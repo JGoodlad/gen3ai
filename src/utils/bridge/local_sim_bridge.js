@@ -54,6 +54,7 @@
 const path = require('path');
 const psPath = path.resolve(__dirname, '../../../deps/pokemon-showdown');
 const { BattleStream, getPlayerStreams } = require(path.join(psPath, 'dist/sim/battle-stream'));
+const { PRNG } = require(path.join(psPath, 'dist/sim/prng'));
 
 let streams = null;
 let rawStream = null;     // the underlying BattleStream — for inputLog/prngSeed at end
@@ -64,6 +65,11 @@ let endedSides = 0;
 // Sticky: once any START asks for it, the process survives battle ends and waits for
 // the next START instead of exiting.
 let persistent = false;
+// Counterfactual Monte-Carlo: {turn, seed} → swap the battle's PRNG for a fresh one at the START of
+// `turn` (so the prefix replays under the recorded dice but the post-divergence dice are resampled).
+// Mirrors replay_driver.js's `b.prng = new PRNG(seed)`, but inside the live streaming bridge.
+let resumeReseed = null;
+let reseeded = false;
 
 function out(line) {
   process.stdout.write(line + '\n');
@@ -133,6 +139,8 @@ function handleStart(json) {
   formatId = msg.formatid;
   cmdLog = [];
   reconEmitted = false;
+  resumeReseed = msg.resumeReseed || null;   // {turn, seed} | null
+  reseeded = false;
   pumpSide('p1');
   pumpSide('p2');
 
@@ -158,6 +166,14 @@ function handleLine(line) {
       const side = s2 === -1 ? rest : rest.slice(0, s2);
       const choice = s2 === -1 ? '' : rest.slice(s2 + 1);
       if (streams && streams[side]) {
+        // Reseed at the START of the divergence turn (battle.turn has already advanced to it after
+        // the prior turn resolved), BEFORE this turn's choices commit — so the prefix keeps the
+        // recorded dice and only the post-divergence resolution draws from the fresh PRNG. Once.
+        if (resumeReseed && !reseeded && rawStream && rawStream.battle
+            && rawStream.battle.turn === resumeReseed.turn) {
+          rawStream.battle.prng = new PRNG(resumeReseed.seed);
+          reseeded = true;
+        }
         cmdLog.push([side, choice]);
         streams[side].write(choice);
       }

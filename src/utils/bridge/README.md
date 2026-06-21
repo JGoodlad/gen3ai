@@ -158,6 +158,36 @@ guarantee — materialized obs == the live `states.npz` rows **bit-for-bit** —
 `agents/training/obs_roundtrip_fuzz_test.py`; replay/re-roll invariants by
 `reconstruction_fuzz_test.py`; the registry by `reconstruction_test.py`.
 
+### Counterfactual replay-to-end (`counterfactual.py`)
+
+Where `reroll_turn` re-rolls a SINGLE turn, **`replay_counterfactual`** picks up a recorded battle at
+turn T, substitutes a different move for one side, and **plays the rest LIVE to a win/loss** — the
+prober's "could it have won if it hadn't choked this turn?" (Feature 2). It reuses the
+`run_local_battles` driver wholesale: both players are real poke-env players whose `choose_move` is
+**scripted** (`install_scripted_prefix`) to replay the recorded commands until the divergence, then
+handed back to the live policy. Faithful prefix: `START` uses the record's resolved seed + both packed
+teams (turns 1..T-1 reproduce the real board), and each scripted `Gen3Player` decision runs
+`embed_battle` + `tracker.advance(recorded_idx)` — the recorded index recovered by inverting the
+recorded choice string through the real action mapper — so the **post-divergence turn-history stays
+faithful**. At turn T our side plays the substitute and goes live; the opponent plays its recorded
+turn-T move (it couldn't have reacted on the same turn) and goes live from T+1. The caller builds the
+players (a greedy trainee + the RELOADED real opponent — a reproducible bot, a sentinel/stable
+checkpoint, or a flagged self-model fallback; orchestrated by `src/main/prober/replay.py`).
+`divergence_turn=None` scripts the whole game (the full-replay correctness oracle).
+**Monte-Carlo**: `post_t_seed` (threaded into `START` as `resumeReseed: {turn, seed}`) swaps the sim
+PRNG at the START of the divergence turn (mirroring `replay_driver.js`'s swap, but inside the live
+`local_sim_bridge.js`), so the prefix keeps the recorded dice while each rollout resamples the
+post-divergence dice → a win-rate ± CI. Faithfulness is proven by `counterfactual_fuzz_test.py`: a
+full scripted replay reproduces the recorded **winner** AND the recorded one-sided obs **bit-for-bit**
+(the `obs_roundtrip` guarantee carried through the live `run_local_battles` path), and the reseed keeps
+the prefix fixed while varying the continuation. (`run_local_battles(..., start_extra=…)` is the generic
+seam that merges extra `START` fields like `resumeReseed`.) For a human-readable **play-by-play**,
+`run_local_battles(..., chunk_sink=[])` accumulates every `(side, chunk)` the bridge emits, and
+`counterfactual.summarize_trajectory(side, sink)` parses OUR one-sided protocol into a per-turn
+`{turn, events}` log (moves / switches / damage / faints / crits / status / win) — so a recovered
+counterfactual win reads as an actual move-by-move line (`replay_counterfactual(..., capture_trajectory=True)`
+→ the prober's `--narrate` / TUI `C`).
+
 **Reading the teams for review** — `record.team_details(side)` / `decode_packed_team(packed)`
 is THE one decode home (moves, EVs, IVs, nature, item, ability, level; omission-defaults
 applied; ids resolved through the sim's alias table — a pool export can say `wisp`, everything

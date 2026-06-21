@@ -1432,3 +1432,40 @@ def test_opp_full_team_text_marks_seen_and_unseen():
     assert "▶ registeel" in s and "○ swampert" in s          # active marker · unseen-mon marker
     assert "✓thunderwave" in s and "○toxic" in s             # per-move seen / unseen icons
     assert "seen on field" in s                              # the legend
+
+
+async def test_counterfactual_section_present_and_guards(tmp_path):
+    """The Counterfactual section + L/C guards (no bridge): graceful hints when there's no decision /
+    no prior lookahead, and the worker surfaces the no-reconstruction.json case rather than crashing."""
+    def _status(app):
+        return str(app.query_one("#cf-status", Static).render()).lower()
+
+    run = _write_trace(tmp_path)            # a websocket-style trace: NO _reconstruction.json sibling
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        sec = app.query_one("#sec-counterfactual", Collapsible)
+        assert sec.collapsed is True                              # on-demand, not open by default
+        assert app.query_one("#cf-lookahead", DataTable) is not None
+        assert app.query_one("#cf-replay", Static) is not None
+
+        # `L` with no decision selected → graceful hint + the section opens.
+        app.action_lookahead()
+        await pilot.pause()
+        assert sec.collapsed is False
+        assert "select a decision" in _status(app)
+
+        # Select the battle + a decision, then `L` runs the worker → no reconstruction.json → clean error.
+        app._select_battle(app._tree_model.all_battles()[0])
+        app._current_inv = 0
+        await pilot.pause()
+        app.action_lookahead()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        assert "reconstruction" in _status(app)                  # bridge-eval-only, surfaced not crashed
+
+        # `C` under an INJECTED (test/fake) model short-circuits cleanly — the replay needs a real
+        # checkpoint it can load, so it never attempts a disk load or crashes.
+        app.action_counterfactual()
+        await pilot.pause()
+        assert "real checkpoint" in _status(app)

@@ -61,6 +61,8 @@ async def run_local_battles(
     battle_format: Optional[str] = None,
     seed: Optional[List[int]] = None,
     concurrency: int = 1,
+    start_extra: "Optional[dict]" = None,
+    chunk_sink: "Optional[list]" = None,
 ) -> None:
     """Play ``n_battles`` between two players via the local sim bridge.
 
@@ -77,8 +79,18 @@ async def run_local_battles(
     process. (Eval runs serially by default — ``_EVAL_SUBPROCESS_CONCURRENCY`` is 1 — but
     ``--eval-concurrency-per-worker`` raises it for latency-hiding; integration tests also
     exercise concurrency > 1.)
+
+    ``start_extra`` merges extra fields into the bridge ``START`` json — e.g.
+    ``{"resumeReseed": {"turn": T, "seed": [...]}}`` for the counterfactual Monte-Carlo reseed
+    (swap the sim PRNG at the start of turn ``T``). ``None`` is the unchanged default.
+
+    ``chunk_sink`` (a list) accumulates every ``(side, chunk)`` the bridge emits — the per-side
+    protocol text — for a caller that wants the move-by-move trajectory (the counterfactual narrator).
+    ``None`` (default) captures nothing. Only use it on a SINGLE battle (it isn't side-deduped across
+    concurrent battles).
     """
-    runner = _LocalBattleRunner(player1, player2, battle_format or player1.format, seed)
+    runner = _LocalBattleRunner(player1, player2, battle_format or player1.format, seed, start_extra,
+                                chunk_sink)
     await handle_threaded_coroutines(runner.run(n_battles, concurrency), POKE_LOOP)
 
 
@@ -89,11 +101,15 @@ class _LocalBattleRunner:
         player2: Player,
         battle_format: str,
         seed: Optional[List[int]],
+        start_extra: Optional[dict] = None,
+        chunk_sink: Optional[list] = None,
     ):
         self.p1 = player1
         self.p2 = player2
         self.fmt = battle_format
         self.seed = seed
+        self.start_extra = start_extra
+        self.chunk_sink = chunk_sink
         self.c1: Optional[BattleStreamClient] = None
         self.c2: Optional[BattleStreamClient] = None
 
@@ -176,6 +192,8 @@ class _LocalBattleRunner:
             }
             if self.seed:
                 start["seed"] = self.seed
+            if self.start_extra:
+                start.update(self.start_extra)
             proc.stdin.write((f"START {json.dumps(start)}\n").encode())
             await proc.stdin.drain()
 
@@ -216,6 +234,8 @@ class _LocalBattleRunner:
                 continue
             side, b64 = text.split(" ", 1)
             chunk = base64.b64decode(b64).decode("utf-8")
+            if self.chunk_sink is not None:
+                self.chunk_sink.append((side, chunk))
             client = self.c1 if side == "p1" else self.c2
             framed = self._frame(tag, side, chunk, inited)
             await client.feed(framed)

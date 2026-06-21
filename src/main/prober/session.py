@@ -370,6 +370,8 @@ class ProbeSession:
         self._tier = tier
         self._model_loader = model_loader      # (path)->model; default ProbeModel.load (tests inject)
         self._models: dict = {}                 # checkpoint path → ProbeModel
+        self._play_models: dict = {}            # checkpoint path → MaskablePPO (counterfactual replay players)
+        self._cf_mappings = None                # lazily-loaded encoder mappings for the replay players
         self._summaries: "dict[str, dict]" = {}
         self._by_path = {b.summary_path: b for b in self.tree.all_battles()}
         self._by_short = {_short_id(b): b for b in self.tree.all_battles()}
@@ -631,6 +633,92 @@ class ProbeSession:
         return falsify_battle(record, self._summary(b), self._npz(b),
                               invs=invs, worst=worst, gamma=self._gamma,
                               n_seeds=n_seeds, n_alts=n_alts, followup=followup)
+
+    def lookahead(self, battle_id: str, *, invs=None, inv: "int | None" = None, worst: int = 3,
+                  n_seeds: int = 0, followup: str = "random") -> dict:
+        """One-ply LOOKAHEAD (Feature 1): for an anchored ``move_selection`` decision, RE-ROLL the turn
+        under each legal action (the opponent plays its RECORDED move), materialize the resulting
+        one-sided successor state through the real encoder, and read the loaded model's **V(s′)** — so
+        the result is per-action ΔV, "what would the critic have valued each alternative at" (the value
+        readout the model-free :meth:`falsify` deliberately defers; + the distributional / win-prob heads
+        when the run trained them). Loads the exact→nearest→recent model. **Requires the trace's
+        ``*_reconstruction.json`` sibling** (bridge-eval traces only). ``inv`` looks ahead from ONE
+        decision (returns the single-decision dict); otherwise ``invs`` (or the ``worst`` δ-craters)
+        returns a battle dict. ``n_seeds`` > 0 dice-averages V(s′) ± std alongside the CRN headline.
+        The CHOSEN action's CRN successor reproduces the real next state, so its ``value_crn`` ≈ the
+        trace's ``recorded_next_value`` — a built-in consistency anchor."""
+        from main.prober.lookahead import lookahead_battle, lookahead_decision
+        from utils.bridge.reconstruction import ReconstructionRecord
+
+        b = self._battle(battle_id)
+        recon_path = b.summary_path[: -len("_summary.json")] + "_reconstruction.json"
+        if not os.path.exists(recon_path):
+            raise FileNotFoundError(
+                f"no reconstruction record next to this trace ({recon_path}) — lookahead needs the "
+                "re-roll layer's replay data, which only bridge-eval traces carry")
+        record = ReconstructionRecord.load(recon_path)
+        model, _ = self._model_for(b)
+        summary, npz = self._summary(b), self._npz(b)
+        if inv is not None:
+            return lookahead_decision(model, record, summary, npz, int(inv),
+                                      n_seeds=n_seeds, followup=followup)
+        return lookahead_battle(model, record, summary, npz, invs=invs, worst=worst,
+                                gamma=self._gamma, n_seeds=n_seeds, followup=followup)
+
+    def replay_counterfactual(self, battle_id: str, inv: int, action: int, *, n_rollouts: int = 1,
+                              opponent_ckpt: "str | None" = None, opponent_source: str = "auto",
+                              narrate: bool = False) -> dict:
+        """COUNTERFACTUAL replay-to-end (Feature 2) — "could the model have won if it hadn't choked this
+        turn?". Pick up the recorded battle at ``inv``'s turn, substitute ``action`` (a legal action
+        index) for OUR side, then play the rest LIVE — the trainee's GREEDY policy vs the RELOADED real
+        opponent — to a win / loss. ``n_rollouts`` > 1 resamples the post-divergence dice (Monte-Carlo)
+        for a win-PROBABILITY ± Wilson CI; ``n_rollouts`` == 1 is the single realized-dice line. The
+        opponent is RELOADED: a reproducible bot is rebuilt exactly, ``opponent_ckpt`` loads any
+        checkpoint (e.g. a self-play sentinel) as the opponent, else the trainee's own model stands in
+        (a flagged self-play approximation). **Requires the trace's ``*_reconstruction.json`` sibling.**"""
+        from sb3_contrib import MaskablePPO
+        from poke_env.ps_client import LocalhostServerConfiguration
+        from agents.observation.state_encoder import load_mappings
+        from main.prober.replay import replay_counterfactual_battle
+        from utils.bridge.reconstruction import ReconstructionRecord
+
+        b = self._battle(battle_id)
+        recon_path = b.summary_path[: -len("_summary.json")] + "_reconstruction.json"
+        if not os.path.exists(recon_path):
+            raise FileNotFoundError(
+                f"no reconstruction record next to this trace ({recon_path}) — counterfactual replay "
+                "needs the re-roll layer's replay data, which only bridge-eval traces carry")
+        record = ReconstructionRecord.load(recon_path)
+
+        choice = self._resolve(b)
+        if choice.path is None:
+            raise FileNotFoundError(
+                f"no checkpoint resolved for the counterfactual trainee: {choice.detail}")
+        if self._cf_mappings is None:
+            self._cf_mappings = load_mappings()
+
+        def _load(path):
+            m = self._play_models.get(path)
+            if m is None:
+                m = MaskablePPO.load(path, env=None, device="cpu")
+                m.policy.set_training_mode(False)
+                # A `--log-level periodic` checkpoint carries an ObservationDebugger that print()s a
+                # "DEEP TRACE" banner on every forward — it would corrupt the CLI's JSON stdout and the
+                # TUI screen. Silence it on the replay players, exactly as ProbeModel.load does.
+                for mod in m.policy.modules():
+                    if hasattr(mod, "_debugger"):
+                        mod._debugger = None
+                self._play_models[path] = m
+            return m
+
+        play_model = _load(choice.path)
+        opp_model = _load(opponent_ckpt) if opponent_ckpt else None
+
+        return replay_counterfactual_battle(
+            record, self._summary(b), self._npz(b), int(inv), int(action),
+            play_model=play_model, opp_name=b.opponent, mappings=self._cf_mappings,
+            server_config=LocalhostServerConfiguration, opponent_ckpt=opponent_ckpt,
+            opp_model=opp_model, opponent_source=opponent_source, n_rollouts=n_rollouts, narrate=narrate)
 
     def falsify_scan(self, *, outcome: "str | None" = "loss",
                      opponent: "str | None" = None, step: "int | None" = None,

@@ -428,10 +428,16 @@ The same analysis is available headless for one invocation via the
 <states.npz> <inv>`); both share the pure engine in `src/main/prober/engine.py`.
 
 **For agents/scripts**, a JSON API + CLI (`ProbeSession` / `python -m
-main.prober.query summary|list|scan|overview|find|analyze|falsify|falsify-scan|calibration`) exposes
-the same probing infrastructure programmatically — list/filter battles, **`scan` the worst turn in
+main.prober.query summary|list|scan|overview|find|analyze|lookahead|replay-counterfactual|falsify|falsify-scan|calibration`)
+exposes the same probing infrastructure programmatically — list/filter battles, **`scan` the worst turn in
 every loss across an opponent (model-free, ranked)**, digest one battle, find
-decisions the model disagrees with, deeply analyze one decision, **`falsify`
+decisions the model disagrees with, deeply analyze one decision, **`lookahead`
+a decision: one-ply VALUE-DELTA — re-roll each legal action one turn (opp plays its recorded move),
+materialize the successor, and read the critic's V(s′) per action** (the model-scored counterpart to
+`falsify`), **`replay-counterfactual` a decision: substitute a move and play the rest LIVE vs the
+RELOADED real opponent to a win/loss — "could it have won if it hadn't choked this turn?"** (a scripted
+prefix over `run_local_battles`; `--rollouts N` resamples the post-divergence dice for a Monte-Carlo
+win-prob ± Wilson CI; bridge-eval traces only), **`falsify`
 a battle's worst decisions: luck-vs-mistake dice attribution by RE-ROLLING the
 real turns** (fix-both luck percentile + paired alternative-action sweep via the
 battle-reconstruction layer; bridge-eval traces with a `*_reconstruction.json`

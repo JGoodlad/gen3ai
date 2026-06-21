@@ -70,6 +70,9 @@ _SECTIONS = _assign_section_keys(_SECTION_DEFS)
 # Title shown on each Collapsible — "1  Summary" — so the hotkey is always visible.
 _SEC_TITLE = {sid: f"{key}  {title}" for sid, title, key in _SECTIONS}
 _OPEN_BY_DEFAULT = {"sec-summary", "sec-board", "sec-faith", "sec-beliefs", "sec-flow", "sec-outcome"}
+# Counterfactual replay-to-end rollouts when triggered from the TUI (`C`): each is a full in-process
+# game, so keep it modest for responsiveness; the CLI's --rollouts goes higher for a tighter CI.
+_TUI_REPLAY_ROLLOUTS = 8
 
 
 class NavTree(Tree):
@@ -189,6 +192,9 @@ class ProberApp(Gen3App):
         ("left_square_bracket", "prev_annotated", "Prev note"),
         ("E", "export_notes", "Export notes"),
         ("y", "copy_replay_path", "Replay path"),
+        # Counterfactual (re-roll powered; opens the Counterfactual section + runs a worker).
+        ("L", "lookahead", "Lookahead V(s′)"),
+        ("C", "counterfactual", "Replay→end"),
         # Section toggles — generated from _SECTIONS so the key/title/binding never drift.
         *[Binding(key, f"toggle_section('{sid}')", title, show=False)
           for sid, title, key in _SECTIONS],
@@ -234,6 +240,12 @@ class ProberApp(Gen3App):
         self._model = None                        # currently active ProbeModel
         self._active_path: "str | None" = None
         self._current_choice: "ModelChoice | None" = None
+        # Counterfactual (L/C) state: the most-recent lookahead (so `C` knows which alternative to
+        # replay), a staleness token, and a lazily-built ProbeSession (owns the MaskablePPO play models).
+        self._last_lookahead: "dict | None" = None
+        self._last_lookahead_inv: "int | None" = None
+        self._cf_token = 0
+        self._cf_session = None
 
     @property
     def _model_ready(self) -> bool:
@@ -328,6 +340,15 @@ class ProberApp(Gen3App):
                         yield DataTable(id="reward-table")
                         yield Static("", id="outcome-events")
                         yield Static("", id="outcome-log")
+                    # Counterfactual (re-roll powered; bridge-eval traces only). On-demand because it
+                    # spawns Node: `L` = one-ply lookahead (V(s′) per legal action), `C` = replay the
+                    # best alternative to a win/loss ("could it have won?"). Not a digit-toggled section.
+                    with Collapsible(title="L · C   Counterfactual  (L lookahead · C replay-to-end)",
+                                     collapsed=True, id="sec-counterfactual"):
+                        yield Static("", id="cf-hint")
+                        yield Static("", id="cf-status")
+                        yield DataTable(id="cf-lookahead")
+                        yield Static("", id="cf-replay")
         # `y` reveals the current battle's replay path here — a full-width bar so the path sits on its
         # OWN line (not wrapped inside a toast), trivially selectable under `v` copy mode. Hidden until
         # used.
@@ -342,6 +363,12 @@ class ProberApp(Gen3App):
         self.query_one("#sweep-table", DataTable).add_columns("×mult", "P(chosen)", "P(switches)")
         self.query_one("#reward-table", DataTable).add_columns("reward component", "value")
         self.query_one("#saliency-table", DataTable).add_columns("obs block", "|grad|/dim", "sum")
+        self.query_one("#cf-lookahead", DataTable).add_columns("move", "V(s′)", "ΔV", "→")
+        self.query_one("#cf-hint", Static).update(Text(
+            "one-ply lookahead + counterfactual replay (re-roll powered, bridge-eval traces only). "
+            "L = V(s′) for each legal action (opp plays its recorded move) · C = play the best "
+            "alternative to a WIN/LOSS vs the reloaded opponent. The CLI's replay-counterfactual takes "
+            "any action + --rollouts for a win-prob ± CI.", style="dim italic"))
         for tid in ("#board-our", "#board-opp"):
             self.query_one(tid, DataTable).add_columns("pokémon", "hp", "status")
         # Flow: a Static box-art dataflow diagram (obs → trunk bus → ⑂ fork → two π/V lanes).
@@ -530,6 +557,7 @@ class ProberApp(Gen3App):
 
     def _select_battle(self, battle: BattleTrace) -> None:
         self._current_battle = battle
+        self._invalidate_counterfactual()                            # a new battle ⇒ stale L/C cache
         self.query_one("#replay-path-bar", Static).display = False   # drop any stale yanked path
         self._current_summary = self._load_summary(battle)
         invs = self._current_summary["invocations"]
@@ -695,6 +723,7 @@ class ProberApp(Gen3App):
     def action_cycle_model(self) -> None:
         """Cycle the resolution preference (auto → nearest → recent) and reload."""
         self._tier = TIERS[(TIERS.index(self._tier) + 1) % len(TIERS)]
+        self._invalidate_counterfactual()        # the tier change re-resolves the model ⇒ stale cf session
         if self._current_battle is not None:
             self._ensure_model_for(self._current_battle.step)
             lv = self.query_one("#invocation-list", ListView)
@@ -706,6 +735,7 @@ class ProberApp(Gen3App):
             del self._model_cache[self._active_path]
         self._model = None
         self._active_path = None
+        self._invalidate_counterfactual()        # reloaded weights ⇒ stale cf session + cache
         if self._current_battle is not None:
             self._ensure_model_for(self._current_battle.step)
 
@@ -824,6 +854,167 @@ class ProberApp(Gen3App):
         # Reuse the battle header line as a transient status when analyzing.
         if msg:
             self.query_one("#battle-header", Static).update(Text(msg, style="yellow"))
+
+    # ------------------------------------------------------------------
+    # Counterfactual (L = one-ply lookahead · C = replay-to-end). On-demand (each spawns Node), run in
+    # a worker, results land in the (auto-opened) Counterfactual section. Bridge-eval traces only.
+    # ------------------------------------------------------------------
+
+    def _cf_set_status(self, msg: str, style: str = "yellow") -> None:
+        self.query_one("#cf-status", Static).update(Text(msg, style=style) if msg else Text(""))
+
+    def _open_counterfactual(self) -> None:
+        try:
+            self.query_one("#sec-counterfactual", Collapsible).collapsed = False
+        except Exception:  # noqa: BLE001 — opening the section is best-effort
+            pass
+
+    def _invalidate_counterfactual(self) -> None:
+        """Drop the cached lookahead + the cf session and clear the section. Called whenever the
+        selected BATTLE or the resolved MODEL (tier/reload) changes, so: (a) `C` can never replay a
+        STALE alternative against the WRONG battle (`_last_lookahead` is gone → "press L first"), (b) a
+        late in-flight L/C worker render is invalidated (the bumped `_cf_token` fails its guard), and
+        (c) the cf session is rebuilt at the CURRENT tier/override (it caches the resolved checkpoint)."""
+        self._last_lookahead = None
+        self._last_lookahead_inv = None
+        self._cf_token += 1
+        self._cf_session = None
+        try:
+            self.query_one("#cf-lookahead", DataTable).clear()
+            self.query_one("#cf-replay", Static).update(Text(""))
+            self._cf_set_status("")
+        except Exception:  # noqa: BLE001 — clearing widgets is best-effort (may run pre-mount)
+            pass
+
+    def action_lookahead(self) -> None:
+        """`L` — one-ply lookahead: V(s′) for each legal action at the current decision."""
+        self._open_counterfactual()
+        if self._current_battle is None or self._current_inv is None:
+            self._cf_set_status("select a decision first")
+            return
+        if not self._model_ready:
+            self._cf_set_status("load a model first (select a battle)")
+            return
+        self._cf_token += 1
+        self._cf_set_status(f"computing one-ply V(s′) for inv {self._current_inv} "
+                            f"(re-rolls each action; a few seconds)…")
+        self._lookahead_worker(self._current_battle, self._current_inv, self._cf_token)
+
+    @work(thread=True, exclusive=True, group="counterfactual")
+    def _lookahead_worker(self, battle: BattleTrace, inv_index: int, token: int) -> None:
+        from main.prober.lookahead import lookahead_decision
+        from utils.bridge.reconstruction import ReconstructionRecord
+
+        recon = battle.summary_path[: -len("_summary.json")] + "_reconstruction.json"
+        if not os.path.exists(recon):
+            self.call_from_thread(
+                self._cf_error, "no reconstruction.json next to this trace — lookahead needs the "
+                "re-roll layer (bridge-eval traces only)", token)
+            return
+        try:
+            d = lookahead_decision(self._model, ReconstructionRecord.load(recon),
+                                   self._load_summary(battle), self._load_npz(battle), inv_index)
+        except Exception as e:  # noqa: BLE001 — surface the error in the section, don't crash
+            self.call_from_thread(self._cf_error, str(e), token)
+            return
+        self.call_from_thread(self._render_lookahead, d, inv_index, token)
+
+    def _render_lookahead(self, d: dict, inv_index: int, token: int) -> None:
+        if token != self._cf_token:
+            return
+        self._last_lookahead = d
+        self._last_lookahead_inv = inv_index
+        self._cf_set_status(
+            f"one-ply V(s′) · turn {d['turn']} · baseline V(s)={d.get('baseline_value')} · "
+            f"chosen {d['chosen']['label']} · best alt {d.get('best_alternative')} "
+            f"(ΔV {d.get('best_delta_v')}) — press C to replay it to a win/loss", style="bold")
+        table = self.query_one("#cf-lookahead", DataTable)
+        table.clear()
+        for c in d["candidates"]:
+            label = f"{'▶' if c['is_chosen'] else ' '} {c['label']}"
+            if c["terminal"]:
+                v = Text(c["terminal"].upper(),
+                         style="bold green" if c["terminal"] == "win" else "bold red")
+                dv = Text("→ end", style="dim")
+            else:
+                v = Text(f"{c['value_crn']:.3f}" if c["value_crn"] is not None else "—")
+                dvf = c.get("delta_v")
+                dv = (Text(f"{dvf:+.3f}", style=("green" if dvf > 0 else "red" if dvf < 0 else "dim"))
+                      if dvf is not None else Text("—", style="dim"))
+            star = "★" if (not c["is_chosen"] and c["label"] == d.get("best_alternative")) else ""
+            table.add_row(label, v, dv, star)
+
+    def action_counterfactual(self) -> None:
+        """`C` — replay the best lookahead alternative to a win/loss ("could it have won?")."""
+        self._open_counterfactual()
+        if self._current_battle is None or self._current_inv is None:
+            self._cf_set_status("select a decision first")
+            return
+        if self._injected_model is not None:
+            # The replay loads a real MaskablePPO checkpoint (not the app's analysis model), so an
+            # injected/test model can't drive it — fail clearly instead of silently disk-loading.
+            self._cf_set_status("counterfactual replay needs a real checkpoint, not an injected model")
+            return
+        if not (self._last_lookahead and self._last_lookahead_inv == self._current_inv):
+            self._cf_set_status("press L first — the lookahead picks which alternative to replay")
+            return
+        alt = next((c for c in self._last_lookahead["candidates"] if not c["is_chosen"]), None)
+        if alt is None:
+            self._cf_set_status("no alternative action to replay")
+            return
+        self._cf_token += 1
+        self._cf_set_status(
+            f"replaying '{alt['label']}' to a win/loss × {_TUI_REPLAY_ROLLOUTS} rollouts (could it "
+            f"have won?) — a full game per rollout, give it a moment…")
+        self._counterfactual_worker(self._current_battle, self._current_inv, alt["action"], self._cf_token)
+
+    @work(thread=True, exclusive=True, group="counterfactual")
+    def _counterfactual_worker(self, battle: BattleTrace, inv_index: int, action: int, token: int) -> None:
+        try:
+            d = self._counterfactual_session().replay_counterfactual(
+                battle.summary_path, inv_index, action, n_rollouts=_TUI_REPLAY_ROLLOUTS, narrate=True)
+        except Exception as e:  # noqa: BLE001 — surface the error, don't crash the UI
+            self.call_from_thread(self._cf_error, str(e), token)
+            return
+        self.call_from_thread(self._render_counterfactual, d, token)
+
+    def _counterfactual_session(self):
+        if self._cf_session is None:
+            from main.prober.session import ProbeSession
+            self._cf_session = ProbeSession(self._root, ckpt_override=self._ckpt_override, tier=self._tier)
+        return self._cf_session
+
+    def _render_counterfactual(self, d: dict, token: int) -> None:
+        if token != self._cf_token:
+            return
+        self._cf_set_status("")
+        wr, ci = d.get("win_rate"), (d.get("win_rate_ci") or [None, None])
+        body = Text()
+        body.append("REPLAY-TO-END  ", style="bold")
+        body.append(f"substitute {d['substitute']['label']} (vs chosen {d['chosen']['label']}) → ")
+        if wr is not None:
+            body.append(f"win {wr * 100:.0f}%", style=("bold green" if wr >= 0.5 else "bold red"))
+            if d["n_rollouts"] > 1 and ci[0] is not None:
+                body.append(f" [{ci[0] * 100:.0f}–{ci[1] * 100:.0f}%]", style="dim")
+            body.append(f"  ({d['wins']}/{d['n_rollouts']})")
+        body.append(f"\nopponent: {d.get('opponent_source')} · recorded result: "
+                    f"{d.get('recorded_result')}\n", style="dim")
+        # The move-by-move play-by-play of one RECOVERED WIN — "how we could have won".
+        traj = d.get("winning_trajectory")
+        if traj:
+            body.append("\n▶ a winning line, turn by turn:\n", style="bold green")
+            for t in traj:
+                evs = " · ".join(e.strip() for e in t.get("events", []))
+                body.append(f"  t{t.get('turn')}: ", style="cyan")
+                body.append(f"{evs}\n", style="green" if "WINS" in evs else "")
+        for c in d.get("caveats", []):
+            body.append(f"  · {c}\n", style="dim italic")
+        self.query_one("#cf-replay", Static).update(body)
+
+    def _cf_error(self, msg: str, token: int) -> None:
+        if token != self._cf_token:
+            return
+        self._cf_set_status(f"✗ {msg}", style="red")
 
     # ---- per-panel renderers ----
 

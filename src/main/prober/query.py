@@ -13,6 +13,8 @@ A typical investigation:
     python -m main.prober.query find     <summary.json> value_drop --limit 5
     python -m main.prober.query find     <summary.json> disagree           # loads the model
     python -m main.prober.query analyze  <summary.json> <inv> [--tier nearest]
+    python -m main.prober.query lookahead <summary.json> [--inv N]               # one-ply V(s′) per action (re-rolls)
+    python -m main.prober.query replay-counterfactual <summary.json> <inv> <action> [--rollouts N]  # could it have won?
     python -m main.prober.query falsify  <summary.json> [--inv N] [--seeds 40]  # luck vs mistake (re-rolls)
     python -m main.prober.query falsify-scan <run_dir> [--opponent X]            # RUN-LEVEL reducible-vs-aleatoric
     python -m main.prober.query calibration  <run_dir> [--step N]                # split `unattributed`: critic vs lost
@@ -59,6 +61,17 @@ examples:
   # 5. full forensic analysis of one decision (loads exact→nearest→recent model)
   python -m main.prober.query analyze <id> 7 --tier nearest
 
+  # 5b. one-ply LOOKAHEAD: re-roll each legal action one turn (opp plays recorded) → the critic's V(s′)
+  #     per action — "what would it have valued each alternative at" (bridge-eval traces only)
+  python -m main.prober.query lookahead <id> --inv 7              # all legal actions at one decision
+  python -m main.prober.query lookahead <id> --worst 3 --seeds 4 # the worst δ-craters, dice-averaged
+
+  # 5c. COUNTERFACTUAL replay-to-end: substitute a move at a turn, play the rest LIVE vs the RELOADED
+  #     opponent to a win/loss — "could it have won if it hadn't choked this turn?"
+  python -m main.prober.query replay-counterfactual <id> 7 9                 # one realized-dice line
+  python -m main.prober.query replay-counterfactual <id> 7 9 --rollouts 20   # Monte-Carlo win-prob ± CI
+  python -m main.prober.query replay-counterfactual <id> 7 9 --opponent-ckpt models/run/snapshots/snap_30M.zip
+
   # 6. dice attribution: were the worst decisions of this loss LUCK or a MISTAKE?
   #    (re-rolls the real turns via the reconstruction layer — bridge-eval traces only)
   python -m main.prober.query falsify <id>                       # worst 3 decisions by δ
@@ -80,7 +93,8 @@ def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="python -m main.prober.query",
         description="JSON probing CLI for agents (triage/probe/summary/list/scan/history-saliency/"
-                    "overview/find/analyze/falsify/falsify-scan/calibration).",
+                    "overview/find/analyze/lookahead/replay-counterfactual/falsify/falsify-scan/"
+                    "calibration).",
         epilog=_EXAMPLES, formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -163,6 +177,45 @@ def _build_parser() -> argparse.ArgumentParser:
     pfa.add_argument("--alts", type=int, default=3, help="alternative actions to test (default 3)")
     pfa.add_argument("--followup", default="random", choices=["random", "default"],
                      help="policy for NEW mid-turn decisions in re-rolled timelines")
+
+    plk = sub.add_parser(
+        "lookahead", help="one-ply value-delta: RE-ROLL each legal action one turn (opponent plays its "
+                          "recorded move) and read the model's V(s′) — per-action ΔV, 'what would the "
+                          "critic have valued each alternative at'. Loads the model; bridge-eval traces "
+                          "with *_reconstruction.json only")
+    plk.add_argument("battle", help="a battle id (the *_summary.json path from list/summary)")
+    plk.add_argument("--inv", type=int, default=None,
+                     help="look ahead from ONE decision (else the --worst δ-craters)")
+    plk.add_argument("--worst", type=int, default=3,
+                     help="anchor the N most-negative-δ move decisions (default 3)")
+    plk.add_argument("--seeds", type=int, default=0,
+                     help="dice-average V(s′) over N fresh seeds (default 0 = CRN / realized-dice only)")
+    plk.add_argument("--followup", default="random", choices=["random", "default"],
+                     help="policy for NEW mid-turn decisions in re-rolled timelines")
+    plk.add_argument("--ckpt", default=None, help="checkpoint override (else exact→nearest→recent)")
+    plk.add_argument("--tier", default="auto", choices=["auto", "nearest", "recent"])
+
+    prc = sub.add_parser(
+        "replay-counterfactual",
+        help="COUNTERFACTUAL replay-to-end: substitute a move at a turn and play the rest LIVE (trainee "
+             "vs the RELOADED real opponent) to a win/loss — 'could it have won?'. --rollouts N gives a "
+             "Monte-Carlo win-prob ± CI. Loads the model; bridge-eval traces with *_reconstruction.json only")
+    prc.add_argument("battle", help="a battle id (the *_summary.json path from list/summary)")
+    prc.add_argument("inv", type=int, help="the move_selection invocation to diverge from")
+    prc.add_argument("action", type=int, help="the substitute action INDEX (a legal action at that decision)")
+    prc.add_argument("--rollouts", type=int, default=1,
+                     help="Monte-Carlo rollouts, each a fresh post-divergence dice reseed (default 1 = "
+                          "the single realized-dice line; >1 → win-rate ± CI)")
+    prc.add_argument("--opponent-ckpt", default=None,
+                     help="load THIS checkpoint as the opponent (e.g. a self-play sentinel snapshot); "
+                          "else a reproducible bot is rebuilt, or the trainee's own model stands in")
+    prc.add_argument("--opponent-source", default="auto", choices=["auto", "bot", "self", "ckpt"],
+                     help="force the opponent kind (default auto: ckpt→bot→self-model fallback)")
+    prc.add_argument("--narrate", action="store_true",
+                     help="capture the move-by-move play-by-play of a recovered WIN (and a LOSS) — the "
+                          "'winning_trajectory'/'losing_trajectory' in the output")
+    prc.add_argument("--ckpt", default=None, help="trainee checkpoint override (else exact→nearest→recent)")
+    prc.add_argument("--tier", default="auto", choices=["auto", "nearest", "recent"])
 
     pfs = sub.add_parser(
         "falsify-scan", help="RUN-LEVEL luck-vs-mistake attribution: falsify every loss's worst "
@@ -248,6 +301,14 @@ def _run(args) -> object:
         return ProbeSession(args.battle).falsify(
             args.battle, invs=args.inv, worst=args.worst,
             n_seeds=args.seeds, n_alts=args.alts, followup=args.followup)
+    if args.cmd == "lookahead":
+        return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier).lookahead(
+            args.battle, inv=args.inv, worst=args.worst,
+            n_seeds=args.seeds, followup=args.followup)
+    if args.cmd == "replay-counterfactual":
+        return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier).replay_counterfactual(
+            args.battle, args.inv, args.action, n_rollouts=args.rollouts,
+            opponent_ckpt=args.opponent_ckpt, opponent_source=args.opponent_source, narrate=args.narrate)
     if args.cmd == "falsify-scan":
         return ProbeSession(args.root).falsify_scan(
             outcome=args.outcome, opponent=args.opponent, step=args.step,

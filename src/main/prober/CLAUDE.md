@@ -63,8 +63,9 @@ the single source of truth — change the analysis once, both surfaces follow.
   `*_replay.html` (`write_battle_record`) — a browser-watchable Showdown replay
   the prober ignores but a human can open directly. Bridge-eval traces add a
   fourth sibling, `*_reconstruction.json` — the battle's full-information
-  replay/re-roll record (`utils/bridge/reconstruction.py`) — which the prober
-  also ignores today (a future counterfactual probe consumes it).
+  replay/re-roll record (`utils/bridge/reconstruction.py`) — consumed by the
+  `falsify` / `lookahead` / `replay_counterfactual` re-roll probes (and the
+  privileged opp-team belief view).
 - **`app.py`** — `ProberApp(Gen3App)`: trace `Tree` | invocation `ListView` |
   a `VerticalScroll` of `Collapsible` analysis sections (Summary · Team · Review · Board ·
   Faithfulness · **Beliefs** · **Threats** · Intervention · Saliency · Flow · Outcome). The
@@ -581,6 +582,42 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   (On run_20260606 the critic's per-dim value-saliency on `incoming_damage` ran ~5×
   the overall mean, vs ~0.3× for the old `their_matchups` — the critic strongly uses
   the new belief.)
+- `lookahead(battle_id, inv=, invs=, worst=, n_seeds=0, followup=)` — **one-ply VALUE-DELTA**
+  (`lookahead.py`): for an anchored `move_selection` decision, RE-ROLL the turn under each LEGAL action
+  (the opponent plays its RECORDED move), materialize the resulting one-sided successor obs through the
+  real encoder, and read the loaded model's **V(s′)** — per-action ΔV, "what would the critic have
+  valued each alternative at" (the model-scored variant the model-free `falsify` deliberately defers,
+  + the distributional / win-prob heads on the successor via `ProbeModel.value_dist_at`/`win_prob_at`
+  when the run trained them). Two faithful modes share one call: the **CRN** headline (the `"original"`
+  seed — hold the realized dice, vary only OUR action, so ΔV isolates the action's effect; the CHOSEN
+  action's CRN successor reproduces the REAL next state so its `value_crn` ≈ the trace's
+  `recorded_next_value`, a built-in consistency anchor) and a **dice-averaged** `value_mean`±`value_std`
+  over `n_seeds`>0 fresh seeds. A candidate whose turn ENDS the battle is reported `terminal` (win/loss),
+  not a numeric V. Loads the exact→nearest→recent model; **requires the trace's `*_reconstruction.json`
+  sibling**. (`ProbeModel.value` is the V(s′) primitive; the successor obs is materialized from
+  `reroll.prefix_pN_chunks + reroll.pN_chunks` per the obs-materializer recipe.)
+- `replay_counterfactual(battle_id, inv, action, n_rollouts=1, opponent_ckpt=, opponent_source=)` —
+  **COUNTERFACTUAL replay-to-end** (`replay.py` → `utils/bridge/counterfactual.py`): "could the model
+  have won if it hadn't choked this turn?". Pick up the recorded battle at `inv`'s turn, substitute
+  `action` (a legal action index) for OUR side, then play the rest LIVE — the trainee's GREEDY policy vs
+  the **RELOADED real opponent** — to a win/loss. The driver reuses `run_local_battles` with both
+  players' `choose_move` SCRIPTED to replay the recorded commands until the divergence (faithful: the
+  bridge `START` uses the recorded resolved seed + both recorded packed teams, and each scripted
+  Gen3Player decision runs `embed_battle` + `tracker.advance(recorded_idx)` — the recorded index
+  recovered by inverting the recorded choice string — so the post-divergence turn-history stays faithful,
+  proven bit-for-bit by `counterfactual_fuzz_test.py`). The opponent is RELOADED: a reproducible bot is
+  rebuilt exactly; `opponent_ckpt` loads any checkpoint (e.g. a self-play sentinel) as the opponent;
+  else the trainee's own model stands in (a flagged `self_model_approx`). `n_rollouts`>1 resamples the
+  post-divergence dice (`local_sim_bridge.js`'s `resumeReseed` PRNG swap at the divergence turn) for a
+  Monte-Carlo win-rate ± **Wilson CI**; `n_rollouts`==1 is the single realized-dice line (NOT a
+  probability — a `caveat` says so). Loads the model; **requires the `*_reconstruction.json` sibling**.
+  Each rollout is a full in-process game (seconds); the `caveats` flag the self-play approximation +
+  that it best illuminates THROWN-LATE losses, not matchup-lost-from-turn-1 ones. `narrate=True` (the
+  CLI `--narrate`, always on from the TUI `C`) additionally captures the **move-by-move play-by-play**
+  of the first recovered WIN + first LOSS (`winning_trajectory` / `losing_trajectory`: per-turn
+  `{turn, events}` from OUR one-sided view — moves / switches / damage / faints / crits / status / win)
+  via `run_local_battles`'s `chunk_sink` → `counterfactual.summarize_trajectory` — so you can read HOW a
+  different move wins and what the bot did (e.g. spamming Earthquake into a Levitate Gengar).
 - `falsify(battle_id, invs=, worst=, n_seeds=, n_alts=, followup=)` — **dice
   attribution** (`falsifier.py`): was a loss decision LUCK or a reducible MISTAKE?
   RE-ROLLS the real turn via the battle-reconstruction layer
@@ -682,6 +719,8 @@ python -m main.prober.query scan     <run_dir> --outcome loss --opponent X [--me
 python -m main.prober.query overview <battle_id>
 python -m main.prober.query find     <battle_id> value_drop --limit 5
 python -m main.prober.query analyze  <battle_id> <inv> [--ckpt PATH] [--tier auto|nearest|recent]
+python -m main.prober.query lookahead <battle_id> [--inv N] [--worst K] [--seeds N] [--followup random|default]
+python -m main.prober.query replay-counterfactual <battle_id> <inv> <action> [--rollouts N] [--opponent-ckpt PATH] [--opponent-source auto|bot|self|ckpt] [--narrate]
 python -m main.prober.query falsify  <battle_id> [--inv N]... [--worst K] [--seeds N] [--alts K] [--followup random|default]
 python -m main.prober.query falsify-scan <run_dir> [--outcome loss|win] [--opponent X] [--step N] [--limit K] [--worst K] [--seeds N] [--alts K] [--concurrency N]
 python -m main.prober.query calibration  <run_dir> [--step N] [--opponent X] [--limit K] [--worst K] [--seeds N] [--concurrency N] [--bins N] [--overvalue-tau F]
@@ -736,6 +775,26 @@ blocking. So:
 - Workers **compute and return**; widgets are only touched on the event loop via
   `call_from_thread`. The npz is opened, the single obs row copied out, and the
   archive closed immediately (no handle accumulation while browsing).
+
+## Counterfactual section (`L` lookahead · `C` replay-to-end)
+
+The **Counterfactual** Collapsible (NOT a digit-toggled `_SECTIONS` entry — opened on demand by `L`/`C`,
+collapsed by default) is the TUI surface for the two re-roll-powered probes (bridge-eval traces only,
+each spawns Node so it runs in a `group="counterfactual"` worker with a `_cf_token` staleness guard):
+
+- **`L` — one-ply lookahead** (`action_lookahead` → `_lookahead_worker` → `lookahead.lookahead_decision`
+  on the loaded `ProbeModel`): renders the `#cf-lookahead` DataTable — per legal action its **V(s′)** (the
+  re-rolled successor's critic value, CRN/realized-dice), **ΔV** vs the chosen line (green↑/red↓), and a
+  `terminal` win/loss when the action ends the battle; the chosen action is `▶`-marked, the best
+  alternative `★`. The status line surfaces the baseline V(s) + the best alt's ΔV.
+- **`C` — replay-to-end** (`action_counterfactual` → `_counterfactual_worker` → a lazily-built
+  `ProbeSession.replay_counterfactual`): plays the lookahead's **best non-chosen alternative** forward to
+  a win/loss × `_TUI_REPLAY_ROLLOUTS` (8) Monte-Carlo rollouts vs the reloaded opponent, rendering the
+  win-% ± CI + the opponent source + the caveats. Requires a prior successful `L` for the same decision
+  (it picks the substitute); the CLI's `replay-counterfactual <id> <inv> <action>` takes an arbitrary
+  action + `--rollouts`. The model.py boundary adds `value_dist_at` / `win_prob_at` (the counterfactual
+  analog of the trace's recorded distributional/win-prob arrays — a re-rolled successor has no saved row,
+  so they re-read the head stash after a forward on s′, mirroring `belief`/`damage_op_view`).
 
 ## Gotchas
 

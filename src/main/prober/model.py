@@ -260,10 +260,29 @@ class ProbeModel:
             probs = torch.softmax(masked, 1).cpu().numpy()
         return probs
 
+    def _expected_obs_dim(self) -> "int | None":
+        """The obs dim the loaded policy was TRAINED on (its ``observation_space`` 'observation' key)."""
+        try:
+            return int(self._policy.observation_space["observation"].shape[0])
+        except (KeyError, AttributeError, TypeError, IndexError):
+            return None
+
+    def _check_obs_dim(self, obs: np.ndarray) -> None:
+        """Fail LOUD on an obs-version mismatch (a re-rolled/materialized obs built by the CURRENT
+        encoder fed to an OLDER checkpoint) — a clear error instead of a confusing mid-forward torch
+        shape error or a silently wrong V(s′). The recorded-state analyze path also flags `obs_mismatch`."""
+        exp = self._expected_obs_dim()
+        n = int(np.asarray(obs).shape[-1])
+        if exp is not None and n != exp:
+            raise ValueError(
+                f"obs-version mismatch: obs is {n} dims but the loaded model expects {exp} — probe a "
+                "model trained on the current obs layout (use --ckpt / the exact tier / --keep-eval-snapshots)")
+
     def value(self, obs: np.ndarray, mask: np.ndarray) -> float:
         """The critic's V(s) for a single obs/mask (dual-head policy value path)."""
         import torch
 
+        self._check_obs_dim(obs)
         ot = torch.as_tensor(obs).unsqueeze(0)
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
@@ -283,6 +302,48 @@ class ProbeModel:
             return float(pa.mu), float(pa.sigma)
         except (AttributeError, TypeError, ValueError):
             return None
+
+    def value_dist_at(self, obs: np.ndarray, mask: np.ndarray) -> "np.ndarray | None":
+        """The distributional value head's per-atom return distribution for an ARBITRARY obs — one
+        clean forward, then ``softmax(last_value_dist_logits)``. ``None`` when the checkpoint trained no
+        value-dist head (``--value-dist-mode none``). This is the COUNTERFACTUAL analog of the trace's
+        recorded ``value_dist`` array: a re-rolled one-ply successor state has no saved row, so the
+        lookahead reads the resulting state's distribution HERE. Mirrors ``belief`` / ``damage_op_view``
+        (the sweep/saliency passes clobber the stash, so a fresh forward is required)."""
+        import torch
+
+        extractor = getattr(self._policy, "features_extractor", None)
+        if extractor is None or getattr(extractor, "value_dist_mode", "none") == "none":
+            return None
+        self._check_obs_dim(obs)
+        ot = torch.as_tensor(obs).unsqueeze(0)
+        mt = torch.as_tensor(mask).unsqueeze(0)
+        with torch.no_grad():
+            self._policy.extract_features({"observation": ot, "action_mask": mt})
+        logits = getattr(extractor, "last_value_dist_logits", None)
+        if logits is None:
+            return None
+        return torch.softmax(logits[0], dim=-1).detach().cpu().numpy()
+
+    def win_prob_at(self, obs: np.ndarray, mask: np.ndarray) -> "float | None":
+        """The win-probability head's calibrated P(win|s) for an ARBITRARY obs — one clean forward, then
+        ``sigmoid(last_win_prob_logits)``. ``None`` when the checkpoint trained no win-prob head
+        (``--win-prob-mode none``). The COUNTERFACTUAL analog of the trace's recorded ``win_probs`` array
+        for a re-rolled one-ply successor state the lookahead evaluates."""
+        import torch
+
+        extractor = getattr(self._policy, "features_extractor", None)
+        if extractor is None:
+            return None
+        self._check_obs_dim(obs)
+        ot = torch.as_tensor(obs).unsqueeze(0)
+        mt = torch.as_tensor(mask).unsqueeze(0)
+        with torch.no_grad():
+            self._policy.extract_features({"observation": ot, "action_mask": mt})
+        logits = getattr(extractor, "last_win_prob_logits", None)
+        if logits is None:
+            return None
+        return float(torch.sigmoid(logits[0, 0]).item())
 
     def value_dist_support(self) -> "tuple[float, float, int] | None":
         """The distributional value head's atom support ``(vmin, vmax, bins)``, or ``None`` when the run
