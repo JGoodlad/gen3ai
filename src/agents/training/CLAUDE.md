@@ -235,6 +235,39 @@ Tests: `reward_redesign_test.py::{TestProgressPBRS, TestHazardPBRS, TestBoostPBR
 TestEndStateDrops, TestAllShapingPbrsNoOpDefault}` + `snapshot_test.py` (resume-immutability + v13→v14 +
 v14→v15 migration).
 
+## State-conditioned defensive-exploration entropy (`--defensive-entropy-boost`)
+
+`gen3_defensive_entropy_v1` — the answer to "the model under-uses Recover/Soft-Boiled/Wish/Refresh/Heal Bell
+when safe" that does **NOT** touch the reward (so it can't create a stall incentive). Instead of biasing toward
+healing (which would force you to hand-draw the good-defense-vs-stall line), it **explores** defensive moves more
+and lets the *existing* anti-stall reward (the `--draw-penalty` + the no-progress clock) be the guardrail: the
+model only KEEPS healing if the returns reward it, and a heal-war that drifts to a 250-turn draw is punished as
+before. **The mechanism is ORTHOGONAL to the reward** — it explores the defensive option more but changes
+nothing about its value, so if the critic learns healing is net-negative here (no-progress clock / racing
+meta), the boost will NOT override that; it only surfaces the option. *Contingent* virtuous loop: IF the model
+**discovers** defense is valuable (the returns must reward it), the self-play **opponents** become defensive
+too, so the distribution self-enriches toward the patient meta self-play currently lacks.
+
+- **The flag (`gen3_env._defensive_opportunity`).** Per decision, the env emits a training-only
+  `defensive_opportunity` Dict-obs key = 1.0 when the trainee's ACTIVE mon has a *productive* defensive option:
+  a legal `is_heal` move with HP below `_DEFENSIVE_HEAL_HP`=0.85, OR a legal self-cure (Refresh) while statused,
+  OR a legal team-cure (Heal Bell/Aromatherapy) while any party member is statused; else 0.0 (forced switch →
+  no moves → 0). Never raises (hot path). Read ONLY by the entropy term — never enters the pi/vf forward.
+- **The boost (`instrumented_ppo`).** The per-decision entropy bonus is multiplied by `defensive_entropy_boost`
+  on flagged decisions: `entropy_loss = -mean((1 + (B_eff−1)·flag)·entropy)`. `B=1.0` = OFF (byte-identical;
+  also identical on any minibatch with no flagged decisions). `B_eff` anneals B→1 linearly over
+  `--defensive-entropy-anneal-frac` of training (`_defensive_entropy_boost_eff`, 0 = constant) so exploration
+  fades as the policy learns. The standard `train/entropy_loss` metric stays UNWEIGHTED; new `defent/*` metrics
+  (`flagged_frac`, `boost_eff`, `entropy_flagged` vs `entropy_unflagged`) confirm the boost fired and raised
+  entropy where intended.
+- **Threading.** `--defensive-entropy-boost` (default 1.0) + `--defensive-entropy-anneal-frac` (default 0.0);
+  the env emit is gated on `boost > 1.0`; the coefs are set on the model like `ent_coef` — **training-only, NOT
+  version-locked, settable on resume** (no `model_config`/`ARCH` change). Try `--defensive-entropy-boost 3.0`.
+  **Caveat (be honest):** the model already *samples* heals ~24% in safe spots, so exploration helps mainly at
+  rare policy-collapse states (low HP + safe + revenge-killer coming) and can't manufacture a "heal→win" signal
+  self-play lacks — it's complementary to, not a substitute for, a teacher/league. Watch the stall-rate canary.
+  Tests: `defensive_entropy_test.py`.
+
 ## Bot evaluation (subprocess, non-blocking)
 
 **Flat schedule, full roster.** Eval fires every `EVAL_FREQ_STEPS` (2M steps) and plays

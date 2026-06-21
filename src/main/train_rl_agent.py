@@ -604,6 +604,21 @@ async def main():
                         help="LR floor for annealing (required with --anneal-lr-start-steps). "
                              "Separate from --min-lr used by AdaptivePPO.")
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
+    parser.add_argument("--defensive-entropy-boost", "--defensive_entropy_boost", dest="defensive_entropy_boost",
+                        type=float, default=1.0,
+                        help="STATE-CONDITIONED entropy boost (gen3_defensive_entropy_v1): multiply the "
+                             "per-decision entropy bonus by this factor ON decisions where the active mon has a "
+                             "productive defensive move legal (HP-recovery with HP to restore, or a self/team "
+                             "status-cure with a status to clear). Keeps the policy EXPLORING defensive moves "
+                             "(Recover/Soft-Boiled/Wish/Refresh/Heal Bell) instead of collapsing to attacking, "
+                             "WITHOUT touching the reward (no stall incentive — the draw penalty + no-progress "
+                             "clock stay the guardrail; the model only keeps healing if the returns reward it). "
+                             "1.0 = OFF (byte-identical). Try 3.0. TRAINING-only (not version-locked).")
+    parser.add_argument("--defensive-entropy-anneal-frac", "--defensive_entropy_anneal_frac",
+                        dest="defensive_entropy_anneal_frac", type=float, default=0.0,
+                        help="Anneal --defensive-entropy-boost linearly back to 1.0 over this FRACTION of total "
+                             "--steps (e.g. 0.5 = boost fades to off by the halfway point). 0.0 = constant boost "
+                             "(default). Lets exploration fade as the policy learns defensive value.")
     parser.add_argument("--vf-coef", "--vf_coef", dest="vf_coef", type=float, default=0.5,
                         help="PPO value-loss coefficient (default 0.5, the SB3 default). Fixed for a "
                              "run's lifetime: it is recorded in model_config.json and resuming with a "
@@ -1829,6 +1844,9 @@ async def main():
                     # HP-TYPE-belief supervision (gen3_opp_hp_type_belief_v1): emit the privileged true-HP-
                     # type label only under the learned head + a non-zero CE coef (the CLI guards both).
                     emit_hp_type_labels=(args.hp_type_belief_mode == "learned" and args.hp_type_belief_coef > 0.0),
+                    # DEFENSIVE-exploration flag (gen3_defensive_entropy_v1): emit only when the boost is on, so
+                    # the state-conditioned entropy term in the PPO loss can read it. Off = no key, no cost.
+                    emit_defensive_opportunity=(args.defensive_entropy_boost > 1.0),
                 )
                 if args.use_showdown_bridge:
                     # Swap the two _EnvPlayer agents' websocket transport for a local
@@ -2383,6 +2401,8 @@ async def main():
         model.move_belief_coef = args.move_belief_coef  # move-belief loss weight (training-only; resume-mutable)
         model.move_belief_latent_coef = args.move_belief_latent_coef  # move-latent grading weight (training-only)
         model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision weight (training-only)
+        model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
+        model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE weight (training-only; mode none = off)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
@@ -2646,6 +2666,8 @@ async def main():
         model.move_belief_coef = args.move_belief_coef  # move-belief reinjection loss (0.0 = off)
         model.move_belief_latent_coef = args.move_belief_latent_coef  # move-latent grading loss (0.0 = off)
         model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision loss (0.0 = off)
+        model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
+        model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE loss (0.0 = off; mode none = off)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss (0.0 = off)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)

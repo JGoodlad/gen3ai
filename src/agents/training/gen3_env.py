@@ -35,13 +35,19 @@ from agents.battle.gen3_battle import Gen3Battle
 from utils.logging.levels import LogLevel
 
 
+# gen3_defensive_entropy_v1: the active mon counts as having a productive HP-recovery opportunity (for the
+# defensive-exploration entropy boost) only when it has taken at least this much chip — below the threshold a
+# heal restores too little to be worth exploring (a Wish cast at full HP for a teammate is the accepted miss).
+_DEFENSIVE_HEAL_HP = 0.85
+
+
 class Gen3Env(SinglesEnv):
     def __init__(self, mappings, reward_fn: Optional[RewardFunction] = None,
                  log_level=LogLevel.QUIET, stall_config: Optional[StallConfig] = None,
                  *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
                  move_belief_mode: str = "off", emit_belief_target: bool = False,
                  emit_win_target: bool = False, emit_spread_labels: bool = False,
-                 emit_hp_type_labels: bool = False, **kwargs):
+                 emit_hp_type_labels: bool = False, emit_defensive_opportunity: bool = False, **kwargs):
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
@@ -104,6 +110,13 @@ class Gen3Env(SinglesEnv):
         # labels). Read ONLY by the win-prob aux loss; the model forward reads only obs["observation"].
         # Enabled by --win-prob-mode != none (threaded as emit_win_target from train_rl_agent).
         self._emit_win_target = emit_win_target
+        # DEFENSIVE-EXPLORATION flag (TRAINING-ONLY, gen3_defensive_entropy_v1): when on, the obs Dict carries
+        # `defensive_opportunity` [1] = 1.0 on decisions where the active mon has a PRODUCTIVE defensive option
+        # (a legal HP-recovery move with HP to restore, OR a legal self/team status-cure with a status to
+        # clear), else 0.0. Read ONLY by the state-conditioned entropy boost (the PPO loss weights the entropy
+        # bonus up on these decisions so the policy keeps exploring defensive moves instead of collapsing to
+        # attacking) — never enters the policy/value forward. Enabled by --defensive-entropy-boost > 1.0.
+        self._emit_defensive_opportunity = emit_defensive_opportunity
         # Per-battle cache of the fresh per-mon identity encodes (keyed by species id). A hidden mon is
         # untouched (full HP, no status) until revealed, at which point it leaves the believed set, so a
         # mon's fresh encode is stable while it is a target — caching is exact. Cleared on reset().
@@ -173,6 +186,10 @@ class Gen3Env(SinglesEnv):
             # placeholder), used by the win-prob loss to stratify P(win) skill by how decided the game
             # is (value lives in close games, |margin|≈0) + a material-baseline skill score.
             base_obs["win_margin"] = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
+        if self._emit_defensive_opportunity:
+            # gen3_defensive_entropy_v1: 1.0 = a productive defensive move (recovery/cure) is legal this
+            # decision. A REAL per-step value; read ONLY by the state-conditioned entropy boost in the PPO loss.
+            base_obs["defensive_opportunity"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
         # SB3 reads the SINGULAR observation_space (threaded as the VecEnv space); the PLURAL
         # observation_spaces is intercepted + rewrapped by PokeEnv.__setattr__ (it would drop the
         # belief keys) and is not the SB3-facing space, so it can stay minimal.
@@ -475,6 +492,40 @@ class Gen3Env(SinglesEnv):
             # step(); 0.0 at reset). A REAL value (present-state), unlike the back-filled win_target.
             agent_obs["win_margin"] = np.array(
                 [float(getattr(self.reward_manager, "_last_material_margin", 0.0))], dtype=np.float32)
+        if self._emit_defensive_opportunity:
+            agent_obs["defensive_opportunity"] = np.array([self._defensive_opportunity()], dtype=np.float32)
+
+    def _defensive_opportunity(self) -> float:
+        """gen3_defensive_entropy_v1: 1.0 if the trainee's ACTIVE mon has a PRODUCTIVE defensive option this
+        decision — a legal HP-recovery move (`is_heal`) with the active below `_DEFENSIVE_HEAL_HP`, OR a legal
+        self-cure (Refresh) while statused, OR a legal team-cure (Heal Bell/Aromatherapy) while any team member
+        is statused — else 0.0. Cheap (a few move lookups); never raises (it rides the per-decision emit path).
+        Read ONLY by the entropy boost; never enters the forward. On a forced switch `available_moves` is empty
+        → 0.0 (you can't heal when forced to replace)."""
+        b1 = getattr(self, "battle1", None)
+        if b1 is None:
+            return 0.0
+        try:
+            active = b1.active_pokemon
+            moves = b1.available_moves or []
+            if active is None or not moves:
+                return 0.0
+            hp = active.current_hp_fraction
+            self_statused = active.status is not None
+            team_statused = any(getattr(m, "status", None) is not None for m in b1.team.values())
+            for mv in moves:
+                md = gen3_data.moves.get(mv.id)
+                if md is None:
+                    continue
+                if md.is_heal and hp is not None and hp < _DEFENSIVE_HEAL_HP:
+                    return 1.0
+                if md.cures_self_status and self_statused:
+                    return 1.0
+                if md.cures_team_status and team_statused:
+                    return 1.0
+        except Exception:
+            return 0.0
+        return 0.0
 
     def step(self, action):
         try:
@@ -485,7 +536,7 @@ class Gen3Env(SinglesEnv):
                 self.reward_manager.record_action(self._tracker.last_ctx, trainee_idx)
             out = super().step(action)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
-                    or self._emit_hp_type_labels):
+                    or self._emit_hp_type_labels or self._emit_defensive_opportunity):
                 agent_obs = out[0].get(self.agent1.username)
                 if agent_obs is not None:
                     self._merge_training_keys(agent_obs)
@@ -507,7 +558,7 @@ class Gen3Env(SinglesEnv):
             self._stall_logger.reset()
             out = super().reset(*args, **kwargs)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
-                    or self._emit_hp_type_labels):
+                    or self._emit_hp_type_labels or self._emit_defensive_opportunity):
                 obs, info = out
                 agent_obs = obs.get(self.agent1.username)
                 if agent_obs is not None:

@@ -234,6 +234,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # change) is gated by the version-checked opp_belief_latent arch toggle, not this coef.
     opp_belief_latent_coef: float = 0.0
 
+    # Set by train_rl_agent (gen3_defensive_entropy_v1). STATE-CONDITIONED entropy boost: on decisions the env
+    # flags `defensive_opportunity`=1 (a productive recovery/cure move is legal), the per-decision entropy bonus
+    # is multiplied by `defensive_entropy_boost` so the policy keeps EXPLORING defensive moves instead of
+    # collapsing to attacking — WITHOUT touching the reward (no stall incentive; the draw penalty + clock stay
+    # the guardrail). 1.0 = OFF (byte-identical entropy term). Annealed B→1 over `defensive_entropy_anneal_frac`
+    # of training (0 = constant). Training-only (like ent_coef): NOT version-locked, settable on resume.
+    defensive_entropy_boost: float = 1.0
+    defensive_entropy_anneal_frac: float = 0.0
+
     # Set by train_rl_agent (like opp_belief_aux_coef). The WIN-PROBABILITY head's BCE loss weight:
     # win_prob_coef * BCE(win_logit, MC outcome) over the transitions whose episode finished in-buffer.
     # Training-only (scales the loss, never a forward pass) → NOT version-locked. The MODE (none /
@@ -819,6 +828,17 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 self, env, callback, rollout_buffer, n_rollout_steps, use_masking)
         return super().collect_rollouts(env, callback, rollout_buffer, n_rollout_steps, use_masking)
 
+    def _defensive_entropy_boost_eff(self) -> float:
+        """gen3_defensive_entropy_v1: the entropy-boost multiplier at the CURRENT step. Constant
+        `defensive_entropy_boost` if `defensive_entropy_anneal_frac` == 0; else linearly annealed toward 1.0,
+        reaching 1.0 once `anneal_frac` of training has elapsed (uses SB3's `_current_progress_remaining`,
+        which runs 1.0 at the start → 0.0 at the end). Pure → unit-testable."""
+        B, af = float(self.defensive_entropy_boost), float(self.defensive_entropy_anneal_frac)
+        if af <= 0.0 or B == 1.0:
+            return B
+        done = 1.0 - float(getattr(self, "_current_progress_remaining", 1.0))   # 0 → 1 over training
+        return 1.0 + (B - 1.0) * max(0.0, 1.0 - done / af)
+
     def train(self) -> None:
         """
         Update policy using the currently gathered rollout buffer.
@@ -839,6 +859,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
 
         entropy_losses = []
         pg_losses, value_losses = [], []
+        # gen3_defensive_entropy_v1: per-minibatch diagnostics for the state-conditioned entropy boost.
+        defent_flag_fracs, defent_boost_eff, defent_ent_flagged, defent_ent_unflagged = [], [], [], []
         clip_fractions = []
         vf_clip_fractions: list[float] = []  # +INSTRUMENTATION
         belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
@@ -960,16 +982,28 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     value_loss = self._value_loss_from_se((rollout_data.returns - values_pred) ** 2)
                 value_losses.append(value_loss.item())
 
-                # Entropy loss favor exploration
-                if entropy is None:
-                    # Approximate entropy when no analytical form
-                    entropy_loss = -th.mean(-log_prob)
-                else:
-                    entropy_loss = -th.mean(entropy)
-
+                # Entropy loss favors exploration. gen3_defensive_entropy_v1: when defensive_entropy_boost > 1,
+                # multiply the per-decision entropy bonus by the (annealed) boost on decisions the env flagged
+                # `defensive_opportunity` — keeping the policy exploratory on recovery/cure choices instead of
+                # collapsing to attacking, WITHOUT touching the reward. OFF (boost == 1) byte-identical.
+                ent_per = -log_prob if entropy is None else entropy          # [B] per-decision entropy (nats)
+                entropy_loss = -th.mean(ent_per)                             # standard (unweighted) metric
                 entropy_losses.append(entropy_loss.item())
+                do_flag = rollout_data.observations.get("defensive_opportunity")
+                if self.defensive_entropy_boost != 1.0 and do_flag is not None:
+                    b_eff = self._defensive_entropy_boost_eff()
+                    flag = do_flag.to(ent_per.device).reshape(-1).float()    # [B] 1.0 on defensive decisions
+                    ent_loss_used = -th.mean((1.0 + (b_eff - 1.0) * flag) * ent_per)
+                    with th.no_grad():
+                        fm = flag > 0.5
+                        defent_flag_fracs.append(float(fm.float().mean().item()))
+                        defent_boost_eff.append(b_eff)
+                        if bool(fm.any()):    defent_ent_flagged.append(float(ent_per[fm].mean().item()))
+                        if bool((~fm).any()): defent_ent_unflagged.append(float(ent_per[~fm].mean().item()))
+                else:
+                    ent_loss_used = entropy_loss
 
-                loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
+                loss = policy_loss + self.ent_coef * ent_loss_used + self.vf_coef * value_loss
 
                 # +BELIEF: hidden-opponent belief aux loss. evaluate_actions(rollout_data.observations,
                 # …) ran the extractor forward just above, stashing per-slot logits for THIS minibatch;
@@ -1264,6 +1298,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
 
         # Logs
         self.logger.record("train/entropy_loss", np.mean(entropy_losses))
+        # gen3_defensive_entropy_v1: did the boost fire, and is entropy actually higher on flagged decisions?
+        if defent_flag_fracs:
+            self.logger.record("defent/flagged_frac", float(np.mean(defent_flag_fracs)))
+            self.logger.record("defent/boost_eff", float(np.mean(defent_boost_eff)))
+            if defent_ent_flagged:
+                self.logger.record("defent/entropy_flagged", float(np.mean(defent_ent_flagged)))
+            if defent_ent_unflagged:
+                self.logger.record("defent/entropy_unflagged", float(np.mean(defent_ent_unflagged)))
         self.logger.record("train/policy_gradient_loss", np.mean(pg_losses))
         self.logger.record("train/value_loss", np.mean(value_losses))
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
