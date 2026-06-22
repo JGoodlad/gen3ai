@@ -164,6 +164,45 @@ def _load_saved_version(model_path: str):
     return None
 
 
+def _validate_or_reset_optimizer_state(model) -> None:
+    """Guard a resume against a MISALIGNED Adam optimizer state.
+
+    SB3/torch save+load the optimizer state BY PARAMETER POSITION, not by name. So a code refactor
+    that REORDERS a module's parameters between the save and the resume (e.g. v40's
+    `SpreadBelief.__init__` building `reinject`/`norm` before `stat_head` where the prior order had
+    `stat_head` first) silently misassigns the saved per-param momentum (`exp_avg`/`exp_avg_sq`) to the
+    WRONG params. The weights still load fine (name-keyed `load_state_dict`) so the arch/version check
+    passes — then `AdamW.step()` crashes ("size of tensor a (128) must match b (5)") the moment a
+    misassigned param of a DIFFERENT shape first receives a gradient (a data-dependent path, so it can
+    survive many steps before dying). Same-shape permutations are UNDETECTABLE and would silently
+    corrupt momentum, so ANY shape mismatch is treated as proof the WHOLE state is untrustworthy: we
+    drop it and let AdamW reinitialise fresh zero-init momentum (re-warms in a few hundred steps —
+    negligible on a multi-million-step resume, and strictly better than a crash or scrambled momentum).
+    No-op when the state aligns (the normal resume), so a clean resume is unchanged."""
+    opt = getattr(getattr(model, "policy", None), "optimizer", None)
+    if opt is None:
+        return
+    name_of = {id(p): n for n, p in model.policy.named_parameters()}
+    bad = []
+    for group in opt.param_groups:
+        for p in group["params"]:
+            st = opt.state.get(p)
+            if not st:
+                continue
+            for key in ("exp_avg", "exp_avg_sq"):
+                t = st.get(key)
+                if t is not None and tuple(t.shape) != tuple(p.shape):
+                    bad.append(f"{name_of.get(id(p), '?')} param{tuple(p.shape)} {key}{tuple(t.shape)}")
+    if bad:
+        from collections import defaultdict
+        print(f"[Resume] WARNING: optimizer momentum is MISALIGNED with current parameters "
+              f"({len(bad)} shape mismatch(es)) — a parameter-reorder refactor since this checkpoint "
+              f"was saved desynced the position-keyed Adam state. RESETTING optimizer momentum "
+              f"(fresh zero-init; LR/param_groups preserved). Mismatches: " + "; ".join(bad[:8]))
+        sys.stdout.flush()
+        opt.state = defaultdict(dict)
+
+
 def _run_arch_toggles(args) -> dict:
     """The architecture TOGGLES of THIS run, for current_model_version so the version gate compares
     like-for-like against the run's own (toggle-ON) pool/stable-opponent snapshots. Without these, a
@@ -2415,6 +2454,10 @@ async def main():
             # SAME way on every retry. Exit with FATAL_CONFIG so the launcher gives up
             # immediately instead of auto-restarting into the identical error.
             os._exit(int(TrainExitCode.FATAL_CONFIG))
+        # Guard: if a param-reorder refactor since this checkpoint desynced the position-keyed Adam
+        # state, reset the momentum (else AdamW.step() crashes when a misassigned param first gets a
+        # gradient — the gen3_nature_ev_belief_v1 SpreadBelief-reorder resume bug). Before any LR read.
+        _validate_or_reset_optimizer_state(model)
         model.ent_coef = args.ent_coef
         model.value_tail_weight = args.value_tail_weight  # == saved (enforced above); set for the loop
         model.opp_belief_aux_coef = args.opp_belief_aux_coef  # training hparam (not version-locked; resume-mutable)
@@ -2544,10 +2587,19 @@ async def main():
             try:
                 model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
             except Exception as e:
+                # A genuine training error (NOT the graceful restart — that path os._exit(15)s and
+                # never reaches here). Print the FULL traceback so the crash is diagnosable, save the
+                # exception weights for forensics, then RE-RAISE: the old code swallowed the error and
+                # fell through to the normal save + "Training complete" + final eval, masking a fatal
+                # crash as a clean completion (so the launcher saw exit-0 and never auto-restarted).
+                # Re-raising surfaces it as a non-zero exit → launcher restarts from the last checkpoint
+                # (resilience) instead of silently ending the run with a fake final win rate.
                 print(f"Training interrupted by exception: {e}")
+                traceback.print_exc()
                 final_path = os.path.join(model_dir, "final_model_exception")
                 model.save(final_path)
                 _write_latest_txt(model_dir, "final_model_exception.zip")
+                raise
 
             final_path = os.path.join(model_dir, "final_model")
             model.save(final_path)

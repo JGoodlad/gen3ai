@@ -146,6 +146,21 @@ Every model save writes the **run-level** `model_config.json` + `metadata.json` 
 1. Change `ARCH_SIGNATURE` in `model_version.py` (e.g. `"gen3_attn_v1"` → `"gen3_lstm_v1"`)
 2. Old models get a clear arch-family error on load
 
+**⚠️ REORDERING a module's parameters silently breaks the optimizer on resume.** SB3/torch save+load
+the Adam optimizer state **by parameter POSITION, not name**. So if a refactor changes the *order*
+`named_parameters()` yields (e.g. building submodules in `__init__` in a different sequence — the v40
+`gen3_nature_ev_belief_v1` bug, where `SpreadBelief.__init__` moved `reinject`/`norm` before
+`stat_head`), a resume's **weights** still load fine (name-keyed `load_state_dict` → arch check PASSES)
+but the **momentum** (`exp_avg`/`exp_avg_sq`) gets assigned to the WRONG params. It then crashes in
+`AdamW.step()` ("size of tensor a (128) must match b (5)") the moment a misassigned param of a
+different shape first gets a gradient — **data-dependently, so it can survive many steps**, and (until
+this guard) the broad `except` in `train_rl_agent.py` masked it as a clean completion. Guard:
+`train_rl_agent._validate_or_reset_optimizer_state` runs on every resume — any param↔state shape
+mismatch is treated as proof the position-keyed state is misaligned, so it **drops the whole optimizer
+momentum** (fresh zero-init, LR/param_groups preserved; re-warms in a few hundred steps). Same-shape
+permutations are undetectable, so prefer **not reordering existing params** — append new submodules
+LAST. Pinned by `src/main/resume_optimizer_realign_test.py`.
+
 **Resume-immutable training hparams (value-meaning, NOT weight-shape).** A hyperparameter can
 be wrong-to-change-mid-run without changing any weight shape — `vf_coef` (`--vf-coef`) is the
 first: it rescales the value head's gradient on the shared trunk, so a forgotten/typo'd flag on
