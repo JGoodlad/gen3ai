@@ -310,7 +310,7 @@ from typing import Any, Dict, List
 #   NEUTRAL boosts (gen3 resets on switch). STRUCTURAL toggle like damage_op (widens both projection
 #   in_features via the op out_dim); gated in check_compatible (bool); OFF byte-for-byte (NO ARCH_SIGNATURE
 #   bump). Requires damage_op. Design: designs/ai_v6/design_per_move_damage_matrices.md.
-MODEL_CONFIG_VERSION = 40
+MODEL_CONFIG_VERSION = 41
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -951,6 +951,14 @@ class ModelVersion:
     # v38 TRAINING-ONLY coefficient (like move_belief_coef, NOT version-locked): the HP-type CE aux weight.
     # Recorded for provenance + flagless-resume read-back; only meaningful under mode 'learned'.
     hp_type_belief_coef: float = 0.0
+    # gen3_belief_grad_mode_v1 (config v41): 'detached' makes the state-prediction belief heads READ a
+    # stop-grad trunk, so their gradient can't reshape it (the belief stays computed/reinjected/consumed).
+    # detach() is value-preserving → the FORWARD (eval/inference/frozen-opponent) is bit-identical; only the
+    # TRAINING gradient differs. So it is a RESUME-IMMUTABLE training hparam (the vf_coef class): recorded
+    # here, enforced ONLY on the training-resume path via check_belief_grad_mode, and EXCLUDED from
+    # check_compatible / _WEIGHT_FIELDS (a frozen eval/pool/distill opponent's forward is identical, so
+    # gating it would be a false rejection that breaks league play). NO ARCH_SIGNATURE bump.
+    belief_grad_mode: str = "shaping"
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -1115,6 +1123,9 @@ class ModelVersion:
             ),
             hp_type_belief_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("hp_type_belief_mode", "off")
+            ),
+            belief_grad_mode=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("belief_grad_mode", "shaping")
             ),
             hp_type_belief_coef=float(hp_type_belief_coef),
             value_tail_weight=float(value_tail_weight),
@@ -1588,6 +1599,24 @@ class ModelVersion:
                 f"{requested!r}."
             )
 
+    def check_belief_grad_mode(self, requested: str) -> None:
+        """Raise ModelVersionError if `requested` (the resume `--belief-grad-mode`) differs from this
+        saved config's belief_grad_mode. Call as: saved_version.check_belief_grad_mode(args.belief_grad_mode).
+
+        gen3_belief_grad_mode_v1: detach() is value-preserving, so the FORWARD (eval / inference / a frozen
+        pool / distill opponent) is bit-identical regardless of the mode — only the TRAINING gradient (does
+        the belief reshape the trunk) differs. So, like vf_coef, it is EXCLUDED from check_compatible (gating
+        a frozen opponent on it would be a false rejection that breaks self-play) and enforced ONLY on the
+        training-resume path: flipping shaping↔detached mid-run silently changes whether the belief
+        gradient shapes the shared trunk, so a drift is a hard error rather than a quiet change."""
+        if self.belief_grad_mode != requested:
+            raise ModelVersionError(
+                f"belief_grad_mode mismatch: saved={self.belief_grad_mode!r}, requested={requested!r}.\n"
+                "Whether the belief heads reshape the shared trunk is fixed for a run's lifetime — flipping "
+                "it on resume silently changes the training signal.\n"
+                f"Fix: resume with --belief-grad-mode {self.belief_grad_mode}, or start a fresh run."
+            )
+
     def check_value_tail_weight(self, requested: float) -> None:
         """Raise ModelVersionError if `requested` (the resume `--value-tail-weight`) differs from this
         saved config's value_tail_weight. Call as: saved_version.check_value_tail_weight(args...).
@@ -1906,4 +1935,10 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("spread_belief_nature", False)
         data.setdefault("spread_belief_nature_marginalize", False)
         data["config_version"] = 40
+    if version < 41:
+        # v41: gen3_belief_grad_mode_v1 — the {shaping, detached} belief-trunk-gradient knob. detach() is
+        # value-preserving, so 'shaping' (default) reproduces the v40 forward AND backward byte-for-byte;
+        # it is a RESUME-IMMUTABLE training hparam (enforced via check_belief_grad_mode, NOT check_compatible).
+        data.setdefault("belief_grad_mode", "shaping")
+        data["config_version"] = 41
     return data

@@ -243,6 +243,7 @@ def _run_arch_toggles(args) -> dict:
         threat_prob_outspeed=args.threat_prob_outspeed,
         threat_status_refine=args.threat_status_refine,
         hp_type_belief_mode=args.hp_type_belief_mode,
+        belief_grad_mode=args.belief_grad_mode,
     )
 
 
@@ -1121,6 +1122,19 @@ async def main():
                              "op-damage gradient + sits at the Smogon prior). Only meaningful with "
                              "--hp-type-belief learned. TRAINING-only (not version-locked); metrics ride "
                              "belief/hptype_* (acc, n_slots). Suggested 0.05.")
+    parser.add_argument("--belief-grad-mode", "--belief_grad_mode", dest="belief_grad_mode",
+                        choices=["shaping", "detached"], default=None,
+                        help="gen3_belief_grad_mode_v1: how the STATE-prediction belief heads (move / spread / "
+                             "hp-type / the species-moves-latent aux) couple to the shared trunk. 'shaping' "
+                             "(default) = they READ the live trunk, so their supervised + reinject gradients "
+                             "reshape it (current behavior). 'detached' = they READ a STOP-GRAD trunk, so NO "
+                             "belief gradient reshapes the trunk — the belief is still computed, reinjected into "
+                             "the forward, and consumed by the op (fully 'in the system'), it just can't drag the "
+                             "trunk toward predicting hidden state at the policy's expense (eliminates the "
+                             "belief↔policy gradient interference). detach() is value-preserving so the FORWARD is "
+                             "bit-identical; only the training gradient differs. RESUME-IMMUTABLE (like --vf-coef, "
+                             "version-checked on resume only — a frozen opponent's forward is unaffected). The "
+                             "win-aligned heads (--win-prob-mode / --value-dist-mode) keep their own read_only.")
     parser.add_argument("--unified-obs", "--unified_obs", dest="unified_obs",
                         action=BoolFlag, default=False,
                         help="DISABLE the redundant CPU obs blocks the unified GPU path now subsumes (ONE "
@@ -1407,6 +1421,7 @@ async def main():
     _resolve("threat_prob_outspeed", False)      # v36 forward-behavior (prob outspeed; version-checked, fresh-only)
     _resolve("threat_status_refine", False)      # v37 structural (status→trunk; version-checked, fresh-only)
     _resolve("hp_type_belief_mode", "off")     # v38 structural + resume-immutable (version-checked, fresh-only)
+    _resolve("belief_grad_mode", "shaping")    # v41 resume-immutable training hparam (vf_coef class; flagless resume inherits)
     _resolve("hp_type_belief_coef", 0.0)       # training-only (inherited like spread_belief_coef)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
@@ -2416,6 +2431,7 @@ async def main():
         _load_extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed          # v36 (version-checked)
         _load_extractor_kwargs["threat_status_refine"] = args.threat_status_refine          # v37 (version-checked)
         _load_extractor_kwargs["hp_type_belief_mode"] = args.hp_type_belief_mode            # v38 (version-checked)
+        _load_extractor_kwargs["belief_grad_mode"] = args.belief_grad_mode                  # v41 (resume-immutable)
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -2446,6 +2462,7 @@ async def main():
                 enforce_reward_config=reward_config,  # FATAL if bias_additivity/mat_alive_weight/redesign drift
                 enforce_value_tail_weight=args.value_tail_weight,  # FATAL if the value-loss tail weight drifts
                 enforce_value_dist=(args.value_dist_vmin, args.value_dist_vmax),  # FATAL if the dist support drifts
+                enforce_belief_grad_mode=args.belief_grad_mode,  # FATAL if the belief-trunk-grad mode drifts (v41)
             )
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
@@ -2697,6 +2714,7 @@ async def main():
         extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed
         extractor_kwargs["threat_status_refine"] = args.threat_status_refine
         extractor_kwargs["hp_type_belief_mode"] = args.hp_type_belief_mode
+        extractor_kwargs["belief_grad_mode"] = args.belief_grad_mode
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,

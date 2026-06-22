@@ -391,6 +391,7 @@ def load_model_snapshot(
     enforce_reward_config=None,
     enforce_value_tail_weight: Optional[float] = None,
     enforce_value_dist: Optional[Tuple[float, float]] = None,
+    enforce_belief_grad_mode: Optional[str] = None,
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
@@ -434,6 +435,8 @@ def load_model_snapshot(
             saved_version.check_value_tail_weight(enforce_value_tail_weight)
         if enforce_value_dist is not None:
             saved_version.check_value_dist(*enforce_value_dist)
+        if enforce_belief_grad_mode is not None:
+            saved_version.check_belief_grad_mode(enforce_belief_grad_mode)
         arch_validated = True
     else:
         print(
@@ -568,6 +571,7 @@ def current_model_version(
     threat_status_refine: bool = False,
     hp_type_belief_mode: str = "off",
     hp_type_belief_coef: float = 0.0,
+    belief_grad_mode: str = "shaping",
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -629,6 +633,7 @@ def current_model_version(
     ext_kwargs["threat_prob_outspeed"] = threat_prob_outspeed
     ext_kwargs["threat_status_refine"] = threat_status_refine
     ext_kwargs["hp_type_belief_mode"] = hp_type_belief_mode
+    ext_kwargs["belief_grad_mode"] = belief_grad_mode
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -702,6 +707,10 @@ def arch_toggles_from_model(model) -> dict:
         # gen3_opp_hp_type_belief_v1 (v38): the tri-state mode — off↔prior a forward change, prior↔learned a
         # state_dict change; STRING-gated in check_compatible, so it must reach the worker's gate.
         "hp_type_belief_mode": str(getattr(fe, "hp_type_belief_mode", "off")),
+        # gen3_belief_grad_mode_v1 (v41): the belief-trunk-gradient knob. detach() is value-preserving so a
+        # frozen opponent's forward is identical regardless — it is NOT check_compatible-gated (resume-only).
+        # Threaded for the trainee's recorded config + so a worker rebuilds the SAME forward (no-op either way).
+        "belief_grad_mode": str(getattr(fe, "belief_grad_mode", "shaping")),
         "use_popart": getattr(model.policy, "popart", None) is not None,
     }
 

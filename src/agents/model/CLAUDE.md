@@ -199,7 +199,9 @@ proportional roar-out-boosts shaping; safe since both telescope to 0.) All are r
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **40** (the `pbrs_roar` PBRS
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **41** (v41 = the
+`gen3_belief_grad_mode_v1` belief-trunk-gradient knob, a resume-immutable training hparam — see the v41 note
+below; the `pbrs_roar` PBRS
 above added NO new version — it rides `all_shaping_pbrs`;
 see the belief +
 unified-damage + unified-move + spread-belief + op-physics + status-landing + choice-band + value-dist
@@ -830,6 +832,30 @@ bump), threaded through `current_model_version` / `arch_toggles_from_model` / `_
 `extractor_kwargs` sites. Tests: `spread_belief_test.py` (buffers, inversion round-trip, OFF byte-identical params,
 cold-start==generative-prior, the nature/EV loss + skip, marg reproduces-at-neutral / shifts-under-uncertainty /
 fixed-damage-invariant / forward-pko-shift, marginalize-requires-nature gate). `MODEL_CONFIG_VERSION` = **40**.
+
+**Belief trunk-gradient mode (v41, `gen3_belief_grad_mode_v1`, `belief_grad_mode` / `--belief-grad-mode {shaping,
+detached}`).** A knob on how the four STATE-prediction belief heads (`MoveBelief`, `SpreadBelief`, `HPTypeBelief`,
+and the `BeliefHead` species/moves/latent aux) couple to the shared trunk. **`shaping`** (default) = the heads READ
+the live trunk, so their supervised loss + the op/policy gradient through them reshape it (current behavior).
+**`detached`** = each head READS a stop-grad trunk (`opp_tokens.detach()` at the logit-read, gated by a per-head
+`detach_read` attr the extractor stamps; the reinject WRITE keeps the LIVE `opp_tokens` identity term, so normal
+policy training still shapes the trunk) — so NO belief-originated gradient reshapes the trunk, while the belief stays
+COMPUTED, REINJECTED into the forward, and CONSUMED by the op (fully "in the system"). This kills the
+belief↔policy gradient interference (let attention reason over the belief, but don't let predicting hidden state
+drag the trunk at the policy's expense) — the "more accurate view that can't hurt" middle ground; the
+representation-rank probe (the 128-dim trunk runs in ~3–5 effective dims) says capacity isn't the constraint, so
+interference is the risk this isolates. **Crucially `detach()` is value-preserving** → the FORWARD
+(eval / inference / a frozen pool / distill opponent) is BIT-IDENTICAL regardless of the mode; only the TRAINING
+gradient differs. So it is a **RESUME-IMMUTABLE training hparam (the `vf_coef` class)**: recorded on `ModelVersion`,
+enforced ONLY on the training-resume path by `check_belief_grad_mode` (+ `enforce_belief_grad_mode` on
+`load_model_snapshot`), and **EXCLUDED from `check_compatible` / `_WEIGHT_FIELDS`** (gating a frozen opponent on it
+would be a false rejection that breaks self-play). NO `ARCH_SIGNATURE` bump (forward identical); `shaping` is
+byte-for-byte the v40 forward AND backward. Threaded through `current_model_version` / `arch_toggles_from_model` /
+`_run_arch_toggles` + both `extractor_kwargs` sites; the CLI flag defaults `None` → `_resolve` so a flagless resume
+inherits the saved mode. Tests: `belief_grad_mode_test.py` (detached forward == shaping bit-identical; a belief loss
+reshapes the trunk under shaping but ZERO trunk-grad under detached while the head still trains; spread + aux heads
+also trunk-isolated; the invalid-mode guard). The win-aligned heads (`win_prob_mode` / `value_dist_mode`) keep their
+own `read_only`/`shaping`. `MODEL_CONFIG_VERSION` = **41**.
 
 **Damage re-attend (v31, `damage_reattend` / `--damage-reattend`, `gen3_damage_reattend_v1`).** Lets
 attention reason OVER the computed physics — today the `DamageOperator` block is concatenated POST-pool

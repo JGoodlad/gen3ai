@@ -964,7 +964,22 @@ nature distribution (3-point quadrature on each candidate's one offensive stat �
 asymmetry the mean-field `ko` at E[mult] blurs). `spread_belief_nature` STRUCTURAL (requires `--spread-belief`);
 `marginalize` FORWARD-BEHAVIOR (requires it + `--damage-op`); both version-checked, OFF byte-identical (NO
 `ARCH_SIGNATURE` bump). Smoke: `nature_acc` rises + `largest_bias` trends to 0.
-Current `MODEL_CONFIG_VERSION` = **40**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+**v41 the BELIEF TRUNK-GRADIENT MODE** (`gen3_belief_grad_mode_v1`; `belief_grad_mode` /
+`--belief-grad-mode {shaping, detached}`) — a knob on whether the four STATE-prediction belief heads
+(move / spread / hp-type / the species-moves-latent aux) reshape the shared trunk. `shaping` (default) =
+they READ the live trunk so their gradient reshapes it (current behavior); `detached` = they READ a
+STOP-GRAD trunk (`opp_tokens.detach()` at the logit-read; reinject WRITE keeps the live identity term) so
+NO belief gradient reshapes the trunk — the belief stays computed / reinjected / consumed by the op (fully
+"in the system"), it just can't drag the trunk toward predicting hidden state at the policy's expense
+(kills the belief↔policy gradient interference). `detach()` is value-preserving → the FORWARD (eval /
+frozen pool / distill opponent) is BIT-IDENTICAL; only the TRAINING gradient differs. So it is a
+**RESUME-IMMUTABLE training hparam** (the `vf_coef` class): recorded on `ModelVersion`, enforced
+resume-only via `check_belief_grad_mode`, EXCLUDED from `check_compatible` (a frozen opponent's forward is
+unaffected, so gating it would break self-play). NO `ARCH_SIGNATURE` bump; `shaping` is byte-for-byte the
+v40 forward+backward. The win-aligned heads (`--win-prob-mode` / `--value-dist-mode`) keep their own
+`read_only`/`shaping`. Design rationale: a representation-rank probe found the 128-dim trunk runs in ~3–5
+effective dims, so capacity isn't the constraint — the risk this isolates is gradient interference.
+Current `MODEL_CONFIG_VERSION` = **41**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

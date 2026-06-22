@@ -1080,15 +1080,19 @@ class BeliefHead(torch.nn.Module):
         without also running the moves/latent heads. `forward` is left byte-identical (it computes its
         own `norm` once and reuses it for both heads); this standalone path is only called by the
         v36 expected-latent-defender (gated off by default), so the baseline forward is unchanged."""
-        return self.species_head(self.norm(tokens))
+        read = tokens.detach() if getattr(self, "detach_read", False) else tokens
+        return self.species_head(self.norm(read))
 
     def forward(self, their_team_out: torch.Tensor) -> Dict[str, torch.Tensor]:
         """their_team_out [B, 6, D] → {"species": [B,6,n_species], "moves": [B,6,n_moves],
         ["latent": [B,6,latent_dim]]}. The latent key is present only when the predictor is built."""
-        h = self.norm(their_team_out)
+        # gen3_belief_grad_mode_v1: BeliefHead is a pure readout (no reinject), so `detached` simply stops the
+        # aux-supervision gradient (species/moves/latent) from reaching the trunk — train the head only.
+        read = their_team_out.detach() if getattr(self, "detach_read", False) else their_team_out
+        h = self.norm(read)
         out = {"species": self.species_head(h), "moves": self.moves_head(h)}
         if self.latent_head is not None:
-            out["latent"] = self.latent_head(their_team_out)
+            out["latent"] = self.latent_head(read)
         return out
 
 
@@ -1247,7 +1251,11 @@ class MoveBelief(torch.nn.Module):
         without re-running the soft-embed reinjection. When `prior_fusion`, `opp_species_ids` [B,6]
         (national-dex nums) and `opp_move_ids` [B,6,4] (revealed; id>0 ⇒ seen) turn the raw head output into
         the two-part POSTERIOR (prior⊕delta, revealed pinned certain)."""
-        logits = self.move_head(opp_tokens)                                      # [B, 6, M] (learned delta)
+        # gen3_belief_grad_mode_v1: in `detached` mode the head READS a stop-grad trunk (so neither the
+        # supervised belief loss nor the op/policy gradient through this read can reshape the trunk); the
+        # reinject WRITE below still rides the LIVE tokens. `getattr` default-False ⇒ unset == byte-identical.
+        read = opp_tokens.detach() if getattr(self, "detach_read", False) else opp_tokens
+        logits = self.move_head(read)                                            # [B, 6, M] (learned delta)
         if self.prior_fusion and opp_species_ids is not None:
             logits = logits + self.move_prior_logits[opp_species_ids]            # posterior = prior ⊕ delta
             if opp_move_ids is not None:
@@ -1339,16 +1347,19 @@ class SpreadBelief(torch.nn.Module):
         Cold-start (zero deltas) ⇒ believed == the usage prior in BOTH parameterisations."""
         prior = self.spread_prior[opp_species_ids]                  # [B,6,5,2]
         mean, std = prior[..., 0], prior[..., 1]                    # [B,6,5]
+        # gen3_belief_grad_mode_v1: `detached` READS a stop-grad trunk for the head(s); reinject below keeps
+        # the LIVE `opp_tokens` identity term (so normal policy training still shapes the trunk).
+        read = opp_tokens.detach() if getattr(self, "detach_read", False) else opp_tokens
         if not self.nature:
-            delta = self.stat_head(opp_tokens)                      # [B,6,5] (std units; cold == 0)
+            delta = self.stat_head(read)                            # [B,6,5] (std units; cold == 0)
             believed = (mean + delta * std).clamp(min=1.0)          # [B,6,5] the stat VALUE the op consumes
             enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(delta)
             return self.norm(enriched), believed, None, None
         # NATURE/EV generative path (gen3_nature_ev_belief_v1): posterior nature ⊕ EV → COMPUTE the derived stat.
-        nat_logits = self.nature_logprior[opp_species_ids] + self.nature_head(opp_tokens)   # [B,6,25] prior⊕delta
+        nat_logits = self.nature_logprior[opp_species_ids] + self.nature_head(read)         # [B,6,25] prior⊕delta
         e_mult = torch.softmax(nat_logits, dim=-1) @ self.nature_mult                       # [B,6,5] E[mult]
         ev = (self.ev_prior[opp_species_ids]
-              + self.ev_head(opp_tokens) * _EV_DELTA_SCALE).clamp(0.0, 252.0)               # [B,6,5]
+              + self.ev_head(read) * _EV_DELTA_SCALE).clamp(0.0, 252.0)                     # [B,6,5]
         base = self.base_nonhp[opp_species_ids]                                             # [B,6,5]
         believed = ((2.0 * base + 31.0 + ev / 4.0 + 5.0) * e_mult).clamp(min=1.0)           # [B,6,5] DERIVED stat
         delta = (believed - mean) / std.clamp(min=1.0)                                      # std-unit residual
@@ -1401,7 +1412,8 @@ class HPTypeBelief(torch.nn.Module):
         """opp_tokens [B,6,D], opp_species_ids [B,6] (national-dex nums) → (logits [B,6,16], posterior
         [B,6,16]). logits = head_delta + log(prior[species]); posterior = softmax. Cold-start (delta 0) ⇒
         posterior == the Smogon prior. The logits feed the CE loss; the posterior feeds the op + reinject."""
-        delta = self.type_head(self.norm(opp_tokens))                       # [B,6,16] (cold == 0)
+        read = opp_tokens.detach() if getattr(self, "detach_read", False) else opp_tokens
+        delta = self.type_head(self.norm(read))                             # [B,6,16] (cold == 0)
         prior = self.hp_prior[opp_species_ids].clamp_min(1e-6)              # [B,6,16]
         logits = delta + torch.log(prior)                                  # posterior logit = prior ⊕ delta
         return logits, torch.softmax(logits, dim=-1)
@@ -3449,7 +3461,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  damage_matrices_outgoing_all: bool = False,
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
                  threat_prob_outspeed: bool = False, threat_status_refine: bool = False,
-                 hp_type_belief_mode: str = "off"):
+                 hp_type_belief_mode: str = "off", belief_grad_mode: str = "shaping"):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -3483,6 +3495,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # move-network input → state_dict-changing; OFF byte-identical). Required by the Stage-3 latent
         # grading aux (the loss reads its latent_table).
         self.move_latent = move_latent
+
+        # gen3_belief_grad_mode_v1: 'detached' makes the STATE-prediction belief heads (move / spread /
+        # hp-type / the species-moves-latent aux) READ a stop-grad trunk — so neither their supervised
+        # loss nor the op/policy gradient through them can reshape the shared trunk. The belief stays
+        # computed, reinjected into the forward, and consumed by the op (fully "in the system"); only the
+        # trunk-shaping gradient is cut. The flag is applied per-head via `detach_read` (set just before
+        # the dummy forward, once all heads exist). 'shaping' (default) = current behavior, byte-identical.
+        if belief_grad_mode not in ("shaping", "detached"):
+            raise ValueError(f"belief_grad_mode must be shaping|detached, got {belief_grad_mode!r}")
+        self.belief_grad_mode = belief_grad_mode
+        self._belief_detach = (belief_grad_mode == "detached")
 
         # Phase modules (constructed before the dummy forward below).
         self.embeddings = Embeddings(layout)
@@ -3870,6 +3893,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.last_value_dist_logits: Optional[torch.Tensor] = None
 
         self.role_token_size = ROLE_TOKEN_SIZE
+
+        # gen3_belief_grad_mode_v1: stamp the per-head trunk-read detach flag now that every belief head
+        # exists (before the dummy forward — shapes are identical in either mode, so auto-sizing is
+        # unaffected). 'shaping' ⇒ all False ⇒ byte-identical. BeliefSlots has no predictive read (it only
+        # swaps in learned tokens pre-transformer), so it is intentionally NOT in this list.
+        for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head, self.belief_head):
+            if _bh is not None:
+                _bh.detach_read = self._belief_detach
 
         # Discover the policy/value projection-input dims via a dummy forward through the
         # assembled phases (the assembler returns a (pi_combined, vf_combined) pair).

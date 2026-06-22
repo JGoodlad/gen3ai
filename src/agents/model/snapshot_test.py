@@ -174,6 +174,54 @@ def test_check_vf_coef_tolerates_float_repr(version):
     saved.check_vf_coef(0.3)  # must not raise
 
 
+# ---------------------------------------------------------------------------
+# belief_grad_mode — resume-only training-signal check (NOT part of check_compatible)
+# ---------------------------------------------------------------------------
+
+def test_check_compatible_ignores_belief_grad_mode(version):
+    """belief_grad_mode is a training-gradient knob, not a weight-shape field — detach() is value-
+    preserving so a frozen eval/pool/distill forward is bit-identical either way. check_compatible
+    (which gates EVERY load) must ignore it, else self-play would FATAL on its own snapshots."""
+    differing = dataclasses.replace(version, belief_grad_mode="detached")
+    version.check_compatible(differing)  # version is shaping (default) — must NOT raise
+
+
+def test_check_belief_grad_mode_match_does_not_raise(version):
+    saved = dataclasses.replace(version, belief_grad_mode="detached")
+    saved.check_belief_grad_mode("detached")  # must not raise
+
+
+def test_check_belief_grad_mode_mismatch_raises(version):
+    """Flipping shaping↔detached mid-run silently changes whether the belief reshapes the trunk —
+    a drift on resume must FATAL, not change the training signal quietly."""
+    saved = dataclasses.replace(version, belief_grad_mode="detached")
+    with pytest.raises(ModelVersionError) as exc_info:
+        saved.check_belief_grad_mode("shaping")
+    msg = str(exc_info.value)
+    assert "belief_grad_mode" in msg
+    assert "detached" in msg and "shaping" in msg
+
+
+def test_belief_grad_mode_read_from_features_extractor_kwargs(layout):
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"belief_grad_mode": "detached"}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.belief_grad_mode == "detached" and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.belief_grad_mode == "shaping"   # default = the legacy trunk-shaping behaviour
+
+
+def test_migrate_pre_v41_adds_belief_grad_mode_default(version):
+    """Pre-v41 configs lack belief_grad_mode — migration injects 'shaping' (byte-identical legacy
+    behaviour) and bumps to current."""
+    data = json.loads(version.to_json())
+    data.pop("belief_grad_mode", None)
+    data["config_version"] = 40
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["belief_grad_mode"] == "shaping"
+    ModelVersion(**result)
+
+
 def test_check_value_tail_weight_match_and_mismatch(version):
     """② value_tail_weight is resume-immutable (like vf_coef): a matching resume passes, a drift FATALs."""
     saved = dataclasses.replace(version, value_tail_weight=0.3)
