@@ -154,12 +154,18 @@ the Adam optimizer state **by parameter POSITION, not name**. So if a refactor c
 but the **momentum** (`exp_avg`/`exp_avg_sq`) gets assigned to the WRONG params. It then crashes in
 `AdamW.step()` ("size of tensor a (128) must match b (5)") the moment a misassigned param of a
 different shape first gets a gradient — **data-dependently, so it can survive many steps**, and (until
-this guard) the broad `except` in `train_rl_agent.py` masked it as a clean completion. Guard:
-`train_rl_agent._validate_or_reset_optimizer_state` runs on every resume — any param↔state shape
-mismatch is treated as proof the position-keyed state is misaligned, so it **drops the whole optimizer
-momentum** (fresh zero-init, LR/param_groups preserved; re-warms in a few hundred steps). Same-shape
-permutations are undetectable, so prefer **not reordering existing params** — append new submodules
-LAST. Pinned by `src/main/resume_optimizer_realign_test.py`.
+the guard) the broad `except` in `train_rl_agent.py` masked it as a clean completion. Guard:
+`train_rl_agent._validate_or_reset_optimizer_state(model, checkpoint_path)` runs on every resume and
+**REMAPS the momentum to the current params BY NAME** — it reads the saved optimizer state + the saved
+parameter NAME ORDER straight from the checkpoint zip (`policy.optimizer.pth` + `policy.pth`) and
+rebuilds `opt.state` so each current param receives the momentum saved for its name, regardless of
+registration order. So a reorder is **corrected**, not just caught: a **same-shape** reorder (which a
+shape check CANNOT see and would silently scramble) now follows the name, and a name reused at a
+different shape (or a genuinely new param) cleanly drops to fresh zero-init. **This means "append new
+params LAST" is no longer load-bearing for optimizer correctness** — though still good hygiene. Falls
+back to the legacy shape-only drop-all-momentum reset only if the zip can't be read (never crashes a
+resume); no-op (momentum carried verbatim) on an aligned resume. Pinned by
+`src/main/resume_optimizer_realign_test.py` (incl. the same-shape-reorder + zip-read cases).
 
 **Resume-immutable training hparams (value-meaning, NOT weight-shape).** A hyperparameter can
 be wrong-to-change-mid-run without changing any weight shape — `vf_coef` (`--vf-coef`) is the
