@@ -184,6 +184,10 @@ def _resolve_fresh_run_dir(args: list, timestamp: str) -> str:
     user_run_dir = _peek_arg(args, "--run-dir")
     if user_run_dir:
         return os.path.normpath(user_run_dir)
+    run_name = _peek_arg(args, "--run-name") or _peek_arg(args, "--run_name")
+    if run_name:
+        # A memorable name → models/<name>/ (basename-sanitized so it can't path-escape models/).
+        return os.path.join("models", os.path.basename(run_name.rstrip("/")) or f"run_{timestamp}")
     return os.path.join("models", f"run_{timestamp}")
 
 

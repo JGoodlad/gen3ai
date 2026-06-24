@@ -300,6 +300,35 @@ def _validate_or_reset_optimizer_state(model, checkpoint_path: str = None) -> No
     _shape_only_reset_optimizer_state(model)
 
 
+def _resolve_fresh_model_dir(run_name, exploiter_label, model_arg):
+    """Pick the run directory for a run whose --run-dir is NOT set (i.e. not a launcher-managed
+    resume). Precedence: an explicit --run-name → ``models/<name>``; else, in exploiter mode, a
+    derived ``models/exploiter_vs_<target>``; else a date-stamped ``models/run_<timestamp>`` (the
+    legacy default). A NAMED dir is validated as a single safe path component, and we refuse to start
+    a FRESH run on top of an EXISTING run (one carrying a metadata.json) — unless --model resumes from
+    INSIDE that very dir — so naming a run after e.g. the live run can't silently clobber it. Returns
+    the dir (or exits with a clear FATAL). Pure given its args → unit-tested."""
+    import re
+    if run_name:
+        if not re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*$", run_name):
+            print(f"\n[RunName] FATAL: --run-name {run_name!r} must be a single name "
+                  f"(letters/digits/._-), with no slashes or path traversal.")
+            sys.exit(1)
+        model_dir = os.path.join("models", run_name)
+    elif exploiter_label:
+        model_dir = os.path.join("models", "exploiter_vs_" + exploiter_label.removeprefix("ext_"))
+    else:
+        return f"models/run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # always unique → no guard
+    # Clobber guard: a named fresh run must not write into a DIFFERENT existing run's dir.
+    resuming_into_it = bool(model_arg) and os.path.abspath(model_arg).startswith(
+        os.path.abspath(model_dir) + os.sep)
+    if os.path.exists(os.path.join(model_dir, "metadata.json")) and not resuming_into_it:
+        print(f"\n[RunName] FATAL: {model_dir!r} is already a run (it has a metadata.json). Pick a "
+              f"different --run-name, or pass --model <a checkpoint inside it> to resume that run.")
+        sys.exit(1)
+    return model_dir
+
+
 def _run_arch_toggles(args) -> dict:
     """The architecture TOGGLES of THIS run, for current_model_version so the version gate compares
     like-for-like against the run's own (toggle-ON) pool/stable-opponent snapshots. Without these, a
@@ -674,6 +703,13 @@ async def main():
     # --- Operational Flags ---
     parser.add_argument("--model", type=str, help="Path to existing model to load")
     parser.add_argument("--run-dir", type=str, help="Run folder to write checkpoints into (set by launcher on resume)")
+    parser.add_argument("--run-name", "--run_name", dest="run_name", type=str, default=None,
+                        help="A MEMORABLE name for a fresh run → writes to models/<name>/ instead of "
+                             "a date-stamped models/run_<timestamp>/. Must be a single name "
+                             "(letters/digits/._-, no slashes). Refuses to overwrite an existing run "
+                             "of that name (pick another, or --model to resume it). Ignored when "
+                             "--run-dir is set (launcher resume). For --exploiter, defaults to "
+                             "'exploiter_vs_<target>' if you don't name it.")
     parser.add_argument("--eval-only", action=BoolFlag, default=False, help="Skip training and only evaluate")
     parser.add_argument("--steps", type=int, default=100000, help="Total training timesteps")
     parser.add_argument("--debug", action=BoolFlag, default=False, help="Use DummyVecEnv (1 env) for debugging")
@@ -1402,6 +1438,18 @@ async def main():
                              "occupies training so a single one can't dominate; multiple un-mastered "
                              f"stable opponents SHARE this slice. Default {STABLE_CHALLENGE_SHARE:g}. "
                              "Only active under --self-play.")
+    parser.add_argument("--exploiter", dest="exploiter", type=str, default=None,
+                        help="EXPLOITER MODE: train against ONE fixed foreign model as the SOLE "
+                             "opponent every episode — the league 'exploiter' role (learn to beat a "
+                             "specific target, e.g. the current main agent). Takes a run dir / "
+                             "checkpoint spec exactly like --stable-opponents (e.g. "
+                             "'models/ai_v6_13_outgoing_dmg_0620'), must share this run's "
+                             "arch_signature (startup FATAL otherwise). This is a clean opponent-mix "
+                             "front-end: it needs NO --self-play / --stable-opponents / share "
+                             "fiddling — just point it at the target. Mutually exclusive with "
+                             "--self-play. Recommended: init the exploiter from a strong checkpoint "
+                             "(--model <target's checkpoint>) so it has a baseline to exploit from. "
+                             "Default None (off).")
 
     args = parser.parse_args()
 
@@ -1552,6 +1600,9 @@ async def main():
         )
     if not 0.0 <= args.stable_opponent_selfplay_share <= 1.0:
         parser.error("--stable-opponent-selfplay-share must be a fraction in [0, 1]")
+    if args.exploiter and args.self_play:
+        parser.error("--exploiter trains vs ONE fixed target as the sole opponent — it is mutually "
+                     "exclusive with --self-play. Drop --self-play (the exploiter needs no pool).")
     if args.opp_belief_cls_k < 0:
         parser.error("--opp-belief-cls-k must be >= 0 (0 = off)")
     if args.opp_belief_cls_k > 0 and not args.attend_unrevealed_opponents:
@@ -1964,6 +2015,36 @@ async def main():
             emit(f"🐴 [STABLE] {len(_fixed_opponents)} cross-run opponent(s): {_stable_labels} — "
                  "EVAL-ONLY (no --self-play, so they don't join the training mix)")
 
+    # EXPLOITER mode (--exploiter): resolve the single fixed target the SAME way as a stable opponent
+    # (run-dir/checkpoint spec → arch-gated FixedOpponentEntry), validating its weights load here so a
+    # corrupt zip FATALs once up front instead of crashing every env worker. The env factory builds one
+    # RLPlayer from it per worker; the wrapper then uses it as the sole training opponent. (Mutual
+    # exclusivity with --self-play is enforced at arg-parse time above.)
+    _exploiter_entry = None
+    if args.exploiter:
+        from agents.training.fixed_opponent_pool import resolve_stable_opponents
+        from agents.model.snapshot import (
+            current_model_version as _current_model_version, load_foreign_opponent)
+        _cv_expl = _current_model_version(mappings, **_run_arch_toggles(args))
+        try:
+            _resolved = resolve_stable_opponents(args.exploiter, _cv_expl,
+                                                 default_temperature=args.stable_opponent_temp)
+            if len(_resolved) != 1:
+                raise ValueError(f"--exploiter takes exactly ONE target model, got {len(_resolved)}")
+            _exploiter_entry = _resolved[0]
+            load_foreign_opponent(_exploiter_entry.zip_path, current_version=_cv_expl, device="cpu",
+                                  config_path=_exploiter_entry.config_path)  # validate weights load
+        except (ModelVersionError, FileNotFoundError, ValueError) as e:
+            print(f"\n[Exploiter] FATAL: {e}")
+            sys.stdout.flush()
+            os._exit(int(TrainExitCode.FATAL_CONFIG))
+        except Exception as e:  # noqa: BLE001 — corrupt/unreadable foreign weights zip
+            print(f"\n[Exploiter] FATAL: failed to load exploiter target weights: {e}")
+            sys.stdout.flush()
+            os._exit(int(TrainExitCode.FATAL_CONFIG))
+        emit(f"🥊 [EXPLOITER] training vs {_exploiter_entry.label} as the SOLE opponent every episode "
+             f"(temp {args.stable_opponent_temp:g}; no self-play/pool/bots). Goal: learn to beat it.")
+
     # Curriculum (transition + floor) effective values: CLI override or the module defaults.
     _heuristic_floor = args.heuristic_floor if args.heuristic_floor is not None else HEURISTIC_FLOOR
     _sp_start_wr = args.self_play_start_wr if args.self_play_start_wr is not None else SELF_PLAY_START
@@ -1985,7 +2066,8 @@ async def main():
     def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                                    opponent_version=None, snapshot_dir=None,
                                    self_play_fraction=0.0, self_play=False,
-                                   heuristic_weights=None, stable_opponents=None):
+                                   heuristic_weights=None, stable_opponents=None,
+                                   exploiter_entry=None):
         def _init():
             try:
                 ts = datetime.now().strftime('%H%M%S')
@@ -2088,12 +2170,30 @@ async def main():
                         ))
                         stable_labels.append(e.label)
 
+                # EXPLOITER mode: one fixed target loaded ONCE per worker → the sole opponent. Same
+                # foreign-load path as a stable opponent; stochastic at the stable-opponent temp so
+                # it stays a moving target (harder to over-exploit a frozen target's quirks).
+                exploiter_player = None
+                if exploiter_entry is not None:
+                    from agents.model.snapshot import load_foreign_opponent
+                    _ex_model, _ = load_foreign_opponent(
+                        exploiter_entry.zip_path, current_version=opponent_version,
+                        device=opponent_device, config_path=exploiter_entry.config_path)
+                    exploiter_player = RLPlayer(
+                        model=_ex_model, team=opponent_teambuilder, battle_format=BATTLE_FORMAT,
+                        server_configuration=server_config, mappings=mappings,
+                        account_configuration=AccountConfiguration(f"Opp{idx}x{ts}", "password"),
+                        start_listening=False,
+                        stochastic=True, temperature=exploiter_entry.temperature,
+                    )
+
                 wrapped = MaskableAgentWrapper(
                     env, heuristic_opponents=heuristic_opponents, pool=pool,
                     pool_player=pool_player, self_play_fraction=self_play_fraction, rng_seed=idx,
                     heuristic_weights=heuristic_weights,
                     stable_players=stable_players, stable_labels=stable_labels,
                     stable_challenge_share=args.stable_opponent_selfplay_share,
+                    exploiter_player=exploiter_player,
                 )
 
                 # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.
@@ -2112,7 +2212,12 @@ async def main():
     if args.run_dir:
         model_dir = args.run_dir                                     # launcher-managed resume
     else:
-        model_dir = f"models/run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        # A memorable --run-name (models/<name>), an exploiter default (models/exploiter_vs_<target>),
+        # or the legacy date-stamp — with a guard against clobbering an existing run.
+        model_dir = _resolve_fresh_model_dir(
+            args.run_name,
+            _exploiter_entry.label if _exploiter_entry is not None else None,
+            args.model)
 
     os.makedirs(model_dir, exist_ok=True)
     # Full CLI namespace (JSON-safe) → persisted into metadata.json for run provenance.
@@ -2183,6 +2288,12 @@ async def main():
             f"({'CPU — avoids per-worker CUDA contexts' if args.self_play_use_cpu else 'training device'})"
         )
 
+    # Exploiter mode is NOT self-play, so the self-play block above left _opp_version=None — but the
+    # env factory still needs it to arch-gate the exploiter target's foreign load. Set it here.
+    if _exploiter_entry is not None and _opp_version is None:
+        from agents.model.snapshot import current_model_version as _current_model_version
+        _opp_version = _current_model_version(mappings, **_run_arch_toggles(args))
+
     def _make_factories():
         return [
             create_training_env_random(
@@ -2192,6 +2303,7 @@ async def main():
                 self_play_fraction=_initial_self_play_fraction, self_play=args.self_play,
                 heuristic_weights=_bot_weight_vec,
                 stable_opponents=_fixed_opponents,
+                exploiter_entry=_exploiter_entry,
             )
             for i in range(n_envs)
         ]

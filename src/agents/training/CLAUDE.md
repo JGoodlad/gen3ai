@@ -815,6 +815,32 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
   end-to-end `stable_opponent_fuzz_test.py` (bridge, no server — resolve + arch FATAL + foreign
   load + legal stochastic play).
 
+## Exploiter mode (`--exploiter`, `MaskableAgentWrapper._exploiter_player`)
+
+A clean opponent-mix front-end for the league **exploiter** role: train a dedicated agent against
+ONE fixed foreign model as the **sole opponent every episode** — to surface (and then patch, by
+folding the exploiter back as a stable opponent / pool member) the non-robustness a *self-play* Nash
+can't see. It needs **no `--self-play` / `--stable-opponents` / share fiddling** — point `--exploiter`
+at the target and it's the only opponent.
+
+- **Target resolution** reuses the stable-opponent path exactly: `--exploiter <run-dir|checkpoint
+  spec>` → `resolve_stable_opponents` (a single `FixedOpponentEntry`, arch_signature-gated) +
+  a weights-load validation in the main process (corrupt zip = startup `[Exploiter] FATAL` →
+  `FATAL_CONFIG`, no restart loop). Emits a `🥊 [EXPLOITER]` line to the launcher Events panel.
+- **Opponent mix**: the env factory builds ONE `RLPlayer` over the target per worker (stochastic at
+  `--stable-opponent-temp`, a moving target), and `MaskableAgentWrapper._select_episode_opponent`
+  **short-circuits** the whole challenge/floor/pool/stable selection when `exploiter_player` is set —
+  the target is `self.opponent` every reset. `None` (default) = the normal selection, byte-identical.
+- **Mutually exclusive with `--self-play`** (arg-parse error — the exploiter needs no pool). Because
+  it's not self-play, `_opp_version` (the arch gate for the foreign load) is set explicitly for this
+  path before the factories are built. Training-only; not version-locked.
+- **Usage:** `--exploiter <target> --model <target's checkpoint>` — init the exploiter from a strong
+  checkpoint so it has a baseline to exploit from (the AlphaStar exploiter init). To ALSO see
+  win-rate vs the target in eval, add `--stable-opponents <same target>` (eval-only without
+  `--self-play`). The run dir defaults to a readable `models/exploiter_vs_<target>/` (not a
+  date-stamp); override with `--run-name <name>`. Tests: `wrappers_test.py::test_exploiter_*`
+  (sole-opponent + off-unchanged).
+
 ## ELO / skill rating (`elo.py`, `bot_elo_calibration.py`, `main.elo`)
 
 Once training is mostly self-play **pool play**, win-rate stops being legible: the promotion

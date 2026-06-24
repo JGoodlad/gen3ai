@@ -247,6 +247,19 @@ class TestResolveFreshRunDir:
         args = ["--run-dir=models/my_run"]
         assert _resolve_fresh_run_dir(args, self.TS) == "models/my_run"
 
+    def test_honours_run_name(self):
+        # --run-name <name> → models/<name> (a memorable name without the full --run-dir path).
+        assert _resolve_fresh_run_dir(["--run-name", "crush_v3"], self.TS) == "models/crush_v3"
+        assert _resolve_fresh_run_dir(["--run-name=crush_v3"], self.TS) == "models/crush_v3"
+
+    def test_run_name_is_basename_sanitized(self):
+        # A name can't path-escape models/ (basename only).
+        assert _resolve_fresh_run_dir(["--run-name", "../../etc/x"], self.TS) == "models/x"
+
+    def test_run_dir_beats_run_name(self):
+        args = ["--run-dir", "models/explicit", "--run-name", "ignored"]
+        assert _resolve_fresh_run_dir(args, self.TS) == "models/explicit"
+
 
 # ── _find_model_arg ──────────────────────────────────────────────────────────
 

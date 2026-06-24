@@ -21,9 +21,10 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
 - `_prepare_session()` (worktree pin + run-dir + initial events + at-exit handlers) runs on the
   main thread **before** the screen opens — a pin failure `sys.exit`s with a clean message.
   **Run-dir resolution** (`checkpoint._resolve_fresh_run_dir`): resuming (`--model`) takes the
-  checkpoint's folder; a fresh run honours a user-supplied `--run-dir` verbatim (the folder the
-  run writes into, shown in the TUI 🗂 badge) and only mints a timestamped `models/run_<ts>` when
-  none was given.
+  checkpoint's folder; a fresh run honours a user-supplied `--run-dir` verbatim, then a
+  `--run-name <name>` (→ `models/<name>`, basename-sanitized — a memorable name without the full
+  path), and only mints a timestamped `models/run_<ts>` when neither was given. The chosen folder
+  (the one the run writes into) shows in the TUI 🗂 badge.
 - `LauncherApp` (a `Gen3App` subclass) renders from `state.snapshot()` on a `set_interval(0.5)`
   timer. Input is split by latency sensitivity: **view navigation** (`l`/`e`/`d`, the `q` confirm
   overlay, `n`/`y`, ctrl-c) is handled **app-locally** via the `view_mode` reactive — switching is

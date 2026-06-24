@@ -19,12 +19,14 @@ def _stub_env():
 
 
 def _make_wrapper(*, fraction=0.0, pool=None, pool_player=None, n_heuristics=2, rng_seed=0,
-                  heuristic_weights=None, stable_players=None, stable_labels=None):
+                  heuristic_weights=None, stable_players=None, stable_labels=None,
+                  exploiter_player=None):
     heuristics = [MagicMock(name=f"heur{i}") for i in range(n_heuristics)]
     w = MaskableAgentWrapper(
         _stub_env(), heuristic_opponents=heuristics, pool=pool, pool_player=pool_player,
         self_play_fraction=fraction, rng_seed=rng_seed, heuristic_weights=heuristic_weights,
         stable_players=stable_players, stable_labels=stable_labels,
+        exploiter_player=exploiter_player,
     )
     return w, heuristics
 
@@ -49,6 +51,28 @@ def test_legacy_single_opponent_form():
     assert w._heuristic_opponents == [opp]
     w._select_episode_opponent()
     assert w.opponent is opp          # no pool → always the single opponent
+
+
+def test_exploiter_player_is_the_sole_opponent():
+    # --exploiter mode: the fixed target is ALWAYS the opponent, short-circuiting the pool / stable /
+    # heuristic selection entirely — even with fraction=1.0, a ready pool, AND stable players present.
+    exploiter = MagicMock(name="exploiter")
+    stable_p, stable_l = _stable(2)
+    w, heuristics = _make_wrapper(fraction=1.0, pool=_stub_pool(), pool_player=MagicMock(),
+                                  stable_players=stable_p, stable_labels=stable_l,
+                                  exploiter_player=exploiter)
+    for _ in range(50):
+        w._select_episode_opponent()
+        assert w.opponent is exploiter            # never the pool/stable/heuristic
+    # and it never touched the pool (no scan/sample/load) — the exploiter branch returns first
+    w._pool.sample.assert_not_called()
+
+
+def test_exploiter_none_is_unchanged():
+    # exploiter_player=None (the default) leaves the normal selection byte-identical.
+    w, heuristics = _make_wrapper(fraction=0.0, exploiter_player=None)
+    w._select_episode_opponent()
+    assert w.opponent in heuristics
 
 
 def test_requires_an_opponent_or_roster():
