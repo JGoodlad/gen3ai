@@ -31,7 +31,7 @@ from main.launcher.checkpoint import (
     _insert_or_replace_model_arg,
     _insert_or_replace_run_dir_arg,
     _peek_arg,
-    _resolve_fresh_run_dir,
+    resolve_launch_run_dir,
     _strip_launcher_args,
 )
 from main.launcher.child import (
@@ -238,16 +238,16 @@ def _prepare_session(
         train_script, src_dir = _TRAIN_SCRIPT, _SRC_DIR
         state.initial_git_hash = _git_hash()
 
-    existing_model = _find_model_arg(child_args)
-    if not existing_model:
-        run_dir = _resolve_fresh_run_dir(child_args, time.strftime("%Y%m%d_%H%M%S"))
-        os.makedirs(run_dir, exist_ok=True)
-        child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
-    else:
-        # A resumed --model may be <run>/checkpoints/checkpoint_*.zip → the run dir is
-        # the parent of checkpoints/, not checkpoints/ itself.
-        run_dir = run_dir_for_checkpoint(existing_model)
-        child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
+    # Run dir: fresh → minted/named; a --run-name (or --exploiter) resume → FORK into a new dir
+    # (init from --model, write here, never clobber the checkpoint's source dir); plain resume →
+    # continue the checkpoint's own dir. (resolve_launch_run_dir documents all three.)
+    try:
+        run_dir = resolve_launch_run_dir(child_args, time.strftime("%Y%m%d_%H%M%S"))
+    except ValueError as e:
+        print(f"[launcher] ERROR: {e}")
+        sys.exit(1)
+    os.makedirs(run_dir, exist_ok=True)
+    child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
 
     state.run_dir = run_dir
 

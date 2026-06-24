@@ -191,6 +191,33 @@ def _resolve_fresh_run_dir(args: list, timestamp: str) -> str:
     return os.path.join("models", f"run_{timestamp}")
 
 
+def resolve_launch_run_dir(args: list, timestamp: str) -> str:
+    """The run dir for a launch, covering all three cases:
+
+    - **fresh** (no ``--model``) → ``_resolve_fresh_run_dir`` (honours ``--run-dir``/``--run-name``).
+    - **fork** (a ``--model`` resume WITH an explicit ``--run-name``, or ``--exploiter``) → a fresh
+      dir: the ``--model`` is only the INIT (an exploiter trained vs a frozen target, or a named
+      experiment forked off a still-running run), so its OWN checkpoints must land in a NEW dir, not
+      the checkpoint's source dir (which may be a live run / the exploiter's target). Refuses to fork
+      onto an EXISTING run (one with a metadata.json) → ``ValueError``.
+    - **plain resume** (a ``--model`` with no fork signal) → the checkpoint's own dir (continue it).
+
+    Pure (no makedirs / no process exit) → unit-tested; the caller does the makedirs + arg injection."""
+    existing_model = _find_model_arg(args)
+    is_fork = bool(_peek_arg(args, "--run-name") or _peek_arg(args, "--run_name")
+                   or "--exploiter" in args)
+    if not existing_model:
+        return _resolve_fresh_run_dir(args, timestamp)
+    if is_fork:
+        run_dir = _resolve_fresh_run_dir(args, timestamp)
+        if run_dir != run_dir_for_checkpoint(existing_model) and \
+                os.path.exists(os.path.join(run_dir, "metadata.json")):
+            raise ValueError(f"fork target {run_dir!r} is already a run (has a metadata.json) — "
+                             f"refusing to clobber it; pick a different --run-name")
+        return run_dir
+    return run_dir_for_checkpoint(existing_model)
+
+
 def _strip_launcher_args(argv: list) -> list:
     """Strip launcher-only flags so they are not forwarded to train_rl_agent.py."""
     out = []

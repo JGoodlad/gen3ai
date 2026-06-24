@@ -20,11 +20,16 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
 
 - `_prepare_session()` (worktree pin + run-dir + initial events + at-exit handlers) runs on the
   main thread **before** the screen opens — a pin failure `sys.exit`s with a clean message.
-  **Run-dir resolution** (`checkpoint._resolve_fresh_run_dir`): resuming (`--model`) takes the
-  checkpoint's folder; a fresh run honours a user-supplied `--run-dir` verbatim, then a
-  `--run-name <name>` (→ `models/<name>`, basename-sanitized — a memorable name without the full
-  path), and only mints a timestamped `models/run_<ts>` when neither was given. The chosen folder
-  (the one the run writes into) shows in the TUI 🗂 badge.
+  **Run-dir resolution** (`checkpoint.resolve_launch_run_dir`, three cases): a **fresh** run (no
+  `--model`) honours `--run-dir` verbatim, then `--run-name <name>` (→ `models/<name>`,
+  basename-sanitized — a memorable name without the full path), else a timestamped `models/run_<ts>`.
+  A **plain resume** (`--model`, no fork signal) takes the checkpoint's own folder (continue it). A
+  **fork** — a `--model` resume WITH an explicit `--run-name`, or with `--exploiter` — instead writes
+  to a fresh `--run-name`/timestamped dir: the `--model` is only the INIT (an exploiter trained vs a
+  frozen target, or a named experiment forked off a still-running run), so its own checkpoints must
+  NOT land in the source checkpoint's dir (which may be a live run / the exploiter's target); forking
+  onto an existing run (one with a `metadata.json`) is refused (`ValueError` → launcher FATAL). The
+  chosen folder (the one the run writes into) shows in the TUI 🗂 badge.
 - `LauncherApp` (a `Gen3App` subclass) renders from `state.snapshot()` on a `set_interval(0.5)`
   timer. Input is split by latency sensitivity: **view navigation** (`l`/`e`/`d`, the `q` confirm
   overlay, `n`/`y`, ctrl-c) is handled **app-locally** via the `view_mode` reactive — switching is

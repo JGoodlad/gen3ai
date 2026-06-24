@@ -20,6 +20,7 @@ from main.launcher import (
     _insert_or_replace_model_arg,
     _insert_or_replace_run_dir_arg,
     _resolve_fresh_run_dir,
+    resolve_launch_run_dir,
     _read_checkpoint_git_hash,
     _read_metrics_pipe,
     _strip_launcher_args,
@@ -259,6 +260,43 @@ class TestResolveFreshRunDir:
     def test_run_dir_beats_run_name(self):
         args = ["--run-dir", "models/explicit", "--run-name", "ignored"]
         assert _resolve_fresh_run_dir(args, self.TS) == "models/explicit"
+
+
+# ── resolve_launch_run_dir (fresh / fork / continue) ─────────────────────────
+
+class TestResolveLaunchRunDir:
+    TS = "20260608_120000"
+    CKPT = "models/ai_v6_13_outgoing_dmg_0620/checkpoints/checkpoint_89027105_steps.zip"
+
+    def test_fresh_no_model_mints_timestamp(self):
+        assert resolve_launch_run_dir(["--debug"], self.TS) == "models/run_20260608_120000"
+
+    def test_plain_resume_continues_checkpoint_dir(self):
+        # A --model resume with NO fork signal → write into the checkpoint's own run dir (continue).
+        assert resolve_launch_run_dir(["--model", self.CKPT], self.TS) == \
+            run_dir_for_checkpoint(self.CKPT)
+        assert resolve_launch_run_dir(["--model", self.CKPT], self.TS).endswith(
+            "models/ai_v6_13_outgoing_dmg_0620")
+
+    def test_resume_with_run_name_forks_to_named_dir(self):
+        # --run-name on a resume → FORK into the new dir, NOT the checkpoint's source dir.
+        args = ["--model", self.CKPT, "--run-name", "ai_v6_13_outgoing_dmg_0620_exp_v1"]
+        assert resolve_launch_run_dir(args, self.TS) == "models/ai_v6_13_outgoing_dmg_0620_exp_v1"
+
+    def test_exploiter_resume_forks(self):
+        # --exploiter inits from --model but must NOT write into the target's dir → fork.
+        args = ["--model", self.CKPT, "--exploiter", "models/some_target", "--run-name", "crush_v1"]
+        assert resolve_launch_run_dir(args, self.TS) == "models/crush_v1"
+
+    def test_fork_onto_existing_run_raises(self, tmp_path, monkeypatch):
+        # Forking onto a name that's ALREADY a run (has metadata.json) must refuse, not clobber it.
+        monkeypatch.chdir(tmp_path)
+        collide = tmp_path / "models" / "live_run"
+        collide.mkdir(parents=True)
+        (collide / "metadata.json").write_text("{}")
+        args = ["--model", "models/other/checkpoints/c.zip", "--run-name", "live_run"]
+        with pytest.raises(ValueError):
+            resolve_launch_run_dir(args, self.TS)
 
 
 # ── _find_model_arg ──────────────────────────────────────────────────────────
