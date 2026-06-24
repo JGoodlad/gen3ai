@@ -99,6 +99,7 @@ def _make_callback(tmp_path, *, pool=None, promote_threshold=0.65,
         best_model_save_path=best_dir,
         promote_threshold=promote_threshold,
         n_workers=3,
+        n_sentinels=n_sentinels,
         debug=debug,
     )
     cb.model = MagicMock()
@@ -232,6 +233,24 @@ def test_no_eval_at_step_zero(tmp_path):
     with patch.object(cb, "_launch_eval") as mock_launch:
         cb._on_step()
         mock_launch.assert_not_called()
+
+
+def test_n_sentinels_defaults_to_five():
+    # The CLI/callback default must stay 5 (the historical behaviour) so an unset run is unchanged.
+    cb = SelfPlayCallback(pool=_mock_pool(3), model_dir=None)
+    assert cb._n_sentinels == 5
+
+
+def test_n_sentinels_threads_into_pool_sentinel_selection(tmp_path):
+    # --n-sentinels N must drive how many evenly-spaced pool snapshots the eval requests (the set
+    # PFSP gets fresh win-rates for). Drive the real _launch_eval with the subprocess spawn stubbed.
+    cb = _make_callback(tmp_path, n_sentinels=9)
+    assert cb._n_sentinels == 9
+    cb._init_callback()
+    cb.num_timesteps = 2_000_000
+    with patch("agents.training.selfplay_callback.spawn_eval_workers", return_value=[]):
+        cb._launch_eval()
+    cb._pool.sentinel_entries.assert_called_once_with(n=9)
 
 
 def test_triggers_at_freq_boundary(tmp_path):

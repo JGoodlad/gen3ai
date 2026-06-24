@@ -498,7 +498,8 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   `PerOpponentEvalCallback`.** Self-play eval no longer runs in-process on the training thread.
   On a trigger step `SelfPlayCallback` freezes the live weights to disk (`model.save`) and
   spawns `--eval-workers`×2 (default 10) `main.eval_worker` subprocesses that **work-steal BOTH
-  the bot roster AND up to 5 pool sentinels** (all split into shard units) from one shared pool (the
+  the bot roster AND up to `--n-sentinels` pool sentinels** (default 5; all split into shard units)
+  from one shared pool (the
   worker's `_play_unit` SENTINEL branch plays the frozen trainee greedy vs each sentinel stochastic);
   training continues immediately. On a later
   `_on_step` poll the parent merges per-opponent + per-sentinel results → `win_rate_vs_bots` /
@@ -600,9 +601,10 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   samples, and the trainer-side pool used for honest sentinel-weight telemetry); off → no extra IPC and the
   legacy sampling/eviction byte-for-byte.
 
-  **Honest caveats (it's a partial-coverage curriculum, not a full PFSP league):** (1) only the **5 evenly-spaced
-  sentinels** the eval measures per cycle get a fresh win-rate — the other snapshots fall back to the cohort
-  mean (treated as average difficulty), so on a 20-deep pool PFSP actively re-prioritises ≈¼ of the pool per
+  **Honest caveats (it's a partial-coverage curriculum, not a full PFSP league):** (1) only the
+  **`--n-sentinels` (default 5) evenly-spaced sentinels** the eval measures per cycle get a fresh win-rate —
+  the other snapshots fall back to the cohort
+  mean (treated as average difficulty), so on a 20-deep pool the default PFSP actively re-prioritises ≈¼ of the pool per
   cycle and an un-remeasured snapshot keeps its **last** EMA (a staleness bias toward selves you *used* to lose
   to — watch `eval/pfsp_hardest_win_rate` is tracking a moving target, not a fossil). (2) The `1 +` floor in the
   weight keeps coverage but makes the tilt mild: a self at `p=0.1` vs one at `p=0.5` differ only `(1+S·0.9)/(1+S·0.5)`
@@ -823,7 +825,8 @@ ELO subsystem gives a single **absolute** number that genuinely rises with skill
 fixed bots.
 
 - **No new battles.** Every eval cycle already plays the trainee (greedy) vs all 9 bots and vs
-  up to 5 pool sentinels, `EVAL_GAMES` each — a full tournament-matrix row. `record_elo`
+  up to `--n-sentinels` (default 5) pool sentinels, `EVAL_GAMES` each — a full tournament-matrix
+  row. `record_elo`
   (`eval_callback.py`, shared by BOTH callbacks) appends that row to an **append-only
   `<run>/eval_results.jsonl`** (`snapshot.append_eval_result_row`) — the canonical, restart-safe
   source of truth, distinct from the overwritten `metadata.json:latest_eval`.

@@ -1356,6 +1356,14 @@ async def main():
                              "per-snapshot win-rates are measured at each self-play eval (EMA-smoothed) "
                              "and pushed to the training envs. Try 1.0–2.0. Pairs with --pool-spread so "
                              "PFSP has a diverse ladder of selves, not a recent-selves echo chamber.")
+    parser.add_argument("--n-sentinels", "--n_sentinels", dest="n_sentinels", type=int, default=5,
+                        help="Number of evenly-spaced pool snapshots eval'd as sentinels each self-play "
+                             "cycle (default 5). Each gets a FRESH win-rate, which is what --pfsp-scale "
+                             "weights the pool by — so a higher count re-prioritises MORE of the pool per "
+                             "cycle (cuts the 'only ~¼ of the pool re-measured' staleness on a deep pool). "
+                             "Cost: each extra sentinel is +100 games/cycle, work-stolen by the doubled "
+                             "eval pool; eval is non-blocking + skip-while-running so it self-throttles. "
+                             "Pairs with a larger --max-snapshots. Training-only (not version-locked).")
     parser.add_argument("--pool-spread", "--pool_spread", dest="pool_spread",
                         action=BoolFlag, default=False,
                         help="Self-play pool retention: keep a temporally-DIVERSE ladder (newest + "
@@ -2408,10 +2416,11 @@ async def main():
             heuristic_floor=_heuristic_floor,
             self_play_start_wr=_sp_start_wr,
             self_play_full_wr=_sp_full_wr,
-            # Self-play eval is ~2x the inference of bot eval — the 5 sentinel matchups run
-            # the model for BOTH players (trainee + sentinel), vs bot matchups where only the
-            # trainee infers. So double the work-stealing pool to keep wall-clock comparable
-            # (5 bot-eval workers → 10 here).
+            # Self-play eval is ~2x the inference of bot eval — the sentinel matchups
+            # (--n-sentinels) run the model for BOTH players (trainee + sentinel), vs bot matchups
+            # where only the trainee infers. So double the work-stealing pool to keep wall-clock
+            # comparable (5 bot-eval workers → 10 here); raise --eval-workers too if --n-sentinels
+            # is pushed high so the extra sentinel shards still drain promptly.
             n_workers=args.eval_workers * 2,
             eval_device=args.eval_device,
             eval_concurrency=args.eval_concurrency_per_worker,
@@ -2435,6 +2444,7 @@ async def main():
             # PFSP: when >0 the callback EMA-smooths the per-sentinel win-rates each eval and pushes
             # them to the env pools so sampling oversamples the selves we're losing to (0.0 = off).
             pfsp_scale=args.pfsp_scale,
+            n_sentinels=args.n_sentinels,
             debug=args.debug,
         )
         callbacks.append(eval_callback)

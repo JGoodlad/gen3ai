@@ -353,6 +353,19 @@ def test_sentinel_entries_exact_n_when_pool_large(tmp_path):
     assert len(sentinels) == 5
 
 
+def test_sentinel_entries_n_one_on_deep_pool_no_zerodiv(tmp_path):
+    # --n-sentinels 1 against a multi-snapshot pool must NOT hit the (len-1)/(n-1) divide-by-zero
+    # (it would crash the trainer on the eval boundary and re-crash every resume). n<=1 → the newest.
+    pool = _make_pool(tmp_path)
+    model = _fake_model(tmp_path)
+    for s in range(10):
+        pool.add(model, step=s * 1_000_000)
+    for n in (1, 0, -3):                       # callback clamps 0/neg to 1, but guard the pool too
+        sentinels = pool.sentinel_entries(n=n)
+        assert len(sentinels) == 1
+        assert sentinels[0].step == 9_000_000  # newest first
+
+
 # ── win-rate persistence ─────────────────────────────────────────────────────
 
 def test_persist_and_load_win_rate(tmp_path):

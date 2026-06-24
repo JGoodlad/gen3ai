@@ -149,6 +149,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             kept equal to the training opponents' ``--self-play-temp`` so eval sentinels
             behave EXACTLY as in training.
         n_workers / eval_device / eval_concurrency: subprocess eval-pool knobs.
+        n_sentinels: number of evenly-spaced pool snapshots eval'd as sentinels each cycle
+            (``--n-sentinels``, default 5). Higher = PFSP re-prioritises more of the pool with
+            fresh win-rates per cycle (less staleness), at +EVAL_GAMES games/cycle each.
         keep_eval_snapshots / keep_eval_trace_steps: forensic retention caps.
         debug: tiny/fast eval cadence so a short CPU smoke exercises seed → pool eval →
             promotion (the real schedule's 1M-step floor never fires in a 20k smoke).
@@ -190,6 +193,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         bot_weight_vec: "list | None" = None,
         floor_roster_count: int = 0,
         pfsp_scale: float = 0.0,
+        n_sentinels: int = 5,
         debug: bool = False,
         verbose: int = 1,
     ):
@@ -273,6 +277,12 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         # (one value per snapshot step) damps the ~100-game eval noise; it survives resume via
         # summary.json. 0.0 → never pushed, byte-identical to a pure-recency pool.
         self._pfsp_scale = max(0.0, float(pfsp_scale))
+        # Number of evenly-spaced pool snapshots eval'd as sentinels per cycle. Each gets a FRESH
+        # win-rate, which is exactly what PFSP (`pfsp_scale>0`) weights the pool by — so a higher
+        # count re-prioritises MORE of the pool per cycle (less of the "only ¼-of-pool re-measured"
+        # staleness). Cost: each extra sentinel is +EVAL_GAMES games/cycle, work-stolen by the
+        # (doubled) eval pool; eval is non-blocking + skip-while-running so it self-throttles.
+        self._n_sentinels = max(1, int(n_sentinels))
         self._pfsp_winrate_ema: dict[int, float] = {}
         if self._pfsp_scale > 0.0:
             for k, v in (self._pool.load_summary().get("pfsp_win_rates") or {}).items():
@@ -381,7 +391,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         snapshot_zip = snapshot_base + ".zip"
 
         bot_names = eval_opponent_names()
-        sentinel_entries = self._pool.sentinel_entries(n=5)
+        sentinel_entries = self._pool.sentinel_entries(n=self._n_sentinels)
         sentinels = [
             {"label": f"sentinel_{i}", "path": str(e.path), "step": e.step}
             for i, e in enumerate(sentinel_entries)

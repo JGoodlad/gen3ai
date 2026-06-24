@@ -250,6 +250,8 @@ class SnapshotPool:
         Used for sentinel eval to compute the monotonicity score.
         """
         entries = list(reversed(self._entries))
+        if n <= 1:
+            return entries[:1]          # n=1 (or clamped 0/neg): just the newest — avoids /0 below
         if len(entries) <= n:
             return entries
         step_size = (len(entries) - 1) / (n - 1)
