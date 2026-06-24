@@ -1469,3 +1469,29 @@ async def test_counterfactual_section_present_and_guards(tmp_path):
         app.action_counterfactual()
         await pilot.pause()
         assert "real checkpoint" in _status(app)
+
+
+async def test_better_line_section_present_and_guards(tmp_path):
+    """The `B` better-line search guard (no bridge): the widget exists, `B` with no decision hints
+    gracefully and opens the section, and the worker surfaces the no-reconstruction.json case."""
+    def _status(app):
+        return str(app.query_one("#cf-status", Static).render()).lower()
+
+    run = _write_trace(tmp_path)            # a websocket-style trace: NO _reconstruction.json sibling
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        assert app.query_one("#cf-betterline", Static) is not None
+
+        app.action_better_line()                                  # no decision selected → hint + open
+        await pilot.pause()
+        assert app.query_one("#sec-counterfactual", Collapsible).collapsed is False
+        assert "select a decision" in _status(app)
+
+        app._select_battle(app._tree_model.all_battles()[0])
+        app._current_inv = 0
+        await pilot.pause()
+        app.action_better_line()                                  # → no reconstruction.json → clean error
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        assert "reconstruction" in _status(app)

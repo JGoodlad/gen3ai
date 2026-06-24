@@ -145,9 +145,18 @@ regenerates it exactly.
   that one turn under each fresh seed by swapping `battle.prng` in place (every die routes
   through it). Each side's start-of-turn action source is independently `recorded` / `random` /
   an explicit choice string; mid-turn follow-ups in re-rolled timelines (forced switches that the
-  original timeline may not contain) use a configurable `followup` policy. ~10–30 ms per re-roll
-  (full prefix rebuild per seed; a `State.serializeBattle` clone would be ~2–3× cheaper if ever
-  needed).
+  original timeline may not contain) use a configurable `followup` policy.
+- **`reroll_many(record, t, arms)`** — the BATCHED form: resolves N independent ARMS (each its own
+  `{p1_action, p2_action, seed, label}`, with the EXACT per-side action semantics of `reroll_turn`)
+  of turn `t` in **one Node process**. The dominant per-re-roll cost is the **~677 ms Node-spawn /
+  pokemon-showdown `require`**, NOT the in-process `buildToTurn` (~26 ms warm), so a candidate sweep
+  (the prober's one-ply lookahead) pays it ONCE instead of once per candidate — measured **~9×** on a
+  full 9-legal-action sweep (5.5 s → 0.62 s). Each arm runs in its own fresh session, so its suffix
+  chunks are **byte-identical** to the same single `reroll_turn` (modulo `|t:|`) and the materialized
+  successor obs is **bit-for-bit identical** — pinned by `reroll_many_parity_fuzz_test.py`. (This is
+  why `State.serializeBattle`/`deserializeBattle` is NOT wired here: the data shows the spawn dominates,
+  not the rebuild, so cloning a battle snapshot wouldn't move the needle for these probes — batching
+  does. `serializeBattle` is the lever for an in-process *tree* search, e.g. MCTS, which is out of scope.)
 
 **The one-sided / omniscient wall (hard rule).** The record holds the opponent's team and the
 dice — referee-view data. It exists only at this bridge layer and in the separate
@@ -187,6 +196,42 @@ seam that merges extra `START` fields like `resumeReseed`.) For a human-readable
 `{turn, events}` log (moves / switches / damage / faints / crits / status / win) — so a recovered
 counterfactual win reads as an actual move-by-move line (`replay_counterfactual(..., capture_trajectory=True)`
 → the prober's `--narrate` / TUI `C`).
+
+### Warm clone-and-branch search-server (`search_driver.js` + `search_session.py`)
+
+Where `reroll_turn` / `reroll_many` rebuild the battle from turn 1 per call (O(commands-to-T)), a
+multi-ply SEARCH (the prober's `better_line` beam) must branch a TREE from any explored node — so
+re-replaying the prefix per node is infeasible at depth. The search-server clones a **mid-battle state
+in-process** via Showdown's `State.serializeBattle` / `deserializeBattle` (`dist/sim/state.js`): a
+verified round-trip of a battle paused with both move requests open (deserialize rebuilds the open
+requests via `getRequests`; PRNG continuity restored from the live counter), at **~1.7 ms/clone —
+~16× cheaper than the ~26 ms warm `buildToTurn`, and CONSTANT in depth**.
+
+- **`search_driver.js`** — a WARM, persistent Node process (vs `replay_driver.js`'s one-shot batch)
+  holding a node-snapshot cache. `open_root {record, turn}` reconstructs to turn T (via the shared
+  `replay_kernels.js`), serializes the root, and returns the request/team-complete prefix chunks.
+  `expand_many {arms}` clones a parent node, applies one joint turn (our action + the opponent's, via
+  the same `resolveTurn`/`resolveTurnExact` kernels), and re-serializes the child. A deserialized
+  battle can't re-emit the historical `|request|` lines (requests are out-of-band, not in `battle.log`),
+  so each expand returns this ply's one-sided **suffix** (flushed-prefix baseline + the new turn) and
+  the Python caller composes `root-prefix + each ply's suffix` — the same `(prefix + suffix)` shape
+  `reroll_many` produces. `recorded_exact` (root only) reproduces the realized turn for the
+  `value_crn` anchor. The per-side chunk splitting is REUSED verbatim (a deserialized battle is
+  re-attached to a fresh `BattleStream` and `restart()`-ed with the same `send` wiring).
+- **`search_session.py`** (`SearchSession`) — the Python wrapper: one process per `better_line` call
+  (context-managed), a synchronous request→one-line-response protocol over a background-drained queue
+  (a wedged child fails ONE call, never hangs the prober). `open_root` / `expand_many` / `close`.
+- **`replay_kernels.js`** — the shared sim kernels (`buildSession` / `buildToTurn` / `resolveTurn` /
+  `resolveTurnExact` / `recordedQueues` / `randomChoice` / `outcomeOf` / …) lifted out of
+  `replay_driver.js` so the replay/re-roll path and the search-server use ONE implementation (no
+  drift; the trusted reroll path is byte-for-byte unchanged).
+
+**Faithfulness (a NEW path, so proven not asserted):** `search_clone_parity_fuzz_test.py` (real
+bridge, no server) asserts over many battles that a depth-1 clone's successor obs equals the
+`reroll_many` obs **bit-for-bit**, that the `recorded_exact` clone reproduces the recorded `states.npz`
+next obs (the `value_crn` anchor), and that a depth-2 clone composes a valid chain. The omniscient
+clone/outcome/teams/dice drive only the opponent + the dice — never the obs encoder (the one-sided
+wall). Consumed by `main.prober.better_line`; see `src/main/prober/CLAUDE.md`.
 
 **Reading the teams for review** — `record.team_details(side)` / `decode_packed_team(packed)`
 is THE one decode home (moves, EVs, IVs, nature, item, ability, level; omission-defaults

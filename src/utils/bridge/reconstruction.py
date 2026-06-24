@@ -431,3 +431,76 @@ def reroll_turn(
         prefix_p2_chunks=out["prefix_p2_chunks"],
         rerolls=rerolls,
     )
+
+
+@dataclass(frozen=True)
+class ArmReroll:
+    """One arm of a batched re-roll — its own action source(s) + seed. Same shape as
+    :class:`TurnReroll`, plus the arm's ``label`` (the caller's tag, e.g. an action index)."""
+
+    label: object
+    seed: str
+    choices_used: dict
+    outcome: dict
+    turn_log: List[str]
+    p1_chunks: List[str]
+    p2_chunks: List[str]
+
+
+@dataclass(frozen=True)
+class RerollManyResult:
+    """Reconstruction point + N independent ARM re-rolls of one turn, resolved in ONE process
+    (see :func:`reroll_many`)."""
+
+    turn: int
+    pre_state: dict
+    requests: dict
+    recorded_choices: dict
+    prefix_p1_chunks: List[str]
+    prefix_p2_chunks: List[str]
+    arms: List[ArmReroll] = field(default_factory=list)
+
+
+def reroll_many(
+    record: ReconstructionRecord,
+    turn: int,
+    arms: Sequence[dict],
+    *,
+    followup: str = "random",
+    timeout: float = 300.0,
+) -> RerollManyResult:
+    """Resolve N independent ARMS of turn ``turn`` in ONE Node process — one ``buildToTurn`` + module
+    load instead of once per arm. Each ``arm`` is a dict ``{p1_action, p2_action, seed, label}`` with
+    EXACTLY the per-side action-source semantics of :func:`reroll_turn` (``"recorded"`` / ``"random"`` /
+    an explicit sim choice string; the special seed ``"original"`` keeps the battle's own mid-game PRNG).
+
+    This is purely a PERFORMANCE batching of :func:`reroll_turn`: a candidate-action sweep (the prober's
+    one-ply lookahead) pays the ~677 ms Node-spawn / pokemon-showdown ``require`` cost ONCE rather than
+    per candidate (measured ~5× on the re-roll step). Each arm runs in its OWN fresh session, so an
+    arm's suffix chunks are BYTE-IDENTICAL to the same single :func:`reroll_turn` — guarded by
+    ``reroll_many_parity_fuzz_test.py``. The shared prefix chunks + decision-point views are returned
+    once. ``arms=()`` just reconstructs (prefix/requests only)."""
+    out = _run_driver(
+        {
+            "mode": "reroll_many",
+            "record": record.to_dict(),
+            "turn": turn,
+            "arms": [dict(a) for a in arms],
+            "followup": followup,
+        },
+        timeout,
+    )
+    arm_results = [
+        ArmReroll(
+            label=a.get("label"), seed=a["seed"], choices_used=a["choices_used"],
+            outcome=a["outcome"], turn_log=a["turn_log"],
+            p1_chunks=a["p1_chunks"], p2_chunks=a["p2_chunks"],
+        )
+        for a in out["arms"]
+    ]
+    return RerollManyResult(
+        turn=out["turn"], pre_state=out["pre_state"], requests=out["requests"],
+        recorded_choices=out["recorded_choices"],
+        prefix_p1_chunks=out["prefix_p1_chunks"], prefix_p2_chunks=out["prefix_p2_chunks"],
+        arms=arm_results,
+    )

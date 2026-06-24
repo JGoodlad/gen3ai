@@ -142,6 +142,29 @@ class Gen3Player(Player):
             self._trackers[tag] = EpisodeTracker()
         return self._trackers[tag]
 
+    def track_decision(self, battle) -> "tuple":
+        """The faithful per-decision TRACKING side-effects — record the decision context + advance the
+        HiddenPowerTracker and the ProgressClock — WITHOUT the (expensive) obs encode. ``embed_battle``
+        does exactly this then encodes; a replay that only needs the obs at SOME decisions can call this
+        at the rest to keep tracker state faithful for later decisions while skipping ~80% of the cost
+        (the encode). Returns ``(legal, mask, tracker)``. The tracker WRITES here (record /
+        update_progress_clock) are identical to ``embed_battle``'s, and the encode it skips is read-only
+        on the tracker — so a later decision's encode reads identical state ⇒ a bit-for-bit identical obs
+        (pinned by the search clone-parity fuzz)."""
+        # Record first so the tracker's HP candidates are up-to-date BEFORE we encode the obs (mirrors
+        # gen3_env.embed_battle ordering). The legality snapshot is captured once and threaded to both
+        # the mask and the context.
+        legal = LegalActions.from_battle(battle)
+        mask = Gen3ActionMasker.get_mask(battle, legal=legal).astype(np.int8)
+        tracker = self._get_tracker(battle)
+        if not battle.strict_view().finished and mask.sum() > 0:
+            tracker.record(battle, mask, legal=legal)
+            # Advance the ProgressClock for the just-completed window BEFORE encode reads it (same
+            # helper gen3_env uses), so the turns_since_progress obs scalar matches what the model saw
+            # during TRAINING — without this, eval / self-play opponents / play.py would always read 0.
+            tracker.update_progress_clock(battle, legal)
+        return legal, mask, tracker
+
     def embed_battle(self, battle) -> Dict[str, Any]:
         if self.observation_encoder is None:
             from agents.observation.state_encoder import load_mappings, get_observation_encoder
@@ -154,18 +177,7 @@ class Gen3Player(Player):
                 self.mappings.get("species", {}) if self.mappings else {},
             )
 
-        # Record first so the tracker's HP candidates are up-to-date BEFORE
-        # we encode the obs (mirrors gen3_env.embed_battle ordering). The legality
-        # snapshot is captured once and threaded to both the mask and the context.
-        legal = LegalActions.from_battle(battle)
-        mask = Gen3ActionMasker.get_mask(battle, legal=legal).astype(np.int8)
-        tracker = self._get_tracker(battle)
-        if not battle.strict_view().finished and mask.sum() > 0:
-            tracker.record(battle, mask, legal=legal)
-            # Advance the ProgressClock for the just-completed window BEFORE encode reads it (same
-            # helper gen3_env uses), so the turns_since_progress obs scalar matches what the model saw
-            # during TRAINING — without this, eval / self-play opponents / play.py would always read 0.
-            tracker.update_progress_clock(battle, legal)
+        legal, mask, tracker = self.track_decision(battle)
 
         # Thread the same legality snapshot into the encoder for its trapped / maybe_trapped
         # reactive bits (avoids a second LegalActions.from_battle this decision).

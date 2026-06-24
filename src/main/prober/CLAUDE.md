@@ -595,7 +595,43 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   over `n_seeds`>0 fresh seeds. A candidate whose turn ENDS the battle is reported `terminal` (win/loss),
   not a numeric V. Loads the exact→nearest→recent model; **requires the trace's `*_reconstruction.json`
   sibling**. (`ProbeModel.value` is the V(s′) primitive; the successor obs is materialized from
-  `reroll.prefix_pN_chunks + reroll.pN_chunks` per the obs-materializer recipe.)
+  `reroll.prefix_pN_chunks + reroll.pN_chunks` per the obs-materializer recipe.) **The whole
+  `(candidate × seed)` sweep resolves in ONE Node process** via `reconstruction.reroll_many` (each arm
+  = a fresh session = byte-identical to a single `reroll_turn`, modulo `|t:|`), so the lookahead pays the
+  ~677 ms Node-spawn cost ONCE instead of once per candidate (~9× on a full 9-action sweep; pinned by
+  `utils/bridge/reroll_many_parity_fuzz_test.py`).
+- `better_line(battle_id, inv, depth=2, beam=3, top_k=4, interior_opponent=, opponent_ckpt=,
+  confirm_rollouts=0)` — **SEARCH for a better line** (`better_line.py`): the depth-≥2 generalization of
+  `lookahead` (which IS its depth-1 instance). A shallow, CRN-anchored **beam over the critic** that
+  branches a search TREE by CLONING mid-battle states in the warm `SearchSession`
+  (`utils/bridge/search_session.py` → `search_driver.js`, `State.serializeBattle`, ~1.7 ms/clone — the
+  only primitive that makes depth>1 feasible), expands OUR top-k actions by policy prior, scores each
+  successor's V(s′) on the materialized ONE-SIDED obs (`model.values_batch`, one critic forward per
+  ply), keeps the top-`beam`, and recurses; backup is **max-over-our-continuations** and the returned
+  LINE is the principal variation. Returns ONE human-legible **contrastive trajectory**: the divergence
+  (`best_alternative` + ΔV / `win_prob`), the per-ply `principal_variation`, and the chosen-vs-best
+  `candidates`. **Faithful-conditional opponent:** the RECORDED move at the divergence ply (the chosen
+  action is `recorded_exact` → the `value_crn` anchor, identical to lookahead), and at INTERIOR plies the
+  reloaded opponent reacts greedily on ITS OWN one-sided obs (materialized via the opponent's
+  action-history from `obs_materializer.infer_action_indices`) — `interior_opponent`: `"self"` (the
+  trainee as a flagged proxy, default), `"ckpt"` (`opponent_ckpt`), or `"none"` (sim default). Depth-1 is
+  faithful regardless; only depth≥2 leans on the interior model. `confirm_rollouts>0` CONFIRMS the
+  recommended first action with an actual Monte-Carlo replay-to-end vs the RELOADED REAL opponent
+  (`replay_counterfactual`) → win-% ± Wilson CI — the ground-truth check on the critic's claim (the
+  three-tier eval: search by V, report by ΔP(win), confirm by rollout). Loads the
+  exact→nearest→recent model; **requires the trace's `*_reconstruction.json` sibling**. Default depth 2
+  is the legibility/cost sweet spot (≈4 s search; depth 1 ≈2 s, depth 3 ≈5 s — try `--depth 3` for setups
+  that pay off a turn later). Faithfulness pinned by `utils/bridge/search_clone_parity_fuzz_test.py`.
+  **Perf:** the bottleneck is obs materialization (the serializeBattle clones are ~2%), so three levers
+  cut it ~1.5× (5.7 s → 3.7 s on a depth-2 decision): (1) ONE shared `replay_battle` feeds both the anchor
+  choice-map AND the opponent's `infer_action_indices` history (was two full replays); (2) the per-node
+  policy forwards are BATCHED (`action_probs_batch`, was one forward per node); (3) `materialize_decisions`
+  `encode_only_at={target}` encodes the obs ONLY at the decision the search reads — every other decision is
+  TRACK-ONLY (the tracker still advances faithfully, the ~80%-cost encode is skipped), so a node replays
+  its prefix as cheap tracking and encodes one obs. Lever 3 rides `Gen3Player.track_decision` (the tracking
+  half of `embed_battle`, extracted byte-identically — the live obs path is unchanged, pinned by
+  `obs_roundtrip_fuzz_test`); its bit-for-bit obs equivalence (track-only prefix vs full encode) is pinned
+  by the clone-parity fuzz.
 - `replay_counterfactual(battle_id, inv, action, n_rollouts=1, opponent_ckpt=, opponent_source=)` —
   **COUNTERFACTUAL replay-to-end** (`replay.py` → `utils/bridge/counterfactual.py`): "could the model
   have won if it hadn't choked this turn?". Pick up the recorded battle at `inv`'s turn, substitute
@@ -720,6 +756,7 @@ python -m main.prober.query overview <battle_id>
 python -m main.prober.query find     <battle_id> value_drop --limit 5
 python -m main.prober.query analyze  <battle_id> <inv> [--ckpt PATH] [--tier auto|nearest|recent]
 python -m main.prober.query lookahead <battle_id> [--inv N] [--worst K] [--seeds N] [--followup random|default]
+python -m main.prober.query better-line <battle_id> <inv> [--depth 2] [--beam 3] [--top-k 4] [--interior-opponent self|ckpt|none] [--opponent-ckpt PATH] [--confirm-rollouts N]
 python -m main.prober.query replay-counterfactual <battle_id> <inv> <action> [--rollouts N] [--opponent-ckpt PATH] [--opponent-source auto|bot|self|ckpt] [--narrate]
 python -m main.prober.query falsify  <battle_id> [--inv N]... [--worst K] [--seeds N] [--alts K] [--followup random|default]
 python -m main.prober.query falsify-scan <run_dir> [--outcome loss|win] [--opponent X] [--step N] [--limit K] [--worst K] [--seeds N] [--alts K] [--concurrency N]
@@ -776,19 +813,29 @@ blocking. So:
   `call_from_thread`. The npz is opened, the single obs row copied out, and the
   archive closed immediately (no handle accumulation while browsing).
 
-## Counterfactual section (`L` lookahead · `C` replay-to-end)
+## Counterfactual section (`L` lookahead · `B` better-line · `C` replay-to-end)
 
-The **Counterfactual** Collapsible (NOT a digit-toggled `_SECTIONS` entry — opened on demand by `L`/`C`,
-collapsed by default) is the TUI surface for the two re-roll-powered probes (bridge-eval traces only,
-each spawns Node so it runs in a `group="counterfactual"` worker with a `_cf_token` staleness guard):
+The **Counterfactual** Collapsible (NOT a digit-toggled `_SECTIONS` entry — opened on demand by
+`L`/`B`/`C`, collapsed by default) is the TUI surface for the three re-roll/clone-powered probes
+(bridge-eval traces only, each spawns Node so it runs in a `group="counterfactual"` worker with a
+`_cf_token` staleness guard):
 
 - **`L` — one-ply lookahead** (`action_lookahead` → `_lookahead_worker` → `lookahead.lookahead_decision`
   on the loaded `ProbeModel`): renders the `#cf-lookahead` DataTable — per legal action its **V(s′)** (the
   re-rolled successor's critic value, CRN/realized-dice), **ΔV** vs the chosen line (green↑/red↓), and a
   `terminal` win/loss when the action ends the battle; the chosen action is `▶`-marked, the best
   alternative `★`. The status line surfaces the baseline V(s) + the best alt's ΔV.
+- **`B` — better-line search** (`action_better_line` → `_better_line_worker` → `better_line.better_line_decision`
+  on the loaded `ProbeModel`, depth 2, the model itself as the flagged self-proxy interior opponent):
+  renders the `#cf-betterline` Static as a **contrastive trajectory** — *"turn T: you played `<chosen>` →
+  better line `<X>`"* with the headline ΔV / P(win) (or `leads to a WIN`), the **principal variation**
+  ply-by-ply, and the depth/beam/opponent provenance + a "press C to confirm" footer. It primes `C` with
+  its recommendation (the same lookahead→C handoff), so `B` then `C` plays the recommended action to a
+  win/loss. The CLI's `better-line <id> <inv> [--depth N]` exposes the full knobs (`--confirm-rollouts N`
+  folds the rollout-confirm into one call).
 - **`C` — replay-to-end** (`action_counterfactual` → `_counterfactual_worker` → a lazily-built
-  `ProbeSession.replay_counterfactual`): plays the lookahead's **best non-chosen alternative** forward to
+  `ProbeSession.replay_counterfactual`): plays the lookahead's (or better-line's) **best non-chosen
+  alternative** forward to
   a win/loss × `_TUI_REPLAY_ROLLOUTS` (8) Monte-Carlo rollouts vs the reloaded opponent, rendering the
   win-% ± CI + the opponent source + the caveats. Requires a prior successful `L` for the same decision
   (it picks the substitute); the CLI's `replay-counterfactual <id> <inv> <action>` takes an arbitrary
@@ -914,9 +961,13 @@ matrix, seed determinism, δ-anchor selection incl. the forced-switch remap, and
 the `anchor_deltas` δ-map) + `falsifier_integration_test.py` (`@integration`,
 real bridge battle → full falsify pipeline, determinism re-run, and the run-level
 `falsify_scan` over a recorded discoverable tree), `review_test.py` (pure
-`ReviewStore` — flag/note roundtrip, persistence, prune, export), `app_test.py`
+`ReviewStore` — flag/note roundtrip, persistence, prune, export),
+`better_line_test.py` (pure: the SEARCH backup logic — terminal sentinels, max-over-continuations,
+beam pruning, principal variation) + `better_line_integration_test.py` (`@integration`, real bridge,
+fake `V=obs.sum()` model: the depth-1 chosen value == sum(recorded next obs) value_crn anchor, the
+depth-2 beam principal variation, determinism), `app_test.py`
 (Textual `run_test` Pilot with an injected fake model — never loads a real checkpoint,
-so it stays fast; incl. the review flag/note/glyph flow):
+so it stays fast; incl. the review flag/note/glyph flow + the `L`/`B`/`C` Counterfactual guards):
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/main/prober -q

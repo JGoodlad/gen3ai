@@ -665,6 +665,72 @@ class ProbeSession:
         return lookahead_battle(model, record, summary, npz, invs=invs, worst=worst,
                                 gamma=self._gamma, n_seeds=n_seeds, followup=followup)
 
+    def better_line(self, battle_id: str, inv: int, *, depth: int = 2, beam: int = 3, top_k: int = 4,
+                    followup: str = "random", opponent_ckpt: "str | None" = None,
+                    interior_opponent: str = "self", confirm_rollouts: int = 0) -> dict:
+        """SEARCH for a better line than the model played (``better_line.py``): a shallow CRN-anchored
+        beam over the critic from an anchored ``move_selection`` decision, returning ONE contrastive
+        trajectory ("at turn T, do X instead — here is the line, the per-ply ΔV/ΔP(win), and where the
+        recorded play went wrong"). ``depth`` = OUR plies looked ahead (1 == :meth:`lookahead`); ``beam``
+        / ``top_k`` bound the interior branching.
+
+        The faithful-conditional opponent: the RECORDED move at the divergence ply (the value_crn
+        anchor), and at INTERIOR plies the reloaded opponent reacts greedily — ``interior_opponent``:
+        ``"self"`` (the trainee's own policy, a flagged self-play approximation; default), ``"ckpt"``
+        (load ``opponent_ckpt`` as the opponent), or ``"none"`` (the sim's default move). When
+        ``confirm_rollouts`` > 0 the recommended first action is CONFIRMED by an actual Monte-Carlo
+        replay-to-end vs the RELOADED REAL opponent (:meth:`replay_counterfactual`) → win-% ± Wilson CI,
+        the ground-truth check on the critic's claim. Loads the exact→nearest→recent model. **Requires
+        the trace's ``*_reconstruction.json`` sibling** (bridge-eval traces only)."""
+        from main.prober.better_line import better_line_decision
+        from utils.bridge.reconstruction import ReconstructionRecord
+
+        b = self._battle(battle_id)
+        recon_path = b.summary_path[: -len("_summary.json")] + "_reconstruction.json"
+        if not os.path.exists(recon_path):
+            raise FileNotFoundError(
+                f"no reconstruction record next to this trace ({recon_path}) — better-line needs the "
+                "re-roll layer's replay data, which only bridge-eval traces carry")
+        record = ReconstructionRecord.load(recon_path)
+        model, _ = self._model_for(b)
+        summary, npz = self._summary(b), self._npz(b)
+
+        opp_model = None
+        opp_used = "recorded@divergence"
+        if depth >= 2 and interior_opponent != "none":
+            if interior_opponent == "ckpt":
+                if not opponent_ckpt:
+                    raise ValueError("interior_opponent='ckpt' requires opponent_ckpt=")
+                from main.prober.model import ProbeModel
+                opp_model = self._models.get(opponent_ckpt) or ProbeModel.load(opponent_ckpt)
+                self._models[opponent_ckpt] = opp_model
+                opp_used = f"reloaded:{os.path.basename(opponent_ckpt)}"
+            else:                                     # "self" — the trainee as a flagged proxy
+                opp_model = model
+                opp_used = "reloaded:self_model_approx"
+
+        out = better_line_decision(
+            model, record, summary, npz, int(inv), depth=depth, beam=beam, top_k=top_k,
+            followup=followup, opp_model=opp_model)
+        out["interior_opponent"] = opp_used
+
+        # Ground-truth CONFIRM of the recommended first action vs the RELOADED REAL opponent.
+        if confirm_rollouts > 0 and out.get("best_alternative"):
+            act = int(out["best_alternative"]["action"])
+            try:
+                conf = self.replay_counterfactual(
+                    battle_id, int(inv), act, n_rollouts=confirm_rollouts,
+                    opponent_ckpt=opponent_ckpt, narrate=False)
+                out["confirm"] = {
+                    "action": act, "label": out["best_alternative"]["label"],
+                    "win_rate": conf.get("win_rate"), "ci": conf.get("win_rate_ci"),
+                    "n_rollouts": confirm_rollouts, "opponent_source": conf.get("opponent_source"),
+                    "caveats": conf.get("caveats"),
+                }
+            except (FileNotFoundError, RuntimeError, ValueError) as e:
+                out["confirm"] = {"error": str(e)}
+        return out
+
     def replay_counterfactual(self, battle_id: str, inv: int, action: int, *, n_rollouts: int = 1,
                               opponent_ckpt: "str | None" = None, opponent_source: str = "auto",
                               narrate: bool = False) -> dict:

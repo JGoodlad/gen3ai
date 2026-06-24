@@ -194,6 +194,7 @@ class ProberApp(Gen3App):
         ("y", "copy_replay_path", "Replay path"),
         # Counterfactual (re-roll powered; opens the Counterfactual section + runs a worker).
         ("L", "lookahead", "Lookahead V(s′)"),
+        ("B", "better_line", "Better line"),
         ("C", "counterfactual", "Replay→end"),
         # Section toggles — generated from _SECTIONS so the key/title/binding never drift.
         *[Binding(key, f"toggle_section('{sid}')", title, show=False)
@@ -343,11 +344,12 @@ class ProberApp(Gen3App):
                     # Counterfactual (re-roll powered; bridge-eval traces only). On-demand because it
                     # spawns Node: `L` = one-ply lookahead (V(s′) per legal action), `C` = replay the
                     # best alternative to a win/loss ("could it have won?"). Not a digit-toggled section.
-                    with Collapsible(title="L · C   Counterfactual  (L lookahead · C replay-to-end)",
+                    with Collapsible(title="L · B · C   Counterfactual  (L lookahead · B better-line search · C replay-to-end)",
                                      collapsed=True, id="sec-counterfactual"):
                         yield Static("", id="cf-hint")
                         yield Static("", id="cf-status")
                         yield DataTable(id="cf-lookahead")
+                        yield Static("", id="cf-betterline")
                         yield Static("", id="cf-replay")
         # `y` reveals the current battle's replay path here — a full-width bar so the path sits on its
         # OWN line (not wrapped inside a toast), trivially selectable under `v` copy mode. Hidden until
@@ -881,6 +883,7 @@ class ProberApp(Gen3App):
         self._cf_session = None
         try:
             self.query_one("#cf-lookahead", DataTable).clear()
+            self.query_one("#cf-betterline", Static).update(Text(""))
             self.query_one("#cf-replay", Static).update(Text(""))
             self._cf_set_status("")
         except Exception:  # noqa: BLE001 — clearing widgets is best-effort (may run pre-mount)
@@ -943,6 +946,103 @@ class ProberApp(Gen3App):
                       if dvf is not None else Text("—", style="dim"))
             star = "★" if (not c["is_chosen"] and c["label"] == d.get("best_alternative")) else ""
             table.add_row(label, v, dv, star)
+
+    def action_better_line(self) -> None:
+        """`B` — SEARCH for a better line (depth-2 beam over the critic) and render the contrastive
+        trajectory ("at turn T, do X instead — here is the line, here is where it went wrong")."""
+        self._open_counterfactual()
+        if self._current_battle is None or self._current_inv is None:
+            self._cf_set_status("select a decision first")
+            return
+        if not self._model_ready:
+            self._cf_set_status("load a model first (select a battle)")
+            return
+        self._cf_token += 1
+        self._cf_set_status(f"searching a better line from inv {self._current_inv} "
+                            f"(depth-2 beam over the critic; clones the board, a few seconds)…")
+        self._better_line_worker(self._current_battle, self._current_inv, self._cf_token)
+
+    @work(thread=True, exclusive=True, group="counterfactual")
+    def _better_line_worker(self, battle: BattleTrace, inv_index: int, token: int) -> None:
+        from main.prober.better_line import better_line_decision
+        from utils.bridge.reconstruction import ReconstructionRecord
+
+        recon = battle.summary_path[: -len("_summary.json")] + "_reconstruction.json"
+        if not os.path.exists(recon):
+            self.call_from_thread(
+                self._cf_error, "no reconstruction.json next to this trace — better-line needs the "
+                "re-roll layer (bridge-eval traces only)", token)
+            return
+        try:
+            # The interior opponent is the analysis model itself (a flagged self-play proxy); the
+            # divergence ply is always the RECORDED opponent. Confirm-to-end stays on `C`.
+            d = better_line_decision(
+                self._model, ReconstructionRecord.load(recon), self._load_summary(battle),
+                self._load_npz(battle), inv_index, depth=2, opp_model=self._model)
+        except Exception as e:  # noqa: BLE001 — surface the error in the section, don't crash
+            self.call_from_thread(self._cf_error, str(e), token)
+            return
+        self.call_from_thread(self._render_better_line, d, token)
+
+    def _render_better_line(self, d: dict, token: int) -> None:
+        if token != self._cf_token:
+            return
+        ba = d.get("best_alternative")
+        chosen = d["chosen"]
+        lines = []
+        # THE DIVERGENCE — what to do instead, and the value/win-prob delta.
+        if ba is None:
+            head = Text(f"turn {d['turn']}: no better line found — ", style="bold")
+            head.append(f"{chosen['label']} stands", style="green")
+            lines.append(head)
+        else:
+            head = Text(f"turn {d['turn']}: you played ", style="bold")
+            head.append(chosen["label"], style="red")
+            head.append("  →  better line ", style="bold")
+            head.append(ba["label"], style="bold green")
+            lines.append(head)
+            delta = Text("   ", style="")
+            if ba.get("terminal") == "win":
+                delta.append("leads to a WIN", style="bold green")
+            elif ba.get("delta_v") is not None:
+                dv = ba["delta_v"]
+                delta.append(f"ΔV {dv:+.3f}", style=("green" if dv > 0 else "red" if dv < 0 else "dim"))
+                if ba.get("win_prob") is not None:
+                    delta.append(f"   P(win) {ba['win_prob']:.0%}", style="cyan")
+            lines.append(delta)
+            # THE LINE — the principal variation, ply by ply.
+            pv = ba.get("principal_variation") or []
+            if pv:
+                pvline = Text("   line: ", style="dim")
+                for k, step in enumerate(pv):
+                    if k:
+                        pvline.append(" → ", style="dim")
+                    tag = (f"a{step['action']}" if step.get("action") is not None else "?")
+                    if step.get("terminal"):
+                        pvline.append(step["terminal"].upper(),
+                                      style="bold green" if step["terminal"] == "win" else "bold red")
+                    else:
+                        pvline.append(tag, style="green")
+                        if step.get("value") is not None:
+                            pvline.append(f"(V {step['value']:.2f})", style="dim")
+                lines.append(pvline)
+        # provenance + how to confirm
+        foot = Text(f"   depth {d['depth']} · beam {d['beam']} · opp: ", style="dim")
+        foot.append(f"{d.get('opp_model_used', '?')}", style="dim italic")
+        foot.append("  ·  press C to play the best alt to a win/loss (real opponent)", style="dim")
+        lines.append(foot)
+        body = Text("\n").join(lines)
+        self.query_one("#cf-betterline", Static).update(body)
+        self._cf_set_status(
+            f"better-line search · turn {d['turn']} · "
+            f"{'no better line' if ba is None else 'recommends ' + ba['label']}", style="bold")
+        # Prime `C` to replay this recommendation (mirrors the lookahead → C handoff).
+        if ba is not None:
+            self._last_lookahead = {
+                "turn": d["turn"], "chosen": d["chosen"],
+                "candidates": [{"is_chosen": False, "action": ba["action"], "label": ba["label"]}],
+                "best_alternative": ba["label"], "best_delta_v": ba.get("delta_v")}
+            self._last_lookahead_inv = d["inv"]
 
     def action_counterfactual(self) -> None:
         """`C` — replay the best lookahead alternative to a win/loss ("could it have won?")."""

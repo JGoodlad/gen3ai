@@ -247,11 +247,13 @@ class ProbeModel:
         """Masked-softmax action probs for a BATCH of (obs, mask). Shape (N, 11).
 
         One transformer forward over N decisions instead of N single-row passes — the
-        right call for offline sweeps (e.g. the human-agreement probe) where thousands of
-        saved/reconstructed states are scored against a frozen policy."""
+        right call for offline sweeps (e.g. the human-agreement probe, the better-line beam)
+        where many saved/reconstructed states are scored against a frozen policy."""
         import torch
 
-        ot = torch.as_tensor(np.asarray(obs, dtype=np.float32))
+        obs = np.asarray(obs, dtype=np.float32)
+        self._check_obs_dim(obs)
+        ot = torch.as_tensor(obs)
         mt = torch.as_tensor(np.asarray(masks))
         with torch.no_grad():
             d = self._policy.get_distribution({"observation": ot, "action_mask": mt})
@@ -259,6 +261,23 @@ class ProbeModel:
             masked = torch.where(mt.bool(), lg, torch.full_like(lg, -1e8))
             probs = torch.softmax(masked, 1).cpu().numpy()
         return probs
+
+    def values_batch(self, obs: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        """The critic's V(s) for a BATCH of (obs, mask). Shape (N,).
+
+        The batched counterpart of :meth:`value` — one critic forward over the whole search
+        frontier instead of N single-row passes (the better-line beam scores every depth-d leaf
+        in one pass). ``predict_values`` already takes a batched Dict obs, so this just stacks
+        and reshapes; same de-normalized real-return scale as :meth:`value`."""
+        import torch
+
+        obs = np.asarray(obs, dtype=np.float32)
+        self._check_obs_dim(obs)
+        ot = torch.as_tensor(obs)
+        mt = torch.as_tensor(np.asarray(masks))
+        with torch.no_grad():
+            v = self._policy.predict_values({"observation": ot, "action_mask": mt})
+        return v.reshape(-1).cpu().numpy()
 
     def _expected_obs_dim(self) -> "int | None":
         """The obs dim the loaded policy was TRAINED on (its ``observation_space`` 'observation' key)."""

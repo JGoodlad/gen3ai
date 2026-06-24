@@ -33,7 +33,7 @@ import numpy as np
 from agents.training.obs_materializer import materialize_from_record, materialize_decisions
 from main.prober.engine import _npz_value
 from main.prober.falsifier import _label_of, fresh_seeds
-from utils.bridge.reconstruction import ReconstructionRecord, reroll_turn
+from utils.bridge.reconstruction import ReconstructionRecord, reroll_many
 
 DEFAULT_SEEDS = 0   # CRN-only by default (fast, deterministic); >0 dice-averages the value
 
@@ -120,19 +120,27 @@ def lookahead_decision(
     username = record.username(side)
     packed = record.packed_team(side)
 
+    # Resolve EVERY (candidate × seed) arm in ONE Node process (reroll_many) — the sweep pays the
+    # ~677ms Node-spawn / pokemon-showdown require cost ONCE instead of once per candidate (~3.8× on the
+    # re-roll step, measured). The CHOSEN action is sourced "recorded" so its "original" line reproduces
+    # the realized turn EXACTLY (resolveTurnExact ⇒ value_crn == recorded_next_value even with a mid-turn
+    # forced switch); alternatives play their explicit choice. Each arm is byte-identical (modulo the
+    # state-invisible |t:| timestamp) to a single reroll_turn — pinned by reroll_many_parity_fuzz_test.
+    arms = []
+    for a in cand:
+        our_action = "recorded" if a == chosen_idx else choice_map[a]
+        for s in seed_list:
+            arms.append({f"{side}_action": our_action, f"{other_side}_action": "recorded",
+                         "seed": s, "label": int(a)})
+    rr = reroll_many(record, turn, arms, followup=followup)
+    prefix_chunks = rr.prefix_p1_chunks if side == "p1" else rr.prefix_p2_chunks
+    by_arm: dict = {}                          # action index → {seed → ArmReroll}
+    for arm in rr.arms:
+        by_arm.setdefault(int(arm.label), {})[arm.seed] = arm
+
     rows = []
     for a in cand:
-        # The CHOSEN action is sourced as "recorded" (not its explicit choice string) so the "original"
-        # seed reproduces the realized turn EXACTLY — replay_driver.js routes both-sides-recorded through
-        # resolveTurnExact (exact recorded follow-ups), so value_crn == recorded_next_value holds even on
-        # a turn with a mid-turn forced switch. Alternatives play their explicit choice (they diverge).
-        our_action = "recorded" if a == chosen_idx else choice_map[a]
-        rr = reroll_turn(
-            record, turn, seeds=seed_list, followup=followup,
-            **{f"{side}_action": our_action, f"{other_side}_action": "recorded"},
-        )
-        by_seed = {r.seed: r for r in rr.rerolls}
-        prefix_chunks = rr.prefix_p1_chunks if side == "p1" else rr.prefix_p2_chunks
+        by_seed = by_arm.get(int(a), {})
         vals: List[float] = []
         crn_v: Optional[float] = None
         crn_dist: Optional[list] = None

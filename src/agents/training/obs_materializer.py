@@ -76,9 +76,13 @@ _TAG_SEQ = 0
 class MaterializedDecision:
     """One decision point's full agent view: the observation the live policy
     would receive (obs-vector + prev-mask + turn-history, concatenated exactly
-    as ``embed_battle`` returns it) and its action mask."""
+    as ``embed_battle`` returns it) and its action mask.
 
-    obs: np.ndarray
+    ``obs`` is ``None`` for a TRACK-ONLY decision (one the caller asked NOT to encode via
+    ``encode_only_at`` — the tracker is still advanced faithfully, only the expensive obs encode is
+    skipped because nobody reads that decision's obs)."""
+
+    obs: Optional[np.ndarray]
     mask: np.ndarray
     turn: int
 
@@ -105,13 +109,17 @@ class _ReplayObsPlayer(Gen3Player):
 
     def __init__(self, *, replay_actions: Sequence[int],
                  map_actions_at: Optional[int] = None,
-                 stop_after_decision: Optional[int] = None, **kwargs):
+                 stop_after_decision: Optional[int] = None,
+                 encode_only_at: "Optional[set]" = None, **kwargs):
         super().__init__(**kwargs)
         self._replay_actions = [int(a) for a in replay_actions]
         self._materialized: List[MaterializedDecision] = []
         self._actions_exhausted = False
         self._map_actions_at = map_actions_at
         self._stop_after = stop_after_decision
+        # When set, ENCODE the obs only at these decision indices (others are track-only — the tracker
+        # still advances faithfully, the encode is skipped). None = encode every decision (the default).
+        self._encode_only_at = encode_only_at
         self._stopped = False
         self.action_choices: Optional[dict] = None
 
@@ -127,18 +135,24 @@ class _ReplayObsPlayer(Gen3Player):
             return forfeit
         if self.done:
             return self.choose_default_move()
-        obs_dict = self.embed_battle(battle)
-        mask = obs_dict["action_mask"]
-        if int(mask.sum()) == 0:
-            return self.choose_default_move()
         i = len(self._materialized)
+        # Encode the obs only where the caller needs it (encode_only_at); elsewhere just TRACK (the
+        # tracker advances identically, the ~80%-cost encode is skipped → obs=None). The index `i` is
+        # this decision's position BEFORE the append (a no-decision mask.sum()==0 call doesn't append),
+        # so it lines up with the caller's encode_only_at indices.
+        if self._encode_only_at is None or i in self._encode_only_at:
+            obs_dict = self.embed_battle(battle)
+            mask = obs_dict["action_mask"]
+            if int(mask.sum()) == 0:
+                return self.choose_default_move()
+            obs = np.asarray(obs_dict["observation"], dtype=np.float32)
+        else:
+            _legal, mask, _tracker = self.track_decision(battle)
+            if int(mask.sum()) == 0:
+                return self.choose_default_move()
+            obs = None
         self._materialized.append(
-            MaterializedDecision(
-                obs=np.asarray(obs_dict["observation"], dtype=np.float32),
-                mask=np.asarray(mask),
-                turn=battle.strict_view().turn,
-            )
-        )
+            MaterializedDecision(obs=obs, mask=np.asarray(mask), turn=battle.strict_view().turn))
         if i == self._map_actions_at:
             # Map every legal action through the REAL mapper at this exact
             # decision state — the choice strings a counterfactual re-roll
@@ -171,6 +185,7 @@ def materialize_decisions(
     stall_config: Optional[StallConfig] = None,
     map_actions_at: Optional[int] = None,
     stop_after_decision: Optional[int] = None,
+    encode_only_at: "Optional[set]" = None,
 ) -> MaterializedTrace:
     """Replay one side's protocol ``chunks`` through the real obs pipeline.
 
@@ -187,6 +202,13 @@ def materialize_decisions(
     real action mapper) — what a counterfactual consumer feeds ``reroll_turn``.
     ``stop_after_decision=i`` stops the replay once row ``i`` is materialized
     (cheap when only a prefix is needed).
+
+    ``encode_only_at`` (a set of decision indices) ENCODES the obs only at those decisions; the rest
+    are TRACK-ONLY (``decision.obs is None``) — the tracker still advances faithfully, but the
+    expensive obs encode (~80% of the per-decision cost) is skipped where the caller won't read it
+    (e.g. a search that needs only ONE successor's obs, or a choice-map / action-history pass that
+    needs none). ``None`` (default) encodes every decision. The encoded decisions' obs are bit-for-bit
+    identical to a full encode (the skipped encode is read-only on the tracker).
     """
     global _TAG_SEQ
     _TAG_SEQ += 1
@@ -196,6 +218,7 @@ def materialize_decisions(
         replay_actions=actions,
         map_actions_at=map_actions_at,
         stop_after_decision=stop_after_decision,
+        encode_only_at=encode_only_at,
         mappings=mappings,
         stall_config=stall_config,
         battle_format=battle_format,
@@ -246,6 +269,126 @@ def materialize_decisions(
         actions_complete=not player._actions_exhausted,
         action_choices=player.action_choices,
     )
+
+
+class _InvertingReplayPlayer(_ReplayObsPlayer):
+    """Like :class:`_ReplayObsPlayer`, but instead of consuming a provided action-index list it
+    RECOVERS each decision's action index by inverting the side's recorded sim-choice string through
+    the real mapper. Used to reconstruct the OPPONENT's action-index history (the trace records only
+    the trainee's actions) so its one-sided obs can be materialized faithfully."""
+
+    def __init__(self, *, recorded_choices: Sequence[str], **kwargs):
+        super().__init__(replay_actions=(), **kwargs)
+        self._queue = list(recorded_choices)
+        self.inverted_actions: List[int] = []
+
+    def choose_move(self, battle):
+        forfeit = self._handle_stall(battle, "REPLAY_STALL")
+        if forfeit:
+            return forfeit
+        if self._stopped:
+            return self.choose_default_move()
+        # Inversion needs only the MASK (to map choices via the real mapper), never the obs — so this
+        # replay is TRACK-ONLY throughout (skip the ~80%-cost encode at every decision).
+        _legal, mask, _tracker = self.track_decision(battle)
+        if int(mask.sum()) == 0:
+            return self.choose_default_move()
+        i = len(self._materialized)
+        self._materialized.append(MaterializedDecision(
+            obs=None, mask=np.asarray(mask), turn=battle.strict_view().turn))
+        # Pop recorded choices until one INVERTS to a legal index (a refused maybe-trapped probe
+        # inverts to None — consume it and try the correction, mirroring the sim's queue semantics).
+        idx = None
+        while self._queue and idx is None:
+            idx = self._invert(battle, self._queue.pop(0), mask)
+        if idx is not None:
+            self.inverted_actions.append(int(idx))
+            self._get_tracker(battle).advance(int(idx))
+        else:
+            self._actions_exhausted = True
+        if self._stop_after is not None and i >= self._stop_after:
+            self._stopped = True
+        return self.choose_default_move()
+
+    def _invert(self, battle, choice_str: str, mask) -> Optional[int]:
+        for idx in np.flatnonzero(np.asarray(mask)):
+            try:
+                order = self.action_to_order(int(idx), battle)
+            except Exception:  # noqa: BLE001 — a stale/illegal candidate is just not a match
+                continue
+            if order.message[len("/choose "):] == choice_str:
+                return int(idx)
+        return None
+
+
+def infer_action_indices(
+    record: ReconstructionRecord,
+    side: str,
+    *,
+    mappings=None,
+    stop_after_decision: Optional[int] = None,
+    chunks: "Optional[Sequence[str]]" = None,
+) -> "list[int]":
+    """Recover ``side``'s ACTION-INDEX history by replaying its recorded battle and inverting each
+    recorded sim-choice string through the real mapper. The counterpart of ``states.npz['actions']``
+    for the OPPONENT (the forensic trace records only the trainee's actions), so the opponent's
+    one-sided obs can be materialized faithfully for an interior search ply. Refused maybe-trapped
+    probes invert to ``None`` and are skipped (queue semantics).
+
+    ``chunks`` (that side's chunks from an ALREADY-run :func:`replay_battle`) skips the internal
+    replay — a caller that already replayed the battle (e.g. for the other side's obs) passes them so
+    the whole game is replayed through Node ONCE, not once per side."""
+    global _TAG_SEQ
+    _TAG_SEQ += 1
+    name = record.username(side)
+    if chunks is None:
+        rep = replay_battle(record)
+        chunks = rep.p1_chunks if side == "p1" else rep.p2_chunks
+    recorded = [c for (s, c) in record.commands if s == side]
+    player = _InvertingReplayPlayer(
+        recorded_choices=recorded, stop_after_decision=stop_after_decision, mappings=mappings,
+        battle_format=record.format_id,
+        account_configuration=AccountConfiguration(name, None),
+        server_configuration=LocalhostServerConfiguration,
+        start_listening=False, max_concurrent_battles=1)
+    client = BattleStreamClient(
+        player.ps_client._account_configuration, side=side,
+        on_battle_message=player._handle_battle_message,
+        on_update_challenges=player._update_challenges,
+        on_challenge_request=player._handle_challenge_request, loop=POKE_LOOP)
+    player.ps_client = client
+    player._current_packed_team = record.packed_team(side)
+    tag = record.battle_tag or f"battle-{record.format_id}-recon{_TAG_SEQ}"
+
+    async def _feed_all() -> None:
+        inited = False
+        for chunk in chunks:
+            header = f">{tag}\n"
+            if not inited:
+                inited = True
+                header += "|init|battle\n"
+            await client.feed(header + chunk)
+            if player.done:
+                break
+
+    try:
+        if asyncio.get_running_loop() is POKE_LOOP:
+            raise RuntimeError("infer_action_indices must not be called from POKE_LOOP")
+    except RuntimeError as e:
+        if "POKE_LOOP" in str(e):
+            raise
+    asyncio.run_coroutine_threadsafe(_feed_all(), POKE_LOOP).result()
+    # Every materialized decision must have inverted to exactly one action index. A shortfall means a
+    # recorded choice failed to invert (an [Invalid choice] round, or a mapper edge) — which would
+    # silently DESYNC the opponent's obs (its action history would be a ply short). Fail LOUD instead:
+    # a faithful interior-opponent search can't run on this battle.
+    if len(player.inverted_actions) != len(player._materialized):
+        raise RuntimeError(
+            f"infer_action_indices({side}): recovered {len(player.inverted_actions)} action indices for "
+            f"{len(player._materialized)} decisions — a recorded choice failed to invert, so the "
+            f"opponent's action history would desync its obs. This battle can't drive a faithful "
+            f"interior-opponent search (depth ≥ 2).")
+    return list(player.inverted_actions)
 
 
 def materialize_from_record(

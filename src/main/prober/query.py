@@ -14,6 +14,7 @@ A typical investigation:
     python -m main.prober.query find     <summary.json> disagree           # loads the model
     python -m main.prober.query analyze  <summary.json> <inv> [--tier nearest]
     python -m main.prober.query lookahead <summary.json> [--inv N]               # one-ply V(s′) per action (re-rolls)
+    python -m main.prober.query better-line <summary.json> <inv> [--depth 2]     # SEARCH a better line (beam over the critic)
     python -m main.prober.query replay-counterfactual <summary.json> <inv> <action> [--rollouts N]  # could it have won?
     python -m main.prober.query falsify  <summary.json> [--inv N] [--seeds 40]  # luck vs mistake (re-rolls)
     python -m main.prober.query falsify-scan <run_dir> [--opponent X]            # RUN-LEVEL reducible-vs-aleatoric
@@ -195,6 +196,30 @@ def _build_parser() -> argparse.ArgumentParser:
     plk.add_argument("--ckpt", default=None, help="checkpoint override (else exact→nearest→recent)")
     plk.add_argument("--tier", default="auto", choices=["auto", "nearest", "recent"])
 
+    pbl = sub.add_parser(
+        "better-line",
+        help="SEARCH for a better line: a shallow CRN-anchored BEAM over the critic from a decision — "
+             "returns ONE contrastive trajectory ('at turn T, do X instead' + per-ply ΔV/ΔP(win) + where "
+             "the recorded play went wrong). Opponent: RECORDED at the divergence ply, reloaded policy "
+             "at interior plies. Loads the model; bridge-eval traces with *_reconstruction.json only")
+    pbl.add_argument("battle", help="a battle id (the *_summary.json path from list/summary)")
+    pbl.add_argument("inv", type=int, help="the move_selection invocation to search from")
+    pbl.add_argument("--depth", type=int, default=2, help="OUR plies looked ahead (1 == lookahead; default 2)")
+    pbl.add_argument("--beam", type=int, default=3, help="nodes kept per interior ply (default 3)")
+    pbl.add_argument("--top-k", type=int, default=4, help="our candidate actions per interior node (default 4)")
+    pbl.add_argument("--interior-opponent", default="self", choices=["self", "ckpt", "none"],
+                     help="who the opponent is at INTERIOR plies: self (trainee proxy, default), ckpt "
+                          "(--opponent-ckpt), or none (sim default). The divergence ply is always RECORDED")
+    pbl.add_argument("--opponent-ckpt", default=None,
+                     help="with --interior-opponent ckpt: load THIS checkpoint as the interior opponent")
+    pbl.add_argument("--confirm-rollouts", type=int, default=0,
+                     help="CONFIRM the recommended first action with N Monte-Carlo replay-to-end rollouts "
+                          "vs the RELOADED REAL opponent → win-%% ± CI (default 0 = search only)")
+    pbl.add_argument("--followup", default="random", choices=["random", "default"],
+                     help="policy for NEW mid-turn decisions in re-rolled timelines")
+    pbl.add_argument("--ckpt", default=None, help="checkpoint override (else exact→nearest→recent)")
+    pbl.add_argument("--tier", default="auto", choices=["auto", "nearest", "recent"])
+
     prc = sub.add_parser(
         "replay-counterfactual",
         help="COUNTERFACTUAL replay-to-end: substitute a move at a turn and play the rest LIVE (trainee "
@@ -305,6 +330,11 @@ def _run(args) -> object:
         return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier).lookahead(
             args.battle, inv=args.inv, worst=args.worst,
             n_seeds=args.seeds, followup=args.followup)
+    if args.cmd == "better-line":
+        return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier).better_line(
+            args.battle, args.inv, depth=args.depth, beam=args.beam, top_k=args.top_k,
+            followup=args.followup, interior_opponent=args.interior_opponent,
+            opponent_ckpt=args.opponent_ckpt, confirm_rollouts=args.confirm_rollouts)
     if args.cmd == "replay-counterfactual":
         return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier).replay_counterfactual(
             args.battle, args.inv, args.action, n_rollouts=args.rollouts,

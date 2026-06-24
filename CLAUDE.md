@@ -120,6 +120,8 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 #                                      Choice Band/item/boosts/burn/screens/weather]) + poke_env_gaps/damage_op_fuzz_test.py (looser random-game net),
 #                                  training/hidden_power_tracker_fuzz_test.py,
 #                                  utils/bridge/reconstruction_fuzz_test.py (battle replay/re-roll invariants),
+#                                  utils/bridge/reroll_many_parity_fuzz_test.py (batched reroll_many == per-call reroll_turn, bit-for-bit obs),
+#                                  utils/bridge/search_clone_parity_fuzz_test.py (serializeBattle clone == reroll_many, bit-for-bit obs + value_crn anchor + depth-2),
 #                                  and training/obs_roundtrip_fuzz_test.py (offline obs == live obs, bit-for-bit)
 ```
 
@@ -428,13 +430,18 @@ The same analysis is available headless for one invocation via the
 <states.npz> <inv>`); both share the pure engine in `src/main/prober/engine.py`.
 
 **For agents/scripts**, a JSON API + CLI (`ProbeSession` / `python -m
-main.prober.query summary|list|scan|overview|find|analyze|lookahead|replay-counterfactual|falsify|falsify-scan|calibration`)
+main.prober.query summary|list|scan|overview|find|analyze|lookahead|better-line|replay-counterfactual|falsify|falsify-scan|calibration`)
 exposes the same probing infrastructure programmatically — list/filter battles, **`scan` the worst turn in
 every loss across an opponent (model-free, ranked)**, digest one battle, find
 decisions the model disagrees with, deeply analyze one decision, **`lookahead`
 a decision: one-ply VALUE-DELTA — re-roll each legal action one turn (opp plays its recorded move),
 materialize the successor, and read the critic's V(s′) per action** (the model-scored counterpart to
-`falsify`), **`replay-counterfactual` a decision: substitute a move and play the rest LIVE vs the
+`falsify`), **`better-line` a decision: SEARCH for a better trajectory — a shallow CRN-anchored BEAM
+over the critic that branches a tree by CLONING mid-battle states (the warm `serializeBattle`
+search-server, `utils/bridge/search_session.py`), returning ONE contrastive line ("at turn T do X
+instead" + per-ply ΔV/ΔP(win)); opponent RECORDED at the divergence ply, reloaded policy at interior
+plies; `--depth N`, `--confirm-rollouts N` for a rollout-to-end win-% confirmation; the depth-≥2
+generalization of `lookahead`, bridge-eval traces only**, **`replay-counterfactual` a decision: substitute a move and play the rest LIVE vs the
 RELOADED real opponent to a win/loss — "could it have won if it hadn't choked this turn?"** (a scripted
 prefix over `run_local_battles`; `--rollouts N` resamples the post-divergence dice for a Monte-Carlo
 win-prob ± Wilson CI; bridge-eval traces only), **`falsify`

@@ -1,5 +1,5 @@
 """Pure unit tests for the one-ply lookahead ORCHESTRATION (candidate sweep, ΔV, terminal handling,
-ranking) — the bridge (reroll_turn / materialize_*) and the model are monkeypatched, so no Node, no
+ranking) — the bridge (reroll_many / materialize_*) and the model are monkeypatched, so no Node, no
 torch. The real re-roll → materialize → value pipeline is exercised end-to-end (against a real battle)
 in ``lookahead_integration_test.py``; this file pins the logic on top of it."""
 
@@ -64,13 +64,18 @@ def _install_fakes(monkeypatch):
                                           turn=_TURN) for _ in range(_INV + 1)]
         return MaterializedTrace(decisions=decisions, actions_complete=True, action_choices=dict(_CHOICES))
 
-    def fake_reroll(record, turn, *, seeds, followup="random", **side_actions):
-        our = side_actions.get("p1_action")
-        ended = (our == _TERMINAL_CHOICE)
-        rerolls = [SimpleNamespace(seed=s, outcome={"ended": ended,
-                                                    "winner": "trainee" if ended else None},
-                                   p1_chunks=["S"], p2_chunks=["S"]) for s in seeds]
-        return SimpleNamespace(prefix_p1_chunks=["P"], prefix_p2_chunks=["P"], rerolls=rerolls)
+    def fake_reroll_many(record, turn, arms, *, followup="random", **kw):
+        # The batched driver resolves every (candidate × seed) arm in one process; each arm carries its
+        # own p1/p2 action source + seed + label (the action index). A terminal arm ends the battle.
+        out_arms = []
+        for arm in arms:
+            our = arm.get("p1_action")
+            ended = (our == _TERMINAL_CHOICE)
+            out_arms.append(SimpleNamespace(
+                label=arm["label"], seed=arm["seed"],
+                outcome={"ended": ended, "winner": "trainee" if ended else None},
+                p1_chunks=["S"], p2_chunks=["S"]))
+        return SimpleNamespace(prefix_p1_chunks=["P"], prefix_p2_chunks=["P"], arms=out_arms)
 
     def fake_mat_decisions(chunks, *, username, packed_team, side, actions, battle_format,
                            battle_tag, mappings=None, stop_after_decision=None):
@@ -83,7 +88,7 @@ def _install_fakes(monkeypatch):
         return MaterializedTrace(decisions=decisions, actions_complete=False, action_choices=None)
 
     monkeypatch.setattr(LA, "materialize_from_record", fake_mat_from_record)
-    monkeypatch.setattr(LA, "reroll_turn", fake_reroll)
+    monkeypatch.setattr(LA, "reroll_many", fake_reroll_many)
     monkeypatch.setattr(LA, "materialize_decisions", fake_mat_decisions)
 
 
