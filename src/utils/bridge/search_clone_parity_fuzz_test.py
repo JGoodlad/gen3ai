@@ -176,6 +176,20 @@ def _check_battle(record, summary, npz) -> int:
                 assert ob is not None, (
                     f"{record.battle_tag}: depth-2 composed chunks failed to materialize a successor obs")
                 n_checked += 1
+
+        # (4) WARM-SESSION REUSE — re-open the SAME process's root (the driver clears its node cache)
+        # and re-expand the chosen arm; it must reproduce the first result (no cross-search leakage).
+        if not ch.ended:
+            root2 = ss.open_root(turn, record=record)
+            assert root2.recorded_choices == root.recorded_choices, (
+                f"{record.battle_tag}: re-open_root on the warm session changed the decision point")
+            ch2 = ss.expand_many([{"node_id": root2.node_id, "recorded_exact": True,
+                                   "seed": "original", "label": chosen}])[0]
+            ob_reuse = succ_obs(root2.prefix_p1_chunks if side == "p1" else root2.prefix_p2_chunks,
+                                ch2.p1_chunks if side == "p1" else ch2.p2_chunks, [chosen])
+            assert ob_reuse is not None and np.array_equal(ob_reuse, ob_recorded), (
+                f"{record.battle_tag}: warm-session reuse (2nd open_root) != first result BIT-FOR-BIT")
+            n_checked += 1
     return n_checked
 
 

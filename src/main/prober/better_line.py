@@ -28,6 +28,7 @@ Requires the trace's ``*_reconstruction.json`` sibling (bridge-eval traces), lik
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence
 
@@ -84,6 +85,7 @@ def better_line_decision(
     opp_model=None,
     mappings=None,
     timeout: float = 300.0,
+    session=None,
 ) -> dict:
     """Search for a better line from one ``move_selection`` decision (module header). Returns the
     recommended contrastive trajectory + per-ply deltas. ``depth`` = how many OUR plies to look ahead
@@ -136,8 +138,11 @@ def better_line_decision(
     use_opp = opp_model is not None and depth >= 2
     opp_model_used = "reloaded" if use_opp else ("none(sim-default)" if depth >= 2 else "recorded@divergence")
 
-    with SearchSession(record, timeout=timeout) as ss:
-        root = ss.open_root(turn)
+    # A caller (the search-teacher worker) can inject a WARM SearchSession reused across battles — then
+    # we don't close it (nullcontext); else we own a one-shot session and close it on exit.
+    ctx = nullcontext(session) if session is not None else SearchSession(record, timeout=timeout)
+    with ctx as ss:
+        root = ss.open_root(turn, record=record)
         our_prefix = root.prefix_p1_chunks if side == "p1" else root.prefix_p2_chunks
         opp_prefix = root.prefix_p1_chunks if other == "p1" else root.prefix_p2_chunks
         opp_recorded = root.recorded_choices.get(other)

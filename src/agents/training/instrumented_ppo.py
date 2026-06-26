@@ -257,6 +257,53 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # lives on the extractor (value_dist_mode); the loss is added whenever the mode is on AND coef != 0.
     value_dist_coef: float = 1.0
 
+    # Set by train_rl_agent (like win_prob_coef). The SEARCH-TEACHER AWR policy-distillation weight:
+    # search_teacher_coef * advantage-weighted CE toward the verified-better action A*, over a minibatch
+    # sampled from the standalone `_correction_buffer` (NOT the rollout buffer — searched states are
+    # off-policy). 0.0 = OFF (loss byte-identical even if the buffer fills). Training-only (scales the
+    # loss, no forward/weight change) → NOT version-locked. `_correction_buffer` / `_search_teacher_on`
+    # are runtime attrs set externally (like `_async_rollout`). Design: design_search_teacher.md.
+    search_teacher_coef: float = 0.0
+    # AWR temperature β: weight w = clamp(exp(advantage/β), max=w_clip). Higher β → flatter weighting.
+    search_teacher_beta: float = 1.0
+    # Corrections sampled per train() for the AWR forward (its OWN forward — small, e.g. 256).
+    search_teacher_batch_size: int = 256
+    # OFF-POLICY value term (DEFAULT 0 — soundness): the search value is V^π*(s), so regressing the
+    # current critic (which feeds GAE) toward it biases advantages. Only enable for the joint-ExIt A/B.
+    search_teacher_value_coef: float = 0.0
+
+    def _excluded_save_params(self):
+        # The search-teacher's `_correction_buffer` lives on the model (the callback↔train() hand-off),
+        # but it is TRANSIENT scaffolding like the rollout buffer — and it holds a threading.Lock that
+        # cloudpickle can't serialize (model.save would crash). Exclude it from the checkpoint (also keeps
+        # checkpoints small — a full buffer is hundreds of MB of obs); it's re-created on resume, empty,
+        # and the workers/cycle refill it. Mirrors SB3 excluding `rollout_buffer`.
+        return super()._excluded_save_params() + ["_correction_buffer"]
+
+    @staticmethod
+    def _searchteacher_loss(logits, action_mask, better_action, advantage,
+                            beta_awr: float = 1.0, w_clip: float = 20.0):
+        """ADVANTAGE-WEIGHTED CE (AWR) toward the verified-better action A* (the search-teacher signal).
+
+        ``logits`` [B, n_actions] = ``policy.get_distribution(obs_dict).distribution.logits`` on the
+        CORRECTION obs (its own forward); ``better_action`` [B] = A*; ``advantage`` [B] = the CONFIRMED
+        win-rate improvement of A* vs the EXACT opponent (> 0, already CI-gated) — NOT a critic
+        advantage. Weight ``w = clamp(exp(adv/β), max=w_clip)`` up-weights high-margin corrections. The
+        policy CE is in logit space (no PopArt). Returns ``(loss, metrics)`` or ``None`` on empty.
+        """
+        if logits is None or better_action is None or better_action.numel() == 0:
+            return None
+        masked = logits + (action_mask.to(logits.dtype) - 1.0) * 1e9   # illegal → −inf (A* is always legal)
+        w = th.exp(advantage / beta_awr).clamp(max=w_clip)
+        ce = F.cross_entropy(masked, better_action.long(), reduction="none")   # [B]
+        loss = (w * ce).sum() / w.sum().clamp(min=1e-6)
+        with th.no_grad():
+            agree = (masked.argmax(-1) == better_action).float().mean()
+            metrics = {"loss": float(loss), "agree_rate": float(agree),
+                       "mean_adv": float(advantage.mean()), "mean_w": float(w.mean()),
+                       "ce": float(ce.mean()), "n": int(better_action.numel())}
+        return loss, metrics
+
     @staticmethod
     def _win_prob_loss(logits, target, mask, margin=None):
         """Supervised BCE loss for the auxiliary WIN-PROBABILITY head (``last_win_prob_logits`` [B,1]).
@@ -865,6 +912,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         vf_clip_fractions: list[float] = []  # +INSTRUMENTATION
         belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
         win_prob_metrics: dict[str, list[float]] = {}  # +WIN-PROB: per-minibatch diagnostics (dict of lists)
+        teacher_metrics: dict[str, list[float]] = {}    # +SEARCH-TEACHER: AWR per-minibatch diagnostics
         value_dist_metrics: dict[str, list[float]] = {}  # +VALUE-DIST: per-minibatch HL-Gauss diagnostics
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
         belief_aux_on = self.opp_belief_aux_coef > 0.0
@@ -886,6 +934,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
         value_dist_on = (
             getattr(self.policy.features_extractor, "value_dist_mode", "none") != "none"
             and self.value_dist_coef != 0.0
+        )
+        # +SEARCH-TEACHER: AWR policy distillation. On when enabled, the coef is non-zero, AND the
+        # standalone correction buffer has been populated (the callback fills it from worker shards).
+        # Each minibatch samples its OWN correction batch + does its OWN policy forward (off-policy
+        # states not in the rollout). OFF / empty buffer → skipped (loss byte-identical to upstream).
+        search_teacher_on = (
+            getattr(self, "_search_teacher_on", False) and self.search_teacher_coef != 0.0
+            and getattr(self, "_correction_buffer", None) is not None
+            and len(self._correction_buffer) > 0
         )
 
         continue_training = True
@@ -1181,6 +1238,36 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             for _vk, _vv in vd_m.items():
                                 value_dist_metrics.setdefault(_vk, []).append(float(_vv))
 
+                # +SEARCH-TEACHER: AWR policy distillation toward the verified-better action. The
+                # corrections are OFF-POLICY (searched eval-trace states, not in this rollout), so this
+                # samples its OWN minibatch from the standalone _correction_buffer and runs its OWN policy
+                # forward (get_distribution → masked logits). Folded at search_teacher_coef; the CE
+                # gradient pulls the trunk (measured by grad/searchteacher_share). The OPTIONAL value term
+                # (default coef 0) is off-policy (the search value is V^π*) — kept behind its own coef.
+                # OFF / empty buffer → skipped (loss byte-identical).
+                searchteacher_term = None
+                if search_teacher_on:
+                    _batch = self._correction_buffer.sample(self.search_teacher_batch_size)
+                    if _batch:
+                        from agents.training.teacher.buffer import CorrectionBuffer as _CB
+                        _td = _CB.to_tensors(_batch, self.device)
+                        _dist = self.policy.get_distribution(_td["obs_dict"])
+                        _st = self._searchteacher_loss(
+                            _dist.distribution.logits, _td["action_mask"], _td["better_action"],
+                            _td["advantage"], beta_awr=self.search_teacher_beta)
+                        if _st is not None:
+                            _st_loss, _st_m = _st
+                            searchteacher_term = self.search_teacher_coef * _st_loss
+                            if self.search_teacher_value_coef != 0.0:   # OFF by default (soundness)
+                                _vt = self.policy.predict_values(_td["obs_dict"]).flatten()
+                                _vtgt = (popart.normalize(_td["confirmed_value"]) if popart is not None
+                                         else _td["confirmed_value"])
+                                searchteacher_term = searchteacher_term + \
+                                    self.search_teacher_value_coef * ((_vt - _vtgt) ** 2).mean()
+                            loss = loss + searchteacher_term
+                            for _tk, _tv in _st_m.items():
+                                teacher_metrics.setdefault(_tk, []).append(float(_tv))
+
                 # Per-term auxiliary pull on the shared trunk, for the grad-balance probe — EVERY
                 # active scaffold competes with policy/value there, so each is broken out INDIVIDUALLY
                 # (not lumped into one "belief" norm) and the probe puts them on one common denominator
@@ -1197,6 +1284,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 if hp_type_term is not None:       aux_probe_terms["hp_type"] = hp_type_term
                 if win_prob_term is not None:      aux_probe_terms["win_prob"] = win_prob_term
                 if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term
+                if searchteacher_term is not None: aux_probe_terms["searchteacher"] = searchteacher_term
                 aux_on = belief_aux_on or move_belief_on or latent_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
                 # wait for one so their shares aren't silently dropped from the single per-train() sample.
@@ -1379,6 +1467,19 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if value_dist_metrics:
             for _vk, _vvals in value_dist_metrics.items():
                 self.logger.record(f"value_dist/{_vk}", float(np.mean(_vvals)))
+
+        # +SEARCH-TEACHER: AWR diagnostics under their OWN `teacher/` TB prefix. `agree_rate` (policy ↔
+        # A* — should RISE as the distillation lands), `mean_adv` (the confirmed win-rate improvement of
+        # the corrections), `mean_w` (AWR weight), `ce`, `loss`, `n`; `buffer_size` = the standalone ring
+        # depth. The shared-trunk pull rides `grad/searchteacher_share` (+ `_policy_cosine` — the live
+        # "is the teacher fighting the actor" signal). `teacher/yield` + `/corrections_per_cycle` are
+        # emitted by SearchTeacherCallback (cross-process facts). Empty (off / empty buffer) → not logged.
+        if teacher_metrics:
+            for _tk, _tvals in teacher_metrics.items():
+                self.logger.record(f"teacher/{_tk}", float(np.mean(_tvals)))
+            cb = getattr(self, "_correction_buffer", None)
+            if cb is not None:
+                self.logger.record("teacher/buffer_size", float(len(cb)))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

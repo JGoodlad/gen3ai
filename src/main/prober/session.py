@@ -377,6 +377,21 @@ class ProbeSession:
         self._by_short = {_short_id(b): b for b in self.tree.all_battles()}
         self._gamma = self._read_gamma()
 
+    def close(self) -> None:
+        """Drop the cached models/summaries. A long-lived caller — the persistent search-teacher
+        worker builds one ``ProbeSession`` per generation iteration — would otherwise accumulate a
+        ``ProbeModel`` (+ a counterfactual ``MaskablePPO``) per checkpoint forever. Idempotent."""
+        self._models.clear()
+        self._play_models.clear()
+        self._summaries.clear()
+
+    def __enter__(self) -> "ProbeSession":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        self.close()
+        return False
+
     # -- run orientation -----------------------------------------------------
 
     def run_summary(self) -> dict:
@@ -667,7 +682,8 @@ class ProbeSession:
 
     def better_line(self, battle_id: str, inv: int, *, depth: int = 2, beam: int = 3, top_k: int = 4,
                     followup: str = "random", opponent_ckpt: "str | None" = None,
-                    interior_opponent: str = "self", confirm_rollouts: int = 0) -> dict:
+                    interior_opponent: str = "self", confirm_rollouts: int = 0,
+                    search_session=None) -> dict:
         """SEARCH for a better line than the model played (``better_line.py``): a shallow CRN-anchored
         beam over the critic from an anchored ``move_selection`` decision, returning ONE contrastive
         trajectory ("at turn T, do X instead — here is the line, the per-ply ΔV/ΔP(win), and where the
@@ -711,7 +727,7 @@ class ProbeSession:
 
         out = better_line_decision(
             model, record, summary, npz, int(inv), depth=depth, beam=beam, top_k=top_k,
-            followup=followup, opp_model=opp_model)
+            followup=followup, opp_model=opp_model, session=search_session)
         out["interior_opponent"] = opp_used
 
         # Ground-truth CONFIRM of the recommended first action vs the RELOADED REAL opponent.

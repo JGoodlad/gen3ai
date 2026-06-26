@@ -1444,6 +1444,104 @@ aux. Design + the K1 honesty frame: `designs/ai_v6/design_distributional_value_c
   `main/prober/engine_test.py` (`build_value_dist`). End-to-end `--debug --debug-eval --use-showdown-bridge
   --value-dist-mode read_only` smoke captures a trace whose npz carries `value_dist`.
 
+## Search-as-teacher (`--search-teacher`, `teacher/` package)
+
+Selective **Expert Iteration** — the offline-teacher plateau-breaker (design:
+`designs/ai_v6/design_search_teacher.md`). Each cycle, **search + rollout-confirm the worst loss
+craters** of recent eval traces and distil the VERIFIED-better action into the policy via an
+**advantage-weighted CE aux loss (AWR)**. Off by default (`--search-teacher` absent / coef 0 ⇒
+byte-identical). The "expert" is the prober's `better_line` beam + the rollout-confirm tiers
+(`src/main/prober/`); this wires them into training. Package `src/agents/training/teacher/`:
+
+- **`selection.py`** (`select_candidates`, Phase 0, model-free) — the two-stage funnel:
+  `ProbeSession.scan` ranks the worst-ΔV loss craters → `falsifier.falsify_battle` gates to *reducible
+  MISTAKEs* (not aleatoric LUCK — don't teach against dice) → expand to the crater **±window** (the
+  cause is usually 1–2 turns BEFORE the value crater). Ranks by |δ|, caps at the budget.
+- **`opponent_resolver.py`** (`resolve_opponent`) — the EXACT opponent: a `sentinel_<i>` trace → its
+  `models/<run>/snapshots/snapshot_<step>.zip` (the positional index→step map is in
+  `metadata.json:latest_eval.pool.sentinels[i].snapshot`, valid only for the latest cycle — which is
+  what the teacher runs on); a bot → reproducible from its name; anything else → **`'unresolved'` →
+  SKIPPED, never approximated** (distilling "A* beats a proxy" is a soundness failure, not a degrade).
+- **`produce.py`** (`produce_correction`) — the 3-tier strictly-better gate: SEARCH (`session.better_line`
+  with `interior_opponent='ckpt'`, the exact opp) → CONFIRM (rollout-to-end vs the same exact opp,
+  Wilson CI) → GATE (keep only if the Wilson LOWER bound beats the played loss rate). Distils the
+  **CONFIRMED** win-rate improvement (`confirmed − played`), never the critic's optimistic backed-up
+  value (the Spore 95%-vs-62% lesson). Staleness re-verify: if the frozen trainee already argmaxes A*,
+  skip (`already_known`).
+- **`buffer.py`** (`Correction`, `CorrectionBuffer`) — a bounded recency RING of corrections, sampled
+  (with its own forward) on each rollout minibatch inside `train()`. **STANDALONE, not the rollout buffer** — the searched states are
+  off-policy (older eval traces), so they must never enter GAE / the clip objective. Lives on
+  `model._correction_buffer`.
+- **`callback.py`** (`SearchTeacherCallback`) + **`src/main/search_teacher_worker.py`** — the
+  non-blocking driver mirrors the eval cadence: freeze the trainee, spawn frozen-snapshot worker
+  subprocesses (own POKE_LOOP, spare cores — the live trunk mutates, so a thread is unsafe; isolation
+  is why eval uses subprocesses too), each runs the search + confirm over a candidate slice (ONE warm
+  `SearchSession` reused → the Node spawn is amortized), publishes a shard (obs `.npz` + scalars
+  `.json`); the parent polls and fills the buffer. Skip-while-running, watchdog, crash-logged.
+- **SUPPLY+POOL mode (`--teacher-persistent`)** — `teacher/generate.py` +
+  `src/main/search_teacher_persistent_worker.py`. The per-cycle mode reads eval traces (a trickle every
+  ~2M steps); the persistent mode is a LONG-LIVED worker pool that GENERATES its own fresh losses (the
+  frozen trainee vs sampled current opponents — the recent pool snapshots + bots — recorded via the
+  eval forensic path `begin_forensic_cycle` + `run_local_battles`) and searches them CONTINUOUSLY,
+  dripping corrections into the buffer instead of a 2M-step burst. The parent RE-FREEZES the snapshot
+  every `--teacher-refresh-steps` (default 500k, written to a polled `control.json`) so long-lived
+  workers track the moving policy, and `_ingest`s correction shards incrementally each `_on_step`.
+  Because the worker CHOSE the opponent, the exact-opponent is KNOWN directly (no sentinel-resolution
+  fragility); `falsify_gate=False` here (supply is plentiful → the CONFIRM is the gate). Never touches
+  the training hot path (a frozen-snapshot side activity, like eval). Validated end-to-end: one worker
+  published 8 verified-better corrections from self-generated battles in ~150 s. Flags:
+  `--teacher-persistent`, `--teacher-refresh-steps`, `--teacher-gen-battles`.
+  - **Lifecycle hardening** (a long-lived, multi-process pool must self-heal — an adversarial review
+    surfaced these): the parent `_reap_and_respawn`s a crashed worker on a step-backoff (so a dead
+    worker can't silently drain the pool to zero — `teacher/workers_alive`/`worker_respawns_total`);
+    snapshot pruning keeps the latest **three** (numeric `_version_key`, not lexical — `v10 > v9`) and
+    the worker re-checks `os.path.exists` before every snapshot/opponent load + wraps both in try/except
+    (a pruned/corrupt file SKIPS the iteration, never crashes); `_spawn_persistent` wipes stale shards +
+    `gen_*` dirs from a prior crash/restart so a fresh pool never double-ingests; `_ingest` CONSUMES
+    (deletes) a shard BEFORE buffering it (a delete failure DROPS it rather than re-globbing it into a
+    duplicate); the worker's per-iteration `ProbeSession` is a context manager (drops its cached models)
+    and the warm `SearchSession` recycles every `recycle_every` (Node V8-heap backstop; the launcher's
+    3 h restart owns the rest). **The `_correction_buffer` is `_excluded_save_params` from the SB3 save**
+    — it holds a `threading.Lock` that cloudpickle can't serialize (it would crash `model.save()` at the
+    pre-train roundtrip smoke for EVERY `--search-teacher` run), and it's transient scaffolding like the
+    rollout buffer (re-created empty on resume; keeps checkpoints small).
+
+**The AWR aux loss** (`InstrumentedMaskablePPO._searchteacher_loss` + the `train()` fold): `coef ·
+advantage-weighted CE(π(·|s), A*)` over a minibatch sampled from `_correction_buffer` with its OWN
+policy forward (`get_distribution`); weight `w = clamp(exp(advantage/β), w_clip)`. The advantage is the
+CONFIRMED win-rate improvement (NOT a critic advantage — the soundness point). The shared-trunk pull
+rides `grad/searchteacher_share` / `_policy_cosine` (the live "is the teacher fighting the actor"
+signal). `teacher/*` metrics: `agree_rate` (π ↔ A*, should RISE), `mean_adv`, `mean_w`, `loss`, `n`,
+`buffer_size`, `corrections_per_cycle`, `yield`, `mean_confirmed_dwin`.
+
+**Why NOT value-only:** the search VALUE is the *improved-policy* value V^π*(s); regressing the PPO
+critic (which must predict V^π for GAE) toward it biases advantages. So the signal is the **policy**
+(AWR); the off-policy value term is wired but `--search-teacher-value-coef 0` by default (the
+joint-ExIt A/B). **All training-only** (no `ARCH_SIGNATURE`/`MODEL_CONFIG_VERSION` bump; coefs
+`_resolve`-inherited on a flagless resume, operational knobs forwarded by the launcher). **Honesty
+gate:** the search *finding* a better line ≠ it *helping* — validate `eval/td_resid_tail` /
+calibration / ELO on a `coef=0` A/B; and ~⅔ of grind losses are matchup-lost-from-turn-1 (UNCOACHABLE
+per turn) — this attacks the thrown-late ⅓.
+
+| Flag | default | role |
+|---|---|---|
+| `--search-teacher` | off | master enable (constructs the callback + buffer) |
+| `--search-teacher-coef` | `0.0` | AWR policy CE weight (0 = byte-identical) |
+| `--search-teacher-value-coef` | `0.0` | off-policy value term (OFF — soundness) |
+| `--search-teacher-beta` | `1.0` | AWR temperature β |
+| `--teacher-search-budget` | `200` | candidates searched per cycle |
+| `--teacher-confirm-rollouts` | `8` | Monte-Carlo confirm games (the CI gate) |
+| `--teacher-search-workers` | `3` | worker subprocesses per cycle |
+| `--teacher-search-freq` | `0` | steps between cycles (0 = eval freq) |
+
+**Tests** (`src/agents/training/teacher/*_test.py`): `buffer_test` (ring/sample/stack), `awr_loss_test`
+(AWR math, masking, grad), `opponent_resolver_test` (bot/sentinel/unresolved, tmp metadata),
+`produce_test` (the 3-tier gate with a fake session), `selection_test` (the funnel with a fake
+ProbeSession + monkeypatched falsify), `callback_test` (shard→buffer collect + crash-graceful); plus
+`instrumented_ppo_test.py::test_search_teacher_*` (the AWR fold in a real `train()` moves the policy
+toward A*; off-by-default no-op). End-to-end pipeline (selection → exact-opp search → confirm → gate →
+Correction) validated against a real run.
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:

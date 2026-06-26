@@ -389,6 +389,10 @@ def _model_hparams(model) -> dict:
         "opp_belief_latent_coef": float(getattr(model, "opp_belief_latent_coef", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),
+        "search_teacher_coef": float(getattr(model, "search_teacher_coef", 0.0)),
+        "search_teacher_value_coef": float(getattr(model, "search_teacher_value_coef", 0.0)),
+        "search_teacher_beta": float(getattr(model, "search_teacher_beta", 1.0)),
+        "search_teacher_batch_size": int(getattr(model, "search_teacher_batch_size", 256)),
         "batch_size": model.batch_size,
         "grad_accum_steps": int(getattr(model, "grad_accum_steps", 1)),
         "n_steps": model.n_steps,
@@ -1053,6 +1057,55 @@ async def main():
                              "--opp-belief-aux-coef. Default 1.0. TRAINING-only (not version-locked; "
                              "inherited on a flagless resume). Ignored when --win-prob-mode none. Lower it "
                              "if 'shaping' fights the policy (watch grad/win_prob_share).")
+    # --- SEARCH-AS-TEACHER (offline ExIt plateau-breaker; designs/ai_v6/design_search_teacher.md) ---
+    # All TRAINING-only (no version bump; coef 0 / flag absent = byte-identical). The coefs are
+    # _resolve'd (flagless-resume-inherited); the operational knobs are forwarded by the launcher.
+    parser.add_argument("--search-teacher", "--search_teacher", dest="search_teacher",
+                        action="store_true",
+                        help="Enable the search-teacher: each cycle, search + rollout-confirm the worst "
+                             "falsify-flagged loss craters (EXACT reloaded opponent), CI-gate strictly-"
+                             "better corrections, and distil them into the policy via an AWR aux loss. "
+                             "Non-blocking (subprocess workers). Recommended at PLATEAU. Re-pass on resume.")
+    parser.add_argument("--search-teacher-coef", "--search_teacher_coef", dest="search_teacher_coef",
+                        type=float, default=None,
+                        help="AWR policy-distillation weight (search_teacher_coef * advantage-weighted CE "
+                             "toward the verified-better action). Default 0.0 = OFF (loss byte-identical). "
+                             "Training-only (inherited on a flagless resume). Watch grad/searchteacher_share "
+                             "+ teacher/agree_rate.")
+    parser.add_argument("--search-teacher-value-coef", "--search_teacher_value_coef",
+                        dest="search_teacher_value_coef", type=float, default=None,
+                        help="OFF by default (0.0) — the off-policy value term (the search value is V^π*, "
+                             "which biases the GAE critic). Only for the joint-ExIt A/B.")
+    parser.add_argument("--search-teacher-beta", "--search_teacher_beta", dest="search_teacher_beta",
+                        type=float, default=None, help="AWR temperature β (default 1.0).")
+    parser.add_argument("--search-teacher-batch-size", "--search_teacher_batch_size",
+                        dest="search_teacher_batch_size", type=int, default=None,
+                        help="Corrections sampled per train() for the AWR forward (default 256).")
+    parser.add_argument("--search-teacher-buffer-size", "--search_teacher_buffer_size",
+                        dest="search_teacher_buffer_size", type=int, default=20000,
+                        help="Correction ring capacity (recency; default 20000).")
+    parser.add_argument("--teacher-search-budget", "--teacher_search_budget", dest="teacher_search_budget",
+                        type=int, default=200, help="Candidates searched per cycle (budget cap; default 200).")
+    parser.add_argument("--teacher-confirm-rollouts", "--teacher_confirm_rollouts",
+                        dest="teacher_confirm_rollouts", type=int, default=8,
+                        help="Monte-Carlo confirm games per candidate for the Wilson-CI strictly-better gate.")
+    parser.add_argument("--teacher-search-workers", "--teacher_search_workers",
+                        dest="teacher_search_workers", type=int, default=3,
+                        help="Search-teacher worker subprocesses per cycle (default 3).")
+    parser.add_argument("--teacher-search-freq", "--teacher_search_freq", dest="teacher_search_freq",
+                        type=int, default=0, help="Steps between search-teacher cycles (0 = use the eval freq).")
+    parser.add_argument("--teacher-persistent", "--teacher_persistent", dest="teacher_persistent",
+                        action="store_true",
+                        help="PERSISTENT-pool mode (the supply lever): long-lived workers GENERATE their "
+                             "own fresh losses (frozen trainee vs current opponents) and search them "
+                             "CONTINUOUSLY, dripping corrections into the buffer — instead of the bursty "
+                             "per-cycle eval-trace scan. Higher, fresher supply; recommended once enabled.")
+    parser.add_argument("--teacher-refresh-steps", "--teacher_refresh_steps", dest="teacher_refresh_steps",
+                        type=int, default=500_000,
+                        help="Persistent mode: re-freeze the trainee snapshot the workers use every N "
+                             "steps (so long-lived workers track the moving policy). Default 500k.")
+    parser.add_argument("--teacher-gen-battles", "--teacher_gen_battles", dest="teacher_gen_battles",
+                        type=int, default=12, help="Persistent mode: battles generated per worker iteration.")
     parser.add_argument("--value-dist-mode", "--value_dist_mode", dest="value_dist_mode",
                         choices=("none", "read_only", "shaping"), default=None,
                         help="Distributional VALUE head (v29): an interpretability readout off the value "
@@ -1564,6 +1617,10 @@ async def main():
     _resolve("value_dist_vmin", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_vmax", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
+    _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)
+    _resolve("search_teacher_value_coef", 0.0)  # training-only off-policy value term (default OFF)
+    _resolve("search_teacher_beta", 1.0)       # training-only AWR temperature
+    _resolve("search_teacher_batch_size", 256)  # training-only per-train() correction sample
     _resolve("damage_topk_k", 0)               # v30 structural int (top-K incoming; version-checked, fresh-only)
     _resolve("damage_refine_rounds", 0)        # v31 structural int (iterative refine; version-checked, fresh-only)
     _resolve("damage_matrices_outgoing", False)  # v32 structural (outgoing damage matrix; version-checked, fresh-only)
@@ -2484,6 +2541,18 @@ async def main():
     if args.win_prob_mode != "none":
         from agents.training.win_prob_callback import WinProbLabelCallback
         callbacks.append(WinProbLabelCallback())
+    # SEARCH-TEACHER: each cycle, search + confirm the worst loss craters and distil verified-better
+    # corrections into model._correction_buffer (the AWR aux loss samples it). Non-blocking subprocess
+    # workers; off by default (the buffer fills nothing → coef-0 loss is byte-identical regardless).
+    if args.search_teacher:
+        from agents.training.teacher.callback import SearchTeacherCallback
+        callbacks.append(SearchTeacherCallback(
+            run_dir=model_dir,
+            freq_steps=(args.teacher_search_freq if args.teacher_search_freq > 0 else 2_000_000),
+            budget=args.teacher_search_budget, n_workers=args.teacher_search_workers,
+            confirm_rollouts=args.teacher_confirm_rollouts,
+            persistent=args.teacher_persistent, refresh_steps=args.teacher_refresh_steps,
+            n_battles=args.teacher_gen_battles, verbose=1))
     eval_callback = None
     # A --debug smoke run skips ALL eval by default — the periodic eval callback below AND the
     # final win-rate eval — so it needs no eval opponents / Showdown eval connection and stays
@@ -2709,6 +2778,16 @@ async def main():
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss weight (training-only; resume-mutable)
+        # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). Buffer is filled by the
+        # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
+        model.search_teacher_coef = args.search_teacher_coef
+        model.search_teacher_value_coef = args.search_teacher_value_coef
+        model.search_teacher_beta = args.search_teacher_beta
+        model.search_teacher_batch_size = args.search_teacher_batch_size
+        model._search_teacher_on = bool(args.search_teacher)
+        if args.search_teacher:
+            from agents.training.teacher.buffer import CorrectionBuffer
+            model._correction_buffer = CorrectionBuffer(args.search_teacher_buffer_size)
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
         model.gae_lambda = 0.80
         # Resume-path LR setup. Phase determines whether we read from the
@@ -2984,6 +3063,15 @@ async def main():
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss (0.0 = off)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss (mode none = off)
+        # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). See the resume site.
+        model.search_teacher_coef = args.search_teacher_coef
+        model.search_teacher_value_coef = args.search_teacher_value_coef
+        model.search_teacher_beta = args.search_teacher_beta
+        model.search_teacher_batch_size = args.search_teacher_batch_size
+        model._search_teacher_on = bool(args.search_teacher)
+        if args.search_teacher:
+            from agents.training.teacher.buffer import CorrectionBuffer
+            model._correction_buffer = CorrectionBuffer(args.search_teacher_buffer_size)
         version = ModelVersion.from_layout_and_policy_kwargs(
             extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef,
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,

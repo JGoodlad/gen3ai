@@ -78,9 +78,13 @@ class SearchError(RuntimeError):
 
 
 class SearchSession:
-    """A live ``search_driver.js`` process; one per ``better_line`` call."""
+    """A live ``search_driver.js`` process. One per ``better_line`` call, OR — for the search-teacher's
+    background workers — ONE WARM process REUSED across many battles (pass ``record=None`` here and the
+    per-battle record to :meth:`open_root`), so the ~0.6 s Node spawn is amortized over hundreds of
+    searches instead of paid per search. Each ``open_root`` starts a fresh tree (the driver clears its
+    node cache), so reuse is memory-bounded and battle-independent."""
 
-    def __init__(self, record: ReconstructionRecord, *, timeout: float = 120.0):
+    def __init__(self, record: "Optional[ReconstructionRecord]" = None, *, timeout: float = 120.0):
         self._record = record
         self._timeout = timeout
         self._seq = 0
@@ -149,9 +153,14 @@ class SearchSession:
 
     # -- API ----------------------------------------------------------------
 
-    def open_root(self, turn: int) -> RootView:
-        """Reconstruct to the start of turn ``turn`` and snapshot it as the search root."""
-        out = self._call({"cmd": "open_root", "record": self._record.to_dict(), "turn": int(turn)})
+    def open_root(self, turn: int, *, record: "Optional[ReconstructionRecord]" = None) -> RootView:
+        """Reconstruct to the start of turn ``turn`` and snapshot it as the search root. ``record``
+        targets a SPECIFIC battle on a reused session (else the one passed to ``__init__``); it also
+        clears the driver's node cache, so a warm process serves many battles' searches in turn."""
+        rec = record if record is not None else self._record
+        if rec is None:
+            raise SearchError("open_root needs a record (pass record= or construct with one)")
+        out = self._call({"cmd": "open_root", "record": rec.to_dict(), "turn": int(turn)})
         return RootView(
             node_id=out["node_id"], requests=out["requests"],
             recorded_choices=out["recorded_choices"], pre_state=out["pre_state"],

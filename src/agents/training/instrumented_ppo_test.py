@@ -284,3 +284,66 @@ def test_noise_scale_logged_only_when_accumulating():
     assert "train/noise_scale" in model.logger.keys
     assert "train/noise_scale_ratio" in model.logger.keys
     assert model._noise_ema_g2 != 2.0 and model._noise_ema_s != 50.0   # a sample was folded in
+
+
+def _fill_correction_buffer(model, n=8, better=1, adv=0.8):
+    """Populate model._correction_buffer with corrections matching the tiny env (1-dim obs, 2 actions)."""
+    from agents.training.teacher.buffer import Correction, CorrectionBuffer
+    buf = CorrectionBuffer(100)
+    for i in range(n):
+        buf.add(Correction(
+            obs=np.array([float(i % 7)], dtype=np.float32),
+            action_mask=np.ones(2, dtype=np.int8),
+            better_action=better, advantage=adv, confirmed_value=0.7,
+            step_produced=0, opponent="bot"))
+    model._correction_buffer = buf
+
+
+def test_search_teacher_off_is_noop():
+    """search_teacher_on False (the default) ⇒ train() never touches the AWR path — byte-identical."""
+    model, _ = _build_tiny_ppo()
+    model.learn(total_timesteps=8 * 4)        # off by default; must not crash, no _correction_buffer needed
+    assert getattr(model, "_search_teacher_on", False) is False
+
+
+def test_search_teacher_awr_folds_into_train():
+    """With the AWR on + a populated buffer, train() runs the extra forward + distillation term and
+    PULLS the policy toward A* (the buffer's better_action) — agree-rate rises after a few updates."""
+    model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
+    model._search_teacher_on = True
+    model.search_teacher_coef = 5.0
+    model.search_teacher_value_coef = 0.0
+    model.search_teacher_beta = 1.0
+    model.search_teacher_batch_size = 4
+    _fill_correction_buffer(model, n=16, better=1, adv=1.0)   # always teach action 1
+
+    # the corrections' obs/mask, to measure the policy's agreement with A*=1 before/after.
+    import torch as th
+    obs = {"observation": th.tensor([[float(i % 7)] for i in range(16)]),
+           "action_mask": th.ones((16, 2))}
+    def agree():
+        with th.no_grad():
+            lg = model.policy.get_distribution(obs).distribution.logits
+        return float((lg.argmax(-1) == 1).float().mean())
+
+    before = agree()
+    for _ in range(15):                       # several train() calls (each does one AWR-weighted update)
+        model.learn(total_timesteps=8 * 4, reset_num_timesteps=False)
+    after = agree()
+    assert after >= before                    # the distillation moved the policy toward A* (monotone-ish)
+    assert after > 0.5                         # and it now predominantly plays the taught action
+
+
+def test_search_teacher_buffer_excluded_from_save(tmp_path):
+    """REGRESSION: `_correction_buffer` holds a threading.Lock — without excluding it from the SB3 save,
+    `model.save()` dies with 'cannot pickle _thread.lock' (it crashed the pre-train roundtrip smoke, so
+    EVERY --search-teacher run). It must save cleanly AND not be persisted (re-created empty on resume,
+    so checkpoints stay small)."""
+    model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
+    model._search_teacher_on = True
+    _fill_correction_buffer(model, n=8)
+    assert "_correction_buffer" in model._excluded_save_params()
+    p = str(tmp_path / "m.zip")
+    model.save(p)                              # must NOT raise (the bug was a lock-pickle crash right here)
+    reloaded = InstrumentedMaskablePPO.load(p, device="cpu")
+    assert not hasattr(reloaded, "_correction_buffer")   # transient scaffolding → kept out of the checkpoint

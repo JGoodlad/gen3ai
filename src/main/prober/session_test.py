@@ -109,6 +109,14 @@ def test_analyze_loads_resolved_model(tmp_path):
     json.dumps(d)
 
 
+def test_close_clears_caches_and_context_manager(tmp_path):
+    run, summ = _build_run(tmp_path)
+    with ProbeSession(run, model_loader=lambda path: _FakeModel()) as sess:
+        sess.analyze(summ, 0)
+        assert sess._models and sess._summaries        # a model + summary got cached during analyze
+    assert not sess._models and not sess._summaries     # __exit__ → close() dropped the caches
+
+
 def test_find_disagree_uses_model(tmp_path):
     run, summ = _build_run(tmp_path)
     sess = ProbeSession(run, model_loader=lambda path: _FakeModel())

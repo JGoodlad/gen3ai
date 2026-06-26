@@ -73,6 +73,9 @@ async function openRoot(req) {
   const record = req.record;
   const T = req.turn;
   if (!Number.isInteger(T) || T < 1) throw new Error(`invalid turn ${T}`);
+  // A fresh root starts a fresh tree; drop the previous search's nodes so a WARM process reused
+  // across many battles (the search-teacher workers) stays memory-bounded. ids stay monotonic.
+  NODES.clear();
   const sess = buildSession();
   try {
     const restIdx = buildToTurn(sess, record, T);
