@@ -310,7 +310,7 @@ from typing import Any, Dict, List
 #   NEUTRAL boosts (gen3 resets on switch). STRUCTURAL toggle like damage_op (widens both projection
 #   in_features via the op out_dim); gated in check_compatible (bool); OFF byte-for-byte (NO ARCH_SIGNATURE
 #   bump). Requires damage_op. Design: designs/ai_v6/design_per_move_damage_matrices.md.
-MODEL_CONFIG_VERSION = 41
+MODEL_CONFIG_VERSION = 42
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1941,4 +1941,10 @@ def _migrate_config(data: dict) -> dict:
         # it is a RESUME-IMMUTABLE training hparam (enforced via check_belief_grad_mode, NOT check_compatible).
         data.setdefault("belief_grad_mode", "shaping")
         data["config_version"] = 41
+    if version < 42:
+        # v42: turn-history depth cut N_HISTORY_TURNS 10 → 7 — a retrain-class obs-DIM change (total obs
+        # 3469 → 2992). No new field: n_history_turns/total_dim are already weight fields, so check_compatible
+        # auto-rejects a pre-v42 checkpoint via the obs-dim weight-field check (NO ARCH_SIGNATURE bump). This
+        # block only advances the version marker so the migration chain reaches the current version.
+        data["config_version"] = 42
     return data

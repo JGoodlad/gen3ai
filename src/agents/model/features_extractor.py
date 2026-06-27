@@ -50,7 +50,7 @@ MOVE_LATENT_DIM = 32              # output dim of the per-move latent (grading i
 ROLE_ENCODER_HIDDEN = [256, 128]  # [hidden, output] of per-Pokémon role encoder
 ACTIVE_CTX_HIDDEN = [64, 32]      # [hidden, output] of active context encoder
 NET_ARCH = [512, 512]             # MLP policy layers (SB3 policy_kwargs["net_arch"])
-N_HISTORY_TURNS = 10              # number of consecutive TurnDeltas in the observation
+N_HISTORY_TURNS = 7               # number of consecutive TurnDeltas in the observation
 
 # Unified transformer hyperparameters. d_model matches ROLE_TOKEN_SIZE so team
 # role tokens enter the transformer without a projection step.

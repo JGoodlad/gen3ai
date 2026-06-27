@@ -557,7 +557,7 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 
 ## Observation Vector
 
-The full observation is a **3469-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **2992-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset |
 |---|---|---|
@@ -567,8 +567,8 @@ The full observation is a **3469-dim float32 vector** (`Gen3ObservationEncoder.d
 | Global env | 18 | 1436 |
 | Reactive + move-effects + **incoming-damage** + **turns_since_progress** + **protect-odds** + matchups + **active-req-moves** | 414 | 1454 |
 | Prev-turn action mask | 11 | 1868 |
-| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1879 |
-| **Total** | **3469** | |
+| Turn history (`N_HISTORY_TURNS` × 159) | 1113 | 1879 |
+| **Total** | **2992** | |
 
 **The full per-block layout** — the 110-dim per-Pokémon slot (incl. a 3-dim
 `gen3_sleep_wake_belief_v1` block: `sleep_is_deterministic` [Rest], computed `p_wake`, and
@@ -971,7 +971,12 @@ unaffected, so gating it would break self-play). NO `ARCH_SIGNATURE` bump; `shap
 v40 forward+backward. The win-aligned heads (`--win-prob-mode` / `--value-dist-mode`) keep their own
 `read_only`/`shaping`. Design rationale: a representation-rank probe found the 128-dim trunk runs in ~3–5
 effective dims, so capacity isn't the constraint — the risk this isolates is gradient interference.
-Current `MODEL_CONFIG_VERSION` = **41**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+**v42 the TURN-HISTORY DEPTH cut** (`N_HISTORY_TURNS` 10 → 7) — a retrain-class obs-dim change: the
+observation drops from 10 to 7 consecutive TurnDelta slots (159 dims each), so the turn-history block is
+1113 dims (was 1590) and the total obs is **2992** (was 3469). `n_history_turns`/`total_dim` are already in
+`_WEIGHT_FIELDS`, so `check_compatible` auto-rejects any pre-v42 checkpoint on the obs-dim weight-field check
+(NO `ARCH_SIGNATURE` bump — the obs-dim weight-field check already catches it). Current
+`MODEL_CONFIG_VERSION` = **42**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

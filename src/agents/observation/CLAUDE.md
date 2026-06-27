@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **3469-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
+This directory builds the **2992-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
 It runs once per agent decision across every training env, so it sits directly on the
 training-throughput (FPS) critical path. Two independent things can regress here, and they
 have **different** gates:

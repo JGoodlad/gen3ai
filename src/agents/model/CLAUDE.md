@@ -80,8 +80,8 @@ so they stay correct when the architecture changes with no manual update.
    matchup-validity ×6, HP-candidate distribution, and prev-turn move validity), a
    **within-Pokémon move self-attention** (MHA 32-dim, 2 heads, + LayerNorm residual), then the
    **role encoder** (Linear→ReLU→Linear, `ROLE_ENCODER_HIDDEN`) → 12 × 128 role tokens.
-4. **`TeamTransformer`** — builds a 23-token sequence (6 our-team + 6 their-team role tokens +
-   `N_HISTORY_TURNS`=10 history tokens + 1 global token), adds token-type and history-positional
+4. **`TeamTransformer`** — builds a 20-token sequence (6 our-team + 6 their-team role tokens +
+   `N_HISTORY_TURNS`=7 history tokens + 1 global token), adds token-type and history-positional
    embeddings, and runs a `TRANSFORMER_N_LAYERS`-deep `nn.TransformerEncoderLayer` stack (d_model
    128, `TRANSFORMER_N_HEADS` heads, FFN `TRANSFORMER_FFN_DIM`, post-LN) under a key-padding mask
    that masks fainted team slots and empty history slots. History tokens come from
@@ -205,7 +205,9 @@ proportional roar-out-boosts shaping; safe since both telescope to 0.) All are r
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **41** (v41 = the
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **42** (v42 = the turn-history
+depth cut `N_HISTORY_TURNS` 10 → 7, a retrain-class obs-dim change — total obs 3469 → 2992, caught by the
+`total_dim`/`n_history_turns` weight-field check, NO `ARCH_SIGNATURE` bump; see the v42 note below. v41 = the
 `gen3_belief_grad_mode_v1` belief-trunk-gradient knob, a resume-immutable training hparam — see the v41 note
 below; the `pbrs_roar` PBRS
 above added NO new version — it rides `all_shaping_pbrs`;
@@ -862,6 +864,16 @@ inherits the saved mode. Tests: `belief_grad_mode_test.py` (detached forward == 
 reshapes the trunk under shaping but ZERO trunk-grad under detached while the head still trains; spread + aux heads
 also trunk-isolated; the invalid-mode guard). The win-aligned heads (`win_prob_mode` / `value_dist_mode`) keep their
 own `read_only`/`shaping`. `MODEL_CONFIG_VERSION` = **41**.
+
+**Turn-history depth cut (v42, `N_HISTORY_TURNS` 10 → 7).** A retrain-class obs-DIM change (not a
+forward-math/structural one): the observation carries 7 consecutive `TurnDelta` slots (159 dims each)
+instead of 10, so the turn-history block is 1113 dims (was 1590) and the total observation is **2992**
+(was 3469). The constant is the single source of truth at the top of `features_extractor.py`
+(imported by `model_version.py` + the observation encoder). `n_history_turns` and `total_dim` are
+already in `_WEIGHT_FIELDS`, so `check_compatible` auto-rejects any pre-v42 checkpoint via the obs-dim
+weight-field check — **NO `ARCH_SIGNATURE` bump** (the weight-field check already catches it). The
+history-token saliency decays hard (the model reads mostly the last 1–2 turns), so the cut is a cheap
+retrain free-rider, not a behavioral regression. `MODEL_CONFIG_VERSION` = **42**.
 
 **Damage re-attend (v31, `damage_reattend` / `--damage-reattend`, `gen3_damage_reattend_v1`).** Lets
 attention reason OVER the computed physics — today the `DamageOperator` block is concatenated POST-pool
