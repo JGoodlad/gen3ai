@@ -386,9 +386,6 @@ class LauncherApp(Gen3App):
             out.append("waiting for first rollout…", style="dim")
         # ELO headline — the absolute skill rating (only present once an eval cycle has run).
         out.append_text(self._elo_badge(snap.metrics))
-        # Opponent-distillation headline (only present under --distill-opponents). The rollout
-        # speedup is all-or-nothing: green only when 100% distilled, yellow while backfilling.
-        out.append_text(self._distill_badge(snap.metrics))
         idle = now - snap.last_activity_ts
         if idle > 120:
             out.append(sep)
@@ -416,27 +413,6 @@ class LauncherApp(Gen3App):
         ci = metrics.get("eval/elo_ci")
         if ci:
             out.append(f" ±{ci:.0f}", style="dim")
-        return out
-
-    def _distill_badge(self, metrics: dict) -> Text:
-        """At-a-glance opponent-distillation state, or empty when distillation is off.
-
-        Distillation is all-or-nothing (the per-step barrier): the rollout speedup is active
-        ONLY at 100%, so the badge is green at all-distilled and yellow while backfilling. Empty
-        when no ``distill/*`` keys are present (i.e. ``--distill-opponents`` not enabled)."""
-        if "distill/all_distilled" not in metrics:
-            return Text()
-        out = Text("  │  ")
-        if metrics.get("distill/all_distilled", 0.0) >= 0.5:
-            out.append("⚗ distilled 100%", style="green")
-        else:
-            frac = metrics.get("distill/frac_active_opponents_distilled", 0.0)
-            n_run = int(metrics.get("distill/n_running", 0) or 0)
-            detail = f" ({n_run} running)" if n_run else ""
-            out.append(f"⚗ distilling {frac * 100:.0f}%{detail}", style="yellow")
-        n_exh = int(metrics.get("distill/n_exhausted", 0) or 0)
-        if n_exh:
-            out.append(f" · {n_exh} exhausted", style="dim")
         return out
 
     def _render_metrics(self, snap, now: float) -> None:
@@ -484,7 +460,7 @@ class LauncherApp(Gen3App):
 
         # Non-eval metrics span TWO columns, never splitting a top-level section: train/* (by
         # far the biggest section) gets its OWN column, with belief/* rendered directly BELOW it
-        # in that same column; everything else (rollout, time, grad, popart, distill, …) stays in
+        # in that same column; everything else (rollout, time, grad, popart, …) stays in
         # the left column. The stale badge annotates the first section header of each column.
         left_sections = ["rollout", "time"] + [
             s for s in by_section if s not in {"rollout", "time", "train", "belief"}

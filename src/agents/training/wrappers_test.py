@@ -301,32 +301,6 @@ def test_set_stable_mastered_reflects_the_pushed_set():
     assert w._stable_mastered == {"ext_run0": False, "ext_run1": True}
 
 
-def test_stable_excluded_from_challenge_while_distilling():
-    """Under distillation the pool is 100% cheap distilled — a FULL stable opponent would gate the
-    per-step barrier, so it drops out of the challenge bucket entirely (pool only)."""
-    pool = _stub_pool(model="M")
-    pp = MagicMock(name="pool_player")
-    sp, sl = _stable(1)
-    w, _ = _make_wrapper(fraction=1.0, pool=pool, pool_player=pp,
-                         stable_players=sp, stable_labels=sl, rng_seed=4)
-    w.set_distill_active(True, steps=[])     # distill on → full pool, stable exempt
-    for _ in range(100):
-        w._select_episode_opponent()
-        assert w.opponent is pp              # never the (full) stable opponent while distilling
-
-
-def test_mastered_stable_excluded_from_floor_while_distilling():
-    """A MASTERED stable opponent is a floor peer normally, but is also a full model — so distill
-    excludes it from the floor too (it's eval-only while distilling)."""
-    sp, sl = _stable(1)
-    w, heuristics = _make_wrapper(fraction=0.0, stable_players=sp, stable_labels=sl)
-    w.set_stable_mastered(sl)
-    w.set_distill_active(True, steps=[])
-    for _ in range(100):
-        w._select_episode_opponent()
-        assert w.opponent in heuristics      # mastered stable excluded from the floor under distill
-
-
 # ── cross-check: the reporting mirror matches the ACTUAL selection sampling ────
 # SelfPlayCallback._opponent_mix_fractions and its per-case unit tests are both hand-derived from
 # the SAME model of the rules below — so neither catches the two implementations DRIFTING. This
@@ -338,16 +312,15 @@ def test_mix_fractions_match_actual_sampling():
     from types import SimpleNamespace
     from agents.training.selfplay_callback import SelfPlayCallback
 
-    # (label, sf, pool_empty, n_stable, mastered_labels, distill)
+    # (label, sf, pool_empty, n_stable, mastered_labels)
     configs = [
-        ("pool-only",            0.9, False, 0, [],           False),
-        ("unmastered-caps",      0.9, False, 1, [],           False),
-        ("no-pool-unmastered",   0.6, True,  1, [],           False),
-        ("mastered-in-floor",    0.8, False, 1, ["ext_run0"], False),
-        ("distill-drops-stable", 0.9, False, 2, ["ext_run0"], True),
+        ("pool-only",            0.9, False, 0, []),
+        ("unmastered-caps",      0.9, False, 1, []),
+        ("no-pool-unmastered",   0.6, True,  1, []),
+        ("mastered-in-floor",    0.8, False, 1, ["ext_run0"]),
     ]
     N = 8000
-    for label, sf, pool_empty, n_stable, mastered, distill in configs:
+    for label, sf, pool_empty, n_stable, mastered in configs:
         stable_players, stable_labels = _stable(n_stable)
         pool_player = MagicMock(name="pool")
         w, heuristics = _make_wrapper(
@@ -355,8 +328,6 @@ def test_mix_fractions_match_actual_sampling():
             n_heuristics=2, rng_seed=7,
             stable_players=stable_players or None, stable_labels=stable_labels or None)
         w.set_stable_mastered(mastered)
-        if distill:
-            w.set_distill_active(True, steps={0})
 
         counts = {"pool": 0, "stable": 0, "bot": 0}
         for _ in range(N):
@@ -370,7 +341,6 @@ def test_mix_fractions_match_actual_sampling():
         mirror = SimpleNamespace(
             _fixed_opponents=[SimpleNamespace(label=lab) for lab in stable_labels],
             _stable_mastered=set(mastered),
-            _distill_deployed=distill,
             _stable_challenge_share=STABLE_CHALLENGE_SHARE,
             _bot_weight_vec=None,
             _floor_roster_count=len(heuristics),

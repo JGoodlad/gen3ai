@@ -386,21 +386,6 @@ making snapshot ELOs **comparable across runs**. Offline: `python -m main.elo <r
 ladder and plots an Elo-vs-step curve (and can backfill a running run from TensorBoard with
 `--source tb`). Full design: `src/agents/training/CLAUDE.md` → ELO / skill rating.
 
-### Opponent distillation (`--distill-opponents`)
-
-On a `--self-play` run, distil the frozen pool opponents into a **cheaper network** for faster
-rollouts (the opponent forward is ~70% of env-worker CPU → ~+15–25% rollout throughput at near-zero
-quality cost). Off by default. It is **all-or-nothing** — the per-step barrier means one full-opponent
-worker straggles and gates the batch, so the pool is only ever 100% distilled or 100% full. An
-idempotent reconcile loop (`SelfPlayCallback` → `DistilledOpponentManager`) **backfills the whole pool
-on enable** (incl. sentinels), then **atomically switches** full↔distilled; each new promotion is
-distilled before it's sampled. A fail-closed gate (fidelity + head-to-head) + capacity escalation +
-drift auto-revert keep it safe. Distilling runs in a non-blocking subprocess on `--eval-device`;
-artifacts + per-snapshot gate manifests live in `models/<run>/distilled/` (auto-cleaned with the pool
-window — the manifest is the source of truth, `summary.json` holds only a re-publish block). Full
-design: `designs/ai_v5/distill_integration.md` (§8 all-or-nothing, §7 restart resilience); module map:
-`src/agents/training/distill/CLAUDE.md`.
-
 ---
 
 ## Playing / Evaluation

@@ -28,7 +28,6 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
-import sys
 import time
 
 from stable_baselines3.common.callbacks import BaseCallback
@@ -108,33 +107,6 @@ def _monotonicity_score(win_rates: list[float]) -> float:
     return 2.0 * concordant / total - 1.0
 
 
-def _distill_step_tag(step: int) -> str:
-    """A snapshot's step as a compact label for the Events panel ('seed' / '47.0M')."""
-    return "seed" if step == 0 else f"{step / 1e6:.1f}M"
-
-
-def _distill_job_event_text(h: dict) -> "str | None":
-    """Pure formatter: one harvested distill job -> an Events-panel line (or None).
-
-    ``h`` is a ``ReconcileResult.harvested`` entry (manager.py): keys ``step, action,
-    rung, n_rungs, next_rung?, speedup, h2h``. Kept pure (no I/O) so it is unit-testable.
-    """
-    tag = _distill_step_tag(h["step"])
-    n = h.get("n_rungs", 1)
-    h2h = h.get("h2h")
-    speed = h.get("speedup") or 0.0
-    action = h.get("action")
-    if action == "deployed":
-        extra = f"h2h {h2h:.2f}, " if isinstance(h2h, (int, float)) else ""
-        return f"⚗ Distilled {tag} ✓ — {extra}{speed:.1f}× faster (rung {h.get('rung', 0) + 1}/{n})"
-    if action == "escalated":
-        reason = f"h2h {h2h:.2f}" if isinstance(h2h, (int, float)) else "low fidelity"
-        return f"⚗ Distill {tag} missed gate ({reason}) — escalating to rung {h.get('next_rung', 0) + 1}/{n}"
-    if action == "exhausted":
-        return f"⚗ Distill {tag} exhausted the ladder — kept as a full opponent"
-    return None
-
-
 class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
     """Non-blocking bot + pool eval callback with snapshot promotion.
 
@@ -178,8 +150,6 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         self_play_full_wr: float = SELF_PLAY_FULL,
         n_workers: int = 3,
         eval_device: str = "cpu",
-        distill_opponents: bool = False,
-        distill_device: str = "cpu",
         eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
         eval_shard_games: int = EVAL_SHARD_GAMES,
         keep_eval_snapshots: int = 10,
@@ -293,31 +263,6 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             # The trainer-side pool reports honest PFSP-weighted sentinel weights in metadata.
             self._pool.set_win_rates(self._pfsp_winrate_ema)
 
-        # ── Opponent distillation (all-or-nothing; distill_integration.md §8) ──
-        # One idempotent reconcile loop keeps the on-disk distilled set == the pool's snapshots:
-        # backfill on enable + steady-state are the same call; no-op when nothing's missing.
-        self._distill_device = distill_device
-        self._distill_mgr = None
-        self._last_distill_push = None
-        # Tracks the live atomic all-or-nothing state so a transition (full↔100% distilled)
-        # fires exactly one Events-panel line. None = not yet known (no transition logged).
-        self._distill_deployed = None
-        self._last_distill_reconcile = 0
-        self._distill_reconcile_interval = 4000 if debug else 100_000
-        if distill_opponents:
-            from agents.training.distill.manager import DistilledOpponentManager
-            self._distill_mgr = DistilledOpponentManager(
-                ready_steps_fn=self._pool.gate_passed_steps,
-                list_artifacts_fn=self._pool.distilled_artifact_steps,
-                run_distill_fn=self._spawn_distill,
-                poll_fn=self._poll_distill,
-                remove_fn=self._pool.remove_distilled,
-                recover_fn=self._pool.failed_distill_manifests,   # restart-safe escalation
-                max_concurrent=max(1, n_workers),
-            )
-            print("[DISTILL] opponent distillation ENABLED — all-or-nothing; "
-                  "the first reconcile backfills the pool, then steady-state.")
-
     # ── SB3 lifecycle ──────────────────────────────────────────────────────
 
     def _init_callback(self) -> None:
@@ -349,12 +294,6 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
                 self._collect_pending()
             elif now - self._pending.get("launched_at", now) > _EVAL_CYCLE_TIMEOUT_SEC:
                 self._abort_pending_cycle()   # hung worker → don't wedge eval forever
-        # Reconcile distilled opponents on a throttle (harvests finished jobs + flips the atomic
-        # full↔distilled switch promptly during backfill, without waiting for the next eval cycle).
-        if (self._distill_mgr is not None
-                and self.num_timesteps - self._last_distill_reconcile >= self._distill_reconcile_interval):
-            self._last_distill_reconcile = self.num_timesteps
-            self._reconcile_distill()
         if self.num_timesteps == 0:
             return True
         self._maybe_force_eval()   # launcher "force eval" button (SIGUSR2); rejects if running
@@ -758,9 +697,6 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         self._prune_and_push_pfsp()
         # (Stable-opponent mastery — the challenge→floor "becomes another bot" flip — was recomputed
         #  + pushed to every training env earlier, with the training-mix telemetry.)
-        # Reconcile distilled opponents now that any seed/promote bumped the generation: distill
-        # the new snapshot (steady-state) or, on first enable, the whole pool (backfill).
-        self._reconcile_distill()
         if self._model_dir or self._pool:
             self._pool.persist_summary(
                 win_rate_vs_bots=self.win_rate_vs_bots,
@@ -873,16 +809,12 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             through to the floor (so FLOOR is NOT simply ``1−sf``).
           - FLOOR (the rest): bots + mastered stable, by a WEIGHTED pick (mastered each weight 1.0).
 
-        ``train/selfplay_fraction`` reports the POOL share (P(pool)) — strictly ≤ ``sf``. Distillation
-        being active drops BOTH stable buckets (a full foreign opponent would straggle the
-        all-or-nothing barrier); ``self._distill_deployed`` here is the last reconcile's state, so a
-        same-cycle distill flip is reflected at most one cycle late."""
+        ``train/selfplay_fraction`` reports the POOL share (P(pool)) — strictly ≤ ``sf``."""
         sf = max(0.0, min(1.0, float(sf)))
-        distill = bool(self._distill_deployed)
         n_mastered = sum(1 for e in self._fixed_opponents
                          if getattr(e, "label", None) in self._stable_mastered)
-        has_unmastered = (len(self._fixed_opponents) - n_mastered) > 0 and not distill
-        k_m = n_mastered if not distill else 0
+        has_unmastered = (len(self._fixed_opponents) - n_mastered) > 0
+        k_m = n_mastered
         s = self._stable_challenge_share
 
         # CHALLENGE bucket (entered with prob sf).
@@ -903,108 +835,6 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         self_play = p_pool
         stable = p_unmastered + p_mastered
         return self_play, stable, self_play + stable
-
-    # ── Opponent distillation reconcile (idempotent; distill_integration.md §8) ──────────────
-    def _reconcile_distill(self) -> None:
-        """One reconcile tick: make the on-disk distilled set match the pool, then push the atomic
-        all-or-nothing switch to the envs (only when it changed) and log the health metrics. No-op
-        when nothing is missing. Never fatal — distillation is strictly additive."""
-        if self._distill_mgr is None:
-            return
-        try:
-            self._pool._scan()
-            active = [e.step for e in self._pool._entries]
-            r = self._distill_mgr.reconcile(active)
-
-            # ── Events panel: per-job gate results (deployed / escalated / exhausted) ──
-            for h in r.harvested:
-                msg = _distill_job_event_text(h)
-                if msg:
-                    send_event(msg)
-
-            key = (r.all_distilled, tuple(sorted(r.sampleable)))
-            if key != self._last_distill_push:
-                self._last_distill_push = key
-                try:
-                    self.training_env.env_method("set_distill_active", r.all_distilled, sorted(r.sampleable))
-                except Exception as e:  # noqa: BLE001
-                    print(f"[DISTILL] set_distill_active push failed (non-fatal): {e}")
-                # Persist a small re-publish block (the per-snapshot record lives in the manifests;
-                # this is the at-a-glance deployment state, merged into summary.json on change).
-                if self._model_dir:
-                    self._pool.persist_summary(distill={
-                        "all_distilled": r.all_distilled, "frac": round(r.frac_distilled, 3),
-                        "n_active": r.n_active, "n_ready": r.n_ready, "n_exhausted": r.n_exhausted,
-                        "deployed_steps": sorted(r.sampleable) if r.all_distilled else []})
-
-            # ── Events panel: the atomic all-or-nothing switch (the speedup is on iff all_distilled) ──
-            if r.all_distilled != self._distill_deployed:
-                if r.all_distilled:
-                    send_event(f"🚀 Opponents now 100% distilled ({r.n_ready} snapshots) — "
-                               f"rollout speedup ACTIVE")
-                elif self._distill_deployed:  # True/None→False: only narrate a real revert, not the cold start
-                    send_event(f"↩️ Opponents reverted to full models "
-                               f"({r.frac_distilled * 100:.0f}% distilled) — backfilling")
-                self._distill_deployed = r.all_distilled
-
-            self.logger.record("distill/frac_active_opponents_distilled", r.frac_distilled)
-            self.logger.record("distill/all_distilled", float(r.all_distilled))
-            self.logger.record("distill/n_running", r.n_running)
-            self.logger.record("distill/n_exhausted", r.n_exhausted)
-            self.logger.record("distill/n_ready", r.n_ready)
-            if r.spawned:
-                steps = ", ".join(_distill_step_tag(s) for s in sorted(r.spawned))
-                send_event(f"⚗ Distilling {len(r.spawned)} snapshot(s) [{steps}] "
-                           f"({r.n_running} running) — opponents stay full until all pass")
-                print(f"[DISTILL] reconcile: spawned {sorted(r.spawned)} "
-                      f"(active={r.n_active} ready={r.n_ready} running={r.n_running} "
-                      f"all_distilled={r.all_distilled})")
-        except Exception as e:  # noqa: BLE001 — reconcile must never break training
-            print(f"[DISTILL] reconcile failed (non-fatal): {e}")
-
-    def _spawn_distill(self, step: int, config: dict):
-        """Spawn the (async, GPU-ok) distill+gate subprocess for a snapshot. Returns (proc, step);
-        None if the snapshot isn't in the pool. Output streams to the run dir for forensics."""
-        import json as _json
-        import subprocess
-        entry = next((e for e in self._pool._entries if e.step == step), None)
-        if entry is None:
-            return None
-        # Thread the run's arch toggles so the worker's teacher-load version gate matches the run's
-        # real arch (a belief-ON / popart distill run would FATAL on its own belief-ON teacher else).
-        worker_config = {**config, "arch_toggles": arch_toggles_from_model(self.model)}
-        cmd = [sys.executable, "-m", "agents.training.distill.worker",
-               "--snapshot", str(entry.path), "--step", str(step),
-               "--distilled-dir", str(self._pool.distilled_dir),
-               "--config", _json.dumps(worker_config), "--device", self._distill_device]
-        env = dict(os.environ)
-        src = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        env["PYTHONPATH"] = src + (":" + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
-        self._pool.distilled_dir.mkdir(parents=True, exist_ok=True)
-        # log lives in distilled/ so it's cleaned with the snapshot's other artifacts on eviction
-        log = open(self._pool.distilled_log(step), "w") if self._model_dir else subprocess.DEVNULL
-        proc = subprocess.Popen(cmd, env=env, stdout=log, stderr=subprocess.STDOUT)
-        return (proc, step)
-
-    def _poll_distill(self, handle):
-        """None = still running; dict = finished. A crash with no manifest reads as failed, so the
-        reconcile loop just re-triggers it next tick (idempotent + self-healing)."""
-        import json as _json
-        if handle is None:
-            return {"passed": False, "speedup": 0.0}
-        proc, step = handle
-        if proc.poll() is None:
-            return None
-        mf = self._pool.distilled_manifest(step)
-        if mf.exists():
-            try:
-                m = _json.loads(mf.read_text())
-                # h2h/top1 pass through to the Events panel (manager ignores them for gating).
-                return {"passed": bool(m.get("passed")), "speedup": float(m.get("speedup") or 0.0),
-                        "h2h": m.get("h2h"), "top1": m.get("top1")}
-            except (ValueError, OSError):
-                pass
-        return {"passed": False, "speedup": 0.0}
 
     def _record_opponent_default_stats(self, tui: dict) -> None:
         """Query the live training envs' self-play opponent default/redecide counters."""

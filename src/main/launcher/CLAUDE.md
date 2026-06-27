@@ -130,19 +130,10 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   at-a-glance "is it going well?" number during self-play pool play — anchored Bradley-Terry over
   the fixed bots, so it rises with strength even while `win_rate_vs_pool` sits pinned near 50% (see
   `src/agents/training/CLAUDE.md` → ELO / skill rating). *(The per-sentinel ELO is a noisy
-  single-cycle estimate — `python -m main.elo … --source tb` is the well-anchored canonical fit.)* **Opponent distillation** (`--distill-opponents`)
-  surfaces in three places, all zero-footprint when off: a **badge-row headline** (`⚗ distilled 100%`
-  green = rollout speedup ACTIVE, vs `⚗ distilling N% (M running)` yellow = backfilling, since the
-  speedup is all-or-nothing — `app.py::_distill_badge`); the **`distill/*` metrics block** in the
-  left column (frac as a %, `all distilled` as yes/no, ready/running/exhausted counts — short labels
-  via `format._metric_label`); and the **Events panel**, which narrates each gate result (✓ deployed
-  with h2h + speedup / escalated a ladder rung / exhausted), the atomic full↔100%-distilled switch,
-  and each backfill spawn (`selfplay_callback._reconcile_distill` → `send_event`). The metrics ride
-  the normal `distill/*` logger scalars through `MetricsExporterCallback`; the events are emitted
-  straight to the IPC pipe.
+  single-cycle estimate — `python -m main.elo … --source tb` is the well-anchored canonical fit.)*
   **Metrics layout** — the dashboard's metrics row is **three side-by-side tables** so a metric-rich
   run stays readable instead of one over-long column: a **left misc column** (rollout / time, then the
-  `grad/*` / `popart/*` / `distill/*` diagnostics), a **dedicated `train/*` column** (by far the
+  `grad/*` / `popart/*` diagnostics), a **dedicated `train/*` column** (by far the
   biggest section — all the PPO losses, `return_*`, `value_pred_std`, `grad_norm`, the opponent-mix
   `*_fraction` telemetry, then the `belief/*` aux diagnostics rendered directly **below** train when a
   belief aux is on), and the **eval column**. Non-eval metrics are split across the first two

@@ -29,7 +29,7 @@ Two integration details make it correct + cheap:
      no extra round-trip. (One ``get_action_masks`` barrier still happens once per rollout, for the
      carried-over ``_last_obs``.)
   2. **``env_method`` is drain-safe.** The eval callback calls ``env.env_method(...)``
-     (set_self_play_target / set_distill_active / opponent_default_stats) from inside ``on_step``,
+     (set_self_play_target / opponent_default_stats) from inside ``on_step``,
      which fires mid-collection while some pipes hold un-recv'd step results. Sending an
      ``env_method`` command then would interleave with those results and desync. ``AsyncSubprocVecEnv``
      overrides ``env_method`` / ``get_attr`` / ``set_attr`` to first **stash** every in-flight step

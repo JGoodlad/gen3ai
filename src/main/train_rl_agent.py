@@ -1392,11 +1392,6 @@ async def main():
                         help="Bound the run's crashes/ dir: each eval cycle keep only the N most-recent "
                              "launcher restart_err_*.txt files (0 = keep all).")
     parser.add_argument("--self-play", action=BoolFlag, default=False, help="Enable self-play snapshot pool as training opponents")
-    parser.add_argument("--distill-opponents", "--distill_opponents", dest="distill_opponents",
-                        action=BoolFlag, default=False,
-                        help="Distill self-play opponents into a cheaper network for faster rollouts "
-                             "(all-or-nothing: backfill the whole pool on enable, then atomic switch; "
-                             "fail-closed gate + auto-revert). See designs/ai_v5/distill_integration.md.")
     parser.add_argument("--snapshot-dir", type=str, default=None, help="Pool directory (default: <run_dir>/snapshots)")
     parser.add_argument("--promote-threshold", type=float, default=None,
                         help="Win rate vs. pool to trigger snapshot promotion. Default 0.65 with "
@@ -2190,9 +2185,6 @@ async def main():
                         pfsp_scale=getattr(args, "pfsp_scale", 0.0),
                         pool_spread=getattr(args, "pool_spread", False),
                     )
-                    # Distilled opponents are rebuilt from the obs layout on load (env-side).
-                    if getattr(args, "distill_opponents", False):
-                        pool.set_distill_layout(Gen3ObservationEncoder(mappings).get_layout())
                     # model=None placeholder — the wrapper swaps in a sampled snapshot before
                     # ever using it. Stochastic + temperature so the learner trains against the
                     # policy's full action distribution (richer, less exploitable than argmax).
@@ -2328,8 +2320,6 @@ async def main():
         _opp_version = _cv
         _pool = SnapshotPool(pool_dir=_snapshot_dir, current_version=_cv, device=args.device,
                              pfsp_scale=args.pfsp_scale, pool_spread=args.pool_spread)
-        if getattr(args, "distill_opponents", False):
-            _pool.set_distill_layout(Gen3ObservationEncoder(mappings).get_layout())
         _persisted_wr = _pool.load_persisted_win_rate()
         _initial_self_play_fraction = 1.0 - heuristic_fraction(
             _persisted_wr, floor=_heuristic_floor, start=_sp_start_wr, full=_sp_full_wr)
@@ -2606,8 +2596,6 @@ async def main():
             eval_device=args.eval_device,
             eval_concurrency=args.eval_concurrency_per_worker,
             eval_shard_games=args.eval_shard_games,
-            distill_opponents=args.distill_opponents,
-            distill_device=args.eval_device,  # CPU by default → no GPU contention with training
             keep_eval_snapshots=args.keep_eval_snapshots,
             keep_eval_trace_steps=args.keep_eval_trace_steps,
             keep_stalls=args.keep_stalls,

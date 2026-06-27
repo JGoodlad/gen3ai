@@ -32,21 +32,19 @@ def _fmt_val(v: float) -> str:
 
 
 def _fmt_metric(key: str, v: float) -> str:
-    """Format a metric value; win rates + distilled-fraction render as percentages, the
-    all-distilled flag as yes/no, ELO as a whole rating + its CI as ±points."""
+    """Format a metric value; win rates render as percentages, ELO as a whole rating + its CI
+    as ±points."""
     if key == "eval/elo":
         return f"{v:.0f}"
     if key == "eval/elo_ci":
         return f"±{v:.0f}"
-    if "win_rate" in key or key == "distill/frac_active_opponents_distilled":
+    if "win_rate" in key:
         return f"{v * 100:.1f}%"
-    if key == "distill/all_distilled":
-        return "yes" if v >= 0.5 else "no"
     return _fmt_val(v)
 
 
 # Short, legible row labels for keys whose tail is verbose (otherwise the label is the
-# part after '/'). Keeps the dashboard's distill block readable.
+# part after '/').
 _METRIC_LABELS = {
     "eval/elo": "ELO",
     "eval/elo_ci": "ELO 95% CI",
@@ -58,11 +56,6 @@ _METRIC_LABELS = {
     # B_simple / effective-batch: ≫1 noise-limited (bigger batch helps), ≪1 diminishing returns.
     "train/noise_scale": "noise scale",
     "train/noise_scale_ratio": "noise/batch",
-    "distill/all_distilled": "all distilled",
-    "distill/frac_active_opponents_distilled": "distilled",
-    "distill/n_ready": "ready",
-    "distill/n_running": "running",
-    "distill/n_exhausted": "exhausted",
     # Gradient balance (shared-trunk pull, ONE common denominator → all shares comparable + sum to ~1).
     # The two RL heads are ALWAYS present; tune vf_coef / PopArt to value_policy_logratio.
     "grad/policy_share": "policy share",
@@ -279,10 +272,4 @@ _METRIC_ORDER = [
     "popart/mu",
     "popart/sigma",
     "popart/value_weight_norm",
-    # Distillation (only present under --distill-opponents) — headline first.
-    "distill/all_distilled",
-    "distill/frac_active_opponents_distilled",
-    "distill/n_ready",
-    "distill/n_running",
-    "distill/n_exhausted",
 ]

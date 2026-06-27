@@ -561,8 +561,7 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   = pool + stable** (= 1 − bot; bot is left implicit). `nonbot` is independent of the stable challenge
   share (it cancels); the per-bucket split needs three **reporting-only** inputs threaded into the
   callback from `train_rl_agent` (the capped `stable_challenge_share`, the `--bot-weights` vector, and
-  `len(OPPONENT_CLASSES)` — the floor roster, which excludes eval-only `random`). Distillation drops
-  both stable buckets (`_distill_deployed`, last-reconcile state → a same-cycle flip lags ≤1 cycle).
+  `len(OPPONENT_CLASSES)` — the floor roster, which excludes eval-only `random`).
   With no stable opponents these reduce to `selfplay_fraction = nonbot = sf·P`, `stable = 0`.
   `_opponent_mix_fractions` is a hand-written **mirror** of the wrapper's selection, so the anti-drift
   guard is `wrappers_test.py::test_mix_fractions_match_actual_sampling`: it runs the REAL
@@ -759,11 +758,6 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
   `🐴 [STABLE] N cross-run opponent(s): ext_<run> — eval greedy; training ≤<share> of self-play until
   mastered (win_rate ≥ <wr>)` line at startup (and a `🏇 [SELFPLAY] Mastered stable opponent(s) …`
   line on the challenge→floor flip), and each eval-summary event gains a `stable <pct>%` field. (Per-opponent `eval/win_rate_vs_ext_<run>` also rides the normal eval Metrics table.)
-- **Distillation interaction:** under `--distill-opponents` the pool flips to 100% cheap distilled
-  models (all-or-nothing — one full-model worker straggles and gates the per-step barrier). A full
-  foreign stable opponent would re-introduce that straggler, so stable opponents drop OUT of the
-  training mix entirely while distill is active (eval-only that period); they re-enter when distill
-  is off. (`_pick_challenge_opponent` / `_pick_floor_opponent` gate on `self._distill_active`.)
 
 - **CLI:** simplest form is just the run dir — `--stable-opponents models/ai_v5_5_popart_N_0607`;
   the opponent is **labelled by the run-dir name** (`ext_ai_v5_5_popart_N_0607`, derived
@@ -909,33 +903,13 @@ fixed bots.
   the bot-anchored scale is preserved since trainee-vs-bot records are unchanged). Tests:
   `elo_test.py` (synthetic-ladder recovery, anchoring, perfect-score, loaders, `fit_pairwise`).
 
-## Opponent distillation (`--distill-opponents`, off by default)
-
-Distils the frozen self-play opponents into a **cheaper network** (the opponent forward is ~70% of
-worker CPU) for faster rollouts — implemented in **`distill/` (has its own CLAUDE.md)**. The governing
-constraint is the per-step barrier: distillation is **all-or-nothing** (one full-opponent worker
-straggles and gates the batch), so the pool is only ever 100% distilled or 100% full. A single
-idempotent **reconcile loop** (`DistilledOpponentManager`, run by `SelfPlayCallback` each eval + on a
-throttle) keeps the on-disk distilled set in sync with the pool — **backfill on enable ≡ steady-state**,
-no-op when nothing's missing — spawning the `distill/worker.py` subprocess per snapshot (gate =
-fidelity + head-to-head). Distilled artifacts + their gate manifests live in `models/<run>/distilled/`
-(the manifest is the per-snapshot source of truth; `summary.json` gets only a re-publish block);
-cleanup is automatic via the reconcile's window-eviction. The env's `MaskableAgentWrapper` does the
-atomic full↔distilled opponent switch (`set_distill_active`). **Observability:** `_reconcile_distill`
-records five `distill/*` scalars (frac/all_distilled/ready/running/exhausted) to TensorBoard + the
-launcher dashboard, and emits launcher **Events** for each gate result (deployed/escalated/exhausted
-with h2h + speedup), the atomic full↔100%-distilled switch, and backfill spawns — surfaced in the TUI
-as a `⚗ distilled 100%`/`⚗ distilling N%` badge + a `distill/*` metrics block + Events lines (zero
-footprint when off). **Full design: `designs/ai_v5/distill_integration.md`
-(§8 all-or-nothing, §7 restart resilience); module map: `src/agents/training/distill/CLAUDE.md`.**
-
 ## Rollout collection: sync barrier vs `--async-rollout` (`async_vec_env.py`)
 
 The default `SubprocVecEnv.step()` is a **per-step barrier** — the trainer waits for the slowest of
 N env workers every step, so a slow battle turn / heavy opponent forward / oversubscription jitter
 stalls the whole batch and the GPU policy-forward never overlaps CPU env-stepping. `--async-rollout`
 swaps in **`AsyncSubprocVecEnv`** (per-env `send_step`/`poll_ready`/`recv_step` over the pipes +
-**drain-safe `env_method`** — the eval callback's `set_self_play_target`/`set_distill_active`/
+**drain-safe `env_method`** — the eval callback's `set_self_play_target`/
 `opponent_default_stats` fire mid-collection, so the override stashes in-flight step results before
 any barrier RPC to avoid a pipe desync) and **`collect_rollouts_async`**, dispatched by
 `InstrumentedMaskablePPO.collect_rollouts` when `model._async_rollout` is set.
@@ -952,8 +926,7 @@ GAE) mirrors the stock loop exactly. The per-decision **mask rides in the Dict o
 **Measured FPS (bridge, GPU forward, steady-state, heuristic opponents):** +20% at `--n-envs 16`;
 **+14% at the production `--n-envs 64` (1489→1695)**; `--async-rollout --n-envs 32` matches `sync@64`
 FPS with half the envs (≈half the env/bridge RAM). Off by default (stock `SubprocVecEnv`), ignored
-under `--debug`. Compounds with distillation (async attacks the barrier; distill attacks the per-step
-opponent CPU). Caveat: benchmarked with heuristic opponents — re-bench under `--self-play` for the
+under `--debug`. Caveat: benchmarked with heuristic opponents — re-bench under `--self-play` for the
 production-regime number. Full design + benchmark table: `designs/ai_v5/design_async_rollout.md`.
 
 ## Gradient-balance + value-scale diagnostics (`grad_balance.py`)

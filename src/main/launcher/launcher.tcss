@@ -33,7 +33,7 @@
     margin-bottom: 1;   /* a little breathing room before the Events section */
 }
 
-/* Three side-by-side tables: a misc metrics column (rollout/time + grad/popart/distill), a
+/* Three side-by-side tables: a misc metrics column (rollout/time + grad/popart), a
  * dedicated train/* column, and the eval column. The two narrow metric columns hug their
  * content (`width: auto`) so the wider eval column (`width: 1fr`) gets the horizontal slack;
  * all size to their rows so the events panel below gets the vertical slack. The dashboard is a

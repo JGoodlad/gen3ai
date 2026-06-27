@@ -185,69 +185,14 @@ def test_secs_str_switches_to_minutes_past_600s():
     assert _secs_str(-5) == "0s"             # clamped
 
 
-def _with_distill(state: LauncherState, *, all_distilled: float, frac: float,
-                  running: float = 0.0, exhausted: float = 0.0) -> LauncherState:
-    """Merge a distill/* metrics block onto an existing state (non-eval → merges)."""
-    state.update_metrics({
-        "_step": 6_100_000,
-        "distill/all_distilled": all_distilled,
-        "distill/frac_active_opponents_distilled": frac,
-        "distill/n_ready": 5.0,
-        "distill/n_running": running,
-        "distill/n_exhausted": exhausted,
-    })
-    return state
-
-
-async def test_distill_badge_green_when_all_distilled():
-    state = _with_distill(_populated_state(), all_distilled=1.0, frac=1.0)
-    app = LauncherApp(state, queue.Queue())
-    async with app.run_test() as pilot:
-        await pilot.pause(); app._refresh(); await pilot.pause()
-        badges = _plain(app.query_one("#badges", Static))
-        assert "distilled 100%" in badges            # speedup ACTIVE headline
-
-
-async def test_distill_badge_yellow_while_backfilling():
-    state = _with_distill(_populated_state(), all_distilled=0.0, frac=0.6,
-                          running=2.0, exhausted=1.0)
-    app = LauncherApp(state, queue.Queue())
-    async with app.run_test() as pilot:
-        await pilot.pause(); app._refresh(); await pilot.pause()
-        badges = _plain(app.query_one("#badges", Static))
-        assert "distilling 60%" in badges
-        assert "2 running" in badges
-        assert "1 exhausted" in badges
-
-
-async def test_no_distill_badge_when_disabled():
-    # _populated_state has no distill/* keys → zero footprint (badge absent).
-    app = LauncherApp(_populated_state(), queue.Queue())
-    async with app.run_test() as pilot:
-        await pilot.pause(); app._refresh(); await pilot.pause()
-        badges = _plain(app.query_one("#badges", Static))
-        assert "distill" not in badges.lower()
-
-
-async def test_distill_metrics_block_renders_legibly():
-    state = _with_distill(_populated_state(), all_distilled=1.0, frac=1.0)
-    app = LauncherApp(state, queue.Queue())
-    async with app.run_test() as pilot:
-        await pilot.pause(); app._refresh(); await pilot.pause()
-        left = _table_text(app.query_one("#metrics-left", DataTable))
-        assert "distill" in left                      # the section header
-        assert "all_distilled" in left and "yes" in left   # flag formatted, short label (underscore house style)
-        assert "distilled" in left and "100.0%" in left    # frac as a percent
-
-
 async def test_metrics_tables_never_show_a_scrollbar():
-    """The dashboard tables size to content and never scroll — even a full self-play +
-    --distill-opponents roster (left misc + a dedicated train column + eval with 5 sentinels)
+    """The dashboard tables size to content and never scroll — even a full self-play
+    roster (left misc + a dedicated train column + eval with 5 sentinels)
     must not trap the wheel with a scrollbar."""
     state = LauncherState(interval_hours=3.0)
     state.pid = 1
     metrics = {"_step": 76_888_064}
-    # non-eval metrics: rollout/time + distill in the left column, the 12 train keys in their
+    # non-eval metrics: rollout/time in the left column, the 12 train keys in their
     # own column → 22 rows across the two, the roster that used to overflow a single column
     metrics.update({"rollout/ep_len_mean": 34.3, "rollout/ep_rew_mean": 3.1,
                     "time/fps": 416.0, "time/total_timesteps": 76_888_064.0})
@@ -255,7 +200,9 @@ async def test_metrics_tables_never_show_a_scrollbar():
               "learning_rate", "loss", "n_updates", "policy_gradient_loss", "value_loss",
               "clip_fraction_vf", "clip_range_vf"):
         metrics[f"train/{k}"] = 0.5
-    metrics.update({"distill/all_distilled": 0, "distill/frac_active_opponents_distilled": 0.5})
+    # grad metrics to fill out the left column so the left+train row count still exceeds the
+    # single-column overflow threshold.
+    metrics.update({"grad/policy_share": 0.5, "grad/value_share": 0.5})
     # eval: aggregates + 9 bots + 5 sentinels
     metrics.update({"eval/win_rate_mean": 0.78, "eval/mean_reward_mean": 20.0,
                     "eval/win_rate_vs_bots": 0.76, "eval/mean_reward_vs_bots": 17.0,
