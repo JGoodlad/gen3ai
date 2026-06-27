@@ -438,13 +438,20 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   **fired** + a pivot existed but the mon died = REWARD/POLICY (`ignored_threat_death`,
   the under-switch target); no pivot left = UPSTREAM (`doomed_already`); already
   fainted = a forced replacement, look one turn back (`post_faint_replacement`). The
-  no-death value craters split on the critic's **pre-cliff value sign** (scale-invariant):
-  V(s)>0 = the critic thought it was WINNING then craters = `critic_blindspot` (CRITIC
-  CAPACITY / a missing obs feature — the "more value capacity / transformer layers"
-  lever); V(s)≤0 = it already knew = `positional_grind` (upstream/material). Reads the
+  no-death value craters split on **whether the model rated itself WINNING** right before
+  the cliff (`engine._was_winning`): WINNING then craters = `critic_blindspot` (a confident-wrong
+  THROW — CRITIC CAPACITY / a missing obs feature); already behind = `positional_grind`
+  (upstream/material — never ahead to throw). **The winning signal is the CALIBRATED win-prob head
+  `P(win) ≥ wp_even` (default 0.5)**, NOT the sign of V — V is a shaped/discounted RETURN with a
+  structural **negative offset** (a measured self-mirror 50/50 reads V≈−6.5; PopArt μ≈−3.6), so the
+  old `V>0` test systematically OVER-counted grinds (mislabeled even/favored positions as "already
+  behind"). It falls back to `V > v_even` (default 0) only when no win-prob was recorded; pass
+  `--v-even` = the checkpoint's self-mirror V / PopArt μ to re-center a head-less run. The result
+  carries a `winning_split` block (`wp_even`/`v_even`/`wp_coverage`) + a caveat naming the signal.
+  Reads the
   true per-opponent win-rates from `eval_results.jsonl` (falls back to ranking by raw
   loss volume, announced in the metric + a caveat, when absent). Carries explicit
-  `caveats` (loss-weighted sampling; one-cause-per-loss; bot-only rating weight).
+  `caveats` (loss-weighted sampling; one-cause-per-loss; bot-only rating weight; the winning-split signal).
 - `probe(target, step=, opponent=, which=, max_decisions=)` — **representation
   probe**: fit a cross-validated LINEAR probe on the model's INTERNAL activations
   (`which='vf'` value-head / `'pi'` policy-head post-projection features, via

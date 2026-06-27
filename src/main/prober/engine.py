@@ -2071,6 +2071,9 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
 #   our_hp_delta:float|None  faint:bool  active_pko:float|None
 #   active_outspeed:float|None  max_pko:float|None  n_healthy_bench:int
 #   min_other_pko:float|None  delta_v:float|None  td:float|None  v_at:float|None
+#   wp_at:float|None        recorded P(win) at the cliff (win-prob head); the CALIBRATED winning-vs-
+#                           losing signal that re-centers the grind/throw split (see `_was_winning`)
+#   wp_even / v_even        the winning thresholds triage stamps on (defaults WP_EVEN_DEFAULT / 0.0)
 # Every field is optional-tolerant: a predicate must treat None as "unknown"
 # (never assume), so a trace missing the belief block still categorizes (it
 # just falls through to a coarser bucket) rather than crashing.
@@ -2080,7 +2083,14 @@ BELIEF_FIRED_PKO = 0.6        # active_pko at/above this = the OHKO belief WARNE
 BELIEF_UNDERREAD_PKO = 0.3    # active_pko below this on a healthy-mon death = the belief MISSED it
 HEALTHY_HP = 0.6              # our active counts as "healthy" (a real mon thrown away) above this HP
 FAINTED_HP = 0.02            # our active's PRE-decision HP at/below this = already fainted (forced replacement)
-CRITIC_CONFIDENT_V = 0.0     # V(s)>this at a value-cliff = the critic rated the position WINNING (sign-based, scale-invariant)
+CRITIC_CONFIDENT_V = 0.0     # FALLBACK winning threshold on V when no win-prob recorded. NB: V's zero is NOT
+                             # "even" — V is a shaped/discounted RETURN with a structural NEGATIVE offset (a
+                             # measured self-mirror 50/50 reads V≈−6.5; PopArt μ≈−3.6), so V>0 OVER-counts grinds.
+                             # Prefer the calibrated P(win) split (`_was_winning`); re-center this only via v_even.
+WP_EVEN_DEFAULT = 0.5        # PRIMARY winning threshold: P(win) at the cliff ≥ this = the model rated the position
+                             # WINNING. Calibrated win-odds (the win-prob head), so it is correctly centered at 0.5
+                             # — unlike V's sign. (The head can carry a small absolute optimism bias; pass wp_even to
+                             # de-bias by a per-checkpoint self-mirror offset if you have one.)
 
 # Common gen3 boosting/setup moves — used at the decisive turn = "set up into a threat" (greedy).
 SETUP_MOVES = frozenset({
@@ -2101,6 +2111,20 @@ class _Cat:
 def _f(feat, k):
     """feat[k] or None — tolerant of missing keys."""
     return feat.get(k)
+
+
+def _was_winning(f) -> bool:
+    """Did the critic rate the position as WINNING right before the value cratered? This is the
+    grind-vs-throw boundary, and it must NOT be the sign of V: V is a shaped/discounted return with a
+    structural negative offset (a self-mirror 50/50 reads V≈−6.5), so V>0 systematically UNDER-counts
+    "was winning" and over-attributes losses to `positional_grind`. So PREFER the calibrated win-prob
+    head — P(win) ≥ wp_even (default 0.5) — and fall back to V > v_even (default 0, re-centerable via the
+    structural even-point) only when no win-prob was recorded. Returns False on unknown (no signal)."""
+    wp = _f(f, "wp_at")
+    if wp is not None:
+        return wp >= f.get("wp_even", WP_EVEN_DEFAULT)
+    v = _f(f, "v_at")
+    return v is not None and v > f.get("v_even", CRITIC_CONFIDENT_V)
 
 
 # Ordered most-specific / most-diagnostic first. First match wins. The death buckets
@@ -2145,11 +2169,13 @@ LOSS_TAXONOMY = (
          lambda f: bool(_f(f, "faint"))),
 
     _Cat("critic_blindspot", "critic capacity / obs (the critic rated the position WINNING then it craters — confident-wrong: more value capacity / a missing obs feature)",
-         "no death this turn, but the critic had V(s)>0 (thought we were WINNING) right before the value cratered — a confident-wrong critic miss",
-         lambda f: not _f(f, "faint") and _f(f, "v_at") is not None and f["v_at"] > CRITIC_CONFIDENT_V),
+         "no death this turn, but right before the cliff the model rated the position WINNING — P(win)≥0.5 "
+         "(or, no win-prob head, V above its even-point) — a confident-wrong critic miss (a THROW, coachable)",
+         lambda f: not _f(f, "faint") and _was_winning(f)),
 
-    _Cat("positional_grind", "UPSTREAM / material (the critic already knew it was losing — a slow positional / material loss, not a critic miss)",
-         "no death this turn and the critic ALREADY had V(s)≤0 (it knew it was losing) — a gradual positional / material grind",
+    _Cat("positional_grind", "UPSTREAM / material (the model already knew it was behind — a slow positional / material loss, not a critic miss)",
+         "no death this turn and the model ALREADY rated itself behind (P(win)<0.5, or V below its even-point) "
+         "right before the cliff — a gradual positional / material grind (was never ahead to throw)",
          lambda f: not _f(f, "faint")),
 
     _Cat("other", "unattributed (drill in with analyze)", "did not match a known failure pattern",

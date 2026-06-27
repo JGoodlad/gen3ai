@@ -124,6 +124,11 @@ def _build_parser() -> argparse.ArgumentParser:
     pt.add_argument("root", help="run dir / eval_traces dir")
     pt.add_argument("--step", type=int, help="step to triage (default: latest with loss traces)")
     pt.add_argument("--opponent", help="restrict to one opponent")
+    pt.add_argument("--wp-even", type=float, default=0.5,
+                    help="P(win) winning-threshold for the grind/throw split (default 0.5; needs a win-prob head)")
+    pt.add_argument("--v-even", type=float, default=0.0,
+                    help="V winning-threshold fallback when no win-prob head (default 0.0; pass the "
+                         "checkpoint's self-mirror V / PopArt μ to re-center — V's zero is NOT 'even')")
 
     pp = sub.add_parser(
         "probe", help="linear-probe the model's activations for a derived quantity (is it already in the rep?)")
@@ -310,7 +315,8 @@ def _run(args) -> object:
             outcome=args.outcome, opponent=args.opponent, step=args.step,
             limit=args.limit, metric=args.metric)
     if args.cmd == "triage":
-        return ProbeSession(args.root).triage(step=args.step, opponent=args.opponent)
+        return ProbeSession(args.root).triage(step=args.step, opponent=args.opponent,
+                                              wp_even=args.wp_even, v_even=args.v_even)
     if args.cmd == "probe":
         return ProbeSession(args.root).probe(
             args.target, step=args.step, opponent=args.opponent,

@@ -748,11 +748,29 @@ def test_taxonomy_attrition_death_partial_belief():
     assert _cat(faint=True, our_hp=0.45, active_pko=0.4, n_healthy_bench=2) == "attrition_death"
 
 
-def test_taxonomy_critic_blindspot_vs_positional_grind_split_on_v():
-    # No death; the split is purely the critic's pre-cliff value sign (scale-invariant).
-    assert _cat(faint=False, v_at=8.0) == "critic_blindspot"      # thought it was WINNING
-    assert _cat(faint=False, v_at=-8.0) == "positional_grind"     # already knew it was losing
-    assert _cat(faint=False, v_at=None) == "positional_grind"     # unknown V → not a blindspot claim
+def test_taxonomy_critic_blindspot_vs_positional_grind_fallback_on_v():
+    # No death, NO win-prob recorded → fall back to V vs v_even (default 0).
+    assert _cat(faint=False, v_at=8.0, wp_at=None) == "critic_blindspot"   # V above even → was winning
+    assert _cat(faint=False, v_at=-8.0, wp_at=None) == "positional_grind"  # V below even → already behind
+    assert _cat(faint=False, v_at=None, wp_at=None) == "positional_grind"  # unknown → not a blindspot claim
+
+
+def test_taxonomy_split_prefers_winprob_over_v_sign():
+    # The KEY re-centering: V's zero is NOT "even" (a 50/50 self-mirror reads V<0), so a NEGATIVE V with
+    # the calibrated P(win) ≥ 0.5 is a THROW (was winning), NOT a grind. wp_at must OVERRIDE the V sign.
+    assert _cat(faint=False, v_at=-8.0, wp_at=0.62) == "critic_blindspot"   # behind on V, ahead on P(win)
+    assert _cat(faint=False, v_at=5.0, wp_at=0.40) == "positional_grind"    # ahead on V, behind on P(win)
+    # threshold + the configurable wp_even
+    assert _cat(faint=False, wp_at=0.50) == "critic_blindspot"              # exactly at 0.5 counts as winning
+    assert _cat(faint=False, wp_at=0.49) == "positional_grind"
+    assert _cat(faint=False, wp_at=0.60, wp_even=0.65) == "positional_grind"  # raise the bar → behind
+
+
+def test_taxonomy_v_even_recenters_no_winprob_run():
+    # On a run without a win-prob head, pass v_even = the checkpoint's structural even-point (e.g. −6.5)
+    # so a slightly-negative V no longer reads as "behind".
+    assert _cat(faint=False, v_at=-5.0, wp_at=None, v_even=-6.5) == "critic_blindspot"  # above the even-point
+    assert _cat(faint=False, v_at=-8.0, wp_at=None, v_even=-6.5) == "positional_grind"  # below it
 
 
 def test_taxonomy_total_on_empty_dict():

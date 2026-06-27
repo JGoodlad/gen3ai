@@ -37,7 +37,7 @@ from main.prober.discovery import (
 from main.prober.engine import (
     analyze_invocation, attribute_turning_point, build_board, build_our_hp_types,
     decode_incoming_belief, fit_probe, history_slot_saliency, parse_pct, parse_protocol_log,
-    protocol_for_turn, summary_flags, SETUP_MOVES,
+    protocol_for_turn, summary_flags, SETUP_MOVES, WP_EVEN_DEFAULT, _npz_win_prob,
 )
 
 
@@ -1414,6 +1414,9 @@ class ProbeSession:
         _reward = (inv.get("outcome") or {}).get("reward")
         _rtotal = _reward.get("total") if isinstance(_reward, dict) else _reward
         v_at = self._v(values, best_i)
+        # Recorded P(win) at the cliff — the CALIBRATED winning-vs-losing signal that re-centers the
+        # grind/throw split (V's sign mis-centers it; see engine._was_winning). None on a no-win-prob run.
+        wp_at = _npz_win_prob(self._npz(battle), best_i)
         td = self._td(_rtotal, v_at, self._v(values, best_i + 1))
         board = build_board(inv)
         our = inv.get("our") or {}
@@ -1443,7 +1446,7 @@ class ProbeSession:
             "max_pko": (belief.max_pko if belief else None),
             "n_healthy_bench": sum(1 for m in board.ours.bench if not m.fainted),
             "min_other_pko": (min(psp) if psp else None),
-            "delta_v": best_dv, "td": td, "v_at": v_at,
+            "delta_v": best_dv, "td": td, "v_at": v_at, "wp_at": wp_at,
         }
 
     def _win_rates(self, step: "int | None") -> dict:
@@ -1460,10 +1463,19 @@ class ProbeSession:
         row = (min(rows, key=lambda r: abs(r.get("step", 0) - step)) if step is not None else rows[-1])
         return dict(row.get("bots") or {})
 
-    def triage(self, *, step: "int | None" = None, opponent: "str | None" = None) -> dict:
+    def triage(self, *, step: "int | None" = None, opponent: "str | None" = None,
+               wp_even: float = WP_EVEN_DEFAULT, v_even: float = 0.0) -> dict:
         """Loss attribution: categorize every loss's decisive turning point into the engine taxonomy,
         aggregate, and RANK the failure categories by estimated recoverable win-rate (the lever
-        prioritization). Model-free. Defaults to the latest step that has loss traces."""
+        prioritization). Model-free. Defaults to the latest step that has loss traces.
+
+        The grind-vs-throw boundary (positional_grind vs critic_blindspot) splits on whether the model
+        rated itself WINNING right before the cliff. That uses the calibrated win-prob head
+        (``P(win) ≥ wp_even``, default 0.5) when the traces carry it, falling back to ``V > v_even``
+        (default 0). NB: V's zero is NOT "even" — V is a shaped/discounted return with a structural
+        negative offset (a self-mirror 50/50 reads V≈−6.5), so the V-fallback over-counts grinds; pass
+        ``v_even`` = the checkpoint's structural even-point (its self-mirror V / PopArt μ) to re-center a
+        no-win-prob run."""
         from collections import defaultdict
         losses = [b for b in self.tree.all_battles() if b.outcome == "loss"]
         if step is None:
@@ -1475,10 +1487,14 @@ class ProbeSession:
 
         per_opp = defaultdict(lambda: {"n": 0, "cats": defaultdict(list)})
         cat_meta: dict = {}
+        n_wp_split = 0                                   # losses whose grind/throw split used the win-prob head
         for b in losses:
             feat = self._turning_point_features(b)
             if feat is None:
                 continue
+            feat["wp_even"], feat["v_even"] = wp_even, v_even   # the winning-thresholds the taxonomy reads
+            if feat.get("wp_at") is not None:
+                n_wp_split += 1
             a = attribute_turning_point(feat)
             cat_meta[a["category"]] = a
             po = per_opp[b.opponent]
@@ -1520,6 +1536,12 @@ class ProbeSession:
         ranking_metric = ("est_recoverable_winrate_pct = mean over BOT opponents of "
                           "loss_rate(opp) × category_share(opp); an UPPER BOUND (assumes fixing "
                           "the lever flips that loss). Ranked descending — this is the lever order.")
+        wp_frac = round(n_wp_split / max(1, total), 2)
+        split_signal = (
+            f"grind-vs-throw boundary: P(win) ≥ {wp_even} when the win-prob head is recorded "
+            f"({int(100 * wp_frac)}% of these losses), else V > {v_even}. The calibrated win-prob split "
+            "re-centers the old V>0 test, which OVER-counted grinds (V's zero is ~6 units below 'even' — "
+            "a shaped-return offset, measured via a self-mirror 50/50 reading V<0).")
         caveats = [
             "Eval traces are LOSS-WEIGHTED (~10 loss / 5 win per opponent), so category SHARES are "
             "per-opponent representative but raw counts are NOT the true loss volume — the recoverable "
@@ -1527,6 +1549,7 @@ class ProbeSession:
             "Each loss is attributed to its single worst-ΔV turning point; a loss can have several causes.",
             "Recoverable-winrate is over BOT opponents only (the ELO anchor); sentinel/ext losses are "
             "counted (pct_of_sampled_losses) but not rating-weighted (their win-rate is gate-pinned).",
+            split_signal,
         ]
         if not bot_opps:
             ranking_metric = ("no eval_results.jsonl bot win-rates found — est_recoverable_winrate_pct "
@@ -1540,6 +1563,7 @@ class ProbeSession:
             "n_losses_analyzed": total, "n_bot_opponents": len(bot_opps),
             "bot_win_rates": {o: wr[o] for o in bot_opps},
             "ranking_metric": ranking_metric,
+            "winning_split": {"wp_even": wp_even, "v_even": v_even, "wp_coverage": wp_frac},
             "caveats": caveats,
             "categories": cats,
         }
