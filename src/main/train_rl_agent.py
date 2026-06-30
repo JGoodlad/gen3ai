@@ -518,6 +518,51 @@ def _apply_grad_checkpointing(model, enabled: bool) -> None:
           f"(bit-exact; trades idle-GPU compute for ~5GB activation VRAM)")
 
 
+def _apply_compile_damage_op(model, enabled: bool) -> None:
+    """torch.compile the DamageOperator's forward on the INFERENCE path (the dispatch-bound
+    ~45%-of-forward op).
+
+    Runtime-only perf knob, like ``_apply_grad_checkpointing``: never enters the saved
+    checkpoint or the version check, so it is set fresh each run from ``--compile-damage-op``
+    regardless of what a resumed checkpoint was trained with. Value-preserving — the fused
+    Inductor kernels do the SAME math (~5e-7 float reassociation), proven 0 graph breaks.
+
+    INFERENCE-ONLY by design: we compile the bound ``forward`` and dispatch on
+    ``torch.is_grad_enabled()`` — the compiled graph runs under no_grad (the per-env self-play
+    opponents [~68% of rollout], the learner's rollout action forward, and eval), while the PPO
+    training UPDATE (grad on) stays EAGER. Two reasons: (1) Inductor's CPU backward codegen for
+    the op's scatter/atomic_add (the HP-type belief index_add) currently errors, and (2) the
+    rollout — not the update — is the latency-bound bottleneck, so the inference path is where
+    the win lives. We patch ``op.forward`` (an instance attribute) rather than wrapping the
+    module, so the state_dict keys are UNCHANGED (resume-safe). Measured CPU op speedup:
+    ~17x at B=1 / ~8x at B=64. A no-op if there is no DamageOperator.
+    """
+    if not enabled:
+        return
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    extractors = [m for m in model.policy.modules()
+                  if isinstance(m, Gen3FeaturesExtractor) and getattr(m, "damage_op", None) is not None]
+    for fx in extractors:
+        op = fx.damage_op
+        if getattr(op, "_compile_patched", False):       # idempotent (don't double-patch a resume)
+            continue
+        eager_forward = op.forward                        # the ORIGINAL bound method (captured pre-patch)
+        compiled_forward = torch.compile(eager_forward)   # compile the bound method (not the module)
+
+        def _dispatch(*a, _eager=eager_forward, _compiled=compiled_forward, **k):
+            # Training backward → eager (Inductor bwd codegen bug + the update isn't the bottleneck);
+            # inference (rollout / opponents / eval, all no_grad) → compiled (~17x at B=1).
+            if torch.is_grad_enabled():
+                return _eager(*a, **k)
+            return _compiled(*a, **k)
+
+        op.forward = _dispatch                            # instance attr → state_dict UNCHANGED (resume-safe)
+        op._compile_patched = True
+    print(f"[CompileDamageOp] inference-path torch.compile on {len(extractors)} DamageOperator(s) "
+          f"(value-preserving; ~17x B=1 / ~8x B=64; 0 graph breaks; training backward stays eager; "
+          f"first inference forward pays a one-time Inductor compile)")
+
+
 def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = False) -> None:
     """Startup smoke test: save → reload → zero forward pass → assert output shape.
 
@@ -1346,6 +1391,13 @@ async def main():
                         help="Gradient-checkpoint the transformer encoder layers during the PPO "
                              "update (bit-exact; trades one extra forward on the idle GPU for "
                              "~5GB less activation VRAM). Off by default; safe to toggle per run.")
+    parser.add_argument("--compile-damage-op", "--compile_damage_op", dest="compile_damage_op",
+                        action="store_true",
+                        help="torch.compile the DamageOperator — the dispatch-bound ~45%% of the "
+                             "model forward (value-preserving fused kernels; ~17x at B=1 = the "
+                             "self-play opponents, ~8x at B=64; 0 graph breaks). Runtime perf knob, "
+                             "NOT version-locked — re-pass on every resume like --grad-checkpointing. "
+                             "First forward pays a one-time Inductor compile.")
     parser.add_argument("--weight-decay", type=float, default=1e-5,
                         help="AdamW weight decay (L2 regularisation). Default 1e-5 is conservative for PPO.")
 
@@ -2862,6 +2914,7 @@ async def main():
             print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail}))")
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
+            _apply_compile_damage_op(model, args.compile_damage_op)
             model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
             save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args)
 
@@ -3082,6 +3135,7 @@ async def main():
         )
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
+        _apply_compile_damage_op(model, args.compile_damage_op)
         model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
         save_model_snapshot(model_dir, version, hparams=_model_hparams(model), cli_args=cli_args)
 
