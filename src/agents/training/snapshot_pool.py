@@ -15,7 +15,7 @@ from pathlib import Path
 
 from sb3_contrib import MaskablePPO
 
-from agents.model.snapshot import load_model_snapshot
+from agents.model.snapshot import load_model_snapshot, maybe_compile_opponent_damage_op
 from agents.model.model_version import ModelVersion
 from main.launcher.ipc import emit
 
@@ -108,6 +108,7 @@ class SnapshotPool:
         lru_cache_size: int = 3,
         pfsp_scale: float = 0.0,
         pool_spread: bool = False,
+        compile_damage_op: bool = False,
     ):
         self.pool_dir = Path(pool_dir)
         self._current_version = current_version
@@ -125,6 +126,9 @@ class SnapshotPool:
         # spread) instead of the oldest-evicted sliding window, so PFSP has a real range of selves
         # to up-weight (a recent-selves-only window is a near-50% echo chamber). Off → byte-identical.
         self._pool_spread = bool(pool_spread)
+        # torch.compile each sampled opponent's DamageOperator inference forward (perf knob; runtime-only,
+        # value-preserving, not version-locked) — applied in load_model(). Off → byte-identical.
+        self._compile_damage_op = bool(compile_damage_op)
         self._cache_size = lru_cache_size
         self._entries: list[SnapshotEntry] = []
         self._model_cache: OrderedDict[str, MaskablePPO] = OrderedDict()
@@ -271,6 +275,9 @@ class SnapshotPool:
                 current_version=self._current_version,
                 device=self._device,
             )
+            # Compile this frozen opponent's DamageOperator inference forward (perf; no-op when the
+            # flag is off). Idempotent, so an LRU re-load of the same path re-patches harmlessly.
+            maybe_compile_opponent_damage_op(loaded, self._compile_damage_op, label="pool-opponent")
             self._model_cache[key] = loaded
         return self._model_cache[key]
 

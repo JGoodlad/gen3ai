@@ -17,6 +17,14 @@ for d in [root_dir, src_dir, main_dir]:
     if d not in sys.path:
         sys.path.insert(0, d)
 
+# Shared on-disk Inductor cache so --compile-damage-op's per-process torch.compile (the learner +
+# up to --n-envs env-worker subprocesses + the eval workers) codegens the DamageOperator graph ONCE
+# and every other process hits the cache instead of re-doing codegen (the 64x / per-eval-cycle
+# startup-compile tax collapses to ~1 real codegen + cheap cache loads). setdefault → a user-set
+# value still wins; harmless when --compile-damage-op is off. Workers re-import this module (spawn),
+# so this runs in every process before any torch.compile.
+os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR", "/tmp/gen3ai_inductor_cache")
+
 import asyncio
 import json
 import random
@@ -519,48 +527,13 @@ def _apply_grad_checkpointing(model, enabled: bool) -> None:
 
 
 def _apply_compile_damage_op(model, enabled: bool) -> None:
-    """torch.compile the DamageOperator's forward on the INFERENCE path (the dispatch-bound
-    ~45%-of-forward op).
-
-    Runtime-only perf knob, like ``_apply_grad_checkpointing``: never enters the saved
-    checkpoint or the version check, so it is set fresh each run from ``--compile-damage-op``
-    regardless of what a resumed checkpoint was trained with. Value-preserving — the fused
-    Inductor kernels do the SAME math (~5e-7 float reassociation), proven 0 graph breaks.
-
-    INFERENCE-ONLY by design: we compile the bound ``forward`` and dispatch on
-    ``torch.is_grad_enabled()`` — the compiled graph runs under no_grad (the per-env self-play
-    opponents [~68% of rollout], the learner's rollout action forward, and eval), while the PPO
-    training UPDATE (grad on) stays EAGER. Two reasons: (1) Inductor's CPU backward codegen for
-    the op's scatter/atomic_add (the HP-type belief index_add) currently errors, and (2) the
-    rollout — not the update — is the latency-bound bottleneck, so the inference path is where
-    the win lives. We patch ``op.forward`` (an instance attribute) rather than wrapping the
-    module, so the state_dict keys are UNCHANGED (resume-safe). Measured CPU op speedup:
-    ~17x at B=1 / ~8x at B=64. A no-op if there is no DamageOperator.
+    """Compile the LEARNER's DamageOperator inference forward — a thin wrapper over the shared
+    ``maybe_compile_opponent_damage_op`` (in agents.model.snapshot) so the learner and every
+    frozen opponent (self-play pool + stable + exploiter + eval sentinels) use the IDENTICAL
+    impl. See that function for the full rationale (inference-only, resume-safe, value-preserving).
     """
-    if not enabled:
-        return
-    from agents.model.features_extractor import Gen3FeaturesExtractor
-    extractors = [m for m in model.policy.modules()
-                  if isinstance(m, Gen3FeaturesExtractor) and getattr(m, "damage_op", None) is not None]
-    for fx in extractors:
-        op = fx.damage_op
-        if getattr(op, "_compile_patched", False):       # idempotent (don't double-patch a resume)
-            continue
-        eager_forward = op.forward                        # the ORIGINAL bound method (captured pre-patch)
-        compiled_forward = torch.compile(eager_forward)   # compile the bound method (not the module)
-
-        def _dispatch(*a, _eager=eager_forward, _compiled=compiled_forward, **k):
-            # Training backward → eager (Inductor bwd codegen bug + the update isn't the bottleneck);
-            # inference (rollout / opponents / eval, all no_grad) → compiled (~17x at B=1).
-            if torch.is_grad_enabled():
-                return _eager(*a, **k)
-            return _compiled(*a, **k)
-
-        op.forward = _dispatch                            # instance attr → state_dict UNCHANGED (resume-safe)
-        op._compile_patched = True
-    print(f"[CompileDamageOp] inference-path torch.compile on {len(extractors)} DamageOperator(s) "
-          f"(value-preserving; ~17x B=1 / ~8x B=64; 0 graph breaks; training backward stays eager; "
-          f"first inference forward pays a one-time Inductor compile)")
+    from agents.model.snapshot import maybe_compile_opponent_damage_op
+    maybe_compile_opponent_damage_op(model, enabled, label="learner")
 
 
 def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = False) -> None:
@@ -2236,6 +2209,7 @@ async def main():
                         device=opponent_device,
                         pfsp_scale=getattr(args, "pfsp_scale", 0.0),
                         pool_spread=getattr(args, "pool_spread", False),
+                        compile_damage_op=args.compile_damage_op,   # compile each sampled opponent's op
                     )
                     # model=None placeholder — the wrapper swaps in a sampled snapshot before
                     # ever using it. Stochastic + temperature so the learner trains against the
@@ -2256,11 +2230,12 @@ async def main():
                 # mastered (pushed via set_stable_mastered) → floor peer of the bots.
                 stable_players, stable_labels = [], []
                 if self_play and stable_opponents:
-                    from agents.model.snapshot import load_foreign_opponent
+                    from agents.model.snapshot import load_foreign_opponent, maybe_compile_opponent_damage_op
                     for e in stable_opponents:
                         opp_model, _ = load_foreign_opponent(
                             e.zip_path, current_version=opponent_version,
                             device=opponent_device, config_path=e.config_path)
+                        maybe_compile_opponent_damage_op(opp_model, args.compile_damage_op, label="stable-opponent")
                         stable_players.append(RLPlayer(
                             model=opp_model, team=opponent_teambuilder, battle_format=BATTLE_FORMAT,
                             server_configuration=server_config, mappings=mappings,
@@ -2276,10 +2251,11 @@ async def main():
                 # it stays a moving target (harder to over-exploit a frozen target's quirks).
                 exploiter_player = None
                 if exploiter_entry is not None:
-                    from agents.model.snapshot import load_foreign_opponent
+                    from agents.model.snapshot import load_foreign_opponent, maybe_compile_opponent_damage_op
                     _ex_model, _ = load_foreign_opponent(
                         exploiter_entry.zip_path, current_version=opponent_version,
                         device=opponent_device, config_path=exploiter_entry.config_path)
+                    maybe_compile_opponent_damage_op(_ex_model, args.compile_damage_op, label="exploiter")
                     exploiter_player = RLPlayer(
                         model=_ex_model, team=opponent_teambuilder, battle_format=BATTLE_FORMAT,
                         server_configuration=server_config, mappings=mappings,
