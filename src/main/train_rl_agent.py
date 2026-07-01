@@ -17,14 +17,6 @@ for d in [root_dir, src_dir, main_dir]:
     if d not in sys.path:
         sys.path.insert(0, d)
 
-# Shared on-disk Inductor cache so --compile-damage-op's per-process torch.compile (the learner +
-# up to --n-envs env-worker subprocesses + the eval workers) codegens the DamageOperator graph ONCE
-# and every other process hits the cache instead of re-doing codegen (the 64x / per-eval-cycle
-# startup-compile tax collapses to ~1 real codegen + cheap cache loads). setdefault → a user-set
-# value still wins; harmless when --compile-damage-op is off. Workers re-import this module (spawn),
-# so this runs in every process before any torch.compile.
-os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR", "/tmp/gen3ai_inductor_cache")
-
 import asyncio
 import json
 import random
@@ -524,16 +516,6 @@ def _apply_grad_checkpointing(model, enabled: bool) -> None:
             n += 1
     print(f"[GradCheckpoint] enabled on {n} transformer block(s) "
           f"(bit-exact; trades idle-GPU compute for ~5GB activation VRAM)")
-
-
-def _apply_compile_damage_op(model, enabled: bool) -> None:
-    """Compile the LEARNER's DamageOperator inference forward — a thin wrapper over the shared
-    ``maybe_compile_opponent_damage_op`` (in agents.model.snapshot) so the learner and every
-    frozen opponent (self-play pool + stable + exploiter + eval sentinels) use the IDENTICAL
-    impl. See that function for the full rationale (inference-only, resume-safe, value-preserving).
-    """
-    from agents.model.snapshot import maybe_compile_opponent_damage_op
-    maybe_compile_opponent_damage_op(model, enabled, label="learner")
 
 
 def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = False) -> None:
@@ -1364,13 +1346,6 @@ async def main():
                         help="Gradient-checkpoint the transformer encoder layers during the PPO "
                              "update (bit-exact; trades one extra forward on the idle GPU for "
                              "~5GB less activation VRAM). Off by default; safe to toggle per run.")
-    parser.add_argument("--compile-damage-op", "--compile_damage_op", dest="compile_damage_op",
-                        action="store_true",
-                        help="torch.compile the DamageOperator — the dispatch-bound ~45%% of the "
-                             "model forward (value-preserving fused kernels; ~17x at B=1 = the "
-                             "self-play opponents, ~8x at B=64; 0 graph breaks). Runtime perf knob, "
-                             "NOT version-locked — re-pass on every resume like --grad-checkpointing. "
-                             "First forward pays a one-time Inductor compile.")
     parser.add_argument("--weight-decay", type=float, default=1e-5,
                         help="AdamW weight decay (L2 regularisation). Default 1e-5 is conservative for PPO.")
 
@@ -2209,7 +2184,6 @@ async def main():
                         device=opponent_device,
                         pfsp_scale=getattr(args, "pfsp_scale", 0.0),
                         pool_spread=getattr(args, "pool_spread", False),
-                        compile_damage_op=args.compile_damage_op,   # compile each sampled opponent's op
                     )
                     # model=None placeholder — the wrapper swaps in a sampled snapshot before
                     # ever using it. Stochastic + temperature so the learner trains against the
@@ -2230,12 +2204,11 @@ async def main():
                 # mastered (pushed via set_stable_mastered) → floor peer of the bots.
                 stable_players, stable_labels = [], []
                 if self_play and stable_opponents:
-                    from agents.model.snapshot import load_foreign_opponent, maybe_compile_opponent_damage_op
+                    from agents.model.snapshot import load_foreign_opponent
                     for e in stable_opponents:
                         opp_model, _ = load_foreign_opponent(
                             e.zip_path, current_version=opponent_version,
                             device=opponent_device, config_path=e.config_path)
-                        maybe_compile_opponent_damage_op(opp_model, args.compile_damage_op, label="stable-opponent")
                         stable_players.append(RLPlayer(
                             model=opp_model, team=opponent_teambuilder, battle_format=BATTLE_FORMAT,
                             server_configuration=server_config, mappings=mappings,
@@ -2251,11 +2224,10 @@ async def main():
                 # it stays a moving target (harder to over-exploit a frozen target's quirks).
                 exploiter_player = None
                 if exploiter_entry is not None:
-                    from agents.model.snapshot import load_foreign_opponent, maybe_compile_opponent_damage_op
+                    from agents.model.snapshot import load_foreign_opponent
                     _ex_model, _ = load_foreign_opponent(
                         exploiter_entry.zip_path, current_version=opponent_version,
                         device=opponent_device, config_path=exploiter_entry.config_path)
-                    maybe_compile_opponent_damage_op(_ex_model, args.compile_damage_op, label="exploiter")
                     exploiter_player = RLPlayer(
                         model=_ex_model, team=opponent_teambuilder, battle_format=BATTLE_FORMAT,
                         server_configuration=server_config, mappings=mappings,
@@ -2890,7 +2862,6 @@ async def main():
             print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail}))")
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
-            _apply_compile_damage_op(model, args.compile_damage_op)
             model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
             save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args)
 
@@ -3111,7 +3082,6 @@ async def main():
         )
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
-        _apply_compile_damage_op(model, args.compile_damage_op)
         model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
         save_model_snapshot(model_dir, version, hparams=_model_hparams(model), cli_args=cli_args)
 

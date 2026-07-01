@@ -14,52 +14,6 @@ from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from utils.git import get_git_hash
 
 
-def maybe_compile_opponent_damage_op(model, enabled: bool, *, label: str = "model") -> None:
-    """torch.compile the DamageOperator's forward on the INFERENCE path of ``model``.
-
-    Shared by the LEARNER (train_rl_agent) and every frozen OPPONENT (self-play pool + stable +
-    exploiter, and the eval-worker sentinels) — co-located here so the training process AND the
-    eval-worker subprocess import the identical impl. A runtime perf knob like grad-checkpointing:
-    never enters the saved checkpoint or the version check (patches ``op.forward`` as an INSTANCE
-    attribute, so state_dict keys are UNCHANGED / resume-safe), value-preserving (fused Inductor
-    kernels do the SAME math, ~5e-7 float reassociation, proven 0 graph breaks).
-
-    INFERENCE-ONLY: the patched ``forward`` dispatches on ``torch.is_grad_enabled()`` — compiled
-    under no_grad (all opponent forwards + the learner's rollout/eval), eager under grad (the PPO
-    update, which hits an Inductor CPU-backward codegen bug on the op's scatter/atomic_add and is
-    not the bottleneck anyway). Frozen opponents ALWAYS run under no_grad → always the compiled
-    path. Idempotent (``_compile_patched`` guard) so an LRU cache-hit / re-materialised snapshot is
-    a no-op. Measured CPU op speedup: ~17x at B=1 (the per-env opponents) / ~8x at B=64. A no-op if
-    disabled or if the model has no DamageOperator.
-    """
-    if not enabled:
-        return
-    import torch
-    from agents.model.features_extractor import Gen3FeaturesExtractor
-    extractors = [m for m in model.policy.modules()
-                  if isinstance(m, Gen3FeaturesExtractor) and getattr(m, "damage_op", None) is not None]
-    n = 0
-    for fx in extractors:
-        op = fx.damage_op
-        if getattr(op, "_compile_patched", False):       # idempotent (LRU reuse / re-load / resume)
-            continue
-        eager_forward = op.forward                        # the ORIGINAL bound method (captured pre-patch)
-        compiled_forward = torch.compile(eager_forward)   # compile the bound method (not the module)
-
-        def _dispatch(*a, _eager=eager_forward, _compiled=compiled_forward, **k):
-            if torch.is_grad_enabled():                   # training backward → eager (bwd codegen bug)
-                return _eager(*a, **k)
-            return _compiled(*a, **k)                      # inference (opponents / rollout / eval) → compiled
-
-        op.forward = _dispatch                            # instance attr → state_dict UNCHANGED (resume-safe)
-        op._compile_patched = True
-        n += 1
-    if n:
-        print(f"[CompileDamageOp] inference-path torch.compile on {n} {label} DamageOperator(s) "
-              f"(value-preserving; ~17x B=1; 0 graph breaks; first inference forward pays a one-time "
-              f"Inductor compile)")
-
-
 def save_model_snapshot(
     model_dir: str,
     version: ModelVersion,
