@@ -153,3 +153,11 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   reasons over uncertainty (distribution-param heads, distributional RL / `ValueDistHead`,
   attention-as-marginalization, why MSE bakes in mean-field, factoring the marginalization into
   the differentiable `DamageOperator`).
+- **`on_policy_self_distillation.md`** — on-policy distillation (OPD) as the dense-signal training
+  regime, why it's ~7-10× more step-efficient than PPO (a full target distribution per state vs ~1
+  bit/game), our `better-line` beam as the policy-improvement teacher, upgrading the `search-teacher`
+  AWR-toward-`A*` to a full-distribution `KL(π' ‖ π)` (with the `V^{π*}`/GAE-bias dissolved by
+  distilling the *policy* while the critic sees only confirmed returns), cheap Gumbel-top-k × opp-axis-
+  collapse search under the expensive `DamageOperator` critic (≈8 evals/node vs 121), and the
+  **team-subset exploiter** as where OPD compounds. Grounds ExIt/AlphaZero, Grill 2020, Gumbel MuZero,
+  ReBeL/Student of Games onto our tooling.

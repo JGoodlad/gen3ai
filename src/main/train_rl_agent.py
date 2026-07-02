@@ -393,6 +393,8 @@ def _model_hparams(model) -> dict:
         "search_teacher_value_coef": float(getattr(model, "search_teacher_value_coef", 0.0)),
         "search_teacher_beta": float(getattr(model, "search_teacher_beta", 1.0)),
         "search_teacher_batch_size": int(getattr(model, "search_teacher_batch_size", 256)),
+        "opd_coef": float(getattr(model, "opd_coef", 0.0)),
+        "opd_beta": float(getattr(model, "opd_beta", 1.0)),
         "batch_size": model.batch_size,
         "grad_accum_steps": int(getattr(model, "grad_accum_steps", 1)),
         "n_steps": model.n_steps,
@@ -1078,6 +1080,18 @@ async def main():
                              "which biases the GAE critic). Only for the joint-ExIt A/B.")
     parser.add_argument("--search-teacher-beta", "--search_teacher_beta", dest="search_teacher_beta",
                         type=float, default=None, help="AWR temperature β (default 1.0).")
+    # ON-POLICY SELF-DISTILLATION (OPD) — upgrades the distillation TARGET from the single action A*
+    # (AWR) to the FULL improved distribution π' via KL(π' ‖ π_student). Training-only, modelled EXACTLY
+    # on --search-teacher-coef (0 = byte-identical; NOT version-locked). REQUIRES --search-teacher (it
+    # fills the correction buffer + its workers build π'). A run carries BOTH targets → A/B AWR vs KL.
+    parser.add_argument("--opd-coef", "--opd_coef", dest="opd_coef", type=float, default=None,
+                        help="ON-POLICY SELF-DISTILLATION weight (opd_coef * KL(π' ‖ π_student) toward the "
+                             "beam's improved distribution). Default 0.0 = OFF (loss byte-identical). "
+                             "Requires --search-teacher. Training-only (inherited on a flagless resume). "
+                             "Watch grad/opd_share + opd/kl / opd/agree_rate.")
+    parser.add_argument("--opd-beta", "--opd_beta", dest="opd_beta", type=float, default=None,
+                        help="OPD softmax temperature β for π' over the per-action backed-up values "
+                             "(default 1.0). Higher β → flatter target.")
     parser.add_argument("--search-teacher-batch-size", "--search_teacher_batch_size",
                         dest="search_teacher_batch_size", type=int, default=None,
                         help="Corrections sampled per train() for the AWR forward (default 256).")
@@ -1616,6 +1630,8 @@ async def main():
     _resolve("search_teacher_value_coef", 0.0)  # training-only off-policy value term (default OFF)
     _resolve("search_teacher_beta", 1.0)       # training-only AWR temperature
     _resolve("search_teacher_batch_size", 256)  # training-only per-train() correction sample
+    _resolve("opd_coef", 0.0)                  # training-only OPD KL weight (inherited on flagless resume)
+    _resolve("opd_beta", 1.0)                  # training-only OPD softmax temperature β
     _resolve("damage_topk_k", 0)               # v30 structural int (top-K incoming; version-checked, fresh-only)
     _resolve("damage_refine_rounds", 0)        # v31 structural int (iterative refine; version-checked, fresh-only)
     _resolve("damage_matrices_outgoing", False)  # v32 structural (outgoing damage matrix; version-checked, fresh-only)
@@ -1689,6 +1705,13 @@ async def main():
         # A negative coef would INVERT the CE gradient. value_dist_coef is training-only (not
         # version-locked), so guard it here — the only gate.
         parser.error("--value-dist-coef must be >= 0 (0 = off; the mode controls on/off)")
+    if args.opd_coef is not None and args.opd_coef < 0.0:
+        parser.error("--opd-coef must be >= 0 (0 = off)")
+    if args.opd_coef and args.opd_coef > 0 and not args.search_teacher:
+        # OPD distils the beam's π' from the SAME correction buffer the search-teacher fills (its workers
+        # build π'), so it can't run standalone.
+        parser.error("--opd-coef > 0 requires --search-teacher (OPD distils the search-teacher's "
+                     "correction buffer; its workers build the π' targets)")
     if args.move_belief_mode != "off":
         # The MoveBelief module reads/refines the opp slots, so (like the BeliefHead) it requires the
         # unrevealed slots to be attendable — auto-enable the unmask flag (the model side hard-gates
@@ -2542,7 +2565,10 @@ async def main():
             budget=args.teacher_search_budget, n_workers=args.teacher_search_workers,
             confirm_rollouts=args.teacher_confirm_rollouts,
             persistent=args.teacher_persistent, refresh_steps=args.teacher_refresh_steps,
-            n_battles=args.teacher_gen_battles, verbose=1))
+            n_battles=args.teacher_gen_battles,
+            # OPD: when --opd-coef>0 the workers ALSO build the improved distribution π' (the KL target).
+            opd_build_pi_target=bool(args.opd_coef and args.opd_coef > 0), opd_beta=args.opd_beta,
+            verbose=1))
     eval_callback = None
     # A --debug smoke run skips ALL eval by default — the periodic eval callback below AND the
     # final win-rate eval — so it needs no eval opponents / Showdown eval connection and stays
@@ -2773,6 +2799,11 @@ async def main():
         model.search_teacher_beta = args.search_teacher_beta
         model.search_teacher_batch_size = args.search_teacher_batch_size
         model._search_teacher_on = bool(args.search_teacher)
+        # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
+        # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
+        model.opd_coef = args.opd_coef
+        model.opd_beta = args.opd_beta
+        model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
         if args.search_teacher:
             from agents.training.teacher.buffer import CorrectionBuffer
             model._correction_buffer = CorrectionBuffer(args.search_teacher_buffer_size)
@@ -3057,6 +3088,11 @@ async def main():
         model.search_teacher_beta = args.search_teacher_beta
         model.search_teacher_batch_size = args.search_teacher_batch_size
         model._search_teacher_on = bool(args.search_teacher)
+        # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
+        # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
+        model.opd_coef = args.opd_coef
+        model.opd_beta = args.opd_beta
+        model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
         if args.search_teacher:
             from agents.training.teacher.buffer import CorrectionBuffer
             model._correction_buffer = CorrectionBuffer(args.search_teacher_buffer_size)

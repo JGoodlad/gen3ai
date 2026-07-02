@@ -1487,6 +1487,24 @@ rides `grad/searchteacher_share` / `_policy_cosine` (the live "is the teacher fi
 signal). `teacher/*` metrics: `agree_rate` (π ↔ A*, should RISE), `mean_adv`, `mean_w`, `loss`, `n`,
 `buffer_size`, `corrections_per_cycle`, `yield`, `mean_confirmed_dwin`.
 
+**On-policy self-distillation (OPD) — the KL upgrade of AWR (`--opd-coef`).** AWR distils only the
+single verified-better action A*; OPD upgrades the distillation TARGET to the FULL improved distribution
+**π'** via `opd_coef · KL(π' ‖ π_student)` (`InstrumentedMaskablePPO._opd_loss` + its own `train()` fold,
+modelled EXACTLY on the AWR fold). π' is the softmax over LEGAL actions of the beam's per-action
+**backed-up** values `(v(a) − max_legal_v) / opd_beta`, with a COMPLETED-Q floor (min legal value) for a
+legal-but-unsearched slot and 0 on illegal slots — built worker-side in `produce.py` (`_build_pi_target`,
+only when `build_pi_target`, so no cost off) and carried on the `Correction` as a NEW `pi_target [11]`
+field (appended LAST, default None → an AWR-only run is backward-compatible). It travels the worker shard
+`.npz` (like obs/mask, a NaN row = None) and `CorrectionBuffer.to_tensors` stacks it (all-present → a
+tensor; **any-None → the key is None** so the KL None-guards — never a partial batch). The OPD fold
+samples the **SAME** `_correction_buffer` (its own `get_distribution` forward), so a Correction carries
+BOTH targets and a run can **A/B AWR vs KL** by which coef is set. `opd/*` metrics: `kl` (should FALL),
+`agree_rate` (student ↔ π' mode, should RISE), `pi_target_entropy` (π' sharpness), `n`; the shared-trunk
+pull rides `grad/opd_share` / `_policy_cosine`. **Training-only** (0 = byte-identical, NOT in
+ModelVersion / `check_compatible` / any `check_*` → both A/B arms resume a pre-OPD checkpoint with zero
+FATAL risk; coefs `_resolve`-inherited on a flagless resume). **Requires `--search-teacher`** (it fills
+the buffer + its workers build π'; a `parser.error` guards `--opd-coef>0` without it).
+
 **Why NOT value-only:** the search VALUE is the *improved-policy* value V^π*(s); regressing the PPO
 critic (which must predict V^π for GAE) toward it biases advantages. So the signal is the **policy**
 (AWR); the off-policy value term is wired but `--search-teacher-value-coef 0` by default (the
@@ -1502,6 +1520,8 @@ per turn) — this attacks the thrown-late ⅓.
 | `--search-teacher-coef` | `0.0` | AWR policy CE weight (0 = byte-identical) |
 | `--search-teacher-value-coef` | `0.0` | off-policy value term (OFF — soundness) |
 | `--search-teacher-beta` | `1.0` | AWR temperature β |
+| `--opd-coef` | `0.0` | OPD KL(π' ‖ π_student) weight (0 = byte-identical; requires `--search-teacher`) |
+| `--opd-beta` | `1.0` | OPD softmax temperature β for π' |
 | `--teacher-search-budget` | `200` | candidates searched per cycle |
 | `--teacher-confirm-rollouts` | `8` | Monte-Carlo confirm games (the CI gate) |
 | `--teacher-search-workers` | `3` | worker subprocesses per cycle |
@@ -1512,8 +1532,13 @@ per turn) — this attacks the thrown-late ⅓.
 `produce_test` (the 3-tier gate with a fake session), `selection_test` (the funnel with a fake
 ProbeSession + monkeypatched falsify), `callback_test` (shard→buffer collect + crash-graceful); plus
 `instrumented_ppo_test.py::test_search_teacher_*` (the AWR fold in a real `train()` moves the policy
-toward A*; off-by-default no-op). End-to-end pipeline (selection → exact-opp search → confirm → gate →
-Correction) validated against a real run.
+toward A*; off-by-default no-op). **OPD tests:** `instrumented_ppo_test.py::test_opd_*` (the `_opd_loss`
+KL — 0 at the fixed point / >0 otherwise / None-guards / illegal-action masking — plus the real-`train()`
+fold moving the policy toward π', off-byte-identical even with a populated buffer, and the AWR-only
+π'-less buffer being skipped), `teacher/buffer_test` (`pi_target` roundtrip: all-present → tensor,
+any-None → None), `teacher/produce_test::test_pi_target_*` (π' sums to 1 over legal / 0 illegal / peaks
+A* / temperature flattens / completed-Q floor). End-to-end pipeline (selection → exact-opp search →
+confirm → gate → Correction) validated against a real run.
 
 ## Process liveness guards (`watchdog.py`)
 

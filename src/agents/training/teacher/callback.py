@@ -33,6 +33,15 @@ def _version_key(path: str) -> int:
         return -1
 
 
+def _pi_target_row(pit, i):
+    """The OPD π' row i from a shard's ``pi_target`` [n,11] array (or ``None`` when no π' array was
+    published — an AWR-only run — or a NaN row, the worker's per-row None sentinel)."""
+    if pit is None or i >= len(pit):
+        return None
+    row = pit[i]
+    return None if np.isnan(row).any() else np.asarray(row, dtype=np.float32)
+
+
 class SearchTeacherCallback(BaseCallback):
     """Drives the offline search-teacher (design_search_teacher.md). Constructed only under
     ``--search-teacher``; off ⇒ never added ⇒ byte-identical training."""
@@ -41,6 +50,7 @@ class SearchTeacherCallback(BaseCallback):
                  depth: int = 2, beam: int = 3, top_k: int = 4, confirm_rollouts: int = 8,
                  margin_min: float = 0.0, falsify_gate: bool = True, scan_limit: int = 60,
                  persistent: bool = False, refresh_steps: int = 500_000, n_battles: int = 12,
+                 opd_build_pi_target: bool = False, opd_beta: float = 1.0,
                  verbose: int = 0):
         super().__init__(verbose)
         self.run_dir = run_dir
@@ -50,6 +60,10 @@ class SearchTeacherCallback(BaseCallback):
         self.depth, self.beam, self.top_k = depth, beam, top_k
         self.confirm_rollouts, self.margin_min = confirm_rollouts, margin_min
         self.falsify_gate, self.scan_limit = falsify_gate, scan_limit
+        # OPD (on-policy self-distillation): tell the workers to ALSO build the improved distribution π'
+        # (the KL target) on each correction. off = AWR-only (no π' → the KL loss is skipped).
+        self.opd_build_pi_target = bool(opd_build_pi_target)
+        self.opd_beta = float(opd_beta)
         self._cycle_dir = os.path.join(run_dir, "teacher_cycle")
         self._pending: Optional[dict] = None
         self._last_launch_step = 0
@@ -148,6 +162,12 @@ class SearchTeacherCallback(BaseCallback):
 
     def _spawn_worker(self, wid: int, out_dir: str, opponents: list) -> None:
         worker_env = {k: v for k, v in os.environ.items() if k != "LAUNCHER_METRICS_FD"}
+        # Force the search/confirm worker onto the CPU — HIDE the GPU from the subprocess entirely
+        # (belt-and-suspenders beyond the explicit device="cpu" model loads). A CUDA-visible worker
+        # would init a CUDA context per process during model load / search, contending with (and
+        # OOM-ing) the learner on the shared card — the exact failure that crashed the opponent-compile
+        # run. The teacher is a spare-core side activity by design, so it never wants the GPU.
+        worker_env["CUDA_VISIBLE_DEVICES"] = ""
         cfg = {
             "run_dir": self.run_dir, "worker_id": wid,
             "control_path": os.path.join(self._persist_dir, "control.json"), "output_dir": out_dir,
@@ -155,6 +175,7 @@ class SearchTeacherCallback(BaseCallback):
             "per_iter_budget": max(2, self.budget // 8), "depth": self.depth, "beam": self.beam,
             "top_k": self.top_k, "confirm_rollouts": self.confirm_rollouts,
             "margin_min": self.margin_min,
+            "opd_build_pi_target": self.opd_build_pi_target, "opd_beta": self.opd_beta,
         }
         cfg_path = os.path.join(self._persist_dir, f"config_{wid}.json")
         with open(cfg_path, "w") as f:
@@ -227,6 +248,7 @@ class SearchTeacherCallback(BaseCallback):
                     sh = json.load(f)
                 with np.load(npz_path) as arr:
                     obs, mask = arr["obs"], arr["mask"]   # forced into memory inside the `with`
+                    pit = np.asarray(arr["pi_target"]) if "pi_target" in arr else None  # OPD π' (opt)
             except (OSError, ValueError, KeyError):
                 continue
             # CONSUME the shard BEFORE buffering it: if a delete fails we drop the shard rather than
@@ -243,7 +265,8 @@ class SearchTeacherCallback(BaseCallback):
                 buf.add(Correction(
                     obs=obs[i], action_mask=mask[i], better_action=int(sc["better_action"]),
                     advantage=float(sc["advantage"]), confirmed_value=float(sc["confirmed_value"]),
-                    step_produced=int(sc["step_produced"]), opponent=sc["opponent"]))
+                    step_produced=int(sc["step_produced"]), opponent=sc["opponent"],
+                    pi_target=_pi_target_row(pit, i)))
                 ingested += 1
         if ingested:
             self._ingested_total += ingested
@@ -298,6 +321,7 @@ class SearchTeacherCallback(BaseCallback):
         self.model.save(snap)
 
         worker_env = {k: v for k, v in os.environ.items() if k != "LAUNCHER_METRICS_FD"}
+        worker_env["CUDA_VISIBLE_DEVICES"] = ""   # CPU-only teacher (see _spawn_worker) — never contend the learner's GPU
         workers, result_bases = [], []
         n = min(self.n_workers, len(cands))
         for wid in range(n):
@@ -310,6 +334,7 @@ class SearchTeacherCallback(BaseCallback):
                 "candidates": [asdict(c) for c in slice_cands],
                 "depth": self.depth, "beam": self.beam, "top_k": self.top_k,
                 "confirm_rollouts": self.confirm_rollouts, "margin_min": self.margin_min,
+                "opd_build_pi_target": self.opd_build_pi_target, "opd_beta": self.opd_beta,
             }
             cfg_path = os.path.join(self._cycle_dir, f"config_{wid}.json")
             with open(cfg_path, "w") as f:
@@ -358,11 +383,13 @@ class SearchTeacherCallback(BaseCallback):
                 continue
             npz = np.load(w["rbase"] + ".npz")
             obs_arr, mask_arr = npz["obs"], npz["mask"]
+            pit_arr = np.asarray(npz["pi_target"]) if "pi_target" in npz else None  # OPD π' (opt)
             for i, sc in enumerate(scalars):
                 corrections.append(Correction(
                     obs=obs_arr[i], action_mask=mask_arr[i], better_action=int(sc["better_action"]),
                     advantage=float(sc["advantage"]), confirmed_value=float(sc["confirmed_value"]),
-                    step_produced=int(sc["step_produced"]), opponent=sc["opponent"]))
+                    step_produced=int(sc["step_produced"]), opponent=sc["opponent"],
+                    pi_target=_pi_target_row(pit_arr, i)))
 
         buf = getattr(self.model, "_correction_buffer", None)
         if buf is not None and corrections:

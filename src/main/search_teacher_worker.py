@@ -33,6 +33,11 @@ def run(cfg_path: str) -> None:
     # ckpt_override pins every battle's model to it (instead of the exact→nearest→recent ladder).
     sess = ProbeSession(run_dir, ckpt_override=cfg["snapshot_path"])
 
+    # OPD: build the improved distribution π' KL target when requested (config-threaded, mirrors
+    # confirm_rollouts/depth); off = the AWR-only behaviour (pi_target stays None → the .npz omits it).
+    opd_build_pi_target = bool(cfg.get("opd_build_pi_target", False))
+    opd_beta = float(cfg.get("opd_beta", 1.0))
+
     corrections, status = [], {}
     # ONE warm SearchSession reused across all candidates → the Node spawn is amortized (perf L4).
     with SearchSession(timeout=float(cfg.get("timeout", 300.0))) as ss:
@@ -43,7 +48,8 @@ def run(cfg_path: str) -> None:
                     sess, c, opponent_ckpt=opp_ckpt, opponent_source=opp_src,
                     confirm_rollouts=int(cfg["confirm_rollouts"]), depth=int(cfg["depth"]),
                     beam=int(cfg["beam"]), top_k=int(cfg["top_k"]),
-                    margin_min=float(cfg["margin_min"]), search_session=ss)
+                    margin_min=float(cfg["margin_min"]), search_session=ss,
+                    build_pi_target=opd_build_pi_target, opd_beta=opd_beta)
             except Exception as e:  # noqa: BLE001 — one bad candidate never kills the worker's slice
                 corr, st = None, f"error:{type(e).__name__}"
             status[st] = status.get(st, 0) + 1
@@ -51,9 +57,16 @@ def run(cfg_path: str) -> None:
                 corrections.append(corr)
 
     if corrections:
-        np.savez(result_path + ".npz",
-                 obs=np.stack([c.obs for c in corrections]).astype(np.float32),
-                 mask=np.stack([c.action_mask for c in corrections]).astype(np.int8))
+        arrays = dict(
+            obs=np.stack([c.obs for c in corrections]).astype(np.float32),
+            mask=np.stack([c.action_mask for c in corrections]).astype(np.int8))
+        # OPD: pack π' as a [n, 11] array (a NaN row = None, so the parent None-guards per-row). Omitted
+        # entirely when no correction carries a target (an AWR-only run) → the parent reads no key.
+        if any(c.pi_target is not None for c in corrections):
+            arrays["pi_target"] = np.stack([
+                c.pi_target if c.pi_target is not None else np.full(11, np.nan, np.float32)
+                for c in corrections]).astype(np.float32)
+        np.savez(result_path + ".npz", **arrays)
     with open(result_path + ".json", "w") as f:
         json.dump({"scalars": [c.as_record() for c in corrections],
                    "status": status, "n_candidates": len(cands)}, f)

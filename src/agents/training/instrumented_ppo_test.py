@@ -347,3 +347,140 @@ def test_search_teacher_buffer_excluded_from_save(tmp_path):
     model.save(p)                              # must NOT raise (the bug was a lock-pickle crash right here)
     reloaded = InstrumentedMaskablePPO.load(p, device="cpu")
     assert not hasattr(reloaded, "_correction_buffer")   # transient scaffolding → kept out of the checkpoint
+
+
+# --- ON-POLICY SELF-DISTILLATION (OPD) --------------------------------------------------------------
+
+def test_opd_loss_zero_when_target_matches_student():
+    """KL(π' ‖ π_student) == 0 when π' IS the student's own (masked) softmax — the loss vanishes at the
+    distillation fixed point."""
+    logits = th.tensor([[2.0, -1.0, 0.5, 3.0]])
+    mask = th.ones((1, 4))
+    p_tgt = F.softmax(logits, dim=-1)                          # π' == the student distribution
+    out = InstrumentedMaskablePPO._opd_loss(logits, mask, p_tgt)
+    assert out is not None
+    kl, m = out
+    assert float(kl) == pytest.approx(0.0, abs=1e-6)
+    assert m["agree_rate"] == pytest.approx(1.0)               # modes coincide
+
+
+def test_opd_loss_positive_when_target_differs():
+    """A π' that disagrees with the student's softmax → strictly positive KL."""
+    logits = th.tensor([[2.0, -1.0, 0.5, 3.0]])
+    mask = th.ones((1, 4))
+    p_tgt = th.tensor([[0.0, 0.0, 0.0, 1.0]])                  # peaked on the last action (≠ softmax)
+    kl, _ = InstrumentedMaskablePPO._opd_loss(logits, mask, p_tgt)
+    assert float(kl) > 0.0
+
+
+def test_opd_loss_none_guards():
+    """None logits / None π' / empty π' → None (the loss is skipped, never NaN-poisoned)."""
+    mask = th.ones((1, 4))
+    p = th.tensor([[0.25, 0.25, 0.25, 0.25]])
+    assert InstrumentedMaskablePPO._opd_loss(None, mask, p) is None
+    assert InstrumentedMaskablePPO._opd_loss(th.zeros((1, 4)), mask, None) is None
+    assert InstrumentedMaskablePPO._opd_loss(th.zeros((0, 4)), th.zeros((0, 4)), th.zeros((0, 4))) is None
+
+
+def test_opd_loss_masks_illegal_actions():
+    """An ILLEGAL action (mask 0, π'=0 there) is excluded from the KL: the student log-prob is over the
+    legal set only, so a huge illegal logit doesn't perturb the loss."""
+    mask = th.tensor([[1.0, 1.0, 0.0]])                        # action 2 illegal
+    legal_logits = th.tensor([[1.0, 0.5, -50.0]])
+    huge_illegal = th.tensor([[1.0, 0.5, 999.0]])             # only the illegal logit changes
+    # π' over the two legal actions == the student's masked softmax (so KL should be ~0 in BOTH cases).
+    masked = legal_logits + (mask - 1.0) * 1e9
+    p_tgt = F.softmax(masked, dim=-1)
+    kl_a, _ = InstrumentedMaskablePPO._opd_loss(legal_logits, mask, p_tgt)
+    kl_b, _ = InstrumentedMaskablePPO._opd_loss(huge_illegal, mask, p_tgt)
+    assert float(kl_a) == pytest.approx(0.0, abs=1e-5)
+    assert float(kl_b) == pytest.approx(0.0, abs=1e-5)         # the illegal logit was masked out
+
+
+def _fill_correction_buffer_opd(model, n=16, better=1, pi_row=(0.0, 1.0)):
+    """Populate model._correction_buffer with corrections that ALSO carry a π' target (the improved
+    distribution), matching the tiny env (1-dim obs, 2 actions)."""
+    from agents.training.teacher.buffer import Correction, CorrectionBuffer
+    buf = CorrectionBuffer(100)
+    for i in range(n):
+        buf.add(Correction(
+            obs=np.array([float(i % 7)], dtype=np.float32),
+            action_mask=np.ones(2, dtype=np.int8),
+            better_action=better, advantage=0.8, confirmed_value=0.7,
+            step_produced=0, opponent="bot",
+            pi_target=np.array(pi_row, dtype=np.float32)))
+    model._correction_buffer = buf
+
+
+def test_opd_off_is_noop():
+    """opd_on False (the default) ⇒ train() never touches the OPD path — byte-identical."""
+    model, _ = _build_tiny_ppo()
+    model.learn(total_timesteps=8 * 4)         # off by default; must not crash, no π' targets needed
+    assert getattr(model, "_opd_on", False) is False
+
+
+def test_opd_off_byte_identical_with_populated_buffer():
+    """A populated OPD buffer with opd_coef=0 (OFF) yields the SAME parameter update as no buffer at all —
+    the OPD term is truly gated on the coef, not merely on the buffer's presence."""
+    model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)          # one rollout to fill the buffer's obs space
+
+    # Baseline update with NO OPD.
+    model._opd_on = False
+    model.opd_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    # Same update, but with a populated buffer AND opd_coef 0 (OFF) → the fold is skipped.
+    _fill_correction_buffer_opd(model, n=16)
+    model._opd_on = True
+    model.opd_coef = 0.0
+    with_buf = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    for k in base:
+        assert th.allclose(base[k], with_buf[k], atol=1e-7), f"OPD off perturbed {k}"
+
+
+def test_opd_fold_moves_policy_toward_pi_target():
+    """With OPD on + a populated buffer whose π' peaks on action 1, train() runs the extra forward + KL
+    term and PULLS the policy toward π' (the taught distribution) — agreement rises after a few updates."""
+    model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
+    model._opd_on = True
+    model.opd_coef = 5.0
+    model.opd_beta = 1.0
+    model.search_teacher_batch_size = 4         # the OPD fold reuses this sample size
+    _fill_correction_buffer_opd(model, n=16, pi_row=(0.0, 1.0))   # π' certain on action 1
+
+    obs = {"observation": th.tensor([[float(i % 7)] for i in range(16)]),
+           "action_mask": th.ones((16, 2))}
+    def agree():
+        with th.no_grad():
+            lg = model.policy.get_distribution(obs).distribution.logits
+        return float((lg.argmax(-1) == 1).float().mean())
+
+    before = agree()
+    for _ in range(15):
+        model.learn(total_timesteps=8 * 4, reset_num_timesteps=False)
+    after = agree()
+    assert after >= before
+    assert after > 0.5                          # the KL distillation moved the policy toward π'
+
+
+def test_opd_skips_awr_only_buffer():
+    """A buffer with corrections that carry NO π' (an AWR-only run) → to_tensors sets pi_target None →
+    the OPD loss None-guards and is skipped, even with opd_on + a non-zero coef (no crash, no update from
+    OPD)."""
+    model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    _fill_correction_buffer(model, n=16, better=1)   # π'-LESS corrections (pi_target None)
+    model._opd_on = True
+    model.opd_coef = 5.0
+    model.search_teacher_batch_size = 4
+    with_awr_only = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    for k in base:
+        assert th.allclose(base[k], with_awr_only[k], atol=1e-7), f"OPD acted on a π'-less buffer at {k}"

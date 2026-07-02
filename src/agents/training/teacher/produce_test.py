@@ -97,3 +97,73 @@ def test_already_known_when_model_argmaxes_astar():
         _FakeSession(_bl(best_action=6), argmax=6), _cand(),
         opponent_ckpt="/s.zip", opponent_source="ckpt")
     assert corr is None and st == "already_known"
+
+
+# --- OPD π' construction (build_pi_target) ----------------------------------------------------------
+
+def _bl_valued(values, win_rate=0.7, ci_low=0.55, baseline=-0.2):
+    """A better_line dict whose candidates carry backed-up VALUES (the OPD π' inputs). ``values`` maps
+    action → backup value; the best is A*."""
+    best = max(values, key=values.get)
+    return {
+        "candidates": [{"action": a, "backup": v, "value": v} for a, v in values.items()],
+        "best_alternative": {"action": best, "label": "spore"},
+        "confirm": {"win_rate": win_rate, "ci": [ci_low, 0.9]},
+        "baseline_value": baseline, "recorded_value": baseline,
+    }
+
+
+def test_pi_target_off_by_default():
+    """Without build_pi_target, the Correction carries NO π' (AWR-only, backward-compatible)."""
+    corr, st = produce_correction(
+        _FakeSession(_bl(win_rate=0.7, ci_low=0.55)), _cand(),
+        opponent_ckpt="/s.zip", opponent_source="ckpt")
+    assert st == "ok" and corr is not None and corr.pi_target is None
+
+
+def test_pi_target_sums_to_one_over_legal_zero_illegal_peaks_best():
+    """With build_pi_target on: π' is a distribution over LEGAL actions (sums to 1), 0 on ILLEGAL slots,
+    and puts the MOST mass on the best-valued (A*) action."""
+    values = {0: -1.0, 2: 0.2, 6: 2.0, 8: -0.5}      # action 6 is best → A*
+    corr, st = produce_correction(
+        _FakeSession(_bl_valued(values)), _cand(),
+        opponent_ckpt="/s.zip", opponent_source="ckpt",
+        build_pi_target=True, opd_beta=1.0)
+    assert st == "ok" and corr is not None
+    pi = corr.pi_target
+    assert pi is not None and pi.shape == (11,)
+    legal = [0, 2, 6, 8]
+    illegal = [a for a in range(11) if a not in legal]
+    assert abs(float(pi.sum()) - 1.0) < 1e-6                 # normalized over legal
+    assert all(pi[a] == 0.0 for a in illegal)               # 0 on illegal slots
+    assert int(pi.argmax()) == 6                            # peaks near the best action (A*)
+    assert pi[6] > pi[2] > pi[0]                            # monotone in value
+
+
+def test_pi_target_temperature_flattens():
+    """A larger opd_beta (higher temperature) flattens π' — the best action's mass drops toward uniform."""
+    values = {0: -1.0, 2: 0.2, 6: 2.0, 8: -0.5}
+    sharp, _ = produce_correction(
+        _FakeSession(_bl_valued(values)), _cand(), opponent_ckpt="/s.zip",
+        opponent_source="ckpt", build_pi_target=True, opd_beta=0.5)
+    flat, _ = produce_correction(
+        _FakeSession(_bl_valued(values)), _cand(), opponent_ckpt="/s.zip",
+        opponent_source="ckpt", build_pi_target=True, opd_beta=5.0)
+    assert flat.pi_target[6] < sharp.pi_target[6]           # flatter target = less peaked on A*
+
+
+def test_pi_target_completed_q_floor_for_unsearched_legal():
+    """A legal action the beam didn't score still gets NON-zero probability (the completed-Q min floor),
+    below the searched actions."""
+    # candidates score only {2, 6}; legal set is {0, 2, 6, 8} → 0 and 8 get the floor.
+    values = {2: 0.2, 6: 2.0}
+    out = _bl_valued(values)
+    out["candidates"] = ([{"action": 2, "backup": 0.2, "value": 0.2},
+                          {"action": 6, "backup": 2.0, "value": 2.0},
+                          {"action": 0}, {"action": 8}])     # 0, 8 legal but unscored
+    corr, st = produce_correction(
+        _FakeSession(out), _cand(), opponent_ckpt="/s.zip", opponent_source="ckpt",
+        build_pi_target=True)
+    pi = corr.pi_target
+    assert pi[0] > 0.0 and pi[8] > 0.0                      # floored, not zeroed
+    assert pi[0] < pi[2] and pi[8] < pi[2]                  # but below the searched actions

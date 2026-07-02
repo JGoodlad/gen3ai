@@ -272,6 +272,19 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # current critic (which feeds GAE) toward it biases advantages. Only enable for the joint-ExIt A/B.
     search_teacher_value_coef: float = 0.0
 
+    # ON-POLICY SELF-DISTILLATION (OPD), modelled EXACTLY on search_teacher_coef. Upgrades the
+    # distillation TARGET from the single verified-better action A* (AWR) to the FULL improved
+    # distribution π' via KL(π' ‖ π_student) — π' is the softmax of the beam's per-action backed-up
+    # values (built in produce.py when the workers run OPD). Samples the SAME standalone
+    # `_correction_buffer` as the search-teacher (its own get_distribution forward). 0.0 = OFF (loss
+    # byte-identical even if the buffer fills). Training-only (scales the loss, no forward/weight change)
+    # → NOT version-locked / NOT in ModelVersion / check_compatible. `_opd_on` is a runtime attr set
+    # externally (like `_search_teacher_on`). OPD requires --search-teacher (it fills the buffer + its
+    # workers build π'); a run can A/B AWR vs KL since a Correction carries BOTH.
+    opd_coef: float = 0.0
+    # OPD softmax temperature β for π' (built worker-side in produce.py); recorded here for provenance.
+    opd_beta: float = 1.0
+
     def _excluded_save_params(self):
         # The search-teacher's `_correction_buffer` lives on the model (the callback↔train() hand-off),
         # but it is TRANSIENT scaffolding like the rollout buffer — and it holds a threading.Lock that
@@ -303,6 +316,32 @@ class InstrumentedMaskablePPO(MaskablePPO):
                        "mean_adv": float(advantage.mean()), "mean_w": float(w.mean()),
                        "ce": float(ce.mean()), "n": int(better_action.numel())}
         return loss, metrics
+
+    @staticmethod
+    def _opd_loss(logits, action_mask, pi_target):
+        """ON-POLICY SELF-DISTILLATION (OPD) — KL(π' ‖ π_student) toward the FULL improved distribution
+        π' (the beam's per-action backed-up values, softmaxed over legal actions). The KL-form upgrade of
+        the AWR :meth:`_searchteacher_loss` (which distils only the single action A*).
+
+        ``logits`` [B, n_actions] = ``policy.get_distribution(obs_dict).distribution.logits`` on the
+        CORRECTION obs (its own forward); ``action_mask`` [B, n_actions] = the legal mask; ``pi_target``
+        [B, n_actions] = π' (already over LEGAL actions, 0 on illegal, L1-normed). Illegal logits are
+        masked to −∞ so the student log-probs are over the legal set (matching π'). Forward KL
+        ``Σ p_tgt·(log p_tgt − log p_student)``, mean over the batch. Returns ``(kl, metrics)`` or
+        ``None`` on an empty / absent π' (the buffer had no OPD targets — an AWR-only run). Pure + static
+        so it unit-tests without a full PPO."""
+        if logits is None or pi_target is None or pi_target.numel() == 0:
+            return None
+        masked = logits + (action_mask.to(logits.dtype) - 1.0) * 1e9   # illegal → −inf (π' is 0 there)
+        logp = F.log_softmax(masked, dim=-1)                           # student log-probs over legal
+        p_tgt = pi_target                                              # already legal-only, illegal 0
+        kl = (p_tgt * (th.log(p_tgt.clamp_min(1e-9)) - logp)).sum(-1).mean()
+        with th.no_grad():
+            ent = -(p_tgt * th.log(p_tgt.clamp_min(1e-9))).sum(-1).mean()   # π' sharpness (low = decisive)
+            agree = (masked.argmax(-1) == p_tgt.argmax(-1)).float().mean()  # student ↔ π' mode agreement
+            metrics = {"kl": float(kl), "pi_target_entropy": float(ent),
+                       "agree_rate": float(agree), "n": int(pi_target.shape[0])}
+        return kl, metrics
 
     @staticmethod
     def _win_prob_loss(logits, target, mask, margin=None):
@@ -913,6 +952,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
         win_prob_metrics: dict[str, list[float]] = {}  # +WIN-PROB: per-minibatch diagnostics (dict of lists)
         teacher_metrics: dict[str, list[float]] = {}    # +SEARCH-TEACHER: AWR per-minibatch diagnostics
+        opd_metrics: dict[str, list[float]] = {}         # +OPD: on-policy self-distillation KL diagnostics
         value_dist_metrics: dict[str, list[float]] = {}  # +VALUE-DIST: per-minibatch HL-Gauss diagnostics
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
         belief_aux_on = self.opp_belief_aux_coef > 0.0
@@ -941,6 +981,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # states not in the rollout). OFF / empty buffer → skipped (loss byte-identical to upstream).
         search_teacher_on = (
             getattr(self, "_search_teacher_on", False) and self.search_teacher_coef != 0.0
+            and getattr(self, "_correction_buffer", None) is not None
+            and len(self._correction_buffer) > 0
+        )
+        # +OPD: on-policy self-distillation. On when enabled, the coef is non-zero, AND the SAME
+        # standalone correction buffer (filled by the SearchTeacherCallback, its workers building π')
+        # is populated. Its OWN get_distribution forward, like the search-teacher AWR. A sampled batch
+        # with no π' (an AWR-only buffer) is skipped by the None-guard. OFF → byte-identical to upstream.
+        opd_on = (
+            getattr(self, "_opd_on", False) and self.opd_coef != 0.0
             and getattr(self, "_correction_buffer", None) is not None
             and len(self._correction_buffer) > 0
         )
@@ -1268,6 +1317,30 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             for _tk, _tv in _st_m.items():
                                 teacher_metrics.setdefault(_tk, []).append(float(_tv))
 
+                # +OPD: on-policy self-distillation KL(π' ‖ π_student). Like the search-teacher AWR above,
+                # this samples the SAME standalone _correction_buffer + runs its OWN get_distribution
+                # forward — but distils the FULL improved distribution π' (the beam's per-action
+                # backed-up values, built worker-side) instead of only the single action A*. Folded at
+                # opd_coef; the KL gradient pulls the trunk (measured by grad/opd_share). A sampled batch
+                # with no π' (an AWR-only buffer) → to_tensors sets pi_target None → the loss None-guards
+                # (skipped). OFF / empty buffer → skipped (loss byte-identical).
+                opd_term = None
+                if opd_on:
+                    _obatch = self._correction_buffer.sample(self.search_teacher_batch_size)
+                    if _obatch:
+                        from agents.training.teacher.buffer import CorrectionBuffer as _CB
+                        _otd = _CB.to_tensors(_obatch, self.device)
+                        if _otd.get("pi_target") is not None:   # skip an AWR-only (π'-less) sample
+                            _odist = self.policy.get_distribution(_otd["obs_dict"])
+                            _opd = self._opd_loss(
+                                _odist.distribution.logits, _otd["action_mask"], _otd["pi_target"])
+                            if _opd is not None:
+                                _opd_loss_t, _opd_m = _opd
+                                opd_term = self.opd_coef * _opd_loss_t
+                                loss = loss + opd_term
+                                for _ok, _ov in _opd_m.items():
+                                    opd_metrics.setdefault(_ok, []).append(float(_ov))
+
                 # Per-term auxiliary pull on the shared trunk, for the grad-balance probe — EVERY
                 # active scaffold competes with policy/value there, so each is broken out INDIVIDUALLY
                 # (not lumped into one "belief" norm) and the probe puts them on one common denominator
@@ -1285,6 +1358,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 if win_prob_term is not None:      aux_probe_terms["win_prob"] = win_prob_term
                 if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term
                 if searchteacher_term is not None: aux_probe_terms["searchteacher"] = searchteacher_term
+                if opd_term is not None:           aux_probe_terms["opd"] = opd_term
                 aux_on = belief_aux_on or move_belief_on or latent_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
                 # wait for one so their shares aren't silently dropped from the single per-train() sample.
@@ -1480,6 +1554,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
             cb = getattr(self, "_correction_buffer", None)
             if cb is not None:
                 self.logger.record("teacher/buffer_size", float(len(cb)))
+
+        # +OPD: on-policy self-distillation KL diagnostics under their OWN `opd/` TB prefix. `kl` = the
+        # forward KL(π' ‖ π_student) being minimized (should FALL as the student matches π'),
+        # `pi_target_entropy` = π' sharpness (low = decisive target), `agree_rate` = student ↔ π' mode
+        # agreement (should RISE), `n` = the sampled correction count. The shared-trunk pull rides
+        # `grad/opd_share`. Empty (off / empty buffer / an AWR-only π'-less sample) → not logged.
+        if opd_metrics:
+            for _ok, _ovals in opd_metrics.items():
+                self.logger.record(f"opd/{_ok}", float(np.mean(_ovals)))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

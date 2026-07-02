@@ -42,14 +42,20 @@ def _silence(model):
 
 
 def _publish_shard(output_dir, wid, seq, corrections):
-    """Atomically publish one iteration's corrections (obs/mask .npz + scalars .json, .json renamed
-    LAST so the parent never ingests a half-written shard)."""
+    """Atomically publish one iteration's corrections (obs/mask [+ OPD π'] .npz + scalars .json, .json
+    renamed LAST so the parent never ingests a half-written shard)."""
     if not corrections:
         return
     base = os.path.join(output_dir, f"corr_{wid}_{seq}")
-    np.savez(base + ".npz",
-             obs=np.stack([c.obs for c in corrections]).astype(np.float32),
-             mask=np.stack([c.action_mask for c in corrections]).astype(np.int8))
+    arrays = dict(
+        obs=np.stack([c.obs for c in corrections]).astype(np.float32),
+        mask=np.stack([c.action_mask for c in corrections]).astype(np.int8))
+    # OPD: pack π' as a [n, 11] array (NaN row = None); omitted when no correction has a target (AWR-only).
+    if any(c.pi_target is not None for c in corrections):
+        arrays["pi_target"] = np.stack([
+            c.pi_target if c.pi_target is not None else np.full(11, np.nan, np.float32)
+            for c in corrections]).astype(np.float32)
+    np.savez(base + ".npz", **arrays)
     tmp = base + ".json.tmp"
     with open(tmp, "w") as f:
         json.dump({"scalars": [c.as_record() for c in corrections]}, f)
@@ -179,7 +185,9 @@ def run(cfg_path: str) -> None:
                                 sess, c, opponent_ckpt=opp_ckpt, opponent_source=opp_src,
                                 confirm_rollouts=int(cfg["confirm_rollouts"]), depth=int(cfg["depth"]),
                                 beam=int(cfg["beam"]), top_k=int(cfg["top_k"]),
-                                margin_min=float(cfg["margin_min"]), search_session=ss)
+                                margin_min=float(cfg["margin_min"]), search_session=ss,
+                                build_pi_target=bool(cfg.get("opd_build_pi_target", False)),
+                                opd_beta=float(cfg.get("opd_beta", 1.0)))
                         except Exception:  # noqa: BLE001 — one bad candidate never kills the loop
                             corr = None
                         if corr is not None:

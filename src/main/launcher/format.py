@@ -86,6 +86,9 @@ _METRIC_LABELS = {
     "grad/value_dist_share": "valdist share",
     "grad/value_dist_norm_shared": "valdist grad-norm",
     "grad/value_dist_policy_cosine": "valdist-pol cos",
+    "grad/opd_share": "opd share",
+    "grad/opd_norm_shared": "opd grad-norm",
+    "grad/opd_policy_cosine": "opd-policy cos",
     "grad/spread_belief_share": "spread blf share",
     "grad/spread_belief_norm_shared": "spread blf norm",
     "grad/spread_belief_policy_cosine": "spread blf-pol cos",
@@ -131,6 +134,13 @@ _METRIC_LABELS = {
     "value_dist/std": "dist std",
     "value_dist/pit_mean": "dist PIT>.5",
     "value_dist/mean_abs_err": "dist E[Z]-G",
+    # On-policy self-distillation (--opd-coef): KL(π' ‖ π_student) toward the beam's improved
+    # distribution. kl falls as the student matches π'; agree_rate (student↔π' mode) rises;
+    # pi_target_entropy = π' sharpness; n = sampled corrections.
+    "opd/kl": "opd KL",
+    "opd/pi_target_entropy": "opd pi' ent",
+    "opd/agree_rate": "opd agree",
+    "opd/n": "opd n",
 }
 
 
@@ -267,6 +277,15 @@ _METRIC_ORDER = [
     "grad/value_dist_share",
     "grad/value_dist_norm_shared",
     "grad/value_dist_policy_cosine",
+    "grad/opd_share",
+    "grad/opd_norm_shared",
+    "grad/opd_policy_cosine",
+    # On-policy self-distillation KL diagnostics (--opd-coef): kl (should fall), agree_rate (student↔π'
+    # mode, should rise), pi_target_entropy (π' sharpness), n (sampled corrections).
+    "opd/kl",
+    "opd/agree_rate",
+    "opd/pi_target_entropy",
+    "opd/n",
     # PopArt (only present under --use-popart): running value-target (mu, sigma) — should track
     # train/return_mean & return_std — and the POP-rescaled value-head weight norm (stays bounded).
     "popart/mu",

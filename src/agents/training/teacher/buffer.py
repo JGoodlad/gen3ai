@@ -30,11 +30,17 @@ class Correction:
     confirmed_value: float   # the rollout-confirmed return of s (only used by the off-by-default value term)
     step_produced: int       # the eval step that produced the source trace (recency aging + provenance)
     opponent: str            # the resolved opponent label (per-opponent metrics + provenance)
+    # ON-POLICY SELF-DISTILLATION (OPD) target: the IMPROVED distribution π' over the 11 actions
+    # (softmax of the beam's per-action backed-up values over LEGAL actions, 0 on illegal, L1-normed).
+    # KL(π' ‖ π_student) upgrades the distillation target from the single action A* to the full π'.
+    # Appended LAST + default None → an AWR-only run (no OPD requested) never builds it (backward-
+    # compatible); the KL loss None-guards on it. Travels via the worker shard .npz (like obs/mask).
+    pi_target: Optional[np.ndarray] = None   # [n_actions=11] float32, 0 on illegal
 
     def as_record(self) -> dict:
-        """JSON-friendly scalars (obs/mask travel as a sibling .npz in a worker shard, not here)."""
+        """JSON-friendly scalars (obs/mask + pi_target travel as a sibling .npz in a worker shard)."""
         d = asdict(self)
-        d.pop("obs"); d.pop("action_mask")
+        d.pop("obs"); d.pop("action_mask"); d.pop("pi_target")
         return d
 
 
@@ -80,7 +86,7 @@ class CorrectionBuffer:
 
         obs = th.as_tensor(np.stack([c.obs for c in corrections]).astype(np.float32), device=device)
         mask = th.as_tensor(np.stack([c.action_mask for c in corrections]), device=device)
-        return {
+        out = {
             "obs_dict": {"observation": obs, "action_mask": mask},
             "action_mask": mask,
             "better_action": th.as_tensor(
@@ -90,3 +96,12 @@ class CorrectionBuffer:
             "confirmed_value": th.as_tensor(
                 np.asarray([c.confirmed_value for c in corrections], dtype=np.float32), device=device),
         }
+        # OPD π' target: only present when EVERY sampled correction carries one (an OPD run fills them;
+        # an AWR-only run has None → the key is None so the KL loss None-guards + is skipped). Never mix
+        # a partial batch (a fresh OPD run's ring may briefly hold pre-OPD corrections) — all-or-nothing.
+        if all(c.pi_target is not None for c in corrections):
+            out["pi_target"] = th.as_tensor(
+                np.stack([c.pi_target for c in corrections]).astype(np.float32), device=device)
+        else:
+            out["pi_target"] = None
+        return out
