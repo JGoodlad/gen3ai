@@ -46,7 +46,8 @@ class MaskableAgentWrapper(SingleAgentWrapper):
     def __init__(self, env, opponent=None, *, heuristic_opponents=None, pool=None,
                  pool_player=None, self_play_fraction=0.0, rng_seed=0,
                  heuristic_weights=None, stable_players=None, stable_labels=None,
-                 stable_challenge_share=STABLE_CHALLENGE_SHARE, exploiter_player=None):
+                 stable_challenge_share=STABLE_CHALLENGE_SHARE, exploiter_player=None,
+                 exploiter_keep_bots=False, exploiter_bot_fraction=0.5):
         # Back-compat: a single positional `opponent` (legacy / tests) becomes a 1-bot roster.
         roster = list(heuristic_opponents) if heuristic_opponents else (
             [opponent] if opponent is not None else [])
@@ -85,6 +86,13 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         # below. Used to train a dedicated agent that just learns to beat one target (the league
         # "exploiter" role). None → normal self-play/bot/stable selection (byte-identical).
         self._exploiter_player = exploiter_player
+        # EXPLOITER + keep-bots: instead of the target being the SOLE opponent, mix the heuristic
+        # bots (the always-on floor roster) back in — per episode, face the target with prob
+        # (1 - exploiter_bot_fraction), else a floor/heuristic bot via _pick_floor_opponent. Lets a
+        # from-scratch specialist keep a bot floor while learning to beat one strong target. Only
+        # consulted when _exploiter_player is set; off → the sole-target path (byte-identical).
+        self._exploiter_keep_bots = bool(exploiter_keep_bots)
+        self._exploiter_bot_fraction = float(exploiter_bot_fraction)
         self._self_play_fraction = float(self_play_fraction)
         self._target_generation = 0
         self._scanned_generation = -1   # -1 forces a pool re-scan on the first pool selection
@@ -183,7 +191,12 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         per-episode coin flip honors the live ``self_play_fraction`` exactly; the pool snapshot is
         loaded once per generation (``_ensure_pool_model``), not per episode."""
         if self._exploiter_player is not None:
-            self.opponent = self._exploiter_player    # exploiter mode: one fixed target, always
+            if self._exploiter_keep_bots and self._rng.random() < self._exploiter_bot_fraction:
+                # keep-bots: a per-episode slice faces a floor/heuristic bot instead of the target,
+                # so a from-scratch specialist keeps a bot floor while learning to beat the target.
+                self.opponent = self._pick_floor_opponent()
+            else:
+                self.opponent = self._exploiter_player   # exploiter target (sole-opponent default)
             return
         if self._rng.random() < self._self_play_fraction:
             opp = self._pick_challenge_opponent()

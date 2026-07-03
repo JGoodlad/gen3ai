@@ -1512,6 +1512,25 @@ async def main():
                              "--self-play. Recommended: init the exploiter from a strong checkpoint "
                              "(--model <target's checkpoint>) so it has a baseline to exploit from. "
                              "Default None (off).")
+    parser.add_argument("--exploiter-keep-bots", dest="exploiter_keep_bots", action="store_true",
+                        help="EXPLOITER MODE (requires --exploiter): mix the heuristic bots BACK IN "
+                             "alongside the exploiter target instead of playing the target as the sole "
+                             "opponent. Per episode, the target is faced with prob "
+                             "(1 - --exploiter-bot-fraction), else a random floor/heuristic bot. Lets a "
+                             "from-scratch specialist keep a bot floor while it learns to beat one strong "
+                             "target. Off (default) = the target is the sole opponent (byte-identical).")
+    parser.add_argument("--exploiter-bot-fraction", dest="exploiter_bot_fraction", type=float,
+                        default=0.5,
+                        help="Under --exploiter-keep-bots, the per-episode probability of facing a "
+                             "heuristic bot instead of the exploiter target (default 0.5). The exploiter "
+                             "target is faced with the complementary probability (1 - this).")
+    parser.add_argument("--trainee-team", dest="trainee_team", type=str, default=None,
+                        help="SPECIALIST MODE: pin the TRAINEE's team pool to the ONE team in this file "
+                             "(a Showdown EXPORT string, like data/teams/sample/*.txt), so the agent "
+                             "always plays that exact 6-mon team. The OPPONENTS still draw the full "
+                             "diverse pool. Use to train a single-team specialist (e.g. --trainee-team "
+                             "data/teams/specialist/tss_starmie.txt). Default None = the full trainee "
+                             "pool (byte-identical).")
 
     args = parser.parse_args()
 
@@ -1671,6 +1690,11 @@ async def main():
     if args.exploiter and args.self_play:
         parser.error("--exploiter trains vs ONE fixed target as the sole opponent — it is mutually "
                      "exclusive with --self-play. Drop --self-play (the exploiter needs no pool).")
+    if args.exploiter_keep_bots and not args.exploiter:
+        parser.error("--exploiter-keep-bots only applies in exploiter mode — pass --exploiter <target> "
+                     "too (it mixes the bots in ALONGSIDE that target).")
+    if not 0.0 <= args.exploiter_bot_fraction <= 1.0:
+        parser.error("--exploiter-bot-fraction must be a fraction in [0, 1]")
     if args.opp_belief_cls_k < 0:
         parser.error("--opp-belief-cls-k must be >= 0 (0 = off)")
     if args.opp_belief_cls_k > 0 and not args.attend_unrevealed_opponents:
@@ -2005,9 +2029,24 @@ async def main():
     
     emit(f"📦 {len(sample_teams)} sample teams (bias) / {len(all_teams)} total loaded")
 
-    # Trainee draws from the full pool, but 50% of the time uses a sample team.
-    # This exposes the agent to diverse team compositions while keeping a stable anchor.
-    trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)
+    # SPECIALIST MODE (--trainee-team): pin the trainee to ONE fixed team read from the given
+    # Showdown-export file, so the agent always plays that exact 6-mon team. A single-team
+    # Gen3Teambuilder validates the team on construction (raises on an illegal set). The OPPONENTS
+    # still draw the full diverse pool (below), so the specialist learns THIS team vs everything.
+    # None (default) → the full-pool trainee builder, byte-identical to the prior behavior.
+    if args.trainee_team:
+        with open(args.trainee_team, "r", encoding="utf-8") as _tf:
+            _specialist_team_str = _tf.read()
+        trainee_teambuilder = Gen3Teambuilder([_specialist_team_str])
+        _spec_mons = [ln.split("@")[0].split("(")[0].strip()
+                      for ln in _specialist_team_str.splitlines()
+                      if ln.strip() and "@" in ln]
+        emit(f"🎯 [SPECIALIST] trainee pinned to ONE team from {args.trainee_team}: "
+             f"{', '.join(_spec_mons)} (opponents keep the full pool)")
+    else:
+        # Trainee draws from the full pool, but 50% of the time uses a sample team.
+        # This exposes the agent to diverse team compositions while keeping a stable anchor.
+        trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)
     opponent_teambuilder = Gen3Teambuilder(all_teams)
 
     mappings = load_mappings()
@@ -2117,8 +2156,13 @@ async def main():
             print(f"\n[Exploiter] FATAL: failed to load exploiter target weights: {e}")
             sys.stdout.flush()
             os._exit(int(TrainExitCode.FATAL_CONFIG))
-        emit(f"🥊 [EXPLOITER] training vs {_exploiter_entry.label} as the SOLE opponent every episode "
-             f"(temp {args.stable_opponent_temp:g}; no self-play/pool/bots). Goal: learn to beat it.")
+        if args.exploiter_keep_bots:
+            emit(f"🥊 [EXPLOITER] training vs {_exploiter_entry.label} (temp {args.stable_opponent_temp:g}) "
+                 f"with the heuristic bots MIXED IN: per episode P(target)={1 - args.exploiter_bot_fraction:.0%}, "
+                 f"P(bot)={args.exploiter_bot_fraction:.0%}. Goal: learn to beat the target while keeping a bot floor.")
+        else:
+            emit(f"🥊 [EXPLOITER] training vs {_exploiter_entry.label} as the SOLE opponent every episode "
+                 f"(temp {args.stable_opponent_temp:g}; no self-play/pool/bots). Goal: learn to beat it.")
 
     # Curriculum (transition + floor) effective values: CLI override or the module defaults.
     _heuristic_floor = args.heuristic_floor if args.heuristic_floor is not None else HEURISTIC_FLOOR
@@ -2266,6 +2310,10 @@ async def main():
                     stable_players=stable_players, stable_labels=stable_labels,
                     stable_challenge_share=args.stable_opponent_selfplay_share,
                     exploiter_player=exploiter_player,
+                    # keep-bots: the heuristic roster (always built above) is mixed back in
+                    # per-episode alongside the exploiter target. No-op unless exploiter_player is set.
+                    exploiter_keep_bots=args.exploiter_keep_bots,
+                    exploiter_bot_fraction=args.exploiter_bot_fraction,
                 )
 
                 # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.

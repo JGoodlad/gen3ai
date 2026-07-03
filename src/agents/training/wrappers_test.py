@@ -20,13 +20,14 @@ def _stub_env():
 
 def _make_wrapper(*, fraction=0.0, pool=None, pool_player=None, n_heuristics=2, rng_seed=0,
                   heuristic_weights=None, stable_players=None, stable_labels=None,
-                  exploiter_player=None):
+                  exploiter_player=None, exploiter_keep_bots=False, exploiter_bot_fraction=0.5):
     heuristics = [MagicMock(name=f"heur{i}") for i in range(n_heuristics)]
     w = MaskableAgentWrapper(
         _stub_env(), heuristic_opponents=heuristics, pool=pool, pool_player=pool_player,
         self_play_fraction=fraction, rng_seed=rng_seed, heuristic_weights=heuristic_weights,
         stable_players=stable_players, stable_labels=stable_labels,
-        exploiter_player=exploiter_player,
+        exploiter_player=exploiter_player, exploiter_keep_bots=exploiter_keep_bots,
+        exploiter_bot_fraction=exploiter_bot_fraction,
     )
     return w, heuristics
 
@@ -73,6 +74,53 @@ def test_exploiter_none_is_unchanged():
     w, heuristics = _make_wrapper(fraction=0.0, exploiter_player=None)
     w._select_episode_opponent()
     assert w.opponent in heuristics
+
+
+def test_exploiter_keep_bots_mixes_target_and_bots():
+    # --exploiter-keep-bots: per episode, the opponent is SOMETIMES the exploiter target and
+    # SOMETIMES a heuristic bot (via _pick_floor_opponent). Off → ALWAYS the target.
+    exploiter = MagicMock(name="exploiter")
+
+    # keep-bots ON at a middling fraction: over many resets we see BOTH the target and bots.
+    w, heuristics = _make_wrapper(exploiter_player=exploiter, exploiter_keep_bots=True,
+                                  exploiter_bot_fraction=0.5, rng_seed=1)
+    seen_target = seen_bot = 0
+    for _ in range(400):
+        w._select_episode_opponent()
+        if w.opponent is exploiter:
+            seen_target += 1
+        else:
+            assert w.opponent in heuristics    # a keep-bots non-target pick is always a floor bot
+            seen_bot += 1
+    assert seen_target > 0 and seen_bot > 0     # the mix actually mixes both ways
+    # ~50/50 at fraction 0.5 (loose bound — this is a randomness sanity check, not an exact ratio)
+    assert 0.30 < seen_bot / 400 < 0.70
+
+    # keep-bots OFF (the default) → the target is the SOLE opponent, never a bot.
+    w_off, _ = _make_wrapper(exploiter_player=exploiter, exploiter_keep_bots=False, rng_seed=1)
+    for _ in range(100):
+        w_off._select_episode_opponent()
+        assert w_off.opponent is exploiter
+
+
+def test_exploiter_bot_fraction_zero_is_all_target():
+    # keep-bots ON but bot_fraction=0.0 → still always the target (byte-identical to sole-target).
+    exploiter = MagicMock(name="exploiter")
+    w, _ = _make_wrapper(exploiter_player=exploiter, exploiter_keep_bots=True,
+                         exploiter_bot_fraction=0.0, rng_seed=3)
+    for _ in range(100):
+        w._select_episode_opponent()
+        assert w.opponent is exploiter
+
+
+def test_exploiter_bot_fraction_one_is_all_bots():
+    # keep-bots ON with bot_fraction=1.0 → always a floor bot, never the target.
+    exploiter = MagicMock(name="exploiter")
+    w, heuristics = _make_wrapper(exploiter_player=exploiter, exploiter_keep_bots=True,
+                                  exploiter_bot_fraction=1.0, rng_seed=4)
+    for _ in range(100):
+        w._select_episode_opponent()
+        assert w.opponent in heuristics
 
 
 def test_requires_an_opponent_or_roster():
