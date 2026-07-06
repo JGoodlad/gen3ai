@@ -4,6 +4,11 @@ Daemon script that spectates Pokémon Showdown battles and saves raw replay logs
 Runs until Ctrl+C. Each battle is saved immediately when it finishes.
 Restarts are safe — already-saved files are not overwritten.
 
+Rooms that never finish (battle ended without a parsed |win|, or the server froze the
+room) are abandoned by a reaper once they go silent (--stale-timeout) or exceed an
+absolute watch cap (--max-watch-time), so they can't hold a slot forever and starve
+--max-concurrent. Abandoned rooms are not saved (their logs are incomplete).
+
 Usage:
     python src/main/collect_replays.py --format gen3ou --save-dir replays/gen3ou
     python src/main/collect_replays.py --format gen3ou --save-dir replays/gen3ou --local
@@ -156,13 +161,19 @@ def render_dashboard(
         proxy_badge = "[bold yellow]DIRECT[/bold yellow] [dim](no proxy)[/dim]"
 
     # ── Stats row ────────────────────────────────────────────────────────
+    abandoned = spectator.abandoned_count
+    abandoned_cell = (
+        f"[bold red]{abandoned}[/bold red]\n[dim]abandoned[/dim]" if abandoned
+        else f"[dim]0[/dim]\n[dim]abandoned[/dim]"
+    )
     stats = Table.grid(padding=(0, 3), expand=True)
-    for _ in range(6):
+    for _ in range(7):
         stats.add_column(justify="center")
     stats.add_row(
         f"[bold green]{state.total_collected}[/bold green]\n[dim]collected[/dim]",
         f"[bold cyan]{len(active)}/{max_concurrent}[/bold cyan]\n[dim]watching[/dim]",
         f"[bold yellow]{spectator.pending_count}[/bold yellow]\n[dim]queued[/dim]",
+        abandoned_cell,
         f"[bold white]{spectator.seen_count}[/bold white]\n[dim]seen total[/dim]",
         f"[dim]{_elapsed_str(elapsed)}[/dim]\n[dim]elapsed[/dim]",
         f"{proxy_badge}\n[dim]connection[/dim]",
@@ -276,6 +287,10 @@ def main() -> None:
     parser.add_argument("--save-dir", default="replays", help="Directory for .log files")
     parser.add_argument("--local", action="store_true", help="Use localhost:8000")
     parser.add_argument("--max-concurrent", type=int, default=20, help="Max simultaneous rooms")
+    parser.add_argument("--stale-timeout", type=float, default=BattleSpectator.STALE_TIMEOUT,
+                        help="Seconds of silence before a stuck room is abandoned (frees its slot)")
+    parser.add_argument("--max-watch-time", type=float, default=BattleSpectator.MAX_WATCH_TIME,
+                        help="Absolute seconds to watch a room before abandoning it (never-ending game)")
     parser.add_argument("--proxy", type=str, default=None, metavar="SOCKS5_URL",
                         help="SOCKS5 proxy URL, e.g. socks5h://127.0.0.1:1080")
     parser.add_argument("--verbose", action="store_true", help="Show debug-level logs in UI")
@@ -288,6 +303,8 @@ def main() -> None:
     spectator = BattleSpectator(
         server_configuration=server,
         max_concurrent=args.max_concurrent,
+        stale_timeout=args.stale_timeout,
+        max_watch_time=args.max_watch_time,
         proxy_url=args.proxy,
     )
     _setup_logging(state, logging.DEBUG if args.verbose else logging.INFO)

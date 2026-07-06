@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import time
 from asyncio import Queue
 from collections.abc import AsyncGenerator
 from typing import Dict, List, Optional, Set
@@ -9,6 +10,31 @@ from poke_env.ps_client.account_configuration import AccountConfiguration
 from poke_env.ps_client.ps_client import PSClient
 from poke_env.ps_client.server_configuration import ServerConfiguration
 from poke_env.spectator.spectated_battle import SpectatedBattle
+
+
+def reap_reason(
+    battle: SpectatedBattle,
+    now: float,
+    stale_timeout: float,
+    max_watch_time: float,
+) -> Optional[str]:
+    """Decide whether a watched room should be abandoned to free its slot.
+
+    Returns a short human-readable reason, or None if the room is healthy.
+    Pure function of the battle's timestamps — unit-testable without a socket.
+
+    A room is reaped when it either goes silent (no message batch for
+    ``stale_timeout`` seconds — it ended without a parsed |win|/|tie|, or the
+    server froze it) or has been watched past ``max_watch_time`` regardless of
+    chatter (a genuinely never-ending game).
+    """
+    idle = now - battle.last_activity
+    if idle >= stale_timeout:
+        return f"idle {int(idle)}s"
+    watched = now - battle.joined_at
+    if watched >= max_watch_time:
+        return f"watched {int(watched)}s"
+    return None
 
 
 class BattleSpectator:
@@ -29,12 +55,23 @@ class BattleSpectator:
       - Detects dropped connections and reconnects automatically.
       - _seen is preserved across reconnects (won't re-join old rooms).
       - Reconnect delay is 10 s by default.
+
+    Stuck-room reaping:
+      - A room that never emits |win|/|tie| (battle ended without a parsed win
+        line, or the server froze the room) would otherwise hold its slot
+        forever, eventually starving max_concurrent. A reaper loop abandons a
+        room once it goes silent (stale_timeout) or is watched past
+        max_watch_time — /leave-ing it and freeing the slot. Abandoned rooms are
+        NOT saved (their logs are incomplete).
     """
 
     MAX_CONCURRENT: int = 10
     JOIN_INTERVAL: float = 1.0
     POLL_INTERVAL: float = 30.0
     RECONNECT_DELAY: float = 10.0
+    STALE_TIMEOUT: float = 600.0      # 10 min of silence → room is dead (ladder timer caps a turn ~150 s)
+    MAX_WATCH_TIME: float = 3600.0    # 1 h absolute cap — no real gen3ou game runs this long
+    REAPER_INTERVAL: float = 30.0     # how often the reaper scans _active
 
     def __init__(
         self,
@@ -44,6 +81,9 @@ class BattleSpectator:
         join_interval: float = JOIN_INTERVAL,
         poll_interval: float = POLL_INTERVAL,
         reconnect_delay: float = RECONNECT_DELAY,
+        stale_timeout: float = STALE_TIMEOUT,
+        max_watch_time: float = MAX_WATCH_TIME,
+        reaper_interval: float = REAPER_INTERVAL,
         proxy_url: Optional[str] = None,
         log_level: Optional[int] = None,
     ) -> None:
@@ -52,6 +92,9 @@ class BattleSpectator:
         self._join_interval = join_interval
         self._poll_interval = poll_interval
         self._reconnect_delay = reconnect_delay
+        self._stale_timeout = stale_timeout
+        self._max_watch_time = max_watch_time
+        self._reaper_interval = reaper_interval
         self._proxy_url = proxy_url
 
         self._logger = logging.getLogger(__name__)
@@ -66,6 +109,7 @@ class BattleSpectator:
         self._done: Optional[Queue] = None
         self._format_id: str = ""
         self._total_joined: int = 0            # preserved across reconnects
+        self._abandoned: int = 0               # stuck rooms reaped (preserved across reconnects)
 
     # ------------------------------------------------------------------
     # Public API
@@ -121,6 +165,8 @@ class BattleSpectator:
 
         join_task = asyncio.ensure_future(self._join_loop())
         poll_task = asyncio.ensure_future(self._poll_loop())
+        reaper_task = asyncio.ensure_future(self._reaper_loop())
+        bg_tasks = (join_task, poll_task, reaper_task)
         try:
             while True:
                 # Detect dropped connection: listen() coroutine has exited
@@ -129,7 +175,7 @@ class BattleSpectator:
                     raise ConnectionError("WebSocket listener exited — connection dropped")
 
                 # Detect background task failure (send on dead socket, etc.)
-                for task in (join_task, poll_task):
+                for task in bg_tasks:
                     if task.done() and not task.cancelled():
                         exc = task.exception()
                         if exc is not None:
@@ -141,9 +187,9 @@ class BattleSpectator:
                 except asyncio.TimeoutError:
                     continue  # loop back to check connection health
         finally:
-            join_task.cancel()
-            poll_task.cancel()
-            for task in (join_task, poll_task):
+            for task in bg_tasks:
+                task.cancel()
+            for task in bg_tasks:
                 try:
                     await task
                 except (asyncio.CancelledError, Exception):
@@ -170,6 +216,31 @@ class BattleSpectator:
         while True:
             await asyncio.sleep(self._poll_interval)
             await self._client.send_message(f"/query roomlist {self._format_id}")  # raises if dead
+
+    async def _reaper_loop(self) -> None:
+        """Abandon rooms that never finish so they stop holding a max_concurrent slot."""
+        while True:
+            await asyncio.sleep(self._reaper_interval)
+            now = time.time()
+            # Snapshot: _abandon_battle mutates _active and awaits between removals.
+            for battle_tag, battle in list(self._active.items()):
+                reason = reap_reason(
+                    battle, now, self._stale_timeout, self._max_watch_time
+                )
+                if reason is not None:
+                    await self._abandon_battle(battle_tag, battle, reason)
+
+    async def _abandon_battle(
+        self, battle_tag: str, battle: SpectatedBattle, reason: str
+    ) -> None:
+        """Leave a stuck room and free its slot. The log is incomplete, so not saved."""
+        self._logger.warning(
+            "Abandoning %s (turn %d, %s) — freeing slot", battle_tag, battle.turn, reason
+        )
+        await self._client.send_message(f"/leave {battle_tag}")  # raises if dead → reconnect
+        self._finished_tags.add(battle_tag)   # ignore any late messages for this room
+        self._active.pop(battle_tag, None)
+        self._abandoned += 1
 
     # ------------------------------------------------------------------
     # PSClient callbacks
@@ -261,3 +332,8 @@ class BattleSpectator:
     def total_joined(self) -> int:
         """Total /join commands sent since watch() was called."""
         return self._total_joined
+
+    @property
+    def abandoned_count(self) -> int:
+        """Total stuck rooms the reaper has left (never finished, slot reclaimed)."""
+        return self._abandoned

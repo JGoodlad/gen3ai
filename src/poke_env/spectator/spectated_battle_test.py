@@ -1,3 +1,5 @@
+import time
+
 from poke_env.spectator.spectated_battle import SpectatedBattle
 
 
@@ -63,6 +65,28 @@ def test_add_lines_after_finish_ignored():
     b.add_lines([["", "move", "p1a: Snorlax", "Body Slam", "p2a: Gengar"]])
     # The move line must not appear — finish came first
     assert "|move|" not in b.log_text
+
+
+def test_last_activity_initialized():
+    b = _make_battle()
+    assert b.last_activity == b.joined_at
+
+
+def test_last_activity_bumps_on_add_lines():
+    b = _make_battle()
+    before = b.last_activity
+    time.sleep(0.01)
+    b.add_lines([["", "turn", "1"]])
+    assert b.last_activity > before
+
+
+def test_last_activity_bumps_even_when_lines_skipped():
+    # An all-empty batch still means the server sent us something — the room is live.
+    b = _make_battle()
+    before = b.last_activity
+    time.sleep(0.01)
+    b.add_lines([[], [""]])
+    assert b.last_activity > before
 
 
 def test_log_text_format():

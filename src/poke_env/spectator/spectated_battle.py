@@ -16,9 +16,13 @@ class SpectatedBattle:
         self._turn: int = 0
         self._players: Dict[str, str] = {}   # "p1"/"p2" → username
         self._joined_at: float = time.time()
+        self._last_activity: float = self._joined_at
 
     def add_lines(self, split_messages: List[List[str]]) -> None:
         """Append a batch of already-split Showdown message lines to the log."""
+        # Any received batch counts as activity, even if every line is skipped —
+        # this is what the reaper uses to tell a live room from a frozen one.
+        self._last_activity = time.time()
         if self._finished:
             return
         for parts in split_messages:
@@ -73,6 +77,16 @@ class SpectatedBattle:
     def joined_at(self) -> float:
         """Unix timestamp when this SpectatedBattle was created (room joined)."""
         return self._joined_at
+
+    @property
+    def last_activity(self) -> float:
+        """Unix timestamp of the most recently received message batch for this room.
+
+        A live battle keeps this fresh (moves, chat, timer ticks); a room that
+        ended without a parsed |win|/|tie| — or that the server froze — goes quiet,
+        so ``now - last_activity`` is how the reaper detects a stuck room.
+        """
+        return self._last_activity
 
     @property
     def log_text(self) -> str:
