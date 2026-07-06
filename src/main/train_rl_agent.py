@@ -1524,6 +1524,28 @@ async def main():
                         help="Under --exploiter-keep-bots, the per-episode probability of facing a "
                              "heuristic bot instead of the exploiter target (default 0.5). The exploiter "
                              "target is faced with the complementary probability (1 - this).")
+    parser.add_argument("--exploiter-temp-start", dest="exploiter_temp_start", type=float, default=None,
+                        help="EXPLOITER MODE (requires --exploiter): ANNEAL the target opponent's sampling "
+                             "temperature over training — a difficulty curriculum via opponent STOCHASTICITY. "
+                             "Setting this (a positive float, e.g. 2.0) starts the target at this temperature "
+                             "(flatter logits → noisier/weaker play, so a from-scratch trainee can win some "
+                             "games and get a learning signal) and linearly anneals it to --exploiter-temp-end "
+                             "over --exploiter-temp-anneal-frac of training, held after. None (default) = OFF: "
+                             "the target plays at --stable-opponent-temp the whole run (byte-identical). "
+                             "Training-only (not version-locked; forwarded verbatim on resume, where the anneal "
+                             "continues from the resumed step).")
+    parser.add_argument("--exploiter-temp-end", dest="exploiter_temp_end", type=float, default=1.0,
+                        help="EXPLOITER MODE: the target opponent's temperature at the END of the anneal window "
+                             "(default 1.0 = the policy's own distribution, i.e. the target's true strength as a "
+                             "stochastic training opponent). Only used when --exploiter-temp-start is set. Set "
+                             "below 1.0 to push the target toward greedy (harder) by the end.")
+    parser.add_argument("--exploiter-temp-anneal-frac", dest="exploiter_temp_anneal_frac", type=float,
+                        default=0.2,
+                        help="EXPLOITER MODE: fraction of total --steps over which to linearly anneal the target "
+                             "temperature from --exploiter-temp-start to --exploiter-temp-end (default 0.2 = the "
+                             "first 20%% of training; held at the end temp after). 0 = constant at "
+                             "--exploiter-temp-start (a fixed hotter opponent, no anneal). Only used when "
+                             "--exploiter-temp-start is set.")
     parser.add_argument("--trainee-team", dest="trainee_team", type=str, default=None,
                         help="SPECIALIST MODE: pin the TRAINEE's team pool to the ONE team in this file "
                              "(a Showdown EXPORT string, like data/teams/sample/*.txt), so the agent "
@@ -1695,6 +1717,15 @@ async def main():
                      "too (it mixes the bots in ALONGSIDE that target).")
     if not 0.0 <= args.exploiter_bot_fraction <= 1.0:
         parser.error("--exploiter-bot-fraction must be a fraction in [0, 1]")
+    if args.exploiter_temp_start is not None:
+        if not args.exploiter:
+            parser.error("--exploiter-temp-start only applies in exploiter mode — pass --exploiter "
+                         "<target> too (it anneals THAT target's play temperature).")
+        if args.exploiter_temp_start <= 0.0 or args.exploiter_temp_end <= 0.0:
+            parser.error("--exploiter-temp-start / --exploiter-temp-end must be > 0 (a softmax "
+                         "temperature; the opponent's logits are divided by it).")
+        if not 0.0 <= args.exploiter_temp_anneal_frac <= 1.0:
+            parser.error("--exploiter-temp-anneal-frac must be a fraction in [0, 1]")
     if args.opp_belief_cls_k < 0:
         parser.error("--opp-belief-cls-k must be >= 0 (0 = off)")
     if args.opp_belief_cls_k > 0 and not args.attend_unrevealed_opponents:
@@ -2140,9 +2171,15 @@ async def main():
         from agents.model.snapshot import (
             current_model_version as _current_model_version, load_foreign_opponent)
         _cv_expl = _current_model_version(mappings, **_run_arch_toggles(args))
+        # gen3_exploiter_temp_anneal_v1: when annealing the target's temperature, START it at
+        # --exploiter-temp-start (so the very first episodes are already at the curriculum's hot temp,
+        # before ExploiterTempAnnealCallback's first per-rollout push); else the fixed
+        # --stable-opponent-temp (unchanged default).
+        _expl_temp0 = (args.exploiter_temp_start if args.exploiter_temp_start is not None
+                       else args.stable_opponent_temp)
         try:
             _resolved = resolve_stable_opponents(args.exploiter, _cv_expl,
-                                                 default_temperature=args.stable_opponent_temp)
+                                                 default_temperature=_expl_temp0)
             if len(_resolved) != 1:
                 raise ValueError(f"--exploiter takes exactly ONE target model, got {len(_resolved)}")
             _exploiter_entry = _resolved[0]
@@ -2156,13 +2193,17 @@ async def main():
             print(f"\n[Exploiter] FATAL: failed to load exploiter target weights: {e}")
             sys.stdout.flush()
             os._exit(int(TrainExitCode.FATAL_CONFIG))
+        _temp_desc = (f"temp {args.exploiter_temp_start:g}→{args.exploiter_temp_end:g} annealed over "
+                      f"{args.exploiter_temp_anneal_frac:.0%} of training"
+                      if args.exploiter_temp_start is not None
+                      else f"temp {args.stable_opponent_temp:g}")
         if args.exploiter_keep_bots:
-            emit(f"🥊 [EXPLOITER] training vs {_exploiter_entry.label} (temp {args.stable_opponent_temp:g}) "
+            emit(f"🥊 [EXPLOITER] training vs {_exploiter_entry.label} ({_temp_desc}) "
                  f"with the heuristic bots MIXED IN: per episode P(target)={1 - args.exploiter_bot_fraction:.0%}, "
                  f"P(bot)={args.exploiter_bot_fraction:.0%}. Goal: learn to beat the target while keeping a bot floor.")
         else:
             emit(f"🥊 [EXPLOITER] training vs {_exploiter_entry.label} as the SOLE opponent every episode "
-                 f"(temp {args.stable_opponent_temp:g}; no self-play/pool/bots). Goal: learn to beat it.")
+                 f"({_temp_desc}; no self-play/pool/bots). Goal: learn to beat it.")
 
     # Curriculum (transition + floor) effective values: CLI override or the module defaults.
     _heuristic_floor = args.heuristic_floor if args.heuristic_floor is not None else HEURISTIC_FLOOR
@@ -2597,6 +2638,15 @@ async def main():
     )
     graceful_restart_callback = GracefulRestartCallback()
     callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback]
+    # gen3_exploiter_temp_anneal_v1: anneal the EXPLOITER target's sampling temperature over training
+    # (a difficulty curriculum via opponent stochasticity — hot/weak early → true strength later),
+    # pushed to every env's exploiter RLPlayer via env_method each rollout. Registered ONLY when
+    # --exploiter-temp-start is set → an off run makes no push (byte-identical). Training-only.
+    if args.exploiter and args.exploiter_temp_start is not None:
+        from agents.training.exploiter_temp_callback import ExploiterTempAnnealCallback
+        callbacks.append(ExploiterTempAnnealCallback(
+            temp_start=args.exploiter_temp_start, temp_end=args.exploiter_temp_end,
+            anneal_frac=args.exploiter_temp_anneal_frac))
     # Win-probability head: captures each episode's win/loss outcome during collection + back-fills the
     # rollout buffer's MC label before train() (only when the head is on → a default run pays nothing).
     if args.win_prob_mode != "none":

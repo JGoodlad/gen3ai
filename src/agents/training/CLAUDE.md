@@ -828,6 +828,25 @@ at the target and it's the only opponent.
 - **Mutually exclusive with `--self-play`** (arg-parse error — the exploiter needs no pool). Because
   it's not self-play, `_opp_version` (the arch gate for the foreign load) is set explicitly for this
   path before the factories are built. Training-only; not version-locked.
+- **Temperature-annealing curriculum (`gen3_exploiter_temp_anneal_v1`, `--exploiter-temp-start`).** A
+  from-scratch trainee vs a STRONG frozen target is crushed every game — the PPO advantage is ~0 (all
+  losses look equally bad) and it never gets a foothold. This anneals the target's SAMPLING TEMPERATURE
+  over training — a difficulty curriculum via opponent STOCHASTICITY (not by swapping opponents): start
+  the target HOT (`--exploiter-temp-start`, e.g. 2.0 → flatter logits → noisier/weaker play, so the
+  trainee wins some games and gets a learning signal) and linearly anneal it to `--exploiter-temp-end`
+  (default 1.0 = the target's true play distribution) over `--exploiter-temp-anneal-frac` of `--steps`
+  (default 0.2), held after. `ExploiterTempAnnealCallback` (`exploiter_temp_callback.py`) computes the
+  temp from SB3's `_current_progress_remaining` each rollout (both the sync and async collectors call
+  `on_rollout_start`) and pushes it to every env's exploiter `RLPlayer` via
+  `env_method("set_exploiter_temperature", T)` — the `set_self_play_target` idiom;
+  `MaskableAgentWrapper.set_exploiter_temperature` sets `RLPlayer._temperature` (read fresh each
+  `choose_move`). Metric: `train/exploiter_temp` (TB + TUI). **Training-only** — no weight-shape/forward
+  change, NOT version-locked, forwarded verbatim on resume (where `_current_progress_remaining` reflects
+  the resumed step, so the anneal continues from the right point). Registered ONLY when
+  `--exploiter-temp-start` is set → an off run makes no push (byte-identical, opponent plays at the fixed
+  `--stable-opponent-temp`). Composes with `--exploiter-keep-bots` (the from-scratch specialist recipe:
+  a bot floor + a temp-ramped strong target). Tests: `exploiter_temp_callback_test.py` (schedule +
+  push/change-guard), `wrappers_test.py::test_set_exploiter_temperature_*`.
 - **Usage:** `--exploiter <target> --model <target's checkpoint>` — init the exploiter from a strong
   checkpoint so it has a baseline to exploit from (the AlphaStar exploiter init). To ALSO see
   win-rate vs the target in eval, add `--stable-opponents <same target>` (eval-only without

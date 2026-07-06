@@ -106,6 +106,16 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         self._self_play_fraction = float(fraction)
         self._target_generation = int(generation)
 
+    def set_exploiter_temperature(self, temperature: float) -> None:
+        """Live update of the EXPLOITER target opponent's sampling temperature (pushed via
+        ``VecEnv.env_method`` each rollout by ``ExploiterTempAnnealCallback``, the
+        ``set_self_play_target`` idiom). Sets it on the persistent exploiter ``RLPlayer`` so the
+        next decision samples at the annealed temp (``RLPlayer.choose_move`` reads
+        ``self._temperature`` fresh each call). No-op when this env has no exploiter player — a
+        non-exploiter run never pushes it (byte-identical)."""
+        if self._exploiter_player is not None:
+            self._exploiter_player._temperature = float(temperature)
+
     def set_opponent_win_rates(self, rates) -> None:
         """Live PFSP update (pushed via ``VecEnv.env_method`` each eval): the trainee's per-snapshot
         win-rates (``{step: P(win)}``, EMA-smoothed in the callback) that weight pool sampling toward

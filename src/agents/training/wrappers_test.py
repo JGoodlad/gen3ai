@@ -123,6 +123,21 @@ def test_exploiter_bot_fraction_one_is_all_bots():
         assert w.opponent in heuristics
 
 
+def test_set_exploiter_temperature_updates_player():
+    # gen3_exploiter_temp_anneal_v1: the env_method push sets the exploiter RLPlayer's temperature.
+    exploiter = MagicMock(name="exploiter")
+    exploiter._temperature = 1.0
+    w, _ = _make_wrapper(exploiter_player=exploiter)
+    w.set_exploiter_temperature(2.5)
+    assert exploiter._temperature == 2.5
+
+
+def test_set_exploiter_temperature_noop_without_exploiter():
+    # A non-exploiter env never has a target — the push must be a harmless no-op (never raises).
+    w, _ = _make_wrapper(exploiter_player=None)
+    w.set_exploiter_temperature(2.5)
+
+
 def test_requires_an_opponent_or_roster():
     with pytest.raises(ValueError):
         MaskableAgentWrapper(_stub_env())
