@@ -138,6 +138,27 @@ def test_set_exploiter_temperature_noop_without_exploiter():
     w.set_exploiter_temperature(2.5)
 
 
+def test_exploiter_winrate_totals_counts_only_target_games():
+    # gen3_exploiter_temp_anneal_v1 ratchet signal: outcomes are counted ONLY when the episode's
+    # opponent was the exploiter target (bot episodes excluded), so the WR measures the target.
+    exploiter = MagicMock(name="exploiter")
+    w, heuristics = _make_wrapper(exploiter_player=exploiter, exploiter_keep_bots=True)
+    assert w.exploiter_winrate_totals() == (0, 0.0)
+    w.opponent = exploiter
+    w._record_exploiter_outcome(1.0)      # target win
+    w._record_exploiter_outcome(0.0)      # target loss
+    w.opponent = heuristics[0]
+    w._record_exploiter_outcome(1.0)      # a BOT win — must NOT count
+    assert w.exploiter_winrate_totals() == (2, 1.0)
+
+
+def test_exploiter_winrate_totals_zero_without_exploiter():
+    w, heuristics = _make_wrapper(exploiter_player=None)
+    w.opponent = heuristics[0]
+    w._record_exploiter_outcome(1.0)      # no exploiter → never counts
+    assert w.exploiter_winrate_totals() == (0, 0.0)
+
+
 def test_requires_an_opponent_or_roster():
     with pytest.raises(ValueError):
         MaskableAgentWrapper(_stub_env())

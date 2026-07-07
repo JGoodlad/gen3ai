@@ -93,6 +93,12 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         # consulted when _exploiter_player is set; off → the sole-target path (byte-identical).
         self._exploiter_keep_bots = bool(exploiter_keep_bots)
         self._exploiter_bot_fraction = float(exploiter_bot_fraction)
+        # gen3_exploiter_temp_anneal_v1 (ratchet mode): cumulative episode outcomes vs the EXPLOITER
+        # target (bot episodes excluded), read via env_method("exploiter_winrate_totals") by
+        # ExploiterTempRatchetCallback to measure the trainee's live WR at the CURRENT opponent
+        # temperature — the signal the fixed schedule lacks. Inert unless an exploiter is set.
+        self._exploiter_games = 0
+        self._exploiter_wins = 0.0
         self._self_play_fraction = float(self_play_fraction)
         self._target_generation = 0
         self._scanned_generation = -1   # -1 forces a pool re-scan on the first pool selection
@@ -115,6 +121,20 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         non-exploiter run never pushes it (byte-identical)."""
         if self._exploiter_player is not None:
             self._exploiter_player._temperature = float(temperature)
+
+    def _record_exploiter_outcome(self, won: float) -> None:
+        """Count an episode outcome vs the EXPLOITER target (ratchet-mode WR signal). Only counts
+        when THIS episode's opponent was the exploiter target (bot episodes under
+        ``--exploiter-keep-bots`` are excluded), so the WR measures difficulty vs the target itself."""
+        if self._exploiter_player is not None and self.opponent is self._exploiter_player:
+            self._exploiter_games += 1
+            self._exploiter_wins += float(won)
+
+    def exploiter_winrate_totals(self):
+        """(cumulative target-games, cumulative target-wins) this worker has played vs the EXPLOITER
+        target — read via ``VecEnv.env_method`` by ``ExploiterTempRatchetCallback``, which diffs to a
+        per-window WR and ratchets the target temperature. ``(0, 0.0)`` when there's no exploiter."""
+        return (self._exploiter_games, self._exploiter_wins)
 
     def set_opponent_win_rates(self, rates) -> None:
         """Live PFSP update (pushed via ``VecEnv.env_method`` each eval): the trainee's per-snapshot
@@ -231,7 +251,9 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             # set. Consumed ONLY when the win-prob head is on (WinProbLabelCallback / the async
             # collector); harmless otherwise. A tie (won is None) counts as not-a-win → 0.0.
             b = getattr(self.env, "battle1", None)
-            info["win_outcome"] = 1.0 if (b is not None and b.won is True) else 0.0
+            won = 1.0 if (b is not None and b.won is True) else 0.0
+            info["win_outcome"] = won
+            self._record_exploiter_outcome(won)   # ratchet-mode WR signal (no-op off / vs bots)
         return obs, reward, term, trunc, info
 
     def action_masks(self):

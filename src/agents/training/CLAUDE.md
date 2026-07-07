@@ -847,6 +847,26 @@ at the target and it's the only opponent.
   `--stable-opponent-temp`). Composes with `--exploiter-keep-bots` (the from-scratch specialist recipe:
   a bot floor + a temp-ramped strong target). Tests: `exploiter_temp_callback_test.py` (schedule +
   push/change-guard), `wrappers_test.py::test_set_exploiter_temperature_*`.
+  - **Two modes (`--exploiter-temp-mode {fixed,ratchet}`, default `fixed`).** `fixed` = the linear
+    time schedule above. **`ratchet` = DYNAMIC, win-rate-driven, one-way** (`ExploiterTempRatchetCallback`):
+    the fixed schedule has to GUESS the right starting temperature (empirically ai_v7_06's fixed 2.0 start
+    was too weak — a 1983-ELO target flattened by temp ~2 is still a wall for a from-scratch net, so half
+    the games yielded ~no advantage signal). Instead, start the target near-trivial
+    (`--exploiter-temp-start` HIGH, e.g. 5.0) and ratchet the temp DOWN (`*= --exploiter-temp-ratchet-factor`,
+    default 0.9, floored at `--exploiter-temp-end`) only when the trainee's measured **training** WR vs the
+    target clears `--exploiter-temp-ratchet-wr` (default 0.55, near the ~0.5 max-advantage-signal zone) over
+    a window of `--exploiter-temp-ratchet-games` (default 500) target-games. It **never raises** the temp,
+    so a plateauing trainee can't comfort-trap the controller into weakening the opponent (the failure mode
+    of a symmetric setpoint controller) — mirroring the one-way stable-opponent mastery flip. The signal is
+    the TRAINING WR at the current temp (NOT the greedy eval WR, which reads ~0 forever early): the wrapper
+    counts per-episode outcomes vs the target (`_record_exploiter_outcome` / `exploiter_winrate_totals`,
+    bot episodes excluded), and the callback diffs the cumulative totals via `env_method` each
+    `on_rollout_end`. **Resume-safe:** the ratcheted temp is persisted to `<run>/exploiter_temp_state.json`
+    and restored on a launcher restart (else a fresh child resets to the easy `temp_start` and undoes the
+    ratcheting; the WR window restarts fresh). Metrics: `train/exploiter_temp` + `train/exploiter_target_wr`
+    (hovers near the threshold) + `train/exploiter_temp_ratchets`. Requires `--exploiter-temp-start >
+    --exploiter-temp-end`. Tests: `exploiter_temp_callback_test.py` (`_decide` one-way/floor + windowed
+    control loop + resume round-trip), `wrappers_test.py::test_exploiter_winrate_totals_*`.
 - **Usage:** `--exploiter <target> --model <target's checkpoint>` — init the exploiter from a strong
   checkpoint so it has a baseline to exploit from (the AlphaStar exploiter init). To ALSO see
   win-rate vs the target in eval, add `--stable-opponents <same target>` (eval-only without

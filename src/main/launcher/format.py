@@ -52,9 +52,13 @@ _METRIC_LABELS = {
     "train/selfplay_fraction": "pool frac",
     "train/stable_fraction": "stable frac",
     "train/nonbot_fraction": "nonbot frac",
-    # Exploiter target temperature (only under --exploiter-temp-start): the annealed opponent
-    # sampling temperature this rollout — high (weak/noisy) early → temp_end (true strength) later.
+    # Exploiter target temperature (only under --exploiter-temp-start): the opponent sampling
+    # temperature this rollout — high (weak/noisy) early → temp_end (true strength) later. In ratchet
+    # mode, target_wr = the measured training WR vs the target (hovers near the ratchet threshold),
+    # ratchets = how many times the temp has stepped down (harder).
     "train/exploiter_temp": "exploiter temp",
+    "train/exploiter_target_wr": "exploiter tgt WR",
+    "train/exploiter_temp_ratchets": "exploiter ratchets",
     # Gradient noise scale (B_simple, McCandlish) — only under --grad-accum-steps>=2. noise_ratio =
     # B_simple / effective-batch: ≫1 noise-limited (bigger batch helps), ≪1 diminishing returns.
     "train/noise_scale": "noise scale",
@@ -220,8 +224,10 @@ _METRIC_ORDER = [
     "train/nonbot_fraction",
     "train/selfplay_fraction",
     "train/stable_fraction",
-    # Exploiter target temperature (annealed; only under --exploiter-temp-start).
+    # Exploiter target temperature (only under --exploiter-temp-start; + WR/ratchets in ratchet mode).
     "train/exploiter_temp",
+    "train/exploiter_target_wr",
+    "train/exploiter_temp_ratchets",
     # Belief-aux diagnostics (only present when a belief aux is on) — rendered in their own
     # `belief/` section directly BELOW train/ (same column). species_acc is the headline; the
     # move_* block is the move-belief head; the latent_* block is the role-token latent predictor

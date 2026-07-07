@@ -1544,8 +1544,31 @@ async def main():
                         help="EXPLOITER MODE: fraction of total --steps over which to linearly anneal the target "
                              "temperature from --exploiter-temp-start to --exploiter-temp-end (default 0.2 = the "
                              "first 20%% of training; held at the end temp after). 0 = constant at "
-                             "--exploiter-temp-start (a fixed hotter opponent, no anneal). Only used when "
-                             "--exploiter-temp-start is set.")
+                             "--exploiter-temp-start (a fixed hotter opponent, no anneal). Only used in the FIXED "
+                             "temp mode (--exploiter-temp-mode fixed).")
+    parser.add_argument("--exploiter-temp-mode", dest="exploiter_temp_mode",
+                        choices=["fixed", "ratchet"], default="fixed",
+                        help="EXPLOITER MODE (with --exploiter-temp-start): how the target temperature is "
+                             "controlled. 'fixed' (default) = the linear time schedule (--exploiter-temp-anneal-frac). "
+                             "'ratchet' = DYNAMIC win-rate-driven: start at --exploiter-temp-start (set it HIGH, e.g. "
+                             "5.0, so early games are trivially winnable) and ratchet the temperature DOWN toward "
+                             "--exploiter-temp-end only when the trainee's measured TRAINING win-rate vs the target "
+                             "clears --exploiter-temp-ratchet-wr — a ONE-WAY auto-curriculum that tracks the trainee's "
+                             "competence frontier (never weakens the target, so no comfort-trap). Resume-safe (the "
+                             "ratcheted temp is persisted to <run>/exploiter_temp_state.json).")
+    parser.add_argument("--exploiter-temp-ratchet-wr", dest="exploiter_temp_ratchet_wr", type=float,
+                        default=0.55,
+                        help="RATCHET mode: the trainee TRAINING-WR vs the target at which the temperature ratchets "
+                             "DOWN (harder). Default 0.55 (keeps play near the ~0.5 max-advantage-signal zone). "
+                             "Measured per window of --exploiter-temp-ratchet-games target games.")
+    parser.add_argument("--exploiter-temp-ratchet-factor", dest="exploiter_temp_ratchet_factor",
+                        type=float, default=0.9,
+                        help="RATCHET mode: multiply the temperature by this (<1) on each ratchet (default 0.9 = 10%% "
+                             "harder steps). Floored at --exploiter-temp-end.")
+    parser.add_argument("--exploiter-temp-ratchet-games", dest="exploiter_temp_ratchet_games",
+                        type=int, default=500,
+                        help="RATCHET mode: min target-games per decision window before a ratchet check (default 500 "
+                             "— the noise guard; larger = smoother/slower).")
     parser.add_argument("--trainee-team", dest="trainee_team", type=str, default=None,
                         help="SPECIALIST MODE: pin the TRAINEE's team pool to the ONE team in this file "
                              "(a Showdown EXPORT string, like data/teams/sample/*.txt), so the agent "
@@ -1726,6 +1749,20 @@ async def main():
                          "temperature; the opponent's logits are divided by it).")
         if not 0.0 <= args.exploiter_temp_anneal_frac <= 1.0:
             parser.error("--exploiter-temp-anneal-frac must be a fraction in [0, 1]")
+        if args.exploiter_temp_mode == "ratchet":
+            if not 0.0 < args.exploiter_temp_ratchet_factor < 1.0:
+                parser.error("--exploiter-temp-ratchet-factor must be in (0, 1) (it multiplies the "
+                             "temperature DOWN each ratchet).")
+            if not 0.0 < args.exploiter_temp_ratchet_wr < 1.0:
+                parser.error("--exploiter-temp-ratchet-wr must be a win-rate in (0, 1).")
+            if args.exploiter_temp_ratchet_games < 1:
+                parser.error("--exploiter-temp-ratchet-games must be >= 1.")
+            if args.exploiter_temp_start <= args.exploiter_temp_end:
+                parser.error("--exploiter-temp-mode ratchet needs --exploiter-temp-start > "
+                             "--exploiter-temp-end (it ratchets the temp DOWN from start toward end).")
+    elif args.exploiter_temp_mode == "ratchet":
+        parser.error("--exploiter-temp-mode ratchet requires --exploiter-temp-start (the initial/max "
+                     "temperature to ratchet down from — set it HIGH, e.g. 5.0).")
     if args.opp_belief_cls_k < 0:
         parser.error("--opp-belief-cls-k must be >= 0 (0 = off)")
     if args.opp_belief_cls_k > 0 and not args.attend_unrevealed_opponents:
@@ -2193,10 +2230,14 @@ async def main():
             print(f"\n[Exploiter] FATAL: failed to load exploiter target weights: {e}")
             sys.stdout.flush()
             os._exit(int(TrainExitCode.FATAL_CONFIG))
-        _temp_desc = (f"temp {args.exploiter_temp_start:g}→{args.exploiter_temp_end:g} annealed over "
-                      f"{args.exploiter_temp_anneal_frac:.0%} of training"
-                      if args.exploiter_temp_start is not None
-                      else f"temp {args.stable_opponent_temp:g}")
+        if args.exploiter_temp_start is None:
+            _temp_desc = f"temp {args.stable_opponent_temp:g}"
+        elif args.exploiter_temp_mode == "ratchet":
+            _temp_desc = (f"temp {args.exploiter_temp_start:g}→{args.exploiter_temp_end:g} WR-RATCHETED "
+                          f"(harder when train-WR ≥ {args.exploiter_temp_ratchet_wr:.0%})")
+        else:
+            _temp_desc = (f"temp {args.exploiter_temp_start:g}→{args.exploiter_temp_end:g} annealed over "
+                          f"{args.exploiter_temp_anneal_frac:.0%} of training")
         if args.exploiter_keep_bots:
             emit(f"🥊 [EXPLOITER] training vs {_exploiter_entry.label} ({_temp_desc}) "
                  f"with the heuristic bots MIXED IN: per episode P(target)={1 - args.exploiter_bot_fraction:.0%}, "
@@ -2638,15 +2679,23 @@ async def main():
     )
     graceful_restart_callback = GracefulRestartCallback()
     callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback]
-    # gen3_exploiter_temp_anneal_v1: anneal the EXPLOITER target's sampling temperature over training
+    # gen3_exploiter_temp_anneal_v1: control the EXPLOITER target's sampling temperature over training
     # (a difficulty curriculum via opponent stochasticity — hot/weak early → true strength later),
     # pushed to every env's exploiter RLPlayer via env_method each rollout. Registered ONLY when
     # --exploiter-temp-start is set → an off run makes no push (byte-identical). Training-only.
+    # 'fixed' = linear time schedule; 'ratchet' = dynamic win-rate-driven one-way ratchet.
     if args.exploiter and args.exploiter_temp_start is not None:
-        from agents.training.exploiter_temp_callback import ExploiterTempAnnealCallback
-        callbacks.append(ExploiterTempAnnealCallback(
-            temp_start=args.exploiter_temp_start, temp_end=args.exploiter_temp_end,
-            anneal_frac=args.exploiter_temp_anneal_frac))
+        from agents.training.exploiter_temp_callback import (
+            ExploiterTempAnnealCallback, ExploiterTempRatchetCallback)
+        if args.exploiter_temp_mode == "ratchet":
+            callbacks.append(ExploiterTempRatchetCallback(
+                temp_start=args.exploiter_temp_start, temp_end=args.exploiter_temp_end,
+                threshold=args.exploiter_temp_ratchet_wr, factor=args.exploiter_temp_ratchet_factor,
+                min_games=args.exploiter_temp_ratchet_games, run_dir=model_dir))
+        else:
+            callbacks.append(ExploiterTempAnnealCallback(
+                temp_start=args.exploiter_temp_start, temp_end=args.exploiter_temp_end,
+                anneal_frac=args.exploiter_temp_anneal_frac))
     # Win-probability head: captures each episode's win/loss outcome during collection + back-fills the
     # rollout buffer's MC label before train() (only when the head is on → a default run pays nothing).
     if args.win_prob_mode != "none":
