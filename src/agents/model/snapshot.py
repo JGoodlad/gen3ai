@@ -572,6 +572,8 @@ def current_model_version(
     hp_type_belief_mode: str = "off",
     hp_type_belief_coef: float = 0.0,
     belief_grad_mode: str = "shaping",
+    pubval_mode: str = "none",
+    pubval_coef: float = 0.0,
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -634,6 +636,7 @@ def current_model_version(
     ext_kwargs["threat_status_refine"] = threat_status_refine
     ext_kwargs["hp_type_belief_mode"] = hp_type_belief_mode
     ext_kwargs["belief_grad_mode"] = belief_grad_mode
+    ext_kwargs["pubval_mode"] = pubval_mode
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -646,7 +649,7 @@ def current_model_version(
         move_belief_coef=move_belief_coef, opp_belief_latent_coef=opp_belief_latent_coef,
         win_prob_coef=win_prob_coef, move_belief_latent_coef=move_belief_latent_coef,
         spread_belief_coef=spread_belief_coef, value_dist_coef=value_dist_coef,
-        hp_type_belief_coef=hp_type_belief_coef,
+        hp_type_belief_coef=hp_type_belief_coef, pubval_coef=pubval_coef,
     )
 
 
@@ -678,6 +681,9 @@ def arch_toggles_from_model(model) -> dict:
         "mask_active_move_scalars_obs": bool(getattr(fe, "mask_active_move_scalars_obs", False)),
         "mask_move_effects_obs": bool(getattr(fe, "mask_move_effects_obs", False)),
         "win_prob_mode": str(getattr(fe, "win_prob_mode", "none")),
+        # v43 pubval aux head (gen3_pubval_aux_v1): STRUCTURAL string like win_prob_mode, gated in
+        # check_compatible, so it must reach the worker's gate (a pubval-ON run's own snapshots carry it).
+        "pubval_mode": str(getattr(fe, "pubval_mode", "none")),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),

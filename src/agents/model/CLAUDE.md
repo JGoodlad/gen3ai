@@ -873,7 +873,25 @@ instead of 10, so the turn-history block is 1113 dims (was 1590) and the total o
 already in `_WEIGHT_FIELDS`, so `check_compatible` auto-rejects any pre-v42 checkpoint via the obs-dim
 weight-field check — **NO `ARCH_SIGNATURE` bump** (the weight-field check already catches it). The
 history-token saliency decays hard (the model reads mostly the last 1–2 turns), so the cut is a cheap
-retrain free-rider, not a behavioral regression. `MODEL_CONFIG_VERSION` = **42**.
+retrain free-rider, not a behavioral regression.
+
+**Public-value aux head (v43, `gen3_pubval_aux_v1`, `pubval_mode` / `--pubval-mode`).** The
+`WinProbHead` pattern with an EXOGENOUS target: `PubValHead` (a named `WinProbHead` subclass — same
+architecture, its own state_dict keys) reads `value_pooled` after the pools and stashes a [B,1]
+`last_pubval_logits` regressed toward the **frozen HUMAN-replay-calibrated public value V_pub**
+(`agents.training.pubval` + `data/gen3_pubval.json` — 170k rated gen3ou games, held-out AUC 0.734,
+turn-1 AUC 0.500 leakage-clean). Dense per-step (the trunk sees WHEN the game swung — the
+credit-assignment lever) and value-INDEPENDENT (human outcomes, not the self-play bootstrap — where
+the win-prob head's MC label inherits the policy's blind spots). Tri-state `pubval_mode`
+{none, read_only, shaping}: `none` = no module (baseline byte-for-byte); `read_only` = head-only on a
+STOP-GRAD `value_pooled` (the "can the trunk carry V_pub?" learnability probe); `shaping` = the human
+positional prior shapes the shared trunk. SIDE readout — never in pi/vf, never in GAE (V^human ≠ V^π);
+the target rides a training-only `pubval_target` obs key computed env-side from PUBLIC state only
+(leak-free). STRUCTURAL + resume-IMMUTABLE STRING gate in `check_compatible` (like `win_prob_mode`);
+`pubval_coef` training-only (flagless-resume-inherited); OFF byte-for-byte (NO `ARCH_SIGNATURE` bump);
+threaded through `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles` + both
+`extractor_kwargs` sites. Training half + the parity fuzz: `src/agents/training/CLAUDE.md` →
+public-replay value aux. `MODEL_CONFIG_VERSION` = **43**.
 
 **Damage re-attend (v31, `damage_reattend` / `--damage-reattend`, `gen3_damage_reattend_v1`).** Lets
 attention reason OVER the computed physics — today the `DamageOperator` block is concatenated POST-pool

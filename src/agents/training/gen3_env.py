@@ -47,7 +47,8 @@ class Gen3Env(SinglesEnv):
                  *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
                  move_belief_mode: str = "off", emit_belief_target: bool = False,
                  emit_win_target: bool = False, emit_spread_labels: bool = False,
-                 emit_hp_type_labels: bool = False, emit_defensive_opportunity: bool = False, **kwargs):
+                 emit_hp_type_labels: bool = False, emit_defensive_opportunity: bool = False,
+                 emit_pubval_target: bool = False, **kwargs):
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
@@ -117,6 +118,18 @@ class Gen3Env(SinglesEnv):
         # bonus up on these decisions so the policy keeps exploring defensive moves instead of collapsing to
         # attacking) — never enters the policy/value forward. Enabled by --defensive-entropy-boost > 1.0.
         self._emit_defensive_opportunity = emit_defensive_opportunity
+        # PUBLIC-VALUE aux target (TRAINING-ONLY, gen3_pubval_aux_v1): when on, the obs Dict carries
+        # `pubval_target` [1] = the FROZEN human-replay-calibrated V_pub = P(win | PUBLIC board) evaluated
+        # on the current board (a REAL per-step value like win_margin, NOT a placeholder — V_pub is a pure
+        # function of present public state) + `pubval_mask` [1] (0 only before the battle objects exist).
+        # Read ONLY by the pubval aux loss (the PubValHead regresses toward it); never enters the forward,
+        # never enters GAE. The artifact loads ONCE here — a missing/stale data/gen3_pubval.json fails the
+        # run at construction (fail-loud), not mid-rollout. Enabled by --pubval-mode != none.
+        self._emit_pubval_target = emit_pubval_target
+        self._pubval_model = None
+        if emit_pubval_target:
+            from agents.training.pubval import PubValModel
+            self._pubval_model = PubValModel.load()
         # Per-battle cache of the fresh per-mon identity encodes (keyed by species id). A hidden mon is
         # untouched (full HP, no status) until revealed, at which point it leaves the believed set, so a
         # mon's fresh encode is stable while it is a target — caching is exact. Cleared on reset().
@@ -190,6 +203,11 @@ class Gen3Env(SinglesEnv):
             # gen3_defensive_entropy_v1: 1.0 = a productive defensive move (recovery/cure) is legal this
             # decision. A REAL per-step value; read ONLY by the state-conditioned entropy boost in the PPO loss.
             base_obs["defensive_opportunity"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
+        if self._emit_pubval_target:
+            # gen3_pubval_aux_v1: the frozen human-replay V_pub of the current PUBLIC board (a REAL
+            # per-step value) + a validity mask. Read ONLY by the pubval aux loss.
+            base_obs["pubval_target"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
+            base_obs["pubval_mask"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
         # SB3 reads the SINGULAR observation_space (threaded as the VecEnv space); the PLURAL
         # observation_spaces is intercepted + rewrapped by PokeEnv.__setattr__ (it would drop the
         # belief keys) and is not the SB3-facing space, so it can stay minimal.
@@ -494,6 +512,27 @@ class Gen3Env(SinglesEnv):
                 [float(getattr(self.reward_manager, "_last_material_margin", 0.0))], dtype=np.float32)
         if self._emit_defensive_opportunity:
             agent_obs["defensive_opportunity"] = np.array([self._defensive_opportunity()], dtype=np.float32)
+        if self._emit_pubval_target:
+            v, m = self._pubval_target()
+            agent_obs["pubval_target"] = np.array([v], dtype=np.float32)
+            agent_obs["pubval_mask"] = np.array([m], dtype=np.float32)
+
+    def _pubval_target(self) -> "tuple[float, float]":
+        """gen3_pubval_aux_v1: evaluate the FROZEN human-replay public value on the current board →
+        ``(V_pub, mask)``. Reads the vetted LiveView (public info only: revealed mons' HP/status,
+        hazards, active boosts, weather) and folds each side through the SAME ``PubSide`` /
+        ``features()`` the calibration corpus used — parity is structural (guarded end-to-end by
+        ``pubval_parity_fuzz_test``). Mask 0 (target 0.5, ignored by the loss) only before the battle
+        exists; a genuine computation error RAISES (fail-loud — a silently wrong target would train the
+        aux head toward garbage)."""
+        b1 = getattr(self, "battle1", None)
+        if b1 is None or self._pubval_model is None:
+            return 0.5, 0.0
+        from agents.training.pubval import features, pub_side_from_live
+        live = b1.live_view()
+        f = features(pub_side_from_live(live.ours), pub_side_from_live(live.opp),
+                     int(live.turn), live.weather.weather)
+        return self._pubval_model.predict(f), 1.0
 
     def _defensive_opportunity(self) -> float:
         """gen3_defensive_entropy_v1: 1.0 if the trainee's ACTIVE mon has a PRODUCTIVE defensive option this
@@ -536,7 +575,8 @@ class Gen3Env(SinglesEnv):
                 self.reward_manager.record_action(self._tracker.last_ctx, trainee_idx)
             out = super().step(action)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
-                    or self._emit_hp_type_labels or self._emit_defensive_opportunity):
+                    or self._emit_hp_type_labels or self._emit_defensive_opportunity
+                    or self._emit_pubval_target):
                 agent_obs = out[0].get(self.agent1.username)
                 if agent_obs is not None:
                     self._merge_training_keys(agent_obs)
@@ -558,7 +598,8 @@ class Gen3Env(SinglesEnv):
             self._stall_logger.reset()
             out = super().reset(*args, **kwargs)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
-                    or self._emit_hp_type_labels or self._emit_defensive_opportunity):
+                    or self._emit_hp_type_labels or self._emit_defensive_opportunity
+                    or self._emit_pubval_target):
                 obs, info = out
                 agent_obs = obs.get(self.agent1.username)
                 if agent_obs is not None:

@@ -641,7 +641,10 @@ latent into the move network; its latent table is the Stage-3 similarity-grading
 A separate optional `WinProbHead` (`--win-prob-mode none|read_only|shaping`) reads `value_pooled` and emits a
 calibrated **P(win)** logit — a SIDE readout (stashed for the aux loss + the prober, **never** in pi/vf, so
 projection dims are unchanged), supervised by the Monte-Carlo episode outcome (win=1/loss=0); `read_only`
-stop-grads its input (a risk-free diagnostic), `shaping` lets the win objective shape the trunk.
+stop-grads its input (a risk-free diagnostic), `shaping` lets the win objective shape the trunk. A sibling
+`PubValHead` (`--pubval-mode`, v43) applies the same pattern with an EXOGENOUS target — the frozen
+human-replay-calibrated public value V_pub (`data/gen3_pubval.json`), a dense per-step credit-assignment
+signal from outside the self-play bootstrap (the v43 note below).
 `forward` returns a `(pi_features, vf_features)` tuple — the transformer body is shared, but the
 actor and critic read it through independent CLS pools and projection heads (the
 **value-dedicated CLS readout**, H4 / Option C). It must be paired with
@@ -975,8 +978,25 @@ effective dims, so capacity isn't the constraint — the risk this isolates is g
 observation drops from 10 to 7 consecutive TurnDelta slots (159 dims each), so the turn-history block is
 1113 dims (was 1590) and the total obs is **2992** (was 3469). `n_history_turns`/`total_dim` are already in
 `_WEIGHT_FIELDS`, so `check_compatible` auto-rejects any pre-v42 checkpoint on the obs-dim weight-field check
-(NO `ARCH_SIGNATURE` bump — the obs-dim weight-field check already catches it). Current
-`MODEL_CONFIG_VERSION` = **42**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+(NO `ARCH_SIGNATURE` bump — the obs-dim weight-field check already catches it).
+**v43 the PUBLIC-VALUE aux head** (`gen3_pubval_aux_v1`; `pubval_mode` / `--pubval-mode
+{none,read_only,shaping}` + the training-only `--pubval-coef`, default 0.1) — `PubValHead` (the WinProbHead
+pattern, a named subclass) reads `value_pooled` and is regressed toward the FROZEN human-replay-calibrated
+public value **V_pub = P(win | PUBLIC board)** (`agents.training.pubval` + `data/gen3_pubval.json`: a
+17-feature logistic over material/hazards/status/boosts/turn/weather aggregates, fit by `python -m
+agents.training.pubval_calibration` on the 170k-game rated gen3ou replay corpus — held-out-by-game AUC 0.734,
+turn-1 AUC 0.500 leakage-clean, calibrated). The value-INDEPENDENT exogenous signal (human outcomes, not the
+self-play bootstrap) as a DENSE per-step shared-trunk target — the trunk sees WHEN the game swung (the
+credit-assignment lever aimed at the measured defensive/positional value blindness). The target rides a
+training-only `pubval_target` obs Dict key computed env-side per decision from the LiveView (PUBLIC state
+only — leak-free; live↔corpus-parser parity is structural via ONE shared feature definition, guarded
+end-to-end by `poke_env_gaps/pubval_parity_fuzz_test.py`). SIDE readout — never in pi/vf, NEVER in GAE
+(V^human ≠ V^π). `read_only` = a stop-grad learnability probe ("can the trunk carry V_pub?"); `shaping` = the
+human positional prior shapes the trunk (the experiment). STRUCTURAL + resume-immutable string gate (like
+`win_prob_mode`); OFF byte-identical (NO `ARCH_SIGNATURE` bump). Metrics `pubval/*` (watch `mae`→0, not the
+entropy-floored `bce`) + `grad/pubval_share`; the acceptance gate = the critic's defensive-AUC-by-style
+transfer. Design: `designs/ai_v8/design_public_info_value.md`. Current
+`MODEL_CONFIG_VERSION` = **43**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 
@@ -1009,6 +1029,12 @@ Reference data (deterministic) under `data/pokemon/`, all regenerable via
 
 Smogon-derived priors (probabilistic), via `tools/smogon_stats_downloader/`:
 - `gen3_smogon_stats.json` (raw aggregated stats) → `gen3_ability_priors.json`, `gen3_hidden_power_priors.json`
+
+Human-replay-derived (a committed calibration artifact, like `gen3_bot_elo_anchors.json`):
+- `gen3_pubval.json` — the frozen public-value logistic (V_pub, `gen3_pubval_aux_v1`): 17 public-board
+  features → P(win), fit on the rated gen3ou replay corpus (`replays/showdown/gen3ou/`, local-only, NOT in
+  the repo) by `python -m agents.training.pubval_calibration`; provenance (n_games, AUC, git hash) in `meta`.
+  Consumed by `Gen3Env` when `--pubval-mode != none` (via `agents.training.pubval.PubValModel`).
 
 All are loaded once (lazy singletons) and raise `FileNotFoundError` / `ValueError` if missing or
 empty. The data layer is poke-env-free; the only poke-env touches left in the battle layer are a

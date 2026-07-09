@@ -310,7 +310,15 @@ from typing import Any, Dict, List
 #   NEUTRAL boosts (gen3 resets on switch). STRUCTURAL toggle like damage_op (widens both projection
 #   in_features via the op out_dim); gated in check_compatible (bool); OFF byte-for-byte (NO ARCH_SIGNATURE
 #   bump). Requires damage_op. Design: designs/ai_v6/design_per_move_damage_matrices.md.
-MODEL_CONFIG_VERSION = 42
+# v43: gen3_pubval_aux_v1 — the PUBLIC-information value aux head. `pubval_mode` (none|read_only|shaping,
+#   the win_prob_mode pattern) builds a PubValHead off value_pooled, regressed toward the FROZEN
+#   human-replay-calibrated public value V_pub (agents.training.pubval + data/gen3_pubval.json — 164k rated
+#   gen3ou games, the value-INDEPENDENT exogenous signal; dense per-step, so the trunk sees WHEN the game
+#   swung). SIDE readout (never in pi/vf, never in GAE); the target rides a training-only `pubval_target`
+#   obs key computed env-side from PUBLIC state only. STRUCTURAL + resume-IMMUTABLE STRING gate like
+#   win_prob_mode ('none'↔head = state_dict; read_only↔shaping = grad-flow); OFF byte-for-byte (NO
+#   ARCH_SIGNATURE bump). `pubval_coef` training-only. Design: designs/ai_v8/design_public_info_value.md.
+MODEL_CONFIG_VERSION = 43
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -959,6 +967,17 @@ class ModelVersion:
     # check_compatible / _WEIGHT_FIELDS (a frozen eval/pool/distill opponent's forward is identical, so
     # gating it would be a false rejection that breaks league play). NO ARCH_SIGNATURE bump.
     belief_grad_mode: str = "shaping"
+    # v43 STRUCTURAL + resume-IMMUTABLE tri-state (gen3_pubval_aux_v1, the win_prob_mode pattern): the
+    # PUBLIC-information value aux head. 'none' = no module (baseline byte-for-byte). 'read_only'/'shaping'
+    # build a PubValHead (side readout off value_pooled — NOT in pi/vf; the only state_dict delta is the
+    # head's params) regressed toward the frozen human-replay-calibrated V_pub. Gated in check_compatible
+    # with a STRING compare ('none'↔head = state_dict change; read_only↔shaping = the resume-immutable
+    # grad-flow choice). OFF byte-for-byte (NO ARCH_SIGNATURE bump).
+    pubval_mode: str = "none"
+    # v43 TRAINING-ONLY loss coefficient for the pubval head (like win_prob_coef). Scales the soft-target
+    # BCE aux loss, affects no forward pass → recorded for provenance but NOT version-locked
+    # (resume-mutable, inherited on a flagless resume).
+    pubval_coef: float = 0.0
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -976,6 +995,7 @@ class ModelVersion:
         spread_belief_coef: float = 0.0,
         value_dist_coef: float = 1.0,
         hp_type_belief_coef: float = 0.0,
+        pubval_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -1127,6 +1147,10 @@ class ModelVersion:
             belief_grad_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("belief_grad_mode", "shaping")
             ),
+            pubval_mode=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("pubval_mode", "none")
+            ),
+            pubval_coef=float(pubval_coef),
             hp_type_belief_coef=float(hp_type_belief_coef),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
@@ -1414,6 +1438,19 @@ class ModelVersion:
                 "state_dict, and switching read_only↔shaping flips whether its loss shapes the shared "
                 "trunk (a silent mid-run training change).\n"
                 "Resume with the matching --win-prob-mode setting, or start a fresh training run."
+            )
+
+        # v43 PUBLIC-information value aux head (gen3_pubval_aux_v1, like win_prob_mode): STRING-gated so
+        # BOTH 'none'↔head (the PubValHead params, a state_dict change) AND read_only↔shaping (the
+        # resume-immutable trunk-gradient choice) FATAL on a mismatch. The training-only pubval_coef is
+        # NOT checked.
+        if self.pubval_mode != saved.pubval_mode:
+            raise ModelVersionError(
+                f"pubval_mode mismatch: saved={saved.pubval_mode!r}, current={self.pubval_mode!r}.\n"
+                "The public-value aux head is fixed for a run's lifetime: adding/removing it changes the "
+                "state_dict, and switching read_only↔shaping flips whether its loss shapes the shared "
+                "trunk (a silent mid-run training change).\n"
+                "Resume with the matching --pubval-mode setting, or start a fresh training run."
             )
 
         # v29 distributional VALUE head (like win_prob_mode): the MODE gates none↔head (the
@@ -1947,4 +1984,10 @@ def _migrate_config(data: dict) -> dict:
         # auto-rejects a pre-v42 checkpoint via the obs-dim weight-field check (NO ARCH_SIGNATURE bump). This
         # block only advances the version marker so the migration chain reaches the current version.
         data["config_version"] = 42
+    if version < 43:
+        # v43: gen3_pubval_aux_v1 — the tri-state PUBLIC-information value aux head (off) + its
+        # training-only loss coef (0.0). Old models had no PubValHead and no pubval loss.
+        data.setdefault("pubval_mode", "none")
+        data.setdefault("pubval_coef", 0.0)
+        data["config_version"] = 43
     return data

@@ -250,6 +250,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # extractor (win_prob_mode); the loss is added whenever the mode is on AND this coef != 0.
     win_prob_coef: float = 1.0
 
+    # Set by train_rl_agent (gen3_pubval_aux_v1, like win_prob_coef). The PUBLIC-VALUE aux head's
+    # soft-target BCE weight: pubval_coef * BCE(pubval_logit, V_pub) where V_pub is the FROZEN
+    # human-replay-calibrated public value riding the training-only `pubval_target` obs key.
+    # Training-only → NOT version-locked; the MODE (none/read_only/shaping) lives on the extractor
+    # (pubval_mode); the loss is added whenever the mode is on AND this coef != 0.
+    pubval_coef: float = 0.0
+
     # Set by train_rl_agent (like win_prob_coef). The DISTRIBUTIONAL value head's HL-Gauss cross-entropy
     # loss weight: value_dist_coef * CE(value_dist_logits, return) over the rollout. Training-only (scales
     # the loss, never a forward pass) → NOT version-locked (recorded for provenance + flagless-resume
@@ -410,6 +417,42 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 metrics["brier_material"] = float(brier_mat.item())
                 metrics["skill_vs_material"] = (
                     float((1.0 - brier / brier_mat).item()) if float(brier_mat) > 0.0 else 0.0)
+        return loss, metrics
+
+    @staticmethod
+    def _pubval_loss(logits, target, mask):
+        """Soft-target BCE for the PUBLIC-VALUE aux head (gen3_pubval_aux_v1; ``last_pubval_logits``
+        [B,1]). ``target`` [B,1] = the frozen human-replay-calibrated V_pub ∈ (0,1) evaluated on the
+        decision's PUBLIC board (a REAL per-step value the env computed — no callback back-fill);
+        ``mask`` [B,1] = 1 where the target was computable (0 only pre-battle). BCE-with-logits
+        against a SOFT probability target — its minimizer is exactly sigmoid(logit) = V_pub, i.e. the
+        head distills the human public value into the trunk's value_pooled read. Returns
+        ``(loss, metrics)`` or ``None`` when nothing is scorable. Pure + static → unit-testable.
+        NOTE the loss floor is the target's own entropy (V_pub ∈ (0,1) ⇒ BCE > 0 even at a perfect
+        fit) — watch ``mae`` (|sigmoid − target|, → 0 as it fits) rather than the raw BCE level."""
+        if logits is None or target is None or mask is None:
+            return None
+        logits = logits.reshape(-1)
+        target = target.to(logits.device).reshape(-1)
+        mask = mask.to(logits.device).reshape(-1)
+        n_known = mask.sum()
+        if float(n_known) == 0.0:
+            return None
+        per = F.binary_cross_entropy_with_logits(logits, target, reduction="none")
+        loss = (per * mask).sum() / n_known
+        with th.no_grad():
+            p = th.sigmoid(logits)
+            mae = ((p - target).abs() * mask).sum() / n_known
+            pred_mean = (p * mask).sum() / n_known
+            target_mean = (target * mask).sum() / n_known
+        metrics = {
+            "loss": float(loss.item()),
+            "bce": float(loss.item()),
+            "mae": float(mae.item()),                 # the fit signal: |head − V_pub| → 0
+            "pred_mean": float(pred_mean.item()),
+            "target_mean": float(target_mean.item()),
+            "coverage": float((n_known / mask.numel()).item()),
+        }
         return loss, metrics
 
     @staticmethod
@@ -951,6 +994,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         vf_clip_fractions: list[float] = []  # +INSTRUMENTATION
         belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
         win_prob_metrics: dict[str, list[float]] = {}  # +WIN-PROB: per-minibatch diagnostics (dict of lists)
+        pubval_metrics: dict[str, list[float]] = {}    # +PUBVAL: per-minibatch diagnostics (dict of lists)
         teacher_metrics: dict[str, list[float]] = {}    # +SEARCH-TEACHER: AWR per-minibatch diagnostics
         opd_metrics: dict[str, list[float]] = {}         # +OPD: on-policy self-distillation KL diagnostics
         value_dist_metrics: dict[str, list[float]] = {}  # +VALUE-DIST: per-minibatch HL-Gauss diagnostics
@@ -967,6 +1011,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
         win_prob_on = (
             getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
             and self.win_prob_coef != 0.0
+        )
+        # +PUBVAL: the public-value aux head (gen3_pubval_aux_v1). On when the mode is set AND the coef
+        # is non-zero. read_only vs shaping differ only in the extractor's stop-grad of the head's input
+        # — the loss term itself is identical. OFF → skipped (loss byte-identical to upstream).
+        pubval_on = (
+            getattr(self.policy.features_extractor, "pubval_mode", "none") != "none"
+            and self.pubval_coef != 0.0
         )
         # +VALUE-DIST: the distributional value head's HL-Gauss CE aux loss. On when the mode is set AND
         # the coef is non-zero. read_only vs shaping differ only in the extractor's stop-grad of the head's
@@ -1264,6 +1315,26 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         for _wk, _wv in wp_m.items():
                             win_prob_metrics.setdefault(_wk, []).append(float(_wv))
 
+                # +PUBVAL: public-value aux soft-BCE (gen3_pubval_aux_v1). evaluate_actions stashed
+                # last_pubval_logits for THIS minibatch; the frozen human-replay V_pub target + mask ride
+                # the obs dict as REAL per-step values (env-computed at decision time — no back-fill).
+                # Folded at pubval_coef. Under read_only the head's input was stop-grad'd in the extractor
+                # (head-only training); under shaping the human positional prior also pulls the trunk.
+                # OFF → skipped (loss byte-identical).
+                pubval_term = None
+                if pubval_on:
+                    pv_out = self._pubval_loss(
+                        self.policy.features_extractor.last_pubval_logits,
+                        rollout_data.observations.get("pubval_target"),
+                        rollout_data.observations.get("pubval_mask"),
+                    )
+                    if pv_out is not None:
+                        pv_loss, pv_m = pv_out
+                        pubval_term = self.pubval_coef * pv_loss
+                        loss = loss + pubval_term
+                        for _pk, _pv in pv_m.items():
+                            pubval_metrics.setdefault(_pk, []).append(float(_pv))
+
                 # +VALUE-DIST: distributional value head HL-Gauss CE. evaluate_actions ran the extractor
                 # forward above, stashing last_value_dist_logits for THIS minibatch; the target is the
                 # rollout return, PopArt-normalized when the scalar critic is (so it lands in the head's
@@ -1356,6 +1427,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 if nature_ev_term is not None:     aux_probe_terms["nature_ev"] = nature_ev_term
                 if hp_type_term is not None:       aux_probe_terms["hp_type"] = hp_type_term
                 if win_prob_term is not None:      aux_probe_terms["win_prob"] = win_prob_term
+                if pubval_term is not None:        aux_probe_terms["pubval"] = pubval_term
                 if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term
                 if searchteacher_term is not None: aux_probe_terms["searchteacher"] = searchteacher_term
                 if opd_term is not None:           aux_probe_terms["opd"] = opd_term
@@ -1533,6 +1605,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if win_prob_metrics:
             for _wk, _wvals in win_prob_metrics.items():
                 self.logger.record(f"win_prob/{_wk}", float(np.mean(_wvals)))
+
+        # +PUBVAL: public-value aux diagnostics under their OWN `pubval/` TB prefix (gen3_pubval_aux_v1).
+        # `mae` is the fit signal (|sigmoid − V_pub| → 0 as the trunk learns the human public value —
+        # the raw BCE floors at the soft target's own entropy, so watch mae not bce); `pred_mean` vs
+        # `target_mean` watches a collapse-to-base-rate. The shared-trunk pull rides `grad/pubval_share`
+        # (≈0 under read_only; real under shaping — the credit-assignment experiment's lever).
+        if pubval_metrics:
+            for _pk, _pvals in pubval_metrics.items():
+                self.logger.record(f"pubval/{_pk}", float(np.mean(_pvals)))
 
         # +VALUE-DIST: distributional value head diagnostics under their OWN `value_dist/` TB prefix (the
         # interpretability head's aggregate health, complementing the prober's per-decision histogram).

@@ -1417,6 +1417,54 @@ Monte-Carlo episode OUTCOME. Off by default (`--win-prob-mode none`). Three piec
   shaping-flows gradient gating, the v22 version gate). End-to-end `--debug --use-showdown-bridge
   --win-prob-mode read_only` smoke confirms the roundtrip + `train/win_prob_*` metrics + `win_prob_share`=0.
 
+## Public-replay value aux — V_pub (`--pubval-mode` / `--pubval-coef`)
+
+`gen3_pubval_aux_v1` (v43; design `designs/ai_v8/design_public_info_value.md`). The measured limiter is
+the value function's positional blindness (defensive AUC ≈ 0.50 → advantage ≈ 0 on positional decisions);
+V_pub is the value-INDEPENDENT exogenous signal that attacks it: **P(win | PUBLIC board), calibrated on
+the human replay corpus**, wired as a dense per-step shared-trunk aux target — the trunk sees WHEN a game
+swung (hazards/status/attrition priced by HUMAN outcomes), not only how it ended (the credit-assignment
+lever). Where the win-prob head learns P(win) from SELF-PLAY outcomes (inheriting the bootstrap's blind
+spots), V_pub's pricing comes from outside the loop. Never in pi/vf, never in GAE (V^human ≠ V^π). Off by
+default; pieces:
+
+- **The frozen artifact (`data/gen3_pubval.json`)** — a 17-feature logistic (`agents.training.pubval`:
+  material diffs + spikes/status/boost/revealed diffs + absolutes + turn clock + weather one-hot — the
+  POC-validated "crude aggregates"; richer identity features overfit, do not add them) trained by
+  `python -m agents.training.pubval_calibration` on the rated gen3ou replay corpus
+  (`replays/showdown/gen3ou/`). Current artifact: **170,769 games / 8.58M positions, held-out-by-game AUC
+  0.7343, turn-1 AUC 0.500** (the leakage guard — the calibration CLI refuses to write if it drifts off
+  ~0.5), calibrated ([0.8,1.0)→0.877); provenance in `meta`. The `bot_elo_calibration` artifact pattern.
+- **The live target (`gen3_env._pubval_target`)** — when `emit_pubval_target` (= `--pubval-mode != none`),
+  each decision folds the vetted **LiveView** through the SAME `PubSide`/`features()` the corpus parser
+  used and emits `pubval_target` [1] + `pubval_mask` [1] as TRAINING-ONLY Dict keys (a REAL per-step value
+  like `win_margin` — V_pub is a function of present public state, no callback back-fill). The artifact
+  loads once at env construction (missing/stale → fail-loud with the regen command; also checked at
+  arg-parse). Cost: one extra `live_view()` per decision, only when the flag is on.
+- **The head + loss** — `PubValHead` (the WinProbHead architecture, a named subclass) reads
+  `value_pooled`; tri-state `--pubval-mode {none,read_only,shaping}` (read_only = stop-grad learnability
+  probe: CAN the trunk carry V_pub?; shaping = the human positional prior shapes the trunk — the
+  experiment). `instrumented_ppo._pubval_loss` = masked soft-target BCE folded at `--pubval-coef`
+  (default 0.1, training-only, flagless-resume-inherited).
+- **Metrics (`pubval/*`)** — watch **`mae`** (|sigmoid − V_pub| → 0 as it fits; the raw `bce` floors at
+  the soft target's own entropy, so its level is NOT the fit signal), `pred_mean` vs `target_mean`
+  (base-rate-collapse watch), `coverage` (≈1). Trunk pull rides `grad/pubval_share` (+`_policy_cosine`):
+  ≈0 under read_only, real under shaping. **The acceptance gate for the experiment is NOT these** — it is
+  the critic's defensive-AUC-by-style transfer (the calibration-by-style probe) + WR/ELO vs a pubval-off
+  control.
+- **Versioning** — `pubval_mode` is STRUCTURAL + resume-immutable (STRING-gated in `check_compatible`
+  like `win_prob_mode`; v43, migrate default "none"; threaded through `current_model_version` /
+  `arch_toggles_from_model` / `_run_arch_toggles` + both extractor-kwargs sites); `pubval_coef`
+  training-only. OFF byte-identical (no `ARCH_SIGNATURE` bump).
+- **Tests** — `pubval_test.py` (the shared feature definition, the corpus parser incl.
+  faint-clears-status/cureteam/boost-handlers, artifact round-trip + the committed-artifact sanity, the
+  LiveView fold, the loss math/mask/guards), `model/pubval_head_test.py` (build, off-byte-identical,
+  read_only-stop-grad vs shaping-flows, the v43 gate, migration), and the **parity fuzz**
+  `poke_env_gaps/pubval_parity_fuzz_test.py` (bridge, no server): folds the trainee's OWN protocol
+  stream through the corpus parser and asserts every `PubSide` field == the live fold at every decision
+  + the emitted `pubval_target` == the artifact's prediction (anti-vacuous-run guard; the capture hook
+  must install BEFORE `attach_bridge_transport` — the bridge captures the bound handler at attach time).
+
 ## Distributional value head (`--value-dist-mode` / `--value-dist-coef`)
 
 The training half of the v29 interpretability side head (model side: `src/agents/model/CLAUDE.md` →

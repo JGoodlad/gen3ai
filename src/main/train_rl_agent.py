@@ -355,6 +355,7 @@ def _run_arch_toggles(args) -> dict:
         mask_active_move_scalars_obs=args.mask_active_move_scalars_obs,
         mask_move_effects_obs=args.mask_move_effects_obs,
         win_prob_mode=args.win_prob_mode,
+        pubval_mode=args.pubval_mode,
         value_dist_mode=args.value_dist_mode,
         value_dist_bins=args.value_dist_bins,
         value_dist_vmin=args.value_dist_vmin,
@@ -388,6 +389,7 @@ def _model_hparams(model) -> dict:
         "hp_type_belief_coef": float(getattr(model, "hp_type_belief_coef", 0.0)),
         "opp_belief_latent_coef": float(getattr(model, "opp_belief_latent_coef", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
+        "pubval_coef": float(getattr(model, "pubval_coef", 0.0)),
         "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),
         "search_teacher_coef": float(getattr(model, "search_teacher_coef", 0.0)),
         "search_teacher_value_coef": float(getattr(model, "search_teacher_value_coef", 0.0)),
@@ -541,6 +543,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         move_belief_latent_coef=float(getattr(model, "move_belief_latent_coef", 0.0)),
         spread_belief_coef=float(getattr(model, "spread_belief_coef", 0.0)),
         value_dist_coef=float(getattr(model, "value_dist_coef", 1.0)),
+        pubval_coef=float(getattr(model, "pubval_coef", 0.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -1059,6 +1062,25 @@ async def main():
                              "--opp-belief-aux-coef. Default 1.0. TRAINING-only (not version-locked; "
                              "inherited on a flagless resume). Ignored when --win-prob-mode none. Lower it "
                              "if 'shaping' fights the policy (watch grad/win_prob_share).")
+    parser.add_argument("--pubval-mode", "--pubval_mode", dest="pubval_mode",
+                        choices=("none", "read_only", "shaping"), default=None,
+                        help="Auxiliary PUBLIC-VALUE head (gen3_pubval_aux_v1): regress a value-pool readout "
+                             "toward the FROZEN human-replay-calibrated public value V_pub = P(win | PUBLIC "
+                             "board) (data/gen3_pubval.json — 164k rated gen3ou games, held-out AUC ~0.73, "
+                             "calibrated; regenerate via `python -m agents.training.pubval_calibration`). The "
+                             "value-INDEPENDENT exogenous signal: a dense per-step target that tells the trunk "
+                             "WHEN the game swung (credit assignment), priced by HUMAN outcomes instead of the "
+                             "self-play bootstrap. 'none' (default) = no module (byte-for-byte). 'read_only' = "
+                             "head-only training on a STOP-GRAD value pool (a learnability probe: CAN the trunk "
+                             "linearly carry V_pub?). 'shaping' = the human positional prior also shapes the "
+                             "shared trunk (the credit-assignment experiment). STRUCTURAL + resume-IMMUTABLE "
+                             "(version-checked). SIDE readout — never in pi/vf, never in GAE (V^human ≠ V^π).")
+    parser.add_argument("--pubval-coef", "--pubval_coef", dest="pubval_coef",
+                        type=float, default=None,
+                        help="Loss weight for the pubval head's soft-target BCE (pubval_coef * BCE), like "
+                             "--win-prob-coef. Default 0.1. TRAINING-only (not version-locked; inherited on a "
+                             "flagless resume). Ignored when --pubval-mode none. Lower it if 'shaping' fights "
+                             "the policy (watch grad/pubval_share).")
     # --- SEARCH-AS-TEACHER (offline ExIt plateau-breaker; designs/ai_v6/design_search_teacher.md) ---
     # All TRAINING-only (no version bump; coef 0 / flag absent = byte-identical). The coefs are
     # _resolve'd (flagless-resume-inherited); the operational knobs are forwarded by the launcher.
@@ -1685,6 +1707,8 @@ async def main():
     _resolve("mask_incoming_damage_obs", False)  # v21 forward-behavior (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
     _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)
+    _resolve("pubval_mode", "none")            # v43 structural + resume-immutable (version-checked)
+    _resolve("pubval_coef", 0.1)               # training-only (inherited like win_prob_coef)
     _resolve("value_dist_mode", "none")        # v29 structural + resume-immutable (version-checked)
     _resolve("value_dist_bins", 0)             # v29 structural (atom count; version-checked)
     _resolve("value_dist_vmin", 0.0)           # v29 resume-immutable support (version-checked)
@@ -1784,6 +1808,16 @@ async def main():
         # A negative coef would INVERT the BCE gradient (train the head/trunk to MAXIMISE error).
         # win_prob_coef is training-only (not version-locked), so guard it here — the only gate.
         parser.error("--win-prob-coef must be >= 0 (0 = off; the mode controls on/off)")
+    if args.pubval_coef is not None and args.pubval_coef < 0.0:
+        parser.error("--pubval-coef must be >= 0 (0 = off; the mode controls on/off)")
+    if args.pubval_mode != "none":
+        # gen3_pubval_aux_v1: fail FAST if the frozen V_pub artifact is missing/stale — a run that
+        # discovered this at env-build time would crash every worker instead of erroring once here.
+        from agents.training.pubval import PubValModel
+        try:
+            PubValModel.load()
+        except (FileNotFoundError, ValueError, KeyError) as e:
+            parser.error(f"--pubval-mode {args.pubval_mode}: {e}")
     if args.value_dist_mode != "none":
         # The atom count is the head's output width; the support must be a real interval. Self-documenting
         # config: require both explicitly when the head is on (no magic defaults for a versioned param).
@@ -2294,6 +2328,7 @@ async def main():
                     move_belief_mode=args.move_belief_mode,
                     emit_belief_target=(args.opp_belief_latent_coef > 0.0),
                     emit_win_target=(args.win_prob_mode != "none"),
+                    emit_pubval_target=(args.pubval_mode != "none"),
                     # SPREAD-belief supervision (gen3_unified_spread_belief_v1): emit the privileged
                     # true-spread label only when the loss will consume it (coef>0; the CLI guards that
                     # --spread-belief-coef requires --spread-belief, so the head is present to supervise).
@@ -2863,6 +2898,7 @@ async def main():
         # Win-probability head mode — version-checked vs the saved config (resume-IMMUTABLE; any change
         # FATALs, same machinery as move_belief_mode).
         _load_extractor_kwargs["win_prob_mode"] = args.win_prob_mode
+        _load_extractor_kwargs["pubval_mode"] = args.pubval_mode
         # Distributional value head (v29) — mode + atom count version-checked in check_compatible; the
         # support (vmin/vmax) is resume-immutable, enforced below via enforce_value_dist.
         _load_extractor_kwargs["value_dist_mode"] = args.value_dist_mode
@@ -2894,6 +2930,7 @@ async def main():
             move_belief_coef=args.move_belief_coef,
             opp_belief_latent_coef=args.opp_belief_latent_coef,
             win_prob_coef=args.win_prob_coef,
+            pubval_coef=args.pubval_coef,
             move_belief_latent_coef=args.move_belief_latent_coef,
             spread_belief_coef=args.spread_belief_coef,
             value_dist_coef=args.value_dist_coef,
@@ -2938,6 +2975,7 @@ async def main():
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE weight (training-only; mode none = off)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
+        model.pubval_coef = args.pubval_coef  # pubval loss weight (training-only; resume-mutable)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss weight (training-only; resume-mutable)
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). Buffer is filled by the
         # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
@@ -3161,6 +3199,7 @@ async def main():
         # (baseline byte-for-byte). The coef is a TRAINING hparam set on the model below; the MODE is the
         # version-checked arch toggle.
         extractor_kwargs["win_prob_mode"] = args.win_prob_mode
+        extractor_kwargs["pubval_mode"] = args.pubval_mode
         # Distributional VALUE head (v29; none|read_only|shaping + atom count + support). Interpretability
         # side readout off value_pooled — never in pi/vf. 'none' = no module (baseline byte-for-byte). Mode
         # + bins are version-checked (check_compatible); the support is resume-immutable (check_value_dist).
@@ -3228,6 +3267,7 @@ async def main():
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE loss (0.0 = off; mode none = off)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss (0.0 = off)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
+        model.pubval_coef = args.pubval_coef  # pubval head soft-BCE (mode none = off)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss (mode none = off)
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). See the resume site.
         model.search_teacher_coef = args.search_teacher_coef
@@ -3250,6 +3290,7 @@ async def main():
             move_belief_coef=args.move_belief_coef,
             opp_belief_latent_coef=args.opp_belief_latent_coef,
             win_prob_coef=args.win_prob_coef,
+            pubval_coef=args.pubval_coef,
             move_belief_latent_coef=args.move_belief_latent_coef,
             spread_belief_coef=args.spread_belief_coef,
             value_dist_coef=args.value_dist_coef,

@@ -1130,6 +1130,21 @@ class WinProbHead(torch.nn.Module):
         return self.net(value_pooled)
 
 
+class PubValHead(WinProbHead):
+    """PUBLIC-information value readout (`gen3_pubval_aux_v1`) — the WinProbHead architecture with a
+    different, EXOGENOUS target: the frozen HUMAN-replay-calibrated public value `V_pub(public board)`
+    (`agents.training.pubval`, 164k rated gen3ou games, held-out AUC ≈ 0.74, calibrated). Where the
+    win-prob head learns P(win) from SELF-PLAY outcomes (inheriting the bootstrap's blind spots — a
+    policy that never plays positionally never generates outcomes that price positional value), this
+    head regresses the trunk toward how HUMAN game outcomes price the same public board — hazards,
+    status, attrition, tempo — as a dense per-step target (V_pub moves turn by turn, so the trunk sees
+    WHEN the game swung, not only how it ended: the credit-assignment lever). Under `shaping` its
+    gradient flows into the shared trunk; the target is a pure function of PUBLIC state computed
+    env-side (leak-free: the POC's turn-1 AUC ≈ 0.51 guard), NEVER in pi/vf, and NEVER in GAE (it is
+    V^human, not V^π). Same module shape as WinProbHead (a named subclass so state_dict keys +
+    reprs are self-documenting)."""
+
+
 class ValueDistHead(torch.nn.Module):
     """Distributional VALUE readout — an INTERPRETABILITY side head over the return distribution.
 
@@ -3461,7 +3476,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  damage_matrices_outgoing_all: bool = False,
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
                  threat_prob_outspeed: bool = False, threat_status_refine: bool = False,
-                 hp_type_belief_mode: str = "off", belief_grad_mode: str = "shaping"):
+                 hp_type_belief_mode: str = "off", belief_grad_mode: str = "shaping",
+                 pubval_mode: str = "none"):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -3861,6 +3877,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # loss + the offline prober/eval; NEVER fed into pi/vf (the OUTCOME label can't leak).
         self.last_win_prob_logits: Optional[torch.Tensor] = None
 
+        # Auxiliary PUBLIC-VALUE head (tri-state `pubval_mode`, gen3_pubval_aux_v1): the WinProbHead
+        # pattern with the frozen HUMAN-replay-calibrated V_pub as the target (dense per-step, exogenous
+        # — see PubValHead's docstring). 'none' = no module (baseline byte-for-byte); 'read_only' =
+        # head-only training on a STOP-GRAD value_pooled; 'shaping' = the human positional prior also
+        # shapes the shared trunk. SIDE readout (stashed for the aux loss, never in pi/vf, never in GAE).
+        if pubval_mode not in ("none", "read_only", "shaping"):
+            raise ValueError(f"pubval_mode must be none|read_only|shaping, got {pubval_mode!r}")
+        self.pubval_mode = pubval_mode
+        self.pubval_head = PubValHead() if pubval_mode != "none" else None
+        # Stashed each forward when the head is on (the [B,1] V_pub logit, or None). Read by the PPO
+        # aux loss; NEVER fed into pi/vf.
+        self.last_pubval_logits: Optional[torch.Tensor] = None
+
         # Distributional VALUE head (tri-state `value_dist_mode`, v29): an interpretability readout off
         # `value_pooled` emitting `value_dist_bins` logits over the support [vmin, vmax]. 'none' = no
         # module (baseline byte-for-byte, NOT in pi/vf so projection dims are unchanged). 'read_only' =
@@ -4200,6 +4229,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.last_win_prob_logits = self.win_head(wp_in)
         else:
             self.last_win_prob_logits = None
+        # Auxiliary PUBLIC-VALUE readout (flag-guarded; None when off). Same value_pooled read as the
+        # win head → a [B,1] V_pub logit stashed for the aux loss (regressed toward the frozen
+        # human-replay-calibrated public value riding the training-only `pubval_target` obs key). NOT
+        # fed into the assembler (a side readout). `read_only` feeds a STOP-GRAD value_pooled;
+        # `shaping` lets the human positional prior shape the shared trunk.
+        if self.pubval_head is not None:
+            pv_in = value_pooled if self.pubval_mode == "shaping" else value_pooled.detach()
+            self.last_pubval_logits = self.pubval_head(pv_in)
+        else:
+            self.last_pubval_logits = None
         # Distributional VALUE readout (flag-guarded; None when off). Same value_pooled the win head
         # reads → per-atom return-distribution logits, stashed for the aux loss + prober/eval. NOT fed
         # into the assembler (a side readout — the value target can't leak into pi/vf). `read_only`
