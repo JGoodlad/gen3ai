@@ -288,7 +288,14 @@ ceilings.
 scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-workers`
 (default 3) `main.eval_worker` subprocesses that **work-steal at battle granularity** from a
 shared pool, load the **frozen** snapshot, and play against the shared Showdown server (or the
-in-process bridge) **without pausing training**. Each opponent's `EVAL_GAMES` are split into
+in-process bridge) **without pausing training**. **The trainee's eval teambuilder follows the
+run's `--trainee-team` pin** (`trainee_team_str` in the worker cfg → `eval_worker._build_trainee_tb`;
+threaded by BOTH callbacks): a specialist run is measured piloting ITS OWN team. The worker used to
+hardcode the default full-pool builder, so every specialist eval (win rates / ELO / `vs_ext`
+verdicts) measured the model piloting random teams it never trained on — pure OOD; the
+"ai_v7_05–08 plateau" was this instrumentation gap, not the training (in-distribution, those runs
+mastered their tasks — see `eval_worker_test.py`, the fix's pin). No pin → the default pool builder,
+byte-identical. Each opponent's `EVAL_GAMES` are split into
 **shard units** of `--eval-shard-games` (default 25 → 4 shards/opponent); a worker claims units
 (atomic `O_EXCL` lock per `unit_id`), plays them, and publishes one `shard__<unit_id>.json` of
 **raw** counts; the parent pools an opponent's shards back into one **exact** result. This is the

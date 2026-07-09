@@ -59,6 +59,19 @@ from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
 
+def _build_trainee_tb(cfg: dict, all_teams, sample_teams):
+    """The TRAINEE's eval teambuilder. When the run pins the trainee to one team
+    (``--trainee-team`` → ``cfg['trainee_team_str']``, the raw Showdown export), eval MUST measure
+    the model piloting THAT team — the worker used to hardcode the default full-pool builder here,
+    so every specialist run's eval (win rates, ELO, vs-ext verdicts) measured the model piloting
+    RANDOM teams it never trained on (pure out-of-distribution; the ai_v7_05–08 "plateau" was this
+    gap, not the training). No pin → the default pool builder, byte-identical to the old behavior."""
+    team_str = cfg.get("trainee_team_str")
+    if team_str:
+        return Gen3Teambuilder([team_str])
+    return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)
+
+
 def _get_opponent_model(cache: dict, path: str, loader):
     """Return the opponent model for ``path``, loading it once per worker and caching it.
 
@@ -160,7 +173,7 @@ def _run(cfg: dict) -> None:
     loader = TeamLoader()
     all_teams = loader.get_all_teams()
     sample_teams = loader.get_sample_teams()
-    trainee_tb = Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)
+    trainee_tb = _build_trainee_tb(cfg, all_teams, sample_teams)
     opp_tb = Gen3Teambuilder(all_teams)
 
     port = cfg.get("port")

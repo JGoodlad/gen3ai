@@ -165,10 +165,15 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         pfsp_scale: float = 0.0,
         n_sentinels: int = 5,
         debug: bool = False,
+        trainee_team_str: "str | None" = None,
         verbose: int = 1,
     ):
         super().__init__(verbose)
         self._pool = pool
+        # SPECIALIST eval alignment (--trainee-team): the raw Showdown-export team string the trainee
+        # is pinned to, threaded into every eval-worker cfg so eval measures the model piloting the
+        # team it actually trains (None = the default pool builder; see eval_worker._build_trainee_tb).
+        self._trainee_team_str = trainee_team_str
         # Stable cross-run opponents (FixedOpponentEntry list) — an extra ext_ eval matchup each
         # cycle, kept out of win_rate_vs_bots / win_rate_vs_pool / the ELO fit / promotion. In the
         # TRAINING mix they are challenge opponents until mastered, then floor (see _push_stable_mastered).
@@ -381,6 +386,8 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             # (loaded via check_compatible) against the RUN's real arch; without it a belief-ON / popart
             # self-play run FATALs on its own sentinels (current_version would default toggle-OFF).
             "arch_toggles": arch_toggles_from_model(self.model),
+            # --trainee-team pin (None = default pool): eval measures the trainee ON ITS OWN TEAM.
+            "trainee_team_str": self._trainee_team_str,
         }
         procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
 

@@ -1034,11 +1034,17 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         keep_stalls: int = KEEP_STALLS_DEFAULT,
         keep_crashes: int = KEEP_CRASHES_DEFAULT,
         fixed_opponents: "list | None" = None,
+        trainee_team_str: "str | None" = None,
         verbose: int = 1,
     ):
         super().__init__(verbose)
         self._model_dir = model_dir
         self._server_config = server_config
+        # SPECIALIST eval alignment (--trainee-team): the raw Showdown-export team string the
+        # TRAINEE is pinned to, threaded into every eval-worker cfg so eval measures the model
+        # piloting the team it actually trains — None = the default pool builder. Without this the
+        # worker's hardcoded default measured specialists on random teams (pure OOD).
+        self._trainee_team_str = trainee_team_str
         # Stable cross-run opponents (FixedOpponentEntry list) — played as an extra ext_ eval
         # matchup each cycle, kept out of win_rate_vs_bots / the ELO fit.
         self._fixed_opponents = list(fixed_opponents or [])
@@ -1175,6 +1181,8 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
             # snapshots against the RUN's real arch (belief-ON / popart / …), not a toggle-OFF default
             # that would FATAL on the run's own belief-ON sentinels.
             "arch_toggles": arch_toggles_from_model(self.model),
+            # --trainee-team pin (None = default pool): eval measures the trainee ON ITS OWN TEAM.
+            "trainee_team_str": self._trainee_team_str,
         }
         procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
 

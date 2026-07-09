@@ -2136,6 +2136,11 @@ async def main():
     # Gen3Teambuilder validates the team on construction (raises on an illegal set). The OPPONENTS
     # still draw the full diverse pool (below), so the specialist learns THIS team vs everything.
     # None (default) → the full-pool trainee builder, byte-identical to the prior behavior.
+    # `_specialist_team_str` is ALSO threaded into both eval callbacks → the eval-worker cfg
+    # (`trainee_team_str`), so eval measures the trainee piloting ITS OWN team — the worker used to
+    # hardcode the default pool builder, so every specialist run's eval (win rates / ELO / vs-ext
+    # verdicts) measured the model piloting random teams it never trained on (pure OOD).
+    _specialist_team_str = None
     if args.trainee_team:
         with open(args.trainee_team, "r", encoding="utf-8") as _tf:
             _specialist_team_str = _tf.read()
@@ -2823,6 +2828,8 @@ async def main():
             pfsp_scale=args.pfsp_scale,
             n_sentinels=args.n_sentinels,
             debug=args.debug,
+            # --trainee-team pin → eval measures the trainee ON ITS OWN TEAM (None = default pool).
+            trainee_team_str=_specialist_team_str,
         )
         callbacks.append(eval_callback)
     elif _run_eval:
@@ -2845,6 +2852,8 @@ async def main():
             keep_stalls=args.keep_stalls,
             keep_crashes=args.keep_crashes,
             fixed_opponents=_fixed_opponents,
+            # --trainee-team pin → eval measures the trainee ON ITS OWN TEAM (None = default pool).
+            trainee_team_str=_specialist_team_str,
         )
         callbacks.append(eval_callback)
 
