@@ -72,6 +72,17 @@ def _build_trainee_tb(cfg: dict, all_teams, sample_teams):
     return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)
 
 
+def _fixed_opponent_tb(item, opp_tb):
+    """A FIXED (stable/exploiter) opponent's eval teambuilder. A specialist opponent is MEASURED
+    piloting ITS OWN pinned team (``item.team_str``, threaded from ``FixedOpponentEntry.to_cfg`` —
+    the fold-back contract), so eval matches the training mix — the same eval-vs-training
+    consistency rule as the trainee's own pin above. No pin → the shared pool builder."""
+    team_str = getattr(item, "team_str", None)
+    if team_str:
+        return Gen3Teambuilder([team_str])
+    return opp_tb
+
+
 def _get_opponent_model(cache: dict, path: str, loader):
     """Return the opponent model for ``path``, loading it once per worker and caching it.
 
@@ -128,8 +139,9 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
             opp_model_cache, item.path,
             lambda: load_foreign_opponent(item.path, current_version=current_version,
                                           device=device, config_path=item.config_path)[0])
+        fixed_tb = _fixed_opponent_tb(item, opp_tb)
         opponent = RLPlayer(
-            model=opp_model, team=opp_tb, battle_format=BATTLE_FORMAT,
+            model=opp_model, team=fixed_tb, battle_format=BATTLE_FORMAT,
             server_configuration=server_config, mappings=mappings,
             account_configuration=AccountConfiguration(f"SOop{tag}", "password"),
             max_concurrent_battles=concurrency,

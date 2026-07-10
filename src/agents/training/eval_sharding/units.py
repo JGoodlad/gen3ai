@@ -48,6 +48,7 @@ class EvalItem:
     path: str | None = None
     step: int | None = None
     config_path: str | None = None
+    team_str: str | None = None  # a FIXED opponent's own pinned team (fold-back) — None = pool
 
     def __post_init__(self) -> None:
         if self.kind not in _KINDS:
@@ -70,6 +71,8 @@ class EvalItem:
             d["step"] = self.step
         if self.config_path is not None:
             d["config_path"] = self.config_path
+        if self.team_str is not None:
+            d["team_str"] = self.team_str
         return d
 
     @classmethod
@@ -77,6 +80,7 @@ class EvalItem:
         return cls(
             key=d["key"], kind=d["kind"], n_games=int(d["n_games"]),
             path=d.get("path"), step=d.get("step"), config_path=d.get("config_path"),
+            team_str=d.get("team_str"),
         )
 
 

@@ -2221,7 +2221,10 @@ async def main():
             sys.stdout.flush()
             os._exit(int(TrainExitCode.FATAL_CONFIG))
         # emit() → the launcher Events panel (like the [SELFPLAY] startup lines); print()s standalone.
-        _stable_labels = ", ".join(e.label for e in _fixed_opponents)
+        # A specialist opponent shows its fold-back pin (it pilots ITS OWN team, training + eval).
+        _stable_labels = ", ".join(
+            e.label + (f" [pilots ITS OWN pin: {os.path.basename(e.team_file)}]" if e.team_str else "")
+            for e in _fixed_opponents)
         if args.self_play:
             emit(f"🐴 [STABLE] {len(_fixed_opponents)} cross-run opponent(s): {_stable_labels} — "
                  f"eval greedy; training ≤{args.stable_opponent_selfplay_share:.0%} of self-play until "
@@ -2278,6 +2281,21 @@ async def main():
         else:
             emit(f"🥊 [EXPLOITER] training vs {_exploiter_entry.label} as the SOLE opponent every episode "
                  f"({_temp_desc}; no self-play/pool/bots). Goal: learn to beat it.")
+        if _exploiter_entry.team_str:
+            emit(f"   target pilots ITS OWN pinned team ({os.path.basename(_exploiter_entry.team_file)}) "
+                 "— the fold-back contract")
+
+    # Opponent-parity Proposal A: the exploiter target AUTO-registers as an eval opponent, so the
+    # verdict metric (eval/win_rate_vs_ext_<target>) exists without remembering to duplicate the
+    # target in --stable-opponents. Dedup-guarded — the historical both-flags recipe is unchanged.
+    # Training-mix side is untouched (exploiter mode excludes --self-play → the entry is eval-only).
+    if _exploiter_entry is not None:
+        from agents.training.fixed_opponent_pool import register_exploiter_for_eval
+        _fixed_opponents, _expl_registered = register_exploiter_for_eval(
+            _fixed_opponents, _exploiter_entry)
+        if _expl_registered:
+            emit(f"🥊 [EXPLOITER] target auto-registered for eval as {_exploiter_entry.label} "
+                 f"(greedy verdict metric eval/win_rate_vs_{_exploiter_entry.label})")
 
     # Curriculum (transition + floor) effective values: CLI override or the module defaults.
     _heuristic_floor = args.heuristic_floor if args.heuristic_floor is not None else HEURISTIC_FLOOR
@@ -2390,15 +2408,21 @@ async def main():
                 # mix only under self-play (the challenge/pool bucket); each plays stochastically at
                 # its temperature (harder to over-exploit). Un-mastered → challenge peer of the pool;
                 # mastered (pushed via set_stable_mastered) → floor peer of the bots.
-                stable_players, stable_labels = [], []
+                stable_players, stable_labels, stable_teams = [], [], []
                 if self_play and stable_opponents:
                     from agents.model.snapshot import load_foreign_opponent
+                    from utils.teambuilder import Gen3Teambuilder as _G3TB
                     for e in stable_opponents:
                         opp_model, _ = load_foreign_opponent(
                             e.zip_path, current_version=opponent_version,
                             device=opponent_device, config_path=e.config_path)
+                        # Fold-back: a specialist opponent pilots ITS OWN pinned team (entry
+                        # team_str from its run's metadata); the wrapper switches agent2._team to
+                        # this builder on the episodes it plays. None = pool pilot (generalist).
+                        _pin_tb = _G3TB([e.team_str]) if e.team_str else None
                         stable_players.append(RLPlayer(
-                            model=opp_model, team=opponent_teambuilder, battle_format=BATTLE_FORMAT,
+                            model=opp_model, team=(_pin_tb or opponent_teambuilder),
+                            battle_format=BATTLE_FORMAT,
                             server_configuration=server_config, mappings=mappings,
                             account_configuration=AccountConfiguration(
                                 f"Opp{idx}s{len(stable_players)}{ts}", "password"),
@@ -2406,18 +2430,25 @@ async def main():
                             stochastic=True, temperature=e.temperature,
                         ))
                         stable_labels.append(e.label)
+                        stable_teams.append(_pin_tb)
 
                 # EXPLOITER mode: one fixed target loaded ONCE per worker → the sole opponent. Same
                 # foreign-load path as a stable opponent; stochastic at the stable-opponent temp so
                 # it stays a moving target (harder to over-exploit a frozen target's quirks).
                 exploiter_player = None
+                exploiter_team = None
                 if exploiter_entry is not None:
                     from agents.model.snapshot import load_foreign_opponent
+                    from utils.teambuilder import Gen3Teambuilder as _G3TB
                     _ex_model, _ = load_foreign_opponent(
                         exploiter_entry.zip_path, current_version=opponent_version,
                         device=opponent_device, config_path=exploiter_entry.config_path)
+                    # Fold-back: an exploiter-of-a-specialist faces the target ON ITS OWN pinned team.
+                    exploiter_team = (_G3TB([exploiter_entry.team_str])
+                                      if exploiter_entry.team_str else None)
                     exploiter_player = RLPlayer(
-                        model=_ex_model, team=opponent_teambuilder, battle_format=BATTLE_FORMAT,
+                        model=_ex_model, team=(exploiter_team or opponent_teambuilder),
+                        battle_format=BATTLE_FORMAT,
                         server_configuration=server_config, mappings=mappings,
                         account_configuration=AccountConfiguration(f"Opp{idx}x{ts}", "password"),
                         start_listening=False,
@@ -2431,6 +2462,11 @@ async def main():
                     stable_players=stable_players, stable_labels=stable_labels,
                     stable_challenge_share=args.stable_opponent_selfplay_share,
                     exploiter_player=exploiter_player,
+                    # Fold-back per-opponent teams: pinned builders (or None) parallel to
+                    # stable_players, the exploiter target's pin, and the pool builder to restore
+                    # on unpinned episodes. All-None → the wrapper never touches agent2._team.
+                    stable_teams=stable_teams, exploiter_team=exploiter_team,
+                    opponent_pool_team=opponent_teambuilder,
                     # keep-bots: the heuristic roster (always built above) is mixed back in
                     # per-episode alongside the exploiter target. No-op unless exploiter_player is set.
                     exploiter_keep_bots=args.exploiter_keep_bots,

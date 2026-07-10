@@ -11,6 +11,7 @@ from agents.training.fixed_opponent_pool import (
     EXT_PREFIX,
     is_external,
     parse_stable_opponents,
+    register_exploiter_for_eval,
     resolve_stable_opponents,
 )
 
@@ -260,3 +261,98 @@ def test_source_elo_none_when_absent(version):
         run = _write_run_colocated(tmp, version, name="r")   # no elo anywhere
         e = resolve_stable_opponents(run, version)[0]
     assert e.source_elo is None
+
+
+# ---------------------------------------------------------------------------
+# fold-back: the opponent's OWN pinned team (_read_trainee_pin via resolve)
+# ---------------------------------------------------------------------------
+
+def _write_pin_run(tmp, version, *, name="spec_run", pin_content="Skarmory @ Leftovers\n",
+                   record_sha=True, delete_pin_file=False, sha_override=None):
+    """A fake SPECIALIST run: model_config + weights zip + metadata.json recording a
+    --trainee-team pin (and optionally the MatchupSpec pin_sha fingerprint)."""
+    import hashlib
+    run = _write_run(tmp, version, name=name)
+    pin_file = os.path.join(tmp, f"{name}_team.txt")
+    with open(pin_file, "w") as f:
+        f.write(pin_content)
+    sha = sha_override or hashlib.sha1(pin_content.encode()).hexdigest()[:10]
+    meta = {"cli_args": {"trainee_team": pin_file}}
+    if record_sha:
+        meta["cli_args"]["_matchup_spec"] = {"trainee_teams": {"pin_sha": sha}}
+    with open(os.path.join(run, "metadata.json"), "w") as f:
+        json.dump(meta, f)
+    if delete_pin_file:
+        os.remove(pin_file)
+    return run, pin_file
+
+
+def test_resolve_reads_opponent_pin_from_metadata(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run, pin_file = _write_pin_run(tmp, version, pin_content="Blissey @ Leftovers\n")
+        e = resolve_stable_opponents(run, version)[0]
+    assert e.team_str == "Blissey @ Leftovers\n"
+    assert e.team_file == pin_file
+    assert e.to_cfg()["team_str"] == e.team_str   # threaded to the eval worker
+
+
+def test_resolve_no_pin_is_none(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _write_run(tmp, version, name="generalist")   # no metadata at all
+        e = resolve_stable_opponents(run, version)[0]
+    assert e.team_str is None and e.team_file is None
+
+
+def test_resolve_missing_pin_file_fails_loud(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run, _ = _write_pin_run(tmp, version, delete_pin_file=True)
+        with pytest.raises(FileNotFoundError, match="no longer exists"):
+            resolve_stable_opponents(run, version)
+
+
+def test_resolve_pin_sha_mismatch_fails_loud(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run, _ = _write_pin_run(tmp, version, sha_override="badf00dbad")
+        with pytest.raises(ValueError, match="pin_sha"):
+            resolve_stable_opponents(run, version)
+
+
+def test_resolve_pin_without_sha_is_accepted(version):
+    # pre-MatchupSpec specialist runs (ai_v7_07/08/09) record only cli_args.trainee_team.
+    with tempfile.TemporaryDirectory() as tmp:
+        run, _ = _write_pin_run(tmp, version, record_sha=False)
+        e = resolve_stable_opponents(run, version)[0]
+    assert e.team_str == "Skarmory @ Leftovers\n"
+
+
+# ---------------------------------------------------------------------------
+# exploiter auto-eval registration (opponent-parity Proposal A)
+# ---------------------------------------------------------------------------
+
+def _entry(label, zip_path):
+    from agents.training.fixed_opponent_pool import FixedOpponentEntry
+    return FixedOpponentEntry(label=label, zip_path=zip_path, config_path="c.json",
+                              arch_signature="sig")
+
+
+def test_exploiter_auto_registers_for_eval():
+    fixed, appended = register_exploiter_for_eval([], _entry("ext_target", "/m/t.zip"))
+    assert appended and [e.label for e in fixed] == ["ext_target"]
+
+
+def test_exploiter_registration_dedups_same_zip():
+    # the historical both-flags recipe (--exploiter X --stable-opponents X) stays byte-identical
+    explicit = [_entry("ext_target", "/m/t.zip")]
+    fixed, appended = register_exploiter_for_eval(explicit, _entry("ext_other_label", "/m/t.zip"))
+    assert not appended and fixed is explicit
+
+
+def test_exploiter_registration_dedups_label_collision():
+    explicit = [_entry("ext_target", "/m/other.zip")]
+    fixed, appended = register_exploiter_for_eval(explicit, _entry("ext_target", "/m/t.zip"))
+    assert not appended and fixed is explicit
+
+
+def test_exploiter_registration_none_is_noop():
+    fixed, appended = register_exploiter_for_eval([], None)
+    assert not appended and fixed == []

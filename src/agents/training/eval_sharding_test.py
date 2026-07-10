@@ -239,3 +239,14 @@ def test_fully_missing_opponent_in_missing_list(tmp_path):
     merged, missing = pool.collect(str(tmp_path))
     assert missing == ["b"]
     assert "a" in merged["win_rates"] and "b" not in merged["win_rates"]
+
+
+def test_eval_item_team_str_round_trips_through_plan():
+    # the fold-back pin must survive plan.json (parent writes, worker reads)
+    from agents.training.eval_sharding.units import EvalItem, FIXED
+    it = EvalItem("ext_spec", FIXED, 10, path="/m/x.zip", config_path="/m/c.json",
+                  team_str="Skarmory @ Leftovers\n")
+    rt = EvalItem.from_dict(it.to_dict())
+    assert rt.team_str == it.team_str and rt == it
+    bare = EvalItem("ext_gen", FIXED, 10, path="/m/y.zip")
+    assert "team_str" not in bare.to_dict() and EvalItem.from_dict(bare.to_dict()).team_str is None

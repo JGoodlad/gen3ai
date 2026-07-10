@@ -433,3 +433,79 @@ def test_mix_fractions_match_actual_sampling():
         assert counts["pool"] / N == pytest.approx(sp, abs=0.03), label
         assert counts["stable"] / N == pytest.approx(st, abs=0.03), label
         assert (counts["pool"] + counts["stable"]) / N == pytest.approx(nb, abs=0.03), label
+
+
+# ── fold-back: per-opponent pinned teams ──────────────────────────────────────
+
+def _make_pinned_wrapper(*, stable=None, stable_teams=None, exploiter=None, exploiter_team=None,
+                         pool_team="POOL_TB", rng_seed=0, exploiter_keep_bots=False,
+                         exploiter_bot_fraction=0.5):
+    heuristics = [MagicMock(name="heur0"), MagicMock(name="heur1")]
+    env = _stub_env()
+    env.agent2._team = pool_team          # what Gen3Env(opponent_team=) set at construction
+    players, labels = stable or ([], [])
+    w = MaskableAgentWrapper(
+        env, heuristic_opponents=heuristics, rng_seed=rng_seed,
+        stable_players=players, stable_labels=labels, stable_teams=stable_teams,
+        exploiter_player=exploiter, exploiter_team=exploiter_team,
+        exploiter_keep_bots=exploiter_keep_bots, exploiter_bot_fraction=exploiter_bot_fraction,
+        opponent_pool_team=pool_team,
+    )
+    return w, env
+
+
+def test_pinned_exploiter_episode_sets_agent2_team_to_pin():
+    exploiter = MagicMock(name="exploiter")
+    w, env = _make_pinned_wrapper(exploiter=exploiter, exploiter_team="PIN_TB")
+    w._select_episode_opponent()
+    assert w.opponent is exploiter
+    w._apply_opponent_team()
+    assert env.agent2._team == "PIN_TB"
+
+
+def test_bot_episode_restores_pool_team():
+    # keep-bots at fraction 1.0 → every episode is a bot → the pool builder must be restored
+    # after a pinned-opponent episode set the pin.
+    exploiter = MagicMock(name="exploiter")
+    w, env = _make_pinned_wrapper(exploiter=exploiter, exploiter_team="PIN_TB",
+                                  exploiter_keep_bots=True, exploiter_bot_fraction=1.0)
+    env.agent2._team = "PIN_TB"           # as if the previous episode faced the pinned target
+    w._select_episode_opponent()
+    assert w.opponent is not exploiter    # a bot
+    w._apply_opponent_team()
+    assert env.agent2._team == "POOL_TB"
+
+
+def test_pinned_stable_opponent_uses_its_own_pin_others_pool():
+    players, labels = _stable(2)
+    w, env = _make_pinned_wrapper(stable=(players, labels), stable_teams=["PIN0", None])
+    w.opponent = players[0]
+    w._apply_opponent_team()
+    assert env.agent2._team == "PIN0"     # the pinned specialist brings ITS OWN team
+    w.opponent = players[1]
+    w._apply_opponent_team()
+    assert env.agent2._team == "POOL_TB"  # the unpinned generalist stays a pool pilot
+
+
+def test_no_pins_never_touches_agent2_team():
+    # Byte-identical guard: with no pinned team anywhere the wrapper must never write agent2._team.
+    players, labels = _stable(1)
+    w, env = _make_pinned_wrapper(stable=(players, labels), stable_teams=[None])
+    sentinel = object()
+    env.agent2._team = sentinel
+    for opp in (players[0], w._heuristic_opponents[0]):
+        w.opponent = opp
+        w._apply_opponent_team()
+        assert env.agent2._team is sentinel
+
+
+def test_stable_teams_length_mismatch_raises():
+    players, labels = _stable(2)
+    with pytest.raises(ValueError, match="stable_teams len"):
+        _make_pinned_wrapper(stable=(players, labels), stable_teams=["PIN0"])
+
+
+def test_pins_require_pool_team():
+    exploiter = MagicMock(name="exploiter")
+    with pytest.raises(ValueError, match="opponent_pool_team"):
+        _make_pinned_wrapper(exploiter=exploiter, exploiter_team="PIN_TB", pool_team=None)

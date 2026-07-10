@@ -351,7 +351,8 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         items += [EvalItem(s["label"], SENTINEL, n_games, path=s["path"], step=s["step"])
                   for s in sentinels]
         items += [EvalItem(f["label"], FIXED, n_games, path=f["path"],
-                           config_path=f.get("config_path")) for f in fixed_cfgs]
+                           config_path=f.get("config_path"), team_str=f.get("team_str"))
+                  for f in fixed_cfgs]
         pool = ShardedEvalPool(items, self._eval_shard_games, step=step)
         pool.write_plan(run_dir)
 

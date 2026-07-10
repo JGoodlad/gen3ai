@@ -47,7 +47,8 @@ class MaskableAgentWrapper(SingleAgentWrapper):
                  pool_player=None, self_play_fraction=0.0, rng_seed=0,
                  heuristic_weights=None, stable_players=None, stable_labels=None,
                  stable_challenge_share=STABLE_CHALLENGE_SHARE, exploiter_player=None,
-                 exploiter_keep_bots=False, exploiter_bot_fraction=0.5):
+                 exploiter_keep_bots=False, exploiter_bot_fraction=0.5,
+                 stable_teams=None, exploiter_team=None, opponent_pool_team=None):
         # Back-compat: a single positional `opponent` (legacy / tests) becomes a 1-bot roster.
         roster = list(heuristic_opponents) if heuristic_opponents else (
             [opponent] if opponent is not None else [])
@@ -93,6 +94,37 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         # consulted when _exploiter_player is set; off → the sole-target path (byte-identical).
         self._exploiter_keep_bots = bool(exploiter_keep_bots)
         self._exploiter_bot_fraction = float(exploiter_bot_fraction)
+        # PER-OPPONENT PINNED TEAMS (the league fold-back contract): a specialist stable/exploiter
+        # opponent pilots ITS OWN pinned team, everyone else the shared pool. The opponent Players
+        # are pure decision-functions — env.agent2 does the networking, so agent2._team decides the
+        # opponent's REAL team (the training-mirror lesson) and must be switched PER EPISODE to
+        # match the selected opponent. `stable_teams` is a per-stable-opponent parallel list of
+        # Gen3Teambuilder|None; `exploiter_team` the exploiter target's pin (or None);
+        # `opponent_pool_team` the default/pool builder to restore on unpinned episodes (the SAME
+        # instance Gen3Env(opponent_team=) got, so team-draw RNG sequences are unchanged). With NO
+        # pinned team anywhere the whole feature is INERT — reset() never touches agent2._team
+        # (byte-identical to the pre-feature wrapper).
+        if stable_teams is not None and len(stable_teams) != len(self._stable_players):
+            raise ValueError(
+                f"stable_teams len {len(stable_teams)} != stable_players len "
+                f"{len(self._stable_players)}")
+        self._team_by_opponent = {}
+        for p, tb in zip(self._stable_players, stable_teams or []):
+            if tb is not None:
+                self._team_by_opponent[id(p)] = tb
+        if exploiter_player is not None and exploiter_team is not None:
+            self._team_by_opponent[id(exploiter_player)] = exploiter_team
+        self._opponent_pool_team = opponent_pool_team
+        self._per_opponent_teams = bool(self._team_by_opponent)
+        if self._per_opponent_teams:
+            if opponent_pool_team is None:
+                raise ValueError(
+                    "per-opponent pinned teams need opponent_pool_team (the default builder to "
+                    "restore on unpinned episodes)")
+            if getattr(env, "agent2", None) is None:
+                raise ValueError(
+                    "per-opponent pinned teams need an env with .agent2 (the opponent-side "
+                    "networking player whose _team decides the opponent's real team)")
         # gen3_exploiter_temp_anneal_v1 (ratchet mode): cumulative episode outcomes vs the EXPLOITER
         # target (bot episodes excluded), read via env_method("exploiter_winrate_totals") by
         # ExploiterTempRatchetCallback to measure the trainee's live WR at the CURRENT opponent
@@ -236,8 +268,19 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         # Floor bucket — also the fallthrough when the challenge bucket has no ready opponent.
         self.opponent = self._pick_floor_opponent()
 
+    def _apply_opponent_team(self) -> None:
+        """The opponent's REAL team follows the selected opponent (fold-back): its own pin when it
+        has one, else the shared pool builder. env.agent2 does the opponent-side networking, so its
+        ``_team`` decides what the opponent actually brings (the training-mirror lesson) — switched
+        per episode, BEFORE the next battle starts (the team is submitted at challenge time). Inert
+        (agent2 never touched) when no opponent carries a pin."""
+        if self._per_opponent_teams:
+            self.env.agent2._team = self._team_by_opponent.get(
+                id(self.opponent), self._opponent_pool_team)
+
     def reset(self, *, seed=None, options=None):
         self._select_episode_opponent()
+        self._apply_opponent_team()
         return super().reset(seed=seed, options=options)
 
     def step(self, action):

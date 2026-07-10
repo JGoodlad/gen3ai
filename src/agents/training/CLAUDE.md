@@ -855,10 +855,29 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
   `latest_eval` block **incl. the run's ELO** —
   `best_model/{best_model.zip,model_config.json,best_model.json}` co-located (arch gate + carried ELO,
   no parent search). Backfilled for existing `models/*/best_model/` dirs.
-- **Tests:** `fixed_opponent_pool_test.py` (parse + resolve + the arch FATAL gate),
+- **Per-opponent pinned teams (the league FOLD-BACK contract).** A SPECIALIST stable opponent —
+  one whose run pinned `--trainee-team` — pilots **ITS OWN team** here, not the shared pool
+  (otherwise a trapper exploiter folds back piloting random teams and the pressure it was trained
+  to apply evaporates — the realized-matchup lesson applied to the opponent side).
+  `resolve_stable_opponents` reads the pin from the opponent run's `metadata.json:
+  cli_args.trainee_team` (`_read_trainee_pin`) into `FixedOpponentEntry.team_str` — **fail-loud**:
+  a recorded pin whose file is missing raises, and a pin that no longer matches the run's recorded
+  MatchupSpec `pin_sha` raises (never a silent pool fallback). TRAINING: the env factory builds a
+  per-entry pinned builder and `MaskableAgentWrapper._apply_opponent_team` switches
+  `env.agent2._team` **per episode** to match the selected opponent (agent2 does the opponent-side
+  networking, so its `_team` decides the opponent's real team — the mirror lesson); unpinned
+  episodes restore the pool builder (the SAME instance, so team-draw RNG streams are unchanged);
+  with no pinned opponent anywhere the wrapper never touches `agent2._team` (byte-identical). EVAL:
+  `team_str` rides `to_cfg()` → the `EvalItem` → `eval_worker._fixed_opponent_tb`, so the FIXED
+  branch measures the opponent piloting its pin (eval matches training, same rule as the trainee's
+  own pin). The `[STABLE]`/`[EXPLOITER]` startup lines annotate `[pilots ITS OWN pin: <file>]`.
+  Guard: `poke_env_gaps/opponent_pin_fuzz_test.py` (bridge, real battles — pinned episodes field
+  EXACTLY the pin, bot episodes the pool).
+- **Tests:** `fixed_opponent_pool_test.py` (parse + resolve + the arch FATAL gate + the pin
+  resolve/fail-loud/sha cases + `register_exploiter_for_eval` dedup),
   `snapshot_test.py::*opponent*/*foreign*` (the loader + `check_opponent_compatible`), and the
   end-to-end `stable_opponent_fuzz_test.py` (bridge, no server — resolve + arch FATAL + foreign
-  load + legal stochastic play).
+  load + legal stochastic play) + `opponent_pin_fuzz_test.py` (the fold-back realized-team guard).
 
 ## Exploiter mode (`--exploiter`, `MaskableAgentWrapper._exploiter_player`)
 
@@ -918,12 +937,22 @@ at the target and it's the only opponent.
     (hovers near the threshold) + `train/exploiter_temp_ratchets`. Requires `--exploiter-temp-start >
     --exploiter-temp-end`. Tests: `exploiter_temp_callback_test.py` (`_decide` one-way/floor + windowed
     control loop + resume round-trip), `wrappers_test.py::test_exploiter_winrate_totals_*`.
+- **The target AUTO-registers for eval** (opponent-parity Proposal A,
+  `fixed_opponent_pool.register_exploiter_for_eval`): `--exploiter` alone now produces the verdict
+  metric `eval/win_rate_vs_ext_<target>` — the resolved target entry is appended to the eval-side
+  fixed-opponent list, DEDUP-guarded (same resolved zip or colliding label → unchanged), so the
+  historical `--exploiter X --stable-opponents X` recipe is byte-identical. Eval-only by
+  construction (exploiter mode excludes `--self-play`, so the appended entry never joins the
+  training mix). And per the fold-back contract above, a SPECIALIST target (its run pinned
+  `--trainee-team`) is faced — and eval-measured — piloting **its own pinned team**
+  (`exploiter_team` in the wrapper; the startup `[EXPLOITER]` line annotates the pin).
 - **Usage:** `--exploiter <target> --model <target's checkpoint>` — init the exploiter from a strong
-  checkpoint so it has a baseline to exploit from (the AlphaStar exploiter init). To ALSO see
-  win-rate vs the target in eval, add `--stable-opponents <same target>` (eval-only without
-  `--self-play`). The run dir defaults to a readable `models/exploiter_vs_<target>/` (not a
+  checkpoint so it has a baseline to exploit from (the AlphaStar exploiter init). The verdict
+  metric vs the target is automatic (above); an explicit `--stable-opponents <same target>` is
+  harmless (dedup). The run dir defaults to a readable `models/exploiter_vs_<target>/` (not a
   date-stamp); override with `--run-name <name>`. Tests: `wrappers_test.py::test_exploiter_*`
-  (sole-opponent + off-unchanged).
+  (sole-opponent + off-unchanged) + `test_pinned_*` (per-opponent teams),
+  `fixed_opponent_pool_test.py::test_exploiter_*registration*`.
 
 ## ELO / skill rating (`elo.py`, `bot_elo_calibration.py`, `main.elo`)
 

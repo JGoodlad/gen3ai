@@ -1147,7 +1147,8 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         fixed_cfgs = [e.to_cfg() for e in self._fixed_opponents]
         items = [EvalItem(name, BOT, n_games) for name in eval_opponent_names()]
         items += [EvalItem(f["label"], FIXED, n_games, path=f["path"],
-                           config_path=f.get("config_path")) for f in fixed_cfgs]
+                           config_path=f.get("config_path"), team_str=f.get("team_str"))
+                  for f in fixed_cfgs]
         names = [it.key for it in items]
         pool = ShardedEvalPool(items, self._eval_shard_games, step=step)
         pool.write_plan(run_dir)
