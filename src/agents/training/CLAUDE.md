@@ -268,6 +268,43 @@ too, so the distribution self-enriches toward the patient meta self-play current
   self-play lacks — it's complementary to, not a substitute for, a teacher/league. Watch the stall-rate canary.
   Tests: `defensive_entropy_test.py`.
 
+## MatchupSpec — the declared matchup (`matchup_spec.py`)
+
+**The ONE explicit declaration of what a run's battles look like** (design:
+`designs/ai_v8/design_matchup_config.md`, P0 built). One week produced four independent failures with a
+shared root — *the matchup a run plays is assembled implicitly across seams that nothing forces to
+agree*: the eval worker rebuilt its own default teams (specialists measured OOD), the env's single
+`team=` fed BOTH sides (the training mirror), training/eval play modes drifted (stochastic
+noise-farming), and the launcher's exit summary resolved "Last model" to a global-glob golden. The spec
+makes the matchup EXPLICIT: built ONCE in `train_rl_agent` (`MatchupSpec.from_args(args)`), then
+CONSUMED — never re-derived — by the consumers (the `plan.json` pattern).
+
+- **`TeamSource`** — where one side's teams come from; its `build(all_teams, sample_teams)` is the ONLY
+  constructor of that side's `Gen3Teambuilder` (the env factory no longer assembles builders inline).
+  Kinds: `pool` (opponent default), `default_biased` (trainee default — full pool + 10% sample-team
+  bias, `DEFAULT_TRAINEE_BIAS_PROB`), `pinned` (`--trainee-team`), `pin_biased` (the future
+  `--trainee-team-prob` shape — supported, no CLI yet). Each is byte-parity with the legacy
+  construction (pinned by `matchup_spec_test.py`). **The two sides are independent BY CONSTRUCTION**
+  (`trainee_teams` / `opponent_teams` → `Gen3Env(team=, opponent_team=)`) — the mirror-bug class is
+  structurally closed.
+- **`PlayMode`** — how the frozen-NN opponents select actions (greedy | stochastic@temp, schedule
+  fixed | anneal | ratchet). Descriptive in P0 — the executors (RLPlayer temp, the anneal/ratchet
+  callbacks) already exist; the spec records the intent so echo/provenance say what a metric was
+  measured under. `eval_opponent_play` defaults greedy; `eval_trainee_teams` defaults to
+  `trainee_teams` (**the eval-OOD fix made structural**: eval pilots what training pilots).
+- **Provenance** — `to_dict()` (pin fingerprints via sha1, not full text) + `spec_hash()` (a 10-hex
+  **measurement-regime tag**: two runs/eras with different hashes are NOT metric-comparable) are
+  stamped into `metadata.json` beside `cli_args` (`_matchup_spec` / `_matchup_spec_hash`).
+- **Startup echo** — `summary_lines()` emits a `🧭 [MATCHUP <hash>]` block to the launcher Events
+  panel: trainee teams, opponent teams + mix, exploiter target + play mode, eval regime — one glance
+  at what the run actually plays.
+- **The realized-matchup fuzz** (`poke_env_gaps/matchup_realized_fuzz_test.py`, bridge, no server) is
+  the permanent mirror-catcher: it drives the REAL construction path (spec → builders →
+  `Gen3Env(team=, opponent_team=)` → bridge) over real battles and asserts per episode that the
+  trainee fields EXACTLY the declared pin, the opponent does NOT (the mirror signature), and opponent
+  rosters VARY across episodes. P1+ (not built): controllers keyed on eval play modes, per-row regime
+  tags, per-opponent team pools.
+
 ## Bot evaluation (subprocess, non-blocking)
 
 **Flat schedule, full roster.** Eval fires every `EVAL_FREQ_STEPS` (2M steps) and plays

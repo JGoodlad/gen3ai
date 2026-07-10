@@ -66,6 +66,34 @@ class TestFindLatestCheckpoint:
         deep.write_text("x")
         assert find_latest_checkpoint(str(tmp_path)) == str(deep)
 
+    def test_run_scoped_never_escapes_to_other_runs(self, tmp_path):
+        """The ai_v3-golden regression: a run_dir-scoped call must NEVER fall back to a global
+        models/ search. A fresh crashed run (no checkpoint yet) returns None — the fatal
+        no-checkpoint case must SURFACE, not silently resolve to whatever ancient run has the
+        biggest step number anywhere (observed: models/_goldens/ai_v3_* at 469M steps)."""
+        golden = tmp_path / "_goldens" / "ai_v3_final"
+        golden.mkdir(parents=True)
+        (golden / "checkpoint_469410304_steps.zip").write_text("x")
+        fresh = tmp_path / "ai_v7_10_fresh_run"
+        fresh.mkdir()
+        # fresh run, no checkpoint yet -> None (never the decoy golden)
+        assert find_latest_checkpoint(str(tmp_path), run_dir=str(fresh)) is None
+        # once the run HAS a checkpoint, the scoped search finds its own (not the bigger decoy)
+        ck = fresh / "checkpoints"
+        ck.mkdir()
+        own = ck / "checkpoint_1000_steps.zip"
+        own.write_text("x")
+        assert find_latest_checkpoint(str(tmp_path), run_dir=str(fresh)) == str(own)
+        # un-scoped (run_dir=None) keeps the legacy global search
+        assert find_latest_checkpoint(str(tmp_path)) == str(golden / "checkpoint_469410304_steps.zip")
+
+    def test_run_scoped_skips_artifact_dirs(self, tmp_path):
+        """Within the run, snapshots/best_model/eval_traces zips are still not resumable."""
+        run = tmp_path / "run_x"
+        (run / "snapshots").mkdir(parents=True)
+        (run / "snapshots" / "snapshot_0_steps.zip").write_text("x")
+        assert find_latest_checkpoint(str(tmp_path), run_dir=str(run)) is None
+
     def test_forced_checkpoint_step_sort(self, tmp_path):
         low = tmp_path / "checkpoint_1000_steps.zip"
         low.write_text("x")

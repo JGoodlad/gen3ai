@@ -47,6 +47,7 @@ from agents.training.snapshot_pool import (
 )
 from agents.training.selfplay_callback import SelfPlayCallback
 from agents.training.wrappers import MaskableAgentWrapper, STABLE_CHALLENGE_SHARE
+from agents.training.matchup_spec import MatchupSpec
 from agents.training.gen3_env import Gen3Env
 from utils.bridge.bridge_session import attach_bridge_transport
 from utils.bridge.local_battle_runner import run_local_battles
@@ -2131,30 +2132,23 @@ async def main():
     
     emit(f"📦 {len(sample_teams)} sample teams (bias) / {len(all_teams)} total loaded")
 
-    # SPECIALIST MODE (--trainee-team): pin the trainee to ONE fixed team read from the given
-    # Showdown-export file, so the agent always plays that exact 6-mon team. A single-team
-    # Gen3Teambuilder validates the team on construction (raises on an illegal set). The OPPONENTS
-    # still draw the full diverse pool (below), so the specialist learns THIS team vs everything.
-    # None (default) → the full-pool trainee builder, byte-identical to the prior behavior.
-    # `_specialist_team_str` is ALSO threaded into both eval callbacks → the eval-worker cfg
-    # (`trainee_team_str`), so eval measures the trainee piloting ITS OWN team — the worker used to
-    # hardcode the default pool builder, so every specialist run's eval (win rates / ELO / vs-ext
-    # verdicts) measured the model piloting random teams it never trained on (pure OOD).
-    _specialist_team_str = None
-    if args.trainee_team:
-        with open(args.trainee_team, "r", encoding="utf-8") as _tf:
-            _specialist_team_str = _tf.read()
-        trainee_teambuilder = Gen3Teambuilder([_specialist_team_str])
+    # THE MATCHUP — declared ONCE (`MatchupSpec.from_args`, designs/ai_v8/design_matchup_config.md)
+    # and consumed everywhere: BOTH teambuilders come from the spec (trainee/opponent independent BY
+    # CONSTRUCTION — the mirror-bug class), the eval callbacks get the trainee pin from it, the
+    # Events panel echoes it, and metadata.json records it (+ spec_hash, the measurement-regime tag).
+    # SPECIALIST MODE (--trainee-team) pins ONLY the trainee source; opponents keep the full pool.
+    matchup = MatchupSpec.from_args(args)
+    _specialist_team_str = matchup.trainee_teams.pin_str   # → eval callbacks (trainee_team_str)
+    trainee_teambuilder = matchup.trainee_teams.build(all_teams, sample_teams)
+    opponent_teambuilder = matchup.opponent_teams.build(all_teams, sample_teams)
+    for _ln in matchup.summary_lines():
+        emit(_ln)
+    if _specialist_team_str:
         _spec_mons = [ln.split("@")[0].split("(")[0].strip()
                       for ln in _specialist_team_str.splitlines()
                       if ln.strip() and "@" in ln]
         emit(f"🎯 [SPECIALIST] trainee pinned to ONE team from {args.trainee_team}: "
              f"{', '.join(_spec_mons)} (opponents keep the full pool)")
-    else:
-        # Trainee draws from the full pool, but 50% of the time uses a sample team.
-        # This exposes the agent to diverse team compositions while keeping a stable anchor.
-        trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)
-    opponent_teambuilder = Gen3Teambuilder(all_teams)
 
     mappings = load_mappings()
     
@@ -2316,11 +2310,6 @@ async def main():
                 env_log_level = log_level if idx == 0 else LogLevel.QUIET
 
                 env = Gen3Env(
-                    # The OPPONENT side's real team source (agent2 does the networking for every
-                    # per-episode opponent; the rotated Players are decision-functions whose own
-                    # builders are inert). Without this, PokeEnv fed `team=` (the TRAINEE builder)
-                    # to BOTH sides — a --trainee-team pin made every battle a single-team MIRROR.
-                    opponent_team=opponent_teambuilder,
                     mappings,
                     battle_format=BATTLE_FORMAT,
                     team=trainee_teambuilder,
@@ -2349,6 +2338,11 @@ async def main():
                     # DEFENSIVE-exploration flag (gen3_defensive_entropy_v1): emit only when the boost is on, so
                     # the state-conditioned entropy term in the PPO loss can read it. Off = no key, no cost.
                     emit_defensive_opportunity=(args.defensive_entropy_boost > 1.0),
+                    # The OPPONENT side's real team source (agent2 does the networking for every
+                    # per-episode opponent; the rotated Players are decision-functions whose own
+                    # builders are inert). Without this, PokeEnv fed `team=` (the TRAINEE builder)
+                    # to BOTH sides — a --trainee-team pin made every battle a single-team MIRROR.
+                    opponent_team=opponent_teambuilder,
                 )
                 if args.use_showdown_bridge:
                     # Swap the two _EnvPlayer agents' websocket transport for a local
@@ -2469,6 +2463,11 @@ async def main():
     os.makedirs(model_dir, exist_ok=True)
     # Full CLI namespace (JSON-safe) → persisted into metadata.json for run provenance.
     cli_args = json.loads(json.dumps(vars(args), default=str))
+    # Matchup provenance (designs/ai_v8/design_matchup_config.md): the DECLARED matchup + its hash
+    # ride into metadata.json beside the flags, so a run's measurement regime is auditable — two
+    # eras with different hashes (e.g. the pre-fix OOD-eval era) are not metric-comparable.
+    cli_args["_matchup_spec"] = matchup.to_dict()
+    cli_args["_matchup_spec_hash"] = matchup.spec_hash()
     if not args.run_dir:
         with open(os.path.join(model_dir, "command.txt"), "w") as f:
             f.write(" ".join(sys.argv))

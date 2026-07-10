@@ -55,6 +55,13 @@ def find_latest_checkpoint(
     run_dir: "str | None" = None,
     min_mtime: float = 0.0,
 ) -> "str | None":
+    """Latest resumable checkpoint. STRICTLY RUN-SCOPED when ``run_dir`` is given: latest.txt →
+    a glob under ``run_dir`` only → ``None``. It must NEVER fall back to a global ``models/``
+    search for a scoped caller — a fresh run that crashes before its first checkpoint has nothing
+    to resume (a fatal condition to surface), and the global step-number max used to resolve to
+    whatever ancient run had the biggest step anywhere (observed: a crashed fresh run's exit
+    summary pointing at a ``models/_goldens/ai_v3_*`` zip at 469M steps). ``run_dir=None`` keeps
+    the global search (the legacy un-scoped callers)."""
     if run_dir:
         latest_txt = os.path.join(run_dir, "latest.txt")
         if os.path.exists(latest_txt):
@@ -66,9 +73,14 @@ def find_latest_checkpoint(
             candidate = os.path.join(run_dir, name)
             if os.path.exists(candidate):
                 return candidate
+        # No latest.txt (or stale) → search THIS run only. The artifact-dir filter still
+        # applies (snapshots/best_model/eval_traces zips are not resumable checkpoints).
+        search_root = run_dir
+    else:
+        search_root = models_root
 
-    zips = glob.glob(os.path.join(models_root, "**", "*.zip"), recursive=True)
-    zips = [p for p in zips if _is_resumable_checkpoint(p, models_root)]
+    zips = glob.glob(os.path.join(search_root, "**", "*.zip"), recursive=True)
+    zips = [p for p in zips if _is_resumable_checkpoint(p, search_root)]
     if min_mtime:
         zips = [p for p in zips if os.path.getmtime(p) >= min_mtime]
     if not zips:
