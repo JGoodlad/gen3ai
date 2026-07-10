@@ -2316,6 +2316,11 @@ async def main():
                 env_log_level = log_level if idx == 0 else LogLevel.QUIET
 
                 env = Gen3Env(
+                    # The OPPONENT side's real team source (agent2 does the networking for every
+                    # per-episode opponent; the rotated Players are decision-functions whose own
+                    # builders are inert). Without this, PokeEnv fed `team=` (the TRAINEE builder)
+                    # to BOTH sides — a --trainee-team pin made every battle a single-team MIRROR.
+                    opponent_team=opponent_teambuilder,
                     mappings,
                     battle_format=BATTLE_FORMAT,
                     team=trainee_teambuilder,

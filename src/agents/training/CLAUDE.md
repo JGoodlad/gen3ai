@@ -293,9 +293,16 @@ run's `--trainee-team` pin** (`trainee_team_str` in the worker cfg → `eval_wor
 threaded by BOTH callbacks): a specialist run is measured piloting ITS OWN team. The worker used to
 hardcode the default full-pool builder, so every specialist eval (win rates / ELO / `vs_ext`
 verdicts) measured the model piloting random teams it never trained on — pure OOD; the
-"ai_v7_05–08 plateau" was this instrumentation gap, not the training (in-distribution, those runs
-mastered their tasks — see `eval_worker_test.py`, the fix's pin). No pin → the default pool builder,
-byte-identical. Each opponent's `EVAL_GAMES` are split into
+"ai_v7_05–08 plateau" was this instrumentation gap, not the training (see `eval_worker_test.py`,
+the fix's pin). No pin → the default pool builder, byte-identical. **The companion TRAINING-side bug
+(the mirror):** PokeEnv feeds its single `team=` kwarg to BOTH internal env agents, and the
+per-episode opponent Players are decision-functions over `battle2` (agent2 does the networking), so
+agent2's `_team` decides the opponent's REAL team — a `--trainee-team` pin therefore also pinned the
+OPPONENTS, turning every specialist run's training into a single-team MIRROR vs bot pilots
+(genuinely-won ~100% training WRs, fake curriculum; a probe on the exact path measured the same
+checkpoint at 1.000 mirror vs 0.483 with real opponent teams). Fixed by the `Gen3Env(opponent_team=…)`
+post-init seam (the `_battle_class` injection pattern), threaded unconditionally from the env factory
+(`opponent_teambuilder`); `None` = the pre-fix both-sides behavior. Pinned by `gen3_env_test.py`. Each opponent's `EVAL_GAMES` are split into
 **shard units** of `--eval-shard-games` (default 25 → 4 shards/opponent); a worker claims units
 (atomic `O_EXCL` lock per `unit_id`), plays them, and publishes one `shard__<unit_id>.json` of
 **raw** counts; the parent pools an opponent's shards back into one **exact** result. This is the

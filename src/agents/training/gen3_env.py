@@ -48,7 +48,7 @@ class Gen3Env(SinglesEnv):
                  move_belief_mode: str = "off", emit_belief_target: bool = False,
                  emit_win_target: bool = False, emit_spread_labels: bool = False,
                  emit_hp_type_labels: bool = False, emit_defensive_opportunity: bool = False,
-                 emit_pubval_target: bool = False, **kwargs):
+                 emit_pubval_target: bool = False, opponent_team=None, **kwargs):
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
@@ -59,6 +59,18 @@ class Gen3Env(SinglesEnv):
         # poke-env's env. The trainee (battle1) is what obs/reward/replay read.
         self.agent1._battle_class = battle_class
         self.agent2._battle_class = battle_class
+        # OPPONENT-side teambuilder (the same post-init injection seam as _battle_class above).
+        # PokeEnv passes its single `team=` kwarg to BOTH internal _EnvPlayers — and the opponent
+        # Players the wrapper rotates per episode are pure DECISION functions over battle2 (agent2
+        # does the networking), so THEIR teambuilders are dead weight: agent2's `_team` decides the
+        # opponent's real team. Without this seam, a `--trainee-team` pin silently pinned the
+        # OPPONENTS to the trainee's team too — every "specialist vs diverse field" run was actually
+        # a single-team MIRROR vs bot pilots (the root cause of the inflated ~100% training win
+        # rates: bots piloting an expertise-gated stall team are trivially beatable, so the wins
+        # were genuine but the curriculum was fake). None → both sides keep `team=` (the pre-fix
+        # behavior, correct for non-pinned runs where both draw the same pool).
+        if opponent_team is not None:
+            self.agent2._team = opponent_team
         self.observation_encoder = get_observation_encoder(mappings)
 
         obs_dim = self.observation_encoder.dimension
