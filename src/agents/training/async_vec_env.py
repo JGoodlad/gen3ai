@@ -22,11 +22,12 @@ max-latency-per-step barrier), NOT an algorithm change like APPO/IMPALA (which i
 and need V-trace). Per-env trajectories stay contiguous, so per-column GAE is unchanged.
 
 Two integration details make it correct + cheap:
-  1. **Masks ride in ``info``.** Stock collection does a separate ``get_action_masks(env)`` barrier
-     each step; async would need a per-env mask as each env becomes ready. Instead the env wrapper
-     (``MaskableAgentWrapper``, when ``emit_action_mask=True``) bundles each obs's action mask into
-     ``info["action_mask"]`` / the reset ``info``, so the collector gets it with the step result —
-     no extra round-trip. (One ``get_action_masks`` barrier still happens once per rollout, for the
+  1. **Masks ride in the Dict obs.** Stock collection does a separate ``get_action_masks(env)`` barrier
+     each step; async would need a per-env mask as each env becomes ready. Instead the mask is already
+     in the observation itself — the encoder writes ``obs["action_mask"]`` (``state_encoder.py``,
+     = ``last_ctx.mask``, the same value the stock path pulls from ``get_action_masks(env)``), so the
+     collector reads each ready env's mask straight from its step result with no extra round-trip and
+     no wrapper change. (One ``get_action_masks`` barrier still happens once per rollout, for the
      carried-over ``_last_obs``.)
   2. **``env_method`` is drain-safe.** The eval callback calls ``env.env_method(...)``
      (set_self_play_target / opponent_default_stats) from inside ``on_step``,

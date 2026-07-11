@@ -63,7 +63,7 @@ Mirrors the stock loop's bookkeeping exactly: `num_timesteps += wave_size`, the 
 bootstrap, `_update_info_buffer(wave_infos, wave_dones)`, `_last_*` carry-over, and the final GAE.
 
 ### 3.3 Masks ride in the obs (no wrapper change)
-`Gen3Env`'s obs is a **Dict** `{"observation": Box(3357), "action_mask": Box(11)}` — the
+`Gen3Env`'s obs is a **Dict** `{"observation": Box(2992), "action_mask": Box(11)}` — the
 per-decision mask is *in the obs*, equal to what the stock path reads via `get_action_masks(env)`
 (both are `last_ctx.mask` for the obs being acted on). So the collector reads each env's mask from
 `obs["action_mask"]` — no per-env `env_method` round-trip, no wrapper change. Writes go to a
