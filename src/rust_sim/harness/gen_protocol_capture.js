@@ -613,6 +613,37 @@ function scenarios() {
       (side, battle) => firstLiveBench(side, battle)),
   });
 
+  // ── (T) MID-BATTLE Intimidate into a −6-FLOORED foe — the CLAMPED-applied delta.
+  //        The port used to hardcode `|-unboost|<foe>|atk|1`, but Showdown emits the
+  //        CLAMPED-APPLIED delta: a foe already at the −6 Atk floor drops by 0 →
+  //        `|-unboost|<foe>|atk|0` (the line is STILL emitted — probe-verified, NOT
+  //        omitted, NOT a `-fail`). p1's Intimidate Salamences pivot in one after
+  //        another, each dropping p2's Snorlax Atk by 1 (atk|1 ×6) until it FLOORS at
+  //        −6, then a 7th fresh Intimidate switch-in emits the `atk|0` floor line.
+  //        (Bridge A/B fuzzer find; probe `harness/probe_intimidate_floor.js`.) ──
+  S.push({
+    id: 'intimidate_atk_floor',
+    p1: [mon('Salamence', ['dragonclaw', 'splash'], { ability: 'Intimidate', nature: 'Adamant', evs: { atk: 252, spe: 252 } }),
+         mon('Salamence', ['dragonclaw', 'splash'], { ability: 'Intimidate', nature: 'Adamant', evs: { atk: 252, spe: 252 } }),
+         mon('Salamence', ['dragonclaw', 'splash'], { ability: 'Intimidate', nature: 'Adamant', evs: { atk: 252, spe: 252 } }),
+         mon('Salamence', ['dragonclaw', 'splash'], { ability: 'Intimidate', nature: 'Adamant', evs: { atk: 252, spe: 252 } }),
+         mon('Salamence', ['dragonclaw', 'splash'], { ability: 'Intimidate', nature: 'Adamant', evs: { atk: 252, spe: 252 } }),
+         mon('Salamence', ['dragonclaw', 'splash'], { ability: 'Intimidate', nature: 'Adamant', evs: { atk: 252, spe: 252 } })],
+    p2: [mon('Snorlax', ['bodyslam', 'splash'], { item: 'Leftovers', ability: 'Thick Fat', nature: 'Adamant', evs: { hp: 252, atk: 252 } })],
+    makeScript: fromPlan(
+      // The lead Salamence Intimidated at the >start switch-in (atk 0 → −1). Now pivot
+      // in a fresh Salamence each turn: −1→−2→−3→−4→−5→−6 (atk|1 ×5) then the FLOOR
+      // switch-in (−6→−6, atk|0). p2 Splashes so it just sits and eats the drops.
+      [{ p1: 'switch 2', p2: 'move 2' }, // −1 → −2  (atk|1)
+       { p1: 'switch 2', p2: 'move 2' }, // −2 → −3  (atk|1)
+       { p1: 'switch 2', p2: 'move 2' }, // −3 → −4  (atk|1)
+       { p1: 'switch 2', p2: 'move 2' }, // −4 → −5  (atk|1)
+       { p1: 'switch 2', p2: 'move 2' }, // −5 → −6  (atk|1)
+       { p1: 'switch 2', p2: 'move 2' }, // −6 → −6 AT FLOOR → atk|0
+       ...fill(40, { p1: 'move 2', p2: 'move 2' })],
+      (side, battle) => firstLiveBench(side, battle)),
+  });
+
   return S;
 }
 

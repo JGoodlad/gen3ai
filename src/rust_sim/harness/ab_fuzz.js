@@ -597,4 +597,18 @@ function appendLog(logPath, line) {
   console.error(line);
 }
 
-main().catch((e) => { console.error(e && e.stack ? e.stack : String(e)); process.exit(1); });
+// ── Exports (one source of truth for the bridge A/B fuzzer) ──────────────────
+// The team providers + the modeled-universe builder are REUSED by
+// harness/bridge_ab_fuzz.js (the per-side / request A/B fuzzer), so team
+// generation (modeled moves + explicit genders + the randbats adapter) lives in
+// exactly ONE place. Additive — `require.main` still runs the omniscient fuzzer.
+module.exports = {
+  parseFlags, adaptRandbatsTeam, makeRandbatsProvider,
+  buildRandomUniverse, makeRandomProvider, makePoolProvider,
+  genRandomSet, sampleDistinct, speciesAllowedAbility,
+  NATURES, ITEM_CHOICES, RANDBATS_FORMAT,
+};
+
+if (require.main === module) {
+  main().catch((e) => { console.error(e && e.stack ? e.stack : String(e)); process.exit(1); });
+}

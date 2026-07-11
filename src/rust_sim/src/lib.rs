@@ -90,6 +90,7 @@
 //! engine rewrite.
 
 pub mod battle;
+pub mod bridge;
 pub mod damage;
 pub mod dex;
 pub mod event;

@@ -945,6 +945,26 @@ impl BattleState {
         }
     }
 
+    /// Whether this side's active is trapped by a **FIRM** (`trapped === true`) trap
+    /// — as opposed to the `'hidden'` (`maybeTrapped`) traps. This drives the bridge
+    /// `|request|` flag: the sim's gen3 **Shadow Tag** override sets `pokemon.trapped =
+    /// true` DIRECTLY in `onFoeTrapPokemon` (`data/mods/gen3/abilities.ts` — NOT the
+    /// base `tryTrap(true)` → `'hidden'`), so `getMoveRequestData`'s `trapped === true`
+    /// branch fires and the FIRST `move` request already carries `trapped:true` (no
+    /// `maybeTrapped` phase, no rejection round). Arena Trap / Magnet Pull call
+    /// `tryTrap(true)` → `trapped = 'hidden'`, so they show `maybeTrapped` until a
+    /// rejected switch firms them. Probe-settled: a Shadow-Tag foe's first p2 request is
+    /// `trapped`, an Arena-Trap / Magnet-Pull foe's is `maybe` (the request/per-side A/B
+    /// fuzzer's #1 find — `bridge_ab_fuzz.js`). Draw-neutral (display-only, like
+    /// `is_trapped`).
+    pub fn trap_is_firm(&self, side: usize, dex: &Dex) -> bool {
+        if !self.is_trapped(side, dex) {
+            return false;
+        }
+        let foe = &self.sides[1 - side].pokemon[self.sides[1 - side].active];
+        to_id(&foe.ability) == "shadowtag"
+    }
+
     /// `updateSpeed()` (`battle.js:241` / `pokemon.js:283`): refresh BOTH actives'
     /// cached `pokemon.speed` to the live `getActionSpeed()` (para/boost/ModifySpe-
     /// aware). Showdown refreshes the cached speed at `commitChoices` (turn start,
@@ -6503,11 +6523,21 @@ impl BattleState {
         HpStatus { hp: mon.hp, maxhp: mon.maxhp, status: status_token(mon.status) }
     }
 
-    /// The `switch`/`drag` Details string: just the species display name in gen-3
-    /// singles (L100 + genderless are omitted by Showdown, matching the capture —
-    /// e.g. `|switch|p1a: Snorlax|Snorlax|524/524`).
+    /// The `switch`/`drag` Details string (`Pokemon.details`): the species display
+    /// name, then `, <Gender>` when the mon has a real gender ('M'/'F'); L100 +
+    /// genderless ('N'/none) are omitted by Showdown. Genderless capture teams show
+    /// just the species (`|switch|p1a: Snorlax|Snorlax|524/524`); a gendered mon
+    /// shows `|switch|p2a: Snorlax|Snorlax, M|461/461` (the bridge goldens). This is
+    /// observation-only: the protocol/writeline goldens use genderless teams (so the
+    /// output is unchanged there), and the e2e_fuzz gate compares SEED+STATE, not
+    /// protocol lines.
     fn switch_details(&self, side: usize, slot: usize, dex: &Dex) -> String {
-        self.display_name(side, slot, dex)
+        let species = self.display_name(side, slot, dex);
+        match self.sides[side].pokemon[slot].gender {
+            Some('M') => format!("{species}, M"),
+            Some('F') => format!("{species}, F"),
+            _ => species,
+        }
     }
 
     /// Emit the battle-init framing (once, at the top of a logged battle), in the
@@ -6586,7 +6616,9 @@ impl BattleState {
                 "drought" => self.field.weather == Some(Weather::Sun),
                 _ => false,
             };
-            self.emit_ability_start_lines(side, slot, weather_line, dex);
+            // The framing/lead reconstruction: a battle-start foe is never below −1, so an
+            // Intimidate clamp never bites → the applied delta is always −1 (`None`).
+            self.emit_ability_start_lines(side, slot, weather_line, None, dex);
         }
     }
 
@@ -6597,7 +6629,7 @@ impl BattleState {
     /// winning-setter rule; mid-battle: `run_switch`'s before≠after weather change — a
     /// permanent same-weather re-set emits nothing). All byte-verified vs the capture
     /// golden (midswitch_ability_lines / trace_switchin / flashfire_cycle):
-    ///   - Intimidate → `|-ability|<mon>|Intimidate|boost` + `|-unboost|<foe>|atk|1`;
+    ///   - Intimidate → `|-ability|<mon>|Intimidate|boost` + `|-unboost|<foe>|atk|<applied>`;
     ///     a Clear Body / White Smoke / Hyper Cutter foe instead shows
     ///     `|-fail|<foe>|unboost|[from] ability: <Blocker>|[of] <foe>`; a SUBSTITUTE
     ///     foe shows ONLY the gen3 `|-hint|` (no `-ability` at all).
@@ -6606,8 +6638,26 @@ impl BattleState {
     ///     omniscient stream carries).
     ///   - Trace (copy applied) → `|-ability|<mon>|<Copied>|Trace|[from] ability: Trace|
     ///     [of] <foe>`.
-    /// DRAW-FREE / observation-only: a formatting read of state the Start already resolved.
-    fn emit_ability_start_lines(&mut self, side: usize, slot: usize, weather_line: bool, dex: &Dex) {
+    ///
+    /// `intim_atk_pre` is the foe active's Atk STAGE just BEFORE this Intimidate's clamped
+    /// drop was applied (threaded from the boost-apply site). The emit reconstructs from the
+    /// POST-drop state (this fn runs AFTER the Start), so it CANNOT infer the applied delta
+    /// from the post-drop stage alone — a foe at −6 is ambiguous (was it −5 dropped, or −6
+    /// a no-op?). We emit the sim's CLAMPED-APPLIED delta `new_stage − pre_stage` ∈ {−1, 0}:
+    /// a foe already at −6 drops by 0 → `|-unboost|<foe>|atk|0` (the line is STILL emitted,
+    /// probe-verified — NOT omitted, NOT a `-fail`), a foe at −5 → `atk|1` landing −6.
+    /// `None` = a reconstruction with no pre-stage available (the framing/lead path, where a
+    /// battle-start foe is never below −1 so the clamp never bites → the applied delta is
+    /// always −1). DRAW-FREE / observation-only: a formatting read of state the Start already
+    /// resolved.
+    fn emit_ability_start_lines(
+        &mut self,
+        side: usize,
+        slot: usize,
+        weather_line: bool,
+        intim_atk_pre: Option<i8>,
+        dex: &Dex,
+    ) {
         if !self.logging() {
             return;
         }
@@ -6634,7 +6684,20 @@ impl BattleState {
                         .unwrap_or(foe_ability);
                     self.log.fail_unboost_from_ability(&foe_ref, &display);
                 } else {
-                    self.log.boost(&foe_ref, 0, -1); // atk -1 → |-unboost|…|atk|1
+                    // The CLAMPED-APPLIED delta `new_atk − pre_atk` ∈ {−1, 0}: a foe already
+                    // at the −6 floor drops by 0 → `|-unboost|…|atk|0` (the sim STILL emits
+                    // the line even at a 0 applied delta — probe
+                    // `harness/probe_intimidate_floor.js`; a REQUESTED boost/drop always
+                    // reports its clamped result, unlike a genuine no-op `boost()` call). So
+                    // we route through `unboost_atk_applied` (which emits at 0 too), NOT the
+                    // generic `boost()` (which skips a zero delta). `None` (the framing/lead
+                    // reconstruction) can never floor → −1.
+                    let new_atk = self.sides[foe].pokemon[foe_slot].boosts[0];
+                    let applied = match intim_atk_pre {
+                        Some(pre) => new_atk - pre,
+                        None => -1,
+                    };
+                    self.log.unboost_atk_applied(&foe_ref, applied.unsigned_abs());
                 }
             }
             "sandstream" | "drizzle" | "drought" => {
@@ -8153,6 +8216,13 @@ impl BattleState {
         // weather is set — exactly the source order). Snapshot the weather state across the
         // Start to detect a real change (a same-weather permanent re-set is a no-op).
         let before = (self.field.weather, self.field.weather_turns);
+        // Snapshot the FOE active's pre-drop Atk stage for the Intimidate emit's CLAMPED
+        // applied delta (a foe already at −6 emits `atk|0`, not `atk|1`; the post-Start
+        // state can't recover the pre-drop stage — a −6 is ambiguous). Read here, BEFORE
+        // the Start applies + clamps the drop. Harmless for a non-Intimidate entrant (the
+        // emit ignores it unless the ability is Intimidate).
+        let intim_foe = 1 - side;
+        let intim_atk_pre = self.sides[intim_foe].pokemon[self.sides[intim_foe].active].boosts[0];
         // `draw_trace=true`: a MID-BATTLE Trace switch-in DRAWS its `randomFoe()` sample
         // (`gen3_berry_trace_shedskin_v1`, probe T1 — `random(1)` even for the single foe),
         // INSIDE this runSwitch runAction (before the trailing Update), unlike the
@@ -8165,7 +8235,7 @@ impl BattleState {
         // The weather SET line fires only on a REAL change (a permanent same-weather
         // re-set — e.g. a re-dragged Sand Stream Tyranitar under standing sand — is a
         // setWeather no-op and emits nothing). Observation-only.
-        self.emit_ability_start_lines(side, slot, weather_changed, dex);
+        self.emit_ability_start_lines(side, slot, weather_changed, Some(intim_atk_pre), dex);
         weather_changed
     }
 

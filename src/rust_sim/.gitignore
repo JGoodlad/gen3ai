@@ -4,3 +4,5 @@ Cargo.lock
 
 # A/B fuzzer output (repros/logs — regenerable, not source)
 /harness/ab_fuzz_out
+/harness/bridge_ab_fuzz_out
+/harness/sim_bridge_diff_out

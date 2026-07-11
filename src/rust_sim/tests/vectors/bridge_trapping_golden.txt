@@ -1,0 +1,273 @@
+# bridge_trapping_golden.txt — the TRAPPED-state BRIDGE per-side streams (Deliverable B).
+# Constructed Arena-Trap / Magnet-Pull matchups driven by a SCRIPTED plan that ISSUES a REJECTED
+# switch, so the per-side stream records the |error|[Unavailable choice] Can't switch: The active
+# Pokémon is trapped chunk + the re-request carrying active[0].trapped:true — the state gen_bridge_
+# capture.js never reaches (its legal-only driver never issues a rejected switch). Same TAB grammar
+# as bridge_capture_golden.txt; gen3customgame; fixed per-scenario seed; |t:| normalized → byte-reproducible.
+# Record grammar (TAB-delimited; the raw-line payload is everything after the final tab):
+#   SCEN  <id>
+#   TEAM  <id>  <p1|p2>  <packed team>
+#   INIT  <id>  <battleNo>  <seed m,n,o,p>  <formatid>
+#   CMD   <id>  <battleNo>  <cmdNo>  <side>  <choice>   (INCLUDING a rejected attempt)
+#   CHUNK <id>  <battleNo>  <side>  <chunkNo>  <lineNo>  <raw line>   (incl. |error| + trapped:true re-request)
+#   END   <id>  <battleNo>  <ended:0|1>  <winner:p1|p2|tie|none>
+# format gen3customgame  scenarios 3
+SCEN	arena_trap_reject
+TEAM	arena_trap_reject	p1	Dugtrio|||ArenaTrap|earthquake,splash|Serious||N||||
+TEAM	arena_trap_reject	p2	Snorlax|||NoAbility|bodyslam,splash|Serious||M||||]Regice|||NoAbility|icebeam,splash|Serious||N||||
+INIT	arena_trap_reject	0	44317,42357,9927,48760	gen3customgame
+CMD	arena_trap_reject	0	0	p2	switch 2
+CMD	arena_trap_reject	0	1	p1	move 2
+CMD	arena_trap_reject	0	2	p2	move 2
+CMD	arena_trap_reject	0	3	p2	switch 2
+CMD	arena_trap_reject	0	4	p1	move 2
+CMD	arena_trap_reject	0	5	p2	move 2
+CHUNK	arena_trap_reject	0	p1	0	0	|t:|<NORMALIZED>
+CHUNK	arena_trap_reject	0	p1	0	1	|gametype|singles
+CHUNK	arena_trap_reject	0	p1	1	0	|player|p1|P1||
+CHUNK	arena_trap_reject	0	p1	2	0	|player|p2|P2||
+CHUNK	arena_trap_reject	0	p1	2	1	|gen|3
+CHUNK	arena_trap_reject	0	p1	2	2	|tier|[Gen 3] Custom Game
+CHUNK	arena_trap_reject	0	p1	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	arena_trap_reject	0	p1	2	4	|
+CHUNK	arena_trap_reject	0	p1	2	5	|t:|<NORMALIZED>
+CHUNK	arena_trap_reject	0	p1	2	6	|teamsize|p1|1
+CHUNK	arena_trap_reject	0	p1	2	7	|teamsize|p2|2
+CHUNK	arena_trap_reject	0	p1	2	8	|start
+CHUNK	arena_trap_reject	0	p1	2	9	|switch|p1a: Dugtrio|Dugtrio|211/211
+CHUNK	arena_trap_reject	0	p1	2	10	|switch|p2a: Snorlax|Snorlax, M|461/461
+CHUNK	arena_trap_reject	0	p1	2	11	|turn|1
+CHUNK	arena_trap_reject	0	p1	3	0	|request|{"active":[{"moves":[{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Splash","id":"splash","pp":64,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Dugtrio","details":"Dugtrio","condition":"211/211","active":true,"stats":{"atk":196,"def":136,"spa":136,"spd":176,"spe":276},"moves":["earthquake","splash"],"baseAbility":"arenatrap","item":"","pokeball":"pokeball"}]}}
+CHUNK	arena_trap_reject	0	p1	4	0	|
+CHUNK	arena_trap_reject	0	p1	4	1	|t:|<NORMALIZED>
+CHUNK	arena_trap_reject	0	p1	4	2	|move|p1a: Dugtrio|Splash|p1a: Dugtrio
+CHUNK	arena_trap_reject	0	p1	4	3	|-nothing
+CHUNK	arena_trap_reject	0	p1	4	4	|move|p2a: Snorlax|Splash|p2a: Snorlax
+CHUNK	arena_trap_reject	0	p1	4	5	|-nothing
+CHUNK	arena_trap_reject	0	p1	4	6	|
+CHUNK	arena_trap_reject	0	p1	4	7	|upkeep
+CHUNK	arena_trap_reject	0	p1	4	8	|turn|2
+CHUNK	arena_trap_reject	0	p1	5	0	|request|{"active":[{"moves":[{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Splash","id":"splash","pp":63,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Dugtrio","details":"Dugtrio","condition":"211/211","active":true,"stats":{"atk":196,"def":136,"spa":136,"spd":176,"spe":276},"moves":["earthquake","splash"],"baseAbility":"arenatrap","item":"","pokeball":"pokeball"}]}}
+CHUNK	arena_trap_reject	0	p1	6	0	|
+CHUNK	arena_trap_reject	0	p1	6	1	|t:|<NORMALIZED>
+CHUNK	arena_trap_reject	0	p1	6	2	|move|p1a: Dugtrio|Splash|p1a: Dugtrio
+CHUNK	arena_trap_reject	0	p1	6	3	|-nothing
+CHUNK	arena_trap_reject	0	p1	6	4	|move|p2a: Snorlax|Splash|p2a: Snorlax
+CHUNK	arena_trap_reject	0	p1	6	5	|-nothing
+CHUNK	arena_trap_reject	0	p1	6	6	|
+CHUNK	arena_trap_reject	0	p1	6	7	|upkeep
+CHUNK	arena_trap_reject	0	p1	6	8	|turn|3
+CHUNK	arena_trap_reject	0	p1	7	0	|request|{"active":[{"moves":[{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Splash","id":"splash","pp":62,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Dugtrio","details":"Dugtrio","condition":"211/211","active":true,"stats":{"atk":196,"def":136,"spa":136,"spd":176,"spe":276},"moves":["earthquake","splash"],"baseAbility":"arenatrap","item":"","pokeball":"pokeball"}]}}
+CHUNK	arena_trap_reject	0	p2	0	0	|t:|<NORMALIZED>
+CHUNK	arena_trap_reject	0	p2	0	1	|gametype|singles
+CHUNK	arena_trap_reject	0	p2	1	0	|player|p1|P1||
+CHUNK	arena_trap_reject	0	p2	2	0	|player|p2|P2||
+CHUNK	arena_trap_reject	0	p2	2	1	|gen|3
+CHUNK	arena_trap_reject	0	p2	2	2	|tier|[Gen 3] Custom Game
+CHUNK	arena_trap_reject	0	p2	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	arena_trap_reject	0	p2	2	4	|
+CHUNK	arena_trap_reject	0	p2	2	5	|t:|<NORMALIZED>
+CHUNK	arena_trap_reject	0	p2	2	6	|teamsize|p1|1
+CHUNK	arena_trap_reject	0	p2	2	7	|teamsize|p2|2
+CHUNK	arena_trap_reject	0	p2	2	8	|start
+CHUNK	arena_trap_reject	0	p2	2	9	|switch|p1a: Dugtrio|Dugtrio|211/211
+CHUNK	arena_trap_reject	0	p2	2	10	|switch|p2a: Snorlax|Snorlax, M|461/461
+CHUNK	arena_trap_reject	0	p2	2	11	|turn|1
+CHUNK	arena_trap_reject	0	p2	3	0	|request|{"active":[{"moves":[{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":64,"maxpp":64,"target":"self","disabled":false}],"maybeTrapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":true,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Regice","details":"Regice","condition":"301/301","active":false,"stats":{"atk":136,"def":236,"spa":236,"spd":436,"spe":136},"moves":["icebeam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	arena_trap_reject	0	p2	4	0	|error|[Unavailable choice] Can't switch: The active Pokémon is trapped
+CHUNK	arena_trap_reject	0	p2	5	0	|request|{"active":[{"moves":[{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":64,"maxpp":64,"target":"self","disabled":false}],"trapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":true,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Regice","details":"Regice","condition":"301/301","active":false,"stats":{"atk":136,"def":236,"spa":236,"spd":436,"spe":136},"moves":["icebeam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]},"update":true}
+CHUNK	arena_trap_reject	0	p2	6	0	|
+CHUNK	arena_trap_reject	0	p2	6	1	|t:|<NORMALIZED>
+CHUNK	arena_trap_reject	0	p2	6	2	|move|p1a: Dugtrio|Splash|p1a: Dugtrio
+CHUNK	arena_trap_reject	0	p2	6	3	|-nothing
+CHUNK	arena_trap_reject	0	p2	6	4	|move|p2a: Snorlax|Splash|p2a: Snorlax
+CHUNK	arena_trap_reject	0	p2	6	5	|-nothing
+CHUNK	arena_trap_reject	0	p2	6	6	|
+CHUNK	arena_trap_reject	0	p2	6	7	|upkeep
+CHUNK	arena_trap_reject	0	p2	6	8	|turn|2
+CHUNK	arena_trap_reject	0	p2	7	0	|request|{"active":[{"moves":[{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":63,"maxpp":64,"target":"self","disabled":false}],"maybeTrapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":true,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Regice","details":"Regice","condition":"301/301","active":false,"stats":{"atk":136,"def":236,"spa":236,"spd":436,"spe":136},"moves":["icebeam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	arena_trap_reject	0	p2	8	0	|error|[Unavailable choice] Can't switch: The active Pokémon is trapped
+CHUNK	arena_trap_reject	0	p2	9	0	|request|{"active":[{"moves":[{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":63,"maxpp":64,"target":"self","disabled":false}],"trapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":true,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Regice","details":"Regice","condition":"301/301","active":false,"stats":{"atk":136,"def":236,"spa":236,"spd":436,"spe":136},"moves":["icebeam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]},"update":true}
+CHUNK	arena_trap_reject	0	p2	10	0	|
+CHUNK	arena_trap_reject	0	p2	10	1	|t:|<NORMALIZED>
+CHUNK	arena_trap_reject	0	p2	10	2	|move|p1a: Dugtrio|Splash|p1a: Dugtrio
+CHUNK	arena_trap_reject	0	p2	10	3	|-nothing
+CHUNK	arena_trap_reject	0	p2	10	4	|move|p2a: Snorlax|Splash|p2a: Snorlax
+CHUNK	arena_trap_reject	0	p2	10	5	|-nothing
+CHUNK	arena_trap_reject	0	p2	10	6	|
+CHUNK	arena_trap_reject	0	p2	10	7	|upkeep
+CHUNK	arena_trap_reject	0	p2	10	8	|turn|3
+CHUNK	arena_trap_reject	0	p2	11	0	|request|{"active":[{"moves":[{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":62,"maxpp":64,"target":"self","disabled":false}],"maybeTrapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":true,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Regice","details":"Regice","condition":"301/301","active":false,"stats":{"atk":136,"def":236,"spa":236,"spd":436,"spe":136},"moves":["icebeam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+END	arena_trap_reject	0	0	none
+SCEN	magnet_pull_reject
+TEAM	magnet_pull_reject	p1	Magneton|||MagnetPull|thunderbolt,splash|Serious||N||||
+TEAM	magnet_pull_reject	p2	Skarmory|||KeenEye|drillpeck,splash|Serious||M||||]Snorlax|||NoAbility|bodyslam,splash|Serious||M||||
+INIT	magnet_pull_reject	1	20046,36102,27557,36400	gen3customgame
+CMD	magnet_pull_reject	1	0	p2	switch 2
+CMD	magnet_pull_reject	1	1	p1	move 2
+CMD	magnet_pull_reject	1	2	p2	move 2
+CMD	magnet_pull_reject	1	3	p2	switch 2
+CMD	magnet_pull_reject	1	4	p1	move 2
+CMD	magnet_pull_reject	1	5	p2	move 2
+CHUNK	magnet_pull_reject	1	p1	0	0	|t:|<NORMALIZED>
+CHUNK	magnet_pull_reject	1	p1	0	1	|gametype|singles
+CHUNK	magnet_pull_reject	1	p1	1	0	|player|p1|P1||
+CHUNK	magnet_pull_reject	1	p1	2	0	|player|p2|P2||
+CHUNK	magnet_pull_reject	1	p1	2	1	|gen|3
+CHUNK	magnet_pull_reject	1	p1	2	2	|tier|[Gen 3] Custom Game
+CHUNK	magnet_pull_reject	1	p1	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	magnet_pull_reject	1	p1	2	4	|
+CHUNK	magnet_pull_reject	1	p1	2	5	|t:|<NORMALIZED>
+CHUNK	magnet_pull_reject	1	p1	2	6	|teamsize|p1|1
+CHUNK	magnet_pull_reject	1	p1	2	7	|teamsize|p2|2
+CHUNK	magnet_pull_reject	1	p1	2	8	|start
+CHUNK	magnet_pull_reject	1	p1	2	9	|switch|p1a: Magneton|Magneton|241/241
+CHUNK	magnet_pull_reject	1	p1	2	10	|switch|p2a: Skarmory|Skarmory, M|271/271
+CHUNK	magnet_pull_reject	1	p1	2	11	|turn|1
+CHUNK	magnet_pull_reject	1	p1	3	0	|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":64,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Magneton","details":"Magneton","condition":"241/241","active":true,"stats":{"atk":156,"def":226,"spa":276,"spd":176,"spe":176},"moves":["thunderbolt","splash"],"baseAbility":"magnetpull","item":"","pokeball":"pokeball"}]}}
+CHUNK	magnet_pull_reject	1	p1	4	0	|
+CHUNK	magnet_pull_reject	1	p1	4	1	|t:|<NORMALIZED>
+CHUNK	magnet_pull_reject	1	p1	4	2	|move|p1a: Magneton|Splash|p1a: Magneton
+CHUNK	magnet_pull_reject	1	p1	4	3	|-nothing
+CHUNK	magnet_pull_reject	1	p1	4	4	|move|p2a: Skarmory|Splash|p2a: Skarmory
+CHUNK	magnet_pull_reject	1	p1	4	5	|-nothing
+CHUNK	magnet_pull_reject	1	p1	4	6	|
+CHUNK	magnet_pull_reject	1	p1	4	7	|upkeep
+CHUNK	magnet_pull_reject	1	p1	4	8	|turn|2
+CHUNK	magnet_pull_reject	1	p1	5	0	|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":63,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Magneton","details":"Magneton","condition":"241/241","active":true,"stats":{"atk":156,"def":226,"spa":276,"spd":176,"spe":176},"moves":["thunderbolt","splash"],"baseAbility":"magnetpull","item":"","pokeball":"pokeball"}]}}
+CHUNK	magnet_pull_reject	1	p1	6	0	|
+CHUNK	magnet_pull_reject	1	p1	6	1	|t:|<NORMALIZED>
+CHUNK	magnet_pull_reject	1	p1	6	2	|move|p1a: Magneton|Splash|p1a: Magneton
+CHUNK	magnet_pull_reject	1	p1	6	3	|-nothing
+CHUNK	magnet_pull_reject	1	p1	6	4	|move|p2a: Skarmory|Splash|p2a: Skarmory
+CHUNK	magnet_pull_reject	1	p1	6	5	|-nothing
+CHUNK	magnet_pull_reject	1	p1	6	6	|
+CHUNK	magnet_pull_reject	1	p1	6	7	|upkeep
+CHUNK	magnet_pull_reject	1	p1	6	8	|turn|3
+CHUNK	magnet_pull_reject	1	p1	7	0	|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":62,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Magneton","details":"Magneton","condition":"241/241","active":true,"stats":{"atk":156,"def":226,"spa":276,"spd":176,"spe":176},"moves":["thunderbolt","splash"],"baseAbility":"magnetpull","item":"","pokeball":"pokeball"}]}}
+CHUNK	magnet_pull_reject	1	p2	0	0	|t:|<NORMALIZED>
+CHUNK	magnet_pull_reject	1	p2	0	1	|gametype|singles
+CHUNK	magnet_pull_reject	1	p2	1	0	|player|p1|P1||
+CHUNK	magnet_pull_reject	1	p2	2	0	|player|p2|P2||
+CHUNK	magnet_pull_reject	1	p2	2	1	|gen|3
+CHUNK	magnet_pull_reject	1	p2	2	2	|tier|[Gen 3] Custom Game
+CHUNK	magnet_pull_reject	1	p2	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	magnet_pull_reject	1	p2	2	4	|
+CHUNK	magnet_pull_reject	1	p2	2	5	|t:|<NORMALIZED>
+CHUNK	magnet_pull_reject	1	p2	2	6	|teamsize|p1|1
+CHUNK	magnet_pull_reject	1	p2	2	7	|teamsize|p2|2
+CHUNK	magnet_pull_reject	1	p2	2	8	|start
+CHUNK	magnet_pull_reject	1	p2	2	9	|switch|p1a: Magneton|Magneton|241/241
+CHUNK	magnet_pull_reject	1	p2	2	10	|switch|p2a: Skarmory|Skarmory, M|271/271
+CHUNK	magnet_pull_reject	1	p2	2	11	|turn|1
+CHUNK	magnet_pull_reject	1	p2	3	0	|request|{"active":[{"moves":[{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Splash","id":"splash","pp":64,"maxpp":64,"target":"self","disabled":false}],"maybeTrapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Skarmory","details":"Skarmory, M","condition":"271/271","active":true,"stats":{"atk":196,"def":316,"spa":116,"spd":176,"spe":176},"moves":["drillpeck","splash"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"},{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":false,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	magnet_pull_reject	1	p2	4	0	|error|[Unavailable choice] Can't switch: The active Pokémon is trapped
+CHUNK	magnet_pull_reject	1	p2	5	0	|request|{"active":[{"moves":[{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Splash","id":"splash","pp":64,"maxpp":64,"target":"self","disabled":false}],"trapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Skarmory","details":"Skarmory, M","condition":"271/271","active":true,"stats":{"atk":196,"def":316,"spa":116,"spd":176,"spe":176},"moves":["drillpeck","splash"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"},{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":false,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]},"update":true}
+CHUNK	magnet_pull_reject	1	p2	6	0	|
+CHUNK	magnet_pull_reject	1	p2	6	1	|t:|<NORMALIZED>
+CHUNK	magnet_pull_reject	1	p2	6	2	|move|p1a: Magneton|Splash|p1a: Magneton
+CHUNK	magnet_pull_reject	1	p2	6	3	|-nothing
+CHUNK	magnet_pull_reject	1	p2	6	4	|move|p2a: Skarmory|Splash|p2a: Skarmory
+CHUNK	magnet_pull_reject	1	p2	6	5	|-nothing
+CHUNK	magnet_pull_reject	1	p2	6	6	|
+CHUNK	magnet_pull_reject	1	p2	6	7	|upkeep
+CHUNK	magnet_pull_reject	1	p2	6	8	|turn|2
+CHUNK	magnet_pull_reject	1	p2	7	0	|request|{"active":[{"moves":[{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Splash","id":"splash","pp":63,"maxpp":64,"target":"self","disabled":false}],"maybeTrapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Skarmory","details":"Skarmory, M","condition":"271/271","active":true,"stats":{"atk":196,"def":316,"spa":116,"spd":176,"spe":176},"moves":["drillpeck","splash"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"},{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":false,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	magnet_pull_reject	1	p2	8	0	|error|[Unavailable choice] Can't switch: The active Pokémon is trapped
+CHUNK	magnet_pull_reject	1	p2	9	0	|request|{"active":[{"moves":[{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Splash","id":"splash","pp":63,"maxpp":64,"target":"self","disabled":false}],"trapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Skarmory","details":"Skarmory, M","condition":"271/271","active":true,"stats":{"atk":196,"def":316,"spa":116,"spd":176,"spe":176},"moves":["drillpeck","splash"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"},{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":false,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]},"update":true}
+CHUNK	magnet_pull_reject	1	p2	10	0	|
+CHUNK	magnet_pull_reject	1	p2	10	1	|t:|<NORMALIZED>
+CHUNK	magnet_pull_reject	1	p2	10	2	|move|p1a: Magneton|Splash|p1a: Magneton
+CHUNK	magnet_pull_reject	1	p2	10	3	|-nothing
+CHUNK	magnet_pull_reject	1	p2	10	4	|move|p2a: Skarmory|Splash|p2a: Skarmory
+CHUNK	magnet_pull_reject	1	p2	10	5	|-nothing
+CHUNK	magnet_pull_reject	1	p2	10	6	|
+CHUNK	magnet_pull_reject	1	p2	10	7	|upkeep
+CHUNK	magnet_pull_reject	1	p2	10	8	|turn|3
+CHUNK	magnet_pull_reject	1	p2	11	0	|request|{"active":[{"moves":[{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Splash","id":"splash","pp":62,"maxpp":64,"target":"self","disabled":false}],"maybeTrapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Skarmory","details":"Skarmory, M","condition":"271/271","active":true,"stats":{"atk":196,"def":316,"spa":116,"spd":176,"spe":176},"moves":["drillpeck","splash"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"},{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":false,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+END	magnet_pull_reject	1	0	none
+SCEN	shadow_tag_firm_trap
+TEAM	shadow_tag_firm_trap	p1	Wobbuffet|||ShadowTag|splash|Serious||M||||
+TEAM	shadow_tag_firm_trap	p2	Snorlax|||NoAbility|bodyslam,splash|Serious||M||||]Regice|||NoAbility|icebeam,splash|Serious||N||||
+INIT	shadow_tag_firm_trap	2	4452,50520,38721,4268	gen3customgame
+CMD	shadow_tag_firm_trap	2	0	p2	switch 2
+CMD	shadow_tag_firm_trap	2	1	p1	move 1
+CMD	shadow_tag_firm_trap	2	2	p2	move 2
+CMD	shadow_tag_firm_trap	2	3	p2	switch 2
+CMD	shadow_tag_firm_trap	2	4	p1	move 1
+CMD	shadow_tag_firm_trap	2	5	p2	move 2
+CHUNK	shadow_tag_firm_trap	2	p1	0	0	|t:|<NORMALIZED>
+CHUNK	shadow_tag_firm_trap	2	p1	0	1	|gametype|singles
+CHUNK	shadow_tag_firm_trap	2	p1	1	0	|player|p1|P1||
+CHUNK	shadow_tag_firm_trap	2	p1	2	0	|player|p2|P2||
+CHUNK	shadow_tag_firm_trap	2	p1	2	1	|gen|3
+CHUNK	shadow_tag_firm_trap	2	p1	2	2	|tier|[Gen 3] Custom Game
+CHUNK	shadow_tag_firm_trap	2	p1	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	shadow_tag_firm_trap	2	p1	2	4	|
+CHUNK	shadow_tag_firm_trap	2	p1	2	5	|t:|<NORMALIZED>
+CHUNK	shadow_tag_firm_trap	2	p1	2	6	|teamsize|p1|1
+CHUNK	shadow_tag_firm_trap	2	p1	2	7	|teamsize|p2|2
+CHUNK	shadow_tag_firm_trap	2	p1	2	8	|start
+CHUNK	shadow_tag_firm_trap	2	p1	2	9	|switch|p1a: Wobbuffet|Wobbuffet, M|521/521
+CHUNK	shadow_tag_firm_trap	2	p1	2	10	|switch|p2a: Snorlax|Snorlax, M|461/461
+CHUNK	shadow_tag_firm_trap	2	p1	2	11	|turn|1
+CHUNK	shadow_tag_firm_trap	2	p1	3	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":64,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Wobbuffet","details":"Wobbuffet, M","condition":"521/521","active":true,"stats":{"atk":102,"def":152,"spa":102,"spd":152,"spe":102},"moves":["splash"],"baseAbility":"shadowtag","item":"","pokeball":"pokeball"}]}}
+CHUNK	shadow_tag_firm_trap	2	p1	4	0	|
+CHUNK	shadow_tag_firm_trap	2	p1	4	1	|t:|<NORMALIZED>
+CHUNK	shadow_tag_firm_trap	2	p1	4	2	|move|p1a: Wobbuffet|Splash|p1a: Wobbuffet
+CHUNK	shadow_tag_firm_trap	2	p1	4	3	|-nothing
+CHUNK	shadow_tag_firm_trap	2	p1	4	4	|move|p2a: Snorlax|Splash|p2a: Snorlax
+CHUNK	shadow_tag_firm_trap	2	p1	4	5	|-nothing
+CHUNK	shadow_tag_firm_trap	2	p1	4	6	|
+CHUNK	shadow_tag_firm_trap	2	p1	4	7	|upkeep
+CHUNK	shadow_tag_firm_trap	2	p1	4	8	|turn|2
+CHUNK	shadow_tag_firm_trap	2	p1	5	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":63,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Wobbuffet","details":"Wobbuffet, M","condition":"521/521","active":true,"stats":{"atk":102,"def":152,"spa":102,"spd":152,"spe":102},"moves":["splash"],"baseAbility":"shadowtag","item":"","pokeball":"pokeball"}]}}
+CHUNK	shadow_tag_firm_trap	2	p1	6	0	|
+CHUNK	shadow_tag_firm_trap	2	p1	6	1	|t:|<NORMALIZED>
+CHUNK	shadow_tag_firm_trap	2	p1	6	2	|move|p1a: Wobbuffet|Splash|p1a: Wobbuffet
+CHUNK	shadow_tag_firm_trap	2	p1	6	3	|-nothing
+CHUNK	shadow_tag_firm_trap	2	p1	6	4	|move|p2a: Snorlax|Splash|p2a: Snorlax
+CHUNK	shadow_tag_firm_trap	2	p1	6	5	|-nothing
+CHUNK	shadow_tag_firm_trap	2	p1	6	6	|
+CHUNK	shadow_tag_firm_trap	2	p1	6	7	|upkeep
+CHUNK	shadow_tag_firm_trap	2	p1	6	8	|turn|3
+CHUNK	shadow_tag_firm_trap	2	p1	7	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":62,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Wobbuffet","details":"Wobbuffet, M","condition":"521/521","active":true,"stats":{"atk":102,"def":152,"spa":102,"spd":152,"spe":102},"moves":["splash"],"baseAbility":"shadowtag","item":"","pokeball":"pokeball"}]}}
+CHUNK	shadow_tag_firm_trap	2	p2	0	0	|t:|<NORMALIZED>
+CHUNK	shadow_tag_firm_trap	2	p2	0	1	|gametype|singles
+CHUNK	shadow_tag_firm_trap	2	p2	1	0	|player|p1|P1||
+CHUNK	shadow_tag_firm_trap	2	p2	2	0	|player|p2|P2||
+CHUNK	shadow_tag_firm_trap	2	p2	2	1	|gen|3
+CHUNK	shadow_tag_firm_trap	2	p2	2	2	|tier|[Gen 3] Custom Game
+CHUNK	shadow_tag_firm_trap	2	p2	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	shadow_tag_firm_trap	2	p2	2	4	|
+CHUNK	shadow_tag_firm_trap	2	p2	2	5	|t:|<NORMALIZED>
+CHUNK	shadow_tag_firm_trap	2	p2	2	6	|teamsize|p1|1
+CHUNK	shadow_tag_firm_trap	2	p2	2	7	|teamsize|p2|2
+CHUNK	shadow_tag_firm_trap	2	p2	2	8	|start
+CHUNK	shadow_tag_firm_trap	2	p2	2	9	|switch|p1a: Wobbuffet|Wobbuffet, M|521/521
+CHUNK	shadow_tag_firm_trap	2	p2	2	10	|switch|p2a: Snorlax|Snorlax, M|461/461
+CHUNK	shadow_tag_firm_trap	2	p2	2	11	|turn|1
+CHUNK	shadow_tag_firm_trap	2	p2	3	0	|request|{"active":[{"moves":[{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":64,"maxpp":64,"target":"self","disabled":false}],"trapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":true,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Regice","details":"Regice","condition":"301/301","active":false,"stats":{"atk":136,"def":236,"spa":236,"spd":436,"spe":136},"moves":["icebeam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	shadow_tag_firm_trap	2	p2	4	0	|error|[Invalid choice] Can't switch: The active Pokémon is trapped
+CHUNK	shadow_tag_firm_trap	2	p2	5	0	|
+CHUNK	shadow_tag_firm_trap	2	p2	5	1	|t:|<NORMALIZED>
+CHUNK	shadow_tag_firm_trap	2	p2	5	2	|move|p1a: Wobbuffet|Splash|p1a: Wobbuffet
+CHUNK	shadow_tag_firm_trap	2	p2	5	3	|-nothing
+CHUNK	shadow_tag_firm_trap	2	p2	5	4	|move|p2a: Snorlax|Splash|p2a: Snorlax
+CHUNK	shadow_tag_firm_trap	2	p2	5	5	|-nothing
+CHUNK	shadow_tag_firm_trap	2	p2	5	6	|
+CHUNK	shadow_tag_firm_trap	2	p2	5	7	|upkeep
+CHUNK	shadow_tag_firm_trap	2	p2	5	8	|turn|2
+CHUNK	shadow_tag_firm_trap	2	p2	6	0	|request|{"active":[{"moves":[{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":63,"maxpp":64,"target":"self","disabled":false}],"trapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":true,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Regice","details":"Regice","condition":"301/301","active":false,"stats":{"atk":136,"def":236,"spa":236,"spd":436,"spe":136},"moves":["icebeam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	shadow_tag_firm_trap	2	p2	7	0	|error|[Invalid choice] Can't switch: The active Pokémon is trapped
+CHUNK	shadow_tag_firm_trap	2	p2	8	0	|
+CHUNK	shadow_tag_firm_trap	2	p2	8	1	|t:|<NORMALIZED>
+CHUNK	shadow_tag_firm_trap	2	p2	8	2	|move|p1a: Wobbuffet|Splash|p1a: Wobbuffet
+CHUNK	shadow_tag_firm_trap	2	p2	8	3	|-nothing
+CHUNK	shadow_tag_firm_trap	2	p2	8	4	|move|p2a: Snorlax|Splash|p2a: Snorlax
+CHUNK	shadow_tag_firm_trap	2	p2	8	5	|-nothing
+CHUNK	shadow_tag_firm_trap	2	p2	8	6	|
+CHUNK	shadow_tag_firm_trap	2	p2	8	7	|upkeep
+CHUNK	shadow_tag_firm_trap	2	p2	8	8	|turn|3
+CHUNK	shadow_tag_firm_trap	2	p2	9	0	|request|{"active":[{"moves":[{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":62,"maxpp":64,"target":"self","disabled":false}],"trapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":true,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Regice","details":"Regice","condition":"301/301","active":false,"stats":{"atk":136,"def":236,"spa":236,"spd":436,"spe":136},"moves":["icebeam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+END	shadow_tag_firm_trap	2	0	none

@@ -507,6 +507,16 @@ impl ProtocolBuilder {
         }
     }
 
+    /// `|-unboost|<mon>|atk|<mag>` — the Intimidate Atk-drop line, emitted UNCONDITIONALLY
+    /// (INCLUDING `mag == 0`). Unlike [`boost`], this does NOT skip a zero delta: a REQUESTED
+    /// stat drop clamped to 0 at the −6 floor STILL reports `|-unboost|<foe>|atk|0` in the sim
+    /// (probe `harness/probe_intimidate_floor.js`), whereas [`boost`]'s zero-skip is for a
+    /// genuine no-op boost. `mag` is the UNSIGNED applied magnitude (`0` or `1`).
+    pub fn unboost_atk_applied(&mut self, mon: &MonRef, mag: u8) {
+        let stat = STAT_TOKENS[0]; // atk
+        self.push_raw(format!("|-unboost|{mon}|{stat}|{mag}"));
+    }
+
     // ── Weather / ability ────────────────────────────────────────────────────────
     /// `|-weather|<Weather>[|[from] ability: <A>|[of] <src>][|[upkeep]]`. The SET form
     /// (an ability turns the weather on) carries `[from] ability:` + `[of] <src>`; the

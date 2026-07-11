@@ -24921,3 +24921,3782 @@ L	waterabsorb_tryhit_miss	5	136	|-heal|p1a: Suicune|315/404 frz|[from] item: Lef
 L	waterabsorb_tryhit_miss	5	137	|upkeep
 L	waterabsorb_tryhit_miss	5	138	|turn|12
 END	waterabsorb_tryhit_miss	5	0	none	139
+SCEN	intimidate_atk_floor
+TEAM	intimidate_atk_floor	p1	Salamence|||Intimidate|dragonclaw,splash|Adamant|,252,,,,252|N||||]Salamence|||Intimidate|dragonclaw,splash|Adamant|,252,,,,252|N||||]Salamence|||Intimidate|dragonclaw,splash|Adamant|,252,,,,252|N||||]Salamence|||Intimidate|dragonclaw,splash|Adamant|,252,,,,252|N||||]Salamence|||Intimidate|dragonclaw,splash|Adamant|,252,,,,252|N||||]Salamence|||Intimidate|dragonclaw,splash|Adamant|,252,,,,252|N||||
+TEAM	intimidate_atk_floor	p2	Snorlax||Leftovers|ThickFat|bodyslam,splash|Adamant|252,252,,,,|N||||
+BATTLE	intimidate_atk_floor	0	36605,10226,60995,3264
+INIT	intimidate_atk_floor	0	714,55632,15277,26243
+DEC	intimidate_atk_floor	0	0	move	0	0	s1	m1	63693,2115,26881,11122
+DEC	intimidate_atk_floor	0	1	move	0	0	s1	m1	62897,48416,22010,50365
+DEC	intimidate_atk_floor	0	2	move	0	0	s1	m1	15416,20017,15498,25172
+DEC	intimidate_atk_floor	0	3	move	0	0	s1	m1	9166,41787,4522,24039
+DEC	intimidate_atk_floor	0	4	move	0	0	s1	m1	50061,55083,10735,18918
+DEC	intimidate_atk_floor	0	5	move	0	0	s1	m1	38035,8174,42852,56449
+DEC	intimidate_atk_floor	0	6	move	0	0	m1	m1	24612,31594,30841,42664
+DEC	intimidate_atk_floor	0	7	move	0	0	m1	m1	42601,16741,4333,18187
+DEC	intimidate_atk_floor	0	8	move	0	0	m1	m1	22117,29627,15893,35098
+DEC	intimidate_atk_floor	0	9	move	0	0	m1	m1	19493,56008,48314,40965
+DEC	intimidate_atk_floor	0	10	move	0	0	m1	m1	38236,31687,53645,28092
+DEC	intimidate_atk_floor	0	11	move	0	0	m1	m1	38554,35151,44240,34287
+DEC	intimidate_atk_floor	0	12	move	0	0	m1	m1	49327,7786,17313,23822
+DEC	intimidate_atk_floor	0	13	move	0	0	m1	m1	50382,6991,31998,54089
+DEC	intimidate_atk_floor	0	14	move	0	0	m1	m1	3376,15144,17089,2960
+DEC	intimidate_atk_floor	0	15	move	0	0	m1	m1	3811,59027,46704,16019
+DEC	intimidate_atk_floor	0	16	move	0	0	m1	m1	19226,56671,50672,63938
+DEC	intimidate_atk_floor	0	17	move	0	0	m1	m1	48016,35381,47663,64077
+DEC	intimidate_atk_floor	0	18	move	0	0	m1	m1	20815,11295,30242,37924
+DEC	intimidate_atk_floor	0	19	move	0	0	m1	m1	20480,3655,23054,21751
+DEC	intimidate_atk_floor	0	20	move	0	0	m1	m1	21836,62983,47623,21302
+DEC	intimidate_atk_floor	0	21	move	0	0	m1	m1	27482,34614,24332,22801
+DEC	intimidate_atk_floor	0	22	move	0	0	m1	m1	28348,40687,46886,56184
+DEC	intimidate_atk_floor	0	23	move	0	0	m1	m1	32778,8853,44598,27931
+DEC	intimidate_atk_floor	0	24	move	0	0	m1	m1	41239,11636,15296,7530
+DEC	intimidate_atk_floor	0	25	move	0	0	m1	m1	48654,64080,59541,62357
+DEC	intimidate_atk_floor	0	26	move	0	0	m1	m1	1238,44553,34749,30092
+DEC	intimidate_atk_floor	0	27	move	0	0	m1	m1	17422,52072,14497,60159
+DEC	intimidate_atk_floor	0	28	move	0	0	m1	m1	63889,3480,65475,52318
+DEC	intimidate_atk_floor	0	29	move	0	0	m1	m1	40989,33252,61270,36313
+DEC	intimidate_atk_floor	0	30	move	0	0	m1	m1	7205,39994,11300,46688
+DEC	intimidate_atk_floor	0	31	move	0	0	m1	m1	63018,35428,36059,62115
+DEC	intimidate_atk_floor	0	32	move	0	0	m1	m1	46482,18620,44603,37906
+DEC	intimidate_atk_floor	0	33	move	0	0	m1	m1	2404,49889,17507,43997
+DEC	intimidate_atk_floor	0	34	move	0	0	m1	m1	29866,10469,16765,45556
+DEC	intimidate_atk_floor	0	35	move	0	0	m1	m1	54017,21829,59557,26631
+DEC	intimidate_atk_floor	0	36	move	0	0	m1	m1	44894,2625,6725,26758
+DEC	intimidate_atk_floor	0	37	move	0	0	m1	m1	60326,57754,58914,37281
+DEC	intimidate_atk_floor	0	38	move	0	0	m1	m1	59635,42796,13088,15432
+DEC	intimidate_atk_floor	0	39	move	0	0	m1	m1	4497,31620,29208,61227
+DEC	intimidate_atk_floor	0	40	move	0	0	m1	m1	28091,62684,2599,64954
+DEC	intimidate_atk_floor	0	41	move	0	0	m1	m1	59897,39619,53452,17189
+DEC	intimidate_atk_floor	0	42	move	0	0	m1	m1	35201,20609,8878,59740
+DEC	intimidate_atk_floor	0	43	move	0	0	m1	m1	28058,41225,31630,60431
+DEC	intimidate_atk_floor	0	44	move	0	0	m1	m1	22345,36679,1094,51118
+DEC	intimidate_atk_floor	0	45	move	0	0	m1	m1	42649,50209,28337,33897
+DEC	intimidate_atk_floor	0	46	move	0	0	m0	m0	12710,23233,29632,34353
+DEC	intimidate_atk_floor	0	47	move	0	0	m0	m0	63514,33526,56328,46841
+DEC	intimidate_atk_floor	0	48	move	0	0	m0	m0	5984,27634,46783,14017
+DEC	intimidate_atk_floor	0	49	move	0	0	m0	m0	30785,44722,58451,48848
+DEC	intimidate_atk_floor	0	50	move	0	0	m0	m0	37703,30903,33282,40283
+DEC	intimidate_atk_floor	0	51	move	0	0	m0	m0	36154,34811,1285,38719
+DEC	intimidate_atk_floor	0	52	switch	1	0	s1	-	36308,23433,45061,414
+DEC	intimidate_atk_floor	0	53	move	0	0	m0	m0	15023,45983,40158,13766
+DEC	intimidate_atk_floor	0	54	move	0	0	m0	m0	13707,12337,47548,11502
+DEC	intimidate_atk_floor	0	55	move	0	0	m0	m0	37805,7055,26809,45169
+DEC	intimidate_atk_floor	0	56	move	0	0	m0	m0	51798,55534,60971,38133
+DEC	intimidate_atk_floor	0	57	switch	1	0	s2	-	57257,9578,47298,32876
+DEC	intimidate_atk_floor	0	58	move	0	0	m0	m0	43780,39944,41205,49364
+DEC	intimidate_atk_floor	0	59	move	0	0	m0	m0	22958,52056,39821,31804
+DEC	intimidate_atk_floor	0	60	move	0	0	m0	m0	12088,5382,56721,21156
+L	intimidate_atk_floor	0	0	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	1	|gametype|singles
+L	intimidate_atk_floor	0	2	|player|p1|P1||
+L	intimidate_atk_floor	0	3	|player|p2|P2||
+L	intimidate_atk_floor	0	4	|gen|3
+L	intimidate_atk_floor	0	5	|tier|[Gen 3] Custom Game
+L	intimidate_atk_floor	0	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	intimidate_atk_floor	0	7	|
+L	intimidate_atk_floor	0	8	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	9	|teamsize|p1|6
+L	intimidate_atk_floor	0	10	|teamsize|p2|1
+L	intimidate_atk_floor	0	11	|start
+L	intimidate_atk_floor	0	12	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	0	13	|switch|p2a: Snorlax|Snorlax|524/524
+L	intimidate_atk_floor	0	14	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	0	15	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	0	16	|turn|1
+L	intimidate_atk_floor	0	17	|
+L	intimidate_atk_floor	0	18	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	19	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	0	20	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	0	21	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	0	22	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	23	|-nothing
+L	intimidate_atk_floor	0	24	|
+L	intimidate_atk_floor	0	25	|upkeep
+L	intimidate_atk_floor	0	26	|turn|2
+L	intimidate_atk_floor	0	27	|
+L	intimidate_atk_floor	0	28	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	29	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	0	30	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	0	31	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	0	32	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	33	|-nothing
+L	intimidate_atk_floor	0	34	|
+L	intimidate_atk_floor	0	35	|upkeep
+L	intimidate_atk_floor	0	36	|turn|3
+L	intimidate_atk_floor	0	37	|
+L	intimidate_atk_floor	0	38	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	39	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	0	40	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	0	41	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	0	42	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	43	|-nothing
+L	intimidate_atk_floor	0	44	|
+L	intimidate_atk_floor	0	45	|upkeep
+L	intimidate_atk_floor	0	46	|turn|4
+L	intimidate_atk_floor	0	47	|
+L	intimidate_atk_floor	0	48	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	49	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	0	50	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	0	51	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	0	52	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	53	|-nothing
+L	intimidate_atk_floor	0	54	|
+L	intimidate_atk_floor	0	55	|upkeep
+L	intimidate_atk_floor	0	56	|turn|5
+L	intimidate_atk_floor	0	57	|
+L	intimidate_atk_floor	0	58	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	59	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	0	60	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	0	61	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	0	62	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	63	|-nothing
+L	intimidate_atk_floor	0	64	|
+L	intimidate_atk_floor	0	65	|upkeep
+L	intimidate_atk_floor	0	66	|turn|6
+L	intimidate_atk_floor	0	67	|
+L	intimidate_atk_floor	0	68	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	69	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	0	70	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	0	71	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	0	72	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	73	|-nothing
+L	intimidate_atk_floor	0	74	|
+L	intimidate_atk_floor	0	75	|upkeep
+L	intimidate_atk_floor	0	76	|turn|7
+L	intimidate_atk_floor	0	77	|
+L	intimidate_atk_floor	0	78	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	79	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	80	|-nothing
+L	intimidate_atk_floor	0	81	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	82	|-nothing
+L	intimidate_atk_floor	0	83	|
+L	intimidate_atk_floor	0	84	|upkeep
+L	intimidate_atk_floor	0	85	|turn|8
+L	intimidate_atk_floor	0	86	|
+L	intimidate_atk_floor	0	87	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	88	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	89	|-nothing
+L	intimidate_atk_floor	0	90	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	91	|-nothing
+L	intimidate_atk_floor	0	92	|
+L	intimidate_atk_floor	0	93	|upkeep
+L	intimidate_atk_floor	0	94	|turn|9
+L	intimidate_atk_floor	0	95	|
+L	intimidate_atk_floor	0	96	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	97	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	98	|-nothing
+L	intimidate_atk_floor	0	99	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	100	|-nothing
+L	intimidate_atk_floor	0	101	|
+L	intimidate_atk_floor	0	102	|upkeep
+L	intimidate_atk_floor	0	103	|turn|10
+L	intimidate_atk_floor	0	104	|
+L	intimidate_atk_floor	0	105	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	106	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	107	|-nothing
+L	intimidate_atk_floor	0	108	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	109	|-nothing
+L	intimidate_atk_floor	0	110	|
+L	intimidate_atk_floor	0	111	|upkeep
+L	intimidate_atk_floor	0	112	|turn|11
+L	intimidate_atk_floor	0	113	|
+L	intimidate_atk_floor	0	114	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	115	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	116	|-nothing
+L	intimidate_atk_floor	0	117	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	118	|-nothing
+L	intimidate_atk_floor	0	119	|
+L	intimidate_atk_floor	0	120	|upkeep
+L	intimidate_atk_floor	0	121	|turn|12
+L	intimidate_atk_floor	0	122	|
+L	intimidate_atk_floor	0	123	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	124	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	125	|-nothing
+L	intimidate_atk_floor	0	126	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	127	|-nothing
+L	intimidate_atk_floor	0	128	|
+L	intimidate_atk_floor	0	129	|upkeep
+L	intimidate_atk_floor	0	130	|turn|13
+L	intimidate_atk_floor	0	131	|
+L	intimidate_atk_floor	0	132	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	133	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	134	|-nothing
+L	intimidate_atk_floor	0	135	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	136	|-nothing
+L	intimidate_atk_floor	0	137	|
+L	intimidate_atk_floor	0	138	|upkeep
+L	intimidate_atk_floor	0	139	|turn|14
+L	intimidate_atk_floor	0	140	|
+L	intimidate_atk_floor	0	141	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	142	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	143	|-nothing
+L	intimidate_atk_floor	0	144	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	145	|-nothing
+L	intimidate_atk_floor	0	146	|
+L	intimidate_atk_floor	0	147	|upkeep
+L	intimidate_atk_floor	0	148	|turn|15
+L	intimidate_atk_floor	0	149	|
+L	intimidate_atk_floor	0	150	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	151	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	152	|-nothing
+L	intimidate_atk_floor	0	153	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	154	|-nothing
+L	intimidate_atk_floor	0	155	|
+L	intimidate_atk_floor	0	156	|upkeep
+L	intimidate_atk_floor	0	157	|turn|16
+L	intimidate_atk_floor	0	158	|
+L	intimidate_atk_floor	0	159	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	160	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	161	|-nothing
+L	intimidate_atk_floor	0	162	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	163	|-nothing
+L	intimidate_atk_floor	0	164	|
+L	intimidate_atk_floor	0	165	|upkeep
+L	intimidate_atk_floor	0	166	|turn|17
+L	intimidate_atk_floor	0	167	|
+L	intimidate_atk_floor	0	168	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	169	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	170	|-nothing
+L	intimidate_atk_floor	0	171	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	172	|-nothing
+L	intimidate_atk_floor	0	173	|
+L	intimidate_atk_floor	0	174	|upkeep
+L	intimidate_atk_floor	0	175	|turn|18
+L	intimidate_atk_floor	0	176	|
+L	intimidate_atk_floor	0	177	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	178	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	179	|-nothing
+L	intimidate_atk_floor	0	180	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	181	|-nothing
+L	intimidate_atk_floor	0	182	|
+L	intimidate_atk_floor	0	183	|upkeep
+L	intimidate_atk_floor	0	184	|turn|19
+L	intimidate_atk_floor	0	185	|
+L	intimidate_atk_floor	0	186	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	187	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	188	|-nothing
+L	intimidate_atk_floor	0	189	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	190	|-nothing
+L	intimidate_atk_floor	0	191	|
+L	intimidate_atk_floor	0	192	|upkeep
+L	intimidate_atk_floor	0	193	|turn|20
+L	intimidate_atk_floor	0	194	|
+L	intimidate_atk_floor	0	195	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	196	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	197	|-nothing
+L	intimidate_atk_floor	0	198	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	199	|-nothing
+L	intimidate_atk_floor	0	200	|
+L	intimidate_atk_floor	0	201	|upkeep
+L	intimidate_atk_floor	0	202	|turn|21
+L	intimidate_atk_floor	0	203	|
+L	intimidate_atk_floor	0	204	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	205	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	206	|-nothing
+L	intimidate_atk_floor	0	207	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	208	|-nothing
+L	intimidate_atk_floor	0	209	|
+L	intimidate_atk_floor	0	210	|upkeep
+L	intimidate_atk_floor	0	211	|turn|22
+L	intimidate_atk_floor	0	212	|
+L	intimidate_atk_floor	0	213	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	214	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	215	|-nothing
+L	intimidate_atk_floor	0	216	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	217	|-nothing
+L	intimidate_atk_floor	0	218	|
+L	intimidate_atk_floor	0	219	|upkeep
+L	intimidate_atk_floor	0	220	|turn|23
+L	intimidate_atk_floor	0	221	|
+L	intimidate_atk_floor	0	222	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	223	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	224	|-nothing
+L	intimidate_atk_floor	0	225	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	226	|-nothing
+L	intimidate_atk_floor	0	227	|
+L	intimidate_atk_floor	0	228	|upkeep
+L	intimidate_atk_floor	0	229	|turn|24
+L	intimidate_atk_floor	0	230	|
+L	intimidate_atk_floor	0	231	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	232	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	233	|-nothing
+L	intimidate_atk_floor	0	234	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	235	|-nothing
+L	intimidate_atk_floor	0	236	|
+L	intimidate_atk_floor	0	237	|upkeep
+L	intimidate_atk_floor	0	238	|turn|25
+L	intimidate_atk_floor	0	239	|
+L	intimidate_atk_floor	0	240	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	241	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	242	|-nothing
+L	intimidate_atk_floor	0	243	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	244	|-nothing
+L	intimidate_atk_floor	0	245	|
+L	intimidate_atk_floor	0	246	|upkeep
+L	intimidate_atk_floor	0	247	|turn|26
+L	intimidate_atk_floor	0	248	|
+L	intimidate_atk_floor	0	249	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	250	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	251	|-nothing
+L	intimidate_atk_floor	0	252	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	253	|-nothing
+L	intimidate_atk_floor	0	254	|
+L	intimidate_atk_floor	0	255	|upkeep
+L	intimidate_atk_floor	0	256	|turn|27
+L	intimidate_atk_floor	0	257	|
+L	intimidate_atk_floor	0	258	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	259	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	260	|-nothing
+L	intimidate_atk_floor	0	261	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	262	|-nothing
+L	intimidate_atk_floor	0	263	|
+L	intimidate_atk_floor	0	264	|upkeep
+L	intimidate_atk_floor	0	265	|turn|28
+L	intimidate_atk_floor	0	266	|
+L	intimidate_atk_floor	0	267	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	268	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	269	|-nothing
+L	intimidate_atk_floor	0	270	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	271	|-nothing
+L	intimidate_atk_floor	0	272	|
+L	intimidate_atk_floor	0	273	|upkeep
+L	intimidate_atk_floor	0	274	|turn|29
+L	intimidate_atk_floor	0	275	|
+L	intimidate_atk_floor	0	276	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	277	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	278	|-nothing
+L	intimidate_atk_floor	0	279	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	280	|-nothing
+L	intimidate_atk_floor	0	281	|
+L	intimidate_atk_floor	0	282	|upkeep
+L	intimidate_atk_floor	0	283	|turn|30
+L	intimidate_atk_floor	0	284	|
+L	intimidate_atk_floor	0	285	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	286	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	287	|-nothing
+L	intimidate_atk_floor	0	288	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	289	|-nothing
+L	intimidate_atk_floor	0	290	|
+L	intimidate_atk_floor	0	291	|upkeep
+L	intimidate_atk_floor	0	292	|turn|31
+L	intimidate_atk_floor	0	293	|
+L	intimidate_atk_floor	0	294	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	295	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	296	|-nothing
+L	intimidate_atk_floor	0	297	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	298	|-nothing
+L	intimidate_atk_floor	0	299	|
+L	intimidate_atk_floor	0	300	|upkeep
+L	intimidate_atk_floor	0	301	|turn|32
+L	intimidate_atk_floor	0	302	|
+L	intimidate_atk_floor	0	303	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	304	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	305	|-nothing
+L	intimidate_atk_floor	0	306	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	307	|-nothing
+L	intimidate_atk_floor	0	308	|
+L	intimidate_atk_floor	0	309	|upkeep
+L	intimidate_atk_floor	0	310	|turn|33
+L	intimidate_atk_floor	0	311	|
+L	intimidate_atk_floor	0	312	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	313	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	314	|-nothing
+L	intimidate_atk_floor	0	315	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	316	|-nothing
+L	intimidate_atk_floor	0	317	|
+L	intimidate_atk_floor	0	318	|upkeep
+L	intimidate_atk_floor	0	319	|turn|34
+L	intimidate_atk_floor	0	320	|
+L	intimidate_atk_floor	0	321	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	322	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	323	|-nothing
+L	intimidate_atk_floor	0	324	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	325	|-nothing
+L	intimidate_atk_floor	0	326	|
+L	intimidate_atk_floor	0	327	|upkeep
+L	intimidate_atk_floor	0	328	|turn|35
+L	intimidate_atk_floor	0	329	|
+L	intimidate_atk_floor	0	330	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	331	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	332	|-nothing
+L	intimidate_atk_floor	0	333	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	334	|-nothing
+L	intimidate_atk_floor	0	335	|
+L	intimidate_atk_floor	0	336	|upkeep
+L	intimidate_atk_floor	0	337	|turn|36
+L	intimidate_atk_floor	0	338	|
+L	intimidate_atk_floor	0	339	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	340	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	341	|-nothing
+L	intimidate_atk_floor	0	342	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	343	|-nothing
+L	intimidate_atk_floor	0	344	|
+L	intimidate_atk_floor	0	345	|upkeep
+L	intimidate_atk_floor	0	346	|turn|37
+L	intimidate_atk_floor	0	347	|
+L	intimidate_atk_floor	0	348	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	349	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	350	|-nothing
+L	intimidate_atk_floor	0	351	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	352	|-nothing
+L	intimidate_atk_floor	0	353	|
+L	intimidate_atk_floor	0	354	|upkeep
+L	intimidate_atk_floor	0	355	|turn|38
+L	intimidate_atk_floor	0	356	|
+L	intimidate_atk_floor	0	357	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	358	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	359	|-nothing
+L	intimidate_atk_floor	0	360	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	361	|-nothing
+L	intimidate_atk_floor	0	362	|
+L	intimidate_atk_floor	0	363	|upkeep
+L	intimidate_atk_floor	0	364	|turn|39
+L	intimidate_atk_floor	0	365	|
+L	intimidate_atk_floor	0	366	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	367	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	368	|-nothing
+L	intimidate_atk_floor	0	369	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	370	|-nothing
+L	intimidate_atk_floor	0	371	|
+L	intimidate_atk_floor	0	372	|upkeep
+L	intimidate_atk_floor	0	373	|turn|40
+L	intimidate_atk_floor	0	374	|
+L	intimidate_atk_floor	0	375	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	376	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	377	|-nothing
+L	intimidate_atk_floor	0	378	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	379	|-nothing
+L	intimidate_atk_floor	0	380	|
+L	intimidate_atk_floor	0	381	|upkeep
+L	intimidate_atk_floor	0	382	|turn|41
+L	intimidate_atk_floor	0	383	|
+L	intimidate_atk_floor	0	384	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	385	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	386	|-nothing
+L	intimidate_atk_floor	0	387	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	388	|-nothing
+L	intimidate_atk_floor	0	389	|
+L	intimidate_atk_floor	0	390	|upkeep
+L	intimidate_atk_floor	0	391	|turn|42
+L	intimidate_atk_floor	0	392	|
+L	intimidate_atk_floor	0	393	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	394	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	395	|-nothing
+L	intimidate_atk_floor	0	396	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	397	|-nothing
+L	intimidate_atk_floor	0	398	|
+L	intimidate_atk_floor	0	399	|upkeep
+L	intimidate_atk_floor	0	400	|turn|43
+L	intimidate_atk_floor	0	401	|
+L	intimidate_atk_floor	0	402	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	403	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	404	|-nothing
+L	intimidate_atk_floor	0	405	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	406	|-nothing
+L	intimidate_atk_floor	0	407	|
+L	intimidate_atk_floor	0	408	|upkeep
+L	intimidate_atk_floor	0	409	|turn|44
+L	intimidate_atk_floor	0	410	|
+L	intimidate_atk_floor	0	411	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	412	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	413	|-nothing
+L	intimidate_atk_floor	0	414	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	415	|-nothing
+L	intimidate_atk_floor	0	416	|
+L	intimidate_atk_floor	0	417	|upkeep
+L	intimidate_atk_floor	0	418	|turn|45
+L	intimidate_atk_floor	0	419	|
+L	intimidate_atk_floor	0	420	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	421	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	422	|-nothing
+L	intimidate_atk_floor	0	423	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	424	|-nothing
+L	intimidate_atk_floor	0	425	|
+L	intimidate_atk_floor	0	426	|upkeep
+L	intimidate_atk_floor	0	427	|turn|46
+L	intimidate_atk_floor	0	428	|
+L	intimidate_atk_floor	0	429	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	430	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	0	431	|-nothing
+L	intimidate_atk_floor	0	432	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	0	433	|-nothing
+L	intimidate_atk_floor	0	434	|
+L	intimidate_atk_floor	0	435	|upkeep
+L	intimidate_atk_floor	0	436	|turn|47
+L	intimidate_atk_floor	0	437	|
+L	intimidate_atk_floor	0	438	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	439	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	0	440	|-damage|p2a: Snorlax|442/524
+L	intimidate_atk_floor	0	441	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	442	|-damage|p1a: Salamence|283/331
+L	intimidate_atk_floor	0	443	|
+L	intimidate_atk_floor	0	444	|-heal|p2a: Snorlax|474/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	445	|upkeep
+L	intimidate_atk_floor	0	446	|turn|48
+L	intimidate_atk_floor	0	447	|
+L	intimidate_atk_floor	0	448	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	449	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	0	450	|-damage|p2a: Snorlax|395/524
+L	intimidate_atk_floor	0	451	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	452	|-damage|p1a: Salamence|240/331
+L	intimidate_atk_floor	0	453	|
+L	intimidate_atk_floor	0	454	|-heal|p2a: Snorlax|427/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	455	|upkeep
+L	intimidate_atk_floor	0	456	|turn|49
+L	intimidate_atk_floor	0	457	|
+L	intimidate_atk_floor	0	458	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	459	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	0	460	|-damage|p2a: Snorlax|345/524
+L	intimidate_atk_floor	0	461	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	462	|-damage|p1a: Salamence|191/331
+L	intimidate_atk_floor	0	463	|-status|p1a: Salamence|par
+L	intimidate_atk_floor	0	464	|
+L	intimidate_atk_floor	0	465	|-heal|p2a: Snorlax|377/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	466	|upkeep
+L	intimidate_atk_floor	0	467	|turn|50
+L	intimidate_atk_floor	0	468	|
+L	intimidate_atk_floor	0	469	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	470	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	471	|-damage|p1a: Salamence|148/331 par
+L	intimidate_atk_floor	0	472	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	0	473	|-damage|p2a: Snorlax|296/524
+L	intimidate_atk_floor	0	474	|
+L	intimidate_atk_floor	0	475	|-heal|p2a: Snorlax|328/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	476	|upkeep
+L	intimidate_atk_floor	0	477	|turn|51
+L	intimidate_atk_floor	0	478	|
+L	intimidate_atk_floor	0	479	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	480	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	481	|-damage|p1a: Salamence|106/331 par
+L	intimidate_atk_floor	0	482	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	0	483	|-damage|p2a: Snorlax|249/524
+L	intimidate_atk_floor	0	484	|
+L	intimidate_atk_floor	0	485	|-heal|p2a: Snorlax|281/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	486	|upkeep
+L	intimidate_atk_floor	0	487	|turn|52
+L	intimidate_atk_floor	0	488	|
+L	intimidate_atk_floor	0	489	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	490	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	491	|debug|Negating (sp)atk boost/penalty.
+L	intimidate_atk_floor	0	492	|-crit|p1a: Salamence
+L	intimidate_atk_floor	0	493	|-damage|p1a: Salamence|0 fnt
+L	intimidate_atk_floor	0	494	|faint|p1a: Salamence
+L	intimidate_atk_floor	0	495	|
+L	intimidate_atk_floor	0	496	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	497	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	0	498	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	0	499	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	0	500	|
+L	intimidate_atk_floor	0	501	|-heal|p2a: Snorlax|313/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	502	|upkeep
+L	intimidate_atk_floor	0	503	|turn|53
+L	intimidate_atk_floor	0	504	|
+L	intimidate_atk_floor	0	505	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	506	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	0	507	|-damage|p2a: Snorlax|222/524
+L	intimidate_atk_floor	0	508	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	509	|-damage|p1a: Salamence|283/331
+L	intimidate_atk_floor	0	510	|
+L	intimidate_atk_floor	0	511	|-heal|p2a: Snorlax|254/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	512	|upkeep
+L	intimidate_atk_floor	0	513	|turn|54
+L	intimidate_atk_floor	0	514	|
+L	intimidate_atk_floor	0	515	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	516	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	0	517	|-damage|p2a: Snorlax|175/524
+L	intimidate_atk_floor	0	518	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	519	|-damage|p1a: Salamence|236/331
+L	intimidate_atk_floor	0	520	|-status|p1a: Salamence|par
+L	intimidate_atk_floor	0	521	|
+L	intimidate_atk_floor	0	522	|-heal|p2a: Snorlax|207/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	523	|upkeep
+L	intimidate_atk_floor	0	524	|turn|55
+L	intimidate_atk_floor	0	525	|
+L	intimidate_atk_floor	0	526	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	527	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	528	|-damage|p1a: Salamence|187/331 par
+L	intimidate_atk_floor	0	529	|debug|move failed because it did nothing
+L	intimidate_atk_floor	0	530	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	0	531	|-damage|p2a: Snorlax|126/524
+L	intimidate_atk_floor	0	532	|
+L	intimidate_atk_floor	0	533	|-heal|p2a: Snorlax|158/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	534	|upkeep
+L	intimidate_atk_floor	0	535	|turn|56
+L	intimidate_atk_floor	0	536	|
+L	intimidate_atk_floor	0	537	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	538	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	539	|debug|Negating (sp)atk boost/penalty.
+L	intimidate_atk_floor	0	540	|-crit|p1a: Salamence
+L	intimidate_atk_floor	0	541	|-damage|p1a: Salamence|0 fnt
+L	intimidate_atk_floor	0	542	|faint|p1a: Salamence
+L	intimidate_atk_floor	0	543	|
+L	intimidate_atk_floor	0	544	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	545	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	0	546	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	0	547	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	0	548	|
+L	intimidate_atk_floor	0	549	|-heal|p2a: Snorlax|190/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	550	|upkeep
+L	intimidate_atk_floor	0	551	|turn|57
+L	intimidate_atk_floor	0	552	|
+L	intimidate_atk_floor	0	553	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	554	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	0	555	|-damage|p2a: Snorlax|110/524
+L	intimidate_atk_floor	0	556	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	557	|-damage|p1a: Salamence|283/331
+L	intimidate_atk_floor	0	558	|
+L	intimidate_atk_floor	0	559	|-heal|p2a: Snorlax|142/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	560	|upkeep
+L	intimidate_atk_floor	0	561	|turn|58
+L	intimidate_atk_floor	0	562	|
+L	intimidate_atk_floor	0	563	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	564	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	0	565	|-damage|p2a: Snorlax|52/524
+L	intimidate_atk_floor	0	566	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	567	|-damage|p1a: Salamence|236/331
+L	intimidate_atk_floor	0	568	|-status|p1a: Salamence|par
+L	intimidate_atk_floor	0	569	|
+L	intimidate_atk_floor	0	570	|-heal|p2a: Snorlax|84/524|[from] item: Leftovers
+L	intimidate_atk_floor	0	571	|upkeep
+L	intimidate_atk_floor	0	572	|turn|59
+L	intimidate_atk_floor	0	573	|
+L	intimidate_atk_floor	0	574	|t:|<NORMALIZED>
+L	intimidate_atk_floor	0	575	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	0	576	|-damage|p1a: Salamence|188/331 par
+L	intimidate_atk_floor	0	577	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	0	578	|-damage|p2a: Snorlax|0 fnt
+L	intimidate_atk_floor	0	579	|faint|p2a: Snorlax
+L	intimidate_atk_floor	0	580	|
+L	intimidate_atk_floor	0	581	|win|P1
+END	intimidate_atk_floor	0	1	p1	582
+BATTLE	intimidate_atk_floor	1	7673,53566,11167,13548
+INIT	intimidate_atk_floor	1	3152,13225,27580,52191
+DEC	intimidate_atk_floor	1	0	move	0	0	s1	m1	50742,10406,12758,25790
+DEC	intimidate_atk_floor	1	1	move	0	0	s1	m1	8777,45712,20184,3001
+DEC	intimidate_atk_floor	1	2	move	0	0	s1	m1	24842,3320,6072,16320
+DEC	intimidate_atk_floor	1	3	move	0	0	s1	m1	48896,43585,46133,34179
+DEC	intimidate_atk_floor	1	4	move	0	0	s1	m1	47830,42197,43084,26226
+DEC	intimidate_atk_floor	1	5	move	0	0	s1	m1	48305,34213,11836,3005
+DEC	intimidate_atk_floor	1	6	move	0	0	m1	m1	21404,63762,28234,25940
+DEC	intimidate_atk_floor	1	7	move	0	0	m1	m1	54656,7735,35078,36071
+DEC	intimidate_atk_floor	1	8	move	0	0	m1	m1	1418,11007,57204,54502
+DEC	intimidate_atk_floor	1	9	move	0	0	m1	m1	38283,11337,35191,45953
+DEC	intimidate_atk_floor	1	10	move	0	0	m1	m1	33445,62073,40951,31144
+DEC	intimidate_atk_floor	1	11	move	0	0	m1	m1	41084,48886,49276,34315
+DEC	intimidate_atk_floor	1	12	move	0	0	m1	m1	1550,2983,58192,25626
+DEC	intimidate_atk_floor	1	13	move	0	0	m1	m1	15686,12178,26918,1797
+DEC	intimidate_atk_floor	1	14	move	0	0	m1	m1	10763,34306,8972,4284
+DEC	intimidate_atk_floor	1	15	move	0	0	m1	m1	49043,48681,3585,54511
+DEC	intimidate_atk_floor	1	16	move	0	0	m1	m1	46484,60894,10332,34830
+DEC	intimidate_atk_floor	1	17	move	0	0	m1	m1	38489,10163,4569,51785
+DEC	intimidate_atk_floor	1	18	move	0	0	m1	m1	691,20043,60499,32400
+DEC	intimidate_atk_floor	1	19	move	0	0	m1	m1	38292,21482,8642,40339
+DEC	intimidate_atk_floor	1	20	move	0	0	m1	m1	1265,27195,52039,29890
+DEC	intimidate_atk_floor	1	21	move	0	0	m1	m1	58052,1056,31265,33101
+DEC	intimidate_atk_floor	1	22	move	0	0	m1	m1	63961,19972,8875,55076
+DEC	intimidate_atk_floor	1	23	move	0	0	m1	m1	49717,56537,46608,50167
+DEC	intimidate_atk_floor	1	24	move	0	0	m1	m1	23584,7912,23908,7734
+DEC	intimidate_atk_floor	1	25	move	0	0	m1	m1	40558,37745,2123,28689
+DEC	intimidate_atk_floor	1	26	move	0	0	m1	m1	21651,10260,57689,61048
+DEC	intimidate_atk_floor	1	27	move	0	0	m1	m1	21596,21566,11911,60443
+DEC	intimidate_atk_floor	1	28	move	0	0	m1	m1	23537,61544,61918,14442
+DEC	intimidate_atk_floor	1	29	move	0	0	m1	m1	38082,12169,39913,39573
+DEC	intimidate_atk_floor	1	30	move	0	0	m1	m1	38120,6685,40221,22668
+DEC	intimidate_atk_floor	1	31	move	0	0	m1	m1	25195,50984,11505,31231
+DEC	intimidate_atk_floor	1	32	move	0	0	m1	m1	21075,50067,57262,14174
+DEC	intimidate_atk_floor	1	33	move	0	0	m1	m1	4154,52032,42773,50393
+DEC	intimidate_atk_floor	1	34	move	0	0	m1	m1	61514,1837,32772,26976
+DEC	intimidate_atk_floor	1	35	move	0	0	m1	m1	53057,15849,16360,37283
+DEC	intimidate_atk_floor	1	36	move	0	0	m1	m1	35859,4949,27725,20242
+DEC	intimidate_atk_floor	1	37	move	0	0	m1	m1	30340,58171,56181,29405
+DEC	intimidate_atk_floor	1	38	move	0	0	m1	m1	30445,35819,53248,13556
+DEC	intimidate_atk_floor	1	39	move	0	0	m1	m1	24449,36085,36670,5895
+DEC	intimidate_atk_floor	1	40	move	0	0	m1	m1	9497,1462,21289,29574
+DEC	intimidate_atk_floor	1	41	move	0	0	m1	m1	53027,60460,44797,59553
+DEC	intimidate_atk_floor	1	42	move	0	0	m1	m1	40304,12513,13368,36680
+DEC	intimidate_atk_floor	1	43	move	0	0	m1	m1	14456,46898,10780,44587
+DEC	intimidate_atk_floor	1	44	move	0	0	m1	m1	47991,28557,56793,22714
+DEC	intimidate_atk_floor	1	45	move	0	0	m1	m1	25383,45171,48248,10789
+DEC	intimidate_atk_floor	1	46	move	0	0	m0	m0	315,45632,52704,57453
+DEC	intimidate_atk_floor	1	47	move	0	0	m0	m0	27369,8806,11866,46517
+DEC	intimidate_atk_floor	1	48	move	0	0	m0	m0	45933,57417,204,51709
+DEC	intimidate_atk_floor	1	49	move	0	0	m0	m0	30485,42206,53466,15685
+DEC	intimidate_atk_floor	1	50	move	0	0	m0	m0	40358,54644,19929,38355
+DEC	intimidate_atk_floor	1	51	move	0	0	m0	m0	30707,23480,25452,33194
+DEC	intimidate_atk_floor	1	52	move	0	0	m0	m0	41246,25711,33956,52384
+DEC	intimidate_atk_floor	1	53	move	0	0	m0	m0	49278,15074,13714,58420
+DEC	intimidate_atk_floor	1	54	switch	1	0	s1	-	50389,64952,60582,31559
+DEC	intimidate_atk_floor	1	55	move	0	0	m0	m0	41309,21435,57889,55119
+DEC	intimidate_atk_floor	1	56	move	0	0	m0	m0	57075,54118,24146,23127
+DEC	intimidate_atk_floor	1	57	move	0	0	m0	m0	40051,38801,45026,53054
+DEC	intimidate_atk_floor	1	58	move	0	0	m0	m0	16122,51595,2154,10241
+DEC	intimidate_atk_floor	1	59	move	0	0	m0	m0	27457,29039,11197,42256
+DEC	intimidate_atk_floor	1	60	move	0	0	m0	m0	39927,36144,59080,3227
+DEC	intimidate_atk_floor	1	61	move	0	0	m0	m0	52298,3471,48990,2393
+DEC	intimidate_atk_floor	1	62	move	0	0	m0	m0	41740,59872,5206,28509
+DEC	intimidate_atk_floor	1	63	switch	1	0	s2	-	12415,42067,36708,21364
+DEC	intimidate_atk_floor	1	64	move	0	0	m0	m0	65325,49741,31424,56028
+DEC	intimidate_atk_floor	1	65	move	0	0	m0	m0	40983,22380,5547,8169
+L	intimidate_atk_floor	1	0	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	1	|gametype|singles
+L	intimidate_atk_floor	1	2	|player|p1|P1||
+L	intimidate_atk_floor	1	3	|player|p2|P2||
+L	intimidate_atk_floor	1	4	|gen|3
+L	intimidate_atk_floor	1	5	|tier|[Gen 3] Custom Game
+L	intimidate_atk_floor	1	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	intimidate_atk_floor	1	7	|
+L	intimidate_atk_floor	1	8	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	9	|teamsize|p1|6
+L	intimidate_atk_floor	1	10	|teamsize|p2|1
+L	intimidate_atk_floor	1	11	|start
+L	intimidate_atk_floor	1	12	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	1	13	|switch|p2a: Snorlax|Snorlax|524/524
+L	intimidate_atk_floor	1	14	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	1	15	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	1	16	|turn|1
+L	intimidate_atk_floor	1	17	|
+L	intimidate_atk_floor	1	18	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	19	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	1	20	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	1	21	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	1	22	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	23	|-nothing
+L	intimidate_atk_floor	1	24	|
+L	intimidate_atk_floor	1	25	|upkeep
+L	intimidate_atk_floor	1	26	|turn|2
+L	intimidate_atk_floor	1	27	|
+L	intimidate_atk_floor	1	28	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	29	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	1	30	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	1	31	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	1	32	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	33	|-nothing
+L	intimidate_atk_floor	1	34	|
+L	intimidate_atk_floor	1	35	|upkeep
+L	intimidate_atk_floor	1	36	|turn|3
+L	intimidate_atk_floor	1	37	|
+L	intimidate_atk_floor	1	38	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	39	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	1	40	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	1	41	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	1	42	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	43	|-nothing
+L	intimidate_atk_floor	1	44	|
+L	intimidate_atk_floor	1	45	|upkeep
+L	intimidate_atk_floor	1	46	|turn|4
+L	intimidate_atk_floor	1	47	|
+L	intimidate_atk_floor	1	48	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	49	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	1	50	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	1	51	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	1	52	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	53	|-nothing
+L	intimidate_atk_floor	1	54	|
+L	intimidate_atk_floor	1	55	|upkeep
+L	intimidate_atk_floor	1	56	|turn|5
+L	intimidate_atk_floor	1	57	|
+L	intimidate_atk_floor	1	58	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	59	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	1	60	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	1	61	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	1	62	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	63	|-nothing
+L	intimidate_atk_floor	1	64	|
+L	intimidate_atk_floor	1	65	|upkeep
+L	intimidate_atk_floor	1	66	|turn|6
+L	intimidate_atk_floor	1	67	|
+L	intimidate_atk_floor	1	68	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	69	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	1	70	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	1	71	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	1	72	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	73	|-nothing
+L	intimidate_atk_floor	1	74	|
+L	intimidate_atk_floor	1	75	|upkeep
+L	intimidate_atk_floor	1	76	|turn|7
+L	intimidate_atk_floor	1	77	|
+L	intimidate_atk_floor	1	78	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	79	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	80	|-nothing
+L	intimidate_atk_floor	1	81	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	82	|-nothing
+L	intimidate_atk_floor	1	83	|
+L	intimidate_atk_floor	1	84	|upkeep
+L	intimidate_atk_floor	1	85	|turn|8
+L	intimidate_atk_floor	1	86	|
+L	intimidate_atk_floor	1	87	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	88	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	89	|-nothing
+L	intimidate_atk_floor	1	90	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	91	|-nothing
+L	intimidate_atk_floor	1	92	|
+L	intimidate_atk_floor	1	93	|upkeep
+L	intimidate_atk_floor	1	94	|turn|9
+L	intimidate_atk_floor	1	95	|
+L	intimidate_atk_floor	1	96	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	97	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	98	|-nothing
+L	intimidate_atk_floor	1	99	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	100	|-nothing
+L	intimidate_atk_floor	1	101	|
+L	intimidate_atk_floor	1	102	|upkeep
+L	intimidate_atk_floor	1	103	|turn|10
+L	intimidate_atk_floor	1	104	|
+L	intimidate_atk_floor	1	105	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	106	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	107	|-nothing
+L	intimidate_atk_floor	1	108	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	109	|-nothing
+L	intimidate_atk_floor	1	110	|
+L	intimidate_atk_floor	1	111	|upkeep
+L	intimidate_atk_floor	1	112	|turn|11
+L	intimidate_atk_floor	1	113	|
+L	intimidate_atk_floor	1	114	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	115	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	116	|-nothing
+L	intimidate_atk_floor	1	117	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	118	|-nothing
+L	intimidate_atk_floor	1	119	|
+L	intimidate_atk_floor	1	120	|upkeep
+L	intimidate_atk_floor	1	121	|turn|12
+L	intimidate_atk_floor	1	122	|
+L	intimidate_atk_floor	1	123	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	124	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	125	|-nothing
+L	intimidate_atk_floor	1	126	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	127	|-nothing
+L	intimidate_atk_floor	1	128	|
+L	intimidate_atk_floor	1	129	|upkeep
+L	intimidate_atk_floor	1	130	|turn|13
+L	intimidate_atk_floor	1	131	|
+L	intimidate_atk_floor	1	132	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	133	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	134	|-nothing
+L	intimidate_atk_floor	1	135	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	136	|-nothing
+L	intimidate_atk_floor	1	137	|
+L	intimidate_atk_floor	1	138	|upkeep
+L	intimidate_atk_floor	1	139	|turn|14
+L	intimidate_atk_floor	1	140	|
+L	intimidate_atk_floor	1	141	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	142	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	143	|-nothing
+L	intimidate_atk_floor	1	144	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	145	|-nothing
+L	intimidate_atk_floor	1	146	|
+L	intimidate_atk_floor	1	147	|upkeep
+L	intimidate_atk_floor	1	148	|turn|15
+L	intimidate_atk_floor	1	149	|
+L	intimidate_atk_floor	1	150	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	151	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	152	|-nothing
+L	intimidate_atk_floor	1	153	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	154	|-nothing
+L	intimidate_atk_floor	1	155	|
+L	intimidate_atk_floor	1	156	|upkeep
+L	intimidate_atk_floor	1	157	|turn|16
+L	intimidate_atk_floor	1	158	|
+L	intimidate_atk_floor	1	159	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	160	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	161	|-nothing
+L	intimidate_atk_floor	1	162	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	163	|-nothing
+L	intimidate_atk_floor	1	164	|
+L	intimidate_atk_floor	1	165	|upkeep
+L	intimidate_atk_floor	1	166	|turn|17
+L	intimidate_atk_floor	1	167	|
+L	intimidate_atk_floor	1	168	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	169	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	170	|-nothing
+L	intimidate_atk_floor	1	171	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	172	|-nothing
+L	intimidate_atk_floor	1	173	|
+L	intimidate_atk_floor	1	174	|upkeep
+L	intimidate_atk_floor	1	175	|turn|18
+L	intimidate_atk_floor	1	176	|
+L	intimidate_atk_floor	1	177	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	178	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	179	|-nothing
+L	intimidate_atk_floor	1	180	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	181	|-nothing
+L	intimidate_atk_floor	1	182	|
+L	intimidate_atk_floor	1	183	|upkeep
+L	intimidate_atk_floor	1	184	|turn|19
+L	intimidate_atk_floor	1	185	|
+L	intimidate_atk_floor	1	186	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	187	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	188	|-nothing
+L	intimidate_atk_floor	1	189	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	190	|-nothing
+L	intimidate_atk_floor	1	191	|
+L	intimidate_atk_floor	1	192	|upkeep
+L	intimidate_atk_floor	1	193	|turn|20
+L	intimidate_atk_floor	1	194	|
+L	intimidate_atk_floor	1	195	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	196	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	197	|-nothing
+L	intimidate_atk_floor	1	198	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	199	|-nothing
+L	intimidate_atk_floor	1	200	|
+L	intimidate_atk_floor	1	201	|upkeep
+L	intimidate_atk_floor	1	202	|turn|21
+L	intimidate_atk_floor	1	203	|
+L	intimidate_atk_floor	1	204	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	205	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	206	|-nothing
+L	intimidate_atk_floor	1	207	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	208	|-nothing
+L	intimidate_atk_floor	1	209	|
+L	intimidate_atk_floor	1	210	|upkeep
+L	intimidate_atk_floor	1	211	|turn|22
+L	intimidate_atk_floor	1	212	|
+L	intimidate_atk_floor	1	213	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	214	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	215	|-nothing
+L	intimidate_atk_floor	1	216	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	217	|-nothing
+L	intimidate_atk_floor	1	218	|
+L	intimidate_atk_floor	1	219	|upkeep
+L	intimidate_atk_floor	1	220	|turn|23
+L	intimidate_atk_floor	1	221	|
+L	intimidate_atk_floor	1	222	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	223	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	224	|-nothing
+L	intimidate_atk_floor	1	225	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	226	|-nothing
+L	intimidate_atk_floor	1	227	|
+L	intimidate_atk_floor	1	228	|upkeep
+L	intimidate_atk_floor	1	229	|turn|24
+L	intimidate_atk_floor	1	230	|
+L	intimidate_atk_floor	1	231	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	232	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	233	|-nothing
+L	intimidate_atk_floor	1	234	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	235	|-nothing
+L	intimidate_atk_floor	1	236	|
+L	intimidate_atk_floor	1	237	|upkeep
+L	intimidate_atk_floor	1	238	|turn|25
+L	intimidate_atk_floor	1	239	|
+L	intimidate_atk_floor	1	240	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	241	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	242	|-nothing
+L	intimidate_atk_floor	1	243	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	244	|-nothing
+L	intimidate_atk_floor	1	245	|
+L	intimidate_atk_floor	1	246	|upkeep
+L	intimidate_atk_floor	1	247	|turn|26
+L	intimidate_atk_floor	1	248	|
+L	intimidate_atk_floor	1	249	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	250	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	251	|-nothing
+L	intimidate_atk_floor	1	252	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	253	|-nothing
+L	intimidate_atk_floor	1	254	|
+L	intimidate_atk_floor	1	255	|upkeep
+L	intimidate_atk_floor	1	256	|turn|27
+L	intimidate_atk_floor	1	257	|
+L	intimidate_atk_floor	1	258	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	259	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	260	|-nothing
+L	intimidate_atk_floor	1	261	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	262	|-nothing
+L	intimidate_atk_floor	1	263	|
+L	intimidate_atk_floor	1	264	|upkeep
+L	intimidate_atk_floor	1	265	|turn|28
+L	intimidate_atk_floor	1	266	|
+L	intimidate_atk_floor	1	267	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	268	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	269	|-nothing
+L	intimidate_atk_floor	1	270	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	271	|-nothing
+L	intimidate_atk_floor	1	272	|
+L	intimidate_atk_floor	1	273	|upkeep
+L	intimidate_atk_floor	1	274	|turn|29
+L	intimidate_atk_floor	1	275	|
+L	intimidate_atk_floor	1	276	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	277	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	278	|-nothing
+L	intimidate_atk_floor	1	279	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	280	|-nothing
+L	intimidate_atk_floor	1	281	|
+L	intimidate_atk_floor	1	282	|upkeep
+L	intimidate_atk_floor	1	283	|turn|30
+L	intimidate_atk_floor	1	284	|
+L	intimidate_atk_floor	1	285	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	286	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	287	|-nothing
+L	intimidate_atk_floor	1	288	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	289	|-nothing
+L	intimidate_atk_floor	1	290	|
+L	intimidate_atk_floor	1	291	|upkeep
+L	intimidate_atk_floor	1	292	|turn|31
+L	intimidate_atk_floor	1	293	|
+L	intimidate_atk_floor	1	294	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	295	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	296	|-nothing
+L	intimidate_atk_floor	1	297	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	298	|-nothing
+L	intimidate_atk_floor	1	299	|
+L	intimidate_atk_floor	1	300	|upkeep
+L	intimidate_atk_floor	1	301	|turn|32
+L	intimidate_atk_floor	1	302	|
+L	intimidate_atk_floor	1	303	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	304	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	305	|-nothing
+L	intimidate_atk_floor	1	306	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	307	|-nothing
+L	intimidate_atk_floor	1	308	|
+L	intimidate_atk_floor	1	309	|upkeep
+L	intimidate_atk_floor	1	310	|turn|33
+L	intimidate_atk_floor	1	311	|
+L	intimidate_atk_floor	1	312	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	313	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	314	|-nothing
+L	intimidate_atk_floor	1	315	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	316	|-nothing
+L	intimidate_atk_floor	1	317	|
+L	intimidate_atk_floor	1	318	|upkeep
+L	intimidate_atk_floor	1	319	|turn|34
+L	intimidate_atk_floor	1	320	|
+L	intimidate_atk_floor	1	321	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	322	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	323	|-nothing
+L	intimidate_atk_floor	1	324	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	325	|-nothing
+L	intimidate_atk_floor	1	326	|
+L	intimidate_atk_floor	1	327	|upkeep
+L	intimidate_atk_floor	1	328	|turn|35
+L	intimidate_atk_floor	1	329	|
+L	intimidate_atk_floor	1	330	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	331	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	332	|-nothing
+L	intimidate_atk_floor	1	333	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	334	|-nothing
+L	intimidate_atk_floor	1	335	|
+L	intimidate_atk_floor	1	336	|upkeep
+L	intimidate_atk_floor	1	337	|turn|36
+L	intimidate_atk_floor	1	338	|
+L	intimidate_atk_floor	1	339	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	340	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	341	|-nothing
+L	intimidate_atk_floor	1	342	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	343	|-nothing
+L	intimidate_atk_floor	1	344	|
+L	intimidate_atk_floor	1	345	|upkeep
+L	intimidate_atk_floor	1	346	|turn|37
+L	intimidate_atk_floor	1	347	|
+L	intimidate_atk_floor	1	348	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	349	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	350	|-nothing
+L	intimidate_atk_floor	1	351	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	352	|-nothing
+L	intimidate_atk_floor	1	353	|
+L	intimidate_atk_floor	1	354	|upkeep
+L	intimidate_atk_floor	1	355	|turn|38
+L	intimidate_atk_floor	1	356	|
+L	intimidate_atk_floor	1	357	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	358	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	359	|-nothing
+L	intimidate_atk_floor	1	360	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	361	|-nothing
+L	intimidate_atk_floor	1	362	|
+L	intimidate_atk_floor	1	363	|upkeep
+L	intimidate_atk_floor	1	364	|turn|39
+L	intimidate_atk_floor	1	365	|
+L	intimidate_atk_floor	1	366	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	367	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	368	|-nothing
+L	intimidate_atk_floor	1	369	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	370	|-nothing
+L	intimidate_atk_floor	1	371	|
+L	intimidate_atk_floor	1	372	|upkeep
+L	intimidate_atk_floor	1	373	|turn|40
+L	intimidate_atk_floor	1	374	|
+L	intimidate_atk_floor	1	375	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	376	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	377	|-nothing
+L	intimidate_atk_floor	1	378	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	379	|-nothing
+L	intimidate_atk_floor	1	380	|
+L	intimidate_atk_floor	1	381	|upkeep
+L	intimidate_atk_floor	1	382	|turn|41
+L	intimidate_atk_floor	1	383	|
+L	intimidate_atk_floor	1	384	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	385	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	386	|-nothing
+L	intimidate_atk_floor	1	387	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	388	|-nothing
+L	intimidate_atk_floor	1	389	|
+L	intimidate_atk_floor	1	390	|upkeep
+L	intimidate_atk_floor	1	391	|turn|42
+L	intimidate_atk_floor	1	392	|
+L	intimidate_atk_floor	1	393	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	394	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	395	|-nothing
+L	intimidate_atk_floor	1	396	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	397	|-nothing
+L	intimidate_atk_floor	1	398	|
+L	intimidate_atk_floor	1	399	|upkeep
+L	intimidate_atk_floor	1	400	|turn|43
+L	intimidate_atk_floor	1	401	|
+L	intimidate_atk_floor	1	402	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	403	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	404	|-nothing
+L	intimidate_atk_floor	1	405	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	406	|-nothing
+L	intimidate_atk_floor	1	407	|
+L	intimidate_atk_floor	1	408	|upkeep
+L	intimidate_atk_floor	1	409	|turn|44
+L	intimidate_atk_floor	1	410	|
+L	intimidate_atk_floor	1	411	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	412	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	413	|-nothing
+L	intimidate_atk_floor	1	414	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	415	|-nothing
+L	intimidate_atk_floor	1	416	|
+L	intimidate_atk_floor	1	417	|upkeep
+L	intimidate_atk_floor	1	418	|turn|45
+L	intimidate_atk_floor	1	419	|
+L	intimidate_atk_floor	1	420	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	421	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	422	|-nothing
+L	intimidate_atk_floor	1	423	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	424	|-nothing
+L	intimidate_atk_floor	1	425	|
+L	intimidate_atk_floor	1	426	|upkeep
+L	intimidate_atk_floor	1	427	|turn|46
+L	intimidate_atk_floor	1	428	|
+L	intimidate_atk_floor	1	429	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	430	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	1	431	|-nothing
+L	intimidate_atk_floor	1	432	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	1	433	|-nothing
+L	intimidate_atk_floor	1	434	|
+L	intimidate_atk_floor	1	435	|upkeep
+L	intimidate_atk_floor	1	436	|turn|47
+L	intimidate_atk_floor	1	437	|
+L	intimidate_atk_floor	1	438	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	439	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	440	|-damage|p2a: Snorlax|443/524
+L	intimidate_atk_floor	1	441	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	442	|-damage|p1a: Salamence|285/331
+L	intimidate_atk_floor	1	443	|
+L	intimidate_atk_floor	1	444	|-heal|p2a: Snorlax|475/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	445	|upkeep
+L	intimidate_atk_floor	1	446	|turn|48
+L	intimidate_atk_floor	1	447	|
+L	intimidate_atk_floor	1	448	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	449	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	450	|-damage|p2a: Snorlax|396/524
+L	intimidate_atk_floor	1	451	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	452	|-damage|p1a: Salamence|239/331
+L	intimidate_atk_floor	1	453	|
+L	intimidate_atk_floor	1	454	|-heal|p2a: Snorlax|428/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	455	|upkeep
+L	intimidate_atk_floor	1	456	|turn|49
+L	intimidate_atk_floor	1	457	|
+L	intimidate_atk_floor	1	458	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	459	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	460	|-damage|p2a: Snorlax|348/524
+L	intimidate_atk_floor	1	461	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	462	|-damage|p1a: Salamence|192/331
+L	intimidate_atk_floor	1	463	|
+L	intimidate_atk_floor	1	464	|-heal|p2a: Snorlax|380/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	465	|upkeep
+L	intimidate_atk_floor	1	466	|turn|50
+L	intimidate_atk_floor	1	467	|
+L	intimidate_atk_floor	1	468	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	469	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	470	|-damage|p2a: Snorlax|299/524
+L	intimidate_atk_floor	1	471	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	472	|-damage|p1a: Salamence|149/331
+L	intimidate_atk_floor	1	473	|-status|p1a: Salamence|par
+L	intimidate_atk_floor	1	474	|
+L	intimidate_atk_floor	1	475	|-heal|p2a: Snorlax|331/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	476	|upkeep
+L	intimidate_atk_floor	1	477	|turn|51
+L	intimidate_atk_floor	1	478	|
+L	intimidate_atk_floor	1	479	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	480	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	481	|-damage|p1a: Salamence|100/331 par
+L	intimidate_atk_floor	1	482	|cant|p1a: Salamence|par
+L	intimidate_atk_floor	1	483	|
+L	intimidate_atk_floor	1	484	|-heal|p2a: Snorlax|363/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	485	|upkeep
+L	intimidate_atk_floor	1	486	|turn|52
+L	intimidate_atk_floor	1	487	|
+L	intimidate_atk_floor	1	488	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	489	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	490	|-damage|p1a: Salamence|55/331 par
+L	intimidate_atk_floor	1	491	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	492	|-damage|p2a: Snorlax|275/524
+L	intimidate_atk_floor	1	493	|
+L	intimidate_atk_floor	1	494	|-heal|p2a: Snorlax|307/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	495	|upkeep
+L	intimidate_atk_floor	1	496	|turn|53
+L	intimidate_atk_floor	1	497	|
+L	intimidate_atk_floor	1	498	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	499	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	500	|-damage|p1a: Salamence|14/331 par
+L	intimidate_atk_floor	1	501	|cant|p1a: Salamence|par
+L	intimidate_atk_floor	1	502	|
+L	intimidate_atk_floor	1	503	|-heal|p2a: Snorlax|339/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	504	|upkeep
+L	intimidate_atk_floor	1	505	|turn|54
+L	intimidate_atk_floor	1	506	|
+L	intimidate_atk_floor	1	507	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	508	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	509	|-damage|p1a: Salamence|0 fnt
+L	intimidate_atk_floor	1	510	|faint|p1a: Salamence
+L	intimidate_atk_floor	1	511	|
+L	intimidate_atk_floor	1	512	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	513	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	1	514	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	1	515	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	1	516	|
+L	intimidate_atk_floor	1	517	|-heal|p2a: Snorlax|371/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	518	|upkeep
+L	intimidate_atk_floor	1	519	|turn|55
+L	intimidate_atk_floor	1	520	|
+L	intimidate_atk_floor	1	521	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	522	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	523	|-damage|p2a: Snorlax|278/524
+L	intimidate_atk_floor	1	524	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	525	|-damage|p1a: Salamence|283/331
+L	intimidate_atk_floor	1	526	|
+L	intimidate_atk_floor	1	527	|-heal|p2a: Snorlax|310/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	528	|upkeep
+L	intimidate_atk_floor	1	529	|turn|56
+L	intimidate_atk_floor	1	530	|
+L	intimidate_atk_floor	1	531	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	532	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	533	|-damage|p2a: Snorlax|224/524
+L	intimidate_atk_floor	1	534	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	535	|-damage|p1a: Salamence|238/331
+L	intimidate_atk_floor	1	536	|-status|p1a: Salamence|par
+L	intimidate_atk_floor	1	537	|
+L	intimidate_atk_floor	1	538	|-heal|p2a: Snorlax|256/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	539	|upkeep
+L	intimidate_atk_floor	1	540	|turn|57
+L	intimidate_atk_floor	1	541	|
+L	intimidate_atk_floor	1	542	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	543	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	544	|-damage|p1a: Salamence|194/331 par
+L	intimidate_atk_floor	1	545	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	546	|-damage|p2a: Snorlax|177/524
+L	intimidate_atk_floor	1	547	|
+L	intimidate_atk_floor	1	548	|-heal|p2a: Snorlax|209/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	549	|upkeep
+L	intimidate_atk_floor	1	550	|turn|58
+L	intimidate_atk_floor	1	551	|
+L	intimidate_atk_floor	1	552	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	553	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	554	|-damage|p1a: Salamence|147/331 par
+L	intimidate_atk_floor	1	555	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	556	|-damage|p2a: Snorlax|125/524
+L	intimidate_atk_floor	1	557	|
+L	intimidate_atk_floor	1	558	|-heal|p2a: Snorlax|157/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	559	|upkeep
+L	intimidate_atk_floor	1	560	|turn|59
+L	intimidate_atk_floor	1	561	|
+L	intimidate_atk_floor	1	562	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	563	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	564	|-damage|p1a: Salamence|98/331 par
+L	intimidate_atk_floor	1	565	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	566	|-damage|p2a: Snorlax|78/524
+L	intimidate_atk_floor	1	567	|
+L	intimidate_atk_floor	1	568	|-heal|p2a: Snorlax|110/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	569	|upkeep
+L	intimidate_atk_floor	1	570	|turn|60
+L	intimidate_atk_floor	1	571	|
+L	intimidate_atk_floor	1	572	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	573	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	574	|-damage|p1a: Salamence|51/331 par
+L	intimidate_atk_floor	1	575	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	576	|-damage|p2a: Snorlax|27/524
+L	intimidate_atk_floor	1	577	|
+L	intimidate_atk_floor	1	578	|-heal|p2a: Snorlax|59/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	579	|upkeep
+L	intimidate_atk_floor	1	580	|turn|61
+L	intimidate_atk_floor	1	581	|
+L	intimidate_atk_floor	1	582	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	583	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	584	|-damage|p1a: Salamence|9/331 par
+L	intimidate_atk_floor	1	585	|cant|p1a: Salamence|par
+L	intimidate_atk_floor	1	586	|
+L	intimidate_atk_floor	1	587	|-heal|p2a: Snorlax|91/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	588	|upkeep
+L	intimidate_atk_floor	1	589	|turn|62
+L	intimidate_atk_floor	1	590	|
+L	intimidate_atk_floor	1	591	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	592	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	593	|-damage|p1a: Salamence|0 fnt
+L	intimidate_atk_floor	1	594	|faint|p1a: Salamence
+L	intimidate_atk_floor	1	595	|
+L	intimidate_atk_floor	1	596	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	597	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	1	598	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	1	599	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	1	600	|
+L	intimidate_atk_floor	1	601	|-heal|p2a: Snorlax|123/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	602	|upkeep
+L	intimidate_atk_floor	1	603	|turn|63
+L	intimidate_atk_floor	1	604	|
+L	intimidate_atk_floor	1	605	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	606	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	607	|-damage|p2a: Snorlax|44/524
+L	intimidate_atk_floor	1	608	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	1	609	|-damage|p1a: Salamence|287/331
+L	intimidate_atk_floor	1	610	|
+L	intimidate_atk_floor	1	611	|-heal|p2a: Snorlax|76/524|[from] item: Leftovers
+L	intimidate_atk_floor	1	612	|upkeep
+L	intimidate_atk_floor	1	613	|turn|64
+L	intimidate_atk_floor	1	614	|
+L	intimidate_atk_floor	1	615	|t:|<NORMALIZED>
+L	intimidate_atk_floor	1	616	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	1	617	|-damage|p2a: Snorlax|0 fnt
+L	intimidate_atk_floor	1	618	|faint|p2a: Snorlax
+L	intimidate_atk_floor	1	619	|
+L	intimidate_atk_floor	1	620	|win|P1
+END	intimidate_atk_floor	1	1	p1	621
+BATTLE	intimidate_atk_floor	2	41141,49994,58043,46040
+INIT	intimidate_atk_floor	2	17632,48922,62043,11003
+DEC	intimidate_atk_floor	2	0	move	0	0	s1	m1	7810,9723,30971,59082
+DEC	intimidate_atk_floor	2	1	move	0	0	s1	m1	2488,57320,4496,50805
+DEC	intimidate_atk_floor	2	2	move	0	0	s1	m1	3996,59853,12716,34796
+DEC	intimidate_atk_floor	2	3	move	0	0	s1	m1	54166,63157,13673,35551
+DEC	intimidate_atk_floor	2	4	move	0	0	s1	m1	38598,10887,28212,49086
+DEC	intimidate_atk_floor	2	5	move	0	0	s1	m1	58207,21940,7108,62137
+DEC	intimidate_atk_floor	2	6	move	0	0	m1	m1	38452,16817,2510,25280
+DEC	intimidate_atk_floor	2	7	move	0	0	m1	m1	21963,13606,1196,21635
+DEC	intimidate_atk_floor	2	8	move	0	0	m1	m1	9352,40332,42227,4466
+DEC	intimidate_atk_floor	2	9	move	0	0	m1	m1	41524,17086,47744,33469
+DEC	intimidate_atk_floor	2	10	move	0	0	m1	m1	13795,60234,43516,22612
+DEC	intimidate_atk_floor	2	11	move	0	0	m1	m1	8188,22970,63046,27623
+DEC	intimidate_atk_floor	2	12	move	0	0	m1	m1	26461,58660,16638,53222
+DEC	intimidate_atk_floor	2	13	move	0	0	m1	m1	39822,64640,47418,47745
+DEC	intimidate_atk_floor	2	14	move	0	0	m1	m1	2811,63768,1960,15528
+DEC	intimidate_atk_floor	2	15	move	0	0	m1	m1	24745,30732,38548,29963
+DEC	intimidate_atk_floor	2	16	move	0	0	m1	m1	43744,65363,45736,44826
+DEC	intimidate_atk_floor	2	17	move	0	0	m1	m1	54433,50783,33822,40453
+DEC	intimidate_atk_floor	2	18	move	0	0	m1	m1	4590,63452,61678,41916
+DEC	intimidate_atk_floor	2	19	move	0	0	m1	m1	10313,63456,36368,54255
+DEC	intimidate_atk_floor	2	20	move	0	0	m1	m1	56007,21960,44478,8974
+DEC	intimidate_atk_floor	2	21	move	0	0	m1	m1	60210,41642,10830,61769
+DEC	intimidate_atk_floor	2	22	move	0	0	m1	m1	9415,34951,21866,57744
+DEC	intimidate_atk_floor	2	23	move	0	0	m1	m1	45993,58623,53495,44179
+DEC	intimidate_atk_floor	2	24	move	0	0	m1	m1	41646,23124,47421,24514
+DEC	intimidate_atk_floor	2	25	move	0	0	m1	m1	32893,3372,25578,14413
+DEC	intimidate_atk_floor	2	26	move	0	0	m1	m1	40754,33924,51659,2596
+DEC	intimidate_atk_floor	2	27	move	0	0	m1	m1	59545,4457,48298,58103
+DEC	intimidate_atk_floor	2	28	move	0	0	m1	m1	48321,23950,19401,22838
+DEC	intimidate_atk_floor	2	29	move	0	0	m1	m1	3240,38948,57294,46865
+DEC	intimidate_atk_floor	2	30	move	0	0	m1	m1	37929,35561,6691,61816
+DEC	intimidate_atk_floor	2	31	move	0	0	m1	m1	16555,55846,50902,6939
+DEC	intimidate_atk_floor	2	32	move	0	0	m1	m1	41461,61350,10461,50026
+DEC	intimidate_atk_floor	2	33	move	0	0	m1	m1	24856,52159,56606,29077
+DEC	intimidate_atk_floor	2	34	move	0	0	m1	m1	2112,43664,32517,11148
+DEC	intimidate_atk_floor	2	35	move	0	0	m1	m1	15395,30907,8786,47359
+DEC	intimidate_atk_floor	2	36	move	0	0	m1	m1	42225,3868,29379,4702
+DEC	intimidate_atk_floor	2	37	move	0	0	m1	m1	9889,59342,54403,11225
+DEC	intimidate_atk_floor	2	38	move	0	0	m1	m1	29540,27142,51533,3168
+DEC	intimidate_atk_floor	2	39	move	0	0	m1	m1	26773,31387,32203,57507
+DEC	intimidate_atk_floor	2	40	move	0	0	m1	m1	63577,10833,42306,31250
+DEC	intimidate_atk_floor	2	41	move	0	0	m1	m1	6264,58129,46386,27101
+DEC	intimidate_atk_floor	2	42	move	0	0	m1	m1	36986,3119,39100,42996
+DEC	intimidate_atk_floor	2	43	move	0	0	m1	m1	52200,51915,49186,30215
+DEC	intimidate_atk_floor	2	44	move	0	0	m1	m1	10518,13492,27929,61062
+DEC	intimidate_atk_floor	2	45	move	0	0	m1	m1	29371,8901,63921,28577
+DEC	intimidate_atk_floor	2	46	move	0	0	m0	m0	7157,16151,37786,41577
+DEC	intimidate_atk_floor	2	47	move	0	0	m0	m0	32461,49754,34299,58417
+DEC	intimidate_atk_floor	2	48	move	0	0	m0	m0	53567,22662,37006,21753
+DEC	intimidate_atk_floor	2	49	move	0	0	m0	m0	2979,42778,31623,5313
+DEC	intimidate_atk_floor	2	50	move	0	0	m0	m0	31987,42083,13335,17289
+DEC	intimidate_atk_floor	2	51	move	0	0	m0	m0	46620,34568,33028,37122
+L	intimidate_atk_floor	2	0	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	1	|gametype|singles
+L	intimidate_atk_floor	2	2	|player|p1|P1||
+L	intimidate_atk_floor	2	3	|player|p2|P2||
+L	intimidate_atk_floor	2	4	|gen|3
+L	intimidate_atk_floor	2	5	|tier|[Gen 3] Custom Game
+L	intimidate_atk_floor	2	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	intimidate_atk_floor	2	7	|
+L	intimidate_atk_floor	2	8	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	9	|teamsize|p1|6
+L	intimidate_atk_floor	2	10	|teamsize|p2|1
+L	intimidate_atk_floor	2	11	|start
+L	intimidate_atk_floor	2	12	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	2	13	|switch|p2a: Snorlax|Snorlax|524/524
+L	intimidate_atk_floor	2	14	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	2	15	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	2	16	|turn|1
+L	intimidate_atk_floor	2	17	|
+L	intimidate_atk_floor	2	18	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	19	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	2	20	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	2	21	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	2	22	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	23	|-nothing
+L	intimidate_atk_floor	2	24	|
+L	intimidate_atk_floor	2	25	|upkeep
+L	intimidate_atk_floor	2	26	|turn|2
+L	intimidate_atk_floor	2	27	|
+L	intimidate_atk_floor	2	28	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	29	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	2	30	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	2	31	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	2	32	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	33	|-nothing
+L	intimidate_atk_floor	2	34	|
+L	intimidate_atk_floor	2	35	|upkeep
+L	intimidate_atk_floor	2	36	|turn|3
+L	intimidate_atk_floor	2	37	|
+L	intimidate_atk_floor	2	38	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	39	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	2	40	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	2	41	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	2	42	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	43	|-nothing
+L	intimidate_atk_floor	2	44	|
+L	intimidate_atk_floor	2	45	|upkeep
+L	intimidate_atk_floor	2	46	|turn|4
+L	intimidate_atk_floor	2	47	|
+L	intimidate_atk_floor	2	48	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	49	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	2	50	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	2	51	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	2	52	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	53	|-nothing
+L	intimidate_atk_floor	2	54	|
+L	intimidate_atk_floor	2	55	|upkeep
+L	intimidate_atk_floor	2	56	|turn|5
+L	intimidate_atk_floor	2	57	|
+L	intimidate_atk_floor	2	58	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	59	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	2	60	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	2	61	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	2	62	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	63	|-nothing
+L	intimidate_atk_floor	2	64	|
+L	intimidate_atk_floor	2	65	|upkeep
+L	intimidate_atk_floor	2	66	|turn|6
+L	intimidate_atk_floor	2	67	|
+L	intimidate_atk_floor	2	68	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	69	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	2	70	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	2	71	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	2	72	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	73	|-nothing
+L	intimidate_atk_floor	2	74	|
+L	intimidate_atk_floor	2	75	|upkeep
+L	intimidate_atk_floor	2	76	|turn|7
+L	intimidate_atk_floor	2	77	|
+L	intimidate_atk_floor	2	78	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	79	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	80	|-nothing
+L	intimidate_atk_floor	2	81	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	82	|-nothing
+L	intimidate_atk_floor	2	83	|
+L	intimidate_atk_floor	2	84	|upkeep
+L	intimidate_atk_floor	2	85	|turn|8
+L	intimidate_atk_floor	2	86	|
+L	intimidate_atk_floor	2	87	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	88	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	89	|-nothing
+L	intimidate_atk_floor	2	90	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	91	|-nothing
+L	intimidate_atk_floor	2	92	|
+L	intimidate_atk_floor	2	93	|upkeep
+L	intimidate_atk_floor	2	94	|turn|9
+L	intimidate_atk_floor	2	95	|
+L	intimidate_atk_floor	2	96	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	97	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	98	|-nothing
+L	intimidate_atk_floor	2	99	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	100	|-nothing
+L	intimidate_atk_floor	2	101	|
+L	intimidate_atk_floor	2	102	|upkeep
+L	intimidate_atk_floor	2	103	|turn|10
+L	intimidate_atk_floor	2	104	|
+L	intimidate_atk_floor	2	105	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	106	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	107	|-nothing
+L	intimidate_atk_floor	2	108	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	109	|-nothing
+L	intimidate_atk_floor	2	110	|
+L	intimidate_atk_floor	2	111	|upkeep
+L	intimidate_atk_floor	2	112	|turn|11
+L	intimidate_atk_floor	2	113	|
+L	intimidate_atk_floor	2	114	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	115	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	116	|-nothing
+L	intimidate_atk_floor	2	117	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	118	|-nothing
+L	intimidate_atk_floor	2	119	|
+L	intimidate_atk_floor	2	120	|upkeep
+L	intimidate_atk_floor	2	121	|turn|12
+L	intimidate_atk_floor	2	122	|
+L	intimidate_atk_floor	2	123	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	124	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	125	|-nothing
+L	intimidate_atk_floor	2	126	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	127	|-nothing
+L	intimidate_atk_floor	2	128	|
+L	intimidate_atk_floor	2	129	|upkeep
+L	intimidate_atk_floor	2	130	|turn|13
+L	intimidate_atk_floor	2	131	|
+L	intimidate_atk_floor	2	132	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	133	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	134	|-nothing
+L	intimidate_atk_floor	2	135	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	136	|-nothing
+L	intimidate_atk_floor	2	137	|
+L	intimidate_atk_floor	2	138	|upkeep
+L	intimidate_atk_floor	2	139	|turn|14
+L	intimidate_atk_floor	2	140	|
+L	intimidate_atk_floor	2	141	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	142	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	143	|-nothing
+L	intimidate_atk_floor	2	144	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	145	|-nothing
+L	intimidate_atk_floor	2	146	|
+L	intimidate_atk_floor	2	147	|upkeep
+L	intimidate_atk_floor	2	148	|turn|15
+L	intimidate_atk_floor	2	149	|
+L	intimidate_atk_floor	2	150	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	151	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	152	|-nothing
+L	intimidate_atk_floor	2	153	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	154	|-nothing
+L	intimidate_atk_floor	2	155	|
+L	intimidate_atk_floor	2	156	|upkeep
+L	intimidate_atk_floor	2	157	|turn|16
+L	intimidate_atk_floor	2	158	|
+L	intimidate_atk_floor	2	159	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	160	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	161	|-nothing
+L	intimidate_atk_floor	2	162	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	163	|-nothing
+L	intimidate_atk_floor	2	164	|
+L	intimidate_atk_floor	2	165	|upkeep
+L	intimidate_atk_floor	2	166	|turn|17
+L	intimidate_atk_floor	2	167	|
+L	intimidate_atk_floor	2	168	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	169	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	170	|-nothing
+L	intimidate_atk_floor	2	171	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	172	|-nothing
+L	intimidate_atk_floor	2	173	|
+L	intimidate_atk_floor	2	174	|upkeep
+L	intimidate_atk_floor	2	175	|turn|18
+L	intimidate_atk_floor	2	176	|
+L	intimidate_atk_floor	2	177	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	178	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	179	|-nothing
+L	intimidate_atk_floor	2	180	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	181	|-nothing
+L	intimidate_atk_floor	2	182	|
+L	intimidate_atk_floor	2	183	|upkeep
+L	intimidate_atk_floor	2	184	|turn|19
+L	intimidate_atk_floor	2	185	|
+L	intimidate_atk_floor	2	186	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	187	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	188	|-nothing
+L	intimidate_atk_floor	2	189	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	190	|-nothing
+L	intimidate_atk_floor	2	191	|
+L	intimidate_atk_floor	2	192	|upkeep
+L	intimidate_atk_floor	2	193	|turn|20
+L	intimidate_atk_floor	2	194	|
+L	intimidate_atk_floor	2	195	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	196	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	197	|-nothing
+L	intimidate_atk_floor	2	198	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	199	|-nothing
+L	intimidate_atk_floor	2	200	|
+L	intimidate_atk_floor	2	201	|upkeep
+L	intimidate_atk_floor	2	202	|turn|21
+L	intimidate_atk_floor	2	203	|
+L	intimidate_atk_floor	2	204	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	205	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	206	|-nothing
+L	intimidate_atk_floor	2	207	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	208	|-nothing
+L	intimidate_atk_floor	2	209	|
+L	intimidate_atk_floor	2	210	|upkeep
+L	intimidate_atk_floor	2	211	|turn|22
+L	intimidate_atk_floor	2	212	|
+L	intimidate_atk_floor	2	213	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	214	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	215	|-nothing
+L	intimidate_atk_floor	2	216	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	217	|-nothing
+L	intimidate_atk_floor	2	218	|
+L	intimidate_atk_floor	2	219	|upkeep
+L	intimidate_atk_floor	2	220	|turn|23
+L	intimidate_atk_floor	2	221	|
+L	intimidate_atk_floor	2	222	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	223	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	224	|-nothing
+L	intimidate_atk_floor	2	225	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	226	|-nothing
+L	intimidate_atk_floor	2	227	|
+L	intimidate_atk_floor	2	228	|upkeep
+L	intimidate_atk_floor	2	229	|turn|24
+L	intimidate_atk_floor	2	230	|
+L	intimidate_atk_floor	2	231	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	232	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	233	|-nothing
+L	intimidate_atk_floor	2	234	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	235	|-nothing
+L	intimidate_atk_floor	2	236	|
+L	intimidate_atk_floor	2	237	|upkeep
+L	intimidate_atk_floor	2	238	|turn|25
+L	intimidate_atk_floor	2	239	|
+L	intimidate_atk_floor	2	240	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	241	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	242	|-nothing
+L	intimidate_atk_floor	2	243	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	244	|-nothing
+L	intimidate_atk_floor	2	245	|
+L	intimidate_atk_floor	2	246	|upkeep
+L	intimidate_atk_floor	2	247	|turn|26
+L	intimidate_atk_floor	2	248	|
+L	intimidate_atk_floor	2	249	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	250	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	251	|-nothing
+L	intimidate_atk_floor	2	252	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	253	|-nothing
+L	intimidate_atk_floor	2	254	|
+L	intimidate_atk_floor	2	255	|upkeep
+L	intimidate_atk_floor	2	256	|turn|27
+L	intimidate_atk_floor	2	257	|
+L	intimidate_atk_floor	2	258	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	259	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	260	|-nothing
+L	intimidate_atk_floor	2	261	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	262	|-nothing
+L	intimidate_atk_floor	2	263	|
+L	intimidate_atk_floor	2	264	|upkeep
+L	intimidate_atk_floor	2	265	|turn|28
+L	intimidate_atk_floor	2	266	|
+L	intimidate_atk_floor	2	267	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	268	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	269	|-nothing
+L	intimidate_atk_floor	2	270	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	271	|-nothing
+L	intimidate_atk_floor	2	272	|
+L	intimidate_atk_floor	2	273	|upkeep
+L	intimidate_atk_floor	2	274	|turn|29
+L	intimidate_atk_floor	2	275	|
+L	intimidate_atk_floor	2	276	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	277	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	278	|-nothing
+L	intimidate_atk_floor	2	279	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	280	|-nothing
+L	intimidate_atk_floor	2	281	|
+L	intimidate_atk_floor	2	282	|upkeep
+L	intimidate_atk_floor	2	283	|turn|30
+L	intimidate_atk_floor	2	284	|
+L	intimidate_atk_floor	2	285	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	286	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	287	|-nothing
+L	intimidate_atk_floor	2	288	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	289	|-nothing
+L	intimidate_atk_floor	2	290	|
+L	intimidate_atk_floor	2	291	|upkeep
+L	intimidate_atk_floor	2	292	|turn|31
+L	intimidate_atk_floor	2	293	|
+L	intimidate_atk_floor	2	294	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	295	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	296	|-nothing
+L	intimidate_atk_floor	2	297	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	298	|-nothing
+L	intimidate_atk_floor	2	299	|
+L	intimidate_atk_floor	2	300	|upkeep
+L	intimidate_atk_floor	2	301	|turn|32
+L	intimidate_atk_floor	2	302	|
+L	intimidate_atk_floor	2	303	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	304	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	305	|-nothing
+L	intimidate_atk_floor	2	306	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	307	|-nothing
+L	intimidate_atk_floor	2	308	|
+L	intimidate_atk_floor	2	309	|upkeep
+L	intimidate_atk_floor	2	310	|turn|33
+L	intimidate_atk_floor	2	311	|
+L	intimidate_atk_floor	2	312	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	313	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	314	|-nothing
+L	intimidate_atk_floor	2	315	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	316	|-nothing
+L	intimidate_atk_floor	2	317	|
+L	intimidate_atk_floor	2	318	|upkeep
+L	intimidate_atk_floor	2	319	|turn|34
+L	intimidate_atk_floor	2	320	|
+L	intimidate_atk_floor	2	321	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	322	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	323	|-nothing
+L	intimidate_atk_floor	2	324	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	325	|-nothing
+L	intimidate_atk_floor	2	326	|
+L	intimidate_atk_floor	2	327	|upkeep
+L	intimidate_atk_floor	2	328	|turn|35
+L	intimidate_atk_floor	2	329	|
+L	intimidate_atk_floor	2	330	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	331	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	332	|-nothing
+L	intimidate_atk_floor	2	333	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	334	|-nothing
+L	intimidate_atk_floor	2	335	|
+L	intimidate_atk_floor	2	336	|upkeep
+L	intimidate_atk_floor	2	337	|turn|36
+L	intimidate_atk_floor	2	338	|
+L	intimidate_atk_floor	2	339	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	340	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	341	|-nothing
+L	intimidate_atk_floor	2	342	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	343	|-nothing
+L	intimidate_atk_floor	2	344	|
+L	intimidate_atk_floor	2	345	|upkeep
+L	intimidate_atk_floor	2	346	|turn|37
+L	intimidate_atk_floor	2	347	|
+L	intimidate_atk_floor	2	348	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	349	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	350	|-nothing
+L	intimidate_atk_floor	2	351	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	352	|-nothing
+L	intimidate_atk_floor	2	353	|
+L	intimidate_atk_floor	2	354	|upkeep
+L	intimidate_atk_floor	2	355	|turn|38
+L	intimidate_atk_floor	2	356	|
+L	intimidate_atk_floor	2	357	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	358	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	359	|-nothing
+L	intimidate_atk_floor	2	360	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	361	|-nothing
+L	intimidate_atk_floor	2	362	|
+L	intimidate_atk_floor	2	363	|upkeep
+L	intimidate_atk_floor	2	364	|turn|39
+L	intimidate_atk_floor	2	365	|
+L	intimidate_atk_floor	2	366	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	367	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	368	|-nothing
+L	intimidate_atk_floor	2	369	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	370	|-nothing
+L	intimidate_atk_floor	2	371	|
+L	intimidate_atk_floor	2	372	|upkeep
+L	intimidate_atk_floor	2	373	|turn|40
+L	intimidate_atk_floor	2	374	|
+L	intimidate_atk_floor	2	375	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	376	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	377	|-nothing
+L	intimidate_atk_floor	2	378	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	379	|-nothing
+L	intimidate_atk_floor	2	380	|
+L	intimidate_atk_floor	2	381	|upkeep
+L	intimidate_atk_floor	2	382	|turn|41
+L	intimidate_atk_floor	2	383	|
+L	intimidate_atk_floor	2	384	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	385	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	386	|-nothing
+L	intimidate_atk_floor	2	387	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	388	|-nothing
+L	intimidate_atk_floor	2	389	|
+L	intimidate_atk_floor	2	390	|upkeep
+L	intimidate_atk_floor	2	391	|turn|42
+L	intimidate_atk_floor	2	392	|
+L	intimidate_atk_floor	2	393	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	394	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	395	|-nothing
+L	intimidate_atk_floor	2	396	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	397	|-nothing
+L	intimidate_atk_floor	2	398	|
+L	intimidate_atk_floor	2	399	|upkeep
+L	intimidate_atk_floor	2	400	|turn|43
+L	intimidate_atk_floor	2	401	|
+L	intimidate_atk_floor	2	402	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	403	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	404	|-nothing
+L	intimidate_atk_floor	2	405	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	406	|-nothing
+L	intimidate_atk_floor	2	407	|
+L	intimidate_atk_floor	2	408	|upkeep
+L	intimidate_atk_floor	2	409	|turn|44
+L	intimidate_atk_floor	2	410	|
+L	intimidate_atk_floor	2	411	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	412	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	413	|-nothing
+L	intimidate_atk_floor	2	414	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	415	|-nothing
+L	intimidate_atk_floor	2	416	|
+L	intimidate_atk_floor	2	417	|upkeep
+L	intimidate_atk_floor	2	418	|turn|45
+L	intimidate_atk_floor	2	419	|
+L	intimidate_atk_floor	2	420	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	421	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	422	|-nothing
+L	intimidate_atk_floor	2	423	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	424	|-nothing
+L	intimidate_atk_floor	2	425	|
+L	intimidate_atk_floor	2	426	|upkeep
+L	intimidate_atk_floor	2	427	|turn|46
+L	intimidate_atk_floor	2	428	|
+L	intimidate_atk_floor	2	429	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	430	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	2	431	|-nothing
+L	intimidate_atk_floor	2	432	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	2	433	|-nothing
+L	intimidate_atk_floor	2	434	|
+L	intimidate_atk_floor	2	435	|upkeep
+L	intimidate_atk_floor	2	436	|turn|47
+L	intimidate_atk_floor	2	437	|
+L	intimidate_atk_floor	2	438	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	439	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	2	440	|-damage|p2a: Snorlax|434/524
+L	intimidate_atk_floor	2	441	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	2	442	|-damage|p1a: Salamence|289/331
+L	intimidate_atk_floor	2	443	|
+L	intimidate_atk_floor	2	444	|-heal|p2a: Snorlax|466/524|[from] item: Leftovers
+L	intimidate_atk_floor	2	445	|upkeep
+L	intimidate_atk_floor	2	446	|turn|48
+L	intimidate_atk_floor	2	447	|
+L	intimidate_atk_floor	2	448	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	449	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	2	450	|-crit|p2a: Snorlax
+L	intimidate_atk_floor	2	451	|-damage|p2a: Snorlax|282/524
+L	intimidate_atk_floor	2	452	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	2	453	|-damage|p1a: Salamence|246/331
+L	intimidate_atk_floor	2	454	|
+L	intimidate_atk_floor	2	455	|-heal|p2a: Snorlax|314/524|[from] item: Leftovers
+L	intimidate_atk_floor	2	456	|upkeep
+L	intimidate_atk_floor	2	457	|turn|49
+L	intimidate_atk_floor	2	458	|
+L	intimidate_atk_floor	2	459	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	460	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	2	461	|-crit|p2a: Snorlax
+L	intimidate_atk_floor	2	462	|-damage|p2a: Snorlax|128/524
+L	intimidate_atk_floor	2	463	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	2	464	|-damage|p1a: Salamence|201/331
+L	intimidate_atk_floor	2	465	|
+L	intimidate_atk_floor	2	466	|-heal|p2a: Snorlax|160/524|[from] item: Leftovers
+L	intimidate_atk_floor	2	467	|upkeep
+L	intimidate_atk_floor	2	468	|turn|50
+L	intimidate_atk_floor	2	469	|
+L	intimidate_atk_floor	2	470	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	471	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	2	472	|-damage|p2a: Snorlax|80/524
+L	intimidate_atk_floor	2	473	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	2	474	|-damage|p1a: Salamence|156/331
+L	intimidate_atk_floor	2	475	|
+L	intimidate_atk_floor	2	476	|-heal|p2a: Snorlax|112/524|[from] item: Leftovers
+L	intimidate_atk_floor	2	477	|upkeep
+L	intimidate_atk_floor	2	478	|turn|51
+L	intimidate_atk_floor	2	479	|
+L	intimidate_atk_floor	2	480	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	481	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	2	482	|-damage|p2a: Snorlax|21/524
+L	intimidate_atk_floor	2	483	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	2	484	|-damage|p1a: Salamence|113/331
+L	intimidate_atk_floor	2	485	|
+L	intimidate_atk_floor	2	486	|-heal|p2a: Snorlax|53/524|[from] item: Leftovers
+L	intimidate_atk_floor	2	487	|upkeep
+L	intimidate_atk_floor	2	488	|turn|52
+L	intimidate_atk_floor	2	489	|
+L	intimidate_atk_floor	2	490	|t:|<NORMALIZED>
+L	intimidate_atk_floor	2	491	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	2	492	|-damage|p2a: Snorlax|0 fnt
+L	intimidate_atk_floor	2	493	|faint|p2a: Snorlax
+L	intimidate_atk_floor	2	494	|
+L	intimidate_atk_floor	2	495	|win|P1
+END	intimidate_atk_floor	2	1	p1	496
+BATTLE	intimidate_atk_floor	3	37681,51734,61335,13700
+INIT	intimidate_atk_floor	3	58774,8718,39182,24535
+DEC	intimidate_atk_floor	3	0	move	0	0	s1	m1	16651,3153,26365,32150
+DEC	intimidate_atk_floor	3	1	move	0	0	s1	m1	12131,11347,376,28913
+DEC	intimidate_atk_floor	3	2	move	0	0	s1	m1	22892,11406,52147,9944
+DEC	intimidate_atk_floor	3	3	move	0	0	s1	m1	5986,49370,28038,35323
+DEC	intimidate_atk_floor	3	4	move	0	0	s1	m1	24480,29876,57327,25034
+DEC	intimidate_atk_floor	3	5	move	0	0	s1	m1	27432,14002,22899,19829
+DEC	intimidate_atk_floor	3	6	move	0	0	m1	m1	36740,13113,31050,51948
+DEC	intimidate_atk_floor	3	7	move	0	0	m1	m1	63520,2392,64948,63967
+DEC	intimidate_atk_floor	3	8	move	0	0	m1	m1	6614,17209,56158,35518
+DEC	intimidate_atk_floor	3	9	move	0	0	m1	m1	45973,17741,6117,2489
+DEC	intimidate_atk_floor	3	10	move	0	0	m1	m1	32103,10638,20422,30144
+DEC	intimidate_atk_floor	3	11	move	0	0	m1	m1	20664,10928,59062,54147
+DEC	intimidate_atk_floor	3	12	move	0	0	m1	m1	51886,34604,59918,11378
+DEC	intimidate_atk_floor	3	13	move	0	0	m1	m1	48404,11799,15525,10685
+DEC	intimidate_atk_floor	3	14	move	0	0	m1	m1	4772,2896,12497,15188
+DEC	intimidate_atk_floor	3	15	move	0	0	m1	m1	3890,65447,19134,64231
+DEC	intimidate_atk_floor	3	16	move	0	0	m1	m1	13575,27446,534,15078
+DEC	intimidate_atk_floor	3	17	move	0	0	m1	m1	19832,49567,23738,61825
+DEC	intimidate_atk_floor	3	18	move	0	0	m1	m1	44791,26211,42924,61352
+DEC	intimidate_atk_floor	3	19	move	0	0	m1	m1	48120,2602,8506,5131
+DEC	intimidate_atk_floor	3	20	move	0	0	m1	m1	31499,55497,24855,27162
+DEC	intimidate_atk_floor	3	21	move	0	0	m1	m1	46320,53009,46305,25861
+DEC	intimidate_atk_floor	3	22	move	0	0	m1	m1	44315,50825,56134,9916
+DEC	intimidate_atk_floor	3	23	move	0	0	m1	m1	62929,3626,27826,33519
+DEC	intimidate_atk_floor	3	24	move	0	0	m1	m1	51649,81,54063,11790
+DEC	intimidate_atk_floor	3	25	move	0	0	m1	m1	17428,23946,48075,18505
+DEC	intimidate_atk_floor	3	26	move	0	0	m1	m1	44456,13078,42760,13456
+DEC	intimidate_atk_floor	3	27	move	0	0	m1	m1	14096,15241,31348,27539
+DEC	intimidate_atk_floor	3	28	move	0	0	m1	m1	61838,51285,37547,47810
+DEC	intimidate_atk_floor	3	29	move	0	0	m1	m1	5018,20294,47143,8013
+DEC	intimidate_atk_floor	3	30	move	0	0	m1	m1	61907,53786,61041,11556
+DEC	intimidate_atk_floor	3	31	move	0	0	m1	m1	64991,60818,4081,45559
+DEC	intimidate_atk_floor	3	32	move	0	0	m1	m1	35608,40779,46208,1078
+DEC	intimidate_atk_floor	3	33	move	0	0	m1	m1	8841,18699,40547,11793
+DEC	intimidate_atk_floor	3	34	move	0	0	m1	m1	22624,40242,65381,58488
+DEC	intimidate_atk_floor	3	35	move	0	0	m1	m1	39394,37712,10725,64027
+DEC	intimidate_atk_floor	3	36	move	0	0	m1	m1	65256,34176,54647,48746
+DEC	intimidate_atk_floor	3	37	move	0	0	m1	m1	13524,42622,14897,30869
+DEC	intimidate_atk_floor	3	38	move	0	0	m1	m1	55605,11507,38725,61068
+DEC	intimidate_atk_floor	3	39	move	0	0	m1	m1	43200,56535,45370,43007
+DEC	intimidate_atk_floor	3	40	move	0	0	m1	m1	64244,58118,31787,23902
+DEC	intimidate_atk_floor	3	41	move	0	0	m1	m1	51401,39595,26571,49881
+DEC	intimidate_atk_floor	3	42	move	0	0	m1	m1	2961,16270,57023,40800
+DEC	intimidate_atk_floor	3	43	move	0	0	m1	m1	58453,30700,18858,57251
+DEC	intimidate_atk_floor	3	44	move	0	0	m1	m1	47183,39417,25524,5394
+DEC	intimidate_atk_floor	3	45	move	0	0	m1	m1	41564,65193,57591,37085
+DEC	intimidate_atk_floor	3	46	move	0	0	m0	m0	33535,19235,43308,34853
+DEC	intimidate_atk_floor	3	47	move	0	0	m0	m0	32267,36566,31423,32365
+DEC	intimidate_atk_floor	3	48	move	0	0	m0	m0	25299,64706,44379,37813
+DEC	intimidate_atk_floor	3	49	move	0	0	m0	m0	23877,2576,31975,59389
+DEC	intimidate_atk_floor	3	50	move	0	0	m0	m0	37741,18918,54817,52732
+DEC	intimidate_atk_floor	3	51	move	0	0	m0	m0	62267,48140,50213,42551
+DEC	intimidate_atk_floor	3	52	move	0	0	m0	m0	55559,21403,48243,37534
+DEC	intimidate_atk_floor	3	53	move	0	0	m0	m0	56868,50538,51813,30290
+DEC	intimidate_atk_floor	3	54	switch	1	0	s1	-	11500,38012,64190,12061
+DEC	intimidate_atk_floor	3	55	move	0	0	m0	m0	1685,41198,36026,40549
+DEC	intimidate_atk_floor	3	56	move	0	0	m0	m0	38792,23190,30718,3245
+DEC	intimidate_atk_floor	3	57	move	0	0	m0	m0	59878,57839,39736,47126
+L	intimidate_atk_floor	3	0	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	1	|gametype|singles
+L	intimidate_atk_floor	3	2	|player|p1|P1||
+L	intimidate_atk_floor	3	3	|player|p2|P2||
+L	intimidate_atk_floor	3	4	|gen|3
+L	intimidate_atk_floor	3	5	|tier|[Gen 3] Custom Game
+L	intimidate_atk_floor	3	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	intimidate_atk_floor	3	7	|
+L	intimidate_atk_floor	3	8	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	9	|teamsize|p1|6
+L	intimidate_atk_floor	3	10	|teamsize|p2|1
+L	intimidate_atk_floor	3	11	|start
+L	intimidate_atk_floor	3	12	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	3	13	|switch|p2a: Snorlax|Snorlax|524/524
+L	intimidate_atk_floor	3	14	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	3	15	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	3	16	|turn|1
+L	intimidate_atk_floor	3	17	|
+L	intimidate_atk_floor	3	18	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	19	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	3	20	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	3	21	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	3	22	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	23	|-nothing
+L	intimidate_atk_floor	3	24	|
+L	intimidate_atk_floor	3	25	|upkeep
+L	intimidate_atk_floor	3	26	|turn|2
+L	intimidate_atk_floor	3	27	|
+L	intimidate_atk_floor	3	28	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	29	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	3	30	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	3	31	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	3	32	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	33	|-nothing
+L	intimidate_atk_floor	3	34	|
+L	intimidate_atk_floor	3	35	|upkeep
+L	intimidate_atk_floor	3	36	|turn|3
+L	intimidate_atk_floor	3	37	|
+L	intimidate_atk_floor	3	38	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	39	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	3	40	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	3	41	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	3	42	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	43	|-nothing
+L	intimidate_atk_floor	3	44	|
+L	intimidate_atk_floor	3	45	|upkeep
+L	intimidate_atk_floor	3	46	|turn|4
+L	intimidate_atk_floor	3	47	|
+L	intimidate_atk_floor	3	48	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	49	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	3	50	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	3	51	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	3	52	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	53	|-nothing
+L	intimidate_atk_floor	3	54	|
+L	intimidate_atk_floor	3	55	|upkeep
+L	intimidate_atk_floor	3	56	|turn|5
+L	intimidate_atk_floor	3	57	|
+L	intimidate_atk_floor	3	58	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	59	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	3	60	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	3	61	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	3	62	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	63	|-nothing
+L	intimidate_atk_floor	3	64	|
+L	intimidate_atk_floor	3	65	|upkeep
+L	intimidate_atk_floor	3	66	|turn|6
+L	intimidate_atk_floor	3	67	|
+L	intimidate_atk_floor	3	68	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	69	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	3	70	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	3	71	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	3	72	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	73	|-nothing
+L	intimidate_atk_floor	3	74	|
+L	intimidate_atk_floor	3	75	|upkeep
+L	intimidate_atk_floor	3	76	|turn|7
+L	intimidate_atk_floor	3	77	|
+L	intimidate_atk_floor	3	78	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	79	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	80	|-nothing
+L	intimidate_atk_floor	3	81	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	82	|-nothing
+L	intimidate_atk_floor	3	83	|
+L	intimidate_atk_floor	3	84	|upkeep
+L	intimidate_atk_floor	3	85	|turn|8
+L	intimidate_atk_floor	3	86	|
+L	intimidate_atk_floor	3	87	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	88	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	89	|-nothing
+L	intimidate_atk_floor	3	90	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	91	|-nothing
+L	intimidate_atk_floor	3	92	|
+L	intimidate_atk_floor	3	93	|upkeep
+L	intimidate_atk_floor	3	94	|turn|9
+L	intimidate_atk_floor	3	95	|
+L	intimidate_atk_floor	3	96	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	97	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	98	|-nothing
+L	intimidate_atk_floor	3	99	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	100	|-nothing
+L	intimidate_atk_floor	3	101	|
+L	intimidate_atk_floor	3	102	|upkeep
+L	intimidate_atk_floor	3	103	|turn|10
+L	intimidate_atk_floor	3	104	|
+L	intimidate_atk_floor	3	105	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	106	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	107	|-nothing
+L	intimidate_atk_floor	3	108	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	109	|-nothing
+L	intimidate_atk_floor	3	110	|
+L	intimidate_atk_floor	3	111	|upkeep
+L	intimidate_atk_floor	3	112	|turn|11
+L	intimidate_atk_floor	3	113	|
+L	intimidate_atk_floor	3	114	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	115	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	116	|-nothing
+L	intimidate_atk_floor	3	117	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	118	|-nothing
+L	intimidate_atk_floor	3	119	|
+L	intimidate_atk_floor	3	120	|upkeep
+L	intimidate_atk_floor	3	121	|turn|12
+L	intimidate_atk_floor	3	122	|
+L	intimidate_atk_floor	3	123	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	124	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	125	|-nothing
+L	intimidate_atk_floor	3	126	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	127	|-nothing
+L	intimidate_atk_floor	3	128	|
+L	intimidate_atk_floor	3	129	|upkeep
+L	intimidate_atk_floor	3	130	|turn|13
+L	intimidate_atk_floor	3	131	|
+L	intimidate_atk_floor	3	132	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	133	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	134	|-nothing
+L	intimidate_atk_floor	3	135	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	136	|-nothing
+L	intimidate_atk_floor	3	137	|
+L	intimidate_atk_floor	3	138	|upkeep
+L	intimidate_atk_floor	3	139	|turn|14
+L	intimidate_atk_floor	3	140	|
+L	intimidate_atk_floor	3	141	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	142	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	143	|-nothing
+L	intimidate_atk_floor	3	144	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	145	|-nothing
+L	intimidate_atk_floor	3	146	|
+L	intimidate_atk_floor	3	147	|upkeep
+L	intimidate_atk_floor	3	148	|turn|15
+L	intimidate_atk_floor	3	149	|
+L	intimidate_atk_floor	3	150	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	151	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	152	|-nothing
+L	intimidate_atk_floor	3	153	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	154	|-nothing
+L	intimidate_atk_floor	3	155	|
+L	intimidate_atk_floor	3	156	|upkeep
+L	intimidate_atk_floor	3	157	|turn|16
+L	intimidate_atk_floor	3	158	|
+L	intimidate_atk_floor	3	159	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	160	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	161	|-nothing
+L	intimidate_atk_floor	3	162	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	163	|-nothing
+L	intimidate_atk_floor	3	164	|
+L	intimidate_atk_floor	3	165	|upkeep
+L	intimidate_atk_floor	3	166	|turn|17
+L	intimidate_atk_floor	3	167	|
+L	intimidate_atk_floor	3	168	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	169	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	170	|-nothing
+L	intimidate_atk_floor	3	171	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	172	|-nothing
+L	intimidate_atk_floor	3	173	|
+L	intimidate_atk_floor	3	174	|upkeep
+L	intimidate_atk_floor	3	175	|turn|18
+L	intimidate_atk_floor	3	176	|
+L	intimidate_atk_floor	3	177	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	178	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	179	|-nothing
+L	intimidate_atk_floor	3	180	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	181	|-nothing
+L	intimidate_atk_floor	3	182	|
+L	intimidate_atk_floor	3	183	|upkeep
+L	intimidate_atk_floor	3	184	|turn|19
+L	intimidate_atk_floor	3	185	|
+L	intimidate_atk_floor	3	186	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	187	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	188	|-nothing
+L	intimidate_atk_floor	3	189	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	190	|-nothing
+L	intimidate_atk_floor	3	191	|
+L	intimidate_atk_floor	3	192	|upkeep
+L	intimidate_atk_floor	3	193	|turn|20
+L	intimidate_atk_floor	3	194	|
+L	intimidate_atk_floor	3	195	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	196	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	197	|-nothing
+L	intimidate_atk_floor	3	198	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	199	|-nothing
+L	intimidate_atk_floor	3	200	|
+L	intimidate_atk_floor	3	201	|upkeep
+L	intimidate_atk_floor	3	202	|turn|21
+L	intimidate_atk_floor	3	203	|
+L	intimidate_atk_floor	3	204	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	205	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	206	|-nothing
+L	intimidate_atk_floor	3	207	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	208	|-nothing
+L	intimidate_atk_floor	3	209	|
+L	intimidate_atk_floor	3	210	|upkeep
+L	intimidate_atk_floor	3	211	|turn|22
+L	intimidate_atk_floor	3	212	|
+L	intimidate_atk_floor	3	213	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	214	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	215	|-nothing
+L	intimidate_atk_floor	3	216	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	217	|-nothing
+L	intimidate_atk_floor	3	218	|
+L	intimidate_atk_floor	3	219	|upkeep
+L	intimidate_atk_floor	3	220	|turn|23
+L	intimidate_atk_floor	3	221	|
+L	intimidate_atk_floor	3	222	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	223	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	224	|-nothing
+L	intimidate_atk_floor	3	225	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	226	|-nothing
+L	intimidate_atk_floor	3	227	|
+L	intimidate_atk_floor	3	228	|upkeep
+L	intimidate_atk_floor	3	229	|turn|24
+L	intimidate_atk_floor	3	230	|
+L	intimidate_atk_floor	3	231	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	232	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	233	|-nothing
+L	intimidate_atk_floor	3	234	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	235	|-nothing
+L	intimidate_atk_floor	3	236	|
+L	intimidate_atk_floor	3	237	|upkeep
+L	intimidate_atk_floor	3	238	|turn|25
+L	intimidate_atk_floor	3	239	|
+L	intimidate_atk_floor	3	240	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	241	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	242	|-nothing
+L	intimidate_atk_floor	3	243	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	244	|-nothing
+L	intimidate_atk_floor	3	245	|
+L	intimidate_atk_floor	3	246	|upkeep
+L	intimidate_atk_floor	3	247	|turn|26
+L	intimidate_atk_floor	3	248	|
+L	intimidate_atk_floor	3	249	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	250	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	251	|-nothing
+L	intimidate_atk_floor	3	252	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	253	|-nothing
+L	intimidate_atk_floor	3	254	|
+L	intimidate_atk_floor	3	255	|upkeep
+L	intimidate_atk_floor	3	256	|turn|27
+L	intimidate_atk_floor	3	257	|
+L	intimidate_atk_floor	3	258	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	259	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	260	|-nothing
+L	intimidate_atk_floor	3	261	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	262	|-nothing
+L	intimidate_atk_floor	3	263	|
+L	intimidate_atk_floor	3	264	|upkeep
+L	intimidate_atk_floor	3	265	|turn|28
+L	intimidate_atk_floor	3	266	|
+L	intimidate_atk_floor	3	267	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	268	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	269	|-nothing
+L	intimidate_atk_floor	3	270	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	271	|-nothing
+L	intimidate_atk_floor	3	272	|
+L	intimidate_atk_floor	3	273	|upkeep
+L	intimidate_atk_floor	3	274	|turn|29
+L	intimidate_atk_floor	3	275	|
+L	intimidate_atk_floor	3	276	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	277	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	278	|-nothing
+L	intimidate_atk_floor	3	279	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	280	|-nothing
+L	intimidate_atk_floor	3	281	|
+L	intimidate_atk_floor	3	282	|upkeep
+L	intimidate_atk_floor	3	283	|turn|30
+L	intimidate_atk_floor	3	284	|
+L	intimidate_atk_floor	3	285	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	286	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	287	|-nothing
+L	intimidate_atk_floor	3	288	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	289	|-nothing
+L	intimidate_atk_floor	3	290	|
+L	intimidate_atk_floor	3	291	|upkeep
+L	intimidate_atk_floor	3	292	|turn|31
+L	intimidate_atk_floor	3	293	|
+L	intimidate_atk_floor	3	294	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	295	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	296	|-nothing
+L	intimidate_atk_floor	3	297	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	298	|-nothing
+L	intimidate_atk_floor	3	299	|
+L	intimidate_atk_floor	3	300	|upkeep
+L	intimidate_atk_floor	3	301	|turn|32
+L	intimidate_atk_floor	3	302	|
+L	intimidate_atk_floor	3	303	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	304	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	305	|-nothing
+L	intimidate_atk_floor	3	306	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	307	|-nothing
+L	intimidate_atk_floor	3	308	|
+L	intimidate_atk_floor	3	309	|upkeep
+L	intimidate_atk_floor	3	310	|turn|33
+L	intimidate_atk_floor	3	311	|
+L	intimidate_atk_floor	3	312	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	313	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	314	|-nothing
+L	intimidate_atk_floor	3	315	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	316	|-nothing
+L	intimidate_atk_floor	3	317	|
+L	intimidate_atk_floor	3	318	|upkeep
+L	intimidate_atk_floor	3	319	|turn|34
+L	intimidate_atk_floor	3	320	|
+L	intimidate_atk_floor	3	321	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	322	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	323	|-nothing
+L	intimidate_atk_floor	3	324	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	325	|-nothing
+L	intimidate_atk_floor	3	326	|
+L	intimidate_atk_floor	3	327	|upkeep
+L	intimidate_atk_floor	3	328	|turn|35
+L	intimidate_atk_floor	3	329	|
+L	intimidate_atk_floor	3	330	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	331	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	332	|-nothing
+L	intimidate_atk_floor	3	333	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	334	|-nothing
+L	intimidate_atk_floor	3	335	|
+L	intimidate_atk_floor	3	336	|upkeep
+L	intimidate_atk_floor	3	337	|turn|36
+L	intimidate_atk_floor	3	338	|
+L	intimidate_atk_floor	3	339	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	340	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	341	|-nothing
+L	intimidate_atk_floor	3	342	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	343	|-nothing
+L	intimidate_atk_floor	3	344	|
+L	intimidate_atk_floor	3	345	|upkeep
+L	intimidate_atk_floor	3	346	|turn|37
+L	intimidate_atk_floor	3	347	|
+L	intimidate_atk_floor	3	348	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	349	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	350	|-nothing
+L	intimidate_atk_floor	3	351	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	352	|-nothing
+L	intimidate_atk_floor	3	353	|
+L	intimidate_atk_floor	3	354	|upkeep
+L	intimidate_atk_floor	3	355	|turn|38
+L	intimidate_atk_floor	3	356	|
+L	intimidate_atk_floor	3	357	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	358	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	359	|-nothing
+L	intimidate_atk_floor	3	360	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	361	|-nothing
+L	intimidate_atk_floor	3	362	|
+L	intimidate_atk_floor	3	363	|upkeep
+L	intimidate_atk_floor	3	364	|turn|39
+L	intimidate_atk_floor	3	365	|
+L	intimidate_atk_floor	3	366	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	367	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	368	|-nothing
+L	intimidate_atk_floor	3	369	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	370	|-nothing
+L	intimidate_atk_floor	3	371	|
+L	intimidate_atk_floor	3	372	|upkeep
+L	intimidate_atk_floor	3	373	|turn|40
+L	intimidate_atk_floor	3	374	|
+L	intimidate_atk_floor	3	375	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	376	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	377	|-nothing
+L	intimidate_atk_floor	3	378	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	379	|-nothing
+L	intimidate_atk_floor	3	380	|
+L	intimidate_atk_floor	3	381	|upkeep
+L	intimidate_atk_floor	3	382	|turn|41
+L	intimidate_atk_floor	3	383	|
+L	intimidate_atk_floor	3	384	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	385	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	386	|-nothing
+L	intimidate_atk_floor	3	387	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	388	|-nothing
+L	intimidate_atk_floor	3	389	|
+L	intimidate_atk_floor	3	390	|upkeep
+L	intimidate_atk_floor	3	391	|turn|42
+L	intimidate_atk_floor	3	392	|
+L	intimidate_atk_floor	3	393	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	394	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	395	|-nothing
+L	intimidate_atk_floor	3	396	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	397	|-nothing
+L	intimidate_atk_floor	3	398	|
+L	intimidate_atk_floor	3	399	|upkeep
+L	intimidate_atk_floor	3	400	|turn|43
+L	intimidate_atk_floor	3	401	|
+L	intimidate_atk_floor	3	402	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	403	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	404	|-nothing
+L	intimidate_atk_floor	3	405	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	406	|-nothing
+L	intimidate_atk_floor	3	407	|
+L	intimidate_atk_floor	3	408	|upkeep
+L	intimidate_atk_floor	3	409	|turn|44
+L	intimidate_atk_floor	3	410	|
+L	intimidate_atk_floor	3	411	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	412	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	413	|-nothing
+L	intimidate_atk_floor	3	414	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	415	|-nothing
+L	intimidate_atk_floor	3	416	|
+L	intimidate_atk_floor	3	417	|upkeep
+L	intimidate_atk_floor	3	418	|turn|45
+L	intimidate_atk_floor	3	419	|
+L	intimidate_atk_floor	3	420	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	421	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	422	|-nothing
+L	intimidate_atk_floor	3	423	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	424	|-nothing
+L	intimidate_atk_floor	3	425	|
+L	intimidate_atk_floor	3	426	|upkeep
+L	intimidate_atk_floor	3	427	|turn|46
+L	intimidate_atk_floor	3	428	|
+L	intimidate_atk_floor	3	429	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	430	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	3	431	|-nothing
+L	intimidate_atk_floor	3	432	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	3	433	|-nothing
+L	intimidate_atk_floor	3	434	|
+L	intimidate_atk_floor	3	435	|upkeep
+L	intimidate_atk_floor	3	436	|turn|47
+L	intimidate_atk_floor	3	437	|
+L	intimidate_atk_floor	3	438	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	439	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	3	440	|-damage|p2a: Snorlax|435/524
+L	intimidate_atk_floor	3	441	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	3	442	|-damage|p1a: Salamence|284/331
+L	intimidate_atk_floor	3	443	|
+L	intimidate_atk_floor	3	444	|-heal|p2a: Snorlax|467/524|[from] item: Leftovers
+L	intimidate_atk_floor	3	445	|upkeep
+L	intimidate_atk_floor	3	446	|turn|48
+L	intimidate_atk_floor	3	447	|
+L	intimidate_atk_floor	3	448	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	449	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	3	450	|-damage|p2a: Snorlax|375/524
+L	intimidate_atk_floor	3	451	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	3	452	|-damage|p1a: Salamence|239/331
+L	intimidate_atk_floor	3	453	|
+L	intimidate_atk_floor	3	454	|-heal|p2a: Snorlax|407/524|[from] item: Leftovers
+L	intimidate_atk_floor	3	455	|upkeep
+L	intimidate_atk_floor	3	456	|turn|49
+L	intimidate_atk_floor	3	457	|
+L	intimidate_atk_floor	3	458	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	459	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	3	460	|-damage|p2a: Snorlax|326/524
+L	intimidate_atk_floor	3	461	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	3	462	|-damage|p1a: Salamence|194/331
+L	intimidate_atk_floor	3	463	|
+L	intimidate_atk_floor	3	464	|-heal|p2a: Snorlax|358/524|[from] item: Leftovers
+L	intimidate_atk_floor	3	465	|upkeep
+L	intimidate_atk_floor	3	466	|turn|50
+L	intimidate_atk_floor	3	467	|
+L	intimidate_atk_floor	3	468	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	469	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	3	470	|-damage|p2a: Snorlax|269/524
+L	intimidate_atk_floor	3	471	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	3	472	|-damage|p1a: Salamence|149/331
+L	intimidate_atk_floor	3	473	|-status|p1a: Salamence|par
+L	intimidate_atk_floor	3	474	|
+L	intimidate_atk_floor	3	475	|-heal|p2a: Snorlax|301/524|[from] item: Leftovers
+L	intimidate_atk_floor	3	476	|upkeep
+L	intimidate_atk_floor	3	477	|turn|51
+L	intimidate_atk_floor	3	478	|
+L	intimidate_atk_floor	3	479	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	480	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	3	481	|-damage|p1a: Salamence|108/331 par
+L	intimidate_atk_floor	3	482	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	3	483	|-damage|p2a: Snorlax|221/524
+L	intimidate_atk_floor	3	484	|
+L	intimidate_atk_floor	3	485	|-heal|p2a: Snorlax|253/524|[from] item: Leftovers
+L	intimidate_atk_floor	3	486	|upkeep
+L	intimidate_atk_floor	3	487	|turn|52
+L	intimidate_atk_floor	3	488	|
+L	intimidate_atk_floor	3	489	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	490	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	3	491	|-damage|p1a: Salamence|66/331 par
+L	intimidate_atk_floor	3	492	|debug|move failed because it did nothing
+L	intimidate_atk_floor	3	493	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	3	494	|-damage|p2a: Snorlax|165/524
+L	intimidate_atk_floor	3	495	|
+L	intimidate_atk_floor	3	496	|-heal|p2a: Snorlax|197/524|[from] item: Leftovers
+L	intimidate_atk_floor	3	497	|upkeep
+L	intimidate_atk_floor	3	498	|turn|53
+L	intimidate_atk_floor	3	499	|
+L	intimidate_atk_floor	3	500	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	501	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	3	502	|-damage|p1a: Salamence|20/331 par
+L	intimidate_atk_floor	3	503	|debug|move failed because it did nothing
+L	intimidate_atk_floor	3	504	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	3	505	|-damage|p2a: Snorlax|109/524
+L	intimidate_atk_floor	3	506	|
+L	intimidate_atk_floor	3	507	|-heal|p2a: Snorlax|141/524|[from] item: Leftovers
+L	intimidate_atk_floor	3	508	|upkeep
+L	intimidate_atk_floor	3	509	|turn|54
+L	intimidate_atk_floor	3	510	|
+L	intimidate_atk_floor	3	511	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	512	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	3	513	|-damage|p1a: Salamence|0 fnt
+L	intimidate_atk_floor	3	514	|faint|p1a: Salamence
+L	intimidate_atk_floor	3	515	|
+L	intimidate_atk_floor	3	516	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	517	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	3	518	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	3	519	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	3	520	|
+L	intimidate_atk_floor	3	521	|-heal|p2a: Snorlax|173/524|[from] item: Leftovers
+L	intimidate_atk_floor	3	522	|upkeep
+L	intimidate_atk_floor	3	523	|turn|55
+L	intimidate_atk_floor	3	524	|
+L	intimidate_atk_floor	3	525	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	526	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	3	527	|-damage|p2a: Snorlax|88/524
+L	intimidate_atk_floor	3	528	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	3	529	|-damage|p1a: Salamence|282/331
+L	intimidate_atk_floor	3	530	|
+L	intimidate_atk_floor	3	531	|-heal|p2a: Snorlax|120/524|[from] item: Leftovers
+L	intimidate_atk_floor	3	532	|upkeep
+L	intimidate_atk_floor	3	533	|turn|56
+L	intimidate_atk_floor	3	534	|
+L	intimidate_atk_floor	3	535	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	536	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	3	537	|-damage|p2a: Snorlax|33/524
+L	intimidate_atk_floor	3	538	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	3	539	|-damage|p1a: Salamence|234/331
+L	intimidate_atk_floor	3	540	|
+L	intimidate_atk_floor	3	541	|-heal|p2a: Snorlax|65/524|[from] item: Leftovers
+L	intimidate_atk_floor	3	542	|upkeep
+L	intimidate_atk_floor	3	543	|turn|57
+L	intimidate_atk_floor	3	544	|
+L	intimidate_atk_floor	3	545	|t:|<NORMALIZED>
+L	intimidate_atk_floor	3	546	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	3	547	|-damage|p2a: Snorlax|0 fnt
+L	intimidate_atk_floor	3	548	|faint|p2a: Snorlax
+L	intimidate_atk_floor	3	549	|
+L	intimidate_atk_floor	3	550	|win|P1
+END	intimidate_atk_floor	3	1	p1	551
+BATTLE	intimidate_atk_floor	4	12653,29090,60979,9712
+INIT	intimidate_atk_floor	4	58423,26072,41778,1651
+DEC	intimidate_atk_floor	4	0	move	0	0	s1	m1	26598,43843,55675,46370
+DEC	intimidate_atk_floor	4	1	move	0	0	s1	m1	21787,61534,19922,18221
+DEC	intimidate_atk_floor	4	2	move	0	0	s1	m1	37924,42850,10862,51332
+DEC	intimidate_atk_floor	4	3	move	0	0	s1	m1	54164,16419,12998,24279
+DEC	intimidate_atk_floor	4	4	move	0	0	s1	m1	56540,24401,32012,6294
+DEC	intimidate_atk_floor	4	5	move	0	0	s1	m1	59038,57843,49966,38897
+DEC	intimidate_atk_floor	4	6	move	0	0	m1	m1	7510,25620,50287,35288
+DEC	intimidate_atk_floor	4	7	move	0	0	m1	m1	14382,45245,5588,39163
+DEC	intimidate_atk_floor	4	8	move	0	0	m1	m1	37530,55465,30146,19658
+DEC	intimidate_atk_floor	4	9	move	0	0	m1	m1	56356,21831,49773,1141
+DEC	intimidate_atk_floor	4	10	move	0	0	m1	m1	54939,42081,34750,65004
+DEC	intimidate_atk_floor	4	11	move	0	0	m1	m1	57768,42900,17880,6367
+DEC	intimidate_atk_floor	4	12	move	0	0	m1	m1	57128,28481,62928,50622
+DEC	intimidate_atk_floor	4	13	move	0	0	m1	m1	58124,11178,17801,20665
+DEC	intimidate_atk_floor	4	14	move	0	0	m1	m1	4290,31280,11413,30912
+DEC	intimidate_atk_floor	4	15	move	0	0	m1	m1	23495,10148,57854,643
+DEC	intimidate_atk_floor	4	16	move	0	0	m1	m1	63295,22190,28234,46962
+DEC	intimidate_atk_floor	4	17	move	0	0	m1	m1	62706,23360,39915,189
+DEC	intimidate_atk_floor	4	18	move	0	0	m1	m1	7700,58684,2158,3668
+DEC	intimidate_atk_floor	4	19	move	0	0	m1	m1	11057,32100,3465,14823
+DEC	intimidate_atk_floor	4	20	move	0	0	m1	m1	54799,35848,53400,5606
+DEC	intimidate_atk_floor	4	21	move	0	0	m1	m1	18245,23103,20777,22657
+DEC	intimidate_atk_floor	4	22	move	0	0	m1	m1	11095,7366,64858,37544
+DEC	intimidate_atk_floor	4	23	move	0	0	m1	m1	2101,4024,20470,25355
+DEC	intimidate_atk_floor	4	24	move	0	0	m1	m1	12515,1118,49321,38170
+DEC	intimidate_atk_floor	4	25	move	0	0	m1	m1	43155,12104,53135,23557
+DEC	intimidate_atk_floor	4	26	move	0	0	m1	m1	30251,52100,15383,39356
+DEC	intimidate_atk_floor	4	27	move	0	0	m1	m1	5009,25600,56031,57839
+DEC	intimidate_atk_floor	4	28	move	0	0	m1	m1	1638,16691,11244,43278
+DEC	intimidate_atk_floor	4	29	move	0	0	m1	m1	42275,29442,33375,53065
+DEC	intimidate_atk_floor	4	30	move	0	0	m1	m1	36620,7841,11488,30608
+DEC	intimidate_atk_floor	4	31	move	0	0	m1	m1	49277,40702,55713,55955
+DEC	intimidate_atk_floor	4	32	move	0	0	m1	m1	20607,26021,30975,34242
+DEC	intimidate_atk_floor	4	33	move	0	0	m1	m1	30042,57085,64473,13901
+DEC	intimidate_atk_floor	4	34	move	0	0	m1	m1	7687,42805,37635,16420
+DEC	intimidate_atk_floor	4	35	move	0	0	m1	m1	632,57897,44734,12535
+DEC	intimidate_atk_floor	4	36	move	0	0	m1	m1	13596,64324,17445,7990
+DEC	intimidate_atk_floor	4	37	move	0	0	m1	m1	34219,53987,25337,54545
+DEC	intimidate_atk_floor	4	38	move	0	0	m1	m1	32952,18714,48948,51064
+DEC	intimidate_atk_floor	4	39	move	0	0	m1	m1	61850,32976,49920,35099
+DEC	intimidate_atk_floor	4	40	move	0	0	m1	m1	49869,55866,23673,10602
+DEC	intimidate_atk_floor	4	41	move	0	0	m1	m1	40789,56862,11523,44949
+DEC	intimidate_atk_floor	4	42	move	0	0	m1	m1	56721,48628,25764,41356
+DEC	intimidate_atk_floor	4	43	move	0	0	m1	m1	12822,45099,19042,18175
+DEC	intimidate_atk_floor	4	44	move	0	0	m1	m1	48069,41505,30180,6238
+DEC	intimidate_atk_floor	4	45	move	0	0	m1	m1	18411,63972,59072,35289
+DEC	intimidate_atk_floor	4	46	move	0	0	m0	m0	29939,28823,55289,3489
+DEC	intimidate_atk_floor	4	47	move	0	0	m0	m0	14025,28782,13284,32873
+DEC	intimidate_atk_floor	4	48	move	0	0	m0	m0	22613,53137,14402,29463
+DEC	intimidate_atk_floor	4	49	move	0	0	m0	m0	34013,1869,12089,39678
+DEC	intimidate_atk_floor	4	50	move	0	0	m0	m0	27199,33604,32679,45761
+DEC	intimidate_atk_floor	4	51	move	0	0	m0	m0	43087,61523,63462,37445
+DEC	intimidate_atk_floor	4	52	switch	1	0	s1	-	34338,64007,20040,16636
+DEC	intimidate_atk_floor	4	53	move	0	0	m0	m0	29986,53786,56055,16228
+DEC	intimidate_atk_floor	4	54	move	0	0	m0	m0	8583,18487,3112,63692
+DEC	intimidate_atk_floor	4	55	move	0	0	m0	m0	19052,36777,61021,3380
+DEC	intimidate_atk_floor	4	56	move	0	0	m0	m0	63972,33347,21920,25679
+DEC	intimidate_atk_floor	4	57	move	0	0	m0	m0	4514,33805,51233,21270
+DEC	intimidate_atk_floor	4	58	move	0	0	m0	m0	52633,777,63895,44140
+DEC	intimidate_atk_floor	4	59	move	0	0	m0	m0	47208,47185,14564,16192
+DEC	intimidate_atk_floor	4	60	switch	1	0	s2	-	30865,48298,21196,54019
+DEC	intimidate_atk_floor	4	61	move	0	0	m0	m0	46473,12499,48965,41867
+DEC	intimidate_atk_floor	4	62	move	0	0	m0	m0	2580,38855,6291,35603
+DEC	intimidate_atk_floor	4	63	move	0	0	m0	m0	22166,44958,30041,65188
+L	intimidate_atk_floor	4	0	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	1	|gametype|singles
+L	intimidate_atk_floor	4	2	|player|p1|P1||
+L	intimidate_atk_floor	4	3	|player|p2|P2||
+L	intimidate_atk_floor	4	4	|gen|3
+L	intimidate_atk_floor	4	5	|tier|[Gen 3] Custom Game
+L	intimidate_atk_floor	4	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	intimidate_atk_floor	4	7	|
+L	intimidate_atk_floor	4	8	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	9	|teamsize|p1|6
+L	intimidate_atk_floor	4	10	|teamsize|p2|1
+L	intimidate_atk_floor	4	11	|start
+L	intimidate_atk_floor	4	12	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	4	13	|switch|p2a: Snorlax|Snorlax|524/524
+L	intimidate_atk_floor	4	14	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	4	15	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	4	16	|turn|1
+L	intimidate_atk_floor	4	17	|
+L	intimidate_atk_floor	4	18	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	19	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	4	20	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	4	21	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	4	22	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	23	|-nothing
+L	intimidate_atk_floor	4	24	|
+L	intimidate_atk_floor	4	25	|upkeep
+L	intimidate_atk_floor	4	26	|turn|2
+L	intimidate_atk_floor	4	27	|
+L	intimidate_atk_floor	4	28	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	29	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	4	30	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	4	31	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	4	32	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	33	|-nothing
+L	intimidate_atk_floor	4	34	|
+L	intimidate_atk_floor	4	35	|upkeep
+L	intimidate_atk_floor	4	36	|turn|3
+L	intimidate_atk_floor	4	37	|
+L	intimidate_atk_floor	4	38	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	39	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	4	40	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	4	41	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	4	42	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	43	|-nothing
+L	intimidate_atk_floor	4	44	|
+L	intimidate_atk_floor	4	45	|upkeep
+L	intimidate_atk_floor	4	46	|turn|4
+L	intimidate_atk_floor	4	47	|
+L	intimidate_atk_floor	4	48	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	49	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	4	50	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	4	51	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	4	52	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	53	|-nothing
+L	intimidate_atk_floor	4	54	|
+L	intimidate_atk_floor	4	55	|upkeep
+L	intimidate_atk_floor	4	56	|turn|5
+L	intimidate_atk_floor	4	57	|
+L	intimidate_atk_floor	4	58	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	59	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	4	60	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	4	61	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	4	62	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	63	|-nothing
+L	intimidate_atk_floor	4	64	|
+L	intimidate_atk_floor	4	65	|upkeep
+L	intimidate_atk_floor	4	66	|turn|6
+L	intimidate_atk_floor	4	67	|
+L	intimidate_atk_floor	4	68	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	69	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	4	70	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	4	71	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	4	72	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	73	|-nothing
+L	intimidate_atk_floor	4	74	|
+L	intimidate_atk_floor	4	75	|upkeep
+L	intimidate_atk_floor	4	76	|turn|7
+L	intimidate_atk_floor	4	77	|
+L	intimidate_atk_floor	4	78	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	79	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	80	|-nothing
+L	intimidate_atk_floor	4	81	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	82	|-nothing
+L	intimidate_atk_floor	4	83	|
+L	intimidate_atk_floor	4	84	|upkeep
+L	intimidate_atk_floor	4	85	|turn|8
+L	intimidate_atk_floor	4	86	|
+L	intimidate_atk_floor	4	87	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	88	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	89	|-nothing
+L	intimidate_atk_floor	4	90	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	91	|-nothing
+L	intimidate_atk_floor	4	92	|
+L	intimidate_atk_floor	4	93	|upkeep
+L	intimidate_atk_floor	4	94	|turn|9
+L	intimidate_atk_floor	4	95	|
+L	intimidate_atk_floor	4	96	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	97	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	98	|-nothing
+L	intimidate_atk_floor	4	99	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	100	|-nothing
+L	intimidate_atk_floor	4	101	|
+L	intimidate_atk_floor	4	102	|upkeep
+L	intimidate_atk_floor	4	103	|turn|10
+L	intimidate_atk_floor	4	104	|
+L	intimidate_atk_floor	4	105	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	106	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	107	|-nothing
+L	intimidate_atk_floor	4	108	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	109	|-nothing
+L	intimidate_atk_floor	4	110	|
+L	intimidate_atk_floor	4	111	|upkeep
+L	intimidate_atk_floor	4	112	|turn|11
+L	intimidate_atk_floor	4	113	|
+L	intimidate_atk_floor	4	114	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	115	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	116	|-nothing
+L	intimidate_atk_floor	4	117	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	118	|-nothing
+L	intimidate_atk_floor	4	119	|
+L	intimidate_atk_floor	4	120	|upkeep
+L	intimidate_atk_floor	4	121	|turn|12
+L	intimidate_atk_floor	4	122	|
+L	intimidate_atk_floor	4	123	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	124	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	125	|-nothing
+L	intimidate_atk_floor	4	126	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	127	|-nothing
+L	intimidate_atk_floor	4	128	|
+L	intimidate_atk_floor	4	129	|upkeep
+L	intimidate_atk_floor	4	130	|turn|13
+L	intimidate_atk_floor	4	131	|
+L	intimidate_atk_floor	4	132	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	133	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	134	|-nothing
+L	intimidate_atk_floor	4	135	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	136	|-nothing
+L	intimidate_atk_floor	4	137	|
+L	intimidate_atk_floor	4	138	|upkeep
+L	intimidate_atk_floor	4	139	|turn|14
+L	intimidate_atk_floor	4	140	|
+L	intimidate_atk_floor	4	141	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	142	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	143	|-nothing
+L	intimidate_atk_floor	4	144	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	145	|-nothing
+L	intimidate_atk_floor	4	146	|
+L	intimidate_atk_floor	4	147	|upkeep
+L	intimidate_atk_floor	4	148	|turn|15
+L	intimidate_atk_floor	4	149	|
+L	intimidate_atk_floor	4	150	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	151	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	152	|-nothing
+L	intimidate_atk_floor	4	153	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	154	|-nothing
+L	intimidate_atk_floor	4	155	|
+L	intimidate_atk_floor	4	156	|upkeep
+L	intimidate_atk_floor	4	157	|turn|16
+L	intimidate_atk_floor	4	158	|
+L	intimidate_atk_floor	4	159	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	160	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	161	|-nothing
+L	intimidate_atk_floor	4	162	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	163	|-nothing
+L	intimidate_atk_floor	4	164	|
+L	intimidate_atk_floor	4	165	|upkeep
+L	intimidate_atk_floor	4	166	|turn|17
+L	intimidate_atk_floor	4	167	|
+L	intimidate_atk_floor	4	168	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	169	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	170	|-nothing
+L	intimidate_atk_floor	4	171	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	172	|-nothing
+L	intimidate_atk_floor	4	173	|
+L	intimidate_atk_floor	4	174	|upkeep
+L	intimidate_atk_floor	4	175	|turn|18
+L	intimidate_atk_floor	4	176	|
+L	intimidate_atk_floor	4	177	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	178	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	179	|-nothing
+L	intimidate_atk_floor	4	180	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	181	|-nothing
+L	intimidate_atk_floor	4	182	|
+L	intimidate_atk_floor	4	183	|upkeep
+L	intimidate_atk_floor	4	184	|turn|19
+L	intimidate_atk_floor	4	185	|
+L	intimidate_atk_floor	4	186	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	187	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	188	|-nothing
+L	intimidate_atk_floor	4	189	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	190	|-nothing
+L	intimidate_atk_floor	4	191	|
+L	intimidate_atk_floor	4	192	|upkeep
+L	intimidate_atk_floor	4	193	|turn|20
+L	intimidate_atk_floor	4	194	|
+L	intimidate_atk_floor	4	195	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	196	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	197	|-nothing
+L	intimidate_atk_floor	4	198	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	199	|-nothing
+L	intimidate_atk_floor	4	200	|
+L	intimidate_atk_floor	4	201	|upkeep
+L	intimidate_atk_floor	4	202	|turn|21
+L	intimidate_atk_floor	4	203	|
+L	intimidate_atk_floor	4	204	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	205	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	206	|-nothing
+L	intimidate_atk_floor	4	207	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	208	|-nothing
+L	intimidate_atk_floor	4	209	|
+L	intimidate_atk_floor	4	210	|upkeep
+L	intimidate_atk_floor	4	211	|turn|22
+L	intimidate_atk_floor	4	212	|
+L	intimidate_atk_floor	4	213	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	214	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	215	|-nothing
+L	intimidate_atk_floor	4	216	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	217	|-nothing
+L	intimidate_atk_floor	4	218	|
+L	intimidate_atk_floor	4	219	|upkeep
+L	intimidate_atk_floor	4	220	|turn|23
+L	intimidate_atk_floor	4	221	|
+L	intimidate_atk_floor	4	222	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	223	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	224	|-nothing
+L	intimidate_atk_floor	4	225	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	226	|-nothing
+L	intimidate_atk_floor	4	227	|
+L	intimidate_atk_floor	4	228	|upkeep
+L	intimidate_atk_floor	4	229	|turn|24
+L	intimidate_atk_floor	4	230	|
+L	intimidate_atk_floor	4	231	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	232	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	233	|-nothing
+L	intimidate_atk_floor	4	234	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	235	|-nothing
+L	intimidate_atk_floor	4	236	|
+L	intimidate_atk_floor	4	237	|upkeep
+L	intimidate_atk_floor	4	238	|turn|25
+L	intimidate_atk_floor	4	239	|
+L	intimidate_atk_floor	4	240	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	241	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	242	|-nothing
+L	intimidate_atk_floor	4	243	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	244	|-nothing
+L	intimidate_atk_floor	4	245	|
+L	intimidate_atk_floor	4	246	|upkeep
+L	intimidate_atk_floor	4	247	|turn|26
+L	intimidate_atk_floor	4	248	|
+L	intimidate_atk_floor	4	249	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	250	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	251	|-nothing
+L	intimidate_atk_floor	4	252	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	253	|-nothing
+L	intimidate_atk_floor	4	254	|
+L	intimidate_atk_floor	4	255	|upkeep
+L	intimidate_atk_floor	4	256	|turn|27
+L	intimidate_atk_floor	4	257	|
+L	intimidate_atk_floor	4	258	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	259	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	260	|-nothing
+L	intimidate_atk_floor	4	261	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	262	|-nothing
+L	intimidate_atk_floor	4	263	|
+L	intimidate_atk_floor	4	264	|upkeep
+L	intimidate_atk_floor	4	265	|turn|28
+L	intimidate_atk_floor	4	266	|
+L	intimidate_atk_floor	4	267	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	268	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	269	|-nothing
+L	intimidate_atk_floor	4	270	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	271	|-nothing
+L	intimidate_atk_floor	4	272	|
+L	intimidate_atk_floor	4	273	|upkeep
+L	intimidate_atk_floor	4	274	|turn|29
+L	intimidate_atk_floor	4	275	|
+L	intimidate_atk_floor	4	276	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	277	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	278	|-nothing
+L	intimidate_atk_floor	4	279	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	280	|-nothing
+L	intimidate_atk_floor	4	281	|
+L	intimidate_atk_floor	4	282	|upkeep
+L	intimidate_atk_floor	4	283	|turn|30
+L	intimidate_atk_floor	4	284	|
+L	intimidate_atk_floor	4	285	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	286	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	287	|-nothing
+L	intimidate_atk_floor	4	288	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	289	|-nothing
+L	intimidate_atk_floor	4	290	|
+L	intimidate_atk_floor	4	291	|upkeep
+L	intimidate_atk_floor	4	292	|turn|31
+L	intimidate_atk_floor	4	293	|
+L	intimidate_atk_floor	4	294	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	295	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	296	|-nothing
+L	intimidate_atk_floor	4	297	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	298	|-nothing
+L	intimidate_atk_floor	4	299	|
+L	intimidate_atk_floor	4	300	|upkeep
+L	intimidate_atk_floor	4	301	|turn|32
+L	intimidate_atk_floor	4	302	|
+L	intimidate_atk_floor	4	303	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	304	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	305	|-nothing
+L	intimidate_atk_floor	4	306	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	307	|-nothing
+L	intimidate_atk_floor	4	308	|
+L	intimidate_atk_floor	4	309	|upkeep
+L	intimidate_atk_floor	4	310	|turn|33
+L	intimidate_atk_floor	4	311	|
+L	intimidate_atk_floor	4	312	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	313	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	314	|-nothing
+L	intimidate_atk_floor	4	315	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	316	|-nothing
+L	intimidate_atk_floor	4	317	|
+L	intimidate_atk_floor	4	318	|upkeep
+L	intimidate_atk_floor	4	319	|turn|34
+L	intimidate_atk_floor	4	320	|
+L	intimidate_atk_floor	4	321	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	322	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	323	|-nothing
+L	intimidate_atk_floor	4	324	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	325	|-nothing
+L	intimidate_atk_floor	4	326	|
+L	intimidate_atk_floor	4	327	|upkeep
+L	intimidate_atk_floor	4	328	|turn|35
+L	intimidate_atk_floor	4	329	|
+L	intimidate_atk_floor	4	330	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	331	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	332	|-nothing
+L	intimidate_atk_floor	4	333	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	334	|-nothing
+L	intimidate_atk_floor	4	335	|
+L	intimidate_atk_floor	4	336	|upkeep
+L	intimidate_atk_floor	4	337	|turn|36
+L	intimidate_atk_floor	4	338	|
+L	intimidate_atk_floor	4	339	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	340	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	341	|-nothing
+L	intimidate_atk_floor	4	342	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	343	|-nothing
+L	intimidate_atk_floor	4	344	|
+L	intimidate_atk_floor	4	345	|upkeep
+L	intimidate_atk_floor	4	346	|turn|37
+L	intimidate_atk_floor	4	347	|
+L	intimidate_atk_floor	4	348	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	349	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	350	|-nothing
+L	intimidate_atk_floor	4	351	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	352	|-nothing
+L	intimidate_atk_floor	4	353	|
+L	intimidate_atk_floor	4	354	|upkeep
+L	intimidate_atk_floor	4	355	|turn|38
+L	intimidate_atk_floor	4	356	|
+L	intimidate_atk_floor	4	357	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	358	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	359	|-nothing
+L	intimidate_atk_floor	4	360	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	361	|-nothing
+L	intimidate_atk_floor	4	362	|
+L	intimidate_atk_floor	4	363	|upkeep
+L	intimidate_atk_floor	4	364	|turn|39
+L	intimidate_atk_floor	4	365	|
+L	intimidate_atk_floor	4	366	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	367	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	368	|-nothing
+L	intimidate_atk_floor	4	369	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	370	|-nothing
+L	intimidate_atk_floor	4	371	|
+L	intimidate_atk_floor	4	372	|upkeep
+L	intimidate_atk_floor	4	373	|turn|40
+L	intimidate_atk_floor	4	374	|
+L	intimidate_atk_floor	4	375	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	376	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	377	|-nothing
+L	intimidate_atk_floor	4	378	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	379	|-nothing
+L	intimidate_atk_floor	4	380	|
+L	intimidate_atk_floor	4	381	|upkeep
+L	intimidate_atk_floor	4	382	|turn|41
+L	intimidate_atk_floor	4	383	|
+L	intimidate_atk_floor	4	384	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	385	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	386	|-nothing
+L	intimidate_atk_floor	4	387	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	388	|-nothing
+L	intimidate_atk_floor	4	389	|
+L	intimidate_atk_floor	4	390	|upkeep
+L	intimidate_atk_floor	4	391	|turn|42
+L	intimidate_atk_floor	4	392	|
+L	intimidate_atk_floor	4	393	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	394	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	395	|-nothing
+L	intimidate_atk_floor	4	396	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	397	|-nothing
+L	intimidate_atk_floor	4	398	|
+L	intimidate_atk_floor	4	399	|upkeep
+L	intimidate_atk_floor	4	400	|turn|43
+L	intimidate_atk_floor	4	401	|
+L	intimidate_atk_floor	4	402	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	403	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	404	|-nothing
+L	intimidate_atk_floor	4	405	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	406	|-nothing
+L	intimidate_atk_floor	4	407	|
+L	intimidate_atk_floor	4	408	|upkeep
+L	intimidate_atk_floor	4	409	|turn|44
+L	intimidate_atk_floor	4	410	|
+L	intimidate_atk_floor	4	411	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	412	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	413	|-nothing
+L	intimidate_atk_floor	4	414	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	415	|-nothing
+L	intimidate_atk_floor	4	416	|
+L	intimidate_atk_floor	4	417	|upkeep
+L	intimidate_atk_floor	4	418	|turn|45
+L	intimidate_atk_floor	4	419	|
+L	intimidate_atk_floor	4	420	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	421	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	422	|-nothing
+L	intimidate_atk_floor	4	423	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	424	|-nothing
+L	intimidate_atk_floor	4	425	|
+L	intimidate_atk_floor	4	426	|upkeep
+L	intimidate_atk_floor	4	427	|turn|46
+L	intimidate_atk_floor	4	428	|
+L	intimidate_atk_floor	4	429	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	430	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	4	431	|-nothing
+L	intimidate_atk_floor	4	432	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	4	433	|-nothing
+L	intimidate_atk_floor	4	434	|
+L	intimidate_atk_floor	4	435	|upkeep
+L	intimidate_atk_floor	4	436	|turn|47
+L	intimidate_atk_floor	4	437	|
+L	intimidate_atk_floor	4	438	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	439	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	440	|-damage|p2a: Snorlax|437/524
+L	intimidate_atk_floor	4	441	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	442	|-damage|p1a: Salamence|289/331
+L	intimidate_atk_floor	4	443	|
+L	intimidate_atk_floor	4	444	|-heal|p2a: Snorlax|469/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	445	|upkeep
+L	intimidate_atk_floor	4	446	|turn|48
+L	intimidate_atk_floor	4	447	|
+L	intimidate_atk_floor	4	448	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	449	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	450	|-damage|p2a: Snorlax|382/524
+L	intimidate_atk_floor	4	451	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	452	|-damage|p1a: Salamence|247/331
+L	intimidate_atk_floor	4	453	|-status|p1a: Salamence|par
+L	intimidate_atk_floor	4	454	|
+L	intimidate_atk_floor	4	455	|-heal|p2a: Snorlax|414/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	456	|upkeep
+L	intimidate_atk_floor	4	457	|turn|49
+L	intimidate_atk_floor	4	458	|
+L	intimidate_atk_floor	4	459	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	460	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	461	|-damage|p1a: Salamence|203/331 par
+L	intimidate_atk_floor	4	462	|cant|p1a: Salamence|par
+L	intimidate_atk_floor	4	463	|
+L	intimidate_atk_floor	4	464	|-heal|p2a: Snorlax|446/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	465	|upkeep
+L	intimidate_atk_floor	4	466	|turn|50
+L	intimidate_atk_floor	4	467	|
+L	intimidate_atk_floor	4	468	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	469	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	470	|-damage|p1a: Salamence|161/331 par
+L	intimidate_atk_floor	4	471	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	472	|-damage|p2a: Snorlax|359/524
+L	intimidate_atk_floor	4	473	|
+L	intimidate_atk_floor	4	474	|-heal|p2a: Snorlax|391/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	475	|upkeep
+L	intimidate_atk_floor	4	476	|turn|51
+L	intimidate_atk_floor	4	477	|
+L	intimidate_atk_floor	4	478	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	479	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	480	|-damage|p1a: Salamence|114/331 par
+L	intimidate_atk_floor	4	481	|debug|move failed because it did nothing
+L	intimidate_atk_floor	4	482	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	483	|-damage|p2a: Snorlax|305/524
+L	intimidate_atk_floor	4	484	|
+L	intimidate_atk_floor	4	485	|-heal|p2a: Snorlax|337/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	486	|upkeep
+L	intimidate_atk_floor	4	487	|turn|52
+L	intimidate_atk_floor	4	488	|
+L	intimidate_atk_floor	4	489	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	490	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	491	|debug|Negating (sp)atk boost/penalty.
+L	intimidate_atk_floor	4	492	|-crit|p1a: Salamence
+L	intimidate_atk_floor	4	493	|-damage|p1a: Salamence|0 fnt
+L	intimidate_atk_floor	4	494	|faint|p1a: Salamence
+L	intimidate_atk_floor	4	495	|
+L	intimidate_atk_floor	4	496	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	497	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	4	498	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	4	499	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	4	500	|
+L	intimidate_atk_floor	4	501	|-heal|p2a: Snorlax|369/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	502	|upkeep
+L	intimidate_atk_floor	4	503	|turn|53
+L	intimidate_atk_floor	4	504	|
+L	intimidate_atk_floor	4	505	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	506	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	507	|-damage|p2a: Snorlax|290/524
+L	intimidate_atk_floor	4	508	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	509	|-damage|p1a: Salamence|289/331
+L	intimidate_atk_floor	4	510	|
+L	intimidate_atk_floor	4	511	|-heal|p2a: Snorlax|322/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	512	|upkeep
+L	intimidate_atk_floor	4	513	|turn|54
+L	intimidate_atk_floor	4	514	|
+L	intimidate_atk_floor	4	515	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	516	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	517	|-damage|p2a: Snorlax|233/524
+L	intimidate_atk_floor	4	518	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	519	|-damage|p1a: Salamence|246/331
+L	intimidate_atk_floor	4	520	|
+L	intimidate_atk_floor	4	521	|-heal|p2a: Snorlax|265/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	522	|upkeep
+L	intimidate_atk_floor	4	523	|turn|55
+L	intimidate_atk_floor	4	524	|
+L	intimidate_atk_floor	4	525	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	526	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	527	|-damage|p2a: Snorlax|184/524
+L	intimidate_atk_floor	4	528	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	529	|-damage|p1a: Salamence|204/331
+L	intimidate_atk_floor	4	530	|-status|p1a: Salamence|par
+L	intimidate_atk_floor	4	531	|
+L	intimidate_atk_floor	4	532	|-heal|p2a: Snorlax|216/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	533	|upkeep
+L	intimidate_atk_floor	4	534	|turn|56
+L	intimidate_atk_floor	4	535	|
+L	intimidate_atk_floor	4	536	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	537	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	538	|-damage|p1a: Salamence|155/331 par
+L	intimidate_atk_floor	4	539	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	540	|-damage|p2a: Snorlax|132/524
+L	intimidate_atk_floor	4	541	|
+L	intimidate_atk_floor	4	542	|-heal|p2a: Snorlax|164/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	543	|upkeep
+L	intimidate_atk_floor	4	544	|turn|57
+L	intimidate_atk_floor	4	545	|
+L	intimidate_atk_floor	4	546	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	547	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	548	|-damage|p1a: Salamence|107/331 par
+L	intimidate_atk_floor	4	549	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	550	|-damage|p2a: Snorlax|82/524
+L	intimidate_atk_floor	4	551	|
+L	intimidate_atk_floor	4	552	|-heal|p2a: Snorlax|114/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	553	|upkeep
+L	intimidate_atk_floor	4	554	|turn|58
+L	intimidate_atk_floor	4	555	|
+L	intimidate_atk_floor	4	556	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	557	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	558	|-damage|p1a: Salamence|65/331 par
+L	intimidate_atk_floor	4	559	|debug|move failed because it did nothing
+L	intimidate_atk_floor	4	560	|cant|p1a: Salamence|par
+L	intimidate_atk_floor	4	561	|
+L	intimidate_atk_floor	4	562	|-heal|p2a: Snorlax|146/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	563	|upkeep
+L	intimidate_atk_floor	4	564	|turn|59
+L	intimidate_atk_floor	4	565	|
+L	intimidate_atk_floor	4	566	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	567	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	568	|debug|Negating (sp)atk boost/penalty.
+L	intimidate_atk_floor	4	569	|-crit|p1a: Salamence
+L	intimidate_atk_floor	4	570	|-damage|p1a: Salamence|0 fnt
+L	intimidate_atk_floor	4	571	|faint|p1a: Salamence
+L	intimidate_atk_floor	4	572	|
+L	intimidate_atk_floor	4	573	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	574	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	4	575	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	4	576	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	4	577	|
+L	intimidate_atk_floor	4	578	|-heal|p2a: Snorlax|178/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	579	|upkeep
+L	intimidate_atk_floor	4	580	|turn|60
+L	intimidate_atk_floor	4	581	|
+L	intimidate_atk_floor	4	582	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	583	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	584	|-damage|p2a: Snorlax|86/524
+L	intimidate_atk_floor	4	585	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	586	|-damage|p1a: Salamence|286/331
+L	intimidate_atk_floor	4	587	|
+L	intimidate_atk_floor	4	588	|-heal|p2a: Snorlax|118/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	589	|upkeep
+L	intimidate_atk_floor	4	590	|turn|61
+L	intimidate_atk_floor	4	591	|
+L	intimidate_atk_floor	4	592	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	593	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	594	|-damage|p2a: Snorlax|32/524
+L	intimidate_atk_floor	4	595	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	4	596	|-damage|p1a: Salamence|238/331
+L	intimidate_atk_floor	4	597	|
+L	intimidate_atk_floor	4	598	|-heal|p2a: Snorlax|64/524|[from] item: Leftovers
+L	intimidate_atk_floor	4	599	|upkeep
+L	intimidate_atk_floor	4	600	|turn|62
+L	intimidate_atk_floor	4	601	|
+L	intimidate_atk_floor	4	602	|t:|<NORMALIZED>
+L	intimidate_atk_floor	4	603	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	4	604	|-damage|p2a: Snorlax|0 fnt
+L	intimidate_atk_floor	4	605	|faint|p2a: Snorlax
+L	intimidate_atk_floor	4	606	|
+L	intimidate_atk_floor	4	607	|win|P1
+END	intimidate_atk_floor	4	1	p1	608
+BATTLE	intimidate_atk_floor	5	30569,1518,14991,45340
+INIT	intimidate_atk_floor	5	10319,8453,43107,31439
+DEC	intimidate_atk_floor	5	0	move	0	0	s1	m1	26411,31115,23495,55662
+DEC	intimidate_atk_floor	5	1	move	0	0	s1	m1	33393,56496,33629,17705
+DEC	intimidate_atk_floor	5	2	move	0	0	s1	m1	2487,1239,60948,55536
+DEC	intimidate_atk_floor	5	3	move	0	0	s1	m1	936,44129,17672,42355
+DEC	intimidate_atk_floor	5	4	move	0	0	s1	m1	2651,20665,59199,28706
+DEC	intimidate_atk_floor	5	5	move	0	0	s1	m1	10872,8077,38942,3629
+DEC	intimidate_atk_floor	5	6	move	0	0	m1	m1	12633,5843,30931,19332
+DEC	intimidate_atk_floor	5	7	move	0	0	m1	m1	19164,5582,32649,3543
+DEC	intimidate_atk_floor	5	8	move	0	0	m1	m1	40817,40481,48770,9110
+DEC	intimidate_atk_floor	5	9	move	0	0	m1	m1	53497,2820,4003,61169
+DEC	intimidate_atk_floor	5	10	move	0	0	m1	m1	39710,15191,6985,56536
+DEC	intimidate_atk_floor	5	11	move	0	0	m1	m1	225,22624,30050,22523
+DEC	intimidate_atk_floor	5	12	move	0	0	m1	m1	12342,11957,15589,42954
+DEC	intimidate_atk_floor	5	13	move	0	0	m1	m1	35114,55514,48146,60277
+DEC	intimidate_atk_floor	5	14	move	0	0	m1	m1	11215,10485,8146,8428
+DEC	intimidate_atk_floor	5	15	move	0	0	m1	m1	24749,64635,30751,59359
+DEC	intimidate_atk_floor	5	16	move	0	0	m1	m1	44532,65195,58092,28862
+DEC	intimidate_atk_floor	5	17	move	0	0	m1	m1	59441,3902,19702,51129
+DEC	intimidate_atk_floor	5	18	move	0	0	m1	m1	51221,53442,61556,27584
+DEC	intimidate_atk_floor	5	19	move	0	0	m1	m1	28297,8955,7678,57731
+DEC	intimidate_atk_floor	5	20	move	0	0	m1	m1	15201,41706,43769,45682
+DEC	intimidate_atk_floor	5	21	move	0	0	m1	m1	60376,11563,3655,1981
+DEC	intimidate_atk_floor	5	22	move	0	0	m1	m1	42970,58470,38779,53588
+DEC	intimidate_atk_floor	5	23	move	0	0	m1	m1	23471,38497,12370,10471
+DEC	intimidate_atk_floor	5	24	move	0	0	m1	m1	59346,58071,39621,24806
+DEC	intimidate_atk_floor	5	25	move	0	0	m1	m1	37717,32232,24362,61313
+DEC	intimidate_atk_floor	5	26	move	0	0	m1	m1	26608,18359,32458,9640
+DEC	intimidate_atk_floor	5	27	move	0	0	m1	m1	47522,20721,7078,25099
+DEC	intimidate_atk_floor	5	28	move	0	0	m1	m1	64325,37164,17808,12314
+DEC	intimidate_atk_floor	5	29	move	0	0	m1	m1	47522,52015,58493,33541
+DEC	intimidate_atk_floor	5	30	move	0	0	m1	m1	17675,26074,491,64700
+DEC	intimidate_atk_floor	5	31	move	0	0	m1	m1	10683,16457,17829,61679
+DEC	intimidate_atk_floor	5	32	move	0	0	m1	m1	37148,20391,45847,37902
+DEC	intimidate_atk_floor	5	33	move	0	0	m1	m1	50289,1954,15121,34377
+DEC	intimidate_atk_floor	5	34	move	0	0	m1	m1	9204,29836,9964,43664
+DEC	intimidate_atk_floor	5	35	move	0	0	m1	m1	8077,24413,27836,63891
+DEC	intimidate_atk_floor	5	36	move	0	0	m1	m1	54230,39296,57161,49346
+DEC	intimidate_atk_floor	5	37	move	0	0	m1	m1	56572,8758,44469,32077
+DEC	intimidate_atk_floor	5	38	move	0	0	m1	m1	15787,20924,37354,17188
+DEC	intimidate_atk_floor	5	39	move	0	0	m1	m1	47437,1130,62845,24567
+DEC	intimidate_atk_floor	5	40	move	0	0	m1	m1	14007,36847,50873,43574
+DEC	intimidate_atk_floor	5	41	move	0	0	m1	m1	16659,22307,13047,44049
+DEC	intimidate_atk_floor	5	42	move	0	0	m1	m1	10934,13883,34665,39544
+DEC	intimidate_atk_floor	5	43	move	0	0	m1	m1	27251,39769,51650,51227
+DEC	intimidate_atk_floor	5	44	move	0	0	m1	m1	62233,41931,46035,1130
+DEC	intimidate_atk_floor	5	45	move	0	0	m1	m1	38986,57101,46762,5781
+DEC	intimidate_atk_floor	5	46	move	0	0	m0	m0	14000,21422,56914,28381
+DEC	intimidate_atk_floor	5	47	move	0	0	m0	m0	1166,63643,29081,63580
+DEC	intimidate_atk_floor	5	48	move	0	0	m0	m0	45235,42439,16574,8727
+DEC	intimidate_atk_floor	5	49	move	0	0	m0	m0	15901,63523,20146,17918
+DEC	intimidate_atk_floor	5	50	move	0	0	m0	m0	6812,40991,49210,18881
+DEC	intimidate_atk_floor	5	51	move	0	0	m0	m0	6299,6859,53704,24016
+DEC	intimidate_atk_floor	5	52	move	0	0	m0	m0	996,5518,38041,18294
+DEC	intimidate_atk_floor	5	53	move	0	0	m0	m0	55346,48531,15285,19882
+DEC	intimidate_atk_floor	5	54	switch	1	0	s1	-	13266,42709,27876,15573
+DEC	intimidate_atk_floor	5	55	move	0	0	m0	m0	19175,37098,40459,3357
+DEC	intimidate_atk_floor	5	56	move	0	0	m0	m0	59514,60301,65389,52422
+L	intimidate_atk_floor	5	0	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	1	|gametype|singles
+L	intimidate_atk_floor	5	2	|player|p1|P1||
+L	intimidate_atk_floor	5	3	|player|p2|P2||
+L	intimidate_atk_floor	5	4	|gen|3
+L	intimidate_atk_floor	5	5	|tier|[Gen 3] Custom Game
+L	intimidate_atk_floor	5	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	intimidate_atk_floor	5	7	|
+L	intimidate_atk_floor	5	8	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	9	|teamsize|p1|6
+L	intimidate_atk_floor	5	10	|teamsize|p2|1
+L	intimidate_atk_floor	5	11	|start
+L	intimidate_atk_floor	5	12	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	5	13	|switch|p2a: Snorlax|Snorlax|524/524
+L	intimidate_atk_floor	5	14	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	5	15	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	5	16	|turn|1
+L	intimidate_atk_floor	5	17	|
+L	intimidate_atk_floor	5	18	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	19	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	5	20	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	5	21	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	5	22	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	23	|-nothing
+L	intimidate_atk_floor	5	24	|
+L	intimidate_atk_floor	5	25	|upkeep
+L	intimidate_atk_floor	5	26	|turn|2
+L	intimidate_atk_floor	5	27	|
+L	intimidate_atk_floor	5	28	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	29	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	5	30	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	5	31	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	5	32	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	33	|-nothing
+L	intimidate_atk_floor	5	34	|
+L	intimidate_atk_floor	5	35	|upkeep
+L	intimidate_atk_floor	5	36	|turn|3
+L	intimidate_atk_floor	5	37	|
+L	intimidate_atk_floor	5	38	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	39	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	5	40	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	5	41	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	5	42	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	43	|-nothing
+L	intimidate_atk_floor	5	44	|
+L	intimidate_atk_floor	5	45	|upkeep
+L	intimidate_atk_floor	5	46	|turn|4
+L	intimidate_atk_floor	5	47	|
+L	intimidate_atk_floor	5	48	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	49	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	5	50	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	5	51	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	5	52	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	53	|-nothing
+L	intimidate_atk_floor	5	54	|
+L	intimidate_atk_floor	5	55	|upkeep
+L	intimidate_atk_floor	5	56	|turn|5
+L	intimidate_atk_floor	5	57	|
+L	intimidate_atk_floor	5	58	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	59	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	5	60	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	5	61	|-unboost|p2a: Snorlax|atk|1
+L	intimidate_atk_floor	5	62	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	63	|-nothing
+L	intimidate_atk_floor	5	64	|
+L	intimidate_atk_floor	5	65	|upkeep
+L	intimidate_atk_floor	5	66	|turn|6
+L	intimidate_atk_floor	5	67	|
+L	intimidate_atk_floor	5	68	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	69	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	5	70	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	5	71	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	5	72	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	73	|-nothing
+L	intimidate_atk_floor	5	74	|
+L	intimidate_atk_floor	5	75	|upkeep
+L	intimidate_atk_floor	5	76	|turn|7
+L	intimidate_atk_floor	5	77	|
+L	intimidate_atk_floor	5	78	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	79	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	80	|-nothing
+L	intimidate_atk_floor	5	81	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	82	|-nothing
+L	intimidate_atk_floor	5	83	|
+L	intimidate_atk_floor	5	84	|upkeep
+L	intimidate_atk_floor	5	85	|turn|8
+L	intimidate_atk_floor	5	86	|
+L	intimidate_atk_floor	5	87	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	88	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	89	|-nothing
+L	intimidate_atk_floor	5	90	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	91	|-nothing
+L	intimidate_atk_floor	5	92	|
+L	intimidate_atk_floor	5	93	|upkeep
+L	intimidate_atk_floor	5	94	|turn|9
+L	intimidate_atk_floor	5	95	|
+L	intimidate_atk_floor	5	96	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	97	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	98	|-nothing
+L	intimidate_atk_floor	5	99	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	100	|-nothing
+L	intimidate_atk_floor	5	101	|
+L	intimidate_atk_floor	5	102	|upkeep
+L	intimidate_atk_floor	5	103	|turn|10
+L	intimidate_atk_floor	5	104	|
+L	intimidate_atk_floor	5	105	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	106	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	107	|-nothing
+L	intimidate_atk_floor	5	108	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	109	|-nothing
+L	intimidate_atk_floor	5	110	|
+L	intimidate_atk_floor	5	111	|upkeep
+L	intimidate_atk_floor	5	112	|turn|11
+L	intimidate_atk_floor	5	113	|
+L	intimidate_atk_floor	5	114	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	115	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	116	|-nothing
+L	intimidate_atk_floor	5	117	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	118	|-nothing
+L	intimidate_atk_floor	5	119	|
+L	intimidate_atk_floor	5	120	|upkeep
+L	intimidate_atk_floor	5	121	|turn|12
+L	intimidate_atk_floor	5	122	|
+L	intimidate_atk_floor	5	123	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	124	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	125	|-nothing
+L	intimidate_atk_floor	5	126	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	127	|-nothing
+L	intimidate_atk_floor	5	128	|
+L	intimidate_atk_floor	5	129	|upkeep
+L	intimidate_atk_floor	5	130	|turn|13
+L	intimidate_atk_floor	5	131	|
+L	intimidate_atk_floor	5	132	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	133	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	134	|-nothing
+L	intimidate_atk_floor	5	135	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	136	|-nothing
+L	intimidate_atk_floor	5	137	|
+L	intimidate_atk_floor	5	138	|upkeep
+L	intimidate_atk_floor	5	139	|turn|14
+L	intimidate_atk_floor	5	140	|
+L	intimidate_atk_floor	5	141	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	142	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	143	|-nothing
+L	intimidate_atk_floor	5	144	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	145	|-nothing
+L	intimidate_atk_floor	5	146	|
+L	intimidate_atk_floor	5	147	|upkeep
+L	intimidate_atk_floor	5	148	|turn|15
+L	intimidate_atk_floor	5	149	|
+L	intimidate_atk_floor	5	150	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	151	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	152	|-nothing
+L	intimidate_atk_floor	5	153	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	154	|-nothing
+L	intimidate_atk_floor	5	155	|
+L	intimidate_atk_floor	5	156	|upkeep
+L	intimidate_atk_floor	5	157	|turn|16
+L	intimidate_atk_floor	5	158	|
+L	intimidate_atk_floor	5	159	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	160	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	161	|-nothing
+L	intimidate_atk_floor	5	162	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	163	|-nothing
+L	intimidate_atk_floor	5	164	|
+L	intimidate_atk_floor	5	165	|upkeep
+L	intimidate_atk_floor	5	166	|turn|17
+L	intimidate_atk_floor	5	167	|
+L	intimidate_atk_floor	5	168	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	169	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	170	|-nothing
+L	intimidate_atk_floor	5	171	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	172	|-nothing
+L	intimidate_atk_floor	5	173	|
+L	intimidate_atk_floor	5	174	|upkeep
+L	intimidate_atk_floor	5	175	|turn|18
+L	intimidate_atk_floor	5	176	|
+L	intimidate_atk_floor	5	177	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	178	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	179	|-nothing
+L	intimidate_atk_floor	5	180	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	181	|-nothing
+L	intimidate_atk_floor	5	182	|
+L	intimidate_atk_floor	5	183	|upkeep
+L	intimidate_atk_floor	5	184	|turn|19
+L	intimidate_atk_floor	5	185	|
+L	intimidate_atk_floor	5	186	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	187	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	188	|-nothing
+L	intimidate_atk_floor	5	189	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	190	|-nothing
+L	intimidate_atk_floor	5	191	|
+L	intimidate_atk_floor	5	192	|upkeep
+L	intimidate_atk_floor	5	193	|turn|20
+L	intimidate_atk_floor	5	194	|
+L	intimidate_atk_floor	5	195	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	196	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	197	|-nothing
+L	intimidate_atk_floor	5	198	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	199	|-nothing
+L	intimidate_atk_floor	5	200	|
+L	intimidate_atk_floor	5	201	|upkeep
+L	intimidate_atk_floor	5	202	|turn|21
+L	intimidate_atk_floor	5	203	|
+L	intimidate_atk_floor	5	204	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	205	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	206	|-nothing
+L	intimidate_atk_floor	5	207	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	208	|-nothing
+L	intimidate_atk_floor	5	209	|
+L	intimidate_atk_floor	5	210	|upkeep
+L	intimidate_atk_floor	5	211	|turn|22
+L	intimidate_atk_floor	5	212	|
+L	intimidate_atk_floor	5	213	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	214	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	215	|-nothing
+L	intimidate_atk_floor	5	216	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	217	|-nothing
+L	intimidate_atk_floor	5	218	|
+L	intimidate_atk_floor	5	219	|upkeep
+L	intimidate_atk_floor	5	220	|turn|23
+L	intimidate_atk_floor	5	221	|
+L	intimidate_atk_floor	5	222	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	223	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	224	|-nothing
+L	intimidate_atk_floor	5	225	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	226	|-nothing
+L	intimidate_atk_floor	5	227	|
+L	intimidate_atk_floor	5	228	|upkeep
+L	intimidate_atk_floor	5	229	|turn|24
+L	intimidate_atk_floor	5	230	|
+L	intimidate_atk_floor	5	231	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	232	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	233	|-nothing
+L	intimidate_atk_floor	5	234	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	235	|-nothing
+L	intimidate_atk_floor	5	236	|
+L	intimidate_atk_floor	5	237	|upkeep
+L	intimidate_atk_floor	5	238	|turn|25
+L	intimidate_atk_floor	5	239	|
+L	intimidate_atk_floor	5	240	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	241	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	242	|-nothing
+L	intimidate_atk_floor	5	243	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	244	|-nothing
+L	intimidate_atk_floor	5	245	|
+L	intimidate_atk_floor	5	246	|upkeep
+L	intimidate_atk_floor	5	247	|turn|26
+L	intimidate_atk_floor	5	248	|
+L	intimidate_atk_floor	5	249	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	250	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	251	|-nothing
+L	intimidate_atk_floor	5	252	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	253	|-nothing
+L	intimidate_atk_floor	5	254	|
+L	intimidate_atk_floor	5	255	|upkeep
+L	intimidate_atk_floor	5	256	|turn|27
+L	intimidate_atk_floor	5	257	|
+L	intimidate_atk_floor	5	258	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	259	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	260	|-nothing
+L	intimidate_atk_floor	5	261	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	262	|-nothing
+L	intimidate_atk_floor	5	263	|
+L	intimidate_atk_floor	5	264	|upkeep
+L	intimidate_atk_floor	5	265	|turn|28
+L	intimidate_atk_floor	5	266	|
+L	intimidate_atk_floor	5	267	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	268	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	269	|-nothing
+L	intimidate_atk_floor	5	270	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	271	|-nothing
+L	intimidate_atk_floor	5	272	|
+L	intimidate_atk_floor	5	273	|upkeep
+L	intimidate_atk_floor	5	274	|turn|29
+L	intimidate_atk_floor	5	275	|
+L	intimidate_atk_floor	5	276	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	277	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	278	|-nothing
+L	intimidate_atk_floor	5	279	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	280	|-nothing
+L	intimidate_atk_floor	5	281	|
+L	intimidate_atk_floor	5	282	|upkeep
+L	intimidate_atk_floor	5	283	|turn|30
+L	intimidate_atk_floor	5	284	|
+L	intimidate_atk_floor	5	285	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	286	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	287	|-nothing
+L	intimidate_atk_floor	5	288	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	289	|-nothing
+L	intimidate_atk_floor	5	290	|
+L	intimidate_atk_floor	5	291	|upkeep
+L	intimidate_atk_floor	5	292	|turn|31
+L	intimidate_atk_floor	5	293	|
+L	intimidate_atk_floor	5	294	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	295	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	296	|-nothing
+L	intimidate_atk_floor	5	297	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	298	|-nothing
+L	intimidate_atk_floor	5	299	|
+L	intimidate_atk_floor	5	300	|upkeep
+L	intimidate_atk_floor	5	301	|turn|32
+L	intimidate_atk_floor	5	302	|
+L	intimidate_atk_floor	5	303	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	304	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	305	|-nothing
+L	intimidate_atk_floor	5	306	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	307	|-nothing
+L	intimidate_atk_floor	5	308	|
+L	intimidate_atk_floor	5	309	|upkeep
+L	intimidate_atk_floor	5	310	|turn|33
+L	intimidate_atk_floor	5	311	|
+L	intimidate_atk_floor	5	312	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	313	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	314	|-nothing
+L	intimidate_atk_floor	5	315	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	316	|-nothing
+L	intimidate_atk_floor	5	317	|
+L	intimidate_atk_floor	5	318	|upkeep
+L	intimidate_atk_floor	5	319	|turn|34
+L	intimidate_atk_floor	5	320	|
+L	intimidate_atk_floor	5	321	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	322	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	323	|-nothing
+L	intimidate_atk_floor	5	324	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	325	|-nothing
+L	intimidate_atk_floor	5	326	|
+L	intimidate_atk_floor	5	327	|upkeep
+L	intimidate_atk_floor	5	328	|turn|35
+L	intimidate_atk_floor	5	329	|
+L	intimidate_atk_floor	5	330	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	331	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	332	|-nothing
+L	intimidate_atk_floor	5	333	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	334	|-nothing
+L	intimidate_atk_floor	5	335	|
+L	intimidate_atk_floor	5	336	|upkeep
+L	intimidate_atk_floor	5	337	|turn|36
+L	intimidate_atk_floor	5	338	|
+L	intimidate_atk_floor	5	339	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	340	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	341	|-nothing
+L	intimidate_atk_floor	5	342	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	343	|-nothing
+L	intimidate_atk_floor	5	344	|
+L	intimidate_atk_floor	5	345	|upkeep
+L	intimidate_atk_floor	5	346	|turn|37
+L	intimidate_atk_floor	5	347	|
+L	intimidate_atk_floor	5	348	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	349	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	350	|-nothing
+L	intimidate_atk_floor	5	351	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	352	|-nothing
+L	intimidate_atk_floor	5	353	|
+L	intimidate_atk_floor	5	354	|upkeep
+L	intimidate_atk_floor	5	355	|turn|38
+L	intimidate_atk_floor	5	356	|
+L	intimidate_atk_floor	5	357	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	358	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	359	|-nothing
+L	intimidate_atk_floor	5	360	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	361	|-nothing
+L	intimidate_atk_floor	5	362	|
+L	intimidate_atk_floor	5	363	|upkeep
+L	intimidate_atk_floor	5	364	|turn|39
+L	intimidate_atk_floor	5	365	|
+L	intimidate_atk_floor	5	366	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	367	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	368	|-nothing
+L	intimidate_atk_floor	5	369	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	370	|-nothing
+L	intimidate_atk_floor	5	371	|
+L	intimidate_atk_floor	5	372	|upkeep
+L	intimidate_atk_floor	5	373	|turn|40
+L	intimidate_atk_floor	5	374	|
+L	intimidate_atk_floor	5	375	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	376	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	377	|-nothing
+L	intimidate_atk_floor	5	378	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	379	|-nothing
+L	intimidate_atk_floor	5	380	|
+L	intimidate_atk_floor	5	381	|upkeep
+L	intimidate_atk_floor	5	382	|turn|41
+L	intimidate_atk_floor	5	383	|
+L	intimidate_atk_floor	5	384	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	385	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	386	|-nothing
+L	intimidate_atk_floor	5	387	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	388	|-nothing
+L	intimidate_atk_floor	5	389	|
+L	intimidate_atk_floor	5	390	|upkeep
+L	intimidate_atk_floor	5	391	|turn|42
+L	intimidate_atk_floor	5	392	|
+L	intimidate_atk_floor	5	393	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	394	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	395	|-nothing
+L	intimidate_atk_floor	5	396	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	397	|-nothing
+L	intimidate_atk_floor	5	398	|
+L	intimidate_atk_floor	5	399	|upkeep
+L	intimidate_atk_floor	5	400	|turn|43
+L	intimidate_atk_floor	5	401	|
+L	intimidate_atk_floor	5	402	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	403	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	404	|-nothing
+L	intimidate_atk_floor	5	405	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	406	|-nothing
+L	intimidate_atk_floor	5	407	|
+L	intimidate_atk_floor	5	408	|upkeep
+L	intimidate_atk_floor	5	409	|turn|44
+L	intimidate_atk_floor	5	410	|
+L	intimidate_atk_floor	5	411	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	412	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	413	|-nothing
+L	intimidate_atk_floor	5	414	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	415	|-nothing
+L	intimidate_atk_floor	5	416	|
+L	intimidate_atk_floor	5	417	|upkeep
+L	intimidate_atk_floor	5	418	|turn|45
+L	intimidate_atk_floor	5	419	|
+L	intimidate_atk_floor	5	420	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	421	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	422	|-nothing
+L	intimidate_atk_floor	5	423	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	424	|-nothing
+L	intimidate_atk_floor	5	425	|
+L	intimidate_atk_floor	5	426	|upkeep
+L	intimidate_atk_floor	5	427	|turn|46
+L	intimidate_atk_floor	5	428	|
+L	intimidate_atk_floor	5	429	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	430	|move|p1a: Salamence|Splash|p1a: Salamence
+L	intimidate_atk_floor	5	431	|-nothing
+L	intimidate_atk_floor	5	432	|move|p2a: Snorlax|Splash|p2a: Snorlax
+L	intimidate_atk_floor	5	433	|-nothing
+L	intimidate_atk_floor	5	434	|
+L	intimidate_atk_floor	5	435	|upkeep
+L	intimidate_atk_floor	5	436	|turn|47
+L	intimidate_atk_floor	5	437	|
+L	intimidate_atk_floor	5	438	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	439	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	5	440	|-damage|p2a: Snorlax|445/524
+L	intimidate_atk_floor	5	441	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	5	442	|-damage|p1a: Salamence|289/331
+L	intimidate_atk_floor	5	443	|-status|p1a: Salamence|par
+L	intimidate_atk_floor	5	444	|
+L	intimidate_atk_floor	5	445	|-heal|p2a: Snorlax|477/524|[from] item: Leftovers
+L	intimidate_atk_floor	5	446	|upkeep
+L	intimidate_atk_floor	5	447	|turn|48
+L	intimidate_atk_floor	5	448	|
+L	intimidate_atk_floor	5	449	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	450	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	5	451	|-damage|p1a: Salamence|243/331 par
+L	intimidate_atk_floor	5	452	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	5	453	|-damage|p2a: Snorlax|391/524
+L	intimidate_atk_floor	5	454	|
+L	intimidate_atk_floor	5	455	|-heal|p2a: Snorlax|423/524|[from] item: Leftovers
+L	intimidate_atk_floor	5	456	|upkeep
+L	intimidate_atk_floor	5	457	|turn|49
+L	intimidate_atk_floor	5	458	|
+L	intimidate_atk_floor	5	459	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	460	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	5	461	|-damage|p1a: Salamence|200/331 par
+L	intimidate_atk_floor	5	462	|debug|move failed because it did nothing
+L	intimidate_atk_floor	5	463	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	5	464	|-damage|p2a: Snorlax|344/524
+L	intimidate_atk_floor	5	465	|
+L	intimidate_atk_floor	5	466	|-heal|p2a: Snorlax|376/524|[from] item: Leftovers
+L	intimidate_atk_floor	5	467	|upkeep
+L	intimidate_atk_floor	5	468	|turn|50
+L	intimidate_atk_floor	5	469	|
+L	intimidate_atk_floor	5	470	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	471	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	5	472	|-damage|p1a: Salamence|153/331 par
+L	intimidate_atk_floor	5	473	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	5	474	|-crit|p2a: Snorlax
+L	intimidate_atk_floor	5	475	|-damage|p2a: Snorlax|218/524
+L	intimidate_atk_floor	5	476	|
+L	intimidate_atk_floor	5	477	|-heal|p2a: Snorlax|250/524|[from] item: Leftovers
+L	intimidate_atk_floor	5	478	|upkeep
+L	intimidate_atk_floor	5	479	|turn|51
+L	intimidate_atk_floor	5	480	|
+L	intimidate_atk_floor	5	481	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	482	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	5	483	|-damage|p1a: Salamence|107/331 par
+L	intimidate_atk_floor	5	484	|debug|move failed because it did nothing
+L	intimidate_atk_floor	5	485	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	5	486	|-crit|p2a: Snorlax
+L	intimidate_atk_floor	5	487	|-damage|p2a: Snorlax|70/524
+L	intimidate_atk_floor	5	488	|
+L	intimidate_atk_floor	5	489	|-heal|p2a: Snorlax|102/524|[from] item: Leftovers
+L	intimidate_atk_floor	5	490	|upkeep
+L	intimidate_atk_floor	5	491	|turn|52
+L	intimidate_atk_floor	5	492	|
+L	intimidate_atk_floor	5	493	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	494	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	5	495	|-damage|p1a: Salamence|65/331 par
+L	intimidate_atk_floor	5	496	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	5	497	|-damage|p2a: Snorlax|23/524
+L	intimidate_atk_floor	5	498	|
+L	intimidate_atk_floor	5	499	|-heal|p2a: Snorlax|55/524|[from] item: Leftovers
+L	intimidate_atk_floor	5	500	|upkeep
+L	intimidate_atk_floor	5	501	|turn|53
+L	intimidate_atk_floor	5	502	|
+L	intimidate_atk_floor	5	503	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	504	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	5	505	|-damage|p1a: Salamence|19/331 par
+L	intimidate_atk_floor	5	506	|cant|p1a: Salamence|par
+L	intimidate_atk_floor	5	507	|
+L	intimidate_atk_floor	5	508	|-heal|p2a: Snorlax|87/524|[from] item: Leftovers
+L	intimidate_atk_floor	5	509	|upkeep
+L	intimidate_atk_floor	5	510	|turn|54
+L	intimidate_atk_floor	5	511	|
+L	intimidate_atk_floor	5	512	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	513	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	5	514	|-damage|p1a: Salamence|0 fnt
+L	intimidate_atk_floor	5	515	|faint|p1a: Salamence
+L	intimidate_atk_floor	5	516	|
+L	intimidate_atk_floor	5	517	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	518	|switch|p1a: Salamence|Salamence|331/331
+L	intimidate_atk_floor	5	519	|-ability|p1a: Salamence|Intimidate|boost
+L	intimidate_atk_floor	5	520	|-unboost|p2a: Snorlax|atk|0
+L	intimidate_atk_floor	5	521	|
+L	intimidate_atk_floor	5	522	|-heal|p2a: Snorlax|119/524|[from] item: Leftovers
+L	intimidate_atk_floor	5	523	|upkeep
+L	intimidate_atk_floor	5	524	|turn|55
+L	intimidate_atk_floor	5	525	|
+L	intimidate_atk_floor	5	526	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	527	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	5	528	|-damage|p2a: Snorlax|27/524
+L	intimidate_atk_floor	5	529	|move|p2a: Snorlax|Body Slam|p1a: Salamence
+L	intimidate_atk_floor	5	530	|-damage|p1a: Salamence|284/331
+L	intimidate_atk_floor	5	531	|
+L	intimidate_atk_floor	5	532	|-heal|p2a: Snorlax|59/524|[from] item: Leftovers
+L	intimidate_atk_floor	5	533	|upkeep
+L	intimidate_atk_floor	5	534	|turn|56
+L	intimidate_atk_floor	5	535	|
+L	intimidate_atk_floor	5	536	|t:|<NORMALIZED>
+L	intimidate_atk_floor	5	537	|move|p1a: Salamence|Dragon Claw|p2a: Snorlax
+L	intimidate_atk_floor	5	538	|-damage|p2a: Snorlax|0 fnt
+L	intimidate_atk_floor	5	539	|faint|p2a: Snorlax
+L	intimidate_atk_floor	5	540	|
+L	intimidate_atk_floor	5	541	|win|P1
+END	intimidate_atk_floor	5	1	p1	542
