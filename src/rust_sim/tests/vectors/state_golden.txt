@@ -1,0 +1,20 @@
+# state_golden.txt — Gen-3 CONSTRUCTION-TIME battle state golden.
+# TEAM <p1|p2> <packed>   /   SEED <m,n,o,p>
+# MON  <side> <slot> <speciesid> <level> <maxhp> <hp> <atk> <def> <spa> <spd> <spe> <active 0|1>
+# Rust: Battle::start(opts{seed, p1=packed, p2=packed}) reproduces stats/maxhp/species/level/lead.
+# NOTE: boosts + field.weather are EVENT-driven (Sand Stream/Intimidate fire here) and NOT asserted.
+TEAM	p1	Tyranitar||Leftovers|SandStream|RockSlide,Earthquake,Crunch,DragonDance|Adamant|252,252,,,4,|||||]Salamence||ChoiceBand|Intimidate|Earthquake,RockSlide,HiddenPowerFlying,BrickBreak|Adamant|,252,,,4,252|||||]Magneton||Leftovers|MagnetPull|Thunderbolt,HiddenPowerGrass,ThunderWave,Toxic|Modest|4,,,252,,252|||||]Skarmory||Leftovers|KeenEye|Spikes,Roar,DrillPeck,Protect|Impish|252,,252,,4,|||||]Blissey||Leftovers|NaturalCure|SoftBoiled,SeismicToss,Toxic,Aromatherapy|Calm|252,,,,252,4|||||]Claydol||Leftovers|Levitate|Earthquake,RapidSpin,Psychic,Explosion|Relaxed|252,,128,,128,|||||
+TEAM	p2	Gyarados||Leftovers|Intimidate|DragonDance,Earthquake,HiddenPowerFlying,Taunt|Adamant|156,252,,,,100|||||]Jirachi||Leftovers|SereneGrace|Wish,BodySlam,Toxic,Protect|Careful|252,,4,,252,|||||]Suicune||Leftovers|Pressure|Surf,CalmMind,Rest,SleepTalk|Bold|252,,252,,4,|||||]Metagross||ChoiceBand|ClearBody|MeteorMash,Earthquake,Explosion,RockSlide|Adamant|,252,,,4,252|||||]Snorlax||Leftovers|Immunity|BodySlam,Curse,Rest,ShadowBall|Careful|188,128,,,192,|||||]Gengar||Leftovers|Levitate|Thunderbolt,IcePunch,HiddenPowerFire,WillOWisp|Timid|4,,,252,,252|||||
+SEED	1,2,3,4
+MON	p1	0	tyranitar	100	404	404	403	256	203	237	158	1
+MON	p1	1	salamence	100	331	331	405	196	230	197	299	0
+MON	p1	2	magneton	100	242	242	140	226	372	176	239	0
+MON	p1	3	skarmory	100	334	334	196	416	104	177	176	0
+MON	p1	4	blissey	100	714	714	50	56	186	405	147	0
+MON	p1	5	claydol	100	324	324	176	305	176	308	167	0
+MON	p2	0	gyarados	100	370	370	383	194	140	236	223	1
+MON	p2	1	jirachi	100	404	404	236	237	212	328	236	0
+MON	p2	2	suicune	100	404	404	167	361	216	267	206	0
+MON	p2	3	metagross	100	301	301	405	296	203	217	239	0
+MON	p2	4	snorlax	100	508	508	288	166	149	334	96	0
+MON	p2	5	gengar	100	262	262	149	156	359	186	350	0

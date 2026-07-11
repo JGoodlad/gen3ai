@@ -20,7 +20,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.5,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "acid": {
         "name": "Acid",
@@ -45,7 +49,20 @@
             "foe_statdrop": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 10,
+                "target": "foe",
+                "boosts": {
+                    "def": -1
+                }
+            }
+        ]
     },
     "acidarmor": {
         "name": "Acid Armor",
@@ -68,7 +85,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "def": 2
+        }
     },
     "aerialace": {
         "name": "Aerial Ace",
@@ -91,7 +115,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "aeroblast": {
         "name": "Aeroblast",
@@ -114,7 +142,12 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "critRatio": 2
     },
     "agility": {
         "name": "Agility",
@@ -137,7 +170,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "spe": 2
+        }
     },
     "aircutter": {
         "name": "Air Cutter",
@@ -160,7 +200,12 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "critRatio": 2
     },
     "amnesia": {
         "name": "Amnesia",
@@ -183,7 +228,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "spd": 2
+        }
     },
     "ancientpower": {
         "name": "Ancient Power",
@@ -208,7 +260,24 @@
             "self_boost": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 10,
+                "target": "self",
+                "boosts": {
+                    "atk": 1,
+                    "def": 1,
+                    "spa": 1,
+                    "spd": 1,
+                    "spe": 1
+                }
+            }
+        ]
     },
     "armthrust": {
         "name": "Arm Thrust",
@@ -231,7 +300,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "aromatherapy": {
         "name": "Aromatherapy",
@@ -254,7 +327,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "assist": {
         "name": "Assist",
@@ -277,7 +354,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "astonish": {
         "name": "Astonish",
@@ -302,7 +383,11 @@
             "flinch": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "attract": {
         "name": "Attract",
@@ -325,7 +410,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "aurorabeam": {
         "name": "Aurora Beam",
@@ -350,7 +439,20 @@
             "foe_statdrop": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 10,
+                "target": "foe",
+                "boosts": {
+                    "atk": -1
+                }
+            }
+        ]
     },
     "barrage": {
         "name": "Barrage",
@@ -373,7 +475,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "barrier": {
         "name": "Barrier",
@@ -396,7 +502,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "def": 2
+        }
     },
     "batonpass": {
         "name": "Baton Pass",
@@ -419,7 +532,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "beatup": {
         "name": "Beat Up",
@@ -442,7 +559,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "bellydrum": {
         "name": "Belly Drum",
@@ -465,7 +586,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "bide": {
         "name": "Bide",
@@ -488,7 +613,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "bind": {
         "name": "Bind",
@@ -511,7 +640,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "bite": {
         "name": "Bite",
@@ -536,7 +669,11 @@
             "flinch": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "blastburn": {
         "name": "Blast Burn",
@@ -559,7 +696,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "blazekick": {
         "name": "Blaze Kick",
@@ -584,7 +725,12 @@
             "brn": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "critRatio": 2
     },
     "blizzard": {
         "name": "Blizzard",
@@ -609,7 +755,11 @@
             "frz": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "block": {
         "name": "Block",
@@ -632,7 +782,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "bodyslam": {
         "name": "Body Slam",
@@ -657,7 +811,11 @@
             "par": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "boneclub": {
         "name": "Bone Club",
@@ -682,7 +840,11 @@
             "flinch": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "bonemerang": {
         "name": "Bonemerang",
@@ -705,7 +867,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "bonerush": {
         "name": "Bone Rush",
@@ -728,7 +894,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "bounce": {
         "name": "Bounce",
@@ -753,7 +923,11 @@
             "par": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "brickbreak": {
         "name": "Brick Break",
@@ -776,7 +950,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "bubble": {
         "name": "Bubble",
@@ -801,7 +979,20 @@
             "foe_statdrop": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 10,
+                "target": "foe",
+                "boosts": {
+                    "spe": -1
+                }
+            }
+        ]
     },
     "bubblebeam": {
         "name": "Bubble Beam",
@@ -826,7 +1017,20 @@
             "foe_statdrop": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 10,
+                "target": "foe",
+                "boosts": {
+                    "spe": -1
+                }
+            }
+        ]
     },
     "bulkup": {
         "name": "Bulk Up",
@@ -849,7 +1053,15 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "atk": 1,
+            "def": 1
+        }
     },
     "bulletseed": {
         "name": "Bullet Seed",
@@ -872,7 +1084,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "calmmind": {
         "name": "Calm Mind",
@@ -895,7 +1111,15 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "spa": 1,
+            "spd": 1
+        }
     },
     "camouflage": {
         "name": "Camouflage",
@@ -918,7 +1142,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "charge": {
         "name": "Charge",
@@ -941,7 +1169,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "charm": {
         "name": "Charm",
@@ -964,7 +1196,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "clamp": {
         "name": "Clamp",
@@ -987,7 +1223,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "cometpunch": {
         "name": "Comet Punch",
@@ -1010,7 +1250,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "confuseray": {
         "name": "Confuse Ray",
@@ -1033,7 +1277,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "confusion": {
         "name": "Confusion",
@@ -1058,7 +1306,11 @@
             "confusion": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "constrict": {
         "name": "Constrict",
@@ -1083,7 +1335,20 @@
             "foe_statdrop": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 35,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 10,
+                "target": "foe",
+                "boosts": {
+                    "spe": -1
+                }
+            }
+        ]
     },
     "conversion": {
         "name": "Conversion",
@@ -1106,7 +1371,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "conversion2": {
         "name": "Conversion 2",
@@ -1129,7 +1398,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "cosmicpower": {
         "name": "Cosmic Power",
@@ -1152,7 +1425,15 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "def": 1,
+            "spd": 1
+        }
     },
     "cottonspore": {
         "name": "Cotton Spore",
@@ -1175,7 +1456,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "counter": {
         "name": "Counter",
@@ -1198,7 +1483,11 @@
         "priority": -5,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "covet": {
         "name": "Covet",
@@ -1221,7 +1510,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "crabhammer": {
         "name": "Crabhammer",
@@ -1244,7 +1537,12 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "critRatio": 2
     },
     "crosschop": {
         "name": "Cross Chop",
@@ -1267,7 +1565,12 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "critRatio": 2
     },
     "crunch": {
         "name": "Crunch",
@@ -1292,7 +1595,20 @@
             "foe_statdrop": 20
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 20,
+                "target": "foe",
+                "boosts": {
+                    "spd": -1
+                }
+            }
+        ]
     },
     "crushclaw": {
         "name": "Crush Claw",
@@ -1317,7 +1633,20 @@
             "foe_statdrop": 50
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 50,
+                "target": "foe",
+                "boosts": {
+                    "def": -1
+                }
+            }
+        ]
     },
     "curse": {
         "name": "Curse",
@@ -1340,7 +1669,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "cut": {
         "name": "Cut",
@@ -1363,7 +1696,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "defensecurl": {
         "name": "Defense Curl",
@@ -1386,7 +1723,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "destinybond": {
         "name": "Destiny Bond",
@@ -1409,7 +1750,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "detect": {
         "name": "Detect",
@@ -1432,7 +1777,11 @@
         "priority": 3,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "dig": {
         "name": "Dig",
@@ -1455,7 +1804,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "disable": {
         "name": "Disable",
@@ -1478,7 +1831,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "dive": {
         "name": "Dive",
@@ -1501,7 +1858,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "dizzypunch": {
         "name": "Dizzy Punch",
@@ -1526,7 +1887,11 @@
             "confusion": 20
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "doomdesire": {
         "name": "Doom Desire",
@@ -1549,7 +1914,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "doubleedge": {
         "name": "Double-Edge",
@@ -1572,7 +1941,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.3333333333333333
+        "recoilFraction": 0.3333333333333333,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "doublekick": {
         "name": "Double Kick",
@@ -1595,7 +1968,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "doubleslap": {
         "name": "Double Slap",
@@ -1618,7 +1995,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "doubleteam": {
         "name": "Double Team",
@@ -1641,7 +2022,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "dragonbreath": {
         "name": "Dragon Breath",
@@ -1666,7 +2051,11 @@
             "par": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "dragonclaw": {
         "name": "Dragon Claw",
@@ -1689,7 +2078,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "dragondance": {
         "name": "Dragon Dance",
@@ -1712,7 +2105,15 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "atk": 1,
+            "spe": 1
+        }
     },
     "dragonrage": {
         "name": "Dragon Rage",
@@ -1735,7 +2136,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "dreameater": {
         "name": "Dream Eater",
@@ -1758,7 +2163,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.5,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "drillpeck": {
         "name": "Drill Peck",
@@ -1781,7 +2190,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "dynamicpunch": {
         "name": "Dynamic Punch",
@@ -1806,7 +2219,11 @@
             "confusion": 100
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "earthquake": {
         "name": "Earthquake",
@@ -1829,7 +2246,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "eggbomb": {
         "name": "Egg Bomb",
@@ -1852,7 +2273,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "ember": {
         "name": "Ember",
@@ -1877,7 +2302,11 @@
             "brn": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "encore": {
         "name": "Encore",
@@ -1900,7 +2329,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "endeavor": {
         "name": "Endeavor",
@@ -1923,7 +2356,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "endure": {
         "name": "Endure",
@@ -1946,7 +2383,11 @@
         "priority": 4,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "eruption": {
         "name": "Eruption",
@@ -1969,7 +2410,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "explosion": {
         "name": "Explosion",
@@ -1992,7 +2437,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "extrasensory": {
         "name": "Extrasensory",
@@ -2017,7 +2466,11 @@
             "flinch": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "extremespeed": {
         "name": "Extreme Speed",
@@ -2040,7 +2493,11 @@
         "priority": 1,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "facade": {
         "name": "Facade",
@@ -2063,7 +2520,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "fakeout": {
         "name": "Fake Out",
@@ -2088,7 +2549,11 @@
             "flinch": 100
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "faketears": {
         "name": "Fake Tears",
@@ -2111,7 +2576,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "falseswipe": {
         "name": "False Swipe",
@@ -2134,7 +2603,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "featherdance": {
         "name": "Feather Dance",
@@ -2157,7 +2630,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "feintattack": {
         "name": "Feint Attack",
@@ -2180,7 +2657,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "fireblast": {
         "name": "Fire Blast",
@@ -2205,7 +2686,11 @@
             "brn": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "firepunch": {
         "name": "Fire Punch",
@@ -2230,7 +2715,11 @@
             "brn": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "firespin": {
         "name": "Fire Spin",
@@ -2253,7 +2742,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "fissure": {
         "name": "Fissure",
@@ -2276,7 +2769,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "flail": {
         "name": "Flail",
@@ -2299,7 +2796,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "flamethrower": {
         "name": "Flamethrower",
@@ -2324,7 +2825,11 @@
             "brn": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "flamewheel": {
         "name": "Flame Wheel",
@@ -2349,7 +2854,11 @@
             "brn": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "flash": {
         "name": "Flash",
@@ -2372,7 +2881,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "flatter": {
         "name": "Flatter",
@@ -2395,7 +2908,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "fly": {
         "name": "Fly",
@@ -2418,7 +2935,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "focusenergy": {
         "name": "Focus Energy",
@@ -2441,7 +2962,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "focuspunch": {
         "name": "Focus Punch",
@@ -2464,7 +2989,11 @@
         "priority": -3,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "followme": {
         "name": "Follow Me",
@@ -2487,7 +3016,11 @@
         "priority": 3,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "foresight": {
         "name": "Foresight",
@@ -2510,7 +3043,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "frenzyplant": {
         "name": "Frenzy Plant",
@@ -2533,7 +3070,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "frustration": {
         "name": "Frustration",
@@ -2556,7 +3097,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "furyattack": {
         "name": "Fury Attack",
@@ -2579,7 +3124,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "furycutter": {
         "name": "Fury Cutter",
@@ -2602,7 +3151,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "furyswipes": {
         "name": "Fury Swipes",
@@ -2625,7 +3178,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "futuresight": {
         "name": "Future Sight",
@@ -2648,7 +3205,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "gigadrain": {
         "name": "Giga Drain",
@@ -2671,7 +3232,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.5,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "glare": {
         "name": "Glare",
@@ -2694,7 +3259,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "grasswhistle": {
         "name": "Grass Whistle",
@@ -2717,7 +3286,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "growl": {
         "name": "Growl",
@@ -2740,7 +3313,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "growth": {
         "name": "Growth",
@@ -2763,7 +3340,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "spa": 1
+        }
     },
     "grudge": {
         "name": "Grudge",
@@ -2786,7 +3370,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "guillotine": {
         "name": "Guillotine",
@@ -2809,7 +3397,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "gust": {
         "name": "Gust",
@@ -2832,7 +3424,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 35,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hail": {
         "name": "Hail",
@@ -2855,7 +3451,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "harden": {
         "name": "Harden",
@@ -2878,7 +3478,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "def": 1
+        }
     },
     "haze": {
         "name": "Haze",
@@ -2901,7 +3508,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "headbutt": {
         "name": "Headbutt",
@@ -2926,7 +3537,11 @@
             "flinch": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "healbell": {
         "name": "Heal Bell",
@@ -2949,7 +3564,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "heatwave": {
         "name": "Heat Wave",
@@ -2974,7 +3593,11 @@
             "brn": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "helpinghand": {
         "name": "Helping Hand",
@@ -2997,7 +3620,11 @@
         "priority": 5,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpower": {
         "name": "Hidden Power",
@@ -3020,7 +3647,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerbug": {
         "name": "Hidden Power Bug",
@@ -3043,7 +3674,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerdark": {
         "name": "Hidden Power Dark",
@@ -3066,7 +3701,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerdragon": {
         "name": "Hidden Power Dragon",
@@ -3089,7 +3728,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerelectric": {
         "name": "Hidden Power Electric",
@@ -3112,7 +3755,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerfighting": {
         "name": "Hidden Power Fighting",
@@ -3135,7 +3782,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerfire": {
         "name": "Hidden Power Fire",
@@ -3158,7 +3809,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerflying": {
         "name": "Hidden Power Flying",
@@ -3181,7 +3836,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerghost": {
         "name": "Hidden Power Ghost",
@@ -3204,7 +3863,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowergrass": {
         "name": "Hidden Power Grass",
@@ -3227,7 +3890,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerground": {
         "name": "Hidden Power Ground",
@@ -3250,7 +3917,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerice": {
         "name": "Hidden Power Ice",
@@ -3273,7 +3944,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerpoison": {
         "name": "Hidden Power Poison",
@@ -3296,7 +3971,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerpsychic": {
         "name": "Hidden Power Psychic",
@@ -3319,7 +3998,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerrock": {
         "name": "Hidden Power Rock",
@@ -3342,7 +4025,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowersteel": {
         "name": "Hidden Power Steel",
@@ -3365,7 +4052,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hiddenpowerwater": {
         "name": "Hidden Power Water",
@@ -3388,7 +4079,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "highjumpkick": {
         "name": "High Jump Kick",
@@ -3411,7 +4106,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "hornattack": {
         "name": "Horn Attack",
@@ -3434,7 +4133,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "horndrill": {
         "name": "Horn Drill",
@@ -3457,7 +4160,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "howl": {
         "name": "Howl",
@@ -3480,7 +4187,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "atk": 1
+        }
     },
     "hydrocannon": {
         "name": "Hydro Cannon",
@@ -3503,7 +4217,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hydropump": {
         "name": "Hydro Pump",
@@ -3526,7 +4244,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hyperbeam": {
         "name": "Hyper Beam",
@@ -3549,7 +4271,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "hyperfang": {
         "name": "Hyper Fang",
@@ -3574,7 +4300,11 @@
             "flinch": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "hypervoice": {
         "name": "Hyper Voice",
@@ -3597,7 +4327,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "hypnosis": {
         "name": "Hypnosis",
@@ -3620,7 +4354,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "iceball": {
         "name": "Ice Ball",
@@ -3643,7 +4381,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "icebeam": {
         "name": "Ice Beam",
@@ -3668,7 +4410,11 @@
             "frz": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "icepunch": {
         "name": "Ice Punch",
@@ -3693,7 +4439,11 @@
             "frz": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "iciclespear": {
         "name": "Icicle Spear",
@@ -3716,7 +4466,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "icywind": {
         "name": "Icy Wind",
@@ -3741,7 +4495,20 @@
             "foe_statdrop": 100
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 100,
+                "target": "foe",
+                "boosts": {
+                    "spe": -1
+                }
+            }
+        ]
     },
     "imprison": {
         "name": "Imprison",
@@ -3764,7 +4531,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "ingrain": {
         "name": "Ingrain",
@@ -3787,7 +4558,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "irondefense": {
         "name": "Iron Defense",
@@ -3810,7 +4585,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "def": 2
+        }
     },
     "irontail": {
         "name": "Iron Tail",
@@ -3835,7 +4617,20 @@
             "foe_statdrop": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 30,
+                "target": "foe",
+                "boosts": {
+                    "def": -1
+                }
+            }
+        ]
     },
     "jumpkick": {
         "name": "Jump Kick",
@@ -3858,7 +4653,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "karatechop": {
         "name": "Karate Chop",
@@ -3881,7 +4680,12 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "critRatio": 2
     },
     "kinesis": {
         "name": "Kinesis",
@@ -3904,7 +4708,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "knockoff": {
         "name": "Knock Off",
@@ -3927,7 +4735,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "leafblade": {
         "name": "Leaf Blade",
@@ -3950,7 +4762,12 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "critRatio": 2
     },
     "leechlife": {
         "name": "Leech Life",
@@ -3973,7 +4790,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.5,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "leechseed": {
         "name": "Leech Seed",
@@ -3996,7 +4817,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "leer": {
         "name": "Leer",
@@ -4019,7 +4844,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "lick": {
         "name": "Lick",
@@ -4044,7 +4873,11 @@
             "par": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "lightscreen": {
         "name": "Light Screen",
@@ -4067,7 +4900,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "lockon": {
         "name": "Lock-On",
@@ -4090,7 +4927,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "lovelykiss": {
         "name": "Lovely Kiss",
@@ -4113,7 +4954,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "lowkick": {
         "name": "Low Kick",
@@ -4136,7 +4981,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "lusterpurge": {
         "name": "Luster Purge",
@@ -4161,7 +5010,20 @@
             "foe_statdrop": 50
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 50,
+                "target": "foe",
+                "boosts": {
+                    "spd": -1
+                }
+            }
+        ]
     },
     "machpunch": {
         "name": "Mach Punch",
@@ -4184,7 +5046,11 @@
         "priority": 1,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "magicalleaf": {
         "name": "Magical Leaf",
@@ -4207,7 +5073,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "magiccoat": {
         "name": "Magic Coat",
@@ -4230,7 +5100,11 @@
         "priority": 4,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "magnitude": {
         "name": "Magnitude",
@@ -4253,7 +5127,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "meanlook": {
         "name": "Mean Look",
@@ -4276,7 +5154,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "meditate": {
         "name": "Meditate",
@@ -4299,7 +5181,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "atk": 1
+        }
     },
     "megadrain": {
         "name": "Mega Drain",
@@ -4322,7 +5211,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.5,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "megahorn": {
         "name": "Megahorn",
@@ -4345,7 +5238,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "megakick": {
         "name": "Mega Kick",
@@ -4368,7 +5265,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "megapunch": {
         "name": "Mega Punch",
@@ -4391,7 +5292,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "memento": {
         "name": "Memento",
@@ -4414,7 +5319,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "metalclaw": {
         "name": "Metal Claw",
@@ -4439,7 +5348,20 @@
             "self_boost": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 35,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 10,
+                "target": "self",
+                "boosts": {
+                    "atk": 1
+                }
+            }
+        ]
     },
     "metalsound": {
         "name": "Metal Sound",
@@ -4462,7 +5384,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "meteormash": {
         "name": "Meteor Mash",
@@ -4487,7 +5413,20 @@
             "self_boost": 20
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 20,
+                "target": "self",
+                "boosts": {
+                    "atk": 1
+                }
+            }
+        ]
     },
     "metronome": {
         "name": "Metronome",
@@ -4510,7 +5449,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "milkdrink": {
         "name": "Milk Drink",
@@ -4533,7 +5476,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "mimic": {
         "name": "Mimic",
@@ -4556,7 +5503,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "mindreader": {
         "name": "Mind Reader",
@@ -4579,7 +5530,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "minimize": {
         "name": "Minimize",
@@ -4602,7 +5557,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "mirrorcoat": {
         "name": "Mirror Coat",
@@ -4625,7 +5584,11 @@
         "priority": -5,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "mirrormove": {
         "name": "Mirror Move",
@@ -4648,7 +5611,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "mist": {
         "name": "Mist",
@@ -4671,7 +5638,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "mistball": {
         "name": "Mist Ball",
@@ -4696,7 +5667,20 @@
             "foe_statdrop": 50
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 50,
+                "target": "foe",
+                "boosts": {
+                    "spa": -1
+                }
+            }
+        ]
     },
     "moonlight": {
         "name": "Moonlight",
@@ -4719,7 +5703,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "morningsun": {
         "name": "Morning Sun",
@@ -4742,7 +5730,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "muddywater": {
         "name": "Muddy Water",
@@ -4767,7 +5759,20 @@
             "foe_statdrop": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 30,
+                "target": "foe",
+                "boosts": {
+                    "accuracy": -1
+                }
+            }
+        ]
     },
     "mudshot": {
         "name": "Mud Shot",
@@ -4792,7 +5797,20 @@
             "foe_statdrop": 100
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 100,
+                "target": "foe",
+                "boosts": {
+                    "spe": -1
+                }
+            }
+        ]
     },
     "mudslap": {
         "name": "Mud-Slap",
@@ -4817,7 +5835,20 @@
             "foe_statdrop": 100
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 100,
+                "target": "foe",
+                "boosts": {
+                    "accuracy": -1
+                }
+            }
+        ]
     },
     "mudsport": {
         "name": "Mud Sport",
@@ -4840,7 +5871,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "naturepower": {
         "name": "Nature Power",
@@ -4863,7 +5898,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "needlearm": {
         "name": "Needle Arm",
@@ -4888,7 +5927,11 @@
             "flinch": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "nightmare": {
         "name": "Nightmare",
@@ -4911,7 +5954,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "nightshade": {
         "name": "Night Shade",
@@ -4934,7 +5981,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "octazooka": {
         "name": "Octazooka",
@@ -4959,7 +6010,20 @@
             "foe_statdrop": 50
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 50,
+                "target": "foe",
+                "boosts": {
+                    "accuracy": -1
+                }
+            }
+        ]
     },
     "odorsleuth": {
         "name": "Odor Sleuth",
@@ -4982,7 +6046,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "outrage": {
         "name": "Outrage",
@@ -5005,7 +6073,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "overheat": {
         "name": "Overheat",
@@ -5028,7 +6100,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "painsplit": {
         "name": "Pain Split",
@@ -5051,7 +6127,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "payday": {
         "name": "Pay Day",
@@ -5074,7 +6154,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "peck": {
         "name": "Peck",
@@ -5097,7 +6181,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 35,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "perishsong": {
         "name": "Perish Song",
@@ -5120,7 +6208,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "petaldance": {
         "name": "Petal Dance",
@@ -5143,7 +6235,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "pinmissile": {
         "name": "Pin Missile",
@@ -5166,7 +6262,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "poisonfang": {
         "name": "Poison Fang",
@@ -5191,7 +6291,11 @@
             "tox": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "poisongas": {
         "name": "Poison Gas",
@@ -5214,7 +6318,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "poisonpowder": {
         "name": "Poison Powder",
@@ -5237,7 +6345,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 35,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "poisonsting": {
         "name": "Poison Sting",
@@ -5262,7 +6374,11 @@
             "psn": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 35,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "poisontail": {
         "name": "Poison Tail",
@@ -5287,7 +6403,12 @@
             "psn": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "critRatio": 2
     },
     "pound": {
         "name": "Pound",
@@ -5310,7 +6431,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 35,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "powdersnow": {
         "name": "Powder Snow",
@@ -5335,7 +6460,11 @@
             "frz": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "present": {
         "name": "Present",
@@ -5358,7 +6487,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "protect": {
         "name": "Protect",
@@ -5381,7 +6514,11 @@
         "priority": 3,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "psybeam": {
         "name": "Psybeam",
@@ -5406,7 +6543,11 @@
             "confusion": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "psychic": {
         "name": "Psychic",
@@ -5431,7 +6572,20 @@
             "foe_statdrop": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 10,
+                "target": "foe",
+                "boosts": {
+                    "spd": -1
+                }
+            }
+        ]
     },
     "psychoboost": {
         "name": "Psycho Boost",
@@ -5454,7 +6608,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "psychup": {
         "name": "Psych Up",
@@ -5477,7 +6635,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "psywave": {
         "name": "Psywave",
@@ -5500,7 +6662,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "pursuit": {
         "name": "Pursuit",
@@ -5523,7 +6689,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "quickattack": {
         "name": "Quick Attack",
@@ -5546,7 +6716,11 @@
         "priority": 1,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "rage": {
         "name": "Rage",
@@ -5569,7 +6743,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "raindance": {
         "name": "Rain Dance",
@@ -5592,7 +6770,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "rapidspin": {
         "name": "Rapid Spin",
@@ -5615,7 +6797,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "razorleaf": {
         "name": "Razor Leaf",
@@ -5638,7 +6824,12 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "critRatio": 2
     },
     "razorwind": {
         "name": "Razor Wind",
@@ -5661,7 +6852,12 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "critRatio": 2
     },
     "recover": {
         "name": "Recover",
@@ -5684,7 +6880,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "recycle": {
         "name": "Recycle",
@@ -5707,7 +6907,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "reflect": {
         "name": "Reflect",
@@ -5730,7 +6934,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "refresh": {
         "name": "Refresh",
@@ -5753,7 +6961,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "rest": {
         "name": "Rest",
@@ -5776,7 +6988,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "return": {
         "name": "Return",
@@ -5799,7 +7015,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "revenge": {
         "name": "Revenge",
@@ -5822,7 +7042,11 @@
         "priority": -4,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "reversal": {
         "name": "Reversal",
@@ -5845,7 +7069,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "roar": {
         "name": "Roar",
@@ -5868,7 +7096,11 @@
         "priority": -6,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "rockblast": {
         "name": "Rock Blast",
@@ -5891,7 +7123,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "rockslide": {
         "name": "Rock Slide",
@@ -5916,7 +7152,11 @@
             "flinch": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "rocksmash": {
         "name": "Rock Smash",
@@ -5941,7 +7181,20 @@
             "foe_statdrop": 50
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 50,
+                "target": "foe",
+                "boosts": {
+                    "def": -1
+                }
+            }
+        ]
     },
     "rockthrow": {
         "name": "Rock Throw",
@@ -5964,7 +7217,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "rocktomb": {
         "name": "Rock Tomb",
@@ -5989,7 +7246,20 @@
             "foe_statdrop": 100
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 100,
+                "target": "foe",
+                "boosts": {
+                    "spe": -1
+                }
+            }
+        ]
     },
     "roleplay": {
         "name": "Role Play",
@@ -6012,7 +7282,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "rollingkick": {
         "name": "Rolling Kick",
@@ -6037,7 +7311,11 @@
             "flinch": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "rollout": {
         "name": "Rollout",
@@ -6060,7 +7338,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "sacredfire": {
         "name": "Sacred Fire",
@@ -6085,7 +7367,11 @@
             "brn": 50
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "safeguard": {
         "name": "Safeguard",
@@ -6108,7 +7394,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "sandattack": {
         "name": "Sand Attack",
@@ -6131,7 +7421,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "sandstorm": {
         "name": "Sandstorm",
@@ -6154,7 +7448,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "sandtomb": {
         "name": "Sand Tomb",
@@ -6177,7 +7475,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "scaryface": {
         "name": "Scary Face",
@@ -6200,7 +7502,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "scratch": {
         "name": "Scratch",
@@ -6223,7 +7529,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 35,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "screech": {
         "name": "Screech",
@@ -6246,7 +7556,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "secretpower": {
         "name": "Secret Power",
@@ -6271,7 +7585,11 @@
             "par": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "seismictoss": {
         "name": "Seismic Toss",
@@ -6294,7 +7612,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "selfdestruct": {
         "name": "Self-Destruct",
@@ -6317,7 +7639,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "shadowball": {
         "name": "Shadow Ball",
@@ -6342,7 +7668,20 @@
             "foe_statdrop": 20
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 20,
+                "target": "foe",
+                "boosts": {
+                    "spd": -1
+                }
+            }
+        ]
     },
     "shadowpunch": {
         "name": "Shadow Punch",
@@ -6365,7 +7704,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "sharpen": {
         "name": "Sharpen",
@@ -6388,7 +7731,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "atk": 1
+        }
     },
     "sheercold": {
         "name": "Sheer Cold",
@@ -6411,7 +7761,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "shockwave": {
         "name": "Shock Wave",
@@ -6434,7 +7788,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "signalbeam": {
         "name": "Signal Beam",
@@ -6459,7 +7817,11 @@
             "confusion": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "silverwind": {
         "name": "Silver Wind",
@@ -6484,7 +7846,24 @@
             "self_boost": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 10,
+                "target": "self",
+                "boosts": {
+                    "atk": 1,
+                    "def": 1,
+                    "spa": 1,
+                    "spd": 1,
+                    "spe": 1
+                }
+            }
+        ]
     },
     "sing": {
         "name": "Sing",
@@ -6507,7 +7886,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "sketch": {
         "name": "Sketch",
@@ -6530,7 +7913,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 1,
+        "noPPBoosts": true,
+        "contact": false,
+        "sound": false
     },
     "skillswap": {
         "name": "Skill Swap",
@@ -6553,7 +7940,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "skullbash": {
         "name": "Skull Bash",
@@ -6576,7 +7967,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "skyattack": {
         "name": "Sky Attack",
@@ -6601,7 +7996,12 @@
             "flinch": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "critRatio": 2
     },
     "skyuppercut": {
         "name": "Sky Uppercut",
@@ -6624,7 +8024,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "slackoff": {
         "name": "Slack Off",
@@ -6647,7 +8051,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "slam": {
         "name": "Slam",
@@ -6670,7 +8078,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "slash": {
         "name": "Slash",
@@ -6693,7 +8105,12 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "critRatio": 2
     },
     "sleeppowder": {
         "name": "Sleep Powder",
@@ -6716,7 +8133,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "sleeptalk": {
         "name": "Sleep Talk",
@@ -6739,7 +8160,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "sludge": {
         "name": "Sludge",
@@ -6764,7 +8189,11 @@
             "psn": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "sludgebomb": {
         "name": "Sludge Bomb",
@@ -6789,7 +8218,11 @@
             "psn": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "smellingsalts": {
         "name": "Smelling Salts",
@@ -6812,7 +8245,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "smog": {
         "name": "Smog",
@@ -6837,7 +8274,11 @@
             "psn": 40
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "smokescreen": {
         "name": "Smokescreen",
@@ -6860,7 +8301,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "snatch": {
         "name": "Snatch",
@@ -6883,7 +8328,11 @@
         "priority": 4,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "snore": {
         "name": "Snore",
@@ -6908,7 +8357,11 @@
             "flinch": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "softboiled": {
         "name": "Soft-Boiled",
@@ -6931,7 +8384,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "solarbeam": {
         "name": "Solar Beam",
@@ -6954,7 +8411,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "sonicboom": {
         "name": "Sonic Boom",
@@ -6977,7 +8438,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "spark": {
         "name": "Spark",
@@ -7002,7 +8467,11 @@
             "par": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "spiderweb": {
         "name": "Spider Web",
@@ -7025,7 +8494,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "spikecannon": {
         "name": "Spike Cannon",
@@ -7048,7 +8521,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "spikes": {
         "name": "Spikes",
@@ -7071,7 +8548,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "spite": {
         "name": "Spite",
@@ -7094,7 +8575,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "spitup": {
         "name": "Spit Up",
@@ -7117,7 +8602,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "splash": {
         "name": "Splash",
@@ -7140,7 +8629,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "spore": {
         "name": "Spore",
@@ -7163,7 +8656,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "steelwing": {
         "name": "Steel Wing",
@@ -7188,7 +8685,20 @@
             "self_boost": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false,
+        "secondaryBoosts": [
+            {
+                "chance": 10,
+                "target": "self",
+                "boosts": {
+                    "def": 1
+                }
+            }
+        ]
     },
     "stockpile": {
         "name": "Stockpile",
@@ -7211,7 +8721,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "stomp": {
         "name": "Stomp",
@@ -7236,7 +8750,11 @@
             "flinch": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "strength": {
         "name": "Strength",
@@ -7259,7 +8777,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "stringshot": {
         "name": "String Shot",
@@ -7282,7 +8804,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "struggle": {
         "name": "Struggle",
@@ -7305,7 +8831,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.25
+        "recoilFraction": 0.25,
+        "pp": 1,
+        "noPPBoosts": true,
+        "contact": true,
+        "sound": false
     },
     "stunspore": {
         "name": "Stun Spore",
@@ -7328,7 +8858,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "submission": {
         "name": "Submission",
@@ -7351,7 +8885,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.25
+        "recoilFraction": 0.25,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "substitute": {
         "name": "Substitute",
@@ -7374,7 +8912,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "sunnyday": {
         "name": "Sunny Day",
@@ -7397,7 +8939,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "superfang": {
         "name": "Super Fang",
@@ -7420,7 +8966,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "superpower": {
         "name": "Superpower",
@@ -7443,7 +8993,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "supersonic": {
         "name": "Supersonic",
@@ -7466,7 +9020,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "surf": {
         "name": "Surf",
@@ -7489,7 +9047,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "swagger": {
         "name": "Swagger",
@@ -7512,7 +9074,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "swallow": {
         "name": "Swallow",
@@ -7535,7 +9101,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "sweetkiss": {
         "name": "Sweet Kiss",
@@ -7558,7 +9128,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "sweetscent": {
         "name": "Sweet Scent",
@@ -7581,7 +9155,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "swift": {
         "name": "Swift",
@@ -7604,7 +9182,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "swordsdance": {
         "name": "Swords Dance",
@@ -7627,7 +9209,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "atk": 2
+        }
     },
     "synthesis": {
         "name": "Synthesis",
@@ -7650,7 +9239,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "tackle": {
         "name": "Tackle",
@@ -7673,7 +9266,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 35,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "tailglow": {
         "name": "Tail Glow",
@@ -7696,7 +9293,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "spa": 2
+        }
     },
     "tailwhip": {
         "name": "Tail Whip",
@@ -7719,7 +9323,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "takedown": {
         "name": "Take Down",
@@ -7742,7 +9350,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.25
+        "recoilFraction": 0.25,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "taunt": {
         "name": "Taunt",
@@ -7765,7 +9377,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "teeterdance": {
         "name": "Teeter Dance",
@@ -7788,7 +9404,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "teleport": {
         "name": "Teleport",
@@ -7811,7 +9431,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "thief": {
         "name": "Thief",
@@ -7834,7 +9458,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "thrash": {
         "name": "Thrash",
@@ -7857,7 +9485,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "thunder": {
         "name": "Thunder",
@@ -7882,7 +9514,11 @@
             "par": 30
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "thunderbolt": {
         "name": "Thunderbolt",
@@ -7907,7 +9543,11 @@
             "par": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "thunderpunch": {
         "name": "Thunder Punch",
@@ -7932,7 +9572,11 @@
             "par": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "thundershock": {
         "name": "Thunder Shock",
@@ -7957,7 +9601,11 @@
             "par": 10
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "thunderwave": {
         "name": "Thunder Wave",
@@ -7980,7 +9628,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "tickle": {
         "name": "Tickle",
@@ -8003,7 +9655,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "torment": {
         "name": "Torment",
@@ -8026,7 +9682,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "toxic": {
         "name": "Toxic",
@@ -8049,7 +9709,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "transform": {
         "name": "Transform",
@@ -8072,7 +9736,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "triattack": {
         "name": "Tri Attack",
@@ -8099,7 +9767,11 @@
             "frz": 6
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "trick": {
         "name": "Trick",
@@ -8122,7 +9794,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "triplekick": {
         "name": "Triple Kick",
@@ -8145,7 +9821,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "twineedle": {
         "name": "Twineedle",
@@ -8170,7 +9850,11 @@
             "psn": 20
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "twister": {
         "name": "Twister",
@@ -8195,7 +9879,11 @@
             "flinch": 20
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "uproar": {
         "name": "Uproar",
@@ -8218,7 +9906,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": true
     },
     "vinewhip": {
         "name": "Vine Whip",
@@ -8241,7 +9933,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "visegrip": {
         "name": "Vise Grip",
@@ -8264,7 +9960,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 30,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "vitalthrow": {
         "name": "Vital Throw",
@@ -8287,7 +9987,11 @@
         "priority": -1,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "volttackle": {
         "name": "Volt Tackle",
@@ -8310,7 +10014,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.3333333333333333
+        "recoilFraction": 0.3333333333333333,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "waterfall": {
         "name": "Waterfall",
@@ -8333,7 +10041,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "watergun": {
         "name": "Water Gun",
@@ -8356,7 +10068,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 25,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "waterpulse": {
         "name": "Water Pulse",
@@ -8381,7 +10097,11 @@
             "confusion": 20
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "watersport": {
         "name": "Water Sport",
@@ -8404,7 +10124,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "waterspout": {
         "name": "Water Spout",
@@ -8427,7 +10151,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "weatherball": {
         "name": "Weather Ball",
@@ -8450,7 +10178,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "whirlpool": {
         "name": "Whirlpool",
@@ -8473,7 +10205,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "whirlwind": {
         "name": "Whirlwind",
@@ -8496,7 +10232,11 @@
         "priority": -6,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "willowisp": {
         "name": "Will-O-Wisp",
@@ -8519,7 +10259,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 15,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "wingattack": {
         "name": "Wing Attack",
@@ -8542,7 +10286,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 35,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "wish": {
         "name": "Wish",
@@ -8565,7 +10313,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "withdraw": {
         "name": "Withdraw",
@@ -8588,7 +10340,14 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 40,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false,
+        "selfBoosts": {
+            "def": 1
+        }
     },
     "wrap": {
         "name": "Wrap",
@@ -8611,7 +10370,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 20,
+        "noPPBoosts": false,
+        "contact": true,
+        "sound": false
     },
     "yawn": {
         "name": "Yawn",
@@ -8634,7 +10397,11 @@
         "priority": 0,
         "secondaryEffects": {},
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 10,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     },
     "zapcannon": {
         "name": "Zap Cannon",
@@ -8659,6 +10426,10 @@
             "par": 100
         },
         "drainFraction": 0.0,
-        "recoilFraction": 0.0
+        "recoilFraction": 0.0,
+        "pp": 5,
+        "noPPBoosts": false,
+        "contact": false,
+        "sound": false
     }
 }

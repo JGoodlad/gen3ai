@@ -1,7 +1,8 @@
 {
     "airlock": {
         "name": "Air Lock",
-        "num": 76
+        "num": 76,
+        "weatherNegate": true
     },
     "arenatrap": {
         "name": "Arena Trap",
@@ -9,15 +10,28 @@
     },
     "battlearmor": {
         "name": "Battle Armor",
-        "num": 4
+        "num": 4,
+        "critImmune": true
     },
     "blaze": {
         "name": "Blaze",
-        "num": 66
+        "num": 66,
+        "dmgMod": {
+            "mod": [
+                3,
+                2
+            ],
+            "fold": "basePower",
+            "type": "Fire",
+            "pinch": true
+        }
     },
     "chlorophyll": {
         "name": "Chlorophyll",
-        "num": 34
+        "num": 34,
+        "weatherSpeed": {
+            "weather": "sunnyday"
+        }
     },
     "clearbody": {
         "name": "Clear Body",
@@ -25,7 +39,8 @@
     },
     "cloudnine": {
         "name": "Cloud Nine",
-        "num": 13
+        "num": 13,
+        "weatherNegate": true
     },
     "colorchange": {
         "name": "Color Change",
@@ -33,15 +48,30 @@
     },
     "compoundeyes": {
         "name": "Compound Eyes",
-        "num": 14
+        "num": 14,
+        "accMod": {
+            "op": "chain",
+            "mod": [
+                13,
+                10
+            ],
+            "side": "attacker"
+        }
     },
     "cutecharm": {
         "name": "Cute Charm",
-        "num": 56
+        "num": 56,
+        "contactAttract": {
+            "chance": [
+                1,
+                3
+            ]
+        }
     },
     "damp": {
         "name": "Damp",
-        "num": 6
+        "num": 6,
+        "blocksExplosion": true
     },
     "drizzle": {
         "name": "Drizzle",
@@ -57,11 +87,33 @@
     },
     "effectspore": {
         "name": "Effect Spore",
-        "num": 27
+        "num": 27,
+        "contactProc": {
+            "statuses": [
+                "slp",
+                "par",
+                "psn"
+            ],
+            "chance": [
+                1,
+                10
+            ],
+            "sample": true
+        }
     },
     "flamebody": {
         "name": "Flame Body",
-        "num": 49
+        "num": 49,
+        "contactProc": {
+            "statuses": [
+                "brn"
+            ],
+            "chance": [
+                1,
+                3
+            ],
+            "sample": false
+        }
     },
     "flashfire": {
         "name": "Flash Fire",
@@ -73,15 +125,47 @@
     },
     "guts": {
         "name": "Guts",
-        "num": 62
+        "num": 62,
+        "dmgMod": {
+            "mod": [
+                3,
+                2
+            ],
+            "fold": "atk",
+            "whenStatused": true
+        }
     },
     "hugepower": {
         "name": "Huge Power",
-        "num": 37
+        "num": 37,
+        "dmgMod": {
+            "mod": [
+                2,
+                1
+            ],
+            "fold": "atk"
+        }
     },
     "hustle": {
         "name": "Hustle",
-        "num": 55
+        "num": 55,
+        "dmgMod": {
+            "mod": [
+                3,
+                2
+            ],
+            "fold": "atk",
+            "direct": true
+        },
+        "accMod": {
+            "op": "chain",
+            "mod": [
+                3277,
+                4096
+            ],
+            "side": "attacker",
+            "physicalTypesOnly": true
+        }
     },
     "hypercutter": {
         "name": "Hyper Cutter",
@@ -93,7 +177,14 @@
     },
     "immunity": {
         "name": "Immunity",
-        "num": 17
+        "num": 17,
+        "statusImmune": {
+            "statuses": [
+                "psn",
+                "tox"
+            ],
+            "phase": "setStatus"
+        }
     },
     "innerfocus": {
         "name": "Inner Focus",
@@ -101,7 +192,13 @@
     },
     "insomnia": {
         "name": "Insomnia",
-        "num": 15
+        "num": 15,
+        "statusImmune": {
+            "statuses": [
+                "slp"
+            ],
+            "phase": "setStatus"
+        }
     },
     "intimidate": {
         "name": "Intimidate",
@@ -121,7 +218,13 @@
     },
     "limber": {
         "name": "Limber",
-        "num": 7
+        "num": 7,
+        "statusImmune": {
+            "statuses": [
+                "par"
+            ],
+            "phase": "setStatus"
+        }
     },
     "liquidooze": {
         "name": "Liquid Ooze",
@@ -129,7 +232,13 @@
     },
     "magmaarmor": {
         "name": "Magma Armor",
-        "num": 40
+        "num": 40,
+        "statusImmune": {
+            "statuses": [
+                "frz"
+            ],
+            "phase": "immunity"
+        }
     },
     "magnetpull": {
         "name": "Magnet Pull",
@@ -137,7 +246,15 @@
     },
     "marvelscale": {
         "name": "Marvel Scale",
-        "num": 63
+        "num": 63,
+        "dmgMod": {
+            "mod": [
+                3,
+                2
+            ],
+            "fold": "def",
+            "whenStatused": true
+        }
     },
     "minus": {
         "name": "Minus",
@@ -153,7 +270,16 @@
     },
     "overgrow": {
         "name": "Overgrow",
-        "num": 65
+        "num": 65,
+        "dmgMod": {
+            "mod": [
+                3,
+                2
+            ],
+            "fold": "basePower",
+            "type": "Grass",
+            "pinch": true
+        }
     },
     "owntempo": {
         "name": "Own Tempo",
@@ -169,7 +295,17 @@
     },
     "poisonpoint": {
         "name": "Poison Point",
-        "num": 38
+        "num": 38,
+        "contactProc": {
+            "statuses": [
+                "psn"
+            ],
+            "chance": [
+                1,
+                3
+            ],
+            "sample": false
+        }
     },
     "pressure": {
         "name": "Pressure",
@@ -177,7 +313,14 @@
     },
     "purepower": {
         "name": "Pure Power",
-        "num": 74
+        "num": 74,
+        "dmgMod": {
+            "mod": [
+                2,
+                1
+            ],
+            "fold": "atk"
+        }
     },
     "raindish": {
         "name": "Rain Dish",
@@ -189,7 +332,8 @@
     },
     "roughskin": {
         "name": "Rough Skin",
-        "num": 24
+        "num": 24,
+        "contactRecoil": true
     },
     "runaway": {
         "name": "Run Away",
@@ -201,7 +345,16 @@
     },
     "sandveil": {
         "name": "Sand Veil",
-        "num": 8
+        "num": 8,
+        "accMod": {
+            "op": "chain",
+            "mod": [
+                8,
+                10
+            ],
+            "side": "defender",
+            "weather": "sandstorm"
+        }
     },
     "serenegrace": {
         "name": "Serene Grace",
@@ -213,11 +366,13 @@
     },
     "shedskin": {
         "name": "Shed Skin",
-        "num": 61
+        "num": 61,
+        "shedSkin": true
     },
     "shellarmor": {
         "name": "Shell Armor",
-        "num": 75
+        "num": 75,
+        "critImmune": true
     },
     "shielddust": {
         "name": "Shield Dust",
@@ -225,7 +380,8 @@
     },
     "soundproof": {
         "name": "Soundproof",
-        "num": 43
+        "num": 43,
+        "blocksSound": true
     },
     "speedboost": {
         "name": "Speed Boost",
@@ -233,7 +389,17 @@
     },
     "static": {
         "name": "Static",
-        "num": 9
+        "num": 9,
+        "contactProc": {
+            "statuses": [
+                "par"
+            ],
+            "chance": [
+                1,
+                3
+            ],
+            "sample": false
+        }
     },
     "stench": {
         "name": "Stench",
@@ -249,31 +415,66 @@
     },
     "suctioncups": {
         "name": "Suction Cups",
-        "num": 21
+        "num": 21,
+        "blocksPhazeDrag": true
     },
     "swarm": {
         "name": "Swarm",
-        "num": 68
+        "num": 68,
+        "dmgMod": {
+            "mod": [
+                3,
+                2
+            ],
+            "fold": "basePower",
+            "type": "Bug",
+            "pinch": true
+        }
     },
     "swiftswim": {
         "name": "Swift Swim",
-        "num": 33
+        "num": 33,
+        "weatherSpeed": {
+            "weather": "raindance"
+        }
     },
     "synchronize": {
         "name": "Synchronize",
-        "num": 28
+        "num": 28,
+        "synchronize": true
     },
     "thickfat": {
         "name": "Thick Fat",
-        "num": 47
+        "num": 47,
+        "dmgMod": {
+            "mod": [
+                1,
+                2
+            ],
+            "fold": "sourceBasePower",
+            "types": [
+                "Ice",
+                "Fire"
+            ]
+        }
     },
     "torrent": {
         "name": "Torrent",
-        "num": 67
+        "num": 67,
+        "dmgMod": {
+            "mod": [
+                3,
+                2
+            ],
+            "fold": "basePower",
+            "type": "Water",
+            "pinch": true
+        }
     },
     "trace": {
         "name": "Trace",
-        "num": 36
+        "num": 36,
+        "trace": true
     },
     "truant": {
         "name": "Truant",
@@ -281,7 +482,13 @@
     },
     "vitalspirit": {
         "name": "Vital Spirit",
-        "num": 72
+        "num": 72,
+        "statusImmune": {
+            "statuses": [
+                "slp"
+            ],
+            "phase": "setStatus"
+        }
     },
     "voltabsorb": {
         "name": "Volt Absorb",
@@ -293,7 +500,13 @@
     },
     "waterveil": {
         "name": "Water Veil",
-        "num": 41
+        "num": 41,
+        "statusImmune": {
+            "statuses": [
+                "brn"
+            ],
+            "phase": "setStatus"
+        }
     },
     "whitesmoke": {
         "name": "White Smoke",

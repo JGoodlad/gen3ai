@@ -1,0 +1,21 @@
+# stats_golden.txt — Gen-3 in-battle stat computation golden.
+# Lines: STAT <packed> <hp> <atk> <def> <spa> <spd> <spe>  (TAB-separated).
+# Rust: compute_stats(unpack(<packed>)[0], Dex::for_gen(3)) == [the 6 stats].
+STAT	Tyranitar||||Crunch|Adamant|252,252,,,,|||||	404	403	256	203	236	158
+STAT	Skarmory||||Spikes|Bold|252,,252,,,|||||	334	176	416	116	176	176
+STAT	Blissey||||SoftBoiled|Serious||||||	651	56	56	186	306	146
+STAT	Blissey||||SoftBoiled|Hardy|||0,0,0,0,0,0|||	620	25	25	155	275	115
+STAT	Snorlax||||BodySlam|Hardy|252,252,252,252,252,252|||||	524	319	229	229	319	159
+STAT	Starmie||||HydroPump|Quiet|,,,252,,252|||||	261	186	206	328	206	296
+STAT	Suicune||||Surf|Bold|252,,252,,4,|||||	404	167	361	216	267	206
+STAT	Gengar||||Thunderbolt|Timid|,,,252,4,252|||||	261	149	156	359	187	350
+STAT	Snorlax||||BodySlam|Careful|188,168,,,152,|||||	508	298	166	149	323	96
+STAT	Heracross||||Megahorn|Lonely|252,252,252,252,252,252|||||	364	383	224	179	289	269
+STAT	Magnemite||||Thunderbolt|Modest|,,,240,,240||||5|	19	9	13	20	12	14
+STAT	Gengar||||Thunderbolt|Hardy|||0,0,0,0,0,0||5|	21	11	11	18	12	16
+STAT	Shedinja||||ShadowBall|Adamant|252,252,,,,4|||||	1	306	126	86	96	117
+STAT	Jynx||||IceBeam|Timid|36,,,252,,220||,0,,,,|||	280	94	106	329	226	309
+STAT	Shuckle||||Toxic|Bold|252,,252,,4,|||||	244	50	614	56	497	46
+STAT	Blissey||||SoftBoiled|Calm|251,,,,253,6|||||	713	50	56	186	405	147
+STAT	Dragonite||||Earthquake|Adamant|,252,,,4,252||||78|	254	315	177	166	185	203
+STAT	Snorlax||||BodySlam|Hardy|||||1|	14	7	6	6	7	5

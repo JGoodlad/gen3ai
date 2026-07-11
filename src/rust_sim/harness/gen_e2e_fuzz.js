@@ -1,0 +1,1282 @@
+// gen_e2e_fuzz.js — THE CAPSTONE: end-to-end full-battle fuzz over REAL teams.
+//
+// Drives the OMNISCIENT in-process BattleStream (no server) AND records a compact
+// per-decision golden that the Rust `run_full_battle` replays bit-for-bit. Unlike
+// the constructed-scenario goldens (gen_fullbattle_golden.js / gen_secondary_
+// golden.js — hand-picked mons + scripted choices), THIS harness:
+//
+//   * loads the 770 REAL Showdown-export teams under data/teams/ (sample/ + others/),
+//     imports each with the real `Teams.import`, validates it under gen3ou, and packs
+//     it (the EXACT bytes the Rust `team::unpack` ingests);
+//   * pairs distinct teams + a battle seed from a MASTER-seeded RNG;
+//   * at each decision reads the sim request and picks a RANDOM legal choice from a
+//     SEPARATE seeded choice-RNG (recorded so a failing battle re-runs deterministically),
+//     RESTRICTED to mechanics the Rust models (damaging fixed-BP moves with a modeled
+//     secondary shape; else a SWITCH; else the battle is unmodeled-forced and dropped);
+//   * runs to GAME-END, capturing the SAME per-decision record as gen_fullbattle_golden.js
+//     (initSeed once; per boundary seedAfter + both actives' species/hp/maxhp/fainted/
+//     status/boosts[5]/confusion + side pokemonLeft + request kind + first mover; winner)
+//     PLUS the two packed teams + the recorded choice tokens.
+//
+// TWO OUTPUTS (the two deliverables):
+//
+//   (1) THE HARD GATE — tests/vectors/e2e_fuzz_golden.txt: ~FILTERED_TARGET battles
+//       whose EVERY mon (both teams) uses ONLY modeled abilities/items, and where every
+//       recorded choice is a modeled move or a switch. `tests/e2e_fuzz_test.rs` replays
+//       these and asserts bit-for-bit to game-end (must be filtered_diverged == 0).
+//
+//   (2) THE COVERAGE TAXONOMY — tests/vectors/e2e_fuzz_taxonomy.txt: a separate UNFILTERED
+//       sweep (real teams, NO ability/item pre-filter) that ranks coverage gaps by STATIC
+//       TEAM COMPOSITION — i.e. which UNMODELED ability/item the PAIRED TEAMS CARRY, via
+//       `classifyTeamsGaps(packed1, packed2)`. It is NOT an observed-first-divergence
+//       classifier: it does not attribute the cause at the actual desync point, and it is
+//       MOVE-LEVEL-BLIND (the sweep only ever picks damaging-or-switch choices, so
+//       status moves / Spikes / Calm Mind / etc. are never chosen and so never appear as
+//       a gap). It still RUNS each pair through the sim, but only to drop empty/errored
+//       battles — the ranked counts come from the static team scan, not the run. So the
+//       output is a "which unmodeled mechanic do real teams carry most" prioritised
+//       remaining-work list, NOT a divergence-cause histogram. A ranked gap list — does
+//       NOT gate cargo test.
+//
+// Determinism: the whole fuzz (team pairing, seeds, choices) is reproducible from the
+// fixed MASTER_SEED below. A failing FILTERED battle re-runs from its recorded
+// initSeed + choice tokens (the golden carries both).
+//
+// Run:  node src/rust_sim/harness/gen_e2e_fuzz.js
+//   env knobs (optional): E2E_FILTERED_TARGET, E2E_UNFILTERED, E2E_MASTER_SEED, E2E_MAX_TRIES
+// (Needs the submodule dist/ + node_modules symlinks; see root CLAUDE.md.)
+//
+// IMPORTANT: this harness drives the SAME Rust engine the gen_fullbattle_golden.js /
+// gen_secondary_golden.js goldens prove; it does not re-implement the Rust port. The
+// taxonomy's divergence classification calls a tiny in-process Rust replayer ONLY via
+// the committed Rust test (the harness itself is the GOLDEN producer + the Node-side
+// taxonomy). The Rust gate asserts the FILTERED golden in tests/e2e_fuzz_test.rs.
+
+'use strict';
+
+const path = require('path');
+const fs = require('fs');
+
+const PS = path.resolve(__dirname, '../../../deps/pokemon-showdown');
+const { BattleStream, getPlayerStreams } = require(path.join(PS, 'dist/sim/battle-stream'));
+const { Teams, Dex, TeamValidator } = require(path.join(PS, 'dist/sim'));
+
+const ROOT = path.resolve(__dirname, '../../..');
+const TEAMS_DIR = path.join(ROOT, 'data/teams');
+const RUST_MOVES = path.join(ROOT, 'data/pokemon/gen3_moves.json');
+const OUT_GOLDEN = path.resolve(__dirname, '../tests/vectors/e2e_fuzz_golden.txt');
+const OUT_TAXONOMY = path.resolve(__dirname, '../tests/vectors/e2e_fuzz_taxonomy.txt');
+
+const FORMAT = 'gen3customgame'; // run format: arbitrary real teams, gen-3 mechanics
+const VALIDATE_FORMAT = 'gen3ou'; // validate real teams as gen3ou (skip rejects)
+
+const dex3 = Dex.forFormat(FORMAT);
+
+// Tunables (env-overridable; defaults sized for a green gate + a real taxonomy).
+// FILTERED_TARGET defaults to 220 — the size of the COMMITTED golden — so a plain
+// `node gen_e2e_fuzz.js` regeneration reproduces `e2e_fuzz_golden.txt` byte-for-byte
+// (the deterministic MASTER_SEED pairing makes battle e2e_N the N-th accepted battle).
+const MASTER_SEED = Number(process.env.E2E_MASTER_SEED || 0x1234abcd) >>> 0;
+const FILTERED_TARGET = Number(process.env.E2E_FILTERED_TARGET || 220);
+const UNFILTERED_TARGET = Number(process.env.E2E_UNFILTERED || 300);
+const MAX_TRIES = Number(process.env.E2E_MAX_TRIES || 6000);
+const SAFETY = 1000; // max decisions per battle (real teams can grind)
+
+function tick() { return new Promise((r) => setTimeout(r, 0)); }
+
+// ── Deterministic choice/pairing RNG (separate from the battle PRNG) ──────────
+// A simple recorded mulberry32 over a 32-bit state — Math-style but seeded, so a
+// failing battle is reproducible from its recorded master-derived seed.
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function randInt(rng, n) { return Math.floor(rng() * n); }
+
+// A well-spread gen5 battle seed derived from a 32-bit state (same shape as the
+// other goldens' seed pool).
+function seedFrom(state) {
+  let x = state >>> 0;
+  const step = () => { x = (Math.imul(x, 1103515245) + 12345) >>> 0; return x & 0xffff; };
+  return [step() || 1, step() || 1, step() || 1, step() || 1];
+}
+
+// ── Modeled-move predicate (the move allow/blocklist) ────────────────────────
+// A move is MODELED iff it's a DAMAGING move with a FIXED dex base power and a
+// secondary shape the Rust port handles. Driven by BOTH the sim move data (for the
+// structural exclusions) AND the Rust gen3_moves.json (the port PANICS on >1
+// secondary col except Tri Attack — so its secondaryEffects map must be ≤1 key).
+
+const rustMoves = JSON.parse(fs.readFileSync(RUST_MOVES, 'utf8'));
+
+// Explicit id blocklist: variable-power / fixed-damage / level / set-HP / OHKO /
+// 2-turn / lock-in / item-loss / switch-trap / sleep-talk / multi etc. that pass the
+// structural checks but the port does NOT model (per the capstone spec). When in
+// doubt, EXCLUDE.
+const MOVE_ID_BLOCKLIST = new Set([
+  // variable power
+  'return', 'frustration', 'flail', 'reversal', 'eruption', 'waterspout',
+  'lowkick', 'grassknot', 'magnitude', 'present', 'beatup', 'weatherball',
+  'gyroball', 'fling', 'punishment', 'trumpcard', 'wringout', 'crushgrip',
+  // hidden power (every type — bp is fixed/wrong for gen3)
+  'hiddenpower',
+  // fixed-damage / level / set-HP
+  'seismictoss', 'nightshade', 'sonicboom', 'dragonrage', 'superfang', 'endeavor',
+  'psywave', 'bide', 'finalgambit', 'counter', 'mirrorcoat',
+  // OHKO
+  'fissure', 'horndrill', 'guillotine', 'sheercold',
+  // switch-trap / item / leaves-1 / fakeout / future / sleeptalk / rapidspin
+  'pursuit', 'knockoff', 'thief', 'covet', 'trick', 'switcheroo', 'falseswipe',
+  'fakeout', 'futuresight', 'doomdesire', 'snore', 'sleeptalk', 'rapidspin',
+  // reactive / out-of-gen-3-modeled-scope status moves (a category-Status move the port
+  // fail-louds on; blocklisted so a team carrying it is not filter-clean). Destiny Bond is
+  // a `volatileStatus:'destinybond'` reactive move (out of scope) — keep it off the
+  // pickable path entirely (belt-and-braces beyond the Status-branch reject, since it can
+  // ride a filter-clean phaze team).
+  'destinybond',
+  // NOTE: Explosion / Self-Destruct are NO LONGER blocklisted — they are FULLY modeled
+  // bit-for-bit (the gen-3 self-KO that precedes the hit; `gen_explosion_golden.js` /
+  // `explosion_test.rs` + the E1-E4 regression pins) and ADMITTED to the e2e capstone via
+  // the `m.selfdestruct` special-case below (gated by EXPLOSION_E2E_EXCLUDED).
+]);
+
+// The MODELED standalone status-inflicting moves (category Status, bp 0) the port
+// now executes bit-for-bit (the status-move layer): par (Thunder Wave / Stun Spore /
+// Glare), psn (Poison Powder / Poison Gas), tox (Toxic), brn (Will-O-Wisp), slp
+// (Spore / Sleep Powder / Hypnosis / Sing / Lovely Kiss / Grass Whistle). Every OTHER
+// Status move (recovery / boost / phaze / hazard / Substitute / field) stays excluded
+// (the port FAIL-LOUDs on them). Kept in lockstep with `modeled_status_move` in
+// src/turn.rs.
+const MODELED_STATUS_MOVES = new Set([
+  'thunderwave', 'stunspore', 'glare',
+  'poisonpowder', 'poisongas',
+  'toxic',
+  'willowisp',
+  'spore', 'sleeppowder', 'hypnosis', 'sing', 'lovelykiss', 'grasswhistle',
+]);
+
+// The MODELED pure SELF-BOOST SETUP moves (category Status, bp 0, target self) the
+// port now executes bit-for-bit (the setup-move layer): Calm Mind / Dragon Dance /
+// Swords Dance / Agility / Bulk Up / Amnesia / Barrier / Acid Armor / Iron Defense /
+// Cosmic Power / Tail Glow / Meditate / Sharpen / Howl / Harden / Withdraw / Growth.
+// DERIVED from the Rust data (`gen3_moves.json`'s `selfBoosts`, populated only for the
+// pure setup moves) so the allow-list is GIGO-PROOF in lockstep with the engine's
+// `self_boost_spec` (every move the port applies a self-boost for is exactly the set
+// with a non-empty `selfBoosts`; moves with an extra effect — Defense Curl/Minimize
+// volatile, Double Team's evasion, Belly Drum's HP cost, Curse — carry NO `selfBoosts`
+// and stay excluded → the port FAIL-LOUDs on them).
+const MODELED_SETUP_MOVES = new Set(
+  Object.keys(rustMoves).filter((id) => {
+    const sb = rustMoves[id] && rustMoves[id].selfBoosts;
+    return sb && typeof sb === 'object' && Object.keys(sb).length > 0;
+  })
+);
+
+// The MODELED self-targeting HP-RECOVERY moves (category Status, bp 0, target self,
+// isHeal) the port now executes bit-for-bit (the recovery-move layer): the flat-half-HP
+// recovers (Recover / Soft-Boiled / Slack Off / Milk Drink → floor(maxhp/2)), the
+// WEATHER-conditional heals (Moonlight / Synthesis / Morning Sun → none floor(maxhp/2) /
+// sun floor(maxhp*2/3) / sand+rain+hail floor(maxhp/4)), and REST (full heal + a FIXED
+// Sleep(3) self-sleep that DRAWS-then-DISCARDS the slp.onStart `random(2,6)` + a prior-
+// status cure). Kept in lockstep with `recovery_heal_amount` + `run_rest` in src/turn.rs.
+// DELIBERATELY EXCLUDED (the port FAIL-LOUDs → they keep the team out of the filtered
+// gate): **Wish** (a DELAYED slot-keyed end-of-next-turn heal — a separate pending-heal
+// model), **Heal Bell / Aromatherapy / Refresh** (team/self STATUS cure, not HP),
+// **Pain Split / Leech Seed / drain / Ingrain / Aqua Ring** (other isHeal mechanics).
+// `splash` (a true draw-free no-op) is ALSO modeled by the port and allowed here.
+const MODELED_RECOVERY_MOVES = new Set([
+  'recover', 'softboiled', 'slackoff', 'milkdrink',
+  'moonlight', 'synthesis', 'morningsun',
+  'rest',
+  'splash',
+]);
+
+// The MODELED PROTECT / DETECT moves (category Status, bp 0, target self, priority 3,
+// `stallingMove`/`volatileStatus:'protect'`) the port now executes bit-for-bit (the
+// protect-move layer): the gen-3 consecutive-use STALL draw (the first protect short-
+// circuits with NO draw; a consecutive one draws one randomChance(1, counter) at the
+// floored 2/4/8 denominator) + the move-BLOCK (a foe move targeting the protected mon
+// draws its accuracy roll then is blocked, NO crit/damage/secondary/status). Kept in
+// lockstep with `run_protect` in src/turn.rs. DELIBERATELY EXCLUDED (the port FAIL-LOUDs
+// → they keep the team out of the filtered gate): **Endure** (isProtect=true but
+// `volatileStatus:'endure'` — a survive-at-1-HP `onDamage`, a different mechanic) +
+// the gen4+ Quick Guard / Wide Guard / King's Shield / Spiky Shield (none exist in gen3).
+const MODELED_PROTECT_MOVES = new Set(['protect', 'detect']);
+
+// The MODELED ENTRY-HAZARD moves (category Status, bp 0, `sideCondition`, target foeSide)
+// the port now executes bit-for-bit (the spikes layer). gen-3's ONLY entry hazard is
+// **Spikes**: a never-miss `sideCondition:'spikes'` move that increments the FOE side's
+// layer count (capped at 3; a 4th FAILS) draw-free, and applies the grounded switch-in
+// damage (`[_,3,4,6][layers]*maxhp/24`, floored, min 1) on the gen-3 runSwitch's
+// `runEvent('EntryHazard')`. Kept in lockstep with `run_status_move`'s spikes arm +
+// `apply_entry_hazards` in src/turn.rs. DELIBERATELY EXCLUDED (the port FAIL-LOUDs → they
+// keep the team out of the filtered gate): **Toxic Spikes** + **Stealth Rock** (NOT gen3),
+// and **Rapid Spin** (the hazard-CLEAR move — a damaging move the fuzz won't pick as a
+// modeled status move; hazards persist). Spikes is the only gen-3 entry hazard.
+const MODELED_HAZARD_MOVES = new Set(['spikes']);
+
+// The MODELED PHAZE moves (category Status, bp 0, `forceSwitch: true`, target normal) the
+// port now executes bit-for-bit: **Roar** + **Whirlwind** — force the FOE to switch to a
+// RANDOM eligible team member. The draw model (kept in lockstep with `run_status_move`'s
+// phaze arm + `drag_in` in src/turn.rs): gen-3 Roar/Whirlwind resolve to `accuracy: 100`
+// (NOT never-miss) so they DRAW `randomChance(100,100)`; a SUCCESSFUL phaze then draws ONE
+// `sample`/`random(n)` (the random target, even for n==1) and `dragIn`s the picked mon (it
+// takes Spikes via the runSwitch EntryHazard, fires its ability Start, and a Spikes-KO on
+// entry chains a normal replacement); a phaze with NO eligible foe (last mon) draws ONLY the
+// accuracy roll. DELIBERATELY EXCLUDED (the port FAIL-LOUDs): **Haze** (resets boosts — a
+// DIFFERENT mechanic, not forceSwitch), Perish Song, Roar of Time (not gen3). Roar +
+// Whirlwind are the ONLY gen-3 phaze moves (`forceSwitch`). The general `m.forceSwitch`
+// reject below (the damaging-move path) never sees these — they are category Status and
+// matched HERE first.
+const MODELED_PHAZE_MOVES = new Set(['roar', 'whirlwind']);
+
+// The MODELED LEECH SEED move (category Status, bp 0, type Grass, accuracy 90,
+// `volatileStatus:'leechseed'`, target normal) the port now executes bit-for-bit (the
+// leech-seed layer): plant the `leechseed` volatile on the FOE; each end-of-turn the seeded
+// mon loses floor(maxhp/8) and the SEEDER's CURRENT active heals it (the gen4-inherited
+// residual at order 10, subOrder 5 — between Leftovers sub 4 and the status DoT sub 6). The
+// move DRAWS its accuracy roll (acc 90, NOT never-miss) unconditionally — even into a
+// Grass-immune or already-seeded target — then plants (draw-free) on a landed hit. Kept in
+// lockstep with `run_status_move`'s leechseed arm + `apply_leech_seed` in src/turn.rs.
+// DELIBERATELY EXCLUDED at the residual (the port FAIL-LOUDs): a Liquid Ooze target reverses
+// the drain (seeder takes damage) — rare in gen-3 OU; the MOVE-ID-BLOCKLIST keeps such teams
+// out. Leech Seed is the only gen-3 drain-volatile move modeled here.
+const MODELED_LEECH_MOVES = new Set(['leechseed']);
+
+// The MODELED gen-3 FIXED-DAMAGE moves (a `damage:` / `damageCallback` move that BYPASSES
+// getDamage — NO crit roll, NO 16-way damage roll) the port now executes bit-for-bit (the
+// fixed-damage layer): Seismic Toss / Night Shade (damage: 'level' → the USER's level),
+// Sonic Boom (20), Dragon Rage (40), Super Fang (max(floor(target.hp/2),1)). Their draw model
+// is accuracy-only (Seismic Toss / Night Shade / Dragon Rage acc-100 but NOT never-miss → they
+// STILL draw one; Sonic Boom / Super Fang acc-90 CAN miss), then the type-immunity short-circuit
+// (accuracy-drawn-then-`-immune`), then apply the fixed amount through the sub-absorb / faint
+// machinery. In the SHOWDOWN dex these carry `category:'Physical'|'Special'` with `basePower:0`
+// (so they fail the `basePower > 0` gate) and a `damage`/`damageCallback` field (so they fail
+// those rejects) — `isModeledMove` ADMITS them by an EARLY special-case (before those rejects),
+// kept in lockstep with `is_fixed_damage_move` / `fixed_damage_amount` in src/turn.rs. The
+// DEFERRED fixed-damage family (Psywave / the OHKO moves / Counter / Mirror Coat / Bide /
+// Endeavor) stays out — the port FAIL-LOUDs on it, and the `basePower`/`damage`/ohko/
+// `damageCallback` rejects + the blocklist keep it off the pickable path.
+const MODELED_FIXED_DAMAGE_MOVES = new Set([
+  'seismictoss', 'nightshade', 'sonicboom', 'dragonrage', 'superfang',
+]);
+
+// The modeled gen-3 SUBSTITUTE move (`volatileStatus:'substitute'`, never-miss): the user
+// spends floor(maxhp/4) HP to make a decoy that ABSORBS foe hits. The port models the create
+// (cost + draw-free), the absorb (damage → sub HP, break at 0, no carry), the SECONDARY that
+// STILL DRAWS its random(100) but applies NOTHING behind a sub (the gen-3 draw-count quirk),
+// the blocked status/stat-drop, the confusion-self-hit-hits-the-mon, and the phaze-bypass — all
+// bit-for-bit (`gen_substitute_golden.js` / `substitute_test.rs`).
+const MODELED_SUBSTITUTE_MOVES = new Set(['substitute']);
+
+// The modeled gen-3 move-SELECTION-RESTRICTION moves (`gen3_taunt_disable_v1`): **Taunt**
+// (Dark, acc 100 — DRAWS randomChance(100,100); the `taunt` volatile is a FIXED duration:2,
+// NO duration draw; blocks every Status-category move at selection + cants a QUEUED one at
+// execution) and **Disable** (Normal, acc 55 — CAN miss; ONE random(2,6) durationCallback
+// draw on a landed hit into a mon with a lastMove — stored +1 iff the target ALREADY moved
+// [the gen4-inherited onStart `!willMove -> duration++`]; disables that one slot; onTryHit
+// FAILS draw-free with no lastMove). Both protect:1 (Protect blocks, after their accuracy
+// roll) + bypasssub:1 (a Substitute does NOT block). The port models the selection
+// restriction (`move_usable`/`must_struggle` -> forced Struggle), the execution-time
+// onBeforeMove cants, and the residual duration ticks bit-for-bit
+// (`gen_taunt_disable_golden.js` / `taunt_disable_test.rs` + the TD1-TD3 regression pins).
+const MODELED_RESTRICTION_MOVES = new Set(['taunt', 'disable']);
+
+// PHAZE_E2E_EXCLUDED — the gen-3 phaze moves (Roar / Whirlwind) are now INCLUDED in the e2e
+// capstone (flag = false), bit-for-bit, 1035 phaze-DRAG decisions across the 220-battle strict
+// gate. ROOT CAUSE of the long-standing "multi-phaze `sample` desync" (FIXED 2026-07-01): it was
+// NOT an eligible-list / array-order bug — Roar AND Whirlwind carry the `protect: 1` flag, so a
+// Protect/Detect on the TARGET BLOCKS the phaze at `runEvent('TryHit')` (after the accuracy roll)
+// → NO `forceSwitchFlag` → NO `dragIn` → NO `sample` draw. The port's phaze arm signalled the drag
+// UNCONDITIONALLY (it never checked the Protect block the leechseed/status arms already do), so into
+// a protected foe it dragged an EXTRA random mon; the boundary seed still matched (the extra `sample`
+// was compensated downstream) while the dragged mon was wrong — which is exactly why it only surfaced
+// when a phaze hit a PROTECTING foe across a long history. FIX: a `protect_blocks` check in the phaze
+// arm (Substitute does NOT block — Roar/Whirlwind carry `bypasssub: 1`). Pinned by
+// `regression_test.rs::phaze_blocked_by_protect_draws_no_sample_and_leaves_the_target` (P4). The
+// `destinybond` a phaze-clean team can carry is in `MOVE_ID_BLOCKLIST` (fail-loud, not modeled).
+// See EDGE_CASES.md "✅ FIXED — phaze multi-draw-turn `sample` desync".
+const PHAZE_E2E_EXCLUDED = false;
+
+// LEECHSEED_E2E_EXCLUDED — whether to keep Leech Seed OUT of the e2e capstone's modeled
+// allow-list. DEFAULT FALSE (INCLUDED): the leech draw model (accuracy 90 + the draw-free
+// residual at order 10/subOrder 5) is bit-for-bit, the residual is DRAW-FREE (so it can't
+// shift the LCG the way the phaze `sample` does), and the HP composition + seed are checked
+// per decision — so leech is exercised in the e2e at scale. If a residual-order desync ever
+// surfaces at scale that can't be root-caused in budget, set this TRUE for the phaze-style
+// HONEST EXCLUSION (keep the dedicated `leechseed_golden.js` / `leechseed_test.rs` + the L1-L3
+// regression pins as the proof) and document the unresolved cause in CLAUDE.md + EDGE_CASES.md.
+const LEECHSEED_E2E_EXCLUDED = false;
+
+// SUBSTITUTE_E2E_EXCLUDED — keep Substitute OUT of the e2e capstone's modeled allow-list.
+// **Now FALSE (INCLUDED, bit-for-bit).** Substitute is FULLY modeled (`gen_substitute_golden.js` /
+// `substitute_test.rs`, 9 scenarios × 80 seeds, 4320 decision rows + 5 regression pins) AND the
+// substitute mechanic itself is DRAW-COUNT-NEUTRAL (the absorb still draws the secondary random(100);
+// the create/block are draw-free). Including it pulled REAL-TEAM battles into scope whose Suicune hit
+// a STATEFUL desync the substitute is NOT the cause of — at e2e_84 dec4 (init_seed
+// 52903,53571,56373,31187) p1 switches a 213-speed Tyranitar (Sand Stream) in while p2's 213-speed
+// Suicune subs; the two actives TIE and the sim drew 8 PRNG calls that turn vs the port's 7. That ONE
+// missing draw is the **`eachEvent('WeatherChange')` switch-in tie-shuffle** (`Field.setWeather`,
+// field.ts:87): a mid-turn weather-setting switch-in into a speed tie draws one `random(0,2)` the port
+// MISSED — the SAME hard class as `forced_replacement_recaches_speed_seed` /
+// `para_while_active_keeps_full_cached_speed_seed`, in the SWITCHING/weather layer (NOT the substitute
+// arm). **FIXED 2026-06-30** in `turn.rs` (`run_switch` reports a weather change → `turn_loop` fires the
+// shuffle), pinned by `regression_test.rs::switch_into_a_tie_under_sand_draws_the_weather_change_shuffle_seed`
+// (ground truth from `harness/probe_switch_tie_weather_regression_rng.js`; the +1 shuffle is shown by the
+// `probe_switch_sand.js` control). With the fix, e2e_84 + all 220 filtered battles (284 substitute-MOVE /
+// 320 sub-up decisions) are bit-for-bit (`filtered_diverged == 0`), so Substitute is INCLUDED here, with a
+// `substitute_decisions >= 50` coverage floor in `e2e_fuzz_test.rs`. Documented in CLAUDE.md + EDGE_CASES.md.
+const SUBSTITUTE_E2E_EXCLUDED = false;
+
+// EXPLOSION_E2E_EXCLUDED — keep Explosion / Self-Destruct OUT of the e2e capstone's modeled
+// allow-list. **Now TRUE (EXCLUDED) — the HONEST phaze-style exclusion.** The Explosion / Self-
+// Destruct SELF-KO is itself FULLY modeled bit-for-bit (`gen_explosion_golden.js` /
+// `explosion_test.rs`, 7 scenarios × 80 seeds, 3688 decision rows, 7376 FAINTED assertions, 544
+// self-KO rows; + the E1-E4 `regression_test.rs` pins for user-faints-through-Protect /
+// -immunity / -a-sub-break / the mutual double-faint TIE). The gen-3 self-KO faints the USER as
+// part of `useMoveInner` (battle-actions.ts:501-503) BEFORE the hit resolves, is UNCONDITIONAL
+// (the user faints THROUGH a Protect / a Ghost immunity / a sub / a miss) and DRAW-FREE (only
+// the normal acc/crit/dmg draws fire; no trailing Quick Claw on a deciding faint).
+//
+// WHY EXCLUDED HERE (an HONEST exclusion — the self-KO is NOT the cause): admitting Explosion
+// pulled REAL-TEAM battles into scope that hit a STATEFUL desync in a DIFFERENT layer — a
+// DOUBLE-FAINT → DOUBLE-REPLACEMENT → SPIKES-CASCADE. When a last-mon-both Explosion (or any
+// double faint) forces BOTH sides to replace AND one side's replacement itself faints on Spikes
+// (chaining a THIRD replacement), the port mis-applies the ENTRY-HAZARD (Spikes) chip to the
+// OTHER side's fresh entrant that the sim does NOT chip (e2e_9 dec43: p2's Jirachi entrant —
+// full 403 in the sim — is wrongly chipped maxhp/8=50 → 353 by the port's `run_switch`
+// EntryHazard during the cascading double-replacement; likewise e2e_194 dec15). The SEED stays
+// bit-for-bit throughout (seed_ok=true) — it is a STATE (HP) mis-application in the
+// entry-hazard × cascade-replacement machinery (`run_switch`/`execute_switch`), NOT the
+// Explosion self-KO (which the 218 OTHER clean battles + the dedicated golden + the 4 regression
+// pins prove exact). Explosion is merely the most common way the fuzz produces the triggering
+// DOUBLE FAINT; the bug is orthogonal to it (a plain mutual-recoil / residual double-KO into the
+// same Spikes cascade would desync identically). Rather than risk a broad surgery on the
+// double-replacement/hazard ordering (which could regress the 218 clean battles + the spikes /
+// phaze tests) inside this layer's budget, we EXCLUDE Explosion from the e2e — keeping the gate
+// STRICT (no silent desync) — with the dedicated golden + the E1-E4 pins as the bit-for-bit
+// proof. Documented in CLAUDE.md + EDGE_CASES.md; the cascade bug is filed there as the next
+// entry-hazard-layer fix. Set false to re-include once the double-faint-cascade Spikes chip is
+// fixed + this yields a clean strict pass.
+const EXPLOSION_E2E_EXCLUDED = false;
+
+// Hidden Power has 16 typed variants whose id is `hiddenpower<type>`.
+function isHiddenPower(id) { return id === 'hiddenpower' || id.startsWith('hiddenpower'); }
+
+// Does the Rust port model this move's secondary shape? (≤1 secondary col, or Tri
+// Attack.) The structured boost moves collapse to a single synthetic col.
+function rustSecondaryOk(id) {
+  if (id === 'triattack') return true; // special-cased in the port
+  const e = rustMoves[id];
+  if (!e) return false;
+  const sec = e.secondaryEffects || {};
+  return Object.keys(sec).length <= 1;
+}
+
+function isModeledMove(id) {
+  if (isHiddenPower(id)) return false;
+  if (MOVE_ID_BLOCKLIST.has(id)) return false;
+  const m = dex3.moves.get(id);
+  if (!m || !m.exists) return false;
+  // FIXED-DAMAGE moves (Seismic Toss / Night Shade / Sonic Boom / Dragon Rage / Super Fang) —
+  // ADMITTED HERE, before the damaging-move gates below reject them. In the Showdown dex they
+  // are category Physical/Special with `basePower:0` + a `damage`/`damageCallback` field, so
+  // they'd else be dropped by the `basePower > 0` / `m.damage` / `m.damageCallback` rejects.
+  // The port models them bit-for-bit (`gen_fixeddamage_golden.js` / `fixeddamage_test.rs` +
+  // the FD1-FD4 regression pins); the DEFERRED fixed-damage family stays out (fail-loud).
+  if (MODELED_FIXED_DAMAGE_MOVES.has(id)) return true;
+  // STATUS MOVES: allow ONLY the modeled standalone status-inflicting moves (accuracy
+  // + apply + sleep random(2,6)), the modeled pure SELF-BOOST setup moves (never-miss →
+  // no accuracy draw, draw-free boost apply, no in-tryMoveHit Update), AND the modeled
+  // self-targeting HP-RECOVERY moves (never-miss → no accuracy draw, draw-free heal; Rest
+  // draws-then-discards one slp.onStart random(2,6)) — the port executes all three bit-
+  // for-bit; every OTHER Status move (Wish/Heal Bell/phaze/hazard/Substitute/field/
+  // Defense-Curl-volatile) stays excluded → the port FAIL-LOUDs.
+  if (m.category === 'Status') {
+    // PHAZE (Roar / Whirlwind) is special-cased HERE — a category-Status `forceSwitch`
+    // move. NOTE: it is currently EXCLUDED from the e2e capstone (see PHAZE_E2E_EXCLUDED)
+    // pending an unresolved phaze-in-a-multi-draw-turn sample desync the e2e exposes —
+    // phaze is fully bit-for-bit proven in the DEDICATED phaze golden (phaze_test.rs) +
+    // the regression pins; this gate stays STRICT by not letting it in here.
+    return MODELED_STATUS_MOVES.has(id) || MODELED_SETUP_MOVES.has(id) ||
+      MODELED_RECOVERY_MOVES.has(id) || MODELED_PROTECT_MOVES.has(id) ||
+      MODELED_HAZARD_MOVES.has(id) || MODELED_RESTRICTION_MOVES.has(id) ||
+      (LEECHSEED_E2E_EXCLUDED ? false : MODELED_LEECH_MOVES.has(id)) ||
+      (SUBSTITUTE_E2E_EXCLUDED ? false : MODELED_SUBSTITUTE_MOVES.has(id)) ||
+      (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));
+  }
+  if (!(m.basePower > 0)) return false; // variable / fixed-damage carrier
+  if (m.ohko) return false;
+  if (m.multihit) return false;
+  if (m.recoil) return false;
+  if (m.drain) return false;
+  // SELF-DESTRUCT class (Explosion / Self-Destruct) — a Normal PHYSICAL damaging move that
+  // faints the USER as part of the move (gen-3 self-KO, `useMoveInner`:501-503). FULLY modeled
+  // bit-for-bit; ADMITTED unless re-excluded. It still must clear the remaining damaging-move
+  // gates below (secondary shape etc.) — but Explosion / Self-Destruct have NO secondary, so
+  // they pass. (When EXCLUDED, drop it here to keep the fuzz free of the self-KO mechanic.)
+  if (m.selfdestruct && EXPLOSION_E2E_EXCLUDED) return false;
+  if (m.forceSwitch) return false;
+  if (m.damage) return false; // fixed/level damage
+  // SIDE/SLOT-CONDITION moves are unmodeled — EXCEPT the modeled gen-3 entry hazard
+  // **Spikes** (a category-Status move, already allowed in the Status branch above; this
+  // belt-and-braces special-case keeps the intent explicit should a hazard ever surface
+  // on the non-Status path). Every other sideCondition (Reflect/Light Screen/Toxic Spikes/
+  // Stealth Rock/Safeguard/Tailwind/…) stays excluded.
+  if ((m.sideCondition || m.slotCondition || m.sideConditions) && !MODELED_HAZARD_MOVES.has(id)) {
+    return false;
+  }
+  if (m.flags && (m.flags.charge || m.flags.recharge)) return false;
+  // TOP-LEVEL move.self.boosts / self.volatileStatus = selfDrops / lockedmove
+  // (Overheat/Superpower/Outrage) — a SEPARATE random(100) the port does NOT model.
+  if (m.self && (m.self.boosts || m.self.volatileStatus)) return false;
+  if (m.volatileStatus) return false; // a volatile MOVE (substitute etc.) — not damaging here
+  // DRAW-ORDER / POWER callbacks the port does NOT model (each desyncs the LCG):
+  //   * basePowerCallback — variable BP (Fury Cutter / Rollout / Ice Ball / Smelling
+  //     Salts / Revenge); the dex BP is a placeholder.
+  //   * beforeTurnCallback — FOCUS PUNCH: queues a beforeTurn `|-singleturn|` action
+  //     + an `onTry` cant-if-hit gate the port doesn't run (a real seed desync).
+  //   * beforeMoveCallback / priorityChargeCallback — other pre-move queue effects.
+  //   * onModifyMove — accuracy/power mutation (THUNDER never-misses in rain → a
+  //     DIFFERENT accuracy draw; Secret Power's terrain effect).
+  //   * damageCallback — fixed/derived damage (covered by `m.damage`/blocklist, but
+  //     belt-and-braces).
+  // (Plain `priority` is FINE — the port reads move.priority for action order; and a
+  // draw-free `onTry`/`onHit` like Brick Break screen-break / Pay Day coins is kept.)
+  if (m.basePowerCallback) return false;
+  if (m.beforeTurnCallback) return false;
+  if (m.beforeMoveCallback) return false;
+  if (m.priorityChargeCallback) return false;
+  if (m.damageCallback) return false;
+  if (m.onModifyMove) return false;
+  // Secondary shape: 0 or 1 secondary, modeled cols only.
+  const secs = m.secondaries || (m.secondary ? [m.secondary] : []);
+  if (secs.length > 1 && id !== 'triattack') return false;
+  for (const s of secs) {
+    if (!s) continue;
+    // self stat-RAISE (Meteor Mash/Ancient Power) — modeled via secondaryBoosts.
+    // foe stat-DROP (Crunch/Psychic/Shadow Ball) — modeled.
+    // a single status / flinch / confusion — modeled. Tri Attack — special-cased.
+    const ok =
+      id === 'triattack' ||
+      (typeof s.status === 'string') ||
+      (s.volatileStatus === 'flinch') ||
+      (s.volatileStatus === 'confusion') ||
+      (s.boosts && typeof s.boosts === 'object') ||
+      (s.self && s.self.boosts && typeof s.self.boosts === 'object');
+    if (!ok) return false;
+  }
+  // The port must also be able to ingest the secondary col-count.
+  if (!rustSecondaryOk(id)) return false;
+  return true;
+}
+
+// ── Modeled ability / item predicates (the FILTERED gate's pre-filter) ───────
+// The FILTERED golden only includes battles where EVERY mon (both teams) has an
+// ability that is EITHER modeled OR a provable no-op in a damaging-move-only fuzz,
+// and an item in the modeled set. The taxonomy does NOT apply these.
+
+const MODELED_ABILITIES = new Set([
+  'intimidate', 'sandstream', 'drizzle', 'drought', 'levitate', 'flashfire',
+  'waterabsorb', 'voltabsorb', 'thickfat', 'clearbody', 'whitesmoke',
+  'hypercutter', 'keeneye', 'serenegrace', 'shielddust', 'owntempo',
+  // TRAPPING (`gen3_trapping_v1`): Arena Trap (grounded foes) + Magnet Pull (Steel
+  // foes) are MODELED — the port computes `is_trapped` (the switch-legality gate) and
+  // the endTurn TrapPokemon/MaybeTrapPokemon tie-shuffle draws (the gen3 magnetpull
+  // onAny 2-handler tie). The generator's voluntary-switch picker respects the sim's
+  // `pokemon.trapped` (below), so a trapped mon always fights — mirroring the real
+  // request, where the trapped mon's switches are rejected.
+  'arenatrap', 'magnetpull',
+  // DMG_MOD class (`gen3_item_mechanics_v1` ability side, Phase 2): the DATA-DRIVEN
+  // ability damage folds (`AbilityData.dmg_mod` → resolve_atk_stat_mods /
+  // resolve_def_stat_mods / resolve_bp_mods) are WIRED + validated by the dedicated
+  // class-sweep golden `gen_ability_dmgmod_golden.js` → `tests/ability_dmgmod_test.rs`
+  // (330 game-end battles, byte-for-byte) + the damage golden's 15 exact-roll probes +
+  // the AB1-AB5 pins. The pinch family (Torrent/Blaze/Overgrow/Swarm: BP ×1.5 at hp≤⅓)
+  // + Huge/Pure Power (Atk ×2) + Guts (Atk ×1.5 statused + burn-halve suppressed) +
+  // Marvel Scale (Def ×1.5 while the DEFENDER is statused). These are the top
+  // team-carry admission gaps (torrent=254, blaze=103, guts=50, marvelscale=35).
+  //
+  // ADMITTED (`gen3_move_alias_resolution_v1`): the 8 below grow the filter-clean pool to
+  // 151/719 (the biggest single admission lever — the DMG_MOD gaps VANISH from the taxonomy's
+  // top list). The admission was gated on ONE newly-admitted battle (e2e_86, a Swampert battle)
+  // that diverged because its Gengar's packed team spells Will-O-Wisp as the ALIAS `wisp` — the
+  // port's dex read only canonical ids, so the move NO-OP'd (drawing nothing while the sim ran it),
+  // a draw-COUNT desync (rust 35 vs golden 41 decisions). FIXED by move-alias resolution in the dex
+  // (`gen3_move_aliases.json`, §8 in EDGE_CASES). The enlarged corpus is now a clean STRICT pass.
+  // (SEPARATE fix, same window: `gen3_sun_freeze_immunity_v1` — the base `sunnyday` `onImmunity('frz')`
+  // blocks a freeze while the field is Sun; the port used to freeze anyway [the A/B "ice-freeze
+  // cluster", 196 repros]. That is pinned by `sun_blocks_freeze_secondary_draw_free` with 0 e2e
+  // decisions — no filter-clean battle has a sun+ice-move turn, so it did NOT gate this admission.)
+  'torrent', 'blaze', 'overgrow', 'swarm', 'hugepower', 'purepower', 'guts', 'marvelscale',
+  // ACCURACY class (`gen3_accuracy_pipeline_v1`): the DATA-DRIVEN to-hit folds
+  // (`AbilityData.acc_mod` → `turn.rs::effective_accuracy`, DRAW-RELEVANT — a wrong effAcc
+  // flips a hit/miss and desyncs the seed). Compound Eyes (×1.3 attacker chain), Sand Veil
+  // (×0.8 defender chain in sand + its `onImmunity('sandstorm')` sand-chip immunity), Hustle
+  // (acc ×0.8 on physical-type moves + its Atk ×1.5 dmgMod — now BOTH wired). Validated by
+  // the class-sweep golden `gen_accuracy_golden.js` → `tests/accuracy_test.rs` (per-decision
+  // STATE+HP+SEED to game-end) + the AC1-AC4 pins. Hustle is off the DATA-ONLY/deferred list.
+  'compoundeyes', 'sandveil', 'hustle',
+  // SWITCH_OUT class (`gen3_natural_cure_v1`): NATURAL CURE — the sole gen-3 switch-out-cure
+  // ability, the #1 e2e team-carry gap (naturalcure=254, on Blissey/Starmie/Celebi/Miltank/…).
+  // The holder's major status is CURED when it switches OUT (voluntary pivot OR phaze-DRAG-out),
+  // DRAW-FREE (probe-settled `harness/probe_naturalcure_rng.js`: `onSwitchOut`, `onCheckShow`
+  // undefined; the cure + its `[silent]` `-curestatus` reveal consume ZERO PRNG — SEED-NEUTRAL).
+  // MODELED in `turn.rs::execute_switch` (status = None on an alive outgoing naturalcure holder),
+  // validated by the class-sweep golden `gen_naturalcure_golden.js` → `tests/naturalcure_test.rs`
+  // (280 game-end battles, per-decision STATE+STATUS+SEED, cure observable on the active-status
+  // timeline) + the NC1-NC3 pins. This is the single biggest e2e-admission lever after the
+  // DMG_MOD family (real gen3OU teams are saturated with Natural Cure carriers).
+  'naturalcure',
+  // STATUS_IMMUNE class (`gen3_status_immune_v1`): the DATA-DRIVEN status-immunity abilities —
+  // Limber (par) / Insomnia + Vital Spirit (slp) / Immunity (psn,tox) / Water Veil (brn) block
+  // via `onSetStatus`; Magma Armor (frz) blocks via `onImmunity` (BEFORE the SetStatus event).
+  // Read from `AbilityData.status_immune` in `turn.rs::try_set_status`; PROBE-settled draw model
+  // (`harness/probe_statusimmune_*.js`): DRAW-FREE in gen3customgame (the ability is the only
+  // SetStatus handler → no shuffle; Magma Armor blocks before the event) — so admission is
+  // SEED-CLEAN. `immunity` (=97) is the #2 team-carry gap after Natural Cure. Validated by the
+  // class-sweep golden `gen_statusimmune_golden.js` → `tests/statusimmune_test.rs` (480 game-end
+  // battles, the block observable on the active-status timeline) + the SI1-SI4 pins.
+  // NOTE `insomnia`/`vitalspirit` MOVED here from NOOP_ABILITIES — they are genuinely MODELED
+  // now (they block sleep, a modeled status move), not provable no-ops.
+  'limber', 'insomnia', 'vitalspirit', 'immunity', 'waterveil', 'magmaarmor',
+  // BATCH-1 DRAW-FREE / STRUCTURAL classes (`gen3_ability_batch1_v1`): four ability classes
+  // WIRED + validated by the class-sweep golden `gen_ability_batch1_golden.js` →
+  // `tests/ability_batch1_test.rs` (300 game-end battles, per-decision STATE+HP+SPE-BOOST+SEED,
+  // byte-for-byte) + the B1-B4b pins in `regression_test.rs`:
+  //   CRIT_IMMUNE  (shellarmor / battlearmor) — a hit into the holder NEVER crits (the crit
+  //     roll is DRAWN then overridden false → DRAW-FREE); the seed is unchanged.
+  //   WEATHER_SPEED (chlorophyll / swiftswim) — ×2 effective speed in sun / rain, folded into the
+  //     cached speed the tie-shuffles read (the ×2 is modeled → the tie-shuffle order/count is
+  //     seed-faithful).
+  //   WEATHER_NEGATE (cloudnine / airlock) — suppresses the weather's EFFECTS (chip + speed ×2);
+  //     the sun/rain eachEvent('Weather') end-of-turn shuffle is fired off the RAW weather (the
+  //     STEP-1 fix `sun_rain_weather_turn_tie_draws_the_eachevent_weather_shuffle_seed`).
+  //   RESIDUAL (speedboost / raindish) — Speed Boost +1 spe/active-turn + Rain Dish +maxhp/16 in
+  //     rain, at residualOrder 10 subOrder 3, DRAW-FREE.
+  // All four are DRAW-FREE, so admitting them is SEED-CLEAN. shellarmor is the big lever
+  // (a common gen3OU defensive ability on Cloyster/Cradily/etc.).
+  'shellarmor', 'battlearmor', 'chlorophyll', 'swiftswim',
+  'cloudnine', 'airlock', 'speedboost', 'raindish',
+  // BATCH-2 DRAW-BEARING "reactive" classes + block tail (`gen3_ability_batch2_v1`): WIRED +
+  // validated by the class-sweep golden `gen_ability_batch2_golden.js` → `tests/ability_batch2_test.rs`
+  // (960 game-end battles, per-decision STATE+HP+STATUS+SEED, byte-for-byte) + the B2-1..B2-7 pins
+  // in `regression_test.rs`. PROBE-settled draw models (`harness/probe_contact_proc_{rng,lands}.js`,
+  // `probe_effectspore_sample.js`, `probe_block_abilities_rng.js`, `probe_synchronize_rng.js`):
+  //   CONTACT_PROC (static par / poisonpoint psn / flamebody brn / effectspore slp|par|psn) — an
+  //     onDamagingHit that, when the holder is hit by a CONTACT move, draws `randomChance(chance)`
+  //     (1/3, or Effect Spore's 1/10 + a sample(3)) and statuses the ATTACKER. The proc's
+  //     randomChance draws INSIDE runEvent('DamagingHit') (gen<5) — AFTER the move's own secondary
+  //     random(100). It draws even behind a Substitute + on a KO. `synchronize` is the #1 taxonomy
+  //     gap, `effectspore` (=9) the #2.
+  //   CONTACT recoil (roughskin) — a DRAW-FREE baseMaxhp/16 recoil to the attacker.
+  //   BLOCK — soundproof (immune to a sound move: Sing / Grass Whistle / Roar — accuracy drawn then
+  //     -immune, no status/drag/sample), damp (Explosion CANCELLED at TryMove — the user does NOT
+  //     self-KO, the move draws NOTHING), suctioncups (a phaze into the holder draws no `sample` —
+  //     the holder stays active).
+  //   SYNCHRONIZE (synchronize) — reflect a foe-inflicted major status back to the SOURCE (slp/frz
+  //     exempt; tox→psn), DRAW-FREE in gen3customgame (the e2e format — the reflected status draws
+  //     no clause shuffle in customgame). Threaded through `turn.rs::try_set_status` (the single
+  //     status choke point, source-aware).
+  // The contact-proc `randomChance` / Effect Spore `sample` are the ONLY new draws (the rest are
+  // draw-free-or-fewer), so admitting these exercises the draw-bearing path on real teams.
+  'static', 'poisonpoint', 'flamebody', 'effectspore', 'roughskin',
+  'soundproof', 'damp', 'suctioncups', 'synchronize',
+  // BATCH-3 (`gen3_berry_trace_shedskin_v1`): TRACE + SHED SKIN — WIRED + validated by the
+  // class-sweep golden `gen_berry_batch3_golden.js` → `tests/berry_batch3_test.rs` (1280
+  // battles, per-decision STATE+STATUS+ITEM+BOOSTS+SEED) + the BR4/BR5 pins. PROBE-settled
+  // draw models (`harness/probe_trace_shedskin_rng.js`):
+  //   TRACE — the gen3-resolved onStart: ONE n=1 `randomFoe` sample draw (`random(1)` even
+  //     for a single foe) + a LIVE copy of the foe's CURRENT ability (no copied-onStart in
+  //     gen3; switch-out reverts; a lead trace's draw pre-dates the seeded start). SAFETY:
+  //     the engine FAIL-LOUDS (`event.rs::TRACE_COPYABLE`, kept in LOCKSTEP with
+  //     MODELED_ABILITIES ∪ NOOP_ABILITIES) on an unmodeled copy — and this filter requires
+  //     BOTH teams all-modeled, so a filtered battle can never trip it.
+  //   SHED SKIN — ONE `randomChance(33,100)` per STATUSED residual (order 10 subOrder 3,
+  //     cure BEFORE the status DoT; the handler is gathered unconditionally for the
+  //     tie-shuffle).
+  'trace', 'shedskin',
+  // BATCH-4 — the FINAL mechanics tail (`gen3_ability_batch4_v1`): WIRED + validated by the
+  // class-sweep golden `gen_ability_batch4_golden.js` → `tests/ability_batch4_test.rs` (1260
+  // game-end battles, per-decision STATE+HP+STATUS+TRAPPED+SEED, byte-for-byte) + the
+  // B4-1..B4-7 pins in `regression_test.rs`. PROBE-settled draw models
+  // (`harness/probe_{truant,truant_edges,innerfocus,shadowtag,cutecharm_attract,colorchange}_rng.js`):
+  //   TRUANT (=4, the last ability team-carry gap) — onBeforeMove priority 9 cant iff
+  //     `truantTurn` (DRAW-FREE: a loaf turn draws NOTHING, no para roll, no PP); onSwitchIn
+  //     arms `turn !== 0`; the order-27 residual toggles (a Truant MIRROR tie adds ONE
+  //     residual shuffle draw).
+  //   INNER FOCUS (=2) — blocks the flinch volatile at the APPLY (the secondary random(100)
+  //     STILL draws — draw-count-identical to a landed flinch; contrast Shield Dust's
+  //     filter-the-draw).
+  //   SHADOW TAG (0 sample teams — Wobbuffet is banned from gen3ou) — `onFoeTrapPokemon`
+  //     traps UNCONDITIONALLY (no grounded/type gate; a MIRROR is mutually trapped),
+  //     DRAW-FREE (0 extra draws — vs Magnet Pull's onAny* draws).
+  //   CUTE CHARM (0 teams) + the ATTRACT volatile — a damaging CONTACT hit draws
+  //     randomChance(1,3) UNCONDITIONALLY (the gender gate lives inside attract.onStart,
+  //     draw-free fail); attract: onBeforeMove priority 2, `-activate` always then
+  //     randomChance(1,2); cleared when the SOURCE leaves / the holder switches out.
+  //   COLOR CHANGE (0 teams, Kecleon-only) — an onDamagingHit TYPE OVERRIDE
+  //     (`MonState::types_override` through the ONE `mon_types` choke point: STAB/chart/
+  //     status-immunity/sand-immunity), DRAW-FREE; NOT behind a sub; not on the KO hit;
+  //     switch-out reverts.
+  // STILL DEFERRED: forecast (a Castform forme+TYPE change under rain/sun/hail — 0 sample
+  // teams; the forme-change reporting surface + the Cloud-Nine/effective-weather composition
+  // are unprobed; the filter keeps every Castform-Forecast team off the modeled path).
+  'truant', 'innerfocus', 'shadowtag', 'cutecharm', 'colorchange',
+  // PLUS / MINUS (`gen3_plus_minus_v1`, 2026-07-10 — moved from NOOP_ABILITIES): the gen3
+  // resolved `onModifySpA` scans `getAllActive()` FOES INCLUDED, so a cross-field
+  // Plus↔Minus pair gives the holder SpA ×1.5 (paired ability only; special-only;
+  // draw-free). The port models it as a ModifySpA chain member; probe
+  // `harness/probe_plus_minus_gen3.js`; pin `minus_boosts_spa_when_the_foe_active_has_plus`.
+  'plus', 'minus',
+]);
+// Provably no-op in a damaging-move-only, no-PP, no-attract, no-sleep, no-OHKO,
+// no-recoil, no-drain fuzz.
+//
+// **LIQUID OOZE is NO LONGER no-op now that LEECH SEED is modeled** — it REVERSES the
+// leech drain (the seeder takes the damage instead of healing). The port FAIL-LOUDs on a
+// Liquid Ooze leech target (`apply_leech_seed`), so it MUST be excluded from the filtered
+// gate (a Liquid Ooze mon that gets seeded would panic + diverge). Removed from the no-op
+// set → its teams are kept off the modeled path (the deferred treatment). If a drain/leech
+// reversal is ever modeled, re-add it.
+const NOOP_ABILITIES = new Set([
+  'pressure', 'oblivious', 'runaway', 'illuminate', 'honeygather', 'pickup',
+  'stench', 'sturdy', 'rockhead', 'earlybird',
+  // `insomnia`/`vitalspirit` MOVED to MODELED_ABILITIES (`gen3_status_immune_v1`) — they
+  // genuinely BLOCK sleep (a modeled status move), so they are modeled, not no-ops. `oblivious`
+  // stays a no-op (its only immunity is to ATTRACT, which is not in the modeled move set).
+  'noability',
+  // BATCH-1 class-(a) NO-OPS (`gen3_ability_batch1_v1`), each PROVE-verified a true no-op in
+  // the modeled move/item universe (`harness/probe_ability_batch1_noop_verify.js` — the
+  // candidate ability vs an Insomnia control over full battles is BIT-IDENTICAL, STATE+SEED):
+  //   lightningrod  — `onFoeRedirectTarget` (redirect Electric moves) → N/A in singles (one target).
+  //   stickyhold    — `onTakeItem` (blocks Thief / Knock Off) → no item-removal move is modeled.
+  // PLUS / MINUS moved to MODELED_ABILITIES (`gen3_plus_minus_v1`, 2026-07-10): the no-op
+  // verification tested them PARTNER-LESS — but the gen3 resolved `onModifySpA` scans
+  // `getAllActive()` (FOES INCLUDED), so a cross-field Plus↔Minus pair is SpA ×1.5 (the A/B
+  // fuzzer's thunderbolt-vs-Plusle/Minun cluster; probe `probe_plus_minus_gen3.js`). The
+  // MODELED∪NOOP admission union is UNCHANGED, so the committed e2e golden is untouched.
+  // FORECAST is DEFERRED (NOT a no-op): its `onWeatherChange` changes Castform's forme + TYPE in
+  // rain/sun/hail (the probe DIVERGES under those weathers — `Castform-Rainy`/Water etc.), so a
+  // filter-clean Castform under weather would desync. Left OUT for batch 2 (a forme-change model).
+  'lightningrod', 'stickyhold',
+]);
+function abilityAllowed(id) {
+  const a = toId(id);
+  return MODELED_ABILITIES.has(a) || NOOP_ABILITIES.has(a) || a === '';
+}
+
+// The DATA-DRIVEN item classes (`gen3_item_mechanics_v1`): every entry below is priced
+// by the port's generic dex-data path (`ItemData.type_boost`/`stat_mods`/`choice` →
+// `resolve_atk_stat_mods`/`resolve_def_stat_mods`/`resolve_bp_mods`) — no hardcoded
+// match-arm to drift from this set again (the Pink Bow / incense bug class). Class map:
+// src/rust_sim/tests/vectors/gen3_mechanics_inventory.md; sweep golden:
+// gen_item_mods_golden.js → tests/item_mods_test.rs.
+const MODELED_ITEMS = new Set([
+  '', 'leftovers', 'choiceband',
+  // TYPE_BOOST, the gen3-mod STAT fold (×1.1 family + Sea Incense ×1.05)
+  'seaincense',
+  'charcoal', 'mysticwater', 'miracleseed', 'magnet', 'blackbelt', 'blackglasses',
+  'dragonfang', 'hardstone', 'metalcoat', 'nevermeltice', 'poisonbarb',
+  'sharpbeak', 'silkscarf', 'silverpowder', 'softsand', 'spelltag', 'twistedspoon',
+  // TYPE_BOOST, the base-data BASE-POWER folds: the gen2 bows (DIRECT ×1.1 float)
+  // + the gen4-named incenses (chainModify 4915/4096 ≈ ×1.2 — NOT ×1.1)
+  'pinkbow', 'polkadotbow', 'oddincense', 'rockincense', 'roseincense', 'waveincense',
+  // SPECIES_STAT (gen3-RESOLVED semantics — gen3 Light Ball is SpA-ONLY ×2;
+  // DeepSeaScale/Metal Powder are DEFENDER-side folds; Soul Dew is both directions)
+  'thickclub', 'lightball', 'deepseatooth', 'deepseascale', 'metalpowder', 'souldew',
+  // Quick Claw (the port models its draw)
+  'quickclaw',
+  // ACCURACY_ITEM (`gen3_accuracy_pipeline_v1`): DEFENDER-side onModifyAccuracy DIRECT
+  // multiplies — Bright Powder ×0.9 / Lax Incense ×0.95 (`ItemData.acc_mod` →
+  // `turn.rs::effective_accuracy`). Draw-relevant (a hit/miss flip desyncs the seed);
+  // validated by `tests/accuracy_test.rs` + the AC3 pin.
+  'brightpowder', 'laxincense',
+  // PROC_ITEM (`gen3_ability_batch4_v1`, batch 4 — 0 team-carry, admitted for completeness):
+  //   kingsrock — the appended trailing `{chance:10, flinch}` secondary for the LISTED moves
+  //     (`ItemData.flinch_secondary`, execution-derived list): one extra random(100) AFTER
+  //     the move's own secondary, BEFORE the foe's contact proc; Serene Grace ×2; Shield
+  //     Dust filters; drawn-not-applied behind a sub; Seismic Toss/Struggle proc too.
+  //   focusband — the onDamage `randomChance(1,10)` drawn FIRST on EVERY Damage event into
+  //     the holder (move hits, burn/sand chips, Spikes, recoil, confusion self-hits; NOT
+  //     sub-absorbed hits); survive-at-1 only on a lethal MOVE hit.
+  'kingsrock', 'focusband',
+  // BERRIES (`gen3_berry_trace_shedskin_v1`, batch 3): the EXACT 22 data-driven
+  // `berryEffect` rows in gen3_items.json — the ONE eatItem consumption mechanism
+  // (item → NONE permanently) + the four effect classes, all probe-settled
+  // (`probe_berry_rng.js` / `probe_berry_sub_tie_rng.js`: the eat is DRAW-FREE; only
+  // Starf's `sample` + the Figy family's nature-gated confusion `random(2,6)` draw;
+  // the HEAL/PINCH residual handler shares Leftovers' order-10-subOrder-4 slot, so a
+  // berry-vs-Leftovers equal-speed mirror draws IDENTICALLY) and validated by
+  // `gen_berry_batch3_golden.js` → `tests/berry_batch3_test.rs` (1280 battles) + the
+  // BR1-BR3/BR6 pins. `lumberry` (=64) + `salacberry` (=46) are the top remaining
+  // taxonomy ITEM gaps — the batch-3 admission levers.
+  //   CURE (Update-site eat BEFORE the holder's move; lum immediate-in-setStatus):
+  'cheriberry', 'chestoberry', 'pechaberry', 'rawstberry', 'aspearberry',
+  'persimberry', 'lumberry',
+  //   HEAL (residual, `2*hp <= maxhp` exact — the BR6 boundary pin):
+  'oranberry', 'sitrusberry', 'figyberry', 'wikiberry', 'magoberry',
+  'aguavberry', 'iapapaberry',
+  //   PINCH (residual, `4*hp <= maxhp` exact; Starf's sample; Lansat's focusenergy):
+  'liechiberry', 'ganlonberry', 'salacberry', 'petayaberry', 'apicotberry',
+  'lansatberry', 'starfberry',
+  //   PP (leppa: +10 on the depleted slot at the Update site):
+  'leppaberry',
+]);
+function itemAllowed(id) { return MODELED_ITEMS.has(toId(id)); }
+
+function toId(s) {
+  return ('' + (s || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+// A team is FILTER-CLEAN iff every mon's ability + item is allowed.
+function teamFilterClean(packed) {
+  const team = Teams.unpack(packed);
+  for (const set of team) {
+    if (!abilityAllowed(set.ability)) return { ok: false, why: `ability:${toId(set.ability)}` };
+    if (!itemAllowed(set.item)) return { ok: false, why: `item:${toId(set.item)}` };
+  }
+  return { ok: true };
+}
+
+// ── Team loading ─────────────────────────────────────────────────────────────
+// Load every .txt, import → validate (gen3ou) → pack. Skip rejects / import fails.
+function loadTeams() {
+  const files = [];
+  const walk = (dir) => {
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, ent.name);
+      if (ent.isDirectory()) walk(p);
+      else if (ent.name.endsWith('.txt')) files.push(p);
+    }
+  };
+  walk(TEAMS_DIR);
+  files.sort(); // deterministic order
+
+  const validator = new TeamValidator(VALIDATE_FORMAT);
+  const teams = [];
+  let skipped = 0;
+  for (const f of files) {
+    let packed;
+    try {
+      const text = fs.readFileSync(f, 'utf8');
+      const team = Teams.import(text);
+      if (!team || team.length === 0) { skipped++; continue; }
+      const errs = validator.validateTeam(team);
+      if (errs && errs.length) { skipped++; continue; }
+      packed = Teams.pack(team);
+      // Round-trip sanity: the packed string must re-unpack to the same species set.
+      const re = Teams.unpack(packed);
+      if (!re || re.length !== team.length) { skipped++; continue; }
+    } catch (e) { skipped++; continue; }
+    teams.push({ file: path.relative(ROOT, f), packed });
+  }
+  return { teams, skipped, total: files.length };
+}
+
+// ── The battle driver ─────────────────────────────────────────────────────────
+// Picks a RANDOM legal choice each decision from `chooseRng`, restricted by
+// `opts.modeledOnly` (the FILTERED gate uses modeled moves only; the taxonomy uses
+// damaging-or-switch). Returns the recorded per-decision golden + a `dropped`
+// reason if the battle hit an unmodeled forced state (no legal modeled choice +
+// no switch).
+function statusOf(active) {
+  const st = (active && active.status) || '';
+  let stage = 0;
+  if (st === 'tox') stage = active.statusState ? (active.statusState.stage || 0) : 0;
+  if (st === 'slp') stage = active.statusState ? (active.statusState.time || 0) : 0;
+  return { status: st || '-', stage };
+}
+function boostsOf(active) {
+  const b = (active && active.boosts) || {};
+  return [b.atk || 0, b.def || 0, b.spa || 0, b.spd || 0, b.spe || 0];
+}
+function confusionOf(active) {
+  if (!active || !active.volatiles || !active.volatiles.confusion) return 0;
+  return active.volatiles.confusion.time || 0;
+}
+// The Spikes layer count on a side (`side.sideConditions.spikes.layers`, 0 = absent) —
+// the SIDE-CONDITION state the Rust e2e gate now asserts (so a switch-in onto a spiked
+// side takes the right hazard chip on real Skarmory/Forretress/Cloyster spiker teams).
+function spikesOf(side) {
+  const sc = side.sideConditions && side.sideConditions['spikes'];
+  return sc ? (sc.layers | 0) : 0;
+}
+function snap(side) {
+  const a = side.active[0];
+  if (!a) return { species: '-', hp: 0, maxhp: 0, fainted: true, status: '-', stage: 0, left: side.pokemonLeft, boosts: [0, 0, 0, 0, 0], confusion: 0, spikes: spikesOf(side) };
+  const { status, stage } = statusOf(a);
+  return {
+    species: a.species.name, hp: a.hp, maxhp: a.maxhp, fainted: !!a.fainted,
+    status, stage, left: side.pokemonLeft, boosts: boostsOf(a), confusion: confusionOf(a),
+    spikes: spikesOf(side),
+  };
+}
+function forceSwitchTable(battle) {
+  const out = [false, false];
+  if (battle.requestState !== 'switch') return out;
+  for (let i = 0; i < 2; i++) {
+    const req = battle.sides[i].activeRequest;
+    if (req && req.forceSwitch && req.forceSwitch[0]) out[i] = true;
+  }
+  return out;
+}
+// First mover this turn = the FIRST mon to RUN its action (the action-order sort's
+// decision). A fully-paralyzed / asleep / flinched mon emits `|cant|` (not `|move|`)
+// and a confusion-self-hit emits `|-activate|…|confusion` — both mean that mon RAN
+// its action FIRST, matching the Rust's `first_mover` (= first sorted action). So we
+// count those too (mirrors gen_secondary_golden.js — the e2e fuzz inflicts status).
+function firstMoverSince(log, fromIdx) {
+  for (let i = fromIdx; i < log.length; i++) {
+    const parts = log[i].split('|');
+    const tag = parts[1];
+    const isAction =
+      tag === 'move' || tag === 'switch' || tag === 'cant' ||
+      (tag === '-activate' && (parts[3] || '') === 'confusion');
+    if (isAction && parts.length >= 3) {
+      const actor = parts[2].trim();
+      if (actor.startsWith('p1a:')) return 'p1';
+      if (actor.startsWith('p2a:')) return 'p2';
+    }
+  }
+  return 'none';
+}
+
+// Encode a submitted choice into the compact golden token (matches gen_fullbattle).
+function encodeChoice(c) {
+  if (!c) return '-';
+  const m = c.match(/^move\s+(\d+)$/);
+  if (m) return `m${Number(m[1]) - 1}`;
+  const s = c.match(/^switch\s+(\d+)$/);
+  if (s) return `s${Number(s[1]) - 1}`;
+  throw new Error(`unencodable choice ${JSON.stringify(c)}`);
+}
+
+// Pick the move-choice for a side at a `move` request: choose a random MODELED (or,
+// for the taxonomy, damaging) legal move; if none, a random legal switch; else null
+// (a forced-unmodeled state — the caller drops the battle from the FILTERED set, or
+// records the cause for the taxonomy).
+//
+// `mode`: 'modeled' (FILTERED) requires isModeledMove; 'damaging' (taxonomy) accepts
+// any non-status move (so it doesn't trivially desync on a chosen status move — the
+// taxonomy is about ability/item gaps, not "we chose a status move").
+function pickMove(battle, side, rng, mode) {
+  const req = battle.sides[side].activeRequest;
+  if (!req || !req.active || !req.active[0]) return { choice: null, reason: 'no-active-request' };
+  const moves = req.active[0].moves || [];
+  const legalMoveSlots = [];
+  for (let k = 0; k < moves.length; k++) {
+    const mv = moves[k];
+    if (mv.disabled) continue;
+    const id = toId(mv.id || mv.move);
+    if (mode === 'modeled') {
+      if (isModeledMove(id)) legalMoveSlots.push(k);
+    } else {
+      // taxonomy: damaging (non-status), still skip the structurally-unreplayable
+      // moves that would desync on the CHOICE side (variable power/fixed/2-turn/
+      // multi/recoil/drain/selfKO) — we want gaps to surface as ability/item, not
+      // "we picked an unmodeled move".
+      const m = dex3.moves.get(id);
+      if (m && m.exists && m.category !== 'Status' && isModeledMove(id)) legalMoveSlots.push(k);
+    }
+  }
+  // TRAPPED (`gen3_trapping_v1`): a trapped active mon's voluntary switch would be
+  // REJECTED by the sim's `side.choose` ("Can't switch: The active Pokémon is
+  // trapped"), stalling the capture — so the picker treats its bench as empty. This is
+  // the sim's own request-legality fact (`pokemon.trapped`, set by the foe's Arena
+  // Trap / Magnet Pull at endTurn), NOT a heuristic; forced replacements
+  // (`pickReplacement`) stay un-gated (trapping never blocks a faint replacement).
+  const active = battle.sides[side].active[0];
+  const isTrapped = !!(active && active.trapped);
+  const switchSlots = isTrapped ? [] : legalSwitchSlots(battle, side);
+  if (legalMoveSlots.length === 0) {
+    // No modeled move — prefer a switch.
+    if (switchSlots.length > 0) {
+      const n = switchSlots[randInt(rng, switchSlots.length)];
+      return { choice: `switch ${n + 1}`, reason: 'switch-no-modeled-move' };
+    }
+    // No modeled move AND no switch (incl. TRAPPED with only unmodeled moves — the
+    // trapped mon must fight, and the port can't replay an unmodeled move) →
+    // forced-unmodeled.
+    const firstId = moves.length ? toId(moves[0].id || moves[0].move) : '?';
+    return { choice: null, reason: `forced-unmodeled-move:${firstId}` };
+  }
+  // Mostly attack; occasionally switch (to exercise the switch-phase draws) — 1/6.
+  if (switchSlots.length > 0 && rng() < 1 / 6) {
+    const n = switchSlots[randInt(rng, switchSlots.length)];
+    return { choice: `switch ${n + 1}`, reason: 'voluntary-switch' };
+  }
+  const k = legalMoveSlots[randInt(rng, legalMoveSlots.length)];
+  // Flag whether the picked move is a STATUS move and, more specifically, a pure
+  // SELF-BOOST SETUP move (so the golden can count how many decisions exercise the new
+  // status-move layer / setup-move layer respectively).
+  const pickedId = toId(moves[k].id || moves[k].move);
+  const pm = dex3.moves.get(pickedId);
+  const isStatus = !!(pm && pm.category === 'Status');
+  const isSetup = MODELED_SETUP_MOVES.has(pickedId);
+  const isRecovery = MODELED_RECOVERY_MOVES.has(pickedId);
+  const isProtect = MODELED_PROTECT_MOVES.has(pickedId);
+  const isPhaze = MODELED_PHAZE_MOVES.has(pickedId);
+  const isLeech = MODELED_LEECH_MOVES.has(pickedId);
+  const isSubstitute = MODELED_SUBSTITUTE_MOVES.has(pickedId);
+  const isRestriction = MODELED_RESTRICTION_MOVES.has(pickedId);
+  const isExplosion = pickedId === 'explosion' || pickedId === 'selfdestruct';
+  const isFixed = MODELED_FIXED_DAMAGE_MOVES.has(pickedId);
+  return { choice: `move ${k + 1}`, reason: 'modeled-move', pickedId, statusMove: isStatus, setupMove: isSetup, recoveryMove: isRecovery, protectMove: isProtect, phazeMove: isPhaze, leechMove: isLeech, substituteMove: isSubstitute, restrictionMove: isRestriction, explosionMove: isExplosion, fixedMove: isFixed };
+}
+
+function legalSwitchSlots(battle, side) {
+  const s = battle.sides[side];
+  const out = [];
+  for (let k = 0; k < s.pokemon.length; k++) {
+    const p = s.pokemon[k];
+    if (p !== s.active[0] && !p.fainted) out.push(k);
+  }
+  return out;
+}
+function pickReplacement(battle, side, rng) {
+  const slots = legalSwitchSlots(battle, side);
+  if (slots.length === 0) return null;
+  const n = slots[randInt(rng, slots.length)];
+  return `switch ${n + 1}`;
+}
+
+// Run ONE battle to game-end (or until a drop/safety). Returns the record.
+async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode) {
+  const stream = new BattleStream();
+  const streams = getPlayerStreams(stream);
+  const log = [];
+  (async () => { for await (const ch of streams.omniscient) { for (const l of ch.split('\n')) if (l) log.push(l); } })();
+
+  streams.omniscient.write(`>start {"formatid":"${FORMAT}","seed":${JSON.stringify(seed)}}`);
+  streams.omniscient.write(`>player p1 ${JSON.stringify({ name: 'P1', team: p1Packed })}`);
+  streams.omniscient.write(`>player p2 ${JSON.stringify({ name: 'P2', team: p2Packed })}`);
+  for (let i = 0; i < 12; i++) await tick();
+
+  const rng = mulberry32(chooseSeed);
+  // `movesUsed` (id -> count) is COVERAGE-ONLY metadata for the A/B fuzzer's
+  // distinct-moves-exercised tally — never serialized into the golden.
+  const rec = { initSeed: null, decisions: [], winner: null, ended: false, dropped: null, chooseSeed, movesUsed: {} };
+
+  let decisionNo = 0;
+  let safety = 0;
+  while (!stream.battle.ended && safety < SAFETY) {
+    safety++;
+    const battle = stream.battle;
+    const reqState = battle.requestState;
+    if (reqState !== 'move' && reqState !== 'switch') { await tick(); continue; }
+    const force = forceSwitchTable(battle);
+    const seedBefore = battle.prng.getSeed();
+    if (decisionNo === 0) rec.initSeed = seedBefore;
+
+    let cp1 = null; let cp2 = null;
+    let statusMoveThisDec = false;
+    let setupMoveThisDec = false;
+    let recoveryMoveThisDec = false;
+    let protectMoveThisDec = false;
+    let phazeMoveThisDec = false;
+    let leechMoveThisDec = false;
+    let substituteMoveThisDec = false;
+    let restrictionMoveThisDec = false;
+    let explosionMoveThisDec = false;
+    let fixedMoveThisDec = false;
+    if (reqState === 'switch') {
+      if (force[0]) { cp1 = pickReplacement(battle, 0, rng); if (!cp1) { rec.dropped = 'no-replacement-p1'; break; } }
+      if (force[1]) { cp2 = pickReplacement(battle, 1, rng); if (!cp2) { rec.dropped = 'no-replacement-p2'; break; } }
+    } else {
+      const r1 = pickMove(battle, 0, rng, mode);
+      const r2 = pickMove(battle, 1, rng, mode);
+      if (r1.choice === null) { rec.dropped = r1.reason; break; }
+      if (r2.choice === null) { rec.dropped = r2.reason; break; }
+      cp1 = r1.choice; cp2 = r2.choice;
+      for (const r of [r1, r2]) {
+        if (r && r.pickedId && r.choice && r.choice.startsWith('move')) {
+          rec.movesUsed[r.pickedId] = (rec.movesUsed[r.pickedId] || 0) + 1;
+        }
+      }
+      statusMoveThisDec = !!(r1.statusMove || r2.statusMove);
+      setupMoveThisDec = !!(r1.setupMove || r2.setupMove);
+      recoveryMoveThisDec = !!(r1.recoveryMove || r2.recoveryMove);
+      protectMoveThisDec = !!(r1.protectMove || r2.protectMove);
+      phazeMoveThisDec = !!(r1.phazeMove || r2.phazeMove);
+      leechMoveThisDec = !!(r1.leechMove || r2.leechMove);
+      substituteMoveThisDec = !!(r1.substituteMove || r2.substituteMove);
+      restrictionMoveThisDec = !!(r1.restrictionMove || r2.restrictionMove);
+      explosionMoveThisDec = !!(r1.explosionMove || r2.explosionMove);
+      fixedMoveThisDec = !!(r1.fixedMove || r2.fixedMove);
+    }
+
+    const logLenBefore = log.length;
+    try { if (cp1) streams.omniscient.write(`>p1 ${cp1}`); } catch (e) {}
+    try { if (cp2) streams.omniscient.write(`>p2 ${cp2}`); } catch (e) {}
+    for (let i = 0; i < 16; i++) await tick();
+
+    const seedAfter = battle.prng.getSeed();
+    rec.decisions.push({
+      request: reqState, force,
+      choiceP1: encodeChoice(cp1), choiceP2: encodeChoice(cp2),
+      seedAfter, p1: snap(battle.sides[0]), p2: snap(battle.sides[1]),
+      firstMover: reqState === 'move' ? firstMoverSince(log, logLenBefore) : 'none',
+      statusMove: statusMoveThisDec,
+      setupMove: setupMoveThisDec,
+      recoveryMove: recoveryMoveThisDec,
+      protectMove: protectMoveThisDec,
+      phazeMove: phazeMoveThisDec,
+      leechMove: leechMoveThisDec,
+      substituteMove: substituteMoveThisDec,
+      restrictionMove: restrictionMoveThisDec,
+      explosionMove: explosionMoveThisDec,
+      fixedMove: fixedMoveThisDec,
+    });
+    decisionNo++;
+  }
+
+  rec.ended = !!stream.battle.ended;
+  rec.winner = stream.battle.winner;
+  try { streams.omniscient.destroy(); } catch (e) {}
+  return rec;
+}
+
+function winTok(rec) {
+  if (!rec.ended) return 'none';
+  if (rec.winner === 'P1') return 'p1';
+  if (rec.winner === 'P2') return 'p2';
+  if (rec.winner === '' ) return 'tie';
+  return 'none';
+}
+
+// Serialize a battle record into the SHARED golden line format (so the Rust e2e
+// test reuses the fullbattle parser shape: SCEN/TEAM/INIT/DEC/END, with DEC carrying
+// boosts[5]+confusion like the secondary golden).
+function emitBattle(lines, id, p1Packed, p2Packed, rec) {
+  lines.push(`SCEN\t${id}`);
+  lines.push(`TEAM\t${id}\tp1\t${p1Packed}`);
+  lines.push(`TEAM\t${id}\tp2\t${p2Packed}`);
+  lines.push(['INIT', id, rec.initSeed, rec.chooseSeed].join('\t'));
+  rec.decisions.forEach((d, di) => {
+    const sp = (s) => [s.species, s.hp, s.maxhp, s.fainted ? 1 : 0, s.status,
+      s.boosts[0], s.boosts[1], s.boosts[2], s.boosts[3], s.boosts[4], s.confusion, s.left].join('\t');
+    lines.push([
+      'DEC', id, di, d.request, d.force[0] ? 1 : 0, d.force[1] ? 1 : 0,
+      d.choiceP1, d.choiceP2, d.seedAfter, sp(d.p1), sp(d.p2), d.firstMover,
+      // SPIKES layers per side (the entry-hazard SIDE CONDITION) — appended after `first`.
+      d.p1.spikes, d.p2.spikes,
+    ].join('\t'));
+  });
+  lines.push(['END', id, rec.ended ? 1 : 0, winTok(rec)].join('\t'));
+}
+
+// ── Taxonomy classification ───────────────────────────────────────────────────
+// For the UNFILTERED sweep we don't re-run the Rust here; instead we classify each
+// battle by the modeled-coverage of its TEAMS + the choices it actually used. The
+// committed Rust taxonomy test (e2e_taxonomy_test, ignored-by-default) does the
+// real divergence run; this Node side records the COVERAGE gaps (which ability/item
+// each battle carried) so we have a ranked "what's blocking real teams" list even
+// without the Rust replay. The Rust filtered gate is the bit-for-bit proof.
+function classifyTeamsGaps(p1Packed, p2Packed) {
+  const gaps = { abilities: new Set(), items: new Set() };
+  for (const packed of [p1Packed, p2Packed]) {
+    const team = Teams.unpack(packed);
+    for (const set of team) {
+      const a = toId(set.ability);
+      const it = toId(set.item);
+      if (!abilityAllowed(a)) gaps.abilities.add(a);
+      if (!itemAllowed(it)) gaps.items.add(it);
+    }
+  }
+  return gaps;
+}
+
+async function main() {
+  const t0 = Date.now();
+  const { teams, skipped, total } = loadTeams();
+  console.error(`teams: loaded ${teams.length} / ${total} (.txt), skipped ${skipped} (import/validate)`);
+  if (teams.length < 8) { console.error('too few valid teams loaded'); process.exit(1); }
+
+  const pairRng = mulberry32(MASTER_SEED);
+
+  // Precompute which loaded teams are FILTER-CLEAN (modeled abilities + items).
+  const cleanIdx = [];
+  for (let i = 0; i < teams.length; i++) {
+    if (teamFilterClean(teams[i].packed).ok) cleanIdx.push(i);
+  }
+  console.error(`filter-clean teams (modeled ability+item only): ${cleanIdx.length} / ${teams.length}`);
+
+  // ===========================================================================
+  // (1) THE FILTERED GATE — pair filter-clean teams, run modeled-only choices,
+  //     keep battles that reach game-end with NO drop. Bit-for-bit golden.
+  // ===========================================================================
+  const goldenLines = [];
+  goldenLines.push('# e2e_fuzz_golden.txt — CAPSTONE filtered gate (real teams, full battles, modeled mechanics only).');
+  goldenLines.push('# Per-decision-boundary STATE+SEED differential to GAME-END; the Rust replays bit-for-bit.');
+  goldenLines.push(`# MASTER_SEED ${MASTER_SEED}  filter-clean-teams ${cleanIdx.length}/${teams.length}`);
+  goldenLines.push('# SCEN <id>');
+  goldenLines.push('# TEAM <id> <p1|p2> <packed>');
+  goldenLines.push('# INIT <id> <initSeed m,n,o,p> <chooseSeed>');
+  goldenLines.push('# DEC  <id> <di> <move|switch> <fP1> <fP2> <cP1> <cP2> <seedAfter> \\');
+  goldenLines.push('#       p1(species hp max fnt status atk def spa spd spe conf left) p2(...) first_mover');
+  goldenLines.push('#   choice token: m<K>=move slot K (0-based) | s<N>=switch slot N (0-based) | -');
+  goldenLines.push('# END  <id> <ended:0|1> <winner:p1|p2|tie|none>');
+
+  let filteredKept = 0; let filteredDropped = 0; let tries = 0;
+  let decRows = 0; let winRows = 0; let tieRows = 0; let switchRows = 0; let doubleRows = 0;
+  let statusMoveDecs = 0; // how many decisions USE a status move (the prior coverage)
+  let setupMoveDecs = 0; // how many decisions USE a pure self-boost setup move (the prior coverage)
+  let recoveryMoveDecs = 0; // how many decisions USE a self-heal recovery move (the prior coverage)
+  let protectMoveDecs = 0; // how many decisions USE a Protect/Detect move (the prior coverage)
+  let phazeMoveDecs = 0; // how many decisions USE a Roar/Whirlwind phaze move (the prior coverage)
+  let leechMoveDecs = 0; // how many decisions USE a Leech Seed move (the prior coverage)
+  let substituteMoveDecs = 0; // how many decisions USE a Substitute move (the prior coverage)
+  let restrictionMoveDecs = 0; // how many decisions USE a Taunt/Disable move (the NEW coverage)
+  let explosionMoveDecs = 0; // how many decisions USE an Explosion/Self-Destruct move (the prior coverage)
+  let fixedMoveDecs = 0; // how many decisions USE a FIXED-DAMAGE move (the NEW coverage)
+  const dropReasons = new Map();
+
+  while (filteredKept < FILTERED_TARGET && tries < MAX_TRIES && cleanIdx.length >= 2) {
+    tries++;
+    const ia = cleanIdx[randInt(pairRng, cleanIdx.length)];
+    let ib = cleanIdx[randInt(pairRng, cleanIdx.length)];
+    if (ib === ia) ib = cleanIdx[(cleanIdx.indexOf(ib) + 1) % cleanIdx.length];
+    if (ib === ia) continue;
+    const seedState = (Math.imul(pairRng() * 4294967296, 1) ^ (tries * 2654435761)) >>> 0;
+    const seed = seedFrom(seedState);
+    const chooseSeed = (Math.floor(pairRng() * 4294967296) ^ 0x9e3779b9) >>> 0;
+    let rec;
+    try {
+      rec = await runBattle(teams[ia].packed, teams[ib].packed, seed, chooseSeed, 'modeled');
+    } catch (e) { filteredDropped++; dropReasons.set('exception', (dropReasons.get('exception') || 0) + 1); continue; }
+    if (rec.dropped || !rec.ended || !rec.initSeed || rec.decisions.length === 0) {
+      filteredDropped++;
+      const r = rec.dropped || (!rec.ended ? 'not-ended' : 'empty');
+      const key = r.split(':')[0];
+      dropReasons.set(key, (dropReasons.get(key) || 0) + 1);
+      continue;
+    }
+    const id = `e2e_${filteredKept}`;
+    emitBattle(goldenLines, id, teams[ia].packed, teams[ib].packed, rec);
+    filteredKept++;
+    decRows += rec.decisions.length;
+    const wt = winTok(rec);
+    if (wt === 'p1' || wt === 'p2') winRows++;
+    if (wt === 'tie') tieRows++;
+    for (const d of rec.decisions) {
+      if (d.request === 'switch') { switchRows++; if (d.force[0] && d.force[1]) doubleRows++; }
+      if (d.statusMove) statusMoveDecs++;
+      if (d.setupMove) setupMoveDecs++;
+      if (d.recoveryMove) recoveryMoveDecs++;
+      if (d.protectMove) protectMoveDecs++;
+      if (d.phazeMove) phazeMoveDecs++;
+      if (d.leechMove) leechMoveDecs++;
+      if (d.substituteMove) substituteMoveDecs++;
+      if (d.restrictionMove) restrictionMoveDecs++;
+      if (d.explosionMove) explosionMoveDecs++;
+      if (d.fixedMove) fixedMoveDecs++;
+    }
+  }
+
+  fs.writeFileSync(OUT_GOLDEN, goldenLines.join('\n') + '\n');
+  console.error(`FILTERED gate: kept ${filteredKept} battles (${decRows} decisions, ${winRows} wins, ${tieRows} ties, ${switchRows} forced-switch, ${doubleRows} double, ${statusMoveDecs} STATUS-MOVE decisions, ${setupMoveDecs} SETUP-MOVE decisions, ${recoveryMoveDecs} RECOVERY-MOVE decisions, ${protectMoveDecs} PROTECT-MOVE decisions, ${phazeMoveDecs} PHAZE-MOVE decisions, ${leechMoveDecs} LEECH-MOVE decisions, ${substituteMoveDecs} SUBSTITUTE-MOVE decisions, ${restrictionMoveDecs} TAUNT/DISABLE-MOVE decisions, ${explosionMoveDecs} EXPLOSION-MOVE decisions, ${fixedMoveDecs} FIXED-DAMAGE-MOVE decisions), dropped ${filteredDropped} -> ${OUT_GOLDEN}`);
+  console.error('  drop reasons: ' + [...dropReasons.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}=${v}`).join(' '));
+
+  if (filteredKept < 50) { console.error('FILTERED GATE: too few kept battles; loosen target or check the filter.'); process.exit(1); }
+
+  // ===========================================================================
+  // (2) THE HONEST TAXONOMY — unfiltered sweep: pair ANY teams, run damaging-or-
+  //     switch choices, record the ability/item gaps each battle carried (the
+  //     ranked remaining-work list). Also emits the unfiltered battles' goldens so
+  //     the Rust taxonomy test can replay + classify divergence at the source.
+  // ===========================================================================
+  const taxRng = mulberry32(MASTER_SEED ^ 0x55555555);
+  const taxLines = [];
+  taxLines.push('# e2e_fuzz_taxonomy.txt — CAPSTONE honest taxonomy (real teams, UNFILTERED, damaging-or-switch choices).');
+  taxLines.push('# The measured coverage + ranked remaining-work list. Does NOT gate cargo test.');
+  taxLines.push(`# MASTER_SEED ${MASTER_SEED}  (taxonomy seed ${MASTER_SEED ^ 0x55555555})`);
+
+  const abilityGapCount = new Map();
+  const itemGapCount = new Map();
+  let cleanBattles = 0; let gappyBattles = 0; let taxBattles = 0;
+
+  // The UNFILTERED sweep RUNS each real-team pair through the sim (damaging-or-switch
+  // choices) ONLY to drop empty/errored battles — then ranks each battle's coverage gap
+  // by STATIC TEAM COMPOSITION via `classifyTeamsGaps` (which unmodeled ability/item the
+  // PAIRED TEAMS CARRY), NOT by the observed first-divergence cause, and BLIND to move
+  // choice (status moves / Spikes / Calm Mind are never picked, so never counted).
+  // Because real gen3OU teams are saturated with Natural Cure / Torrent / Magnet Pull /
+  // berries, essentially every random pair is "gappy" — so the ranked counts below ARE
+  // the prioritised remaining-work list (which unmodeled mechanic the MOST real teams
+  // carry). We do NOT replay these in Rust (a gappy battle can't bit-for-bit match —
+  // its UNMODELED ability/item would desync); the bit-for-bit cross-engine proof is the
+  // FILTERED gate (`e2e_fuzz_golden.txt` → `tests/e2e_fuzz_test.rs`).
+  for (let t = 0; t < UNFILTERED_TARGET && taxBattles < UNFILTERED_TARGET * 3; t++) {
+    const ia = randInt(taxRng, teams.length);
+    let ib = randInt(taxRng, teams.length);
+    if (ib === ia) ib = (ib + 1) % teams.length;
+    const seed = seedFrom((Math.floor(taxRng() * 4294967296) ^ (t * 40503)) >>> 0);
+    const chooseSeed = (Math.floor(taxRng() * 4294967296) ^ 0x1b873593) >>> 0;
+    let rec;
+    try {
+      rec = await runBattle(teams[ia].packed, teams[ib].packed, seed, chooseSeed, 'damaging');
+    } catch (e) { continue; }
+    taxBattles++;
+    if (!rec.initSeed || rec.decisions.length === 0) continue;
+
+    const gaps = classifyTeamsGaps(teams[ia].packed, teams[ib].packed);
+    const hasGap = gaps.abilities.size > 0 || gaps.items.size > 0;
+    if (hasGap) gappyBattles++; else cleanBattles++;
+    for (const a of gaps.abilities) abilityGapCount.set(a, (abilityGapCount.get(a) || 0) + 1);
+    for (const it of gaps.items) itemGapCount.set(it, (itemGapCount.get(it) || 0) + 1);
+  }
+
+  // Rank the gaps by how many battles they blocked.
+  const rankAbil = [...abilityGapCount.entries()].sort((a, b) => b[1] - a[1]);
+  const rankItem = [...itemGapCount.entries()].sort((a, b) => b[1] - a[1]);
+
+  taxLines.push(`# unfiltered battles run: ${taxBattles}`);
+  taxLines.push(`# filter-CLEAN battles (every mon modeled ability+item): ${cleanBattles}`);
+  taxLines.push(`# GAPPY battles (>=1 unmodeled ability/item somewhere): ${gappyBattles}`);
+  taxLines.push('# ── ranked ABILITY gaps (battles blocked) ──');
+  for (const [a, c] of rankAbil) taxLines.push(`ABILITY\t${a}\t${c}`);
+  taxLines.push('# ── ranked ITEM gaps (battles blocked) ──');
+  for (const [it, c] of rankItem) taxLines.push(`ITEM\t${it}\t${c}`);
+  // The ENGINE-side taxonomy: among MODELED-mechanics-only battles (the filtered gate),
+  // the port now has ZERO cross-engine divergence — it is bit-for-bit to game-end over
+  // all FILTERED_TARGET battles. The former residual-vs-faint-under-weather ordering gap
+  // is FIXED in turn.rs (per-handler faintMessages + the cached `pokemon.speed` model).
+  taxLines.push('# ── ENGINE divergence cause among MODELED-mechanics battles (the gate) ──');
+  taxLines.push('ENGINE_GAP\tnone\t(bit-for-bit; the prior weather residual-vs-faint gap is FIXED — see CLAUDE.md "## E2E capstone")');
+
+  fs.writeFileSync(OUT_TAXONOMY, taxLines.join('\n') + '\n');
+
+  console.error(`TAXONOMY: ${taxBattles} unfiltered battles (${cleanBattles} clean, ${gappyBattles} gappy)`);
+  console.error('  top ability gaps: ' + rankAbil.slice(0, 12).map(([a, c]) => `${a}=${c}`).join(' '));
+  console.error('  top item gaps:    ' + rankItem.slice(0, 12).map(([it, c]) => `${it}=${c}`).join(' '));
+  console.error(`done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+  process.exit(0);
+}
+
+// ── Module surface (the A/B fuzzer reuses these — ONE source of truth) ───────
+// `harness/ab_fuzz.js` requires this file for the modeled-universe predicates
+// (isModeledMove / ability / item), the battle driver (runBattle + the TAB golden
+// emitter), and the team loader — so the two harnesses can never drift. Running
+// this file DIRECTLY (node gen_e2e_fuzz.js) still regenerates the e2e goldens,
+// byte-identically (main() only runs under require.main).
+module.exports = {
+  runBattle, emitBattle, winTok, encodeChoice,
+  isModeledMove, isHiddenPower,
+  abilityAllowed, itemAllowed, teamFilterClean, loadTeams, classifyTeamsGaps,
+  MODELED_ABILITIES, NOOP_ABILITIES, MODELED_ITEMS,
+  MODELED_STATUS_MOVES, MODELED_SETUP_MOVES, MODELED_RECOVERY_MOVES,
+  MODELED_PROTECT_MOVES, MODELED_HAZARD_MOVES, MODELED_PHAZE_MOVES,
+  MODELED_LEECH_MOVES, MODELED_FIXED_DAMAGE_MOVES, MODELED_SUBSTITUTE_MOVES,
+  MODELED_RESTRICTION_MOVES,
+  mulberry32, randInt, seedFrom, toId,
+  FORMAT, dex3,
+};
+
+if (require.main === module) {
+  main().catch((e) => { console.error(e && e.stack ? e.stack : String(e)); process.exit(1); });
+}

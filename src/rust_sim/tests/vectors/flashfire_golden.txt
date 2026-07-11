@@ -1,0 +1,460 @@
+# flashfire_golden.txt — the gen3_flashfire_boost_v1 FLASH FIRE ×1.5 class-sweep golden.
+# Per-decision-boundary STATE+HP+SEED differential to GAME-END: activation + the
+# ×1.5 Fire boost (incl. the Light-Screen Phase1 chain-combine) + wrong-type/
+# not-activated/switch-clear controls.
+# SCEN  <id>
+# TEAM  <id>  <p1|p2>  <packed team string>
+# INIT  <id>  <seed>  <m,n,o,p>
+# DEC   <id> <seed> <req> <fP1> <fP2> <cP1> <cP2> <seedAfter> \
+#        p1(species hp max fnt status left) p2(...) first boosted
+# END   <id>  <seed>  <ended:0|1>  <winner:p1|p2|tie|none>
+SCEN	ff_special_boost
+TEAM	ff_special_boost	p1	Ninetales|||FlashFire|flamethrower,rest|Modest|252,,,252,,|N||||
+TEAM	ff_special_boost	p2	Charizard|||Blaze|fireblast|Modest|252,,,252,,|N||||
+INIT	ff_special_boost	54490,41650,25112,30740	26482,63427,6208,889
+DEC	ff_special_boost	26482,63427,6208,889	move	0	0	m0	m0	10495,37289,15355,28499	Ninetales	350	350	0	-	1	Charizard	287	360	0	-	1	p1	1
+DEC	ff_special_boost	26482,63427,6208,889	move	0	0	m0	m0	27532,19430,46613,21534	Ninetales	350	350	0	-	1	Charizard	179	360	0	-	1	p2	1
+DEC	ff_special_boost	26482,63427,6208,889	move	0	0	m0	m0	31856,45356,47664,36325	Ninetales	350	350	0	-	1	Charizard	61	360	0	-	1	p1	1
+DEC	ff_special_boost	26482,63427,6208,889	move	0	0	m0	m0	62922,43289,3686,56279	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	26482,63427,6208,889	1	p1
+INIT	ff_special_boost	52279,41406,53816,38272	35006,19743,30828,24117
+DEC	ff_special_boost	35006,19743,30828,24117	move	0	0	m0	m0	61172,38343,58116,17839	Ninetales	350	350	0	-	1	Charizard	240	360	0	-	1	p2	1
+DEC	ff_special_boost	35006,19743,30828,24117	move	0	0	m0	m0	54712,28279,64880,42	Ninetales	350	350	0	-	1	Charizard	121	360	0	-	1	p1	1
+DEC	ff_special_boost	35006,19743,30828,24117	move	0	0	m0	m0	28147,57460,52252,52916	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	35006,19743,30828,24117	1	p1
+INIT	ff_special_boost	44,50449,5174,7596	29386,39995,44888,43185
+DEC	ff_special_boost	29386,39995,44888,43185	move	0	0	m0	m0	20860,7339,41361,9675	Ninetales	350	350	0	-	1	Charizard	250	360	0	-	1	p2	1
+DEC	ff_special_boost	29386,39995,44888,43185	move	0	0	m0	m0	35296,61012,6010,24822	Ninetales	350	350	0	-	1	Charizard	130	360	0	-	1	p1	1
+DEC	ff_special_boost	29386,39995,44888,43185	move	0	0	m0	m0	4639,8595,5564,13469	Ninetales	350	350	0	-	1	Charizard	12	360	0	-	1	p1	1
+DEC	ff_special_boost	29386,39995,44888,43185	move	0	0	m0	m0	7605,31227,25823,65231	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	29386,39995,44888,43185	1	p1
+INIT	ff_special_boost	4364,56093,5932,64664	61846,49431,26884,7917
+DEC	ff_special_boost	61846,49431,26884,7917	move	0	0	m0	m0	35059,24854,53832,60327	Ninetales	350	350	0	-	1	Charizard	277	360	0	-	1	p1	1
+DEC	ff_special_boost	61846,49431,26884,7917	move	0	0	m0	m0	20732,2574,8363,642	Ninetales	350	350	0	-	1	Charizard	36	360	0	-	1	p2	1
+DEC	ff_special_boost	61846,49431,26884,7917	move	0	0	m0	m0	25898,54237,21764,2124	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	61846,49431,26884,7917	1	p1
+INIT	ff_special_boost	18295,10073,51250,56900	37154,22451,4464,48361
+DEC	ff_special_boost	37154,22451,4464,48361	move	0	0	m0	m0	45907,22093,35383,13123	Ninetales	350	350	0	-	1	Charizard	242	360	0	-	1	p2	1
+DEC	ff_special_boost	37154,22451,4464,48361	move	0	0	m0	m0	2838,65250,38340,12494	Ninetales	350	350	0	-	1	Charizard	129	360	0	-	1	p2	1
+DEC	ff_special_boost	37154,22451,4464,48361	move	0	0	m0	m0	17413,13721,50341,64085	Ninetales	350	350	0	-	1	Charizard	17	360	0	-	1	p1	1
+DEC	ff_special_boost	37154,22451,4464,48361	move	0	0	m0	m0	36445,37206,61034,35015	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	37154,22451,4464,48361	1	p1
+INIT	ff_special_boost	47127,18413,11972,11952	40302,48143,54428,16037
+DEC	ff_special_boost	40302,48143,54428,16037	move	0	0	m0	m0	37870,61539,54685,22687	Ninetales	350	350	0	-	1	Charizard	279	360	0	-	1	p1	1
+DEC	ff_special_boost	40302,48143,54428,16037	move	0	0	m0	m0	14133,10467,59992,63450	Ninetales	350	350	0	-	1	Charizard	155	360	0	-	1	p2	1
+DEC	ff_special_boost	40302,48143,54428,16037	move	0	0	m0	m0	40197,19897,7109,56548	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	40302,48143,54428,16037	1	p1
+INIT	ff_special_boost	328,63050,38252,6620	8826,2603,40584,8225
+DEC	ff_special_boost	8826,2603,40584,8225	move	0	0	m0	m0	24879,6382,1210,30651	Ninetales	350	350	0	-	1	Charizard	280	360	0	-	1	p1	1
+DEC	ff_special_boost	8826,2603,40584,8225	move	0	0	m0	m0	47137,32092,47157,9126	Ninetales	350	350	0	-	1	Charizard	162	360	0	-	1	p2	1
+DEC	ff_special_boost	8826,2603,40584,8225	move	0	0	m0	m0	12088,59707,57443,48909	Ninetales	350	350	0	-	1	Charizard	54	360	0	-	1	p1	1
+DEC	ff_special_boost	8826,2603,40584,8225	move	0	0	m0	m0	34598,44976,18645,22975	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	8826,2603,40584,8225	1	p1
+INIT	ff_special_boost	11629,153,12379,35784	60486,7687,6964,40285
+DEC	ff_special_boost	60486,7687,6964,40285	move	0	0	m0	m0	38150,63401,64462,27799	Ninetales	350	350	0	-	1	Charizard	289	360	0	-	1	p1	1
+DEC	ff_special_boost	60486,7687,6964,40285	move	0	0	m0	m0	34891,45839,57788,16434	Ninetales	350	350	0	-	1	Charizard	163	360	0	-	1	p2	1
+DEC	ff_special_boost	60486,7687,6964,40285	move	0	0	m0	m0	49966,24546,4097,50650	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	60486,7687,6964,40285	1	p1
+INIT	ff_special_boost	40750,49034,7529,12404	34514,37795,46752,45657
+DEC	ff_special_boost	34514,37795,46752,45657	move	0	0	m0	m0	60568,57165,13081,54067	Ninetales	350	350	0	-	1	Charizard	111	360	0	-	1	p2	1
+DEC	ff_special_boost	34514,37795,46752,45657	move	0	0	m0	m0	31250,55250,4206,36283	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	34514,37795,46752,45657	1	p1
+INIT	ff_special_boost	29078,30528,60987,29664	15902,50943,40140,6933
+DEC	ff_special_boost	15902,50943,40140,6933	move	0	0	m0	m0	28846,60901,51728,1935	Ninetales	350	350	0	-	1	Charizard	278	360	0	-	1	p1	1
+DEC	ff_special_boost	15902,50943,40140,6933	move	0	0	m0	m0	27548,63001,51242,15242	Ninetales	350	350	0	-	1	Charizard	160	360	0	-	1	p1	1
+DEC	ff_special_boost	15902,50943,40140,6933	move	0	0	m0	m0	44890,49286,14055,46657	Ninetales	350	350	0	-	1	Charizard	45	360	0	-	1	p2	1
+DEC	ff_special_boost	15902,50943,40140,6933	move	0	0	m0	m0	1610,49931,19555,13577	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	15902,50943,40140,6933	1	p1
+INIT	ff_special_boost	64772,45167,60765,33292	7722,54299,47544,21393
+DEC	ff_special_boost	7722,54299,47544,21393	move	0	0	m0	m0	38155,43475,4336,9643	Ninetales	350	350	0	-	1	Charizard	241	360	0	-	1	p2	1
+DEC	ff_special_boost	7722,54299,47544,21393	move	0	0	m0	m0	15217,47443,7753,62038	Ninetales	350	350	0	-	1	Charizard	121	360	0	-	1	p2	1
+DEC	ff_special_boost	7722,54299,47544,21393	move	0	0	m0	m0	8376,19321,38262,50557	Ninetales	350	350	0	-	1	Charizard	7	360	0	-	1	p1	1
+DEC	ff_special_boost	7722,54299,47544,21393	move	0	0	m0	m0	44697,12809,11691,20655	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	7722,54299,47544,21393	1	p1
+INIT	ff_special_boost	9953,14731,2539,18168	62198,38647,47460,38861
+DEC	ff_special_boost	62198,38647,47460,38861	move	0	0	m0	m0	7077,19927,25185,2439	Ninetales	350	350	0	-	1	Charizard	278	360	0	-	1	p1	1
+DEC	ff_special_boost	62198,38647,47460,38861	move	0	0	m0	m0	45078,16029,45247,18914	Ninetales	350	350	0	-	1	Charizard	164	360	0	-	1	p1	1
+DEC	ff_special_boost	62198,38647,47460,38861	move	0	0	m0	m0	31608,35212,8876,35961	Ninetales	350	350	0	-	1	Charizard	51	360	0	-	1	p2	1
+DEC	ff_special_boost	62198,38647,47460,38861	move	0	0	m0	m0	61033,39694,9931,53451	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	62198,38647,47460,38861	1	p1
+INIT	ff_special_boost	480,39863,42704,28324	18562,43923,2000,58313
+DEC	ff_special_boost	18562,43923,2000,58313	move	0	0	m0	m0	50650,31960,49212,20259	Ninetales	350	350	0	-	1	Charizard	277	360	0	-	1	p1	1
+DEC	ff_special_boost	18562,43923,2000,58313	move	0	0	m0	m0	25186,39107,28786,36398	Ninetales	350	350	0	-	1	Charizard	154	360	0	-	1	p1	1
+DEC	ff_special_boost	18562,43923,2000,58313	move	0	0	m0	m0	8715,60534,25015,50997	Ninetales	350	350	0	-	1	Charizard	32	360	0	-	1	p1	1
+DEC	ff_special_boost	18562,43923,2000,58313	move	0	0	m0	m0	32274,22602,24247,11133	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	18562,43923,2000,58313	1	p1
+INIT	ff_special_boost	37764,12141,21939,25872	27342,28143,53500,62341
+DEC	ff_special_boost	27342,28143,53500,62341	move	0	0	m0	m0	10751,31561,18933,21119	Ninetales	350	350	0	-	1	Charizard	208	360	0	-	1	p1	1
+DEC	ff_special_boost	27342,28143,53500,62341	move	0	0	m0	m0	21154,20041,23760,52026	Ninetales	350	350	0	-	1	Charizard	94	360	0	-	1	p1	1
+DEC	ff_special_boost	27342,28143,53500,62341	move	0	0	m0	m0	9066,40849,46336,38882	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	27342,28143,53500,62341	1	p1
+INIT	ff_special_boost	52838,62413,55029,22076	26074,64011,232,17153
+DEC	ff_special_boost	26074,64011,232,17153	move	0	0	m0	m0	13588,57951,15513,12187	Ninetales	350	350	0	-	1	Charizard	287	360	0	-	1	p1	1
+DEC	ff_special_boost	26074,64011,232,17153	move	0	0	m0	m0	43077,10759,33739,52486	Ninetales	350	350	0	-	1	Charizard	175	360	0	-	1	p1	1
+DEC	ff_special_boost	26074,64011,232,17153	move	0	0	m0	m0	28592,4561,164,18413	Ninetales	350	350	0	-	1	Charizard	57	360	0	-	1	p1	1
+DEC	ff_special_boost	26074,64011,232,17153	move	0	0	m0	m0	35301,20478,64238,44341	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	26074,64011,232,17153	1	p1
+INIT	ff_special_boost	65026,64456,41948,11816	1446,11239,17300,3645
+DEC	ff_special_boost	1446,11239,17300,3645	move	0	0	m0	m0	17111,20589,1536,49783	Ninetales	350	350	0	-	1	Charizard	237	360	0	-	1	p2	1
+DEC	ff_special_boost	1446,11239,17300,3645	move	0	0	m0	m0	55292,8413,36276,8082	Ninetales	350	350	0	-	1	Charizard	13	360	0	-	1	p2	1
+DEC	ff_special_boost	1446,11239,17300,3645	move	0	0	m0	m0	10572,55118,25280,39226	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	1446,11239,17300,3645	1	p1
+INIT	ff_special_boost	1176,35694,8019,39124	54834,40835,1280,20793
+DEC	ff_special_boost	54834,40835,1280,20793	move	0	0	m0	m0	50292,57023,43013,42771	Ninetales	350	350	0	-	1	Charizard	281	360	0	-	1	p1	1
+DEC	ff_special_boost	54834,40835,1280,20793	move	0	0	m0	m0	21558,32680,27506,3806	Ninetales	350	350	0	-	1	Charizard	162	360	0	-	1	p2	1
+DEC	ff_special_boost	54834,40835,1280,20793	move	0	0	m0	m0	62211,46411,31199,56070	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	54834,40835,1280,20793	1	p1
+INIT	ff_special_boost	59381,46624,56066,576	9086,45279,28972,51189
+DEC	ff_special_boost	9086,45279,28972,51189	move	0	0	m0	m0	25414,18480,16923,14703	Ninetales	350	350	0	-	1	Charizard	286	360	0	-	1	p1	1
+DEC	ff_special_boost	9086,45279,28972,51189	move	0	0	m0	m0	42256,1792,7282,42730	Ninetales	350	350	0	-	1	Charizard	166	360	0	-	1	p1	1
+DEC	ff_special_boost	9086,45279,28972,51189	move	0	0	m0	m0	38855,39314,10587,59681	Ninetales	350	350	0	-	1	Charizard	51	360	0	-	1	p2	1
+DEC	ff_special_boost	9086,45279,28972,51189	move	0	0	m0	m0	64675,20368,21776,15923	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	9086,45279,28972,51189	1	p1
+INIT	ff_special_boost	51933,1324,38728,38508	63882,31739,29720,61041
+DEC	ff_special_boost	63882,31739,29720,61041	move	0	0	m0	m0	18808,14631,4430,38283	Ninetales	350	350	0	-	1	Charizard	287	360	0	-	1	p1	1
+DEC	ff_special_boost	63882,31739,29720,61041	move	0	0	m0	m0	37009,3478,44711,46006	Ninetales	350	350	0	-	1	Charizard	170	360	0	-	1	p2	1
+DEC	ff_special_boost	63882,31739,29720,61041	move	0	0	m0	m0	11413,42766,22077,18013	Ninetales	350	350	0	-	1	Charizard	52	360	0	-	1	p1	1
+DEC	ff_special_boost	63882,31739,29720,61041	move	0	0	m0	m0	51117,30993,55015,4751	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	63882,31739,29720,61041	1	p1
+INIT	ff_special_boost	37481,35866,17219,16728	9302,56535,47556,173
+DEC	ff_special_boost	9302,56535,47556,173	move	0	0	m0	m0	9724,30207,28742,38759	Ninetales	350	350	0	-	1	Charizard	242	360	0	-	1	p2	1
+DEC	ff_special_boost	9302,56535,47556,173	move	0	0	m0	m0	7628,38892,16007,49474	Ninetales	350	350	0	-	1	Charizard	120	360	0	-	1	p1	1
+DEC	ff_special_boost	9302,56535,47556,173	move	0	0	m0	m0	60343,63704,38634,15193	Ninetales	350	350	0	-	1	Charizard	13	360	0	-	1	p2	1
+DEC	ff_special_boost	9302,56535,47556,173	move	0	0	m0	m0	15590,23911,29244,3873	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	9302,56535,47556,173	1	p1
+INIT	ff_special_boost	26552,1002,4380,44804	12258,28531,44592,64169
+DEC	ff_special_boost	12258,28531,44592,64169	move	0	0	m0	m0	27448,52166,64935,56067	Ninetales	350	350	0	-	1	Charizard	280	360	0	-	1	p1	1
+DEC	ff_special_boost	12258,28531,44592,64169	move	0	0	m0	m0	57871,53139,3778,7054	Ninetales	350	350	0	-	1	Charizard	171	360	0	-	1	p2	1
+DEC	ff_special_boost	12258,28531,44592,64169	move	0	0	m0	m0	62304,1832,2948,33813	Ninetales	350	350	0	-	1	Charizard	57	360	0	-	1	p2	1
+DEC	ff_special_boost	12258,28531,44592,64169	move	0	0	m0	m0	40191,52472,7322,44125	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	12258,28531,44592,64169	1	p1
+INIT	ff_special_boost	50341,2830,49980,19312	26670,36815,32092,39013
+DEC	ff_special_boost	26670,36815,32092,39013	move	0	0	m0	m0	14261,16790,15386,48223	Ninetales	350	350	0	-	1	Charizard	251	360	0	-	1	p2	1
+DEC	ff_special_boost	26670,36815,32092,39013	move	0	0	m0	m0	31915,39021,52476,52890	Ninetales	350	350	0	-	1	Charizard	134	360	0	-	1	p2	1
+DEC	ff_special_boost	26670,36815,32092,39013	move	0	0	m0	m0	59247,25576,52531,40081	Ninetales	350	350	0	-	1	Charizard	15	360	0	-	1	p2	1
+DEC	ff_special_boost	26670,36815,32092,39013	move	0	0	m0	m0	14431,44530,41438,57689	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	26670,36815,32092,39013	1	p1
+INIT	ff_special_boost	477,58661,42029,17052	55610,23019,4936,21985
+DEC	ff_special_boost	55610,23019,4936,21985	move	0	0	m0	m0	4664,54323,31710,22395	Ninetales	350	350	0	-	1	Charizard	237	360	0	-	1	p2	1
+DEC	ff_special_boost	55610,23019,4936,21985	move	0	0	m0	m0	64221,29601,4867,42598	Ninetales	350	350	0	-	1	Charizard	114	360	0	-	1	p1	1
+DEC	ff_special_boost	55610,23019,4936,21985	move	0	0	m0	m0	28451,40507,11679,49357	Ninetales	350	350	0	-	1	Charizard	7	360	0	-	1	p1	1
+DEC	ff_special_boost	55610,23019,4936,21985	move	0	0	m0	m0	27659,62651,35267,56703	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	55610,23019,4936,21985	1	p1
+INIT	ff_special_boost	58542,24661,59424,32904	20230,43463,7156,28445
+DEC	ff_special_boost	20230,43463,7156,28445	move	0	0	m0	m0	60189,43868,41266,34903	Ninetales	350	350	0	-	1	Charizard	277	360	0	-	1	p1	1
+DEC	ff_special_boost	20230,43463,7156,28445	move	0	0	m0	m0	37160,6127,49978,12018	Ninetales	350	350	0	-	1	Charizard	170	360	0	-	1	p2	1
+DEC	ff_special_boost	20230,43463,7156,28445	move	0	0	m0	m0	49086,27079,32011,60617	Ninetales	350	350	0	-	1	Charizard	53	360	0	-	1	p1	1
+DEC	ff_special_boost	20230,43463,7156,28445	move	0	0	m0	m0	32553,47386,20210,23195	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	20230,43463,7156,28445	1	p1
+INIT	ff_special_boost	62881,1476,61953,45364	21906,7011,864,57369
+DEC	ff_special_boost	21906,7011,864,57369	move	0	0	m0	m0	28816,27127,44528,60147	Ninetales	350	350	0	-	1	Charizard	250	360	0	-	1	p2	1
+DEC	ff_special_boost	21906,7011,864,57369	move	0	0	m0	m0	19593,38947,52872,46142	Ninetales	350	350	0	-	1	Charizard	137	360	0	-	1	p2	1
+DEC	ff_special_boost	21906,7011,864,57369	move	0	0	m0	m0	54030,14406,16038,56453	Ninetales	350	350	0	-	1	Charizard	17	360	0	-	1	p1	1
+DEC	ff_special_boost	21906,7011,864,57369	move	0	0	m0	m0	8676,24036,20171,9933	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	21906,7011,864,57369	1	p1
+INIT	ff_special_boost	10642,11831,3682,16544	14558,2751,62860,25813
+DEC	ff_special_boost	14558,2751,62860,25813	move	0	0	m0	m0	42828,26491,14323,56143	Ninetales	350	350	0	-	1	Charizard	283	360	0	-	1	p1	1
+DEC	ff_special_boost	14558,2751,62860,25813	move	0	0	m0	m0	55669,658,28271,16970	Ninetales	350	350	0	-	1	Charizard	166	360	0	-	1	p1	1
+DEC	ff_special_boost	14558,2751,62860,25813	move	0	0	m0	m0	26464,54344,62522,3073	Ninetales	350	350	0	-	1	Charizard	54	360	0	-	1	p2	1
+DEC	ff_special_boost	14558,2751,62860,25813	move	0	0	m0	m0	57839,61947,4838,4627	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	14558,2751,62860,25813	1	p1
+INIT	ff_special_boost	43271,37663,34765,23244	1258,37851,56952,31057
+DEC	ff_special_boost	1258,37851,56952,31057	move	0	0	m0	m0	55532,36219,36730,30059	Ninetales	350	350	0	-	1	Charizard	288	360	0	-	1	p1	0
+DEC	ff_special_boost	1258,37851,56952,31057	move	0	0	m0	m0	42639,19590,15545,42262	Ninetales	350	350	0	-	1	Charizard	169	360	0	-	1	p2	1
+DEC	ff_special_boost	1258,37851,56952,31057	move	0	0	m0	m0	21488,25677,61293,46909	Ninetales	350	350	0	-	1	Charizard	59	360	0	-	1	p2	1
+DEC	ff_special_boost	1258,37851,56952,31057	move	0	0	m0	m0	1512,52882,15745,17519	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	1258,37851,56952,31057	1	p1
+INIT	ff_special_boost	52978,18439,19806,60344	34230,37559,27172,22925
+DEC	ff_special_boost	34230,37559,27172,22925	move	0	0	m0	m0	41264,41044,3883,38215	Ninetales	350	350	0	-	1	Charizard	284	360	0	-	1	p1	1
+DEC	ff_special_boost	34230,37559,27172,22925	move	0	0	m0	m0	12049,31359,21982,26786	Ninetales	350	350	0	-	1	Charizard	174	360	0	-	1	p1	1
+DEC	ff_special_boost	34230,37559,27172,22925	move	0	0	m0	m0	22843,39379,19507,55865	Ninetales	350	350	0	-	1	Charizard	52	360	0	-	1	p1	1
+DEC	ff_special_boost	34230,37559,27172,22925	move	0	0	m0	m0	4781,53996,40842,12801	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	34230,37559,27172,22925	1	p1
+INIT	ff_special_boost	26789,6952,49666,40804	18242,41811,1168,393
+DEC	ff_special_boost	18242,41811,1168,393	move	0	0	m0	m0	9433,52355,47328,55011	Ninetales	350	350	0	-	1	Charizard	253	360	0	-	1	p2	1
+DEC	ff_special_boost	18242,41811,1168,393	move	0	0	m0	m0	48662,25908,43717,55534	Ninetales	350	350	0	-	1	Charizard	135	360	0	-	1	p2	1
+DEC	ff_special_boost	18242,41811,1168,393	move	0	0	m0	m0	56285,6882,36283,12533	Ninetales	350	350	0	-	1	Charizard	20	360	0	-	1	p2	1
+DEC	ff_special_boost	18242,41811,1168,393	move	0	0	m0	m0	62300,46562,22900,57959	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_special_boost	18242,41811,1168,393	1	p1
+INIT	ff_special_boost	41267,55940,48243,57808	38286,8623,55740,11589
+DEC	ff_special_boost	38286,8623,55740,11589	move	0	0	m0	m0	55362,12358,13734,38463	Ninetales	350	350	0	-	1	Charizard	242	360	0	-	1	p2	1
+DEC	ff_special_boost	38286,8623,55740,11589	move	0	0	m0	m0	53014,32641,202,506	Ninetales	350	350	0	-	1	Charizard	132	360	0	-	1	p2	1
+DEC	ff_special_boost	38286,8623,55740,11589	move	0	0	m0	m0	18882,46689,40559,14193	Ninetales	350	350	0	-	1	Charizard	25	360	0	-	1	p1	1
+DEC	ff_special_boost	38286,8623,55740,11589	move	0	0	m0	m0	16571,47617,31883,32825	Ninetales	350	350	0	-	1	Charizard	0	360	1	-	0	p1	1
+END	ff_special_boost	38286,8623,55740,11589	1	p1
+SCEN	ff_wrongtype_control
+TEAM	ff_wrongtype_control	p1	Houndoom|||FlashFire|crunch,flamethrower|Rash|,252,,252,,|N||||
+TEAM	ff_wrongtype_control	p2	Charizard|||Blaze|fireblast|Modest|252,,,252,,|N||||
+INIT	ff_wrongtype_control	58687,58598,63378,48768	26482,63427,6208,889
+DEC	ff_wrongtype_control	26482,63427,6208,889	move	0	0	m0	m0	49356,30665,33829,31142	Houndoom	291	291	0	-	1	Charizard	209	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	26482,63427,6208,889	move	0	0	m0	m0	13567,65416,46977,35708	Houndoom	291	291	0	-	1	Charizard	58	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	26482,63427,6208,889	move	0	0	m0	m0	10495,37289,15355,28499	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	26482,63427,6208,889	1	p1
+INIT	ff_wrongtype_control	10788,14714,28869,9900	35006,19743,30828,24117
+DEC	ff_wrongtype_control	35006,19743,30828,24117	move	0	0	m0	m0	14517,8679,34330,54834	Houndoom	291	291	0	-	1	Charizard	207	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	35006,19743,30828,24117	move	0	0	m0	m0	17020,60494,64469,55144	Houndoom	291	291	0	-	1	Charizard	49	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	35006,19743,30828,24117	move	0	0	m0	m0	61172,38343,58116,17839	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	35006,19743,30828,24117	1	p1
+INIT	ff_wrongtype_control	50833,28622,59710,58776	29386,39995,44888,43185
+DEC	ff_wrongtype_control	29386,39995,44888,43185	move	0	0	m0	m0	60655,55174,21786,28542	Houndoom	291	291	0	-	1	Charizard	186	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	29386,39995,44888,43185	move	0	0	m0	m0	49159,20372,3835,62996	Houndoom	291	291	0	-	1	Charizard	16	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	29386,39995,44888,43185	move	0	0	m0	m0	20860,7339,41361,9675	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	29386,39995,44888,43185	1	p1
+INIT	ff_wrongtype_control	35748,13337,30670,42820	61846,49431,26884,7917
+DEC	ff_wrongtype_control	61846,49431,26884,7917	move	0	0	m0	m0	61615,18572,31419,20874	Houndoom	291	291	0	-	1	Charizard	188	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	61846,49431,26884,7917	move	0	0	m0	m0	8075,4437,21742,21376	Houndoom	291	291	0	-	1	Charizard	16	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	61846,49431,26884,7917	move	0	0	m0	m0	35059,24854,53832,60327	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	61846,49431,26884,7917	1	p1
+INIT	ff_wrongtype_control	16865,33455,44312,55216	37154,22451,4464,48361
+DEC	ff_wrongtype_control	37154,22451,4464,48361	move	0	0	m0	m0	37987,28675,29448,18518	Houndoom	291	291	0	-	1	Charizard	193	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	37154,22451,4464,48361	move	0	0	m0	m0	27374,1869,19753,7084	Houndoom	291	291	0	-	1	Charizard	40	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	37154,22451,4464,48361	move	0	0	m0	m0	45907,22093,35383,13123	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	37154,22451,4464,48361	1	p1
+INIT	ff_wrongtype_control	25301,46034,53716,41692	40302,48143,54428,16037
+DEC	ff_wrongtype_control	40302,48143,54428,16037	move	0	0	m0	m0	55365,34746,29156,57314	Houndoom	291	291	0	-	1	Charizard	206	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	40302,48143,54428,16037	move	0	0	m0	m0	29473,27834,32468,55729	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	40302,48143,54428,16037	1	p1
+INIT	ff_wrongtype_control	5416,46680,12787,62664	8826,2603,40584,8225
+DEC	ff_wrongtype_control	8826,2603,40584,8225	move	0	0	m0	m0	1534,25249,33141,25646	Houndoom	291	291	0	-	1	Charizard	186	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	8826,2603,40584,8225	move	0	0	m0	m0	46024,26309,46746,23620	Houndoom	291	291	0	-	1	Charizard	19	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	8826,2603,40584,8225	move	0	0	m0	m0	24879,6382,1210,30651	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	8826,2603,40584,8225	1	p1
+INIT	ff_wrongtype_control	48531,11233,28074,31092	60486,7687,6964,40285
+DEC	ff_wrongtype_control	60486,7687,6964,40285	move	0	0	m0	m0	51591,29086,3869,57658	Houndoom	291	291	0	-	1	Charizard	190	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	60486,7687,6964,40285	move	0	0	m0	m0	22876,26976,63745,60592	Houndoom	291	291	0	-	1	Charizard	43	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	60486,7687,6964,40285	move	0	0	m0	m0	38150,63401,64462,27799	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	60486,7687,6964,40285	1	p1
+INIT	ff_wrongtype_control	61041,22034,31085,40160	34514,37795,46752,45657
+DEC	ff_wrongtype_control	34514,37795,46752,45657	move	0	0	m0	m0	8184,64496,60290,8966	Houndoom	291	291	0	-	1	Charizard	202	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	34514,37795,46752,45657	move	0	0	m0	m0	4822,53892,18123,6108	Houndoom	291	291	0	-	1	Charizard	30	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	34514,37795,46752,45657	move	0	0	m0	m0	60568,57165,13081,54067	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	34514,37795,46752,45657	1	p1
+INIT	ff_wrongtype_control	57657,51468,45246,35596	15902,50943,40140,6933
+DEC	ff_wrongtype_control	15902,50943,40140,6933	move	0	0	m0	m0	51896,19046,4639,46482	Houndoom	291	291	0	-	1	Charizard	199	360	0	-	1	p2	0
+DEC	ff_wrongtype_control	15902,50943,40140,6933	move	0	0	m0	m0	41721,25999,61866,51656	Houndoom	291	291	0	-	1	Charizard	29	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	15902,50943,40140,6933	move	0	0	m0	m0	28846,60901,51728,1935	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	15902,50943,40140,6933	1	p1
+INIT	ff_wrongtype_control	4981,4052,24463,12280	7722,54299,47544,21393
+DEC	ff_wrongtype_control	7722,54299,47544,21393	move	0	0	m0	m0	29341,56148,36122,58590	Houndoom	291	291	0	-	1	Charizard	213	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	7722,54299,47544,21393	move	0	0	m0	m0	21796,16742,35682,44660	Houndoom	291	291	0	-	1	Charizard	66	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	7722,54299,47544,21393	move	0	0	m0	m0	38155,43475,4336,9643	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	7722,54299,47544,21393	1	p1
+INIT	ff_wrongtype_control	57252,54942,40110,14244	62198,38647,47460,38861
+DEC	ff_wrongtype_control	62198,38647,47460,38861	move	0	0	m0	m0	3753,24226,58890,48362	Houndoom	291	291	0	-	1	Charizard	190	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	62198,38647,47460,38861	move	0	0	m0	m0	30392,19973,30701,12768	Houndoom	291	291	0	-	1	Charizard	20	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	62198,38647,47460,38861	move	0	0	m0	m0	7077,19927,25185,2439	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	62198,38647,47460,38861	1	p1
+INIT	ff_wrongtype_control	5344,47180,58870,3600	18562,43923,2000,58313
+DEC	ff_wrongtype_control	18562,43923,2000,58313	move	0	0	m0	m0	54666,12585,53600,2486	Houndoom	291	291	0	-	1	Charizard	12	360	0	-	1	p2	0
+DEC	ff_wrongtype_control	18562,43923,2000,58313	move	0	0	m0	m0	12248,6593,24333,27669	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	18562,43923,2000,58313	1	p1
+INIT	ff_wrongtype_control	40125,28308,38631,57148	27342,28143,53500,62341
+DEC	ff_wrongtype_control	27342,28143,53500,62341	move	0	0	m0	m0	64877,10985,19096,22338	Houndoom	291	291	0	-	1	Charizard	44	360	0	-	1	p2	0
+DEC	ff_wrongtype_control	27342,28143,53500,62341	move	0	0	m0	m0	34291,62842,4602,33937	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	27342,28143,53500,62341	1	p1
+INIT	ff_wrongtype_control	46911,34518,59563,38696	26074,64011,232,17153
+DEC	ff_wrongtype_control	26074,64011,232,17153	move	0	0	m0	m0	32212,32928,37949,61838	Houndoom	291	291	0	-	1	Charizard	207	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	26074,64011,232,17153	move	0	0	m0	m0	614,47836,45535,60580	Houndoom	291	291	0	-	1	Charizard	56	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	26074,64011,232,17153	move	0	0	m0	m0	13588,57951,15513,12187	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	26074,64011,232,17153	1	p1
+INIT	ff_wrongtype_control	1792,8583,1241,57812	1446,11239,17300,3645
+DEC	ff_wrongtype_control	1446,11239,17300,3645	move	0	0	m0	m0	15895,18432,65409,58522	Houndoom	291	291	0	-	1	Charizard	213	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	1446,11239,17300,3645	move	0	0	m0	m0	11883,2136,53680,8976	Houndoom	291	291	0	-	1	Charizard	52	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	1446,11239,17300,3645	move	0	0	m0	m0	17111,20589,1536,49783	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	1446,11239,17300,3645	1	p1
+INIT	ff_wrongtype_control	473,20513,26957,11072	54834,40835,1280,20793
+DEC	ff_wrongtype_control	54834,40835,1280,20793	move	0	0	m0	m0	24396,64022,16596,64614	Houndoom	291	291	0	-	1	Charizard	186	360	0	-	1	p2	0
+DEC	ff_wrongtype_control	54834,40835,1280,20793	move	0	0	m0	m0	46521,37554,45486,50309	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	54834,40835,1280,20793	1	p1
+INIT	ff_wrongtype_control	39923,17142,29062,40812	9086,45279,28972,51189
+DEC	ff_wrongtype_control	9086,45279,28972,51189	move	0	0	m0	m0	22179,35603,21428,50418	Houndoom	291	291	0	-	1	Charizard	211	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	9086,45279,28972,51189	move	0	0	m0	m0	2227,32462,58685,27688	Houndoom	291	291	0	-	1	Charizard	57	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	9086,45279,28972,51189	move	0	0	m0	m0	25414,18480,16923,14703	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	9086,45279,28972,51189	1	p1
+INIT	ff_wrongtype_control	25596,39473,22190,10840	63882,31739,29720,61041
+DEC	ff_wrongtype_control	63882,31739,29720,61041	move	0	0	m0	m0	62003,63313,31403,35390	Houndoom	291	291	0	-	1	Charizard	207	360	0	-	1	p2	0
+DEC	ff_wrongtype_control	63882,31739,29720,61041	move	0	0	m0	m0	61310,54071,1415,5844	Houndoom	291	291	0	-	1	Charizard	56	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	63882,31739,29720,61041	move	0	0	m0	m0	18808,14631,4430,38283	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	63882,31739,29720,61041	1	p1
+INIT	ff_wrongtype_control	43491,35692,12178,30724	9302,56535,47556,173
+DEC	ff_wrongtype_control	9302,56535,47556,173	move	0	0	m0	m0	59900,53892,16208,22602	Houndoom	291	291	0	-	1	Charizard	202	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	9302,56535,47556,173	move	0	0	m0	m0	27469,39017,57791,49216	Houndoom	291	291	0	-	1	Charizard	53	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	9302,56535,47556,173	move	0	0	m0	m0	9724,30207,28742,38759	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	9302,56535,47556,173	1	p1
+INIT	ff_wrongtype_control	52261,62879,5692,62576	12258,28531,44592,64169
+DEC	ff_wrongtype_control	12258,28531,44592,64169	move	0	0	m0	m0	56733,4378,378,64278	Houndoom	291	291	0	-	1	Charizard	197	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	12258,28531,44592,64169	move	0	0	m0	m0	44114,47981,19858,6389	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	12258,28531,44592,64169	1	p1
+INIT	ff_wrongtype_control	19683,15262,51711,52124	26670,36815,32092,39013
+DEC	ff_wrongtype_control	26670,36815,32092,39013	move	0	0	m0	m0	57326,11235,4417,65186	Houndoom	291	291	0	-	1	Charizard	207	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	26670,36815,32092,39013	move	0	0	m0	m0	56782,56906,40487,32600	Houndoom	291	291	0	-	1	Charizard	53	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	26670,36815,32092,39013	move	0	0	m0	m0	14261,16790,15386,48223	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	26670,36815,32092,39013	1	p1
+INIT	ff_wrongtype_control	46135,24330,38604,59784	55610,23019,4936,21985
+DEC	ff_wrongtype_control	55610,23019,4936,21985	move	0	0	m0	m0	55497,48489,30921,44782	Houndoom	291	291	0	-	1	Charizard	186	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	55610,23019,4936,21985	move	0	0	m0	m0	8781,16705,53102,11524	Houndoom	291	291	0	-	1	Charizard	21	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	55610,23019,4936,21985	move	0	0	m0	m0	4664,54323,31710,22395	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	55610,23019,4936,21985	1	p1
+INIT	ff_wrongtype_control	56694,388,7383,64052	20230,43463,7156,28445
+DEC	ff_wrongtype_control	20230,43463,7156,28445	move	0	0	m0	m0	36956,13970,42358,6138	Houndoom	291	291	0	-	1	Charizard	211	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	20230,43463,7156,28445	move	0	0	m0	m0	58412,18254,43036,2416	Houndoom	291	291	0	-	1	Charizard	39	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	20230,43463,7156,28445	move	0	0	m0	m0	60189,43868,41266,34903	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	20230,43463,7156,28445	1	p1
+INIT	ff_wrongtype_control	34028,48620,55803,27040	21906,7011,864,57369
+DEC	ff_wrongtype_control	21906,7011,864,57369	move	0	0	m0	m0	30138,62519,19384,1478	Houndoom	291	291	0	-	1	Charizard	213	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	21906,7011,864,57369	move	0	0	m0	m0	50541,22636,61635,16540	Houndoom	291	291	0	-	1	Charizard	46	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	21906,7011,864,57369	move	0	0	m0	m0	28816,27127,44528,60147	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	21906,7011,864,57369	1	p1
+INIT	ff_wrongtype_control	44941,22669,41043,25548	14558,2751,62860,25813
+DEC	ff_wrongtype_control	14558,2751,62860,25813	move	0	0	m0	m0	39245,3416,33600,1106	Houndoom	291	291	0	-	1	Charizard	190	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	14558,2751,62860,25813	move	0	0	m0	m0	31109,33079,8099,48776	Houndoom	291	291	0	-	1	Charizard	30	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	14558,2751,62860,25813	move	0	0	m0	m0	42828,26491,14323,56143	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	14558,2751,62860,25813	1	p1
+INIT	ff_wrongtype_control	38601,49211,48081,54456	1258,37851,56952,31057
+DEC	ff_wrongtype_control	1258,37851,56952,31057	move	0	0	m0	m0	3157,21734,22066,24478	Houndoom	291	291	0	-	1	Charizard	204	360	0	-	1	p2	0
+DEC	ff_wrongtype_control	1258,37851,56952,31057	move	0	0	m0	m0	28774,20016,50815,12084	Houndoom	291	291	0	-	1	Charizard	55	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	1258,37851,56952,31057	move	0	0	m0	m0	55532,36219,36730,30059	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	1258,37851,56952,31057	1	p1
+INIT	ff_wrongtype_control	30662,10897,17221,26724	34230,37559,27172,22925
+DEC	ff_wrongtype_control	34230,37559,27172,22925	move	0	0	m0	m0	48952,24212,20006,9130	Houndoom	291	291	0	-	1	Charizard	207	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	34230,37559,27172,22925	move	0	0	m0	m0	25888,33484,18767,65184	Houndoom	291	291	0	-	1	Charizard	49	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	34230,37559,27172,22925	move	0	0	m0	m0	41264,41044,3883,38215	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	34230,37559,27172,22925	1	p1
+INIT	ff_wrongtype_control	36257,48084,46216,35536	18242,41811,1168,393
+DEC	ff_wrongtype_control	18242,41811,1168,393	move	0	0	m0	m0	50647,27400,8076,7286	Houndoom	291	291	0	-	1	Charizard	197	360	0	-	1	p2	0
+DEC	ff_wrongtype_control	18242,41811,1168,393	move	0	0	m0	m0	63940,25210,28840,22732	Houndoom	291	291	0	-	1	Charizard	36	360	0	-	1	p2	0
+DEC	ff_wrongtype_control	18242,41811,1168,393	move	0	0	m0	m0	9433,52355,47328,55011	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	18242,41811,1168,393	1	p1
+INIT	ff_wrongtype_control	57679,4189,62593,26620	38286,8623,55740,11589
+DEC	ff_wrongtype_control	38286,8623,55740,11589	move	0	0	m0	m0	35163,19366,43438,54786	Houndoom	291	291	0	-	1	Charizard	204	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	38286,8623,55740,11589	move	0	0	m0	m0	28199,35871,27058,10680	Houndoom	291	291	0	-	1	Charizard	48	360	0	-	1	p2	1
+DEC	ff_wrongtype_control	38286,8623,55740,11589	move	0	0	m0	m0	55362,12358,13734,38463	Houndoom	291	291	0	-	1	Charizard	0	360	1	-	0	p2	1
+END	ff_wrongtype_control	38286,8623,55740,11589	1	p1
+SCEN	ff_not_activated
+TEAM	ff_not_activated	p1	Ninetales|||FlashFire|flamethrower,rest|Modest|252,,,252,,|N||||
+TEAM	ff_not_activated	p2	Snorlax|||NoAbility|bodyslam|Adamant|252,252,,,,|N||||
+INIT	ff_not_activated	58687,58598,63378,48768	26482,63427,6208,889
+DEC	ff_not_activated	26482,63427,6208,889	move	0	0	m0	m0	44651,31899,24049,53195	Ninetales	159	350	0	par	1	Snorlax	399	524	0	-	1	p1	0
+DEC	ff_not_activated	26482,63427,6208,889	move	0	0	m0	m0	20064,627,55884,687	Ninetales	0	350	1	par	0	Snorlax	399	524	0	-	1	p2	0
+END	ff_not_activated	26482,63427,6208,889	1	p2
+INIT	ff_not_activated	10788,14714,28869,9900	35006,19743,30828,24117
+DEC	ff_not_activated	35006,19743,30828,24117	move	0	0	m0	m0	35287,20555,55594,21927	Ninetales	151	350	0	par	1	Snorlax	394	524	0	-	1	p1	0
+DEC	ff_not_activated	35006,19743,30828,24117	move	0	0	m0	m0	10554,3503,36771,17099	Ninetales	0	350	1	par	0	Snorlax	394	524	0	-	1	p2	0
+END	ff_not_activated	35006,19743,30828,24117	1	p2
+INIT	ff_not_activated	50833,28622,59710,58776	29386,39995,44888,43185
+DEC	ff_not_activated	29386,39995,44888,43185	move	0	0	m0	m0	16963,22910,39890,23875	Ninetales	254	350	0	par	1	Snorlax	337	524	0	brn	1	p1	0
+DEC	ff_not_activated	29386,39995,44888,43185	move	0	0	m0	m0	19821,58511,65393,12485	Ninetales	164	350	0	par	1	Snorlax	143	524	0	brn	1	p2	0
+DEC	ff_not_activated	29386,39995,44888,43185	move	0	0	m0	m0	32789,51106,1419,47076	Ninetales	64	350	0	par	1	Snorlax	0	524	1	brn	0	p2	0
+END	ff_not_activated	29386,39995,44888,43185	1	p1
+INIT	ff_not_activated	35748,13337,30670,42820	61846,49431,26884,7917
+DEC	ff_not_activated	61846,49431,26884,7917	move	0	0	m0	m0	57123,58332,29136,17055	Ninetales	252	350	0	-	1	Snorlax	334	524	0	brn	1	p1	0
+DEC	ff_not_activated	61846,49431,26884,7917	move	0	0	m0	m0	51825,44501,58008,63142	Ninetales	165	350	0	-	1	Snorlax	135	524	0	brn	1	p1	0
+DEC	ff_not_activated	61846,49431,26884,7917	move	0	0	m0	m0	21592,15814,58913,12750	Ninetales	0	350	1	-	0	Snorlax	4	524	0	brn	1	p1	0
+END	ff_not_activated	61846,49431,26884,7917	1	p2
+INIT	ff_not_activated	16865,33455,44312,55216	37154,22451,4464,48361
+DEC	ff_not_activated	37154,22451,4464,48361	move	0	0	m0	m0	40176,55397,52551,8635	Ninetales	155	350	0	-	1	Snorlax	409	524	0	-	1	p1	0
+DEC	ff_not_activated	37154,22451,4464,48361	move	0	0	m0	m0	45907,22093,35383,13123	Ninetales	0	350	1	-	0	Snorlax	282	524	0	-	1	p1	0
+END	ff_not_activated	37154,22451,4464,48361	1	p2
+INIT	ff_not_activated	25301,46034,53716,41692	40302,48143,54428,16037
+DEC	ff_not_activated	40302,48143,54428,16037	move	0	0	m0	m0	5659,46464,31879,54935	Ninetales	151	350	0	-	1	Snorlax	398	524	0	-	1	p1	0
+DEC	ff_not_activated	40302,48143,54428,16037	move	0	0	m0	m0	37870,61539,54685,22687	Ninetales	0	350	1	-	0	Snorlax	277	524	0	-	1	p1	0
+END	ff_not_activated	40302,48143,54428,16037	1	p2
+INIT	ff_not_activated	5416,46680,12787,62664	8826,2603,40584,8225
+DEC	ff_not_activated	8826,2603,40584,8225	move	0	0	m0	m0	24336,9366,18392,64819	Ninetales	152	350	0	-	1	Snorlax	222	524	0	brn	1	p1	0
+DEC	ff_not_activated	8826,2603,40584,8225	move	0	0	m0	m0	55368,51154,53735,61066	Ninetales	55	350	0	-	1	Snorlax	36	524	0	brn	1	p1	0
+DEC	ff_not_activated	8826,2603,40584,8225	move	0	0	m0	m0	19534,25952,32309,52094	Ninetales	55	350	0	-	1	Snorlax	0	524	1	brn	0	p1	0
+END	ff_not_activated	8826,2603,40584,8225	1	p1
+INIT	ff_not_activated	48531,11233,28074,31092	60486,7687,6964,40285
+DEC	ff_not_activated	60486,7687,6964,40285	move	0	0	m0	m0	23833,41369,20185,61839	Ninetales	161	350	0	par	1	Snorlax	273	524	0	-	1	p1	0
+DEC	ff_not_activated	60486,7687,6964,40285	move	0	0	m0	m0	5716,2267,65123,12339	Ninetales	0	350	1	par	0	Snorlax	273	524	0	-	1	p2	0
+END	ff_not_activated	60486,7687,6964,40285	1	p2
+INIT	ff_not_activated	61041,22034,31085,40160	34514,37795,46752,45657
+DEC	ff_not_activated	34514,37795,46752,45657	move	0	0	m0	m0	5868,54162,2178,53163	Ninetales	151	350	0	par	1	Snorlax	393	524	0	-	1	p1	0
+DEC	ff_not_activated	34514,37795,46752,45657	move	0	0	m0	m0	18586,21373,5391,50319	Ninetales	0	350	1	par	0	Snorlax	393	524	0	-	1	p2	0
+END	ff_not_activated	34514,37795,46752,45657	1	p2
+INIT	ff_not_activated	57657,51468,45246,35596	15902,50943,40140,6933
+DEC	ff_not_activated	15902,50943,40140,6933	move	0	0	m0	m0	62991,63195,60054,29575	Ninetales	163	350	0	par	1	Snorlax	391	524	0	-	1	p1	0
+DEC	ff_not_activated	15902,50943,40140,6933	move	0	0	m0	m0	23891,63186,41724,17067	Ninetales	0	350	1	par	0	Snorlax	391	524	0	-	1	p2	0
+END	ff_not_activated	15902,50943,40140,6933	1	p2
+INIT	ff_not_activated	4981,4052,24463,12280	7722,54299,47544,21393
+DEC	ff_not_activated	7722,54299,47544,21393	move	0	0	m0	m0	19473,45067,48475,31011	Ninetales	177	350	0	par	1	Snorlax	408	524	0	-	1	p1	0
+DEC	ff_not_activated	7722,54299,47544,21393	move	0	0	m0	m0	47472,61212,33437,34439	Ninetales	0	350	1	par	0	Snorlax	408	524	0	-	1	p2	0
+END	ff_not_activated	7722,54299,47544,21393	1	p2
+INIT	ff_not_activated	57252,54942,40110,14244	62198,38647,47460,38861
+DEC	ff_not_activated	62198,38647,47460,38861	move	0	0	m0	m0	27494,21114,4606,10508	Ninetales	0	350	1	-	0	Snorlax	397	524	0	-	1	p1	0
+END	ff_not_activated	62198,38647,47460,38861	1	p2
+INIT	ff_not_activated	5344,47180,58870,3600	18562,43923,2000,58313
+DEC	ff_not_activated	18562,43923,2000,58313	move	0	0	m0	m0	5537,41790,25437,55707	Ninetales	254	350	0	-	1	Snorlax	186	524	0	brn	1	p1	0
+DEC	ff_not_activated	18562,43923,2000,58313	move	0	0	m0	m0	50650,31960,49212,20259	Ninetales	156	350	0	-	1	Snorlax	0	524	1	brn	0	p1	0
+END	ff_not_activated	18562,43923,2000,58313	1	p1
+INIT	ff_not_activated	40125,28308,38631,57148	27342,28143,53500,62341
+DEC	ff_not_activated	27342,28143,53500,62341	move	0	0	m0	m0	3168,17575,30479,11383	Ninetales	149	350	0	-	1	Snorlax	388	524	0	-	1	p1	0
+DEC	ff_not_activated	27342,28143,53500,62341	move	0	0	m0	m0	10751,31561,18933,21119	Ninetales	0	350	1	-	0	Snorlax	273	524	0	-	1	p1	0
+END	ff_not_activated	27342,28143,53500,62341	1	p2
+INIT	ff_not_activated	46911,34518,59563,38696	26074,64011,232,17153
+DEC	ff_not_activated	26074,64011,232,17153	move	0	0	m0	m0	32553,52117,43168,53523	Ninetales	157	350	0	-	1	Snorlax	394	524	0	-	1	p1	0
+DEC	ff_not_activated	26074,64011,232,17153	move	0	0	m0	m0	13588,57951,15513,12187	Ninetales	0	350	1	-	0	Snorlax	258	524	0	-	1	p1	0
+END	ff_not_activated	26074,64011,232,17153	1	p2
+INIT	ff_not_activated	1792,8583,1241,57812	1446,11239,17300,3645
+DEC	ff_not_activated	1446,11239,17300,3645	move	0	0	m0	m0	50082,14333,27499,9071	Ninetales	153	350	0	-	1	Snorlax	271	524	0	-	1	p1	0
+DEC	ff_not_activated	1446,11239,17300,3645	move	0	0	m0	m0	17111,20589,1536,49783	Ninetales	0	350	1	-	0	Snorlax	138	524	0	-	1	p1	0
+END	ff_not_activated	1446,11239,17300,3645	1	p2
+INIT	ff_not_activated	473,20513,26957,11072	54834,40835,1280,20793
+DEC	ff_not_activated	54834,40835,1280,20793	move	0	0	m0	m0	19476,4684,35359,16267	Ninetales	247	350	0	-	1	Snorlax	338	524	0	brn	1	p1	0
+DEC	ff_not_activated	54834,40835,1280,20793	move	0	0	m0	m0	45290,43178,58959,46146	Ninetales	148	350	0	-	1	Snorlax	143	524	0	brn	1	p1	0
+DEC	ff_not_activated	54834,40835,1280,20793	move	0	0	m0	m0	19142,34421,57300,2026	Ninetales	51	350	0	par	1	Snorlax	0	524	1	brn	0	p1	0
+END	ff_not_activated	54834,40835,1280,20793	1	p1
+INIT	ff_not_activated	39923,17142,29062,40812	9086,45279,28972,51189
+DEC	ff_not_activated	9086,45279,28972,51189	move	0	0	m0	m0	50173,37385,31360,359	Ninetales	161	350	0	-	1	Snorlax	398	524	0	-	1	p1	0
+DEC	ff_not_activated	9086,45279,28972,51189	move	0	0	m0	m0	25414,18480,16923,14703	Ninetales	0	350	1	-	0	Snorlax	262	524	0	-	1	p1	0
+END	ff_not_activated	9086,45279,28972,51189	1	p2
+INIT	ff_not_activated	25596,39473,22190,10840	63882,31739,29720,61041
+DEC	ff_not_activated	63882,31739,29720,61041	move	0	0	m0	m0	46996,64310,23906,1283	Ninetales	149	350	0	par	1	Snorlax	403	524	0	-	1	p1	0
+DEC	ff_not_activated	63882,31739,29720,61041	move	0	0	m0	m0	48505,2209,35190,5223	Ninetales	0	350	1	par	0	Snorlax	403	524	0	-	1	p2	0
+END	ff_not_activated	63882,31739,29720,61041	1	p2
+INIT	ff_not_activated	43491,35692,12178,30724	9302,56535,47556,173
+DEC	ff_not_activated	9302,56535,47556,173	move	0	0	m0	m0	45648,60724,65195,42591	Ninetales	177	350	0	par	1	Snorlax	393	524	0	-	1	p1	0
+DEC	ff_not_activated	9302,56535,47556,173	move	0	0	m0	m0	13913,30254,61551,47107	Ninetales	0	350	1	par	0	Snorlax	393	524	0	-	1	p2	0
+END	ff_not_activated	9302,56535,47556,173	1	p2
+INIT	ff_not_activated	52261,62879,5692,62576	12258,28531,44592,64169
+DEC	ff_not_activated	12258,28531,44592,64169	move	0	0	m0	m0	50811,55773,9273,379	Ninetales	165	350	0	-	1	Snorlax	406	524	0	-	1	p1	0
+DEC	ff_not_activated	12258,28531,44592,64169	move	0	0	m0	m0	27448,52166,64935,56067	Ninetales	0	350	1	-	0	Snorlax	270	524	0	-	1	p1	0
+END	ff_not_activated	12258,28531,44592,64169	1	p2
+INIT	ff_not_activated	19683,15262,51711,52124	26670,36815,32092,39013
+DEC	ff_not_activated	26670,36815,32092,39013	move	0	0	m0	m0	43995,3915,18593,62039	Ninetales	173	350	0	-	1	Snorlax	397	524	0	-	1	p1	0
+DEC	ff_not_activated	26670,36815,32092,39013	move	0	0	m0	m0	14261,16790,15386,48223	Ninetales	0	350	1	-	0	Snorlax	279	524	0	-	1	p1	0
+END	ff_not_activated	26670,36815,32092,39013	1	p2
+INIT	ff_not_activated	46135,24330,38604,59784	55610,23019,4936,21985
+DEC	ff_not_activated	55610,23019,4936,21985	move	0	0	m0	m0	33715,56923,13357,5363	Ninetales	262	350	0	-	1	Snorlax	334	524	0	brn	1	p1	0
+DEC	ff_not_activated	55610,23019,4936,21985	move	0	0	m0	m0	31013,49693,9228,62794	Ninetales	163	350	0	par	1	Snorlax	136	524	0	brn	1	p1	0
+DEC	ff_not_activated	55610,23019,4936,21985	move	0	0	m0	m0	43185,19020,31950,34112	Ninetales	66	350	0	par	1	Snorlax	71	524	0	brn	1	p2	0
+DEC	ff_not_activated	55610,23019,4936,21985	move	0	0	m0	m0	25173,5027,63747,21204	Ninetales	0	350	1	par	0	Snorlax	71	524	0	brn	1	p2	0
+END	ff_not_activated	55610,23019,4936,21985	1	p2
+INIT	ff_not_activated	56694,388,7383,64052	20230,43463,7156,28445
+DEC	ff_not_activated	20230,43463,7156,28445	move	0	0	m0	m0	57240,49919,1657,50511	Ninetales	149	350	0	-	1	Snorlax	406	524	0	-	1	p1	0
+DEC	ff_not_activated	20230,43463,7156,28445	move	0	0	m0	m0	60189,43868,41266,34903	Ninetales	0	350	1	-	0	Snorlax	172	524	0	-	1	p1	0
+END	ff_not_activated	20230,43463,7156,28445	1	p2
+INIT	ff_not_activated	34028,48620,55803,27040	21906,7011,864,57369
+DEC	ff_not_activated	21906,7011,864,57369	move	0	0	m0	m0	49024,39261,35385,8043	Ninetales	153	350	0	-	1	Snorlax	405	524	0	-	1	p1	0
+DEC	ff_not_activated	21906,7011,864,57369	move	0	0	m0	m0	28816,27127,44528,60147	Ninetales	0	350	1	-	0	Snorlax	286	524	0	-	1	p1	0
+END	ff_not_activated	21906,7011,864,57369	1	p2
+INIT	ff_not_activated	44941,22669,41043,25548	14558,2751,62860,25813
+DEC	ff_not_activated	14558,2751,62860,25813	move	0	0	m0	m0	50168,48236,57716,65351	Ninetales	153	350	0	-	1	Snorlax	405	524	0	-	1	p1	0
+DEC	ff_not_activated	14558,2751,62860,25813	move	0	0	m0	m0	42828,26491,14323,56143	Ninetales	0	350	1	-	0	Snorlax	279	524	0	-	1	p1	0
+END	ff_not_activated	14558,2751,62860,25813	1	p2
+INIT	ff_not_activated	38601,49211,48081,54456	1258,37851,56952,31057
+DEC	ff_not_activated	1258,37851,56952,31057	move	0	0	m0	m0	28416,30091,19714,51104	Ninetales	0	350	1	-	0	Snorlax	395	524	0	-	1	p1	0
+END	ff_not_activated	1258,37851,56952,31057	1	p2
+INIT	ff_not_activated	30662,10897,17221,26724	34230,37559,27172,22925
+DEC	ff_not_activated	34230,37559,27172,22925	move	0	0	m0	m0	21047,33853,12060,32831	Ninetales	157	350	0	-	1	Snorlax	398	524	0	-	1	p1	0
+DEC	ff_not_activated	34230,37559,27172,22925	move	0	0	m0	m0	14422,31862,22572,33478	Ninetales	61	350	0	-	1	Snorlax	206	524	0	brn	1	p1	0
+DEC	ff_not_activated	34230,37559,27172,22925	move	0	0	m0	m0	32704,14038,43025,55790	Ninetales	0	350	1	-	0	Snorlax	91	524	0	brn	1	p1	0
+END	ff_not_activated	34230,37559,27172,22925	1	p2
+INIT	ff_not_activated	36257,48084,46216,35536	18242,41811,1168,393
+DEC	ff_not_activated	18242,41811,1168,393	move	0	0	m0	m0	17403,63551,48159,39259	Ninetales	173	350	0	par	1	Snorlax	273	524	0	-	1	p1	0
+DEC	ff_not_activated	18242,41811,1168,393	move	0	0	m0	m0	30928,18213,1962,54079	Ninetales	0	350	1	par	0	Snorlax	273	524	0	-	1	p2	0
+END	ff_not_activated	18242,41811,1168,393	1	p2
+INIT	ff_not_activated	57679,4189,62593,26620	38286,8623,55740,11589
+DEC	ff_not_activated	38286,8623,55740,11589	move	0	0	m0	m0	33663,17845,17657,10295	Ninetales	165	350	0	-	1	Snorlax	399	524	0	-	1	p1	0
+DEC	ff_not_activated	38286,8623,55740,11589	move	0	0	m0	m0	55362,12358,13734,38463	Ninetales	0	350	1	-	0	Snorlax	272	524	0	-	1	p1	0
+END	ff_not_activated	38286,8623,55740,11589	1	p2

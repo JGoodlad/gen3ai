@@ -1026,6 +1026,10 @@ Reference data (deterministic) under `data/pokemon/`, all regenerable via
 - `gen3_natures.json` — nature → `{num, stat multipliers}` (was live `poke_env/.../natures.json`)
 - `gen3_learnset.json` — species id → `[move_id, ...]` gen3 legal movepool (the hard legality gate the
   move-belief prior uses to prune impossible candidate moves; via `gen3_data.learnset`)
+- `gen3_move_aliases.json` — `{alias_id: canonical_move_id}` from Showdown's `aliases.ts`
+  (`wisp`→`willowisp`, `sd`→`swordsdance`, …). **Consumed ONLY by the `src/rust_sim` port** (its dex
+  resolves a packed-team move alias like the RL runtime never touches); the `agents.gen3_data` facade
+  does NOT load it, so it is obs-neutral. `gen3_move_alias_resolution_v1`.
 
 Smogon-derived priors (probabilistic), via `tools/smogon_stats_downloader/`:
 - `gen3_smogon_stats.json` (raw aggregated stats) → `gen3_ability_priors.json`, `gen3_hidden_power_priors.json`

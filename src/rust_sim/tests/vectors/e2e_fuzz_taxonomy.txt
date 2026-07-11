@@ -1,0 +1,10 @@
+# e2e_fuzz_taxonomy.txt — CAPSTONE honest taxonomy (real teams, UNFILTERED, damaging-or-switch choices).
+# The measured coverage + ranked remaining-work list. Does NOT gate cargo test.
+# MASTER_SEED 305441741  (taxonomy seed 1197604504)
+# unfiltered battles run: 300
+# filter-CLEAN battles (every mon modeled ability+item): 300
+# GAPPY battles (>=1 unmodeled ability/item somewhere): 0
+# ── ranked ABILITY gaps (battles blocked) ──
+# ── ranked ITEM gaps (battles blocked) ──
+# ── ENGINE divergence cause among MODELED-mechanics battles (the gate) ──
+ENGINE_GAP	none	(bit-for-bit; the prior weather residual-vs-faint gap is FIXED — see CLAUDE.md "## E2E capstone")

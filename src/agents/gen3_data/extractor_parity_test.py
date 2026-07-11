@@ -70,6 +70,15 @@ def test_items_builder_reproduces_committed():
     assert _load_sync().build_items(3) == _committed("gen3_items.json")
 
 
+@pytest.mark.integration
+def test_move_aliases_builder_reproduces_committed():
+    # build_move_aliases reads the Showdown submodule (deps/pokemon-showdown/data/aliases.ts).
+    # gen3_move_aliases.json is consumed ONLY by the src/rust_sim port (its dex resolves a
+    # packed-team move alias like `wisp`->willowisp, mirroring Showdown); the Python facade
+    # never loads it, so it is obs-neutral. `gen3_move_alias_resolution_v1`.
+    assert _load_sync().build_move_aliases(3) == _committed("gen3_move_aliases.json")
+
+
 # --- gen3_move_effects_v1: the effect flags are faithful to the Showdown SOURCE ------------- #
 # `test_moves_builder_reproduces_committed` proves committed == builder (no hand-edit drift);
 # build_moves reads poke-env's static JSON. This test closes the remaining gap — that poke-env's

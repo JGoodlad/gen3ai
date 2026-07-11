@@ -4491,7 +4491,8 @@
         "types": [
             "BUG",
             "GHOST"
-        ]
+        ],
+        "maxHP": 1
     },
     "shelgon": {
         "baseStats": {

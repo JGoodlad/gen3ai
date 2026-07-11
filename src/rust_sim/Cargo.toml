@@ -1,0 +1,22 @@
+# pokesim — a from-scratch, bit-for-bit-faithful Rust reimplementation of the
+# Pokémon Showdown battle simulator, scoped first to Gen 3 OU singles.
+#
+# Deliberately std-only: no dependencies. Bit-exact determinism is the whole
+# point, so the RNG (ChaCha20 + the Gen5 LCG) is hand-rolled and auditable, and
+# `cargo test` needs no network to fetch crates. Add deps only with a clear
+# reason; never one that touches the deterministic battle path.
+
+[package]
+name = "pokesim"
+version = "0.0.0"
+edition = "2021"
+description = "Bit-for-bit faithful Rust port of the Pokémon Showdown simulator (Gen 3 OU singles first)"
+license = "MIT"
+publish = false
+
+[lib]
+name = "pokesim"
+path = "src/lib.rs"
+
+[dependencies]
+# none — std-only by design (see header).

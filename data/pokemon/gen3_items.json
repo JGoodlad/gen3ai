@@ -1,23 +1,53 @@
 {
     "aguavberry": {
         "name": "Aguav Berry",
-        "num": 162
+        "num": 162,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "heal",
+            "threshold": [
+                1,
+                2
+            ],
+            "healFrac": 8,
+            "confuseIfMinus": "spd"
+        }
     },
     "apicotberry": {
         "name": "Apicot Berry",
-        "num": 205
+        "num": 205,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "pinch",
+            "threshold": [
+                1,
+                4
+            ],
+            "boost": "spd"
+        }
     },
     "aspearberry": {
         "name": "Aspear Berry",
-        "num": 153
+        "num": 153,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "cure",
+            "statuses": [
+                "frz"
+            ],
+            "curesConfusion": false,
+            "immediate": false
+        }
     },
     "belueberry": {
         "name": "Belue Berry",
-        "num": 183
+        "num": 183,
+        "isBerry": true
     },
     "berry": {
         "name": "Berry",
-        "num": 155
+        "num": 155,
+        "isBerry": true
     },
     "berryjuice": {
         "name": "Berry Juice",
@@ -25,43 +55,100 @@
     },
     "bitterberry": {
         "name": "Bitter Berry",
-        "num": 156
+        "num": 156,
+        "isBerry": true
     },
     "blackbelt": {
         "name": "Black Belt",
-        "num": 241
+        "num": 241,
+        "typeBoost": {
+            "type": "Fighting",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "blackglasses": {
         "name": "Black Glasses",
-        "num": 240
+        "num": 240,
+        "typeBoost": {
+            "type": "Dark",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "blukberry": {
         "name": "Bluk Berry",
-        "num": 165
+        "num": 165,
+        "isBerry": true
     },
     "brightpowder": {
         "name": "Bright Powder",
-        "num": 213
+        "num": 213,
+        "accMod": {
+            "op": "multiply",
+            "mod": 0.9,
+            "side": "defender"
+        }
     },
     "burntberry": {
         "name": "Burnt Berry",
-        "num": 153
+        "num": 153,
+        "isBerry": true
     },
     "charcoal": {
         "name": "Charcoal",
-        "num": 249
+        "num": 249,
+        "typeBoost": {
+            "type": "Fire",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "cheriberry": {
         "name": "Cheri Berry",
-        "num": 149
+        "num": 149,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "cure",
+            "statuses": [
+                "par"
+            ],
+            "curesConfusion": false,
+            "immediate": false
+        }
     },
     "chestoberry": {
         "name": "Chesto Berry",
-        "num": 150
+        "num": 150,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "cure",
+            "statuses": [
+                "slp"
+            ],
+            "curesConfusion": false,
+            "immediate": false
+        }
     },
     "choiceband": {
         "name": "Choice Band",
-        "num": 220
+        "num": 220,
+        "choice": true,
+        "statMods": {
+            "atk": [
+                3,
+                2
+            ]
+        }
     },
     "clawfossil": {
         "name": "Claw Fossil",
@@ -69,15 +156,34 @@
     },
     "cornnberry": {
         "name": "Cornn Berry",
-        "num": 175
+        "num": 175,
+        "isBerry": true
     },
     "deepseascale": {
         "name": "Deep Sea Scale",
-        "num": 227
+        "num": 227,
+        "statMods": {
+            "spd": [
+                2,
+                1
+            ]
+        },
+        "onlySpecies": [
+            "clamperl"
+        ]
     },
     "deepseatooth": {
         "name": "Deep Sea Tooth",
-        "num": 226
+        "num": 226,
+        "statMods": {
+            "spa": [
+                2,
+                1
+            ]
+        },
+        "onlySpecies": [
+            "clamperl"
+        ]
     },
     "diveball": {
         "name": "Dive Ball",
@@ -89,7 +195,15 @@
     },
     "dragonfang": {
         "name": "Dragon Fang",
-        "num": 250
+        "num": 250,
+        "typeBoost": {
+            "type": "Dragon",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "dragonscale": {
         "name": "Dragon Scale",
@@ -97,11 +211,13 @@
     },
     "durinberry": {
         "name": "Durin Berry",
-        "num": 182
+        "num": 182,
+        "isBerry": true
     },
     "enigmaberry": {
         "name": "Enigma Berry",
-        "num": 208
+        "num": 208,
+        "isBerry": true
     },
     "fastball": {
         "name": "Fast Ball",
@@ -109,7 +225,17 @@
     },
     "figyberry": {
         "name": "Figy Berry",
-        "num": 159
+        "num": 159,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "heal",
+            "threshold": [
+                1,
+                2
+            ],
+            "healFrac": 8,
+            "confuseIfMinus": "atk"
+        }
     },
     "firestone": {
         "name": "Fire Stone",
@@ -117,7 +243,13 @@
     },
     "focusband": {
         "name": "Focus Band",
-        "num": 230
+        "num": 230,
+        "surviveLethal": {
+            "chance": [
+                1,
+                10
+            ]
+        }
     },
     "friendball": {
         "name": "Friend Ball",
@@ -125,11 +257,21 @@
     },
     "ganlonberry": {
         "name": "Ganlon Berry",
-        "num": 202
+        "num": 202,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "pinch",
+            "threshold": [
+                1,
+                4
+            ],
+            "boost": "def"
+        }
     },
     "goldberry": {
         "name": "Gold Berry",
-        "num": 158
+        "num": 158,
+        "isBerry": true
     },
     "greatball": {
         "name": "Great Ball",
@@ -137,11 +279,20 @@
     },
     "grepaberry": {
         "name": "Grepa Berry",
-        "num": 173
+        "num": 173,
+        "isBerry": true
     },
     "hardstone": {
         "name": "Hard Stone",
-        "num": 238
+        "num": 238,
+        "typeBoost": {
+            "type": "Rock",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "heavyball": {
         "name": "Heavy Ball",
@@ -153,31 +304,193 @@
     },
     "hondewberry": {
         "name": "Hondew Berry",
-        "num": 172
+        "num": 172,
+        "isBerry": true
     },
     "iapapaberry": {
         "name": "Iapapa Berry",
-        "num": 163
+        "num": 163,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "heal",
+            "threshold": [
+                1,
+                2
+            ],
+            "healFrac": 8,
+            "confuseIfMinus": "def"
+        }
     },
     "iceberry": {
         "name": "Ice Berry",
-        "num": 152
+        "num": 152,
+        "isBerry": true
     },
     "kelpsyberry": {
         "name": "Kelpsy Berry",
-        "num": 170
+        "num": 170,
+        "isBerry": true
     },
     "kingsrock": {
         "name": "King's Rock",
-        "num": 221
+        "num": 221,
+        "flinchSecondary": {
+            "chance": 10,
+            "moves": [
+                "aerialace",
+                "aeroblast",
+                "aircutter",
+                "armthrust",
+                "barrage",
+                "beatup",
+                "bide",
+                "bind",
+                "blastburn",
+                "bonemerang",
+                "bonerush",
+                "bounce",
+                "brickbreak",
+                "bulletseed",
+                "clamp",
+                "cometpunch",
+                "crabhammer",
+                "crosschop",
+                "cut",
+                "dig",
+                "dive",
+                "doubleedge",
+                "doublekick",
+                "doubleslap",
+                "dragonbreath",
+                "dragonclaw",
+                "dragonrage",
+                "drillpeck",
+                "earthquake",
+                "eggbomb",
+                "endeavor",
+                "eruption",
+                "explosion",
+                "extremespeed",
+                "falseswipe",
+                "feintattack",
+                "firespin",
+                "flail",
+                "fly",
+                "frenzyplant",
+                "frustration",
+                "furyattack",
+                "furycutter",
+                "furyswipes",
+                "gust",
+                "hiddenpower",
+                "highjumpkick",
+                "hornattack",
+                "hydrocannon",
+                "hydropump",
+                "hyperbeam",
+                "iceball",
+                "iciclespear",
+                "jumpkick",
+                "karatechop",
+                "leafblade",
+                "lowkick",
+                "machpunch",
+                "magicalleaf",
+                "magnitude",
+                "megahorn",
+                "megakick",
+                "megapunch",
+                "meteormash",
+                "muddywater",
+                "mudshot",
+                "nightshade",
+                "outrage",
+                "overheat",
+                "payday",
+                "peck",
+                "petaldance",
+                "pinmissile",
+                "poisontail",
+                "pound",
+                "psychoboost",
+                "psywave",
+                "quickattack",
+                "rage",
+                "rapidspin",
+                "razorleaf",
+                "razorwind",
+                "return",
+                "revenge",
+                "reversal",
+                "rockblast",
+                "rockthrow",
+                "rollingkick",
+                "rollout",
+                "sandtomb",
+                "scratch",
+                "seismictoss",
+                "selfdestruct",
+                "shadowpunch",
+                "shockwave",
+                "signalbeam",
+                "silverwind",
+                "skullbash",
+                "skyattack",
+                "skyuppercut",
+                "slam",
+                "slash",
+                "snore",
+                "solarbeam",
+                "sonicboom",
+                "spikecannon",
+                "spitup",
+                "steelwing",
+                "strength",
+                "struggle",
+                "submission",
+                "surf",
+                "swift",
+                "tackle",
+                "takedown",
+                "thrash",
+                "triplekick",
+                "twister",
+                "uproar",
+                "vinewhip",
+                "visegrip",
+                "vitalthrow",
+                "volttackle",
+                "waterfall",
+                "watergun",
+                "waterpulse",
+                "weatherball",
+                "whirlpool",
+                "wingattack",
+                "wrap"
+            ]
+        }
     },
     "lansatberry": {
         "name": "Lansat Berry",
-        "num": 206
+        "num": 206,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "pinch",
+            "threshold": [
+                1,
+                4
+            ],
+            "boost": "focusenergy"
+        }
     },
     "laxincense": {
         "name": "Lax Incense",
-        "num": 255
+        "num": 255,
+        "accMod": {
+            "op": "multiply",
+            "mod": 0.95,
+            "side": "defender"
+        }
     },
     "leafstone": {
         "name": "Leaf Stone",
@@ -189,7 +502,12 @@
     },
     "leppaberry": {
         "name": "Leppa Berry",
-        "num": 154
+        "num": 154,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "pp",
+            "restore": 10
+        }
     },
     "levelball": {
         "name": "Level Ball",
@@ -197,11 +515,29 @@
     },
     "liechiberry": {
         "name": "Liechi Berry",
-        "num": 201
+        "num": 201,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "pinch",
+            "threshold": [
+                1,
+                4
+            ],
+            "boost": "atk"
+        }
     },
     "lightball": {
         "name": "Light Ball",
-        "num": 236
+        "num": 236,
+        "statMods": {
+            "spa": [
+                2,
+                1
+            ]
+        },
+        "onlySpecies": [
+            "pikachu"
+        ]
     },
     "loveball": {
         "name": "Love Ball",
@@ -213,7 +549,21 @@
     },
     "lumberry": {
         "name": "Lum Berry",
-        "num": 157
+        "num": 157,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "cure",
+            "statuses": [
+                "par",
+                "slp",
+                "psn",
+                "tox",
+                "brn",
+                "frz"
+            ],
+            "curesConfusion": true,
+            "immediate": true
+        }
     },
     "lureball": {
         "name": "Lure Ball",
@@ -229,15 +579,34 @@
     },
     "magnet": {
         "name": "Magnet",
-        "num": 242
+        "num": 242,
+        "typeBoost": {
+            "type": "Electric",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "magoberry": {
         "name": "Mago Berry",
-        "num": 161
+        "num": 161,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "heal",
+            "threshold": [
+                1,
+                2
+            ],
+            "healFrac": 8,
+            "confuseIfMinus": "spe"
+        }
     },
     "magostberry": {
         "name": "Magost Berry",
-        "num": 176
+        "num": 176,
+        "isBerry": true
     },
     "mail": {
         "name": "Mail",
@@ -253,23 +622,51 @@
     },
     "metalcoat": {
         "name": "Metal Coat",
-        "num": 233
+        "num": 233,
+        "typeBoost": {
+            "type": "Steel",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "metalpowder": {
         "name": "Metal Powder",
-        "num": 257
+        "num": 257,
+        "statMods": {
+            "def": [
+                2,
+                1
+            ]
+        },
+        "onlySpecies": [
+            "ditto"
+        ],
+        "untransformedOnly": true
     },
     "mintberry": {
         "name": "Mint Berry",
-        "num": 150
+        "num": 150,
+        "isBerry": true
     },
     "miracleberry": {
         "name": "Miracle Berry",
-        "num": 157
+        "num": 157,
+        "isBerry": true
     },
     "miracleseed": {
         "name": "Miracle Seed",
-        "num": 239
+        "num": 239,
+        "typeBoost": {
+            "type": "Grass",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "moonball": {
         "name": "Moon Ball",
@@ -281,15 +678,25 @@
     },
     "mysteryberry": {
         "name": "Mystery Berry",
-        "num": 154
+        "num": 154,
+        "isBerry": true
     },
     "mysticwater": {
         "name": "Mystic Water",
-        "num": 243
+        "num": 243,
+        "typeBoost": {
+            "type": "Water",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "nanabberry": {
         "name": "Nanab Berry",
-        "num": 166
+        "num": 166,
+        "isBerry": true
     },
     "nestball": {
         "name": "Nest Ball",
@@ -301,11 +708,32 @@
     },
     "nevermeltice": {
         "name": "Never-Melt Ice",
-        "num": 246
+        "num": 246,
+        "typeBoost": {
+            "type": "Ice",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "nomelberry": {
         "name": "Nomel Berry",
-        "num": 178
+        "num": 178,
+        "isBerry": true
+    },
+    "oddincense": {
+        "name": "Odd Incense",
+        "num": 314,
+        "typeBoost": {
+            "type": "Psychic",
+            "mod": [
+                4915,
+                4096
+            ],
+            "fold": "basePower"
+        }
     },
     "oldamber": {
         "name": "Old Amber",
@@ -313,35 +741,88 @@
     },
     "oranberry": {
         "name": "Oran Berry",
-        "num": 155
+        "num": 155,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "heal",
+            "threshold": [
+                1,
+                2
+            ],
+            "heal": 10
+        }
     },
     "pamtreberry": {
         "name": "Pamtre Berry",
-        "num": 180
+        "num": 180,
+        "isBerry": true
     },
     "pechaberry": {
         "name": "Pecha Berry",
-        "num": 151
+        "num": 151,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "cure",
+            "statuses": [
+                "psn",
+                "tox"
+            ],
+            "curesConfusion": false,
+            "immediate": false
+        }
     },
     "persimberry": {
         "name": "Persim Berry",
-        "num": 156
+        "num": 156,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "cure",
+            "statuses": [],
+            "curesConfusion": true,
+            "immediate": false
+        }
     },
     "petayaberry": {
         "name": "Petaya Berry",
-        "num": 204
+        "num": 204,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "pinch",
+            "threshold": [
+                1,
+                4
+            ],
+            "boost": "spa"
+        }
     },
     "pinapberry": {
         "name": "Pinap Berry",
-        "num": 168
+        "num": 168,
+        "isBerry": true
     },
     "pinkbow": {
         "name": "Pink Bow",
-        "num": 251
+        "num": 251,
+        "typeBoost": {
+            "type": "Normal",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "basePowerDirect"
+        }
     },
     "poisonbarb": {
         "name": "Poison Barb",
-        "num": 245
+        "num": 245,
+        "typeBoost": {
+            "type": "Poison",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "pokeball": {
         "name": "Poke Ball",
@@ -349,11 +830,20 @@
     },
     "polkadotbow": {
         "name": "Polkadot Bow",
-        "num": 251
+        "num": 251,
+        "typeBoost": {
+            "type": "Normal",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "basePowerDirect"
+        }
     },
     "pomegberry": {
         "name": "Pomeg Berry",
-        "num": 169
+        "num": 169,
+        "isBerry": true
     },
     "premierball": {
         "name": "Premier Ball",
@@ -361,15 +851,18 @@
     },
     "przcureberry": {
         "name": "PRZ Cure Berry",
-        "num": 149
+        "num": 149,
+        "isBerry": true
     },
     "psncureberry": {
         "name": "PSN Cure Berry",
-        "num": 151
+        "num": 151,
+        "isBerry": true
     },
     "qualotberry": {
         "name": "Qualot Berry",
-        "num": 171
+        "num": 171,
+        "isBerry": true
     },
     "quickclaw": {
         "name": "Quick Claw",
@@ -377,23 +870,58 @@
     },
     "rabutaberry": {
         "name": "Rabuta Berry",
-        "num": 177
+        "num": 177,
+        "isBerry": true
     },
     "rawstberry": {
         "name": "Rawst Berry",
-        "num": 152
+        "num": 152,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "cure",
+            "statuses": [
+                "brn"
+            ],
+            "curesConfusion": false,
+            "immediate": false
+        }
     },
     "razzberry": {
         "name": "Razz Berry",
-        "num": 164
+        "num": 164,
+        "isBerry": true
     },
     "repeatball": {
         "name": "Repeat Ball",
         "num": 9
     },
+    "rockincense": {
+        "name": "Rock Incense",
+        "num": 315,
+        "typeBoost": {
+            "type": "Rock",
+            "mod": [
+                4915,
+                4096
+            ],
+            "fold": "basePower"
+        }
+    },
     "rootfossil": {
         "name": "Root Fossil",
         "num": 99
+    },
+    "roseincense": {
+        "name": "Rose Incense",
+        "num": 318,
+        "typeBoost": {
+            "type": "Grass",
+            "mod": [
+                4915,
+                4096
+            ],
+            "fold": "basePower"
+        }
     },
     "safariball": {
         "name": "Safari Ball",
@@ -401,7 +929,16 @@
     },
     "salacberry": {
         "name": "Salac Berry",
-        "num": 203
+        "num": 203,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "pinch",
+            "threshold": [
+                1,
+                4
+            ],
+            "boost": "spe"
+        }
     },
     "scopelens": {
         "name": "Scope Lens",
@@ -409,11 +946,27 @@
     },
     "seaincense": {
         "name": "Sea Incense",
-        "num": 254
+        "num": 254,
+        "typeBoost": {
+            "type": "Water",
+            "mod": [
+                21,
+                20
+            ],
+            "fold": "stat"
+        }
     },
     "sharpbeak": {
         "name": "Sharp Beak",
-        "num": 244
+        "num": 244,
+        "typeBoost": {
+            "type": "Flying",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "shellbell": {
         "name": "Shell Bell",
@@ -421,31 +974,87 @@
     },
     "silkscarf": {
         "name": "Silk Scarf",
-        "num": 251
+        "num": 251,
+        "typeBoost": {
+            "type": "Normal",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "silverpowder": {
         "name": "Silver Powder",
-        "num": 222
+        "num": 222,
+        "typeBoost": {
+            "type": "Bug",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "sitrusberry": {
         "name": "Sitrus Berry",
-        "num": 158
+        "num": 158,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "heal",
+            "threshold": [
+                1,
+                2
+            ],
+            "heal": 30
+        }
     },
     "softsand": {
         "name": "Soft Sand",
-        "num": 237
+        "num": 237,
+        "typeBoost": {
+            "type": "Ground",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "souldew": {
         "name": "Soul Dew",
-        "num": 225
+        "num": 225,
+        "statMods": {
+            "spa": [
+                3,
+                2
+            ],
+            "spd": [
+                3,
+                2
+            ]
+        },
+        "onlySpecies": [
+            "latias",
+            "latios"
+        ]
     },
     "spelltag": {
         "name": "Spell Tag",
-        "num": 247
+        "num": 247,
+        "typeBoost": {
+            "type": "Ghost",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "spelonberry": {
         "name": "Spelon Berry",
-        "num": 179
+        "num": 179,
+        "isBerry": true
     },
     "sportball": {
         "name": "Sport Ball",
@@ -453,7 +1062,16 @@
     },
     "starfberry": {
         "name": "Starf Berry",
-        "num": 207
+        "num": 207,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "pinch",
+            "threshold": [
+                1,
+                4
+            ],
+            "boost": "random2"
+        }
     },
     "stick": {
         "name": "Stick",
@@ -465,11 +1083,22 @@
     },
     "tamatoberry": {
         "name": "Tamato Berry",
-        "num": 174
+        "num": 174,
+        "isBerry": true
     },
     "thickclub": {
         "name": "Thick Club",
-        "num": 258
+        "num": 258,
+        "statMods": {
+            "atk": [
+                2,
+                1
+            ]
+        },
+        "onlySpecies": [
+            "cubone",
+            "marowak"
+        ]
     },
     "thunderstone": {
         "name": "Thunder Stone",
@@ -481,7 +1110,15 @@
     },
     "twistedspoon": {
         "name": "Twisted Spoon",
-        "num": 248
+        "num": 248,
+        "typeBoost": {
+            "type": "Psychic",
+            "mod": [
+                11,
+                10
+            ],
+            "fold": "stat"
+        }
     },
     "ultraball": {
         "name": "Ultra Ball",
@@ -497,11 +1134,25 @@
     },
     "watmelberry": {
         "name": "Watmel Berry",
-        "num": 181
+        "num": 181,
+        "isBerry": true
+    },
+    "waveincense": {
+        "name": "Wave Incense",
+        "num": 317,
+        "typeBoost": {
+            "type": "Water",
+            "mod": [
+                4915,
+                4096
+            ],
+            "fold": "basePower"
+        }
     },
     "wepearberry": {
         "name": "Wepear Berry",
-        "num": 167
+        "num": 167,
+        "isBerry": true
     },
     "whiteherb": {
         "name": "White Herb",
@@ -509,6 +1160,16 @@
     },
     "wikiberry": {
         "name": "Wiki Berry",
-        "num": 160
+        "num": 160,
+        "isBerry": true,
+        "berryEffect": {
+            "class": "heal",
+            "threshold": [
+                1,
+                2
+            ],
+            "healFrac": 8,
+            "confuseIfMinus": "spa"
+        }
     }
 }

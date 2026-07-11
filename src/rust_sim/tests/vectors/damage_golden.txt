@@ -1,0 +1,76 @@
+# damage_golden.txt — Gen-3 single-hit damage golden (EXACT max-roll).
+# DMG <id> <bp> <move_type> <category> <crit> <weather> <reflect> <light_screen> <halves_def> \
+#     <atk_level> <atk_stat> <spa_stat> <atk_types> <atk_boosts> <atk_status> <atk_ability> <atk_item> \
+#     <def_stat> <spd_stat> <def_types> <def_boosts> <def_ability> \
+#     <base_max_roll_dmg> <min_roll_dmg> <atk_species> <def_species> <def_item> \
+#     <atk_hp> <atk_maxhp> <def_status> <def_ability>
+# All TAB-separated. boosts = atk,def,spa,spd,spe. types = comma list. immunity -> base=0.
+# crit=1 means the measured hit is a critical (x2, ignore-boosts/screens).
+# halves_def=1 marks Explosion/Self-Destruct (gen3 halves the defender Def).
+# atk_species/def_species/def_item (gen3_item_mechanics_v1, appended so pre-existing
+# indices are unchanged): the species-gated item mods + the DEFENDER-side item.
+# atk_hp/atk_maxhp/def_status/def_ability (gen3_item_mechanics_v1 ability side, appended):
+# the pinch HP (test recomputes 3*hp<=maxhp), the defender status+ability (Marvel Scale).
+DMG	neutral_special_nostab	80	Ghost	Physical	0	none	0	0	0	100	230	251	Normal	0,0,0,0,0	none	noability	none	266	361	Water	0,0,0,0,0	noability	60	51	snorlax	suicune	none	461	461	none	noability
+DMG	neutral_physical_nostab	100	Ground	Physical	0	none	0	0	0	100	350	149	Normal	0,0,0,0,0	none	noability	none	361	266	Water	0,0,0,0,0	noability	83	70	snorlax	suicune	none	461	461	none	noability
+DMG	stab_special	95	Water	Special	0	none	0	0	0	100	167	306	Water	0,0,0,0,0	none	noability	none	56	405	Normal	0,0,0,0,0	noability	93	79	suicune	blissey	none	341	341	none	noability
+DMG	stab_physical	85	Normal	Physical	0	none	0	0	0	100	350	149	Normal	0,0,0,0,0	none	noability	none	361	266	Water	0,0,0,0,0	noability	106	90	snorlax	suicune	none	461	461	none	noability
+DMG	super_effective_2x	95	Electric	Special	0	none	0	0	0	100	167	328	Water,Psychic	0,0,0,0,0	none	noability	none	266	361	Water	0,0,0,0,0	noability	148	125	starmie	suicune	none	261	261	slp	noability
+DMG	resisted_half	95	Electric	Special	0	none	0	0	0	100	149	350	Electric	0,0,0,0,0	none	noability	none	206	306	Electric,Flying	0,0,0,0,0	noability	139	118	jolteon	zapdos	none	271	271	slp	noability
+DMG	quad_effective_4x	95	Ice	Special	0	none	0	0	0	100	226	206	Water,Ice	0,0,0,0,0	none	noability	none	196	284	Dragon,Flying	0,0,0,0,0	noability	352	299	cloyster	salamence	none	241	241	none	noability
+DMG	type_immune	95	Electric	Special	0	none	0	0	0	100	185	361	Electric	0,0,0,0,0	none	noability	none	237	216	Water,Ground	0,0,0,0,0	noability	0	0	raikou	swampert	none	321	321	none	noability
+DMG	ability_immune_levitate	100	Ground	Physical	0	none	0	0	0	100	403	203	Rock,Dark	0,0,0,0,0	none	sandstream	none	270	276	Ground,Psychic	0,0,0,0,0	levitate	0	0	tyranitar	claydol	none	341	341	none	levitate
+DMG	ability_immune_flashfire	95	Fire	Special	0	none	0	0	0	100	183	348	Fire,Flying	0,0,0,0,0	none	noability	none	136	215	Dark,Fire	0,0,0,0,0	flashfire	0	0	charizard	houndoom	none	297	297	none	flashfire
+DMG	ability_immune_waterabsorb	95	Water	Special	0	none	0	0	0	100	167	306	Water	0,0,0,0,0	none	noability	none	156	248	Water	0,0,0,0,0	waterabsorb	0	0	suicune	vaporeon	none	341	341	none	waterabsorb
+DMG	ability_immune_voltabsorb	95	Electric	Special	0	none	0	0	0	100	149	350	Electric	0,0,0,0,0	none	noability	none	156	248	Electric	0,0,0,0,0	voltabsorb	0	0	jolteon	jolteon	none	271	271	none	voltabsorb
+DMG	thick_fat_ice	95	Ice	Special	0	none	0	0	0	100	167	328	Water,Psychic	0,0,0,0,0	none	noability	none	166	350	Normal	0,0,0,0,0	thickfat	38	32	starmie	snorlax	none	261	261	slp	thickfat
+DMG	choice_band	75	Rock	Physical	0	none	0	0	0	100	403	203	Rock,Dark	0,0,0,0,0	none	sandstream	choiceband	416	176	Steel,Flying	0,0,0,0,0	noability	139	118	tyranitar	skarmory	none	341	341	none	noability
+DMG	type_boost_item	95	Electric	Special	0	none	0	0	0	100	194	383	Electric,Flying	0,0,0,0,0	none	noability	magnet	56	405	Normal	0,0,0,0,0	noability	126	107	zapdos	blissey	none	321	321	none	noability
+DMG	sea_incense	95	Water	Special	0	none	0	0	0	100	167	306	Water	0,0,0,0,0	none	noability	seaincense	56	405	Normal	0,0,0,0,0	noability	97	82	suicune	blissey	none	341	341	none	noability
+DMG	burn_half_physical	75	Rock	Physical	0	none	0	0	0	100	403	203	Rock,Dark	0,0,0,0,0	brn	sandstream	none	416	156	Bug,Steel	0,0,0,0,0	sturdy	48	40	tyranitar	forretress	none	215	341	slp	sturdy
+DMG	reflect_physical	75	Rock	Physical	0	none	1	0	0	100	403	203	Rock,Dark	0,0,0,0,0	none	sandstream	none	416	176	Steel,Flying	0,0,0,0,0	noability	48	40	tyranitar	skarmory	none	341	341	none	noability
+DMG	lightscreen_special	95	Water	Special	0	none	0	1	0	100	167	328	Water,Psychic	0,0,0,0,0	par	noability	none	56	405	Normal	0,0,0,0,0	noability	51	43	starmie	blissey	none	261	261	none	noability
+DMG	rain_water_boost	95	Water	Special	0	rain	0	0	0	100	167	306	Water	0,0,0,0,0	none	noability	none	166	350	Normal	0,0,0,0,0	noability	157	133	suicune	snorlax	none	341	341	slp	noability
+DMG	sun_water_weaken	95	Water	Special	0	sun	0	0	0	100	167	306	Water	0,0,0,0,0	none	noability	none	166	350	Normal	0,0,0,0,0	noability	54	45	suicune	snorlax	none	341	341	slp	noability
+DMG	sun_fire_boost	95	Fire	Special	0	sun	0	0	0	100	183	348	Fire,Flying	0,0,0,0,0	none	noability	none	56	405	Normal	0,0,0,0,0	noability	156	132	charizard	blissey	none	297	297	none	noability
+DMG	rain_fire_weaken	95	Fire	Special	0	rain	0	0	0	100	183	348	Fire,Flying	0,0,0,0,0	none	noability	none	56	405	Normal	0,0,0,0,0	noability	54	45	charizard	blissey	none	297	297	none	noability
+DMG	plus2_atk	100	Ground	Physical	0	none	0	0	0	100	405	230	Dragon,Flying	2,0,0,0,0	none	noability	none	306	216	Water,Ground	0,0,0,0,0	noability	224	190	salamence	swampert	none	331	331	slp	noability
+DMG	plus2_spa	95	Water	Special	0	none	0	0	0	100	167	306	Water	0,0,1,1,0	none	noability	none	166	350	Normal	0,0,0,0,0	noability	159	135	suicune	snorlax	none	341	341	slp	noability
+DMG	defender_plus2_def	100	Ground	Physical	0	none	0	0	0	100	403	203	Rock,Dark	0,0,0,0,0	none	sandstream	none	347	156	Bug,Steel	0,2,0,0,0	sturdy	50	42	tyranitar	forretress	none	341	341	none	sturdy
+DMG	crit_ignores_defender_def	100	Ground	Physical	1	none	0	0	0	100	403	203	Rock,Dark	0,0,0,0,0	none	sandstream	none	347	156	Bug,Steel	0,2,0,0,0	sturdy	198	168	tyranitar	forretress	none	341	341	none	sturdy
+DMG	crit_bypasses_lightscreen	95	Water	Special	1	none	0	1	0	100	167	328	Water,Psychic	0,0,0,0,0	par	noability	none	56	405	Normal	0,0,0,0,0	noability	198	168	starmie	blissey	none	261	261	none	noability
+DMG	explosion_def_halve	200	Normal	Physical	0	none	0	0	1	100	350	149	Normal	0,0,0,0,0	none	noability	none	416	176	Steel,Flying	0,0,0,0,0	noability	213	181	snorlax	skarmory	none	0	461	none	noability
+DMG	min_vs_max_stats	35	Normal	Physical	0	none	0	0	0	100	130	59	Water	0,0,0,0,0	none	noability	none	614	496	Bug,Rock	0,0,0,0,0	noability	4	3	magikarp	shuckle	none	181	181	slp	noability
+DMG	low_level_attacker	85	Normal	Physical	0	none	0	0	0	50	178	76	Normal	0,0,0,0,0	none	noability	none	361	266	Water	0,0,0,0,0	noability	30	25	snorlax	suicune	none	235	235	none	noability
+DMG	pink_bow_normal	85	Normal	Physical	0	none	0	0	0	100	350	149	Normal	0,0,0,0,0	none	noability	pinkbow	361	266	Water	0,0,0,0,0	noability	115	97	snorlax	suicune	none	461	461	none	noability
+DMG	polkadot_bow_normal	85	Normal	Physical	0	none	0	0	0	100	328	104	Normal	0,0,0,0,0	none	noability	polkadotbow	361	266	Water	0,0,0,0,0	noability	108	91	tauros	suicune	none	291	291	slp	noability
+DMG	odd_incense_psychic	90	Psychic	Special	0	none	0	0	0	100	122	405	Psychic	0,0,0,0,0	none	noability	oddincense	266	361	Water	0,0,0,0,0	noability	154	130	alakazam	suicune	none	251	251	slp	noability
+DMG	rock_incense_rock	75	Rock	Physical	0	none	0	0	0	100	403	203	Rock,Dark	0,0,0,0,0	none	sandstream	rockincense	361	266	Water	0,0,0,0,0	noability	129	109	tyranitar	suicune	none	341	341	none	noability
+DMG	rose_incense_grass	70	Grass	Special	0	none	0	0	0	100	295	221	Grass	0,0,0,0,0	none	noability	roseincense	361	266	Water	0,0,0,0,0	noability	180	153	sceptile	suicune	none	281	281	slp	noability
+DMG	wave_incense_water	95	Water	Special	0	none	0	0	0	100	167	306	Water	0,0,0,0,0	none	noability	waveincense	56	405	Normal	0,0,0,0,0	noability	111	94	suicune	blissey	none	341	341	none	noability
+DMG	incense_wrong_type_control	80	Ghost	Physical	0	none	0	0	0	100	122	405	Psychic	0,0,0,0,0	none	noability	oddincense	266	361	Water	0,0,0,0,0	noability	32	27	alakazam	suicune	none	251	251	slp	noability
+DMG	thick_club_marowak	100	Ground	Physical	0	none	0	0	0	100	284	122	Ground	0,0,0,0,0	none	noability	thickclub	361	266	Water	0,0,0,0,0	noability	201	170	marowak	suicune	none	261	261	none	noability
+DMG	thick_club_wrong_species_control	100	Ground	Physical	0	none	0	0	0	100	350	149	Normal	0,0,0,0,0	none	noability	thickclub	361	266	Water	0,0,0,0,0	noability	83	70	snorlax	suicune	none	461	461	none	noability
+DMG	light_ball_pikachu_spa	95	Electric	Special	0	none	0	0	0	100	131	218	Electric	0,0,0,0,0	none	noability	lightball	56	405	Normal	0,0,0,0,0	noability	130	110	pikachu	blissey	none	211	211	none	noability
+DMG	light_ball_pikachu_atk_control	80	Normal	Physical	0	none	0	0	0	100	229	122	Electric	0,0,0,0,0	none	noability	lightball	361	266	Water	0,0,0,0,0	noability	44	37	pikachu	suicune	none	211	211	slp	noability
+DMG	deepseatooth_clamperl	95	Water	Special	0	none	0	0	0	100	147	271	Water	0,0,0,0,0	none	noability	deepseatooth	56	405	Normal	0,0,0,0,0	noability	162	137	clamperl	blissey	none	211	211	none	noability
+DMG	souldew_latios_spa	90	Psychic	Special	0	none	0	0	0	100	194	394	Dragon,Psychic	0,0,0,0,0	none	noability	souldew	56	405	Normal	0,0,0,0,0	noability	168	142	latios	blissey	none	301	301	none	noability
+DMG	deepseascale_clamperl_def	95	Water	Special	0	none	0	0	0	100	186	216	Water	0,0,0,0,0	none	noability	none	206	160	Water	0,0,0,0,0	noability	41	34	suicune	clamperl	deepseascale	341	341	slp	noability
+DMG	metalpowder_ditto_def	85	Normal	Physical	0	none	0	0	0	50	130	85	Normal	0,0,0,0,0	none	noability	none	145	132	Normal	0,0,0,0,0	noability	27	22	snorlax	ditto	metalpowder	235	235	none	noability
+DMG	souldew_latias_spd_def	95	Water	Special	0	none	0	0	0	100	167	306	Water	0,0,0,0,0	none	noability	none	216	325	Dragon,Psychic	0,0,0,0,0	noability	39	33	suicune	latias	souldew	341	341	none	noability
+DMG	deepseascale_wrong_species_def_control	95	Water	Special	0	none	0	0	0	100	167	306	Water	0,0,0,0,0	none	noability	none	56	405	Normal	0,0,0,0,0	noability	93	79	suicune	blissey	deepseascale	341	341	none	noability
+DMG	torrent_pinch_water	95	Water	Special	0	none	0	0	0	100	181	295	Water	0,0,0,0,0	none	torrent	none	166	350	Normal	0,0,0,0,0	noability	153	130	blastoise	snorlax	none	60	299	slp	noability
+DMG	torrent_fullhp_control	95	Water	Special	0	none	0	0	0	100	181	295	Water	0,0,0,0,0	none	torrent	none	166	350	Normal	0,0,0,0,0	noability	103	87	blastoise	snorlax	none	299	299	slp	noability
+DMG	torrent_wrongtype_pinch_control	95	Ice	Special	0	none	0	0	0	100	181	295	Water	0,0,0,0,0	none	torrent	none	166	350	Normal	0,0,0,0,0	noability	69	58	blastoise	snorlax	none	60	299	slp	noability
+DMG	blaze_pinch_fire	95	Fire	Special	0	none	0	0	0	100	183	348	Fire,Flying	0,0,0,0,0	none	blaze	none	166	350	Normal	0,0,0,0,0	noability	180	153	charizard	snorlax	none	59	297	slp	noability
+DMG	overgrow_pinch_grass	70	Grass	Special	0	none	0	0	0	100	295	221	Grass	0,0,0,0,0	none	overgrow	none	251	256	Normal	0,0,0,0,0	noability	117	99	sceptile	snorlax	none	56	281	slp	noability
+DMG	swarm_pinch_bug	120	Bug	Physical	0	none	0	0	0	100	383	104	Bug,Fighting	0,0,0,0,0	none	swarm	none	251	256	Normal	0,0,0,0,0	noability	348	295	heracross	snorlax	none	60	301	slp	noability
+DMG	huge_power_physical	85	Normal	Physical	0	none	0	0	0	100	218	122	Water	0,0,0,0,0	none	hugepower	none	251	256	Normal	0,0,0,0,0	noability	126	107	azumarill	snorlax	none	341	341	slp	noability
+DMG	huge_power_special_control	95	Water	Special	0	none	0	0	0	100	122	218	Water	0,0,0,0,0	none	hugepower	none	166	350	Normal	0,0,0,0,0	noability	76	64	azumarill	snorlax	none	341	341	slp	noability
+DMG	pure_power_physical	85	Normal	Physical	0	none	0	0	0	100	240	140	Fighting,Psychic	0,0,0,0,0	none	purepower	none	251	256	Normal	0,0,0,0,0	noability	138	117	medicham	snorlax	none	261	261	slp	noability
+DMG	guts_burned_physical	85	Normal	Physical	0	none	0	0	0	100	394	149	Fighting	0,0,0,0,0	brn	guts	none	251	256	Normal	0,0,0,0,0	noability	170	144	machamp	snorlax	none	281	321	slp	noability
+DMG	guts_paralyzed_physical	85	Normal	Physical	0	none	0	0	0	100	394	149	Fighting	0,0,0,0,0	par	guts	none	251	256	Normal	0,0,0,0,0	noability	170	144	machamp	snorlax	none	321	321	none	noability
+DMG	guts_unstatused_control	85	Normal	Physical	0	none	0	0	0	100	394	149	Fighting	0,0,0,0,0	none	guts	none	251	256	Normal	0,0,0,0,0	noability	114	96	machamp	snorlax	none	321	321	slp	noability
+DMG	nonguts_burned_control	85	Normal	Physical	0	none	0	0	0	100	394	149	Fighting	0,0,0,0,0	brn	noability	none	251	256	Normal	0,0,0,0,0	noability	58	49	machamp	snorlax	none	281	321	slp	noability
+DMG	marvel_scale_burned_def	85	Normal	Physical	0	none	0	0	0	100	350	149	Normal	0,0,0,0,0	none	noability	none	282	286	Water	0,0,0,0,0	marvelscale	91	77	snorlax	milotic	none	461	461	brn	marvelscale
+DMG	marvel_scale_unstatused_control	85	Normal	Physical	0	none	0	0	0	100	350	149	Normal	0,0,0,0,0	none	noability	none	282	286	Water	0,0,0,0,0	marvelscale	135	114	snorlax	milotic	none	461	461	none	marvelscale

@@ -1,0 +1,1115 @@
+# accuracy_golden.txt — the gen3_accuracy_pipeline_v1 ACCURACY class-sweep golden.
+# Per-decision-boundary STATE+HP+SEED differential to GAME-END, every wired acc class.
+# DRAW-RELEVANT: a hit/miss flip desyncs the SEED (the accuracy randomChance is drawn,
+# then crit/damage draws follow ONLY on a hit). The seedAfter column is the teeth.
+# SCEN  <id>
+# TEAM  <id>  <p1|p2>  <packed team string>
+# INIT  <id>  <seed>  <m,n,o,p>
+# DEC   <id> <seed> <req> <fP1> <fP2> <cP1> <cP2> <seedAfter> \
+#        p1(species hp max fnt status left) p2(...) first miss accMod
+# END   <id>  <seed>  <ended:0|1>  <winner:p1|p2|tie|none>
+SCEN	muddywater_stage_drop
+TEAM	muddywater_stage_drop	p1	Swampert|||NoAbility|muddywater,rest|Modest|252,,,252,,|N||||
+TEAM	muddywater_stage_drop	p2	Salamence|||NoAbility|crosschop,rest|Adamant|252,252,,,,|N||||
+INIT	muddywater_stage_drop	50192,7304,11753,24806	10728,47105,54950,10471
+DEC	muddywater_stage_drop	10728,47105,54950,10471	move	0	0	m0	m0	44471,8463,44847,64700	Swampert	404	404	0	-	1	Salamence	224	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	10728,47105,54950,10471	move	0	0	m0	m0	10325,62301,10926,17188	Swampert	265	404	0	-	1	Salamence	141	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	10728,47105,54950,10471	move	0	0	m0	m0	59081,56288,9646,17548	Swampert	130	404	0	-	1	Salamence	50	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	10728,47105,54950,10471	move	0	0	m0	m0	22081,15396,36058,32985	Swampert	0	404	1	-	0	Salamence	50	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	10728,47105,54950,10471	1	p2
+INIT	muddywater_stage_drop	42900,38714,32434,35186	64660,54077,46898,27779
+DEC	muddywater_stage_drop	64660,54077,46898,27779	move	0	0	m0	m0	62118,7672,13649,10010	Swampert	268	404	0	-	1	Salamence	311	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	64660,54077,46898,27779	move	0	0	m0	m0	19158,60140,25774,55234	Swampert	111	404	0	-	1	Salamence	222	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	64660,54077,46898,27779	move	0	0	m0	m0	2416,23212,63119,10616	Swampert	111	404	0	-	1	Salamence	136	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	64660,54077,46898,27779	move	0	0	m0	m0	42936,27675,61895,51605	Swampert	0	404	1	-	0	Salamence	136	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	64660,54077,46898,27779	1	p2
+INIT	muddywater_stage_drop	20182,34501,58048,44734	19968,26169,5246,19935
+DEC	muddywater_stage_drop	19968,26169,5246,19935	move	0	0	m0	m0	58367,4939,33638,7613	Swampert	263	404	0	-	1	Salamence	394	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	19968,26169,5246,19935	move	0	0	m0	m0	50875,9008,17447,57062	Swampert	0	404	1	-	0	Salamence	394	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	19968,26169,5246,19935	1	p2
+INIT	muddywater_stage_drop	29312,2109,29311,56522	18988,11509,64138,59643
+DEC	muddywater_stage_drop	18988,11509,64138,59643	move	0	0	m0	m0	6948,60099,18470,18290	Swampert	250	404	0	-	1	Salamence	308	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	18988,11509,64138,59643	move	0	0	m0	m0	19217,359,18915,9498	Swampert	91	404	0	-	1	Salamence	231	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	18988,11509,64138,59643	move	0	0	m0	m0	50333,46088,58717,12783	Swampert	0	404	1	-	0	Salamence	231	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	18988,11509,64138,59643	1	p2
+INIT	muddywater_stage_drop	27824,51273,34771,57238	56600,41841,13654,6615
+DEC	muddywater_stage_drop	56600,41841,13654,6615	move	0	0	m0	m0	43205,50960,53928,48364	Swampert	404	404	0	-	1	Salamence	313	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	56600,41841,13654,6615	move	0	0	m0	m0	41737,27157,20554,60756	Swampert	265	404	0	-	1	Salamence	235	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	56600,41841,13654,6615	move	0	0	m0	m0	41528,716,30823,11290	Swampert	265	404	0	-	1	Salamence	153	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	56600,41841,13654,6615	move	0	0	m0	m0	32337,57847,4077,15554	Swampert	124	404	0	-	1	Salamence	64	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	56600,41841,13654,6615	move	0	0	m0	m0	3880,12527,51404,55313	Swampert	124	404	0	-	1	Salamence	0	394	1	-	0	p2	1	0
+END	muddywater_stage_drop	56600,41841,13654,6615	1	p1
+INIT	muddywater_stage_drop	9650,19131,2368,17186	45764,1453,20706,31859
+DEC	muddywater_stage_drop	45764,1453,20706,31859	move	0	0	m0	m0	31501,13551,53147,6858	Swampert	245	404	0	-	1	Salamence	303	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	45764,1453,20706,31859	move	0	0	m0	m0	52798,34399,18636,14016	Swampert	245	404	0	-	1	Salamence	223	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	45764,1453,20706,31859	move	0	0	m0	m0	62923,41113,54712,17382	Swampert	245	404	0	-	1	Salamence	133	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	45764,1453,20706,31859	move	0	0	m0	m0	44004,27436,17357,5902	Swampert	94	404	0	-	1	Salamence	50	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	45764,1453,20706,31859	move	0	0	m0	m0	16750,57420,21224,15437	Swampert	94	404	0	-	1	Salamence	0	394	1	-	0	p2	1	0
+END	muddywater_stage_drop	45764,1453,20706,31859	1	p1
+INIT	muddywater_stage_drop	39297,18874,38235,21358	14128,20393,39214,27855
+DEC	muddywater_stage_drop	14128,20393,39214,27855	move	0	0	m0	m0	3119,32934,28584,23958	Swampert	269	404	0	-	1	Salamence	311	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	14128,20393,39214,27855	move	0	0	m0	m0	48375,32921,781,27326	Swampert	125	404	0	-	1	Salamence	220	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	14128,20393,39214,27855	move	0	0	m0	m0	15610,36512,3734,13187	Swampert	0	404	1	-	0	Salamence	220	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	14128,20393,39214,27855	1	p2
+INIT	muddywater_stage_drop	40577,55844,47916,7290	38492,15717,6714,1771
+DEC	muddywater_stage_drop	38492,15717,6714,1771	move	0	0	m0	m0	1802,11696,35537,51753	Swampert	257	404	0	-	1	Salamence	394	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	38492,15717,6714,1771	move	0	0	m0	m0	37998,63361,62448,54257	Swampert	116	404	0	-	1	Salamence	313	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	38492,15717,6714,1771	move	0	0	m0	m0	25775,34954,54979,13535	Swampert	116	404	0	-	1	Salamence	233	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	38492,15717,6714,1771	move	0	0	m0	m0	19782,58443,14013,64701	Swampert	116	404	0	-	1	Salamence	154	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	38492,15717,6714,1771	move	0	0	m0	m0	50825,12634,24104,16139	Swampert	116	404	0	-	1	Salamence	77	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	38492,15717,6714,1771	move	0	0	m0	m0	3723,60911,36431,46350	Swampert	116	404	0	-	1	Salamence	0	394	1	-	0	p2	1	0
+END	muddywater_stage_drop	38492,15717,6714,1771	1	p1
+INIT	muddywater_stage_drop	19753,39857,28869,27206	48200,19169,40966,9927
+DEC	muddywater_stage_drop	48200,19169,40966,9927	move	0	0	m0	m0	20961,42805,58187,20846	Swampert	252	404	0	-	1	Salamence	304	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	48200,19169,40966,9927	move	0	0	m0	m0	43438,57088,62048,33668	Swampert	252	404	0	-	1	Salamence	219	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	48200,19169,40966,9927	move	0	0	m0	m0	60043,40151,35152,22764	Swampert	100	404	0	-	1	Salamence	132	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	48200,19169,40966,9927	move	0	0	m0	m0	13054,34453,65415,43634	Swampert	100	404	0	-	1	Salamence	52	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	48200,19169,40966,9927	move	0	0	m0	m0	59229,11919,41640,18305	Swampert	100	404	0	-	1	Salamence	0	394	1	-	0	p2	1	0
+END	muddywater_stage_drop	48200,19169,40966,9927	1	p1
+INIT	muddywater_stage_drop	20029,43143,123,51410	21748,46109,46738,26723
+DEC	muddywater_stage_drop	21748,46109,46738,26723	move	0	0	m0	m0	44425,44448,16533,23162	Swampert	266	404	0	-	1	Salamence	303	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	21748,46109,46738,26723	move	0	0	m0	m0	10197,16328,7721,57385	Swampert	114	404	0	-	1	Salamence	303	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	21748,46109,46738,26723	move	0	0	m0	m0	22777,8287,531,32546	Swampert	0	404	1	-	0	Salamence	303	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	21748,46109,46738,26723	1	p2
+INIT	muddywater_stage_drop	63736,45114,37450,33822	52320,29977,43486,10175
+DEC	muddywater_stage_drop	52320,29977,43486,10175	move	0	0	m0	m0	61159,56877,10343,59462	Swampert	265	404	0	-	1	Salamence	304	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	52320,29977,43486,10175	move	0	0	m0	m0	7458,19324,54772,3950	Swampert	108	404	0	-	1	Salamence	224	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	52320,29977,43486,10175	move	0	0	m0	m0	46837,10786,14850,45444	Swampert	108	404	0	-	1	Salamence	145	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	52320,29977,43486,10175	move	0	0	m0	m0	6274,19311,42871,31985	Swampert	0	404	1	-	0	Salamence	145	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	52320,29977,43486,10175	1	p2
+INIT	muddywater_stage_drop	11765,48405,16029,43050	20108,18901,34282,32987
+DEC	muddywater_stage_drop	20108,18901,34282,32987	move	0	0	m0	m0	29516,31355,57513,34514	Swampert	265	404	0	-	1	Salamence	316	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	20108,18901,34282,32987	move	0	0	m0	m0	36583,1926,54945,22650	Swampert	118	404	0	-	1	Salamence	238	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	20108,18901,34282,32987	move	0	0	m0	m0	57899,31034,22605,54223	Swampert	0	404	1	-	0	Salamence	238	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	20108,18901,34282,32987	1	p2
+INIT	muddywater_stage_drop	5840,33781,59582,246	51064,44625,5814,20407
+DEC	muddywater_stage_drop	51064,44625,5814,20407	move	0	0	m0	m0	28603,62648,6725,33310	Swampert	266	404	0	-	1	Salamence	306	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	51064,44625,5814,20407	move	0	0	m0	m0	47767,10952,25305,9798	Swampert	120	404	0	-	1	Salamence	226	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	51064,44625,5814,20407	move	0	0	m0	m0	39428,5907,54580,34076	Swampert	120	404	0	-	1	Salamence	144	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	51064,44625,5814,20407	move	0	0	m0	m0	25081,10984,14770,2419	Swampert	120	404	0	-	1	Salamence	0	394	1	-	0	p2	1	0
+END	muddywater_stage_drop	51064,44625,5814,20407	1	p1
+INIT	muddywater_stage_drop	41573,10041,25701,6786	58148,56973,59458,12371
+DEC	muddywater_stage_drop	58148,56973,59458,12371	move	0	0	m0	m0	29897,25156,34879,58922	Swampert	258	404	0	-	1	Salamence	316	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	58148,56973,59458,12371	move	0	0	m0	m0	6787,1905,32794,1234	Swampert	111	404	0	-	1	Salamence	239	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	58148,56973,59458,12371	move	0	0	m0	m0	25277,28098,19380,52679	Swampert	0	404	1	-	0	Salamence	239	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	58148,56973,59458,12371	1	p2
+INIT	muddywater_stage_drop	63650,9805,25331,16590	3472,54921,18062,32431
+DEC	muddywater_stage_drop	3472,54921,18062,32431	move	0	0	m0	m0	62568,1420,37931,32502	Swampert	269	404	0	-	1	Salamence	315	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	3472,54921,18062,32431	move	0	0	m0	m0	25424,15430,44633,16414	Swampert	120	404	0	-	1	Salamence	232	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	3472,54921,18062,32431	move	0	0	m0	m0	34198,13418,47225,12131	Swampert	0	404	1	-	0	Salamence	232	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	3472,54921,18062,32431	1	p2
+INIT	muddywater_stage_drop	12801,50741,59914,32730	29372,21061,15770,22219
+DEC	muddywater_stage_drop	29372,21061,15770,22219	move	0	0	m0	m0	44715,55337,14436,55426	Swampert	257	404	0	-	1	Salamence	306	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	29372,21061,15770,22219	move	0	0	m0	m0	32118,18415,9939,57400	Swampert	257	404	0	-	1	Salamence	224	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	29372,21061,15770,22219	move	0	0	m0	m0	18810,1970,29339,3775	Swampert	98	404	0	-	1	Salamence	224	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	29372,21061,15770,22219	move	0	0	m0	m0	27101,5712,51060,58144	Swampert	0	404	1	-	0	Salamence	224	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	29372,21061,15770,22219	1	p2
+INIT	muddywater_stage_drop	6223,37856,61373,41894	65192,52673,39270,38055
+DEC	muddywater_stage_drop	65192,52673,39270,38055	move	0	0	m0	m0	2405,57302,29025,16078	Swampert	257	404	0	-	1	Salamence	314	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	65192,52673,39270,38055	move	0	0	m0	m0	43323,18297,30127,48374	Swampert	119	404	0	-	1	Salamence	230	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	65192,52673,39270,38055	move	0	0	m0	m0	7931,140,34768,7500	Swampert	119	404	0	-	1	Salamence	153	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	65192,52673,39270,38055	move	0	0	m0	m0	49112,21092,3384,44697	Swampert	0	404	1	-	0	Salamence	153	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	65192,52673,39270,38055	1	p2
+INIT	muddywater_stage_drop	44430,13017,48737,14386	23892,34045,58866,54339
+DEC	muddywater_stage_drop	23892,34045,58866,54339	move	0	0	m0	m0	22096,7332,52319,48602	Swampert	266	404	0	-	1	Salamence	315	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	23892,34045,58866,54339	move	0	0	m0	m0	11374,35314,14284,59145	Swampert	130	404	0	-	1	Salamence	315	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	23892,34045,58866,54339	move	0	0	m0	m0	13014,28481,35112,22146	Swampert	0	404	1	-	0	Salamence	315	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	23892,34045,58866,54339	1	p2
+INIT	muddywater_stage_drop	61370,51536,32240,35198	64192,29689,28478,29087
+DEC	muddywater_stage_drop	64192,29689,28478,29087	move	0	0	m0	m0	15151,21185,36142,8614	Swampert	266	404	0	-	1	Salamence	313	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	64192,29689,28478,29087	move	0	0	m0	m0	7750,5090,30231,64718	Swampert	111	404	0	-	1	Salamence	225	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	64192,29689,28478,29087	move	0	0	m0	m0	39050,57788,64918,41444	Swampert	111	404	0	-	1	Salamence	137	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	64192,29689,28478,29087	move	0	0	m0	m0	63864,56154,59244,2001	Swampert	0	404	1	-	0	Salamence	137	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	64192,29689,28478,29087	1	p2
+INIT	muddywater_stage_drop	41490,60147,18135,41866	748,22197,16714,35003
+DEC	muddywater_stage_drop	748,22197,16714,35003	move	0	0	m0	m0	47446,59792,63922,63026	Swampert	106	404	0	-	1	Salamence	314	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	748,22197,16714,35003	move	0	0	m0	m0	22914,6711,26837,62887	Swampert	0	404	1	-	0	Salamence	314	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	748,22197,16714,35003	1	p2
+INIT	muddywater_stage_drop	31127,47272,34244,21078	25048,43313,10262,62871
+DEC	muddywater_stage_drop	25048,43313,10262,62871	move	0	0	m0	m0	35663,7430,59550,34686	Swampert	249	404	0	-	1	Salamence	303	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	25048,43313,10262,62871	move	0	0	m0	m0	28683,54369,33522,24486	Swampert	94	404	0	-	1	Salamence	221	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	25048,43313,10262,62871	move	0	0	m0	m0	57405,19495,41251,8572	Swampert	94	404	0	-	1	Salamence	137	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	25048,43313,10262,62871	move	0	0	m0	m0	46292,43196,11395,20489	Swampert	0	404	1	-	0	Salamence	137	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	25048,43313,10262,62871	1	p2
+INIT	muddywater_stage_drop	57938,62296,64422,8674	50052,42861,44962,21555
+DEC	muddywater_stage_drop	50052,42861,44962,21555	move	0	0	m0	m0	27867,18736,49514,57738	Swampert	250	404	0	-	1	Salamence	309	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	50052,42861,44962,21555	move	0	0	m0	m0	33069,42961,8107,37535	Swampert	250	404	0	-	1	Salamence	309	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	50052,42861,44962,21555	move	0	0	m0	m0	39736,5340,2634,15271	Swampert	115	404	0	-	1	Salamence	225	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	50052,42861,44962,21555	move	0	0	m0	m0	18489,33461,6055,58728	Swampert	0	404	1	-	0	Salamence	225	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	50052,42861,44962,21555	1	p2
+INIT	muddywater_stage_drop	64416,4062,58178,24110	37872,19817,9198,143
+DEC	muddywater_stage_drop	37872,19817,9198,143	move	0	0	m0	m0	7994,40967,4975,53334	Swampert	106	404	0	-	1	Salamence	311	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	37872,19817,9198,143	move	0	0	m0	m0	12492,9229,16413,35259	Swampert	0	404	1	-	0	Salamence	311	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	37872,19817,9198,143	1	p2
+INIT	muddywater_stage_drop	62147,48965,52128,4922	65308,22309,37114,5803
+DEC	muddywater_stage_drop	65308,22309,37114,5803	move	0	0	m0	m0	3529,58602,65230,57314	Swampert	263	404	0	-	1	Salamence	313	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	65308,22309,37114,5803	move	0	0	m0	m0	36293,32917,38409,54935	Swampert	263	404	0	-	1	Salamence	313	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	65308,22309,37114,5803	move	0	0	m0	m0	33898,45938,12817,57226	Swampert	104	404	0	-	1	Salamence	313	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	65308,22309,37114,5803	move	0	0	m0	m0	33047,6210,65152,53632	Swampert	104	404	0	-	1	Salamence	138	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	65308,22309,37114,5803	move	0	0	m0	m0	5224,11156,27484,44669	Swampert	0	404	1	-	0	Salamence	138	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	65308,22309,37114,5803	1	p2
+INIT	muddywater_stage_drop	34642,39183,8557,3334	61704,16545,49862,29319
+DEC	muddywater_stage_drop	61704,16545,49862,29319	move	0	0	m0	m0	900,11787,23096,23598	Swampert	249	404	0	-	1	Salamence	314	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	61704,16545,49862,29319	move	0	0	m0	m0	12144,56038,8083,5427	Swampert	0	404	1	-	0	Salamence	314	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	61704,16545,49862,29319	1	p2
+INIT	muddywater_stage_drop	52761,16582,12029,55186	5556,17885,17746,45091
+DEC	muddywater_stage_drop	5556,17885,17746,45091	move	0	0	m0	m0	40365,31608,45803,20794	Swampert	249	404	0	-	1	Salamence	303	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	5556,17885,17746,45091	move	0	0	m0	m0	53990,27701,58312,24034	Swampert	98	404	0	-	1	Salamence	220	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	5556,17885,17746,45091	move	0	0	m0	m0	36291,1596,26966,7319	Swampert	0	404	1	-	0	Salamence	220	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	5556,17885,17746,45091	1	p2
+INIT	muddywater_stage_drop	5054,61285,7245,48862	55584,25305,25758,11135
+DEC	muddywater_stage_drop	55584,25305,25758,11135	move	0	0	m0	m0	29963,19965,46,55412	Swampert	404	404	0	-	1	Salamence	313	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	55584,25305,25758,11135	move	0	0	m0	m0	43861,37730,43939,49116	Swampert	265	404	0	-	1	Salamence	223	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	55584,25305,25758,11135	move	0	0	m0	m0	2157,28539,54651,16964	Swampert	119	404	0	-	1	Salamence	140	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	55584,25305,25758,11135	move	0	0	m0	m0	44331,63618,47421,33930	Swampert	119	404	0	-	1	Salamence	51	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	55584,25305,25758,11135	move	0	0	m0	m0	18122,63546,60715,41849	Swampert	119	404	0	-	1	Salamence	0	394	1	-	0	p2	1	0
+END	muddywater_stage_drop	55584,25305,25758,11135	1	p1
+INIT	muddywater_stage_drop	17266,9680,456,52970	26444,21397,11434,155
+DEC	muddywater_stage_drop	26444,21397,11434,155	move	0	0	m0	m0	26560,28218,28029,38290	Swampert	102	404	0	-	1	Salamence	317	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	26444,21397,11434,155	move	0	0	m0	m0	10330,3546,14792,54151	Swampert	0	404	1	-	0	Salamence	317	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	26444,21397,11434,155	1	p2
+INIT	muddywater_stage_drop	32315,36434,19484,54198	44088,37905,26998,2935
+DEC	muddywater_stage_drop	44088,37905,26998,2935	move	0	0	m0	m0	7512,35943,17182,6668	Swampert	404	404	0	-	1	Salamence	228	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	44088,37905,26998,2935	move	0	0	m0	m0	9549,49344,32543,61731	Swampert	247	404	0	-	1	Salamence	228	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	44088,37905,26998,2935	move	0	0	m0	m0	26959,40675,63689,9249	Swampert	247	404	0	-	1	Salamence	149	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	44088,37905,26998,2935	move	0	0	m0	m0	12898,17470,48330,18153	Swampert	93	404	0	-	1	Salamence	64	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	44088,37905,26998,2935	move	0	0	m0	m0	6772,51789,23304,49890	Swampert	0	404	1	-	0	Salamence	64	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	44088,37905,26998,2935	1	p2
+INIT	muddywater_stage_drop	56040,14462,52995,22850	21476,24653,42754,59411
+DEC	muddywater_stage_drop	21476,24653,42754,59411	move	0	0	m0	m0	15539,27917,23141,5880	Swampert	404	404	0	-	1	Salamence	314	394	0	-	1	p2	1	0
+DEC	muddywater_stage_drop	21476,24653,42754,59411	move	0	0	m0	m0	36254,27967,16189,480	Swampert	269	404	0	-	1	Salamence	237	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	21476,24653,42754,59411	move	0	0	m0	m0	25861,57787,50720,38856	Swampert	122	404	0	-	1	Salamence	159	394	0	-	1	p2	0	0
+DEC	muddywater_stage_drop	21476,24653,42754,59411	move	0	0	m0	m0	34394,17269,45866,57509	Swampert	0	404	1	-	0	Salamence	159	394	0	-	1	p2	0	0
+END	muddywater_stage_drop	21476,24653,42754,59411	1	p2
+SCEN	brightpowder_defender
+TEAM	brightpowder_defender	p1	Tauros|||NoAbility|crosschop,rest|Adamant|252,252,,,,|N||||
+TEAM	brightpowder_defender	p2	Snorlax||brightpowder|NoAbility|bodyslam,rest|Adamant|252,252,,,,|N||||
+INIT	brightpowder_defender	50192,7304,11753,24806	10728,47105,54950,10471
+DEC	brightpowder_defender	10728,47105,54950,10471	move	0	0	m0	m0	44471,8463,44847,64700	Tauros	42	354	0	par	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	brightpowder_defender	10728,47105,54950,10471	move	0	0	m0	m0	46201,6427,10224,43664	Tauros	0	354	1	par	0	Snorlax	524	524	0	-	1	p2	0	0
+END	brightpowder_defender	10728,47105,54950,10471	1	p2
+INIT	brightpowder_defender	42900,38714,32434,35186	64660,54077,46898,27779
+DEC	brightpowder_defender	64660,54077,46898,27779	move	0	0	m0	m0	62118,7672,13649,10010	Tauros	200	354	0	-	1	Snorlax	237	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	64660,54077,46898,27779	move	0	0	m0	m0	7260,3929,19466,27631	Tauros	200	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	64660,54077,46898,27779	1	p1
+INIT	brightpowder_defender	20182,34501,58048,44734	19968,26169,5246,19935
+DEC	brightpowder_defender	19968,26169,5246,19935	move	0	0	m0	m0	50875,9008,17447,57062	Tauros	186	354	0	par	1	Snorlax	227	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	19968,26169,5246,19935	move	0	0	m0	m0	39,65051,23870,55023	Tauros	25	354	0	par	1	Snorlax	227	524	0	-	1	p2	1	1
+DEC	brightpowder_defender	19968,26169,5246,19935	move	0	0	m0	m0	24220,37339,19203,32659	Tauros	0	354	1	par	0	Snorlax	227	524	0	-	1	p2	0	0
+END	brightpowder_defender	19968,26169,5246,19935	1	p2
+INIT	brightpowder_defender	29312,2109,29311,56522	18988,11509,64138,59643
+DEC	brightpowder_defender	18988,11509,64138,59643	move	0	0	m0	m0	6948,60099,18470,18290	Tauros	195	354	0	par	1	Snorlax	201	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	18988,11509,64138,59643	move	0	0	m0	m0	54787,45039,1400,45835	Tauros	27	354	0	par	1	Snorlax	201	524	0	-	1	p2	1	1
+DEC	brightpowder_defender	18988,11509,64138,59643	move	0	0	m0	m0	50333,46088,58717,12783	Tauros	0	354	1	par	0	Snorlax	201	524	0	-	1	p2	0	0
+END	brightpowder_defender	18988,11509,64138,59643	1	p2
+INIT	brightpowder_defender	27824,51273,34771,57238	56600,41841,13654,6615
+DEC	brightpowder_defender	56600,41841,13654,6615	move	0	0	m0	m0	43205,50960,53928,48364	Tauros	203	354	0	par	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	brightpowder_defender	56600,41841,13654,6615	move	0	0	m0	m0	10673,17581,27765,62397	Tauros	56	354	0	par	1	Snorlax	524	524	0	-	1	p2	1	1
+DEC	brightpowder_defender	56600,41841,13654,6615	move	0	0	m0	m0	17730,64404,23075,7041	Tauros	0	354	1	par	0	Snorlax	524	524	0	-	1	p2	0	0
+END	brightpowder_defender	56600,41841,13654,6615	1	p2
+INIT	brightpowder_defender	9650,19131,2368,17186	45764,1453,20706,31859
+DEC	brightpowder_defender	45764,1453,20706,31859	move	0	0	m0	m0	31501,13551,53147,6858	Tauros	186	354	0	-	1	Snorlax	190	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	45764,1453,20706,31859	move	0	0	m0	m0	52798,34399,18636,14016	Tauros	39	354	0	-	1	Snorlax	190	524	0	-	1	p1	1	1
+DEC	brightpowder_defender	45764,1453,20706,31859	move	0	0	m0	m0	65469,65457,25404,53223	Tauros	0	354	1	-	0	Snorlax	190	524	0	-	1	p1	1	1
+END	brightpowder_defender	45764,1453,20706,31859	1	p2
+INIT	brightpowder_defender	39297,18874,38235,21358	14128,20393,39214,27855
+DEC	brightpowder_defender	14128,20393,39214,27855	move	0	0	m0	m0	3119,32934,28584,23958	Tauros	200	354	0	-	1	Snorlax	241	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	14128,20393,39214,27855	move	0	0	m0	m0	36946,12923,9201,59899	Tauros	200	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	14128,20393,39214,27855	1	p1
+INIT	brightpowder_defender	40577,55844,47916,7290	38492,15717,6714,1771
+DEC	brightpowder_defender	38492,15717,6714,1771	move	0	0	m0	m0	47084,57595,52412,290	Tauros	18	354	0	-	1	Snorlax	214	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	38492,15717,6714,1771	move	0	0	m0	m0	41013,64648,58680,64215	Tauros	18	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	38492,15717,6714,1771	1	p1
+INIT	brightpowder_defender	19753,39857,28869,27206	48200,19169,40966,9927
+DEC	brightpowder_defender	48200,19169,40966,9927	move	0	0	m0	m0	20961,42805,58187,20846	Tauros	188	354	0	par	1	Snorlax	204	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	48200,19169,40966,9927	move	0	0	m0	m0	43438,57088,62048,33668	Tauros	32	354	0	par	1	Snorlax	204	524	0	-	1	p2	0	0
+DEC	brightpowder_defender	48200,19169,40966,9927	move	0	0	m0	m0	44450,25238,10547,38104	Tauros	0	354	1	par	0	Snorlax	204	524	0	-	1	p2	0	0
+END	brightpowder_defender	48200,19169,40966,9927	1	p2
+INIT	brightpowder_defender	20029,43143,123,51410	21748,46109,46738,26723
+DEC	brightpowder_defender	21748,46109,46738,26723	move	0	0	m0	m0	44425,44448,16533,23162	Tauros	186	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	21748,46109,46738,26723	move	0	0	m0	m0	19265,33622,31017,3535	Tauros	186	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	21748,46109,46738,26723	1	p1
+INIT	brightpowder_defender	63736,45114,37450,33822	52320,29977,43486,10175
+DEC	brightpowder_defender	52320,29977,43486,10175	move	0	0	m0	m0	61159,56877,10343,59462	Tauros	188	354	0	par	1	Snorlax	231	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	52320,29977,43486,10175	move	0	0	m0	m0	54738,38716,38966,30927	Tauros	22	354	0	par	1	Snorlax	231	524	0	-	1	p2	1	1
+DEC	brightpowder_defender	52320,29977,43486,10175	move	0	0	m0	m0	25226,22778,2519,50035	Tauros	0	354	1	par	0	Snorlax	231	524	0	-	1	p2	0	0
+END	brightpowder_defender	52320,29977,43486,10175	1	p2
+INIT	brightpowder_defender	11765,48405,16029,43050	20108,18901,34282,32987
+DEC	brightpowder_defender	20108,18901,34282,32987	move	0	0	m0	m0	29516,31355,57513,34514	Tauros	210	354	0	-	1	Snorlax	231	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	20108,18901,34282,32987	move	0	0	m0	m0	29628,20633,36973,34759	Tauros	210	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	20108,18901,34282,32987	1	p1
+INIT	brightpowder_defender	5840,33781,59582,246	51064,44625,5814,20407
+DEC	brightpowder_defender	51064,44625,5814,20407	move	0	0	m0	m0	28603,62648,6725,33310	Tauros	192	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	51064,44625,5814,20407	move	0	0	m0	m0	52807,56262,4335,1460	Tauros	35	354	0	par	1	Snorlax	234	524	0	-	1	p1	1	1
+DEC	brightpowder_defender	51064,44625,5814,20407	move	0	0	m0	m0	52570,52901,42185,54280	Tauros	0	354	1	par	0	Snorlax	234	524	0	-	1	p2	0	0
+END	brightpowder_defender	51064,44625,5814,20407	1	p2
+INIT	brightpowder_defender	41573,10041,25701,6786	58148,56973,59458,12371
+DEC	brightpowder_defender	58148,56973,59458,12371	move	0	0	m0	m0	29897,25156,34879,58922	Tauros	210	354	0	-	1	Snorlax	217	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	58148,56973,59458,12371	move	0	0	m0	m0	31375,52017,3308,18623	Tauros	210	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	58148,56973,59458,12371	1	p1
+INIT	brightpowder_defender	63650,9805,25331,16590	3472,54921,18062,32431
+DEC	brightpowder_defender	3472,54921,18062,32431	move	0	0	m0	m0	55349,15725,25493,1508	Tauros	200	354	0	par	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	brightpowder_defender	3472,54921,18062,32431	move	0	0	m0	m0	56019,45482,6692,13247	Tauros	49	354	0	par	1	Snorlax	217	524	0	-	1	p2	0	1
+DEC	brightpowder_defender	3472,54921,18062,32431	move	0	0	m0	m0	34198,13418,47225,12131	Tauros	0	354	1	par	0	Snorlax	217	524	0	-	1	p2	0	0
+END	brightpowder_defender	3472,54921,18062,32431	1	p2
+INIT	brightpowder_defender	12801,50741,59914,32730	29372,21061,15770,22219
+DEC	brightpowder_defender	29372,21061,15770,22219	move	0	0	m0	m0	44715,55337,14436,55426	Tauros	192	354	0	-	1	Snorlax	214	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	29372,21061,15770,22219	move	0	0	m0	m0	32118,18415,9939,57400	Tauros	40	354	0	-	1	Snorlax	214	524	0	-	1	p1	1	1
+DEC	brightpowder_defender	29372,21061,15770,22219	move	0	0	m0	m0	1122,13707,33010,7509	Tauros	40	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	29372,21061,15770,22219	1	p1
+INIT	brightpowder_defender	6223,37856,61373,41894	65192,52673,39270,38055
+DEC	brightpowder_defender	65192,52673,39270,38055	move	0	0	m0	m0	2405,57302,29025,16078	Tauros	207	354	0	-	1	Snorlax	214	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	65192,52673,39270,38055	move	0	0	m0	m0	32466,54974,44022,29668	Tauros	51	354	0	par	1	Snorlax	214	524	0	-	1	p1	1	1
+DEC	brightpowder_defender	65192,52673,39270,38055	move	0	0	m0	m0	19062,27169,63746,16184	Tauros	0	354	1	par	0	Snorlax	214	524	0	-	1	p2	0	0
+END	brightpowder_defender	65192,52673,39270,38055	1	p2
+INIT	brightpowder_defender	44430,13017,48737,14386	23892,34045,58866,54339
+DEC	brightpowder_defender	23892,34045,58866,54339	move	0	0	m0	m0	22096,7332,52319,48602	Tauros	208	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	23892,34045,58866,54339	move	0	0	m0	m0	61016,17244,36771,8111	Tauros	208	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	23892,34045,58866,54339	1	p1
+INIT	brightpowder_defender	61370,51536,32240,35198	64192,29689,28478,29087
+DEC	brightpowder_defender	64192,29689,28478,29087	move	0	0	m0	m0	15151,21185,36142,8614	Tauros	203	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	64192,29689,28478,29087	move	0	0	m0	m0	10565,55387,39416,55243	Tauros	203	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	64192,29689,28478,29087	1	p1
+INIT	brightpowder_defender	41490,60147,18135,41866	748,22197,16714,35003
+DEC	brightpowder_defender	748,22197,16714,35003	move	0	0	m0	m0	25057,51816,38356,35999	Tauros	354	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	748,22197,16714,35003	1	p1
+INIT	brightpowder_defender	31127,47272,34244,21078	25048,43313,10262,62871
+DEC	brightpowder_defender	25048,43313,10262,62871	move	0	0	m0	m0	35663,7430,59550,34686	Tauros	186	354	0	-	1	Snorlax	197	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	25048,43313,10262,62871	move	0	0	m0	m0	10553,5948,64093,5443	Tauros	186	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	25048,43313,10262,62871	1	p1
+INIT	brightpowder_defender	57938,62296,64422,8674	50052,42861,44962,21555
+DEC	brightpowder_defender	50052,42861,44962,21555	move	0	0	m0	m0	27867,18736,49514,57738	Tauros	197	354	0	par	1	Snorlax	201	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	50052,42861,44962,21555	move	0	0	m0	m0	24269,25985,11427,24643	Tauros	43	354	0	par	1	Snorlax	201	524	0	-	1	p2	1	1
+DEC	brightpowder_defender	50052,42861,44962,21555	move	0	0	m0	m0	39736,5340,2634,15271	Tauros	0	354	1	par	0	Snorlax	201	524	0	-	1	p2	0	0
+END	brightpowder_defender	50052,42861,44962,21555	1	p2
+INIT	brightpowder_defender	64416,4062,58178,24110	37872,19817,9198,143
+DEC	brightpowder_defender	37872,19817,9198,143	move	0	0	m0	m0	25256,15868,41708,20275	Tauros	354	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	37872,19817,9198,143	1	p1
+INIT	brightpowder_defender	62147,48965,52128,4922	65308,22309,37114,5803
+DEC	brightpowder_defender	65308,22309,37114,5803	move	0	0	m0	m0	3529,58602,65230,57314	Tauros	203	354	0	par	1	Snorlax	227	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	65308,22309,37114,5803	move	0	0	m0	m0	33898,45938,12817,57226	Tauros	49	354	0	par	1	Snorlax	0	524	1	-	0	p2	0	1
+END	brightpowder_defender	65308,22309,37114,5803	1	p1
+INIT	brightpowder_defender	34642,39183,8557,3334	61704,16545,49862,29319
+DEC	brightpowder_defender	61704,16545,49862,29319	move	0	0	m0	m0	900,11787,23096,23598	Tauros	207	354	0	-	1	Snorlax	197	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	61704,16545,49862,29319	move	0	0	m0	m0	40467,50688,40003,5188	Tauros	48	354	0	par	1	Snorlax	197	524	0	-	1	p1	1	1
+DEC	brightpowder_defender	61704,16545,49862,29319	move	0	0	m0	m0	2196,17723,252,39320	Tauros	0	354	1	par	0	Snorlax	197	524	0	-	1	p2	0	0
+END	brightpowder_defender	61704,16545,49862,29319	1	p2
+INIT	brightpowder_defender	52761,16582,12029,55186	5556,17885,17746,45091
+DEC	brightpowder_defender	5556,17885,17746,45091	move	0	0	m0	m0	40365,31608,45803,20794	Tauros	186	354	0	-	1	Snorlax	197	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	5556,17885,17746,45091	move	0	0	m0	m0	22653,15510,40615,41359	Tauros	186	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	5556,17885,17746,45091	1	p1
+INIT	brightpowder_defender	5054,61285,7245,48862	55584,25305,25758,11135
+DEC	brightpowder_defender	55584,25305,25758,11135	move	0	0	m0	m0	29963,19965,46,55412	Tauros	203	354	0	-	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	brightpowder_defender	55584,25305,25758,11135	move	0	0	m0	m0	43861,37730,43939,49116	Tauros	37	354	0	-	1	Snorlax	231	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	55584,25305,25758,11135	move	0	0	m0	m0	33752,61136,59384,37097	Tauros	37	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	55584,25305,25758,11135	1	p1
+INIT	brightpowder_defender	17266,9680,456,52970	26444,21397,11434,155
+DEC	brightpowder_defender	26444,21397,11434,155	move	0	0	m0	m0	21487,28728,5679,18047	Tauros	354	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	26444,21397,11434,155	1	p1
+INIT	brightpowder_defender	32315,36434,19484,54198	44088,37905,26998,2935
+DEC	brightpowder_defender	44088,37905,26998,2935	move	0	0	m0	m0	7512,35943,17182,6668	Tauros	49	354	0	-	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	brightpowder_defender	44088,37905,26998,2935	move	0	0	m0	m0	42889,10008,65316,58973	Tauros	0	354	1	-	0	Snorlax	194	524	0	-	1	p1	0	1
+END	brightpowder_defender	44088,37905,26998,2935	1	p2
+INIT	brightpowder_defender	56040,14462,52995,22850	21476,24653,42754,59411
+DEC	brightpowder_defender	21476,24653,42754,59411	move	0	0	m0	m0	15539,27917,23141,5880	Tauros	207	354	0	-	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	brightpowder_defender	21476,24653,42754,59411	move	0	0	m0	m0	36254,27967,16189,480	Tauros	65	354	0	-	1	Snorlax	241	524	0	-	1	p1	0	1
+DEC	brightpowder_defender	21476,24653,42754,59411	move	0	0	m0	m0	29735,12401,60352,31069	Tauros	65	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	brightpowder_defender	21476,24653,42754,59411	1	p1
+SCEN	laxincense_defender
+TEAM	laxincense_defender	p1	Tauros|||NoAbility|crosschop,rest|Adamant|252,252,,,,|N||||
+TEAM	laxincense_defender	p2	Snorlax||laxincense|NoAbility|bodyslam,rest|Adamant|252,252,,,,|N||||
+INIT	laxincense_defender	50192,7304,11753,24806	10728,47105,54950,10471
+DEC	laxincense_defender	10728,47105,54950,10471	move	0	0	m0	m0	44471,8463,44847,64700	Tauros	42	354	0	par	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	laxincense_defender	10728,47105,54950,10471	move	0	0	m0	m0	46201,6427,10224,43664	Tauros	0	354	1	par	0	Snorlax	524	524	0	-	1	p2	0	0
+END	laxincense_defender	10728,47105,54950,10471	1	p2
+INIT	laxincense_defender	42900,38714,32434,35186	64660,54077,46898,27779
+DEC	laxincense_defender	64660,54077,46898,27779	move	0	0	m0	m0	62118,7672,13649,10010	Tauros	200	354	0	-	1	Snorlax	237	524	0	-	1	p1	0	1
+DEC	laxincense_defender	64660,54077,46898,27779	move	0	0	m0	m0	7260,3929,19466,27631	Tauros	200	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	64660,54077,46898,27779	1	p1
+INIT	laxincense_defender	20182,34501,58048,44734	19968,26169,5246,19935
+DEC	laxincense_defender	19968,26169,5246,19935	move	0	0	m0	m0	50875,9008,17447,57062	Tauros	186	354	0	par	1	Snorlax	227	524	0	-	1	p1	0	1
+DEC	laxincense_defender	19968,26169,5246,19935	move	0	0	m0	m0	39,65051,23870,55023	Tauros	25	354	0	par	1	Snorlax	227	524	0	-	1	p2	1	1
+DEC	laxincense_defender	19968,26169,5246,19935	move	0	0	m0	m0	24220,37339,19203,32659	Tauros	0	354	1	par	0	Snorlax	227	524	0	-	1	p2	0	0
+END	laxincense_defender	19968,26169,5246,19935	1	p2
+INIT	laxincense_defender	29312,2109,29311,56522	18988,11509,64138,59643
+DEC	laxincense_defender	18988,11509,64138,59643	move	0	0	m0	m0	6948,60099,18470,18290	Tauros	195	354	0	par	1	Snorlax	201	524	0	-	1	p1	0	1
+DEC	laxincense_defender	18988,11509,64138,59643	move	0	0	m0	m0	54787,45039,1400,45835	Tauros	27	354	0	par	1	Snorlax	201	524	0	-	1	p2	1	1
+DEC	laxincense_defender	18988,11509,64138,59643	move	0	0	m0	m0	50333,46088,58717,12783	Tauros	0	354	1	par	0	Snorlax	201	524	0	-	1	p2	0	0
+END	laxincense_defender	18988,11509,64138,59643	1	p2
+INIT	laxincense_defender	27824,51273,34771,57238	56600,41841,13654,6615
+DEC	laxincense_defender	56600,41841,13654,6615	move	0	0	m0	m0	43205,50960,53928,48364	Tauros	203	354	0	par	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	laxincense_defender	56600,41841,13654,6615	move	0	0	m0	m0	10673,17581,27765,62397	Tauros	56	354	0	par	1	Snorlax	524	524	0	-	1	p2	1	1
+DEC	laxincense_defender	56600,41841,13654,6615	move	0	0	m0	m0	17730,64404,23075,7041	Tauros	0	354	1	par	0	Snorlax	524	524	0	-	1	p2	0	0
+END	laxincense_defender	56600,41841,13654,6615	1	p2
+INIT	laxincense_defender	9650,19131,2368,17186	45764,1453,20706,31859
+DEC	laxincense_defender	45764,1453,20706,31859	move	0	0	m0	m0	31501,13551,53147,6858	Tauros	186	354	0	-	1	Snorlax	190	524	0	-	1	p1	0	1
+DEC	laxincense_defender	45764,1453,20706,31859	move	0	0	m0	m0	52798,34399,18636,14016	Tauros	39	354	0	-	1	Snorlax	190	524	0	-	1	p1	1	1
+DEC	laxincense_defender	45764,1453,20706,31859	move	0	0	m0	m0	65469,65457,25404,53223	Tauros	0	354	1	-	0	Snorlax	190	524	0	-	1	p1	1	1
+END	laxincense_defender	45764,1453,20706,31859	1	p2
+INIT	laxincense_defender	39297,18874,38235,21358	14128,20393,39214,27855
+DEC	laxincense_defender	14128,20393,39214,27855	move	0	0	m0	m0	3119,32934,28584,23958	Tauros	200	354	0	-	1	Snorlax	241	524	0	-	1	p1	0	1
+DEC	laxincense_defender	14128,20393,39214,27855	move	0	0	m0	m0	36946,12923,9201,59899	Tauros	200	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	14128,20393,39214,27855	1	p1
+INIT	laxincense_defender	40577,55844,47916,7290	38492,15717,6714,1771
+DEC	laxincense_defender	38492,15717,6714,1771	move	0	0	m0	m0	47084,57595,52412,290	Tauros	18	354	0	-	1	Snorlax	214	524	0	-	1	p1	0	1
+DEC	laxincense_defender	38492,15717,6714,1771	move	0	0	m0	m0	41013,64648,58680,64215	Tauros	18	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	38492,15717,6714,1771	1	p1
+INIT	laxincense_defender	19753,39857,28869,27206	48200,19169,40966,9927
+DEC	laxincense_defender	48200,19169,40966,9927	move	0	0	m0	m0	20961,42805,58187,20846	Tauros	188	354	0	par	1	Snorlax	204	524	0	-	1	p1	0	1
+DEC	laxincense_defender	48200,19169,40966,9927	move	0	0	m0	m0	43438,57088,62048,33668	Tauros	32	354	0	par	1	Snorlax	204	524	0	-	1	p2	0	0
+DEC	laxincense_defender	48200,19169,40966,9927	move	0	0	m0	m0	44450,25238,10547,38104	Tauros	0	354	1	par	0	Snorlax	204	524	0	-	1	p2	0	0
+END	laxincense_defender	48200,19169,40966,9927	1	p2
+INIT	laxincense_defender	20029,43143,123,51410	21748,46109,46738,26723
+DEC	laxincense_defender	21748,46109,46738,26723	move	0	0	m0	m0	44425,44448,16533,23162	Tauros	186	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	1
+DEC	laxincense_defender	21748,46109,46738,26723	move	0	0	m0	m0	19265,33622,31017,3535	Tauros	186	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	21748,46109,46738,26723	1	p1
+INIT	laxincense_defender	63736,45114,37450,33822	52320,29977,43486,10175
+DEC	laxincense_defender	52320,29977,43486,10175	move	0	0	m0	m0	61159,56877,10343,59462	Tauros	188	354	0	par	1	Snorlax	231	524	0	-	1	p1	0	1
+DEC	laxincense_defender	52320,29977,43486,10175	move	0	0	m0	m0	7458,19324,54772,3950	Tauros	22	354	0	par	1	Snorlax	0	524	1	-	0	p2	0	1
+END	laxincense_defender	52320,29977,43486,10175	1	p1
+INIT	laxincense_defender	11765,48405,16029,43050	20108,18901,34282,32987
+DEC	laxincense_defender	20108,18901,34282,32987	move	0	0	m0	m0	29516,31355,57513,34514	Tauros	210	354	0	-	1	Snorlax	231	524	0	-	1	p1	0	1
+DEC	laxincense_defender	20108,18901,34282,32987	move	0	0	m0	m0	29628,20633,36973,34759	Tauros	210	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	20108,18901,34282,32987	1	p1
+INIT	laxincense_defender	5840,33781,59582,246	51064,44625,5814,20407
+DEC	laxincense_defender	51064,44625,5814,20407	move	0	0	m0	m0	28603,62648,6725,33310	Tauros	192	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	1
+DEC	laxincense_defender	51064,44625,5814,20407	move	0	0	m0	m0	52807,56262,4335,1460	Tauros	35	354	0	par	1	Snorlax	234	524	0	-	1	p1	1	1
+DEC	laxincense_defender	51064,44625,5814,20407	move	0	0	m0	m0	52570,52901,42185,54280	Tauros	0	354	1	par	0	Snorlax	234	524	0	-	1	p2	0	0
+END	laxincense_defender	51064,44625,5814,20407	1	p2
+INIT	laxincense_defender	41573,10041,25701,6786	58148,56973,59458,12371
+DEC	laxincense_defender	58148,56973,59458,12371	move	0	0	m0	m0	29897,25156,34879,58922	Tauros	210	354	0	-	1	Snorlax	217	524	0	-	1	p1	0	1
+DEC	laxincense_defender	58148,56973,59458,12371	move	0	0	m0	m0	31375,52017,3308,18623	Tauros	210	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	58148,56973,59458,12371	1	p1
+INIT	laxincense_defender	63650,9805,25331,16590	3472,54921,18062,32431
+DEC	laxincense_defender	3472,54921,18062,32431	move	0	0	m0	m0	55349,15725,25493,1508	Tauros	200	354	0	par	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	laxincense_defender	3472,54921,18062,32431	move	0	0	m0	m0	56019,45482,6692,13247	Tauros	49	354	0	par	1	Snorlax	217	524	0	-	1	p2	0	1
+DEC	laxincense_defender	3472,54921,18062,32431	move	0	0	m0	m0	34198,13418,47225,12131	Tauros	0	354	1	par	0	Snorlax	217	524	0	-	1	p2	0	0
+END	laxincense_defender	3472,54921,18062,32431	1	p2
+INIT	laxincense_defender	12801,50741,59914,32730	29372,21061,15770,22219
+DEC	laxincense_defender	29372,21061,15770,22219	move	0	0	m0	m0	44715,55337,14436,55426	Tauros	192	354	0	-	1	Snorlax	214	524	0	-	1	p1	0	1
+DEC	laxincense_defender	29372,21061,15770,22219	move	0	0	m0	m0	32118,18415,9939,57400	Tauros	40	354	0	-	1	Snorlax	214	524	0	-	1	p1	1	1
+DEC	laxincense_defender	29372,21061,15770,22219	move	0	0	m0	m0	1122,13707,33010,7509	Tauros	40	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	29372,21061,15770,22219	1	p1
+INIT	laxincense_defender	6223,37856,61373,41894	65192,52673,39270,38055
+DEC	laxincense_defender	65192,52673,39270,38055	move	0	0	m0	m0	2405,57302,29025,16078	Tauros	207	354	0	-	1	Snorlax	214	524	0	-	1	p1	0	1
+DEC	laxincense_defender	65192,52673,39270,38055	move	0	0	m0	m0	32466,54974,44022,29668	Tauros	51	354	0	par	1	Snorlax	214	524	0	-	1	p1	1	1
+DEC	laxincense_defender	65192,52673,39270,38055	move	0	0	m0	m0	19062,27169,63746,16184	Tauros	0	354	1	par	0	Snorlax	214	524	0	-	1	p2	0	0
+END	laxincense_defender	65192,52673,39270,38055	1	p2
+INIT	laxincense_defender	44430,13017,48737,14386	23892,34045,58866,54339
+DEC	laxincense_defender	23892,34045,58866,54339	move	0	0	m0	m0	22096,7332,52319,48602	Tauros	208	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	1
+DEC	laxincense_defender	23892,34045,58866,54339	move	0	0	m0	m0	61016,17244,36771,8111	Tauros	208	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	23892,34045,58866,54339	1	p1
+INIT	laxincense_defender	61370,51536,32240,35198	64192,29689,28478,29087
+DEC	laxincense_defender	64192,29689,28478,29087	move	0	0	m0	m0	15151,21185,36142,8614	Tauros	203	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	1
+DEC	laxincense_defender	64192,29689,28478,29087	move	0	0	m0	m0	10565,55387,39416,55243	Tauros	203	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	64192,29689,28478,29087	1	p1
+INIT	laxincense_defender	41490,60147,18135,41866	748,22197,16714,35003
+DEC	laxincense_defender	748,22197,16714,35003	move	0	0	m0	m0	25057,51816,38356,35999	Tauros	354	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	748,22197,16714,35003	1	p1
+INIT	laxincense_defender	31127,47272,34244,21078	25048,43313,10262,62871
+DEC	laxincense_defender	25048,43313,10262,62871	move	0	0	m0	m0	35663,7430,59550,34686	Tauros	186	354	0	-	1	Snorlax	197	524	0	-	1	p1	0	1
+DEC	laxincense_defender	25048,43313,10262,62871	move	0	0	m0	m0	10553,5948,64093,5443	Tauros	186	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	25048,43313,10262,62871	1	p1
+INIT	laxincense_defender	57938,62296,64422,8674	50052,42861,44962,21555
+DEC	laxincense_defender	50052,42861,44962,21555	move	0	0	m0	m0	27867,18736,49514,57738	Tauros	197	354	0	par	1	Snorlax	201	524	0	-	1	p1	0	1
+DEC	laxincense_defender	50052,42861,44962,21555	move	0	0	m0	m0	24269,25985,11427,24643	Tauros	43	354	0	par	1	Snorlax	201	524	0	-	1	p2	1	1
+DEC	laxincense_defender	50052,42861,44962,21555	move	0	0	m0	m0	39736,5340,2634,15271	Tauros	0	354	1	par	0	Snorlax	201	524	0	-	1	p2	0	0
+END	laxincense_defender	50052,42861,44962,21555	1	p2
+INIT	laxincense_defender	64416,4062,58178,24110	37872,19817,9198,143
+DEC	laxincense_defender	37872,19817,9198,143	move	0	0	m0	m0	25256,15868,41708,20275	Tauros	354	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	37872,19817,9198,143	1	p1
+INIT	laxincense_defender	62147,48965,52128,4922	65308,22309,37114,5803
+DEC	laxincense_defender	65308,22309,37114,5803	move	0	0	m0	m0	3529,58602,65230,57314	Tauros	203	354	0	par	1	Snorlax	227	524	0	-	1	p1	0	1
+DEC	laxincense_defender	65308,22309,37114,5803	move	0	0	m0	m0	33898,45938,12817,57226	Tauros	49	354	0	par	1	Snorlax	0	524	1	-	0	p2	0	1
+END	laxincense_defender	65308,22309,37114,5803	1	p1
+INIT	laxincense_defender	34642,39183,8557,3334	61704,16545,49862,29319
+DEC	laxincense_defender	61704,16545,49862,29319	move	0	0	m0	m0	900,11787,23096,23598	Tauros	207	354	0	-	1	Snorlax	197	524	0	-	1	p1	0	1
+DEC	laxincense_defender	61704,16545,49862,29319	move	0	0	m0	m0	40467,50688,40003,5188	Tauros	48	354	0	par	1	Snorlax	197	524	0	-	1	p1	1	1
+DEC	laxincense_defender	61704,16545,49862,29319	move	0	0	m0	m0	2196,17723,252,39320	Tauros	0	354	1	par	0	Snorlax	197	524	0	-	1	p2	0	0
+END	laxincense_defender	61704,16545,49862,29319	1	p2
+INIT	laxincense_defender	52761,16582,12029,55186	5556,17885,17746,45091
+DEC	laxincense_defender	5556,17885,17746,45091	move	0	0	m0	m0	40365,31608,45803,20794	Tauros	186	354	0	-	1	Snorlax	197	524	0	-	1	p1	0	1
+DEC	laxincense_defender	5556,17885,17746,45091	move	0	0	m0	m0	22653,15510,40615,41359	Tauros	186	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	5556,17885,17746,45091	1	p1
+INIT	laxincense_defender	5054,61285,7245,48862	55584,25305,25758,11135
+DEC	laxincense_defender	55584,25305,25758,11135	move	0	0	m0	m0	29963,19965,46,55412	Tauros	203	354	0	-	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	laxincense_defender	55584,25305,25758,11135	move	0	0	m0	m0	43861,37730,43939,49116	Tauros	37	354	0	-	1	Snorlax	231	524	0	-	1	p1	0	1
+DEC	laxincense_defender	55584,25305,25758,11135	move	0	0	m0	m0	33752,61136,59384,37097	Tauros	37	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	55584,25305,25758,11135	1	p1
+INIT	laxincense_defender	17266,9680,456,52970	26444,21397,11434,155
+DEC	laxincense_defender	26444,21397,11434,155	move	0	0	m0	m0	21487,28728,5679,18047	Tauros	354	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	26444,21397,11434,155	1	p1
+INIT	laxincense_defender	32315,36434,19484,54198	44088,37905,26998,2935
+DEC	laxincense_defender	44088,37905,26998,2935	move	0	0	m0	m0	7512,35943,17182,6668	Tauros	49	354	0	-	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	laxincense_defender	44088,37905,26998,2935	move	0	0	m0	m0	42889,10008,65316,58973	Tauros	0	354	1	-	0	Snorlax	194	524	0	-	1	p1	0	1
+END	laxincense_defender	44088,37905,26998,2935	1	p2
+INIT	laxincense_defender	56040,14462,52995,22850	21476,24653,42754,59411
+DEC	laxincense_defender	21476,24653,42754,59411	move	0	0	m0	m0	15539,27917,23141,5880	Tauros	207	354	0	-	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	laxincense_defender	21476,24653,42754,59411	move	0	0	m0	m0	36254,27967,16189,480	Tauros	65	354	0	-	1	Snorlax	241	524	0	-	1	p1	0	1
+DEC	laxincense_defender	21476,24653,42754,59411	move	0	0	m0	m0	29735,12401,60352,31069	Tauros	65	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	laxincense_defender	21476,24653,42754,59411	1	p1
+SCEN	compoundeyes_attacker
+TEAM	compoundeyes_attacker	p1	Butterfree|||CompoundEyes|thunder,rest|Modest|252,,,252,,|N||||
+TEAM	compoundeyes_attacker	p2	Blissey|||NoAbility|softboiled,seismictoss|Calm|252,,,,252,|N||||
+INIT	compoundeyes_attacker	50192,7304,11753,24806	10728,47105,54950,10471
+DEC	compoundeyes_attacker	10728,47105,54950,10471	move	0	0	m0	m1	44471,8463,44847,64700	Butterfree	224	324	0	-	1	Blissey	642	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	10728,47105,54950,10471	move	0	0	m0	m0	34525,35439,63312,63891	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	10728,47105,54950,10471	move	0	0	m0	m1	64041,37201,36651,44049	Butterfree	124	324	0	-	1	Blissey	644	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	10728,47105,54950,10471	move	0	0	m0	m0	59081,56288,9646,17548	Butterfree	124	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	10728,47105,54950,10471	move	0	0	m0	m1	16442,43590,456,39698	Butterfree	24	324	0	-	1	Blissey	646	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	10728,47105,54950,10471	move	0	0	m0	m0	58568,15748,5527,9377	Butterfree	24	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	10728,47105,54950,10471	move	0	0	m0	m1	60042,45818,6182,55055	Butterfree	0	324	1	-	0	Blissey	651	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	10728,47105,54950,10471	1	p2
+INIT	compoundeyes_attacker	42900,38714,32434,35186	64660,54077,46898,27779
+DEC	compoundeyes_attacker	64660,54077,46898,27779	move	0	0	m0	m1	32014,41110,46159,36107	Butterfree	224	324	0	-	1	Blissey	653	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64660,54077,46898,27779	move	0	0	m0	m0	48246,29419,57396,23484	Butterfree	224	324	0	-	1	Blissey	653	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	64660,54077,46898,27779	move	0	0	m0	m1	65093,10877,2278,36941	Butterfree	124	324	0	-	1	Blissey	587	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64660,54077,46898,27779	move	0	0	m0	m0	10200,65008,42523,13083	Butterfree	124	324	0	-	1	Blissey	519	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64660,54077,46898,27779	move	0	0	m0	m1	1812,48913,44342,20735	Butterfree	24	324	0	-	1	Blissey	519	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	64660,54077,46898,27779	move	0	0	m0	m0	47864,45780,62696,49629	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64660,54077,46898,27779	move	0	0	m0	m1	57774,45936,61664,13611	Butterfree	0	324	1	-	0	Blissey	649	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	64660,54077,46898,27779	1	p2
+INIT	compoundeyes_attacker	20182,34501,58048,44734	19968,26169,5246,19935
+DEC	compoundeyes_attacker	19968,26169,5246,19935	move	0	0	m0	m1	733,3332,2437,32596	Butterfree	224	324	0	-	1	Blissey	650	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	19968,26169,5246,19935	move	0	0	m0	m0	20442,8189,30295,43019	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	19968,26169,5246,19935	move	0	0	m0	m1	59502,59704,24051,47248	Butterfree	124	324	0	-	1	Blissey	651	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	19968,26169,5246,19935	move	0	0	m0	m0	64826,11790,47264,43062	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	19968,26169,5246,19935	move	0	0	m0	m1	18711,59262,21705,64511	Butterfree	24	324	0	-	1	Blissey	653	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	19968,26169,5246,19935	move	0	0	m0	m0	10395,43437,49198,34013	Butterfree	24	324	0	-	1	Blissey	584	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	19968,26169,5246,19935	move	0	0	m0	m1	53098,55729,12734,53291	Butterfree	0	324	1	-	0	Blissey	522	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	19968,26169,5246,19935	1	p2
+INIT	compoundeyes_attacker	29312,2109,29311,56522	18988,11509,64138,59643
+DEC	compoundeyes_attacker	18988,11509,64138,59643	move	0	0	m0	m1	23366,41090,19331,35008	Butterfree	224	324	0	-	1	Blissey	645	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	18988,11509,64138,59643	move	0	0	m0	m0	19255,46116,36442,42470	Butterfree	224	324	0	-	1	Blissey	579	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	18988,11509,64138,59643	move	0	0	m0	m1	7313,64632,56178,43452	Butterfree	224	324	0	-	1	Blissey	517	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	18988,11509,64138,59643	move	0	0	m0	m0	29224,42649,31703,5570	Butterfree	224	324	0	-	1	Blissey	455	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	18988,11509,64138,59643	move	0	0	m0	m1	10440,54606,48718,55579	Butterfree	124	324	0	-	1	Blissey	388	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	18988,11509,64138,59643	move	0	0	m0	m0	38591,54327,22043,45452	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	18988,11509,64138,59643	move	0	0	m0	m1	23087,22882,37133,47069	Butterfree	24	324	0	-	1	Blissey	650	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	18988,11509,64138,59643	move	0	0	m0	m0	57739,44634,53374,23339	Butterfree	24	324	0	-	1	Blissey	589	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	18988,11509,64138,59643	move	0	0	m0	m1	16869,52006,38085,20585	Butterfree	0	324	1	-	0	Blissey	528	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	18988,11509,64138,59643	1	p2
+INIT	compoundeyes_attacker	27824,51273,34771,57238	56600,41841,13654,6615
+DEC	compoundeyes_attacker	56600,41841,13654,6615	move	0	0	m0	m1	40226,64420,30550,41979	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	1	1
+DEC	compoundeyes_attacker	56600,41841,13654,6615	move	0	0	m0	m0	16907,43973,52338,44222	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	56600,41841,13654,6615	move	0	0	m0	m1	41737,27157,20554,60756	Butterfree	124	324	0	-	1	Blissey	647	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	56600,41841,13654,6615	move	0	0	m0	m0	58861,10817,24367,44555	Butterfree	124	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	56600,41841,13654,6615	move	0	0	m0	m1	19859,23361,57504,12873	Butterfree	24	324	0	-	1	Blissey	653	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	56600,41841,13654,6615	move	0	0	m0	m0	7704,19578,49914,24356	Butterfree	24	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	56600,41841,13654,6615	move	0	0	m0	m1	9094,44150,28577,5147	Butterfree	0	324	1	-	0	Blissey	642	714	0	-	1	p1	0	1
+END	compoundeyes_attacker	56600,41841,13654,6615	1	p2
+INIT	compoundeyes_attacker	9650,19131,2368,17186	45764,1453,20706,31859
+DEC	compoundeyes_attacker	45764,1453,20706,31859	move	0	0	m0	m1	695,18955,59744,2008	Butterfree	224	324	0	-	1	Blissey	642	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	45764,1453,20706,31859	move	0	0	m0	m0	51850,14465,58472,46014	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	45764,1453,20706,31859	move	0	0	m0	m1	15849,25808,63727,50546	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	45764,1453,20706,31859	move	0	0	m0	m0	65469,65457,25404,53223	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	45764,1453,20706,31859	move	0	0	m0	m1	23323,32511,24460,39179	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	45764,1453,20706,31859	move	0	0	m0	m0	51080,2971,2761,13641	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	45764,1453,20706,31859	move	0	0	m0	m1	12118,1464,56576,18167	Butterfree	0	324	1	-	0	Blissey	650	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	45764,1453,20706,31859	1	p2
+INIT	compoundeyes_attacker	39297,18874,38235,21358	14128,20393,39214,27855
+DEC	compoundeyes_attacker	14128,20393,39214,27855	move	0	0	m0	m1	31096,29497,47567,49111	Butterfree	224	324	0	-	1	Blissey	653	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	14128,20393,39214,27855	move	0	0	m0	m0	16722,11576,24023,44405	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	14128,20393,39214,27855	move	0	0	m0	m1	11512,9337,53135,3186	Butterfree	124	324	0	-	1	Blissey	650	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	14128,20393,39214,27855	move	0	0	m0	m0	3380,54499,1964,53160	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	14128,20393,39214,27855	move	0	0	m0	m1	61052,28676,24401,43081	Butterfree	24	324	0	-	1	Blissey	651	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	14128,20393,39214,27855	move	0	0	m0	m0	1423,15300,21635,4599	Butterfree	24	324	0	-	1	Blissey	589	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	14128,20393,39214,27855	move	0	0	m0	m1	26536,10349,54501,55445	Butterfree	0	324	1	-	0	Blissey	524	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	14128,20393,39214,27855	1	p2
+INIT	compoundeyes_attacker	40577,55844,47916,7290	38492,15717,6714,1771
+DEC	compoundeyes_attacker	38492,15717,6714,1771	move	0	0	m0	m1	1148,54051,56634,20976	Butterfree	224	324	0	-	1	Blissey	648	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	38492,15717,6714,1771	move	0	0	m0	m0	41013,64648,58680,64215	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	38492,15717,6714,1771	move	0	0	m0	m1	45509,44005,40419,32885	Butterfree	124	324	0	-	1	Blissey	653	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	38492,15717,6714,1771	move	0	0	m0	m0	25775,34954,54979,13535	Butterfree	124	324	0	-	1	Blissey	714	714	0	-	1	p1	1	1
+DEC	compoundeyes_attacker	38492,15717,6714,1771	move	0	0	m0	m1	19782,58443,14013,64701	Butterfree	24	324	0	-	1	Blissey	653	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	38492,15717,6714,1771	move	0	0	m0	m0	29774,20400,5781,16040	Butterfree	24	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	38492,15717,6714,1771	move	0	0	m0	m1	28227,55322,58635,65007	Butterfree	0	324	1	-	0	Blissey	648	714	0	-	1	p1	0	1
+END	compoundeyes_attacker	38492,15717,6714,1771	1	p2
+INIT	compoundeyes_attacker	19753,39857,28869,27206	48200,19169,40966,9927
+DEC	compoundeyes_attacker	48200,19169,40966,9927	move	0	0	m0	m1	2270,4981,22365,37583	Butterfree	224	324	0	-	1	Blissey	645	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	48200,19169,40966,9927	move	0	0	m0	m0	13588,32101,13630,58925	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	48200,19169,40966,9927	move	0	0	m0	m1	19411,60019,34746,40906	Butterfree	124	324	0	-	1	Blissey	645	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	48200,19169,40966,9927	move	0	0	m0	m0	45559,54767,14655,9152	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	48200,19169,40966,9927	move	0	0	m0	m1	59229,11919,41640,18305	Butterfree	24	324	0	-	1	Blissey	651	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	48200,19169,40966,9927	move	0	0	m0	m0	39889,8901,54708,2287	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	48200,19169,40966,9927	move	0	0	m0	m1	51394,16946,20874,21837	Butterfree	0	324	1	-	0	Blissey	646	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	48200,19169,40966,9927	1	p2
+INIT	compoundeyes_attacker	20029,43143,123,51410	21748,46109,46738,26723
+DEC	compoundeyes_attacker	21748,46109,46738,26723	move	0	0	m0	m1	60814,2315,5897,27883	Butterfree	224	324	0	-	1	Blissey	652	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21748,46109,46738,26723	move	0	0	m0	m0	10197,16328,7721,57385	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21748,46109,46738,26723	move	0	0	m0	m1	20148,26692,52427,17046	Butterfree	124	324	0	-	1	Blissey	578	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21748,46109,46738,26723	move	0	0	m0	m0	48081,43044,46061,63468	Butterfree	124	324	0	-	1	Blissey	513	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21748,46109,46738,26723	move	0	0	m0	m1	27240,10471,16060,370	Butterfree	124	324	0	-	1	Blissey	369	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21748,46109,46738,26723	move	0	0	m0	m0	11405,12363,2068,44200	Butterfree	124	324	0	-	1	Blissey	659	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21748,46109,46738,26723	move	0	0	m0	m1	58014,29011,6260,41289	Butterfree	24	324	0	-	1	Blissey	594	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21748,46109,46738,26723	move	0	0	m0	m0	8399,6213,29194,4855	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21748,46109,46738,26723	move	0	0	m0	m1	51862,65214,44771,8597	Butterfree	24	324	0	-	1	Blissey	653	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21748,46109,46738,26723	move	0	0	m0	m0	35679,41601,23938,4259	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21748,46109,46738,26723	move	0	0	m0	m1	46539,36389,45125,8097	Butterfree	0	324	1	-	0	Blissey	645	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	21748,46109,46738,26723	1	p2
+INIT	compoundeyes_attacker	63736,45114,37450,33822	52320,29977,43486,10175
+DEC	compoundeyes_attacker	52320,29977,43486,10175	move	0	0	m0	m1	6689,48670,47448,38836	Butterfree	224	324	0	-	1	Blissey	651	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	52320,29977,43486,10175	move	0	0	m0	m0	4985,20112,37754,34795	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	52320,29977,43486,10175	move	0	0	m0	m1	50453,14164,55732,37673	Butterfree	124	324	0	-	1	Blissey	650	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	52320,29977,43486,10175	move	0	0	m0	m0	46837,10786,14850,45444	Butterfree	124	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	52320,29977,43486,10175	move	0	0	m0	m1	29394,63320,64633,39285	Butterfree	24	324	0	-	1	Blissey	643	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	52320,29977,43486,10175	move	0	0	m0	m0	36414,49661,19690,32643	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	52320,29977,43486,10175	move	0	0	m0	m1	50374,37810,60837,46932	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	52320,29977,43486,10175	move	0	0	m0	m0	20535,49091,57014,50714	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	52320,29977,43486,10175	move	0	0	m0	m1	35585,36783,30913,28816	Butterfree	0	324	1	-	0	Blissey	648	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	52320,29977,43486,10175	1	p2
+INIT	compoundeyes_attacker	11765,48405,16029,43050	20108,18901,34282,32987
+DEC	compoundeyes_attacker	20108,18901,34282,32987	move	0	0	m0	m1	60158,56803,7323,50976	Butterfree	224	324	0	-	1	Blissey	651	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	20108,18901,34282,32987	move	0	0	m0	m0	29516,31355,57513,34514	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	1	1
+DEC	compoundeyes_attacker	20108,18901,34282,32987	move	0	0	m0	m1	58352,34896,9972,62728	Butterfree	124	324	0	-	1	Blissey	648	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	20108,18901,34282,32987	move	0	0	m0	m0	57899,31034,22605,54223	Butterfree	124	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	20108,18901,34282,32987	move	0	0	m0	m1	15031,4273,11623,36996	Butterfree	24	324	0	-	1	Blissey	653	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	20108,18901,34282,32987	move	0	0	m0	m0	25846,32412,41251,21706	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	20108,18901,34282,32987	move	0	0	m0	m1	1038,53749,11568,49344	Butterfree	0	324	1	-	0	Blissey	651	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	20108,18901,34282,32987	1	p2
+INIT	compoundeyes_attacker	5840,33781,59582,246	51064,44625,5814,20407
+DEC	compoundeyes_attacker	51064,44625,5814,20407	move	0	0	m0	m1	39588,54853,40636,19903	Butterfree	224	324	0	-	1	Blissey	652	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	51064,44625,5814,20407	move	0	0	m0	m0	18499,51375,4996,21661	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	51064,44625,5814,20407	move	0	0	m0	m1	39286,39426,59825,24442	Butterfree	124	324	0	-	1	Blissey	650	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	51064,44625,5814,20407	move	0	0	m0	m0	16087,7240,44084,27888	Butterfree	124	324	0	-	1	Blissey	584	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	51064,44625,5814,20407	move	0	0	m0	m1	60919,29617,41769,29425	Butterfree	24	324	0	-	1	Blissey	512	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	51064,44625,5814,20407	move	0	0	m0	m0	40166,18252,12330,35807	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	51064,44625,5814,20407	move	0	0	m0	m1	41253,53062,13831,52157	Butterfree	0	324	1	-	0	Blissey	647	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	51064,44625,5814,20407	1	p2
+INIT	compoundeyes_attacker	41573,10041,25701,6786	58148,56973,59458,12371
+DEC	compoundeyes_attacker	58148,56973,59458,12371	move	0	0	m0	m1	61199,21016,52066,45624	Butterfree	224	324	0	-	1	Blissey	648	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	58148,56973,59458,12371	move	0	0	m0	m0	31375,52017,3308,18623	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	58148,56973,59458,12371	move	0	0	m0	m1	18405,5358,12476,59293	Butterfree	124	324	0	-	1	Blissey	653	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	58148,56973,59458,12371	move	0	0	m0	m0	54669,50796,1036,58120	Butterfree	124	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	58148,56973,59458,12371	move	0	0	m0	m1	9860,44411,46804,54382	Butterfree	124	324	0	-	1	Blissey	644	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	58148,56973,59458,12371	move	0	0	m0	m0	22049,31642,59152,56964	Butterfree	124	324	0	-	1	Blissey	577	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	58148,56973,59458,12371	move	0	0	m0	m1	37722,31742,49082,41589	Butterfree	24	324	0	-	1	Blissey	511	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	58148,56973,59458,12371	move	0	0	m0	m0	17395,39938,55524,4227	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	58148,56973,59458,12371	move	0	0	m0	m1	40895,60417,48039,22145	Butterfree	0	324	1	-	0	Blissey	643	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	58148,56973,59458,12371	1	p2
+INIT	compoundeyes_attacker	63650,9805,25331,16590	3472,54921,18062,32431
+DEC	compoundeyes_attacker	3472,54921,18062,32431	move	0	0	m0	m1	55349,15725,25493,1508	Butterfree	224	324	0	-	1	Blissey	653	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	3472,54921,18062,32431	move	0	0	m0	m0	9995,40370,48735,3370	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	3472,54921,18062,32431	move	0	0	m0	m1	34198,13418,47225,12131	Butterfree	124	324	0	-	1	Blissey	652	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	3472,54921,18062,32431	move	0	0	m0	m0	43301,40802,1759,25697	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	3472,54921,18062,32431	move	0	0	m0	m1	19020,27543,49435,52078	Butterfree	24	324	0	-	1	Blissey	648	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	3472,54921,18062,32431	move	0	0	m0	m0	60139,61409,59103,19844	Butterfree	24	324	0	-	1	Blissey	576	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	3472,54921,18062,32431	move	0	0	m0	m1	30770,3570,32590,14794	Butterfree	0	324	1	-	0	Blissey	507	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	3472,54921,18062,32431	1	p2
+INIT	compoundeyes_attacker	12801,50741,59914,32730	29372,21061,15770,22219
+DEC	compoundeyes_attacker	29372,21061,15770,22219	move	0	0	m0	m1	13325,16066,16909,59472	Butterfree	224	324	0	-	1	Blissey	648	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	29372,21061,15770,22219	move	0	0	m0	m0	8820,43404,49500,12471	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	29372,21061,15770,22219	move	0	0	m0	m1	1122,13707,33010,7509	Butterfree	124	324	0	-	1	Blissey	648	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	29372,21061,15770,22219	move	0	0	m0	m0	41205,51263,62640,23139	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	29372,21061,15770,22219	move	0	0	m0	m1	20353,14056,19446,37128	Butterfree	24	324	0	-	1	Blissey	649	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	29372,21061,15770,22219	move	0	0	m0	m0	41012,20628,33819,29294	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	29372,21061,15770,22219	move	0	0	m0	m1	34588,51029,47607,60548	Butterfree	24	324	0	-	1	Blissey	652	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	29372,21061,15770,22219	move	0	0	m0	m0	64943,27978,21397,37066	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	29372,21061,15770,22219	move	0	0	m0	m1	8283,10236,22859,56512	Butterfree	0	324	1	-	0	Blissey	649	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	29372,21061,15770,22219	1	p2
+INIT	compoundeyes_attacker	6223,37856,61373,41894	65192,52673,39270,38055
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m1	56579,39934,64099,42159	Butterfree	224	324	0	-	1	Blissey	648	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m0	4980,35549,1862,16141	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m1	64392,7460,40523,27434	Butterfree	124	324	0	-	1	Blissey	650	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m0	33410,18462,57122,25120	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m1	41574,49927,51792,23137	Butterfree	24	324	0	-	1	Blissey	647	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m0	26168,51732,12907,43727	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m1	12523,53266,15379,48685	Butterfree	24	324	0	-	1	Blissey	653	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m0	23984,33567,25361,34811	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m1	49861,25215,36235,30649	Butterfree	24	324	0	-	1	Blissey	645	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m0	55896,60863,25785,41586	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m1	28242,2461,11941,38312	Butterfree	24	324	0	-	1	Blissey	651	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m0	30175,37015,6602,33806	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	65192,52673,39270,38055	move	0	0	m0	m1	16816,46993,11536,45860	Butterfree	0	324	1	-	0	Blissey	642	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	65192,52673,39270,38055	1	p2
+INIT	compoundeyes_attacker	44430,13017,48737,14386	23892,34045,58866,54339
+DEC	compoundeyes_attacker	23892,34045,58866,54339	move	0	0	m0	m1	64644,10655,51941,48331	Butterfree	224	324	0	-	1	Blissey	652	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	23892,34045,58866,54339	move	0	0	m0	m0	11374,35314,14284,59145	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	23892,34045,58866,54339	move	0	0	m0	m1	11838,64314,37968,25590	Butterfree	124	324	0	-	1	Blissey	645	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	23892,34045,58866,54339	move	0	0	m0	m0	1715,63379,47569,48204	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	23892,34045,58866,54339	move	0	0	m0	m1	58361,47016,42012,37789	Butterfree	24	324	0	-	1	Blissey	647	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	23892,34045,58866,54339	move	0	0	m0	m0	30308,32075,24803,34027	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	23892,34045,58866,54339	move	0	0	m0	m1	63414,33494,9514,47145	Butterfree	24	324	0	-	1	Blissey	573	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	23892,34045,58866,54339	move	0	0	m0	m0	31711,41599,62904,55511	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	23892,34045,58866,54339	move	0	0	m0	m1	52295,6012,10242,23512	Butterfree	0	324	1	-	0	Blissey	714	714	0	par	1	p1	1	1
+END	compoundeyes_attacker	23892,34045,58866,54339	1	p2
+INIT	compoundeyes_attacker	61370,51536,32240,35198	64192,29689,28478,29087
+DEC	compoundeyes_attacker	64192,29689,28478,29087	move	0	0	m0	m1	33755,24716,29004,15015	Butterfree	224	324	0	-	1	Blissey	652	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64192,29689,28478,29087	move	0	0	m0	m0	50033,58473,31113,4805	Butterfree	224	324	0	-	1	Blissey	587	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64192,29689,28478,29087	move	0	0	m0	m1	47012,22817,40649,30547	Butterfree	224	324	0	-	1	Blissey	516	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64192,29689,28478,29087	move	0	0	m0	m0	63864,56154,59244,2001	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64192,29689,28478,29087	move	0	0	m0	m1	18029,16307,16150,64542	Butterfree	124	324	0	-	1	Blissey	651	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64192,29689,28478,29087	move	0	0	m0	m0	62106,46666,49846,53172	Butterfree	124	324	0	-	1	Blissey	585	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64192,29689,28478,29087	move	0	0	m0	m1	28401,19000,51477,63866	Butterfree	124	324	0	-	1	Blissey	517	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64192,29689,28478,29087	move	0	0	m0	m0	32353,64884,31664,22256	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64192,29689,28478,29087	move	0	0	m0	m1	60232,35803,50146,59780	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	64192,29689,28478,29087	move	0	0	m0	m0	46714,11135,56349,46538	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	64192,29689,28478,29087	move	0	0	m0	m1	35595,14609,46676,27072	Butterfree	0	324	1	-	0	Blissey	652	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	64192,29689,28478,29087	1	p2
+INIT	compoundeyes_attacker	41490,60147,18135,41866	748,22197,16714,35003
+DEC	compoundeyes_attacker	748,22197,16714,35003	move	0	0	m0	m1	52487,46784,12637,46464	Butterfree	224	324	0	-	1	Blissey	647	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	748,22197,16714,35003	move	0	0	m0	m0	44365,47190,2199,59558	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	748,22197,16714,35003	move	0	0	m0	m1	26055,33598,4805,12924	Butterfree	224	324	0	-	1	Blissey	645	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	748,22197,16714,35003	move	0	0	m0	m0	40522,23660,65198,38018	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	748,22197,16714,35003	move	0	0	m0	m1	58047,22558,40195,39131	Butterfree	124	324	0	-	1	Blissey	646	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	748,22197,16714,35003	move	0	0	m0	m0	22420,27652,37984,34713	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	748,22197,16714,35003	move	0	0	m0	m1	63126,44851,43383,42822	Butterfree	24	324	0	-	1	Blissey	653	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	748,22197,16714,35003	move	0	0	m0	m0	12454,10629,63461,19996	Butterfree	24	324	0	-	1	Blissey	591	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	748,22197,16714,35003	move	0	0	m0	m1	9083,15743,37871,13602	Butterfree	0	324	1	-	0	Blissey	528	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	748,22197,16714,35003	1	p2
+INIT	compoundeyes_attacker	31127,47272,34244,21078	25048,43313,10262,62871
+DEC	compoundeyes_attacker	25048,43313,10262,62871	move	0	0	m0	m1	29589,15071,27219,38815	Butterfree	224	324	0	-	1	Blissey	644	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	25048,43313,10262,62871	move	0	0	m0	m0	46152,24477,4228,42365	Butterfree	224	324	0	-	1	Blissey	575	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	25048,43313,10262,62871	move	0	0	m0	m1	31691,26670,42376,49882	Butterfree	124	324	0	-	1	Blissey	509	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	25048,43313,10262,62871	move	0	0	m0	m0	18347,1248,39506,12463	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	25048,43313,10262,62871	move	0	0	m0	m1	63219,60564,56116,11021	Butterfree	124	324	0	-	1	Blissey	651	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	25048,43313,10262,62871	move	0	0	m0	m0	19390,53507,42342,54235	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	25048,43313,10262,62871	move	0	0	m0	m1	12127,62768,29635,15904	Butterfree	24	324	0	-	1	Blissey	651	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	25048,43313,10262,62871	move	0	0	m0	m0	46446,24276,44618,40518	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	25048,43313,10262,62871	move	0	0	m0	m1	61848,27097,20895,48412	Butterfree	0	324	1	-	0	Blissey	650	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	25048,43313,10262,62871	1	p2
+INIT	compoundeyes_attacker	57938,62296,64422,8674	50052,42861,44962,21555
+DEC	compoundeyes_attacker	50052,42861,44962,21555	move	0	0	m0	m1	5402,28341,41211,61115	Butterfree	224	324	0	-	1	Blissey	645	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	50052,42861,44962,21555	move	0	0	m0	m0	22310,61511,14581,17529	Butterfree	224	324	0	-	1	Blissey	584	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	50052,42861,44962,21555	move	0	0	m0	m1	31410,55308,10277,14461	Butterfree	124	324	0	-	1	Blissey	584	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	50052,42861,44962,21555	move	0	0	m0	m0	24862,61314,21760,51403	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	50052,42861,44962,21555	move	0	0	m0	m1	5212,35068,47467,21257	Butterfree	124	324	0	-	1	Blissey	651	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	50052,42861,44962,21555	move	0	0	m0	m0	49280,64948,15583,17079	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	50052,42861,44962,21555	move	0	0	m0	m1	287,34646,44445,6220	Butterfree	24	324	0	-	1	Blissey	648	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	50052,42861,44962,21555	move	0	0	m0	m0	40702,20854,16923,31954	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	50052,42861,44962,21555	move	0	0	m0	m1	8007,32038,12168,6920	Butterfree	0	324	1	-	0	Blissey	649	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	50052,42861,44962,21555	1	p2
+INIT	compoundeyes_attacker	64416,4062,58178,24110	37872,19817,9198,143
+DEC	compoundeyes_attacker	37872,19817,9198,143	move	0	0	m0	m1	35756,38595,38169,42564	Butterfree	224	324	0	-	1	Blissey	647	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	37872,19817,9198,143	move	0	0	m0	m0	12492,9229,16413,35259	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	37872,19817,9198,143	move	0	0	m0	m1	16285,50832,47060,30585	Butterfree	124	324	0	-	1	Blissey	646	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	37872,19817,9198,143	move	0	0	m0	m0	12516,19309,48328,39747	Butterfree	124	324	0	-	1	Blissey	714	714	0	-	1	p1	1	1
+DEC	compoundeyes_attacker	37872,19817,9198,143	move	0	0	m0	m1	28747,8059,5257,64532	Butterfree	24	324	0	-	1	Blissey	714	714	0	-	1	p1	1	1
+DEC	compoundeyes_attacker	37872,19817,9198,143	move	0	0	m0	m0	35477,11554,4565,41931	Butterfree	24	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	37872,19817,9198,143	move	0	0	m0	m1	13866,4455,59879,50697	Butterfree	0	324	1	-	0	Blissey	653	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	37872,19817,9198,143	1	p2
+INIT	compoundeyes_attacker	62147,48965,52128,4922	65308,22309,37114,5803
+DEC	compoundeyes_attacker	65308,22309,37114,5803	move	0	0	m0	m1	42432,26795,1726,11952	Butterfree	224	324	0	-	1	Blissey	650	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	65308,22309,37114,5803	move	0	0	m0	m0	36293,32917,38409,54935	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	65308,22309,37114,5803	move	0	0	m0	m1	56380,61718,42650,43573	Butterfree	124	324	0	-	1	Blissey	642	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	65308,22309,37114,5803	move	0	0	m0	m0	33047,6210,65152,53632	Butterfree	124	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	65308,22309,37114,5803	move	0	0	m0	m1	61003,9761,24418,58534	Butterfree	24	324	0	-	1	Blissey	572	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	65308,22309,37114,5803	move	0	0	m0	m0	24085,45356,19052,4549	Butterfree	24	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	65308,22309,37114,5803	move	0	0	m0	m1	3834,20822,23387,45487	Butterfree	0	324	1	-	0	Blissey	714	714	0	-	1	p1	1	1
+END	compoundeyes_attacker	65308,22309,37114,5803	1	p2
+INIT	compoundeyes_attacker	34642,39183,8557,3334	61704,16545,49862,29319
+DEC	compoundeyes_attacker	61704,16545,49862,29319	move	0	0	m0	m1	50456,23133,40435,53724	Butterfree	224	324	0	-	1	Blissey	644	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	61704,16545,49862,29319	move	0	0	m0	m0	20570,31686,17387,18146	Butterfree	224	324	0	-	1	Blissey	518	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	61704,16545,49862,29319	move	0	0	m0	m1	5089,40058,58665,36795	Butterfree	124	324	0	-	1	Blissey	450	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	61704,16545,49862,29319	move	0	0	m0	m0	9757,33106,39734,11641	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	61704,16545,49862,29319	move	0	0	m0	m1	31682,54837,46211,7078	Butterfree	24	324	0	-	1	Blissey	652	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	61704,16545,49862,29319	move	0	0	m0	m0	52792,20928,4080,48508	Butterfree	24	324	0	-	1	Blissey	584	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	61704,16545,49862,29319	move	0	0	m0	m1	59226,19679,7183,64521	Butterfree	24	324	0	-	1	Blissey	584	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	61704,16545,49862,29319	move	0	0	m0	m0	23941,56775,50433,29623	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	61704,16545,49862,29319	move	0	0	m0	m1	55229,27022,54796,14421	Butterfree	0	324	1	-	0	Blissey	653	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	61704,16545,49862,29319	1	p2
+INIT	compoundeyes_attacker	52761,16582,12029,55186	5556,17885,17746,45091
+DEC	compoundeyes_attacker	5556,17885,17746,45091	move	0	0	m0	m1	139,62010,63934,31688	Butterfree	224	324	0	-	1	Blissey	644	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	5556,17885,17746,45091	move	0	0	m0	m0	15077,62333,3239,58158	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	5556,17885,17746,45091	move	0	0	m0	m1	4597,31878,18050,37700	Butterfree	224	324	0	-	1	Blissey	652	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	5556,17885,17746,45091	move	0	0	m0	m0	43333,38148,18993,40330	Butterfree	224	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	5556,17885,17746,45091	move	0	0	m0	m1	20584,31363,59515,60483	Butterfree	124	324	0	-	1	Blissey	650	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	5556,17885,17746,45091	move	0	0	m0	m0	19664,36075,48413,32833	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	5556,17885,17746,45091	move	0	0	m0	m1	53478,9675,31087,48590	Butterfree	24	324	0	-	1	Blissey	648	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	5556,17885,17746,45091	move	0	0	m0	m0	16100,31944,7834,43748	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	5556,17885,17746,45091	move	0	0	m0	m1	47486,22471,17969,6698	Butterfree	0	324	1	-	0	Blissey	643	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	5556,17885,17746,45091	1	p2
+INIT	compoundeyes_attacker	5054,61285,7245,48862	55584,25305,25758,11135
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m1	29963,19965,46,55412	Butterfree	224	324	0	-	1	Blissey	645	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m0	7151,11411,33182,63546	Butterfree	224	324	0	-	1	Blissey	582	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m1	60193,51841,36391,39731	Butterfree	124	324	0	-	1	Blissey	516	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m0	48848,29559,36716,33457	Butterfree	124	324	0	-	1	Blissey	444	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m1	29907,54180,37386,35231	Butterfree	124	324	0	-	1	Blissey	380	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m0	43575,635,42699,42877	Butterfree	124	324	0	-	1	Blissey	672	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m1	13862,53062,41240,28619	Butterfree	124	324	0	-	1	Blissey	607	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m0	41112,48240,29787,61961	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m1	2068,12160,54166,44301	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m0	63392,11433,60793,58843	Butterfree	24	324	0	-	1	Blissey	648	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m1	63244,45366,35842,31897	Butterfree	24	324	0	-	1	Blissey	576	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m0	17170,7728,47662,64711	Butterfree	24	324	0	-	1	Blissey	512	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m1	26771,37951,13630,11749	Butterfree	24	324	0	-	1	Blissey	373	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m0	63415,2790,15431,62323	Butterfree	24	324	0	-	1	Blissey	668	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	55584,25305,25758,11135	move	0	0	m0	m1	26633,45676,33045,11505	Butterfree	0	324	1	-	0	Blissey	604	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	55584,25305,25758,11135	1	p2
+INIT	compoundeyes_attacker	17266,9680,456,52970	26444,21397,11434,155
+DEC	compoundeyes_attacker	26444,21397,11434,155	move	0	0	m0	m1	61747,19943,42492,21472	Butterfree	224	324	0	-	1	Blissey	578	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	26444,21397,11434,155	move	0	0	m0	m0	10330,3546,14792,54151	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	26444,21397,11434,155	move	0	0	m0	m1	9369,42061,38878,32476	Butterfree	124	324	0	-	1	Blissey	653	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	26444,21397,11434,155	move	0	0	m0	m0	24246,33634,21756,39906	Butterfree	124	324	0	-	1	Blissey	590	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	26444,21397,11434,155	move	0	0	m0	m1	34765,43052,4803,54936	Butterfree	124	324	0	-	1	Blissey	521	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	26444,21397,11434,155	move	0	0	m0	m0	35037,13909,54945,10366	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	26444,21397,11434,155	move	0	0	m0	m1	48990,21573,3572,53827	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	1	1
+DEC	compoundeyes_attacker	26444,21397,11434,155	move	0	0	m0	m0	58467,62623,21963,5697	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	26444,21397,11434,155	move	0	0	m0	m1	50933,58038,24178,56270	Butterfree	24	324	0	-	1	Blissey	648	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	26444,21397,11434,155	move	0	0	m0	m0	27132,11176,32066,14564	Butterfree	24	324	0	-	1	Blissey	583	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	26444,21397,11434,155	move	0	0	m0	m1	8521,34116,33756,38954	Butterfree	0	324	1	-	0	Blissey	515	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	26444,21397,11434,155	1	p2
+INIT	compoundeyes_attacker	32315,36434,19484,54198	44088,37905,26998,2935
+DEC	compoundeyes_attacker	44088,37905,26998,2935	move	0	0	m0	m1	7512,35943,17182,6668	Butterfree	224	324	0	-	1	Blissey	570	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	44088,37905,26998,2935	move	0	0	m0	m0	9549,49344,32543,61731	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	44088,37905,26998,2935	move	0	0	m0	m1	51190,47689,61832,18036	Butterfree	124	324	0	-	1	Blissey	714	714	0	-	1	p1	1	1
+DEC	compoundeyes_attacker	44088,37905,26998,2935	move	0	0	m0	m0	9089,47782,25597,40363	Butterfree	124	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	44088,37905,26998,2935	move	0	0	m0	m1	12898,17470,48330,18153	Butterfree	24	324	0	-	1	Blissey	649	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	44088,37905,26998,2935	move	0	0	m0	m0	56499,58245,9405,12356	Butterfree	24	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	44088,37905,26998,2935	move	0	0	m0	m1	33348,63439,3630,25226	Butterfree	24	324	0	-	1	Blissey	650	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	44088,37905,26998,2935	move	0	0	m0	m0	13134,34394,48924,11392	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	44088,37905,26998,2935	move	0	0	m0	m1	56699,16135,22137,55206	Butterfree	0	324	1	-	0	Blissey	646	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	44088,37905,26998,2935	1	p2
+INIT	compoundeyes_attacker	56040,14462,52995,22850	21476,24653,42754,59411
+DEC	compoundeyes_attacker	21476,24653,42754,59411	move	0	0	m0	m1	15539,27917,23141,5880	Butterfree	224	324	0	-	1	Blissey	653	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	21476,24653,42754,59411	move	0	0	m0	m0	64508,53370,7110,19583	Butterfree	224	324	0	-	1	Blissey	714	714	0	-	1	p1	0	1
+DEC	compoundeyes_attacker	21476,24653,42754,59411	move	0	0	m0	m1	36254,27967,16189,480	Butterfree	124	324	0	-	1	Blissey	714	714	0	-	1	p1	1	1
+DEC	compoundeyes_attacker	21476,24653,42754,59411	move	0	0	m0	m0	61017,61522,54107,61446	Butterfree	124	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21476,24653,42754,59411	move	0	0	m0	m1	47342,17955,7231,60815	Butterfree	24	324	0	-	1	Blissey	643	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21476,24653,42754,59411	move	0	0	m0	m0	27905,63628,38773,18157	Butterfree	24	324	0	-	1	Blissey	714	714	0	par	1	p1	0	1
+DEC	compoundeyes_attacker	21476,24653,42754,59411	move	0	0	m0	m1	52502,2589,36912,1723	Butterfree	0	324	1	-	0	Blissey	650	714	0	par	1	p1	0	1
+END	compoundeyes_attacker	21476,24653,42754,59411	1	p2
+SCEN	sandveil_defender_sand
+TEAM	sandveil_defender_sand	p1	Tyranitar|||SandStream|crosschop,rest|Adamant|252,252,,,,|N||||
+TEAM	sandveil_defender_sand	p2	Cacturne|||SandVeil|rest,spikes|Careful|252,,,,252,|N||||
+INIT	sandveil_defender_sand	50192,7304,11753,24806	10728,47105,54950,10471
+DEC	sandveil_defender_sand	10728,47105,54950,10471	move	0	0	m0	m0	33266,14892,23630,9640	Tyranitar	404	404	0	-	1	Cacturne	344	344	0	-	1	p1	1	1
+DEC	sandveil_defender_sand	10728,47105,54950,10471	move	0	0	m0	m0	18392,5772,43633,33541	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	10728,47105,54950,10471	1	p1
+INIT	sandveil_defender_sand	42900,38714,32434,35186	64660,54077,46898,27779
+DEC	sandveil_defender_sand	64660,54077,46898,27779	move	0	0	m0	m0	60048,56160,35419,999	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	64660,54077,46898,27779	1	p1
+INIT	sandveil_defender_sand	20182,34501,58048,44734	19968,26169,5246,19935
+DEC	sandveil_defender_sand	19968,26169,5246,19935	move	0	0	m0	m0	48011,4004,15282,59267	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	19968,26169,5246,19935	1	p1
+INIT	sandveil_defender_sand	29312,2109,29311,56522	18988,11509,64138,59643
+DEC	sandveil_defender_sand	18988,11509,64138,59643	move	0	0	m0	m0	20545,58731,38398,3564	Tyranitar	404	404	0	-	1	Cacturne	344	344	0	-	1	p1	1	1
+DEC	sandveil_defender_sand	18988,11509,64138,59643	move	0	0	m0	m0	23342,44427,63718,8377	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	18988,11509,64138,59643	1	p1
+INIT	sandveil_defender_sand	27824,51273,34771,57238	56600,41841,13654,6615
+DEC	sandveil_defender_sand	56600,41841,13654,6615	move	0	0	m0	m0	21279,64062,46670,14552	Tyranitar	404	404	0	-	1	Cacturne	344	344	0	-	1	p1	1	1
+DEC	sandveil_defender_sand	56600,41841,13654,6615	move	0	0	m0	m0	10844,60011,20339,22389	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	56600,41841,13654,6615	1	p1
+INIT	sandveil_defender_sand	9650,19131,2368,17186	45764,1453,20706,31859
+DEC	sandveil_defender_sand	45764,1453,20706,31859	move	0	0	m0	m0	1375,39689,40779,29911	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	45764,1453,20706,31859	1	p1
+INIT	sandveil_defender_sand	39297,18874,38235,21358	14128,20393,39214,27855
+DEC	sandveil_defender_sand	14128,20393,39214,27855	move	0	0	m0	m0	61574,30259,25688,30579	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	14128,20393,39214,27855	1	p1
+INIT	sandveil_defender_sand	40577,55844,47916,7290	38492,15717,6714,1771
+DEC	sandveil_defender_sand	38492,15717,6714,1771	move	0	0	m0	m0	32206,61038,47124,1999	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	38492,15717,6714,1771	1	p1
+INIT	sandveil_defender_sand	19753,39857,28869,27206	48200,19169,40966,9927
+DEC	sandveil_defender_sand	48200,19169,40966,9927	move	0	0	m0	m0	16792,59971,48009,16875	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	48200,19169,40966,9927	1	p1
+INIT	sandveil_defender_sand	20029,43143,123,51410	21748,46109,46738,26723
+DEC	sandveil_defender_sand	21748,46109,46738,26723	move	0	0	m0	m0	54667,21699,60246,455	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	21748,46109,46738,26723	1	p1
+INIT	sandveil_defender_sand	63736,45114,37450,33822	52320,29977,43486,10175
+DEC	sandveil_defender_sand	52320,29977,43486,10175	move	0	0	m0	m0	49582,45509,2459,58211	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	52320,29977,43486,10175	1	p1
+INIT	sandveil_defender_sand	11765,48405,16029,43050	20108,18901,34282,32987
+DEC	sandveil_defender_sand	20108,18901,34282,32987	move	0	0	m0	m0	49680,20234,61922,17087	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	20108,18901,34282,32987	1	p1
+INIT	sandveil_defender_sand	5840,33781,59582,246	51064,44625,5814,20407
+DEC	sandveil_defender_sand	51064,44625,5814,20407	move	0	0	m0	m0	55592,14895,61778,15323	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	51064,44625,5814,20407	1	p1
+INIT	sandveil_defender_sand	41573,10041,25701,6786	58148,56973,59458,12371
+DEC	sandveil_defender_sand	58148,56973,59458,12371	move	0	0	m0	m0	33964,7838,28282,43703	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	58148,56973,59458,12371	1	p1
+INIT	sandveil_defender_sand	63650,9805,25331,16590	3472,54921,18062,32431
+DEC	sandveil_defender_sand	3472,54921,18062,32431	move	0	0	m0	m0	35495,52098,62782,55632	Tyranitar	404	404	0	-	1	Cacturne	344	344	0	-	1	p1	1	1
+DEC	sandveil_defender_sand	3472,54921,18062,32431	move	0	0	m0	m0	35047,18308,40210,8578	Tyranitar	404	404	0	-	1	Cacturne	344	344	0	-	1	p1	1	1
+DEC	sandveil_defender_sand	3472,54921,18062,32431	move	0	0	m0	m0	44351,31990,25428,62903	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	3472,54921,18062,32431	1	p1
+INIT	sandveil_defender_sand	12801,50741,59914,32730	29372,21061,15770,22219
+DEC	sandveil_defender_sand	29372,21061,15770,22219	move	0	0	m0	m0	30149,18827,60882,6575	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	29372,21061,15770,22219	1	p1
+INIT	sandveil_defender_sand	6223,37856,61373,41894	65192,52673,39270,38055
+DEC	sandveil_defender_sand	65192,52673,39270,38055	move	0	0	m0	m0	32491,48971,6321,37323	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	65192,52673,39270,38055	1	p1
+INIT	sandveil_defender_sand	44430,13017,48737,14386	23892,34045,58866,54339
+DEC	sandveil_defender_sand	23892,34045,58866,54339	move	0	0	m0	m0	55599,64287,4778,28583	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	23892,34045,58866,54339	1	p1
+INIT	sandveil_defender_sand	61370,51536,32240,35198	64192,29689,28478,29087
+DEC	sandveil_defender_sand	64192,29689,28478,29087	move	0	0	m0	m0	56822,38636,40414,20291	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	64192,29689,28478,29087	1	p1
+INIT	sandveil_defender_sand	41490,60147,18135,41866	748,22197,16714,35003
+DEC	sandveil_defender_sand	748,22197,16714,35003	move	0	0	m0	m0	25057,51816,38356,35999	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	748,22197,16714,35003	1	p1
+INIT	sandveil_defender_sand	31127,47272,34244,21078	25048,43313,10262,62871
+DEC	sandveil_defender_sand	25048,43313,10262,62871	move	0	0	m0	m0	11735,42419,12711,17339	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	25048,43313,10262,62871	1	p1
+INIT	sandveil_defender_sand	57938,62296,64422,8674	50052,42861,44962,21555
+DEC	sandveil_defender_sand	50052,42861,44962,21555	move	0	0	m0	m0	12331,58682,1027,20631	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	50052,42861,44962,21555	1	p1
+INIT	sandveil_defender_sand	64416,4062,58178,24110	37872,19817,9198,143
+DEC	sandveil_defender_sand	37872,19817,9198,143	move	0	0	m0	m0	25256,15868,41708,20275	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	37872,19817,9198,143	1	p1
+INIT	sandveil_defender_sand	62147,48965,52128,4922	65308,22309,37114,5803
+DEC	sandveil_defender_sand	65308,22309,37114,5803	move	0	0	m0	m0	49143,53018,65528,39823	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	65308,22309,37114,5803	1	p1
+INIT	sandveil_defender_sand	34642,39183,8557,3334	61704,16545,49862,29319
+DEC	sandveil_defender_sand	61704,16545,49862,29319	move	0	0	m0	m0	9353,48836,21058,20907	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	61704,16545,49862,29319	1	p1
+INIT	sandveil_defender_sand	52761,16582,12029,55186	5556,17885,17746,45091
+DEC	sandveil_defender_sand	5556,17885,17746,45091	move	0	0	m0	m0	8264,50381,58316,26996	Tyranitar	404	404	0	-	1	Cacturne	344	344	0	-	1	p1	1	1
+DEC	sandveil_defender_sand	5556,17885,17746,45091	move	0	0	m0	m0	17147,3847,31555,39713	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	5556,17885,17746,45091	1	p1
+INIT	sandveil_defender_sand	5054,61285,7245,48862	55584,25305,25758,11135
+DEC	sandveil_defender_sand	55584,25305,25758,11135	move	0	0	m0	m0	49837,6996,23333,50400	Tyranitar	404	404	0	-	1	Cacturne	344	344	0	-	1	p1	1	1
+DEC	sandveil_defender_sand	55584,25305,25758,11135	move	0	0	m0	m0	32583,39845,29969,4189	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	55584,25305,25758,11135	1	p1
+INIT	sandveil_defender_sand	17266,9680,456,52970	26444,21397,11434,155
+DEC	sandveil_defender_sand	26444,21397,11434,155	move	0	0	m0	m0	21487,28728,5679,18047	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	26444,21397,11434,155	1	p1
+INIT	sandveil_defender_sand	32315,36434,19484,54198	44088,37905,26998,2935
+DEC	sandveil_defender_sand	44088,37905,26998,2935	move	0	0	m0	m0	1763,14432,8833,18424	Tyranitar	404	404	0	-	1	Cacturne	344	344	0	-	1	p1	1	1
+DEC	sandveil_defender_sand	44088,37905,26998,2935	move	0	0	m0	m0	57039,29296,65275,65045	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	44088,37905,26998,2935	1	p1
+INIT	sandveil_defender_sand	56040,14462,52995,22850	21476,24653,42754,59411
+DEC	sandveil_defender_sand	21476,24653,42754,59411	move	0	0	m0	m0	8504,6760,20341,1956	Tyranitar	404	404	0	-	1	Cacturne	344	344	0	-	1	p1	1	1
+DEC	sandveil_defender_sand	21476,24653,42754,59411	move	0	0	m0	m0	49410,57803,39614,47798	Tyranitar	404	404	0	-	1	Cacturne	344	344	0	-	1	p1	1	1
+DEC	sandveil_defender_sand	21476,24653,42754,59411	move	0	0	m0	m0	15539,27917,23141,5880	Tyranitar	404	404	0	-	1	Cacturne	344	344	0	-	1	p1	1	1
+DEC	sandveil_defender_sand	21476,24653,42754,59411	move	0	0	m0	m0	61476,30552,42886,61717	Tyranitar	404	404	0	-	1	Cacturne	0	344	1	-	0	p1	0	1
+END	sandveil_defender_sand	21476,24653,42754,59411	1	p1
+SCEN	hustle_physical
+TEAM	hustle_physical	p1	Delibird|||Hustle|crosschop,rest|Adamant|252,252,,,,|N||||
+TEAM	hustle_physical	p2	Snorlax|||NoAbility|bodyslam,rest|Adamant|252,252,,,,|N||||
+INIT	hustle_physical	50192,7304,11753,24806	10728,47105,54950,10471
+DEC	hustle_physical	10728,47105,54950,10471	move	0	0	m0	m0	18392,5772,43633,33541	Delibird	0	294	1	-	0	Snorlax	524	524	0	-	1	p1	1	1
+END	hustle_physical	10728,47105,54950,10471	1	p2
+INIT	hustle_physical	42900,38714,32434,35186	64660,54077,46898,27779
+DEC	hustle_physical	64660,54077,46898,27779	move	0	0	m0	m0	62118,7672,13649,10010	Delibird	18	294	0	-	1	Snorlax	223	524	0	-	1	p1	0	1
+DEC	hustle_physical	64660,54077,46898,27779	move	0	0	m0	m0	7260,3929,19466,27631	Delibird	18	294	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	hustle_physical	64660,54077,46898,27779	1	p1
+INIT	hustle_physical	20182,34501,58048,44734	19968,26169,5246,19935
+DEC	hustle_physical	19968,26169,5246,19935	move	0	0	m0	m0	763,47154,7745,52967	Delibird	0	294	1	-	0	Snorlax	213	524	0	-	1	p1	0	1
+END	hustle_physical	19968,26169,5246,19935	1	p2
+INIT	hustle_physical	29312,2109,29311,56522	18988,11509,64138,59643
+DEC	hustle_physical	18988,11509,64138,59643	move	0	0	m0	m0	23366,41090,19331,35008	Delibird	18	294	0	-	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	hustle_physical	18988,11509,64138,59643	move	0	0	m0	m0	32271,21969,65434,53437	Delibird	18	294	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	hustle_physical	18988,11509,64138,59643	1	p1
+INIT	hustle_physical	27824,51273,34771,57238	56600,41841,13654,6615
+DEC	hustle_physical	56600,41841,13654,6615	move	0	0	m0	m0	43205,50960,53928,48364	Delibird	24	294	0	par	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	hustle_physical	56600,41841,13654,6615	move	0	0	m0	m0	34512,32082,44153,18368	Delibird	0	294	1	par	0	Snorlax	524	524	0	-	1	p2	0	0
+END	hustle_physical	56600,41841,13654,6615	1	p2
+INIT	hustle_physical	9650,19131,2368,17186	45764,1453,20706,31859
+DEC	hustle_physical	45764,1453,20706,31859	move	0	0	m0	m0	38685,56254,52772,20219	Delibird	0	294	1	-	0	Snorlax	174	524	0	-	1	p1	0	1
+END	hustle_physical	45764,1453,20706,31859	1	p2
+INIT	hustle_physical	39297,18874,38235,21358	14128,20393,39214,27855
+DEC	hustle_physical	14128,20393,39214,27855	move	0	0	m0	m0	3119,32934,28584,23958	Delibird	18	294	0	-	1	Snorlax	227	524	0	-	1	p1	0	1
+DEC	hustle_physical	14128,20393,39214,27855	move	0	0	m0	m0	36946,12923,9201,59899	Delibird	18	294	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	hustle_physical	14128,20393,39214,27855	1	p1
+INIT	hustle_physical	40577,55844,47916,7290	38492,15717,6714,1771
+DEC	hustle_physical	38492,15717,6714,1771	move	0	0	m0	m0	50828,51555,64402,25203	Delibird	0	294	1	-	0	Snorlax	199	524	0	-	1	p1	0	1
+END	hustle_physical	38492,15717,6714,1771	1	p2
+INIT	hustle_physical	19753,39857,28869,27206	48200,19169,40966,9927
+DEC	hustle_physical	48200,19169,40966,9927	move	0	0	m0	m0	2270,4981,22365,37583	Delibird	0	294	1	-	0	Snorlax	188	524	0	-	1	p1	0	1
+END	hustle_physical	48200,19169,40966,9927	1	p2
+INIT	hustle_physical	20029,43143,123,51410	21748,46109,46738,26723
+DEC	hustle_physical	21748,46109,46738,26723	move	0	0	m0	m0	60814,2315,5897,27883	Delibird	0	294	1	-	0	Snorlax	220	524	0	-	1	p1	0	1
+END	hustle_physical	21748,46109,46738,26723	1	p2
+INIT	hustle_physical	63736,45114,37450,33822	52320,29977,43486,10175
+DEC	hustle_physical	52320,29977,43486,10175	move	0	0	m0	m0	19273,31423,40757,52423	Delibird	0	294	1	-	0	Snorlax	216	524	0	-	1	p1	0	1
+END	hustle_physical	52320,29977,43486,10175	1	p2
+INIT	hustle_physical	11765,48405,16029,43050	20108,18901,34282,32987
+DEC	hustle_physical	20108,18901,34282,32987	move	0	0	m0	m0	29516,31355,57513,34514	Delibird	36	294	0	-	1	Snorlax	216	524	0	-	1	p1	0	1
+DEC	hustle_physical	20108,18901,34282,32987	move	0	0	m0	m0	29628,20633,36973,34759	Delibird	36	294	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	hustle_physical	20108,18901,34282,32987	1	p1
+INIT	hustle_physical	5840,33781,59582,246	51064,44625,5814,20407
+DEC	hustle_physical	51064,44625,5814,20407	move	0	0	m0	m0	28603,62648,6725,33310	Delibird	3	294	0	-	1	Snorlax	220	524	0	-	1	p1	0	1
+DEC	hustle_physical	51064,44625,5814,20407	move	0	0	m0	m0	18499,51375,4996,21661	Delibird	0	294	1	-	0	Snorlax	220	524	0	-	1	p1	1	1
+END	hustle_physical	51064,44625,5814,20407	1	p2
+INIT	hustle_physical	41573,10041,25701,6786	58148,56973,59458,12371
+DEC	hustle_physical	58148,56973,59458,12371	move	0	0	m0	m0	29897,25156,34879,58922	Delibird	36	294	0	-	1	Snorlax	202	524	0	-	1	p1	0	1
+DEC	hustle_physical	58148,56973,59458,12371	move	0	0	m0	m0	31375,52017,3308,18623	Delibird	36	294	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	hustle_physical	58148,56973,59458,12371	1	p1
+INIT	hustle_physical	63650,9805,25331,16590	3472,54921,18062,32431
+DEC	hustle_physical	3472,54921,18062,32431	move	0	0	m0	m0	55349,15725,25493,1508	Delibird	18	294	0	par	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	hustle_physical	3472,54921,18062,32431	move	0	0	m0	m0	9937,30786,555,45368	Delibird	0	294	1	par	0	Snorlax	524	524	0	-	1	p2	0	0
+END	hustle_physical	3472,54921,18062,32431	1	p2
+INIT	hustle_physical	12801,50741,59914,32730	29372,21061,15770,22219
+DEC	hustle_physical	29372,21061,15770,22219	move	0	0	m0	m0	44715,55337,14436,55426	Delibird	3	294	0	-	1	Snorlax	199	524	0	-	1	p1	0	1
+DEC	hustle_physical	29372,21061,15770,22219	move	0	0	m0	m0	53813,64752,63511,24273	Delibird	0	294	1	-	0	Snorlax	199	524	0	-	1	p1	1	1
+END	hustle_physical	29372,21061,15770,22219	1	p2
+INIT	hustle_physical	6223,37856,61373,41894	65192,52673,39270,38055
+DEC	hustle_physical	65192,52673,39270,38055	move	0	0	m0	m0	2405,57302,29025,16078	Delibird	30	294	0	-	1	Snorlax	199	524	0	-	1	p1	0	1
+DEC	hustle_physical	65192,52673,39270,38055	move	0	0	m0	m0	4980,35549,1862,16141	Delibird	0	294	1	-	0	Snorlax	199	524	0	-	1	p1	1	1
+END	hustle_physical	65192,52673,39270,38055	1	p2
+INIT	hustle_physical	44430,13017,48737,14386	23892,34045,58866,54339
+DEC	hustle_physical	23892,34045,58866,54339	move	0	0	m0	m0	22096,7332,52319,48602	Delibird	33	294	0	-	1	Snorlax	220	524	0	-	1	p1	0	1
+DEC	hustle_physical	23892,34045,58866,54339	move	0	0	m0	m0	61016,17244,36771,8111	Delibird	33	294	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	hustle_physical	23892,34045,58866,54339	1	p1
+INIT	hustle_physical	61370,51536,32240,35198	64192,29689,28478,29087
+DEC	hustle_physical	64192,29689,28478,29087	move	0	0	m0	m0	15151,21185,36142,8614	Delibird	24	294	0	-	1	Snorlax	220	524	0	-	1	p1	0	1
+DEC	hustle_physical	64192,29689,28478,29087	move	0	0	m0	m0	10565,55387,39416,55243	Delibird	24	294	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	hustle_physical	64192,29689,28478,29087	1	p1
+INIT	hustle_physical	41490,60147,18135,41866	748,22197,16714,35003
+DEC	hustle_physical	748,22197,16714,35003	move	0	0	m0	m0	25057,51816,38356,35999	Delibird	294	294	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	hustle_physical	748,22197,16714,35003	1	p1
+INIT	hustle_physical	31127,47272,34244,21078	25048,43313,10262,62871
+DEC	hustle_physical	25048,43313,10262,62871	move	0	0	m0	m0	29589,15071,27219,38815	Delibird	0	294	1	-	0	Snorlax	181	524	0	-	1	p1	0	1
+END	hustle_physical	25048,43313,10262,62871	1	p2
+INIT	hustle_physical	57938,62296,64422,8674	50052,42861,44962,21555
+DEC	hustle_physical	50052,42861,44962,21555	move	0	0	m0	m0	27867,18736,49514,57738	Delibird	12	294	0	par	1	Snorlax	185	524	0	-	1	p1	0	1
+DEC	hustle_physical	50052,42861,44962,21555	move	0	0	m0	m0	1755,36027,26279,36478	Delibird	0	294	1	par	0	Snorlax	185	524	0	-	1	p2	0	0
+END	hustle_physical	50052,42861,44962,21555	1	p2
+INIT	hustle_physical	64416,4062,58178,24110	37872,19817,9198,143
+DEC	hustle_physical	37872,19817,9198,143	move	0	0	m0	m0	25256,15868,41708,20275	Delibird	294	294	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	hustle_physical	37872,19817,9198,143	1	p1
+INIT	hustle_physical	62147,48965,52128,4922	65308,22309,37114,5803
+DEC	hustle_physical	65308,22309,37114,5803	move	0	0	m0	m0	3529,58602,65230,57314	Delibird	24	294	0	par	1	Snorlax	213	524	0	-	1	p1	0	1
+DEC	hustle_physical	65308,22309,37114,5803	move	0	0	m0	m0	26732,44975,2048,5974	Delibird	0	294	1	par	0	Snorlax	213	524	0	-	1	p2	0	0
+END	hustle_physical	65308,22309,37114,5803	1	p2
+INIT	hustle_physical	34642,39183,8557,3334	61704,16545,49862,29319
+DEC	hustle_physical	61704,16545,49862,29319	move	0	0	m0	m0	900,11787,23096,23598	Delibird	30	294	0	-	1	Snorlax	181	524	0	-	1	p1	0	1
+DEC	hustle_physical	61704,16545,49862,29319	move	0	0	m0	m0	10754,47633,64790,34797	Delibird	0	294	1	-	0	Snorlax	181	524	0	-	1	p1	1	1
+END	hustle_physical	61704,16545,49862,29319	1	p2
+INIT	hustle_physical	52761,16582,12029,55186	5556,17885,17746,45091
+DEC	hustle_physical	5556,17885,17746,45091	move	0	0	m0	m0	139,62010,63934,31688	Delibird	24	294	0	par	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	hustle_physical	5556,17885,17746,45091	move	0	0	m0	m0	18439,8678,8948,12508	Delibird	0	294	1	par	0	Snorlax	524	524	0	-	1	p2	0	0
+END	hustle_physical	5556,17885,17746,45091	1	p2
+INIT	hustle_physical	5054,61285,7245,48862	55584,25305,25758,11135
+DEC	hustle_physical	55584,25305,25758,11135	move	0	0	m0	m0	29963,19965,46,55412	Delibird	24	294	0	-	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	hustle_physical	55584,25305,25758,11135	move	0	0	m0	m0	20830,36739,30795,38821	Delibird	0	294	1	-	0	Snorlax	216	524	0	-	1	p1	0	1
+END	hustle_physical	55584,25305,25758,11135	1	p2
+INIT	hustle_physical	17266,9680,456,52970	26444,21397,11434,155
+DEC	hustle_physical	26444,21397,11434,155	move	0	0	m0	m0	21487,28728,5679,18047	Delibird	294	294	0	-	1	Snorlax	0	524	1	-	0	p1	0	1
+END	hustle_physical	26444,21397,11434,155	1	p1
+INIT	hustle_physical	32315,36434,19484,54198	44088,37905,26998,2935
+DEC	hustle_physical	44088,37905,26998,2935	move	0	0	m0	m0	57039,29296,65275,65045	Delibird	0	294	1	-	0	Snorlax	524	524	0	-	1	p1	1	1
+END	hustle_physical	44088,37905,26998,2935	1	p2
+INIT	hustle_physical	56040,14462,52995,22850	21476,24653,42754,59411
+DEC	hustle_physical	21476,24653,42754,59411	move	0	0	m0	m0	15539,27917,23141,5880	Delibird	30	294	0	-	1	Snorlax	524	524	0	-	1	p1	1	1
+DEC	hustle_physical	21476,24653,42754,59411	move	0	0	m0	m0	26054,17703,47726,45913	Delibird	0	294	1	-	0	Snorlax	227	524	0	-	1	p1	0	1
+END	hustle_physical	21476,24653,42754,59411	1	p2
+SCEN	nomod_control_crosschop
+TEAM	nomod_control_crosschop	p1	Tauros|||NoAbility|crosschop,rest|Adamant|252,252,,,,|N||||
+TEAM	nomod_control_crosschop	p2	Snorlax|||NoAbility|bodyslam,rest|Adamant|252,252,,,,|N||||
+INIT	nomod_control_crosschop	50192,7304,11753,24806	10728,47105,54950,10471
+DEC	nomod_control_crosschop	10728,47105,54950,10471	move	0	0	m0	m0	44471,8463,44847,64700	Tauros	42	354	0	par	1	Snorlax	524	524	0	-	1	p1	1	0
+DEC	nomod_control_crosschop	10728,47105,54950,10471	move	0	0	m0	m0	46201,6427,10224,43664	Tauros	0	354	1	par	0	Snorlax	524	524	0	-	1	p2	0	0
+END	nomod_control_crosschop	10728,47105,54950,10471	1	p2
+INIT	nomod_control_crosschop	42900,38714,32434,35186	64660,54077,46898,27779
+DEC	nomod_control_crosschop	64660,54077,46898,27779	move	0	0	m0	m0	62118,7672,13649,10010	Tauros	200	354	0	-	1	Snorlax	237	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	64660,54077,46898,27779	move	0	0	m0	m0	7260,3929,19466,27631	Tauros	200	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	64660,54077,46898,27779	1	p1
+INIT	nomod_control_crosschop	20182,34501,58048,44734	19968,26169,5246,19935
+DEC	nomod_control_crosschop	19968,26169,5246,19935	move	0	0	m0	m0	50875,9008,17447,57062	Tauros	186	354	0	par	1	Snorlax	227	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	19968,26169,5246,19935	move	0	0	m0	m0	39,65051,23870,55023	Tauros	25	354	0	par	1	Snorlax	227	524	0	-	1	p2	1	0
+DEC	nomod_control_crosschop	19968,26169,5246,19935	move	0	0	m0	m0	24220,37339,19203,32659	Tauros	0	354	1	par	0	Snorlax	227	524	0	-	1	p2	0	0
+END	nomod_control_crosschop	19968,26169,5246,19935	1	p2
+INIT	nomod_control_crosschop	29312,2109,29311,56522	18988,11509,64138,59643
+DEC	nomod_control_crosschop	18988,11509,64138,59643	move	0	0	m0	m0	6948,60099,18470,18290	Tauros	195	354	0	par	1	Snorlax	201	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	18988,11509,64138,59643	move	0	0	m0	m0	54787,45039,1400,45835	Tauros	27	354	0	par	1	Snorlax	201	524	0	-	1	p2	1	0
+DEC	nomod_control_crosschop	18988,11509,64138,59643	move	0	0	m0	m0	50333,46088,58717,12783	Tauros	0	354	1	par	0	Snorlax	201	524	0	-	1	p2	0	0
+END	nomod_control_crosschop	18988,11509,64138,59643	1	p2
+INIT	nomod_control_crosschop	27824,51273,34771,57238	56600,41841,13654,6615
+DEC	nomod_control_crosschop	56600,41841,13654,6615	move	0	0	m0	m0	43205,50960,53928,48364	Tauros	203	354	0	par	1	Snorlax	524	524	0	-	1	p1	1	0
+DEC	nomod_control_crosschop	56600,41841,13654,6615	move	0	0	m0	m0	10673,17581,27765,62397	Tauros	56	354	0	par	1	Snorlax	524	524	0	-	1	p2	1	0
+DEC	nomod_control_crosschop	56600,41841,13654,6615	move	0	0	m0	m0	17730,64404,23075,7041	Tauros	0	354	1	par	0	Snorlax	524	524	0	-	1	p2	0	0
+END	nomod_control_crosschop	56600,41841,13654,6615	1	p2
+INIT	nomod_control_crosschop	9650,19131,2368,17186	45764,1453,20706,31859
+DEC	nomod_control_crosschop	45764,1453,20706,31859	move	0	0	m0	m0	31501,13551,53147,6858	Tauros	186	354	0	-	1	Snorlax	190	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	45764,1453,20706,31859	move	0	0	m0	m0	52798,34399,18636,14016	Tauros	39	354	0	-	1	Snorlax	190	524	0	-	1	p1	1	0
+DEC	nomod_control_crosschop	45764,1453,20706,31859	move	0	0	m0	m0	65469,65457,25404,53223	Tauros	0	354	1	-	0	Snorlax	190	524	0	-	1	p1	1	0
+END	nomod_control_crosschop	45764,1453,20706,31859	1	p2
+INIT	nomod_control_crosschop	39297,18874,38235,21358	14128,20393,39214,27855
+DEC	nomod_control_crosschop	14128,20393,39214,27855	move	0	0	m0	m0	3119,32934,28584,23958	Tauros	200	354	0	-	1	Snorlax	241	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	14128,20393,39214,27855	move	0	0	m0	m0	36946,12923,9201,59899	Tauros	200	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	14128,20393,39214,27855	1	p1
+INIT	nomod_control_crosschop	40577,55844,47916,7290	38492,15717,6714,1771
+DEC	nomod_control_crosschop	38492,15717,6714,1771	move	0	0	m0	m0	47084,57595,52412,290	Tauros	18	354	0	-	1	Snorlax	214	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	38492,15717,6714,1771	move	0	0	m0	m0	41013,64648,58680,64215	Tauros	18	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	38492,15717,6714,1771	1	p1
+INIT	nomod_control_crosschop	19753,39857,28869,27206	48200,19169,40966,9927
+DEC	nomod_control_crosschop	48200,19169,40966,9927	move	0	0	m0	m0	20961,42805,58187,20846	Tauros	188	354	0	par	1	Snorlax	204	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	48200,19169,40966,9927	move	0	0	m0	m0	43438,57088,62048,33668	Tauros	32	354	0	par	1	Snorlax	204	524	0	-	1	p2	0	0
+DEC	nomod_control_crosschop	48200,19169,40966,9927	move	0	0	m0	m0	44450,25238,10547,38104	Tauros	0	354	1	par	0	Snorlax	204	524	0	-	1	p2	0	0
+END	nomod_control_crosschop	48200,19169,40966,9927	1	p2
+INIT	nomod_control_crosschop	20029,43143,123,51410	21748,46109,46738,26723
+DEC	nomod_control_crosschop	21748,46109,46738,26723	move	0	0	m0	m0	44425,44448,16533,23162	Tauros	186	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	21748,46109,46738,26723	move	0	0	m0	m0	19265,33622,31017,3535	Tauros	186	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	21748,46109,46738,26723	1	p1
+INIT	nomod_control_crosschop	63736,45114,37450,33822	52320,29977,43486,10175
+DEC	nomod_control_crosschop	52320,29977,43486,10175	move	0	0	m0	m0	61159,56877,10343,59462	Tauros	188	354	0	par	1	Snorlax	231	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	52320,29977,43486,10175	move	0	0	m0	m0	7458,19324,54772,3950	Tauros	22	354	0	par	1	Snorlax	0	524	1	-	0	p2	0	0
+END	nomod_control_crosschop	52320,29977,43486,10175	1	p1
+INIT	nomod_control_crosschop	11765,48405,16029,43050	20108,18901,34282,32987
+DEC	nomod_control_crosschop	20108,18901,34282,32987	move	0	0	m0	m0	29516,31355,57513,34514	Tauros	210	354	0	-	1	Snorlax	231	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	20108,18901,34282,32987	move	0	0	m0	m0	29628,20633,36973,34759	Tauros	210	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	20108,18901,34282,32987	1	p1
+INIT	nomod_control_crosschop	5840,33781,59582,246	51064,44625,5814,20407
+DEC	nomod_control_crosschop	51064,44625,5814,20407	move	0	0	m0	m0	28603,62648,6725,33310	Tauros	192	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	51064,44625,5814,20407	move	0	0	m0	m0	35607,30138,32083,43363	Tauros	192	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	51064,44625,5814,20407	1	p1
+INIT	nomod_control_crosschop	41573,10041,25701,6786	58148,56973,59458,12371
+DEC	nomod_control_crosschop	58148,56973,59458,12371	move	0	0	m0	m0	29897,25156,34879,58922	Tauros	210	354	0	-	1	Snorlax	217	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	58148,56973,59458,12371	move	0	0	m0	m0	31375,52017,3308,18623	Tauros	210	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	58148,56973,59458,12371	1	p1
+INIT	nomod_control_crosschop	63650,9805,25331,16590	3472,54921,18062,32431
+DEC	nomod_control_crosschop	3472,54921,18062,32431	move	0	0	m0	m0	62568,1420,37931,32502	Tauros	208	354	0	-	1	Snorlax	241	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	3472,54921,18062,32431	move	0	0	m0	m0	25710,38465,46530,33243	Tauros	208	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	3472,54921,18062,32431	1	p1
+INIT	nomod_control_crosschop	12801,50741,59914,32730	29372,21061,15770,22219
+DEC	nomod_control_crosschop	29372,21061,15770,22219	move	0	0	m0	m0	44715,55337,14436,55426	Tauros	192	354	0	-	1	Snorlax	214	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	29372,21061,15770,22219	move	0	0	m0	m0	32118,18415,9939,57400	Tauros	40	354	0	-	1	Snorlax	214	524	0	-	1	p1	1	0
+DEC	nomod_control_crosschop	29372,21061,15770,22219	move	0	0	m0	m0	1122,13707,33010,7509	Tauros	40	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	29372,21061,15770,22219	1	p1
+INIT	nomod_control_crosschop	6223,37856,61373,41894	65192,52673,39270,38055
+DEC	nomod_control_crosschop	65192,52673,39270,38055	move	0	0	m0	m0	2405,57302,29025,16078	Tauros	207	354	0	-	1	Snorlax	214	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	65192,52673,39270,38055	move	0	0	m0	m0	55998,13667,7852,61779	Tauros	207	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	65192,52673,39270,38055	1	p1
+INIT	nomod_control_crosschop	44430,13017,48737,14386	23892,34045,58866,54339
+DEC	nomod_control_crosschop	23892,34045,58866,54339	move	0	0	m0	m0	22096,7332,52319,48602	Tauros	208	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	23892,34045,58866,54339	move	0	0	m0	m0	61016,17244,36771,8111	Tauros	208	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	23892,34045,58866,54339	1	p1
+INIT	nomod_control_crosschop	61370,51536,32240,35198	64192,29689,28478,29087
+DEC	nomod_control_crosschop	64192,29689,28478,29087	move	0	0	m0	m0	15151,21185,36142,8614	Tauros	203	354	0	-	1	Snorlax	234	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	64192,29689,28478,29087	move	0	0	m0	m0	10565,55387,39416,55243	Tauros	203	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	64192,29689,28478,29087	1	p1
+INIT	nomod_control_crosschop	41490,60147,18135,41866	748,22197,16714,35003
+DEC	nomod_control_crosschop	748,22197,16714,35003	move	0	0	m0	m0	25057,51816,38356,35999	Tauros	354	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	748,22197,16714,35003	1	p1
+INIT	nomod_control_crosschop	31127,47272,34244,21078	25048,43313,10262,62871
+DEC	nomod_control_crosschop	25048,43313,10262,62871	move	0	0	m0	m0	35663,7430,59550,34686	Tauros	186	354	0	-	1	Snorlax	197	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	25048,43313,10262,62871	move	0	0	m0	m0	10553,5948,64093,5443	Tauros	186	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	25048,43313,10262,62871	1	p1
+INIT	nomod_control_crosschop	57938,62296,64422,8674	50052,42861,44962,21555
+DEC	nomod_control_crosschop	50052,42861,44962,21555	move	0	0	m0	m0	27867,18736,49514,57738	Tauros	197	354	0	par	1	Snorlax	201	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	50052,42861,44962,21555	move	0	0	m0	m0	24269,25985,11427,24643	Tauros	43	354	0	par	1	Snorlax	201	524	0	-	1	p2	1	0
+DEC	nomod_control_crosschop	50052,42861,44962,21555	move	0	0	m0	m0	39736,5340,2634,15271	Tauros	0	354	1	par	0	Snorlax	201	524	0	-	1	p2	0	0
+END	nomod_control_crosschop	50052,42861,44962,21555	1	p2
+INIT	nomod_control_crosschop	64416,4062,58178,24110	37872,19817,9198,143
+DEC	nomod_control_crosschop	37872,19817,9198,143	move	0	0	m0	m0	25256,15868,41708,20275	Tauros	354	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	37872,19817,9198,143	1	p1
+INIT	nomod_control_crosschop	62147,48965,52128,4922	65308,22309,37114,5803
+DEC	nomod_control_crosschop	65308,22309,37114,5803	move	0	0	m0	m0	3529,58602,65230,57314	Tauros	203	354	0	par	1	Snorlax	227	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	65308,22309,37114,5803	move	0	0	m0	m0	33898,45938,12817,57226	Tauros	49	354	0	par	1	Snorlax	0	524	1	-	0	p2	0	0
+END	nomod_control_crosschop	65308,22309,37114,5803	1	p1
+INIT	nomod_control_crosschop	34642,39183,8557,3334	61704,16545,49862,29319
+DEC	nomod_control_crosschop	61704,16545,49862,29319	move	0	0	m0	m0	900,11787,23096,23598	Tauros	207	354	0	-	1	Snorlax	197	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	61704,16545,49862,29319	move	0	0	m0	m0	12144,56038,8083,5427	Tauros	207	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	61704,16545,49862,29319	1	p1
+INIT	nomod_control_crosschop	52761,16582,12029,55186	5556,17885,17746,45091
+DEC	nomod_control_crosschop	5556,17885,17746,45091	move	0	0	m0	m0	40365,31608,45803,20794	Tauros	186	354	0	-	1	Snorlax	197	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	5556,17885,17746,45091	move	0	0	m0	m0	22653,15510,40615,41359	Tauros	186	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	5556,17885,17746,45091	1	p1
+INIT	nomod_control_crosschop	5054,61285,7245,48862	55584,25305,25758,11135
+DEC	nomod_control_crosschop	55584,25305,25758,11135	move	0	0	m0	m0	29963,19965,46,55412	Tauros	203	354	0	-	1	Snorlax	524	524	0	-	1	p1	1	0
+DEC	nomod_control_crosschop	55584,25305,25758,11135	move	0	0	m0	m0	43861,37730,43939,49116	Tauros	37	354	0	-	1	Snorlax	231	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	55584,25305,25758,11135	move	0	0	m0	m0	33752,61136,59384,37097	Tauros	37	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	55584,25305,25758,11135	1	p1
+INIT	nomod_control_crosschop	17266,9680,456,52970	26444,21397,11434,155
+DEC	nomod_control_crosschop	26444,21397,11434,155	move	0	0	m0	m0	21487,28728,5679,18047	Tauros	354	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	26444,21397,11434,155	1	p1
+INIT	nomod_control_crosschop	32315,36434,19484,54198	44088,37905,26998,2935
+DEC	nomod_control_crosschop	44088,37905,26998,2935	move	0	0	m0	m0	7512,35943,17182,6668	Tauros	49	354	0	-	1	Snorlax	524	524	0	-	1	p1	1	0
+DEC	nomod_control_crosschop	44088,37905,26998,2935	move	0	0	m0	m0	42889,10008,65316,58973	Tauros	0	354	1	-	0	Snorlax	194	524	0	-	1	p1	0	0
+END	nomod_control_crosschop	44088,37905,26998,2935	1	p2
+INIT	nomod_control_crosschop	56040,14462,52995,22850	21476,24653,42754,59411
+DEC	nomod_control_crosschop	21476,24653,42754,59411	move	0	0	m0	m0	15539,27917,23141,5880	Tauros	207	354	0	-	1	Snorlax	524	524	0	-	1	p1	1	0
+DEC	nomod_control_crosschop	21476,24653,42754,59411	move	0	0	m0	m0	36254,27967,16189,480	Tauros	65	354	0	-	1	Snorlax	241	524	0	-	1	p1	0	0
+DEC	nomod_control_crosschop	21476,24653,42754,59411	move	0	0	m0	m0	29735,12401,60352,31069	Tauros	65	354	0	-	1	Snorlax	0	524	1	-	0	p1	0	0
+END	nomod_control_crosschop	21476,24653,42754,59411	1	p1

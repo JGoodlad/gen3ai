@@ -1,0 +1,1580 @@
+# ability_batch1_golden.txt — the gen3_ability_batch1_v1 class-sweep golden.
+# Per-decision STATE+HP+SPE-BOOST+SEED differential to GAME-END: CRIT_IMMUNE /
+# WEATHER_SPEED / WEATHER_NEGATE / RESIDUAL (Speed Boost / Rain Dish).
+# SCEN  <id>
+# TEAM  <id>  <p1|p2>  <packed team string>
+# INIT  <id>  <seed>  <m,n,o,p>
+# DEC   <id> <seed> <req> <fP1> <fP2> <cP1> <cP2> <seedAfter> \
+#        p1(species hp max fnt status left speBoost) p2(...) first covered
+# END   <id>  <seed>  <ended:0|1>  <winner:p1|p2|tie|none>
+SCEN	shellarmor_vs_crabhammer
+TEAM	shellarmor_vs_crabhammer	p1	Cloyster|||ShellArmor|surf,rest|Bold|252,,252,,,|N||||
+TEAM	shellarmor_vs_crabhammer	p2	Kingler|||NoAbility|crabhammer,rest|Adamant|252,252,,,,|N||||
+INIT	shellarmor_vs_crabhammer	14384,20876,61741,29496	45384,41991,4538,62929
+DEC	shellarmor_vs_crabhammer	45384,41991,4538,62929	move	0	0	m0	m0	5241,27972,2797,21145	Cloyster	250	304	0	-	1	0	Kingler	232	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	45384,41991,4538,62929	move	0	0	m0	m0	2576,36899,5731,38324	Cloyster	250	304	0	-	1	0	Kingler	147	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	45384,41991,4538,62929	move	0	0	m0	m0	9291,22892,32150,58341	Cloyster	194	304	0	-	1	0	Kingler	61	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	45384,41991,4538,62929	move	0	0	m0	m0	11958,45879,35201,39209	Cloyster	194	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	0
+END	shellarmor_vs_crabhammer	45384,41991,4538,62929	1	p1
+INIT	shellarmor_vs_crabhammer	12105,34601,19563,12172	46332,35883,13198,9621
+DEC	shellarmor_vs_crabhammer	46332,35883,13198,9621	move	0	0	m0	m0	39916,7562,26991,40413	Cloyster	255	304	0	-	1	0	Kingler	236	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	46332,35883,13198,9621	move	0	0	m0	m0	44824,31579,40526,51130	Cloyster	199	304	0	-	1	0	Kingler	153	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	46332,35883,13198,9621	move	0	0	m0	m0	34818,3960,41839,17587	Cloyster	152	304	0	-	1	0	Kingler	76	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	46332,35883,13198,9621	move	0	0	m0	m0	47417,3547,49224,55345	Cloyster	98	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	46332,35883,13198,9621	1	p1
+INIT	shellarmor_vs_crabhammer	17895,25420,15262,42784	14832,33935,43170,3993
+DEC	shellarmor_vs_crabhammer	14832,33935,43170,3993	move	0	0	m0	m0	7716,56247,16386,39777	Cloyster	253	304	0	-	1	0	Kingler	235	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	14832,33935,43170,3993	move	0	0	m0	m0	59507,20153,17171,54894	Cloyster	201	304	0	-	1	0	Kingler	154	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	14832,33935,43170,3993	move	0	0	m0	m0	17418,55197,34233,42711	Cloyster	145	304	0	-	1	0	Kingler	63	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	14832,33935,43170,3993	move	0	0	m0	m0	23517,52872,1852,35957	Cloyster	97	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	14832,33935,43170,3993	1	p1
+INIT	shellarmor_vs_crabhammer	21475,582,31802,60916	46116,28979,1270,14301
+DEC	shellarmor_vs_crabhammer	46116,28979,1270,14301	move	0	0	m0	m0	32150,3002,8841,20261	Cloyster	250	304	0	-	1	0	Kingler	229	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	46116,28979,1270,14301	move	0	0	m0	m0	29942,52818,46812,38498	Cloyster	203	304	0	-	1	0	Kingler	140	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	46116,28979,1270,14301	move	0	0	m0	m0	8044,1354,36439,21041	Cloyster	203	304	0	-	1	0	Kingler	57	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	46116,28979,1270,14301	move	0	0	m0	m0	11619,26370,5920,46367	Cloyster	147	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	46116,28979,1270,14301	1	p1
+INIT	shellarmor_vs_crabhammer	5472,39410,60940,22536	55192,30231,7306,25185
+DEC	shellarmor_vs_crabhammer	55192,30231,7306,25185	move	0	0	m0	m0	17730,57578,35358,64809	Cloyster	254	304	0	-	1	0	Kingler	235	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	55192,30231,7306,25185	move	0	0	m0	m0	6671,21379,9674,31638	Cloyster	202	304	0	-	1	0	Kingler	157	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	55192,30231,7306,25185	move	0	0	m0	m0	17334,51525,1210,9077	Cloyster	202	304	0	-	1	0	Kingler	77	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	55192,30231,7306,25185	move	0	0	m0	m0	48629,63383,17213,55683	Cloyster	146	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	55192,30231,7306,25185	1	p1
+INIT	shellarmor_vs_crabhammer	41634,16728,37688,31068	38988,63291,862,37669
+DEC	shellarmor_vs_crabhammer	38988,63291,862,37669	move	0	0	m0	m0	37775,57537,54551,10605	Cloyster	256	304	0	-	1	0	Kingler	231	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	38988,63291,862,37669	move	0	0	m0	m0	14381,47631,27338,14858	Cloyster	203	304	0	-	1	0	Kingler	61	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	38988,63291,862,37669	move	0	0	m0	m0	14374,14808,64925,40960	Cloyster	155	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	38988,63291,862,37669	1	p1
+INIT	shellarmor_vs_crabhammer	33270,43575,1753,9712	10816,39071,3442,3625
+DEC	shellarmor_vs_crabhammer	10816,39071,3442,3625	move	0	0	m0	m0	53125,41313,63076,24279	Cloyster	304	304	0	-	1	0	Kingler	235	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	10816,39071,3442,3625	move	0	0	m0	m0	44746,599,18244,65004	Cloyster	254	304	0	-	1	0	Kingler	156	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	10816,39071,3442,3625	move	0	0	m0	m0	23634,55428,52281,189	Cloyster	200	304	0	-	1	0	Kingler	75	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	10816,39071,3442,3625	move	0	0	m0	m0	33105,24760,31284,25355	Cloyster	148	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	10816,39071,3442,3625	1	p1
+INIT	shellarmor_vs_crabhammer	885,56248,6443,29124	372,15939,52934,22381
+DEC	shellarmor_vs_crabhammer	372,15939,52934,22381	move	0	0	m0	m0	32425,19595,31340,47931	Cloyster	304	304	0	-	1	0	Kingler	232	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	372,15939,52934,22381	move	0	0	m0	m0	47571,56729,28423,42496	Cloyster	255	304	0	-	1	0	Kingler	144	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	372,15939,52934,22381	move	0	0	m0	m0	49728,34975,44535,21697	Cloyster	201	304	0	-	1	0	Kingler	60	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	372,15939,52934,22381	move	0	0	m0	m0	52187,12329,33476,20527	Cloyster	147	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	372,15939,52934,22381	1	p1
+INIT	shellarmor_vs_crabhammer	42944,31259,8342,45272	53736,3111,7002,13041
+DEC	shellarmor_vs_crabhammer	53736,3111,7002,13041	move	0	0	m0	m0	8612,53104,29841,19423	Cloyster	304	304	0	-	1	0	Kingler	236	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	53736,3111,7002,13041	move	0	0	m0	m0	59281,55157,28148,58708	Cloyster	257	304	0	-	1	0	Kingler	152	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	53736,3111,7002,13041	move	0	0	m0	m0	31279,44463,54318,34565	Cloyster	206	304	0	-	1	0	Kingler	63	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	53736,3111,7002,13041	move	0	0	m0	m0	17079,21562,4442,19017	Cloyster	206	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	0
+END	shellarmor_vs_crabhammer	53736,3111,7002,13041	1	p1
+INIT	shellarmor_vs_crabhammer	22164,42141,43173,30508	36764,26187,1838,42165
+DEC	shellarmor_vs_crabhammer	36764,26187,1838,42165	move	0	0	m0	m0	11533,28572,51005,55549	Cloyster	252	304	0	-	1	0	Kingler	228	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	36764,26187,1838,42165	move	0	0	m0	m0	16446,57186,35841,32858	Cloyster	202	304	0	-	1	0	Kingler	150	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	36764,26187,1838,42165	move	0	0	m0	m0	557,35457,60386,64723	Cloyster	154	304	0	-	1	0	Kingler	66	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	36764,26187,1838,42165	move	0	0	m0	m0	2469,46405,56680,6481	Cloyster	104	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	36764,26187,1838,42165	1	p1
+INIT	shellarmor_vs_crabhammer	8102,3327,19569,39104	28304,61615,58946,61625
+DEC	shellarmor_vs_crabhammer	28304,61615,58946,61625	move	0	0	m0	m0	33415,21534,9422,63617	Cloyster	248	304	0	-	1	0	Kingler	237	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	28304,61615,58946,61625	move	0	0	m0	m0	63813,35874,9325,51470	Cloyster	199	304	0	-	1	0	Kingler	153	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	28304,61615,58946,61625	move	0	0	m0	m0	25887,40580,60432,54861	Cloyster	199	304	0	-	1	0	Kingler	62	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	28304,61615,58946,61625	move	0	0	m0	m0	59088,10376,9117,10523	Cloyster	145	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	28304,61615,58946,61625	1	p1
+INIT	shellarmor_vs_crabhammer	58721,17963,51566,10644	58052,36691,19606,39677
+DEC	shellarmor_vs_crabhammer	58052,36691,19606,39677	move	0	0	m0	m0	58219,14900,60430,60997	Cloyster	252	304	0	-	1	0	Kingler	233	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	58052,36691,19606,39677	move	0	0	m0	m0	6411,52457,43030,25346	Cloyster	203	304	0	-	1	0	Kingler	153	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	58052,36691,19606,39677	move	0	0	m0	m0	46503,19660,22463,30043	Cloyster	148	304	0	-	1	0	Kingler	73	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	58052,36691,19606,39677	move	0	0	m0	m0	4308,32485,22649,26649	Cloyster	96	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	58052,36691,19606,39677	1	p1
+INIT	shellarmor_vs_crabhammer	30900,61957,35020,32168	41016,26167,3626,26497
+DEC	shellarmor_vs_crabhammer	41016,26167,3626,26497	move	0	0	m0	m0	42094,875,11001,65097	Cloyster	249	304	0	-	1	0	Kingler	233	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	41016,26167,3626,26497	move	0	0	m0	m0	45951,4009,65097,49718	Cloyster	199	304	0	-	1	0	Kingler	149	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	41016,26167,3626,26497	move	0	0	m0	m0	28802,8810,2369,52735	Cloyster	145	304	0	-	1	0	Kingler	67	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	41016,26167,3626,26497	move	0	0	m0	m0	38689,24685,59317,26333	Cloyster	96	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	41016,26167,3626,26497	1	p1
+INIT	shellarmor_vs_crabhammer	24042,45304,36018,10492	39660,55643,16126,23109
+DEC	shellarmor_vs_crabhammer	39660,55643,16126,23109	move	0	0	m0	m0	37414,51739,16355,44173	Cloyster	251	304	0	-	1	0	Kingler	135	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	39660,55643,16126,23109	move	0	0	m0	m0	15781,60245,500,39594	Cloyster	197	304	0	-	1	0	Kingler	47	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	39660,55643,16126,23109	move	0	0	m0	m0	14148,5720,61292,62878	Cloyster	197	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	0
+END	shellarmor_vs_crabhammer	39660,55643,16126,23109	1	p1
+INIT	shellarmor_vs_crabhammer	15023,5990,63901,65424	1760,36031,13074,46921
+DEC	shellarmor_vs_crabhammer	1760,36031,13074,46921	move	0	0	m0	m0	16177,9347,28247,48401	Cloyster	250	304	0	-	1	0	Kingler	231	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	1760,36031,13074,46921	move	0	0	m0	m0	31324,61344,15566,57438	Cloyster	201	304	0	-	1	0	Kingler	150	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	1760,36031,13074,46921	move	0	0	m0	m0	38649,33685,28992,27655	Cloyster	152	304	0	-	1	0	Kingler	67	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	1760,36031,13074,46921	move	0	0	m0	m0	680,48014,248,26405	Cloyster	105	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	1760,36031,13074,46921	1	p1
+INIT	shellarmor_vs_crabhammer	48361,59492,926,5476	22548,25699,32358,653
+DEC	shellarmor_vs_crabhammer	22548,25699,32358,653	move	0	0	m0	m0	19060,61986,46424,13269	Cloyster	255	304	0	-	1	0	Kingler	227	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	22548,25699,32358,653	move	0	0	m0	m0	58868,2866,31461,15264	Cloyster	255	304	0	-	1	0	Kingler	140	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	22548,25699,32358,653	move	0	0	m0	m0	12938,40552,28085,1505	Cloyster	206	304	0	-	1	0	Kingler	58	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	22548,25699,32358,653	move	0	0	m0	m0	9124,57142,10377,37455	Cloyster	158	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	22548,25699,32358,653	1	p1
+INIT	shellarmor_vs_crabhammer	57211,7951,40264,48760	17032,33863,62714,17
+DEC	shellarmor_vs_crabhammer	17032,33863,62714,17	move	0	0	m0	m0	19505,39155,47042,21721	Cloyster	252	304	0	-	1	0	Kingler	131	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	17032,33863,62714,17	move	0	0	m0	m0	52769,65339,16648,50054	Cloyster	202	304	0	-	1	0	Kingler	47	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	17032,33863,62714,17	move	0	0	m0	m0	30530,44445,60205,56412	Cloyster	154	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	17032,33863,62714,17	1	p1
+INIT	shellarmor_vs_crabhammer	12607,53872,51395,36556	47676,20587,43726,46037
+DEC	shellarmor_vs_crabhammer	47676,20587,43726,46037	move	0	0	m0	m0	52714,40559,54249,42013	Cloyster	250	304	0	-	1	0	Kingler	227	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	47676,20587,43726,46037	move	0	0	m0	m0	19804,62076,34768,35066	Cloyster	198	304	0	-	1	0	Kingler	149	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	47676,20587,43726,46037	move	0	0	m0	m0	14268,20939,60402,50419	Cloyster	145	304	0	-	1	0	Kingler	72	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	47676,20587,43726,46037	move	0	0	m0	m0	30741,62978,5660,13655	Cloyster	145	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	0
+END	shellarmor_vs_crabhammer	47676,20587,43726,46037	1	p1
+INIT	shellarmor_vs_crabhammer	11250,53668,38851,23136	62256,27855,62434,25049
+DEC	shellarmor_vs_crabhammer	62256,27855,62434,25049	move	0	0	m0	m0	32449,26162,9111,58785	Cloyster	255	304	0	-	1	0	Kingler	234	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	62256,27855,62434,25049	move	0	0	m0	m0	8952,43227,22711,2990	Cloyster	205	304	0	-	1	0	Kingler	157	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	62256,27855,62434,25049	move	0	0	m0	m0	38008,41870,739,2839	Cloyster	155	304	0	-	1	0	Kingler	77	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	62256,27855,62434,25049	move	0	0	m0	m0	11536,20481,18017,41653	Cloyster	102	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	62256,27855,62434,25049	1	p1
+INIT	shellarmor_vs_crabhammer	48696,4362,55941,13620	24932,48499,25654,36381
+DEC	shellarmor_vs_crabhammer	24932,48499,25654,36381	move	0	0	m0	m0	43721,45199,25714,7525	Cloyster	253	304	0	-	1	0	Kingler	232	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	24932,48499,25654,36381	move	0	0	m0	m0	9346,48998,42860,32674	Cloyster	198	304	0	-	1	0	Kingler	155	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	24932,48499,25654,36381	move	0	0	m0	m0	39539,36767,50614,16763	Cloyster	147	304	0	-	1	0	Kingler	67	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	24932,48499,25654,36381	move	0	0	m0	m0	19910,51674,23505,23865	Cloyster	97	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	24932,48499,25654,36381	1	p1
+INIT	shellarmor_vs_crabhammer	6862,50814,28885,29512	47320,26199,53194,64673
+DEC	shellarmor_vs_crabhammer	47320,26199,53194,64673	move	0	0	m0	m0	18469,45279,3987,36713	Cloyster	251	304	0	-	1	0	Kingler	131	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	47320,26199,53194,64673	move	0	0	m0	m0	23610,36729,40978,22742	Cloyster	200	304	0	-	1	0	Kingler	48	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	47320,26199,53194,64673	move	0	0	m0	m0	35386,16956,22310,53292	Cloyster	150	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	47320,26199,53194,64673	1	p1
+INIT	shellarmor_vs_crabhammer	60401,5017,54132,43164	60812,52091,19102,45413
+DEC	shellarmor_vs_crabhammer	60812,52091,19102,45413	move	0	0	m0	m0	29054,11470,18310,29427	Cloyster	304	304	0	-	1	0	Kingler	227	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	60812,52091,19102,45413	move	0	0	m0	m0	49135,61395,31935,60504	Cloyster	254	304	0	-	1	0	Kingler	145	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	60812,52091,19102,45413	move	0	0	m0	m0	36051,11710,32703,45369	Cloyster	204	304	0	-	1	0	Kingler	65	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	60812,52091,19102,45413	move	0	0	m0	m0	11789,22303,26761,48743	Cloyster	148	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	60812,52091,19102,45413	1	p1
+INIT	shellarmor_vs_crabhammer	15040,2960,45126,43312	13184,37087,10418,61545
+DEC	shellarmor_vs_crabhammer	13184,37087,10418,61545	move	0	0	m0	m0	27505,2233,55664,29233	Cloyster	254	304	0	-	1	0	Kingler	226	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	13184,37087,10418,61545	move	0	0	m0	m0	18603,39650,13139,19198	Cloyster	201	304	0	-	1	0	Kingler	142	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	13184,37087,10418,61545	move	0	0	m0	m0	50805,25219,52341,44583	Cloyster	148	304	0	-	1	0	Kingler	65	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	13184,37087,10418,61545	move	0	0	m0	m0	18776,13501,37172,581	Cloyster	99	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	13184,37087,10418,61545	1	p1
+INIT	shellarmor_vs_crabhammer	46371,29046,15193,35076	65204,39555,65030,15789
+DEC	shellarmor_vs_crabhammer	65204,39555,65030,15789	move	0	0	m0	m0	20525,50609,36344,58235	Cloyster	304	304	0	-	1	0	Kingler	237	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	65204,39555,65030,15789	move	0	0	m0	m0	46630,29759,21044,41280	Cloyster	251	304	0	-	1	0	Kingler	155	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	65204,39555,65030,15789	move	0	0	m0	m0	2034,48809,54022,18177	Cloyster	197	304	0	-	1	0	Kingler	75	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	65204,39555,65030,15789	move	0	0	m0	m0	50710,59786,26178,58479	Cloyster	148	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	65204,39555,65030,15789	1	p1
+INIT	shellarmor_vs_crabhammer	62599,11680,26435,39960	808,3175,40602,23857
+DEC	shellarmor_vs_crabhammer	808,3175,40602,23857	move	0	0	m0	m0	43018,54646,29642,44537	Cloyster	253	304	0	-	1	0	Kingler	230	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	808,3175,40602,23857	move	0	0	m0	m0	55286,24971,32620,62612	Cloyster	253	304	0	-	1	0	Kingler	151	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	808,3175,40602,23857	move	0	0	m0	m0	18944,32318,29208,32069	Cloyster	200	304	0	-	1	0	Kingler	64	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	808,3175,40602,23857	move	0	0	m0	m0	919,31964,60441,54739	Cloyster	146	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	808,3175,40602,23857	1	p1
+INIT	shellarmor_vs_crabhammer	59195,64984,44229,30316	13532,19083,7790,21237
+DEC	shellarmor_vs_crabhammer	13532,19083,7790,21237	move	0	0	m0	m0	8734,32833,36722,65341	Cloyster	255	304	0	-	1	0	Kingler	223	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	13532,19083,7790,21237	move	0	0	m0	m0	13606,15446,45594,62248	Cloyster	255	304	0	-	1	0	Kingler	40	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	13532,19083,7790,21237	move	0	0	m0	m0	963,40268,25671,11662	Cloyster	206	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	13532,19083,7790,21237	1	p1
+INIT	shellarmor_vs_crabhammer	37986,35147,12381,60416	51152,63727,53634,25337
+DEC	shellarmor_vs_crabhammer	51152,63727,53634,25337	move	0	0	m0	m0	50430,38932,1418,60967	Cloyster	304	304	0	-	1	0	Kingler	233	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	51152,63727,53634,25337	move	0	0	m0	m0	2796,54150,6281,45308	Cloyster	252	304	0	-	1	0	Kingler	146	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	51152,63727,53634,25337	move	0	0	m0	m0	28083,46365,24851,38029	Cloyster	203	304	0	-	1	0	Kingler	55	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	51152,63727,53634,25337	move	0	0	m0	m0	5236,34348,41480,59739	Cloyster	156	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	51152,63727,53634,25337	1	p1
+INIT	shellarmor_vs_crabhammer	56935,25315,44928,4308	12292,64403,19414,4413
+DEC	shellarmor_vs_crabhammer	12292,64403,19414,4413	move	0	0	m0	m0	54193,28361,35762,56453	Cloyster	253	304	0	-	1	0	Kingler	225	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	12292,64403,19414,4413	move	0	0	m0	m0	26211,2092,31852,33296	Cloyster	253	304	0	-	1	0	Kingler	137	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	12292,64403,19414,4413	move	0	0	m0	m0	11333,26391,28431,36215	Cloyster	253	304	0	-	1	0	Kingler	47	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	12292,64403,19414,4413	move	0	0	m0	m0	35963,38954,7614,4117	Cloyster	204	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	12292,64403,19414,4413	1	p1
+INIT	shellarmor_vs_crabhammer	3284,11396,37725,14568	8568,30327,24938,8641
+DEC	shellarmor_vs_crabhammer	8568,30327,24938,8641	move	0	0	m0	m0	27235,25375,3625,45193	Cloyster	254	304	0	-	1	0	Kingler	226	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	8568,30327,24938,8641	move	0	0	m0	m0	50286,13164,38090,16246	Cloyster	205	304	0	-	1	0	Kingler	142	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	8568,30327,24938,8641	move	0	0	m0	m0	32394,8833,46016,38101	Cloyster	205	304	0	-	1	0	Kingler	53	314	0	-	1	0	p2	0
+DEC	shellarmor_vs_crabhammer	8568,30327,24938,8641	move	0	0	m0	m0	53952,53786,45665,28131	Cloyster	153	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	shellarmor_vs_crabhammer	8568,30327,24938,8641	1	p1
+INIT	shellarmor_vs_crabhammer	49487,64820,56858,63548	36908,52635,9790,39045
+DEC	shellarmor_vs_crabhammer	36908,52635,9790,39045	move	0	0	m0	m0	7569,53458,19415,25293	Cloyster	250	304	0	-	1	0	Kingler	233	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	36908,52635,9790,39045	move	0	0	m0	m0	42340,21181,53496,19434	Cloyster	201	304	0	-	1	0	Kingler	151	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	36908,52635,9790,39045	move	0	0	m0	m0	35760,57863,17044,44835	Cloyster	146	304	0	-	1	0	Kingler	74	314	0	-	1	0	p2	1
+DEC	shellarmor_vs_crabhammer	36908,52635,9790,39045	move	0	0	m0	m0	8668,50763,3487,23687	Cloyster	146	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	0
+END	shellarmor_vs_crabhammer	36908,52635,9790,39045	1	p1
+SCEN	battlearmor_vs_slash
+TEAM	battlearmor_vs_slash	p1	Skarmory|||BattleArmor|drillpeck,rest|Impish|252,,252,,,|N||||
+TEAM	battlearmor_vs_slash	p2	Ursaring|||NoAbility|slash,rest|Adamant|252,252,,,,|N||||
+INIT	battlearmor_vs_slash	14384,20876,61741,29496	45384,41991,4538,62929
+DEC	battlearmor_vs_slash	45384,41991,4538,62929	move	0	0	m0	m0	5241,27972,2797,21145	Skarmory	296	334	0	-	1	0	Ursaring	280	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	45384,41991,4538,62929	move	0	0	m0	m0	6656,57430,19255,13894	Skarmory	257	334	0	-	1	0	Ursaring	180	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	45384,41991,4538,62929	move	0	0	m0	m0	49665,8719,14433,61135	Skarmory	221	334	0	-	1	0	Ursaring	83	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	45384,41991,4538,62929	move	0	0	m0	m0	45543,36053,5981,64752	Skarmory	221	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	45384,41991,4538,62929	1	p1
+INIT	battlearmor_vs_slash	12105,34601,19563,12172	46332,35883,13198,9621
+DEC	battlearmor_vs_slash	46332,35883,13198,9621	move	0	0	m0	m0	39916,7562,26991,40413	Skarmory	298	334	0	-	1	0	Ursaring	288	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	46332,35883,13198,9621	move	0	0	m0	m0	44824,31579,40526,51130	Skarmory	260	334	0	-	1	0	Ursaring	180	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	46332,35883,13198,9621	move	0	0	m0	m0	34818,3960,41839,17587	Skarmory	225	334	0	-	1	0	Ursaring	89	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	46332,35883,13198,9621	move	0	0	m0	m0	14577,23324,18638,46532	Skarmory	225	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	46332,35883,13198,9621	1	p1
+INIT	battlearmor_vs_slash	17895,25420,15262,42784	14832,33935,43170,3993
+DEC	battlearmor_vs_slash	14832,33935,43170,3993	move	0	0	m0	m0	7716,56247,16386,39777	Skarmory	298	334	0	-	1	0	Ursaring	285	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	14832,33935,43170,3993	move	0	0	m0	m0	59507,20153,17171,54894	Skarmory	261	334	0	-	1	0	Ursaring	185	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	14832,33935,43170,3993	move	0	0	m0	m0	17418,55197,34233,42711	Skarmory	219	334	0	-	1	0	Ursaring	77	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	14832,33935,43170,3993	move	0	0	m0	m0	54958,17067,13370,45528	Skarmory	219	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	14832,33935,43170,3993	1	p1
+INIT	battlearmor_vs_slash	21475,582,31802,60916	46116,28979,1270,14301
+DEC	battlearmor_vs_slash	46116,28979,1270,14301	move	0	0	m0	m0	32150,3002,8841,20261	Skarmory	295	334	0	-	1	0	Ursaring	173	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	46116,28979,1270,14301	move	0	0	m0	m0	29942,52818,46812,38498	Skarmory	254	334	0	-	1	0	Ursaring	82	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	46116,28979,1270,14301	move	0	0	m0	m0	56831,52189,61746,17175	Skarmory	254	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	46116,28979,1270,14301	1	p1
+INIT	battlearmor_vs_slash	5472,39410,60940,22536	55192,30231,7306,25185
+DEC	battlearmor_vs_slash	55192,30231,7306,25185	move	0	0	m0	m0	17730,57578,35358,64809	Skarmory	298	334	0	-	1	0	Ursaring	287	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	55192,30231,7306,25185	move	0	0	m0	m0	6671,21379,9674,31638	Skarmory	262	334	0	-	1	0	Ursaring	187	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	55192,30231,7306,25185	move	0	0	m0	m0	5075,19169,11030,24543	Skarmory	226	334	0	-	1	0	Ursaring	89	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	55192,30231,7306,25185	move	0	0	m0	m0	49178,1268,34884,960	Skarmory	226	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	55192,30231,7306,25185	1	p1
+INIT	battlearmor_vs_slash	41634,16728,37688,31068	38988,63291,862,37669
+DEC	battlearmor_vs_slash	38988,63291,862,37669	move	0	0	m0	m0	37775,57537,54551,10605	Skarmory	296	334	0	-	1	0	Ursaring	292	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	38988,63291,862,37669	move	0	0	m0	m0	14381,47631,27338,14858	Skarmory	257	334	0	-	1	0	Ursaring	190	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	38988,63291,862,37669	move	0	0	m0	m0	24839,33060,51702,48835	Skarmory	217	334	0	-	1	0	Ursaring	3	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	38988,63291,862,37669	move	0	0	m0	m0	13408,116,8468,16788	Skarmory	217	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	38988,63291,862,37669	1	p1
+INIT	battlearmor_vs_slash	33270,43575,1753,9712	10816,39071,3442,3625
+DEC	battlearmor_vs_slash	10816,39071,3442,3625	move	0	0	m0	m0	29818,34860,45596,38897	Skarmory	296	334	0	-	1	0	Ursaring	287	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	10816,39071,3442,3625	move	0	0	m0	m0	4976,14404,21606,50622	Skarmory	258	334	0	-	1	0	Ursaring	194	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	10816,39071,3442,3625	move	0	0	m0	m0	13668,9950,52647,14823	Skarmory	217	334	0	-	1	0	Ursaring	91	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	10816,39071,3442,3625	move	0	0	m0	m0	53715,16519,63936,37544	Skarmory	217	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	10816,39071,3442,3625	1	p1
+INIT	battlearmor_vs_slash	885,56248,6443,29124	372,15939,52934,22381
+DEC	battlearmor_vs_slash	372,15939,52934,22381	move	0	0	m0	m0	9564,49473,57044,19637	Skarmory	297	334	0	-	1	0	Ursaring	293	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	372,15939,52934,22381	move	0	0	m0	m0	26044,57738,54864,21170	Skarmory	259	334	0	-	1	0	Ursaring	198	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	372,15939,52934,22381	move	0	0	m0	m0	50187,48333,35933,30027	Skarmory	220	334	0	-	1	0	Ursaring	103	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	372,15939,52934,22381	move	0	0	m0	m0	9540,52951,36218,35580	Skarmory	220	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	372,15939,52934,22381	1	p1
+INIT	battlearmor_vs_slash	42944,31259,8342,45272	53736,3111,7002,13041
+DEC	battlearmor_vs_slash	53736,3111,7002,13041	move	0	0	m0	m0	17310,48546,16248,35769	Skarmory	296	334	0	-	1	0	Ursaring	293	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	53736,3111,7002,13041	move	0	0	m0	m0	3797,3572,24955,21734	Skarmory	258	334	0	-	1	0	Ursaring	188	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	53736,3111,7002,13041	move	0	0	m0	m0	24571,19199,28854,21743	Skarmory	222	334	0	-	1	0	Ursaring	90	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	53736,3111,7002,13041	move	0	0	m0	m0	10332,53453,65157,65168	Skarmory	222	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	53736,3111,7002,13041	1	p1
+INIT	battlearmor_vs_slash	22164,42141,43173,30508	36764,26187,1838,42165
+DEC	battlearmor_vs_slash	36764,26187,1838,42165	move	0	0	m0	m0	11533,28572,51005,55549	Skarmory	295	334	0	-	1	0	Ursaring	284	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	36764,26187,1838,42165	move	0	0	m0	m0	16446,57186,35841,32858	Skarmory	259	334	0	-	1	0	Ursaring	187	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	36764,26187,1838,42165	move	0	0	m0	m0	557,35457,60386,64723	Skarmory	220	334	0	-	1	0	Ursaring	94	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	36764,26187,1838,42165	move	0	0	m0	m0	43222,26432,23250,356	Skarmory	220	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	36764,26187,1838,42165	1	p1
+INIT	battlearmor_vs_slash	8102,3327,19569,39104	28304,61615,58946,61625
+DEC	battlearmor_vs_slash	28304,61615,58946,61625	move	0	0	m0	m0	33415,21534,9422,63617	Skarmory	299	334	0	-	1	0	Ursaring	276	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	28304,61615,58946,61625	move	0	0	m0	m0	63813,35874,9325,51470	Skarmory	260	334	0	-	1	0	Ursaring	180	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	28304,61615,58946,61625	move	0	0	m0	m0	9137,29496,19844,53495	Skarmory	219	334	0	-	1	0	Ursaring	82	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	28304,61615,58946,61625	move	0	0	m0	m0	2490,2688,12772,59256	Skarmory	219	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	28304,61615,58946,61625	1	p1
+INIT	battlearmor_vs_slash	58721,17963,51566,10644	58052,36691,19606,39677
+DEC	battlearmor_vs_slash	58052,36691,19606,39677	move	0	0	m0	m0	58219,14900,60430,60997	Skarmory	297	334	0	-	1	0	Ursaring	283	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	58052,36691,19606,39677	move	0	0	m0	m0	6411,52457,43030,25346	Skarmory	260	334	0	-	1	0	Ursaring	187	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	58052,36691,19606,39677	move	0	0	m0	m0	46503,19660,22463,30043	Skarmory	224	334	0	-	1	0	Ursaring	81	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	58052,36691,19606,39677	move	0	0	m0	m0	28846,29246,18918,17612	Skarmory	224	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	58052,36691,19606,39677	1	p1
+INIT	battlearmor_vs_slash	30900,61957,35020,32168	41016,26167,3626,26497
+DEC	battlearmor_vs_slash	41016,26167,3626,26497	move	0	0	m0	m0	42094,875,11001,65097	Skarmory	297	334	0	-	1	0	Ursaring	278	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	41016,26167,3626,26497	move	0	0	m0	m0	45951,4009,65097,49718	Skarmory	258	334	0	-	1	0	Ursaring	180	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	41016,26167,3626,26497	move	0	0	m0	m0	28802,8810,2369,52735	Skarmory	220	334	0	-	1	0	Ursaring	75	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	41016,26167,3626,26497	move	0	0	m0	m0	50484,61537,31267,60768	Skarmory	220	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	41016,26167,3626,26497	1	p1
+INIT	battlearmor_vs_slash	24042,45304,36018,10492	39660,55643,16126,23109
+DEC	battlearmor_vs_slash	39660,55643,16126,23109	move	0	0	m0	m0	37414,51739,16355,44173	Skarmory	293	334	0	-	1	0	Ursaring	281	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	39660,55643,16126,23109	move	0	0	m0	m0	15781,60245,500,39594	Skarmory	253	334	0	-	1	0	Ursaring	176	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	39660,55643,16126,23109	move	0	0	m0	m0	65414,11152,2355,65251	Skarmory	216	334	0	-	1	0	Ursaring	84	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	39660,55643,16126,23109	move	0	0	m0	m0	19294,36736,62983,62772	Skarmory	216	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	39660,55643,16126,23109	1	p1
+INIT	battlearmor_vs_slash	15023,5990,63901,65424	1760,36031,13074,46921
+DEC	battlearmor_vs_slash	1760,36031,13074,46921	move	0	0	m0	m0	16177,9347,28247,48401	Skarmory	296	334	0	-	1	0	Ursaring	280	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	1760,36031,13074,46921	move	0	0	m0	m0	31324,61344,15566,57438	Skarmory	259	334	0	-	1	0	Ursaring	185	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	1760,36031,13074,46921	move	0	0	m0	m0	38649,33685,28992,27655	Skarmory	221	334	0	-	1	0	Ursaring	89	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	1760,36031,13074,46921	move	0	0	m0	m0	61885,20125,10141,45128	Skarmory	221	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	1760,36031,13074,46921	1	p1
+INIT	battlearmor_vs_slash	48361,59492,926,5476	22548,25699,32358,653
+DEC	battlearmor_vs_slash	22548,25699,32358,653	move	0	0	m0	m0	19060,61986,46424,13269	Skarmory	294	334	0	-	1	0	Ursaring	194	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	22548,25699,32358,653	move	0	0	m0	m0	27021,62003,28929,51026	Skarmory	256	334	0	-	1	0	Ursaring	90	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	22548,25699,32358,653	move	0	0	m0	m0	50626,54400,65498,38471	Skarmory	256	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	22548,25699,32358,653	1	p1
+INIT	battlearmor_vs_slash	57211,7951,40264,48760	17032,33863,62714,17
+DEC	battlearmor_vs_slash	17032,33863,62714,17	move	0	0	m0	m0	19505,39155,47042,21721	Skarmory	292	334	0	-	1	0	Ursaring	283	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	17032,33863,62714,17	move	0	0	m0	m0	52769,65339,16648,50054	Skarmory	253	334	0	-	1	0	Ursaring	186	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	17032,33863,62714,17	move	0	0	m0	m0	63006,44461,10927,51983	Skarmory	214	334	0	-	1	0	Ursaring	94	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	17032,33863,62714,17	move	0	0	m0	m0	22030,56576,8344,53296	Skarmory	214	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	17032,33863,62714,17	1	p1
+INIT	battlearmor_vs_slash	12607,53872,51395,36556	47676,20587,43726,46037
+DEC	battlearmor_vs_slash	47676,20587,43726,46037	move	0	0	m0	m0	52714,40559,54249,42013	Skarmory	294	334	0	-	1	0	Ursaring	279	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	47676,20587,43726,46037	move	0	0	m0	m0	19804,62076,34768,35066	Skarmory	258	334	0	-	1	0	Ursaring	178	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	47676,20587,43726,46037	move	0	0	m0	m0	14268,20939,60402,50419	Skarmory	223	334	0	-	1	0	Ursaring	75	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	47676,20587,43726,46037	move	0	0	m0	m0	11824,55913,52539,7428	Skarmory	223	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	47676,20587,43726,46037	1	p1
+INIT	battlearmor_vs_slash	11250,53668,38851,23136	62256,27855,62434,25049
+DEC	battlearmor_vs_slash	62256,27855,62434,25049	move	0	0	m0	m0	32449,26162,9111,58785	Skarmory	298	334	0	-	1	0	Ursaring	289	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	62256,27855,62434,25049	move	0	0	m0	m0	8952,43227,22711,2990	Skarmory	263	334	0	-	1	0	Ursaring	192	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	62256,27855,62434,25049	move	0	0	m0	m0	38008,41870,739,2839	Skarmory	227	334	0	-	1	0	Ursaring	94	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	62256,27855,62434,25049	move	0	0	m0	m0	20287,64929,46447,60696	Skarmory	227	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	62256,27855,62434,25049	1	p1
+INIT	battlearmor_vs_slash	48696,4362,55941,13620	24932,48499,25654,36381
+DEC	battlearmor_vs_slash	24932,48499,25654,36381	move	0	0	m0	m0	43721,45199,25714,7525	Skarmory	296	334	0	-	1	0	Ursaring	285	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	24932,48499,25654,36381	move	0	0	m0	m0	9346,48998,42860,32674	Skarmory	261	334	0	-	1	0	Ursaring	179	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	24932,48499,25654,36381	move	0	0	m0	m0	39539,36767,50614,16763	Skarmory	221	334	0	-	1	0	Ursaring	80	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	24932,48499,25654,36381	move	0	0	m0	m0	43296,39749,21608,54380	Skarmory	221	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	24932,48499,25654,36381	1	p1
+INIT	battlearmor_vs_slash	6862,50814,28885,29512	47320,26199,53194,64673
+DEC	battlearmor_vs_slash	47320,26199,53194,64673	move	0	0	m0	m0	18469,45279,3987,36713	Skarmory	292	334	0	-	1	0	Ursaring	177	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	47320,26199,53194,64673	move	0	0	m0	m0	23610,36729,40978,22742	Skarmory	254	334	0	-	1	0	Ursaring	78	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	47320,26199,53194,64673	move	0	0	m0	m0	37765,41106,9904,49211	Skarmory	254	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	47320,26199,53194,64673	1	p1
+INIT	battlearmor_vs_slash	60401,5017,54132,43164	60812,52091,19102,45413
+DEC	battlearmor_vs_slash	60812,52091,19102,45413	move	0	0	m0	m0	10007,43398,61038,49069	Skarmory	296	334	0	-	1	0	Ursaring	177	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	60812,52091,19102,45413	move	0	0	m0	m0	15828,9494,25192,19274	Skarmory	258	334	0	-	1	0	Ursaring	73	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	60812,52091,19102,45413	move	0	0	m0	m0	23886,10004,55804,44383	Skarmory	258	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	60812,52091,19102,45413	1	p1
+INIT	battlearmor_vs_slash	15040,2960,45126,43312	13184,37087,10418,61545
+DEC	battlearmor_vs_slash	13184,37087,10418,61545	move	0	0	m0	m0	27505,2233,55664,29233	Skarmory	294	334	0	-	1	0	Ursaring	287	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	13184,37087,10418,61545	move	0	0	m0	m0	18603,39650,13139,19198	Skarmory	255	334	0	-	1	0	Ursaring	184	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	13184,37087,10418,61545	move	0	0	m0	m0	50805,25219,52341,44583	Skarmory	220	334	0	-	1	0	Ursaring	82	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	13184,37087,10418,61545	move	0	0	m0	m0	50664,59698,46560,40424	Skarmory	220	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	13184,37087,10418,61545	1	p1
+INIT	battlearmor_vs_slash	46371,29046,15193,35076	65204,39555,65030,15789
+DEC	battlearmor_vs_slash	65204,39555,65030,15789	move	0	0	m0	m0	46105,44534,53146,43765	Skarmory	295	334	0	-	1	0	Ursaring	280	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	65204,39555,65030,15789	move	0	0	m0	m0	31914,50820,54524,35826	Skarmory	253	334	0	-	1	0	Ursaring	180	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	65204,39555,65030,15789	move	0	0	m0	m0	42049,35182,2178,3175	Skarmory	253	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	65204,39555,65030,15789	1	p1
+INIT	battlearmor_vs_slash	62599,11680,26435,39960	808,3175,40602,23857
+DEC	battlearmor_vs_slash	808,3175,40602,23857	move	0	0	m0	m0	43018,54646,29642,44537	Skarmory	295	334	0	-	1	0	Ursaring	285	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	808,3175,40602,23857	move	0	0	m0	m0	47202,15824,59871,33318	Skarmory	259	334	0	-	1	0	Ursaring	190	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	808,3175,40602,23857	move	0	0	m0	m0	5471,46598,26190,20783	Skarmory	222	334	0	-	1	0	Ursaring	95	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	808,3175,40602,23857	move	0	0	m0	m0	50059,64609,32150,29136	Skarmory	222	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	808,3175,40602,23857	1	p1
+INIT	battlearmor_vs_slash	59195,64984,44229,30316	13532,19083,7790,21237
+DEC	battlearmor_vs_slash	13532,19083,7790,21237	move	0	0	m0	m0	8734,32833,36722,65341	Skarmory	292	334	0	-	1	0	Ursaring	288	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	13532,19083,7790,21237	move	0	0	m0	m0	44359,15951,37307,57754	Skarmory	255	334	0	-	1	0	Ursaring	180	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	13532,19083,7790,21237	move	0	0	m0	m0	19892,53572,41886,40211	Skarmory	217	334	0	-	1	0	Ursaring	81	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	13532,19083,7790,21237	move	0	0	m0	m0	1688,65422,40970,2212	Skarmory	217	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	13532,19083,7790,21237	1	p1
+INIT	battlearmor_vs_slash	37986,35147,12381,60416	51152,63727,53634,25337
+DEC	battlearmor_vs_slash	51152,63727,53634,25337	move	0	0	m0	m0	42550,28248,26143,25281	Skarmory	294	334	0	-	1	0	Ursaring	279	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	51152,63727,53634,25337	move	0	0	m0	m0	654,52752,22089,40526	Skarmory	254	334	0	-	1	0	Ursaring	187	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	51152,63727,53634,25337	move	0	0	m0	m0	4076,17304,14822,21815	Skarmory	212	334	0	-	1	0	Ursaring	89	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	51152,63727,53634,25337	move	0	0	m0	m0	60110,56951,29669,49848	Skarmory	212	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	51152,63727,53634,25337	1	p1
+INIT	battlearmor_vs_slash	56935,25315,44928,4308	12292,64403,19414,4413
+DEC	battlearmor_vs_slash	12292,64403,19414,4413	move	0	0	m0	m0	54193,28361,35762,56453	Skarmory	293	334	0	-	1	0	Ursaring	285	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	12292,64403,19414,4413	move	0	0	m0	m0	38747,42441,46302,60482	Skarmory	257	334	0	-	1	0	Ursaring	193	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	12292,64403,19414,4413	move	0	0	m0	m0	19750,21674,60233,7579	Skarmory	221	334	0	-	1	0	Ursaring	88	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	12292,64403,19414,4413	move	0	0	m0	m0	38356,20684,48977,13324	Skarmory	221	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	12292,64403,19414,4413	1	p1
+INIT	battlearmor_vs_slash	3284,11396,37725,14568	8568,30327,24938,8641
+DEC	battlearmor_vs_slash	8568,30327,24938,8641	move	0	0	m0	m0	27235,25375,3625,45193	Skarmory	294	334	0	-	1	0	Ursaring	286	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	8568,30327,24938,8641	move	0	0	m0	m0	50286,13164,38090,16246	Skarmory	255	334	0	-	1	0	Ursaring	190	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	8568,30327,24938,8641	move	0	0	m0	m0	62413,4008,46709,55871	Skarmory	217	334	0	-	1	0	Ursaring	92	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	8568,30327,24938,8641	move	0	0	m0	m0	5285,43125,22938,12448	Skarmory	217	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	8568,30327,24938,8641	1	p1
+INIT	battlearmor_vs_slash	49487,64820,56858,63548	36908,52635,9790,39045
+DEC	battlearmor_vs_slash	36908,52635,9790,39045	move	0	0	m0	m0	7569,53458,19415,25293	Skarmory	297	334	0	-	1	0	Ursaring	279	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	36908,52635,9790,39045	move	0	0	m0	m0	42340,21181,53496,19434	Skarmory	259	334	0	-	1	0	Ursaring	184	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	36908,52635,9790,39045	move	0	0	m0	m0	35760,57863,17044,44835	Skarmory	224	334	0	-	1	0	Ursaring	78	384	0	-	1	0	p1	1
+DEC	battlearmor_vs_slash	36908,52635,9790,39045	move	0	0	m0	m0	9381,5507,30250,52340	Skarmory	224	334	0	-	1	0	Ursaring	0	384	1	-	0	0	p1	0
+END	battlearmor_vs_slash	36908,52635,9790,39045	1	p1
+SCEN	crit_control_no_armor
+TEAM	crit_control_no_armor	p1	Cloyster|||Insomnia|surf,rest|Bold|252,,252,,,|N||||
+TEAM	crit_control_no_armor	p2	Kingler|||NoAbility|crabhammer,rest|Adamant|252,252,,,,|N||||
+INIT	crit_control_no_armor	14384,20876,61741,29496	45384,41991,4538,62929
+DEC	crit_control_no_armor	45384,41991,4538,62929	move	0	0	m0	m0	5241,27972,2797,21145	Cloyster	196	304	0	-	1	0	Kingler	232	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	45384,41991,4538,62929	move	0	0	m0	m0	2576,36899,5731,38324	Cloyster	196	304	0	-	1	0	Kingler	147	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	45384,41991,4538,62929	move	0	0	m0	m0	9291,22892,32150,58341	Cloyster	84	304	0	-	1	0	Kingler	61	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	45384,41991,4538,62929	move	0	0	m0	m0	11958,45879,35201,39209	Cloyster	84	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	0
+END	crit_control_no_armor	45384,41991,4538,62929	1	p1
+INIT	crit_control_no_armor	12105,34601,19563,12172	46332,35883,13198,9621
+DEC	crit_control_no_armor	46332,35883,13198,9621	move	0	0	m0	m0	39916,7562,26991,40413	Cloyster	255	304	0	-	1	0	Kingler	236	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	46332,35883,13198,9621	move	0	0	m0	m0	44824,31579,40526,51130	Cloyster	199	304	0	-	1	0	Kingler	153	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	46332,35883,13198,9621	move	0	0	m0	m0	34818,3960,41839,17587	Cloyster	152	304	0	-	1	0	Kingler	76	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	46332,35883,13198,9621	move	0	0	m0	m0	47417,3547,49224,55345	Cloyster	44	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	46332,35883,13198,9621	1	p1
+INIT	crit_control_no_armor	17895,25420,15262,42784	14832,33935,43170,3993
+DEC	crit_control_no_armor	14832,33935,43170,3993	move	0	0	m0	m0	7716,56247,16386,39777	Cloyster	253	304	0	-	1	0	Kingler	235	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	14832,33935,43170,3993	move	0	0	m0	m0	59507,20153,17171,54894	Cloyster	201	304	0	-	1	0	Kingler	154	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	14832,33935,43170,3993	move	0	0	m0	m0	17418,55197,34233,42711	Cloyster	145	304	0	-	1	0	Kingler	63	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	14832,33935,43170,3993	move	0	0	m0	m0	23517,52872,1852,35957	Cloyster	48	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	14832,33935,43170,3993	1	p1
+INIT	crit_control_no_armor	21475,582,31802,60916	46116,28979,1270,14301
+DEC	crit_control_no_armor	46116,28979,1270,14301	move	0	0	m0	m0	32150,3002,8841,20261	Cloyster	195	304	0	-	1	0	Kingler	229	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	46116,28979,1270,14301	move	0	0	m0	m0	29942,52818,46812,38498	Cloyster	148	304	0	-	1	0	Kingler	140	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	46116,28979,1270,14301	move	0	0	m0	m0	8044,1354,36439,21041	Cloyster	148	304	0	-	1	0	Kingler	57	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	46116,28979,1270,14301	move	0	0	m0	m0	11619,26370,5920,46367	Cloyster	92	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	46116,28979,1270,14301	1	p1
+INIT	crit_control_no_armor	5472,39410,60940,22536	55192,30231,7306,25185
+DEC	crit_control_no_armor	55192,30231,7306,25185	move	0	0	m0	m0	17730,57578,35358,64809	Cloyster	254	304	0	-	1	0	Kingler	235	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	55192,30231,7306,25185	move	0	0	m0	m0	6671,21379,9674,31638	Cloyster	202	304	0	-	1	0	Kingler	157	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	55192,30231,7306,25185	move	0	0	m0	m0	17334,51525,1210,9077	Cloyster	202	304	0	-	1	0	Kingler	77	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	55192,30231,7306,25185	move	0	0	m0	m0	48629,63383,17213,55683	Cloyster	90	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	55192,30231,7306,25185	1	p1
+INIT	crit_control_no_armor	41634,16728,37688,31068	38988,63291,862,37669
+DEC	crit_control_no_armor	38988,63291,862,37669	move	0	0	m0	m0	37775,57537,54551,10605	Cloyster	256	304	0	-	1	0	Kingler	231	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	38988,63291,862,37669	move	0	0	m0	m0	14381,47631,27338,14858	Cloyster	203	304	0	-	1	0	Kingler	61	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	38988,63291,862,37669	move	0	0	m0	m0	14374,14808,64925,40960	Cloyster	106	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	38988,63291,862,37669	1	p1
+INIT	crit_control_no_armor	33270,43575,1753,9712	10816,39071,3442,3625
+DEC	crit_control_no_armor	10816,39071,3442,3625	move	0	0	m0	m0	53125,41313,63076,24279	Cloyster	304	304	0	-	1	0	Kingler	235	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	10816,39071,3442,3625	move	0	0	m0	m0	44746,599,18244,65004	Cloyster	254	304	0	-	1	0	Kingler	156	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	10816,39071,3442,3625	move	0	0	m0	m0	23634,55428,52281,189	Cloyster	146	304	0	-	1	0	Kingler	75	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	10816,39071,3442,3625	move	0	0	m0	m0	33105,24760,31284,25355	Cloyster	94	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	10816,39071,3442,3625	1	p1
+INIT	crit_control_no_armor	885,56248,6443,29124	372,15939,52934,22381
+DEC	crit_control_no_armor	372,15939,52934,22381	move	0	0	m0	m0	32425,19595,31340,47931	Cloyster	304	304	0	-	1	0	Kingler	232	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	372,15939,52934,22381	move	0	0	m0	m0	47571,56729,28423,42496	Cloyster	255	304	0	-	1	0	Kingler	144	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	372,15939,52934,22381	move	0	0	m0	m0	49728,34975,44535,21697	Cloyster	201	304	0	-	1	0	Kingler	60	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	372,15939,52934,22381	move	0	0	m0	m0	52187,12329,33476,20527	Cloyster	147	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	372,15939,52934,22381	1	p1
+INIT	crit_control_no_armor	42944,31259,8342,45272	53736,3111,7002,13041
+DEC	crit_control_no_armor	53736,3111,7002,13041	move	0	0	m0	m0	8612,53104,29841,19423	Cloyster	304	304	0	-	1	0	Kingler	236	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	53736,3111,7002,13041	move	0	0	m0	m0	59281,55157,28148,58708	Cloyster	257	304	0	-	1	0	Kingler	152	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	53736,3111,7002,13041	move	0	0	m0	m0	31279,44463,54318,34565	Cloyster	154	304	0	-	1	0	Kingler	63	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	53736,3111,7002,13041	move	0	0	m0	m0	17079,21562,4442,19017	Cloyster	154	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	0
+END	crit_control_no_armor	53736,3111,7002,13041	1	p1
+INIT	crit_control_no_armor	22164,42141,43173,30508	36764,26187,1838,42165
+DEC	crit_control_no_armor	36764,26187,1838,42165	move	0	0	m0	m0	11533,28572,51005,55549	Cloyster	252	304	0	-	1	0	Kingler	228	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	36764,26187,1838,42165	move	0	0	m0	m0	16446,57186,35841,32858	Cloyster	202	304	0	-	1	0	Kingler	150	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	36764,26187,1838,42165	move	0	0	m0	m0	557,35457,60386,64723	Cloyster	154	304	0	-	1	0	Kingler	66	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	36764,26187,1838,42165	move	0	0	m0	m0	2469,46405,56680,6481	Cloyster	54	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	36764,26187,1838,42165	1	p1
+INIT	crit_control_no_armor	8102,3327,19569,39104	28304,61615,58946,61625
+DEC	crit_control_no_armor	28304,61615,58946,61625	move	0	0	m0	m0	33415,21534,9422,63617	Cloyster	192	304	0	-	1	0	Kingler	237	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	28304,61615,58946,61625	move	0	0	m0	m0	63813,35874,9325,51470	Cloyster	143	304	0	-	1	0	Kingler	153	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	28304,61615,58946,61625	move	0	0	m0	m0	25887,40580,60432,54861	Cloyster	143	304	0	-	1	0	Kingler	62	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	28304,61615,58946,61625	move	0	0	m0	m0	59088,10376,9117,10523	Cloyster	89	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	28304,61615,58946,61625	1	p1
+INIT	crit_control_no_armor	58721,17963,51566,10644	58052,36691,19606,39677
+DEC	crit_control_no_armor	58052,36691,19606,39677	move	0	0	m0	m0	58219,14900,60430,60997	Cloyster	252	304	0	-	1	0	Kingler	233	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	58052,36691,19606,39677	move	0	0	m0	m0	6411,52457,43030,25346	Cloyster	203	304	0	-	1	0	Kingler	153	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	58052,36691,19606,39677	move	0	0	m0	m0	46503,19660,22463,30043	Cloyster	148	304	0	-	1	0	Kingler	73	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	58052,36691,19606,39677	move	0	0	m0	m0	4308,32485,22649,26649	Cloyster	96	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	58052,36691,19606,39677	1	p1
+INIT	crit_control_no_armor	30900,61957,35020,32168	41016,26167,3626,26497
+DEC	crit_control_no_armor	41016,26167,3626,26497	move	0	0	m0	m0	42094,875,11001,65097	Cloyster	249	304	0	-	1	0	Kingler	233	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	41016,26167,3626,26497	move	0	0	m0	m0	45951,4009,65097,49718	Cloyster	199	304	0	-	1	0	Kingler	149	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	41016,26167,3626,26497	move	0	0	m0	m0	28802,8810,2369,52735	Cloyster	145	304	0	-	1	0	Kingler	67	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	41016,26167,3626,26497	move	0	0	m0	m0	38689,24685,59317,26333	Cloyster	96	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	41016,26167,3626,26497	1	p1
+INIT	crit_control_no_armor	24042,45304,36018,10492	39660,55643,16126,23109
+DEC	crit_control_no_armor	39660,55643,16126,23109	move	0	0	m0	m0	37414,51739,16355,44173	Cloyster	251	304	0	-	1	0	Kingler	135	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	39660,55643,16126,23109	move	0	0	m0	m0	15781,60245,500,39594	Cloyster	197	304	0	-	1	0	Kingler	47	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	39660,55643,16126,23109	move	0	0	m0	m0	14148,5720,61292,62878	Cloyster	197	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	0
+END	crit_control_no_armor	39660,55643,16126,23109	1	p1
+INIT	crit_control_no_armor	15023,5990,63901,65424	1760,36031,13074,46921
+DEC	crit_control_no_armor	1760,36031,13074,46921	move	0	0	m0	m0	16177,9347,28247,48401	Cloyster	250	304	0	-	1	0	Kingler	231	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	1760,36031,13074,46921	move	0	0	m0	m0	31324,61344,15566,57438	Cloyster	201	304	0	-	1	0	Kingler	150	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	1760,36031,13074,46921	move	0	0	m0	m0	38649,33685,28992,27655	Cloyster	152	304	0	-	1	0	Kingler	67	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	1760,36031,13074,46921	move	0	0	m0	m0	680,48014,248,26405	Cloyster	105	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	1760,36031,13074,46921	1	p1
+INIT	crit_control_no_armor	48361,59492,926,5476	22548,25699,32358,653
+DEC	crit_control_no_armor	22548,25699,32358,653	move	0	0	m0	m0	19060,61986,46424,13269	Cloyster	206	304	0	-	1	0	Kingler	227	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	22548,25699,32358,653	move	0	0	m0	m0	58868,2866,31461,15264	Cloyster	206	304	0	-	1	0	Kingler	140	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	22548,25699,32358,653	move	0	0	m0	m0	12938,40552,28085,1505	Cloyster	157	304	0	-	1	0	Kingler	58	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	22548,25699,32358,653	move	0	0	m0	m0	9124,57142,10377,37455	Cloyster	60	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	22548,25699,32358,653	1	p1
+INIT	crit_control_no_armor	57211,7951,40264,48760	17032,33863,62714,17
+DEC	crit_control_no_armor	17032,33863,62714,17	move	0	0	m0	m0	19505,39155,47042,21721	Cloyster	252	304	0	-	1	0	Kingler	131	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	17032,33863,62714,17	move	0	0	m0	m0	52769,65339,16648,50054	Cloyster	202	304	0	-	1	0	Kingler	47	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	17032,33863,62714,17	move	0	0	m0	m0	30530,44445,60205,56412	Cloyster	154	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	17032,33863,62714,17	1	p1
+INIT	crit_control_no_armor	12607,53872,51395,36556	47676,20587,43726,46037
+DEC	crit_control_no_armor	47676,20587,43726,46037	move	0	0	m0	m0	52714,40559,54249,42013	Cloyster	250	304	0	-	1	0	Kingler	227	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	47676,20587,43726,46037	move	0	0	m0	m0	19804,62076,34768,35066	Cloyster	145	304	0	-	1	0	Kingler	149	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	47676,20587,43726,46037	move	0	0	m0	m0	14268,20939,60402,50419	Cloyster	92	304	0	-	1	0	Kingler	72	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	47676,20587,43726,46037	move	0	0	m0	m0	30741,62978,5660,13655	Cloyster	92	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	0
+END	crit_control_no_armor	47676,20587,43726,46037	1	p1
+INIT	crit_control_no_armor	11250,53668,38851,23136	62256,27855,62434,25049
+DEC	crit_control_no_armor	62256,27855,62434,25049	move	0	0	m0	m0	32449,26162,9111,58785	Cloyster	255	304	0	-	1	0	Kingler	234	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	62256,27855,62434,25049	move	0	0	m0	m0	8952,43227,22711,2990	Cloyster	205	304	0	-	1	0	Kingler	157	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	62256,27855,62434,25049	move	0	0	m0	m0	38008,41870,739,2839	Cloyster	155	304	0	-	1	0	Kingler	77	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	62256,27855,62434,25049	move	0	0	m0	m0	11536,20481,18017,41653	Cloyster	48	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	62256,27855,62434,25049	1	p1
+INIT	crit_control_no_armor	48696,4362,55941,13620	24932,48499,25654,36381
+DEC	crit_control_no_armor	24932,48499,25654,36381	move	0	0	m0	m0	43721,45199,25714,7525	Cloyster	201	304	0	-	1	0	Kingler	232	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	24932,48499,25654,36381	move	0	0	m0	m0	9346,48998,42860,32674	Cloyster	146	304	0	-	1	0	Kingler	155	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	24932,48499,25654,36381	move	0	0	m0	m0	39539,36767,50614,16763	Cloyster	95	304	0	-	1	0	Kingler	67	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	24932,48499,25654,36381	move	0	0	m0	m0	19910,51674,23505,23865	Cloyster	45	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	24932,48499,25654,36381	1	p1
+INIT	crit_control_no_armor	6862,50814,28885,29512	47320,26199,53194,64673
+DEC	crit_control_no_armor	47320,26199,53194,64673	move	0	0	m0	m0	18469,45279,3987,36713	Cloyster	197	304	0	-	1	0	Kingler	131	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	47320,26199,53194,64673	move	0	0	m0	m0	23610,36729,40978,22742	Cloyster	146	304	0	-	1	0	Kingler	48	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	47320,26199,53194,64673	move	0	0	m0	m0	35386,16956,22310,53292	Cloyster	96	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	47320,26199,53194,64673	1	p1
+INIT	crit_control_no_armor	60401,5017,54132,43164	60812,52091,19102,45413
+DEC	crit_control_no_armor	60812,52091,19102,45413	move	0	0	m0	m0	29054,11470,18310,29427	Cloyster	304	304	0	-	1	0	Kingler	227	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	60812,52091,19102,45413	move	0	0	m0	m0	49135,61395,31935,60504	Cloyster	254	304	0	-	1	0	Kingler	145	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	60812,52091,19102,45413	move	0	0	m0	m0	36051,11710,32703,45369	Cloyster	204	304	0	-	1	0	Kingler	65	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	60812,52091,19102,45413	move	0	0	m0	m0	11789,22303,26761,48743	Cloyster	148	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	60812,52091,19102,45413	1	p1
+INIT	crit_control_no_armor	15040,2960,45126,43312	13184,37087,10418,61545
+DEC	crit_control_no_armor	13184,37087,10418,61545	move	0	0	m0	m0	27505,2233,55664,29233	Cloyster	254	304	0	-	1	0	Kingler	226	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	13184,37087,10418,61545	move	0	0	m0	m0	18603,39650,13139,19198	Cloyster	201	304	0	-	1	0	Kingler	142	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	13184,37087,10418,61545	move	0	0	m0	m0	50805,25219,52341,44583	Cloyster	148	304	0	-	1	0	Kingler	65	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	13184,37087,10418,61545	move	0	0	m0	m0	18776,13501,37172,581	Cloyster	99	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	13184,37087,10418,61545	1	p1
+INIT	crit_control_no_armor	46371,29046,15193,35076	65204,39555,65030,15789
+DEC	crit_control_no_armor	65204,39555,65030,15789	move	0	0	m0	m0	20525,50609,36344,58235	Cloyster	304	304	0	-	1	0	Kingler	237	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	65204,39555,65030,15789	move	0	0	m0	m0	46630,29759,21044,41280	Cloyster	251	304	0	-	1	0	Kingler	155	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	65204,39555,65030,15789	move	0	0	m0	m0	2034,48809,54022,18177	Cloyster	197	304	0	-	1	0	Kingler	75	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	65204,39555,65030,15789	move	0	0	m0	m0	50710,59786,26178,58479	Cloyster	148	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	65204,39555,65030,15789	1	p1
+INIT	crit_control_no_armor	62599,11680,26435,39960	808,3175,40602,23857
+DEC	crit_control_no_armor	808,3175,40602,23857	move	0	0	m0	m0	43018,54646,29642,44537	Cloyster	253	304	0	-	1	0	Kingler	230	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	808,3175,40602,23857	move	0	0	m0	m0	55286,24971,32620,62612	Cloyster	253	304	0	-	1	0	Kingler	151	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	808,3175,40602,23857	move	0	0	m0	m0	18944,32318,29208,32069	Cloyster	200	304	0	-	1	0	Kingler	64	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	808,3175,40602,23857	move	0	0	m0	m0	919,31964,60441,54739	Cloyster	92	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	808,3175,40602,23857	1	p1
+INIT	crit_control_no_armor	59195,64984,44229,30316	13532,19083,7790,21237
+DEC	crit_control_no_armor	13532,19083,7790,21237	move	0	0	m0	m0	8734,32833,36722,65341	Cloyster	255	304	0	-	1	0	Kingler	223	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	13532,19083,7790,21237	move	0	0	m0	m0	13606,15446,45594,62248	Cloyster	255	304	0	-	1	0	Kingler	40	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	13532,19083,7790,21237	move	0	0	m0	m0	963,40268,25671,11662	Cloyster	206	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	13532,19083,7790,21237	1	p1
+INIT	crit_control_no_armor	37986,35147,12381,60416	51152,63727,53634,25337
+DEC	crit_control_no_armor	51152,63727,53634,25337	move	0	0	m0	m0	50430,38932,1418,60967	Cloyster	304	304	0	-	1	0	Kingler	233	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	51152,63727,53634,25337	move	0	0	m0	m0	2796,54150,6281,45308	Cloyster	252	304	0	-	1	0	Kingler	146	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	51152,63727,53634,25337	move	0	0	m0	m0	28083,46365,24851,38029	Cloyster	153	304	0	-	1	0	Kingler	55	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	51152,63727,53634,25337	move	0	0	m0	m0	5236,34348,41480,59739	Cloyster	58	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	51152,63727,53634,25337	1	p1
+INIT	crit_control_no_armor	56935,25315,44928,4308	12292,64403,19414,4413
+DEC	crit_control_no_armor	12292,64403,19414,4413	move	0	0	m0	m0	54193,28361,35762,56453	Cloyster	253	304	0	-	1	0	Kingler	225	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	12292,64403,19414,4413	move	0	0	m0	m0	26211,2092,31852,33296	Cloyster	253	304	0	-	1	0	Kingler	137	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	12292,64403,19414,4413	move	0	0	m0	m0	11333,26391,28431,36215	Cloyster	253	304	0	-	1	0	Kingler	47	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	12292,64403,19414,4413	move	0	0	m0	m0	35963,38954,7614,4117	Cloyster	155	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	12292,64403,19414,4413	1	p1
+INIT	crit_control_no_armor	3284,11396,37725,14568	8568,30327,24938,8641
+DEC	crit_control_no_armor	8568,30327,24938,8641	move	0	0	m0	m0	27235,25375,3625,45193	Cloyster	254	304	0	-	1	0	Kingler	226	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	8568,30327,24938,8641	move	0	0	m0	m0	50286,13164,38090,16246	Cloyster	205	304	0	-	1	0	Kingler	142	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	8568,30327,24938,8641	move	0	0	m0	m0	32394,8833,46016,38101	Cloyster	205	304	0	-	1	0	Kingler	53	314	0	-	1	0	p2	0
+DEC	crit_control_no_armor	8568,30327,24938,8641	move	0	0	m0	m0	53952,53786,45665,28131	Cloyster	153	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	1
+END	crit_control_no_armor	8568,30327,24938,8641	1	p1
+INIT	crit_control_no_armor	49487,64820,56858,63548	36908,52635,9790,39045
+DEC	crit_control_no_armor	36908,52635,9790,39045	move	0	0	m0	m0	7569,53458,19415,25293	Cloyster	250	304	0	-	1	0	Kingler	233	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	36908,52635,9790,39045	move	0	0	m0	m0	42340,21181,53496,19434	Cloyster	201	304	0	-	1	0	Kingler	151	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	36908,52635,9790,39045	move	0	0	m0	m0	35760,57863,17044,44835	Cloyster	146	304	0	-	1	0	Kingler	74	314	0	-	1	0	p2	1
+DEC	crit_control_no_armor	36908,52635,9790,39045	move	0	0	m0	m0	8668,50763,3487,23687	Cloyster	146	304	0	-	1	0	Kingler	0	314	1	-	0	0	p2	0
+END	crit_control_no_armor	36908,52635,9790,39045	1	p1
+SCEN	chlorophyll_flip_sun
+TEAM	chlorophyll_flip_sun	p1	Bellossom|||Chlorophyll|razorleaf,rest|Serious||N||||
+TEAM	chlorophyll_flip_sun	p2	Groudon|||Drought|earthquake,rest|Serious||N||||
+INIT	chlorophyll_flip_sun	14384,20876,61741,29496	45384,41991,4538,62929
+DEC	chlorophyll_flip_sun	45384,41991,4538,62929	move	0	0	m0	m0	5241,27972,2797,21145	Bellossom	197	291	0	-	1	0	Groudon	62	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	45384,41991,4538,62929	move	0	0	m0	m0	31718,9610,7218,32210	Bellossom	197	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	45384,41991,4538,62929	1	p1
+INIT	chlorophyll_flip_sun	12105,34601,19563,12172	46332,35883,13198,9621
+DEC	chlorophyll_flip_sun	46332,35883,13198,9621	move	0	0	m0	m0	39916,7562,26991,40413	Bellossom	202	291	0	-	1	0	Groudon	213	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	46332,35883,13198,9621	move	0	0	m0	m0	44824,31579,40526,51130	Bellossom	107	291	0	-	1	0	Groudon	69	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	46332,35883,13198,9621	move	0	0	m0	m0	64697,40184,16550,52751	Bellossom	107	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	46332,35883,13198,9621	1	p1
+INIT	chlorophyll_flip_sun	17895,25420,15262,42784	14832,33935,43170,3993
+DEC	chlorophyll_flip_sun	14832,33935,43170,3993	move	0	0	m0	m0	7716,56247,16386,39777	Bellossom	201	291	0	-	1	0	Groudon	209	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	14832,33935,43170,3993	move	0	0	m0	m0	59507,20153,17171,54894	Bellossom	108	291	0	-	1	0	Groudon	76	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	14832,33935,43170,3993	move	0	0	m0	m0	1616,28265,849,52851	Bellossom	108	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	14832,33935,43170,3993	1	p1
+INIT	chlorophyll_flip_sun	21475,582,31802,60916	46116,28979,1270,14301
+DEC	chlorophyll_flip_sun	46116,28979,1270,14301	move	0	0	m0	m0	32150,3002,8841,20261	Bellossom	194	291	0	-	1	0	Groudon	59	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	46116,28979,1270,14301	move	0	0	m0	m0	61538,10903,37243,9134	Bellossom	194	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	46116,28979,1270,14301	1	p1
+INIT	chlorophyll_flip_sun	5472,39410,60940,22536	55192,30231,7306,25185
+DEC	chlorophyll_flip_sun	55192,30231,7306,25185	move	0	0	m0	m0	17730,57578,35358,64809	Bellossom	201	291	0	-	1	0	Groudon	212	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	55192,30231,7306,25185	move	0	0	m0	m0	6671,21379,9674,31638	Bellossom	112	291	0	-	1	0	Groudon	79	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	55192,30231,7306,25185	move	0	0	m0	m0	38268,58775,42504,20475	Bellossom	112	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	55192,30231,7306,25185	1	p1
+INIT	chlorophyll_flip_sun	41634,16728,37688,31068	38988,63291,862,37669
+DEC	chlorophyll_flip_sun	38988,63291,862,37669	move	0	0	m0	m0	37775,57537,54551,10605	Bellossom	196	291	0	-	1	0	Groudon	218	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	38988,63291,862,37669	move	0	0	m0	m0	14381,47631,27338,14858	Bellossom	3	291	0	-	1	0	Groudon	82	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	38988,63291,862,37669	move	0	0	m0	m0	57326,19018,40954,22815	Bellossom	3	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	38988,63291,862,37669	1	p1
+INIT	chlorophyll_flip_sun	33270,43575,1753,9712	10816,39071,3442,3625
+DEC	chlorophyll_flip_sun	10816,39071,3442,3625	move	0	0	m0	m0	53125,41313,63076,24279	Bellossom	201	291	0	-	1	0	Groudon	341	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	10816,39071,3442,3625	move	0	0	m0	m0	44746,599,18244,65004	Bellossom	111	291	0	-	1	0	Groudon	212	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	10816,39071,3442,3625	move	0	0	m0	m0	12310,40017,56503,20665	Bellossom	111	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	10816,39071,3442,3625	1	p1
+INIT	chlorophyll_flip_sun	885,56248,6443,29124	372,15939,52934,22381
+DEC	chlorophyll_flip_sun	372,15939,52934,22381	move	0	0	m0	m0	9564,49473,57044,19637	Bellossom	198	291	0	-	1	0	Groudon	219	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	372,15939,52934,22381	move	0	0	m0	m0	26044,57738,54864,21170	Bellossom	103	291	0	-	1	0	Groudon	93	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	372,15939,52934,22381	move	0	0	m0	m0	50536,30535,46233,12327	Bellossom	103	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	372,15939,52934,22381	1	p1
+INIT	chlorophyll_flip_sun	42944,31259,8342,45272	53736,3111,7002,13041
+DEC	chlorophyll_flip_sun	53736,3111,7002,13041	move	0	0	m0	m0	17310,48546,16248,35769	Bellossom	196	291	0	-	1	0	Groudon	219	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	53736,3111,7002,13041	move	0	0	m0	m0	59281,55157,28148,58708	Bellossom	100	291	0	-	1	0	Groudon	219	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	53736,3111,7002,13041	move	0	0	m0	m0	33574,23683,53384,13185	Bellossom	100	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	53736,3111,7002,13041	1	p1
+INIT	chlorophyll_flip_sun	22164,42141,43173,30508	36764,26187,1838,42165
+DEC	chlorophyll_flip_sun	36764,26187,1838,42165	move	0	0	m0	m0	11533,28572,51005,55549	Bellossom	193	291	0	-	1	0	Groudon	208	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	36764,26187,1838,42165	move	0	0	m0	m0	16446,57186,35841,32858	Bellossom	104	291	0	-	1	0	Groudon	79	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	36764,26187,1838,42165	move	0	0	m0	m0	53342,56280,43482,59439	Bellossom	104	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	36764,26187,1838,42165	1	p1
+INIT	chlorophyll_flip_sun	8102,3327,19569,39104	28304,61615,58946,61625
+DEC	chlorophyll_flip_sun	28304,61615,58946,61625	move	0	0	m0	m0	33415,21534,9422,63617	Bellossom	203	291	0	-	1	0	Groudon	53	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	28304,61615,58946,61625	move	0	0	m0	m0	46283,47795,9500,46362	Bellossom	203	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	28304,61615,58946,61625	1	p1
+INIT	chlorophyll_flip_sun	58721,17963,51566,10644	58052,36691,19606,39677
+DEC	chlorophyll_flip_sun	58052,36691,19606,39677	move	0	0	m0	m0	58219,14900,60430,60997	Bellossom	198	291	0	-	1	0	Groudon	206	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	58052,36691,19606,39677	move	0	0	m0	m0	6411,52457,43030,25346	Bellossom	106	291	0	-	1	0	Groudon	78	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	58052,36691,19606,39677	move	0	0	m0	m0	5138,59960,59225,41271	Bellossom	106	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	58052,36691,19606,39677	1	p1
+INIT	chlorophyll_flip_sun	30900,61957,35020,32168	41016,26167,3626,26497
+DEC	chlorophyll_flip_sun	41016,26167,3626,26497	move	0	0	m0	m0	42094,875,11001,65097	Bellossom	198	291	0	-	1	0	Groudon	199	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	41016,26167,3626,26497	move	0	0	m0	m0	45951,4009,65097,49718	Bellossom	102	291	0	-	1	0	Groudon	68	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	41016,26167,3626,26497	move	0	0	m0	m0	9583,5947,1961,32795	Bellossom	102	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	41016,26167,3626,26497	1	p1
+INIT	chlorophyll_flip_sun	24042,45304,36018,10492	39660,55643,16126,23109
+DEC	chlorophyll_flip_sun	39660,55643,16126,23109	move	0	0	m0	m0	37414,51739,16355,44173	Bellossom	88	291	0	-	1	0	Groudon	203	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	39660,55643,16126,23109	move	0	0	m0	m0	14256,56515,14127,49499	Bellossom	0	291	1	-	0	0	Groudon	62	341	0	-	1	0	p1	1
+END	chlorophyll_flip_sun	39660,55643,16126,23109	1	p2
+INIT	chlorophyll_flip_sun	15023,5990,63901,65424	1760,36031,13074,46921
+DEC	chlorophyll_flip_sun	1760,36031,13074,46921	move	0	0	m0	m0	16177,9347,28247,48401	Bellossom	196	291	0	-	1	0	Groudon	202	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	1760,36031,13074,46921	move	0	0	m0	m0	31324,61344,15566,57438	Bellossom	103	291	0	-	1	0	Groudon	76	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	1760,36031,13074,46921	move	0	0	m0	m0	45835,9058,19395,13987	Bellossom	103	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	1760,36031,13074,46921	1	p1
+INIT	chlorophyll_flip_sun	48361,59492,926,5476	22548,25699,32358,653
+DEC	chlorophyll_flip_sun	22548,25699,32358,653	move	0	0	m0	m0	19060,61986,46424,13269	Bellossom	192	291	0	-	1	0	Groudon	88	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	22548,25699,32358,653	move	0	0	m0	m0	13665,12109,64747,62366	Bellossom	192	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	22548,25699,32358,653	1	p1
+INIT	chlorophyll_flip_sun	57211,7951,40264,48760	17032,33863,62714,17
+DEC	chlorophyll_flip_sun	17032,33863,62714,17	move	0	0	m0	m0	19505,39155,47042,21721	Bellossom	83	291	0	-	1	0	Groudon	206	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	17032,33863,62714,17	move	0	0	m0	m0	30819,33591,65363,9991	Bellossom	0	291	1	-	0	0	Groudon	77	341	0	-	1	0	p1	1
+END	chlorophyll_flip_sun	17032,33863,62714,17	1	p2
+INIT	chlorophyll_flip_sun	12607,53872,51395,36556	47676,20587,43726,46037
+DEC	chlorophyll_flip_sun	47676,20587,43726,46037	move	0	0	m0	m0	52714,40559,54249,42013	Bellossom	192	291	0	-	1	0	Groudon	200	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	47676,20587,43726,46037	move	0	0	m0	m0	26904,52693,17885,26566	Bellossom	192	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	47676,20587,43726,46037	1	p1
+INIT	chlorophyll_flip_sun	11250,53668,38851,23136	62256,27855,62434,25049
+DEC	chlorophyll_flip_sun	62256,27855,62434,25049	move	0	0	m0	m0	32449,26162,9111,58785	Bellossom	200	291	0	-	1	0	Groudon	215	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	62256,27855,62434,25049	move	0	0	m0	m0	8952,43227,22711,2990	Bellossom	112	291	0	-	1	0	Groudon	86	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	62256,27855,62434,25049	move	0	0	m0	m0	38214,64905,42311,14003	Bellossom	112	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	62256,27855,62434,25049	1	p1
+INIT	chlorophyll_flip_sun	48696,4362,55941,13620	24932,48499,25654,36381
+DEC	chlorophyll_flip_sun	24932,48499,25654,36381	move	0	0	m0	m0	43721,45199,25714,7525	Bellossom	197	291	0	-	1	0	Groudon	77	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	24932,48499,25654,36381	move	0	0	m0	m0	4449,25556,56898,24814	Bellossom	197	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	24932,48499,25654,36381	1	p1
+INIT	chlorophyll_flip_sun	6862,50814,28885,29512	47320,26199,53194,64673
+DEC	chlorophyll_flip_sun	47320,26199,53194,64673	move	0	0	m0	m0	18469,45279,3987,36713	Bellossom	83	291	0	-	1	0	Groudon	65	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	47320,26199,53194,64673	move	0	0	m0	m0	36359,33968,40351,47458	Bellossom	83	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	47320,26199,53194,64673	1	p1
+INIT	chlorophyll_flip_sun	60401,5017,54132,43164	60812,52091,19102,45413
+DEC	chlorophyll_flip_sun	60812,52091,19102,45413	move	0	0	m0	m0	10007,43398,61038,49069	Bellossom	196	291	0	-	1	0	Groudon	65	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	60812,52091,19102,45413	move	0	0	m0	m0	13456,434,45111,32534	Bellossom	196	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	60812,52091,19102,45413	1	p1
+INIT	chlorophyll_flip_sun	15040,2960,45126,43312	13184,37087,10418,61545
+DEC	chlorophyll_flip_sun	13184,37087,10418,61545	move	0	0	m0	m0	27505,2233,55664,29233	Bellossom	191	291	0	-	1	0	Groudon	212	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	13184,37087,10418,61545	move	0	0	m0	m0	18603,39650,13139,19198	Bellossom	95	291	0	-	1	0	Groudon	74	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	13184,37087,10418,61545	move	0	0	m0	m0	21652,1884,5463,31427	Bellossom	95	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	13184,37087,10418,61545	1	p1
+INIT	chlorophyll_flip_sun	46371,29046,15193,35076	65204,39555,65030,15789
+DEC	chlorophyll_flip_sun	65204,39555,65030,15789	move	0	0	m0	m0	20525,50609,36344,58235	Bellossom	203	291	0	-	1	0	Groudon	341	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	65204,39555,65030,15789	move	0	0	m0	m0	46630,29759,21044,41280	Bellossom	109	291	0	-	1	0	Groudon	205	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	65204,39555,65030,15789	move	0	0	m0	m0	2034,48809,54022,18177	Bellossom	17	291	0	-	1	0	Groudon	66	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	65204,39555,65030,15789	move	0	0	m0	m0	49995,55384,21199,22938	Bellossom	17	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	65204,39555,65030,15789	1	p1
+INIT	chlorophyll_flip_sun	62599,11680,26435,39960	808,3175,40602,23857
+DEC	chlorophyll_flip_sun	808,3175,40602,23857	move	0	0	m0	m0	43018,54646,29642,44537	Bellossom	195	291	0	-	1	0	Groudon	209	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	808,3175,40602,23857	move	0	0	m0	m0	47202,15824,59871,33318	Bellossom	105	291	0	-	1	0	Groudon	83	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	808,3175,40602,23857	move	0	0	m0	m0	51641,32236,25198,34379	Bellossom	105	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	808,3175,40602,23857	1	p1
+INIT	chlorophyll_flip_sun	59195,64984,44229,30316	13532,19083,7790,21237
+DEC	chlorophyll_flip_sun	13532,19083,7790,21237	move	0	0	m0	m0	8734,32833,36722,65341	Bellossom	187	291	0	-	1	0	Groudon	213	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	13532,19083,7790,21237	move	0	0	m0	m0	44359,15951,37307,57754	Bellossom	94	291	0	-	1	0	Groudon	69	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	13532,19083,7790,21237	move	0	0	m0	m0	34584,9051,6058,19567	Bellossom	94	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	13532,19083,7790,21237	1	p1
+INIT	chlorophyll_flip_sun	37986,35147,12381,60416	51152,63727,53634,25337
+DEC	chlorophyll_flip_sun	51152,63727,53634,25337	move	0	0	m0	m0	50430,38932,1418,60967	Bellossom	198	291	0	-	1	0	Groudon	341	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	51152,63727,53634,25337	move	0	0	m0	m0	2796,54150,6281,45308	Bellossom	99	291	0	-	1	0	Groudon	206	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	51152,63727,53634,25337	move	0	0	m0	m0	47687,17457,44299,53641	Bellossom	99	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	51152,63727,53634,25337	1	p1
+INIT	chlorophyll_flip_sun	56935,25315,44928,4308	12292,64403,19414,4413
+DEC	chlorophyll_flip_sun	12292,64403,19414,4413	move	0	0	m0	m0	54193,28361,35762,56453	Bellossom	190	291	0	-	1	0	Groudon	209	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	12292,64403,19414,4413	move	0	0	m0	m0	38747,42441,46302,60482	Bellossom	101	291	0	-	1	0	Groudon	86	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	12292,64403,19414,4413	move	0	0	m0	m0	2039,22105,50669,48529	Bellossom	4	291	0	-	1	0	Groudon	86	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	12292,64403,19414,4413	move	0	0	m0	m0	25233,65021,10260,16362	Bellossom	4	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	12292,64403,19414,4413	1	p1
+INIT	chlorophyll_flip_sun	3284,11396,37725,14568	8568,30327,24938,8641
+DEC	chlorophyll_flip_sun	8568,30327,24938,8641	move	0	0	m0	m0	27235,25375,3625,45193	Bellossom	191	291	0	-	1	0	Groudon	210	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	8568,30327,24938,8641	move	0	0	m0	m0	50286,13164,38090,16246	Bellossom	95	291	0	-	1	0	Groudon	82	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	8568,30327,24938,8641	move	0	0	m0	m0	38442,42917,61420,4187	Bellossom	95	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	8568,30327,24938,8641	1	p1
+INIT	chlorophyll_flip_sun	49487,64820,56858,63548	36908,52635,9790,39045
+DEC	chlorophyll_flip_sun	36908,52635,9790,39045	move	0	0	m0	m0	7569,53458,19415,25293	Bellossom	198	291	0	-	1	0	Groudon	200	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	36908,52635,9790,39045	move	0	0	m0	m0	42340,21181,53496,19434	Bellossom	104	291	0	-	1	0	Groudon	74	341	0	-	1	0	p1	1
+DEC	chlorophyll_flip_sun	36908,52635,9790,39045	move	0	0	m0	m0	4792,26431,35197,61311	Bellossom	104	291	0	-	1	0	Groudon	0	341	1	-	0	0	p1	1
+END	chlorophyll_flip_sun	36908,52635,9790,39045	1	p1
+SCEN	swiftswim_flip_rain
+TEAM	swiftswim_flip_rain	p1	Omastar|||SwiftSwim|surf,rest|Serious||N||||
+TEAM	swiftswim_flip_rain	p2	Kyogre|||Drizzle|thunderbolt,rest|Serious||N||||
+INIT	swiftswim_flip_rain	14384,20876,61741,29496	45384,41991,4538,62929
+DEC	swiftswim_flip_rain	45384,41991,4538,62929	move	0	0	m0	m0	58860,39524,7979,5664	Omastar	1	281	0	par	1	0	Kyogre	268	341	0	-	1	0	p1	1
+DEC	swiftswim_flip_rain	45384,41991,4538,62929	move	0	0	m0	m0	2576,36899,5731,38324	Omastar	0	281	1	par	0	0	Kyogre	268	341	0	-	1	0	p2	0
+END	swiftswim_flip_rain	45384,41991,4538,62929	1	p2
+INIT	swiftswim_flip_rain	12105,34601,19563,12172	46332,35883,13198,9621
+DEC	swiftswim_flip_rain	46332,35883,13198,9621	move	0	0	m0	m0	54258,63967,57782,11252	Omastar	17	281	0	-	1	0	Kyogre	274	341	0	-	1	0	p1	1
+DEC	swiftswim_flip_rain	46332,35883,13198,9621	move	0	0	m0	m0	43630,3497,35891,62757	Omastar	0	281	1	-	0	0	Kyogre	137	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	46332,35883,13198,9621	1	p2
+INIT	swiftswim_flip_rain	17895,25420,15262,42784	14832,33935,43170,3993
+DEC	swiftswim_flip_rain	14832,33935,43170,3993	move	0	0	m0	m0	16608,37489,53755,54536	Omastar	14	281	0	-	1	0	Kyogre	272	341	0	-	1	0	p1	1
+DEC	swiftswim_flip_rain	14832,33935,43170,3993	move	0	0	m0	m0	41485,47972,22973,5673	Omastar	0	281	1	-	0	0	Kyogre	201	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	14832,33935,43170,3993	1	p2
+INIT	swiftswim_flip_rain	21475,582,31802,60916	46116,28979,1270,14301
+DEC	swiftswim_flip_rain	46116,28979,1270,14301	move	0	0	m0	m0	32150,3002,8841,20261	Omastar	0	281	1	-	0	0	Kyogre	192	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	46116,28979,1270,14301	1	p2
+INIT	swiftswim_flip_rain	5472,39410,60940,22536	55192,30231,7306,25185
+DEC	swiftswim_flip_rain	55192,30231,7306,25185	move	0	0	m0	m0	29494,15942,19450,28912	Omastar	14	281	0	-	1	0	Kyogre	273	341	0	-	1	0	p1	1
+DEC	swiftswim_flip_rain	55192,30231,7306,25185	move	0	0	m0	m0	60369,51921,60998,42737	Omastar	0	281	1	-	0	0	Kyogre	204	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	55192,30231,7306,25185	1	p2
+INIT	swiftswim_flip_rain	41634,16728,37688,31068	38988,63291,862,37669
+DEC	swiftswim_flip_rain	38988,63291,862,37669	move	0	0	m0	m0	37775,57537,54551,10605	Omastar	0	281	1	-	0	0	Kyogre	276	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	38988,63291,862,37669	1	p2
+INIT	swiftswim_flip_rain	33270,43575,1753,9712	10816,39071,3442,3625
+DEC	swiftswim_flip_rain	10816,39071,3442,3625	move	0	0	m0	m0	29818,34860,45596,38897	Omastar	0	281	1	-	0	0	Kyogre	273	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	10816,39071,3442,3625	1	p2
+INIT	swiftswim_flip_rain	885,56248,6443,29124	372,15939,52934,22381
+DEC	swiftswim_flip_rain	372,15939,52934,22381	move	0	0	m0	m0	49779,45519,64488,48940	Omastar	4	281	0	-	1	0	Kyogre	277	341	0	-	1	0	p1	1
+DEC	swiftswim_flip_rain	372,15939,52934,22381	move	0	0	m0	m0	14133,19910,58614,33021	Omastar	0	281	1	-	0	0	Kyogre	204	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	372,15939,52934,22381	1	p2
+INIT	swiftswim_flip_rain	42944,31259,8342,45272	53736,3111,7002,13041
+DEC	swiftswim_flip_rain	53736,3111,7002,13041	move	0	0	m0	m0	17310,48546,16248,35769	Omastar	0	281	1	-	0	0	Kyogre	277	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	53736,3111,7002,13041	1	p2
+INIT	swiftswim_flip_rain	22164,42141,43173,30508	36764,26187,1838,42165
+DEC	swiftswim_flip_rain	36764,26187,1838,42165	move	0	0	m0	m0	11533,28572,51005,55549	Omastar	0	281	1	-	0	0	Kyogre	271	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	36764,26187,1838,42165	1	p2
+INIT	swiftswim_flip_rain	8102,3327,19569,39104	28304,61615,58946,61625
+DEC	swiftswim_flip_rain	28304,61615,58946,61625	move	0	0	m0	m0	8112,47611,32850,45736	Omastar	20	281	0	-	1	0	Kyogre	265	341	0	-	1	0	p1	1
+DEC	swiftswim_flip_rain	28304,61615,58946,61625	move	0	0	m0	m0	64262,52047,34673,28489	Omastar	0	281	1	-	0	0	Kyogre	201	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	28304,61615,58946,61625	1	p2
+INIT	swiftswim_flip_rain	58721,17963,51566,10644	58052,36691,19606,39677
+DEC	swiftswim_flip_rain	58052,36691,19606,39677	move	0	0	m0	m0	15480,33371,49008,36092	Omastar	4	281	0	-	1	0	Kyogre	270	341	0	-	1	0	p1	1
+DEC	swiftswim_flip_rain	58052,36691,19606,39677	move	0	0	m0	m0	39653,4942,55557,49293	Omastar	0	281	1	-	0	0	Kyogre	198	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	58052,36691,19606,39677	1	p2
+INIT	swiftswim_flip_rain	30900,61957,35020,32168	41016,26167,3626,26497
+DEC	swiftswim_flip_rain	41016,26167,3626,26497	move	0	0	m0	m0	44310,19761,32220,656	Omastar	4	281	0	-	1	0	Kyogre	266	341	0	-	1	0	p1	1
+DEC	swiftswim_flip_rain	41016,26167,3626,26497	move	0	0	m0	m0	46477,10855,58281,9233	Omastar	0	281	1	-	0	0	Kyogre	201	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	41016,26167,3626,26497	1	p2
+INIT	swiftswim_flip_rain	24042,45304,36018,10492	39660,55643,16126,23109
+DEC	swiftswim_flip_rain	39660,55643,16126,23109	move	0	0	m0	m0	37414,51739,16355,44173	Omastar	0	281	1	-	0	0	Kyogre	269	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	39660,55643,16126,23109	1	p2
+INIT	swiftswim_flip_rain	15023,5990,63901,65424	1760,36031,13074,46921
+DEC	swiftswim_flip_rain	1760,36031,13074,46921	move	0	0	m0	m0	16177,9347,28247,48401	Omastar	0	281	1	-	0	0	Kyogre	268	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	1760,36031,13074,46921	1	p2
+INIT	swiftswim_flip_rain	48361,59492,926,5476	22548,25699,32358,653
+DEC	swiftswim_flip_rain	22548,25699,32358,653	move	0	0	m0	m0	19060,61986,46424,13269	Omastar	0	281	1	-	0	0	Kyogre	207	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	22548,25699,32358,653	1	p2
+INIT	swiftswim_flip_rain	57211,7951,40264,48760	17032,33863,62714,17
+DEC	swiftswim_flip_rain	17032,33863,62714,17	move	0	0	m0	m0	19505,39155,47042,21721	Omastar	0	281	1	-	0	0	Kyogre	270	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	17032,33863,62714,17	1	p2
+INIT	swiftswim_flip_rain	12607,53872,51395,36556	47676,20587,43726,46037
+DEC	swiftswim_flip_rain	47676,20587,43726,46037	move	0	0	m0	m0	52714,40559,54249,42013	Omastar	0	281	1	-	0	0	Kyogre	267	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	47676,20587,43726,46037	1	p2
+INIT	swiftswim_flip_rain	11250,53668,38851,23136	62256,27855,62434,25049
+DEC	swiftswim_flip_rain	62256,27855,62434,25049	move	0	0	m0	m0	25941,14432,34910,24648	Omastar	10	281	0	-	1	0	Kyogre	275	341	0	-	1	0	p1	1
+DEC	swiftswim_flip_rain	62256,27855,62434,25049	move	0	0	m0	m0	41795,48280,44896,22633	Omastar	0	281	1	-	0	0	Kyogre	206	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	62256,27855,62434,25049	1	p2
+INIT	swiftswim_flip_rain	48696,4362,55941,13620	24932,48499,25654,36381
+DEC	swiftswim_flip_rain	24932,48499,25654,36381	move	0	0	m0	m0	1550,47282,7338,17564	Omastar	1	281	0	-	1	0	Kyogre	272	341	0	-	1	0	p1	1
+DEC	swiftswim_flip_rain	24932,48499,25654,36381	move	0	0	m0	m0	39743,7634,62384,43949	Omastar	0	281	1	-	0	0	Kyogre	196	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	24932,48499,25654,36381	1	p2
+INIT	swiftswim_flip_rain	6862,50814,28885,29512	47320,26199,53194,64673
+DEC	swiftswim_flip_rain	47320,26199,53194,64673	move	0	0	m0	m0	18469,45279,3987,36713	Omastar	0	281	1	-	0	0	Kyogre	195	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	47320,26199,53194,64673	1	p2
+INIT	swiftswim_flip_rain	60401,5017,54132,43164	60812,52091,19102,45413
+DEC	swiftswim_flip_rain	60812,52091,19102,45413	move	0	0	m0	m0	10007,43398,61038,49069	Omastar	0	281	1	-	0	0	Kyogre	195	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	60812,52091,19102,45413	1	p2
+INIT	swiftswim_flip_rain	15040,2960,45126,43312	13184,37087,10418,61545
+DEC	swiftswim_flip_rain	13184,37087,10418,61545	move	0	0	m0	m0	27505,2233,55664,29233	Omastar	0	281	1	-	0	0	Kyogre	273	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	13184,37087,10418,61545	1	p2
+INIT	swiftswim_flip_rain	46371,29046,15193,35076	65204,39555,65030,15789
+DEC	swiftswim_flip_rain	65204,39555,65030,15789	move	0	0	m0	m0	46105,44534,53146,43765	Omastar	0	281	1	-	0	0	Kyogre	268	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	65204,39555,65030,15789	1	p2
+INIT	swiftswim_flip_rain	62599,11680,26435,39960	808,3175,40602,23857
+DEC	swiftswim_flip_rain	808,3175,40602,23857	move	0	0	m0	m0	43018,54646,29642,44537	Omastar	0	281	1	-	0	0	Kyogre	272	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	808,3175,40602,23857	1	p2
+INIT	swiftswim_flip_rain	59195,64984,44229,30316	13532,19083,7790,21237
+DEC	swiftswim_flip_rain	13532,19083,7790,21237	move	0	0	m0	m0	8734,32833,36722,65341	Omastar	0	281	1	-	0	0	Kyogre	274	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	13532,19083,7790,21237	1	p2
+INIT	swiftswim_flip_rain	37986,35147,12381,60416	51152,63727,53634,25337
+DEC	swiftswim_flip_rain	51152,63727,53634,25337	move	0	0	m0	m0	42550,28248,26143,25281	Omastar	0	281	1	-	0	0	Kyogre	267	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	51152,63727,53634,25337	1	p2
+INIT	swiftswim_flip_rain	56935,25315,44928,4308	12292,64403,19414,4413
+DEC	swiftswim_flip_rain	12292,64403,19414,4413	move	0	0	m0	m0	54193,28361,35762,56453	Omastar	0	281	1	-	0	0	Kyogre	272	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	12292,64403,19414,4413	1	p2
+INIT	swiftswim_flip_rain	3284,11396,37725,14568	8568,30327,24938,8641
+DEC	swiftswim_flip_rain	8568,30327,24938,8641	move	0	0	m0	m0	27235,25375,3625,45193	Omastar	0	281	1	-	0	0	Kyogre	272	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	8568,30327,24938,8641	1	p2
+INIT	swiftswim_flip_rain	49487,64820,56858,63548	36908,52635,9790,39045
+DEC	swiftswim_flip_rain	36908,52635,9790,39045	move	0	0	m0	m0	28446,10241,24475,20132	Omastar	4	281	0	-	1	0	Kyogre	267	341	0	-	1	0	p1	1
+DEC	swiftswim_flip_rain	36908,52635,9790,39045	move	0	0	m0	m0	42451,45531,7714,52245	Omastar	0	281	1	-	0	0	Kyogre	197	341	0	-	1	0	p1	1
+END	swiftswim_flip_rain	36908,52635,9790,39045	1	p2
+SCEN	weather_speed_control
+TEAM	weather_speed_control	p1	Omastar|||Insomnia|surf,rest|Serious||N||||
+TEAM	weather_speed_control	p2	Kyogre|||Drizzle|thunderbolt,rest|Serious||N||||
+INIT	weather_speed_control	14384,20876,61741,29496	45384,41991,4538,62929
+DEC	weather_speed_control	45384,41991,4538,62929	move	0	0	m0	m0	47081,54521,32464,4428	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	45384,41991,4538,62929	1	p2
+INIT	weather_speed_control	12105,34601,19563,12172	46332,35883,13198,9621
+DEC	weather_speed_control	46332,35883,13198,9621	move	0	0	m0	m0	54258,63967,57782,11252	Omastar	7	281	0	-	1	0	Kyogre	272	341	0	-	1	0	p2	1
+DEC	weather_speed_control	46332,35883,13198,9621	move	0	0	m0	m0	20170,39227,53589,5704	Omastar	0	281	1	-	0	0	Kyogre	272	341	0	-	1	0	p2	1
+END	weather_speed_control	46332,35883,13198,9621	1	p2
+INIT	weather_speed_control	17895,25420,15262,42784	14832,33935,43170,3993
+DEC	weather_speed_control	14832,33935,43170,3993	move	0	0	m0	m0	64928,61879,25384,5812	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	14832,33935,43170,3993	1	p2
+INIT	weather_speed_control	21475,582,31802,60916	46116,28979,1270,14301
+DEC	weather_speed_control	46116,28979,1270,14301	move	0	0	m0	m0	27394,37106,59105,47176	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	46116,28979,1270,14301	1	p2
+INIT	weather_speed_control	5472,39410,60940,22536	55192,30231,7306,25185
+DEC	weather_speed_control	55192,30231,7306,25185	move	0	0	m0	m0	29494,15942,19450,28912	Omastar	4	281	0	-	1	0	Kyogre	269	341	0	-	1	0	p2	1
+DEC	weather_speed_control	55192,30231,7306,25185	move	0	0	m0	m0	62637,32423,52559,25476	Omastar	0	281	1	-	0	0	Kyogre	269	341	0	-	1	0	p2	1
+END	weather_speed_control	55192,30231,7306,25185	1	p2
+INIT	weather_speed_control	41634,16728,37688,31068	38988,63291,862,37669
+DEC	weather_speed_control	38988,63291,862,37669	move	0	0	m0	m0	40535,34719,38256,19396	Omastar	17	281	0	-	1	0	Kyogre	272	341	0	-	1	0	p2	1
+DEC	weather_speed_control	38988,63291,862,37669	move	0	0	m0	m0	3579,58522,37265,22808	Omastar	0	281	1	-	0	0	Kyogre	272	341	0	-	1	0	p2	1
+END	weather_speed_control	38988,63291,862,37669	1	p2
+INIT	weather_speed_control	33270,43575,1753,9712	10816,39071,3442,3625
+DEC	weather_speed_control	10816,39071,3442,3625	move	0	0	m0	m0	44852,24810,26197,35288	Omastar	4	281	0	-	1	0	Kyogre	271	341	0	-	1	0	p2	1
+DEC	weather_speed_control	10816,39071,3442,3625	move	0	0	m0	m0	44746,599,18244,65004	Omastar	0	281	1	-	0	0	Kyogre	271	341	0	-	1	0	p2	1
+END	weather_speed_control	10816,39071,3442,3625	1	p2
+INIT	weather_speed_control	885,56248,6443,29124	372,15939,52934,22381
+DEC	weather_speed_control	372,15939,52934,22381	move	0	0	m0	m0	49779,45519,64488,48940	Omastar	20	281	0	-	1	0	Kyogre	267	341	0	-	1	0	p2	1
+DEC	weather_speed_control	372,15939,52934,22381	move	0	0	m0	m0	47571,56729,28423,42496	Omastar	0	281	1	-	0	0	Kyogre	267	341	0	-	1	0	p2	1
+END	weather_speed_control	372,15939,52934,22381	1	p2
+INIT	weather_speed_control	42944,31259,8342,45272	53736,3111,7002,13041
+DEC	weather_speed_control	53736,3111,7002,13041	move	0	0	m0	m0	65111,53045,27530,49088	Omastar	20	281	0	-	1	0	Kyogre	269	341	0	-	1	0	p2	1
+DEC	weather_speed_control	53736,3111,7002,13041	move	0	0	m0	m0	59281,55157,28148,58708	Omastar	0	281	1	-	0	0	Kyogre	269	341	0	-	1	0	p2	1
+END	weather_speed_control	53736,3111,7002,13041	1	p2
+INIT	weather_speed_control	22164,42141,43173,30508	36764,26187,1838,42165
+DEC	weather_speed_control	36764,26187,1838,42165	move	0	0	m0	m0	33136,60140,26664,56832	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	36764,26187,1838,42165	1	p2
+INIT	weather_speed_control	8102,3327,19569,39104	28304,61615,58946,61625
+DEC	weather_speed_control	28304,61615,58946,61625	move	0	0	m0	m0	30753,41940,65480,11860	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	28304,61615,58946,61625	1	p2
+INIT	weather_speed_control	58721,17963,51566,10644	58052,36691,19606,39677
+DEC	weather_speed_control	58052,36691,19606,39677	move	0	0	m0	m0	32105,4073,28545,31208	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	58052,36691,19606,39677	1	p2
+INIT	weather_speed_control	30900,61957,35020,32168	41016,26167,3626,26497
+DEC	weather_speed_control	41016,26167,3626,26497	move	0	0	m0	m0	35041,51285,18488,54460	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	41016,26167,3626,26497	1	p2
+INIT	weather_speed_control	24042,45304,36018,10492	39660,55643,16126,23109
+DEC	weather_speed_control	39660,55643,16126,23109	move	0	0	m0	m0	61341,8552,42754,37584	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	39660,55643,16126,23109	1	p2
+INIT	weather_speed_control	15023,5990,63901,65424	1760,36031,13074,46921
+DEC	weather_speed_control	1760,36031,13074,46921	move	0	0	m0	m0	47581,10827,31288,18468	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	1760,36031,13074,46921	1	p2
+INIT	weather_speed_control	48361,59492,926,5476	22548,25699,32358,653
+DEC	weather_speed_control	22548,25699,32358,653	move	0	0	m0	m0	27715,49642,63310,51384	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	22548,25699,32358,653	1	p2
+INIT	weather_speed_control	57211,7951,40264,48760	17032,33863,62714,17
+DEC	weather_speed_control	17032,33863,62714,17	move	0	0	m0	m0	9290,45542,62527,10380	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	17032,33863,62714,17	1	p2
+INIT	weather_speed_control	12607,53872,51395,36556	47676,20587,43726,46037
+DEC	weather_speed_control	47676,20587,43726,46037	move	0	0	m0	m0	14160,2426,36381,48032	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	47676,20587,43726,46037	1	p2
+INIT	weather_speed_control	11250,53668,38851,23136	62256,27855,62434,25049
+DEC	weather_speed_control	62256,27855,62434,25049	move	0	0	m0	m0	25941,14432,34910,24648	Omastar	10	281	0	-	1	0	Kyogre	271	341	0	-	1	0	p2	1
+DEC	weather_speed_control	62256,27855,62434,25049	move	0	0	m0	m0	50153,57835,42226,52572	Omastar	0	281	1	-	0	0	Kyogre	271	341	0	-	1	0	p2	1
+END	weather_speed_control	62256,27855,62434,25049	1	p2
+INIT	weather_speed_control	48696,4362,55941,13620	24932,48499,25654,36381
+DEC	weather_speed_control	24932,48499,25654,36381	move	0	0	m0	m0	44813,57414,51688,2952	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	24932,48499,25654,36381	1	p2
+INIT	weather_speed_control	6862,50814,28885,29512	47320,26199,53194,64673
+DEC	weather_speed_control	47320,26199,53194,64673	move	0	0	m0	m0	3048,49834,48214,45148	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	47320,26199,53194,64673	1	p2
+INIT	weather_speed_control	60401,5017,54132,43164	60812,52091,19102,45413
+DEC	weather_speed_control	60812,52091,19102,45413	move	0	0	m0	m0	18404,41838,55397,22640	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	60812,52091,19102,45413	1	p2
+INIT	weather_speed_control	15040,2960,45126,43312	13184,37087,10418,61545
+DEC	weather_speed_control	13184,37087,10418,61545	move	0	0	m0	m0	27465,61764,49654,58648	Omastar	4	281	0	-	1	0	Kyogre	270	341	0	-	1	0	p2	1
+DEC	weather_speed_control	13184,37087,10418,61545	move	0	0	m0	m0	61130,47064,20089,9516	Omastar	0	281	1	-	0	0	Kyogre	270	341	0	-	1	0	p2	1
+END	weather_speed_control	13184,37087,10418,61545	1	p2
+INIT	weather_speed_control	46371,29046,15193,35076	65204,39555,65030,15789
+DEC	weather_speed_control	65204,39555,65030,15789	move	0	0	m0	m0	64239,15061,23843,16984	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	65204,39555,65030,15789	1	p2
+INIT	weather_speed_control	62599,11680,26435,39960	808,3175,40602,23857
+DEC	weather_speed_control	808,3175,40602,23857	move	0	0	m0	m0	22984,4058,53568,27692	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	808,3175,40602,23857	1	p2
+INIT	weather_speed_control	59195,64984,44229,30316	13532,19083,7790,21237
+DEC	weather_speed_control	13532,19083,7790,21237	move	0	0	m0	m0	57831,61829,55751,63188	Omastar	7	281	0	-	1	0	Kyogre	192	341	0	-	1	0	p2	1
+DEC	weather_speed_control	13532,19083,7790,21237	move	0	0	m0	m0	13606,15446,45594,62248	Omastar	0	281	1	-	0	0	Kyogre	192	341	0	-	1	0	p2	1
+END	weather_speed_control	13532,19083,7790,21237	1	p2
+INIT	weather_speed_control	37986,35147,12381,60416	51152,63727,53634,25337
+DEC	weather_speed_control	51152,63727,53634,25337	move	0	0	m0	m0	42392,16806,26951,52628	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	51152,63727,53634,25337	1	p2
+INIT	weather_speed_control	56935,25315,44928,4308	12292,64403,19414,4413
+DEC	weather_speed_control	12292,64403,19414,4413	move	0	0	m0	m0	65521,522,62997,27944	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	12292,64403,19414,4413	1	p2
+INIT	weather_speed_control	3284,11396,37725,14568	8568,30327,24938,8641
+DEC	weather_speed_control	8568,30327,24938,8641	move	0	0	m0	m0	28512,48107,52659,2515	Omastar	1	281	0	par	1	0	Kyogre	273	341	0	-	1	0	p2	1
+DEC	weather_speed_control	8568,30327,24938,8641	move	0	0	m0	m0	29259,33835,9004,60471	Omastar	0	281	1	par	0	0	Kyogre	273	341	0	-	1	0	p2	1
+END	weather_speed_control	8568,30327,24938,8641	1	p2
+INIT	weather_speed_control	49487,64820,56858,63548	36908,52635,9790,39045
+DEC	weather_speed_control	36908,52635,9790,39045	move	0	0	m0	m0	49002,30427,56206,60944	Omastar	0	281	1	-	0	0	Kyogre	341	341	0	-	1	0	p2	1
+END	weather_speed_control	36908,52635,9790,39045	1	p2
+SCEN	cloudnine_no_sand_chip
+TEAM	cloudnine_no_sand_chip	p1	Psyduck|||CloudNine|surf,rest|Bold|252,,252,,,|N||||
+TEAM	cloudnine_no_sand_chip	p2	Tyranitar|||SandStream|rockslide,rest|Careful|252,,,,252,|N||||
+INIT	cloudnine_no_sand_chip	14384,20876,61741,29496	45384,41991,4538,62929
+DEC	cloudnine_no_sand_chip	45384,41991,4538,62929	move	0	0	m0	m0	58860,39524,7979,5664	Psyduck	173	304	0	-	1	0	Tyranitar	280	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	45384,41991,4538,62929	move	0	0	m0	m0	21894,4280,10362,711	Psyduck	46	304	0	-	1	0	Tyranitar	280	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	45384,41991,4538,62929	move	0	0	m0	m0	42310,48980,61399,24043	Psyduck	0	304	1	-	0	0	Tyranitar	280	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	45384,41991,4538,62929	1	p2
+INIT	cloudnine_no_sand_chip	12105,34601,19563,12172	46332,35883,13198,9621
+DEC	cloudnine_no_sand_chip	46332,35883,13198,9621	move	0	0	m0	m0	54258,63967,57782,11252	Psyduck	183	304	0	-	1	0	Tyranitar	290	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	46332,35883,13198,9621	move	0	0	m0	m0	20170,39227,53589,5704	Psyduck	0	304	1	-	0	0	Tyranitar	290	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	46332,35883,13198,9621	1	p2
+INIT	cloudnine_no_sand_chip	17895,25420,15262,42784	14832,33935,43170,3993
+DEC	cloudnine_no_sand_chip	14832,33935,43170,3993	move	0	0	m0	m0	16608,37489,53755,54536	Psyduck	179	304	0	-	1	0	Tyranitar	280	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	14832,33935,43170,3993	move	0	0	m0	m0	21511,56655,32699,19952	Psyduck	52	304	0	-	1	0	Tyranitar	167	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	14832,33935,43170,3993	move	0	0	m0	m0	3263,61784,57348,28804	Psyduck	0	304	1	-	0	0	Tyranitar	167	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	14832,33935,43170,3993	1	p2
+INIT	cloudnine_no_sand_chip	21475,582,31802,60916	46116,28979,1270,14301
+DEC	cloudnine_no_sand_chip	46116,28979,1270,14301	move	0	0	m0	m0	34047,27816,57776,42332	Psyduck	37	304	0	-	1	0	Tyranitar	287	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	46116,28979,1270,14301	move	0	0	m0	m0	60391,9779,42921,2352	Psyduck	0	304	1	-	0	0	Tyranitar	287	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	46116,28979,1270,14301	1	p2
+INIT	cloudnine_no_sand_chip	5472,39410,60940,22536	55192,30231,7306,25185
+DEC	cloudnine_no_sand_chip	55192,30231,7306,25185	move	0	0	m0	m0	29494,15942,19450,28912	Psyduck	182	304	0	-	1	0	Tyranitar	284	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	55192,30231,7306,25185	move	0	0	m0	m0	47599,26568,3572,29912	Psyduck	59	304	0	-	1	0	Tyranitar	176	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	55192,30231,7306,25185	move	0	0	m0	m0	51101,33783,52931,14572	Psyduck	0	304	1	-	0	0	Tyranitar	176	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	55192,30231,7306,25185	1	p2
+INIT	cloudnine_no_sand_chip	41634,16728,37688,31068	38988,63291,862,37669
+DEC	cloudnine_no_sand_chip	38988,63291,862,37669	move	0	0	m0	m0	40535,34719,38256,19396	Psyduck	188	304	0	-	1	0	Tyranitar	290	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	38988,63291,862,37669	move	0	0	m0	m0	31059,25577,50900,40251	Psyduck	73	304	0	-	1	0	Tyranitar	290	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	38988,63291,862,37669	move	0	0	m0	m0	57326,19018,40954,22815	Psyduck	0	304	1	-	0	0	Tyranitar	290	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	38988,63291,862,37669	1	p2
+INIT	cloudnine_no_sand_chip	33270,43575,1753,9712	10816,39071,3442,3625
+DEC	cloudnine_no_sand_chip	10816,39071,3442,3625	move	0	0	m0	m0	53125,41313,63076,24279	Psyduck	304	304	0	-	1	0	Tyranitar	295	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	10816,39071,3442,3625	move	0	0	m0	m0	35999,433,35766,6367	Psyduck	182	304	0	-	1	0	Tyranitar	182	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	10816,39071,3442,3625	move	0	0	m0	m0	41011,2541,65408,46962	Psyduck	56	304	0	-	1	0	Tyranitar	182	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	10816,39071,3442,3625	move	0	0	m0	m0	31229,792,43630,5606	Psyduck	0	304	1	-	0	0	Tyranitar	182	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	10816,39071,3442,3625	1	p2
+INIT	cloudnine_no_sand_chip	885,56248,6443,29124	372,15939,52934,22381
+DEC	cloudnine_no_sand_chip	372,15939,52934,22381	move	0	0	m0	m0	32425,19595,31340,47931	Psyduck	304	304	0	-	1	0	Tyranitar	290	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	372,15939,52934,22381	move	0	0	m0	m0	33117,19249,28673,7363	Psyduck	185	304	0	-	1	0	Tyranitar	178	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	372,15939,52934,22381	move	0	0	m0	m0	50187,48333,35933,30027	Psyduck	66	304	0	-	1	0	Tyranitar	61	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	372,15939,52934,22381	move	0	0	m0	m0	52187,12329,33476,20527	Psyduck	0	304	1	-	0	0	Tyranitar	61	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	372,15939,52934,22381	1	p2
+INIT	cloudnine_no_sand_chip	42944,31259,8342,45272	53736,3111,7002,13041
+DEC	cloudnine_no_sand_chip	53736,3111,7002,13041	move	0	0	m0	m0	8612,53104,29841,19423	Psyduck	304	304	0	-	1	0	Tyranitar	296	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	53736,3111,7002,13041	move	0	0	m0	m0	35444,16834,9675,3303	Psyduck	189	304	0	-	1	0	Tyranitar	188	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	53736,3111,7002,13041	move	0	0	m0	m0	24571,19199,28854,21743	Psyduck	58	304	0	-	1	0	Tyranitar	79	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	53736,3111,7002,13041	move	0	0	m0	m0	13044,47705,54831,7571	Psyduck	0	304	1	-	0	0	Tyranitar	79	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	53736,3111,7002,13041	1	p2
+INIT	cloudnine_no_sand_chip	22164,42141,43173,30508	36764,26187,1838,42165
+DEC	cloudnine_no_sand_chip	36764,26187,1838,42165	move	0	0	m0	m0	55439,29831,24471,40852	Psyduck	178	304	0	-	1	0	Tyranitar	281	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	36764,26187,1838,42165	move	0	0	m0	m0	12919,38391,48665,17148	Psyduck	60	304	0	-	1	0	Tyranitar	166	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	36764,26187,1838,42165	move	0	0	m0	m0	29197,40545,33212,3280	Psyduck	0	304	1	-	0	0	Tyranitar	166	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	36764,26187,1838,42165	1	p2
+INIT	cloudnine_no_sand_chip	8102,3327,19569,39104	28304,61615,58946,61625
+DEC	cloudnine_no_sand_chip	28304,61615,58946,61625	move	0	0	m0	m0	8112,47611,32850,45736	Psyduck	168	304	0	-	1	0	Tyranitar	289	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	28304,61615,58946,61625	move	0	0	m0	m0	38417,57269,64372,38800	Psyduck	53	304	0	-	1	0	Tyranitar	182	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	28304,61615,58946,61625	move	0	0	m0	m0	9472,38661,32149,24612	Psyduck	0	304	1	-	0	0	Tyranitar	182	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	28304,61615,58946,61625	1	p2
+INIT	cloudnine_no_sand_chip	58721,17963,51566,10644	58052,36691,19606,39677
+DEC	cloudnine_no_sand_chip	58052,36691,19606,39677	move	0	0	m0	m0	15480,33371,49008,36092	Psyduck	177	304	0	-	1	0	Tyranitar	296	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	58052,36691,19606,39677	move	0	0	m0	m0	42677,45892,29522,2916	Psyduck	48	304	0	-	1	0	Tyranitar	182	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	58052,36691,19606,39677	move	0	0	m0	m0	51669,10569,47263,24248	Psyduck	0	304	1	-	0	0	Tyranitar	182	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	58052,36691,19606,39677	1	p2
+INIT	cloudnine_no_sand_chip	30900,61957,35020,32168	41016,26167,3626,26497
+DEC	cloudnine_no_sand_chip	41016,26167,3626,26497	move	0	0	m0	m0	44310,19761,32220,656	Psyduck	170	304	0	-	1	0	Tyranitar	291	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	41016,26167,3626,26497	move	0	0	m0	m0	25710,24158,32421,62072	Psyduck	54	304	0	-	1	0	Tyranitar	179	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	41016,26167,3626,26497	move	0	0	m0	m0	39914,15898,62801,7308	Psyduck	0	304	1	-	0	0	Tyranitar	179	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	41016,26167,3626,26497	1	p2
+INIT	cloudnine_no_sand_chip	24042,45304,36018,10492	39660,55643,16126,23109
+DEC	cloudnine_no_sand_chip	39660,55643,16126,23109	move	0	0	m0	m0	52772,49303,16428,10084	Psyduck	174	304	0	-	1	0	Tyranitar	290	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	39660,55643,16126,23109	move	0	0	m0	m0	14256,56515,14127,49499	Psyduck	43	304	0	-	1	0	Tyranitar	290	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	39660,55643,16126,23109	move	0	0	m0	m0	57661,20898,24136,31551	Psyduck	0	304	1	-	0	0	Tyranitar	290	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	39660,55643,16126,23109	1	p2
+INIT	cloudnine_no_sand_chip	15023,5990,63901,65424	1760,36031,13074,46921
+DEC	cloudnine_no_sand_chip	1760,36031,13074,46921	move	0	0	m0	m0	1072,39109,54377,20344	Psyduck	173	304	0	-	1	0	Tyranitar	282	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	1760,36031,13074,46921	move	0	0	m0	m0	17607,7206,63132,43616	Psyduck	43	304	0	-	1	0	Tyranitar	172	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	1760,36031,13074,46921	move	0	0	m0	m0	33791,4944,52606,26100	Psyduck	0	304	1	-	0	0	Tyranitar	172	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	1760,36031,13074,46921	1	p2
+INIT	cloudnine_no_sand_chip	48361,59492,926,5476	22548,25699,32358,653
+DEC	cloudnine_no_sand_chip	22548,25699,32358,653	move	0	0	m0	m0	56149,24590,1667,3788	Psyduck	64	304	0	-	1	0	Tyranitar	284	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	22548,25699,32358,653	move	0	0	m0	m0	58868,2866,31461,15264	Psyduck	0	304	1	-	0	0	Tyranitar	284	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	22548,25699,32358,653	1	p2
+INIT	cloudnine_no_sand_chip	57211,7951,40264,48760	17032,33863,62714,17
+DEC	cloudnine_no_sand_chip	17032,33863,62714,17	move	0	0	m0	m0	2839,7909,21912,35327	Psyduck	177	304	0	-	1	0	Tyranitar	404	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	17032,33863,62714,17	move	0	0	m0	m0	30819,33591,65363,9991	Psyduck	54	304	0	-	1	0	Tyranitar	284	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	17032,33863,62714,17	move	0	0	m0	m0	59173,18642,10624,48683	Psyduck	0	304	1	-	0	0	Tyranitar	284	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	17032,33863,62714,17	1	p2
+INIT	cloudnine_no_sand_chip	12607,53872,51395,36556	47676,20587,43726,46037
+DEC	cloudnine_no_sand_chip	47676,20587,43726,46037	move	0	0	m0	m0	29583,42879,40106,17635	Psyduck	171	304	0	-	1	0	Tyranitar	404	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	47676,20587,43726,46037	move	0	0	m0	m0	26904,52693,17885,26566	Psyduck	50	304	0	-	1	0	Tyranitar	404	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	47676,20587,43726,46037	move	0	0	m0	m0	19804,62076,34768,35066	Psyduck	0	304	1	-	0	0	Tyranitar	404	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	47676,20587,43726,46037	1	p2
+INIT	cloudnine_no_sand_chip	11250,53668,38851,23136	62256,27855,62434,25049
+DEC	cloudnine_no_sand_chip	62256,27855,62434,25049	move	0	0	m0	m0	25941,14432,34910,24648	Psyduck	185	304	0	-	1	0	Tyranitar	287	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	62256,27855,62434,25049	move	0	0	m0	m0	17900,29555,30552,45360	Psyduck	62	304	0	-	1	0	Tyranitar	174	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	62256,27855,62434,25049	move	0	0	m0	m0	49755,2718,19140,8132	Psyduck	0	304	1	-	0	0	Tyranitar	174	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	62256,27855,62434,25049	1	p2
+INIT	cloudnine_no_sand_chip	48696,4362,55941,13620	24932,48499,25654,36381
+DEC	cloudnine_no_sand_chip	24932,48499,25654,36381	move	0	0	m0	m0	1550,47282,7338,17564	Psyduck	179	304	0	-	1	0	Tyranitar	291	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	24932,48499,25654,36381	move	0	0	m0	m0	62503,42486,1016,16115	Psyduck	43	304	0	-	1	0	Tyranitar	291	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	24932,48499,25654,36381	move	0	0	m0	m0	33663,29516,4430,3927	Psyduck	0	304	1	-	0	0	Tyranitar	291	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	24932,48499,25654,36381	1	p2
+INIT	cloudnine_no_sand_chip	6862,50814,28885,29512	47320,26199,53194,64673
+DEC	cloudnine_no_sand_chip	47320,26199,53194,64673	move	0	0	m0	m0	2231,27960,21823,28431	Psyduck	42	304	0	-	1	0	Tyranitar	404	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	47320,26199,53194,64673	move	0	0	m0	m0	42764,33048,38567,54707	Psyduck	0	304	1	-	0	0	Tyranitar	404	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	47320,26199,53194,64673	1	p2
+INIT	cloudnine_no_sand_chip	60401,5017,54132,43164	60812,52091,19102,45413
+DEC	cloudnine_no_sand_chip	60812,52091,19102,45413	move	0	0	m0	m0	29054,11470,18310,29427	Psyduck	304	304	0	-	1	0	Tyranitar	284	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	60812,52091,19102,45413	move	0	0	m0	m0	35767,13279,33729,62843	Psyduck	181	304	0	-	1	0	Tyranitar	172	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	60812,52091,19102,45413	move	0	0	m0	m0	57000,17839,51734,20227	Psyduck	59	304	0	-	1	0	Tyranitar	52	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	60812,52091,19102,45413	move	0	0	m0	m0	11789,22303,26761,48743	Psyduck	0	304	1	-	0	0	Tyranitar	52	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	60812,52091,19102,45413	1	p2
+INIT	cloudnine_no_sand_chip	15040,2960,45126,43312	13184,37087,10418,61545
+DEC	cloudnine_no_sand_chip	13184,37087,10418,61545	move	0	0	m0	m0	27465,61764,49654,58648	Psyduck	182	304	0	-	1	0	Tyranitar	286	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	13184,37087,10418,61545	move	0	0	m0	m0	18981,63589,37837,44032	Psyduck	51	304	0	-	1	0	Tyranitar	174	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	13184,37087,10418,61545	move	0	0	m0	m0	63667,59021,31547,36244	Psyduck	0	304	1	-	0	0	Tyranitar	174	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	13184,37087,10418,61545	1	p2
+INIT	cloudnine_no_sand_chip	46371,29046,15193,35076	65204,39555,65030,15789
+DEC	cloudnine_no_sand_chip	65204,39555,65030,15789	move	0	0	m0	m0	20525,50609,36344,58235	Psyduck	304	304	0	-	1	0	Tyranitar	297	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	65204,39555,65030,15789	move	0	0	m0	m0	29029,34872,37855,25150	Psyduck	175	304	0	-	1	0	Tyranitar	297	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	65204,39555,65030,15789	move	0	0	m0	m0	46195,1379,48873,41574	Psyduck	39	304	0	-	1	0	Tyranitar	71	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	65204,39555,65030,15789	move	0	0	m0	m0	49995,55384,21199,22938	Psyduck	0	304	1	-	0	0	Tyranitar	71	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	65204,39555,65030,15789	1	p2
+INIT	cloudnine_no_sand_chip	62599,11680,26435,39960	808,3175,40602,23857
+DEC	cloudnine_no_sand_chip	808,3175,40602,23857	move	0	0	m0	m0	58782,7647,62470,33536	Psyduck	179	304	0	-	1	0	Tyranitar	291	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	808,3175,40602,23857	move	0	0	m0	m0	63316,46750,8737,38120	Psyduck	61	304	0	-	1	0	Tyranitar	172	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	808,3175,40602,23857	move	0	0	m0	m0	45566,36975,42940,63484	Psyduck	0	304	1	-	0	0	Tyranitar	172	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	808,3175,40602,23857	1	p2
+INIT	cloudnine_no_sand_chip	59195,64984,44229,30316	13532,19083,7790,21237
+DEC	cloudnine_no_sand_chip	13532,19083,7790,21237	move	0	0	m0	m0	57831,61829,55751,63188	Psyduck	183	304	0	-	1	0	Tyranitar	158	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	13532,19083,7790,21237	move	0	0	m0	m0	13606,15446,45594,62248	Psyduck	0	304	1	-	0	0	Tyranitar	158	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	13532,19083,7790,21237	1	p2
+INIT	cloudnine_no_sand_chip	37986,35147,12381,60416	51152,63727,53634,25337
+DEC	cloudnine_no_sand_chip	51152,63727,53634,25337	move	0	0	m0	m0	50430,38932,1418,60967	Psyduck	304	304	0	-	1	0	Tyranitar	291	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	51152,63727,53634,25337	move	0	0	m0	m0	15282,41187,34068,20015	Psyduck	177	304	0	-	1	0	Tyranitar	165	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	51152,63727,53634,25337	move	0	0	m0	m0	4076,17304,14822,21815	Psyduck	62	304	0	-	1	0	Tyranitar	39	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	51152,63727,53634,25337	move	0	0	m0	m0	5236,34348,41480,59739	Psyduck	62	304	0	-	1	0	Tyranitar	0	404	1	-	0	0	p2	1
+END	cloudnine_no_sand_chip	51152,63727,53634,25337	1	p1
+INIT	cloudnine_no_sand_chip	56935,25315,44928,4308	12292,64403,19414,4413
+DEC	cloudnine_no_sand_chip	12292,64403,19414,4413	move	0	0	m0	m0	57794,4011,63837,52284	Psyduck	179	304	0	-	1	0	Tyranitar	295	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	12292,64403,19414,4413	move	0	0	m0	m0	5940,15768,24551,41636	Psyduck	48	304	0	-	1	0	Tyranitar	188	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	12292,64403,19414,4413	move	0	0	m0	m0	49489,22277,44124,504	Psyduck	0	304	1	-	0	0	Tyranitar	188	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	12292,64403,19414,4413	1	p2
+INIT	cloudnine_no_sand_chip	3284,11396,37725,14568	8568,30327,24938,8641
+DEC	cloudnine_no_sand_chip	8568,30327,24938,8641	move	0	0	m0	m0	23753,30313,64358,50479	Psyduck	181	304	0	-	1	0	Tyranitar	404	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	8568,30327,24938,8641	move	0	0	m0	m0	29259,33835,9004,60471	Psyduck	59	304	0	-	1	0	Tyranitar	286	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	8568,30327,24938,8641	move	0	0	m0	m0	38442,42917,61420,4187	Psyduck	0	304	1	-	0	0	Tyranitar	286	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	8568,30327,24938,8641	1	p2
+INIT	cloudnine_no_sand_chip	49487,64820,56858,63548	36908,52635,9790,39045
+DEC	cloudnine_no_sand_chip	36908,52635,9790,39045	move	0	0	m0	m0	28446,10241,24475,20132	Psyduck	171	304	0	-	1	0	Tyranitar	280	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	36908,52635,9790,39045	move	0	0	m0	m0	38185,56040,62379,24588	Psyduck	45	304	0	-	1	0	Tyranitar	167	404	0	-	1	0	p2	1
+DEC	cloudnine_no_sand_chip	36908,52635,9790,39045	move	0	0	m0	m0	64590,58682,9740,63712	Psyduck	0	304	1	-	0	0	Tyranitar	167	404	0	-	1	0	p2	1
+END	cloudnine_no_sand_chip	36908,52635,9790,39045	1	p2
+SCEN	airlock_no_sand_chip
+TEAM	airlock_no_sand_chip	p1	Rayquaza|||AirLock|dragonclaw,rest|Adamant|252,252,,,,|N||||
+TEAM	airlock_no_sand_chip	p2	Tyranitar|||SandStream|crunch,rest|Careful|252,,,,252,|N||||
+INIT	airlock_no_sand_chip	14384,20876,61741,29496	45384,41991,4538,62929
+DEC	airlock_no_sand_chip	45384,41991,4538,62929	move	0	0	m0	m0	58860,39524,7979,5664	Rayquaza	326	414	0	-	1	0	Tyranitar	313	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	45384,41991,4538,62929	move	0	0	m0	m0	57161,58077,44693,25608	Rayquaza	184	414	0	-	1	0	Tyranitar	225	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	45384,41991,4538,62929	move	0	0	m0	m0	11958,45879,35201,39209	Rayquaza	0	414	1	-	0	0	Tyranitar	133	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	45384,41991,4538,62929	1	p2
+INIT	airlock_no_sand_chip	12105,34601,19563,12172	46332,35883,13198,9621
+DEC	airlock_no_sand_chip	46332,35883,13198,9621	move	0	0	m0	m0	54258,63967,57782,11252	Rayquaza	331	414	0	-	1	0	Tyranitar	321	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	46332,35883,13198,9621	move	0	0	m0	m0	17878,44892,28378,9052	Rayquaza	244	414	0	-	1	0	Tyranitar	151	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	46332,35883,13198,9621	move	0	0	m0	m0	14577,23324,18638,46532	Rayquaza	156	414	0	-	1	0	Tyranitar	61	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	46332,35883,13198,9621	move	0	0	m0	m0	47417,3547,49224,55345	Rayquaza	156	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	46332,35883,13198,9621	1	p1
+INIT	airlock_no_sand_chip	17895,25420,15262,42784	14832,33935,43170,3993
+DEC	airlock_no_sand_chip	14832,33935,43170,3993	move	0	0	m0	m0	16608,37489,53755,54536	Rayquaza	330	414	0	-	1	0	Tyranitar	318	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	14832,33935,43170,3993	move	0	0	m0	m0	21511,56655,32699,19952	Rayquaza	207	414	0	-	1	0	Tyranitar	230	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	14832,33935,43170,3993	move	0	0	m0	m0	54958,17067,13370,45528	Rayquaza	63	414	0	-	1	0	Tyranitar	142	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	14832,33935,43170,3993	move	0	0	m0	m0	56140,40621,38832,22713	Rayquaza	0	414	1	-	0	0	Tyranitar	53	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	14832,33935,43170,3993	1	p2
+INIT	airlock_no_sand_chip	21475,582,31802,60916	46116,28979,1270,14301
+DEC	airlock_no_sand_chip	46116,28979,1270,14301	move	0	0	m0	m0	34047,27816,57776,42332	Rayquaza	323	414	0	-	1	0	Tyranitar	219	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	46116,28979,1270,14301	move	0	0	m0	m0	48349,51186,40574,63428	Rayquaza	233	414	0	-	1	0	Tyranitar	128	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	46116,28979,1270,14301	move	0	0	m0	m0	60541,54711,40905,34092	Rayquaza	136	414	0	-	1	0	Tyranitar	35	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	46116,28979,1270,14301	move	0	0	m0	m0	19516,6386,16514,761	Rayquaza	136	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	46116,28979,1270,14301	1	p1
+INIT	airlock_no_sand_chip	5472,39410,60940,22536	55192,30231,7306,25185
+DEC	airlock_no_sand_chip	55192,30231,7306,25185	move	0	0	m0	m0	29494,15942,19450,28912	Rayquaza	330	414	0	-	1	0	Tyranitar	320	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	55192,30231,7306,25185	move	0	0	m0	m0	47599,26568,3572,29912	Rayquaza	234	414	0	-	1	0	Tyranitar	235	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	55192,30231,7306,25185	move	0	0	m0	m0	49178,1268,34884,960	Rayquaza	137	414	0	-	1	0	Tyranitar	145	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	55192,30231,7306,25185	move	0	0	m0	m0	3973,16432,7215,42881	Rayquaza	0	414	1	-	0	0	Tyranitar	65	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	55192,30231,7306,25185	1	p2
+INIT	airlock_no_sand_chip	41634,16728,37688,31068	38988,63291,862,37669
+DEC	airlock_no_sand_chip	38988,63291,862,37669	move	0	0	m0	m0	40535,34719,38256,19396	Rayquaza	325	414	0	-	1	0	Tyranitar	324	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	38988,63291,862,37669	move	0	0	m0	m0	3091,52666,38516,22828	Rayquaza	231	414	0	-	1	0	Tyranitar	245	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	38988,63291,862,37669	move	0	0	m0	m0	13408,116,8468,16788	Rayquaza	140	414	0	-	1	0	Tyranitar	154	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	38988,63291,862,37669	move	0	0	m0	m0	8083,37213,32331,42236	Rayquaza	46	414	0	-	1	0	Tyranitar	71	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	38988,63291,862,37669	move	0	0	m0	m0	47481,25136,3514,30089	Rayquaza	46	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	38988,63291,862,37669	1	p1
+INIT	airlock_no_sand_chip	33270,43575,1753,9712	10816,39071,3442,3625
+DEC	airlock_no_sand_chip	10816,39071,3442,3625	move	0	0	m0	m0	44852,24810,26197,35288	Rayquaza	325	414	0	-	1	0	Tyranitar	320	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	10816,39071,3442,3625	move	0	0	m0	m0	29613,9848,28603,30912	Rayquaza	229	414	0	-	1	0	Tyranitar	239	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	10816,39071,3442,3625	move	0	0	m0	m0	53715,16519,63936,37544	Rayquaza	96	414	0	-	1	0	Tyranitar	150	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	10816,39071,3442,3625	move	0	0	m0	m0	14850,37345,4621,53065	Rayquaza	0	414	1	-	0	0	Tyranitar	59	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	10816,39071,3442,3625	1	p2
+INIT	airlock_no_sand_chip	885,56248,6443,29124	372,15939,52934,22381
+DEC	airlock_no_sand_chip	372,15939,52934,22381	move	0	0	m0	m0	49779,45519,64488,48940	Rayquaza	327	414	0	-	1	0	Tyranitar	325	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	372,15939,52934,22381	move	0	0	m0	m0	50417,41977,33625,59284	Rayquaza	192	414	0	-	1	0	Tyranitar	234	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	372,15939,52934,22381	move	0	0	m0	m0	9540,52951,36218,35580	Rayquaza	53	414	0	-	1	0	Tyranitar	152	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	372,15939,52934,22381	move	0	0	m0	m0	9858,53333,20800,9869	Rayquaza	0	414	1	-	0	0	Tyranitar	66	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	372,15939,52934,22381	1	p2
+INIT	airlock_no_sand_chip	42944,31259,8342,45272	53736,3111,7002,13041
+DEC	airlock_no_sand_chip	53736,3111,7002,13041	move	0	0	m0	m0	65111,53045,27530,49088	Rayquaza	325	414	0	-	1	0	Tyranitar	325	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	53736,3111,7002,13041	move	0	0	m0	m0	13380,37106,65017,63912	Rayquaza	228	414	0	-	1	0	Tyranitar	238	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	53736,3111,7002,13041	move	0	0	m0	m0	10332,53453,65157,65168	Rayquaza	141	414	0	-	1	0	Tyranitar	151	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	53736,3111,7002,13041	move	0	0	m0	m0	24271,61385,4540,28280	Rayquaza	58	414	0	-	1	0	Tyranitar	68	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	53736,3111,7002,13041	move	0	0	m0	m0	16630,43210,11218,6805	Rayquaza	58	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	53736,3111,7002,13041	1	p1
+INIT	airlock_no_sand_chip	22164,42141,43173,30508	36764,26187,1838,42165
+DEC	airlock_no_sand_chip	36764,26187,1838,42165	move	0	0	m0	m0	55439,29831,24471,40852	Rayquaza	322	414	0	-	1	0	Tyranitar	317	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	36764,26187,1838,42165	move	0	0	m0	m0	12919,38391,48665,17148	Rayquaza	184	414	0	-	1	0	Tyranitar	236	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	36764,26187,1838,42165	move	0	0	m0	m0	3398,31602,13697,32397	Rayquaza	0	414	1	-	0	0	Tyranitar	148	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	36764,26187,1838,42165	1	p2
+INIT	airlock_no_sand_chip	8102,3327,19569,39104	28304,61615,58946,61625
+DEC	airlock_no_sand_chip	28304,61615,58946,61625	move	0	0	m0	m0	8112,47611,32850,45736	Rayquaza	332	414	0	-	1	0	Tyranitar	310	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	28304,61615,58946,61625	move	0	0	m0	m0	38417,57269,64372,38800	Rayquaza	250	414	0	-	1	0	Tyranitar	231	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	28304,61615,58946,61625	move	0	0	m0	m0	2490,2688,12772,59256	Rayquaza	156	414	0	-	1	0	Tyranitar	54	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	28304,61615,58946,61625	move	0	0	m0	m0	62286,61492,46695,20373	Rayquaza	156	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	28304,61615,58946,61625	1	p1
+INIT	airlock_no_sand_chip	58721,17963,51566,10644	58052,36691,19606,39677
+DEC	airlock_no_sand_chip	58052,36691,19606,39677	move	0	0	m0	m0	15480,33371,49008,36092	Rayquaza	327	414	0	-	1	0	Tyranitar	316	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	58052,36691,19606,39677	move	0	0	m0	m0	42677,45892,29522,2916	Rayquaza	231	414	0	-	1	0	Tyranitar	227	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	58052,36691,19606,39677	move	0	0	m0	m0	28846,29246,18918,17612	Rayquaza	141	414	0	-	1	0	Tyranitar	138	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	58052,36691,19606,39677	move	0	0	m0	m0	38595,10329,31148,55604	Rayquaza	44	414	0	-	1	0	Tyranitar	45	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	58052,36691,19606,39677	move	0	0	m0	m0	57712,2277,38001,25569	Rayquaza	44	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	58052,36691,19606,39677	1	p1
+INIT	airlock_no_sand_chip	30900,61957,35020,32168	41016,26167,3626,26497
+DEC	airlock_no_sand_chip	41016,26167,3626,26497	move	0	0	m0	m0	44310,19761,32220,656	Rayquaza	327	414	0	-	1	0	Tyranitar	311	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	41016,26167,3626,26497	move	0	0	m0	m0	25710,24158,32421,62072	Rayquaza	241	414	0	-	1	0	Tyranitar	231	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	41016,26167,3626,26497	move	0	0	m0	m0	50484,61537,31267,60768	Rayquaza	152	414	0	-	1	0	Tyranitar	141	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	41016,26167,3626,26497	move	0	0	m0	m0	22348,47626,2619,37704	Rayquaza	70	414	0	-	1	0	Tyranitar	56	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	41016,26167,3626,26497	move	0	0	m0	m0	5810,50395,8637,40485	Rayquaza	70	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	41016,26167,3626,26497	1	p1
+INIT	airlock_no_sand_chip	24042,45304,36018,10492	39660,55643,16126,23109
+DEC	airlock_no_sand_chip	39660,55643,16126,23109	move	0	0	m0	m0	52772,49303,16428,10084	Rayquaza	223	414	0	-	1	0	Tyranitar	314	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	39660,55643,16126,23109	move	0	0	m0	m0	58700,2067,58824,57548	Rayquaza	129	414	0	-	1	0	Tyranitar	223	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	39660,55643,16126,23109	move	0	0	m0	m0	19294,36736,62983,62772	Rayquaza	40	414	0	-	1	0	Tyranitar	142	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	39660,55643,16126,23109	move	0	0	m0	m0	33046,37711,7269,56677	Rayquaza	0	414	1	-	0	0	Tyranitar	59	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	39660,55643,16126,23109	1	p2
+INIT	airlock_no_sand_chip	15023,5990,63901,65424	1760,36031,13074,46921
+DEC	airlock_no_sand_chip	1760,36031,13074,46921	move	0	0	m0	m0	1072,39109,54377,20344	Rayquaza	325	414	0	-	1	0	Tyranitar	313	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	1760,36031,13074,46921	move	0	0	m0	m0	17607,7206,63132,43616	Rayquaza	235	414	0	-	1	0	Tyranitar	223	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	1760,36031,13074,46921	move	0	0	m0	m0	61885,20125,10141,45128	Rayquaza	139	414	0	-	1	0	Tyranitar	142	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	1760,36031,13074,46921	move	0	0	m0	m0	34954,32647,43267,26729	Rayquaza	0	414	1	-	0	0	Tyranitar	48	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	1760,36031,13074,46921	1	p2
+INIT	airlock_no_sand_chip	48361,59492,926,5476	22548,25699,32358,653
+DEC	airlock_no_sand_chip	22548,25699,32358,653	move	0	0	m0	m0	56149,24590,1667,3788	Rayquaza	321	414	0	-	1	0	Tyranitar	238	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	22548,25699,32358,653	move	0	0	m0	m0	17959,52452,22594,25396	Rayquaza	230	414	0	-	1	0	Tyranitar	148	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	22548,25699,32358,653	move	0	0	m0	m0	61275,5057,64135,45724	Rayquaza	146	414	0	-	1	0	Tyranitar	57	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	22548,25699,32358,653	move	0	0	m0	m0	21327,196,30238,45225	Rayquaza	146	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	22548,25699,32358,653	1	p1
+INIT	airlock_no_sand_chip	57211,7951,40264,48760	17032,33863,62714,17
+DEC	airlock_no_sand_chip	17032,33863,62714,17	move	0	0	m0	m0	40433,5175,23849,14688	Rayquaza	219	414	0	-	1	0	Tyranitar	316	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	17032,33863,62714,17	move	0	0	m0	m0	55601,37110,31187,24392	Rayquaza	134	414	0	-	1	0	Tyranitar	232	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	17032,33863,62714,17	move	0	0	m0	m0	22030,56576,8344,53296	Rayquaza	50	414	0	-	1	0	Tyranitar	149	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	17032,33863,62714,17	move	0	0	m0	m0	30320,54772,6862,44337	Rayquaza	0	414	1	-	0	0	Tyranitar	60	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	17032,33863,62714,17	1	p2
+INIT	airlock_no_sand_chip	12607,53872,51395,36556	47676,20587,43726,46037
+DEC	airlock_no_sand_chip	47676,20587,43726,46037	move	0	0	m0	m0	47377,13719,23794,58164	Rayquaza	321	414	0	-	1	0	Tyranitar	312	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	47676,20587,43726,46037	move	0	0	m0	m0	43158,31048,9128,12956	Rayquaza	228	414	0	-	1	0	Tyranitar	229	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	47676,20587,43726,46037	move	0	0	m0	m0	11824,55913,52539,7428	Rayquaza	105	414	0	-	1	0	Tyranitar	138	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	47676,20587,43726,46037	move	0	0	m0	m0	35164,24654,64378,12021	Rayquaza	0	414	1	-	0	0	Tyranitar	51	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	47676,20587,43726,46037	1	p2
+INIT	airlock_no_sand_chip	11250,53668,38851,23136	62256,27855,62434,25049
+DEC	airlock_no_sand_chip	62256,27855,62434,25049	move	0	0	m0	m0	25941,14432,34910,24648	Rayquaza	329	414	0	-	1	0	Tyranitar	322	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	62256,27855,62434,25049	move	0	0	m0	m0	17900,29555,30552,45360	Rayquaza	234	414	0	-	1	0	Tyranitar	237	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	62256,27855,62434,25049	move	0	0	m0	m0	20287,64929,46447,60696	Rayquaza	138	414	0	-	1	0	Tyranitar	152	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	62256,27855,62434,25049	move	0	0	m0	m0	62481,1083,55834,35577	Rayquaza	0	414	1	-	0	0	Tyranitar	60	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	62256,27855,62434,25049	1	p2
+INIT	airlock_no_sand_chip	48696,4362,55941,13620	24932,48499,25654,36381
+DEC	airlock_no_sand_chip	24932,48499,25654,36381	move	0	0	m0	m0	1550,47282,7338,17564	Rayquaza	326	414	0	-	1	0	Tyranitar	318	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	24932,48499,25654,36381	move	0	0	m0	m0	50386,34086,24180,61188	Rayquaza	231	414	0	-	1	0	Tyranitar	224	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	24932,48499,25654,36381	move	0	0	m0	m0	43296,39749,21608,54380	Rayquaza	138	414	0	-	1	0	Tyranitar	145	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	24932,48499,25654,36381	move	0	0	m0	m0	5603,36180,42911,17725	Rayquaza	0	414	1	-	0	0	Tyranitar	55	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	24932,48499,25654,36381	1	p2
+INIT	airlock_no_sand_chip	6862,50814,28885,29512	47320,26199,53194,64673
+DEC	airlock_no_sand_chip	47320,26199,53194,64673	move	0	0	m0	m0	18527,27725,21756,25648	Rayquaza	219	414	0	-	1	0	Tyranitar	223	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	47320,26199,53194,64673	move	0	0	m0	m0	18618,42723,7116,16408	Rayquaza	127	414	0	-	1	0	Tyranitar	135	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	47320,26199,53194,64673	move	0	0	m0	m0	42759,41991,42734,42752	Rayquaza	34	414	0	-	1	0	Tyranitar	51	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	47320,26199,53194,64673	move	0	0	m0	m0	12226,4610,16317,7677	Rayquaza	34	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	47320,26199,53194,64673	1	p1
+INIT	airlock_no_sand_chip	60401,5017,54132,43164	60812,52091,19102,45413
+DEC	airlock_no_sand_chip	60812,52091,19102,45413	move	0	0	m0	m0	38290,58362,36902,54020	Rayquaza	325	414	0	-	1	0	Tyranitar	223	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	60812,52091,19102,45413	move	0	0	m0	m0	41752,32310,24978,14444	Rayquaza	186	414	0	-	1	0	Tyranitar	138	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	60812,52091,19102,45413	move	0	0	m0	m0	56801,3138,1510,30932	Rayquaza	42	414	0	-	1	0	Tyranitar	52	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	60812,52091,19102,45413	move	0	0	m0	m0	62638,39907,50110,10497	Rayquaza	42	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	60812,52091,19102,45413	1	p1
+INIT	airlock_no_sand_chip	15040,2960,45126,43312	13184,37087,10418,61545
+DEC	airlock_no_sand_chip	13184,37087,10418,61545	move	0	0	m0	m0	27465,61764,49654,58648	Rayquaza	320	414	0	-	1	0	Tyranitar	320	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	13184,37087,10418,61545	move	0	0	m0	m0	18981,63589,37837,44032	Rayquaza	227	414	0	-	1	0	Tyranitar	229	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	13184,37087,10418,61545	move	0	0	m0	m0	50664,59698,46560,40424	Rayquaza	130	414	0	-	1	0	Tyranitar	145	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	13184,37087,10418,61545	move	0	0	m0	m0	39302,22991,35761,23248	Rayquaza	36	414	0	-	1	0	Tyranitar	55	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	13184,37087,10418,61545	move	0	0	m0	m0	7715,63927,22060,21645	Rayquaza	36	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	13184,37087,10418,61545	1	p1
+INIT	airlock_no_sand_chip	46371,29046,15193,35076	65204,39555,65030,15789
+DEC	airlock_no_sand_chip	65204,39555,65030,15789	move	0	0	m0	m0	21920,7804,46684,11884	Rayquaza	324	414	0	-	1	0	Tyranitar	313	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	65204,39555,65030,15789	move	0	0	m0	m0	299,18365,22943,44756	Rayquaza	143	414	0	-	1	0	Tyranitar	228	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	65204,39555,65030,15789	move	0	0	m0	m0	38441,8421,41599,43580	Rayquaza	58	414	0	-	1	0	Tyranitar	134	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	65204,39555,65030,15789	move	0	0	m0	m0	7500,62068,60495,60621	Rayquaza	0	414	1	-	0	0	Tyranitar	40	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	65204,39555,65030,15789	1	p2
+INIT	airlock_no_sand_chip	62599,11680,26435,39960	808,3175,40602,23857
+DEC	airlock_no_sand_chip	808,3175,40602,23857	move	0	0	m0	m0	58782,7647,62470,33536	Rayquaza	324	414	0	-	1	0	Tyranitar	318	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	808,3175,40602,23857	move	0	0	m0	m0	63316,46750,8737,38120	Rayquaza	238	414	0	-	1	0	Tyranitar	237	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	808,3175,40602,23857	move	0	0	m0	m0	50059,64609,32150,29136	Rayquaza	144	414	0	-	1	0	Tyranitar	147	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	808,3175,40602,23857	move	0	0	m0	m0	31055,30355,34777,64081	Rayquaza	0	414	1	-	0	0	Tyranitar	60	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	808,3175,40602,23857	1	p2
+INIT	airlock_no_sand_chip	59195,64984,44229,30316	13532,19083,7790,21237
+DEC	airlock_no_sand_chip	13532,19083,7790,21237	move	0	0	m0	m0	57831,61829,55751,63188	Rayquaza	317	414	0	-	1	0	Tyranitar	321	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	13532,19083,7790,21237	move	0	0	m0	m0	64961,11523,40838,62012	Rayquaza	188	414	0	-	1	0	Tyranitar	132	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	13532,19083,7790,21237	move	0	0	m0	m0	10080,51453,52862,38345	Rayquaza	188	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	13532,19083,7790,21237	1	p1
+INIT	airlock_no_sand_chip	37986,35147,12381,60416	51152,63727,53634,25337
+DEC	airlock_no_sand_chip	51152,63727,53634,25337	move	0	0	m0	m0	26719,41265,13736,56808	Rayquaza	320	414	0	-	1	0	Tyranitar	312	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	51152,63727,53634,25337	move	0	0	m0	m0	61568,17146,8113,39632	Rayquaza	223	414	0	-	1	0	Tyranitar	222	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	51152,63727,53634,25337	move	0	0	m0	m0	60110,56951,29669,49848	Rayquaza	58	414	0	-	1	0	Tyranitar	45	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	51152,63727,53634,25337	move	0	0	m0	m0	46389,15281,52301,34261	Rayquaza	58	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	51152,63727,53634,25337	1	p1
+INIT	airlock_no_sand_chip	56935,25315,44928,4308	12292,64403,19414,4413
+DEC	airlock_no_sand_chip	12292,64403,19414,4413	move	0	0	m0	m0	57794,4011,63837,52284	Rayquaza	319	414	0	-	1	0	Tyranitar	318	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	12292,64403,19414,4413	move	0	0	m0	m0	5940,15768,24551,41636	Rayquaza	231	414	0	-	1	0	Tyranitar	227	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	12292,64403,19414,4413	move	0	0	m0	m0	38356,20684,48977,13324	Rayquaza	140	414	0	-	1	0	Tyranitar	133	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	12292,64403,19414,4413	move	0	0	m0	m0	12115,8432,47482,8308	Rayquaza	54	414	0	-	1	0	Tyranitar	39	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	12292,64403,19414,4413	move	0	0	m0	m0	30911,18566,15385,54817	Rayquaza	54	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	12292,64403,19414,4413	1	p1
+INIT	airlock_no_sand_chip	3284,11396,37725,14568	8568,30327,24938,8641
+DEC	airlock_no_sand_chip	8568,30327,24938,8641	move	0	0	m0	m0	42617,48255,34257,38352	Rayquaza	320	414	0	-	1	0	Tyranitar	319	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	8568,30327,24938,8641	move	0	0	m0	m0	23491,27289,47389,23992	Rayquaza	235	414	0	-	1	0	Tyranitar	238	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	8568,30327,24938,8641	move	0	0	m0	m0	5285,43125,22938,12448	Rayquaza	144	414	0	-	1	0	Tyranitar	151	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	8568,30327,24938,8641	move	0	0	m0	m0	59853,43904,29325,44680	Rayquaza	15	414	0	-	1	0	Tyranitar	69	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	8568,30327,24938,8641	move	0	0	m0	m0	41790,52303,35128,5221	Rayquaza	15	414	0	-	1	0	Tyranitar	0	404	1	-	0	0	p1	1
+END	airlock_no_sand_chip	8568,30327,24938,8641	1	p1
+INIT	airlock_no_sand_chip	49487,64820,56858,63548	36908,52635,9790,39045
+DEC	airlock_no_sand_chip	36908,52635,9790,39045	move	0	0	m0	m0	28446,10241,24475,20132	Rayquaza	327	414	0	-	1	0	Tyranitar	312	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	36908,52635,9790,39045	move	0	0	m0	m0	38185,56040,62379,24588	Rayquaza	198	414	0	-	1	0	Tyranitar	225	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	36908,52635,9790,39045	move	0	0	m0	m0	9381,5507,30250,52340	Rayquaza	75	414	0	-	1	0	Tyranitar	142	404	0	-	1	0	p1	1
+DEC	airlock_no_sand_chip	36908,52635,9790,39045	move	0	0	m0	m0	46224,35756,4201,64421	Rayquaza	0	414	1	-	0	0	Tyranitar	58	404	0	-	1	0	p1	1
+END	airlock_no_sand_chip	36908,52635,9790,39045	1	p2
+SCEN	speedboost_ninjask
+TEAM	speedboost_ninjask	p1	Ninjask|||SpeedBoost|aerialace,rest|Jolly|252,252,,,,|N||||
+TEAM	speedboost_ninjask	p2	Snorlax|||NoAbility|bodyslam,rest|Impish|252,,252,,,|N||||
+INIT	speedboost_ninjask	14384,20876,61741,29496	45384,41991,4538,62929
+DEC	speedboost_ninjask	45384,41991,4538,62929	move	0	0	m0	m0	5241,27972,2797,21145	Ninjask	117	326	0	-	1	1	Snorlax	438	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	45384,41991,4538,62929	move	0	0	m0	m0	21894,4280,10362,711	Ninjask	0	326	1	-	0	0	Snorlax	361	524	0	-	1	0	p1	0
+END	speedboost_ninjask	45384,41991,4538,62929	1	p2
+INIT	speedboost_ninjask	12105,34601,19563,12172	46332,35883,13198,9621
+DEC	speedboost_ninjask	46332,35883,13198,9621	move	0	0	m0	m0	39916,7562,26991,40413	Ninjask	126	326	0	-	1	1	Snorlax	444	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	46332,35883,13198,9621	move	0	0	m0	m0	35148,63682,7068,61739	Ninjask	0	326	1	-	0	0	Snorlax	366	524	0	-	1	0	p1	0
+END	speedboost_ninjask	46332,35883,13198,9621	1	p2
+INIT	speedboost_ninjask	17895,25420,15262,42784	14832,33935,43170,3993
+DEC	speedboost_ninjask	14832,33935,43170,3993	move	0	0	m0	m0	7716,56247,16386,39777	Ninjask	115	326	0	-	1	1	Snorlax	363	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	14832,33935,43170,3993	move	0	0	m0	m0	41195,60948,31294,13263	Ninjask	0	326	1	-	0	0	Snorlax	283	524	0	-	1	0	p1	0
+END	speedboost_ninjask	14832,33935,43170,3993	1	p2
+INIT	speedboost_ninjask	21475,582,31802,60916	46116,28979,1270,14301
+DEC	speedboost_ninjask	46116,28979,1270,14301	move	0	0	m0	m0	32150,3002,8841,20261	Ninjask	111	326	0	-	1	1	Snorlax	437	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	46116,28979,1270,14301	move	0	0	m0	m0	8694,19594,7185,61107	Ninjask	0	326	1	-	0	0	Snorlax	358	524	0	-	1	0	p1	0
+END	speedboost_ninjask	46116,28979,1270,14301	1	p2
+INIT	speedboost_ninjask	5472,39410,60940,22536	55192,30231,7306,25185
+DEC	speedboost_ninjask	55192,30231,7306,25185	move	0	0	m0	m0	17730,57578,35358,64809	Ninjask	131	326	0	-	1	1	Snorlax	440	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	55192,30231,7306,25185	move	0	0	m0	m0	59177,53070,58710,34263	Ninjask	0	326	1	-	0	0	Snorlax	364	524	0	-	1	0	p1	0
+END	speedboost_ninjask	55192,30231,7306,25185	1	p2
+INIT	speedboost_ninjask	41634,16728,37688,31068	38988,63291,862,37669
+DEC	speedboost_ninjask	38988,63291,862,37669	move	0	0	m0	m0	37775,57537,54551,10605	Ninjask	109	326	0	-	1	1	Snorlax	370	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	38988,63291,862,37669	move	0	0	m0	m0	31059,25577,50900,40251	Ninjask	0	326	1	-	0	0	Snorlax	290	524	0	-	1	0	p1	0
+END	speedboost_ninjask	38988,63291,862,37669	1	p2
+INIT	speedboost_ninjask	33270,43575,1753,9712	10816,39071,3442,3625
+DEC	speedboost_ninjask	10816,39071,3442,3625	move	0	0	m0	m0	29818,34860,45596,38897	Ninjask	133	326	0	-	1	1	Snorlax	445	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	10816,39071,3442,3625	move	0	0	m0	m0	35999,433,35766,6367	Ninjask	0	326	1	-	0	0	Snorlax	363	524	0	-	1	0	p1	0
+END	speedboost_ninjask	10816,39071,3442,3625	1	p2
+INIT	speedboost_ninjask	885,56248,6443,29124	372,15939,52934,22381
+DEC	speedboost_ninjask	372,15939,52934,22381	move	0	0	m0	m0	9564,49473,57044,19637	Ninjask	122	326	0	-	1	1	Snorlax	451	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	372,15939,52934,22381	move	0	0	m0	m0	33117,19249,28673,7363	Ninjask	0	326	1	-	0	0	Snorlax	374	524	0	-	1	0	p1	0
+END	speedboost_ninjask	372,15939,52934,22381	1	p2
+INIT	speedboost_ninjask	42944,31259,8342,45272	53736,3111,7002,13041
+DEC	speedboost_ninjask	53736,3111,7002,13041	move	0	0	m0	m0	17310,48546,16248,35769	Ninjask	111	326	0	-	1	1	Snorlax	448	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	53736,3111,7002,13041	move	0	0	m0	m0	35444,16834,9675,3303	Ninjask	0	326	1	-	0	0	Snorlax	375	524	0	-	1	0	p1	0
+END	speedboost_ninjask	53736,3111,7002,13041	1	p2
+INIT	speedboost_ninjask	22164,42141,43173,30508	36764,26187,1838,42165
+DEC	speedboost_ninjask	36764,26187,1838,42165	move	0	0	m0	m0	11533,28572,51005,55549	Ninjask	115	326	0	-	1	1	Snorlax	363	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	36764,26187,1838,42165	move	0	0	m0	m0	59225,23188,53253,36171	Ninjask	0	326	1	-	0	0	Snorlax	278	524	0	-	1	0	p1	0
+END	speedboost_ninjask	36764,26187,1838,42165	1	p2
+INIT	speedboost_ninjask	8102,3327,19569,39104	28304,61615,58946,61625
+DEC	speedboost_ninjask	28304,61615,58946,61625	move	0	0	m0	m0	33415,21534,9422,63617	Ninjask	133	326	0	-	1	1	Snorlax	438	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	28304,61615,58946,61625	move	0	0	m0	m0	32353,36096,14810,33263	Ninjask	0	326	1	-	0	0	Snorlax	354	524	0	-	1	0	p1	0
+END	speedboost_ninjask	28304,61615,58946,61625	1	p2
+INIT	speedboost_ninjask	58721,17963,51566,10644	58052,36691,19606,39677
+DEC	speedboost_ninjask	58052,36691,19606,39677	move	0	0	m0	m0	58219,14900,60430,60997	Ninjask	109	326	0	-	1	1	Snorlax	441	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	58052,36691,19606,39677	move	0	0	m0	m0	45512,694,15102,3795	Ninjask	0	326	1	-	0	0	Snorlax	358	524	0	-	1	0	p1	0
+END	speedboost_ninjask	58052,36691,19606,39677	1	p2
+INIT	speedboost_ninjask	30900,61957,35020,32168	41016,26167,3626,26497
+DEC	speedboost_ninjask	41016,26167,3626,26497	move	0	0	m0	m0	42094,875,11001,65097	Ninjask	109	326	0	-	1	1	Snorlax	449	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	41016,26167,3626,26497	move	0	0	m0	m0	29070,26641,59863,38903	Ninjask	0	326	1	-	0	0	Snorlax	369	524	0	-	1	0	p1	0
+END	speedboost_ninjask	41016,26167,3626,26497	1	p2
+INIT	speedboost_ninjask	24042,45304,36018,10492	39660,55643,16126,23109
+DEC	speedboost_ninjask	39660,55643,16126,23109	move	0	0	m0	m0	37414,51739,16355,44173	Ninjask	106	326	0	par	1	1	Snorlax	449	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	39660,55643,16126,23109	move	0	0	m0	m0	15781,60245,500,39594	Ninjask	0	326	1	par	0	0	Snorlax	364	524	0	-	1	0	p1	0
+END	speedboost_ninjask	39660,55643,16126,23109	1	p2
+INIT	speedboost_ninjask	15023,5990,63901,65424	1760,36031,13074,46921
+DEC	speedboost_ninjask	1760,36031,13074,46921	move	0	0	m0	m0	16177,9347,28247,48401	Ninjask	117	326	0	-	1	1	Snorlax	443	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	1760,36031,13074,46921	move	0	0	m0	m0	43591,5927,8281,28415	Ninjask	0	326	1	-	0	0	Snorlax	275	524	0	-	1	0	p1	0
+END	speedboost_ninjask	1760,36031,13074,46921	1	p2
+INIT	speedboost_ninjask	48361,59492,926,5476	22548,25699,32358,653
+DEC	speedboost_ninjask	22548,25699,32358,653	move	0	0	m0	m0	19060,61986,46424,13269	Ninjask	126	326	0	par	1	1	Snorlax	437	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	22548,25699,32358,653	move	0	0	m0	m0	27021,62003,28929,51026	Ninjask	0	326	1	par	0	0	Snorlax	353	524	0	-	1	0	p1	0
+END	speedboost_ninjask	22548,25699,32358,653	1	p2
+INIT	speedboost_ninjask	57211,7951,40264,48760	17032,33863,62714,17
+DEC	speedboost_ninjask	17032,33863,62714,17	move	0	0	m0	m0	19505,39155,47042,21721	Ninjask	106	326	0	par	1	1	Snorlax	439	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	17032,33863,62714,17	move	0	0	m0	m0	52769,65339,16648,50054	Ninjask	0	326	1	par	0	0	Snorlax	361	524	0	-	1	0	p1	0
+END	speedboost_ninjask	17032,33863,62714,17	1	p2
+INIT	speedboost_ninjask	12607,53872,51395,36556	47676,20587,43726,46037
+DEC	speedboost_ninjask	47676,20587,43726,46037	move	0	0	m0	m0	52714,40559,54249,42013	Ninjask	122	326	0	par	1	1	Snorlax	441	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	47676,20587,43726,46037	move	0	0	m0	m0	19804,62076,34768,35066	Ninjask	0	326	1	par	0	0	Snorlax	360	524	0	-	1	0	p1	0
+END	speedboost_ninjask	47676,20587,43726,46037	1	p2
+INIT	speedboost_ninjask	11250,53668,38851,23136	62256,27855,62434,25049
+DEC	speedboost_ninjask	62256,27855,62434,25049	move	0	0	m0	m0	32449,26162,9111,58785	Ninjask	115	326	0	-	1	1	Snorlax	444	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	62256,27855,62434,25049	move	0	0	m0	m0	63777,10192,29019,57359	Ninjask	0	326	1	-	0	0	Snorlax	359	524	0	-	1	0	p1	0
+END	speedboost_ninjask	62256,27855,62434,25049	1	p2
+INIT	speedboost_ninjask	48696,4362,55941,13620	24932,48499,25654,36381
+DEC	speedboost_ninjask	24932,48499,25654,36381	move	0	0	m0	m0	43721,45199,25714,7525	Ninjask	124	326	0	-	1	1	Snorlax	438	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	24932,48499,25654,36381	move	0	0	m0	m0	62503,42486,1016,16115	Ninjask	0	326	1	-	0	0	Snorlax	277	524	0	-	1	0	p1	0
+END	speedboost_ninjask	24932,48499,25654,36381	1	p2
+INIT	speedboost_ninjask	6862,50814,28885,29512	47320,26199,53194,64673
+DEC	speedboost_ninjask	47320,26199,53194,64673	move	0	0	m0	m0	3534,19033,61957,30382	Ninjask	0	326	1	-	0	0	Snorlax	437	524	0	-	1	0	p1	0
+END	speedboost_ninjask	47320,26199,53194,64673	1	p2
+INIT	speedboost_ninjask	60401,5017,54132,43164	60812,52091,19102,45413
+DEC	speedboost_ninjask	60812,52091,19102,45413	move	0	0	m0	m0	10007,43398,61038,49069	Ninjask	122	326	0	-	1	1	Snorlax	437	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	60812,52091,19102,45413	move	0	0	m0	m0	35767,13279,33729,62843	Ninjask	0	326	1	-	0	0	Snorlax	357	524	0	-	1	0	p1	0
+END	speedboost_ninjask	60812,52091,19102,45413	1	p2
+INIT	speedboost_ninjask	15040,2960,45126,43312	13184,37087,10418,61545
+DEC	speedboost_ninjask	13184,37087,10418,61545	move	0	0	m0	m0	27505,2233,55664,29233	Ninjask	117	326	0	par	1	1	Snorlax	448	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	13184,37087,10418,61545	move	0	0	m0	m0	18603,39650,13139,19198	Ninjask	0	326	1	par	0	0	Snorlax	365	524	0	-	1	0	p1	0
+END	speedboost_ninjask	13184,37087,10418,61545	1	p2
+INIT	speedboost_ninjask	46371,29046,15193,35076	65204,39555,65030,15789
+DEC	speedboost_ninjask	65204,39555,65030,15789	move	0	0	m0	m0	46105,44534,53146,43765	Ninjask	117	326	0	-	1	1	Snorlax	445	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	65204,39555,65030,15789	move	0	0	m0	m0	1564,37297,501,32003	Ninjask	0	326	1	-	0	0	Snorlax	359	524	0	-	1	0	p1	0
+END	speedboost_ninjask	65204,39555,65030,15789	1	p2
+INIT	speedboost_ninjask	62599,11680,26435,39960	808,3175,40602,23857
+DEC	speedboost_ninjask	808,3175,40602,23857	move	0	0	m0	m0	43018,54646,29642,44537	Ninjask	137	326	0	-	1	1	Snorlax	439	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	808,3175,40602,23857	move	0	0	m0	m0	55459,28871,46354,20775	Ninjask	0	326	1	-	0	0	Snorlax	357	524	0	-	1	0	p1	0
+END	speedboost_ninjask	808,3175,40602,23857	1	p2
+INIT	speedboost_ninjask	59195,64984,44229,30316	13532,19083,7790,21237
+DEC	speedboost_ninjask	13532,19083,7790,21237	move	0	0	m0	m0	8734,32833,36722,65341	Ninjask	109	326	0	par	1	1	Snorlax	357	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	13532,19083,7790,21237	move	0	0	m0	m0	44359,15951,37307,57754	Ninjask	0	326	1	par	0	0	Snorlax	270	524	0	-	1	0	p1	0
+END	speedboost_ninjask	13532,19083,7790,21237	1	p2
+INIT	speedboost_ninjask	37986,35147,12381,60416	51152,63727,53634,25337
+DEC	speedboost_ninjask	51152,63727,53634,25337	move	0	0	m0	m0	42550,28248,26143,25281	Ninjask	133	326	0	par	1	1	Snorlax	440	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	51152,63727,53634,25337	move	0	0	m0	m0	654,52752,22089,40526	Ninjask	0	326	1	par	0	0	Snorlax	366	524	0	-	1	0	p1	0
+END	speedboost_ninjask	51152,63727,53634,25337	1	p2
+INIT	speedboost_ninjask	56935,25315,44928,4308	12292,64403,19414,4413
+DEC	speedboost_ninjask	12292,64403,19414,4413	move	0	0	m0	m0	54193,28361,35762,56453	Ninjask	120	326	0	par	1	1	Snorlax	444	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	12292,64403,19414,4413	move	0	0	m0	m0	38747,42441,46302,60482	Ninjask	0	326	1	par	0	0	Snorlax	370	524	0	-	1	0	p1	0
+END	speedboost_ninjask	12292,64403,19414,4413	1	p2
+INIT	speedboost_ninjask	3284,11396,37725,14568	8568,30327,24938,8641
+DEC	speedboost_ninjask	8568,30327,24938,8641	move	0	0	m0	m0	27235,25375,3625,45193	Ninjask	117	326	0	par	1	1	Snorlax	447	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	8568,30327,24938,8641	move	0	0	m0	m0	50286,13164,38090,16246	Ninjask	0	326	1	par	0	0	Snorlax	370	524	0	-	1	0	p1	0
+END	speedboost_ninjask	8568,30327,24938,8641	1	p2
+INIT	speedboost_ninjask	49487,64820,56858,63548	36908,52635,9790,39045
+DEC	speedboost_ninjask	36908,52635,9790,39045	move	0	0	m0	m0	7569,53458,19415,25293	Ninjask	117	326	0	-	1	1	Snorlax	449	524	0	-	1	0	p1	1
+DEC	speedboost_ninjask	36908,52635,9790,39045	move	0	0	m0	m0	37451,30735,31330,14747	Ninjask	0	326	1	-	0	0	Snorlax	366	524	0	-	1	0	p1	0
+END	speedboost_ninjask	36908,52635,9790,39045	1	p2
+SCEN	raindish_ludicolo
+TEAM	raindish_ludicolo	p1	Ludicolo|||RainDish|surf,rest|Calm|252,,,,252,|N||||
+TEAM	raindish_ludicolo	p2	Kyogre|||Drizzle|icebeam,rest|Modest|,,,4,,|N||||
+INIT	raindish_ludicolo	14384,20876,61741,29496	45384,41991,4538,62929
+DEC	raindish_ludicolo	45384,41991,4538,62929	move	0	0	m0	m0	58860,39524,7979,5664	Ludicolo	297	364	0	-	1	0	Kyogre	280	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	45384,41991,4538,62929	move	0	0	m0	m0	6656,57430,19255,13894	Ludicolo	233	364	0	frz	1	0	Kyogre	280	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	45384,41991,4538,62929	move	0	0	m0	m0	11958,45879,35201,39209	Ludicolo	173	364	0	-	1	0	Kyogre	220	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	45384,41991,4538,62929	move	0	0	m0	m0	54003,55551,53565,471	Ludicolo	108	364	0	frz	1	0	Kyogre	220	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	45384,41991,4538,62929	move	0	0	m0	m0	54500,42093,51835,32629	Ludicolo	38	364	0	frz	1	0	Kyogre	220	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	45384,41991,4538,62929	move	0	0	m0	m0	58701,29256,61470,7097	Ludicolo	0	364	1	frz	0	0	Kyogre	220	341	0	-	1	0	p2	0
+END	raindish_ludicolo	45384,41991,4538,62929	1	p2
+INIT	raindish_ludicolo	12105,34601,19563,12172	46332,35883,13198,9621
+DEC	raindish_ludicolo	46332,35883,13198,9621	move	0	0	m0	m0	54258,63967,57782,11252	Ludicolo	305	364	0	-	1	0	Kyogre	285	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	46332,35883,13198,9621	move	0	0	m0	m0	17878,44892,28378,9052	Ludicolo	162	364	0	-	1	0	Kyogre	230	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	46332,35883,13198,9621	move	0	0	m0	m0	14577,23324,18638,46532	Ludicolo	96	364	0	-	1	0	Kyogre	168	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	46332,35883,13198,9621	move	0	0	m0	m0	51726,6787,34231,33580	Ludicolo	37	364	0	-	1	0	Kyogre	108	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	46332,35883,13198,9621	move	0	0	m0	m0	1606,17663,12050,10752	Ludicolo	0	364	1	-	0	0	Kyogre	108	341	0	-	1	0	p2	0
+END	raindish_ludicolo	46332,35883,13198,9621	1	p2
+INIT	raindish_ludicolo	17895,25420,15262,42784	14832,33935,43170,3993
+DEC	raindish_ludicolo	14832,33935,43170,3993	move	0	0	m0	m0	16608,37489,53755,54536	Ludicolo	302	364	0	-	1	0	Kyogre	280	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	14832,33935,43170,3993	move	0	0	m0	m0	21511,56655,32699,19952	Ludicolo	238	364	0	-	1	0	Kyogre	225	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	14832,33935,43170,3993	move	0	0	m0	m0	1056,59391,24719,32918	Ludicolo	174	364	0	frz	1	0	Kyogre	225	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	14832,33935,43170,3993	move	0	0	m0	m0	32557,63132,30055,42476	Ludicolo	105	364	0	frz	1	0	Kyogre	225	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	14832,33935,43170,3993	move	0	0	m0	m0	1784,43082,38418,40818	Ludicolo	47	364	0	frz	1	0	Kyogre	225	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	14832,33935,43170,3993	move	0	0	m0	m0	6802,27370,48625,32230	Ludicolo	0	364	1	frz	0	0	Kyogre	225	341	0	-	1	0	p2	0
+END	raindish_ludicolo	14832,33935,43170,3993	1	p2
+INIT	raindish_ludicolo	21475,582,31802,60916	46116,28979,1270,14301
+DEC	raindish_ludicolo	46116,28979,1270,14301	move	0	0	m0	m0	34047,27816,57776,42332	Ludicolo	206	364	0	-	1	0	Kyogre	284	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	46116,28979,1270,14301	move	0	0	m0	m0	48349,51186,40574,63428	Ludicolo	139	364	0	-	1	0	Kyogre	232	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	46116,28979,1270,14301	move	0	0	m0	m0	60541,54711,40905,34092	Ludicolo	70	364	0	-	1	0	Kyogre	115	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	46116,28979,1270,14301	move	0	0	m0	m0	42086,30757,10200,3072	Ludicolo	0	364	1	-	0	0	Kyogre	115	341	0	-	1	0	p2	0
+END	raindish_ludicolo	46116,28979,1270,14301	1	p2
+INIT	raindish_ludicolo	5472,39410,60940,22536	55192,30231,7306,25185
+DEC	raindish_ludicolo	55192,30231,7306,25185	move	0	0	m0	m0	29494,15942,19450,28912	Ludicolo	304	364	0	-	1	0	Kyogre	282	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	55192,30231,7306,25185	move	0	0	m0	m0	47599,26568,3572,29912	Ludicolo	243	364	0	-	1	0	Kyogre	229	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	55192,30231,7306,25185	move	0	0	m0	m0	49178,1268,34884,960	Ludicolo	177	364	0	-	1	0	Kyogre	107	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	55192,30231,7306,25185	move	0	0	m0	m0	60473,4845,40990,48552	Ludicolo	120	364	0	-	1	0	Kyogre	45	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	55192,30231,7306,25185	move	0	0	m0	m0	46189,57842,1687,15945	Ludicolo	40	364	0	-	1	0	Kyogre	0	341	1	-	0	0	p2	0
+END	raindish_ludicolo	55192,30231,7306,25185	1	p1
+INIT	raindish_ludicolo	41634,16728,37688,31068	38988,63291,862,37669
+DEC	raindish_ludicolo	38988,63291,862,37669	move	0	0	m0	m0	40535,34719,38256,19396	Ludicolo	307	364	0	-	1	0	Kyogre	285	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	38988,63291,862,37669	move	0	0	m0	m0	14381,47631,27338,14858	Ludicolo	251	364	0	frz	1	0	Kyogre	285	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	38988,63291,862,37669	move	0	0	m0	m0	14374,14808,64925,40960	Ludicolo	113	364	0	frz	1	0	Kyogre	285	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	38988,63291,862,37669	move	0	0	m0	m0	51725,36183,37436,50982	Ludicolo	57	364	0	frz	1	0	Kyogre	285	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	38988,63291,862,37669	move	0	0	m0	m0	13628,31540,34887,45658	Ludicolo	0	364	1	frz	0	0	Kyogre	285	341	0	-	1	0	p2	0
+END	raindish_ludicolo	38988,63291,862,37669	1	p2
+INIT	raindish_ludicolo	33270,43575,1753,9712	10816,39071,3442,3625
+DEC	raindish_ludicolo	10816,39071,3442,3625	move	0	0	m0	m0	44852,24810,26197,35288	Ludicolo	304	364	0	-	1	0	Kyogre	284	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	10816,39071,3442,3625	move	0	0	m0	m0	29613,9848,28603,30912	Ludicolo	246	364	0	-	1	0	Kyogre	224	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	10816,39071,3442,3625	move	0	0	m0	m0	53715,16519,63936,37544	Ludicolo	181	364	0	-	1	0	Kyogre	163	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	10816,39071,3442,3625	move	0	0	m0	m0	39153,48405,64134,30608	Ludicolo	114	364	0	-	1	0	Kyogre	103	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	10816,39071,3442,3625	move	0	0	m0	m0	6299,4883,30234,51064	Ludicolo	56	364	0	-	1	0	Kyogre	48	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	10816,39071,3442,3625	move	0	0	m0	m0	40542,4365,59690,41356	Ludicolo	0	364	1	-	0	0	Kyogre	48	341	0	-	1	0	p2	0
+END	raindish_ludicolo	10816,39071,3442,3625	1	p2
+INIT	raindish_ludicolo	885,56248,6443,29124	372,15939,52934,22381
+DEC	raindish_ludicolo	372,15939,52934,22381	move	0	0	m0	m0	49779,45519,64488,48940	Ludicolo	308	364	0	-	1	0	Kyogre	281	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	372,15939,52934,22381	move	0	0	m0	m0	50417,41977,33625,59284	Ludicolo	241	364	0	-	1	0	Kyogre	221	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	372,15939,52934,22381	move	0	0	m0	m0	9540,52951,36218,35580	Ludicolo	183	364	0	-	1	0	Kyogre	159	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	372,15939,52934,22381	move	0	0	m0	m0	18409,29826,22208,5943	Ludicolo	121	364	0	-	1	0	Kyogre	100	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	372,15939,52934,22381	move	0	0	m0	m0	51956,49174,34218,42303	Ludicolo	64	364	0	-	1	0	Kyogre	39	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	372,15939,52934,22381	move	0	0	m0	m0	2574,9493,18135,35043	Ludicolo	0	364	1	-	0	0	Kyogre	39	341	0	-	1	0	p2	0
+END	raindish_ludicolo	372,15939,52934,22381	1	p2
+INIT	raindish_ludicolo	42944,31259,8342,45272	53736,3111,7002,13041
+DEC	raindish_ludicolo	53736,3111,7002,13041	move	0	0	m0	m0	65111,53045,27530,49088	Ludicolo	308	364	0	-	1	0	Kyogre	282	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	53736,3111,7002,13041	move	0	0	m0	m0	13380,37106,65017,63912	Ludicolo	245	364	0	-	1	0	Kyogre	168	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	53736,3111,7002,13041	move	0	0	m0	m0	10332,53453,65157,65168	Ludicolo	182	364	0	-	1	0	Kyogre	109	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	53736,3111,7002,13041	move	0	0	m0	m0	24271,61385,4540,28280	Ludicolo	123	364	0	-	1	0	Kyogre	54	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	53736,3111,7002,13041	move	0	0	m0	m0	39054,18637,15734,17625	Ludicolo	35	364	0	-	1	0	Kyogre	0	341	1	-	0	0	p2	0
+END	raindish_ludicolo	53736,3111,7002,13041	1	p1
+INIT	raindish_ludicolo	22164,42141,43173,30508	36764,26187,1838,42165
+DEC	raindish_ludicolo	36764,26187,1838,42165	move	0	0	m0	m0	55439,29831,24471,40852	Ludicolo	301	364	0	-	1	0	Kyogre	281	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	36764,26187,1838,42165	move	0	0	m0	m0	12919,38391,48665,17148	Ludicolo	243	364	0	-	1	0	Kyogre	224	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	36764,26187,1838,42165	move	0	0	m0	m0	43222,26432,23250,356	Ludicolo	179	364	0	-	1	0	Kyogre	162	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	36764,26187,1838,42165	move	0	0	m0	m0	60252,55432,60667,62648	Ludicolo	0	364	1	-	0	0	Kyogre	162	341	0	-	1	0	p2	0
+END	raindish_ludicolo	36764,26187,1838,42165	1	p2
+INIT	raindish_ludicolo	8102,3327,19569,39104	28304,61615,58946,61625
+DEC	raindish_ludicolo	28304,61615,58946,61625	move	0	0	m0	m0	8112,47611,32850,45736	Ludicolo	294	364	0	-	1	0	Kyogre	284	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	28304,61615,58946,61625	move	0	0	m0	m0	38417,57269,64372,38800	Ludicolo	238	364	0	-	1	0	Kyogre	232	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	28304,61615,58946,61625	move	0	0	m0	m0	2490,2688,12772,59256	Ludicolo	88	364	0	-	1	0	Kyogre	180	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	28304,61615,58946,61625	move	0	0	m0	m0	14735,37490,17437,16992	Ludicolo	32	364	0	-	1	0	Kyogre	124	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	28304,61615,58946,61625	move	0	0	m0	m0	16108,36541,50661,32244	Ludicolo	0	364	1	-	0	0	Kyogre	124	341	0	-	1	0	p2	0
+END	raindish_ludicolo	28304,61615,58946,61625	1	p2
+INIT	raindish_ludicolo	58721,17963,51566,10644	58052,36691,19606,39677
+DEC	raindish_ludicolo	58052,36691,19606,39677	move	0	0	m0	m0	15480,33371,49008,36092	Ludicolo	300	364	0	-	1	0	Kyogre	288	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	58052,36691,19606,39677	move	0	0	m0	m0	42677,45892,29522,2916	Ludicolo	235	364	0	-	1	0	Kyogre	232	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	58052,36691,19606,39677	move	0	0	m0	m0	28846,29246,18918,17612	Ludicolo	170	364	0	-	1	0	Kyogre	177	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	58052,36691,19606,39677	move	0	0	m0	m0	38595,10329,31148,55604	Ludicolo	101	364	0	-	1	0	Kyogre	55	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	58052,36691,19606,39677	move	0	0	m0	m0	14719,38095,24988,29029	Ludicolo	22	364	0	-	1	0	Kyogre	0	341	1	-	0	0	p2	0
+END	raindish_ludicolo	58052,36691,19606,39677	1	p1
+INIT	raindish_ludicolo	30900,61957,35020,32168	41016,26167,3626,26497
+DEC	raindish_ludicolo	41016,26167,3626,26497	move	0	0	m0	m0	44310,19761,32220,656	Ludicolo	295	364	0	-	1	0	Kyogre	286	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	41016,26167,3626,26497	move	0	0	m0	m0	25710,24158,32421,62072	Ludicolo	238	364	0	-	1	0	Kyogre	231	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	41016,26167,3626,26497	move	0	0	m0	m0	50484,61537,31267,60768	Ludicolo	172	364	0	-	1	0	Kyogre	172	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	41016,26167,3626,26497	move	0	0	m0	m0	64939,61682,6430,6022	Ludicolo	111	364	0	frz	1	0	Kyogre	172	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	41016,26167,3626,26497	move	0	0	m0	m0	8719,42714,38075,12137	Ludicolo	55	364	0	-	1	0	Kyogre	117	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	41016,26167,3626,26497	move	0	0	m0	m0	1353,42005,40699,54381	Ludicolo	0	364	1	-	0	0	Kyogre	117	341	0	-	1	0	p2	0
+END	raindish_ludicolo	41016,26167,3626,26497	1	p2
+INIT	raindish_ludicolo	24042,45304,36018,10492	39660,55643,16126,23109
+DEC	raindish_ludicolo	39660,55643,16126,23109	move	0	0	m0	m0	52772,49303,16428,10084	Ludicolo	298	364	0	-	1	0	Kyogre	285	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	39660,55643,16126,23109	move	0	0	m0	m0	58700,2067,58824,57548	Ludicolo	231	364	0	-	1	0	Kyogre	232	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	39660,55643,16126,23109	move	0	0	m0	m0	19294,36736,62983,62772	Ludicolo	173	364	0	-	1	0	Kyogre	174	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	39660,55643,16126,23109	move	0	0	m0	m0	47360,25713,24981,1180	Ludicolo	114	364	0	-	1	0	Kyogre	117	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	39660,55643,16126,23109	move	0	0	m0	m0	31860,4211,10183,44804	Ludicolo	56	364	0	-	1	0	Kyogre	60	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	39660,55643,16126,23109	move	0	0	m0	m0	56449,8101,61291,2136	Ludicolo	0	364	1	-	0	0	Kyogre	60	341	0	-	1	0	p2	0
+END	raindish_ludicolo	39660,55643,16126,23109	1	p2
+INIT	raindish_ludicolo	15023,5990,63901,65424	1760,36031,13074,46921
+DEC	raindish_ludicolo	1760,36031,13074,46921	move	0	0	m0	m0	1072,39109,54377,20344	Ludicolo	297	364	0	-	1	0	Kyogre	281	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	1760,36031,13074,46921	move	0	0	m0	m0	17607,7206,63132,43616	Ludicolo	231	364	0	-	1	0	Kyogre	227	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	1760,36031,13074,46921	move	0	0	m0	m0	61885,20125,10141,45128	Ludicolo	173	364	0	-	1	0	Kyogre	168	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	1760,36031,13074,46921	move	0	0	m0	m0	17928,11657,43070,304	Ludicolo	103	364	0	-	1	0	Kyogre	111	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	1760,36031,13074,46921	move	0	0	m0	m0	52053,51344,57659,15640	Ludicolo	34	364	0	-	1	0	Kyogre	50	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	1760,36031,13074,46921	move	0	0	m0	m0	10013,17960,43495,64812	Ludicolo	0	364	1	-	0	0	Kyogre	50	341	0	-	1	0	p2	0
+END	raindish_ludicolo	1760,36031,13074,46921	1	p2
+INIT	raindish_ludicolo	48361,59492,926,5476	22548,25699,32358,653
+DEC	raindish_ludicolo	22548,25699,32358,653	move	0	0	m0	m0	56149,24590,1667,3788	Ludicolo	225	364	0	-	1	0	Kyogre	282	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	22548,25699,32358,653	move	0	0	m0	m0	17959,52452,22594,25396	Ludicolo	159	364	0	-	1	0	Kyogre	228	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	22548,25699,32358,653	move	0	0	m0	m0	61275,5057,64135,45724	Ludicolo	92	364	0	-	1	0	Kyogre	173	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	22548,25699,32358,653	move	0	0	m0	m0	442,61535,56746,40196	Ludicolo	27	364	0	-	1	0	Kyogre	117	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	22548,25699,32358,653	move	0	0	m0	m0	19204,59338,23211,5720	Ludicolo	0	364	1	-	0	0	Kyogre	117	341	0	-	1	0	p2	0
+END	raindish_ludicolo	22548,25699,32358,653	1	p2
+INIT	raindish_ludicolo	57211,7951,40264,48760	17032,33863,62714,17
+DEC	raindish_ludicolo	17032,33863,62714,17	move	0	0	m0	m0	40433,5175,23849,14688	Ludicolo	300	364	0	-	1	0	Kyogre	222	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	17032,33863,62714,17	move	0	0	m0	m0	55601,37110,31187,24392	Ludicolo	240	364	0	-	1	0	Kyogre	168	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	17032,33863,62714,17	move	0	0	m0	m0	22030,56576,8344,53296	Ludicolo	181	364	0	-	1	0	Kyogre	109	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	17032,33863,62714,17	move	0	0	m0	m0	4971,59315,38583,11288	Ludicolo	116	364	0	-	1	0	Kyogre	52	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	17032,33863,62714,17	move	0	0	m0	m0	5158,597,31748,65017	Ludicolo	30	364	0	-	1	0	Kyogre	0	341	1	-	0	0	p2	0
+END	raindish_ludicolo	17032,33863,62714,17	1	p1
+INIT	raindish_ludicolo	12607,53872,51395,36556	47676,20587,43726,46037
+DEC	raindish_ludicolo	47676,20587,43726,46037	move	0	0	m0	m0	47377,13719,23794,58164	Ludicolo	296	364	0	-	1	0	Kyogre	287	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	47676,20587,43726,46037	move	0	0	m0	m0	43158,31048,9128,12956	Ludicolo	237	364	0	-	1	0	Kyogre	227	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	47676,20587,43726,46037	move	0	0	m0	m0	11824,55913,52539,7428	Ludicolo	170	364	0	-	1	0	Kyogre	166	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	47676,20587,43726,46037	move	0	0	m0	m0	18728,15757,16175,17004	Ludicolo	107	364	0	-	1	0	Kyogre	109	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	47676,20587,43726,46037	move	0	0	m0	m0	32654,38193,35508,17108	Ludicolo	37	364	0	-	1	0	Kyogre	50	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	47676,20587,43726,46037	move	0	0	m0	m0	30179,90,52666,32552	Ludicolo	0	364	1	-	0	0	Kyogre	50	341	0	-	1	0	p2	0
+END	raindish_ludicolo	47676,20587,43726,46037	1	p2
+INIT	raindish_ludicolo	11250,53668,38851,23136	62256,27855,62434,25049
+DEC	raindish_ludicolo	62256,27855,62434,25049	move	0	0	m0	m0	25941,14432,34910,24648	Ludicolo	306	364	0	-	1	0	Kyogre	284	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	62256,27855,62434,25049	move	0	0	m0	m0	17900,29555,30552,45360	Ludicolo	245	364	0	-	1	0	Kyogre	229	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	62256,27855,62434,25049	move	0	0	m0	m0	20287,64929,46447,60696	Ludicolo	184	364	0	-	1	0	Kyogre	168	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	62256,27855,62434,25049	move	0	0	m0	m0	29734,58349,6605,46080	Ludicolo	116	364	0	-	1	0	Kyogre	116	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	62256,27855,62434,25049	move	0	0	m0	m0	51220,63033,4231,42472	Ludicolo	48	364	0	-	1	0	Kyogre	56	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	62256,27855,62434,25049	move	0	0	m0	m0	56890,26989,53323,63740	Ludicolo	0	364	1	-	0	0	Kyogre	56	341	0	-	1	0	p2	0
+END	raindish_ludicolo	62256,27855,62434,25049	1	p2
+INIT	raindish_ludicolo	48696,4362,55941,13620	24932,48499,25654,36381
+DEC	raindish_ludicolo	24932,48499,25654,36381	move	0	0	m0	m0	1550,47282,7338,17564	Ludicolo	302	364	0	-	1	0	Kyogre	286	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	24932,48499,25654,36381	move	0	0	m0	m0	50386,34086,24180,61188	Ludicolo	232	364	0	-	1	0	Kyogre	230	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	24932,48499,25654,36381	move	0	0	m0	m0	43296,39749,21608,54380	Ludicolo	176	364	0	-	1	0	Kyogre	170	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	24932,48499,25654,36381	move	0	0	m0	m0	36823,18107,65205,38100	Ludicolo	110	364	0	-	1	0	Kyogre	48	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	24932,48499,25654,36381	move	0	0	m0	m0	34500,16751,45465,36997	Ludicolo	22	364	0	-	1	0	Kyogre	0	341	1	-	0	0	p2	0
+END	raindish_ludicolo	24932,48499,25654,36381	1	p1
+INIT	raindish_ludicolo	6862,50814,28885,29512	47320,26199,53194,64673
+DEC	raindish_ludicolo	47320,26199,53194,64673	move	0	0	m0	m0	42764,33048,38567,54707	Ludicolo	210	364	0	-	1	0	Kyogre	282	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	47320,26199,53194,64673	move	0	0	m0	m0	37765,41106,9904,49211	Ludicolo	142	364	0	-	1	0	Kyogre	223	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	47320,26199,53194,64673	move	0	0	m0	m0	35906,61781,9389,33219	Ludicolo	80	364	0	-	1	0	Kyogre	168	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	47320,26199,53194,64673	move	0	0	m0	m0	33527,64176,11217,17703	Ludicolo	0	364	1	-	0	0	Kyogre	168	341	0	-	1	0	p2	0
+END	raindish_ludicolo	47320,26199,53194,64673	1	p2
+INIT	raindish_ludicolo	60401,5017,54132,43164	60812,52091,19102,45413
+DEC	raindish_ludicolo	60812,52091,19102,45413	move	0	0	m0	m0	38290,58362,36902,54020	Ludicolo	210	364	0	-	1	0	Kyogre	281	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	60812,52091,19102,45413	move	0	0	m0	m0	41752,32310,24978,14444	Ludicolo	149	364	0	-	1	0	Kyogre	225	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	60812,52091,19102,45413	move	0	0	m0	m0	56801,3138,1510,30932	Ludicolo	87	364	0	-	1	0	Kyogre	101	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	60812,52091,19102,45413	move	0	0	m0	m0	17685,28729,28031,13372	Ludicolo	31	364	0	-	1	0	Kyogre	39	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	60812,52091,19102,45413	move	0	0	m0	m0	50161,62516,16263,27152	Ludicolo	0	364	1	-	0	0	Kyogre	39	341	0	-	1	0	p2	0
+END	raindish_ludicolo	60812,52091,19102,45413	1	p2
+INIT	raindish_ludicolo	15040,2960,45126,43312	13184,37087,10418,61545
+DEC	raindish_ludicolo	13184,37087,10418,61545	move	0	0	m0	m0	27465,61764,49654,58648	Ludicolo	304	364	0	-	1	0	Kyogre	283	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	13184,37087,10418,61545	move	0	0	m0	m0	18981,63589,37837,44032	Ludicolo	237	364	0	-	1	0	Kyogre	228	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	13184,37087,10418,61545	move	0	0	m0	m0	50664,59698,46560,40424	Ludicolo	177	364	0	-	1	0	Kyogre	114	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	13184,37087,10418,61545	move	0	0	m0	m0	39302,22991,35761,23248	Ludicolo	111	364	0	-	1	0	Kyogre	62	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	13184,37087,10418,61545	move	0	0	m0	m0	44048,39925,33982,28516	Ludicolo	0	364	1	-	0	0	Kyogre	62	341	0	-	1	0	p2	0
+END	raindish_ludicolo	13184,37087,10418,61545	1	p2
+INIT	raindish_ludicolo	46371,29046,15193,35076	65204,39555,65030,15789
+DEC	raindish_ludicolo	65204,39555,65030,15789	move	0	0	m0	m0	21920,7804,46684,11884	Ludicolo	297	364	0	-	1	0	Kyogre	286	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	65204,39555,65030,15789	move	0	0	m0	m0	299,18365,22943,44756	Ludicolo	236	364	0	-	1	0	Kyogre	226	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	65204,39555,65030,15789	move	0	0	m0	m0	38441,8421,41599,43580	Ludicolo	166	364	0	-	1	0	Kyogre	173	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	65204,39555,65030,15789	move	0	0	m0	m0	12948,9358,63235,49316	Ludicolo	96	364	0	-	1	0	Kyogre	112	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	65204,39555,65030,15789	move	0	0	m0	m0	57391,55346,13655,43391	Ludicolo	34	364	0	-	1	0	Kyogre	59	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	65204,39555,65030,15789	move	0	0	m0	m0	40387,64629,54998,51491	Ludicolo	0	364	1	-	0	0	Kyogre	59	341	0	-	1	0	p2	0
+END	raindish_ludicolo	65204,39555,65030,15789	1	p2
+INIT	raindish_ludicolo	62599,11680,26435,39960	808,3175,40602,23857
+DEC	raindish_ludicolo	808,3175,40602,23857	move	0	0	m0	m0	58782,7647,62470,33536	Ludicolo	302	364	0	-	1	0	Kyogre	286	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	808,3175,40602,23857	move	0	0	m0	m0	63316,46750,8737,38120	Ludicolo	244	364	0	-	1	0	Kyogre	228	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	808,3175,40602,23857	move	0	0	m0	m0	50059,64609,32150,29136	Ludicolo	178	364	0	-	1	0	Kyogre	166	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	808,3175,40602,23857	move	0	0	m0	m0	19177,9581,17490,47544	Ludicolo	115	364	0	-	1	0	Kyogre	109	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	808,3175,40602,23857	move	0	0	m0	m0	50379,24017,33968,3232	Ludicolo	45	364	0	-	1	0	Kyogre	49	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	808,3175,40602,23857	move	0	0	m0	m0	37262,52870,48490,9268	Ludicolo	0	364	1	-	0	0	Kyogre	49	341	0	-	1	0	p2	0
+END	raindish_ludicolo	808,3175,40602,23857	1	p2
+INIT	raindish_ludicolo	59195,64984,44229,30316	13532,19083,7790,21237
+DEC	raindish_ludicolo	13532,19083,7790,21237	move	0	0	m0	m0	57831,61829,55751,63188	Ludicolo	305	364	0	-	1	0	Kyogre	220	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	13532,19083,7790,21237	move	0	0	m0	m0	64961,11523,40838,62012	Ludicolo	143	364	0	-	1	0	Kyogre	166	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	13532,19083,7790,21237	move	0	0	m0	m0	39978,26520,6847,18448	Ludicolo	0	364	1	-	0	0	Kyogre	166	341	0	-	1	0	p2	0
+END	raindish_ludicolo	13532,19083,7790,21237	1	p2
+INIT	raindish_ludicolo	37986,35147,12381,60416	51152,63727,53634,25337
+DEC	raindish_ludicolo	51152,63727,53634,25337	move	0	0	m0	m0	26719,41265,13736,56808	Ludicolo	296	364	0	-	1	0	Kyogre	286	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	51152,63727,53634,25337	move	0	0	m0	m0	654,52752,22089,40526	Ludicolo	230	364	0	frz	1	0	Kyogre	286	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	51152,63727,53634,25337	move	0	0	m0	m0	1135,16992,21306,44900	Ludicolo	169	364	0	frz	1	0	Kyogre	286	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	51152,63727,53634,25337	move	0	0	m0	m0	46970,9537,25119,9023	Ludicolo	99	364	0	-	1	0	Kyogre	231	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	51152,63727,53634,25337	move	0	0	m0	m0	42132,50128,16568,55367	Ludicolo	38	364	0	-	1	0	Kyogre	174	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	51152,63727,53634,25337	move	0	0	m0	m0	6004,6756,57039,56171	Ludicolo	0	364	1	-	0	0	Kyogre	174	341	0	-	1	0	p2	0
+END	raindish_ludicolo	51152,63727,53634,25337	1	p2
+INIT	raindish_ludicolo	56935,25315,44928,4308	12292,64403,19414,4413
+DEC	raindish_ludicolo	12292,64403,19414,4413	move	0	0	m0	m0	57794,4011,63837,52284	Ludicolo	302	364	0	-	1	0	Kyogre	288	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	12292,64403,19414,4413	move	0	0	m0	m0	5940,15768,24551,41636	Ludicolo	235	364	0	-	1	0	Kyogre	236	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	12292,64403,19414,4413	move	0	0	m0	m0	38356,20684,48977,13324	Ludicolo	165	364	0	-	1	0	Kyogre	179	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	12292,64403,19414,4413	move	0	0	m0	m0	12115,8432,47482,8308	Ludicolo	95	364	0	-	1	0	Kyogre	119	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	12292,64403,19414,4413	move	0	0	m0	m0	44480,48732,7278,2012	Ludicolo	32	364	0	-	1	0	Kyogre	60	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	12292,64403,19414,4413	move	0	0	m0	m0	20707,33421,32537,17328	Ludicolo	0	364	1	-	0	0	Kyogre	60	341	0	-	1	0	p2	0
+END	raindish_ludicolo	12292,64403,19414,4413	1	p2
+INIT	raindish_ludicolo	3284,11396,37725,14568	8568,30327,24938,8641
+DEC	raindish_ludicolo	8568,30327,24938,8641	move	0	0	m0	m0	13971,64228,26497,37198	Ludicolo	303	364	0	frz	1	0	Kyogre	341	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	8568,30327,24938,8641	move	0	0	m0	m0	26591,15227,63944,64100	Ludicolo	239	364	0	frz	1	0	Kyogre	341	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	8568,30327,24938,8641	move	0	0	m0	m0	11416,62750,54150,50602	Ludicolo	182	364	0	frz	1	0	Kyogre	341	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	8568,30327,24938,8641	move	0	0	m0	m0	52833,63269,30868,25885	Ludicolo	126	364	0	-	1	0	Kyogre	288	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	8568,30327,24938,8641	move	0	0	m0	m0	41790,52303,35128,5221	Ludicolo	66	364	0	-	1	0	Kyogre	227	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	8568,30327,24938,8641	move	0	0	m0	m0	9160,42154,25572,49577	Ludicolo	0	364	1	-	0	0	Kyogre	227	341	0	-	1	0	p2	0
+END	raindish_ludicolo	8568,30327,24938,8641	1	p2
+INIT	raindish_ludicolo	49487,64820,56858,63548	36908,52635,9790,39045
+DEC	raindish_ludicolo	36908,52635,9790,39045	move	0	0	m0	m0	28446,10241,24475,20132	Ludicolo	296	364	0	-	1	0	Kyogre	280	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	36908,52635,9790,39045	move	0	0	m0	m0	38185,56040,62379,24588	Ludicolo	233	364	0	-	1	0	Kyogre	225	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	36908,52635,9790,39045	move	0	0	m0	m0	9381,5507,30250,52340	Ludicolo	174	364	0	-	1	0	Kyogre	170	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	36908,52635,9790,39045	move	0	0	m0	m0	30610,14291,44837,13276	Ludicolo	114	364	0	-	1	0	Kyogre	115	341	0	-	1	0	p2	1
+DEC	raindish_ludicolo	36908,52635,9790,39045	move	0	0	m0	m0	23462,16425,12437,44976	Ludicolo	0	364	1	-	0	0	Kyogre	115	341	0	-	1	0	p2	0
+END	raindish_ludicolo	36908,52635,9790,39045	1	p2

@@ -1,0 +1,6 @@
+# Rust build artifacts
+/target
+Cargo.lock
+
+# A/B fuzzer output (repros/logs — regenerable, not source)
+/harness/ab_fuzz_out

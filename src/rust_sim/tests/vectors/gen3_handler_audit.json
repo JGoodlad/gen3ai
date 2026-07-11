@@ -1,0 +1,3941 @@
+{
+ "_meta": {
+  "generator": "harness/dump_gen3_handlers.js",
+  "gate": "node harness/dump_gen3_handlers.js --audit (cargo: tests/handler_audit_test.rs)",
+  "surface": {
+   "abilities": 74,
+   "items": 59,
+   "conditions": 27,
+   "moves": 168,
+   "rows": 664
+  },
+  "excluded_deferred": {
+   "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); NOT in MODELED/NOOP so the e2e filter excludes its teams",
+   "liquidooze": "reverses the Leech Seed drain — the port FAIL-LOUDs in apply_leech_seed; removed from NOOP_ABILITIES so its teams are off the modeled path",
+   "ohko_psywave_counter_family": "fissure/horndrill/guillotine/sheercold/psywave/counter/mirrorcoat/bide/endeavor — the deferred fixed-damage family: isModeledMove rejects + MOVE_ID_BLOCKLIST + the engine fail-louds",
+   "protocol_lines": "PROTOCOL PHASE 3 (gen3_protocol_phase3_v1) closed the formerly-deferred lines: the Trace |-ability| reveal, the taunt/disable residual -end lines + the Disable [miss]/[still] retro-edits, the Flash Fire -start/-immune/-end cycle, the STATUS_IMMUNE -immune [from] ability: blocks, the Synchronize→Lum interleave, the mid-battle switch-in ability lines, Leech Seed / Splash / Pay Day — all byte-verified vs the capture golden (114 battles / 16115 lines). Remaining un-emitted (uncapturable) forms are documented at their sites — see PROTOCOL_EMISSION_DESIGN.md"
+  }
+ },
+ "rows": {
+  "ability:airlock:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:905ec09c:onEnd(pokemon) { pokemon.abilityState.ending = true; this.eachEvent(\"WeatherChange\", this.effect); }",
+   "anchor": "turn.rs::process_faints",
+   "reason": "the onEnd eachEvent(WeatherChange) at the negater's faint — the faint-queue order fix (gen3_faint_queue_order_v1)"
+  },
+  "ability:airlock:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:18ed06f0:onStart(pokemon) { pokemon.abilityState.ending = false; }",
+   "anchor": "turn.rs::effective_weather",
+   "reason": "weather-effect suppression while the negater is active (B3)"
+  },
+  "ability:arenatrap:onFoeMaybeTrapPokemon": {
+   "disposition": "implemented",
+   "fp": "fn:e6fbe600:onFoeMaybeTrapPokemon(pokemon, source) { if (!source) source = this.effectState.target; if (!source || !pokemon.isAdjace",
+   "anchor": "turn.rs::is_trapped",
+   "reason": "the endTurn (Maybe)TrapPokemon handler gather — magnetpull's onAny* draws the 2-handler tie-shuffle"
+  },
+  "ability:arenatrap:onFoeTrapPokemon": {
+   "disposition": "implemented",
+   "fp": "fn:7c54ba3e:onFoeTrapPokemon(pokemon) { if (!pokemon.isAdjacent(this.effectState.target)) return; if (pokemon.isGrounded()) { pokemo",
+   "anchor": "turn.rs::is_trapped",
+   "reason": "the switch-legality trap gate (gen3_trapping_v1 / B4-3 shadow tag)"
+  },
+  "ability:battlearmor:onCriticalHit": {
+   "disposition": "implemented",
+   "fp": "val:false",
+   "anchor": "turn.rs::crit_immune",
+   "reason": "the drawn-then-overridden crit (B1, probe_critimmune_rng.js)"
+  },
+  "ability:blaze:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:b5cd8c4e:onBasePower(basePower, attacker, defender, move) { if (move.type === \"Fire\" && attacker.hp <= attacker.maxhp / 3) { this",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "pinch BP ×1.5 at 3·hp<=maxhp (gen3_item_mechanics_v1 P2)"
+  },
+  "ability:blaze:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "pinch BP ×1.5 at 3·hp<=maxhp (gen3_item_mechanics_v1 P2) — (order metadata of the sibling onBasePower handler)"
+  },
+  "ability:blaze:onModifyAtkPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:5",
+   "reason": "gen4-mod priority residue — the gen3 fold is the onBasePower pinch chain; no onModifyAtk/onModifySpA fn resolves (the mod-chain law)"
+  },
+  "ability:blaze:onModifySpAPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:5",
+   "reason": "gen4-mod priority residue — the gen3 fold is the onBasePower pinch chain; no onModifyAtk/onModifySpA fn resolves (the mod-chain law)"
+  },
+  "ability:chlorophyll:onModifySpe": {
+   "disposition": "implemented",
+   "fp": "fn:f6a187cb:onModifySpe(spe, pokemon) { if ([\"sunnyday\", \"desolateland\"].includes(pokemon.effectiveWeather())) { return this.chainMo",
+   "anchor": "turn.rs::effective_speed",
+   "reason": "weather ×2 folded into the cached tie-shuffle speed (B2)"
+  },
+  "ability:clearbody:onTryBoost": {
+   "disposition": "implemented",
+   "fp": "fn:6a5aec33:onTryBoost(boost, target, source, effect) { if (source && target === source) return; let showMsg = false; let i; for (i ",
+   "anchor": "event.rs::intimidate_on_start",
+   "reason": "the boost-drop immunity gate (Intimidate + secondary stat-drops)"
+  },
+  "ability:cloudnine:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:905ec09c:onEnd(pokemon) { pokemon.abilityState.ending = true; this.eachEvent(\"WeatherChange\", this.effect); }",
+   "anchor": "turn.rs::process_faints",
+   "reason": "the onEnd eachEvent(WeatherChange) at the negater's faint — the faint-queue order fix (gen3_faint_queue_order_v1)"
+  },
+  "ability:cloudnine:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:18ed06f0:onStart(pokemon) { pokemon.abilityState.ending = false; }",
+   "anchor": "turn.rs::effective_weather",
+   "reason": "weather-effect suppression while the negater is active (B3)"
+  },
+  "ability:colorchange:onDamagingHit": {
+   "disposition": "implemented",
+   "fp": "fn:f818d3be:onDamagingHit(damage, target, source, move) { if (!damage || !target.hp) return; const type = move.type; if (target.isAc",
+   "anchor": "turn.rs::types_override",
+   "reason": "the mon_types choke-point type override (B4-5)"
+  },
+  "ability:compoundeyes:onSourceModifyAccuracy": {
+   "disposition": "implemented",
+   "fp": "fn:ba58383b:onSourceModifyAccuracy(accuracy) { if (typeof accuracy !== \"number\") return; this.debug(\"compoundeyes - enhancing accura",
+   "anchor": "turn.rs::effective_accuracy",
+   "reason": "acc ×1.3 attacker chain"
+  },
+  "ability:compoundeyes:onSourceModifyAccuracyPriority": {
+   "disposition": "implemented",
+   "fp": "val:9",
+   "anchor": "turn.rs::effective_accuracy",
+   "reason": "acc ×1.3 attacker chain — (order metadata of the sibling onSourceModifyAccuracy handler)"
+  },
+  "ability:cutecharm:onDamagingHit": {
+   "disposition": "implemented",
+   "fp": "fn:8bfba51d:onDamagingHit(damage, target, source, move) { if (damage && move.flags[\"contact\"]) { if (this.randomChance(1, 3)) { sour",
+   "anchor": "turn.rs::try_add_attract",
+   "reason": "the unconditional contact roll + gender-gated attract add (B4-4)"
+  },
+  "ability:damp:onAnyDamage": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:244a340c:onAnyDamage(damage, target, source, effect) { if (effect && effect.name === \"Aftermath\") { return false; } }",
+   "reason": "the Aftermath guard — Aftermath is a gen4 ability, not in the gen3 universe"
+  },
+  "ability:damp:onAnyTryMove": {
+   "disposition": "implemented",
+   "fp": "fn:4eaa2757:onAnyTryMove(target, source, effect) { if ([\"explosion\", \"mindblown\", \"mistyexplosion\", \"selfdestruct\"].includes(effect.",
+   "anchor": "turn.rs::damp_holder",
+   "reason": "Explosion/Self-Destruct cancelled at TryMove (B2-4)"
+  },
+  "ability:drizzle:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:80ee6192:onStart(source) { if (source.species.id === \"kyogre\" && source.item === \"blueorb\") return; this.field.setWeather(\"rainda",
+   "anchor": "event.rs::run_switch",
+   "reason": "switch-in weather set (permanent, ability-sourced); the Kyogre/Groudon orb guard is gen4-only"
+  },
+  "ability:drought:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:b1246fa8:onStart(source) { if (source.species.id === \"groudon\" && source.item === \"redorb\") return; this.field.setWeather(\"sunnyd",
+   "anchor": "event.rs::run_switch",
+   "reason": "switch-in weather set (permanent, ability-sourced); the Kyogre/Groudon orb guard is gen4-only"
+  },
+  "ability:effectspore:onDamagingHit": {
+   "disposition": "implemented",
+   "fp": "fn:0ed47add:onDamagingHit(damage, target, source, move) { if (damage && move.flags[\"contact\"] && this.randomChance(1, 10)) { const s",
+   "anchor": "turn.rs::apply_contact_proc",
+   "reason": "the after-secondary contact-proc draw (B2-1/B2-2)"
+  },
+  "ability:flamebody:onDamagingHit": {
+   "disposition": "implemented",
+   "fp": "fn:6a3d3244:onDamagingHit(damage, target, source, move) { if (damage && move.flags[\"contact\"]) { if (this.randomChance(1, 3)) { sour",
+   "anchor": "turn.rs::apply_contact_proc",
+   "reason": "the after-secondary contact-proc draw (B2-1/B2-2)"
+  },
+  "ability:flashfire:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:ca7e683a:onEnd(pokemon) { pokemon.removeVolatile(\"flashfire\"); }",
+   "anchor": "turn.rs::execute_switch",
+   "reason": "REACHED routinely (Lens-1 corrected the old unreachable label): the sim fires singleEvent(End, ability) on EVERY switch-out AND faint (the gen3_cloudnine_end_v1 mechanism; probe: an armed FF switch-out prints |-end|...|ability: Flash Fire|[silent]). The body (removeVolatile(flashfire)) is draw-free and STATE-EQUIVALENT to the port volatile clear in execute_switch + process_faints (proven at scale: the e2e corpus has FF teams with switches, bit-for-bit). The [silent] -end line is now EMITTED on an alive switch-out (gen3_protocol_phase3_v1, byte-verified vs the flashfire_cycle capture; the FAINT path emits nothing — capture-proven). Formerly a documented un-emitted level-2 protocol nicety."
+  },
+  "ability:flashfire:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:c36eb706:onTryHit(target, source, move) { if (target !== source && move.type === \"Fire\") { if (move.id === \"willowisp\" && (target",
+   "anchor": "turn.rs::apply_flash_fire_activation",
+   "reason": "the acc_hit-gated flash_fire arm (gen3_flashfire_v1)"
+  },
+  "ability:guts:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:49ede268:onModifyAtk(atk, pokemon) { if (pokemon.status) { return this.chainModify(1.5); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "Atk ×1.5 whenStatused + the has_guts burn-halve suppression"
+  },
+  "ability:guts:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "Atk ×1.5 whenStatused + the has_guts burn-halve suppression — (order metadata of the sibling onModifyAtk handler)"
+  },
+  "ability:hugepower:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:b5d4212a:onModifyAtk(atk) { return this.chainModify(2); }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "Atk ×2 (physical only)"
+  },
+  "ability:hugepower:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "Atk ×2 (physical only) — (order metadata of the sibling onModifyAtk handler)"
+  },
+  "ability:hustle:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:928e2fd5:onModifyAtk(atk) { return this.modify(atk, 1.5); }",
+   "anchor": "turn.rs::atk_direct_modify",
+   "reason": "the DIRECT this.modify(atk,1.5) pre-chain fold"
+  },
+  "ability:hustle:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "turn.rs::atk_direct_modify",
+   "reason": "the DIRECT this.modify(atk,1.5) pre-chain fold — (order metadata of the sibling onModifyAtk handler)"
+  },
+  "ability:hustle:onSourceModifyAccuracy": {
+   "disposition": "implemented",
+   "fp": "fn:5e10ec72:onSourceModifyAccuracy(accuracy, target, source, move) { const physicalTypes = [\"Normal\", \"Fighting\", \"Flying\", \"Poison\"",
+   "anchor": "turn.rs::effective_accuracy",
+   "reason": "acc ×3277/4096 for physical-TYPE moves (gen3_accuracy_pipeline_v1)"
+  },
+  "ability:hustle:onSourceModifyAccuracyPriority": {
+   "disposition": "implemented",
+   "fp": "val:7",
+   "anchor": "turn.rs::effective_accuracy",
+   "reason": "acc ×3277/4096 for physical-TYPE moves (gen3_accuracy_pipeline_v1) — (order metadata of the sibling onSourceModifyAccuracy handler)"
+  },
+  "ability:hypercutter:onTryBoost": {
+   "disposition": "implemented",
+   "fp": "fn:63035d05:onTryBoost(boost, target, source, effect) { if (source && target === source) return; if (boost.atk && boost.atk < 0) { d",
+   "anchor": "event.rs::intimidate_on_start",
+   "reason": "the boost-drop immunity gate (Intimidate + secondary stat-drops)"
+  },
+  "ability:immunity:onSetStatus": {
+   "disposition": "implemented",
+   "fp": "fn:44fccff5:onSetStatus(status, target, source, effect) { if (status.id !== \"psn\" && status.id !== \"tox\") return; if (effect?.status",
+   "anchor": "turn.rs::status_immune_of",
+   "reason": "the setStatus-phase block inside the already-drawn SetStatus event"
+  },
+  "ability:immunity:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:6213a735:onUpdate(pokemon) { if (pokemon.status === \"psn\" || pokemon.status === \"tox\") { this.add(\"-activate\", pokemon, \"ability:",
+   "anchor": "turn.rs::status_immune_on_update",
+   "reason": "the Update-site cure — reachable ONLY via a statused mon TRACING the ability (gen3_statusimmune_onupdate_cure_v1, the A/B Trace-Porygon2 cluster)"
+  },
+  "ability:innerfocus:onTryAddVolatile": {
+   "disposition": "implemented",
+   "fp": "fn:afa43b46:onTryAddVolatile(status, pokemon) { if (status.id === \"flinch\") return null; }",
+   "anchor": "turn.rs::apply_one_secondary",
+   "reason": "the flinch block at APPLY (the secondary random(100) still draws, B4-2)"
+  },
+  "ability:insomnia:onSetStatus": {
+   "disposition": "implemented",
+   "fp": "fn:e86da03c:onSetStatus(status, target, source, effect) { if (status.id !== \"slp\") return; if (effect?.status) { this.add(\"-immune\",",
+   "anchor": "turn.rs::status_immune_of",
+   "reason": "the setStatus-phase block inside the already-drawn SetStatus event"
+  },
+  "ability:insomnia:onTryAddVolatile": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:6c6a2789:onTryAddVolatile(status, target) { if (status.id === \"yawn\") { this.add(\"-immune\", target, \"[from] ability: Insomnia\"); ",
+   "reason": "gates the YAWN volatile only — Yawn is not a modeled move (fail-loud unmodeled status move)"
+  },
+  "ability:insomnia:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:fc95259c:onUpdate(pokemon) { if (pokemon.status === \"slp\") { this.add(\"-activate\", pokemon, \"ability: Insomnia\"); pokemon.cureSta",
+   "anchor": "turn.rs::status_immune_on_update",
+   "reason": "the Update-site cure — reachable ONLY via a statused mon TRACING the ability (gen3_statusimmune_onupdate_cure_v1, the A/B Trace-Porygon2 cluster)"
+  },
+  "ability:intimidate:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:b91a5306:onStart(pokemon) { let activated = false; for (const target of pokemon.adjacentFoes()) { if (!target.volatiles[\"substitu",
+   "anchor": "event.rs::intimidate_on_start"
+  },
+  "ability:keeneye:onTryBoost": {
+   "disposition": "implemented",
+   "fp": "fn:14651fe6:onTryBoost(boost, target, source, effect) { if (source && target === source) return; if (boost.accuracy && boost.accurac",
+   "anchor": "event.rs::intimidate_on_start",
+   "reason": "the boost-drop immunity gate (Intimidate + secondary stat-drops)"
+  },
+  "ability:lightningrod:onFoeRedirectTarget": {
+   "disposition": "noop_justified",
+   "fp": "fn:dcbec3cf:onFoeRedirectTarget(target, source, source2, move) { if (this.dex.moves.get(move.id).type !== \"Electric\") return; if (th",
+   "reason": "redirects Electric moves in doubles — a singles battle has one target, nothing to redirect",
+   "probe": "probe_ability_batch1_noop_verify.js"
+  },
+  "ability:limber:onSetStatus": {
+   "disposition": "implemented",
+   "fp": "fn:c3e8e36b:onSetStatus(status, target, source, effect) { if (status.id !== \"par\") return; if (effect?.status) { this.add(\"-immune\",",
+   "anchor": "turn.rs::status_immune_of",
+   "reason": "the setStatus-phase block inside the already-drawn SetStatus event"
+  },
+  "ability:limber:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:dbcbf21b:onUpdate(pokemon) { if (pokemon.status === \"par\") { this.add(\"-activate\", pokemon, \"ability: Limber\"); pokemon.cureStatu",
+   "anchor": "turn.rs::status_immune_on_update",
+   "reason": "the Update-site cure — reachable ONLY via a statused mon TRACING the ability (gen3_statusimmune_onupdate_cure_v1, the A/B Trace-Porygon2 cluster)"
+  },
+  "ability:magmaarmor:onImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:a0ed8f95:onImmunity(type, pokemon) { if (type === \"frz\") return false; }",
+   "anchor": "turn.rs::status_immune_of",
+   "reason": "the immunity-phase frz block BEFORE the SetStatus event"
+  },
+  "ability:magmaarmor:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:5e3afc31:onUpdate(pokemon) { if (pokemon.status === \"frz\") { this.add(\"-activate\", pokemon, \"ability: Magma Armor\"); pokemon.cure",
+   "anchor": "turn.rs::status_immune_on_update",
+   "reason": "the Update-site cure — reachable ONLY via a statused mon TRACING the ability (gen3_statusimmune_onupdate_cure_v1, the A/B Trace-Porygon2 cluster)"
+  },
+  "ability:magnetpull:onAnyMaybeTrapPokemon": {
+   "disposition": "implemented",
+   "fp": "fn:dd1f7993:onAnyMaybeTrapPokemon(pokemon, source) { if (!source) source = this.effectState.target; if (!source || !pokemon.isAdjace",
+   "anchor": "turn.rs::is_trapped",
+   "reason": "the endTurn (Maybe)TrapPokemon handler gather — magnetpull's onAny* draws the 2-handler tie-shuffle"
+  },
+  "ability:magnetpull:onAnyTrapPokemon": {
+   "disposition": "implemented",
+   "fp": "fn:33fc84ab:onAnyTrapPokemon(pokemon) { if (pokemon.hasType(\"Steel\") && pokemon.isAdjacent(this.effectState.target)) { pokemon.tryTr",
+   "anchor": "turn.rs::is_trapped",
+   "reason": "the switch-legality trap gate (gen3_trapping_v1 / B4-3 shadow tag)"
+  },
+  "ability:marvelscale:onModifyDef": {
+   "disposition": "implemented",
+   "fp": "fn:d9aaa874:onModifyDef(def, pokemon) { if (pokemon.status) { return this.chainModify(1.5); } }",
+   "anchor": "turn.rs::resolve_def_stat_mods",
+   "reason": "Def ×1.5 while the defender is statused"
+  },
+  "ability:marvelscale:onModifyDefPriority": {
+   "disposition": "implemented",
+   "fp": "val:6",
+   "anchor": "turn.rs::resolve_def_stat_mods",
+   "reason": "Def ×1.5 while the defender is statused — (order metadata of the sibling onModifyDef handler)"
+  },
+  "ability:minus:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:2b7fe910:onModifySpA(spa, pokemon) { for (const active of this.getAllActive()) { if (!active.fainted && active.hasAbility(\"plus\")",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the cross-field Plus↔Minus SpA ×1.5 chain member (gen3_plus_minus_v1)"
+  },
+  "ability:naturalcure:onSwitchOut": {
+   "disposition": "implemented",
+   "fp": "fn:887ebce3:onSwitchOut(pokemon) { if (!pokemon.status || pokemon.status === \"fnt\") return; this.add(\"-curestatus\", pokemon, pokemon",
+   "anchor": "turn.rs::execute_switch",
+   "reason": "the draw-free switch-out cure (gen3_natural_cure_v1)"
+  },
+  "ability:oblivious:onImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:7d40c712:onImmunity(type, pokemon) { if (type === \"attract\") return false; }",
+   "anchor": "turn.rs::try_add_attract",
+   "reason": "the attract immunity gate (batch-4 attract via Cute Charm)"
+  },
+  "ability:oblivious:onTryHit": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:19b82d0e:onTryHit(pokemon, target, move) { if (move.id === \"captivate\") { this.add(\"-immune\", pokemon, \"[from] Oblivious\"); retur",
+   "reason": "gates CAPTIVATE only — a gen4 move, not in the gen3 universe"
+  },
+  "ability:oblivious:onUpdate": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:ef11fbb0:onUpdate(pokemon) { if (pokemon.volatiles[\"attract\"]) { pokemon.removeVolatile(\"attract\"); this.add(\"-end\", pokemon, \"mo",
+   "reason": "removes an attract the holder already has — unreachable: attract clears when the holder switches out, so a TRACE copy can never find a pre-existing attract, and a direct add is blocked at the onImmunity gate"
+  },
+  "ability:overgrow:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:9ecb62af:onBasePower(basePower, attacker, defender, move) { if (move.type === \"Grass\" && attacker.hp <= attacker.maxhp / 3) { thi",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "pinch BP ×1.5 at 3·hp<=maxhp (gen3_item_mechanics_v1 P2)"
+  },
+  "ability:overgrow:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "pinch BP ×1.5 at 3·hp<=maxhp (gen3_item_mechanics_v1 P2) — (order metadata of the sibling onBasePower handler)"
+  },
+  "ability:overgrow:onModifyAtkPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:5",
+   "reason": "gen4-mod priority residue — the gen3 fold is the onBasePower pinch chain; no onModifyAtk/onModifySpA fn resolves (the mod-chain law)"
+  },
+  "ability:overgrow:onModifySpAPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:5",
+   "reason": "gen4-mod priority residue — the gen3 fold is the onBasePower pinch chain; no onModifyAtk/onModifySpA fn resolves (the mod-chain law)"
+  },
+  "ability:owntempo:onHit": {
+   "disposition": "noop_justified",
+   "fp": "fn:9d26eded:onHit(target, source, move) { if (move?.volatileStatus === \"confusion\") { this.add(\"-immune\", target, \"confusion\", \"[fro",
+   "reason": "display-only: the `-immune` line for a confusion-VOLATILE move (Confuse Ray etc. — no such move is modeled anyway); the block itself is onTryAddVolatile"
+  },
+  "ability:owntempo:onTryAddVolatile": {
+   "disposition": "implemented",
+   "fp": "fn:5c575674:onTryAddVolatile(status, pokemon) { if (status.id === \"confusion\") return null; }",
+   "anchor": "turn.rs::add_confusion",
+   "reason": "the confusion add block"
+  },
+  "ability:owntempo:onUpdate": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:c39e4fc5:onUpdate(pokemon) { if (pokemon.volatiles[\"confusion\"]) { this.add(\"-activate\", pokemon, \"ability: Own Tempo\"); pokemon.",
+   "reason": "cures a confusion the holder already has — unreachable: volatiles clear on switch-out, so a TRACE copy (the only ability-gain route) can never find a pre-existing confusion, and a direct add is blocked at onTryAddVolatile"
+  },
+  "ability:pickup:onResidualOrder": {
+   "disposition": "noop_justified",
+   "fp": "val:28",
+   "reason": "base-data residue: an out-of-battle pickup residual ORDER with NO function handler in the gen3 resolution"
+  },
+  "ability:pickup:onResidualSubOrder": {
+   "disposition": "noop_justified",
+   "fp": "val:2",
+   "reason": "base-data residue: an out-of-battle pickup residual ORDER with NO function handler in the gen3 resolution"
+  },
+  "ability:plus:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:1b7478f2:onModifySpA(spa, pokemon) { for (const active of this.getAllActive()) { if (!active.fainted && active.hasAbility(\"minus\"",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the cross-field Plus↔Minus SpA ×1.5 chain member (gen3_plus_minus_v1)"
+  },
+  "ability:poisonpoint:onDamagingHit": {
+   "disposition": "implemented",
+   "fp": "fn:c84287d1:onDamagingHit(damage, target, source, move) { if (damage && move.flags[\"contact\"]) { if (this.randomChance(1, 3)) { sour",
+   "anchor": "turn.rs::apply_contact_proc",
+   "reason": "the after-secondary contact-proc draw (B2-1/B2-2)"
+  },
+  "ability:pressure:onDeductPP": {
+   "disposition": "implemented",
+   "fp": "fn:a5fd52ba:onDeductPP(target, source) { if (target === source) return; return 1; }",
+   "anchor": "turn.rs::pressure_extra",
+   "reason": "the foe-Pressure +1 PP deduction (gen3_pp_tracking_v1, VERIFIED −2 total)"
+  },
+  "ability:pressure:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:32835c7e:onStart(pokemon) { this.addSplit(pokemon.side.id, [\"-ability\", pokemon, \"Pressure\", \"[silent]\"]); }",
+   "anchor": "turn.rs::emit_ability_start_lines",
+   "reason": "the |-ability|<mon>|Pressure|[silent] switch-in reveal — EMITTED (gen3_protocol_phase3_v1, byte-verified; the omniscient stream carries the addSplit secret line)"
+  },
+  "ability:purepower:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:b5d4212a:onModifyAtk(atk) { return this.chainModify(2); }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "Atk ×2 (physical only)"
+  },
+  "ability:purepower:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "Atk ×2 (physical only) — (order metadata of the sibling onModifyAtk handler)"
+  },
+  "ability:raindish:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:c5a868d1:onResidual(pokemon) { if ([\"raindance\", \"primordialsea\"].includes(pokemon.effectiveWeather())) { this.heal(pokemon.baseM",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "ResidualAction::RainDish +maxhp/16 in effective rain (B4b)"
+  },
+  "ability:raindish:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "ResidualAction::RainDish +maxhp/16 in effective rain (B4b) — (order metadata of the sibling onResidual handler)"
+  },
+  "ability:raindish:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "ResidualAction::RainDish +maxhp/16 in effective rain (B4b) — (order metadata of the sibling onResidual handler)"
+  },
+  "ability:rockhead:onDamage": {
+   "disposition": "noop_justified",
+   "fp": "fn:f6daeccd:onDamage(damage, target, source, effect) { if (effect.id === \"recoil\") { if (!this.activeMove) throw new Error(\"Battle.a",
+   "reason": "negates recoil EXCEPT Struggle (the resolved handler: `if (this.activeMove.id !== \"struggle\") return null`) — Struggle is the ONLY recoil source in the modeled universe, so the handler never changes anything"
+  },
+  "ability:roughskin:onDamagingHit": {
+   "disposition": "implemented",
+   "fp": "fn:025f93c8:onDamagingHit(damage, target, source, move) { if (damage && move.flags[\"contact\"]) { this.damage(source.baseMaxhp / 16, ",
+   "anchor": "turn.rs::apply_contact_proc",
+   "reason": "the draw-free baseMaxhp/16 contact recoil (B2-3)"
+  },
+  "ability:roughskin:onDamagingHitOrder": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::apply_contact_proc",
+   "reason": "the draw-free baseMaxhp/16 contact recoil (B2-3) — (order metadata of the sibling onDamagingHit handler)"
+  },
+  "ability:sandstream:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:ebe37063:onStart(source) { this.field.setWeather(\"sandstorm\"); }",
+   "anchor": "event.rs::run_switch",
+   "reason": "switch-in weather set (permanent, ability-sourced); the Kyogre/Groudon orb guard is gen4-only"
+  },
+  "ability:sandveil:onImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:80ab886c:onImmunity(type, pokemon) { if (type === \"sandstorm\") return false; }",
+   "anchor": "turn.rs::weather_immune",
+   "reason": "the sandstorm-chip immunity (AC5)"
+  },
+  "ability:sandveil:onModifyAccuracy": {
+   "disposition": "implemented",
+   "fp": "fn:8a435c29:onModifyAccuracy(accuracy) { if (typeof accuracy !== \"number\") return; if (this.field.isWeather(\"sandstorm\")) { this.deb",
+   "anchor": "turn.rs::effective_accuracy",
+   "reason": "acc ×0.8 defender chain in sand"
+  },
+  "ability:sandveil:onModifyAccuracyPriority": {
+   "disposition": "implemented",
+   "fp": "val:8",
+   "anchor": "turn.rs::effective_accuracy",
+   "reason": "acc ×0.8 defender chain in sand — (order metadata of the sibling onModifyAccuracy handler)"
+  },
+  "ability:serenegrace:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:d726eb02:onModifyMove(move) { if (move.secondaries && move.id !== \"chatter\") { this.debug(\"doubling secondary chance\"); for (cons",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "secondary chance ×2 (incl. the King's Rock appended one)"
+  },
+  "ability:serenegrace:onModifyMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:-2",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "secondary chance ×2 (incl. the King's Rock appended one) — (order metadata of the sibling onModifyMove handler)"
+  },
+  "ability:shadowtag:onFoeMaybeTrapPokemon": {
+   "disposition": "implemented",
+   "fp": "fn:aa2fbee0:onFoeMaybeTrapPokemon(pokemon, source) { if (!source) source = this.effectState.target; if (!source || !pokemon.isAdjace",
+   "anchor": "turn.rs::is_trapped",
+   "reason": "the endTurn (Maybe)TrapPokemon handler gather — magnetpull's onAny* draws the 2-handler tie-shuffle"
+  },
+  "ability:shadowtag:onFoeTrapPokemon": {
+   "disposition": "implemented",
+   "fp": "fn:25754e19:onFoeTrapPokemon(pokemon) { pokemon.trapped = true; }",
+   "anchor": "turn.rs::is_trapped",
+   "reason": "the switch-legality trap gate (gen3_trapping_v1 / B4-3 shadow tag)"
+  },
+  "ability:shedskin:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:2bf43b0f:onResidual(pokemon) { if (pokemon.hp && pokemon.status && this.randomChance(33, 100)) { this.debug(\"shed skin\"); this.ad",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-10 subOrder-3 randomChance(33,100) cure-before-DoT residual (BR5; handler gathered unconditionally for the tie-shuffle)"
+  },
+  "ability:shedskin:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-10 subOrder-3 randomChance(33,100) cure-before-DoT residual (BR5; handler gathered unconditionally for the tie-shuffle) — (order metadata of the sibling onResidual handler)"
+  },
+  "ability:shedskin:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-10 subOrder-3 randomChance(33,100) cure-before-DoT residual (BR5; handler gathered unconditionally for the tie-shuffle) — (order metadata of the sibling onResidual handler)"
+  },
+  "ability:shellarmor:onCriticalHit": {
+   "disposition": "implemented",
+   "fp": "val:false",
+   "anchor": "turn.rs::crit_immune",
+   "reason": "the drawn-then-overridden crit (B1, probe_critimmune_rng.js)"
+  },
+  "ability:shielddust:onModifySecondaries": {
+   "disposition": "implemented",
+   "fp": "fn:8722f9c1:onModifySecondaries(secondaries) { this.debug(\"Shield Dust prevent secondary\"); return secondaries.filter((effect) => !!",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the filter-the-draw secondary suppression"
+  },
+  "ability:soundproof:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:558acf16:onTryHit(target, source, move) { if (move.flags[\"sound\"]) { this.add(\"-immune\", target, \"[from] ability: Soundproof\"); r",
+   "anchor": "turn.rs::move_is_sound",
+   "reason": "sound-move immunity (B2-5)"
+  },
+  "ability:speedboost:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:a08bc956:onResidual(pokemon) { if (pokemon.activeTurns) { this.boost({ spe: 1 }); } }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "ResidualAction::SpeedBoost at order 10 subOrder 3 (B4)"
+  },
+  "ability:speedboost:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "ResidualAction::SpeedBoost at order 10 subOrder 3 (B4) — (order metadata of the sibling onResidual handler)"
+  },
+  "ability:speedboost:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "ResidualAction::SpeedBoost at order 10 subOrder 3 (B4) — (order metadata of the sibling onResidual handler)"
+  },
+  "ability:static:onDamagingHit": {
+   "disposition": "implemented",
+   "fp": "fn:e32bf5df:onDamagingHit(damage, target, source, move) { if (damage && move.flags[\"contact\"]) { if (this.randomChance(1, 3)) { sour",
+   "anchor": "turn.rs::apply_contact_proc",
+   "reason": "the after-secondary contact-proc draw (B2-1/B2-2)"
+  },
+  "ability:stench:onModifyMovePriority": {
+   "disposition": "noop_justified",
+   "fp": "val:-1",
+   "reason": "base-data residue: the gen9 stench-flinch onModifyMove is not in the gen3 resolution — only its priority number survives"
+  },
+  "ability:stickyhold:onTakeItem": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:0774dd31:onTakeItem(item, pokemon, source) { if (source && source !== pokemon || this.activeMove && this.activeMove.id === \"knock",
+   "reason": "blocks Thief/Knock Off/Trick item removal — no item-removal move is modeled (MOVE_ID_BLOCKLIST)",
+   "probe": "probe_ability_batch1_noop_verify.js"
+  },
+  "ability:sturdy:onDamagePriority": {
+   "disposition": "noop_justified",
+   "fp": "val:-30",
+   "reason": "base-data residue: the gen5+ survive-at-1 onDamage is not in the gen3 resolution — only its priority number survives"
+  },
+  "ability:sturdy:onTryHit": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:d9afd493:onTryHit(pokemon, target, move) { if (move.ohko) { this.add(\"-immune\", pokemon, \"[from] ability: Sturdy\"); return null; ",
+   "reason": "the OHKO-move immunity — the OHKO family is deferred (fail-loud + MOVE_ID_BLOCKLIST keeps it off the modeled path)"
+  },
+  "ability:suctioncups:onDragOut": {
+   "disposition": "implemented",
+   "fp": "fn:d6c5b7f0:onDragOut(pokemon) { this.add(\"-activate\", pokemon, \"ability: Suction Cups\"); return null; }",
+   "anchor": "turn.rs::drag_in",
+   "reason": "the phaze-arm Suction Cups gate — no drag, no sample draw (B2-6)"
+  },
+  "ability:suctioncups:onDragOutPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::drag_in",
+   "reason": "the phaze-arm Suction Cups gate — no drag, no sample draw (B2-6) — (order metadata of the sibling onDragOut handler)"
+  },
+  "ability:swarm:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:6f0a0760:onBasePower(basePower, attacker, defender, move) { if (move.type === \"Bug\" && attacker.hp <= attacker.maxhp / 3) { this.",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "pinch BP ×1.5 at 3·hp<=maxhp (gen3_item_mechanics_v1 P2)"
+  },
+  "ability:swarm:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "pinch BP ×1.5 at 3·hp<=maxhp (gen3_item_mechanics_v1 P2) — (order metadata of the sibling onBasePower handler)"
+  },
+  "ability:swarm:onModifyAtkPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:5",
+   "reason": "gen4-mod priority residue — the gen3 fold is the onBasePower pinch chain; no onModifyAtk/onModifySpA fn resolves (the mod-chain law)"
+  },
+  "ability:swarm:onModifySpAPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:5",
+   "reason": "gen4-mod priority residue — the gen3 fold is the onBasePower pinch chain; no onModifyAtk/onModifySpA fn resolves (the mod-chain law)"
+  },
+  "ability:swiftswim:onModifySpe": {
+   "disposition": "implemented",
+   "fp": "fn:a5184935:onModifySpe(spe, pokemon) { if ([\"raindance\", \"primordialsea\"].includes(pokemon.effectiveWeather())) { return this.chain",
+   "anchor": "turn.rs::effective_speed",
+   "reason": "weather ×2 folded into the cached tie-shuffle speed (B2)"
+  },
+  "ability:synchronize:onAfterSetStatus": {
+   "disposition": "implemented",
+   "fp": "fn:5e202987:onAfterSetStatus(status, target, source, effect) { if (!source || source === target) return; if (effect && effect.id ===",
+   "anchor": "turn.rs::try_set_status",
+   "reason": "the source-aware status reflect (B2-7)"
+  },
+  "ability:thickfat:onSourceBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:a145b480:onSourceBasePower(basePower, attacker, defender, move) { if (move.type === \"Ice\" || move.type === \"Fire\") { return this.",
+   "anchor": "turn.rs::defender_thick_fat",
+   "reason": "Ice/Fire sourceBasePower ×0.5 (defender handler on the attacker BP)"
+  },
+  "ability:thickfat:onSourceBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::defender_thick_fat",
+   "reason": "Ice/Fire sourceBasePower ×0.5 (defender handler on the attacker BP) — (order metadata of the sibling onSourceBasePower handler)"
+  },
+  "ability:thickfat:onSourceModifyAtkPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:6",
+   "reason": "gen4-mod priority residue — the gen3 fold is onSourceBasePower; no onSourceModifyAtk/SpA fn resolves"
+  },
+  "ability:thickfat:onSourceModifySpAPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:5",
+   "reason": "gen4-mod priority residue — the gen3 fold is onSourceBasePower; no onSourceModifyAtk/SpA fn resolves"
+  },
+  "ability:torrent:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:fd46839b:onBasePower(basePower, attacker, defender, move) { if (move.type === \"Water\" && attacker.hp <= attacker.maxhp / 3) { thi",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "pinch BP ×1.5 at 3·hp<=maxhp (gen3_item_mechanics_v1 P2)"
+  },
+  "ability:torrent:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "pinch BP ×1.5 at 3·hp<=maxhp (gen3_item_mechanics_v1 P2) — (order metadata of the sibling onBasePower handler)"
+  },
+  "ability:torrent:onModifyAtkPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:5",
+   "reason": "gen4-mod priority residue — the gen3 fold is the onBasePower pinch chain; no onModifyAtk/onModifySpA fn resolves (the mod-chain law)"
+  },
+  "ability:torrent:onModifySpAPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:5",
+   "reason": "gen4-mod priority residue — the gen3 fold is the onBasePower pinch chain; no onModifyAtk/onModifySpA fn resolves (the mod-chain law)"
+  },
+  "ability:trace:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:66bdf2b0:onStart(pokemon) { const target = pokemon.side.randomFoe(); if (!target || target.fainted) return; const ability = targe",
+   "anchor": "event.rs::trace_on_start",
+   "reason": "the n=1 randomFoe sample + live ability copy (BR4)"
+  },
+  "ability:truant:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:d87cdf46:onBeforeMove(pokemon) { if (pokemon.truantTurn) { this.add(\"cant\", pokemon, \"ability: Truant\"); return false; } }",
+   "anchor": "turn.rs::truant_turn",
+   "reason": "the priority-9 loaf cant (B4-1)"
+  },
+  "ability:truant:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:9",
+   "anchor": "turn.rs::truant_turn",
+   "reason": "the priority-9 loaf cant (B4-1) — (order metadata of the sibling onBeforeMove handler)"
+  },
+  "ability:truant:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:6e5ea60a:onResidual(pokemon) { pokemon.truantTurn = !pokemon.truantTurn; }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-27 truant toggle residual"
+  },
+  "ability:truant:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:27",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-27 truant toggle residual — (order metadata of the sibling onResidual handler)"
+  },
+  "ability:truant:onSwitchIn": {
+   "disposition": "implemented",
+   "fp": "fn:30e5e713:onSwitchIn(pokemon) { pokemon.truantTurn = this.turn !== 0; }",
+   "anchor": "event.rs::run_switch",
+   "reason": "truant_turn armed `turn != 0` at switch-in"
+  },
+  "ability:vitalspirit:onSetStatus": {
+   "disposition": "implemented",
+   "fp": "fn:f85016cd:onSetStatus(status, target, source, effect) { if (status.id !== \"slp\") return; if (effect?.status) { this.add(\"-immune\",",
+   "anchor": "turn.rs::status_immune_of",
+   "reason": "the setStatus-phase block inside the already-drawn SetStatus event"
+  },
+  "ability:vitalspirit:onTryAddVolatile": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:2be51a6e:onTryAddVolatile(status, target) { if (status.id === \"yawn\") { this.add(\"-immune\", target, \"[from] ability: Vital Spirit",
+   "reason": "gates the YAWN volatile only — Yawn is not a modeled move (fail-loud unmodeled status move)"
+  },
+  "ability:vitalspirit:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:757dd4b5:onUpdate(pokemon) { if (pokemon.status === \"slp\") { this.add(\"-activate\", pokemon, \"ability: Vital Spirit\"); pokemon.cur",
+   "anchor": "turn.rs::status_immune_on_update",
+   "reason": "the Update-site cure — reachable ONLY via a statused mon TRACING the ability (gen3_statusimmune_onupdate_cure_v1, the A/B Trace-Porygon2 cluster)"
+  },
+  "ability:voltabsorb:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:8d65ab95:onTryHit(target, source, move) { if (target !== source && move.type === \"Electric\" && move.id !== \"thunderwave\") { if (!",
+   "anchor": "turn.rs::apply_absorb_heal",
+   "reason": "the acc_hit-gated maxhp/4 absorb heal"
+  },
+  "ability:waterabsorb:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:faf24d4f:onTryHit(target, source, move) { if (target !== source && move.type === \"Water\") { if (!this.heal(target.baseMaxhp / 4))",
+   "anchor": "turn.rs::apply_absorb_heal",
+   "reason": "the acc_hit-gated maxhp/4 absorb heal"
+  },
+  "ability:waterveil:onSetStatus": {
+   "disposition": "implemented",
+   "fp": "fn:e527bcae:onSetStatus(status, target, source, effect) { if (status.id !== \"brn\") return; if (effect?.status) { this.add(\"-immune\",",
+   "anchor": "turn.rs::status_immune_of",
+   "reason": "the setStatus-phase block inside the already-drawn SetStatus event"
+  },
+  "ability:waterveil:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:37f94f2e:onUpdate(pokemon) { if (pokemon.status === \"brn\") { this.add(\"-activate\", pokemon, \"ability: Water Veil\"); pokemon.cureS",
+   "anchor": "turn.rs::status_immune_on_update",
+   "reason": "the Update-site cure — reachable ONLY via a statused mon TRACING the ability (gen3_statusimmune_onupdate_cure_v1, the A/B Trace-Porygon2 cluster)"
+  },
+  "ability:whitesmoke:onTryBoost": {
+   "disposition": "implemented",
+   "fp": "fn:7c3b143a:onTryBoost(boost, target, source, effect) { if (source && target === source) return; let showMsg = false; let i; for (i ",
+   "anchor": "event.rs::intimidate_on_start",
+   "reason": "the boost-drop immunity gate (Intimidate + secondary stat-drops)"
+  },
+  "condition:attract:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:02bc5ced:onBeforeMove(pokemon, target, move) { this.add(\"-activate\", pokemon, \"move: Attract\", \"[of] \" + this.effectState.source)",
+   "anchor": "turn.rs::run_move",
+   "reason": "the priority-2 -activate + randomChance(1,2) cant"
+  },
+  "condition:attract:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::run_move",
+   "reason": "the priority-2 -activate + randomChance(1,2) cant — (order metadata of the sibling onBeforeMove handler)"
+  },
+  "condition:attract:onEnd": {
+   "disposition": "noop_justified",
+   "fp": "fn:fbe69ccf:onEnd(pokemon) { this.add(\"-end\", pokemon, \"Attract\", \"[silent]\"); }",
+   "reason": "display-only [silent] |-end| Attract line"
+  },
+  "condition:attract:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:27126d9b:onStart(pokemon, source, effect) { if (!(pokemon.gender === \"M\" && source.gender === \"F\") && !(pokemon.gender === \"F\" &&",
+   "anchor": "turn.rs::try_add_attract",
+   "reason": "the gender gate INSIDE onStart (the CC roll drew unconditionally)"
+  },
+  "condition:attract:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:e1505792:onUpdate(pokemon) { if (this.effectState.source && !this.effectState.source.isActive && pokemon.volatiles[\"attract\"]) { ",
+   "anchor": "turn.rs::run_update_items",
+   "reason": "the source-left clear (the attract onUpdate removal)"
+  },
+  "condition:brn:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:bf41b8fb:onResidual(pokemon) { this.damage(pokemon.baseMaxhp / 8); }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the maxhp/8 status DoT at order 10 subOrder 6"
+  },
+  "condition:brn:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the maxhp/8 status DoT at order 10 subOrder 6 — (order metadata of the sibling onResidual handler)"
+  },
+  "condition:brn:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:6",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the maxhp/8 status DoT at order 10 subOrder 6 — (order metadata of the sibling onResidual handler)"
+  },
+  "condition:brn:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:e40ff891:onStart(target, source, sourceEffect) { if (sourceEffect && sourceEffect.id === \"flameorb\") { this.add(\"-status\", target",
+   "anchor": "turn.rs::try_set_status",
+   "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
+  },
+  "condition:choicelock:onDisableMove": {
+   "disposition": "implemented",
+   "fp": "fn:f52ed89b:onDisableMove(pokemon) { if (!pokemon.getItem().isChoice || !pokemon.hasMove(this.effectState.move)) { pokemon.removeVol",
+   "anchor": "turn.rs::move_usable",
+   "reason": "the non-locked slots unselectable while holding the Choice item"
+  },
+  "condition:choicelock:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:61a6b21f:onStart(pokemon) { if (!pokemon.lastMove) return false; this.effectState.move = pokemon.lastMove.id; }",
+   "anchor": "state.rs::choice_locked_move",
+   "reason": "the lastMove lock arm (fails with no lastMove)"
+  },
+  "condition:confusion:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:e78812b8:onBeforeMove(pokemon) { pokemon.volatiles[\"confusion\"].time--; if (!pokemon.volatiles[\"confusion\"].time) { pokemon.remov",
+   "anchor": "turn.rs::apply_confusion_self_hit",
+   "reason": "the priority-3 counter decrement + randomChance(1,2) self-hit"
+  },
+  "condition:confusion:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "turn.rs::apply_confusion_self_hit",
+   "reason": "the priority-3 counter decrement + randomChance(1,2) self-hit — (order metadata of the sibling onBeforeMove handler)"
+  },
+  "condition:confusion:onEnd": {
+   "disposition": "noop_justified",
+   "fp": "fn:ffbbe2dd:onEnd(target) { this.add(\"-end\", target, \"confusion\"); }",
+   "reason": "display-only |-end| confusion line (the port emits it at the counter expiry)"
+  },
+  "condition:confusion:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:ee4712e5:onStart(target, source, sourceEffect) { if (sourceEffect?.id === \"lockedmove\") { this.add(\"-start\", target, \"confusion\",",
+   "anchor": "turn.rs::add_confusion",
+   "reason": "the random(2,6) duration; the lockedmove-fatigue branch is unreachable (lockedmove moves rejected)"
+  },
+  "condition:disable:durationCallback": {
+   "disposition": "implemented",
+   "fp": "fn:8ee07c32:durationCallback() { return this.random(2, 6); }",
+   "anchor": "turn.rs::disable_move_event_shuffle",
+   "reason": "the ONE random(2,6) duration draw on a landed Disable"
+  },
+  "condition:disable:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:80a1db98:onBeforeMove(attacker, defender, move) { if (!(move.isZ && move.isZOrMaxPowered) && move.id === this.effectState.move) {",
+   "anchor": "turn.rs::run_move",
+   "reason": "the execution-time cant of the disabled queued move"
+  },
+  "condition:disable:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:7",
+   "anchor": "turn.rs::run_move",
+   "reason": "the execution-time cant of the disabled queued move — (order metadata of the sibling onBeforeMove handler)"
+  },
+  "condition:disable:onDisableMove": {
+   "disposition": "implemented",
+   "fp": "fn:f2fcb4b7:onDisableMove(pokemon) { for (const moveSlot of pokemon.moveSlots) { if (moveSlot.id === this.effectState.move) { pokemo",
+   "anchor": "turn.rs::move_usable",
+   "reason": "the disabled slot unselectable"
+  },
+  "condition:disable:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:dd204bfd:onEnd(pokemon) { this.add(\"-end\", pokemon, \"Disable\"); }",
+   "anchor": "turn.rs::DisableDuration",
+   "reason": "the |-end|<mon>|Disable residual-expiry line — EMITTED (gen3_protocol_phase3_v1, byte-verified vs the disable_lifecycle capture)"
+  },
+  "condition:disable:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:d9184044:onStart(pokemon) { if (!this.queue.willMove(pokemon)) { this.effectState.duration++; } if (!pokemon.lastMove) { return f",
+   "anchor": "state.rs::disable",
+   "reason": "the willMove +1 duration store (gen3_taunt_disable_v1)"
+  },
+  "condition:flashfire:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:3d463786:onEnd(target) { this.add(\"-end\", target, \"ability: Flash Fire\", \"[silent]\"); }",
+   "anchor": "turn.rs::process_faints",
+   "reason": "fires from the ABILITY's onEnd at every switch-out/faint — see ability:flashfire:onEnd; the volatile removal is state-equivalent to the port clear in execute_switch + process_faints."
+  },
+  "condition:flashfire:onModifyAtkPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:5",
+   "reason": "gen4+ priority residue — the gen3 fold is onModifyDamagePhase1; no onModifyAtk/SpA fn resolves"
+  },
+  "condition:flashfire:onModifyDamagePhase1": {
+   "disposition": "implemented",
+   "fp": "fn:0d791582:onModifyDamagePhase1(atk, attacker, defender, move) { if (move.type === \"Fire\") { this.debug(\"Flash Fire boost\"); return",
+   "anchor": "turn.rs::flash_fire",
+   "reason": "the armed ×1.5 Fire fold (gen3_flashfire_v1 ModifyDamagePhase1)"
+  },
+  "condition:flashfire:onModifySpAPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:5",
+   "reason": "gen4+ priority residue — the gen3 fold is onModifyDamagePhase1; no onModifyAtk/SpA fn resolves"
+  },
+  "condition:flashfire:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:045e4711:onStart(target) { this.add(\"-start\", target, \"ability: Flash Fire\"); }",
+   "anchor": "turn.rs::apply_flash_fire_activation",
+   "reason": "the flash_fire arm + |-start| line"
+  },
+  "condition:flinch:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "state.rs::flinch",
+   "reason": "the duration-1 volatile — reset at end of turn (clear_flinch)"
+  },
+  "condition:flinch:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:26187abe:onBeforeMove(pokemon) { this.add(\"cant\", pokemon, \"flinch\"); this.runEvent(\"Flinch\", pokemon); return false; }",
+   "anchor": "turn.rs::clear_flinch",
+   "reason": "the priority-8 draw-free cant"
+  },
+  "condition:flinch:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:8",
+   "anchor": "turn.rs::clear_flinch",
+   "reason": "the priority-8 draw-free cant — (order metadata of the sibling onBeforeMove handler)"
+  },
+  "condition:focusenergy:onModifyCritRatio": {
+   "disposition": "implemented",
+   "fp": "fn:90b179a8:onModifyCritRatio(critRatio) { return critRatio + 2; }",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the +2 crit-ratio fold (clamped 0..5) into the crit denominator"
+  },
+  "condition:focusenergy:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:8149470d:onStart(target, source, effect) { if (target.volatiles[\"dragoncheer\"]) return false; if (effect?.id === \"zpower\") { this",
+   "anchor": "state.rs::focus_energy",
+   "reason": "the volatile arm (via a Lansat eat — the only gen3 route); the dragoncheer branch is gen9 cruft"
+  },
+  "condition:freezeclausemod:onBegin": {
+   "disposition": "noop_justified",
+   "fp": "fn:55b5237c:onBegin() { this.add(\"rule\", \"Freeze Clause Mod: Limit one foe frozen\"); }",
+   "reason": "display-only: the |rule| banner line at battle start"
+  },
+  "condition:freezeclausemod:onSetStatus": {
+   "disposition": "implemented",
+   "fp": "fn:195aa762:onSetStatus(status, target, source) { if (source?.isAlly(target)) { return; } if (status.id === \"frz\") { for (const poke",
+   "anchor": "turn.rs::side_has_frozen",
+   "reason": "the second-freeze block (gen3_freeze_clause_v1 — the audit's HA2 fix)"
+  },
+  "condition:frz:onAfterMoveSecondary": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:1f797aa6:onAfterMoveSecondary(target, source, move) { if (move.thawsTarget) { target.cureStatus(); } }",
+   "reason": "move.thawsTarget only — NO gen3 modeled move carries thawsTarget (the fire-thaw rides onDamagingHit instead)"
+  },
+  "condition:frz:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:8b97fb73:onBeforeMove(pokemon, target, move) { if (this.randomChance(1, 5)) { pokemon.cureStatus(); return; } if (move.flags[\"def",
+   "anchor": "turn.rs::run_move",
+   "reason": "the priority-10 randomChance(1,5) thaw BEFORE the defrost check"
+  },
+  "condition:frz:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::run_move",
+   "reason": "the priority-10 randomChance(1,5) thaw BEFORE the defrost check — (order metadata of the sibling onBeforeMove handler)"
+  },
+  "condition:frz:onDamagingHit": {
+   "disposition": "implemented",
+   "fp": "fn:99627abf:onDamagingHit(damage, target, source, move) { if (this.dex.moves.get(move.id).type === \"Fire\" && move.category !== \"Stat",
+   "anchor": "turn.rs::run_move",
+   "reason": "a landed Fire damaging move thaws the target (the fire-thaw at the DamagingHit region; sub-absorbed hits do not thaw)"
+  },
+  "condition:frz:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:bef178a7:onModifyMove(move, pokemon) { if (move.flags[\"defrost\"]) { this.add(\"-curestatus\", pokemon, \"frz\", `[from] move: ${move}",
+   "anchor": "turn.rs::run_move",
+   "reason": "the flags.defrost user self-thaw (gen3_defrost_v1 — Sacred Fire / Flame Wheel)"
+  },
+  "condition:frz:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:e58c5c29:onStart(target, source, sourceEffect) { if (sourceEffect && sourceEffect.effectType === \"Ability\") { this.add(\"-status\",",
+   "anchor": "turn.rs::try_set_status",
+   "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
+  },
+  "condition:hail:duration": {
+   "disposition": "unreachable_justified",
+   "fp": "val:5",
+   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+  },
+  "condition:hail:durationCallback": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:de12985a:durationCallback(source, effect) { if (source?.hasItem(\"icyrock\")) { return 8; } return 5; }",
+   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+  },
+  "condition:hail:onFieldEnd": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:9dc7d496:onFieldEnd() { this.add(\"-weather\", \"none\"); }",
+   "reason": "weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end"
+  },
+  "condition:hail:onFieldResidual": {
+   "disposition": "implemented",
+   "fp": "fn:37efead8:onFieldResidual() { this.add(\"-weather\", \"Hail\", \"[upkeep]\"); if (this.field.isWeather(\"hail\")) this.eachEvent(\"Weather\"",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the upkeep + effective-weather-GATED eachEvent(Weather) chip shuffle (a negater silences it)"
+  },
+  "condition:hail:onFieldResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:8",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the upkeep + effective-weather-GATED eachEvent(Weather) chip shuffle (a negater silences it) — (order metadata of the sibling onFieldResidual handler)"
+  },
+  "condition:hail:onFieldStart": {
+   "disposition": "implemented",
+   "fp": "fn:a2af3ee7:onFieldStart(field, source, effect) { if (effect?.effectType === \"Ability\") { if (this.gen <= 5) this.effectState.durati",
+   "anchor": "event.rs::run_switch",
+   "reason": "the ability-sourced weather set (permanent) + |-weather| line"
+  },
+  "condition:hail:onWeather": {
+   "disposition": "implemented",
+   "fp": "fn:257afca3:onWeather(target) { this.damage(target.baseMaxhp / 16); }",
+   "anchor": "turn.rs::weather_immune",
+   "reason": "the maxhp/16 weather chip (typed + Sand Veil immunities folded)"
+  },
+  "condition:leechseed:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:d527ddb8:onResidual(pokemon) { const target = this.getAtSlot(pokemon.volatiles[\"leechseed\"].sourceSlot); if (!target || target.fa",
+   "anchor": "turn.rs::apply_leech_seed",
+   "reason": "the order-10 subOrder-5 drain/heal residual"
+  },
+  "condition:leechseed:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_leech_seed",
+   "reason": "the order-10 subOrder-5 drain/heal residual — (order metadata of the sibling onResidual handler)"
+  },
+  "condition:leechseed:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "turn.rs::apply_leech_seed",
+   "reason": "the order-10 subOrder-5 drain/heal residual — (order metadata of the sibling onResidual handler)"
+  },
+  "condition:leechseed:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:cbcbef24:onStart(target) { this.add(\"-start\", target, \"move: Leech Seed\"); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the |-start|<mon>|move: Leech Seed line — EMITTED at the plant (gen3_protocol_phase3_v1, byte-verified vs the leechseed_splash_payday capture)"
+  },
+  "condition:par:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:a6d16ff1:onBeforeMove(pokemon) { if (!pokemon.hasAbility(\"magicguard\") && this.randomChance(1, 4)) { this.add(\"cant\", pokemon, \"p",
+   "anchor": "turn.rs::run_move",
+   "reason": "the priority-1 full-para randomChance(1,4) (magicguard is gen4-only)"
+  },
+  "condition:par:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::run_move",
+   "reason": "the priority-1 full-para randomChance(1,4) (magicguard is gen4-only) — (order metadata of the sibling onBeforeMove handler)"
+  },
+  "condition:par:onModifySpe": {
+   "disposition": "implemented",
+   "fp": "fn:7fd90253:onModifySpe(spe, pokemon) { if (!pokemon.hasAbility(\"quickfeet\")) { return this.chainModify(0.25); } return spe; }",
+   "anchor": "turn.rs::effective_speed",
+   "reason": "the ×0.25 paralysis speed fold (quickfeet is gen4-only)"
+  },
+  "condition:par:onModifySpePriority": {
+   "disposition": "implemented",
+   "fp": "val:-101",
+   "anchor": "turn.rs::effective_speed",
+   "reason": "the ×0.25 paralysis speed fold (quickfeet is gen4-only) — (order metadata of the sibling onModifySpe handler)"
+  },
+  "condition:par:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:6d079a78:onStart(target, source, sourceEffect) { if (sourceEffect && sourceEffect.effectType === \"Ability\") { this.add(\"-status\",",
+   "anchor": "turn.rs::try_set_status",
+   "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
+  },
+  "condition:protect:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "state.rs::protected",
+   "reason": "the duration-1 volatile — cleared at turn top"
+  },
+  "condition:protect:onStart": {
+   "disposition": "noop_justified",
+   "fp": "fn:6e23d167:onStart(target) { this.add(\"-singleturn\", target, \"Protect\"); }",
+   "reason": "display-only |-singleturn| Protect line"
+  },
+  "condition:protect:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:a9259791:onTryHit(target, source, move) { if (this.checkMoveBypassesProtect(move, source, target)) return; this.add(\"-activate\", ",
+   "anchor": "turn.rs::protect_blocks",
+   "reason": "the priority-3 TryHit block (after the attacker's accuracy roll)"
+  },
+  "condition:protect:onTryHitPriority": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "turn.rs::protect_blocks",
+   "reason": "the priority-3 TryHit block (after the attacker's accuracy roll) — (order metadata of the sibling onTryHit handler)"
+  },
+  "condition:psn:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:bf41b8fb:onResidual(pokemon) { this.damage(pokemon.baseMaxhp / 8); }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the maxhp/8 status DoT at order 10 subOrder 6"
+  },
+  "condition:psn:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the maxhp/8 status DoT at order 10 subOrder 6 — (order metadata of the sibling onResidual handler)"
+  },
+  "condition:psn:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:6",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the maxhp/8 status DoT at order 10 subOrder 6 — (order metadata of the sibling onResidual handler)"
+  },
+  "condition:psn:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:e395633c:onStart(target, source, sourceEffect) { if (sourceEffect && sourceEffect.effectType === \"Ability\") { this.add(\"-status\",",
+   "anchor": "turn.rs::try_set_status",
+   "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
+  },
+  "condition:raindance:duration": {
+   "disposition": "unreachable_justified",
+   "fp": "val:5",
+   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+  },
+  "condition:raindance:durationCallback": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:6d9de025:durationCallback(source, effect) { if (source?.hasItem(\"damprock\")) { return 8; } return 5; }",
+   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+  },
+  "condition:raindance:onFieldEnd": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:9dc7d496:onFieldEnd() { this.add(\"-weather\", \"none\"); }",
+   "reason": "weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end"
+  },
+  "condition:raindance:onFieldResidual": {
+   "disposition": "implemented",
+   "fp": "fn:fcfce89e:onFieldResidual() { this.add(\"-weather\", \"RainDance\", \"[upkeep]\"); this.eachEvent(\"Weather\"); }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the UNCONDITIONAL eachEvent(Weather) tie-shuffle (the sun_rain_weather_turn_tie fix — fired off RAW weather)"
+  },
+  "condition:raindance:onFieldResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:8",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the UNCONDITIONAL eachEvent(Weather) tie-shuffle (the sun_rain_weather_turn_tie fix — fired off RAW weather) — (order metadata of the sibling onFieldResidual handler)"
+  },
+  "condition:raindance:onFieldStart": {
+   "disposition": "implemented",
+   "fp": "fn:2e98845f:onFieldStart(field, source, effect) { if (effect?.effectType === \"Ability\") { if (this.gen <= 5) this.effectState.durati",
+   "anchor": "event.rs::run_switch",
+   "reason": "the ability-sourced weather set (permanent) + |-weather| line"
+  },
+  "condition:raindance:onWeatherModifyDamage": {
+   "disposition": "implemented",
+   "fp": "fn:29e062fd:onWeatherModifyDamage(damage, attacker, defender, move) { if (defender.effectiveWeather() !== \"raindance\") return; if (m",
+   "anchor": "damage.rs::weather",
+   "reason": "the Fire/Water ×1.5/×0.5 weather damage folds (hydrosteam is gen9 cruft)"
+  },
+  "condition:sandstorm:duration": {
+   "disposition": "unreachable_justified",
+   "fp": "val:5",
+   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+  },
+  "condition:sandstorm:durationCallback": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:44452f71:durationCallback(source, effect) { if (source?.hasItem(\"smoothrock\")) { return 8; } return 5; }",
+   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+  },
+  "condition:sandstorm:onFieldEnd": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:9dc7d496:onFieldEnd() { this.add(\"-weather\", \"none\"); }",
+   "reason": "weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end"
+  },
+  "condition:sandstorm:onFieldResidual": {
+   "disposition": "implemented",
+   "fp": "fn:9f77ac74:onFieldResidual() { this.add(\"-weather\", \"Sandstorm\", \"[upkeep]\"); if (this.field.isWeather(\"sandstorm\")) this.eachEvent",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the upkeep + effective-weather-GATED eachEvent(Weather) chip shuffle (a negater silences it)"
+  },
+  "condition:sandstorm:onFieldResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:8",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the upkeep + effective-weather-GATED eachEvent(Weather) chip shuffle (a negater silences it) — (order metadata of the sibling onFieldResidual handler)"
+  },
+  "condition:sandstorm:onFieldStart": {
+   "disposition": "implemented",
+   "fp": "fn:692d5e7b:onFieldStart(field, source, effect) { if (effect?.effectType === \"Ability\") { if (this.gen <= 5) this.effectState.durati",
+   "anchor": "event.rs::run_switch",
+   "reason": "the ability-sourced weather set (permanent) + |-weather| line"
+  },
+  "condition:sandstorm:onModifySpDPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:10",
+   "reason": "gen4+ SpD-boost priority residue — no onModifySpD fn resolves in gen3"
+  },
+  "condition:sandstorm:onWeather": {
+   "disposition": "implemented",
+   "fp": "fn:257afca3:onWeather(target) { this.damage(target.baseMaxhp / 16); }",
+   "anchor": "turn.rs::weather_immune",
+   "reason": "the maxhp/16 weather chip (typed + Sand Veil immunities folded)"
+  },
+  "condition:sleepclausemod:onBegin": {
+   "disposition": "noop_justified",
+   "fp": "fn:66c5381d:onBegin() { this.add(\"rule\", \"Sleep Clause Mod: Limit one foe put to sleep\"); }",
+   "reason": "display-only: the |rule| banner line at battle start"
+  },
+  "condition:sleepclausemod:onSetStatus": {
+   "disposition": "implemented",
+   "fp": "fn:33d295fc:onSetStatus(status, target, source) { if (source?.isAlly(target)) { return; } if (status.id === \"slp\") { for (const poke",
+   "anchor": "turn.rs::side_has_sleeper",
+   "reason": "the clause block inside the drawn SetStatus event (clause formats only)"
+  },
+  "condition:slp:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:605c2352:onBeforeMove(pokemon, target, move) { if (pokemon.hasAbility(\"earlybird\")) { pokemon.statusState.time--; } pokemon.statu",
+   "anchor": "turn.rs::run_move",
+   "reason": "the draw-free counter decrement + wake; Early Bird double-decrements (earlybird read inline)"
+  },
+  "condition:slp:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::run_move",
+   "reason": "the draw-free counter decrement + wake; Early Bird double-decrements (earlybird read inline) — (order metadata of the sibling onBeforeMove handler)"
+  },
+  "condition:slp:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:a1388940:onStart(target, source, sourceEffect) { if (sourceEffect && sourceEffect.effectType === \"Move\") { this.add(\"-status\", ta",
+   "anchor": "turn.rs::try_set_status",
+   "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
+  },
+  "condition:slp:onSwitchIn": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:1d0a77fd:onSwitchIn(target) { this.effectState.time += this.effectState.skippedTime; this.effectState.skippedTime = 0; }",
+   "reason": "restores skippedTime — skippedTime is only ever incremented by a `sleepUsable` move (Snore / Sleep Talk, both MOVE_ID_BLOCKLISTed), so it is always 0"
+  },
+  "condition:spikes:onEntryHazard": {
+   "disposition": "implemented",
+   "fp": "fn:2baa157a:onEntryHazard(pokemon) { if (!pokemon.isGrounded() || pokemon.hasItem(\"heavydutyboots\")) return; const damageAmounts = [",
+   "anchor": "turn.rs::apply_entry_hazards",
+   "reason": "the grounded switch-in chip ([_,3,4,6][layers]·maxhp/24, floored, min 1) at the gen3 runSwitch EntryHazard"
+  },
+  "condition:spikes:onSideRestart": {
+   "disposition": "implemented",
+   "fp": "fn:fa0c6550:onSideRestart(side) { if (this.effectState.layers >= 3) return false; this.add(\"-sidestart\", side, \"Spikes\"); this.effec",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the layer set/increment (cap 3, a 4th FAILS) + |-sidestart| line — the spikes arm"
+  },
+  "condition:spikes:onSideStart": {
+   "disposition": "implemented",
+   "fp": "fn:cdada21b:onSideStart(side) { this.add(\"-sidestart\", side, \"Spikes\"); this.effectState.layers = 1; }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the layer set/increment (cap 3, a 4th FAILS) + |-sidestart| line — the spikes arm"
+  },
+  "condition:stall:counterMax": {
+   "disposition": "implemented",
+   "fp": "val:8",
+   "anchor": "state.rs::protect_counter",
+   "reason": "the gen3 stall counter 0→2→4→8 (counterMax 8) + duration-2 expiry (stall_duration)"
+  },
+  "condition:stall:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "state.rs::protect_counter",
+   "reason": "the gen3 stall counter 0→2→4→8 (counterMax 8) + duration-2 expiry (stall_duration)"
+  },
+  "condition:stall:onRestart": {
+   "disposition": "implemented",
+   "fp": "fn:f043508f:onRestart() { if (this.effectState.counter < this.effect.counterMax) { this.effectState.counter *= 2; } this.effectState",
+   "anchor": "state.rs::protect_counter",
+   "reason": "the gen3 stall counter 0→2→4→8 (counterMax 8) + duration-2 expiry (stall_duration)"
+  },
+  "condition:stall:onStallMove": {
+   "disposition": "implemented",
+   "fp": "fn:f9351da7:onStallMove() { const counter = this.effectState.counter || 1; if (counter >= 256) { return this.randomChance(1, 2 ** 32",
+   "anchor": "turn.rs::run_protect",
+   "reason": "the consecutive-protect randomChance(1, counter); the counter>=256 branch is unreachable (counterMax 8)"
+  },
+  "condition:stall:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:37b7c571:onStart() { this.effectState.counter = 2; }",
+   "anchor": "state.rs::protect_counter",
+   "reason": "the gen3 stall counter 0→2→4→8 (counterMax 8) + duration-2 expiry (stall_duration)"
+  },
+  "condition:substitute:onEnd": {
+   "disposition": "noop_justified",
+   "fp": "fn:55398a21:onEnd(target) { this.add(\"-end\", target, \"Substitute\"); }",
+   "reason": "display-only |-end| Substitute line (the port emits it at the break)"
+  },
+  "condition:substitute:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:4c69fbe8:onStart(target, source, effect) { if (effect?.id === \"shedtail\") { this.add(\"-start\", target, \"Substitute\", \"[from] move",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the sub create (maxhp/4 cost, draw-free); the shedtail branch is gen9 cruft"
+  },
+  "condition:substitute:onTryPrimaryHit": {
+   "disposition": "implemented",
+   "fp": "fn:c4020290:onTryPrimaryHit(target, source, move) { if (target === source || move.flags[\"bypasssub\"]) { return; } let damage = this.",
+   "anchor": "turn.rs::absorb_into_sub",
+   "reason": "the sub absorb / break / no-carry + blocked status/stat-drop"
+  },
+  "condition:substitute:onTryPrimaryHitPriority": {
+   "disposition": "implemented",
+   "fp": "val:-1",
+   "anchor": "turn.rs::absorb_into_sub",
+   "reason": "the sub absorb / break / no-carry + blocked status/stat-drop — (order metadata of the sibling onTryPrimaryHit handler)"
+  },
+  "condition:sunnyday:duration": {
+   "disposition": "unreachable_justified",
+   "fp": "val:5",
+   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+  },
+  "condition:sunnyday:durationCallback": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:2779616d:durationCallback(source, effect) { if (source?.hasItem(\"heatrock\")) { return 8; } return 5; }",
+   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+  },
+  "condition:sunnyday:onFieldEnd": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:9dc7d496:onFieldEnd() { this.add(\"-weather\", \"none\"); }",
+   "reason": "weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end"
+  },
+  "condition:sunnyday:onFieldResidual": {
+   "disposition": "implemented",
+   "fp": "fn:d83ce1ee:onFieldResidual() { this.add(\"-weather\", \"SunnyDay\", \"[upkeep]\"); this.eachEvent(\"Weather\"); }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the UNCONDITIONAL eachEvent(Weather) tie-shuffle (the sun_rain_weather_turn_tie fix — fired off RAW weather)"
+  },
+  "condition:sunnyday:onFieldResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:8",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the UNCONDITIONAL eachEvent(Weather) tie-shuffle (the sun_rain_weather_turn_tie fix — fired off RAW weather) — (order metadata of the sibling onFieldResidual handler)"
+  },
+  "condition:sunnyday:onFieldStart": {
+   "disposition": "implemented",
+   "fp": "fn:c327f383:onFieldStart(battle, source, effect) { if (effect?.effectType === \"Ability\") { if (this.gen <= 5) this.effectState.durat",
+   "anchor": "event.rs::run_switch",
+   "reason": "the ability-sourced weather set (permanent) + |-weather| line"
+  },
+  "condition:sunnyday:onImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:041698eb:onImmunity(type, pokemon) { if (pokemon.effectiveWeather() !== \"sunnyday\") return; if (type === \"frz\") return false; }",
+   "anchor": "turn.rs::try_set_status",
+   "reason": "the sun-freeze immunity gate (gen3_sun_freeze_immunity_v1, FZ1)"
+  },
+  "condition:sunnyday:onWeatherModifyDamage": {
+   "disposition": "implemented",
+   "fp": "fn:d5fa9857:onWeatherModifyDamage(damage, attacker, defender, move) { if (move.id === \"hydrosteam\" && attacker.effectiveWeather() ==",
+   "anchor": "damage.rs::weather",
+   "reason": "the Fire/Water ×1.5/×0.5 weather damage folds (hydrosteam is gen9 cruft)"
+  },
+  "condition:taunt:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "state.rs::taunt",
+   "reason": "the FIXED duration-2 taunt volatile (gen3_taunt_disable_v1); start/end lines emitted at the arm/expiry"
+  },
+  "condition:taunt:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:ea630d38:onBeforeMove(attacker, defender, move) { if (move.category === \"Status\") { this.add(\"cant\", attacker, \"move: Taunt\", mov",
+   "anchor": "turn.rs::run_move",
+   "reason": "the execution-time cant of a QUEUED status move"
+  },
+  "condition:taunt:onDisableMove": {
+   "disposition": "implemented",
+   "fp": "fn:8e1800e0:onDisableMove(pokemon) { for (const moveSlot of pokemon.moveSlots) { if (this.dex.moves.get(moveSlot.id).category === \"S",
+   "anchor": "turn.rs::move_usable",
+   "reason": "Status-category moves unselectable while taunted"
+  },
+  "condition:taunt:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:cc4636df:onEnd(target) { this.add(\"-end\", target, \"move: Taunt\", \"[silent]\"); }",
+   "anchor": "state.rs::taunt",
+   "reason": "the FIXED duration-2 taunt volatile (gen3_taunt_disable_v1); start/end lines emitted at the arm/expiry"
+  },
+  "condition:taunt:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the duration-bearing taunt volatile's residual TICK slot (order 10 subOrder 15 — the fieldEvent Residual duration decrement; taunt itself has no onResidual fn)"
+  },
+  "condition:taunt:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the duration-bearing taunt volatile's residual TICK slot (order 10 subOrder 15 — the fieldEvent Residual duration decrement; taunt itself has no onResidual fn)"
+  },
+  "condition:taunt:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:66b572fc:onStart(target) { this.add(\"-start\", target, \"move: Taunt\"); }",
+   "anchor": "state.rs::taunt",
+   "reason": "the FIXED duration-2 taunt volatile (gen3_taunt_disable_v1); start/end lines emitted at the arm/expiry"
+  },
+  "condition:tox:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:43b4df96:onResidual(pokemon) { if (this.effectState.stage < 15) { this.effectState.stage++; } this.damage(this.clampIntRange(poke",
+   "anchor": "turn.rs::tox_stage",
+   "reason": "the ramping stage chip at order 10 subOrder 6"
+  },
+  "condition:tox:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::tox_stage",
+   "reason": "the ramping stage chip at order 10 subOrder 6 — (order metadata of the sibling onResidual handler)"
+  },
+  "condition:tox:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:6",
+   "anchor": "turn.rs::tox_stage",
+   "reason": "the ramping stage chip at order 10 subOrder 6 — (order metadata of the sibling onResidual handler)"
+  },
+  "condition:tox:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:fcbf9676:onStart(target, source, sourceEffect) { this.effectState.stage = 0; if (sourceEffect && sourceEffect.id === \"toxicorb\") ",
+   "anchor": "turn.rs::try_set_status",
+   "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
+  },
+  "condition:tox:onSwitchIn": {
+   "disposition": "implemented",
+   "fp": "fn:192a07e2:onSwitchIn() { this.effectState.stage = 0; }",
+   "anchor": "turn.rs::stage_reset",
+   "reason": "the runSwitch-time toxic stage reset (TX pins)"
+  },
+  "condition:toxic:duration": {
+   "disposition": "unreachable_justified",
+   "fp": "val:1",
+   "reason": "the gen6+ poison-type-Toxic never-miss volatile — NOTHING in the gen3 resolution adds it (the resolved gen3 toxic move carries no handler referencing it)"
+  },
+  "condition:toxic:onSourceAccuracy": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:b1afeec2:onSourceAccuracy(accuracy, target, source, move) { if (move && source === this.effectState.target) return true; }",
+   "reason": "the gen6+ poison-type-Toxic never-miss volatile — NOTHING in the gen3 resolution adds it (the resolved gen3 toxic move carries no handler referencing it)"
+  },
+  "condition:toxic:onSourceInvulnerability": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:35c357bd:onSourceInvulnerability(target, source, move) { if (move && source === this.effectState.target) return 0; }",
+   "reason": "the gen6+ poison-type-Toxic never-miss volatile — NOTHING in the gen3 resolution adds it (the resolved gen3 toxic move carries no handler referencing it)"
+  },
+  "condition:toxic:onSourceInvulnerabilityPriority": {
+   "disposition": "unreachable_justified",
+   "fp": "val:1",
+   "reason": "the gen6+ poison-type-Toxic never-miss volatile — NOTHING in the gen3 resolution adds it (the resolved gen3 toxic move carries no handler referencing it) — (order metadata of the sibling onSourceInvulnerability handler)"
+  },
+  "item:aguavberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:833097ac:onEat(pokemon) { this.heal(pokemon.baseMaxhp / 8); if (pokemon.getNature().minus === \"spd\") { pokemon.addVolatile(\"confu",
+   "anchor": "turn.rs::BE::Heal",
+   "reason": "the heal-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:aguavberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:74d8f67b:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 2) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:aguavberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:aguavberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:aguavberry:onTryEatItem": {
+   "disposition": "noop_justified",
+   "fp": "fn:74d8d82a:onTryEatItem(item, pokemon) { if (!this.runEvent(\"TryHeal\", pokemon, null, this.effect, pokemon.baseMaxhp / 3)) return f",
+   "reason": "the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds)"
+  },
+  "item:apicotberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:338b4359:onEat(pokemon) { this.boost({ spd: 1 }); }",
+   "anchor": "turn.rs::BE::Pinch",
+   "reason": "the pinch-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:apicotberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:11035fa9:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 4) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:apicotberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:apicotberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:aspearberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:44c60366:onEat(pokemon) { if (pokemon.status === \"frz\") { pokemon.cureStatus(); } }",
+   "anchor": "turn.rs::berry_cure",
+   "reason": "the cure-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:aspearberry:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:6a0a84c9:onUpdate(pokemon) { if (pokemon.status === \"frz\") { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::berry_on_update",
+   "reason": "the Update-site eat (cure/PP berries)"
+  },
+  "item:blackbelt:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:blackbelt:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:9f12af94:onModifyAtk(atk, user, target, move) { if (move?.type === \"Fighting\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:blackbelt:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:blackglasses:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:blackglasses:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:3e4e740e:onModifySpA(spa, user, target, move) { if (move?.type === \"Dark\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:blackglasses:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:brightpowder:onModifyAccuracy": {
+   "disposition": "implemented",
+   "fp": "fn:49bf927a:onModifyAccuracy(accuracy) { if (typeof accuracy !== \"number\") return; this.debug(\"brightpowder - decreasing accuracy\");",
+   "anchor": "turn.rs::effective_accuracy",
+   "reason": "the DIRECT defender acc multiply (gen3_accuracy_pipeline_v1, AC3)"
+  },
+  "item:brightpowder:onModifyAccuracyPriority": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "turn.rs::effective_accuracy",
+   "reason": "the DIRECT defender acc multiply (gen3_accuracy_pipeline_v1, AC3) — (order metadata of the sibling onModifyAccuracy handler)"
+  },
+  "item:charcoal:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:charcoal:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:65eb384a:onModifySpA(spa, user, target, move) { if (move?.type === \"Fire\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:charcoal:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:cheriberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:d2e7c62b:onEat(pokemon) { if (pokemon.status === \"par\") { pokemon.cureStatus(); } }",
+   "anchor": "turn.rs::berry_cure",
+   "reason": "the cure-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:cheriberry:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:0850820e:onUpdate(pokemon) { if (pokemon.status === \"par\") { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::berry_on_update",
+   "reason": "the Update-site eat (cure/PP berries)"
+  },
+  "item:chestoberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:4fd0a0e5:onEat(pokemon) { if (pokemon.status === \"slp\") { pokemon.cureStatus(); } }",
+   "anchor": "turn.rs::berry_cure",
+   "reason": "the cure-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:chestoberry:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:d3014c58:onUpdate(pokemon) { if (pokemon.status === \"slp\") { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::berry_on_update",
+   "reason": "the Update-site eat (cure/PP berries)"
+  },
+  "item:choiceband:onAfterMove": {
+   "disposition": "implemented",
+   "fp": "fn:d7de6873:onAfterMove(pokemon) { pokemon.addVolatile(\"choicelock\"); }",
+   "anchor": "state.rs::choice_locked_move",
+   "reason": "the post-move choicelock arm"
+  },
+  "item:choiceband:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:d5f3a65c:onModifyAtk(atk, pokemon) { if (pokemon.volatiles[\"dynamax\"]) return; return this.chainModify(1.5); }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the species-gated offensive stat chain"
+  },
+  "item:choiceband:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the species-gated offensive stat chain"
+  },
+  "item:deepseascale:onModifySpD": {
+   "disposition": "implemented",
+   "fp": "fn:df793b3a:onModifySpD(spd, pokemon) { if (pokemon.species.name === \"Clamperl\") { return this.chainModify(2); } }",
+   "anchor": "turn.rs::resolve_def_stat_mods",
+   "reason": "the species-gated defensive stat chain"
+  },
+  "item:deepseascale:onModifySpDPriority": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::resolve_def_stat_mods",
+   "reason": "the species-gated defensive stat chain"
+  },
+  "item:deepseatooth:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:f6eb970a:onModifySpA(spa, pokemon) { if (pokemon.species.name === \"Clamperl\") { return this.chainModify(2); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the species-gated offensive stat chain"
+  },
+  "item:deepseatooth:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the species-gated offensive stat chain"
+  },
+  "item:dragonfang:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:dragonfang:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:d8390919:onModifySpA(spa, user, target, move) { if (move?.type === \"Dragon\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:dragonfang:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:figyberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:d8cc648b:onEat(pokemon) { this.heal(pokemon.baseMaxhp / 8); if (pokemon.getNature().minus === \"atk\") { pokemon.addVolatile(\"confu",
+   "anchor": "turn.rs::BE::Heal",
+   "reason": "the heal-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:figyberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:74d8f67b:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 2) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:figyberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:figyberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:figyberry:onTryEatItem": {
+   "disposition": "noop_justified",
+   "fp": "fn:74d8d82a:onTryEatItem(item, pokemon) { if (!this.runEvent(\"TryHeal\", pokemon, null, this.effect, pokemon.baseMaxhp / 3)) return f",
+   "reason": "the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds)"
+  },
+  "item:focusband:onDamage": {
+   "disposition": "implemented",
+   "fp": "fn:184b7d78:onDamage(damage, target, source, effect) { if (this.randomChance(1, 10) && damage >= target.hp && effect && effect.effec",
+   "anchor": "turn.rs::focus_band_damage",
+   "reason": "the randomChance(1,10) on EVERY Damage event + survive-at-1 on a lethal MOVE hit"
+  },
+  "item:focusband:onDamagePriority": {
+   "disposition": "implemented",
+   "fp": "val:-40",
+   "anchor": "turn.rs::focus_band_damage",
+   "reason": "the randomChance(1,10) on EVERY Damage event + survive-at-1 on a lethal MOVE hit — (order metadata of the sibling onDamage handler)"
+  },
+  "item:ganlonberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:ac84aa0b:onEat(pokemon) { this.boost({ def: 1 }); }",
+   "anchor": "turn.rs::BE::Pinch",
+   "reason": "the pinch-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:ganlonberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:11035fa9:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 4) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:ganlonberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:ganlonberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:hardstone:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:hardstone:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:5f56604b:onModifyAtk(atk, user, target, move) { if (move?.type === \"Rock\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:hardstone:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:iapapaberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:b7315776:onEat(pokemon) { this.heal(pokemon.baseMaxhp / 8); if (pokemon.getNature().minus === \"def\") { pokemon.addVolatile(\"confu",
+   "anchor": "turn.rs::BE::Heal",
+   "reason": "the heal-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:iapapaberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:74d8f67b:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 2) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:iapapaberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:iapapaberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:iapapaberry:onTryEatItem": {
+   "disposition": "noop_justified",
+   "fp": "fn:74d8d82a:onTryEatItem(item, pokemon) { if (!this.runEvent(\"TryHeal\", pokemon, null, this.effect, pokemon.baseMaxhp / 3)) return f",
+   "reason": "the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds)"
+  },
+  "item:kingsrock:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:915e2237:onModifyMove(move) { const affectedByKingsRock = [ \"aerialace\", \"aeroblast\", \"aircutter\", \"armthrust\", \"barrage\", \"beatu",
+   "anchor": "turn.rs::flinch_secondary",
+   "reason": "the appended trailing 10% flinch secondary (execution-derived move list)"
+  },
+  "item:kingsrock:onModifyMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:-1",
+   "anchor": "turn.rs::flinch_secondary",
+   "reason": "the appended trailing 10% flinch secondary (execution-derived move list) — (order metadata of the sibling onModifyMove handler)"
+  },
+  "item:lansatberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:89bc2ac4:onEat(pokemon) { pokemon.addVolatile(\"focusenergy\"); }",
+   "anchor": "turn.rs::BE::Pinch",
+   "reason": "the pinch-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:lansatberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:11035fa9:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 4) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:lansatberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:lansatberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:laxincense:onModifyAccuracy": {
+   "disposition": "implemented",
+   "fp": "fn:d346a95e:onModifyAccuracy(accuracy) { if (typeof accuracy !== \"number\") return; this.debug(\"lax incense - decreasing accuracy\"); ",
+   "anchor": "turn.rs::effective_accuracy",
+   "reason": "the DIRECT defender acc multiply (gen3_accuracy_pipeline_v1, AC3)"
+  },
+  "item:laxincense:onModifyAccuracyPriority": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "turn.rs::effective_accuracy",
+   "reason": "the DIRECT defender acc multiply (gen3_accuracy_pipeline_v1, AC3) — (order metadata of the sibling onModifyAccuracy handler)"
+  },
+  "item:leftovers:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:8b0f1d3d:onResidual(pokemon) { this.heal(pokemon.baseMaxhp / 16); }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the maxhp/16 heal at order 10 subOrder 4"
+  },
+  "item:leftovers:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the maxhp/16 heal at order 10 subOrder 4 — (order metadata of the sibling onResidual handler)"
+  },
+  "item:leftovers:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the maxhp/16 heal at order 10 subOrder 4 — (order metadata of the sibling onResidual handler)"
+  },
+  "item:leppaberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:c18554a2:onEat(pokemon) { const moveSlot = pokemon.moveSlots.find((move) => move.pp === 0) || pokemon.moveSlots.find((move) => mo",
+   "anchor": "turn.rs::BE::PpRestore",
+   "reason": "the pp-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:leppaberry:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:4a3f01df:onUpdate(pokemon) { if (!pokemon.hp) return; if (pokemon.moveSlots.some((move) => move.pp === 0)) { pokemon.eatItem(); }",
+   "anchor": "turn.rs::berry_on_update",
+   "reason": "the Update-site eat (cure/PP berries)"
+  },
+  "item:liechiberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:a36c1430:onEat(pokemon) { this.boost({ atk: 1 }); }",
+   "anchor": "turn.rs::BE::Pinch",
+   "reason": "the pinch-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:liechiberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:11035fa9:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 4) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:liechiberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:liechiberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:lightball:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the species-gated offensive stat chain"
+  },
+  "item:lightball:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:36cf2713:onModifySpA(spa, pokemon) { if (pokemon.species.name === \"Pikachu\") { return this.chainModify(2); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the species-gated offensive stat chain"
+  },
+  "item:lightball:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the species-gated offensive stat chain"
+  },
+  "item:lumberry:onAfterSetStatus": {
+   "disposition": "implemented",
+   "fp": "fn:ca2588d8:onAfterSetStatus(status, pokemon) { pokemon.eatItem(); }",
+   "anchor": "turn.rs::try_set_status",
+   "reason": "LUM's IMMEDIATE eat (priority -1, AFTER Synchronize) at the setStatus tail"
+  },
+  "item:lumberry:onAfterSetStatusPriority": {
+   "disposition": "implemented",
+   "fp": "val:-1",
+   "anchor": "turn.rs::try_set_status",
+   "reason": "LUM's IMMEDIATE eat (priority -1, AFTER Synchronize) at the setStatus tail — (order metadata of the sibling onAfterSetStatus handler)"
+  },
+  "item:lumberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:a8dac035:onEat(pokemon) { pokemon.cureStatus(); pokemon.removeVolatile(\"confusion\"); }",
+   "anchor": "turn.rs::berry_cure",
+   "reason": "the cure-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:lumberry:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:fa80f472:onUpdate(pokemon) { if (pokemon.status || pokemon.volatiles[\"confusion\"]) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::berry_on_update",
+   "reason": "the Update-site eat (cure/PP berries)"
+  },
+  "item:magnet:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:magnet:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:d3f5743d:onModifySpA(spa, user, target, move) { if (move?.type === \"Electric\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:magnet:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:magoberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:3d57df23:onEat(pokemon) { this.heal(pokemon.baseMaxhp / 8); if (pokemon.getNature().minus === \"spe\") { pokemon.addVolatile(\"confu",
+   "anchor": "turn.rs::BE::Heal",
+   "reason": "the heal-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:magoberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:74d8f67b:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 2) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:magoberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:magoberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:magoberry:onTryEatItem": {
+   "disposition": "noop_justified",
+   "fp": "fn:74d8d82a:onTryEatItem(item, pokemon) { if (!this.runEvent(\"TryHeal\", pokemon, null, this.effect, pokemon.baseMaxhp / 3)) return f",
+   "reason": "the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds)"
+  },
+  "item:metalcoat:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:metalcoat:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:87c2fc03:onModifyAtk(atk, user, target, move) { if (move?.type === \"Steel\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:metalcoat:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:metalpowder:onModifyDef": {
+   "disposition": "implemented",
+   "fp": "fn:11ac2fad:onModifyDef(def, pokemon) { if (pokemon.species.name === \"Ditto\" && !pokemon.transformed) { return this.chainModify(2); ",
+   "anchor": "turn.rs::resolve_def_stat_mods",
+   "reason": "the species-gated defensive stat chain"
+  },
+  "item:metalpowder:onModifyDefPriority": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::resolve_def_stat_mods",
+   "reason": "the species-gated defensive stat chain"
+  },
+  "item:miracleseed:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:miracleseed:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:6a3583ba:onModifySpA(spa, user, target, move) { if (move?.type === \"Grass\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:miracleseed:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:mysticwater:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:mysticwater:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:6c749bf3:onModifySpA(spa, user, target, move) { if (move?.type === \"Water\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:mysticwater:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:nevermeltice:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:nevermeltice:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:c10f9ad7:onModifySpA(spa, user, target, move) { if (move?.type === \"Ice\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:nevermeltice:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:oddincense:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:98dbb45a:onBasePower(basePower, user, target, move) { if (move.type === \"Psychic\") { return this.chainModify([4915, 4096]); } }",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:oddincense:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:oranberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:83d28413:onEat(pokemon) { this.heal(10); }",
+   "anchor": "turn.rs::BE::Heal",
+   "reason": "the heal-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:oranberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:74d8f67b:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 2) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:oranberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:oranberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:oranberry:onTryEatItem": {
+   "disposition": "noop_justified",
+   "fp": "fn:aeb986a7:onTryEatItem(item, pokemon) { if (!this.runEvent(\"TryHeal\", pokemon, null, this.effect, 10)) return false; }",
+   "reason": "the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds)"
+  },
+  "item:pechaberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:b1fd5ebc:onEat(pokemon) { if (pokemon.status === \"psn\" || pokemon.status === \"tox\") { pokemon.cureStatus(); } }",
+   "anchor": "turn.rs::berry_cure",
+   "reason": "the cure-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:pechaberry:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:719f6533:onUpdate(pokemon) { if (pokemon.status === \"psn\" || pokemon.status === \"tox\") { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::berry_on_update",
+   "reason": "the Update-site eat (cure/PP berries)"
+  },
+  "item:persimberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:059b8bfb:onEat(pokemon) { pokemon.removeVolatile(\"confusion\"); }",
+   "anchor": "turn.rs::berry_cure",
+   "reason": "the cure-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:persimberry:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:7d304595:onUpdate(pokemon) { if (pokemon.volatiles[\"confusion\"]) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::berry_on_update",
+   "reason": "the Update-site eat (cure/PP berries)"
+  },
+  "item:petayaberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:41f52e24:onEat(pokemon) { this.boost({ spa: 1 }); }",
+   "anchor": "turn.rs::BE::Pinch",
+   "reason": "the pinch-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:petayaberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:11035fa9:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 4) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:petayaberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:petayaberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:pinkbow:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:e95a691a:onBasePower(basePower, user, target, move) { if (move.type === \"Normal\") { return basePower * 1.1; } }",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:poisonbarb:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:poisonbarb:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:056fbb2a:onModifyAtk(atk, user, target, move) { if (move?.type === \"Poison\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:poisonbarb:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:polkadotbow:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:e95a691a:onBasePower(basePower, user, target, move) { if (move.type === \"Normal\") { return basePower * 1.1; } }",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:quickclaw:onFractionalPriorityPriority": {
+   "disposition": "implemented",
+   "fp": "val:-2",
+   "anchor": "turn.rs::quick_claw",
+   "reason": "the gen3 item entry is a bare priority number — the randomChance(1,5) lives in the gen3 action scripts, modeled as the per-turn QC draw"
+  },
+  "item:rawstberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:ce5e557e:onEat(pokemon) { if (pokemon.status === \"brn\") { pokemon.cureStatus(); } }",
+   "anchor": "turn.rs::berry_cure",
+   "reason": "the cure-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:rawstberry:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:6610b499:onUpdate(pokemon) { if (pokemon.status === \"brn\") { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::berry_on_update",
+   "reason": "the Update-site eat (cure/PP berries)"
+  },
+  "item:rockincense:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:503223e0:onBasePower(basePower, user, target, move) { if (move.type === \"Rock\") { return this.chainModify([4915, 4096]); } }",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:rockincense:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:roseincense:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:7381bd6d:onBasePower(basePower, user, target, move) { if (move.type === \"Grass\") { return this.chainModify([4915, 4096]); } }",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:roseincense:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:salacberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:870404d8:onEat(pokemon) { this.boost({ spe: 1 }); }",
+   "anchor": "turn.rs::BE::Pinch",
+   "reason": "the pinch-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:salacberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:11035fa9:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 4) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:salacberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:salacberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:seaincense:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:seaincense:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:d6c7cdcf:onModifySpA(spa, user, target, move) { if (move?.type === \"Water\") { return this.chainModify(1.05); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:seaincense:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:sharpbeak:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:sharpbeak:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:13f19625:onModifyAtk(atk, user, target, move) { if (move?.type === \"Flying\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:sharpbeak:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:silkscarf:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:silkscarf:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:e9490999:onModifyAtk(atk, user, target, move) { if (move?.type === \"Normal\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:silkscarf:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:silverpowder:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:silverpowder:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:3a2a0a6a:onModifyAtk(atk, user, target, move) { if (move?.type === \"Bug\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:silverpowder:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:sitrusberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:181446b1:onEat(pokemon) { this.heal(30); }",
+   "anchor": "turn.rs::BE::Heal",
+   "reason": "the heal-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:sitrusberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:74d8f67b:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 2) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:sitrusberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:sitrusberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:sitrusberry:onTryEatItem": {
+   "disposition": "noop_justified",
+   "fp": "fn:11801e43:onTryEatItem(item, pokemon) { if (!this.runEvent(\"TryHeal\", pokemon, null, this.effect, pokemon.baseMaxhp / 4)) return f",
+   "reason": "the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds)"
+  },
+  "item:softsand:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:softsand:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:631077b9:onModifyAtk(atk, user, target, move) { if (move?.type === \"Ground\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:softsand:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:souldew:onBasePowerPriority": {
+   "disposition": "noop_justified",
+   "fp": "val:15",
+   "reason": "base-data BP priority residue — Soul Dew's gen3 folds are the onModifySpA/onModifySpD stat chains; no onBasePower fn resolves"
+  },
+  "item:souldew:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:17468b08:onModifySpA(spa, pokemon) { if (pokemon.baseSpecies.num === 380 || pokemon.baseSpecies.num === 381) { return this.chainM",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the species-gated offensive stat chain"
+  },
+  "item:souldew:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the species-gated offensive stat chain"
+  },
+  "item:souldew:onModifySpD": {
+   "disposition": "implemented",
+   "fp": "fn:f782f018:onModifySpD(spd, pokemon) { if (pokemon.baseSpecies.num === 380 || pokemon.baseSpecies.num === 381) { return this.chainM",
+   "anchor": "turn.rs::resolve_def_stat_mods",
+   "reason": "the species-gated defensive stat chain"
+  },
+  "item:souldew:onModifySpDPriority": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::resolve_def_stat_mods",
+   "reason": "the species-gated defensive stat chain"
+  },
+  "item:spelltag:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:spelltag:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:12cef07f:onModifyAtk(atk, user, target, move) { if (move?.type === \"Ghost\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:spelltag:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:starfberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:6fe6199f:onEat(pokemon) { const stats = []; let stat; for (stat in pokemon.boosts) { if (stat !== \"accuracy\" && stat !== \"evasion",
+   "anchor": "turn.rs::BE::Pinch",
+   "reason": "the pinch-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:starfberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:11035fa9:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 4) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:starfberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:starfberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:thickclub:onModifyAtk": {
+   "disposition": "implemented",
+   "fp": "fn:43a78e97:onModifyAtk(atk, pokemon) { if (pokemon.species.name === \"Cubone\" || pokemon.species.name === \"Marowak\") { return this.c",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the species-gated offensive stat chain"
+  },
+  "item:thickclub:onModifyAtkPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the species-gated offensive stat chain"
+  },
+  "item:twistedspoon:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:twistedspoon:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:20395fb3:onModifySpA(spa, user, target, move) { if (move?.type === \"Psychic\") { return this.chainModify(1.1); } }",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:twistedspoon:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::resolve_atk_stat_mods",
+   "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:waveincense:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:08a3c9d2:onBasePower(basePower, user, target, move) { if (move.type === \"Water\") { return this.chainModify([4915, 4096]); } }",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:waveincense:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:15",
+   "anchor": "turn.rs::resolve_bp_mods",
+   "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:wikiberry:onEat": {
+   "disposition": "implemented",
+   "fp": "fn:db8e1ca7:onEat(pokemon) { this.heal(pokemon.baseMaxhp / 8); if (pokemon.getNature().minus === \"spa\") { pokemon.addVolatile(\"confu",
+   "anchor": "turn.rs::BE::Heal",
+   "reason": "the heal-berry eat effect (gen3_berry_trace_shedskin_v1)"
+  },
+  "item:wikiberry:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:74d8f67b:onResidual(pokemon) { if (pokemon.hp <= pokemon.maxhp / 2) { pokemon.eatItem(); } }",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6)"
+  },
+  "item:wikiberry:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:wikiberry:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::apply_berry_residual",
+   "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
+  },
+  "item:wikiberry:onTryEatItem": {
+   "disposition": "noop_justified",
+   "fp": "fn:74d8d82a:onTryEatItem(item, pokemon) { if (!this.runEvent(\"TryHeal\", pokemon, null, this.effect, pokemon.baseMaxhp / 3)) return f",
+   "reason": "the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds)"
+  },
+  "move:acid:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"boosts\":{\"def\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:acidarmor:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"def\":2}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:acidarmor:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:acidarmor:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:aerialace:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:aeroblast:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:agility:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"spe\":2}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:agility:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:agility:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:aircutter:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:amnesia:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"spd\":2}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:amnesia:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:amnesia:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:ancientpower:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"self\":{\"boosts\":{\"atk\":1,\"def\":1,\"spa\":1,\"spd\":1,\"spe\":1}}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:astonish:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:aurorabeam:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"boosts\":{\"atk\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:barrier:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"def\":2}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:barrier:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:barrier:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:bite:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:blazekick:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:blazekick:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:blizzard:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"frz\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:bodyslam:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"status\":\"par\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:boneclub:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:brickbreak:onTryHit": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:9f3bf201:onTryHit(target, source) { const foe = source.side.foe; foe.removeSideCondition(\"reflect\"); foe.removeSideCondition(\"lig",
+   "reason": "removes Reflect/Light Screen before the hit — the screens are unmodeled SIDE CONDITIONS no modeled move can set, so there is never a screen to break (the move's damaging path is fully modeled)"
+  },
+  "move:bubble:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"boosts\":{\"spe\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:bubblebeam:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"boosts\":{\"spe\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:bulkup:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":1,\"def\":1}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:bulkup:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:bulkup:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:calmmind:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"spa\":1,\"spd\":1}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:calmmind:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:calmmind:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:confusion:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"volatileStatus\":\"confusion\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:constrict:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"boosts\":{\"spe\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:cosmicpower:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"def\":1,\"spd\":1}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:cosmicpower:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:cosmicpower:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:crabhammer:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:crosschop:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:crunch:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":20,\"boosts\":{\"spd\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:crushclaw:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":50,\"boosts\":{\"def\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:detect:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:detect:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:detect:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:fd8966cf:onHit(pokemon) { pokemon.addVolatile(\"stall\"); }",
+   "anchor": "state.rs::protect_counter",
+   "reason": "the stall volatile (re)add on success"
+  },
+  "move:detect:onPrepareHit": {
+   "disposition": "implemented",
+   "fp": "fn:90156567:onPrepareHit(pokemon) { return !!this.queue.willAct() && this.runEvent(\"StallMove\", pokemon); }",
+   "anchor": "turn.rs::run_protect",
+   "reason": "the willAct + StallMove gate (first protect short-circuits draw-free)"
+  },
+  "move:detect:priority": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "turn.rs::move_priority",
+   "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:detect:stallingMove": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_protect",
+   "reason": "the protect/detect stall machinery"
+  },
+  "move:detect:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"protect\"",
+   "anchor": "turn.rs::run_protect"
+  },
+  "move:disable:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:disable:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:043c7017:onTryHit(target) { if (!target.lastMove || target.lastMove.isZOrMaxPowered || target.lastMove.isMax || target.lastMove.i",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the no-lastMove draw-free fail (gen3_taunt_disable_v1)"
+  },
+  "move:disable:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"disable\"",
+   "anchor": "state.rs::disable",
+   "reason": "the disable volatile (gen3_taunt_disable_v1)"
+  },
+  "move:dizzypunch:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":20,\"volatileStatus\":\"confusion\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:dragonbreath:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"status\":\"par\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:dragondance:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":1,\"spe\":1}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:dragondance:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:dragondance:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:dynamicpunch:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":100,\"volatileStatus\":\"confusion\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:ember:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:explosion:selfdestruct": {
+   "disposition": "implemented",
+   "fp": "val:\"always\"",
+   "anchor": "turn.rs::pending_explosion_self_ko",
+   "reason": "the pre-hit unconditional self-KO (gen3_explosion_v1)"
+  },
+  "move:extrasensory:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:extremespeed:priority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::move_priority",
+   "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:facade:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:3f28aa69:onBasePower(basePower, pokemon) { if (pokemon.status && pokemon.status !== \"slp\") { return this.chainModify(2); } }",
+   "anchor": "turn.rs::run_move",
+   "reason": "the ×2-when-statused BP chain member (gen3_facade_v1 — id-gated at the facade site)"
+  },
+  "move:feintattack:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:fireblast:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:firepunch:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:flamethrower:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:flamewheel:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:glare:status": {
+   "disposition": "implemented",
+   "fp": "val:\"par\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:grasswhistle:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:grasswhistle:status": {
+   "disposition": "implemented",
+   "fp": "val:\"slp\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:growth:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"spa\":1}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:growth:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:growth:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:harden:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"def\":1}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:harden:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:harden:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:headbutt:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:heatwave:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:highjumpkick:onMoveFail": {
+   "disposition": "implemented",
+   "fp": "fn:5859cdde:onMoveFail(target, source, move) { if (target.runImmunity(\"Fighting\")) { const damage = this.actions.getDamage(source, t",
+   "anchor": "turn.rs::apply_jump_kick_crash",
+   "reason": "the crash on miss/protect-block: getDamage-with-crit+roll halved, clamp [1, floor(target.maxhp/2)] (gen3_jump_kick_crash_v1 — the audit's HA1 fix)"
+  },
+  "move:howl:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":1}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:howl:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:howl:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:hyperfang:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:hypnosis:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:hypnosis:status": {
+   "disposition": "implemented",
+   "fp": "val:\"slp\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:icebeam:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"frz\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:icepunch:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"frz\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:icywind:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":100,\"boosts\":{\"spe\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:irondefense:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"def\":2}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:irondefense:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:irondefense:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:irontail:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"boosts\":{\"def\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:jumpkick:onMoveFail": {
+   "disposition": "implemented",
+   "fp": "fn:6a0103c4:onMoveFail(target, source, move) { if (target.runImmunity(\"Fighting\")) { const damage = this.actions.getDamage(source, t",
+   "anchor": "turn.rs::apply_jump_kick_crash",
+   "reason": "the crash on miss/protect-block: getDamage-with-crit+roll halved, clamp [1, floor(target.maxhp/2)] (gen3_jump_kick_crash_v1 — the audit's HA1 fix)"
+  },
+  "move:karatechop:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:leafblade:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:leechseed:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:leechseed:onTryImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:ee9691fd:onTryImmunity(target) { return !target.hasType(\"Grass\"); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Grass-type immunity (accuracy drawn, then -immune)"
+  },
+  "move:leechseed:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"leechseed\"",
+   "anchor": "turn.rs::apply_leech_seed"
+  },
+  "move:lick:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"status\":\"par\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:lovelykiss:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:lovelykiss:status": {
+   "disposition": "implemented",
+   "fp": "val:\"slp\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:lusterpurge:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":50,\"boosts\":{\"spd\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:machpunch:priority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::move_priority",
+   "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:magicalleaf:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:meditate:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":1}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:meditate:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:meditate:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:metalclaw:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"self\":{\"boosts\":{\"atk\":1}}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:meteormash:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":20,\"self\":{\"boosts\":{\"atk\":1}}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:milkdrink:heal": {
+   "disposition": "implemented",
+   "fp": "val:[1,2]",
+   "anchor": "turn.rs::recovery_heal_amount",
+   "reason": "the flat floor(maxhp/2) recovery arm"
+  },
+  "move:milkdrink:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:milkdrink:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:mistball:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":50,\"boosts\":{\"spa\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:moonlight:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:moonlight:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:moonlight:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:fc491693:onHit(pokemon) { if (this.field.isWeather([\"sunnyday\", \"desolateland\"])) { this.heal(pokemon.maxhp * 2 / 3); } else if (",
+   "anchor": "turn.rs::recovery_heal_amount",
+   "reason": "the weather-conditional heal fractions"
+  },
+  "move:morningsun:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:morningsun:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:morningsun:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:fc491693:onHit(pokemon) { if (this.field.isWeather([\"sunnyday\", \"desolateland\"])) { this.heal(pokemon.maxhp * 2 / 3); } else if (",
+   "anchor": "turn.rs::recovery_heal_amount",
+   "reason": "the weather-conditional heal fractions"
+  },
+  "move:muddywater:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"boosts\":{\"accuracy\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:mudshot:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":100,\"boosts\":{\"spe\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:mudslap:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":100,\"boosts\":{\"accuracy\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:needlearm:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:octazooka:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":50,\"boosts\":{\"accuracy\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:payday:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:ade5e10c:onHit() { this.add(\"-fieldactivate\", \"move: Pay Day\"); }",
+   "anchor": "protocol.rs::fieldactivate_move",
+   "reason": "the |-fieldactivate|move: Pay Day line — EMITTED after the -damage on a landed direct hit (gen3_protocol_phase3_v1; the coin scatter itself has no battle effect; the sub-absorbed form stays uncaptured/un-emitted)"
+  },
+  "move:poisonfang:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"status\":\"tox\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:poisongas:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:poisongas:status": {
+   "disposition": "implemented",
+   "fp": "val:\"psn\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:poisonpowder:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:poisonpowder:status": {
+   "disposition": "implemented",
+   "fp": "val:\"psn\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:poisonsting:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"status\":\"psn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:poisontail:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:poisontail:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"psn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:powdersnow:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"frz\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:protect:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:protect:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:protect:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:fd8966cf:onHit(pokemon) { pokemon.addVolatile(\"stall\"); }",
+   "anchor": "state.rs::protect_counter",
+   "reason": "the stall volatile (re)add on success"
+  },
+  "move:protect:onPrepareHit": {
+   "disposition": "implemented",
+   "fp": "fn:90156567:onPrepareHit(pokemon) { return !!this.queue.willAct() && this.runEvent(\"StallMove\", pokemon); }",
+   "anchor": "turn.rs::run_protect",
+   "reason": "the willAct + StallMove gate (first protect short-circuits draw-free)"
+  },
+  "move:protect:priority": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "turn.rs::move_priority",
+   "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:protect:stallingMove": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_protect",
+   "reason": "the protect/detect stall machinery"
+  },
+  "move:protect:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"protect\"",
+   "anchor": "turn.rs::run_protect"
+  },
+  "move:psybeam:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"volatileStatus\":\"confusion\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:psychic:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"boosts\":{\"spd\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:quickattack:priority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::move_priority",
+   "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:razorleaf:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:recover:heal": {
+   "disposition": "implemented",
+   "fp": "val:[1,2]",
+   "anchor": "turn.rs::recovery_heal_amount",
+   "reason": "the flat floor(maxhp/2) recovery arm"
+  },
+  "move:recover:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:recover:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:rest:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:rest:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:rest:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:db425e8f:onHit(target, source, move) { const result = target.setStatus(\"slp\", source, move); if (!result) return result; target.s",
+   "anchor": "turn.rs::run_rest",
+   "reason": "the full heal + FIXED Sleep(3) self-sleep (draws-then-discards the slp random(2,6))"
+  },
+  "move:rest:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:3ab29105:onTry(source) { if (source.status === \"slp\" || source.hasAbility(\"comatose\")) return false; if (source.hp === source.max",
+   "anchor": "turn.rs::run_rest",
+   "reason": "the already-asleep / full-HP fail gates"
+  },
+  "move:roar:forceSwitch": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::drag_in",
+   "reason": "the phaze arm (accuracy + protect/soundproof/suctioncups gates + ONE sample)"
+  },
+  "move:roar:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:roar:priority": {
+   "disposition": "implemented",
+   "fp": "val:-6",
+   "anchor": "turn.rs::move_priority",
+   "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:rockslide:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:rocksmash:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":50,\"boosts\":{\"def\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:rocktomb:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":100,\"boosts\":{\"spe\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:rollingkick:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:sacredfire:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":50,\"status\":\"brn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:selfdestruct:selfdestruct": {
+   "disposition": "implemented",
+   "fp": "val:\"always\"",
+   "anchor": "turn.rs::pending_explosion_self_ko",
+   "reason": "the pre-hit unconditional self-KO (gen3_explosion_v1)"
+  },
+  "move:shadowball:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":20,\"boosts\":{\"spd\":-1}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:shadowpunch:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:sharpen:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":1}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:sharpen:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:sharpen:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:shockwave:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:signalbeam:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"volatileStatus\":\"confusion\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:silverwind:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"self\":{\"boosts\":{\"atk\":1,\"def\":1,\"spa\":1,\"spd\":1,\"spe\":1}}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:sing:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:sing:status": {
+   "disposition": "implemented",
+   "fp": "val:\"slp\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:slackoff:heal": {
+   "disposition": "implemented",
+   "fp": "val:[1,2]",
+   "anchor": "turn.rs::recovery_heal_amount",
+   "reason": "the flat floor(maxhp/2) recovery arm"
+  },
+  "move:slackoff:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:slackoff:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:slash:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:sleeppowder:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:sleeppowder:status": {
+   "disposition": "implemented",
+   "fp": "val:\"slp\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:sludge:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"status\":\"psn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:sludgebomb:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"status\":\"psn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:smog:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":40,\"status\":\"psn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:softboiled:heal": {
+   "disposition": "implemented",
+   "fp": "val:[1,2]",
+   "anchor": "turn.rs::recovery_heal_amount",
+   "reason": "the flat floor(maxhp/2) recovery arm"
+  },
+  "move:softboiled:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:softboiled:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:spark:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"status\":\"par\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:spikes:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:spikes:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:spikes:sideCondition": {
+   "disposition": "implemented",
+   "fp": "val:\"spikes\"",
+   "anchor": "turn.rs::apply_entry_hazards",
+   "reason": "the Spikes side-condition arm (layers + grounded entry chip)"
+  },
+  "move:splash:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:splash:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:splash:onTry": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:4f14fd46:onTry(source, target, move) { if (this.field.getPseudoWeather(\"Gravity\")) { this.add(\"cant\", source, \"move: Gravity\", mo",
+   "reason": "the Gravity gate — Gravity is a gen4 pseudo-weather, not in the gen3 universe"
+  },
+  "move:splash:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:997bf98c:onTryHit(target, source) { this.add(\"-nothing\"); }",
+   "anchor": "protocol.rs::nothing",
+   "reason": "the |-nothing marker — EMITTED (gen3_protocol_phase3_v1, byte-verified; Splash stays the modeled draw-free no-op move)"
+  },
+  "move:spore:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:spore:status": {
+   "disposition": "implemented",
+   "fp": "val:\"slp\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:steelwing:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"self\":{\"boosts\":{\"def\":1}}}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:stomp:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:struggle:noPPBoosts": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::must_struggle",
+   "reason": "Struggle is not a slot — no PP tracked/deducted (gen3_pp_tracking_v1)"
+  },
+  "move:struggle:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:a892c501:onModifyMove(move) { move.type = \"???\"; }",
+   "anchor": "turn.rs::run_move",
+   "reason": "the typeless ??? override (no STAB, hits Ghosts) — the struggle arm resolves move_type None"
+  },
+  "move:struggle:recoil": {
+   "disposition": "implemented",
+   "fp": "val:[1,4]",
+   "anchor": "turn.rs::run_move",
+   "reason": "STRUGGLE RECOIL: the gen-3 recoil:[1,4] on ACTUAL damage dealt"
+  },
+  "move:stunspore:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:stunspore:status": {
+   "disposition": "implemented",
+   "fp": "val:\"par\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:substitute:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:substitute:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:substitute:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:f7fb973d:onHit(target) { this.directDamage(target.maxhp / 4); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the maxhp/4 directDamage create cost"
+  },
+  "move:substitute:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:234c558d:onTryHit(source) { if (source.volatiles[\"substitute\"]) { this.add(\"-fail\", source, \"move: Substitute\"); return this.NOT_",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the already-subbed / not-enough-HP fail gates"
+  },
+  "move:substitute:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"substitute\"",
+   "anchor": "turn.rs::absorb_into_sub",
+   "reason": "the substitute volatile (create in run_status_move, absorb at onTryPrimaryHit)"
+  },
+  "move:swift:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:swordsdance:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":2}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:swordsdance:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:swordsdance:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:synthesis:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:synthesis:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:synthesis:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:fc491693:onHit(pokemon) { if (this.field.isWeather([\"sunnyday\", \"desolateland\"])) { this.heal(pokemon.maxhp * 2 / 3); } else if (",
+   "anchor": "turn.rs::recovery_heal_amount",
+   "reason": "the weather-conditional heal fractions"
+  },
+  "move:tailglow:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"spa\":2}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:tailglow:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:tailglow:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:taunt:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:taunt:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"taunt\"",
+   "anchor": "state.rs::taunt",
+   "reason": "the taunt volatile (gen3_taunt_disable_v1)"
+  },
+  "move:thunderbolt:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"par\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:thunderpunch:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"par\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:thundershock:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":10,\"status\":\"par\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:thunderwave:status": {
+   "disposition": "implemented",
+   "fp": "val:\"par\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:toxic:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:toxic:status": {
+   "disposition": "implemented",
+   "fp": "val:\"tox\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:triattack:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":20}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "Tri Attack's ONE random(100) + brn/par/frz sample (special-cased)"
+  },
+  "move:twister:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":20,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:vitalthrow:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:vitalthrow:priority": {
+   "disposition": "implemented",
+   "fp": "val:-1",
+   "anchor": "turn.rs::move_priority",
+   "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:waterpulse:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":20,\"volatileStatus\":\"confusion\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:whirlwind:forceSwitch": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::drag_in",
+   "reason": "the phaze arm (accuracy + protect/soundproof/suctioncups gates + ONE sample)"
+  },
+  "move:whirlwind:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:whirlwind:priority": {
+   "disposition": "implemented",
+   "fp": "val:-6",
+   "anchor": "turn.rs::move_priority",
+   "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:willowisp:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:willowisp:status": {
+   "disposition": "implemented",
+   "fp": "val:\"brn\"",
+   "anchor": "turn.rs::modeled_status_move",
+   "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:withdraw:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"def\":1}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:withdraw:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:withdraw:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:zapcannon:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":100,\"status\":\"par\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  }
+ }
+}

@@ -1,0 +1,54 @@
+//! Species reference data, parsed from `data/pokemon/gen3_species.json`.
+//! Mirrors `agents.gen3_data.species.SpeciesData`.
+
+use super::types::{BaseStats, Type};
+use crate::json::Json;
+use std::collections::HashMap;
+
+/// Static facts about one species (national-dex `num`, base stats, types).
+#[derive(Debug, Clone)]
+pub struct SpeciesData {
+    pub id: String,
+    pub num: u16,
+    pub name: String,
+    pub base_stats: BaseStats,
+    pub types: Vec<Type>,
+    /// A FIXED max-HP override (Showdown's `pokedex.ts` `maxHP`), present only for
+    /// Shedinja (`maxHP: 1`). `None` for every normal species. `Pokemon.setSpecies`
+    /// overwrites the computed HP stat with this when set (`pokemon.js:990`); the
+    /// stat calc mirrors that hook. Parsed from the `maxHP` JSON key when present.
+    pub max_hp: Option<u16>,
+}
+
+pub(super) fn parse(root: &Json) -> Result<HashMap<String, SpeciesData>, String> {
+    let obj = root.as_object().ok_or("species: expected a JSON object")?;
+    let mut out = HashMap::with_capacity(obj.len());
+    for (id, v) in obj {
+        let bs = v.get("baseStats");
+        let stat = |k: &str| bs.and_then(|b| b.get(k)).and_then(Json::as_f64).map_or(0, |n| n as u16);
+        let types = v
+            .get("types")
+            .and_then(Json::as_array)
+            .map(|a| a.iter().filter_map(|t| t.as_str().and_then(Type::from_name)).collect())
+            .unwrap_or_default();
+        out.insert(
+            id.clone(),
+            SpeciesData {
+                id: id.clone(),
+                num: v.int_or("num", 0) as u16,
+                name: v.str_at("name").unwrap_or(id).to_string(),
+                base_stats: BaseStats {
+                    hp: stat("hp"),
+                    atk: stat("atk"),
+                    def: stat("def"),
+                    spa: stat("spa"),
+                    spd: stat("spd"),
+                    spe: stat("spe"),
+                },
+                types,
+                max_hp: v.get("maxHP").and_then(Json::as_f64).map(|n| n as u16),
+            },
+        );
+    }
+    Ok(out)
+}

@@ -1,0 +1,40 @@
+# switchin_golden.txt — Gen-3 >start SWITCH-IN-EVENT outputs (boosts + weather).
+# SCEN <name>  /  TEAM <scen> <p1|p2> <packed>  /  SEED <scen> <m,n,o,p>
+# WEATHER <scen> <none|sandstorm|raindance|sunnyday> <duration>
+# BOOST   <scen> <p1|p2> <atk-stage>  (the active lead Atk boost; -1 = Intimidate hit)
+# Rust: Battle::start_with_switchins reproduces these from the SAME teams + seed.
+SCEN	sand_vs_intim_gyarados
+TEAM	sand_vs_intim_gyarados	p1	Tyranitar||Leftovers|SandStream|RockSlide,Earthquake,Crunch,DragonDance|Adamant|252,252,,,4,|||||
+TEAM	sand_vs_intim_gyarados	p2	Gyarados||Leftovers|Intimidate|DragonDance,Earthquake,HiddenPowerFlying,Taunt|Adamant|156,252,,,,100|||||
+SEED	sand_vs_intim_gyarados	1,2,3,4
+WEATHER	sand_vs_intim_gyarados	sandstorm	0
+BOOST	sand_vs_intim_gyarados	p1	-1
+BOOST	sand_vs_intim_gyarados	p2	0
+SCEN	sand_vs_intim_salamence
+TEAM	sand_vs_intim_salamence	p1	Tyranitar||Leftovers|SandStream|RockSlide,Earthquake,Crunch,DragonDance|Adamant|252,252,,,4,|||||
+TEAM	sand_vs_intim_salamence	p2	Salamence||ChoiceBand|Intimidate|Earthquake,RockSlide,HiddenPowerFlying,BrickBreak|Adamant|,252,,,4,252|||||
+SEED	sand_vs_intim_salamence	1,2,3,4
+WEATHER	sand_vs_intim_salamence	sandstorm	0
+BOOST	sand_vs_intim_salamence	p1	-1
+BOOST	sand_vs_intim_salamence	p2	0
+SCEN	drizzle_vs_neutral
+TEAM	drizzle_vs_neutral	p1	Kyogre||Leftovers|Drizzle|Surf,IceBeam,Thunder,CalmMind|Modest|4,,,252,,252|||||
+TEAM	drizzle_vs_neutral	p2	Blissey||Leftovers|NaturalCure|SoftBoiled,SeismicToss,Toxic,Aromatherapy|Calm|252,,,,252,4|||||
+SEED	drizzle_vs_neutral	1,2,3,4
+WEATHER	drizzle_vs_neutral	raindance	0
+BOOST	drizzle_vs_neutral	p1	0
+BOOST	drizzle_vs_neutral	p2	0
+SCEN	drought_vs_neutral
+TEAM	drought_vs_neutral	p1	Groudon||Leftovers|Drought|Earthquake,RockSlide,SwordsDance,HiddenPowerBug|Adamant|4,252,,,,252|||||
+TEAM	drought_vs_neutral	p2	Blissey||Leftovers|NaturalCure|SoftBoiled,SeismicToss,Toxic,Aromatherapy|Calm|252,,,,252,4|||||
+SEED	drought_vs_neutral	1,2,3,4
+WEATHER	drought_vs_neutral	sunnyday	0
+BOOST	drought_vs_neutral	p1	0
+BOOST	drought_vs_neutral	p2	0
+SCEN	drizzle_faster_vs_sand_slower
+TEAM	drizzle_faster_vs_sand_slower	p1	Kyogre||Leftovers|Drizzle|Surf,IceBeam,Thunder,CalmMind|Modest|4,,,252,,252|||||
+TEAM	drizzle_faster_vs_sand_slower	p2	Tyranitar||Leftovers|SandStream|RockSlide,Earthquake,Crunch,DragonDance|Adamant|252,252,,,4,|||||
+SEED	drizzle_faster_vs_sand_slower	1,2,3,4
+WEATHER	drizzle_faster_vs_sand_slower	sandstorm	0
+BOOST	drizzle_faster_vs_sand_slower	p1	0
+BOOST	drizzle_faster_vs_sand_slower	p2	0
