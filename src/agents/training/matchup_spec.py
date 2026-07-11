@@ -196,6 +196,38 @@ class MatchupSpec:
         )
 
 
+def sample_team_shas(sample_teams) -> "set[str]":
+    """Strip-normalized sha1[:10] of each curated sample team — the fingerprint set an exploiter
+    trainee must belong to. Strip-normalized because ``TeamLoader`` strips files but a pin is read
+    raw (a trailing newline must not spoof a mismatch); matches ``team_archetypes.team_sha``."""
+    return {hashlib.sha1(t.strip().encode()).hexdigest()[:10] for t in sample_teams}
+
+
+def validate_exploiter_trainee_is_sample(spec: "MatchupSpec", sample_teams) -> None:
+    """The EXPLOITER team-source guarantee: an exploiter must ever pilot only a VETTED sample team —
+    the curated, tournament-proven set (``data/teams/sample/``) — never an arbitrary or
+    bulk-downloaded ``other`` team. Raises ``ValueError`` when a ``mix_kind == 'exploiter'`` run
+    pins a trainee team whose (strip-normalized) fingerprint is not in the sample set; the caller
+    turns it into a startup FATAL. Out of scope (returns quietly): a non-exploiter run, or an
+    exploiter with an UNPINNED trainee (a full-pool generalist exploiter, not a single-team
+    specialist — it isn't "using a team" to constrain). Covers the single-pin ``pinned`` /
+    ``pin_biased`` kinds; a future multi-team exploiter pool must validate every member likewise."""
+    if spec.mix_kind != "exploiter":
+        return
+    ts = spec.trainee_teams
+    if ts.kind not in ("pinned", "pin_biased") or not ts.pin_str:
+        return
+    shas = sample_team_shas(sample_teams)
+    pin = hashlib.sha1(ts.pin_str.strip().encode()).hexdigest()[:10]
+    if pin not in shas:
+        raise ValueError(
+            f"exploiter trainee team {ts.pin_file or '<inline>'!r} (sha {pin}) is NOT one of the "
+            f"{len(shas)} curated SAMPLE teams. Exploiters must only ever pilot a vetted, "
+            "tournament-proven sample team (a subset of data/teams/sample/) — bulk-downloaded / "
+            "hand-crafted teams are not allowed here. Pick a sample team, or promote this one into "
+            "the sample set first if it is proven.")
+
+
 def describe_drift(recorded: "dict | None", current: "dict | None") -> "list[str]":
     """Field-level diff of two ``MatchupSpec.to_dict()``s — the resume drift guard's payload.
 

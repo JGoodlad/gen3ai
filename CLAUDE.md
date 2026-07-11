@@ -1034,6 +1034,16 @@ Reference data (deterministic) under `data/pokemon/`, all regenerable via
 Smogon-derived priors (probabilistic), via `tools/smogon_stats_downloader/`:
 - `gen3_smogon_stats.json` (raw aggregated stats) → `gen3_ability_priors.json`, `gen3_hidden_power_priors.json`
 
+Pool-derived (a committed calibration artifact, same pattern):
+- `data/teams/gen3_team_archetypes.json` — every pool team labeled by PACE class
+  (hyper_offense/offense/balance/semi_stall/stall via a transparent composition rubric) + style
+  TAGS (sand/spikes/spin/spinblock/phaze/**trap**/**trap_core**/wish/boom/choice/…), keyed by
+  `sha1(team_str)[:10]` (the MatchupSpec `pin_sha` convention, so labels join every provenance
+  record). Derived by `python -m agents.training.team_archetypes` (a k-means cross-tab prints as
+  the unsupervised sanity check); consumed by league targeting (the `trap_core` exploiter
+  shortlist) and future archetype-aware team sampling. Loader:
+  `agents.training.team_archetypes.load_team_archetypes`.
+
 Human-replay-derived (a committed calibration artifact, like `gen3_bot_elo_anchors.json`):
 - `gen3_pubval.json` — the frozen public-value logistic (V_pub, `gen3_pubval_aux_v1`): 17 public-board
   features → P(win), fit on the rated gen3ou replay corpus (`replays/showdown/gen3ou/`, local-only, NOT in

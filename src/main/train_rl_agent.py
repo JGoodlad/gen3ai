@@ -2138,6 +2138,17 @@ async def main():
     # Events panel echoes it, and metadata.json records it (+ spec_hash, the measurement-regime tag).
     # SPECIALIST MODE (--trainee-team) pins ONLY the trainee source; opponents keep the full pool.
     matchup = MatchupSpec.from_args(args)
+    # EXPLOITER team-source guarantee: an exploiter may ONLY EVER pilot a vetted sample team (the
+    # curated, tournament-proven set) — never a bulk-downloaded `other` team. FATAL otherwise (a
+    # deliberate startup gate, like the stable-opponent arch check). Non-exploiter / unpinned runs
+    # are unaffected; the existing TSS specialist pin IS a sample team, so it passes.
+    try:
+        from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
+        validate_exploiter_trainee_is_sample(matchup, sample_teams)
+    except ValueError as _e:
+        print(f"\n[Exploiter] FATAL: {_e}")
+        sys.stdout.flush()
+        os._exit(int(TrainExitCode.FATAL_CONFIG))
     _specialist_team_str = matchup.trainee_teams.pin_str   # → eval callbacks (trainee_team_str)
     trainee_teambuilder = matchup.trainee_teams.build(all_teams, sample_teams)
     opponent_teambuilder = matchup.opponent_teams.build(all_teams, sample_teams)

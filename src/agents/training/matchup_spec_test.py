@@ -118,3 +118,58 @@ def test_describe_drift_names_changed_fields():
     assert any(l.startswith("exploiter_target:") for l in lines)
     assert describe_drift(a, dict(a)) == []            # no drift → no lines
     assert describe_drift(None, None) == []
+
+
+# ── exploiter team-source guard (only-ever-sample-teams) ─────────────────────────
+
+def _sample_and_other():
+    from utils.team_loader import TeamLoader
+    loader = TeamLoader()
+    sample = loader.get_sample_teams()
+    other = [t for t in loader.get_all_teams() if t not in sample]
+    return sample, other
+
+
+def test_exploiter_pinned_sample_team_passes(tmp_path):
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
+    sample, _ = _sample_and_other()
+    pin = tmp_path / "s.txt"
+    pin.write_text(sample[0] + "\n\n")                       # raw file w/ trailing whitespace
+    spec = MatchupSpec.from_args(_args(exploiter="models/x", trainee_team=str(pin)))
+    validate_exploiter_trainee_is_sample(spec, sample)       # no raise — strip-normalized member
+
+
+def test_exploiter_pinned_nonsample_team_fatals(tmp_path):
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
+    sample, other = _sample_and_other()
+    pin = tmp_path / "o.txt"
+    pin.write_text(other[0])                                 # a bulk-downloaded 'other' team
+    spec = MatchupSpec.from_args(_args(exploiter="models/x", trainee_team=str(pin)))
+    with pytest.raises(ValueError, match="curated SAMPLE teams"):
+        validate_exploiter_trainee_is_sample(spec, sample)
+
+
+def test_non_exploiter_pin_is_unconstrained(tmp_path):
+    # a bots/self-play specialist may pin any team — the guard is exploiter-only
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
+    sample, other = _sample_and_other()
+    pin = tmp_path / "o.txt"
+    pin.write_text(other[0])
+    spec = MatchupSpec.from_args(_args(trainee_team=str(pin)))   # no --exploiter → mix_kind=bots
+    validate_exploiter_trainee_is_sample(spec, sample)          # no raise
+
+
+def test_exploiter_unpinned_trainee_is_out_of_scope():
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
+    sample, _ = _sample_and_other()
+    spec = MatchupSpec.from_args(_args(exploiter="models/x"))   # default_biased trainee, no pin
+    validate_exploiter_trainee_is_sample(spec, sample)          # no raise (full-pool exploiter)
+
+
+def test_tss_specialist_pin_is_a_sample_team():
+    # the shipped TSS specialist recipe must keep passing the guard
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
+    sample, _ = _sample_and_other()
+    spec = MatchupSpec.from_args(_args(exploiter="models/x",
+                                       trainee_team="data/teams/specialist/tss_starmie.txt"))
+    validate_exploiter_trainee_is_sample(spec, sample)

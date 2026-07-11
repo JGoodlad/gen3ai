@@ -926,6 +926,16 @@ at the target and it's the only opponent.
   `--stable-opponent-temp`, a moving target), and `MaskableAgentWrapper._select_episode_opponent`
   **short-circuits** the whole challenge/floor/pool/stable selection when `exploiter_player` is set —
   the target is `self.opponent` every reset. `None` (default) = the normal selection, byte-identical.
+- **Team-source guarantee — an exploiter may ONLY EVER pilot a vetted SAMPLE team.** The curated
+  `data/teams/sample/` set is the tournament-proven, rock-solid roster; the ~687 `other` teams are
+  bulk-downloaded and unvetted. `matchup_spec.validate_exploiter_trainee_is_sample(matchup,
+  sample_teams)` (called at startup in `train_rl_agent`, FATAL → `FATAL_CONFIG`) enforces that a
+  `mix_kind == 'exploiter'` run with a pinned `--trainee-team` pins a team whose strip-normalized
+  fingerprint is in the sample set — else it refuses to launch with a clear message. Out of scope:
+  non-exploiter runs (any pin allowed), and an exploiter with an UNPINNED trainee (a full-pool
+  exploiter, not a single-team specialist). The shipped TSS pin IS a sample team, so it passes; a
+  future multi-team exploiter pool must validate every member. Tests:
+  `matchup_spec_test.py::test_exploiter_*sample*` + the e2e FATAL.
 - **Mutually exclusive with `--self-play`** (arg-parse error — the exploiter needs no pool). Because
   it's not self-play, `_opp_version` (the arch gate for the foreign load) is set explicitly for this
   path before the factories are built. Training-only; not version-locked.
