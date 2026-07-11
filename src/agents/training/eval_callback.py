@@ -1,3 +1,4 @@
+import hashlib
 import os
 import re
 import sys
@@ -75,7 +76,9 @@ def _read_run_identity(model_dir: str) -> tuple:
 
 
 def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
-                        snapshot: "str | None" = None) -> dict:
+                        snapshot: "str | None" = None,
+                        trainee_team_str: "str | None" = None,
+                        opponent_pins: "dict | None" = None) -> dict:
     """Write ``<model_dir>/eval_traces/step_<N>/eval_manifest.json`` — the per-cycle
     record of *exactly which model* produced this cycle's forensic traces.
 
@@ -83,8 +86,17 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
     (``snapshot.zip``) when `--keep-eval-snapshots` retained it this cycle, else None;
     the prober uses it to reload the bit-exact model, falling back to the nearest
     persisted checkpoint when absent.
+
+    The manifest also records the EVAL REGIME, so a trace dir is self-describing about how its
+    numbers were measured (the OOD-eval era was invisible precisely because this was missing):
+    ``matchup_hash`` (the run's declared-matchup tag, read from the run metadata),
+    ``trainee_team_sha`` (the pin the trainee piloted — None = the default pool builder), and
+    ``opponent_pins`` ({ext label: sha} for stable/exploiter opponents measured on their OWN
+    pinned team — the fold-back contract).
     """
     git_hash, arch_signature, config_version = _read_run_identity(model_dir)
+    from agents.model.snapshot import _read_matchup_hash
+    _sha = lambda t: hashlib.sha1(t.encode()).hexdigest()[:10] if t else None
     d = os.path.join(model_dir, "eval_traces", f"step_{step}")
     os.makedirs(d, exist_ok=True)
     manifest = {
@@ -97,6 +109,9 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
         "snapshot": snapshot,
         "opponents": list(opponents),
         "n_games": n_games,
+        "matchup_hash": _read_matchup_hash(model_dir),
+        "trainee_team_sha": _sha(trainee_team_str),
+        "opponent_pins": {k: _sha(v) for k, v in (opponent_pins or {}).items() if v},
     }
     with open(os.path.join(d, EVAL_MANIFEST_NAME), "w") as f:
         json.dump(manifest, f, indent=2)
@@ -745,7 +760,7 @@ def _record_opponent_elos(fit, bot_names, sentinels, tui):
 
 
 def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
-               bot_td_tails=None, bot_counts=None):
+               bot_td_tails=None, bot_counts=None, externals=None):
     """Append this cycle's results to ``eval_results.jsonl``, refit anchored Bradley-Terry
     ELO, and record ``eval/elo`` + ``eval/elo_ci`` to the SB3 logger + the TUI dict.
 
@@ -762,7 +777,8 @@ def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
         from agents.training import elo as elo_mod
 
         append_eval_result_row(model_dir, step, n_games, bot_win_rates, sentinels,
-                               bot_td_tails=bot_td_tails, bot_counts=bot_counts)
+                               bot_td_tails=bot_td_tails, bot_counts=bot_counts,
+                               externals=externals)
         # Refits the WHOLE accumulated ladder to read this snapshot's rating. Cheap at the
         # expected scale (tens of snapshots → ms); wrapped best-effort so it can never break eval.
         fit = elo_mod.fit_from_run(model_dir, source="log")
@@ -1155,7 +1171,9 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         # Record exactly which model produced this cycle's traces (the prober reads
         # this to reload the right model). snapshot=None now; _persist_snapshot patches
         # it to the retained filename on success when --keep-eval-snapshots is set.
-        write_eval_manifest(self._model_dir, step, opponents=names, n_games=n_games)
+        write_eval_manifest(self._model_dir, step, opponents=names, n_games=n_games,
+                            trainee_team_str=self._trainee_team_str,
+                            opponent_pins={e.label: e.team_str for e in self._fixed_opponents})
         # Process-unique account tag (per-process nonce + per-cycle counter), NOT the step:
         # the resume re-eval fires at the same step every restart, so a step tag collided
         # across restarts and hung a worker on a lingering challenge.
@@ -1297,8 +1315,13 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         # bot_wr carries every BOT incl. random (a valid anchor); ext_ opponents are kept OUT of the
         # fit (no ladder distortion); no sentinels on the bot-only path.
         bot_counts = {k: merged["counts"][k] for k in bot_wr if k in merged.get("counts", {})}
+        # The vs-target record (e.g. the exploiter VERDICT) rides the append-only jsonl too — it
+        # used to live only in the overwritten latest_eval block + TensorBoard.
+        ext_block = {k: {"win_rate": v, "counts": merged.get("counts", {}).get(k)}
+                     for k, v in ext_wr.items()}
         elo_result = record_elo(self._model_dir, step, bot_wr, [], n_games,
-                                self.logger, tui, bot_td_tails=bot_td_tails, bot_counts=bot_counts)
+                                self.logger, tui, bot_td_tails=bot_td_tails, bot_counts=bot_counts,
+                                externals=ext_block or None)
         # ELO for each stable opponent (display-only) → fills the eval table's elo column for the
         # ext_ rows: its OWN recorded ELO when available, else a ballpark from the trainee's rating.
         if ext_wr:

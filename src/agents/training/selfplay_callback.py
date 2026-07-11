@@ -358,7 +358,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
 
         # Record exactly which model produced this cycle's traces (the prober reads this).
         write_eval_manifest(self._model_dir, step,
-                            opponents=bot_names + sentinel_labels + fixed_labels, n_games=n_games)
+                            opponents=bot_names + sentinel_labels + fixed_labels, n_games=n_games,
+                            trainee_team_str=self._trainee_team_str,
+                            opponent_pins={e.label: e.team_str for e in self._fixed_opponents})
         # Process-unique account tag (per-process nonce + per-cycle counter), NOT the step:
         # the resume re-eval fires at the same step every restart, so a step tag collided
         # across restarts and hung a worker on a lingering challenge (wedging eval forever).
@@ -628,10 +630,15 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         # bot_wr carries every bot incl. random (the anchor); sentinels are the pool
         # snapshots the trainee just played, keyed by their training step.
         bot_counts = {n: merged["counts"][n] for n in bot_wr if n in merged.get("counts", {})}
+        # The vs-target/stable record rides the append-only jsonl too (it used to live only in
+        # the overwritten latest_eval block + TensorBoard).
+        ext_block = {k: {"win_rate": v, "counts": merged.get("counts", {}).get(k)}
+                     for k, v in ext_wr.items()}
         elo_result = record_elo(
             self._model_dir, step, bot_wr,
             [{"step": e.step, "win_rate": v} for e, _l, v, _rw, _ep in kept_sentinels],
             pending["n_games"], self.logger, tui, bot_td_tails=bot_td, bot_counts=bot_counts,
+            externals=ext_block or None,
         )
         # ELO for each stable opponent (display-only, out of the fit) → fills the eval table's elo
         # column for the ext_ rows: its OWN recorded ELO when available, else a trainee-derived ballpark.

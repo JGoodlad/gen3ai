@@ -59,6 +59,7 @@ def save_model_snapshot(
     existing_cli_args = None
     existing_launcher_command = None
     existing_original_command = None
+    existing_matchup_history = []
     if os.path.exists(meta_path):
         with open(meta_path) as f:
             existing = json.load(f)
@@ -67,6 +68,7 @@ def save_model_snapshot(
             existing_cli_args = existing.get("cli_args")
             existing_launcher_command = existing.get("launcher_command")
             existing_original_command = existing.get("original_command")
+            existing_matchup_history = existing.get("matchup_history", [])
 
     metadata = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -100,6 +102,23 @@ def save_model_snapshot(
         metadata["snapshot_history"] = existing_history
     if existing_latest_eval is not None:
         metadata["latest_eval"] = existing_latest_eval
+    # MATCHUP ERA HISTORY (append-only): `cli_args` records only the LATEST process's declared
+    # matchup — a manual resume that changes the matchup (a new --trainee-team / --exploiter /
+    # --bot-weights) would silently overwrite what earlier eras trained against. Each era's
+    # declared spec is appended here ONCE (on hash change), so the run's full training-regime
+    # timeline survives every restart. The current era's `_matchup_spec{,_hash}` ride in via
+    # `cli_args` (stamped by train_rl_agent); saves without cli_args (the per-checkpoint path)
+    # preserve the history untouched.
+    matchup_history = list(existing_matchup_history)
+    _m_hash = (cli or {}).get("_matchup_spec_hash")
+    if _m_hash and (not matchup_history or matchup_history[-1].get("hash") != _m_hash):
+        matchup_history.append({
+            "hash": _m_hash,
+            "spec": (cli or {}).get("_matchup_spec"),
+            "recorded_at": datetime.now(timezone.utc).isoformat(),
+        })
+    if matchup_history:
+        metadata["matchup_history"] = matchup_history
     with open(meta_path, "w") as f:
         json.dump(metadata, f, indent=2)
 
@@ -138,6 +157,7 @@ def append_eval_result_row(
     sentinels: "list[dict] | None" = None,
     bot_td_tails: "dict | None" = None,
     bot_counts: "dict | None" = None,
+    externals: "dict | None" = None,
 ) -> None:
     """Append one eval cycle's pairwise win-records to ``<model_dir>/eval_results.jsonl``.
 
@@ -156,6 +176,15 @@ def append_eval_result_row(
     additive sibling ``counts`` ({name: [n_won, n_finished]}); old readers ignore it, and it is
     what a future Glicko-2 / TrueSkill backfill (``agents.training.rating``) consumes for an exact
     ladder. Omitted when not supplied, so existing rows/readers stay byte-identical.
+
+    ``externals`` (optional) maps a stable/exploiter opponent label (``ext_*``) →
+    ``{"win_rate": float, "counts": [n_won, n_finished]}`` — the per-cycle vs-target record
+    (e.g. the exploiter VERDICT metric), which previously lived only in the OVERWRITTEN
+    ``latest_eval`` block + TensorBoard. Kept in its own sibling (never inside ``bots``) so the
+    ELO fit's ladder is untouched. Each row is also stamped with the run's CURRENT declared
+    ``matchup_hash`` (the measurement-regime tag, read from the run metadata) so rows from
+    different regimes/eras — e.g. the OOD-eval era vs post-fix — are distinguishable IN-FILE
+    instead of by out-of-band dates. Both additive; old readers ignore them.
 
     Best-effort: never raise into the eval path — a failed append must not break eval.
     """
@@ -177,10 +206,67 @@ def append_eval_result_row(
         # Exact per-opponent W/L (the rating-fidelity record; see docstring). Optional, additive.
         if bot_counts:
             row["counts"] = {k: [int(c[0]), int(c[1])] for k, c in bot_counts.items()}
+        if externals:
+            row["externals"] = {
+                k: {"win_rate": float(v.get("win_rate", 0.0)),
+                    **({"counts": [int(v["counts"][0]), int(v["counts"][1])]}
+                       if v.get("counts") else {})}
+                for k, v in externals.items()}
+        m_hash = _read_matchup_hash(model_dir)
+        if m_hash:
+            row["matchup_hash"] = m_hash
         with open(os.path.join(model_dir, "eval_results.jsonl"), "a") as f:
             f.write(json.dumps(row) + "\n")
     except (OSError, ValueError, KeyError, TypeError) as e:
         print(f"⚠️ [ELO] failed to append eval_results.jsonl row at step {step}: {e}")
+
+
+def _read_matchup_hash(model_dir: str) -> "str | None":
+    """The CURRENT-era declared-matchup hash (the measurement-regime tag) from the run's
+    metadata — `cli_args._matchup_spec_hash` (the latest process's declaration), falling back to
+    the last `matchup_history` era. `None` for pre-MatchupSpec runs / missing metadata. Cheap
+    best-effort reader used to stamp eval rows / manifests / checkpoint sidecars so each record
+    is self-describing about the regime it was produced under."""
+    meta_path = os.path.join(model_dir, "metadata.json")
+    if not os.path.exists(meta_path):
+        return None
+    try:
+        with open(meta_path) as f:
+            meta = json.load(f)
+    except (OSError, ValueError):
+        return None
+    h = (meta.get("cli_args") or {}).get("_matchup_spec_hash")
+    if h:
+        return h
+    hist = meta.get("matchup_history") or []
+    return hist[-1].get("hash") if hist else None
+
+
+def read_recorded_matchup(model_path: str) -> "tuple[str | None, dict | None]":
+    """The (hash, spec) a resumed checkpoint's RUN last declared — for the resume drift guard.
+
+    `model_path` is the --model argument (a checkpoint .zip or a run dir); the run metadata is
+    searched next to the zip and one level up (the `load_model_snapshot` convention, covering
+    `<run>/checkpoints/<name>.zip`). Returns `(None, None)` for pre-MatchupSpec runs."""
+    apath = os.path.abspath(model_path)
+    dirs = [apath] if os.path.isdir(apath) else [os.path.dirname(apath)]
+    dirs.append(os.path.dirname(dirs[0]))
+    for d in dirs:
+        meta_path = os.path.join(d, "metadata.json")
+        if not os.path.exists(meta_path):
+            continue
+        try:
+            with open(meta_path) as f:
+                meta = json.load(f)
+        except (OSError, ValueError):
+            continue
+        cli = meta.get("cli_args") or {}
+        if cli.get("_matchup_spec_hash"):
+            return cli["_matchup_spec_hash"], cli.get("_matchup_spec")
+        hist = meta.get("matchup_history") or []
+        if hist:
+            return hist[-1].get("hash"), hist[-1].get("spec")
+    return None, None
 
 
 def _latest_checkpoint(history: dict) -> str | None:
@@ -203,6 +289,7 @@ def _build_snapshot_entry(
     git_hash: Optional[str] = None,
     handoff_lr: Optional[float] = None,
     eval_block: Optional[dict] = None,
+    matchup_hash: Optional[str] = None,
 ) -> dict:
     """Build the canonical per-checkpoint metadata dict.
 
@@ -231,6 +318,11 @@ def _build_snapshot_entry(
         entry["handoff_lr"] = handoff_lr
     if eval_block:
         entry["latest_eval"] = eval_block
+    # The declared-matchup regime tag AS OF this checkpoint (like the latest_eval stamp): each
+    # checkpoint is self-describing about what it was training against, robust to a later era
+    # overwriting the run-level cli_args.
+    if matchup_hash:
+        entry["matchup_hash"] = matchup_hash
     return entry
 
 
@@ -243,6 +335,7 @@ def record_snapshot_in_history(
     git_hash: Optional[str] = None,
     handoff_lr: Optional[float] = None,
     eval_block: Optional[dict] = None,
+    matchup_hash: Optional[str] = None,
 ) -> None:
     """Append or update a checkpoint entry in snapshot_history within metadata.json.
 
@@ -260,7 +353,7 @@ def record_snapshot_in_history(
             meta = json.load(f)
     history = meta.get("snapshot_history", {})
     history[checkpoint_name] = _build_snapshot_entry(
-        lr, n_epochs, hparams, git_hash, handoff_lr, eval_block
+        lr, n_epochs, hparams, git_hash, handoff_lr, eval_block, matchup_hash
     )
     meta["snapshot_history"] = history
     with open(meta_path, "w") as f:
@@ -295,6 +388,7 @@ def record_checkpoint(
     """
     resolved_hash = git_hash or get_git_hash()
     eval_block = _read_latest_eval(model_dir)
+    matchup_hash = _read_matchup_hash(model_dir)
     write_checkpoint_metadata(
         checkpoint_path,
         lr,
@@ -303,6 +397,7 @@ def record_checkpoint(
         git_hash=resolved_hash,
         handoff_lr=handoff_lr,
         eval_block=eval_block,
+        matchup_hash=matchup_hash,
     )
     name = os.path.basename(checkpoint_path)
     if not name.endswith(".zip"):
@@ -316,6 +411,7 @@ def record_checkpoint(
         git_hash=resolved_hash,
         handoff_lr=handoff_lr,
         eval_block=eval_block,
+        matchup_hash=matchup_hash,
     )
 
 
@@ -327,6 +423,7 @@ def write_checkpoint_metadata(
     git_hash: Optional[str] = None,
     handoff_lr: Optional[float] = None,
     eval_block: Optional[dict] = None,
+    matchup_hash: Optional[str] = None,
 ) -> None:
     """Write the per-checkpoint metadata sidecar alongside a checkpoint .zip.
 
@@ -341,7 +438,8 @@ def write_checkpoint_metadata(
 
     handoff_lr / eval_block: see ``record_checkpoint``.
     """
-    entry = _build_snapshot_entry(lr, n_epochs, hparams, git_hash, handoff_lr, eval_block)
+    entry = _build_snapshot_entry(lr, n_epochs, hparams, git_hash, handoff_lr, eval_block,
+                                  matchup_hash)
     with open(_checkpoint_metadata_path(checkpoint_path), "w") as f:
         json.dump(entry, f, indent=2)
 

@@ -1,4 +1,5 @@
 import os
+import json
 import math
 from unittest.mock import MagicMock, patch
 
@@ -788,3 +789,24 @@ def test_trace_naming_contract():
         assert t.opponent == "heuristic"
     assert parse("").index == 5                       # un-sharded index unchanged
     assert parse("s1_").index != parse("s3_").index   # two shards' same idx stay DISTINCT
+
+
+def test_eval_manifest_records_the_regime(tmp_path):
+    """The manifest is self-describing about HOW the numbers were measured (the OOD-era gap):
+    matchup hash + the trainee's pin sha + per-opponent fold-back pin shas."""
+    import hashlib
+    from agents.training.eval_callback import write_eval_manifest
+    (tmp_path / "metadata.json").write_text(json.dumps(
+        {"cli_args": {"_matchup_spec_hash": "cafe000042"}}))
+    m = write_eval_manifest(str(tmp_path), 1000, opponents=["heuristic", "ext_spec"], n_games=100,
+                            trainee_team_str="Skarmory @ Leftovers\n",
+                            opponent_pins={"ext_spec": "Magneton @ Leftovers\n", "ext_gen": None})
+    assert m["matchup_hash"] == "cafe000042"
+    assert m["trainee_team_sha"] == hashlib.sha1(b"Skarmory @ Leftovers\n").hexdigest()[:10]
+    assert m["opponent_pins"] == {
+        "ext_spec": hashlib.sha1(b"Magneton @ Leftovers\n").hexdigest()[:10]}   # None pin dropped
+    on_disk = json.loads((tmp_path / "eval_traces" / "step_1000" / "eval_manifest.json").read_text())
+    assert on_disk["matchup_hash"] == "cafe000042"
+    # regime absent (the old call shape) → explicit Nones, never a KeyError for readers
+    m2 = write_eval_manifest(str(tmp_path), 2000, opponents=["heuristic"], n_games=100)
+    assert m2["trainee_team_sha"] is None and m2["opponent_pins"] == {}

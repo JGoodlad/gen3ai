@@ -2150,6 +2150,24 @@ async def main():
         emit(f"🎯 [SPECIALIST] trainee pinned to ONE team from {args.trainee_team}: "
              f"{', '.join(_spec_mons)} (opponents keep the full pool)")
 
+    # RESUME MATCHUP-DRIFT GUARD: matchup flags (--trainee-team/--exploiter/--bot-weights/…) are
+    # NOT resume-immutable — a mid-run curriculum change is legitimate — but it must never be
+    # SILENT: a resume whose declared matchup differs from what the run last recorded overwrites
+    # cli_args and changes the training distribution. Warn LOUDLY with the field diff; the new era
+    # is appended to metadata `matchup_history` at the next save (save_model_snapshot), so the
+    # run's full regime timeline survives. (A launcher restart forwards flags verbatim → no drift.)
+    if args.model:
+        from agents.model.snapshot import read_recorded_matchup
+        from agents.training.matchup_spec import describe_drift
+        _rec_hash, _rec_spec = read_recorded_matchup(args.model)
+        if _rec_hash and _rec_hash != matchup.spec_hash():
+            emit(f"⚠️ [MATCHUP DRIFT] this resume declares matchup {matchup.spec_hash()} but the "
+                 f"run last recorded {_rec_hash} — the TRAINING DISTRIBUTION IS CHANGING mid-run. "
+                 "Metrics across the change are NOT comparable (a new era lands in "
+                 "metadata.json:matchup_history).")
+            for _d in describe_drift(_rec_spec, matchup.to_dict()):
+                emit(f"   ⚠️ {_d}")
+
     mappings = load_mappings()
     
     # Training heuristic opponents — ALL eight archetype bots (both v1 and v2 of each).

@@ -194,3 +194,19 @@ class MatchupSpec:
             exploiter_bot_fraction=float(getattr(args, "exploiter_bot_fraction", 0.5)),
             opponent_play=play,
         )
+
+
+def describe_drift(recorded: "dict | None", current: "dict | None") -> "list[str]":
+    """Field-level diff of two ``MatchupSpec.to_dict()``s — the resume drift guard's payload.
+
+    A resume whose declared matchup differs from what the run last recorded is legitimate
+    (a deliberate mid-run curriculum change) but must never be SILENT: the caller emits these
+    lines loudly and the new era lands in the metadata ``matchup_history``. Returns one
+    ``key: recorded → current`` line per differing top-level field ([] = no drift). Pure."""
+    recorded, current = recorded or {}, current or {}
+    lines = []
+    for key in sorted(set(recorded) | set(current)):
+        a, b = recorded.get(key), current.get(key)
+        if a != b:
+            lines.append(f"{key}: {a!r} → {b!r}")
+    return lines

@@ -2120,3 +2120,79 @@ def test_belief_works_for_selfplay_and_stable_play(mappings):
     assert belief_on.total_dim == belief_off.total_dim             # obs["observation"] interface unchanged
     belief_on.check_opponent_compatible(belief_off)      # stable: a belief-OFF opponent in a belief-ON run
     belief_off.check_opponent_compatible(belief_on)      # …and a belief-ON opponent in a belief-OFF run
+
+
+# ---------------------------------------------------------------------------
+# Matchup provenance (the four diligence fixes): era history, per-row/manifest/
+# sidecar regime tags, and the recorded-matchup readers.
+# ---------------------------------------------------------------------------
+
+def _cli(h, spec=None):
+    return {"_matchup_spec_hash": h, "_matchup_spec": spec or {"mix_kind": "bots"}}
+
+
+def test_matchup_history_appends_once_per_era(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        save_model_snapshot(tmp, version, cli_args=_cli("aaa1111111"))
+        save_model_snapshot(tmp, version, cli_args=_cli("aaa1111111"))   # same era → no dup
+        meta = json.load(open(os.path.join(tmp, "metadata.json")))
+        assert [e["hash"] for e in meta["matchup_history"]] == ["aaa1111111"]
+        # a resume with a DIFFERENT declared matchup → a new era entry, old one preserved
+        save_model_snapshot(tmp, version, cli_args=_cli("bbb2222222", {"mix_kind": "exploiter"}))
+        meta = json.load(open(os.path.join(tmp, "metadata.json")))
+        assert [e["hash"] for e in meta["matchup_history"]] == ["aaa1111111", "bbb2222222"]
+        assert meta["matchup_history"][1]["spec"] == {"mix_kind": "exploiter"}
+        assert all("recorded_at" in e for e in meta["matchup_history"])
+
+
+def test_matchup_history_preserved_by_cli_less_saves(version):
+    # the periodic checkpoint save path passes no cli_args — it must not drop the history
+    with tempfile.TemporaryDirectory() as tmp:
+        save_model_snapshot(tmp, version, cli_args=_cli("aaa1111111"))
+        save_model_snapshot(tmp, version, current_lr=1e-4, current_epochs=7)
+        meta = json.load(open(os.path.join(tmp, "metadata.json")))
+        assert [e["hash"] for e in meta["matchup_history"]] == ["aaa1111111"]
+
+
+def test_read_matchup_hash_and_recorded_matchup(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        assert snapshot._read_matchup_hash(tmp) is None                  # no metadata yet
+        save_model_snapshot(tmp, version, cli_args=_cli("cafe000042", {"mix_kind": "bots"}))
+        assert snapshot._read_matchup_hash(tmp) == "cafe000042"
+        # read_recorded_matchup resolves from a checkpoint path (checkpoints/ subdir → parent)
+        ck = os.path.join(tmp, "checkpoints", "checkpoint_5_steps.zip")
+        os.makedirs(os.path.dirname(ck))
+        open(ck, "w").close()
+        h, spec = snapshot.read_recorded_matchup(ck)
+        assert h == "cafe000042" and spec == {"mix_kind": "bots"}
+        assert snapshot.read_recorded_matchup(os.path.join(tmp, "nope.zip"))[0] == "cafe000042"
+
+
+def test_eval_row_carries_externals_and_matchup_hash(version):
+    from agents.model.snapshot import append_eval_result_row
+    with tempfile.TemporaryDirectory() as tmp:
+        save_model_snapshot(tmp, version, cli_args=_cli("cafe000042"))
+        append_eval_result_row(
+            tmp, 1000, 100, {"heuristic": 0.9}, [],
+            externals={"ext_target": {"win_rate": 0.84, "counts": (84, 100)}})
+        row = json.loads(open(os.path.join(tmp, "eval_results.jsonl")).read())
+        assert row["matchup_hash"] == "cafe000042"
+        assert row["externals"] == {"ext_target": {"win_rate": 0.84, "counts": [84, 100]}}
+        assert "ext_target" not in row["bots"]          # never inside the ELO-fit ladder
+        # omitted args → the old row shape (additive change)
+        append_eval_result_row(tmp, 2000, 100, {"heuristic": 0.9}, [])
+        row2 = json.loads(open(os.path.join(tmp, "eval_results.jsonl")).readlines()[1])
+        assert "externals" not in row2 and row2["matchup_hash"] == "cafe000042"
+
+
+def test_checkpoint_sidecar_carries_matchup_hash(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        save_model_snapshot(tmp, version, cli_args=_cli("cafe000042"))
+        ck = os.path.join(tmp, "checkpoints", "checkpoint_9_steps.zip")
+        os.makedirs(os.path.dirname(ck))
+        open(ck, "w").close()
+        record_checkpoint(tmp, ck, 1e-4, 7)
+        sidecar = read_checkpoint_metadata(ck)
+        assert sidecar["matchup_hash"] == "cafe000042"
+        meta = json.load(open(os.path.join(tmp, "metadata.json")))
+        assert meta["snapshot_history"]["checkpoint_9_steps.zip"]["matchup_hash"] == "cafe000042"

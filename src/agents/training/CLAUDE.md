@@ -305,6 +305,37 @@ CONSUMED — never re-derived — by the consumers (the `plan.json` pattern).
   rosters VARY across episodes. P1+ (not built): controllers keyed on eval play modes, per-row regime
   tags, per-opponent team pools.
 
+### Matchup provenance (what a run trained/evaled against — the diligence layer)
+
+Four self-describing records, all metadata-only + additive (old readers unaffected), closing the
+"a row/trace/checkpoint can't say what regime produced it" gap the OOD-eval era exposed:
+
+- **`eval_results.jsonl` rows carry `matchup_hash` + `externals`** (`append_eval_result_row`):
+  each append-only ladder row is stamped with the run's CURRENT declared-matchup hash (rows from
+  different regimes/eras are distinguishable IN-FILE, not by dates), and the per-cycle vs-target
+  record (`{ext label: {win_rate, counts}}` — e.g. the exploiter VERDICT) now survives in the
+  jsonl instead of only the overwritten `latest_eval` + TensorBoard. Externals stay OUT of `bots`
+  (the ELO fit's ladder is untouched).
+- **`metadata.json:matchup_history`** (append-only, maintained by `save_model_snapshot` from the
+  `cli_args` stamp): one `{hash, spec, recorded_at}` entry per ERA — a resume that changes the
+  declared matchup appends a new era instead of silently overwriting the old one (cli_args keeps
+  only the latest). Saves without cli_args (the periodic-checkpoint path) preserve it.
+- **The resume MATCHUP-DRIFT guard** (`train_rl_agent`, warn-not-fatal): a `--model` resume whose
+  declared matchup hash ≠ the run's recorded one emits a loud `⚠️ [MATCHUP DRIFT]` + the
+  field-level diff (`matchup_spec.describe_drift`) — a mid-run curriculum change is legitimate,
+  doing it SILENTLY is not. Launcher restarts forward flags verbatim → never fire it.
+- **`eval_manifest.json` records the eval REGIME**: `matchup_hash`, `trainee_team_sha` (the pin
+  the trainee piloted; None = pool), `opponent_pins` ({ext label: sha} for fold-back-pinned
+  opponents) — a trace dir is self-describing about HOW its numbers were measured.
+- **Checkpoint sidecars + `snapshot_history` entries carry `matchup_hash`** (via
+  `record_checkpoint` → `_build_snapshot_entry`, like the `latest_eval` stamp) — each checkpoint
+  is self-describing about what it was training against as of its save, robust to later eras.
+
+Readers: `snapshot._read_matchup_hash(model_dir)` (current era) /
+`snapshot.read_recorded_matchup(model_path)` (the drift guard's input). Tests:
+`snapshot_test.py::test_matchup_*`/`test_eval_row_*`/`test_checkpoint_sidecar_*`,
+`matchup_spec_test.py::test_describe_drift_*`, `eval_callback_test.py::test_eval_manifest_records_the_regime`.
+
 ## Bot evaluation (subprocess, non-blocking)
 
 **Flat schedule, full roster.** Eval fires every `EVAL_FREQ_STEPS` (2M steps) and plays

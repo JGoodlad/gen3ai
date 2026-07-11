@@ -107,3 +107,14 @@ def test_bad_kind_and_missing_pin_raise():
         TeamSource(kind="bogus")
     with pytest.raises(ValueError):
         TeamSource(kind="pinned")
+
+
+def test_describe_drift_names_changed_fields():
+    from agents.training.matchup_spec import describe_drift
+    a = MatchupSpec.from_args(_args()).to_dict()
+    b = MatchupSpec.from_args(_args(exploiter="models/x")).to_dict()
+    lines = describe_drift(a, b)
+    assert any(l.startswith("mix_kind:") for l in lines)
+    assert any(l.startswith("exploiter_target:") for l in lines)
+    assert describe_drift(a, dict(a)) == []            # no drift → no lines
+    assert describe_drift(None, None) == []
