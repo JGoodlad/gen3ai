@@ -95,16 +95,18 @@ def _get_opponent_model(cache: dict, path: str, loader):
     return cache[path]
 
 
-async def _play(trainee, opponent, n_games, use_bridge, concurrency):
+async def _play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl="node"):
     if use_bridge:
-        await run_local_battles(trainee, opponent, n_games, concurrency=concurrency)
+        await run_local_battles(trainee, opponent, n_games, concurrency=concurrency,
+                                impl=bridge_impl)
     else:
         await trainee.battle_against(opponent, n_battles=n_games)
 
 
 def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, opp_tb,
                mappings, server_config, concurrency, device, model_dir, step, tag, wid,
-               use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory) -> ShardResult:
+               use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory,
+               bridge_impl="node") -> ShardResult:
     """Play one shard unit and return its RAW (additive) result.
 
     A fresh trainee + opponent are built per unit so the measurement (win count, reward sum, δ
@@ -162,7 +164,7 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
         loss_quota=max(1, math.ceil(_FORENSIC_LOSS_QUOTA / n_shards)))
 
     start = datetime.now()
-    asyncio.run(_play(trainee, opponent, n_games, use_bridge, concurrency))
+    asyncio.run(_play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl))
     dur = (datetime.now() - start).total_seconds()
 
     res = ShardResult(
@@ -191,6 +193,9 @@ def _run(cfg: dict) -> None:
     port = cfg.get("port")
     server_config = localhost_server_configuration(port) if port else LocalhostServerConfiguration
     use_bridge = cfg.get("use_showdown_bridge", False)
+    # Which in-process bridge child: "node" (default) or "rust". Only meaningful when
+    # use_bridge; threaded from the callback's base_cfg alongside use_showdown_bridge.
+    bridge_impl = cfg.get("bridge_impl", "node")
     concurrency = cfg["concurrency"]
     device = cfg.get("device", "cpu")
     model_dir = cfg.get("model_dir")
@@ -243,7 +248,7 @@ def _run(cfg: dict) -> None:
         res = _play_unit(
             unit, pool, model, opp_model_cache, current_version, trainee_tb, opp_tb,
             mappings, server_config, concurrency, device, model_dir, step, tag, wid,
-            use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory)
+            use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory, bridge_impl)
         pool.publish(result_dir, res)
 
 

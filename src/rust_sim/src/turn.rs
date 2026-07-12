@@ -6499,9 +6499,25 @@ impl BattleState {
         self.log.is_enabled()
     }
 
-    /// The display name of `side`'s `slot` mon (the species name — the capture
-    /// teams carry no nicknames, so the ident's name is the species name).
+    /// The IDENTIFIER name of `side`'s `slot` mon — the on-field NICKNAME, which is
+    /// what every `p<N>a: <name>` protocol token (`|move|` user/target, `|switch|`,
+    /// `|-damage|`, `|-ability|`, `|-status|`, `[of]`, …) references. This mirrors
+    /// Showdown's `Pokemon.name` = `set.name || species.name`: the packed set's
+    /// nickname when present (e.g. `Electhor` for a Zapdos), falling back to the
+    /// species DISPLAY name only when the set carries no nickname. poke-env tracks
+    /// each mon by THIS token, so rendering the species here (instead of the
+    /// nickname) makes it fail to match the mon it already knows and try to ADD a
+    /// 7th — the localized/nicknamed-team crash. NOTE: the SPECIES (for `|switch|`
+    /// details, `Zapdos`) comes from [`species_name`], NOT this.
     fn display_name(&self, side: usize, slot: usize, dex: &Dex) -> String {
+        let nick = &self.sides[side].pokemon[slot].set.name;
+        if nick.is_empty() { self.species_name(side, slot, dex) } else { nick.clone() }
+    }
+
+    /// The SPECIES display name of `side`'s `slot` mon (e.g. `Zapdos`), for the
+    /// `|switch|`/`|drag|` DETAILS field — distinct from the ident nickname
+    /// ([`display_name`]).
+    fn species_name(&self, side: usize, slot: usize, dex: &Dex) -> String {
         let mon = &self.sides[side].pokemon[slot];
         dex.species(&mon.species_id).map_or_else(|| mon.species_id.clone(), |s| s.name.clone())
     }
@@ -6532,7 +6548,7 @@ impl BattleState {
     /// output is unchanged there), and the e2e_fuzz gate compares SEED+STATE, not
     /// protocol lines.
     fn switch_details(&self, side: usize, slot: usize, dex: &Dex) -> String {
-        let species = self.display_name(side, slot, dex);
+        let species = self.species_name(side, slot, dex);
         match self.sides[side].pokemon[slot].gender {
             Some('M') => format!("{species}, M"),
             Some('F') => format!("{species}, F"),

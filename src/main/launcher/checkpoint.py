@@ -159,15 +159,28 @@ def _set_arg(args: list, name: str, value: str) -> list:
 DEFAULT_TRAINING_SHOWDOWN_PORT = 8001
 
 
+def child_uses_bridge(args: list) -> bool:
+    """True when the child args enable the in-process bridge transport (no Showdown server).
+
+    Covers BOTH the deprecated ``--use-showdown-bridge`` boolean AND the current
+    ``--use-bridge {node,rust}`` (value form ``--use-bridge X`` or ``--use-bridge=X``; only
+    ``off`` means server). ``--use-bridge`` at its ``off`` default (or absent) is NOT a bridge run."""
+    if "--use-showdown-bridge" in args:
+        return True
+    val = _peek_arg(args, "--use-bridge")
+    return val is not None and val != "off"
+
+
 def _apply_default_showdown_port(
     args: list, default_port: int = DEFAULT_TRAINING_SHOWDOWN_PORT
 ) -> list:
     """Inject ``--showdown-port <default_port>`` into the child args when the user
     didn't pass one. An explicit ``--showdown-port`` (any spelling) always wins.
 
-    ``--use-showdown-bridge`` connects to no Showdown server at all (training AND eval run
-    in-process), so no default port is injected — a phantom port would only mislead the TUI."""
-    if "--use-showdown-bridge" in args:
+    A bridge run (``--use-showdown-bridge`` / ``--use-bridge {node,rust}``) connects to no Showdown
+    server at all (training AND eval run in-process), so no default port is injected — a phantom
+    port would only mislead the TUI."""
+    if child_uses_bridge(args):
         return args
     if _peek_arg(args, "--showdown-port", type_=int) is not None:
         return args

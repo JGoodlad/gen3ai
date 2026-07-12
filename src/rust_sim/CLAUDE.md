@@ -2447,7 +2447,15 @@ bit-for-bit RNG+state faithful; this layer is a **side output** of events that A
   `p<N>: <PlayerName>`), `HpStatus` (the three variants `x/y` / `x/y <status>` / `0 fnt`, the #1
   correctness point), `Cause` (`[from] item: <Item>` / `[from] ability: <A>` / `[from] move: <M>` /
   `[from] <bare>`), `STAT_TOKENS` (the `-boost`/`-unboost` stat names). Move display names come
-  from the dex (`MoveData.name` — Title-Case spaced), species from `SpeciesData.name`. Disabled by
+  from the dex (`MoveData.name` — Title-Case spaced). A `MonRef`'s IDENT name is the mon's ON-FIELD
+  NICKNAME (`turn.rs::display_name` = the packed set's `set.name`, ← `SpeciesData.name` only when the
+  set has no nickname — mirroring Showdown's `Pokemon.name = set.name || species.name`), NOT the
+  species: poke-env keys each mon by this `p<N>a: <nick>` token, so rendering the species there
+  (e.g. `p1a: Zapdos` for a Zapdos nicknamed `Electhor`) makes poke-env fail to match the mon it
+  already tracks and try to ADD a 7th — the localized/nicknamed-team overflow crash
+  (`gen3_nickname_ident_v1`, pinned by `regression_test::nicknamed_mon_renders_nickname_in_every_ident_not_species`).
+  The SPECIES name (`turn.rs::species_name`) lives ONLY in the `|switch|`/`|drag|` DETAILS field
+  (`|switch|p1a: Electhor|Zapdos|<hp>`). Disabled by
   default (`ProtocolBuilder::new()` → off): `run_full_battle` never enables it, so the seed suite
   keeps an empty, cost-free buffer AND every emit hook is a no-op that touches nothing.
   `run_full_battle_logged` enables it, emits the framing, runs the SAME `run_full_battle`, and

@@ -743,13 +743,19 @@ async def main():
                         help="Local Showdown server port (default 8000). Sets the port for the trainee, "
                              "eval, and self-play clients. Start the server on the matching port, "
                              "e.g. npm run showdown -- <port>.")
-    parser.add_argument("--use-showdown-bridge", action=BoolFlag, default=False,
-                        help="Use the in-process BattleStream bridge instead of a websocket "
-                             "Showdown server: each training env owns a local sim subprocess and "
-                             "eval/self-play play in-process via run_local_battles — no server, no "
-                             "port, no /challenge connection storm, deterministic delivery. Covers "
-                             "BOTH training AND eval, so a run needs no Showdown server at all. "
-                             "Default False (websocket).")
+    parser.add_argument("--use-bridge", type=str, default="off",
+                        choices=["off", "node", "rust"],
+                        help="In-process BattleStream bridge transport for BOTH training AND eval "
+                             "(no Showdown server, no port, no /challenge storm, deterministic). "
+                             "'off' (default) = websocket. 'node' = the Node local_sim_bridge.js "
+                             "(current bridge behavior). 'rust' = the byte-compatible src/rust_sim "
+                             "sim_bridge binary (built via cargo; override with POKESIM_SIM_BRIDGE_BIN). "
+                             "NOTE: 'rust' emits no __RECON__ and ignores resumeReseed, so the "
+                             "forensic-reconstruction / search-teacher / falsify paths require 'node'.")
+    parser.add_argument("--use-showdown-bridge", action=BoolFlag, default=None,
+                        help="DEPRECATED alias for --use-bridge=node (kept for the launcher + "
+                             "existing scripts). Enables the in-process Node BattleStream bridge for "
+                             "BOTH training and eval. Prefer --use-bridge={off,node,rust}.")
     parser.add_argument(
         "--self-play-use-cpu",
         action=BoolFlag,
@@ -1602,6 +1608,27 @@ async def main():
 
     args = parser.parse_args()
 
+    # --- Resolve the bridge-transport flags into ONE internal state -----------------------------
+    # Two knobs feed it: the new `--use-bridge {off,node,rust}` and the DEPRECATED back-compat
+    # `--use-showdown-bridge` (bool; kept because the launcher + existing scripts pass it). Reconcile
+    # them into `args.use_showdown_bridge` (a plain bool = "bridge enabled?", read at all the existing
+    # transport sites) + `args.bridge_impl` (the "node"|"rust" child selector, read only at spawn).
+    #
+    # `--use-showdown-bridge` is an ALIAS FOR `--use-bridge=node`. Only an EXPLICIT-TRUE legacy flag
+    # asserts node; a legacy FALSE (`--no-use-showdown-bridge`) is just "not the legacy-on path" and
+    # defers entirely to `--use-bridge` (so `--use-bridge=rust --no-use-showdown-bridge` is rust, not a
+    # conflict). A legacy TRUE alongside a non-node `--use-bridge` (e.g. `=rust`) is a real conflict.
+    _use_bridge = getattr(args, "use_bridge", "off")
+    _legacy_bridge = args.use_showdown_bridge  # None = not passed, True/False = explicit
+    if _legacy_bridge is True:
+        if _use_bridge not in ("off", "node"):
+            parser.error(
+                f"--use-bridge={_use_bridge} conflicts with --use-showdown-bridge (the deprecated "
+                f"alias means --use-bridge=node). Pass only --use-bridge, or make them agree.")
+        _use_bridge = "node"  # legacy-on asserts node (wins over the 'off' default)
+    args.bridge_impl = "node" if _use_bridge == "off" else _use_bridge
+    args.use_showdown_bridge = _use_bridge != "off"
+
     # --- Resolve resumable structural toggles (None sentinel = "not passed on the CLI") ---
     # Each version-checked structural toggle defaults to None so a FLAGLESS resume can INHERIT the
     # saved value (the documented `--model … --steps …` command), instead of falling back to OFF and
@@ -2094,8 +2121,29 @@ async def main():
         else localhost_server_configuration(args.showdown_port)
     )
     if args.use_showdown_bridge:
-        emit("🌉 Transport: in-process BattleStream bridge for BOTH training and eval "
-             "(no Showdown server needed — --showdown-port ignored)")
+        emit(f"🌉 Transport: in-process BattleStream bridge [{args.bridge_impl}] for BOTH training "
+             "and eval (no Showdown server needed — --showdown-port ignored)")
+        if args.bridge_impl == "rust":
+            # One-time startup warning naming the Rust bridge's honest deferrals (no __RECON__,
+            # no resumeReseed) — resolve/build the binary NOW so a missing toolchain fails loudly
+            # at startup, not deep inside the first env reset.
+            from utils.bridge.sim_bridge_bin import warn_rust_deferrals, resolve_sim_bridge_bin
+            warn_rust_deferrals(emit)
+            _rust_bin = resolve_sim_bridge_bin()
+            emit(f"🦀 [BRIDGE=rust] sim_bridge binary: {_rust_bin}")
+            # Reconstruction-dependent options need the Node bridge's __RECON__ / resumeReseed.
+            # If any is enabled with rust, error clearly (they'd silently no-op otherwise).
+            _recon_needed = []
+            if getattr(args, "search_teacher", False):
+                _recon_needed.append("--search-teacher")
+            if getattr(args, "teacher_persistent", False):
+                _recon_needed.append("--teacher-persistent")
+            if _recon_needed:
+                parser.error(
+                    f"--use-bridge=rust is incompatible with {', '.join(_recon_needed)}: the "
+                    "search-teacher path relies on the Node bridge's __RECON__ reconstruction "
+                    "record / resumeReseed, which the Rust binary does not emit. Use "
+                    "--use-bridge=node for reconstruction-dependent runs.")
     else:
         emit(f"🔌 Showdown server: {server_config.websocket_url}")
 
@@ -2395,7 +2443,8 @@ async def main():
                     # Swap the two _EnvPlayer agents' websocket transport for a local
                     # BattleStream subprocess. Everything above the transport (obs, reward,
                     # mask, wrappers) is unchanged — see utils/bridge/bridge_session.py.
-                    attach_bridge_transport(env, battle_format=BATTLE_FORMAT)
+                    attach_bridge_transport(env, battle_format=BATTLE_FORMAT,
+                                            impl=args.bridge_impl)
 
                 # Opponents are pure DECISION FUNCTIONS over env.battle2 (env.agent1/agent2 do
                 # the networking), so build them start_listening=False — no idle connections,
@@ -2716,7 +2765,8 @@ async def main():
                 # Overlap games like the server does; cap the Node-process fan-out (eval_concurrency
                 # defaults to 100, which would spawn 100 sim children).
                 await run_local_battles(rl_player, opponent, n,
-                                        concurrency=min(args.eval_concurrency, 8))
+                                        concurrency=min(args.eval_concurrency, 8),
+                                        impl=args.bridge_impl)
             else:
                 await rl_player.battle_against(opponent, n_battles=n)
             duration = datetime.now() - start_time
@@ -2858,6 +2908,7 @@ async def main():
             server_config=server_config,
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
+            bridge_impl=args.bridge_impl,
             best_model_save_path=os.path.join(model_dir, "best_model"),
             promote_threshold=_promote_threshold,
             self_play_temp=args.self_play_temp,
@@ -2915,6 +2966,7 @@ async def main():
             eval_shard_games=args.eval_shard_games,
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
+            bridge_impl=args.bridge_impl,
             resume_eval_metadata=_resume_meta,
             keep_eval_snapshots=args.keep_eval_snapshots,
             keep_eval_trace_steps=args.keep_eval_trace_steps,

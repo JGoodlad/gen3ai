@@ -75,27 +75,103 @@ pub fn advance_seed_for_construction(raw: &PrngSeed) -> PrngSeed {
 // Wire choice tokens (the CMD stream the driver replays).
 // ===========================================================================
 
-/// One `>pN <choice>` command from a bridge-capture golden's CMD stream, parsed
-/// into a side + a 0-based engine [`Choice`]. `switch N` is 1-based on the wire
-/// (→ `Switch(N-1)`), targeting the CURRENT `side.pokemon` array position AFTER any
-/// prior switch swaps (the crate's array mirrors Showdown's — see `execute_switch`).
-#[derive(Debug, Clone, Copy)]
-pub struct Cmd {
-    pub side: usize,
-    pub choice: Choice,
+/// A wire-level choice token BEFORE it is resolved to a 0-based engine [`Choice`].
+///
+/// The bridge-capture goldens use the NUMERIC forms (`move K` / `switch N`, 1-based);
+/// the REAL poke-env RL runtime (`BattleOrder::message` in `battle_order.py`) serializes
+/// choices as NAMES — `/choose move <move_id>` (e.g. `move earthquake`,
+/// `move hiddenpowerice`) and `/choose switch <species_name>` (e.g. `switch Salamence`) —
+/// exactly like the live Showdown server, which resolves ids/species natively. A NAME
+/// cannot be turned into a slot at parse time (slots shift with position swaps), so it is
+/// carried here and resolved at the decision boundary (`resolve` below) against the LIVE
+/// side state, mirroring how Showdown's `side.chooseMove`/`chooseSwitch` resolve.
+///
+/// A numeric token ALWAYS parses to `Move`/`Switch` (byte-identical to the old
+/// numeric-only `parse_choice`), so the golden / writeline paths are unchanged.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireChoice {
+    /// `move K` — 1-based move slot on the wire (→ `Choice::Move(K-1)`).
+    Move(usize),
+    /// `switch N` — 1-based team slot on the wire (→ `Choice::Switch(N-1)`).
+    Switch(usize),
+    /// `move <move_id>` — the move's ID string (e.g. `earthquake`, `hiddenpowerice`),
+    /// resolved against the active mon's ordered moveset.
+    MoveName(String),
+    /// `switch <species_name>` — the species / pokemon name, resolved against the
+    /// team's bench species.
+    SwitchSpecies(String),
 }
 
-/// Parse a wire choice token (`move K` / `switch N`, 1-based) into a 0-based
-/// [`Choice`]. `None` for an unsupported token.
-pub fn parse_choice(tok: &str) -> Option<Choice> {
+/// One `>pN <choice>` command from a bridge-capture golden's CMD stream OR the live
+/// RL runtime — a side + an unresolved [`WireChoice`]. `switch N` is 1-based on the
+/// wire (→ `Switch(N-1)`), targeting the CURRENT `side.pokemon` array position AFTER any
+/// prior switch swaps (the crate's array mirrors Showdown's — see `execute_switch`).
+#[derive(Debug, Clone)]
+pub struct Cmd {
+    pub side: usize,
+    pub choice: WireChoice,
+}
+
+/// Parse a wire choice token into an unresolved [`WireChoice`]. A NUMERIC token after
+/// `move `/`switch ` yields the 0-based `Move`/`Switch` slot variant (byte-identical to
+/// the pre-name parser); a NON-numeric token yields the `MoveName`/`SwitchSpecies`
+/// variant (resolved later against the live state, like the real Showdown server).
+/// `None` for a token with neither the `move `/`switch ` prefix.
+pub fn parse_choice(tok: &str) -> Option<WireChoice> {
     let tok = tok.trim();
-    if let Some(k) = tok.strip_prefix("move ") {
-        return Some(Choice::Move(k.trim().parse::<usize>().ok()?.checked_sub(1)?));
+    if let Some(rest) = tok.strip_prefix("move ") {
+        let rest = rest.trim();
+        return Some(match rest.parse::<usize>() {
+            Ok(k) => WireChoice::Move(k.checked_sub(1)?),
+            Err(_) => WireChoice::MoveName(rest.to_string()),
+        });
     }
-    if let Some(n) = tok.strip_prefix("switch ") {
-        return Some(Choice::Switch(n.trim().parse::<usize>().ok()?.checked_sub(1)?));
+    if let Some(rest) = tok.strip_prefix("switch ") {
+        let rest = rest.trim();
+        return Some(match rest.parse::<usize>() {
+            Ok(n) => WireChoice::Switch(n.checked_sub(1)?),
+            Err(_) => WireChoice::SwitchSpecies(rest.to_string()),
+        });
     }
     None
+}
+
+/// Resolve a [`WireChoice`] to a 0-based engine [`Choice`] against the LIVE battle
+/// state for `side` (the same resolution Showdown's `side.chooseMove`/`chooseSwitch`
+/// do at the decision boundary). The numeric variants pass through unchanged.
+///
+/// - **`MoveName(id)`** — normalize `id` via [`crate::dex::to_id`] and match it against
+///   each of the active mon's moveslots (also normalized). A gen<6 TYPED Hidden Power
+///   is stored as its TYPED id (`hiddenpowerice`) — [`side_move_id`] normalizes each slot
+///   to that same form — so `move hiddenpowerice` matches its slot. `None` (illegal —
+///   handled exactly like a numeric out-of-range slot) if no slot matches.
+/// - **`SwitchSpecies(name)`** — normalize `name` and match it against each bench mon's
+///   species id, returning the FIRST non-active, non-fainted slot. `None` if none match.
+pub fn resolve_choice(state: &BattleState, side: usize, choice: &WireChoice) -> Option<Choice> {
+    match choice {
+        WireChoice::Move(k) => Some(Choice::Move(*k)),
+        WireChoice::Switch(n) => Some(Choice::Switch(*n)),
+        WireChoice::MoveName(id) => {
+            let want = crate::dex::to_id(id);
+            let mon = &state.sides[side].pokemon[state.sides[side].active];
+            mon.set
+                .moves
+                .iter()
+                .position(|m| side_move_id(m) == want)
+                .map(Choice::Move)
+        }
+        WireChoice::SwitchSpecies(name) => {
+            let want = crate::dex::to_id(name);
+            let s = &state.sides[side];
+            s.pokemon.iter().enumerate().find_map(|(i, m)| {
+                if i != s.active && !m.fainted && crate::dex::to_id(&m.species_id) == want {
+                    Some(Choice::Switch(i))
+                } else {
+                    None
+                }
+            })
+        }
+    }
 }
 
 // ===========================================================================
@@ -716,7 +792,7 @@ pub fn run_full_battle_bridge_chunked_ended(
         let mut plan_ended = false;
         while need[0] || need[1] {
             let cmd = match cmd_iter.peek() {
-                Some(c) => **c,
+                Some(c) => *c,
                 None => {
                     plan_ended = true;
                     break;
@@ -728,12 +804,24 @@ pub fn run_full_battle_bridge_chunked_ended(
                     "unexpected CMD for side {s} at boundary {guard} (kinds {kinds:?})"
                 ));
             }
+            // Resolve the wire token (numeric slot OR a NAME — `move earthquake` /
+            // `switch Salamence`, the live RL runtime's form) against THIS boundary's
+            // state, exactly like Showdown's `side.chooseMove`/`chooseSwitch`. An
+            // unresolvable NAME (illegal — no matching move slot / bench species) maps to
+            // an OUT-OF-RANGE numeric slot so the engine's existing reject-and-re-request
+            // gate (`choice_is_legal`) handles it IDENTICALLY to a numeric out-of-range.
+            let resolved = resolve_choice(state, s, &cmd.choice).unwrap_or_else(|| match cmd.choice {
+                WireChoice::Switch(_) | WireChoice::SwitchSpecies(_) => {
+                    Choice::Switch(state.sides[s].pokemon.len())
+                }
+                _ => Choice::Move(state.sides[s].pokemon[state.sides[s].active].set.moves.len()),
+            });
             cmd_iter.next();
             // Trapped-switch rejection at a MOVE boundary (see the flat driver's docs +
             // `gen3_shadowtag_firm_trap_v1`). The `|error|` and the re-request are SEPARATE
             // chunks (the sim flushes each on the rejected write / the update).
             if kinds[s] == SideRequest::Move
-                && matches!(cmd.choice, Choice::Switch(_))
+                && matches!(resolved, Choice::Switch(_))
                 && state.is_trapped(s, dex)
                 && has_live_bench(state, s)
             {
@@ -754,7 +842,7 @@ pub fn run_full_battle_bridge_chunked_ended(
                 }
                 continue; // side s still needs a choice
             }
-            got[s] = Some(cmd.choice);
+            got[s] = Some(resolved);
             need[s] = false;
         }
         if plan_ended {
@@ -1087,10 +1175,10 @@ mod tests {
         let p2 = "Tauros||||bodyslam,splash|Serious||M||||";
         let opts = bridge_opts("gen3customgame", "44317,42357,9927,48760".to_string(), p1, p2);
         let cmds = vec![
-            Cmd { side: 0, choice: Choice::Move(1) },
-            Cmd { side: 1, choice: Choice::Move(1) },
-            Cmd { side: 0, choice: Choice::Move(0) },
-            Cmd { side: 1, choice: Choice::Move(0) },
+            Cmd { side: 0, choice: WireChoice::Move(1) },
+            Cmd { side: 1, choice: WireChoice::Move(1) },
+            Cmd { side: 0, choice: WireChoice::Move(0) },
+            Cmd { side: 1, choice: WireChoice::Move(0) },
         ];
         let flat = run_full_battle_bridge(&opts, &cmds, &dex).unwrap();
         let chunked = run_full_battle_bridge_chunked(&opts, &cmds, &dex).unwrap();
@@ -1098,5 +1186,142 @@ mod tests {
         assert_eq!(chunked.flatten().p2, flat.p2);
         // And the chunk grouping is non-trivial (framing splits into 3 chunks/side + requests).
         assert!(chunked.side_chunks(0).count() >= 4, "p1 must have ≥4 chunks (framing + requests)");
+    }
+
+    /// `gen3_sim_bridge_name_choices_v1` — the REAL RL runtime serializes choices as
+    /// NAMES (`/choose move <move_id>` / `/choose switch <species_name>`), NOT the
+    /// bridge-golden's 1-based numeric slots. The bridge must resolve those names against
+    /// the LIVE state to the SAME `Choice` a numeric token would, so a policy plays the
+    /// port bit-for-bit like it plays the Node bridge / live server.
+    ///
+    /// This pins BOTH resolution directions bit-for-bit — INCLUDING the TYPED Hidden Power
+    /// case (`move hiddenpowerice`, the exact move that surfaced the bug: its stored id is
+    /// the TYPED `hiddenpowerice`, so a bare `to_id`-normalized compare must still match).
+    /// A NAME-choice `Cmd` stream must produce output BYTE-IDENTICAL to the equivalent
+    /// numeric stream. Revert-verify: if `resolve_choice` stops matching names to slots
+    /// (returns `None`), the driver falls back to an OUT-OF-RANGE slot → the battle
+    /// diverges from the numeric baseline and this assertion fails.
+    #[test]
+    fn name_choices_resolve_to_the_same_slots_incl_typed_hidden_power() {
+        let dex = Dex::for_gen(3);
+        // p1's active has hiddenpowerice at slot 0 (move 1) and thunderbolt at slot 1
+        // (move 2); a bench Snorlax it can switch to by species name. p2 is a bulky wall.
+        let p1 = "Jolteon||leftovers|voltabsorb|hiddenpowerice,thunderbolt,\
+                  batonpass,agility|Timid|,,,252,4,252||M|||]\
+                  Snorlax||leftovers|thickfat|bodyslam,earthquake,rest,curse|\
+                  Careful|188,,,,252,||M|||";
+        let p2 = "Suicune||leftovers|pressure|surf,icebeam,rest,calmmind|\
+                  Bold|252,,252,,4,||M|||";
+        let opts = bridge_opts("gen3customgame", "44317,42357,9927,48760".to_string(), p1, p2);
+
+        // Unit-level: resolve each name against the fresh lead state → the correct slot.
+        {
+            let mut b = Battle::start_with_switchins(&opts, &dex).unwrap();
+            let st = b.state_mut().unwrap();
+            // p1 move hiddenpowerice → slot 0; thunderbolt → slot 1.
+            assert_eq!(
+                resolve_choice(st, 0, &WireChoice::MoveName("hiddenpowerice".into())),
+                Some(Choice::Move(0)),
+                "typed Hidden Power must resolve to its moveslot"
+            );
+            assert_eq!(
+                resolve_choice(st, 0, &WireChoice::MoveName("thunderbolt".into())),
+                Some(Choice::Move(1))
+            );
+            // p1 switch Snorlax → its bench slot (1).
+            assert_eq!(
+                resolve_choice(st, 0, &WireChoice::SwitchSpecies("Snorlax".into())),
+                Some(Choice::Switch(1)),
+                "switch-by-species must resolve to the bench slot"
+            );
+            // An unresolvable name → None (the driver then rejects like an out-of-range slot).
+            assert_eq!(resolve_choice(st, 0, &WireChoice::MoveName("earthquake".into())), None);
+            assert_eq!(resolve_choice(st, 0, &WireChoice::SwitchSpecies("Zapdos".into())), None);
+        }
+
+        // End-to-end: a NAME-based CMD stream (what the RL runtime sends) must produce the
+        // EXACT same per-side streams as the equivalent NUMERIC stream — proving the
+        // resolution feeds the driver identically. Turn 1 p1 uses typed HP (move 1),
+        // p2 surfs (move 1); turn 2 p1 switches to Snorlax by species, p2 ice beams (move 2).
+        let numeric = vec![
+            Cmd { side: 0, choice: WireChoice::Move(0) },
+            Cmd { side: 1, choice: WireChoice::Move(0) },
+            Cmd { side: 0, choice: WireChoice::Switch(1) },
+            Cmd { side: 1, choice: WireChoice::Move(1) },
+        ];
+        let named = vec![
+            Cmd { side: 0, choice: WireChoice::MoveName("hiddenpowerice".into()) },
+            Cmd { side: 1, choice: WireChoice::MoveName("surf".into()) },
+            Cmd { side: 0, choice: WireChoice::SwitchSpecies("Snorlax".into()) },
+            Cmd { side: 1, choice: WireChoice::MoveName("icebeam".into()) },
+        ];
+        let by_num = run_full_battle_bridge(&opts, &numeric, &dex).unwrap();
+        let by_name = run_full_battle_bridge(&opts, &named, &dex).unwrap();
+        assert_eq!(by_name.p1, by_num.p1, "name-choice p1 stream must equal numeric");
+        assert_eq!(by_name.p2, by_num.p2, "name-choice p2 stream must equal numeric");
+        // Sanity: the streams are non-trivial (a real multi-turn battle with a switch).
+        assert!(by_num.p1.iter().any(|l| l.contains("Snorlax")), "the switch must have happened");
+    }
+
+    /// `gen3_sim_bridge_nickname_ident_v1` — the on-field IDENTIFIER token
+    /// (`pNa: <name>`) in every `|switch|` / `|move|` (user AND target) line MUST be
+    /// the packed set's NICKNAME (Showdown's `Pokemon.name = set.name || species.name`),
+    /// NOT the species — the SPECIES belongs only in the `|switch|` DETAILS field.
+    ///
+    /// Real localized teams carry nicknames (e.g. a Zapdos nicknamed `Electhor`).
+    /// poke-env keys each mon by the ident token: emit the species there and poke-env
+    /// fails to match the mon it already tracks and tries to ADD a 7th →
+    /// `ValueError: team already has 6 pokemons` (the nicknamed-team crash). The
+    /// broadcast `|switch|`/`|move|` idents are rendered by the protocol emitter's
+    /// `turn.rs::display_name` (via `MonRef`); the per-side request/sideupdate idents by
+    /// `bridge.rs::display_name` + `mon_ident`. THIS pin covers the emitter path (the
+    /// omniscient `|switch|`/`|move|` lines the bridge folds to each side).
+    ///
+    /// PINNED BYTE-FOR-BYTE vs the real sim (`harness/probe_nickname_perside.js`,
+    /// `getPlayerStreams` p1 stream, seed `[7,11,13,17]` → the post-`>start`
+    /// construction seed `44317,42357,9927,48760`):
+    ///   `|switch|p1a: Electhor|Zapdos|321/321`   (ident = NICKNAME, details = SPECIES)
+    ///   `|move|p1a: Electhor|Thunderbolt|p2a: Snorlax`  (the `|move|` user token = nickname)
+    ///
+    /// REVERT-VERIFY (done): reverting `turn.rs::display_name` to return the species
+    /// name makes the ident `|switch|p1a: Zapdos|Zapdos|321/321` (and the `|move|` user
+    /// `p1a: Zapdos`), and both asserts below FAIL at the exact nickname-vs-species token.
+    #[test]
+    fn switch_and_move_ident_tokens_use_the_nickname_not_the_species() {
+        let dex = Dex::for_gen(3);
+        // p1's lead is a Zapdos NICKNAMED `Electhor` (nickname in packed field 1,
+        // species in field 2). p2 is a bulky Snorlax (no nickname → ident = species).
+        let p1 = "Electhor|Zapdos||Pressure|thunderbolt,roar|Serious||N||||";
+        let p2 = "Snorlax|||Immunity|bodyslam,splash|Serious||M||||]\
+                  Regice|||ClearBody|icebeam,splash|Serious||N||||";
+        let opts = bridge_opts("gen3customgame", "44317,42357,9927,48760".to_string(), p1, p2);
+        // Turn 1: both mons attack (p1 Thunderbolt slot 0, p2 Body Slam slot 0).
+        let cmds = vec![
+            Cmd { side: 0, choice: WireChoice::Move(0) },
+            Cmd { side: 1, choice: WireChoice::Move(0) },
+        ];
+        let streams = run_full_battle_bridge(&opts, &cmds, &dex).unwrap();
+
+        // The `|switch|` ident is the NICKNAME; the DETAILS field is the SPECIES.
+        assert!(
+            streams.p1.iter().any(|l| l == "|switch|p1a: Electhor|Zapdos|321/321"),
+            "the p1 |switch| ident must be the nickname `Electhor` (details `Zapdos`); \
+             got the switch line(s): {:?}",
+            streams.p1.iter().filter(|l| l.starts_with("|switch|p1")).collect::<Vec<_>>(),
+        );
+        // The `|move|` USER token is the nickname too.
+        assert!(
+            streams.p1.iter().any(|l| l == "|move|p1a: Electhor|Thunderbolt|p2a: Snorlax"),
+            "the p1 |move| user token must be the nickname `Electhor`; got the move line(s): {:?}",
+            streams.p1.iter().filter(|l| l.starts_with("|move|p1")).collect::<Vec<_>>(),
+        );
+        // GIGO guard: the nickname is genuinely distinct from the species — so the
+        // assert can't pass trivially — and the species NEVER appears in an ident slot
+        // (`pNa: Zapdos`), only in the `|switch|` details.
+        assert_ne!("Electhor", "Zapdos");
+        assert!(
+            !streams.p1.iter().any(|l| l.contains("p1a: Zapdos")),
+            "the species must never appear as the ident (`p1a: Zapdos`) — only in details",
+        );
     }
 }

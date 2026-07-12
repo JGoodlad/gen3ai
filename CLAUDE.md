@@ -184,11 +184,11 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 `--debug` defaults to **CPU** (so a smoke never contends with a live GPU training run — an
 explicit `--device cuda` still wins) and **skips all eval** by default — both the periodic eval
 callback and the final win-rate eval. So the plain smoke above needs **no eval opponents / eval
-server connection**; add `--use-showdown-bridge` to make it fully serverless (the in-process
-sim runs the training battles too, no Showdown server at all). To also exercise the eval
-pipeline (final win-rate eval, and the self-play seed → pool eval → promotion path under
+server connection**; add `--use-bridge=node` (or `--use-bridge=rust`) to make it fully serverless
+(the in-process sim runs the training battles too, no Showdown server at all). To also exercise the
+eval pipeline (final win-rate eval, and the self-play seed → pool eval → promotion path under
 `--self-play`), add `--debug-eval` — that path needs a server (default `:8000`) or
-`--use-showdown-bridge`.
+`--use-bridge={node,rust}`.
 
 What to look for:
 - `[ModelVersion] Round-trip smoke test PASSED` — serialization and reload are healthy (printed early, before training begins)
@@ -294,12 +294,39 @@ Checkpoints are saved automatically into `models/run_<timestamp>/checkpoints/` (
 beside its per-checkpoint `.json` sidecar); the run-level `model_config.json` / `metadata.json`
 / `latest.txt` and the `final_model*.zip` / `best_model/` stay at the run root.
 
-### In-process bridge transport (`--use-showdown-bridge`, opt-in)
+### In-process bridge transport (`--use-bridge {off,node,rust}`, opt-in)
 
-`--use-showdown-bridge` (default off) swaps **both training and eval** from a websocket
+`--use-bridge` (default `off` = websocket) swaps **both training and eval** from a websocket
 Showdown server to an in-process `BattleStream` subprocess — no server, no port, no
 `/challenge` connection storm, deterministic delivery (poke-env issue #907). **A run needs no
-Showdown server at all.** It reuses the *entire* obs/reward/mask/wrapper stack unchanged:
+Showdown server at all.** It reuses the *entire* obs/reward/mask/wrapper stack unchanged.
+
+**Two bridge impls:** `--use-bridge=node` is the Node `local_sim_bridge.js` (the original bridge
+behavior). `--use-bridge=rust` swaps the child binary for the std-only pokesim
+`src/rust_sim/src/bin/sim_bridge.rs` — a byte-for-byte protocol-compatible drop-in (validated by
+`src/rust_sim/harness/gen_sim_bridge_diff.js`), so nothing above the transport changes. The
+`--use-showdown-bridge` boolean flag is a **DEPRECATED back-compat alias for `--use-bridge=node`**
+(kept because the launcher + existing scripts pass it); both resolve into one internal
+`bridge_enabled: bool` + `bridge_impl: "node"|"rust"`, and if both are passed they must agree.
+`bridge_impl` is threaded to `attach_bridge_transport(env, …, impl=…)` (training),
+`run_local_battles(…, impl=…)` (eval driver), and the eval-worker shard config
+(`bridge_impl` alongside `use_showdown_bridge`). The binary is resolved by
+`src/utils/bridge/sim_bridge_bin.py::resolve_sim_bridge_bin()`: `$POKESIM_SIM_BRIDGE_BIN`
+(absolute override) first, else `cargo build --release --bin sim_bridge` in `src/rust_sim`
+(cached; a clear error, never a silent node fall-back, if cargo/crate/binary is missing).
+
+**`rust` deferrals + coverage limit (honest, warned at startup):** the Rust bridge emits **no
+`__RECON__`** (no byte-identical `input_log`) and **ignores `resumeReseed`** (`Battle::reseed` is
+`todo!()`), so the forensic-reconstruction / search-teacher / falsify / counterfactual paths
+require `--use-bridge=node` — `train_rl_agent` emits a one-time startup warning and errors if
+`--search-teacher`/`--teacher-persistent` is combined with `rust`. The pokesim port also models a
+large-but-INCOMPLETE gen3 move set and **fail-louds** on an unmodeled move, so `rust` is only safe
+for a run whose teams stay in the modeled universe; and a **seeded** speed-tied lead may differ
+from node (the turn-0 construction-shuffle convention gap; `seed=None` training is unaffected). See
+`src/utils/bridge/README.md`. Transport parity (poke-env sends move-ids/species names, e.g.
+`move hiddenpowerice`) is guarded by `src/utils/bridge/bridge_impl_parity_test.py`.
+
+It reuses the *entire* obs/reward/mask/wrapper stack unchanged:
 
 - **Training** — `attach_bridge_transport` (`src/utils/bridge/bridge_session.py`) swaps the two
   `_EnvPlayer` agents' transport for a background-pumped bridge subprocess per env. The child is

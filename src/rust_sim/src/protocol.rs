@@ -105,8 +105,12 @@ impl Choice {
 }
 
 /// A mon reference, rendered `p<N><pos>: <Nickname>` — gen-3 singles is always
-/// position `a`. The `name` is the display name (species name unless a custom
-/// nickname; the capture teams use the species name, so we render that).
+/// position `a`. The `name` is the on-field IDENTIFIER = the packed set's NICKNAME
+/// (Showdown's `Pokemon.name` = `set.name || species.name`), e.g. `Electhor` for a
+/// Zapdos nicknamed `Electhor`, falling back to the species display name only when
+/// the set has no nickname. This is the token poke-env keys each mon by, so it MUST
+/// be the nickname — never the species (the species belongs in the `|switch|`
+/// details field). See `turn.rs::display_name` / `species_name`.
 ///
 /// A **side** reference (side conditions) is `p<N>: <PlayerName>` — no position
 /// letter — via [`ProtocolBuilder::side_ref`].

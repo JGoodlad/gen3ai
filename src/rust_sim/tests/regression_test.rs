@@ -6288,3 +6288,81 @@ fn per_side_choice_acceptance_maps_split_accept_boundaries_to_the_sims_seeds() {
         );
     }
 }
+
+// ============================================================================
+// NICKNAME — every emitted mon-reference token (`p<N>a: <name>`) renders the packed
+//   set's ON-FIELD NICKNAME, never the English species name.
+//
+//   Showdown's `Pokemon.name` = `set.name || species.name`, and EVERY protocol
+//   line references a mon by that ident (`|move|<user>|<Move>|<target>`, `|switch|`
+//   IDENT, `|-damage|`, `|-ability|`, `|-status|`, `[of]`, …). poke-env tracks each
+//   mon by THIS token; if the bridge emits the SPECIES where the ident should be the
+//   nickname, poke-env can't match the mon it already knows and tries to ADD it —
+//   overflowing to a 7th mon (`p1's team already has 6 pokemons: cannot add p1:
+//   Zapdos`), the localized/nicknamed-team crash (a Zapdos nicknamed `Electhor` etc).
+//
+//   WRONG (pre-fix): `display_name` returned the SPECIES name for the ident, so
+//   `|move|p1a: Zapdos|…` was emitted instead of `|move|p1a: Electhor|…`.
+//   FIX: `display_name` renders the nickname (`set.name`, ← species only when empty);
+//   the SPECIES lives ONLY in the `|switch|` DETAILS field (`species_name`).
+// ============================================================================
+
+/// A nicknamed mon (`Electhor` = Zapdos) has EVERY emitted mon-reference token
+/// render the NICKNAME `p<N>a: Electhor`, while the `|switch|` DETAILS field keeps
+/// the SPECIES `Zapdos`. The species name must NEVER appear as an ident token
+/// (`p<N>a: Zapdos`) — that's the exact byte that overflows poke-env's team to a
+/// 7th mon. WRONG (pre-fix): the ident rendered the species → the crash.
+#[test]
+fn nicknamed_mon_renders_nickname_in_every_ident_not_species() {
+    let d = dex();
+    // p1: `Electhor` (nickname) = Zapdos, Pressure — Thunderbolt hits the foe (so a
+    //     `|move|<Electhor>|Thunderbolt|<foe>` + `|-damage|` + a switch-in `|-ability|`
+    //     all reference our mon by ident). p2: a plain Snorlax (species == name).
+    let electhor = "Electhor|zapdos|leftovers|pressure|thunderbolt|Timid|,,,,,252|,0,,,,|||100|";
+    let snorlax = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
+
+    // Both attack each turn; a short scripted battle so the Zapdos is on-field and
+    // referenced as user, target, and switch-in.
+    let script = [
+        ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+    ];
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(electhor, snorlax, "40263,34842,41812,24710"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let (_out, lines) = st.run_full_battle_logged(&script, &d);
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+
+    // (a) our mon IS referenced by ident somewhere (guard against a vacuous pass).
+    assert!(
+        raw.iter().any(|l| l.contains("p1a: Electhor")),
+        "the nicknamed Zapdos must be referenced by its nickname ident `p1a: Electhor` \
+         at least once; emitted lines:\n{}",
+        raw.join("\n")
+    );
+
+    // (b) THE PIN — the SPECIES name must NEVER appear as an IDENT token. The ident is
+    //     always `p<N>a: <name>`; a `p1a: Zapdos` / `p2a: Zapdos` token is the exact
+    //     byte that overflows poke-env's team. (The species IS allowed in the `|switch|`
+    //     DETAILS field, checked in (c) — that's a different, non-`pNa:` position.)
+    for l in &raw {
+        assert!(
+            !l.contains("p1a: Zapdos") && !l.contains("p2a: Zapdos"),
+            "no emitted line may render the SPECIES `Zapdos` as an ident token \
+             (`p<N>a: Zapdos`) — poke-env keys the mon by its nickname `Electhor`, so \
+             the species ident overflows its team to a 7th mon. Offending line: {l:?}"
+        );
+    }
+
+    // (c) the `|switch|` line proves the split: IDENT = nickname, DETAILS = species.
+    let switch_line = raw
+        .iter()
+        .find(|l| l.starts_with("|switch|p1a:"))
+        .expect("p1's lead switch-in line is emitted");
+    assert!(
+        switch_line.starts_with("|switch|p1a: Electhor|Zapdos"),
+        "the `|switch|` line must be `|switch|p1a: Electhor|Zapdos|<hp>` — the IDENT is \
+         the nickname `Electhor`, the DETAILS the species `Zapdos`. Got: {switch_line:?}"
+    );
+}

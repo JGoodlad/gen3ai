@@ -26,6 +26,7 @@ from main.exit_codes import TrainExitCode
 from main.launcher.checkpoint import (
     find_latest_checkpoint,
     run_dir_for_checkpoint,
+    child_uses_bridge,
     _apply_default_showdown_port,
     _find_model_arg,
     _insert_or_replace_model_arg,
@@ -256,9 +257,10 @@ def _prepare_session(
     else:
         state.add_event("🚀 Starting — single run (no restart)")
 
-    if "--use-showdown-bridge" in child_args:
+    if child_uses_bridge(child_args):
         # In-process BattleStream transport for training AND eval — no server, the port is unused.
-        state.add_event("🌉 Transport: in-process bridge (no Showdown server)")
+        _impl = _peek_arg(child_args, "--use-bridge") or "node"
+        state.add_event(f"🌉 Transport: in-process bridge [{_impl}] (no Showdown server)")
     else:
         showdown_port = _peek_arg(child_args, "--showdown-port", type_=int)
         if showdown_port is not None:

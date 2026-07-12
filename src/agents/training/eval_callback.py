@@ -1044,6 +1044,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         eval_shard_games: int = EVAL_SHARD_GAMES,
         showdown_port: int | None = None,
         use_showdown_bridge: bool = False,
+        bridge_impl: str = "node",
         resume_eval_metadata: str | None = None,
         keep_eval_snapshots: int = 10,
         keep_eval_trace_steps: int = 20,
@@ -1073,6 +1074,8 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         self._showdown_port = showdown_port
         # Bridge eval: workers play in-process via run_local_battles (no server connection).
         self._use_showdown_bridge = use_showdown_bridge
+        # Which bridge child the workers spawn when use_showdown_bridge: "node" | "rust".
+        self._bridge_impl = bridge_impl
         # >0: persist the eval weight snapshot into eval_traces/step_<N>/snapshot.zip
         # (keeping only the N most-recent) so the prober can reload the bit-exact model
         # that produced a cycle's traces. 0 disables (traces still carry the manifest).
@@ -1186,6 +1189,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
             "snapshot": snapshot_zip,
             "port": self._showdown_port,
             "use_showdown_bridge": self._use_showdown_bridge,
+            "bridge_impl": self._bridge_impl,
             "model_dir": self._model_dir,
             "step": step,
             "claim_dir": claim_dir,

@@ -35,6 +35,47 @@ pipeline runs byte-for-byte the same; only the transport changes (poke-env issue
 This powers the `*_fuzz_test.py` suite. (A few timing-sensitive checks stay on the live
 server as `*_fuzz_e2e_test.py` — e.g. `effectiveness_fuzz_e2e_test`.)
 
+#### Node vs Rust sim bridge (`--use-bridge {off,node,rust}`)
+
+The bridge child that speaks the `local_sim_bridge.js` stdin/stdout protocol has **two
+implementations**, selected by `--use-bridge`:
+
+- **`node`** (`local_sim_bridge.js`) — the default bridge impl, a relay over the real Showdown
+  `BattleStream`. Handles the full gen3 move/ability set and produces the `__RECON__`
+  reconstruction record + honors `resumeReseed` (the forensic / search / counterfactual layers).
+- **`rust`** — the std-only `src/rust_sim/src/bin/sim_bridge.rs` binary, a byte-for-byte
+  protocol-compatible drop-in (validated at the chunk/stdout level by
+  `src/rust_sim/harness/gen_sim_bridge_diff.js`). No Node needed for battle stepping.
+
+`sim_bridge_bin.py::bridge_spawn_argv(impl)` turns the impl into the spawn argv both transport
+seams (`bridge_session.py`, `local_battle_runner.py`) exec:
+`node` → `["node", local_sim_bridge.js]`; `rust` → `[<resolved sim_bridge binary>]`.
+`resolve_sim_bridge_bin()` honors `$POKESIM_SIM_BRIDGE_BIN` (absolute-path override) first, else
+runs `cargo build --release --bin sim_bridge` in `src/rust_sim` and caches the resulting
+`target/release/sim_bridge`; it raises a clear, actionable error (never a silent fall-back to
+node) if cargo/crate/binary is unavailable.
+
+**Honest scope of `rust` — two deferrals + a coverage limit:**
+- **No `__RECON__`** (the port has no byte-identical `input_log`) and **no `resumeReseed`** (needs
+  `Battle::reseed`, still `todo!()`). Both serve the forensic-reconstruction / search-teacher /
+  falsify / counterfactual layers, NOT core training/eval — `local_battle_runner`'s `_offer_recon`
+  degrades gracefully when the frame is absent. A `rust` run therefore emits **no per-trace
+  `*_reconstruction.json`** sibling. `train_rl_agent` emits a one-time startup warning naming these,
+  and errors if a reconstruction-dependent option (`--search-teacher` / `--teacher-persistent`) is
+  combined with `--use-bridge=rust`.
+- **Move coverage.** The pokesim port models a large-but-INCOMPLETE gen3 move/ability set and
+  **fail-louds** (`__ERR__ … is not modeled`) on anything outside it rather than silently desync.
+  Real `gen3ou` sample teams routinely carry an unmodeled move (Aromatherapy, Wish, …), so
+  `--use-bridge=rust` is only safe for a run whose teams stay inside the port's modeled universe.
+- **Seed-tie construction convention.** The port's `run_full_battle` omits the sim's turn-0
+  construction endTurn (the per-mon gender `sample` + speed-tie construction shuffles), so a *seeded*
+  speed-tied lead matchup may differ from node. `seed=None` training is unaffected (no shared
+  reference). See `advance_seed_for_construction` in `src/rust_sim/src/bridge.rs`.
+
+The move-name/switch-species transport parity (poke-env serializes choices by move-id + species
+name, e.g. `move hiddenpowerice` / `switch Salamence` — not slot numbers) is exercised by
+`bridge_impl_parity_test.py` (rust integration smoke + rust-vs-node win-rate parity at `seed=None`).
+
 ### Single-turn damage oracle (`damage_probe.js`) — exact ground truth, no poke-env
 
 A third bridge mode drives the **OMNISCIENT** (referee) BattleStream directly — *not* the
@@ -273,12 +314,16 @@ from utils.bridge.local_battle_runner import run_local_battles
 await run_local_battles(my_player, opponent, n_battles=40)   # no `npm run showdown`
 ```
 
-### RL-training transport (used by `train_rl_agent.py --use-showdown-bridge`)
+### RL-training transport (used by `train_rl_agent.py --use-bridge {node,rust}`)
 ```python
 from utils.bridge.bridge_session import attach_bridge_transport
 
 # Build the env with start_listening=False, then swap in the bridge transport.
 env = Gen3Env(mappings, battle_format="gen3ou", team=teambuilder, start_listening=False)
-attach_bridge_transport(env, battle_format="gen3ou")
+attach_bridge_transport(env, battle_format="gen3ou", impl="node")  # or impl="rust"
 # env now trains with no websocket / server — everything above the transport is unchanged.
 ```
+`train_rl_agent.py --use-bridge {off,node,rust}` (default `off` = websocket) selects the transport
+for BOTH training and eval; `--use-showdown-bridge` is a DEPRECATED back-compat alias for
+`--use-bridge=node` (the two must agree if both are passed). `run_local_battles(..., impl=…)` takes
+the same impl for the eval driver.

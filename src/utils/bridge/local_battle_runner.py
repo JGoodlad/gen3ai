@@ -32,6 +32,7 @@ from poke_env.player.player import Player
 from poke_env.teambuilder.teambuilder import Teambuilder
 
 from utils.bridge.battle_stream_client import BattleStreamClient
+from utils.bridge.sim_bridge_bin import bridge_spawn_argv
 from utils.bridge import reconstruction
 
 _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
@@ -63,6 +64,7 @@ async def run_local_battles(
     concurrency: int = 1,
     start_extra: "Optional[dict]" = None,
     chunk_sink: "Optional[list]" = None,
+    impl: str = "node",
 ) -> None:
     """Play ``n_battles`` between two players via the local sim bridge.
 
@@ -88,9 +90,14 @@ async def run_local_battles(
     protocol text — for a caller that wants the move-by-move trajectory (the counterfactual narrator).
     ``None`` (default) captures nothing. Only use it on a SINGLE battle (it isn't side-deduped across
     concurrent battles).
+
+    ``impl`` selects the bridge child binary — ``"node"`` (default, ``local_sim_bridge.js``) or
+    ``"rust"`` (the byte-compatible ``src/rust_sim`` binary). The Rust binary emits no
+    ``__RECON__``, so ``start_extra``'s ``resumeReseed`` + the reconstruction join degrade to
+    no-ops under ``rust`` — callers that need the forensic/counterfactual layer must use ``node``.
     """
     runner = _LocalBattleRunner(player1, player2, battle_format or player1.format, seed, start_extra,
-                                chunk_sink)
+                                chunk_sink, impl)
     await handle_threaded_coroutines(runner.run(n_battles, concurrency), POKE_LOOP)
 
 
@@ -103,6 +110,7 @@ class _LocalBattleRunner:
         seed: Optional[List[int]],
         start_extra: Optional[dict] = None,
         chunk_sink: Optional[list] = None,
+        impl: str = "node",
     ):
         self.p1 = player1
         self.p2 = player2
@@ -110,6 +118,9 @@ class _LocalBattleRunner:
         self.seed = seed
         self.start_extra = start_extra
         self.chunk_sink = chunk_sink
+        # Which bridge child to spawn per battle: "node" or "rust". Resolve to an argv list
+        # once (the rust path may build the binary), reused for every _one_battle spawn.
+        self._spawn_argv = bridge_spawn_argv(impl)
         self.c1: Optional[BattleStreamClient] = None
         self.c2: Optional[BattleStreamClient] = None
 
@@ -155,8 +166,7 @@ class _LocalBattleRunner:
         tag = f"battle-{self.fmt}-{next(_BATTLE_SEQ)}"
 
         proc = await asyncio.create_subprocess_exec(
-            "node",
-            _BRIDGE_JS,
+            *self._spawn_argv,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,

@@ -58,6 +58,7 @@ from typing import Dict, List, Optional
 from poke_env.player.player import Player
 
 from utils.bridge.battle_stream_client import BattleStreamClient
+from utils.bridge.sim_bridge_bin import bridge_spawn_argv
 
 _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
 
@@ -71,7 +72,7 @@ _BATTLE_SEQ = itertools.count(1)
 
 def attach_bridge_transport(
     env, *, battle_format: str, seed: Optional[List[int]] = None, persistent: bool = True,
-    recycle_every: int = 5000,
+    recycle_every: int = 5000, impl: str = "node",
 ) -> "BridgeSession":
     """Swap a freshly-built ``PokeEnv``'s websocket transport for the local bridge.
 
@@ -79,6 +80,11 @@ def attach_bridge_transport(
     agents never opened a websocket. ``persistent=True`` (default) reuses ONE long-lived bridge
     child across every episode (no Node spawn per ``reset()``); ``persistent=False`` falls back
     to a fresh child per battle.
+
+    ``impl`` selects the child binary: ``"node"`` (default, the Node ``local_sim_bridge.js``) or
+    ``"rust"`` (the byte-compatible ``src/rust_sim`` binary, resolved/built by
+    ``sim_bridge_bin.resolve_sim_bridge_bin``). The two speak the identical protocol, so only the
+    executable spawned differs.
 
     ``recycle_every`` (persistent only) replaces a HEALTHY child with a fresh one after that many
     battles. It is a **backstop, not a routine need**: a child's RSS was measured FLAT — ~189 MB
@@ -91,7 +97,7 @@ def attach_bridge_transport(
     """
     session = BridgeSession(
         env.agent1, env.agent2, battle_format, seed=seed, persistent=persistent,
-        recycle_every=recycle_every,
+        recycle_every=recycle_every, impl=impl,
     ).attach()
     # Keep a reference for the env's lifetime + tear the child down on env.close().
     env._bridge_session = session
@@ -127,12 +133,17 @@ class BridgeSession:
         seed: Optional[List[int]] = None,
         persistent: bool = True,
         recycle_every: int = 5000,
+        impl: str = "node",
     ):
         self.a1 = agent1
         self.a2 = agent2
         self.fmt = battle_format
         self.seed = seed
         self._persistent = persistent
+        # Which sim-bridge child to spawn: "node" (default) or "rust". Resolved to an argv
+        # list once (the rust path may build the binary) so the hot spawn stays cheap.
+        self._impl = impl
+        self._spawn_argv = bridge_spawn_argv(impl)
         # Recycle a HEALTHY persistent child after this many battles (0 = never) — a BACKSTOP for
         # marathon / no-launcher runs, not a routine need: child RSS is measured flat (plateaus
         # ~229 MB), and the launcher's 3h restart (~2150 battles/child) already owns the lifecycle,
@@ -201,9 +212,10 @@ class BridgeSession:
             await self._start_spawned_battle()
 
     async def _spawn_child(self) -> asyncio.subprocess.Process:
+        # _spawn_argv is ["node", local_sim_bridge.js] or [<rust sim_bridge binary>] — both
+        # speak the identical stdin/stdout protocol, so the framing/demux below is unchanged.
         return await asyncio.create_subprocess_exec(
-            "node",
-            _BRIDGE_JS,
+            *self._spawn_argv,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
