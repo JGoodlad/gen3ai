@@ -21,6 +21,7 @@ from main.launcher import (
     _insert_or_replace_run_dir_arg,
     _resolve_fresh_run_dir,
     resolve_launch_run_dir,
+    resolve_fork_resume_model,
     _read_checkpoint_git_hash,
     _read_metrics_pipe,
     _strip_launcher_args,
@@ -316,8 +317,9 @@ class TestResolveLaunchRunDir:
         args = ["--model", self.CKPT, "--exploiter", "models/some_target", "--run-name", "crush_v1"]
         assert resolve_launch_run_dir(args, self.TS) == "models/crush_v1"
 
-    def test_fork_onto_existing_run_raises(self, tmp_path, monkeypatch):
-        # Forking onto a name that's ALREADY a run (has metadata.json) must refuse, not clobber it.
+    def test_fork_onto_existing_run_without_checkpoint_raises(self, tmp_path, monkeypatch):
+        # A fork target that exists (metadata.json) but has NO resumable checkpoint is a genuine
+        # clobber (run-name collision / crashed-pre-checkpoint) → refuse, not overwrite.
         monkeypatch.chdir(tmp_path)
         collide = tmp_path / "models" / "live_run"
         collide.mkdir(parents=True)
@@ -325,6 +327,36 @@ class TestResolveLaunchRunDir:
         args = ["--model", "models/other/checkpoints/c.zip", "--run-name", "live_run"]
         with pytest.raises(ValueError):
             resolve_launch_run_dir(args, self.TS)
+
+    def test_idempotent_fork_with_checkpoint_resumes_not_raises(self, tmp_path, monkeypatch):
+        # THE 24h-unattended fix: re-launching a fork whose target ALREADY made progress (has its
+        # own resumable checkpoint) must RESUME it in place — resolve returns the dir (no raise),
+        # and resolve_fork_resume_model swaps --model to the fork's own latest checkpoint.
+        monkeypatch.chdir(tmp_path)
+        fork = tmp_path / "models" / "capstone"
+        (fork / "checkpoints").mkdir(parents=True)
+        (fork / "metadata.json").write_text("{}")
+        (fork / "checkpoints" / "checkpoint_500_steps.zip").write_text("")
+        (fork / "checkpoints" / "checkpoint_900_steps.zip").write_text("")
+        args = ["--model", "models/ai_v7_02/checkpoints/c.zip", "--run-name", "capstone"]
+        assert resolve_launch_run_dir(args, self.TS) == "models/capstone"      # no raise
+        resume = resolve_fork_resume_model(args, "models/capstone")
+        assert resume is not None and resume.endswith("checkpoint_900_steps.zip")  # its OWN latest
+
+    def test_fork_first_launch_keeps_source_model(self, tmp_path, monkeypatch):
+        # First fork (target doesn't exist yet) → resolve returns the new dir, and the resume
+        # helper returns None so the source --model is used to COPY once.
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "models").mkdir()
+        args = ["--model", "models/ai_v7_02/checkpoints/c.zip", "--run-name", "capstone"]
+        assert resolve_launch_run_dir(args, self.TS) == "models/capstone"
+        assert resolve_fork_resume_model(args, "models/capstone") is None
+
+    def test_fork_resume_model_none_for_plain_resume(self, tmp_path, monkeypatch):
+        # A plain resume (run_dir IS the model's own dir) → None (the restart loop owns it).
+        monkeypatch.chdir(tmp_path)
+        rd = run_dir_for_checkpoint(self.CKPT)
+        assert resolve_fork_resume_model(["--model", self.CKPT], rd) is None
 
 
 # ── _find_model_arg ──────────────────────────────────────────────────────────

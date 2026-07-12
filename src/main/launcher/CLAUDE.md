@@ -27,9 +27,20 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
   **fork** — a `--model` resume WITH an explicit `--run-name`, or with `--exploiter` — instead writes
   to a fresh `--run-name`/timestamped dir: the `--model` is only the INIT (an exploiter trained vs a
   frozen target, or a named experiment forked off a still-running run), so its own checkpoints must
-  NOT land in the source checkpoint's dir (which may be a live run / the exploiter's target); forking
-  onto an existing run (one with a `metadata.json`) is refused (`ValueError` → launcher FATAL). The
+  NOT land in the source checkpoint's dir (which may be a live run / the exploiter's target). The
   chosen folder (the one the run writes into) shows in the TUI 🗂 badge.
+  **A fork is IDEMPOTENT ("copy once from the source, resume in place after").** The FIRST launch
+  copies the source `--model` into the new dir; a *re-launch* of the same fork command (launcher
+  process death → reboot / re-running the launch script) detects that the fork dir already holds its
+  OWN resumable checkpoint and RESUMES it from that (`checkpoint.resolve_fork_resume_model`, swapped
+  in `run._prepare_session`) instead of re-copying the source (which would silently discard the
+  fork's progress). So a fork command is safe to re-run unattended. The clobber guard now FATALs only
+  when the fork target exists but has **no** resumable checkpoint — a genuine run-name collision or a
+  fork that crashed before its first save. (The launcher's OWN 6h/crash restart loop was already
+  idempotent — it finds the run dir's latest checkpoint and replaces `--model`; this extends the same
+  guarantee to a full launcher-process restart.) Tests: `launcher_test.py::TestResolveLaunchRunDir`
+  (`test_idempotent_fork_with_checkpoint_resumes_not_raises` / `test_fork_first_launch_keeps_source_model`
+  / `test_fork_onto_existing_run_without_checkpoint_raises`).
 - `LauncherApp` (a `Gen3App` subclass) renders from `state.snapshot()` on a `set_interval(0.5)`
   timer. Input is split by latency sensitivity: **view navigation** (`l`/`e`/`d`, the `q` confirm
   overlay, `n`/`y`, ctrl-c) is handled **app-locally** via the `view_mode` reactive — switching is

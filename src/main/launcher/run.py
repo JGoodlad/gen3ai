@@ -33,6 +33,7 @@ from main.launcher.checkpoint import (
     _insert_or_replace_run_dir_arg,
     _peek_arg,
     resolve_launch_run_dir,
+    resolve_fork_resume_model,
     _strip_launcher_args,
 )
 from main.launcher.child import (
@@ -247,6 +248,17 @@ def _prepare_session(
     except ValueError as e:
         print(f"[launcher] ERROR: {e}")
         sys.exit(1)
+    # Idempotent fork: if this fork dir ALREADY holds its own progress (a prior launch of this same
+    # fork checkpointed), resume from THAT checkpoint rather than re-copying the source --model — so
+    # a launcher-process restart / reboot / re-run of the launch command CONTINUES the fork in place
+    # instead of discarding its progress. No-op on a first fork (keeps the source --model) and on a
+    # plain resume (the restart loop owns that). See checkpoint.resolve_fork_resume_model.
+    _fork_resume = resolve_fork_resume_model(child_args, run_dir)
+    if _fork_resume is not None:
+        child_args = _insert_or_replace_model_arg(child_args, _fork_resume)
+        state.add_event(
+            f"♻️  Fork {os.path.basename(run_dir)} already has progress — resuming in place from "
+            f"{os.path.basename(_fork_resume)} (idempotent)")
     os.makedirs(run_dir, exist_ok=True)
     child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
 

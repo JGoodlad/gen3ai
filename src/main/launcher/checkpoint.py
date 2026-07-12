@@ -235,12 +235,38 @@ def resolve_launch_run_dir(args: list, timestamp: str) -> str:
         return _resolve_fresh_run_dir(args, timestamp)
     if is_fork:
         run_dir = _resolve_fresh_run_dir(args, timestamp)
-        if run_dir != run_dir_for_checkpoint(existing_model) and \
-                os.path.exists(os.path.join(run_dir, "metadata.json")):
-            raise ValueError(f"fork target {run_dir!r} is already a run (has a metadata.json) — "
-                             f"refusing to clobber it; pick a different --run-name")
+        # IDEMPOTENT FORK ("copy once from the source, resume in place after"): a fork COPIES the
+        # source --model into a NEW named dir on its FIRST launch, but a *re-launch* of that same
+        # fork (launcher-process restart / machine reboot / re-running the launch command) must
+        # CONTINUE it, not re-copy the source (which would silently discard all the fork's
+        # progress). So a fork target that ALREADY holds its own resumable checkpoint is a resume,
+        # not a clobber — `resolve_fork_resume_model` swaps --model to that checkpoint in the
+        # caller. The clobber guard now fires ONLY when the target exists WITHOUT any resumable
+        # checkpoint (a genuine run-name collision, or a fork that crashed before its first save).
+        if run_dir != run_dir_for_checkpoint(existing_model) \
+                and find_latest_checkpoint("models", run_dir=run_dir) is None \
+                and os.path.exists(os.path.join(run_dir, "metadata.json")):
+            raise ValueError(f"fork target {run_dir!r} is already a run (has a metadata.json but no "
+                             f"resumable checkpoint) — refusing to clobber it; pick a different "
+                             f"--run-name")
         return run_dir
     return run_dir_for_checkpoint(existing_model)
+
+
+def resolve_fork_resume_model(args: list, run_dir: str) -> "str | None":
+    """The idempotent-fork resume target, or ``None``.
+
+    When ``run_dir`` is a FORK dir (distinct from the source ``--model``'s own dir) that ALREADY
+    holds its own resumable checkpoint — i.e. a prior launch of this same fork made progress — this
+    returns that checkpoint so the launch RESUMES the fork IN PLACE instead of re-initialising from
+    the source ``--model`` (which would discard the fork's progress on a launcher restart / reboot).
+    Returns ``None`` on a fork's FIRST launch (no checkpoint yet → keep the source ``--model`` so it
+    copies the source once) and on a plain resume (``run_dir`` IS the model's own dir → the restart
+    loop already handles it). This is the one swap that makes a fork "copy once, resume after"."""
+    model = _find_model_arg(args)
+    if not model or run_dir == run_dir_for_checkpoint(model):
+        return None
+    return find_latest_checkpoint("models", run_dir=run_dir)
 
 
 def _strip_launcher_args(argv: list) -> list:

@@ -15,6 +15,7 @@ from main.launcher.checkpoint import (
     _peek_arg,
     _resolve_fresh_run_dir,
     resolve_launch_run_dir,
+    resolve_fork_resume_model,
     _set_arg,
     _strip_launcher_args,
 )
