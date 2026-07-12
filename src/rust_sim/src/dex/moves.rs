@@ -73,6 +73,28 @@ pub struct MoveData {
     /// engine applies these DRAW-FREE on the user (the boost itself consumes no PRNG),
     /// clamped to `[-6, 6]`.
     pub self_boosts: Vec<(usize, i8)>,
+    /// The top-level `move.self.boosts` SELF STAT-DROP spec on a DAMAGING move
+    /// (`gen3_move_coverage_batch1_v1`, `selfDrops` in the data): Overheat `[(2, -2)]`
+    /// = −2 SpA, Superpower `[(0,-1),(1,-1)]` = −1 Atk/−1 Def. Each `(stat-index,
+    /// stages)` is a [`crate::state::MonState::boosts`] index; all stages are NEGATIVE.
+    /// Empty for every non-self-drop move. gen3 `selfDrops` (battle-actions.ts:1338) DRAWS
+    /// ONE `random(100)` (the `secondaryRoll`) then applies the drop UNCONDITIONALLY (Overheat/
+    /// Superpower have `self.chance === undefined`) — so it is **NOT draw-free** (probe-verified
+    /// via a per-call-site PRNG trace). The engine draws-then-discards the `random(100)` then
+    /// applies the boosts on the USER after the hit, clamped to `[-6, 6]` — see
+    /// `turn.rs::apply_self_drops`.
+    pub self_drops: Vec<(usize, i8)>,
+    /// The declarative FOE STAT-DROP spec for a standalone STAT-DROP STATUS move
+    /// (`gen3_move_coverage_batch2_v1`, `statDropBoosts` in the data): Screech `[(1,-2)]`
+    /// = −2 Def, Charm `[(0,-2)]` = −2 Atk, Metal Sound `[(3,-2)]` = −2 SpD, Feather Dance
+    /// `[(0,-2)]`, Tickle `[(0,-1),(1,-1)]`, Fake Tears `[(3,-2)]`, Cotton Spore / Scary
+    /// Face `[(4,-2)]`. Each `(stat-index, stages)` is a [`crate::state::MonState::boosts`]
+    /// index; all stages NEGATIVE. Empty for every non-stat-drop move. The MOVE draws its
+    /// accuracy roll (Screech/Metal Sound acc 85 CAN miss; Charm/Feather Dance/Tickle/Fake
+    /// Tears acc 100 always pass) then applies the drop DRAW-FREE on the FOE via `boost()`
+    /// (±6 clamp, Clear Body / White Smoke / Hyper Cutter / Keen Eye `onTryBoost` gated) —
+    /// see `turn.rs`'s stat-drop-move arm in `run_status_move`.
+    pub stat_drop_boosts: Vec<(usize, i8)>,
 }
 
 /// A foe stat-drop / self stat-raise SECONDARY (`secondaryBoosts[i]` in the data).
@@ -242,6 +264,35 @@ pub(super) fn parse(root: &Json, gen: u8) -> Result<HashMap<String, MoveData>, S
             self_boosts.sort_by_key(|&(idx, _)| idx);
         }
 
+        // The top-level SELF STAT-DROP spec (`selfDrops`, only-when-present) — the
+        // `{stat: stages}` (negative) map for a damaging self-drop move (Overheat /
+        // Superpower). Same GIGO discipline as `selfBoosts`: throw on an unknown stat.
+        let mut self_drops: Vec<(usize, i8)> = Vec::new();
+        if let Some(obj) = v.get("selfDrops").and_then(Json::as_object) {
+            for (stat, st) in obj {
+                let idx = boost_stat_index(stat)
+                    .ok_or_else(|| format!("move {id}: unknown selfDrops stat {stat:?}"))?;
+                let stages = st.as_f64().map_or(0, |n| n as i64);
+                self_drops.push((idx, stages as i8));
+            }
+            self_drops.sort_by_key(|&(idx, _)| idx);
+        }
+
+        // The declarative FOE STAT-DROP spec (`statDropBoosts`, only-when-present) — the
+        // `{stat: stages}` (negative) map for a standalone stat-drop STATUS move (Screech /
+        // Charm / Metal Sound / …). Same GIGO discipline as `selfDrops`: throw on an
+        // unknown stat id. `gen3_move_coverage_batch2_v1`.
+        let mut stat_drop_boosts: Vec<(usize, i8)> = Vec::new();
+        if let Some(obj) = v.get("statDropBoosts").and_then(Json::as_object) {
+            for (stat, st) in obj {
+                let idx = boost_stat_index(stat)
+                    .ok_or_else(|| format!("move {id}: unknown statDropBoosts stat {stat:?}"))?;
+                let stages = st.as_f64().map_or(0, |n| n as i64);
+                stat_drop_boosts.push((idx, stages as i8));
+            }
+            stat_drop_boosts.sort_by_key(|&(idx, _)| idx);
+        }
+
         out.insert(
             id.clone(),
             MoveData {
@@ -275,6 +326,8 @@ pub(super) fn parse(root: &Json, gen: u8) -> Result<HashMap<String, MoveData>, S
                 secondary_effects,
                 secondary_boosts,
                 self_boosts,
+                self_drops,
+                stat_drop_boosts,
             },
         );
     }

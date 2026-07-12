@@ -129,9 +129,13 @@ const MOVE_ID_BLOCKLIST = new Set([
   'psywave', 'bide', 'finalgambit', 'counter', 'mirrorcoat',
   // OHKO
   'fissure', 'horndrill', 'guillotine', 'sheercold',
-  // switch-trap / item / leaves-1 / fakeout / future / sleeptalk / rapidspin
-  'pursuit', 'knockoff', 'thief', 'covet', 'trick', 'switcheroo', 'falseswipe',
-  'fakeout', 'futuresight', 'doomdesire', 'snore', 'sleeptalk', 'rapidspin',
+  // switch-trap / item-swap / leaves-1 / fakeout / future / sleeptalk. NOTE:
+  // knockoff/thief/covet (item REMOVAL) + rapidspin are NO LONGER blocklisted — they are
+  // MODELED bit-for-bit (`gen3_move_coverage_batch1_v1`) and ADMITTED via
+  // MODELED_ITEM_REMOVAL_MOVES / MODELED_RAPIDSPIN_MOVES in `isModeledMove`. Trick / Switcheroo
+  // (item SWAP, not removal) stay out.
+  'pursuit', 'trick', 'switcheroo', 'falseswipe',
+  'fakeout', 'futuresight', 'doomdesire', 'snore', 'sleeptalk',
   // reactive / out-of-gen-3-modeled-scope status moves (a category-Status move the port
   // fail-louds on; blocklisted so a team carrying it is not filter-clean). Destiny Bond is
   // a `volatileStatus:'destinybond'` reactive move (out of scope) — keep it off the
@@ -265,6 +269,37 @@ const MODELED_FIXED_DAMAGE_MOVES = new Set([
   'seismictoss', 'nightshade', 'sonicboom', 'dragonrage', 'superfang',
 ]);
 
+// MOVE-COVERAGE BATCH 1 (`gen3_move_coverage_batch1_v1`): the DRAW-FREE post-hit effects a
+// damaging move drops after a landed hit — RECOIL / DRAIN / SELF-DROP / ITEM-REMOVAL / RAPID-
+// SPIN — the port now executes bit-for-bit (`gen_movecoverage_batch1_golden.js` /
+// `movecoverage_batch1_test.rs` + the MC1-MC6 regression pins). Each is an EXPLICIT set (like
+// MODELED_STATUS_MOVES) kept in lockstep with src/turn.rs — NOT a blanket `m.recoil`/`m.drain`
+// allow — so a recoil/drain move carrying an EXTRA unmodeled mechanic (Dream Eater's
+// sleep-only `onTryImmunity`) stays out.
+//
+// RECOIL — `recoil:[num,den]`: the USER takes max(floor(dmgDealt·num/den),1) HP; Rock Head
+// negates; fires behind a sub. DRAW-FREE. The clean gen-3 recoil moves (no charge/callback/
+// onModifyMove): Double-Edge / Take Down / Submission (Struggle is its own path).
+const MODELED_RECOIL_MOVES = new Set(['doubleedge', 'takedown', 'submission']);
+// DRAIN — `drain:[num,den]`: the USER heals the fraction of the damage dealt (floor non-sub /
+// ceil behind a sub); heal-at-full fails. DRAW-FREE. Liquid Ooze reverses it (fail-loud —
+// excluded via the NOOP-ability filter). Dream Eater is EXCLUDED (its `onTryImmunity`
+// sleep-only gate is unmodeled). Clean gen-3 drain moves: Absorb / Mega Drain / Giga Drain /
+// Leech Life.
+const MODELED_DRAIN_MOVES = new Set(['absorb', 'megadrain', 'gigadrain', 'leechlife']);
+// SELF-DROP — the top-level `move.self.boosts` on a DAMAGING move (Overheat −2 SpA, Superpower
+// −1 Atk/−1 Def): the port applies the drop AND draws the gen3 `selfDrops` random(100) (the
+// `secondaryRoll`, applied unconditionally since `self.chance === undefined`) — NOT draw-free.
+const MODELED_SELFDROP_MOVES = new Set(['overheat', 'superpower']);
+// ITEM REMOVAL — Knock Off (removes; gen3 no dmg boost) / Thief / Covet (steal iff the attacker
+// is itemless); Sticky Hold blocks; the onAfterHit fires ONLY when the MON was damaged (not
+// behind a sub). DRAW-FREE. A Liquid-Ooze-style item complication doesn't exist here.
+const MODELED_ITEM_REMOVAL_MOVES = new Set(['knockoff', 'thief', 'covet']);
+// RAPID SPIN — a 20-BP damaging move whose onAfterHit + onAfterSubDamage clear the USER's own
+// Spikes + Leech Seed (+ partial-trap, not modeled — no partial-trap move in scope). DRAW-FREE;
+// clears behind a sub too. gen3 has only Spikes among the hazards.
+const MODELED_RAPIDSPIN_MOVES = new Set(['rapidspin']);
+
 // The modeled gen-3 SUBSTITUTE move (`volatileStatus:'substitute'`, never-miss): the user
 // spends floor(maxhp/4) HP to make a decoy that ABSORBS foe hits. The port models the create
 // (cost + draw-free), the absorb (damage → sub HP, break at 0, no carry), the SECONDARY that
@@ -285,6 +320,40 @@ const MODELED_SUBSTITUTE_MOVES = new Set(['substitute']);
 // onBeforeMove cants, and the residual duration ticks bit-for-bit
 // (`gen_taunt_disable_golden.js` / `taunt_disable_test.rs` + the TD1-TD3 regression pins).
 const MODELED_RESTRICTION_MOVES = new Set(['taunt', 'disable']);
+
+// MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — the four DRAW-friendly status-move
+// classes the port now models bit-for-bit (`gen_movecoverage_batch2_golden.js` /
+// `movecoverage_batch2_test.rs` + the MC9-MC17 regression pins). All are category-Status, so
+// they're admitted in the Status branch below (kept in LOCKSTEP with src/turn.rs):
+//   * STATUS-CURE — Refresh (self par/psn/brn), Heal Bell + Aromatherapy (whole-team major-
+//     status cure incl. bench, Heal Bell skips a Soundproof ally). NEVER-MISS + DRAW-FREE.
+//   * WEATHER-SET — Rain Dance / Sunny Day: a 5-turn TIMED weather (the eachEvent
+//     ('WeatherChange') tie-shuffle draws only on a speed tie; setWeather fails draw-free into
+//     the same weather). NEVER-MISS.
+//   * STAT-DROP — Screech / Charm / Metal Sound / Feather Dance / Tickle / Fake Tears / Cotton
+//     Spore / Scary Face: accuracy draw + a draw-free foe stat-drop `boost()` (Clear Body /
+//     Hyper Cutter / Soundproof gated).
+//   * SCREENS — Light Screen / Reflect: a 5-turn SIDE condition (halves special / physical;
+//     the DAMAGE calc reads it). A physical/special hit into a side with BOTH screens up draws
+//     the ModifyDamagePhase1 shuffle (the port models it). NEVER-MISS + draw-free set.
+const MODELED_CURE_MOVES = new Set(['refresh', 'healbell', 'aromatherapy']);
+const MODELED_WEATHER_MOVES = new Set(['raindance', 'sunnyday']);
+const MODELED_STATDROP_MOVES = new Set([
+  'screech', 'charm', 'metalsound', 'featherdance', 'tickle', 'faketears', 'cottonspore', 'scaryface',
+]);
+const MODELED_SCREEN_MOVES = new Set(['lightscreen', 'reflect']);
+// BATCH2_E2E_EXCLUDED — whether to keep the batch-2 classes OUT of the e2e capstone's modeled
+// allow-list (the phaze-exclusion precedent). The engine models all four classes bit-for-bit
+// (`gen_movecoverage_batch2_golden.js` / `movecoverage_batch2_test.rs`, 1360 runs, + the
+// MC9-MC17 regression pins), so they're PROVEN. But admitting them to the e2e surfaced ONE
+// unresolved real-team-only divergence — e2e_182, a 5-HP Blissey residual-HEAL-ORDERING gap
+// on a board where p2 Aromatherapy-cures its own paralysis mid-turn while p1 switches (the
+// port reaches full HP ONE residual tick early; a state-only, seed-matching desync the
+// dedicated-golden scenarios can't reach). Rather than let a silent desync into the STRICT
+// gate, batch 2 is HONESTLY EXCLUDED here (like phaze was, `PHAZE_E2E_EXCLUDED`), keeping the
+// pre-batch-2 golden byte-identical. The DEDICATED golden + the MC9-MC17 pins remain the
+// batch-2 proof. Re-enable (false) once the e2e_182 residual-order interaction is root-caused.
+const BATCH2_E2E_EXCLUDED = true;
 
 // PHAZE_E2E_EXCLUDED — the gen-3 phaze moves (Roar / Whirlwind) are now INCLUDED in the e2e
 // capstone (flag = false), bit-for-bit, 1035 phaze-DRAG decisions across the 220-battle strict
@@ -405,6 +474,12 @@ function isModeledMove(id) {
     return MODELED_STATUS_MOVES.has(id) || MODELED_SETUP_MOVES.has(id) ||
       MODELED_RECOVERY_MOVES.has(id) || MODELED_PROTECT_MOVES.has(id) ||
       MODELED_HAZARD_MOVES.has(id) || MODELED_RESTRICTION_MOVES.has(id) ||
+      // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — the cure / weather-set /
+      // stat-drop / screen classes, all category-Status + bit-for-bit modeled. HONESTLY
+      // EXCLUDED from the e2e capstone (BATCH2_E2E_EXCLUDED) pending the e2e_182 residual-
+      // heal-ordering root-cause; the DEDICATED golden + MC9-MC17 pins are the proof.
+      (BATCH2_E2E_EXCLUDED ? false : (MODELED_CURE_MOVES.has(id) || MODELED_WEATHER_MOVES.has(id) ||
+        MODELED_STATDROP_MOVES.has(id) || MODELED_SCREEN_MOVES.has(id))) ||
       (LEECHSEED_E2E_EXCLUDED ? false : MODELED_LEECH_MOVES.has(id)) ||
       (SUBSTITUTE_E2E_EXCLUDED ? false : MODELED_SUBSTITUTE_MOVES.has(id)) ||
       (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));
@@ -412,8 +487,18 @@ function isModeledMove(id) {
   if (!(m.basePower > 0)) return false; // variable / fixed-damage carrier
   if (m.ohko) return false;
   if (m.multihit) return false;
-  if (m.recoil) return false;
-  if (m.drain) return false;
+  // RECOIL / DRAIN (`gen3_move_coverage_batch1_v1`) — a recoil/drain damaging move is admitted
+  // ONLY if it is in the explicit modeled set (a recoil/drain move with an EXTRA unmodeled
+  // mechanic — Dream Eater's sleep-only `onTryImmunity` — stays out). Otherwise reject.
+  if (m.recoil && !MODELED_RECOIL_MOVES.has(id)) return false;
+  if (m.drain && !MODELED_DRAIN_MOVES.has(id)) return false;
+  // ITEM REMOVAL (Knock Off / Thief / Covet) + RAPID SPIN — a damaging `onAfterHit` move is
+  // admitted ONLY if it is in the modeled item-removal / rapid-spin sets; every OTHER onAfterHit
+  // damaging move (a future unmodeled mechanic) is rejected. (Brick Break's screen-break onHit /
+  // Pay Day's coin onHit are draw-free and kept — they are NOT onAfterHit.)
+  if (m.onAfterHit && !MODELED_ITEM_REMOVAL_MOVES.has(id) && !MODELED_RAPIDSPIN_MOVES.has(id)) {
+    return false;
+  }
   // SELF-DESTRUCT class (Explosion / Self-Destruct) — a Normal PHYSICAL damaging move that
   // faints the USER as part of the move (gen-3 self-KO, `useMoveInner`:501-503). FULLY modeled
   // bit-for-bit; ADMITTED unless re-excluded. It still must clear the remaining damaging-move
@@ -431,9 +516,14 @@ function isModeledMove(id) {
     return false;
   }
   if (m.flags && (m.flags.charge || m.flags.recharge)) return false;
-  // TOP-LEVEL move.self.boosts / self.volatileStatus = selfDrops / lockedmove
-  // (Overheat/Superpower/Outrage) — a SEPARATE random(100) the port does NOT model.
-  if (m.self && (m.self.boosts || m.self.volatileStatus)) return false;
+  // TOP-LEVEL move.self.boosts (SELF-DROP — Overheat/Superpower) / self.volatileStatus
+  // (lockedmove — Outrage/Thrash/Petal Dance). The self-DROP is now MODELED
+  // (`gen3_move_coverage_batch1_v1`): the port applies the drop AND draws the gen3 `selfDrops`
+  // random(100) — admitted via MODELED_SELFDROP_MOVES. A self.volatileStatus (a locked-move) is
+  // still UNMODELED → rejected. (A self.boosts move NOT in the modeled set — none in gen-3 OU —
+  // stays out.)
+  if (m.self && m.self.volatileStatus) return false;
+  if (m.self && m.self.boosts && !MODELED_SELFDROP_MOVES.has(id)) return false;
   if (m.volatileStatus) return false; // a volatile MOVE (substitute etc.) — not damaging here
   // DRAW-ORDER / POWER callbacks the port does NOT model (each desyncs the LCG):
   //   * basePowerCallback — variable BP (Fury Cutter / Rollout / Ice Ball / Smelling
@@ -654,7 +744,10 @@ const NOOP_ABILITIES = new Set([
   // the modeled move/item universe (`harness/probe_ability_batch1_noop_verify.js` — the
   // candidate ability vs an Insomnia control over full battles is BIT-IDENTICAL, STATE+SEED):
   //   lightningrod  — `onFoeRedirectTarget` (redirect Electric moves) → N/A in singles (one target).
-  //   stickyhold    — `onTakeItem` (blocks Thief / Knock Off) → no item-removal move is modeled.
+  //   stickyhold    — `onTakeItem` (blocks Thief / Knock Off) — the item-removal moves are now
+  //                   MODELED (`gen3_move_coverage_batch1_v1`), and the port models the Sticky
+  //                   Hold block bit-for-bit (a `-activate` + the item unchanged), so it stays a
+  //                   valid modeled ability (the block is a draw-free no-op on the seed).
   // PLUS / MINUS moved to MODELED_ABILITIES (`gen3_plus_minus_v1`, 2026-07-10): the no-op
   // verification tested them PARTNER-LESS — but the gen3 resolved `onModifySpA` scans
   // `getAllActive()` (FOES INCLUDED), so a cross-field Plus↔Minus pair is SpA ×1.5 (the A/B
@@ -1273,6 +1366,7 @@ module.exports = {
   MODELED_PROTECT_MOVES, MODELED_HAZARD_MOVES, MODELED_PHAZE_MOVES,
   MODELED_LEECH_MOVES, MODELED_FIXED_DAMAGE_MOVES, MODELED_SUBSTITUTE_MOVES,
   MODELED_RESTRICTION_MOVES,
+  MODELED_CURE_MOVES, MODELED_WEATHER_MOVES, MODELED_STATDROP_MOVES, MODELED_SCREEN_MOVES,
   mulberry32, randInt, seedFrom, toId,
   FORMAT, dex3,
 };

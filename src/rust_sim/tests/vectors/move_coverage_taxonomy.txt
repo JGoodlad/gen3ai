@@ -1,0 +1,114 @@
+# gen3 move-coverage taxonomy (engine-true) — REGENERABLE, do not hand-edit
+# regen: node src/rust_sim/harness/scan_move_coverage.js  (+ scan_move_probe for `emp`)
+# valid gen3ou teams: 722/773   distinct moves: 108
+# MODELED 62  MISMODELED 15  UNMODELED 31
+# fully-playable teams: 8   no-fail-loud teams: 125
+# cov	emp	#teams	cat	move	mechanic
+MODELED	ran	-	-	aerialace	(bit-for-bit)
+MODELED	ran	-	-	agility	(bit-for-bit)
+MODELED	ran	-	-	bodyslam	(bit-for-bit)
+MODELED	ran	-	-	brickbreak	(bit-for-bit)
+MODELED	ran	-	-	bulkup	(bit-for-bit)
+MODELED	ran	-	-	calmmind	(bit-for-bit)
+MODELED	ran	-	-	crosschop	(bit-for-bit)
+MODELED	ran	-	-	crunch	(bit-for-bit)
+MODELED	ran	-	-	dragonclaw	(bit-for-bit)
+MODELED	ran	-	-	dragondance	(bit-for-bit)
+MODELED	ran	-	-	drillpeck	(bit-for-bit)
+MODELED	ran	-	-	dynamicpunch	(bit-for-bit)
+MODELED	ran	-	-	earthquake	(bit-for-bit)
+MODELED	ran	-	-	explosion	(bit-for-bit)
+MODELED	ran	-	-	extremespeed	(bit-for-bit)
+MODELED	ran	-	-	facade	(bit-for-bit)
+MODELED	ran	-	-	fireblast	(bit-for-bit)
+MODELED	ran	-	-	firepunch	(bit-for-bit)
+MODELED	ran	-	-	flamethrower	(bit-for-bit)
+MODELED	ran	-	-	gust	(bit-for-bit)
+MODELED	panic	-	-	hiddenpower	(bit-for-bit)
+MODELED	ran	-	-	hydropump	(bit-for-bit)
+MODELED	ran	-	-	hypnosis	(bit-for-bit)
+MODELED	ran	-	-	icebeam	(bit-for-bit)
+MODELED	ran	-	-	icepunch	(bit-for-bit)
+MODELED	ran	-	-	leafblade	(bit-for-bit)
+MODELED	ran	-	-	leechseed	(bit-for-bit)
+MODELED	ran	-	-	lovelykiss	(bit-for-bit)
+MODELED	ran	-	-	machpunch	(bit-for-bit)
+MODELED	ran	-	-	megahorn	(bit-for-bit)
+MODELED	ran	-	-	meteormash	(bit-for-bit)
+MODELED	ran	-	-	morningsun	(bit-for-bit)
+MODELED	ran	-	-	protect	(bit-for-bit)
+MODELED	ran	-	-	psychic	(bit-for-bit)
+MODELED	ran	-	-	razorleaf	(bit-for-bit)
+MODELED	ran	-	-	recover	(bit-for-bit)
+MODELED	ran	-	-	rest	(bit-for-bit)
+MODELED	ran	-	-	roar	(bit-for-bit)
+MODELED	ran	-	-	rockslide	(bit-for-bit)
+MODELED	ran	-	-	seismictoss	(bit-for-bit)
+MODELED	ran	-	-	selfdestruct	(bit-for-bit)
+MODELED	ran	-	-	shadowball	(bit-for-bit)
+MODELED	ran	-	-	sing	(bit-for-bit)
+MODELED	ran	-	-	skyuppercut	(bit-for-bit)
+MODELED	ran	-	-	sleeppowder	(bit-for-bit)
+MODELED	ran	-	-	sludgebomb	(bit-for-bit)
+MODELED	ran	-	-	softboiled	(bit-for-bit)
+MODELED	ran	-	-	spikes	(bit-for-bit)
+MODELED	ran	-	-	spore	(bit-for-bit)
+MODELED	ran	-	-	substitute	(bit-for-bit)
+MODELED	ran	-	-	surf	(bit-for-bit)
+MODELED	ran	-	-	swordsdance	(bit-for-bit)
+MODELED	ran	-	-	taunt	(bit-for-bit)
+MODELED	ran	-	-	thunderbolt	(bit-for-bit)
+MODELED	ran	-	-	thunderpunch	(bit-for-bit)
+MODELED	ran	-	-	thunderwave	(bit-for-bit)
+MODELED	ran	-	-	toxic	(bit-for-bit)
+MODELED	ran	-	-	triattack	(bit-for-bit)
+MODELED	ran	-	-	waterpulse	(bit-for-bit)
+MODELED	ran	-	-	whirlwind	(bit-for-bit)
+MODELED	ran	-	-	willowisp	(bit-for-bit)
+MODELED	ran	-	-	zapcannon	(bit-for-bit)
+MISMODELED	ran	298	Physical	rapidspin	hazard-clear (Rapid Spin)
+MISMODELED	ran	266	Physical	doubleedge	recoil
+UNMODELED	panic	241	Status	curse	type-conditional (Curse)
+UNMODELED	panic	213	Status	wish	delayed-heal (Wish)
+MISMODELED	ran	196	Physical	focuspunch	beforeTurn (Focus Punch)
+MISMODELED	ran	182	Special	gigadrain	drain
+MISMODELED	ran	159	Special	pursuit	variable-BP
+UNMODELED	panic	158	Status	batonpass	volatile-transfer (Baton Pass)
+MISMODELED	ran	114	Special	beatup	variable-BP
+UNMODELED	panic	89	Status	refresh	self-status-cure
+UNMODELED	panic	65	Physical	counter	reactive-or-ohko-fixed
+UNMODELED	panic	52	Physical	return	variable-BP (bp0 → status fail-loud)
+UNMODELED	panic	33	Status	raindance	weather-set
+UNMODELED	panic	30	Physical	endeavor	reactive-or-ohko-fixed
+UNMODELED	panic	29	Status	sleeptalk	other-status-move
+UNMODELED	panic	27	Status	aromatherapy	team-status-cure
+UNMODELED	panic	23	Status	sunnyday	weather-set
+MISMODELED	ran	22	Special	thunder	onModifyMove (acc/power mutate)
+UNMODELED	panic	21	Status	perishsong	perish-song
+UNMODELED	panic	18	Status	screech	other-status-move
+MISMODELED	ran	17	Special	knockoff	item-removal (Knock Off)
+MISMODELED	ran	17	Special	thief	item-steal (Thief/Covet)
+UNMODELED	panic	12	Status	meanlook	switch-trap-move
+UNMODELED	panic	10	Status	endure	survive-at-1 (Endure)
+MISMODELED	ran	6	Special	overheat	self-drop/lock
+UNMODELED	panic	6	Status	destinybond	reactive-volatile (Destiny Bond)
+UNMODELED	panic	5	Status	lightscreen	screen
+MISMODELED	ran	5	Physical	superpower	self-drop/lock
+UNMODELED	panic	5	Status	encore	move-lock (Encore)
+UNMODELED	panic	4	Status	charm	other-status-move
+UNMODELED	panic	4	Status	snatch	other-status-move
+UNMODELED	panic	3	Status	bellydrum	hp-cost-boost (Belly Drum)
+UNMODELED	panic	3	Status	metalsound	other-status-move
+UNMODELED	panic	3	Status	charge	charge-volatile
+UNMODELED	panic	3	Physical	reversal	variable-BP (bp0 → status fail-loud)
+MISMODELED	ran	2	Physical	hyperbeam	2-turn-charge
+MISMODELED	ran	2	Physical	doomdesire	future-move (delayed strike)
+UNMODELED	panic	1	Status	memento	self-faint-effect
+UNMODELED	panic	1	Status	mimic	other-status-move
+UNMODELED	panic	1	Status	psychup	boost-copy
+UNMODELED	panic	1	Physical	flail	variable-BP (bp0 → status fail-loud)
+UNMODELED	panic	1	Physical	lowkick	variable-BP (bp0 → status fail-loud)
+UNMODELED	panic	1	Status	painsplit	hp-average (Pain Split)
+UNMODELED	panic	1	Physical	frustration	variable-BP (bp0 → status fail-loud)
+MISMODELED	ran	1	Special	solarbeam	2-turn-charge
+MISMODELED	ran	1	Special	waterspout	variable-BP

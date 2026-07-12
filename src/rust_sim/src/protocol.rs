@@ -409,6 +409,13 @@ impl ProtocolBuilder {
             None => self.push_raw(format!("|-heal|{mon}|{hp}")),
         }
     }
+    /// `|-heal|<mon>|<HP>|[from] <cause>|[of] <of>` — a heal that carries BOTH a `[from]`
+    /// cause AND an `[of]` source. The DRAIN heal (`gen3_move_coverage_batch1_v1`, Giga
+    /// Drain) emits `|-heal|<user>|<HP>|[from] drain|[of] <target>` (the drained mon is the
+    /// `[of]` source), matching the sim exactly.
+    pub fn heal_of(&mut self, mon: &MonRef, hp: &HpStatus, from: &Cause, of: &MonRef) {
+        self.push_raw(format!("|-heal|{mon}|{hp}|{from}|[of] {of}"));
+    }
 
     // ── Effectiveness / crit / miss / immune ────────────────────────────────────
     /// `|-supereffective|<mon>` — `<mon>` is the DEFENDER.
@@ -467,6 +474,24 @@ impl ProtocolBuilder {
         } else {
             self.push_raw(format!("|-curestatus|{mon}|{status}"));
         }
+    }
+    /// `|-curestatus|<mon>|<status>|[silent]` — a status cured silently, as by Heal Bell's
+    /// per-ally `cureStatus(true)` (`gen3_move_coverage_batch2_v1`). The BENCH mons render as
+    /// a SIDE ref (`p<N>: <PlayerName>`), the active as a mon ref (`p<N>a: <Name>`); the
+    /// caller passes the pre-formatted ident string.
+    pub fn curestatus_silent(&mut self, ident: &str, status: &str) {
+        self.push_raw(format!("|-curestatus|{ident}|{status}|[silent]"));
+    }
+    /// `|-cureteam|<mon>|[from] move: Aromatherapy` — Aromatherapy's team-cure banner
+    /// (`gen3_move_coverage_batch2_v1`; unlike Heal Bell, Aromatherapy emits NO per-mon
+    /// `-curestatus` line — a single `-cureteam` covers the whole side).
+    pub fn cureteam_aromatherapy(&mut self, mon: &MonRef) {
+        self.push_raw(format!("|-cureteam|{mon}|[from] move: Aromatherapy"));
+    }
+    /// `|-sideend|<side>|<Effect>` — a side condition ENDS naturally at its duration expiry
+    /// (`gen3_move_coverage_batch2_v1`, Light Screen / Reflect). `<side>` is a side ref.
+    pub fn sideend(&mut self, side_ref: &str, effect: &str) {
+        self.push_raw(format!("|-sideend|{side_ref}|{effect}"));
     }
     /// `|-curestatus|<mon>|<status>|[from] move: <Move>` — a status cured BY a move
     /// (`gen3_defrost_v1`: the frozen user of a `flags.defrost` move — Sacred Fire /
@@ -626,6 +651,34 @@ impl ProtocolBuilder {
     /// `|-singleturn|<mon>|<Effect>` — a one-turn effect announced (Protect).
     pub fn singleturn(&mut self, mon: &MonRef, effect: &str) {
         self.push_raw(format!("|-singleturn|{mon}|{effect}"));
+    }
+    /// `|-end|<mon>|<Effect>|[from] move: <Move>|[of] <of>` — a volatile removed BY a move
+    /// (`gen3_move_coverage_batch1_v1`, Rapid Spin clearing the USER's own Leech Seed:
+    /// `|-end|<user>|Leech Seed|[from] move: Rapid Spin|[of] <user>`).
+    pub fn volatile_end_from_move(&mut self, mon: &MonRef, effect: &str, move_name: &str, of: &MonRef) {
+        self.push_raw(format!("|-end|{mon}|{effect}|[from] move: {move_name}|[of] {of}"));
+    }
+    /// `|-sideend|<side>|<Effect>|[from] move: <Move>|[of] <of>` — a side condition removed
+    /// BY a move (`gen3_move_coverage_batch1_v1`, Rapid Spin clearing the USER's Spikes).
+    pub fn sideend_from_move(&mut self, side_ref: &str, effect: &str, move_name: &str, of: &MonRef) {
+        self.push_raw(format!("|-sideend|{side_ref}|{effect}|[from] move: {move_name}|[of] {of}"));
+    }
+    /// `|-enditem|<mon>|<Item>|[from] move: Knock Off|[of] <of>` — the KNOCK OFF item removal
+    /// (`gen3_move_coverage_batch1_v1`). In gens 3-4 Knock Off only makes the item unusable;
+    /// the paired `|-hint|` line follows.
+    pub fn enditem_knockoff(&mut self, mon: &MonRef, item: &str, of: &MonRef) {
+        self.push_raw(format!("|-enditem|{mon}|{item}|[from] move: Knock Off|[of] {of}"));
+    }
+    /// `|-enditem|<mon>|<Item>|[silent]|[from] move: Thief|[of] <of>` — the THIEF target-loses
+    /// half (a Covet steal has NO `-enditem`, only the `-item` gain). Silent (the client shows
+    /// only the attacker's `-item` gain).
+    pub fn enditem_thief_silent(&mut self, mon: &MonRef, item: &str, of: &MonRef) {
+        self.push_raw(format!("|-enditem|{mon}|{item}|[silent]|[from] move: Thief|[of] {of}"));
+    }
+    /// `|-item|<mon>|<Item>|[from] move: <Move>|[of] <of>` — the THIEF / COVET item GAIN on the
+    /// attacker (`<Move>` = `Thief`/`Covet`, `<of>` = the mon the item came from).
+    pub fn item_stolen(&mut self, mon: &MonRef, item: &str, move_name: &str, of: &MonRef) {
+        self.push_raw(format!("|-item|{mon}|{item}|[from] move: {move_name}|[of] {of}"));
     }
 
     // ── End of battle (player layer — the bridge relays these) ──────────────────

@@ -254,6 +254,23 @@ add([cond('spikes', 'onSideStart'), cond('spikes', 'onSideRestart')],
   IMPL('turn.rs::run_status_move', 'the layer set/increment (cap 3, a 4th FAILS) + |-sidestart| line — the spikes arm'));
 add([cond('spikes', 'onEntryHazard')], IMPL('turn.rs::apply_entry_hazards',
   'the grounded switch-in chip ([_,3,4,6][layers]·maxhp/24, floored, min 1) at the gen3 runSwitch EntryHazard'));
+
+// SCREENS (`gen3_move_coverage_batch2_v1`) — the Light Screen / Reflect side conditions.
+for (const id of ['reflect', 'lightscreen']) {
+  add([cond(id, 'onSideStart')], IMPL('turn.rs::modeled_screen_move',
+    'the |-sidestart| line + the 5-turn counter set (the screen-set arm in run_status_move)'));
+  add([cond(id, 'onSideEnd')], IMPL('turn.rs::run_residuals',
+    'the |-sideend| line at expiry (the side-residual screen countdown in run_residuals)'));
+  add([cond(id, 'duration')], IMPL('turn.rs::SCREEN_DURATION',
+    'the fixed 5-turn duration (gen3 has no Light Clay → always 5)'));
+  add([cond(id, 'durationCallback')], IMPL('turn.rs::SCREEN_DURATION',
+    'the Light-Clay durationCallback resolves to 5 in gen3 (Light Clay is gen4)'));
+  add([cond(id, 'onSideResidualOrder')], IMPL('turn.rs::run_residuals',
+    'the side-residual TICK order (Reflect 1 / Light Screen 2 — the countdown decrement; the screens have no drawing residual handler)'));
+  // The ModifyDamagePhase1 halving handler — the damage-calc fold PLUS the 2-screen tie-shuffle.
+  add([cond(id, 'onAnyModifyDamagePhase1')], IMPL('damage.rs::modify_damage',
+    'the ×0.5 physical(Reflect)/special(Light Screen) halving (crit-bypassed) — plus, when BOTH screens are up, the run_move ModifyDamagePhase1 tie-shuffle draw (two_tied_handler_shuffle)'));
+}
 add([cond('taunt', 'onResidualOrder'), cond('taunt', 'onResidualSubOrder')],
   IMPL('turn.rs::run_residuals', 'the duration-bearing taunt volatile\'s residual TICK slot (order 10 subOrder 15 — the fieldEvent Residual duration decrement; taunt itself has no onResidual fn)'));
 
@@ -302,6 +319,11 @@ add([mv('struggle', 'recoil')], IMPL('turn.rs::run_move', 'STRUGGLE RECOIL: the 
 add([mv('struggle', 'noPPBoosts')], IMPL('turn.rs::must_struggle', 'Struggle is not a slot — no PP tracked/deducted (gen3_pp_tracking_v1)'));
 add([mv('substitute', 'onTryHit')], IMPL('turn.rs::run_status_move', 'the already-subbed / not-enough-HP fail gates'));
 add([mv('substitute', 'onHit')], IMPL('turn.rs::run_status_move', 'the maxhp/4 directDamage create cost'));
+
+// MOVE-COVERAGE BATCH 2 status-cure `onHit` (`gen3_move_coverage_batch2_v1`).
+add([mv('refresh', 'onHit')], IMPL('turn.rs::run_status_move', 'the Refresh self-cure arm (par/psn/brn cleared; none/slp/frz fail — draw-free)'));
+add([mv('healbell', 'onHit')], IMPL('turn.rs::run_status_move', 'the Heal Bell whole-team cure (active + bench; SKIPS a Soundproof ally, draw-free)'));
+add([mv('aromatherapy', 'onHit')], IMPL('turn.rs::run_status_move', 'the Aromatherapy whole-team clearStatus cure (no Soundproof gate, draw-free)'));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CLASS RULES (applied when no exact row matches).
@@ -371,7 +393,19 @@ function moveRule(row, d3) {
     return IMPL('turn.rs::modeled_status_move', 'the standalone status-inflicting move arm (accuracy + try_set_status)');
   }
   if (h === 'status') return IMPL('turn.rs::apply_secondaries', 'a secondary-carried status');
-  if (h === 'boosts') return IMPL('turn.rs::self_boost_spec', 'the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)');
+  if (h === 'boosts') {
+    // A declarative top-level `boosts` map is EITHER a PURE self-boost setup move
+    // (target:self, positive — `selfBoosts`) OR a standalone FOE STAT-DROP status move
+    // (target:normal, negative — `statDropBoosts`, gen3_move_coverage_batch2_v1). Route by
+    // the move's target so the anchor is right.
+    if (m && m.target === 'self') {
+      return IMPL('turn.rs::self_boost_spec', 'the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)');
+    }
+    return IMPL('turn.rs::stat_drop_boosts', 'the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)');
+  }
+  // WEATHER-SET (`gen3_move_coverage_batch2_v1`) — Rain Dance / Sunny Day set a 5-turn timed
+  // weather (never-miss, draw-free set; the WeatherChange tie-shuffle draws only on a speed tie).
+  if (h === 'weather') return IMPL('turn.rs::modeled_weather_set_move', 'the 5-turn timed weather-set arm (Rain Dance/Sunny Day; setWeather fails into the same weather, overwrites a different one)');
   if (h === 'heal') return IMPL('turn.rs::recovery_heal_amount', 'the flat floor(maxhp/2) recovery arm');
   if (h === 'volatileStatus') {
     const e = MOVE_VOLATILE_ANCHOR[String(m && m.volatileStatus)];
@@ -380,8 +414,43 @@ function moveRule(row, d3) {
   }
   if (h === 'forceSwitch') return IMPL('turn.rs::drag_in', 'the phaze arm (accuracy + protect/soundproof/suctioncups gates + ONE sample)');
   if (h === 'selfdestruct') return IMPL('turn.rs::pending_explosion_self_ko', 'the pre-hit unconditional self-KO (gen3_explosion_v1)');
-  if (h === 'sideCondition') return IMPL('turn.rs::apply_entry_hazards', 'the Spikes side-condition arm (layers + grounded entry chip)');
+  if (h === 'sideCondition') {
+    // SCREENS (`gen3_move_coverage_batch2_v1`) — Light Screen / Reflect set a 5-turn SIDE
+    // condition the damage calc reads (halve special / physical). Spikes is the entry hazard.
+    if (row.id === 'lightscreen' || row.id === 'reflect') {
+      return IMPL('turn.rs::modeled_screen_move', 'the 5-turn screen side-condition arm (Light Screen/Reflect set + the side-residual countdown + the damage-calc halving)');
+    }
+    return IMPL('turn.rs::apply_entry_hazards', 'the Spikes side-condition arm (layers + grounded entry chip)');
+  }
   if (h === 'stallingMove') return IMPL('turn.rs::run_protect', 'the protect/detect stall machinery');
+  // MOVE-COVERAGE BATCH 1 (`gen3_move_coverage_batch1_v1`): the DRAW-FREE (+ self-drop's ONE
+  // random(100)) post-hit effects, admitted via MODELED_{RECOIL,DRAIN,SELFDROP,ITEM_REMOVAL,
+  // RAPIDSPIN}_MOVES. A recoil/drain/self move NOT in a modeled set is unreachable
+  // (isModeledMove rejects it), so a row here is for an ADMITTED member.
+  if (h === 'recoil') {
+    return IMPL('turn.rs::apply_recoil', 'the recoil family (Double-Edge/Take Down/Submission); Rock Head negates, draw-free');
+  }
+  if (h === 'drain') {
+    return IMPL('turn.rs::apply_drain', 'the drain family (Absorb/Mega/Giga Drain/Leech Life); floor non-sub, ceil behind a sub, draw-free');
+  }
+  if (h === 'self') {
+    // `move.self` is EITHER a self-DROP (Overheat/Superpower `{boosts:...}`) or Rapid Spin's
+    // empty `{}` marker (its clear is the onAfterHit/onAfterSubDamage below).
+    if (m && m.self && m.self.boosts) {
+      return IMPL('turn.rs::apply_self_drops', 'the self stat-drop (Overheat/Superpower) + the gen3 selfDrops random(100)');
+    }
+    return NOOP('an empty `self: {}` marker (Rapid Spin) — its effect is the onAfterHit/onAfterSubDamage clear');
+  }
+  if (h === 'onAfterHit' || h === 'onAfterSubDamage') {
+    // Knock Off / Thief / Covet (item removal) + Rapid Spin (hazard clear).
+    if (row.id === 'rapidspin') {
+      return IMPL('turn.rs::apply_rapid_spin', 'the Rapid Spin hazard/leech clear (onAfterHit + onAfterSubDamage — clears behind a sub too)');
+    }
+    if (row.id === 'knockoff' || row.id === 'thief' || row.id === 'covet') {
+      return IMPL('turn.rs::apply_item_removal', 'the Knock Off/Thief/Covet item removal (Sticky Hold block + the gen3 itemKnockedOff gate)');
+    }
+    return null;
+  }
   return null;
 }
 

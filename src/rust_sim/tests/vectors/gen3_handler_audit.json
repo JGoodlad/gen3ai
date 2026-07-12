@@ -6,8 +6,8 @@
    "abilities": 74,
    "items": 59,
    "conditions": 27,
-   "moves": 168,
-   "rows": 664
+   "moves": 181,
+   "rows": 679
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); NOT in MODELED/NOOP so the e2e filter excludes its teams",
@@ -2508,6 +2508,12 @@
    "fp": "fn:74d8d82a:onTryEatItem(item, pokemon) { if (!this.runEvent(\"TryHeal\", pokemon, null, this.effect, pokemon.baseMaxhp / 3)) return f",
    "reason": "the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds)"
   },
+  "move:absorb:drain": {
+   "disposition": "implemented",
+   "fp": "val:[1,2]",
+   "anchor": "turn.rs::apply_drain",
+   "reason": "the drain family (Absorb/Mega/Giga Drain/Leech Life); floor non-sub, ceil behind a sub, draw-free"
+  },
   "move:acid:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":10,\"boosts\":{\"def\":-1}}]",
@@ -2741,6 +2747,12 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:covet:onAfterHit": {
+   "disposition": "implemented",
+   "fp": "fn:a3097623:onAfterHit(target, source, move) { if (source.item || source.volatiles[\"gem\"]) { return; } const yourItem = target.takeI",
+   "anchor": "turn.rs::apply_item_removal",
+   "reason": "the Knock Off/Thief/Covet item removal (Sticky Hold block + the gen3 itemKnockedOff gate)"
+  },
   "move:crabhammer:critRatio": {
    "disposition": "implemented",
    "fp": "val:2",
@@ -2829,6 +2841,12 @@
    "fp": "val:[{\"chance\":20,\"volatileStatus\":\"confusion\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:doubleedge:recoil": {
+   "disposition": "implemented",
+   "fp": "val:[1,3]",
+   "anchor": "turn.rs::apply_recoil",
+   "reason": "the recoil family (Double-Edge/Take Down/Submission); Rock Head negates, draw-free"
   },
   "move:dragonbreath:secondaries": {
    "disposition": "implemented",
@@ -2919,6 +2937,12 @@
    "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:gigadrain:drain": {
+   "disposition": "implemented",
+   "fp": "val:[1,2]",
+   "anchor": "turn.rs::apply_drain",
+   "reason": "the drain family (Absorb/Mega/Giga Drain/Leech Life); floor non-sub, ceil behind a sub, draw-free"
   },
   "move:glare:status": {
    "disposition": "implemented",
@@ -3082,11 +3106,23 @@
    "anchor": "turn.rs::CRIT_MULT",
    "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
   },
+  "move:knockoff:onAfterHit": {
+   "disposition": "implemented",
+   "fp": "fn:45f5ce6c:onAfterHit(target, source, move) { if (!target.item) return; const item = target.getItem(); if (this.runEvent(\"TakeItem\"",
+   "anchor": "turn.rs::apply_item_removal",
+   "reason": "the Knock Off/Thief/Covet item removal (Sticky Hold block + the gen3 itemKnockedOff gate)"
+  },
   "move:leafblade:critRatio": {
    "disposition": "implemented",
    "fp": "val:2",
    "anchor": "turn.rs::CRIT_MULT",
    "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:leechlife:drain": {
+   "disposition": "implemented",
+   "fp": "val:[1,2]",
+   "anchor": "turn.rs::apply_drain",
+   "reason": "the drain family (Absorb/Mega/Giga Drain/Leech Life); floor non-sub, ceil behind a sub, draw-free"
   },
   "move:leechseed:ignoreImmunity": {
    "disposition": "implemented",
@@ -3158,6 +3194,12 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:megadrain:drain": {
+   "disposition": "implemented",
+   "fp": "val:[1,2]",
+   "anchor": "turn.rs::apply_drain",
+   "reason": "the drain family (Absorb/Mega/Giga Drain/Leech Life); floor non-sub, ceil behind a sub, draw-free"
   },
   "move:metalclaw:secondaries": {
    "disposition": "implemented",
@@ -3260,6 +3302,12 @@
    "fp": "val:[{\"chance\":50,\"boosts\":{\"accuracy\":-1}}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:overheat:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"boosts\":{\"spa\":-2}}",
+   "anchor": "turn.rs::apply_self_drops",
+   "reason": "the self stat-drop (Overheat/Superpower) + the gen3 selfDrops random(100)"
   },
   "move:payday:onHit": {
    "disposition": "implemented",
@@ -3379,6 +3427,23 @@
    "fp": "val:1",
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:rapidspin:onAfterHit": {
+   "disposition": "implemented",
+   "fp": "fn:d70eb3be:onAfterHit(target, pokemon, move) { if (!move.hasSheerForce) { if (pokemon.removeVolatile(\"leechseed\")) { this.add(\"-end",
+   "anchor": "turn.rs::apply_rapid_spin",
+   "reason": "the Rapid Spin hazard/leech clear (onAfterHit + onAfterSubDamage — clears behind a sub too)"
+  },
+  "move:rapidspin:onAfterSubDamage": {
+   "disposition": "implemented",
+   "fp": "fn:2c919874:onAfterSubDamage(damage, target, pokemon, move) { if (!move.hasSheerForce) { if (pokemon.hp && pokemon.removeVolatile(\"l",
+   "anchor": "turn.rs::apply_rapid_spin",
+   "reason": "the Rapid Spin hazard/leech clear (onAfterHit + onAfterSubDamage — clears behind a sub too)"
+  },
+  "move:rapidspin:self": {
+   "disposition": "noop_justified",
+   "fp": "val:{}",
+   "reason": "an empty `self: {}` marker (Rapid Spin) — its effect is the onAfterHit/onAfterSubDamage clear"
   },
   "move:razorleaf:critRatio": {
    "disposition": "implemented",
@@ -3715,6 +3780,12 @@
    "anchor": "turn.rs::modeled_status_move",
    "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
   },
+  "move:submission:recoil": {
+   "disposition": "implemented",
+   "fp": "val:[1,4]",
+   "anchor": "turn.rs::apply_recoil",
+   "reason": "the recoil family (Double-Edge/Take Down/Submission); Rock Head negates, draw-free"
+  },
   "move:substitute:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -3744,6 +3815,12 @@
    "fp": "val:\"substitute\"",
    "anchor": "turn.rs::absorb_into_sub",
    "reason": "the substitute volatile (create in run_status_move, absorb at onTryPrimaryHit)"
+  },
+  "move:superpower:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"boosts\":{\"atk\":-1,\"def\":-1}}",
+   "anchor": "turn.rs::apply_self_drops",
+   "reason": "the self stat-drop (Overheat/Superpower) + the gen3 selfDrops random(100)"
   },
   "move:swift:neverMiss": {
    "disposition": "implemented",
@@ -3805,6 +3882,12 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:takedown:recoil": {
+   "disposition": "implemented",
+   "fp": "val:[1,4]",
+   "anchor": "turn.rs::apply_recoil",
+   "reason": "the recoil family (Double-Edge/Take Down/Submission); Rock Head negates, draw-free"
+  },
   "move:taunt:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -3816,6 +3899,12 @@
    "fp": "val:\"taunt\"",
    "anchor": "state.rs::taunt",
    "reason": "the taunt volatile (gen3_taunt_disable_v1)"
+  },
+  "move:thief:onAfterHit": {
+   "disposition": "implemented",
+   "fp": "fn:bc2f9627:onAfterHit(target, source, move) { if (source.item || source.volatiles[\"gem\"]) { return; } const yourItem = target.takeI",
+   "anchor": "turn.rs::apply_item_removal",
+   "reason": "the Knock Off/Thief/Covet item removal (Sticky Hold block + the gen3 itemKnockedOff gate)"
   },
   "move:thunderbolt:secondaries": {
    "disposition": "implemented",

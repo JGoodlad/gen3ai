@@ -323,6 +323,14 @@ pub struct MonState {
     /// unlike `ability`, an item change survives a switch). Every engine item read goes
     /// through THIS field, never `set.item` (the construction-time value).
     pub item: String,
+    /// Whether this mon's item was **KNOCKED OFF** (`pokemon.itemKnockedOff`,
+    /// `gen3_move_coverage_batch1_v1`). gen3 Knock Off makes the item "unusable — cannot obtain
+    /// a new item"; the sim's `takeItem` (pokemon.ts:1853) returns FALSE in gen≤4 when EITHER
+    /// the target OR the source has `itemKnockedOff` — so a Thief / Covet whose ATTACKER was
+    /// Knocked-Off (or whose TARGET was) does NOTHING to items (no removal, no gain). Set by
+    /// `apply_item_removal` on a Knock Off; PERSISTS for the battle (an item change survives a
+    /// switch — like `item`). `false` at construction.
+    pub item_knocked_off: bool,
     /// The CURRENT ability (`pokemon.ability`, `gen3_berry_trace_shedskin_v1`) — starts
     /// as `set.ability`; TRACE overwrites it with the foe's current ability at switch-in
     /// (the copy is LIVE for every ability read); RESET to `set.ability` on switch-out
@@ -448,6 +456,7 @@ impl MonState {
         Ok(MonState {
             set,
             item,
+            item_knocked_off: false,
             ability,
             focus_energy: false,
             species_id,
@@ -599,6 +608,19 @@ pub struct SideState {
     /// (excluded / fail-loud): Toxic Spikes + Stealth Rock (NOT gen3), Rapid Spin (the
     /// hazard-clear move) — Spikes is the only gen-3 entry hazard.
     pub spikes: u8,
+    /// The **Light Screen** side-condition remaining-turn counter (`side.sideConditions.
+    /// lightscreen.duration`), `gen3_move_coverage_batch2_v1`. 0 = not up; set to 5 by the
+    /// Light Screen MOVE (gen3 has no Light Clay → always 5), decremented ONCE per end-of-turn
+    /// SIDE residual (`onSideResidual`), cleared to 0 at expiry (emitting `|-sideend|…|move:
+    /// Light Screen`). While up, the damage calc HALVES incoming SPECIAL damage to this side
+    /// (`DamageContext::light_screen`, crit-bypassed). A per-side persistent state (like
+    /// spikes); 0 at construction.
+    pub light_screen: u8,
+    /// The **Reflect** side-condition remaining-turn counter (`side.sideConditions.reflect.
+    /// duration`), `gen3_move_coverage_batch2_v1`. As `light_screen` but HALVES incoming
+    /// PHYSICAL damage (`DamageContext::reflect`) and expires with `|-sideend|…|Reflect`. 0 at
+    /// construction.
+    pub reflect: u8,
 }
 
 impl SideState {
@@ -813,6 +835,8 @@ fn build_side(name: &str, team: &PackedTeam, dex: &Dex) -> Result<SideState, Str
         active: 0, // gen-3 singles lead = pokemon[0]
         pokemon_left,
         switch_flag: false,
-        spikes: 0, // no side conditions at construction
+        spikes: 0,        // no side conditions at construction
+        light_screen: 0,  // gen3_move_coverage_batch2_v1
+        reflect: 0,       // gen3_move_coverage_batch2_v1
     })
 }

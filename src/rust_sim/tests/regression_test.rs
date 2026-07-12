@@ -6366,3 +6366,612 @@ fn nicknamed_mon_renders_nickname_in_every_ident_not_species() {
          the nickname `Electhor`, the DETAILS the species `Zapdos`. Got: {switch_line:?}"
     );
 }
+
+// ============================================================================
+// MOVE-COVERAGE BATCH 1 (`gen3_move_coverage_batch1_v1`) — the DRAW-FREE post-hit effects
+// (RECOIL / DRAIN / ITEM-REMOVAL / RAPID-SPIN) + the SELF-DROP that draws ONE random(100).
+// Ground truth from `harness/probe_batch1_regression_rng.js` (raw seed [11,22,33,44]; the
+// genderless leads construct to the init seed "57388,452,34593,29177" — Tauros has a gender
+// ratio so MC1 constructs to a different init seed "18464,3966,47670,60926").
+//
+// **THE DRAW-FREE PROOF**: MC1b (Rock-Head recoil) / MC2 (drain) / MC4 (knock-off) / MC4b
+// (sticky-hold) / MC6 (rapid-spin) ALL share seedAfter "4448,587,55846,30246" — recoil/drain/
+// item/rapid-spin add NO PRNG draw, so they produce the IDENTICAL post-turn seed as each other
+// on the shared init seed. The SELF-DROP scenario (MC3) has a DIFFERENT seedAfter — it draws
+// the selfDrops random(100). Each pin is revert-verified (removing its effect's wiring flips
+// the state; skipping the self-drop draw flips MC3's seed off the shared draw-free value).
+// ============================================================================
+
+/// MC1: Double-Edge recoils `floor(dmgDealt/3)` to the USER (`recoil:[1,3]`), DRAW-FREE.
+/// WRONG (pre-fix): the recoil was never applied (the USER took no recoil). STATE (Tauros HP
+/// includes the recoil) + SEED (the post-turn seed == the real Showdown seed).
+#[test]
+fn double_edge_recoils_a_third_of_the_damage_dealt() {
+    let d = dex();
+    let tauros = "Tauros|||sturdy|doubleedge|Adamant|,252,,,,252|||||";
+    let snorlax = "Snorlax|||immunity|pound|Careful|252,,,252,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(tauros, snorlax, "18464,3966,47670,60926"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions.len(), 1);
+    // Tauros (maxhp 291) took the Double-Edge recoil (Snorlax was KO'd this turn). Ground
+    // truth: 117/291 — the recoil chipped it. A no-recoil model leaves Tauros near-full.
+    assert_eq!(out.decisions[0].active[0].hp, 117, "Tauros HP includes the DE recoil (dealt/3)");
+    assert!(!out.decisions[0].active[0].fainted, "Tauros survives the recoil");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "29587,16389,4131,29123",
+        "recoil is DRAW-FREE → the post-turn seed matches the real Showdown seed"
+    );
+}
+
+/// MC1b: Rock Head NEGATES Double-Edge recoil — the USER takes NO recoil (only the foe's
+/// chip). WRONG (a model that applied recoil regardless of ability): Aggron's HP would be
+/// lower. STATE (Aggron near-full HP) + SEED (== the SHARED draw-free seed — recoil is
+/// draw-free either way).
+#[test]
+fn rock_head_negates_double_edge_recoil() {
+    let d = dex();
+    let aggron = "Aggron|||rockhead|doubleedge|Adamant|,252,,,,252|||||";
+    let snorlax = "Snorlax|||immunity|pound|Careful|252,,,252,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(aggron, snorlax, "57388,452,34593,29177"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // Aggron (maxhp 281) took ONLY Snorlax's Pound — NO recoil. Ground truth 274/281.
+    assert_eq!(out.decisions[0].active[0].hp, 274, "Rock Head → Aggron takes NO Double-Edge recoil");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "4448,587,55846,30246",
+        "recoil (or its Rock-Head negation) is DRAW-FREE → the SHARED draw-free seed (== MC2/MC4/MC4b/MC6)"
+    );
+}
+
+/// MC2: Giga Drain heals the USER `floor(dmgDealt/2)` (`drain:[1,2]`), DRAW-FREE. WRONG
+/// (pre-fix): the drain heal was never applied. STATE (the injured Sceptile heals) + SEED
+/// (== the SHARED draw-free value — drain draws nothing).
+#[test]
+fn giga_drain_heals_half_the_damage_dealt() {
+    let d = dex();
+    let sceptile = "Sceptile|||overgrow|gigadrain|Modest|,,,252,,252|||||";
+    let snorlax = "Snorlax|||immunity|pound|Careful|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(sceptile, snorlax, "57388,452,34593,29177"), &d)
+            .expect("start");
+    // Injure Sceptile to 80 so the heal is visible (mirrors the golden/probe inject).
+    st_set_hp_b1(battle.state_mut().unwrap(), 0, 80);
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // Sceptile healed the drain (dealt/2), then took Snorlax's Pound. Ground truth 65/281.
+    assert_eq!(out.decisions[0].active[0].hp, 65, "Sceptile HP includes the Giga Drain heal (dealt/2)");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "4448,587,55846,30246",
+        "drain is DRAW-FREE → the SHARED draw-free seed (== MC1b/MC4/MC4b/MC6)"
+    );
+}
+
+/// MC3: Overheat drops the USER's SpA by 2 (`move.self.boosts {spa:-2}`) AND gen3 `selfDrops`
+/// DRAWS ONE `random(100)` (the `secondaryRoll`) — the drop applies unconditionally
+/// (`self.chance === undefined`) but the roll fires. STATE (Charizard spa -2) + SEED (a
+/// DIFFERENT post-turn seed from the physical scenarios — proving the extra `random(100)`;
+/// WRONG (pre-fix): skipping the draw would give the shared draw-free "4448,...", desyncing).
+#[test]
+fn overheat_self_drops_spa_and_draws_the_selfdrops_random_100() {
+    let d = dex();
+    let charizard = "Charizard|||blaze|overheat|Modest|,,,252,,252|||||";
+    let snorlax = "Snorlax|||immunity|pound|Careful|252,,,,252,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(charizard, snorlax, "57388,452,34593,29177"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // Charizard's SpA dropped -2 (boosts index 2 == spa).
+    assert_eq!(out.decisions[0].active[0].boosts[2], -2, "Overheat self-drops SpA by 2");
+    // Ground truth: the selfDrops random(100) makes THIS seed differ from the draw-free ones.
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "43673,61326,59799,37313",
+        "the selfDrops random(100) is DRAWN → a DIFFERENT seed than the draw-free scenarios; \
+         skipping it would give the shared draw-free \"4448,...\" (the pre-fix bug)"
+    );
+}
+
+/// MC4: Knock Off removes the TARGET's item (`onAfterHit`, gen3 no dmg boost), DRAW-FREE.
+/// WRONG (pre-fix): the item was never removed (the target kept it). STATE (Snorlax item gone)
+/// + SEED (== the SHARED draw-free value).
+#[test]
+fn knock_off_removes_the_targets_item_draw_free() {
+    let d = dex();
+    let ttar = "Tyranitar|||sandstream|knockoff|Adamant|,252,,,,252|||||";
+    let snorlax = "Snorlax||leftovers|immunity|pound|Careful|252,,4,252,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(ttar, snorlax, "57388,452,34593,29177"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    // Pre-condition: Snorlax holds Leftovers.
+    assert_eq!(st.sides[1].pokemon[0].item, "Leftovers", "Snorlax starts with Leftovers");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(st.sides[1].pokemon[st.sides[1].active].item, "", "Knock Off REMOVED Snorlax's item");
+    assert!(!out.decisions[0].active[1].item_held, "Snorlax no longer holds an item");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "4448,587,55846,30246",
+        "Knock Off's onAfterHit item removal is DRAW-FREE → the SHARED draw-free seed"
+    );
+}
+
+/// MC4b: Knock Off is BLOCKED by Sticky Hold — the target KEEPS its item. WRONG (a model that
+/// ignored Sticky Hold): the item would be removed. STATE (Muk keeps Leftovers) + SEED (==
+/// the SHARED draw-free value — the block is draw-free too).
+#[test]
+fn knock_off_blocked_by_sticky_hold() {
+    let d = dex();
+    let ttar = "Tyranitar|||sandstream|knockoff|Adamant|,252,,,,252|||||";
+    let muk = "Muk||leftovers|stickyhold|pound|Careful|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(ttar, muk, "57388,452,34593,29177"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        st.sides[1].pokemon[st.sides[1].active].item, "Leftovers",
+        "Sticky Hold BLOCKS Knock Off — Muk KEEPS its Leftovers"
+    );
+    assert!(out.decisions[0].active[1].item_held, "Muk still holds an item");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "4448,587,55846,30246",
+        "the Sticky-Hold-blocked Knock Off is DRAW-FREE → the SHARED draw-free seed"
+    );
+}
+
+/// MC5: Thief STEALS the target's item when the attacker holds NONE — the attacker GAINS it,
+/// the target LOSES it. DRAW-FREE. WRONG (pre-fix): no steal (both items unchanged). STATE
+/// (Gengar gains Leftovers, Snorlax loses it) + SEED.
+#[test]
+fn thief_steals_the_targets_item_when_attacker_is_itemless() {
+    let d = dex();
+    let gengar = "Gengar|||levitate|thief|Timid|,,,252,,252|||||";
+    let snorlax = "Snorlax||leftovers|immunity|pound|Careful|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(gengar, snorlax, "57388,452,34593,29177"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    assert_eq!(st.sides[0].pokemon[0].item, "", "Gengar starts itemless");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        st.sides[0].pokemon[st.sides[0].active].item, "Leftovers",
+        "Thief → the itemless Gengar STOLE Snorlax's Leftovers"
+    );
+    assert_eq!(st.sides[1].pokemon[st.sides[1].active].item, "", "Snorlax LOST its Leftovers");
+    assert!(out.decisions[0].active[0].item_held, "Gengar now holds the stolen item");
+    assert!(!out.decisions[0].active[1].item_held, "Snorlax no longer holds an item");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "60833,51486,28767,2196",
+        "Thief's steal is DRAW-FREE (Gengar's construction seed differs from the physical leads)"
+    );
+}
+
+/// MC6: Rapid Spin clears the USER's OWN Spikes + Leech Seed (`onAfterHit` +
+/// `onAfterSubDamage`), DRAW-FREE. WRONG (pre-fix): the hazards/leech persisted. STATE (p1's
+/// spikes 3→0 + its leech cleared) + SEED (== the SHARED draw-free value).
+#[test]
+fn rapid_spin_clears_the_users_own_spikes_and_leech_seed() {
+    let d = dex();
+    let forretress = "Forretress|||sturdy|rapidspin|Relaxed|252,,252,,,|||||";
+    let snorlax = "Snorlax|||immunity|pound|Careful|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(forretress, snorlax, "57388,452,34593,29177"), &d)
+            .expect("start");
+    {
+        // Inject 3 Spikes on p1's side + a Leech Seed on p1's Forretress (seeded by p2) —
+        // the board Rapid Spin must clear (STATE-only, no PRNG).
+        let st = battle.state_mut().expect("state");
+        st.sides[0].spikes = 3;
+        let active = st.sides[0].active;
+        st.sides[0].pokemon[active].leech_seed = Some(1);
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(st.sides[0].spikes, 0, "Rapid Spin CLEARED the user's own Spikes (3→0)");
+    assert!(
+        st.sides[0].pokemon[st.sides[0].active].leech_seed.is_none(),
+        "Rapid Spin CLEARED the user's own Leech Seed"
+    );
+    assert!(!out.decisions[0].active[0].leech_seeded, "Forretress is no longer leech-seeded");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "4448,587,55846,30246",
+        "Rapid Spin's clear is DRAW-FREE → the SHARED draw-free seed"
+    );
+}
+
+/// MC7: gen3 `itemKnockedOff` — a mon whose item was KNOCKED OFF can neither have its item
+/// TAKEN nor GAIN one (the sim's `takeItem` returns false in gen≤4 if the target OR the source
+/// has `itemKnockedOff`). So a Thief by a Knocked-Off attacker does NOTHING (no removal, no
+/// gain). WRONG (pre-fix): the port's Thief stole the item, giving the Knocked-Off attacker a
+/// Leftovers it then healed with (the e2e_83 real-team bug — Skarmory Thief'd + wrongly healed).
+/// STATE (Skarmory stays itemless / Snorlax keeps its item) + SEED. Ground truth
+/// `harness/probe_batch1_regression_rng.js` (the itemKnockedOff scenario).
+#[test]
+fn knocked_off_attacker_thief_takes_nothing() {
+    let d = dex();
+    // Skarmory holds Leftovers + has Thief; Snorlax has Knock Off (removes Skarmory's item).
+    // Move order: Skarmory [protect, thief] → Protect=Move(0)/Thief=Move(1); Snorlax [knockoff,
+    // pound] → Knock Off=Move(0)/Pound=Move(1). (Protect is a modeled gen-3 filler; on dec0 it
+    // resolves BEFORE the Knock Off — but Knock Off has `protect:1` so Protect BLOCKS it!). Use a
+    // non-protecting filler instead: Skarmory Spikes (draw-free, modeled) so the Knock Off lands.
+    let skarmory = "Skarmory||leftovers|keeneye|spikes,thief|Impish|252,,252,,,|||||";
+    let snorlax = "Snorlax||leftovers|immunity|knockoff,pound|Adamant|252,252,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(skarmory, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    // Skarmory moves [roost, thief] → Roost=Move(0), Thief=Move(1); Snorlax moves [knockoff,
+    // pound] → Knock Off=Move(0), Pound=Move(1). dec0: Skarmory Roost, Snorlax Knock Off →
+    // removes Skarmory's Leftovers + sets `item_knocked_off`. dec1: Skarmory Thief, Snorlax
+    // Pound → the Thief does NOTHING (Skarmory is Knocked-Off; Snorlax keeps its Leftovers).
+    let out = st.run_full_battle(&[
+        ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ScriptDecision::both(Choice::Move(1), Choice::Move(1)),
+    ], &d);
+    assert_eq!(out.decisions.len(), 2);
+    // After the Knock Off (dec0): Skarmory has no item AND is flagged Knocked-Off.
+    assert_eq!(st.sides[0].pokemon[0].item, "", "Knock Off removed Skarmory's Leftovers");
+    assert!(st.sides[0].pokemon[0].item_knocked_off, "Skarmory's slot is flagged itemKnockedOff");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "29587,16389,4131,29123",
+        "the Knock Off dec0 seed"
+    );
+    // After the Thief (dec1): the Knocked-Off Skarmory could NOT gain the item; Snorlax KEEPS it.
+    assert_eq!(st.sides[0].pokemon[st.sides[0].active].item, "", "the Knocked-Off Skarmory gained NOTHING");
+    assert_eq!(
+        st.sides[1].pokemon[st.sides[1].active].item, "Leftovers",
+        "Snorlax KEEPS its Leftovers — the Thief by a Knocked-Off mon does nothing"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "13227,40747,44602,26856",
+        "the Thief-does-nothing dec1 seed (the item op is DRAW-FREE)"
+    );
+}
+
+/// MC8: RECOIL is computed on the POST-Focus-Band damage (`move.totalDamage`). When a Focus
+/// Band SAVES the target from a KO by a recoil move, the recoil is `floor((hp-1)/den)`, NOT
+/// `floor(hp/den)` off the full lethal roll. WRONG (pre-fix): `dealt` was captured BEFORE the
+/// Focus Band survive-at-1 reduction, so the attacker over-recoiled by the FB-clipped amount
+/// (a code-review-found latent bug — reachable on real teams since both recoil [batch-1] and
+/// Focus Band [batch-4] are e2e-admitted). STATE (Tauros HP) + SEED. The FB roll draws at a
+/// probed seed; the recoil itself is draw-free.
+#[test]
+fn recoil_is_computed_on_the_post_focus_band_damage() {
+    let d = dex();
+    let tauros = "Tauros||silkscarf|sturdy|doubleedge|Adamant|,252,,,,252|||||";
+    // Snorlax holds Focus Band; injected to 60 HP so Double-Edge is LETHAL and the 1/10 FB
+    // roll (which passes at this seed) saves it at 1 HP.
+    let snorlax = "Snorlax||focusband|immunity|splash,pound|Careful|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(tauros, snorlax, "11645,6730,59128,17195"), &d)
+            .expect("start");
+    {
+        let st = battle.state_mut().expect("state");
+        let a = st.sides[1].active;
+        st.sides[1].pokemon[a].hp = 60;
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // Snorlax survives at 1 HP (Focus Band); the damage DEALT is 59 → recoil floor(59/3)=19,
+    // so Tauros (maxhp 291) takes 19 → 272. A pre-fix model (recoil off the full lethal roll,
+    // clamped to 60) would recoil floor(60/3)=20 → Tauros 271.
+    assert_eq!(out.decisions[0].active[1].hp, 1, "Focus Band saved Snorlax at 1 HP");
+    assert!(!out.decisions[0].active[1].fainted, "Snorlax did not faint");
+    assert_eq!(
+        out.decisions[0].active[0].hp, 272,
+        "recoil is floor((hp-1)/3)=floor(59/3)=19 off the POST-Focus-Band damage (272), NOT \
+         floor(60/3)=20 off the full lethal roll (271)"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "49711,14316,42044,43950",
+        "the FB roll drew; the recoil itself is draw-free → the real Showdown seed"
+    );
+}
+
+/// Helper: set side `s`'s active mon HP (a STATE-only inject, no PRNG) for the drain pin.
+fn st_set_hp_b1(st: &mut pokesim::state::BattleState, s: usize, hp: u16) {
+    let active = st.sides[s].active;
+    st.sides[s].pokemon[active].hp = hp;
+}
+
+// ============================================================================
+// MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — the DRAW-FRIENDLY status-move
+// classes: STATUS-CURE / WEATHER-SET / STAT-DROP / SCREENS. Ground truth from
+// `harness/probe_batch2_regression_rng.js` (raw seed [11,22,33,44]; the genderless leads
+// construct to init "13127,45333,18295,15391" for the Vaporeon/Electrode/Persian/Blissey
+// scenarios, and "18464,3966,47670,60926" for the Vileplume/Snorlax Aromatherapy team).
+//
+// **THE DRAW MODEL**: the cures / distinct-speed weather-set / screens are DRAW-FREE (the
+// SET turn produces the shared draw-free seed "57388,452,34593,29177" or the scenario's own
+// draw-free value); the stat-drops draw ONE accuracy roll; and — the CRUX — a physical hit
+// into a side with BOTH Reflect AND Light Screen up draws ONE EXTRA `random(0,2)` (the
+// `runEvent('ModifyDamagePhase1')` handler-sort shuffle: the 2 screen `onAnyModifyDamage
+// Phase1` handlers tie), so MC17 (both screens) and its ONE-screen control produce DIFFERENT
+// seeds. Each pin is revert-verified.
+// ============================================================================
+
+/// MC9: Refresh self-cures paralysis (par/psn/brn), DRAW-FREE. WRONG (pre-fix / if the cure
+/// arm is removed): Vaporeon stays paralyzed (its `onHit` would fail-loud or no-op). STATE
+/// (Vaporeon un-paralyzed) + SEED (the draw-free post-turn seed).
+#[test]
+fn refresh_cures_self_paralysis_draw_free() {
+    let d = dex();
+    let vaporeon = "Vaporeon|||waterabsorb|refresh,surf|Serious|,,,252,,|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(vaporeon, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    st_set_status_b2(battle.state_mut().unwrap(), 0, Status::Paralysis);
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        out.decisions[0].active[0].status, None,
+        "Refresh cured Vaporeon's paralysis"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "57388,452,34593,29177",
+        "Refresh's cure is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC10: Heal Bell cures the WHOLE team (active + bench) but SKIPS a Soundproof ally,
+/// DRAW-FREE. WRONG (pre-fix / if the team-cure arm is missing): the active tox persists;
+/// WRONG (if the Soundproof skip is dropped): the bench Electrode's par would be cured too.
+/// STATE (Miltank un-tox'd; the Soundproof Electrode bench KEEPS its par) + SEED (draw-free).
+#[test]
+fn heal_bell_cures_team_but_skips_a_soundproof_ally() {
+    let d = dex();
+    let p1 = "Miltank|||thickfat|healbell,bodyslam|Serious|252,,,,,|||||]\
+              Electrode|||soundproof|thunderbolt|Serious|252,,,,,|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    {
+        let st = battle.state_mut().unwrap();
+        st.sides[0].pokemon[0].status = Some(Status::Toxic(0)); // active Miltank
+        st.sides[0].pokemon[1].status = Some(Status::Paralysis); // bench Soundproof Electrode
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[0].status, None, "Heal Bell cured the active Miltank's tox");
+    // The Soundproof bench ally is SKIPPED — it keeps its paralysis (read the state directly,
+    // it's not the active). A model without the Soundproof gate would cure it.
+    assert_eq!(
+        st.sides[0].pokemon[1].status,
+        Some(Status::Paralysis),
+        "Heal Bell SKIPS the Soundproof bench Electrode → it KEEPS its paralysis"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "18464,3966,47670,60926",
+        "Heal Bell's cure is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC11: Aromatherapy cures the WHOLE team (active + bench) via `clearStatus` — NO Soundproof
+/// gate (Aromatherapy is not a sound move). DRAW-FREE. STATE (active + bench both cleared) +
+/// SEED. WRONG (pre-fix): the team-cure arm missing → the brn/slp persist.
+#[test]
+fn aromatherapy_cures_the_whole_team_draw_free() {
+    let d = dex();
+    let p1 = "Vileplume|||chlorophyll|aromatherapy,gigadrain|Serious|252,,,,,|||||]\
+              Snorlax|||thickfat|bodyslam|Serious|252,,,,,|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, snorlax, "18464,3966,47670,60926"), &d)
+            .expect("start");
+    {
+        let st = battle.state_mut().unwrap();
+        st.sides[0].pokemon[0].status = Some(Status::Burn); // active Vileplume
+        st.sides[0].pokemon[1].status = Some(Status::Sleep(2)); // bench Snorlax
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[0].status, None, "Aromatherapy cured the active Vileplume's burn");
+    assert_eq!(st.sides[0].pokemon[1].status, None, "Aromatherapy cured the bench Snorlax's sleep too");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "57388,452,34593,29177",
+        "Aromatherapy's cure is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC12: Rain Dance sets a 5-turn TIMED Rain (distinct speed → DRAW-FREE). WRONG (pre-fix):
+/// the weather-set arm missing → weather stays clear (fail-loud). STATE (weather Rain, turns
+/// 4 after the first upkeep) + SEED (draw-free at distinct speed).
+#[test]
+fn rain_dance_sets_a_five_turn_timed_rain_draw_free() {
+    let d = dex();
+    let electrode = "Electrode|||noability|raindance,thunderbolt|Serious|,,,,,252|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(electrode, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].weather, Some(Weather::Rain), "Rain Dance set Rain");
+    assert_eq!(
+        out.decisions[0].weather_turns, 4,
+        "the 5-turn timer ticked once at the end-of-turn field residual → 4 remaining"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "18464,3966,47670,60926",
+        "at distinct speed the weather-set draws NO eachEvent('WeatherChange') shuffle → draw-free seed"
+    );
+}
+
+/// MC13: Rain Dance into an ALREADY-active Rain FAILS (`setWeather` returns false for a MOVE
+/// source when `this.weather === status.id`), DRAW-FREE, the weather (incl. its permanent
+/// duration) UNCHANGED. STATE (weather still permanent Rain, turns 0) + SEED. WRONG (a model
+/// that re-set the timer): the weather would become a 5-turn timed Rain.
+#[test]
+fn rain_dance_into_an_already_active_rain_fails_draw_free() {
+    let d = dex();
+    let electrode = "Electrode|||noability|raindance,thunderbolt|Serious|,,,,,252|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(electrode, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    {
+        // Inject a PERMANENT Rain (the Drizzle-style board — weather_turns 0).
+        let st = battle.state_mut().unwrap();
+        st.field.weather = Some(Weather::Rain);
+        st.field.weather_turns = 0;
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].weather, Some(Weather::Rain), "the weather is still Rain");
+    assert_eq!(
+        out.decisions[0].weather_turns, 0,
+        "the Rain Dance FAILED into the same weather → the PERMANENT (turns 0) Rain is unchanged"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "18464,3966,47670,60926",
+        "the failed weather-set is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC14: Screech drops the foe's Def by 2 (`statDropBoosts {def:-2}`) after its accuracy
+/// roll. STATE (Snorlax Def -2) + SEED (the accuracy roll drew). WRONG (pre-fix): the
+/// stat-drop arm missing → Screech fail-louds.
+#[test]
+fn screech_drops_the_foe_defense_by_two_after_its_accuracy_roll() {
+    let d = dex();
+    let persian = "Persian|||limber|screech,slash|Serious|,,,,,252|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(persian, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[1].boosts[1], -2, "Screech dropped Snorlax's Def by 2 (boosts idx 1 == def)");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "57388,452,34593,29177",
+        "Screech draws its accuracy roll (then a draw-free boost) → the real Showdown seed"
+    );
+}
+
+/// MC15: Screech BLOCKED by Clear Body — the accuracy roll is STILL drawn, but no drop lands.
+/// STATE (Metagross Def stays 0) + SEED (the accuracy roll drew, same as a landed drop). WRONG
+/// (a model ignoring Clear Body): Metagross Def would be -2.
+#[test]
+fn screech_blocked_by_clear_body_draws_accuracy_but_no_drop() {
+    let d = dex();
+    let persian = "Persian|||limber|screech,slash|Serious|,,,,,252|||||";
+    let metagross = "Metagross|||clearbody|meteormash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(persian, metagross, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[1].boosts[1], 0, "Clear Body BLOCKED the Screech drop → Def stays 0");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "3932,55062,24613,55040",
+        "the accuracy roll STILL draws (the block is at the boost apply) → the real Showdown seed"
+    );
+}
+
+/// MC16: Light Screen sets a 5-turn SIDE condition, DRAW-FREE. STATE (p1 light_screen 4 after
+/// one residual tick) + SEED (draw-free). WRONG (pre-fix): the screen arm missing → fail-loud.
+#[test]
+fn light_screen_sets_a_five_turn_side_condition_draw_free() {
+    let d = dex();
+    let blissey = "Blissey|||naturalcure|lightscreen,softboiled|Serious|252,,252,,,|||||";
+    let snorlax = "Snorlax|||immunity|pound|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(blissey, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        out.decisions[0].light_screen[0], 4,
+        "Light Screen set duration 5, ticked once at the side residual → 4 remaining on p1's side"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "29587,16389,4131,29123",
+        "Light Screen is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC17: THE DOUBLE-SCREEN `ModifyDamagePhase1` SHUFFLE (the crux) — a physical hit into a
+/// side with BOTH Reflect AND Light Screen up draws ONE extra `random(0,2)` (the 2 screen
+/// `onAnyModifyDamagePhase1` handlers tie → a size-2 Fisher-Yates shuffle). WRONG (pre-fix):
+/// the shuffle was NOT drawn → the seed matched the ONE-screen control. This pin captures the
+/// TWO-screen seed AND asserts it DIFFERS from the ONE-screen control (the extra draw).
+#[test]
+fn double_screen_physical_hit_draws_the_modify_damage_phase1_shuffle() {
+    let d = dex();
+    let blissey = "Blissey|||naturalcure|softboiled|Serious|252,,252,,,|||||";
+    let snorlax = "Snorlax|||immunity|pound|Serious|252,,,,,|||||";
+    // TWO screens up on p1's side (Reflect + Light Screen).
+    let mut both =
+        Battle::start_with_switchins(&opts_cg(blissey, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    {
+        let st = both.state_mut().unwrap();
+        st.sides[0].reflect = 5;
+        st.sides[0].light_screen = 5;
+    }
+    let out_both = both
+        .state_mut()
+        .unwrap()
+        .run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        seed_str(&out_both.decisions[0].seed_after),
+        "55318,8071,46680,56242",
+        "with BOTH screens up, the physical Pound draws the ModifyDamagePhase1 shuffle → the \
+         real Showdown seed"
+    );
+
+    // ONE screen up (Reflect only) — NO tie, NO shuffle. Its seed must DIFFER from the above.
+    let mut one =
+        Battle::start_with_switchins(&opts_cg(blissey, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    {
+        let st = one.state_mut().unwrap();
+        st.sides[0].reflect = 5;
+    }
+    let out_one = one
+        .state_mut()
+        .unwrap()
+        .run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        seed_str(&out_one.decisions[0].seed_after),
+        "29587,16389,4131,29123",
+        "with ONE screen up, NO ModifyDamagePhase1 tie → NO shuffle draw → a DIFFERENT seed"
+    );
+    assert_ne!(
+        seed_str(&out_both.decisions[0].seed_after),
+        seed_str(&out_one.decisions[0].seed_after),
+        "the double-screen shuffle draw MUST make the two seeds differ (the crux — reverting the \
+         shuffle would make them equal)"
+    );
+}
+
+/// Helper: set side `s`'s active mon major status (a STATE-only inject, no PRNG).
+fn st_set_status_b2(st: &mut pokesim::state::BattleState, s: usize, status: Status) {
+    let active = st.sides[s].active;
+    st.sides[s].pokemon[active].status = Some(status);
+}

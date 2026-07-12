@@ -133,6 +133,19 @@ const STALL_DURATION: u8 = 2;
 /// onResidualSubOrder 15) and EXPIRES → `None` at 0.
 const TAUNT_DURATION: u8 = 2;
 
+/// The gen-3 TIMED-WEATHER MOVE duration (`gen3_move_coverage_batch2_v1`) — Rain Dance /
+/// Sunny Day set `weather_turns = 5` (`raindance`/`sunnyday` `durationCallback` yields 5;
+/// gen3 has no Damp/Heat Rock → always 5, VERIFIED vs the sim). Distinct from the
+/// ability-source PERMANENT weather (`weather_turns = 0`). Decremented ONCE per end-of-turn
+/// FIELD residual; at 0 the weather clears (`|-weather|none`).
+const WEATHER_MOVE_DURATION: u8 = 5;
+
+/// The gen-3 SCREEN duration (`gen3_move_coverage_batch2_v1`) — Light Screen / Reflect set
+/// `light_screen`/`reflect = 5` (`lightscreen`/`reflect` `durationCallback` yields 5; gen3
+/// has no Light Clay → always 5, VERIFIED). Decremented ONCE per end-of-turn SIDE residual;
+/// at 0 the screen expires (`|-sideend|…`).
+const SCREEN_DURATION: u8 = 5;
+
 /// The TAUNT volatile's residual duration-handler `onResidualSubOrder` (15,
 /// `gen3_taunt_disable_v1`) — the gen-3 `taunt` condition carries `onResidualOrder: 10,
 /// onResidualSubOrder: 15`, so at the shared order 10 it sorts AFTER Leftovers (sub 4) /
@@ -755,8 +768,18 @@ impl BattleState {
     /// (0 handlers) draws nothing.
     fn set_status_event_shuffle(&mut self) {
         // Two tied handlers (the 2 Standard clauses) at equal everything → speed_sort
-        // draws one size-2 shuffle. The handler payload is irrelevant (we only need the
-        // DRAW); reuse the generic EventHandler with equal keys.
+        // draws one size-2 shuffle. Shared with the ModifyDamagePhase1 screen pair.
+        self.two_tied_handler_shuffle();
+    }
+
+    /// A size-2 speed-sort shuffle over two handlers at EQUAL order/priority/speed (0) — an
+    /// UNCONDITIONAL one-draw `random(0,2)` (unlike [`each_event_shuffle`], which draws only
+    /// on a mon-SPEED tie). Used for any `runEvent` whose 2 gathered handlers are both
+    /// speed-less effect handlers that ALWAYS tie: the gen3ou SetStatus clause pair (Sleep +
+    /// Freeze Clause Mod, [`set_status_event_shuffle`]) AND the `ModifyDamagePhase1`
+    /// Reflect + Light-Screen pair (`gen3_move_coverage_batch2_v1` — two `onAnyModifyDamage
+    /// Phase1` side-condition handlers). The payload is irrelevant — we only need the DRAW.
+    fn two_tied_handler_shuffle(&mut self) {
         let mut handlers: Vec<EventHandler<usize>> = (0..2)
             .map(|i| EventHandler {
                 order: NO_ORDER,
@@ -1005,6 +1028,37 @@ impl BattleState {
         // CURRENT (para/boost-aware) speed — even for a mon that switched in mid-turn
         // with a stale raw cached speed.
         self.update_speed(dex);
+
+        // --- SCREENS countdown (`gen3_move_coverage_batch2_v1`) — the Light Screen / Reflect
+        //     SIDE-condition residual (`onSideResidualOrder` reflect 1 / lightscreen 2, well
+        //     BEFORE the field weather residual at order 8 and the mon handlers at order 10).
+        //     DRAW-FREE + state-only (VERIFIED: a screen turn draws only the existing shuffles
+        //     + Quick Claw — the screen residual has no drawing handler; its own SideCondition
+        //     effectType sort group never ties a mon-held handler). Each screen ticks once; at
+        //     0 it expires (`|-sideend|<side>|<Effect>`). Reflect ticks before Light Screen
+        //     (subOrder 1 < 2), side 0 before side 1. ---
+        for side in 0..2 {
+            for is_reflect in [true, false] {
+                let ptr = if is_reflect {
+                    &mut self.sides[side].reflect
+                } else {
+                    &mut self.sides[side].light_screen
+                };
+                if *ptr == 0 {
+                    continue;
+                }
+                *ptr -= 1;
+                if *ptr == 0 {
+                    // [EMIT] `|-sideend|<side>|Reflect` / `|…|move: Light Screen`.
+                    if self.logging() {
+                        let side_ref =
+                            crate::protocol::ProtocolBuilder::side_ref(side, &self.sides[side].name);
+                        let effect = if is_reflect { "Reflect" } else { "move: Light Screen" };
+                        self.log.sideend(&side_ref, effect);
+                    }
+                }
+            }
+        }
 
         // --- Gather residual handlers (one per active per applicable effect), each
         //     with its resolved comparePriority key + a typed action. ---
@@ -1512,6 +1566,33 @@ impl BattleState {
     /// first, then chip both actives in side order (the chip itself is draw-free; its
     /// order is unobservable as it touches distinct mons).
     fn apply_weather_chip(&mut self, weather: Weather, dex: &Dex) {
+        // --- TIMED-WEATHER (`gen3_move_coverage_batch2_v1`) countdown + expiry. A MOVE-set
+        //     weather (Rain Dance / Sunny Day) carries `weather_turns` 1..=5; the ability
+        //     weather (Sand Stream) is PERMANENT (`weather_turns == 0` — never expires). At
+        //     the field residual: `weather_turns == 1` → EXPIRE this turn (emit `|-weather|
+        //     none` INSTEAD of the `[upkeep]` line, clear the weather), and STILL run the
+        //     eachEvent('Weather') shuffle below (VERIFIED: the expiry turn draws the SAME
+        //     count as an upkeep turn — the field residual's shuffle fires either way).
+        //     `weather_turns > 1` → decrement + upkeep. `weather_turns == 0` → permanent, no
+        //     decrement. The decrement is DRAW-FREE + state-only. ---
+        let expiring = self.field.weather_turns == 1;
+        if expiring {
+            self.field.weather = None;
+            self.field.weather_turns = 0;
+            // [EMIT] `|-weather|none` (the weather condition's `onFieldEnd`).
+            if self.logging() {
+                self.log.weather("none", None, None, false);
+            }
+            // The field residual STILL fires its eachEvent('Weather') shuffle on the expiry
+            // turn (probe: the expiry turn draws the same count as an upkeep turn). No chip
+            // (the weather is gone; even a would-be sand/hail chip is skipped — the shuffle
+            // is the whole residual). Run the shuffle, then return.
+            self.each_event_shuffle();
+            return;
+        }
+        if self.field.weather_turns > 1 {
+            self.field.weather_turns -= 1;
+        }
         // [EMIT] `|-weather|<Weather>|[upkeep]` — the end-of-turn weather TICK, emitted at
         // the TOP of the field-residual (gen-3 `onFieldResidual` adds `-weather …
         // [upkeep]` BEFORE the `eachEvent('Weather')` chip loop, verified vs the golden:
@@ -2038,6 +2119,280 @@ impl BattleState {
         }
         let heal = mon.maxhp / 4; // floor
         mon.hp = (mon.hp + heal).min(mon.maxhp);
+    }
+
+    /// RECOIL (`gen3_move_coverage_batch1_v1`, the DAMAGING-move recoil family — Double-Edge
+    /// `recoil:[1,3]`, Take Down / Submission `[1,4]`): the USER takes
+    /// `max(floor(damageDealt · num/den), 1)` HP AFTER a landed hit — the exact gen3
+    /// `calcRecoilDamage` = `clampIntRange(floor(dmg·num/den), 1)`. DRAW-FREE (`this.damage`
+    /// consumes no PRNG), and it fires whether the damage hit the MON or a SUBSTITUTE (gen-3
+    /// `substitute.onTryPrimaryHit` runs the SAME `calcRecoilDamage` on the sub damage), so
+    /// `dealt` is the actual damage dealt to whatever absorbed it. **Rock Head** negates
+    /// recoil (`rockhead.onDamage` returns null for a `recoil` effect) → a no-op here.
+    /// `dealt > 0` is the `move.totalDamage` gate. Emitted as `|-damage|<user>|<HP>|[from]
+    /// Recoil|[of] <target>` via [`crate::protocol::ProtocolBuilder::damage_of`]. Struggle's
+    /// recoil is a SEPARATE gen3 path (`[1,4]` with its own `damage_of` line, already modeled).
+    #[allow(clippy::too_many_arguments)]
+    fn apply_recoil(
+        &mut self,
+        side: usize,
+        slot: usize,
+        target_side: usize,
+        target_slot: usize,
+        recoil_fraction: f64,
+        dealt: u16,
+        dex: &Dex,
+    ) {
+        if recoil_fraction <= 0.0 || dealt == 0 {
+            return;
+        }
+        // ROCK HEAD negates recoil (the `onDamage` returns null for a `recoil` effect —
+        // draw-free no-op). Read the CURRENT ability (Trace-aware).
+        if to_id(&self.sides[side].pokemon[slot].ability) == "rockhead" {
+            return;
+        }
+        // gen3 `calcRecoilDamage`: clampIntRange(floor(dmg·num/den), 1). Compute via INTEGER
+        // rational math (recovered from the fraction — [1,3]→(1,3), [1,4]→(1,4)) so 1/3 of 120
+        // is EXACTLY floor(40) == 40 (a float `120·0.333…` would be 39.999… — the reason the
+        // old code needed an epsilon; the integer path is exact + can't mis-round).
+        let (num, den) = recoil_fraction_to_ratio(recoil_fraction);
+        let recoil = (((dealt as u32) * num as u32) / den as u32) as u16;
+        let recoil = recoil.max(1);
+        let user_hp_before = self.sides[side].pokemon[slot].hp;
+        let recoil = recoil.min(user_hp_before);
+        // FOCUS BAND: the recoil is a Damage event into the user (effect 'recoil', NOT a
+        // Move) — the roll draws, no survive. `gen3_ability_batch4_v1`.
+        let recoil = self.focus_band_damage(side, slot, recoil, false, dex);
+        self.apply_damage(side, slot, recoil);
+        if self.logging() {
+            let user = self.mon_ref(side, slot, dex);
+            let target = self.mon_ref(target_side, target_slot, dex);
+            let hp = self.hp_status(side, slot);
+            self.log.damage_of(&user, &hp, &Cause::Bare("Recoil".into()), &target);
+        }
+    }
+
+    /// DRAIN (`gen3_move_coverage_batch1_v1`, Giga Drain / Absorb / Mega Drain / Leech Life —
+    /// `drain:[1,2]`): the USER HEALS by the drain fraction of the damage dealt AFTER a landed
+    /// hit. DRAW-FREE (`this.heal` consumes no PRNG); heal-at-full-HP FAILS draw-free (via
+    /// `apply_heal`). It fires whether the damage hit the MON or a SUBSTITUTE. **The gen<5
+    /// floor/ceil split**: the non-sub path (`battle.ts::damage`) uses `floor(dmg·num/den)`
+    /// clamped to `>=1`; the SUB path (`substitute.onTryPrimaryHit`) uses `ceil(dmg·num/den)` —
+    /// so `absorbed` selects the rounding (equal for `[1,2]` and EVEN `dealt`, differ by 1 for
+    /// odd). **Liquid Ooze** REVERSES the drain (the seeder takes damage) — FAIL-LOUD, the
+    /// move never reaches here (the e2e/A-B filter excludes a Liquid Ooze target, matching the
+    /// Leech-Seed liquidooze deferral). Emitted as `|-heal|<user>|<HP>|[from] drain|[of]
+    /// <target>`.
+    #[allow(clippy::too_many_arguments)]
+    fn apply_drain(
+        &mut self,
+        side: usize,
+        slot: usize,
+        target_side: usize,
+        target_slot: usize,
+        drain_fraction: f64,
+        dealt: u16,
+        absorbed: bool,
+        dex: &Dex,
+    ) {
+        if drain_fraction <= 0.0 || dealt == 0 {
+            return;
+        }
+        // LIQUID OOZE reverses the drain (the seeder takes damage) — fail-loud, unreachable
+        // on the filtered e2e/A-B path (a Liquid Ooze target is excluded), mirroring the
+        // Leech-Seed liquidooze deferral. Guard so it can never silently mis-heal.
+        assert!(
+            to_id(&self.sides[target_side].pokemon[target_slot].ability) != "liquidooze",
+            "Liquid Ooze reverses a drain heal (the drainer takes damage) — NOT modeled; \
+             excluded from the e2e/A-B filter (the Leech-Seed liquidooze deferral)."
+        );
+        // gen<5: non-sub `floor(dmg·num/den)` clamped `>=1` (battle.ts:2168); the SUB path
+        // `ceil(dmg·num/den)` (substitute.onTryPrimaryHit). Compute via INTEGER rational math
+        // (recovered from the fraction: `[1,2]`=0.5 / `[3,4]`=0.75) — NOT a float floor/ceil
+        // with an epsilon (an epsilon on an EXACT even product like 68·0.5==34.0 wrongly
+        // ceil'd to 35 — the e2e_33 Giga-Drain-into-a-sub bug). `den` is the smallest integer
+        // making `frac·den` integral (1/2 → 2, 3/4 → 4); `num = round(frac·den)`.
+        let (num, den) = drain_fraction_to_ratio(drain_fraction);
+        let prod = (dealt as u32) * (num as u32);
+        let heal = if absorbed {
+            // ceil(prod/den)
+            (((prod + den as u32 - 1) / den as u32) as u16).max(1)
+        } else {
+            // floor(prod/den), clamped >=1
+            ((prod / den as u32) as u16).max(1)
+        };
+        let healed = self.apply_heal(side, slot, heal);
+        if self.logging() && healed {
+            let user = self.mon_ref(side, slot, dex);
+            let target = self.mon_ref(target_side, target_slot, dex);
+            let hp = self.hp_status(side, slot);
+            self.log.heal_of(&user, &hp, &Cause::Bare("drain".into()), &target);
+        }
+    }
+
+    /// SELF STAT-DROP (`gen3_move_coverage_batch1_v1`, `move.self.boosts` — Overheat −2 SpA,
+    /// Superpower −1 Atk/−1 Def): apply the self-drop to the USER after a landed hit.
+    ///
+    /// **THE `selfDrops` DRAW (probe-settled — the "draw-free" hypothesis was WRONG; the mod
+    /// chain is the only oracle).** gen3 `selfDrops` (battle-actions.ts:1338) draws ONE
+    /// `random(100)` (the `secondaryRoll`) when `moveData.self.boosts` exists and this isn't a
+    /// secondary, THEN applies the drop if `secondaryRoll < self.chance` OR — Overheat /
+    /// Superpower have `self.chance === undefined` — UNCONDITIONALLY. So the drop ALWAYS
+    /// applies but the roll is ALWAYS DRAWN (verified via a per-call-site PRNG trace: Overheat
+    /// draws `random(100)` at the `selfDrops` position, AFTER the move's own damage + BEFORE
+    /// the foe's move). This is the ONE draw the batch-1 post-hit effects add — and the reason
+    /// the port's Overheat/Superpower were never seed-verified (they were MISMODELED, skipping
+    /// this). The port draws-then-DISCARDS one `random_below(100)` here.
+    ///
+    /// The APPLY is a plain `boost()` on the user (±6 clamp, draw-free), IDENTICAL to the
+    /// setup-move self-boost path. It fires on ANY landed hit INCLUDING behind a SUBSTITUTE
+    /// (the gen3 `selfDrops` targets the USER, not the sub — probe-verified). Our OWN Clear
+    /// Body / Hyper Cutter never blocks our own self-drop (the `onTryBoost` immunity is
+    /// FOE-drop-only). Emitted `|-boost|`/`|-unboost|` per stat by the CLAMPED-applied delta's
+    /// sign — a drop into the −6 floor is a delta-0 no-op that emits NOTHING (the sim's
+    /// `boost()` skips it — probe-verified).
+    fn apply_self_drops(&mut self, side: usize, slot: usize, self_drops: &[(usize, i8)], dex: &Dex) {
+        // THE `selfDrops` `random(100)` — drawn UNCONDITIONALLY (Overheat / Superpower have
+        // `self.chance === undefined`, so the drop always applies but the roll still fires).
+        let _ = self.prng.random_below(100);
+        for &(idx, stages) in self_drops {
+            let cur = self.sides[side].pokemon[slot].boosts[idx] as i32;
+            let next = (cur + stages as i32).clamp(-6, 6);
+            self.sides[side].pokemon[slot].boosts[idx] = next as i8;
+            if self.logging() {
+                let delta = (next - cur) as i8; // the applied (post-clamp) magnitude
+                let user = self.mon_ref(side, slot, dex);
+                self.log.boost(&user, idx, delta);
+            }
+        }
+    }
+
+    /// ITEM REMOVAL (`gen3_move_coverage_batch1_v1`, the `onAfterHit` item mechanics —
+    /// KNOCK OFF removes the target's item; THIEF / COVET STEAL it iff the attacker holds
+    /// none). Runs ONLY on a hit that DAMAGED THE MON (`!absorbed` — the sim's `onAfterHit`
+    /// iterates the `damagedTargets`, which a sub-absorbed hit leaves empty; the target keeps
+    /// its item behind a sub — probe-verified). DRAW-FREE (the `TakeItem` event / `takeItem`
+    /// consume no PRNG — probe-verified). gen3 gotchas (probe-settled vs the resolved dex):
+    ///   - **Knock Off** removes but does NOT boost damage (gen3; the dmg-boost is gen4+),
+    ///     emitting `|-enditem|<target>|<Item>|[from] move: Knock Off|[of] <user>` + the
+    ///     gens-3-4 `|-hint|`. It sets `item = ""`.
+    ///   - **Thief / Covet** STEAL: only if the ATTACKER holds NO item; the attacker GAINS the
+    ///     target's item (`|-item|<user>|<Item>|[from] move: Thief/Covet|[of] <target>`), Thief
+    ///     also emitting the silent `|-enditem|<target>|<Item>|[silent]|[from] move: Thief`.
+    ///   - **Sticky Hold** BLOCKS all three (`onTakeItem` returns false for a foe source) —
+    ///     `|-activate|<target>|ability: Sticky Hold`, item unchanged.
+    ///   - **Mail** does NOT block these three (its `onTakeItem` returns false only for OTHER
+    ///     take-item moves — Trick etc. — so knock/thief/covet go through; probe-verified).
+    /// A target with NO item is a no-op (no line). `move_id` selects the mechanic.
+    #[allow(clippy::too_many_arguments)]
+    fn apply_item_removal(
+        &mut self,
+        side: usize,
+        slot: usize,
+        target_side: usize,
+        target_slot: usize,
+        move_id: &str,
+        dex: &Dex,
+    ) {
+        // No item to remove.
+        if self.sides[target_side].pokemon[target_slot].item.is_empty() {
+            return;
+        }
+        let is_steal = move_id == "thief" || move_id == "covet";
+        // Thief/Covet only steal if the ATTACKER holds NO item.
+        if is_steal && !self.sides[side].pokemon[slot].item.is_empty() {
+            return;
+        }
+        // **THE gen3 `itemKnockedOff` GATE (pokemon.ts:1853)**: `target.takeItem(source)` returns
+        // FALSE in gen≤4 when EITHER the target OR the source (attacker) has `itemKnockedOff` —
+        // gen3 Knock Off makes the slot "unusable, cannot obtain a new item". Thief / Covet route
+        // through `takeItem`, so a Thief/Covet whose ATTACKER was Knocked-Off (or whose TARGET
+        // was) does NOTHING to items (no removal, no gain). VERIFIED vs the sim (`probe_batch1_
+        // *`): the e2e_83 Skarmory (item Knocked-Off) Thiefs a Leftovers Salamence → the item
+        // stays on Salamence, Skarmory gains nothing. Knock Off itself does NOT use `takeItem`
+        // (it `runEvent("TakeItem")`s directly), so it is UNGATED — a fresh item is still removed.
+        if is_steal
+            && (self.sides[target_side].pokemon[target_slot].item_knocked_off
+                || self.sides[side].pokemon[slot].item_knocked_off)
+        {
+            return;
+        }
+        // STICKY HOLD on the target BLOCKS the take (foe source). `-activate`, item unchanged.
+        if to_id(&self.sides[target_side].pokemon[target_slot].ability) == "stickyhold" {
+            if self.logging() {
+                let target = self.mon_ref(target_side, target_slot, dex);
+                self.log.activate(&target, "ability: Sticky Hold", None);
+            }
+            return;
+        }
+        // The item id + its display name (before we clear it).
+        let item_id = self.sides[target_side].pokemon[target_slot].item.clone();
+        let item_name = dex
+            .item(&to_id(&item_id))
+            .map(|i| i.name.clone())
+            .unwrap_or_else(|| item_id.clone());
+        // Remove from the target.
+        self.sides[target_side].pokemon[target_slot].item = String::new();
+        if is_steal {
+            // The attacker GAINS the item (only reached when the attacker was itemless). Store
+            // the SAME string form the target held (the raw set value, e.g. "Leftovers"), so
+            // the port's `MonState::item` field stays consistent (every read normalizes with
+            // `to_id`, so the exact stored form is cosmetic — but keep it uniform).
+            let move_name = if move_id == "thief" { "Thief" } else { "Covet" };
+            self.sides[side].pokemon[slot].item = item_id.clone();
+            if self.logging() {
+                let target = self.mon_ref(target_side, target_slot, dex);
+                let user = self.mon_ref(side, slot, dex);
+                if move_id == "thief" {
+                    self.log.enditem_thief_silent(&target, &item_name, &user);
+                }
+                self.log.item_stolen(&user, &item_name, move_name, &target);
+            }
+        } else {
+            // KNOCK OFF: remove + mark the slot `itemKnockedOff` (gen3 — "unusable, cannot obtain
+            // a new item"), so a later Thief/Covet on this mon (or by this mon) does nothing.
+            self.sides[target_side].pokemon[target_slot].item_knocked_off = true;
+            if self.logging() {
+                let target = self.mon_ref(target_side, target_slot, dex);
+                let user = self.mon_ref(side, slot, dex);
+                self.log.enditem_knockoff(&target, &item_name, &user);
+                self.log.hint(
+                    "In Gens 3-4, Knock Off only makes the target's item unusable; \
+                     it cannot obtain a new item.",
+                );
+            }
+        }
+    }
+
+    /// RAPID SPIN (`gen3_move_coverage_batch1_v1`, the `onAfterHit` + `onAfterSubDamage`
+    /// hazard-clear): after a LANDED hit (mon OR sub — Rapid Spin carries BOTH hooks, so it
+    /// clears behind a substitute too, unlike Knock Off — probe-verified), CLEAR the USER's
+    /// OWN side hazards (Spikes) + the USER's Leech Seed + partial-trap. DRAW-FREE. gen3 has
+    /// only Spikes among the hazards (Toxic Spikes / Stealth Rock are later gens); partial-trap
+    /// is not modeled (no partial-trap move in scope) → a documented no-op. `dealt > 0` gates
+    /// (a landed hit). Emitted: `|-end|<user>|Leech Seed|[from] move: Rapid Spin|[of] <user>`
+    /// then `|-sideend|<user-side>|Spikes|[from] move: Rapid Spin|[of] <user>`, in that order
+    /// (probe-verified).
+    fn apply_rapid_spin(&mut self, side: usize, slot: usize, dex: &Dex) {
+        // Clear the USER's Leech Seed FIRST (the sim order), if present.
+        if self.sides[side].pokemon[slot].leech_seed.is_some() {
+            self.sides[side].pokemon[slot].leech_seed = None;
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                self.log.volatile_end_from_move(&user, "Leech Seed", "Rapid Spin", &user);
+            }
+        }
+        // Clear the USER's OWN side Spikes (the only gen-3 hazard).
+        if self.sides[side].spikes > 0 {
+            self.sides[side].spikes = 0;
+            if self.logging() {
+                let side_ref =
+                    crate::protocol::ProtocolBuilder::side_ref(side, &self.sides[side].name);
+                let user = self.mon_ref(side, slot, dex);
+                self.log.sideend_from_move(&side_ref, "Spikes", "Rapid Spin", &user);
+            }
+        }
+        // Partial-trap: no partial-trap move is modeled → nothing to clear (documented no-op).
     }
 
     /// FLASH FIRE activation (gen3 `flashfire.onTryHit`): a Fire-type move that LANDS on a
@@ -2578,6 +2933,20 @@ impl BattleState {
             }
         };
 
+        // BATCH-1 post-hit effect specs (`gen3_move_coverage_batch1_v1`): recoil / drain /
+        // self-drop fractions read from the move data. Struggle's recoil rides its OWN
+        // dedicated gen-3 path below (so leave it 0 here to avoid a double recoil). Rapid
+        // Spin / Knock Off / Thief / Covet are id-driven (no data field). All draw-free.
+        let (recoil_fraction, drain_fraction, self_drops): (f64, f64, Vec<(usize, i8)>) = if struggle
+        {
+            (0.0, 0.0, Vec::new())
+        } else {
+            match self.move_at(side, slot, move_index, dex) {
+                Some(m) => (m.recoil_fraction, m.drain_fraction, m.self_drops.clone()),
+                None => (0.0, 0.0, Vec::new()),
+            }
+        };
+
         // --- onBeforeMove STATUS draws (BEFORE accuracy), mirroring
         //     runEvent('BeforeMove') at runMove (battle-actions.ts:255), which
         //     precedes useMove/PP/accuracy. Handlers run priority-DESC (sleep 10,
@@ -3032,6 +3401,24 @@ impl BattleState {
         ctx.crit = crit;
         let dmg = crate::damage::calc_damage(&ctx, dex);
 
+        // --- 2b. THE `runEvent('ModifyDamagePhase1')` HANDLER-SORT SHUFFLE
+        //     (`gen3_move_coverage_batch2_v1`) — gen3 `modifyDamage` (scripts.js:61) runs
+        //     `runEvent('ModifyDamagePhase1')` to fold the screens (Reflect ×0.5 physical,
+        //     Light Screen ×0.5 special) + Flash Fire ×1.5. When the DEFENDER's side has
+        //     BOTH Reflect AND Light Screen up, their two `onAnyModifyDamagePhase1` handlers
+        //     TIE (same order/priority/speed — both side-condition handlers) → a size-2
+        //     Fisher-Yates speed-sort shuffle draws EXACTLY one `random(0,2)` per damaging
+        //     hit. VERIFIED bit-for-bit vs the sim (`probe_batch2` / the shuffle trace): ONE
+        //     screen (or none) → NO tie → NO draw; BOTH screens → 1 draw. Flash Fire is in a
+        //     DIFFERENT tie group (attacker vs defender speed) so it never adds to this count
+        //     (probed: FF+one-screen = 0, FF+both = 1). Drawn AFTER the crit roll, BEFORE the
+        //     `random(16)` damage roll — the exact position in the sim's draw stream. A crit
+        //     ignores screens for the DAMAGE, but the handlers still GATHER (the event runs
+        //     regardless of crit), so the shuffle draws even under a crit. ---
+        if self.sides[foe].reflect > 0 && self.sides[foe].light_screen > 0 {
+            self.two_tied_handler_shuffle();
+        }
+
         // --- 3. DAMAGE: random(16) selects rolls[r] (gen-3 randomizer). ---
         let r = self.prng.random_below(16) as usize;
         let realized = dmg.rolls[r];
@@ -3054,7 +3441,15 @@ impl BattleState {
             Some(sub_hp) => sub_hp,
             None => self.sides[foe].pokemon[foe_slot].hp,
         };
-        let dealt = realized.min(target_hp_before);
+        // `dealt` = `move.totalDamage` (the sim's `damage()` return) — the ACTUAL HP delta,
+        // used as the recoil/drain BASIS. It is the roll clamped to the target's remaining HP,
+        // AND (for a NON-sub hit) further reduced by a Focus Band survive-at-1 (the sim's drain/
+        // recoil read `move.totalDamage` AFTER the Focus Band `onDamage` reduction — gen3
+        // scripts.ts:398/406/408). `dealt` is refreshed inside the `!absorbed` block below to the
+        // post-Focus-Band value so a recoil/drain move that a Focus Band saves from a KO
+        // recoils/heals off `hp-1`, not the full lethal roll. For a sub the basis is the sub HP
+        // (Focus Band never applies to a sub-absorbed hit).
+        let mut dealt = realized.min(target_hp_before);
         let sub = self.absorb_into_sub(foe, foe_slot, realized);
         let absorbed = sub != SubAbsorb::NoSub;
 
@@ -3064,6 +3459,8 @@ impl BattleState {
             // damage rolls, BEFORE the apply; a lethal MOVE hit that passes survives at
             // 1 HP (probe seed 8: crit path included). A sub-absorbed hit never draws.
             let realized = self.focus_band_damage(foe, foe_slot, realized, true, dex);
+            // Refresh `dealt` to the POST-Focus-Band applied amount (the recoil/drain basis).
+            dealt = realized.min(target_hp_before);
             self.apply_damage(foe, foe_slot, realized);
             // [EMIT] `|-damage|<foe>|<HP>` with the POST-damage HP (`x/y`, `x/y
             // <status>`, or `0 fnt` when the hit KO'd). Observation-only. A 0-damage
@@ -3104,6 +3501,25 @@ impl BattleState {
             }
         }
 
+        // --- BATCH-1 DRAIN (`gen3_move_coverage_batch1_v1`) — the USER heals a fraction of
+        //     the damage dealt, INSIDE the sim's `damage()` (`battle.ts:2167`, gen<=4), so it
+        //     fires right after the `-damage`/sub line + BEFORE self.boosts/secondaries. It
+        //     fires whether the mon or a SUB took the hit (`dealt` = the damage dealt); the
+        //     non-sub path floors, the SUB path ceils (`absorbed` selects). DRAW-FREE. ---
+        if drain_fraction > 0.0 {
+            self.apply_drain(side, slot, foe, foe_slot, drain_fraction, dealt, absorbed, dex);
+        }
+
+        // --- BATCH-1 SELF STAT-DROP (`gen3_move_coverage_batch1_v1`, `move.self.boosts`) —
+        //     the sim's `selfDrops` (battle-actions.ts:1338), AFTER runMoveEffects/drain +
+        //     BEFORE secondaries. Fires on ANY landed hit INCLUDING behind a sub (it targets
+        //     the USER). **NOT draw-free** — gen3 `selfDrops` draws ONE `random(100)` (the
+        //     `secondaryRoll`), applied unconditionally (`self.chance === undefined`); see
+        //     `apply_self_drops`. This is the ONE draw batch-1 adds. ---
+        if !self_drops.is_empty() {
+            self.apply_self_drops(side, slot, &self_drops, dex);
+        }
+
         // --- 4. SECONDARY effects (the per-move random(100) AFTER the hit lands +
         //     HP applied), mirroring spreadMoveHit step 5 (battle-actions.ts:1120,
         //     after spreadDamage/runMoveEffects/selfDrops). For each surviving
@@ -3138,6 +3554,25 @@ impl BattleState {
             };
             if !kr_move_id.is_empty() {
                 self.apply_kings_rock_secondary(side, slot, foe, foe_slot, &kr_move_id, absorbed, dex);
+            }
+        }
+
+        // --- BATCH-1 onAfterHit ITEM REMOVAL + RAPID SPIN (`gen3_move_coverage_batch1_v1`) —
+        //     the sim's `onAfterHit` (battle-actions.ts:1144), AFTER secondaries + BEFORE the
+        //     gen<5 DamagingHit (contact proc). DRAW-FREE. `!struggle` (Struggle carries no
+        //     onAfterHit; `move_index` is its stale scripted slot). Knock Off / Thief / Covet
+        //     fire ONLY when the MON was damaged (`!absorbed` — the sim's damagedTargets is
+        //     empty behind a sub, so the target keeps its item). Rapid Spin ALSO carries an
+        //     `onAfterSubDamage`, so it clears even behind a sub (`dealt > 0`, mon OR sub). ---
+        if !struggle {
+            match move_id.as_str() {
+                "knockoff" | "thief" | "covet" if !absorbed && dealt > 0 => {
+                    self.apply_item_removal(side, slot, foe, foe_slot, &move_id, dex);
+                }
+                "rapidspin" if dealt > 0 => {
+                    self.apply_rapid_spin(side, slot, dex);
+                }
+                _ => {}
             }
         }
 
@@ -3205,6 +3640,16 @@ impl BattleState {
                 let hp = self.hp_status(side, slot);
                 self.log.damage_of(&user, &hp, &Cause::Bare("Recoil".into()), &target);
             }
+        }
+
+        // --- BATCH-1 RECOIL (`gen3_move_coverage_batch1_v1`, Double-Edge / Take Down /
+        //     Submission) — the gen3 `tryMoveHit` recoil (scripts.ts:460), AFTER moveHit
+        //     returns (so LAST in the landed-hit tail, after the contact procs). Fires
+        //     whether the mon or a SUB took the hit (`dealt`); Rock Head negates. DRAW-FREE.
+        //     `!struggle` (Struggle's recoil is the dedicated path above — its
+        //     `recoil_fraction` is 0 here). ---
+        if !struggle && recoil_fraction > 0.0 && dealt > 0 {
+            self.apply_recoil(side, slot, foe, foe_slot, recoil_fraction, dealt, dex);
         }
 
         // The move landed (acc-hit + non-immune; a sub hit STILL fires the in-tryMoveHit
@@ -4164,6 +4609,251 @@ impl BattleState {
                 self.log.damage(&user, &hp, None);
             }
             // A status move is never landed (no in-tryMoveHit Update).
+            return MoveResolution::done(false, false, false);
+        }
+
+        // ============================================================================
+        // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — four DRAW-friendly
+        // status-move classes: STATUS-CURE / WEATHER-SET / STAT-DROP / SCREENS. Each was
+        // probe-settled bit-for-bit vs the omniscient sim (`harness/probe_batch2_movecoverage.js`).
+        // ============================================================================
+
+        // --- STATUS-CURE (`refresh` self / `healbell` + `aromatherapy` whole-team) — a
+        //     never-miss Status move that clears major status. DRAW-FREE (VERIFIED: a cure
+        //     turn draws only the existing action-order / Quick Claw draws — the cure's
+        //     `onHit` consumes NO PRNG):
+        //       * REFRESH (`curesSelfStatus`, `target: self`) — cures the USER's par / psn /
+        //         brn ONLY (`onHit`: `if (["", "slp", "frz"].includes(status)) return false`),
+        //         so it FAILS (draw-free `-fail`) on none/sleep/freeze; emits
+        //         `|-curestatus|<user>|<status>|[msg]` on a cure.
+        //       * HEAL BELL (`curesTeamStatus`, `sound`) — emits `|-activate|<user>|move: Heal
+        //         Bell` then iterates the WHOLE team (active + bench), SKIPPING a Soundproof
+        //         ally (`|-immune|<ally>|[from] ability: Soundproof` if the ally is active),
+        //         curing each other ally draw-free (`|-curestatus|<ident>|<status>|[silent]`,
+        //         the bench renders as a SIDE ref).
+        //       * AROMATHERAPY (`curesTeamStatus`, NOT sound) — emits `|-cureteam|<user>|[from]
+        //         move: Aromatherapy` then clears EVERY ally's status (no Soundproof gate, no
+        //         per-mon `-curestatus`).
+        //     `landed` FALSE (a status `moveHit` returns undefined → no in-tryMoveHit Update).
+        if dex.moves(move_id).map(|m| m.cures_self_status).unwrap_or(false) {
+            // REFRESH — self-cure ANY major status EXCEPT sleep / freeze / none (the gen3
+            // `onHit`: `if (["", "slp", "frz"].includes(status)) return false; cureStatus()`).
+            // So it cures par / psn / **tox** / brn (Toxic IS cured — the missing case that
+            // desynced the e2e Refresh teams). NEVER-MISS → no accuracy draw, DRAW-FREE.
+            let cured = matches!(
+                self.sides[_side].pokemon[_slot].status,
+                Some(Status::Paralysis) | Some(Status::Poison) | Some(Status::Burn) | Some(Status::Toxic(_))
+            );
+            if cured {
+                let tok = status_token(self.sides[_side].pokemon[_slot].status).unwrap_or("");
+                self.sides[_side].pokemon[_slot].status = None;
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.curestatus(&user, tok, true); // `[msg]` form
+                }
+            } else if self.logging() {
+                // no curable status (none / slp / frz) → `onHit` returns false → `-fail`.
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.fail(&user, None, false);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+        if dex.moves(move_id).map(|m| m.cures_team_status).unwrap_or(false) {
+            // HEAL BELL / AROMATHERAPY — whole-team major-status cure (never-miss → no
+            // accuracy draw). DRAW-FREE. `_side` owns the team.
+            let is_heal_bell = self.move_is_sound(move_id, dex); // healbell = sound; aromatherapy not
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                if is_heal_bell {
+                    self.log.activate(&user, "move: Heal Bell", None);
+                } else {
+                    self.log.cureteam_aromatherapy(&user);
+                }
+            }
+            let active = self.sides[_side].active;
+            let team_len = self.sides[_side].pokemon.len();
+            for i in 0..team_len {
+                // HEAL BELL only: a Soundproof ally is SKIPPED (not cured); emits `-immune`
+                // if that ally is ACTIVE. Aromatherapy has no sound flag → cures everyone.
+                if is_heal_bell
+                    && to_id(&self.sides[_side].pokemon[i].ability) == "soundproof"
+                {
+                    if self.logging() && i == active {
+                        let ally = self.mon_ref(_side, i, dex);
+                        self.log.immune_from_ability(&ally, "Soundproof");
+                    }
+                    continue;
+                }
+                if self.sides[_side].pokemon[i].status.is_none() {
+                    continue; // nothing to cure on this ally
+                }
+                let tok = status_token(self.sides[_side].pokemon[i].status).unwrap_or("");
+                self.sides[_side].pokemon[i].status = None;
+                // Heal Bell emits a per-mon `-curestatus [silent]`; Aromatherapy emits none
+                // (its single `-cureteam` banner covers the side).
+                if is_heal_bell && self.logging() {
+                    let ident = if i == active {
+                        self.mon_ref(_side, i, dex).to_string()
+                    } else {
+                        crate::protocol::ProtocolBuilder::side_ref(_side, &self.sides[_side].name)
+                    };
+                    self.log.curestatus_silent(&ident, tok);
+                }
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- WEATHER-SET (`raindance` → Rain / `sunnyday` → Sun) — a never-miss `target:all`
+        //     Status move that SETS field weather for 5 TURNS (a TIMED weather, distinct from
+        //     the permanent ability weather). VERIFIED bit-for-bit vs the omniscient sim:
+        //       * NEVER-MISS → NO accuracy draw. DRAW-FREE at the move itself (a distinct-
+        //         speed set turn draws only Quick Claw). The eachEvent('WeatherChange') tie-
+        //         shuffle DOES fire when the two actives tie on cached speed (the SAME model
+        //         as the ability switch-in weather, already wired via `run_switch`) — handled
+        //         by the shared each_event_shuffle at the WEATHER SET below.
+        //       * `field.setWeather` (field.ts): if the SAME weather is already active it
+        //         FAILS for a MOVE source (`gen > 2 → return false`), emitting `|-weather|<W>`
+        //         then `|-fail|<caster>` and leaving the weather (incl. its duration) UNCHANGED.
+        //         A DIFFERENT weather OVERWRITES (5-turn timer). Emits `|-weather|<W>` (the
+        //         move-source onFieldStart form — NO `[from] ability`), sets `weather_turns=5`.
+        //       * The 5-turn UPKEEP tick (`|-weather|<W>|[upkeep]`) + the expiry (`|-weather|
+        //         none`) are handled at the end-of-turn field residual (`apply_weather_chip` /
+        //         the field-residual duration countdown). `landed` FALSE.
+        if let Some(new_weather) = modeled_weather_set_move(move_id) {
+            debug_assert!(never_miss, "weather-set {move_id:?} expected never_miss");
+            // setWeather: SAME weather already active → FAIL (gen>2 move source), draw-free.
+            if self.field.weather == Some(new_weather) {
+                if self.logging() {
+                    let caster = self.mon_ref(_side, _slot, dex);
+                    self.log.weather(weather_display(new_weather), None, None, false);
+                    self.log.fail(&caster, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // OVERWRITE (or set from clear): a 5-turn TIMED weather. gen3 has no Damp/Heat
+            // Rock → always 5. The eachEvent('WeatherChange') tie-shuffle fires iff the
+            // actives tie on cached speed (mirrors the ability switch-in weather change).
+            self.field.weather = Some(new_weather);
+            self.field.weather_turns = WEATHER_MOVE_DURATION;
+            if self.logging() {
+                // The move-source onFieldStart line: `|-weather|<W>` (no upkeep, no ability).
+                self.log.weather(weather_display(new_weather), None, None, false);
+            }
+            // The `eachEvent('WeatherChange')` draw (only on a speed tie). Return value
+            // unused — this is the DRAW, not an emit-order (matches `run_switch`'s use).
+            self.each_event_shuffle();
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- SCREENS (`lightscreen` / `reflect`) — a never-miss `target: allySide` Status
+        //     move that sets a 5-turn SIDE CONDITION halving incoming special / physical
+        //     damage. VERIFIED bit-for-bit vs the sim:
+        //       * NEVER-MISS → NO accuracy draw. DRAW-FREE (a set turn draws only Quick Claw).
+        //       * The condition begins on the CASTER's own side with duration 5 (gen3 has no
+        //         Light Clay → always 5); `|-sidestart|<side>|move: Light Screen` (Light
+        //         Screen) / `|-sidestart|<side>|Reflect` (Reflect). A re-use while ALREADY up
+        //         FAILS (`addSideCondition` false → `|-fail|<caster>`), the existing timer
+        //         UNCHANGED, draw-free.
+        //       * The damage calc reads `sides[foe].light_screen/reflect > 0` (already wired in
+        //         `build_damage_context`). The 5-turn countdown + expiry (`|-sideend|`) are the
+        //         end-of-turn SIDE residual. `landed` FALSE. ---
+        if let Some(is_reflect) = modeled_screen_move(move_id) {
+            debug_assert!(never_miss, "screen {move_id:?} expected never_miss");
+            let up = if is_reflect {
+                self.sides[_side].reflect > 0
+            } else {
+                self.sides[_side].light_screen > 0
+            };
+            if up {
+                // already up → addSideCondition false → `-fail` on the caster, draw-free.
+                if self.logging() {
+                    let caster = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&caster, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            if is_reflect {
+                self.sides[_side].reflect = SCREEN_DURATION;
+            } else {
+                self.sides[_side].light_screen = SCREEN_DURATION;
+            }
+            if self.logging() {
+                let side_ref = crate::protocol::ProtocolBuilder::side_ref(_side, &self.sides[_side].name);
+                // Light Screen's onSideStart emits `move: Light Screen`; Reflect emits `Reflect`.
+                let effect = if is_reflect { "Reflect" } else { "move: Light Screen" };
+                self.log.sidestart(&side_ref, effect);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- STAT-DROP MOVE (Screech −2 Def / Charm −2 Atk / Metal Sound −2 SpD / Feather
+        //     Dance −2 Atk / Tickle −1 Atk/−1 Def / Fake Tears −2 SpD / Cotton Spore / Scary
+        //     Face −2 Spe) — a standalone foe-targeting Status move whose ENTIRE effect is a
+        //     foe stat drop (`statDropBoosts` in the data). VERIFIED bit-for-bit vs the sim:
+        //       1. ACCURACY — `randomChance(acc,100)` drawn unless never-miss (Screech / Metal
+        //          Sound / Cotton Spore are acc-85/85/85 and CAN miss; Charm / Feather Dance /
+        //          Tickle / Fake Tears are acc-100 but NOT never-miss so they STILL draw one
+        //          roll). This is the ONLY per-move draw.
+        //       2. SOUNDPROOF — Screech / Metal Sound carry `flags.sound`, so vs a Soundproof
+        //          holder the move is IMMUNE at TryHit (accuracy drawn, then `-immune|[from]
+        //          ability: Soundproof`, no drop). Charm / Feather Dance / Tickle / Fake Tears
+        //          are NOT sound.
+        //       3. PROTECT BLOCK — all carry `protect: 1` → a Protect/Detect on the target
+        //          blocks it (accuracy drawn, `-activate Protect`, no drop). Tickle also
+        //          `bypasssub` but the others don't — a SUBSTITUTE blocks a non-bypasssub
+        //          stat-drop (the sub's onTryHit). (Handled below.)
+        //       4. APPLY `boost()` on the FOE, ±6 clamp, DRAW-FREE, with the Clear Body /
+        //          White Smoke / Hyper Cutter / Keen Eye `onTryBoost` immunity gates (reusing
+        //          `apply_secondary_boost`, which emits `|-unboost|` per applied stat OR the
+        //          `|-fail|…|unboost|[from] ability|…` block on an immunity). `landed` FALSE. ---
+        if !dex.moves(move_id).map(|m| m.stat_drop_boosts.is_empty()).unwrap_or(true) {
+            // (1) ACCURACY — drawn unless never-miss (the modeled set is never never-miss).
+            let acc_hit = if never_miss {
+                true
+            } else {
+                self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex)
+            };
+            if !acc_hit {
+                if self.logging() {
+                    self.log.attr_last_move_miss();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.miss(&user, Some(&target));
+                }
+                return MoveResolution::done(true, false, false);
+            }
+            // (2) SOUNDPROOF (sound stat-drops only): immune after the accuracy roll.
+            if self.move_is_sound(move_id, dex)
+                && dex.ability(&to_id(&self.sides[foe].pokemon[foe_slot].ability)).map(|a| a.blocks_sound).unwrap_or(false)
+            {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.immune_from_ability(&target, "Soundproof");
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (3) PROTECT BLOCK (foe-targeting): blocked at TryHit after accuracy.
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (3b) SUBSTITUTE BLOCK — a non-`bypasssub` stat-drop into a substituted foe is
+            //      blocked by the sub (accuracy drawn, no drop). Tickle carries `bypasssub`,
+            //      so it is EXEMPT (it drops a subbed foe). Draw-free past accuracy.
+            if move_id != "tickle" && self.sides[foe].pokemon[foe_slot].substitute.is_some() {
+                return MoveResolution::done(false, false, false);
+            }
+            // (4) APPLY the foe stat drop (DRAW-FREE) via the shared secondary-boost helper.
+            //     Build the `(want_self=false)` spec from the move's `statDropBoosts`.
+            let spec = crate::dex::moves::SecondaryBoost {
+                chance: 100,
+                target_self: false,
+                boosts: dex.moves(move_id).map(|m| m.stat_drop_boosts.clone()).unwrap_or_default(),
+            };
+            self.apply_secondary_boost(_side, _slot, foe, foe_slot, false, std::slice::from_ref(&spec), dex);
             return MoveResolution::done(false, false, false);
         }
 
@@ -6204,8 +6894,12 @@ impl BattleState {
             mv,
             crit: false, // set by the caller after the crit roll
             weather,
-            reflect: false,      // side conditions not tracked this step
-            light_screen: false, // side conditions not tracked this step
+            // SCREENS (`gen3_move_coverage_batch2_v1`): the DEFENDER's side conditions halve
+            // the incoming damage — Reflect ×0.5 physical, Light Screen ×0.5 special (both
+            // crit-bypassed, folded in `damage.rs::modify_damage`). Read from the DEFENDING
+            // (`foe`) side's turn counters; a non-zero count = the screen is up.
+            reflect: self.sides[foe].reflect > 0,
+            light_screen: self.sides[foe].light_screen > 0,
             atk_stat_mods,
             atk_direct_modify,
             def_stat_mods,
@@ -6890,6 +7584,20 @@ pub struct DecisionRecord {
     /// at the previous endTurn, possibly for the now-fainted mon), so the differentials
     /// only assert it at move boundaries.
     pub trapped: [bool; 2],
+    /// The FIELD weather after this decision (`gen3_move_coverage_batch2_v1`) — `None` =
+    /// clear. A MOVE-set weather (Rain Dance / Sunny Day) counts down + expires; the
+    /// ability weather (Sand Stream) is permanent. The batch-2 differential asserts it.
+    pub weather: Option<Weather>,
+    /// The FIELD weather's remaining turns after this decision (`gen3_move_coverage_batch2_v1`,
+    /// `field.weather_turns`). 0 = clear OR permanent (ability weather); 1..=5 = a MOVE-set
+    /// timed weather counting down.
+    pub weather_turns: u8,
+    /// Per-side **Light Screen** remaining turns after this decision (`side.light_screen`,
+    /// `gen3_move_coverage_batch2_v1`, 0..=5). A SIDE condition (reported per side).
+    pub light_screen: [u8; 2],
+    /// Per-side **Reflect** remaining turns after this decision (`side.reflect`,
+    /// `gen3_move_coverage_batch2_v1`, 0..=5). A SIDE condition (reported per side).
+    pub reflect: [u8; 2],
 }
 
 /// The outcome of a full scripted battle: the winner (if any) + every decision's
@@ -7164,22 +7872,7 @@ impl BattleState {
                         // makeRequest('switch') paused the turn. Record the boundary
                         // we JUST finished (the move request, or the prior forced
                         // switch) at the PAUSE seed, then take the next replacement.
-                        decisions.push(DecisionRecord {
-                            request,
-                            active: [self.active_snapshot(0), self.active_snapshot(1)],
-                            active_species: [self.active_species_id(0), self.active_species_id(1)],
-                            pokemon_left: [self.sides[0].pokemon_left, self.sides[1].pokemon_left],
-                            spikes: [self.sides[0].spikes, self.sides[1].spikes],
-                            seed_after: self.prng.get_seed(),
-                            first_mover: if matches!(request, RequestKind::Move) {
-                                first_mover
-                            } else {
-                                None
-                            },
-                            explosion_self_ko: self.pending_explosion_self_ko,
-                            phaze_drag: self.pending_phaze_drag,
-                            trapped: [self.is_trapped(0, dex), self.is_trapped(1, dex)],
-                        });
+                        decisions.push(self.boundary_record(request, first_mover, dex));
 
                         // Pull the replacement decision(s); commit the flagged sides'
                         // instaswitch(es); prepend them before the saved tail. PER-SIDE
@@ -7398,6 +8091,10 @@ impl BattleState {
             explosion_self_ko: self.pending_explosion_self_ko,
             phaze_drag: self.pending_phaze_drag,
             trapped: [self.is_trapped(0, dex), self.is_trapped(1, dex)],
+            weather: self.field.weather,
+            weather_turns: self.field.weather_turns,
+            light_screen: [self.sides[0].light_screen, self.sides[1].light_screen],
+            reflect: [self.sides[0].reflect, self.sides[1].reflect],
         }
     }
 
@@ -8325,6 +9022,47 @@ fn compare_keys(a: &(u64, i32, f64), b: &(u64, i32, f64)) -> f64 {
     0.0
 }
 
+/// Recover the exact `(num, den)` integer ratio from a `recoil`/`drain` FRACTION
+/// (`gen3_move_coverage_batch1_v1`). The data stores the pre-divided float
+/// (`recoilFraction`/`drainFraction`); the engine needs the EXACT integer floor/ceil, so it
+/// reconstructs the smallest `den` making `frac·den` integral and `num = round(frac·den)`.
+/// The gen-3 (+ modeled) values are a fixed small set — `[1,2]`, `[1,3]`, `[1,4]`, `[3,4]`,
+/// `[33,100]`, `[1,2]` — resolved by exact-float compare (they round-trip bit-for-bit; a stray
+/// float would GIGO-panic rather than silently mis-round). Used by `apply_recoil`/`apply_drain`.
+fn fraction_to_ratio(frac: f64) -> (u16, u16) {
+    // Compare against the exact stored floats (division of small ints in f64 is exact for
+    // these). Ordered by frequency (gen-3 OU: [1,2] drain, [1,3]/[1,4] recoil).
+    const TABLE: &[(u16, u16)] = &[
+        (1, 2),
+        (1, 3),
+        (1, 4),
+        (3, 4),
+        (33, 100),
+        (1, 8),
+        (1, 16),
+    ];
+    for &(n, d) in TABLE {
+        if frac == (n as f64) / (d as f64) {
+            return (n, d);
+        }
+    }
+    panic!(
+        "unexpected recoil/drain fraction {frac} — not in the known gen-3 ratio table; \
+         add its (num, den) to `fraction_to_ratio` (GIGO guard so it can never mis-round)."
+    );
+}
+
+/// See [`fraction_to_ratio`] — the recoil-fraction wrapper (kept as a named alias for the
+/// `apply_recoil` call site's readability).
+fn recoil_fraction_to_ratio(frac: f64) -> (u16, u16) {
+    fraction_to_ratio(frac)
+}
+
+/// See [`fraction_to_ratio`] — the drain-fraction wrapper.
+fn drain_fraction_to_ratio(frac: f64) -> (u16, u16) {
+    fraction_to_ratio(frac)
+}
+
 /// The gen-3 SUBSTITUTE cost = `floor(maxhp/4)`, which is ALSO the created sub's HP
 /// (`directDamage(maxhp/4)` floors, and the volatile's `onStart` sets `effectState.hp =
 /// Math.floor(maxhp/4)`). A Substitute FAILS (draw-free) if `hp <= floor(maxhp/4)` — the
@@ -8453,6 +9191,27 @@ fn modeled_status_move(move_id: &str) -> Option<&'static str> {
         "spore" | "sleeppowder" | "hypnosis" | "sing" | "lovelykiss" | "grasswhistle" => "slp",
         _ => return None,
     })
+}
+
+/// The MODELED WEATHER-SET moves (`gen3_move_coverage_batch2_v1`) → the [`Weather`] they
+/// set for 5 turns. Rain Dance → Rain, Sunny Day → Sun. Sandstorm / Hail (the MOVES) are
+/// NOT modeled here (no gen3-OU team carries the moves; sand/hail come from Sand Stream).
+fn modeled_weather_set_move(move_id: &str) -> Option<Weather> {
+    match move_id {
+        "raindance" => Some(Weather::Rain),
+        "sunnyday" => Some(Weather::Sun),
+        _ => None,
+    }
+}
+
+/// The MODELED SCREEN moves (`gen3_move_coverage_batch2_v1`) → `Some(true)` for Reflect
+/// (halves PHYSICAL), `Some(false)` for Light Screen (halves SPECIAL), `None` otherwise.
+fn modeled_screen_move(move_id: &str) -> Option<bool> {
+    match move_id {
+        "reflect" => Some(true),
+        "lightscreen" => Some(false),
+        _ => None,
+    }
 }
 
 /// The PRIMARY self-boost spec for a PURE SETUP move (Swords Dance / Dragon Dance /

@@ -136,6 +136,27 @@ Notes that bite:
   the draw-free `boost()` apply); the file diff is just the ~17 pure setup moves and it is **obs-neutral**
   (the facade ignores it). The e2e fuzz's `MODELED_SETUP_MOVES` is DERIVED from this field so the
   allow-list stays GIGO-proof in lockstep with the engine.
+- **`build_moves`** ALSO carries **`selfDrops`** (only-when-present, like `selfBoosts`,
+  `gen3_move_coverage_batch1_v1`) — the top-level `move.self.boosts` SELF STAT-DROP on a DAMAGING
+  move: Overheat `{spa:-2}`, Superpower `{atk:-1,def:-1}`, Psycho Boost `{spa:-2}`. `_self_drops`
+  emits the `{stat:stages}` (all NEGATIVE) map for a damaging move whose `self` block is EXACTLY a
+  `boosts` map of self stat-DROPS in the battle stats (no accuracy/evasion, no other `self` key).
+  It exists for the **`src/rust_sim` Rust port** (`MoveData::self_drops` → `turn.rs::apply_self_drops`,
+  which draws the gen3 `selfDrops` `random(100)` then applies the drop draw-free); the file diff is
+  just the handful of self-drop moves and it is **obs-neutral** (the facade ignores it). Rapid Spin's
+  `self` block is `{}` (its clear is an `onAfterHit`, not a self-boost) → correctly excluded.
+- **`build_moves`** ALSO carries **`statDropBoosts`** (only-when-present, like `selfDrops`,
+  `gen3_move_coverage_batch2_v1`) — the declarative FOE STAT-DROP for a standalone stat-drop STATUS
+  move: Screech `{def:-2}`, Charm `{atk:-2}`, Metal Sound `{spd:-2}`, Feather Dance `{atk:-2}`, Tickle
+  `{atk:-1,def:-1}`, Fake Tears `{spd:-2}`, Cotton Spore / Scary Face `{spe:-2}`. `_stat_drop_boosts`
+  emits the `{stat:stages}` (all NEGATIVE) map for a `category:Status`, foe-targeting (`target:normal`)
+  move (bp 0) whose ENTIRE effect is its declarative top-level `boosts` of foe drops in the battle
+  stats (no accuracy/evasion, no `status`/`volatileStatus`/`self`/`secondary`/`onHit`/`heal`, and NO
+  `selfdestruct` — so Memento is excluded). It exists for the **`src/rust_sim` Rust port**
+  (`MoveData::stat_drop_boosts` → the stat-drop arm in `run_status_move`, which draws the accuracy roll
+  then applies the drop draw-free via `apply_secondary_boost`); obs-neutral (the facade ignores it).
+  Refresh / Heal Bell / Aromatherapy reuse the pre-existing `curesSelfStatus` / `curesTeamStatus`
+  flags; the weather/screen ids are pinned in `turn.rs`.
 
 ## Team downloaders — one manifest entry per team
 

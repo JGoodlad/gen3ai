@@ -1200,7 +1200,10 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "statDropBoosts": {
+            "atk": -2
+        }
     },
     "clamp": {
         "name": "Clamp",
@@ -1460,7 +1463,10 @@
         "pp": 40,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "statDropBoosts": {
+            "spe": -2
+        }
     },
     "counter": {
         "name": "Counter",
@@ -2580,7 +2586,10 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "statDropBoosts": {
+            "spd": -2
+        }
     },
     "falseswipe": {
         "name": "False Swipe",
@@ -2634,7 +2643,10 @@
         "pp": 15,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "statDropBoosts": {
+            "atk": -2
+        }
     },
     "feintattack": {
         "name": "Feint Attack",
@@ -5388,7 +5400,10 @@
         "pp": 40,
         "noPPBoosts": false,
         "contact": false,
-        "sound": true
+        "sound": true,
+        "statDropBoosts": {
+            "spd": -2
+        }
     },
     "meteormash": {
         "name": "Meteor Mash",
@@ -6104,7 +6119,10 @@
         "pp": 5,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "selfDrops": {
+            "spa": -2
+        }
     },
     "painsplit": {
         "name": "Pain Split",
@@ -6612,7 +6630,10 @@
         "pp": 5,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "selfDrops": {
+            "spa": -2
+        }
     },
     "psychup": {
         "name": "Psych Up",
@@ -7506,7 +7527,10 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "statDropBoosts": {
+            "spe": -2
+        }
     },
     "scratch": {
         "name": "Scratch",
@@ -7560,7 +7584,10 @@
         "pp": 40,
         "noPPBoosts": false,
         "contact": false,
-        "sound": true
+        "sound": true,
+        "statDropBoosts": {
+            "def": -2
+        }
     },
     "secretpower": {
         "name": "Secret Power",
@@ -8997,7 +9024,11 @@
         "pp": 5,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "selfDrops": {
+            "atk": -1,
+            "def": -1
+        }
     },
     "supersonic": {
         "name": "Supersonic",
@@ -9659,7 +9690,11 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "statDropBoosts": {
+            "atk": -1,
+            "def": -1
+        }
     },
     "torment": {
         "name": "Torment",

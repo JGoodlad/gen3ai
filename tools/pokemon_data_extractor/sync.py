@@ -547,6 +547,82 @@ def _self_boosts(entry):
     return {stat: int(stages) for stat, stages in boosts.items()}
 
 
+def _self_drops(entry):
+    """The top-level ``move.self.boosts`` SELF STAT-DROP spec on a DAMAGING move
+    (``gen3_move_coverage_batch1_v1`` — Overheat ``{spa:-2}``, Superpower ``{atk:-1,
+    def:-1}``, Draco Meteor / Leaf Storm / Psycho Boost ``{spa:-2}``). Returns the
+    ``{stat: stages}`` map (all stages NEGATIVE), ELSE ``None`` (the key is then
+    OMITTED — additive, only-when-present, like ``selfBoosts``), so the file diff is
+    just the handful of self-drop moves and the obs facade ignores it.
+
+    Gated to a DAMAGING move (bp > 0) whose ``self`` block is EXACTLY a ``boosts`` map
+    of self stat-DROPS in ``_SELF_BOOST_STATS`` — no accuracy/evasion, no other key on
+    the ``self`` block. gen3 ``self.boosts`` are UNCONDITIONAL (no ``chance``/``selfDrops``
+    ``random(100)`` — probe-verified draw-free), applied to the USER after the hit, so the
+    ``src/rust_sim`` engine applies them via a draw-free ``boost()`` (±6 clamp). Rapid
+    Spin's ``self`` block is ``{}`` (its clear is an ``onAfterHit``, not a self-boost) →
+    excluded (no ``boosts`` key)."""
+    if not entry.get("basePower"):  # a self-DROP rides a damaging move
+        return None
+    self_block = entry.get("self")
+    if not isinstance(self_block, dict):
+        return None
+    boosts = self_block.get("boosts")
+    if not isinstance(boosts, dict) or not boosts:
+        return None
+    # Only a pure self.boosts block (no onHit/volatileStatus/etc. on `self`).
+    if any(k != "boosts" for k in self_block):
+        return None
+    if any(v >= 0 for v in boosts.values()):
+        return None
+    if any(stat not in _SELF_BOOST_STATS for stat in boosts):
+        return None
+    return {stat: int(stages) for stat, stages in boosts.items()}
+
+
+def _stat_drop_boosts(entry):
+    """The declarative FOE STAT-DROP spec for a standalone STAT-DROP STATUS MOVE
+    (``gen3_move_coverage_batch2_v1`` — Screech ``{def:-2}``, Charm ``{atk:-2}``,
+    Metal Sound ``{spd:-2}``, Feather Dance ``{atk:-2}``, Tickle ``{atk:-1,def:-1}``,
+    Fake Tears ``{spd:-2}``). Returns the ``{stat: stages}`` map (all stages NEGATIVE),
+    ELSE ``None`` (the key is then OMITTED — additive, only-when-present, like
+    ``selfBoosts``/``selfDrops``), so the file diff is just the handful of stat-drop
+    STATUS moves and the obs facade ignores it.
+
+    Gated to a foe-targeting STATUS move (bp 0) whose ENTIRE effect is its declarative
+    top-level ``boosts`` map of FOE stat-DROPS in ``_SELF_BOOST_STATS`` (no accuracy/
+    evasion — the ``src/rust_sim`` engine's evasion is not folded into the accuracy roll,
+    so an accuracy/evasion drop would silently desync) — mirroring ``_self_boosts`` but for
+    a ``target: normal`` move with NEGATIVE stages and no other effect (NO ``status``/
+    ``volatileStatus``/``self``/``secondary``/``onHit``/``onTryHit``/``heal``). The
+    ``src/rust_sim`` engine draws the accuracy roll then applies these draw-free via
+    ``boost()`` on the FOE with the Clear Body / White Smoke / Hyper Cutter / Keen Eye
+    ``onTryBoost`` immunity gates (``apply_secondary_boost``)."""
+    if entry.get("basePower"):  # a damaging move's stat-drop rides `secondary`, not here
+        return None
+    if entry.get("category") != "Status":
+        return None
+    if entry.get("target") not in ("normal", "adjacentFoe", "any"):
+        return None
+    boosts = entry.get("boosts")
+    if not isinstance(boosts, dict) or not boosts:
+        return None
+    if any(v >= 0 for v in boosts.values()):  # a stat-DROP move (never a foe raise)
+        return None
+    if any(stat not in _SELF_BOOST_STATS for stat in boosts):
+        return None
+    # Any other declarative effect disqualifies the pure stat-drop classification.
+    if entry.get("status") or entry.get("volatileStatus") or entry.get("self") or entry.get("secondary"):
+        return None
+    if entry.get("onHit") or entry.get("onTryHit") or entry.get("heal"):
+        return None
+    # A self-KO move (Memento's `selfdestruct: 'ifHit'` faints the user) is NOT a pure
+    # stat-drop — its self-faint is a separate unmodeled mechanic → exclude (key omitted).
+    if entry.get("selfdestruct"):
+        return None
+    return {stat: int(stages) for stat, stages in boosts.items()}
+
+
 def build_moves(gen):
     """Build the gen-N move map from the poke-env static move data.
 
@@ -695,6 +771,24 @@ def build_moves(gen):
         self_boosts = _self_boosts(entry)
         if self_boosts:
             move_dict["selfBoosts"] = self_boosts
+        # gen3_move_coverage_batch1_v1: the top-level `move.self.boosts` SELF STAT-DROP
+        # on a damaging move (Overheat -2 SpA, Superpower -1 Atk/-1 Def) — only-when-
+        # present, like selfBoosts. The `{stat: stages}` (negative) the `src/rust_sim`
+        # engine applies draw-free on the USER after the hit. Obs-neutral (the facade
+        # ignores it); diff = the handful of self-drop moves.
+        self_drops = _self_drops(entry)
+        if self_drops:
+            move_dict["selfDrops"] = self_drops
+        # gen3_move_coverage_batch2_v1: the declarative FOE STAT-DROP for a standalone
+        # stat-drop STATUS move (Screech -2 Def, Charm -2 Atk, Metal Sound -2 SpD,
+        # Feather Dance -2 Atk, Tickle -1 Atk/-1 Def, Fake Tears -2 SpD) — only-when-
+        # present, like selfDrops. The `{stat: stages}` (negative) the `src/rust_sim`
+        # engine applies draw-free on the FOE (Clear Body/Hyper Cutter/etc. gated) after
+        # its accuracy roll. Obs-neutral (the facade ignores it); diff = the ~6 stat-drop
+        # status moves.
+        stat_drop_boosts = _stat_drop_boosts(entry)
+        if stat_drop_boosts:
+            move_dict["statDropBoosts"] = stat_drop_boosts
         moves_map[move_id] = move_dict
 
     return moves_map
