@@ -202,6 +202,28 @@ const STATUS_DOT_SUBORDER: i32 = 6;
 /// and stall use it, so they tie (with each other) at order NO_ORDER — the tie-group
 /// shuffle the protect golden's seed parity pins.
 const VOLATILE_RESIDUAL_SUBORDER: i32 = 2;
+/// The **WISH** slot condition's `onResidualOrder` **7** (`gen3_move_coverage_batch3_v1`,
+/// the resolved gen-3 `wish` condition — NO subOrder). Smaller than the sand chip's order 8
+/// and every order-10 mon handler, so the Wish heal fires FIRST among the residuals (VERIFIED
+/// vs the sim: on the resolve turn `-heal Wish` precedes `-heal Leftovers` precedes `-damage
+/// brn`). The handler participates in the residual speed-sort with the slot's active mon's
+/// cached speed, so two Wishes resolving the same turn at EQUAL speed draw ONE tie-shuffle
+/// `random(0,2)` (probe: a Blissey-mirror both-Wish resolve turn draws +1 vs a single-Wish
+/// control; distinct-speed draws none). Its subOrder is unset → `resolvePriority`'s
+/// effectTypeOrder default; unobservable (order 7 is unique among the modeled residuals).
+const WISH_RESIDUAL_ORDER: u64 = 7;
+/// The **WISH** slot condition's duration (`wish` condition `duration: 2`,
+/// `gen3_move_coverage_batch3_v1`): cast turn decrements 2 → 1, next turn 1 → 0 → the
+/// `onEnd` heal fires. So the heal lands at the END of the turn AFTER cast.
+const WISH_DURATION: u8 = 2;
+/// The **CURSE** volatile's `onResidualSubOrder` **8** (`gen3_move_coverage_batch3_v1`, the
+/// resolved gen-3 `curse` condition `onResidualOrder: 10, onResidualSubOrder: 8`). So at
+/// order 10 the residual ladder is ability sub 3 → Leftovers sub 4 → leech sub 5 → status DoT
+/// sub 6 → **CURSE sub 8** → Taunt sub 15: Curse's floor(maxhp/4) chip on the cursed foe
+/// fires AFTER the Leftovers/leech/DoT. VERIFIED vs the sim's residual handler dump. Gathered
+/// with the VOLATILES (after leech, before the item / the NO_ORDER duration volatiles),
+/// mirroring `findPokemonEventHandlers`'s status→volatiles→item order.
+const CURSE_RESIDUAL_SUBORDER: i32 = 8;
 /// TRUANT's residual toggle (`gen3_ability_batch4_v1`) — the resolved
 /// `truant.onResidualOrder: 27` (base data, gen3-inherited): its OWN order group,
 /// AFTER every order-10 mon handler, BEFORE the NO_ORDER duration-only volatiles.
@@ -331,6 +353,19 @@ enum ResidualAction {
     /// onResidual unconditionally, so it participates in the residual tie-shuffle).
     /// Confusion is NOT cured. Probe `probe_trace_shedskin_rng.js` (S1/S2/S3).
     ShedSkin { side: usize, slot: usize },
+    /// The **CURSE** residual chip (`gen3_move_coverage_batch3_v1`, order 10 subOrder 8):
+    /// the CURSED holder loses `floor(maxhp/4)` (`curse.onResidual` → `this.damage(baseMaxhp/
+    /// 4)`), emitting `|-damage|<foe>|<hp>|[from] Curse`. DRAW-FREE. Gathered with the
+    /// volatiles (after leech, before Taunt). The `source_side` is stored for parity with
+    /// leech but the chip has no source-heal (unlike leech).
+    Curse { side: usize, slot: usize },
+    /// The **WISH** slot condition's delayed heal (`gen3_move_coverage_batch3_v1`, order 7 —
+    /// BEFORE the sand chip + all order-10 handlers): decrement the side's `wish_pending`
+    /// duration; on reaching 0, if the slot's active mon is not fainted, heal `floor(maxhp/2)`
+    /// (a NON-zero heal emits `|-heal|<mon>|<hp>|[from] move: Wish|[wisher] <name>`; a
+    /// heal-at-full resolves SILENTLY). DRAW-FREE apply; the handler ties-shuffles with the
+    /// other side's Wish at equal speed. `side` is the slot (the healed side).
+    Wish { side: usize },
     /// TRUANT's end-of-turn toggle (`gen3_ability_batch4_v1`, order **27** — its own
     /// group, AFTER every order-10 handler): `truant_turn = !truant_turn`, DRAW-FREE.
     /// Gathered UNCONDITIONALLY for an active Truant holder (the parity clock ticks on
@@ -1064,6 +1099,31 @@ impl BattleState {
         //     with its resolved comparePriority key + a typed action. ---
         let mut handlers: Vec<EventHandler<ResidualAction>> = Vec::new();
 
+        // --- The WISH slot condition (`gen3_move_coverage_batch3_v1`, order 7 — BEFORE the
+        //     sand chip order 8 and every order-10 mon handler). Gathered here (per side) so
+        //     it sorts FIRST among the residuals. Its `speed` is the slot's CURRENT active
+        //     mon's cached speed (the `effectHolder` is the slot occupant), so two Wishes
+        //     resolving the same turn at EQUAL speed TIE at order 7 → ONE tie-shuffle draw
+        //     (probe: a Blissey-mirror both-Wish resolve turn draws +1; distinct speed draws
+        //     none). Gathered whenever a Wish is PENDING (the duration decrement + the fire-at-0
+        //     check live in the apply, like a Leftovers-style gate). No subOrder (unset →
+        //     effectTypeOrder default; unobservable — order 7 is unique among the modeled
+        //     residuals). ---
+        for side in 0..2 {
+            if self.sides[side].wish_pending.is_some() {
+                let slot = self.sides[side].active;
+                let speed = self.sides[side].pokemon[slot].cached_speed as f64;
+                handlers.push(EventHandler {
+                    order: WISH_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: 0,
+                    effect_order: 0,
+                    handler: ResidualAction::Wish { side },
+                });
+            }
+        }
+
         // The weather FIELD handler (`onFieldResidual`, order 8) sorts FIRST. It has no
         // holder speed (a Field handler), so its `speed` key is 0 — it never ties a
         // mon-held handler (those are order 10). One handler for the whole field. It fires
@@ -1177,6 +1237,26 @@ impl BattleState {
                     sub_order: LEECH_SEED_SUBORDER,
                     effect_order: 0,
                     handler: ResidualAction::LeechSeed { side, slot, seeder_side },
+                });
+            }
+
+            // --- The CURSE volatile's residual chip (`gen3_move_coverage_batch3_v1`). Order
+            //     10, subOrder 8 (the gen-3 `curse` condition's `onResidualOrder: 10,
+            //     onResidualSubOrder: 8`) — so at order 10 it sorts AFTER Leftovers (4) / Leech
+            //     Seed (5) / status DoT (6) but BEFORE Taunt (15). It is a VOLATILE, gathered
+            //     with the volatiles group (after leech, before Taunt), mirroring
+            //     `findPokemonEventHandlers`'s status→volatiles→item order. The cursed HOLDER
+            //     is the effect holder (the mon carrying `curse`), so its speed is the sort
+            //     key; its only tie is the OTHER mon's curse at equal speed. Its apply chips
+            //     `floor(maxhp/4)`, DRAW-FREE. ---
+            if mon.curse.is_some() {
+                handlers.push(EventHandler {
+                    order: STATUS_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: CURSE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::Curse { side, slot },
                 });
             }
 
@@ -1545,6 +1625,23 @@ impl BattleState {
                         continue;
                     }
                     self.apply_berry_residual(side, slot, dex);
+                }
+                // CURSE chip (`gen3_move_coverage_batch3_v1`, order 10 subOrder 8): the cursed
+                // holder loses floor(maxhp/4). DRAW-FREE.
+                ResidualAction::Curse { side, slot } => {
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    self.apply_curse(side, slot, dex);
+                }
+                // WISH delayed heal (`gen3_move_coverage_batch3_v1`, order 7): decrement the
+                // pending duration; fire the heal at 0. DRAW-FREE apply.
+                ResidualAction::Wish { side } => {
+                    // The Wish's effectHolder is the slot (not a specific mon); a fainted
+                    // active does NOT skip the DECREMENT — but the heal is gated on
+                    // `!target.fainted` inside apply_wish. We still process it (the slot
+                    // condition ticks regardless).
+                    self.apply_wish(side, dex);
                 }
             }
 
@@ -2462,6 +2559,70 @@ impl BattleState {
         }
     }
 
+    /// The **CURSE** residual chip (`curse.onResidual`, `gen3_move_coverage_batch3_v1`):
+    /// the cursed holder (`side`/`slot`) loses `floor(baseMaxhp/4)` (`this.damage(pokemon.
+    /// baseMaxhp/4)`), emitting `|-damage|<foe>|<hp>|[from] Curse`. DRAW-FREE. Order 10,
+    /// subOrder 8 (see `CURSE_RESIDUAL_SUBORDER`). Focus Band's onDamage roll applies (no
+    /// survive — the curse damage is not a Move effect, so it can't survive-at-1). VERIFIED
+    /// vs `harness/probe_batch3_curse.js`: a cursed Snorlax (maxhp 524) loses 131/turn.
+    fn apply_curse(&mut self, side: usize, slot: usize, dex: &Dex) {
+        let mon = &self.sides[side].pokemon[slot];
+        if mon.fainted || mon.curse.is_none() {
+            return;
+        }
+        let dmg = (mon.maxhp / 4).max(1);
+        // Focus Band's onDamage roll draws on the curse chip (no survive — not a Move).
+        let dmg = self.focus_band_damage(side, slot, dmg, false, dex);
+        self.apply_damage(side, slot, dmg);
+        // [EMIT] `|-damage|<foe>|<HP>|[from] Curse`.
+        if dmg > 0 && self.logging() {
+            let mon_ref = self.mon_ref(side, slot, dex);
+            let hp = self.hp_status(side, slot);
+            self.log.damage(&mon_ref, &hp, Some(&Cause::Bare("Curse".to_string())));
+        }
+    }
+
+    /// The **WISH** slot-condition delayed heal (`wish.onEnd`, `gen3_move_coverage_batch3_v1`):
+    /// decrement the side's `wish_pending` duration; when it reaches 0 the Wish RESOLVES —
+    /// if the slot's active mon is not fainted, heal `floor(baseMaxhp/2)`. A NON-zero heal
+    /// emits `|-heal|<mon>|<hp>|[from] move: Wish|[wisher] <name>` (the wisher name stored at
+    /// cast); a heal-at-FULL resolves SILENTLY (`this.heal` returns 0 → the `if(damage)` guard
+    /// skips the line). DRAW-FREE. Order 7 (fires BEFORE the sand chip + all order-10 handlers
+    /// — VERIFIED). VERIFIED vs `harness/probe_batch3_wish.js`: Blissey 714→+357; Charizard
+    /// 298→+149 (floor); a switched-in Chansey (704) gets +352.
+    fn apply_wish(&mut self, side: usize, dex: &Dex) {
+        // Decrement the pending duration (`fieldEvent('Residual')` decrements the slot
+        // condition's `duration`); fire the `onEnd` heal at 0. The wisher name is consumed
+        // from the pending state.
+        let (dur, wisher) = match self.sides[side].wish_pending.clone() {
+            Some(p) => p,
+            None => return,
+        };
+        let next = dur.saturating_sub(1);
+        if next > 0 {
+            // Not yet resolving — just tick the duration down.
+            self.sides[side].wish_pending = Some((next, wisher));
+            return;
+        }
+        // RESOLVE: clear the pending state, then heal the CURRENT slot occupant.
+        self.sides[side].wish_pending = None;
+        let slot = self.sides[side].active;
+        let mon = &self.sides[side].pokemon[slot];
+        if mon.fainted {
+            // `wish.onEnd` guards `if (!target.fainted)` — a fainted slot heals nothing.
+            return;
+        }
+        let amount = mon.maxhp / 2; // floor(baseMaxhp/2)
+        let healed = self.apply_heal(side, slot, amount);
+        // [EMIT] `|-heal|<mon>|<HP>|[from] move: Wish|[wisher] <name>` — only when a NON-zero
+        // heal landed (a heal-at-full resolves silently, `heal` returns 0).
+        if healed && self.logging() {
+            let mon_ref = self.mon_ref(side, slot, dex);
+            let hp = self.hp_status(side, slot);
+            self.log.heal_wish(&mon_ref, &hp, &wisher);
+        }
+    }
+
     /// The **LEECH SEED** residual drain (`leechseed.onResidual`, gen-3 — verified
     /// bit-for-bit vs the omniscient sim `harness/probe_leechseed_rng.js`). The seeded
     /// mon (`side`/`slot`) loses `floor(baseMaxhp/8)` and the SEEDER's CURRENT active
@@ -2889,6 +3050,7 @@ impl BattleState {
             targets_self,
             move_name,
             is_contact,
+            pressure_targets_foe,
         ) = if struggle {
             let m = dex
                 .moves("struggle")
@@ -2908,6 +3070,7 @@ impl BattleState {
                 false,        // targets the foe, not self
                 m.name.clone(), // "Struggle"
                 m.contact,    // Struggle IS a contact move (gen-3 `flags.contact`) → it CAN proc a contact ability
+                pressure_targets_foe(&m.target), // Struggle target=normal → foe in pressureTargets
             )
         } else {
             match self.move_at(side, slot, move_index, dex) {
@@ -2926,6 +3089,7 @@ impl BattleState {
                     m.target == "self",
                     m.name.clone(),
                     m.contact,
+                    pressure_targets_foe(&m.target),
                 ),
                 // Not a known move — resolve as a no-op (draws nothing). This is a
                 // programming error in scope (the caller picks damaging slots).
@@ -2977,11 +3141,18 @@ impl BattleState {
         //     DRAW-FREE. The mon's OWN move deducts 1 from its used slot; a foe holding
         //     **Pressure** deducts 2 (the `runEvent('DeductPP')` extra, battle-actions.ts:
         //     472-483 — VERIFIED −2, no RNG). Struggle deducts NOTHING (it is not a slot).
-        //     A self-target move (setup/heal/protect) still deducts its slot's PP; only a
-        //     Pressure FOE that is actually TARGETED adds the extra — a self-target move
-        //     does not target a foe, so no Pressure extra (Showdown's `pressureTargets`).
+        //     The Pressure extra fires ONLY when the Pressure FOE is in the move's
+        //     **`pressureTargets`** (`getMoveTargets`, pokemon.ts:854-861) — i.e. the move
+        //     TARGETS a foe. That is NOT the same as `!targets_self`: an **`allyTeam`** move
+        //     (Aromatherapy / Heal Bell) or an `allySide` / `allies` / `foeSide` move does
+        //     NOT put the foe in `pressureTargets`, so it deducts only 1 even under a
+        //     Pressure foe — `pressure_targets_foe` (below) mirrors the exact target rule
+        //     (`gen3_pressure_allyteam_v1`, VERIFIED vs the sim: Blissey's Aromatherapy under
+        //     a Pressure Zapdos deducts 1, not 2 — the e2e_182 root cause). A self-target
+        //     heal/setup/protect (SoftBoiled / Calm Mind / Protect) is `pressureTargets=[self]`
+        //     → also 1.
         if !struggle {
-            let pressure_extra = !targets_self
+            let pressure_extra = pressure_targets_foe
                 && to_id(&self.sides[foe].pokemon[foe_slot].ability) == "pressure";
             let deduct = if pressure_extra { 2 } else { 1 };
             self.sides[side].pokemon[slot].deduct_pp(move_index, deduct);
@@ -3914,6 +4085,25 @@ impl BattleState {
         // USER, mirroring `attrLastMove('[still]')`) and the `-fail` line in the
         // standalone-status arm below. `None` = not this case (announce normally).
         let status_fail = self.foe_status_move_fail(foe, foe_slot, move_id, targets_self, status_inflicted, dex);
+        // --- CURSE (`gen3_move_coverage_batch3_v1`) — the gen-3 `curse.onModifyMove`
+        //     RE-TARGETS the move at runtime based on the USER's type:
+        //       * NON-GHOST user → `move.self = {boosts:{atk:1,def:1,spe:-1}}`, `move.target =
+        //         nonGhostTarget` (SELF). So the announce renders the USER (`|move|<user>|
+        //         Curse|<user>`) and the effect is a self-boost — DELETING the volatileStatus
+        //         + onHit (no curse laid, no HP cost).
+        //       * GHOST user with the foe SUBSTITUTED → `onModifyMove` deletes both → the move
+        //         does NOTHING (`[still]` + `-fail`, no HP cost). The base `move.target` is
+        //         `normal` (foe), so the un-redirected announce renders the FOE.
+        //       * GHOST user, non-subbed → lays the `curse` volatile on the FOE + pays
+        //         floor(maxhp/2) HP (`|move|<user>|Curse|<foe>`, foe-target).
+        //     `curse_ghost` = the user is a Ghost; `curse_still` = the ghost-into-a-sub
+        //     did-nothing case (announce as `[still]`, like Spikes-at-cap). The full effect
+        //     branch runs in the dedicated arm below; this block only fixes the ANNOUNCE.
+        let curse_ghost = move_id == "curse"
+            && mon_types(&self.sides[_side].pokemon[_slot], dex).contains(&Type::Ghost);
+        let curse_still = move_id == "curse"
+            && curse_ghost
+            && self.sides[foe].pokemon[foe_slot].substitute.is_some();
         if self.logging() {
             let user = self.mon_ref(_side, _slot, dex);
             // Spikes at the cap is a top-level `[still]` (did-nothing) case; a
@@ -3925,11 +4115,16 @@ impl BattleState {
             // FIRST, and a MISSED move keeps its target-form announce + gains `[miss]`
             // (byte-verified: `|move|…|Hypnosis|<target>|[miss]` into a paralyzed Hypno).
             // Spikes-at-cap stays up-front (never-miss, no roll before the fail).)
-            let still_form = move_id == "spikes" && self.sides[foe].spikes >= 3;
+            // A ghost-Curse-into-a-sub is the SAME did-nothing `[still]` case.
+            let still_form =
+                (move_id == "spikes" && self.sides[foe].spikes >= 3) || curse_still;
             if still_form {
                 self.log.move_used(&user, move_name, None, false, true);
             } else {
-                let target = if targets_self {
+                // Curse's NON-GHOST branch re-targets to SELF (announce the USER); the
+                // GHOST branch keeps the base foe target.
+                let renders_self = targets_self || (move_id == "curse" && !curse_ghost);
+                let target = if renders_self {
                     user.clone()
                 } else {
                     self.mon_ref(foe, foe_slot, dex)
@@ -4609,6 +4804,161 @@ impl BattleState {
                 self.log.damage(&user, &hp, None);
             }
             // A status move is never landed (no in-tryMoveHit Update).
+            return MoveResolution::done(false, false, false);
+        }
+
+        // ============================================================================
+        // MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — three STATEFUL,
+        // DRAW-FREE move classes: CURSE / WISH / BATON PASS. Each was probe-settled
+        // bit-for-bit vs the omniscient sim (`harness/probe_batch3_*.js`).
+        // ============================================================================
+
+        // --- CURSE (`curse`, `curse.onModifyMove` + `onHit`) — the type-conditional
+        //     move. The `onModifyMove` (announce block above computes `curse_ghost` /
+        //     `curse_still`) re-targets by the USER's type:
+        //       * NON-GHOST user: `move.self = {boosts:{atk:1,def:1,spe:-1}}`, target SELF.
+        //         So it is a DRAW-FREE self-boost `{atk:+1, def:+1, spe:-1}` on the USER —
+        //         the mixed +/- setup. Line order (VERIFIED vs the sim): `-unboost <user>
+        //         spe|1`, `-boost <user> atk|1`, `-boost <user> def|1` (the -Spe emitted
+        //         FIRST). The `-1 Spe` updates only `boosts[4]`; `cached_speed` stays STALE
+        //         (like Dragon Dance) so it can flip the first mover NEXT turn.
+        //       * GHOST user, foe SUBSTITUTED: `onModifyMove` deletes the volatileStatus +
+        //         onHit → the move does NOTHING: `[still]` (announced above) + `|-fail|
+        //         <user>`, no HP cost, no volatile change. DRAW-FREE.
+        //       * GHOST user, already-cursed foe: re-curse FAILS: `[still]` + `-fail`, no HP
+        //         cost, no volatile change. DRAW-FREE (`addVolatile` returns false).
+        //       * GHOST user, non-subbed, non-cursed foe: lay the `curse` volatile on the FOE
+        //         (the `onHit` runs `addVolatile('curse')` — `curse.onStart` emits `|-start|
+        //         <foe>|Curse|[of] <user>`) THEN pay `floor(maxhp/2)` HP (`this.damage(source.
+        //         baseMaxhp/2, source, source)` — a bare `|-damage|<user>|<hp>`, NO `[from]`).
+        //         The volatile is laid BEFORE the HP cost (VERIFIED: at hp<=maxhp/2 the ghost
+        //         lays the curse THEN faints from the self-cost, foe still cursed). A GHOST
+        //         target is NOT immune (the curse volatile has no type gate). DRAW-FREE.
+        //     `landed` FALSE (a status `moveHit` returns undefined). The Curse RESIDUAL (order
+        //     10, subOrder 8) lives in `run_residuals` / `apply_curse` (chips the cursed foe
+        //     floor(maxhp/4)/turn); the volatile clears on switch-out + faint like leech_seed.
+        if move_id == "curse" {
+            if !curse_ghost {
+                // NON-GHOST: the self-boost {atk:+1, def:+1, spe:-1} on the USER. Its
+                // `move.self = {boosts}` goes through the gen3 `selfDrops` path
+                // (battle-actions.ts:1338, `gen3_move_coverage_batch1_v1`), which DRAWS ONE
+                // `random(100)` (the `secondaryRoll`) — then applies the boost UNCONDITIONALLY
+                // (`self.chance === undefined`). So the non-ghost curse is NOT draw-free: it
+                // consumes ONE `random(100)` (the value is discarded), exactly like
+                // Overheat/Superpower's self-drop. VERIFIED vs the sim (`probe_batch3_curse.js`
+                // /the iso probe: Snorlax curse draws +1 vs a plain Harden). Draw it here, then
+                // apply the boost.
+                let _ = self.prng.random_below(100);
+                // Line order: -Spe first, then +Atk, then +Def (the `move.self.boosts`
+                // iteration order atk→def→spe but the -Spe is emitted FIRST — VERIFIED vs the
+                // golden's line order). Apply in the fixed (atk,def,spe) index order but emit
+                // spe before atk/def to match.
+                for &(idx, stages) in &[(4usize, -1i8), (0, 1), (1, 1)] {
+                    let cur = self.sides[_side].pokemon[_slot].boosts[idx] as i32;
+                    let next = (cur + stages as i32).clamp(-6, 6);
+                    self.sides[_side].pokemon[_slot].boosts[idx] = next as i8;
+                    if self.logging() {
+                        let delta = (next - cur) as i8;
+                        let user = self.mon_ref(_side, _slot, dex);
+                        self.log.boost(&user, idx, delta);
+                    }
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // GHOST branch. A foe SUBSTITUTE or an ALREADY-CURSED foe → the move does NOTHING
+            // (draw-free, no HP cost). The `[still]` announce already emitted above for the
+            // SUB case; the already-cursed case shows the FOE-target announce (emitted above)
+            // then `[still]` retro-edit + `-fail`. Both emit `-fail` on the USER.
+            let subbed = self.sides[foe].pokemon[foe_slot].substitute.is_some();
+            let already_cursed = self.sides[foe].pokemon[foe_slot].curse.is_some();
+            if subbed || already_cursed {
+                if self.logging() {
+                    // The sub case already announced `[still]`; the already-cursed case
+                    // needs the `[still]` retro-edit (the foe-target announce showed first).
+                    if !subbed {
+                        self.log.attr_last_move_still();
+                    }
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // Lay the curse on the FOE (recording the caster side for the `[of]` clause),
+            // THEN pay floor(maxhp/2) HP. Both DRAW-FREE.
+            self.sides[foe].pokemon[foe_slot].curse = Some(_side);
+            if self.logging() {
+                let foe_ref = self.mon_ref(foe, foe_slot, dex);
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.volatile_start_of(&foe_ref, "Curse", &user);
+            }
+            // The self-cost: floor(baseMaxhp/2), applied via apply_damage so a self-KO goes
+            // through the normal faint machinery (VERIFIED: at hp<=maxhp/2 the ghost lays the
+            // curse THEN faints; foe stays cursed). No `[from]` cause (a bare `-damage`).
+            let cost = self.sides[_side].pokemon[_slot].maxhp / 2;
+            self.apply_damage(_side, _slot, cost);
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                let hp = self.hp_status(_side, _slot);
+                self.log.damage(&user, &hp, None);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- WISH (`wish`, `slotCondition:'Wish'`, duration 2) — a slot-keyed DELAYED heal.
+        //     Never-miss (`target: self`), DRAW-FREE at cast. The gen-3 model (VERIFIED vs
+        //     `harness/probe_batch3_wish.js`):
+        //       * CAST: if a Wish is ALREADY pending on this side → FAILS: `|move|<user>|
+        //         Wish||[still]` (the `[still]` announce form, NO `-fail` line), draw-free,
+        //         the existing Wish untouched. Else set `wish_pending = (2, wisher_name)`.
+        //       * The heal fires at the end-of-turn RESIDUAL (`wish.onEnd`, order 7 — see
+        //         `run_residuals` / `apply_wish`).
+        //     `landed` FALSE. The double-Wish fail's `[still]` needs a retro-edit (the
+        //     self-target announce already emitted the USER target above).
+        if move_id == "wish" {
+            debug_assert!(never_miss, "wish expected gen-3 never_miss (target self)");
+            if self.sides[_side].wish_pending.is_some() {
+                // Double-Wish: `[still]` retro-edit, NO `-fail` line (just the announce form).
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // Set the pending Wish (duration 2). The wisher name is the CASTER's display name
+            // (`source.name`) for the `[wisher]` clause at resolution.
+            let wisher = self.display_name(_side, _slot, dex);
+            self.sides[_side].wish_pending = Some((WISH_DURATION, wisher));
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- BATON PASS (`batonpass`, `selfSwitch:'copyvolatile'`, `onHit`) — a self-switch
+        //     that PASSES the outgoing mon's boosts + copyable volatiles to the entrant. The
+        //     gen-3 model (VERIFIED vs `harness/probe_batch3_batonpass.js`):
+        //       * NO eligible bench (last mon / every other fainted) → `onHit` FAILS:
+        //         `|move|<user>|Baton Pass||[still]` + `|-fail|<user>`, draw-free (the move
+        //         still counts as used — `NOT_FAIL`). The self-target announce showed the USER
+        //         above; add the `[still]` retro-edit + `-fail`.
+        //       * An eligible bench exists → set the side's `switch_flag` + the
+        //         `baton_pass_pending` marker; the FORCED switch-in (via the normal switch
+        //         machinery) then runs `copyVolatileFrom` in `execute_switch` (snapshot the
+        //         passer's pass-set BEFORE clearVolatile, apply to the entrant AFTER the swap,
+        //         tag the `|switch|` with `[from] Baton Pass`). DRAW-FREE at the move; the
+        //         forced switch-in draws exactly like a normal switch. `landed` FALSE.
+        if move_id == "batonpass" {
+            debug_assert!(never_miss, "batonpass expected gen-3 never_miss (target self)");
+            if self.can_switch(_side) {
+                // Signal the self-switch: force this side to replace + mark the pass so
+                // `execute_switch` runs copyVolatileFrom. The turn loop pulls the forced
+                // `switch` request for this side after the move resolves.
+                self.sides[_side].switch_flag = true;
+                self.sides[_side].baton_pass_pending = true;
+            } else {
+                // No eligible bench: FAIL draw-free. `[still]` retro-edit + `-fail` on the USER.
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+            }
             return MoveResolution::done(false, false, false);
         }
 
@@ -7140,6 +7490,10 @@ impl BattleState {
                 // (`execute_switch`) and the differential only compares them on a LIVE mon, so
                 // leech is the one whose post-faint state the per-decision golden asserts.
                 mon.leech_seed = None;
+                // clearVolatile also drops the CURSE volatile on faint
+                // (`gen3_move_coverage_batch3_v1`) — a fainted cursed mon is no longer cursed
+                // (like leech_seed; the golden reads the curse flag on a live mon).
+                mon.curse = None;
                 // clearVolatile also drops the SUBSTITUTE on faint (a fainted mon has no
                 // sub). (A sub-owner can only faint to NON-absorbed damage — confusion
                 // self-hit, residual chip, or a hit AFTER the sub broke — so this keeps the
@@ -7598,6 +7952,19 @@ pub struct DecisionRecord {
     /// Per-side **Reflect** remaining turns after this decision (`side.reflect`,
     /// `gen3_move_coverage_batch2_v1`, 0..=5). A SIDE condition (reported per side).
     pub reflect: [u8; 2],
+    /// Per-side **CURSE** flag after this decision (`gen3_move_coverage_batch3_v1`): whether
+    /// each side's ACTIVE mon carries the `curse` volatile (a ghost Curse laid on it). A mon
+    /// volatile (reported for the current active), cleared on switch/faint; Baton-Pass-transferable.
+    pub curse: [bool; 2],
+    /// Per-side **WISH-PENDING** duration after this decision (`gen3_move_coverage_batch3_v1`,
+    /// `side.wish_pending`): the slot condition's remaining turns (0 = none, 2 → 1 → resolve).
+    /// A SIDE/slot condition (reported per side regardless of which mon is active — it survives
+    /// a switch).
+    pub wish_pending: [u8; 2],
+    /// Per-side **SUB-HP** after this decision (`gen3_move_coverage_batch3_v1`): the active
+    /// mon's Substitute decoy HP (0 = no sub). Reported here so the batch-3 differential can
+    /// assert a Baton-Passed sub's HP transfer (the substitute is a mon volatile).
+    pub sub_hp: [u16; 2],
 }
 
 /// The outcome of a full scripted battle: the winner (if any) + every decision's
@@ -8095,6 +8462,18 @@ impl BattleState {
             weather_turns: self.field.weather_turns,
             light_screen: [self.sides[0].light_screen, self.sides[1].light_screen],
             reflect: [self.sides[0].reflect, self.sides[1].reflect],
+            curse: [
+                self.sides[0].pokemon[self.sides[0].active].curse.is_some(),
+                self.sides[1].pokemon[self.sides[1].active].curse.is_some(),
+            ],
+            wish_pending: [
+                self.sides[0].wish_pending.as_ref().map(|(d, _)| *d).unwrap_or(0),
+                self.sides[1].wish_pending.as_ref().map(|(d, _)| *d).unwrap_or(0),
+            ],
+            sub_hp: [
+                self.sides[0].pokemon[self.sides[0].active].substitute.unwrap_or(0),
+                self.sides[1].pokemon[self.sides[1].active].substitute.unwrap_or(0),
+            ],
         }
     }
 
@@ -8596,6 +8975,21 @@ impl BattleState {
 
     fn execute_switch(&mut self, side: usize, target: usize, is_drag: bool, dex: &Dex, queue: &mut Vec<QAction>) {
         let active = self.sides[side].active;
+        // --- BATON PASS copyVolatileFrom (`gen3_move_coverage_batch3_v1`): if this side has a
+        //     pending Baton Pass, SNAPSHOT the OUTGOING mon's PASS-SET (its 7 boosts + the
+        //     copyable `noCopy == false` volatiles the port models: substitute / leech_seed /
+        //     confusion / curse) BEFORE the clearVolatile block below zeros them. The snapshot
+        //     is applied to the entrant AFTER the array swap, and the `|switch|` line is tagged
+        //     `[from] Baton Pass`. `is_drag` is false for a Baton Pass (it's a self-switch, not
+        //     a phaze drag) — but we compute `bp` from the marker (a phaze can't set it). Major
+        //     STATUS is NOT a volatile → not passed (stays with the outgoing mon). ---
+        let bp = self.sides[side].baton_pass_pending && !is_drag;
+        let bp_snapshot = if bp {
+            let m = &self.sides[side].pokemon[active];
+            Some((m.boosts, m.substitute, m.leech_seed, m.confusion, m.curse))
+        } else {
+            None
+        };
         // WEATHER_NEGATE `onEnd` → `eachEvent('WeatherChange')` (`gen3_cloudnine_end_v1`,
         // the A/B icebeam-tail root cause): the resolved gen3 Cloud Nine / Air Lock carry
         // an `onEnd` that fires `this.eachEvent("WeatherChange", this.effect)`
@@ -8731,6 +9125,23 @@ impl BattleState {
         self.sides[side].pokemon.swap(active, target);
         self.sides[side].pokemon[active].position = active;
         self.sides[side].pokemon[target].position = target;
+        // --- BATON PASS copyVolatileFrom APPLY (`gen3_move_coverage_batch3_v1`): the entrant
+        //     is now at `active` (the clearVolatile block above already zeroed its fresh state).
+        //     Apply the passer's snapshot: the boosts array + the four copyable volatile fields
+        //     (substitute HP / leech-seed seeder / confusion counter / curse source). The
+        //     leech/curse fields keep the seeder/curse-source SIDE, so the residual keeps
+        //     chipping the new mon. Applied BEFORE `cached_speed` is (re)established, so a
+        //     passed +Spe/-Spe boost is reflected in the entrant's post-switch cached speed
+        //     (Showdown's copyVolatileFrom runs inside switchIn before the speed cache). Clear
+        //     the pending marker. ---
+        if let Some((boosts, sub, leech, conf, curse)) = bp_snapshot.clone() {
+            let m = &mut self.sides[side].pokemon[active];
+            m.boosts = boosts;
+            m.substitute = sub;
+            m.leech_seed = leech;
+            m.confusion = conf;
+            m.curse = curse;
+        }
         // TOXIC STAGE — the reset does NOT live here (`gen3_tox_stage_persists_v1`):
         // the resolved gen3 `tox.onSwitchIn(){ stage = 0 }` fires via the RUNSWITCH-time
         // `runEvent('SwitchIn')` (mods/gen4/scripts.js:42), NOT at this raw array swap.
@@ -8770,12 +9181,15 @@ impl BattleState {
             self.sides[side].pokemon[active].truant_turn = self.turn != 0;
         }
         // `active` index is unchanged (gen-3 singles pos 0); the entrant now lives
-        // there. Clear the side's switch flag — it's been answered.
+        // there. Clear the side's switch flag — it's been answered. Also clear the
+        // Baton Pass marker (the copyVolatileFrom has been applied above).
         self.sides[side].switch_flag = false;
+        self.sides[side].baton_pass_pending = false;
 
         // [EMIT] `|switch|<entrant>|<Details>|<HP>` (a voluntary/forced-replacement
-        // switch) OR `|drag|…` (a Roar/Whirlwind phaze). Emitted AFTER the array swap,
-        // so `active` is the entrant — its ident/details/HP are the fresh entrant's.
+        // switch) OR `|drag|…` (a Roar/Whirlwind phaze). A BATON PASS switch-in carries
+        // `[from] Baton Pass` (`gen3_move_coverage_batch3_v1`). Emitted AFTER the array
+        // swap, so `active` is the entrant — its ident/details/HP are the fresh entrant's.
         // The spikes switch-in chip (`apply_entry_hazards`) fires LATER when the queued
         // RunSwitch runs, emitting its own `|-damage|…|[from] Spikes` — so this `|switch|`
         // /`|drag|` correctly precedes the hazard chip (matching the golden). Observation-
@@ -8786,6 +9200,8 @@ impl BattleState {
             let hp = self.hp_status(side, active);
             if is_drag {
                 self.log.drag(&entrant, &details, &hp);
+            } else if bp {
+                self.log.switch_from(&entrant, &details, &hp, "Baton Pass");
             } else {
                 self.log.switch(&entrant, &details, &hp);
             }
@@ -9134,6 +9550,26 @@ fn nature_minus_stat(nature: &str, dex: &Dex) -> Option<String> {
         }
     }
     None
+}
+
+/// Whether a foe holding **Pressure** is in the move's `pressureTargets` — i.e. the
+/// move actually TARGETS a foe (so Pressure's `onDeductPP` fires the +1 extra PP drop).
+/// `gen3_pressure_allyteam_v1` — mirrors Showdown's `Pokemon.getMoveTargets` +
+/// `pressureTargets` resolution (`sim/pokemon.ts:792-861`) for gen-3 SINGLES: the foe is
+/// a pressure target for every FOE-directed target (`normal` / `any` / `randomNormal` /
+/// `adjacentFoe` / `allAdjacentFoes` / `scripted`, plus the spread `all` / `allAdjacent`
+/// whose target list includes foes), and NOT for the ally/self-directed targets (`self` /
+/// `allyTeam` [Aromatherapy / Heal Bell] / `allySide` / `allies` / `adjacentAlly` /
+/// `adjacentAllyOrSelf`) NOR `foeSide` (Spikes — `pressureTargets` is explicitly emptied).
+/// VERIFIED vs the sim (`harness/probe_pressure_allyteam_rng.js` + the real-battle PP
+/// count): Aromatherapy / Heal Bell under a Pressure foe deduct 1, ThunderVane / Seismic
+/// Toss deduct 2. This replaces the wrong `!targets_self` predicate — the e2e_182 cause.
+fn pressure_targets_foe(target: &str) -> bool {
+    !matches!(
+        target,
+        "self" | "allyTeam" | "allySide" | "allies" | "adjacentAlly" | "adjacentAllyOrSelf"
+            | "foeSide"
+    )
 }
 
 fn status_token(status: Option<Status>) -> Option<&'static str> {

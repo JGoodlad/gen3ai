@@ -251,6 +251,22 @@ const MODELED_PHAZE_MOVES = new Set(['roar', 'whirlwind']);
 // out. Leech Seed is the only gen-3 drain-volatile move modeled here.
 const MODELED_LEECH_MOVES = new Set(['leechseed']);
 
+// MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — the three STATEFUL move classes the
+// port now executes bit-for-bit (the batch-3 layer): CURSE (type-conditional: non-ghost self-
+// boost {atk:+1,def:+1,spe:-1} drawing ONE selfDrops random(100), OR ghost floor(maxhp/2) HP +
+// the `curse` volatile on the foe + the order-10-subOrder-8 residual chip), WISH (the slot-
+// keyed order-7 delayed heal floor(maxhp/2) at N+1; double-Wish fails; heal-at-full silent),
+// and BATON PASS (the selfSwitch:'copyvolatile' pass of the boosts + copyable volatiles
+// [substitute/leech-seed/confusion/curse] to the entrant; no-bench fail). All three are
+// category-Status, admitted in the Status branch (gated by BATCH3_E2E_EXCLUDED). Kept in
+// lockstep with `run_status_move`'s curse/wish/batonpass arms + `apply_curse`/`apply_wish` +
+// the `copyVolatileFrom` snapshot in `execute_switch` (src/turn.rs). Validated by the DEDICATED
+// golden (`gen_movecoverage_batch3_golden.js` / `movecoverage_batch3_test.rs`) + the MC18-MC29
+// regression pins. DEFERRED (still fail-loud / excluded): Haze (a boost-reset, not a phaze),
+// Perish Song, Encore (reactive), Attract (the volatile move — Cute Charm's attract is a
+// separate ability path). `whether-to-admit` is BATCH3_E2E_EXCLUDED below.
+const MODELED_BATCH3_MOVES = new Set(['curse', 'wish', 'batonpass']);
+
 // The MODELED gen-3 FIXED-DAMAGE moves (a `damage:` / `damageCallback` move that BYPASSES
 // getDamage — NO crit roll, NO 16-way damage roll) the port now executes bit-for-bit (the
 // fixed-damage layer): Seismic Toss / Night Shade (damage: 'level' → the USER's level),
@@ -353,7 +369,15 @@ const MODELED_SCREEN_MOVES = new Set(['lightscreen', 'reflect']);
 // gate, batch 2 is HONESTLY EXCLUDED here (like phaze was, `PHAZE_E2E_EXCLUDED`), keeping the
 // pre-batch-2 golden byte-identical. The DEDICATED golden + the MC9-MC17 pins remain the
 // batch-2 proof. Re-enable (false) once the e2e_182 residual-order interaction is root-caused.
-const BATCH2_E2E_EXCLUDED = true;
+const BATCH2_E2E_EXCLUDED = false;
+
+// BATCH3_E2E_EXCLUDED — whether to keep the batch-3 classes (CURSE / WISH / BATON PASS) OUT of
+// the e2e capstone's modeled allow-list. The engine models all three bit-for-bit (the DEDICATED
+// `gen_movecoverage_batch3_golden.js` / `movecoverage_batch3_test.rs`, 16 scenarios × 80 seeds,
+// + the MC18-MC29 regression pins), so they're PROVEN. Admitting them (false) grows the
+// filter-clean team pool (many gen3ou teams carry Curse / Wish / Baton Pass). Set false =
+// ADMITTED to the STRICT e2e gate. (`gen3_move_coverage_batch3_v1`.)
+const BATCH3_E2E_EXCLUDED = false;
 
 // PHAZE_E2E_EXCLUDED — the gen-3 phaze moves (Roar / Whirlwind) are now INCLUDED in the e2e
 // capstone (flag = false), bit-for-bit, 1035 phaze-DRAG decisions across the 220-battle strict
@@ -482,6 +506,9 @@ function isModeledMove(id) {
         MODELED_STATDROP_MOVES.has(id) || MODELED_SCREEN_MOVES.has(id))) ||
       (LEECHSEED_E2E_EXCLUDED ? false : MODELED_LEECH_MOVES.has(id)) ||
       (SUBSTITUTE_E2E_EXCLUDED ? false : MODELED_SUBSTITUTE_MOVES.has(id)) ||
+      // MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — CURSE / WISH / BATON PASS,
+      // all category-Status + bit-for-bit modeled (the DEDICATED golden + MC18-MC29 pins).
+      (BATCH3_E2E_EXCLUDED ? false : MODELED_BATCH3_MOVES.has(id)) ||
       (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));
   }
   if (!(m.basePower > 0)) return false; // variable / fixed-damage carrier
@@ -1365,7 +1392,7 @@ module.exports = {
   MODELED_STATUS_MOVES, MODELED_SETUP_MOVES, MODELED_RECOVERY_MOVES,
   MODELED_PROTECT_MOVES, MODELED_HAZARD_MOVES, MODELED_PHAZE_MOVES,
   MODELED_LEECH_MOVES, MODELED_FIXED_DAMAGE_MOVES, MODELED_SUBSTITUTE_MOVES,
-  MODELED_RESTRICTION_MOVES,
+  MODELED_RESTRICTION_MOVES, MODELED_BATCH3_MOVES,
   MODELED_CURE_MOVES, MODELED_WEATHER_MOVES, MODELED_STATDROP_MOVES, MODELED_SCREEN_MOVES,
   mulberry32, randInt, seedFrom, toId,
   FORMAT, dex3,

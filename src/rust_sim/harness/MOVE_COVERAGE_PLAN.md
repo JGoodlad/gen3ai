@@ -87,14 +87,49 @@ STATE(+HP+STATUS+BOOSTS+WEATHER+SCREENS)+SEED assertions, byte-reproducible) + *
 `tests/regression_test.rs` pins** (MC9-MC17 — MC17 is the double-screen ModifyDamagePhase1 shuffle
 crux). Probes kept: `harness/probe_batch2_movecoverage.js`, `probe_batch2_regression_rng.js`. DATA: the
 extractor emits `statDropBoosts` (obs-neutral, like `selfDrops`); Refresh/Heal Bell/Aromatherapy reuse
-the existing `curesSelfStatus`/`curesTeamStatus` flags. **e2e — HONESTLY DEFERRED**
-(`BATCH2_E2E_EXCLUDED = true`, the phaze-exclusion precedent): the engine is proven by the dedicated
-golden + the MC9-MC17 pins, but admitting batch 2 to the e2e surfaced ONE unresolved real-team-only
-divergence (e2e_182, a 5-HP Blissey residual-heal-ordering gap where p2 Aromatherapy-cures its own
-paralysis mid-turn while p1 switches; the Refresh-Toxic fix cleared the other 6 the admission first
-surfaced). Batch 2 stays OUT of the e2e allow-list, keeping the pre-batch-2 golden BYTE-IDENTICAL
-(md5 `dac97afb25317cc9def204ccc9af0e8d`); re-enable once e2e_182 is root-caused. See
-`src/rust_sim/CLAUDE.md` → the batch-2 move-class section.
+the existing `curesSelfStatus`/`curesTeamStatus` flags. **e2e — ADMITTED (`BATCH2_E2E_EXCLUDED =
+false`, 2026-07-12), STRICT clean.** Admitting batch 2 to the e2e capstone surfaced ONE real-team-only
+divergence — **e2e_182**, which was FIRST described as a "5-HP Blissey residual-heal-ordering gap" but
+root-caused (via `harness/probe_e2e182_simtrace.js` + the sim probe) to a **`Pressure` × `allyTeam`
+PP-deduction bug**, NOT a residual-order issue: the port applied the Pressure `−1` extra PP drop to
+Blissey's Aromatherapy (an `allyTeam` move) under a Pressure Zapdos, because it keyed the extra on
+`!targets_self` instead of the real rule (the Pressure foe fires its `onDeductPP` only when it is in the
+move's `pressureTargets` — a FOE-directed target; `allyTeam` / `self` / `foeSide` never put the foe
+there). The mis-drain exhausted Aromatherapy's 8 PP early, so the port REJECTED a legitimate late
+Aromatherapy as out-of-PP → the script shifted and the battle desynced (a decision-count + state gap).
+FIX: `turn.rs::pressure_targets_foe` (`gen3_pressure_allyteam_v1`), pinned by
+`regression_test.rs::pressure_does_not_add_pp_for_an_allyteam_move` (revert-verified; ground truth
+`harness/probe_pressure_allyteam_rng.js`). Batch 2 is now IN the e2e allow-list; the regenerated golden
+is **md5 `738da13e9ab666ae50ead17bc6329a08`** (722/722 filter-clean teams, STRICT `filtered_diverged ==
+0` over 220 battles / 11176 decisions). See `src/rust_sim/CLAUDE.md` → the batch-2 move-class section.
+
+## ✅ BATCH 3 DONE (`gen3_move_coverage_batch3_v1`, 2026-07-12) — the STATEFUL DRAW-FREE move classes
+
+**CURSE / WISH / BATON PASS — the three stateful move classes are MODELED bit-for-bit + e2e-ADMITTED.**
+- **CURSE** (`curse`, type-conditional at `onModifyMove`) — NON-GHOST → a self-boost {atk:+1, def:+1,
+  spe:-1} that DRAWS ONE `random(100)` via the gen3 `selfDrops` path (like Overheat, NOT draw-free — the
+  probe-surfaced subtlety); GHOST → pays floor(maxhp/2) HP + lays the `curse` volatile on the FOE (the
+  order-10 subOrder-8 residual chip floor(maxhp/4)/turn). Re-curse fails ([still]+-fail); curse-into-a-sub
+  does nothing; a Ghost target is NOT immune. `turn.rs::run_status_move`'s curse arm + `apply_curse`;
+  `MonState::curse`.
+- **WISH** (`wish`, `slotCondition`, duration 2) — the slot-keyed order-7 delayed heal floor(maxhp/2) at
+  N+1 (BEFORE the sand chip order 8 + all order-10 handlers — VERIFIED; two Wishes at equal speed
+  tie-shuffle); double-Wish fails ([still]); heal-at-full is silent. `SideState::wish_pending`;
+  `apply_wish`.
+- **BATON PASS** (`batonpass`, `selfSwitch:'copyvolatile'`) — a self-switch passing the outgoing mon's
+  boosts + the copyable (`noCopy==false`) volatiles (substitute / leech-seed / confusion / curse) to the
+  entrant; no-bench fail; the entrant's `|switch|` carries `[from] Baton Pass`. The `copyVolatileFrom`
+  snapshot lives in `execute_switch`; `SideState::baton_pass_pending`.
+
+Validated by the DEDICATED golden `gen_movecoverage_batch3_golden.js` → `movecoverage_batch3_test.rs`
+(16 scenarios × 80 seeds, 4980 decision rows, 1280 wins) + the **MC18-MC29** revert-verified
+`regression_test.rs` pins (ground truth `harness/probe_batch3_regression_rng.js`; the MC23 Wish
+residual-ORDER pin is a LIFE/DEATH order test — a low-HP mon under sand survives ONLY because the
+order-7 Wish heals before the order-8 sand chip). **e2e ADMITTED** (`BATCH3_E2E_EXCLUDED = false`) — a
+CLEAN STRICT pass first-try, NO new engine bug: the pre-regen golden replayed BYTE-IDENTICAL (md5
+`738da13e…` unchanged, the batch-3 code a no-op on the old golden) then the deliberate regen shifted it
+to **md5 `529ab3f0940f8f9cbab383fb26d2a696`** (722/722 filter-clean teams, STRICT `filtered_diverged ==
+0` over 220 battles / 11163 decisions). See `src/rust_sim/CLAUDE.md` → the batch-3 move-class section.
 
 ## Top-5 build CLASSES by cumulative team-unlock (greedy set-cover)
 
@@ -126,12 +161,12 @@ Every row's `emp` matches its `cov` (MODELED/MISMODELED → ran, UNMODELED → p
 |---|---|---|---|---|---|
 | rapidspin | **MODELED** | ran | 298 | Phys | ✅ batch 1 — hazard/leech clear (`onAfterHit`+`onAfterSubDamage`) |
 | doubleedge | **MODELED** | ran | 266 | Phys | ✅ batch 1 — recoil `floor(dmg/3)` to the user |
-| curse | UNMODELED | panic | 241 | Status | type-conditional (Ghost: HP-cost curse vs +Atk/+Def/−Spe) |
-| wish | UNMODELED | panic | 213 | Status | delayed slot-keyed end-of-next-turn heal |
+| curse | **MODELED** | ran | 241 | Status | ✅ batch 3 — type-conditional (ghost HP-cost + curse residual; non-ghost self-boost + the selfDrops random(100)) |
+| wish | **MODELED** | ran | 213 | Status | ✅ batch 3 — slot-keyed order-7 delayed heal (maxhp/2 at N+1; double-Wish fails; heal-at-full silent) |
 | focuspunch | MISMODELED | ran | 196 | Phys | beforeTurn `|-singleturn|` + flinch-cancel gate not run |
 | gigadrain | **MODELED** | ran | 182 | Spec | ✅ batch 1 — drain heal `floor(dmg/2)` |
 | pursuit | MISMODELED | ran | 159 | Spec | variable-BP (×2 + hits on switch) — runs at flat bp 40 |
-| batonpass | UNMODELED | panic | 158 | Status | volatile/boost transfer to the switch-in |
+| batonpass | **MODELED** | ran | 158 | Status | ✅ batch 3 — copyVolatileFrom pass of boosts + sub/leech/confusion/curse to the entrant |
 | beatup | MISMODELED | ran | 114 | Spec | multi-strike per healthy teammate — runs one flat hit |
 | refresh | **MODELED** | ran | 89 | Status | ✅ batch 2 — self status cure (par/psn/tox/brn, draw-free) |
 | counter | UNMODELED | panic | 65 | Phys | reactive: returns 2× physical dmg taken |

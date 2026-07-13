@@ -200,6 +200,11 @@ add([cond('substitute', 'onTryPrimaryHit')], IMPL('turn.rs::absorb_into_sub', 't
 add([cond('substitute', 'onEnd')], NOOP('display-only |-end| Substitute line (the port emits it at the break)'));
 add([cond('leechseed', 'onStart')], IMPL('turn.rs::run_status_move', 'the |-start|<mon>|move: Leech Seed line — EMITTED at the plant (gen3_protocol_phase3_v1, byte-verified vs the leechseed_splash_payday capture)'));
 add([cond('leechseed', 'onResidual')], IMPL('turn.rs::apply_leech_seed', 'the order-10 subOrder-5 drain/heal residual'));
+// MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — CURSE / WISH conditions.
+add([cond('curse', 'onStart')], IMPL('turn.rs::run_status_move', 'the |-start|<foe>|Curse|[of] <user> line — EMITTED at the ghost-curse lay (volatile_start_of)'));
+add([cond('curse', 'onResidual')], IMPL('turn.rs::apply_curse', 'the order-10 subOrder-8 chip: the cursed foe loses floor(maxhp/4)/turn, draw-free'));
+add([cond('wish', 'onEnd')], IMPL('turn.rs::apply_wish', 'the order-7 delayed heal floor(maxhp/2) at N+1 onto the slot occupant (|-heal|…|move: Wish|[wisher]); silent at full HP'));
+add([cond('wish', 'duration')], IMPL('state.rs::wish_pending', 'the slot condition duration 2 (cast N → decrement to 1 → fire at 0 = end of N+1)'));
 add([cond('protect', 'duration')], IMPL('state.rs::protected', 'the duration-1 volatile — cleared at turn top'));
 add([cond('protect', 'onStart')], NOOP('display-only |-singleturn| Protect line'));
 add([cond('protect', 'onTryHit')], IMPL('turn.rs::protect_blocks', 'the priority-3 TryHit block (after the attacker\'s accuracy roll)'));
@@ -319,6 +324,17 @@ add([mv('struggle', 'recoil')], IMPL('turn.rs::run_move', 'STRUGGLE RECOIL: the 
 add([mv('struggle', 'noPPBoosts')], IMPL('turn.rs::must_struggle', 'Struggle is not a slot — no PP tracked/deducted (gen3_pp_tracking_v1)'));
 add([mv('substitute', 'onTryHit')], IMPL('turn.rs::run_status_move', 'the already-subbed / not-enough-HP fail gates'));
 add([mv('substitute', 'onHit')], IMPL('turn.rs::run_status_move', 'the maxhp/4 directDamage create cost'));
+
+// MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — CURSE / WISH / BATON PASS move rows.
+add([mv('curse', 'onModifyMove'), mv('curse', 'onTryHit')], IMPL('turn.rs::run_status_move', 'the type-conditional re-target: NON-GHOST → move.self={boosts:{atk:1,def:1,spe:-1}} + target self (the selfDrops random(100) + boost); GHOST-into-a-sub deletes both (does nothing → [still]+-fail). (The resolved dist splits the logic across onModifyMove + onTryHit; the port handles both in the curse arm.)'));
+add([mv('curse', 'onHit')], IMPL('turn.rs::run_status_move', 'the GHOST branch: lay the curse volatile on the foe THEN pay floor(maxhp/2) HP (draw-free)'));
+add([mv('curse', 'nonGhostTarget')], IMPL('turn.rs::run_status_move', 'the NON-GHOST self-redirect target (`self`) — the port renders the announce/boost on the USER'));
+add([mv('curse', 'volatileStatus')], IMPL('state.rs::curse', 'the `curse` volatile marker laid on the foe (Some(source_side))'));
+add([mv('wish', 'slotCondition')], IMPL('state.rs::wish_pending', 'the Wish slot condition set at cast (double-Wish fails [still], draw-free)'));
+add([cond('wish', 'onResidualOrder')], IMPL('turn.rs::apply_wish', 'order 7 — the Wish heal fires BEFORE the sand chip (order 8) + all order-10 handlers'));
+add([mv('wish', 'onTryHit')], NOOP('undefined in the resolved dist — never-miss target:self, no accuracy check; the cast draws nothing'));
+add([mv('batonpass', 'onHit')], IMPL('turn.rs::run_status_move', 'the no-eligible-bench FAIL ([still]+-fail, NOT_FAIL); else set switch_flag + baton_pass_pending for the forced self-switch'));
+add([mv('batonpass', 'selfSwitch')], IMPL('turn.rs::execute_switch', 'copyvolatile: the copyVolatileFrom pass of boosts + the copyable volatiles (substitute/leech-seed/confusion/curse) to the entrant, [from] Baton Pass'));
 
 // MOVE-COVERAGE BATCH 2 status-cure `onHit` (`gen3_move_coverage_batch2_v1`).
 add([mv('refresh', 'onHit')], IMPL('turn.rs::run_status_move', 'the Refresh self-cure arm (par/psn/brn cleared; none/slp/frz fail — draw-free)'));

@@ -63,6 +63,10 @@ const MODELED_PHAZE = new Set(['roar', 'whirlwind']);
 const MODELED_LEECH = new Set(['leechseed']);
 // Substitute (`run_status_move` substitute arm).
 const MODELED_SUBSTITUTE = new Set(['substitute']);
+// MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — Curse / Wish / Baton Pass,
+// all MODELED bit-for-bit (`run_status_move`'s curse/wish/batonpass arms + apply_curse/
+// apply_wish + the copyVolatileFrom snapshot in execute_switch).
+const MODELED_BATCH3 = new Set(['curse', 'wish', 'batonpass']);
 // Selection-restriction (`MODELED_RESTRICTION_MOVES` — taunt/disable).
 const MODELED_RESTRICTION = new Set(['taunt', 'disable']);
 // MOVE-COVERAGE BATCH 1 (`gen3_move_coverage_batch1_v1`) — the DRAW-FREE (+ self-drop's ONE
@@ -170,6 +174,13 @@ function classifyStatus(m, id) {
   if (MODELED_WEATHER.has(id)) return { cov: 'MODELED', mech: 'weather-set (batch 2)' };
   if (MODELED_STATDROP.has(id)) return { cov: 'MODELED', mech: 'stat-drop (batch 2)' };
   if (MODELED_SCREEN.has(id)) return { cov: 'MODELED', mech: 'screen (batch 2)' };
+  // MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — Curse / Wish / Baton Pass.
+  if (MODELED_BATCH3.has(id)) {
+    const mech = id === 'curse' ? 'type-conditional curse (batch 3)'
+      : id === 'wish' ? 'delayed-heal Wish (batch 3)'
+      : 'volatile-transfer Baton Pass (batch 3)';
+    return { cov: 'MODELED', mech };
+  }
   // Everything else is a fail-loud in run_status_move / run_protect. Bucket by mechanic.
   return { cov: 'UNMODELED', mech: statusMechanic(m, id) };
 }

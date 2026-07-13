@@ -375,6 +375,11 @@ impl ProtocolBuilder {
     pub fn switch(&mut self, mon: &MonRef, details: &str, hp: &HpStatus) {
         self.push_raw(format!("|switch|{mon}|{details}|{hp}"));
     }
+    /// `|switch|<mon>|<Details>|<HP>|[from] <Effect>` — a switch carrying a `[from]` tag
+    /// (`gen3_move_coverage_batch3_v1`, the BATON PASS entry: `[from] Baton Pass`).
+    pub fn switch_from(&mut self, mon: &MonRef, details: &str, hp: &HpStatus, effect: &str) {
+        self.push_raw(format!("|switch|{mon}|{details}|{hp}|[from] {effect}"));
+    }
     /// `|drag|<mon>|<Details>|<HP>` — identical grammar to `switch`; the FORCED
     /// (Roar/Whirlwind) entry.
     pub fn drag(&mut self, mon: &MonRef, details: &str, hp: &HpStatus) {
@@ -415,6 +420,12 @@ impl ProtocolBuilder {
     /// `[of]` source), matching the sim exactly.
     pub fn heal_of(&mut self, mon: &MonRef, hp: &HpStatus, from: &Cause, of: &MonRef) {
         self.push_raw(format!("|-heal|{mon}|{hp}|{from}|[of] {of}"));
+    }
+    /// `|-heal|<mon>|<HP>|[from] move: Wish|[wisher] <name>` — the WISH delayed heal
+    /// (`gen3_move_coverage_batch3_v1`). The `[wisher]` clause carries the CASTER's display
+    /// name (stored at cast, so it survives the wisher fainting / switching / phazing).
+    pub fn heal_wish(&mut self, mon: &MonRef, hp: &HpStatus, wisher: &str) {
+        self.push_raw(format!("|-heal|{mon}|{hp}|[from] move: Wish|[wisher] {wisher}"));
     }
 
     // ── Effectiveness / crit / miss / immune ────────────────────────────────────
@@ -630,6 +641,12 @@ impl ProtocolBuilder {
     /// `volatile_start` to avoid clashing with the framing `|start` line.
     pub fn volatile_start(&mut self, mon: &MonRef, effect: &str) {
         self.push_raw(format!("|-start|{mon}|{effect}"));
+    }
+    /// `|-start|<mon>|<Effect>|[of] <src>` — a volatile begins with a SOURCE clause
+    /// (`gen3_move_coverage_batch3_v1`, the GHOST Curse's `curse.onStart`:
+    /// `|-start|<foe>|Curse|[of] <user>`). Observation-only.
+    pub fn volatile_start_of(&mut self, mon: &MonRef, effect: &str, of: &MonRef) {
+        self.push_raw(format!("|-start|{mon}|{effect}|[of] {of}"));
     }
     /// `|-end|<mon>|<Effect>` — a volatile ends (Substitute breaks).
     pub fn volatile_end(&mut self, mon: &MonRef, effect: &str) {

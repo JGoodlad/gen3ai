@@ -2000,6 +2000,64 @@ fn pressure_decrements_two_pp() {
     );
 }
 
+/// PA1 (`gen3_pressure_allyteam_v1`, the e2e_182 root cause): an **`allyTeam`** move
+/// (Aromatherapy / Heal Bell) under a **Pressure** foe deducts ONE PP, NOT two — the
+/// Pressure extra fires ONLY when the Pressure foe is in the move's `pressureTargets`
+/// (a FOE-directed target), and an ally/self/foeSide move never puts the foe there
+/// (`Pokemon.getMoveTargets`, pokemon.ts:854-861). Blissey's Aromatherapy (slot 0,
+/// target=allyTeam, 8 PP) into a Pressure Zapdos → PP 8→**7** (−1); a control ThunderWave
+/// (slot 1, target=normal, 32 PP) into the same Pressure foe → 32→**30** (−2). Both are
+/// DRAW-FREE so both post-turn seeds match the real sim. WRONG (the pre-fix `!targets_self`
+/// predicate) deducts 2 for Aromatherapy (8→6), which — over a stall battle — drains its PP
+/// early and makes the port REJECT a legitimate late Aromatherapy as out-of-PP, shifting the
+/// whole script (the e2e_182 decision-count + state desync). Ground truth from
+/// `harness/probe_pressure_allyteam_rng.js`.
+#[test]
+fn pressure_does_not_add_pp_for_an_allyteam_move() {
+    let d = dex();
+    // Packed EXACTLY as the probe so the ground-truth seeds line up bit-for-bit.
+    let blissey = "Blissey||Leftovers|NaturalCure|Aromatherapy,ThunderWave,SeismicToss,SoftBoiled|Bold|252,,252,,4,|F||||";
+    let zapdos = "Zapdos||Leftovers|Pressure|Thunderbolt,Roost,Rest,ThunderWave|Modest|252,,,252,,|N||||";
+    // The seed is the POST-construction seed (the probe's SEED_BEFORE) — the port's
+    // `start_with_switchins` skips the sim's turn-0 construction draws, so it must start where
+    // the sim is right before the first decision.
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(blissey, zapdos, "57890,13032,12358,42006"), &d).expect("start");
+    // dec0: p1 Aromatherapy (allyTeam) into Pressure Zapdos; p2 Rest (self, so it draws nothing extra).
+    // dec1: p1 ThunderWave (foe move) into the same Pressure foe; p2 Rest.
+    let out = battle.state_mut().expect("state").run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(2)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(2)),
+        ],
+        &d,
+    );
+
+    // dec0: Aromatherapy (allyTeam, slot 0) drops 8→7 (−1, NOT the Pressure −2). The FOE-target
+    // slots are untouched (twave 32, stoss 32, sboiled 16). WRONG (pre-fix) = 8→6.
+    assert_eq!(
+        out.decisions[0].active[0].move_pp, [7, 32, 32, 16],
+        "Aromatherapy (allyTeam) under a Pressure foe deducts 1 PP (8→7), NOT 2 — the foe is not \
+         in an allyTeam move's pressureTargets; the pre-fix !targets_self predicate wrongly gave 8→6"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "43514,9542,40559,8561",
+        "the allyTeam PP deduct is DRAW-FREE — the post-turn seed matches the real sim"
+    );
+    // dec1 (control): ThunderWave (target=normal, foe-directed) DOES get the Pressure −2 → 32→30.
+    assert_eq!(
+        out.decisions[1].active[0].move_pp, [7, 30, 32, 16],
+        "ThunderWave (a FOE-directed move) into a Pressure foe correctly deducts 2 PP (32→30) — \
+         the fix keeps the real Pressure extra for foe-targeting moves"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "55250,62519,52978,42619",
+        "the foe-move Pressure −2 is DRAW-FREE — the post-turn seed matches the real sim"
+    );
+}
+
 /// PP3 + PP4: a mon with NO usable move is FORCED to Struggle, and gen-3 Struggle recoil is
 /// `max(floor(damageDealt / 4), 1)` (the `recoil:[1,4]` path, NOT struggleRecoil = maxhp/4).
 /// A CHOICE-BAND Snorlax with Extreme Speed (m0, 8 PP) LOCKS to it and spams it 8× into a
@@ -6974,4 +7032,406 @@ fn double_screen_physical_hit_draws_the_modify_damage_phase1_shuffle() {
 fn st_set_status_b2(st: &mut pokesim::state::BattleState, s: usize, status: Status) {
     let active = st.sides[s].active;
     st.sides[s].pokemon[active].status = Some(status);
+}
+
+// ============================================================================
+// MOVE-COVERAGE BATCH 3 pins (MC18…MC29, `gen3_move_coverage_batch3_v1`) — CURSE /
+// WISH / BATON PASS, each a CONSTRUCTED gen3customgame board reseeded to the RAW seed
+// "13127,45333,18295,15391" (the port's draw-free `start_with_switchins` aligns), each
+// revert-verified (each FAILS when its class's engine wiring is disabled). Ground truth:
+// `harness/probe_batch3_regression_rng.js`; the draw model was settled by
+// `harness/probe_batch3_{curse,wish,batonpass}.js`.
+//
+// THE DRAW MODEL: the NON-GHOST curse draws ONE `random(100)` (the `selfDrops` roll, like
+// Overheat); GHOST curse / Wish / Baton Pass are draw-free (a wish-mirror at equal speed
+// draws ONE tie-shuffle). The residual ORDER is the highest-risk item: Wish fires at order
+// 7 (BEFORE Leftovers order 10 + the burn DoT); the curse chip fires at order 10 subOrder 8.
+// ============================================================================
+
+/// MC18: CURSE non-ghost self-boost {atk:+1, def:+1, spe:-1}. WRONG (if the non-ghost curse
+/// arm is removed): Snorlax stays un-boosted (the fail-loud guard would panic). STATE (the
+/// mixed +/- boosts) + SEED (the ONE selfDrops `random(100)` — reverting the draw desyncs).
+#[test]
+fn curse_non_ghost_self_boosts_atk_def_and_drops_spe() {
+    let d = dex();
+    let snorlax = "Snorlax|||immunity|curse,bodyslam|Serious|252,,,,252,|||||";
+    let blissey = "Blissey|||naturalcure|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(snorlax, blissey, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // atk+1, def+1, spa 0, spd 0, spe-1 — the mixed self-boost.
+    assert_eq!(
+        &out.decisions[0].active[0].boosts[0..5],
+        &[1, 1, 0, 0, -1],
+        "non-ghost Curse self-boosts +1 Atk / +1 Def / -1 Spe"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "57388,452,34593,29177",
+        "non-ghost Curse draws ONE selfDrops random(100) → the real Showdown post-turn seed"
+    );
+}
+
+/// MC19: CURSE ghost pays floor(maxhp/2) HP + lays the `curse` volatile on the FOE. WRONG (if
+/// the ghost arm is missing): no HP cost, no curse. STATE (Gengar −maxhp/2; Snorlax cursed) +
+/// SEED (the ghost curse is DRAW-FREE).
+#[test]
+fn curse_ghost_pays_half_hp_and_lays_the_curse_on_the_foe() {
+    let d = dex();
+    let gengar = "Gengar|||levitate|curse,shadowball|Serious|,,,252,,252|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(gengar, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // Gengar (maxhp 261) pays floor(261/2)=130 → hp 131.
+    assert_eq!(out.decisions[0].active[0].hp, 131, "ghost Curse pays floor(maxhp/2) HP");
+    assert!(out.decisions[0].curse[1], "the FOE (Snorlax) is now cursed");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "18464,3966,47670,60926",
+        "ghost Curse (lay + HP cost) is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC20: the CURSE residual chips the cursed foe floor(maxhp/4)/turn, DRAW-FREE. WRONG (if the
+/// residual is missing): the foe never chips. STATE (Snorlax loses maxhp/4 on the resolve
+/// turn) + SEED.
+#[test]
+fn curse_residual_chips_the_cursed_foe_a_quarter_maxhp() {
+    let d = dex();
+    let gengar = "Gengar|||levitate|curse,shadowball|Serious|,,,252,,252|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(gengar, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // curse (lay)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // shadowball; the curse chips
+        ],
+        &d,
+    );
+    // Snorlax maxhp 524 → cursed → loses floor(524/4)=131 at the turn-1 residual → 393;
+    // at the turn-2 residual → 262.
+    assert_eq!(out.decisions[0].active[1].hp, 393, "curse chip 1: 524 → 393 (−131 = maxhp/4)");
+    assert_eq!(out.decisions[1].active[1].hp, 262, "curse chip 2: 393 → 262 (−131)");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "3932,55062,24613,55040",
+        "the curse chip is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC21: a GHOST re-curse into an ALREADY-CURSED foe FAILS ([still]+-fail), DRAW-FREE, no HP
+/// cost, the volatile unchanged. WRONG (if the re-curse guard is missing): Gengar pays HP
+/// again. STATE (Gengar's HP unchanged on the 2nd curse; Snorlax still cursed) + SEED.
+#[test]
+fn curse_recurse_into_an_already_cursed_foe_fails_draw_free() {
+    let d = dex();
+    let gengar = "Gengar|||levitate|curse,shadowball|Serious|,,,252,,252|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(gengar, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // curse (lay) → Gengar 131
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // curse again → FAILS, no HP cost
+        ],
+        &d,
+    );
+    // dec 1 (the re-curse): Gengar's HP must be UNCHANGED from dec 0 (no 2nd HP cost) — the
+    // only HP change is the curse chip on Snorlax; Gengar took no Splash damage.
+    assert_eq!(out.decisions[0].active[0].hp, 131, "the FIRST curse paid maxhp/2 → Gengar 131");
+    assert_eq!(
+        out.decisions[1].active[0].hp, 131,
+        "the RE-CURSE fails (no 2nd HP cost) → Gengar stays 131"
+    );
+    assert!(out.decisions[1].curse[1], "Snorlax is still cursed after the failed re-curse");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "57388,452,34593,29177",
+        "the re-curse fail is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC22: WISH heals floor(maxhp/2) at the END of the turn AFTER cast (the N+1 heal). WRONG (if
+/// the Wish residual is missing): the heal never fires. STATE (Blissey +floor(maxhp/2) on the
+/// resolve turn) + SEED (draw-free).
+#[test]
+fn wish_heals_half_maxhp_the_turn_after_cast() {
+    let d = dex();
+    let blissey = "Blissey|||naturalcure|wish,splash|Serious|252,,,,,|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(blissey, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    battle.state_mut().unwrap().sides[0].pokemon[0].hp = 100; // low HP so the heal is visible
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Wish (cast) — no heal yet
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Splash — the Wish resolves
+        ],
+        &d,
+    );
+    // dec 0: cast, wish pending (duration 1 after the cast-turn residual decrement), no heal.
+    assert_eq!(out.decisions[0].active[0].hp, 100, "no heal on the cast turn");
+    assert_eq!(out.decisions[0].wish_pending[0], 1, "wish pending (2 → 1 at the cast-turn residual)");
+    // dec 1: the Wish resolves → heal floor(714/2)=357 → 100 + 357 = 457.
+    assert_eq!(out.decisions[1].active[0].hp, 457, "Wish heals floor(maxhp/2)=357 at N+1 → 457");
+    assert_eq!(out.decisions[1].wish_pending[0], 0, "the Wish resolved → cleared");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "57388,452,34593,29177",
+        "the Wish heal is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC23 (CRITICAL): the WISH RESIDUAL-ORDER pin — a LIFE/DEATH order test. A low-HP Snorlax
+/// under SANDSTORM (chips maxhp/16 at order 8) with a Wish pending: the Wish heal at ORDER 7
+/// fires BEFORE the sand chip, so on the resolve turn the mon HEALS first (survives), then
+/// takes the chip. If the Wish were slotted at order 11 (after the sand chip), the low-HP mon
+/// would be KO'd by the sand chip FIRST → `wish.onEnd`'s `!target.fainted` guard skips the
+/// heal → the mon is DEAD. So the ORDER-7 slot is the difference between life and death here.
+/// STATE (the mon SURVIVES with the exact post-order HP) + SEED. Reverting Wish to order 11
+/// makes this mon faint (the assertion fails).
+#[test]
+fn wish_residual_fires_at_order_7_saving_a_low_hp_mon_from_the_sand_chip() {
+    let d = dex();
+    let snorlax = "Snorlax|||immunity|wish,splash|Serious|252,,,,,|||||";
+    let blissey = "Blissey|||naturalcure|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(snorlax, blissey, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    {
+        let st = battle.state_mut().unwrap();
+        // Permanent sandstorm + a low-HP Snorlax (survives one cast-turn chip, then relies on
+        // the order-7 Wish to survive the resolve turn).
+        st.field.weather = Some(pokesim::state::Weather::Sand);
+        st.field.weather_turns = 0; // permanent (ability-style inject)
+        st.sides[0].pokemon[0].hp = 40;
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Wish cast
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Splash — the Wish resolves
+        ],
+        &d,
+    );
+    // dec 0 (cast turn): sand chip maxhp/16 (524/16=32): 40 - 32 = 8, survives.
+    assert_eq!(out.decisions[0].active[0].hp, 8, "cast turn: sand chip 40 → 8 (survives)");
+    // dec 1 (resolve turn): Wish +262 (order 7, BEFORE the sand chip) → 8 + 262 = 270, THEN
+    //   sand chip −32 → 238. The mon SURVIVES because the heal fired FIRST. With Wish at order
+    //   11 the sand chip (order 8) would KO the 8-HP mon before the heal → faint (no heal).
+    assert!(!out.decisions[1].active[0].fainted, "the order-7 Wish heal SAVED the low-HP mon");
+    assert_eq!(
+        out.decisions[1].active[0].hp, 238,
+        "resolve turn: Wish(+262, order 7 FIRST) THEN sand chip(−32) → 238"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "57388,452,34593,29177",
+        "the Wish/sand residual chain is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC24: a 2nd WISH while one is pending FAILS ([still], DRAW-FREE), the existing Wish
+/// untouched (it resolves that turn normally). WRONG (if double-Wish is allowed): the 2nd Wish
+/// resets the timer. STATE (the pending Wish resolves on schedule) + SEED.
+#[test]
+fn wish_double_cast_fails_and_the_pending_wish_resolves() {
+    let d = dex();
+    let blissey = "Blissey|||naturalcure|wish,splash|Serious|252,,,,,|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(blissey, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    battle.state_mut().unwrap().sides[0].pokemon[0].hp = 100;
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Wish (cast)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Wish AGAIN — FAILS; the 1st resolves
+        ],
+        &d,
+    );
+    // dec 1: the 1st Wish resolves (+357 → 457); the 2nd Wish FAILED (no new pending set until
+    // the residual? — the 2nd cast is rejected, and NO fresh Wish exists this turn's end).
+    assert_eq!(out.decisions[1].active[0].hp, 457, "the pending (1st) Wish resolved → 457");
+    assert_eq!(
+        out.decisions[1].wish_pending[0], 0,
+        "the 2nd Wish FAILED (no fresh pending set) → the slot is clear after the 1st resolved"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "57388,452,34593,29177",
+        "the double-Wish fail is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC25: WISH is SLOT-KEYED — it survives the wisher switching out. p1 Wishes, switches to
+/// Chansey; the Wish resolves this turn's end onto WHOEVER is in the slot. WRONG (if Wish is a
+/// mon volatile): switching out would clear it. STATE (Chansey active, the slot survived) + SEED.
+#[test]
+fn wish_is_slot_keyed_and_survives_a_switch() {
+    let d = dex();
+    let p1 = "Blissey|||naturalcure|wish,splash|Serious|252,,,,,|||||]\
+              Chansey|||naturalcure|splash|Serious|252,,,,,|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    battle.state_mut().unwrap().sides[0].pokemon[0].hp = 100;
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Wish
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(0)), // switch to Chansey; Wish resolves
+        ],
+        &d,
+    );
+    // dec 1: Chansey is now active AND the Wish resolved onto it (it entered full 704, so the
+    // heal is silent — the slot-key survival is proven by the wish_pending clearing + Chansey
+    // active). A mon-volatile Wish would have been cleared when Blissey switched out (never
+    // resolving).
+    assert_eq!(out.decisions[1].active_species[0], "chansey", "Chansey is active after the switch");
+    assert_eq!(out.decisions[1].wish_pending[0], 0, "the slot-keyed Wish RESOLVED (survived the switch)");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "57388,452,34593,29177",
+        "the slot-keyed Wish resolve is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC26: BATON PASS boost transfer. Jolteon Swords Dances (+2 Atk), Baton Passes to Snorlax
+/// which inherits the +2 Atk. WRONG (if copyVolatileFrom's boosts aren't applied): Snorlax
+/// enters at +0. STATE (Snorlax atk +2 after the pass) + SEED (the pass + forced switch are
+/// draw-free).
+#[test]
+fn baton_pass_transfers_the_boosts_to_the_entrant() {
+    let d = dex();
+    let p1 = "Jolteon|||voltabsorb|swordsdance,batonpass|Serious|,252,,,,252|||||]\
+              Snorlax|||immunity|bodyslam|Serious|252,252,,,,|||||";
+    let blissey = "Blissey|||naturalcure|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, blissey, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Swords Dance (+2 Atk)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Baton Pass → forced switch
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(0)), // switch to Snorlax (the pass entrant)
+        ],
+        &d,
+    );
+    // dec 2 (the forced switch to Snorlax): Snorlax inherits the +2 Atk.
+    assert_eq!(out.decisions[2].active_species[0], "snorlax", "Snorlax is the Baton-Pass entrant");
+    assert_eq!(
+        out.decisions[2].active[0].boosts[0], 2,
+        "the +2 Atk passed to Snorlax (copyVolatileFrom.boosts)"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "57388,452,34593,29177",
+        "the Baton-Pass switch-in is DRAW-FREE (the copy adds no PRNG) → the real Showdown seed"
+    );
+}
+
+/// MC27: BATON PASS substitute transfer. Jolteon Subs (sub HP floor(maxhp/4)=83), Baton Passes;
+/// the SUB HP transfers to Snorlax. WRONG (if the sub isn't copied): Snorlax enters with no
+/// sub. STATE (Snorlax sub HP 83 after the pass) + SEED.
+#[test]
+fn baton_pass_transfers_the_substitute_to_the_entrant() {
+    let d = dex();
+    let p1 = "Jolteon|||voltabsorb|substitute,batonpass|Serious|252,,,,,252|||||]\
+              Snorlax|||immunity|bodyslam|Serious|252,252,,,,|||||";
+    let blissey = "Blissey|||naturalcure|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, blissey, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Substitute (sub HP 83)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Baton Pass → forced switch
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(0)), // switch to Snorlax
+        ],
+        &d,
+    );
+    // dec 2: Snorlax inherits the substitute (HP 83 = floor(Jolteon 334/4)).
+    assert_eq!(out.decisions[2].active_species[0], "snorlax", "Snorlax is the entrant");
+    assert_eq!(out.decisions[2].sub_hp[0], 83, "the SUB HP (83) passed to Snorlax");
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "57388,452,34593,29177",
+        "the Baton-Pass sub transfer is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC28: BATON PASS leech-seed transfer. Meganium seeds Jolteon; Jolteon Agilities (+2 Spe)
+/// then Baton Passes; the SEED (+ the +2 Spe) transfers to Snorlax (the seeder keeps draining
+/// the new mon). WRONG (if leech_seed isn't copied): Snorlax enters unseeded. STATE (Snorlax
+/// leech-seeded + drained after the pass) + SEED.
+#[test]
+fn baton_pass_transfers_the_leech_seed_to_the_entrant() {
+    let d = dex();
+    let p1 = "Jolteon|||voltabsorb|agility,batonpass|Serious|252,,,,,252|||||]\
+              Snorlax|||immunity|bodyslam|Serious|252,252,,,,|||||";
+    let meganium = "Meganium|||overgrow|leechseed,splash|Serious|252,,,252,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, meganium, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Agility; Meganium seeds Jolteon
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // Baton Pass → forced switch
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(1)), // switch to Snorlax
+        ],
+        &d,
+    );
+    // dec 2 (the forced switch): Snorlax is leech-seeded (the seed passed) AND drained
+    // (the leech residual fires on it) — and carries the +2 Spe from the Agility.
+    assert_eq!(out.decisions[2].active_species[0], "snorlax", "Snorlax is the entrant");
+    assert_eq!(out.decisions[2].active[0].boosts[4], 2, "the +2 Spe (Agility) passed to Snorlax");
+    // Snorlax leech-seeded → drained maxhp/8 at the switch turn's residual: 524 − 65 = 459.
+    assert_eq!(out.decisions[2].active[0].hp, 459, "Snorlax leech-drained maxhp/8 (the seed passed)");
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "3932,55062,24613,55040",
+        "the Baton-Pass leech transfer is DRAW-FREE → the real Showdown post-turn seed"
+    );
+}
+
+/// MC29: BATON PASS with NO eligible bench FAILS ([still]+-fail, DRAW-FREE) — the move still
+/// "counts" as used (NOT_FAIL). WRONG (if the no-bench guard is missing): a phantom switch
+/// request. STATE (Jolteon stays active, unchanged) + SEED (the fail is draw-free — the Quick
+/// Claw still draws since no switch pause).
+#[test]
+fn baton_pass_with_no_bench_fails_draw_free() {
+    let d = dex();
+    let jolteon = "Jolteon|||voltabsorb|batonpass,thunderbolt|Serious|,,,252,,252|||||";
+    let blissey = "Blissey|||naturalcure|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(jolteon, blissey, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // Baton Pass fails (no bench) → Jolteon stays active, no switch request.
+    assert!(matches!(out.decisions[0].request, RequestKind::Move), "no forced switch — the BP FAILED");
+    assert_eq!(out.decisions[0].active_species[0], "jolteon", "Jolteon stays active (the pass failed)");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "18464,3966,47670,60926",
+        "the no-bench Baton-Pass fail is DRAW-FREE → the real Showdown post-turn seed"
+    );
 }

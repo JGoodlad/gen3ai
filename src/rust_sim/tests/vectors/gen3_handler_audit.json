@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 74,
    "items": 59,
-   "conditions": 27,
-   "moves": 181,
-   "rows": 679
+   "conditions": 31,
+   "moves": 199,
+   "rows": 750
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); NOT in MODELED/NOOP so the e2e filter excludes its teams",
@@ -855,6 +855,30 @@
    "anchor": "turn.rs::add_confusion",
    "reason": "the random(2,6) duration; the lockedmove-fatigue branch is unreachable (lockedmove moves rejected)"
   },
+  "condition:curse:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:bd1f08df:onResidual(pokemon) { this.damage(pokemon.baseMaxhp / 4); }",
+   "anchor": "turn.rs::apply_curse",
+   "reason": "the order-10 subOrder-8 chip: the cursed foe loses floor(maxhp/4)/turn, draw-free"
+  },
+  "condition:curse:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_curse",
+   "reason": "the order-10 subOrder-8 chip: the cursed foe loses floor(maxhp/4)/turn, draw-free — (order metadata of the sibling onResidual handler)"
+  },
+  "condition:curse:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:8",
+   "anchor": "turn.rs::apply_curse",
+   "reason": "the order-10 subOrder-8 chip: the cursed foe loses floor(maxhp/4)/turn, draw-free — (order metadata of the sibling onResidual handler)"
+  },
+  "condition:curse:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:a2741b5c:onStart(pokemon, source) { this.add(\"-start\", pokemon, \"Curse\", `[of] ${source}`); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the |-start|<foe>|Curse|[of] <user> line — EMITTED at the ghost-curse lay (volatile_start_of)"
+  },
   "condition:disable:durationCallback": {
    "disposition": "implemented",
    "fp": "fn:8ee07c32:durationCallback() { return this.random(2, 6); }",
@@ -1058,6 +1082,42 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the |-start|<mon>|move: Leech Seed line — EMITTED at the plant (gen3_protocol_phase3_v1, byte-verified vs the leechseed_splash_payday capture)"
   },
+  "condition:lightscreen:duration": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "turn.rs::SCREEN_DURATION",
+   "reason": "the fixed 5-turn duration (gen3 has no Light Clay → always 5)"
+  },
+  "condition:lightscreen:durationCallback": {
+   "disposition": "implemented",
+   "fp": "fn:cae69264:durationCallback(target, source, effect) { if (source?.hasItem(\"lightclay\")) { return 8; } return 5; }",
+   "anchor": "turn.rs::SCREEN_DURATION",
+   "reason": "the Light-Clay durationCallback resolves to 5 in gen3 (Light Clay is gen4)"
+  },
+  "condition:lightscreen:onAnyModifyDamagePhase1": {
+   "disposition": "implemented",
+   "fp": "fn:fa221693:onAnyModifyDamagePhase1(damage, source, target, move) { if (target !== source && this.effectState.target.hasAlly(target)",
+   "anchor": "damage.rs::modify_damage",
+   "reason": "the ×0.5 physical(Reflect)/special(Light Screen) halving (crit-bypassed) — plus, when BOTH screens are up, the run_move ModifyDamagePhase1 tie-shuffle draw (two_tied_handler_shuffle)"
+  },
+  "condition:lightscreen:onSideEnd": {
+   "disposition": "implemented",
+   "fp": "fn:b918aa82:onSideEnd(side) { this.add(\"-sideend\", side, \"move: Light Screen\"); }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the |-sideend| line at expiry (the side-residual screen countdown in run_residuals)"
+  },
+  "condition:lightscreen:onSideResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the side-residual TICK order (Reflect 1 / Light Screen 2 — the countdown decrement; the screens have no drawing residual handler)"
+  },
+  "condition:lightscreen:onSideStart": {
+   "disposition": "implemented",
+   "fp": "fn:6eaeba2c:onSideStart(side) { this.add(\"-sidestart\", side, \"move: Light Screen\"); }",
+   "anchor": "turn.rs::modeled_screen_move",
+   "reason": "the |-sidestart| line + the 5-turn counter set (the screen-set arm in run_status_move)"
+  },
   "condition:par:onBeforeMove": {
    "disposition": "implemented",
    "fp": "fn:a6d16ff1:onBeforeMove(pokemon) { if (!pokemon.hasAbility(\"magicguard\") && this.randomChance(1, 4)) { this.add(\"cant\", pokemon, \"p",
@@ -1173,6 +1233,42 @@
    "fp": "fn:29e062fd:onWeatherModifyDamage(damage, attacker, defender, move) { if (defender.effectiveWeather() !== \"raindance\") return; if (m",
    "anchor": "damage.rs::weather",
    "reason": "the Fire/Water ×1.5/×0.5 weather damage folds (hydrosteam is gen9 cruft)"
+  },
+  "condition:reflect:duration": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "turn.rs::SCREEN_DURATION",
+   "reason": "the fixed 5-turn duration (gen3 has no Light Clay → always 5)"
+  },
+  "condition:reflect:durationCallback": {
+   "disposition": "implemented",
+   "fp": "fn:cae69264:durationCallback(target, source, effect) { if (source?.hasItem(\"lightclay\")) { return 8; } return 5; }",
+   "anchor": "turn.rs::SCREEN_DURATION",
+   "reason": "the Light-Clay durationCallback resolves to 5 in gen3 (Light Clay is gen4)"
+  },
+  "condition:reflect:onAnyModifyDamagePhase1": {
+   "disposition": "implemented",
+   "fp": "fn:a16e5a4c:onAnyModifyDamagePhase1(damage, source, target, move) { if (target !== source && this.effectState.target.hasAlly(target)",
+   "anchor": "damage.rs::modify_damage",
+   "reason": "the ×0.5 physical(Reflect)/special(Light Screen) halving (crit-bypassed) — plus, when BOTH screens are up, the run_move ModifyDamagePhase1 tie-shuffle draw (two_tied_handler_shuffle)"
+  },
+  "condition:reflect:onSideEnd": {
+   "disposition": "implemented",
+   "fp": "fn:84f66e1c:onSideEnd(side) { this.add(\"-sideend\", side, \"Reflect\"); }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the |-sideend| line at expiry (the side-residual screen countdown in run_residuals)"
+  },
+  "condition:reflect:onSideResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the side-residual TICK order (Reflect 1 / Light Screen 2 — the countdown decrement; the screens have no drawing residual handler)"
+  },
+  "condition:reflect:onSideStart": {
+   "disposition": "implemented",
+   "fp": "fn:45b46426:onSideStart(side) { this.add(\"-sidestart\", side, \"Reflect\"); }",
+   "anchor": "turn.rs::modeled_screen_move",
+   "reason": "the |-sidestart| line + the 5-turn counter set (the screen-set arm in run_status_move)"
   },
   "condition:sandstorm:duration": {
    "disposition": "unreachable_justified",
@@ -1459,6 +1555,24 @@
    "disposition": "unreachable_justified",
    "fp": "val:1",
    "reason": "the gen6+ poison-type-Toxic never-miss volatile — NOTHING in the gen3 resolution adds it (the resolved gen3 toxic move carries no handler referencing it) — (order metadata of the sibling onSourceInvulnerability handler)"
+  },
+  "condition:wish:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "state.rs::wish_pending",
+   "reason": "the slot condition duration 2 (cast N → decrement to 1 → fire at 0 = end of N+1)"
+  },
+  "condition:wish:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:3dd3a159:onEnd(target) { if (!target.fainted) { const source = this.effectState.source; const damage = this.heal(target.baseMaxhp",
+   "anchor": "turn.rs::apply_wish",
+   "reason": "the order-7 delayed heal floor(maxhp/2) at N+1 onto the slot occupant (|-heal|…|move: Wish|[wisher]); silent at full HP"
+  },
+  "condition:wish:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:7",
+   "anchor": "turn.rs::apply_wish",
+   "reason": "order 7 — the Wish heal fires BEFORE the sand chip (order 8) + all order-10 handlers"
   },
   "item:aguavberry:onEat": {
    "disposition": "implemented",
@@ -2598,6 +2712,24 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:aromatherapy:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:aromatherapy:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:aromatherapy:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:58fd983f:onHit(target, source) { this.add(\"-cureteam\", source, \"[from] move: Aromatherapy\"); const allies = [...target.side.pokem",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Aromatherapy whole-team clearStatus cure (no Soundproof gate, draw-free)"
+  },
   "move:astonish:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
@@ -2627,6 +2759,35 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:batonpass:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:batonpass:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:batonpass:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:d51cfb15:onHit(target) { if (!this.canSwitch(target.side) || target.volatiles[\"commanded\"]) { this.attrLastMove(\"[still]\"); this.",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the no-eligible-bench FAIL ([still]+-fail, NOT_FAIL); else set switch_flag + baton_pass_pending for the forced self-switch"
+  },
+  "move:batonpass:self": {
+   "disposition": "noop_justified",
+   "fp": "val:{}",
+   "reason": "an empty `self: {}` marker (Rapid Spin) — its effect is the onAfterHit/onAfterSubDamage clear"
+  },
+  "move:batonpass:selfSwitch": {
+   "disposition": "implemented",
+   "fp": "val:\"copyvolatile\"",
+   "anchor": "turn.rs::execute_switch",
+   "reason": "copyvolatile: the copyVolatileFrom pass of boosts + the copyable volatiles (substitute/leech-seed/confusion/curse) to the entrant, [from] Baton Pass"
   },
   "move:bite:secondaries": {
    "disposition": "implemented",
@@ -2717,6 +2878,18 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:charm:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":-2}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:charm:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
   "move:confusion:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":10,\"volatileStatus\":\"confusion\"}]",
@@ -2747,6 +2920,18 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:cottonspore:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"spe\":-2}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:cottonspore:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
   "move:covet:onAfterHit": {
    "disposition": "implemented",
    "fp": "fn:a3097623:onAfterHit(target, source, move) { if (source.item || source.volatiles[\"gem\"]) { return; } const yourItem = target.takeI",
@@ -2776,6 +2961,48 @@
    "fp": "val:[{\"chance\":50,\"boosts\":{\"def\":-1}}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:curse:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:curse:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:curse:nonGhostTarget": {
+   "disposition": "implemented",
+   "fp": "val:\"self\"",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the NON-GHOST self-redirect target (`self`) — the port renders the announce/boost on the USER"
+  },
+  "move:curse:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:fd16995e:onHit(target, source) { this.directDamage(source.maxhp / 2, source, source); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the GHOST branch: lay the curse volatile on the foe THEN pay floor(maxhp/2) HP (draw-free)"
+  },
+  "move:curse:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:175f9c03:onModifyMove(move, source, target) { if (!source.hasType(\"Ghost\")) { delete move.volatileStatus; delete move.onHit; move",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the type-conditional re-target: NON-GHOST → move.self={boosts:{atk:1,def:1,spe:-1}} + target self (the selfDrops random(100) + boost); GHOST-into-a-sub deletes both (does nothing → [still]+-fail). (The resolved dist splits the logic across onModifyMove + onTryHit; the port handles both in the curse arm.)"
+  },
+  "move:curse:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:c5ffaf7a:onTryHit(target, source, move) { if (!source.hasType(\"Ghost\")) { delete move.volatileStatus; delete move.onHit; move.sel",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the type-conditional re-target: NON-GHOST → move.self={boosts:{atk:1,def:1,spe:-1}} + target self (the selfDrops random(100) + boost); GHOST-into-a-sub deletes both (does nothing → [still]+-fail). (The resolved dist splits the logic across onModifyMove + onTryHit; the port handles both in the curse arm.)"
+  },
+  "move:curse:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"curse\"",
+   "anchor": "state.rs::curse",
+   "reason": "the `curse` volatile marker laid on the foe (Some(source_side))"
   },
   "move:detect:ignoreImmunity": {
    "disposition": "implemented",
@@ -2908,6 +3135,30 @@
    "anchor": "turn.rs::run_move",
    "reason": "the ×2-when-statused BP chain member (gen3_facade_v1 — id-gated at the facade site)"
   },
+  "move:faketears:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"spd\":-2}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:faketears:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:featherdance:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":-2}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:featherdance:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
   "move:feintattack:neverMiss": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -3003,6 +3254,24 @@
    "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:healbell:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:healbell:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:healbell:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:193a3f47:onHit(target, source) { this.add(\"-activate\", source, \"move: Heal Bell\"); const allies = [...target.side.pokemon, ...tar",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Heal Bell whole-team cure (active + bench; SKIPS a Soundproof ally, draw-free)"
   },
   "move:heatwave:secondaries": {
    "disposition": "implemented",
@@ -3147,6 +3416,24 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:lightscreen:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:lightscreen:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:lightscreen:sideCondition": {
+   "disposition": "implemented",
+   "fp": "val:\"lightscreen\"",
+   "anchor": "turn.rs::modeled_screen_move",
+   "reason": "the 5-turn screen side-condition arm (Light Screen/Reflect set + the side-residual countdown + the damage-calc halving)"
+  },
   "move:lovelykiss:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -3206,6 +3493,18 @@
    "fp": "val:[{\"chance\":10,\"self\":{\"boosts\":{\"atk\":1}}}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:metalsound:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"spd\":-2}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:metalsound:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
   },
   "move:meteormash:secondaries": {
    "disposition": "implemented",
@@ -3428,6 +3727,24 @@
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
   },
+  "move:raindance:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:raindance:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:raindance:weather": {
+   "disposition": "implemented",
+   "fp": "val:\"RainDance\"",
+   "anchor": "turn.rs::modeled_weather_set_move",
+   "reason": "the 5-turn timed weather-set arm (Rain Dance/Sunny Day; setWeather fails into the same weather, overwrites a different one)"
+  },
   "move:rapidspin:onAfterHit": {
    "disposition": "implemented",
    "fp": "fn:d70eb3be:onAfterHit(target, pokemon, move) { if (!move.hasSheerForce) { if (pokemon.removeVolatile(\"leechseed\")) { this.add(\"-end",
@@ -3468,6 +3785,42 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:reflect:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:reflect:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:reflect:sideCondition": {
+   "disposition": "implemented",
+   "fp": "val:\"reflect\"",
+   "anchor": "turn.rs::modeled_screen_move",
+   "reason": "the 5-turn screen side-condition arm (Light Screen/Reflect set + the side-residual countdown + the damage-calc halving)"
+  },
+  "move:refresh:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:refresh:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:refresh:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:6e5af1cf:onHit(pokemon) { if ([\"\", \"slp\", \"frz\"].includes(pokemon.status)) return false; pokemon.cureStatus(); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Refresh self-cure arm (par/psn/brn cleared; none/slp/frz fail — draw-free)"
   },
   "move:rest:ignoreImmunity": {
    "disposition": "implemented",
@@ -3540,6 +3893,30 @@
    "fp": "val:[{\"chance\":50,\"status\":\"brn\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:scaryface:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"spe\":-2}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:scaryface:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:screech:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"def\":-2}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:screech:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
   },
   "move:selfdestruct:selfdestruct": {
    "disposition": "implemented",
@@ -3816,6 +4193,24 @@
    "anchor": "turn.rs::absorb_into_sub",
    "reason": "the substitute volatile (create in run_status_move, absorb at onTryPrimaryHit)"
   },
+  "move:sunnyday:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:sunnyday:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:sunnyday:weather": {
+   "disposition": "implemented",
+   "fp": "val:\"sunnyday\"",
+   "anchor": "turn.rs::modeled_weather_set_move",
+   "reason": "the 5-turn timed weather-set arm (Rain Dance/Sunny Day; setWeather fails into the same weather, overwrites a different one)"
+  },
   "move:superpower:self": {
    "disposition": "implemented",
    "fp": "val:{\"boosts\":{\"atk\":-1,\"def\":-1}}",
@@ -3930,6 +4325,18 @@
    "anchor": "turn.rs::modeled_status_move",
    "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
   },
+  "move:tickle:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":-1,\"def\":-1}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:tickle:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
   "move:toxic:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -4001,6 +4408,24 @@
    "fp": "val:\"brn\"",
    "anchor": "turn.rs::modeled_status_move",
    "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:wish:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:wish:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:wish:slotCondition": {
+   "disposition": "implemented",
+   "fp": "val:\"Wish\"",
+   "anchor": "state.rs::wish_pending",
+   "reason": "the Wish slot condition set at cast (double-Wish fails [still], draw-free)"
   },
   "move:withdraw:boosts": {
    "disposition": "implemented",

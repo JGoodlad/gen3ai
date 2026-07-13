@@ -414,6 +414,26 @@ pub struct MonState {
     /// residual, incremented to 1 only at endTurn). Modeled: init **1** at construction (leads
     /// boost turn 1), RESET to 0 in `execute_switch`, INCREMENT at end-of-turn. DRAW-FREE.
     pub active_turns: u32,
+    /// The **CURSE** volatile (`curse`, `gen3_move_coverage_batch3_v1` — laid by the GHOST
+    /// branch of the Curse move onto the FOE): `Some(source_side)` when this mon is cursed,
+    /// recording the SIDE whose mon laid the curse (for the `[of] <user>` clause on the
+    /// `-start` line; the source is the caster's active). `None` = not cursed (the
+    /// construction-time value).
+    ///
+    /// The gen-3 model, VERIFIED bit-for-bit vs the omniscient sim
+    /// (`harness/probe_batch3_curse.js`): a GHOST user's Curse pays `floor(maxhp/2)` HP and
+    /// lays this volatile on the FOE (the `curse.onStart` `-start`), then each end-of-turn
+    /// RESIDUAL (order 10, subOrder **8** — the gen-3 `curse` condition's
+    /// `onResidualOrder: 10, onResidualSubOrder: 8`, so AFTER Leftovers sub 4 / Leech sub 5 /
+    /// status DoT sub 6, and after Taunt's sub 15? no — 8 < 15) the CURSED mon loses
+    /// `floor(maxhp/4)` (`this.damage(baseMaxhp/4)`), emitting `|-damage|<foe>|<hp>|[from]
+    /// Curse`. DRAW-FREE. A re-curse into an already-cursed foe FAILS draw-free (`[still]` +
+    /// `-fail`, no HP cost); a Curse into a SUBSTITUTE does NOTHING (the onModifyMove deletes
+    /// the volatileStatus+onHit → `[still]` + `-fail`, no HP cost). A GHOST target is NOT
+    /// immune (the curse volatile has no type gate). CLEARED on switch-out (`execute_switch`'s
+    /// clearVolatile) and on faint (`process_faints`), exactly like `leech_seed`. `None` at
+    /// construction.
+    pub curse: Option<usize>,
 }
 
 impl MonState {
@@ -494,6 +514,7 @@ impl MonState {
             // A LEAD has activeTurns 1 at its first residual (VERIFIED vs the sim) so it
             // boosts Speed Boost on turn 1; a switch-in RESETS to 0 in `execute_switch`.
             active_turns: 1,
+            curse: None,
         })
     }
 
@@ -621,6 +642,48 @@ pub struct SideState {
     /// PHYSICAL damage (`DamageContext::reflect`) and expires with `|-sideend|…|Reflect`. 0 at
     /// construction.
     pub reflect: u8,
+    /// The **WISH** pending slot-condition (`side.slotConditions[0].wish`,
+    /// `gen3_move_coverage_batch3_v1`): `Some((duration, wisher_name))` when a Wish cast on
+    /// THIS side is pending. `None` = no pending Wish (the construction-time value).
+    ///
+    /// Wish is a SLOT condition (a per-side, per-active-slot delayed heal — gen-3 singles has
+    /// one active slot, so it is per-side here), NOT a mon volatile: it SURVIVES the wisher
+    /// switching out / fainting / being phazed (slot-keyed), and the heal lands on WHOEVER
+    /// occupies the slot at resolution (healing `floor(ITS maxhp/2)`). VERIFIED bit-for-bit vs
+    /// the omniscient sim (`harness/probe_batch3_wish.js`):
+    ///   - CAST: the Wish move (never-miss, `target: self`) sets this to `(2, wisher_name)` —
+    ///     DRAW-FREE. A 2nd Wish while one is pending FAILS (`[still]`, no fail line, draw-free,
+    ///     the existing Wish untouched → resolves normally).
+    ///   - RESIDUAL (`wish.onEnd`, `onResidualOrder: 7` — BEFORE the sand chip order 8 and ALL
+    ///     order-10 handlers): `duration` counts 2 → 1 (end of the cast turn) → fires at 0 (end
+    ///     of the NEXT turn). On resolve, if the slot's mon is not fainted, heal
+    ///     `floor(maxhp/2)`; a NON-zero heal emits `|-heal|<mon>|<hp>|[from] move: Wish|[wisher]
+    ///     <name>` (a heal-at-full resolves SILENTLY — `this.heal` returns 0, the `if(damage)`
+    ///     guard skips the line). DRAW-FREE, but the handler PARTICIPATES in the residual
+    ///     speed-sort at order 7 (speed = the slot's active mon's cached speed), so TWO Wishes
+    ///     resolving the same turn at EQUAL speed draw ONE tie-shuffle `random(0,2)` (probe:
+    ///     a Blissey-mirror both-Wish resolve turn draws +1 vs the single-Wish control).
+    ///   - The wisher FAINTING on the cast turn skips that turn's residual (the faint pauses),
+    ///     leaving `duration` at 2 → resolves the following turn on the replacement.
+    /// NOT cleared on switch (a side/slot condition — it persists); cleared only when it
+    /// resolves (or expiry). `None` at construction.
+    pub wish_pending: Option<(u8, String)>,
+    /// The **BATON PASS** pending-pass marker (`gen3_move_coverage_batch3_v1`): `true` while a
+    /// Baton Pass has resolved on THIS side and the entrant's `copyVolatileFrom` is awaiting
+    /// the forced switch-in. `false` = no pending pass (the construction-time value).
+    ///
+    /// Baton Pass (`selfSwitch: 'copyvolatile'`) resolves like a voluntary self-switch: on a
+    /// success the side's `switch_flag` is set AND this marker is set. `execute_switch` reads
+    /// it (when the forced switch-in commits) to (a) SNAPSHOT the OUTGOING mon's PASS-SET —
+    /// its 7 boosts + the copyable (`noCopy == false`) volatiles the port models (substitute
+    /// HP / leech-seed seeder / confusion counter / curse source) — BEFORE the clearVolatile
+    /// block zeros them, (b) APPLY that snapshot to the entrant AFTER the array swap, and
+    /// (c) emit the `|switch|…|[from] Baton Pass` tag. Then it clears the marker. DRAW-FREE
+    /// (the copy consumes no PRNG; the forced switch-in draws exactly like a normal switch).
+    /// A Baton Pass with NO eligible bench FAILS draw-free (`[still]` + `-fail`) and never
+    /// sets this. Major STATUS is NOT a volatile → NOT passed (it stays with the outgoing
+    /// mon). `false` at construction.
+    pub baton_pass_pending: bool,
 }
 
 impl SideState {
@@ -838,5 +901,7 @@ fn build_side(name: &str, team: &PackedTeam, dex: &Dex) -> Result<SideState, Str
         spikes: 0,        // no side conditions at construction
         light_screen: 0,  // gen3_move_coverage_batch2_v1
         reflect: 0,       // gen3_move_coverage_batch2_v1
+        wish_pending: None,         // gen3_move_coverage_batch3_v1
+        baton_pass_pending: false,  // gen3_move_coverage_batch3_v1
     })
 }

@@ -782,3 +782,33 @@ fn e2e_trace_one() {
         break;
     }
 }
+
+/// Dump the RUST protocol log for one e2e scenario (heal/damage/move/status ordering),
+/// so a residual-order desync can be read directly against the sim probe.
+///   E2E_TRACE=e2e_182 cargo test --test e2e_fuzz_test e2e_trace_log -- --ignored --nocapture --test-threads=1
+#[test]
+#[ignore]
+fn e2e_trace_log() {
+    let d = dex();
+    let (meta, cases) = parse_golden();
+    let want = std::env::var("E2E_TRACE").unwrap_or_else(|_| "e2e_182".into());
+    for case in &cases {
+        if case.scen != want { continue; }
+        let m = meta.get(&case.scen).unwrap();
+        let opts = opts_for(m, &case.init_seed);
+        let mut battle = Battle::start_with_switchins(&opts, &d).unwrap();
+        let script = script_from_decisions(case);
+        let (_outcome, log) = battle.state_mut().unwrap().run_full_battle_logged(&script, &d);
+        for line in &log {
+            let s = &line.0;
+            if s.starts_with("|move") || s.starts_with("|switch") || s.starts_with("|drag")
+                || s.starts_with("|-heal") || s.starts_with("|-damage") || s.starts_with("|-status")
+                || s.starts_with("|-curestatus") || s.starts_with("|-cureteam") || s.starts_with("|-activate")
+                || s.starts_with("|-fail") || s.starts_with("|upkeep") || s.starts_with("|turn")
+                || s.starts_with("|faint") {
+                eprintln!("{s}");
+            }
+        }
+        break;
+    }
+}
