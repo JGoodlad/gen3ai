@@ -161,6 +161,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         fixed_opponents: "list | None" = None,
         stable_opponent_mastered_wr: float = 0.80,
         stable_challenge_share: float = STABLE_CHALLENGE_SHARE,
+        stable_pfsp: bool = False,
         bot_weight_vec: "list | None" = None,
         floor_roster_count: int = 0,
         pfsp_scale: float = 0.0,
@@ -182,6 +183,10 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         self._stable_opponent_mastered_wr = float(stable_opponent_mastered_wr)
         self._stable_mastered: set[str] = set()  # labels mastered this run (monotonic)
         self._stable_mastery_streak: dict[str, int] = {}  # consecutive ≥-threshold cycles per label
+        # DYNAMIC stable selection (--stable-opponent-pfsp): push per-opponent win-rates each cycle so
+        # workers loss-weight the un-mastered-stable pick. EMA-smoothed (resume-safe: re-warms).
+        self._stable_pfsp = bool(stable_pfsp)
+        self._stable_wr_ema: dict[str, float] = {}
         # Reporting-only inputs for the per-episode opponent-mix fractions (train/selfplay_fraction
         # = pool share, train/stable_fraction, train/nonbot_fraction). They let the callback REPORT
         # the exact split MaskableAgentWrapper._select_episode_opponent (wrappers.py) implies WITHOUT
@@ -810,6 +815,22 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             self.training_env.env_method("set_stable_mastered", sorted(self._stable_mastered))
         except Exception as e:  # noqa: BLE001 — must never break eval
             print(f"[SELFPLAY] set_stable_mastered push failed (non-fatal): {e}")
+        # DYNAMIC stable selection (--stable-opponent-pfsp): push the per-opponent win-rates so the
+        # workers weight the un-mastered-stable pick toward the axes we're losing worst (the
+        # loss-weighted `_pick_stable`). EMA-smoothed to damp ~100-game eval noise, mirroring the pool
+        # PFSP EMA. No-op / not pushed unless pfsp is on (so an off run stays byte-identical).
+        if self._stable_pfsp and ext_wr:
+            b = _PFSP_WR_EMA_BETA
+            for lab, wr in ext_wr.items():
+                prev = self._stable_wr_ema.get(lab)
+                self._stable_wr_ema[lab] = wr if prev is None else b * prev + (1 - b) * wr
+            # keep the map to live (un-mastered) opponents only
+            self._stable_wr_ema = {lab: v for lab, v in self._stable_wr_ema.items()
+                                   if lab not in self._stable_mastered}
+            try:
+                self.training_env.env_method("set_stable_win_rates", dict(self._stable_wr_ema))
+            except Exception as e:  # noqa: BLE001 — must never break eval
+                print(f"[SELFPLAY] set_stable_win_rates push failed (non-fatal): {e}")
 
     def _opponent_mix_fractions(self, sf: float, pool_ready: bool) -> "tuple[float, float, float]":
         """The INTENDED per-episode opponent-mix probabilities the curriculum implies, for REPORTING

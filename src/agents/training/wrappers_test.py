@@ -509,3 +509,53 @@ def test_pins_require_pool_team():
     exploiter = MagicMock(name="exploiter")
     with pytest.raises(ValueError, match="opponent_pool_team"):
         _make_pinned_wrapper(exploiter=exploiter, exploiter_team="PIN_TB", pool_team=None)
+
+
+# ── dynamic stable-opponent selection (--stable-opponent-pfsp) ────────────────
+
+def _stable_wrapper(pfsp, n=3):
+    players = [MagicMock(name=f"ext{i}") for i in range(n)]
+    labels = [f"ext_run{i}" for i in range(n)]
+    w = MaskableAgentWrapper(_stub_env(), heuristic_opponents=[MagicMock()],
+                             stable_players=players, stable_labels=labels,
+                             stable_pfsp=pfsp, rng_seed=0)
+    return w, players, labels
+
+
+def test_stable_pfsp_off_is_uniform():
+    # OFF (default): _pick_stable == _rng.choice, uniform over the 3 — byte-identical behavior.
+    w, players, _ = _stable_wrapper(pfsp=False)
+    w.set_stable_win_rates({"ext_run0": 0.1, "ext_run1": 0.9, "ext_run2": 0.9})  # ignored when off
+    from collections import Counter
+    counts = Counter(id(w._pick_stable(players)) for _ in range(6000))
+    fracs = sorted(c / 6000 for c in counts.values())
+    assert all(0.28 < f < 0.39 for f in fracs), fracs   # ~1/3 each
+
+
+def test_stable_pfsp_on_oversamples_the_loser():
+    # ON: the opponent we're LOSING to most (lowest win-rate) is picked far more often.
+    w, players, labels = _stable_wrapper(pfsp=True)
+    w.set_stable_win_rates({labels[0]: 0.10, labels[1]: 0.90, labels[2]: 0.90})  # losing badly to #0
+    from collections import Counter
+    counts = Counter()
+    for _ in range(6000):
+        counts[id(w._pick_stable(players))] += 1
+    f0 = counts[id(players[0])] / 6000
+    f1 = counts[id(players[1])] / 6000
+    # weights: (1-.1)=0.9 vs (1-.9)=0.1 → #0 should get ~0.9/(0.9+0.1+0.1)=0.818
+    assert f0 > 0.7 and f1 < 0.2, (f0, f1)
+
+
+def test_stable_pfsp_on_without_rates_is_uniform():
+    # ON but no win-rates pushed yet (cold start) → falls back to uniform, no crash.
+    w, players, _ = _stable_wrapper(pfsp=True)
+    picks = {id(w._pick_stable(players)) for _ in range(200)}
+    assert len(picks) == 3                                 # all three reachable
+
+
+def test_stable_pfsp_mastered_weight_floored():
+    # A just-mastered opponent (win_rate ~1.0) keeps a small floor weight (0.05), never zero-division.
+    w, players, labels = _stable_wrapper(pfsp=True, n=2)
+    w.set_stable_win_rates({labels[0]: 1.0, labels[1]: 1.0})
+    picks = [id(w._pick_stable(players)) for _ in range(200)]
+    assert set(picks) == {id(players[0]), id(players[1])}  # both still reachable (floor > 0)

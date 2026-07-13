@@ -833,6 +833,22 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
   the training mix shows up in `train/stable_fraction` (challenge un-mastered + floor mastered), with
   `train/selfplay_fraction` (pool) and `train/nonbot_fraction` (their sum); see the Curriculum
   subsection's **Opponent-mix reporting** bullet above for the exact decomposition.
+- **Dynamic within-slice selection (`--stable-opponent-pfsp`, default off).** A FLAT capped share
+  splits the stable slice UNIFORMLY over the un-mastered opponents — so a generalist hardening against
+  several exploiters at once spends equal budget on the axis it already handles and the one it's
+  failing. Under `--stable-opponent-pfsp`, `MaskableAgentWrapper._pick_stable` weights the
+  un-mastered-stable pick by **`1 − win_rate`** (floored 0.05) — the exploiter it's LOSING to worst
+  gets most of the slice, and each fades as mastered (win_rate→1 ⇒ weight→0), then the mastery flip
+  retires it to the floor. Win-rates are the same `win_rate_vs_ext_<label>` eval already computes,
+  EMA-smoothed (`_PFSP_WR_EMA_BETA`) and pushed each cycle via `SelfPlayCallback._push_stable_mastered`
+  → `env_method("set_stable_win_rates", …)` (mirrors the pool PFSP `set_opponent_win_rates`). **The
+  TOTAL pool-vs-stable share is unchanged** (still `--stable-opponent-selfplay-share`), so the
+  opponent-mix telemetry + the `test_mix_fractions_match_actual_sampling` anti-drift guard are
+  unaffected — only WHICH un-mastered stable opponent is picked shifts. Training-only (not
+  version-locked, forwarded on resume like `--pfsp-scale`); OFF = uniform, byte-identical. **Pairs
+  with a raised `--stable-opponent-selfplay-share`.** Motivation: a flat 0.35 share (≈12% exposure
+  each of 3 exploiters) left ai_v7_14's hardening flattening at ~0.30 vs the exploiters; the dynamic
+  focus + a raised share is the fix. Tests: `wrappers_test.py::test_stable_pfsp_*`.
 - The stable-opponent players are **built once per worker** (`load_foreign_opponent` in the env
   factory), so no per-episode reload; each plays **stochastic** at `--stable-opponent-temp` in
   TRAINING but **greedy (temp 0)** in EVAL (a clean yardstick).

@@ -1529,6 +1529,14 @@ async def main():
                              "occupies training so a single one can't dominate; multiple un-mastered "
                              f"stable opponents SHARE this slice. Default {STABLE_CHALLENGE_SHARE:g}. "
                              "Only active under --self-play.")
+    parser.add_argument("--stable-opponent-pfsp", "--stable_opponent_pfsp",
+                        dest="stable_opponent_pfsp", action="store_true",
+                        help="DYNAMIC stable-opponent selection: within the capped stable challenge "
+                             "slice, pick WEIGHTED by how much the trainee is LOSING to each "
+                             "(1 - win_rate) instead of uniformly — spend the exploiter budget on the "
+                             "axis it's failing worst, and let each fade as it's mastered. The TOTAL "
+                             "pool-vs-stable share is unchanged. Training-only; OFF = uniform "
+                             "(byte-identical). Pairs with a raised --stable-opponent-selfplay-share.")
     parser.add_argument("--exploiter", dest="exploiter", type=str, default=None,
                         help="EXPLOITER MODE: train against ONE fixed foreign model as the SOLE "
                              "opponent every episode — the league 'exploiter' role (learn to beat a "
@@ -2539,6 +2547,7 @@ async def main():
                     heuristic_weights=heuristic_weights,
                     stable_players=stable_players, stable_labels=stable_labels,
                     stable_challenge_share=args.stable_opponent_selfplay_share,
+                    stable_pfsp=args.stable_opponent_pfsp,
                     exploiter_player=exploiter_player,
                     # Fold-back per-opponent teams: pinned builders (or None) parallel to
                     # stable_players, the exploiter target's pin, and the pool builder to restore
@@ -2941,6 +2950,7 @@ async def main():
             # wrapper's selection implies — no change to selection. The capped stable challenge share,
             # the bot-weight vector, and the floor bot-roster size all live only in the wrapper / here.
             stable_challenge_share=args.stable_opponent_selfplay_share,
+            stable_pfsp=args.stable_opponent_pfsp,
             bot_weight_vec=_bot_weight_vec,
             floor_roster_count=len(OPPONENT_CLASSES),
             # PFSP: when >0 the callback EMA-smooths the per-sentinel win-rates each eval and pushes

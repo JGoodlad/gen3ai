@@ -48,7 +48,8 @@ class MaskableAgentWrapper(SingleAgentWrapper):
                  heuristic_weights=None, stable_players=None, stable_labels=None,
                  stable_challenge_share=STABLE_CHALLENGE_SHARE, exploiter_player=None,
                  exploiter_keep_bots=False, exploiter_bot_fraction=0.5,
-                 stable_teams=None, exploiter_team=None, opponent_pool_team=None):
+                 stable_teams=None, exploiter_team=None, opponent_pool_team=None,
+                 stable_pfsp=False):
         # Back-compat: a single positional `opponent` (legacy / tests) becomes a 1-bot roster.
         roster = list(heuristic_opponents) if heuristic_opponents else (
             [opponent] if opponent is not None else [])
@@ -82,6 +83,17 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         self._stable_labels = list(stable_labels) if stable_labels else []
         self._stable_mastered = {lab: False for lab in self._stable_labels}
         self._stable_challenge_share = float(stable_challenge_share)
+        # DYNAMIC stable-opponent selection (--stable-opponent-pfsp): when the trainee faces the
+        # un-mastered stable opponents (the capped challenge slice), pick WEIGHTED by how much it is
+        # LOSING to each (weight = 1 − win_rate) instead of uniformly — so a stalled generalist
+        # spends its exploiter budget on the axis it's failing WORST, and each opponent naturally
+        # fades from the slice as it's mastered (win_rate→1 ⇒ weight→0), then the mastery flip moves
+        # it to the floor. The TOTAL pool-vs-stable share is unchanged (still `stable_challenge_share`),
+        # so the opponent-mix reporting/telemetry is unaffected — only WHICH un-mastered stable
+        # opponent gets picked shifts. Win-rates arrive via `set_stable_win_rates` each eval. OFF
+        # (default) → uniform `_rng.choice`, byte-identical to the flat-share behavior.
+        self._stable_pfsp = bool(stable_pfsp)
+        self._stable_win_rates: dict = {}   # {label: p} EMA-smoothed, pushed each eval when pfsp on
         # EXPLOITER mode (--exploiter): a single fixed foreign model that is the SOLE training
         # opponent every episode — it short-circuits the whole challenge/floor/pool/stable selection
         # below. Used to train a dedicated agent that just learns to beat one target (the league
@@ -187,6 +199,14 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         s = set(mastered_labels or ())
         self._stable_mastered = {lab: (lab in s) for lab in self._stable_labels}
 
+    def set_stable_win_rates(self, rates) -> None:
+        """Pushed by the eval callback each cycle (via ``env_method``) when ``--stable-opponent-pfsp``
+        is on: the trainee's per-stable-opponent win-rate ``{label: p}`` (the same ``win_rate_vs_ext_
+        <label>`` the eval already computes, EMA-smoothed). Weights the un-mastered-stable pick toward
+        the opponents the trainee is LOSING to most (``_pick_stable``). Mirrors ``set_opponent_win_
+        rates`` (the pool PFSP push); a no-op on selection unless ``stable_pfsp`` is set."""
+        self._stable_win_rates = dict(rates or {})
+
     def _ensure_pool_model(self) -> bool:
         """Load/refresh the per-generation pool snapshot into the reusable pool player; return True
         if a pool model is ready.
@@ -227,21 +247,36 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         weights = self._heuristic_weights + [1.0] * len(mastered)
         return self._rng.choices(candidates, weights=weights, k=1)[0]
 
+    def _pick_stable(self, stable):
+        """Pick one un-mastered stable opponent. With ``--stable-opponent-pfsp`` (and win-rates
+        pushed), weight by how much the trainee is LOSING to each (``1 − win_rate``, floored so an
+        unmeasured / just-mastered opponent still gets a small share) — spend the exploiter budget on
+        the axis we're failing worst. OFF → uniform ``_rng.choice`` (byte-identical). Aligning by the
+        opponent's LABEL (via ``_stable_labels``) so the win-rate map keys match the player."""
+        if not self._stable_pfsp or not self._stable_win_rates or len(stable) == 1:
+            return self._rng.choice(stable)
+        label_of = {id(p): lab for p, lab in zip(self._stable_players, self._stable_labels)}
+        weights = [max(0.05, 1.0 - float(self._stable_win_rates.get(label_of.get(id(p)), 0.5)))
+                   for p in stable]
+        return self._rng.choices(stable, weights=weights, k=1)[0]
+
     def _pick_challenge_opponent(self):
         """The CHALLENGE bucket — what the model is actively trying to master. The self-play pool
         gets the BULK; any UN-mastered stable cross-run opponents share a CAPPED minority slice
         (``_stable_challenge_share``, default 20%), so a single fixed opponent can never dominate
-        training. Returns ``None`` if neither has a ready opponent (→ fall through to the floor)."""
+        training. WHICH un-mastered stable opponent is picked is loss-weighted under
+        ``--stable-opponent-pfsp`` (``_pick_stable``); the total pool-vs-stable share is unchanged.
+        Returns ``None`` if neither has a ready opponent (→ fall through to the floor)."""
         stable = self._stable_in(mastered=False)
         pool_ready = self._ensure_pool_model()
         if stable and pool_ready:
             if self._rng.random() < self._stable_challenge_share:
-                return self._rng.choice(stable)       # the capped stable slice
+                return self._pick_stable(stable)      # the capped stable slice (loss-weighted)
             return self._pool_player                  # the bulk → the pool
         if pool_ready:
             return self._pool_player
         if stable:
-            return self._rng.choice(stable)           # no pool seeded yet → stable IS the challenge
+            return self._pick_stable(stable)          # no pool seeded yet → stable IS the challenge
         return None
 
     def _select_episode_opponent(self) -> None:
