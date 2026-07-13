@@ -1621,6 +1621,76 @@ with `target:"self"` (Curse's `nonGhostTarget`) but the port's request serialize
 bridge_capture scope-audit strips it, like the drawn gender + the `return102` alias). Probes kept:
 `harness/probe_batch3_{curse,wish,batonpass}.js`, `probe_batch3_regression_rng.js`.
 
+## Move-coverage BATCH 4: the beforeTurnCallback move classes (FOCUS PUNCH / PURSUIT)
+
+`gen3_move_coverage_batch4_v1` — the TWO gen-3 DAMAGING moves carrying a `beforeTurnCallback` (the
+NEW queue-machinery piece the port didn't model): **FOCUS PUNCH** + **PURSUIT**. Both probe-settled
+bit-for-bit vs the omniscient sim (`harness/probe_batch4_{focuspunch,pursuit}.js`) and wired into the
+turn loop / `run_move` / `execute_switch`. New fields: `MonState::focus_punch: Option<bool>`
+(the `focuspunch` volatile, `Some(lost_focus)`), `MonState::pursuit: Option<usize>` (the `pursuit`
+volatile on the target, `Some(pursuer_uid)`), `BattleState::pursuit_strike: bool` (the transient
+interrupt-strike flag). The NEW **`QAction::BeforeTurnMove { side, uid, move_index }`** (order 5,
+between beforeTurn=4 and switch=103) is unshifted by the queue-builder for any move whose id is in
+`move_has_before_turn_callback` (focuspunch/pursuit); it runs the `beforeTurnCallback` (draw-free) +
+the standard gen<5 trailing `eachEvent('Update')` tail, and participates in the action-order
+`speed_sort` at order 5 (so a MIRROR ties → the mirror shuffle).
+
+- **FOCUS PUNCH** (`focuspunch`, 150-BP Fighting, priority -3) — the beforeTurnMove adds the
+  `focuspunch` volatile to the USER (`|-singleturn|<user>|move: Focus Punch`, draw-free). A NON-Status
+  move that HITS the user DIRECTLY (the `!absorbed` damage-apply block; chip absorbed by the user's OWN
+  Substitute does NOT count — the sub intercept precedes the focuspunch onHit) sets `lost_focus`. At the
+  FP move's execution the onTry CANCELS it draw-free BEFORE accuracy iff `lost_focus`
+  (`|move|…Focus Punch||[still]` + `|cant|…Focus Punch|Focus Punch`, placed after PP/lastMove — the sim
+  deducts PP + moveUsed before onTry). The volatile BLOCKS a flinch (`focuspunch.onTryAddVolatile`) — a
+  DRAW-RELEVANT gate (a mon with BOTH `focus_punch` + `flinch` would register TWO tied NO_ORDER residual
+  duration handlers → a phantom intra-mon tie-shuffle; the flinch-secondary `random(100)` STILL draws,
+  draw-then-block). A STATUS hit (Thunder Wave) does NOT set lostFocus (FP lands even while newly
+  paralyzed; the para roll still draws on the FP turn). The `duration:1` volatile registers a
+  NO_ORDER/subOrder-2 residual duration handler → a FP MIRROR at equal speed adds one residual
+  tie-shuffle (the bulky both-FP mirror's +1). Cleared at turn-top (`clear_flinch`) + switch-out + faint.
+- **PURSUIT** (`pursuit`, 40-BP Dark SPECIAL, acc 100) — the beforeTurnMove lays the `pursuit` volatile
+  on the FOE (skipped if the pursuer is frz/slp). THE INTERRUPT (`condition.onBeforeSwitchOut`, fired by
+  `execute_switch`'s `!is_drag` top): a VOLUNTARY switch-out of the pursued mon lets the pursuer cancel
+  its queued Pursuit (`queue.retain`, draw-free), deduct its Pursuit PP + set lastMove (draw-free), then
+  run Pursuit against the SWITCHING mon at ×2 BP + NEVER-MISS (crit + damage, NO accuracy — the
+  `pursuit_strike` flag makes `run_move` double the BP + skip acc/on_before_move/PP/lastMove) BEFORE the
+  switch resolves (`|-activate|<switcher>|move: Pursuit`), Choice-locks the pursuer if it holds a Choice
+  item, and fires the strike's in-tryMoveHit Update. A KO'd switcher still brings in the replacement (the
+  gen 2-4 `-hint`, `process_faints` before the swap). A NORMAL Pursuit (foe stays) is a plain bp-40 hit.
+  A phaze DRAG does NOT intercept (`!is_drag`). Cleared at turn-top / consumed by the interrupt / switch-out / faint.
+
+**Validated** by `tests/movecoverage_batch4_test.rs` (a per-seed PER-DECISION STATE(+HP+STATUS+BOOSTS+
+SUB-HP)+SEED+winner differential to GAME-END over **13 scenarios × 80 seeds = 1040 game-end battles,
+8866 decision rows, 8866 seed + 17732 HP assertions, 2127 sub-up rows, 1040 wins** — FP land/cancel/
+behind-sub/mirror-tie/flinch-hit + Pursuit interrupt/normal/KO-switcher/ghost/into-sub/target-faster/
+mirror-tie; the golden REUSES the batch-3 42-field DEC format, CURSE/WISH columns asserted 0) + **6
+revert-verified `tests/regression_test.rs` pins** (MC30-MC35): MC30 `focus_punch_cancelled_by_a_prior_
+hit_draws_nothing`, MC31 `focus_punch_lands_when_the_user_keeps_focus`, MC32 `pursuit_interrupt_strikes_
+the_switcher_at_double_bp_never_miss`, MC33 `pursuit_normal_when_the_foe_stays_is_a_plain_bp40_hit`, MC34
+`pursuit_that_kos_the_switcher_still_brings_in_the_replacement`, MC35 `focus_punch_mirror_speed_tie_draws_
+the_beforeturnmove_and_residual_ties`. Ground truth `harness/probe_batch4_movecoverage_regression_rng.js`.
+
+**e2e — DEFERRED (`BATCH4_E2E_EXCLUDED = true`, the PHAZE precedent).** The engine is bit-for-bit in the
+DEDICATED golden + the MC30-MC35 pins, but admitting FP/Pursuit to the e2e capstone surfaces a real-team-
+only BENCH-ORDER divergence in COMPLEX multi-switch battles where a PURSUIT interrupt composes with a
+BATON PASS self-switch + a ROAR phaze + a double faint (the switch-array slot assignment across the
+re-queued-switch / instaswitch machinery diverges — NOT caught by the e2e's active-only STATE assertions,
+so it manifests as a later "switch to a fainted slot" reject / decision-count mismatch: e.g. e2e_11 rust
+34 vs golden 55). Keeping FP/Pursuit OUT of the STRICT e2e gate (rather than a silent desync in) honors
+the bit-for-bit law, exactly as PHAZE_E2E_EXCLUDED does. The committed e2e golden
+(`529ab3f0940f8f9cbab383fb26d2a696`) stays BYTE-IDENTICAL (FP/Pursuit never picked). Re-enable once the
+multi-mechanic pursuit-interrupt bench-order composition is fixed. Probes kept:
+`harness/probe_batch4_{focuspunch,pursuit,movecoverage_regression_rng}.js`.
+
+**BRIDGE-SAFETY CAVEAT (the divergence is `--use-bridge=rust`-reachable, not just an e2e artifact).**
+Unlike PHAZE (whose exclusion was purely a strict-gate concern), the Pursuit-interrupt bench-order bug
+sits in an UNCONDITIONAL engine path (`execute_switch`'s interrupt fires whenever a `pursuit` volatile
+is present), and Pursuit is common in gen3ou (Tyranitar/Metagross). In `--use-bridge=rust` the port IS
+the environment — there is no live vs-Showdown check — so on a rare multi-mechanic turn
+(Pursuit-interrupt + Baton Pass + Roar + double-faint) a wrong switch-array slot assignment produces
+SILENTLY-wrong obs rather than a caught divergence. So a serverless-rust training run that reaches that
+composition is NOT bit-for-bit until the bench-order fix lands; the fix is the #1 batch-4 follow-up.
+
 ## E2E capstone: real teams, full battles, bit-for-bit (per-decision STATE+SEED+winner differential)
 
 This is the closure: instead of constructed scenarios with hand-picked mons + scripted moves, the

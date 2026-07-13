@@ -132,8 +132,10 @@ const MOVE_ID_BLOCKLIST = new Set([
   // switch-trap / item-swap / leaves-1 / fakeout / future / sleeptalk. NOTE:
   // knockoff/thief/covet (item REMOVAL) + rapidspin are NO LONGER blocklisted — they are
   // MODELED bit-for-bit (`gen3_move_coverage_batch1_v1`) and ADMITTED via
-  // MODELED_ITEM_REMOVAL_MOVES / MODELED_RAPIDSPIN_MOVES in `isModeledMove`. Trick / Switcheroo
-  // (item SWAP, not removal) stay out.
+  // MODELED_ITEM_REMOVAL_MOVES / MODELED_RAPIDSPIN_MOVES in `isModeledMove`. `pursuit` is MODELED
+  // bit-for-bit (`gen3_move_coverage_batch4_v1`) but currently EXCLUDED from the e2e capstone
+  // (BATCH4_E2E_EXCLUDED — the bench-order composition deferral), so it STAYS blocklisted here.
+  // Trick / Switcheroo (item SWAP, not removal) stay out.
   'pursuit', 'trick', 'switcheroo', 'falseswipe',
   'fakeout', 'futuresight', 'doomdesire', 'snore', 'sleeptalk',
   // reactive / out-of-gen-3-modeled-scope status moves (a category-Status move the port
@@ -266,6 +268,29 @@ const MODELED_LEECH_MOVES = new Set(['leechseed']);
 // Perish Song, Encore (reactive), Attract (the volatile move — Cute Charm's attract is a
 // separate ability path). `whether-to-admit` is BATCH3_E2E_EXCLUDED below.
 const MODELED_BATCH3_MOVES = new Set(['curse', 'wish', 'batonpass']);
+
+// MOVE-COVERAGE BATCH 4 (`gen3_move_coverage_batch4_v1`) — the two DAMAGING moves with a
+// `beforeTurnCallback`: FOCUS PUNCH (the beforeTurnMove `|-singleturn|` + the onTry cant-if-hit
+// gate + the flinch-block) and PURSUIT (the beforeTurnMove lays the `pursuit` volatile; the
+// switch-interrupt strikes the switching mon at ×2 BP + never-miss via `basePowerCallback` /
+// `onModifyMove`). Both are damaging (bp>0), so they are ADMITTED by an EARLY special-case in
+// `isModeledMove` (before the `beforeTurnCallback` / `basePowerCallback` / `onModifyMove`
+// rejects that would else drop them). Kept in lockstep with `move_has_before_turn_callback` +
+// the FP/Pursuit arms in src/turn.rs. Validated by the DEDICATED golden
+// (`gen_movecoverage_batch4_golden.js` / `movecoverage_batch4_test.rs`) + the MC30-MC35 pins.
+const MODELED_BATCH4_MOVES = new Set(['focuspunch', 'pursuit']);
+// BATCH4_E2E_EXCLUDED — whether to keep FOCUS PUNCH + PURSUIT OUT of the e2e capstone's modeled
+// set. Currently `true` (EXCLUDED), the PHAZE precedent: the engine is bit-for-bit in the
+// DEDICATED golden (`movecoverage_batch4_test.rs`, 1040 game-end battles) + the MC30-MC35 pins,
+// but admitting the moves to the e2e capstone surfaces a real-team-only BENCH-ORDER divergence
+// in COMPLEX multi-switch battles where a PURSUIT interrupt composes with a BATON PASS
+// self-switch + a ROAR phaze + a double faint (the switch-array slot assignment across the
+// re-queued-switch / instaswitch machinery diverges — NOT caught by the e2e's active-only STATE
+// assertions, so it manifests as a later "switch to a fainted slot" reject / decision-count
+// mismatch). Keeping FP/Pursuit OUT of the STRICT e2e gate (rather than letting a silent desync
+// in) honors the bit-for-bit law; the DEDICATED golden + the MC30-MC35 pins remain the proof.
+// Re-enable (`= false`) once the multi-mechanic pursuit-interrupt bench-order composition is fixed.
+const BATCH4_E2E_EXCLUDED = true;
 
 // The MODELED gen-3 FIXED-DAMAGE moves (a `damage:` / `damageCallback` move that BYPASSES
 // getDamage — NO crit roll, NO 16-way damage roll) the port now executes bit-for-bit (the
@@ -482,6 +507,11 @@ function isModeledMove(id) {
   // The port models them bit-for-bit (`gen_fixeddamage_golden.js` / `fixeddamage_test.rs` +
   // the FD1-FD4 regression pins); the DEFERRED fixed-damage family stays out (fail-loud).
   if (MODELED_FIXED_DAMAGE_MOVES.has(id)) return true;
+  // MOVE-COVERAGE BATCH 4 (`gen3_move_coverage_batch4_v1`) — FOCUS PUNCH + PURSUIT, ADMITTED
+  // HERE (before the damaging-move `beforeTurnCallback` / `basePowerCallback` / `onModifyMove`
+  // rejects below, which would else drop them). Both are damaging (bp>0) with no secondary, so
+  // the early return is safe. Kept in lockstep with `move_has_before_turn_callback` in src/turn.rs.
+  if (!BATCH4_E2E_EXCLUDED && MODELED_BATCH4_MOVES.has(id)) return true;
   // STATUS MOVES: allow ONLY the modeled standalone status-inflicting moves (accuracy
   // + apply + sleep random(2,6)), the modeled pure SELF-BOOST setup moves (never-miss →
   // no accuracy draw, draw-free boost apply, no in-tryMoveHit Update), AND the modeled

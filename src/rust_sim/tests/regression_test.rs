@@ -7435,3 +7435,181 @@ fn baton_pass_with_no_bench_fails_draw_free() {
         "the no-bench Baton-Pass fail is DRAW-FREE → the real Showdown post-turn seed"
     );
 }
+
+// ============================================================================
+// MOVE-COVERAGE BATCH 4 pins (MC30…MC35, `gen3_move_coverage_batch4_v1`) — FOCUS PUNCH +
+// PURSUIT, each a CONSTRUCTED gen3customgame board reseeded to the RAW seed
+// "44317,42357,9927,48760" (the port's draw-free `start_with_switchins` aligns), each
+// revert-verified (each FAILS when its class's engine wiring is disabled). Ground truth:
+// `harness/probe_batch4_movecoverage_regression_rng.js`; the draw model was settled by
+// `harness/probe_batch4_{focuspunch,pursuit}.js`.
+//
+// THE DRAW MODEL: the `beforeTurnMove` (order 5) is draw-free but adds a per-action Update tail
+// (draws on a speed TIE) + the focuspunch/pursuit `duration: 1` volatiles register a residual
+// duration handler (a MIRROR at equal speed adds one residual tie-shuffle). A CANCELLED Focus
+// Punch (lostFocus) draws NOTHING (the onTry cancel precedes accuracy). The PURSUIT INTERRUPT
+// strikes the switching mon at ×2 BP + NEVER-MISS (crit + damage, NO accuracy) BEFORE the switch
+// resolves; a NORMAL Pursuit (foe stays) is a plain bp-40 hit (acc + crit + dmg).
+// ============================================================================
+
+/// MC30: FOCUS PUNCH CANCELLED — the foe Tackles the FP user first (FP is priority -3 → moves
+/// last) → lostFocus → the move's onTry CANCELS the punch draw-free BEFORE accuracy. WRONG (if
+/// the onTry cancel is missing): Focus Punch would land + damage Snorlax. STATE (Snorlax
+/// UNHARMED — FP dealt 0; Machamp took the Tackle) + SEED (the FP is draw-free; the turn draws
+/// only the Tackle acc/crit/dmg + Quick Claw).
+#[test]
+fn focus_punch_cancelled_by_a_prior_hit_draws_nothing() {
+    let d = dex();
+    let machamp = "Machamp||||focuspunch,seismictoss|Serious|252,252,,,,|||||";
+    let snorlax = "Snorlax|||immunity|tackle|Serious|,252,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(machamp, snorlax, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // Snorlax is UNHARMED — Focus Punch was cancelled (lostFocus) and dealt no damage.
+    assert_eq!(out.decisions[0].active[1].hp, 461, "Focus Punch cancelled → Snorlax takes NO damage");
+    // Machamp took the Tackle (313/384).
+    assert_eq!(out.decisions[0].active[0].hp, 313, "Machamp took the Tackle that cancelled its Focus Punch");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "37635,3740,64462,10380",
+        "the cancelled Focus Punch is DRAW-FREE (only Tackle acc/crit/dmg + Quick Claw) → the real Showdown post-turn seed"
+    );
+}
+
+/// MC31: FOCUS PUNCH LANDS — the foe Splashes (non-damaging) → the user keeps focus → Focus
+/// Punch executes (the beforeTurnMove laid the volatile; the onTry did NOT cancel). WRONG (if
+/// the beforeTurnMove/onTry model is broken): the wrong draw count. STATE (the Blissey is KO'd
+/// by the 150-BP Fighting hit) + SEED (the FP acc/crit/dmg + the beforeTurnMove tie-shuffles).
+#[test]
+fn focus_punch_lands_when_the_user_keeps_focus() {
+    let d = dex();
+    let machamp = "Machamp||||focuspunch,splash|Serious|252,252,,,,|||||";
+    let blissey = "Blissey|||naturalcure|splash|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(machamp, blissey, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // Focus Punch KOs the Blissey (150 BP Fighting super-effective vs Normal).
+    assert_eq!(out.decisions[0].active[1].hp, 0, "Focus Punch lands → Blissey KO'd");
+    assert!(out.decisions[0].active[1].fainted, "Blissey fainted to the landed Focus Punch");
+    assert_eq!(out.decisions[0].pokemon_left[1], 0, "Blissey was the last mon → p1 wins");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "5621,5056,41416,14688",
+        "the landed Focus Punch's acc/crit/dmg + the beforeTurnMove tie-shuffles → the real Showdown post-turn seed"
+    );
+}
+
+/// MC32: PURSUIT INTERRUPT — the foe VOLUNTARILY switches → the pursuer STRIKES the switching
+/// mon at ×2 BP + NEVER-MISS (crit + damage, NO accuracy) BEFORE the switch resolves, then the
+/// replacement comes in. WRONG (if the interrupt is missing): Pursuit runs at its normal turn
+/// (bp 40, no strike) and the switch is uninterrupted. STATE (the SWITCHER Jolteon takes the ×2
+/// chip → 160/271; the replacement Snorlax is now active; p2 still has 2 mons) + SEED (the strike
+/// is never-miss → no accuracy draw; the turn draws crit + damage + Quick Claw).
+#[test]
+fn pursuit_interrupt_strikes_the_switcher_at_double_bp_never_miss() {
+    let d = dex();
+    let ttar = "Tyranitar|||pressure|pursuit,crunch|Serious|,252,,252,,|||||";
+    let p2 = "Jolteon|||voltabsorb|thunderbolt|Serious|,,,,,252|||||]Snorlax|||immunity|bodyslam|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(ttar, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[ScriptDecision { p1: Some(Choice::Move(0)), p2: Some(Choice::Switch(1)) }],
+        &d,
+    );
+    // The replacement (Snorlax) is now active + full HP; p2 still has 2 mons.
+    assert_eq!(out.decisions[0].active_species[1], "snorlax", "the replacement switched in after the interrupt");
+    assert_eq!(out.decisions[0].active[1].hp, 524, "the replacement Snorlax entered at full HP");
+    assert_eq!(out.decisions[0].pokemon_left[1], 2, "no faint — the interrupt only chipped the switcher (now on the bench)");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "10897,43434,54578,10901",
+        "the Pursuit interrupt is NEVER-MISS (no accuracy draw): crit + damage + Quick Claw → the real Showdown post-turn seed"
+    );
+}
+
+/// MC33: NORMAL PURSUIT (the foe STAYS in) — a plain bp-40 Dark hit (acc + crit + dmg), NO ×2,
+/// NO interrupt. WRONG (if the beforeTurnMove/normal path is broken): the wrong draw count. STATE
+/// (Snorlax takes the small bp-40 chip → 468/524; no switch) + SEED (Pursuit acc/crit/dmg +
+/// Body Slam acc/crit/dmg/secondary + Quick Claw). Contrast MC32's ×2 never-miss strike.
+#[test]
+fn pursuit_normal_when_the_foe_stays_is_a_plain_bp40_hit() {
+    let d = dex();
+    let ttar = "Tyranitar|||pressure|pursuit,crunch|Serious|,252,,252,,|||||";
+    let p2 = "Snorlax|||immunity|bodyslam|Serious|252,252,,,,|||||]Blissey|||naturalcure|softboiled|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(ttar, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // Snorlax stays in and takes the plain bp-40 Pursuit chip (56 dmg, NOT the ×2 interrupt).
+    assert_eq!(out.decisions[0].active_species[1], "snorlax", "the foe stayed in (no interrupt)");
+    assert_eq!(out.decisions[0].active[1].hp, 468, "a NORMAL Pursuit is a plain bp-40 hit → Snorlax 524 → 468");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "5621,5056,41416,14688",
+        "a normal Pursuit draws acc + crit + dmg (like any bp-40 move) + the Body Slam + Quick Claw → the real Showdown post-turn seed"
+    );
+}
+
+/// MC34: PURSUIT KOs the SWITCHER — a low-HP mon switches into a Pursuit that KOs it (Dark
+/// super-effective vs Ghost); the ALREADY-CHOSEN switch STILL brings in the replacement (the
+/// gen 2-4 `-hint`), and the turn completes (Quick Claw drawn). WRONG (if the pursuitfaint path
+/// is wrong): the replacement is lost / pokemon_left desyncs. STATE (the Gengar fainted →
+/// pokemon_left 1; the Snorlax replacement is active at full HP) + SEED.
+#[test]
+fn pursuit_that_kos_the_switcher_still_brings_in_the_replacement() {
+    let d = dex();
+    let ttar = "Tyranitar|||pressure|pursuit,crunch|Serious|,252,,252,,|||||";
+    let p2 = "Gengar|||levitate|shadowball|Serious|,,,,,252|||||]Snorlax|||immunity|bodyslam|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(ttar, p2, "44317,42357,9927,48760"), &d).expect("start");
+    // Inject Gengar to 40 HP (STATE-only, no PRNG — mirrors the probe's `b.sides[1].active[0].hp = 40`).
+    {
+        let st = battle.state_mut().expect("state");
+        let active = st.sides[1].active;
+        st.sides[1].pokemon[active].hp = 40;
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[ScriptDecision { p1: Some(Choice::Move(0)), p2: Some(Choice::Switch(1)) }],
+        &d,
+    );
+    // Gengar was KO'd by the ×2 interrupt, but the replacement Snorlax STILL switched in.
+    assert_eq!(out.decisions[0].active_species[1], "snorlax", "the replacement STILL comes in after a pursuitfaint");
+    assert_eq!(out.decisions[0].active[1].hp, 524, "the Snorlax replacement entered at full HP");
+    assert_eq!(out.decisions[0].pokemon_left[1], 1, "the KO'd Gengar dropped pokemon_left to 1 (the replacement is not counted a faint)");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "10897,43434,54578,10901",
+        "the pursuitfaint (KO + hint + the still-chosen switch) is bit-for-bit → the real Showdown post-turn seed"
+    );
+}
+
+/// MC35: FOCUS PUNCH MIRROR at a SPEED TIE — both Focus Punch: the two `beforeTurnMove` order-5
+/// actions tie (the mirror action-sort shuffle), BOTH mons carry the `focuspunch` volatile at
+/// the residual (the +1 residual duration-handler tie-shuffle), the first FP lands and the
+/// second is CANCELLED draw-free. WRONG (if the beforeTurnMove tie or the focuspunch residual
+/// handler is missing): the draw COUNT desyncs. STATE (the loser chipped by the landed FP; both
+/// still alive) + SEED (the crux: the beforeTurnMove ties + the residual mirror tie).
+#[test]
+fn focus_punch_mirror_speed_tie_draws_the_beforeturnmove_and_residual_ties() {
+    let d = dex();
+    let machamp = "Machamp||||focuspunch|Serious|,252,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(machamp, machamp, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // p2 moved first (the tie-shuffle) and its FP chipped p1 to 15; p1's FP was cancelled.
+    assert_eq!(out.decisions[0].active[0].hp, 15, "the loser (p1) took the landed FP; both survive");
+    assert_eq!(out.decisions[0].active[1].hp, 321, "the winner (p2) is unharmed (p1's FP was cancelled)");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "56830,34298,10811,30881",
+        "the two beforeTurnMove order-5 ties + the +1 residual focuspunch duration-handler tie + the landed FP's acc/crit/dmg → the real Showdown post-turn seed"
+    );
+}

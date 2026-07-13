@@ -1355,6 +1355,38 @@ impl BattleState {
                 });
             }
 
+            // --- FOCUS PUNCH + PURSUIT `duration: 1` volatiles (`gen3_move_coverage_batch4_v1`)
+            //     each register a NO_ORDER/subOrder-2 residual DURATION handler (gathered by
+            //     `findPokemonEventHandlers(..., 'duration')`, same tie-group as
+            //     protect/stall/flinch/disable). NO HP effect (the actual clear is the turn-top
+            //     `clear_flinch` reset) — a no-op `VolatileDuration{is_stall:false}` apply — but
+            //     their PRESENCE changes the residual tie-shuffle COUNT: a FOCUS PUNCH MIRROR at
+            //     equal speed adds ONE tie-shuffle draw (VERIFIED: the bulky both-FP mirror's
+            //     +1 residual shuffle), and a normal Pursuit whose foe STAYS in leaves the
+            //     pursuit volatile up through the residual. An FP user can't ALSO protect/flinch
+            //     (FP blocks flinch; it's a damaging move, not Protect), so the same-mon gather
+            //     position is unobservable — the only tie is the OTHER mon's same volatile. ---
+            if mon.focus_punch.is_some() {
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
+                });
+            }
+            if mon.pursuit.is_some() {
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
+                });
+            }
+
             // --- RESIDUAL ABILITY handlers (`gen3_ability_batch1_v1`, Speed Boost / Rain
             //     Dish). Order 10, subOrder **3** — so BEFORE Leftovers (4) / leech (5) /
             //     status DoT (6) at order 10. They are ABILITY handlers, gathered in the
@@ -2726,6 +2758,16 @@ impl BattleState {
             //     `protected` true + reset `stall_duration` to 2 in `run_protect`, so it
             //     survives; a non-protect turn lets the residual run it down.) ---
             self.sides[side].pokemon[a].protected = false;
+            // --- The FOCUS PUNCH (`focuspunch`) + PURSUIT (`pursuit`) `duration: 1`
+            //     volatiles (`gen3_move_coverage_batch4_v1`) expire at the next turn-top,
+            //     exactly like `flinch`. Both are RE-ADDED each turn by the `beforeTurnMove`
+            //     action (Focus Punch on the user, Pursuit on the foe) IF the move is queued
+            //     again — so clearing here + re-adding there is the residual `duration`
+            //     countdown. A Pursuit volatile whose foe SWITCHED was already consumed
+            //     (set to `None`) by the interrupt in `execute_switch`; this clears the
+            //     "foe stayed in" case. DRAW-FREE. ---
+            self.sides[side].pokemon[a].focus_punch = None;
+            self.sides[side].pokemon[a].pursuit = None;
         }
     }
 
@@ -3111,12 +3153,29 @@ impl BattleState {
             }
         };
 
+        // --- PURSUIT INTERRUPT (`gen3_move_coverage_batch4_v1`): read+clear the transient
+        //     `pursuit_strike` flag `execute_switch` sets for the ONE run_move that resolves the
+        //     interrupt strike (the sim's bare `useMove(pursuit, source, {target: switcher})`
+        //     inside `onBeforeSwitchOut`). When set, Pursuit's `basePowerCallback` DOUBLES the BP
+        //     (`target.beingCalledBack` — the switcher) and its `onModifyMove` makes it NEVER-MISS
+        //     (`move.accuracy = true`), AND the strike SKIPS `on_before_move` / PP / lastMove
+        //     (already handled manually by the interrupt), mirroring `useMove` (not `runMove`). ---
+        let pursuit_strike = self.pursuit_strike;
+        self.pursuit_strike = false;
+        let (never_miss, base_power) = if pursuit_strike {
+            (true, base_power.saturating_mul(2))
+        } else {
+            (never_miss, base_power)
+        };
+
         // --- onBeforeMove STATUS draws (BEFORE accuracy), mirroring
         //     runEvent('BeforeMove') at runMove (battle-actions.ts:255), which
         //     precedes useMove/PP/accuracy. Handlers run priority-DESC (sleep 10,
         //     freeze 10, flinch 8, confusion 3, par 1), SHORT-CIRCUITING on the first
         //     abort (a lower-priority status then never draws). A move that aborts
-        //     here draws NOTHING further — no accuracy/crit/damage/secondary. ---
+        //     here draws NOTHING further — no accuracy/crit/damage/secondary.
+        //     SKIPPED for the pursuit strike (a bare useMove; the pursuer already acted). ---
+        if !pursuit_strike {
         // `is_status` for the TAUNT onBeforeMove cant — whether Taunt BLOCKS this move
         // (`gen3_taunt_disable_v1`): a derived-Status move that is NOT a fixed-damage move
         // (Seismic Toss etc. are bp-0 but a non-Status Showdown category, so Taunt does not
@@ -3179,6 +3238,27 @@ impl BattleState {
         //     point (like PP), so it leaves `last_move` unchanged — mirroring `moveUsed` running
         //     only after BeforeMove passes. ---
         self.sides[side].pokemon[slot].last_move = if struggle { None } else { Some(move_index) };
+        } // end `if !pursuit_strike` (on_before_move + PP + lastMove)
+
+        // --- FOCUS PUNCH onTry cancel (`gen3_move_coverage_batch4_v1`,
+        //     `focuspunch.move.onTry`): fires at the `singleEvent('Try')` step INSIDE
+        //     `useMoveInner` (battle-actions.ts:489) — AFTER PP/lastMove (above) but BEFORE
+        //     accuracy. If the user's `focuspunch` volatile has `lost_focus` (it was HIT by a
+        //     non-Status move earlier this turn), the punch is CANCELLED draw-free: the sim
+        //     retro-edits the `|move|` announce to `[still]` + emits `|cant|<user>|Focus
+        //     Punch|Focus Punch`, and returns null (NOT landed → no in-tryMoveHit Update, no
+        //     acc/crit/dmg). PP + lastMove were already consumed (the deductPP/moveUsed at
+        //     runMove precede onTry — VERIFIED vs the sim). ---
+        if move_id == "focuspunch" && self.sides[side].pokemon[slot].focus_punch == Some(true) {
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                // `|move|<user>|Focus Punch||[still]` (attrLastMove('[still]')) then
+                // `|cant|<user>|Focus Punch|Focus Punch`.
+                self.log.move_used(&user, &move_name, None, false, true);
+                self.log.cant(&user, "Focus Punch", Some("Focus Punch"));
+            }
+            return MoveResolution::done(false, false, false);
+        }
 
         // --- PROTECT / DETECT (the user's OWN protect move) — a self-target,
         //     never-miss, priority-3 `stallingMove`/`volatileStatus:'protect'` move. It
@@ -3633,6 +3713,16 @@ impl BattleState {
             // Refresh `dealt` to the POST-Focus-Band applied amount (the recoil/drain basis).
             dealt = realized.min(target_hp_before);
             self.apply_damage(foe, foe_slot, realized);
+            // FOCUS PUNCH lostFocus (`gen3_move_coverage_batch4_v1`,
+            // `focuspunch.condition.onHit`): a NON-Status move that HIT the FP user DIRECTLY
+            // (this `!absorbed` block = the mon took the damage, not its sub) sets
+            // `lost_focus` → the user's queued Focus Punch is CANCELLED at its onTry. The
+            // damaging path here is always non-Status; a chip ABSORBED by the user's own
+            // Substitute goes through the `absorbed` branch and does NOT reach here (the sub
+            // intercept precedes the focuspunch onHit — VERIFIED vs the sim). DRAW-FREE.
+            if let Some(fp) = self.sides[foe].pokemon[foe_slot].focus_punch.as_mut() {
+                *fp = true;
+            }
             // [EMIT] `|-damage|<foe>|<HP>` with the POST-damage HP (`x/y`, `x/y
             // <status>`, or `0 fnt` when the hit KO'd). Observation-only. A 0-damage
             // move that reaches here (none modeled) would still emit — matching the
@@ -6224,8 +6314,21 @@ impl BattleState {
                 // Thick Fat control bit-for-bit, cant=0). CONTRAST Shield Dust, which
                 // FILTERS the secondary so the roll is never drawn. Applies to a move's
                 // own flinch secondary AND the King's Rock appended one alike.
+                // FOCUS PUNCH flinch-immunity (`gen3_move_coverage_batch4_v1`,
+                // `focuspunch.condition.onTryAddVolatile` → null for `flinch`): a Focus
+                // Punch user (its `focuspunch` volatile up) CANNOT be flinched — the flinch
+                // secondary's random(100) was ALREADY drawn (draw-then-block, like Inner
+                // Focus), so the count is unchanged, but the flinch is NOT set. This is
+                // DRAW-RELEVANT via the residual duration-handler tally: a mon with BOTH
+                // `focus_punch` AND `flinch` would register TWO tied NO_ORDER duration
+                // handlers → an intra-mon tie-shuffle the sim never draws (VERIFIED: the
+                // Rock-Slide-into-a-FP-user turn draws no such shuffle).
                 let mon = &mut self.sides[foe].pokemon[foe_slot];
-                if !mon.fainted && mon.hp > 0 && to_id(&mon.ability) != "innerfocus" {
+                if !mon.fainted
+                    && mon.hp > 0
+                    && to_id(&mon.ability) != "innerfocus"
+                    && mon.focus_punch.is_none()
+                {
                     mon.flinch = true;
                 }
             }
@@ -7512,6 +7615,10 @@ impl BattleState {
                 // clearVolatile also drops the FLASH FIRE activation on faint — a fainted FF
                 // mon carries no boost, and if re-encoded must not show a stale `flash_fire`.
                 mon.flash_fire = false;
+                // clearVolatile also drops the FOCUS PUNCH + PURSUIT `duration: 1` volatiles on
+                // faint (`gen3_move_coverage_batch4_v1`) — a fainted mon carries neither.
+                mon.focus_punch = None;
+                mon.pursuit = None;
                 // `faintMessages` decrements the side's live-mon count — the count `check_win`
                 // reads to END the battle (a side at `pokemon_left == 0` has lost). The `mon`
                 // borrow above ends before this disjoint-field write.
@@ -7988,6 +8095,15 @@ pub struct BattleOutcome {
 enum QAction {
     /// `eachEvent('BeforeTurn')` action (order 4): one trailing-Update tail.
     BeforeTurn,
+    /// A per-move `beforeTurnMove` action (order 5, between beforeTurn=4 and switch=103) —
+    /// created for a move carrying a `beforeTurnCallback` (Focus Punch / Pursuit,
+    /// `gen3_move_coverage_batch4_v1`). Runs the callback (draw-free: Focus Punch adds its
+    /// `focuspunch` volatile to the user + emits `-singleturn`; Pursuit lays the `pursuit`
+    /// volatile on the foe, skipped if the pursuer is frz/slp) then the standard gen<5
+    /// runAction trailing `eachEvent('Update')` tail. Keyed by the actor's STABLE `uid`.
+    /// Participates in the action-order `speed_sort` at order 5 (so two beforeTurnMove actions
+    /// tie at order 5 → the mirror tie-shuffle).
+    BeforeTurnMove { side: usize, uid: usize, move_index: usize },
     /// A voluntary `switch` (order 103) — `pokemon` (outgoing slot) switches to
     /// `target` (bench slot). Carries the OUTGOING mon's speed for the tie key.
     Switch { side: usize, target: usize },
@@ -8013,6 +8129,7 @@ impl QAction {
         match self {
             QAction::InstaSwitch { .. } => 3,
             QAction::BeforeTurn => 4,
+            QAction::BeforeTurnMove { .. } => 5,
             QAction::RunSwitch { .. } => 101,
             QAction::Switch { .. } => 103,
             QAction::Move { .. } => 200,
@@ -8193,6 +8310,18 @@ impl BattleState {
                         // REJECTED earlier by `move_decision_is_legal`, mirroring the sim's
                         // "doesn't have PP" reject — so it never reaches here.)
                         let struggle = self.sides[side].pokemon[active].must_struggle(dex);
+                        // `beforeTurnMove` unshift (`gen3_move_coverage_batch4_v1`, mirroring
+                        // `battle-queue.ts:107`): a `move` action whose move carries a
+                        // `beforeTurnCallback` (Focus Punch / Pursuit) ALSO enqueues an order-5
+                        // `beforeTurnMove` action for the same actor. A forced Struggle carries no
+                        // beforeTurnCallback. Resolve the picked move's id from the CURRENT slot.
+                        if !struggle {
+                            if let Some(m) = self.move_at(side, active, mi, dex) {
+                                if move_has_before_turn_callback(&to_id(&m.id)) {
+                                    actions.push(QAction::BeforeTurnMove { side, uid, move_index: mi });
+                                }
+                            }
+                        }
                         actions.push(QAction::Move { side, uid, move_index: mi, struggle });
                     }
                     Some(Choice::Switch(target)) => {
@@ -8571,6 +8700,16 @@ impl BattleState {
                         // (the active at sort time); priority 0.
                         (*side, self.sides[*side].active, 0)
                     }
+                    // A `beforeTurnMove` (order 5) sorts by the actor's speed; getActionSpeed
+                    // sets NO `action.priority` for a non-`move` choice (undefined → 0 in
+                    // comparePriority — VERIFIED vs the sim source `getActionSpeed`). Its speed
+                    // is the actor's action speed (resolved by uid, in case the array swapped —
+                    // it never does before the sort, but keep it robust). So two beforeTurnMove
+                    // actions tie at order 5 / priority 0 / equal speed → the mirror shuffle.
+                    QAction::BeforeTurnMove { side, uid, .. } => {
+                        let slot = self.slot_of_uid(*side, *uid).unwrap_or(self.sides[*side].active);
+                        (*side, slot, 0)
+                    }
                     // beforeTurn / runSwitch / residual never co-sort with these in
                     // our queue construction, but keep a total key for safety.
                     QAction::BeforeTurn | QAction::RunSwitch { .. } | QAction::Residual => {
@@ -8608,6 +8747,43 @@ impl BattleState {
             match action {
                 QAction::BeforeTurn => {
                     self.each_event_shuffle(); // eachEvent('BeforeTurn')
+                }
+                QAction::BeforeTurnMove { side, uid, move_index } => {
+                    // `case 'beforeTurnMove'` (battle.ts:2265): `if (!isActive) return false;
+                    // if (fainted) return false;` then run the move's beforeTurnCallback. A
+                    // `return false` skips the runAction tail (no trailing Update). DRAW-FREE.
+                    let slot = match self.slot_of_uid(side, uid) {
+                        Some(s) if self.sides[side].active == s && !self.sides[side].pokemon[s].fainted => s,
+                        _ => continue, // inactive/fainted → return false, no tail
+                    };
+                    let move_id = match self.move_at(side, slot, move_index, dex) {
+                        Some(m) => to_id(&m.id),
+                        None => continue,
+                    };
+                    if move_id == "focuspunch" {
+                        // focuspunch.beforeTurnCallback: addVolatile('focuspunch') on the USER.
+                        // The volatile's onStart emits `|-singleturn|<user>|move: Focus Punch`.
+                        self.sides[side].pokemon[slot].focus_punch = Some(false);
+                        if self.logging() {
+                            let user = self.mon_ref(side, slot, dex);
+                            self.log.singleturn(&user, "move: Focus Punch");
+                        }
+                    } else if move_id == "pursuit" {
+                        // pursuit.beforeTurnCallback: `if (frz|slp) return; if (isAlly) return;
+                        // target.addVolatile('pursuit'); sources.push(pokemon)`. Lay the volatile
+                        // on the FOE (the pursuer's target), recording the pursuer's uid — UNLESS
+                        // the pursuer (this actor) is frozen or asleep (then NO volatile → no
+                        // interrupt). No `-singleturn`/`-start` line (the pursuit condition has
+                        // no onStart). Draw-free.
+                        let st = self.sides[side].pokemon[slot].status;
+                        let skip = matches!(st, Some(Status::Freeze) | Some(Status::Sleep(_)));
+                        if !skip {
+                            let foe = 1 - side;
+                            let foe_slot = self.sides[foe].active;
+                            let pursuer_uid = self.sides[side].pokemon[slot].uid;
+                            self.sides[foe].pokemon[foe_slot].pursuit = Some(pursuer_uid);
+                        }
+                    }
                 }
                 QAction::Move { side, uid, move_index, struggle } => {
                     // The `case 'move'` guard (battle.ts:2239-2240): a move whose actor
@@ -8975,6 +9151,96 @@ impl BattleState {
 
     fn execute_switch(&mut self, side: usize, target: usize, is_drag: bool, dex: &Dex, queue: &mut Vec<QAction>) {
         let active = self.sides[side].active;
+
+        // --- PURSUIT INTERRUPT (`gen3_move_coverage_batch4_v1`,
+        //     `pursuit.condition.onBeforeSwitchOut`, fired by `switchIn`'s `runEvent(
+        //     'BeforeSwitchOut', oldActive)` at battle-actions.ts:94, `!isDrag`-gated): a
+        //     VOLUNTARY switch-out of a mon carrying the `pursuit` volatile lets the pursuer
+        //     STRIKE the switching mon BEFORE the switch resolves. A phaze DRAG is NOT
+        //     intercepted (`!is_drag`; VERIFIED: Roar drags a pursued mon out cleanly). Runs at
+        //     the very TOP of `execute_switch` (before the clearVolatile block below) since the
+        //     strike targets the still-active switcher. ---
+        if !is_drag {
+            if let Some(pursuer_uid) = self.sides[side].pokemon[active].pursuit {
+                let pside = 1 - side;
+                // The pursuer must still be its side's ACTIVE + ALIVE (the sim's
+                // `if (!this.queue.cancelMove(source) || !source.hp) continue`); resolve its
+                // queued Pursuit Move action to get the slot's move_index (the Pursuit slot).
+                let strike = self.slot_of_uid(pside, pursuer_uid).and_then(|pslot| {
+                    if self.sides[pside].active == pslot && !self.sides[pside].pokemon[pslot].fainted {
+                        queue.iter().find_map(|a| match a {
+                            QAction::Move { side: s, uid, move_index, .. }
+                                if *s == pside && *uid == pursuer_uid =>
+                            {
+                                Some((pslot, *move_index))
+                            }
+                            _ => None,
+                        })
+                    } else {
+                        None
+                    }
+                });
+                if let Some((pslot, pmi)) = strike {
+                    // (a) `this.queue.cancelMove(source)` — remove the pursuer's queued Pursuit
+                    //     from the queue so it does NOT also act this turn. DRAW-FREE.
+                    queue.retain(
+                        |a| !matches!(a, QAction::Move { side: s, uid, .. } if *s == pside && *uid == pursuer_uid),
+                    );
+                    // (b) [EMIT] `|-activate|<switcher>|move: Pursuit`.
+                    if self.logging() {
+                        let sw = self.mon_ref(side, active, dex);
+                        self.log.activate(&sw, "move: Pursuit", None);
+                    }
+                    // (c) `source.deductPP('pursuit')` (draw-free, −1 — the sim passes NO target
+                    //     so there is no Pressure extra) + `source.moveUsed` (sets lastMove).
+                    self.sides[pside].pokemon[pslot].deduct_pp(pmi, 1);
+                    self.sides[pside].pokemon[pslot].last_move = Some(pmi);
+                    // (d) `useMove(pursuit, source, {target: switcher})` — the strike at ×2 BP +
+                    //     never-miss (the transient `pursuit_strike` flag, read+cleared inside
+                    //     run_move). The switcher is still at `self.sides[side].active`, so
+                    //     run_move's foe/foe_slot resolve to it.
+                    self.pursuit_strike = true;
+                    let res = self.run_move(
+                        MoveAction { side: pside, slot: pslot, move_index: pmi, struggle: false },
+                        false,
+                        false,
+                        dex,
+                    );
+                    self.pursuit_strike = false; // belt-and-braces (run_move already cleared it)
+                    if res.landed {
+                        // The strike's in-`tryMoveHit` `eachEvent('Update')` (draws on a
+                        // pursuer↔switcher speed tie; the switcher is hp-0-but-not-yet-fainted
+                        // here, so it is still in getAllActive — process_faints runs below).
+                        let upd = self.each_event_shuffle();
+                        self.run_update_items(&upd, dex);
+                    }
+                    // (e) `if (useMove(...) && source.getItem().isChoice) addVolatile('choicelock')`
+                    //     — a Choice-item pursuer (gen-3: Choice Band) locks to Pursuit.
+                    if to_id(&self.sides[pside].pokemon[pslot].item) == "choiceband" {
+                        self.sides[pside].pokemon[pslot].choice_locked_move = Some(pmi);
+                    }
+                    // (f) PURSUITFAINT: if the strike KO'd the switcher, process the faint NOW
+                    //     (before the swap) — pokemon_left decrements + `fainted` is set — but the
+                    //     ALREADY-CHOSEN switch STILL brings in the replacement (the gen 2-4
+                    //     `-hint`, verified vs the sim probe #3: Snorlax still came in, QC drawn).
+                    //     process_faints reads the ACTIVE (still the switcher at this point).
+                    if self.sides[side].pokemon[active].hp == 0
+                        && !self.sides[side].pokemon[active].fainted
+                    {
+                        if self.logging() {
+                            self.log.hint(
+                                "Previously chosen switches continue in Gen 2-4 after a Pursuit target faints.",
+                            );
+                        }
+                        self.process_faints(dex);
+                    }
+                }
+                // (g) The `pursuit` volatile is CONSUMED by the interrupt (whether or not a strike
+                //     ran — e.g. the pursuer had already switched/fainted). Clear it before the
+                //     swap so the residual + turn-top don't double-handle it.
+                self.sides[side].pokemon[active].pursuit = None;
+            }
+        }
         // --- BATON PASS copyVolatileFrom (`gen3_move_coverage_batch3_v1`): if this side has a
         //     pending Baton Pass, SNAPSHOT the OUTGOING mon's PASS-SET (its 7 boosts + the
         //     copyable `noCopy == false` volatiles the port models: substitute / leech_seed /
@@ -9102,6 +9368,13 @@ impl BattleState {
             // The COLOR CHANGE type-override clears on switch-out (a re-entering Kecleon
             // is Normal again — probe_colorchange_rng.js t4). `gen3_ability_batch4_v1`.
             m.types_override = None;
+            // The FOCUS PUNCH + PURSUIT `duration: 1` volatiles clear on switch-out
+            // (`clearVolatile`, `gen3_move_coverage_batch4_v1`). A switching FP user drops its
+            // focuspunch; a switching pursued mon that reaches here (a non-intercepted path)
+            // drops its pursuit. (A voluntary pursued switch-out was already consumed by the
+            // interrupt above; this is the belt-and-braces reset.)
+            m.focus_punch = None;
+            m.pursuit = None;
         }
         // ATTRACT source-left clear (`attract.onUpdate`, `gen3_ability_batch4_v1`): when the
         // DEPARTING mon is the SOURCE of the foe active's attraction, the volatile is removed
@@ -9271,7 +9544,11 @@ impl BattleState {
                 // resolved at insertChoice time, after the switch swapped active).
                 (a.order(), 0, self.effective_speed(*side, self.sides[*side].active, dex) as f64)
             }
-            QAction::BeforeTurn | QAction::Residual => (a.order(), 0, 0.0),
+            // A `beforeTurnMove` is never inserted via `insertChoice` (it's built at
+            // queue-construction, not spliced mid-turn), but keep a total key for safety.
+            QAction::BeforeTurn | QAction::BeforeTurnMove { .. } | QAction::Residual => {
+                (a.order(), 0, 0.0)
+            }
         }
     }
 
@@ -9771,6 +10048,20 @@ fn is_fixed_damage_move(move_id: &str) -> bool {
         | "psywave" | "fissure" | "horndrill" | "guillotine"
         | "counter" | "mirrorcoat" | "bide" | "endeavor"
     )
+}
+
+/// Whether `move_id` (already `to_id`-normalized) carries a gen3 `beforeTurnCallback`
+/// (`gen3_move_coverage_batch4_v1`), so the queue-builder must unshift a `beforeTurnMove`
+/// action (order 5) for its move. The gen-3 (resolved via the gen4 mod) carriers are
+/// **Focus Punch** (adds its `focuspunch` volatile to the user) and **Pursuit** (lays the
+/// `pursuit` volatile on the target). Id-gated per the `is_fixed_damage_move` precedent
+/// (`gen3_moves.json` carries no `beforeTurnCallback` marker). The resolved gen3 dex has FOUR
+/// carriers — `counter` / `mirrorcoat` / `pursuit` / `focuspunch`; Counter + Mirror Coat are the
+/// DEFERRED reactive fixed-damage family (fail-loud via `is_fixed_damage_move`), so only the two
+/// modeled ones are matched here. NB when Counter/Mirror Coat are modeled they need BOTH a
+/// `BeforeTurnMove` action AND a residual duration handler (their volatiles are `duration:1`).
+fn move_has_before_turn_callback(move_id: &str) -> bool {
+    matches!(move_id, "focuspunch" | "pursuit")
 }
 
 /// Whether `move_id` (already `to_id`-normalized) carries the gen3 `flags.defrost`

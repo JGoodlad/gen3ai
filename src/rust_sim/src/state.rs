@@ -434,6 +434,39 @@ pub struct MonState {
     /// clearVolatile) and on faint (`process_faints`), exactly like `leech_seed`. `None` at
     /// construction.
     pub curse: Option<usize>,
+
+    /// The **FOCUS PUNCH** `focuspunch` volatile (`gen3_move_coverage_batch4_v1`) —
+    /// `Some(lost_focus)` while the volatile is up (re-added every turn a Focus Punch is
+    /// queued, via the `beforeTurnMove` order-5 queue action), `None` otherwise. VERIFIED
+    /// bit-for-bit vs the omniscient sim (`harness/probe_batch4_focuspunch.js`): the
+    /// `focuspunch.onStart` emits `|-singleturn|<user>|move: Focus Punch` (DRAW-FREE); the
+    /// `onHit` sets `lost_focus = true` when the user is HIT by a NON-Status move (chip
+    /// absorbed by the user's OWN Substitute does NOT set it — the sub's `onTryPrimaryHit`
+    /// intercepts before the focuspunch `onHit`); the move's `onTry` then CANCELS the punch
+    /// (draw-free, BEFORE accuracy: `|move|…Focus Punch||[still]` + `|cant|…Focus Punch|Focus
+    /// Punch`) iff `lost_focus`; and the volatile's `onTryAddVolatile` BLOCKS a flinch (a
+    /// Focus Punch user is flinch-immune — DRAW-RELEVANT via the residual duration-handler
+    /// count). It is a `duration: 1` volatile → registers a NO_ORDER/subOrder-2 residual
+    /// duration handler (like `flinch`/`protect`/`stall`), so a FP MIRROR at equal speed adds
+    /// one residual tie-shuffle draw. Cleared at the TOP of each turn (`clear_focus_punch`,
+    /// re-added by the beforeTurnMove) and on switch-out/faint. `None` at construction.
+    pub focus_punch: Option<bool>,
+
+    /// The **PURSUIT** `pursuit` volatile (`gen3_move_coverage_batch4_v1`) —
+    /// `Some(pursuer_uid)` while the volatile is laid on THIS mon (the pursuer's TARGET), the
+    /// pursuer being the foe's active whose `uid` is stored; `None` otherwise. Laid at the
+    /// BeforeTurn phase (the pursuit `beforeTurnCallback` via the `beforeTurnMove` order-5
+    /// queue action) recording the pursuer, SKIPPED if the pursuer is frz/slp. The INTERRUPT
+    /// (`condition.onBeforeSwitchOut`): when this mon VOLUNTARILY switches out,
+    /// `execute_switch` cancels the pursuer's queued Pursuit move (draw-free), deducts its
+    /// Pursuit PP + sets its lastMove (draw-free), then runs Pursuit against THIS switching mon
+    /// at ×2 BP + NEVER-MISS (crit + damage, no accuracy) BEFORE the switch resolves, and
+    /// Choice-locks the pursuer if it holds a Choice item. It is a `duration: 1` volatile →
+    /// registers a NO_ORDER/subOrder-2 residual duration handler (a normal Pursuit whose foe
+    /// STAYS in leaves the volatile up through the residual). Cleared at the TOP of each turn
+    /// (`clear_focus_punch`) — or consumed by the interrupt (`execute_switch`) — and on
+    /// switch-out/faint. `None` at construction.
+    pub pursuit: Option<usize>,
 }
 
 impl MonState {
@@ -515,6 +548,8 @@ impl MonState {
             // boosts Speed Boost on turn 1; a switch-in RESETS to 0 in `execute_switch`.
             active_turns: 1,
             curse: None,
+            focus_punch: None,
+            pursuit: None,
         })
     }
 
@@ -766,6 +801,15 @@ pub struct BattleState {
     /// BEFORE its KO'd target, verified vs the golden). Pushed UNCONDITIONALLY by
     /// `apply_damage` (+ the explosion self-KO); drained by `process_faints`.
     pub faint_emit_queue: Vec<usize>,
+    /// The **PURSUIT INTERRUPT** transient flag (`gen3_move_coverage_batch4_v1`): set true by
+    /// `execute_switch` for the duration of the ONE `run_move` call that resolves the pursuit
+    /// strike against a switching mon, then read+cleared at the top of `run_move`. When set,
+    /// `run_move` runs the move NEVER-MISS + at ×2 BP (the `basePowerCallback` / `onModifyMove`
+    /// interrupt condition) and SKIPS the `on_before_move` status draws + PP deduction +
+    /// lastMove (all handled manually by the interrupt in `execute_switch`, mirroring the sim's
+    /// bare `useMove`). Never set during a normal move; not persisted (a transient like
+    /// `pending_explosion_self_ko` but read+cleared, not per-turn).
+    pub pursuit_strike: bool,
 }
 
 impl BattleState {
@@ -813,6 +857,7 @@ impl BattleState {
             pending_phaze_drag: false,
             log: crate::protocol::ProtocolBuilder::new(),
             faint_emit_queue: Vec::new(),
+            pursuit_strike: false,
         })
     }
 
