@@ -1386,6 +1386,23 @@ impl BattleState {
                     handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
                 });
             }
+            // --- BEAT UP's `beatup` `duration: 1` volatile (`gen3_move_coverage_batch4b_v1`)
+            //     registers the SAME NO_ORDER/subOrder-2 residual DURATION handler as
+            //     focus-punch/pursuit/protect/stall/flinch. NO HP effect (the clear is the
+            //     turn-top `clear_flinch`), but its PRESENCE changes the residual tie-shuffle
+            //     COUNT: a BEAT UP MIRROR at equal speed adds ONE tie-shuffle draw (the e2e_217
+            //     desync — both Charizards' beatup volatiles tie). A Beat Up user can't ALSO
+            //     protect/flinch, so the same-mon gather position is unobservable. ---
+            if mon.beat_up {
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
+                });
+            }
 
             // --- RESIDUAL ABILITY handlers (`gen3_ability_batch1_v1`, Speed Boost / Rain
             //     Dish). Order 10, subOrder **3** — so BEFORE Leftovers (4) / leech (5) /
@@ -2462,6 +2479,16 @@ impl BattleState {
             .unwrap_or_else(|| item_id.clone());
         // Remove from the target.
         self.sides[target_side].pokemon[target_slot].item = String::new();
+        // CHOICE-LOCK RELEASE (`gen3_move_coverage_batch4_v1`, the e2e_126 fix): the Choice
+        // lock is enforced by the ITEM's `choiceband.onDisableMove` — with the Choice Band
+        // GONE (Thief steals it / Knock Off removes it), that handler no longer fires, so the
+        // mon can freely pick any move again. The port's `choice_locked_move` is a cached
+        // shadow of that item-gated lock, so clearing the item MUST release it (else the port
+        // keeps rejecting the now-legal move → a decision-stream desync). VERIFIED vs the sim:
+        // e2e_126 Skarmory Thiefs a Choice-Band Aerodactyl (both itemless → the steal fires),
+        // and the sim then offers Aerodactyl ALL its moves (RockSlide after Earthquake). A
+        // no-op for a non-Choice-item target (its lock is already None). DRAW-FREE.
+        self.sides[target_side].pokemon[target_slot].choice_locked_move = None;
         if is_steal {
             // The attacker GAINS the item (only reached when the attacker was itemless). Store
             // the SAME string form the target held (the raw set value, e.g. "Leftovers"), so
@@ -2768,6 +2795,10 @@ impl BattleState {
             //     "foe stayed in" case. DRAW-FREE. ---
             self.sides[side].pokemon[a].focus_punch = None;
             self.sides[side].pokemon[a].pursuit = None;
+            // --- BEAT UP's `beatup` `duration: 1` volatile (`gen3_move_coverage_batch4b_v1`)
+            //     expires at the next turn-top, exactly like `flinch`/`focus_punch`. Re-added
+            //     each turn Beat Up runs (`run_beat_up`). DRAW-FREE. ---
+            self.sides[side].pokemon[a].beat_up = false;
         }
     }
 
@@ -3166,6 +3197,49 @@ impl BattleState {
             (true, base_power.saturating_mul(2))
         } else {
             (never_miss, base_power)
+        };
+
+        // --- WATER SPOUT variable BP (`gen3_move_coverage_batch4b_v1`,
+        //     `waterspout.basePowerCallback`): `bp = clampIntRange(150 * hp / maxhp, 1)` =
+        //     `max(floor(150·hp/maxhp), 1)` — a deterministic STATE read of the USER's
+        //     CURRENT hp, computed BEFORE the crit/damage draws, so DRAW-NEUTRAL (probe
+        //     `harness/probe_batch4b_waterspout.js`: full-HP bp 150 and half-HP bp 74 end at
+        //     the SAME seed with the same draws; only the damage magnitude differs). At 1 HP
+        //     the raw 0.44 floors to 0 → clamped to min BP 1 (a min-damage HIT, does NOT
+        //     fail — the `if (!basePower)` early-return only triggers on EXACT 0, unreachable
+        //     while hp>=1). The multiply MUST widen to u32 (`150·714` overflows u16). Routed
+        //     like Pursuit's ×2 id-gate; the integer division `(150·hp)/maxhp` is exact-equal
+        //     to the JS `Math.floor(150·hp/maxhp)` since `150·hp` is an exact integer. ---
+        let base_power = if move_id == "waterspout" {
+            let mon = &self.sides[side].pokemon[slot];
+            ((150u32 * mon.hp as u32) / mon.maxhp as u32).max(1) as u16
+        } else {
+            base_power
+        };
+
+        // --- THUNDER weather-accuracy mutation (`gen3_move_coverage_batch4b_v1`,
+        //     `thunder.onModifyMove`): the id-gated gen3 rule REWRITES the BASE move.accuracy
+        //     by the TARGET's `effectiveWeather()` BEFORE the accuracy pipeline runs —
+        //     effective RAIN → `accuracy = true` (never-miss: the WHOLE accuracy block AND its
+        //     `randomChance` are SKIPPED, so ONE FEWER draw), effective SUN → base 50, else
+        //     (none / sand / hail / Cloud-Nine-or-Air-Lock-SUPPRESSED) → base 70 unchanged.
+        //     The acc/eva stages + accMod (Bright Powder / Sand Veil / …) then fold ON TOP of
+        //     this weather-set base via `effective_accuracy` (weather FIRST, accMod SECOND); in
+        //     rain the `never_miss` short-circuits the entire stage+accMod chain (the
+        //     `accuracy === true` guard), so a Bright Powder is inert and still 0 acc draws.
+        //     `effective_weather()` already zeroes under Cloud Nine / Air Lock (→ base 70),
+        //     matching the probe. VERIFIED bit-for-bit vs `harness/probe_batch4b_thunder.js`
+        //     (rain 5 draws → seed 22534,42410,55299,35327; sun/base/sand/suppressed 2 draws →
+        //     seed 60880,31090,7619,34922 — the accuracy `random(100)` is the SAME consumption
+        //     regardless of the numerator, only the miss threshold differs). ---
+        let (never_miss, accuracy) = if move_id == "thunder" {
+            match self.effective_weather(dex) {
+                Some(Weather::Rain) => (true, accuracy),
+                Some(Weather::Sun) => (false, 50),
+                _ => (never_miss, accuracy),
+            }
+        } else {
+            (never_miss, accuracy)
         };
 
         // --- onBeforeMove STATUS draws (BEFORE accuracy), mirroring
@@ -3592,6 +3666,20 @@ impl BattleState {
             return MoveResolution::done(true, false, false);
         }
 
+        // --- BEAT UP (`gen3_move_coverage_batch4b_v1`) — a MULTI-STRIKE move: ONE strike
+        //     PER healthy (non-fainted, NON-STATUSED) party member of the USER's side, each a
+        //     TYPELESS flat-BP-10 Special hit with the STAT SWAP (the ally's dex `baseStats.atk`
+        //     → the attacker's SpA, the target's dex `baseStats.def` → the defender's SpD, both
+        //     at `event.modifier=1` → NO boosts / items / CB / burn / abilities touch the stat).
+        //     The whole-move accuracy roll already drew here (acc 100 → always passes; Beat Up
+        //     is never immune [typeless '???'] and was not protect-blocked), so this is only
+        //     reached on a hit — the per-strike crit+damage draws + the KO-mid-sequence break
+        //     live in `run_beat_up`. It emits its OWN `|move|` announce (no effectiveness line),
+        //     so branch BEFORE the standard `|move|` emit below. ---
+        if move_id == "beatup" {
+            return self.run_beat_up(side, slot, foe, foe_slot, crit_ratio, &move_name, dex);
+        }
+
         // [EMIT] `|move|<user>|<Name>|<foe>` (a landed damaging move — the effectiveness
         // / crit / damage lines follow). Emitted BEFORE the crit roll so the line order
         // matches the sim; the emit reads already-resolved state (draws nothing).
@@ -3917,6 +4005,229 @@ impl BattleState {
         // Update — gen-3 `moveHit` returns a truthy `true` for a HIT_SUBSTITUTE so
         // `tryMoveHit`'s `if (!damage && damage !== 0) return` does NOT short-circuit).
         MoveResolution::done(false, crit, true)
+    }
+
+    /// BEAT UP (`gen3_move_coverage_batch4b_v1`) — the multi-strike STAT-SWAP move. ONE
+    /// strike PER healthy (non-fainted, NON-STATUSED) party member of the USER's side, in
+    /// PARTY ORDER (the sim's `move.allies = side.pokemon.filter(a => !a.fainted && !a.status)`,
+    /// `move.multihit = allies.length`; the ACTIVE user itself strikes when healthy — a
+    /// single-mon side is exactly 1 strike — and a burned/paralyzed ACTIVE user skips its OWN
+    /// strike via the uniform filter). The whole-move accuracy roll (acc 100 →
+    /// `randomChance(100,100)`, drawn ONCE BEFORE the loop) already fired in `run_move` and is
+    /// NOT re-drawn here; Beat Up is never immune (typeless '???' → 1× / hits Ghost) so this is
+    /// only reached on a hit. Per strike, in the getDamage/modifyDamage order: [crit]
+    /// `randomChance(1, critMult[critRatio=1]=16)` (1/16, independent per strike), then [damage]
+    /// `random(16)`. The strike damage runs the standard gen-3 calc with **level = the ACTIVE
+    /// user's level**, **BP 10**, **TYPELESS** (no STAB / 1× / hits Ghost), **category Special**,
+    /// but the attacker's SpA REPLACED by the ally's dex `baseStats.atk` and the defender's SpD
+    /// by the target's dex `baseStats.def`, both at `event.modifier=1` (NO boosts / items / CB /
+    /// abilities / burn touch the stat) — so the strike depends only on ally base-atk, target
+    /// base-def, level, crit (×2, screens ignored), and Light Screen (Special → applies) + the
+    /// 85-100% roll. Each strike routes through the sub-intercept (a break lets later strikes hit
+    /// the mon directly); the multihit STOPS at the target's faint (later strikes + the Quick
+    /// Claw skip — the deferred-faint protocol). If ALL party members are fainted/statused the
+    /// ally list is empty → the basePowerCallback returns null → the move FIZZLES draw-free (a
+    /// rare fail-safe: no strikes / no hitcount / not landed). VERIFIED bit-for-bit vs
+    /// `harness/probe_batch4b_beatup.js` (6 healthy = 12 strike draws; statused/fainted skips;
+    /// the KO-mid-sequence break; typeless-into-Ghost; the sub break + later direct strikes).
+    #[allow(clippy::too_many_arguments)]
+    fn run_beat_up(
+        &mut self,
+        side: usize,
+        slot: usize,
+        foe: usize,
+        foe_slot: usize,
+        crit_ratio: u8,
+        move_name: &str,
+        dex: &Dex,
+    ) -> MoveResolution {
+        // Add the `beatup` volatile (`gen3_move_coverage_batch4b_v1`, the sim's `onModifyMove`
+        // `pokemon.addVolatile("beatup")` BEFORE the strikes). Its ONLY observable effect here is
+        // the `duration: 1` residual DURATION handler (the stat swap is computed directly below),
+        // so a BEAT UP MIRROR at equal speed adds one residual tie-shuffle draw. Cleared at the
+        // next turn-top (`clear_flinch`).
+        self.sides[side].pokemon[slot].beat_up = true;
+
+        // Snapshot the strike list up front so the &mut self hits below don't fight the
+        // immutable dex borrow: party order, healthy = `!fainted && status == None`. Each
+        // entry carries the ally's SLOT INDEX (for the `[of]` display name) + its dex base-atk.
+        let user_level = self.sides[side].pokemon[slot].level;
+        let target_base_def = dex
+            .species(&self.sides[foe].pokemon[foe_slot].species_id)
+            .expect("beatup: target species must be in the dex")
+            .base_stats
+            .def;
+        let strikes: Vec<(usize, u16)> = (0..self.sides[side].pokemon.len())
+            .filter(|&i| {
+                let a = &self.sides[side].pokemon[i];
+                !a.fainted && a.status.is_none()
+            })
+            .map(|i| {
+                let base_atk = dex
+                    .species(&self.sides[side].pokemon[i].species_id)
+                    .expect("beatup: ally species must be in the dex")
+                    .base_stats
+                    .atk;
+                (i, base_atk)
+            })
+            .collect();
+
+        // [EMIT] the move announce `|move|<user>|Beat Up|<foe>` (NO effectiveness line —
+        // each strike is typeless). Observation-only (reads resolved state, draws nothing).
+        if self.logging() {
+            let user = self.mon_ref(side, slot, dex);
+            let target = self.mon_ref(foe, foe_slot, dex);
+            self.log.move_used(&user, move_name, Some(&target), false, false);
+        }
+
+        // Degenerate: no eligible allies → the basePowerCallback returns null → the move
+        // FIZZLES draw-free (no strikes / no hitcount). Rare (every party member
+        // fainted/statused). NOT landed → no in-tryMoveHit Update.
+        if strikes.is_empty() {
+            return MoveResolution::done(false, false, false);
+        }
+
+        let light_screen = self.sides[foe].light_screen > 0;
+        let crit_immune = dex
+            .ability(&self.sides[foe].pokemon[foe_slot].ability)
+            .map(|a| a.crit_immune)
+            .unwrap_or(false);
+
+        let mut hits = 0u32;
+        for (ally_idx, ally_atk) in strikes {
+            // [crit] `randomChance(1, critMult[critRatio])` — Beat Up critRatio 1 → 1/16,
+            // independent per strike. CRIT_IMMUNE (Battle/Shell Armor) draws the roll then
+            // overrides it to false (draw-count unchanged), like the main damaging path.
+            let mut crit = self.prng.random_chance(1, CRIT_MULT[crit_ratio as usize]);
+            if crit && crit_immune {
+                crit = false;
+            }
+
+            // The stat-swap DamageContext: typeless / Special / level = the ACTIVE user's,
+            // BP 10, attacker SpA = ally base-atk, defender SpD = target base-def, modifier=1
+            // (no boosts / items / burn / abilities). Light Screen (special) applies; Reflect
+            // does not. The typeless move has no type-chart row → 1× (hits every type incl.
+            // Ghost) and no STAB (attacker types empty).
+            let ctx = DamageContext {
+                attacker: Combatant {
+                    level: user_level,
+                    atk_stat: 0,
+                    spa_stat: ally_atk,
+                    def_stat: 0,
+                    spd_stat: 0,
+                    types: Vec::new(),
+                    boosts: [0; 5],
+                    burned: false,
+                    has_guts: false,
+                },
+                defender: Combatant {
+                    level: user_level, // the defender's level is unused by the formula
+                    atk_stat: 0,
+                    spa_stat: 0,
+                    def_stat: 0,
+                    spd_stat: target_base_def,
+                    types: Vec::new(),
+                    boosts: [0; 5],
+                    burned: false,
+                    has_guts: false,
+                },
+                mv: MoveInput {
+                    base_power: 10,
+                    move_type: None,
+                    category: MoveCategory::Special,
+                    halves_defense: false,
+                },
+                crit,
+                weather: None,
+                reflect: false,
+                light_screen,
+                atk_stat_mods: Vec::new(),
+                atk_direct_modify: None,
+                def_stat_mods: Vec::new(),
+                bp_mods: Vec::new(),
+                defender_thick_fat: false,
+                immune: false,
+                flash_fire: false,
+            };
+            let dmg = calc_damage(&ctx, dex);
+            // [damage] `random(16)` selects the roll — every other damaging move's order.
+            let r = self.prng.random_below(16) as usize;
+            let realized = dmg.rolls[r];
+
+            // [EMIT] `|-activate|<user>|move: Beat Up|[of] <ally display name>` then (if the
+            // strike crit) `|-crit|<foe>`, then the `|-damage|` / Substitute result.
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                let ally_name = self.display_name(side, ally_idx, dex);
+                self.log.activate(&user, "move: Beat Up", Some(&format!("[of] {ally_name}")));
+                if crit {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.crit(&target);
+                }
+            }
+
+            // Route through the sub-intercept: a break lets later strikes hit the mon.
+            let sub = self.absorb_into_sub(foe, foe_slot, realized);
+            let absorbed = sub != SubAbsorb::NoSub;
+            if !absorbed {
+                self.apply_damage(foe, foe_slot, realized);
+                // FOCUS PUNCH lostFocus (`focuspunch.condition.onHit`): a Beat Up strike that
+                // HIT the target DIRECTLY (not its sub) sets `lost_focus` if the target has a
+                // pending Focus Punch → its queued FP is CANCELLED at onTry. Beat Up is a
+                // non-Status damaging move, so each direct strike counts (the sim fires the
+                // onHit per hit). A sub-absorbed strike does NOT (the sub intercept precedes the
+                // focuspunch onHit — the `!absorbed` gate, same as run_move). DRAW-FREE. Missing
+                // this let a Beat Up into a Focus-Punch user wrongly leave the FP landing (e2e_196).
+                if let Some(fp) = self.sides[foe].pokemon[foe_slot].focus_punch.as_mut() {
+                    *fp = true;
+                }
+                if realized > 0 && self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    let hp = self.hp_status(foe, foe_slot);
+                    self.log.damage(&target, &hp, None);
+                }
+            } else if self.logging() {
+                let target = self.mon_ref(foe, foe_slot, dex);
+                match sub {
+                    SubAbsorb::Held => self.log.activate(&target, "Substitute", Some("[damage]")),
+                    SubAbsorb::Broke => self.log.volatile_end(&target, "Substitute"),
+                    SubAbsorb::NoSub => unreachable!(),
+                }
+            }
+            hits += 1;
+
+            // --- THE PER-STRIKE `eachEvent('Update')` (gen3 `tryMoveHit` scripts.js:~400, the
+            //     `for (i = 0; ...)` multihit loop fires `this.battle.eachEvent("Update")` INSIDE
+            //     the loop AFTER each `moveHit`, BEFORE the loop's `target.hp` re-check). It draws
+            //     one `random(0,2)` speed-tie shuffle on a TIE (zero at distinct speed — which is
+            //     why the distinct-speed dedicated golden hid this), then the item onUpdate (cure
+            //     berries, draw-free). It fires even for the KO strike (the target is 0-HP but NOT
+            //     yet `fainted` — `getAllActive` still counts it). The TRAILING in-tryMoveHit
+            //     Update (scripts.js:75) is fired by the CALLER via `landed=true`. Missing these
+            //     per-strike Updates was the e2e_52 real-team desync (Charizard↔Salamence tie). ---
+            let upd = self.each_event_shuffle();
+            self.run_update_items(&upd, dex);
+
+            // The multihit STOPS at the target's faint (hp == 0) — the remaining strikes +
+            // the end-of-turn Quick Claw skip (the deferred-faint protocol). A sub-absorbed
+            // strike never faints the mon. (The per-strike Update above already fired for the
+            // KO strike, mirroring the loop's post-moveHit `eachEvent` then `target.hp` check.)
+            if self.sides[foe].pokemon[foe_slot].hp == 0 {
+                break;
+            }
+        }
+
+        // [EMIT] `|-hitcount|<target>|N` (N = the strikes that actually FIRED — 6 for a full
+        // healthy side, fewer on a statused/fainted skip or a KO-mid-sequence break).
+        if self.logging() {
+            let target = self.mon_ref(foe, foe_slot, dex);
+            self.log.hitcount(&target, hits);
+        }
+
+        // The move landed (>=1 strike hit → moveHit returns truthy → the in-tryMoveHit Update
+        // fires, even on a KO — before process_faints). No move-level crit (the per-strike
+        // crits were already applied to the strike damage).
+        MoveResolution::done(false, false, true)
     }
 
     /// Resolve + APPLY a FIXED-DAMAGE / FIXED-FORMULA move (Seismic Toss / Night Shade /
@@ -7619,6 +7930,8 @@ impl BattleState {
                 // faint (`gen3_move_coverage_batch4_v1`) — a fainted mon carries neither.
                 mon.focus_punch = None;
                 mon.pursuit = None;
+                // ...and the BEAT UP `beatup` `duration: 1` volatile (`gen3_move_coverage_batch4b_v1`).
+                mon.beat_up = false;
                 // `faintMessages` decrements the side's live-mon count — the count `check_win`
                 // reads to END the battle (a side at `pokemon_left == 0` has lost). The `mon`
                 // borrow above ends before this disjoint-field write.
@@ -8285,6 +8598,10 @@ impl BattleState {
             // Clear the per-turn PHAZE-drag diagnostic flag; `drag_in` re-sets it if a Roar /
             // Whirlwind drag fires this turn (read into every boundary record of this turn).
             self.pending_phaze_drag = false;
+            // Clear the per-turn PURSUIT-INTERRUPT first-mover override; `execute_switch` re-sets
+            // it to the pursuer's side when a pursuit strike fires this turn (the pursuer emits its
+            // `|move|` before the switcher's `|switch|`, so the sim reads it as the first mover).
+            self.pursuit_first_mover = None;
             // Expire the `duration:1` FLINCH volatiles from the previous turn (see
             // `run_turn`). DRAW-FREE.
             self.clear_flinch();
@@ -8583,7 +8900,14 @@ impl BattleState {
             pokemon_left: [self.sides[0].pokemon_left, self.sides[1].pokemon_left],
             spikes: [self.sides[0].spikes, self.sides[1].spikes],
             seed_after: self.prng.get_seed(),
-            first_mover: if matches!(request, RequestKind::Move) { first_mover } else { None },
+            // A PURSUIT-INTERRUPT turn overrides the sorted-queue first_mover with the pursuer
+            // (`gen3_move_coverage_batch4_v1`): the pursuer's `|move|Pursuit` is emitted before
+            // the switcher's `|switch|`, so the sim reads the pursuer as the first mover.
+            first_mover: if matches!(request, RequestKind::Move) {
+                self.pursuit_first_mover.or(first_mover)
+            } else {
+                None
+            },
             explosion_self_ko: self.pending_explosion_self_ko,
             phaze_drag: self.pending_phaze_drag,
             trapped: [self.is_trapped(0, dex), self.is_trapped(1, dex)],
@@ -8847,8 +9171,24 @@ impl BattleState {
                         self.drag_in(foe, dex, &mut *queue);
                     }
                 }
-                QAction::Switch { side, target } | QAction::InstaSwitch { side, target } => {
-                    self.execute_switch(side, target, false, dex, &mut *queue);
+                QAction::Switch { side, target } => {
+                    // A VOLUNTARY menu switch (order 103) — `is_voluntary = true` so the
+                    // PURSUIT INTERRUPT fires (the sim's `runEvent('BeforeSwitchOut')` runs
+                    // for a menu switch, dispatching pursuit's `onBeforeSwitchOut` strike).
+                    self.execute_switch(side, target, false, true, dex, &mut *queue);
+                }
+                QAction::InstaSwitch { side, target } => {
+                    // A FORCED replacement (order 3) — a Baton-Pass selfSwitch OR a faint
+                    // replacement. `is_voluntary = false` so the PURSUIT INTERRUPT does NOT
+                    // fire (`gen3_move_coverage_batch4_v1` fix): the sim's `BeforeSwitchOut`
+                    // is SUPPRESSED for a Baton Pass (`batonpass.self.onHit` sets
+                    // `source.skipBeforeSwitchOutEventFlag = true`, moves.ts:1109) and a
+                    // faint replacement's outgoing corpse carries no `pursuit` volatile
+                    // (clearVolatile in faintMessages). PROBE-SETTLED bit-for-bit
+                    // (`harness/probe_bp_pursuit_settle.js`): a pursued Baton-Pass passer is
+                    // NOT struck — it survives, passes its boosts, and the pursuer's Pursuit
+                    // runs NORMALLY (bp 40) against the ENTRANT next decision.
+                    self.execute_switch(side, target, false, false, dex, &mut *queue);
                 }
                 QAction::RunSwitch { side } => {
                     // gen3 runSwitch: EntryHazard (Spikes damage, draw-free) → ability Start.
@@ -9146,21 +9486,34 @@ impl BattleState {
         self.pending_phaze_drag = true;
         // (2) The forced switch (reuses the voluntary-switch swap + runSwitch enqueue).
         //     `is_drag = true` → `execute_switch` emits `|drag|`, not `|switch|`.
-        self.execute_switch(side, target, true, dex, queue);
+        //     `is_voluntary = false` — a phaze DRAG never fires the pursuit interrupt
+        //     (the sim's `BeforeSwitchOut` is `!isDrag`-gated).
+        self.execute_switch(side, target, true, false, dex, queue);
     }
 
-    fn execute_switch(&mut self, side: usize, target: usize, is_drag: bool, dex: &Dex, queue: &mut Vec<QAction>) {
+    /// `is_voluntary` = a VOLUNTARY menu switch (`QAction::Switch`), the ONLY switch-out
+    /// the sim runs `BeforeSwitchOut` for — so the PURSUIT INTERRUPT fires only for it.
+    /// A Baton-Pass selfSwitch / faint replacement (`QAction::InstaSwitch`) and a phaze
+    /// drag (`drag_in`) pass `false`. Orthogonal to `is_drag` (which distinguishes a phaze
+    /// drag from a switch for the `|drag|`-vs-`|switch|` emit + the Baton-Pass copyVolatileFrom).
+    fn execute_switch(&mut self, side: usize, target: usize, is_drag: bool, is_voluntary: bool, dex: &Dex, queue: &mut Vec<QAction>) {
         let active = self.sides[side].active;
 
         // --- PURSUIT INTERRUPT (`gen3_move_coverage_batch4_v1`,
         //     `pursuit.condition.onBeforeSwitchOut`, fired by `switchIn`'s `runEvent(
         //     'BeforeSwitchOut', oldActive)` at battle-actions.ts:94, `!isDrag`-gated): a
-        //     VOLUNTARY switch-out of a mon carrying the `pursuit` volatile lets the pursuer
-        //     STRIKE the switching mon BEFORE the switch resolves. A phaze DRAG is NOT
-        //     intercepted (`!is_drag`; VERIFIED: Roar drags a pursued mon out cleanly). Runs at
-        //     the very TOP of `execute_switch` (before the clearVolatile block below) since the
-        //     strike targets the still-active switcher. ---
-        if !is_drag {
+        //     VOLUNTARY MENU switch-out of a mon carrying the `pursuit` volatile lets the
+        //     pursuer STRIKE the switching mon BEFORE the switch resolves. It is gated on
+        //     `is_voluntary` (NOT merely `!is_drag`): the sim runs `runEvent('BeforeSwitchOut')`
+        //     — which dispatches pursuit's `onBeforeSwitchOut` — ONLY for a menu switch. A phaze
+        //     DRAG (`!isDrag`-gated in switchIn), a BATON-PASS selfSwitch (`batonpass.self.onHit`
+        //     sets `skipBeforeSwitchOutEventFlag`, moves.ts:1109 — probe-settled: the passer is
+        //     NOT struck, Pursuit runs normally against the entrant next decision), and a FAINT
+        //     replacement (its corpse's `pursuit` volatile is already cleared) all pass
+        //     `is_voluntary = false` → no interrupt. (`gen3_move_coverage_batch4_v1`, the
+        //     bench-order-desync fix.) Runs at the very TOP of `execute_switch` (before the
+        //     clearVolatile block below) since the strike targets the still-active switcher. ---
+        if is_voluntary {
             if let Some(pursuer_uid) = self.sides[side].pokemon[active].pursuit {
                 let pside = 1 - side;
                 // The pursuer must still be its side's ACTIVE + ALIVE (the sim's
@@ -9181,6 +9534,11 @@ impl BattleState {
                     }
                 });
                 if let Some((pslot, pmi)) = strike {
+                    // FIRST-MOVER attribution: the pursuer strikes NOW (its `|move|Pursuit` is the
+                    // FIRST action line emitted this turn — before the switcher's `|switch|`), so
+                    // the sim's `firstMoverSince` reads the PURSUER as the first mover. Record the
+                    // override so `boundary_record` reports `pside`, not the sorted-queue switch.
+                    self.pursuit_first_mover = Some(pside);
                     // (a) `this.queue.cancelMove(source)` — remove the pursuer's queued Pursuit
                     //     from the queue so it does NOT also act this turn. DRAW-FREE.
                     queue.retain(
@@ -9375,6 +9733,15 @@ impl BattleState {
             // interrupt above; this is the belt-and-braces reset.)
             m.focus_punch = None;
             m.pursuit = None;
+            // The BEAT UP `beatup` `duration: 1` volatile ALSO clears on switch-out
+            // (`clearVolatile`, `gen3_move_coverage_batch4b_v1`). MISSING this stranded a stale
+            // `beat_up = true` on a mon phazed out the same turn it Beat Up'd (Roar priority -6
+            // resolves after the move); the flag survived the bench (the turn-top `clear_flinch`
+            // is ACTIVE-mon-only) and, when the mon re-entered, the active-only residual gather
+            // pushed a SPURIOUS NO_ORDER/subOrder-2 VolatileDuration handler → at a residual
+            // speed tie one extra `random(0,2)` tie-shuffle vs the sim (a silent draw-order
+            // desync — the class this batch exists to remove). Sibling one-liners above.
+            m.beat_up = false;
         }
         // ATTRACT source-left clear (`attract.onUpdate`, `gen3_ability_batch4_v1`): when the
         // DEPARTING mon is the SOURCE of the foe active's attraction, the volatile is removed
@@ -11995,7 +12362,7 @@ mod tests {
             let expect_dmg = (snorlax_maxhp / denom).max(1);
             let before = state.prng_seed();
             let mut queue: Vec<QAction> = Vec::new();
-            state.execute_switch(1, 1, false, &d, &mut queue); // swap Snorlax to active + enqueue runSwitch
+            state.execute_switch(1, 1, false, true, &d, &mut queue); // swap Snorlax to active + enqueue runSwitch
             // Run the enqueued runSwitch (the EntryHazard step applies spikes).
             assert!(matches!(queue.first(), Some(QAction::RunSwitch { side: 1 })));
             state.run_switch(1, &d);
@@ -12023,7 +12390,7 @@ mod tests {
             state.sides[1].spikes = 3; // max layers — still ZERO for an immune entrant
             let maxhp = state.sides[1].pokemon[slot].maxhp;
             let mut queue: Vec<QAction> = Vec::new();
-            state.execute_switch(1, slot, false, &d, &mut queue);
+            state.execute_switch(1, slot, false, true, &d, &mut queue);
             state.run_switch(1, &d);
             let entrant = &state.sides[1].pokemon[state.sides[1].active];
             assert_eq!(entrant.hp, maxhp, "a Flying/Levitate entrant ({}) takes ZERO spikes", entrant.species_id);
@@ -12046,7 +12413,7 @@ mod tests {
         state.sides[1].pokemon[1].hp = 1;
         let before = state.prng_seed();
         let mut queue: Vec<QAction> = Vec::new();
-        state.execute_switch(1, 1, false, &d, &mut queue);
+        state.execute_switch(1, 1, false, true, &d, &mut queue);
         state.run_switch(1, &d);
         let entrant = &state.sides[1].pokemon[state.sides[1].active];
         assert_eq!(entrant.species_id, "diglett");
@@ -12279,7 +12646,7 @@ mod tests {
         state.sides[1].pokemon[0].disable = Some((0, 3));
         state.sides[1].pokemon[0].last_move = Some(0);
         let mut queue: Vec<QAction> = Vec::new();
-        state.execute_switch(1, 1, false, &d, &mut queue); // Snorlax out, Blissey in
+        state.execute_switch(1, 1, false, true, &d, &mut queue); // Snorlax out, Blissey in
         // The outgoing Snorlax (now bench slot 1) is un-restricted.
         let out = &state.sides[1].pokemon[1];
         assert!(out.taunt.is_none() && out.disable.is_none() && out.last_move.is_none(),

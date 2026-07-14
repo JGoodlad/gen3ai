@@ -669,6 +669,12 @@ impl ProtocolBuilder {
     pub fn singleturn(&mut self, mon: &MonRef, effect: &str) {
         self.push_raw(format!("|-singleturn|{mon}|{effect}"));
     }
+    /// `|-hitcount|<mon>|<N>` — the number of times a MULTI-STRIKE move hit
+    /// (`gen3_move_coverage_batch4b_v1`, Beat Up: one line at the end of the strike loop,
+    /// N = the strikes that actually fired).
+    pub fn hitcount(&mut self, mon: &MonRef, n: u32) {
+        self.push_raw(format!("|-hitcount|{mon}|{n}"));
+    }
     /// `|-end|<mon>|<Effect>|[from] move: <Move>|[of] <of>` — a volatile removed BY a move
     /// (`gen3_move_coverage_batch1_v1`, Rapid Spin clearing the USER's own Leech Seed:
     /// `|-end|<user>|Leech Seed|[from] move: Rapid Spin|[of] <user>`).

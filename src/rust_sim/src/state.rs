@@ -467,6 +467,15 @@ pub struct MonState {
     /// (`clear_focus_punch`) — or consumed by the interrupt (`execute_switch`) — and on
     /// switch-out/faint. `None` at construction.
     pub pursuit: Option<usize>,
+    /// The **BEAT UP** `beatup` volatile (`gen3_move_coverage_batch4b_v1`) — `true` while this
+    /// mon's Beat Up is resolving THIS turn (added by the sim's `onModifyMove`
+    /// `pokemon.addVolatile("beatup")` before the multi-strike loop, carrying the stat-swap
+    /// hooks + a `duration: 1`). The stat swap itself is computed directly in `run_beat_up`, so
+    /// this flag exists ONLY for the `duration: 1` residual DURATION handler (NO_ORDER/subOrder-2,
+    /// the protect/stall/flinch/focus-punch tie group): a BEAT UP MIRROR at equal speed adds ONE
+    /// residual tie-shuffle draw (the e2e_217 desync). Cleared at the TOP of each turn
+    /// (`clear_flinch`) + on switch-out/faint. `false` at construction.
+    pub beat_up: bool,
 }
 
 impl MonState {
@@ -549,6 +558,7 @@ impl MonState {
             active_turns: 1,
             curse: None,
             focus_punch: None,
+            beat_up: false,
             pursuit: None,
         })
     }
@@ -810,6 +820,17 @@ pub struct BattleState {
     /// bare `useMove`). Never set during a normal move; not persisted (a transient like
     /// `pending_explosion_self_ko` but read+cleared, not per-turn).
     pub pursuit_strike: bool,
+    /// The PER-TURN **first-mover override** for a PURSUIT-INTERRUPT turn
+    /// (`gen3_move_coverage_batch4_v1`). On a turn where a mon VOLUNTARILY switches out and the
+    /// foe's Pursuit interrupts it, the sim emits the pursuer's `|move|Pursuit` line FIRST (from
+    /// the `onBeforeSwitchOut` strike, at the TOP of the switch's runAction — before the
+    /// `|switch|` line), so `firstMoverSince` reads the PURSUER as the first mover. The port's
+    /// default `first_mover` is the first SORTED-queue action = the switch (order 103 < move 200)
+    /// = the switching side — WRONG for this turn. `execute_switch` sets this to the pursuer's
+    /// side (`pside`) when the strike fires; `boundary_record` prefers it over the sorted-queue
+    /// `first_mover`. Reset to `None` at the top of each turn (like `pending_phaze_drag`). The
+    /// pursuer genuinely acts first, so this is a faithful attribution, not a cosmetic patch.
+    pub pursuit_first_mover: Option<usize>,
 }
 
 impl BattleState {
@@ -858,6 +879,7 @@ impl BattleState {
             log: crate::protocol::ProtocolBuilder::new(),
             faint_emit_queue: Vec::new(),
             pursuit_strike: false,
+            pursuit_first_mover: None,
         })
     }
 

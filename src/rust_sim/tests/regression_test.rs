@@ -7613,3 +7613,498 @@ fn focus_punch_mirror_speed_tie_draws_the_beforeturnmove_and_residual_ties() {
         "the two beforeTurnMove order-5 ties + the +1 residual focuspunch duration-handler tie + the landed FP's acc/crit/dmg → the real Showdown post-turn seed"
     );
 }
+
+/// MC36: PURSUIT does NOT intercept a BATON-PASS selfSwitch (`gen3_move_coverage_batch4_v1`, the
+/// bench-order-desync fix). The sim SUPPRESSES `BeforeSwitchOut` for a Baton Pass
+/// (`batonpass.self.onHit` sets `skipBeforeSwitchOutEventFlag = true`, moves.ts:1109), so the
+/// pursued passer is NOT struck: it survives (boosts intact), the Baton Pass completes (the +2 Atk
+/// passes to the entrant), and the pursuer's Pursuit runs NORMALLY (bp 40) against the ENTRANT on
+/// the resumed turn. WRONG (pre-fix, the interrupt fired for ANY `!is_drag` switch incl. a
+/// selfSwitch InstaSwitch): the port struck the still-active passer at ×2 never-miss + `queue.retain`d
+/// away the pursuer's Pursuit → a spurious strike (and, for a low-HP passer, a spurious faint in a
+/// bench slot → the downstream slot-desync of e2e_11). STATE (Jolteon ALIVE on the bench 271/271;
+/// Vaporeon active with +2 Atk having taken the normal Pursuit → 400/464) + SEED (37635,… — the sim's
+/// post-switch seed; the pre-fix strike gives a DIFFERENT seed). Ground truth
+/// `harness/probe_batch4_pursuit_bench_regression_rng.js`.
+#[test]
+fn pursuit_does_not_intercept_a_baton_pass_selfswitch() {
+    let d = dex();
+    let ttar = "Tyranitar|||pressure|pursuit,crunch|Serious|,,,252,,|||||";
+    let p2 = "Jolteon|||voltabsorb|batonpass,thunderbolt|Serious|,,,,,252|||||]\
+              Vaporeon|||waterabsorb|surf|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(ttar, p2, "44317,42357,9927,48760"), &d).expect("start");
+    // Inject +2 Atk on Jolteon (STATE-only, no PRNG — mirrors the probe injection) so the pass
+    // is observable on the entrant. Atk does not affect speed, so the draw stream is unchanged.
+    {
+        let st = battle.state_mut().expect("state");
+        let active = st.sides[1].active;
+        st.sides[1].pokemon[active].boosts[0] = 2;
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // p1 Pursuit, p2 Baton Pass → forced switch
+            ScriptDecision::one(1, Choice::Switch(1)),              // p2 switch to Vaporeon (the pass entrant)
+        ],
+        &d,
+    );
+    // dec 1 (the Baton-Pass forced switch): Vaporeon is the entrant, inherits +2 Atk, and takes the
+    // NORMAL Pursuit (bp 40) on the resumed turn — the passer was NOT struck.
+    assert_eq!(out.decisions[1].active_species[1], "vaporeon", "Vaporeon is the Baton-Pass entrant");
+    assert_eq!(out.decisions[1].active[1].boosts[0], 2, "the +2 Atk passed to Vaporeon (copyVolatileFrom.boosts)");
+    assert_eq!(out.decisions[1].active[1].hp, 400, "Vaporeon (the ENTRANT) took a NORMAL bp-40 Pursuit → 464 → 400");
+    assert_eq!(out.decisions[1].pokemon_left[1], 2, "no faint — the passer was NOT struck");
+    // The passer Jolteon is ALIVE on the bench (271/271 untouched), NOT struck.
+    let bench_active = st.sides[1].active;
+    let bench_idx = (0..st.sides[1].pokemon.len()).find(|&i| i != bench_active).expect("a bench slot");
+    assert_eq!(st.sides[1].pokemon[bench_idx].set.species, "Jolteon", "the passer sits on the bench");
+    assert_eq!(st.sides[1].pokemon[bench_idx].hp, 271, "the passer is UNTOUCHED (271/271) — no Pursuit strike");
+    assert!(!st.sides[1].pokemon[bench_idx].fainted, "the passer is ALIVE (no spurious strike-faint)");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "37635,3740,64462,10380",
+        "Baton Pass suppresses the interrupt → Pursuit runs normally against the entrant → the real Showdown seed (a pre-fix strike diverges it)"
+    );
+}
+
+/// MC36b: the LOW-HP-passer variant of MC36 — pins the exact "fainted-in-a-bench-slot" symptom.
+/// Jolteon is injected to 10 HP (≤ a ×2 Pursuit strike). WRONG (pre-fix): the port strikes the
+/// passer, KOing it → a FAINTED mon sits in the bench slot where the sim has an ALIVE one → a later
+/// "switch to a fainted slot" reject / decision-count desync (the e2e_11 root symptom). With the fix
+/// the passer is left ALIVE at 10 HP on the bench. STATE (Jolteon alive 10/271 on the bench,
+/// pokemon_left 2) + SEED.
+#[test]
+fn pursuit_does_not_faint_a_low_hp_baton_pass_passer() {
+    let d = dex();
+    let ttar = "Tyranitar|||pressure|pursuit,crunch|Serious|,,,252,,|||||";
+    let p2 = "Jolteon|||voltabsorb|batonpass,thunderbolt|Serious|,,,,,252|||||]\
+              Vaporeon|||waterabsorb|surf|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(ttar, p2, "44317,42357,9927,48760"), &d).expect("start");
+    {
+        let st = battle.state_mut().expect("state");
+        let active = st.sides[1].active;
+        st.sides[1].pokemon[active].hp = 10; // ≤ a ×2 Pursuit strike would KO
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::one(1, Choice::Switch(1)),
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[1].active_species[1], "vaporeon", "Vaporeon entered");
+    assert_eq!(out.decisions[1].pokemon_left[1], 2, "the low-HP passer did NOT faint (no strike)");
+    let bench_active = st.sides[1].active;
+    let bench_idx = (0..st.sides[1].pokemon.len()).find(|&i| i != bench_active).expect("a bench slot");
+    assert_eq!(st.sides[1].pokemon[bench_idx].set.species, "Jolteon", "the low-HP passer sits on the bench");
+    assert_eq!(st.sides[1].pokemon[bench_idx].hp, 10, "the passer stays at 10 HP — NOT struck");
+    assert!(!st.sides[1].pokemon[bench_idx].fainted, "the passer is ALIVE (no spurious strike-faint-in-a-slot)");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "37635,3740,64462,10380",
+        "the low-HP passer variant is bit-for-bit identical to MC36 (the strike is suppressed either way)"
+    );
+}
+
+/// MC37 (batch-4 nit): PURSUIT INTERRUPT composed with ENTRY HAZARDS — a VOLUNTARY switch into a
+/// Pursuit STRIKE, then the replacement enters through the runSwitch EntryHazard (Spikes chip). The
+/// strike (×2, on the switcher Jolteon 271 → 153) precedes the swap; the entrant Snorlax then takes
+/// the Spikes chip (524 → 459 = maxhp/8) on its runSwitch. Pins the strike→process_faints→swap→
+/// runSwitch(spikes) composition the reviewer flagged. WRONG (if the strike or the spikes-on-
+/// replacement ordering is broken): the switcher/entrant HP or the seed desyncs. STATE (switcher
+/// Jolteon 153 on the bench; entrant Snorlax 459 = post-Spikes) + SEED. Ground truth
+/// `harness/probe_batch4_pursuit_bench_regression_rng.js`.
+#[test]
+fn pursuit_interrupt_into_entry_hazards() {
+    let d = dex();
+    let ttar = "Tyranitar|||pressure|pursuit,spikes|Serious|,,,252,,|||||";
+    let p2 = "Jolteon|||voltabsorb|thunderbolt|Serious|,,,,,252|||||]\
+              Snorlax|||immunity|bodyslam|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(ttar, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // p1 Spikes (1 layer), p2 Thunderbolt
+            ScriptDecision::both(Choice::Move(0), Choice::Switch(1)), // p1 Pursuit, p2 VOLUNTARY switch → strike + Spikes on entrant
+        ],
+        &d,
+    );
+    // dec 1: Pursuit STRUCK the switching Jolteon (×2 → 153 on the bench); Snorlax entered and took
+    // the Spikes chip (524 → 459).
+    assert_eq!(out.decisions[1].active_species[1], "snorlax", "the replacement Snorlax is active after the strike");
+    assert_eq!(out.decisions[1].active[1].hp, 459, "Snorlax took the Spikes chip on entry (524 → 459 = maxhp/8)");
+    assert_eq!(out.decisions[1].pokemon_left[1], 2, "no faint — the switcher was only chipped");
+    let sw_active = st.sides[1].active;
+    let sw_idx = (0..st.sides[1].pokemon.len()).find(|&i| i != sw_active).expect("a bench slot");
+    assert_eq!(st.sides[1].pokemon[sw_idx].hp, 153, "the STRUCK switcher Jolteon (×2 Pursuit) sits on the bench at 153/271");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "5621,5056,41416,14688",
+        "the strike (never-miss crit+dmg) → swap → runSwitch Spikes (draw-free) composition → the real Showdown seed"
+    );
+}
+
+/// MC38 (batch-4 nit): PURSUIT INTERRUPT at a pursuer/switcher SPEED TIE — the strike lands, so its
+/// in-tryMoveHit `eachEvent('Update')` fires, and because the pursuer (p1 Tyranitar) and the
+/// SWITCHER (p2 Tyranitar, still hp>0 pre-swap) TIE on cached speed, that eachEvent draws ONE
+/// tie-shuffle `random(0,2)`. Pins the post-strike each-event draw the reviewer flagged. WRONG (if
+/// the interrupt's `each_event_shuffle` on a landed strike is dropped, or the tie is mis-evaluated):
+/// the draw COUNT desyncs. STATE (the struck switcher Tyranitar 282 on the bench; Snorlax active) +
+/// SEED (the crux — the tie-shuffle draw). Ground truth
+/// `harness/probe_batch4_pursuit_bench_regression_rng.js`.
+#[test]
+fn pursuit_speed_tie_interrupt_draws_the_post_strike_each_event() {
+    let d = dex();
+    let ttar = "Tyranitar|||pressure|pursuit,crunch|Serious|,,,252,,|||||";
+    let p2 = "Tyranitar|||pressure|crunch|Serious|,,,252,,|||||]\
+              Snorlax|||immunity|bodyslam|Serious|252,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(ttar, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[ScriptDecision { p1: Some(Choice::Move(0)), p2: Some(Choice::Switch(1)) }],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active_species[1], "snorlax", "the replacement Snorlax is active after the strike");
+    let sw_active = st.sides[1].active;
+    let sw_idx = (0..st.sides[1].pokemon.len()).find(|&i| i != sw_active).expect("a bench slot");
+    assert_eq!(st.sides[1].pokemon[sw_idx].hp, 282, "the struck switcher Tyranitar (×2 Pursuit) sits on the bench at 282/341");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "37112,13693,28533,21721",
+        "the landed strike's in-tryMoveHit eachEvent('Update') draws the pursuer↔switcher speed-tie shuffle → the real Showdown seed"
+    );
+}
+
+// ── MOVE-COVERAGE BATCH 4b (`gen3_move_coverage_batch4b_v1`): BEAT UP / THUNDER / WATER SPOUT ──
+// Ground truth: `harness/probe_batch4b_regression_rng.js`. Each is a CONSTRUCTED gen3customgame
+// board reseeded to the raw seed (aligning the port's draw-free `start_with_switchins`),
+// revert-verified (each FAILS when its move's engine wiring is reverted).
+
+/// MC39: BEAT UP full 6-strike — Slaking + 5 healthy bench each strike the bulky Skarmory once
+/// (typeless flat-BP-10 Special with the ally-base-atk → SpA / target-base-def → SpD stat swap).
+/// ONE accuracy roll + 6*(crit+damage) + Quick Claw. WRONG (if the beatup arm is reverted): the
+/// move runs as a plain bp-10 Dark move — ONE crit+damage pair (not six) → both the per-strike HP
+/// AND the seed desync. STATE (Skarmory 271 → 237, the six-strike chip in ally base-atk order
+/// −10/−8/−4/−7/−1/−4) + SEED (the 12 per-strike draws + Quick Claw).
+#[test]
+fn beat_up_full_side_strikes_once_per_healthy_teammate() {
+    let d = dex();
+    let p1 = "Slaking|||keeneye|beatup,seismictoss|Serious|252,252,,,,|||||\
+]Machamp|||noguard|splash|Serious|,,,,,|||||\
+]Alakazam|||synchronize|splash|Serious|,,,,,|||||\
+]Snorlax|||immunity|splash|Serious|,,,,,|||||\
+]Blissey|||naturalcure|splash|Serious|,,,,,|||||\
+]Gengar|||keeneye|splash|Serious|,,,,,|||||";
+    let p2 = "Skarmory|||keeneye|splash|Serious|,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // Skarmory survived all 6 strikes: 271 → 237 (the six-strike stat-swap chip).
+    assert_eq!(out.decisions[0].active[1].hp, 237, "Beat Up = 6 strikes (one per healthy teammate) → 271-34");
+    assert!(!out.decisions[0].active[1].fainted, "Skarmory survived the 6-strike Beat Up");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "21092,10154,5215,50054",
+        "1 accuracy roll + 6*(crit+damage) + Quick Claw → the real Showdown post-turn seed"
+    );
+}
+
+/// MC40: BEAT UP KOs the target MID-SEQUENCE — a 30-HP Gengar SURVIVES the first strike (→ 7)
+/// then the SECOND strike KOs it → the multihit STOPS (later strikes + the Quick Claw skip; the
+/// deferred-faint protocol). WRONG (if the beatup arm is reverted → a plain bp-10 Dark hit, or if
+/// the loop does not stop): a plain single hit leaves Gengar alive (30-HP survives a bp-10 hit) →
+/// the pokemon_left + seed desync; a non-stopping multihit fires extra strikes / a Quick Claw on
+/// the deciding faint → the seed desyncs. STATE (Gengar fainted after exactly 2 strikes, p1 wins)
+/// + SEED (1 acc + 2*(crit+damage), NO Quick Claw).
+#[test]
+fn beat_up_ko_mid_sequence_stops_the_multihit_no_quick_claw() {
+    let d = dex();
+    let p1 = "Slaking|||keeneye|beatup,seismictoss|Serious|252,,,,,|||||\
+]Snorlax|||immunity|splash|Serious|,,,,,|||||\
+]Blissey|||naturalcure|splash|Serious|,,,,,|||||";
+    let p2 = "Gengar|||keeneye|splash|Serious|,,,,,252|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    // Inject Gengar to 30 HP (STATE-only, no PRNG): strike 1 leaves it at 7, strike 2 KOs it.
+    {
+        let st = battle.state_mut().expect("state");
+        let active = st.sides[1].active;
+        st.sides[1].pokemon[active].hp = 30;
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert!(out.decisions[0].active[1].fainted, "the SECOND Beat Up strike KO'd the 30-HP Gengar");
+    assert_eq!(out.decisions[0].pokemon_left[1], 0, "Gengar was p2's only mon → p1 wins");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "22534,42410,55299,35327",
+        "the multihit STOPS at the faint after 2 strikes (1 acc + 2*(crit+damage), NO Quick Claw on the deciding faint) → the real Showdown seed"
+    );
+}
+
+/// MC41: THUNDER in RAIN — the id-gated onModifyMove makes Thunder NEVER-MISS in rain, so the
+/// accuracy `random(100)` is SKIPPED (ONE FEWER draw). WRONG (if the weather-accuracy mutation is
+/// reverted): Thunder uses base acc 70 in rain → it DRAWS the accuracy roll (and, at this seed,
+/// MISSES) → the post-turn seed matches the BASE control (60880,...) instead of the rain seed.
+/// STATE (the never-miss Thunder HITS + paralyzes Blissey) + SEED (distinct from the base
+/// control's) — the never-miss-skips-the-accuracy-draw proof.
+#[test]
+fn thunder_rain_never_miss_skips_the_accuracy_draw() {
+    let d = dex();
+    let zap = "Zapdos|||keeneye|thunder,seismictoss|Serious|,,252,,,252|||||";
+    let rain = "Blissey|||drizzle|splash|Serious|252,,,,,|||||";
+    let base = "Blissey|||naturalcure|splash|Serious|252,,,,,|||||";
+
+    // RAIN: never-miss → 0 accuracy draw → HIT + para.
+    let mut br =
+        Battle::start_with_switchins(&opts_cg(zap, rain, "44317,42357,9927,48760"), &d).expect("start");
+    let outr = br.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(outr.decisions[0].active[1].hp, 591, "rain Thunder is never-miss → it HITS (714 → 591)");
+    assert_eq!(outr.decisions[0].active[1].status, Some(Status::Paralysis), "the 30% para landed");
+    let rain_seed = seed_str(&outr.decisions[0].seed_after);
+    assert_eq!(rain_seed, "22534,42410,55299,35327", "rain: crit+damage+para-secondary+full-para+Quick Claw (NO accuracy draw) → the real Showdown seed");
+
+    // BASE control (no weather): base acc 70 IS drawn → at this seed it MISSES → a DIFFERENT seed.
+    let mut bb =
+        Battle::start_with_switchins(&opts_cg(zap, base, "44317,42357,9927,48760"), &d).expect("start");
+    let outb = bb.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(outb.decisions[0].active[1].hp, 714, "base Thunder DRAWS the accuracy roll and MISSES at this seed");
+    let base_seed = seed_str(&outb.decisions[0].seed_after);
+    assert_eq!(base_seed, "60880,31090,7619,34922", "base: the accuracy random(100) draws + a miss → the real Showdown seed");
+
+    assert_ne!(rain_seed, base_seed, "reverting the rain never-miss makes rain == base — the extra accuracy draw is the crux");
+}
+
+/// MC42: THUNDER in SUN — the id-gated onModifyMove sets base accuracy 50 (a LOWER threshold). At
+/// a seed whose accuracy roll ∈ [50,70), SUN (thresh 50) MISSES while BASE (thresh 70) HITS. WRONG
+/// (if the sun→50 mutation is reverted): sun uses base 70 → it HITS → Blissey takes damage instead
+/// of staying at full HP. STATE (sun MISS = Blissey 714; base HIT = Blissey 589). Same accuracy
+/// draw COUNT either way (only the threshold differs), so this is a STATE pin.
+#[test]
+fn thunder_sun_base_accuracy_fifty_lowers_the_hit_threshold() {
+    let d = dex();
+    let zap = "Zapdos|||keeneye|thunder,seismictoss|Serious|,,252,,,252|||||";
+    let sun = "Blissey|||drought|splash|Serious|252,,,,,|||||";
+    let base = "Blissey|||naturalcure|splash|Serious|252,,,,,|||||";
+    let seed = "8,25,58,91"; // its first random(100) == 60 ∈ [50,70)
+
+    // SUN (thresh 50): 60 >= 50 → MISS.
+    let mut bs = Battle::start_with_switchins(&opts_cg(zap, sun, seed), &d).expect("start");
+    let outs = bs.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(outs.decisions[0].active[1].hp, 714, "sun Thunder (thresh 50) MISSES at roll 60 → Blissey unharmed");
+
+    // BASE (thresh 70): 60 < 70 → HIT.
+    let mut bb = Battle::start_with_switchins(&opts_cg(zap, base, seed), &d).expect("start");
+    let outb = bb.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(outb.decisions[0].active[1].hp, 589, "base Thunder (thresh 70) HITS at roll 60 → Blissey 714 → 589");
+}
+
+/// MC43: WATER SPOUT variable BP — `bp = max(floor(150·hp/maxhp), 1)`. At the SAME seed, full HP
+/// (bp 150) and low HP (179/341 → bp 78) deal DIFFERENT damage but end at the IDENTICAL post-turn
+/// seed (the variable BP is a deterministic STATE read, DRAW-NEUTRAL). WRONG (if the basePower
+/// callback is reverted): both HP levels run at the flat placeholder bp → the low-HP damage is
+/// wrong. STATE (full: Snorlax 524 → 279; low: Snorlax 524 → 397) + the SAME SEED (draw-neutral).
+#[test]
+fn water_spout_variable_bp_is_draw_neutral() {
+    let d = dex();
+    let kyogre = "Kyogre|||keeneye|waterspout,seismictoss|Serious|,,252,,,252|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+
+    // FULL HP: bp 150.
+    let mut bf =
+        Battle::start_with_switchins(&opts_cg(kyogre, snorlax, "44317,42357,9927,48760"), &d).expect("start");
+    let outf = bf.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(outf.decisions[0].active[1].hp, 279, "Water Spout at full HP is bp 150 → Snorlax 524 → 279");
+    let full_seed = seed_str(&outf.decisions[0].seed_after);
+    assert_eq!(full_seed, "37635,3740,64462,10380", "the full-HP Water Spout draws acc+crit+damage + Quick Claw → the real Showdown seed");
+
+    // LOW HP (Kyogre injected to 179/341 → bp floor(150*179/341)=78): smaller damage, SAME seed.
+    let mut bl =
+        Battle::start_with_switchins(&opts_cg(kyogre, snorlax, "44317,42357,9927,48760"), &d).expect("start");
+    {
+        let st = bl.state_mut().expect("state");
+        let active = st.sides[0].active;
+        st.sides[0].pokemon[active].hp = 179;
+    }
+    let outl = bl.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(outl.decisions[0].active[1].hp, 397, "Water Spout at 179/341 HP is bp 78 → smaller damage → Snorlax 524 → 397");
+    assert_eq!(
+        seed_str(&outl.decisions[0].seed_after),
+        full_seed,
+        "the variable BP is a STATE read → DRAW-NEUTRAL: the low-HP turn draws the SAME PRNG sequence as the full-HP turn"
+    );
+}
+
+
+/// MC44: BEAT UP MIRROR at a SPEED TIE — both Charizards Beat Up at equal speed. This pins TWO
+/// tie-only draws the distinct-speed Beat Up scenarios hide: (a) the gen3 multihit loop's
+/// PER-STRIKE `eachEvent('Update')` (scripts.js — drawn after each strike on a tie); (b) the
+/// `beatup` `duration: 1` volatile's residual DURATION handler (two `beatup` volatiles tie → one
+/// residual shuffle). WRONG (reverting EITHER): the post-turn seed desyncs. STATE (p1 Charizard
+/// 285, p2 Charizard 258 — both survive) + SEED.
+#[test]
+fn beat_up_mirror_speed_tie_draws_the_per_strike_and_residual_shuffles() {
+    let d = dex();
+    let p1 = "Charizard|||Blaze|beatup,seismictoss|Modest|,,,252,,252|N||||\
+]Slaking|||keeneye|splash|Serious|,,,,,|N||||\
+]Machamp|||noguard|splash|Serious|,,,,,|N||||";
+    let p2 = "Charizard|||Blaze|beatup,roost|Modest|,,,252,,252|N||||\
+]Magikarp|||keeneye|splash|Serious|,,,,,|N|||5|";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let out = battle.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[0].hp, 285, "p1 Charizard survived p2's 2-strike Beat Up");
+    assert_eq!(out.decisions[0].active[1].hp, 258, "p2 Charizard survived p1's 3-strike Beat Up");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "37710,62820,53795,28781",
+        "the per-strike eachEvent('Update') (each Beat Up) + the two beatup-volatile residual duration handlers (the mirror tie) → the real Showdown seed"
+    );
+}
+
+/// MC45: BEAT UP CANCELS A FOCUS PUNCH — p2 Charizard Beat Ups (priority 0) into p1 Charizard,
+/// which chose Focus Punch (priority -3 → moves LAST). The Beat Up direct strikes set lostFocus
+/// → the Focus Punch is CANCELLED draw-free (0 damage to p2). WRONG (if `run_beat_up` does not
+/// set lostFocus): the Focus Punch would land + damage p2 (the e2e_196 real-team desync). STATE
+/// (p2 Charizard UNHARMED at 297 — the FP was cancelled; p1 Charizard took the Beat Up → 256) +
+/// SEED.
+#[test]
+fn beat_up_hit_cancels_the_targets_focus_punch() {
+    let d = dex();
+    let p1 = "Charizard|||Blaze|focuspunch,seismictoss|Modest|,4,,,,252|N||||";
+    let p2 = "Charizard|||Blaze|beatup,roost|Modest|,,,252,,252|N||||\
+]Slaking|||keeneye|splash|Serious|,,,,,|N||||\
+]Machamp|||noguard|splash|Serious|,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let out = battle.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[1].hp, 297, "the Beat Up set lostFocus → the Focus Punch was CANCELLED → p2 Charizard UNHARMED");
+    assert_eq!(out.decisions[0].active[0].hp, 256, "p1 Charizard took the 3-strike Beat Up");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "39289,57899,39292,47653",
+        "the Beat Up (3 strikes + per-strike Updates) + the cancelled Focus Punch (draw-free) + Quick Claw → the real Showdown seed"
+    );
+}
+
+/// MC46: BEAT UP's `beatup` `duration: 1` volatile is dropped by clearVolatile on switch-out —
+/// exactly like its sibling focus_punch/pursuit volatiles (`gen3_move_coverage_batch4b_v1`).
+/// WRONG (pre-fix): `execute_switch`'s clearVolatile reset focus_punch/pursuit but OMITTED
+/// beat_up, so a Beat Up user phazed out the SAME turn it Beat Up'd (Roar priority -6 resolves
+/// AFTER the move) kept a STALE `beat_up = true` on the bench (the turn-top `clear_flinch` is
+/// ACTIVE-mon-only), and on RE-ENTRY the active-only residual gather pushed a SPURIOUS
+/// NO_ORDER/subOrder-2 VolatileDuration handler that TIED the foe's → one extra `random(0,2)`
+/// tie-shuffle vs the sim (a silent draw-order desync).
+///
+/// Choreography (all Charizards → equal speed → residual ties): turn 1 p1 Charizard Beat Ups
+/// (sets the beatup volatile) + p2 Charizard Roars (priority -6 → drags the n=1-eligible bench
+/// Charizard in, benching the Beat Up user — the sim's clearVolatile drops its beatup volatile);
+/// turn 2 p1 SWITCHES the Beat Up user back in + p2 Beat Ups (registers ITS OWN beatup residual
+/// handler). At the turn-2 residual the returned mon is active BEFORE the next turn-top
+/// clear_flinch, so a stale beat_up would tie p2's handler → an extra shuffle. STATE (the
+/// dragged-out mon's beat_up == false on the bench + the returned/foe HP) + SEED (both decisions
+/// vs the real Showdown ground truth). Ground truth
+/// `harness/probe_batch4b_beatup_switchout_regression_rng.js`.
+#[test]
+fn beat_up_volatile_clears_on_switch_out() {
+    let d = dex();
+    let p1 = "Charizard|||Blaze|beatup,splash|Modest|,,,252,,252|N||||\
+]Charizard|||Blaze|beatup,splash|Modest|,,,252,,252|N||||";
+    let p2 = "Charizard|||Blaze|roar,beatup|Modest|,,,252,,252|N||||\
+]Magikarp|||keeneye|splash|Serious|,,,,,|N|||5|";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let out = battle.state_mut().unwrap().run_full_battle(
+        &[
+            // turn 1: p1 Beat Up, p2 Roar (drags the p1 Beat Up user OUT).
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            // turn 2: p1 switches the Beat Up user (array slot 1) back in, p2 Beat Ups.
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(1)),
+        ],
+        &d,
+    );
+
+    // dec 0: the phaze dragged the n=1-eligible bench Charizard in; the Beat Up user is BENCHED
+    // (its beatup volatile is cleared by clearVolatile — the fix; pre-fix it stayed true and
+    // re-entered stale on turn 2). p2 Charizard took the 2-strike Beat Up (297 → 277).
+    assert_eq!(out.decisions[0].active[1].hp, 277, "p2 Charizard took the turn-1 2-strike Beat Up");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "63651,14230,62171,48683",
+        "turn 1: p1 Beat Up (2 strikes) + p2 Roar (acc + n=1 sample) + Quick Claw → the real Showdown seed"
+    );
+
+    // dec 1: the Beat Up user is back active; p2 Beat Ups it (2 strikes, 297 → 286). At the
+    // residual only p2 has a beatup handler (the returned mon's is cleared), so NO tie shuffle —
+    // a stale beat_up would tie it, drawing one extra shuffle and desyncing THIS seed.
+    assert_eq!(out.decisions[1].active[0].hp, 286, "the returned Beat Up user took p2's 2-strike Beat Up");
+    assert_eq!(out.decisions[1].active[1].hp, 277, "p2 Charizard unchanged (p1 switched, did not attack)");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "53016,60759,29878,11288",
+        "turn 2: p1 switch + p2 Beat Up (2 strikes + per-strike Updates) with ONLY p2's beatup residual handler (NO stale-flag tie) → the real Showdown seed"
+    );
+}
+
+/// MC47: WATER SPOUT's min-BP-1 clamp — `bp = max(floor(150·hp/maxhp), 1)`. At 1 HP,
+/// `floor(150·1/341)=0` → the `.max(1)` clamps the BP to 1 (a MIN-damage HIT, NOT a fail).
+/// The batch-4b golden (`waterspout_low_hp` at hp 40 → bp 17) never realizes the clamp; this
+/// pins the hp=1 boundary. STATE (Snorlax 524 → 521, a 3-HP min hit) + SEED (identical to the
+/// full-HP Water Spout MC43 — the variable BP is a deterministic STATE read → DRAW-NEUTRAL even
+/// at the clamp). Ground truth `harness/probe_batch4b_edge_regression_rng.js`.
+#[test]
+fn water_spout_at_one_hp_clamps_the_base_power_to_one() {
+    let d = dex();
+    let kyogre = "Kyogre|||keeneye|waterspout,seismictoss|Serious|,,252,,,252|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|252,,,,,|||||";
+    let mut b =
+        Battle::start_with_switchins(&opts_cg(kyogre, snorlax, "44317,42357,9927,48760"), &d).expect("start");
+    {
+        let st = b.state_mut().expect("state");
+        let active = st.sides[0].active;
+        st.sides[0].pokemon[active].hp = 1; // floor(150*1/341)=0 → clamp to bp 1
+    }
+    let out = b.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[1].hp, 521, "Water Spout at 1 HP is bp 1 → a MIN-damage HIT (Snorlax 524 → 521), NOT a fizzle");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "37635,3740,64462,10380",
+        "the clamped-BP Water Spout draws the SAME acc+crit+damage+Quick-Claw sequence as the full-HP one (draw-neutral) → the real Showdown seed"
+    );
+}
+
+/// MC48: BEAT UP with NO eligible party member fizzles — a STATUSED active user whose ONLY
+/// party member is itself (statused → skipped) yields 0 strikes → the `basePowerCallback`
+/// returns null → the move FIZZLES (`|move|Beat Up||[still]` + `|-fail|`), drawing only the
+/// whole-move accuracy roll (drawn in `run_move` BEFORE the empty-strikes return). The batch-4b
+/// golden never realizes the empty-strikes branch; this pins it. STATE (Gengar UNTOUCHED at 261;
+/// the burned Slaking takes only its burn chip 504 → 441) + SEED (acc + Quick Claw only — no
+/// strikes → no crit/damage draws). Ground truth `harness/probe_batch4b_edge_regression_rng.js`.
+#[test]
+fn beat_up_with_no_eligible_party_fizzles_drawing_only_accuracy() {
+    let d = dex();
+    let slaking = "Slaking|||keeneye|beatup,seismictoss|Serious|252,252,,,,|||||";
+    let gengar = "Gengar|||levitate|splash|Serious|,,,,,252|||||";
+    let mut b =
+        Battle::start_with_switchins(&opts_cg(slaking, gengar, "44317,42357,9927,48760"), &d).expect("start");
+    {
+        let st = b.state_mut().expect("state");
+        let active = st.sides[0].active;
+        st.sides[0].pokemon[active].status = Some(Status::Burn); // the only party member is statused → 0 strikes
+    }
+    let out = b.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[1].hp, 261, "the Beat Up FIZZLED (0 eligible strikers) → Gengar UNTOUCHED");
+    assert_eq!(out.decisions[0].active[0].hp, 441, "the burned Slaking took only its burn chip (504 → 441)");
+    assert_eq!(out.decisions[0].active[0].status, Some(Status::Burn), "Slaking stays burned");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "60880,31090,7619,34922",
+        "the fizzle draws the whole-move accuracy roll (no strikes → no crit/damage) + Quick Claw → the real Showdown seed"
+    );
+}

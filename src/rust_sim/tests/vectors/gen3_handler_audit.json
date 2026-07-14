@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 74,
    "items": 59,
-   "conditions": 31,
-   "moves": 199,
-   "rows": 750
+   "conditions": 34,
+   "moves": 204,
+   "rows": 767
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); NOT in MODELED/NOOP so the e2e filter excludes its teams",
@@ -796,6 +796,36 @@
    "anchor": "turn.rs::run_update_items",
    "reason": "the source-left clear (the attract onUpdate removal)"
   },
+  "condition:beatup:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "state.rs::beat_up",
+   "reason": "the duration:1 volatile — a NO_ORDER/subOrder-2 residual duration handler (the Beat Up mirror tie-shuffle); cleared at turn-top (clear_flinch) / switch-out / faint"
+  },
+  "condition:beatup:onFoeModifySpD": {
+   "disposition": "implemented",
+   "fp": "fn:95bf5471:onFoeModifySpD(def, pokemon) { this.event.modifier = 1; return this.dex.species.get(pokemon.set.species).baseStats.def; ",
+   "anchor": "turn.rs::run_beat_up",
+   "reason": "the stat swap: defender SpD REPLACED by the target dex baseStats.def (event.modifier=1) — computed directly in the per-strike DamageContext"
+  },
+  "condition:beatup:onFoeModifySpDPriority": {
+   "disposition": "implemented",
+   "fp": "val:-101",
+   "anchor": "turn.rs::run_beat_up",
+   "reason": "the stat swap: defender SpD REPLACED by the target dex baseStats.def (event.modifier=1) — computed directly in the per-strike DamageContext"
+  },
+  "condition:beatup:onModifySpA": {
+   "disposition": "implemented",
+   "fp": "fn:c394899d:onModifySpA(atk, pokemon, defender, move) { if (!this.ruleTable.has(\"beatupnicknamesmod\")) { this.add(\"-activate\", pokem",
+   "anchor": "turn.rs::run_beat_up",
+   "reason": "the stat swap: attacker SpA REPLACED by the current ally dex baseStats.atk (event.modifier=1) — computed directly in the per-strike DamageContext"
+  },
+  "condition:beatup:onModifySpAPriority": {
+   "disposition": "implemented",
+   "fp": "val:-101",
+   "anchor": "turn.rs::run_beat_up",
+   "reason": "the stat swap: attacker SpA REPLACED by the current ally dex baseStats.atk (event.modifier=1) — computed directly in the per-strike DamageContext"
+  },
   "condition:brn:onResidual": {
    "disposition": "implemented",
    "fp": "fn:bf41b8fb:onResidual(pokemon) { this.damage(pokemon.baseMaxhp / 8); }",
@@ -972,6 +1002,30 @@
    "fp": "fn:8149470d:onStart(target, source, effect) { if (target.volatiles[\"dragoncheer\"]) return false; if (effect?.id === \"zpower\") { this",
    "anchor": "state.rs::focus_energy",
    "reason": "the volatile arm (via a Lansat eat — the only gen3 route); the dragoncheer branch is gen9 cruft"
+  },
+  "condition:focuspunch:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "state.rs::focus_punch",
+   "reason": "the duration:1 volatile — cleared at turn-top (clear_flinch) / switch-out / faint; registers a NO_ORDER residual duration handler (the FP-mirror tie-shuffle)"
+  },
+  "condition:focuspunch:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:355b1033:onHit(pokemon, source, move) { if (move.category !== \"Status\") { this.effectState.lostFocus = true; } }",
+   "anchor": "turn.rs::run_move",
+   "reason": "sets lostFocus when the user is hit DIRECTLY by a non-Status move (a sub-absorbed chip does not count)"
+  },
+  "condition:focuspunch:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:0ddfccfd:onStart(pokemon) { this.add(\"-singleturn\", pokemon, \"move: Focus Punch\"); }",
+   "anchor": "turn.rs::run_move",
+   "reason": "the |-singleturn|<user>|move: Focus Punch line at the beforeTurnMove (draw-free)"
+  },
+  "condition:focuspunch:onTryAddVolatile": {
+   "disposition": "implemented",
+   "fp": "fn:afa43b46:onTryAddVolatile(status, pokemon) { if (status.id === \"flinch\") return null; }",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the focuspunch volatile BLOCKS a flinch (the flinch-secondary random(100) still draws; draw-then-block)"
   },
   "condition:freezeclausemod:onBegin": {
    "disposition": "noop_justified",
@@ -1194,6 +1248,18 @@
    "fp": "fn:e395633c:onStart(target, source, sourceEffect) { if (sourceEffect && sourceEffect.effectType === \"Ability\") { this.add(\"-status\",",
    "anchor": "turn.rs::try_set_status",
    "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
+  },
+  "condition:pursuit:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "state.rs::pursuit",
+   "reason": "the duration:1 volatile on the target (Some(pursuer_uid)) — laid at the beforeTurnMove, consumed by the interrupt / cleared at turn-top / switch-out / faint"
+  },
+  "condition:pursuit:onBeforeSwitchOut": {
+   "disposition": "implemented",
+   "fp": "fn:e85d8f4d:onBeforeSwitchOut(pokemon) { this.debug(\"Pursuit start\"); let alreadyAdded = false; for (const source of this.effectStat",
+   "anchor": "turn.rs::execute_switch",
+   "reason": "the interrupt: on a VOLUNTARY (is_voluntary) switch-out of the pursued mon, cancelMove the pursuer + run Pursuit at ×2 never-miss BEFORE the swap (gen3_move_coverage_batch4_v1); Baton Pass/drag/faint-replacement do NOT intercept"
   },
   "condition:raindance:duration": {
    "disposition": "unreachable_justified",
@@ -2789,6 +2855,12 @@
    "anchor": "turn.rs::execute_switch",
    "reason": "copyvolatile: the copyVolatileFrom pass of boosts + the copyable volatiles (substitute/leech-seed/confusion/curse) to the entrant, [from] Baton Pass"
   },
+  "move:beatup:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:1e40f787:onModifyMove(move, pokemon) { pokemon.addVolatile(\"beatup\"); move.type = \"???\"; move.category = \"Special\"; move.allies =",
+   "anchor": "turn.rs::run_beat_up",
+   "reason": "adds the beatup volatile + sets type ??? / category Special / allies (healthy non-statused party) / multihit; the port runs the per-strike loop with the stat swap"
+  },
   "move:bite:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
@@ -3188,6 +3260,18 @@
    "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:focuspunch:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:dbac830a:onTry(pokemon) { if (pokemon.volatiles[\"focuspunch\"]?.lostFocus) { this.attrLastMove(\"[still]\"); this.add(\"cant\", pokemo",
+   "anchor": "turn.rs::run_move",
+   "reason": "the onTry cancel BEFORE accuracy iff the focuspunch volatile is lostFocus (|move|…||[still] + |cant|…Focus Punch); PP/lastMove already deducted"
+  },
+  "move:focuspunch:priority": {
+   "disposition": "implemented",
+   "fp": "val:-3",
+   "anchor": "turn.rs::move_priority",
+   "reason": "the action-order priority sort (draws only on a priority+speed tie)"
   },
   "move:gigadrain:drain": {
    "disposition": "implemented",
@@ -3720,6 +3804,12 @@
    "fp": "val:[{\"chance\":10,\"boosts\":{\"spd\":-1}}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:pursuit:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:5a6e39c2:onModifyMove(move, source, target) { if (target?.beingCalledBack || target?.switchFlag) move.accuracy = true; }",
+   "anchor": "turn.rs::run_move",
+   "reason": "accuracy=true (never-miss) on the interrupt condition (beingCalledBack/switchFlag) — the pursuit_strike flag drives the never-miss + ×2 BP"
   },
   "move:quickattack:priority": {
    "disposition": "implemented",
@@ -4300,6 +4390,18 @@
    "fp": "fn:bc2f9627:onAfterHit(target, source, move) { if (source.item || source.volatiles[\"gem\"]) { return; } const yourItem = target.takeI",
    "anchor": "turn.rs::apply_item_removal",
    "reason": "the Knock Off/Thief/Covet item removal (Sticky Hold block + the gen3 itemKnockedOff gate)"
+  },
+  "move:thunder:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:6a848e05:onModifyMove(move, pokemon, target) { switch (target?.effectiveWeather()) { case \"raindance\": case \"primordialsea\": move",
+   "anchor": "turn.rs::run_move",
+   "reason": "the id-gated weather-accuracy mutation: effective rain => never-miss (skip the accuracy random(100)), sun => base 50, else base 70 (gen3_move_coverage_batch4b_v1)"
+  },
+  "move:thunder:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"status\":\"par\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
   "move:thunderbolt:secondaries": {
    "disposition": "implemented",

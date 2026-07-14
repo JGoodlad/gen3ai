@@ -22,9 +22,11 @@ printf 'wish\ndoubleedge\n...' | /tmp/pokesim_target_scope/release/scan_move_pro
   - **77 MODELED** — the engine runs them bit-for-bit (incl. **typed Hidden Power**, all 16 types;
     **BATCH 1** recoil/drain/self-drop/item-removal/rapid-spin + **BATCH 2** status-cure/weather-set/
     stat-drop/screens).
-  - **8 MISMODELED** (`--use-bridge=rust` would diverge silently): Focus-Punch's beforeTurn queue,
-    Pursuit's / Beat Up's / Water Spout's variable-BP, Thunder's rain-accuracy, Doom Desire's future
-    strike, Hyper Beam's recharge. These are the *dangerous* ones — a silent desync, not a crash.
+  - **MISMODELED (`--use-bridge=rust` would diverge silently):** Focus-Punch's beforeTurn queue +
+    Pursuit's variable-BP are now MODELED (**BATCH 4a**, `gen3_move_coverage_batch4_v1`), and Beat Up's
+    multi-strike stat-swap + Water Spout's variable-BP + Thunder's rain-accuracy are now MODELED
+    (**BATCH 4b**, `gen3_move_coverage_batch4b_v1`). The ONLY remaining MISMODELED classes are Doom
+    Desire's future strike + Hyper Beam's recharge — the *dangerous* ones (a silent desync, not a crash).
   - **23 UNMODELED** — the engine FAIL-LOUDs (`panic!` / `is not modeled`). Honest crash, no desync.
 - **Teams already FULLY engine-playable (every move MODELED bit-for-bit): 71 / 722** (was 8 pre-batch;
   batches 1+2 combined).
@@ -130,6 +132,24 @@ CLEAN STRICT pass first-try, NO new engine bug: the pre-regen golden replayed BY
 `738da13e…` unchanged, the batch-3 code a no-op on the old golden) then the deliberate regen shifted it
 to **md5 `529ab3f0940f8f9cbab383fb26d2a696`** (722/722 filter-clean teams, STRICT `filtered_diverged ==
 0` over 220 battles / 11163 decisions). See `src/rust_sim/CLAUDE.md` → the batch-3 move-class section.
+
+## ✅ BATCH 4 + 4b DONE — the beforeTurnCallback + variable-BP/weather-accuracy damaging moves
+
+**BATCH 4** (`gen3_move_coverage_batch4_v1`) modeled the two `beforeTurnCallback` damaging moves — **FOCUS
+PUNCH** (the beforeTurn `|-singleturn|` + onTry cancel-if-hit) + **PURSUIT** (the switch-interrupt ×2
+never-miss strike) — e2e-ADMITTED (golden md5 `fe1529609264be655f36032e0261868d`, 11481 decisions).
+
+**BATCH 4b** (`gen3_move_coverage_batch4b_v1`, 2026-07-14) modeled the THREE remaining MISMODELED
+single-turn damaging moves — **BEAT UP** (the multi-strike TYPELESS stat-swap: ally base-atk → SpA,
+target base-def → SpD; ONE accuracy roll + per-strike crit+damage + the per-strike `eachEvent('Update')`;
+the `beatup` `duration:1` residual handler; sets lostFocus), **THUNDER** (the id-gated weather-accuracy
+mutation: rain never-miss / sun 50 / else 70), **WATER SPOUT** (`bp = max(floor(150·hp/maxhp),1)`,
+draw-neutral). Validated by `movecoverage_batch4b_test.rs` (14 scenarios × 80 seeds = 1120 battles) + 7
+revert-verified pins (MC39-MC45). **e2e ADMITTED** (`BATCH4B_E2E_EXCLUDED = false`) — golden md5
+`64edcdcd5c6a63b1256fc23d3887d8c7` (STRICT `filtered_diverged == 0` over 220 battles / 11407 decisions),
+after fixing THREE real-team-only bugs (the per-strike `eachEvent('Update')`, the beatup-volatile residual
+duration tie, and Beat Up setting the target's Focus-Punch lostFocus). The ONLY MISMODELED classes left are
+Doom Desire (future strike) + Hyper Beam (recharge). See `src/rust_sim/CLAUDE.md` → the batch-4b section.
 
 ## Top-5 build CLASSES by cumulative team-unlock (greedy set-cover)
 

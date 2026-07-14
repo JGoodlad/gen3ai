@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
-31 conditions (engine state space + attached), 199 modeled moves
-→ **750 (effect, hook) rows**.
+34 conditions (engine state space + attached), 204 modeled moves
+→ **767 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 686 |
+| implemented | 703 |
 | noop_justified | 36 |
 | unreachable_justified | 28 |
 
@@ -331,7 +331,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (139 rows: implemented=112, noop_justified=9, unreachable_justified=18)
+## condition (150 rows: implemented=123, noop_justified=9, unreachable_justified=18)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -340,6 +340,11 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | attract | onEnd | noop_justified | display-only [silent] |-end| Attract line |
 | attract | onStart | implemented | `turn.rs::try_add_attract` |
 | attract | onUpdate | implemented | `turn.rs::run_update_items` |
+| beatup | duration | implemented | `state.rs::beat_up` |
+| beatup | onFoeModifySpD | implemented | `turn.rs::run_beat_up` |
+| beatup | onFoeModifySpDPriority | implemented | `turn.rs::run_beat_up` |
+| beatup | onModifySpA | implemented | `turn.rs::run_beat_up` |
+| beatup | onModifySpAPriority | implemented | `turn.rs::run_beat_up` |
 | brn | onResidual | implemented | `turn.rs::run_residuals` |
 | brn | onResidualOrder | implemented | `turn.rs::run_residuals` |
 | brn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
@@ -370,6 +375,10 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | flinch | onBeforeMovePriority | implemented | `turn.rs::clear_flinch` |
 | focusenergy | onModifyCritRatio | implemented | `turn.rs::CRIT_MULT` |
 | focusenergy | onStart | implemented | `state.rs::focus_energy` |
+| focuspunch | duration | implemented | `state.rs::focus_punch` |
+| focuspunch | onHit | implemented | `turn.rs::run_move` |
+| focuspunch | onStart | implemented | `turn.rs::run_move` |
+| focuspunch | onTryAddVolatile | implemented | `turn.rs::apply_secondaries` |
 | freezeclausemod | onBegin | noop_justified | display-only: the |rule| banner line at battle start |
 | freezeclausemod | onSetStatus | implemented | `turn.rs::side_has_frozen` |
 | frz | onAfterMoveSecondary | unreachable_justified | move.thawsTarget only — NO gen3 modeled move carries thawsTarget (the fire-thaw rides onDamagingHit instead) |
@@ -408,6 +417,8 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | psn | onResidualOrder | implemented | `turn.rs::run_residuals` |
 | psn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | psn | onStart | implemented | `turn.rs::try_set_status` |
+| pursuit | duration | implemented | `state.rs::pursuit` |
+| pursuit | onBeforeSwitchOut | implemented | `turn.rs::execute_switch` |
 | raindance | duration | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
 | raindance | durationCallback | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
 | raindance | onFieldEnd | unreachable_justified | weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end |
@@ -475,7 +486,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | wish | onEnd | implemented | `turn.rs::apply_wish` |
 | wish | onResidualOrder | implemented | `turn.rs::apply_wish` |
 
-## move (306 rows: implemented=302, noop_justified=2, unreachable_justified=2)
+## move (312 rows: implemented=308, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -507,6 +518,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | batonpass | onHit | implemented | `turn.rs::run_status_move` |
 | batonpass | self | noop_justified | an empty `self: {}` marker (Rapid Spin) — its effect is the onAfterHit/onAfterSubDamage clear |
 | batonpass | selfSwitch | implemented | `turn.rs::execute_switch` |
+| beatup | onModifyMove | implemented | `turn.rs::run_beat_up` |
 | bite | secondaries | implemented | `turn.rs::apply_secondaries` |
 | blazekick | critRatio | implemented | `turn.rs::CRIT_MULT` |
 | blazekick | secondaries | implemented | `turn.rs::apply_secondaries` |
@@ -574,6 +586,8 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | firepunch | secondaries | implemented | `turn.rs::apply_secondaries` |
 | flamethrower | secondaries | implemented | `turn.rs::apply_secondaries` |
 | flamewheel | secondaries | implemented | `turn.rs::apply_secondaries` |
+| focuspunch | onTry | implemented | `turn.rs::run_move` |
+| focuspunch | priority | implemented | `turn.rs::move_priority` |
 | gigadrain | drain | implemented | `turn.rs::apply_drain` |
 | glare | status | implemented | `turn.rs::modeled_status_move` |
 | grasswhistle | ignoreImmunity | implemented | `turn.rs::run_status_move` |
@@ -663,6 +677,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | protect | volatileStatus | implemented | `turn.rs::run_protect` |
 | psybeam | secondaries | implemented | `turn.rs::apply_secondaries` |
 | psychic | secondaries | implemented | `turn.rs::apply_secondaries` |
+| pursuit | onModifyMove | implemented | `turn.rs::run_move` |
 | quickattack | priority | implemented | `turn.rs::move_priority` |
 | raindance | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | raindance | neverMiss | implemented | `turn.rs::never_miss` |
@@ -760,6 +775,8 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | taunt | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | taunt | volatileStatus | implemented | `state.rs::taunt` |
 | thief | onAfterHit | implemented | `turn.rs::apply_item_removal` |
+| thunder | onModifyMove | implemented | `turn.rs::run_move` |
+| thunder | secondaries | implemented | `turn.rs::apply_secondaries` |
 | thunderbolt | secondaries | implemented | `turn.rs::apply_secondaries` |
 | thunderpunch | secondaries | implemented | `turn.rs::apply_secondaries` |
 | thundershock | secondaries | implemented | `turn.rs::apply_secondaries` |

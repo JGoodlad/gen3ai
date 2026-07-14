@@ -118,9 +118,11 @@ const rustMoves = JSON.parse(fs.readFileSync(RUST_MOVES, 'utf8'));
 // structural checks but the port does NOT model (per the capstone spec). When in
 // doubt, EXCLUDE.
 const MOVE_ID_BLOCKLIST = new Set([
-  // variable power
-  'return', 'frustration', 'flail', 'reversal', 'eruption', 'waterspout',
-  'lowkick', 'grassknot', 'magnitude', 'present', 'beatup', 'weatherball',
+  // variable power. NOTE: waterspout + beatup are NO LONGER blocklisted — they are MODELED
+  // bit-for-bit AND e2e-ADMITTED (`gen3_move_coverage_batch4b_v1`, BATCH4B_E2E_EXCLUDED=false)
+  // via MODELED_BATCH4B_MOVES in `isModeledMove`.
+  'return', 'frustration', 'flail', 'reversal', 'eruption',
+  'lowkick', 'grassknot', 'magnitude', 'present', 'weatherball',
   'gyroball', 'fling', 'punishment', 'trumpcard', 'wringout', 'crushgrip',
   // hidden power (every type — bp is fixed/wrong for gen3)
   'hiddenpower',
@@ -132,11 +134,11 @@ const MOVE_ID_BLOCKLIST = new Set([
   // switch-trap / item-swap / leaves-1 / fakeout / future / sleeptalk. NOTE:
   // knockoff/thief/covet (item REMOVAL) + rapidspin are NO LONGER blocklisted — they are
   // MODELED bit-for-bit (`gen3_move_coverage_batch1_v1`) and ADMITTED via
-  // MODELED_ITEM_REMOVAL_MOVES / MODELED_RAPIDSPIN_MOVES in `isModeledMove`. `pursuit` is MODELED
-  // bit-for-bit (`gen3_move_coverage_batch4_v1`) but currently EXCLUDED from the e2e capstone
-  // (BATCH4_E2E_EXCLUDED — the bench-order composition deferral), so it STAYS blocklisted here.
-  // Trick / Switcheroo (item SWAP, not removal) stay out.
-  'pursuit', 'trick', 'switcheroo', 'falseswipe',
+  // MODELED_ITEM_REMOVAL_MOVES / MODELED_RAPIDSPIN_MOVES in `isModeledMove`. `pursuit` is likewise
+  // NO LONGER blocklisted — it is MODELED bit-for-bit AND e2e-ADMITTED (`gen3_move_coverage_batch4_v1`,
+  // BATCH4_E2E_EXCLUDED=false) via MODELED_BATCH4_MOVES in `isModeledMove`. Trick / Switcheroo
+  // (item SWAP, not removal) stay out.
+  'trick', 'switcheroo', 'falseswipe',
   'fakeout', 'futuresight', 'doomdesire', 'snore', 'sleeptalk',
   // reactive / out-of-gen-3-modeled-scope status moves (a category-Status move the port
   // fail-louds on; blocklisted so a team carrying it is not filter-clean). Destiny Bond is
@@ -280,17 +282,33 @@ const MODELED_BATCH3_MOVES = new Set(['curse', 'wish', 'batonpass']);
 // (`gen_movecoverage_batch4_golden.js` / `movecoverage_batch4_test.rs`) + the MC30-MC35 pins.
 const MODELED_BATCH4_MOVES = new Set(['focuspunch', 'pursuit']);
 // BATCH4_E2E_EXCLUDED — whether to keep FOCUS PUNCH + PURSUIT OUT of the e2e capstone's modeled
-// set. Currently `true` (EXCLUDED), the PHAZE precedent: the engine is bit-for-bit in the
-// DEDICATED golden (`movecoverage_batch4_test.rs`, 1040 game-end battles) + the MC30-MC35 pins,
-// but admitting the moves to the e2e capstone surfaces a real-team-only BENCH-ORDER divergence
-// in COMPLEX multi-switch battles where a PURSUIT interrupt composes with a BATON PASS
-// self-switch + a ROAR phaze + a double faint (the switch-array slot assignment across the
-// re-queued-switch / instaswitch machinery diverges — NOT caught by the e2e's active-only STATE
-// assertions, so it manifests as a later "switch to a fainted slot" reject / decision-count
-// mismatch). Keeping FP/Pursuit OUT of the STRICT e2e gate (rather than letting a silent desync
-// in) honors the bit-for-bit law; the DEDICATED golden + the MC30-MC35 pins remain the proof.
-// Re-enable (`= false`) once the multi-mechanic pursuit-interrupt bench-order composition is fixed.
-const BATCH4_E2E_EXCLUDED = true;
+// set. Now `false` (ADMITTED, `gen3_move_coverage_batch4_v1`): STRICT `filtered_diverged == 0`
+// over the 220-battle gate (242 Focus Punch / 184 Pursuit decisions). The former deferral (the
+// PHAZE precedent — a pursuit-interrupt bench-order desync composed with Baton Pass) was
+// ROOT-CAUSED + FIXED: the port's `execute_switch` used to fire the pursuit interrupt for ANY
+// non-drag switch INCLUDING a Baton-Pass selfSwitch, striking the still-active passer — while the
+// sim SUPPRESSES `BeforeSwitchOut` for a Baton Pass (`batonpass.self.onHit` sets
+// `skipBeforeSwitchOutEventFlag`, moves.ts:1109). Gating the interrupt on `is_voluntary` (only a
+// menu switch) fixed the spurious-strike / fainted-in-a-slot desync; admitting also surfaced +
+// fixed (a) a first-mover attribution nuance (the pursuer's `|move|` emits before the switcher's
+// `|switch|` → `pursuit_first_mover`) and (b) a Choice-lock-not-released-on-item-removal bug (a
+// Thief'd Choice Band mon must be freed to re-pick — e2e_126). Pins MC36/MC36b/MC37/MC38.
+const BATCH4_E2E_EXCLUDED = false;
+
+// MOVE-COVERAGE BATCH 4b (`gen3_move_coverage_batch4b_v1`) — the THREE remaining MISMODELED
+// single-turn damaging moves, all now MODELED bit-for-bit (the DEDICATED golden
+// `gen_movecoverage_batch4b_golden.js` / `movecoverage_batch4b_test.rs` + the MC39-MC43 pins):
+//   * BEAT UP — a MULTI-STRIKE stat-swap move (static dex has `basePowerCallback` + `onModifyMove`
+//     setting `multihit`; the port runs the per-strike loop).
+//   * THUNDER — a 120-BP Special Electric move whose id-gated `onModifyMove` rewrites the base
+//     accuracy by the target's effective weather (rain never-miss / sun 50 / else 70).
+//   * WATER SPOUT — a variable-BP Special Water move (`basePowerCallback` = 150·hp/maxhp).
+// In the Showdown dex Beat Up + Water Spout carry `basePowerCallback` and Thunder + Beat Up carry
+// `onModifyMove`, so they'd else be dropped by those rejects below — `isModeledMove` ADMITS them by
+// an EARLY special-case (before those rejects), kept in lockstep with the id-gates in src/turn.rs
+// (`run_beat_up` / the waterspout BP override / the thunder weather-accuracy mutation).
+const MODELED_BATCH4B_MOVES = new Set(['beatup', 'thunder', 'waterspout']);
+const BATCH4B_E2E_EXCLUDED = false;
 
 // The MODELED gen-3 FIXED-DAMAGE moves (a `damage:` / `damageCallback` move that BYPASSES
 // getDamage — NO crit roll, NO 16-way damage roll) the port now executes bit-for-bit (the
@@ -512,6 +530,12 @@ function isModeledMove(id) {
   // rejects below, which would else drop them). Both are damaging (bp>0) with no secondary, so
   // the early return is safe. Kept in lockstep with `move_has_before_turn_callback` in src/turn.rs.
   if (!BATCH4_E2E_EXCLUDED && MODELED_BATCH4_MOVES.has(id)) return true;
+  // MOVE-COVERAGE BATCH 4b (`gen3_move_coverage_batch4b_v1`) — BEAT UP / THUNDER / WATER SPOUT,
+  // ADMITTED HERE (before the `m.multihit` / `basePowerCallback` / `onModifyMove` rejects below,
+  // which would else drop them). All three are damaging (bp>0); Beat Up carries the only secondary-
+  // free multi-strike, Thunder's 30% para is the ordinary modeled secondary shape. Kept in lockstep
+  // with `run_beat_up` / the waterspout+thunder id-gates in src/turn.rs.
+  if (!BATCH4B_E2E_EXCLUDED && MODELED_BATCH4B_MOVES.has(id)) return true;
   // STATUS MOVES: allow ONLY the modeled standalone status-inflicting moves (accuracy
   // + apply + sleep random(2,6)), the modeled pure SELF-BOOST setup moves (never-miss →
   // no accuracy draw, draw-free boost apply, no in-tryMoveHit Update), AND the modeled

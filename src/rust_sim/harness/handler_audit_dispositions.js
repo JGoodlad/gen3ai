@@ -336,6 +336,28 @@ add([mv('wish', 'onTryHit')], NOOP('undefined in the resolved dist — never-mis
 add([mv('batonpass', 'onHit')], IMPL('turn.rs::run_status_move', 'the no-eligible-bench FAIL ([still]+-fail, NOT_FAIL); else set switch_flag + baton_pass_pending for the forced self-switch'));
 add([mv('batonpass', 'selfSwitch')], IMPL('turn.rs::execute_switch', 'copyvolatile: the copyVolatileFrom pass of boosts + the copyable volatiles (substitute/leech-seed/confusion/curse) to the entrant, [from] Baton Pass'));
 
+// MOVE-COVERAGE BATCH 4 (`gen3_move_coverage_batch4_v1`) — FOCUS PUNCH + PURSUIT (the
+// beforeTurnCallback + switch-interrupt classes). `priority` / `secondaries` etc. fall to the
+// moveRule; these hooks (the two conditions + focuspunch onTry + pursuit onModifyMove) are
+// EXACT. (`beforeTurnCallback` / `basePowerCallback` are declarative callbacks the enumerator
+// does not surface as `on*` handlers; the beforeTurnMove queue action + the ×2 BP live in
+// turn.rs::execute_beforeturn_move / turn.rs::run_move.)
+add([mv('focuspunch', 'onTry')], IMPL('turn.rs::run_move', 'the onTry cancel BEFORE accuracy iff the focuspunch volatile is lostFocus (|move|…||[still] + |cant|…Focus Punch); PP/lastMove already deducted'));
+add([cond('focuspunch', 'onStart')], IMPL('turn.rs::run_move', 'the |-singleturn|<user>|move: Focus Punch line at the beforeTurnMove (draw-free)'));
+add([cond('focuspunch', 'onHit')], IMPL('turn.rs::run_move', 'sets lostFocus when the user is hit DIRECTLY by a non-Status move (a sub-absorbed chip does not count)'));
+add([cond('focuspunch', 'onTryAddVolatile')], IMPL('turn.rs::apply_secondaries', 'the focuspunch volatile BLOCKS a flinch (the flinch-secondary random(100) still draws; draw-then-block)'));
+add([cond('focuspunch', 'duration')], IMPL('state.rs::focus_punch', 'the duration:1 volatile — cleared at turn-top (clear_flinch) / switch-out / faint; registers a NO_ORDER residual duration handler (the FP-mirror tie-shuffle)'));
+add([mv('pursuit', 'onModifyMove')], IMPL('turn.rs::run_move', 'accuracy=true (never-miss) on the interrupt condition (beingCalledBack/switchFlag) — the pursuit_strike flag drives the never-miss + ×2 BP'));
+add([cond('pursuit', 'onBeforeSwitchOut')], IMPL('turn.rs::execute_switch', 'the interrupt: on a VOLUNTARY (is_voluntary) switch-out of the pursued mon, cancelMove the pursuer + run Pursuit at ×2 never-miss BEFORE the swap (gen3_move_coverage_batch4_v1); Baton Pass/drag/faint-replacement do NOT intercept'));
+add([cond('pursuit', 'duration')], IMPL('state.rs::pursuit', 'the duration:1 volatile on the target (Some(pursuer_uid)) — laid at the beforeTurnMove, consumed by the interrupt / cleared at turn-top / switch-out / faint'));
+
+// MOVE-COVERAGE BATCH 4b (`gen3_move_coverage_batch4b_v1`): BEAT UP / THUNDER / WATER SPOUT.
+add([mv('beatup', 'onModifyMove')], IMPL('turn.rs::run_beat_up', 'adds the beatup volatile + sets type ??? / category Special / allies (healthy non-statused party) / multihit; the port runs the per-strike loop with the stat swap'));
+add([cond('beatup', 'onModifySpA'), cond('beatup', 'onModifySpAPriority')], IMPL('turn.rs::run_beat_up', 'the stat swap: attacker SpA REPLACED by the current ally dex baseStats.atk (event.modifier=1) — computed directly in the per-strike DamageContext'));
+add([cond('beatup', 'onFoeModifySpD'), cond('beatup', 'onFoeModifySpDPriority')], IMPL('turn.rs::run_beat_up', 'the stat swap: defender SpD REPLACED by the target dex baseStats.def (event.modifier=1) — computed directly in the per-strike DamageContext'));
+add([cond('beatup', 'duration')], IMPL('state.rs::beat_up', 'the duration:1 volatile — a NO_ORDER/subOrder-2 residual duration handler (the Beat Up mirror tie-shuffle); cleared at turn-top (clear_flinch) / switch-out / faint'));
+add([mv('thunder', 'onModifyMove')], IMPL('turn.rs::run_move', 'the id-gated weather-accuracy mutation: effective rain => never-miss (skip the accuracy random(100)), sun => base 50, else base 70 (gen3_move_coverage_batch4b_v1)'));
+
 // MOVE-COVERAGE BATCH 2 status-cure `onHit` (`gen3_move_coverage_batch2_v1`).
 add([mv('refresh', 'onHit')], IMPL('turn.rs::run_status_move', 'the Refresh self-cure arm (par/psn/brn cleared; none/slp/frz fail — draw-free)'));
 add([mv('healbell', 'onHit')], IMPL('turn.rs::run_status_move', 'the Heal Bell whole-team cure (active + bench; SKIPS a Soundproof ally, draw-free)'));

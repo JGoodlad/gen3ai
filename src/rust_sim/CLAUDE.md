@@ -1657,7 +1657,16 @@ the standard gen<5 trailing `eachEvent('Update')` tail, and participates in the 
   switch resolves (`|-activate|<switcher>|move: Pursuit`), Choice-locks the pursuer if it holds a Choice
   item, and fires the strike's in-tryMoveHit Update. A KO'd switcher still brings in the replacement (the
   gen 2-4 `-hint`, `process_faints` before the swap). A NORMAL Pursuit (foe stays) is a plain bp-40 hit.
-  A phaze DRAG does NOT intercept (`!is_drag`). Cleared at turn-top / consumed by the interrupt / switch-out / faint.
+  The interrupt is gated on **`is_voluntary`** (a menu switch, `QAction::Switch`) — matching the sim, which
+  runs `runEvent('BeforeSwitchOut')` (hence pursuit's `onBeforeSwitchOut`) ONLY for a menu switch: a phaze
+  DRAG (`!isDrag`), a **BATON-PASS selfSwitch** (`batonpass.self.onHit` sets `skipBeforeSwitchOutEventFlag`,
+  moves.ts:1109 — the passer is NOT struck, Pursuit runs normally against the ENTRANT next decision), and a
+  FAINT replacement (`QAction::InstaSwitch`, its corpse's `pursuit` already cleared) all pass
+  `is_voluntary=false` → no interrupt (`gen3_move_coverage_batch4_v1`, the bench-order-desync fix; probe
+  `harness/probe_batch4_pursuit_bench_regression_rng.js`, pins MC36/MC36b). On an interrupt turn the pursuer's
+  `|move|Pursuit` is emitted BEFORE the switcher's `|switch|`, so the sim reads the pursuer as the first mover
+  — the port records `pursuit_first_mover = pside` and `boundary_record` prefers it over the sorted-queue
+  first_mover. Cleared at turn-top / consumed by the interrupt / switch-out / faint.
 
 **Validated** by `tests/movecoverage_batch4_test.rs` (a per-seed PER-DECISION STATE(+HP+STATUS+BOOSTS+
 SUB-HP)+SEED+winner differential to GAME-END over **13 scenarios × 80 seeds = 1040 game-end battles,
@@ -1670,26 +1679,108 @@ the_switcher_at_double_bp_never_miss`, MC33 `pursuit_normal_when_the_foe_stays_i
 `pursuit_that_kos_the_switcher_still_brings_in_the_replacement`, MC35 `focus_punch_mirror_speed_tie_draws_
 the_beforeturnmove_and_residual_ties`. Ground truth `harness/probe_batch4_movecoverage_regression_rng.js`.
 
-**e2e — DEFERRED (`BATCH4_E2E_EXCLUDED = true`, the PHAZE precedent).** The engine is bit-for-bit in the
-DEDICATED golden + the MC30-MC35 pins, but admitting FP/Pursuit to the e2e capstone surfaces a real-team-
-only BENCH-ORDER divergence in COMPLEX multi-switch battles where a PURSUIT interrupt composes with a
-BATON PASS self-switch + a ROAR phaze + a double faint (the switch-array slot assignment across the
-re-queued-switch / instaswitch machinery diverges — NOT caught by the e2e's active-only STATE assertions,
-so it manifests as a later "switch to a fainted slot" reject / decision-count mismatch: e.g. e2e_11 rust
-34 vs golden 55). Keeping FP/Pursuit OUT of the STRICT e2e gate (rather than a silent desync in) honors
-the bit-for-bit law, exactly as PHAZE_E2E_EXCLUDED does. The committed e2e golden
-(`529ab3f0940f8f9cbab383fb26d2a696`) stays BYTE-IDENTICAL (FP/Pursuit never picked). Re-enable once the
-multi-mechanic pursuit-interrupt bench-order composition is fixed. Probes kept:
-`harness/probe_batch4_{focuspunch,pursuit,movecoverage_regression_rng}.js`.
+Plus **4 revert-verified `regression_test.rs` pins** for the bench-order fix (`gen3_move_coverage_batch4_v1`,
+ground truth `harness/probe_batch4_pursuit_bench_regression_rng.js`): **MC36** `pursuit_does_not_intercept_a_
+baton_pass_selfswitch` (the passer survives + passes boosts, Pursuit hits the entrant normally), **MC36b**
+`pursuit_does_not_faint_a_low_hp_baton_pass_passer` (the fainted-in-a-slot symptom — a low-HP passer stays
+alive on the bench), **MC37** `pursuit_interrupt_into_entry_hazards` (VOLUNTARY switch → strike → the
+replacement takes Spikes on runSwitch), **MC38** `pursuit_speed_tie_interrupt_draws_the_post_strike_each_event`
+(the landed strike's in-tryMoveHit `eachEvent('Update')` draws the pursuer↔switcher tie-shuffle).
 
-**BRIDGE-SAFETY CAVEAT (the divergence is `--use-bridge=rust`-reachable, not just an e2e artifact).**
-Unlike PHAZE (whose exclusion was purely a strict-gate concern), the Pursuit-interrupt bench-order bug
-sits in an UNCONDITIONAL engine path (`execute_switch`'s interrupt fires whenever a `pursuit` volatile
-is present), and Pursuit is common in gen3ou (Tyranitar/Metagross). In `--use-bridge=rust` the port IS
-the environment — there is no live vs-Showdown check — so on a rare multi-mechanic turn
-(Pursuit-interrupt + Baton Pass + Roar + double-faint) a wrong switch-array slot assignment produces
-SILENTLY-wrong obs rather than a caught divergence. So a serverless-rust training run that reaches that
-composition is NOT bit-for-bit until the bench-order fix lands; the fix is the #1 batch-4 follow-up.
+**e2e — ADMITTED (`BATCH4_E2E_EXCLUDED = false`, `gen3_move_coverage_batch4_v1`).** STRICT
+`filtered_diverged == 0` over the 220-battle gate / **11481 decisions** (242 Focus Punch across 82 battles +
+184 Pursuit across 64 battles); the regenerated golden **md5 `fe1529609264be655f36032e0261868d`** (from the
+pre-batch-4 `529ab3f0940f8f9cbab383fb26d2a696`). The former deferral — a real-team-only BENCH-ORDER divergence
+(e2e_11 rust 34 vs golden 55) — was ROOT-CAUSED as the PURSUIT interrupt firing for a BATON-PASS selfSwitch
+(an `InstaSwitch`), striking the still-active passer where the sim leaves it alone (`skipBeforeSwitchOutEventFlag`).
+Gating the interrupt on `is_voluntary` (menu switch only) fixed it. Admitting then surfaced + fixed TWO more
+real-team-only issues, both bit-for-bit now: (1) a **first-mover attribution** nuance on interrupt turns — the
+pursuer's `|move|` emits before the switcher's `|switch|`, so `first_mover` is overridden to the pursuer
+(`pursuit_first_mover`, ~15 battles); (2) a **Choice-lock-not-released-on-item-removal** bug (e2e_126) — a
+Thief/Knock-Off that removes a mon's Choice Band must clear its `choice_locked_move` (the lock is enforced by
+the item's `onDisableMove`), else the port keeps rejecting a now-legal move → a decision-stream desync. All
+OTHER seed suites stay BYTE-IDENTICAL (the fixes are no-ops on any board without a pursuit-into-selfswitch or a
+Thief'd Choice item). The handler-audit manifest grew 750 → **759 rows** (the FP/Pursuit move + condition
+handlers, all implemented). Probes kept:
+`harness/probe_batch4_{focuspunch,pursuit,movecoverage_regression_rng,pursuit_bench_regression_rng}.js`.
+
+**BRIDGE-SAFETY (`--use-bridge=rust`): RESOLVED.** The former caveat — the Pursuit-interrupt bench-order bug
+sat in an UNCONDITIONAL engine path (`execute_switch`), Pursuit is common in gen3ou (Tyranitar/Metagross),
+and `--use-bridge=rust` has no live vs-Showdown check — is CLOSED: the `is_voluntary` gate + the Choice-lock
+release make `execute_switch` bit-for-bit on the pursuit-interrupt + Baton-Pass + item-removal compositions, so
+a serverless-rust run reaching them now produces correct obs (validated by the STRICT 220/220 e2e).
+
+## Move-coverage BATCH 4b: the last MISMODELED single-turn damaging moves (BEAT UP / THUNDER / WATER SPOUT)
+
+`gen3_move_coverage_batch4b_v1` — the THREE remaining MISMODELED single-turn damaging moves (the
+move-coverage roadmap's last silent-desync class), each probe-settled bit-for-bit vs the omniscient
+sim (`harness/probe_batch4b_{beatup,thunder,waterspout}.js`) and wired into `run_move` / `run_beat_up`:
+
+- **BEAT UP** (`beatup`, a `basePowerCallback` + `onModifyMove` multi-strike; `run_beat_up`) — ONE
+  strike PER healthy (non-fainted, NON-STATUSED) party member of the USER's side, in PARTY ORDER (the
+  ACTIVE user itself strikes when healthy; a statused ACTIVE user skips its own strike). Each strike is
+  a TYPELESS '???' flat-BP-10 **Special** hit with the STAT SWAP — the attacker's SpA REPLACED by the
+  current ally's dex `baseStats.atk` and the defender's SpD by the target's dex `baseStats.def`, both at
+  `event.modifier=1` (NO boosts / items / CB / burn / abilities touch the stat), level = the ACTIVE
+  user's level (verified: Slaking base-atk 160 vs Skarmory base-def 140 → base 11; Blissey base-atk 10 →
+  base 2; vs Gengar base-def 60 → base 24). Typeless → 1× / hits Ghost / no STAB / no weather boost;
+  Light Screen (Special) applies + crit ×2. **DRAW MODEL:** ONE whole-move accuracy roll
+  `randomChance(100,100)` (acc 100 — drawn, always passes) BEFORE the multi-strike loop, then PER STRIKE
+  [crit `randomChance(1,16)`] + [damage `random(16)`] + the gen3 multihit loop's **per-strike
+  `eachEvent('Update')`** (scripts.js — drawn on a speed TIE, zero at distinct speed), then the trailing
+  in-tryMoveHit Update + the runAction Update (caller, via `landed=true`). The multihit STOPS at the
+  target's faint (`i < hits && target.hp` — later strikes + the Quick Claw skip). Each strike routes the
+  sub-intercept (a break lets later strikes hit the mon); a direct strike sets the target's Focus-Punch
+  **lostFocus** (cancelling a queued FP). The `beatup` `duration: 1` volatile (`MonState::beat_up`)
+  registers a NO_ORDER/subOrder-2 residual DURATION handler (the protect/stall/flinch/focus-punch tie
+  group) → a BEAT UP MIRROR at equal speed adds ONE residual tie-shuffle draw. A degenerate all-fainted/
+  statused party fizzles draw-free (basePowerCallback null).
+- **THUNDER** (`thunder`, a 120-BP Special Electric, 30% para, base acc 70; the `onModifyMove` id-gate in
+  `run_move`) — the ONLY new draw-relevant piece is the weather-accuracy mutation, folded into the
+  effAcc pipeline BEFORE the stage/accMod chain: effective RAIN → `never_miss=true` (the whole accuracy
+  block AND its `randomChance` are SKIPPED — ONE FEWER draw), effective SUN → base 50, else (none / sand
+  / hail / Cloud-Nine-or-Air-Lock-SUPPRESSED via `effective_weather()`) → base 70. Everything downstream
+  is the ordinary 120-BP-special-with-30%-para draw model (crit + damage + secondary `random(100)`). The
+  CRUX: rain removes EXACTLY the accuracy draw (a wrong effAcc flips hit/miss AND the draw count).
+- **WATER SPOUT** (`waterspout`, a variable-BP Special Water move; the id-gate in `run_move`, Pursuit-`×2`
+  precedent) — `bp = max(floor(150·hp/maxhp), 1)` (u32-widened — `150·714` overflows u16), a deterministic
+  STATE read of the USER's CURRENT hp computed BEFORE the crit/damage draws → **DRAW-NEUTRAL** (probe:
+  full-HP bp 150 and low-HP bp 74 end at the SAME seed; only the damage magnitude differs). At 1 HP the raw
+  0.44 floors to min BP 1 (a min-damage HIT, does NOT fail). No secondary; identical draw count/order to Surf.
+
+**Validated** by `tests/movecoverage_batch4b_test.rs` (a per-seed PER-DECISION STATE(+HP+STATUS+BOOSTS+
+SUB-HP)+SEED+winner differential to GAME-END over **14 scenarios × 80 seeds = 1120 game-end battles, 7527
+decision rows, 7527 seed + 15054 HP assertions, 387 sub-up rows, 1120 wins** — Beat Up 6-strike / statused-
+skip / KO-mid-sequence / into-a-sub / into-a-Ghost / **a speed-tie + a MIRROR at a speed tie** [the
+per-strike Update + the residual duration tie]; Thunder rain/sun/none/sand accuracy; Water Spout full/low HP
++ into-a-sub; the golden REUSES the batch-3/4 42-field DEC format, CURSE/WISH columns asserted 0) + **7
+revert-verified `tests/regression_test.rs` pins** (MC39-MC45): MC39
+`beat_up_full_side_strikes_once_per_healthy_teammate`, MC40 `beat_up_ko_mid_sequence_stops_the_multihit_no_
+quick_claw`, MC41 `thunder_rain_never_miss_skips_the_accuracy_draw` (+ a base control, seed-distinct), MC42
+`thunder_sun_base_accuracy_fifty_lowers_the_hit_threshold` (a mid-roll seed where sun-50 MISSES while
+base-70 HITS), MC43 `water_spout_variable_bp_is_draw_neutral` (full vs low HP, same seed, different damage),
+MC44 `beat_up_mirror_speed_tie_draws_the_per_strike_and_residual_shuffles`, MC45
+`beat_up_hit_cancels_the_targets_focus_punch`. Ground truth `harness/probe_batch4b_regression_rng.js`.
+
+**e2e — ADMITTED (`BATCH4B_E2E_EXCLUDED = false`, `MODELED_BATCH4B_MOVES = {beatup, thunder, waterspout}`
+in `gen_e2e_fuzz.js`; waterspout + beatup removed from `MOVE_ID_BLOCKLIST`).** STRICT
+`filtered_diverged == 0` over the 220-battle gate / **11407 decisions** (217 wins + 3 ties); the
+regenerated golden **md5 `64edcdcd5c6a63b1256fc23d3887d8c7`** (from the pre-batch-4b
+`fe1529609264be655f36032e0261868d`). Admitting these surfaced + FIXED **THREE real-team-only engine bugs**
+the distinct-speed dedicated golden couldn't reach, all now bit-for-bit + revert-pinned: (1) the gen3
+multihit loop's **PER-STRIKE `eachEvent('Update')`** (e2e_52, Charizard↔Salamence tie — `run_beat_up` fires
+`each_event_shuffle` after each strike, not just the caller's single trailing Update via `landed`); (2) the
+**`beatup` `duration: 1` volatile's residual DURATION handler** (e2e_217, a Beat Up MIRROR — two beatup
+volatiles tie → one residual shuffle; `MonState::beat_up` + the run_residuals gather); (3) **Beat Up sets
+the target's Focus-Punch lostFocus** (e2e_196 — a Beat Up into a Focus-Punch user must cancel the FP; the
+`!absorbed` direct-strike branch now sets `focus_punch = Some(true)`). All OTHER seed suites (battle /
+fullbattle / secondary / protocol / writeline / bridge / every move-coverage batch) stay BYTE-IDENTICAL —
+the batch-4b engine changes are id-gated no-ops on any board without beatup/thunder/waterspout. The
+handler-audit manifest grew 759 → **767 rows** (the Beat Up multi-strike + stat-swap + duration handlers,
+Thunder's weather onModifyMove, all implemented). Probes kept:
+`harness/probe_batch4b_{beatup,thunder,waterspout,regression_rng}.js`. **BRIDGE-SAFETY
+(`--use-bridge=rust`):** these were the last MISMODELED single-turn damaging moves — a serverless-rust run
+reaching Beat Up / Thunder / Water Spout now produces correct obs (validated by the STRICT 220/220 e2e).
 
 ## E2E capstone: real teams, full battles, bit-for-bit (per-decision STATE+SEED+winner differential)
 
