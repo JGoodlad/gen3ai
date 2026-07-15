@@ -292,13 +292,26 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # OPD softmax temperature β for π' (built worker-side in produce.py); recorded here for provenance.
     opd_beta: float = 1.0
 
+    # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1). The ON-POLICY KL that pours a frozen per-team
+    # SPECIALIST (an --exploiter checkpoint) into the generalist: for rollout states where the trainee
+    # pilots the teacher's team (the training-only `distill_mask` obs key = 1), a forward of the frozen
+    # teacher gives π_teacher, and distill_coef * KL(π_teacher ‖ π_student) is added — carving the
+    # specialist's per-team play into the shared trunk WITHOUT touching the value head (policy-only). The
+    # non-teacher-team states (distill_mask = 0) are the rehearsal that guards against forgetting. Training-
+    # only (scales the loss, no forward/weight change) → NOT version-locked / NOT in check_compatible.
+    # `_distill_teacher` is a runtime attr (a loaded frozen model) set externally (like `_correction_buffer`).
+    # 0.0 = OFF (byte-identical: the whole block is guarded on coef != 0 AND teacher present).
+    distill_coef: float = 0.0
+
     def _excluded_save_params(self):
         # The search-teacher's `_correction_buffer` lives on the model (the callback↔train() hand-off),
         # but it is TRANSIENT scaffolding like the rollout buffer — and it holds a threading.Lock that
         # cloudpickle can't serialize (model.save would crash). Exclude it from the checkpoint (also keeps
         # checkpoints small — a full buffer is hundreds of MB of obs); it's re-created on resume, empty,
         # and the workers/cycle refill it. Mirrors SB3 excluding `rollout_buffer`.
-        return super()._excluded_save_params() + ["_correction_buffer"]
+        # `_distill_teacher` is a full frozen model (a foreign exploiter) attached at setup — never pickle
+        # it into our checkpoint; it is re-loaded from its own path on resume (like a stable opponent).
+        return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher"]
 
     @staticmethod
     def _searchteacher_loss(logits, action_mask, better_action, advantage,
@@ -349,6 +362,37 @@ class InstrumentedMaskablePPO(MaskablePPO):
             metrics = {"kl": float(kl), "pi_target_entropy": float(ent),
                        "agree_rate": float(agree), "n": int(pi_target.shape[0])}
         return kl, metrics
+
+    @staticmethod
+    def _distill_loss(student_logits, teacher_logits, action_mask, distill_mask):
+        """EXPLOITER DISTILLATION — masked ON-POLICY KL(π_teacher ‖ π_student) over the rollout minibatch.
+
+        ``student_logits`` / ``teacher_logits`` [B, n_actions] = raw ``get_distribution(...).distribution.
+        logits`` (the teacher's ALREADY under no_grad — it is frozen). ``action_mask`` [B, n_actions] = the
+        legal mask; ``distill_mask`` [B] or [B,1] = 1 on states where the trainee pilots the TEACHER's team
+        (the only states where the teacher's advice is on-distribution — elsewhere it would corrupt the
+        other teams, so those rows are excluded). Illegal logits → −∞ so both sides normalise over the legal
+        set; forward KL ``Σ p_teacher·(log p_teacher − log p_student)`` per row, masked-mean over the
+        teacher-team rows. Returns ``(kl, metrics)`` or ``None`` when the minibatch has no teacher-team rows
+        (the None guard keeps an empty subset from NaN-poisoning the loss). Pure + static → unit-testable."""
+        if student_logits is None or teacher_logits is None or distill_mask is None:
+            return None
+        m = distill_mask.reshape(-1).to(student_logits.dtype)              # [B] 1.0 on teacher-team states
+        n_on = m.sum()
+        if float(n_on) < 1.0:
+            return None                                                   # no teacher-team states this batch
+        neg = (action_mask.to(student_logits.dtype) - 1.0) * 1e9          # illegal → −inf (both sides)
+        logp_s = F.log_softmax(student_logits + neg, dim=-1)              # student log-probs over legal
+        p_t = F.softmax(teacher_logits + neg, dim=-1)                     # teacher probs over legal (detached)
+        kl_row = (p_t * (th.log(p_t.clamp_min(1e-9)) - logp_s)).sum(-1)   # [B] forward KL per state
+        loss = (kl_row * m).sum() / n_on.clamp(min=1e-6)                  # masked-mean over teacher-team rows
+        with th.no_grad():
+            agree_row = ((student_logits + neg).argmax(-1) == (teacher_logits + neg).argmax(-1)).float()
+            metrics = {"kl": float(loss),
+                       "agree_rate": float((agree_row * m).sum() / n_on.clamp(min=1e-6)),
+                       "coverage": float(m.mean()),                       # fraction of minibatch on teacher team
+                       "n": int(n_on.item())}
+        return loss, metrics
 
     @staticmethod
     def _win_prob_loss(logits, target, mask, margin=None):
@@ -997,6 +1041,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         pubval_metrics: dict[str, list[float]] = {}    # +PUBVAL: per-minibatch diagnostics (dict of lists)
         teacher_metrics: dict[str, list[float]] = {}    # +SEARCH-TEACHER: AWR per-minibatch diagnostics
         opd_metrics: dict[str, list[float]] = {}         # +OPD: on-policy self-distillation KL diagnostics
+        distill_metrics: dict[str, list[float]] = {}     # +DISTILL: exploiter-distillation KL diagnostics
         value_dist_metrics: dict[str, list[float]] = {}  # +VALUE-DIST: per-minibatch HL-Gauss diagnostics
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
         belief_aux_on = self.opp_belief_aux_coef > 0.0
@@ -1043,6 +1088,12 @@ class InstrumentedMaskablePPO(MaskablePPO):
             getattr(self, "_opd_on", False) and self.opd_coef != 0.0
             and getattr(self, "_correction_buffer", None) is not None
             and len(self._correction_buffer) > 0
+        )
+        # +DISTILL (gen3_exploiter_distill_v1): exploiter distillation. On when a frozen teacher model is
+        # attached AND the coef is non-zero. Per minibatch it forwards student + teacher on the ROLLOUT obs
+        # and folds a KL masked to the teacher-team states (`distill_mask`). OFF → byte-identical to upstream.
+        distill_on = (
+            getattr(self, "_distill_teacher", None) is not None and self.distill_coef != 0.0
         )
 
         continue_training = True
@@ -1358,6 +1409,36 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             for _vk, _vv in vd_m.items():
                                 value_dist_metrics.setdefault(_vk, []).append(float(_vv))
 
+                # +DISTILL (gen3_exploiter_distill_v1): ON-POLICY KL toward a frozen per-team SPECIALIST,
+                # masked to the rollout states where the trainee pilots the teacher's team (`distill_mask`).
+                # Its own get_distribution forwards — the student's (fresh, so its extractor re-stash can't
+                # clobber the aux losses above, which are already folded) + the FROZEN teacher's under
+                # no_grad. Folded at distill_coef; policy-only (never touches the value head). OFF (coef 0 /
+                # no teacher) → the whole block is skipped, loss byte-identical.
+                distill_term = None
+                if distill_on:
+                    _dmask = rollout_data.observations.get("distill_mask")
+                    if _dmask is not None and float(_dmask.reshape(-1).sum()) >= 1.0:
+                        _s_logits = self.policy.get_distribution(
+                            rollout_data.observations).distribution.logits
+                        # The frozen teacher has its OWN (older) obs space — it does NOT know the new
+                        # training-only keys (distill_mask, and any label keys added since it was saved).
+                        # SB3's preprocess_obs iterates the OBS keys against the space, so pass only the
+                        # keys the teacher's space knows (it needs just observation + action_mask anyway).
+                        _t_obs = {k: v for k, v in rollout_data.observations.items()
+                                  if k in self._distill_teacher.observation_space.spaces}
+                        with th.no_grad():
+                            _t_logits = self._distill_teacher.policy.get_distribution(
+                                _t_obs).distribution.logits
+                        d_out = self._distill_loss(
+                            _s_logits, _t_logits, rollout_data.action_masks, _dmask)
+                        if d_out is not None:
+                            d_loss, d_m = d_out
+                            distill_term = self.distill_coef * d_loss
+                            loss = loss + distill_term
+                            for _dk, _dv in d_m.items():
+                                distill_metrics.setdefault(_dk, []).append(float(_dv))
+
                 # +SEARCH-TEACHER: AWR policy distillation toward the verified-better action. The
                 # corrections are OFF-POLICY (searched eval-trace states, not in this rollout), so this
                 # samples its OWN minibatch from the standalone _correction_buffer and runs its OWN policy
@@ -1644,6 +1725,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if opd_metrics:
             for _ok, _ovals in opd_metrics.items():
                 self.logger.record(f"opd/{_ok}", float(np.mean(_ovals)))
+
+        # +DISTILL: exploiter-distillation KL diagnostics under their OWN `distill/` TB prefix. `kl` = the
+        # masked forward KL(π_teacher ‖ π_student) being minimized (should FALL as the student matches the
+        # specialist), `agree_rate` = student ↔ teacher mode agreement on teacher-team states (should RISE),
+        # `coverage` = fraction of the minibatch on the teacher's team, `n` = teacher-team state count.
+        # Empty (off / no teacher-team states in any minibatch) → not logged.
+        if distill_metrics:
+            for _dk, _dvals in distill_metrics.items():
+                self.logger.record(f"distill/{_dk}", float(np.mean(_dvals)))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

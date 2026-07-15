@@ -397,6 +397,7 @@ def _model_hparams(model) -> dict:
         "search_teacher_beta": float(getattr(model, "search_teacher_beta", 1.0)),
         "search_teacher_batch_size": int(getattr(model, "search_teacher_batch_size", 256)),
         "opd_coef": float(getattr(model, "opd_coef", 0.0)),
+        "distill_coef": float(getattr(model, "distill_coef", 0.0)),
         "opd_beta": float(getattr(model, "opd_beta", 1.0)),
         "batch_size": model.batch_size,
         "grad_accum_steps": int(getattr(model, "grad_accum_steps", 1)),
@@ -1121,6 +1122,25 @@ async def main():
     parser.add_argument("--opd-beta", "--opd_beta", dest="opd_beta", type=float, default=None,
                         help="OPD softmax temperature β for π' over the per-action backed-up values "
                              "(default 1.0). Higher β → flatter target.")
+    # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1) — pour a frozen per-team SPECIALIST (an
+    # --exploiter checkpoint) into the generalist via an ON-POLICY KL, masked to the states where the
+    # trainee pilots the teacher's team; the other (pool) states are the anti-forgetting rehearsal.
+    # Training-only (0 = byte-identical; NOT version-locked). designs/learning/generalist_specialist_amortization_gap.md
+    parser.add_argument("--distill-teacher", "--distill_teacher", dest="distill_teacher", type=str, default=None,
+                        help="Path to a frozen exploiter checkpoint (dir or .zip) to distil into the trainee "
+                             "as a per-team teacher (KL(π_teacher ‖ π_student) on the teacher-team states).")
+    parser.add_argument("--distill-teacher-team", "--distill_teacher_team", dest="distill_teacher_team",
+                        type=str, default=None,
+                        help="Showdown team file the teacher pilots (the team whose states get the KL). The "
+                             "trainee is biased toward this team by --distill-team-bias so it gets the signal.")
+    parser.add_argument("--distill-coef", "--distill_coef", dest="distill_coef", type=float, default=None,
+                        help="Exploiter-distillation KL weight (default 0.0 = OFF, loss byte-identical). "
+                             "Requires --distill-teacher + --distill-teacher-team. Training-only (inherited on "
+                             "a flagless resume). Watch distill/kl ↓ + distill/agree_rate ↑ + grad/distill_share.")
+    parser.add_argument("--distill-team-bias", "--distill_team_bias", dest="distill_team_bias",
+                        type=float, default=0.4,
+                        help="Fraction of trainee episodes biased to the teacher's team (rest = pool "
+                             "rehearsal). Default 0.4. Only used when --distill-coef > 0.")
     parser.add_argument("--search-teacher-batch-size", "--search_teacher_batch_size",
                         dest="search_teacher_batch_size", type=int, default=None,
                         help="Corrections sampled per train() for the AWR forward (default 256).")
@@ -1755,6 +1775,7 @@ async def main():
     _resolve("search_teacher_beta", 1.0)       # training-only AWR temperature
     _resolve("search_teacher_batch_size", 256)  # training-only per-train() correction sample
     _resolve("opd_coef", 0.0)                  # training-only OPD KL weight (inherited on flagless resume)
+    _resolve("distill_coef", 0.0)              # training-only exploiter-distillation KL weight (inherited on resume)
     _resolve("opd_beta", 1.0)                  # training-only OPD softmax temperature β
     _resolve("damage_topk_k", 0)               # v30 structural int (top-K incoming; version-checked, fresh-only)
     _resolve("damage_refine_rounds", 0)        # v31 structural int (iterative refine; version-checked, fresh-only)
@@ -1874,6 +1895,15 @@ async def main():
         # build π'), so it can't run standalone.
         parser.error("--opd-coef > 0 requires --search-teacher (OPD distils the search-teacher's "
                      "correction buffer; its workers build the π' targets)")
+    if args.distill_coef is not None and args.distill_coef < 0.0:
+        parser.error("--distill-coef must be >= 0 (0 = off)")
+    if args.distill_coef and args.distill_coef > 0 and not (args.distill_teacher and args.distill_teacher_team):
+        parser.error("--distill-coef > 0 requires BOTH --distill-teacher (the frozen exploiter checkpoint) "
+                     "and --distill-teacher-team (the team it pilots, whose states get the KL)")
+    if args.distill_coef and args.distill_coef > 0 and args.trainee_team:
+        parser.error("--distill-coef is mutually exclusive with --trainee-team: distillation biases the "
+                     "trainee toward the teacher team via --distill-team-bias while keeping the pool for "
+                     "rehearsal; a hard pin would remove the rehearsal (and cause forgetting)")
     if args.move_belief_mode != "off":
         # The MoveBelief module reads/refines the opp slots, so (like the BeliefHead) it requires the
         # unrevealed slots to be attendable — auto-enable the unmask flag (the model side hard-gates
@@ -2208,6 +2238,24 @@ async def main():
     _specialist_team_str = matchup.trainee_teams.pin_str   # → eval callbacks (trainee_team_str)
     trainee_teambuilder = matchup.trainee_teams.build(all_teams, sample_teams)
     opponent_teambuilder = matchup.opponent_teams.build(all_teams, sample_teams)
+    # gen3_exploiter_distill_v1: bias the trainee toward the teacher's team (rest = pool rehearsal) so it
+    # gets enough distillation signal, and precompute the teacher team's species id-set for the env's
+    # per-state `distill_mask`. --distill-coef is mutually exclusive with --trainee-team (a pin would
+    # defeat the mixed-team rehearsal that guards against forgetting).
+    args._distill_species = None
+    if args.distill_coef and args.distill_coef > 0 and args.distill_teacher_team:
+        from poke_env.teambuilder.teambuilder import Teambuilder as _TB
+        from poke_env.data.normalize import to_id_str as _to_id
+        with open(args.distill_teacher_team, encoding="utf-8") as _df:
+            _distill_team_str = _df.read()
+        _dmons = _TB.parse_showdown_team(_distill_team_str)
+        # poke-env parks the species in `nickname` when the export has no nickname → fall back to it.
+        args._distill_species = frozenset(_to_id(m.species or m.nickname) for m in _dmons)
+        trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=[_distill_team_str],
+                                              bias_prob=args.distill_team_bias)
+        emit(f"🧪 [DISTILL] teacher={args.distill_teacher} coef={args.distill_coef} | trainee biased "
+             f"{args.distill_team_bias:.0%} → teacher team ({', '.join(sorted(args._distill_species))}); "
+             f"rest = pool rehearsal")
     for _ln in matchup.summary_lines():
         emit(_ln)
     if _specialist_team_str:
@@ -2441,6 +2489,10 @@ async def main():
                     # DEFENSIVE-exploration flag (gen3_defensive_entropy_v1): emit only when the boost is on, so
                     # the state-conditioned entropy term in the PPO loss can read it. Off = no key, no cost.
                     emit_defensive_opportunity=(args.defensive_entropy_boost > 1.0),
+                    # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1): the teacher team's species id-set
+                    # (None unless --distill-coef>0). The env emits `distill_mask`=1 on states where the
+                    # trainee pilots this team — the only states the distillation KL folds. None → no key.
+                    distill_team_species=getattr(args, "_distill_species", None),
                     # The OPPONENT side's real team source (agent2 does the networking for every
                     # per-episode opponent; the rotated Players are decision-functions whose own
                     # builders are inert). Without this, PokeEnv fed `team=` (the TRAINEE builder)
@@ -3127,6 +3179,27 @@ async def main():
         # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
         # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
         model.opd_coef = args.opd_coef
+        # gen3_exploiter_distill_v1: attach the frozen per-team teacher (foreign exploiter) on the training
+        # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
+        # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
+        model.distill_coef = float(args.distill_coef or 0.0)
+        model._distill_teacher = None
+        if args.distill_coef and args.distill_coef > 0 and args.distill_teacher:
+            from agents.model.snapshot import (
+                current_model_version as _cmv_d, load_foreign_opponent as _lfo_d)
+            from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _rzc_d
+            try:
+                _zip_d, _cfg_d, _ = _rzc_d(args.distill_teacher, None)   # run-dir → (zip, config)
+                _cv_d = _cmv_d(mappings, **_run_arch_toggles(args))
+                _tm_d, _ = _lfo_d(_zip_d, current_version=_cv_d,
+                                  device=str(model.device), config_path=_cfg_d)
+                _tm_d.policy.set_training_mode(False)
+                model._distill_teacher = _tm_d
+                emit(f"🧪 [DISTILL] teacher attached on {model.device} from {args.distill_teacher}")
+            except Exception as _e_d:  # noqa: BLE001 — bad/incompatible teacher weights
+                print(f"\n[Distill] FATAL: could not load --distill-teacher {args.distill_teacher}: {_e_d}")
+                sys.stdout.flush()
+                os._exit(int(TrainExitCode.FATAL_CONFIG))
         model.opd_beta = args.opd_beta
         model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
         if args.search_teacher:
@@ -3418,6 +3491,27 @@ async def main():
         # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
         # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
         model.opd_coef = args.opd_coef
+        # gen3_exploiter_distill_v1: attach the frozen per-team teacher (foreign exploiter) on the training
+        # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
+        # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
+        model.distill_coef = float(args.distill_coef or 0.0)
+        model._distill_teacher = None
+        if args.distill_coef and args.distill_coef > 0 and args.distill_teacher:
+            from agents.model.snapshot import (
+                current_model_version as _cmv_d, load_foreign_opponent as _lfo_d)
+            from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _rzc_d
+            try:
+                _zip_d, _cfg_d, _ = _rzc_d(args.distill_teacher, None)   # run-dir → (zip, config)
+                _cv_d = _cmv_d(mappings, **_run_arch_toggles(args))
+                _tm_d, _ = _lfo_d(_zip_d, current_version=_cv_d,
+                                  device=str(model.device), config_path=_cfg_d)
+                _tm_d.policy.set_training_mode(False)
+                model._distill_teacher = _tm_d
+                emit(f"🧪 [DISTILL] teacher attached on {model.device} from {args.distill_teacher}")
+            except Exception as _e_d:  # noqa: BLE001 — bad/incompatible teacher weights
+                print(f"\n[Distill] FATAL: could not load --distill-teacher {args.distill_teacher}: {_e_d}")
+                sys.stdout.flush()
+                os._exit(int(TrainExitCode.FATAL_CONFIG))
         model.opd_beta = args.opd_beta
         model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
         if args.search_teacher:

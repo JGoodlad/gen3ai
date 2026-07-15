@@ -122,6 +122,62 @@ def test_grad_accum_marker_present_in_override():
     assert "(loss / accum).backward()" in src
 
 
+# --------------------------------------------------------------------------------------
+# Exploiter distillation (gen3_exploiter_distill_v1): masked ON-POLICY KL(π_teacher ‖ π_student).
+# --------------------------------------------------------------------------------------
+
+
+def test_distill_loss_identical_logits_zero_kl():
+    """Student == teacher ⇒ KL 0, full agreement, full coverage."""
+    logits = th.randn(4, 6)
+    out = InstrumentedMaskablePPO._distill_loss(
+        logits.clone(), logits.clone(), th.ones(4, 6), th.ones(4, 1))
+    assert out is not None
+    loss, m = out
+    assert float(loss) == pytest.approx(0.0, abs=1e-6)
+    assert m["agree_rate"] == pytest.approx(1.0)
+    assert m["coverage"] == pytest.approx(1.0)
+    assert m["n"] == 4
+
+
+def test_distill_loss_masks_non_teacher_rows():
+    """Only the distill_mask==1 rows contribute; loss == mean of their per-row KL."""
+    student, teacher = th.randn(4, 5), th.randn(4, 5)
+    amask = th.ones(4, 5)
+    dmask = th.tensor([[1.0], [0.0], [1.0], [0.0]])
+    loss, m = InstrumentedMaskablePPO._distill_loss(student, teacher, amask, dmask)
+    assert m["n"] == 2 and m["coverage"] == pytest.approx(0.5)
+    logp = F.log_softmax(student, -1)
+    p = F.softmax(teacher, -1)
+    kl_row = (p * (th.log(p.clamp_min(1e-9)) - logp)).sum(-1)
+    assert float(loss) == pytest.approx(float((kl_row[0] + kl_row[2]) / 2), rel=1e-5)
+
+
+def test_distill_loss_none_when_no_teacher_rows():
+    """A minibatch with zero teacher-team states ⇒ None (no NaN-poisoning an empty subset)."""
+    assert InstrumentedMaskablePPO._distill_loss(
+        th.randn(3, 4), th.randn(3, 4), th.ones(3, 4), th.zeros(3, 1)) is None
+
+
+def test_distill_loss_respects_illegal_mask():
+    """An illegal action the teacher 'wants' must not leak into the KL (both sides masked to -inf)."""
+    student, teacher = th.zeros(2, 4), th.zeros(2, 4)
+    teacher[:, 3] = 50.0                                  # teacher spikes the ILLEGAL action
+    amask = th.tensor([[1.0, 1.0, 1.0, 0.0], [1.0, 1.0, 1.0, 0.0]])
+    loss, _ = InstrumentedMaskablePPO._distill_loss(student, teacher, amask, th.ones(2, 1))
+    assert float(loss) == pytest.approx(0.0, abs=1e-4)   # both uniform over the legal {0,1,2}
+
+
+def test_distill_loss_grad_flows_student_only():
+    """Gradient flows through the student logits; the (detached) teacher gets none."""
+    student = th.randn(3, 5, requires_grad=True)
+    teacher = th.randn(3, 5)                              # no requires_grad → frozen teacher
+    loss, _ = InstrumentedMaskablePPO._distill_loss(student, teacher, th.ones(3, 5), th.ones(3, 1))
+    loss.backward()
+    assert student.grad is not None and th.isfinite(student.grad).all()
+    assert teacher.grad is None
+
+
 class _CounterDictEnv(gym.Env):
     """Tiny Dict-obs maskable env (mirrors Gen3Env's {observation, action_mask} space). The
     observation counts up each step so the policy sees varied inputs → non-trivial gradients.

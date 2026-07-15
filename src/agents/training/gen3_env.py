@@ -48,7 +48,8 @@ class Gen3Env(SinglesEnv):
                  move_belief_mode: str = "off", emit_belief_target: bool = False,
                  emit_win_target: bool = False, emit_spread_labels: bool = False,
                  emit_hp_type_labels: bool = False, emit_defensive_opportunity: bool = False,
-                 emit_pubval_target: bool = False, opponent_team=None, **kwargs):
+                 emit_pubval_target: bool = False, distill_team_species=None,
+                 opponent_team=None, **kwargs):
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
@@ -142,6 +143,15 @@ class Gen3Env(SinglesEnv):
         if emit_pubval_target:
             from agents.training.pubval import PubValModel
             self._pubval_model = PubValModel.load()
+        # gen3_exploiter_distill_v1: `distill_mask` [1] = 1.0 iff the trainee's CURRENT team IS the frozen
+        # distillation teacher's team (the exploiter's pinned team). Read ONLY by the exploiter-distillation
+        # KL in the PPO loss, which masks the teacher's advice to these states (elsewhere the specialist is
+        # off-distribution and would corrupt the other teams). `distill_team_species` is the teacher team's
+        # species id-set (frozenset), matched against the trainee's own team (`battle1.team`). None → the key
+        # is not emitted. Cached per battle (the team is fixed for a battle) in `_distill_active`.
+        self._emit_distill_mask = distill_team_species is not None
+        self._distill_team_species = distill_team_species
+        self._distill_active = None  # per-battle cache; recomputed once the trainee team is known
         # Per-battle cache of the fresh per-mon identity encodes (keyed by species id). A hidden mon is
         # untouched (full HP, no status) until revealed, at which point it leaves the believed set, so a
         # mon's fresh encode is stable while it is a target — caching is exact. Cleared on reset().
@@ -220,6 +230,11 @@ class Gen3Env(SinglesEnv):
             # per-step value) + a validity mask. Read ONLY by the pubval aux loss.
             base_obs["pubval_target"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
             base_obs["pubval_mask"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
+        if self._emit_distill_mask:
+            # gen3_exploiter_distill_v1: 1.0 iff the trainee pilots the distillation teacher's team.
+            # Read ONLY by the exploiter-distillation KL in the PPO loss (gates where the specialist's
+            # advice is on-distribution). A REAL per-step value (constant within a battle).
+            base_obs["distill_mask"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
         # SB3 reads the SINGULAR observation_space (threaded as the VecEnv space); the PLURAL
         # observation_spaces is intercepted + rewrapped by PokeEnv.__setattr__ (it would drop the
         # belief keys) and is not the SB3-facing space, so it can stay minimal.
@@ -528,6 +543,24 @@ class Gen3Env(SinglesEnv):
             v, m = self._pubval_target()
             agent_obs["pubval_target"] = np.array([v], dtype=np.float32)
             agent_obs["pubval_mask"] = np.array([m], dtype=np.float32)
+        if self._emit_distill_mask:
+            agent_obs["distill_mask"] = np.array([self._distill_mask()], dtype=np.float32)
+
+    def _distill_mask(self) -> float:
+        """gen3_exploiter_distill_v1: 1.0 iff the trainee's CURRENT team's species id-set equals the
+        distillation teacher's team — the ONLY states where the frozen specialist's advice is
+        on-distribution. Cached per battle (`battle1.team` is fixed for a battle); 0.0 (uncached) until the
+        trainee's full 6-mon team is known (early reset). Both sides use the SAME `to_id_str(species)` id-set
+        (the teacher team's set is precomputed in train_rl_agent from the pinned team file)."""
+        if self._distill_active is not None:
+            return 1.0 if self._distill_active else 0.0
+        b1 = getattr(self, "battle1", None)
+        team = getattr(b1, "team", None) if b1 is not None else None
+        if not team or len(team) < TEAM_SIZE:
+            return 0.0  # team not fully known yet — don't cache a partial set
+        cur = frozenset(to_id_str(m.species) for m in team.values())
+        self._distill_active = (cur == self._distill_team_species)
+        return 1.0 if self._distill_active else 0.0
 
     def _pubval_target(self) -> "tuple[float, float]":
         """gen3_pubval_aux_v1: evaluate the FROZEN human-replay public value on the current board →
@@ -588,7 +621,7 @@ class Gen3Env(SinglesEnv):
             out = super().step(action)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
                     or self._emit_hp_type_labels or self._emit_defensive_opportunity
-                    or self._emit_pubval_target):
+                    or self._emit_pubval_target or self._emit_distill_mask):
                 agent_obs = out[0].get(self.agent1.username)
                 if agent_obs is not None:
                     self._merge_training_keys(agent_obs)
@@ -603,6 +636,7 @@ class Gen3Env(SinglesEnv):
         self.reward_manager.report_episode(getattr(self, "battle1", None))
         self._tracker.reset()
         self._target_encode_cache = {}   # new battle → new opponent team → drop the fresh-encode cache
+        self._distill_active = None      # new battle → recompute whether the trainee is on the teacher's team
         try:
             if hasattr(self, "agent1"):
                 self.agent1.save_replays = None
@@ -611,7 +645,7 @@ class Gen3Env(SinglesEnv):
             out = super().reset(*args, **kwargs)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
                     or self._emit_hp_type_labels or self._emit_defensive_opportunity
-                    or self._emit_pubval_target):
+                    or self._emit_pubval_target or self._emit_distill_mask):
                 obs, info = out
                 agent_obs = obs.get(self.agent1.username)
                 if agent_obs is not None:
