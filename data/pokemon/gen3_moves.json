@@ -358,7 +358,8 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "noSleepTalk": true
     },
     "astonish": {
         "name": "Astonish",
@@ -617,7 +618,8 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "noSleepTalk": true
     },
     "bind": {
         "name": "Bind",
@@ -927,7 +929,9 @@
         "pp": 5,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "noSleepTalk": true,
+        "isCharge": true
     },
     "brickbreak": {
         "name": "Brick Break",
@@ -1814,7 +1818,9 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "noSleepTalk": true,
+        "isCharge": true
     },
     "disable": {
         "name": "Disable",
@@ -1868,7 +1874,9 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "noSleepTalk": true,
+        "isCharge": true
     },
     "dizzypunch": {
         "name": "Dizzy Punch",
@@ -2339,7 +2347,8 @@
         "pp": 5,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "failEncore": true
     },
     "endeavor": {
         "name": "Endeavor",
@@ -2951,7 +2960,8 @@
         "pp": 15,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "isCharge": true
     },
     "focusenergy": {
         "name": "Focus Energy",
@@ -3005,7 +3015,8 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "noSleepTalk": true
     },
     "followme": {
         "name": "Follow Me",
@@ -5468,7 +5479,9 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "noSleepTalk": true,
+        "failMimic": true
     },
     "milkdrink": {
         "name": "Milk Drink",
@@ -5522,7 +5535,9 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "failEncore": true,
+        "failMimic": true
     },
     "mindreader": {
         "name": "Mind Reader",
@@ -5630,7 +5645,9 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "noSleepTalk": true,
+        "failEncore": true
     },
     "mist": {
         "name": "Mist",
@@ -6878,6 +6895,8 @@
         "noPPBoosts": false,
         "contact": false,
         "sound": false,
+        "noSleepTalk": true,
+        "isCharge": true,
         "critRatio": 2
     },
     "recover": {
@@ -7944,7 +7963,9 @@
         "pp": 1,
         "noPPBoosts": true,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "failEncore": true,
+        "failMimic": true
     },
     "skillswap": {
         "name": "Skill Swap",
@@ -7998,7 +8019,9 @@
         "pp": 15,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "noSleepTalk": true,
+        "isCharge": true
     },
     "skyattack": {
         "name": "Sky Attack",
@@ -8028,6 +8051,8 @@
         "noPPBoosts": false,
         "contact": false,
         "sound": false,
+        "noSleepTalk": true,
+        "isCharge": true,
         "critRatio": 2
     },
     "skyuppercut": {
@@ -8191,7 +8216,8 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "noSleepTalk": true
     },
     "sludge": {
         "name": "Sludge",
@@ -8442,7 +8468,9 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "noSleepTalk": true,
+        "isCharge": true
     },
     "sonicboom": {
         "name": "Sonic Boom",
@@ -8862,7 +8890,9 @@
         "pp": 1,
         "noPPBoosts": true,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "failEncore": true,
+        "failMimic": true
     },
     "stunspore": {
         "name": "Stun Spore",
@@ -9775,7 +9805,8 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "failEncore": true
     },
     "triattack": {
         "name": "Tri Attack",
@@ -9945,7 +9976,8 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": false,
-        "sound": true
+        "sound": true,
+        "noSleepTalk": true
     },
     "vinewhip": {
         "name": "Vine Whip",

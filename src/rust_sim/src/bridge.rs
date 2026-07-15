@@ -154,6 +154,22 @@ pub fn resolve_choice(state: &BattleState, side: usize, choice: &WireChoice) -> 
         WireChoice::MoveName(id) => {
             let want = crate::dex::to_id(id);
             let mon = &state.sides[side].pokemon[state.sides[side].active];
+            // MOVE-LOCKED request (`gen3_move_coverage_batch4c_v1`): the request offered a
+            // SINGLE pseudo/locked entry, so the wire's `move recharge` / `move solarbeam`
+            // resolves to slot 1 of the REQUEST = the engine's Move(0) (the sim accepts
+            // both `move 1` and `move recharge` — probed). Matched against the entry's id.
+            if mon.move_locked() {
+                let locked_id = if mon.must_recharge {
+                    "recharge".to_string()
+                } else {
+                    mon.two_turn
+                        .as_ref()
+                        .and_then(|t| mon.set.moves.get(t.move_index))
+                        .map(|m| crate::dex::to_id(m))
+                        .unwrap_or_default()
+                };
+                return if want == locked_id { Some(Choice::Move(0)) } else { None };
+            }
             mon.set
                 .moves
                 .iter()
@@ -551,6 +567,34 @@ fn serialize_active(
 ) -> String {
     let s = &state.sides[side];
     let mon = &s.pokemon[s.active];
+    // MOVE-LOCKED request (`gen3_move_coverage_batch4c_v1` — Hyper Beam's mustrecharge /
+    // Solar Beam's twoturnmove): the request offers a SINGLE pseudo/locked move entry
+    // with ONLY `{move,id}` — NO pp/maxpp/target/disabled keys (Showdown's lockedmove
+    // request serialization, probe-verified:
+    // `{"moves":[{"move":"Recharge","id":"recharge"}],"trapped":true}` /
+    // `{"moves":[{"move":"Solar Beam","id":"solarbeam"}],"trapped":true}`) — plus the
+    // FIRM `trapped:true` (below; no maybeTrapped phase — a rejected switch draws
+    // `[Invalid choice] Can't switch: The active Pokémon is trapped` with no re-request,
+    // like Shadow Tag). HONEST SCOPE: probe-shaped, not yet byte-gated by a bridge
+    // capture scenario.
+    if mon.move_locked() {
+        let entry = if mon.must_recharge {
+            "{\"move\":\"Recharge\",\"id\":\"recharge\"}".to_string()
+        } else {
+            let mid = mon
+                .two_turn
+                .as_ref()
+                .and_then(|t| mon.set.moves.get(t.move_index))
+                .cloned()
+                .unwrap_or_else(|| "solarbeam".to_string());
+            let (id, name) = active_move_display(&mid, dex);
+            format!("{{\"move\":\"{}\",\"id\":\"{}\"}}", json_escape(&name), json_escape(&id))
+        };
+        // The lockedmove request shows `trapped:true` iff a live bench exists (the
+        // `canSwitchIn` gate of getMoveRequestData — with no bench neither flag shows).
+        let flag = if has_live_bench(state, side) { ",\"trapped\":true" } else { "" };
+        return format!("{{\"moves\":[{entry}]{flag}}}");
+    }
     // Struggle substitution: a mon with NO usable move offers only Struggle.
     let must_struggle = mon.must_struggle(dex);
     let moves_json = if must_struggle {
@@ -820,12 +864,15 @@ pub fn run_full_battle_bridge_chunked_ended(
             // Trapped-switch rejection at a MOVE boundary (see the flat driver's docs +
             // `gen3_shadowtag_firm_trap_v1`). The `|error|` and the re-request are SEPARATE
             // chunks (the sim flushes each on the rejected write / the update).
+            // A MOVE-LOCKED mon (mustrecharge / charging, `gen3_move_coverage_batch4c_v1`)
+            // rejects a switch with the FIRM `[Invalid choice]` form + NO re-request
+            // (probed — the request already showed `trapped:true`), like Shadow Tag.
+            let locked = state.sides[s].pokemon[state.sides[s].active].move_locked();
             if kinds[s] == SideRequest::Move
                 && matches!(resolved, Choice::Switch(_))
-                && state.is_trapped(s, dex)
-                && has_live_bench(state, s)
+                && ((state.is_trapped(s, dex) && has_live_bench(state, s)) || locked)
             {
-                if state.trap_is_firm(s, dex) {
+                if locked || state.trap_is_firm(s, dex) {
                     chunks.push_chunk(
                         s,
                         vec!["|error|[Invalid choice] Can't switch: The active Pokémon is trapped"
@@ -855,7 +902,10 @@ pub fn run_full_battle_bridge_chunked_ended(
         for s in 0..2 {
             if matches!(got[s], Some(Choice::Move(_))) {
                 let mon = &state.sides[s].pokemon[state.sides[s].active];
-                if mon.must_struggle(dex) {
+                // A MOVE-LOCKED mon's single-entry request never Struggle-substitutes
+                // (`gen3_move_coverage_batch4c_v1` — the locked move/recharge is offered
+                // regardless of PP).
+                if !mon.move_locked() && mon.must_struggle(dex) {
                     let name = display_name(mon, dex);
                     chunks.push_chunk(
                         s,

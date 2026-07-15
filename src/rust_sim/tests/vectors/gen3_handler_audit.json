@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 74,
    "items": 59,
-   "conditions": 34,
-   "moves": 204,
-   "rows": 767
+   "conditions": 46,
+   "moves": 235,
+   "rows": 889
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); NOT in MODELED/NOOP so the e2e filter excludes its teams",
@@ -850,6 +850,48 @@
    "anchor": "turn.rs::try_set_status",
    "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
   },
+  "condition:charge:onAfterMove": {
+   "disposition": "implemented",
+   "fp": "fn:dffe9569:onAfterMove(pokemon, target, move) { if (move.id !== \"charge\") { pokemon.removeVolatile(\"charge\"); } }",
+   "anchor": "turn.rs::turn_loop",
+   "reason": "the post-run_move consumption: any executed/aborted move != charge removes it (-end [silent]); keyed on the OUTER queued move (a Sleep Talk turn consumes on sleeptalk; the pursuit-interrupt bare useMove does NOT — no runMove → no AfterMove; MC93/MC98)"
+  },
+  "condition:charge:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:4b49c126:onBasePower(basePower, attacker, defender, move) { if (move.type === \"Electric\") { this.debug(\"charge boost\"); return th",
+   "anchor": "turn.rs::run_move",
+   "reason": "the ×2 BP-chain fold for the next ELECTRIC move (MC93)"
+  },
+  "condition:charge:onBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:9",
+   "anchor": "turn.rs::run_move",
+   "reason": "the ×2 BP-chain fold for the next ELECTRIC move (MC93)"
+  },
+  "condition:charge:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:fa127fe8:onEnd(pokemon) { this.add(\"-end\", pokemon, \"Charge\", \"[silent]\"); }",
+   "anchor": "turn.rs::turn_loop",
+   "reason": "the post-run_move consumption: any executed/aborted move != charge removes it (-end [silent]); keyed on the OUTER queued move (a Sleep Talk turn consumes on sleeptalk; the pursuit-interrupt bare useMove does NOT — no runMove → no AfterMove; MC93/MC98)"
+  },
+  "condition:charge:onMoveAborted": {
+   "disposition": "implemented",
+   "fp": "fn:da4136ac:onMoveAborted(pokemon, target, move) { if (move.id !== \"charge\") { pokemon.removeVolatile(\"charge\"); } }",
+   "anchor": "turn.rs::turn_loop",
+   "reason": "the post-run_move consumption: any executed/aborted move != charge removes it (-end [silent]); keyed on the OUTER queued move (a Sleep Talk turn consumes on sleeptalk; the pursuit-interrupt bare useMove does NOT — no runMove → no AfterMove; MC93/MC98)"
+  },
+  "condition:charge:onRestart": {
+   "disposition": "implemented",
+   "fp": "fn:4cf45db1:onRestart(pokemon, source, effect) { if (effect && [\"Electromorphosis\", \"Wind Power\"].includes(effect.name)) { this.add(",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the charge arm sets MonState::charge (onRestart re-adds, -start again); gen3 has NO +1 SpD"
+  },
+  "condition:charge:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:66eaede6:onStart(pokemon, source, effect) { if (effect && [\"Electromorphosis\", \"Wind Power\"].includes(effect.name)) { this.add(\"-",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the charge arm sets MonState::charge (onRestart re-adds, -start again); gen3 has NO +1 SpD"
+  },
   "condition:choicelock:onDisableMove": {
    "disposition": "implemented",
    "fp": "fn:f52ed89b:onDisableMove(pokemon) { if (!pokemon.getItem().isChoice || !pokemon.hasMove(this.effectState.move)) { pokemon.removeVol",
@@ -885,6 +927,42 @@
    "anchor": "turn.rs::add_confusion",
    "reason": "the random(2,6) duration; the lockedmove-fatigue branch is unreachable (lockedmove moves rejected)"
   },
+  "condition:counter:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "state.rs::reactive",
+   "reason": "the duration:1 volatile — a NO_ORDER/subOrder-2 residual duration handler (the counter-mirror tie-shuffle); cleared at turn-top (clear_flinch) / switch-out / faint"
+  },
+  "condition:counter:onDamage": {
+   "disposition": "implemented",
+   "fp": "fn:23c75c2a:onDamage(damage, target, source, effect) { if (effect.effectType === \"Move\" && !source.isAlly(target) && (effect.categor",
+   "anchor": "turn.rs::record_reactive_hit",
+   "reason": "the priority −101 (LAST — post-Focus-Band) recorder: 2× each qualifying DIRECT foe Move hit (counter: Physical || bare hiddenpower; mirrorcoat: Special && !hiddenpower), OVERWRITING per hit (multihit → 2× the LAST strike); a sub-absorbed hit never fires the mon Damage event"
+  },
+  "condition:counter:onDamagePriority": {
+   "disposition": "implemented",
+   "fp": "val:-101",
+   "anchor": "turn.rs::record_reactive_hit",
+   "reason": "the priority −101 (LAST — post-Focus-Band) recorder: 2× each qualifying DIRECT foe Move hit (counter: Physical || bare hiddenpower; mirrorcoat: Special && !hiddenpower), OVERWRITING per hit (multihit → 2× the LAST strike); a sub-absorbed hit never fires the mon Damage event — (order metadata of the sibling onDamage handler)"
+  },
+  "condition:counter:onRedirectTarget": {
+   "disposition": "implemented",
+   "fp": "fn:cdd5a2eb:onRedirectTarget(target, source, source2) { if (source !== this.effectState.target || !this.effectState.slot) return; re",
+   "anchor": "turn.rs::run_fixed_damage_move",
+   "reason": "target `scripted` redirects at the recorded damager slot — in gen-3 SINGLES that always resolves to the CURRENT foe active (probed C2: a foe switch fails the counter announcing the NEW active), which is what the port targets"
+  },
+  "condition:counter:onRedirectTargetPriority": {
+   "disposition": "implemented",
+   "fp": "val:-1",
+   "anchor": "turn.rs::run_fixed_damage_move",
+   "reason": "target `scripted` redirects at the recorded damager slot — in gen-3 SINGLES that always resolves to the CURRENT foe active (probed C2: a foe switch fails the counter announcing the NEW active), which is what the port targets — (order metadata of the sibling onRedirectTarget handler)"
+  },
+  "condition:counter:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:c32788bc:onStart(target, source, move) { this.effectState.slot = null; this.effectState.damage = 0; }",
+   "anchor": "turn.rs::run_full_battle",
+   "reason": "the order-5 beforeTurnMove lays the reactive volatile with a RESET record ({slot:null,damage:0} — prev-turn damage never counts); draw-free, no protocol line"
+  },
   "condition:curse:onResidual": {
    "disposition": "implemented",
    "fp": "fn:bd1f08df:onResidual(pokemon) { this.damage(pokemon.baseMaxhp / 4); }",
@@ -908,6 +986,36 @@
    "fp": "fn:a2741b5c:onStart(pokemon, source) { this.add(\"-start\", pokemon, \"Curse\", `[of] ${source}`); }",
    "anchor": "turn.rs::run_status_move",
    "reason": "the |-start|<foe>|Curse|[of] <user> line — EMITTED at the ghost-curse lay (volatile_start_of)"
+  },
+  "condition:destinybond:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:9a159a99:onBeforeMove(pokemon, target, move) { if (move.id === \"destinybond\") return; this.debug(\"removing Destiny Bond before at",
+   "anchor": "turn.rs::run_move",
+   "reason": "the window closes at the users next move ATTEMPT: priority −1 removal for any move != destinybond + the onMoveAborted removal at every cant site (MC84)"
+  },
+  "condition:destinybond:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:-1",
+   "anchor": "turn.rs::run_move",
+   "reason": "the window closes at the users next move ATTEMPT: priority −1 removal for any move != destinybond + the onMoveAborted removal at every cant site (MC84)"
+  },
+  "condition:destinybond:onFaint": {
+   "disposition": "implemented",
+   "fp": "fn:f63bb9ee:onFaint(target, source, effect) { if (!source || !effect || target.isAlly(source)) return; if (effect.effectType === \"Mo",
+   "anchor": "turn.rs::process_faints",
+   "reason": "the mutual-faint chain: |faint| victim → -activate → the killers hp zeroed + drained in the SAME faintMessages worklist (a foe-Move KO only — the damage sites record destiny_bond_ko_by; residual/futuremove/sub-absorbed never trigger; MC83/MC85)"
+  },
+  "condition:destinybond:onMoveAborted": {
+   "disposition": "implemented",
+   "fp": "fn:f229ab84:onMoveAborted(pokemon, target, move) { pokemon.removeVolatile(\"destinybond\"); }",
+   "anchor": "turn.rs::run_move",
+   "reason": "the window closes at the users next move ATTEMPT: priority −1 removal for any move != destinybond + the onMoveAborted removal at every cant site (MC84)"
+  },
+  "condition:destinybond:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:a60aa9d7:onStart(pokemon) { this.add(\"-singlemove\", pokemon, \"Destiny Bond\"); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the DB arm: a ZERO-draw cast; the re-cast draw-free self-removes+re-adds (the flag is idempotent) — |-singlemove| each cast, PP −1 each"
   },
   "condition:disable:durationCallback": {
    "disposition": "implemented",
@@ -944,6 +1052,78 @@
    "fp": "fn:d9184044:onStart(pokemon) { if (!this.queue.willMove(pokemon)) { this.effectState.duration++; } if (!pokemon.lastMove) { return f",
    "anchor": "state.rs::disable",
    "reason": "the willMove +1 duration store (gen3_taunt_disable_v1)"
+  },
+  "condition:encore:durationCallback": {
+   "disposition": "implemented",
+   "fp": "fn:92b61f6c:durationCallback() { return this.random(3, 7); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the encore arm: acc-100 draw → protect block → already-encored fail (acc ONLY) → durationCallback random(3,7) → the onStart rejects (no lastMove / failencore / 0-PP lastMove, draws consumed) → stored = willMove ? rolled : rolled+1 (MC79/MC80)"
+  },
+  "condition:encore:onDisableMove": {
+   "disposition": "implemented",
+   "fp": "fn:c3176841:onDisableMove(pokemon) { if (!this.effectState.move || !pokemon.hasMove(this.effectState.move)) { return; } for (const m",
+   "anchor": "state.rs::move_usable",
+   "reason": "every non-encored slot is un-selectable while the volatile is up (the request disabled shape; a switch stays legal)"
+  },
+  "condition:encore:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:cfe58a0d:onEnd(target) { this.add(\"-end\", target, \"Encore\"); }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-10/subOrder-14 tick (ResidualAction::EncoreDuration): decrement + the 0-PP EARLY -end (MC82) + the expiry -end"
+  },
+  "condition:encore:onOverrideAction": {
+   "disposition": "implemented",
+   "fp": "fn:7c241952:onOverrideAction(pokemon, target, move) { if (move.id !== this.effectState.move) return this.effectState.move; }",
+   "anchor": "turn.rs::turn_loop",
+   "reason": "a queued DIFFERENT move executes AS the encored move — the ENCORED slot PP deducts, the announce shows the encored move (MC79/EN7)"
+  },
+  "condition:encore:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:6b4e977c:onResidual(target) { const moveSlot = target.getMoveData(this.effectState.move); if (!moveSlot || moveSlot.pp <= 0) { ta",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-10/subOrder-14 tick (ResidualAction::EncoreDuration): decrement + the 0-PP EARLY -end (MC82) + the expiry -end"
+  },
+  "condition:encore:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-10/subOrder-14 tick (ResidualAction::EncoreDuration): decrement + the 0-PP EARLY -end (MC82) + the expiry -end"
+  },
+  "condition:encore:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:14",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-10/subOrder-14 tick (ResidualAction::EncoreDuration): decrement + the 0-PP EARLY -end (MC82) + the expiry -end"
+  },
+  "condition:encore:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:ff78b1e3:onStart(target) { let move = target.lastMove; if (!move || target.volatiles[\"dynamax\"]) return false; if (move.isMax && ",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the encore arm: acc-100 draw → protect block → already-encored fail (acc ONLY) → durationCallback random(3,7) → the onStart rejects (no lastMove / failencore / 0-PP lastMove, draws consumed) → stored = willMove ? rolled : rolled+1 (MC79/MC80)"
+  },
+  "condition:endure:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the duration:1 volatile registers a NO_ORDER/subOrder-2 residual duration handler (the endure+stall intra-mon tie — ONE shuffle on every SUCCESS turn); cleared at turn-top (clear_flinch)"
+  },
+  "condition:endure:onDamage": {
+   "disposition": "implemented",
+   "fp": "fn:a308a3d6:onDamage(damage, target, source, effect) { if (effect?.effectType === \"Move\" && damage >= target.hp) { this.add(\"-activa",
+   "anchor": "turn.rs::endure_clamp",
+   "reason": "the priority −10 survive-at-1 clamp on every MOVE-effect Damage site (plain / fixed / multihit strike / futuremove resolve); residual damage is NOT clamped (MC86/MC87)"
+  },
+  "condition:endure:onDamagePriority": {
+   "disposition": "implemented",
+   "fp": "val:-10",
+   "anchor": "turn.rs::endure_clamp",
+   "reason": "the priority −10 survive-at-1 clamp on every MOVE-effect Damage site (plain / fixed / multihit strike / futuremove resolve); residual damage is NOT clamped (MC86/MC87)"
+  },
+  "condition:endure:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:6788061a:onStart(target) { this.add(\"-singleturn\", target, \"move: Endure\"); }",
+   "anchor": "turn.rs::run_protect",
+   "reason": "the endure arm rides the SHARED protect stallingMove machinery (willAct gate + randomChance(1,counter) 2→4→8 no-delete-on-fail; priority 4); success sets MonState::endure"
   },
   "condition:flashfire:onEnd": {
    "disposition": "implemented",
@@ -1073,6 +1253,30 @@
    "anchor": "turn.rs::try_set_status",
    "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
   },
+  "condition:futuremove:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:556cfb03:onEnd(target) { const data = this.effectState; const move = this.dex.moves.get(data.move); if (target.fainted || target ",
+   "anchor": "turn.rs::apply_future_move",
+   "reason": "the resolve: skip iff the occupant fainted; |-end|…|move: <Name>, remove Protect, ONE accuracy roll, the STORED number fixed-damage-style (sub absorbs, Focus Band rolls), the two hitStepMoveHitLoop Updates with the in-loop faintMessages between (a resolve KO draws one tie-Update + defers the Quick Claw)"
+  },
+  "condition:futuremove:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:0d77074e:onResidual(target) { if (this.getOverflowedTurnCount() < this.effectState.endingTurn) return; target.side.removeSlotCond",
+   "anchor": "turn.rs::apply_future_move",
+   "reason": "the order-11 residual tick (gathered EVERY end-of-turn while pending, speed = the slot occupant — the FS-mirror tie; Wish 7 → sand 8 → order-10s → futuremove 11 LAST), duration 3→2→1→resolve"
+  },
+  "condition:futuremove:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:11",
+   "anchor": "turn.rs::apply_future_move",
+   "reason": "the order-11 residual tick (gathered EVERY end-of-turn while pending, speed = the slot occupant — the FS-mirror tie; Wish 7 → sand 8 → order-10s → futuremove 11 LAST), duration 3→2→1→resolve"
+  },
+  "condition:futuremove:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:92767d53:onStart(target) { this.effectState.targetSlot = target.getSlot(); this.effectState.endingTurn = this.turn - 1 + 2; if (t",
+   "anchor": "state.rs::future_move",
+   "reason": "FutureMove {duration:3, damage, move_id, accuracy, source_side/uid} — the slot-keyed pending strike (the Wish precedent)"
+  },
   "condition:hail:duration": {
    "disposition": "unreachable_justified",
    "fp": "val:5",
@@ -1172,6 +1376,72 @@
    "anchor": "turn.rs::modeled_screen_move",
    "reason": "the |-sidestart| line + the 5-turn counter set (the screen-set arm in run_status_move)"
   },
+  "condition:mirrorcoat:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "state.rs::reactive",
+   "reason": "the duration:1 volatile — a NO_ORDER/subOrder-2 residual duration handler (the counter-mirror tie-shuffle); cleared at turn-top (clear_flinch) / switch-out / faint"
+  },
+  "condition:mirrorcoat:onDamage": {
+   "disposition": "implemented",
+   "fp": "fn:7e939427:onDamage(damage, target, source, effect) { if (effect.effectType === \"Move\" && !source.isAlly(target) && effect.category",
+   "anchor": "turn.rs::record_reactive_hit",
+   "reason": "the priority −101 (LAST — post-Focus-Band) recorder: 2× each qualifying DIRECT foe Move hit (counter: Physical || bare hiddenpower; mirrorcoat: Special && !hiddenpower), OVERWRITING per hit (multihit → 2× the LAST strike); a sub-absorbed hit never fires the mon Damage event"
+  },
+  "condition:mirrorcoat:onDamagePriority": {
+   "disposition": "implemented",
+   "fp": "val:-101",
+   "anchor": "turn.rs::record_reactive_hit",
+   "reason": "the priority −101 (LAST — post-Focus-Band) recorder: 2× each qualifying DIRECT foe Move hit (counter: Physical || bare hiddenpower; mirrorcoat: Special && !hiddenpower), OVERWRITING per hit (multihit → 2× the LAST strike); a sub-absorbed hit never fires the mon Damage event — (order metadata of the sibling onDamage handler)"
+  },
+  "condition:mirrorcoat:onRedirectTarget": {
+   "disposition": "implemented",
+   "fp": "fn:cdd5a2eb:onRedirectTarget(target, source, source2) { if (source !== this.effectState.target || !this.effectState.slot) return; re",
+   "anchor": "turn.rs::run_fixed_damage_move",
+   "reason": "target `scripted` redirects at the recorded damager slot — in gen-3 SINGLES that always resolves to the CURRENT foe active (probed C2: a foe switch fails the counter announcing the NEW active), which is what the port targets"
+  },
+  "condition:mirrorcoat:onRedirectTargetPriority": {
+   "disposition": "implemented",
+   "fp": "val:-1",
+   "anchor": "turn.rs::run_fixed_damage_move",
+   "reason": "target `scripted` redirects at the recorded damager slot — in gen-3 SINGLES that always resolves to the CURRENT foe active (probed C2: a foe switch fails the counter announcing the NEW active), which is what the port targets — (order metadata of the sibling onRedirectTarget handler)"
+  },
+  "condition:mirrorcoat:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:c32788bc:onStart(target, source, move) { this.effectState.slot = null; this.effectState.damage = 0; }",
+   "anchor": "turn.rs::run_full_battle",
+   "reason": "the order-5 beforeTurnMove lays the reactive volatile with a RESET record ({slot:null,damage:0} — prev-turn damage never counts); draw-free, no protocol line"
+  },
+  "condition:mustrecharge:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the duration:2 volatile registers a NO_ORDER/subOrder-2 residual duration handler on the CAST turn residual (the HB-mirror tie-shuffle); the removal is the recharge cant, not the countdown"
+  },
+  "condition:mustrecharge:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:908abf39:onBeforeMove(pokemon) { this.add(\"cant\", pokemon, \"recharge\"); pokemon.removeVolatile(\"mustrecharge\"); pokemon.removeVol",
+   "anchor": "turn.rs::run_move",
+   "reason": "the priority-11 recharge cant at the TOP of run_move (before every status handler — a par/slp locked user rolls/decrements NOTHING): |cant|…|recharge, clear must_recharge, ZERO draws, NO PP; removeVolatile(truant) is a no-op in the truant_turn toggle model (the order-27 toggle consumes the loaf — probed cadence)"
+  },
+  "condition:mustrecharge:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:11",
+   "anchor": "turn.rs::run_move",
+   "reason": "the priority-11 recharge cant at the TOP of run_move (before every status handler — a par/slp locked user rolls/decrements NOTHING): |cant|…|recharge, clear must_recharge, ZERO draws, NO PP; removeVolatile(truant) is a no-op in the truant_turn toggle model (the order-27 toggle consumes the loaf — probed cadence)"
+  },
+  "condition:mustrecharge:onLockMove": {
+   "disposition": "implemented",
+   "fp": "val:\"recharge\"",
+   "anchor": "state.rs::move_locked",
+   "reason": "the locked single-`Recharge` request (choice_is_legal Move(0)-only + the firm trapped switch-reject; bridge serialize_active/resolve_choice)"
+  },
+  "condition:mustrecharge:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:e1880e8b:onStart(pokemon) { this.add(\"-mustrecharge\", pokemon); }",
+   "anchor": "turn.rs::run_move",
+   "reason": "the |-mustrecharge|<user> announce at the apply site (log.must_recharge)"
+  },
   "condition:par:onBeforeMove": {
    "disposition": "implemented",
    "fp": "fn:a6d16ff1:onBeforeMove(pokemon) { if (!pokemon.hasAbility(\"magicguard\") && this.randomChance(1, 4)) { this.add(\"cant\", pokemon, \"p",
@@ -1201,6 +1471,30 @@
    "fp": "fn:6d079a78:onStart(target, source, sourceEffect) { if (sourceEffect && sourceEffect.effectType === \"Ability\") { this.add(\"-status\",",
    "anchor": "turn.rs::try_set_status",
    "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
+  },
+  "condition:perishsong:duration": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the perishsong arm: getAllActive in SIDE order — Soundproof -immune (counted as a result), fresh counters Some(4), ONE -fieldactivate iff >=1 newly applied, the all-counted [still]+-fail, the >=1-immune SILENT re-cast; ZERO draws every branch"
+  },
+  "condition:perishsong:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:e646783e:onEnd(target) { this.add(\"-start\", target, \"perish0\"); target.faint(); }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-12 (LAST) tick (ResidualAction::Perish): decrement + |-start|perish<d>; the 1→0 tick prints perish0 + zeroes HP with the DURATION-END `continue` (NO per-handler faintMessages — the mutual perish-out double faint processes at the tail → the gen-3 TIE, MC89)"
+  },
+  "condition:perishsong:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:98db3d2a:onResidual(pokemon) { const duration = pokemon.volatiles[\"perishsong\"].duration; this.add(\"-start\", pokemon, `perish${du",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-12 (LAST) tick (ResidualAction::Perish): decrement + |-start|perish<d>; the 1→0 tick prints perish0 + zeroes HP with the DURATION-END `continue` (NO per-handler faintMessages — the mutual perish-out double faint processes at the tail → the gen-3 TIE, MC89)"
+  },
+  "condition:perishsong:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:12",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the order-12 (LAST) tick (ResidualAction::Perish): decrement + |-start|perish<d>; the 1→0 tick prints perish0 + zeroes HP with the DURATION-END `continue` (NO per-handler faintMessages — the mutual perish-out double faint processes at the tail → the gen-3 TIE, MC89)"
   },
   "condition:protect:duration": {
    "disposition": "implemented",
@@ -1621,6 +1915,48 @@
    "disposition": "unreachable_justified",
    "fp": "val:1",
    "reason": "the gen6+ poison-type-Toxic never-miss volatile — NOTHING in the gen3 resolution adds it (the resolved gen3 toxic move carries no handler referencing it) — (order metadata of the sibling onSourceInvulnerability handler)"
+  },
+  "condition:trapped:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:26d44d10:onStart(target) { this.add(\"-activate\", target, \"trapped\"); }",
+   "anchor": "turn.rs::is_trapped",
+   "reason": "the FIRM trap (trap_is_firm true — the Shadow-Tag request shape); noCopy FALSE → the Baton Pass snapshot PASSES trapped_by (the link re-points, MC91); the link ends when the trapper leaves ANY way (execute_switch source-left clear + the process_faints corpse clear)"
+  },
+  "condition:trapped:onTrapPokemon": {
+   "disposition": "implemented",
+   "fp": "fn:cd8dddd3:onTrapPokemon(pokemon) { pokemon.tryTrap(); }",
+   "anchor": "turn.rs::is_trapped",
+   "reason": "the FIRM trap (trap_is_firm true — the Shadow-Tag request shape); noCopy FALSE → the Baton Pass snapshot PASSES trapped_by (the link re-points, MC91); the link ends when the trapper leaves ANY way (execute_switch source-left clear + the process_faints corpse clear)"
+  },
+  "condition:twoturnmove:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the duration:2 volatile registers a NO_ORDER/subOrder-2 residual duration handler on BOTH the charge- and fire-turn residuals (the SB-mirror tie-shuffle; after a fire-turn KO the resumed tail residual cleans the linger)"
+  },
+  "condition:twoturnmove:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:6a085fa9:onEnd(target) { target.removeVolatile(this.effectState.move); }",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the duration expiry removes the volatile (TwoTurnDuration 2→1→0); its removeVolatile(solarbeam) is a no-op when the beam fired (charging already false)"
+  },
+  "condition:twoturnmove:onLockMove": {
+   "disposition": "implemented",
+   "fp": "fn:6914eb29:onLockMove() { return this.effectState.move; }",
+   "anchor": "state.rs::move_locked",
+   "reason": "the locked single-move fire request (choice_is_legal Move(0)-only + the firm trapped switch-reject; the queue build maps Move(0) to the locked slot)"
+  },
+  "condition:twoturnmove:onMoveAborted": {
+   "disposition": "implemented",
+   "fp": "fn:4c80a515:onMoveAborted(pokemon) { pokemon.removeVolatile(\"twoturnmove\"); }",
+   "anchor": "turn.rs::run_move",
+   "reason": "an onBeforeMove cant clears two_turn entirely — THE CHARGE IS LOST (a fresh charge re-pays PP)"
+  },
+  "condition:twoturnmove:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:8ce1af72:onStart(attacker, defender, effect) { this.effectState.move = effect.id; attacker.addVolatile(effect.id); let moveTarget",
+   "anchor": "state.rs::two_turn",
+   "reason": "TwoTurnMove {move_index, duration:2, charging:true} set at the charge (the solarbeam sub-volatile == charging)"
   },
   "condition:wish:duration": {
    "disposition": "implemented",
@@ -2861,6 +3197,24 @@
    "anchor": "turn.rs::run_beat_up",
    "reason": "adds the beatup volatile + sets type ??? / category Special / allies (healthy non-statused party) / multihit; the port runs the per-strike loop with the stat swap"
   },
+  "move:bellydrum:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:bellydrum:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:bellydrum:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:9e44e581:onHit(target) { if (target.hp <= target.maxhp / 2 || target.boosts.atk >= 6 || target.maxhp === 1) { return false; } thi",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the bellydrum arm: the FLOAT hp<=maxhp/2 gate as integer-exact 2*hp<=maxhp (262/524 fails, 263 succeeds — MC92) + atk>=6 + maxhp==1 fails; directDamage(floor(maxhp/2)) then the SET to +6 (-setboost)"
+  },
   "move:bite:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
@@ -2884,6 +3238,24 @@
    "fp": "val:[{\"chance\":10,\"status\":\"frz\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:block:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:block:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:block:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:87e84bff:onHit(target, source, move) { return target.addVolatile(\"trapped\", source, move, \"trapper\"); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the trap-move arm: protect block → substitute block ([still]+-fail) → already-trapped fail → the linked trapped_by = Some(trapper uid); ZERO draws every branch (MC90/MC91)"
   },
   "move:bodyslam:secondaries": {
    "disposition": "implemented",
@@ -2950,6 +3322,24 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:charge:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:charge:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:charge:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"charge\"",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the charge arm sets MonState::charge (onRestart re-adds, -start again); gen3 has NO +1 SpD"
+  },
   "move:charm:boosts": {
    "disposition": "implemented",
    "fp": "val:{\"atk\":-2}",
@@ -3003,6 +3393,18 @@
    "fp": "val:true",
    "anchor": "turn.rs::run_status_move",
    "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:counter:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:36e273fc:onTry(source) { if (!source.volatiles[\"counter\"]) return false; if (source.volatiles[\"counter\"].slot === null) return fa",
+   "anchor": "turn.rs::run_fixed_damage_move",
+   "reason": "the ZERO-DRAW un-armed fail (no volatile / slot===null): a bare |move| line, no -fail, PP already deducted — BEFORE the accuracy roll"
+  },
+  "move:counter:priority": {
+   "disposition": "implemented",
+   "fp": "val:-5",
+   "anchor": "turn.rs::move_priority",
+   "reason": "the action-order priority sort (draws only on a priority+speed tie)"
   },
   "move:covet:onAfterHit": {
    "disposition": "implemented",
@@ -3076,6 +3478,30 @@
    "anchor": "state.rs::curse",
    "reason": "the `curse` volatile marker laid on the foe (Some(source_side))"
   },
+  "move:destinybond:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:destinybond:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:destinybond:onPrepareHit": {
+   "disposition": "implemented",
+   "fp": "fn:b84c06e0:onPrepareHit(pokemon) { pokemon.removeVolatile(\"destinybond\"); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the DB arm: a ZERO-draw cast; the re-cast draw-free self-removes+re-adds (the flag is idempotent) — |-singlemove| each cast, PP −1 each"
+  },
+  "move:destinybond:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"destinybond\"",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the DB arm: a ZERO-draw cast; the re-cast draw-free self-removes+re-adds (the flag is idempotent) — |-singlemove| each cast, PP −1 each"
+  },
   "move:detect:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -3141,6 +3567,12 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:doomdesire:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:4d6fe38f:onTry(source, target) { if (!target.side.addSlotCondition(target, \"futuremove\")) return false; const moveData = { name: ",
+   "anchor": "turn.rs::run_future_move_cast",
+   "reason": "the cast: addSlotCondition futuremove (a double-cast fails with a bare |move|, zero draws, PP still deducted) + ONE random(16) getDamage snapshot (typeless, cast-time stats, willCrit false) + |-start|<caster>|<Name>; BEFORE the protect block (a cast-turn Protect does not block)"
+  },
   "move:doubleedge:recoil": {
    "disposition": "implemented",
    "fp": "val:[1,3]",
@@ -3171,6 +3603,12 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:dragonrage:damage": {
+   "disposition": "implemented",
+   "fp": "val:40",
+   "anchor": "turn.rs::fixed_damage_amount",
+   "reason": "the fixed/level damage declarative (Seismic Toss/Night Shade level; Sonic Boom 20; Dragon Rage 40) — accuracy-only draw, no crit/damage roll (gen3_fixeddamage_v1; surfaced by the batch-5 blocklist un-shadowing)"
+  },
   "move:dynamicpunch:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":100,\"volatileStatus\":\"confusion\"}]",
@@ -3182,6 +3620,72 @@
    "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:encore:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the encore arm applies the volatile; Status-default ignoreImmunity (no type gate)"
+  },
+  "move:encore:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"encore\"",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the encore arm applies the volatile; Status-default ignoreImmunity (no type gate)"
+  },
+  "move:endeavor:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:7439038e:onTry(pokemon, target) { if (pokemon.hp >= target.hp) { this.add(\"-fail\", pokemon); return null; } }",
+   "anchor": "turn.rs::run_fixed_damage_move",
+   "reason": "the ZERO-DRAW `hp >= target.hp` fail (EQUALITY INCLUDED — probed 50v50 fails): target-form announce + |-fail|<user>, BEFORE the accuracy roll"
+  },
+  "move:endeavor:onTryImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:9e8a4a8b:onTryImmunity(target, pokemon) { return pokemon.hp < target.hp; }",
+   "anchor": "turn.rs::run_fixed_damage_move",
+   "reason": "pokemon.hp < target.hp — the same compare as the onTry (the port gates once, before accuracy); the Normal→Ghost type immunity rides move_is_immune after the accuracy draw"
+  },
+  "move:endure:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:endure:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:endure:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:fd8966cf:onHit(pokemon) { pokemon.addVolatile(\"stall\"); }",
+   "anchor": "turn.rs::run_protect",
+   "reason": "the endure arm rides the SHARED protect stallingMove machinery (willAct gate + randomChance(1,counter) 2→4→8 no-delete-on-fail; priority 4); success sets MonState::endure"
+  },
+  "move:endure:onPrepareHit": {
+   "disposition": "implemented",
+   "fp": "fn:90156567:onPrepareHit(pokemon) { return !!this.queue.willAct() && this.runEvent(\"StallMove\", pokemon); }",
+   "anchor": "turn.rs::run_protect",
+   "reason": "the endure arm rides the SHARED protect stallingMove machinery (willAct gate + randomChance(1,counter) 2→4→8 no-delete-on-fail; priority 4); success sets MonState::endure"
+  },
+  "move:endure:priority": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::run_protect",
+   "reason": "the endure arm rides the SHARED protect stallingMove machinery (willAct gate + randomChance(1,counter) 2→4→8 no-delete-on-fail; priority 4); success sets MonState::endure"
+  },
+  "move:endure:stallingMove": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_protect",
+   "reason": "the endure arm rides the SHARED protect stallingMove machinery (willAct gate + randomChance(1,counter) 2→4→8 no-delete-on-fail; priority 4); success sets MonState::endure"
+  },
+  "move:endure:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"endure\"",
+   "anchor": "turn.rs::run_protect",
+   "reason": "the endure arm rides the SHARED protect stallingMove machinery (willAct gate + randomChance(1,counter) 2→4→8 no-delete-on-fail; priority 4); success sets MonState::endure"
   },
   "move:explosion:selfdestruct": {
    "disposition": "implemented",
@@ -3272,6 +3776,18 @@
    "fp": "val:-3",
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:futuresight:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_future_move_cast",
+   "reason": "the strike is TYPELESS ??? (move_type None — no chart row, never immune), so the declarative ignoreImmunity is subsumed"
+  },
+  "move:futuresight:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:8bb2f909:onTry(source, target) { if (!target.side.addSlotCondition(target, \"futuremove\")) return false; const moveData = { name: ",
+   "anchor": "turn.rs::run_future_move_cast",
+   "reason": "the cast: addSlotCondition futuremove (a double-cast fails with a bare |move|, zero draws, PP still deducted) + ONE random(16) getDamage snapshot (typeless, cast-time stats, willCrit false) + |-start|<caster>|<Name>; BEFORE the protect block (a cast-turn Protect does not block)"
   },
   "move:gigadrain:drain": {
    "disposition": "implemented",
@@ -3386,6 +3902,12 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:hyperbeam:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"volatileStatus\":\"mustrecharge\"}",
+   "anchor": "turn.rs::run_move",
+   "reason": "self.volatileStatus mustrecharge — applied DRAW-FREE on a SUCCESSFUL damaging hit (plain/sub-absorb/sub-break/target-KO; NOT miss/immune/Protect-block), |-mustrecharge| after the damage/sub line"
   },
   "move:hyperfang:secondaries": {
    "disposition": "implemented",
@@ -3548,6 +4070,24 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:meanlook:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:meanlook:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:meanlook:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:87e84bff:onHit(target, source, move) { return target.addVolatile(\"trapped\", source, move, \"trapper\"); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the trap-move arm: protect block → substitute block ([still]+-fail) → already-trapped fail → the linked trapped_by = Some(trapper uid); ZERO draws every branch (MC90/MC91)"
+  },
   "move:meditate:boosts": {
    "disposition": "implemented",
    "fp": "val:{\"atk\":1}",
@@ -3571,6 +4111,30 @@
    "fp": "val:[1,2]",
    "anchor": "turn.rs::apply_drain",
    "reason": "the drain family (Absorb/Mega/Giga Drain/Leech Life); floor non-sub, ceil behind a sub, draw-free"
+  },
+  "move:memento:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":-2,\"spa\":-2}",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the memento arm: protect/sub block (NO faint — ifHit); the −2/−2 drops via apply_secondary_boost (Clear-Body gated; the user faints even when blocked/floored) then the self-faint through the deferred-faint protocol (gen3 faint-cancels-all + no QC → the ZERO-draw landed turn, MC94)"
+  },
+  "move:memento:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:memento:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:memento:selfdestruct": {
+   "disposition": "implemented",
+   "fp": "val:\"ifHit\"",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the memento arm: protect/sub block (NO faint — ifHit); the −2/−2 drops via apply_secondary_boost (Clear-Body gated; the user faints even when blocked/floored) then the self-faint through the deferred-faint protocol (gen3 faint-cancels-all + no QC → the ZERO-draw landed turn, MC94)"
   },
   "move:metalclaw:secondaries": {
    "disposition": "implemented",
@@ -3613,6 +4177,36 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:mimic:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:mimic:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:mimic:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:1688b09e:onHit(target, source) { if (source.transformed || !target.lastMove || target.volatiles[\"substitute\"]) { return false; } ",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the mimic arm: sub / no-lastMove / failmimic (data-driven MoveData::fail_mimic) / already-known fails ([still]+-fail, draw-free); the copy overlays the slot {pp: min(5, base), maxpp: calculatePP(copied,3)} via MonState::mimic_overlay; restore_mimic_overlay reverts on switch-out/faint (MC95)"
+  },
+  "move:mirrorcoat:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:bdcb8380:onTry(source) { if (!source.volatiles[\"mirrorcoat\"]) return false; if (source.volatiles[\"mirrorcoat\"].slot === null) ret",
+   "anchor": "turn.rs::run_fixed_damage_move",
+   "reason": "the ZERO-DRAW un-armed fail (no volatile / slot===null): a bare |move| line, no -fail, PP already deducted — BEFORE the accuracy roll"
+  },
+  "move:mirrorcoat:priority": {
+   "disposition": "implemented",
+   "fp": "val:-5",
+   "anchor": "turn.rs::move_priority",
+   "reason": "the action-order priority sort (draws only on a priority+speed tie)"
   },
   "move:mistball:secondaries": {
    "disposition": "implemented",
@@ -3680,6 +4274,12 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:nightshade:damage": {
+   "disposition": "implemented",
+   "fp": "val:\"level\"",
+   "anchor": "turn.rs::fixed_damage_amount",
+   "reason": "the fixed/level damage declarative (Seismic Toss/Night Shade level; Sonic Boom 20; Dragon Rage 40) — accuracy-only draw, no crit/damage roll (gen3_fixeddamage_v1; surfaced by the batch-5 blocklist un-shadowing)"
+  },
   "move:octazooka:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":50,\"boosts\":{\"accuracy\":-1}}]",
@@ -3692,11 +4292,47 @@
    "anchor": "turn.rs::apply_self_drops",
    "reason": "the self stat-drop (Overheat/Superpower) + the gen3 selfDrops random(100)"
   },
+  "move:painsplit:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:painsplit:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:painsplit:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:c5f50f19:onHit(target, pokemon) { const targetHP = target.getUndynamaxedHP(); const averagehp = Math.floor((targetHP + pokemon.hp",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the painsplit arm: protect/sub block; avg = floor((u+t)/2), EACH side clamped at its OWN maxhp (MC96); -sethp target [silent] then user"
+  },
   "move:payday:onHit": {
    "disposition": "implemented",
    "fp": "fn:ade5e10c:onHit() { this.add(\"-fieldactivate\", \"move: Pay Day\"); }",
    "anchor": "protocol.rs::fieldactivate_move",
    "reason": "the |-fieldactivate|move: Pay Day line — EMITTED after the -damage on a landed direct hit (gen3_protocol_phase3_v1; the coin scatter itself has no battle effect; the sub-absorbed form stays uncaptured/un-emitted)"
+  },
+  "move:perishsong:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:perishsong:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:perishsong:onHitField": {
+   "disposition": "implemented",
+   "fp": "fn:cc6a0b5f:onHitField(target, source, move) { let result = false; let message = false; for (const pokemon of this.getAllActive()) {",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the perishsong arm: getAllActive in SIDE order — Soundproof -immune (counted as a result), fresh counters Some(4), ONE -fieldactivate iff >=1 newly applied, the all-counted [still]+-fail, the >=1-immune SILENT re-cast; ZERO draws every branch"
   },
   "move:poisonfang:secondaries": {
    "disposition": "implemented",
@@ -3804,6 +4440,24 @@
    "fp": "val:[{\"chance\":10,\"boosts\":{\"spd\":-1}}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:psychup:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:psychup:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:psychup:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:06997a4d:onHit(target, source) { let i; for (i in target.boosts) { source.boosts[i] = target.boosts[i]; } this.add(\"-copyboost\", ",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the psychup arm: copies ALL 7 stages VERBATIM (zeros overwrite — MC97); NO protect flag (copies through a Protect); bypasssub"
   },
   "move:pursuit:onModifyMove": {
    "disposition": "implemented",
@@ -4008,6 +4662,12 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
   },
+  "move:seismictoss:damage": {
+   "disposition": "implemented",
+   "fp": "val:\"level\"",
+   "anchor": "turn.rs::fixed_damage_amount",
+   "reason": "the fixed/level damage declarative (Seismic Toss/Night Shade level; Sonic Boom 20; Dragon Rage 40) — accuracy-only draw, no crit/damage roll (gen3_fixeddamage_v1; surfaced by the batch-5 blocklist un-shadowing)"
+  },
   "move:selfdestruct:selfdestruct": {
    "disposition": "implemented",
    "fp": "val:\"always\"",
@@ -4110,6 +4770,42 @@
    "anchor": "turn.rs::modeled_status_move",
    "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
   },
+  "move:sleeptalk:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "accuracy true (no draw) + the Status-default ignoreImmunity — the sleeptalk arm draws nothing but the sample"
+  },
+  "move:sleeptalk:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "accuracy true (no draw) + the Status-default ignoreImmunity — the sleeptalk arm draws nothing but the sample"
+  },
+  "move:sleeptalk:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:32945850:onHit(pokemon) { const moves = []; for (const moveSlot of pokemon.moveSlots) { const moveid = moveSlot.id; const pp = mo",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the pool build (slot order, !nosleeptalk && !charge — data-driven MoveData flags; NO pp/disabled filter) + ONE sample = random(n) even at n=1 + the 0-PP |cant|nopp| stop + the bare-useMove called run ([from] Sleep Talk, no PP, full draw chain)"
+  },
+  "move:sleeptalk:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:67cf1dbe:onTry(source) { return source.status === \"slp\" || source.hasAbility(\"comatose\"); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "usable ONLY while asleep — an awake/wake-turn use fails SILENTLY (the normal self-target announce, no [still], no -fail, zero draws); `comatose` is gen7+, unreachable"
+  },
+  "move:sleeptalk:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:443207c5:onTryHit(pokemon) { return !pokemon.volatiles[\"choicelock\"] && !pokemon.volatiles[\"encore\"]; }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the choicelock gate (a PRIOR-turn lock → [still]+-fail BEFORE the sample; the lock this use just set does not count — the pre-move snapshot); ENCORE is modeled as of batch 6 (`gen3_move_coverage_batch6_v1`) via move_usable + the onOverrideAction execution override"
+  },
+  "move:sleeptalk:sleepUsable": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::on_before_move",
+   "reason": "the slp handler prints |cant|slp then PROCEEDS for Sleep Talk (skippedTime++; a normal blocked cant resets it; the onSwitchIn restore lives in run_switch)"
+  },
   "move:sludge:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":30,\"status\":\"psn\"}]",
@@ -4146,11 +4842,47 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:solarbeam:onBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:4db566f2:onBasePower(basePower, pokemon, target) { const weakWeathers = [\"raindance\", \"primordialsea\", \"sandstorm\", \"hail\", \"snow",
+   "anchor": "turn.rs::run_move",
+   "reason": "the rain/sand/hail BP-halving chainModify(0.5) — a draw-free BP-chain fold read at damage time, suppression-aware (gen3 DOES have the modern halving, probed rain 54 vs control 105)"
+  },
+  "move:solarbeam:onTryMove": {
+   "disposition": "implemented",
+   "fp": "fn:6630f1d5:onTryMove(attacker, defender, move) { if (attacker.removeVolatile(move.id)) { return; } this.add(\"-prepare\", attacker, m",
+   "anchor": "turn.rs::run_move",
+   "reason": "the two-turn gate: CHARGE ([still]+-prepare, zero move draws, addVolatile twoturnmove) / SUN SKIP (effective_weather-aware: -anim + immediate 3-draw execution) / FIRE (removeVolatile solarbeam => charging=false, [from]lockedmove, acc-100 drawn)"
+  },
+  "move:sonicboom:damage": {
+   "disposition": "implemented",
+   "fp": "val:20",
+   "anchor": "turn.rs::fixed_damage_amount",
+   "reason": "the fixed/level damage declarative (Seismic Toss/Night Shade level; Sonic Boom 20; Dragon Rage 40) — accuracy-only draw, no crit/damage roll (gen3_fixeddamage_v1; surfaced by the batch-5 blocklist un-shadowing)"
+  },
   "move:spark:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":30,\"status\":\"par\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:spiderweb:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:spiderweb:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:spiderweb:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:87e84bff:onHit(target, source, move) { return target.addVolatile(\"trapped\", source, move, \"trapper\"); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the trap-move arm: protect block → substitute block ([still]+-fail) → already-trapped fail → the linked trapped_by = Some(trapper uid); ZERO draws every branch (MC90/MC91)"
   },
   "move:spikes:ignoreImmunity": {
    "disposition": "implemented",

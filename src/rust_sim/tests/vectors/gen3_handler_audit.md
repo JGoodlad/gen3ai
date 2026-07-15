@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
-34 conditions (engine state space + attached), 204 modeled moves
-→ **767 (effect, hook) rows**.
+46 conditions (engine state space + attached), 235 modeled moves
+→ **889 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 703 |
+| implemented | 825 |
 | noop_justified | 36 |
 | unreachable_justified | 28 |
 
@@ -331,7 +331,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (150 rows: implemented=123, noop_justified=9, unreachable_justified=18)
+## condition (206 rows: implemented=179, noop_justified=9, unreachable_justified=18)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -349,22 +349,52 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | brn | onResidualOrder | implemented | `turn.rs::run_residuals` |
 | brn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | brn | onStart | implemented | `turn.rs::try_set_status` |
+| charge | onAfterMove | implemented | `turn.rs::turn_loop` |
+| charge | onBasePower | implemented | `turn.rs::run_move` |
+| charge | onBasePowerPriority | implemented | `turn.rs::run_move` |
+| charge | onEnd | implemented | `turn.rs::turn_loop` |
+| charge | onMoveAborted | implemented | `turn.rs::turn_loop` |
+| charge | onRestart | implemented | `turn.rs::run_status_move` |
+| charge | onStart | implemented | `turn.rs::run_status_move` |
 | choicelock | onDisableMove | implemented | `turn.rs::move_usable` |
 | choicelock | onStart | implemented | `state.rs::choice_locked_move` |
 | confusion | onBeforeMove | implemented | `turn.rs::apply_confusion_self_hit` |
 | confusion | onBeforeMovePriority | implemented | `turn.rs::apply_confusion_self_hit` |
 | confusion | onEnd | noop_justified | display-only |-end| confusion line (the port emits it at the counter expiry) |
 | confusion | onStart | implemented | `turn.rs::add_confusion` |
+| counter | duration | implemented | `state.rs::reactive` |
+| counter | onDamage | implemented | `turn.rs::record_reactive_hit` |
+| counter | onDamagePriority | implemented | `turn.rs::record_reactive_hit` |
+| counter | onRedirectTarget | implemented | `turn.rs::run_fixed_damage_move` |
+| counter | onRedirectTargetPriority | implemented | `turn.rs::run_fixed_damage_move` |
+| counter | onStart | implemented | `turn.rs::run_full_battle` |
 | curse | onResidual | implemented | `turn.rs::apply_curse` |
 | curse | onResidualOrder | implemented | `turn.rs::apply_curse` |
 | curse | onResidualSubOrder | implemented | `turn.rs::apply_curse` |
 | curse | onStart | implemented | `turn.rs::run_status_move` |
+| destinybond | onBeforeMove | implemented | `turn.rs::run_move` |
+| destinybond | onBeforeMovePriority | implemented | `turn.rs::run_move` |
+| destinybond | onFaint | implemented | `turn.rs::process_faints` |
+| destinybond | onMoveAborted | implemented | `turn.rs::run_move` |
+| destinybond | onStart | implemented | `turn.rs::run_status_move` |
 | disable | durationCallback | implemented | `turn.rs::disable_move_event_shuffle` |
 | disable | onBeforeMove | implemented | `turn.rs::run_move` |
 | disable | onBeforeMovePriority | implemented | `turn.rs::run_move` |
 | disable | onDisableMove | implemented | `turn.rs::move_usable` |
 | disable | onEnd | implemented | `turn.rs::DisableDuration` |
 | disable | onStart | implemented | `state.rs::disable` |
+| encore | durationCallback | implemented | `turn.rs::run_status_move` |
+| encore | onDisableMove | implemented | `state.rs::move_usable` |
+| encore | onEnd | implemented | `turn.rs::run_residuals` |
+| encore | onOverrideAction | implemented | `turn.rs::turn_loop` |
+| encore | onResidual | implemented | `turn.rs::run_residuals` |
+| encore | onResidualOrder | implemented | `turn.rs::run_residuals` |
+| encore | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
+| encore | onStart | implemented | `turn.rs::run_status_move` |
+| endure | duration | implemented | `turn.rs::run_residuals` |
+| endure | onDamage | implemented | `turn.rs::endure_clamp` |
+| endure | onDamagePriority | implemented | `turn.rs::endure_clamp` |
+| endure | onStart | implemented | `turn.rs::run_protect` |
 | flashfire | onEnd | implemented | `turn.rs::process_faints` |
 | flashfire | onModifyAtkPriority | noop_justified | gen4+ priority residue — the gen3 fold is onModifyDamagePhase1; no onModifyAtk/SpA fn resolves |
 | flashfire | onModifyDamagePhase1 | implemented | `turn.rs::flash_fire` |
@@ -387,6 +417,10 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | frz | onDamagingHit | implemented | `turn.rs::run_move` |
 | frz | onModifyMove | implemented | `turn.rs::run_move` |
 | frz | onStart | implemented | `turn.rs::try_set_status` |
+| futuremove | onEnd | implemented | `turn.rs::apply_future_move` |
+| futuremove | onResidual | implemented | `turn.rs::apply_future_move` |
+| futuremove | onResidualOrder | implemented | `turn.rs::apply_future_move` |
+| futuremove | onStart | implemented | `state.rs::future_move` |
 | hail | duration | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
 | hail | durationCallback | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
 | hail | onFieldEnd | unreachable_justified | weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end |
@@ -404,11 +438,26 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | lightscreen | onSideEnd | implemented | `turn.rs::run_residuals` |
 | lightscreen | onSideResidualOrder | implemented | `turn.rs::run_residuals` |
 | lightscreen | onSideStart | implemented | `turn.rs::modeled_screen_move` |
+| mirrorcoat | duration | implemented | `state.rs::reactive` |
+| mirrorcoat | onDamage | implemented | `turn.rs::record_reactive_hit` |
+| mirrorcoat | onDamagePriority | implemented | `turn.rs::record_reactive_hit` |
+| mirrorcoat | onRedirectTarget | implemented | `turn.rs::run_fixed_damage_move` |
+| mirrorcoat | onRedirectTargetPriority | implemented | `turn.rs::run_fixed_damage_move` |
+| mirrorcoat | onStart | implemented | `turn.rs::run_full_battle` |
+| mustrecharge | duration | implemented | `turn.rs::run_residuals` |
+| mustrecharge | onBeforeMove | implemented | `turn.rs::run_move` |
+| mustrecharge | onBeforeMovePriority | implemented | `turn.rs::run_move` |
+| mustrecharge | onLockMove | implemented | `state.rs::move_locked` |
+| mustrecharge | onStart | implemented | `turn.rs::run_move` |
 | par | onBeforeMove | implemented | `turn.rs::run_move` |
 | par | onBeforeMovePriority | implemented | `turn.rs::run_move` |
 | par | onModifySpe | implemented | `turn.rs::effective_speed` |
 | par | onModifySpePriority | implemented | `turn.rs::effective_speed` |
 | par | onStart | implemented | `turn.rs::try_set_status` |
+| perishsong | duration | implemented | `turn.rs::run_status_move` |
+| perishsong | onEnd | implemented | `turn.rs::run_residuals` |
+| perishsong | onResidual | implemented | `turn.rs::run_residuals` |
+| perishsong | onResidualOrder | implemented | `turn.rs::run_residuals` |
 | protect | duration | implemented | `state.rs::protected` |
 | protect | onStart | noop_justified | display-only |-singleturn| Protect line |
 | protect | onTryHit | implemented | `turn.rs::protect_blocks` |
@@ -482,11 +531,18 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | toxic | onSourceAccuracy | unreachable_justified | the gen6+ poison-type-Toxic never-miss volatile — NOTHING in the gen3 resolution adds it (the resolved gen3 toxic move carries no handler referencing it) |
 | toxic | onSourceInvulnerability | unreachable_justified | the gen6+ poison-type-Toxic never-miss volatile — NOTHING in the gen3 resolution adds it (the resolved gen3 toxic move carries no handler referencing it) |
 | toxic | onSourceInvulnerabilityPriority | unreachable_justified | the gen6+ poison-type-Toxic never-miss volatile — NOTHING in the gen3 resolution adds it (the resolved gen3 toxic move carries no handler referencing it) — (order metadata of the sibling onSourceInvulnerability handler) |
+| trapped | onStart | implemented | `turn.rs::is_trapped` |
+| trapped | onTrapPokemon | implemented | `turn.rs::is_trapped` |
+| twoturnmove | duration | implemented | `turn.rs::run_residuals` |
+| twoturnmove | onEnd | implemented | `turn.rs::run_residuals` |
+| twoturnmove | onLockMove | implemented | `state.rs::move_locked` |
+| twoturnmove | onMoveAborted | implemented | `turn.rs::run_move` |
+| twoturnmove | onStart | implemented | `state.rs::two_turn` |
 | wish | duration | implemented | `state.rs::wish_pending` |
 | wish | onEnd | implemented | `turn.rs::apply_wish` |
 | wish | onResidualOrder | implemented | `turn.rs::apply_wish` |
 
-## move (312 rows: implemented=308, noop_justified=2, unreachable_justified=2)
+## move (378 rows: implemented=374, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -519,10 +575,16 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | batonpass | self | noop_justified | an empty `self: {}` marker (Rapid Spin) — its effect is the onAfterHit/onAfterSubDamage clear |
 | batonpass | selfSwitch | implemented | `turn.rs::execute_switch` |
 | beatup | onModifyMove | implemented | `turn.rs::run_beat_up` |
+| bellydrum | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| bellydrum | neverMiss | implemented | `turn.rs::run_status_move` |
+| bellydrum | onHit | implemented | `turn.rs::run_status_move` |
 | bite | secondaries | implemented | `turn.rs::apply_secondaries` |
 | blazekick | critRatio | implemented | `turn.rs::CRIT_MULT` |
 | blazekick | secondaries | implemented | `turn.rs::apply_secondaries` |
 | blizzard | secondaries | implemented | `turn.rs::apply_secondaries` |
+| block | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| block | neverMiss | implemented | `turn.rs::run_status_move` |
+| block | onHit | implemented | `turn.rs::run_status_move` |
 | bodyslam | secondaries | implemented | `turn.rs::apply_secondaries` |
 | boneclub | secondaries | implemented | `turn.rs::apply_secondaries` |
 | brickbreak | onTryHit | unreachable_justified | removes Reflect/Light Screen before the hit — the screens are unmodeled SIDE CONDITIONS no modeled move can set, so there is never a screen to break (the move's damaging path is fully modeled) |
@@ -534,6 +596,9 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | calmmind | boosts | implemented | `turn.rs::self_boost_spec` |
 | calmmind | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | calmmind | neverMiss | implemented | `turn.rs::never_miss` |
+| charge | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| charge | neverMiss | implemented | `turn.rs::run_status_move` |
+| charge | volatileStatus | implemented | `turn.rs::run_status_move` |
 | charm | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | charm | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | confusion | secondaries | implemented | `turn.rs::apply_secondaries` |
@@ -543,6 +608,8 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | cosmicpower | neverMiss | implemented | `turn.rs::never_miss` |
 | cottonspore | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | cottonspore | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| counter | onTry | implemented | `turn.rs::run_fixed_damage_move` |
+| counter | priority | implemented | `turn.rs::move_priority` |
 | covet | onAfterHit | implemented | `turn.rs::apply_item_removal` |
 | crabhammer | critRatio | implemented | `turn.rs::CRIT_MULT` |
 | crosschop | critRatio | implemented | `turn.rs::CRIT_MULT` |
@@ -555,6 +622,10 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | curse | onModifyMove | implemented | `turn.rs::run_status_move` |
 | curse | onTryHit | implemented | `turn.rs::run_status_move` |
 | curse | volatileStatus | implemented | `state.rs::curse` |
+| destinybond | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| destinybond | neverMiss | implemented | `turn.rs::run_status_move` |
+| destinybond | onPrepareHit | implemented | `turn.rs::run_status_move` |
+| destinybond | volatileStatus | implemented | `turn.rs::run_status_move` |
 | detect | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | detect | neverMiss | implemented | `turn.rs::never_miss` |
 | detect | onHit | implemented | `state.rs::protect_counter` |
@@ -566,13 +637,26 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | disable | onTryHit | implemented | `turn.rs::run_status_move` |
 | disable | volatileStatus | implemented | `state.rs::disable` |
 | dizzypunch | secondaries | implemented | `turn.rs::apply_secondaries` |
+| doomdesire | onTry | implemented | `turn.rs::run_future_move_cast` |
 | doubleedge | recoil | implemented | `turn.rs::apply_recoil` |
 | dragonbreath | secondaries | implemented | `turn.rs::apply_secondaries` |
 | dragondance | boosts | implemented | `turn.rs::self_boost_spec` |
 | dragondance | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | dragondance | neverMiss | implemented | `turn.rs::never_miss` |
+| dragonrage | damage | implemented | `turn.rs::fixed_damage_amount` |
 | dynamicpunch | secondaries | implemented | `turn.rs::apply_secondaries` |
 | ember | secondaries | implemented | `turn.rs::apply_secondaries` |
+| encore | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| encore | volatileStatus | implemented | `turn.rs::run_status_move` |
+| endeavor | onTry | implemented | `turn.rs::run_fixed_damage_move` |
+| endeavor | onTryImmunity | implemented | `turn.rs::run_fixed_damage_move` |
+| endure | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| endure | neverMiss | implemented | `turn.rs::run_status_move` |
+| endure | onHit | implemented | `turn.rs::run_protect` |
+| endure | onPrepareHit | implemented | `turn.rs::run_protect` |
+| endure | priority | implemented | `turn.rs::run_protect` |
+| endure | stallingMove | implemented | `turn.rs::run_protect` |
+| endure | volatileStatus | implemented | `turn.rs::run_protect` |
 | explosion | selfdestruct | implemented | `turn.rs::pending_explosion_self_ko` |
 | extrasensory | secondaries | implemented | `turn.rs::apply_secondaries` |
 | extremespeed | priority | implemented | `turn.rs::move_priority` |
@@ -588,6 +672,8 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | flamewheel | secondaries | implemented | `turn.rs::apply_secondaries` |
 | focuspunch | onTry | implemented | `turn.rs::run_move` |
 | focuspunch | priority | implemented | `turn.rs::move_priority` |
+| futuresight | ignoreImmunity | implemented | `turn.rs::run_future_move_cast` |
+| futuresight | onTry | implemented | `turn.rs::run_future_move_cast` |
 | gigadrain | drain | implemented | `turn.rs::apply_drain` |
 | glare | status | implemented | `turn.rs::modeled_status_move` |
 | grasswhistle | ignoreImmunity | implemented | `turn.rs::run_status_move` |
@@ -607,6 +693,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | howl | boosts | implemented | `turn.rs::self_boost_spec` |
 | howl | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | howl | neverMiss | implemented | `turn.rs::never_miss` |
+| hyperbeam | self | implemented | `turn.rs::run_move` |
 | hyperfang | secondaries | implemented | `turn.rs::apply_secondaries` |
 | hypnosis | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | hypnosis | status | implemented | `turn.rs::modeled_status_move` |
@@ -634,10 +721,17 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | lusterpurge | secondaries | implemented | `turn.rs::apply_secondaries` |
 | machpunch | priority | implemented | `turn.rs::move_priority` |
 | magicalleaf | neverMiss | implemented | `turn.rs::never_miss` |
+| meanlook | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| meanlook | neverMiss | implemented | `turn.rs::run_status_move` |
+| meanlook | onHit | implemented | `turn.rs::run_status_move` |
 | meditate | boosts | implemented | `turn.rs::self_boost_spec` |
 | meditate | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | meditate | neverMiss | implemented | `turn.rs::never_miss` |
 | megadrain | drain | implemented | `turn.rs::apply_drain` |
+| memento | boosts | implemented | `turn.rs::run_status_move` |
+| memento | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| memento | neverMiss | implemented | `turn.rs::run_status_move` |
+| memento | selfdestruct | implemented | `turn.rs::run_status_move` |
 | metalclaw | secondaries | implemented | `turn.rs::apply_secondaries` |
 | metalsound | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | metalsound | ignoreImmunity | implemented | `turn.rs::run_status_move` |
@@ -645,6 +739,11 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | milkdrink | heal | implemented | `turn.rs::recovery_heal_amount` |
 | milkdrink | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | milkdrink | neverMiss | implemented | `turn.rs::never_miss` |
+| mimic | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| mimic | neverMiss | implemented | `turn.rs::run_status_move` |
+| mimic | onHit | implemented | `turn.rs::run_status_move` |
+| mirrorcoat | onTry | implemented | `turn.rs::run_fixed_damage_move` |
+| mirrorcoat | priority | implemented | `turn.rs::move_priority` |
 | mistball | secondaries | implemented | `turn.rs::apply_secondaries` |
 | moonlight | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | moonlight | neverMiss | implemented | `turn.rs::never_miss` |
@@ -656,9 +755,16 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | mudshot | secondaries | implemented | `turn.rs::apply_secondaries` |
 | mudslap | secondaries | implemented | `turn.rs::apply_secondaries` |
 | needlearm | secondaries | implemented | `turn.rs::apply_secondaries` |
+| nightshade | damage | implemented | `turn.rs::fixed_damage_amount` |
 | octazooka | secondaries | implemented | `turn.rs::apply_secondaries` |
 | overheat | self | implemented | `turn.rs::apply_self_drops` |
+| painsplit | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| painsplit | neverMiss | implemented | `turn.rs::run_status_move` |
+| painsplit | onHit | implemented | `turn.rs::run_status_move` |
 | payday | onHit | implemented | `protocol.rs::fieldactivate_move` |
+| perishsong | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| perishsong | neverMiss | implemented | `turn.rs::run_status_move` |
+| perishsong | onHitField | implemented | `turn.rs::run_status_move` |
 | poisonfang | secondaries | implemented | `turn.rs::apply_secondaries` |
 | poisongas | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | poisongas | status | implemented | `turn.rs::modeled_status_move` |
@@ -677,6 +783,9 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | protect | volatileStatus | implemented | `turn.rs::run_protect` |
 | psybeam | secondaries | implemented | `turn.rs::apply_secondaries` |
 | psychic | secondaries | implemented | `turn.rs::apply_secondaries` |
+| psychup | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| psychup | neverMiss | implemented | `turn.rs::run_status_move` |
+| psychup | onHit | implemented | `turn.rs::run_status_move` |
 | pursuit | onModifyMove | implemented | `turn.rs::run_move` |
 | quickattack | priority | implemented | `turn.rs::move_priority` |
 | raindance | ignoreImmunity | implemented | `turn.rs::run_status_move` |
@@ -711,6 +820,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | scaryface | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | screech | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | screech | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| seismictoss | damage | implemented | `turn.rs::fixed_damage_amount` |
 | selfdestruct | selfdestruct | implemented | `turn.rs::pending_explosion_self_ko` |
 | shadowball | secondaries | implemented | `turn.rs::apply_secondaries` |
 | shadowpunch | neverMiss | implemented | `turn.rs::never_miss` |
@@ -728,13 +838,25 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | slash | critRatio | implemented | `turn.rs::CRIT_MULT` |
 | sleeppowder | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | sleeppowder | status | implemented | `turn.rs::modeled_status_move` |
+| sleeptalk | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| sleeptalk | neverMiss | implemented | `turn.rs::run_status_move` |
+| sleeptalk | onHit | implemented | `turn.rs::run_status_move` |
+| sleeptalk | onTry | implemented | `turn.rs::run_status_move` |
+| sleeptalk | onTryHit | implemented | `turn.rs::run_status_move` |
+| sleeptalk | sleepUsable | implemented | `turn.rs::on_before_move` |
 | sludge | secondaries | implemented | `turn.rs::apply_secondaries` |
 | sludgebomb | secondaries | implemented | `turn.rs::apply_secondaries` |
 | smog | secondaries | implemented | `turn.rs::apply_secondaries` |
 | softboiled | heal | implemented | `turn.rs::recovery_heal_amount` |
 | softboiled | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | softboiled | neverMiss | implemented | `turn.rs::never_miss` |
+| solarbeam | onBasePower | implemented | `turn.rs::run_move` |
+| solarbeam | onTryMove | implemented | `turn.rs::run_move` |
+| sonicboom | damage | implemented | `turn.rs::fixed_damage_amount` |
 | spark | secondaries | implemented | `turn.rs::apply_secondaries` |
+| spiderweb | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| spiderweb | neverMiss | implemented | `turn.rs::run_status_move` |
+| spiderweb | onHit | implemented | `turn.rs::run_status_move` |
 | spikes | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | spikes | neverMiss | implemented | `turn.rs::never_miss` |
 | spikes | sideCondition | implemented | `turn.rs::apply_entry_hazards` |

@@ -12,7 +12,8 @@
         "num": 63,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 195
     },
     "absol": {
         "baseStats": {
@@ -27,7 +28,8 @@
         "num": 359,
         "types": [
             "DARK"
-        ]
+        ],
+        "weighthg": 470
     },
     "aerodactyl": {
         "baseStats": {
@@ -43,7 +45,8 @@
         "types": [
             "ROCK",
             "FLYING"
-        ]
+        ],
+        "weighthg": 590
     },
     "aggron": {
         "baseStats": {
@@ -59,7 +62,8 @@
         "types": [
             "STEEL",
             "ROCK"
-        ]
+        ],
+        "weighthg": 3600
     },
     "aipom": {
         "baseStats": {
@@ -74,7 +78,8 @@
         "num": 190,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 115
     },
     "alakazam": {
         "baseStats": {
@@ -89,7 +94,8 @@
         "num": 65,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 480
     },
     "altaria": {
         "baseStats": {
@@ -105,7 +111,8 @@
         "types": [
             "DRAGON",
             "FLYING"
-        ]
+        ],
+        "weighthg": 206
     },
     "ampharos": {
         "baseStats": {
@@ -120,7 +127,8 @@
         "num": 181,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 615
     },
     "anorith": {
         "baseStats": {
@@ -136,7 +144,8 @@
         "types": [
             "ROCK",
             "BUG"
-        ]
+        ],
+        "weighthg": 125
     },
     "arbok": {
         "baseStats": {
@@ -151,7 +160,8 @@
         "num": 24,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 650
     },
     "arcanine": {
         "baseStats": {
@@ -166,7 +176,8 @@
         "num": 59,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 1550
     },
     "ariados": {
         "baseStats": {
@@ -182,7 +193,8 @@
         "types": [
             "BUG",
             "POISON"
-        ]
+        ],
+        "weighthg": 335
     },
     "armaldo": {
         "baseStats": {
@@ -198,7 +210,8 @@
         "types": [
             "ROCK",
             "BUG"
-        ]
+        ],
+        "weighthg": 682
     },
     "aron": {
         "baseStats": {
@@ -214,7 +227,8 @@
         "types": [
             "STEEL",
             "ROCK"
-        ]
+        ],
+        "weighthg": 600
     },
     "articuno": {
         "baseStats": {
@@ -230,7 +244,8 @@
         "types": [
             "ICE",
             "FLYING"
-        ]
+        ],
+        "weighthg": 554
     },
     "azumarill": {
         "baseStats": {
@@ -245,7 +260,8 @@
         "num": 184,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 285
     },
     "azurill": {
         "baseStats": {
@@ -260,7 +276,8 @@
         "num": 298,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 20
     },
     "bagon": {
         "baseStats": {
@@ -275,7 +292,8 @@
         "num": 371,
         "types": [
             "DRAGON"
-        ]
+        ],
+        "weighthg": 421
     },
     "baltoy": {
         "baseStats": {
@@ -291,7 +309,8 @@
         "types": [
             "GROUND",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 215
     },
     "banette": {
         "baseStats": {
@@ -306,7 +325,8 @@
         "num": 354,
         "types": [
             "GHOST"
-        ]
+        ],
+        "weighthg": 125
     },
     "barboach": {
         "baseStats": {
@@ -322,7 +342,8 @@
         "types": [
             "WATER",
             "GROUND"
-        ]
+        ],
+        "weighthg": 19
     },
     "bayleef": {
         "baseStats": {
@@ -337,7 +358,8 @@
         "num": 153,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 158
     },
     "beautifly": {
         "baseStats": {
@@ -353,7 +375,8 @@
         "types": [
             "BUG",
             "FLYING"
-        ]
+        ],
+        "weighthg": 284
     },
     "beedrill": {
         "baseStats": {
@@ -369,7 +392,8 @@
         "types": [
             "BUG",
             "POISON"
-        ]
+        ],
+        "weighthg": 295
     },
     "beldum": {
         "baseStats": {
@@ -385,7 +409,8 @@
         "types": [
             "STEEL",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 952
     },
     "bellossom": {
         "baseStats": {
@@ -400,7 +425,8 @@
         "num": 182,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 58
     },
     "bellsprout": {
         "baseStats": {
@@ -416,7 +442,8 @@
         "types": [
             "GRASS",
             "POISON"
-        ]
+        ],
+        "weighthg": 40
     },
     "blastoise": {
         "baseStats": {
@@ -431,7 +458,8 @@
         "num": 9,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 855
     },
     "blaziken": {
         "baseStats": {
@@ -447,7 +475,8 @@
         "types": [
             "FIRE",
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 520
     },
     "blissey": {
         "baseStats": {
@@ -462,7 +491,8 @@
         "num": 242,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 468
     },
     "breloom": {
         "baseStats": {
@@ -478,7 +508,8 @@
         "types": [
             "GRASS",
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 392
     },
     "bulbasaur": {
         "baseStats": {
@@ -494,7 +525,8 @@
         "types": [
             "GRASS",
             "POISON"
-        ]
+        ],
+        "weighthg": 69
     },
     "butterfree": {
         "baseStats": {
@@ -510,7 +542,8 @@
         "types": [
             "BUG",
             "FLYING"
-        ]
+        ],
+        "weighthg": 320
     },
     "cacnea": {
         "baseStats": {
@@ -525,7 +558,8 @@
         "num": 331,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 513
     },
     "cacturne": {
         "baseStats": {
@@ -541,7 +575,8 @@
         "types": [
             "GRASS",
             "DARK"
-        ]
+        ],
+        "weighthg": 774
     },
     "camerupt": {
         "baseStats": {
@@ -557,7 +592,8 @@
         "types": [
             "FIRE",
             "GROUND"
-        ]
+        ],
+        "weighthg": 2200
     },
     "carvanha": {
         "baseStats": {
@@ -573,7 +609,8 @@
         "types": [
             "WATER",
             "DARK"
-        ]
+        ],
+        "weighthg": 208
     },
     "cascoon": {
         "baseStats": {
@@ -588,7 +625,8 @@
         "num": 268,
         "types": [
             "BUG"
-        ]
+        ],
+        "weighthg": 115
     },
     "castform": {
         "baseStats": {
@@ -603,7 +641,8 @@
         "num": 351,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 8
     },
     "caterpie": {
         "baseStats": {
@@ -618,7 +657,8 @@
         "num": 10,
         "types": [
             "BUG"
-        ]
+        ],
+        "weighthg": 29
     },
     "celebi": {
         "baseStats": {
@@ -634,7 +674,8 @@
         "types": [
             "PSYCHIC",
             "GRASS"
-        ]
+        ],
+        "weighthg": 50
     },
     "chansey": {
         "baseStats": {
@@ -649,7 +690,8 @@
         "num": 113,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 346
     },
     "charizard": {
         "baseStats": {
@@ -665,7 +707,8 @@
         "types": [
             "FIRE",
             "FLYING"
-        ]
+        ],
+        "weighthg": 905
     },
     "charmander": {
         "baseStats": {
@@ -680,7 +723,8 @@
         "num": 4,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 85
     },
     "charmeleon": {
         "baseStats": {
@@ -695,7 +739,8 @@
         "num": 5,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 190
     },
     "chikorita": {
         "baseStats": {
@@ -710,7 +755,8 @@
         "num": 152,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 64
     },
     "chimecho": {
         "baseStats": {
@@ -725,7 +771,8 @@
         "num": 358,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 10
     },
     "chinchou": {
         "baseStats": {
@@ -741,7 +788,8 @@
         "types": [
             "WATER",
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 120
     },
     "clamperl": {
         "baseStats": {
@@ -756,7 +804,8 @@
         "num": 366,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 525
     },
     "claydol": {
         "baseStats": {
@@ -772,7 +821,8 @@
         "types": [
             "GROUND",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 1080
     },
     "clefable": {
         "baseStats": {
@@ -787,7 +837,8 @@
         "num": 36,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 400
     },
     "clefairy": {
         "baseStats": {
@@ -802,7 +853,8 @@
         "num": 35,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 75
     },
     "cleffa": {
         "baseStats": {
@@ -817,7 +869,8 @@
         "num": 173,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 30
     },
     "cloyster": {
         "baseStats": {
@@ -833,7 +886,8 @@
         "types": [
             "WATER",
             "ICE"
-        ]
+        ],
+        "weighthg": 1325
     },
     "combusken": {
         "baseStats": {
@@ -849,7 +903,8 @@
         "types": [
             "FIRE",
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 195
     },
     "corphish": {
         "baseStats": {
@@ -864,7 +919,8 @@
         "num": 341,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 115
     },
     "corsola": {
         "baseStats": {
@@ -880,7 +936,8 @@
         "types": [
             "WATER",
             "ROCK"
-        ]
+        ],
+        "weighthg": 50
     },
     "cradily": {
         "baseStats": {
@@ -896,7 +953,8 @@
         "types": [
             "ROCK",
             "GRASS"
-        ]
+        ],
+        "weighthg": 604
     },
     "crawdaunt": {
         "baseStats": {
@@ -912,7 +970,8 @@
         "types": [
             "WATER",
             "DARK"
-        ]
+        ],
+        "weighthg": 328
     },
     "crobat": {
         "baseStats": {
@@ -928,7 +987,8 @@
         "types": [
             "POISON",
             "FLYING"
-        ]
+        ],
+        "weighthg": 750
     },
     "croconaw": {
         "baseStats": {
@@ -943,7 +1003,8 @@
         "num": 159,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 250
     },
     "cubone": {
         "baseStats": {
@@ -958,7 +1019,8 @@
         "num": 104,
         "types": [
             "GROUND"
-        ]
+        ],
+        "weighthg": 65
     },
     "cyndaquil": {
         "baseStats": {
@@ -973,7 +1035,8 @@
         "num": 155,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 79
     },
     "delcatty": {
         "baseStats": {
@@ -988,7 +1051,8 @@
         "num": 301,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 326
     },
     "delibird": {
         "baseStats": {
@@ -1004,7 +1068,8 @@
         "types": [
             "ICE",
             "FLYING"
-        ]
+        ],
+        "weighthg": 160
     },
     "deoxys": {
         "baseStats": {
@@ -1019,7 +1084,8 @@
         "num": 386,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 608
     },
     "dewgong": {
         "baseStats": {
@@ -1035,7 +1101,8 @@
         "types": [
             "WATER",
             "ICE"
-        ]
+        ],
+        "weighthg": 1200
     },
     "diglett": {
         "baseStats": {
@@ -1050,7 +1117,8 @@
         "num": 50,
         "types": [
             "GROUND"
-        ]
+        ],
+        "weighthg": 8
     },
     "ditto": {
         "baseStats": {
@@ -1065,7 +1133,8 @@
         "num": 132,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 40
     },
     "dodrio": {
         "baseStats": {
@@ -1081,7 +1150,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 852
     },
     "doduo": {
         "baseStats": {
@@ -1097,7 +1167,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 392
     },
     "donphan": {
         "baseStats": {
@@ -1112,7 +1183,8 @@
         "num": 232,
         "types": [
             "GROUND"
-        ]
+        ],
+        "weighthg": 1200
     },
     "dragonair": {
         "baseStats": {
@@ -1127,7 +1199,8 @@
         "num": 148,
         "types": [
             "DRAGON"
-        ]
+        ],
+        "weighthg": 165
     },
     "dragonite": {
         "baseStats": {
@@ -1143,7 +1216,8 @@
         "types": [
             "DRAGON",
             "FLYING"
-        ]
+        ],
+        "weighthg": 2100
     },
     "dratini": {
         "baseStats": {
@@ -1158,7 +1232,8 @@
         "num": 147,
         "types": [
             "DRAGON"
-        ]
+        ],
+        "weighthg": 33
     },
     "drowzee": {
         "baseStats": {
@@ -1173,7 +1248,8 @@
         "num": 96,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 324
     },
     "dugtrio": {
         "baseStats": {
@@ -1188,7 +1264,8 @@
         "num": 51,
         "types": [
             "GROUND"
-        ]
+        ],
+        "weighthg": 333
     },
     "dunsparce": {
         "baseStats": {
@@ -1203,7 +1280,8 @@
         "num": 206,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 140
     },
     "dusclops": {
         "baseStats": {
@@ -1218,7 +1296,8 @@
         "num": 356,
         "types": [
             "GHOST"
-        ]
+        ],
+        "weighthg": 306
     },
     "duskull": {
         "baseStats": {
@@ -1233,7 +1312,8 @@
         "num": 355,
         "types": [
             "GHOST"
-        ]
+        ],
+        "weighthg": 150
     },
     "dustox": {
         "baseStats": {
@@ -1249,7 +1329,8 @@
         "types": [
             "BUG",
             "POISON"
-        ]
+        ],
+        "weighthg": 316
     },
     "eevee": {
         "baseStats": {
@@ -1264,7 +1345,8 @@
         "num": 133,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 65
     },
     "ekans": {
         "baseStats": {
@@ -1279,7 +1361,8 @@
         "num": 23,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 69
     },
     "electabuzz": {
         "baseStats": {
@@ -1294,7 +1377,8 @@
         "num": 125,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 300
     },
     "electrike": {
         "baseStats": {
@@ -1309,7 +1393,8 @@
         "num": 309,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 152
     },
     "electrode": {
         "baseStats": {
@@ -1324,7 +1409,8 @@
         "num": 101,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 666
     },
     "elekid": {
         "baseStats": {
@@ -1339,7 +1425,8 @@
         "num": 239,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 235
     },
     "entei": {
         "baseStats": {
@@ -1354,7 +1441,8 @@
         "num": 244,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 1980
     },
     "espeon": {
         "baseStats": {
@@ -1369,7 +1457,8 @@
         "num": 196,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 265
     },
     "exeggcute": {
         "baseStats": {
@@ -1385,7 +1474,8 @@
         "types": [
             "GRASS",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 25
     },
     "exeggutor": {
         "baseStats": {
@@ -1401,7 +1491,8 @@
         "types": [
             "GRASS",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 1200
     },
     "exploud": {
         "baseStats": {
@@ -1416,7 +1507,8 @@
         "num": 295,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 840
     },
     "farfetchd": {
         "baseStats": {
@@ -1432,7 +1524,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 150
     },
     "fearow": {
         "baseStats": {
@@ -1448,7 +1541,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 380
     },
     "feebas": {
         "baseStats": {
@@ -1463,7 +1557,8 @@
         "num": 349,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 74
     },
     "feraligatr": {
         "baseStats": {
@@ -1478,7 +1573,8 @@
         "num": 160,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 888
     },
     "flaaffy": {
         "baseStats": {
@@ -1493,7 +1589,8 @@
         "num": 180,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 133
     },
     "flareon": {
         "baseStats": {
@@ -1508,7 +1605,8 @@
         "num": 136,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 250
     },
     "flygon": {
         "baseStats": {
@@ -1524,7 +1622,8 @@
         "types": [
             "GROUND",
             "DRAGON"
-        ]
+        ],
+        "weighthg": 820
     },
     "forretress": {
         "baseStats": {
@@ -1540,7 +1639,8 @@
         "types": [
             "BUG",
             "STEEL"
-        ]
+        ],
+        "weighthg": 1258
     },
     "furret": {
         "baseStats": {
@@ -1555,7 +1655,8 @@
         "num": 162,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 325
     },
     "gardevoir": {
         "baseStats": {
@@ -1570,7 +1671,8 @@
         "num": 282,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 484
     },
     "gastly": {
         "baseStats": {
@@ -1586,7 +1688,8 @@
         "types": [
             "GHOST",
             "POISON"
-        ]
+        ],
+        "weighthg": 1
     },
     "gengar": {
         "baseStats": {
@@ -1602,7 +1705,8 @@
         "types": [
             "GHOST",
             "POISON"
-        ]
+        ],
+        "weighthg": 405
     },
     "geodude": {
         "baseStats": {
@@ -1618,7 +1722,8 @@
         "types": [
             "ROCK",
             "GROUND"
-        ]
+        ],
+        "weighthg": 200
     },
     "girafarig": {
         "baseStats": {
@@ -1634,7 +1739,8 @@
         "types": [
             "NORMAL",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 415
     },
     "glalie": {
         "baseStats": {
@@ -1649,7 +1755,8 @@
         "num": 362,
         "types": [
             "ICE"
-        ]
+        ],
+        "weighthg": 2565
     },
     "gligar": {
         "baseStats": {
@@ -1665,7 +1772,8 @@
         "types": [
             "GROUND",
             "FLYING"
-        ]
+        ],
+        "weighthg": 648
     },
     "gloom": {
         "baseStats": {
@@ -1681,7 +1789,8 @@
         "types": [
             "GRASS",
             "POISON"
-        ]
+        ],
+        "weighthg": 86
     },
     "golbat": {
         "baseStats": {
@@ -1697,7 +1806,8 @@
         "types": [
             "POISON",
             "FLYING"
-        ]
+        ],
+        "weighthg": 550
     },
     "goldeen": {
         "baseStats": {
@@ -1712,7 +1822,8 @@
         "num": 118,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 150
     },
     "golduck": {
         "baseStats": {
@@ -1727,7 +1838,8 @@
         "num": 55,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 766
     },
     "golem": {
         "baseStats": {
@@ -1743,7 +1855,8 @@
         "types": [
             "ROCK",
             "GROUND"
-        ]
+        ],
+        "weighthg": 3000
     },
     "gorebyss": {
         "baseStats": {
@@ -1758,7 +1871,8 @@
         "num": 368,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 226
     },
     "granbull": {
         "baseStats": {
@@ -1773,7 +1887,8 @@
         "num": 210,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 487
     },
     "graveler": {
         "baseStats": {
@@ -1789,7 +1904,8 @@
         "types": [
             "ROCK",
             "GROUND"
-        ]
+        ],
+        "weighthg": 1050
     },
     "grimer": {
         "baseStats": {
@@ -1804,7 +1920,8 @@
         "num": 88,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 300
     },
     "groudon": {
         "baseStats": {
@@ -1819,7 +1936,8 @@
         "num": 383,
         "types": [
             "GROUND"
-        ]
+        ],
+        "weighthg": 9500
     },
     "grovyle": {
         "baseStats": {
@@ -1834,7 +1952,8 @@
         "num": 253,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 216
     },
     "growlithe": {
         "baseStats": {
@@ -1849,7 +1968,8 @@
         "num": 58,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 190
     },
     "grumpig": {
         "baseStats": {
@@ -1864,7 +1984,8 @@
         "num": 326,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 715
     },
     "gulpin": {
         "baseStats": {
@@ -1879,7 +2000,8 @@
         "num": 316,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 103
     },
     "gyarados": {
         "baseStats": {
@@ -1895,7 +2017,8 @@
         "types": [
             "WATER",
             "FLYING"
-        ]
+        ],
+        "weighthg": 2350
     },
     "hariyama": {
         "baseStats": {
@@ -1910,7 +2033,8 @@
         "num": 297,
         "types": [
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 2538
     },
     "haunter": {
         "baseStats": {
@@ -1926,7 +2050,8 @@
         "types": [
             "GHOST",
             "POISON"
-        ]
+        ],
+        "weighthg": 1
     },
     "heracross": {
         "baseStats": {
@@ -1942,7 +2067,8 @@
         "types": [
             "BUG",
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 540
     },
     "hitmonchan": {
         "baseStats": {
@@ -1957,7 +2083,8 @@
         "num": 107,
         "types": [
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 502
     },
     "hitmonlee": {
         "baseStats": {
@@ -1972,7 +2099,8 @@
         "num": 106,
         "types": [
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 498
     },
     "hitmontop": {
         "baseStats": {
@@ -1987,7 +2115,8 @@
         "num": 237,
         "types": [
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 480
     },
     "hooh": {
         "baseStats": {
@@ -2003,7 +2132,8 @@
         "types": [
             "FIRE",
             "FLYING"
-        ]
+        ],
+        "weighthg": 1990
     },
     "hoothoot": {
         "baseStats": {
@@ -2019,7 +2149,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 212
     },
     "hoppip": {
         "baseStats": {
@@ -2035,7 +2166,8 @@
         "types": [
             "GRASS",
             "FLYING"
-        ]
+        ],
+        "weighthg": 5
     },
     "horsea": {
         "baseStats": {
@@ -2050,7 +2182,8 @@
         "num": 116,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 80
     },
     "houndoom": {
         "baseStats": {
@@ -2066,7 +2199,8 @@
         "types": [
             "DARK",
             "FIRE"
-        ]
+        ],
+        "weighthg": 350
     },
     "houndour": {
         "baseStats": {
@@ -2082,7 +2216,8 @@
         "types": [
             "DARK",
             "FIRE"
-        ]
+        ],
+        "weighthg": 108
     },
     "huntail": {
         "baseStats": {
@@ -2097,7 +2232,8 @@
         "num": 367,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 270
     },
     "hypno": {
         "baseStats": {
@@ -2112,7 +2248,8 @@
         "num": 97,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 756
     },
     "igglybuff": {
         "baseStats": {
@@ -2127,7 +2264,8 @@
         "num": 174,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 10
     },
     "illumise": {
         "baseStats": {
@@ -2142,7 +2280,8 @@
         "num": 314,
         "types": [
             "BUG"
-        ]
+        ],
+        "weighthg": 177
     },
     "ivysaur": {
         "baseStats": {
@@ -2158,7 +2297,8 @@
         "types": [
             "GRASS",
             "POISON"
-        ]
+        ],
+        "weighthg": 130
     },
     "jigglypuff": {
         "baseStats": {
@@ -2173,7 +2313,8 @@
         "num": 39,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 55
     },
     "jirachi": {
         "baseStats": {
@@ -2189,7 +2330,8 @@
         "types": [
             "STEEL",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 11
     },
     "jolteon": {
         "baseStats": {
@@ -2204,7 +2346,8 @@
         "num": 135,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 245
     },
     "jumpluff": {
         "baseStats": {
@@ -2220,7 +2363,8 @@
         "types": [
             "GRASS",
             "FLYING"
-        ]
+        ],
+        "weighthg": 30
     },
     "jynx": {
         "baseStats": {
@@ -2236,7 +2380,8 @@
         "types": [
             "ICE",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 406
     },
     "kabuto": {
         "baseStats": {
@@ -2252,7 +2397,8 @@
         "types": [
             "ROCK",
             "WATER"
-        ]
+        ],
+        "weighthg": 115
     },
     "kabutops": {
         "baseStats": {
@@ -2268,7 +2414,8 @@
         "types": [
             "ROCK",
             "WATER"
-        ]
+        ],
+        "weighthg": 405
     },
     "kadabra": {
         "baseStats": {
@@ -2283,7 +2430,8 @@
         "num": 64,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 565
     },
     "kakuna": {
         "baseStats": {
@@ -2299,7 +2447,8 @@
         "types": [
             "BUG",
             "POISON"
-        ]
+        ],
+        "weighthg": 100
     },
     "kangaskhan": {
         "baseStats": {
@@ -2314,7 +2463,8 @@
         "num": 115,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 800
     },
     "kecleon": {
         "baseStats": {
@@ -2329,7 +2479,8 @@
         "num": 352,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 220
     },
     "kingdra": {
         "baseStats": {
@@ -2345,7 +2496,8 @@
         "types": [
             "WATER",
             "DRAGON"
-        ]
+        ],
+        "weighthg": 1520
     },
     "kingler": {
         "baseStats": {
@@ -2360,7 +2512,8 @@
         "num": 99,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 600
     },
     "kirlia": {
         "baseStats": {
@@ -2375,7 +2528,8 @@
         "num": 281,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 202
     },
     "koffing": {
         "baseStats": {
@@ -2390,7 +2544,8 @@
         "num": 109,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 10
     },
     "krabby": {
         "baseStats": {
@@ -2405,7 +2560,8 @@
         "num": 98,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 65
     },
     "kyogre": {
         "baseStats": {
@@ -2420,7 +2576,8 @@
         "num": 382,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 3520
     },
     "lairon": {
         "baseStats": {
@@ -2436,7 +2593,8 @@
         "types": [
             "STEEL",
             "ROCK"
-        ]
+        ],
+        "weighthg": 1200
     },
     "lanturn": {
         "baseStats": {
@@ -2452,7 +2610,8 @@
         "types": [
             "WATER",
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 225
     },
     "lapras": {
         "baseStats": {
@@ -2468,7 +2627,8 @@
         "types": [
             "WATER",
             "ICE"
-        ]
+        ],
+        "weighthg": 2200
     },
     "larvitar": {
         "baseStats": {
@@ -2484,7 +2644,8 @@
         "types": [
             "ROCK",
             "GROUND"
-        ]
+        ],
+        "weighthg": 720
     },
     "latias": {
         "baseStats": {
@@ -2500,7 +2661,8 @@
         "types": [
             "DRAGON",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 400
     },
     "latios": {
         "baseStats": {
@@ -2516,7 +2678,8 @@
         "types": [
             "DRAGON",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 600
     },
     "ledian": {
         "baseStats": {
@@ -2532,7 +2695,8 @@
         "types": [
             "BUG",
             "FLYING"
-        ]
+        ],
+        "weighthg": 356
     },
     "ledyba": {
         "baseStats": {
@@ -2548,7 +2712,8 @@
         "types": [
             "BUG",
             "FLYING"
-        ]
+        ],
+        "weighthg": 108
     },
     "lickitung": {
         "baseStats": {
@@ -2563,7 +2728,8 @@
         "num": 108,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 655
     },
     "lileep": {
         "baseStats": {
@@ -2579,7 +2745,8 @@
         "types": [
             "ROCK",
             "GRASS"
-        ]
+        ],
+        "weighthg": 238
     },
     "linoone": {
         "baseStats": {
@@ -2594,7 +2761,8 @@
         "num": 264,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 325
     },
     "lombre": {
         "baseStats": {
@@ -2610,7 +2778,8 @@
         "types": [
             "WATER",
             "GRASS"
-        ]
+        ],
+        "weighthg": 325
     },
     "lotad": {
         "baseStats": {
@@ -2626,7 +2795,8 @@
         "types": [
             "WATER",
             "GRASS"
-        ]
+        ],
+        "weighthg": 26
     },
     "loudred": {
         "baseStats": {
@@ -2641,7 +2811,8 @@
         "num": 294,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 405
     },
     "ludicolo": {
         "baseStats": {
@@ -2657,7 +2828,8 @@
         "types": [
             "WATER",
             "GRASS"
-        ]
+        ],
+        "weighthg": 550
     },
     "lugia": {
         "baseStats": {
@@ -2673,7 +2845,8 @@
         "types": [
             "PSYCHIC",
             "FLYING"
-        ]
+        ],
+        "weighthg": 2160
     },
     "lunatone": {
         "baseStats": {
@@ -2689,7 +2862,8 @@
         "types": [
             "ROCK",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 1680
     },
     "luvdisc": {
         "baseStats": {
@@ -2704,7 +2878,8 @@
         "num": 370,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 87
     },
     "machamp": {
         "baseStats": {
@@ -2719,7 +2894,8 @@
         "num": 68,
         "types": [
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 1300
     },
     "machoke": {
         "baseStats": {
@@ -2734,7 +2910,8 @@
         "num": 67,
         "types": [
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 705
     },
     "machop": {
         "baseStats": {
@@ -2749,7 +2926,8 @@
         "num": 66,
         "types": [
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 195
     },
     "magby": {
         "baseStats": {
@@ -2764,7 +2942,8 @@
         "num": 240,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 214
     },
     "magcargo": {
         "baseStats": {
@@ -2780,7 +2959,8 @@
         "types": [
             "FIRE",
             "ROCK"
-        ]
+        ],
+        "weighthg": 550
     },
     "magikarp": {
         "baseStats": {
@@ -2795,7 +2975,8 @@
         "num": 129,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 100
     },
     "magmar": {
         "baseStats": {
@@ -2810,7 +2991,8 @@
         "num": 126,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 445
     },
     "magnemite": {
         "baseStats": {
@@ -2826,7 +3008,8 @@
         "types": [
             "ELECTRIC",
             "STEEL"
-        ]
+        ],
+        "weighthg": 60
     },
     "magneton": {
         "baseStats": {
@@ -2842,7 +3025,8 @@
         "types": [
             "ELECTRIC",
             "STEEL"
-        ]
+        ],
+        "weighthg": 600
     },
     "makuhita": {
         "baseStats": {
@@ -2857,7 +3041,8 @@
         "num": 296,
         "types": [
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 864
     },
     "manectric": {
         "baseStats": {
@@ -2872,7 +3057,8 @@
         "num": 310,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 402
     },
     "mankey": {
         "baseStats": {
@@ -2887,7 +3073,8 @@
         "num": 56,
         "types": [
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 280
     },
     "mantine": {
         "baseStats": {
@@ -2903,7 +3090,8 @@
         "types": [
             "WATER",
             "FLYING"
-        ]
+        ],
+        "weighthg": 2200
     },
     "mareep": {
         "baseStats": {
@@ -2918,7 +3106,8 @@
         "num": 179,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 78
     },
     "marill": {
         "baseStats": {
@@ -2933,7 +3122,8 @@
         "num": 183,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 85
     },
     "marowak": {
         "baseStats": {
@@ -2948,7 +3138,8 @@
         "num": 105,
         "types": [
             "GROUND"
-        ]
+        ],
+        "weighthg": 450
     },
     "marshtomp": {
         "baseStats": {
@@ -2964,7 +3155,8 @@
         "types": [
             "WATER",
             "GROUND"
-        ]
+        ],
+        "weighthg": 280
     },
     "masquerain": {
         "baseStats": {
@@ -2980,7 +3172,8 @@
         "types": [
             "BUG",
             "FLYING"
-        ]
+        ],
+        "weighthg": 36
     },
     "mawile": {
         "baseStats": {
@@ -2995,7 +3188,8 @@
         "num": 303,
         "types": [
             "STEEL"
-        ]
+        ],
+        "weighthg": 115
     },
     "medicham": {
         "baseStats": {
@@ -3011,7 +3205,8 @@
         "types": [
             "FIGHTING",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 315
     },
     "meditite": {
         "baseStats": {
@@ -3027,7 +3222,8 @@
         "types": [
             "FIGHTING",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 112
     },
     "meganium": {
         "baseStats": {
@@ -3042,7 +3238,8 @@
         "num": 154,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 1005
     },
     "meowth": {
         "baseStats": {
@@ -3057,7 +3254,8 @@
         "num": 52,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 42
     },
     "metagross": {
         "baseStats": {
@@ -3073,7 +3271,8 @@
         "types": [
             "STEEL",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 5500
     },
     "metang": {
         "baseStats": {
@@ -3089,7 +3288,8 @@
         "types": [
             "STEEL",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 2025
     },
     "metapod": {
         "baseStats": {
@@ -3104,7 +3304,8 @@
         "num": 11,
         "types": [
             "BUG"
-        ]
+        ],
+        "weighthg": 99
     },
     "mew": {
         "baseStats": {
@@ -3119,7 +3320,8 @@
         "num": 151,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 40
     },
     "mewtwo": {
         "baseStats": {
@@ -3134,7 +3336,8 @@
         "num": 150,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 1220
     },
     "mightyena": {
         "baseStats": {
@@ -3149,7 +3352,8 @@
         "num": 262,
         "types": [
             "DARK"
-        ]
+        ],
+        "weighthg": 370
     },
     "milotic": {
         "baseStats": {
@@ -3164,7 +3368,8 @@
         "num": 350,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 1620
     },
     "miltank": {
         "baseStats": {
@@ -3179,7 +3384,8 @@
         "num": 241,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 755
     },
     "minun": {
         "baseStats": {
@@ -3194,7 +3400,8 @@
         "num": 312,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 42
     },
     "misdreavus": {
         "baseStats": {
@@ -3209,7 +3416,8 @@
         "num": 200,
         "types": [
             "GHOST"
-        ]
+        ],
+        "weighthg": 10
     },
     "moltres": {
         "baseStats": {
@@ -3225,7 +3433,8 @@
         "types": [
             "FIRE",
             "FLYING"
-        ]
+        ],
+        "weighthg": 600
     },
     "mrmime": {
         "baseStats": {
@@ -3240,7 +3449,8 @@
         "num": 122,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 545
     },
     "mudkip": {
         "baseStats": {
@@ -3255,7 +3465,8 @@
         "num": 258,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 76
     },
     "muk": {
         "baseStats": {
@@ -3270,7 +3481,8 @@
         "num": 89,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 300
     },
     "murkrow": {
         "baseStats": {
@@ -3286,7 +3498,8 @@
         "types": [
             "DARK",
             "FLYING"
-        ]
+        ],
+        "weighthg": 21
     },
     "natu": {
         "baseStats": {
@@ -3302,7 +3515,8 @@
         "types": [
             "PSYCHIC",
             "FLYING"
-        ]
+        ],
+        "weighthg": 20
     },
     "nidoking": {
         "baseStats": {
@@ -3318,7 +3532,8 @@
         "types": [
             "POISON",
             "GROUND"
-        ]
+        ],
+        "weighthg": 620
     },
     "nidoqueen": {
         "baseStats": {
@@ -3334,7 +3549,8 @@
         "types": [
             "POISON",
             "GROUND"
-        ]
+        ],
+        "weighthg": 600
     },
     "nidoranf": {
         "baseStats": {
@@ -3349,7 +3565,8 @@
         "num": 29,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 70
     },
     "nidoranm": {
         "baseStats": {
@@ -3364,7 +3581,8 @@
         "num": 32,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 90
     },
     "nidorina": {
         "baseStats": {
@@ -3379,7 +3597,8 @@
         "num": 30,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 200
     },
     "nidorino": {
         "baseStats": {
@@ -3394,7 +3613,8 @@
         "num": 33,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 195
     },
     "nincada": {
         "baseStats": {
@@ -3410,7 +3630,8 @@
         "types": [
             "BUG",
             "GROUND"
-        ]
+        ],
+        "weighthg": 55
     },
     "ninetales": {
         "baseStats": {
@@ -3425,7 +3646,8 @@
         "num": 38,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 199
     },
     "ninjask": {
         "baseStats": {
@@ -3441,7 +3663,8 @@
         "types": [
             "BUG",
             "FLYING"
-        ]
+        ],
+        "weighthg": 120
     },
     "noctowl": {
         "baseStats": {
@@ -3457,7 +3680,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 408
     },
     "nosepass": {
         "baseStats": {
@@ -3472,7 +3696,8 @@
         "num": 299,
         "types": [
             "ROCK"
-        ]
+        ],
+        "weighthg": 970
     },
     "numel": {
         "baseStats": {
@@ -3488,7 +3713,8 @@
         "types": [
             "FIRE",
             "GROUND"
-        ]
+        ],
+        "weighthg": 240
     },
     "nuzleaf": {
         "baseStats": {
@@ -3504,7 +3730,8 @@
         "types": [
             "GRASS",
             "DARK"
-        ]
+        ],
+        "weighthg": 280
     },
     "octillery": {
         "baseStats": {
@@ -3519,7 +3746,8 @@
         "num": 224,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 285
     },
     "oddish": {
         "baseStats": {
@@ -3535,7 +3763,8 @@
         "types": [
             "GRASS",
             "POISON"
-        ]
+        ],
+        "weighthg": 54
     },
     "omanyte": {
         "baseStats": {
@@ -3551,7 +3780,8 @@
         "types": [
             "ROCK",
             "WATER"
-        ]
+        ],
+        "weighthg": 75
     },
     "omastar": {
         "baseStats": {
@@ -3567,7 +3797,8 @@
         "types": [
             "ROCK",
             "WATER"
-        ]
+        ],
+        "weighthg": 350
     },
     "onix": {
         "baseStats": {
@@ -3583,7 +3814,8 @@
         "types": [
             "ROCK",
             "GROUND"
-        ]
+        ],
+        "weighthg": 2100
     },
     "paras": {
         "baseStats": {
@@ -3599,7 +3831,8 @@
         "types": [
             "BUG",
             "GRASS"
-        ]
+        ],
+        "weighthg": 54
     },
     "parasect": {
         "baseStats": {
@@ -3615,7 +3848,8 @@
         "types": [
             "BUG",
             "GRASS"
-        ]
+        ],
+        "weighthg": 295
     },
     "pelipper": {
         "baseStats": {
@@ -3631,7 +3865,8 @@
         "types": [
             "WATER",
             "FLYING"
-        ]
+        ],
+        "weighthg": 280
     },
     "persian": {
         "baseStats": {
@@ -3646,7 +3881,8 @@
         "num": 53,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 320
     },
     "phanpy": {
         "baseStats": {
@@ -3661,7 +3897,8 @@
         "num": 231,
         "types": [
             "GROUND"
-        ]
+        ],
+        "weighthg": 335
     },
     "pichu": {
         "baseStats": {
@@ -3676,7 +3913,8 @@
         "num": 172,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 20
     },
     "pidgeot": {
         "baseStats": {
@@ -3692,7 +3930,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 395
     },
     "pidgeotto": {
         "baseStats": {
@@ -3708,7 +3947,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 300
     },
     "pidgey": {
         "baseStats": {
@@ -3724,7 +3964,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 18
     },
     "pikachu": {
         "baseStats": {
@@ -3739,7 +3980,8 @@
         "num": 25,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 60
     },
     "piloswine": {
         "baseStats": {
@@ -3755,7 +3997,8 @@
         "types": [
             "ICE",
             "GROUND"
-        ]
+        ],
+        "weighthg": 558
     },
     "pineco": {
         "baseStats": {
@@ -3770,7 +4013,8 @@
         "num": 204,
         "types": [
             "BUG"
-        ]
+        ],
+        "weighthg": 72
     },
     "pinsir": {
         "baseStats": {
@@ -3785,7 +4029,8 @@
         "num": 127,
         "types": [
             "BUG"
-        ]
+        ],
+        "weighthg": 550
     },
     "plusle": {
         "baseStats": {
@@ -3800,7 +4045,8 @@
         "num": 311,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 42
     },
     "politoed": {
         "baseStats": {
@@ -3815,7 +4061,8 @@
         "num": 186,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 339
     },
     "poliwag": {
         "baseStats": {
@@ -3830,7 +4077,8 @@
         "num": 60,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 124
     },
     "poliwhirl": {
         "baseStats": {
@@ -3845,7 +4093,8 @@
         "num": 61,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 200
     },
     "poliwrath": {
         "baseStats": {
@@ -3861,7 +4110,8 @@
         "types": [
             "WATER",
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 540
     },
     "ponyta": {
         "baseStats": {
@@ -3876,7 +4126,8 @@
         "num": 77,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 300
     },
     "poochyena": {
         "baseStats": {
@@ -3891,7 +4142,8 @@
         "num": 261,
         "types": [
             "DARK"
-        ]
+        ],
+        "weighthg": 136
     },
     "porygon": {
         "baseStats": {
@@ -3906,7 +4158,8 @@
         "num": 137,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 365
     },
     "porygon2": {
         "baseStats": {
@@ -3921,7 +4174,8 @@
         "num": 233,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 325
     },
     "primeape": {
         "baseStats": {
@@ -3936,7 +4190,8 @@
         "num": 57,
         "types": [
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 320
     },
     "psyduck": {
         "baseStats": {
@@ -3951,7 +4206,8 @@
         "num": 54,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 196
     },
     "pupitar": {
         "baseStats": {
@@ -3967,7 +4223,8 @@
         "types": [
             "ROCK",
             "GROUND"
-        ]
+        ],
+        "weighthg": 1520
     },
     "quagsire": {
         "baseStats": {
@@ -3983,7 +4240,8 @@
         "types": [
             "WATER",
             "GROUND"
-        ]
+        ],
+        "weighthg": 750
     },
     "quilava": {
         "baseStats": {
@@ -3998,7 +4256,8 @@
         "num": 156,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 190
     },
     "qwilfish": {
         "baseStats": {
@@ -4014,7 +4273,8 @@
         "types": [
             "WATER",
             "POISON"
-        ]
+        ],
+        "weighthg": 39
     },
     "raichu": {
         "baseStats": {
@@ -4029,7 +4289,8 @@
         "num": 26,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 300
     },
     "raikou": {
         "baseStats": {
@@ -4044,7 +4305,8 @@
         "num": 243,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 1780
     },
     "ralts": {
         "baseStats": {
@@ -4059,7 +4321,8 @@
         "num": 280,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 66
     },
     "rapidash": {
         "baseStats": {
@@ -4074,7 +4337,8 @@
         "num": 78,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 950
     },
     "raticate": {
         "baseStats": {
@@ -4089,7 +4353,8 @@
         "num": 20,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 185
     },
     "rattata": {
         "baseStats": {
@@ -4104,7 +4369,8 @@
         "num": 19,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 35
     },
     "rayquaza": {
         "baseStats": {
@@ -4120,7 +4386,8 @@
         "types": [
             "DRAGON",
             "FLYING"
-        ]
+        ],
+        "weighthg": 2065
     },
     "regice": {
         "baseStats": {
@@ -4135,7 +4402,8 @@
         "num": 378,
         "types": [
             "ICE"
-        ]
+        ],
+        "weighthg": 1750
     },
     "regirock": {
         "baseStats": {
@@ -4150,7 +4418,8 @@
         "num": 377,
         "types": [
             "ROCK"
-        ]
+        ],
+        "weighthg": 2300
     },
     "registeel": {
         "baseStats": {
@@ -4165,7 +4434,8 @@
         "num": 379,
         "types": [
             "STEEL"
-        ]
+        ],
+        "weighthg": 2050
     },
     "relicanth": {
         "baseStats": {
@@ -4181,7 +4451,8 @@
         "types": [
             "WATER",
             "ROCK"
-        ]
+        ],
+        "weighthg": 234
     },
     "remoraid": {
         "baseStats": {
@@ -4196,7 +4467,8 @@
         "num": 223,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 120
     },
     "rhydon": {
         "baseStats": {
@@ -4212,7 +4484,8 @@
         "types": [
             "GROUND",
             "ROCK"
-        ]
+        ],
+        "weighthg": 1200
     },
     "rhyhorn": {
         "baseStats": {
@@ -4228,7 +4501,8 @@
         "types": [
             "GROUND",
             "ROCK"
-        ]
+        ],
+        "weighthg": 1150
     },
     "roselia": {
         "baseStats": {
@@ -4244,7 +4518,8 @@
         "types": [
             "GRASS",
             "POISON"
-        ]
+        ],
+        "weighthg": 20
     },
     "sableye": {
         "baseStats": {
@@ -4260,7 +4535,8 @@
         "types": [
             "DARK",
             "GHOST"
-        ]
+        ],
+        "weighthg": 110
     },
     "salamence": {
         "baseStats": {
@@ -4276,7 +4552,8 @@
         "types": [
             "DRAGON",
             "FLYING"
-        ]
+        ],
+        "weighthg": 1026
     },
     "sandshrew": {
         "baseStats": {
@@ -4291,7 +4568,8 @@
         "num": 27,
         "types": [
             "GROUND"
-        ]
+        ],
+        "weighthg": 120
     },
     "sandslash": {
         "baseStats": {
@@ -4306,7 +4584,8 @@
         "num": 28,
         "types": [
             "GROUND"
-        ]
+        ],
+        "weighthg": 295
     },
     "sceptile": {
         "baseStats": {
@@ -4321,7 +4600,8 @@
         "num": 254,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 522
     },
     "scizor": {
         "baseStats": {
@@ -4337,7 +4617,8 @@
         "types": [
             "BUG",
             "STEEL"
-        ]
+        ],
+        "weighthg": 1180
     },
     "scyther": {
         "baseStats": {
@@ -4353,7 +4634,8 @@
         "types": [
             "BUG",
             "FLYING"
-        ]
+        ],
+        "weighthg": 560
     },
     "seadra": {
         "baseStats": {
@@ -4368,7 +4650,8 @@
         "num": 117,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 250
     },
     "seaking": {
         "baseStats": {
@@ -4383,7 +4666,8 @@
         "num": 119,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 390
     },
     "sealeo": {
         "baseStats": {
@@ -4399,7 +4683,8 @@
         "types": [
             "ICE",
             "WATER"
-        ]
+        ],
+        "weighthg": 876
     },
     "seedot": {
         "baseStats": {
@@ -4414,7 +4699,8 @@
         "num": 273,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 40
     },
     "seel": {
         "baseStats": {
@@ -4429,7 +4715,8 @@
         "num": 86,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 900
     },
     "sentret": {
         "baseStats": {
@@ -4444,7 +4731,8 @@
         "num": 161,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 60
     },
     "seviper": {
         "baseStats": {
@@ -4459,7 +4747,8 @@
         "num": 336,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 525
     },
     "sharpedo": {
         "baseStats": {
@@ -4475,7 +4764,8 @@
         "types": [
             "WATER",
             "DARK"
-        ]
+        ],
+        "weighthg": 888
     },
     "shedinja": {
         "baseStats": {
@@ -4492,7 +4782,8 @@
             "BUG",
             "GHOST"
         ],
-        "maxHP": 1
+        "maxHP": 1,
+        "weighthg": 12
     },
     "shelgon": {
         "baseStats": {
@@ -4507,7 +4798,8 @@
         "num": 372,
         "types": [
             "DRAGON"
-        ]
+        ],
+        "weighthg": 1105
     },
     "shellder": {
         "baseStats": {
@@ -4522,7 +4814,8 @@
         "num": 90,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 40
     },
     "shiftry": {
         "baseStats": {
@@ -4538,7 +4831,8 @@
         "types": [
             "GRASS",
             "DARK"
-        ]
+        ],
+        "weighthg": 596
     },
     "shroomish": {
         "baseStats": {
@@ -4553,7 +4847,8 @@
         "num": 285,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 45
     },
     "shuckle": {
         "baseStats": {
@@ -4569,7 +4864,8 @@
         "types": [
             "BUG",
             "ROCK"
-        ]
+        ],
+        "weighthg": 205
     },
     "shuppet": {
         "baseStats": {
@@ -4584,7 +4880,8 @@
         "num": 353,
         "types": [
             "GHOST"
-        ]
+        ],
+        "weighthg": 23
     },
     "silcoon": {
         "baseStats": {
@@ -4599,7 +4896,8 @@
         "num": 266,
         "types": [
             "BUG"
-        ]
+        ],
+        "weighthg": 100
     },
     "skarmory": {
         "baseStats": {
@@ -4615,7 +4913,8 @@
         "types": [
             "STEEL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 505
     },
     "skiploom": {
         "baseStats": {
@@ -4631,7 +4930,8 @@
         "types": [
             "GRASS",
             "FLYING"
-        ]
+        ],
+        "weighthg": 10
     },
     "skitty": {
         "baseStats": {
@@ -4646,7 +4946,8 @@
         "num": 300,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 110
     },
     "slaking": {
         "baseStats": {
@@ -4661,7 +4962,8 @@
         "num": 289,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 1305
     },
     "slakoth": {
         "baseStats": {
@@ -4676,7 +4978,8 @@
         "num": 287,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 240
     },
     "slowbro": {
         "baseStats": {
@@ -4692,7 +4995,8 @@
         "types": [
             "WATER",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 785
     },
     "slowking": {
         "baseStats": {
@@ -4708,7 +5012,8 @@
         "types": [
             "WATER",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 795
     },
     "slowpoke": {
         "baseStats": {
@@ -4724,7 +5029,8 @@
         "types": [
             "WATER",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 360
     },
     "slugma": {
         "baseStats": {
@@ -4739,7 +5045,8 @@
         "num": 218,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 350
     },
     "smeargle": {
         "baseStats": {
@@ -4754,7 +5061,8 @@
         "num": 235,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 580
     },
     "smoochum": {
         "baseStats": {
@@ -4770,7 +5078,8 @@
         "types": [
             "ICE",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 60
     },
     "sneasel": {
         "baseStats": {
@@ -4786,7 +5095,8 @@
         "types": [
             "DARK",
             "ICE"
-        ]
+        ],
+        "weighthg": 280
     },
     "snorlax": {
         "baseStats": {
@@ -4801,7 +5111,8 @@
         "num": 143,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 4600
     },
     "snorunt": {
         "baseStats": {
@@ -4816,7 +5127,8 @@
         "num": 361,
         "types": [
             "ICE"
-        ]
+        ],
+        "weighthg": 168
     },
     "snubbull": {
         "baseStats": {
@@ -4831,7 +5143,8 @@
         "num": 209,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 78
     },
     "solrock": {
         "baseStats": {
@@ -4847,7 +5160,8 @@
         "types": [
             "ROCK",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 1540
     },
     "spearow": {
         "baseStats": {
@@ -4863,7 +5177,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 20
     },
     "spheal": {
         "baseStats": {
@@ -4879,7 +5194,8 @@
         "types": [
             "ICE",
             "WATER"
-        ]
+        ],
+        "weighthg": 395
     },
     "spinarak": {
         "baseStats": {
@@ -4895,7 +5211,8 @@
         "types": [
             "BUG",
             "POISON"
-        ]
+        ],
+        "weighthg": 85
     },
     "spinda": {
         "baseStats": {
@@ -4910,7 +5227,8 @@
         "num": 327,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 50
     },
     "spoink": {
         "baseStats": {
@@ -4925,7 +5243,8 @@
         "num": 325,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 306
     },
     "squirtle": {
         "baseStats": {
@@ -4940,7 +5259,8 @@
         "num": 7,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 90
     },
     "stantler": {
         "baseStats": {
@@ -4955,7 +5275,8 @@
         "num": 234,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 712
     },
     "starmie": {
         "baseStats": {
@@ -4971,7 +5292,8 @@
         "types": [
             "WATER",
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 800
     },
     "staryu": {
         "baseStats": {
@@ -4986,7 +5308,8 @@
         "num": 120,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 345
     },
     "steelix": {
         "baseStats": {
@@ -5002,7 +5325,8 @@
         "types": [
             "STEEL",
             "GROUND"
-        ]
+        ],
+        "weighthg": 4000
     },
     "sudowoodo": {
         "baseStats": {
@@ -5017,7 +5341,8 @@
         "num": 185,
         "types": [
             "ROCK"
-        ]
+        ],
+        "weighthg": 380
     },
     "suicune": {
         "baseStats": {
@@ -5032,7 +5357,8 @@
         "num": 245,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 1870
     },
     "sunflora": {
         "baseStats": {
@@ -5047,7 +5373,8 @@
         "num": 192,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 85
     },
     "sunkern": {
         "baseStats": {
@@ -5062,7 +5389,8 @@
         "num": 191,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 18
     },
     "surskit": {
         "baseStats": {
@@ -5078,7 +5406,8 @@
         "types": [
             "BUG",
             "WATER"
-        ]
+        ],
+        "weighthg": 17
     },
     "swablu": {
         "baseStats": {
@@ -5094,7 +5423,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 12
     },
     "swalot": {
         "baseStats": {
@@ -5109,7 +5439,8 @@
         "num": 317,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 800
     },
     "swampert": {
         "baseStats": {
@@ -5125,7 +5456,8 @@
         "types": [
             "WATER",
             "GROUND"
-        ]
+        ],
+        "weighthg": 819
     },
     "swellow": {
         "baseStats": {
@@ -5141,7 +5473,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 198
     },
     "swinub": {
         "baseStats": {
@@ -5157,7 +5490,8 @@
         "types": [
             "ICE",
             "GROUND"
-        ]
+        ],
+        "weighthg": 65
     },
     "taillow": {
         "baseStats": {
@@ -5173,7 +5507,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 23
     },
     "tangela": {
         "baseStats": {
@@ -5188,7 +5523,8 @@
         "num": 114,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 350
     },
     "tauros": {
         "baseStats": {
@@ -5203,7 +5539,8 @@
         "num": 128,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 884
     },
     "teddiursa": {
         "baseStats": {
@@ -5218,7 +5555,8 @@
         "num": 216,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 88
     },
     "tentacool": {
         "baseStats": {
@@ -5234,7 +5572,8 @@
         "types": [
             "WATER",
             "POISON"
-        ]
+        ],
+        "weighthg": 455
     },
     "tentacruel": {
         "baseStats": {
@@ -5250,7 +5589,8 @@
         "types": [
             "WATER",
             "POISON"
-        ]
+        ],
+        "weighthg": 550
     },
     "togepi": {
         "baseStats": {
@@ -5265,7 +5605,8 @@
         "num": 175,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 15
     },
     "togetic": {
         "baseStats": {
@@ -5281,7 +5622,8 @@
         "types": [
             "NORMAL",
             "FLYING"
-        ]
+        ],
+        "weighthg": 32
     },
     "torchic": {
         "baseStats": {
@@ -5296,7 +5638,8 @@
         "num": 255,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 25
     },
     "torkoal": {
         "baseStats": {
@@ -5311,7 +5654,8 @@
         "num": 324,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 804
     },
     "totodile": {
         "baseStats": {
@@ -5326,7 +5670,8 @@
         "num": 158,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 95
     },
     "trapinch": {
         "baseStats": {
@@ -5341,7 +5686,8 @@
         "num": 328,
         "types": [
             "GROUND"
-        ]
+        ],
+        "weighthg": 150
     },
     "treecko": {
         "baseStats": {
@@ -5356,7 +5702,8 @@
         "num": 252,
         "types": [
             "GRASS"
-        ]
+        ],
+        "weighthg": 50
     },
     "tropius": {
         "baseStats": {
@@ -5372,7 +5719,8 @@
         "types": [
             "GRASS",
             "FLYING"
-        ]
+        ],
+        "weighthg": 1000
     },
     "typhlosion": {
         "baseStats": {
@@ -5387,7 +5735,8 @@
         "num": 157,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 795
     },
     "tyranitar": {
         "baseStats": {
@@ -5403,7 +5752,8 @@
         "types": [
             "ROCK",
             "DARK"
-        ]
+        ],
+        "weighthg": 2020
     },
     "tyrogue": {
         "baseStats": {
@@ -5418,7 +5768,8 @@
         "num": 236,
         "types": [
             "FIGHTING"
-        ]
+        ],
+        "weighthg": 210
     },
     "umbreon": {
         "baseStats": {
@@ -5433,7 +5784,8 @@
         "num": 197,
         "types": [
             "DARK"
-        ]
+        ],
+        "weighthg": 270
     },
     "unown": {
         "baseStats": {
@@ -5448,7 +5800,8 @@
         "num": 201,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 50
     },
     "ursaring": {
         "baseStats": {
@@ -5463,7 +5816,8 @@
         "num": 217,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 1258
     },
     "vaporeon": {
         "baseStats": {
@@ -5478,7 +5832,8 @@
         "num": 134,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 290
     },
     "venomoth": {
         "baseStats": {
@@ -5494,7 +5849,8 @@
         "types": [
             "BUG",
             "POISON"
-        ]
+        ],
+        "weighthg": 125
     },
     "venonat": {
         "baseStats": {
@@ -5510,7 +5866,8 @@
         "types": [
             "BUG",
             "POISON"
-        ]
+        ],
+        "weighthg": 300
     },
     "venusaur": {
         "baseStats": {
@@ -5526,7 +5883,8 @@
         "types": [
             "GRASS",
             "POISON"
-        ]
+        ],
+        "weighthg": 1000
     },
     "vibrava": {
         "baseStats": {
@@ -5542,7 +5900,8 @@
         "types": [
             "GROUND",
             "DRAGON"
-        ]
+        ],
+        "weighthg": 153
     },
     "victreebel": {
         "baseStats": {
@@ -5558,7 +5917,8 @@
         "types": [
             "GRASS",
             "POISON"
-        ]
+        ],
+        "weighthg": 155
     },
     "vigoroth": {
         "baseStats": {
@@ -5573,7 +5933,8 @@
         "num": 288,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 465
     },
     "vileplume": {
         "baseStats": {
@@ -5589,7 +5950,8 @@
         "types": [
             "GRASS",
             "POISON"
-        ]
+        ],
+        "weighthg": 186
     },
     "volbeat": {
         "baseStats": {
@@ -5604,7 +5966,8 @@
         "num": 313,
         "types": [
             "BUG"
-        ]
+        ],
+        "weighthg": 177
     },
     "voltorb": {
         "baseStats": {
@@ -5619,7 +5982,8 @@
         "num": 100,
         "types": [
             "ELECTRIC"
-        ]
+        ],
+        "weighthg": 104
     },
     "vulpix": {
         "baseStats": {
@@ -5634,7 +5998,8 @@
         "num": 37,
         "types": [
             "FIRE"
-        ]
+        ],
+        "weighthg": 99
     },
     "wailmer": {
         "baseStats": {
@@ -5649,7 +6014,8 @@
         "num": 320,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 1300
     },
     "wailord": {
         "baseStats": {
@@ -5664,7 +6030,8 @@
         "num": 321,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 3980
     },
     "walrein": {
         "baseStats": {
@@ -5680,7 +6047,8 @@
         "types": [
             "ICE",
             "WATER"
-        ]
+        ],
+        "weighthg": 1506
     },
     "wartortle": {
         "baseStats": {
@@ -5695,7 +6063,8 @@
         "num": 8,
         "types": [
             "WATER"
-        ]
+        ],
+        "weighthg": 225
     },
     "weedle": {
         "baseStats": {
@@ -5711,7 +6080,8 @@
         "types": [
             "BUG",
             "POISON"
-        ]
+        ],
+        "weighthg": 32
     },
     "weepinbell": {
         "baseStats": {
@@ -5727,7 +6097,8 @@
         "types": [
             "GRASS",
             "POISON"
-        ]
+        ],
+        "weighthg": 64
     },
     "weezing": {
         "baseStats": {
@@ -5742,7 +6113,8 @@
         "num": 110,
         "types": [
             "POISON"
-        ]
+        ],
+        "weighthg": 95
     },
     "whiscash": {
         "baseStats": {
@@ -5758,7 +6130,8 @@
         "types": [
             "WATER",
             "GROUND"
-        ]
+        ],
+        "weighthg": 236
     },
     "whismur": {
         "baseStats": {
@@ -5773,7 +6146,8 @@
         "num": 293,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 163
     },
     "wigglytuff": {
         "baseStats": {
@@ -5788,7 +6162,8 @@
         "num": 40,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 120
     },
     "wingull": {
         "baseStats": {
@@ -5804,7 +6179,8 @@
         "types": [
             "WATER",
             "FLYING"
-        ]
+        ],
+        "weighthg": 95
     },
     "wobbuffet": {
         "baseStats": {
@@ -5819,7 +6195,8 @@
         "num": 202,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 285
     },
     "wooper": {
         "baseStats": {
@@ -5835,7 +6212,8 @@
         "types": [
             "WATER",
             "GROUND"
-        ]
+        ],
+        "weighthg": 85
     },
     "wurmple": {
         "baseStats": {
@@ -5850,7 +6228,8 @@
         "num": 265,
         "types": [
             "BUG"
-        ]
+        ],
+        "weighthg": 36
     },
     "wynaut": {
         "baseStats": {
@@ -5865,7 +6244,8 @@
         "num": 360,
         "types": [
             "PSYCHIC"
-        ]
+        ],
+        "weighthg": 140
     },
     "xatu": {
         "baseStats": {
@@ -5881,7 +6261,8 @@
         "types": [
             "PSYCHIC",
             "FLYING"
-        ]
+        ],
+        "weighthg": 150
     },
     "yanma": {
         "baseStats": {
@@ -5897,7 +6278,8 @@
         "types": [
             "BUG",
             "FLYING"
-        ]
+        ],
+        "weighthg": 380
     },
     "zangoose": {
         "baseStats": {
@@ -5912,7 +6294,8 @@
         "num": 335,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 403
     },
     "zapdos": {
         "baseStats": {
@@ -5928,7 +6311,8 @@
         "types": [
             "ELECTRIC",
             "FLYING"
-        ]
+        ],
+        "weighthg": 526
     },
     "zigzagoon": {
         "baseStats": {
@@ -5943,7 +6327,8 @@
         "num": 263,
         "types": [
             "NORMAL"
-        ]
+        ],
+        "weighthg": 175
     },
     "zubat": {
         "baseStats": {
@@ -5959,6 +6344,7 @@
         "types": [
             "POISON",
             "FLYING"
-        ]
+        ],
+        "weighthg": 75
     }
 }

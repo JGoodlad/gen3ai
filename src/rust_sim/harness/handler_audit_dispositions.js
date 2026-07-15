@@ -358,6 +358,28 @@ add([cond('beatup', 'onFoeModifySpD'), cond('beatup', 'onFoeModifySpDPriority')]
 add([cond('beatup', 'duration')], IMPL('state.rs::beat_up', 'the duration:1 volatile — a NO_ORDER/subOrder-2 residual duration handler (the Beat Up mirror tie-shuffle); cleared at turn-top (clear_flinch) / switch-out / faint'));
 add([mv('thunder', 'onModifyMove')], IMPL('turn.rs::run_move', 'the id-gated weather-accuracy mutation: effective rain => never-miss (skip the accuracy random(100)), sun => base 50, else base 70 (gen3_move_coverage_batch4b_v1)'));
 
+// MOVE-COVERAGE BATCH 4c (`gen3_move_coverage_batch4c_v1`): HYPER BEAM (mustrecharge) /
+// SOLAR BEAM (twoturnmove) / DOOM DESIRE + FUTURE SIGHT (futuremove). The three
+// cross-turn conditions are enumerated explicitly in dump_gen3_handlers.js's
+// ENGINE_CONDITIONS (standalone conditions, not `m.condition` sub-objects).
+add([mv('hyperbeam', 'self')], IMPL('turn.rs::run_move', 'self.volatileStatus mustrecharge — applied DRAW-FREE on a SUCCESSFUL damaging hit (plain/sub-absorb/sub-break/target-KO; NOT miss/immune/Protect-block), |-mustrecharge| after the damage/sub line'));
+add([cond('mustrecharge', 'onStart')], IMPL('turn.rs::run_move', 'the |-mustrecharge|<user> announce at the apply site (log.must_recharge)'));
+add([cond('mustrecharge', 'onBeforeMove'), cond('mustrecharge', 'onBeforeMovePriority')], IMPL('turn.rs::run_move', 'the priority-11 recharge cant at the TOP of run_move (before every status handler — a par/slp locked user rolls/decrements NOTHING): |cant|…|recharge, clear must_recharge, ZERO draws, NO PP; removeVolatile(truant) is a no-op in the truant_turn toggle model (the order-27 toggle consumes the loaf — probed cadence)'));
+add([cond('mustrecharge', 'onLockMove')], IMPL('state.rs::move_locked', 'the locked single-`Recharge` request (choice_is_legal Move(0)-only + the firm trapped switch-reject; bridge serialize_active/resolve_choice)'));
+add([cond('mustrecharge', 'duration')], IMPL('turn.rs::run_residuals', 'the duration:2 volatile registers a NO_ORDER/subOrder-2 residual duration handler on the CAST turn residual (the HB-mirror tie-shuffle); the removal is the recharge cant, not the countdown'));
+add([mv('solarbeam', 'onTryMove')], IMPL('turn.rs::run_move', 'the two-turn gate: CHARGE ([still]+-prepare, zero move draws, addVolatile twoturnmove) / SUN SKIP (effective_weather-aware: -anim + immediate 3-draw execution) / FIRE (removeVolatile solarbeam => charging=false, [from]lockedmove, acc-100 drawn)'));
+add([mv('solarbeam', 'onBasePower')], IMPL('turn.rs::run_move', 'the rain/sand/hail BP-halving chainModify(0.5) — a draw-free BP-chain fold read at damage time, suppression-aware (gen3 DOES have the modern halving, probed rain 54 vs control 105)'));
+add([cond('twoturnmove', 'onStart')], IMPL('state.rs::two_turn', 'TwoTurnMove {move_index, duration:2, charging:true} set at the charge (the solarbeam sub-volatile == charging)'));
+add([cond('twoturnmove', 'onLockMove')], IMPL('state.rs::move_locked', 'the locked single-move fire request (choice_is_legal Move(0)-only + the firm trapped switch-reject; the queue build maps Move(0) to the locked slot)'));
+add([cond('twoturnmove', 'onMoveAborted')], IMPL('turn.rs::run_move', 'an onBeforeMove cant clears two_turn entirely — THE CHARGE IS LOST (a fresh charge re-pays PP)'));
+add([cond('twoturnmove', 'onEnd')], IMPL('turn.rs::run_residuals', 'the duration expiry removes the volatile (TwoTurnDuration 2→1→0); its removeVolatile(solarbeam) is a no-op when the beam fired (charging already false)'));
+add([cond('twoturnmove', 'duration')], IMPL('turn.rs::run_residuals', 'the duration:2 volatile registers a NO_ORDER/subOrder-2 residual duration handler on BOTH the charge- and fire-turn residuals (the SB-mirror tie-shuffle; after a fire-turn KO the resumed tail residual cleans the linger)'));
+add([mv('doomdesire', 'onTry'), mv('futuresight', 'onTry')], IMPL('turn.rs::run_future_move_cast', 'the cast: addSlotCondition futuremove (a double-cast fails with a bare |move|, zero draws, PP still deducted) + ONE random(16) getDamage snapshot (typeless, cast-time stats, willCrit false) + |-start|<caster>|<Name>; BEFORE the protect block (a cast-turn Protect does not block)'));
+add([mv('futuresight', 'ignoreImmunity')], IMPL('turn.rs::run_future_move_cast', 'the strike is TYPELESS ??? (move_type None — no chart row, never immune), so the declarative ignoreImmunity is subsumed'));
+add([cond('futuremove', 'onStart')], IMPL('state.rs::future_move', 'FutureMove {duration:3, damage, move_id, accuracy, source_side/uid} — the slot-keyed pending strike (the Wish precedent)'));
+add([cond('futuremove', 'onResidual'), cond('futuremove', 'onResidualOrder')], IMPL('turn.rs::apply_future_move', 'the order-11 residual tick (gathered EVERY end-of-turn while pending, speed = the slot occupant — the FS-mirror tie; Wish 7 → sand 8 → order-10s → futuremove 11 LAST), duration 3→2→1→resolve'));
+add([cond('futuremove', 'onEnd')], IMPL('turn.rs::apply_future_move', 'the resolve: skip iff the occupant fainted; |-end|…|move: <Name>, remove Protect, ONE accuracy roll, the STORED number fixed-damage-style (sub absorbs, Focus Band rolls), the two hitStepMoveHitLoop Updates with the in-loop faintMessages between (a resolve KO draws one tie-Update + defers the Quick Claw)'));
+
 // MOVE-COVERAGE BATCH 2 status-cure `onHit` (`gen3_move_coverage_batch2_v1`).
 add([mv('refresh', 'onHit')], IMPL('turn.rs::run_status_move', 'the Refresh self-cure arm (par/psn/brn cleared; none/slp/frz fail — draw-free)'));
 add([mv('healbell', 'onHit')], IMPL('turn.rs::run_status_move', 'the Heal Bell whole-team cure (active + bench; SKIPS a Soundproof ally, draw-free)'));
@@ -411,6 +433,104 @@ function itemRule(row) {
   return null;
 }
 
+
+// MOVE-COVERAGE BATCH 5 (`gen3_move_coverage_batch5_v1`): COUNTER / MIRROR COAT /
+// ENDEAVOR (the reactive fixed-damage family) + SLEEP TALK. (The VARIABLE-BP family's
+// `basePowerCallback` is a declarative callback the enumerator does not surface — the
+// engine BP lives in turn.rs::variable_bp; their `priority`/`secondaries` fall to the
+// moveRule.) The fixed-damage `damage` declaratives (seismictoss/nightshade/sonicboom/
+// dragonrage) surfaced when the batch-5 blocklist un-shadowing admitted them — covered
+// by the moveRule `damage` clause.
+add([mv('counter', 'onTry'), mv('mirrorcoat', 'onTry')],
+  IMPL('turn.rs::run_fixed_damage_move', 'the ZERO-DRAW un-armed fail (no volatile / slot===null): a bare |move| line, no -fail, PP already deducted — BEFORE the accuracy roll'));
+add([cond('counter', 'onStart'), cond('mirrorcoat', 'onStart')],
+  IMPL('turn.rs::run_full_battle', 'the order-5 beforeTurnMove lays the reactive volatile with a RESET record ({slot:null,damage:0} — prev-turn damage never counts); draw-free, no protocol line'));
+add([cond('counter', 'onDamage'), cond('mirrorcoat', 'onDamage')],
+  IMPL('turn.rs::record_reactive_hit', 'the priority −101 (LAST — post-Focus-Band) recorder: 2× each qualifying DIRECT foe Move hit (counter: Physical || bare hiddenpower; mirrorcoat: Special && !hiddenpower), OVERWRITING per hit (multihit → 2× the LAST strike); a sub-absorbed hit never fires the mon Damage event'));
+add([cond('counter', 'duration'), cond('mirrorcoat', 'duration')],
+  IMPL('state.rs::reactive', 'the duration:1 volatile — a NO_ORDER/subOrder-2 residual duration handler (the counter-mirror tie-shuffle); cleared at turn-top (clear_flinch) / switch-out / faint'));
+add([cond('counter', 'onRedirectTarget'), cond('mirrorcoat', 'onRedirectTarget')],
+  IMPL('turn.rs::run_fixed_damage_move', 'target `scripted` redirects at the recorded damager slot — in gen-3 SINGLES that always resolves to the CURRENT foe active (probed C2: a foe switch fails the counter announcing the NEW active), which is what the port targets'));
+add([mv('endeavor', 'onTry')],
+  IMPL('turn.rs::run_fixed_damage_move', 'the ZERO-DRAW `hp >= target.hp` fail (EQUALITY INCLUDED — probed 50v50 fails): target-form announce + |-fail|<user>, BEFORE the accuracy roll'));
+add([mv('endeavor', 'onTryImmunity')],
+  IMPL('turn.rs::run_fixed_damage_move', 'pokemon.hp < target.hp — the same compare as the onTry (the port gates once, before accuracy); the Normal→Ghost type immunity rides move_is_immune after the accuracy draw'));
+add([mv('sleeptalk', 'onTry')],
+  IMPL('turn.rs::run_status_move', 'usable ONLY while asleep — an awake/wake-turn use fails SILENTLY (the normal self-target announce, no [still], no -fail, zero draws); `comatose` is gen7+, unreachable'));
+add([mv('sleeptalk', 'onTryHit')],
+  IMPL('turn.rs::run_status_move', 'the choicelock gate (a PRIOR-turn lock → [still]+-fail BEFORE the sample; the lock this use just set does not count — the pre-move snapshot); ENCORE is modeled as of batch 6 (`gen3_move_coverage_batch6_v1`) via move_usable + the onOverrideAction execution override'));
+add([mv('sleeptalk', 'onHit')],
+  IMPL('turn.rs::run_status_move', 'the pool build (slot order, !nosleeptalk && !charge — data-driven MoveData flags; NO pp/disabled filter) + ONE sample = random(n) even at n=1 + the 0-PP |cant|nopp| stop + the bare-useMove called run ([from] Sleep Talk, no PP, full draw chain)'));
+add([mv('sleeptalk', 'sleepUsable')],
+  IMPL('turn.rs::on_before_move', 'the slp handler prints |cant|slp then PROCEEDS for Sleep Talk (skippedTime++; a normal blocked cant resets it; the onSwitchIn restore lives in run_switch)'));
+add([mv('sleeptalk', 'neverMiss'), mv('sleeptalk', 'ignoreImmunity')],
+  IMPL('turn.rs::run_status_move', 'accuracy true (no draw) + the Status-default ignoreImmunity — the sleeptalk arm draws nothing but the sample'));
+
+// MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`): the FINAL UNMODELED tail —
+// ENCORE / DESTINY BOND / ENDURE / PERISH SONG / MEAN LOOK / SPIDER WEB / BLOCK /
+// BELLY DRUM / CHARGE / MEMENTO / MIMIC / PAIN SPLIT / PSYCH UP (+ the linked
+// trapped/trapper conditions). Probe-settled by probe_batch6_{locks,field_trap,
+// utility,dexfacts}.js; pinned MC79-MC98.
+add([cond('encore', 'onStart'), cond('encore', 'durationCallback')],
+  IMPL('turn.rs::run_status_move', 'the encore arm: acc-100 draw → protect block → already-encored fail (acc ONLY) → durationCallback random(3,7) → the onStart rejects (no lastMove / failencore / 0-PP lastMove, draws consumed) → stored = willMove ? rolled : rolled+1 (MC79/MC80)'));
+add([cond('encore', 'onOverrideAction')],
+  IMPL('turn.rs::turn_loop', 'a queued DIFFERENT move executes AS the encored move — the ENCORED slot PP deducts, the announce shows the encored move (MC79/EN7)'));
+add([cond('encore', 'onDisableMove')],
+  IMPL('state.rs::move_usable', 'every non-encored slot is un-selectable while the volatile is up (the request disabled shape; a switch stays legal)'));
+add([cond('encore', 'onResidual'), cond('encore', 'onResidualOrder'), cond('encore', 'onResidualSubOrder'), cond('encore', 'onEnd')],
+  IMPL('turn.rs::run_residuals', 'the order-10/subOrder-14 tick (ResidualAction::EncoreDuration): decrement + the 0-PP EARLY -end (MC82) + the expiry -end'));
+add([mv('encore', 'volatileStatus'), mv('encore', 'ignoreImmunity')],
+  IMPL('turn.rs::run_status_move', 'the encore arm applies the volatile; Status-default ignoreImmunity (no type gate)'));
+add([mv('destinybond', 'onPrepareHit'), mv('destinybond', 'volatileStatus'), cond('destinybond', 'onStart')],
+  IMPL('turn.rs::run_status_move', 'the DB arm: a ZERO-draw cast; the re-cast draw-free self-removes+re-adds (the flag is idempotent) — |-singlemove| each cast, PP −1 each'));
+add([cond('destinybond', 'onBeforeMove'), cond('destinybond', 'onBeforeMovePriority'), cond('destinybond', 'onMoveAborted')],
+  IMPL('turn.rs::run_move', 'the window closes at the users next move ATTEMPT: priority −1 removal for any move != destinybond + the onMoveAborted removal at every cant site (MC84)'));
+add([cond('destinybond', 'onFaint')],
+  IMPL('turn.rs::process_faints', 'the mutual-faint chain: |faint| victim → -activate → the killers hp zeroed + drained in the SAME faintMessages worklist (a foe-Move KO only — the damage sites record destiny_bond_ko_by; residual/futuremove/sub-absorbed never trigger; MC83/MC85)'));
+add([mv('endure', 'onPrepareHit'), mv('endure', 'stallingMove'), mv('endure', 'priority'), mv('endure', 'onHit'), mv('endure', 'volatileStatus'), cond('endure', 'onStart')],
+  IMPL('turn.rs::run_protect', 'the endure arm rides the SHARED protect stallingMove machinery (willAct gate + randomChance(1,counter) 2→4→8 no-delete-on-fail; priority 4); success sets MonState::endure'));
+add([cond('endure', 'onDamage'), cond('endure', 'onDamagePriority')],
+  IMPL('turn.rs::endure_clamp', 'the priority −10 survive-at-1 clamp on every MOVE-effect Damage site (plain / fixed / multihit strike / futuremove resolve); residual damage is NOT clamped (MC86/MC87)'));
+add([cond('endure', 'duration')],
+  IMPL('turn.rs::run_residuals', 'the duration:1 volatile registers a NO_ORDER/subOrder-2 residual duration handler (the endure+stall intra-mon tie — ONE shuffle on every SUCCESS turn); cleared at turn-top (clear_flinch)'));
+add([mv('perishsong', 'onHitField'), cond('perishsong', 'duration')],
+  IMPL('turn.rs::run_status_move', 'the perishsong arm: getAllActive in SIDE order — Soundproof -immune (counted as a result), fresh counters Some(4), ONE -fieldactivate iff >=1 newly applied, the all-counted [still]+-fail, the >=1-immune SILENT re-cast; ZERO draws every branch'));
+add([cond('perishsong', 'onResidual'), cond('perishsong', 'onResidualOrder'), cond('perishsong', 'onEnd')],
+  IMPL('turn.rs::run_residuals', 'the order-12 (LAST) tick (ResidualAction::Perish): decrement + |-start|perish<d>; the 1→0 tick prints perish0 + zeroes HP with the DURATION-END `continue` (NO per-handler faintMessages — the mutual perish-out double faint processes at the tail → the gen-3 TIE, MC89)'));
+add([mv('meanlook', 'onHit'), mv('spiderweb', 'onHit'), mv('block', 'onHit')],
+  IMPL('turn.rs::run_status_move', 'the trap-move arm: protect block → substitute block ([still]+-fail) → already-trapped fail → the linked trapped_by = Some(trapper uid); ZERO draws every branch (MC90/MC91)'));
+add([cond('trapped', 'onStart'), cond('trapped', 'onTrapPokemon'), cond('trapped', 'noCopy'), cond('trapper', 'noCopy')],
+  IMPL('turn.rs::is_trapped', 'the FIRM trap (trap_is_firm true — the Shadow-Tag request shape); noCopy FALSE → the Baton Pass snapshot PASSES trapped_by (the link re-points, MC91); the link ends when the trapper leaves ANY way (execute_switch source-left clear + the process_faints corpse clear)'));
+add([mv('bellydrum', 'onHit')],
+  IMPL('turn.rs::run_status_move', 'the bellydrum arm: the FLOAT hp<=maxhp/2 gate as integer-exact 2*hp<=maxhp (262/524 fails, 263 succeeds — MC92) + atk>=6 + maxhp==1 fails; directDamage(floor(maxhp/2)) then the SET to +6 (-setboost)'));
+add([mv('charge', 'volatileStatus'), cond('charge', 'onStart'), cond('charge', 'onRestart')],
+  IMPL('turn.rs::run_status_move', 'the charge arm sets MonState::charge (onRestart re-adds, -start again); gen3 has NO +1 SpD'));
+add([cond('charge', 'onBasePower'), cond('charge', 'onBasePowerPriority')],
+  IMPL('turn.rs::run_move', 'the ×2 BP-chain fold for the next ELECTRIC move (MC93)'));
+add([cond('charge', 'onAfterMove'), cond('charge', 'onMoveAborted'), cond('charge', 'onEnd')],
+  IMPL('turn.rs::turn_loop', 'the post-run_move consumption: any executed/aborted move != charge removes it (-end [silent]); keyed on the OUTER queued move (a Sleep Talk turn consumes on sleeptalk; the pursuit-interrupt bare useMove does NOT — no runMove → no AfterMove; MC93/MC98)'));
+add([mv('memento', 'boosts'), mv('memento', 'selfdestruct')],
+  IMPL('turn.rs::run_status_move', 'the memento arm: protect/sub block (NO faint — ifHit); the −2/−2 drops via apply_secondary_boost (Clear-Body gated; the user faints even when blocked/floored) then the self-faint through the deferred-faint protocol (gen3 faint-cancels-all + no QC → the ZERO-draw landed turn, MC94)'));
+add([mv('mimic', 'onHit')],
+  IMPL('turn.rs::run_status_move', 'the mimic arm: sub / no-lastMove / failmimic (data-driven MoveData::fail_mimic) / already-known fails ([still]+-fail, draw-free); the copy overlays the slot {pp: min(5, base), maxpp: calculatePP(copied,3)} via MonState::mimic_overlay; restore_mimic_overlay reverts on switch-out/faint (MC95)'));
+add([mv('painsplit', 'onHit')],
+  IMPL('turn.rs::run_status_move', 'the painsplit arm: protect/sub block; avg = floor((u+t)/2), EACH side clamped at its OWN maxhp (MC96); -sethp target [silent] then user'));
+add([mv('psychup', 'onHit')],
+  IMPL('turn.rs::run_status_move', 'the psychup arm: copies ALL 7 stages VERBATIM (zeros overwrite — MC97); NO protect flag (copies through a Protect); bypasssub'));
+add([mv('bellydrum', 'ignoreImmunity'), mv('bellydrum', 'neverMiss'),
+     mv('block', 'ignoreImmunity'), mv('block', 'neverMiss'),
+     mv('charge', 'ignoreImmunity'), mv('charge', 'neverMiss'),
+     mv('destinybond', 'ignoreImmunity'), mv('destinybond', 'neverMiss'),
+     mv('endure', 'ignoreImmunity'), mv('endure', 'neverMiss'),
+     mv('meanlook', 'ignoreImmunity'), mv('meanlook', 'neverMiss'),
+     mv('memento', 'ignoreImmunity'), mv('memento', 'neverMiss'),
+     mv('mimic', 'ignoreImmunity'), mv('mimic', 'neverMiss'),
+     mv('painsplit', 'ignoreImmunity'), mv('painsplit', 'neverMiss'),
+     mv('perishsong', 'ignoreImmunity'), mv('perishsong', 'neverMiss'),
+     mv('psychup', 'ignoreImmunity'), mv('psychup', 'neverMiss'),
+     mv('spiderweb', 'ignoreImmunity'), mv('spiderweb', 'neverMiss')],
+  IMPL('turn.rs::run_status_move', 'never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)'));
+
 function moveRule(row, d3) {
   const h = row.hook;
   const m = d3.moves.get(row.id);
@@ -421,6 +541,10 @@ function moveRule(row, d3) {
         : 'the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)');
   }
   if (h === 'neverMiss') return IMPL('turn.rs::never_miss', 'accuracy === true — NO accuracy draw at all');
+  if (h === 'damage') {
+    return IMPL('turn.rs::fixed_damage_amount',
+      'the fixed/level damage declarative (Seismic Toss/Night Shade level; Sonic Boom 20; Dragon Rage 40) — accuracy-only draw, no crit/damage roll (gen3_fixeddamage_v1; surfaced by the batch-5 blocklist un-shadowing)');
+  }
   if (h === 'priority') return IMPL('turn.rs::move_priority', 'the action-order priority sort (draws only on a priority+speed tie)');
   if (h === 'critRatio') return IMPL('turn.rs::CRIT_MULT', 'the high-crit denominator table (critRatio 2 => 1/8)');
   if (h === 'ignoreImmunity') {

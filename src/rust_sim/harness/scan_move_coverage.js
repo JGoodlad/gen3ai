@@ -69,6 +69,16 @@ const MODELED_SUBSTITUTE = new Set(['substitute']);
 const MODELED_BATCH3 = new Set(['curse', 'wish', 'batonpass']);
 // Selection-restriction (`MODELED_RESTRICTION_MOVES` — taunt/disable).
 const MODELED_RESTRICTION = new Set(['taunt', 'disable']);
+// MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the FINAL UNMODELED tail,
+// all category-Status, MODELED bit-for-bit (the batch-6 arms in src/turn.rs +
+// gen_movecoverage_batch6_golden.js + the MC79+ pins): Encore / Destiny Bond / Endure /
+// Perish Song / Mean Look / Spider Web / Block / Belly Drum / Charge / Memento / Mimic
+// / Pain Split / Psych Up.
+const MODELED_BATCH6 = new Set([
+  'encore', 'destinybond', 'endure', 'perishsong',
+  'meanlook', 'spiderweb', 'block',
+  'bellydrum', 'charge', 'memento', 'mimic', 'painsplit', 'psychup',
+]);
 // MOVE-COVERAGE BATCH 1 (`gen3_move_coverage_batch1_v1`) — the DRAW-FREE (+ self-drop's ONE
 // random(100)) post-hit effects on a DAMAGING move: recoil / drain / self-drop / item-removal
 // / rapid-spin. The engine now models these bit-for-bit (they RUN + apply the side-effect), so
@@ -87,14 +97,29 @@ const MODELED_STATDROP = new Set([
 ]);
 const MODELED_SCREEN = new Set(['lightscreen', 'reflect']);
 // MODELED fixed-damage (`fixed_damage_amount` — engine runs these bit-for-bit).
+// BATCH 5 (`gen3_move_coverage_batch5_v1`): counter / mirrorcoat / endeavor are MODELED
+// (the reactive volatile + recorder / the delta), no longer deferred.
 const MODELED_FIXED_DAMAGE = new Set([
   'seismictoss', 'nightshade', 'sonicboom', 'dragonrage', 'superfang',
+  'counter', 'mirrorcoat', 'endeavor',
 ]);
 // DEFERRED fixed-damage (`is_fixed_damage_move` true but no amount → fail-loud panic).
 const DEFERRED_FIXED_DAMAGE = new Set([
-  'psywave', 'fissure', 'horndrill', 'guillotine',
-  'counter', 'mirrorcoat', 'bide', 'endeavor',
+  'psywave', 'fissure', 'horndrill', 'guillotine', 'bide',
 ]);
+// MOVE-COVERAGE BATCH 4 / 4b / 4c / 5 damaging-side modeled sets (mirrored from the
+// src/turn.rs id-gates — the pre-batch-5 scan STALELY classified these MISMODELED):
+//   BATCH 4  — Focus Punch + Pursuit (the beforeTurnMove queue machinery).
+//   BATCH 4b — Beat Up (the only modeled multi-strike) / Thunder (the weather-accuracy
+//              onModifyMove) / Water Spout (variable BP, data bp 150).
+//   BATCH 4c — Hyper Beam (mustrecharge) / Solar Beam (twoturnmove) / Doom Desire +
+//              Future Sight (the slot-keyed future strike).
+//   BATCH 5  — the bp-0 VARIABLE-BP family (`variable_bp`): Return / Frustration /
+//              Flail / Reversal / Low Kick.
+const MODELED_BATCH4 = new Set(['focuspunch', 'pursuit']);
+const MODELED_BATCH4B = new Set(['beatup', 'thunder', 'waterspout']);
+const MODELED_BATCH4C = new Set(['hyperbeam', 'solarbeam', 'doomdesire', 'futuresight']);
+const MODELED_VARBP = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick']);
 // Typed Hidden Power — the engine models these end-to-end (16 typed nums 355-370 + bare).
 // The bare `hiddenpower` id in a packed team resolves to a TYPED variant per the mon's IVs;
 // the engine runs it as an ordinary damaging move. So HP is MODELED (contra isModeledMove).
@@ -116,12 +141,22 @@ function classifyDamaging(m, id) {
   if (DEFERRED_FIXED_DAMAGE.has(id)) return { cov: 'UNMODELED', mech: 'reactive-or-ohko-fixed' };
   if (m.ohko) return { cov: 'UNMODELED', mech: 'ohko' };
 
-  // VARIABLE-BP with dex basePower 0 (Return/Frustration/Flail/Reversal/Low Kick):
-  // `derive_category` classifies a bp-0 move as Status → it falls to run_status_move's
-  // fail-loud guard → the engine PANICS (verified empirically). So it is UNMODELED
-  // (honest fail-loud), NOT a silent-desync MISMODELED. A variable-BP move with a
-  // NON-ZERO placeholder bp (Pursuit 40 / Beat Up 10 / Water Spout 150) reaches the
-  // damaging path and runs at the wrong flat BP → MISMODELED (silent desync).
+  // SNORE (`gen3_move_coverage_batch5_v1`): the other sleepUsable move — fail-loud in
+  // the engine (its awake-use onTry fail + the asleep proceed are unbuilt).
+  if (id === 'snore') return { cov: 'UNMODELED', mech: 'sleep-usable damaging (fail-loud)' };
+
+  // The batch-4/4b/4c/5 modeled sets — checked BEFORE the generic MISMODELED buckets
+  // (each carries a callback/flag shape the generic checks would stale-classify):
+  if (MODELED_BATCH4.has(id)) return { cov: 'MODELED', mech: 'beforeTurn (batch 4)' };
+  if (MODELED_BATCH4B.has(id)) return { cov: 'MODELED', mech: 'multi-strike/weather-acc/variable-BP (batch 4b)' };
+  if (MODELED_BATCH4C.has(id)) return { cov: 'MODELED', mech: 'turn-spanning (batch 4c)' };
+  if (MODELED_VARBP.has(id)) return { cov: 'MODELED', mech: 'variable-BP (batch 5)' };
+
+  // The REMAINING variable-BP moves with a bp-0 data row (Eruption / Grass Knot-class):
+  // `derive_category` classifies a bp-0 move as Status → run_status_move's fail-loud
+  // guard PANICS → UNMODELED (honest fail-loud). A remaining variable-BP move with a
+  // NON-ZERO placeholder bp reaches the damaging path and runs at the wrong flat BP →
+  // MISMODELED (silent desync).
   if (m.basePowerCallback && !(m.basePower > 0)) {
     return { cov: 'UNMODELED', mech: 'variable-BP (bp0 → status fail-loud)' };
   }
@@ -139,15 +174,19 @@ function classifyDamaging(m, id) {
   if (MODELED_RAPIDSPIN.has(id)) return { cov: 'MODELED', mech: 'rapid-spin (batch 1)' };
   if (m.recoil || (m.struggleRecoil)) return { cov: 'MISMODELED', mech: 'recoil' };
   if (m.drain) return { cov: 'MISMODELED', mech: 'drain' };
-  if (m.flags && (m.flags.charge || m.flags.recharge)) return { cov: 'MISMODELED', mech: '2-turn-charge' };
+  // The remaining charge/recharge family (Blast Burn / Frenzy Plant / Hydro Cannon /
+  // Razor Wind / Sky Attack / Skull Bash / Fly / Dig / Dive / Bounce) FAIL-LOUDS in the
+  // engine since batch 4c (the explicit panic in run_move) → UNMODELED, not a silent
+  // MISMODELED.
+  if (m.flags && (m.flags.charge || m.flags.recharge)) return { cov: 'UNMODELED', mech: '2-turn-charge (fail-loud)' };
   // FUTURE MOVES (Doom Desire / Future Sight) — a `futuremove` flag + an `onTry` that queues a
   // delayed strike 2 turns out. bp>0 + no charge flag → reaches the damaging path + runs as an
   // INSTANT hit (wrong: state + draw desync). MISMODELED (empirically RUNS, no fail-loud).
-  if (m.flags && m.flags.futuremove) return { cov: 'MISMODELED', mech: 'future-move (delayed strike)' };
+  if (m.flags && m.flags.futuremove) return { cov: 'MISMODELED', mech: 'future-move (delayed strike)' }; // none left (DD/FS modeled)
   if (m.self && (m.self.boosts || m.self.volatileStatus)) return { cov: 'MISMODELED', mech: 'self-drop/lock' };
   if (m.forceSwitch) return { cov: 'MISMODELED', mech: 'phaze-damaging' }; // no gen3 damaging phaze
   if (m.onModifyMove) return { cov: 'MISMODELED', mech: 'onModifyMove (acc/power mutate)' };
-  if (m.beforeTurnCallback) return { cov: 'MISMODELED', mech: 'beforeTurn (Focus Punch)' };
+  if (m.beforeTurnCallback) return { cov: 'MISMODELED', mech: 'beforeTurn' }; // none left (FP/Pursuit/Counter/MC modeled)
   if (m.damageCallback || m.damage) return { cov: 'UNMODELED', mech: 'derived-fixed-damage' };
 
   // Secondary shape > 1 col (except Tri Attack) → the engine's fail-loud >1-col guard PANICS.
@@ -174,6 +213,13 @@ function classifyStatus(m, id) {
   if (MODELED_WEATHER.has(id)) return { cov: 'MODELED', mech: 'weather-set (batch 2)' };
   if (MODELED_STATDROP.has(id)) return { cov: 'MODELED', mech: 'stat-drop (batch 2)' };
   if (MODELED_SCREEN.has(id)) return { cov: 'MODELED', mech: 'screen (batch 2)' };
+  // MOVE-COVERAGE BATCH 5 (`gen3_move_coverage_batch5_v1`) — SLEEP TALK (the
+  // move-sampler). MODELED per-move; team-level playability composes naturally: a
+  // sleep-talker whose POOL carries an unmodeled move is blocked by THAT move's own
+  // row (the called move bypasses no gate the pool member itself doesn't).
+  if (id === 'sleeptalk') return { cov: 'MODELED', mech: 'sleep-talk (batch 5)' };
+  // MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the final tail.
+  if (MODELED_BATCH6.has(id)) return { cov: 'MODELED', mech: `batch-6 (${id})` };
   // MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — Curse / Wish / Baton Pass.
   if (MODELED_BATCH3.has(id)) {
     const mech = id === 'curse' ? 'type-conditional curse (batch 3)'

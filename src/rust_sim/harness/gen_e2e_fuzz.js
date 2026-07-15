@@ -121,14 +121,22 @@ const MOVE_ID_BLOCKLIST = new Set([
   // variable power. NOTE: waterspout + beatup are NO LONGER blocklisted — they are MODELED
   // bit-for-bit AND e2e-ADMITTED (`gen3_move_coverage_batch4b_v1`, BATCH4B_E2E_EXCLUDED=false)
   // via MODELED_BATCH4B_MOVES in `isModeledMove`.
-  'return', 'frustration', 'flail', 'reversal', 'eruption',
-  'lowkick', 'grassknot', 'magnitude', 'present', 'weatherball',
+  // NOTE: return/frustration/flail/reversal/lowkick are NO LONGER blocklisted — they are
+  // MODELED bit-for-bit AND e2e-ADMITTED (`gen3_move_coverage_batch5_v1`) via
+  // MODELED_BATCH5_VARBP_MOVES in `isModeledMove`.
+  'eruption',
+  'grassknot', 'magnitude', 'present', 'weatherball',
   'gyroball', 'fling', 'punishment', 'trumpcard', 'wringout', 'crushgrip',
   // hidden power (every type — bp is fixed/wrong for gen3)
   'hiddenpower',
-  // fixed-damage / level / set-HP
-  'seismictoss', 'nightshade', 'sonicboom', 'dragonrage', 'superfang', 'endeavor',
-  'psywave', 'bide', 'finalgambit', 'counter', 'mirrorcoat',
+  // fixed-damage / level / set-HP. NOTE: seismictoss/nightshade/sonicboom/dragonrage/
+  // superfang were REMOVED from this list (`gen3_move_coverage_batch5_v1` housekeeping) —
+  // they had been SHADOWING their own `MODELED_FIXED_DAMAGE_MOVES` admission (the
+  // blocklist reject runs FIRST in `isModeledMove`), contradicting the documented
+  // early-admit; they are modeled bit-for-bit (fixeddamage_test.rs + FD1-FD4).
+  // counter/mirrorcoat/endeavor are likewise NO LONGER blocklisted — MODELED
+  // (`gen3_move_coverage_batch5_v1`) via MODELED_BATCH5_REACTIVE_MOVES.
+  'psywave', 'bide', 'finalgambit',
   // OHKO
   'fissure', 'horndrill', 'guillotine', 'sheercold',
   // switch-trap / item-swap / leaves-1 / fakeout / future / sleeptalk. NOTE:
@@ -138,14 +146,20 @@ const MOVE_ID_BLOCKLIST = new Set([
   // NO LONGER blocklisted — it is MODELED bit-for-bit AND e2e-ADMITTED (`gen3_move_coverage_batch4_v1`,
   // BATCH4_E2E_EXCLUDED=false) via MODELED_BATCH4_MOVES in `isModeledMove`. Trick / Switcheroo
   // (item SWAP, not removal) stay out.
+  // NOTE: futuresight/doomdesire are NO LONGER blocklisted — MODELED bit-for-bit AND
+  // e2e-ADMITTED (`gen3_move_coverage_batch4c_v1`, BATCH4C_E2E_EXCLUDED=false) via
+  // MODELED_BATCH4C_MOVES in `isModeledMove`.
   'trick', 'switcheroo', 'falseswipe',
-  'fakeout', 'futuresight', 'doomdesire', 'snore', 'sleeptalk',
-  // reactive / out-of-gen-3-modeled-scope status moves (a category-Status move the port
-  // fail-louds on; blocklisted so a team carrying it is not filter-clean). Destiny Bond is
-  // a `volatileStatus:'destinybond'` reactive move (out of scope) — keep it off the
-  // pickable path entirely (belt-and-braces beyond the Status-branch reject, since it can
-  // ride a filter-clean phaze team).
-  'destinybond',
+  // NOTE: `sleeptalk` is NO LONGER blocklisted — MODELED (`gen3_move_coverage_batch5_v1`);
+  // its pickability is CARRIER-conditional (see `sleepTalkPoolModeled` in pickMove: the
+  // sampled pool must be all-modeled, since the CALLED move bypasses the picker). `snore`
+  // (the other gen-3 sleepUsable move) stays out: its while-asleep execution + awake
+  // onTry fail are unmodeled.
+  'fakeout', 'snore',
+  // NOTE: `destinybond` is NO LONGER blocklisted — MODELED bit-for-bit
+  // (`gen3_move_coverage_batch6_v1`) and ADMITTED via MODELED_BATCH6_MOVES in the
+  // Status branch of `isModeledMove`. `snatch` (the one remaining gen-3 reactive
+  // status-steal) stays out via the Status-branch reject (the port FAIL-LOUDs on it).
   // NOTE: Explosion / Self-Destruct are NO LONGER blocklisted — they are FULLY modeled
   // bit-for-bit (the gen-3 self-KO that precedes the hit; `gen_explosion_golden.js` /
   // `explosion_test.rs` + the E1-E4 regression pins) and ADMITTED to the e2e capstone via
@@ -309,6 +323,48 @@ const BATCH4_E2E_EXCLUDED = false;
 // (`run_beat_up` / the waterspout BP override / the thunder weather-accuracy mutation).
 const MODELED_BATCH4B_MOVES = new Set(['beatup', 'thunder', 'waterspout']);
 const BATCH4B_E2E_EXCLUDED = false;
+
+// MOVE-COVERAGE BATCH 4c (`gen3_move_coverage_batch4c_v1`) — the TURN-SPANNING classes:
+// HYPER BEAM (mustrecharge — the locked single-`Recharge` request), SOLAR BEAM (the
+// two-turn charge + sun skip — the locked single-move request), DOOM DESIRE + FUTURE
+// SIGHT (the slot-keyed order-11 future strike). All bit-for-bit modeled
+// (movecoverage_batch4c_test.rs + the MC49+ pins). `recharge` is the locked-turn
+// pseudo-move id the sim's request offers — admitted so the picker submits `move 1` on a
+// locked request instead of stalling. The UNMODELED siblings stay fail-loud + rejected
+// (Blast Burn / Frenzy Plant / Hydro Cannon via `self.volatileStatus`+`flags.recharge`;
+// Razor Wind / Sky Attack / Skull Bash / Fly / Dig / Dive / Bounce via `flags.charge`;
+// no other gen3 `futuremove` exists).
+const MODELED_BATCH4C_MOVES = new Set(['hyperbeam', 'solarbeam', 'doomdesire', 'futuresight', 'recharge']);
+const BATCH4C_E2E_EXCLUDED = false;
+
+// MOVE-COVERAGE BATCH 5 (`gen3_move_coverage_batch5_v1`): the REACTIVE fixed-damage family
+// (COUNTER / MIRROR COAT — the beforeTurnMove volatile + the onDamage 2× recorder;
+// ENDEAVOR — the target.hp − user.hp delta), the VARIABLE-BP family (RETURN / FRUSTRATION /
+// FLAIL / REVERSAL / LOW KICK — engine-computed BP, draw-neutral), and SLEEP TALK (the
+// move-sampler — carrier-conditional pickability, see `sleepTalkPoolModeled`). All modeled
+// bit-for-bit (`gen_movecoverage_batch5_golden.js` / `movecoverage_batch5_test.rs` + the
+// MC61+ pins), kept in lockstep with the src/turn.rs id-gates (`is_fixed_damage_move` /
+// `variable_bp` / the sleeptalk arm).
+const MODELED_BATCH5_REACTIVE_MOVES = new Set(['counter', 'mirrorcoat', 'endeavor']);
+const MODELED_BATCH5_VARBP_MOVES = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick']);
+const BATCH5_E2E_EXCLUDED = false;
+
+// MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the FINAL UNMODELED tail,
+// all category-Status: ENCORE (the lock + the onOverrideAction execution override) /
+// DESTINY BOND (the mutual-faint reactive volatile) / ENDURE (the protect/stall-family
+// survive-at-1) / PERISH SONG (the field-wide order-12 counter) / MEAN LOOK / SPIDER
+// WEB / BLOCK (the linked firm-trap volatiles) / BELLY DRUM / CHARGE / MEMENTO / MIMIC
+// / PAIN SPLIT / PSYCH UP. Kept in lockstep with the src/turn.rs batch-6 arms
+// (validated by gen_movecoverage_batch6_golden.js + the MC79+ pins). MIMIC's copy is
+// picker-safe: the copied slot is always the target's lastMove, which the capture's
+// picker only ever lets be a MODELED move (both sides pick modeled moves only) — and
+// the copied slot itself re-passes `isModeledMove` at every later pick.
+const MODELED_BATCH6_MOVES = new Set([
+  'encore', 'destinybond', 'endure', 'perishsong',
+  'meanlook', 'spiderweb', 'block',
+  'bellydrum', 'charge', 'memento', 'mimic', 'painsplit', 'psychup',
+]);
+const BATCH6_E2E_EXCLUDED = false;
 
 // The MODELED gen-3 FIXED-DAMAGE moves (a `damage:` / `damageCallback` move that BYPASSES
 // getDamage — NO crit roll, NO 16-way damage roll) the port now executes bit-for-bit (the
@@ -536,6 +592,21 @@ function isModeledMove(id) {
   // free multi-strike, Thunder's 30% para is the ordinary modeled secondary shape. Kept in lockstep
   // with `run_beat_up` / the waterspout+thunder id-gates in src/turn.rs.
   if (!BATCH4B_E2E_EXCLUDED && MODELED_BATCH4B_MOVES.has(id)) return true;
+  // MOVE-COVERAGE BATCH 4c (`gen3_move_coverage_batch4c_v1`) — HYPER BEAM / SOLAR BEAM /
+  // DOOM DESIRE / FUTURE SIGHT (+ the locked-turn `recharge` pseudo-move), ADMITTED HERE
+  // (before the `flags.charge|recharge` / `self.volatileStatus` / futuremove rejects
+  // below, which would else drop them). Kept in lockstep with the turn.rs id-gates.
+  if (!BATCH4C_E2E_EXCLUDED && MODELED_BATCH4C_MOVES.has(id)) return true;
+  // MOVE-COVERAGE BATCH 5 (`gen3_move_coverage_batch5_v1`) — the REACTIVE family (a
+  // `damageCallback` + `beforeTurnCallback` shape) + the VARIABLE-BP family (a
+  // `basePowerCallback` over a bp-0 data row), ADMITTED HERE (before the `basePower > 0`
+  // / callback rejects below, which would else drop them). SLEEP TALK is NOT admitted
+  // here — its safety is CARRIER-conditional (the sampled pool must be all-modeled), so
+  // `pickMove` gates it via `sleepTalkPoolModeled`.
+  if (!BATCH5_E2E_EXCLUDED
+      && (MODELED_BATCH5_REACTIVE_MOVES.has(id) || MODELED_BATCH5_VARBP_MOVES.has(id))) {
+    return true;
+  }
   // STATUS MOVES: allow ONLY the modeled standalone status-inflicting moves (accuracy
   // + apply + sleep random(2,6)), the modeled pure SELF-BOOST setup moves (never-miss →
   // no accuracy draw, draw-free boost apply, no in-tryMoveHit Update), AND the modeled
@@ -545,17 +616,18 @@ function isModeledMove(id) {
   // Defense-Curl-volatile) stays excluded → the port FAIL-LOUDs.
   if (m.category === 'Status') {
     // PHAZE (Roar / Whirlwind) is special-cased HERE — a category-Status `forceSwitch`
-    // move. NOTE: it is currently EXCLUDED from the e2e capstone (see PHAZE_E2E_EXCLUDED)
-    // pending an unresolved phaze-in-a-multi-draw-turn sample desync the e2e exposes —
-    // phaze is fully bit-for-bit proven in the DEDICATED phaze golden (phaze_test.rs) +
-    // the regression pins; this gate stays STRICT by not letting it in here.
+    // move, gated on PHAZE_E2E_EXCLUDED below. It is INCLUDED (flag = false) since the
+    // Protect-blocks-phaze fix (see the PHAZE_E2E_EXCLUDED comment above) — so a
+    // Roar-carrying RestTalker's Sleep-Talk pool passes `sleepTalkPoolModeled` too
+    // (the CALLED Roar rides the port's force_switch_foe drag; pinned by
+    // `regression_test.rs::sleep_talk_called_roar_drags_the_foe`).
     return MODELED_STATUS_MOVES.has(id) || MODELED_SETUP_MOVES.has(id) ||
       MODELED_RECOVERY_MOVES.has(id) || MODELED_PROTECT_MOVES.has(id) ||
       MODELED_HAZARD_MOVES.has(id) || MODELED_RESTRICTION_MOVES.has(id) ||
       // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — the cure / weather-set /
-      // stat-drop / screen classes, all category-Status + bit-for-bit modeled. HONESTLY
-      // EXCLUDED from the e2e capstone (BATCH2_E2E_EXCLUDED) pending the e2e_182 residual-
-      // heal-ordering root-cause; the DEDICATED golden + MC9-MC17 pins are the proof.
+      // stat-drop / screen classes, all category-Status + bit-for-bit modeled. INCLUDED
+      // (BATCH2_E2E_EXCLUDED = false) since the e2e_182 Pressure×allyTeam PP-deduction fix
+      // (`gen3_pressure_allyteam_v1`); the DEDICATED golden + MC9-MC17 pins remain the proof.
       (BATCH2_E2E_EXCLUDED ? false : (MODELED_CURE_MOVES.has(id) || MODELED_WEATHER_MOVES.has(id) ||
         MODELED_STATDROP_MOVES.has(id) || MODELED_SCREEN_MOVES.has(id))) ||
       (LEECHSEED_E2E_EXCLUDED ? false : MODELED_LEECH_MOVES.has(id)) ||
@@ -563,6 +635,9 @@ function isModeledMove(id) {
       // MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — CURSE / WISH / BATON PASS,
       // all category-Status + bit-for-bit modeled (the DEDICATED golden + MC18-MC29 pins).
       (BATCH3_E2E_EXCLUDED ? false : MODELED_BATCH3_MOVES.has(id)) ||
+      // MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the final tail, all
+      // category-Status + bit-for-bit modeled (the DEDICATED golden + MC79+ pins).
+      (BATCH6_E2E_EXCLUDED ? false : MODELED_BATCH6_MOVES.has(id)) ||
       (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));
   }
   if (!(m.basePower > 0)) return false; // variable / fixed-damage carrier
@@ -597,6 +672,10 @@ function isModeledMove(id) {
     return false;
   }
   if (m.flags && (m.flags.charge || m.flags.recharge)) return false;
+  // FUTURE MOVES (`flags.futuremove`) beyond the modeled DD/FS (none exist in gen3) —
+  // belt-and-braces: a futuremove not admitted above can never slip in as a plain
+  // damaging move (the pre-batch-4c silent-desync class).
+  if (m.flags && m.flags.futuremove) return false;
   // TOP-LEVEL move.self.boosts (SELF-DROP — Overheat/Superpower) / self.volatileStatus
   // (lockedmove — Outrage/Thrash/Petal Dance). The self-DROP is now MODELED
   // (`gen3_move_coverage_batch1_v1`): the port applies the drop AND draws the gen3 `selfDrops`
@@ -1048,6 +1127,13 @@ function pickMove(battle, side, rng, mode) {
     if (mv.disabled) continue;
     const id = toId(mv.id || mv.move);
     if (mode === 'modeled') {
+      // SLEEP TALK (`gen3_move_coverage_batch5_v1`): pickable ONLY when the carrier's
+      // sampled POOL is all-modeled — the CALLED move bypasses the picker, so a
+      // pool member the port fail-louds on (or the phaze-excluded Roar) must veto it.
+      if (id === 'sleeptalk') {
+        if (!BATCH5_E2E_EXCLUDED && sleepTalkPoolModeled(battle, side)) legalMoveSlots.push(k);
+        continue;
+      }
       if (isModeledMove(id)) legalMoveSlots.push(k);
     } else {
       // taxonomy: damaging (non-status), still skip the structurally-unreplayable
@@ -1065,7 +1151,12 @@ function pickMove(battle, side, rng, mode) {
   // Trap / Magnet Pull at endTurn), NOT a heuristic; forced replacements
   // (`pickReplacement`) stay un-gated (trapping never blocks a faint replacement).
   const active = battle.sides[side].active[0];
-  const isTrapped = !!(active && active.trapped);
+  // A MOVE-LOCKED request (`gen3_move_coverage_batch4c_v1` — Hyper Beam's recharge turn /
+  // Solar Beam's fire turn) serializes `trapped:true` on the REQUEST (the sim's
+  // lockedmove request shape) without setting `pokemon.trapped` — the picker must not
+  // submit a doomed switch (the sim rejects it, stalling the capture).
+  const reqTrapped = !!(req.active[0].trapped);
+  const isTrapped = !!(active && active.trapped) || reqTrapped;
   const switchSlots = isTrapped ? [] : legalSwitchSlots(battle, side);
   if (legalMoveSlots.length === 0) {
     // No modeled move — prefer a switch.
@@ -1100,7 +1191,29 @@ function pickMove(battle, side, rng, mode) {
   const isRestriction = MODELED_RESTRICTION_MOVES.has(pickedId);
   const isExplosion = pickedId === 'explosion' || pickedId === 'selfdestruct';
   const isFixed = MODELED_FIXED_DAMAGE_MOVES.has(pickedId);
-  return { choice: `move ${k + 1}`, reason: 'modeled-move', pickedId, statusMove: isStatus, setupMove: isSetup, recoveryMove: isRecovery, protectMove: isProtect, phazeMove: isPhaze, leechMove: isLeech, substituteMove: isSubstitute, restrictionMove: isRestriction, explosionMove: isExplosion, fixedMove: isFixed };
+  const isBatch5 = MODELED_BATCH5_REACTIVE_MOVES.has(pickedId) ||
+    MODELED_BATCH5_VARBP_MOVES.has(pickedId) || pickedId === 'sleeptalk';
+  const isBatch6 = MODELED_BATCH6_MOVES.has(pickedId);
+  return { choice: `move ${k + 1}`, reason: 'modeled-move', pickedId, statusMove: isStatus, setupMove: isSetup, recoveryMove: isRecovery, protectMove: isProtect, phazeMove: isPhaze, leechMove: isLeech, substituteMove: isSubstitute, restrictionMove: isRestriction, explosionMove: isExplosion, fixedMove: isFixed, batch5Move: isBatch5, batch6Move: isBatch6 };
+}
+
+// Whether a Sleep-Talk carrier's SAMPLED POOL is safe for the modeled capture
+// (`gen3_move_coverage_batch5_v1`): every pool-ELIGIBLE moveslot (not
+// `flags.nosleeptalk`, not `flags.charge` — the pool filter Sleep Talk itself applies,
+// so a charge/nosleeptalk move can never be CALLED regardless of modeledness) must be
+// `isModeledMove` — else the called move would desync/fail-loud the port. An empty
+// pool is SAFE (the modeled `[still]`+`-fail` branch).
+function sleepTalkPoolModeled(battle, side) {
+  const active = battle.sides[side].active[0];
+  if (!active) return false;
+  for (const slot of active.moveSlots) {
+    const mid = toId(slot.id);
+    const mv = dex3.moves.get(mid);
+    if (!mv || !mv.exists) return false;
+    if (mv.flags && (mv.flags.nosleeptalk || mv.flags.charge)) continue; // pool-excluded
+    if (!isModeledMove(mid)) return false;
+  }
+  return true;
 }
 
 function legalSwitchSlots(battle, side) {
@@ -1158,6 +1271,8 @@ async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode) {
     let restrictionMoveThisDec = false;
     let explosionMoveThisDec = false;
     let fixedMoveThisDec = false;
+    let batch5MoveThisDec = false;
+    let batch6MoveThisDec = false;
     if (reqState === 'switch') {
       if (force[0]) { cp1 = pickReplacement(battle, 0, rng); if (!cp1) { rec.dropped = 'no-replacement-p1'; break; } }
       if (force[1]) { cp2 = pickReplacement(battle, 1, rng); if (!cp2) { rec.dropped = 'no-replacement-p2'; break; } }
@@ -1182,6 +1297,8 @@ async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode) {
       restrictionMoveThisDec = !!(r1.restrictionMove || r2.restrictionMove);
       explosionMoveThisDec = !!(r1.explosionMove || r2.explosionMove);
       fixedMoveThisDec = !!(r1.fixedMove || r2.fixedMove);
+      batch5MoveThisDec = !!(r1.batch5Move || r2.batch5Move);
+      batch6MoveThisDec = !!(r1.batch6Move || r2.batch6Move);
     }
 
     const logLenBefore = log.length;
@@ -1205,6 +1322,8 @@ async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode) {
       restrictionMove: restrictionMoveThisDec,
       explosionMove: explosionMoveThisDec,
       fixedMove: fixedMoveThisDec,
+      batch5Move: batch5MoveThisDec,
+      batch6Move: batch6MoveThisDec,
     });
     decisionNo++;
   }
@@ -1239,6 +1358,11 @@ function emitBattle(lines, id, p1Packed, p2Packed, rec) {
       d.choiceP1, d.choiceP2, d.seedAfter, sp(d.p1), sp(d.p2), d.firstMover,
       // SPIKES layers per side (the entry-hazard SIDE CONDITION) — appended after `first`.
       d.p1.spikes, d.p2.spikes,
+      // FIXED-DAMAGE / BATCH-5 usage flags (appended LAST — the Rust gate's coverage
+      // FLOORS read these, so a regen that silently stops sampling the fixed-damage
+      // five / the batch-5 nine FAILS the gate instead of staying green; the review's
+      // "generator statistic, not a gated assertion" fix).
+      d.fixedMove ? 1 : 0, d.batch5Move ? 1 : 0, d.batch6Move ? 1 : 0,
     ].join('\t'));
   });
   lines.push(['END', id, rec.ended ? 1 : 0, winTok(rec)].join('\t'));
@@ -1292,7 +1416,8 @@ async function main() {
   goldenLines.push('# TEAM <id> <p1|p2> <packed>');
   goldenLines.push('# INIT <id> <initSeed m,n,o,p> <chooseSeed>');
   goldenLines.push('# DEC  <id> <di> <move|switch> <fP1> <fP2> <cP1> <cP2> <seedAfter> \\');
-  goldenLines.push('#       p1(species hp max fnt status atk def spa spd spe conf left) p2(...) first_mover');
+  goldenLines.push('#       p1(species hp max fnt status atk def spa spd spe conf left) p2(...) first_mover \\');
+  goldenLines.push('#       p1Spikes p2Spikes fixedMove batch5Move batch6Move');
   goldenLines.push('#   choice token: m<K>=move slot K (0-based) | s<N>=switch slot N (0-based) | -');
   goldenLines.push('# END  <id> <ended:0|1> <winner:p1|p2|tie|none>');
 
@@ -1308,6 +1433,8 @@ async function main() {
   let restrictionMoveDecs = 0; // how many decisions USE a Taunt/Disable move (the NEW coverage)
   let explosionMoveDecs = 0; // how many decisions USE an Explosion/Self-Destruct move (the prior coverage)
   let fixedMoveDecs = 0; // how many decisions USE a FIXED-DAMAGE move (the NEW coverage)
+  let batch5MoveDecs = 0; // how many decisions USE a BATCH-5 move (reactive / variable-BP / sleep talk)
+  let batch6MoveDecs = 0; // how many decisions USE a BATCH-6 move (the final tail)
   const dropReasons = new Map();
 
   while (filteredKept < FILTERED_TARGET && tries < MAX_TRIES && cleanIdx.length >= 2) {
@@ -1349,11 +1476,13 @@ async function main() {
       if (d.restrictionMove) restrictionMoveDecs++;
       if (d.explosionMove) explosionMoveDecs++;
       if (d.fixedMove) fixedMoveDecs++;
+      if (d.batch5Move) batch5MoveDecs++;
+      if (d.batch6Move) batch6MoveDecs++;
     }
   }
 
   fs.writeFileSync(OUT_GOLDEN, goldenLines.join('\n') + '\n');
-  console.error(`FILTERED gate: kept ${filteredKept} battles (${decRows} decisions, ${winRows} wins, ${tieRows} ties, ${switchRows} forced-switch, ${doubleRows} double, ${statusMoveDecs} STATUS-MOVE decisions, ${setupMoveDecs} SETUP-MOVE decisions, ${recoveryMoveDecs} RECOVERY-MOVE decisions, ${protectMoveDecs} PROTECT-MOVE decisions, ${phazeMoveDecs} PHAZE-MOVE decisions, ${leechMoveDecs} LEECH-MOVE decisions, ${substituteMoveDecs} SUBSTITUTE-MOVE decisions, ${restrictionMoveDecs} TAUNT/DISABLE-MOVE decisions, ${explosionMoveDecs} EXPLOSION-MOVE decisions, ${fixedMoveDecs} FIXED-DAMAGE-MOVE decisions), dropped ${filteredDropped} -> ${OUT_GOLDEN}`);
+  console.error(`FILTERED gate: kept ${filteredKept} battles (${decRows} decisions, ${winRows} wins, ${tieRows} ties, ${switchRows} forced-switch, ${doubleRows} double, ${statusMoveDecs} STATUS-MOVE decisions, ${setupMoveDecs} SETUP-MOVE decisions, ${recoveryMoveDecs} RECOVERY-MOVE decisions, ${protectMoveDecs} PROTECT-MOVE decisions, ${phazeMoveDecs} PHAZE-MOVE decisions, ${leechMoveDecs} LEECH-MOVE decisions, ${substituteMoveDecs} SUBSTITUTE-MOVE decisions, ${restrictionMoveDecs} TAUNT/DISABLE-MOVE decisions, ${explosionMoveDecs} EXPLOSION-MOVE decisions, ${fixedMoveDecs} FIXED-DAMAGE-MOVE decisions, ${batch5MoveDecs} BATCH5-MOVE decisions, ${batch6MoveDecs} BATCH6-MOVE decisions), dropped ${filteredDropped} -> ${OUT_GOLDEN}`);
   console.error('  drop reasons: ' + [...dropReasons.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}=${v}`).join(' '));
 
   if (filteredKept < 50) { console.error('FILTERED GATE: too few kept battles; loosen target or check the filter.'); process.exit(1); }

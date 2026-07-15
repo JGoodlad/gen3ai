@@ -18,6 +18,14 @@ pub struct SpeciesData {
     /// overwrites the computed HP stat with this when set (`pokemon.js:990`); the
     /// stat calc mirrors that hook. Parsed from the `maxHP` JSON key when present.
     pub max_hp: Option<u16>,
+    /// The species WEIGHT in HECTOGRAMS (`gen3_move_coverage_batch5_v1` — the unit
+    /// Showdown's `pokemon.getWeight()` returns: `weighthg = round(weightkg * 10)`,
+    /// clamped `>= 1`). Low Kick's BP ladder compares on it (`>=2000` → 120, `>=1000`
+    /// → 100, `>=500` → 80, `>=250` → 60, `>=100` → 40, else 20 — probe-swept exact
+    /// cutoffs). gen3 has NO `ModifyWeight` handler, so the species value IS the live
+    /// weight (probe: Skarmory `getWeight()` == 505 == weighthg). 0 when the data
+    /// omits it (no gen-3 species does; a 0 would floor into the lightest bucket).
+    pub weighthg: u32,
 }
 
 pub(super) fn parse(root: &Json) -> Result<HashMap<String, SpeciesData>, String> {
@@ -47,6 +55,7 @@ pub(super) fn parse(root: &Json) -> Result<HashMap<String, SpeciesData>, String>
                 },
                 types,
                 max_hp: v.get("maxHP").and_then(Json::as_f64).map(|n| n as u16),
+                weighthg: v.int_or("weighthg", 0) as u32,
             },
         );
     }

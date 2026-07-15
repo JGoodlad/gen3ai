@@ -98,7 +98,7 @@ use crate::dex::{to_id, Dex, DmgFold, MoveCategory, Type, TypeBoostFold};
 use crate::event::{single_event_ability_start, speed_sort, EventHandler, NO_ORDER};
 use crate::prng::PrngSeed;
 use crate::protocol::{Cause, HpStatus, MonRef, ProtocolLine};
-use crate::state::{BattleState, Status, Weather, BOOST_LEN};
+use crate::state::{BattleState, FutureMove, Status, TwoTurnMove, Weather, BOOST_LEN};
 
 /// The denominators `critMult[critRatio]` for gen ≤ 5 (`battle-actions.ts:1631`):
 /// index by the (clamped 0..5) crit ratio. A normal damaging move resolves to
@@ -224,6 +224,37 @@ const WISH_DURATION: u8 = 2;
 /// with the VOLATILES (after leech, before the item / the NO_ORDER duration volatiles),
 /// mirroring `findPokemonEventHandlers`'s status→volatiles→item order.
 const CURSE_RESIDUAL_SUBORDER: i32 = 8;
+/// The **ENCORE** volatile's residual sort key (`gen3_move_coverage_batch6_v1` — the
+/// resolved gen-3 `encore` condition's `onResidualOrder: 10, onResidualSubOrder: 14`,
+/// ONE below Taunt's 15). At order 10 it sorts AFTER Leftovers(4)/leech(5)/DoT(6)/
+/// curse(8) and BEFORE taunt(15). The handler visit does BOTH the duration decrement
+/// (the generic `effectState.duration--` — `|-end|` at 0) AND the `onResidual` pp
+/// check (the encored slot at 0 PP removes the volatile EARLY, same-turn `-end` even
+/// at duration 5 — probe EN5). Its only tie is the OTHER mon's encore at equal speed.
+const ENCORE_RESIDUAL_SUBORDER: i32 = 14;
+/// The **PERISH SONG** counter's residual order (`gen3_move_coverage_batch6_v1` — the
+/// resolved gen-3 `perishsong` condition's `onResidualOrder: 12`, NO subOrder → the
+/// Condition effectTypeOrder default 2). Order 12 = LAST in the modeled ladder
+/// (probed: Leftovers 10.4 → brn 10.6 → futuremove 11 → **perish 12**). The handler
+/// visit decrements the duration THEN prints `|-start|<mon>|perish<duration>`; the
+/// 1 → 0 tick fires `onEnd` (`perish0` + faint) instead. TWO perished mons at EQUAL
+/// cached speed are a size-2 tie group (ONE `random(0,2)` per residual — the
+/// duration decrement and onResidual ride the SAME handler visit, probe P5).
+const PERISH_RESIDUAL_ORDER: u64 = 12;
+/// The **FUTUREMOVE** slot condition's `onResidualOrder` **11** (`gen3_move_coverage_
+/// batch4c_v1`, the resolved gen-3 `futuremove` condition — NO subOrder). Order 11 sits
+/// AFTER every order-10 mon handler (incl. Taunt's 10/15) and BEFORE Truant's 27 / the
+/// NO_ORDER duration volatiles. OBSERVED one-turn
+/// order (probe `harness/probe_batch4c_doomdesire.js`, the Celebi/Tyranitar pin): Wish
+/// heal(7) → weather upkeep + sand chip(8) → Leftovers(10.4) → futuremove `-end`+damage
+/// (11) LAST. The handler participates in the residual speed-sort with the SLOT's active
+/// mon's cached speed (an equal-speed FS MIRROR draws ONE tie-shuffle per residual —
+/// cast/idle/resolve alike), gathered EVERY end-of-turn while pending.
+const FUTURE_RESIDUAL_ORDER: u64 = 11;
+/// The **FUTUREMOVE** slot condition's duration (`futuremove` condition `duration: 3`,
+/// `gen3_move_coverage_batch4c_v1`): cast-turn residual 3 → 2, idle turn 2 → 1, and the
+/// 1 → 0 tick RESOLVES the strike at the end of turn N+2 (cast t1 → `-end` at end of t3).
+const FUTURE_MOVE_DURATION: u8 = 3;
 /// TRUANT's residual toggle (`gen3_ability_batch4_v1`) — the resolved
 /// `truant.onResidualOrder: 27` (base data, gen3-inherited): its OWN order group,
 /// AFTER every order-10 mon handler, BEFORE the NO_ORDER duration-only volatiles.
@@ -386,6 +417,38 @@ enum ResidualAction {
     /// holder (probe `probe_berry_sub_tie_rng.js` (B): identical draw sequence).
     /// CURE/PP berries register NO residual handler (their gen3 trigger is `onUpdate`).
     BerryResidual { side: usize, slot: usize },
+    /// The **TWOTURNMOVE** volatile's residual duration handler (`gen3_move_coverage_
+    /// batch4c_v1`, Solar Beam — order NO_ORDER, subOrder 2, the protect/stall/flinch tie
+    /// group): decrement `MonState::two_turn`'s `duration` (2 → 1 on the charge-turn
+    /// residual, 1 → 0 on the fire-turn residual → REMOVE the volatile — `twoturnmove.
+    /// onEnd`'s `removeVolatile('solarbeam')` is a no-op by then when the beam fired).
+    /// NO HP effect, DRAW-FREE apply; its PRESENCE changes the residual tie-shuffle COUNT
+    /// (probe: the volatile registers on BOTH the charge-turn and fire-turn residuals —
+    /// a same-cached-speed foe duration handler would tie it). After a fire-turn KO the
+    /// lingering volatile is cleaned by the RESUMED tail's residual via this handler.
+    TwoTurnDuration { side: usize, slot: usize },
+    /// The pending **FUTUREMOVE** slot condition's residual handler (`gen3_move_coverage_
+    /// batch4c_v1`, Doom Desire / Future Sight — order **11**, after every order-10 mon
+    /// handler): decrement the side's `future_move` duration; on reaching 0 RESOLVE the
+    /// strike (`onEnd` → ONE accuracy roll + the STORED damage fixed-damage-style + the
+    /// two landed-resolve `eachEvent('Update')` shuffles — see `apply_future_move`).
+    /// Gathered EVERY end-of-turn while pending (speed = the slot occupant's cached
+    /// speed — an equal-speed FS mirror tie-shuffles once per residual). `side` is the
+    /// TARGET slot's side.
+    FutureMove { side: usize },
+    /// The **ENCORE** volatile's residual handler (`gen3_move_coverage_batch6_v1`,
+    /// order 10 subOrder 14 — the taunt-15 precedent): the generic duration decrement
+    /// (`|-end|` at 0) + the `onResidual` 0-PP EARLY removal (the encored slot hit 0 PP
+    /// → same-turn `-end` even at duration 5 — probe EN5). NO HP effect, DRAW-FREE
+    /// apply; its only tie is the OTHER mon's encore at equal speed.
+    EncoreDuration { side: usize, slot: usize },
+    /// The **PERISH SONG** counter's residual handler (`gen3_move_coverage_batch6_v1`,
+    /// order 12 — LAST in the ladder): decrement, then `|-start|<mon>|perish<d>`; the
+    /// 1 → 0 tick fires `onEnd` — `perish0` + FAINT the holder (processed per-handler
+    /// by the caller's `faintMessages`, so a mutual perish-out is a same-residual
+    /// double faint → double replacement, NO Quick Claw). DRAW-FREE apply; two
+    /// perished mons at equal cached speed tie (ONE shuffle per residual — P5).
+    Perish { side: usize, slot: usize },
 }
 
 /// The per-mon outcome of a turn (what THIS step validates against the sim).
@@ -981,6 +1044,15 @@ impl BattleState {
         if me.fainted || foe.fainted {
             return false; // isAdjacent() is false for a fainted mon — no trapping
         }
+        // The TRAP-MOVE volatile (`gen3_move_coverage_batch6_v1`, Mean Look / Spider Web
+        // / Block — the linked `trapped` volatile): a FIRM trap (`trapped.onTrapPokemon`
+        // → bare `tryTrap()`, NOT `'hidden'` — the Shadow-Tag request shape, probed).
+        // NO type/grounded gate (a grounded GHOST IS trapped — T-scenarios). The link is
+        // cleared eagerly the moment the TRAPPER leaves the field (execute_switch /
+        // process_faints), so a live `trapped_by` here always means an active trapper.
+        if me.trapped_by.is_some() {
+            return true;
+        }
         match to_id(&foe.ability).as_str() {
             "arenatrap" => {
                 // Grounded-only: Flying-type / Levitate escape (the spikes grounded rule).
@@ -1018,6 +1090,13 @@ impl BattleState {
     pub fn trap_is_firm(&self, side: usize, dex: &Dex) -> bool {
         if !self.is_trapped(side, dex) {
             return false;
+        }
+        // The trap-MOVE volatile (`gen3_move_coverage_batch6_v1`) is a FIRM trap: the
+        // probed request shape is `trapped:true` on the very FIRST move request (no
+        // `maybeTrapped` phase) + an `[Invalid choice]` reject with NO re-request —
+        // byte-identical to the Shadow-Tag shape (`gen3_shadowtag_firm_trap_v1`).
+        if self.sides[side].pokemon[self.sides[side].active].trapped_by.is_some() {
+            return true;
         }
         let foe = &self.sides[1 - side].pokemon[self.sides[1 - side].active];
         to_id(&foe.ability) == "shadowtag"
@@ -1120,6 +1199,29 @@ impl BattleState {
                     sub_order: 0,
                     effect_order: 0,
                     handler: ResidualAction::Wish { side },
+                });
+            }
+        }
+
+        // --- The pending FUTUREMOVE slot condition (`gen3_move_coverage_batch4c_v1`,
+        //     order 11 — AFTER every order-10 mon handler, BEFORE Truant's 27 and the
+        //     NO_ORDER duration volatiles). Gathered per side EVERY end-of-turn while
+        //     pending (cast turn included — probe: an equal-speed FS MIRROR draws ONE
+        //     tie-shuffle per residual, cast/idle/resolve alike). Its `speed` is the
+        //     slot's CURRENT active mon's cached speed (the effectHolder is the slot
+        //     occupant, like Wish). The duration decrement + the fire-at-0 resolve live
+        //     in `apply_future_move`. ---
+        for side in 0..2 {
+            if self.sides[side].future_move.is_some() {
+                let slot = self.sides[side].active;
+                let speed = self.sides[side].pokemon[slot].cached_speed as f64;
+                handlers.push(EventHandler {
+                    order: FUTURE_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: 0,
+                    effect_order: 0,
+                    handler: ResidualAction::FutureMove { side },
                 });
             }
         }
@@ -1260,6 +1362,43 @@ impl BattleState {
                 });
             }
 
+            // --- The ENCORE volatile's residual handler (`gen3_move_coverage_batch6_v1`).
+            //     Order 10, subOrder 14 (the resolved gen-3 `encore` condition — one below
+            //     Taunt's 15). Duration decrement + the onResidual 0-PP early removal ride
+            //     the SAME visit. A VOLATILE, gathered in the volatiles group (after curse,
+            //     before taunt — the insertion-order convention; its only tie is the other
+            //     mon's encore at equal speed, so the intra-mon position is unobservable). ---
+            if mon.encore.is_some() {
+                handlers.push(EventHandler {
+                    order: STATUS_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: ENCORE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::EncoreDuration { side, slot },
+                });
+            }
+
+            // --- The PERISH SONG counter's residual handler (`gen3_move_coverage_batch6_v1`).
+            //     Order **12** — its OWN group, LAST in the modeled ladder (after the
+            //     order-10 mon handlers + the order-11 futuremove, before Truant's 27 and
+            //     the NO_ORDER duration volatiles). subOrder = the Condition
+            //     effectTypeOrder default 2 (no explicit onResidualSubOrder). A VOLATILE
+            //     on the holder; its only tie is the OTHER mon's perish counter at equal
+            //     cached speed (the P5 mirror: ONE `random(0,2)` per residual — the
+            //     decrement + the `-start perish<d>` print ride ONE handler visit, so a
+            //     perished pair is a size-2 tie group, NOT two). ---
+            if mon.perish.is_some() {
+                handlers.push(EventHandler {
+                    order: PERISH_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::Perish { side, slot },
+                });
+            }
+
             // --- The TAUNT volatile's duration handler (`gen3_taunt_disable_v1`). Order 10,
             //     subOrder 15 (the gen-3 `taunt` condition's `onResidualOrder: 10,
             //     onResidualSubOrder: 15`) — so at order 10 it sorts AFTER Leftovers (4) / Leech
@@ -1294,6 +1433,28 @@ impl BattleState {
             //     `volatileStatus`, added first) then `stall` (added by `onHit`). Order
             //     within the gather is load-bearing — the shuffle permutes in pre-sort order.
             if mon.protected {
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
+                });
+            }
+            // --- The ENDURE `duration: 1` volatile (`gen3_move_coverage_batch6_v1`)
+            //     registers a NO_ORDER/subOrder-2 residual DURATION handler exactly like
+            //     `protect` (its sibling above). THE CRUX (probe ED1/ED2/ED9): a
+            //     SUCCESSFUL endure turn holds BOTH `endure` (duration 1) + `stall`
+            //     (duration 2) — TWO tied handlers on the SAME mon → an INTRA-mon
+            //     tie-group shuffle draws ONE `random(0,2)` at ANY speed configuration
+            //     (the protect+stall pair class); a FAILED-roll turn has no endure
+            //     volatile → no tie → no shuffle (ED2 t4). NO HP effect (the survive-at-1
+            //     clamp is the onDamage; the clear is the turn-top `clear_flinch`); the
+            //     apply is a no-op `VolatileDuration{is_stall:false}`. The tie
+            //     PERMUTATION among the no-op handlers is unobservable, so the gather
+            //     position vs `stall` below only needs the pair to EXIST. ---
+            if mon.endure {
                 handlers.push(EventHandler {
                     order: NO_ORDER,
                     priority: 0,
@@ -1386,6 +1547,25 @@ impl BattleState {
                     handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
                 });
             }
+            // --- COUNTER / MIRROR COAT's reactive `duration: 1` volatile
+            //     (`gen3_move_coverage_batch5_v1`) registers the SAME NO_ORDER/subOrder-2
+            //     residual DURATION handler as focus-punch/pursuit. NO HP effect (the
+            //     clear is the turn-top `clear_flinch`), but its PRESENCE changes the
+            //     residual tie-shuffle COUNT: a COUNTER MIRROR at equal speed adds ONE
+            //     tie-shuffle draw (the probed CM +1 residual-duration tie — part of the
+            //     +4 delta vs the both-splash control). A counter user can't ALSO
+            //     protect/flinch this turn, so the same-mon gather position is
+            //     unobservable. ---
+            if mon.reactive.is_some() {
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
+                });
+            }
             // --- BEAT UP's `beatup` `duration: 1` volatile (`gen3_move_coverage_batch4b_v1`)
             //     registers the SAME NO_ORDER/subOrder-2 residual DURATION handler as
             //     focus-punch/pursuit/protect/stall/flinch. NO HP effect (the clear is the
@@ -1401,6 +1581,38 @@ impl BattleState {
                     sub_order: VOLATILE_RESIDUAL_SUBORDER,
                     effect_order: 0,
                     handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
+                });
+            }
+            // --- MUSTRECHARGE's `duration: 2` volatile (`gen3_move_coverage_batch4c_v1`,
+            //     Hyper Beam) registers a NO_ORDER/subOrder-2 residual DURATION handler on
+            //     the CAST turn's residual (the volatile is removed at the NEXT turn's
+            //     recharge cant, BEFORE that turn's residual — so only the cast-turn
+            //     residual gathers it). NO HP effect (the 2 → 1 decrement is unobservable —
+            //     the volatile never expires by duration), DRAW-FREE apply; its PRESENCE
+            //     changes the residual tie-shuffle COUNT (an HB MIRROR at equal speed adds
+            //     one tie draw). ---
+            if mon.must_recharge {
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
+                });
+            }
+            // --- TWOTURNMOVE's `duration: 2` volatile (`gen3_move_coverage_batch4c_v1`,
+            //     Solar Beam) — a REAL duration countdown (2 → 1 on the charge-turn
+            //     residual, 1 → 0 on the fire-turn residual → removed). Registers on BOTH
+            //     residuals (probe), the same NO_ORDER/subOrder-2 tie group. ---
+            if mon.two_turn.is_some() {
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::TwoTurnDuration { side, slot },
                 });
             }
 
@@ -1691,6 +1903,112 @@ impl BattleState {
                     // `!target.fainted` inside apply_wish. We still process it (the slot
                     // condition ticks regardless).
                     self.apply_wish(side, dex);
+                }
+                // TWOTURNMOVE duration tick (`gen3_move_coverage_batch4c_v1`, Solar Beam):
+                // decrement + remove at 0. NO HP effect, DRAW-FREE.
+                ResidualAction::TwoTurnDuration { side, slot } => {
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    let mon = &mut self.sides[side].pokemon[slot];
+                    if let Some(t) = mon.two_turn.as_mut() {
+                        t.duration = t.duration.saturating_sub(1);
+                        if t.duration == 0 {
+                            mon.two_turn = None; // the volatile expired (onEnd)
+                        }
+                    }
+                }
+                // FUTUREMOVE tick / resolve (`gen3_move_coverage_batch4c_v1`): like Wish,
+                // the effectHolder is the SLOT — a fainted occupant does NOT skip the
+                // decrement; the fainted-skip gate lives inside `apply_future_move` (the
+                // sim's onEnd skips the STRIKE, with the condition consumed either way).
+                ResidualAction::FutureMove { side } => {
+                    self.apply_future_move(side, dex);
+                }
+                // ENCORE duration tick (`gen3_move_coverage_batch6_v1`): the generic
+                // decrement (`-end` at 0) THEN the `onResidual` 0-PP check (the encored
+                // slot at 0 PP removes the volatile EARLY — probe EN5: same-turn `-end`
+                // even at duration 5). NO HP effect, DRAW-FREE.
+                ResidualAction::EncoreDuration { side, slot } => {
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    let mut ended = false;
+                    {
+                        let mon = &mut self.sides[side].pokemon[slot];
+                        if let Some((eslot, turns)) = mon.encore {
+                            let next = turns.saturating_sub(1);
+                            if next == 0 {
+                                mon.encore = None; // the duration expired (onEnd)
+                                ended = true;
+                            } else if mon.move_pp.get(eslot).copied().unwrap_or(0) == 0 {
+                                // encore.onResidual: the encored slot is out of PP →
+                                // removeVolatile NOW (the early `-end`).
+                                mon.encore = None;
+                                ended = true;
+                            } else {
+                                mon.encore = Some((eslot, next));
+                            }
+                        }
+                    }
+                    // [EMIT] `|-end|<mon>|Encore` (`encore.onEnd`) — both removal paths.
+                    if ended && self.logging() {
+                        let m = self.mon_ref(side, slot, dex);
+                        self.log.volatile_end(&m, "Encore");
+                    }
+                }
+                // PERISH SONG tick (`gen3_move_coverage_batch6_v1`): decrement, then
+                // `|-start|<mon>|perish<d>`; at 1 → 0 the `onEnd` fires `perish0` + the
+                // holder FAINTS (hp → 0 draw-free; the caller's per-handler
+                // faintMessages sets `fainted` + a game-ending KO aborts the rest — a
+                // mutual perish-out is a same-residual double faint → double
+                // replacement, NO Quick Claw on the faint turn).
+                ResidualAction::Perish { side, slot } => {
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    let next = {
+                        let mon = &mut self.sides[side].pokemon[slot];
+                        match mon.perish {
+                            Some(d) => {
+                                let n = d.saturating_sub(1);
+                                if n == 0 {
+                                    mon.perish = None; // onEnd (the faint below)
+                                } else {
+                                    mon.perish = Some(n);
+                                }
+                                n
+                            }
+                            None => continue,
+                        }
+                    };
+                    if next == 0 {
+                        // [EMIT] `|-start|<mon>|perish0` then the faint (onEnd).
+                        if self.logging() {
+                            let m = self.mon_ref(side, slot, dex);
+                            self.log.volatile_start(&m, "perish0");
+                        }
+                        let hp = self.sides[side].pokemon[slot].hp;
+                        self.apply_damage(side, slot, hp); // zero + record the faint order
+                        // THE DURATION-END `continue` (probe MC89 — the mutual
+                        // perish-out TIE): the sim's `fieldEvent` duration-END branch
+                        // (`handler.state.duration-- → end() → continue`) SKIPS the
+                        // per-handler `faintMessages()` — the perish faint is only
+                        // ENQUEUED here, so a speed-tied MIRROR runs BOTH perish
+                        // handlers back-to-back (both `perish0` lines print before
+                        // EITHER `|faint|`) and the double faint processes at the
+                        // residual's tail → both LAST mons → the gen-3 TIE. Running
+                        // the per-handler faintMessages here (the onResidual-callback
+                        // convention — burn DoT etc.) would end the battle after the
+                        // FIRST perish faint with a WRONG winner. Perish is order 12
+                        // (LAST in the ladder), so no later handler is skipped.
+                        continue;
+                    } else if self.logging() {
+                        // [EMIT] `|-start|<mon>|perish<duration>` (the onResidual print,
+                        // post-decrement — the cast turn's residual prints perish3).
+                        let m = self.mon_ref(side, slot, dex);
+                        self.log.volatile_start(&m, &format!("perish{next}"));
+                    }
                 }
             }
 
@@ -2682,6 +3000,133 @@ impl BattleState {
         }
     }
 
+    /// The pending **FUTUREMOVE** slot condition's residual tick / RESOLVE
+    /// (`gen3_move_coverage_batch4c_v1`, Doom Desire / Future Sight — the gen-3
+    /// `futuremove` condition's order-11 `onResidual`/`onEnd`, probe-settled bit-for-bit
+    /// vs `harness/probe_batch4c_doomdesire.js`):
+    ///
+    ///   * a NON-final tick just decrements the duration (3 → 2 → 1), DRAW-FREE;
+    ///   * the FINAL tick (1 → 0) RESOLVES: `removeSlotCondition` (the pending state is
+    ///     consumed EITHER WAY) → `onEnd`:
+    ///       - SKIP (no strike, zero draws) iff the CURRENT slot occupant is FAINTED
+    ///         (`target === source` — the other skip — is impossible in gen-3 singles).
+    ///         The sim emits a `-hint` here whose exact text is UNCAPTURED → deliberately
+    ///         not emitted (the honesty discipline — like the sub-absorbed Pay Day form).
+    ///       - else `|-end|<target>|move: <Name>`, remove the target's PROTECT volatile
+    ///         (the strike ignores a resolve-turn Protect — probed full 366 through it),
+    ///         then ONE accuracy roll (`randomChance(85|90,100)` — the standard
+    ///         `hitStepAccuracy` acc/eva-stage + accMod fold; the STAGE fold at resolve is
+    ///         probe-UNREACHED [no modeled gen3 path raises evasion] and modeled as the
+    ///         standard fold, per the probe's PLAUSIBLE-standard-fold disposition).
+    ///       - HIT: the STORED cast-time number lands fixed-damage-style — NO crit roll,
+    ///         NO damage roll; a SUBSTITUTE absorbs it (accuracy still drawn; breaks, no
+    ///         carry); Focus Band (a Move-effect Damage event into the occupant) can roll
+    ///         its survive; typeless '???' → no type-chart row → NEVER immune (DD is
+    ///         neutral into Fire, FS hits Dark). A LANDED resolve then draws TWO extra
+    ///         `eachEvent('Update')` shuffles (`hitStepMoveHitLoop` — tie-only; zero at
+    ///         distinct speed; probed: the FS-mirror resolve turn draws 14 vs the
+    ///         distinct-speed 3).
+    ///       - MISS: `|-miss|<caster>|<target>`, NO damage, NO extra Updates — plus the
+    ///         sim's `attrLastMove('[miss]')` PROTOCOL QUIRK (the `[miss]` retro-appends
+    ///         to the LAST `|move|` line of the turn — the TARGET'S OWN move line).
+    ///     The strike resolves even when the CASTER has switched out or FAINTED (probed:
+    ///     a fainted-benched Jirachi's DD still dealt the full stored 366); the caster is
+    ///     resolved by its stable uid for the accuracy fold + the `-miss` ident.
+    ///     A resolve KO rides the caller's per-handler `faintMessages` + `checkWin` (a
+    ///     game-ending resolve KO aborts the remaining residual handlers; the Quick Claw
+    ///     is deferred past the forced replacement — the deferred-faint protocol).
+    fn apply_future_move(&mut self, side: usize, dex: &Dex) {
+        let fm = match self.sides[side].future_move.clone() {
+            Some(f) => f,
+            None => return,
+        };
+        if fm.duration > 1 {
+            self.sides[side].future_move =
+                Some(FutureMove { duration: fm.duration - 1, ..fm });
+            return;
+        }
+        // RESOLVE: consume the slot condition (removeSlotCondition), then strike.
+        self.sides[side].future_move = None;
+        let slot = self.sides[side].active;
+        if self.sides[side].pokemon[slot].fainted {
+            // A fainted occupant skips the strike ('-hint' in the sim, text uncaptured —
+            // not emitted; zero draws either way).
+            return;
+        }
+        let move_name = dex
+            .moves(&fm.move_id)
+            .map(|m| m.name.clone())
+            .unwrap_or_else(|| fm.move_id.clone());
+        // [EMIT] `|-end|<target>|move: Doom Desire` (on the TARGET, with the `move:`
+        // prefix — probe-observed shape).
+        if self.logging() {
+            let t = self.mon_ref(side, slot, dex);
+            self.log.volatile_end(&t, &format!("move: {move_name}"));
+        }
+        // `onEnd` removes the target's Protect/Endure volatile BEFORE the strike (the
+        // stored number lands through a resolve-turn Protect — probed).
+        self.sides[side].pokemon[slot].protected = false;
+        // The caster (may be benched / fainted — the strike still resolves).
+        let src_side = fm.source_side;
+        let src_slot = self
+            .slot_of_uid(src_side, fm.source_uid)
+            .unwrap_or(self.sides[src_side].active);
+        // ONE accuracy roll (typeless → no move_type; never_miss false).
+        let hit = self.roll_accuracy(src_side, src_slot, side, slot, fm.accuracy, false, None, dex);
+        if !hit {
+            // [EMIT] the `attrLastMove('[miss]')` retro-edit (the `[miss]` lands on the
+            // LAST `|move|` line of the turn — the target's own move line, the observed
+            // protocol quirk) then `|-miss|<caster>|<target>`.
+            if self.logging() {
+                self.log.attr_last_move_miss();
+                let u = self.mon_ref(src_side, src_slot, dex);
+                let t = self.mon_ref(side, slot, dex);
+                self.log.miss(&u, Some(&t));
+            }
+            return;
+        }
+        // The STORED number lands fixed-damage-style (sub-intercept first; Focus Band on
+        // a direct hit; deferred faint via the caller's per-handler faintMessages).
+        let realized = fm.damage;
+        let sub = self.absorb_into_sub(side, slot, realized);
+        if sub == SubAbsorb::NoSub {
+            // ENDURE clamps the future-move resolve too (`gen3_move_coverage_batch6_v1`,
+            // CLASS-INFERRED: the resolve's Damage event runs the onDamage handlers —
+            // the Focus-Band-rolls-here precedent — and `endure.onDamage` gates only on
+            // `effect.effectType === 'Move'`, which the resolving move satisfies; an
+            // endure volatile is still up at the same turn's residual). No golden
+            // scenario composes them — disclosed, not probe-verified. DRAW-FREE.
+            let realized = self.endure_clamp(side, slot, realized, dex);
+            let realized = self.focus_band_damage(side, slot, realized, true, dex);
+            self.apply_damage(side, slot, realized);
+            if realized > 0 && self.logging() {
+                let t = self.mon_ref(side, slot, dex);
+                let hp = self.hp_status(side, slot);
+                self.log.damage(&t, &hp, None);
+            }
+        } else if self.logging() {
+            let t = self.mon_ref(side, slot, dex);
+            match sub {
+                SubAbsorb::Held => self.log.activate(&t, "Substitute", Some("[damage]")),
+                SubAbsorb::Broke => self.log.volatile_end(&t, "Substitute"),
+                SubAbsorb::NoSub => unreachable!(),
+            }
+        }
+        // A LANDED resolve (direct OR sub-absorbed — both are a hit) fires TWO extra
+        // `eachEvent('Update')`s inside `hitStepMoveHitLoop` (tie-only draws), with the
+        // in-loop `faintMessages(false, false, !pokemon.hp)` (battle-actions.js:852)
+        // BETWEEN them — so on a resolve KO the FIRST Update still gathers the 0-HP
+        // not-yet-fainted target (a tie draws) while the SECOND no longer does
+        // (`getAllActive` excludes the now-fainted mon → one active → no tie, no draw).
+        // PROBE-verified on the fs_mirror board: a non-KO tie resolve draws acc+2 Updates;
+        // the KO resolve draws acc+1 (the |faint| emits between them). The inner
+        // faintMessages also ENDS a battle the KO decided (the caller's per-handler
+        // `check_win` return then aborts the remaining residual handlers).
+        self.each_event_shuffle();
+        self.process_faints(dex);
+        self.each_event_shuffle();
+    }
+
     /// The **LEECH SEED** residual drain (`leechseed.onResidual`, gen-3 — verified
     /// bit-for-bit vs the omniscient sim `harness/probe_leechseed_rng.js`). The seeded
     /// mon (`side`/`slot`) loses `floor(baseMaxhp/8)` and the SEEDER's CURRENT active
@@ -2799,6 +3244,72 @@ impl BattleState {
             //     expires at the next turn-top, exactly like `flinch`/`focus_punch`. Re-added
             //     each turn Beat Up runs (`run_beat_up`). DRAW-FREE. ---
             self.sides[side].pokemon[a].beat_up = false;
+            // --- COUNTER / MIRROR COAT's reactive `duration: 1` volatile
+            //     (`gen3_move_coverage_batch5_v1`) expires at the next turn-top, exactly
+            //     like `focus_punch`. Re-added (with a RESET damage record) each turn the
+            //     move is selected, by the order-5 `beforeTurnMove`. DRAW-FREE. ---
+            self.sides[side].pokemon[a].reactive = None;
+            // --- ENDURE's `duration: 1` volatile (`gen3_move_coverage_batch6_v1`)
+            //     expires at the next turn-top, exactly like `protect` (its sibling —
+            //     same stall machinery, different effect: the onDamage survive-at-1
+            //     clamp instead of the move block). DRAW-FREE. ---
+            self.sides[side].pokemon[a].endure = false;
+        }
+    }
+
+    /// The COUNTER / MIRROR COAT damage RECORDER (`gen3_move_coverage_batch5_v1` — the
+    /// reactive volatile's `onDamage`, priority **−101** = LAST, so it reads the FINAL
+    /// post-Focus-Band damage). Called at each site where a FOE **Move**-effect hit
+    /// lands on the MON directly (a SUB-absorbed hit never fires the mon's Damage event
+    /// → the sites never call this for an absorbed hit; confusion self-hits / recoil /
+    /// residuals are NOT Move-effect foe hits → no site calls it). `dealt` is the
+    /// ACTUAL applied damage (clamped + post-Focus-Band). The qualifying rule
+    /// (probe-settled, `probe_batch5_reactive.js` + `probe_batch5_reactive_edges.js`):
+    ///
+    ///   * `counter`   ← `category == Physical || id == hiddenpower` (gen3 type-derived
+    ///     category: Seismic Toss / Endeavor / Struggle ARE Physical; a bare Hidden
+    ///     Power is countered UNCONDITIONALLY — Showdown normalizes every typed
+    ///     `hiddenpowerX` id to bare `hiddenpower` at Pokemon construction, so the
+    ///     `starts_with` fold mirrors that);
+    ///   * `mirrorcoat` ← `category == Special && id != hiddenpower` (Beat Up's strikes
+    ///     are Special → recorded, 2× the LAST strike; HP NEVER arms Mirror Coat even
+    ///     special-typed — probed).
+    ///
+    /// Each qualifying hit OVERWRITES `damage = 2 × dealt` (the multihit last-strike
+    /// rule). DRAW-FREE. (A FUTURE-move resolve is unobservable here: the volatile
+    /// RESETS at the next selection's beforeTurnMove before the move could ever read a
+    /// residual-time record, so no future-resolve site calls this.)
+    ///
+    /// **A ZERO-damage hit NEVER records** (`dealt > 0` gate): a Focus-Band proc on a
+    /// holder at exactly 1 HP reduces the applied damage to 0, and the sim's
+    /// `runEvent('Damage')` BREAKS its handler chain on a falsy relayVar
+    /// (battle.js:695 `if (!relayVar || fastExit) break`) BEFORE the counter's
+    /// priority-−101 recorder ever runs — so the sim leaves Counter/Mirror Coat
+    /// UN-ARMED (a bare zero-draw `|move|` fail next), while an armed-with-0 port
+    /// would draw an extra accuracy roll (a latent seed desync). Behavioral probe
+    /// `harness/probe_lens1_batch5_review.js` R3 (seed [6,6,6,6]: Drill Peck lethal
+    /// into a 1-HP Focus-Band Snorlax → `|-activate|item: Focus Band`, 0 dealt, then
+    /// a bare `|move|…|Counter|…` with NO accuracy draw, Skarmory untouched); pinned
+    /// by `regression_test.rs::focus_band_zero_damage_hit_does_not_arm_counter`.
+    fn record_reactive_hit(
+        &mut self,
+        def_side: usize,
+        def_slot: usize,
+        category: MoveCategory,
+        move_id: &str,
+        dealt: u16,
+    ) {
+        let Some(r) = self.sides[def_side].pokemon[def_slot].reactive.as_mut() else {
+            return;
+        };
+        let is_hp = move_id.starts_with("hiddenpower");
+        let qualifies = if r.mirror {
+            category == MoveCategory::Special && !is_hp
+        } else {
+            category == MoveCategory::Physical || is_hp
+        };
+        if qualifies && dealt > 0 {
+            r.damage = Some(dealt.saturating_mul(2));
         }
     }
 
@@ -3170,6 +3681,26 @@ impl BattleState {
             }
         };
 
+        // --- SNORE fail-loud guard (`gen3_move_coverage_batch5_v1` scope edge): Snore
+        //     is a bp-40 damaging move carrying `sleepUsable` + an asleep-only `onTry`
+        //     — the port models NEITHER (Sleep Talk is the ONLY modeled sleepUsable
+        //     move; `on_before_move`'s slp arm proceeds only for sleeptalk). Running it
+        //     as a plain damaging move silently mismodels BOTH branches: AWAKE the sim
+        //     onTry-fails silently (the port would deal damage); ASLEEP the sim cants
+        //     then sleepUsable-PROCEEDS (the port cants + blocks). No pool team carries
+        //     it (e2e-picker-blocklisted, `gen_e2e_fuzz.js`), but a future team source
+        //     (e.g. the training bridge) could reach the engine directly — PANIC per
+        //     the fail-loud canon, BEFORE any draw (the guard sits before
+        //     `on_before_move`, so an asleep Snore selection panics too). ---
+        if move_id == "snore" {
+            panic!(
+                "unmodeled sleepUsable move 'snore' reached run_move — Snore's asleep-only \
+                 onTry + the sleepUsable cant-then-proceed are NOT modeled (Sleep Talk is the \
+                 only modeled sleepUsable move). Model it bit-for-bit or keep it off the \
+                 pickable set — do NOT let it run as a plain bp-40 damaging move."
+            );
+        }
+
         // BATCH-1 post-hit effect specs (`gen3_move_coverage_batch1_v1`): recoil / drain /
         // self-drop fractions read from the move data. Struggle's recoil rides its OWN
         // dedicated gen-3 path below (so leave it 0 here to avoid a double recoil). Rapid
@@ -3193,11 +3724,73 @@ impl BattleState {
         //     (already handled manually by the interrupt), mirroring `useMove` (not `runMove`). ---
         let pursuit_strike = self.pursuit_strike;
         self.pursuit_strike = false;
+        // --- SLEEP TALK CALLED MOVE (`gen3_move_coverage_batch5_v1`): read+clear the
+        //     transient `sleep_talk_call` flag the Sleep Talk arm sets for the ONE
+        //     recursive run_move that executes the SAMPLED move (the sim's bare
+        //     `actions.useMove(picked)` inside `sleeptalk.onHit`). Like the pursuit
+        //     strike, the called move SKIPS on_before_move / PP / lastMove / the
+        //     mustrecharge gate (all owned by the OUTER Sleep Talk run) but otherwise
+        //     runs its FULL NORMAL draw chain. ---
+        let sleep_talk_call = self.sleep_talk_call;
+        self.sleep_talk_call = false;
         let (never_miss, base_power) = if pursuit_strike {
             (true, base_power.saturating_mul(2))
         } else {
             (never_miss, base_power)
         };
+
+        // --- MUSTRECHARGE cant (`gen3_move_coverage_batch4c_v1`, Hyper Beam's locked
+        //     turn): the gen3-resolved `mustrecharge.onBeforeMove` at priority **11** —
+        //     BEFORE sleep/frz (10) / truant (9) / flinch (8) / disable (7) / confusion
+        //     (3) / attract (2) / paralysis (1) — emits `|cant|<user>|recharge`, removes
+        //     the volatile (+ `removeVolatile('truant')`, a NO-OP in the port's
+        //     `truant_turn` toggle model: the recharge cant fires before the truant gate
+        //     and the order-27 residual toggle consumes the loaf — the probed Slaking
+        //     HB/recharge/HB/recharge cadence with no truant cant ever), and returns null.
+        //     ZERO draws (a par'd user draws NO para roll — probed: the recharge-turn seed
+        //     advance is IDENTICAL with and without par; a slp'd user's counter does NOT
+        //     decrement — `|cant|recharge`, not `|cant|slp`), NO PP (the recharge is not a
+        //     slot; PP deduction sits after on_before_move, never reached). The lock fully
+        //     clears — Hyper Beam is selectable again the following turn. This gate sits
+        //     BEFORE the unmodeled-sibling fail-loud below: a locked mon never RESOLVES a
+        //     move at all in the sim (the priority-11 cant precedes move resolution), so an
+        //     unmodeled charge/recharge move sitting in the resolved slot must not panic on
+        //     a recharge turn (review finding, batch-4c Lens 2). ---
+        if !pursuit_strike && !sleep_talk_call && self.sides[side].pokemon[slot].must_recharge {
+            self.sides[side].pokemon[slot].must_recharge = false;
+            // DESTINY BOND's `onMoveAborted` (`gen3_move_coverage_batch6_v1`): a cant
+            // CLOSES the window — the recharge cant is a BeforeMove abort, so a DB
+            // volatile still up from a prior cast is removed here (draw-free).
+            self.sides[side].pokemon[slot].destiny_bond = false;
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                self.log.cant(&user, "recharge", None);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- FAIL-LOUD: the UNMODELED recharge / charge siblings (`gen3_move_coverage_
+        //     batch4c_v1`). Blast Burn / Frenzy Plant / Hydro Cannon ARE gen3-legal with
+        //     the identical `self:mustrecharge` machinery but are UNPROBED for their
+        //     specifics → fail-loud rather than silently run recharge-less. Razor Wind /
+        //     Sky Attack / Skull Bash (+ the semi-invulnerable Fly / Dig / Dive / Bounce,
+        //     whose conditions DIFFER from Solar Beam's) are `flags.charge` moves the port
+        //     does not model → fail-loud rather than silently collapse to one turn.
+        //     (gigaimpact / rockwrecker / roaroftime are `isNonstandard:'Future'` — not
+        //     gen3-legal, absent from gen3_moves.json.) Only `hyperbeam` / `solarbeam` are
+        //     modeled; `doomdesire` / `futuresight` are BOTH modeled (probe-settled
+        //     same-mechanic). ---
+        match move_id.as_str() {
+            "blastburn" | "frenzyplant" | "hydrocannon" => panic!(
+                "gen3_move_coverage_batch4c_v1: the RECHARGE move {move_id:?} is NOT modeled \
+                 (only hyperbeam is) — fail-loud, not a silent recharge-less desync"
+            ),
+            "razorwind" | "skyattack" | "skullbash" | "fly" | "dig" | "dive" | "bounce" => panic!(
+                "gen3_move_coverage_batch4c_v1: the CHARGE move {move_id:?} is NOT modeled \
+                 (only solarbeam is) — fail-loud, not a silent one-turn collapse"
+            ),
+            _ => {}
+        }
 
         // --- WATER SPOUT variable BP (`gen3_move_coverage_batch4b_v1`,
         //     `waterspout.basePowerCallback`): `bp = clampIntRange(150 * hp / maxhp, 1)` =
@@ -3215,6 +3808,28 @@ impl BattleState {
             ((150u32 * mon.hp as u32) / mon.maxhp as u32).max(1) as u16
         } else {
             base_power
+        };
+
+        // --- The VARIABLE-BP family (`gen3_move_coverage_batch5_v1`, `basePowerCallback`
+        //     over a bp-0 data row — Return / Frustration / Flail / Reversal / Low Kick):
+        //     compute the engine BP (see `variable_bp` — deterministic STATE reads, ZERO
+        //     PRNG, probe-proven DRAW-NEUTRAL) and RE-DERIVE the category (the bp-0 data
+        //     row mis-derived Status; the true gen3 category is the type split — all five
+        //     are Physical [Normal / Fighting]). Everything downstream is the ordinary
+        //     single-hit damaging draw model (acc-100 DRAWN, crit 1/16 — gen3 Flail /
+        //     Reversal CAN crit, gen2's willCrit=false is NOT inherited — damage
+        //     random(16), Quick Claw; NO secondary), with the normal type immunity
+        //     (Normal→Ghost, Fighting→Ghost) reporting `-immune` AFTER the accuracy
+        //     draw. `|| 1`-clamped, so bp is never 0 → never the `base_power == 0`
+        //     no-op below. ---
+        let (base_power, category) = match variable_bp(
+            &move_id,
+            &self.sides[side].pokemon[slot],
+            &self.sides[foe].pokemon[foe_slot],
+            dex,
+        ) {
+            Some(bp) => (bp, crate::dex::moves::derive_category(3, bp, move_type)),
+            None => (base_power, category),
         };
 
         // --- THUNDER weather-accuracy mutation (`gen3_move_coverage_batch4b_v1`,
@@ -3249,7 +3864,23 @@ impl BattleState {
         //     abort (a lower-priority status then never draws). A move that aborts
         //     here draws NOTHING further — no accuracy/crit/damage/secondary.
         //     SKIPPED for the pursuit strike (a bare useMove; the pursuer already acted). ---
-        if !pursuit_strike {
+        // --- The LOCKED FIRE turn of a two-turn move (`gen3_move_coverage_batch4c_v1`,
+        //     Solar Beam): the mon is CHARGING (`two_turn.charging`) and this action is
+        //     the locked fire. The fire deducts NO PP (the sim's `useMoveInner` lockedmove
+        //     path skips `deductPP`); everything else (onBeforeMove first — an abort
+        //     LOSES the charge — then normal accuracy/crit/damage) runs below. Computed
+        //     BEFORE the on_before_move/PP block reads it. ---
+        let locked_fire = !pursuit_strike
+            && move_id == "solarbeam"
+            && self.sides[side].pokemon[slot].two_turn.map_or(false, |t| t.charging);
+
+        // The PRE-move Choice-lock snapshot (`gen3_move_coverage_batch5_v1`, the Sleep
+        // Talk `onTryHit` choicelock gate): the lock the PP block below sets for THIS
+        // very use must NOT count (a CB mon's FIRST Sleep Talk samples + executes —
+        // probed; only a lock from a PREVIOUS turn fails the next Sleep Talk).
+        let was_choice_locked = self.sides[side].pokemon[slot].choice_locked_move.is_some();
+
+        if !pursuit_strike && !sleep_talk_call {
         // `is_status` for the TAUNT onBeforeMove cant — whether Taunt BLOCKS this move
         // (`gen3_taunt_disable_v1`): a derived-Status move that is NOT a fixed-damage move
         // (Seismic Toss etc. are bp-0 but a non-Status Showdown category, so Taunt does not
@@ -3266,7 +3897,33 @@ impl BattleState {
             // / still-asleep / flinched / frozen / confusion-self-hit turn consumes NO PP
             // (VERIFIED vs the sim: a full-para Snorlax keeps its Body Slam PP). Struggle
             // is likewise not deducted (it has no slot).
+            //
+            // `twoturnmove.onMoveAborted` (`gen3_move_coverage_batch4c_v1`): a cant on the
+            // FIRE turn removes BOTH the twoturnmove volatile and its `solarbeam` sub —
+            // THE CHARGE IS LOST (probed: Spore on the fire turn → `|cant|slp`, vols=[];
+            // on wake the mon starts a FRESH charge and pays PP again). A charge-turn cant
+            // has no volatile yet (it is added below, after this gate) — the clear is a
+            // no-op then. DRAW-FREE.
+            self.sides[side].pokemon[slot].two_turn = None;
+            // DESTINY BOND's `onMoveAborted` (`gen3_move_coverage_batch6_v1`): ANY cant
+            // (full-para / slp / frz / flinch / confusion self-hit / disable / taunt)
+            // removes a still-up DB volatile — the window closes at the move ATTEMPT
+            // whether or not the move ran (probe DB2's class; draw-free). The CHARGE
+            // volatile's own `onMoveAborted` (any move != charge) is consumed by the
+            // CALLER (turn_loop's post-run_move consumption — the abort path included).
+            self.sides[side].pokemon[slot].destiny_bond = false;
             return MoveResolution::done(false, false, false);
+        }
+
+        // --- DESTINY BOND's `onBeforeMove` (priority −1, `gen3_move_coverage_batch6_v1`):
+        //     the LOWEST-priority BeforeMove handler — it runs only after every cant gate
+        //     PASSED (an abort was handled above via onMoveAborted) and removes a still-up
+        //     DB volatile for any move `!= destinybond` (a DB RE-CAST keeps it up through
+        //     its own attempt — the onPrepareHit then draw-free re-adds it, DB6). So the
+        //     DB window is exactly "until the user's next move ATTEMPT" (probe DB2: the
+        //     user splashed then was KO'd the same turn → NO mutual faint). DRAW-FREE. ---
+        if move_id != "destinybond" {
+            self.sides[side].pokemon[slot].destiny_bond = false;
         }
 
         // --- PP DEDUCTION (`gen3_pp_tracking_v1`), mirroring `deductPP` at
@@ -3284,7 +3941,11 @@ impl BattleState {
         //     a Pressure Zapdos deducts 1, not 2 — the e2e_182 root cause). A self-target
         //     heal/setup/protect (SoftBoiled / Calm Mind / Protect) is `pressureTargets=[self]`
         //     → also 1.
-        if !struggle {
+        //     A LOCKED FIRE (Solar Beam's second turn) deducts NO PP — the sim's
+        //     `useMoveInner` lockedmove path skips `deductPP` (`gen3_move_coverage_
+        //     batch4c_v1`; probed: PP is paid ONCE, at the CHARGE — 16→15, or 16→14 under
+        //     a Pressure foe — and the fire turn leaves it untouched).
+        if !struggle && !locked_fire {
             let pressure_extra = pressure_targets_foe
                 && to_id(&self.sides[foe].pokemon[foe_slot].ability) == "pressure";
             let deduct = if pressure_extra { 2 } else { 1 };
@@ -3312,7 +3973,7 @@ impl BattleState {
         //     point (like PP), so it leaves `last_move` unchanged — mirroring `moveUsed` running
         //     only after BeforeMove passes. ---
         self.sides[side].pokemon[slot].last_move = if struggle { None } else { Some(move_index) };
-        } // end `if !pursuit_strike` (on_before_move + PP + lastMove)
+        } // end `if !pursuit_strike && !sleep_talk_call` (on_before_move + PP + lastMove)
 
         // --- FOCUS PUNCH onTry cancel (`gen3_move_coverage_batch4_v1`,
         //     `focuspunch.move.onTry`): fires at the `singleEvent('Try')` step INSIDE
@@ -3332,6 +3993,74 @@ impl BattleState {
                 self.log.cant(&user, "Focus Punch", Some("Focus Punch"));
             }
             return MoveResolution::done(false, false, false);
+        }
+
+        // --- FUTURE MOVE cast (`gen3_move_coverage_batch4c_v1`, Doom Desire / Future
+        //     Sight — the gen-3 `onTry`, which fires BEFORE tryMoveHit's accuracy AND
+        //     before the TryHit protect check, so a cast-turn Protect does NOT block it):
+        //     queue the CAST-TIME DAMAGE SNAPSHOT as the target slot's pending strike.
+        //     PP + lastMove were already consumed above (deductPP/moveUsed precede onTry
+        //     — probed: a FAILED double-cast still deducts PP, 7→6). ---
+        if move_id == "doomdesire" || move_id == "futuresight" {
+            return self.run_future_move_cast(
+                side, slot, foe, foe_slot, base_power, category, accuracy, &move_id,
+                &move_name, dex,
+            );
+        }
+
+        // --- SOLAR BEAM (`gen3_move_coverage_batch4c_v1`) — the two-turn CHARGE move
+        //     (`onTryMove`, which runs AFTER PP was deducted above — the CHARGE turn pays
+        //     the PP; the fire turn paid none via `locked_fire`). Probe
+        //     `harness/probe_batch4c_solarbeam.js`:
+        //       * CHARGE (no volatile yet): emit `|move|<user>|Solar Beam||[still]` +
+        //         `|-prepare|<user>|Solar Beam`, then check the user's EFFECTIVE weather
+        //         (Cloud Nine / Air Lock suppress — a negater forces the charge back even
+        //         under Drought sun, probed): SUN → the charge is SKIPPED — emit
+        //         `|-anim|<user>|Solar Beam|<target>` and fall through to the NORMAL
+        //         damaging execution (acc+crit+dmg — 3 draws exactly like a normal move,
+        //         NO volatile); else add the `twoturnmove` volatile (duration 2, charging)
+        //         and return null — ZERO move draws, `landed` false (no in-tryMoveHit
+        //         Update).
+        //       * FIRE (`locked_fire`): `removeVolatile('solarbeam')` (the sub-volatile —
+        //         `charging` = false; the twoturnmove itself lingers to its residual
+        //         expiry) → NORMAL execution below with the `|[from]lockedmove` announce
+        //         attr. Accuracy 100 is DRAWN (always passes); crit + damage follow; NO
+        //         secondary.
+        //     `suppress_announce` marks the sun-skip (its `|move|` line already emitted in
+        //     the `[still]`+`-prepare`+`-anim` form); `announce_lockedmove` marks the fire
+        //     (the downstream announce gains the lockedmove attr). ---
+        let mut suppress_announce = false;
+        let mut announce_lockedmove = false;
+        if move_id == "solarbeam" {
+            if locked_fire {
+                if let Some(t) = self.sides[side].pokemon[slot].two_turn.as_mut() {
+                    t.charging = false; // removeVolatile('solarbeam') → the beam FIRES
+                }
+                announce_lockedmove = true;
+            } else {
+                // CHARGE turn (or the sun skip). [EMIT] the `[still]` announce + -prepare.
+                if self.logging() {
+                    let user = self.mon_ref(side, slot, dex);
+                    self.log.move_used(&user, &move_name, None, false, true);
+                    self.log.prepare(&user, &move_name);
+                }
+                if self.effective_weather(dex) == Some(Weather::Sun) {
+                    // SUN SKIP: -anim then IMMEDIATE normal execution (PP already paid -1).
+                    if self.logging() {
+                        let user = self.mon_ref(side, slot, dex);
+                        let target = self.mon_ref(foe, foe_slot, dex);
+                        self.log.anim(&user, &move_name, &target);
+                    }
+                    suppress_announce = true;
+                } else {
+                    self.sides[side].pokemon[slot].two_turn = Some(TwoTurnMove {
+                        move_index,
+                        duration: 2,
+                        charging: true,
+                    });
+                    return MoveResolution::done(false, false, false);
+                }
+            }
         }
 
         // --- PROTECT / DETECT (the user's OWN protect move) — a self-target,
@@ -3408,6 +4137,8 @@ impl BattleState {
                 targets_self,
                 status_inflicted.as_deref(),
                 foe_will_move,
+                will_act,
+                was_choice_locked,
                 dex,
             );
         }
@@ -3486,10 +4217,18 @@ impl BattleState {
             // Protect` — a blocked foe attack shows the `|move|` announce (NO `-crit`/
             // `-damage`/effectiveness — the block precedes them) + the Protect activate,
             // BEFORE the `-immune` report (protect wins TryHit). VERIFIED vs the golden.
-            if self.logging() {
+            if self.logging() && !suppress_announce {
                 let user = self.mon_ref(side, slot, dex);
                 let target = self.mon_ref(foe, foe_slot, dex);
                 self.log.move_used(&user, &move_name, Some(&target), false, false);
+                if announce_lockedmove {
+                    self.log.attr_last_move_from_lockedmove();
+                }
+                self.log.activate(&target, "Protect", None);
+            } else if self.logging() {
+                // A sun-skip Solar Beam into a Protect: the announce already emitted in
+                // the [still]+prepare+anim form; only the block line follows.
+                let target = self.mon_ref(foe, foe_slot, dex);
                 self.log.activate(&target, "Protect", None);
             }
             // JUMP KICK / HIGH JUMP KICK crash through Protect (`gen3_jump_kick_crash_v1`):
@@ -3530,6 +4269,36 @@ impl BattleState {
             )
         {
             ctx.bp_mods.push(BpMod::Chain(2, 1));
+        }
+
+        // --- CHARGE ×2 on the next Electric move (`gen3_move_coverage_batch6_v1`, the
+        //     `charge` volatile's `onBasePower chainModify(2)` iff `move.type ===
+        //     'Electric'` — probe CH1: control Thunderbolt 117, charged 208, post-charge
+        //     back to ~114 at IDENTICAL draw counts). A BASE-POWER chain member (joins
+        //     the ONE accumulated 4096 modifier — ×2 is exact under the chain rounding,
+        //     so its accumulate position is commutative). The volatile is CONSUMED by
+        //     the user's next move attempt of ANY kind (onAfterMove/onMoveAborted —
+        //     handled by the CALLER after this move resolves), so the fold reads the
+        //     still-up flag. gen3 Charge has NO +1 SpD. DRAW-FREE. ---
+        if self.sides[side].pokemon[slot].charge && move_type == Some(Type::Electric) {
+            ctx.bp_mods.push(BpMod::Chain(2, 1));
+        }
+
+        // --- SOLAR BEAM weather BP-halving (`gen3_move_coverage_batch4c_v1` — gen3 DOES
+        //     have the modern halving, PROBED: rain 54 vs no-weather 105 on the same
+        //     Kyogre, and in sand): the resolved gen3 `solarbeam.onBasePower`
+        //     `chainModify(0.5)` when the USER's `effectiveWeather()` is rain / sandstorm
+        //     / hail (+primordialsea/snowscape — N/A gen3). Suppression-aware (a Cloud
+        //     Nine / Air Lock mon kills the halving too — `effective_weather`), read at
+        //     DAMAGE time (the fire turn / the sun-skip). DRAW-FREE (a BP-chain fold —
+        //     state-only, seed-identical to the unhalved control). ---
+        if move_id == "solarbeam"
+            && matches!(
+                self.effective_weather(dex),
+                Some(Weather::Rain | Weather::Sand | Weather::Hail)
+            )
+        {
+            ctx.bp_mods.push(BpMod::Chain(1, 2));
         }
 
         // --- IMMUNITY short-circuit (the draw-COUNT crux): a type-chart 0× or an
@@ -3588,7 +4357,12 @@ impl BattleState {
             if self.logging() {
                 let user = self.mon_ref(side, slot, dex);
                 let target = self.mon_ref(foe, foe_slot, dex);
-                self.log.move_used(&user, &move_name, Some(&target), false, false);
+                if !suppress_announce {
+                    self.log.move_used(&user, &move_name, Some(&target), false, false);
+                    if announce_lockedmove {
+                        self.log.attr_last_move_from_lockedmove();
+                    }
+                }
                 let fm = &self.sides[foe].pokemon[foe_slot];
                 let ff_case = is_tryhit_ff && acc_hit;
                 if ff_case {
@@ -3649,7 +4423,12 @@ impl BattleState {
             if self.logging() {
                 let user = self.mon_ref(side, slot, dex);
                 let target = self.mon_ref(foe, foe_slot, dex);
-                self.log.move_used(&user, &move_name, Some(&target), true, false);
+                if !suppress_announce {
+                    self.log.move_used(&user, &move_name, Some(&target), true, false);
+                    if announce_lockedmove {
+                        self.log.attr_last_move_from_lockedmove();
+                    }
+                }
                 self.log.miss(&user, Some(&target));
             }
             // JUMP KICK / HIGH JUMP KICK crash on a miss (`gen3_jump_kick_crash_v1`):
@@ -3686,7 +4465,12 @@ impl BattleState {
         if self.logging() {
             let user = self.mon_ref(side, slot, dex);
             let target = self.mon_ref(foe, foe_slot, dex);
-            self.log.move_used(&user, &move_name, Some(&target), false, false);
+            if !suppress_announce {
+                self.log.move_used(&user, &move_name, Some(&target), false, false);
+                if announce_lockedmove {
+                    self.log.attr_last_move_from_lockedmove();
+                }
+            }
             // Effectiveness (the DEFENDER's ident) — the type-chart product of the
             // move type vs the defender's species types. `-supereffective` (>1) /
             // `-resisted` (<1, non-zero); a 0× is the immune path above. Emitted
@@ -3794,6 +4578,15 @@ impl BattleState {
 
         // --- APPLY HP + faint at 0 (only when the sub did NOT absorb it). ---
         if !absorbed {
+            // ENDURE survive-at-1 (`gen3_move_coverage_batch6_v1`, `endure.onDamage`
+            // priority **−10** — BEFORE Focus Band's −40 in the priority-DESC Damage
+            // event, source-derived; the composition itself is unprobed — no gen3 board
+            // pairs them — but FB's roll draws UNCONDITIONALLY either way, so the draw
+            // stream is order-independent and only the survive branch reads the order):
+            // a MOVE hit that would KO an endure-volatile holder is clamped to `hp − 1`,
+            // `|-activate|…|move: Endure` emitted BEFORE the `|-damage|` (probe ED1).
+            // DRAW-FREE. Fixed damage + each multihit strike have their own sites.
+            let realized = self.endure_clamp(foe, foe_slot, realized, dex);
             // FOCUS BAND (`gen3_ability_batch4_v1`): the onDamage roll draws AFTER the
             // damage rolls, BEFORE the apply; a lethal MOVE hit that passes survives at
             // 1 HP (probe seed 8: crit path included). A sub-absorbed hit never draws.
@@ -3801,6 +4594,18 @@ impl BattleState {
             // Refresh `dealt` to the POST-Focus-Band applied amount (the recoil/drain basis).
             dealt = realized.min(target_hp_before);
             self.apply_damage(foe, foe_slot, realized);
+            // DESTINY BOND trigger record (`gen3_move_coverage_batch6_v1`, the
+            // `onFaint` gate: a FOE-side **Move**-effect hit — this path — that zeroed
+            // a DB-volatile holder's HP marks the pending mutual faint; the chain
+            // itself runs in `process_faints` (corpse `|faint|` → `-activate` → the
+            // killer's faint). A sub-absorbed hit / recoil / residual / confusion
+            // self-hit never reaches this site; futuremove has its own site and is
+            // EXCLUDED (`!effect.flags['futuremove']` — probe DB4's class). DRAW-FREE.
+            if self.sides[foe].pokemon[foe_slot].hp == 0
+                && self.sides[foe].pokemon[foe_slot].destiny_bond
+            {
+                self.sides[foe].pokemon[foe_slot].destiny_bond_ko_by = Some(side);
+            }
             // FOCUS PUNCH lostFocus (`gen3_move_coverage_batch4_v1`,
             // `focuspunch.condition.onHit`): a NON-Status move that HIT the FP user DIRECTLY
             // (this `!absorbed` block = the mon took the damage, not its sub) sets
@@ -3811,6 +4616,12 @@ impl BattleState {
             if let Some(fp) = self.sides[foe].pokemon[foe_slot].focus_punch.as_mut() {
                 *fp = true;
             }
+            // COUNTER / MIRROR COAT recorder (`gen3_move_coverage_batch5_v1`): a DIRECT
+            // (non-sub-absorbed) foe Move hit arms the defender's reactive volatile with
+            // 2× the post-Focus-Band applied damage. `category` here is the type-derived
+            // gen3 category (Struggle passes Physical explicitly; a variable-BP move was
+            // re-categorized Physical at its BP override). DRAW-FREE.
+            self.record_reactive_hit(foe, foe_slot, category, &move_id, dealt);
             // [EMIT] `|-damage|<foe>|<HP>` with the POST-damage HP (`x/y`, `x/y
             // <status>`, or `0 fnt` when the hit KO'd). Observation-only. A 0-damage
             // move that reaches here (none modeled) would still emit — matching the
@@ -3832,6 +4643,23 @@ impl BattleState {
                 SubAbsorb::Held => self.log.activate(&target, "Substitute", Some("[damage]")),
                 SubAbsorb::Broke => self.log.volatile_end(&target, "Substitute"),
                 SubAbsorb::NoSub => unreachable!(),
+            }
+        }
+
+        // --- HYPER BEAM's MUSTRECHARGE (`gen3_move_coverage_batch4c_v1`,
+        //     `hyperbeam.self = {volatileStatus:'mustrecharge'}`): applied on a SUCCESSFUL
+        //     damaging hit — plain hit, sub-absorb AND sub-break, AND a target-KO (the
+        //     `|-mustrecharge|` prints BEFORE `|faint|`, which `process_faints` emits
+        //     later; the lock persists across the opponent's force-switch). NOT on a miss
+        //     / immune / Protect-block (those returned above). DRAW-FREE (probed — the
+        //     self.volatileStatus apply consumes no PRNG, unlike the selfDrops boost
+        //     random(100)). Emitted `|-mustrecharge|<user>` right after the damage/sub
+        //     line (the probed position). ---
+        if move_id == "hyperbeam" {
+            self.sides[side].pokemon[slot].must_recharge = true;
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                self.log.must_recharge(&user);
             }
         }
 
@@ -4170,7 +4998,33 @@ impl BattleState {
             let sub = self.absorb_into_sub(foe, foe_slot, realized);
             let absorbed = sub != SubAbsorb::NoSub;
             if !absorbed {
+                let pre_hp = self.sides[foe].pokemon[foe_slot].hp;
+                // ENDURE clamps EVERY strike of a multihit (`gen3_move_coverage_batch6_v1`
+                // — the probe ED8 Arm-Thrust class: each strike `-activate`s + survives at
+                // 1). DRAW-FREE.
+                let realized = self.endure_clamp(foe, foe_slot, realized, dex);
                 self.apply_damage(foe, foe_slot, realized);
+                // DESTINY BOND trigger record (`gen3_move_coverage_batch6_v1`): a Beat Up
+                // strike is a FOE Move hit — a KO strike with the DB volatile up marks the
+                // pending mutual faint (the chain runs in process_faints). DRAW-FREE.
+                if self.sides[foe].pokemon[foe_slot].hp == 0
+                    && self.sides[foe].pokemon[foe_slot].destiny_bond
+                {
+                    self.sides[foe].pokemon[foe_slot].destiny_bond_ko_by = Some(side);
+                }
+                // COUNTER / MIRROR COAT recorder (`gen3_move_coverage_batch5_v1`): Beat
+                // Up's strikes are **Special** (the resolved gen3 category — Dark) Move
+                // hits, so each DIRECT strike arms the target's MIRROR COAT (never
+                // Counter), OVERWRITING per strike → the return is 2× the LAST strike
+                // (probed `probe_batch5_reactive_edges.js` BU-M: 3 strikes → MC armed
+                // with the last, then `-immune` into the Dark attacker).
+                self.record_reactive_hit(
+                    foe,
+                    foe_slot,
+                    MoveCategory::Special,
+                    "beatup",
+                    realized.min(pre_hp),
+                );
                 // FOCUS PUNCH lostFocus (`focuspunch.condition.onHit`): a Beat Up strike that
                 // HIT the target DIRECTLY (not its sub) sets `lost_focus` if the target has a
                 // pending Focus Punch → its queued FP is CANCELLED at onTry. Beat Up is a
@@ -4259,9 +5113,11 @@ impl BattleState {
     /// return` does NOT short-circuit); FALSE on a miss / immune / block.
     ///
     /// FAIL-LOUD: the DEFERRED fixed-damage family (Psywave / Fissure / Horn Drill /
-    /// Guillotine / Counter / Mirror Coat / Bide / Endeavor) is routed here by
-    /// `is_fixed_damage_move` but has NO `fixed_damage_amount` entry, so this PANICS
-    /// rather than silently no-op (they need extra RNG or reactive/OHKO machinery).
+    /// Guillotine / Bide) is routed here by `is_fixed_damage_move` but has NO
+    /// `fixed_damage_amount` entry, so this PANICS rather than silently no-op (they
+    /// need extra RNG or reactive/OHKO machinery). Counter / Mirror Coat / Endeavor
+    /// are MODELED since `gen3_move_coverage_batch5_v1` (the onTry gates below + the
+    /// reactive-volatile `fixed_damage_amount` arms).
     #[allow(clippy::too_many_arguments)]
     fn run_fixed_damage_move(
         &mut self,
@@ -4277,10 +5133,51 @@ impl BattleState {
         targets_self: bool,
         dex: &Dex,
     ) -> MoveResolution {
+        // --- COUNTER / MIRROR COAT onTry gate (`gen3_move_coverage_batch5_v1`, BEFORE
+        //     the accuracy roll): the move FAILS with **ZERO draws** when the reactive
+        //     volatile is missing (never selected via beforeTurnMove — unreachable here)
+        //     or UN-ARMED (`slot === null` — no qualifying foe hit landed THIS turn:
+        //     no damage / wrong category / a sub-absorbed hit / the foe switched / a
+        //     prev-turn-only hit). The fail protocol shape (probed): a bare
+        //     `|move|<user>|Counter|<current foe active>` line — NO `-fail`, NO
+        //     `[still]`; PP already deducted by the caller. A foe that SWITCHED this
+        //     turn is announced as the NEW active (probed C2). ---
+        if move_id == "counter" || move_id == "mirrorcoat" {
+            let armed = self.sides[side].pokemon[slot]
+                .reactive
+                .filter(|r| r.mirror == (move_id == "mirrorcoat"))
+                .and_then(|r| r.damage);
+            if armed.is_none() {
+                if self.logging() {
+                    let user = self.mon_ref(side, slot, dex);
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.move_used(&user, move_name, Some(&target), false, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+        }
+
+        // --- ENDEAVOR onTry gate (`gen3_move_coverage_batch5_v1`, BEFORE the accuracy
+        //     roll): fails at `pokemon.hp >= target.hp` — EQUALITY INCLUDED (probed
+        //     50v50 fails; STRICT less-than required to proceed). The compare reads the
+        //     TARGET MON's hp (not its sub's). Emits the normal target-form announce +
+        //     `|-fail|<user>`, ZERO draws; PP already deducted. ---
+        if move_id == "endeavor"
+            && self.sides[side].pokemon[slot].hp >= self.sides[foe].pokemon[foe_slot].hp
+        {
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.move_used(&user, move_name, Some(&target), false, false);
+                self.log.fail(&user, None, false);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         // FAIL-LOUD: only the modeled fixed-damage set has a formula. A DEFERRED
-        // fixed-damage move (Psywave / OHKO / Counter / Mirror Coat / Bide / Endeavor)
-        // reaches here via `is_fixed_damage_move` but has no amount → PANIC (never a
-        // silent desync — these draw an unmodeled number/order or need reactive state).
+        // fixed-damage move (Psywave / OHKO / Bide) reaches here via
+        // `is_fixed_damage_move` but has no amount → PANIC (never a silent desync —
+        // these draw an unmodeled number/order or need accumulator machinery).
         let amount = match fixed_damage_amount(
             move_id,
             &self.sides[side].pokemon[slot],
@@ -4290,8 +5187,7 @@ impl BattleState {
             None => panic!(
                 "unmodeled FIXED-DAMAGE move {move_id:?} routed to run_fixed_damage_move — \
                  Psywave (variable RNG) / the OHKO moves (Fissure/Horn Drill/Guillotine) / \
-                 Counter / Mirror Coat / Bide / Endeavor are DEFERRED (they draw an unmodeled \
-                 number/order or need reactive/OHKO machinery). Model it bit-for-bit or keep it \
+                 Bide (a 2-turn accumulator) are DEFERRED. Model it bit-for-bit or keep it \
                  off the pickable set — do NOT let it silently no-op."
             ),
         };
@@ -4375,10 +5271,43 @@ impl BattleState {
         let sub = self.absorb_into_sub(foe, foe_slot, amount);
         let absorbed = sub != SubAbsorb::NoSub;
         if !absorbed {
+            // ENDURE clamps a FIXED-damage Move hit too (`gen3_move_coverage_batch6_v1`
+            // — probe ED6: a lethal Seismic Toss into an endurer leaves it at 1 HP;
+            // endure −10 precedes Focus Band's −40). DRAW-FREE.
+            let amount = self.endure_clamp(foe, foe_slot, amount, dex);
             // FOCUS BAND: a fixed-damage move is a MOVE-effect Damage event — the roll
             // draws and a lethal Seismic Toss can be survived at 1. `gen3_ability_batch4_v1`.
+            let pre_hp = self.sides[foe].pokemon[foe_slot].hp;
             let amount = self.focus_band_damage(foe, foe_slot, amount, true, dex);
             self.apply_damage(foe, foe_slot, amount);
+            // DESTINY BOND trigger record (`gen3_move_coverage_batch6_v1`): a
+            // fixed-damage foe Move KO — incl. a Counter/Mirror-Coat RETURN (a foe
+            // Move) — with the DB volatile up marks the pending mutual faint. DRAW-FREE.
+            if self.sides[foe].pokemon[foe_slot].hp == 0
+                && self.sides[foe].pokemon[foe_slot].destiny_bond
+            {
+                self.sides[foe].pokemon[foe_slot].destiny_bond_ko_by = Some(side);
+            }
+            // COUNTER / MIRROR COAT recorder (`gen3_move_coverage_batch5_v1`): a
+            // fixed-damage foe hit IS a Move-effect Damage event — Seismic Toss
+            // (Fighting → Physical) arms Counter for 2×100 (probed CS), Dragon Rage
+            // (Dragon → Special) would arm Mirror Coat. The gen3 category is the
+            // TYPE-derived one (`derive_category` with a nonzero bp forces the type
+            // branch); `dealt` = the post-Focus-Band applied amount, clamped.
+            let dealt = amount.min(pre_hp);
+            let cat = crate::dex::moves::derive_category(3, 1, move_type);
+            self.record_reactive_hit(foe, foe_slot, cat, move_id, dealt);
+            // FOCUS PUNCH lostFocus (`gen3_move_coverage_batch4_v1`,
+            // `focuspunch.condition.onHit`): a FIXED-DAMAGE hit is a NON-Status move
+            // that HIT the FP user DIRECTLY, so it cancels a queued Focus Punch exactly
+            // like the normal damaging path (SIM-VERIFIED by the batch-5 e2e admission
+            // itself — e2e_202 dec44: a Blissey Seismic Toss into a Focus-Punch
+            // Dragonite → `|cant|…|Focus Punch`; the port's missing set let the punch
+            // land, KO'ing the Blissey — a LATENT gap unreachable while the
+            // fixed-damage family was blocklist-shadowed out of the e2e). DRAW-FREE.
+            if let Some(fp) = self.sides[foe].pokemon[foe_slot].focus_punch.as_mut() {
+                *fp = true;
+            }
             // [EMIT] `|-damage|<foe>|<HP>` with the POST-damage HP. The modeled fixed-
             // damage moves always deal >= 1 to a non-immune target, so the emit fires.
             if amount > 0 && self.logging() {
@@ -4403,12 +5332,109 @@ impl BattleState {
         //     real move TYPE for the override). Same DamagingHit-region ordering as the
         //     damaging path. `gen3_ability_batch4_v1`. ---
         self.apply_kings_rock_secondary(side, slot, foe, foe_slot, move_id, absorbed, dex);
+        // --- CONTACT_PROC (+ Rough Skin recoil) on a CONTACT fixed-damage hit
+        //     (`gen3_ability_batch2_v1` × the fixed-damage family — Seismic Toss /
+        //     Super Fang / Counter / Endeavor carry `flags.contact`; Night Shade /
+        //     Sonic Boom / Dragon Rage / Mirror Coat do NOT): the DEFENDER's
+        //     `onDamagingHit` fires for a fixed-damage hit exactly like the normal
+        //     damaging path (AFTER the appended King's Rock secondary, NOT behind a
+        //     sub). THE e2e_7 FIX (`gen3_move_coverage_batch6_v1` regen): the sim
+        //     rolled Effect Spore's `randomChance(1,10)` after a Seismic Toss into
+        //     Breloom (mods/gen3/abilities.js onDamagingHit) while the port drew
+        //     nothing — a LATENT batch-5-era gap (fixed damage was only e2e-admitted
+        //     in batch 5, and no ST-into-a-contact-proc-holder board was sampled until
+        //     the batch-6 corpus reshuffle). Pin MC99. ---
+        let is_contact = dex.moves(move_id).map(|m| m.contact).unwrap_or(false);
+        if is_contact && !absorbed && amount > 0 {
+            self.apply_contact_proc(side, slot, foe, foe_slot, dex);
+        }
         if !absorbed && amount > 0 {
             self.apply_color_change(foe, foe_slot, move_type, dex);
         }
 
         // The move landed (a sub hit STILL fires the in-tryMoveHit Update). NO crit.
         MoveResolution::done(false, false, true)
+    }
+
+    /// The FUTURE-MOVE **CAST** (`gen3_move_coverage_batch4c_v1`, Doom Desire / Future
+    /// Sight — the gen-3 `onTry`, probe-settled bit-for-bit vs
+    /// `harness/probe_batch4c_doomdesire.js`):
+    ///
+    ///   * DOUBLE-CAST (any futuremove already pending on the TARGET slot — DD-after-FS
+    ///     included, one condition per slot): FAILS with a bare `|move|` line (NO
+    ///     `[still]`, NO `-fail`, NO `-start`), ZERO move draws — `addSlotCondition`
+    ///     fails BEFORE `getDamage`. PP was already deducted by the caller (probed 7→6).
+    ///   * else: `addSlotCondition(target,'futuremove')` → `getDamage(source, target,
+    ///     {bp 120(DD)/80(FS), category Physical(DD)/Special(FS), type '???',
+    ///     willCrit:false})` IMMEDIATELY — the CAST-TIME DAMAGE SNAPSHOT: typeless (no
+    ///     STAB, no type chart → no immunity ever), NO accuracy roll, NO crit roll,
+    ///     exactly ONE `random(16)` (the modifyDamage randomizer), with cast-time
+    ///     stats/boosts/items/burn/screens (the full getDamage semantics — attacker Calm
+    ///     Mind / defender Amnesia AFTER the cast change NOTHING; a cast at Skarmory hits
+    ///     a switched-in Blissey with the Skarmory-computed number). The `modifyDamage`
+    ///     run ALSO fires `runEvent('ModifyDamagePhase1')` — a BOTH-screens defender side
+    ///     draws the size-2 handler tie-shuffle exactly like a normal damaging hit
+    ///     (mirrored control flow; unprobed only because no probe scenario stacked both
+    ///     screens at cast). Emits `|-start|<caster>|Doom Desire` (on the CASTER, no
+    ///     `move:` prefix) and returns null — `landed` FALSE (no in-tryMoveHit Update; a
+    ///     tie-turn cast control probed 8 draws vs idle 7, the getDamage being the only
+    ///     delta). A cast-turn Protect on the target does NOT block the cast (onTry
+    ///     precedes TryHit — the caller gates this path before the protect block).
+    #[allow(clippy::too_many_arguments)]
+    fn run_future_move_cast(
+        &mut self,
+        side: usize,
+        slot: usize,
+        foe: usize,
+        foe_slot: usize,
+        base_power: u16,
+        category: MoveCategory,
+        accuracy: u16,
+        move_id: &str,
+        move_name: &str,
+        dex: &Dex,
+    ) -> MoveResolution {
+        // [EMIT] the announce — BOTH arms show the plain `|move|<user>|<Name>|<target>`
+        // (the double-cast fail is a bare `|move|` line, probed: no [still], no -fail).
+        if self.logging() {
+            let user = self.mon_ref(side, slot, dex);
+            let target = self.mon_ref(foe, foe_slot, dex);
+            self.log.move_used(&user, move_name, Some(&target), false, false);
+        }
+        if self.sides[foe].future_move.is_some() {
+            // DOUBLE-CAST fail: draw-free (the pending strike resolves on schedule).
+            return MoveResolution::done(false, false, false);
+        }
+        // The CAST-TIME SNAPSHOT: full getDamage semantics over a typeless move.
+        let mut ctx = self.build_damage_context(
+            side, slot, foe, foe_slot, base_power, None, category, false, dex,
+        );
+        ctx.crit = false; // willCrit: false — no crit roll, crit never true
+        // The ModifyDamagePhase1 handler-sort shuffle (both screens on the DEFENDER's
+        // side tie → one random(0,2)), mirroring the damaging path's position: inside
+        // modifyDamage, BEFORE the randomizer.
+        if self.sides[foe].reflect > 0 && self.sides[foe].light_screen > 0 {
+            self.two_tied_handler_shuffle();
+        }
+        let dmg = crate::damage::calc_damage(&ctx, dex);
+        // ONE random(16) — the getDamage randomizer (the cast's only draw).
+        let r = self.prng.random_below(16) as usize;
+        let stored = dmg.rolls[r];
+        self.sides[foe].future_move = Some(FutureMove {
+            duration: FUTURE_MOVE_DURATION,
+            damage: stored,
+            move_id: move_id.to_string(),
+            accuracy,
+            source_side: side,
+            source_uid: self.sides[side].pokemon[slot].uid,
+        });
+        // [EMIT] `|-start|<caster>|Doom Desire` — on the CASTER, no `move:` prefix
+        // (probe-observed shape).
+        if self.logging() {
+            let user = self.mon_ref(side, slot, dex);
+            self.log.volatile_start(&user, move_name);
+        }
+        MoveResolution::done(false, false, false)
     }
 
     /// Resolve + APPLY a STANDALONE STATUS MOVE (category Status, bp 0, whose PURPOSE
@@ -4462,6 +5488,12 @@ impl BattleState {
         // target has ALREADY moved, i.e. the disabler is slower / moved 2nd). Unused by every
         // other status-move arm.
         foe_will_move: bool,
+        // `queue.willAct()` (the Protect gate) — threaded so a Sleep-Talk-CALLED Protect
+        // runs the same `run_protect` machinery (`gen3_move_coverage_batch5_v1`).
+        will_act: bool,
+        // The PRE-move Choice-lock snapshot (the Sleep Talk `onTryHit` choicelock gate —
+        // see `run_move`; the lock THIS use just set does not count).
+        was_choice_locked: bool,
         dex: &Dex,
     ) -> MoveResolution {
         // [EMIT] `|move|<user>|<Name>|<target>` — the status-move ANNOUNCE, emitted for
@@ -4533,6 +5565,98 @@ impl BattleState {
                 self.log.move_used(&user, move_name, Some(&target), false, false);
             }
         }
+        // --- SLEEP TALK (`gen3_move_coverage_batch5_v1`, the gen-3 `sleeptalk` — probe
+        //     `harness/probe_batch5_sleeptalk.js`, the resolved source dumped there):
+        //     usable ONLY while asleep; picks ONE of the user's OTHER eligible moves at
+        //     RANDOM (a REAL `sample` draw — even for a 1-move pool) and executes it via
+        //     a bare `useMove`. The user reached here THROUGH the slp onBeforeMove
+        //     (`sleepUsable` — the `|cant|slp` printed, the counter decremented,
+        //     `skippedTime`++), and Sleep Talk's OWN PP was deducted (every path below
+        //     keeps that: PP −1 on ALL fail paths too — probed). ---
+        if move_id == "sleeptalk" {
+            // onTry(source){ return source.status === 'slp' } — an AWAKE use (incl. the
+            // WAKE turn, whose cure fired in on_before_move before this ran) fails
+            // SILENTLY: the normal self-target `|move|` announce (already emitted), NO
+            // `[still]`, NO `-fail`, ZERO draws (probed — identical protocol to a
+            // never-asleep use).
+            if !matches!(self.sides[_side].pokemon[_slot].status, Some(Status::Sleep(_))) {
+                return MoveResolution::done(false, false, false);
+            }
+            // onTryHit(pokemon){ return !volatiles['choicelock'] && !volatiles['encore'] }
+            // — a Choice lock from a PREVIOUS turn fails: the `[still]` retro-edit +
+            // `|-fail|<user>`, NO sample draw. The lock is always Sleep Talk ITSELF (the
+            // choicelock records the CHOSEN move, so CB + Sleep Talk works exactly ONCE
+            // then fails every later turn of the lock — probed); the lock THIS use just
+            // set does NOT count (`was_choice_locked` is the pre-move snapshot). Encore
+            // is unmodeled gen-3-wide (fail-loud as a move), so choicelock is the only
+            // live gate.
+            if was_choice_locked {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // onHit — build the pool from the user's moveSlots IN SLOT ORDER, keeping
+            // `{move, pp}` where `!flags.nosleeptalk && !flags.charge` (data-driven:
+            // `MoveData::{no_sleep_talk, is_charge}`; Sleep Talk excludes ITSELF via its
+            // own nosleeptalk flag). NO pp filter (a 0-PP member stays IN the pool) and
+            // NO disabled/Taunt filter (the resolved source has none — a Disabled pool
+            // member is still pickable).
+            let mut pool: Vec<(usize, String, u16)> = Vec::new();
+            for k in 0..self.sides[_side].pokemon[_slot].set.moves.len() {
+                if let Some(m) = self.move_at(_side, _slot, k, dex) {
+                    if !m.no_sleep_talk && !m.is_charge {
+                        let pp = self.sides[_side].pokemon[_slot].move_pp.get(k).copied().unwrap_or(0);
+                        pool.push((k, m.id.clone(), pp));
+                    }
+                }
+            }
+            if pool.is_empty() {
+                // EMPTY pool → onHit returns false → `|move|…|Sleep Talk||[still]` +
+                // `|-fail|<user>`, ZERO Sleep-Talk draws (probed: only the QC drew).
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // THE SAMPLE: `this.sample(pool)` = `random(n)` — drawn EVEN at n == 1
+            // (`random(1)` returns 0 but still consumes a draw — probed). `random(n)=k`
+            // → the k-th eligible move in slot order (probed mapping).
+            let pick = self.prng.random_below(pool.len() as u32) as usize;
+            let (k, picked_id, picked_pp) = pool[pick].clone();
+            if picked_pp == 0 {
+                // The picked slot has 0 PP → `|cant|<user>|nopp|<raw move id>` and STOP
+                // (the turn is wasted; NO further draws — probed).
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.cant(&user, "nopp", Some(&picked_id));
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // EXECUTE the picked move — the sim's bare `actions.useMove(picked)`: the
+            // recursive `run_move` under the `sleep_talk_call` transient (skips
+            // on_before_move / PP / lastMove; the picked move's PP is NEVER consumed;
+            // the FULL normal draw chain otherwise — acc/crit/damage/secondary for a
+            // damaging pick, the status arms for a status pick — probed: Body Slam ran
+            // acc+crit+dmg+secondary; Curse rolled its selfDrops random(100); an asleep
+            // Rest pick silently no-ops in `run_rest`). The announce carries the
+            // byte-exact `|[from] Sleep Talk` fold. The called resolution PROPAGATES
+            // (a landed pick fires the caller's in-tryMoveHit Update; a called Roar's
+            // drag rides `force_switch_foe`).
+            self.log.set_next_move_from("Sleep Talk");
+            self.sleep_talk_call = true;
+            return self.run_move(
+                MoveAction { side: _side, slot: _slot, move_index: k, struggle: false },
+                will_act,
+                foe_will_move,
+                dex,
+            );
+        }
+
         // --- PURE SELF-BOOST SETUP MOVE (Swords Dance / Dragon Dance / Calm Mind /
         //     Agility / Bulk Up / …) — a `target: self` Status move whose ENTIRE effect
         //     is raising the USER'S stat stages. The gen-3 `tryMoveHit` self-boost path:
@@ -4657,6 +5781,508 @@ impl BattleState {
             // `|-nothing`). Observation-only.
             if self.logging() {
                 self.log.nothing();
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // ═══════════════════ MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) ═══════════════════
+        // The final UNMODELED tail — probe-settled bit-for-bit (`harness/probe_batch6_{locks,
+        // field_trap,utility}.js` + `probe_batch6_dexfacts.js`). Every arm below is id-gated;
+        // the announce already emitted at the top of this fn.
+
+        // --- ENCORE — lock the foe into its LAST-USED move for random(3,7) turns. The
+        //     probed draw model (EN1-EN10): [1] accuracy `randomChance(100,100)` (acc 100,
+        //     NOT never-miss — DRAWN, always passes), [2] the `durationCallback`
+        //     `random(3,7)` (rolled 3..6) INSIDE addVolatile — nothing else (NO
+        //     in-tryMoveHit Update: `landed` FALSE, EN8). The FAIL split is NOT uniform:
+        //       * ALREADY-ENCORED (addVolatile false BEFORE the durationCallback): the
+        //         accuracy draw ONLY, `[still]` + `-fail|<user>`, the existing volatile
+        //         UNCHANGED (EN6);
+        //       * no-lastMove / lastMove-has-failencore (Struggle/Mimic/…) / lastMove at
+        //         0 PP: accuracy AND durationCallback BOTH drawn (the durationCallback
+        //         fires before onStart rejects), then `[still]` + `-fail|<user>` (EN3/
+        //         EN4/EN10);
+        //       * SUCCESS: `stored = willMove(target) ? rolled : rolled + 1` (the exact
+        //         Disable branch — a FASTER encore user stores `rolled`, a SLOWER one
+        //         `rolled + 1`; EN1/EN2 share boundary seeds with DIFFERENT stored
+        //         durations), `|-start|<foe>|Encore`.
+        //     Flags: `protect: 1` (a Protect blocks AFTER the accuracy draw — the generic
+        //     TryHit position, before addVolatile → NO durationCallback) + `bypasssub: 1`
+        //     (a Substitute does NOT block). noCopy → NOT Baton-Passable. The lock's
+        //     selection restriction lives in `move_usable`; the execution OVERRIDE
+        //     (`onOverrideAction`) in `turn_loop`; the residual tick (order 10/subOrder
+        //     14, incl. the 0-PP early end) in `run_residuals`. ---
+        if move_id == "encore" {
+            debug_assert!(
+                !never_miss && accuracy == 100,
+                "encore expected gen-3 accuracy 100 + not never_miss, got \
+                 accuracy={accuracy} never_miss={never_miss}"
+            );
+            // (1) ACCURACY — drawn (always passes at 100).
+            if !never_miss {
+                let acc_hit = self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
+                if !acc_hit {
+                    return MoveResolution::done(true, false, false);
+                }
+            }
+            // (2) PROTECT BLOCK (flags.protect — the generic TryHit position, BEFORE
+            //     addVolatile → no durationCallback draw). bypasssub → NO substitute check.
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (3) ALREADY-ENCORED — addVolatile returns false BEFORE the durationCallback:
+            //     the accuracy draw was the ONLY draw; `[still]` + `-fail|<user>`; the
+            //     existing volatile continues UNCHANGED (EN6).
+            if self.sides[foe].pokemon[foe_slot].encore.is_some() {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (4) durationCallback — `random(3,7)` (3..6), drawn BEFORE onStart can reject.
+            let rolled = self.prng.random_range(3, 7) as u8;
+            // (5) onStart rejects: no lastMove / lastMove carries `failencore` (data-driven
+            //     `MoveData::fail_encore` — Struggle stores `last_move = None` so it falls
+            //     under no-lastMove here, matching the sim's failencore-flagged Struggle) /
+            //     the lastMove slot at 0 PP. All → `[still]` + `-fail|<user>`, draws consumed.
+            let reject = match self.sides[foe].pokemon[foe_slot].last_move {
+                None => true,
+                Some(lslot) => {
+                    let fail_flag = self
+                        .move_at(foe, foe_slot, lslot, dex)
+                        .map(|m| m.fail_encore)
+                        .unwrap_or(true);
+                    fail_flag
+                        || self.sides[foe].pokemon[foe_slot].move_pp.get(lslot).copied().unwrap_or(0) == 0
+                }
+            };
+            if reject {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (6) SUCCESS — store the branch-adjusted duration + the locked slot.
+            let lslot = self.sides[foe].pokemon[foe_slot].last_move.expect("checked above");
+            let stored = if foe_will_move { rolled } else { rolled + 1 };
+            self.sides[foe].pokemon[foe_slot].encore = Some((lslot, stored));
+            // [EMIT] `|-start|<foe>|Encore` (the volatile's onStart).
+            if self.logging() {
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.volatile_start(&target, "Encore");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- DESTINY BOND — a self-target, never-miss Ghost Status move; the cast is
+        //     ZERO draws (DB7: cast-turn count == a splash control; the duration-less
+        //     volatile registers NO residual handler → no residual tie either). A
+        //     re-cast on consecutive turns SUCCEEDS draw-free (the move's onPrepareHit
+        //     removes the old volatile, then the volatileStatus re-adds — no fail line,
+        //     PP −1 each cast, DB6). The volatile persists until the user's NEXT MOVE
+        //     ATTEMPT (removed at onBeforeMove −1 / onMoveAborted — see run_move); the
+        //     mutual-faint chain (a FOE-Move KO while up → the killer faints too,
+        //     DRAW-FREE) lives in the damage sites + `process_faints`. `bypasssub` +
+        //     self-target → no block of any kind. noCopy → NOT Baton-Passable. ---
+        if move_id == "destinybond" {
+            self.sides[_side].pokemon[_slot].destiny_bond = true;
+            // [EMIT] `|-singlemove|<user>|Destiny Bond` (the volatile's onStart — fires
+            // on the re-cast too, after the silent onPrepareHit removal).
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.singlemove(&user, "Destiny Bond");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- PERISH SONG — a field-wide (`target: all`) never-miss sound move; the
+        //     cast is COMPLETELY DRAW-FREE in every branch (P1-P5: cast / all-counted
+        //     re-cast / immune re-cast all match the splash-control seed trajectory).
+        //     `onHitField` loops getAllActive() in SIDE order (p1 active then p2,
+        //     regardless of caster): per mon — Invulnerability (unreachable: fly/dig
+        //     unmodeled) → TryHit (SOUNDPROOF blocks: `|-immune|<mon>|[from] ability:
+        //     Soundproof` — the holder is immune, everyone else INCLUDING THE CASTER is
+        //     still counted) → if no perish counter yet: apply (duration 4) +
+        //     `|-start|<mon>|perish3|[silent]`. ONE `|-fieldactivate|move: Perish Song`
+        //     iff >= 1 NEWLY applied. NO new application anywhere: every active already
+        //     counted → `[still]` + `-fail|<user>`; but >= 1 Soundproof-immune →
+        //     SILENT success (bare `|move|` + the `-immune`s, no fail, no
+        //     fieldactivate). The counter tick / faint is the order-12 residual; a
+        //     switch-out clears it (ordinary volatile); Baton Pass PASSES it (noCopy
+        //     false — the resolved gen3 condition). ---
+        if move_id == "perishsong" {
+            let mut newly = false;
+            let mut any_result = false; // `result` in the sim: immune OR newly applied
+            for s in 0..2 {
+                let a = self.sides[s].active;
+                if self.sides[s].pokemon[a].fainted {
+                    continue; // getAllActive excludes a fainted mon
+                }
+                let blocks_sound = dex
+                    .ability(&to_id(&self.sides[s].pokemon[a].ability))
+                    .map(|ab| ab.blocks_sound)
+                    .unwrap_or(false);
+                if blocks_sound {
+                    // TryHit null — Soundproof. Counted as a `result` (the silent-success
+                    // gate) but NOT a new application.
+                    any_result = true;
+                    if self.logging() {
+                        let m = self.mon_ref(s, a, dex);
+                        self.log.immune_from_ability(&m, "Soundproof");
+                    }
+                    continue;
+                }
+                if self.sides[s].pokemon[a].perish.is_none() {
+                    self.sides[s].pokemon[a].perish = Some(4);
+                    any_result = true;
+                    newly = true;
+                    // [EMIT] `|-start|<mon>|perish3|[silent]` (the apply's silent form;
+                    // the residual then prints the non-silent perish3/2/1 ticks).
+                    if self.logging() {
+                        let m = self.mon_ref(s, a, dex);
+                        self.log.volatile_start_silent(&m, "perish3");
+                    }
+                }
+            }
+            if !any_result {
+                // Every active already counted → `[still]` + `-fail|<user>` (P2's
+                // all-already-counted re-cast). DRAW-FREE.
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+            } else if newly && self.logging() {
+                // [EMIT] ONE `|-fieldactivate|move: Perish Song` iff >= 1 newly applied.
+                self.log.fieldactivate_move("Perish Song");
+            }
+            // (>= 1 result but 0 newly applied = the SILENT success — no fail, no
+            // fieldactivate; the `-immune`s already emitted.)
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- MEAN LOOK / SPIDER WEB / BLOCK — the trap-VOLATILE moves (identical
+        //     mechanic; never-miss → the landed cast is ZERO draws, T1-T9 all match the
+        //     splash-control trajectory). `onHit → target.addVolatile('trapped', source,
+        //     move, 'trapper')` — the LINKED pair: the target's FIRM trap (`trapped:true`
+        //     on its very FIRST request — the Shadow-Tag shape, NO maybeTrapped phase;
+        //     a rejected switch is `[Invalid choice]` with NO re-request) that ENDS the
+        //     moment the TRAPPER leaves the field ANY way (voluntary switch T1 / faint
+        //     T9 / drag T4 — both linked volatiles removed draw-free). gen3
+        //     `trapped.noCopy` is FALSE → a Baton-Passing HOLDER passes the volatile
+        //     (still trapped, same link — T3b; BP itself is LEGAL for a trapped mon,
+        //     selfSwitch bypasses the trap gate). A grounded GHOST IS trapped (the
+        //     arenatrap precedent). Blocks: `protect: 1` (blocked draw-free — these are
+        //     never-miss, so no roll precedes it) + a SUBSTITUTE blocks (NO bypasssub:
+        //     `[still]` + `-fail`, T5); a RE-APPLICATION into an already-trapped foe
+        //     FAILS (`[still]` + `-fail`, draw-free). The volatiles add ZERO endTurn
+        //     draws (the Condition handler's subOrder 2 never ties an Ability's 7). ---
+        if matches!(move_id, "meanlook" | "spiderweb" | "block") {
+            // (1) PROTECT BLOCK (never-miss → draw-free block, no accuracy roll before it).
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (2) SUBSTITUTE blocks (no bypasssub): `[still]` + `-fail|<user>`, draw-free.
+            if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (3) ALREADY-TRAPPED re-application fails (`addVolatile` false): `[still]`
+            //     + `-fail|<user>`, draw-free; the existing link unchanged.
+            if self.sides[foe].pokemon[foe_slot].trapped_by.is_some() {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (4) APPLY the linked trap (the trapper's uid — the link end condition).
+            let trapper_uid = self.sides[_side].pokemon[_slot].uid;
+            self.sides[foe].pokemon[foe_slot].trapped_by = Some(trapper_uid);
+            // [EMIT] `|-activate|<target>|trapped` (the `trapped` condition's onStart).
+            if self.logging() {
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.activate(&target, "trapped", None);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- BELLY DRUM — pay floor(maxhp/2), SET Atk to +6 exactly. DRAW-FREE both
+        //     branches (probed). FAILS (`[still]` + `-fail|<user>`) iff `hp <= maxhp/2`
+        //     (the FLOAT compare — integer-exact as `2*hp <= maxhp`: 262/524 fails, 263
+        //     succeeds; odd 523 → 261 fails, 262 succeeds) OR Atk already >= +6 OR
+        //     maxhp == 1. On success: `directDamage(floor(maxhp/2))` (bypasses the
+        //     onDamage handlers — no Endure/Focus Band; can never faint, hp > cost) then
+        //     `boost({atk:12})` → a SET to +6 from ANY stage, emitted as
+        //     `|-setboost|<user>|atk|6|[from] move: Belly Drum` (the battle.boost
+        //     bellydrum special-case — NOT `-boost`). Self-target → no blocks. ---
+        if move_id == "bellydrum" {
+            let (hp, maxhp, atk) = {
+                let m = &self.sides[_side].pokemon[_slot];
+                (m.hp, m.maxhp, m.boosts[0])
+            };
+            if 2 * (hp as u32) <= maxhp as u32 || atk >= 6 || maxhp == 1 {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            let cost = maxhp / 2; // floor — odd 523 pays 261, leaving 262
+            self.sides[_side].pokemon[_slot].hp = hp - cost;
+            // [EMIT] the directDamage `|-damage|<user>|<HP>` then the `-setboost`.
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                let hps = self.hp_status(_side, _slot);
+                self.log.damage(&user, &hps, None);
+            }
+            self.sides[_side].pokemon[_slot].boosts[0] = 6;
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.setboost_from_move(&user, "atk", 6, "Belly Drum");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- CHARGE — add the `charge` volatile (×2 the next Electric move's BP — the
+        //     onBasePower chain fold in run_move; gen3 has NO +1 SpD, probed: boosts
+        //     stayed {}). DRAW-FREE. The volatile lasts until the user's NEXT move
+        //     attempt OF ANY KIND (onAfterMove + onMoveAborted for any move != charge —
+        //     consumed by turn_loop after that move resolves; an idle Splash consumes
+        //     it, only an Electric next move gets the ×2). A re-charge while up re-adds
+        //     (onRestart — `-start` again, no draw). Self-target → no blocks. ---
+        if move_id == "charge" {
+            self.sides[_side].pokemon[_slot].charge = true;
+            // [EMIT] `|-start|<user>|Charge` (onStart AND onRestart both announce).
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.volatile_start(&user, "Charge");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- MEMENTO — the user FAINTS (`selfdestruct: 'ifHit'`), the foe takes
+        //     −2 Atk / −2 SpA. Never-miss in the RESOLVED gen3 (the base/gen4 acc-100
+        //     is overridden to true — the probed surprise) → ZERO draws in all
+        //     branches. A PROTECT blocks it (`flags.protect` → `-activate Protect`)
+        //     and the user does NOT faint (ifHit); a SUBSTITUTE blocks it (`[still]` +
+        //     `-fail|<user>`) and the user does NOT faint. On a HIT: the drops apply
+        //     FIRST (via the shared boost machinery — Clear-Body-class `onTryBoost`
+        //     gates block the drop but the move still HIT → the user STILL faints; at
+        //     a −6 floor the sim emits delta-0 `-unboost` lines — an emission nuance
+        //     the shared helper skips, state-identical), THEN the user faints
+        //     (deferred-faint protocol: the foe's queued move is CANCELLED by gen3
+        //     faint-cancels-all; no Quick Claw — a landed memento turn where the user
+        //     moves first consumes 0 draws TOTAL, ME1). Last-mon memento → the foe
+        //     WINS (the standard pokemon_left machinery). ---
+        if move_id == "memento" {
+            debug_assert!(never_miss, "memento expected gen-3 accuracy true (never-miss)");
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // The −2 Atk / −2 SpA foe drops (the move's declarative `boosts` — id-gated
+            // like the screen/weather ids; the extractor's statDropBoosts deliberately
+            // excludes Memento for its selfdestruct). Clear Body / White Smoke block
+            // both, Hyper Cutter the Atk half — reusing the shared stat-drop machinery.
+            let spec = crate::dex::moves::SecondaryBoost {
+                chance: 100,
+                target_self: false,
+                boosts: vec![(0, -2), (2, -2)], // atk −2, spa −2
+            };
+            self.apply_secondary_boost(_side, _slot, foe, foe_slot, false, std::slice::from_ref(&spec), dex);
+            // The SELF-FAINT (`selfdestruct: 'ifHit'` — AFTER the drops applied/blocked;
+            // the user faints even when the drops are fully blocked/floored). The
+            // deferred-faint protocol: zero HP + record the faint order; process_faints
+            // at the runAction tail emits `|faint|` + cancels the foe's queued move.
+            let user_hp = self.sides[_side].pokemon[_slot].hp;
+            self.apply_damage(_side, _slot, user_hp);
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- MIMIC — copy the target's LAST-USED move over the user's Mimic slot for
+        //     this field stay. Never-miss → ZERO draws in all branches (probed). FAILS
+        //     (`[still]` + `-fail|<user>`, each draw-free): the target behind a
+        //     SUBSTITUTE (an EXPLICIT onHit check — the `bypasssub` flag does NOT save
+        //     it, MI4) / no lastMove / lastMove carries `failmimic` (data-driven
+        //     `MoveData::fail_mimic`; a Struggle lastMove is `None` here, matching its
+        //     failmimic flag) / the user already KNOWS the move. (The transformed-user
+        //     gate is unreachable — Transform is unmodeled + fail-loud.) A PROTECT
+        //     blocks it (`flags.protect`). On success the Mimic slot is OVERWRITTEN:
+        //     `{move, pp: min(5, copied.pp), maxpp: calculatePP(copied, 3)}` +
+        //     `|-activate|<user>|move: Mimic|<MoveName>`; the slot REVERTS on
+        //     switch-out (Mimic's own remaining PP persists — `restore_mimic_overlay`). ---
+        if move_id == "mimic" {
+            debug_assert!(never_miss, "mimic expected gen-3 accuracy true (never-miss)");
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            let fail = {
+                if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
+                    true
+                } else {
+                    match self.sides[foe].pokemon[foe_slot].last_move {
+                        None => true,
+                        Some(lslot) => {
+                            match self.move_at(foe, foe_slot, lslot, dex) {
+                                None => true,
+                                Some(lm) => {
+                                    let copied_id = lm.id.clone();
+                                    lm.fail_mimic
+                                        || self.sides[_side].pokemon[_slot].set.moves.iter().any(|mid| {
+                                            dex.moves(mid).map(|m| m.id == copied_id).unwrap_or(false)
+                                        })
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            if fail {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // SUCCESS — overlay the Mimic slot with the copied move.
+            let lslot = self.sides[foe].pokemon[foe_slot].last_move.expect("checked above");
+            let (copied_id, copied_name, copied_pp, copied_maxpp) = {
+                let lm = self.move_at(foe, foe_slot, lslot, dex).expect("checked above");
+                (lm.id.clone(), lm.name.clone(), lm.pp.min(5), lm.max_pp())
+            };
+            let mslot = (0..self.sides[_side].pokemon[_slot].set.moves.len()).find(|&k| {
+                self.move_at(_side, _slot, k, dex).map(|m| m.id == "mimic").unwrap_or(false)
+            });
+            let mslot = match mslot {
+                Some(k) => k,
+                None => {
+                    // `mimicIndex < 0` (the sim's guard — unreachable: the user just
+                    // USED Mimic, so the slot exists). Draw-free silent fail.
+                    return MoveResolution::done(false, false, false);
+                }
+            };
+            {
+                let m = &mut self.sides[_side].pokemon[_slot];
+                let base_pp = m.move_pp.get(mslot).copied().unwrap_or(0);
+                let base_maxpp = m.move_maxpp.get(mslot).copied().unwrap_or(0);
+                m.mimic_overlay = Some(crate::state::MimicOverlay { slot: mslot, base_pp, base_maxpp });
+                m.set.moves[mslot] = copied_id;
+                if let Some(pp) = m.move_pp.get_mut(mslot) {
+                    *pp = copied_pp;
+                }
+                if let Some(mp) = m.move_maxpp.get_mut(mslot) {
+                    *mp = copied_maxpp;
+                }
+            }
+            // [EMIT] `|-activate|<user>|move: Mimic|<MoveName>`.
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.activate(&user, "move: Mimic", Some(&copied_name));
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- PAIN SPLIT — average the two actives' HP. Never-miss → ZERO draws in all
+        //     branches (probed; a Ghost target WORKS — Status ignoreImmunity). A
+        //     PROTECT blocks it (`flags.protect`); a SUBSTITUTE blocks it (`[still]` +
+        //     `-fail`, no bypasssub). On success: `avg = floor((t.hp + u.hp) / 2)`;
+        //     BOTH are set to `min(avg, own maxhp)` (the sim's sethp clamps — Blissey
+        //     41+714 → avg 377: Blissey drops to 377, Gengar caps at its 261 maxhp —
+        //     NOT conservative). Lines: the TARGET's `-sethp … [silent]` THEN the
+        //     USER's `-sethp`. Equal HP still succeeds (lines emitted, no fail). ---
+        if move_id == "painsplit" {
+            debug_assert!(never_miss, "painsplit expected gen-3 accuracy true (never-miss)");
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            let avg = {
+                let u = self.sides[_side].pokemon[_slot].hp as u32;
+                let t = self.sides[foe].pokemon[foe_slot].hp as u32;
+                (((u + t) / 2) as u16).max(1) // `|| 1` (unreachable — both alive ≥ 1)
+            };
+            {
+                let t = &mut self.sides[foe].pokemon[foe_slot];
+                t.hp = avg.min(t.maxhp);
+            }
+            {
+                let u = &mut self.sides[_side].pokemon[_slot];
+                u.hp = avg.min(u.maxhp);
+            }
+            // [EMIT] target `-sethp [silent]` then user `-sethp` (the probed order).
+            if self.logging() {
+                let t = self.mon_ref(foe, foe_slot, dex);
+                let thp = self.hp_status(foe, foe_slot);
+                self.log.sethp_from_move(&t, &thp, "Pain Split", true);
+                let u = self.mon_ref(_side, _slot, dex);
+                let uhp = self.hp_status(_side, _slot);
+                self.log.sethp_from_move(&u, &uhp, "Pain Split", false);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- PSYCH UP — copy ALL the target's boost stages VERBATIM (incl. negatives
+        //     AND zeros — the user's own prior stages are fully overwritten; all 7
+        //     stages incl. acc/eva). Never-miss → ZERO draws (probed). NO `protect`
+        //     flag → it copies THROUGH a Protect; `bypasssub` → works through a sub
+        //     (probed: Calm Mind boosts made behind a sub are copied). A +Spe copy
+        //     leaves `cached_speed` stale until the next re-cache site (the Dragon
+        //     Dance convention). An all-zero copy is a SUCCESS, not a fail. ---
+        if move_id == "psychup" {
+            debug_assert!(never_miss, "psychup expected gen-3 accuracy true (never-miss)");
+            let copied = self.sides[foe].pokemon[foe_slot].boosts;
+            self.sides[_side].pokemon[_slot].boosts = copied;
+            // [EMIT] `|-copyboost|<user>|<target>|[from] move: Psych Up`.
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.copyboost_from_move(&user, &target, "Psych Up");
             }
             return MoveResolution::done(false, false, false);
         }
@@ -5848,6 +7474,15 @@ impl BattleState {
     ///      in-`tryMoveHit` `eachEvent('Update')` shuffle is SKIPPED.
     fn run_rest(&mut self, side: usize, slot: usize, dex: &Dex) -> MoveResolution {
         let mon = &self.sides[side].pokemon[slot];
+        // (0) ALREADY-ASLEEP GUARD (`gen3_move_coverage_batch5_v1`): a Rest by an
+        //     ALREADY-asleep user SILENTLY no-ops — NO `-fail` line, NO heal, NO counter
+        //     reset, ZERO draws (probed via Sleep Talk, the ONLY path that can execute a
+        //     move while asleep: a Sleep-Talk-picked Rest emits just the two `|move|`
+        //     lines and nothing else). Checked BEFORE the full-HP guard (a full-HP
+        //     asleep RestTalker must NOT emit the `-fail|heal` form).
+        if matches!(mon.status, Some(Status::Sleep(_))) {
+            return MoveResolution::done(false, false, false);
+        }
         // (1) FULL-HP GUARD (onTry: `if source.hp === source.maxhp` → `-fail heal`,
         //     return null). A fainted mon never reaches here. Draw-free — return before
         //     the SetStatus shuffle (the sim's `onTry` precedes `singleEvent('Try')`'s
@@ -5881,6 +7516,8 @@ impl BattleState {
         //     the existing on_before_move handler (3 attempts → wake).
         let _discarded = self.prng.random_range(2, 6); // slp.onStart's random(2,6) — value discarded
         self.sides[side].pokemon[slot].status = Some(Status::Sleep(3));
+        // A fresh slp statusState → skippedTime 0 (`gen3_move_coverage_batch5_v1`).
+        self.sides[side].pokemon[slot].sleep_skipped = 0;
 
         // [EMIT] `|-status|<user>|slp|[from] move: Rest` — the self-sleep, carrying the
         // Rest provenance. (setStatus overriding a prior status does NOT emit a
@@ -5945,10 +7582,12 @@ impl BattleState {
     ///   5. `landed` is ALWAYS FALSE — the protect is a status `moveHit`; the
     ///      in-`tryMoveHit` `eachEvent('Update')` shuffle is SKIPPED.
     ///
-    /// FAIL-LOUD: only Protect / Detect are modeled. Any other `isProtect` move (Endure
-    /// — `volatileStatus:'endure'` + a survive-at-1-HP `onDamage`; the gen4+ Quick
-    /// Guard / Wide Guard / King's Shield / Spiky Shield / … which gen3 doesn't have)
-    /// PANICS so a future protection variant can never silently desync.
+    /// FAIL-LOUD: Protect / Detect / **Endure** (`gen3_move_coverage_batch6_v1` — the
+    /// same stallingMove machinery, SHARED stall counter, but the `endure` volatile's
+    /// survive-at-1-HP `onDamage` clamp instead of the move block) are modeled. Any
+    /// OTHER `isProtect` move (the gen4+ Quick Guard / Wide Guard / King's Shield /
+    /// Spiky Shield / … which gen3 doesn't have) PANICS so a future protection
+    /// variant can never silently desync.
     fn run_protect(
         &mut self,
         side: usize,
@@ -5958,15 +7597,25 @@ impl BattleState {
         will_act: bool,
         dex: &Dex,
     ) -> MoveResolution {
-        if move_id != "protect" && move_id != "detect" {
+        if move_id != "protect" && move_id != "detect" && move_id != "endure" {
             panic!(
                 "protect-class move {move_id:?} is not modeled — only Protect / Detect \
-                 are (identical full-turn protection). Endure (survive-at-1-HP, a \
-                 different onDamage mechanic) + Quick Guard / Wide Guard / King's Shield \
-                 / etc. are DEFERRED (and gen3 has none of the latter). Model it (or \
+                 (identical full-turn protection) + Endure (survive-at-1-HP, \
+                 `gen3_move_coverage_batch6_v1`) are. Quick Guard / Wide Guard / King's \
+                 Shield / etc. are DEFERRED (and gen3 has none of them). Model it (or \
                  exclude it from isModeledMove) before a battle can use it."
             );
         }
+        // ENDURE (`gen3_move_coverage_batch6_v1`) rides the IDENTICAL stallingMove
+        // machinery (probe ED1-ED9): the same `willAct()` gate, the same SHARED `stall`
+        // counter/ladder (an endure escalates a prior Protect's denominator and vice
+        // versa — ED3/ED4 byte-identical both orders), the same no-delete-on-fail
+        // persistence. Only the SUCCESS effect differs: the `endure` volatile (the
+        // onDamage survive-at-1 clamp + a NO_ORDER residual duration handler) instead
+        // of the `protected` move-block, and a `|-singleturn|<user>|move: Endure` line.
+        // gen3 Endure is priority **4** (one ABOVE Protect's 3 — the dex feeds
+        // `sort_actions`; not this fn's concern).
+        let is_endure = move_id == "endure";
 
         // (1) THE `willAct()` GATE (`onPrepareHit`: `!!this.queue.willAct() &&
         //     runEvent('StallMove')`): Protect/Detect FAIL — DRAW-FREE, no volatile, no
@@ -6008,7 +7657,8 @@ impl BattleState {
             let user = self.mon_ref(side, slot, dex);
             if success {
                 self.log.move_used(&user, move_name, Some(&user), false, false);
-                self.log.singleturn(&user, "Protect");
+                // Endure's onStart announces `move: Endure`; Protect/Detect's bare `Protect`.
+                self.log.singleturn(&user, if is_endure { "move: Endure" } else { "Protect" });
             } else {
                 // A FAILED stall roll shows the `[still]` move + `|-fail|<user>` (the
                 // protect "failed" — verified vs the golden: `|move|…Protect||[still]` then
@@ -6025,7 +7675,13 @@ impl BattleState {
             //     capped at counterMax 8 — the gen3 floor 1/8). BOTH onStart and onRestart
             //     reset the stall volatile's `duration` to 2 (its lifetime — it expires at
             //     the residual one turn after the user stops protecting).
-            mon.protected = true;
+            //     ENDURE sets its OWN volatile instead of the move block (the onDamage
+            //     survive-at-1 clamp reads `endure`; `protect_blocks` never reads it).
+            if is_endure {
+                mon.endure = true;
+            } else {
+                mon.protected = true;
+            }
             mon.protect_counter = if counter == 0 {
                 2 // onStart
             } else {
@@ -6101,6 +7757,7 @@ impl BattleState {
             if next == 0 {
                 // Wake: cure the status, then PROCEED (gen3 wakes and moves same turn).
                 self.sides[side].pokemon[slot].status = None;
+                self.sides[side].pokemon[slot].sleep_skipped = 0;
                 // [EMIT] `|-curestatus|<mon>|slp|[msg]` — a natural sleep wake (the `[msg]`
                 // shows the client wake message). Emitted BEFORE the mon's own `|move|`
                 // (it wakes then moves the same turn). Observation-only.
@@ -6110,14 +7767,39 @@ impl BattleState {
                 }
                 // (fall through to the next-lower handlers, like the sim's `return`
                 //  from the slp handler — but slp is exclusive, so none else fire.)
+                // A WAKE-turn Sleep Talk then executes AWAKE → its onTry fails SILENTLY
+                // in the Sleep Talk arm (`gen3_move_coverage_batch5_v1`, probed).
             } else {
                 self.sides[side].pokemon[slot].status = Some(Status::Sleep(next));
-                // [EMIT] `|cant|<mon>|slp` — still asleep, the move is cancelled.
+                // [EMIT] `|cant|<mon>|slp` — still asleep. Emitted for BOTH branches
+                // below (the sim prints the cant BEFORE checking `move.sleepUsable`).
                 if self.logging() {
                     let mon_ref = self.mon_ref(side, slot, dex);
                     self.log.cant(&mon_ref, "slp", None);
                 }
-                return false; // still asleep → ABORT (no further draws).
+                // --- `move.sleepUsable` (`gen3_move_coverage_batch5_v1`, SLEEP TALK —
+                //     the ONLY modeled sleepUsable move; Snore is UNMODELED — it
+                //     FAIL-LOUD-panics at run_move's top, `snore_panics_fail_loud`):
+                //     the slp handler `return`s instead of
+                //     `return false`, so the move PROCEEDS while still asleep — and the
+                //     gen3 slp state does `skippedTime++` (a normal blocked cant RESETS
+                //     it to 0; the onSwitchIn restore lives in `run_switch`). The bare
+                //     `return` means LOWER handlers still run (an asleep+confused
+                //     sleep-talker draws its confusion gate), mirroring the sim's
+                //     handler chain. DRAW-FREE either way. ---
+                let sleep_usable = !struggle
+                    && self
+                        .move_at(side, slot, move_index, dex)
+                        .map(|m| m.id == "sleeptalk")
+                        .unwrap_or(false);
+                if sleep_usable {
+                    self.sides[side].pokemon[slot].sleep_skipped =
+                        self.sides[side].pokemon[slot].sleep_skipped.saturating_add(1);
+                    // fall through to the lower handlers → the move proceeds.
+                } else {
+                    self.sides[side].pokemon[slot].sleep_skipped = 0;
+                    return false; // still asleep → ABORT (no further draws).
+                }
             }
         }
 
@@ -6905,6 +8587,32 @@ impl BattleState {
     /// sub-absorbed hit (the mon's Damage event never runs — no draw). Returns the (possibly
     /// hp-1-capped) damage; emits `|-activate|<mon>|item: Focus Band` on a survive.
     /// PROBE-settled `probe_focusband_rng.js` + `probe_focusband_confusion_rng.js`.
+    /// ENDURE's survive-at-1 clamp (`gen3_move_coverage_batch6_v1`, the resolved gen-3
+    /// `endure.onDamage` at priority **−10**): a **Move**-effect damage that would KO the
+    /// endure-volatile holder (`damage >= hp`) is clamped to `hp − 1`, with
+    /// `|-activate|<holder>|move: Endure` emitted BEFORE the `-damage` line. Applies to
+    /// every qualifying Move hit — plain hits, FIXED damage (Seismic Toss → 1 HP, probe
+    /// ED6), EVERY strike of a multihit (each strike `-activate`s + clamps, probe ED8),
+    /// and the future-move resolve (class-inferred: the resolve's Damage event runs the
+    /// onDamage handlers — the Focus-Band-rolls-there precedent). It does NOT guard
+    /// non-Move damage (residual chips KO a 1-HP endurer — ED5; confusion self-hits are
+    /// a Move-effect but SELF-inflicted and gen3 boards never pair them with Endure —
+    /// the sim's gate is effectType-only, so we clamp there too via the caller sites,
+    /// none of which route a self-hit here). DRAW-FREE. Every caller runs this BEFORE
+    /// `focus_band_damage` (endure −10 precedes FB's −40 in the priority-DESC event).
+    fn endure_clamp(&mut self, side: usize, slot: usize, dmg: u16, dex: &Dex) -> u16 {
+        let mon = &self.sides[side].pokemon[slot];
+        if !mon.endure || mon.fainted || dmg == 0 || dmg < mon.hp {
+            return dmg;
+        }
+        // [EMIT] `|-activate|<holder>|move: Endure` — BEFORE the `-damage`.
+        if self.logging() {
+            let m = self.mon_ref(side, slot, dex);
+            self.log.activate(&m, "move: Endure", None);
+        }
+        self.sides[side].pokemon[slot].hp - 1
+    }
+
     fn focus_band_damage(&mut self, side: usize, slot: usize, dmg: u16, is_move: bool, dex: &Dex) -> u16 {
         if dmg == 0 {
             return 0; // no Damage event for a 0-damage apply (no modeled path reaches this)
@@ -7266,6 +8974,9 @@ impl BattleState {
             "tox" => Status::Toxic(0),
             _ => return,
         };
+        // A FRESH status gets a FRESH `statusState` — the slp `skippedTime` starts at 0
+        // (`gen3_move_coverage_batch5_v1`; meaningless for the non-sleep statuses).
+        self.sides[foe].pokemon[foe_slot].sleep_skipped = 0;
         self.sides[foe].pokemon[foe_slot].status = Some(new);
         // [EMIT] `|-status|<target>|<status>` — a foe-inflicted status (secondary /
         // standalone status move / Tri Attack). NO `[from]` (only Rest's self-inflict
@@ -7855,7 +9566,7 @@ impl BattleState {
         // queue (a residual/state path that zeroed HP without a push — keeps the walk robust
         // even if a future faint site forgets to record). This order also drives the
         // `|faint|` emission lines.
-        let ordered: Vec<usize> = {
+        let mut ordered: Vec<usize> = {
             let mut o: Vec<usize> = std::mem::take(&mut self.faint_emit_queue);
             for side in 0..2 {
                 if !o.contains(&side) {
@@ -7866,7 +9577,14 @@ impl BattleState {
         };
 
         let mut any = false;
-        for &side in &ordered {
+        // A WORKLIST (index-based) rather than a plain iterator: DESTINY BOND's mutual
+        // faint (`gen3_move_coverage_batch6_v1`) enqueues the KILLER mid-drain — the
+        // sim's `destinybond.onFaint` calls `source.faint()`, which pushes the source
+        // onto `faintQueue` and the SAME `faintMessages` while-loop processes it next.
+        let mut i = 0usize;
+        while i < ordered.len() {
+            let side = ordered[i];
+            i += 1;
             let slot = self.sides[side].active;
             // WEATHER_NEGATE `onEnd` → `eachEvent('WeatherChange')` at the FAINT site
             // (`gen3_cloudnine_end_v1`, the ab_916_16 fingerprint): `faintMessages` fires the
@@ -7932,6 +9650,34 @@ impl BattleState {
                 mon.pursuit = None;
                 // ...and the BEAT UP `beatup` `duration: 1` volatile (`gen3_move_coverage_batch4b_v1`).
                 mon.beat_up = false;
+                // ...and the MUSTRECHARGE / TWOTURNMOVE volatiles (`gen3_move_coverage_
+                // batch4c_v1`) — a fainted mon carries neither (a fainted charger's
+                // replacement enters fully unlocked; the corpse never gathers a residual
+                // duration handler either way).
+                mon.must_recharge = false;
+                mon.two_turn = None;
+                // ...and the COUNTER/MIRROR COAT reactive volatile (`gen3_move_coverage_
+                // batch5_v1`) — a fainted counter user's corpse must not gather a residual
+                // duration handler; sleep_skipped is meaningless without the slp status.
+                mon.reactive = None;
+                mon.sleep_skipped = 0;
+                // ...and the BATCH-6 volatiles (`gen3_move_coverage_batch6_v1`,
+                // clearVolatile): ENCORE / PERISH / ENDURE / CHARGE / the trap-move
+                // TRAPPED link / the MIMIC moveslot overlay (the `baseMoveSlots`
+                // revert). The DESTINY BOND flag + its pending-KO record are consumed
+                // BELOW (the mutual-faint chain reads them first).
+                mon.encore = None;
+                mon.perish = None;
+                mon.endure = false;
+                mon.charge = false;
+                mon.trapped_by = None;
+                mon.restore_mimic_overlay();
+                // DESTINY BOND (`gen3_move_coverage_batch6_v1`, `destinybond.onFaint`):
+                // consume the pending-KO record (set at the qualifying FOE-Move damage
+                // sites — never by a residual / sub-absorbed hit / futuremove) + drop
+                // the volatile with the corpse.
+                let db_killer = mon.destiny_bond_ko_by.take();
+                mon.destiny_bond = false;
                 // `faintMessages` decrements the side's live-mon count — the count `check_win`
                 // reads to END the battle (a side at `pokemon_left == 0` has lost). The `mon`
                 // borrow above ends before this disjoint-field write.
@@ -7942,6 +9688,56 @@ impl BattleState {
                 if self.logging() {
                     let mon_ref = self.mon_ref(side, slot, dex);
                     self.log.faint(&mon_ref);
+                }
+                // --- TRAP-LINK end on the TRAPPER's faint (`gen3_move_coverage_
+                //     batch6_v1`, probe T9): a fainted trapper frees its target — the
+                //     foe active's `trapped_by == this corpse's uid` link is removed
+                //     draw-free (the freed mon's next request drops `trapped:true`).
+                //     NOTE (revert-verified honesty): this clear is observationally
+                //     REDUNDANT today — the corpse's forced replacement runs
+                //     `execute_switch`, whose source-left clear removes the same link,
+                //     and `is_trapped` already returns false while the foe is fainted
+                //     — so no pin can distinguish its removal. Kept as the faithful
+                //     mirror of the sim's clearVolatile → removeLinkedVolatiles
+                //     (defense in depth for any future path that faints a trapper
+                //     without an immediate replacement). ---
+                {
+                    let corpse_uid = self.sides[side].pokemon[slot].uid;
+                    let foe = 1 - side;
+                    let foe_active = self.sides[foe].active;
+                    if self.sides[foe].pokemon[foe_active].trapped_by == Some(corpse_uid) {
+                        self.sides[foe].pokemon[foe_active].trapped_by = None;
+                    }
+                }
+                // --- DESTINY BOND's mutual faint (`gen3_move_coverage_batch6_v1`,
+                //     `destinybond.onFaint` — the runEvent('Faint') handler): the gate
+                //     (foe source + a Move effect + !futuremove) was encoded at the
+                //     damage sites; here the chain runs DRAW-FREE (probed DB1/DB3):
+                //     the corpse's `|faint|` FIRST (above), then
+                //     `|-activate|<corpse>|move: Destiny Bond`, then `source.faint()` —
+                //     the killer's HP zeroes and its side joins the SAME faintMessages
+                //     drain (its `|faint|` emits when the worklist reaches it). A
+                //     both-last-mons mutual faint ends winner="" — the gen-3 TIE. ---
+                if let Some(killer_side) = db_killer {
+                    // [EMIT] `|-activate|<corpse>|move: Destiny Bond` BEFORE the
+                    // killer's `|faint|` (the probed order; the sim emits it
+                    // unconditionally before `source.faint()` — which itself no-ops on
+                    // an already-fainted source).
+                    if self.logging() {
+                        let corpse_ref = self.mon_ref(side, slot, dex);
+                        self.log.activate(&corpse_ref, "move: Destiny Bond", None);
+                    }
+                    let kslot = self.sides[killer_side].active;
+                    let killer = &mut self.sides[killer_side].pokemon[kslot];
+                    if !killer.fainted && killer.hp > 0 {
+                        killer.hp = 0;
+                        // `source.faint()` — enqueue the killer for THIS drain (the
+                        // remaining worklist may already contain its side from the
+                        // both-sides fallback; only push when it does not).
+                        if !ordered[i..].contains(&killer_side) {
+                            ordered.push(killer_side);
+                        }
+                    }
                 }
             }
         }
@@ -8385,6 +10181,20 @@ pub struct DecisionRecord {
     /// mon's Substitute decoy HP (0 = no sub). Reported here so the batch-3 differential can
     /// assert a Baton-Passed sub's HP transfer (the substitute is a mon volatile).
     pub sub_hp: [u16; 2],
+    /// Per-side pending **FUTUREMOVE** duration after this decision
+    /// (`gen3_move_coverage_batch4c_v1`, `side.future_move`): the slot condition's remaining
+    /// residual ticks (0 = none; 3 → 2 → 1 → the strike resolves on the 1→0 tick). A SIDE/slot
+    /// condition like `wish_pending` (it survives the occupant switching/fainting).
+    pub future_pending: [u8; 2],
+    /// Per side, the ACTIVE mon's ENCORE remaining duration (`gen3_move_coverage_
+    /// batch6_v1` — the sim's `volatiles.encore.duration`), 0 when not encored. The
+    /// willMove ±1 duration branch + the residual tick + the 0-PP early end are all
+    /// observable here.
+    pub encore: [u8; 2],
+    /// Per side, the ACTIVE mon's PERISH SONG counter (`volatiles.perishsong.
+    /// duration`), 0 when none — 3 at the cast turn's boundary (4-at-apply minus the
+    /// cast-turn residual tick) down to the faint.
+    pub perish: [u8; 2],
 }
 
 /// The outcome of a full scripted battle: the winner (if any) + every decision's
@@ -8617,6 +10427,21 @@ impl BattleState {
                 let uid = self.sides[side].pokemon[active].uid;
                 match dec.for_side(side) {
                     Some(Choice::Move(mi)) => {
+                        // MOVE-LOCKED requests (`gen3_move_coverage_batch4c_v1`): a
+                        // MUSTRECHARGE mon's request offered ONLY `Recharge` and a CHARGING
+                        // (twoturnmove) mon's ONLY its locked Solar Beam — the accepted
+                        // `move 1` (Choice::Move(0), the single request entry) maps to the
+                        // recharge pseudo-move (run_move's mustrecharge gate reads the
+                        // volatile, `move_index` unused) / the LOCKED move's REAL slot.
+                        // Neither substitutes Struggle (the sim's `side.choose` creates
+                        // the locked move, not Struggle) nor unshifts a beforeTurnMove
+                        // (recharge/solarbeam carry no beforeTurnCallback).
+                        let locked = self.sides[side].pokemon[active].move_locked();
+                        let mi = self.sides[side].pokemon[active]
+                            .two_turn
+                            .filter(|t| t.charging)
+                            .map(|t| t.move_index)
+                            .unwrap_or(mi);
                         // `gen3_pp_tracking_v1`: a mon with NO usable move (all slots at 0
                         // PP) has `moveid:'struggle'` substituted by `side.choose` at
                         // choice-commit time — regardless of the scripted slot `mi`. This
@@ -8626,13 +10451,14 @@ impl BattleState {
                         // `Move(mi)` on a 0-PP slot while ANOTHER slot still has PP is
                         // REJECTED earlier by `move_decision_is_legal`, mirroring the sim's
                         // "doesn't have PP" reject — so it never reaches here.)
-                        let struggle = self.sides[side].pokemon[active].must_struggle(dex);
+                        let struggle =
+                            !locked && self.sides[side].pokemon[active].must_struggle(dex);
                         // `beforeTurnMove` unshift (`gen3_move_coverage_batch4_v1`, mirroring
                         // `battle-queue.ts:107`): a `move` action whose move carries a
                         // `beforeTurnCallback` (Focus Punch / Pursuit) ALSO enqueues an order-5
                         // `beforeTurnMove` action for the same actor. A forced Struggle carries no
                         // beforeTurnCallback. Resolve the picked move's id from the CURRENT slot.
-                        if !struggle {
+                        if !struggle && !locked {
                             if let Some(m) = self.move_at(side, active, mi, dex) {
                                 if move_has_before_turn_callback(&to_id(&m.id)) {
                                     actions.push(QAction::BeforeTurnMove { side, uid, move_index: mi });
@@ -8834,6 +10660,15 @@ impl BattleState {
                 Some(Choice::Move(mi)) => {
                     let active = self.sides[side].active;
                     let mon = &self.sides[side].pokemon[active];
+                    // (0) MOVE-LOCKED request (`gen3_move_coverage_batch4c_v1` — a
+                    // MUSTRECHARGE / CHARGING mon): the request offers a SINGLE pseudo/
+                    // locked move entry, so ONLY `move 1` (Move(0)) is accepted; a
+                    // `move 2` is rejected ("Your <mon> doesn't have a move 2" — probed)
+                    // and the PP/usable gates below (which read the REAL moveset) do not
+                    // apply to the single-entry request.
+                    if mon.move_locked() {
+                        return mi == 0;
+                    }
                     // (1) OUT-OF-RANGE slot (the forced-replacement resume phantom): a
                     // `Move(K)` whose slot the current active mon doesn't have.
                     if mi >= mon.set.moves.len() {
@@ -8856,6 +10691,14 @@ impl BattleState {
                     }
                 }
                 Some(Choice::Switch(t)) => {
+                    // (2a) MOVE-LOCKED request (`gen3_move_coverage_batch4c_v1`): a
+                    // MUSTRECHARGE / CHARGING mon's request is `trapped:true` — a
+                    // voluntary switch is REJECTED draw-free ("[Invalid choice] Can't
+                    // switch: The active Pokémon is trapped", probed — the FIRM-trap
+                    // shape, no maybeTrapped phase).
+                    if self.sides[side].pokemon[self.sides[side].active].move_locked() {
+                        return false;
+                    }
                     // (2b) INVALID TARGET (Phase 3 — the capture plans now submit blind
                     // `switch N` tokens, so a scripted switch to a FAINTED / out-of-range /
                     // already-active slot must be SKIPPED exactly like the sim's
@@ -8926,6 +10769,18 @@ impl BattleState {
             sub_hp: [
                 self.sides[0].pokemon[self.sides[0].active].substitute.unwrap_or(0),
                 self.sides[1].pokemon[self.sides[1].active].substitute.unwrap_or(0),
+            ],
+            future_pending: [
+                self.sides[0].future_move.as_ref().map(|f| f.duration).unwrap_or(0),
+                self.sides[1].future_move.as_ref().map(|f| f.duration).unwrap_or(0),
+            ],
+            encore: [
+                self.sides[0].pokemon[self.sides[0].active].encore.map(|(_, t)| t).unwrap_or(0),
+                self.sides[1].pokemon[self.sides[1].active].encore.map(|(_, t)| t).unwrap_or(0),
+            ],
+            perish: [
+                self.sides[0].pokemon[self.sides[0].active].perish.unwrap_or(0),
+                self.sides[1].pokemon[self.sides[1].active].perish.unwrap_or(0),
             ],
         }
     }
@@ -9012,7 +10867,12 @@ impl BattleState {
                         let slot = self.slot_of_uid(*side, *uid).unwrap_or(self.sides[*side].active);
                         // A forced Struggle has priority 0 (Struggle's dex priority), NOT the
                         // stale scripted slot's — read it from the `struggle` move, else the slot.
-                        let pr = if *struggle {
+                        // A MUSTRECHARGE mon's action is the `recharge` pseudo-move (priority
+                        // 0 — `gen3_move_coverage_batch4c_v1`), NOT slot 0's real move (whose
+                        // priority could differ); the volatile is still set at sort time
+                        // (cleared only at the cant). A CHARGING mon's `move_index` was
+                        // already translated to its locked Solar Beam slot (priority 0).
+                        let pr = if *struggle || self.sides[*side].pokemon[slot].must_recharge {
                             0
                         } else {
                             self.move_priority(*side, slot, *move_index, dex) as i32
@@ -9092,6 +10952,18 @@ impl BattleState {
                             let user = self.mon_ref(side, slot, dex);
                             self.log.singleturn(&user, "move: Focus Punch");
                         }
+                    } else if move_id == "counter" || move_id == "mirrorcoat" {
+                        // counter/mirrorcoat.beforeTurnCallback (`gen3_move_coverage_batch5_v1`):
+                        // `pokemon.addVolatile('counter'|'mirrorcoat')` on the USER — DRAW-FREE,
+                        // no protocol line (the conditions have no announcing onStart). The
+                        // onStart RESETS `{slot: null, damage: 0}` EVERY selection turn (so
+                        // prev-turn damage never counts — probed C1 t2); the un-armed state is
+                        // `damage: None`. The recorder (`record_reactive_hit`) then arms it on a
+                        // qualifying foe hit this turn.
+                        self.sides[side].pokemon[slot].reactive = Some(crate::state::Reactive {
+                            mirror: move_id == "mirrorcoat",
+                            damage: None,
+                        });
                     } else if move_id == "pursuit" {
                         // pursuit.beforeTurnCallback: `if (frz|slp) return; if (isAlly) return;
                         // target.addVolatile('pursuit'); sources.push(pokemon)`. Lay the volatile
@@ -9128,6 +11000,26 @@ impl BattleState {
                         continue; // runAction returned false → no tail, no draws
                     }
                     let slot = self.slot_of_uid(side, uid).unwrap();
+                    // --- ENCORE onOverrideAction (`gen3_move_coverage_batch6_v1`, probe
+                    //     EN7): a QUEUED move that differs from the encored slot is
+                    //     OVERRIDDEN at EXECUTION to the encored move — the ENCORED
+                    //     slot's PP deducts, the announce shows the encored move, and
+                    //     the draw count is a normal move turn's. This only fires when
+                    //     the encore LANDED THIS TURN (a faster encore user; the
+                    //     target's queued move was chosen pre-lock) — at a request
+                    //     boundary `move_usable` already restricts selection to the
+                    //     encored slot. The action keeps its QUEUED sort position (the
+                    //     sim sorted by the queued move's priority; the override fires
+                    //     inside runAction). DRAW-FREE. Struggle / a recharge-locked
+                    //     turn are exempt (no slot / the priority-11 cant precedes). ---
+                    let move_index = if !struggle {
+                        match self.sides[side].pokemon[slot].encore {
+                            Some((eslot, _)) if eslot != move_index => eslot,
+                            _ => move_index,
+                        }
+                    } else {
+                        move_index
+                    };
                     // `willAct()` (battle-queue.ts:310) — does ANY move/switch/instaswitch/
                     // shift action REMAIN in the queue? Protect/Detect's `onPrepareHit`
                     // requires it (`!!this.queue.willAct() && runEvent('StallMove')`): a
@@ -9158,6 +11050,33 @@ impl BattleState {
                     if res.landed {
                         let upd = self.each_event_shuffle(); // in-tryMoveHit Update (landed)
                         self.run_update_items(&upd, dex); // cure-berry/Leppa onUpdate (draw-free)
+                    }
+                    // --- CHARGE consumption (`gen3_move_coverage_batch6_v1` —
+                    //     `charge.onAfterMove` + `onMoveAborted`, both `if (move.id !==
+                    //     'charge') removeVolatile('charge')`): the volatile lasts until
+                    //     the user's NEXT move attempt OF ANY KIND — an idle Splash
+                    //     consumes it, a cant (onMoveAborted — full-para / slp / recharge
+                    //     / …) consumes it, only an Electric move first gets the ×2 BP
+                    //     fold (already applied inside run_move). The AfterMove event
+                    //     fires from `runMove` with the OUTER (queued, post-encore-
+                    //     override) move — so a Sleep-Talk turn consumes it keyed on
+                    //     `sleeptalk`, not the called move; the pursuit-interrupt strike
+                    //     is a bare `useMove` (NO runMove → NO AfterMove → NOT consumed
+                    //     there, faithful to the source). DRAW-FREE; the removal emits
+                    //     `|-end|<user>|Charge|[silent]` (`charge.onEnd`). ---
+                    if self.sides[side].pokemon[slot].charge {
+                        let executed_is_charge = !struggle
+                            && self
+                                .move_at(side, slot, move_index, dex)
+                                .map(|m| m.id == "charge")
+                                .unwrap_or(false);
+                        if !executed_is_charge {
+                            self.sides[side].pokemon[slot].charge = false;
+                            if self.logging() {
+                                let user = self.mon_ref(side, slot, dex);
+                                self.log.volatile_end_silent(&user, "Charge");
+                            }
+                        }
                     }
                     // --- forceSwitchFlag consumption (battle.ts:2348-2353): at the END of
                     //     the move's runAction (AFTER the move body / any in-tryMoveHit
@@ -9610,7 +11529,15 @@ impl BattleState {
         let bp = self.sides[side].baton_pass_pending && !is_drag;
         let bp_snapshot = if bp {
             let m = &self.sides[side].pokemon[active];
-            Some((m.boosts, m.substitute, m.leech_seed, m.confusion, m.curse))
+            // BATCH-6 additions to the pass-set (`gen3_move_coverage_batch6_v1`, the
+            // resolved-dex noCopy facts — probe_batch6_dexfacts.js): **perishsong**
+            // (noCopy false — the entrant inherits the counter), the trap-move
+            // **trapped** volatile (noCopy FALSE, behaviorally probed T3b — the entrant
+            // is STILL firm-trapped, the link re-points so the ORIGINAL trapper's later
+            // exit frees it), and **charge** (noCopy undefined → falsy → copied).
+            // Encore / Destiny Bond are noCopy TRUE → NOT passed (and DB was already
+            // removed by the passer's own BP move attempt at onBeforeMove −1).
+            Some((m.boosts, m.substitute, m.leech_seed, m.confusion, m.curse, m.perish, m.trapped_by, m.charge))
         } else {
             None
         };
@@ -9742,6 +11669,55 @@ impl BattleState {
             // speed tie one extra `random(0,2)` tie-shuffle vs the sim (a silent draw-order
             // desync — the class this batch exists to remove). Sibling one-liners above.
             m.beat_up = false;
+            // The MUSTRECHARGE + TWOTURNMOVE volatiles clear on switch-out (`clearVolatile`,
+            // `gen3_move_coverage_batch4c_v1`): a locked mon can only LEAVE the field via a
+            // phaze DRAG (its own request is trapped) or a Baton-Pass-free forced path — the
+            // dragged-out mon re-enters fully unlocked (a fresh Hyper Beam / charge starts
+            // over). Same stale-flag hazard class as `beat_up` above.
+            m.must_recharge = false;
+            m.two_turn = None;
+            // The COUNTER / MIRROR COAT reactive volatile clears on switch-out
+            // (`clearVolatile`, `gen3_move_coverage_batch5_v1`) — a phazed-out counter
+            // user must not gather a stale residual duration handler on re-entry (the
+            // `beat_up` stale-flag hazard class). NOT Baton-Passable (`noCopy`-class
+            // per-turn state; the pass-set snapshot above never includes it).
+            m.reactive = None;
+            // --- BATCH-6 volatiles clear on switch-out (`clearVolatile`,
+            //     `gen3_move_coverage_batch6_v1`): ENCORE (a switched-out encored mon
+            //     returns un-locked — noCopy true, never passed), PERISH (the counter
+            //     clears; an entrant while the song runs gets NOTHING — but the BP
+            //     snapshot above PASSES it, noCopy false), ENDURE (duration-1,
+            //     belt-and-braces beside the turn-top clear), CHARGE (cleared like any
+            //     volatile — the BP snapshot passes it, noCopy falsy), DESTINY BOND (+
+            //     its pending-KO record — noCopy true, and the window closed at the BP
+            //     move attempt anyway), the trap-move TRAPPED link (a dragged-out /
+            //     replaced holder is freed; the BP snapshot passes it, noCopy false),
+            //     and the MIMIC moveslot overlay (the `baseMoveSlots` revert — the slot
+            //     reverts to Mimic with Mimic's OWN remaining PP; probed MI-switch). ---
+            m.encore = None;
+            m.perish = None;
+            m.endure = false;
+            m.charge = false;
+            m.destiny_bond = false;
+            m.destiny_bond_ko_by = None;
+            m.trapped_by = None;
+            m.restore_mimic_overlay();
+        }
+        // --- TRAP-LINK source-left clear (`gen3_move_coverage_batch6_v1`, the linked
+        //     `trapped`/`trapper` pair — probed T1/T4/T9 + T3b): the trap ENDS the
+        //     moment the TRAPPER leaves the field ANY way (voluntary switch / Baton
+        //     Pass / phaze drag; the FAINT path mirrors this in `process_faints`). When
+        //     the DEPARTING mon's uid is the foe active's `trapped_by` link, remove the
+        //     volatile — the freed mon's very next request drops `trapped:true`.
+        //     DRAW-FREE (no protocol line — the `trapped` condition has no onEnd). The
+        //     attract source-left clear below is the same mechanism class. ---
+        {
+            let departing_uid = self.sides[side].pokemon[self.sides[side].active].uid;
+            let foe = 1 - side;
+            let foe_active = self.sides[foe].active;
+            if self.sides[foe].pokemon[foe_active].trapped_by == Some(departing_uid) {
+                self.sides[foe].pokemon[foe_active].trapped_by = None;
+            }
         }
         // ATTRACT source-left clear (`attract.onUpdate`, `gen3_ability_batch4_v1`): when the
         // DEPARTING mon is the SOURCE of the foe active's attraction, the volatile is removed
@@ -9774,13 +11750,19 @@ impl BattleState {
         //     passed +Spe/-Spe boost is reflected in the entrant's post-switch cached speed
         //     (Showdown's copyVolatileFrom runs inside switchIn before the speed cache). Clear
         //     the pending marker. ---
-        if let Some((boosts, sub, leech, conf, curse)) = bp_snapshot.clone() {
+        if let Some((boosts, sub, leech, conf, curse, perish, trapped_by, charge)) = bp_snapshot.clone() {
             let m = &mut self.sides[side].pokemon[active];
             m.boosts = boosts;
             m.substitute = sub;
             m.leech_seed = leech;
             m.confusion = conf;
             m.curse = curse;
+            // The batch-6 noCopy-false volatiles (`gen3_move_coverage_batch6_v1`):
+            // the perish counter, the trap-move `trapped` link (the entrant is STILL
+            // firm-trapped by the SAME trapper — T3b), and the charge volatile.
+            m.perish = perish;
+            m.trapped_by = trapped_by;
+            m.charge = charge;
         }
         // TOXIC STAGE — the reset does NOT live here (`gen3_tox_stage_persists_v1`):
         // the resolved gen3 `tox.onSwitchIn(){ stage = 0 }` fires via the RUNSWITCH-time
@@ -9976,6 +11958,19 @@ impl BattleState {
         // heal +16 → 29, chip 32 = stage 2 → faints). DRAW-FREE.
         if let Some(Status::Toxic(_)) = self.sides[side].pokemon[slot].status {
             self.sides[side].pokemon[slot].status = Some(Status::Toxic(0));
+        }
+        // The OTHER modeled SwitchIn handler is `slp.onSwitchIn` (`gen3_move_coverage_
+        // batch5_v1`, the Sleep Talk `skippedTime` restore — live-probed: time=3 →
+        // talk,talk → time=1,skipped=2 → switch out+in → time=3 again): `time +=
+        // skippedTime; skippedTime = 0`. Same runSwitch site as the tox reset, so the
+        // SAME cancellation law applies (a CANCELLED runSwitch keeps both). DRAW-FREE.
+        if let Some(Status::Sleep(t)) = self.sides[side].pokemon[slot].status {
+            let skipped = self.sides[side].pokemon[slot].sleep_skipped;
+            if skipped > 0 {
+                self.sides[side].pokemon[slot].status =
+                    Some(Status::Sleep(t.saturating_add(skipped)));
+                self.sides[side].pokemon[slot].sleep_skipped = 0;
+            }
         }
         // (3) If the entrant was KO'd by the hazard, its ability `Start` does NOT fire
         // (`if (!pokemon.hp) return false`). The faint flag + the forced replacement are
@@ -10370,11 +12365,16 @@ fn recovery_heal_amount(move_id: &str, mon: &crate::state::MonState, weather: Op
 ///     (VERIFIED vs the sim: SF into a full-HP-536 Blissey behind a 178-HP sub deals
 ///     floor(536/2)=268 → the sub BREAKS, no carry, NOT floor(178/2)=89).
 ///
-/// DEFERRED (fail-loud — these need extra RNG or reactive/OHKO machinery the caller
+/// MODELED (`gen3_move_coverage_batch5_v1`, the arms below): **Counter / Mirror Coat**
+/// (the reactive volatile's recorded 2× damage — the caller's onTry gate already
+/// zero-draw-failed when un-armed) and **Endeavor** (`target.hp − pokemon.hp`, the
+/// caller's onTry gate already failed `hp >= target.hp`).
+///
+/// DEFERRED (fail-loud — these need extra RNG or accumulator/OHKO machinery the caller
 /// PANICS on, never silently no-ops): **Psywave** (variable — draws RNG), the OHKO
 /// moves **Fissure / Horn Drill / Guillotine** (accuracy-gated instakill + the level
-/// gate), **Counter / Mirror Coat / Bide** (reactive), **Endeavor** (sets hp to the
-/// user's). They are NOT in this set → the caller's fixed-damage fail-loud guard fires.
+/// gate), **Bide** (a 2-turn accumulator). They are NOT in this set → the caller's
+/// fixed-damage fail-loud guard fires.
 fn fixed_damage_amount(
     move_id: &str,
     attacker: &crate::state::MonState,
@@ -10389,6 +12389,21 @@ fn fixed_damage_amount(
         // `damageCallback` — half the TARGET's current HP, min 1 (the sub, if any,
         // absorbs this NUMBER; the halving reads the MON's hp, not the sub's).
         "superfang" => (defender.hp / 2).max(1),
+        // COUNTER / MIRROR COAT (`gen3_move_coverage_batch5_v1`): `damageCallback` =
+        // the reactive volatile's recorded `damage` (already 2× the last qualifying
+        // hit — see `MonState::reactive`). The caller's onTry gate (`run_fixed_damage_
+        // move`) already failed zero-draw when the volatile is missing/un-armed, so an
+        // unarmed read here is a programming error, not a silent fallback.
+        "counter" | "mirrorcoat" => attacker
+            .reactive
+            .and_then(|r| r.damage)
+            .expect("counter/mirrorcoat amount read past the onTry gate (must be armed)"),
+        // ENDEAVOR (`gen3_move_coverage_batch5_v1`): `damageCallback` = target.hp −
+        // pokemon.hp — sets the target's MON hp to EXACTLY the user's hp (never a KO;
+        // reads the MON's hp behind a sub, the number then lands on the SUB with no
+        // carry — probed E4). The caller's onTry gate already failed `hp >= target.hp`
+        // (EQUALITY INCLUDED — probed 50v50 fails), so the subtraction never underflows.
+        "endeavor" => defender.hp - attacker.hp,
         _ => return None,
     })
 }
@@ -10400,20 +12415,21 @@ fn fixed_damage_amount(
 /// fail-loud on the DEFERRED ones (never a silent `base_power == 0` no-op / desync).
 ///
 /// It is the UNION of the modeled set (`fixed_damage_amount` — Seismic Toss / Night
-/// Shade / Sonic Boom / Dragon Rage / Super Fang) AND the DEFERRED fixed-damage family
+/// Shade / Sonic Boom / Dragon Rage / Super Fang, plus the `gen3_move_coverage_batch5_v1`
+/// reactive family Counter / Mirror Coat / Endeavor) AND the DEFERRED fixed-damage family
 /// (Psywave — variable, draws RNG; the OHKO moves Fissure / Horn Drill / Guillotine —
-/// accuracy-gated instakill + a level gate; Counter / Mirror Coat / Bide — reactive;
-/// Endeavor — sets hp to the user's). Listing the deferred ones here (not relying on the
-/// `base_power == 0` fall-through) makes their exclusion EXPLICIT + FAIL-LOUD: a real
-/// team that carries one PANICS in `run_fixed_damage_move` instead of quietly desyncing.
+/// accuracy-gated instakill + a level gate; Bide — a 2-turn accumulator). Listing the
+/// deferred ones here (not relying on the `base_power == 0` fall-through) makes their
+/// exclusion EXPLICIT + FAIL-LOUD: a real team that carries one PANICS in
+/// `run_fixed_damage_move` instead of quietly desyncing.
 fn is_fixed_damage_move(move_id: &str) -> bool {
     matches!(
         move_id,
         // Modeled (bit-for-bit):
         "seismictoss" | "nightshade" | "sonicboom" | "dragonrage" | "superfang"
+        | "counter" | "mirrorcoat" | "endeavor"
         // Deferred (fail-loud in run_fixed_damage_move):
-        | "psywave" | "fissure" | "horndrill" | "guillotine"
-        | "counter" | "mirrorcoat" | "bide" | "endeavor"
+        | "psywave" | "fissure" | "horndrill" | "guillotine" | "bide"
     )
 }
 
@@ -10423,12 +12439,94 @@ fn is_fixed_damage_move(move_id: &str) -> bool {
 /// **Focus Punch** (adds its `focuspunch` volatile to the user) and **Pursuit** (lays the
 /// `pursuit` volatile on the target). Id-gated per the `is_fixed_damage_move` precedent
 /// (`gen3_moves.json` carries no `beforeTurnCallback` marker). The resolved gen3 dex has FOUR
-/// carriers — `counter` / `mirrorcoat` / `pursuit` / `focuspunch`; Counter + Mirror Coat are the
-/// DEFERRED reactive fixed-damage family (fail-loud via `is_fixed_damage_move`), so only the two
-/// modeled ones are matched here. NB when Counter/Mirror Coat are modeled they need BOTH a
-/// `BeforeTurnMove` action AND a residual duration handler (their volatiles are `duration:1`).
+/// carriers — `counter` / `mirrorcoat` / `pursuit` / `focuspunch` — ALL modeled now:
+/// Counter + Mirror Coat (`gen3_move_coverage_batch5_v1`) add their reactive volatile to
+/// the USER (its onStart RESETS `{slot:null, damage:0}` every selection turn) at order 5,
+/// with a `duration:1` residual duration handler like Focus Punch's.
 fn move_has_before_turn_callback(move_id: &str) -> bool {
-    matches!(move_id, "focuspunch" | "pursuit")
+    matches!(move_id, "focuspunch" | "pursuit" | "counter" | "mirrorcoat")
+}
+
+/// The gen-3 VARIABLE-BP `basePowerCallback` family with a bp-0 data row
+/// (`gen3_move_coverage_batch5_v1`) — the engine-computed BP, all deterministic STATE
+/// reads consuming ZERO PRNG (the Water Spout precedent). DRAW-NEUTRALITY
+/// probe-proven for Return h255 vs h3 / Frustration h0 vs h252 / Flail full vs 1 HP
+/// (each pair ends at byte-identical seeds, `probe_batch5_varbp.js`); the probe's Low
+/// Kick heavy-vs-light leg is KO-CONFOUNDED (the heavy case KO'd the target → 3 vs 4
+/// draws, legitimately different flows) — Low Kick's neutrality rests on the SAME
+/// zero-PRNG code path plus the 18548-row batch-5 golden, not that leg's seed compare.
+/// Returns `Some(bp)` for the five members, `None` otherwise.
+/// Formulas from the RESOLVED gen3 sources (dumped in `probe_batch5_varbp.js`):
+///
+///   * **Return**: `floor(happiness * 10 / 25) || 1` — h255 → 102 (the natural max, no
+///     explicit cap); h ∈ {0,1,2} floors to 0 → the `|| 1` clamp → BP **1** (NOT a fail).
+///   * **Frustration**: `floor((255 − happiness) * 10 / 25) || 1` — h0 → 102.
+///   * **Flail / Reversal** (identical callback): `ratio = max(floor(hp*48/maxhp), 1)`,
+///     then the FLOORED-integer bands `<2 → 200, <5 → 150, <10 → 100, <17 → 80,
+///     <33 → 40, else 20` (live-verified edges at maxhp 461: hp 1-19 → 200, 20-48 → 150,
+///     49-96 → 100, 97-163 → 80, 164-316 → 40, 317+ → 20; gen4 changes the 48 to 64 —
+///     gen3 is 48).
+///   * **Low Kick**: from the TARGET's `getWeight()` in HECTOGRAMS (`SpeciesData::
+///     weighthg` — gen3 has NO ModifyWeight handler): `>=2000 → 120, >=1000 → 100,
+///     >=500 → 80, >=250 → 60, >=100 → 40, else 20` (cutoffs swept exact at
+///     100/250/500/1000/2000 hg).
+///
+/// No fail conditions — the `|| 1` clamp means BP can never be 0. The multiplies widen
+/// to u32 (`48 * 714` etc. overflow u16).
+fn variable_bp(
+    move_id: &str,
+    user: &crate::state::MonState,
+    target: &crate::state::MonState,
+    dex: &Dex,
+) -> Option<u16> {
+    Some(match move_id {
+        "return" => (((user.set.happiness as u32) * 10 / 25).max(1)) as u16,
+        "frustration" => ((((255 - user.set.happiness as u32) * 10) / 25).max(1)) as u16,
+        "flail" | "reversal" => {
+            let ratio = ((48u32 * user.hp as u32) / user.maxhp.max(1) as u32).max(1);
+            match ratio {
+                0..=1 => 200,
+                2..=4 => 150,
+                5..=9 => 100,
+                10..=16 => 80,
+                17..=32 => 40,
+                _ => 20,
+            }
+        }
+        "lowkick" => {
+            // FAIL-LOUD weight read (GIGO guard, review nit): every real gen3 species
+            // weighs >= 0.1 kg = 1 hg, and `dex/species.rs` defaults `weighthg` to 0
+            // when the JSON field is ABSENT — so a missing species or a 0 weight means
+            // a data resync dropped the field, which would silently price EVERY Low
+            // Kick at BP 20. PANIC instead (the dex `batch5_tests` weighthg anchors
+            // are the value gate; this guards the missing-field class).
+            let hg = dex
+                .species(&target.species_id)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "lowkick: unknown target species {:?} — the weight-based BP \
+                         ladder needs SpeciesData",
+                        target.species_id
+                    )
+                })
+                .weighthg;
+            assert!(
+                hg >= 1,
+                "lowkick: species {:?} has weighthg {hg} — gen3_species.json lost its \
+                 `weighthg` field (a resync regression); every real species is >= 1 hg",
+                target.species_id
+            );
+            match hg {
+                0..=99 => 20,
+                100..=249 => 40,
+                250..=499 => 60,
+                500..=999 => 80,
+                1000..=1999 => 100,
+                _ => 120,
+            }
+        }
+        _ => return None,
+    })
 }
 
 /// Whether `move_id` (already `to_id`-normalized) carries the gen3 `flags.defrost`
@@ -11467,17 +13565,18 @@ mod tests {
         let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
     }
 
-    // DESTINY BOND (out-of-gen-3-modeled-scope — a reactive `volatileStatus:'destinybond'`
-    // move) FAIL-LOUDS: it is category Status, not in the modeled status set, so it hits the
-    // same fail-loud guard as Haze. This confirms the port PANICS (never silently mishandles /
-    // no-ops) if destinybond is ever routed — the belt-and-braces the e2e's `MOVE_ID_BLOCKLIST`
-    // + the Status-branch exclusion keep OFF the pickable path (a team carrying it plays fine
-    // because `pickMove` never picks it, but if it ever were, the port fails loud, not silently).
+    // SNATCH (a STILL-unmodeled reactive `volatileStatus:'snatch'` move — the one gen-3
+    // status-steal) FAIL-LOUDS: it is category Status, not in the modeled status set, so it
+    // hits the same fail-loud guard as Haze. This confirms the port PANICS (never silently
+    // mishandles / no-ops) if snatch is ever routed — the belt-and-braces the e2e's
+    // `MOVE_ID_BLOCKLIST` + the Status-branch exclusion keep OFF the pickable path. (This
+    // test was re-keyed from DESTINY BOND, which is MODELED as of
+    // `gen3_move_coverage_batch6_v1` — see `movecoverage_batch6_test.rs` + the MC pins.)
     #[test]
     #[should_panic(expected = "is not modeled")]
-    fn destinybond_status_move_panics_fail_loud() {
+    fn snatch_status_move_panics_fail_loud() {
         let d = dex();
-        let gengar = "Gengar||leftovers|levitate|destinybond,thunderbolt|Timid|252,,,,,252|||||";
+        let gengar = "Gengar||leftovers|levitate|snatch,thunderbolt|Timid|252,,,,,252|||||";
         let snorlax = "Snorlax||leftovers||bodyslam,earthquake|Adamant|252,252,,,,|||||";
         let mut state = BattleState::start(&opts_cg(gengar, snorlax, "1,2,3,4"), &d).expect("start");
         let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
@@ -12293,17 +14392,24 @@ mod tests {
         assert!(state.sides[1].pokemon[0].hp < foe_hp_before, "the foe took Body Slam damage");
     }
 
-    // FAIL-LOUD: an `isProtect` move that is NOT Protect/Detect (Endure — a different
-    // onDamage mechanic) PANICS rather than silently desync.
+    // ENDURE is MODELED as of `gen3_move_coverage_batch6_v1` (it rides the Protect
+    // stallingMove machinery — the SHARED `stall` counter + the `endure` volatile's
+    // onDamage survive-at-1 clamp). This replaces the old `endure_panics_fail_loud`
+    // gate: a FIRST Endure succeeds DRAW-FREE (no stall roll at counter 0), sets the
+    // `endure` volatile + the shared counter to 2, and does NOT set `protected`.
     #[test]
-    #[should_panic(expected = "is not modeled")]
-    fn endure_panics_fail_loud() {
+    fn endure_first_use_draw_free_sets_the_volatile_and_shared_stall_counter() {
         let d = dex();
         let snorlax = "Snorlax||leftovers||endure,bodyslam|Careful|252,,,,252,|||||";
         let tauros = "Tauros||leftovers||bodyslam,earthquake|Adamant|,252,,,,252|||||";
         let mut state = BattleState::start(&opts_cg(snorlax, tauros, "1,2,3,4"), &d).expect("start");
-        // Endure is isProtect=true but volatileStatus:'endure' → fail-loud in run_protect.
-        let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
+        let seed_before = state.prng_seed();
+        let res = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
+        assert!(!res.landed, "a status move never lands (no in-tryMoveHit Update)");
+        assert!(state.sides[0].pokemon[0].endure, "the endure volatile is up");
+        assert!(!state.sides[0].pokemon[0].protected, "endure does NOT set the protect move-block");
+        assert_eq!(state.sides[0].pokemon[0].protect_counter, 2, "the SHARED stall counter escalates to 2");
+        assert_eq!(state.prng_seed(), seed_before, "a first Endure draws NOTHING (no stall roll at counter 0)");
     }
 
     // FAIL-LOUD: a DEFERRED fixed-damage move (Counter — a reactive damageCallback) is in
@@ -12311,16 +14417,34 @@ mod tests {
     // has NO `fixed_damage_amount` entry, so it PANICS in `run_fixed_damage_move` rather than
     // desync. Mirrors `endure_panics_fail_loud`; pins the deferred-set guarantee so a future
     // change that drops a deferred id from `is_fixed_damage_move` (or adds a wrong amount)
-    // can't silently regress it. (Psywave / the OHKO moves / Mirror Coat / Bide / Endeavor
-    // share this path.)
+    // can't silently regress it. (Psywave / the OHKO moves / Bide share this path;
+    // Counter / Mirror Coat / Endeavor are MODELED since `gen3_move_coverage_batch5_v1`,
+    // so the pin is keyed on Bide now.)
     #[test]
     #[should_panic(expected = "unmodeled FIXED-DAMAGE move")]
     fn deferred_fixed_damage_move_panics_fail_loud() {
         let d = dex();
-        let snorlax = "Snorlax||leftovers||counter,bodyslam|Careful|252,,,,252,|||||";
+        let snorlax = "Snorlax||leftovers||bide,bodyslam|Careful|252,,,,252,|||||";
         let tauros = "Tauros||leftovers||bodyslam,earthquake|Adamant|,252,,,,252|||||";
         let mut state = BattleState::start(&opts_cg(snorlax, tauros, "1,2,3,4"), &d).expect("start");
-        // Counter is is_fixed_damage_move=true but fixed_damage_amount=None → fail-loud.
+        // Bide is is_fixed_damage_move=true but fixed_damage_amount=None → fail-loud.
+        let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
+    }
+
+    // FAIL-LOUD: SNORE (`gen3_move_coverage_batch5_v1` scope edge) — a bp-40 damaging
+    // move with `sleepUsable` + an asleep-only `onTry`, NEITHER modeled (Sleep Talk is
+    // the only modeled sleepUsable move). Without the guard it runs as a plain damaging
+    // move: a silent mismodel both awake (sim: silent onTry fail) and asleep (sim:
+    // cant-then-PROCEEDS; port: cant + blocked). The e2e picker blocklists it, but the
+    // engine itself must fail loud for any future team source (the review's Lens-1
+    // finding: the "Snore is fail-loud" claim was picker-only before this guard).
+    #[test]
+    #[should_panic(expected = "unmodeled sleepUsable move 'snore'")]
+    fn snore_panics_fail_loud() {
+        let d = dex();
+        let snorlax = "Snorlax||leftovers||snore,bodyslam|Careful|252,,,,252,|||||";
+        let tauros = "Tauros||leftovers||bodyslam,earthquake|Adamant|,252,,,,252|||||";
+        let mut state = BattleState::start(&opts_cg(snorlax, tauros, "1,2,3,4"), &d).expect("start");
         let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
     }
 

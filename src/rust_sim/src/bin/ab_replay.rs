@@ -216,8 +216,13 @@ fn parse_chunk(data: &str) -> Vec<Result<CaseExpect, (String, String)>> {
             }
             "DEC" => {
                 let Some(c) = cur.as_mut() else { continue };
-                if f.len() != 36 {
-                    cur_broken = Some((c.id.clone(), format!("DEC needs 36 fields, got {} (line {ln})", f.len())));
+                // 36 = the pre-batch-5-floor format (saved repro dirs stay replayable);
+                // 38 = the batch-5 format (+ fixedMove/batch5Move coverage flags);
+                // 39 = the current batch-6 format (+ the batch6Move flag). The trailing
+                // flags are e2e-gate-only (`gen_e2e_fuzz.js` emitBattle) — the replayer
+                // ignores them.
+                if f.len() != 36 && f.len() != 38 && f.len() != 39 {
+                    cur_broken = Some((c.id.clone(), format!("DEC needs 36, 38 or 39 fields, got {} (line {ln})", f.len())));
                     continue;
                 }
                 let parsed: Result<DecExpect, String> = (|| {

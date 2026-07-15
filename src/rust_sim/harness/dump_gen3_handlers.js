@@ -129,6 +129,17 @@ const ENGINE_CONDITIONS = [
   'sandstorm', 'raindance', 'sunnyday', 'hail',
   // side conditions (SideState::spikes)
   'spikes',
+  // BATCH-4c cross-turn conditions (`gen3_move_coverage_batch4c_v1`): Hyper Beam's
+  // recharge lock (MonState::must_recharge), Solar Beam's charge volatile
+  // (MonState::two_turn), the Doom Desire / Future Sight slot condition
+  // (SideState::future_move). Standalone conditions (not `m.condition` sub-objects),
+  // so they are enumerated here explicitly.
+  'mustrecharge', 'twoturnmove', 'futuremove',
+  // BATCH-6 trap-move volatiles (`gen3_move_coverage_batch6_v1`): the linked
+  // `trapped`/`trapper` pair (MonState::trapped_by — Mean Look / Spider Web / Block).
+  // Standalone conditions (the moves' `volatileStatus: 'trapped'` refers to the global
+  // condition, not an `m.condition` sub-object), so enumerated explicitly.
+  'trapped', 'trapper',
   // format clauses (BattleState::sleep_clause — gen3ou carries BOTH clauses)
   'sleepclausemod', 'freezeclausemod',
 ];
@@ -195,13 +206,17 @@ function buildSurface() {
     }
   }
 
-  // (d) moves: the isModeledMove universe + struggle (reachable via must_struggle).
+  // (d) moves: the isModeledMove universe + struggle (reachable via must_struggle)
+  // + sleeptalk (`gen3_move_coverage_batch5_v1` — MODELED but isModeledMove-false:
+  // its e2e pickability is CARRIER-conditional via `sleepTalkPoolModeled`, so the
+  // per-id predicate rejects it; the ENGINE runs it, so its handlers ARE surface).
   const moveIds = [];
   for (const mv of d3.moves.all()) {
     if (mv.gen > 3 || mv.isNonstandard) continue;
     if (e2e.isModeledMove(mv.id)) moveIds.push(mv.id);
   }
   moveIds.push('struggle');
+  moveIds.push('sleeptalk');
   moveIds.sort();
   for (const id of moveIds) {
     const m = d3.moves.get(id);

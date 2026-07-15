@@ -314,3 +314,40 @@ mod alias_tests {
         assert!(d.moves("notarealmove").is_none(), "an unknown token stays None");
     }
 }
+
+#[cfg(test)]
+mod batch5_tests {
+    use super::*;
+
+    // `gen3_move_coverage_batch5_v1`: TAUNT does NOT block the bp-0 VARIABLE-BP family
+    // (their resolved gen3 category is Physical, like the fixed-damage family) nor the
+    // reactive fixed-damage moves — but Sleep Talk (a genuine Status move) IS blocked.
+    // PROBE-verified vs the live sim (a taunted Snorlax's request: return/flail/counter
+    // stay `disabled:false`, sleeptalk flips `disabled:true`).
+    #[test]
+    fn taunt_blocks_sleep_talk_but_not_the_variable_bp_or_reactive_families() {
+        let d = Dex::for_gen(3);
+        for id in ["return", "frustration", "flail", "reversal", "lowkick"] {
+            let m = d.moves(id).unwrap();
+            assert!(m.is_variable_bp(), "{id} is in the variable-BP family");
+            assert!(!m.blocked_by_taunt(), "{id} must stay selectable under Taunt");
+        }
+        for id in ["counter", "mirrorcoat", "endeavor", "seismictoss"] {
+            assert!(!d.moves(id).unwrap().blocked_by_taunt(), "{id} must stay selectable under Taunt");
+        }
+        let st = d.moves("sleeptalk").unwrap();
+        assert!(st.blocked_by_taunt(), "Sleep Talk (Status) IS taunt-blocked");
+        // The pool-exclusion flags ride the data (never hand-listed): sleeptalk excludes
+        // ITSELF via nosleeptalk; solarbeam is BOTH nosleeptalk and charge; fly is charge.
+        assert!(st.no_sleep_talk, "sleeptalk carries flags.nosleeptalk");
+        let sb = d.moves("solarbeam").unwrap();
+        assert!(sb.no_sleep_talk && sb.is_charge, "solarbeam carries both exclusion flags");
+        assert!(d.moves("fly").unwrap().is_charge, "fly carries flags.charge");
+        assert!(!d.moves("rest").unwrap().no_sleep_talk, "Rest IS Sleep-Talk-eligible");
+        // Low Kick's data need: the species weighthg (round(weightkg*10)) — the probed
+        // ladder anchors.
+        for (sp, hg) in [("pichu", 20u32), ("wobbuffet", 285), ("gengar", 405), ("slaking", 1305), ("snorlax", 4600), ("skarmory", 505)] {
+            assert_eq!(d.species(sp).unwrap().weighthg, hg, "{sp} weighthg");
+        }
+    }
+}

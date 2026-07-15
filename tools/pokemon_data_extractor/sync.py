@@ -749,6 +749,29 @@ def build_moves(gen):
             "contact": bool(flags.get("contact")),
             "sound": bool(flags.get("sound")),
         }
+        # gen3_move_coverage_batch5_v1: the SLEEP TALK pool-exclusion flags, enumerated
+        # from the data (never hand-listed). `nosleeptalk` — the move cannot be called by
+        # Sleep Talk (Sleep Talk itself / Focus Punch / Uproar / Bide / Metronome / Mirror
+        # Move / Assist + the charge family); `charge` — a two-turn charge move (Solar
+        # Beam / Fly / Dig / Dive / Bounce / Razor Wind / Skull Bash / Sky Attack), ALSO
+        # excluded from the Sleep Talk pool. Only-when-present (like critRatio) so the
+        # data diff is just the ~15 carriers; obs-neutral / port-side only (the facade
+        # ignores unknown keys).
+        if flags.get("nosleeptalk"):
+            move_dict["noSleepTalk"] = True
+        if flags.get("charge"):
+            move_dict["isCharge"] = True
+        # gen3_move_coverage_batch6_v1: the ENCORE / MIMIC fail-condition flags,
+        # enumerated from the data (never hand-listed). `failencore` — Encore fails when
+        # the target's lastMove carries it (gen3: encore / mimic / mirrormove / sketch /
+        # struggle / transform); `failmimic` — Mimic fails when the target's lastMove
+        # carries it (gen3: metronome / mimic / sketch / struggle). Only-when-present
+        # (like noSleepTalk) so the data diff is just the carriers; obs-neutral /
+        # port-side only (the facade ignores unknown keys).
+        if flags.get("failencore"):
+            move_dict["failEncore"] = True
+        if flags.get("failmimic"):
+            move_dict["failMimic"] = True
         # gen3 high-crit moves carry critRatio (2 in gen3: Slash, Crabhammer,
         # Aircutter, Blaze Kick, Leaf Blade, …); normal moves omit it and the dex
         # defaults to 1. Conditional, so the data-file diff is just the ~dozen
@@ -848,6 +871,14 @@ def build_species(gen):
         # stat-computing consumer (e.g. the rust_sim port) applies it.
         if "maxHP" in mon:
             entry["maxHP"] = mon["maxHP"]
+        # gen3_move_coverage_batch5_v1: the species WEIGHT in HECTOGRAMS (the unit
+        # Showdown's `getWeight()`/Low Kick compare on: `weighthg = round(weightkg * 10)`,
+        # dex-species.ts). Carried for the src/rust_sim port's Low Kick BP ladder
+        # (>=2000hg -> 120 ... else 20); gen3 has NO ModifyWeight handler, so the species
+        # weighthg IS the live weight. Obs-neutral additive like maxHP (the obs facade
+        # ignores the key; it reads base stats only).
+        if "weightkg" in mon:
+            entry["weighthg"] = int(round(float(mon["weightkg"]) * 10))
         species_map[mon_id] = entry
 
     return {sid: species_map[sid] for sid in sorted(species_map)}

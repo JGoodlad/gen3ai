@@ -1,0 +1,586 @@
+//! MOVE-COVERAGE BATCH 5 full-battle test (`gen3_move_coverage_batch5_v1`) — the per-seed
+//! PER-DECISION STATE(+HP+STATUS+SLP-COUNTER+BOOSTS+SUB-HP)+SEED+winner differential that
+//! proves the batch-5 move classes match Showdown EXACTLY, to GAME-END:
+//!
+//!   * **COUNTER / MIRROR COAT** — the order-5 `beforeTurnMove` volatile (its onStart
+//!     RESETS the record each selection turn) + the onDamage recorder (2× each
+//!     qualifying DIRECT foe Move hit, category-gated Physical/Special, multihit → 2×
+//!     the LAST strike). Execution: un-armed → a ZERO-DRAW bare-`|move|` fail; armed →
+//!     ONE accuracy draw (acc 100, NOT never-miss) then type immunity (Fighting→Ghost /
+//!     Psychic→Dark → `-immune`), NO crit/damage rolls, `landed` true (the in-tryMoveHit
+//!     Update at a speed tie). The `duration:1` volatile registers a NO_ORDER residual
+//!     duration handler (the counter-mirror tie draw).
+//!   * **ENDEAVOR** — onTry fails at `hp >= target.hp` (EQUALITY INCLUDED, `-fail`,
+//!     ZERO draws); else ONE accuracy draw, Normal→Ghost `-immune` after it, and the
+//!     delta (`target.hp − user.hp`) lands through the sub/faint machinery (a sub takes
+//!     the number computed from the MON's hp, no carry).
+//!   * **RETURN / FRUSTRATION / FLAIL / REVERSAL / LOW KICK** — the engine-computed BP
+//!     (happiness / the 48·hp/maxhp band ladder / the weighthg ladder), DRAW-IDENTICAL
+//!     to a plain single-hit physical move (a wrong BP desyncs the HP STATE at an
+//!     unchanged seed; a wrong draw model desyncs the SEED).
+//!   * **SLEEP TALK** — the slp cant prints and the move PROCEEDS (`sleepUsable`,
+//!     `skippedTime`++ — the slp `stage` column asserts the counter INCLUDING the
+//!     switch-in `time += skippedTime` restore); exactly ONE `sample` = `random(n)`
+//!     (drawn even at n=1) over the slot-order `!nosleeptalk && !charge` pool; a 0-PP
+//!     pick wastes the turn (`|cant|nopp`); the picked move runs its FULL normal draw
+//!     chain (its PP untouched); empty pool / a prior-turn choicelock fail draw-free;
+//!     an awake use fails silently.
+//!
+//! Each move's draws must be in Showdown's EXACT place/count — a stray/missing draw
+//! desyncs the LCG at the SEED assertion; the STATE columns are the effect proof. The
+//! golden REUSES the batch-3/4/4c 44-field TAB format (CURSE / WISH / FUTURE columns
+//! asserted 0 — batch 5 never sets them). INJECT gains an optional per-slot PP set.
+
+use pokesim::battle::{Battle, BattleOptions, PackedTeam, PlayerOptions};
+use pokesim::dex::Dex;
+use pokesim::json::Json;
+use pokesim::state::Status;
+use pokesim::turn::{Choice, RequestKind, ScriptDecision};
+use std::collections::BTreeMap;
+
+fn dex() -> Dex {
+    Dex::for_gen(3)
+}
+
+#[derive(Debug, Clone, Default)]
+struct ScenMeta {
+    teams: [Option<String>; 2],
+    inject: Vec<Inject>,
+}
+
+/// One injected board mutation (a STATE-only set, no PRNG — so seed parity is unaffected).
+#[derive(Debug, Clone, Default)]
+struct Inject {
+    side: Option<usize>,
+    slot: Option<usize>,
+    status: Option<Status>,
+    hp: Option<u16>,
+    /// A per-move-slot PP override (`pp: {moveSlot, val}` — the 0-PP Sleep Talk pick +
+    /// the Struggle-vs-Counter scenarios).
+    pp: Option<(usize, u16)>,
+}
+
+#[derive(Debug, Clone)]
+struct RunCase {
+    scen: String,
+    init_seed: String,
+    decisions: Vec<DecExpect>,
+    ended: bool,
+    winner: WinTok,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum WinTok {
+    P1,
+    P2,
+    Tie,
+    None,
+}
+
+#[derive(Debug, Clone)]
+struct DecExpect {
+    request: ReqTok,
+    force: [bool; 2],
+    choice: [Option<Choice>; 2],
+    seed_after: String,
+    p1: SideExpect,
+    p2: SideExpect,
+    first_mover: String,
+}
+
+fn parse_choice(tok: &str) -> Option<Choice> {
+    if tok == "-" {
+        return None;
+    }
+    let (kind, num) = tok.split_at(1);
+    let n: usize = num.parse().unwrap_or_else(|e| panic!("bad choice token {tok:?}: {e}"));
+    match kind {
+        "m" => Some(Choice::Move(n)),
+        "s" => Some(Choice::Switch(n)),
+        other => panic!("bad choice kind {other:?} in {tok:?}"),
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ReqTok {
+    Move,
+    Switch,
+}
+
+#[derive(Debug, Clone)]
+struct SideExpect {
+    species: String,
+    hp: u16,
+    maxhp: u16,
+    fainted: bool,
+    status: Option<Status>,
+    stage: u8,
+    left: usize,
+    boosts: [i8; 5],
+    confusion: u8,
+    curse: bool,
+    wish: u8,
+    sub_hp: u16,
+    future: u8,
+}
+
+fn parse_status(tok: &str, stage: u16) -> Option<Status> {
+    match tok {
+        "-" => None,
+        "fnt" => None,
+        "brn" => Some(Status::Burn),
+        "par" => Some(Status::Paralysis),
+        "slp" => Some(Status::Sleep(stage as u8)),
+        "frz" => Some(Status::Freeze),
+        "psn" => Some(Status::Poison),
+        "tox" => Some(Status::Toxic(stage as u8)),
+        other => panic!("unknown status token {other:?}"),
+    }
+}
+
+fn status_variant_eq(a: Option<Status>, b: Option<Status>) -> bool {
+    use Status::*;
+    matches!(
+        (a, b),
+        (None, None)
+            | (Some(Burn), Some(Burn))
+            | (Some(Paralysis), Some(Paralysis))
+            | (Some(Sleep(_)), Some(Sleep(_)))
+            | (Some(Freeze), Some(Freeze))
+            | (Some(Poison), Some(Poison))
+            | (Some(Toxic(_)), Some(Toxic(_)))
+    )
+}
+
+fn status_stage(s: Option<Status>) -> u8 {
+    match s {
+        Some(Status::Sleep(n)) => n,
+        Some(Status::Toxic(n)) => n,
+        _ => 0,
+    }
+}
+
+fn parse_inject(json: &str, ln: usize) -> Vec<Inject> {
+    let parsed = Json::parse(json).unwrap_or_else(|e| panic!("bad INJECT json (line {ln}): {e}"));
+    let arr = parsed.as_array().unwrap_or_else(|| panic!("INJECT not an array (line {ln})"));
+    let status_of = |s: &str| match s {
+        "brn" => Status::Burn,
+        "par" => Status::Paralysis,
+        "psn" => Status::Poison,
+        "tox" => Status::Toxic(0),
+        "frz" => Status::Freeze,
+        "slp" => Status::Sleep(0),
+        other => panic!("unknown INJECT status {other:?} (line {ln})"),
+    };
+    arr.iter()
+        .map(|e| {
+            let side = e.get("side").and_then(|s| s.as_f64()).map(|f| f as usize);
+            let slot = e.get("slot").and_then(|s| s.as_f64()).map(|f| f as usize);
+            let status = e.str_at("status").map(status_of);
+            let hp = e.get("hp").and_then(|h| h.as_f64()).map(|f| f as u16);
+            let pp = e.get("pp").map(|p| {
+                let ms = p.get("moveSlot").and_then(|v| v.as_f64()).map(|f| f as usize)
+                    .unwrap_or_else(|| panic!("INJECT pp missing moveSlot (line {ln})"));
+                let val = p.get("val").and_then(|v| v.as_f64()).map(|f| f as u16)
+                    .unwrap_or_else(|| panic!("INJECT pp missing val (line {ln})"));
+                (ms, val)
+            });
+            Inject { side, slot, status, hp, pp }
+        })
+        .collect()
+}
+
+fn parse_golden() -> (BTreeMap<String, ScenMeta>, Vec<RunCase>) {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/vectors/movecoverage_batch5_golden.txt");
+    let data = std::fs::read_to_string(path).unwrap_or_else(|e| {
+        panic!(
+            "missing batch5 golden ({path}): {e}\nrun: node src/rust_sim/harness/gen_movecoverage_batch5_golden.js"
+        )
+    });
+
+    let mut meta: BTreeMap<String, ScenMeta> = BTreeMap::new();
+    let mut cases: Vec<RunCase> = Vec::new();
+    let mut cur: Option<RunCase> = None;
+
+    let flush = |cur: &mut Option<RunCase>, cases: &mut Vec<RunCase>| {
+        if let Some(c) = cur.take() {
+            cases.push(c);
+        }
+    };
+
+    for (i, line) in data.lines().enumerate() {
+        let ln = i + 1;
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let f: Vec<&str> = line.split('\t').collect();
+        match f[0] {
+            "SCEN" => {
+                meta.entry(f[1].to_string()).or_default();
+            }
+            "TEAM" => {
+                assert_eq!(f.len(), 4, "TEAM needs 4 fields (line {ln})");
+                let side = if f[2] == "p1" { 0 } else { 1 };
+                meta.entry(f[1].to_string()).or_default().teams[side] = Some(f[3].to_string());
+            }
+            "INJECT" => {
+                assert_eq!(f.len(), 3, "INJECT needs 3 fields (line {ln})");
+                meta.entry(f[1].to_string()).or_default().inject = parse_inject(f[2], ln);
+            }
+            "INIT" => {
+                assert_eq!(f.len(), 4, "INIT needs 4 fields (line {ln})");
+                flush(&mut cur, &mut cases);
+                cur = Some(RunCase {
+                    scen: f[1].to_string(),
+                    init_seed: f[2].to_string(),
+                    decisions: Vec::new(),
+                    ended: false,
+                    winner: WinTok::None,
+                });
+            }
+            "DEC" => {
+                // The batch-4c 44-field DEC layout (see movecoverage_batch4c_test.rs).
+                assert_eq!(f.len(), 44, "DEC needs 44 fields (line {ln}), got {}", f.len());
+                let req = match f[3] {
+                    "move" => ReqTok::Move,
+                    "switch" => ReqTok::Switch,
+                    other => panic!("bad request {other:?} (line {ln})"),
+                };
+                let force = [f[4] == "1", f[5] == "1"];
+                let choice = [parse_choice(f[6]), parse_choice(f[7])];
+                let seed_after = f[8].to_string();
+                let g = |i: usize| f[i].parse::<u16>().unwrap_or_else(|e| panic!("bad num f[{i}] (line {ln}): {e}"));
+                let gi = |i: usize| f[i].parse::<i8>().unwrap_or_else(|e| panic!("bad int f[{i}] (line {ln}): {e}"));
+                let p1 = SideExpect {
+                    species: f[9].to_string(),
+                    hp: g(10),
+                    maxhp: g(11),
+                    fainted: f[12] == "1",
+                    status: parse_status(f[13], g(14)),
+                    stage: g(14) as u8,
+                    left: g(15) as usize,
+                    boosts: [gi(16), gi(17), gi(18), gi(19), gi(20)],
+                    confusion: g(21) as u8,
+                    curse: f[36] == "1",
+                    wish: g(37) as u8,
+                    sub_hp: g(38),
+                    future: g(42) as u8,
+                };
+                let p2 = SideExpect {
+                    species: f[22].to_string(),
+                    hp: g(23),
+                    maxhp: g(24),
+                    fainted: f[25] == "1",
+                    status: parse_status(f[26], g(27)),
+                    stage: g(27) as u8,
+                    left: g(28) as usize,
+                    boosts: [gi(29), gi(30), gi(31), gi(32), gi(33)],
+                    confusion: g(34) as u8,
+                    curse: f[39] == "1",
+                    wish: g(40) as u8,
+                    sub_hp: g(41),
+                    future: g(43) as u8,
+                };
+                let first_mover = f[35].to_string();
+                let c = cur.as_mut().unwrap_or_else(|| panic!("DEC before INIT (line {ln})"));
+                c.decisions.push(DecExpect {
+                    request: req, force, choice, seed_after, p1, p2, first_mover,
+                });
+            }
+            "END" => {
+                assert_eq!(f.len(), 5, "END needs 5 fields (line {ln})");
+                let c = cur.as_mut().unwrap_or_else(|| panic!("END before INIT (line {ln})"));
+                c.ended = f[3] == "1";
+                c.winner = match f[4] {
+                    "p1" => WinTok::P1,
+                    "p2" => WinTok::P2,
+                    "tie" => WinTok::Tie,
+                    "none" => WinTok::None,
+                    other => panic!("bad winner {other:?} (line {ln})"),
+                };
+            }
+            other => panic!("unknown record {other:?} (line {ln})"),
+        }
+    }
+    flush(&mut cur, &mut cases);
+    (meta, cases)
+}
+
+fn opts_for(meta: &ScenMeta, init_seed: &str) -> BattleOptions {
+    let t = &meta.teams;
+    BattleOptions {
+        format_id: "gen3customgame".to_string(),
+        seed: Some(init_seed.to_string()),
+        p1: PlayerOptions { name: "P1".to_string(), team: PackedTeam(t[0].clone().expect("p1 team")) },
+        p2: PlayerOptions { name: "P2".to_string(), team: PackedTeam(t[1].clone().expect("p2 team")) },
+    }
+}
+
+fn script_from_decisions(case: &RunCase) -> Vec<ScriptDecision> {
+    case.decisions
+        .iter()
+        .map(|dec| ScriptDecision { p1: dec.choice[0], p2: dec.choice[1] })
+        .collect()
+}
+
+fn species_id(s: &str) -> String {
+    s.chars().filter(|c| c.is_ascii_alphanumeric()).map(|c| c.to_ascii_lowercase()).collect()
+}
+
+fn req_eq(rust: &RequestKind, golden: ReqTok, force: [bool; 2]) -> bool {
+    match (rust, golden) {
+        (RequestKind::Move, ReqTok::Move) => true,
+        (RequestKind::ForceSwitch { force: rf }, ReqTok::Switch) => *rf == force,
+        _ => false,
+    }
+}
+
+/// Apply the scenario's one-time STATE-only INJECT (status / HP / per-slot PP) to the
+/// freshly-constructed battle — mirroring the sim harness's post-start inject. NO PRNG.
+fn apply_inject(battle: &mut Battle, inject: &[Inject]) {
+    let state = battle.state_mut().expect("state");
+    for inj in inject {
+        if let Some(side) = inj.side {
+            let idx = inj.slot.unwrap_or(state.sides[side].active);
+            let mon = &mut state.sides[side].pokemon[idx];
+            if let Some(st) = inj.status {
+                mon.status = Some(st);
+            }
+            if let Some(hp) = inj.hp {
+                mon.hp = hp;
+            }
+            if let Some((ms, val)) = inj.pp {
+                mon.move_pp[ms] = val;
+            }
+        }
+    }
+}
+
+#[test]
+fn movecoverage_batch5_golden_matches_showdown() {
+    let d = dex();
+    let (meta, cases) = parse_golden();
+    assert!(meta.len() >= 20, "expected >=20 scenarios, got {}", meta.len());
+    assert!(cases.len() >= 1500, "expected the per-seed corpus (>=1500 runs), got {}", cases.len());
+
+    let mut dec_assertions = 0usize;
+    let mut seed_assertions = 0usize;
+    let mut hp_assertions = 0usize;
+    let mut curse_rows = 0usize; // must stay 0 (no batch-5 scenario curses)
+    let mut wish_rows = 0usize; // must stay 0
+    let mut future_rows = 0usize; // must stay 0
+    let mut sub_rows = 0usize; // a decision where a sub is up
+    let mut slp_rows = 0usize; // a decision where a mon is ASLEEP (the counter asserted)
+    let mut win_runs = 0usize;
+    let mut tie_runs = 0usize;
+
+    for case in &cases {
+        let m = meta.get(&case.scen).unwrap_or_else(|| panic!("no meta for {}", case.scen));
+        assert!(!case.decisions.is_empty(), "[{}] empty run", case.scen);
+
+        let opts = opts_for(m, &case.init_seed);
+        let mut battle = Battle::start_with_switchins(&opts, &d)
+            .unwrap_or_else(|e| panic!("[{}] start failed: {e}", case.scen));
+
+        assert_eq!(
+            battle.state().unwrap().prng_seed(),
+            case.init_seed,
+            "[{}] init prng seed must equal the sim's (switch-ins draw-free)",
+            case.scen
+        );
+
+        apply_inject(&mut battle, &m.inject);
+
+        let script = script_from_decisions(case);
+        let outcome = battle.state_mut().unwrap().run_full_battle(&script, &d);
+
+        assert_eq!(
+            outcome.decisions.len(),
+            case.decisions.len(),
+            "[{}] decision count mismatch (init_seed {}): rust {} vs golden {}",
+            case.scen, case.init_seed, outcome.decisions.len(), case.decisions.len()
+        );
+
+        for (di, (rec, exp)) in outcome.decisions.iter().zip(case.decisions.iter()).enumerate() {
+            assert!(
+                req_eq(&rec.request, exp.request, exp.force),
+                "[{}] decision {} request mismatch (init_seed {}): got {:?} exp {:?} force {:?}",
+                case.scen, di, case.init_seed, rec.request, exp.request, exp.force
+            );
+
+            for (idx, (snap, e, curse, wish, sub_hp, future)) in [
+                (0usize, (&rec.active[0], &exp.p1, rec.curse[0], rec.wish_pending[0], rec.sub_hp[0], rec.future_pending[0])),
+                (1usize, (&rec.active[1], &exp.p2, rec.curse[1], rec.wish_pending[1], rec.sub_hp[1], rec.future_pending[1])),
+            ] {
+                assert_eq!(
+                    species_id(&rec.active_species[idx]), species_id(&e.species),
+                    "[{}] dec {} side {} active species mismatch (init_seed {}): got {:?} exp {:?}",
+                    case.scen, di, idx, case.init_seed, rec.active_species[idx], e.species
+                );
+                // HP: the counter/mirror-coat 2× return, the endeavor delta, and the
+                // variable-BP band damage land HERE — a wrong BP band / a wrong 2×
+                // record / a wrong recorder gate is an HP-STATE desync at an unchanged
+                // seed.
+                assert_eq!(
+                    snap.hp, e.hp,
+                    "[{}] dec {} side {} HP mismatch (init_seed {}): got {} exp {}\n  \
+                     the reactive 2× record / the endeavor delta / a variable-BP band is wrong. FIX THE MODEL.",
+                    case.scen, di, idx, case.init_seed, snap.hp, e.hp
+                );
+                hp_assertions += 1;
+                assert_eq!(
+                    snap.maxhp, e.maxhp,
+                    "[{}] dec {} side {} maxhp mismatch (init_seed {})",
+                    case.scen, di, idx, case.init_seed
+                );
+                assert_eq!(
+                    snap.fainted, e.fainted,
+                    "[{}] dec {} side {} fainted mismatch (init_seed {}): got {} exp {}",
+                    case.scen, di, idx, case.init_seed, snap.fainted, e.fainted
+                );
+                assert_eq!(
+                    curse, e.curse,
+                    "[{}] dec {} side {} CURSE mismatch (init_seed {}): got {} exp {}",
+                    case.scen, di, idx, case.init_seed, curse, e.curse
+                );
+                if curse {
+                    curse_rows += 1;
+                }
+                assert_eq!(
+                    wish, e.wish,
+                    "[{}] dec {} side {} WISH-PENDING mismatch (init_seed {}): got {} exp {}",
+                    case.scen, di, idx, case.init_seed, wish, e.wish
+                );
+                if wish > 0 {
+                    wish_rows += 1;
+                }
+                assert_eq!(
+                    future, e.future,
+                    "[{}] dec {} side {} FUTURE-PENDING mismatch (init_seed {}): got {} exp {}",
+                    case.scen, di, idx, case.init_seed, future, e.future
+                );
+                if future > 0 {
+                    future_rows += 1;
+                }
+                assert_eq!(
+                    sub_hp, e.sub_hp,
+                    "[{}] dec {} side {} SUB-HP mismatch (init_seed {}): got {} exp {}",
+                    case.scen, di, idx, case.init_seed, sub_hp, e.sub_hp
+                );
+                if sub_hp > 0 {
+                    sub_rows += 1;
+                }
+
+                if !e.fainted {
+                    assert!(
+                        status_variant_eq(snap.status, e.status),
+                        "[{}] dec {} side {} STATUS mismatch (init_seed {}): got {:?} exp {:?}",
+                        case.scen, di, idx, case.init_seed, snap.status, e.status
+                    );
+                    // The SLEEP COUNTER (`statusState.time`) — the Sleep Talk decrement
+                    // (a sleep-talking turn still ticks 3→2→1) AND the switch-in
+                    // `time += skippedTime` RESTORE land here (a wrong skippedTime model
+                    // shows a wrong counter after a pivot, and shifts the later wake).
+                    assert_eq!(
+                        status_stage(snap.status), e.stage,
+                        "[{}] dec {} side {} STATUS-COUNTER mismatch (init_seed {}): got {} exp {}\n  \
+                         (the slp decrement-under-Sleep-Talk / the skippedTime switch-in restore is wrong)",
+                        case.scen, di, idx, case.init_seed, status_stage(snap.status), e.stage
+                    );
+                    if matches!(snap.status, Some(Status::Sleep(_))) {
+                        slp_rows += 1;
+                    }
+                    assert_eq!(
+                        &snap.boosts[0..5], &e.boosts[..],
+                        "[{}] dec {} side {} BOOST mismatch (init_seed {}): got {:?} exp {:?}",
+                        case.scen, di, idx, case.init_seed, &snap.boosts[0..5], e.boosts
+                    );
+                    let rust_conf = snap.confusion.unwrap_or(0);
+                    assert_eq!(
+                        rust_conf, e.confusion,
+                        "[{}] dec {} side {} CONFUSION mismatch (init_seed {}): got {} exp {}",
+                        case.scen, di, idx, case.init_seed, rust_conf, e.confusion
+                    );
+                }
+            }
+            assert_eq!(rec.pokemon_left[0], exp.p1.left, "[{}] dec {} p1 left", case.scen, di);
+            assert_eq!(rec.pokemon_left[1], exp.p2.left, "[{}] dec {} p2 left", case.scen, di);
+
+            if exp.request == ReqTok::Move {
+                let sim_first: Option<usize> = match exp.first_mover.as_str() {
+                    "p1" => Some(0),
+                    "p2" => Some(1),
+                    _ => None,
+                };
+                if sim_first.is_some() {
+                    assert_eq!(
+                        rec.first_mover, sim_first,
+                        "[{}] dec {} FIRST-MOVER mismatch (init_seed {}): got {:?} exp {:?}\n  \
+                         (counter/mirror coat sort at priority -5; a slp cant still marks the sleeper as the actor)",
+                        case.scen, di, case.init_seed, rec.first_mover, sim_first
+                    );
+                }
+            }
+
+            // --- PER-DECISION SEED PARITY (the draw-order+count proof). The un-armed
+            //     counter/mirror-coat/endeavor fails draw ZERO; an armed return draws
+            //     accuracy ONLY (no crit/damage); the variable-BP moves draw exactly like
+            //     a plain physical hit (the BP is a draw-free state read); Sleep Talk
+            //     draws exactly ONE sample (even n=1) then the picked move's full chain
+            //     (and NOTHING on the empty-pool/choicelock/awake/nopp paths); the
+            //     reactive duration handlers shift the residual tie-shuffle COUNT on the
+            //     mirror boards. A stray/missing/mis-ordered draw desyncs HERE. ---
+            assert_eq!(
+                rec.seed_after, exp.seed_after,
+                "[{}] dec {} SEED mismatch (init_seed {}): got {} exp {}\n  \
+                 a batch-5 draw is wrong — the reactive zero-draw fail / accuracy-only \
+                 return, the variable-BP draw-neutrality, or the Sleep Talk sample / \
+                 called-move chain. FIX THE DRAW MODEL.",
+                case.scen, di, case.init_seed, rec.seed_after, exp.seed_after
+            );
+            seed_assertions += 1;
+            dec_assertions += 1;
+        }
+
+        assert_eq!(
+            outcome.ended, case.ended,
+            "[{}] ended mismatch (init_seed {}): got {} exp {}",
+            case.scen, case.init_seed, outcome.ended, case.ended
+        );
+        let rust_win = match outcome.winner {
+            Some(0) => WinTok::P1,
+            Some(1) => WinTok::P2,
+            Some(other) => panic!("[{}] bad winner side {other}", case.scen),
+            None if outcome.ended => WinTok::Tie,
+            None => WinTok::None,
+        };
+        assert_eq!(
+            rust_win, case.winner,
+            "[{}] WINNER mismatch (init_seed {}): got {:?} exp {:?}",
+            case.scen, case.init_seed, rust_win, case.winner
+        );
+        match case.winner {
+            WinTok::P1 | WinTok::P2 => win_runs += 1,
+            WinTok::Tie => tie_runs += 1,
+            WinTok::None => {}
+        }
+    }
+
+    // Coverage floors: the branch realization is enforced by the GENERATOR's require
+    // gates; here we pin the STATE columns' exercise. Batch 5 must never touch the
+    // CURSE/WISH/FUTURE columns (a nonzero one means a scenario leaked out of scope).
+    assert!(seed_assertions >= 15000, "expected the per-decision seed corpus (>=15000), got {seed_assertions}");
+    assert!(hp_assertions >= 15000, "expected per-decision HP assertions (>=15000), got {hp_assertions}");
+    assert_eq!(curse_rows, 0, "BATCH 5 must never set the curse volatile, got {curse_rows}");
+    assert_eq!(wish_rows, 0, "BATCH 5 must never set a wish, got {wish_rows}");
+    assert_eq!(future_rows, 0, "BATCH 5 must never set a future move, got {future_rows}");
+    assert!(sub_rows >= 50, "expected substitute-up rows (>=50), got {sub_rows}");
+    assert!(slp_rows >= 500, "expected ASLEEP rows (>=500 — the Sleep Talk corpus), got {slp_rows}");
+    assert!(win_runs >= 40, "expected real game-end WIN runs (>=40), got {win_runs}");
+
+    eprintln!(
+        "movecoverage batch5 golden: {} runs, {dec_assertions} STATE rows, {seed_assertions} seed assertions, \
+         {hp_assertions} HP assertions ({sub_rows} sub-up rows, {slp_rows} asleep rows), {win_runs} wins, {tie_runs} ties",
+        cases.len()
+    );
+}

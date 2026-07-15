@@ -22,14 +22,16 @@ printf 'wish\ndoubleedge\n...' | /tmp/pokesim_target_scope/release/scan_move_pro
   - **77 MODELED** — the engine runs them bit-for-bit (incl. **typed Hidden Power**, all 16 types;
     **BATCH 1** recoil/drain/self-drop/item-removal/rapid-spin + **BATCH 2** status-cure/weather-set/
     stat-drop/screens).
-  - **MISMODELED (`--use-bridge=rust` would diverge silently):** Focus-Punch's beforeTurn queue +
-    Pursuit's variable-BP are now MODELED (**BATCH 4a**, `gen3_move_coverage_batch4_v1`), and Beat Up's
-    multi-strike stat-swap + Water Spout's variable-BP + Thunder's rain-accuracy are now MODELED
-    (**BATCH 4b**, `gen3_move_coverage_batch4b_v1`). The ONLY remaining MISMODELED classes are Doom
-    Desire's future strike + Hyper Beam's recharge — the *dangerous* ones (a silent desync, not a crash).
+  - **MISMODELED (`--use-bridge=rust` would diverge silently): NONE LEFT.** Focus-Punch's beforeTurn
+    queue + Pursuit's variable-BP are MODELED (**BATCH 4a**, `gen3_move_coverage_batch4_v1`), Beat Up's
+    multi-strike stat-swap + Water Spout's variable-BP + Thunder's rain-accuracy are MODELED
+    (**BATCH 4b**, `gen3_move_coverage_batch4b_v1`), and the last cluster — Hyper Beam's recharge +
+    Solar Beam's two-turn charge + Doom Desire's (+ Future Sight's) future strike — is MODELED
+    (**BATCH 4c**, `gen3_move_coverage_batch4c_v1`). Every remaining un-modeled move FAIL-LOUDs.
   - **23 UNMODELED** — the engine FAIL-LOUDs (`panic!` / `is not modeled`). Honest crash, no desync.
-- **Teams already FULLY engine-playable (every move MODELED bit-for-bit): 71 / 722** (was 8 pre-batch;
-  batches 1+2 combined).
+- **Teams already FULLY engine-playable (every move MODELED bit-for-bit): 718 / 722** (was 8
+  pre-batch-1; 662 after batch 5; batch 6 models the final status tail — the LAST blocker is
+  SNATCH, 4 teams, deliberately deferred/fail-loud).
 - **Teams with NO FAIL-LOUD (MISMODELED allowed to run-but-wrong): 176 / 722.**
 
 The oracle used is the ENGINE's true coverage, verified by actually running each move through
@@ -148,8 +150,218 @@ draw-neutral). Validated by `movecoverage_batch4b_test.rs` (14 scenarios × 80 s
 revert-verified pins (MC39-MC45). **e2e ADMITTED** (`BATCH4B_E2E_EXCLUDED = false`) — golden md5
 `64edcdcd5c6a63b1256fc23d3887d8c7` (STRICT `filtered_diverged == 0` over 220 battles / 11407 decisions),
 after fixing THREE real-team-only bugs (the per-strike `eachEvent('Update')`, the beatup-volatile residual
-duration tie, and Beat Up setting the target's Focus-Punch lostFocus). The ONLY MISMODELED classes left are
-Doom Desire (future strike) + Hyper Beam (recharge). See `src/rust_sim/CLAUDE.md` → the batch-4b section.
+duration tie, and Beat Up setting the target's Focus-Punch lostFocus). See `src/rust_sim/CLAUDE.md` → the
+batch-4b section.
+
+## ✅ BATCH 4c DONE (`gen3_move_coverage_batch4c_v1`, 2026-07-14) — the TURN-SPANNING move classes (the LAST MISMODELED cluster)
+
+**HYPER BEAM (mustrecharge) / SOLAR BEAM (two-turn charge + sun skip) / DOOM DESIRE + FUTURE SIGHT
+(the slot-keyed future strike) are MODELED bit-for-bit + e2e-ADMITTED — the MISMODELED set is now
+EMPTY.**
+- **HYPER BEAM** (`hyperbeam`, 150-BP Physical acc 90) — a SUCCESSFUL damaging hit (plain / sub-absorb /
+  sub-BREAK / target-KO; NOT a miss / immune / Protect-block) applies `MonState::must_recharge`
+  DRAW-FREE (`|-mustrecharge|`, printed before a KO's `|faint|`; the lock PERSISTS across the foe's
+  force-switch). The LOCKED turn's request offers ONLY `{move:"Recharge",id:"recharge"}` + firm
+  `trapped:true`; the turn is spent as `|cant|…|recharge` at the user's normal speed-order position —
+  ZERO draws, NO PP (the gen3-resolved `mustrecharge.onBeforeMove` at priority **11** precedes EVERY
+  status handler: a par'd/slp'd locked user rolls/decrements NOTHING), then the lock fully clears. The
+  `duration: 2` volatile registers a NO_ORDER/subOrder-2 residual duration handler on the CAST turn's
+  residual (the HB-mirror tie draw). Truant composes with NO special case (the recharge cant precedes
+  the truant gate; the order-27 toggle consumes the loaf — HB/recharge/HB cadence, no truant cant on
+  the landed path; a MISSED HB legitimately loafs next turn). Fail-loud siblings: blastburn /
+  frenzyplant / hydrocannon.
+- **SOLAR BEAM** (`solarbeam`, 120-BP Special Grass acc 100) — CHARGE turn: onBeforeMove draws fire
+  first (a para roll IS drawn; a full-para cant = no charge, NO PP), PP deducted (−1; **−2 under a
+  Pressure foe — Pressure applies at the CHARGE**), `[still]` + `|-prepare|`, ZERO move draws →
+  `MonState::two_turn` (the `twoturnmove` volatile: duration 2 + the `solarbeam` sub-volatile =
+  `charging`), which registers a NO_ORDER/subOrder-2 residual duration handler on BOTH residuals. FIRE
+  turn: the locked single-move request; NO PP; accuracy 100 DRAWN → crit → damage
+  (`|move|…|[from]lockedmove`). An ABORT on the fire turn (slp/par/frz/flinch cant) LOSES the charge
+  (onMoveAborted; a fresh charge re-pays PP); a Protect-blocked fire consumes the charge (acc drawn,
+  no crit/dmg). SUN (`effectiveWeather` — Cloud Nine-aware) SKIPS the charge (still + prepare + `-anim`
+  then a normal 3-draw execution). Rain/sand/hail HALVE the BP (the gen3-resolved onBasePower
+  chainModify(0.5) — gen3 DOES have the modern halving, probed rain 54 vs control 105; suppression-
+  aware, read at damage time, draw-free). Fail-loud siblings: razorwind / skyattack / skullbash / fly /
+  dig / dive / bounce.
+- **DOOM DESIRE + FUTURE SIGHT** (`doomdesire` bp 120 Physical acc 85 / `futuresight` bp 80 Special
+  acc 90 — probe-settled SAME mechanic) — the CAST (`onTry`, BEFORE the protect check — a cast-turn
+  Protect does NOT block) draws exactly ONE `random(16)`: the cast-time TYPELESS damage SNAPSHOT
+  (no STAB / no chart → never immune; cast-time stats/boosts; willCrit false) stored in
+  `SideState::future_move` (the slot condition — duration 3, `FUTURE_RESIDUAL_ORDER = 11`, gathered
+  every end-of-turn: Wish 7 → sand 8 → order-10s → **futuremove 11**; an equal-speed FS mirror
+  tie-shuffles once per residual). A DOUBLE-CAST fails with a bare `|move|` line, ZERO draws, PP still
+  deducted. The RESOLVE (the 1→0 tick, end of turn N+2): skip iff the slot occupant is fainted; else
+  `|-end|…|move: <Name>`, remove the target's Protect, ONE accuracy roll, then the STORED number lands
+  on WHOEVER occupies the slot (sub absorbs, no carry; Focus Band can roll) + the two
+  `hitStepMoveHitLoop` `eachEvent('Update')`s with the in-loop `faintMessages` BETWEEN them (a resolve
+  KO draws only ONE tie-Update; the Quick Claw defers past the forced replacement). Resolves even when
+  the caster switched/fainted (slot semantics — the entrant takes the OLD stored damage). The bridge
+  needs NO new request shape (the future-move class never locks the user).
+
+Validated by the DEDICATED golden `gen_movecoverage_batch4c_golden.js` → `movecoverage_batch4c_test.rs`
+(23 scenarios × 80 seeds = **1840 game-end battles, 16621 per-decision
+STATE(+HP+STATUS+BOOSTS+SUB-HP+WISH+FUTURE-PENDING)+SEED assertions**, the DEC format extended with 2
+per-side FUTURE-PENDING columns → 44 fields) + **12 `regression_test.rs` pin functions
+MC49-MC60** (the cross-turn cruxes revert-verified) (ground truth `harness/probe_batch4c_regression_rng.js`; draw models settled by
+`probe_batch4c_{hyperbeam,solarbeam,doomdesire}.js`) + the fs_mirror_tie golden scenario as the
+resolve-KO-single-Update pin. The bridge serializes the LOCKED request (`serialize_active` /
+`resolve_choice` / the firm trapped reject) per the probed shape. **e2e ADMITTED**
+(`BATCH4C_E2E_EXCLUDED = false`; `futuresight`/`doomdesire` removed from `MOVE_ID_BLOCKLIST`; a
+belt-and-braces `flags.futuremove` reject; the picker treats a locked `trapped:true` request as
+trapped) — see `src/rust_sim/CLAUDE.md` → the batch-4c section for the regen result.
+
+## ✅ BATCH 5 DONE (`gen3_move_coverage_batch5_v1`, 2026-07-14) — the REACTIVE fixed-damage family + the VARIABLE-BP family + SLEEP TALK
+
+**NINE moves — the top of the greedy team-unlock list — MODELED bit-for-bit + e2e-ADMITTED:**
+
+- **COUNTER / MIRROR COAT** — the order-5 `beforeTurnMove` volatile (`MonState::reactive`;
+  the onStart RESETS `{slot:null, damage:0}` every selection turn — prev-turn damage never
+  counts) + the priority-−101 onDamage RECORDER (`record_reactive_hit`: 2× each qualifying
+  DIRECT foe **Move** hit — counter `Physical || bare hiddenpower`, mirrorcoat `Special &&
+  !hiddenpower`; the gen3 TYPE-derived category; a sub-absorbed hit never records; MULTIHIT →
+  2× the LAST strike, probed via Beat Up; Seismic-Toss-class fixed damage IS Physical →
+  countered; Struggle IS countered; Beat Up's Special strikes arm MIRROR COAT). Execution
+  (`run_fixed_damage_move`): un-armed → a **ZERO-DRAW** bare-`|move|` fail (no `-fail`, PP −1);
+  armed → ONE accuracy draw (acc 100, NOT never-miss) then type immunity (Fighting→Ghost /
+  Psychic→Dark → `-immune`), **NO crit / NO damage roll**, `landed` true (the in-tryMoveHit
+  Update at a tie). `duration:1` → a NO_ORDER/subOrder-2 residual duration handler (the
+  counter-mirror +4 draw delta: the order-5 pair sort tie + 2 trailing Updates + the residual
+  duration tie — probed).
+- **ENDEAVOR** — onTry fails at `hp >= target.hp` (**EQUALITY INCLUDED**, `|-fail|<user>`,
+  ZERO draws, PP −1); else ONE accuracy draw, Normal→Ghost `-immune` after it, and the delta
+  (`target.hp − user.hp` — never a KO) lands fixed-damage-style (a sub takes the number
+  computed from the MON's hp; break, NO carry).
+- **RETURN / FRUSTRATION / FLAIL / REVERSAL / LOW KICK** (`turn.rs::variable_bp`) — the
+  engine-computed BP over a bp-0 data row, DRAW-NEUTRAL (probed seed-identical across
+  happiness/HP/weight extremes): Return `floor(h·10/25) || 1` (h≤2 → the `||1` clamp → BP 1, a
+  HIT not a fail); Frustration the 255-mirror; Flail/Reversal `ratio = max(floor(48·hp/maxhp),1)`
+  → bands `<2:200, <5:150, <10:100, <17:80, <33:40, else 20` (gen3 is 48, NOT gen4's 64; they
+  CAN crit — gen2's willCrit=false is NOT inherited); Low Kick the TARGET-`weighthg` ladder
+  `≥2000:120, ≥1000:100, ≥500:80, ≥250:60, ≥100:40, else 20` (the NEW extractor field
+  `gen3_species.json::weighthg` = round(weightkg·10); gen3 has NO ModifyWeight). The bp-0 row
+  mis-derived category Status → re-derived Physical at the BP override; `blocked_by_taunt`
+  carves the family out (probed: a taunted mon keeps Return/Flail/Counter selectable).
+- **SLEEP TALK** — the slp onBeforeMove prints `|cant|slp` and **PROCEEDS** (`sleepUsable`;
+  the counter still decrements; `MonState::sleep_skipped`++ per proceed, reset on a normal
+  blocked cant, RESTORED `time += skippedTime` at the runSwitch SwitchIn — live-probed
+  3→talk,talk→1,sk2→switch→3). The arm (`run_status_move`): onTry = asleep-only (an
+  awake/wake-turn use fails SILENTLY); onTryHit = the choicelock gate (a PRIOR-turn lock →
+  `[still]`+`-fail` BEFORE the sample; CB + Sleep Talk works exactly ONCE — the lock records
+  Sleep Talk itself, and the lock THIS use sets does not count); onHit = the pool (slot order,
+  `!nosleeptalk && !charge` — the NEW data-enumerated `noSleepTalk`/`isCharge` move flags; NO
+  pp/disabled filter) → **ONE `sample` = `random(n)` even at n=1** → a 0-PP pick wastes the
+  turn (`|cant|…|nopp|<id>`) → else the picked move runs via a bare `useMove` (the
+  `sleep_talk_call` transient: no on_before_move / NO PP for the picked move / lastMove stays
+  Sleep Talk; the FULL normal draw chain; the announce carries the byte-exact
+  `|[from] Sleep Talk`). An asleep-called REST silently no-ops (`run_rest`'s asleep guard — no
+  heal, no `random(2,6)`, no counter reset). Empty pool → `[still]`+`-fail`, zero draws.
+
+**Validated:** the DEDICATED golden `gen_movecoverage_batch5_golden.js` →
+`movecoverage_batch5_test.rs` (23 scenarios × 80 seeds = **1840 game-end battles, 18548
+per-decision STATE+SEED assertions, 37096 HP assertions, 3090 asleep rows — a CLEAN first-try
+pass**; the batch-4c 44-field DEC format reused, INJECT gains a per-slot `pp` set) + **16
+revert-verified `regression_test.rs` pins (MC61-MC75 + the dex batch5_tests data pin)**, ground
+truth `harness/probe_batch5_regression_rng.js`; draw/mechanic models settled by
+`probe_batch5_{reactive,varbp,sleeptalk,reactive_edges}.js` (the edges probe settled Beat
+Up→Mirror-Coat + Struggle→Counter). **e2e ADMITTED** (`BATCH5_E2E_EXCLUDED = false`;
+`MODELED_BATCH5_{REACTIVE,VARBP}_MOVES`; the batch-5 nine removed from `MOVE_ID_BLOCKLIST` —
+which ALSO un-shadowed the modeled fixed-damage five (seismictoss/nightshade/sonicboom/
+dragonrage/superfang), whose blocklist rows had been overriding their documented
+`MODELED_FIXED_DAMAGE_MOVES` early-admit; Sleep Talk's pickability is CARRIER-conditional via
+`sleepTalkPoolModeled` — the CALLED move bypasses the picker, so the sampled pool must be
+all-modeled; `snore`, the other gen-3 sleepUsable move, stays out/unmodeled). The
+handler-audit surface explicitly adds `sleeptalk` (isModeledMove-false but engine-modeled);
+the manifest grew 787 → **815 rows**. The coverage scan (`scan_move_coverage.js`, classifier
+refreshed for batches 4/4b/4c/5 — the stale MISMODELED rows removed): **662 / 722 teams fully
+engine-playable** (MISMODELED distinct moves: **0**; 12 fail-loud status moves remain, headed
+by Perish Song 21 / Mean Look 12 / Endure 10).
+
+## ✅ BATCH 6 DONE (`gen3_move_coverage_batch6_v1`, 2026-07-15) — the FINAL UNMODELED tail (13 moves)
+
+**ENCORE / DESTINY BOND / ENDURE / PERISH SONG / MEAN LOOK / SPIDER WEB / BLOCK / BELLY DRUM /
+CHARGE / MEMENTO / MIMIC / PAIN SPLIT / PSYCH UP — MODELED bit-for-bit + e2e-ADMITTED.**
+- **ENCORE** — acc-100 draw + the `durationCallback` `random(3,7)` INSIDE addVolatile
+  (already-encored fails accuracy-ONLY; no-lastMove / failencore / 0-PP-lastMove fails draw BOTH);
+  `stored = willMove(target) ? rolled : rolled+1` (the Disable branch — MC79/MC80 are the
+  same-seed perturbation pair); the `onOverrideAction` EXECUTION override (a queued different
+  move runs AS the encored move, the ENCORED slot's PP deducts); `move_usable` restricts the
+  request; the order-10/subOrder-14 residual tick + the 0-PP EARLY `-end`. Data: the extractor's
+  `failEncore`/`failMimic` move flags (`gen3_moves.json`, obs-neutral).
+- **DESTINY BOND** — a ZERO-draw cast (draw-free re-cast); the window closes at the user's NEXT
+  move attempt (onBeforeMove −1 + onMoveAborted at every cant site); a FOE-Move KO while up
+  faints the killer too via the `process_faints` worklist (|faint| victim → `-activate` →
+  |faint| killer; both-last-mons → the gen-3 TIE); a residual / sub-absorbed / futuremove KO
+  does NOT trigger (the record lives only at the Move damage sites).
+- **ENDURE** — rides the protect stallingMove machinery with the SHARED `stall` counter
+  (2→4→8, no-delete-on-fail, the willAct gate; gen3 priority 4); the `endure` volatile's
+  priority-−10 onDamage clamp survives any MOVE damage (fixed damage + every multihit strike
+  included) at 1 HP — residual damage still kills; every SUCCESS turn adds the endure+stall
+  intra-mon NO_ORDER/subOrder-2 residual duration tie (ONE shuffle at ANY speed).
+- **PERISH SONG** — draw-free in EVERY branch; all actives (incl. the caster) get perish
+  4-at-apply (the boundary shows 3) ticked at the order-12 residual (LAST in the ladder); the
+  1→0 tick prints perish0 + faints via the **DURATION-END `continue`** (NO per-handler
+  faintMessages — the sim's fieldEvent duration-end branch — so a speed-tied mirror's mutual
+  perish-out is a same-residual DOUBLE faint → the gen-3 TIE; the batch's one first-try pin
+  failure, root-caused + revert-verified); Soundproof immune (the >=1-immune re-cast is a
+  SILENT success; all-counted fails [still]); switch-out clears; Baton Pass PASSES it
+  (noCopy false).
+- **MEAN LOOK / SPIDER WEB / BLOCK** — draw-free linked FIRM-trap volatiles
+  (`MonState::trapped_by` = the trapper's uid): `is_trapped`/`trap_is_firm` fold it (the
+  Shadow-Tag request shape — `trapped:true` first request, `[Invalid choice]` reject, no
+  re-request); a grounded GHOST IS trapped; the link ends the moment the TRAPPER leaves ANY
+  way (execute_switch source-left clear + the process_faints corpse clear); a trapped mon's
+  Baton Pass is LEGAL and the ENTRANT INHERITS the trap (noCopy false — the link re-points);
+  a phaze drags through it; a SUBSTITUTE blocks; re-application fails.
+- **BELLY DRUM** — the FLOAT `hp <= maxhp/2` gate integer-exact as `2*hp <= maxhp` (262/524
+  fails, 263 succeeds); pays `floor(maxhp/2)` via directDamage (no Endure/Focus Band) then a
+  SET to +6 (`-setboost`); atk>=6 / maxhp==1 fail. Draw-free.
+- **CHARGE** — the `charge` volatile ×2s the next ELECTRIC move's BP (a BP-chain fold);
+  CONSUMED by the user's next move attempt OF ANY KIND (`turn_loop`'s post-run_move
+  onAfterMove/onMoveAborted consumption keyed on the OUTER move — a Baton Pass consumes it
+  BEFORE the switch, so charge never actually survives a pass despite noCopy-false, probed
+  MC98); NO gen3 SpD boost. Draw-free.
+- **MEMENTO** — never-miss in the RESOLVED gen3 (the base acc-100 is overridden); the landed
+  turn is ZERO draws TOTAL (self-faint via the deferred-faint protocol → gen3
+  faint-cancels-all kills the foe's queued move; no Quick Claw); foe −2 Atk/−2 SpA through the
+  shared boost machinery (Clear-Body gated; the user faints even when blocked/floored — a
+  delta-0 `-unboost` emission nuance is skipped, state-identical); a Protect/Sub block → NO
+  faint (ifHit).
+- **MIMIC** — copies the target's lastMove over the Mimic slot (`pp = min(5, base)`, `maxpp =
+  calculatePP(copied, 3)`) via `MonState::mimic_overlay`; the copied slot's PP decrements
+  independently; `restore_mimic_overlay` reverts on switch-out/faint (Mimic's OWN remaining PP
+  persists); sub / no-lastMove / failmimic / already-known fails, all draw-free.
+- **PAIN SPLIT** — `avg = floor((u+t)/2)`, EACH side clamped at its OWN maxhp (the Gengar-vs-
+  Blissey clamp case: Blissey takes the full loss, Gengar caps at 261); a sub blocks; works on
+  a Ghost (Status ignoreImmunity). Draw-free.
+- **PSYCH UP** — copies ALL 7 boost stages VERBATIM (zeros overwrite the user's own prior
+  stages); NO protect flag (copies through a Protect); bypasssub. Draw-free.
+
+**Validated:** the DEDICATED golden `gen_movecoverage_batch6_golden.js` →
+`movecoverage_batch6_test.rs` (24 scenarios × 80 seeds = **1920 game-end battles, 22074
+per-decision seed assertions, 44148 HP assertions, 1711 encore / 1200 perish / 6479
+trapped rows, 1707 wins + 213 ties — a CLEAN FIRST-TRY pass**; the batch-4c/5 44-field DEC format
+EXTENDED with SIX appended columns — p1/p2 ENCORE duration, PERISH counter, TRAPPED (the live
+volatile, NOT the sim's endTurn-stale `pokemon.trapped` flag) → 50 fields) + **20
+revert-verified `regression_test.rs` pins MC79-MC98** (ground truth
+`harness/probe_batch6_regression_rng.js`; mechanics settled by
+`probe_batch6_{locks,field_trap,utility,dexfacts}.js`; every crux revert FAILS its pin — the
+one exception is the trapper-FAINT link clear, which is observationally REDUNDANT with the
+replacement-switch clear + the fainted-foe `is_trapped` guard, kept as the faithful mirror and
+documented at the site). The engine work also fixed the sim-faithful **duration-END
+`continue`** in `run_residuals` (the perish mutual-faint tie) and extended
+`DecisionRecord` with `encore`/`perish` columns. **e2e ADMITTED**
+(`BATCH6_E2E_EXCLUDED = false`; `destinybond` OUT of `MOVE_ID_BLOCKLIST`; a per-DEC
+`batch6Move` flag → DEC 39 fields + a GATED `batch6_decisions >= 50` floor): the pre-regen
+golden replayed BYTE-IDENTICAL (md5 `614d47b9…` unchanged via `ab_replay`, ok:220), then the
+deliberate regen shifted it to **md5 `02fe5d9a59955eaf0360e9d881f46a83`** — STRICT
+`filtered_diverged == 0` over 220 battles / 11584 decisions, **58 batch-6 decisions**.
+The admission surfaced + FIXED ONE real-team-only bug (e2e_7): a CONTACT **fixed-damage**
+hit (Seismic Toss into an Effect Spore Breloom) must fire the defender's contact-proc
+`onDamagingHit` — a latent batch-5-era gap, pinned MC99. The coverage scan
+(classifier refreshed): **718 / 722 teams fully engine-playable** — the HONEST residual is
+**SNATCH** (4 teams), the one gen-3 status-steal reactive, DELIBERATELY DEFERRED (unprobed —
+it stays fail-loud; the task's twelve-move list did not include it and the quota gate closed
+before a probe round).
 
 ## Top-5 build CLASSES by cumulative team-unlock (greedy set-cover)
 
@@ -189,42 +401,42 @@ Every row's `emp` matches its `cov` (MODELED/MISMODELED → ran, UNMODELED → p
 | batonpass | **MODELED** | ran | 158 | Status | ✅ batch 3 — copyVolatileFrom pass of boosts + sub/leech/confusion/curse to the entrant |
 | beatup | MISMODELED | ran | 114 | Spec | multi-strike per healthy teammate — runs one flat hit |
 | refresh | **MODELED** | ran | 89 | Status | ✅ batch 2 — self status cure (par/psn/tox/brn, draw-free) |
-| counter | UNMODELED | panic | 65 | Phys | reactive: returns 2× physical dmg taken |
-| return | UNMODELED | panic | 52 | Phys | variable-BP, dex bp 0 → routed Status → fail-loud |
+| counter | **MODELED** | ran | 65 | Phys | ✅ batch 5 — the reactive 2× return |
+| return | **MODELED** | ran | 52 | Phys | ✅ batch 5 — happiness-scaled variable BP |
 | raindance | **MODELED** | ran | 33 | Status | ✅ batch 2 — weather-SET (Rain, 5-turn timer + upkeep/expiry) |
-| endeavor | UNMODELED | panic | 30 | Phys | sets target HP = user HP |
-| sleeptalk | UNMODELED | panic | 29 | Status | picks + calls a random other move while asleep |
+| endeavor | **MODELED** | ran | 30 | Phys | ✅ batch 5 — the hp delta |
+| sleeptalk | **MODELED** | ran | 29 | Status | ✅ batch 5 — the sample + called move |
 | aromatherapy | **MODELED** | ran | 27 | Status | ✅ batch 2 — team status cure (clearStatus banner) |
 | sunnyday | **MODELED** | ran | 23 | Status | ✅ batch 2 — weather-SET (Sun, 5-turn timer) |
 | thunder | MISMODELED | ran | 22 | Spec | onModifyMove: never-miss in rain / 50% in sun — runs flat 70% |
-| perishsong | UNMODELED | panic | 21 | Status | field perish counter (both sides faint in 3) |
+| perishsong | **MODELED** | ran | 21 | Status | ✅ batch 6 — the order-12 field counter + the duration-end continue |
 | screech | **MODELED** | ran | 18 | Status | ✅ batch 2 — foe −2 Def (acc-85 draw + draw-free boost) |
 | knockoff | **MODELED** | ran | 17 | Phys | ✅ batch 1 — item removal (`onAfterHit`) |
 | thief | **MODELED** | ran | 17 | Phys | ✅ batch 1 — item steal (`onAfterHit`) |
-| meanlook | UNMODELED | panic | 12 | Status | switch-trap volatile |
-| endure | UNMODELED | panic | 10 | Status | survive-at-1-HP (`onDamage`, not Protect) |
+| meanlook | **MODELED** | ran | 12 | Status | ✅ batch 6 — the linked firm-trap volatile (+ spiderweb/block) |
+| endure | **MODELED** | ran | 10 | Status | ✅ batch 6 — the shared-stall survive-at-1 |
 | overheat | **MODELED** | ran | 6 | Spec | ✅ batch 1 — self −2 SpA + the selfDrops `random(100)` |
-| destinybond | UNMODELED | panic | 6 | Status | reactive: KOs the attacker if user faints |
+| destinybond | **MODELED** | ran | 6 | Status | ✅ batch 6 — the mutual-faint window |
 | lightscreen | **MODELED** | ran | 5 | Status | ✅ batch 2 — side screen ½ special (5 turns + the both-screens ModifyDamagePhase1 shuffle) |
 | superpower | **MODELED** | ran | 5 | Phys | ✅ batch 1 — self −1 Atk/−1 Def + the selfDrops `random(100)` |
-| encore | UNMODELED | panic | 5 | Status | locks foe into last move |
+| encore | **MODELED** | ran | 5 | Status | ✅ batch 6 — the lock + onOverrideAction |
 | charm | **MODELED** | ran | 4 | Status | ✅ batch 2 — foe −2 Atk (acc-100 draw + draw-free boost) |
-| snatch | UNMODELED | panic | 4 | Status | steal foe's next self-targeted move |
-| bellydrum | UNMODELED | panic | 3 | Status | −½ HP, +6 Atk |
+| snatch | UNMODELED | panic | 4 | Status | steal foe's next self-targeted move — **the ONE residual** (deferred, unprobed; fail-loud) |
+| bellydrum | **MODELED** | ran | 3 | Status | ✅ batch 6 — the 2·hp<=maxhp gate + the +6 SET |
 | metalsound | **MODELED** | ran | 3 | Status | ✅ batch 2 — foe −2 SpD (Soundproof-immune) |
-| charge | UNMODELED | panic | 3 | Status | charge volatile (×2 next Electric) |
-| reversal | UNMODELED | panic | 3 | Phys | variable-BP, dex bp 0 → routed Status → fail-loud |
-| hyperbeam | MISMODELED | ran | 2 | Phys | recharge lock (`mustrecharge`) not applied |
-| memento | UNMODELED | panic | 1 | Status | user faints, foe −2 Atk/−2 SpA |
-| mimic | UNMODELED | panic | 1 | Status | copy foe's last move |
-| psychup | UNMODELED | panic | 1 | Status | copy foe's boosts |
-| flail | UNMODELED | panic | 1 | Phys | variable-BP (bp0 → fail-loud) |
-| lowkick | UNMODELED | panic | 1 | Phys | variable-BP (bp0 → fail-loud) |
-| painsplit | UNMODELED | panic | 1 | Status | average both HPs |
-| frustration | UNMODELED | panic | 1 | Phys | variable-BP (bp0 → fail-loud) |
-| solarbeam | MISMODELED | ran | 1 | Spec | 2-turn charge collapsed to 1 turn (skips the charge turn + draws) |
+| charge | **MODELED** | ran | 3 | Status | ✅ batch 6 — ×2 next Electric, consumed by any next move |
+| reversal | **MODELED** | ran | 3 | Phys | ✅ batch 5 — the 48·hp/maxhp band ladder |
+| hyperbeam | **MODELED** | ran | 2 | Phys | ✅ batch 4c — the mustrecharge lock (locked Recharge request, zero-draw cant turn) |
+| memento | **MODELED** | ran | 1 | Status | ✅ batch 6 — the zero-draw self-faint + drops |
+| mimic | **MODELED** | ran | 1 | Status | ✅ batch 6 — the slot overlay + revert |
+| psychup | **MODELED** | ran | 1 | Status | ✅ batch 6 — the verbatim copy |
+| flail | **MODELED** | ran | 1 | Phys | ✅ batch 5 — the band ladder |
+| lowkick | **MODELED** | ran | 1 | Phys | ✅ batch 5 — the weighthg ladder |
+| painsplit | **MODELED** | ran | 1 | Status | ✅ batch 6 — the clamped floor-average |
+| frustration | **MODELED** | ran | 1 | Phys | ✅ batch 5 — the 255-mirror |
+| solarbeam | **MODELED** | ran | 1 | Spec | ✅ batch 4c — the two-turn charge (locked fire request, sun skip, weather BP-halve) |
 | waterspout | MISMODELED | ran | 1 | Spec | variable-BP (HP-scaled) — runs at flat bp 150 |
-| doomdesire | MISMODELED | ran | 2 | Phys | future-move (delayed strike) runs as an instant hit |
+| doomdesire | **MODELED** | ran | 2 | Phys | ✅ batch 4c — the slot-keyed order-11 future strike (cast-time typeless snapshot; + futuresight) |
 
 ## Class-grouped batch plan (ordered by team-unlock; the roadmap)
 

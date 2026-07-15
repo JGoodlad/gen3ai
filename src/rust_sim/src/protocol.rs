@@ -205,11 +205,30 @@ pub struct ProtocolBuilder {
     /// leaves it off; `run_full_battle_logged` turns it on. Either way NO PRNG is
     /// touched (the whole module is draw-free).
     enabled: bool,
+    /// A ONE-SHOT `[from] <Effect>` attr the NEXT `|move|` announce carries
+    /// (`gen3_move_coverage_batch5_v1` — the Sleep Talk CALLED move's
+    /// `|move|<user>|<Picked>|<target>|[from] Sleep Talk`, byte-exact: ONE space, NO
+    /// `move:` prefix; the sim's `useMove(…, sourceEffect)` folds it into the announce
+    /// ITSELF, so a later `attrLastMove('[miss]')` lands AFTER it — which is why this
+    /// is an announce-time fold, not a retro-edit). Set via [`Self::set_next_move_from`]
+    /// just before the recursive called-move run; consumed (cleared) by the next
+    /// `move_used`. PRNG-free like everything here.
+    pending_move_from: Option<String>,
 }
 
 impl ProtocolBuilder {
     pub fn new() -> Self {
-        Self { lines: Vec::new(), enabled: false }
+        Self { lines: Vec::new(), enabled: false, pending_move_from: None }
+    }
+
+    /// Arm the ONE-SHOT `[from] <Effect>` attr for the NEXT `|move|` announce (the
+    /// Sleep Talk called-move tag). No-op while disabled (the seed suite's zero-cost
+    /// invariant — nothing is stored or read).
+    pub fn set_next_move_from(&mut self, effect: &str) {
+        if !self.enabled {
+            return;
+        }
+        self.pending_move_from = Some(effect.to_string());
     }
 
     /// Enable emission (the logged battle path calls this). The seed suite never
@@ -310,12 +329,22 @@ impl ProtocolBuilder {
         if !self.enabled {
             return;
         }
+        // Consume the one-shot `[from] <Effect>` attr (the Sleep Talk called move).
+        let from = self.pending_move_from.take();
         let mut s = format!("|move|{user}|{move_name}|");
         if still {
             // Empty target field + [still] (e.g. Protect: `|move|…|Protect||[still]`).
             s.push_str("|[still]");
+            if let Some(f) = &from {
+                s.push_str(&format!("|[from] {f}"));
+            }
         } else if let Some(t) = target {
             s.push_str(&t.to_string());
+            // The `[from]` fold precedes a `[miss]` (the announce carries the from-attr;
+            // the miss is a LATER attrLastMove append).
+            if let Some(f) = &from {
+                s.push_str(&format!("|[from] {f}"));
+            }
             if miss {
                 s.push_str("|[miss]");
             }
@@ -366,6 +395,41 @@ impl ProtocolBuilder {
         if let Some(line) = self.lines.iter_mut().rev().find(|l| l.0.starts_with("|move|")) {
             line.0.push_str("|[miss]");
         }
+    }
+
+    /// The `attrLastMove('[from]lockedmove')` retro-edit (`gen3_move_coverage_batch4c_v1`
+    /// — Solar Beam's FIRE-turn announce: `|move|<user>|Solar Beam|<target>|[from]lockedmove`,
+    /// the sim's `useMove` locked-move attr; NO space after `[from]`, matching Showdown's
+    /// literal `'[from]lockedmove'`). Same append-only exception discipline as
+    /// [`Self::attr_last_move_miss`]. HONEST SCOPE: no capture scenario byte-gates a
+    /// solarbeam line yet — the shape is the probe-observed one. No-op when disabled.
+    pub fn attr_last_move_from_lockedmove(&mut self) {
+        if !self.enabled {
+            return;
+        }
+        if let Some(line) = self.lines.iter_mut().rev().find(|l| l.0.starts_with("|move|")) {
+            line.0.push_str("|[from]lockedmove");
+        }
+    }
+
+    /// `|-prepare|<mon>|<MoveName>` — the two-turn CHARGE announce (Solar Beam's charge
+    /// turn, `gen3_move_coverage_batch4c_v1`; probe-observed shape, not yet byte-gated).
+    pub fn prepare(&mut self, mon: &MonRef, move_name: &str) {
+        self.push_raw(format!("|-prepare|{mon}|{move_name}"));
+    }
+
+    /// `|-anim|<mon>|<MoveName>|<target>` — the SUN-SKIP animation line (a charge move
+    /// that fires immediately still emits `[still]` + `-prepare` THEN `-anim` before the
+    /// damage lines; probe-observed shape, not yet byte-gated).
+    pub fn anim(&mut self, mon: &MonRef, move_name: &str, target: &MonRef) {
+        self.push_raw(format!("|-anim|{mon}|{move_name}|{target}"));
+    }
+
+    /// `|-mustrecharge|<mon>` — Hyper Beam's recharge-lock announce, printed right after
+    /// the `|-damage|`/sub line of a successful hit (`gen3_move_coverage_batch4c_v1`;
+    /// probe-observed shape, not yet byte-gated).
+    pub fn must_recharge(&mut self, mon: &MonRef) {
+        self.push_raw(format!("|-mustrecharge|{mon}"));
     }
 
     // ── Switch / drag / faint ───────────────────────────────────────────────────
@@ -668,6 +732,38 @@ impl ProtocolBuilder {
     /// `|-singleturn|<mon>|<Effect>` — a one-turn effect announced (Protect).
     pub fn singleturn(&mut self, mon: &MonRef, effect: &str) {
         self.push_raw(format!("|-singleturn|{mon}|{effect}"));
+    }
+    /// `|-singlemove|<mon>|<Effect>` — a until-next-move effect announced
+    /// (`gen3_move_coverage_batch6_v1`, Destiny Bond's `onStart`).
+    pub fn singlemove(&mut self, mon: &MonRef, effect: &str) {
+        self.push_raw(format!("|-singlemove|{mon}|{effect}"));
+    }
+    /// `|-start|<mon>|<Effect>|[silent]` — a volatile begins silently
+    /// (`gen3_move_coverage_batch6_v1`, the Perish Song apply's
+    /// `|-start|<mon>|perish3|[silent]`).
+    pub fn volatile_start_silent(&mut self, mon: &MonRef, effect: &str) {
+        self.push_raw(format!("|-start|{mon}|{effect}|[silent]"));
+    }
+    /// `|-setboost|<mon>|<stat>|<n>|[from] move: <Move>` — a stat stage SET to an
+    /// absolute value (`gen3_move_coverage_batch6_v1`, Belly Drum's `battle.boost`
+    /// special-case: `|-setboost|<user>|atk|6|[from] move: Belly Drum`).
+    pub fn setboost_from_move(&mut self, mon: &MonRef, stat: &str, n: i8, move_name: &str) {
+        self.push_raw(format!("|-setboost|{mon}|{stat}|{n}|[from] move: {move_name}"));
+    }
+    /// `|-sethp|<mon>|<HP>|[from] move: <Move>[|[silent]]` — an HP SET
+    /// (`gen3_move_coverage_batch6_v1`, Pain Split: the TARGET line carries
+    /// `[silent]`, the USER line does not — the probed order/form).
+    pub fn sethp_from_move(&mut self, mon: &MonRef, hp: &HpStatus, move_name: &str, silent: bool) {
+        if silent {
+            self.push_raw(format!("|-sethp|{mon}|{hp}|[from] move: {move_name}|[silent]"));
+        } else {
+            self.push_raw(format!("|-sethp|{mon}|{hp}|[from] move: {move_name}"));
+        }
+    }
+    /// `|-copyboost|<user>|<target>|[from] move: <Move>` — the user copies the
+    /// target's boost stages (`gen3_move_coverage_batch6_v1`, Psych Up).
+    pub fn copyboost_from_move(&mut self, user: &MonRef, target: &MonRef, move_name: &str) {
+        self.push_raw(format!("|-copyboost|{user}|{target}|[from] move: {move_name}"));
     }
     /// `|-hitcount|<mon>|<N>` — the number of times a MULTI-STRIKE move hit
     /// (`gen3_move_coverage_batch4b_v1`, Beat Up: one line at the end of the strike loop,

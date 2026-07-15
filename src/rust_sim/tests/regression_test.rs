@@ -8108,3 +8108,1977 @@ fn beat_up_with_no_eligible_party_fizzles_drawing_only_accuracy() {
         "the fizzle draws the whole-move accuracy roll (no strikes → no crit/damage) + Quick Claw → the real Showdown seed"
     );
 }
+
+// ============================================================================
+// MOVE-COVERAGE BATCH 4c (`gen3_move_coverage_batch4c_v1`) — HYPER BEAM
+// (mustrecharge) / SOLAR BEAM (two-turn charge) / DOOM DESIRE + FUTURE SIGHT
+// (the slot-keyed future strike). Ground-truth seeds/state from
+// `harness/probe_batch4c_regression_rng.js` (the REAL Showdown, verbatim);
+// the draw models were settled by `harness/probe_batch4c_{hyperbeam,solarbeam,
+// doomdesire}.js`. Teams mirror the probe exactly (packed via Teams.pack).
+// ============================================================================
+
+const HB_P1: &str = "Snorlax|||NoAbility|hyperbeam,splash|Serious||N||||]Blissey|||NoAbility|softboiled|Serious||N||||";
+const HB_P2: &str = "Skarmory|||NoAbility|spikes,protect,splash,roar|Serious|252,,,,,|N||||]Forretress|||NoAbility|spikes,splash|Serious|252,,,,,|N||||";
+
+/// MC49: HYPER BEAM hit → RECHARGE → clear. The cast turn is an ordinary damaging move
+/// (acc+crit+dmg + the foe's draw-free Spikes + Quick Claw) that applies `mustrecharge`
+/// DRAW-FREE; the LOCKED turn's user action draws ZERO and costs NO PP (`|cant|…|recharge`
+/// — the only draw is the endTurn Quick Claw); the lock then fully CLEARS (Hyper Beam
+/// fires again the next turn). WRONG (pre-batch-4c): the port ran HB recharge-less — the
+/// locked turn ran a SECOND Hyper Beam (acc+crit+dmg draws + damage + PP) → both the seed
+/// AND the state desync. STATE (Skarmory 259 after ONE hit, unchanged through the locked
+/// turn, 183 after the next HB; PP 7 → 7 → 6) + SEED (all three boundaries).
+#[test]
+fn hyper_beam_hit_locks_then_recharges_draw_free_then_clears() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(HB_P1, HB_P2, "53118,34657,41207,29520"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // HB hits (Skarm lays Spikes)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // LOCKED: move 1 == Recharge
+            ScriptDecision::both(Choice::Move(0), Choice::Move(2)), // free again: HB vs Splash
+        ],
+        &d,
+    );
+    // dec0 — the cast: one HB hit (334-75=259), PP 8→7, the lock applied.
+    assert_eq!(out.decisions[0].active[1].hp, 259, "one Hyper Beam hit: Skarmory 334 → 259");
+    assert_eq!(out.decisions[0].active[0].move_pp[0], 7, "the cast consumed 1 PP");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "48590,39028,4743,65508",
+        "cast turn: HB acc+crit+dmg + draw-free Spikes + Quick Claw → the real Showdown seed"
+    );
+    // dec1 — the LOCKED turn: the user's action draws ZERO + costs NO PP; Skarmory
+    // untouched (the recharge is spent doing nothing).
+    assert_eq!(out.decisions[1].active[1].hp, 259, "the locked turn deals nothing");
+    assert_eq!(out.decisions[1].active[0].move_pp[0], 7, "the recharge costs NO PP");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "34574,58966,18171,38839",
+        "locked turn: |cant|recharge draws ZERO — only the endTurn Quick Claw → the real Showdown seed"
+    );
+    // dec2 — the lock CLEARED: Hyper Beam fires again (259-76=183), PP 7→6.
+    assert_eq!(out.decisions[2].active[1].hp, 183, "the lock cleared — HB fires again (259 → 183)");
+    assert_eq!(out.decisions[2].active[0].move_pp[0], 6, "the second cast consumed its PP");
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "65303,16015,55571,987",
+        "free turn: a normal HB again → the real Showdown seed"
+    );
+}
+
+/// MC50: a MISSED Hyper Beam does NOT lock (PP still consumed; the user acts FREELY the
+/// next turn — at this seed the follow-up HB HITS and re-locks). WRONG (a model locking
+/// on any use): the next turn would be a zero-draw recharge instead of a full HB → seed +
+/// state desync. STATE (Skarmory untouched by the miss, 260 after the free-turn hit; PP
+/// 7 → 6) + SEED (both boundaries).
+#[test]
+fn hyper_beam_miss_does_not_lock() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(HB_P1, HB_P2, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(2)), // HB MISSES (acc 90 fails)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(2)), // NOT locked: a fresh HB hits
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[1].hp, 334, "the missed HB deals nothing");
+    assert_eq!(out.decisions[0].active[0].move_pp[0], 7, "a miss still consumes PP");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "60880,31090,7619,34922",
+        "miss turn: the accuracy draw fails + Quick Claw → the real Showdown seed"
+    );
+    assert_eq!(out.decisions[1].active[1].hp, 260, "NOT locked — the next HB fires and hits");
+    assert_eq!(out.decisions[1].active[0].move_pp[0], 6, "the free-turn HB consumed its PP");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "7184,5868,30814,34654",
+        "free turn: a full HB (acc+crit+dmg) — NOT a zero-draw recharge → the real Showdown seed"
+    );
+}
+
+/// MC51: a Hyper Beam that KOs the target STILL locks — the `|-mustrecharge|` precedes
+/// the `|faint|`, the KO turn draws NO endTurn residual (the deferred-faint protocol —
+/// the Quick Claw lands at the force-switch boundary), and the lock PERSISTS across the
+/// opponent's force-switch (the next full turn is a zero-draw recharge vs the entrant).
+/// WRONG (a lock consumed by the force-switch / no lock on a KO): the post-replacement
+/// turn runs a full HB → seed + state desync. STATE + SEED (all three boundaries).
+#[test]
+fn hyper_beam_ko_still_locks_across_the_force_switch() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(HB_P1, HB_P2, "53118,34657,41207,29520"), &d)
+            .expect("start");
+    {
+        let st = battle.state_mut().expect("state");
+        let a = st.sides[1].active;
+        st.sides[1].pokemon[a].hp = 20; // STATE-only inject: the HB KOs
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // HB KOs Skarmory
+            ScriptDecision { p1: None, p2: Some(Choice::Switch(1)) }, // the forced replacement
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // p1 STILL locked
+        ],
+        &d,
+    );
+    assert!(out.decisions[0].active[1].fainted, "the HB KO'd the 20-HP Skarmory");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "13521,38977,6462,56077",
+        "KO turn: acc+crit+dmg ONLY (the endTurn residual/Quick Claw is deferred) → the real Showdown seed"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "48590,39028,4743,65508",
+        "force-switch boundary: the deferred endTurn Quick Claw draws → the real Showdown seed"
+    );
+    assert_eq!(out.decisions[2].active[1].hp, 354, "the locked turn deals nothing to the entrant");
+    assert_eq!(out.decisions[2].active[0].move_pp[0], 7, "the recharge costs NO PP");
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "34574,58966,18171,38839",
+        "the post-replacement turn is STILL the zero-draw recharge → the real Showdown seed"
+    );
+}
+
+/// MC52: a PARALYZED user on the LOCKED turn — the recharge cant (onBeforeMove priority
+/// 11) WINS over paralysis (1): NO para roll is drawn on the locked turn (the seed
+/// advance is IDENTICAL to the un-paralyzed MC49 dec1: 48590… → 34574…), the par STAYS,
+/// and the para roll resumes on the FOLLOWING turn (the probed |cant|par at this seed).
+/// WRONG (para before recharge / a para roll on the locked turn): one extra random(4) →
+/// the locked-turn seed desyncs. SEED (both boundaries) + STATE (par persists).
+#[test]
+fn paralyzed_user_on_the_recharge_turn_draws_no_para_roll() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(HB_P1, HB_P2, "53118,34657,41207,29520"), &d)
+            .expect("start");
+    // Phase 1 — the cast turn (identical to MC49 dec0).
+    let out0 = battle.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert_eq!(seed_str(&out0.decisions[0].seed_after), "48590,39028,4743,65508");
+    // Inject par on the locked Snorlax (STATE-only, mirroring the probe's pre-act).
+    {
+        let st = battle.state_mut().expect("state");
+        let a = st.sides[0].active;
+        st.sides[0].pokemon[a].status = Some(Status::Paralysis);
+    }
+    // Phase 2 — the LOCKED turn (par'd) + the following turn (the para roll resumes).
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // locked + par'd
+            ScriptDecision::both(Choice::Move(1), Choice::Move(2)), // Splash — the para roll NOW draws
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[0].status, Some(Status::Paralysis), "the par persists through the recharge");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "34574,58966,18171,38839",
+        "the locked turn draws NO para roll — the seed advance is IDENTICAL to the un-par'd control"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "10368,44139,43612,44497",
+        "the FOLLOWING turn resumes the para roll (the probed |cant|par) → the real Showdown seed"
+    );
+}
+
+const SB_P1: &str = "Venusaur|||NoAbility|solarbeam,razorleaf|Serious||N||||]Snorlax|||NoAbility|bodyslam|Serious||N||||";
+const SB_P2: &str = "Swampert|||NoAbility|surf|Serious|252,,,,,|N||||]Blissey|||NoAbility|softboiled|Serious|252,,,,,|N||||";
+
+/// MC53: SOLAR BEAM charge → fire → a FRESH charge. The CHARGE turn draws ZERO move
+/// draws (only the foe's Surf + Quick Claw; PP is paid HERE — 16 → 15); the FIRE turn
+/// draws acc+crit+dmg with NO PP (it KOs the 4×-weak Swampert — no Quick Claw, the
+/// deferred faint); the lingering twoturnmove is residual-cleaned across the
+/// replacement boundary (1 draw — the resumed Quick Claw); the NEXT Solar Beam is a
+/// FRESH charge that re-pays PP (15 → 14, the failed full-HP SoftBoiled draw-free).
+/// WRONG (pre-batch-4c: SB collapsed to one turn): the charge turn draws acc+crit+dmg →
+/// every boundary desyncs. STATE (HP/PP) + SEED (all four boundaries).
+#[test]
+fn solar_beam_charges_then_fires_then_recharges_fresh() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(SB_P1, SB_P2, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // CHARGE (Swampert Surfs)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // FIRE (KOs Swampert)
+            ScriptDecision { p1: None, p2: Some(Choice::Switch(1)) }, // the replacement
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // a FRESH charge vs Blissey
+        ],
+        &d,
+    );
+    // dec0 — the charge: zero move draws; Venusaur took the Surf; PP 16 → 15.
+    assert_eq!(out.decisions[0].active[0].hp, 250, "Venusaur was hit DURING the charge (the charge survives)");
+    assert_eq!(out.decisions[0].active[0].move_pp[0], 15, "the CHARGE turn pays the PP");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "37635,3740,64462,10380",
+        "charge turn: Surf acc+crit+dmg + Quick Claw ONLY (the charge draws nothing) → the real Showdown seed"
+    );
+    // dec1 — the fire: acc+crit+dmg, NO PP, KOs Swampert (no Quick Claw).
+    assert!(out.decisions[1].active[1].fainted, "the fire KO'd the 4×-weak Swampert");
+    assert_eq!(out.decisions[1].active[0].move_pp[0], 15, "the FIRE turn pays NO PP");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "37112,13693,28533,21721",
+        "fire turn: SB acc+crit+dmg, no Quick Claw on the deciding-side faint → the real Showdown seed"
+    );
+    // dec2 — the replacement boundary: the resumed tail's Quick Claw (the lingering
+    // twoturnmove is cleaned draw-free by the resumed residual).
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "5621,5056,41416,14688",
+        "replacement boundary: exactly the resumed Quick Claw → the real Showdown seed"
+    );
+    // dec3 — a FRESH charge (the volatile did NOT linger into the request): PP 15 → 14.
+    assert_eq!(out.decisions[3].active[0].move_pp[0], 14, "the fresh charge re-pays PP");
+    assert_eq!(
+        seed_str(&out.decisions[3].seed_after),
+        "50157,35106,3193,41379",
+        "fresh charge vs Blissey (its full-HP SoftBoiled fails draw-free) → the real Showdown seed"
+    );
+}
+
+/// MC54: SOLAR BEAM in SUN (Drought) SKIPS the charge — the whole turn draws like a
+/// normal move (Groudon's EQ 3 + SB 3 + Quick Claw = 7), PP −1, NO volatile (the next
+/// request is NOT locked). WRONG (a sun charge / a wrong skip draw count): the seed
+/// desyncs. STATE (both sides hit hard on ONE turn) + SEED.
+#[test]
+fn solar_beam_sun_skip_fires_immediately() {
+    let d = dex();
+    let p1 = "Venusaur|||NoAbility|solarbeam|Serious||N||||";
+    let p2 = "Groudon|||Drought|earthquake|Serious|252,,,,,|N||||]Blissey|||NoAbility|softboiled|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[0].hp, 95, "Groudon's EQ landed the same turn");
+    assert_eq!(out.decisions[0].active[1].hp, 72, "the sun-skipped Solar Beam fired IMMEDIATELY (404 → 72)");
+    assert_eq!(out.decisions[0].active[0].move_pp[0], 15, "the skip pays the normal 1 PP");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "37112,13693,28533,21721",
+        "sun-skip turn: EQ 3 + SB 3 + Quick Claw = 7 draws → the real Showdown seed"
+    );
+}
+
+/// MC55: SOLAR BEAM's BP is HALVED in RAIN (the gen3-resolved onBasePower chainModify(0.5)
+/// — gen3 DOES have the modern halving, probe-confirmed) — a STATE-only fold: the rain
+/// fire deals 54 (404 → 350) while the no-weather control deals 105 (404 → 299) at
+/// BYTE-IDENTICAL boundary seeds (the halving is draw-free). WRONG (no halving): the rain
+/// Kyogre's HP reads the control's. STATE (both damages) + the SHARED seeds.
+#[test]
+fn solar_beam_rain_halves_the_bp_state_only() {
+    let d = dex();
+    let p1 = "Venusaur|||NoAbility|solarbeam|Serious||N||||";
+    let rain = "Kyogre|||Drizzle|calmmind|Serious|252,,,,,|N||||]Blissey|||NoAbility|softboiled|Serious|252,,,,,|N||||";
+    let ctl = "Kyogre|||ShellArmor|calmmind|Serious|252,,,,,|N||||]Blissey|||NoAbility|softboiled|Serious|252,,,,,|N||||";
+    let script = [
+        ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // charge
+        ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // fire
+    ];
+
+    let mut br = Battle::start_with_switchins(&opts_cg(p1, rain, "44317,42357,9927,48760"), &d).expect("start");
+    let outr = br.state_mut().unwrap().run_full_battle(&script, &d);
+    assert_eq!(outr.decisions[1].active[1].hp, 350, "RAIN: the fire's BP is halved (404 → 350, dmg 54)");
+    let rain_seeds = (
+        seed_str(&outr.decisions[0].seed_after),
+        seed_str(&outr.decisions[1].seed_after),
+    );
+    assert_eq!(rain_seeds.0, "61255,39458,1834,64539");
+    assert_eq!(rain_seeds.1, "22534,42410,55299,35327");
+
+    let mut bc = Battle::start_with_switchins(&opts_cg(p1, ctl, "44317,42357,9927,48760"), &d).expect("start");
+    let outc = bc.state_mut().unwrap().run_full_battle(&script, &d);
+    assert_eq!(outc.decisions[1].active[1].hp, 299, "CONTROL: full BP (404 → 299, dmg 105)");
+    assert_eq!(seed_str(&outc.decisions[0].seed_after), rain_seeds.0, "the halving is DRAW-FREE (identical charge seed)");
+    assert_eq!(seed_str(&outc.decisions[1].seed_after), rain_seeds.1, "the halving is DRAW-FREE (identical fire seed)");
+}
+
+/// MC56: a FULL-PARA on the CHARGE turn — the para roll IS drawn on the charge turn
+/// (onBeforeMove precedes onTryMove) and a full-para cant means NO charge and NO PP
+/// (16/16 — the PP deduction sits after BeforeMove). WRONG (charge before the para roll /
+/// PP paid anyway): the seed / the PP desyncs. STATE (PP untouched) + SEED.
+#[test]
+fn solar_beam_full_para_on_the_charge_turn_no_charge_no_pp() {
+    let d = dex();
+    let p1 = "Venusaur|||NoAbility|solarbeam|Serious||N||||";
+    let p2 = "Swampert|||NoAbility|curse|Serious|252,,,,,|N||||]Blissey|||NoAbility|softboiled|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "61872,34750,8741,59883"), &d).expect("start");
+    {
+        let st = battle.state_mut().expect("state");
+        let a = st.sides[0].active;
+        st.sides[0].pokemon[a].status = Some(Status::Paralysis);
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[0].move_pp[0], 16, "a full-para'd charge pays NO PP");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "49988,3828,17110,61724",
+        "the charge turn draws the para roll (full-para → cant, no charge) + Curse selfDrops + Quick Claw → the real Showdown seed"
+    );
+}
+
+const DD_P1: &str = "Jirachi|||NoAbility|doomdesire,splash|Serious||N||||";
+const FS_P1: &str = "Jirachi|||NoAbility|futuresight,splash|Serious||N||||";
+const DD_P2: &str = "Blissey|||NoAbility|splash|Serious|252,,,,,|N||||";
+
+/// MC57: DOOM DESIRE cast → idle → RESOLVE at the end of turn N+2, and the FUTURE SIGHT
+/// twin — IDENTICAL boundary seeds, different STORED damage (DD 366 physical bp-120 /
+/// FS 45 special bp-80 vs Blissey's huge SpD — the cast-time typeless snapshot). The
+/// cast draws exactly ONE random(16) (no accuracy / no crit); the idle turn draws
+/// nothing for the pending strike; the resolve draws ONE accuracy roll then applies the
+/// STORED number. WRONG (pre-batch-4c: DD ran as an instant hit): every boundary
+/// desyncs. STATE (714 → 348 / 714 → 669 at the N+2 boundary ONLY) + SEED (all three).
+#[test]
+fn doom_desire_and_future_sight_cast_idle_resolve_snapshot() {
+    let d = dex();
+    let script = [
+        ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // cast
+        ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // idle (Splash)
+        ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // the resolve turn
+    ];
+    let expected_seeds = [
+        "60880,31090,7619,34922",
+        "10897,43434,54578,10901",
+        "22534,42410,55299,35327",
+    ];
+
+    for (team, resolved_hp, label) in [(DD_P1, 348u16, "DD 366"), (FS_P1, 669u16, "FS 45")] {
+        let mut battle =
+            Battle::start_with_switchins(&opts_cg(team, DD_P2, "44317,42357,9927,48760"), &d)
+                .expect("start");
+        let out = battle.state_mut().unwrap().run_full_battle(&script, &d);
+        assert_eq!(out.decisions[0].active[1].hp, 714, "{label}: the cast deals NOTHING now");
+        assert_eq!(out.decisions[1].active[1].hp, 714, "{label}: the idle turn deals nothing");
+        assert_eq!(
+            out.decisions[2].active[1].hp, resolved_hp,
+            "{label}: the STORED snapshot lands at the end of turn N+2"
+        );
+        for (i, exp) in expected_seeds.iter().enumerate() {
+            assert_eq!(
+                &seed_str(&out.decisions[i].seed_after), exp,
+                "{label}: dec{i} — cast=1×random(16), idle=QC only, resolve=1×accuracy+QC → the real Showdown seeds"
+            );
+        }
+    }
+}
+
+/// MC58: a DOUBLE-CAST while a strike is pending FAILS with ZERO move draws — but PP IS
+/// still deducted (7 → 6; deductPP precedes the onTry fail) — and the ORIGINAL pending
+/// strike resolves on schedule. The failed-cast turn's seed equals the plain idle turn's
+/// (the fail is draw-free). WRONG (a second snapshot random(16) / no PP): seed / PP
+/// desync. STATE (PP 6; the resolve still lands 366) + SEED.
+#[test]
+fn doom_desire_double_cast_fails_draw_free_but_deducts_pp() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(DD_P1, DD_P2, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let out = battle.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // cast
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // DOUBLE-CAST → fails
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // the resolve turn
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[1].active[0].move_pp[0], 6, "the failed double-cast STILL deducts PP (7 → 6)");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "10897,43434,54578,10901",
+        "the double-cast turn is draw-free (== the plain idle turn's seed) → the real Showdown seed"
+    );
+    assert_eq!(out.decisions[2].active[1].hp, 348, "the ORIGINAL strike resolves on schedule (714 → 348)");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "22534,42410,55299,35327");
+}
+
+/// MC59: a RESOLVE KO defers the Quick Claw — the resolve turn draws the accuracy roll
+/// ONLY (the strike faints the 60-HP Gengar at the order-11 residual → the endTurn Quick
+/// Claw is deferred past the forced replacement, which draws it). Also pins DD's
+/// TYPELESS-ness (a Steel move would be resisted by nothing relevant here; the point is
+/// the LEVITATE GHOST takes the full typeless hit — no immunity ever). WRONG (a QC on
+/// the resolve-KO turn / a typed chart read): the boundary seeds desync. STATE + SEED.
+#[test]
+fn doom_desire_resolve_ko_defers_the_quick_claw() {
+    let d = dex();
+    let p2 = "Gengar|||Levitate|splash|Serious|252,,,,,|N||||]Blissey|||NoAbility|splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(DD_P1, p2, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    {
+        let st = battle.state_mut().expect("state");
+        let a = st.sides[1].active;
+        st.sides[1].pokemon[a].hp = 60; // STATE-only inject: the resolve KOs
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // cast
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // idle
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // the resolve KOs
+            ScriptDecision { p1: None, p2: Some(Choice::Switch(1)) }, // the forced replacement
+        ],
+        &d,
+    );
+    assert!(out.decisions[2].active[1].fainted, "the resolve KO'd the 60-HP (Levitate, Ghost) Gengar — typeless never misses the chart");
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "37635,3740,64462,10380",
+        "the resolve-KO turn draws the accuracy roll ONLY (NO Quick Claw — deferred) → the real Showdown seed"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[3].seed_after),
+        "22534,42410,55299,35327",
+        "the forced-replacement boundary draws the deferred Quick Claw → the real Showdown seed"
+    );
+}
+
+/// MC60: the RESIDUAL-ORDER composition — Wish (order 7) → the sand chip (8) → Leftovers
+/// (10.4) → the FUTUREMOVE strike (11) LAST, all in ONE turn: the 150-HP Celebi ends at
+/// 320 (Wish +170 → 320, sand −21 → 299, Leftovers +21 → 320) and the DD strike lands
+/// on Tyranitar (404 → 324, the stored 80) AFTER every heal/chip. WRONG (the futuremove
+/// at any earlier order): Celebi's HP arithmetic and/or the strike's position shifts →
+/// the STATE (both HPs) and/or the SEED desyncs. STATE + SEED at every boundary.
+#[test]
+fn doom_desire_resolves_last_in_the_residual_order() {
+    let d = dex();
+    let p1 = "Celebi||Leftovers|NoAbility|doomdesire,wish,splash|Serious||N||||";
+    let p2 = "Tyranitar||Leftovers|SandStream|splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    {
+        let st = battle.state_mut().expect("state");
+        let a = st.sides[0].active;
+        st.sides[0].pokemon[a].hp = 150; // STATE-only inject: room for the Wish heal
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // DD cast (turn 1)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Wish (turn 2)
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)), // Splash (turn 3 — everything resolves)
+        ],
+        &d,
+    );
+    // Turn 1: sand −21 then Leftovers +21 → net 150. Turn 2: same. Turn 3: Wish +170
+    // (→ 320) then sand −21 (→ 299) then Leftovers +21 (→ 320) then the DD strike.
+    assert_eq!(out.decisions[0].active[0].hp, 150, "turn 1: sand −21 + Leftovers +21 = net 0");
+    assert_eq!(out.decisions[1].active[0].hp, 150, "turn 2: net 0 again");
+    assert_eq!(
+        out.decisions[2].active[0].hp, 320,
+        "turn 3: Wish(7) +170 → 320, sand(8) −21 → 299, Leftovers(10.4) +21 → 320 — the ORDER is load-bearing"
+    );
+    assert_eq!(
+        out.decisions[2].active[1].hp, 324,
+        "the DD strike (order 11, LAST) lands the stored 80 on Tyranitar (404 → 324)"
+    );
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "60880,31090,7619,34922");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "10897,43434,54578,10901");
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "22534,42410,55299,35327",
+        "the resolve turn: ONE accuracy roll + Quick Claw (the residual heals/chips are draw-free) → the real Showdown seed"
+    );
+}
+
+// ============================================================================
+// MC61-MC78 — MOVE-COVERAGE BATCH 5 (`gen3_move_coverage_batch5_v1`): the
+// reactive fixed-damage family COUNTER / MIRROR COAT / ENDEAVOR, the
+// variable-BP family RETURN / FRUSTRATION / FLAIL / REVERSAL / LOW KICK, and
+// SLEEP TALK. Ground-truth seeds/state from the REAL Showdown probe
+// `harness/probe_batch5_regression_rng.js` (re-run it after any PRNG /
+// draw-order change and update the constants; MC77's ground truth is
+// `probe_lens1_batch5_review.js` R3, MC78's is
+// `probe_batch5_st_calls_roar_rng.js`). Draw/mechanic models settled by
+// `harness/probe_batch5_{reactive,varbp,sleeptalk,reactive_edges}.js`.
+// ============================================================================
+
+const B5_CT_P1: &str = "Snorlax|||NoAbility|counter,splash|Serious|252,,,,,|N||||";
+const B5_CT_P2: &str = "Skarmory|||NoAbility|drillpeck,splash|Serious|252,,,,,|N||||";
+
+/// MC61: COUNTER returns 2× a landed foe PHYSICAL hit (Drill Peck 118 → Counter 236 —
+/// the recorder's exact double), and the NEXT turn's Counter (the foe splashes) fails
+/// with **ZERO draws** and a bare `|move|` line — the volatile's onStart RESETS the
+/// record EVERY selection turn, so PREV-TURN damage never counts. WRONG (a model that
+/// persists the record): the second Counter would return 236 again (STATE) and draw an
+/// accuracy roll (SEED). STATE + SEED, both boundaries.
+#[test]
+fn counter_returns_double_the_physical_hit_and_resets_each_turn() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(B5_CT_P1, B5_CT_P2, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Drill Peck 118 → Counter 236
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Splash → Counter fails zero-draw
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[0].hp, 406, "Drill Peck dealt 118 (524 → 406)");
+    assert_eq!(out.decisions[0].active[1].hp, 98, "Counter returned EXACTLY 2×118 = 236 (334 → 98)");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "22534,42410,55299,35327",
+        "the landed-counter turn: DP acc+crit+dmg + Counter's ONE accuracy roll (NO crit/damage) + QC"
+    );
+    assert_eq!(out.decisions[1].active[1].hp, 98, "the un-armed Counter deals NOTHING (prev-turn reset)");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "7184,5868,30814,34654",
+        "the fail turn draws ZERO for Counter (only the Quick Claw) — the onTry zero-draw fail"
+    );
+}
+
+/// MC62: the WRONG-CATEGORY recorder gates — a SPECIAL hit (Surf) does NOT arm Counter,
+/// a PHYSICAL hit (Return) does NOT arm Mirror Coat; both executions fail ZERO-DRAW.
+/// WRONG (a category-blind recorder): either would return 2× (STATE) + draw accuracy
+/// (SEED). SEED pins on both boundaries.
+#[test]
+fn reactive_wrong_category_hits_do_not_arm() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|counter,mirrorcoat|Serious|252,,,,,|N||||";
+    let p2 = "Skarmory|||NoAbility|surf,return|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Counter vs Surf (special) → fail
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // Mirror Coat vs Return (physical) → fail
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[1].hp, 334, "Counter vs a SPECIAL hit deals nothing");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "37635,3740,64462,10380");
+    assert_eq!(out.decisions[1].active[1].hp, 334, "Mirror Coat vs a PHYSICAL hit deals nothing");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "5621,5056,41416,14688");
+}
+
+/// MC63: the RETURN-FIRE type immunity — an ARMED Counter (Shadow Ball, Ghost =
+/// PHYSICAL in gen3, arms it) into a GHOST reports `-immune` AFTER its accuracy draw
+/// (Fighting → Ghost 0×); an ARMED Mirror Coat (Crunch, Dark = SPECIAL, arms it) into
+/// a DARK likewise (Psychic → Dark 0×). ZERO damage either way, the accuracy roll
+/// consumed. STATE + SEED.
+#[test]
+fn armed_counter_and_mirror_coat_respect_the_return_fire_type_immunity() {
+    let d = dex();
+    // (a) Counter → Ghost.
+    let p1 = "Machamp|||NoAbility|counter,splash|Serious|252,,,,,|N||||";
+    let p2 = "Gengar|||Levitate|shadowball,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[0].hp, 299, "Shadow Ball dealt 85 (384 → 299) — Counter ARMED");
+    assert_eq!(out.decisions[0].active[1].hp, 324, "the Fighting return fire is IMMUNE into the Ghost");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "7184,5868,30814,34654");
+
+    // (b) Mirror Coat → Dark.
+    let p1 = "Blissey|||NoAbility|mirrorcoat,splash|Serious|252,,,,,|N||||";
+    let p2 = "Tyranitar|||NoAbility|crunch,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[0].hp, 640, "Crunch dealt 74 (714 → 640) — Mirror Coat ARMED");
+    assert_eq!(out.decisions[0].active[1].hp, 404, "the Psychic return fire is IMMUNE into the Dark");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "7184,5868,30814,34654");
+}
+
+/// MC64: a foe physical hit ABSORBED by the counter user's own SUBSTITUTE is NOT
+/// recorded (the mon's Damage event never fires behind a sub) → the Counter fails
+/// ZERO-DRAW. WRONG (a recorder keyed on the raw hit): Counter returns 2×118 (STATE) +
+/// draws accuracy (SEED). STATE (sub HP 131−118=13, foe untouched) + SEED.
+#[test]
+fn sub_absorbed_hit_does_not_arm_counter() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|counter,substitute,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, B5_CT_P2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // sub up (Skarm splashes)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Drill Peck into the SUB → Counter fails
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[0].hp, 393, "the sub cost 131 (524 → 393)");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "61255,39458,1834,64539");
+    assert_eq!(out.decisions[1].sub_hp[0], 21, "the sub absorbed Drill Peck's 110-roll (131 → 21)");
+    assert_eq!(out.decisions[1].active[0].hp, 393, "the MON took nothing behind the sub");
+    assert_eq!(out.decisions[1].active[1].hp, 334, "the un-armed Counter deals NOTHING");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "22534,42410,55299,35327",
+        "Counter drew ZERO (the sub-absorbed hit never armed it)"
+    );
+}
+
+/// MC65: (a) SEISMIC TOSS (fixed damage, Fighting → the gen3 type-derived category is
+/// PHYSICAL) IS countered — 2×100 = 200; (b) BEAT UP's strikes (Special) arm MIRROR
+/// COAT with 2× the **LAST STRIKE ONLY** (the per-hit OVERWRITE — strikes 17/89/9 →
+/// the return is 18, NOT 230). Probe `probe_batch5_reactive_edges.js`. STATE + SEED.
+#[test]
+fn fixed_damage_is_countered_and_beat_up_arms_mirror_coat_with_the_last_strike() {
+    let d = dex();
+    // (a) Seismic Toss countered.
+    let p2 = "Blissey|||NoAbility|seismictoss,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(B5_CT_P1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[0].hp, 424, "Seismic Toss dealt the level 100");
+    assert_eq!(out.decisions[0].active[1].hp, 514, "Counter returned 2×100 = 200 (714 → 514)");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "10897,43434,54578,10901");
+
+    // (b) Beat Up → Mirror Coat, 2× the LAST strike.
+    let p1 = "Blissey|||NoAbility|mirrorcoat,splash|Serious|252,,,,,|N||||";
+    let p2 = "Smeargle|||NoAbility|beatup,splash|Serious|252,,,,,|N||||]Snorlax|||NoAbility|splash|Serious|252,,,,,|N||||]Blissey|||NoAbility|splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[0].hp, 599, "three Beat Up strikes: 17 + 89 + 9 (714 → 599)");
+    assert_eq!(
+        out.decisions[0].active[1].hp, 296,
+        "Mirror Coat returned 2× the LAST strike = 18 (314 → 296) — NOT 2× the total"
+    );
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "50157,35106,3193,41379");
+}
+
+/// MC66: the COUNTER-MIRROR at an EQUAL SPEED — the both-counter turn draws +4 vs the
+/// both-splash control (the order-5 beforeTurnMove pair tie-shuffle + the 2 trailing
+/// runAction Updates + the residual `duration:1` handler tie). Both counters FAIL
+/// (nothing dealt damage). SEED pins on both boundaries (the control anchors the
+/// baseline; the delta is the counter machinery's draws).
+#[test]
+fn counter_mirror_speed_tie_draws_the_before_turn_and_residual_ties() {
+    let d = dex();
+    let p2 = "Snorlax|||NoAbility|counter,splash|Serious|252,,,,,|N||||";
+    // The tied-lead construction shuffles pre-date the seeded start: the probe's
+    // printed initSeed (37635,…) is the pre-first-decision state.
+    let mut battle = Battle::start_with_switchins(&opts_cg(B5_CT_P1, p2, "37635,3740,64462,10380"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // both-splash CONTROL
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // both-counter (+4 draws)
+        ],
+        &d,
+    );
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "60443,61849,18300,733", "the control turn");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "63246,52257,55308,49838",
+        "the both-counter turn: the order-5 sort tie + 2 trailing Updates + the residual duration tie"
+    );
+    assert_eq!(out.decisions[1].active[0].hp, 524, "both counters fail — no damage either way");
+    assert_eq!(out.decisions[1].active[1].hp, 524, "both counters fail — no damage either way");
+}
+
+/// MC67: ENDEAVOR sets the target's hp to EXACTLY the user's hp (the delta
+/// `target.hp − user.hp`, accuracy-only draw), and the follow-up at EQUAL hp FAILS
+/// (`hp >= target.hp` — EQUALITY INCLUDED) with **ZERO draws** + `|-fail|`. PP is
+/// consumed on BOTH (the onTry fail sits after deductPP). STATE + SEED.
+#[test]
+fn endeavor_sets_target_hp_to_users_and_fails_at_equality_zero_draw() {
+    let d = dex();
+    let p1 = "Swellow|||NoAbility|endeavor,splash|Serious||N||||";
+    let p2 = "Snorlax|||NoAbility|splash,drillpeck|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    battle.state_mut().unwrap().sides[0].pokemon[0].hp = 50; // the probe's inject
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Endeavor: 524 → 50
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // 50 vs 50 → EQUALITY fail
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[1].hp, 50, "Endeavor left the Snorlax at EXACTLY the user's 50");
+    assert_eq!(out.decisions[0].active[0].move_pp[0], 7, "the landed Endeavor consumed 1 PP");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "60880,31090,7619,34922");
+    assert_eq!(out.decisions[1].active[1].hp, 50, "the equality Endeavor deals nothing");
+    assert_eq!(out.decisions[1].active[0].move_pp[0], 6, "the FAILED Endeavor still consumed 1 PP");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "10897,43434,54578,10901",
+        "the equality fail draws ZERO (onTry precedes accuracy)"
+    );
+}
+
+/// MC68: (a) ENDEAVOR into a GHOST is `-immune` AFTER its accuracy draw (Normal →
+/// Ghost 0×, ignoreImmunity false); (b) ENDEAVOR into a SUBSTITUTE computes the delta
+/// from the MON's hp (393 − 50 = 343) and the number lands on the SUB — it BREAKS with
+/// NO carry (the mon's hp unchanged). STATE + SEED.
+#[test]
+fn endeavor_ghost_immunity_and_substitute_break_no_carry() {
+    let d = dex();
+    // (a) → Ghost.
+    let p1 = "Swellow|||NoAbility|endeavor,splash|Serious||N||||";
+    let p2 = "Gengar|||Levitate|splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    battle.state_mut().unwrap().sides[0].pokemon[0].hp = 50;
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[1].hp, 324, "the Ghost takes ZERO (immune)");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "60880,31090,7619,34922");
+
+    // (b) → Substitute.
+    let p2 = "Snorlax|||NoAbility|substitute,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    battle.state_mut().unwrap().sides[0].pokemon[0].hp = 50;
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Snorlax subs
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Endeavor into the sub
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[1].sub_hp[1], 0, "the 343 delta BROKE the 131-HP sub");
+    assert_eq!(out.decisions[1].active[1].hp, 393, "NO carry — the mon's hp is untouched");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "10897,43434,54578,10901");
+}
+
+/// MC69: RETURN / FRUSTRATION happiness extremes — h255 Return = BP 102 (60 dmg into
+/// this Skarmory), h3 Return = the `|| 1`-clamped BP **1** (a 1-damage HIT, not a
+/// fail), h0 Frustration = BP 102 — and ALL THREE runs end at the SAME post-turn seed
+/// (the BP is a draw-free state read: acc+crit+dmg+QC regardless). STATE + the
+/// seed-EQUALITY draw-neutrality proof.
+#[test]
+fn return_frustration_happiness_extremes_are_draw_neutral() {
+    let d = dex();
+    let p2 = "Skarmory|||NoAbility|splash,drillpeck|Serious|252,,,,,|N||||";
+    let run = |p1: &str| {
+        let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+            .expect("start");
+        let st = battle.state_mut().expect("state");
+        let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+        (out.decisions[0].active[1].hp, seed_str(&out.decisions[0].seed_after))
+    };
+    let (hp_h255, seed_h255) = run("Tauros|||NoAbility|return,splash|Serious|,252,,,,|N||||");
+    let (hp_h3, seed_h3) = run("Tauros|||NoAbility|return,splash|Serious|,252,,,,|N||||3");
+    let (hp_h0, seed_h0) = run("Tauros|||NoAbility|return,splash|Serious|,252,,,,|N||||0");
+    let (hp_f0, seed_f0) = run("Tauros|||NoAbility|frustration,splash|Serious|,252,,,,|N||||0");
+    assert_eq!(hp_h255, 274, "h255 Return (BP 102) dealt 60 (334 → 274)");
+    assert_eq!(hp_h3, 333, "h3 Return: floor(30/25) = BP 1 → EXACTLY 1 damage");
+    assert_eq!(hp_h0, 333, "h0 Return: floor(0/25) = 0 → the `|| 1` CLAMP → BP 1 (a HIT, not a fail)");
+    assert_eq!(hp_f0, 274, "h0 Frustration (BP 102) mirrors the h255 Return");
+    assert_eq!(seed_h255, "37635,3740,64462,10380", "the real Showdown post-turn seed");
+    assert_eq!(seed_h3, seed_h255, "BP 1 vs BP 102: BYTE-IDENTICAL seeds — the BP is draw-free");
+    assert_eq!(seed_h0, seed_h255, "the clamped BP-1 hit shares the identical draw chain");
+    assert_eq!(seed_f0, seed_h255, "Frustration shares the same draw chain");
+}
+
+/// MC70: the FLAIL band boundary at Snorlax maxhp 524 — hp 21 (ratio ⌊48·21/524⌋ = 1
+/// → BP 200) vs hp 22 (ratio 2 → BP 150): different damage (125 vs 94) at the
+/// BYTE-IDENTICAL post-turn seed. A ±1 band-threshold error flips the BP at exactly
+/// this boundary. STATE + the seed-equality proof.
+#[test]
+fn flail_band_boundary_bp200_vs_bp150() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|flail,splash|Serious|252,252,,,,|N||||";
+    let p2 = "Skarmory|||NoAbility|splash,drillpeck|Serious|252,,,,,|N||||";
+    let run = |hp: u16| {
+        let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+            .expect("start");
+        battle.state_mut().unwrap().sides[0].pokemon[0].hp = hp;
+        let st = battle.state_mut().expect("state");
+        let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+        (out.decisions[0].active[1].hp, seed_str(&out.decisions[0].seed_after))
+    };
+    let (hp21, seed21) = run(21);
+    let (hp22, seed22) = run(22);
+    assert_eq!(hp21, 209, "hp 21 → ratio 1 → BP 200 → 125 damage (334 → 209)");
+    assert_eq!(hp22, 240, "hp 22 → ratio 2 → BP 150 → 94 damage (334 → 240)");
+    assert_eq!(seed21, "37635,3740,64462,10380", "the real Showdown post-turn seed");
+    assert_eq!(seed22, seed21, "the band only changes the BP — the draws are identical");
+}
+
+/// MC71: the LOW KICK weight ladder — Pichu (20 hg → BP 20, 31 dmg), Wobbuffet
+/// (285 hg → BP 60, 19 dmg), Snorlax (4600 hg → BP 120, 145 dmg ×2 SE), all at the
+/// BYTE-IDENTICAL post-turn seed (the weight read is draw-free). A wrong `weighthg`
+/// datum or ladder cutoff shows as the wrong rung's damage. STATE + seed equality.
+#[test]
+fn low_kick_weight_ladder_is_draw_neutral() {
+    let d = dex();
+    let p1 = "Blissey|||NoAbility|lowkick,splash|Serious|,252,,,,|N||||";
+    let run = |p2: &str| {
+        let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+            .expect("start");
+        let st = battle.state_mut().expect("state");
+        let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+        (out.decisions[0].active[1].hp, seed_str(&out.decisions[0].seed_after))
+    };
+    let (pichu, s1) = run("Pichu|||NoAbility|splash|Serious|252,,,,,|N||||");
+    let (wobb, s2) = run("Wobbuffet|||NoAbility|splash|Serious|252,,,,,|N||||");
+    let (lax, s3) = run("Snorlax|||NoAbility|splash|Serious|252,,,,,|N||||");
+    assert_eq!(pichu, 213, "Pichu 20 hg → BP 20 (244 → 213)");
+    assert_eq!(wobb, 565, "Wobbuffet 285 hg → BP 60 (584 → 565)");
+    assert_eq!(lax, 379, "Snorlax 4600 hg → BP 120 (524 → 379)");
+    assert_eq!(s1, "37635,3740,64462,10380", "the real Showdown post-turn seed");
+    assert_eq!(s2, s1, "the weight rung is draw-free");
+    assert_eq!(s3, s1, "the weight rung is draw-free");
+}
+
+/// MC72: SLEEP TALK — (a) the n=1 pool ([rest] — Sleep Talk excludes itself) STILL
+/// draws the `sample` (`random(1)`) and the picked Rest-while-asleep SILENTLY no-ops
+/// (no heal, no counter reset, no `-fail`); the picked move's PP is NEVER consumed
+/// (rest stays 15 — only the direct dec0 use paid). (b) the EMPTY pool ([sleeptalk,
+/// solarbeam] — solarbeam is `charge`-flagged) fails `[still]` + `-fail` with ZERO
+/// Sleep-Talk draws, and the slp counter still ticks (a sleep-talking turn decrements).
+/// STATE (slp counter + PP) + SEED.
+#[test]
+fn sleep_talk_n1_sample_and_empty_pool() {
+    let d = dex();
+    // (a) n=1 pool: a Rest-based sleep (fixed 3), then Sleep Talk picks Rest.
+    let p1 = "Snorlax|||NoAbility|sleeptalk,rest|Serious|252,,,,,|N||||";
+    let p2 = "Skarmory|||NoAbility|drillpeck,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    battle.state_mut().unwrap().sides[0].pokemon[0].hp = 300;
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Rest → Sleep(3), full heal
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Sleep Talk: sample(1) → Rest no-op
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[0].status, Some(Status::Sleep(3)), "Rest → the fixed Sleep(3)");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "22534,42410,55299,35327");
+    assert_eq!(
+        out.decisions[1].active[0].status,
+        Some(Status::Sleep(2)),
+        "the sleep-talking turn still decrements the counter (3 → 2)"
+    );
+    assert_eq!(out.decisions[1].active[0].move_pp[0], 15, "Sleep Talk's own PP −1");
+    assert_eq!(
+        out.decisions[1].active[0].move_pp[1], 15,
+        "the PICKED Rest's PP is NEVER consumed (15 from the direct dec0 use only)"
+    );
+    assert_eq!(out.decisions[1].active[0].hp, 524, "the called Rest-while-asleep silently no-ops (already full)");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "37112,13693,28533,21721",
+        "the n=1 pool STILL draws the sample (random(1)) — then the Rest no-op draws nothing"
+    );
+
+    // (a2) the called Rest on a DAMAGED sleeper — the silent no-op must NOT heal /
+    // redraw random(2,6) / reset the counter (a full-HP board masks this behind the
+    // full-HP guard; here Drill Peck lands the same turn BEFORE the talk).
+    let p1 = "Snorlax|||NoAbility|sleeptalk,rest|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    battle.state_mut().unwrap().sides[0].pokemon[0].hp = 300;
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Rest → Sleep(3), full heal
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Drill Peck 119, then talk → Rest no-op
+        ],
+        &d,
+    );
+    assert_eq!(
+        out.decisions[1].active[0].hp, 405,
+        "the called Rest-while-asleep did NOT heal the damaged sleeper (524 − 119 = 405)"
+    );
+    assert_eq!(
+        out.decisions[1].active[0].status,
+        Some(Status::Sleep(2)),
+        "…and did NOT reset the sleep counter (3 → 2 by the talk decrement only)"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "17940,16623,13080,40722",
+        "…and drew NOTHING (no random(2,6) — the asleep guard precedes the Rest body)"
+    );
+
+    // (b) the EMPTY pool: a Spore-based sleep, [sleeptalk, solarbeam] → pool [].
+    let p1 = "Snorlax|||NoAbility|sleeptalk,solarbeam|Serious|252,,,,,|N||||";
+    let p2 = "Breloom|||NoAbility|spore,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Spore lands; the queued Sleep Talk PROCEEDS asleep → empty pool fail
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // still asleep → empty pool fail again
+        ],
+        &d,
+    );
+    assert_eq!(
+        out.decisions[0].active[0].status,
+        Some(Status::Sleep(4)),
+        "the Spore rolled 5; the SAME-TURN queued Sleep Talk decremented it to 4 and PROCEEDED (sleepUsable)"
+    );
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "10897,43434,54578,10901");
+    assert_eq!(out.decisions[1].active[0].status, Some(Status::Sleep(3)));
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "37635,3740,64462,10380",
+        "the empty-pool fail draws ZERO Sleep-Talk draws (only the Quick Claw)"
+    );
+}
+
+/// MC73: the CHOICE-LOCKED Sleep Talk — a Choice Band sleeper's FIRST Sleep Talk of a
+/// lock samples + executes (the lock records Sleep Talk ITSELF — the lock this very
+/// use sets does NOT count); every LATER one fails `[still]` + `-fail` BEFORE the
+/// sample (no sample draw). WRONG (gating on the post-set lock): the FIRST use would
+/// fail too. STATE + SEED, all three boundaries.
+#[test]
+fn choice_band_sleep_talk_works_once_then_fails_on_the_lock() {
+    let d = dex();
+    let p1 = "Snorlax||ChoiceBand|NoAbility|sleeptalk,bodyslam|Serious|252,252,,,,|N||||";
+    let p2 = "Breloom|||NoAbility|spore,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Spore; the queued Sleep Talk #1 locks + samples + Body Slams
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Sleep Talk #2 → the choicelock [still]+fail
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Sleep Talk #3 → still locked
+        ],
+        &d,
+    );
+    assert_eq!(
+        out.decisions[0].active[1].hp, 63,
+        "Sleep Talk #1 called Body Slam (324 → 63) — the first use of the lock WORKS"
+    );
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "5621,5056,41416,14688");
+    assert_eq!(out.decisions[1].active[1].hp, 63, "Sleep Talk #2 fails on the PRIOR-turn lock");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "50157,35106,3193,41379",
+        "the choicelock fail draws NO sample"
+    );
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "17940,16623,13080,40722");
+}
+
+/// MC74: the 0-PP PICK — the pool keeps a 0-PP member (NO pp filter at build), the
+/// n=1 `sample` DRAWS, and the pick STOPS at `|cant|…|nopp|bodyslam` (the turn is
+/// wasted, NO further draws, the picked move never runs). WRONG (a pp-filtered pool):
+/// the pool would be empty → a `[still]`+`-fail` with NO sample → a seed desync.
+/// STATE + SEED.
+#[test]
+fn sleep_talk_zero_pp_pick_wastes_the_turn_after_the_sample() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|sleeptalk,bodyslam|Serious|252,,,,,|N||||";
+    let p2 = "Breloom|||NoAbility|spore,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    battle.state_mut().unwrap().sides[0].pokemon[0].move_pp[1] = 0; // Body Slam at 0 PP
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Spore; Sleep Talk samples → nopp
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // again
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[1].hp, 324, "the 0-PP pick never executes (Breloom untouched)");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "37635,3740,64462,10380",
+        "the sample DREW (random(1)) then the nopp cant stopped — no further draws"
+    );
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "7184,5868,30814,34654");
+}
+
+/// MC75: the slp `skippedTime` RESTORE — each sleep-talking turn decrements the
+/// counter AND banks a skip (3 → 2 → 1, skipped 2); a switch out + back RESTORES
+/// `time += skippedTime` (the counter reads 3 again on re-entry), so the later wake
+/// timing shifts. WRONG (no skippedTime): the re-entered sleeper wakes 2 turns early.
+/// STATE (the counter timeline) + SEED (every boundary).
+#[test]
+fn sleep_talk_skipped_time_restores_on_switch_in() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|sleeptalk,rest|Serious|252,,,,,|N||||]Blissey|||NoAbility|splash|Serious|252,,,,,|N||||";
+    let p2 = "Skarmory|||NoAbility|drillpeck,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    battle.state_mut().unwrap().sides[0].pokemon[0].hp = 300;
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),   // Rest → Sleep(3)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),   // talk (2, skipped 1)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),   // talk (1, skipped 2)
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(1)), // pivot out
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(1)), // pivot back → RESTORED to 3
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),   // talk (2 again)
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[0].status, Some(Status::Sleep(3)));
+    assert_eq!(out.decisions[1].active[0].status, Some(Status::Sleep(2)));
+    assert_eq!(out.decisions[2].active[0].status, Some(Status::Sleep(1)));
+    assert_eq!(
+        out.decisions[4].active[0].status,
+        Some(Status::Sleep(3)),
+        "the switch-in RESTORE: time += skippedTime (1 + 2 = 3)"
+    );
+    assert_eq!(out.decisions[5].active[0].status, Some(Status::Sleep(2)));
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "22534,42410,55299,35327");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "37112,13693,28533,21721");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "50157,35106,3193,41379");
+    assert_eq!(seed_str(&out.decisions[3].seed_after), "17940,16623,13080,40722");
+    assert_eq!(seed_str(&out.decisions[4].seed_after), "60443,61849,18300,733");
+    assert_eq!(seed_str(&out.decisions[5].seed_after), "54523,22811,31582,9991");
+}
+
+/// MC76: a FIXED-DAMAGE hit sets the Focus-Punch user's `lostFocus` — the batch-5 e2e
+/// admission bug (e2e_202 dec44: the sim's Blissey Seismic Toss into a Focus-Punch
+/// Dragonite cants the punch; the port's `run_fixed_damage_move` never set `lost_focus`,
+/// so the punch LANDED and KO'd the Blissey — a LATENT gap unreachable while the
+/// fixed-damage family was blocklist-shadowed out of the e2e picker). WRONG (pre-fix):
+/// the punch runs (acc+crit+dmg draws + a huge hit) → STATE + SEED desync. Ground truth
+/// `harness/probe_batch5_regression_rng.js` (MC76).
+#[test]
+fn fixed_damage_hit_cancels_a_queued_focus_punch() {
+    let d = dex();
+    let p1 = "Blissey|||NoAbility|seismictoss,splash|Serious|252,,,,,|N||||";
+    let p2 = "Dragonite|||NoAbility|focuspunch,splash|Serious|252,252,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[1].hp, 286, "Seismic Toss dealt 100 (386 → 286)");
+    assert_eq!(
+        out.decisions[0].active[0].hp, 714,
+        "the Focus Punch was CANT'd (lostFocus from the fixed-damage hit) — Blissey untouched"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "60880,31090,7619,34922",
+        "the cant'd punch draws NOTHING (only the ST accuracy + Quick Claw)"
+    );
+}
+
+/// MC78: a Sleep-Talk-CALLED ROAR drags the foe — the called move's resolution
+/// PROPAGATES through the recursive `run_move` (`force_switch_foe` rides out of the
+/// Sleep Talk arm to the runAction-tail `drag_in`), so an asleep RestTalker's called
+/// Roar phazes exactly like a selected Roar (the n=1 `sample` pulls the lone bench
+/// mon). The review's coverage gap: the batch-5 golden's 23 scenarios call only
+/// Rest/attacks via Sleep Talk — the called-Roar drag composition (e2e-INCLUDED, since
+/// phaze is admitted + `sleepTalkPoolModeled` passes a Roar carrier) was coded but
+/// unpinned. Scenario: Suicune [Sleep Talk, Roar] (pool = [roar] — Sleep Talk itself is
+/// flags.nosleeptalk → the n=1 sample) vs Parasect [Spore, Splash] + a bench Snorlax.
+/// dec0 = ST awake (the silent zero-draw onTry fail) + Spore lands; dec1 = ST asleep →
+/// |cant|slp + sleepUsable-proceeds → sample picks Roar → the CALLED Roar draws its
+/// accuracy then the n=1 drag `sample` pulls Snorlax in. Ground truth
+/// `harness/probe_batch5_st_calls_roar_rng.js` (raw seed [7,11,13,17]).
+#[test]
+fn sleep_talk_called_roar_drags_the_foe() {
+    let d = dex();
+    let p1 = "Suicune|||NoAbility|sleeptalk,roar|Serious|252,,,,,|N||||";
+    let p2 = "Parasect|||NoAbility|spore,splash|Serious|252,,,,,|N||||\
+              ]Snorlax|||NoAbility|splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // ST awake-fail ; Spore
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // ST asleep → called Roar ; Splash
+        ],
+        &d,
+    );
+    assert_eq!(
+        out.decisions[0].active[0].status,
+        Some(Status::Sleep(5)),
+        "Spore slept Suicune (the awake Sleep Talk fails silently, zero draws)"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "10897,43434,54578,10901",
+        "dec0: the awake Sleep Talk draws NOTHING; Spore acc + slp random(2,6) + Quick Claw"
+    );
+    assert_eq!(
+        st.sides[1].pokemon[st.sides[1].active].species_id, "snorlax",
+        "the CALLED Roar dragged the lone bench Snorlax in (n=1 sample)"
+    );
+    assert_eq!(
+        out.decisions[1].active[0].status,
+        Some(Status::Sleep(4)),
+        "Suicune stayed asleep through the called Roar (the counter decremented once)"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "37112,13693,28533,21721",
+        "dec1: [slp-cant draw-free, the n=1 Sleep Talk sample, the called Roar's accuracy, \
+         the n=1 drag sample, Quick Claw] — the composition's exact draw chain"
+    );
+}
+
+/// MC77: a FOCUS-BAND-proc'd ZERO-damage hit does NOT arm Counter/Mirror Coat — the
+/// sim's `runEvent('Damage')` BREAKS its handler chain on a falsy relayVar
+/// (battle.js:695) BEFORE the counter's priority-−101 recorder, so a 1-HP Focus-Band
+/// holder whose lethal incoming hit is reduced to 0 keeps Counter UN-ARMED: the
+/// Counter is a bare zero-draw `|move|` fail (NO accuracy roll, foe untouched).
+/// WRONG (pre-fix): `record_reactive_hit` armed `Some(0)` unconditionally → the port's
+/// Counter proceeded past the onTry gate and drew ONE extra accuracy roll (a latent
+/// SEED desync; e2e-unreachable today — 0 Focus Band carriers in the team pool).
+/// Ground truth: `harness/probe_lens1_batch5_review.js` R3, raw seed [6,6,6,6] →
+/// pre-decision seed 13567,1259,49329,55073; the FB-proc turn draws EXACTLY
+/// [DP acc, crit, dmg, FB roll, Quick Claw] → 24097,1527,37675,7388.
+#[test]
+fn focus_band_zero_damage_hit_does_not_arm_counter() {
+    let d = dex();
+    let p1 = "Snorlax||focusband|NoAbility|counter,splash|Serious|252,,,,,|N||||";
+    let p2 = "Skarmory|||NoAbility|drillpeck,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "13567,1259,49329,55073"), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    // The probe injects hp=1 on the FB holder post-construction (the sim's applyActs).
+    st.sides[0].pokemon[0].hp = 1;
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        out.decisions[0].active[0].hp, 1,
+        "the Focus Band proc reduced the lethal Drill Peck to 0 dealt (holder stays at 1 HP)"
+    );
+    assert_eq!(
+        out.decisions[0].active[1].hp, 334,
+        "Counter stayed UN-ARMED by the 0-damage hit — the return fire never happened"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "24097,1527,37675,7388",
+        "the un-armed Counter is a ZERO-draw fail (no accuracy roll) — \
+         only [DP acc, crit, dmg, FB roll, Quick Claw] drew"
+    );
+}
+
+// ============================================================================
+// MC79-MC98 — MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`): the FINAL
+// UNMODELED tail — ENCORE / DESTINY BOND / ENDURE / PERISH SONG / MEAN LOOK
+// family / BELLY DRUM / CHARGE / MEMENTO / MIMIC / PAIN SPLIT / PSYCH UP.
+// Ground-truth seeds/state from the REAL Showdown probe
+// `harness/probe_batch6_regression_rng.js` (re-run it after any PRNG /
+// draw-order change and update the constants). Draw/mechanic models settled by
+// `harness/probe_batch6_{locks,field_trap,utility,dexfacts}.js`.
+// ============================================================================
+
+const B6_EN_JOLTEON: &str = "Jolteon|||NoAbility|encore,thunderbolt|Serious|252,,,252,,252|N||||";
+const B6_EN_SNORLAX: &str = "Snorlax|||NoAbility|splash,bodyslam|Serious|252,,,,,|N||||";
+
+/// MC79: the FASTER encore user (the target has NOT moved this turn → the gen4-inherited
+/// onStart's `!willMove → duration++` does NOT fire → stored = rolled) + the
+/// `onOverrideAction` EXECUTION OVERRIDE — the Snorlax QUEUED Body Slam the very turn
+/// the encore landed, and the queued move executed AS the encored Splash: the ENCORED
+/// slot's PP deducts (splash 63→62), Body Slam's is UNTOUCHED (24). The ENCORE column
+/// then ticks 4→3→2→gone at each residual. WRONG (no override): Body Slam runs (a huge
+/// HP/state desync); WRONG (+1 duration branch): every ENCORE column is off by one
+/// (MC80 is the SAME seeds with the OTHER branch — the perturbation pair).
+#[test]
+fn faster_encore_stores_rolled_and_overrides_the_queued_move() {
+    let d = dex();
+    let mut battle = Battle::start_with_switchins(
+        &opts_cg(B6_EN_JOLTEON, B6_EN_SNORLAX, "44317,42357,9927,48760"),
+        &d,
+    )
+    .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // tbolt / splash (lastMove)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // encore; queued BODYSLAM → overridden to splash
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    // dec1 — the encore landed + the override executed splash (its PP deducted).
+    assert_eq!(out.decisions[1].encore, [0, 4], "dec1: stored = ROLLED (5) − the landing residual tick = 4");
+    assert_eq!(
+        out.decisions[1].active[1].move_pp,
+        [62, 24, -1, -1],
+        "dec1: the OVERRIDE deducted the ENCORED splash (63→62); the queued Body Slam is untouched"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "5621,5056,41416,14688",
+        "dec1: encore acc + durationCallback random(3,7) + QC (the landed-encore draw model)"
+    );
+    // The residual tick timeline (4 → 3 → 2 → expired).
+    assert_eq!(out.decisions[2].encore, [0, 3]);
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "54523,22811,31582,9991");
+    assert_eq!(out.decisions[3].encore, [0, 2]);
+    assert_eq!(seed_str(&out.decisions[3].seed_after), "50037,28344,49354,43194");
+    assert_eq!(out.decisions[4].encore, [0, 0], "dec4: the KO turn (the lock is moot)");
+    assert_eq!(seed_str(&out.decisions[4].seed_after), "63246,52257,55308,49838");
+    assert_eq!(out.winner, Some(0), "Jolteon sweeps");
+}
+
+/// MC80: the SLOWER encore user (the target ALREADY moved this turn → `!willMove` →
+/// `duration++` → stored = rolled + 1). The SAME init seed + the SAME draw stream as
+/// MC79's landing turn (byte-identical boundary seeds), but the ENCORE column reads
+/// **5** where MC79 read 4 — the branch is STATE-only at an equal draw count (the
+/// perfect perturbation pin pair). WRONG (either fixed model): one of MC79/MC80 fails.
+#[test]
+fn slower_encore_stores_rolled_plus_one() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|encore,bodyslam|Serious|252,,,,,|N||||";
+    let p2 = "Jolteon|||NoAbility|splash,thunderbolt|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Jolteon splashes FIRST
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // the SLOWER encore
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert_eq!(
+        out.decisions[1].encore,
+        [0, 5],
+        "dec1: stored = rolled + 1 (the !willMove branch) − the landing tick = 5 (MC79 read 4 \
+         at the IDENTICAL boundary seed — the branch is state-only)"
+    );
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "5621,5056,41416,14688");
+    assert_eq!(out.decisions[2].encore, [0, 4]);
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "54523,22811,31582,9991");
+}
+
+/// MC81: the encore FAIL SPLIT is NOT uniform — the NO-LASTMOVE fail consumes the
+/// accuracy roll AND the durationCallback `random(3,7)` (the callback fires before
+/// onStart rejects), while the ALREADY-ENCORED fail consumes the accuracy roll ONLY
+/// (`addVolatile` returns false BEFORE the durationCallback), the existing volatile
+/// UNCHANGED. A uniform fail model desyncs the LCG on one of the two boundaries.
+#[test]
+fn encore_fail_split_draws_differ_by_the_duration_callback() {
+    let d = dex();
+    let mut battle = Battle::start_with_switchins(
+        &opts_cg(B6_EN_JOLTEON, B6_EN_SNORLAX, "44317,42357,9927,48760"),
+        &d,
+    )
+    .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // NO-LASTMOVE fail: acc + dur
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // lands
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // ALREADY-ENCORED fail: acc ONLY
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].encore, [0, 0], "dec0: the no-lastMove encore FAILED");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "10897,43434,54578,10901",
+        "dec0: acc + durationCallback + QC (the 2-draw fail form)"
+    );
+    assert_eq!(out.decisions[1].encore, [0, 3], "dec1: the encore LANDS (stored 4 − the tick)");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "7184,5868,30814,34654");
+    assert_eq!(out.decisions[2].encore, [0, 2], "dec2: the existing volatile just ticks (UNCHANGED by the fail)");
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "5621,5056,41416,14688",
+        "dec2: the already-encored fail draws the accuracy roll ONLY (1-draw fail form)"
+    );
+}
+
+/// MC82: the encored slot hitting 0 PP removes the volatile EARLY at THAT residual
+/// (`encore.onResidual`'s pp check — the `-end` fires the same turn even at a high
+/// remaining duration), and a later re-encore into the still-lastMove 0-PP slot FAILS
+/// with BOTH draws (acc + durationCallback — the onStart 0-PP reject fires after them).
+#[test]
+fn encore_zero_pp_ends_early_and_rejects_the_zero_pp_lastmove() {
+    let d = dex();
+    let mut battle = Battle::start_with_switchins(
+        &opts_cg(B6_EN_JOLTEON, B6_EN_SNORLAX, "44317,42357,9927,48760"),
+        &d,
+    )
+    .expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[1].pokemon[0].move_pp[0] = 2; // splash injected to 2 PP
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // splash 2→1 (lastMove)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // encore lands; splash 1→0 → EARLY -end
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // re-encore into the 0-PP lastMove: FAIL
+        ],
+        &d,
+    );
+    assert_eq!(
+        out.decisions[1].encore,
+        [0, 0],
+        "dec1: the encore -end'd EARLY at the same residual (the encored slot hit 0 PP)"
+    );
+    assert_eq!(out.decisions[1].active[1].move_pp, [0, 24, -1, -1]);
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "5621,5056,41416,14688");
+    assert_eq!(out.decisions[2].encore, [0, 0], "dec2: the 0-PP-lastMove re-encore FAILED");
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "56830,34298,10811,30881",
+        "dec2: the 0-PP-lastMove fail consumes acc AND the durationCallback"
+    );
+}
+
+const B6_DB_GENGAR: &str = "Gengar|||Levitate|destinybond,splash|Serious||N||||";
+const B6_DB_SNORLAX: &str = "Snorlax|||NoAbility|shadowball,splash|Serious|252,252,,,,|N||||";
+
+/// MC83: DESTINY BOND cast-and-KO'd the SAME turn → the MUTUAL FAINT: Gengar's |faint|
+/// FIRST, then `-activate|move: Destiny Bond`, then the killer Snorlax's |faint| — a
+/// both-last-mons mutual faint is the gen-3 TIE. The cast is ZERO draws; the KO turn
+/// draws Shadow Ball's acc/crit/dmg/secondary and NO Quick Claw. WRONG (no onFaint
+/// chain): Snorlax survives and WINS (the MC84 outcome at a different seed).
+#[test]
+fn destiny_bond_mutual_faint_is_a_tie() {
+    let d = dex();
+    let mut battle = Battle::start_with_switchins(
+        &opts_cg(B6_DB_GENGAR, B6_DB_SNORLAX, "44317,42357,9927,48760"),
+        &d,
+    )
+    .expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[0].pokemon[0].hp = 120; // in Shadow Ball KO range
+    let out = st.run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert!(out.decisions[0].active[0].fainted, "Gengar fainted to the Shadow Ball");
+    assert!(out.decisions[0].active[1].fainted, "the KILLER fainted too (Destiny Bond)");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "37635,3740,64462,10380",
+        "the cast is draw-free; the KO turn draws SB acc/crit/dmg/secondary, no QC, and the \
+         mutual-faint chain itself is DRAW-FREE"
+    );
+    assert!(out.ended, "both last mons fainted");
+    assert_eq!(out.winner, None, "the gen-3 TIE (winner='')");
+}
+
+/// MC84: the DB WINDOW CLOSES at the user's NEXT MOVE ATTEMPT (`onBeforeMove` −1): the
+/// bond, then a SPLASH (removes the volatile), then the KO → NO mutual faint — the
+/// killer survives at full HP and WINS. WRONG (a persistent volatile): a phantom
+/// mutual faint (MC83's tie instead of the P2 win).
+#[test]
+fn destiny_bond_window_closes_at_the_next_move_attempt() {
+    let d = dex();
+    let mut battle = Battle::start_with_switchins(
+        &opts_cg(B6_DB_GENGAR, B6_DB_SNORLAX, "44317,42357,9927,48760"),
+        &d,
+    )
+    .expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[0].pokemon[0].hp = 120;
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // DB cast; Snorlax splashes
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // Gengar SPLASHES → the window closes
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Shadow Ball KOs → NO mutual faint
+        ],
+        &d,
+    );
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "61255,39458,1834,64539", "the cast turn: QC only");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "60880,31090,7619,34922");
+    assert!(out.decisions[2].active[0].fainted, "Gengar fainted");
+    assert!(!out.decisions[2].active[1].fainted, "the killer did NOT faint (the window closed)");
+    assert_eq!(out.decisions[2].active[1].hp, 524, "Snorlax untouched");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "7184,5868,30814,34654");
+    assert_eq!(out.winner, Some(1), "P2 wins — no mutual faint");
+}
+
+/// MC85: a RESIDUAL (sand chip) KO does NOT trigger Destiny Bond — and the WHOLE turn
+/// (DB cast + foe splash + sand chip + faint) is ZERO draws at distinct speeds: the
+/// post-turn seed is LITERALLY the init seed. WRONG (a residual-triggered bond):
+/// Tyranitar faints too (a tie instead of the P2 win).
+#[test]
+fn destiny_bond_is_not_triggered_by_a_residual_ko() {
+    let d = dex();
+    let ttar = "Tyranitar|||SandStream|splash,crunch|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(B6_DB_GENGAR, ttar, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[0].pokemon[0].hp = 15; // within the sand chip
+    let out = st.run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert!(out.decisions[0].active[0].fainted, "the sand chip KO'd the bond holder");
+    assert!(!out.decisions[0].active[1].fainted, "NO mutual faint on a residual KO");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "44317,42357,9927,48760",
+        "the whole cast+chip+faint turn is ZERO draws (the seed is unchanged)"
+    );
+    assert_eq!(out.winner, Some(1));
+}
+
+/// MC86: ENDURE survives any MOVE damage at 1 HP and rides the SHARED protect `stall`
+/// ladder: the first endure is draw-free (counter → 2), consecutive uses roll
+/// `randomChance(1, counter)` escalating 2 → 4 → 8, and a FAILED roll leaves the user
+/// unprotected (the Double-Edge KOs). Every successful endure turn ALSO adds the
+/// endure+stall intra-mon residual duration tie (ONE shuffle at ANY speed) — a wrong
+/// tie model desyncs every boundary seed here.
+#[test]
+fn endure_survives_at_one_hp_and_rides_the_shared_stall_ladder() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|endure,splash|Serious|252,,,,,|N||||";
+    let p2 = "Tauros|||NoAbility|doubleedge,splash|Serious|,252,,,,252|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[0].hp, 256, "dec0: DE landed (no clamp needed at full HP)");
+    assert_eq!(out.decisions[0].active[0].protect_counter, 2, "the SHARED stall counter");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "22534,42410,55299,35327");
+    assert_eq!(out.decisions[1].active[0].hp, 15);
+    assert_eq!(out.decisions[1].active[0].protect_counter, 4);
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "60443,61849,18300,733");
+    assert_eq!(
+        out.decisions[2].active[0].hp, 1,
+        "dec2: the endure onDamage CLAMP — the lethal Double-Edge leaves EXACTLY 1 HP"
+    );
+    assert_eq!(out.decisions[2].active[0].protect_counter, 8);
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "63651,14230,62171,48683");
+    assert!(out.decisions[3].active[0].fainted, "dec3: the stall roll FAILED → the KO");
+    assert_eq!(seed_str(&out.decisions[3].seed_after), "35046,57977,35930,51983");
+    assert_eq!(out.winner, Some(1));
+}
+
+/// MC87: ENDURE guards MOVE damage ONLY — the burned endurer survives the (fixed-
+/// damage) Seismic Toss at exactly 1 HP, then the SAME turn's burn residual kills it
+/// (residual damage is not a Move effect → no clamp). One decision, game over.
+#[test]
+fn endure_clamps_fixed_damage_but_not_the_burn_residual() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|endure,splash|Serious|252,,,,,|N||||";
+    let p2 = "Blissey|||NoAbility|seismictoss,splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[0].pokemon[0].status = Some(Status::Burn);
+    st.sides[0].pokemon[0].hp = 80; // within Seismic Toss KO range (the clamp must fire)
+    let out = st.run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert!(out.decisions[0].active[0].fainted, "the burn residual killed the 1-HP endurer");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "60880,31090,7619,34922");
+    assert_eq!(out.winner, Some(1));
+}
+
+/// MC88: PERISH SONG counters tick 3 → 2 → 1 → the perish0 FAINT at the order-12
+/// residual (LAST in the ladder), the CAST is draw-free, and a SWITCH-OUT at perish1
+/// CLEARS the leaver's counter (the pivoted-out Celebi survives; the Snorlax that
+/// stayed faints on schedule → a forced replacement).
+#[test]
+fn perish_song_ticks_to_the_faint_and_a_pivot_clears_the_counter() {
+    let d = dex();
+    let p1 = "Celebi|||NoAbility|perishsong,splash|Serious|252,,,,,|N||||]Blissey|||NoAbility|seismictoss,splash|Serious|252,,,,,|N||||";
+    let p2 = "Snorlax|||NoAbility|splash,bodyslam|Serious|252,,,,,|N||||]Skarmory|||NoAbility|drillpeck,splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // the cast (draw-free)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(0)), // Celebi pivots at perish1
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),   // Snorlax faints at 0
+            ScriptDecision::one(1, Choice::Switch(1)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].perish, [3, 3], "the cast turn's boundary: BOTH actives at perish3");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "61255,39458,1834,64539",
+        "the cast is DRAW-FREE (QC only)"
+    );
+    assert_eq!(out.decisions[1].perish, [2, 2]);
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "60880,31090,7619,34922");
+    assert_eq!(
+        out.decisions[2].perish,
+        [0, 1],
+        "the pivoted-in Blissey has NO counter (the switch cleared Celebi's); Snorlax ticked to 1"
+    );
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "10897,43434,54578,10901");
+    assert!(out.decisions[3].active[1].fainted, "Snorlax fainted at perish0");
+    assert_eq!(seed_str(&out.decisions[3].seed_after), "37635,3740,64462,10380");
+    assert_eq!(out.decisions[4].active_species[1], "skarmory", "the forced replacement");
+    assert_eq!(seed_str(&out.decisions[5].seed_after), "37112,13693,28533,21721");
+}
+
+/// MC89: the PERISH MIRROR at an EQUAL cached speed — the two order-12 perish handlers
+/// tie at EVERY residual (ONE `random(0,2)` shuffle per residual, the P5 draw model),
+/// and the simultaneous 1→0 tick is a same-residual DOUBLE faint: both LAST mons → the
+/// gen-3 TIE. A wrong pair-tie model desyncs every boundary seed.
+#[test]
+fn perish_mirror_ties_each_residual_and_the_mutual_perish_out_is_a_tie() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|perishsong,splash|Serious|252,,,,,|N||||";
+    let p2 = "Snorlax|||NoAbility|splash,bodyslam|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "37635,3740,64462,10380"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].perish, [3, 3]);
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "12061,48772,57767,1268");
+    assert_eq!(out.decisions[1].perish, [2, 2]);
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "4112,59617,252,56412");
+    assert_eq!(out.decisions[2].perish, [1, 1]);
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "609,418,60999,20164");
+    assert!(out.decisions[3].active[0].fainted && out.decisions[3].active[1].fainted);
+    assert_eq!(seed_str(&out.decisions[3].seed_after), "47292,19098,34708,5386");
+    assert!(out.ended);
+    assert_eq!(out.winner, None, "the mutual perish-out of both LAST mons is the TIE");
+}
+
+/// MC90: MEAN LOOK firm-traps the grounded GHOST (no `trapped` type-immunity in
+/// Showdown-gen3): the trapped Gengar's voluntary switch is REJECTED draw-free (the
+/// decision is SKIPPED, the boundary stays open — the T1 pattern); the moment the
+/// TRAPPER pivots out the link ends and the next switch is ACCEPTED.
+#[test]
+fn mean_look_firm_traps_the_ghost_until_the_trapper_leaves() {
+    let d = dex();
+    let p1 = "Umbreon|||NoAbility|meanlook,seismictoss|Serious|252,,,,,|N||||]Blissey|||NoAbility|seismictoss,splash|Serious|252,,,,,|N||||";
+    let p2 = "Gengar|||Levitate|nightshade,splash|Serious|252,,,,,|N||||]Misdreavus|||NoAbility|nightshade,splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // mean look lands
+            ScriptDecision::one(1, Choice::Switch(1)),              // REJECTED (trapped) — skipped
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // the re-choice commits
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(1)), // the TRAPPER pivots → freed
+            ScriptDecision::both(Choice::Move(0), Choice::Switch(1)), // the switch is now ACCEPTED
+        ],
+        &d,
+    );
+    assert_eq!(
+        out.decisions.len(),
+        4,
+        "the rejected trapped-switch decision is SKIPPED (no boundary recorded)"
+    );
+    assert_eq!(out.decisions[0].trapped, [false, true], "the Ghost IS trapped (no type immunity)");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "61255,39458,1834,64539");
+    assert_eq!(out.decisions[1].trapped, [false, true], "still trapped after the draw-free reject");
+    assert_eq!(out.decisions[1].active_species[1], "gengar", "Gengar never left");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "10897,43434,54578,10901");
+    assert_eq!(out.decisions[2].trapped, [false, false], "the trapper LEFT → the link ended");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "37635,3740,64462,10380");
+    assert_eq!(out.decisions[3].active_species[1], "misdreavus", "the freed switch was ACCEPTED");
+    assert_eq!(seed_str(&out.decisions[3].seed_after), "7184,5868,30814,34654");
+}
+
+/// MC91: SPIDER WEB + BATON PASS — the trapped Celebi legally Baton-Passes (selfSwitch
+/// bypasses the trap gate) and the ENTRANT INHERITS the firm trap (`trapped` noCopy
+/// FALSE — the resolved gen3 fact): the inheriting Snorlax's switch is REJECTED. The
+/// TRAPPER'S FAINT then frees it (the link dies with the corpse) — the next switch is
+/// ACCEPTED.
+#[test]
+fn spider_web_survives_a_baton_pass_and_dies_with_the_trapper() {
+    let d = dex();
+    let p1 = "Ariados|||NoAbility|spiderweb,splash|Serious|252,,,,,|N||||]Skarmory|||NoAbility|drillpeck,splash|Serious|252,,,,,|N||||";
+    let p2 = "Celebi|||NoAbility|batonpass,splash|Serious|252,,,,,|N||||]Snorlax|||NoAbility|bodyslam,splash|Serious|252,252,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[0].pokemon[0].hp = 230; // 2 Body Slams KO Ariados
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // spider web traps Celebi
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // the trapped Celebi Baton-Passes (LEGAL)
+            ScriptDecision::one(1, Choice::Switch(1)),              // the BP replacement target
+            ScriptDecision::one(1, Choice::Switch(1)),              // REJECTED — the ENTRANT inherited the trap
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // the re-choice commits
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Body Slam KOs the trapper
+            ScriptDecision::one(0, Choice::Switch(1)),
+            ScriptDecision::both(Choice::Move(1), Choice::Switch(1)), // the freed switch is ACCEPTED
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions.len(), 7, "ONE rejected decision was skipped");
+    assert_eq!(out.decisions[0].trapped, [false, true], "Celebi trapped");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "61255,39458,1834,64539");
+    // dec1 = the BP pause; dec2 = the replacement committed — the ENTRANT is trapped.
+    assert_eq!(out.decisions[2].active_species[1], "snorlax");
+    assert_eq!(out.decisions[2].trapped, [false, true], "the BP ENTRANT INHERITED the firm trap");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "60880,31090,7619,34922");
+    // dec3 = the splash/bodyslam turn after the draw-free reject.
+    assert_eq!(out.decisions[3].trapped, [false, true]);
+    assert_eq!(seed_str(&out.decisions[3].seed_after), "37112,13693,28533,21721");
+    // dec4 = the trapper's KO — the link dies with the corpse.
+    assert!(out.decisions[4].active[0].fainted, "Ariados fainted");
+    assert_eq!(out.decisions[4].trapped, [false, false], "the trapper's faint FREED the target");
+    assert_eq!(seed_str(&out.decisions[4].seed_after), "60443,61849,18300,733");
+    // dec5 = p1's forced replacement; dec6 = the freed switch accepted (Celebi back).
+    assert_eq!(out.decisions[6].active_species[1], "celebi");
+    assert_eq!(seed_str(&out.decisions[6].seed_after), "54523,22811,31582,9991");
+}
+
+/// MC92: the BELLY DRUM hp gate is the FLOAT `hp <= maxhp/2` — integer-exact as
+/// `2*hp <= maxhp`: at Snorlax's 524 maxhp, hp=262 FAILS ([still]+fail, atk 0, HP
+/// untouched, draw-free) while hp=263 SUCCEEDS (pays 262 → 1 HP, atk SET to +6), and
+/// the immediate re-drum fails (atk >= 6). Both boundary seeds are the draw-free QC-only
+/// trajectory.
+#[test]
+fn belly_drum_hp_boundary_and_the_atk_cap_fail() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|bellydrum,return|Serious|252,252,,,,|N||||";
+    let p2 = "Skarmory|||NoAbility|splash,seismictoss|Serious|252,,,,,|N||||";
+    // (a) hp == 262 → FAIL.
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[0].pokemon[0].hp = 262;
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[0].hp, 262, "hp UNTOUCHED (the drum failed)");
+    assert_eq!(out.decisions[0].active[0].boosts[0], 0, "no boost");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "61255,39458,1834,64539");
+
+    // (b) hp == 263 → SUCCESS (1 HP, atk +6); the re-drum FAILS at atk >= 6.
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[0].pokemon[0].hp = 263;
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[0].hp, 1, "paid floor(524/2)=262, leaving 1");
+    assert_eq!(out.decisions[0].active[0].boosts[0], 6, "atk SET to +6");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "61255,39458,1834,64539");
+    assert_eq!(out.decisions[1].active[0].hp, 1, "the re-drum FAILED (atk >= 6): no second cost");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "60880,31090,7619,34922");
+}
+
+/// MC93: CHARGE ×2s the NEXT ELECTRIC move's BP only (charged Thunderbolt 215 vs the
+/// uncharged control 105 at BYTE-IDENTICAL draw counts — the ×2 is a BP-chain fold,
+/// never a draw), and the volatile is CONSUMED by the user's next move attempt OF ANY
+/// KIND (the Surf consumed it with NO boost — the following Thunderbolt is back at ×1).
+#[test]
+fn charge_doubles_the_next_electric_move_and_is_consumed_by_any_move() {
+    let d = dex();
+    let p1 = "Lanturn|||NoAbility|charge,thunderbolt,surf,splash|Serious|252,,,252,,|N||||";
+    let p2 = "Snorlax|||NoAbility|splash,bodyslam|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // charge
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // CHARGED tbolt (×2)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // uncharged control
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // charge
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)), // Surf CONSUMES it (no boost)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // tbolt back at ×1 → the KO
+        ],
+        &d,
+    );
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "61255,39458,1834,64539", "the charge cast is draw-free");
+    assert_eq!(out.decisions[1].active[1].hp, 309, "the CHARGED Thunderbolt dealt 215 (524→309)");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "7184,5868,30814,34654");
+    assert_eq!(out.decisions[2].active[1].hp, 204, "the uncharged control dealt 105 (309→204)");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "60443,61849,18300,733");
+    assert_eq!(out.decisions[4].active[1].hp, 100, "the Surf consumed the charge with NO ×2");
+    assert_eq!(seed_str(&out.decisions[4].seed_after), "59155,64853,46482,24392");
+    assert_eq!(out.decisions[5].active[1].hp, 0, "the post-consumption tbolt is back at ×1");
+    assert_eq!(seed_str(&out.decisions[5].seed_after), "4112,59617,252,56412");
+    assert_eq!(out.winner, Some(0));
+}
+
+/// MC94: MEMENTO — the LANDED turn is ZERO draws TOTAL (never-miss in the resolved
+/// gen3, the user's self-faint CANCELS the foe's queued Body Slam via gen3
+/// faint-cancels-all, and the faint pause skips the Quick Claw): the post-turn seed is
+/// the INIT seed. The foe drops −2 Atk / −2 SpA; the user faints → a forced
+/// replacement. A PROTECTED memento is BLOCKED and the user does NOT faint.
+#[test]
+fn memento_lands_zero_draw_with_the_foe_move_cancelled_and_protect_blocks_it() {
+    let d = dex();
+    let p1 = "Dugtrio|||NoAbility|memento,splash|Serious|,,,,,252|N||||]Blissey|||NoAbility|seismictoss,splash|Serious|252,,,,,|N||||";
+    let p2 = "Snorlax|||NoAbility|bodyslam,protect|Serious|252,252,,,,|N||||";
+    // (a) the LANDED memento.
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // memento; Body Slam CANCELLED
+            ScriptDecision::one(0, Choice::Switch(1)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert!(out.decisions[0].active[0].fainted, "the user fainted (selfdestruct ifHit)");
+    assert_eq!(out.decisions[0].active[1].boosts[0], -2, "foe atk −2");
+    assert_eq!(out.decisions[0].active[1].boosts[2], -2, "foe spa −2");
+    assert_eq!(out.decisions[0].active[1].hp, 524, "the foe's queued Body Slam was CANCELLED");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "44317,42357,9927,48760",
+        "the landed-memento turn consumed ZERO draws (never-miss + cancel + no QC)"
+    );
+    assert_eq!(out.decisions[1].active_species[0], "blissey");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "37112,13693,28533,21721");
+
+    // (b) memento INTO A PROTECT: blocked, the user does NOT faint.
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // protect blocks the memento
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert!(!out.decisions[0].active[0].fainted, "BLOCKED (ifHit) — the user does NOT faint");
+    assert_eq!(out.decisions[0].active[0].hp, 211);
+    assert_eq!(out.decisions[0].active[1].boosts[0], 0, "no drops through the Protect");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "60880,31090,7619,34922");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "7184,5868,30814,34654");
+}
+
+/// MC95: MIMIC slot semantics — the copy OVERWRITES the Mimic slot with the target's
+/// lastMove at `pp = min(5, base)` / `maxpp = calculatePP(copied, 3)` (Psychic → 5/16);
+/// the copied slot's PP decrements INDEPENDENTLY (5→4 on use); the slot REVERTS on
+/// switch-out with Mimic's OWN remaining PP (15/16); a re-mimic pointed at an
+/// already-known lastMove (Splash) FAILS. All draw-free. Plus the no-lastMove fail.
+#[test]
+fn mimic_overlays_the_slot_and_reverts_on_switch_out() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|mimic,splash|Serious|252,,,,,|N||||]Blissey|||NoAbility|seismictoss,splash|Serious|252,,,,,|N||||";
+    let p2 = "Alakazam|||NoAbility|psychic,splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Psychic first → Mimic COPIES it
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // the COPIED Psychic runs (5→4)
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(1)), // pivot → the overlay REVERTS
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(1)), // back in (slot = Mimic 15/16)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // mimic at a SPLASH lastMove → already-known FAIL
+        ],
+        &d,
+    );
+    assert_eq!(
+        out.decisions[0].active[0].move_pp,
+        [5, 64, -1, -1],
+        "the Mimic slot now holds the copied Psychic at pp 5"
+    );
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "22534,42410,55299,35327");
+    assert_eq!(out.decisions[1].active[0].move_pp, [4, 64, -1, -1], "the copied slot decrements independently");
+    assert_eq!(out.decisions[1].active[1].hp, 284, "the copied Psychic DEALT damage (314→284)");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "17940,16623,13080,40722");
+    assert_eq!(
+        out.decisions[3].active[0].move_pp,
+        [15, 64, -1, -1],
+        "back in: the slot REVERTED to Mimic with Mimic's own remaining PP (15/16)"
+    );
+    assert_eq!(seed_str(&out.decisions[3].seed_after), "12061,48772,57767,1268");
+    assert_eq!(
+        out.decisions[4].active[0].move_pp,
+        [14, 64, -1, -1],
+        "the re-mimic FAILED (already-known Splash): Mimic's own PP paid, no overlay"
+    );
+    assert_eq!(seed_str(&out.decisions[4].seed_after), "54523,22811,31582,9991");
+
+    // The NO-LASTMOVE fail (the faster mimicker moves before the foe ever moved).
+    let p1b = "Jolteon|||NoAbility|mimic,thunderbolt|Serious|252,,,,,252|N||||";
+    let mut battle = Battle::start_with_switchins(
+        &opts_cg(p1b, B6_EN_SNORLAX, "44317,42357,9927,48760"),
+        &d,
+    )
+    .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[0].move_pp, [15, 24, -1, -1], "no overlay (the fail)");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "61255,39458,1834,64539", "draw-free");
+}
+
+/// MC96: PAIN SPLIT floor-averages the two actives' HP with each side clamped at its
+/// OWN maxhp — Gengar 41 + Blissey 714 → avg 377: Blissey takes the FULL loss to 377
+/// while Gengar caps at its 261 maxhp (NOT conservative). A SUBSTITUTE blocks it
+/// ([still]+fail). All draw-free.
+#[test]
+fn pain_split_averages_with_the_maxhp_clamp_and_a_sub_blocks_it() {
+    let d = dex();
+    let p1 = "Gengar|||Levitate|painsplit,splash|Serious||N||||";
+    let p2 = "Blissey|||NoAbility|splash,substitute|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[0].pokemon[0].hp = 41;
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // the clamped split
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // Blissey subs
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // BLOCKED by the sub
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[0].active[0].hp, 261, "Gengar CLAMPED at its own maxhp");
+    assert_eq!(out.decisions[0].active[1].hp, 377, "Blissey took the FULL loss to the raw average");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "61255,39458,1834,64539");
+    assert_eq!(out.decisions[2].active[1].hp, 199, "the subbed split did NOTHING");
+    assert_eq!(out.decisions[2].active[0].hp, 261);
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "10897,43434,54578,10901");
+}
+
+/// MC97: PSYCH UP copies ALL the target's boost stages VERBATIM — including the ZEROS,
+/// so the user's own prior stages are fully OVERWRITTEN: the twice-Cursed Snorlax
+/// (+2 atk/+2 def/−2 spe) becomes exactly {spa+2, spd+2} after psyching up the
+/// twice-Calm-Minded Suicune. Draw-free.
+#[test]
+fn psych_up_copies_all_stages_verbatim_overwriting_the_users_own() {
+    let d = dex();
+    let p1 = "Snorlax|||NoAbility|psychup,curse|Serious|252,252,,,,|N||||";
+    let p2 = "Suicune|||NoAbility|calmmind,splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[1].active[0].boosts[0..5], [2, 2, 0, 0, -2], "the cursed stages");
+    assert_eq!(
+        out.decisions[2].active[0].boosts[0..5],
+        [0, 0, 2, 2, 0],
+        "psych up OVERWROTE every stage with the target's (zeros included)"
+    );
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "22534,42410,55299,35327");
+}
+
+/// MC98: CHARGE does NOT survive a Baton Pass in practice — the BP itself is the
+/// user's next move attempt, so `charge.onAfterMove` CONSUMES the volatile BEFORE the
+/// switch resolves (probed: the sim emits `-end|Charge|[silent]` on the BP turn and
+/// the entrant's Thunderbolt deals the ×1 control damage, 524→381 in BOTH arms).
+/// WRONG (charge surviving to the entrant): the tbolt deals ~×2 → the HP desyncs.
+#[test]
+fn charge_is_consumed_by_the_baton_pass_move_itself() {
+    let d = dex();
+    let p1 = "Lanturn|||NoAbility|charge,batonpass,splash|Serious|252,,,,,|N||||]Jolteon|||NoAbility|thunderbolt,splash|Serious|252,,,252,,|N||||";
+    let p2 = "Snorlax|||NoAbility|splash,bodyslam|Serious|252,,,,,|N||||";
+    for (first_move, label) in [(Choice::Move(0), "charge"), (Choice::Move(2), "splash control")] {
+        let mut battle =
+            Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d)
+                .expect("start");
+        let st = battle.state_mut().expect("state");
+        let out = st.run_full_battle(
+            &[
+                ScriptDecision::both(first_move, Choice::Move(0)),
+                ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Baton Pass (consumes the charge)
+                ScriptDecision::one(0, Choice::Switch(1)),
+                ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // the entrant's tbolt
+            ],
+            &d,
+        );
+        assert_eq!(
+            out.decisions[3].active[1].hp,
+            381,
+            "[{label}] the entrant's Thunderbolt is ×1 (the BP consumed any charge)"
+        );
+        assert_eq!(seed_str(&out.decisions[3].seed_after), "37112,13693,28533,21721", "[{label}]");
+    }
+}
+
+/// MC99: a CONTACT **fixed-damage** hit fires the DEFENDER's contact-proc
+/// `onDamagingHit` — Seismic Toss (`flags.contact`) into an EFFECT SPORE Breloom rolls
+/// `randomChance(1,10)` after the damage apply (+ the `sample(3)` on a pass, landing
+/// psn on the attacker at dec2). THE e2e_7 FIX (`gen3_move_coverage_batch6_v1` regen):
+/// a LATENT batch-5-era gap — the fixed-damage family was only e2e-admitted in batch 5
+/// and no ST-into-a-contact-proc-holder board was sampled until the batch-6 corpus
+/// reshuffle; the port's `run_fixed_damage_move` never called `apply_contact_proc`, so
+/// the sim drew `random(10)` where the port drew nothing (a seed desync at e2e_7
+/// dec37). WRONG (no proc): every boundary seed here shifts and Blissey never gets
+/// poisoned. Ground truth: harness/probe_batch6_regression_rng.js (MC99).
+#[test]
+fn fixed_damage_contact_hit_fires_the_contact_proc() {
+    let d = dex();
+    let p1 = "Breloom|||EffectSpore|splash,machpunch|Serious|252,,,,,|N||||";
+    let p2 = "Blissey|||NoAbility|seismictoss,splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "10897,43434,54578,10901",
+        "dec0: ST acc + the Effect Spore randomChance(1,10) (a FAIL roll) + QC"
+    );
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "7184,5868,30814,34654");
+    assert!(
+        matches!(out.decisions[2].active[1].status, Some(Status::Poison)),
+        "dec2: the proc PASSED + sampled psn onto the ATTACKER (Blissey)"
+    );
+    assert_eq!(out.decisions[2].active[1].hp, 625, "Blissey took the psn chip (714 − 89)");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "17940,16623,13080,40722");
+}

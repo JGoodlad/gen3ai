@@ -53,6 +53,28 @@ pub struct MoveData {
     /// IMMUNE to it. Of the modeled moves: Sing / Grass Whistle (sleep) + Roar (phaze) are sound;
     /// Whirlwind is NOT.
     pub is_sound: bool,
+    /// Whether the move CANNOT be called by Sleep Talk (`flags.nosleeptalk` →
+    /// `noSleepTalk` in the data, `gen3_move_coverage_batch5_v1`). Sleep Talk's onHit
+    /// builds its pool from the user's moveSlots keeping only
+    /// `!nosleeptalk && !charge` — data-enumerated, never hand-listed (the gen3
+    /// carriers: sleeptalk itself, focuspunch, uproar, bide, metronome, mirrormove,
+    /// assist + the charge family).
+    pub no_sleep_talk: bool,
+    /// Whether the move is a TWO-TURN CHARGE move (`flags.charge` → `isCharge` in the
+    /// data, `gen3_move_coverage_batch5_v1`): solarbeam / fly / dig / dive / bounce /
+    /// razorwind / skullbash / skyattack. Excluded from the Sleep Talk pool (with
+    /// `no_sleep_talk`); the engine models only Solar Beam (the rest stay fail-loud).
+    pub is_charge: bool,
+    /// Whether ENCORE FAILS when this move is the target's lastMove (`flags.failencore`
+    /// → `failEncore` in the data, `gen3_move_coverage_batch6_v1`; the gen3 carriers:
+    /// encore / mimic / mirrormove / sketch / struggle / transform). Data-enumerated,
+    /// never hand-listed. Read by `run_status_move`'s encore arm (the onStart reject —
+    /// AFTER the accuracy + durationCallback draws, probe-settled).
+    pub fail_encore: bool,
+    /// Whether MIMIC FAILS when this move is the target's lastMove (`flags.failmimic`
+    /// → `failMimic` in the data, `gen3_move_coverage_batch6_v1`; the gen3 carriers:
+    /// metronome / mimic / sketch / struggle). Draw-free fail (`[still]` + `-fail`).
+    pub fail_mimic: bool,
     /// Sorted `(effect, percent)` pairs from `secondaryEffects`.
     pub secondary_effects: Vec<(String, u16)>,
     /// The STRUCTURED secondary stat-boost spec (`secondaryBoosts` in the data) the
@@ -160,7 +182,7 @@ impl MoveData {
     /// counter-family moves. (Every REAL gen-3 Status move — boosts/heal/hazard/phaze/status-
     /// inflict/protect/etc. — has bp 0 and a genuine Status category, so it is still blocked.)
     pub fn blocked_by_taunt(&self) -> bool {
-        self.category == MoveCategory::Status && !self.is_fixed_damage()
+        self.category == MoveCategory::Status && !self.is_fixed_damage() && !self.is_variable_bp()
     }
 
     /// Whether this is a gen-3 FIXED-DAMAGE / `damageCallback` / Counter-family move (bp 0 but
@@ -172,6 +194,22 @@ impl MoveData {
             "seismictoss" | "nightshade" | "sonicboom" | "dragonrage" | "superfang"
                 | "psywave" | "fissure" | "horndrill" | "guillotine"
                 | "counter" | "mirrorcoat" | "bide" | "endeavor"
+        )
+    }
+
+    /// Whether this is a gen-3 VARIABLE-BP `basePowerCallback` move with a bp-0 data row
+    /// (`gen3_move_coverage_batch5_v1`): Return / Frustration (happiness), Flail /
+    /// Reversal (the HP-ratio ladder), Low Kick (the target-weight ladder). These carry
+    /// `basePower: 0` in the data (the BP is engine-computed, the Water Spout precedent
+    /// — Water Spout itself carries its data bp 150 so it is NOT in this set), which
+    /// mis-derives their category as Status — the SAME mis-classification the
+    /// fixed-damage family gets. Their TRUE Showdown category is type-derived Physical
+    /// (Normal / Fighting), so Taunt does NOT block them. Kept in lockstep with
+    /// `turn.rs::variable_bp`.
+    pub fn is_variable_bp(&self) -> bool {
+        matches!(
+            self.id.as_str(),
+            "return" | "frustration" | "flail" | "reversal" | "lowkick"
         )
     }
 }
@@ -323,6 +361,10 @@ pub(super) fn parse(root: &Json, gen: u8) -> Result<HashMap<String, MoveData>, S
                 no_pp_boosts: v.bool_or("noPPBoosts", false),
                 contact: v.bool_or("contact", false),
                 is_sound: v.bool_or("sound", false),
+                no_sleep_talk: v.bool_or("noSleepTalk", false),
+                is_charge: v.bool_or("isCharge", false),
+                fail_encore: v.bool_or("failEncore", false),
+                fail_mimic: v.bool_or("failMimic", false),
                 secondary_effects,
                 secondary_boosts,
                 self_boosts,

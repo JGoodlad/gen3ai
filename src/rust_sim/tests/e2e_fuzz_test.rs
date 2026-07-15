@@ -66,6 +66,14 @@ struct DecExpect {
     p1: SideExpect,
     p2: SideExpect,
     first_mover: String,
+    /// The decision USED a modeled FIXED-DAMAGE move (Seismic Toss / Night Shade /
+    /// Sonic Boom / Dragon Rage / Super Fang) — recorded per-DEC by the generator's
+    /// pickMove so the coverage FLOOR is a GATED assertion, not a generator statistic.
+    fixed_move: bool,
+    /// The decision USED a batch-5 move (Counter / Mirror Coat / Endeavor / the
+    /// variable-BP five / Sleep Talk) — same gated-floor purpose.
+    batch5_move: bool,
+    batch6_move: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -177,7 +185,8 @@ fn parse_golden() -> (BTreeMap<String, ScenMeta>, Vec<RunCase>) {
                 // DEC <id> <di> <req> <fp1> <fp2> <cp1> <cp2> <seedAfter>
                 //   p1(species hp max fnt status atk def spa spd spe conf left)[9..21)
                 //   p2(...)[21..33)  first[33]  p1Spikes[34] p2Spikes[35]
-                assert_eq!(f.len(), 36, "DEC needs 36 fields (line {ln}), got {}", f.len());
+                //   fixedMove[36] batch5Move[37] batch6Move[38] (the gated coverage-floor flags)
+                assert_eq!(f.len(), 39, "DEC needs 39 fields (line {ln}), got {}", f.len());
                 let req = match f[3] {
                     "move" => ReqTok::Move,
                     "switch" => ReqTok::Switch,
@@ -212,8 +221,22 @@ fn parse_golden() -> (BTreeMap<String, ScenMeta>, Vec<RunCase>) {
                     spikes: g(35) as u8,
                 };
                 let first_mover = f[33].to_string();
+                let fixed_move = f[36] == "1";
+                let batch5_move = f[37] == "1";
+                let batch6_move = f[38] == "1";
                 let c = cur.as_mut().unwrap_or_else(|| panic!("DEC before INIT (line {ln})"));
-                c.decisions.push(DecExpect { request: req, force, choice, seed_after, p1, p2, first_mover });
+                c.decisions.push(DecExpect {
+                    request: req,
+                    force,
+                    choice,
+                    seed_after,
+                    p1,
+                    p2,
+                    first_mover,
+                    fixed_move,
+                    batch5_move,
+                    batch6_move,
+                });
             }
             "END" => {
                 // END <id> <ended> <winner>
@@ -346,6 +369,9 @@ fn e2e_fuzz_golden_matches_showdown() {
     let mut taunt_decisions = 0usize; // DECISIONS where EITHER active is TAUNTED at the boundary ("uses Taunt")
     let mut disable_decisions = 0usize; // DECISIONS where EITHER active has a DISABLED slot at the boundary ("uses Disable")
     let mut trapped_decisions = 0usize; // DECISIONS where EITHER active is TRAPPED at the boundary (`gen3_trapping_v1`)
+    let mut fixed_damage_decisions = 0usize; // DECISIONS that USE a modeled FIXED-DAMAGE move (golden per-DEC flag)
+    let mut batch5_decisions = 0usize; // DECISIONS that USE a batch-5 move (golden per-DEC flag)
+    let mut batch6_decisions = 0usize; // DECISIONS that USE a batch-6 move (the final tail)
     let mut boost_assertions = 0usize;
     let mut switch_req_rows = 0usize;
     let mut win_runs = 0usize;
@@ -492,6 +518,20 @@ fn e2e_fuzz_golden_matches_showdown() {
             if exp.p1.spikes >= 1 || exp.p2.spikes >= 1 {
                 spikes_decisions += 1;
             }
+            // A DECISION that "uses a FIXED-DAMAGE / BATCH-5 move" — read from the golden's
+            // per-DEC flags (the generator's pickMove tags), so the coverage FLOORS below are
+            // GATED assertions: a regen whose blocklist silently re-shadows the fixed-damage
+            // five / the batch-5 nine writes 0s here and the gate FAILS (the exact bug class
+            // the batch-5 un-shadowing closed), instead of staying green on a generator stat.
+            if exp.fixed_move {
+                fixed_damage_decisions += 1;
+            }
+            if exp.batch5_move {
+                batch5_decisions += 1;
+            }
+            if exp.batch6_move {
+                batch6_decisions += 1;
+            }
             // A DECISION that "uses Substitute" = either active carries a SUBSTITUTE volatile
             // at this boundary (a Substitute was created + is ABSORBING). Counted from the
             // Rust snapshot's `substitute` field — the gate replayed it bit-for-bit (the sub
@@ -631,7 +671,9 @@ fn e2e_fuzz_golden_matches_showdown() {
          {spikes_decisions} decisions USE SPIKES, {substitute_decisions} decisions USE SUBSTITUTE, \
          {explosion_decisions} decisions USE EXPLOSION, {phaze_decisions} decisions USE PHAZE, \
          {taunt_decisions} decisions USE TAUNT, {disable_decisions} decisions USE DISABLE, \
-         {trapped_decisions} decisions involve a TRAPPED mon), \
+         {trapped_decisions} decisions involve a TRAPPED mon, \
+         {fixed_damage_decisions} decisions USE FIXED-DAMAGE, {batch5_decisions} decisions USE BATCH-5, \
+         {batch6_decisions} decisions USE BATCH-6), \
          {switch_req_rows} forced-switch reqs, \
          {win_runs} wins, {tie_runs} ties, {faint_carry_runs} past-faint runs",
         cases.len()
@@ -755,6 +797,40 @@ fn e2e_fuzz_golden_matches_showdown() {
         trapped_decisions >= 50,
         "expected the expanded golden to exercise TRAPPING (>=50 trapped-boundary decisions), \
          got {trapped_decisions} (did arenatrap/magnetpull fall out of MODELED_ABILITIES?)"
+    );
+    // FIXED-DAMAGE coverage floor (`gen3_move_coverage_batch5_v1` un-shadowing): the modeled
+    // fixed-damage five (Seismic Toss / Night Shade / Sonic Boom / Dragon Rage / Super Fang)
+    // sat in `MODELED_FIXED_DAMAGE_MOVES` since the fixed-damage layer but were
+    // BLOCKLIST-SHADOWED out of the picker until batch 5 removed their `MOVE_ID_BLOCKLIST`
+    // rows — the old "0 fixed-damage decisions" disclosure. The committed golden carries ~271
+    // fixed-damage-move decisions; this GATED floor (read from the golden's per-DEC
+    // `fixedMove` flag, not a generator stat) fails a regen whose blocklist re-shadows them —
+    // exactly the bug class the batch-5 un-shadowing closed.
+    assert!(
+        fixed_damage_decisions >= 50,
+        "expected the golden to exercise the FIXED-DAMAGE five (>=50 fixed-damage-move decisions), \
+         got {fixed_damage_decisions} (did a MOVE_ID_BLOCKLIST edit re-shadow them?)"
+    );
+    // BATCH-5 coverage floor (`gen3_move_coverage_batch5_v1`): Counter / Mirror Coat /
+    // Endeavor + Return / Frustration / Flail / Reversal / Low Kick + Sleep Talk. The
+    // committed golden carries ~240 batch5-move decisions; a regen that silently dropped the
+    // family (an allow-list / blocklist regression, or `sleepTalkPoolModeled` breaking) would
+    // crater this GATED floor.
+    assert!(
+        batch5_decisions >= 50,
+        "expected the golden to exercise the BATCH-5 moves (>=50 batch5-move decisions), \
+         got {batch5_decisions} (did the batch-5 nine fall out of the allow-list?)"
+    );
+    // BATCH-6 coverage floor (`gen3_move_coverage_batch6_v1`): the FINAL tail — Encore /
+    // Destiny Bond / Endure / Perish Song / the trap moves / Belly Drum / Charge / Memento
+    // / Mimic / Pain Split / Psych Up — is heavily carried by real gen3ou teams (Perish
+    // Song 21 / Mean Look 12 / Endure 10 / Encore 5 / Destiny Bond 6 / Counter-era
+    // leftovers), so the sampled 220 must EXERCISE it. The gated per-DEC `batch6Move`
+    // flag fails a regen whose allow-list silently drops the tail.
+    assert!(
+        batch6_decisions >= 50,
+        "expected the golden to exercise the BATCH-6 moves (>=50 batch6-move decisions), \
+         got {batch6_decisions} (did the batch-6 twelve fall out of the allow-list?)"
     );
 }
 
