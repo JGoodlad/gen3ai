@@ -178,6 +178,26 @@ def test_distill_loss_grad_flows_student_only():
     assert teacher.grad is None
 
 
+def test_distill_multi_teacher_averaging():
+    """N teachers on DISJOINT team-id subsets → the combined loss is the MEAN of the per-teacher masked
+    KLs (per-archetype balancing: each teacher weighted equally regardless of its state count); a teacher
+    with zero states is SKIPPED (None), never zero-weighted-in."""
+    B, A = 6, 5
+    student, t1, t2 = th.randn(B, A), th.randn(B, A), th.randn(B, A)
+    amask = th.ones(B, A)
+    tid = th.tensor([1.0, 1.0, 1.0, 2.0, 2.0, 0.0])       # rows 0-2 → teacher 1, rows 3-4 → teacher 2, row 5 none
+    kl1, m1 = InstrumentedMaskablePPO._distill_loss(student, t1, amask, (tid == 1).float())
+    kl2, m2 = InstrumentedMaskablePPO._distill_loss(student, t2, amask, (tid == 2).float())
+    assert m1["n"] == 3 and m2["n"] == 2                  # each teacher sees only its own team's states
+    assert InstrumentedMaskablePPO._distill_loss(student, t1, amask, (tid == 9).float()) is None  # skipped
+    combined = th.stack([kl1, kl2]).mean()               # what the train() loop folds
+    assert float(combined) == pytest.approx(float((kl1 + kl2) / 2), rel=1e-6)
+    # teacher-1's KL is the masked-mean over ONLY rows 0-2
+    logp = F.log_softmax(student, -1); p = F.softmax(t1, -1)
+    kl_row = (p * (th.log(p.clamp_min(1e-9)) - logp)).sum(-1)
+    assert float(kl1) == pytest.approx(float(kl_row[:3].mean()), rel=1e-5)
+
+
 class _CounterDictEnv(gym.Env):
     """Tiny Dict-obs maskable env (mirrors Gen3Env's {observation, action_mask} space). The
     observation counts up each step so the policy sees varied inputs → non-trivial gradients.

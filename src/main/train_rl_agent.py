@@ -1127,12 +1127,16 @@ async def main():
     # trainee pilots the teacher's team; the other (pool) states are the anti-forgetting rehearsal.
     # Training-only (0 = byte-identical; NOT version-locked). designs/learning/generalist_specialist_amortization_gap.md
     parser.add_argument("--distill-teacher", "--distill_teacher", dest="distill_teacher", type=str, default=None,
-                        help="Path to a frozen exploiter checkpoint (dir or .zip) to distil into the trainee "
-                             "as a per-team teacher (KL(π_teacher ‖ π_student) on the teacher-team states).")
+                        help="Frozen exploiter teacher(s) to distil into the trainee, as "
+                             "'TEACHER:TEAM' pairs (KL(π_teacher ‖ π_student) on that teacher's team states). "
+                             "TEACHER = a checkpoint dir/.zip, TEAM = its Showdown team file. Comma-separated "
+                             "for N teachers (joint multi-teacher distillation), e.g. "
+                             "'models/expA:data/teams/specialist/a.txt,models/expB:data/teams/specialist/b.txt'. "
+                             "The colon pairing binds each teacher to its team — no misalignment possible.")
     parser.add_argument("--distill-teacher-team", "--distill_teacher_team", dest="distill_teacher_team",
                         type=str, default=None,
-                        help="Showdown team file the teacher pilots (the team whose states get the KL). The "
-                             "trainee is biased toward this team by --distill-team-bias so it gets the signal.")
+                        help="DEPRECATED (back-compat for in-flight runs) — a parallel team list for the bare "
+                             "(colon-less) --distill-teacher form. Prefer the 'TEACHER:TEAM' pair form instead.")
     parser.add_argument("--distill-coef", "--distill_coef", dest="distill_coef", type=float, default=None,
                         help="Exploiter-distillation KL weight (default 0.0 = OFF, loss byte-identical). "
                              "Requires --distill-teacher + --distill-teacher-team. Training-only (inherited on "
@@ -1897,9 +1901,33 @@ async def main():
                      "correction buffer; its workers build the π' targets)")
     if args.distill_coef is not None and args.distill_coef < 0.0:
         parser.error("--distill-coef must be >= 0 (0 = off)")
-    if args.distill_coef and args.distill_coef > 0 and not (args.distill_teacher and args.distill_teacher_team):
-        parser.error("--distill-coef > 0 requires BOTH --distill-teacher (the frozen exploiter checkpoint) "
-                     "and --distill-teacher-team (the team it pilots, whose states get the KL)")
+    # gen3_exploiter_distill_v1: parse --distill-teacher into (teacher_path, team_file) PAIRS once, stored on
+    # args for the teambuilder + model-setup to reuse. Preferred form = 'TEACHER:TEAM' colon pairs (the colon
+    # binds each teacher to its team → misalignment is impossible). Legacy form = bare teacher list + a
+    # parallel --distill-teacher-team (kept only so in-flight runs don't crash on restart).
+    args._distill_pairs = []
+    if args.distill_coef and args.distill_coef > 0:
+        _items = [x.strip() for x in (args.distill_teacher or "").split(",") if x.strip()]
+        if not _items:
+            parser.error("--distill-coef > 0 requires --distill-teacher (as 'TEACHER:TEAM' pairs)")
+        if any(":" in x for x in _items):                       # PREFERRED: colon pairs
+            if args.distill_teacher_team:
+                parser.error("--distill-teacher uses 'TEACHER:TEAM' pairs — do NOT also pass the deprecated "
+                             "--distill-teacher-team")
+            for x in _items:
+                _tp, _sep, _tm = x.partition(":")
+                if not _sep or not _tp.strip() or not _tm.strip():
+                    parser.error(f"--distill-teacher item {x!r} must be 'TEACHER:TEAM' (a checkpoint path, a "
+                                 "colon, then its Showdown team file)")
+                args._distill_pairs.append((_tp.strip(), _tm.strip()))
+        else:                                                   # LEGACY: bare list + parallel --distill-teacher-team
+            print("[Distill] WARNING: bare --distill-teacher + --distill-teacher-team is DEPRECATED; "
+                  "prefer 'TEACHER:TEAM' colon pairs in --distill-teacher.")
+            _teams = [t.strip() for t in (args.distill_teacher_team or "").split(",") if t.strip()]
+            if len(_teams) != len(_items):
+                parser.error(f"legacy --distill-teacher ({len(_items)}) / --distill-teacher-team ({len(_teams)}) "
+                             "must be equal-length — or use the 'TEACHER:TEAM' pair form in --distill-teacher")
+            args._distill_pairs = list(zip(_items, _teams))
     if args.distill_coef and args.distill_coef > 0 and args.trainee_team:
         parser.error("--distill-coef is mutually exclusive with --trainee-team: distillation biases the "
                      "trainee toward the teacher team via --distill-team-bias while keeping the pool for "
@@ -2243,19 +2271,24 @@ async def main():
     # per-state `distill_mask`. --distill-coef is mutually exclusive with --trainee-team (a pin would
     # defeat the mixed-team rehearsal that guards against forgetting).
     args._distill_species = None
-    if args.distill_coef and args.distill_coef > 0 and args.distill_teacher_team:
+    if getattr(args, "_distill_pairs", None):
         from poke_env.teambuilder.teambuilder import Teambuilder as _TB
         from poke_env.data.normalize import to_id_str as _to_id
-        with open(args.distill_teacher_team, encoding="utf-8") as _df:
-            _distill_team_str = _df.read()
-        _dmons = _TB.parse_showdown_team(_distill_team_str)
-        # poke-env parks the species in `nickname` when the export has no nickname → fall back to it.
-        args._distill_species = frozenset(_to_id(m.species or m.nickname) for m in _dmons)
-        trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=[_distill_team_str],
+        _species_sets, _team_strs = [], []
+        for _tp, _tf in args._distill_pairs:
+            with open(_tf, encoding="utf-8") as _df:
+                _s = _df.read()
+            _team_strs.append(_s)
+            # poke-env parks the species in `nickname` when the export has no nickname → fall back to it.
+            _species_sets.append(frozenset(_to_id(m.species or m.nickname) for m in _TB.parse_showdown_team(_s)))
+        args._distill_species = _species_sets   # list of frozensets, one per teacher (teacher-id = index+1)
+        # Bias the trainee across ALL N teacher teams (bias_prob total, split evenly); rest = pool rehearsal.
+        trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=_team_strs,
                                               bias_prob=args.distill_team_bias)
-        emit(f"🧪 [DISTILL] teacher={args.distill_teacher} coef={args.distill_coef} | trainee biased "
-             f"{args.distill_team_bias:.0%} → teacher team ({', '.join(sorted(args._distill_species))}); "
-             f"rest = pool rehearsal")
+        emit(f"🧪 [DISTILL] {len(args._distill_pairs)} teacher(s), coef={args.distill_coef} | trainee biased "
+             f"{args.distill_team_bias:.0%} across {len(args._distill_pairs)} teacher team(s); rest = pool rehearsal")
+        for _i, (_tp, _tf) in enumerate(args._distill_pairs, start=1):
+            emit(f"   [{_i}] {_tp} ← {os.path.basename(_tf)} ({', '.join(sorted(_species_sets[_i-1]))})")
     for _ln in matchup.summary_lines():
         emit(_ln)
     if _specialist_team_str:
@@ -3183,23 +3216,25 @@ async def main():
         # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
         # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
         model.distill_coef = float(args.distill_coef or 0.0)
-        model._distill_teacher = None
-        if args.distill_coef and args.distill_coef > 0 and args.distill_teacher:
+        model._distill_teachers = []   # gen3_exploiter_distill_v1: N frozen per-team teachers (teacher-id = index+1)
+        if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
             from agents.model.snapshot import (
                 current_model_version as _cmv_d, load_foreign_opponent as _lfo_d)
             from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _rzc_d
-            try:
-                _zip_d, _cfg_d, _ = _rzc_d(args.distill_teacher, None)   # run-dir → (zip, config)
-                _cv_d = _cmv_d(mappings, **_run_arch_toggles(args))
-                _tm_d, _ = _lfo_d(_zip_d, current_version=_cv_d,
-                                  device=str(model.device), config_path=_cfg_d)
-                _tm_d.policy.set_training_mode(False)
-                model._distill_teacher = _tm_d
-                emit(f"🧪 [DISTILL] teacher attached on {model.device} from {args.distill_teacher}")
-            except Exception as _e_d:  # noqa: BLE001 — bad/incompatible teacher weights
-                print(f"\n[Distill] FATAL: could not load --distill-teacher {args.distill_teacher}: {_e_d}")
-                sys.stdout.flush()
-                os._exit(int(TrainExitCode.FATAL_CONFIG))
+            _cv_d = _cmv_d(mappings, **_run_arch_toggles(args))
+            for _tp, _tf in args._distill_pairs:
+                try:
+                    _zip_d, _cfg_d, _ = _rzc_d(_tp, None)   # run-dir → (zip, config)
+                    _tm_d, _ = _lfo_d(_zip_d, current_version=_cv_d,
+                                      device=str(model.device), config_path=_cfg_d)
+                    _tm_d.policy.set_training_mode(False)
+                    model._distill_teachers.append(_tm_d)
+                except Exception as _e_d:  # noqa: BLE001 — bad/incompatible teacher weights
+                    print(f"\n[Distill] FATAL: could not load --distill-teacher {_tp}: {_e_d}")
+                    sys.stdout.flush()
+                    os._exit(int(TrainExitCode.FATAL_CONFIG))
+            emit(f"🧪 [DISTILL] {len(model._distill_teachers)} teacher(s) attached on {model.device} "
+                 f"(order = teacher-id 1..{len(model._distill_teachers)})")
         model.opd_beta = args.opd_beta
         model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
         if args.search_teacher:
@@ -3495,23 +3530,25 @@ async def main():
         # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
         # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
         model.distill_coef = float(args.distill_coef or 0.0)
-        model._distill_teacher = None
-        if args.distill_coef and args.distill_coef > 0 and args.distill_teacher:
+        model._distill_teachers = []   # gen3_exploiter_distill_v1: N frozen per-team teachers (teacher-id = index+1)
+        if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
             from agents.model.snapshot import (
                 current_model_version as _cmv_d, load_foreign_opponent as _lfo_d)
             from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _rzc_d
-            try:
-                _zip_d, _cfg_d, _ = _rzc_d(args.distill_teacher, None)   # run-dir → (zip, config)
-                _cv_d = _cmv_d(mappings, **_run_arch_toggles(args))
-                _tm_d, _ = _lfo_d(_zip_d, current_version=_cv_d,
-                                  device=str(model.device), config_path=_cfg_d)
-                _tm_d.policy.set_training_mode(False)
-                model._distill_teacher = _tm_d
-                emit(f"🧪 [DISTILL] teacher attached on {model.device} from {args.distill_teacher}")
-            except Exception as _e_d:  # noqa: BLE001 — bad/incompatible teacher weights
-                print(f"\n[Distill] FATAL: could not load --distill-teacher {args.distill_teacher}: {_e_d}")
-                sys.stdout.flush()
-                os._exit(int(TrainExitCode.FATAL_CONFIG))
+            _cv_d = _cmv_d(mappings, **_run_arch_toggles(args))
+            for _tp, _tf in args._distill_pairs:
+                try:
+                    _zip_d, _cfg_d, _ = _rzc_d(_tp, None)   # run-dir → (zip, config)
+                    _tm_d, _ = _lfo_d(_zip_d, current_version=_cv_d,
+                                      device=str(model.device), config_path=_cfg_d)
+                    _tm_d.policy.set_training_mode(False)
+                    model._distill_teachers.append(_tm_d)
+                except Exception as _e_d:  # noqa: BLE001 — bad/incompatible teacher weights
+                    print(f"\n[Distill] FATAL: could not load --distill-teacher {_tp}: {_e_d}")
+                    sys.stdout.flush()
+                    os._exit(int(TrainExitCode.FATAL_CONFIG))
+            emit(f"🧪 [DISTILL] {len(model._distill_teachers)} teacher(s) attached on {model.device} "
+                 f"(order = teacher-id 1..{len(model._distill_teachers)})")
         model.opd_beta = args.opd_beta
         model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
         if args.search_teacher:

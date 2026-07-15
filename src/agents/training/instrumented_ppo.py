@@ -311,7 +311,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # and the workers/cycle refill it. Mirrors SB3 excluding `rollout_buffer`.
         # `_distill_teacher` is a full frozen model (a foreign exploiter) attached at setup — never pickle
         # it into our checkpoint; it is re-loaded from its own path on resume (like a stable opponent).
-        return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher"]
+        return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher", "_distill_teachers"]
 
     @staticmethod
     def _searchteacher_loss(logits, action_mask, better_action, advantage,
@@ -1089,11 +1089,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
             and getattr(self, "_correction_buffer", None) is not None
             and len(self._correction_buffer) > 0
         )
-        # +DISTILL (gen3_exploiter_distill_v1): exploiter distillation. On when a frozen teacher model is
-        # attached AND the coef is non-zero. Per minibatch it forwards student + teacher on the ROLLOUT obs
-        # and folds a KL masked to the teacher-team states (`distill_mask`). OFF → byte-identical to upstream.
+        # +DISTILL (gen3_exploiter_distill_v1): exploiter distillation, N teachers. On when a non-empty list
+        # of frozen teacher models is attached AND the coef is non-zero. Per minibatch: ONE student forward
+        # + one forward per teacher, each KL masked to that teacher's team states (the `distill_mask` obs key
+        # holds an INTEGER team-id — 0 = none, k = teacher k, 1-indexed). Per-teacher mean-KLs are averaged
+        # (per-archetype balancing → no teacher dominates). N=1 is byte-identical to the single-teacher form
+        # (id ∈ {0,1}). OFF (empty list / coef 0) → byte-identical to upstream.
         distill_on = (
-            getattr(self, "_distill_teacher", None) is not None and self.distill_coef != 0.0
+            bool(getattr(self, "_distill_teachers", None)) and self.distill_coef != 0.0
         )
 
         continue_training = True
@@ -1417,27 +1420,38 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # no teacher) → the whole block is skipped, loss byte-identical.
                 distill_term = None
                 if distill_on:
-                    _dmask = rollout_data.observations.get("distill_mask")
-                    if _dmask is not None and float(_dmask.reshape(-1).sum()) >= 1.0:
+                    _tid = rollout_data.observations.get("distill_mask")   # INTEGER team-id [B,1]: 0=none, k=teacher k
+                    if _tid is not None and float(_tid.reshape(-1).max()) >= 1.0:
+                        _tid_flat = _tid.reshape(-1)
+                        # ONE student forward, reused across all teachers (the teacher forwards are frozen).
                         _s_logits = self.policy.get_distribution(
                             rollout_data.observations).distribution.logits
-                        # The frozen teacher has its OWN (older) obs space — it does NOT know the new
-                        # training-only keys (distill_mask, and any label keys added since it was saved).
-                        # SB3's preprocess_obs iterates the OBS keys against the space, so pass only the
-                        # keys the teacher's space knows (it needs just observation + action_mask anyway).
-                        _t_obs = {k: v for k, v in rollout_data.observations.items()
-                                  if k in self._distill_teacher.observation_space.spaces}
-                        with th.no_grad():
-                            _t_logits = self._distill_teacher.policy.get_distribution(
-                                _t_obs).distribution.logits
-                        d_out = self._distill_loss(
-                            _s_logits, _t_logits, rollout_data.action_masks, _dmask)
-                        if d_out is not None:
-                            d_loss, d_m = d_out
-                            distill_term = self.distill_coef * d_loss
+                        _per_teacher_kl = []
+                        for _k, _teacher in enumerate(self._distill_teachers, start=1):
+                            _sel = (_tid_flat == _k).to(_s_logits.dtype)      # states on teacher k's team
+                            if float(_sel.sum()) < 1.0:
+                                continue
+                            # Each frozen teacher has its OWN (older) obs space — pass only the keys it knows
+                            # (SB3's preprocess_obs iterates obs keys against the space; it needs just
+                            # observation + action_mask). See gen3_exploiter_distill_v1 invariance (Δ=0).
+                            _t_obs = {key: v for key, v in rollout_data.observations.items()
+                                      if key in _teacher.observation_space.spaces}
+                            with th.no_grad():
+                                _t_logits = _teacher.policy.get_distribution(_t_obs).distribution.logits
+                            _d_out = self._distill_loss(_s_logits, _t_logits, rollout_data.action_masks, _sel)
+                            if _d_out is not None:
+                                _kl_k, _m_k = _d_out
+                                _per_teacher_kl.append(_kl_k)
+                                for _mk, _mv in _m_k.items():   # per-teacher diagnostics (distill/t{k}_*)
+                                    distill_metrics.setdefault(f"t{_k}_{_mk}", []).append(float(_mv))
+                        if _per_teacher_kl:
+                            # Per-archetype balancing: average the per-teacher mean-KLs so a teacher with
+                            # fewer states still contributes comparable gradient (not swamped by a big one).
+                            _distill_kl = th.stack(_per_teacher_kl).mean()
+                            distill_term = self.distill_coef * _distill_kl
                             loss = loss + distill_term
-                            for _dk, _dv in d_m.items():
-                                distill_metrics.setdefault(_dk, []).append(float(_dv))
+                            distill_metrics.setdefault("kl", []).append(float(_distill_kl))
+                            distill_metrics.setdefault("n_teachers_active", []).append(float(len(_per_teacher_kl)))
 
                 # +SEARCH-TEACHER: AWR policy distillation toward the verified-better action. The
                 # corrections are OFF-POLICY (searched eval-trace states, not in this rollout), so this
