@@ -85,6 +85,11 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         distribution = self._get_action_dist_from_latent(latent_pi)
         if action_masks is not None:
             distribution.apply_masking(action_masks)
+        # gen3_exploiter_distill_v1: stash the (masked) pi distribution so the exploiter-distillation KL in
+        # InstrumentedMaskablePPO.train() can REUSE this forward instead of a redundant second
+        # get_distribution. The masked logits give a BIT-IDENTICAL KL (over LEGAL actions the logits are
+        # unchanged; illegal actions contribute exactly 0 either way). A no-op for any non-distill run.
+        self._last_pi_distribution = distribution
         log_prob = distribution.log_prob(actions)
         values = self._denorm(self.value_net(latent_vf))
         return values, log_prob, distribution.entropy()

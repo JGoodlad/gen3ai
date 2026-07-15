@@ -1424,8 +1424,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     if _tid is not None and float(_tid.reshape(-1).max()) >= 1.0:
                         _tid_flat = _tid.reshape(-1)
                         # ONE student forward, reused across all teachers (the teacher forwards are frozen).
-                        _s_logits = self.policy.get_distribution(
-                            rollout_data.observations).distribution.logits
+                        # gen3_exploiter_distill_v1 optimization: REUSE the student pi distribution the
+                        # evaluate_actions forward above already built (self.policy._last_pi_distribution),
+                        # instead of a redundant second get_distribution — the KL is bit-identical (masked
+                        # vs raw logits agree over legal actions; illegal contribute 0). Fall back to a fresh
+                        # forward if the stash is somehow absent (defensive; evaluate_actions always sets it).
+                        _last_pi = getattr(self.policy, "_last_pi_distribution", None)
+                        _s_logits = (_last_pi.distribution.logits if _last_pi is not None
+                                     else self.policy.get_distribution(
+                                         rollout_data.observations).distribution.logits)
                         _per_teacher_kl = []
                         for _k, _teacher in enumerate(self._distill_teachers, start=1):
                             _sel = (_tid_flat == _k).to(_s_logits.dtype)      # states on teacher k's team

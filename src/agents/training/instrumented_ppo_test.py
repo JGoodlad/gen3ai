@@ -178,6 +178,21 @@ def test_distill_loss_grad_flows_student_only():
     assert teacher.grad is None
 
 
+def test_distill_reuse_masked_logits_bit_identical():
+    """The #3 optimization (reuse the evaluate_actions forward, whose logits are MASKED) must give a
+    BIT-IDENTICAL KL to a fresh (RAW) get_distribution forward: over LEGAL actions the logits are the same
+    (masking adds nothing to legal), and illegal actions contribute exactly 0 to the KL either way."""
+    B, A = 4, 6
+    raw_student, teacher = th.randn(B, A), th.randn(B, A)
+    amask = th.ones(B, A); amask[:, 4:] = 0.0                 # actions 4,5 illegal
+    # masked student = raw with illegal set to a large negative (mimics MaskableCategorical.apply_masking)
+    masked_student = raw_student.clone(); masked_student[:, 4:] = -1e8
+    loss_raw, m_raw = InstrumentedMaskablePPO._distill_loss(raw_student, teacher, amask, th.ones(B, 1))
+    loss_masked, m_masked = InstrumentedMaskablePPO._distill_loss(masked_student, teacher, amask, th.ones(B, 1))
+    assert float(loss_raw) == float(loss_masked)             # EXACT (bit-identical), not approx
+    assert m_raw["agree_rate"] == m_masked["agree_rate"]
+
+
 def test_distill_multi_teacher_averaging():
     """N teachers on DISJOINT team-id subsets → the combined loss is the MEAN of the per-teacher masked
     KLs (per-archetype balancing: each teacher weighted equally regardless of its state count); a teacher
