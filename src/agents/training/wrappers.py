@@ -189,6 +189,34 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         if self._pool is not None:
             self._pool.set_win_rates(rates)
 
+    def _trainee_teambuilder(self):
+        """The trainee's teambuilder handle (poke-env stores ``team=`` as ``_team``; agent1 is the
+        trainee). Guarded — returns None if the env/agent1/_team chain is absent."""
+        return getattr(getattr(self.env, "agent1", None), "_team", None)
+
+    def drain_team_pfsp_counts(self):
+        """Team-side PFSP pull (read via ``VecEnv.env_method`` by ``TeamPFSPCallback`` each window):
+        drain-and-zero this worker's per-team self-play win/loss accumulators. ``None`` when the
+        trainee builder isn't PFSP-capable (off runs / a non-Gen3 builder)."""
+        _tb = self._trainee_teambuilder()
+        return _tb.drain_team_pfsp_counts() if (
+            _tb is not None and hasattr(_tb, "drain_team_pfsp_counts")) else None
+
+    def set_team_pfsp_weights(self, weights) -> None:
+        """Team-side PFSP push (``VecEnv.env_method`` from ``TeamPFSPCallback``): set the trainee
+        builder's per-team sampling weights. No-op when the builder isn't PFSP-capable."""
+        _tb = self._trainee_teambuilder()
+        if _tb is not None and hasattr(_tb, "set_team_pfsp_weights"):
+            _tb.set_team_pfsp_weights(weights)
+
+    def get_team_pfsp_keys(self):
+        """Team-side PFSP identity pull (``VecEnv.env_method``, ONCE): this worker's per-pool-team
+        fingerprints, so the callback can verify the per-index team identity matches across workers.
+        ``None`` when the trainee builder isn't PFSP-capable."""
+        _tb = self._trainee_teambuilder()
+        return _tb.get_team_pfsp_keys() if (
+            _tb is not None and hasattr(_tb, "get_team_pfsp_keys")) else None
+
     def set_stable_mastered(self, mastered_labels) -> None:
         """Pushed by the eval callback each cycle (via ``env_method``): the labels of stable
         cross-run opponents the trainee has MASTERED (win_rate ≥ threshold). A mastered opponent
@@ -332,6 +360,14 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             won = 1.0 if (b is not None and b.won is True) else 0.0
             info["win_outcome"] = won
             self._record_exploiter_outcome(won)   # ratchet-mode WR signal (no-op off / vs bots)
+            # Team-side PFSP: record this outcome against the trainee's yielded pool team, but ONLY
+            # on SELF-PLAY POOL battles (`opponent is _pool_player`) — bots are excluded (we win
+            # ~0.99 vs bots, which washes out the per-team variance signal). No-op off / vs bots /
+            # on a bias-team yield (the builder's own guards). Aggregated centrally by TeamPFSPCallback.
+            if self.opponent is self._pool_player:
+                _tb = self._trainee_teambuilder()
+                if _tb is not None and hasattr(_tb, "record_team_pfsp_outcome"):
+                    _tb.record_team_pfsp_outcome(won)
         return obs, reward, term, trunc, info
 
     def action_masks(self):

@@ -1521,6 +1521,25 @@ async def main():
                              "oldest + an even interior spread) instead of the oldest-evicted sliding "
                              "window, so PFSP (--pfsp-scale) has a real range of past selves to "
                              "up-weight. Default off = the legacy sliding window (byte-identical).")
+    # ── Team-side PFSP: variance-weighted TEAM sampling by self-play win-rate (OFF by default) ──
+    parser.add_argument("--team-pfsp", "--team_pfsp", dest="team_pfsp",
+                        choices=["off", "var"], default="off",
+                        help="Variance-weighted TEAM sampling for the trainee's pool teams by their "
+                             "self-play win-rate (default off = uniform random.choice, byte-identical). "
+                             "'var' weights each pool team by floor + p*(1-p) (p = per-team self-play "
+                             "win-rate EMA, seed 0.5), capped at --team-pfsp-cap x the uniform share — so "
+                             "the trainee drills the teams it wins around half the time (max variance) and "
+                             "stops over-sampling the ones it already crushes / always loses. Measured on "
+                             "SELF-PLAY pool battles only (bots excluded). Training-only, NOT "
+                             "version-locked.")
+    parser.add_argument("--team-pfsp-cap", "--team_pfsp_cap", dest="team_pfsp_cap",
+                        type=float, default=3.0,
+                        help="Over-representation cap for --team-pfsp: no team is sampled more than "
+                             "this multiple of the uniform share (weight ≤ cap×mean(raw)). Default 3.0.")
+    parser.add_argument("--team-pfsp-floor", "--team_pfsp_floor", dest="team_pfsp_floor",
+                        type=float, default=0.05,
+                        help="Weight floor for --team-pfsp (raw_i = floor + p*(1-p)) so a fully-won / "
+                             "fully-lost team is never starved to zero. Default 0.05.")
     # ── Stable (cross-run) opponents: load a model from ANOTHER run as a fixed opponent ──
     parser.add_argument("--stable-opponents", "--stable_opponents", dest="stable_opponents",
                         type=str, default=None,
@@ -2264,7 +2283,12 @@ async def main():
         sys.stdout.flush()
         os._exit(int(TrainExitCode.FATAL_CONFIG))
     _specialist_team_str = matchup.trainee_teams.pin_str   # → eval callbacks (trainee_team_str)
-    trainee_teambuilder = matchup.trainee_teams.build(all_teams, sample_teams)
+    # Team-side PFSP threads ONLY into the TRAINEE builder (opponent teams aren't win-rate-sampled);
+    # "off" (default) is byte-identical construction.
+    trainee_teambuilder = matchup.trainee_teams.build(
+        all_teams, sample_teams,
+        team_pfsp=args.team_pfsp, team_pfsp_cap=args.team_pfsp_cap,
+        team_pfsp_floor=args.team_pfsp_floor)
     opponent_teambuilder = matchup.opponent_teams.build(all_teams, sample_teams)
     # gen3_exploiter_distill_v1: bias the trainee toward the teacher's team (rest = pool rehearsal) so it
     # gets enough distillation signal, and precompute the teacher team's species id-set for the env's
@@ -2284,7 +2308,10 @@ async def main():
         args._distill_species = _species_sets   # list of frozensets, one per teacher (teacher-id = index+1)
         # Bias the trainee across ALL N teacher teams (bias_prob total, split evenly); rest = pool rehearsal.
         trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=_team_strs,
-                                              bias_prob=args.distill_team_bias)
+                                              bias_prob=args.distill_team_bias,
+                                              team_pfsp=args.team_pfsp,
+                                              team_pfsp_cap=args.team_pfsp_cap,
+                                              team_pfsp_floor=args.team_pfsp_floor)
         emit(f"🧪 [DISTILL] {len(args._distill_pairs)} teacher(s), coef={args.distill_coef} | trainee biased "
              f"{args.distill_team_bias:.0%} across {len(args._distill_pairs)} teacher team(s); rest = pool rehearsal")
         for _i, (_tp, _tf) in enumerate(args._distill_pairs, start=1):
@@ -2954,6 +2981,11 @@ async def main():
     if args.win_prob_mode != "none":
         from agents.training.win_prob_callback import WinProbLabelCallback
         callbacks.append(WinProbLabelCallback())
+    # Team-side PFSP: variance-weighted TEAM sampling by self-play win-rate. Registered ONLY when on
+    # → an off run adds no callback and makes no env_method calls (byte-identical). Training-only.
+    if args.team_pfsp != "off":
+        from agents.training.team_pfsp_callback import TeamPFSPCallback
+        callbacks.append(TeamPFSPCallback(cap=args.team_pfsp_cap, floor=args.team_pfsp_floor))
     # SEARCH-TEACHER: each cycle, search + confirm the worst loss craters and distil verified-better
     # corrections into model._correction_buffer (the AWR aux loss samples it). Non-blocking subprocess
     # workers; off by default (the buffer fills nothing → coef-0 loss is byte-identical regardless).

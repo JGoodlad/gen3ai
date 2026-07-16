@@ -51,19 +51,24 @@ class TeamSource:
         if self.kind in ("pinned", "pin_biased") and not self.pin_str:
             raise ValueError(f"TeamSource kind {self.kind!r} needs pin_str (the team export)")
 
-    def build(self, all_teams, sample_teams):
+    def build(self, all_teams, sample_teams, team_pfsp="off",
+              team_pfsp_cap=3.0, team_pfsp_floor=0.05):
         """The side's Gen3Teambuilder. Parity contract: ``pool`` == the historical opponent
         builder, ``default_biased`` == the historical trainee builder, ``pinned`` == the
-        --trainee-team builder — each byte-for-byte (pinned by matchup_spec_test)."""
+        --trainee-team builder — each byte-for-byte (pinned by matchup_spec_test).
+
+        team_pfsp/cap/floor: threaded ONLY for the TRAINEE side (opponent teams are not
+        win-rate-sampled). Default "off" is byte-identical to the pre-PFSP construction."""
         from utils.teambuilder import Gen3Teambuilder
+        _tp = dict(team_pfsp=team_pfsp, team_pfsp_cap=team_pfsp_cap, team_pfsp_floor=team_pfsp_floor)
         if self.kind == "pool":
-            return Gen3Teambuilder(all_teams)
+            return Gen3Teambuilder(all_teams, **_tp)
         if self.kind == "default_biased":
-            return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=self.bias_prob)
+            return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=self.bias_prob, **_tp)
         if self.kind == "pinned":
-            return Gen3Teambuilder([self.pin_str])
+            return Gen3Teambuilder([self.pin_str], **_tp)
         # pin_biased: the pinned team bias_prob of the time, else the full pool.
-        return Gen3Teambuilder(all_teams, bias_teams=[self.pin_str], bias_prob=self.bias_prob)
+        return Gen3Teambuilder(all_teams, bias_teams=[self.pin_str], bias_prob=self.bias_prob, **_tp)
 
     def describe(self) -> str:
         if self.kind == "pool":

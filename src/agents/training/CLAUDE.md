@@ -1011,6 +1011,51 @@ at the target and it's the only opponent.
   (sole-opponent + off-unchanged) + `test_pinned_*` (per-opponent teams),
   `fixed_opponent_pool_test.py::test_exploiter_*registration*`.
 
+## Team-side PFSP (`--team-pfsp`, `team_pfsp_callback.py`)
+
+The TEAM-axis complement to the opponent-side `--pfsp-scale`: bias the TRAINEE's team sampling toward
+the pool teams it is weakest on, so training spends gradient where the win-rate says there's headroom
+instead of uniformly over ~700 pool teams (the documented "uniform team sampling = headroom" gap). Off
+by default (`--team-pfsp off` → byte-identical).
+
+- **Variance weighting + cap + floor.** For pool team `i` the weight is `raw_i = --team-pfsp-floor +
+  p_i·(1−p_i)` where `p_i` is the team's self-play win-rate EMA (seed 0.5 → an unmeasured team gets the
+  MAX variance weight → explored), then capped `w_i = min(raw_i, --team-pfsp-cap·mean(raw))` (no team is
+  sampled more than `cap`× the uniform share — the over-representation bound). `p·(1−p)` peaks at 50%
+  (the most-to-learn matchups) and decays to the floor at both extremes, so it self-ignores both the
+  teams we crush AND the truly-lost teams; the floor keeps nothing fully starved. `compute_team_pfsp_
+  weights` is the pure, unit-tested math.
+- **Self-play only, pool teams only.** The per-team win-rate is measured ONLY on self-play POOL battles
+  (bots wash the signal out — we win ~0.99 vs bots): `MaskableAgentWrapper.step` records the outcome to
+  the trainee's `Gen3Teambuilder` (`self.env.agent1._team`) only when `self.opponent is
+  self._pool_player`. A bias/distill-pinned team (the `--distill-team-bias` branch) yields
+  `_last_pool_idx=None` → its battle is never tracked (those teams get fixed exposure via the bias, not
+  the win-rate weighting).
+- **Centralized aggregation (NOT per-worker — ~700 teams makes a single worker's counts too sparse; NOT
+  info-dict threading — that breaks under `--async-rollout`).** Each worker's teambuilder accumulates
+  LOCAL windowed `(wins, games)` per pool team; `TeamPFSPCallback` every `update_every` (3) rollouts
+  PULLs them from all workers via `env_method("drain_team_pfsp_counts")` (drain-zeroes each window), SUMs
+  by pool index, EMA-smooths a global per-team win-rate, computes the capped weights, and PUSHes them
+  back via `env_method("set_team_pfsp_weights", w)` → the teambuilder samples with
+  `random.choices(weights=…)`.
+- **Auditability + GIGO guard.** Each pool team carries a `team_sha` fingerprint
+  (`sha1(team_str.strip())[:10]` — the SAME convention as `matchup_spec.pin_sha` / the archetype
+  artifact, so a key JOINS every provenance record). The callback pulls them ONCE
+  (`env_method("get_team_pfsp_keys")`) and verifies the per-INDEX team identity is IDENTICAL across
+  every worker (**same pool SIZE ≠ same pool ORDER** — a diverged order would silently mis-attribute
+  win-rates, which the cheap per-cycle size-only belt can't catch), then logs the weakest measured
+  teams by `sha@win-rate` so the weighting is inspectable (which teams/archetypes the budget
+  concentrates on), not an anonymous min/max scalar. Metrics
+  `team_pfsp/{min_wr,max_wr,n_measured,weight_spread}`.
+- **Training-only, not version-locked.** Threaded into the TRAINEE teambuilder only (both the
+  `matchup.trainee_teams.build` and the distill `Gen3Teambuilder` paths); the opponent builder is
+  untouched. Registered ONLY when `--team-pfsp != off` (off → no callback, no `env_method`, exact-legacy
+  `random.choice` → byte-identical). Forward it like `--pfsp-scale` on resume; no `model_config`/
+  `ModelVersion` entry.
+- **Tests.** `utils/teambuilder_test.py` (off==uniform RNG-identical, weighted sampling, record/drain,
+  the cap+floor weight math), `team_pfsp_callback_test.py` (cross-worker aggregation, the pool-size GIGO
+  guard, the `update_every` throttle, None-worker filtering).
+
 ## ELO / skill rating (`elo.py`, `bot_elo_calibration.py`, `main.elo`)
 
 Once training is mostly self-play **pool play**, win-rate stops being legible: the promotion
