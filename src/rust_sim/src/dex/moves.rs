@@ -75,6 +75,13 @@ pub struct MoveData {
     /// → `failMimic` in the data, `gen3_move_coverage_batch6_v1`; the gen3 carriers:
     /// metronome / mimic / sketch / struggle). Draw-free fail (`[still]` + `-fail`).
     pub fail_mimic: bool,
+    /// Whether this move CAN BE SNATCHED (`flags.snatch` → `isSnatchable` in the data,
+    /// `gen3_snatch_v1`). A `target:self` status move (self-boost / recover / Rest /
+    /// status-cures / Substitute / Belly Drum / …) that a foe's Snatch STEALS. The 44
+    /// gen3-legal carriers are data-enumerated, never hand-listed (Wish / Spikes /
+    /// Thunder Wave / Snatch itself are NOT snatchable — the sim overturned the
+    /// hypotheses). Read by `run_status_move`'s snatch interception.
+    pub is_snatchable: bool,
     /// Sorted `(effect, percent)` pairs from `secondaryEffects`.
     pub secondary_effects: Vec<(String, u16)>,
     /// The STRUCTURED secondary stat-boost spec (`secondaryBoosts` in the data) the
@@ -365,6 +372,7 @@ pub(super) fn parse(root: &Json, gen: u8) -> Result<HashMap<String, MoveData>, S
                 is_charge: v.bool_or("isCharge", false),
                 fail_encore: v.bool_or("failEncore", false),
                 fail_mimic: v.bool_or("failMimic", false),
+                is_snatchable: v.bool_or("isSnatchable", false),
                 secondary_effects,
                 secondary_boosts,
                 self_boosts,

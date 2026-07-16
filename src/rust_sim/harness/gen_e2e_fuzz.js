@@ -158,8 +158,9 @@ const MOVE_ID_BLOCKLIST = new Set([
   'fakeout', 'snore',
   // NOTE: `destinybond` is NO LONGER blocklisted — MODELED bit-for-bit
   // (`gen3_move_coverage_batch6_v1`) and ADMITTED via MODELED_BATCH6_MOVES in the
-  // Status branch of `isModeledMove`. `snatch` (the one remaining gen-3 reactive
-  // status-steal) stays out via the Status-branch reject (the port FAIL-LOUDs on it).
+  // Status branch of `isModeledMove`. `snatch` (the LAST gen-3 status move) is likewise
+  // NO LONGER blocklisted — MODELED bit-for-bit (`gen3_snatch_v1`) and ADMITTED via
+  // MODELED_SNATCH_MOVES in the Status branch (the port no longer FAIL-LOUDs on it).
   // NOTE: Explosion / Self-Destruct are NO LONGER blocklisted — they are FULLY modeled
   // bit-for-bit (the gen-3 self-KO that precedes the hit; `gen_explosion_golden.js` /
   // `explosion_test.rs` + the E1-E4 regression pins) and ADMITTED to the e2e capstone via
@@ -365,6 +366,15 @@ const MODELED_BATCH6_MOVES = new Set([
   'bellydrum', 'charge', 'memento', 'mimic', 'painsplit', 'psychup',
 ]);
 const BATCH6_E2E_EXCLUDED = false;
+
+// SNATCH (`gen3_snatch_v1`) — the LAST unmodeled gen-3 status move, MODELED bit-for-bit
+// (the interception + cast in `run_status_move`; the DEDICATED golden + MC100-MC104 pins).
+// A snatcher STEALS the next foe self-targeted `flags.snatch` status move; the port's
+// interception recurses into `run_status_move` for the stolen move, so any snatchable move
+// the picker CAN pick (all in `isModeledMove`) executes bit-for-bit when stolen. Admitting
+// it closes 722/722 (the last team-blocking move). The port no longer FAIL-LOUDs on snatch.
+const MODELED_SNATCH_MOVES = new Set(['snatch']);
+const SNATCH_E2E_EXCLUDED = false;
 
 // The MODELED gen-3 FIXED-DAMAGE moves (a `damage:` / `damageCallback` move that BYPASSES
 // getDamage — NO crit roll, NO 16-way damage roll) the port now executes bit-for-bit (the
@@ -638,6 +648,10 @@ function isModeledMove(id) {
       // MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the final tail, all
       // category-Status + bit-for-bit modeled (the DEDICATED golden + MC79+ pins).
       (BATCH6_E2E_EXCLUDED ? false : MODELED_BATCH6_MOVES.has(id)) ||
+      // SNATCH (`gen3_snatch_v1`) — the LAST gen-3 status move. Its interception steals only
+      // moves the picker also picks (all `isModeledMove`), so the steal always re-dispatches
+      // a modeled arm (never a fail-loud). Closes 722/722.
+      (SNATCH_E2E_EXCLUDED ? false : MODELED_SNATCH_MOVES.has(id)) ||
       (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));
   }
   if (!(m.basePower > 0)) return false; // variable / fixed-damage carrier

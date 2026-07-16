@@ -10082,3 +10082,161 @@ fn fixed_damage_contact_hit_fires_the_contact_proc() {
     assert_eq!(out.decisions[2].active[1].hp, 625, "Blissey took the psn chip (714 − 89)");
     assert_eq!(seed_str(&out.decisions[2].seed_after), "17940,16623,13080,40722");
 }
+
+// ============================================================================
+// MC100-MC104 — SNATCH (`gen3_snatch_v1`): the LAST unmodeled gen-3 status move,
+// which closes 722/722. A Dark, category-Status, priority-+4, never-miss target-self
+// move that sets the `snatch` singleturn volatile; while up it STEALS the next foe
+// self-targeted `flags.snatch` status move (the snatcher executes it, the foe's move
+// does nothing). Probe-settled bit-for-bit (harness/probe_snatch.js); ground-truth
+// seeds/state from harness/probe_snatch_regression_rng.js.
+// ============================================================================
+
+/// MC100: a FAST snatcher (Jolteon 130 > Skarmory 70) STEALS Swords Dance — the SNATCHER
+/// gets +2 Atk, the foe is unboosted, the foe's SD PP drops (48→47), the snatcher spends
+/// ONLY its Snatch PP (16→15). SNATCH is draw-free (the only turn draw is the endTurn Quick
+/// Claw). WRONG (no steal / a panic): Jolteon unboosted; WRONG (a drawing steal): the seed
+/// desyncs.
+#[test]
+fn snatch_fast_steals_swords_dance() {
+    let d = dex();
+    let jolteon = "Jolteon|||NoAbility|snatch,splash|Serious||N||||";
+    let skarmory = "Skarmory|||NoAbility|swordsdance,splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(jolteon, skarmory, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[0].boosts[0], 2, "the SNATCHER (Jolteon) got the stolen +2 Atk");
+    assert_eq!(out.decisions[0].active[1].boosts[0], 0, "the foe (Skarmory) is UNBOOSTED — its SD was stolen");
+    assert_eq!(out.decisions[0].active[0].move_pp[0], 15, "the snatcher spent ONLY its Snatch PP (16→15)");
+    assert_eq!(out.decisions[0].active[1].move_pp[0], 47, "the VICTIM spent the stolen SD's PP (48→47)");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "61255,39458,1834,64539",
+        "SNATCH is draw-free — the only turn draw is the endTurn Quick Claw"
+    );
+}
+
+/// MC101: a SLOW snatcher (Snorlax 30 < Skarmory 70) STEALS Swords Dance ANYWAY — priority
+/// +4 guarantees the `snatch` volatile is up before the foe's move, so the post-turn seed is
+/// IDENTICAL to MC100's (the +4 interception proof). WRONG (a naive "reactive after the foe"
+/// speed-race model): the draw order differs → the seed diverges from MC100.
+#[test]
+fn snatch_slow_snatcher_still_steals_priority_plus_four() {
+    let d = dex();
+    let snorlax = "Snorlax|||NoAbility|snatch,splash|Serious|252,,,,,|N||||";
+    let skarmory = "Skarmory|||NoAbility|swordsdance,splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(snorlax, skarmory, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[0].boosts[0], 2, "the SLOW snatcher (Snorlax) STILL got the stolen +2 Atk");
+    assert_eq!(out.decisions[0].active[1].boosts[0], 0, "Skarmory unboosted");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "61255,39458,1834,64539",
+        "IDENTICAL to MC100 — priority +4 means the snatch fires regardless of speed"
+    );
+}
+
+/// MC102: STEAL A REST (the DRAW-COUNT teeth) — the snatcher steals Snorlax's Rest → the
+/// SNATCHER goes to sleep + FULL-heals (100→394, its own state; the foe stays awake). The
+/// stolen Rest's sleep `random(2,6)` fires in the snatcher's context (2 draws vs 1). WRONG
+/// (a draw-free steal): the seed desyncs by exactly that `random(2,6)`.
+#[test]
+fn snatch_steals_rest_snatcher_sleeps_and_draws_the_sleep_roll() {
+    let d = dex();
+    let umbreon = "Umbreon|||NoAbility|snatch,splash|Serious|252,,,,,|N||||";
+    let snorlax = "Snorlax|||NoAbility|rest,splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(umbreon, snorlax, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[0].pokemon[0].hp = 100; // injure the snatcher so the stolen Rest's full heal is observable
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert!(
+        matches!(out.decisions[0].active[0].status, Some(Status::Sleep(_))),
+        "the SNATCHER (Umbreon) is asleep from the stolen Rest"
+    );
+    assert_eq!(out.decisions[0].active[0].hp, 394, "the stolen Rest FULL-healed the SNATCHER (100→394)");
+    assert!(
+        out.decisions[0].active[1].status.is_none(),
+        "the foe (Snorlax) is NOT asleep — the Rest was stolen"
+    );
+    assert_eq!(out.decisions[0].active[1].move_pp[0], 15, "the VICTIM spent the stolen Rest's PP (16→15)");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "60880,31090,7619,34922",
+        "the stolen Rest draws its sleep random(2,6) in the snatcher's context (+ the endTurn QC)"
+    );
+}
+
+/// MC103: THUNDER WAVE is NOT snatchable (it carries no `flags.snatch`) → it PASSES THROUGH:
+/// the snatcher is paralyzed normally, NO steal, NO `-activate`. WRONG (a wrongly-stolen
+/// TWave): the snatcher would be UN-paralyzed and the seed would differ.
+#[test]
+fn snatch_does_not_steal_thunder_wave() {
+    let d = dex();
+    let umbreon = "Umbreon|||NoAbility|snatch,splash|Serious|252,,,,,|N||||";
+    let jolteon = "Jolteon|||NoAbility|thunderwave,splash|Serious||N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(umbreon, jolteon, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert!(
+        matches!(out.decisions[0].active[0].status, Some(Status::Paralysis)),
+        "the snatcher is PARALYZED — Thunder Wave passed through (not snatchable)"
+    );
+    assert_eq!(out.decisions[0].active[0].boosts[0], 0, "no self-boost — nothing was stolen");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "60880,31090,7619,34922",
+        "TWave draws its accuracy roll (+ the endTurn QC); no steal machinery"
+    );
+}
+
+/// MC104: the SNATCH MIRROR residual-duration tie (the CRUX). Two EQUAL-speed Umbreon both
+/// cast Snatch → both `snatch` `duration:1` volatiles register the NO_ORDER/subOrder-2
+/// residual duration handler → they TIE → ONE extra `random(0,2)` tie-shuffle at the residual
+/// (8 total draws). Neither steals (Snatch itself is not snatchable). WRONG (no residual
+/// handler): the seed matches the both-Splash control (MC104b, 7 draws) → a silent desync on
+/// every mirror turn. This pin asserts the mirror seed AND that it DIFFERS from the control.
+#[test]
+fn snatch_mirror_draws_the_residual_duration_tie_shuffle() {
+    let d = dex();
+    let umbreon = "Umbreon|||NoAbility|snatch,splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(umbreon, umbreon, "37635,3740,64462,10380"), &d)
+            .expect("start");
+    let out = battle
+        .state_mut()
+        .expect("state")
+        .run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "12061,48772,57767,1268",
+        "the snatch mirror draws the residual duration-handler tie-shuffle (8 draws)"
+    );
+    // The CONTROL: both Splash (slot swapped) → NO snatch volatile → NO residual tie-shuffle
+    // (7 draws). Its post-seed MUST DIFFER — the mirror's extra draw is snatch-attributable.
+    let umbreon_splash = "Umbreon|||NoAbility|splash,snatch|Serious|252,,,,,|N||||";
+    let mut ctrl =
+        Battle::start_with_switchins(&opts_cg(umbreon_splash, umbreon_splash, "37635,3740,64462,10380"), &d)
+            .expect("start");
+    let ctrl_out = ctrl
+        .state_mut()
+        .expect("state")
+        .run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        seed_str(&ctrl_out.decisions[0].seed_after),
+        "60443,61849,18300,733",
+        "the both-Splash control draws NO residual tie-shuffle (7 draws)"
+    );
+    assert_ne!(
+        out.decisions[0].seed_after, ctrl_out.decisions[0].seed_after,
+        "the mirror's extra residual tie-shuffle draw MUST make its seed differ from the control"
+    );
+}

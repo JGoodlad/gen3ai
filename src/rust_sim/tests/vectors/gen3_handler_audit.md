@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
-46 conditions (engine state space + attached), 235 modeled moves
-→ **889 (effect, hook) rows**.
+47 conditions (engine state space + attached), 236 modeled moves
+→ **897 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 825 |
+| implemented | 833 |
 | noop_justified | 36 |
 | unreachable_justified | 28 |
 
@@ -331,7 +331,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (206 rows: implemented=179, noop_justified=9, unreachable_justified=18)
+## condition (210 rows: implemented=183, noop_justified=9, unreachable_justified=18)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -495,6 +495,10 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | slp | onBeforeMovePriority | implemented | `turn.rs::run_move` |
 | slp | onStart | implemented | `turn.rs::try_set_status` |
 | slp | onSwitchIn | unreachable_justified | restores skippedTime — skippedTime is only ever incremented by a `sleepUsable` move (Snore / Sleep Talk, both MOVE_ID_BLOCKLISTed), so it is always 0 |
+| snatch | duration | implemented | `turn.rs::run_residuals` |
+| snatch | onAnyPrepareHit | implemented | `turn.rs::run_status_move` |
+| snatch | onAnyPrepareHitPriority | implemented | `turn.rs::run_status_move` |
+| snatch | onStart | implemented | `turn.rs::run_status_move` |
 | spikes | onEntryHazard | implemented | `turn.rs::apply_entry_hazards` |
 | spikes | onSideRestart | implemented | `turn.rs::run_status_move` |
 | spikes | onSideStart | implemented | `turn.rs::run_status_move` |
@@ -542,7 +546,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | wish | onEnd | implemented | `turn.rs::apply_wish` |
 | wish | onResidualOrder | implemented | `turn.rs::apply_wish` |
 
-## move (378 rows: implemented=374, noop_justified=2, unreachable_justified=2)
+## move (382 rows: implemented=378, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -847,6 +851,10 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | sludge | secondaries | implemented | `turn.rs::apply_secondaries` |
 | sludgebomb | secondaries | implemented | `turn.rs::apply_secondaries` |
 | smog | secondaries | implemented | `turn.rs::apply_secondaries` |
+| snatch | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| snatch | neverMiss | implemented | `turn.rs::run_status_move` |
+| snatch | priority | implemented | `turn.rs::run_status_move` |
+| snatch | volatileStatus | implemented | `turn.rs::run_status_move` |
 | softboiled | heal | implemented | `turn.rs::recovery_heal_amount` |
 | softboiled | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | softboiled | neverMiss | implemented | `turn.rs::never_miss` |

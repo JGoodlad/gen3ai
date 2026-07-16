@@ -227,6 +227,9 @@ function classifyStatus(m, id) {
       : 'volatile-transfer Baton Pass (batch 3)';
     return { cov: 'MODELED', mech };
   }
+  // SNATCH (`gen3_snatch_v1`) — the LAST gen-3 status move, MODELED bit-for-bit (the
+  // interception + cast in run_status_move; the DEDICATED golden + MC100-MC104 pins).
+  if (id === 'snatch') return { cov: 'MODELED', mech: 'status-steal Snatch (snatch)' };
   // Everything else is a fail-loud in run_status_move / run_protect. Bucket by mechanic.
   return { cov: 'UNMODELED', mech: statusMechanic(m, id) };
 }

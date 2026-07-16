@@ -628,6 +628,17 @@ pub struct MonState {
     /// record holds what to RESTORE on switch-out / faint (`baseMoveSlots` — back to
     /// Mimic with its own remaining PP). `None` at construction.
     pub mimic_overlay: Option<MimicOverlay>,
+
+    /// The **SNATCH** singleturn volatile (`gen3_snatch_v1`): `true` while this mon's
+    /// Snatch (`volatileStatus:'snatch'`, `duration:1`) is up. Set DRAW-FREE on the
+    /// priority-+4 cast; while it is up, the NEXT self-targeted `flags.snatch` status
+    /// move used by ANY eligible mon (in gen-3 singles, the FOE) is STOLEN — the
+    /// snatcher executes it instead (the `snatch` condition's `onAnyPrepareHit`). Like
+    /// `flinch`/`focus_punch`/`endure` it clears at the NEXT turn-top (`clear_flinch`),
+    /// and it registers a NO_ORDER/subOrder-2 residual DURATION handler (so a SNATCH
+    /// MIRROR at equal speed draws ONE residual tie-shuffle — probe-verified 8 vs the
+    /// both-Splash control's 7). Cleared on switch-out + faint. `false` at construction.
+    pub snatch: bool,
 }
 
 /// The MIMIC moveslot-overlay restore record (`gen3_move_coverage_batch6_v1`).
@@ -820,6 +831,7 @@ impl MonState {
             trapped_by: None,
             charge: false,
             mimic_overlay: None,
+            snatch: false,
         })
     }
 

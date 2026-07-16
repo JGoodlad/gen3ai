@@ -29,9 +29,10 @@ printf 'wish\ndoubleedge\n...' | /tmp/pokesim_target_scope/release/scan_move_pro
     Solar Beam's two-turn charge + Doom Desire's (+ Future Sight's) future strike — is MODELED
     (**BATCH 4c**, `gen3_move_coverage_batch4c_v1`). Every remaining un-modeled move FAIL-LOUDs.
   - **23 UNMODELED** — the engine FAIL-LOUDs (`panic!` / `is not modeled`). Honest crash, no desync.
-- **Teams already FULLY engine-playable (every move MODELED bit-for-bit): 718 / 722** (was 8
-  pre-batch-1; 662 after batch 5; batch 6 models the final status tail — the LAST blocker is
-  SNATCH, 4 teams, deliberately deferred/fail-loud).
+- **Teams already FULLY engine-playable (every move MODELED bit-for-bit): 722 / 722** (was 8
+  pre-batch-1; 662 after batch 5; batch 6 → 718; **SNATCH** (`gen3_snatch_v1`) models the LAST
+  status move → **722 / 722** — every `data/teams/` team fully engine-playable, 0 UNMODELED moves
+  left. See the SNATCH section in `src/rust_sim/CLAUDE.md`.).
 - **Teams with NO FAIL-LOUD (MISMODELED allowed to run-but-wrong): 176 / 722.**
 
 The oracle used is the ENGINE's true coverage, verified by actually running each move through

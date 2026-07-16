@@ -517,7 +517,15 @@ add([mv('painsplit', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the painsplit arm: protect/sub block; avg = floor((u+t)/2), EACH side clamped at its OWN maxhp (MC96); -sethp target [silent] then user'));
 add([mv('psychup', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the psychup arm: copies ALL 7 stages VERBATIM (zeros overwrite — MC97); NO protect flag (copies through a Protect); bypasssub'));
+// SNATCH (gen3_snatch_v1) — the LAST gen-3 status move, the status-steal.
+add([mv('snatch', 'volatileStatus'), mv('snatch', 'priority'), cond('snatch', 'onStart')],
+  IMPL('turn.rs::run_status_move', 'the snatch-cast arm: priority +4 sets MonState::snatch DRAW-FREE + emits |move|U|Snatch|U + |-singleturn|U|Snatch (the onStart line); landed FALSE'));
+add([cond('snatch', 'onAnyPrepareHit'), cond('snatch', 'onAnyPrepareHitPriority')],
+  IMPL('turn.rs::run_status_move', 'the INTERCEPTION (gated on the data-derived MoveData::is_snatchable + the foe snatch volatile): removeVolatile FIRST → |-activate|…|move: Snatch|[of] FOE → DeductPP (draw-free no-op) → the snatcher useMove(stolen) via a recursive run_status_move + [from] Snatch → return null (the foe move does nothing); MC100-MC104'));
+add([cond('snatch', 'duration')],
+  IMPL('turn.rs::run_residuals', 'the duration:1 volatile registers a NO_ORDER/subOrder-2 residual duration handler (the SNATCH-mirror tie-shuffle — 8 draws vs the both-Splash control 7, MC104); cleared at turn-top (clear_flinch) / switch-out / faint'));
 add([mv('bellydrum', 'ignoreImmunity'), mv('bellydrum', 'neverMiss'),
+     mv('snatch', 'ignoreImmunity'), mv('snatch', 'neverMiss'),
      mv('block', 'ignoreImmunity'), mv('block', 'neverMiss'),
      mv('charge', 'ignoreImmunity'), mv('charge', 'neverMiss'),
      mv('destinybond', 'ignoreImmunity'), mv('destinybond', 'neverMiss'),

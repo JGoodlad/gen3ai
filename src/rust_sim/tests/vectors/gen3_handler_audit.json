@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 74,
    "items": 59,
-   "conditions": 46,
-   "moves": 235,
-   "rows": 889
+   "conditions": 47,
+   "moves": 236,
+   "rows": 897
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); NOT in MODELED/NOOP so the e2e filter excludes its teams",
@@ -1707,6 +1707,30 @@
    "disposition": "unreachable_justified",
    "fp": "fn:1d0a77fd:onSwitchIn(target) { this.effectState.time += this.effectState.skippedTime; this.effectState.skippedTime = 0; }",
    "reason": "restores skippedTime — skippedTime is only ever incremented by a `sleepUsable` move (Snore / Sleep Talk, both MOVE_ID_BLOCKLISTed), so it is always 0"
+  },
+  "condition:snatch:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the duration:1 volatile registers a NO_ORDER/subOrder-2 residual duration handler (the SNATCH-mirror tie-shuffle — 8 draws vs the both-Splash control 7, MC104); cleared at turn-top (clear_flinch) / switch-out / faint"
+  },
+  "condition:snatch:onAnyPrepareHit": {
+   "disposition": "implemented",
+   "fp": "fn:36e3d85c:onAnyPrepareHit(source, target, move) { const snatchUser = this.effectState.source; if (snatchUser.isSkyDropped()) retur",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the INTERCEPTION (gated on the data-derived MoveData::is_snatchable + the foe snatch volatile): removeVolatile FIRST → |-activate|…|move: Snatch|[of] FOE → DeductPP (draw-free no-op) → the snatcher useMove(stolen) via a recursive run_status_move + [from] Snatch → return null (the foe move does nothing); MC100-MC104"
+  },
+  "condition:snatch:onAnyPrepareHitPriority": {
+   "disposition": "implemented",
+   "fp": "val:-1",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the INTERCEPTION (gated on the data-derived MoveData::is_snatchable + the foe snatch volatile): removeVolatile FIRST → |-activate|…|move: Snatch|[of] FOE → DeductPP (draw-free no-op) → the snatcher useMove(stolen) via a recursive run_status_move + [from] Snatch → return null (the foe move does nothing); MC100-MC104"
+  },
+  "condition:snatch:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:90bda241:onStart(pokemon) { this.add(\"-singleturn\", pokemon, \"Snatch\"); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the snatch-cast arm: priority +4 sets MonState::snatch DRAW-FREE + emits |move|U|Snatch|U + |-singleturn|U|Snatch (the onStart line); landed FALSE"
   },
   "condition:spikes:onEntryHazard": {
    "disposition": "implemented",
@@ -4823,6 +4847,30 @@
    "fp": "val:[{\"chance\":40,\"status\":\"psn\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:snatch:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:snatch:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:snatch:priority": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the snatch-cast arm: priority +4 sets MonState::snatch DRAW-FREE + emits |move|U|Snatch|U + |-singleturn|U|Snatch (the onStart line); landed FALSE"
+  },
+  "move:snatch:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"snatch\"",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the snatch-cast arm: priority +4 sets MonState::snatch DRAW-FREE + emits |move|U|Snatch|U + |-singleturn|U|Snatch (the onStart line); landed FALSE"
   },
   "move:softboiled:heal": {
    "disposition": "implemented",

@@ -1583,6 +1583,26 @@ impl BattleState {
                     handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
                 });
             }
+            // --- SNATCH's `snatch` `duration: 1` volatile (`gen3_snatch_v1`) registers the
+            //     SAME NO_ORDER/subOrder-2 residual DURATION handler as
+            //     focus-punch/beat-up/endure. NO HP effect (the clear is the turn-top
+            //     `clear_flinch`), but its PRESENCE changes the residual tie-shuffle COUNT:
+            //     a SNATCH MIRROR at equal speed adds ONE tie-shuffle draw (PROBE-VERIFIED:
+            //     both-Snatch draws 8 vs the both-Splash control's 7 — the extra is the
+            //     residual `fieldEvent` handler-sort shuffle). A snatcher can't ALSO
+            //     protect/flinch this turn (it spent its +4 action on Snatch), so the
+            //     same-mon gather position is unobservable — the only tie is the OTHER
+            //     mon's same volatile. ---
+            if mon.snatch {
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
+                });
+            }
             // --- MUSTRECHARGE's `duration: 2` volatile (`gen3_move_coverage_batch4c_v1`,
             //     Hyper Beam) registers a NO_ORDER/subOrder-2 residual DURATION handler on
             //     the CAST turn's residual (the volatile is removed at the NEXT turn's
@@ -3254,6 +3274,13 @@ impl BattleState {
             //     same stall machinery, different effect: the onDamage survive-at-1
             //     clamp instead of the move block). DRAW-FREE. ---
             self.sides[side].pokemon[a].endure = false;
+            // --- SNATCH's `duration: 1` singleturn volatile (`gen3_snatch_v1`) expires at
+            //     the next turn-top, exactly like `flinch`/`focus_punch`/`endure`. Set on
+            //     the priority-+4 cast, it lives through the CAST turn (so it can intercept
+            //     the foe's snatchable move + register the residual duration handler) and
+            //     is cleared here at the FOLLOWING turn-top (probe SN1: t2 vols=(none)).
+            //     DRAW-FREE. ---
+            self.sides[side].pokemon[a].snatch = false;
         }
     }
 
@@ -5565,6 +5592,63 @@ impl BattleState {
                 self.log.move_used(&user, move_name, Some(&target), false, false);
             }
         }
+        // --- SNATCH INTERCEPTION (`gen3_snatch_v1`, the `snatch` condition's
+        //     `onAnyPrepareHit`, `onAnyPrepareHitPriority = -1`) — probe-settled bit-for-bit
+        //     vs the omniscient sim (`harness/probe_snatch.js`). When the FOE (`_side`,
+        //     the current move's USER) uses a `flags.snatch` SELF-targeted status move
+        //     while the OTHER active (`foe`, the snatcher who cast Snatch this turn) has the
+        //     `snatch` volatile up, the snatcher STEALS it: the snatcher executes the move
+        //     itself and the FOE's move does nothing. The interception fires INSIDE the
+        //     foe's `tryMoveHit`, AFTER the foe's `|move|` line (emitted just above) and
+        //     AFTER the foe's PP was deducted (in `run_move` before this dispatch). The
+        //     exact sim ordering (settled by the probe):
+        //       (1) `removeVolatile('snatch')` on the SNATCHER — FIRST, so the snatcher's
+        //           own nested `useMove` below can't re-trigger the interception;
+        //       (2) `|-activate|SNATCHER|move: Snatch|[of] FOE`;
+        //       (3) `runEvent('DeductPP', foe, snatcher)` — DRAW-FREE, returns true → 0
+        //           extra snatch PP (no Pressure interaction in gen3) → a NO-OP here;
+        //       (4) `this.actions.useMove(stolenId, snatcher)` — the snatcher executes the
+        //           stolen move in ITS OWN context (a bare useMove: no accuracy/on_before_move/
+        //           PP/lastMove, just the effect + the stolen move's NATIVE draws — SwordsDance/
+        //           Recover/Substitute draw 0 extra, Rest draws its sleep `random(2,6)`). Its
+        //           announce carries the `|[from] Snatch` fold (set below);
+        //       (5) `return null` → the FOE's move aborts (does nothing).
+        //     SNATCH INTRODUCES ZERO DRAWS OF ITS OWN (cast + steal are draw-free); the ONLY
+        //     snatch-attributable draw is the residual duration-handler tie-shuffle a MIRROR
+        //     draws (gathered in `run_residuals`, above). Priority +4 guarantees the volatile
+        //     is up before ANY foe move even for a SLOW snatcher (SN3 == SN2, seed-identical).
+        if dex.moves(move_id).map(|m| m.is_snatchable).unwrap_or(false)
+            && self.sides[foe].pokemon[foe_slot].snatch
+            && !self.sides[foe].pokemon[foe_slot].fainted
+            && self.sides[foe].pokemon[foe_slot].hp > 0
+        {
+            // (1) removeVolatile('snatch') on the SNATCHER first.
+            self.sides[foe].pokemon[foe_slot].snatch = false;
+            // (2) `|-activate|SNATCHER|move: Snatch|[of] FOE`.
+            if self.logging() {
+                let snatcher = self.mon_ref(foe, foe_slot, dex);
+                let victim = self.mon_ref(_side, _slot, dex);
+                self.log
+                    .activate(&snatcher, "move: Snatch", Some(&format!("[of] {victim}")));
+            }
+            // (3) DeductPP — draw-free no-op in gen3 (returns true → 0 extra snatch PP).
+            // (4) the SNATCHER uses the stolen move (the bare `useMove` — a recursive
+            //     `run_status_move` in the snatcher's context, with the `[from] Snatch`
+            //     announce fold). The stolen self-target moves are all category Status, so
+            //     they route through THIS fn; the recursion re-checks the interception but
+            //     the snatcher's volatile is now cleared (and the victim has none), so it
+            //     never re-fires. Its resolution is DISCARDED — the nested useMove is not the
+            //     snatcher's own queued action, so it fires no trailing Update (probe: SN2
+            //     SwordsDance draws only endTurn; SN5 Rest draws its sleep roll + endTurn).
+            self.log.set_next_move_from("Snatch");
+            self.run_status_move(
+                foe, foe_slot, _side, _slot, accuracy, never_miss, move_type, move_id,
+                move_name, targets_self, status_inflicted, /*foe_will_move*/ false,
+                /*will_act*/ will_act, /*was_choice_locked*/ false, dex,
+            );
+            // (5) return null — the FOE's move does nothing (not landed, not missed).
+            return MoveResolution::done(false, false, false);
+        }
         // --- SLEEP TALK (`gen3_move_coverage_batch5_v1`, the gen-3 `sleeptalk` — probe
         //     `harness/probe_batch5_sleeptalk.js`, the resolved source dumped there):
         //     usable ONLY while asleep; picks ONE of the user's OTHER eligible moves at
@@ -7231,6 +7315,27 @@ impl BattleState {
                 boosts: dex.moves(move_id).map(|m| m.stat_drop_boosts.clone()).unwrap_or_default(),
             };
             self.apply_secondary_boost(_side, _slot, foe, foe_slot, false, std::slice::from_ref(&spec), dex);
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- SNATCH CAST (`gen3_snatch_v1`, `snatch.onStart`) — a category-Status,
+        //     priority-+4, never-miss, `target:self` move that sets the `snatch` volatile
+        //     (`duration: 1`). DRAW-FREE: the `|move|<user>|Snatch|<user>` announce was
+        //     emitted at the top of this fn (self-target); here we set the volatile + emit
+        //     `|-singleturn|<user>|Snatch`. The volatile lives through THIS turn — so it can
+        //     intercept the foe's snatchable status move (the interception block above) AND
+        //     register the residual duration handler (`run_residuals`) — and clears at the
+        //     next turn-top (`clear_flinch`; probe SN1: t2 vols=(none)). Casting into
+        //     NOTHING just expires (draw-free removal). `landed` FALSE (a status `moveHit`
+        //     returns undefined → no in-tryMoveHit Update). Snatch itself is NOT snatchable
+        //     (its flags carry no `snatch` — a mirror steals nothing, probe SN12). ---
+        if move_id == "snatch" {
+            self.sides[_side].pokemon[_slot].snatch = true;
+            // [EMIT] `|-singleturn|<user>|Snatch`.
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.singleturn(&user, "Snatch");
+            }
             return MoveResolution::done(false, false, false);
         }
 
@@ -9670,6 +9775,10 @@ impl BattleState {
                 mon.perish = None;
                 mon.endure = false;
                 mon.charge = false;
+                // SNATCH (`gen3_snatch_v1`): drop the singleturn volatile with the corpse
+                // (the `beat_up` stale-flag hazard class — a fainted snatcher must not
+                // gather a residual duration handler on re-entry).
+                mon.snatch = false;
                 mon.trapped_by = None;
                 mon.restore_mimic_overlay();
                 // DESTINY BOND (`gen3_move_coverage_batch6_v1`, `destinybond.onFaint`):
@@ -11698,6 +11807,12 @@ impl BattleState {
             m.perish = None;
             m.endure = false;
             m.charge = false;
+            // SNATCH (`gen3_snatch_v1`): the singleturn volatile clears on switch-out
+            // (`clearVolatile`) — the `beat_up` stale-flag hazard class (a snatcher phazed
+            // out the same turn it cast Snatch must not gather a stale residual duration
+            // handler on re-entry). A snatch is +4, so a voluntary switch same-turn is
+            // impossible; the drag-out path is the reachable one.
+            m.snatch = false;
             m.destiny_bond = false;
             m.destiny_bond_ko_by = None;
             m.trapped_by = None;
@@ -13565,21 +13680,25 @@ mod tests {
         let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
     }
 
-    // SNATCH (a STILL-unmodeled reactive `volatileStatus:'snatch'` move — the one gen-3
-    // status-steal) FAIL-LOUDS: it is category Status, not in the modeled status set, so it
-    // hits the same fail-loud guard as Haze. This confirms the port PANICS (never silently
-    // mishandles / no-ops) if snatch is ever routed — the belt-and-braces the e2e's
-    // `MOVE_ID_BLOCKLIST` + the Status-branch exclusion keep OFF the pickable path. (This
-    // test was re-keyed from DESTINY BOND, which is MODELED as of
-    // `gen3_move_coverage_batch6_v1` — see `movecoverage_batch6_test.rs` + the MC pins.)
+    // SNATCH (`gen3_snatch_v1`) is now MODELED (the LAST gen-3 status move — this closes
+    // 722/722). The CAST is DRAW-FREE: it sets the `snatch` singleturn volatile on the
+    // user + emits `|-singleturn|<user>|Snatch`, consuming NO PRNG (the seed is unchanged
+    // by the cast — only the foe's Drill Peck + endTurn draw). (This test was re-keyed
+    // from a fail-loud panic — the deep steal mechanics + draw model are pinned bit-for-bit
+    // in `regression_test.rs` MC100-MC104 + `movecoverage_snatch_test.rs`.)
     #[test]
-    #[should_panic(expected = "is not modeled")]
-    fn snatch_status_move_panics_fail_loud() {
+    fn snatch_cast_sets_the_volatile_draw_free() {
         let d = dex();
+        // A FAST Gengar Snatch vs a slower Skarmory Drill Peck: the +4 cast sets the
+        // volatile before the foe's attack, and its own execution draws NOTHING.
         let gengar = "Gengar||leftovers|levitate|snatch,thunderbolt|Timid|252,,,,,252|||||";
-        let snorlax = "Snorlax||leftovers||bodyslam,earthquake|Adamant|252,252,,,,|||||";
-        let mut state = BattleState::start(&opts_cg(gengar, snorlax, "1,2,3,4"), &d).expect("start");
-        let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
+        let skarmory = "Skarmory||leftovers||drillpeck,spikes|Impish|252,,252,,,|||||";
+        let mut state = BattleState::start(&opts_cg(gengar, skarmory, "1,2,3,4"), &d).expect("start");
+        let before = state.prng_seed();
+        let res = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
+        assert!(state.sides[0].pokemon[0].snatch, "Snatch sets the `snatch` volatile on the user");
+        assert!(!res.landed && !res.missed, "a status Snatch never lands and never misses");
+        assert_eq!(state.prng_seed(), before, "the Snatch cast consumes no PRNG");
     }
 
     // RECOVERY: Recover heals EXACTLY `floor(maxhp/2)` on the USER, DRAW-FREE (never-miss

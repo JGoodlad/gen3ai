@@ -2070,9 +2070,80 @@ members (Seismic Toss / Super Fang / Counter / Endeavor), pinned by the revert-v
 **MC99** `fixed_damage_contact_hit_fires_the_contact_proc`. The handler-audit manifest
 grew 815 → **889 rows** (the batch-6 move + condition handlers + the `trapped`/`trapper`
 conditions, all implemented). The coverage scan:
-**718 / 722 teams fully engine-playable** — the HONEST residual is **SNATCH** (4 teams), the
-one remaining gen-3 status move, DELIBERATELY DEFERRED (unprobed → it stays FAIL-LOUD via the
-status-move guard, pinned by `snatch_status_move_panics_fail_loud`).
+**718 / 722 teams fully engine-playable** at the batch-6 landing — the residual was **SNATCH**
+(4 teams), since MODELED (see the SNATCH section below → **722 / 722**, every `data/teams/` team
+fully engine-playable).
+
+## SNATCH: the LAST unmodeled gen-3 status move (→ 722/722)
+
+`gen3_snatch_v1` — **SNATCH** (`snatch`), the SOLE remaining unmodeled gen3ou move (4 teams), now
+MODELED bit-for-bit, closing **722/722** — every `data/teams/` team fully engine-playable, the
+`--use-bridge=rust` endgame. A Dark, category-Status, **priority +4**, never-miss (`accuracy:true`),
+`target:self` move that sets the `snatch` singleturn volatile (`duration:1`); while up, the NEXT
+self-targeted `flags.snatch` status move used by the FOE (the only eligible victim in gen-3 singles)
+is STOLEN — the snatcher executes it in ITS OWN context and the foe's move does nothing. Probe-settled
+bit-for-bit vs the omniscient sim (`harness/probe_snatch.js`; the resolved `snatch.condition` is
+`onAnyPrepareHit`, `onAnyPrepareHitPriority = -1`):
+
+- **THE CAST** (`run_status_move`'s snatch-cast arm) — sets `MonState::snatch = true` DRAW-FREE +
+  emits `|move|U|Snatch|U` + `|-singleturn|U|Snatch`. `landed` FALSE. Snatch itself is NOT snatchable
+  (its flags = `{bypasssub,noassist,failcopycat}`, no `snatch`) → a mirror steals nothing.
+- **THE INTERCEPTION** (`run_status_move`, right after the move-announce, gated on the move's
+  data-derived `is_snatchable` flag + the FOE's `snatch` volatile) — fires INSIDE the foe's
+  `tryMoveHit`, AFTER the foe's `|move|` line + AFTER its PP was deducted (in `run_move`). The exact
+  sim ordering: (1) `removeVolatile('snatch')` on the snatcher FIRST (so its own nested `useMove`
+  can't re-intercept), (2) `|-activate|SNATCHER|move: Snatch|[of] FOE`, (3) `DeductPP` (draw-free
+  no-op — returns true → 0 extra snatch PP in gen3), (4) the snatcher executes the stolen move via a
+  recursive `run_status_move` in the snatcher's context (a `set_next_move_from("Snatch")` fold →
+  `|move|SNATCHER|Name|SNATCHER|[from] Snatch` + the effect), (5) return null → the foe's move does
+  nothing. The stolen self-target moves are all category-Status, so they route through the SAME
+  `run_status_move` arms (setup / recovery / Rest / Substitute / team-cure / screens / Belly Drum /
+  Charge / Psych Up) — the snatcher gets the boost/heal/sub/status/etc. The VICTIM spends the stolen
+  move's PP (deducted before the interception); the SNATCHER spends ONLY its Snatch PP.
+- **THE DRAW MODEL** — SNATCH INTRODUCES **ZERO DRAWS OF ITS OWN** (cast + steal are entirely
+  draw-free). The stolen move's OWN native draws fire in the snatcher's context (SwordsDance / Recover
+  / Substitute = 0 extra; **Rest draws its sleep `random(2,6)`** — the draw-count teeth). Priority +4
+  guarantees the volatile is up before ANY foe move even for a SLOW snatcher (SN3 == SN2,
+  seed-identical). **THE ONE snatch-attributable draw is the residual duration-handler tie-shuffle a
+  MIRROR draws:** the `snatch` `duration:1` volatile registers a NO_ORDER/subOrder-2 residual DURATION
+  handler (like protect/flinch/focus-punch/beat-up/endure), so two EQUAL-speed snatchers' volatiles
+  TIE → ONE `random(0,2)` tie-shuffle at the residual (**PROBE-VERIFIED 8 draws vs the both-Splash
+  control's 7**). The volatile clears at the next turn-top (`clear_flinch`) + switch-out + faint.
+- **NON-members** (the sim overturned the task's hypotheses — the sim is the oracle): **Wish** /
+  **Spikes** / **Thunder Wave** carry NO `flags.snatch` → they pass through un-stolen; **Snatch itself**
+  is not snatchable.
+- **DATA**: the extractor emits a data-derived **`isSnatchable`** flag into `gen3_moves.json` from
+  `flags.snatch` (only-when-present, obs-neutral — the facade ignores it, like `failEncore`); the 44
+  gen3-legal carriers are data-enumerated, never hand-listed. `dex/moves.rs::MoveData::is_snatchable`
+  parses it; the engine gates the interception on it, NOT a hard-coded id-list.
+
+**Validated** by `gen_movecoverage_snatch_golden.js` → `movecoverage_snatch_test.rs` (a per-seed
+PER-DECISION STATE(+HP+STATUS+BOOSTS+SUB-HP)+SEED+winner differential to GAME-END over 7 scenarios × 80
+seeds — steal a self-boost / steal a Recover / steal a Rest [the snatcher sleeps + heals] / steal a
+Substitute / a NON-snatchable Thunder Wave NOT stolen + cast-into-nothing / the SNATCH MIRROR residual
+tie / snatch-into-a-real-battle; REUSES the batch-6 50-field DEC format so the parser is shared) +
+**5 revert-verified `regression_test.rs` pins MC100-MC104** (ground truth
+`harness/probe_snatch_regression_rng.js`): MC100 fast-steal-SwordsDance, MC101 slow-steal (the +4
+interception proof — SAME post-seed as MC100), MC102 steal-Rest (the snatcher sleeps + full-heals + the
+stolen sleep `random(2,6)` draw teeth), MC103 Thunder-Wave-NOT-stolen (passes through, snatcher
+paralyzed), **MC104 the MIRROR residual-duration tie** (the CRUX — asserts the 8-draw mirror seed AND
+that it DIFFERS from the 7-draw both-Splash control). The former `snatch_status_move_panics_fail_loud`
+fail-loud test is re-keyed to `snatch_cast_sets_the_volatile_draw_free`. **e2e ADMITTED**
+(`SNATCH_E2E_EXCLUDED = false`; `snatch` removed from the blocklist commentary; the interception steals
+only moves the picker also picks — all `isModeledMove` — so the recursion always hits a modeled arm,
+never a fail-loud) — a **CLEAN STRICT pass first-try, NO new engine bug**: the pre-regen golden replayed
+BYTE-IDENTICAL (md5 `02fe5d9a59955eaf0360e9d881f46a83` unchanged — the snatch code is a no-op on the old
+golden), then the deliberate regen shifted it to **md5 `3155eb796cb4bf453c6053d769ba98e5`** — STRICT
+`filtered_diverged == 0` over **220 battles / 11575 decisions** (218 wins + 2 ties), **722 / 722
+filter-clean teams** (the LAST team-blocking move — the taxonomy's 300-battle UNFILTERED sweep is now
+300/300 clean with EMPTY ability+item gap lists). The handler-audit manifest grew 889 → **897 rows** (the
+snatch move + `snatch` condition handlers, all implemented). The 220-battle sampled corpus exercises
+**ZERO snatch decisions** (like DISABLE — only 4 of 722 teams carry it, and none was drawn active at a
+snatch cast), so there is NO snatch e2e coverage floor and the mechanic is proven ENTIRELY by the dedicated
+golden (`movecoverage_snatch_test`, 560 runs) + the MC100-MC104 pins — an honest disclosure, the leech-seed
+situation. OBSERVATION-ONLY for the OTHER seed suites (battle / fullbattle / secondary / protocol
+/ every move-coverage batch stay BYTE-IDENTICAL — the snatch code is an id-gated no-op on any board with
+no snatch cast).
 
 ## E2E capstone: real teams, full battles, bit-for-bit (per-decision STATE+SEED+winner differential)
 

@@ -772,6 +772,14 @@ def build_moves(gen):
             move_dict["failEncore"] = True
         if flags.get("failmimic"):
             move_dict["failMimic"] = True
+        # gen3_snatch_v1: whether the move CAN BE SNATCHED (`flags.snatch`) — a
+        # `target:self` status move (self-boost / recover / Rest / status-cures /
+        # Substitute / Belly Drum / …) a foe's Snatch STEALS. Enumerated from the data
+        # (never hand-listed; Wish / Spikes / Thunder Wave / Snatch itself carry NO
+        # snatch flag). Only-when-present (like noSleepTalk) so the data diff is just the
+        # ~44 gen3 carriers; obs-neutral / port-side only (the facade ignores it).
+        if flags.get("snatch"):
+            move_dict["isSnatchable"] = True
         # gen3 high-crit moves carry critRatio (2 in gen3: Slash, Crabhammer,
         # Aircutter, Blaze Kick, Leaf Blade, …); normal moves omit it and the dex
         # defaults to 1. Conditional, so the data-file diff is just the ~dozen
