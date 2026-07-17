@@ -1694,6 +1694,39 @@ aux. Design + the K1 honesty frame: `designs/ai_v6/design_distributional_value_c
   `main/prober/engine_test.py` (`build_value_dist`). End-to-end `--debug --debug-eval --use-showdown-bridge
   --value-dist-mode read_only` smoke captures a trace whose npz carries `value_dist`.
 
+## Exploiter distillation (`--distill-teacher` / `--distill-coef` / `--distill-value-coef`)
+
+`gen3_exploiter_distill_v1` — pour a frozen per-team SPECIALIST (an exploiter) into the generalist so it
+learns to PILOT that team, closing the amortization gap the self-play average can't. `--distill-teacher`
+takes `TEACHER:TEAM` colon pairs (comma-separated, N teachers — a checkpoint dir → `best_model.zip`, bound
+to its Showdown team file); the env emits a training-only integer `distill_mask` obs key (0=none, k=teacher
+k) on states where the trainee pilots team-k (biased there by `--distill-team-bias`, default 0.4; rest =
+pool rehearsal → no forgetting). In `train()`, for each teacher a frozen forward gives π_teacher and
+`distill_coef · KL(π_teacher ‖ π_student)` is folded, masked to that teacher's states; the per-teacher
+mean-KLs are AVERAGED (a small-coverage teacher still contributes comparable gradient). Reuses the
+`evaluate_actions` forward's stashed `_last_pi_distribution` (bit-identical, one fewer forward). Metrics
+`distill/{kl, agree_rate, tK_kl, tK_coverage, n_teachers_active}`. OFF (coef 0 / no teacher) byte-identical;
+training-only, NOT version-locked (inherited on a flagless resume). Validated (ai_v7_16→_19): offense
+transfers (TSS-piloting 0.475→0.75) and HOLDS under the double-sided recipe (see the memory).
+
+- **VALUE distillation (`gen3_exploiter_value_distill_v1`, `--distill-value-coef`, default 0 = OFF).** The
+  policy KL is POLICY-ONLY — the student pilots the teacher's team with its own amortized (~4-dim) critic,
+  so it mimics the MOVES but never gets the teacher's per-team VALUE (confirmed: value_cls effective rank
+  FLAT across _14→_18→_19). This adds `distill_value_coef · MSE(V_teacher, V_student)` on the SAME
+  teacher-team states, in the student's PopArt-normalized frame (`_value_distill_mse`, a static testable
+  helper mirroring `_distill_loss`; teacher V from a frozen `predict_values`, real-unit → normalized).
+  **Coherent despite V^π being policy-relative** because the policy KL simultaneously drives
+  π_student→π_teacher there, so V_teacher becomes the right target — hence it **requires `--distill-coef > 0`**
+  (arg-parse guard). Metrics `distill/{value_mse, tK_value_mse}`. **The A/B lever:** policy-only
+  (`--distill-value-coef 0`) vs policy+value (>0), read out by the value_cls effective-rank probe
+  (`rank_metrics.py`, `tmp/value_rank_compare.py`) — does distilling the value ENRICH it. OFF byte-identical
+  (no teacher predict_values forward); training-only. **Distributional-value distill** (distil the teacher's
+  `ValueDistHead` return distribution, enabling later archetype-token conditioning) is a future follow-on.
+
+Tests: `instrumented_ppo_test.py::test_distill_*` (policy KL: identical→0, masking, illegal-mask, None-guard,
+grad-student-only, reuse-bit-identical, multi-teacher averaging) + `::test_value_distill_*` (equal→0, masking,
+None-guard, PopArt-frame scaling, grad-student-only).
+
 ## Search-as-teacher (`--search-teacher`, `teacher/` package)
 
 Selective **Expert Iteration** — the offline-teacher plateau-breaker (design:

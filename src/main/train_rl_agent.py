@@ -398,6 +398,7 @@ def _model_hparams(model) -> dict:
         "search_teacher_batch_size": int(getattr(model, "search_teacher_batch_size", 256)),
         "opd_coef": float(getattr(model, "opd_coef", 0.0)),
         "distill_coef": float(getattr(model, "distill_coef", 0.0)),
+        "distill_value_coef": float(getattr(model, "distill_value_coef", 0.0)),
         "opd_beta": float(getattr(model, "opd_beta", 1.0)),
         "batch_size": model.batch_size,
         "grad_accum_steps": int(getattr(model, "grad_accum_steps", 1)),
@@ -1141,6 +1142,15 @@ async def main():
                         help="Exploiter-distillation KL weight (default 0.0 = OFF, loss byte-identical). "
                              "Requires --distill-teacher + --distill-teacher-team. Training-only (inherited on "
                              "a flagless resume). Watch distill/kl ↓ + distill/agree_rate ↑ + grad/distill_share.")
+    parser.add_argument("--distill-value-coef", "--distill_value_coef", dest="distill_value_coef",
+                        type=float, default=None,
+                        help="VALUE-distillation weight (gen3_exploiter_value_distill_v1): also pour the "
+                             "teacher's per-team VALUE into the student — MSE(V_teacher, V_student) on the "
+                             "teacher-team states, in the PopArt-normalized frame. Default 0.0 = OFF "
+                             "(byte-identical; no teacher predict_values forward). Requires --distill-coef > 0 "
+                             "(the policy KL validates the value target). Training-only, inherited on resume. "
+                             "The A/B lever for 'does distilling the value enrich it' — watch distill/value_mse ↓ "
+                             "and the value_cls effective-rank probe rise. Distributional-value distill is future.")
     parser.add_argument("--distill-team-bias", "--distill_team_bias", dest="distill_team_bias",
                         type=float, default=0.4,
                         help="Fraction of trainee episodes biased to the teacher's team (rest = pool "
@@ -1801,6 +1811,7 @@ async def main():
     _resolve("search_teacher_batch_size", 256)  # training-only per-train() correction sample
     _resolve("opd_coef", 0.0)                  # training-only OPD KL weight (inherited on flagless resume)
     _resolve("distill_coef", 0.0)              # training-only exploiter-distillation KL weight (inherited on resume)
+    _resolve("distill_value_coef", 0.0)        # training-only exploiter VALUE-distillation MSE weight (inherited on resume)
     _resolve("opd_beta", 1.0)                  # training-only OPD softmax temperature β
     _resolve("damage_topk_k", 0)               # v30 structural int (top-K incoming; version-checked, fresh-only)
     _resolve("damage_refine_rounds", 0)        # v31 structural int (iterative refine; version-checked, fresh-only)
@@ -1922,6 +1933,12 @@ async def main():
                      "correction buffer; its workers build the π' targets)")
     if args.distill_coef is not None and args.distill_coef < 0.0:
         parser.error("--distill-coef must be >= 0 (0 = off)")
+    if args.distill_value_coef is not None and args.distill_value_coef < 0.0:
+        parser.error("--distill-value-coef must be >= 0 (0 = off)")
+    if args.distill_value_coef and args.distill_value_coef > 0 and not (args.distill_coef and args.distill_coef > 0):
+        parser.error("--distill-value-coef > 0 requires --distill-coef > 0 — the value distillation is "
+                     "coherent only because the policy KL drives π_student→π_teacher on those states, "
+                     "making V_teacher the right target (V^π is policy-relative).")
     # gen3_exploiter_distill_v1: parse --distill-teacher into (teacher_path, team_file) PAIRS once, stored on
     # args for the teambuilder + model-setup to reuse. Preferred form = 'TEACHER:TEAM' colon pairs (the colon
     # binds each teacher to its team → misalignment is impossible). Legacy form = bare teacher list + a
@@ -3251,6 +3268,7 @@ async def main():
         # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
         # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
         model.distill_coef = float(args.distill_coef or 0.0)
+        model.distill_value_coef = float(args.distill_value_coef or 0.0)
         model._distill_teachers = []   # gen3_exploiter_distill_v1: N frozen per-team teachers (teacher-id = index+1)
         if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
             from agents.model.snapshot import (
@@ -3565,6 +3583,7 @@ async def main():
         # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
         # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
         model.distill_coef = float(args.distill_coef or 0.0)
+        model.distill_value_coef = float(args.distill_value_coef or 0.0)
         model._distill_teachers = []   # gen3_exploiter_distill_v1: N frozen per-team teachers (teacher-id = index+1)
         if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
             from agents.model.snapshot import (

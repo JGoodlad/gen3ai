@@ -303,6 +303,16 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # `_distill_teacher` is a runtime attr (a loaded frozen model) set externally (like `_correction_buffer`).
     # 0.0 = OFF (byte-identical: the whole block is guarded on coef != 0 AND teacher present).
     distill_coef: float = 0.0
+    # VALUE distillation (gen3_exploiter_value_distill_v1) — the missing head: policy-only distill leaves
+    # the student piloting the teacher's team with its OWN amortized (~4-dim) critic, so it mimics the
+    # teacher's MOVES but never gets its per-team VALUE understanding (confirmed: value_cls rank flat
+    # _14→_18→_19). This adds distill_value_coef * MSE(V_teacher, V_student) on the SAME teacher-team
+    # states, in the student's PopArt-normalized frame (same frame as the value loss). It is COHERENT
+    # despite V^π being policy-relative because the policy KL simultaneously drives π_student→π_teacher
+    # there, so V_teacher becomes the right value. Requires distill_coef > 0 (the policy-match validates
+    # the value-match). 0.0 = OFF (byte-identical); training-only, NOT version-locked. The A/B lever:
+    # policy-only (=0) vs policy+value (>0), read out by the value_cls rank probe.
+    distill_value_coef: float = 0.0
 
     def _excluded_save_params(self):
         # The search-teacher's `_correction_buffer` lives on the model (the callback↔train() hand-off),
@@ -394,6 +404,28 @@ class InstrumentedMaskablePPO(MaskablePPO):
                        "coverage": float(m.mean()),                       # fraction of minibatch on teacher team
                        "n": int(n_on.item())}
         return loss, metrics
+
+    @staticmethod
+    def _value_distill_mse(student_values, teacher_values, distill_mask, popart=None):
+        """VALUE DISTILLATION — masked MSE(V_teacher ‖ V_student) over the teacher-team rows.
+
+        ``student_values`` [B] carries grad; ``teacher_values`` [B] is the frozen teacher's (real-unit,
+        already under no_grad). ``distill_mask`` [B]/[B,1] = 1 on teacher-team states. When a PopArt
+        normalizer is given, both are mapped to the student's normalized frame first (so the coef is
+        scale-comparable with the value loss); else a raw-unit MSE. Returns the masked-mean SE, or None
+        when no teacher-team rows (the None guard, like _distill_loss). Pure + static → unit-testable."""
+        if student_values is None or teacher_values is None or distill_mask is None:
+            return None
+        m = distill_mask.reshape(-1).to(student_values.dtype)
+        n_on = m.sum()
+        if float(n_on) < 1.0:
+            return None
+        sv, tv = student_values.reshape(-1), teacher_values.reshape(-1)
+        if popart is not None:
+            se = (popart.normalize(sv) - popart.normalize(tv)) ** 2
+        else:
+            se = (sv - tv) ** 2
+        return (se * m).sum() / n_on.clamp(min=1e-6)
 
     @staticmethod
     def _win_prob_loss(logits, target, mask, margin=None):
@@ -1435,7 +1467,12 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         _s_logits = (_last_pi.distribution.logits if _last_pi is not None
                                      else self.policy.get_distribution(
                                          rollout_data.observations).distribution.logits)
-                        _per_teacher_kl = []
+                        # +VALUE-DISTILL (gen3_exploiter_value_distill_v1): also pour the teacher's per-team
+                        # VALUE into the student. Requires policy distill (coherence). OFF (coef 0) → the
+                        # teacher predict_values forward is skipped, loss byte-identical.
+                        _vd_on = self.distill_value_coef != 0.0
+                        _s_val = values.flatten() if _vd_on else None        # student V (real-unit, WITH grad)
+                        _per_teacher_kl, _per_teacher_vd = [], []
                         for _k, _teacher in enumerate(self._distill_teachers, start=1):
                             _sel = (_tid_flat == _k).to(_s_logits.dtype)      # states on teacher k's team
                             if float(_sel.sum()) < 1.0:
@@ -1453,6 +1490,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
                                 _per_teacher_kl.append(_kl_k)
                                 for _mk, _mv in _m_k.items():   # per-teacher diagnostics (distill/t{k}_*)
                                     distill_metrics.setdefault(f"t{_k}_{_mk}", []).append(float(_mv))
+                            if _vd_on:
+                                # Teacher V (real-unit, frozen); masked MSE vs student V in the PopArt frame.
+                                with th.no_grad():
+                                    _t_val = _teacher.policy.predict_values(_t_obs).flatten()
+                                _vd_k = self._value_distill_mse(_s_val, _t_val, _sel, popart)
+                                if _vd_k is not None:
+                                    _per_teacher_vd.append(_vd_k)
+                                    distill_metrics.setdefault(f"t{_k}_value_mse", []).append(float(_vd_k))
                         if _per_teacher_kl:
                             # Per-archetype balancing: average the per-teacher mean-KLs so a teacher with
                             # fewer states still contributes comparable gradient (not swamped by a big one).
@@ -1461,6 +1506,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             loss = loss + distill_term
                             distill_metrics.setdefault("kl", []).append(float(_distill_kl))
                             distill_metrics.setdefault("n_teachers_active", []).append(float(len(_per_teacher_kl)))
+                        if _per_teacher_vd:
+                            _distill_vd = th.stack(_per_teacher_vd).mean()    # balanced like the policy KL
+                            loss = loss + self.distill_value_coef * _distill_vd
+                            distill_metrics.setdefault("value_mse", []).append(float(_distill_vd))
 
                 # +SEARCH-TEACHER: AWR policy distillation toward the verified-better action. The
                 # corrections are OFF-POLICY (searched eval-trace states, not in this rollout), so this

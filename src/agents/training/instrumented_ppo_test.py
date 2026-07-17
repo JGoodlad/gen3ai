@@ -178,6 +178,47 @@ def test_distill_loss_grad_flows_student_only():
     assert teacher.grad is None
 
 
+def test_value_distill_zero_when_equal():
+    """V_student == V_teacher ⇒ 0 masked MSE."""
+    v = th.randn(4)
+    out = InstrumentedMaskablePPO._value_distill_mse(v.clone(), v.clone(), th.ones(4, 1))
+    assert float(out) == pytest.approx(0.0, abs=1e-6)
+
+
+def test_value_distill_masks_non_teacher_rows():
+    """Only distill_mask==1 rows contribute; loss == masked-mean SE of those rows."""
+    s, t = th.tensor([1., 2., 3., 4.]), th.tensor([1., 9., 3., 9.])   # differ on rows 1 (7) and 3 (5)
+    out = InstrumentedMaskablePPO._value_distill_mse(s, t, th.tensor([[1.], [0.], [1.], [0.]]))
+    assert float(out) == pytest.approx(0.0, abs=1e-6)                 # kept rows 0,2 are EQUAL
+    out2 = InstrumentedMaskablePPO._value_distill_mse(s, t, th.tensor([[0.], [1.], [0.], [1.]]))
+    assert float(out2) == pytest.approx((49. + 25.) / 2, rel=1e-5)    # kept rows 1,3 → (7²+5²)/2
+
+
+def test_value_distill_none_no_rows():
+    """No teacher-team rows ⇒ None (no NaN-poisoning an empty subset)."""
+    assert InstrumentedMaskablePPO._value_distill_mse(th.randn(3), th.randn(3), th.zeros(3, 1)) is None
+
+
+def test_value_distill_popart_frame_scales_by_sigma():
+    """Under PopArt both sides are normalized first, so the SE is in the student's normalized frame."""
+    class _FakePopart:
+        def normalize(self, x):
+            return (x - 5.0) / 2.0                                    # sigma = 2
+    s, t = th.tensor([3., 3.]), th.tensor([5., 5.])                   # real diff 2 → normalized diff 1
+    out = InstrumentedMaskablePPO._value_distill_mse(s, t, th.ones(2, 1), popart=_FakePopart())
+    assert float(out) == pytest.approx(1.0, rel=1e-5)                 # (2/2)² = 1
+
+
+def test_value_distill_grad_student_only():
+    """Gradient flows into the student value; the frozen teacher value gets none."""
+    s = th.randn(3, requires_grad=True)
+    t = th.randn(3)
+    out = InstrumentedMaskablePPO._value_distill_mse(s, t, th.ones(3, 1))
+    out.backward()
+    assert s.grad is not None and th.isfinite(s.grad).all()
+    assert t.grad is None
+
+
 def test_distill_reuse_masked_logits_bit_identical():
     """The #3 optimization (reuse the evaluate_actions forward, whose logits are MASKED) must give a
     BIT-IDENTICAL KL to a fresh (RAW) get_distribution forward: over LEGAL actions the logits are the same
