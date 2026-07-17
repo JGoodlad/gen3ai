@@ -14,6 +14,10 @@ The per-team signal is measured ONLY on self-play POOL battles (the wrapper excl
 ~0.99 vs bots, which washes out the variance signal) over the POOL teams (bias/distill-pinned teams
 are excluded — they get fixed exposure via the existing bias fraction).
 """
+import json
+import os
+import time
+
 from stable_baselines3.common.callbacks import BaseCallback
 
 
@@ -37,20 +41,28 @@ class TeamPFSPCallback(BaseCallback):
       cap / floor    — the weight cap (× uniform share) and floor (raw = floor + p*(1-p)).
       ema_beta       — EMA smoothing of each team's win-rate (higher = slower, damps eval noise).
       update_every   — act only every N rollouts (the counts accumulate across the skipped ones).
+      mode           — "var" (bias sampling: push the variance weights) | "measure" (track + persist
+                       the per-team win-rate ONLY, never push → sampling stays uniform). Both persist.
+      persist_dir    — if set, write a ``team_winrates.json`` snapshot there each update (the offline
+                       "which team is the generalist weakest on → next exploiter target" artifact).
     """
 
     def __init__(self, cap: float, floor: float, ema_beta: float = 0.7,
-                 update_every: int = 3, verbose: int = 0):
+                 update_every: int = 3, mode: str = "var", persist_dir=None, verbose: int = 0):
         super().__init__(verbose)
         self._cap = float(cap)
         self._floor = float(floor)
         self._ema_beta = float(ema_beta)
         self._update_every = max(1, int(update_every))
+        self._mode = str(mode)
+        self._persist_dir = persist_dir
         self._ema = None            # lazily sized to n_pool on first pull, seeded 0.5
+        self._cum_games = None      # cumulative self-play games per pool team (persisted for weight/confidence)
         self._rollout_count = 0
         self._update_count = 0      # times we actually pulled/pushed (for the sparse audit log)
         self._measured = set()      # pool indices that ever received a game (for n_measured)
         self._keys = None           # canonical per-index team fingerprints (verified once)
+        self._archetypes = None     # {team_sha: archetype label}, best-effort (annotates the snapshot)
 
     def _on_step(self) -> bool:
         return True
@@ -104,18 +116,23 @@ class TeamPFSPCallback(BaseCallback):
                 W[i] += wins[i]
                 G[i] += games[i]
 
-        # 4) EMA-update each measured team's win-rate; unmeasured teams keep their EMA.
+        # 4) EMA-update each measured team's win-rate; unmeasured teams keep their EMA. Accumulate
+        #    cumulative games per team (persisted as the confidence/weight of each win-rate estimate).
         if self._ema is None:
             self._ema = [0.5] * n_pool
+            self._cum_games = [0.0] * n_pool
         for i in range(n_pool):
+            self._cum_games[i] += G[i]
             if G[i] > 0.0:
                 p = W[i] / G[i]
                 self._ema[i] = self._ema_beta * self._ema[i] + (1.0 - self._ema_beta) * p
                 self._measured.add(i)
 
-        # 5) Compute + 6) PUSH the variance weights (capped) to every worker.
+        # 5) Compute the variance weights (capped) — 6) PUSH them ONLY in "var" mode ("measure" tracks
+        #    + persists the win-rate but never biases sampling, so the team distribution stays uniform).
         w = compute_team_pfsp_weights(self._ema, self._floor, self._cap)
-        self.training_env.env_method("set_team_pfsp_weights", w)
+        if self._mode == "var":
+            self.training_env.env_method("set_team_pfsp_weights", w)
 
         # 7) Diagnostics + auditability.
         self._update_count += 1
@@ -132,4 +149,53 @@ class TeamPFSPCallback(BaseCallback):
             weakest = sorted(self._measured, key=lambda i: self._ema[i])[:5]
             pairs = ", ".join(f"{self._keys[i]}@{self._ema[i]:.2f}" for i in weakest)
             print(f"[team_pfsp] weakest measured pool teams (sha@win-rate): {pairs}", flush=True)
+
+        # 8) Persist the per-team self-play win-rate snapshot (offline "which exploiter next" artifact).
+        self._persist_snapshot(n_pool)
         return True
+
+    def _load_archetypes(self):
+        """Best-effort {team_sha: archetype-label} to annotate the snapshot (so the offline view reads
+        'weakest = stall-class', not just anonymous shas). Never fatal — missing artifact → no labels."""
+        if self._archetypes is not None:
+            return self._archetypes
+        self._archetypes = {}
+        try:
+            from agents.training.team_archetypes import load_team_archetypes
+            data = load_team_archetypes() or {}
+            teams = data.get("teams", data)   # {sha: {archetype, pace_score, tags, ...}}
+            for sha, rec in teams.items():
+                if isinstance(rec, dict) and "archetype" in rec:
+                    self._archetypes[sha] = rec.get("archetype")
+        except Exception:
+            pass
+        return self._archetypes
+
+    def _persist_snapshot(self, n_pool) -> None:
+        """Overwrite ``<persist_dir>/team_winrates.json`` with the current per-team win-rate estimates
+        (weakest-first) — a bounded snapshot (not history) for offline exploiter-target selection."""
+        if not self._persist_dir or self._keys is None or len(self._keys) != n_pool:
+            return
+        arch = self._load_archetypes()
+        rows = [
+            {"sha": self._keys[i], "win_rate": round(self._ema[i], 4),
+             "games": int(self._cum_games[i]), "archetype": arch.get(self._keys[i])}
+            for i in sorted(self._measured, key=lambda i: self._ema[i])
+        ]
+        step = int(self.num_timesteps)
+        snap = {"step": step, "updated_at": time.time(), "mode": self._mode,
+                "n_teams_measured": len(rows), "teams": rows}
+        try:
+            os.makedirs(self._persist_dir, exist_ok=True)
+            tmp = os.path.join(self._persist_dir, "team_winrates.json.tmp")
+            with open(tmp, "w") as f:
+                json.dump(snap, f, indent=0)
+            os.replace(tmp, os.path.join(self._persist_dir, "team_winrates.json"))  # atomic latest snapshot
+            # Append a compact STEP-TAGGED row to a history JSONL so the win-rates can be tracked OVER
+            # TIME offline (per-team trends + noise, not just the latest snapshot). One line per update.
+            hist = {"step": step, "wr": {self._keys[i]: round(self._ema[i], 4)
+                                         for i in self._measured}}
+            with open(os.path.join(self._persist_dir, "team_winrates_history.jsonl"), "a") as f:
+                f.write(json.dumps(hist) + "\n")
+        except Exception as e:
+            print(f"[team_pfsp] snapshot write failed (non-fatal): {e}", flush=True)

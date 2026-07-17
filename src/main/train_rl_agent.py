@@ -1523,14 +1523,16 @@ async def main():
                              "up-weight. Default off = the legacy sliding window (byte-identical).")
     # ── Team-side PFSP: variance-weighted TEAM sampling by self-play win-rate (OFF by default) ──
     parser.add_argument("--team-pfsp", "--team_pfsp", dest="team_pfsp",
-                        choices=["off", "var"], default="off",
-                        help="Variance-weighted TEAM sampling for the trainee's pool teams by their "
-                             "self-play win-rate (default off = uniform random.choice, byte-identical). "
-                             "'var' weights each pool team by floor + p*(1-p) (p = per-team self-play "
-                             "win-rate EMA, seed 0.5), capped at --team-pfsp-cap x the uniform share — so "
-                             "the trainee drills the teams it wins around half the time (max variance) and "
-                             "stops over-sampling the ones it already crushes / always loses. Measured on "
-                             "SELF-PLAY pool battles only (bots excluded). Training-only, NOT "
+                        choices=["off", "measure", "var"], default="off",
+                        help="Per-team self-play win-rate tracking for the trainee's pool teams (default "
+                             "off = uniform random.choice, byte-identical). 'measure' TRACKS + persists "
+                             "the per-team self-play win-rate to <run>/team_winrates.json (the offline "
+                             "'which team is the generalist weakest on → next exploiter target' artifact) "
+                             "WITHOUT biasing sampling. 'var' additionally weights each pool team by floor "
+                             "+ p*(1-p) (p = the win-rate EMA, seed 0.5), capped at --team-pfsp-cap x the "
+                             "uniform share — so the trainee drills the teams it wins ~half the time (max "
+                             "variance) and stops over-sampling the ones it crushes / always loses. Measured "
+                             "on SELF-PLAY pool battles only (bots excluded). Training-only, NOT "
                              "version-locked.")
     parser.add_argument("--team-pfsp-cap", "--team_pfsp_cap", dest="team_pfsp_cap",
                         type=float, default=3.0,
@@ -2985,7 +2987,8 @@ async def main():
     # → an off run adds no callback and makes no env_method calls (byte-identical). Training-only.
     if args.team_pfsp != "off":
         from agents.training.team_pfsp_callback import TeamPFSPCallback
-        callbacks.append(TeamPFSPCallback(cap=args.team_pfsp_cap, floor=args.team_pfsp_floor))
+        callbacks.append(TeamPFSPCallback(cap=args.team_pfsp_cap, floor=args.team_pfsp_floor,
+                                          mode=args.team_pfsp, persist_dir=model_dir))
     # SEARCH-TEACHER: each cycle, search + confirm the worst loss craters and distil verified-better
     # corrections into model._correction_buffer (the AWR aux loss samples it). Non-blocking subprocess
     # workers; off by default (the buffer fills nothing → coef-0 loss is byte-identical regardless).

@@ -4,6 +4,7 @@ The weight MATH (compute_team_pfsp_weights) is pinned in utils/teambuilder_test.
 callback's aggregation (sum across workers → EMA → push), the update_every throttle, the None-worker
 filter, and — critically — the pool-size-mismatch GIGO guard (a silent per-index win-rate corruption
 if a worker's pool order ever diverged)."""
+import json
 import types
 import pytest
 from agents.training.team_pfsp_callback import TeamPFSPCallback
@@ -37,8 +38,9 @@ class _FakeVecEnv:
         raise AssertionError(f"unexpected env_method {name!r}")
 
 
-def _mk(env, update_every=1, cap=3.0, floor=0.05, beta=0.7):
-    cb = TeamPFSPCallback(cap=cap, floor=floor, ema_beta=beta, update_every=update_every)
+def _mk(env, update_every=1, cap=3.0, floor=0.05, beta=0.7, mode="var", persist_dir=None):
+    cb = TeamPFSPCallback(cap=cap, floor=floor, ema_beta=beta, update_every=update_every,
+                          mode=mode, persist_dir=persist_dir)
     # BaseCallback.training_env / .logger are getter-only properties over self.model.
     cb.model = types.SimpleNamespace(logger=_FakeLogger(), get_env=lambda: env)
     return cb
@@ -100,3 +102,24 @@ def test_all_none_is_a_noop():
     cb = _mk(env)
     assert cb._on_rollout_end() is True
     assert env.pushed is None
+
+
+def test_measure_mode_persists_snapshot_but_never_pushes(tmp_path):
+    # 3 pool teams: team 0 always wins, team 1 always loses, team 2 ~50%.
+    drain = [([2.0, 0.0, 1.0], [2.0, 2.0, 2.0], 3), ([2.0, 0.0, 1.0], [2.0, 2.0, 2.0], 3)]
+    env = _FakeVecEnv(drain)
+    cb = _mk(env, mode="measure", persist_dir=str(tmp_path))
+    assert cb._on_rollout_end() is True
+    assert env.pushed is None                       # measure NEVER biases sampling
+    snap = json.load(open(tmp_path / "team_winrates.json"))
+    assert snap["mode"] == "measure"
+    assert snap["n_teams_measured"] == 3
+    wrs = [t["win_rate"] for t in snap["teams"]]
+    assert wrs == sorted(wrs)                        # weakest-first (ascending win-rate)
+    assert snap["teams"][0]["win_rate"] < snap["teams"][-1]["win_rate"]
+    assert all(("sha" in t and "games" in t) for t in snap["teams"])
+    # A step-tagged history row is appended for offline trend/noise tracking over time.
+    hist_lines = (tmp_path / "team_winrates_history.jsonl").read_text().strip().splitlines()
+    assert len(hist_lines) == 1
+    row = json.loads(hist_lines[0])
+    assert "step" in row and len(row["wr"]) == 3

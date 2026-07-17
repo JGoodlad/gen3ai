@@ -1015,8 +1015,9 @@ at the target and it's the only opponent.
 
 The TEAM-axis complement to the opponent-side `--pfsp-scale`: bias the TRAINEE's team sampling toward
 the pool teams it is weakest on, so training spends gradient where the win-rate says there's headroom
-instead of uniformly over ~700 pool teams (the documented "uniform team sampling = headroom" gap). Off
-by default (`--team-pfsp off` → byte-identical).
+instead of uniformly over ~700 pool teams (the documented "uniform team sampling = headroom" gap).
+Three modes: **`off`** (default → byte-identical), **`measure`** (TRACK + persist the per-team
+self-play win-rate WITHOUT biasing sampling — pure observability), **`var`** (measure + bias).
 
 - **Variance weighting + cap + floor.** For pool team `i` the weight is `raw_i = --team-pfsp-floor +
   p_i·(1−p_i)` where `p_i` is the team's self-play win-rate EMA (seed 0.5 → an unmeasured team gets the
@@ -1047,11 +1048,18 @@ by default (`--team-pfsp off` → byte-identical).
   teams by `sha@win-rate` so the weighting is inspectable (which teams/archetypes the budget
   concentrates on), not an anonymous min/max scalar. Metrics
   `team_pfsp/{min_wr,max_wr,n_measured,weight_spread}`.
+- **Persisted artifacts (both `measure` and `var`) → offline "which exploiter next".** Each update the
+  callback writes to the run dir: `team_winrates.json` (the latest snapshot — per-team `{sha, win_rate,
+  games, archetype}` sorted WEAKEST-FIRST, atomic-replaced; the weakest teams = candidate exploiter
+  targets, and `archetype` is joined from `gen3_team_archetypes.json` via `team_sha` so it reads
+  "weakest = stall-class") and an appended `team_winrates_history.jsonl` row `{step, wr:{sha:wr}}` (so
+  the per-team win-rate is trackable OVER TIME offline — trends + noise, not just the latest). `measure`
+  gives this signal on ANY self-play run without changing the team distribution.
 - **Training-only, not version-locked.** Threaded into the TRAINEE teambuilder only (both the
   `matchup.trainee_teams.build` and the distill `Gen3Teambuilder` paths); the opponent builder is
   untouched. Registered ONLY when `--team-pfsp != off` (off → no callback, no `env_method`, exact-legacy
-  `random.choice` → byte-identical). Forward it like `--pfsp-scale` on resume; no `model_config`/
-  `ModelVersion` entry.
+  `random.choice` → byte-identical); `var` pushes weights, `measure` never does. Forward it like
+  `--pfsp-scale` on resume; no `model_config`/`ModelVersion` entry.
 - **Tests.** `utils/teambuilder_test.py` (off==uniform RNG-identical, weighted sampling, record/drain,
   the cap+floor weight math), `team_pfsp_callback_test.py` (cross-worker aggregation, the pool-size GIGO
   guard, the `update_every` throttle, None-worker filtering).
