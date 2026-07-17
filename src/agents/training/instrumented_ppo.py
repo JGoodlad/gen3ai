@@ -39,6 +39,7 @@ from agents.training.grad_balance import (
     shared_trunk_parameters,
     value_scale_metrics,
 )
+from agents.training.rank_metrics import rank_probe
 
 
 # SHA256 of inspect.getsource(MaskablePPO.train) at the time this file was
@@ -1107,6 +1108,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # normalization (PopArt) can be tuned to a number rather than inferred from KL.
         shared_trunk = shared_trunk_parameters(self.policy.features_extractor)
         grad_balance: dict[str, float] = {}
+        rank_metrics: dict[str, float] = {}  # effective rank of trunk / value_cls / policy reps (once/train)
         grad_norms: list[float] = []  # pre-clip total grad norm (shows grad-clip activity)
 
         # +PopArt: advance the value-target normalizer once per train() (before the epochs) from
@@ -1561,6 +1563,16 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         aux_terms=aux_probe_terms or None,
                     )
 
+                # +INSTRUMENTATION: effective-rank of the trunk / value_cls / policy reps, sampled
+                # ONCE per train() (first minibatch) via one no_grad forward — how many dims each
+                # readout actually uses (rank_metrics.py). {} for a non-Gen3 extractor.
+                if shared_trunk and not rank_metrics:
+                    rank_metrics = rank_probe(
+                        self.policy.features_extractor,
+                        rollout_data.observations,
+                        self.policy.extract_features,
+                    )
+
                 # Calculate approximate form of reverse KL Divergence for early stopping
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
                 # and discussion in PR #419: https://github.com/DLR-RM/stable-baselines3/pull/419
@@ -1660,6 +1672,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # reducing vf_coef and adding return normalization (PopArt) — see grad_balance.py and
         # src/agents/training/CLAUDE.md. All ride the standard logger → TensorBoard + launcher TUI.
         for _key, _val in grad_balance.items():
+            self.logger.record(_key, _val)
+        for _key, _val in rank_metrics.items():   # rank/{trunk,value_cls,policy}_* effective-rank probe
             self.logger.record(_key, _val)
         for _key, _val in value_scale_metrics(
             self.rollout_buffer.returns, self.rollout_buffer.values

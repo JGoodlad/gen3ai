@@ -106,6 +106,20 @@ _METRIC_LABELS = {
     "popart/mu": "value mu",
     "popart/sigma": "value sigma",
     "popart/value_weight_norm": "value head |W|",
+    # Effective-rank probe (rank_metrics.py) — how many dims each readout uses.
+    "rank/trunk_pr": "trunk rank (PR)",
+    "rank/trunk_effrank": "trunk effrank",
+    "rank/trunk_n90": "trunk n90",
+    "rank/trunk_n95": "trunk n95",
+    "rank/value_cls_pr": "value-cls rank (PR)",
+    "rank/value_cls_effrank": "value-cls effrank",
+    "rank/value_cls_n90": "value-cls n90",
+    "rank/value_cls_n95": "value-cls n95",
+    "rank/policy_pr": "policy rank (PR)",
+    "rank/policy_effrank": "policy effrank",
+    "rank/policy_n90": "policy n90",
+    "rank/policy_n95": "policy n95",
+    "rank/policy_n99": "policy n99",
     # Hidden-opponent belief-aux diagnostics (--opp-belief-aux-coef / --move-belief-mode /
     # --opp-belief-latent-coef). species_acc is the headline; move_* = the move-belief head;
     # latent_* = the role-token latent predictor (std→0 while cosine→1 is the collapse NO-GO).
@@ -308,4 +322,20 @@ _METRIC_ORDER = [
     "popart/mu",
     "popart/sigma",
     "popart/value_weight_norm",
+    # Effective-rank probe (always on): how many dims each readout actually uses (rank_metrics.py).
+    # trunk = shared body (the capacity-utilization signal); value_cls = critic readout (runs low);
+    # policy = actor rep (runs higher → the n90/n95/n99 percentile counts are the view).
+    "rank/trunk_pr",
+    "rank/trunk_effrank",
+    "rank/trunk_n90",
+    "rank/trunk_n95",
+    "rank/value_cls_pr",
+    "rank/value_cls_effrank",
+    "rank/value_cls_n90",
+    "rank/value_cls_n95",
+    "rank/policy_pr",
+    "rank/policy_effrank",
+    "rank/policy_n90",
+    "rank/policy_n95",
+    "rank/policy_n99",
 ]
