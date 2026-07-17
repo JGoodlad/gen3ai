@@ -1,0 +1,646 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_46
+TEAM	ab_0_46	p1	Metagross||Leftovers|ClearBody|MeteorMash,Earthquake,Toxic,Explosion|Adamant|252,252,,,4,|N||||]Blissey||Leftovers|NaturalCure|SeismicToss,IceBeam,Wish,SoftBoiled|Bold|224,,252,,,32|F||||]Magneton||Magnet|MagnetPull|Thunderbolt,HiddenPowerFire,ThunderWave,Protect|Modest|240,,,212,,56|N|,2,,30,,30|||,Fire,,,,]Salamence||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,Earthquake,RockSlide|Adamant|4,252,,,,252|M|30,30,30,30,30,|||,Flying,,,,]Suicune||Leftovers|Pressure|CalmMind,HydroPump,IceBeam,Rest|Modest|252,,,184,,72|N|,0,,,,|||]Celebi||Leftovers|NaturalCure|PerishSong,HiddenPowerGrass,LeechSeed,Recover|Bold|248,,76,104,48,32|N|,2,,30,,|||,Grass,,,,
+TEAM	ab_0_46	p2	Skarmory||Leftovers|KeenEye|Spikes,Roar,Toxic,Protect|Careful|252,,,,252,4|M|,0,,,,|||]Jolteon||Leftovers|VoltAbsorb|Thunderbolt,ThunderWave,HiddenPowerGrass,BatonPass|Timid|4,,,252,,252|M|,2,,30,,|||,Grass,,,,]Tyranitar||Leftovers|SandStream|FocusPunch,Earthquake,HiddenPowerBug,RockSlide|Adamant|252,252,4,,,|M|,,,,30,30|||,Bug,,,,]Gengar||Leftovers|Levitate|IcePunch,FirePunch,HiddenPowerGrass,Explosion|Hasty|40,,,252,,216|M|,30,,30,,|||,Grass,,,,]Metagross||ChoiceBand|ClearBody|MeteorMash,Earthquake,RockSlide,Explosion|Adamant|68,252,,,,188|N||||]Starmie||Leftovers|NaturalCure|HydroPump,Thunderbolt,IceBeam,Psychic|Timid|4,,,252,,252|N|,0,,,,|||
+FMT	ab_0_46	gen3customgame
+INIT	ab_0_46	6466,11973,35191,6949	4144591190
+DEC	ab_0_46	0	move	0	0	m2	m0	25585,29008,60728,1039	Metagross	364	364	0	-	0	0	0	0	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	6	p2	1	0	0	0	0
+DEC	ab_0_46	1	move	0	0	m1	m1	12137,43488,20553,6835	Suicune	379	404	0	-	0	0	0	0	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	6	p1	1	0	0	0	0
+DEC	ab_0_46	2	move	0	0	m0	m3	12019,9282,28486,45421	Suicune	404	404	0	-	0	0	1	1	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	6	p2	1	0	0	0	0
+DEC	ab_0_46	3	move	0	0	m0	m2	29052,38541,11310,44823	Suicune	379	404	0	tox	0	0	2	2	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	6	p1	1	0	0	0	0
+DEC	ab_0_46	4	move	0	0	m1	m0	65441,18907,63263,33048	Suicune	379	404	0	tox	0	0	2	2	0	0	6	Skarmory	0	334	1	fnt	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_0_46	5	switch	0	1	-	s1	44851,56787,850,25915	Suicune	354	404	0	tox	0	0	2	2	0	0	6	Jolteon	272	272	0	-	0	0	0	0	0	0	5	none	1	0	0	0	0
+DEC	ab_0_46	6	move	0	0	m3	s3	51775,53524,47019,26293	Suicune	404	404	0	slp	0	0	2	2	0	0	6	Gengar	271	271	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_46	7	move	0	0	m0	m1	42618,64509,16046,51200	Suicune	404	404	0	slp	0	0	2	2	0	0	6	Gengar	271	271	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_46	8	move	0	0	m2	m1	25566,54346,50552,64039	Suicune	404	404	0	slp	0	0	2	2	0	0	6	Gengar	271	271	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_46	9	move	0	0	m0	m0	41853,6278,40357,39514	Suicune	349	404	0	-	0	0	3	3	0	0	6	Gengar	271	271	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_46	10	move	0	0	m1	m1	10822,58595,35161,52947	Suicune	334	404	0	-	0	0	3	3	0	0	6	Gengar	0	271	1	fnt	0	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_0_46	11	switch	0	1	-	s4	37347,57658,60425,8962	Suicune	359	404	0	-	0	0	3	3	0	0	6	Metagross	318	318	0	-	0	0	0	0	0	0	4	none	1	0	0	0	0
+DEC	ab_0_46	12	move	0	0	m0	m3	48500,91,60793,24887	Suicune	0	404	1	fnt	0	0	0	0	0	0	5	Metagross	0	318	1	fnt	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_0_46	13	switch	1	1	s4	s2	39996,16738,33425,26742	Metagross	341	364	0	-	0	0	0	0	0	0	5	Tyranitar	404	404	0	-	0	0	0	0	0	0	3	none	1	0	0	0	0
+DEC	ab_0_46	14	move	0	0	m2	m0	50423,46458,12579,61909	Metagross	213	364	0	-	0	0	0	0	0	0	5	Tyranitar	379	404	0	tox	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_0_46	15	move	0	0	m3	m3	57470,3516,48105,31134	Metagross	0	364	1	fnt	0	0	0	0	0	0	4	Tyranitar	93	404	0	tox	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_0_46	16	switch	1	0	s1	-	8954,54285,4267,10265	Blissey	619	707	0	-	0	0	0	0	0	0	4	Tyranitar	68	404	0	tox	0	0	0	0	0	0	3	none	1	0	0	0	0
+DEC	ab_0_46	17	move	0	0	m3	m2	33033,25255,18605,8733	Blissey	707	707	0	-	0	0	0	0	0	0	4	Tyranitar	18	404	0	tox	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_0_46	18	move	0	0	m0	s3	10785,8127,25776,58439	Blissey	707	707	0	-	0	0	0	0	0	0	4	Jolteon	172	272	0	-	0	0	0	0	0	0	3	p2	1	0	1	0	0
+DEC	ab_0_46	19	move	0	0	s2	s3	65257,61836,38411,44486	Magneton	264	301	0	-	0	0	0	0	0	0	4	Tyranitar	18	404	0	tox	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_0_46	20	move	0	0	m0	m2	52644,33439,32534,28410	Magneton	264	301	0	-	0	0	0	0	0	0	4	Tyranitar	0	404	1	fnt	0	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_0_46	21	switch	0	1	-	s5	20948,23296,42554,12645	Magneton	264	301	0	-	0	0	0	0	0	0	4	Starmie	262	262	0	-	0	0	0	0	0	0	2	none	1	0	0	0	0
+DEC	ab_0_46	22	move	0	0	m3	m3	41855,45048,29714,42222	Magneton	264	301	0	-	0	0	0	0	0	0	4	Starmie	262	262	0	-	0	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_0_46	23	move	0	0	m3	m1	6033,50387,34896,21252	Magneton	204	301	0	-	0	0	0	0	0	0	4	Starmie	262	262	0	-	0	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_0_46	24	move	0	0	m2	s3	14809,29436,5348,65302	Magneton	204	301	0	-	0	0	0	0	0	0	4	Jolteon	172	272	0	par	0	0	0	0	0	0	2	p2	1	0	0	0	0
+DEC	ab_0_46	25	move	0	0	s3	m0	45278,14715,31755,47212	Salamence	147	331	0	-	0	0	0	0	0	0	4	Jolteon	172	272	0	par	-1	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_0_46	26	move	0	0	s2	m0	12898,21239,29174,58866	Blissey	511	707	0	-	0	0	0	0	0	0	4	Jolteon	172	272	0	par	-1	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_0_46	27	move	0	0	m3	m3	1316,22535,34991,63700	Blissey	707	707	0	-	0	0	0	0	0	0	4	Jolteon	172	272	0	par	-1	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_0_46	28	move	0	0	s2	m0	50438,48366,9346,23654	Salamence	147	331	0	-	0	0	0	0	0	0	4	Jolteon	172	272	0	par	-2	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_0_46	29	move	0	0	m2	s3	9622,32230,39648,29594	Salamence	147	331	0	-	0	0	0	0	0	0	4	Starmie	108	262	0	-	0	0	0	0	0	0	2	p2	1	0	0	0	0
+DEC	ab_0_46	30	move	0	0	m0	m0	47979,46834,8854,40846	Salamence	36	331	0	-	1	0	0	0	1	0	4	Starmie	108	262	0	-	0	0	0	0	0	0	2	p2	1	0	0	0	0
+DEC	ab_0_46	31	move	0	0	m0	m3	60960,29222,28891,5186	Salamence	0	331	1	fnt	0	0	0	0	0	0	3	Starmie	108	262	0	-	0	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_0_46	32	switch	1	0	s3	-	4523,61987,10810,61133	Magneton	167	301	0	-	0	0	0	0	0	0	3	Starmie	108	262	0	-	0	0	0	0	0	0	2	none	1	0	0	0	0
+DEC	ab_0_46	33	move	0	0	m3	m3	10009,55666,30472,50614	Magneton	167	301	0	-	0	0	0	0	0	0	3	Starmie	108	262	0	-	0	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_0_46	34	move	0	0	m3	m1	8849,53915,63443,26602	Magneton	167	301	0	-	0	0	0	0	0	0	3	Starmie	108	262	0	-	0	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_0_46	35	move	0	0	s2	m2	17194,54241,35584,10841	Blissey	547	707	0	-	0	0	0	0	0	0	3	Starmie	108	262	0	-	0	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_0_46	36	move	0	0	m0	m3	61721,40694,21654,2164	Blissey	440	707	0	-	0	0	0	0	0	0	3	Starmie	0	262	1	fnt	0	0	0	0	0	0	1	p2	1	0	1	0	0
+DEC	ab_0_46	37	switch	0	1	-	s3	64321,30690,54538,2183	Blissey	440	707	0	-	0	0	0	0	0	0	3	Jolteon	172	272	0	par	0	0	0	0	0	0	1	none	1	0	0	0	0
+DEC	ab_0_46	38	move	0	0	m1	m2	49500,10547,48765,1957	Blissey	440	707	0	-	0	0	0	0	0	0	3	Jolteon	108	272	0	par	0	0	0	0	0	0	1	p1	1	0	0	0	0
+DEC	ab_0_46	39	move	0	0	m1	m2	283,9686,32438,29252	Blissey	385	707	0	-	0	0	0	0	0	0	3	Jolteon	52	272	0	par	0	0	0	0	0	0	1	p1	1	0	0	0	0
+DEC	ab_0_46	40	move	0	0	m3	m3	10425,2149,19748,48214	Blissey	707	707	0	-	0	0	0	0	0	0	3	Jolteon	52	272	0	par	0	0	0	0	0	0	1	p1	1	0	0	0	0
+DEC	ab_0_46	41	move	0	0	m3	m2	9059,38189,2325,13109	Blissey	647	707	0	-	0	0	0	0	0	0	3	Jolteon	52	272	0	par	0	0	0	0	0	0	1	p1	1	0	0	0	0
+DEC	ab_0_46	42	move	0	0	s2	m1	9199,60950,38307,45438	Magneton	130	301	0	par	0	0	0	0	0	0	3	Jolteon	52	272	0	par	0	0	0	0	0	0	1	p1	1	0	0	0	0
+DEC	ab_0_46	43	move	0	0	m0	m3	13163,48443,55084,26418	Magneton	130	301	0	par	0	0	0	0	0	0	3	Jolteon	120	272	0	par	0	0	0	0	0	0	1	p2	1	0	0	0	0
+DEC	ab_0_46	44	move	0	0	m1	m2	51609,15037,31542,12392	Magneton	130	301	0	par	0	0	0	0	0	0	3	Jolteon	35	272	0	par	0	0	0	0	0	0	1	p2	1	0	0	0	0
+DEC	ab_0_46	45	move	0	0	m2	m3	367,23762,12706,23237	Magneton	130	301	0	par	0	0	0	0	0	0	3	Jolteon	35	272	0	par	0	0	0	0	0	0	1	p2	1	0	0	0	0
+DEC	ab_0_46	46	move	0	0	m1	m0	34995,12854,36979,2532	Magneton	31	301	0	par	0	0	0	0	0	0	3	Jolteon	0	272	1	par	0	0	0	0	0	0	0	p2	1	0	0	0	0
+END	ab_0_46	1	p1
+L	ab_0_46	0	|t:|<NORMALIZED>
+L	ab_0_46	1	|gametype|singles
+L	ab_0_46	2	|player|p1|P1||
+L	ab_0_46	3	|player|p2|P2||
+L	ab_0_46	4	|gen|3
+L	ab_0_46	5	|tier|[Gen 3] Custom Game
+L	ab_0_46	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_46	7	|
+L	ab_0_46	8	|t:|<NORMALIZED>
+L	ab_0_46	9	|teamsize|p1|6
+L	ab_0_46	10	|teamsize|p2|6
+L	ab_0_46	11	|start
+L	ab_0_46	12	|switch|p1a: Metagross|Metagross|364/364
+L	ab_0_46	13	|switch|p2a: Skarmory|Skarmory, M|334/334
+L	ab_0_46	14	|turn|1
+L	ab_0_46	15	|
+L	ab_0_46	16	|t:|<NORMALIZED>
+L	ab_0_46	17	|move|p2a: Skarmory|Spikes|p1a: Metagross
+L	ab_0_46	18	|-sidestart|p1: P1|Spikes
+L	ab_0_46	19	|move|p1a: Metagross|Toxic|p2a: Skarmory
+L	ab_0_46	20	|debug|natural status immunity
+L	ab_0_46	21	|debug|immune to status
+L	ab_0_46	22	|-immune|p2a: Skarmory
+L	ab_0_46	23	|debug|move failed because it did nothing
+L	ab_0_46	24	|
+L	ab_0_46	25	|upkeep
+L	ab_0_46	26	|turn|2
+L	ab_0_46	27	|
+L	ab_0_46	28	|t:|<NORMALIZED>
+L	ab_0_46	29	|move|p1a: Metagross|Earthquake|p2a: Skarmory
+L	ab_0_46	30	|-immune|p2a: Skarmory
+L	ab_0_46	31	|move|p2a: Skarmory|Roar|p1a: Metagross
+L	ab_0_46	32	|drag|p1a: Suicune|Suicune|404/404
+L	ab_0_46	33	|-damage|p1a: Suicune|354/404|[from] Spikes
+L	ab_0_46	34	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_46	35	|
+L	ab_0_46	36	|-heal|p1a: Suicune|379/404|[from] item: Leftovers
+L	ab_0_46	37	|upkeep
+L	ab_0_46	38	|turn|3
+L	ab_0_46	39	|
+L	ab_0_46	40	|t:|<NORMALIZED>
+L	ab_0_46	41	|move|p2a: Skarmory|Protect|p2a: Skarmory
+L	ab_0_46	42	|-singleturn|p2a: Skarmory|Protect
+L	ab_0_46	43	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_0_46	44	|-boost|p1a: Suicune|spa|1
+L	ab_0_46	45	|-boost|p1a: Suicune|spd|1
+L	ab_0_46	46	|
+L	ab_0_46	47	|-heal|p1a: Suicune|404/404|[from] item: Leftovers
+L	ab_0_46	48	|upkeep
+L	ab_0_46	49	|turn|4
+L	ab_0_46	50	|
+L	ab_0_46	51	|t:|<NORMALIZED>
+L	ab_0_46	52	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_0_46	53	|-boost|p1a: Suicune|spa|1
+L	ab_0_46	54	|-boost|p1a: Suicune|spd|1
+L	ab_0_46	55	|move|p2a: Skarmory|Toxic|p1a: Suicune
+L	ab_0_46	56	|-status|p1a: Suicune|tox
+L	ab_0_46	57	|
+L	ab_0_46	58	|-damage|p1a: Suicune|379/404 tox|[from] psn
+L	ab_0_46	59	|upkeep
+L	ab_0_46	60	|turn|5
+L	ab_0_46	61	|
+L	ab_0_46	62	|t:|<NORMALIZED>
+L	ab_0_46	63	|move|p1a: Suicune|Hydro Pump|p2a: Skarmory
+L	ab_0_46	64	|-crit|p2a: Skarmory
+L	ab_0_46	65	|-damage|p2a: Skarmory|0 fnt
+L	ab_0_46	66	|faint|p2a: Skarmory
+L	ab_0_46	67	|
+L	ab_0_46	68	|t:|<NORMALIZED>
+L	ab_0_46	69	|switch|p2a: Jolteon|Jolteon, M|272/272
+L	ab_0_46	70	|
+L	ab_0_46	71	|-heal|p1a: Suicune|404/404 tox|[from] item: Leftovers
+L	ab_0_46	72	|-damage|p1a: Suicune|354/404 tox|[from] psn
+L	ab_0_46	73	|upkeep
+L	ab_0_46	74	|turn|6
+L	ab_0_46	75	|
+L	ab_0_46	76	|t:|<NORMALIZED>
+L	ab_0_46	77	|switch|p2a: Gengar|Gengar, M|271/271
+L	ab_0_46	78	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_46	79	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_0_46	80	|-heal|p1a: Suicune|404/404 slp|[silent]
+L	ab_0_46	81	|
+L	ab_0_46	82	|upkeep
+L	ab_0_46	83	|turn|7
+L	ab_0_46	84	|
+L	ab_0_46	85	|t:|<NORMALIZED>
+L	ab_0_46	86	|move|p2a: Gengar|Fire Punch|p1a: Suicune
+L	ab_0_46	87	|-resisted|p1a: Suicune
+L	ab_0_46	88	|-damage|p1a: Suicune|386/404 slp
+L	ab_0_46	89	|cant|p1a: Suicune|slp
+L	ab_0_46	90	|
+L	ab_0_46	91	|-heal|p1a: Suicune|404/404 slp|[from] item: Leftovers
+L	ab_0_46	92	|upkeep
+L	ab_0_46	93	|turn|8
+L	ab_0_46	94	|
+L	ab_0_46	95	|t:|<NORMALIZED>
+L	ab_0_46	96	|move|p2a: Gengar|Fire Punch|p1a: Suicune
+L	ab_0_46	97	|-resisted|p1a: Suicune
+L	ab_0_46	98	|-damage|p1a: Suicune|382/404 slp
+L	ab_0_46	99	|cant|p1a: Suicune|slp
+L	ab_0_46	100	|
+L	ab_0_46	101	|-heal|p1a: Suicune|404/404 slp|[from] item: Leftovers
+L	ab_0_46	102	|upkeep
+L	ab_0_46	103	|turn|9
+L	ab_0_46	104	|
+L	ab_0_46	105	|t:|<NORMALIZED>
+L	ab_0_46	106	|move|p2a: Gengar|Ice Punch|p1a: Suicune
+L	ab_0_46	107	|debug|Negating (sp)def boost/penalty.
+L	ab_0_46	108	|-resisted|p1a: Suicune
+L	ab_0_46	109	|-crit|p1a: Suicune
+L	ab_0_46	110	|-damage|p1a: Suicune|324/404 slp
+L	ab_0_46	111	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_0_46	112	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_0_46	113	|-boost|p1a: Suicune|spa|1
+L	ab_0_46	114	|-boost|p1a: Suicune|spd|1
+L	ab_0_46	115	|
+L	ab_0_46	116	|-heal|p1a: Suicune|349/404|[from] item: Leftovers
+L	ab_0_46	117	|upkeep
+L	ab_0_46	118	|turn|10
+L	ab_0_46	119	|
+L	ab_0_46	120	|t:|<NORMALIZED>
+L	ab_0_46	121	|move|p2a: Gengar|Fire Punch|p1a: Suicune
+L	ab_0_46	122	|-resisted|p1a: Suicune
+L	ab_0_46	123	|-damage|p1a: Suicune|334/404
+L	ab_0_46	124	|move|p1a: Suicune|Hydro Pump|p2a: Gengar
+L	ab_0_46	125	|-damage|p2a: Gengar|0 fnt
+L	ab_0_46	126	|faint|p2a: Gengar
+L	ab_0_46	127	|
+L	ab_0_46	128	|t:|<NORMALIZED>
+L	ab_0_46	129	|switch|p2a: Metagross|Metagross|318/318
+L	ab_0_46	130	|
+L	ab_0_46	131	|-heal|p1a: Suicune|359/404|[from] item: Leftovers
+L	ab_0_46	132	|upkeep
+L	ab_0_46	133	|turn|11
+L	ab_0_46	134	|
+L	ab_0_46	135	|t:|<NORMALIZED>
+L	ab_0_46	136	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_0_46	137	|-boost|p1a: Suicune|spa|1
+L	ab_0_46	138	|-boost|p1a: Suicune|spd|1
+L	ab_0_46	139	|move|p2a: Metagross|Explosion|p1a: Suicune
+L	ab_0_46	140	|-damage|p1a: Suicune|0 fnt
+L	ab_0_46	141	|faint|p2a: Metagross
+L	ab_0_46	142	|faint|p1a: Suicune
+L	ab_0_46	143	|
+L	ab_0_46	144	|t:|<NORMALIZED>
+L	ab_0_46	145	|switch|p1a: Metagross|Metagross|364/364
+L	ab_0_46	146	|switch|p2a: Tyranitar|Tyranitar, M|404/404
+L	ab_0_46	147	|-damage|p1a: Metagross|319/364|[from] Spikes
+L	ab_0_46	148	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_0_46	149	|
+L	ab_0_46	150	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	151	|debug|natural status immunity
+L	ab_0_46	152	|debug|weather immunity
+L	ab_0_46	153	|debug|natural status immunity
+L	ab_0_46	154	|debug|weather immunity
+L	ab_0_46	155	|-heal|p1a: Metagross|341/364|[from] item: Leftovers
+L	ab_0_46	156	|upkeep
+L	ab_0_46	157	|turn|12
+L	ab_0_46	158	|
+L	ab_0_46	159	|t:|<NORMALIZED>
+L	ab_0_46	160	|debug|before turn callback: focuspunch
+L	ab_0_46	161	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_0_46	162	|move|p1a: Metagross|Toxic|p2a: Tyranitar
+L	ab_0_46	163	|-status|p2a: Tyranitar|tox
+L	ab_0_46	164	|move|p2a: Tyranitar|Focus Punch|p1a: Metagross
+L	ab_0_46	165	|-damage|p1a: Metagross|191/364
+L	ab_0_46	166	|
+L	ab_0_46	167	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	168	|debug|natural status immunity
+L	ab_0_46	169	|debug|weather immunity
+L	ab_0_46	170	|debug|natural status immunity
+L	ab_0_46	171	|debug|weather immunity
+L	ab_0_46	172	|-heal|p1a: Metagross|213/364|[from] item: Leftovers
+L	ab_0_46	173	|-damage|p2a: Tyranitar|379/404 tox|[from] psn
+L	ab_0_46	174	|upkeep
+L	ab_0_46	175	|turn|13
+L	ab_0_46	176	|
+L	ab_0_46	177	|t:|<NORMALIZED>
+L	ab_0_46	178	|move|p1a: Metagross|Explosion|p2a: Tyranitar
+L	ab_0_46	179	|-resisted|p2a: Tyranitar
+L	ab_0_46	180	|-damage|p2a: Tyranitar|93/404 tox
+L	ab_0_46	181	|faint|p1a: Metagross
+L	ab_0_46	182	|
+L	ab_0_46	183	|t:|<NORMALIZED>
+L	ab_0_46	184	|switch|p1a: Blissey|Blissey, F|707/707
+L	ab_0_46	185	|-damage|p1a: Blissey|619/707|[from] Spikes
+L	ab_0_46	186	|
+L	ab_0_46	187	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	188	|debug|natural status immunity
+L	ab_0_46	189	|debug|weather immunity
+L	ab_0_46	190	|-damage|p1a: Blissey|575/707|[from] Sandstorm
+L	ab_0_46	191	|-heal|p2a: Tyranitar|118/404 tox|[from] item: Leftovers
+L	ab_0_46	192	|-damage|p2a: Tyranitar|68/404 tox|[from] psn
+L	ab_0_46	193	|-heal|p1a: Blissey|619/707|[from] item: Leftovers
+L	ab_0_46	194	|upkeep
+L	ab_0_46	195	|turn|14
+L	ab_0_46	196	|
+L	ab_0_46	197	|t:|<NORMALIZED>
+L	ab_0_46	198	|move|p2a: Tyranitar|Hidden Power|p1a: Blissey
+L	ab_0_46	199	|debug|BP: 70
+L	ab_0_46	200	|-damage|p1a: Blissey|463/707
+L	ab_0_46	201	|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+L	ab_0_46	202	|-heal|p1a: Blissey|707/707
+L	ab_0_46	203	|
+L	ab_0_46	204	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	205	|debug|natural status immunity
+L	ab_0_46	206	|debug|weather immunity
+L	ab_0_46	207	|-damage|p1a: Blissey|663/707|[from] Sandstorm
+L	ab_0_46	208	|-heal|p2a: Tyranitar|93/404 tox|[from] item: Leftovers
+L	ab_0_46	209	|-damage|p2a: Tyranitar|18/404 tox|[from] psn
+L	ab_0_46	210	|-heal|p1a: Blissey|707/707|[from] item: Leftovers
+L	ab_0_46	211	|upkeep
+L	ab_0_46	212	|turn|15
+L	ab_0_46	213	|
+L	ab_0_46	214	|t:|<NORMALIZED>
+L	ab_0_46	215	|switch|p2a: Jolteon|Jolteon, M|272/272
+L	ab_0_46	216	|move|p1a: Blissey|Seismic Toss|p2a: Jolteon
+L	ab_0_46	217	|-damage|p2a: Jolteon|172/272
+L	ab_0_46	218	|
+L	ab_0_46	219	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	220	|-damage|p2a: Jolteon|155/272|[from] Sandstorm
+L	ab_0_46	221	|-damage|p1a: Blissey|663/707|[from] Sandstorm
+L	ab_0_46	222	|-heal|p2a: Jolteon|172/272|[from] item: Leftovers
+L	ab_0_46	223	|-heal|p1a: Blissey|707/707|[from] item: Leftovers
+L	ab_0_46	224	|upkeep
+L	ab_0_46	225	|turn|16
+L	ab_0_46	226	|
+L	ab_0_46	227	|t:|<NORMALIZED>
+L	ab_0_46	228	|switch|p2a: Tyranitar|Tyranitar, M|18/404 tox
+L	ab_0_46	229	|switch|p1a: Magneton|Magneton|301/301
+L	ab_0_46	230	|-damage|p1a: Magneton|264/301|[from] Spikes
+L	ab_0_46	231	|
+L	ab_0_46	232	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	233	|debug|natural status immunity
+L	ab_0_46	234	|debug|weather immunity
+L	ab_0_46	235	|debug|natural status immunity
+L	ab_0_46	236	|debug|weather immunity
+L	ab_0_46	237	|-heal|p2a: Tyranitar|43/404 tox|[from] item: Leftovers
+L	ab_0_46	238	|-damage|p2a: Tyranitar|18/404 tox|[from] psn
+L	ab_0_46	239	|upkeep
+L	ab_0_46	240	|turn|17
+L	ab_0_46	241	|
+L	ab_0_46	242	|t:|<NORMALIZED>
+L	ab_0_46	243	|move|p1a: Magneton|Thunderbolt|p2a: Tyranitar
+L	ab_0_46	244	|-damage|p2a: Tyranitar|0 fnt
+L	ab_0_46	245	|faint|p2a: Tyranitar
+L	ab_0_46	246	|
+L	ab_0_46	247	|t:|<NORMALIZED>
+L	ab_0_46	248	|switch|p2a: Starmie|Starmie|262/262
+L	ab_0_46	249	|
+L	ab_0_46	250	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	251	|-damage|p2a: Starmie|246/262|[from] Sandstorm
+L	ab_0_46	252	|debug|natural status immunity
+L	ab_0_46	253	|debug|weather immunity
+L	ab_0_46	254	|-heal|p2a: Starmie|262/262|[from] item: Leftovers
+L	ab_0_46	255	|upkeep
+L	ab_0_46	256	|turn|18
+L	ab_0_46	257	|
+L	ab_0_46	258	|t:|<NORMALIZED>
+L	ab_0_46	259	|move|p1a: Magneton|Protect|p1a: Magneton
+L	ab_0_46	260	|-singleturn|p1a: Magneton|Protect
+L	ab_0_46	261	|move|p2a: Starmie|Psychic|p1a: Magneton
+L	ab_0_46	262	|-activate|p1a: Magneton|Protect
+L	ab_0_46	263	|
+L	ab_0_46	264	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	265	|-damage|p2a: Starmie|246/262|[from] Sandstorm
+L	ab_0_46	266	|debug|natural status immunity
+L	ab_0_46	267	|debug|weather immunity
+L	ab_0_46	268	|-heal|p2a: Starmie|262/262|[from] item: Leftovers
+L	ab_0_46	269	|upkeep
+L	ab_0_46	270	|turn|19
+L	ab_0_46	271	|
+L	ab_0_46	272	|t:|<NORMALIZED>
+L	ab_0_46	273	|move|p1a: Magneton|Protect||[still]
+L	ab_0_46	274	|debug|Success chance: 50%
+L	ab_0_46	275	|-fail|p1a: Magneton
+L	ab_0_46	276	|move|p2a: Starmie|Thunderbolt|p1a: Magneton
+L	ab_0_46	277	|-resisted|p1a: Magneton
+L	ab_0_46	278	|-damage|p1a: Magneton|204/301
+L	ab_0_46	279	|
+L	ab_0_46	280	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	281	|-damage|p2a: Starmie|246/262|[from] Sandstorm
+L	ab_0_46	282	|debug|natural status immunity
+L	ab_0_46	283	|debug|weather immunity
+L	ab_0_46	284	|-heal|p2a: Starmie|262/262|[from] item: Leftovers
+L	ab_0_46	285	|upkeep
+L	ab_0_46	286	|turn|20
+L	ab_0_46	287	|
+L	ab_0_46	288	|t:|<NORMALIZED>
+L	ab_0_46	289	|switch|p2a: Jolteon|Jolteon, M|172/272
+L	ab_0_46	290	|move|p1a: Magneton|Thunder Wave|p2a: Jolteon
+L	ab_0_46	291	|-status|p2a: Jolteon|par
+L	ab_0_46	292	|
+L	ab_0_46	293	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	294	|debug|natural status immunity
+L	ab_0_46	295	|debug|weather immunity
+L	ab_0_46	296	|-damage|p2a: Jolteon|155/272 par|[from] Sandstorm
+L	ab_0_46	297	|-heal|p2a: Jolteon|172/272 par|[from] item: Leftovers
+L	ab_0_46	298	|upkeep
+L	ab_0_46	299	|turn|21
+L	ab_0_46	300	|
+L	ab_0_46	301	|t:|<NORMALIZED>
+L	ab_0_46	302	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_0_46	303	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_46	304	|-unboost|p2a: Jolteon|atk|1
+L	ab_0_46	305	|move|p2a: Jolteon|Thunderbolt|p1a: Salamence
+L	ab_0_46	306	|-damage|p1a: Salamence|147/331
+L	ab_0_46	307	|
+L	ab_0_46	308	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	309	|-damage|p1a: Salamence|127/331|[from] Sandstorm
+L	ab_0_46	310	|-damage|p2a: Jolteon|155/272 par|[from] Sandstorm
+L	ab_0_46	311	|-heal|p1a: Salamence|147/331|[from] item: Leftovers
+L	ab_0_46	312	|-heal|p2a: Jolteon|172/272 par|[from] item: Leftovers
+L	ab_0_46	313	|upkeep
+L	ab_0_46	314	|turn|22
+L	ab_0_46	315	|
+L	ab_0_46	316	|t:|<NORMALIZED>
+L	ab_0_46	317	|switch|p1a: Blissey|Blissey, F|707/707
+L	ab_0_46	318	|-damage|p1a: Blissey|619/707|[from] Spikes
+L	ab_0_46	319	|move|p2a: Jolteon|Thunderbolt|p1a: Blissey
+L	ab_0_46	320	|-damage|p1a: Blissey|511/707
+L	ab_0_46	321	|
+L	ab_0_46	322	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	323	|-damage|p1a: Blissey|467/707|[from] Sandstorm
+L	ab_0_46	324	|-damage|p2a: Jolteon|155/272 par|[from] Sandstorm
+L	ab_0_46	325	|-heal|p1a: Blissey|511/707|[from] item: Leftovers
+L	ab_0_46	326	|-heal|p2a: Jolteon|172/272 par|[from] item: Leftovers
+L	ab_0_46	327	|upkeep
+L	ab_0_46	328	|turn|23
+L	ab_0_46	329	|
+L	ab_0_46	330	|t:|<NORMALIZED>
+L	ab_0_46	331	|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+L	ab_0_46	332	|-heal|p1a: Blissey|707/707
+L	ab_0_46	333	|cant|p2a: Jolteon|par
+L	ab_0_46	334	|
+L	ab_0_46	335	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	336	|-damage|p1a: Blissey|663/707|[from] Sandstorm
+L	ab_0_46	337	|-damage|p2a: Jolteon|155/272 par|[from] Sandstorm
+L	ab_0_46	338	|-heal|p1a: Blissey|707/707|[from] item: Leftovers
+L	ab_0_46	339	|-heal|p2a: Jolteon|172/272 par|[from] item: Leftovers
+L	ab_0_46	340	|upkeep
+L	ab_0_46	341	|turn|24
+L	ab_0_46	342	|
+L	ab_0_46	343	|t:|<NORMALIZED>
+L	ab_0_46	344	|switch|p1a: Salamence|Salamence, M|147/331
+L	ab_0_46	345	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_46	346	|-unboost|p2a: Jolteon|atk|1
+L	ab_0_46	347	|cant|p2a: Jolteon|par
+L	ab_0_46	348	|
+L	ab_0_46	349	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	350	|-damage|p1a: Salamence|127/331|[from] Sandstorm
+L	ab_0_46	351	|-damage|p2a: Jolteon|155/272 par|[from] Sandstorm
+L	ab_0_46	352	|-heal|p1a: Salamence|147/331|[from] item: Leftovers
+L	ab_0_46	353	|-heal|p2a: Jolteon|172/272 par|[from] item: Leftovers
+L	ab_0_46	354	|upkeep
+L	ab_0_46	355	|turn|25
+L	ab_0_46	356	|
+L	ab_0_46	357	|t:|<NORMALIZED>
+L	ab_0_46	358	|switch|p2a: Starmie|Starmie|262/262
+L	ab_0_46	359	|move|p1a: Salamence|Earthquake|p2a: Starmie
+L	ab_0_46	360	|-damage|p2a: Starmie|108/262
+L	ab_0_46	361	|
+L	ab_0_46	362	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	363	|-damage|p2a: Starmie|92/262|[from] Sandstorm
+L	ab_0_46	364	|-damage|p1a: Salamence|127/331|[from] Sandstorm
+L	ab_0_46	365	|-heal|p2a: Starmie|108/262|[from] item: Leftovers
+L	ab_0_46	366	|-heal|p1a: Salamence|147/331|[from] item: Leftovers
+L	ab_0_46	367	|upkeep
+L	ab_0_46	368	|turn|26
+L	ab_0_46	369	|
+L	ab_0_46	370	|t:|<NORMALIZED>
+L	ab_0_46	371	|move|p2a: Starmie|Hydro Pump|p1a: Salamence
+L	ab_0_46	372	|-resisted|p1a: Salamence
+L	ab_0_46	373	|-damage|p1a: Salamence|36/331
+L	ab_0_46	374	|move|p1a: Salamence|Dragon Dance|p1a: Salamence
+L	ab_0_46	375	|-boost|p1a: Salamence|atk|1
+L	ab_0_46	376	|-boost|p1a: Salamence|spe|1
+L	ab_0_46	377	|
+L	ab_0_46	378	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	379	|-damage|p1a: Salamence|16/331|[from] Sandstorm
+L	ab_0_46	380	|-damage|p2a: Starmie|92/262|[from] Sandstorm
+L	ab_0_46	381	|-heal|p1a: Salamence|36/331|[from] item: Leftovers
+L	ab_0_46	382	|-heal|p2a: Starmie|108/262|[from] item: Leftovers
+L	ab_0_46	383	|upkeep
+L	ab_0_46	384	|turn|27
+L	ab_0_46	385	|
+L	ab_0_46	386	|t:|<NORMALIZED>
+L	ab_0_46	387	|move|p1a: Salamence|Dragon Dance|p1a: Salamence
+L	ab_0_46	388	|-boost|p1a: Salamence|atk|1
+L	ab_0_46	389	|-boost|p1a: Salamence|spe|1
+L	ab_0_46	390	|move|p2a: Starmie|Psychic|p1a: Salamence
+L	ab_0_46	391	|-damage|p1a: Salamence|0 fnt
+L	ab_0_46	392	|faint|p1a: Salamence
+L	ab_0_46	393	|
+L	ab_0_46	394	|t:|<NORMALIZED>
+L	ab_0_46	395	|switch|p1a: Magneton|Magneton|204/301
+L	ab_0_46	396	|-damage|p1a: Magneton|167/301|[from] Spikes
+L	ab_0_46	397	|
+L	ab_0_46	398	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	399	|-damage|p2a: Starmie|92/262|[from] Sandstorm
+L	ab_0_46	400	|debug|natural status immunity
+L	ab_0_46	401	|debug|weather immunity
+L	ab_0_46	402	|-heal|p2a: Starmie|108/262|[from] item: Leftovers
+L	ab_0_46	403	|upkeep
+L	ab_0_46	404	|turn|28
+L	ab_0_46	405	|
+L	ab_0_46	406	|t:|<NORMALIZED>
+L	ab_0_46	407	|move|p1a: Magneton|Protect|p1a: Magneton
+L	ab_0_46	408	|-singleturn|p1a: Magneton|Protect
+L	ab_0_46	409	|move|p2a: Starmie|Psychic|p1a: Magneton
+L	ab_0_46	410	|-activate|p1a: Magneton|Protect
+L	ab_0_46	411	|
+L	ab_0_46	412	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	413	|-damage|p2a: Starmie|92/262|[from] Sandstorm
+L	ab_0_46	414	|debug|natural status immunity
+L	ab_0_46	415	|debug|weather immunity
+L	ab_0_46	416	|-heal|p2a: Starmie|108/262|[from] item: Leftovers
+L	ab_0_46	417	|upkeep
+L	ab_0_46	418	|turn|29
+L	ab_0_46	419	|
+L	ab_0_46	420	|t:|<NORMALIZED>
+L	ab_0_46	421	|move|p1a: Magneton|Protect|p1a: Magneton
+L	ab_0_46	422	|debug|Success chance: 50%
+L	ab_0_46	423	|-singleturn|p1a: Magneton|Protect
+L	ab_0_46	424	|move|p2a: Starmie|Thunderbolt|p1a: Magneton
+L	ab_0_46	425	|-activate|p1a: Magneton|Protect
+L	ab_0_46	426	|
+L	ab_0_46	427	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	428	|-damage|p2a: Starmie|92/262|[from] Sandstorm
+L	ab_0_46	429	|debug|natural status immunity
+L	ab_0_46	430	|debug|weather immunity
+L	ab_0_46	431	|-heal|p2a: Starmie|108/262|[from] item: Leftovers
+L	ab_0_46	432	|upkeep
+L	ab_0_46	433	|turn|30
+L	ab_0_46	434	|
+L	ab_0_46	435	|t:|<NORMALIZED>
+L	ab_0_46	436	|switch|p1a: Blissey|Blissey, F|707/707
+L	ab_0_46	437	|-damage|p1a: Blissey|619/707|[from] Spikes
+L	ab_0_46	438	|move|p2a: Starmie|Ice Beam|p1a: Blissey
+L	ab_0_46	439	|-damage|p1a: Blissey|547/707
+L	ab_0_46	440	|
+L	ab_0_46	441	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	442	|-damage|p2a: Starmie|92/262|[from] Sandstorm
+L	ab_0_46	443	|-damage|p1a: Blissey|503/707|[from] Sandstorm
+L	ab_0_46	444	|-heal|p2a: Starmie|108/262|[from] item: Leftovers
+L	ab_0_46	445	|-heal|p1a: Blissey|547/707|[from] item: Leftovers
+L	ab_0_46	446	|upkeep
+L	ab_0_46	447	|turn|31
+L	ab_0_46	448	|
+L	ab_0_46	449	|t:|<NORMALIZED>
+L	ab_0_46	450	|move|p2a: Starmie|Psychic|p1a: Blissey
+L	ab_0_46	451	|-damage|p1a: Blissey|440/707
+L	ab_0_46	452	|move|p1a: Blissey|Seismic Toss|p2a: Starmie
+L	ab_0_46	453	|-damage|p2a: Starmie|8/262
+L	ab_0_46	454	|
+L	ab_0_46	455	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	456	|-damage|p2a: Starmie|0 fnt|[from] Sandstorm
+L	ab_0_46	457	|-damage|p1a: Blissey|396/707|[from] Sandstorm
+L	ab_0_46	458	|faint|p2a: Starmie
+L	ab_0_46	459	|-heal|p1a: Blissey|440/707|[from] item: Leftovers
+L	ab_0_46	460	|upkeep
+L	ab_0_46	461	|
+L	ab_0_46	462	|t:|<NORMALIZED>
+L	ab_0_46	463	|switch|p2a: Jolteon|Jolteon, M|172/272 par
+L	ab_0_46	464	|turn|32
+L	ab_0_46	465	|
+L	ab_0_46	466	|t:|<NORMALIZED>
+L	ab_0_46	467	|move|p1a: Blissey|Ice Beam|p2a: Jolteon
+L	ab_0_46	468	|-damage|p2a: Jolteon|108/272 par
+L	ab_0_46	469	|cant|p2a: Jolteon|par
+L	ab_0_46	470	|
+L	ab_0_46	471	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	472	|-damage|p1a: Blissey|396/707|[from] Sandstorm
+L	ab_0_46	473	|-damage|p2a: Jolteon|91/272 par|[from] Sandstorm
+L	ab_0_46	474	|-heal|p1a: Blissey|440/707|[from] item: Leftovers
+L	ab_0_46	475	|-heal|p2a: Jolteon|108/272 par|[from] item: Leftovers
+L	ab_0_46	476	|upkeep
+L	ab_0_46	477	|turn|33
+L	ab_0_46	478	|
+L	ab_0_46	479	|t:|<NORMALIZED>
+L	ab_0_46	480	|move|p1a: Blissey|Ice Beam|p2a: Jolteon
+L	ab_0_46	481	|-damage|p2a: Jolteon|52/272 par
+L	ab_0_46	482	|move|p2a: Jolteon|Hidden Power|p1a: Blissey
+L	ab_0_46	483	|debug|BP: 70
+L	ab_0_46	484	|-damage|p1a: Blissey|385/707
+L	ab_0_46	485	|
+L	ab_0_46	486	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	487	|-damage|p1a: Blissey|341/707|[from] Sandstorm
+L	ab_0_46	488	|-damage|p2a: Jolteon|35/272 par|[from] Sandstorm
+L	ab_0_46	489	|-heal|p1a: Blissey|385/707|[from] item: Leftovers
+L	ab_0_46	490	|-heal|p2a: Jolteon|52/272 par|[from] item: Leftovers
+L	ab_0_46	491	|upkeep
+L	ab_0_46	492	|turn|34
+L	ab_0_46	493	|
+L	ab_0_46	494	|t:|<NORMALIZED>
+L	ab_0_46	495	|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+L	ab_0_46	496	|-heal|p1a: Blissey|707/707
+L	ab_0_46	497	|move|p2a: Jolteon|Baton Pass||[still]
+L	ab_0_46	498	|-fail|p2a: Jolteon
+L	ab_0_46	499	|
+L	ab_0_46	500	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	501	|-damage|p1a: Blissey|663/707|[from] Sandstorm
+L	ab_0_46	502	|-damage|p2a: Jolteon|35/272 par|[from] Sandstorm
+L	ab_0_46	503	|-heal|p1a: Blissey|707/707|[from] item: Leftovers
+L	ab_0_46	504	|-heal|p2a: Jolteon|52/272 par|[from] item: Leftovers
+L	ab_0_46	505	|upkeep
+L	ab_0_46	506	|turn|35
+L	ab_0_46	507	|
+L	ab_0_46	508	|t:|<NORMALIZED>
+L	ab_0_46	509	|move|p1a: Blissey|Soft-Boiled||[still]
+L	ab_0_46	510	|-fail|p1a: Blissey|heal
+L	ab_0_46	511	|debug|move failed because it did nothing
+L	ab_0_46	512	|move|p2a: Jolteon|Hidden Power|p1a: Blissey
+L	ab_0_46	513	|debug|BP: 70
+L	ab_0_46	514	|-damage|p1a: Blissey|647/707
+L	ab_0_46	515	|
+L	ab_0_46	516	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	517	|-damage|p1a: Blissey|603/707|[from] Sandstorm
+L	ab_0_46	518	|-damage|p2a: Jolteon|35/272 par|[from] Sandstorm
+L	ab_0_46	519	|-heal|p1a: Blissey|647/707|[from] item: Leftovers
+L	ab_0_46	520	|-heal|p2a: Jolteon|52/272 par|[from] item: Leftovers
+L	ab_0_46	521	|upkeep
+L	ab_0_46	522	|turn|36
+L	ab_0_46	523	|
+L	ab_0_46	524	|t:|<NORMALIZED>
+L	ab_0_46	525	|switch|p1a: Magneton|Magneton|167/301
+L	ab_0_46	526	|-damage|p1a: Magneton|130/301|[from] Spikes
+L	ab_0_46	527	|move|p2a: Jolteon|Thunder Wave|p1a: Magneton
+L	ab_0_46	528	|-status|p1a: Magneton|par
+L	ab_0_46	529	|
+L	ab_0_46	530	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	531	|-damage|p2a: Jolteon|35/272 par|[from] Sandstorm
+L	ab_0_46	532	|debug|natural status immunity
+L	ab_0_46	533	|debug|weather immunity
+L	ab_0_46	534	|-heal|p2a: Jolteon|52/272 par|[from] item: Leftovers
+L	ab_0_46	535	|upkeep
+L	ab_0_46	536	|turn|37
+L	ab_0_46	537	|
+L	ab_0_46	538	|t:|<NORMALIZED>
+L	ab_0_46	539	|move|p2a: Jolteon|Baton Pass||[still]
+L	ab_0_46	540	|-fail|p2a: Jolteon
+L	ab_0_46	541	|move|p1a: Magneton|Thunderbolt|p2a: Jolteon
+L	ab_0_46	542	|-heal|p2a: Jolteon|120/272 par|[from] ability: Volt Absorb|[of] p1a: Magneton
+L	ab_0_46	543	|
+L	ab_0_46	544	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	545	|-damage|p2a: Jolteon|103/272 par|[from] Sandstorm
+L	ab_0_46	546	|debug|natural status immunity
+L	ab_0_46	547	|debug|weather immunity
+L	ab_0_46	548	|-heal|p2a: Jolteon|120/272 par|[from] item: Leftovers
+L	ab_0_46	549	|upkeep
+L	ab_0_46	550	|turn|38
+L	ab_0_46	551	|
+L	ab_0_46	552	|t:|<NORMALIZED>
+L	ab_0_46	553	|cant|p2a: Jolteon|par
+L	ab_0_46	554	|move|p1a: Magneton|Hidden Power|p2a: Jolteon
+L	ab_0_46	555	|debug|BP: 70
+L	ab_0_46	556	|-damage|p2a: Jolteon|35/272 par
+L	ab_0_46	557	|
+L	ab_0_46	558	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	559	|-damage|p2a: Jolteon|18/272 par|[from] Sandstorm
+L	ab_0_46	560	|debug|natural status immunity
+L	ab_0_46	561	|debug|weather immunity
+L	ab_0_46	562	|-heal|p2a: Jolteon|35/272 par|[from] item: Leftovers
+L	ab_0_46	563	|upkeep
+L	ab_0_46	564	|turn|39
+L	ab_0_46	565	|
+L	ab_0_46	566	|t:|<NORMALIZED>
+L	ab_0_46	567	|move|p2a: Jolteon|Baton Pass||[still]
+L	ab_0_46	568	|-fail|p2a: Jolteon
+L	ab_0_46	569	|cant|p1a: Magneton|par
+L	ab_0_46	570	|
+L	ab_0_46	571	|-weather|Sandstorm|[upkeep]
+L	ab_0_46	572	|-damage|p2a: Jolteon|18/272 par|[from] Sandstorm
+L	ab_0_46	573	|debug|natural status immunity
+L	ab_0_46	574	|debug|weather immunity
+L	ab_0_46	575	|-heal|p2a: Jolteon|35/272 par|[from] item: Leftovers
+L	ab_0_46	576	|upkeep
+L	ab_0_46	577	|turn|40
+L	ab_0_46	578	|
+L	ab_0_46	579	|t:|<NORMALIZED>
+L	ab_0_46	580	|move|p2a: Jolteon|Thunderbolt|p1a: Magneton
+L	ab_0_46	581	|-resisted|p1a: Magneton
+L	ab_0_46	582	|-damage|p1a: Magneton|31/301 par
+L	ab_0_46	583	|move|p1a: Magneton|Hidden Power|p2a: Jolteon
+L	ab_0_46	584	|debug|BP: 70
+L	ab_0_46	585	|-damage|p2a: Jolteon|0 fnt
+L	ab_0_46	586	|faint|p2a: Jolteon
+L	ab_0_46	587	|
+L	ab_0_46	588	|win|P1

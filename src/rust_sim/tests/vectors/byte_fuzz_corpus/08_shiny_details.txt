@@ -1,0 +1,654 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777002 run_id=rmro8hjvp chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_73
+TEAM	ab_0_73	p1	Tyranitar||Leftovers|SandStream|Crunch,Pursuit,IceBeam,BrickBreak|Quiet|184,20,,216,,88|M||||]Skarmory||Leftovers|KeenEye|DrillPeck,Spikes,Roar,Protect|Careful|252,,,,252,4|M||||]Milotic||Leftovers|MarvelScale|Toxic,Surf,Refresh,Recover|Bold|248,,192,,,68|M|,0,,,,|||]Magneton||Leftovers|MagnetPull|Thunderbolt,HiddenPowerFire,Toxic,ThunderWave|Modest|240,,,212,,56|N|,2,,30,,30|||,Fire,,,,]Donphan||Leftovers|Sturdy|Earthquake,HiddenPowerRock,RapidSpin,Protect|Impish|248,,28,,160,72|M|,,30,,30,30|||,Rock,,,,]Celebi||Leftovers|NaturalCure|HiddenPowerGrass,PerishSong,LeechSeed,Recover|Bold|248,,76,,164,20|N|,30,,30,,|||,Grass,,,,
+TEAM	ab_0_73	p2	Skarmory||Leftovers|KeenEye|Spikes,Protect,Roar,Toxic|Careful|252,,8,,248,|F|,0,,,,|||]Blissey||Leftovers|NaturalCure|SoftBoiled,IceBeam,Toxic,FireBlast|Modest|,,252,252,,4|F|,0,,,,|S||]Tyranitar||Leftovers|SandStream|FocusPunch,RockSlide,HiddenPowerBug,Earthquake|Adamant|248,196,12,,52,|F|,30,30,,30,|||,Bug,,,,]Swampert||Leftovers|Torrent|Earthquake,IceBeam,HydroPump,Protect|Relaxed|240,,136,40,48,44|F||||]Gengar||Leftovers|Levitate|WillOWisp,Thunderbolt,IcePunch,Explosion|Timid|168,,,,164,176|F||||]Starmie||Leftovers|NaturalCure|HydroPump,IceBeam,Thunderbolt,RapidSpin|Timid|4,,,252,,252|N|,0,,,,|||
+FMT	ab_0_73	gen3ou
+INIT	ab_0_73	52258,49894,36383,42541	4170926561
+DEC	ab_0_73	0	move	0	0	m0	m3	3297,3483,48628,24522	Tyranitar	363	387	0	tox	0	0	0	0	0	0	6	Skarmory	297	334	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_73	1	move	0	0	s2	s1	35156,31203,36697,33653	Milotic	393	393	0	-	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_73	2	move	0	0	s4	m3	55714,50857,48112,14723	Donphan	234	383	0	brn	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_73	3	move	0	0	m2	m3	57144,33708,41892,47627	Donphan	79	383	0	brn	0	0	0	0	0	0	6	Blissey	632	651	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_73	4	move	0	0	m2	m3	952,28661,28065,8848	Donphan	0	383	1	fnt	0	0	0	0	0	0	5	Blissey	612	651	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_73	5	switch	1	0	s4	-	46459,20556,11816,20883	Milotic	393	393	0	-	0	0	0	0	0	0	5	Blissey	612	651	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_73	6	move	0	0	m0	m2	51760,35799,58175,57910	Milotic	369	393	0	tox	0	0	0	0	0	0	5	Blissey	572	651	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_73	7	move	0	0	m0	m1	63043,11881,58176,15500	Milotic	286	393	0	tox	0	0	0	0	0	0	5	Blissey	492	651	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_73	8	move	0	0	m3	m3	17477,55875,8249,17827	Milotic	275	393	0	tox	0	0	0	0	0	0	5	Blissey	372	651	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_73	9	move	0	0	m3	s3	37179,3579,2168,21266	Milotic	297	393	0	tox	0	0	0	0	0	0	5	Swampert	401	401	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_73	10	move	0	0	m3	m3	39153,9546,10362,39156	Milotic	273	393	0	tox	0	0	0	0	0	0	5	Swampert	401	401	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_73	11	move	0	0	m3	m1	43537,506,8474,57899	Milotic	221	393	0	tox	0	0	0	0	0	0	5	Swampert	401	401	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_73	12	move	0	0	m0	m0	3268,19675,57326,46766	Milotic	0	393	1	fnt	0	0	0	0	0	0	4	Swampert	376	401	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_73	13	switch	1	0	s3	-	60222,24276,32729,53097	Magneton	301	301	0	-	0	0	0	0	0	0	4	Swampert	376	401	0	tox	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_73	14	move	0	0	m0	m3	12030,3897,8564,63842	Magneton	301	301	0	-	0	0	0	0	0	0	4	Swampert	351	401	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_73	15	move	0	0	m0	s1	42878,57925,4883,39126	Magneton	301	301	0	-	0	0	0	0	0	0	4	Skarmory	0	334	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_73	16	switch	0	1	-	s4	49757,34023,31110,28977	Magneton	301	301	0	-	0	0	0	0	0	0	4	Gengar	303	303	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_73	17	move	0	0	m1	s5	37500,53890,48667,51637	Magneton	301	301	0	-	0	0	0	0	0	0	4	Starmie	213	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_73	18	move	0	0	m2	m3	61509,26559,22249,49603	Magneton	301	301	0	-	0	0	0	0	0	0	4	Starmie	197	262	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_73	19	move	0	0	m2	m1	51852,44889,29572,25025	Magneton	258	301	0	-	0	0	0	0	0	0	4	Starmie	165	262	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_73	20	move	0	0	m1	m1	1237,29928,42043,61577	Magneton	212	301	0	-	0	0	0	0	0	0	4	Starmie	73	262	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_73	21	move	0	0	s1	m0	14474,13972,64663,50061	Skarmory	193	334	0	-	0	0	0	0	0	0	4	Starmie	9	262	0	tox	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_73	22	move	0	0	m1	m1	13386,51538,26412,3665	Skarmory	120	334	0	-	0	0	0	0	0	0	4	Starmie	0	262	1	fnt	0	0	0	0	0	0	4	p2	0	1	0	0	0
+DEC	ab_0_73	23	switch	0	1	-	s5	58629,36844,55400,40376	Skarmory	120	334	0	-	0	0	0	0	0	0	4	Gengar	303	303	0	-	0	0	0	0	0	0	4	none	0	1	0	0	0
+DEC	ab_0_73	24	move	0	0	m2	m0	61039,33755,4066,6719	Skarmory	99	334	0	brn	0	0	0	0	0	0	4	Tyranitar	378	403	0	-	0	0	0	0	0	0	4	p2	0	1	0	0	0
+DEC	ab_0_73	25	move	0	0	m2	m0	62721,50893,56253,28832	Skarmory	0	334	1	fnt	0	0	0	0	0	0	3	Tyranitar	378	403	0	-	0	0	0	0	0	0	4	p2	0	1	0	0	0
+DEC	ab_0_73	26	switch	1	0	s5	-	19024,54945,42889,44515	Celebi	403	403	0	-	0	0	0	0	0	0	3	Tyranitar	403	403	0	-	0	0	0	0	0	0	4	none	0	1	0	0	0
+DEC	ab_0_73	27	move	0	0	m2	m3	5202,37051,12158,1222	Celebi	400	403	0	-	0	0	0	0	0	0	3	Tyranitar	353	403	0	-	0	0	0	0	0	0	4	p1	0	1	0	0	0
+DEC	ab_0_73	28	move	0	0	m1	m0	35287,50748,14313,22010	Celebi	370	403	0	-	0	0	0	0	0	0	3	Tyranitar	328	403	0	-	0	0	0	0	0	0	4	p1	0	1	0	0	1
+DEC	ab_0_73	29	move	0	0	m2	s3	15127,11513,23482,63388	Celebi	403	403	0	-	0	0	0	0	0	0	3	Blissey	210	651	0	-	0	0	0	0	0	0	4	p2	0	1	0	0	0
+DEC	ab_0_73	30	move	0	0	m0	m1	24367,807,27038,16900	Celebi	337	403	0	-	0	0	0	0	0	0	3	Blissey	64	651	0	-	0	0	0	0	0	0	4	p1	0	1	0	0	0
+DEC	ab_0_73	31	move	0	0	m0	m0	45995,1397,27804,39793	Celebi	0	403	1	fnt	0	0	0	0	0	0	2	Blissey	246	651	0	-	0	0	0	0	0	0	4	p1	0	1	0	0	0
+DEC	ab_0_73	32	switch	1	0	s1	-	30324,46820,38198,27480	Magneton	212	301	0	-	0	0	0	0	0	0	2	Blissey	246	651	0	-	0	0	0	0	0	0	4	none	0	1	0	0	0
+DEC	ab_0_73	33	move	0	0	m0	m1	713,4522,62881,2563	Magneton	253	301	0	-	0	0	0	0	0	0	2	Blissey	23	651	0	-	0	0	0	0	0	0	4	p1	0	1	0	0	0
+DEC	ab_0_73	34	move	0	0	m2	m1	44058,16807,35415,31745	Magneton	219	301	0	-	0	0	0	0	0	0	2	Blissey	0	651	1	fnt	0	0	0	0	0	0	3	p1	0	1	0	0	0
+DEC	ab_0_73	35	switch	0	1	-	s1	32672,47164,13838,5160	Magneton	219	301	0	-	0	0	0	0	0	0	2	Swampert	301	401	0	tox	0	0	0	0	0	0	3	none	0	1	0	0	0
+DEC	ab_0_73	36	move	0	0	m3	m1	28856,65111,10969,38542	Magneton	190	301	0	-	0	0	0	0	0	0	2	Swampert	301	401	0	tox	0	0	0	0	0	0	3	p1	0	1	0	0	0
+DEC	ab_0_73	37	move	0	0	m3	m1	52818,9950,43895,63908	Magneton	124	301	0	-	0	0	0	0	0	0	2	Swampert	276	401	0	tox	0	0	0	0	0	0	3	p1	0	1	0	0	0
+DEC	ab_0_73	38	move	0	0	m2	m0	9270,45476,24940,59640	Magneton	0	301	1	fnt	0	0	0	0	0	0	1	Swampert	276	401	0	tox	0	0	0	0	0	0	3	p1	0	1	0	0	0
+DEC	ab_0_73	39	switch	1	0	s2	-	33524,15384,46995,16539	Tyranitar	363	387	0	tox	0	0	0	0	0	0	1	Swampert	226	401	0	tox	0	0	0	0	0	0	3	none	0	1	0	0	0
+DEC	ab_0_73	40	move	0	0	m0	s2	17482,22484,21090,42462	Tyranitar	339	387	0	tox	0	0	0	0	0	0	1	Gengar	56	303	0	-	0	0	0	0	0	0	3	p2	0	1	0	0	0
+DEC	ab_0_73	41	move	0	0	m1	m3	7681,31707,49335,54819	Tyranitar	218	387	0	tox	0	0	0	0	0	0	1	Gengar	0	303	1	fnt	0	0	0	0	0	0	2	p2	0	1	0	0	0
+DEC	ab_0_73	42	switch	0	1	-	s3	59138,51202,2363,54674	Tyranitar	170	387	0	tox	0	0	0	0	0	0	1	Tyranitar	303	403	0	-	0	0	0	0	0	0	2	none	0	1	0	0	0
+DEC	ab_0_73	43	move	0	0	m0	s2	1783,42385,56271,28961	Tyranitar	98	387	0	tox	0	0	0	0	0	0	1	Swampert	40	401	0	tox	0	0	0	0	0	0	2	p2	0	1	0	0	0
+DEC	ab_0_73	44	move	0	0	m3	m1	58137,5118,63039,36666	Tyranitar	98	387	0	tox	0	0	0	0	0	0	1	Swampert	0	401	1	fnt	0	0	0	0	0	0	1	p1	0	1	0	0	0
+DEC	ab_0_73	45	switch	0	1	-	s2	6203,57706,36214,10917	Tyranitar	2	387	0	tox	0	0	0	0	0	0	1	Tyranitar	278	403	0	-	0	0	0	0	0	0	1	none	0	1	0	0	0
+DEC	ab_0_73	46	move	0	0	m3	m1	50091,57787,57514,56290	Tyranitar	0	387	1	tox	0	0	0	0	0	0	0	Tyranitar	14	403	0	-	0	0	0	0	0	0	1	p1	0	1	0	0	0
+END	ab_0_73	1	p2
+L	ab_0_73	0	|t:|<NORMALIZED>
+L	ab_0_73	1	|gametype|singles
+L	ab_0_73	2	|player|p1|P1||
+L	ab_0_73	3	|player|p2|P2||
+L	ab_0_73	4	|gen|3
+L	ab_0_73	5	|tier|[Gen 3] OU
+L	ab_0_73	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_73	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_0_73	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_0_73	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_0_73	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_0_73	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_0_73	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_0_73	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_0_73	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_0_73	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_0_73	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_0_73	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_0_73	18	|
+L	ab_0_73	19	|t:|<NORMALIZED>
+L	ab_0_73	20	|teamsize|p1|6
+L	ab_0_73	21	|teamsize|p2|6
+L	ab_0_73	22	|start
+L	ab_0_73	23	|switch|p1a: Tyranitar|Tyranitar, M|387/387
+L	ab_0_73	24	|switch|p2a: Skarmory|Skarmory, F|334/334
+L	ab_0_73	25	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_0_73	26	|turn|1
+L	ab_0_73	27	|
+L	ab_0_73	28	|t:|<NORMALIZED>
+L	ab_0_73	29	|move|p2a: Skarmory|Toxic|p1a: Tyranitar
+L	ab_0_73	30	|-status|p1a: Tyranitar|tox
+L	ab_0_73	31	|move|p1a: Tyranitar|Crunch|p2a: Skarmory
+L	ab_0_73	32	|-resisted|p2a: Skarmory
+L	ab_0_73	33	|-damage|p2a: Skarmory|277/334
+L	ab_0_73	34	|
+L	ab_0_73	35	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	36	|-heal|p2a: Skarmory|297/334|[from] item: Leftovers
+L	ab_0_73	37	|-damage|p1a: Tyranitar|363/387 tox|[from] psn
+L	ab_0_73	38	|upkeep
+L	ab_0_73	39	|turn|2
+L	ab_0_73	40	|
+L	ab_0_73	41	|t:|<NORMALIZED>
+L	ab_0_73	42	|switch|p2a: Blissey|Blissey, F, shiny|651/651
+L	ab_0_73	43	|switch|p1a: Milotic|Milotic, M|393/393
+L	ab_0_73	44	|
+L	ab_0_73	45	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	46	|-damage|p1a: Milotic|369/393|[from] Sandstorm
+L	ab_0_73	47	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_0_73	48	|-heal|p1a: Milotic|393/393|[from] item: Leftovers
+L	ab_0_73	49	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_73	50	|upkeep
+L	ab_0_73	51	|turn|3
+L	ab_0_73	52	|
+L	ab_0_73	53	|t:|<NORMALIZED>
+L	ab_0_73	54	|switch|p1a: Donphan|Donphan, M|383/383
+L	ab_0_73	55	|move|p2a: Blissey|Fire Blast|p1a: Donphan
+L	ab_0_73	56	|-damage|p1a: Donphan|258/383
+L	ab_0_73	57	|-status|p1a: Donphan|brn
+L	ab_0_73	58	|
+L	ab_0_73	59	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	60	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_0_73	61	|-heal|p1a: Donphan|281/383 brn|[from] item: Leftovers
+L	ab_0_73	62	|-damage|p1a: Donphan|234/383 brn|[from] brn
+L	ab_0_73	63	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_73	64	|upkeep
+L	ab_0_73	65	|turn|4
+L	ab_0_73	66	|
+L	ab_0_73	67	|t:|<NORMALIZED>
+L	ab_0_73	68	|move|p1a: Donphan|Rapid Spin|p2a: Blissey
+L	ab_0_73	69	|-damage|p2a: Blissey|632/651
+L	ab_0_73	70	|move|p2a: Blissey|Fire Blast|p1a: Donphan
+L	ab_0_73	71	|-damage|p1a: Donphan|103/383 brn
+L	ab_0_73	72	|
+L	ab_0_73	73	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	74	|-damage|p2a: Blissey|592/651|[from] Sandstorm
+L	ab_0_73	75	|-heal|p1a: Donphan|126/383 brn|[from] item: Leftovers
+L	ab_0_73	76	|-damage|p1a: Donphan|79/383 brn|[from] brn
+L	ab_0_73	77	|-heal|p2a: Blissey|632/651|[from] item: Leftovers
+L	ab_0_73	78	|upkeep
+L	ab_0_73	79	|turn|5
+L	ab_0_73	80	|
+L	ab_0_73	81	|t:|<NORMALIZED>
+L	ab_0_73	82	|move|p1a: Donphan|Rapid Spin|p2a: Blissey
+L	ab_0_73	83	|-damage|p2a: Blissey|612/651
+L	ab_0_73	84	|move|p2a: Blissey|Fire Blast|p1a: Donphan
+L	ab_0_73	85	|-damage|p1a: Donphan|0 fnt
+L	ab_0_73	86	|faint|p1a: Donphan
+L	ab_0_73	87	|
+L	ab_0_73	88	|t:|<NORMALIZED>
+L	ab_0_73	89	|switch|p1a: Milotic|Milotic, M|393/393
+L	ab_0_73	90	|
+L	ab_0_73	91	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	92	|-damage|p1a: Milotic|369/393|[from] Sandstorm
+L	ab_0_73	93	|-damage|p2a: Blissey|572/651|[from] Sandstorm
+L	ab_0_73	94	|-heal|p1a: Milotic|393/393|[from] item: Leftovers
+L	ab_0_73	95	|-heal|p2a: Blissey|612/651|[from] item: Leftovers
+L	ab_0_73	96	|upkeep
+L	ab_0_73	97	|turn|6
+L	ab_0_73	98	|
+L	ab_0_73	99	|t:|<NORMALIZED>
+L	ab_0_73	100	|move|p1a: Milotic|Toxic|p2a: Blissey
+L	ab_0_73	101	|-status|p2a: Blissey|tox
+L	ab_0_73	102	|move|p2a: Blissey|Toxic|p1a: Milotic
+L	ab_0_73	103	|-status|p1a: Milotic|tox
+L	ab_0_73	104	|
+L	ab_0_73	105	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	106	|-damage|p1a: Milotic|369/393 tox|[from] Sandstorm
+L	ab_0_73	107	|-damage|p2a: Blissey|572/651 tox|[from] Sandstorm
+L	ab_0_73	108	|-heal|p1a: Milotic|393/393 tox|[from] item: Leftovers
+L	ab_0_73	109	|-damage|p1a: Milotic|369/393 tox|[from] psn
+L	ab_0_73	110	|-heal|p2a: Blissey|612/651 tox|[from] item: Leftovers
+L	ab_0_73	111	|-damage|p2a: Blissey|572/651 tox|[from] psn
+L	ab_0_73	112	|upkeep
+L	ab_0_73	113	|turn|7
+L	ab_0_73	114	|
+L	ab_0_73	115	|t:|<NORMALIZED>
+L	ab_0_73	116	|move|p1a: Milotic|Toxic|p2a: Blissey
+L	ab_0_73	117	|-fail|p2a: Blissey|tox
+L	ab_0_73	118	|move|p2a: Blissey|Ice Beam|p1a: Milotic
+L	ab_0_73	119	|-resisted|p1a: Milotic
+L	ab_0_73	120	|-damage|p1a: Milotic|334/393 tox
+L	ab_0_73	121	|
+L	ab_0_73	122	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	123	|-damage|p1a: Milotic|310/393 tox|[from] Sandstorm
+L	ab_0_73	124	|-damage|p2a: Blissey|532/651 tox|[from] Sandstorm
+L	ab_0_73	125	|-heal|p1a: Milotic|334/393 tox|[from] item: Leftovers
+L	ab_0_73	126	|-damage|p1a: Milotic|286/393 tox|[from] psn
+L	ab_0_73	127	|-heal|p2a: Blissey|572/651 tox|[from] item: Leftovers
+L	ab_0_73	128	|-damage|p2a: Blissey|492/651 tox|[from] psn
+L	ab_0_73	129	|upkeep
+L	ab_0_73	130	|turn|8
+L	ab_0_73	131	|
+L	ab_0_73	132	|t:|<NORMALIZED>
+L	ab_0_73	133	|move|p1a: Milotic|Recover|p1a: Milotic
+L	ab_0_73	134	|-heal|p1a: Milotic|393/393 tox
+L	ab_0_73	135	|move|p2a: Blissey|Fire Blast|p1a: Milotic
+L	ab_0_73	136	|-resisted|p1a: Milotic
+L	ab_0_73	137	|-damage|p1a: Milotic|347/393 tox
+L	ab_0_73	138	|
+L	ab_0_73	139	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	140	|-damage|p1a: Milotic|323/393 tox|[from] Sandstorm
+L	ab_0_73	141	|-damage|p2a: Blissey|452/651 tox|[from] Sandstorm
+L	ab_0_73	142	|-heal|p1a: Milotic|347/393 tox|[from] item: Leftovers
+L	ab_0_73	143	|-damage|p1a: Milotic|275/393 tox|[from] psn
+L	ab_0_73	144	|-heal|p2a: Blissey|492/651 tox|[from] item: Leftovers
+L	ab_0_73	145	|-damage|p2a: Blissey|372/651 tox|[from] psn
+L	ab_0_73	146	|upkeep
+L	ab_0_73	147	|turn|9
+L	ab_0_73	148	|
+L	ab_0_73	149	|t:|<NORMALIZED>
+L	ab_0_73	150	|-curestatus|p2a: Blissey|tox|[from] ability: Natural Cure|[silent]
+L	ab_0_73	151	|switch|p2a: Swampert|Swampert, F|401/401
+L	ab_0_73	152	|move|p1a: Milotic|Recover|p1a: Milotic
+L	ab_0_73	153	|-heal|p1a: Milotic|393/393 tox
+L	ab_0_73	154	|
+L	ab_0_73	155	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	156	|-damage|p1a: Milotic|369/393 tox|[from] Sandstorm
+L	ab_0_73	157	|-heal|p1a: Milotic|393/393 tox|[from] item: Leftovers
+L	ab_0_73	158	|-damage|p1a: Milotic|297/393 tox|[from] psn
+L	ab_0_73	159	|upkeep
+L	ab_0_73	160	|turn|10
+L	ab_0_73	161	|
+L	ab_0_73	162	|t:|<NORMALIZED>
+L	ab_0_73	163	|move|p2a: Swampert|Protect|p2a: Swampert
+L	ab_0_73	164	|-singleturn|p2a: Swampert|Protect
+L	ab_0_73	165	|move|p1a: Milotic|Recover|p1a: Milotic
+L	ab_0_73	166	|-heal|p1a: Milotic|393/393 tox
+L	ab_0_73	167	|
+L	ab_0_73	168	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	169	|-damage|p1a: Milotic|369/393 tox|[from] Sandstorm
+L	ab_0_73	170	|-heal|p1a: Milotic|393/393 tox|[from] item: Leftovers
+L	ab_0_73	171	|-damage|p1a: Milotic|273/393 tox|[from] psn
+L	ab_0_73	172	|upkeep
+L	ab_0_73	173	|turn|11
+L	ab_0_73	174	|
+L	ab_0_73	175	|t:|<NORMALIZED>
+L	ab_0_73	176	|move|p1a: Milotic|Recover|p1a: Milotic
+L	ab_0_73	177	|-heal|p1a: Milotic|393/393 tox
+L	ab_0_73	178	|move|p2a: Swampert|Ice Beam|p1a: Milotic
+L	ab_0_73	179	|-resisted|p1a: Milotic
+L	ab_0_73	180	|-damage|p1a: Milotic|365/393 tox
+L	ab_0_73	181	|
+L	ab_0_73	182	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	183	|-damage|p1a: Milotic|341/393 tox|[from] Sandstorm
+L	ab_0_73	184	|-heal|p1a: Milotic|365/393 tox|[from] item: Leftovers
+L	ab_0_73	185	|-damage|p1a: Milotic|221/393 tox|[from] psn
+L	ab_0_73	186	|upkeep
+L	ab_0_73	187	|turn|12
+L	ab_0_73	188	|
+L	ab_0_73	189	|t:|<NORMALIZED>
+L	ab_0_73	190	|move|p1a: Milotic|Toxic|p2a: Swampert
+L	ab_0_73	191	|-status|p2a: Swampert|tox
+L	ab_0_73	192	|move|p2a: Swampert|Earthquake|p1a: Milotic
+L	ab_0_73	193	|-damage|p1a: Milotic|139/393 tox
+L	ab_0_73	194	|
+L	ab_0_73	195	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	196	|-damage|p1a: Milotic|115/393 tox|[from] Sandstorm
+L	ab_0_73	197	|-heal|p1a: Milotic|139/393 tox|[from] item: Leftovers
+L	ab_0_73	198	|-damage|p1a: Milotic|0 fnt|[from] psn
+L	ab_0_73	199	|faint|p1a: Milotic
+L	ab_0_73	200	|-damage|p2a: Swampert|376/401 tox|[from] psn
+L	ab_0_73	201	|upkeep
+L	ab_0_73	202	|
+L	ab_0_73	203	|t:|<NORMALIZED>
+L	ab_0_73	204	|switch|p1a: Magneton|Magneton|301/301
+L	ab_0_73	205	|turn|13
+L	ab_0_73	206	|
+L	ab_0_73	207	|t:|<NORMALIZED>
+L	ab_0_73	208	|move|p2a: Swampert|Protect|p2a: Swampert
+L	ab_0_73	209	|-singleturn|p2a: Swampert|Protect
+L	ab_0_73	210	|move|p1a: Magneton|Thunderbolt|p2a: Swampert
+L	ab_0_73	211	|-activate|p2a: Swampert|Protect
+L	ab_0_73	212	|
+L	ab_0_73	213	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	214	|-heal|p2a: Swampert|401/401 tox|[from] item: Leftovers
+L	ab_0_73	215	|-damage|p2a: Swampert|351/401 tox|[from] psn
+L	ab_0_73	216	|upkeep
+L	ab_0_73	217	|turn|14
+L	ab_0_73	218	|
+L	ab_0_73	219	|t:|<NORMALIZED>
+L	ab_0_73	220	|switch|p2a: Skarmory|Skarmory, F|297/334
+L	ab_0_73	221	|move|p1a: Magneton|Thunderbolt|p2a: Skarmory
+L	ab_0_73	222	|-supereffective|p2a: Skarmory
+L	ab_0_73	223	|-damage|p2a: Skarmory|0 fnt
+L	ab_0_73	224	|faint|p2a: Skarmory
+L	ab_0_73	225	|
+L	ab_0_73	226	|t:|<NORMALIZED>
+L	ab_0_73	227	|switch|p2a: Gengar|Gengar, F|303/303
+L	ab_0_73	228	|
+L	ab_0_73	229	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	230	|-damage|p2a: Gengar|285/303|[from] Sandstorm
+L	ab_0_73	231	|-heal|p2a: Gengar|303/303|[from] item: Leftovers
+L	ab_0_73	232	|upkeep
+L	ab_0_73	233	|turn|15
+L	ab_0_73	234	|
+L	ab_0_73	235	|t:|<NORMALIZED>
+L	ab_0_73	236	|switch|p2a: Starmie|Starmie|262/262
+L	ab_0_73	237	|move|p1a: Magneton|Hidden Power|p2a: Starmie
+L	ab_0_73	238	|-resisted|p2a: Starmie
+L	ab_0_73	239	|-damage|p2a: Starmie|213/262
+L	ab_0_73	240	|
+L	ab_0_73	241	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	242	|-damage|p2a: Starmie|197/262|[from] Sandstorm
+L	ab_0_73	243	|-heal|p2a: Starmie|213/262|[from] item: Leftovers
+L	ab_0_73	244	|upkeep
+L	ab_0_73	245	|turn|16
+L	ab_0_73	246	|
+L	ab_0_73	247	|t:|<NORMALIZED>
+L	ab_0_73	248	|move|p2a: Starmie|Rapid Spin|p1a: Magneton
+L	ab_0_73	249	|-resisted|p1a: Magneton
+L	ab_0_73	250	|-damage|p1a: Magneton|296/301
+L	ab_0_73	251	|move|p1a: Magneton|Toxic|p2a: Starmie
+L	ab_0_73	252	|-status|p2a: Starmie|tox
+L	ab_0_73	253	|
+L	ab_0_73	254	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	255	|-damage|p2a: Starmie|197/262 tox|[from] Sandstorm
+L	ab_0_73	256	|-heal|p2a: Starmie|213/262 tox|[from] item: Leftovers
+L	ab_0_73	257	|-damage|p2a: Starmie|197/262 tox|[from] psn
+L	ab_0_73	258	|-heal|p1a: Magneton|301/301|[from] item: Leftovers
+L	ab_0_73	259	|upkeep
+L	ab_0_73	260	|turn|17
+L	ab_0_73	261	|
+L	ab_0_73	262	|t:|<NORMALIZED>
+L	ab_0_73	263	|move|p2a: Starmie|Ice Beam|p1a: Magneton
+L	ab_0_73	264	|-resisted|p1a: Magneton
+L	ab_0_73	265	|-damage|p1a: Magneton|240/301
+L	ab_0_73	266	|move|p1a: Magneton|Toxic|p2a: Starmie
+L	ab_0_73	267	|-fail|p2a: Starmie|tox
+L	ab_0_73	268	|
+L	ab_0_73	269	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	270	|-damage|p2a: Starmie|181/262 tox|[from] Sandstorm
+L	ab_0_73	271	|-heal|p2a: Starmie|197/262 tox|[from] item: Leftovers
+L	ab_0_73	272	|-damage|p2a: Starmie|165/262 tox|[from] psn
+L	ab_0_73	273	|-heal|p1a: Magneton|258/301|[from] item: Leftovers
+L	ab_0_73	274	|upkeep
+L	ab_0_73	275	|turn|18
+L	ab_0_73	276	|
+L	ab_0_73	277	|t:|<NORMALIZED>
+L	ab_0_73	278	|move|p2a: Starmie|Ice Beam|p1a: Magneton
+L	ab_0_73	279	|-resisted|p1a: Magneton
+L	ab_0_73	280	|-damage|p1a: Magneton|194/301
+L	ab_0_73	281	|move|p1a: Magneton|Hidden Power|p2a: Starmie
+L	ab_0_73	282	|-resisted|p2a: Starmie
+L	ab_0_73	283	|-damage|p2a: Starmie|121/262 tox
+L	ab_0_73	284	|
+L	ab_0_73	285	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	286	|-damage|p2a: Starmie|105/262 tox|[from] Sandstorm
+L	ab_0_73	287	|-heal|p2a: Starmie|121/262 tox|[from] item: Leftovers
+L	ab_0_73	288	|-damage|p2a: Starmie|73/262 tox|[from] psn
+L	ab_0_73	289	|-heal|p1a: Magneton|212/301|[from] item: Leftovers
+L	ab_0_73	290	|upkeep
+L	ab_0_73	291	|turn|19
+L	ab_0_73	292	|
+L	ab_0_73	293	|t:|<NORMALIZED>
+L	ab_0_73	294	|switch|p1a: Skarmory|Skarmory, M|334/334
+L	ab_0_73	295	|move|p2a: Starmie|Hydro Pump|p1a: Skarmory
+L	ab_0_73	296	|-damage|p1a: Skarmory|173/334
+L	ab_0_73	297	|
+L	ab_0_73	298	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	299	|-damage|p2a: Starmie|57/262 tox|[from] Sandstorm
+L	ab_0_73	300	|-heal|p2a: Starmie|73/262 tox|[from] item: Leftovers
+L	ab_0_73	301	|-damage|p2a: Starmie|9/262 tox|[from] psn
+L	ab_0_73	302	|-heal|p1a: Skarmory|193/334|[from] item: Leftovers
+L	ab_0_73	303	|upkeep
+L	ab_0_73	304	|turn|20
+L	ab_0_73	305	|
+L	ab_0_73	306	|t:|<NORMALIZED>
+L	ab_0_73	307	|move|p2a: Starmie|Ice Beam|p1a: Skarmory
+L	ab_0_73	308	|-damage|p1a: Skarmory|100/334
+L	ab_0_73	309	|move|p1a: Skarmory|Spikes|p2a: Starmie
+L	ab_0_73	310	|-sidestart|p2: P2|Spikes
+L	ab_0_73	311	|
+L	ab_0_73	312	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	313	|-damage|p2a: Starmie|0 fnt|[from] Sandstorm
+L	ab_0_73	314	|faint|p2a: Starmie
+L	ab_0_73	315	|-heal|p1a: Skarmory|120/334|[from] item: Leftovers
+L	ab_0_73	316	|upkeep
+L	ab_0_73	317	|
+L	ab_0_73	318	|t:|<NORMALIZED>
+L	ab_0_73	319	|switch|p2a: Gengar|Gengar, F|303/303
+L	ab_0_73	320	|turn|21
+L	ab_0_73	321	|
+L	ab_0_73	322	|t:|<NORMALIZED>
+L	ab_0_73	323	|move|p2a: Gengar|Will-O-Wisp|p1a: Skarmory
+L	ab_0_73	324	|-status|p1a: Skarmory|brn
+L	ab_0_73	325	|move|p1a: Skarmory|Roar|p2a: Gengar
+L	ab_0_73	326	|drag|p2a: Tyranitar|Tyranitar, F|403/403
+L	ab_0_73	327	|-damage|p2a: Tyranitar|353/403|[from] Spikes
+L	ab_0_73	328	|
+L	ab_0_73	329	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	330	|-heal|p1a: Skarmory|140/334 brn|[from] item: Leftovers
+L	ab_0_73	331	|-damage|p1a: Skarmory|99/334 brn|[from] brn
+L	ab_0_73	332	|-heal|p2a: Tyranitar|378/403|[from] item: Leftovers
+L	ab_0_73	333	|upkeep
+L	ab_0_73	334	|turn|22
+L	ab_0_73	335	|
+L	ab_0_73	336	|t:|<NORMALIZED>
+L	ab_0_73	337	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_0_73	338	|move|p2a: Tyranitar|Focus Punch|p1a: Skarmory
+L	ab_0_73	339	|-damage|p1a: Skarmory|0 fnt
+L	ab_0_73	340	|faint|p1a: Skarmory
+L	ab_0_73	341	|
+L	ab_0_73	342	|t:|<NORMALIZED>
+L	ab_0_73	343	|switch|p1a: Celebi|Celebi|403/403
+L	ab_0_73	344	|
+L	ab_0_73	345	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	346	|-damage|p1a: Celebi|378/403|[from] Sandstorm
+L	ab_0_73	347	|-heal|p1a: Celebi|403/403|[from] item: Leftovers
+L	ab_0_73	348	|-heal|p2a: Tyranitar|403/403|[from] item: Leftovers
+L	ab_0_73	349	|upkeep
+L	ab_0_73	350	|turn|23
+L	ab_0_73	351	|
+L	ab_0_73	352	|t:|<NORMALIZED>
+L	ab_0_73	353	|move|p1a: Celebi|Leech Seed|p2a: Tyranitar
+L	ab_0_73	354	|-start|p2a: Tyranitar|move: Leech Seed
+L	ab_0_73	355	|move|p2a: Tyranitar|Earthquake|p1a: Celebi
+L	ab_0_73	356	|-resisted|p1a: Celebi
+L	ab_0_73	357	|-damage|p1a: Celebi|350/403
+L	ab_0_73	358	|
+L	ab_0_73	359	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	360	|-damage|p1a: Celebi|325/403|[from] Sandstorm
+L	ab_0_73	361	|-heal|p1a: Celebi|350/403|[from] item: Leftovers
+L	ab_0_73	362	|-damage|p2a: Tyranitar|353/403|[from] Leech Seed|[of] p1a: Celebi
+L	ab_0_73	363	|-heal|p1a: Celebi|400/403|[silent]
+L	ab_0_73	364	|upkeep
+L	ab_0_73	365	|turn|24
+L	ab_0_73	366	|
+L	ab_0_73	367	|t:|<NORMALIZED>
+L	ab_0_73	368	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_0_73	369	|move|p1a: Celebi|Perish Song|p1a: Celebi
+L	ab_0_73	370	|-start|p1a: Celebi|perish3|[silent]
+L	ab_0_73	371	|-start|p2a: Tyranitar|perish3|[silent]
+L	ab_0_73	372	|-fieldactivate|move: Perish Song
+L	ab_0_73	373	|move|p2a: Tyranitar|Focus Punch|p1a: Celebi
+L	ab_0_73	374	|-resisted|p1a: Celebi
+L	ab_0_73	375	|-damage|p1a: Celebi|320/403
+L	ab_0_73	376	|
+L	ab_0_73	377	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	378	|-damage|p1a: Celebi|295/403|[from] Sandstorm
+L	ab_0_73	379	|-heal|p1a: Celebi|320/403|[from] item: Leftovers
+L	ab_0_73	380	|-heal|p2a: Tyranitar|378/403|[from] item: Leftovers
+L	ab_0_73	381	|-damage|p2a: Tyranitar|328/403|[from] Leech Seed|[of] p1a: Celebi
+L	ab_0_73	382	|-heal|p1a: Celebi|370/403|[silent]
+L	ab_0_73	383	|-start|p1a: Celebi|perish3
+L	ab_0_73	384	|-start|p2a: Tyranitar|perish3
+L	ab_0_73	385	|upkeep
+L	ab_0_73	386	|turn|25
+L	ab_0_73	387	|
+L	ab_0_73	388	|t:|<NORMALIZED>
+L	ab_0_73	389	|switch|p2a: Blissey|Blissey, F, shiny|372/651
+L	ab_0_73	390	|-damage|p2a: Blissey|291/651|[from] Spikes
+L	ab_0_73	391	|move|p1a: Celebi|Leech Seed|p2a: Blissey
+L	ab_0_73	392	|-start|p2a: Blissey|move: Leech Seed
+L	ab_0_73	393	|
+L	ab_0_73	394	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	395	|-damage|p1a: Celebi|345/403|[from] Sandstorm
+L	ab_0_73	396	|-damage|p2a: Blissey|251/651|[from] Sandstorm
+L	ab_0_73	397	|-heal|p1a: Celebi|370/403|[from] item: Leftovers
+L	ab_0_73	398	|-heal|p2a: Blissey|291/651|[from] item: Leftovers
+L	ab_0_73	399	|-damage|p2a: Blissey|210/651|[from] Leech Seed|[of] p1a: Celebi
+L	ab_0_73	400	|-heal|p1a: Celebi|403/403|[silent]
+L	ab_0_73	401	|-start|p1a: Celebi|perish2
+L	ab_0_73	402	|upkeep
+L	ab_0_73	403	|turn|26
+L	ab_0_73	404	|
+L	ab_0_73	405	|t:|<NORMALIZED>
+L	ab_0_73	406	|move|p1a: Celebi|Hidden Power|p2a: Blissey
+L	ab_0_73	407	|-damage|p2a: Blissey|145/651
+L	ab_0_73	408	|move|p2a: Blissey|Ice Beam|p1a: Celebi
+L	ab_0_73	409	|-supereffective|p1a: Celebi
+L	ab_0_73	410	|-damage|p1a: Celebi|256/403
+L	ab_0_73	411	|
+L	ab_0_73	412	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	413	|-damage|p1a: Celebi|231/403|[from] Sandstorm
+L	ab_0_73	414	|-damage|p2a: Blissey|105/651|[from] Sandstorm
+L	ab_0_73	415	|-heal|p1a: Celebi|256/403|[from] item: Leftovers
+L	ab_0_73	416	|-heal|p2a: Blissey|145/651|[from] item: Leftovers
+L	ab_0_73	417	|-damage|p2a: Blissey|64/651|[from] Leech Seed|[of] p1a: Celebi
+L	ab_0_73	418	|-heal|p1a: Celebi|337/403|[silent]
+L	ab_0_73	419	|-start|p1a: Celebi|perish1
+L	ab_0_73	420	|upkeep
+L	ab_0_73	421	|turn|27
+L	ab_0_73	422	|
+L	ab_0_73	423	|t:|<NORMALIZED>
+L	ab_0_73	424	|move|p1a: Celebi|Hidden Power|p2a: Blissey
+L	ab_0_73	425	|-damage|p2a: Blissey|2/651
+L	ab_0_73	426	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_0_73	427	|-heal|p2a: Blissey|327/651
+L	ab_0_73	428	|
+L	ab_0_73	429	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	430	|-damage|p1a: Celebi|312/403|[from] Sandstorm
+L	ab_0_73	431	|-damage|p2a: Blissey|287/651|[from] Sandstorm
+L	ab_0_73	432	|-heal|p1a: Celebi|337/403|[from] item: Leftovers
+L	ab_0_73	433	|-heal|p2a: Blissey|327/651|[from] item: Leftovers
+L	ab_0_73	434	|-damage|p2a: Blissey|246/651|[from] Leech Seed|[of] p1a: Celebi
+L	ab_0_73	435	|-heal|p1a: Celebi|403/403|[silent]
+L	ab_0_73	436	|-start|p1a: Celebi|perish0
+L	ab_0_73	437	|upkeep
+L	ab_0_73	438	|faint|p1a: Celebi
+L	ab_0_73	439	|
+L	ab_0_73	440	|t:|<NORMALIZED>
+L	ab_0_73	441	|switch|p1a: Magneton|Magneton|212/301
+L	ab_0_73	442	|turn|28
+L	ab_0_73	443	|
+L	ab_0_73	444	|t:|<NORMALIZED>
+L	ab_0_73	445	|move|p1a: Magneton|Thunderbolt|p2a: Blissey
+L	ab_0_73	446	|-damage|p2a: Blissey|104/651
+L	ab_0_73	447	|move|p2a: Blissey|Ice Beam|p1a: Magneton
+L	ab_0_73	448	|-resisted|p1a: Magneton
+L	ab_0_73	449	|-damage|p1a: Magneton|154/301
+L	ab_0_73	450	|
+L	ab_0_73	451	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	452	|-damage|p2a: Blissey|64/651|[from] Sandstorm
+L	ab_0_73	453	|-heal|p1a: Magneton|172/301|[from] item: Leftovers
+L	ab_0_73	454	|-heal|p2a: Blissey|104/651|[from] item: Leftovers
+L	ab_0_73	455	|-damage|p2a: Blissey|23/651|[from] Leech Seed|[of] p1a: Magneton
+L	ab_0_73	456	|-heal|p1a: Magneton|253/301|[silent]
+L	ab_0_73	457	|upkeep
+L	ab_0_73	458	|turn|29
+L	ab_0_73	459	|
+L	ab_0_73	460	|t:|<NORMALIZED>
+L	ab_0_73	461	|move|p1a: Magneton|Toxic|p2a: Blissey
+L	ab_0_73	462	|-status|p2a: Blissey|tox
+L	ab_0_73	463	|move|p2a: Blissey|Ice Beam|p1a: Magneton
+L	ab_0_73	464	|-resisted|p1a: Magneton
+L	ab_0_73	465	|-damage|p1a: Magneton|201/301
+L	ab_0_73	466	|
+L	ab_0_73	467	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	468	|-damage|p2a: Blissey|0 fnt|[from] Sandstorm
+L	ab_0_73	469	|faint|p2a: Blissey
+L	ab_0_73	470	|-heal|p1a: Magneton|219/301|[from] item: Leftovers
+L	ab_0_73	471	|upkeep
+L	ab_0_73	472	|
+L	ab_0_73	473	|t:|<NORMALIZED>
+L	ab_0_73	474	|switch|p2a: Swampert|Swampert, F|351/401 tox
+L	ab_0_73	475	|-damage|p2a: Swampert|301/401 tox|[from] Spikes
+L	ab_0_73	476	|turn|30
+L	ab_0_73	477	|
+L	ab_0_73	478	|t:|<NORMALIZED>
+L	ab_0_73	479	|move|p1a: Magneton|Thunder Wave|p2a: Swampert
+L	ab_0_73	480	|-immune|p2a: Swampert
+L	ab_0_73	481	|move|p2a: Swampert|Ice Beam|p1a: Magneton
+L	ab_0_73	482	|-resisted|p1a: Magneton
+L	ab_0_73	483	|-damage|p1a: Magneton|172/301
+L	ab_0_73	484	|
+L	ab_0_73	485	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	486	|-heal|p1a: Magneton|190/301|[from] item: Leftovers
+L	ab_0_73	487	|-heal|p2a: Swampert|326/401 tox|[from] item: Leftovers
+L	ab_0_73	488	|-damage|p2a: Swampert|301/401 tox|[from] psn
+L	ab_0_73	489	|upkeep
+L	ab_0_73	490	|turn|31
+L	ab_0_73	491	|
+L	ab_0_73	492	|t:|<NORMALIZED>
+L	ab_0_73	493	|move|p1a: Magneton|Thunder Wave|p2a: Swampert
+L	ab_0_73	494	|-immune|p2a: Swampert
+L	ab_0_73	495	|move|p2a: Swampert|Ice Beam|p1a: Magneton
+L	ab_0_73	496	|-resisted|p1a: Magneton
+L	ab_0_73	497	|-crit|p1a: Magneton
+L	ab_0_73	498	|-damage|p1a: Magneton|106/301
+L	ab_0_73	499	|
+L	ab_0_73	500	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	501	|-heal|p1a: Magneton|124/301|[from] item: Leftovers
+L	ab_0_73	502	|-heal|p2a: Swampert|326/401 tox|[from] item: Leftovers
+L	ab_0_73	503	|-damage|p2a: Swampert|276/401 tox|[from] psn
+L	ab_0_73	504	|upkeep
+L	ab_0_73	505	|turn|32
+L	ab_0_73	506	|
+L	ab_0_73	507	|t:|<NORMALIZED>
+L	ab_0_73	508	|move|p1a: Magneton|Toxic|p2a: Swampert
+L	ab_0_73	509	|-fail|p2a: Swampert|tox
+L	ab_0_73	510	|move|p2a: Swampert|Earthquake|p1a: Magneton
+L	ab_0_73	511	|-supereffective|p1a: Magneton
+L	ab_0_73	512	|-damage|p1a: Magneton|0 fnt
+L	ab_0_73	513	|faint|p1a: Magneton
+L	ab_0_73	514	|
+L	ab_0_73	515	|t:|<NORMALIZED>
+L	ab_0_73	516	|switch|p1a: Tyranitar|Tyranitar, M|363/387 tox
+L	ab_0_73	517	|
+L	ab_0_73	518	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	519	|-heal|p1a: Tyranitar|387/387 tox|[from] item: Leftovers
+L	ab_0_73	520	|-damage|p1a: Tyranitar|363/387 tox|[from] psn
+L	ab_0_73	521	|-heal|p2a: Swampert|301/401 tox|[from] item: Leftovers
+L	ab_0_73	522	|-damage|p2a: Swampert|226/401 tox|[from] psn
+L	ab_0_73	523	|upkeep
+L	ab_0_73	524	|turn|33
+L	ab_0_73	525	|
+L	ab_0_73	526	|t:|<NORMALIZED>
+L	ab_0_73	527	|switch|p2a: Gengar|Gengar, F|303/303
+L	ab_0_73	528	|move|p1a: Tyranitar|Crunch|p2a: Gengar
+L	ab_0_73	529	|-supereffective|p2a: Gengar
+L	ab_0_73	530	|-damage|p2a: Gengar|56/303
+L	ab_0_73	531	|
+L	ab_0_73	532	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	533	|-damage|p2a: Gengar|38/303|[from] Sandstorm
+L	ab_0_73	534	|-heal|p2a: Gengar|56/303|[from] item: Leftovers
+L	ab_0_73	535	|-heal|p1a: Tyranitar|387/387 tox|[from] item: Leftovers
+L	ab_0_73	536	|-damage|p1a: Tyranitar|339/387 tox|[from] psn
+L	ab_0_73	537	|upkeep
+L	ab_0_73	538	|turn|34
+L	ab_0_73	539	|
+L	ab_0_73	540	|t:|<NORMALIZED>
+L	ab_0_73	541	|move|p2a: Gengar|Explosion|p1a: Tyranitar
+L	ab_0_73	542	|-resisted|p1a: Tyranitar
+L	ab_0_73	543	|-damage|p1a: Tyranitar|218/387 tox
+L	ab_0_73	544	|faint|p2a: Gengar
+L	ab_0_73	545	|
+L	ab_0_73	546	|t:|<NORMALIZED>
+L	ab_0_73	547	|switch|p2a: Tyranitar|Tyranitar, F|328/403
+L	ab_0_73	548	|-damage|p2a: Tyranitar|278/403|[from] Spikes
+L	ab_0_73	549	|
+L	ab_0_73	550	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	551	|-heal|p1a: Tyranitar|242/387 tox|[from] item: Leftovers
+L	ab_0_73	552	|-damage|p1a: Tyranitar|170/387 tox|[from] psn
+L	ab_0_73	553	|-heal|p2a: Tyranitar|303/403|[from] item: Leftovers
+L	ab_0_73	554	|upkeep
+L	ab_0_73	555	|turn|35
+L	ab_0_73	556	|
+L	ab_0_73	557	|t:|<NORMALIZED>
+L	ab_0_73	558	|switch|p2a: Swampert|Swampert, F|226/401 tox
+L	ab_0_73	559	|-damage|p2a: Swampert|176/401 tox|[from] Spikes
+L	ab_0_73	560	|move|p1a: Tyranitar|Crunch|p2a: Swampert
+L	ab_0_73	561	|-damage|p2a: Swampert|40/401 tox
+L	ab_0_73	562	|
+L	ab_0_73	563	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	564	|-heal|p1a: Tyranitar|194/387 tox|[from] item: Leftovers
+L	ab_0_73	565	|-damage|p1a: Tyranitar|98/387 tox|[from] psn
+L	ab_0_73	566	|-heal|p2a: Swampert|65/401 tox|[from] item: Leftovers
+L	ab_0_73	567	|-damage|p2a: Swampert|40/401 tox|[from] psn
+L	ab_0_73	568	|upkeep
+L	ab_0_73	569	|turn|36
+L	ab_0_73	570	|
+L	ab_0_73	571	|t:|<NORMALIZED>
+L	ab_0_73	572	|move|p1a: Tyranitar|Brick Break|p2a: Swampert
+L	ab_0_73	573	|-damage|p2a: Swampert|0 fnt
+L	ab_0_73	574	|faint|p2a: Swampert
+L	ab_0_73	575	|
+L	ab_0_73	576	|t:|<NORMALIZED>
+L	ab_0_73	577	|switch|p2a: Tyranitar|Tyranitar, F|303/403
+L	ab_0_73	578	|-damage|p2a: Tyranitar|253/403|[from] Spikes
+L	ab_0_73	579	|
+L	ab_0_73	580	|-weather|Sandstorm|[upkeep]
+L	ab_0_73	581	|-heal|p1a: Tyranitar|122/387 tox|[from] item: Leftovers
+L	ab_0_73	582	|-damage|p1a: Tyranitar|2/387 tox|[from] psn
+L	ab_0_73	583	|-heal|p2a: Tyranitar|278/403|[from] item: Leftovers
+L	ab_0_73	584	|upkeep
+L	ab_0_73	585	|turn|37
+L	ab_0_73	586	|
+L	ab_0_73	587	|t:|<NORMALIZED>
+L	ab_0_73	588	|move|p1a: Tyranitar|Brick Break|p2a: Tyranitar
+L	ab_0_73	589	|-supereffective|p2a: Tyranitar
+L	ab_0_73	590	|-damage|p2a: Tyranitar|14/403
+L	ab_0_73	591	|move|p2a: Tyranitar|Rock Slide|p1a: Tyranitar
+L	ab_0_73	592	|-crit|p1a: Tyranitar
+L	ab_0_73	593	|-damage|p1a: Tyranitar|0 fnt
+L	ab_0_73	594	|faint|p1a: Tyranitar
+L	ab_0_73	595	|
+L	ab_0_73	596	|win|P2

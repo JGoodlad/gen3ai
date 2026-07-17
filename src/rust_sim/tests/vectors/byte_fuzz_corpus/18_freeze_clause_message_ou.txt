@@ -1,0 +1,860 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777002 run_id=rmro8hjvp chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_10
+TEAM	ab_0_10	p1	Zapdos||Leftovers|Pressure|ThunderWave,Toxic,Thunderbolt,HiddenPowerIce|Modest|216,,,136,,156|N|,,,,,30|||,Ice,,,,]Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,252,,16|M||||]Metagross||Leftovers|ClearBody|Earthquake,ThunderPunch,HiddenPowerGrass,Explosion|Rash|168,,16,252,,72|N|,30,,30,,|||,Grass,,,,]Suicune||Leftovers|Pressure|Rest,CalmMind,Surf,IceBeam|Modest|252,,,228,,28|N|,0,,,,|||]Gengar||Leftovers|Levitate|WillOWisp,IcePunch,Thunderbolt,Explosion|Timid|,,,252,4,252|M||||]Dugtrio||ChoiceBand|ArenaTrap|Earthquake,HiddenPowerBug,AerialAce,RockSlide|Jolly|,252,4,,,252|M|,30,30,,30,|||,Bug,,,,
+TEAM	ab_0_10	p2	Suicune||Leftovers|Pressure|HydroPump,IceBeam,Roar,CalmMind|Modest|252,,,104,,152|N|,0,,,,|||]Moltres||Leftovers|Pressure|FireBlast,HiddenPowerGrass,WillOWisp,Agility|Modest|4,,,252,,252|N|,2,,30,,|||,Grass,,,,]Tyranitar||Leftovers|SandStream|BrickBreak,IceBeam,Pursuit,FireBlast|Quiet|184,12,,224,,88|M||||]Cloyster||Leftovers|ShellArmor|RapidSpin,IceBeam,Explosion,Spikes|Timid|72,,,,244,192|M||||]Metagross||ChoiceBand|ClearBody|MeteorMash,Earthquake,RockSlide,Explosion|Adamant|112,208,,,,188|N||||]Blissey||Leftovers|NaturalCure|SeismicToss,IceBeam,Toxic,SoftBoiled|Modest|,,252,232,,24|F|,0,,,,|||
+FMT	ab_0_10	gen3ou
+INIT	ab_0_10	14605,3009,55993,43733	3412841608
+DEC	ab_0_10	0	move	0	0	m1	s2	16602,520,21566,61086	Zapdos	375	375	0	-	0	0	0	0	0	0	6	Tyranitar	363	387	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_10	1	move	0	0	s3	s3	42898,2840,6399,20761	Suicune	404	404	0	-	0	0	0	0	0	0	6	Cloyster	259	259	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_10	2	move	0	0	m2	s1	2655,52012,37779,4690	Suicune	404	404	0	-	0	0	0	0	0	0	6	Moltres	0	322	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_10	3	switch	0	1	-	s5	57896,55466,1592,47901	Suicune	404	404	0	-	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_10	4	move	0	0	m0	m1	54776,50808,6235,51307	Suicune	367	404	0	frz	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_10	5	move	0	0	m3	m2	57414,56623,16599,58780	Suicune	367	404	0	frz	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_10	6	move	0	0	s4	m1	11916,2589,42523,29683	Gengar	159	261	0	-	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_10	7	move	0	0	m0	m1	62048,29346,35572,47448	Gengar	61	261	0	-	0	0	0	0	0	0	6	Blissey	570	651	0	brn	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_10	8	move	0	0	m1	m3	19502,17005,50578,32351	Gengar	61	261	0	-	0	0	0	0	0	0	6	Blissey	570	651	0	brn	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_10	9	move	0	0	m2	m1	17024,28617,58890,28519	Gengar	0	261	1	fnt	0	0	0	0	0	0	5	Blissey	489	651	0	brn	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_10	10	switch	1	0	s2	-	22291,47278,55219,45414	Metagross	343	343	0	-	0	0	0	0	0	0	5	Blissey	408	651	0	brn	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_10	11	move	0	0	m2	m1	32898,6901,62487,63689	Metagross	315	343	0	-	0	0	0	0	0	0	5	Blissey	265	651	0	brn	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_10	12	move	0	0	m1	m2	37211,54209,39599,1655	Metagross	336	343	0	-	0	0	0	0	0	0	5	Blissey	124	651	0	brn	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_10	13	move	0	0	m3	m0	55964,58326,52204,14072	Metagross	0	343	1	fnt	0	0	0	0	0	0	4	Blissey	0	651	1	fnt	0	0	0	0	0	0	4	p1	0	0	1	0	0
+DEC	ab_0_10	14	switch	1	1	s3	s3	49669,26973,65163,1691	Zapdos	375	375	0	-	0	0	0	0	0	0	4	Tyranitar	363	387	0	tox	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_10	15	move	0	0	m2	m3	8773,61340,9605,13202	Zapdos	237	375	0	-	0	0	0	0	0	0	4	Tyranitar	184	387	0	tox	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_10	16	move	0	0	m2	m1	17931,48900,39187,11578	Zapdos	31	375	0	-	0	0	0	0	0	0	4	Tyranitar	0	387	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_10	17	switch	0	1	-	s2	33183,28472,23681,32933	Zapdos	31	375	0	-	0	0	0	0	0	0	4	Suicune	404	404	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_10	18	move	0	0	m3	m3	13226,17828,56521,59881	Zapdos	31	375	0	-	0	0	0	0	0	0	4	Suicune	369	404	0	-	0	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_10	19	move	0	0	m0	s4	9633,30347,12288,47586	Zapdos	31	375	0	-	0	0	0	0	0	0	4	Metagross	329	329	0	par	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_10	20	move	0	0	m0	m2	28990,35016,5556,25752	Zapdos	0	375	1	fnt	0	0	0	0	0	0	3	Metagross	329	329	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_10	21	switch	1	0	s5	-	39561,62692,64079,42683	Dugtrio	211	211	0	-	0	0	0	0	0	0	3	Metagross	329	329	0	par	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_10	22	move	0	0	m2	m2	2241,36397,1432,6211	Dugtrio	95	211	0	-	0	0	0	0	0	0	3	Metagross	301	329	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_10	23	move	0	0	m2	m2	25218,38754,2759,15720	Dugtrio	0	211	1	fnt	0	0	0	0	0	0	2	Metagross	269	329	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_10	24	switch	1	0	s1	-	37750,15573,28278,32971	Swampert	401	401	0	-	0	0	0	0	0	0	2	Metagross	269	329	0	par	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_10	25	move	0	0	s4	m2	34292,42962,47862,21445	Suicune	367	404	0	frz	0	0	0	0	0	0	2	Metagross	269	329	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_10	26	move	0	0	s4	m2	44457,32376,8527,41903	Swampert	401	401	0	-	0	0	0	0	0	0	2	Metagross	269	329	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_10	27	move	0	0	m3	m2	14815,14217,33166,6353	Swampert	348	401	0	-	0	0	0	0	0	0	2	Metagross	216	329	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_10	28	move	0	0	m0	m2	34602,18915,8817,39198	Swampert	324	401	0	-	1	1	0	0	-1	0	2	Metagross	216	329	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_10	29	move	0	0	m1	m2	61969,36269,27082,50275	Swampert	324	401	0	-	1	1	0	0	-1	0	2	Metagross	0	329	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_10	30	switch	0	1	-	s4	15559,24188,25332,5330	Swampert	349	401	0	-	1	1	0	0	-1	0	2	Suicune	369	404	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_10	31	move	0	0	s4	s1	48936,49750,54101,14237	Suicune	367	404	0	frz	0	0	0	0	0	0	2	Cloyster	259	259	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_10	32	move	0	0	m1	s1	29734,1065,47904,40391	Suicune	367	404	0	frz	0	0	0	0	0	0	2	Suicune	369	404	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_10	33	move	0	0	m1	s1	47870,4469,27256,57697	Suicune	367	404	0	frz	0	0	0	0	0	0	2	Cloyster	259	259	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_10	34	move	0	0	m3	m0	54217,31311,63938,13340	Suicune	353	404	0	frz	0	0	0	0	0	0	2	Cloyster	259	259	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_10	35	move	0	0	m3	m1	60923,60835,15648,52002	Suicune	312	404	0	frz	0	0	0	0	0	0	2	Cloyster	259	259	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_10	36	move	0	0	m3	m1	10945,45665,5974,53208	Suicune	270	404	0	frz	0	0	0	0	0	0	2	Cloyster	259	259	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_10	37	move	0	0	m3	s1	3230,57165,50834,41674	Suicune	270	404	0	frz	0	0	0	0	0	0	2	Suicune	369	404	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_10	38	move	0	0	m1	m0	23452,24574,8654,24249	Suicune	198	404	0	frz	0	0	0	0	0	0	2	Suicune	369	404	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_10	39	move	0	0	m3	m2	37917,61354,6315,11965	Swampert	374	401	0	-	0	0	0	0	0	0	2	Suicune	369	404	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_10	40	move	0	0	s4	s1	11522,35142,23262,13396	Suicune	198	404	0	frz	0	0	0	0	0	0	2	Cloyster	259	259	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_10	41	move	0	0	s4	m2	20303,10316,37362,42625	Swampert	0	401	1	fnt	0	0	0	0	0	0	1	Cloyster	0	259	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_10	42	switch	1	1	s4	s1	31985,63510,27012,22696	Suicune	198	404	0	frz	0	0	0	0	0	0	1	Suicune	369	404	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_0_10	43	move	0	0	m2	m3	43282,1360,12459,8175	Suicune	198	404	0	-	0	0	0	0	0	0	1	Suicune	330	404	0	-	0	0	1	1	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_10	44	move	0	0	m2	m1	4139,37796,10227,41745	Suicune	142	404	0	-	0	0	0	0	0	0	1	Suicune	199	404	0	-	0	0	1	1	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_10	45	move	0	0	m2	m3	100,37954,65196,40341	Suicune	142	404	0	-	0	0	0	0	0	0	1	Suicune	166	404	0	-	0	0	2	2	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_10	46	move	0	0	m0	m1	45219,58951,287,46610	Suicune	404	404	0	slp	0	0	0	0	0	0	1	Suicune	166	404	0	-	0	0	2	2	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_10	47	move	0	0	m2	m2	61997,43152,22400,33780	Suicune	404	404	0	slp	0	0	0	0	0	0	1	Suicune	166	404	0	-	0	0	2	2	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_10	48	move	0	0	m2	m1	50849,5069,40686,10539	Suicune	335	404	0	slp	0	0	0	0	0	0	1	Suicune	166	404	0	-	0	0	2	2	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_10	49	move	0	0	m2	m1	19310,54894,62001,31923	Suicune	266	404	0	-	0	0	0	0	0	0	1	Suicune	136	404	0	-	0	0	2	2	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_10	50	move	0	0	m3	m1	11932,24469,12384,14517	Suicune	187	404	0	-	0	0	0	0	0	0	1	Suicune	116	404	0	frz	0	0	2	2	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_10	51	move	0	0	m3	m3	56893,34666,57103,26819	Suicune	187	404	0	-	0	0	0	0	0	0	1	Suicune	97	404	0	frz	0	0	2	2	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_10	52	move	0	0	m0	m3	54002,58994,49210,48167	Suicune	404	404	0	slp	0	0	0	0	0	0	1	Suicune	97	404	0	frz	0	0	2	2	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_10	53	move	0	0	m1	m3	50307,1300,12915,193	Suicune	404	404	0	slp	0	0	0	0	0	0	1	Suicune	97	404	0	frz	0	0	2	2	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_10	54	move	0	0	m3	m2	36345,18158,9428,33882	Suicune	404	404	0	slp	0	0	0	0	0	0	1	Suicune	97	404	0	-	0	0	2	2	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_10	55	move	0	0	m3	m2	56126,34919,57824,12496	Suicune	404	404	0	-	0	0	0	0	0	0	1	Suicune	77	404	0	-	0	0	2	2	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_10	56	move	0	0	m1	m3	46145,23718,11625,12499	Suicune	404	404	0	-	0	0	1	1	0	0	1	Suicune	77	404	0	-	0	0	3	3	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_10	57	move	0	0	m0	m2	16331,30196,28535,37517	Suicune	404	404	0	-	0	0	1	1	0	0	1	Suicune	77	404	0	-	0	0	3	3	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_10	58	move	0	0	m2	m2	44522,53055,22927,39096	Suicune	404	404	0	-	0	0	1	1	0	0	1	Suicune	38	404	0	-	0	0	3	3	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_10	59	move	0	0	m3	m3	37647,42807,37590,57036	Suicune	379	404	0	-	0	0	1	1	0	0	1	Suicune	0	404	1	-	0	0	0	0	0	0	0	p2	0	0	0	0	0
+END	ab_0_10	1	p1
+L	ab_0_10	0	|t:|<NORMALIZED>
+L	ab_0_10	1	|gametype|singles
+L	ab_0_10	2	|player|p1|P1||
+L	ab_0_10	3	|player|p2|P2||
+L	ab_0_10	4	|gen|3
+L	ab_0_10	5	|tier|[Gen 3] OU
+L	ab_0_10	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_10	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_0_10	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_0_10	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_0_10	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_0_10	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_0_10	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_0_10	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_0_10	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_0_10	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_0_10	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_0_10	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_0_10	18	|
+L	ab_0_10	19	|t:|<NORMALIZED>
+L	ab_0_10	20	|teamsize|p1|6
+L	ab_0_10	21	|teamsize|p2|6
+L	ab_0_10	22	|start
+L	ab_0_10	23	|switch|p1a: Zapdos|Zapdos|375/375
+L	ab_0_10	24	|switch|p2a: Suicune|Suicune|404/404
+L	ab_0_10	25	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_10	26	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_10	27	|turn|1
+L	ab_0_10	28	|
+L	ab_0_10	29	|t:|<NORMALIZED>
+L	ab_0_10	30	|switch|p2a: Tyranitar|Tyranitar, M|387/387
+L	ab_0_10	31	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_0_10	32	|move|p1a: Zapdos|Toxic|p2a: Tyranitar
+L	ab_0_10	33	|-status|p2a: Tyranitar|tox
+L	ab_0_10	34	|
+L	ab_0_10	35	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	36	|-damage|p1a: Zapdos|352/375|[from] Sandstorm
+L	ab_0_10	37	|-heal|p1a: Zapdos|375/375|[from] item: Leftovers
+L	ab_0_10	38	|-damage|p2a: Tyranitar|363/387 tox|[from] psn
+L	ab_0_10	39	|upkeep
+L	ab_0_10	40	|turn|2
+L	ab_0_10	41	|
+L	ab_0_10	42	|t:|<NORMALIZED>
+L	ab_0_10	43	|switch|p1a: Suicune|Suicune|404/404
+L	ab_0_10	44	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_10	45	|switch|p2a: Cloyster|Cloyster, M|259/259
+L	ab_0_10	46	|
+L	ab_0_10	47	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	48	|-damage|p2a: Cloyster|243/259|[from] Sandstorm
+L	ab_0_10	49	|-damage|p1a: Suicune|379/404|[from] Sandstorm
+L	ab_0_10	50	|-heal|p2a: Cloyster|259/259|[from] item: Leftovers
+L	ab_0_10	51	|-heal|p1a: Suicune|404/404|[from] item: Leftovers
+L	ab_0_10	52	|upkeep
+L	ab_0_10	53	|turn|3
+L	ab_0_10	54	|
+L	ab_0_10	55	|t:|<NORMALIZED>
+L	ab_0_10	56	|switch|p2a: Moltres|Moltres|322/322
+L	ab_0_10	57	|-ability|p2a: Moltres|Pressure|[silent]
+L	ab_0_10	58	|move|p1a: Suicune|Surf|p2a: Moltres
+L	ab_0_10	59	|-supereffective|p2a: Moltres
+L	ab_0_10	60	|-damage|p2a: Moltres|0 fnt
+L	ab_0_10	61	|faint|p2a: Moltres
+L	ab_0_10	62	|
+L	ab_0_10	63	|t:|<NORMALIZED>
+L	ab_0_10	64	|switch|p2a: Blissey|Blissey, F|651/651
+L	ab_0_10	65	|
+L	ab_0_10	66	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	67	|-damage|p1a: Suicune|379/404|[from] Sandstorm
+L	ab_0_10	68	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_0_10	69	|-heal|p1a: Suicune|404/404|[from] item: Leftovers
+L	ab_0_10	70	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_10	71	|upkeep
+L	ab_0_10	72	|turn|4
+L	ab_0_10	73	|
+L	ab_0_10	74	|t:|<NORMALIZED>
+L	ab_0_10	75	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_10	76	|-fail|p1a: Suicune|heal
+L	ab_0_10	77	|move|p2a: Blissey|Ice Beam|p1a: Suicune
+L	ab_0_10	78	|-resisted|p1a: Suicune
+L	ab_0_10	79	|-damage|p1a: Suicune|367/404
+L	ab_0_10	80	|-status|p1a: Suicune|frz
+L	ab_0_10	81	|
+L	ab_0_10	82	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	83	|-damage|p1a: Suicune|342/404 frz|[from] Sandstorm
+L	ab_0_10	84	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_0_10	85	|-heal|p1a: Suicune|367/404 frz|[from] item: Leftovers
+L	ab_0_10	86	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_10	87	|upkeep
+L	ab_0_10	88	|turn|5
+L	ab_0_10	89	|
+L	ab_0_10	90	|t:|<NORMALIZED>
+L	ab_0_10	91	|cant|p1a: Suicune|frz
+L	ab_0_10	92	|move|p2a: Blissey|Toxic||[still]
+L	ab_0_10	93	|-fail|p2a: Blissey
+L	ab_0_10	94	|
+L	ab_0_10	95	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	96	|-damage|p1a: Suicune|342/404 frz|[from] Sandstorm
+L	ab_0_10	97	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_0_10	98	|-heal|p1a: Suicune|367/404 frz|[from] item: Leftovers
+L	ab_0_10	99	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_10	100	|upkeep
+L	ab_0_10	101	|turn|6
+L	ab_0_10	102	|
+L	ab_0_10	103	|t:|<NORMALIZED>
+L	ab_0_10	104	|switch|p1a: Gengar|Gengar, M|261/261
+L	ab_0_10	105	|move|p2a: Blissey|Ice Beam|p1a: Gengar
+L	ab_0_10	106	|-damage|p1a: Gengar|159/261
+L	ab_0_10	107	|
+L	ab_0_10	108	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	109	|-damage|p1a: Gengar|143/261|[from] Sandstorm
+L	ab_0_10	110	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_0_10	111	|-heal|p1a: Gengar|159/261|[from] item: Leftovers
+L	ab_0_10	112	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_10	113	|upkeep
+L	ab_0_10	114	|turn|7
+L	ab_0_10	115	|
+L	ab_0_10	116	|t:|<NORMALIZED>
+L	ab_0_10	117	|move|p1a: Gengar|Will-O-Wisp|p2a: Blissey
+L	ab_0_10	118	|-status|p2a: Blissey|brn
+L	ab_0_10	119	|move|p2a: Blissey|Ice Beam|p1a: Gengar
+L	ab_0_10	120	|-damage|p1a: Gengar|61/261
+L	ab_0_10	121	|
+L	ab_0_10	122	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	123	|-damage|p1a: Gengar|45/261|[from] Sandstorm
+L	ab_0_10	124	|-damage|p2a: Blissey|611/651 brn|[from] Sandstorm
+L	ab_0_10	125	|-heal|p1a: Gengar|61/261|[from] item: Leftovers
+L	ab_0_10	126	|-heal|p2a: Blissey|651/651 brn|[from] item: Leftovers
+L	ab_0_10	127	|-damage|p2a: Blissey|570/651 brn|[from] brn
+L	ab_0_10	128	|upkeep
+L	ab_0_10	129	|turn|8
+L	ab_0_10	130	|
+L	ab_0_10	131	|t:|<NORMALIZED>
+L	ab_0_10	132	|move|p1a: Gengar|Ice Punch|p2a: Blissey
+L	ab_0_10	133	|-damage|p2a: Blissey|498/651 brn
+L	ab_0_10	134	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_0_10	135	|-heal|p2a: Blissey|651/651 brn
+L	ab_0_10	136	|
+L	ab_0_10	137	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	138	|-damage|p1a: Gengar|45/261|[from] Sandstorm
+L	ab_0_10	139	|-damage|p2a: Blissey|611/651 brn|[from] Sandstorm
+L	ab_0_10	140	|-heal|p1a: Gengar|61/261|[from] item: Leftovers
+L	ab_0_10	141	|-heal|p2a: Blissey|651/651 brn|[from] item: Leftovers
+L	ab_0_10	142	|-damage|p2a: Blissey|570/651 brn|[from] brn
+L	ab_0_10	143	|upkeep
+L	ab_0_10	144	|turn|9
+L	ab_0_10	145	|
+L	ab_0_10	146	|t:|<NORMALIZED>
+L	ab_0_10	147	|move|p1a: Gengar|Thunderbolt|p2a: Blissey
+L	ab_0_10	148	|-damage|p2a: Blissey|489/651 brn
+L	ab_0_10	149	|move|p2a: Blissey|Ice Beam|p1a: Gengar
+L	ab_0_10	150	|-crit|p1a: Gengar
+L	ab_0_10	151	|-damage|p1a: Gengar|0 fnt
+L	ab_0_10	152	|faint|p1a: Gengar
+L	ab_0_10	153	|
+L	ab_0_10	154	|t:|<NORMALIZED>
+L	ab_0_10	155	|switch|p1a: Metagross|Metagross|343/343
+L	ab_0_10	156	|
+L	ab_0_10	157	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	158	|-damage|p2a: Blissey|449/651 brn|[from] Sandstorm
+L	ab_0_10	159	|-heal|p2a: Blissey|489/651 brn|[from] item: Leftovers
+L	ab_0_10	160	|-damage|p2a: Blissey|408/651 brn|[from] brn
+L	ab_0_10	161	|upkeep
+L	ab_0_10	162	|turn|10
+L	ab_0_10	163	|
+L	ab_0_10	164	|t:|<NORMALIZED>
+L	ab_0_10	165	|move|p1a: Metagross|Hidden Power|p2a: Blissey
+L	ab_0_10	166	|-damage|p2a: Blissey|346/651 brn
+L	ab_0_10	167	|move|p2a: Blissey|Ice Beam|p1a: Metagross
+L	ab_0_10	168	|-resisted|p1a: Metagross
+L	ab_0_10	169	|-damage|p1a: Metagross|294/343
+L	ab_0_10	170	|-message|Freeze Clause activated.
+L	ab_0_10	171	|
+L	ab_0_10	172	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	173	|-damage|p2a: Blissey|306/651 brn|[from] Sandstorm
+L	ab_0_10	174	|-heal|p1a: Metagross|315/343|[from] item: Leftovers
+L	ab_0_10	175	|-heal|p2a: Blissey|346/651 brn|[from] item: Leftovers
+L	ab_0_10	176	|-damage|p2a: Blissey|265/651 brn|[from] brn
+L	ab_0_10	177	|upkeep
+L	ab_0_10	178	|turn|11
+L	ab_0_10	179	|
+L	ab_0_10	180	|t:|<NORMALIZED>
+L	ab_0_10	181	|move|p1a: Metagross|Thunder Punch|p2a: Blissey
+L	ab_0_10	182	|-damage|p2a: Blissey|205/651 brn
+L	ab_0_10	183	|move|p2a: Blissey|Toxic|p1a: Metagross
+L	ab_0_10	184	|-immune|p1a: Metagross
+L	ab_0_10	185	|
+L	ab_0_10	186	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	187	|-damage|p2a: Blissey|165/651 brn|[from] Sandstorm
+L	ab_0_10	188	|-heal|p1a: Metagross|336/343|[from] item: Leftovers
+L	ab_0_10	189	|-heal|p2a: Blissey|205/651 brn|[from] item: Leftovers
+L	ab_0_10	190	|-damage|p2a: Blissey|124/651 brn|[from] brn
+L	ab_0_10	191	|upkeep
+L	ab_0_10	192	|turn|12
+L	ab_0_10	193	|
+L	ab_0_10	194	|t:|<NORMALIZED>
+L	ab_0_10	195	|move|p1a: Metagross|Explosion|p2a: Blissey
+L	ab_0_10	196	|-damage|p2a: Blissey|0 fnt
+L	ab_0_10	197	|faint|p1a: Metagross
+L	ab_0_10	198	|faint|p2a: Blissey
+L	ab_0_10	199	|
+L	ab_0_10	200	|t:|<NORMALIZED>
+L	ab_0_10	201	|switch|p1a: Zapdos|Zapdos|375/375
+L	ab_0_10	202	|switch|p2a: Tyranitar|Tyranitar, M|363/387 tox
+L	ab_0_10	203	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_10	204	|
+L	ab_0_10	205	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	206	|-damage|p1a: Zapdos|352/375|[from] Sandstorm
+L	ab_0_10	207	|-heal|p1a: Zapdos|375/375|[from] item: Leftovers
+L	ab_0_10	208	|-heal|p2a: Tyranitar|387/387 tox|[from] item: Leftovers
+L	ab_0_10	209	|-damage|p2a: Tyranitar|363/387 tox|[from] psn
+L	ab_0_10	210	|upkeep
+L	ab_0_10	211	|turn|13
+L	ab_0_10	212	|
+L	ab_0_10	213	|t:|<NORMALIZED>
+L	ab_0_10	214	|move|p1a: Zapdos|Thunderbolt|p2a: Tyranitar
+L	ab_0_10	215	|-damage|p2a: Tyranitar|208/387 tox
+L	ab_0_10	216	|move|p2a: Tyranitar|Fire Blast|p1a: Zapdos
+L	ab_0_10	217	|-damage|p1a: Zapdos|237/375
+L	ab_0_10	218	|
+L	ab_0_10	219	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	220	|-damage|p1a: Zapdos|214/375|[from] Sandstorm
+L	ab_0_10	221	|-heal|p1a: Zapdos|237/375|[from] item: Leftovers
+L	ab_0_10	222	|-heal|p2a: Tyranitar|232/387 tox|[from] item: Leftovers
+L	ab_0_10	223	|-damage|p2a: Tyranitar|184/387 tox|[from] psn
+L	ab_0_10	224	|upkeep
+L	ab_0_10	225	|turn|14
+L	ab_0_10	226	|
+L	ab_0_10	227	|t:|<NORMALIZED>
+L	ab_0_10	228	|move|p1a: Zapdos|Thunderbolt|p2a: Tyranitar
+L	ab_0_10	229	|-damage|p2a: Tyranitar|27/387 tox
+L	ab_0_10	230	|move|p2a: Tyranitar|Ice Beam|p1a: Zapdos
+L	ab_0_10	231	|-supereffective|p1a: Zapdos
+L	ab_0_10	232	|-damage|p1a: Zapdos|31/375
+L	ab_0_10	233	|
+L	ab_0_10	234	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	235	|-damage|p1a: Zapdos|8/375|[from] Sandstorm
+L	ab_0_10	236	|-heal|p1a: Zapdos|31/375|[from] item: Leftovers
+L	ab_0_10	237	|-heal|p2a: Tyranitar|51/387 tox|[from] item: Leftovers
+L	ab_0_10	238	|-damage|p2a: Tyranitar|0 fnt|[from] psn
+L	ab_0_10	239	|faint|p2a: Tyranitar
+L	ab_0_10	240	|upkeep
+L	ab_0_10	241	|
+L	ab_0_10	242	|t:|<NORMALIZED>
+L	ab_0_10	243	|switch|p2a: Suicune|Suicune|404/404
+L	ab_0_10	244	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_10	245	|turn|15
+L	ab_0_10	246	|
+L	ab_0_10	247	|t:|<NORMALIZED>
+L	ab_0_10	248	|move|p1a: Zapdos|Hidden Power|p2a: Suicune
+L	ab_0_10	249	|-resisted|p2a: Suicune
+L	ab_0_10	250	|-damage|p2a: Suicune|369/404
+L	ab_0_10	251	|move|p2a: Suicune|Calm Mind|p2a: Suicune
+L	ab_0_10	252	|-boost|p2a: Suicune|spa|1
+L	ab_0_10	253	|-boost|p2a: Suicune|spd|1
+L	ab_0_10	254	|
+L	ab_0_10	255	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	256	|-damage|p1a: Zapdos|8/375|[from] Sandstorm
+L	ab_0_10	257	|-damage|p2a: Suicune|344/404|[from] Sandstorm
+L	ab_0_10	258	|-heal|p1a: Zapdos|31/375|[from] item: Leftovers
+L	ab_0_10	259	|-heal|p2a: Suicune|369/404|[from] item: Leftovers
+L	ab_0_10	260	|upkeep
+L	ab_0_10	261	|turn|16
+L	ab_0_10	262	|
+L	ab_0_10	263	|t:|<NORMALIZED>
+L	ab_0_10	264	|switch|p2a: Metagross|Metagross|329/329
+L	ab_0_10	265	|move|p1a: Zapdos|Thunder Wave|p2a: Metagross
+L	ab_0_10	266	|-status|p2a: Metagross|par
+L	ab_0_10	267	|
+L	ab_0_10	268	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	269	|-damage|p1a: Zapdos|8/375|[from] Sandstorm
+L	ab_0_10	270	|-heal|p1a: Zapdos|31/375|[from] item: Leftovers
+L	ab_0_10	271	|upkeep
+L	ab_0_10	272	|turn|17
+L	ab_0_10	273	|
+L	ab_0_10	274	|t:|<NORMALIZED>
+L	ab_0_10	275	|move|p1a: Zapdos|Thunder Wave|p2a: Metagross
+L	ab_0_10	276	|-fail|p2a: Metagross|par
+L	ab_0_10	277	|move|p2a: Metagross|Rock Slide|p1a: Zapdos
+L	ab_0_10	278	|-supereffective|p1a: Zapdos
+L	ab_0_10	279	|-damage|p1a: Zapdos|0 fnt
+L	ab_0_10	280	|faint|p1a: Zapdos
+L	ab_0_10	281	|
+L	ab_0_10	282	|t:|<NORMALIZED>
+L	ab_0_10	283	|switch|p1a: Dugtrio|Dugtrio, M|211/211
+L	ab_0_10	284	|
+L	ab_0_10	285	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	286	|upkeep
+L	ab_0_10	287	|turn|18
+L	ab_0_10	288	|
+L	ab_0_10	289	|t:|<NORMALIZED>
+L	ab_0_10	290	|move|p1a: Dugtrio|Aerial Ace|p2a: Metagross
+L	ab_0_10	291	|-resisted|p2a: Metagross
+L	ab_0_10	292	|-damage|p2a: Metagross|301/329 par
+L	ab_0_10	293	|move|p2a: Metagross|Rock Slide|p1a: Dugtrio
+L	ab_0_10	294	|-resisted|p1a: Dugtrio
+L	ab_0_10	295	|-damage|p1a: Dugtrio|95/211
+L	ab_0_10	296	|
+L	ab_0_10	297	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	298	|upkeep
+L	ab_0_10	299	|turn|19
+L	ab_0_10	300	|
+L	ab_0_10	301	|t:|<NORMALIZED>
+L	ab_0_10	302	|move|p1a: Dugtrio|Aerial Ace|p2a: Metagross
+L	ab_0_10	303	|-resisted|p2a: Metagross
+L	ab_0_10	304	|-damage|p2a: Metagross|269/329 par
+L	ab_0_10	305	|move|p2a: Metagross|Rock Slide|p1a: Dugtrio
+L	ab_0_10	306	|-resisted|p1a: Dugtrio
+L	ab_0_10	307	|-damage|p1a: Dugtrio|0 fnt
+L	ab_0_10	308	|faint|p1a: Dugtrio
+L	ab_0_10	309	|
+L	ab_0_10	310	|t:|<NORMALIZED>
+L	ab_0_10	311	|switch|p1a: Swampert|Swampert, M|401/401
+L	ab_0_10	312	|
+L	ab_0_10	313	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	314	|upkeep
+L	ab_0_10	315	|turn|20
+L	ab_0_10	316	|
+L	ab_0_10	317	|t:|<NORMALIZED>
+L	ab_0_10	318	|switch|p1a: Suicune|Suicune|367/404 frz
+L	ab_0_10	319	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_10	320	|cant|p2a: Metagross|par
+L	ab_0_10	321	|
+L	ab_0_10	322	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	323	|-damage|p1a: Suicune|342/404 frz|[from] Sandstorm
+L	ab_0_10	324	|-heal|p1a: Suicune|367/404 frz|[from] item: Leftovers
+L	ab_0_10	325	|upkeep
+L	ab_0_10	326	|turn|21
+L	ab_0_10	327	|
+L	ab_0_10	328	|t:|<NORMALIZED>
+L	ab_0_10	329	|switch|p1a: Swampert|Swampert, M|401/401
+L	ab_0_10	330	|cant|p2a: Metagross|par
+L	ab_0_10	331	|
+L	ab_0_10	332	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	333	|upkeep
+L	ab_0_10	334	|turn|22
+L	ab_0_10	335	|
+L	ab_0_10	336	|t:|<NORMALIZED>
+L	ab_0_10	337	|move|p1a: Swampert|Ice Beam|p2a: Metagross
+L	ab_0_10	338	|-resisted|p2a: Metagross
+L	ab_0_10	339	|-damage|p2a: Metagross|216/329 par
+L	ab_0_10	340	|move|p2a: Metagross|Rock Slide|p1a: Swampert
+L	ab_0_10	341	|-resisted|p1a: Swampert
+L	ab_0_10	342	|-damage|p1a: Swampert|323/401
+L	ab_0_10	343	|
+L	ab_0_10	344	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	345	|-heal|p1a: Swampert|348/401|[from] item: Leftovers
+L	ab_0_10	346	|upkeep
+L	ab_0_10	347	|turn|23
+L	ab_0_10	348	|
+L	ab_0_10	349	|t:|<NORMALIZED>
+L	ab_0_10	350	|move|p1a: Swampert|Curse|p1a: Swampert
+L	ab_0_10	351	|-unboost|p1a: Swampert|spe|1
+L	ab_0_10	352	|-boost|p1a: Swampert|atk|1
+L	ab_0_10	353	|-boost|p1a: Swampert|def|1
+L	ab_0_10	354	|move|p2a: Metagross|Rock Slide|p1a: Swampert
+L	ab_0_10	355	|-resisted|p1a: Swampert
+L	ab_0_10	356	|-damage|p1a: Swampert|299/401
+L	ab_0_10	357	|
+L	ab_0_10	358	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	359	|-heal|p1a: Swampert|324/401|[from] item: Leftovers
+L	ab_0_10	360	|upkeep
+L	ab_0_10	361	|turn|24
+L	ab_0_10	362	|
+L	ab_0_10	363	|t:|<NORMALIZED>
+L	ab_0_10	364	|move|p1a: Swampert|Earthquake|p2a: Metagross
+L	ab_0_10	365	|-supereffective|p2a: Metagross
+L	ab_0_10	366	|-damage|p2a: Metagross|0 fnt
+L	ab_0_10	367	|faint|p2a: Metagross
+L	ab_0_10	368	|
+L	ab_0_10	369	|t:|<NORMALIZED>
+L	ab_0_10	370	|switch|p2a: Suicune|Suicune|369/404
+L	ab_0_10	371	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_10	372	|
+L	ab_0_10	373	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	374	|-damage|p2a: Suicune|344/404|[from] Sandstorm
+L	ab_0_10	375	|-heal|p2a: Suicune|369/404|[from] item: Leftovers
+L	ab_0_10	376	|-heal|p1a: Swampert|349/401|[from] item: Leftovers
+L	ab_0_10	377	|upkeep
+L	ab_0_10	378	|turn|25
+L	ab_0_10	379	|
+L	ab_0_10	380	|t:|<NORMALIZED>
+L	ab_0_10	381	|switch|p2a: Cloyster|Cloyster, M|259/259
+L	ab_0_10	382	|switch|p1a: Suicune|Suicune|367/404 frz
+L	ab_0_10	383	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_10	384	|
+L	ab_0_10	385	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	386	|-damage|p2a: Cloyster|243/259|[from] Sandstorm
+L	ab_0_10	387	|-damage|p1a: Suicune|342/404 frz|[from] Sandstorm
+L	ab_0_10	388	|-heal|p2a: Cloyster|259/259|[from] item: Leftovers
+L	ab_0_10	389	|-heal|p1a: Suicune|367/404 frz|[from] item: Leftovers
+L	ab_0_10	390	|upkeep
+L	ab_0_10	391	|turn|26
+L	ab_0_10	392	|
+L	ab_0_10	393	|t:|<NORMALIZED>
+L	ab_0_10	394	|switch|p2a: Suicune|Suicune|369/404
+L	ab_0_10	395	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_10	396	|cant|p1a: Suicune|frz
+L	ab_0_10	397	|
+L	ab_0_10	398	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	399	|-damage|p2a: Suicune|344/404|[from] Sandstorm
+L	ab_0_10	400	|-damage|p1a: Suicune|342/404 frz|[from] Sandstorm
+L	ab_0_10	401	|-heal|p2a: Suicune|369/404|[from] item: Leftovers
+L	ab_0_10	402	|-heal|p1a: Suicune|367/404 frz|[from] item: Leftovers
+L	ab_0_10	403	|upkeep
+L	ab_0_10	404	|turn|27
+L	ab_0_10	405	|
+L	ab_0_10	406	|t:|<NORMALIZED>
+L	ab_0_10	407	|switch|p2a: Cloyster|Cloyster, M|259/259
+L	ab_0_10	408	|cant|p1a: Suicune|frz
+L	ab_0_10	409	|
+L	ab_0_10	410	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	411	|-damage|p2a: Cloyster|243/259|[from] Sandstorm
+L	ab_0_10	412	|-damage|p1a: Suicune|342/404 frz|[from] Sandstorm
+L	ab_0_10	413	|-heal|p2a: Cloyster|259/259|[from] item: Leftovers
+L	ab_0_10	414	|-heal|p1a: Suicune|367/404 frz|[from] item: Leftovers
+L	ab_0_10	415	|upkeep
+L	ab_0_10	416	|turn|28
+L	ab_0_10	417	|
+L	ab_0_10	418	|t:|<NORMALIZED>
+L	ab_0_10	419	|move|p2a: Cloyster|Rapid Spin|p1a: Suicune
+L	ab_0_10	420	|-damage|p1a: Suicune|353/404 frz
+L	ab_0_10	421	|cant|p1a: Suicune|frz
+L	ab_0_10	422	|
+L	ab_0_10	423	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	424	|-damage|p2a: Cloyster|243/259|[from] Sandstorm
+L	ab_0_10	425	|-damage|p1a: Suicune|328/404 frz|[from] Sandstorm
+L	ab_0_10	426	|-heal|p2a: Cloyster|259/259|[from] item: Leftovers
+L	ab_0_10	427	|-heal|p1a: Suicune|353/404 frz|[from] item: Leftovers
+L	ab_0_10	428	|upkeep
+L	ab_0_10	429	|turn|29
+L	ab_0_10	430	|
+L	ab_0_10	431	|t:|<NORMALIZED>
+L	ab_0_10	432	|move|p2a: Cloyster|Ice Beam|p1a: Suicune
+L	ab_0_10	433	|-resisted|p1a: Suicune
+L	ab_0_10	434	|-damage|p1a: Suicune|312/404 frz
+L	ab_0_10	435	|cant|p1a: Suicune|frz
+L	ab_0_10	436	|
+L	ab_0_10	437	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	438	|-damage|p2a: Cloyster|243/259|[from] Sandstorm
+L	ab_0_10	439	|-damage|p1a: Suicune|287/404 frz|[from] Sandstorm
+L	ab_0_10	440	|-heal|p2a: Cloyster|259/259|[from] item: Leftovers
+L	ab_0_10	441	|-heal|p1a: Suicune|312/404 frz|[from] item: Leftovers
+L	ab_0_10	442	|upkeep
+L	ab_0_10	443	|turn|30
+L	ab_0_10	444	|
+L	ab_0_10	445	|t:|<NORMALIZED>
+L	ab_0_10	446	|move|p2a: Cloyster|Ice Beam|p1a: Suicune
+L	ab_0_10	447	|-resisted|p1a: Suicune
+L	ab_0_10	448	|-damage|p1a: Suicune|270/404 frz
+L	ab_0_10	449	|cant|p1a: Suicune|frz
+L	ab_0_10	450	|
+L	ab_0_10	451	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	452	|-damage|p2a: Cloyster|243/259|[from] Sandstorm
+L	ab_0_10	453	|-damage|p1a: Suicune|245/404 frz|[from] Sandstorm
+L	ab_0_10	454	|-heal|p2a: Cloyster|259/259|[from] item: Leftovers
+L	ab_0_10	455	|-heal|p1a: Suicune|270/404 frz|[from] item: Leftovers
+L	ab_0_10	456	|upkeep
+L	ab_0_10	457	|turn|31
+L	ab_0_10	458	|
+L	ab_0_10	459	|t:|<NORMALIZED>
+L	ab_0_10	460	|switch|p2a: Suicune|Suicune|369/404
+L	ab_0_10	461	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_10	462	|cant|p1a: Suicune|frz
+L	ab_0_10	463	|
+L	ab_0_10	464	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	465	|-damage|p2a: Suicune|344/404|[from] Sandstorm
+L	ab_0_10	466	|-damage|p1a: Suicune|245/404 frz|[from] Sandstorm
+L	ab_0_10	467	|-heal|p2a: Suicune|369/404|[from] item: Leftovers
+L	ab_0_10	468	|-heal|p1a: Suicune|270/404 frz|[from] item: Leftovers
+L	ab_0_10	469	|upkeep
+L	ab_0_10	470	|turn|32
+L	ab_0_10	471	|
+L	ab_0_10	472	|t:|<NORMALIZED>
+L	ab_0_10	473	|move|p2a: Suicune|Hydro Pump|p1a: Suicune
+L	ab_0_10	474	|-resisted|p1a: Suicune
+L	ab_0_10	475	|-damage|p1a: Suicune|198/404 frz
+L	ab_0_10	476	|cant|p1a: Suicune|frz
+L	ab_0_10	477	|
+L	ab_0_10	478	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	479	|-damage|p2a: Suicune|344/404|[from] Sandstorm
+L	ab_0_10	480	|-damage|p1a: Suicune|173/404 frz|[from] Sandstorm
+L	ab_0_10	481	|-heal|p2a: Suicune|369/404|[from] item: Leftovers
+L	ab_0_10	482	|-heal|p1a: Suicune|198/404 frz|[from] item: Leftovers
+L	ab_0_10	483	|upkeep
+L	ab_0_10	484	|turn|33
+L	ab_0_10	485	|
+L	ab_0_10	486	|t:|<NORMALIZED>
+L	ab_0_10	487	|cant|p1a: Suicune|frz
+L	ab_0_10	488	|move|p2a: Suicune|Roar|p1a: Suicune
+L	ab_0_10	489	|drag|p1a: Swampert|Swampert, M|349/401
+L	ab_0_10	490	|
+L	ab_0_10	491	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	492	|-damage|p2a: Suicune|344/404|[from] Sandstorm
+L	ab_0_10	493	|-heal|p2a: Suicune|369/404|[from] item: Leftovers
+L	ab_0_10	494	|-heal|p1a: Swampert|374/401|[from] item: Leftovers
+L	ab_0_10	495	|upkeep
+L	ab_0_10	496	|turn|34
+L	ab_0_10	497	|
+L	ab_0_10	498	|t:|<NORMALIZED>
+L	ab_0_10	499	|switch|p2a: Cloyster|Cloyster, M|259/259
+L	ab_0_10	500	|switch|p1a: Suicune|Suicune|198/404 frz
+L	ab_0_10	501	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_10	502	|
+L	ab_0_10	503	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	504	|-damage|p2a: Cloyster|243/259|[from] Sandstorm
+L	ab_0_10	505	|-damage|p1a: Suicune|173/404 frz|[from] Sandstorm
+L	ab_0_10	506	|-heal|p2a: Cloyster|259/259|[from] item: Leftovers
+L	ab_0_10	507	|-heal|p1a: Suicune|198/404 frz|[from] item: Leftovers
+L	ab_0_10	508	|upkeep
+L	ab_0_10	509	|turn|35
+L	ab_0_10	510	|
+L	ab_0_10	511	|t:|<NORMALIZED>
+L	ab_0_10	512	|switch|p1a: Swampert|Swampert, M|374/401
+L	ab_0_10	513	|move|p2a: Cloyster|Explosion|p1a: Swampert
+L	ab_0_10	514	|-damage|p1a: Swampert|0 fnt
+L	ab_0_10	515	|faint|p2a: Cloyster
+L	ab_0_10	516	|faint|p1a: Swampert
+L	ab_0_10	517	|
+L	ab_0_10	518	|t:|<NORMALIZED>
+L	ab_0_10	519	|switch|p2a: Suicune|Suicune|369/404
+L	ab_0_10	520	|switch|p1a: Suicune|Suicune|198/404 frz
+L	ab_0_10	521	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_10	522	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_10	523	|
+L	ab_0_10	524	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	525	|-damage|p2a: Suicune|344/404|[from] Sandstorm
+L	ab_0_10	526	|-damage|p1a: Suicune|173/404 frz|[from] Sandstorm
+L	ab_0_10	527	|-heal|p2a: Suicune|369/404|[from] item: Leftovers
+L	ab_0_10	528	|-heal|p1a: Suicune|198/404 frz|[from] item: Leftovers
+L	ab_0_10	529	|upkeep
+L	ab_0_10	530	|turn|36
+L	ab_0_10	531	|
+L	ab_0_10	532	|t:|<NORMALIZED>
+L	ab_0_10	533	|move|p2a: Suicune|Calm Mind|p2a: Suicune
+L	ab_0_10	534	|-boost|p2a: Suicune|spa|1
+L	ab_0_10	535	|-boost|p2a: Suicune|spd|1
+L	ab_0_10	536	|-curestatus|p1a: Suicune|frz|[msg]
+L	ab_0_10	537	|move|p1a: Suicune|Surf|p2a: Suicune
+L	ab_0_10	538	|-resisted|p2a: Suicune
+L	ab_0_10	539	|-damage|p2a: Suicune|330/404
+L	ab_0_10	540	|
+L	ab_0_10	541	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	542	|-damage|p2a: Suicune|305/404|[from] Sandstorm
+L	ab_0_10	543	|-damage|p1a: Suicune|173/404|[from] Sandstorm
+L	ab_0_10	544	|-heal|p2a: Suicune|330/404|[from] item: Leftovers
+L	ab_0_10	545	|-heal|p1a: Suicune|198/404|[from] item: Leftovers
+L	ab_0_10	546	|upkeep
+L	ab_0_10	547	|turn|37
+L	ab_0_10	548	|
+L	ab_0_10	549	|t:|<NORMALIZED>
+L	ab_0_10	550	|move|p2a: Suicune|Ice Beam|p1a: Suicune
+L	ab_0_10	551	|-resisted|p1a: Suicune
+L	ab_0_10	552	|-damage|p1a: Suicune|142/404
+L	ab_0_10	553	|-status|p1a: Suicune|frz
+L	ab_0_10	554	|-curestatus|p1a: Suicune|frz|[msg]
+L	ab_0_10	555	|move|p1a: Suicune|Surf|p2a: Suicune
+L	ab_0_10	556	|-resisted|p2a: Suicune
+L	ab_0_10	557	|-crit|p2a: Suicune
+L	ab_0_10	558	|-damage|p2a: Suicune|199/404
+L	ab_0_10	559	|
+L	ab_0_10	560	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	561	|-damage|p2a: Suicune|174/404|[from] Sandstorm
+L	ab_0_10	562	|-damage|p1a: Suicune|117/404|[from] Sandstorm
+L	ab_0_10	563	|-heal|p2a: Suicune|199/404|[from] item: Leftovers
+L	ab_0_10	564	|-heal|p1a: Suicune|142/404|[from] item: Leftovers
+L	ab_0_10	565	|upkeep
+L	ab_0_10	566	|turn|38
+L	ab_0_10	567	|
+L	ab_0_10	568	|t:|<NORMALIZED>
+L	ab_0_10	569	|move|p2a: Suicune|Calm Mind|p2a: Suicune
+L	ab_0_10	570	|-boost|p2a: Suicune|spa|1
+L	ab_0_10	571	|-boost|p2a: Suicune|spd|1
+L	ab_0_10	572	|move|p1a: Suicune|Surf|p2a: Suicune
+L	ab_0_10	573	|-resisted|p2a: Suicune
+L	ab_0_10	574	|-damage|p2a: Suicune|166/404
+L	ab_0_10	575	|
+L	ab_0_10	576	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	577	|-damage|p2a: Suicune|141/404|[from] Sandstorm
+L	ab_0_10	578	|-damage|p1a: Suicune|117/404|[from] Sandstorm
+L	ab_0_10	579	|-heal|p2a: Suicune|166/404|[from] item: Leftovers
+L	ab_0_10	580	|-heal|p1a: Suicune|142/404|[from] item: Leftovers
+L	ab_0_10	581	|upkeep
+L	ab_0_10	582	|turn|39
+L	ab_0_10	583	|
+L	ab_0_10	584	|t:|<NORMALIZED>
+L	ab_0_10	585	|move|p2a: Suicune|Ice Beam|p1a: Suicune
+L	ab_0_10	586	|-resisted|p1a: Suicune
+L	ab_0_10	587	|-damage|p1a: Suicune|71/404
+L	ab_0_10	588	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_10	589	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_0_10	590	|-heal|p1a: Suicune|404/404 slp|[silent]
+L	ab_0_10	591	|
+L	ab_0_10	592	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	593	|-damage|p2a: Suicune|141/404|[from] Sandstorm
+L	ab_0_10	594	|-damage|p1a: Suicune|379/404 slp|[from] Sandstorm
+L	ab_0_10	595	|-heal|p2a: Suicune|166/404|[from] item: Leftovers
+L	ab_0_10	596	|-heal|p1a: Suicune|404/404 slp|[from] item: Leftovers
+L	ab_0_10	597	|upkeep
+L	ab_0_10	598	|turn|40
+L	ab_0_10	599	|
+L	ab_0_10	600	|t:|<NORMALIZED>
+L	ab_0_10	601	|cant|p1a: Suicune|slp
+L	ab_0_10	602	|move|p2a: Suicune|Roar||[still]
+L	ab_0_10	603	|-fail|p2a: Suicune
+L	ab_0_10	604	|
+L	ab_0_10	605	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	606	|-damage|p2a: Suicune|141/404|[from] Sandstorm
+L	ab_0_10	607	|-damage|p1a: Suicune|379/404 slp|[from] Sandstorm
+L	ab_0_10	608	|-heal|p2a: Suicune|166/404|[from] item: Leftovers
+L	ab_0_10	609	|-heal|p1a: Suicune|404/404 slp|[from] item: Leftovers
+L	ab_0_10	610	|upkeep
+L	ab_0_10	611	|turn|41
+L	ab_0_10	612	|
+L	ab_0_10	613	|t:|<NORMALIZED>
+L	ab_0_10	614	|move|p2a: Suicune|Ice Beam|p1a: Suicune
+L	ab_0_10	615	|-resisted|p1a: Suicune
+L	ab_0_10	616	|-damage|p1a: Suicune|335/404 slp
+L	ab_0_10	617	|cant|p1a: Suicune|slp
+L	ab_0_10	618	|
+L	ab_0_10	619	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	620	|-damage|p2a: Suicune|141/404|[from] Sandstorm
+L	ab_0_10	621	|-damage|p1a: Suicune|310/404 slp|[from] Sandstorm
+L	ab_0_10	622	|-heal|p2a: Suicune|166/404|[from] item: Leftovers
+L	ab_0_10	623	|-heal|p1a: Suicune|335/404 slp|[from] item: Leftovers
+L	ab_0_10	624	|upkeep
+L	ab_0_10	625	|turn|42
+L	ab_0_10	626	|
+L	ab_0_10	627	|t:|<NORMALIZED>
+L	ab_0_10	628	|move|p2a: Suicune|Ice Beam|p1a: Suicune
+L	ab_0_10	629	|-resisted|p1a: Suicune
+L	ab_0_10	630	|-damage|p1a: Suicune|266/404 slp
+L	ab_0_10	631	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_0_10	632	|move|p1a: Suicune|Surf|p2a: Suicune
+L	ab_0_10	633	|-resisted|p2a: Suicune
+L	ab_0_10	634	|-damage|p2a: Suicune|136/404
+L	ab_0_10	635	|
+L	ab_0_10	636	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	637	|-damage|p2a: Suicune|111/404|[from] Sandstorm
+L	ab_0_10	638	|-damage|p1a: Suicune|241/404|[from] Sandstorm
+L	ab_0_10	639	|-heal|p2a: Suicune|136/404|[from] item: Leftovers
+L	ab_0_10	640	|-heal|p1a: Suicune|266/404|[from] item: Leftovers
+L	ab_0_10	641	|upkeep
+L	ab_0_10	642	|turn|43
+L	ab_0_10	643	|
+L	ab_0_10	644	|t:|<NORMALIZED>
+L	ab_0_10	645	|move|p2a: Suicune|Ice Beam|p1a: Suicune
+L	ab_0_10	646	|-resisted|p1a: Suicune
+L	ab_0_10	647	|-damage|p1a: Suicune|187/404
+L	ab_0_10	648	|move|p1a: Suicune|Ice Beam|p2a: Suicune
+L	ab_0_10	649	|-resisted|p2a: Suicune
+L	ab_0_10	650	|-damage|p2a: Suicune|116/404
+L	ab_0_10	651	|-status|p2a: Suicune|frz
+L	ab_0_10	652	|
+L	ab_0_10	653	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	654	|-damage|p2a: Suicune|91/404 frz|[from] Sandstorm
+L	ab_0_10	655	|-damage|p1a: Suicune|162/404|[from] Sandstorm
+L	ab_0_10	656	|-heal|p2a: Suicune|116/404 frz|[from] item: Leftovers
+L	ab_0_10	657	|-heal|p1a: Suicune|187/404|[from] item: Leftovers
+L	ab_0_10	658	|upkeep
+L	ab_0_10	659	|turn|44
+L	ab_0_10	660	|
+L	ab_0_10	661	|t:|<NORMALIZED>
+L	ab_0_10	662	|cant|p2a: Suicune|frz
+L	ab_0_10	663	|move|p1a: Suicune|Ice Beam|p2a: Suicune
+L	ab_0_10	664	|-resisted|p2a: Suicune
+L	ab_0_10	665	|-damage|p2a: Suicune|97/404 frz
+L	ab_0_10	666	|
+L	ab_0_10	667	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	668	|-damage|p2a: Suicune|72/404 frz|[from] Sandstorm
+L	ab_0_10	669	|-damage|p1a: Suicune|162/404|[from] Sandstorm
+L	ab_0_10	670	|-heal|p2a: Suicune|97/404 frz|[from] item: Leftovers
+L	ab_0_10	671	|-heal|p1a: Suicune|187/404|[from] item: Leftovers
+L	ab_0_10	672	|upkeep
+L	ab_0_10	673	|turn|45
+L	ab_0_10	674	|
+L	ab_0_10	675	|t:|<NORMALIZED>
+L	ab_0_10	676	|cant|p2a: Suicune|frz
+L	ab_0_10	677	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_10	678	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_0_10	679	|-heal|p1a: Suicune|404/404 slp|[silent]
+L	ab_0_10	680	|
+L	ab_0_10	681	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	682	|-damage|p2a: Suicune|72/404 frz|[from] Sandstorm
+L	ab_0_10	683	|-damage|p1a: Suicune|379/404 slp|[from] Sandstorm
+L	ab_0_10	684	|-heal|p2a: Suicune|97/404 frz|[from] item: Leftovers
+L	ab_0_10	685	|-heal|p1a: Suicune|404/404 slp|[from] item: Leftovers
+L	ab_0_10	686	|upkeep
+L	ab_0_10	687	|turn|46
+L	ab_0_10	688	|
+L	ab_0_10	689	|t:|<NORMALIZED>
+L	ab_0_10	690	|cant|p2a: Suicune|frz
+L	ab_0_10	691	|cant|p1a: Suicune|slp
+L	ab_0_10	692	|
+L	ab_0_10	693	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	694	|-damage|p2a: Suicune|72/404 frz|[from] Sandstorm
+L	ab_0_10	695	|-damage|p1a: Suicune|379/404 slp|[from] Sandstorm
+L	ab_0_10	696	|-heal|p2a: Suicune|97/404 frz|[from] item: Leftovers
+L	ab_0_10	697	|-heal|p1a: Suicune|404/404 slp|[from] item: Leftovers
+L	ab_0_10	698	|upkeep
+L	ab_0_10	699	|turn|47
+L	ab_0_10	700	|
+L	ab_0_10	701	|t:|<NORMALIZED>
+L	ab_0_10	702	|cant|p1a: Suicune|slp
+L	ab_0_10	703	|-curestatus|p2a: Suicune|frz|[msg]
+L	ab_0_10	704	|move|p2a: Suicune|Roar||[still]
+L	ab_0_10	705	|-fail|p2a: Suicune
+L	ab_0_10	706	|
+L	ab_0_10	707	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	708	|-damage|p2a: Suicune|72/404|[from] Sandstorm
+L	ab_0_10	709	|-damage|p1a: Suicune|379/404 slp|[from] Sandstorm
+L	ab_0_10	710	|-heal|p2a: Suicune|97/404|[from] item: Leftovers
+L	ab_0_10	711	|-heal|p1a: Suicune|404/404 slp|[from] item: Leftovers
+L	ab_0_10	712	|upkeep
+L	ab_0_10	713	|turn|48
+L	ab_0_10	714	|
+L	ab_0_10	715	|t:|<NORMALIZED>
+L	ab_0_10	716	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_0_10	717	|move|p1a: Suicune|Ice Beam|p2a: Suicune
+L	ab_0_10	718	|-resisted|p2a: Suicune
+L	ab_0_10	719	|-damage|p2a: Suicune|77/404
+L	ab_0_10	720	|move|p2a: Suicune|Roar||[still]
+L	ab_0_10	721	|-fail|p2a: Suicune
+L	ab_0_10	722	|
+L	ab_0_10	723	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	724	|-damage|p2a: Suicune|52/404|[from] Sandstorm
+L	ab_0_10	725	|-damage|p1a: Suicune|379/404|[from] Sandstorm
+L	ab_0_10	726	|-heal|p2a: Suicune|77/404|[from] item: Leftovers
+L	ab_0_10	727	|-heal|p1a: Suicune|404/404|[from] item: Leftovers
+L	ab_0_10	728	|upkeep
+L	ab_0_10	729	|turn|49
+L	ab_0_10	730	|
+L	ab_0_10	731	|t:|<NORMALIZED>
+L	ab_0_10	732	|move|p2a: Suicune|Calm Mind|p2a: Suicune
+L	ab_0_10	733	|-boost|p2a: Suicune|spa|1
+L	ab_0_10	734	|-boost|p2a: Suicune|spd|1
+L	ab_0_10	735	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_0_10	736	|-boost|p1a: Suicune|spa|1
+L	ab_0_10	737	|-boost|p1a: Suicune|spd|1
+L	ab_0_10	738	|
+L	ab_0_10	739	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	740	|-damage|p2a: Suicune|52/404|[from] Sandstorm
+L	ab_0_10	741	|-damage|p1a: Suicune|379/404|[from] Sandstorm
+L	ab_0_10	742	|-heal|p2a: Suicune|77/404|[from] item: Leftovers
+L	ab_0_10	743	|-heal|p1a: Suicune|404/404|[from] item: Leftovers
+L	ab_0_10	744	|upkeep
+L	ab_0_10	745	|turn|50
+L	ab_0_10	746	|
+L	ab_0_10	747	|t:|<NORMALIZED>
+L	ab_0_10	748	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_10	749	|-fail|p1a: Suicune|heal
+L	ab_0_10	750	|move|p2a: Suicune|Roar||[still]
+L	ab_0_10	751	|-fail|p2a: Suicune
+L	ab_0_10	752	|
+L	ab_0_10	753	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	754	|-damage|p2a: Suicune|52/404|[from] Sandstorm
+L	ab_0_10	755	|-damage|p1a: Suicune|379/404|[from] Sandstorm
+L	ab_0_10	756	|-heal|p2a: Suicune|77/404|[from] item: Leftovers
+L	ab_0_10	757	|-heal|p1a: Suicune|404/404|[from] item: Leftovers
+L	ab_0_10	758	|upkeep
+L	ab_0_10	759	|turn|51
+L	ab_0_10	760	|
+L	ab_0_10	761	|t:|<NORMALIZED>
+L	ab_0_10	762	|move|p1a: Suicune|Surf|p2a: Suicune
+L	ab_0_10	763	|-resisted|p2a: Suicune
+L	ab_0_10	764	|-damage|p2a: Suicune|38/404
+L	ab_0_10	765	|move|p2a: Suicune|Roar||[still]
+L	ab_0_10	766	|-fail|p2a: Suicune
+L	ab_0_10	767	|
+L	ab_0_10	768	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	769	|-damage|p2a: Suicune|13/404|[from] Sandstorm
+L	ab_0_10	770	|-damage|p1a: Suicune|379/404|[from] Sandstorm
+L	ab_0_10	771	|-heal|p2a: Suicune|38/404|[from] item: Leftovers
+L	ab_0_10	772	|-heal|p1a: Suicune|404/404|[from] item: Leftovers
+L	ab_0_10	773	|upkeep
+L	ab_0_10	774	|turn|52
+L	ab_0_10	775	|
+L	ab_0_10	776	|t:|<NORMALIZED>
+L	ab_0_10	777	|move|p2a: Suicune|Calm Mind|p2a: Suicune
+L	ab_0_10	778	|-boost|p2a: Suicune|spa|1
+L	ab_0_10	779	|-boost|p2a: Suicune|spd|1
+L	ab_0_10	780	|move|p1a: Suicune|Ice Beam|p2a: Suicune
+L	ab_0_10	781	|-resisted|p2a: Suicune
+L	ab_0_10	782	|-damage|p2a: Suicune|16/404
+L	ab_0_10	783	|
+L	ab_0_10	784	|-weather|Sandstorm|[upkeep]
+L	ab_0_10	785	|-damage|p2a: Suicune|0 fnt|[from] Sandstorm
+L	ab_0_10	786	|-damage|p1a: Suicune|379/404|[from] Sandstorm
+L	ab_0_10	787	|faint|p2a: Suicune
+L	ab_0_10	788	|
+L	ab_0_10	789	|win|P1

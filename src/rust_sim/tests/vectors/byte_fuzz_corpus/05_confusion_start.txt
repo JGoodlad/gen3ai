@@ -1,0 +1,418 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_28
+TEAM	ab_0_28	p1	Zapdos||Leftovers|Pressure|ThunderWave,Toxic,Thunderbolt,HiddenPowerIce|Modest|216,,,136,,156|N|,,,,,30|||,Ice,,,,]Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,252,,16|M||||]Jirachi||Leftovers|SereneGrace|BodySlam,FirePunch,HiddenPowerGrass,DynamicPunch|Rash|,80,,252,,176|N|,30,,30,,|||,Grass,,,,]Gengar||Leftovers|Levitate|WillOWisp,IcePunch,Thunderbolt,Explosion|Timid|168,,,,164,176|M||||]Snorlax||Leftovers|Immunity|Return,Earthquake,ShadowBall,SelfDestruct|Adamant|32,176,112,,172,16|M||||]Salamence||Leftovers|Intimidate|DragonClaw,Flamethrower,HiddenPowerGrass,BrickBreak|Mild|24,,,244,64,176|M|,30,,30,,|||,Grass,,,,
+TEAM	ab_0_28	p2	Tyranitar||Leftovers|SandStream|DragonDance,Earthquake,RockSlide,DoubleEdge|Adamant|184,104,,,,220|M||||]Skarmory||Leftovers|KeenEye|Spikes,Taunt,DrillPeck,Roar|Careful|240,,,,240,28|M||||]Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,252,,16|M||||]Jirachi||Leftovers|SereneGrace|BodySlam,FirePunch,HiddenPowerGrass,DynamicPunch|Rash|112,,,220,,176|N|,30,,30,,|||,Grass,,,,]Jolteon||Leftovers|VoltAbsorb|Wish,Thunderbolt,HiddenPowerGrass,BatonPass|Timid|80,,,252,,176|M|,2,,30,,|||,Grass,,,,]Charizard||Leftovers|Blaze|DragonClaw,Flamethrower,HiddenPowerGrass,BeatUp|Modest|,,,252,4,252|M|,2,,30,,|||,Grass,,,,
+FMT	ab_0_28	gen3customgame
+INIT	ab_0_28	47773,59940,11887,22089	329083787
+DEC	ab_0_28	0	move	0	0	m2	m3	36029,55230,62635,31761	Zapdos	223	375	0	-	0	0	0	0	0	0	6	Tyranitar	184	387	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_28	1	move	0	0	m0	m0	61322,14593,34313,37994	Zapdos	223	375	0	-	0	0	0	0	0	0	6	Tyranitar	208	387	0	par	1	0	0	0	1	0	6	p1	0	0	0	0	0
+DEC	ab_0_28	2	move	0	0	m1	m1	44793,54097,40763,54110	Zapdos	223	375	0	-	0	0	0	0	0	0	6	Tyranitar	232	387	0	par	1	0	0	0	1	0	6	p1	0	0	0	0	0
+DEC	ab_0_28	3	move	0	0	m2	s4	33539,4803,42921,42336	Zapdos	223	375	0	-	0	0	0	0	0	0	6	Jolteon	291	291	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_28	4	move	0	0	m1	m0	56144,16408,44953,11026	Zapdos	223	375	0	-	0	0	0	0	0	0	6	Jolteon	273	291	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_28	5	move	0	0	m1	s3	23910,51628,45609,45300	Zapdos	223	375	0	-	0	0	0	0	0	0	6	Jirachi	369	369	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_28	6	move	0	0	m2	m1	63940,48226,17349,9999	Zapdos	131	375	0	-	0	0	0	0	0	0	6	Jirachi	202	369	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_28	7	move	0	0	m2	m3	60822,56366,44150,29207	Zapdos	56	375	0	-	0	0	0	0	0	4	6	Jirachi	225	369	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_28	8	move	0	0	m3	m0	52703,26476,26203,63547	Zapdos	0	375	1	fnt	0	0	0	0	0	0	5	Jirachi	225	369	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_28	9	switch	1	0	s5	-	27475,62399,8196,63993	Salamence	337	337	0	-	0	0	0	0	0	0	5	Jirachi	248	369	0	-	-1	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_28	10	move	0	0	s1	s3	41461,25806,17824,38397	Swampert	401	401	0	-	0	0	0	0	0	0	5	Jolteon	255	291	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_28	11	move	0	0	m2	m1	1866,48294,30714,4328	Swampert	401	401	0	-	0	0	0	0	0	0	5	Jolteon	40	291	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_28	12	move	0	0	m2	m2	13603,20432,39152,35141	Swampert	0	401	1	fnt	0	0	0	0	0	0	4	Jolteon	40	291	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_28	13	switch	1	0	s2	-	13603,20432,39152,35141	Jirachi	341	341	0	-	0	0	0	0	0	0	4	Jolteon	0	291	1	fnt	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_28	14	switch	0	1	-	s1	15877,26330,60773,46076	Jirachi	341	341	0	-	0	0	0	0	0	0	4	Skarmory	331	331	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_28	15	move	0	0	s3	m3	8972,64631,35658,43145	Snorlax	469	469	0	-	0	0	0	0	0	0	4	Skarmory	331	331	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_28	16	move	0	0	m3	m2	62380,31201,11171,42039	Snorlax	0	469	1	fnt	0	0	0	0	0	0	3	Skarmory	107	331	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_28	17	switch	1	0	s4	-	17272,30628,31768,55158	Gengar	303	303	0	-	0	0	0	0	0	0	3	Skarmory	127	331	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_28	18	move	0	0	m2	m0	13193,10315,5339,56746	Gengar	303	303	0	-	0	0	0	0	0	0	3	Skarmory	0	331	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_28	19	switch	0	1	-	s2	4881,10593,44075,3285	Gengar	303	303	0	-	0	0	0	0	0	0	3	Swampert	401	401	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_28	20	move	0	0	m2	s5	34370,50095,31918,2208	Gengar	303	303	0	-	0	0	0	0	0	0	3	Charizard	98	297	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_28	21	move	0	0	s1	m1	19563,5917,51860,26439	Salamence	211	337	0	-	0	0	0	0	0	0	3	Charizard	98	297	0	-	-1	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_28	22	move	0	0	m1	m0	9682,3216,61406,34440	Salamence	0	337	1	fnt	0	0	0	0	0	0	2	Charizard	98	297	0	-	-1	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_28	23	switch	1	0	s1	-	61015,57611,50856,31339	Gengar	303	303	0	-	0	0	0	0	0	0	2	Charizard	98	297	0	-	-1	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_28	24	move	0	0	s3	m1	49121,50320,38062,17231	Jirachi	0	341	1	fnt	0	0	0	0	0	0	1	Charizard	98	297	0	-	-1	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_28	25	switch	1	0	s3	-	613,62704,5653,29678	Gengar	303	303	0	-	0	0	0	0	0	0	1	Charizard	98	297	0	-	-1	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_28	26	move	0	0	m0	m2	19018,47918,9760,15021	Gengar	264	303	0	-	0	0	0	0	0	0	1	Charizard	98	297	0	-	-1	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_28	27	move	0	0	m0	m0	12404,55157,52854,856	Gengar	75	303	0	-	0	0	0	0	0	0	1	Charizard	98	297	0	-	-1	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_28	28	move	0	0	m1	m1	22511,4126,30084,16960	Gengar	0	303	1	-	0	0	0	0	0	0	0	Charizard	18	297	0	-	-1	0	0	0	0	0	4	p1	0	0	0	0	0
+END	ab_0_28	1	p2
+L	ab_0_28	0	|t:|<NORMALIZED>
+L	ab_0_28	1	|gametype|singles
+L	ab_0_28	2	|player|p1|P1||
+L	ab_0_28	3	|player|p2|P2||
+L	ab_0_28	4	|gen|3
+L	ab_0_28	5	|tier|[Gen 3] Custom Game
+L	ab_0_28	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_28	7	|
+L	ab_0_28	8	|t:|<NORMALIZED>
+L	ab_0_28	9	|teamsize|p1|6
+L	ab_0_28	10	|teamsize|p2|6
+L	ab_0_28	11	|start
+L	ab_0_28	12	|switch|p1a: Zapdos|Zapdos|375/375
+L	ab_0_28	13	|switch|p2a: Tyranitar|Tyranitar, M|387/387
+L	ab_0_28	14	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_28	15	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_0_28	16	|turn|1
+L	ab_0_28	17	|
+L	ab_0_28	18	|t:|<NORMALIZED>
+L	ab_0_28	19	|move|p1a: Zapdos|Thunderbolt|p2a: Tyranitar
+L	ab_0_28	20	|-damage|p2a: Tyranitar|210/387
+L	ab_0_28	21	|move|p2a: Tyranitar|Double-Edge|p1a: Zapdos
+L	ab_0_28	22	|-damage|p1a: Zapdos|223/375
+L	ab_0_28	23	|-damage|p2a: Tyranitar|160/387|[from] Recoil|[of] p1a: Zapdos
+L	ab_0_28	24	|
+L	ab_0_28	25	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	26	|-damage|p1a: Zapdos|200/375|[from] Sandstorm
+L	ab_0_28	27	|debug|natural status immunity
+L	ab_0_28	28	|debug|weather immunity
+L	ab_0_28	29	|-heal|p1a: Zapdos|223/375|[from] item: Leftovers
+L	ab_0_28	30	|-heal|p2a: Tyranitar|184/387|[from] item: Leftovers
+L	ab_0_28	31	|upkeep
+L	ab_0_28	32	|turn|2
+L	ab_0_28	33	|
+L	ab_0_28	34	|t:|<NORMALIZED>
+L	ab_0_28	35	|move|p1a: Zapdos|Thunder Wave|p2a: Tyranitar
+L	ab_0_28	36	|-status|p2a: Tyranitar|par
+L	ab_0_28	37	|move|p2a: Tyranitar|Dragon Dance|p2a: Tyranitar
+L	ab_0_28	38	|-boost|p2a: Tyranitar|atk|1
+L	ab_0_28	39	|-boost|p2a: Tyranitar|spe|1
+L	ab_0_28	40	|
+L	ab_0_28	41	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	42	|-damage|p1a: Zapdos|200/375|[from] Sandstorm
+L	ab_0_28	43	|debug|natural status immunity
+L	ab_0_28	44	|debug|weather immunity
+L	ab_0_28	45	|-heal|p1a: Zapdos|223/375|[from] item: Leftovers
+L	ab_0_28	46	|-heal|p2a: Tyranitar|208/387 par|[from] item: Leftovers
+L	ab_0_28	47	|upkeep
+L	ab_0_28	48	|turn|3
+L	ab_0_28	49	|
+L	ab_0_28	50	|t:|<NORMALIZED>
+L	ab_0_28	51	|move|p1a: Zapdos|Toxic||[still]
+L	ab_0_28	52	|-fail|p1a: Zapdos
+L	ab_0_28	53	|debug|move failed because it did nothing
+L	ab_0_28	54	|move|p2a: Tyranitar|Earthquake|p1a: Zapdos
+L	ab_0_28	55	|-immune|p1a: Zapdos
+L	ab_0_28	56	|
+L	ab_0_28	57	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	58	|-damage|p1a: Zapdos|200/375|[from] Sandstorm
+L	ab_0_28	59	|debug|natural status immunity
+L	ab_0_28	60	|debug|weather immunity
+L	ab_0_28	61	|-heal|p1a: Zapdos|223/375|[from] item: Leftovers
+L	ab_0_28	62	|-heal|p2a: Tyranitar|232/387 par|[from] item: Leftovers
+L	ab_0_28	63	|upkeep
+L	ab_0_28	64	|turn|4
+L	ab_0_28	65	|
+L	ab_0_28	66	|t:|<NORMALIZED>
+L	ab_0_28	67	|switch|p2a: Jolteon|Jolteon, M|291/291
+L	ab_0_28	68	|move|p1a: Zapdos|Thunderbolt|p2a: Jolteon
+L	ab_0_28	69	|-immune|p2a: Jolteon|[from] ability: Volt Absorb
+L	ab_0_28	70	|
+L	ab_0_28	71	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	72	|-damage|p2a: Jolteon|273/291|[from] Sandstorm
+L	ab_0_28	73	|-damage|p1a: Zapdos|200/375|[from] Sandstorm
+L	ab_0_28	74	|-heal|p2a: Jolteon|291/291|[from] item: Leftovers
+L	ab_0_28	75	|-heal|p1a: Zapdos|223/375|[from] item: Leftovers
+L	ab_0_28	76	|upkeep
+L	ab_0_28	77	|turn|5
+L	ab_0_28	78	|
+L	ab_0_28	79	|t:|<NORMALIZED>
+L	ab_0_28	80	|move|p2a: Jolteon|Wish|p2a: Jolteon
+L	ab_0_28	81	|move|p1a: Zapdos|Toxic|p2a: Jolteon
+L	ab_0_28	82	|-status|p2a: Jolteon|tox
+L	ab_0_28	83	|
+L	ab_0_28	84	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	85	|-damage|p2a: Jolteon|273/291 tox|[from] Sandstorm
+L	ab_0_28	86	|-damage|p1a: Zapdos|200/375|[from] Sandstorm
+L	ab_0_28	87	|-heal|p2a: Jolteon|291/291 tox|[from] item: Leftovers
+L	ab_0_28	88	|-damage|p2a: Jolteon|273/291 tox|[from] psn
+L	ab_0_28	89	|-heal|p1a: Zapdos|223/375|[from] item: Leftovers
+L	ab_0_28	90	|upkeep
+L	ab_0_28	91	|turn|6
+L	ab_0_28	92	|
+L	ab_0_28	93	|t:|<NORMALIZED>
+L	ab_0_28	94	|switch|p2a: Jirachi|Jirachi|369/369
+L	ab_0_28	95	|move|p1a: Zapdos|Toxic|p2a: Jirachi
+L	ab_0_28	96	|debug|natural status immunity
+L	ab_0_28	97	|debug|immune to status
+L	ab_0_28	98	|-immune|p2a: Jirachi
+L	ab_0_28	99	|debug|move failed because it did nothing
+L	ab_0_28	100	|
+L	ab_0_28	101	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	102	|debug|natural status immunity
+L	ab_0_28	103	|debug|weather immunity
+L	ab_0_28	104	|-damage|p1a: Zapdos|200/375|[from] Sandstorm
+L	ab_0_28	105	|-heal|p1a: Zapdos|223/375|[from] item: Leftovers
+L	ab_0_28	106	|upkeep
+L	ab_0_28	107	|turn|7
+L	ab_0_28	108	|
+L	ab_0_28	109	|t:|<NORMALIZED>
+L	ab_0_28	110	|debug|doubling secondary chance
+L	ab_0_28	111	|move|p2a: Jirachi|Fire Punch|p1a: Zapdos
+L	ab_0_28	112	|-damage|p1a: Zapdos|131/375
+L	ab_0_28	113	|move|p1a: Zapdos|Thunderbolt|p2a: Jirachi
+L	ab_0_28	114	|-damage|p2a: Jirachi|179/369
+L	ab_0_28	115	|
+L	ab_0_28	116	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	117	|debug|natural status immunity
+L	ab_0_28	118	|debug|weather immunity
+L	ab_0_28	119	|-damage|p1a: Zapdos|108/375|[from] Sandstorm
+L	ab_0_28	120	|-heal|p2a: Jirachi|202/369|[from] item: Leftovers
+L	ab_0_28	121	|-heal|p1a: Zapdos|131/375|[from] item: Leftovers
+L	ab_0_28	122	|upkeep
+L	ab_0_28	123	|turn|8
+L	ab_0_28	124	|
+L	ab_0_28	125	|t:|<NORMALIZED>
+L	ab_0_28	126	|debug|doubling secondary chance
+L	ab_0_28	127	|move|p2a: Jirachi|Dynamic Punch|p1a: Zapdos
+L	ab_0_28	128	|-resisted|p1a: Zapdos
+L	ab_0_28	129	|-damage|p1a: Zapdos|86/375
+L	ab_0_28	130	|-start|p1a: Zapdos|confusion
+L	ab_0_28	131	|-activate|p1a: Zapdos|confusion
+L	ab_0_28	132	|-damage|p1a: Zapdos|56/375|[from] confusion
+L	ab_0_28	133	|
+L	ab_0_28	134	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	135	|debug|natural status immunity
+L	ab_0_28	136	|debug|weather immunity
+L	ab_0_28	137	|-damage|p1a: Zapdos|33/375|[from] Sandstorm
+L	ab_0_28	138	|-heal|p2a: Jirachi|225/369|[from] item: Leftovers
+L	ab_0_28	139	|-heal|p1a: Zapdos|56/375|[from] item: Leftovers
+L	ab_0_28	140	|upkeep
+L	ab_0_28	141	|turn|9
+L	ab_0_28	142	|
+L	ab_0_28	143	|t:|<NORMALIZED>
+L	ab_0_28	144	|debug|doubling secondary chance
+L	ab_0_28	145	|move|p2a: Jirachi|Body Slam|p1a: Zapdos
+L	ab_0_28	146	|-damage|p1a: Zapdos|0 fnt
+L	ab_0_28	147	|faint|p1a: Zapdos
+L	ab_0_28	148	|
+L	ab_0_28	149	|t:|<NORMALIZED>
+L	ab_0_28	150	|switch|p1a: Salamence|Salamence, M|337/337
+L	ab_0_28	151	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_28	152	|-unboost|p2a: Jirachi|atk|1
+L	ab_0_28	153	|
+L	ab_0_28	154	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	155	|-damage|p1a: Salamence|316/337|[from] Sandstorm
+L	ab_0_28	156	|debug|natural status immunity
+L	ab_0_28	157	|debug|weather immunity
+L	ab_0_28	158	|-heal|p1a: Salamence|337/337|[from] item: Leftovers
+L	ab_0_28	159	|-heal|p2a: Jirachi|248/369|[from] item: Leftovers
+L	ab_0_28	160	|upkeep
+L	ab_0_28	161	|turn|10
+L	ab_0_28	162	|
+L	ab_0_28	163	|t:|<NORMALIZED>
+L	ab_0_28	164	|switch|p1a: Swampert|Swampert, M|401/401
+L	ab_0_28	165	|switch|p2a: Jolteon|Jolteon, M|273/291 tox
+L	ab_0_28	166	|
+L	ab_0_28	167	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	168	|-damage|p2a: Jolteon|255/291 tox|[from] Sandstorm
+L	ab_0_28	169	|debug|natural status immunity
+L	ab_0_28	170	|debug|weather immunity
+L	ab_0_28	171	|-heal|p2a: Jolteon|273/291 tox|[from] item: Leftovers
+L	ab_0_28	172	|-damage|p2a: Jolteon|255/291 tox|[from] psn
+L	ab_0_28	173	|upkeep
+L	ab_0_28	174	|turn|11
+L	ab_0_28	175	|
+L	ab_0_28	176	|t:|<NORMALIZED>
+L	ab_0_28	177	|move|p2a: Jolteon|Thunderbolt|p1a: Swampert
+L	ab_0_28	178	|-immune|p1a: Swampert
+L	ab_0_28	179	|move|p1a: Swampert|Hydro Pump|p2a: Jolteon
+L	ab_0_28	180	|-damage|p2a: Jolteon|76/291 tox
+L	ab_0_28	181	|
+L	ab_0_28	182	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	183	|-damage|p2a: Jolteon|58/291 tox|[from] Sandstorm
+L	ab_0_28	184	|debug|natural status immunity
+L	ab_0_28	185	|debug|weather immunity
+L	ab_0_28	186	|-heal|p2a: Jolteon|76/291 tox|[from] item: Leftovers
+L	ab_0_28	187	|-damage|p2a: Jolteon|40/291 tox|[from] psn
+L	ab_0_28	188	|upkeep
+L	ab_0_28	189	|turn|12
+L	ab_0_28	190	|
+L	ab_0_28	191	|t:|<NORMALIZED>
+L	ab_0_28	192	|move|p2a: Jolteon|Hidden Power|p1a: Swampert
+L	ab_0_28	193	|debug|BP: 70
+L	ab_0_28	194	|-supereffective|p1a: Swampert
+L	ab_0_28	195	|-crit|p1a: Swampert
+L	ab_0_28	196	|-damage|p1a: Swampert|0 fnt
+L	ab_0_28	197	|faint|p1a: Swampert
+L	ab_0_28	198	|
+L	ab_0_28	199	|t:|<NORMALIZED>
+L	ab_0_28	200	|switch|p1a: Jirachi|Jirachi|341/341
+L	ab_0_28	201	|
+L	ab_0_28	202	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	203	|-damage|p2a: Jolteon|22/291 tox|[from] Sandstorm
+L	ab_0_28	204	|debug|natural status immunity
+L	ab_0_28	205	|debug|weather immunity
+L	ab_0_28	206	|-heal|p2a: Jolteon|40/291 tox|[from] item: Leftovers
+L	ab_0_28	207	|-damage|p2a: Jolteon|0 fnt|[from] psn
+L	ab_0_28	208	|faint|p2a: Jolteon
+L	ab_0_28	209	|upkeep
+L	ab_0_28	210	|
+L	ab_0_28	211	|t:|<NORMALIZED>
+L	ab_0_28	212	|switch|p2a: Skarmory|Skarmory, M|331/331
+L	ab_0_28	213	|turn|13
+L	ab_0_28	214	|
+L	ab_0_28	215	|t:|<NORMALIZED>
+L	ab_0_28	216	|switch|p1a: Gengar|Gengar, M|303/303
+L	ab_0_28	217	|move|p2a: Skarmory|Roar|p1a: Gengar
+L	ab_0_28	218	|drag|p1a: Snorlax|Snorlax, M|469/469
+L	ab_0_28	219	|
+L	ab_0_28	220	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	221	|debug|natural status immunity
+L	ab_0_28	222	|debug|weather immunity
+L	ab_0_28	223	|-damage|p1a: Snorlax|440/469|[from] Sandstorm
+L	ab_0_28	224	|-heal|p1a: Snorlax|469/469|[from] item: Leftovers
+L	ab_0_28	225	|upkeep
+L	ab_0_28	226	|turn|14
+L	ab_0_28	227	|
+L	ab_0_28	228	|t:|<NORMALIZED>
+L	ab_0_28	229	|move|p2a: Skarmory|Drill Peck|p1a: Snorlax
+L	ab_0_28	230	|-damage|p1a: Snorlax|375/469
+L	ab_0_28	231	|move|p1a: Snorlax|Self-Destruct|p2a: Skarmory
+L	ab_0_28	232	|-resisted|p2a: Skarmory
+L	ab_0_28	233	|-damage|p2a: Skarmory|107/331
+L	ab_0_28	234	|faint|p1a: Snorlax
+L	ab_0_28	235	|
+L	ab_0_28	236	|t:|<NORMALIZED>
+L	ab_0_28	237	|switch|p1a: Gengar|Gengar, M|303/303
+L	ab_0_28	238	|
+L	ab_0_28	239	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	240	|-damage|p1a: Gengar|285/303|[from] Sandstorm
+L	ab_0_28	241	|debug|natural status immunity
+L	ab_0_28	242	|debug|weather immunity
+L	ab_0_28	243	|-heal|p1a: Gengar|303/303|[from] item: Leftovers
+L	ab_0_28	244	|-heal|p2a: Skarmory|127/331|[from] item: Leftovers
+L	ab_0_28	245	|upkeep
+L	ab_0_28	246	|turn|15
+L	ab_0_28	247	|
+L	ab_0_28	248	|t:|<NORMALIZED>
+L	ab_0_28	249	|move|p1a: Gengar|Thunderbolt|p2a: Skarmory
+L	ab_0_28	250	|-supereffective|p2a: Skarmory
+L	ab_0_28	251	|-damage|p2a: Skarmory|0 fnt
+L	ab_0_28	252	|faint|p2a: Skarmory
+L	ab_0_28	253	|
+L	ab_0_28	254	|t:|<NORMALIZED>
+L	ab_0_28	255	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_0_28	256	|
+L	ab_0_28	257	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	258	|-damage|p1a: Gengar|285/303|[from] Sandstorm
+L	ab_0_28	259	|debug|natural status immunity
+L	ab_0_28	260	|debug|weather immunity
+L	ab_0_28	261	|-heal|p1a: Gengar|303/303|[from] item: Leftovers
+L	ab_0_28	262	|upkeep
+L	ab_0_28	263	|turn|16
+L	ab_0_28	264	|
+L	ab_0_28	265	|t:|<NORMALIZED>
+L	ab_0_28	266	|switch|p2a: Charizard|Charizard, M|297/297
+L	ab_0_28	267	|move|p1a: Gengar|Thunderbolt|p2a: Charizard
+L	ab_0_28	268	|-supereffective|p2a: Charizard
+L	ab_0_28	269	|-damage|p2a: Charizard|98/297
+L	ab_0_28	270	|
+L	ab_0_28	271	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	272	|-damage|p1a: Gengar|285/303|[from] Sandstorm
+L	ab_0_28	273	|-damage|p2a: Charizard|80/297|[from] Sandstorm
+L	ab_0_28	274	|-heal|p1a: Gengar|303/303|[from] item: Leftovers
+L	ab_0_28	275	|-heal|p2a: Charizard|98/297|[from] item: Leftovers
+L	ab_0_28	276	|upkeep
+L	ab_0_28	277	|turn|17
+L	ab_0_28	278	|
+L	ab_0_28	279	|t:|<NORMALIZED>
+L	ab_0_28	280	|switch|p1a: Salamence|Salamence, M|337/337
+L	ab_0_28	281	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_28	282	|-unboost|p2a: Charizard|atk|1
+L	ab_0_28	283	|move|p2a: Charizard|Flamethrower|p1a: Salamence
+L	ab_0_28	284	|debug|Blaze boost
+L	ab_0_28	285	|-resisted|p1a: Salamence
+L	ab_0_28	286	|-damage|p1a: Salamence|211/337
+L	ab_0_28	287	|
+L	ab_0_28	288	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	289	|-damage|p2a: Charizard|80/297|[from] Sandstorm
+L	ab_0_28	290	|-damage|p1a: Salamence|190/337|[from] Sandstorm
+L	ab_0_28	291	|-heal|p2a: Charizard|98/297|[from] item: Leftovers
+L	ab_0_28	292	|-heal|p1a: Salamence|211/337|[from] item: Leftovers
+L	ab_0_28	293	|upkeep
+L	ab_0_28	294	|turn|18
+L	ab_0_28	295	|
+L	ab_0_28	296	|t:|<NORMALIZED>
+L	ab_0_28	297	|move|p2a: Charizard|Dragon Claw|p1a: Salamence
+L	ab_0_28	298	|-supereffective|p1a: Salamence
+L	ab_0_28	299	|-crit|p1a: Salamence
+L	ab_0_28	300	|-damage|p1a: Salamence|0 fnt
+L	ab_0_28	301	|faint|p1a: Salamence
+L	ab_0_28	302	|
+L	ab_0_28	303	|t:|<NORMALIZED>
+L	ab_0_28	304	|switch|p1a: Gengar|Gengar, M|303/303
+L	ab_0_28	305	|
+L	ab_0_28	306	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	307	|-damage|p1a: Gengar|285/303|[from] Sandstorm
+L	ab_0_28	308	|-damage|p2a: Charizard|80/297|[from] Sandstorm
+L	ab_0_28	309	|-heal|p1a: Gengar|303/303|[from] item: Leftovers
+L	ab_0_28	310	|-heal|p2a: Charizard|98/297|[from] item: Leftovers
+L	ab_0_28	311	|upkeep
+L	ab_0_28	312	|turn|19
+L	ab_0_28	313	|
+L	ab_0_28	314	|t:|<NORMALIZED>
+L	ab_0_28	315	|switch|p1a: Jirachi|Jirachi|341/341
+L	ab_0_28	316	|move|p2a: Charizard|Flamethrower|p1a: Jirachi
+L	ab_0_28	317	|debug|Blaze boost
+L	ab_0_28	318	|-supereffective|p1a: Jirachi
+L	ab_0_28	319	|-damage|p1a: Jirachi|0 fnt
+L	ab_0_28	320	|faint|p1a: Jirachi
+L	ab_0_28	321	|
+L	ab_0_28	322	|t:|<NORMALIZED>
+L	ab_0_28	323	|switch|p1a: Gengar|Gengar, M|303/303
+L	ab_0_28	324	|
+L	ab_0_28	325	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	326	|-damage|p1a: Gengar|285/303|[from] Sandstorm
+L	ab_0_28	327	|-damage|p2a: Charizard|80/297|[from] Sandstorm
+L	ab_0_28	328	|-heal|p1a: Gengar|303/303|[from] item: Leftovers
+L	ab_0_28	329	|-heal|p2a: Charizard|98/297|[from] item: Leftovers
+L	ab_0_28	330	|upkeep
+L	ab_0_28	331	|turn|20
+L	ab_0_28	332	|
+L	ab_0_28	333	|t:|<NORMALIZED>
+L	ab_0_28	334	|move|p1a: Gengar|Will-O-Wisp|p2a: Charizard
+L	ab_0_28	335	|debug|natural status immunity
+L	ab_0_28	336	|debug|immune to status
+L	ab_0_28	337	|-immune|p2a: Charizard
+L	ab_0_28	338	|debug|move failed because it did nothing
+L	ab_0_28	339	|move|p2a: Charizard|Hidden Power|p1a: Gengar
+L	ab_0_28	340	|debug|BP: 70
+L	ab_0_28	341	|-resisted|p1a: Gengar
+L	ab_0_28	342	|-damage|p1a: Gengar|264/303
+L	ab_0_28	343	|
+L	ab_0_28	344	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	345	|-damage|p1a: Gengar|246/303|[from] Sandstorm
+L	ab_0_28	346	|-damage|p2a: Charizard|80/297|[from] Sandstorm
+L	ab_0_28	347	|-heal|p1a: Gengar|264/303|[from] item: Leftovers
+L	ab_0_28	348	|-heal|p2a: Charizard|98/297|[from] item: Leftovers
+L	ab_0_28	349	|upkeep
+L	ab_0_28	350	|turn|21
+L	ab_0_28	351	|
+L	ab_0_28	352	|t:|<NORMALIZED>
+L	ab_0_28	353	|move|p1a: Gengar|Will-O-Wisp|p2a: Charizard
+L	ab_0_28	354	|debug|natural status immunity
+L	ab_0_28	355	|debug|immune to status
+L	ab_0_28	356	|-immune|p2a: Charizard
+L	ab_0_28	357	|debug|move failed because it did nothing
+L	ab_0_28	358	|move|p2a: Charizard|Dragon Claw|p1a: Gengar
+L	ab_0_28	359	|-crit|p1a: Gengar
+L	ab_0_28	360	|-damage|p1a: Gengar|75/303
+L	ab_0_28	361	|
+L	ab_0_28	362	|-weather|Sandstorm|[upkeep]
+L	ab_0_28	363	|-damage|p1a: Gengar|57/303|[from] Sandstorm
+L	ab_0_28	364	|-damage|p2a: Charizard|80/297|[from] Sandstorm
+L	ab_0_28	365	|-heal|p1a: Gengar|75/303|[from] item: Leftovers
+L	ab_0_28	366	|-heal|p2a: Charizard|98/297|[from] item: Leftovers
+L	ab_0_28	367	|upkeep
+L	ab_0_28	368	|turn|22
+L	ab_0_28	369	|
+L	ab_0_28	370	|t:|<NORMALIZED>
+L	ab_0_28	371	|move|p1a: Gengar|Ice Punch|p2a: Charizard
+L	ab_0_28	372	|-damage|p2a: Charizard|18/297
+L	ab_0_28	373	|move|p2a: Charizard|Flamethrower|p1a: Gengar
+L	ab_0_28	374	|debug|Blaze boost
+L	ab_0_28	375	|-damage|p1a: Gengar|0 fnt
+L	ab_0_28	376	|faint|p1a: Gengar
+L	ab_0_28	377	|
+L	ab_0_28	378	|win|P2

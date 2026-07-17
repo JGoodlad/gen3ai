@@ -15,6 +15,9 @@
 //! plus a trailing {"chunk_summary":{...}} line.
 //!
 //! First-divergence `kind` taxonomy (priority order within a decision):
+//!   protocol  — (--protocol / L-rows present) an emitted `|...|` byte-stream divergence,
+//!               reported ONLY after state/seed/winner all match — so a draw bug still
+//!               reports `seed` (the root cause), never `protocol` (`decision` = line index)
 //!   seed      — post-decision PRNG seed mismatch (a draw is mis-ordered/missing/extra)
 //!   request   — move-vs-forceSwitch boundary mismatch
 //!   species   — wrong active species (a wrong switch/drag target)
@@ -88,6 +91,52 @@ struct CaseExpect {
     decisions: Vec<DecExpect>,
     ended: bool,
     winner: WinTok,
+    /// The run format (`gen3customgame` default; `gen3ou` turns on the Sleep/Freeze-Clause
+    /// SetStatus handler-sort shuffle + the OU framing). From the golden's `FMT` row.
+    format: String,
+    /// The captured REAL OMNISCIENT `|...|` lines (verbatim, `|t:|` normalized) — the
+    /// byte-diff target (`gen3_omniscient_byte_fuzz_v1`). Empty on a state-only chunk.
+    lines: Vec<String>,
+}
+
+// ── Shared line filter (mirrors tests/protocol_test.rs verbatim + a DENYLIST) ────
+//
+// A DENYLIST (keep everything except `debug`/`error`, normalize `|t:|`) rather than
+// protocol_test.rs's batch-3-era ALLOWLIST — so the NEWLY-emitted batch-4c/5/6/snatch
+// line types (`-mustrecharge`/`-prepare`/`-anim`/`-sethp`/`-copyboost`/`-hitcount`/
+// `-singlemove`/`-setboost`/`-sideend`/`-cureteam`/…) are diffed AUTOMATICALLY instead of
+// silently dropped on BOTH sides (which an allowlist would do → a blind pass). The
+// `debug`/`error` drop + the `|t:|` normalization are the SAME two exclusions the
+// protocol_test.rs helpers apply; BOTH sides run through the identical filter so they
+// compare the same gated set.
+
+/// The "type" of a raw protocol line (`|X|…` → `X`; the bare `|` → `""`).
+fn line_type(raw: &str) -> &str {
+    raw.strip_prefix('|').map_or(raw, |rest| rest.split('|').next().unwrap_or(""))
+}
+
+/// Normalize a `|t:|<unixtime>` line to the golden placeholder (positional-assert, not
+/// value-assert — the timestamp is inherently non-reproducible by the engine).
+fn normalize(raw: &str) -> String {
+    if raw.starts_with("|t:|") {
+        "|t:|<NORMALIZED>".to_string()
+    } else {
+        raw.to_string()
+    }
+}
+
+/// Keep every line except the two poke-env-ignored free-form types (`debug`/`error`),
+/// normalizing `|t:|`. Applied identically to BOTH the golden's captured lines and the
+/// engine's emitted lines.
+fn filter_bytes(lines: &[String]) -> Vec<String> {
+    lines
+        .iter()
+        .filter(|l| {
+            let t = line_type(l);
+            t != "debug" && t != "error"
+        })
+        .map(|l| normalize(l))
+        .collect()
 }
 
 // ── Non-panicking TAB parser ─────────────────────────────────────────────────
@@ -141,6 +190,8 @@ fn parse_chunk(data: &str) -> Vec<Result<CaseExpect, (String, String)>> {
     let mut out: Vec<Result<CaseExpect, (String, String)>> = Vec::new();
     // id -> teams, filled by TEAM lines (which precede INIT for each battle).
     let mut teams: Vec<(String, [Option<String>; 2])> = Vec::new();
+    // id -> format, filled by the optional FMT row (protocol chunks only; before INIT).
+    let mut formats: Vec<(String, String)> = Vec::new();
     let mut cur: Option<CaseExpect> = None;
     let mut cur_broken: Option<(String, String)> = None; // (id, why)
 
@@ -173,13 +224,19 @@ fn parse_chunk(data: &str) -> Vec<Result<CaseExpect, (String, String)>> {
         // While the current battle is marked broken, skip its remaining lines
         // (a new SCEN/INIT flushes it).
         let record = f[0];
-        if cur_broken.is_some() && record != "SCEN" && record != "INIT" && record != "TEAM" {
+        if cur_broken.is_some() && record != "SCEN" && record != "INIT" && record != "TEAM" && record != "FMT" {
             continue;
         }
         match record {
             "SCEN" => {
                 if f.len() >= 2 {
                     teams.push((f[1].to_string(), [None, None]));
+                }
+            }
+            "FMT" => {
+                // FMT <id> <format> — protocol chunks only; sits before INIT.
+                if f.len() == 3 {
+                    formats.push((f[1].to_string(), f[2].to_string()));
                 }
             }
             "TEAM" => {
@@ -198,6 +255,11 @@ fn parse_chunk(data: &str) -> Vec<Result<CaseExpect, (String, String)>> {
                     continue;
                 }
                 let id = f[1].to_string();
+                let fmt = formats
+                    .iter()
+                    .find(|(fid, _)| fid == &id)
+                    .map(|(_, fm)| fm.clone())
+                    .unwrap_or_else(|| "gen3customgame".to_string());
                 match team_for(&teams, &id) {
                     Some(t) => {
                         cur = Some(CaseExpect {
@@ -207,6 +269,8 @@ fn parse_chunk(data: &str) -> Vec<Result<CaseExpect, (String, String)>> {
                             decisions: Vec::new(),
                             ended: false,
                             winner: WinTok::None,
+                            format: fmt,
+                            lines: Vec::new(),
                         });
                     }
                     None => {
@@ -265,6 +329,18 @@ fn parse_chunk(data: &str) -> Vec<Result<CaseExpect, (String, String)>> {
                 match parsed {
                     Ok(d) => c.decisions.push(d),
                     Err(why) => cur_broken = Some((c.id.clone(), format!("{why} (line {ln})"))),
+                }
+            }
+            "L" => {
+                // L <id> <lineNo> <RAW protocol line — MAY contain tabs/pipes; LAST field>.
+                // splitn(4) keeps the raw payload intact (mirrors protocol_test.rs's L-parse).
+                let Some(c) = cur.as_mut() else { continue };
+                let lf: Vec<&str> = line.splitn(4, '\t').collect();
+                if lf.len() == 4 {
+                    c.lines.push(lf[3].to_string());
+                } else {
+                    // A truly empty raw line ("L\t<id>\t<n>\t") splits to 3 fields — keep "".
+                    c.lines.push(String::new());
                 }
             }
             "END" => {
@@ -392,15 +468,18 @@ fn species_id(s: &str) -> String {
     s.chars().filter(|c| c.is_ascii_alphanumeric()).map(|c| c.to_ascii_lowercase()).collect()
 }
 
-fn replay_case(case: &CaseExpect, dex: &Dex) -> Verdict {
+fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
     let opts = BattleOptions {
-        // Same format as the e2e capstone: gen3customgame (no clauses → no
-        // SetStatus handler-sort shuffle; sleep_clause OFF).
-        format_id: "gen3customgame".to_string(),
+        // The chunk's format (default gen3customgame — no clauses → no SetStatus
+        // handler-sort shuffle; `gen3ou` turns the clause shuffle ON so the state seeds
+        // match a gen3ou-captured golden, and the byte path reframes the OU tier/rules).
+        format_id: case.format.clone(),
         seed: Some(case.init_seed.clone()),
         p1: PlayerOptions { name: "P1".to_string(), team: PackedTeam(case.teams[0].clone()) },
         p2: PlayerOptions { name: "P2".to_string(), team: PackedTeam(case.teams[1].clone()) },
     };
+    // Byte mode only when requested AND the chunk actually carries captured lines.
+    let byte_mode = protocol && !case.lines.is_empty();
 
     let mut battle = match Battle::start_with_switchins(&opts, dex) {
         Ok(b) => b,
@@ -432,7 +511,22 @@ fn replay_case(case: &CaseExpect, dex: &Dex) -> Verdict {
 
     let script: Vec<ScriptDecision> =
         case.decisions.iter().map(|d| ScriptDecision { p1: d.choice[0], p2: d.choice[1] }).collect();
-    let outcome: BattleOutcome = battle.state_mut().unwrap().run_full_battle(&script, dex);
+    // Byte mode replays through the EMITTING engine (`run_full_battle_logged` — same
+    // bit-for-bit `run_full_battle` + the PRNG-free protocol side-output), so the SAME
+    // state/seed compare runs first (a draw bug still reports `seed`, the root cause),
+    // then the byte-diff surfaces an emission-only divergence as `protocol`.
+    let (outcome, emitted): (BattleOutcome, Vec<String>) = if byte_mode {
+        let (o, lines) = battle.state_mut().unwrap().run_full_battle_logged(&script, dex);
+        // gen3ou: rewrite the gen3customgame framing tier/rules to OU before diffing.
+        let raw: Vec<String> = if case.format.contains("gen3ou") {
+            pokesim::bridge::reframe(&lines, &case.format)
+        } else {
+            lines.into_iter().map(|l| l.0).collect()
+        };
+        (o, raw)
+    } else {
+        (battle.state_mut().unwrap().run_full_battle(&script, dex), Vec::new())
+    };
 
     let n = outcome.decisions.len().min(case.decisions.len());
     for di in 0..n {
@@ -607,6 +701,39 @@ fn replay_case(case: &CaseExpect, dex: &Dex) -> Verdict {
         );
     }
 
+    // ── The BYTE differential (protocol mode) ────────────────────────────────
+    // State + seed + winner all matched → the engine is bit-for-bit; now diff the
+    // literal OMNISCIENT `|...|` bytes. Both sides run through the identical DENYLIST
+    // filter (drop debug/error, normalize |t:|), then a first-divergence line diff
+    // (the protocol_test.rs:343-363 loop pattern). Reports a NEW `protocol` kind.
+    if byte_mode {
+        let golden = filter_bytes(&case.lines);
+        let engine = filter_bytes(&emitted);
+        let m = golden.len().max(engine.len());
+        for i in 0..m {
+            let g = golden.get(i).map(String::as_str);
+            let e = engine.get(i).map(String::as_str);
+            if g != e {
+                let lo = i.saturating_sub(2);
+                let ctx = |v: &[String]| -> String {
+                    (lo..(i + 2).min(v.len())).map(|k| format!("[{k}] {}", v[k])).collect::<Vec<_>>().join(" ¦ ")
+                };
+                return Verdict::diverged(
+                    &case.id,
+                    "protocol",
+                    Some(i),
+                    g.unwrap_or("<none>").to_string(),
+                    e.unwrap_or("<none>").to_string(),
+                    format!(
+                        "byte divergence at filtered line {i} (fmt={}) | golden ctx: {} | engine ctx: {}",
+                        case.format, ctx(&golden), ctx(&engine)
+                    ),
+                    n,
+                );
+            }
+        }
+    }
+
     Verdict::ok(&case.id, n)
 }
 
@@ -637,9 +764,16 @@ fn take_panic_msg() -> String {
 // ── main ─────────────────────────────────────────────────────────────────────
 
 fn main() {
-    let args: Vec<String> = std::env::args().skip(1).collect();
+    let raw_args: Vec<String> = std::env::args().skip(1).collect();
+    // `--protocol` turns on the omniscient BYTE differential (gen3_omniscient_byte_fuzz_v1):
+    // replay through `run_full_battle_logged` + diff the captured `|...|` lines. It also
+    // auto-enables per-case when the chunk carries L-rows, so a saved repro dir replays in
+    // byte mode automatically. Also honored via POKESIM_AB_PROTOCOL=1.
+    let flag_protocol = raw_args.iter().any(|a| a == "--protocol")
+        || std::env::var("POKESIM_AB_PROTOCOL").map(|v| v == "1").unwrap_or(false);
+    let args: Vec<String> = raw_args.into_iter().filter(|a| !a.starts_with("--")).collect();
     if args.is_empty() {
-        eprintln!("usage: ab_replay <chunk-file | repro-dir> [...]");
+        eprintln!("usage: ab_replay [--protocol] <chunk-file | repro-dir> [...]");
         std::process::exit(2);
     }
     install_panic_capture();
@@ -680,7 +814,10 @@ fn main() {
                     emit(&v);
                 }
                 Ok(case) => {
-                    let result = panic::catch_unwind(AssertUnwindSafe(|| replay_case(&case, &dex)));
+                    // Auto-enable byte mode when the chunk carries L-rows (a saved repro
+                    // dir), else honor the explicit --protocol flag.
+                    let proto = flag_protocol || !case.lines.is_empty();
+                    let result = panic::catch_unwind(AssertUnwindSafe(|| replay_case(&case, &dex, proto)));
                     let v = match result {
                         Ok(v) => v,
                         Err(_) => {

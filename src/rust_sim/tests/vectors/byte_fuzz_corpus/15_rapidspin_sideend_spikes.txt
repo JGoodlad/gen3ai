@@ -1,0 +1,800 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_69
+TEAM	ab_0_69	p1	Salamence||ChoiceBand|Intimidate|RockSlide,BrickBreak,HiddenPowerFlying,Earthquake|Adamant|4,252,,,,252|M|30,30,30,30,30,|||,Flying,,,,]Metagross||Leftovers|ClearBody|Earthquake,Explosion,MeteorMash,RockSlide|Adamant|252,216,16,,,24|N||||]Suicune||Leftovers|Pressure|Roar,CalmMind,Rest,Surf|Bold|252,,236,,,20|N|,0,,,,|||]Claydol||Leftovers|Levitate|Earthquake,Psychic,RapidSpin,Explosion|Impish|252,60,180,16,,|N||||]Blissey||Leftovers|NaturalCure|SoftBoiled,IceBeam,SeismicToss,Wish|Bold|,,252,252,,4|F|,0,,,,|||]Magneton||Leftovers|MagnetPull|Thunderbolt,SunnyDay,ThunderWave,HiddenPowerFire|Modest|4,,,252,,252|N|,2,,30,,30|||,Fire,,,,
+TEAM	ab_0_69	p2	Swampert||Leftovers|Torrent|HydroPump,IceBeam,Earthquake,FocusPunch|Rash|,4,,252,,252|M||||]Forretress||Leftovers|Sturdy|ZapCannon,Spikes,RapidSpin,Counter|Calm|252,,4,,252,|M||||]Flygon||ChoiceBand|Levitate|Earthquake,RockSlide,HiddenPowerBug,FireBlast|Naive|,252,,4,,252|M|,30,30,,30,|||,Bug,,,,]Tyranitar||Leftovers|SandStream|Crunch,Pursuit,FireBlast,HiddenPowerGrass|Modest|184,,,220,,104|M|,30,,30,,|||,Grass,,,,]Gengar||Leftovers|Levitate|Thunderbolt,IcePunch,WillOWisp,Explosion|Timid|248,,4,,68,188|M||||]Blissey||Leftovers|NaturalCure|SeismicToss,Sing,Toxic,SoftBoiled|Jolly|4,,252,,,252|F||||
+FMT	ab_0_69	gen3customgame
+INIT	ab_0_69	23410,724,16653,35939	3125486132
+DEC	ab_0_69	0	move	0	0	m3	s1	56018,62184,4358,58823	Salamence	331	331	0	-	0	0	0	0	0	0	6	Forretress	223	354	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_69	1	move	0	0	s5	m1	33443,6990,42311,50502	Magneton	242	242	0	-	0	0	0	0	0	0	6	Forretress	245	354	0	-	0	0	0	0	0	0	6	p1	1	0	0	0	0
+DEC	ab_0_69	2	move	0	0	m3	m2	37973,48655,1556,4331	Magneton	242	242	0	-	0	0	0	0	0	0	6	Forretress	0	354	1	fnt	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_0_69	3	switch	0	1	-	s1	27749,60820,48524,3706	Magneton	242	242	0	-	0	0	0	0	0	0	6	Swampert	341	341	0	-	0	0	0	0	0	0	5	none	1	0	0	0	0
+DEC	ab_0_69	4	move	0	0	m0	m2	41020,32268,11385,19566	Magneton	0	242	1	fnt	0	0	0	0	0	0	5	Swampert	341	341	0	-	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_0_69	5	switch	1	0	s5	-	53397,33679,62698,42025	Salamence	331	331	0	-	0	0	0	0	0	0	5	Swampert	341	341	0	-	-1	0	0	0	0	0	5	none	1	0	0	0	0
+DEC	ab_0_69	6	move	0	0	m3	m1	32395,56018,14068,13974	Salamence	0	331	1	fnt	0	0	0	0	0	0	4	Swampert	119	341	0	-	-1	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_0_69	7	switch	1	0	s1	-	63939,22331,9680,28145	Metagross	341	364	0	-	0	0	0	0	0	0	4	Swampert	140	341	0	-	-1	0	0	0	0	0	5	none	1	0	0	0	0
+DEC	ab_0_69	8	move	0	0	m3	m1	9208,44245,42765,9920	Metagross	315	364	0	-	0	0	0	0	0	0	4	Swampert	111	341	0	-	-1	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_69	9	move	0	0	m2	m0	19813,61096,52514,32936	Metagross	41	364	0	-	0	0	0	0	0	0	4	Swampert	28	341	0	-	-1	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_69	10	move	0	0	m3	m1	21778,44528,29932,42940	Metagross	0	364	1	fnt	0	0	0	0	0	0	3	Swampert	28	341	0	-	-1	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_69	11	switch	1	0	s2	-	22380,39128,44396,26607	Suicune	379	404	0	-	0	0	0	0	0	0	3	Swampert	49	341	0	-	-1	0	0	0	0	0	5	none	1	0	0	0	0
+DEC	ab_0_69	12	move	0	0	m1	s4	2070,33382,6931,34574	Suicune	404	404	0	-	0	0	1	1	0	0	3	Gengar	323	323	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_69	13	move	0	0	m2	s4	44217,62414,48003,25929	Suicune	404	404	0	-	0	0	1	1	0	0	3	Swampert	70	341	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_69	14	move	0	0	m2	m1	60758,39961,9655,63223	Suicune	404	404	0	slp	0	0	1	1	0	0	3	Swampert	91	341	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_69	15	move	0	0	m1	m0	863,21976,63321,61211	Suicune	357	404	0	slp	0	0	1	1	0	0	3	Swampert	112	341	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_69	16	move	0	0	m3	m2	46401,28103,61025,19711	Suicune	289	404	0	slp	0	0	1	1	0	0	3	Swampert	133	341	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_0_69	17	move	0	0	m3	m2	62483,64744,49714,40413	Suicune	199	404	0	-	0	0	1	1	0	0	3	Swampert	0	341	1	fnt	0	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_0_69	18	switch	0	1	-	s5	49453,18670,16805,11252	Suicune	224	404	0	-	0	0	1	1	0	0	3	Blissey	652	652	0	-	0	0	0	0	0	0	4	none	1	0	0	0	0
+DEC	ab_0_69	19	move	0	0	m2	m2	44901,19089,27190,25505	Suicune	404	404	0	slp	0	0	1	1	0	0	3	Blissey	652	652	0	-	0	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_0_69	20	move	0	0	s4	m1	4039,12365,25911,61739	Blissey	610	651	0	-	0	0	0	0	0	0	3	Blissey	652	652	0	-	0	0	0	0	0	0	4	p1	1	0	0	0	0
+DEC	ab_0_69	21	move	0	0	m3	m2	44493,51964,19350,62757	Blissey	610	651	0	tox	0	0	0	0	0	0	3	Blissey	652	652	0	-	0	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_0_69	22	move	0	0	m3	m2	18144,8349,40593,52751	Blissey	571	651	0	tox	0	0	0	0	0	0	3	Blissey	652	652	0	-	0	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_0_69	23	move	0	0	m2	m0	35199,3258,10117,42800	Blissey	391	651	0	tox	0	0	0	0	0	0	3	Blissey	592	652	0	-	0	0	0	0	0	0	4	p2	1	0	1	0	0
+DEC	ab_0_69	24	move	0	0	m0	s4	12469,8631,61610,17587	Blissey	491	651	0	tox	0	0	0	0	0	0	3	Gengar	323	323	0	-	0	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_0_69	25	move	0	0	s3	m2	13507,51458,2893,19309	Claydol	284	324	0	brn	0	0	0	0	0	0	3	Gengar	323	323	0	-	0	0	0	0	0	0	4	p1	1	0	0	0	0
+DEC	ab_0_69	26	move	0	0	m0	s3	24384,38399,53275,55345	Claydol	264	324	0	brn	0	0	0	0	0	0	3	Tyranitar	323	387	0	-	0	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_0_69	27	move	0	0	m1	m3	16815,4086,45318,33580	Claydol	117	324	0	brn	0	0	0	0	0	0	3	Tyranitar	347	387	0	-	0	0	0	0	0	0	4	p1	1	0	0	0	0
+DEC	ab_0_69	28	move	0	0	m2	m2	39222,40892,12243,11156	Claydol	1	324	0	brn	0	0	0	0	0	0	3	Tyranitar	367	387	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_69	29	move	0	0	m3	m1	59415,14105,21122,2241	Claydol	0	324	1	fnt	0	0	0	0	0	0	2	Tyranitar	300	387	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_69	30	switch	1	0	s4	-	30091,42633,52586,23528	Suicune	404	404	0	slp	0	0	0	0	0	0	2	Tyranitar	324	387	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_69	31	move	0	0	s3	m0	50487,53510,58089,42031	Blissey	303	651	0	-	0	0	0	0	0	0	2	Tyranitar	348	387	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_69	32	move	0	0	m3	m0	22181,28791,9895,46338	Blissey	204	651	0	-	0	0	0	0	0	0	2	Tyranitar	372	387	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	33	move	0	0	m1	m3	11834,13279,62235,45226	Blissey	473	651	0	-	0	0	0	0	0	0	2	Tyranitar	313	387	0	frz	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	34	move	0	0	m1	s3	23599,24744,2569,57881	Blissey	473	651	0	-	0	0	0	0	0	0	2	Gengar	228	323	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	35	move	0	0	m0	m0	17172,38653,18280,56116	Blissey	651	651	0	-	0	0	0	0	0	0	2	Gengar	228	323	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	36	move	0	0	m0	s2	53310,1280,14399,60999	Blissey	651	651	0	-	0	0	0	0	0	0	2	Flygon	301	301	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	37	move	0	0	s3	m2	9481,15409,17921,37227	Suicune	339	404	0	slp	0	0	0	0	0	0	2	Flygon	301	301	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_69	38	move	0	0	m2	m2	7001,28988,32891,59983	Suicune	265	404	0	slp	0	0	0	0	0	0	2	Flygon	301	301	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	39	move	0	0	m2	m2	12491,31041,57093,7411	Suicune	192	404	0	slp	0	0	0	0	0	0	2	Flygon	301	301	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	40	move	0	0	m0	m2	52654,6854,56691,625	Suicune	126	404	0	-	0	0	0	0	0	0	2	Blissey	592	652	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	41	move	0	0	m1	m0	9176,1878,6237,24443	Suicune	26	404	0	-	0	0	1	1	0	0	2	Blissey	592	652	0	-	0	0	0	0	0	0	4	p2	0	0	1	0	0
+DEC	ab_0_69	42	move	0	0	m0	m1	34320,5985,56080,14956	Suicune	26	404	0	slp	0	0	1	1	0	0	2	Blissey	592	652	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	43	move	0	0	s3	m2	30079,61473,35721,36414	Blissey	651	651	0	-	0	0	0	0	0	0	2	Blissey	592	652	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_69	44	move	0	0	m0	m0	40210,62464,64159,60736	Blissey	651	651	0	-	0	0	0	0	0	0	2	Blissey	592	652	0	-	0	0	0	0	0	0	4	p2	0	0	1	0	0
+DEC	ab_0_69	45	move	0	0	m1	m3	7321,24102,44235,18535	Blissey	651	651	0	-	0	0	0	0	0	0	2	Blissey	594	652	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	46	move	0	0	s3	s4	6852,53624,25834,20070	Suicune	26	404	0	slp	0	0	0	0	0	0	2	Flygon	301	301	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	47	move	0	0	s3	m1	53796,54326,648,32389	Blissey	442	651	0	-	0	0	0	0	0	0	2	Flygon	301	301	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_69	48	move	0	0	m2	m1	13127,34215,52380,52240	Blissey	255	651	0	-	0	0	0	0	0	0	2	Flygon	301	301	0	-	0	0	0	0	0	0	4	p2	0	0	1	0	0
+DEC	ab_0_69	49	move	0	0	m1	s4	21250,25187,45815,40823	Blissey	255	651	0	-	0	0	0	0	0	0	2	Blissey	536	652	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	50	move	0	0	s3	m1	49189,13651,63542,65425	Suicune	26	404	0	slp	0	0	0	0	0	0	2	Blissey	536	652	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_69	51	move	0	0	m2	m3	60297,34429,34197,3064	Suicune	26	404	0	slp	0	0	0	0	0	0	2	Blissey	652	652	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	52	move	0	0	m3	s4	65170,9466,27428,3995	Suicune	26	404	0	slp	0	0	0	0	0	0	2	Flygon	301	301	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	53	move	0	0	m3	m2	4897,44555,23069,40460	Suicune	0	404	1	fnt	0	0	0	0	0	0	1	Flygon	301	301	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	54	switch	1	0	s3	-	29025,37356,51646,25983	Blissey	255	651	0	-	0	0	0	0	0	0	1	Flygon	301	301	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_69	55	move	0	0	m0	m2	36931,21764,47273,50467	Blissey	393	651	0	-	0	0	0	0	0	0	1	Flygon	301	301	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	56	move	0	0	m3	m2	20753,44672,54911,4743	Blissey	189	651	0	-	0	0	0	0	0	0	1	Flygon	301	301	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	57	move	0	0	m1	s2	16847,4869,29431,31290	Blissey	514	651	0	-	0	0	0	0	0	0	1	Gengar	133	323	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	58	move	0	0	m3	m1	33881,12106,52037,15081	Blissey	454	651	0	-	0	0	0	0	0	0	1	Gengar	133	323	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_69	59	move	0	0	m2	m3	26693,5167,47148,26338	Blissey	0	651	1	-	0	0	0	0	0	0	0	Gengar	0	323	1	-	0	0	0	0	0	0	3	p2	0	0	1	0	0
+END	ab_0_69	1	p2
+L	ab_0_69	0	|t:|<NORMALIZED>
+L	ab_0_69	1	|gametype|singles
+L	ab_0_69	2	|player|p1|P1||
+L	ab_0_69	3	|player|p2|P2||
+L	ab_0_69	4	|gen|3
+L	ab_0_69	5	|tier|[Gen 3] Custom Game
+L	ab_0_69	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_69	7	|
+L	ab_0_69	8	|t:|<NORMALIZED>
+L	ab_0_69	9	|teamsize|p1|6
+L	ab_0_69	10	|teamsize|p2|6
+L	ab_0_69	11	|start
+L	ab_0_69	12	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_0_69	13	|switch|p2a: Swampert|Swampert, M|341/341
+L	ab_0_69	14	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_69	15	|-unboost|p2a: Swampert|atk|1
+L	ab_0_69	16	|turn|1
+L	ab_0_69	17	|
+L	ab_0_69	18	|t:|<NORMALIZED>
+L	ab_0_69	19	|switch|p2a: Forretress|Forretress, M|354/354
+L	ab_0_69	20	|move|p1a: Salamence|Earthquake|p2a: Forretress
+L	ab_0_69	21	|-damage|p2a: Forretress|201/354
+L	ab_0_69	22	|
+L	ab_0_69	23	|-heal|p2a: Forretress|223/354|[from] item: Leftovers
+L	ab_0_69	24	|upkeep
+L	ab_0_69	25	|turn|2
+L	ab_0_69	26	|
+L	ab_0_69	27	|t:|<NORMALIZED>
+L	ab_0_69	28	|switch|p1a: Magneton|Magneton|242/242
+L	ab_0_69	29	|move|p2a: Forretress|Spikes|p1a: Magneton
+L	ab_0_69	30	|-sidestart|p1: P1|Spikes
+L	ab_0_69	31	|
+L	ab_0_69	32	|-heal|p2a: Forretress|245/354|[from] item: Leftovers
+L	ab_0_69	33	|upkeep
+L	ab_0_69	34	|turn|3
+L	ab_0_69	35	|
+L	ab_0_69	36	|t:|<NORMALIZED>
+L	ab_0_69	37	|move|p1a: Magneton|Hidden Power|p2a: Forretress
+L	ab_0_69	38	|debug|BP: 70
+L	ab_0_69	39	|-supereffective|p2a: Forretress
+L	ab_0_69	40	|-crit|p2a: Forretress
+L	ab_0_69	41	|-damage|p2a: Forretress|0 fnt
+L	ab_0_69	42	|faint|p2a: Forretress
+L	ab_0_69	43	|
+L	ab_0_69	44	|t:|<NORMALIZED>
+L	ab_0_69	45	|switch|p2a: Swampert|Swampert, M|341/341
+L	ab_0_69	46	|
+L	ab_0_69	47	|upkeep
+L	ab_0_69	48	|turn|4
+L	ab_0_69	49	|
+L	ab_0_69	50	|t:|<NORMALIZED>
+L	ab_0_69	51	|move|p1a: Magneton|Thunderbolt|p2a: Swampert
+L	ab_0_69	52	|-immune|p2a: Swampert
+L	ab_0_69	53	|move|p2a: Swampert|Earthquake|p1a: Magneton
+L	ab_0_69	54	|-supereffective|p1a: Magneton
+L	ab_0_69	55	|-damage|p1a: Magneton|0 fnt
+L	ab_0_69	56	|faint|p1a: Magneton
+L	ab_0_69	57	|
+L	ab_0_69	58	|t:|<NORMALIZED>
+L	ab_0_69	59	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_0_69	60	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_69	61	|-unboost|p2a: Swampert|atk|1
+L	ab_0_69	62	|
+L	ab_0_69	63	|upkeep
+L	ab_0_69	64	|turn|5
+L	ab_0_69	65	|
+L	ab_0_69	66	|t:|<NORMALIZED>
+L	ab_0_69	67	|move|p1a: Salamence|Earthquake|p2a: Swampert
+L	ab_0_69	68	|-damage|p2a: Swampert|119/341
+L	ab_0_69	69	|move|p2a: Swampert|Ice Beam|p1a: Salamence
+L	ab_0_69	70	|-supereffective|p1a: Salamence
+L	ab_0_69	71	|-damage|p1a: Salamence|0 fnt
+L	ab_0_69	72	|faint|p1a: Salamence
+L	ab_0_69	73	|
+L	ab_0_69	74	|t:|<NORMALIZED>
+L	ab_0_69	75	|switch|p1a: Metagross|Metagross|364/364
+L	ab_0_69	76	|-damage|p1a: Metagross|319/364|[from] Spikes
+L	ab_0_69	77	|
+L	ab_0_69	78	|-heal|p2a: Swampert|140/341|[from] item: Leftovers
+L	ab_0_69	79	|-heal|p1a: Metagross|341/364|[from] item: Leftovers
+L	ab_0_69	80	|upkeep
+L	ab_0_69	81	|turn|6
+L	ab_0_69	82	|
+L	ab_0_69	83	|t:|<NORMALIZED>
+L	ab_0_69	84	|move|p2a: Swampert|Ice Beam|p1a: Metagross
+L	ab_0_69	85	|-resisted|p1a: Metagross
+L	ab_0_69	86	|-damage|p1a: Metagross|293/364
+L	ab_0_69	87	|move|p1a: Metagross|Rock Slide|p2a: Swampert
+L	ab_0_69	88	|-resisted|p2a: Swampert
+L	ab_0_69	89	|-damage|p2a: Swampert|90/341
+L	ab_0_69	90	|
+L	ab_0_69	91	|-heal|p2a: Swampert|111/341|[from] item: Leftovers
+L	ab_0_69	92	|-heal|p1a: Metagross|315/364|[from] item: Leftovers
+L	ab_0_69	93	|upkeep
+L	ab_0_69	94	|turn|7
+L	ab_0_69	95	|
+L	ab_0_69	96	|t:|<NORMALIZED>
+L	ab_0_69	97	|move|p2a: Swampert|Hydro Pump|p1a: Metagross
+L	ab_0_69	98	|debug|Torrent boost
+L	ab_0_69	99	|-damage|p1a: Metagross|19/364
+L	ab_0_69	100	|move|p1a: Metagross|Meteor Mash|p2a: Swampert
+L	ab_0_69	101	|-resisted|p2a: Swampert
+L	ab_0_69	102	|-damage|p2a: Swampert|7/341
+L	ab_0_69	103	|
+L	ab_0_69	104	|-heal|p2a: Swampert|28/341|[from] item: Leftovers
+L	ab_0_69	105	|-heal|p1a: Metagross|41/364|[from] item: Leftovers
+L	ab_0_69	106	|upkeep
+L	ab_0_69	107	|turn|8
+L	ab_0_69	108	|
+L	ab_0_69	109	|t:|<NORMALIZED>
+L	ab_0_69	110	|move|p2a: Swampert|Ice Beam|p1a: Metagross
+L	ab_0_69	111	|-resisted|p1a: Metagross
+L	ab_0_69	112	|-damage|p1a: Metagross|0 fnt
+L	ab_0_69	113	|faint|p1a: Metagross
+L	ab_0_69	114	|
+L	ab_0_69	115	|t:|<NORMALIZED>
+L	ab_0_69	116	|switch|p1a: Suicune|Suicune|404/404
+L	ab_0_69	117	|-damage|p1a: Suicune|354/404|[from] Spikes
+L	ab_0_69	118	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_69	119	|
+L	ab_0_69	120	|-heal|p2a: Swampert|49/341|[from] item: Leftovers
+L	ab_0_69	121	|-heal|p1a: Suicune|379/404|[from] item: Leftovers
+L	ab_0_69	122	|upkeep
+L	ab_0_69	123	|turn|9
+L	ab_0_69	124	|
+L	ab_0_69	125	|t:|<NORMALIZED>
+L	ab_0_69	126	|switch|p2a: Gengar|Gengar, M|323/323
+L	ab_0_69	127	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_0_69	128	|-boost|p1a: Suicune|spa|1
+L	ab_0_69	129	|-boost|p1a: Suicune|spd|1
+L	ab_0_69	130	|
+L	ab_0_69	131	|-heal|p1a: Suicune|404/404|[from] item: Leftovers
+L	ab_0_69	132	|upkeep
+L	ab_0_69	133	|turn|10
+L	ab_0_69	134	|
+L	ab_0_69	135	|t:|<NORMALIZED>
+L	ab_0_69	136	|switch|p2a: Swampert|Swampert, M|49/341
+L	ab_0_69	137	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_69	138	|-fail|p1a: Suicune|heal
+L	ab_0_69	139	|
+L	ab_0_69	140	|-heal|p2a: Swampert|70/341|[from] item: Leftovers
+L	ab_0_69	141	|upkeep
+L	ab_0_69	142	|turn|11
+L	ab_0_69	143	|
+L	ab_0_69	144	|t:|<NORMALIZED>
+L	ab_0_69	145	|move|p2a: Swampert|Ice Beam|p1a: Suicune
+L	ab_0_69	146	|-resisted|p1a: Suicune
+L	ab_0_69	147	|-damage|p1a: Suicune|376/404
+L	ab_0_69	148	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_69	149	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_0_69	150	|-heal|p1a: Suicune|404/404 slp|[silent]
+L	ab_0_69	151	|
+L	ab_0_69	152	|-heal|p2a: Swampert|91/341|[from] item: Leftovers
+L	ab_0_69	153	|upkeep
+L	ab_0_69	154	|turn|12
+L	ab_0_69	155	|
+L	ab_0_69	156	|t:|<NORMALIZED>
+L	ab_0_69	157	|move|p2a: Swampert|Hydro Pump|p1a: Suicune
+L	ab_0_69	158	|debug|Torrent boost
+L	ab_0_69	159	|-resisted|p1a: Suicune
+L	ab_0_69	160	|-damage|p1a: Suicune|332/404 slp
+L	ab_0_69	161	|cant|p1a: Suicune|slp
+L	ab_0_69	162	|
+L	ab_0_69	163	|-heal|p2a: Swampert|112/341|[from] item: Leftovers
+L	ab_0_69	164	|-heal|p1a: Suicune|357/404 slp|[from] item: Leftovers
+L	ab_0_69	165	|upkeep
+L	ab_0_69	166	|turn|13
+L	ab_0_69	167	|
+L	ab_0_69	168	|t:|<NORMALIZED>
+L	ab_0_69	169	|move|p2a: Swampert|Earthquake|p1a: Suicune
+L	ab_0_69	170	|-damage|p1a: Suicune|264/404 slp
+L	ab_0_69	171	|cant|p1a: Suicune|slp
+L	ab_0_69	172	|
+L	ab_0_69	173	|-heal|p2a: Swampert|133/341|[from] item: Leftovers
+L	ab_0_69	174	|-heal|p1a: Suicune|289/404 slp|[from] item: Leftovers
+L	ab_0_69	175	|upkeep
+L	ab_0_69	176	|turn|14
+L	ab_0_69	177	|
+L	ab_0_69	178	|t:|<NORMALIZED>
+L	ab_0_69	179	|move|p2a: Swampert|Earthquake|p1a: Suicune
+L	ab_0_69	180	|-damage|p1a: Suicune|199/404 slp
+L	ab_0_69	181	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_0_69	182	|move|p1a: Suicune|Surf|p2a: Swampert
+L	ab_0_69	183	|-damage|p2a: Swampert|0 fnt
+L	ab_0_69	184	|faint|p2a: Swampert
+L	ab_0_69	185	|
+L	ab_0_69	186	|t:|<NORMALIZED>
+L	ab_0_69	187	|switch|p2a: Blissey|Blissey, F|652/652
+L	ab_0_69	188	|
+L	ab_0_69	189	|-heal|p1a: Suicune|224/404|[from] item: Leftovers
+L	ab_0_69	190	|upkeep
+L	ab_0_69	191	|turn|15
+L	ab_0_69	192	|
+L	ab_0_69	193	|t:|<NORMALIZED>
+L	ab_0_69	194	|move|p2a: Blissey|Toxic|p1a: Suicune
+L	ab_0_69	195	|-status|p1a: Suicune|tox
+L	ab_0_69	196	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_69	197	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_0_69	198	|-heal|p1a: Suicune|404/404 slp|[silent]
+L	ab_0_69	199	|
+L	ab_0_69	200	|upkeep
+L	ab_0_69	201	|turn|16
+L	ab_0_69	202	|
+L	ab_0_69	203	|t:|<NORMALIZED>
+L	ab_0_69	204	|switch|p1a: Blissey|Blissey, F|651/651
+L	ab_0_69	205	|-damage|p1a: Blissey|570/651|[from] Spikes
+L	ab_0_69	206	|move|p2a: Blissey|Sing|p1a: Blissey|[miss]
+L	ab_0_69	207	|-miss|p2a: Blissey|p1a: Blissey
+L	ab_0_69	208	|
+L	ab_0_69	209	|-heal|p1a: Blissey|610/651|[from] item: Leftovers
+L	ab_0_69	210	|upkeep
+L	ab_0_69	211	|turn|17
+L	ab_0_69	212	|
+L	ab_0_69	213	|t:|<NORMALIZED>
+L	ab_0_69	214	|move|p2a: Blissey|Toxic|p1a: Blissey
+L	ab_0_69	215	|-status|p1a: Blissey|tox
+L	ab_0_69	216	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_0_69	217	|
+L	ab_0_69	218	|-heal|p1a: Blissey|650/651 tox|[from] item: Leftovers
+L	ab_0_69	219	|-damage|p1a: Blissey|610/651 tox|[from] psn
+L	ab_0_69	220	|upkeep
+L	ab_0_69	221	|turn|18
+L	ab_0_69	222	|
+L	ab_0_69	223	|t:|<NORMALIZED>
+L	ab_0_69	224	|move|p2a: Blissey|Toxic|p1a: Blissey
+L	ab_0_69	225	|-fail|p1a: Blissey|tox
+L	ab_0_69	226	|debug|move failed because it did nothing
+L	ab_0_69	227	|move|p1a: Blissey|Wish||[still]
+L	ab_0_69	228	|-fail|p1a: Blissey
+L	ab_0_69	229	|debug|move failed because it did nothing
+L	ab_0_69	230	|
+L	ab_0_69	231	|-heal|p1a: Blissey|651/651 tox|[from] move: Wish|[wisher] Blissey
+L	ab_0_69	232	|-damage|p1a: Blissey|571/651 tox|[from] psn
+L	ab_0_69	233	|upkeep
+L	ab_0_69	234	|turn|19
+L	ab_0_69	235	|
+L	ab_0_69	236	|t:|<NORMALIZED>
+L	ab_0_69	237	|move|p2a: Blissey|Seismic Toss|p1a: Blissey
+L	ab_0_69	238	|-damage|p1a: Blissey|471/651 tox
+L	ab_0_69	239	|move|p1a: Blissey|Seismic Toss|p2a: Blissey
+L	ab_0_69	240	|-damage|p2a: Blissey|552/652
+L	ab_0_69	241	|
+L	ab_0_69	242	|-heal|p2a: Blissey|592/652|[from] item: Leftovers
+L	ab_0_69	243	|-heal|p1a: Blissey|511/651 tox|[from] item: Leftovers
+L	ab_0_69	244	|-damage|p1a: Blissey|391/651 tox|[from] psn
+L	ab_0_69	245	|upkeep
+L	ab_0_69	246	|turn|20
+L	ab_0_69	247	|
+L	ab_0_69	248	|t:|<NORMALIZED>
+L	ab_0_69	249	|switch|p2a: Gengar|Gengar, M|323/323
+L	ab_0_69	250	|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+L	ab_0_69	251	|-heal|p1a: Blissey|651/651 tox
+L	ab_0_69	252	|
+L	ab_0_69	253	|-damage|p1a: Blissey|491/651 tox|[from] psn
+L	ab_0_69	254	|upkeep
+L	ab_0_69	255	|turn|21
+L	ab_0_69	256	|
+L	ab_0_69	257	|t:|<NORMALIZED>
+L	ab_0_69	258	|-curestatus|p1a: Blissey|tox|[from] ability: Natural Cure|[silent]
+L	ab_0_69	259	|switch|p1a: Claydol|Claydol|324/324
+L	ab_0_69	260	|move|p2a: Gengar|Will-O-Wisp|p1a: Claydol
+L	ab_0_69	261	|-status|p1a: Claydol|brn
+L	ab_0_69	262	|
+L	ab_0_69	263	|-damage|p1a: Claydol|284/324 brn|[from] brn
+L	ab_0_69	264	|upkeep
+L	ab_0_69	265	|turn|22
+L	ab_0_69	266	|
+L	ab_0_69	267	|t:|<NORMALIZED>
+L	ab_0_69	268	|switch|p2a: Tyranitar|Tyranitar, M|387/387
+L	ab_0_69	269	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_0_69	270	|move|p1a: Claydol|Earthquake|p2a: Tyranitar
+L	ab_0_69	271	|-supereffective|p2a: Tyranitar
+L	ab_0_69	272	|-damage|p2a: Tyranitar|299/387
+L	ab_0_69	273	|
+L	ab_0_69	274	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	275	|debug|natural status immunity
+L	ab_0_69	276	|debug|weather immunity
+L	ab_0_69	277	|debug|natural status immunity
+L	ab_0_69	278	|debug|weather immunity
+L	ab_0_69	279	|-heal|p1a: Claydol|304/324 brn|[from] item: Leftovers
+L	ab_0_69	280	|-damage|p1a: Claydol|264/324 brn|[from] brn
+L	ab_0_69	281	|-heal|p2a: Tyranitar|323/387|[from] item: Leftovers
+L	ab_0_69	282	|upkeep
+L	ab_0_69	283	|turn|23
+L	ab_0_69	284	|
+L	ab_0_69	285	|t:|<NORMALIZED>
+L	ab_0_69	286	|move|p1a: Claydol|Psychic|p2a: Tyranitar
+L	ab_0_69	287	|-immune|p2a: Tyranitar
+L	ab_0_69	288	|move|p2a: Tyranitar|Hidden Power|p1a: Claydol
+L	ab_0_69	289	|debug|BP: 70
+L	ab_0_69	290	|-supereffective|p1a: Claydol
+L	ab_0_69	291	|-damage|p1a: Claydol|137/324 brn
+L	ab_0_69	292	|
+L	ab_0_69	293	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	294	|debug|natural status immunity
+L	ab_0_69	295	|debug|weather immunity
+L	ab_0_69	296	|debug|natural status immunity
+L	ab_0_69	297	|debug|weather immunity
+L	ab_0_69	298	|-heal|p1a: Claydol|157/324 brn|[from] item: Leftovers
+L	ab_0_69	299	|-damage|p1a: Claydol|117/324 brn|[from] brn
+L	ab_0_69	300	|-heal|p2a: Tyranitar|347/387|[from] item: Leftovers
+L	ab_0_69	301	|upkeep
+L	ab_0_69	302	|turn|24
+L	ab_0_69	303	|
+L	ab_0_69	304	|t:|<NORMALIZED>
+L	ab_0_69	305	|move|p1a: Claydol|Rapid Spin|p2a: Tyranitar
+L	ab_0_69	306	|-resisted|p2a: Tyranitar
+L	ab_0_69	307	|-damage|p2a: Tyranitar|343/387
+L	ab_0_69	308	|-sideend|p1: P1|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+L	ab_0_69	309	|move|p2a: Tyranitar|Fire Blast|p1a: Claydol
+L	ab_0_69	310	|-damage|p1a: Claydol|21/324 brn
+L	ab_0_69	311	|
+L	ab_0_69	312	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	313	|debug|natural status immunity
+L	ab_0_69	314	|debug|weather immunity
+L	ab_0_69	315	|debug|natural status immunity
+L	ab_0_69	316	|debug|weather immunity
+L	ab_0_69	317	|-heal|p1a: Claydol|41/324 brn|[from] item: Leftovers
+L	ab_0_69	318	|-damage|p1a: Claydol|1/324 brn|[from] brn
+L	ab_0_69	319	|-heal|p2a: Tyranitar|367/387|[from] item: Leftovers
+L	ab_0_69	320	|upkeep
+L	ab_0_69	321	|turn|25
+L	ab_0_69	322	|
+L	ab_0_69	323	|t:|<NORMALIZED>
+L	ab_0_69	324	|debug|before turn callback: pursuit
+L	ab_0_69	325	|move|p1a: Claydol|Explosion|p2a: Tyranitar
+L	ab_0_69	326	|-resisted|p2a: Tyranitar
+L	ab_0_69	327	|-damage|p2a: Tyranitar|300/387
+L	ab_0_69	328	|faint|p1a: Claydol
+L	ab_0_69	329	|
+L	ab_0_69	330	|t:|<NORMALIZED>
+L	ab_0_69	331	|switch|p1a: Suicune|Suicune|404/404 slp
+L	ab_0_69	332	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_69	333	|
+L	ab_0_69	334	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	335	|-damage|p1a: Suicune|379/404 slp|[from] Sandstorm
+L	ab_0_69	336	|debug|natural status immunity
+L	ab_0_69	337	|debug|weather immunity
+L	ab_0_69	338	|-heal|p1a: Suicune|404/404 slp|[from] item: Leftovers
+L	ab_0_69	339	|-heal|p2a: Tyranitar|324/387|[from] item: Leftovers
+L	ab_0_69	340	|upkeep
+L	ab_0_69	341	|turn|26
+L	ab_0_69	342	|
+L	ab_0_69	343	|t:|<NORMALIZED>
+L	ab_0_69	344	|switch|p1a: Blissey|Blissey, F|491/651
+L	ab_0_69	345	|move|p2a: Tyranitar|Crunch|p1a: Blissey
+L	ab_0_69	346	|-crit|p1a: Blissey
+L	ab_0_69	347	|-damage|p1a: Blissey|303/651
+L	ab_0_69	348	|
+L	ab_0_69	349	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	350	|debug|natural status immunity
+L	ab_0_69	351	|debug|weather immunity
+L	ab_0_69	352	|-damage|p1a: Blissey|263/651|[from] Sandstorm
+L	ab_0_69	353	|-heal|p2a: Tyranitar|348/387|[from] item: Leftovers
+L	ab_0_69	354	|-heal|p1a: Blissey|303/651|[from] item: Leftovers
+L	ab_0_69	355	|upkeep
+L	ab_0_69	356	|turn|27
+L	ab_0_69	357	|
+L	ab_0_69	358	|t:|<NORMALIZED>
+L	ab_0_69	359	|move|p2a: Tyranitar|Crunch|p1a: Blissey
+L	ab_0_69	360	|-damage|p1a: Blissey|204/651
+L	ab_0_69	361	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_0_69	362	|
+L	ab_0_69	363	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	364	|debug|natural status immunity
+L	ab_0_69	365	|debug|weather immunity
+L	ab_0_69	366	|-damage|p1a: Blissey|164/651|[from] Sandstorm
+L	ab_0_69	367	|-heal|p2a: Tyranitar|372/387|[from] item: Leftovers
+L	ab_0_69	368	|-heal|p1a: Blissey|204/651|[from] item: Leftovers
+L	ab_0_69	369	|upkeep
+L	ab_0_69	370	|turn|28
+L	ab_0_69	371	|
+L	ab_0_69	372	|t:|<NORMALIZED>
+L	ab_0_69	373	|move|p2a: Tyranitar|Hidden Power|p1a: Blissey
+L	ab_0_69	374	|debug|BP: 70
+L	ab_0_69	375	|-damage|p1a: Blissey|148/651
+L	ab_0_69	376	|move|p1a: Blissey|Ice Beam|p2a: Tyranitar
+L	ab_0_69	377	|-damage|p2a: Tyranitar|289/387
+L	ab_0_69	378	|-status|p2a: Tyranitar|frz
+L	ab_0_69	379	|
+L	ab_0_69	380	|-heal|p1a: Blissey|473/651|[from] move: Wish|[wisher] Blissey
+L	ab_0_69	381	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	382	|debug|natural status immunity
+L	ab_0_69	383	|debug|weather immunity
+L	ab_0_69	384	|-damage|p1a: Blissey|433/651|[from] Sandstorm
+L	ab_0_69	385	|-heal|p2a: Tyranitar|313/387 frz|[from] item: Leftovers
+L	ab_0_69	386	|-heal|p1a: Blissey|473/651|[from] item: Leftovers
+L	ab_0_69	387	|upkeep
+L	ab_0_69	388	|turn|29
+L	ab_0_69	389	|
+L	ab_0_69	390	|t:|<NORMALIZED>
+L	ab_0_69	391	|switch|p2a: Gengar|Gengar, M|323/323
+L	ab_0_69	392	|move|p1a: Blissey|Ice Beam|p2a: Gengar
+L	ab_0_69	393	|-damage|p2a: Gengar|228/323
+L	ab_0_69	394	|
+L	ab_0_69	395	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	396	|-damage|p2a: Gengar|208/323|[from] Sandstorm
+L	ab_0_69	397	|-damage|p1a: Blissey|433/651|[from] Sandstorm
+L	ab_0_69	398	|-heal|p2a: Gengar|228/323|[from] item: Leftovers
+L	ab_0_69	399	|-heal|p1a: Blissey|473/651|[from] item: Leftovers
+L	ab_0_69	400	|upkeep
+L	ab_0_69	401	|turn|30
+L	ab_0_69	402	|
+L	ab_0_69	403	|t:|<NORMALIZED>
+L	ab_0_69	404	|move|p2a: Gengar|Thunderbolt|p1a: Blissey
+L	ab_0_69	405	|-damage|p1a: Blissey|397/651
+L	ab_0_69	406	|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+L	ab_0_69	407	|-heal|p1a: Blissey|651/651
+L	ab_0_69	408	|
+L	ab_0_69	409	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	410	|-damage|p2a: Gengar|208/323|[from] Sandstorm
+L	ab_0_69	411	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_0_69	412	|-heal|p2a: Gengar|228/323|[from] item: Leftovers
+L	ab_0_69	413	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_69	414	|upkeep
+L	ab_0_69	415	|turn|31
+L	ab_0_69	416	|
+L	ab_0_69	417	|t:|<NORMALIZED>
+L	ab_0_69	418	|switch|p2a: Flygon|Flygon, M|301/301
+L	ab_0_69	419	|move|p1a: Blissey|Soft-Boiled||[still]
+L	ab_0_69	420	|-fail|p1a: Blissey|heal
+L	ab_0_69	421	|debug|move failed because it did nothing
+L	ab_0_69	422	|
+L	ab_0_69	423	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	424	|debug|natural status immunity
+L	ab_0_69	425	|debug|weather immunity
+L	ab_0_69	426	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_0_69	427	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_69	428	|upkeep
+L	ab_0_69	429	|turn|32
+L	ab_0_69	430	|
+L	ab_0_69	431	|t:|<NORMALIZED>
+L	ab_0_69	432	|switch|p1a: Suicune|Suicune|404/404 slp
+L	ab_0_69	433	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_69	434	|move|p2a: Flygon|Hidden Power|p1a: Suicune
+L	ab_0_69	435	|debug|BP: 70
+L	ab_0_69	436	|-damage|p1a: Suicune|339/404 slp
+L	ab_0_69	437	|
+L	ab_0_69	438	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	439	|debug|natural status immunity
+L	ab_0_69	440	|debug|weather immunity
+L	ab_0_69	441	|-damage|p1a: Suicune|314/404 slp|[from] Sandstorm
+L	ab_0_69	442	|-heal|p1a: Suicune|339/404 slp|[from] item: Leftovers
+L	ab_0_69	443	|upkeep
+L	ab_0_69	444	|turn|33
+L	ab_0_69	445	|
+L	ab_0_69	446	|t:|<NORMALIZED>
+L	ab_0_69	447	|move|p2a: Flygon|Hidden Power|p1a: Suicune
+L	ab_0_69	448	|debug|BP: 70
+L	ab_0_69	449	|-damage|p1a: Suicune|265/404 slp
+L	ab_0_69	450	|cant|p1a: Suicune|slp
+L	ab_0_69	451	|
+L	ab_0_69	452	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	453	|debug|natural status immunity
+L	ab_0_69	454	|debug|weather immunity
+L	ab_0_69	455	|-damage|p1a: Suicune|240/404 slp|[from] Sandstorm
+L	ab_0_69	456	|-heal|p1a: Suicune|265/404 slp|[from] item: Leftovers
+L	ab_0_69	457	|upkeep
+L	ab_0_69	458	|turn|34
+L	ab_0_69	459	|
+L	ab_0_69	460	|t:|<NORMALIZED>
+L	ab_0_69	461	|move|p2a: Flygon|Hidden Power|p1a: Suicune
+L	ab_0_69	462	|debug|BP: 70
+L	ab_0_69	463	|-damage|p1a: Suicune|192/404 slp
+L	ab_0_69	464	|cant|p1a: Suicune|slp
+L	ab_0_69	465	|
+L	ab_0_69	466	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	467	|debug|natural status immunity
+L	ab_0_69	468	|debug|weather immunity
+L	ab_0_69	469	|-damage|p1a: Suicune|167/404 slp|[from] Sandstorm
+L	ab_0_69	470	|-heal|p1a: Suicune|192/404 slp|[from] item: Leftovers
+L	ab_0_69	471	|upkeep
+L	ab_0_69	472	|turn|35
+L	ab_0_69	473	|
+L	ab_0_69	474	|t:|<NORMALIZED>
+L	ab_0_69	475	|move|p2a: Flygon|Hidden Power|p1a: Suicune
+L	ab_0_69	476	|debug|BP: 70
+L	ab_0_69	477	|-damage|p1a: Suicune|126/404 slp
+L	ab_0_69	478	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_0_69	479	|move|p1a: Suicune|Roar|p2a: Flygon
+L	ab_0_69	480	|drag|p2a: Blissey|Blissey, F|592/652
+L	ab_0_69	481	|
+L	ab_0_69	482	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	483	|-damage|p2a: Blissey|552/652|[from] Sandstorm
+L	ab_0_69	484	|-damage|p1a: Suicune|101/404|[from] Sandstorm
+L	ab_0_69	485	|-heal|p2a: Blissey|592/652|[from] item: Leftovers
+L	ab_0_69	486	|-heal|p1a: Suicune|126/404|[from] item: Leftovers
+L	ab_0_69	487	|upkeep
+L	ab_0_69	488	|turn|36
+L	ab_0_69	489	|
+L	ab_0_69	490	|t:|<NORMALIZED>
+L	ab_0_69	491	|move|p2a: Blissey|Seismic Toss|p1a: Suicune
+L	ab_0_69	492	|-damage|p1a: Suicune|26/404
+L	ab_0_69	493	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_0_69	494	|-boost|p1a: Suicune|spa|1
+L	ab_0_69	495	|-boost|p1a: Suicune|spd|1
+L	ab_0_69	496	|
+L	ab_0_69	497	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	498	|-damage|p2a: Blissey|552/652|[from] Sandstorm
+L	ab_0_69	499	|-damage|p1a: Suicune|1/404|[from] Sandstorm
+L	ab_0_69	500	|-heal|p2a: Blissey|592/652|[from] item: Leftovers
+L	ab_0_69	501	|-heal|p1a: Suicune|26/404|[from] item: Leftovers
+L	ab_0_69	502	|upkeep
+L	ab_0_69	503	|turn|37
+L	ab_0_69	504	|
+L	ab_0_69	505	|t:|<NORMALIZED>
+L	ab_0_69	506	|move|p2a: Blissey|Sing|p1a: Suicune
+L	ab_0_69	507	|-status|p1a: Suicune|slp|[from] move: Sing
+L	ab_0_69	508	|cant|p1a: Suicune|slp
+L	ab_0_69	509	|
+L	ab_0_69	510	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	511	|-damage|p2a: Blissey|552/652|[from] Sandstorm
+L	ab_0_69	512	|-damage|p1a: Suicune|1/404 slp|[from] Sandstorm
+L	ab_0_69	513	|-heal|p2a: Blissey|592/652|[from] item: Leftovers
+L	ab_0_69	514	|-heal|p1a: Suicune|26/404 slp|[from] item: Leftovers
+L	ab_0_69	515	|upkeep
+L	ab_0_69	516	|turn|38
+L	ab_0_69	517	|
+L	ab_0_69	518	|t:|<NORMALIZED>
+L	ab_0_69	519	|switch|p1a: Blissey|Blissey, F|651/651
+L	ab_0_69	520	|move|p2a: Blissey|Toxic|p1a: Blissey|[miss]
+L	ab_0_69	521	|-miss|p2a: Blissey|p1a: Blissey
+L	ab_0_69	522	|
+L	ab_0_69	523	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	524	|-damage|p2a: Blissey|552/652|[from] Sandstorm
+L	ab_0_69	525	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_0_69	526	|-heal|p2a: Blissey|592/652|[from] item: Leftovers
+L	ab_0_69	527	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_69	528	|upkeep
+L	ab_0_69	529	|turn|39
+L	ab_0_69	530	|
+L	ab_0_69	531	|t:|<NORMALIZED>
+L	ab_0_69	532	|move|p2a: Blissey|Seismic Toss|p1a: Blissey
+L	ab_0_69	533	|-damage|p1a: Blissey|551/651
+L	ab_0_69	534	|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+L	ab_0_69	535	|-heal|p1a: Blissey|651/651
+L	ab_0_69	536	|
+L	ab_0_69	537	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	538	|-damage|p2a: Blissey|552/652|[from] Sandstorm
+L	ab_0_69	539	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_0_69	540	|-heal|p2a: Blissey|592/652|[from] item: Leftovers
+L	ab_0_69	541	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_69	542	|upkeep
+L	ab_0_69	543	|turn|40
+L	ab_0_69	544	|
+L	ab_0_69	545	|t:|<NORMALIZED>
+L	ab_0_69	546	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_0_69	547	|-heal|p2a: Blissey|652/652
+L	ab_0_69	548	|move|p1a: Blissey|Ice Beam|p2a: Blissey
+L	ab_0_69	549	|-damage|p2a: Blissey|594/652
+L	ab_0_69	550	|
+L	ab_0_69	551	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	552	|-damage|p2a: Blissey|554/652|[from] Sandstorm
+L	ab_0_69	553	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_0_69	554	|-heal|p2a: Blissey|594/652|[from] item: Leftovers
+L	ab_0_69	555	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_69	556	|upkeep
+L	ab_0_69	557	|turn|41
+L	ab_0_69	558	|
+L	ab_0_69	559	|t:|<NORMALIZED>
+L	ab_0_69	560	|switch|p2a: Flygon|Flygon, M|301/301
+L	ab_0_69	561	|switch|p1a: Suicune|Suicune|26/404 slp
+L	ab_0_69	562	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_69	563	|
+L	ab_0_69	564	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	565	|debug|natural status immunity
+L	ab_0_69	566	|debug|weather immunity
+L	ab_0_69	567	|-damage|p1a: Suicune|1/404 slp|[from] Sandstorm
+L	ab_0_69	568	|-heal|p1a: Suicune|26/404 slp|[from] item: Leftovers
+L	ab_0_69	569	|upkeep
+L	ab_0_69	570	|turn|42
+L	ab_0_69	571	|
+L	ab_0_69	572	|t:|<NORMALIZED>
+L	ab_0_69	573	|switch|p1a: Blissey|Blissey, F|651/651
+L	ab_0_69	574	|move|p2a: Flygon|Rock Slide|p1a: Blissey
+L	ab_0_69	575	|-damage|p1a: Blissey|442/651
+L	ab_0_69	576	|
+L	ab_0_69	577	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	578	|debug|natural status immunity
+L	ab_0_69	579	|debug|weather immunity
+L	ab_0_69	580	|-damage|p1a: Blissey|402/651|[from] Sandstorm
+L	ab_0_69	581	|-heal|p1a: Blissey|442/651|[from] item: Leftovers
+L	ab_0_69	582	|upkeep
+L	ab_0_69	583	|turn|43
+L	ab_0_69	584	|
+L	ab_0_69	585	|t:|<NORMALIZED>
+L	ab_0_69	586	|move|p2a: Flygon|Rock Slide|p1a: Blissey
+L	ab_0_69	587	|-damage|p1a: Blissey|255/651
+L	ab_0_69	588	|cant|p1a: Blissey|flinch
+L	ab_0_69	589	|
+L	ab_0_69	590	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	591	|debug|natural status immunity
+L	ab_0_69	592	|debug|weather immunity
+L	ab_0_69	593	|-damage|p1a: Blissey|215/651|[from] Sandstorm
+L	ab_0_69	594	|-heal|p1a: Blissey|255/651|[from] item: Leftovers
+L	ab_0_69	595	|upkeep
+L	ab_0_69	596	|turn|44
+L	ab_0_69	597	|
+L	ab_0_69	598	|t:|<NORMALIZED>
+L	ab_0_69	599	|switch|p2a: Blissey|Blissey, F|594/652
+L	ab_0_69	600	|move|p1a: Blissey|Ice Beam|p2a: Blissey
+L	ab_0_69	601	|-damage|p2a: Blissey|536/652
+L	ab_0_69	602	|
+L	ab_0_69	603	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	604	|-damage|p2a: Blissey|496/652|[from] Sandstorm
+L	ab_0_69	605	|-damage|p1a: Blissey|215/651|[from] Sandstorm
+L	ab_0_69	606	|-heal|p2a: Blissey|536/652|[from] item: Leftovers
+L	ab_0_69	607	|-heal|p1a: Blissey|255/651|[from] item: Leftovers
+L	ab_0_69	608	|upkeep
+L	ab_0_69	609	|turn|45
+L	ab_0_69	610	|
+L	ab_0_69	611	|t:|<NORMALIZED>
+L	ab_0_69	612	|switch|p1a: Suicune|Suicune|26/404 slp
+L	ab_0_69	613	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_69	614	|move|p2a: Blissey|Sing|p1a: Suicune|[miss]
+L	ab_0_69	615	|-miss|p2a: Blissey|p1a: Suicune
+L	ab_0_69	616	|
+L	ab_0_69	617	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	618	|-damage|p2a: Blissey|496/652|[from] Sandstorm
+L	ab_0_69	619	|-damage|p1a: Suicune|1/404 slp|[from] Sandstorm
+L	ab_0_69	620	|-heal|p2a: Blissey|536/652|[from] item: Leftovers
+L	ab_0_69	621	|-heal|p1a: Suicune|26/404 slp|[from] item: Leftovers
+L	ab_0_69	622	|upkeep
+L	ab_0_69	623	|turn|46
+L	ab_0_69	624	|
+L	ab_0_69	625	|t:|<NORMALIZED>
+L	ab_0_69	626	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_0_69	627	|-heal|p2a: Blissey|652/652
+L	ab_0_69	628	|cant|p1a: Suicune|slp
+L	ab_0_69	629	|
+L	ab_0_69	630	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	631	|-damage|p2a: Blissey|612/652|[from] Sandstorm
+L	ab_0_69	632	|-damage|p1a: Suicune|1/404 slp|[from] Sandstorm
+L	ab_0_69	633	|-heal|p2a: Blissey|652/652|[from] item: Leftovers
+L	ab_0_69	634	|-heal|p1a: Suicune|26/404 slp|[from] item: Leftovers
+L	ab_0_69	635	|upkeep
+L	ab_0_69	636	|turn|47
+L	ab_0_69	637	|
+L	ab_0_69	638	|t:|<NORMALIZED>
+L	ab_0_69	639	|switch|p2a: Flygon|Flygon, M|301/301
+L	ab_0_69	640	|cant|p1a: Suicune|slp
+L	ab_0_69	641	|
+L	ab_0_69	642	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	643	|debug|natural status immunity
+L	ab_0_69	644	|debug|weather immunity
+L	ab_0_69	645	|-damage|p1a: Suicune|1/404 slp|[from] Sandstorm
+L	ab_0_69	646	|-heal|p1a: Suicune|26/404 slp|[from] item: Leftovers
+L	ab_0_69	647	|upkeep
+L	ab_0_69	648	|turn|48
+L	ab_0_69	649	|
+L	ab_0_69	650	|t:|<NORMALIZED>
+L	ab_0_69	651	|move|p2a: Flygon|Hidden Power|p1a: Suicune
+L	ab_0_69	652	|debug|BP: 70
+L	ab_0_69	653	|-damage|p1a: Suicune|0 fnt
+L	ab_0_69	654	|faint|p1a: Suicune
+L	ab_0_69	655	|
+L	ab_0_69	656	|t:|<NORMALIZED>
+L	ab_0_69	657	|switch|p1a: Blissey|Blissey, F|255/651
+L	ab_0_69	658	|
+L	ab_0_69	659	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	660	|debug|natural status immunity
+L	ab_0_69	661	|debug|weather immunity
+L	ab_0_69	662	|-damage|p1a: Blissey|215/651|[from] Sandstorm
+L	ab_0_69	663	|-heal|p1a: Blissey|255/651|[from] item: Leftovers
+L	ab_0_69	664	|upkeep
+L	ab_0_69	665	|turn|49
+L	ab_0_69	666	|
+L	ab_0_69	667	|t:|<NORMALIZED>
+L	ab_0_69	668	|move|p2a: Flygon|Hidden Power|p1a: Blissey
+L	ab_0_69	669	|debug|BP: 70
+L	ab_0_69	670	|-damage|p1a: Blissey|68/651
+L	ab_0_69	671	|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+L	ab_0_69	672	|-heal|p1a: Blissey|393/651
+L	ab_0_69	673	|
+L	ab_0_69	674	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	675	|debug|natural status immunity
+L	ab_0_69	676	|debug|weather immunity
+L	ab_0_69	677	|-damage|p1a: Blissey|353/651|[from] Sandstorm
+L	ab_0_69	678	|-heal|p1a: Blissey|393/651|[from] item: Leftovers
+L	ab_0_69	679	|upkeep
+L	ab_0_69	680	|turn|50
+L	ab_0_69	681	|
+L	ab_0_69	682	|t:|<NORMALIZED>
+L	ab_0_69	683	|move|p2a: Flygon|Hidden Power|p1a: Blissey
+L	ab_0_69	684	|debug|BP: 70
+L	ab_0_69	685	|-damage|p1a: Blissey|189/651
+L	ab_0_69	686	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_0_69	687	|
+L	ab_0_69	688	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	689	|debug|natural status immunity
+L	ab_0_69	690	|debug|weather immunity
+L	ab_0_69	691	|-damage|p1a: Blissey|149/651|[from] Sandstorm
+L	ab_0_69	692	|-heal|p1a: Blissey|189/651|[from] item: Leftovers
+L	ab_0_69	693	|upkeep
+L	ab_0_69	694	|turn|51
+L	ab_0_69	695	|
+L	ab_0_69	696	|t:|<NORMALIZED>
+L	ab_0_69	697	|switch|p2a: Gengar|Gengar, M|228/323
+L	ab_0_69	698	|move|p1a: Blissey|Ice Beam|p2a: Gengar
+L	ab_0_69	699	|-damage|p2a: Gengar|133/323
+L	ab_0_69	700	|
+L	ab_0_69	701	|-heal|p1a: Blissey|514/651|[from] move: Wish|[wisher] Blissey
+L	ab_0_69	702	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	703	|-damage|p2a: Gengar|113/323|[from] Sandstorm
+L	ab_0_69	704	|-damage|p1a: Blissey|474/651|[from] Sandstorm
+L	ab_0_69	705	|-heal|p2a: Gengar|133/323|[from] item: Leftovers
+L	ab_0_69	706	|-heal|p1a: Blissey|514/651|[from] item: Leftovers
+L	ab_0_69	707	|upkeep
+L	ab_0_69	708	|turn|52
+L	ab_0_69	709	|
+L	ab_0_69	710	|t:|<NORMALIZED>
+L	ab_0_69	711	|move|p2a: Gengar|Ice Punch|p1a: Blissey
+L	ab_0_69	712	|-damage|p1a: Blissey|454/651
+L	ab_0_69	713	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_0_69	714	|
+L	ab_0_69	715	|-weather|Sandstorm|[upkeep]
+L	ab_0_69	716	|-damage|p2a: Gengar|113/323|[from] Sandstorm
+L	ab_0_69	717	|-damage|p1a: Blissey|414/651|[from] Sandstorm
+L	ab_0_69	718	|-heal|p2a: Gengar|133/323|[from] item: Leftovers
+L	ab_0_69	719	|-heal|p1a: Blissey|454/651|[from] item: Leftovers
+L	ab_0_69	720	|upkeep
+L	ab_0_69	721	|turn|53
+L	ab_0_69	722	|
+L	ab_0_69	723	|t:|<NORMALIZED>
+L	ab_0_69	724	|move|p2a: Gengar|Explosion|p1a: Blissey
+L	ab_0_69	725	|-damage|p1a: Blissey|0 fnt
+L	ab_0_69	726	|faint|p2a: Gengar
+L	ab_0_69	727	|faint|p1a: Blissey
+L	ab_0_69	728	|
+L	ab_0_69	729	|win|P2

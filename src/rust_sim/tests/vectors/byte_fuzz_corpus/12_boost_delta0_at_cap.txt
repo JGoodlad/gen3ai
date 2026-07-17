@@ -1,0 +1,682 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_32
+TEAM	ab_0_32	p1	Metagross||LumBerry|ClearBody|MeteorMash,Earthquake,RockSlide,Explosion|Adamant|112,244,,,,152|N||||]Snorlax||Leftovers|Immunity|BodySlam,ShadowBall,Earthquake,SelfDestruct|Adamant|80,96,140,,156,36|M||||]Celebi||Leftovers|NaturalCure|Psychic,GigaDrain,HiddenPowerFire,CalmMind|Timid|92,,,196,,220|N|,2,,30,,30|||,Fire,,,,]Heracross||SalacBerry|Swarm|Megahorn,RockSlide,Substitute,SwordsDance|Jolly|,252,,,4,252|M|30,,,,,|||]Magneton||Magnet|MagnetPull|Thunderbolt,HiddenPowerGrass,Toxic,ThunderWave|Timid|4,,,252,,252|N|,2,,30,,|||,Grass,,,,]Gyarados||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,Earthquake,ThunderWave|Jolly|4,252,,,,252|M|,,,30,30,30|||,Flying,,,,
+TEAM	ab_0_32	p2	Salamence||ChoiceBand|Intimidate|BrickBreak,Earthquake,HiddenPowerFlying,RockSlide|Jolly|,252,4,,,252|M|30,30,30,30,30,|||,Flying,,,,]Vaporeon||Leftovers|WaterAbsorb|Surf,Wish,Protect,Roar|Bold|240,,216,,28,24|M|,0,,,,|||]Snorlax||Leftovers|Immunity|BodySlam,Earthquake,ShadowBall,SelfDestruct|Adamant|16,176,120,,160,36|M||||]Magneton||Leftovers|MagnetPull|Thunderbolt,HiddenPowerFire,Toxic,Protect|Modest|,,,224,32,252|N|,2,,30,,30|||,Fire,,,,]Claydol||Leftovers|Levitate|Earthquake,Explosion,Psychic,RapidSpin|Brave|248,228,,,,32|N||||]Metagross||Leftovers|ClearBody|MeteorMash,Pursuit,Psychic,Explosion|Quiet|192,,,252,,64|N||||
+FMT	ab_0_32	gen3customgame
+INIT	ab_0_32	40736,3102,58962,25264	1569884009
+DEC	ab_0_32	0	move	0	0	s4	m3	12523,36761,63286,6807	Magneton	174	242	0	-	0	0	0	0	0	0	6	Salamence	330	330	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_32	1	move	0	0	m1	m3	64432,65465,4359,29578	Magneton	33	242	0	-	0	0	0	0	0	0	6	Salamence	330	330	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_32	2	move	0	0	m2	m3	6865,50431,46063,126	Magneton	0	242	1	fnt	0	0	0	0	0	0	5	Salamence	330	330	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_32	3	switch	1	0	s1	-	52725,60321,4135,15993	Snorlax	481	481	0	-	0	0	0	0	0	0	5	Salamence	330	330	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_32	4	move	0	0	m2	m3	63424,13867,6294,34215	Snorlax	363	481	0	-	0	0	0	0	0	0	5	Salamence	330	330	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_32	5	move	0	0	m1	m3	5765,52500,34586,46030	Snorlax	231	481	0	-	0	0	0	0	0	0	5	Salamence	240	330	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_32	6	move	0	0	m0	m3	21813,44069,23285,56017	Snorlax	95	481	0	-	0	0	0	0	0	0	5	Salamence	71	330	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_32	7	move	0	0	m1	m3	8203,13927,32576,55637	Snorlax	0	481	1	fnt	0	0	0	0	0	0	4	Salamence	71	330	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_32	8	switch	1	0	s3	-	52188,38381,46685,55884	Heracross	300	300	0	-	0	0	0	0	0	0	4	Salamence	71	330	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_32	9	move	0	0	m0	m3	51881,58207,56554,39325	Heracross	116	300	0	-	0	0	0	0	0	0	4	Salamence	0	330	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_32	10	switch	0	1	-	s3	59765,57141,9269,16052	Heracross	116	300	0	-	0	0	0	0	0	0	4	Magneton	241	241	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_32	11	move	0	0	m2	m3	8132,51794,30936,30534	Heracross	41	300	0	-	0	0	0	0	1	0	4	Magneton	241	241	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_32	12	move	0	0	m1	m1	28895,8525,32992,40476	Heracross	41	300	0	-	0	0	0	0	1	0	4	Magneton	212	241	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_32	13	move	0	0	m3	m3	19017,53751,35213,48750	Heracross	41	300	0	-	2	0	0	0	1	0	4	Magneton	227	241	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_32	14	move	0	0	m0	m2	15146,15178,8077,5747	Heracross	41	300	0	-	2	0	0	0	1	0	4	Magneton	0	241	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_32	15	switch	0	1	-	s4	25116,48596,5369,1314	Heracross	41	300	0	-	2	0	0	0	1	0	4	Claydol	323	323	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_32	16	move	0	0	m1	s2	32204,2888,51974,10225	Heracross	41	300	0	-	2	0	0	0	1	0	4	Snorlax	268	465	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_32	17	move	0	0	m3	m2	64012,26915,9789,52716	Heracross	41	300	0	-	4	0	0	0	1	0	4	Snorlax	297	465	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_32	18	move	0	0	m2	m0	60465,41785,56647,18624	Heracross	0	300	1	fnt	0	0	0	0	0	0	3	Snorlax	297	465	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_32	19	switch	1	0	s4	-	25470,28835,28789,4739	Metagross	329	329	0	-	0	0	0	0	0	0	3	Snorlax	326	465	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_32	20	move	0	0	s5	s1	54872,52571,51924,1906	Gyarados	332	332	0	-	0	0	0	0	0	0	3	Vaporeon	461	461	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_32	21	move	0	0	s2	m3	10002,46765,55599,18919	Metagross	329	329	0	-	0	0	0	0	0	0	3	Vaporeon	461	461	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_32	22	move	0	0	m2	m1	46450,62318,6040,58650	Metagross	329	329	0	-	0	0	0	0	0	0	3	Vaporeon	382	461	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_32	23	move	0	0	m1	s5	1749,44472,25350,63758	Metagross	329	329	0	-	0	0	0	0	0	0	3	Metagross	150	349	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_32	24	move	0	0	m0	s1	5614,52770,63633,50765	Metagross	329	329	0	-	1	0	0	0	0	0	3	Snorlax	110	465	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_32	25	move	0	0	m0	m1	25719,15292,6089,25873	Metagross	329	329	0	-	1	0	0	0	0	0	3	Snorlax	0	465	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_32	26	switch	0	1	-	s1	5468,61898,6440,38776	Metagross	329	329	0	-	1	0	0	0	0	0	3	Metagross	171	349	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_32	27	move	0	0	m1	m2	5072,15783,7802,16277	Metagross	329	329	0	-	1	0	0	0	0	0	3	Metagross	0	349	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_32	28	switch	0	1	-	s2	54669,10034,2939,29068	Metagross	329	329	0	-	1	0	0	0	0	0	3	Claydol	323	323	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_32	29	move	0	0	m3	m3	43117,52557,61550,6617	Metagross	0	329	1	fnt	0	0	0	0	0	0	2	Claydol	0	323	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	30	switch	1	1	s5	s5	4049,49394,2138,62048	Celebi	364	364	0	-	0	0	0	0	0	0	2	Vaporeon	410	461	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_0_32	31	move	0	0	m3	m1	48802,65171,6237,40611	Celebi	364	364	0	-	0	0	1	1	0	0	2	Vaporeon	438	461	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	32	move	0	0	m2	m2	61463,44558,6440,11764	Celebi	364	364	0	-	0	0	1	1	0	0	2	Vaporeon	461	461	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_32	33	move	0	0	s2	m2	18474,30662,40772,21511	Gyarados	332	332	0	-	0	0	0	0	0	0	2	Vaporeon	461	461	0	-	-1	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	34	move	0	0	m1	m3	25975,46178,27717,36645	Celebi	364	364	0	-	0	0	0	0	0	0	2	Vaporeon	373	461	0	-	-1	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	35	move	0	0	s2	m2	44547,46505,30517,58716	Gyarados	332	332	0	-	0	0	0	0	0	0	2	Vaporeon	401	461	0	-	-2	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	36	move	0	0	m1	m3	1836,63167,61275,54882	Celebi	364	364	0	-	0	0	0	0	0	0	2	Vaporeon	312	461	0	-	-2	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	37	move	0	0	m0	m2	2083,15943,17148,33559	Celebi	364	364	0	-	0	0	0	0	0	0	2	Vaporeon	340	461	0	-	-2	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_32	38	move	0	0	m2	m3	51194,45027,14004,55989	Gyarados	332	332	0	-	0	0	0	0	0	0	2	Vaporeon	336	461	0	-	-3	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	39	move	0	0	m0	m0	14670,32086,61034,17145	Gyarados	292	332	0	-	1	0	0	0	1	0	2	Vaporeon	364	461	0	-	-3	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	40	move	0	0	s2	m0	13954,31426,44907,20221	Celebi	329	364	0	-	0	0	0	0	0	0	2	Vaporeon	392	461	0	-	-3	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	41	move	0	0	m0	m0	9155,44064,59665,8773	Celebi	287	364	0	-	0	0	0	0	0	0	2	Vaporeon	281	461	0	-	-3	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	42	move	0	0	m3	m0	22970,40226,8763,45449	Celebi	268	364	0	-	0	0	1	1	0	0	2	Vaporeon	309	461	0	-	-3	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	43	move	0	0	m0	m2	22812,49292,10998,1794	Celebi	290	364	0	-	0	0	1	1	0	0	2	Vaporeon	337	461	0	-	-3	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_32	44	move	0	0	m3	m3	35724,29367,46285,13623	Gyarados	312	332	0	-	0	0	0	0	0	0	2	Vaporeon	365	461	0	-	-4	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	45	move	0	0	m1	m1	64489,29021,55105,51547	Gyarados	332	332	0	-	0	0	0	0	0	0	2	Vaporeon	269	461	0	-	-4	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	46	move	0	0	m3	m3	46908,19929,40879,51404	Gyarados	332	332	0	-	0	0	0	0	0	0	2	Vaporeon	461	461	0	par	-4	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	47	move	0	0	s2	m0	49683,22813,56591,40350	Celebi	312	364	0	-	0	0	0	0	0	0	2	Vaporeon	461	461	0	par	-4	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	48	move	0	0	m0	m3	34434,65279,52577,20934	Gyarados	332	332	0	-	0	0	0	0	0	0	2	Vaporeon	361	461	0	par	-5	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	49	move	0	0	m0	m3	62694,60473,48377,54010	Celebi	334	364	0	-	0	0	0	0	0	0	2	Vaporeon	389	461	0	par	-5	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	50	move	0	0	m3	m1	58007,23914,3441,60572	Celebi	356	364	0	-	0	0	1	1	0	0	2	Vaporeon	417	461	0	par	-5	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	51	move	0	0	s2	m2	8141,25195,41255,51438	Gyarados	332	332	0	-	0	0	0	0	0	0	2	Vaporeon	461	461	0	par	-6	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	52	move	0	0	m1	m3	40104,41352,30266,22359	Celebi	364	364	0	-	0	0	0	0	0	0	2	Vaporeon	359	461	0	par	-6	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	53	move	0	0	m1	m2	63662,17831,15790,2427	Celebi	364	364	0	-	0	0	0	0	0	0	2	Vaporeon	387	461	0	par	-6	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_32	54	move	0	0	m2	m0	14064,28453,17657,32830	Celebi	364	364	0	-	0	0	0	0	0	0	2	Vaporeon	385	461	0	par	-6	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	55	move	0	0	m0	m1	31939,22584,15574,15572	Celebi	364	364	0	-	0	0	0	0	0	0	2	Vaporeon	274	461	0	par	-6	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	56	move	0	0	m1	m1	21239,15006,25610,45963	Celebi	364	364	0	-	0	0	0	0	0	0	2	Vaporeon	356	461	0	par	-6	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	57	move	0	0	m1	m3	13196,1167,11526,28176	Gyarados	332	332	0	-	0	0	0	0	0	0	2	Vaporeon	196	461	0	par	-6	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	58	move	0	0	m0	m1	39256,65069,16451,63554	Gyarados	332	332	0	-	1	0	0	0	1	0	2	Vaporeon	224	461	0	par	-6	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	59	move	0	0	m2	m1	60604,7723,55667,47505	Gyarados	332	332	0	-	1	0	0	0	1	0	2	Vaporeon	319	461	0	par	-6	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	60	move	0	0	m1	m0	37706,64020,65082,57356	Gyarados	332	332	0	-	1	0	0	0	1	0	2	Vaporeon	150	461	0	par	-6	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_32	61	move	0	0	m2	m3	29669,44593,8444,24153	Gyarados	332	332	0	-	1	0	0	0	1	0	2	Vaporeon	0	461	1	par	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_0_32	1	p1
+L	ab_0_32	0	|t:|<NORMALIZED>
+L	ab_0_32	1	|gametype|singles
+L	ab_0_32	2	|player|p1|P1||
+L	ab_0_32	3	|player|p2|P2||
+L	ab_0_32	4	|gen|3
+L	ab_0_32	5	|tier|[Gen 3] Custom Game
+L	ab_0_32	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_32	7	|
+L	ab_0_32	8	|t:|<NORMALIZED>
+L	ab_0_32	9	|teamsize|p1|6
+L	ab_0_32	10	|teamsize|p2|6
+L	ab_0_32	11	|start
+L	ab_0_32	12	|switch|p1a: Metagross|Metagross|329/329
+L	ab_0_32	13	|switch|p2a: Salamence|Salamence, M|330/330
+L	ab_0_32	14	|-ability|p2a: Salamence|Intimidate|boost
+L	ab_0_32	15	|-fail|p1a: Metagross|unboost|[from] ability: Clear Body|[of] p1a: Metagross
+L	ab_0_32	16	|turn|1
+L	ab_0_32	17	|
+L	ab_0_32	18	|t:|<NORMALIZED>
+L	ab_0_32	19	|switch|p1a: Magneton|Magneton|242/242
+L	ab_0_32	20	|move|p2a: Salamence|Rock Slide|p1a: Magneton
+L	ab_0_32	21	|-resisted|p1a: Magneton
+L	ab_0_32	22	|-damage|p1a: Magneton|174/242
+L	ab_0_32	23	|
+L	ab_0_32	24	|upkeep
+L	ab_0_32	25	|turn|2
+L	ab_0_32	26	|
+L	ab_0_32	27	|t:|<NORMALIZED>
+L	ab_0_32	28	|move|p2a: Salamence|Rock Slide|p1a: Magneton
+L	ab_0_32	29	|-resisted|p1a: Magneton
+L	ab_0_32	30	|-crit|p1a: Magneton
+L	ab_0_32	31	|-damage|p1a: Magneton|33/242
+L	ab_0_32	32	|cant|p1a: Magneton|flinch
+L	ab_0_32	33	|
+L	ab_0_32	34	|upkeep
+L	ab_0_32	35	|turn|3
+L	ab_0_32	36	|
+L	ab_0_32	37	|t:|<NORMALIZED>
+L	ab_0_32	38	|move|p2a: Salamence|Rock Slide|p1a: Magneton
+L	ab_0_32	39	|-resisted|p1a: Magneton
+L	ab_0_32	40	|-damage|p1a: Magneton|0 fnt
+L	ab_0_32	41	|debug|move failed because it did nothing
+L	ab_0_32	42	|faint|p1a: Magneton
+L	ab_0_32	43	|
+L	ab_0_32	44	|t:|<NORMALIZED>
+L	ab_0_32	45	|switch|p1a: Snorlax|Snorlax, M|481/481
+L	ab_0_32	46	|
+L	ab_0_32	47	|upkeep
+L	ab_0_32	48	|turn|4
+L	ab_0_32	49	|
+L	ab_0_32	50	|t:|<NORMALIZED>
+L	ab_0_32	51	|move|p2a: Salamence|Rock Slide|p1a: Snorlax
+L	ab_0_32	52	|-damage|p1a: Snorlax|333/481
+L	ab_0_32	53	|move|p1a: Snorlax|Earthquake|p2a: Salamence
+L	ab_0_32	54	|-immune|p2a: Salamence
+L	ab_0_32	55	|
+L	ab_0_32	56	|-heal|p1a: Snorlax|363/481|[from] item: Leftovers
+L	ab_0_32	57	|upkeep
+L	ab_0_32	58	|turn|5
+L	ab_0_32	59	|
+L	ab_0_32	60	|t:|<NORMALIZED>
+L	ab_0_32	61	|move|p2a: Salamence|Rock Slide|p1a: Snorlax
+L	ab_0_32	62	|-damage|p1a: Snorlax|201/481
+L	ab_0_32	63	|move|p1a: Snorlax|Shadow Ball|p2a: Salamence
+L	ab_0_32	64	|-damage|p2a: Salamence|240/330
+L	ab_0_32	65	|
+L	ab_0_32	66	|-heal|p1a: Snorlax|231/481|[from] item: Leftovers
+L	ab_0_32	67	|upkeep
+L	ab_0_32	68	|turn|6
+L	ab_0_32	69	|
+L	ab_0_32	70	|t:|<NORMALIZED>
+L	ab_0_32	71	|move|p2a: Salamence|Rock Slide|p1a: Snorlax
+L	ab_0_32	72	|-damage|p1a: Snorlax|65/481
+L	ab_0_32	73	|move|p1a: Snorlax|Body Slam|p2a: Salamence
+L	ab_0_32	74	|-damage|p2a: Salamence|71/330
+L	ab_0_32	75	|
+L	ab_0_32	76	|-heal|p1a: Snorlax|95/481|[from] item: Leftovers
+L	ab_0_32	77	|upkeep
+L	ab_0_32	78	|turn|7
+L	ab_0_32	79	|
+L	ab_0_32	80	|t:|<NORMALIZED>
+L	ab_0_32	81	|move|p2a: Salamence|Rock Slide|p1a: Snorlax
+L	ab_0_32	82	|-damage|p1a: Snorlax|0 fnt
+L	ab_0_32	83	|debug|move failed because it did nothing
+L	ab_0_32	84	|faint|p1a: Snorlax
+L	ab_0_32	85	|
+L	ab_0_32	86	|t:|<NORMALIZED>
+L	ab_0_32	87	|switch|p1a: Heracross|Heracross, M|300/300
+L	ab_0_32	88	|
+L	ab_0_32	89	|upkeep
+L	ab_0_32	90	|turn|8
+L	ab_0_32	91	|
+L	ab_0_32	92	|t:|<NORMALIZED>
+L	ab_0_32	93	|move|p2a: Salamence|Rock Slide|p1a: Heracross
+L	ab_0_32	94	|-damage|p1a: Heracross|116/300
+L	ab_0_32	95	|move|p1a: Heracross|Megahorn|p2a: Salamence
+L	ab_0_32	96	|-resisted|p2a: Salamence
+L	ab_0_32	97	|-damage|p2a: Salamence|0 fnt
+L	ab_0_32	98	|faint|p2a: Salamence
+L	ab_0_32	99	|
+L	ab_0_32	100	|t:|<NORMALIZED>
+L	ab_0_32	101	|switch|p2a: Magneton|Magneton|241/241
+L	ab_0_32	102	|
+L	ab_0_32	103	|upkeep
+L	ab_0_32	104	|turn|9
+L	ab_0_32	105	|
+L	ab_0_32	106	|t:|<NORMALIZED>
+L	ab_0_32	107	|move|p2a: Magneton|Protect|p2a: Magneton
+L	ab_0_32	108	|-singleturn|p2a: Magneton|Protect
+L	ab_0_32	109	|move|p1a: Heracross|Substitute|p1a: Heracross
+L	ab_0_32	110	|-start|p1a: Heracross|Substitute
+L	ab_0_32	111	|-damage|p1a: Heracross|41/300
+L	ab_0_32	112	|
+L	ab_0_32	113	|-enditem|p1a: Heracross|Salac Berry|[eat]
+L	ab_0_32	114	|-boost|p1a: Heracross|spe|1|[from] item: Salac Berry
+L	ab_0_32	115	|upkeep
+L	ab_0_32	116	|turn|10
+L	ab_0_32	117	|
+L	ab_0_32	118	|t:|<NORMALIZED>
+L	ab_0_32	119	|move|p1a: Heracross|Rock Slide|p2a: Magneton
+L	ab_0_32	120	|-resisted|p2a: Magneton
+L	ab_0_32	121	|-damage|p2a: Magneton|197/241
+L	ab_0_32	122	|cant|p2a: Magneton|flinch
+L	ab_0_32	123	|
+L	ab_0_32	124	|-heal|p2a: Magneton|212/241|[from] item: Leftovers
+L	ab_0_32	125	|upkeep
+L	ab_0_32	126	|turn|11
+L	ab_0_32	127	|
+L	ab_0_32	128	|t:|<NORMALIZED>
+L	ab_0_32	129	|move|p2a: Magneton|Protect|p2a: Magneton
+L	ab_0_32	130	|-singleturn|p2a: Magneton|Protect
+L	ab_0_32	131	|move|p1a: Heracross|Swords Dance|p1a: Heracross
+L	ab_0_32	132	|-boost|p1a: Heracross|atk|2
+L	ab_0_32	133	|
+L	ab_0_32	134	|-heal|p2a: Magneton|227/241|[from] item: Leftovers
+L	ab_0_32	135	|upkeep
+L	ab_0_32	136	|turn|12
+L	ab_0_32	137	|
+L	ab_0_32	138	|t:|<NORMALIZED>
+L	ab_0_32	139	|move|p1a: Heracross|Megahorn|p2a: Magneton
+L	ab_0_32	140	|debug|Swarm boost
+L	ab_0_32	141	|-resisted|p2a: Magneton
+L	ab_0_32	142	|-damage|p2a: Magneton|0 fnt
+L	ab_0_32	143	|faint|p2a: Magneton
+L	ab_0_32	144	|
+L	ab_0_32	145	|t:|<NORMALIZED>
+L	ab_0_32	146	|switch|p2a: Claydol|Claydol|323/323
+L	ab_0_32	147	|
+L	ab_0_32	148	|upkeep
+L	ab_0_32	149	|turn|13
+L	ab_0_32	150	|
+L	ab_0_32	151	|t:|<NORMALIZED>
+L	ab_0_32	152	|switch|p2a: Snorlax|Snorlax, M|465/465
+L	ab_0_32	153	|move|p1a: Heracross|Rock Slide|p2a: Snorlax
+L	ab_0_32	154	|-damage|p2a: Snorlax|239/465
+L	ab_0_32	155	|
+L	ab_0_32	156	|-heal|p2a: Snorlax|268/465|[from] item: Leftovers
+L	ab_0_32	157	|upkeep
+L	ab_0_32	158	|turn|14
+L	ab_0_32	159	|
+L	ab_0_32	160	|t:|<NORMALIZED>
+L	ab_0_32	161	|move|p1a: Heracross|Swords Dance|p1a: Heracross
+L	ab_0_32	162	|-boost|p1a: Heracross|atk|2
+L	ab_0_32	163	|move|p2a: Snorlax|Shadow Ball|p1a: Heracross
+L	ab_0_32	164	|-end|p1a: Heracross|Substitute
+L	ab_0_32	165	|
+L	ab_0_32	166	|-heal|p2a: Snorlax|297/465|[from] item: Leftovers
+L	ab_0_32	167	|upkeep
+L	ab_0_32	168	|turn|15
+L	ab_0_32	169	|
+L	ab_0_32	170	|t:|<NORMALIZED>
+L	ab_0_32	171	|move|p1a: Heracross|Substitute|p1a: Heracross
+L	ab_0_32	172	|-fail|p1a: Heracross|move: Substitute|[weak]
+L	ab_0_32	173	|move|p2a: Snorlax|Body Slam|p1a: Heracross
+L	ab_0_32	174	|-damage|p1a: Heracross|0 fnt
+L	ab_0_32	175	|faint|p1a: Heracross
+L	ab_0_32	176	|
+L	ab_0_32	177	|t:|<NORMALIZED>
+L	ab_0_32	178	|switch|p1a: Metagross|Metagross|329/329
+L	ab_0_32	179	|
+L	ab_0_32	180	|-heal|p2a: Snorlax|326/465|[from] item: Leftovers
+L	ab_0_32	181	|upkeep
+L	ab_0_32	182	|turn|16
+L	ab_0_32	183	|
+L	ab_0_32	184	|t:|<NORMALIZED>
+L	ab_0_32	185	|switch|p1a: Gyarados|Gyarados, M|332/332
+L	ab_0_32	186	|-ability|p1a: Gyarados|Intimidate|boost
+L	ab_0_32	187	|-unboost|p2a: Snorlax|atk|1
+L	ab_0_32	188	|switch|p2a: Vaporeon|Vaporeon, M|461/461
+L	ab_0_32	189	|
+L	ab_0_32	190	|upkeep
+L	ab_0_32	191	|turn|17
+L	ab_0_32	192	|
+L	ab_0_32	193	|t:|<NORMALIZED>
+L	ab_0_32	194	|switch|p1a: Celebi|Celebi|364/364
+L	ab_0_32	195	|move|p2a: Vaporeon|Roar|p1a: Celebi
+L	ab_0_32	196	|drag|p1a: Metagross|Metagross|329/329
+L	ab_0_32	197	|
+L	ab_0_32	198	|upkeep
+L	ab_0_32	199	|turn|18
+L	ab_0_32	200	|
+L	ab_0_32	201	|t:|<NORMALIZED>
+L	ab_0_32	202	|move|p1a: Metagross|Rock Slide|p2a: Vaporeon
+L	ab_0_32	203	|-damage|p2a: Vaporeon|354/461
+L	ab_0_32	204	|cant|p2a: Vaporeon|flinch
+L	ab_0_32	205	|
+L	ab_0_32	206	|-heal|p2a: Vaporeon|382/461|[from] item: Leftovers
+L	ab_0_32	207	|upkeep
+L	ab_0_32	208	|turn|19
+L	ab_0_32	209	|
+L	ab_0_32	210	|t:|<NORMALIZED>
+L	ab_0_32	211	|switch|p2a: Metagross|Metagross|349/349
+L	ab_0_32	212	|move|p1a: Metagross|Earthquake|p2a: Metagross
+L	ab_0_32	213	|-supereffective|p2a: Metagross
+L	ab_0_32	214	|-damage|p2a: Metagross|129/349
+L	ab_0_32	215	|
+L	ab_0_32	216	|-heal|p2a: Metagross|150/349|[from] item: Leftovers
+L	ab_0_32	217	|upkeep
+L	ab_0_32	218	|turn|20
+L	ab_0_32	219	|
+L	ab_0_32	220	|t:|<NORMALIZED>
+L	ab_0_32	221	|switch|p2a: Snorlax|Snorlax, M|326/465
+L	ab_0_32	222	|move|p1a: Metagross|Meteor Mash|p2a: Snorlax
+L	ab_0_32	223	|-damage|p2a: Snorlax|81/465
+L	ab_0_32	224	|-boost|p1a: Metagross|atk|1
+L	ab_0_32	225	|
+L	ab_0_32	226	|-heal|p2a: Snorlax|110/465|[from] item: Leftovers
+L	ab_0_32	227	|upkeep
+L	ab_0_32	228	|turn|21
+L	ab_0_32	229	|
+L	ab_0_32	230	|t:|<NORMALIZED>
+L	ab_0_32	231	|move|p1a: Metagross|Meteor Mash|p2a: Snorlax
+L	ab_0_32	232	|-damage|p2a: Snorlax|0 fnt
+L	ab_0_32	233	|faint|p2a: Snorlax
+L	ab_0_32	234	|
+L	ab_0_32	235	|t:|<NORMALIZED>
+L	ab_0_32	236	|switch|p2a: Metagross|Metagross|150/349
+L	ab_0_32	237	|
+L	ab_0_32	238	|-heal|p2a: Metagross|171/349|[from] item: Leftovers
+L	ab_0_32	239	|upkeep
+L	ab_0_32	240	|turn|22
+L	ab_0_32	241	|
+L	ab_0_32	242	|t:|<NORMALIZED>
+L	ab_0_32	243	|move|p1a: Metagross|Earthquake|p2a: Metagross
+L	ab_0_32	244	|-supereffective|p2a: Metagross
+L	ab_0_32	245	|-damage|p2a: Metagross|0 fnt
+L	ab_0_32	246	|faint|p2a: Metagross
+L	ab_0_32	247	|
+L	ab_0_32	248	|t:|<NORMALIZED>
+L	ab_0_32	249	|switch|p2a: Claydol|Claydol|323/323
+L	ab_0_32	250	|
+L	ab_0_32	251	|upkeep
+L	ab_0_32	252	|turn|23
+L	ab_0_32	253	|
+L	ab_0_32	254	|t:|<NORMALIZED>
+L	ab_0_32	255	|move|p1a: Metagross|Explosion|p2a: Claydol
+L	ab_0_32	256	|-damage|p2a: Claydol|0 fnt
+L	ab_0_32	257	|faint|p1a: Metagross
+L	ab_0_32	258	|faint|p2a: Claydol
+L	ab_0_32	259	|
+L	ab_0_32	260	|t:|<NORMALIZED>
+L	ab_0_32	261	|switch|p1a: Celebi|Celebi|364/364
+L	ab_0_32	262	|switch|p2a: Vaporeon|Vaporeon, M|382/461
+L	ab_0_32	263	|
+L	ab_0_32	264	|-heal|p2a: Vaporeon|410/461|[from] item: Leftovers
+L	ab_0_32	265	|upkeep
+L	ab_0_32	266	|turn|24
+L	ab_0_32	267	|
+L	ab_0_32	268	|t:|<NORMALIZED>
+L	ab_0_32	269	|move|p1a: Celebi|Calm Mind|p1a: Celebi
+L	ab_0_32	270	|-boost|p1a: Celebi|spa|1
+L	ab_0_32	271	|-boost|p1a: Celebi|spd|1
+L	ab_0_32	272	|move|p2a: Vaporeon|Wish|p2a: Vaporeon
+L	ab_0_32	273	|
+L	ab_0_32	274	|-heal|p2a: Vaporeon|438/461|[from] item: Leftovers
+L	ab_0_32	275	|upkeep
+L	ab_0_32	276	|turn|25
+L	ab_0_32	277	|
+L	ab_0_32	278	|t:|<NORMALIZED>
+L	ab_0_32	279	|move|p2a: Vaporeon|Protect|p2a: Vaporeon
+L	ab_0_32	280	|-singleturn|p2a: Vaporeon|Protect
+L	ab_0_32	281	|move|p1a: Celebi|Hidden Power|p2a: Vaporeon
+L	ab_0_32	282	|-activate|p2a: Vaporeon|Protect
+L	ab_0_32	283	|
+L	ab_0_32	284	|-heal|p2a: Vaporeon|461/461|[from] move: Wish|[wisher] Vaporeon
+L	ab_0_32	285	|upkeep
+L	ab_0_32	286	|turn|26
+L	ab_0_32	287	|
+L	ab_0_32	288	|t:|<NORMALIZED>
+L	ab_0_32	289	|switch|p1a: Gyarados|Gyarados, M|332/332
+L	ab_0_32	290	|-ability|p1a: Gyarados|Intimidate|boost
+L	ab_0_32	291	|-unboost|p2a: Vaporeon|atk|1
+L	ab_0_32	292	|move|p2a: Vaporeon|Protect||[still]
+L	ab_0_32	293	|-fail|p2a: Vaporeon
+L	ab_0_32	294	|
+L	ab_0_32	295	|upkeep
+L	ab_0_32	296	|turn|27
+L	ab_0_32	297	|
+L	ab_0_32	298	|t:|<NORMALIZED>
+L	ab_0_32	299	|move|p1a: Gyarados|Hidden Power|p2a: Vaporeon
+L	ab_0_32	300	|debug|BP: 70
+L	ab_0_32	301	|-damage|p2a: Vaporeon|345/461
+L	ab_0_32	302	|move|p2a: Vaporeon|Roar|p1a: Gyarados
+L	ab_0_32	303	|drag|p1a: Celebi|Celebi|364/364
+L	ab_0_32	304	|
+L	ab_0_32	305	|-heal|p2a: Vaporeon|373/461|[from] item: Leftovers
+L	ab_0_32	306	|upkeep
+L	ab_0_32	307	|turn|28
+L	ab_0_32	308	|
+L	ab_0_32	309	|t:|<NORMALIZED>
+L	ab_0_32	310	|switch|p1a: Gyarados|Gyarados, M|332/332
+L	ab_0_32	311	|-ability|p1a: Gyarados|Intimidate|boost
+L	ab_0_32	312	|-unboost|p2a: Vaporeon|atk|1
+L	ab_0_32	313	|move|p2a: Vaporeon|Protect||[still]
+L	ab_0_32	314	|-fail|p2a: Vaporeon
+L	ab_0_32	315	|
+L	ab_0_32	316	|-heal|p2a: Vaporeon|401/461|[from] item: Leftovers
+L	ab_0_32	317	|upkeep
+L	ab_0_32	318	|turn|29
+L	ab_0_32	319	|
+L	ab_0_32	320	|t:|<NORMALIZED>
+L	ab_0_32	321	|move|p1a: Gyarados|Hidden Power|p2a: Vaporeon
+L	ab_0_32	322	|debug|BP: 70
+L	ab_0_32	323	|-damage|p2a: Vaporeon|284/461
+L	ab_0_32	324	|move|p2a: Vaporeon|Roar|p1a: Gyarados
+L	ab_0_32	325	|drag|p1a: Celebi|Celebi|364/364
+L	ab_0_32	326	|
+L	ab_0_32	327	|-heal|p2a: Vaporeon|312/461|[from] item: Leftovers
+L	ab_0_32	328	|upkeep
+L	ab_0_32	329	|turn|30
+L	ab_0_32	330	|
+L	ab_0_32	331	|t:|<NORMALIZED>
+L	ab_0_32	332	|move|p2a: Vaporeon|Protect|p2a: Vaporeon
+L	ab_0_32	333	|-singleturn|p2a: Vaporeon|Protect
+L	ab_0_32	334	|move|p1a: Celebi|Psychic|p2a: Vaporeon
+L	ab_0_32	335	|-activate|p2a: Vaporeon|Protect
+L	ab_0_32	336	|
+L	ab_0_32	337	|-heal|p2a: Vaporeon|340/461|[from] item: Leftovers
+L	ab_0_32	338	|upkeep
+L	ab_0_32	339	|turn|31
+L	ab_0_32	340	|
+L	ab_0_32	341	|t:|<NORMALIZED>
+L	ab_0_32	342	|move|p1a: Celebi|Hidden Power|p2a: Vaporeon
+L	ab_0_32	343	|debug|BP: 70
+L	ab_0_32	344	|-resisted|p2a: Vaporeon
+L	ab_0_32	345	|-damage|p2a: Vaporeon|308/461
+L	ab_0_32	346	|move|p2a: Vaporeon|Roar|p1a: Celebi
+L	ab_0_32	347	|drag|p1a: Gyarados|Gyarados, M|332/332
+L	ab_0_32	348	|-ability|p1a: Gyarados|Intimidate|boost
+L	ab_0_32	349	|-unboost|p2a: Vaporeon|atk|1
+L	ab_0_32	350	|
+L	ab_0_32	351	|-heal|p2a: Vaporeon|336/461|[from] item: Leftovers
+L	ab_0_32	352	|upkeep
+L	ab_0_32	353	|turn|32
+L	ab_0_32	354	|
+L	ab_0_32	355	|t:|<NORMALIZED>
+L	ab_0_32	356	|move|p1a: Gyarados|Dragon Dance|p1a: Gyarados
+L	ab_0_32	357	|-boost|p1a: Gyarados|atk|1
+L	ab_0_32	358	|-boost|p1a: Gyarados|spe|1
+L	ab_0_32	359	|move|p2a: Vaporeon|Surf|p1a: Gyarados
+L	ab_0_32	360	|-resisted|p1a: Gyarados
+L	ab_0_32	361	|-damage|p1a: Gyarados|272/332
+L	ab_0_32	362	|
+L	ab_0_32	363	|-heal|p1a: Gyarados|292/332|[from] item: Leftovers
+L	ab_0_32	364	|-heal|p2a: Vaporeon|364/461|[from] item: Leftovers
+L	ab_0_32	365	|upkeep
+L	ab_0_32	366	|turn|33
+L	ab_0_32	367	|
+L	ab_0_32	368	|t:|<NORMALIZED>
+L	ab_0_32	369	|switch|p1a: Celebi|Celebi|364/364
+L	ab_0_32	370	|move|p2a: Vaporeon|Surf|p1a: Celebi
+L	ab_0_32	371	|-resisted|p1a: Celebi
+L	ab_0_32	372	|-damage|p1a: Celebi|307/364
+L	ab_0_32	373	|
+L	ab_0_32	374	|-heal|p1a: Celebi|329/364|[from] item: Leftovers
+L	ab_0_32	375	|-heal|p2a: Vaporeon|392/461|[from] item: Leftovers
+L	ab_0_32	376	|upkeep
+L	ab_0_32	377	|turn|34
+L	ab_0_32	378	|
+L	ab_0_32	379	|t:|<NORMALIZED>
+L	ab_0_32	380	|move|p1a: Celebi|Psychic|p2a: Vaporeon
+L	ab_0_32	381	|-damage|p2a: Vaporeon|253/461
+L	ab_0_32	382	|move|p2a: Vaporeon|Surf|p1a: Celebi
+L	ab_0_32	383	|-resisted|p1a: Celebi
+L	ab_0_32	384	|-damage|p1a: Celebi|265/364
+L	ab_0_32	385	|
+L	ab_0_32	386	|-heal|p1a: Celebi|287/364|[from] item: Leftovers
+L	ab_0_32	387	|-heal|p2a: Vaporeon|281/461|[from] item: Leftovers
+L	ab_0_32	388	|upkeep
+L	ab_0_32	389	|turn|35
+L	ab_0_32	390	|
+L	ab_0_32	391	|t:|<NORMALIZED>
+L	ab_0_32	392	|move|p1a: Celebi|Calm Mind|p1a: Celebi
+L	ab_0_32	393	|-boost|p1a: Celebi|spa|1
+L	ab_0_32	394	|-boost|p1a: Celebi|spd|1
+L	ab_0_32	395	|move|p2a: Vaporeon|Surf|p1a: Celebi
+L	ab_0_32	396	|-resisted|p1a: Celebi
+L	ab_0_32	397	|-damage|p1a: Celebi|246/364
+L	ab_0_32	398	|
+L	ab_0_32	399	|-heal|p1a: Celebi|268/364|[from] item: Leftovers
+L	ab_0_32	400	|-heal|p2a: Vaporeon|309/461|[from] item: Leftovers
+L	ab_0_32	401	|upkeep
+L	ab_0_32	402	|turn|36
+L	ab_0_32	403	|
+L	ab_0_32	404	|t:|<NORMALIZED>
+L	ab_0_32	405	|move|p2a: Vaporeon|Protect|p2a: Vaporeon
+L	ab_0_32	406	|-singleturn|p2a: Vaporeon|Protect
+L	ab_0_32	407	|move|p1a: Celebi|Psychic|p2a: Vaporeon
+L	ab_0_32	408	|-activate|p2a: Vaporeon|Protect
+L	ab_0_32	409	|
+L	ab_0_32	410	|-heal|p1a: Celebi|290/364|[from] item: Leftovers
+L	ab_0_32	411	|-heal|p2a: Vaporeon|337/461|[from] item: Leftovers
+L	ab_0_32	412	|upkeep
+L	ab_0_32	413	|turn|37
+L	ab_0_32	414	|
+L	ab_0_32	415	|t:|<NORMALIZED>
+L	ab_0_32	416	|move|p1a: Celebi|Calm Mind|p1a: Celebi
+L	ab_0_32	417	|-boost|p1a: Celebi|spa|1
+L	ab_0_32	418	|-boost|p1a: Celebi|spd|1
+L	ab_0_32	419	|move|p2a: Vaporeon|Roar|p1a: Celebi
+L	ab_0_32	420	|drag|p1a: Gyarados|Gyarados, M|292/332
+L	ab_0_32	421	|-ability|p1a: Gyarados|Intimidate|boost
+L	ab_0_32	422	|-unboost|p2a: Vaporeon|atk|1
+L	ab_0_32	423	|
+L	ab_0_32	424	|-heal|p1a: Gyarados|312/332|[from] item: Leftovers
+L	ab_0_32	425	|-heal|p2a: Vaporeon|365/461|[from] item: Leftovers
+L	ab_0_32	426	|upkeep
+L	ab_0_32	427	|turn|38
+L	ab_0_32	428	|
+L	ab_0_32	429	|t:|<NORMALIZED>
+L	ab_0_32	430	|move|p1a: Gyarados|Hidden Power|p2a: Vaporeon
+L	ab_0_32	431	|debug|BP: 70
+L	ab_0_32	432	|-damage|p2a: Vaporeon|241/461
+L	ab_0_32	433	|move|p2a: Vaporeon|Wish|p2a: Vaporeon
+L	ab_0_32	434	|
+L	ab_0_32	435	|-heal|p1a: Gyarados|332/332|[from] item: Leftovers
+L	ab_0_32	436	|-heal|p2a: Vaporeon|269/461|[from] item: Leftovers
+L	ab_0_32	437	|upkeep
+L	ab_0_32	438	|turn|39
+L	ab_0_32	439	|
+L	ab_0_32	440	|t:|<NORMALIZED>
+L	ab_0_32	441	|move|p1a: Gyarados|Thunder Wave|p2a: Vaporeon
+L	ab_0_32	442	|-status|p2a: Vaporeon|par
+L	ab_0_32	443	|cant|p2a: Vaporeon|par
+L	ab_0_32	444	|
+L	ab_0_32	445	|-heal|p2a: Vaporeon|461/461 par|[from] move: Wish|[wisher] Vaporeon
+L	ab_0_32	446	|upkeep
+L	ab_0_32	447	|turn|40
+L	ab_0_32	448	|
+L	ab_0_32	449	|t:|<NORMALIZED>
+L	ab_0_32	450	|switch|p1a: Celebi|Celebi|290/364
+L	ab_0_32	451	|cant|p2a: Vaporeon|par
+L	ab_0_32	452	|
+L	ab_0_32	453	|-heal|p1a: Celebi|312/364|[from] item: Leftovers
+L	ab_0_32	454	|upkeep
+L	ab_0_32	455	|turn|41
+L	ab_0_32	456	|
+L	ab_0_32	457	|t:|<NORMALIZED>
+L	ab_0_32	458	|move|p1a: Celebi|Psychic|p2a: Vaporeon
+L	ab_0_32	459	|-damage|p2a: Vaporeon|333/461 par
+L	ab_0_32	460	|move|p2a: Vaporeon|Roar|p1a: Celebi
+L	ab_0_32	461	|drag|p1a: Gyarados|Gyarados, M|332/332
+L	ab_0_32	462	|-ability|p1a: Gyarados|Intimidate|boost
+L	ab_0_32	463	|-unboost|p2a: Vaporeon|atk|1
+L	ab_0_32	464	|
+L	ab_0_32	465	|-heal|p2a: Vaporeon|361/461 par|[from] item: Leftovers
+L	ab_0_32	466	|upkeep
+L	ab_0_32	467	|turn|42
+L	ab_0_32	468	|
+L	ab_0_32	469	|t:|<NORMALIZED>
+L	ab_0_32	470	|move|p1a: Gyarados|Dragon Dance|p1a: Gyarados
+L	ab_0_32	471	|-boost|p1a: Gyarados|atk|1
+L	ab_0_32	472	|-boost|p1a: Gyarados|spe|1
+L	ab_0_32	473	|move|p2a: Vaporeon|Roar|p1a: Gyarados
+L	ab_0_32	474	|drag|p1a: Celebi|Celebi|312/364
+L	ab_0_32	475	|
+L	ab_0_32	476	|-heal|p1a: Celebi|334/364|[from] item: Leftovers
+L	ab_0_32	477	|-heal|p2a: Vaporeon|389/461 par|[from] item: Leftovers
+L	ab_0_32	478	|upkeep
+L	ab_0_32	479	|turn|43
+L	ab_0_32	480	|
+L	ab_0_32	481	|t:|<NORMALIZED>
+L	ab_0_32	482	|move|p1a: Celebi|Calm Mind|p1a: Celebi
+L	ab_0_32	483	|-boost|p1a: Celebi|spa|1
+L	ab_0_32	484	|-boost|p1a: Celebi|spd|1
+L	ab_0_32	485	|move|p2a: Vaporeon|Wish|p2a: Vaporeon
+L	ab_0_32	486	|
+L	ab_0_32	487	|-heal|p1a: Celebi|356/364|[from] item: Leftovers
+L	ab_0_32	488	|-heal|p2a: Vaporeon|417/461 par|[from] item: Leftovers
+L	ab_0_32	489	|upkeep
+L	ab_0_32	490	|turn|44
+L	ab_0_32	491	|
+L	ab_0_32	492	|t:|<NORMALIZED>
+L	ab_0_32	493	|switch|p1a: Gyarados|Gyarados, M|332/332
+L	ab_0_32	494	|-ability|p1a: Gyarados|Intimidate|boost
+L	ab_0_32	495	|-unboost|p2a: Vaporeon|atk|1
+L	ab_0_32	496	|move|p2a: Vaporeon|Protect||[still]
+L	ab_0_32	497	|-fail|p2a: Vaporeon
+L	ab_0_32	498	|
+L	ab_0_32	499	|-heal|p2a: Vaporeon|461/461 par|[from] move: Wish|[wisher] Vaporeon
+L	ab_0_32	500	|upkeep
+L	ab_0_32	501	|turn|45
+L	ab_0_32	502	|
+L	ab_0_32	503	|t:|<NORMALIZED>
+L	ab_0_32	504	|move|p1a: Gyarados|Hidden Power|p2a: Vaporeon
+L	ab_0_32	505	|debug|BP: 70
+L	ab_0_32	506	|-damage|p2a: Vaporeon|331/461 par
+L	ab_0_32	507	|move|p2a: Vaporeon|Roar|p1a: Gyarados
+L	ab_0_32	508	|drag|p1a: Celebi|Celebi|356/364
+L	ab_0_32	509	|
+L	ab_0_32	510	|-heal|p1a: Celebi|364/364|[from] item: Leftovers
+L	ab_0_32	511	|-heal|p2a: Vaporeon|359/461 par|[from] item: Leftovers
+L	ab_0_32	512	|upkeep
+L	ab_0_32	513	|turn|46
+L	ab_0_32	514	|
+L	ab_0_32	515	|t:|<NORMALIZED>
+L	ab_0_32	516	|move|p2a: Vaporeon|Protect|p2a: Vaporeon
+L	ab_0_32	517	|-singleturn|p2a: Vaporeon|Protect
+L	ab_0_32	518	|move|p1a: Celebi|Giga Drain|p2a: Vaporeon
+L	ab_0_32	519	|-activate|p2a: Vaporeon|Protect
+L	ab_0_32	520	|
+L	ab_0_32	521	|-heal|p2a: Vaporeon|387/461 par|[from] item: Leftovers
+L	ab_0_32	522	|upkeep
+L	ab_0_32	523	|turn|47
+L	ab_0_32	524	|
+L	ab_0_32	525	|t:|<NORMALIZED>
+L	ab_0_32	526	|move|p1a: Celebi|Hidden Power|p2a: Vaporeon
+L	ab_0_32	527	|debug|BP: 70
+L	ab_0_32	528	|-resisted|p2a: Vaporeon
+L	ab_0_32	529	|-damage|p2a: Vaporeon|357/461 par
+L	ab_0_32	530	|cant|p2a: Vaporeon|par
+L	ab_0_32	531	|
+L	ab_0_32	532	|-heal|p2a: Vaporeon|385/461 par|[from] item: Leftovers
+L	ab_0_32	533	|upkeep
+L	ab_0_32	534	|turn|48
+L	ab_0_32	535	|
+L	ab_0_32	536	|t:|<NORMALIZED>
+L	ab_0_32	537	|move|p1a: Celebi|Psychic|p2a: Vaporeon
+L	ab_0_32	538	|-damage|p2a: Vaporeon|246/461 par
+L	ab_0_32	539	|move|p2a: Vaporeon|Wish|p2a: Vaporeon
+L	ab_0_32	540	|
+L	ab_0_32	541	|-heal|p2a: Vaporeon|274/461 par|[from] item: Leftovers
+L	ab_0_32	542	|upkeep
+L	ab_0_32	543	|turn|49
+L	ab_0_32	544	|
+L	ab_0_32	545	|t:|<NORMALIZED>
+L	ab_0_32	546	|move|p1a: Celebi|Giga Drain|p2a: Vaporeon
+L	ab_0_32	547	|-supereffective|p2a: Vaporeon
+L	ab_0_32	548	|-damage|p2a: Vaporeon|98/461 par
+L	ab_0_32	549	|move|p2a: Vaporeon|Wish||[still]
+L	ab_0_32	550	|-fail|p2a: Vaporeon
+L	ab_0_32	551	|debug|move failed because it did nothing
+L	ab_0_32	552	|
+L	ab_0_32	553	|-heal|p2a: Vaporeon|328/461 par|[from] move: Wish|[wisher] Vaporeon
+L	ab_0_32	554	|-heal|p2a: Vaporeon|356/461 par|[from] item: Leftovers
+L	ab_0_32	555	|upkeep
+L	ab_0_32	556	|turn|50
+L	ab_0_32	557	|
+L	ab_0_32	558	|t:|<NORMALIZED>
+L	ab_0_32	559	|move|p1a: Celebi|Giga Drain|p2a: Vaporeon
+L	ab_0_32	560	|-supereffective|p2a: Vaporeon
+L	ab_0_32	561	|-damage|p2a: Vaporeon|168/461 par
+L	ab_0_32	562	|move|p2a: Vaporeon|Roar|p1a: Celebi
+L	ab_0_32	563	|drag|p1a: Gyarados|Gyarados, M|332/332
+L	ab_0_32	564	|-ability|p1a: Gyarados|Intimidate|boost
+L	ab_0_32	565	|-unboost|p2a: Vaporeon|atk|0
+L	ab_0_32	566	|
+L	ab_0_32	567	|-heal|p2a: Vaporeon|196/461 par|[from] item: Leftovers
+L	ab_0_32	568	|upkeep
+L	ab_0_32	569	|turn|51
+L	ab_0_32	570	|
+L	ab_0_32	571	|t:|<NORMALIZED>
+L	ab_0_32	572	|move|p1a: Gyarados|Dragon Dance|p1a: Gyarados
+L	ab_0_32	573	|-boost|p1a: Gyarados|atk|1
+L	ab_0_32	574	|-boost|p1a: Gyarados|spe|1
+L	ab_0_32	575	|move|p2a: Vaporeon|Wish|p2a: Vaporeon
+L	ab_0_32	576	|
+L	ab_0_32	577	|-heal|p2a: Vaporeon|224/461 par|[from] item: Leftovers
+L	ab_0_32	578	|upkeep
+L	ab_0_32	579	|turn|52
+L	ab_0_32	580	|
+L	ab_0_32	581	|t:|<NORMALIZED>
+L	ab_0_32	582	|move|p1a: Gyarados|Earthquake|p2a: Vaporeon
+L	ab_0_32	583	|-damage|p2a: Vaporeon|61/461 par
+L	ab_0_32	584	|move|p2a: Vaporeon|Wish||[still]
+L	ab_0_32	585	|-fail|p2a: Vaporeon
+L	ab_0_32	586	|debug|move failed because it did nothing
+L	ab_0_32	587	|
+L	ab_0_32	588	|-heal|p2a: Vaporeon|291/461 par|[from] move: Wish|[wisher] Vaporeon
+L	ab_0_32	589	|-heal|p2a: Vaporeon|319/461 par|[from] item: Leftovers
+L	ab_0_32	590	|upkeep
+L	ab_0_32	591	|turn|53
+L	ab_0_32	592	|
+L	ab_0_32	593	|t:|<NORMALIZED>
+L	ab_0_32	594	|move|p1a: Gyarados|Hidden Power|p2a: Vaporeon
+L	ab_0_32	595	|debug|BP: 70
+L	ab_0_32	596	|-damage|p2a: Vaporeon|122/461 par
+L	ab_0_32	597	|cant|p2a: Vaporeon|par
+L	ab_0_32	598	|
+L	ab_0_32	599	|-heal|p2a: Vaporeon|150/461 par|[from] item: Leftovers
+L	ab_0_32	600	|upkeep
+L	ab_0_32	601	|turn|54
+L	ab_0_32	602	|
+L	ab_0_32	603	|t:|<NORMALIZED>
+L	ab_0_32	604	|move|p1a: Gyarados|Earthquake|p2a: Vaporeon
+L	ab_0_32	605	|-crit|p2a: Vaporeon
+L	ab_0_32	606	|-damage|p2a: Vaporeon|0 fnt
+L	ab_0_32	607	|faint|p2a: Vaporeon
+L	ab_0_32	608	|
+L	ab_0_32	609	|win|P1

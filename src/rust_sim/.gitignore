@@ -2,7 +2,8 @@
 /target
 Cargo.lock
 
-# A/B fuzzer output (repros/logs — regenerable, not source)
-/harness/ab_fuzz_out
-/harness/bridge_ab_fuzz_out
-/harness/sim_bridge_diff_out
+# A/B fuzzer output (repros/logs — regenerable, not source).
+# Glob so format-suffixed run dirs (ab_fuzz_out_ou, ab_fuzz_out_protocol, …) are covered too.
+/harness/ab_fuzz_out*
+/harness/bridge_ab_fuzz_out*
+/harness/sim_bridge_diff_out*

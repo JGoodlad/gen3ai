@@ -1,0 +1,389 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_14
+TEAM	ab_0_14	p1	Zapdos||Leftovers|Pressure|Thunderbolt,HiddenPowerIce,ThunderWave,Roar|Timid|,,,252,4,252|N|,2,30,,,|||,Ice,,,,]Swampert||SalacBerry|Torrent|HydroPump,IceBeam,Substitute,Endeavor|Timid|,,,252,4,252|M|,0,,,,|||]Tyranitar||LumBerry|SandStream|DragonDance,RockSlide,Earthquake,HiddenPowerGrass|Naive|,244,,12,,252|M|,,30,30,,|||,Grass,,,,]Metagross||Leftovers|ClearBody|MeteorMash,HiddenPowerFire,Psychic,Explosion|Quiet|184,,,224,,100|N|,30,,30,,30|||,Fire,,,,]Snorlax||Leftovers|Immunity|BodySlam,FocusPunch,ShadowBall,SelfDestruct|Adamant|16,176,120,,160,36|M||||]Salamence||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,Earthquake,RockSlide|Adamant|,180,,,212,116|M|,,,30,30,30|||,Flying,,,,
+TEAM	ab_0_14	p2	Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,252,,16|M||||]Metagross||Leftovers|ClearBody|MeteorMash,HiddenPowerFire,Psychic,Explosion|Rash|168,,16,252,,72|N|,30,,30,,30|||,Fire,,,,]Gengar||Leftovers|Levitate|WillOWisp,FirePunch,IcePunch,Explosion|Timid|4,,,252,,252|M||||]Jolteon||Leftovers|VoltAbsorb|Substitute,Toxic,Thunderbolt,BatonPass|Timid|8,,,248,,252|M|,0,,,,|||]Celebi||Leftovers|NaturalCure|LeechSeed,CalmMind,GigaDrain,Psychic|Modest|192,,4,136,,176|N|,0,,,,|||]Salamence||Leftovers|Intimidate|DragonDance,Earthquake,RockSlide,HiddenPowerFlying|Adamant|,180,,,212,116|M|,,,30,30,30|||,Flying,,,,
+FMT	ab_0_14	gen3customgame
+INIT	ab_0_14	10739,61576,46889,53476	256760312
+DEC	ab_0_14	0	move	0	0	m3	m0	6182,50161,38145,52280	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Celebi	389	389	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_14	1	move	0	0	m2	m0	22958,8920,15288,55884	Zapdos	281	321	0	-	0	0	0	0	0	0	6	Celebi	389	389	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	2	move	0	0	m0	m0	47725,50391,22473,39325	Zapdos	261	321	0	-	0	0	0	0	0	0	6	Celebi	372	389	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	3	move	0	0	m2	m0	36353,57401,22683,30534	Zapdos	241	321	0	-	0	0	0	0	0	0	6	Celebi	389	389	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	4	move	0	0	m1	m3	32367,56892,7436,40489	Zapdos	72	321	0	-	0	0	0	0	0	0	6	Celebi	293	389	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	5	move	0	0	m2	m2	13430,41759,15447,28375	Zapdos	8	321	0	-	0	0	0	0	0	0	6	Celebi	379	389	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	6	move	0	0	s4	m1	21090,40524,58421,10225	Snorlax	465	465	0	-	0	0	0	0	0	0	6	Celebi	389	389	0	par	0	0	1	1	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	7	move	0	0	m0	m0	4258,38779,51650,5566	Snorlax	465	465	0	-	0	0	0	0	0	0	6	Celebi	266	389	0	par	0	0	1	1	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	8	move	0	0	m1	s1	14623,13828,9799,1906	Snorlax	465	465	0	-	0	0	0	0	0	0	6	Metagross	241	343	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_14	9	move	0	0	m2	m3	45346,60898,4022,18919	Snorlax	0	465	1	fnt	0	0	0	0	0	0	5	Metagross	0	343	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_14	10	switch	1	1	s3	s1	62296,48869,14831,26086	Metagross	347	347	0	-	0	0	0	0	0	0	5	Celebi	290	389	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_14	11	move	0	0	m3	m2	29229,48585,65373,27068	Metagross	0	347	1	fnt	0	0	0	0	0	0	4	Celebi	0	389	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_14	12	switch	1	1	s5	s3	3010,10671,61882,61935	Salamence	331	331	0	-	0	0	0	0	0	0	4	Jolteon	273	273	0	-	-1	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_14	13	move	0	0	m3	m0	45446,4863,17479,54722	Salamence	331	331	0	-	0	0	0	0	0	0	4	Jolteon	222	273	0	-	-1	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_14	14	move	0	0	m2	m1	6748,29699,1032,28470	Salamence	331	331	0	-	0	0	0	0	0	0	4	Jolteon	0	273	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_14	15	switch	0	1	-	s4	22174,16332,60792,25873	Salamence	331	331	0	-	0	0	0	0	0	0	4	Swampert	401	401	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_14	16	move	0	0	m2	m2	9550,3629,48598,29068	Salamence	331	331	0	-	0	0	0	0	0	0	4	Swampert	281	401	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_14	17	move	0	0	m1	m0	51125,64117,16596,40611	Salamence	331	331	0	-	0	0	0	0	0	0	4	Swampert	158	401	0	-	1	1	0	0	-1	0	3	p1	0	0	0	0	0
+DEC	ab_0_14	18	move	0	0	m1	m1	64308,48276,3079,33926	Salamence	331	331	0	-	0	0	0	0	0	0	4	Swampert	78	401	0	-	1	1	0	0	-1	0	3	p1	0	0	0	0	0
+DEC	ab_0_14	19	move	0	0	m3	m3	9728,9443,12305,25518	Salamence	0	331	1	fnt	0	0	0	0	0	0	3	Swampert	46	401	0	-	1	1	0	0	-1	0	3	p1	0	0	0	0	0
+DEC	ab_0_14	20	switch	1	0	s4	-	52757,38536,26397,4201	Zapdos	28	321	0	-	0	0	0	0	0	0	3	Swampert	71	401	0	-	1	1	0	0	-1	0	3	none	0	0	0	0	0
+DEC	ab_0_14	21	move	0	0	m3	m3	21517,14799,42985,42349	Zapdos	0	321	1	fnt	0	0	0	0	0	0	2	Swampert	71	401	0	-	1	1	0	0	-1	0	3	p2	0	0	0	0	0
+DEC	ab_0_14	22	switch	1	0	s2	-	65316,35831,51927,14276	Tyranitar	341	341	0	-	0	0	0	0	0	0	2	Swampert	96	401	0	-	1	1	0	0	-1	0	3	none	0	0	0	0	0
+DEC	ab_0_14	23	move	0	0	s1	m1	10993,14480,8257,34072	Swampert	118	341	0	-	0	0	0	0	0	0	2	Swampert	121	401	0	-	1	1	0	0	-1	0	3	p1	0	0	0	0	0
+DEC	ab_0_14	24	move	0	0	m3	m1	22493,49315,7769,50476	Swampert	0	341	1	fnt	0	0	0	0	0	0	1	Swampert	118	401	0	-	1	1	0	0	-1	0	3	p1	0	0	0	1	0
+DEC	ab_0_14	25	switch	1	0	s1	-	58993,44439,63561,62751	Tyranitar	341	341	0	-	0	0	0	0	0	0	1	Swampert	143	401	0	-	1	1	0	0	-1	0	3	none	0	0	0	0	0
+DEC	ab_0_14	26	move	0	0	m3	m2	40276,22393,55268,19456	Tyranitar	341	341	0	-	0	0	0	0	0	0	1	Swampert	0	401	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_14	27	switch	0	1	-	s5	17109,60137,28132,39619	Tyranitar	341	341	0	-	-1	0	0	0	0	0	1	Salamence	331	331	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_14	28	move	0	0	m1	m2	36823,55769,5082,17089	Tyranitar	254	341	0	-	-1	0	0	0	0	0	1	Salamence	331	331	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	29	move	0	0	m2	m0	42581,4701,53799,13131	Tyranitar	254	341	0	-	-1	0	0	0	0	0	1	Salamence	331	331	0	-	1	0	0	0	1	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	30	move	0	0	m1	m1	17875,21501,63294,4348	Tyranitar	0	341	1	-	0	0	0	0	0	0	0	Salamence	331	331	0	-	1	0	0	0	1	0	2	p2	0	0	0	0	0
+END	ab_0_14	1	p2
+L	ab_0_14	0	|t:|<NORMALIZED>
+L	ab_0_14	1	|gametype|singles
+L	ab_0_14	2	|player|p1|P1||
+L	ab_0_14	3	|player|p2|P2||
+L	ab_0_14	4	|gen|3
+L	ab_0_14	5	|tier|[Gen 3] Custom Game
+L	ab_0_14	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_14	7	|
+L	ab_0_14	8	|t:|<NORMALIZED>
+L	ab_0_14	9	|teamsize|p1|6
+L	ab_0_14	10	|teamsize|p2|6
+L	ab_0_14	11	|start
+L	ab_0_14	12	|switch|p1a: Zapdos|Zapdos|321/321
+L	ab_0_14	13	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_0_14	14	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_14	15	|turn|1
+L	ab_0_14	16	|
+L	ab_0_14	17	|t:|<NORMALIZED>
+L	ab_0_14	18	|move|p2a: Swampert|Curse|p2a: Swampert
+L	ab_0_14	19	|-unboost|p2a: Swampert|spe|1
+L	ab_0_14	20	|-boost|p2a: Swampert|atk|1
+L	ab_0_14	21	|-boost|p2a: Swampert|def|1
+L	ab_0_14	22	|move|p1a: Zapdos|Roar|p2a: Swampert
+L	ab_0_14	23	|drag|p2a: Celebi|Celebi|389/389
+L	ab_0_14	24	|
+L	ab_0_14	25	|upkeep
+L	ab_0_14	26	|turn|2
+L	ab_0_14	27	|
+L	ab_0_14	28	|t:|<NORMALIZED>
+L	ab_0_14	29	|move|p1a: Zapdos|Thunder Wave|p2a: Celebi
+L	ab_0_14	30	|-status|p2a: Celebi|par
+L	ab_0_14	31	|move|p2a: Celebi|Leech Seed|p1a: Zapdos
+L	ab_0_14	32	|-start|p1a: Zapdos|move: Leech Seed
+L	ab_0_14	33	|
+L	ab_0_14	34	|-damage|p1a: Zapdos|281/321|[from] Leech Seed|[of] p2a: Celebi
+L	ab_0_14	35	|upkeep
+L	ab_0_14	36	|turn|3
+L	ab_0_14	37	|
+L	ab_0_14	38	|t:|<NORMALIZED>
+L	ab_0_14	39	|move|p1a: Zapdos|Thunderbolt|p2a: Celebi
+L	ab_0_14	40	|-resisted|p2a: Celebi
+L	ab_0_14	41	|-damage|p2a: Celebi|308/389 par
+L	ab_0_14	42	|move|p2a: Celebi|Leech Seed||[still]
+L	ab_0_14	43	|-fail|p2a: Celebi
+L	ab_0_14	44	|debug|move failed because it did nothing
+L	ab_0_14	45	|
+L	ab_0_14	46	|-heal|p1a: Zapdos|301/321|[from] item: Leftovers
+L	ab_0_14	47	|-damage|p1a: Zapdos|261/321|[from] Leech Seed|[of] p2a: Celebi
+L	ab_0_14	48	|-heal|p2a: Celebi|348/389 par|[silent]
+L	ab_0_14	49	|-heal|p2a: Celebi|372/389 par|[from] item: Leftovers
+L	ab_0_14	50	|upkeep
+L	ab_0_14	51	|turn|4
+L	ab_0_14	52	|
+L	ab_0_14	53	|t:|<NORMALIZED>
+L	ab_0_14	54	|move|p1a: Zapdos|Thunder Wave|p2a: Celebi
+L	ab_0_14	55	|-fail|p2a: Celebi|par
+L	ab_0_14	56	|debug|move failed because it did nothing
+L	ab_0_14	57	|cant|p2a: Celebi|par
+L	ab_0_14	58	|
+L	ab_0_14	59	|-heal|p1a: Zapdos|281/321|[from] item: Leftovers
+L	ab_0_14	60	|-damage|p1a: Zapdos|241/321|[from] Leech Seed|[of] p2a: Celebi
+L	ab_0_14	61	|-heal|p2a: Celebi|389/389 par|[silent]
+L	ab_0_14	62	|upkeep
+L	ab_0_14	63	|turn|5
+L	ab_0_14	64	|
+L	ab_0_14	65	|t:|<NORMALIZED>
+L	ab_0_14	66	|move|p1a: Zapdos|Hidden Power|p2a: Celebi
+L	ab_0_14	67	|debug|BP: 70
+L	ab_0_14	68	|-supereffective|p2a: Celebi
+L	ab_0_14	69	|-damage|p2a: Celebi|229/389 par
+L	ab_0_14	70	|move|p2a: Celebi|Psychic|p1a: Zapdos
+L	ab_0_14	71	|-damage|p1a: Zapdos|92/321
+L	ab_0_14	72	|
+L	ab_0_14	73	|-heal|p1a: Zapdos|112/321|[from] item: Leftovers
+L	ab_0_14	74	|-damage|p1a: Zapdos|72/321|[from] Leech Seed|[of] p2a: Celebi
+L	ab_0_14	75	|-heal|p2a: Celebi|269/389 par|[silent]
+L	ab_0_14	76	|-heal|p2a: Celebi|293/389 par|[from] item: Leftovers
+L	ab_0_14	77	|upkeep
+L	ab_0_14	78	|turn|6
+L	ab_0_14	79	|
+L	ab_0_14	80	|t:|<NORMALIZED>
+L	ab_0_14	81	|move|p1a: Zapdos|Thunder Wave|p2a: Celebi
+L	ab_0_14	82	|-fail|p2a: Celebi|par
+L	ab_0_14	83	|debug|move failed because it did nothing
+L	ab_0_14	84	|move|p2a: Celebi|Giga Drain|p1a: Zapdos
+L	ab_0_14	85	|-resisted|p1a: Zapdos
+L	ab_0_14	86	|-damage|p1a: Zapdos|28/321
+L	ab_0_14	87	|-heal|p2a: Celebi|315/389 par|[from] drain|[of] p1a: Zapdos
+L	ab_0_14	88	|
+L	ab_0_14	89	|-heal|p1a: Zapdos|48/321|[from] item: Leftovers
+L	ab_0_14	90	|-damage|p1a: Zapdos|8/321|[from] Leech Seed|[of] p2a: Celebi
+L	ab_0_14	91	|-heal|p2a: Celebi|355/389 par|[silent]
+L	ab_0_14	92	|-heal|p2a: Celebi|379/389 par|[from] item: Leftovers
+L	ab_0_14	93	|upkeep
+L	ab_0_14	94	|turn|7
+L	ab_0_14	95	|
+L	ab_0_14	96	|t:|<NORMALIZED>
+L	ab_0_14	97	|switch|p1a: Snorlax|Snorlax, M|465/465
+L	ab_0_14	98	|move|p2a: Celebi|Calm Mind|p2a: Celebi
+L	ab_0_14	99	|-boost|p2a: Celebi|spa|1
+L	ab_0_14	100	|-boost|p2a: Celebi|spd|1
+L	ab_0_14	101	|
+L	ab_0_14	102	|-heal|p2a: Celebi|389/389 par|[from] item: Leftovers
+L	ab_0_14	103	|upkeep
+L	ab_0_14	104	|turn|8
+L	ab_0_14	105	|
+L	ab_0_14	106	|t:|<NORMALIZED>
+L	ab_0_14	107	|move|p1a: Snorlax|Body Slam|p2a: Celebi
+L	ab_0_14	108	|-damage|p2a: Celebi|242/389 par
+L	ab_0_14	109	|move|p2a: Celebi|Leech Seed|p1a: Snorlax|[miss]
+L	ab_0_14	110	|-miss|p2a: Celebi|p1a: Snorlax
+L	ab_0_14	111	|
+L	ab_0_14	112	|-heal|p2a: Celebi|266/389 par|[from] item: Leftovers
+L	ab_0_14	113	|upkeep
+L	ab_0_14	114	|turn|9
+L	ab_0_14	115	|
+L	ab_0_14	116	|t:|<NORMALIZED>
+L	ab_0_14	117	|debug|before turn callback: focuspunch
+L	ab_0_14	118	|-singleturn|p1a: Snorlax|move: Focus Punch
+L	ab_0_14	119	|-curestatus|p2a: Celebi|par|[from] ability: Natural Cure|[silent]
+L	ab_0_14	120	|switch|p2a: Metagross|Metagross|343/343
+L	ab_0_14	121	|move|p1a: Snorlax|Focus Punch|p2a: Metagross
+L	ab_0_14	122	|-damage|p2a: Metagross|220/343
+L	ab_0_14	123	|
+L	ab_0_14	124	|-heal|p2a: Metagross|241/343|[from] item: Leftovers
+L	ab_0_14	125	|upkeep
+L	ab_0_14	126	|turn|10
+L	ab_0_14	127	|
+L	ab_0_14	128	|t:|<NORMALIZED>
+L	ab_0_14	129	|move|p2a: Metagross|Explosion|p1a: Snorlax
+L	ab_0_14	130	|-damage|p1a: Snorlax|0 fnt
+L	ab_0_14	131	|faint|p2a: Metagross
+L	ab_0_14	132	|faint|p1a: Snorlax
+L	ab_0_14	133	|
+L	ab_0_14	134	|t:|<NORMALIZED>
+L	ab_0_14	135	|switch|p2a: Celebi|Celebi|266/389
+L	ab_0_14	136	|switch|p1a: Metagross|Metagross|347/347
+L	ab_0_14	137	|
+L	ab_0_14	138	|-heal|p2a: Celebi|290/389|[from] item: Leftovers
+L	ab_0_14	139	|upkeep
+L	ab_0_14	140	|turn|11
+L	ab_0_14	141	|
+L	ab_0_14	142	|t:|<NORMALIZED>
+L	ab_0_14	143	|move|p2a: Celebi|Giga Drain|p1a: Metagross
+L	ab_0_14	144	|-resisted|p1a: Metagross
+L	ab_0_14	145	|-crit|p1a: Metagross
+L	ab_0_14	146	|-damage|p1a: Metagross|254/347
+L	ab_0_14	147	|-heal|p2a: Celebi|336/389|[from] drain|[of] p1a: Metagross
+L	ab_0_14	148	|move|p1a: Metagross|Explosion|p2a: Celebi
+L	ab_0_14	149	|-damage|p2a: Celebi|0 fnt
+L	ab_0_14	150	|faint|p1a: Metagross
+L	ab_0_14	151	|faint|p2a: Celebi
+L	ab_0_14	152	|
+L	ab_0_14	153	|t:|<NORMALIZED>
+L	ab_0_14	154	|switch|p2a: Jolteon|Jolteon, M|273/273
+L	ab_0_14	155	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_0_14	156	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_14	157	|-unboost|p2a: Jolteon|atk|1
+L	ab_0_14	158	|
+L	ab_0_14	159	|upkeep
+L	ab_0_14	160	|turn|12
+L	ab_0_14	161	|
+L	ab_0_14	162	|t:|<NORMALIZED>
+L	ab_0_14	163	|move|p2a: Jolteon|Substitute|p2a: Jolteon
+L	ab_0_14	164	|-start|p2a: Jolteon|Substitute
+L	ab_0_14	165	|-damage|p2a: Jolteon|205/273
+L	ab_0_14	166	|move|p1a: Salamence|Rock Slide|p2a: Jolteon
+L	ab_0_14	167	|-crit|p2a: Jolteon
+L	ab_0_14	168	|-end|p2a: Jolteon|Substitute
+L	ab_0_14	169	|
+L	ab_0_14	170	|-heal|p2a: Jolteon|222/273|[from] item: Leftovers
+L	ab_0_14	171	|upkeep
+L	ab_0_14	172	|turn|13
+L	ab_0_14	173	|
+L	ab_0_14	174	|t:|<NORMALIZED>
+L	ab_0_14	175	|move|p2a: Jolteon|Toxic|p1a: Salamence|[miss]
+L	ab_0_14	176	|-miss|p2a: Jolteon|p1a: Salamence
+L	ab_0_14	177	|move|p1a: Salamence|Earthquake|p2a: Jolteon
+L	ab_0_14	178	|-supereffective|p2a: Jolteon
+L	ab_0_14	179	|-damage|p2a: Jolteon|0 fnt
+L	ab_0_14	180	|faint|p2a: Jolteon
+L	ab_0_14	181	|
+L	ab_0_14	182	|t:|<NORMALIZED>
+L	ab_0_14	183	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_0_14	184	|
+L	ab_0_14	185	|upkeep
+L	ab_0_14	186	|turn|14
+L	ab_0_14	187	|
+L	ab_0_14	188	|t:|<NORMALIZED>
+L	ab_0_14	189	|move|p1a: Salamence|Earthquake|p2a: Swampert
+L	ab_0_14	190	|-damage|p2a: Swampert|256/401
+L	ab_0_14	191	|move|p2a: Swampert|Hydro Pump|p1a: Salamence|[miss]
+L	ab_0_14	192	|-miss|p2a: Swampert|p1a: Salamence
+L	ab_0_14	193	|
+L	ab_0_14	194	|-heal|p2a: Swampert|281/401|[from] item: Leftovers
+L	ab_0_14	195	|upkeep
+L	ab_0_14	196	|turn|15
+L	ab_0_14	197	|
+L	ab_0_14	198	|t:|<NORMALIZED>
+L	ab_0_14	199	|move|p1a: Salamence|Hidden Power|p2a: Swampert
+L	ab_0_14	200	|debug|BP: 70
+L	ab_0_14	201	|-damage|p2a: Swampert|133/401
+L	ab_0_14	202	|move|p2a: Swampert|Curse|p2a: Swampert
+L	ab_0_14	203	|-unboost|p2a: Swampert|spe|1
+L	ab_0_14	204	|-boost|p2a: Swampert|atk|1
+L	ab_0_14	205	|-boost|p2a: Swampert|def|1
+L	ab_0_14	206	|
+L	ab_0_14	207	|-heal|p2a: Swampert|158/401|[from] item: Leftovers
+L	ab_0_14	208	|upkeep
+L	ab_0_14	209	|turn|16
+L	ab_0_14	210	|
+L	ab_0_14	211	|t:|<NORMALIZED>
+L	ab_0_14	212	|move|p1a: Salamence|Hidden Power|p2a: Swampert
+L	ab_0_14	213	|debug|BP: 70
+L	ab_0_14	214	|-damage|p2a: Swampert|53/401
+L	ab_0_14	215	|move|p2a: Swampert|Earthquake|p1a: Salamence
+L	ab_0_14	216	|-immune|p1a: Salamence
+L	ab_0_14	217	|
+L	ab_0_14	218	|-heal|p2a: Swampert|78/401|[from] item: Leftovers
+L	ab_0_14	219	|upkeep
+L	ab_0_14	220	|turn|17
+L	ab_0_14	221	|
+L	ab_0_14	222	|t:|<NORMALIZED>
+L	ab_0_14	223	|move|p1a: Salamence|Rock Slide|p2a: Swampert
+L	ab_0_14	224	|-resisted|p2a: Swampert
+L	ab_0_14	225	|-damage|p2a: Swampert|46/401
+L	ab_0_14	226	|move|p2a: Swampert|Ice Beam|p1a: Salamence
+L	ab_0_14	227	|-supereffective|p1a: Salamence
+L	ab_0_14	228	|-damage|p1a: Salamence|0 fnt
+L	ab_0_14	229	|faint|p1a: Salamence
+L	ab_0_14	230	|
+L	ab_0_14	231	|t:|<NORMALIZED>
+L	ab_0_14	232	|switch|p1a: Zapdos|Zapdos|8/321
+L	ab_0_14	233	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_14	234	|
+L	ab_0_14	235	|-heal|p1a: Zapdos|28/321|[from] item: Leftovers
+L	ab_0_14	236	|-heal|p2a: Swampert|71/401|[from] item: Leftovers
+L	ab_0_14	237	|upkeep
+L	ab_0_14	238	|turn|18
+L	ab_0_14	239	|
+L	ab_0_14	240	|t:|<NORMALIZED>
+L	ab_0_14	241	|move|p2a: Swampert|Ice Beam|p1a: Zapdos
+L	ab_0_14	242	|-supereffective|p1a: Zapdos
+L	ab_0_14	243	|-damage|p1a: Zapdos|0 fnt
+L	ab_0_14	244	|faint|p1a: Zapdos
+L	ab_0_14	245	|
+L	ab_0_14	246	|t:|<NORMALIZED>
+L	ab_0_14	247	|switch|p1a: Tyranitar|Tyranitar, M|341/341
+L	ab_0_14	248	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_0_14	249	|
+L	ab_0_14	250	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	251	|debug|natural status immunity
+L	ab_0_14	252	|debug|weather immunity
+L	ab_0_14	253	|debug|natural status immunity
+L	ab_0_14	254	|debug|weather immunity
+L	ab_0_14	255	|-heal|p2a: Swampert|96/401|[from] item: Leftovers
+L	ab_0_14	256	|upkeep
+L	ab_0_14	257	|turn|19
+L	ab_0_14	258	|
+L	ab_0_14	259	|t:|<NORMALIZED>
+L	ab_0_14	260	|switch|p1a: Swampert|Swampert, M|341/341
+L	ab_0_14	261	|move|p2a: Swampert|Earthquake|p1a: Swampert
+L	ab_0_14	262	|-damage|p1a: Swampert|118/341
+L	ab_0_14	263	|
+L	ab_0_14	264	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	265	|debug|natural status immunity
+L	ab_0_14	266	|debug|weather immunity
+L	ab_0_14	267	|debug|natural status immunity
+L	ab_0_14	268	|debug|weather immunity
+L	ab_0_14	269	|-heal|p2a: Swampert|121/401|[from] item: Leftovers
+L	ab_0_14	270	|upkeep
+L	ab_0_14	271	|turn|20
+L	ab_0_14	272	|
+L	ab_0_14	273	|t:|<NORMALIZED>
+L	ab_0_14	274	|move|p1a: Swampert|Endeavor|p2a: Swampert
+L	ab_0_14	275	|-damage|p2a: Swampert|118/401
+L	ab_0_14	276	|move|p2a: Swampert|Earthquake|p1a: Swampert
+L	ab_0_14	277	|-damage|p1a: Swampert|0 fnt
+L	ab_0_14	278	|faint|p1a: Swampert
+L	ab_0_14	279	|
+L	ab_0_14	280	|t:|<NORMALIZED>
+L	ab_0_14	281	|switch|p1a: Tyranitar|Tyranitar, M|341/341
+L	ab_0_14	282	|
+L	ab_0_14	283	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	284	|debug|natural status immunity
+L	ab_0_14	285	|debug|weather immunity
+L	ab_0_14	286	|debug|natural status immunity
+L	ab_0_14	287	|debug|weather immunity
+L	ab_0_14	288	|-heal|p2a: Swampert|143/401|[from] item: Leftovers
+L	ab_0_14	289	|upkeep
+L	ab_0_14	290	|turn|21
+L	ab_0_14	291	|
+L	ab_0_14	292	|t:|<NORMALIZED>
+L	ab_0_14	293	|move|p1a: Tyranitar|Hidden Power|p2a: Swampert
+L	ab_0_14	294	|debug|BP: 70
+L	ab_0_14	295	|-supereffective|p2a: Swampert
+L	ab_0_14	296	|-damage|p2a: Swampert|0 fnt
+L	ab_0_14	297	|faint|p2a: Swampert
+L	ab_0_14	298	|
+L	ab_0_14	299	|t:|<NORMALIZED>
+L	ab_0_14	300	|switch|p2a: Salamence|Salamence, M|331/331
+L	ab_0_14	301	|-ability|p2a: Salamence|Intimidate|boost
+L	ab_0_14	302	|-unboost|p1a: Tyranitar|atk|1
+L	ab_0_14	303	|
+L	ab_0_14	304	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	305	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+L	ab_0_14	306	|debug|natural status immunity
+L	ab_0_14	307	|debug|weather immunity
+L	ab_0_14	308	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+L	ab_0_14	309	|upkeep
+L	ab_0_14	310	|turn|22
+L	ab_0_14	311	|
+L	ab_0_14	312	|t:|<NORMALIZED>
+L	ab_0_14	313	|move|p2a: Salamence|Rock Slide|p1a: Tyranitar
+L	ab_0_14	314	|-damage|p1a: Tyranitar|254/341
+L	ab_0_14	315	|move|p1a: Tyranitar|Rock Slide|p2a: Salamence|[miss]
+L	ab_0_14	316	|-miss|p1a: Tyranitar|p2a: Salamence
+L	ab_0_14	317	|
+L	ab_0_14	318	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	319	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+L	ab_0_14	320	|debug|natural status immunity
+L	ab_0_14	321	|debug|weather immunity
+L	ab_0_14	322	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+L	ab_0_14	323	|upkeep
+L	ab_0_14	324	|turn|23
+L	ab_0_14	325	|
+L	ab_0_14	326	|t:|<NORMALIZED>
+L	ab_0_14	327	|move|p2a: Salamence|Dragon Dance|p2a: Salamence
+L	ab_0_14	328	|-boost|p2a: Salamence|atk|1
+L	ab_0_14	329	|-boost|p2a: Salamence|spe|1
+L	ab_0_14	330	|move|p1a: Tyranitar|Earthquake|p2a: Salamence
+L	ab_0_14	331	|-immune|p2a: Salamence
+L	ab_0_14	332	|
+L	ab_0_14	333	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	334	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+L	ab_0_14	335	|debug|natural status immunity
+L	ab_0_14	336	|debug|weather immunity
+L	ab_0_14	337	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+L	ab_0_14	338	|upkeep
+L	ab_0_14	339	|turn|24
+L	ab_0_14	340	|
+L	ab_0_14	341	|t:|<NORMALIZED>
+L	ab_0_14	342	|move|p2a: Salamence|Earthquake|p1a: Tyranitar
+L	ab_0_14	343	|-supereffective|p1a: Tyranitar
+L	ab_0_14	344	|-damage|p1a: Tyranitar|0 fnt
+L	ab_0_14	345	|faint|p1a: Tyranitar
+L	ab_0_14	346	|
+L	ab_0_14	347	|win|P2

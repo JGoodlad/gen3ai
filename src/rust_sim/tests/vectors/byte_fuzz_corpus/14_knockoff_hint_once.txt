@@ -1,0 +1,821 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_33
+TEAM	ab_0_33	p1	Hariyama||Leftovers|ThickFat|BrickBreak,KnockOff,HiddenPowerFlying,Rest|Impish|24,,248,,180,56|M|,,,30,30,30|||,Flying,,,,]Blissey||Leftovers|NaturalCure|SeismicToss,IceBeam,ThunderWave,SoftBoiled|Bold|40,,244,204,,20|F|,0,,,,|||]Skarmory||Leftovers|KeenEye|Protect,DrillPeck,Roar,Spikes|Careful|240,,,,244,24|M||||]Tyranitar||Leftovers|SandStream|RockSlide,Earthquake,HiddenPowerBug,Roar|Adamant|248,184,48,,,28|M|,,,,30,30|||,Bug,,,,]Claydol||Leftovers|Levitate|Earthquake,Refresh,Psychic,RapidSpin|Adamant|248,232,,,,28|N||||]Milotic||Leftovers|MarvelScale|Surf,Toxic,Refresh,Recover|Bold|248,,204,,8,48|M|,0,,,,|||
+TEAM	ab_0_33	p2	Zapdos||Leftovers|Pressure|Thunderbolt,HiddenPowerIce,Substitute,BatonPass|Timid|,,4,252,,252|N|,2,30,,,|||,Ice,,,,]Hariyama||Leftovers|Guts|BrickBreak,FocusPunch,RockSlide,HiddenPowerBug|Adamant|,216,108,,124,60|M|,,,,30,30|||,Bug,,,,]Tyranitar||Leftovers|SandStream|RockSlide,FireBlast,HiddenPowerGrass,FocusPunch|Mild|,144,,252,,112|M|,30,,30,,|||,Grass,,,,]Blissey||Leftovers|NaturalCure|SeismicToss,IceBeam,Wish,SoftBoiled|Bold|252,,252,,4,|F||||]Starmie||Leftovers|NaturalCure|Surf,ThunderWave,RapidSpin,Recover|Timid|252,,4,,,252|N|,0,,,,|||]Metagross||Leftovers|ClearBody|MeteorMash,Earthquake,Protect,Explosion|Impish|252,,152,,60,44|N||||
+FMT	ab_0_33	gen3customgame
+INIT	ab_0_33	55556,58004,24250,33436	999909752
+DEC	ab_0_33	0	move	0	0	m1	m3	55556,58004,24250,33436	Hariyama	435	435	0	-	0	0	0	0	0	0	6	Zapdos	321	321	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_33	1	switch	0	1	-	s1	22733,6412,51857,37488	Hariyama	435	435	0	-	0	0	0	0	0	0	6	Hariyama	425	429	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_33	2	move	0	0	m2	m3	49804,37982,14720,64113	Hariyama	424	435	0	-	0	0	0	0	0	0	6	Hariyama	247	429	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_33	3	move	0	0	m1	s2	55197,41412,20002,16117	Hariyama	424	435	0	-	0	0	0	0	0	0	6	Tyranitar	337	341	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_33	4	move	0	0	s1	m3	16349,51899,7585,9790	Blissey	0	661	1	fnt	0	0	0	0	0	0	5	Tyranitar	337	341	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_33	5	switch	1	0	s4	-	15172,43694,8675,58169	Claydol	323	323	0	-	0	0	0	0	0	0	5	Tyranitar	337	341	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_33	6	move	0	0	m3	m3	49712,38052,39173,27453	Claydol	323	323	0	-	0	0	0	0	0	0	5	Tyranitar	328	341	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_33	7	move	0	0	m1	m1	52777,9441,39481,53032	Claydol	235	323	0	-	0	0	0	0	0	0	5	Tyranitar	328	341	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_33	8	move	0	0	m1	m0	51629,38452,15230,22639	Claydol	193	323	0	-	0	0	0	0	0	0	5	Tyranitar	328	341	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_33	9	move	0	0	m3	s4	2409,65165,39209,59667	Claydol	213	323	0	-	0	0	0	0	0	0	5	Starmie	306	324	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_33	10	move	0	0	m3	m0	17722,3151,2691,58360	Claydol	30	323	0	-	0	0	0	0	0	0	5	Starmie	286	324	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_33	11	move	0	0	m1	m2	63152,6157,6542,62988	Claydol	40	323	0	-	0	0	0	0	0	0	5	Starmie	286	324	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_33	12	move	0	0	m0	s3	42294,17702,58067,12000	Claydol	60	323	0	-	0	0	0	0	0	0	5	Blissey	470	714	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_33	13	move	0	0	m2	m1	23523,9424,10530,9416	Claydol	0	323	1	fnt	0	0	0	0	0	0	4	Blissey	419	714	0	-	0	0	0	-1	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_33	14	switch	1	0	s1	-	45965,36478,57798,10667	Hariyama	424	435	0	-	0	0	0	0	0	0	4	Blissey	419	714	0	-	0	0	0	-1	0	0	6	none	0	0	0	0	0
+DEC	ab_0_33	15	move	0	0	m1	m1	2269,28006,43859,60723	Hariyama	390	435	0	-	0	0	0	0	0	0	4	Blissey	366	714	0	-	0	0	0	-1	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_33	16	move	0	0	m2	m2	63205,50730,6005,22935	Hariyama	390	435	0	-	0	0	0	0	0	0	4	Blissey	199	714	0	-	0	0	0	-1	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_33	17	move	0	0	m1	m3	54696,36539,26247,26555	Hariyama	390	435	0	-	0	0	0	0	0	0	4	Blissey	670	714	0	-	0	0	0	-1	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_33	18	move	0	0	m1	m0	32067,44401,57525,31614	Hariyama	290	435	0	-	0	0	0	0	0	0	4	Blissey	618	714	0	-	0	0	0	-1	0	0	6	p1	0	0	1	0	0
+DEC	ab_0_33	19	move	0	0	m0	s5	30545,59730,42437,37170	Hariyama	290	435	0	-	0	0	0	0	0	0	4	Metagross	319	364	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_33	20	move	0	0	m1	m1	14884,3497,6700,459	Hariyama	192	435	0	-	0	0	0	0	0	0	4	Metagross	311	364	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_33	21	move	0	0	s5	m0	30256,33507,45212,28366	Milotic	329	393	0	-	0	0	0	0	0	0	4	Metagross	311	364	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_33	22	move	0	0	m2	m2	46873,57807,51284,55120	Milotic	329	393	0	-	0	0	0	0	0	0	4	Metagross	311	364	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_33	23	move	0	0	s2	m3	38205,33893,51985,12045	Skarmory	146	331	0	-	0	0	0	0	0	0	4	Metagross	0	364	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_33	24	switch	0	1	-	s5	46431,8776,5495,9188	Skarmory	166	331	0	-	0	0	0	0	0	0	4	Blissey	574	714	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_33	25	move	0	0	m2	m2	4563,32701,9169,49617	Skarmory	186	331	0	-	0	0	0	0	0	0	4	Zapdos	321	321	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_33	26	move	0	0	m1	m2	62408,57896,48772,20565	Skarmory	206	331	0	-	0	0	0	0	0	0	4	Zapdos	321	321	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_33	27	move	0	0	s3	m0	35489,27160,46642,4640	Tyranitar	268	403	0	-	0	0	0	0	0	0	4	Zapdos	321	321	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_33	28	move	0	0	s3	m1	56124,17203,35666,53684	Skarmory	154	331	0	-	0	0	0	0	0	0	4	Zapdos	321	321	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_33	29	move	0	0	m0	m2	8680,48578,56381,4678	Skarmory	174	331	0	-	0	0	0	0	0	0	4	Zapdos	321	321	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_33	30	move	0	0	m0	m0	49811,12556,48782,35706	Skarmory	194	331	0	-	0	0	0	0	0	0	4	Zapdos	321	321	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_33	31	move	0	0	m2	m2	40646,13218,43047,6863	Skarmory	214	331	0	-	0	0	0	0	0	0	4	Tyranitar	328	341	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_33	32	move	0	0	m1	m1	58129,16089,14546,17779	Skarmory	0	331	1	fnt	0	0	0	0	0	0	3	Tyranitar	328	341	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_33	33	switch	1	0	s5	-	27020,9607,23659,36898	Hariyama	192	435	0	-	0	0	0	0	0	0	3	Tyranitar	328	341	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_33	34	move	0	0	m2	m0	46406,57188,64301,51146	Hariyama	129	435	0	-	0	0	0	0	0	0	3	Tyranitar	294	341	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_33	35	move	0	0	m2	m0	14444,50102,6529,26553	Hariyama	62	435	0	-	0	0	0	0	0	0	3	Tyranitar	294	341	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_33	36	move	0	0	m1	m2	19444,46904,56029,53874	Hariyama	0	435	1	fnt	0	0	0	0	0	0	2	Tyranitar	294	341	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_33	37	switch	1	0	s3	-	30837,13409,59495,42941	Tyranitar	293	403	0	-	0	0	0	0	0	0	2	Tyranitar	294	341	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_33	38	move	0	0	m2	m2	12276,1506,32656,20506	Tyranitar	179	403	0	-	0	0	0	0	0	0	2	Tyranitar	116	341	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_33	39	move	0	0	m0	m0	49269,51054,16565,51856	Tyranitar	83	403	0	-	0	0	0	0	0	0	2	Tyranitar	116	341	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_33	40	move	0	0	m1	m2	32434,4620,21614,7501	Tyranitar	0	403	1	fnt	0	0	0	0	0	0	1	Tyranitar	116	341	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_33	41	switch	1	0	s2	-	7856,55756,34401,25380	Milotic	329	393	0	-	0	0	0	0	0	0	1	Tyranitar	116	341	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_33	42	move	0	0	m0	m3	43269,25390,20582,19473	Milotic	329	393	0	-	0	0	0	0	0	0	1	Tyranitar	0	341	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_33	43	switch	0	1	-	s3	26596,33508,47022,47736	Milotic	329	393	0	-	0	0	0	0	0	0	1	Starmie	286	324	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_33	44	move	0	0	m2	s4	24929,32850,45864,26651	Milotic	329	393	0	-	0	0	0	0	0	0	1	Zapdos	321	321	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_33	45	move	0	0	m1	m2	11624,15111,15214,46741	Milotic	329	393	0	-	0	0	0	0	0	0	1	Zapdos	241	321	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_33	46	move	0	0	m1	m3	11624,15111,15214,46741	Milotic	329	393	0	-	0	0	0	0	0	0	1	Zapdos	241	321	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_33	47	switch	0	1	-	s4	39416,25479,34018,13823	Milotic	329	393	0	-	0	0	0	0	0	0	1	Starmie	286	324	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_33	48	move	0	0	m1	s4	19293,58643,34273,8409	Milotic	329	393	0	-	0	0	0	0	0	0	1	Zapdos	221	321	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_33	49	move	0	0	m1	s1	57348,37950,53413,36259	Milotic	329	393	0	-	0	0	0	0	0	0	1	Blissey	486	714	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_33	50	move	0	0	m3	m3	32546,2311,36280,47890	Milotic	393	393	0	-	0	0	0	0	0	0	1	Blissey	582	714	0	tox	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_33	51	move	0	0	m3	s1	56805,64997,31651,3805	Milotic	393	393	0	-	0	0	0	0	0	0	1	Zapdos	201	321	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_33	52	move	0	0	m3	m2	5995,671,44666,49396	Milotic	393	393	0	-	0	0	0	0	0	0	1	Zapdos	81	321	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_33	53	move	0	0	m0	m0	4613,60924,10181,6236	Milotic	108	393	0	-	0	0	0	0	0	0	1	Zapdos	21	321	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_33	54	move	0	0	m0	m1	37651,1478,63307,24930	Milotic	74	393	0	-	0	0	0	0	0	0	1	Zapdos	0	321	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_33	55	switch	0	1	-	s2	57258,62373,59823,31853	Milotic	74	393	0	-	0	0	0	0	0	0	1	Hariyama	221	429	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_33	56	move	0	0	m1	m2	3638,56622,35439,10264	Milotic	0	393	1	-	0	0	0	0	0	0	0	Hariyama	221	429	0	tox	0	0	0	0	0	0	3	p1	0	0	0	0	0
+END	ab_0_33	1	p2
+L	ab_0_33	0	|t:|<NORMALIZED>
+L	ab_0_33	1	|gametype|singles
+L	ab_0_33	2	|player|p1|P1||
+L	ab_0_33	3	|player|p2|P2||
+L	ab_0_33	4	|gen|3
+L	ab_0_33	5	|tier|[Gen 3] Custom Game
+L	ab_0_33	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_33	7	|
+L	ab_0_33	8	|t:|<NORMALIZED>
+L	ab_0_33	9	|teamsize|p1|6
+L	ab_0_33	10	|teamsize|p2|6
+L	ab_0_33	11	|start
+L	ab_0_33	12	|switch|p1a: Hariyama|Hariyama, M|435/435
+L	ab_0_33	13	|switch|p2a: Zapdos|Zapdos|321/321
+L	ab_0_33	14	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_33	15	|turn|1
+L	ab_0_33	16	|
+L	ab_0_33	17	|t:|<NORMALIZED>
+L	ab_0_33	18	|move|p2a: Zapdos|Baton Pass|p2a: Zapdos
+L	ab_0_33	19	|
+L	ab_0_33	20	|t:|<NORMALIZED>
+L	ab_0_33	21	|switch|p2a: Hariyama|Hariyama, M|429/429|[from] Baton Pass
+L	ab_0_33	22	|move|p1a: Hariyama|Knock Off|p2a: Hariyama
+L	ab_0_33	23	|-resisted|p2a: Hariyama
+L	ab_0_33	24	|-damage|p2a: Hariyama|425/429
+L	ab_0_33	25	|-enditem|p2a: Hariyama|Leftovers|[from] move: Knock Off|[of] p1a: Hariyama
+L	ab_0_33	26	|-hint|In Gens 3-4, Knock Off only makes the target's item unusable; it cannot obtain a new item.
+L	ab_0_33	27	|
+L	ab_0_33	28	|upkeep
+L	ab_0_33	29	|turn|2
+L	ab_0_33	30	|
+L	ab_0_33	31	|t:|<NORMALIZED>
+L	ab_0_33	32	|move|p2a: Hariyama|Hidden Power|p1a: Hariyama
+L	ab_0_33	33	|debug|BP: 70
+L	ab_0_33	34	|-resisted|p1a: Hariyama
+L	ab_0_33	35	|-damage|p1a: Hariyama|397/435
+L	ab_0_33	36	|move|p1a: Hariyama|Hidden Power|p2a: Hariyama
+L	ab_0_33	37	|debug|BP: 70
+L	ab_0_33	38	|-supereffective|p2a: Hariyama
+L	ab_0_33	39	|-damage|p2a: Hariyama|247/429
+L	ab_0_33	40	|
+L	ab_0_33	41	|-heal|p1a: Hariyama|424/435|[from] item: Leftovers
+L	ab_0_33	42	|upkeep
+L	ab_0_33	43	|turn|3
+L	ab_0_33	44	|
+L	ab_0_33	45	|t:|<NORMALIZED>
+L	ab_0_33	46	|switch|p2a: Tyranitar|Tyranitar, M|341/341
+L	ab_0_33	47	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_0_33	48	|move|p1a: Hariyama|Knock Off|p2a: Tyranitar
+L	ab_0_33	49	|-resisted|p2a: Tyranitar
+L	ab_0_33	50	|-damage|p2a: Tyranitar|337/341
+L	ab_0_33	51	|-enditem|p2a: Tyranitar|Leftovers|[from] move: Knock Off|[of] p1a: Hariyama
+L	ab_0_33	52	|
+L	ab_0_33	53	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	54	|debug|natural status immunity
+L	ab_0_33	55	|debug|weather immunity
+L	ab_0_33	56	|-damage|p1a: Hariyama|397/435|[from] Sandstorm
+L	ab_0_33	57	|-heal|p1a: Hariyama|424/435|[from] item: Leftovers
+L	ab_0_33	58	|upkeep
+L	ab_0_33	59	|turn|4
+L	ab_0_33	60	|
+L	ab_0_33	61	|t:|<NORMALIZED>
+L	ab_0_33	62	|debug|before turn callback: focuspunch
+L	ab_0_33	63	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_0_33	64	|switch|p1a: Blissey|Blissey, F|661/661
+L	ab_0_33	65	|move|p2a: Tyranitar|Focus Punch|p1a: Blissey
+L	ab_0_33	66	|-supereffective|p1a: Blissey
+L	ab_0_33	67	|-damage|p1a: Blissey|12/661
+L	ab_0_33	68	|
+L	ab_0_33	69	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	70	|debug|natural status immunity
+L	ab_0_33	71	|debug|weather immunity
+L	ab_0_33	72	|-damage|p1a: Blissey|0 fnt|[from] Sandstorm
+L	ab_0_33	73	|faint|p1a: Blissey
+L	ab_0_33	74	|upkeep
+L	ab_0_33	75	|
+L	ab_0_33	76	|t:|<NORMALIZED>
+L	ab_0_33	77	|switch|p1a: Claydol|Claydol|323/323
+L	ab_0_33	78	|turn|5
+L	ab_0_33	79	|
+L	ab_0_33	80	|t:|<NORMALIZED>
+L	ab_0_33	81	|debug|before turn callback: focuspunch
+L	ab_0_33	82	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_0_33	83	|move|p1a: Claydol|Rapid Spin|p2a: Tyranitar
+L	ab_0_33	84	|-resisted|p2a: Tyranitar
+L	ab_0_33	85	|-damage|p2a: Tyranitar|328/341
+L	ab_0_33	86	|move|p2a: Tyranitar|Focus Punch||[still]
+L	ab_0_33	87	|cant|p2a: Tyranitar|Focus Punch|Focus Punch
+L	ab_0_33	88	|
+L	ab_0_33	89	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	90	|debug|natural status immunity
+L	ab_0_33	91	|debug|weather immunity
+L	ab_0_33	92	|debug|natural status immunity
+L	ab_0_33	93	|debug|weather immunity
+L	ab_0_33	94	|upkeep
+L	ab_0_33	95	|turn|6
+L	ab_0_33	96	|
+L	ab_0_33	97	|t:|<NORMALIZED>
+L	ab_0_33	98	|move|p1a: Claydol|Refresh||[still]
+L	ab_0_33	99	|-fail|p1a: Claydol
+L	ab_0_33	100	|debug|move failed because it did nothing
+L	ab_0_33	101	|move|p2a: Tyranitar|Fire Blast|p1a: Claydol
+L	ab_0_33	102	|-damage|p1a: Claydol|215/323
+L	ab_0_33	103	|
+L	ab_0_33	104	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	105	|debug|natural status immunity
+L	ab_0_33	106	|debug|weather immunity
+L	ab_0_33	107	|debug|natural status immunity
+L	ab_0_33	108	|debug|weather immunity
+L	ab_0_33	109	|-heal|p1a: Claydol|235/323|[from] item: Leftovers
+L	ab_0_33	110	|upkeep
+L	ab_0_33	111	|turn|7
+L	ab_0_33	112	|
+L	ab_0_33	113	|t:|<NORMALIZED>
+L	ab_0_33	114	|move|p1a: Claydol|Refresh||[still]
+L	ab_0_33	115	|-fail|p1a: Claydol
+L	ab_0_33	116	|debug|move failed because it did nothing
+L	ab_0_33	117	|move|p2a: Tyranitar|Rock Slide|p1a: Claydol
+L	ab_0_33	118	|-resisted|p1a: Claydol
+L	ab_0_33	119	|-damage|p1a: Claydol|173/323
+L	ab_0_33	120	|
+L	ab_0_33	121	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	122	|debug|natural status immunity
+L	ab_0_33	123	|debug|weather immunity
+L	ab_0_33	124	|debug|natural status immunity
+L	ab_0_33	125	|debug|weather immunity
+L	ab_0_33	126	|-heal|p1a: Claydol|193/323|[from] item: Leftovers
+L	ab_0_33	127	|upkeep
+L	ab_0_33	128	|turn|8
+L	ab_0_33	129	|
+L	ab_0_33	130	|t:|<NORMALIZED>
+L	ab_0_33	131	|switch|p2a: Starmie|Starmie|324/324
+L	ab_0_33	132	|move|p1a: Claydol|Rapid Spin|p2a: Starmie
+L	ab_0_33	133	|-damage|p2a: Starmie|306/324
+L	ab_0_33	134	|
+L	ab_0_33	135	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	136	|-damage|p2a: Starmie|286/324|[from] Sandstorm
+L	ab_0_33	137	|debug|natural status immunity
+L	ab_0_33	138	|debug|weather immunity
+L	ab_0_33	139	|-heal|p2a: Starmie|306/324|[from] item: Leftovers
+L	ab_0_33	140	|-heal|p1a: Claydol|213/323|[from] item: Leftovers
+L	ab_0_33	141	|upkeep
+L	ab_0_33	142	|turn|9
+L	ab_0_33	143	|
+L	ab_0_33	144	|t:|<NORMALIZED>
+L	ab_0_33	145	|move|p2a: Starmie|Surf|p1a: Claydol
+L	ab_0_33	146	|-supereffective|p1a: Claydol
+L	ab_0_33	147	|-damage|p1a: Claydol|10/323
+L	ab_0_33	148	|move|p1a: Claydol|Rapid Spin|p2a: Starmie
+L	ab_0_33	149	|-damage|p2a: Starmie|286/324
+L	ab_0_33	150	|
+L	ab_0_33	151	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	152	|-damage|p2a: Starmie|266/324|[from] Sandstorm
+L	ab_0_33	153	|debug|natural status immunity
+L	ab_0_33	154	|debug|weather immunity
+L	ab_0_33	155	|-heal|p2a: Starmie|286/324|[from] item: Leftovers
+L	ab_0_33	156	|-heal|p1a: Claydol|30/323|[from] item: Leftovers
+L	ab_0_33	157	|upkeep
+L	ab_0_33	158	|turn|10
+L	ab_0_33	159	|
+L	ab_0_33	160	|t:|<NORMALIZED>
+L	ab_0_33	161	|move|p2a: Starmie|Rapid Spin|p1a: Claydol
+L	ab_0_33	162	|-damage|p1a: Claydol|20/323
+L	ab_0_33	163	|move|p1a: Claydol|Refresh||[still]
+L	ab_0_33	164	|-fail|p1a: Claydol
+L	ab_0_33	165	|debug|move failed because it did nothing
+L	ab_0_33	166	|
+L	ab_0_33	167	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	168	|-damage|p2a: Starmie|266/324|[from] Sandstorm
+L	ab_0_33	169	|debug|natural status immunity
+L	ab_0_33	170	|debug|weather immunity
+L	ab_0_33	171	|-heal|p2a: Starmie|286/324|[from] item: Leftovers
+L	ab_0_33	172	|-heal|p1a: Claydol|40/323|[from] item: Leftovers
+L	ab_0_33	173	|upkeep
+L	ab_0_33	174	|turn|11
+L	ab_0_33	175	|
+L	ab_0_33	176	|t:|<NORMALIZED>
+L	ab_0_33	177	|switch|p2a: Blissey|Blissey, F|714/714
+L	ab_0_33	178	|move|p1a: Claydol|Earthquake|p2a: Blissey
+L	ab_0_33	179	|-damage|p2a: Blissey|470/714
+L	ab_0_33	180	|
+L	ab_0_33	181	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	182	|debug|natural status immunity
+L	ab_0_33	183	|debug|weather immunity
+L	ab_0_33	184	|-damage|p2a: Blissey|426/714|[from] Sandstorm
+L	ab_0_33	185	|-heal|p1a: Claydol|60/323|[from] item: Leftovers
+L	ab_0_33	186	|-heal|p2a: Blissey|470/714|[from] item: Leftovers
+L	ab_0_33	187	|upkeep
+L	ab_0_33	188	|turn|12
+L	ab_0_33	189	|
+L	ab_0_33	190	|t:|<NORMALIZED>
+L	ab_0_33	191	|move|p1a: Claydol|Psychic|p2a: Blissey
+L	ab_0_33	192	|-damage|p2a: Blissey|419/714
+L	ab_0_33	193	|-unboost|p2a: Blissey|spd|1
+L	ab_0_33	194	|move|p2a: Blissey|Ice Beam|p1a: Claydol
+L	ab_0_33	195	|-supereffective|p1a: Claydol
+L	ab_0_33	196	|-damage|p1a: Claydol|0 fnt
+L	ab_0_33	197	|faint|p1a: Claydol
+L	ab_0_33	198	|
+L	ab_0_33	199	|t:|<NORMALIZED>
+L	ab_0_33	200	|switch|p1a: Hariyama|Hariyama, M|424/435
+L	ab_0_33	201	|
+L	ab_0_33	202	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	203	|-damage|p1a: Hariyama|397/435|[from] Sandstorm
+L	ab_0_33	204	|-damage|p2a: Blissey|375/714|[from] Sandstorm
+L	ab_0_33	205	|-heal|p1a: Hariyama|424/435|[from] item: Leftovers
+L	ab_0_33	206	|-heal|p2a: Blissey|419/714|[from] item: Leftovers
+L	ab_0_33	207	|upkeep
+L	ab_0_33	208	|turn|13
+L	ab_0_33	209	|
+L	ab_0_33	210	|t:|<NORMALIZED>
+L	ab_0_33	211	|move|p1a: Hariyama|Knock Off|p2a: Blissey
+L	ab_0_33	212	|-damage|p2a: Blissey|410/714
+L	ab_0_33	213	|-enditem|p2a: Blissey|Leftovers|[from] move: Knock Off|[of] p1a: Hariyama
+L	ab_0_33	214	|move|p2a: Blissey|Ice Beam|p1a: Hariyama
+L	ab_0_33	215	|-damage|p1a: Hariyama|390/435
+L	ab_0_33	216	|
+L	ab_0_33	217	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	218	|-damage|p1a: Hariyama|363/435|[from] Sandstorm
+L	ab_0_33	219	|-damage|p2a: Blissey|366/714|[from] Sandstorm
+L	ab_0_33	220	|-heal|p1a: Hariyama|390/435|[from] item: Leftovers
+L	ab_0_33	221	|upkeep
+L	ab_0_33	222	|turn|14
+L	ab_0_33	223	|
+L	ab_0_33	224	|t:|<NORMALIZED>
+L	ab_0_33	225	|move|p1a: Hariyama|Hidden Power|p2a: Blissey
+L	ab_0_33	226	|debug|BP: 70
+L	ab_0_33	227	|-damage|p2a: Blissey|243/714
+L	ab_0_33	228	|move|p2a: Blissey|Wish|p2a: Blissey
+L	ab_0_33	229	|
+L	ab_0_33	230	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	231	|-damage|p1a: Hariyama|363/435|[from] Sandstorm
+L	ab_0_33	232	|-damage|p2a: Blissey|199/714|[from] Sandstorm
+L	ab_0_33	233	|-heal|p1a: Hariyama|390/435|[from] item: Leftovers
+L	ab_0_33	234	|upkeep
+L	ab_0_33	235	|turn|15
+L	ab_0_33	236	|
+L	ab_0_33	237	|t:|<NORMALIZED>
+L	ab_0_33	238	|move|p1a: Hariyama|Knock Off|p2a: Blissey
+L	ab_0_33	239	|-damage|p2a: Blissey|190/714
+L	ab_0_33	240	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_0_33	241	|-heal|p2a: Blissey|547/714
+L	ab_0_33	242	|
+L	ab_0_33	243	|-heal|p2a: Blissey|714/714|[from] move: Wish|[wisher] Blissey
+L	ab_0_33	244	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	245	|-damage|p1a: Hariyama|363/435|[from] Sandstorm
+L	ab_0_33	246	|-damage|p2a: Blissey|670/714|[from] Sandstorm
+L	ab_0_33	247	|-heal|p1a: Hariyama|390/435|[from] item: Leftovers
+L	ab_0_33	248	|upkeep
+L	ab_0_33	249	|turn|16
+L	ab_0_33	250	|
+L	ab_0_33	251	|t:|<NORMALIZED>
+L	ab_0_33	252	|move|p1a: Hariyama|Knock Off|p2a: Blissey
+L	ab_0_33	253	|-damage|p2a: Blissey|662/714
+L	ab_0_33	254	|move|p2a: Blissey|Seismic Toss|p1a: Hariyama
+L	ab_0_33	255	|-damage|p1a: Hariyama|290/435
+L	ab_0_33	256	|
+L	ab_0_33	257	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	258	|-damage|p1a: Hariyama|263/435|[from] Sandstorm
+L	ab_0_33	259	|-damage|p2a: Blissey|618/714|[from] Sandstorm
+L	ab_0_33	260	|-heal|p1a: Hariyama|290/435|[from] item: Leftovers
+L	ab_0_33	261	|upkeep
+L	ab_0_33	262	|turn|17
+L	ab_0_33	263	|
+L	ab_0_33	264	|t:|<NORMALIZED>
+L	ab_0_33	265	|switch|p2a: Metagross|Metagross|364/364
+L	ab_0_33	266	|move|p1a: Hariyama|Brick Break|p2a: Metagross
+L	ab_0_33	267	|-damage|p2a: Metagross|297/364
+L	ab_0_33	268	|
+L	ab_0_33	269	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	270	|debug|natural status immunity
+L	ab_0_33	271	|debug|weather immunity
+L	ab_0_33	272	|-damage|p1a: Hariyama|263/435|[from] Sandstorm
+L	ab_0_33	273	|-heal|p2a: Metagross|319/364|[from] item: Leftovers
+L	ab_0_33	274	|-heal|p1a: Hariyama|290/435|[from] item: Leftovers
+L	ab_0_33	275	|upkeep
+L	ab_0_33	276	|turn|18
+L	ab_0_33	277	|
+L	ab_0_33	278	|t:|<NORMALIZED>
+L	ab_0_33	279	|move|p2a: Metagross|Earthquake|p1a: Hariyama
+L	ab_0_33	280	|-damage|p1a: Hariyama|192/435
+L	ab_0_33	281	|move|p1a: Hariyama|Knock Off|p2a: Metagross
+L	ab_0_33	282	|-damage|p2a: Metagross|311/364
+L	ab_0_33	283	|-enditem|p2a: Metagross|Leftovers|[from] move: Knock Off|[of] p1a: Hariyama
+L	ab_0_33	284	|
+L	ab_0_33	285	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	286	|debug|natural status immunity
+L	ab_0_33	287	|debug|weather immunity
+L	ab_0_33	288	|-damage|p1a: Hariyama|165/435|[from] Sandstorm
+L	ab_0_33	289	|-heal|p1a: Hariyama|192/435|[from] item: Leftovers
+L	ab_0_33	290	|upkeep
+L	ab_0_33	291	|turn|19
+L	ab_0_33	292	|
+L	ab_0_33	293	|t:|<NORMALIZED>
+L	ab_0_33	294	|switch|p1a: Milotic|Milotic, M|393/393
+L	ab_0_33	295	|move|p2a: Metagross|Meteor Mash|p1a: Milotic
+L	ab_0_33	296	|-resisted|p1a: Milotic
+L	ab_0_33	297	|-damage|p1a: Milotic|329/393
+L	ab_0_33	298	|
+L	ab_0_33	299	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	300	|-damage|p1a: Milotic|305/393|[from] Sandstorm
+L	ab_0_33	301	|debug|natural status immunity
+L	ab_0_33	302	|debug|weather immunity
+L	ab_0_33	303	|-heal|p1a: Milotic|329/393|[from] item: Leftovers
+L	ab_0_33	304	|upkeep
+L	ab_0_33	305	|turn|20
+L	ab_0_33	306	|
+L	ab_0_33	307	|t:|<NORMALIZED>
+L	ab_0_33	308	|move|p2a: Metagross|Protect|p2a: Metagross
+L	ab_0_33	309	|-singleturn|p2a: Metagross|Protect
+L	ab_0_33	310	|move|p1a: Milotic|Refresh||[still]
+L	ab_0_33	311	|-fail|p1a: Milotic
+L	ab_0_33	312	|debug|move failed because it did nothing
+L	ab_0_33	313	|
+L	ab_0_33	314	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	315	|-damage|p1a: Milotic|305/393|[from] Sandstorm
+L	ab_0_33	316	|debug|natural status immunity
+L	ab_0_33	317	|debug|weather immunity
+L	ab_0_33	318	|-heal|p1a: Milotic|329/393|[from] item: Leftovers
+L	ab_0_33	319	|upkeep
+L	ab_0_33	320	|turn|21
+L	ab_0_33	321	|
+L	ab_0_33	322	|t:|<NORMALIZED>
+L	ab_0_33	323	|switch|p1a: Skarmory|Skarmory, M|331/331
+L	ab_0_33	324	|move|p2a: Metagross|Explosion|p1a: Skarmory
+L	ab_0_33	325	|-resisted|p1a: Skarmory
+L	ab_0_33	326	|-damage|p1a: Skarmory|146/331
+L	ab_0_33	327	|faint|p2a: Metagross
+L	ab_0_33	328	|
+L	ab_0_33	329	|t:|<NORMALIZED>
+L	ab_0_33	330	|switch|p2a: Blissey|Blissey, F|618/714
+L	ab_0_33	331	|
+L	ab_0_33	332	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	333	|debug|natural status immunity
+L	ab_0_33	334	|debug|weather immunity
+L	ab_0_33	335	|-damage|p2a: Blissey|574/714|[from] Sandstorm
+L	ab_0_33	336	|-heal|p1a: Skarmory|166/331|[from] item: Leftovers
+L	ab_0_33	337	|upkeep
+L	ab_0_33	338	|turn|22
+L	ab_0_33	339	|
+L	ab_0_33	340	|t:|<NORMALIZED>
+L	ab_0_33	341	|move|p2a: Blissey|Wish|p2a: Blissey
+L	ab_0_33	342	|move|p1a: Skarmory|Roar|p2a: Blissey
+L	ab_0_33	343	|drag|p2a: Zapdos|Zapdos|321/321
+L	ab_0_33	344	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_33	345	|
+L	ab_0_33	346	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	347	|-damage|p2a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_33	348	|debug|natural status immunity
+L	ab_0_33	349	|debug|weather immunity
+L	ab_0_33	350	|-heal|p2a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_33	351	|-heal|p1a: Skarmory|186/331|[from] item: Leftovers
+L	ab_0_33	352	|upkeep
+L	ab_0_33	353	|turn|23
+L	ab_0_33	354	|
+L	ab_0_33	355	|t:|<NORMALIZED>
+L	ab_0_33	356	|move|p2a: Zapdos|Substitute|p2a: Zapdos
+L	ab_0_33	357	|-start|p2a: Zapdos|Substitute
+L	ab_0_33	358	|-damage|p2a: Zapdos|241/321
+L	ab_0_33	359	|move|p1a: Skarmory|Drill Peck|p2a: Zapdos
+L	ab_0_33	360	|-resisted|p2a: Zapdos
+L	ab_0_33	361	|-activate|p2a: Zapdos|Substitute|[damage]
+L	ab_0_33	362	|
+L	ab_0_33	363	|-heal|p2a: Zapdos|321/321|[from] move: Wish|[wisher] Blissey
+L	ab_0_33	364	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	365	|-damage|p2a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_33	366	|debug|natural status immunity
+L	ab_0_33	367	|debug|weather immunity
+L	ab_0_33	368	|-heal|p2a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_33	369	|-heal|p1a: Skarmory|206/331|[from] item: Leftovers
+L	ab_0_33	370	|upkeep
+L	ab_0_33	371	|turn|24
+L	ab_0_33	372	|
+L	ab_0_33	373	|t:|<NORMALIZED>
+L	ab_0_33	374	|switch|p1a: Tyranitar|Tyranitar, M|403/403
+L	ab_0_33	375	|move|p2a: Zapdos|Thunderbolt|p1a: Tyranitar
+L	ab_0_33	376	|-damage|p1a: Tyranitar|243/403
+L	ab_0_33	377	|
+L	ab_0_33	378	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	379	|-damage|p2a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_33	380	|debug|natural status immunity
+L	ab_0_33	381	|debug|weather immunity
+L	ab_0_33	382	|-heal|p2a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_33	383	|-heal|p1a: Tyranitar|268/403|[from] item: Leftovers
+L	ab_0_33	384	|upkeep
+L	ab_0_33	385	|turn|25
+L	ab_0_33	386	|
+L	ab_0_33	387	|t:|<NORMALIZED>
+L	ab_0_33	388	|switch|p1a: Skarmory|Skarmory, M|206/331
+L	ab_0_33	389	|move|p2a: Zapdos|Hidden Power|p1a: Skarmory
+L	ab_0_33	390	|debug|BP: 70
+L	ab_0_33	391	|-damage|p1a: Skarmory|134/331
+L	ab_0_33	392	|
+L	ab_0_33	393	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	394	|-damage|p2a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_33	395	|debug|natural status immunity
+L	ab_0_33	396	|debug|weather immunity
+L	ab_0_33	397	|-heal|p2a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_33	398	|-heal|p1a: Skarmory|154/331|[from] item: Leftovers
+L	ab_0_33	399	|upkeep
+L	ab_0_33	400	|turn|26
+L	ab_0_33	401	|
+L	ab_0_33	402	|t:|<NORMALIZED>
+L	ab_0_33	403	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_33	404	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_33	405	|move|p2a: Zapdos|Substitute|p2a: Zapdos
+L	ab_0_33	406	|-fail|p2a: Zapdos|move: Substitute
+L	ab_0_33	407	|
+L	ab_0_33	408	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	409	|-damage|p2a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_33	410	|debug|natural status immunity
+L	ab_0_33	411	|debug|weather immunity
+L	ab_0_33	412	|-heal|p2a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_33	413	|-heal|p1a: Skarmory|174/331|[from] item: Leftovers
+L	ab_0_33	414	|upkeep
+L	ab_0_33	415	|turn|27
+L	ab_0_33	416	|
+L	ab_0_33	417	|t:|<NORMALIZED>
+L	ab_0_33	418	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_33	419	|debug|Success chance: 50%
+L	ab_0_33	420	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_33	421	|move|p2a: Zapdos|Thunderbolt|p1a: Skarmory
+L	ab_0_33	422	|-activate|p1a: Skarmory|Protect
+L	ab_0_33	423	|
+L	ab_0_33	424	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	425	|-damage|p2a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_33	426	|debug|natural status immunity
+L	ab_0_33	427	|debug|weather immunity
+L	ab_0_33	428	|-heal|p2a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_33	429	|-heal|p1a: Skarmory|194/331|[from] item: Leftovers
+L	ab_0_33	430	|upkeep
+L	ab_0_33	431	|turn|28
+L	ab_0_33	432	|
+L	ab_0_33	433	|t:|<NORMALIZED>
+L	ab_0_33	434	|move|p2a: Zapdos|Substitute|p2a: Zapdos
+L	ab_0_33	435	|-fail|p2a: Zapdos|move: Substitute
+L	ab_0_33	436	|move|p1a: Skarmory|Roar|p2a: Zapdos
+L	ab_0_33	437	|drag|p2a: Tyranitar|Tyranitar, M|328/341
+L	ab_0_33	438	|
+L	ab_0_33	439	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	440	|debug|natural status immunity
+L	ab_0_33	441	|debug|weather immunity
+L	ab_0_33	442	|debug|natural status immunity
+L	ab_0_33	443	|debug|weather immunity
+L	ab_0_33	444	|-heal|p1a: Skarmory|214/331|[from] item: Leftovers
+L	ab_0_33	445	|upkeep
+L	ab_0_33	446	|turn|29
+L	ab_0_33	447	|
+L	ab_0_33	448	|t:|<NORMALIZED>
+L	ab_0_33	449	|move|p2a: Tyranitar|Fire Blast|p1a: Skarmory
+L	ab_0_33	450	|-supereffective|p1a: Skarmory
+L	ab_0_33	451	|-damage|p1a: Skarmory|0 fnt
+L	ab_0_33	452	|faint|p1a: Skarmory
+L	ab_0_33	453	|
+L	ab_0_33	454	|t:|<NORMALIZED>
+L	ab_0_33	455	|switch|p1a: Hariyama|Hariyama, M|192/435
+L	ab_0_33	456	|
+L	ab_0_33	457	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	458	|debug|natural status immunity
+L	ab_0_33	459	|debug|weather immunity
+L	ab_0_33	460	|-damage|p1a: Hariyama|165/435|[from] Sandstorm
+L	ab_0_33	461	|-heal|p1a: Hariyama|192/435|[from] item: Leftovers
+L	ab_0_33	462	|upkeep
+L	ab_0_33	463	|turn|30
+L	ab_0_33	464	|
+L	ab_0_33	465	|t:|<NORMALIZED>
+L	ab_0_33	466	|move|p2a: Tyranitar|Rock Slide|p1a: Hariyama
+L	ab_0_33	467	|-resisted|p1a: Hariyama
+L	ab_0_33	468	|-damage|p1a: Hariyama|129/435
+L	ab_0_33	469	|move|p1a: Hariyama|Hidden Power|p2a: Tyranitar
+L	ab_0_33	470	|debug|BP: 70
+L	ab_0_33	471	|-resisted|p2a: Tyranitar
+L	ab_0_33	472	|-damage|p2a: Tyranitar|294/341
+L	ab_0_33	473	|
+L	ab_0_33	474	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	475	|debug|natural status immunity
+L	ab_0_33	476	|debug|weather immunity
+L	ab_0_33	477	|-damage|p1a: Hariyama|102/435|[from] Sandstorm
+L	ab_0_33	478	|-heal|p1a: Hariyama|129/435|[from] item: Leftovers
+L	ab_0_33	479	|upkeep
+L	ab_0_33	480	|turn|31
+L	ab_0_33	481	|
+L	ab_0_33	482	|t:|<NORMALIZED>
+L	ab_0_33	483	|move|p2a: Tyranitar|Rock Slide|p1a: Hariyama
+L	ab_0_33	484	|-resisted|p1a: Hariyama
+L	ab_0_33	485	|-damage|p1a: Hariyama|62/435
+L	ab_0_33	486	|cant|p1a: Hariyama|flinch
+L	ab_0_33	487	|
+L	ab_0_33	488	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	489	|debug|natural status immunity
+L	ab_0_33	490	|debug|weather immunity
+L	ab_0_33	491	|-damage|p1a: Hariyama|35/435|[from] Sandstorm
+L	ab_0_33	492	|-heal|p1a: Hariyama|62/435|[from] item: Leftovers
+L	ab_0_33	493	|upkeep
+L	ab_0_33	494	|turn|32
+L	ab_0_33	495	|
+L	ab_0_33	496	|t:|<NORMALIZED>
+L	ab_0_33	497	|move|p2a: Tyranitar|Hidden Power|p1a: Hariyama
+L	ab_0_33	498	|debug|BP: 70
+L	ab_0_33	499	|-damage|p1a: Hariyama|0 fnt
+L	ab_0_33	500	|faint|p1a: Hariyama
+L	ab_0_33	501	|
+L	ab_0_33	502	|t:|<NORMALIZED>
+L	ab_0_33	503	|switch|p1a: Tyranitar|Tyranitar, M|268/403
+L	ab_0_33	504	|
+L	ab_0_33	505	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	506	|debug|natural status immunity
+L	ab_0_33	507	|debug|weather immunity
+L	ab_0_33	508	|debug|natural status immunity
+L	ab_0_33	509	|debug|weather immunity
+L	ab_0_33	510	|-heal|p1a: Tyranitar|293/403|[from] item: Leftovers
+L	ab_0_33	511	|upkeep
+L	ab_0_33	512	|turn|33
+L	ab_0_33	513	|
+L	ab_0_33	514	|t:|<NORMALIZED>
+L	ab_0_33	515	|move|p2a: Tyranitar|Hidden Power|p1a: Tyranitar
+L	ab_0_33	516	|debug|BP: 70
+L	ab_0_33	517	|-supereffective|p1a: Tyranitar
+L	ab_0_33	518	|-damage|p1a: Tyranitar|154/403
+L	ab_0_33	519	|move|p1a: Tyranitar|Hidden Power|p2a: Tyranitar
+L	ab_0_33	520	|debug|BP: 70
+L	ab_0_33	521	|-supereffective|p2a: Tyranitar
+L	ab_0_33	522	|-damage|p2a: Tyranitar|116/341
+L	ab_0_33	523	|
+L	ab_0_33	524	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	525	|debug|natural status immunity
+L	ab_0_33	526	|debug|weather immunity
+L	ab_0_33	527	|debug|natural status immunity
+L	ab_0_33	528	|debug|weather immunity
+L	ab_0_33	529	|-heal|p1a: Tyranitar|179/403|[from] item: Leftovers
+L	ab_0_33	530	|upkeep
+L	ab_0_33	531	|turn|34
+L	ab_0_33	532	|
+L	ab_0_33	533	|t:|<NORMALIZED>
+L	ab_0_33	534	|move|p2a: Tyranitar|Rock Slide|p1a: Tyranitar
+L	ab_0_33	535	|-damage|p1a: Tyranitar|58/403
+L	ab_0_33	536	|move|p1a: Tyranitar|Rock Slide|p2a: Tyranitar|[miss]
+L	ab_0_33	537	|-miss|p1a: Tyranitar|p2a: Tyranitar
+L	ab_0_33	538	|
+L	ab_0_33	539	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	540	|debug|natural status immunity
+L	ab_0_33	541	|debug|weather immunity
+L	ab_0_33	542	|debug|natural status immunity
+L	ab_0_33	543	|debug|weather immunity
+L	ab_0_33	544	|-heal|p1a: Tyranitar|83/403|[from] item: Leftovers
+L	ab_0_33	545	|upkeep
+L	ab_0_33	546	|turn|35
+L	ab_0_33	547	|
+L	ab_0_33	548	|t:|<NORMALIZED>
+L	ab_0_33	549	|move|p2a: Tyranitar|Hidden Power|p1a: Tyranitar
+L	ab_0_33	550	|debug|BP: 70
+L	ab_0_33	551	|-supereffective|p1a: Tyranitar
+L	ab_0_33	552	|-crit|p1a: Tyranitar
+L	ab_0_33	553	|-damage|p1a: Tyranitar|0 fnt
+L	ab_0_33	554	|faint|p1a: Tyranitar
+L	ab_0_33	555	|
+L	ab_0_33	556	|t:|<NORMALIZED>
+L	ab_0_33	557	|switch|p1a: Milotic|Milotic, M|329/393
+L	ab_0_33	558	|
+L	ab_0_33	559	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	560	|-damage|p1a: Milotic|305/393|[from] Sandstorm
+L	ab_0_33	561	|debug|natural status immunity
+L	ab_0_33	562	|debug|weather immunity
+L	ab_0_33	563	|-heal|p1a: Milotic|329/393|[from] item: Leftovers
+L	ab_0_33	564	|upkeep
+L	ab_0_33	565	|turn|36
+L	ab_0_33	566	|
+L	ab_0_33	567	|t:|<NORMALIZED>
+L	ab_0_33	568	|debug|before turn callback: focuspunch
+L	ab_0_33	569	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_0_33	570	|move|p1a: Milotic|Surf|p2a: Tyranitar
+L	ab_0_33	571	|-supereffective|p2a: Tyranitar
+L	ab_0_33	572	|-damage|p2a: Tyranitar|0 fnt
+L	ab_0_33	573	|faint|p2a: Tyranitar
+L	ab_0_33	574	|
+L	ab_0_33	575	|t:|<NORMALIZED>
+L	ab_0_33	576	|switch|p2a: Starmie|Starmie|286/324
+L	ab_0_33	577	|
+L	ab_0_33	578	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	579	|-damage|p2a: Starmie|266/324|[from] Sandstorm
+L	ab_0_33	580	|-damage|p1a: Milotic|305/393|[from] Sandstorm
+L	ab_0_33	581	|-heal|p2a: Starmie|286/324|[from] item: Leftovers
+L	ab_0_33	582	|-heal|p1a: Milotic|329/393|[from] item: Leftovers
+L	ab_0_33	583	|upkeep
+L	ab_0_33	584	|turn|37
+L	ab_0_33	585	|
+L	ab_0_33	586	|t:|<NORMALIZED>
+L	ab_0_33	587	|switch|p2a: Zapdos|Zapdos|321/321
+L	ab_0_33	588	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_33	589	|move|p1a: Milotic|Refresh||[still]
+L	ab_0_33	590	|-fail|p1a: Milotic
+L	ab_0_33	591	|debug|move failed because it did nothing
+L	ab_0_33	592	|
+L	ab_0_33	593	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	594	|-damage|p2a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_33	595	|-damage|p1a: Milotic|305/393|[from] Sandstorm
+L	ab_0_33	596	|-heal|p2a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_33	597	|-heal|p1a: Milotic|329/393|[from] item: Leftovers
+L	ab_0_33	598	|upkeep
+L	ab_0_33	599	|turn|38
+L	ab_0_33	600	|
+L	ab_0_33	601	|t:|<NORMALIZED>
+L	ab_0_33	602	|move|p2a: Zapdos|Substitute|p2a: Zapdos
+L	ab_0_33	603	|-start|p2a: Zapdos|Substitute
+L	ab_0_33	604	|-damage|p2a: Zapdos|241/321
+L	ab_0_33	605	|move|p1a: Milotic|Toxic||[still]
+L	ab_0_33	606	|-fail|p1a: Milotic
+L	ab_0_33	607	|debug|move failed because it did nothing
+L	ab_0_33	608	|
+L	ab_0_33	609	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	610	|-damage|p2a: Zapdos|221/321|[from] Sandstorm
+L	ab_0_33	611	|-damage|p1a: Milotic|305/393|[from] Sandstorm
+L	ab_0_33	612	|-heal|p2a: Zapdos|241/321|[from] item: Leftovers
+L	ab_0_33	613	|-heal|p1a: Milotic|329/393|[from] item: Leftovers
+L	ab_0_33	614	|upkeep
+L	ab_0_33	615	|turn|39
+L	ab_0_33	616	|
+L	ab_0_33	617	|t:|<NORMALIZED>
+L	ab_0_33	618	|move|p2a: Zapdos|Baton Pass|p2a: Zapdos
+L	ab_0_33	619	|
+L	ab_0_33	620	|t:|<NORMALIZED>
+L	ab_0_33	621	|switch|p2a: Starmie|Starmie|286/324|[from] Baton Pass
+L	ab_0_33	622	|move|p1a: Milotic|Toxic||[still]
+L	ab_0_33	623	|-fail|p1a: Milotic
+L	ab_0_33	624	|debug|move failed because it did nothing
+L	ab_0_33	625	|
+L	ab_0_33	626	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	627	|-damage|p2a: Starmie|266/324|[from] Sandstorm
+L	ab_0_33	628	|-damage|p1a: Milotic|305/393|[from] Sandstorm
+L	ab_0_33	629	|-heal|p2a: Starmie|286/324|[from] item: Leftovers
+L	ab_0_33	630	|-heal|p1a: Milotic|329/393|[from] item: Leftovers
+L	ab_0_33	631	|upkeep
+L	ab_0_33	632	|turn|40
+L	ab_0_33	633	|
+L	ab_0_33	634	|t:|<NORMALIZED>
+L	ab_0_33	635	|switch|p2a: Zapdos|Zapdos|241/321
+L	ab_0_33	636	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_33	637	|move|p1a: Milotic|Toxic|p2a: Zapdos
+L	ab_0_33	638	|-status|p2a: Zapdos|tox
+L	ab_0_33	639	|
+L	ab_0_33	640	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	641	|-damage|p2a: Zapdos|221/321 tox|[from] Sandstorm
+L	ab_0_33	642	|-damage|p1a: Milotic|305/393|[from] Sandstorm
+L	ab_0_33	643	|-heal|p2a: Zapdos|241/321 tox|[from] item: Leftovers
+L	ab_0_33	644	|-damage|p2a: Zapdos|221/321 tox|[from] psn
+L	ab_0_33	645	|-heal|p1a: Milotic|329/393|[from] item: Leftovers
+L	ab_0_33	646	|upkeep
+L	ab_0_33	647	|turn|41
+L	ab_0_33	648	|
+L	ab_0_33	649	|t:|<NORMALIZED>
+L	ab_0_33	650	|switch|p2a: Blissey|Blissey, F|574/714
+L	ab_0_33	651	|move|p1a: Milotic|Toxic|p2a: Blissey
+L	ab_0_33	652	|-status|p2a: Blissey|tox
+L	ab_0_33	653	|
+L	ab_0_33	654	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	655	|-damage|p1a: Milotic|305/393|[from] Sandstorm
+L	ab_0_33	656	|-damage|p2a: Blissey|530/714 tox|[from] Sandstorm
+L	ab_0_33	657	|-heal|p1a: Milotic|329/393|[from] item: Leftovers
+L	ab_0_33	658	|-damage|p2a: Blissey|486/714 tox|[from] psn
+L	ab_0_33	659	|upkeep
+L	ab_0_33	660	|turn|42
+L	ab_0_33	661	|
+L	ab_0_33	662	|t:|<NORMALIZED>
+L	ab_0_33	663	|move|p1a: Milotic|Recover|p1a: Milotic
+L	ab_0_33	664	|-heal|p1a: Milotic|393/393
+L	ab_0_33	665	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_0_33	666	|-heal|p2a: Blissey|714/714 tox
+L	ab_0_33	667	|
+L	ab_0_33	668	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	669	|-damage|p1a: Milotic|369/393|[from] Sandstorm
+L	ab_0_33	670	|-damage|p2a: Blissey|670/714 tox|[from] Sandstorm
+L	ab_0_33	671	|-heal|p1a: Milotic|393/393|[from] item: Leftovers
+L	ab_0_33	672	|-damage|p2a: Blissey|582/714 tox|[from] psn
+L	ab_0_33	673	|upkeep
+L	ab_0_33	674	|turn|43
+L	ab_0_33	675	|
+L	ab_0_33	676	|t:|<NORMALIZED>
+L	ab_0_33	677	|-curestatus|p2a: Blissey|tox|[from] ability: Natural Cure|[silent]
+L	ab_0_33	678	|switch|p2a: Zapdos|Zapdos|221/321 tox
+L	ab_0_33	679	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_33	680	|move|p1a: Milotic|Recover||[still]
+L	ab_0_33	681	|-fail|p1a: Milotic|heal
+L	ab_0_33	682	|debug|move failed because it did nothing
+L	ab_0_33	683	|
+L	ab_0_33	684	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	685	|-damage|p2a: Zapdos|201/321 tox|[from] Sandstorm
+L	ab_0_33	686	|-damage|p1a: Milotic|369/393|[from] Sandstorm
+L	ab_0_33	687	|-heal|p2a: Zapdos|221/321 tox|[from] item: Leftovers
+L	ab_0_33	688	|-damage|p2a: Zapdos|201/321 tox|[from] psn
+L	ab_0_33	689	|-heal|p1a: Milotic|393/393|[from] item: Leftovers
+L	ab_0_33	690	|upkeep
+L	ab_0_33	691	|turn|44
+L	ab_0_33	692	|
+L	ab_0_33	693	|t:|<NORMALIZED>
+L	ab_0_33	694	|move|p2a: Zapdos|Substitute|p2a: Zapdos
+L	ab_0_33	695	|-start|p2a: Zapdos|Substitute
+L	ab_0_33	696	|-damage|p2a: Zapdos|121/321 tox
+L	ab_0_33	697	|move|p1a: Milotic|Recover||[still]
+L	ab_0_33	698	|-fail|p1a: Milotic|heal
+L	ab_0_33	699	|debug|move failed because it did nothing
+L	ab_0_33	700	|
+L	ab_0_33	701	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	702	|-damage|p2a: Zapdos|101/321 tox|[from] Sandstorm
+L	ab_0_33	703	|-damage|p1a: Milotic|369/393|[from] Sandstorm
+L	ab_0_33	704	|-heal|p2a: Zapdos|121/321 tox|[from] item: Leftovers
+L	ab_0_33	705	|-damage|p2a: Zapdos|81/321 tox|[from] psn
+L	ab_0_33	706	|-heal|p1a: Milotic|393/393|[from] item: Leftovers
+L	ab_0_33	707	|upkeep
+L	ab_0_33	708	|turn|45
+L	ab_0_33	709	|
+L	ab_0_33	710	|t:|<NORMALIZED>
+L	ab_0_33	711	|move|p2a: Zapdos|Thunderbolt|p1a: Milotic
+L	ab_0_33	712	|-supereffective|p1a: Milotic
+L	ab_0_33	713	|-damage|p1a: Milotic|108/393
+L	ab_0_33	714	|move|p1a: Milotic|Surf|p2a: Zapdos
+L	ab_0_33	715	|-end|p2a: Zapdos|Substitute
+L	ab_0_33	716	|
+L	ab_0_33	717	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	718	|-damage|p2a: Zapdos|61/321 tox|[from] Sandstorm
+L	ab_0_33	719	|-damage|p1a: Milotic|84/393|[from] Sandstorm
+L	ab_0_33	720	|-heal|p2a: Zapdos|81/321 tox|[from] item: Leftovers
+L	ab_0_33	721	|-damage|p2a: Zapdos|21/321 tox|[from] psn
+L	ab_0_33	722	|-heal|p1a: Milotic|108/393|[from] item: Leftovers
+L	ab_0_33	723	|upkeep
+L	ab_0_33	724	|turn|46
+L	ab_0_33	725	|
+L	ab_0_33	726	|t:|<NORMALIZED>
+L	ab_0_33	727	|move|p2a: Zapdos|Hidden Power|p1a: Milotic
+L	ab_0_33	728	|debug|BP: 70
+L	ab_0_33	729	|-resisted|p1a: Milotic
+L	ab_0_33	730	|-damage|p1a: Milotic|74/393
+L	ab_0_33	731	|move|p1a: Milotic|Surf|p2a: Zapdos
+L	ab_0_33	732	|-damage|p2a: Zapdos|0 fnt
+L	ab_0_33	733	|faint|p2a: Zapdos
+L	ab_0_33	734	|
+L	ab_0_33	735	|t:|<NORMALIZED>
+L	ab_0_33	736	|switch|p2a: Hariyama|Hariyama, M|247/429
+L	ab_0_33	737	|
+L	ab_0_33	738	|-weather|Sandstorm|[upkeep]
+L	ab_0_33	739	|-damage|p1a: Milotic|50/393|[from] Sandstorm
+L	ab_0_33	740	|-damage|p2a: Hariyama|221/429|[from] Sandstorm
+L	ab_0_33	741	|-heal|p1a: Milotic|74/393|[from] item: Leftovers
+L	ab_0_33	742	|upkeep
+L	ab_0_33	743	|turn|47
+L	ab_0_33	744	|
+L	ab_0_33	745	|t:|<NORMALIZED>
+L	ab_0_33	746	|move|p1a: Milotic|Toxic|p2a: Hariyama
+L	ab_0_33	747	|-status|p2a: Hariyama|tox
+L	ab_0_33	748	|move|p2a: Hariyama|Rock Slide|p1a: Milotic
+L	ab_0_33	749	|-damage|p1a: Milotic|0 fnt
+L	ab_0_33	750	|debug|move failed because it did nothing
+L	ab_0_33	751	|faint|p1a: Milotic
+L	ab_0_33	752	|
+L	ab_0_33	753	|win|P2

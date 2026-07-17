@@ -1,0 +1,466 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777002 run_id=rmro8hjvp chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_23
+TEAM	ab_0_23	p1	Heracross||Leftovers|Guts|Megahorn,RockSlide,FocusPunch,Toxic|Adamant|248,124,,,116,20|M||||]Magneton||Magnet|MagnetPull|Thunderbolt,HiddenPowerFire,ThunderWave,Toxic|Modest|240,,,248,,20|N|,2,,30,,30|||,Fire,,,,]Tyranitar||Leftovers|SandStream|RockSlide,Crunch,Pursuit,FocusPunch|Quiet|248,12,,160,52,36|M||||]Swampert||Leftovers|Torrent|HydroPump,Earthquake,IceBeam,FocusPunch|Brave|176,136,,156,4,36|M||||]Flygon||Leftovers|Levitate|Earthquake,RockSlide,HiddenPowerBug,Substitute|Jolly|16,240,,,,252|M|,30,30,,30,|||,Bug,,,,]Gyarados||Leftovers|Intimidate|HiddenPowerFlying,Earthquake,DragonDance,Substitute|Jolly|4,252,,,,252|M|30,30,30,30,30,|||,Flying,,,,
+TEAM	ab_0_23	p2	Zapdos||Leftovers|Pressure|Thunderbolt,Toxic,Roar,Rest|Calm|248,,,,228,32|N||||]Suicune||Leftovers|Pressure|CalmMind,Rest,Roar,Surf|Bold|240,,196,,,72|N||||]Blissey||Leftovers|NaturalCure|ThunderWave,SeismicToss,IceBeam,SoftBoiled|Bold|228,,252,,,28|F||||]Claydol||Leftovers|Levitate|Explosion,RapidSpin,Earthquake,Psychic|Relaxed|248,,204,,40,16|N||||]Dugtrio||ChoiceBand|ArenaTrap|AerialAce,Earthquake,HiddenPowerBug,SunnyDay|Jolly|,252,,,4,252|M|,30,30,,30,|||,Bug,,,,]Magneton||Magnet|MagnetPull|Thunderbolt,HiddenPowerFire,Toxic,RainDance|Timid|4,,,252,,252|N|,2,,30,,30|||,Fire,,,,
+FMT	ab_0_23	gen3ou
+INIT	ab_0_23	50913,35602,17928,19081	3577130651
+DEC	ab_0_23	0	move	0	0	m2	s5	65243,56730,57490,56322	Heracross	363	363	0	-	0	0	0	0	0	0	6	Magneton	0	242	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_23	1	switch	0	1	-	s4	20070,19432,3554,32141	Heracross	363	363	0	-	0	0	0	0	0	0	6	Dugtrio	211	211	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_23	2	move	0	0	m3	s2	8042,51784,11929,37238	Heracross	363	363	0	-	0	0	0	0	0	0	6	Blissey	664	708	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_23	3	move	0	0	m0	m3	26492,39985,60244,63402	Heracross	363	363	0	-	0	0	0	0	0	0	6	Blissey	585	708	0	tox	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_23	4	move	0	0	m2	s3	31815,40067,43209,33438	Heracross	363	363	0	-	0	0	0	0	0	0	6	Claydol	246	323	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_23	5	move	0	0	m2	m0	9414,58402,10965,30691	Heracross	0	363	1	fnt	0	0	0	0	0	0	5	Claydol	0	323	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_23	6	switch	1	1	s1	s1	5352,4704,11964,26194	Magneton	301	301	0	-	0	0	0	0	0	0	5	Suicune	401	401	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_23	7	move	0	0	m1	m2	16918,47138,46679,45192	Swampert	385	385	0	-	0	0	0	0	0	0	5	Suicune	389	401	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_23	8	move	0	0	m1	s2	17322,51104,54353,20069	Swampert	385	385	0	-	0	0	0	0	0	0	5	Dugtrio	0	211	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_23	9	switch	0	1	-	s5	62346,46136,2033,39324	Swampert	385	385	0	-	0	0	0	0	0	0	5	Zapdos	383	383	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_23	10	move	0	0	m1	m3	30554,18794,43342,28142	Swampert	385	385	0	-	0	0	0	0	0	0	5	Zapdos	383	383	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_23	11	move	0	0	m0	s2	20332,25237,34457,48290	Swampert	385	385	0	-	0	0	0	0	0	0	5	Suicune	347	401	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_23	12	move	0	0	m2	m2	20132,19039,18183,6779	Flygon	305	305	0	-	0	0	0	0	0	0	5	Suicune	339	401	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_23	13	move	0	0	m1	m0	48728,6165,35036,58686	Flygon	305	305	0	-	0	0	0	0	0	0	5	Suicune	317	401	0	-	0	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_23	14	move	0	0	s5	m2	2922,7045,40255,54275	Swampert	385	385	0	-	0	0	0	0	0	0	5	Suicune	342	401	0	-	-1	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_23	15	move	0	0	m1	m2	54825,56836,22027,5633	Magneton	301	301	0	-	0	0	0	0	0	0	5	Suicune	130	401	0	-	-1	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_23	16	move	0	0	m3	m0	8230,55496,35223,19610	Magneton	301	301	0	-	0	0	0	0	0	0	5	Suicune	130	401	0	tox	-1	0	2	2	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_23	17	move	0	0	m1	m3	20470,64543,58499,60271	Magneton	0	301	1	fnt	0	0	0	0	0	0	4	Suicune	130	401	0	tox	-1	0	2	2	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_23	18	switch	1	0	s5	-	7342,39065,1337,59534	Flygon	305	305	0	-	0	0	0	0	0	0	4	Suicune	105	401	0	tox	-1	0	2	2	0	0	3	none	0	0	0	0	0
+DEC	ab_0_23	19	move	0	0	m0	m2	15902,29513,10548,19475	Flygon	305	305	0	-	0	0	0	0	0	0	4	Suicune	0	401	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_23	20	switch	0	1	-	s3	34448,10223,22275,52546	Flygon	305	305	0	-	0	0	0	0	0	0	4	Blissey	629	708	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_23	21	move	0	0	m1	m3	61485,13920,57753,12945	Flygon	305	305	0	-	0	0	0	0	0	0	4	Blissey	708	708	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_23	22	move	0	0	m3	m0	4179,22496,34644,19099	Flygon	248	305	0	-	0	0	0	0	0	0	4	Blissey	708	708	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_23	23	move	0	0	m2	m1	23754,54431,37098,30686	Flygon	267	305	0	-	0	0	0	0	0	0	4	Blissey	627	708	0	-	0	0	0	0	0	0	2	p1	0	0	1	0	0
+DEC	ab_0_23	24	move	0	0	s2	m2	46874,45571,29129,15709	Tyranitar	375	403	0	-	0	0	0	0	0	0	4	Blissey	627	708	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_23	25	move	0	0	m0	s2	61763,37789,6572,43976	Tyranitar	400	403	0	-	0	0	0	0	0	0	4	Zapdos	114	383	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_23	26	move	0	0	m2	m2	11004,20998,41779,37678	Gyarados	331	331	0	-	0	0	0	0	0	0	4	Zapdos	70	383	0	-	-1	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_23	27	move	0	0	m3	m0	19688,18780,41349,2797	Gyarados	249	331	0	-	0	0	0	0	0	0	4	Zapdos	70	383	0	-	-1	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_23	28	move	0	0	m3	m0	63722,31759,8540,22680	Gyarados	167	331	0	-	0	0	0	0	0	0	4	Zapdos	70	383	0	-	-1	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_23	29	move	0	0	m2	s2	28973,26033,8486,60091	Gyarados	167	331	0	-	1	0	0	0	1	0	4	Blissey	627	708	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_23	30	move	0	0	m3	m0	3395,31529,26422,4149	Gyarados	85	331	0	-	1	0	0	0	1	0	4	Blissey	627	708	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_23	31	move	0	0	m2	m3	5262,36043,29850,24748	Gyarados	85	331	0	-	2	0	0	0	2	0	4	Blissey	708	708	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_23	32	move	0	0	m1	m0	1690,56914,58394,56387	Gyarados	85	331	0	-	2	0	0	0	2	0	4	Blissey	267	708	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_23	33	move	0	0	m1	m3	1645,827,54230,55572	Gyarados	85	331	0	-	2	0	0	0	2	0	4	Blissey	0	708	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_23	34	switch	0	1	-	s2	21056,14928,60833,63399	Gyarados	85	331	0	-	2	0	0	0	2	0	4	Zapdos	70	383	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_0_23	35	move	0	0	m1	m0	12772,4179,11521,63429	Gyarados	85	331	0	-	2	0	0	0	2	0	4	Zapdos	70	383	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_23	36	move	0	0	m0	m2	17036,14703,12387,28110	Gyarados	85	331	0	-	2	0	0	0	2	0	4	Zapdos	0	383	1	-	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_0_23	1	p1
+L	ab_0_23	0	|t:|<NORMALIZED>
+L	ab_0_23	1	|gametype|singles
+L	ab_0_23	2	|player|p1|P1||
+L	ab_0_23	3	|player|p2|P2||
+L	ab_0_23	4	|gen|3
+L	ab_0_23	5	|tier|[Gen 3] OU
+L	ab_0_23	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_23	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_0_23	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_0_23	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_0_23	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_0_23	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_0_23	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_0_23	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_0_23	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_0_23	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_0_23	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_0_23	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_0_23	18	|
+L	ab_0_23	19	|t:|<NORMALIZED>
+L	ab_0_23	20	|teamsize|p1|6
+L	ab_0_23	21	|teamsize|p2|6
+L	ab_0_23	22	|start
+L	ab_0_23	23	|switch|p1a: Heracross|Heracross, M|363/363
+L	ab_0_23	24	|switch|p2a: Zapdos|Zapdos|383/383
+L	ab_0_23	25	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_23	26	|turn|1
+L	ab_0_23	27	|
+L	ab_0_23	28	|t:|<NORMALIZED>
+L	ab_0_23	29	|-singleturn|p1a: Heracross|move: Focus Punch
+L	ab_0_23	30	|switch|p2a: Magneton|Magneton|242/242
+L	ab_0_23	31	|move|p1a: Heracross|Focus Punch|p2a: Magneton
+L	ab_0_23	32	|-supereffective|p2a: Magneton
+L	ab_0_23	33	|-damage|p2a: Magneton|0 fnt
+L	ab_0_23	34	|faint|p2a: Magneton
+L	ab_0_23	35	|
+L	ab_0_23	36	|t:|<NORMALIZED>
+L	ab_0_23	37	|switch|p2a: Dugtrio|Dugtrio, M|211/211
+L	ab_0_23	38	|
+L	ab_0_23	39	|upkeep
+L	ab_0_23	40	|turn|2
+L	ab_0_23	41	|
+L	ab_0_23	42	|t:|<NORMALIZED>
+L	ab_0_23	43	|switch|p2a: Blissey|Blissey, F|708/708
+L	ab_0_23	44	|move|p1a: Heracross|Toxic|p2a: Blissey
+L	ab_0_23	45	|-status|p2a: Blissey|tox
+L	ab_0_23	46	|
+L	ab_0_23	47	|-damage|p2a: Blissey|664/708 tox|[from] psn
+L	ab_0_23	48	|upkeep
+L	ab_0_23	49	|turn|3
+L	ab_0_23	50	|
+L	ab_0_23	51	|t:|<NORMALIZED>
+L	ab_0_23	52	|move|p1a: Heracross|Megahorn|p2a: Blissey
+L	ab_0_23	53	|-damage|p2a: Blissey|275/708 tox
+L	ab_0_23	54	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_0_23	55	|-heal|p2a: Blissey|629/708 tox
+L	ab_0_23	56	|
+L	ab_0_23	57	|-heal|p2a: Blissey|673/708 tox|[from] item: Leftovers
+L	ab_0_23	58	|-damage|p2a: Blissey|585/708 tox|[from] psn
+L	ab_0_23	59	|upkeep
+L	ab_0_23	60	|turn|4
+L	ab_0_23	61	|
+L	ab_0_23	62	|t:|<NORMALIZED>
+L	ab_0_23	63	|-singleturn|p1a: Heracross|move: Focus Punch
+L	ab_0_23	64	|-curestatus|p2a: Blissey|tox|[from] ability: Natural Cure|[silent]
+L	ab_0_23	65	|switch|p2a: Claydol|Claydol|323/323
+L	ab_0_23	66	|move|p1a: Heracross|Focus Punch|p2a: Claydol
+L	ab_0_23	67	|-resisted|p2a: Claydol
+L	ab_0_23	68	|-damage|p2a: Claydol|226/323
+L	ab_0_23	69	|
+L	ab_0_23	70	|-heal|p2a: Claydol|246/323|[from] item: Leftovers
+L	ab_0_23	71	|upkeep
+L	ab_0_23	72	|turn|5
+L	ab_0_23	73	|
+L	ab_0_23	74	|t:|<NORMALIZED>
+L	ab_0_23	75	|-singleturn|p1a: Heracross|move: Focus Punch
+L	ab_0_23	76	|move|p2a: Claydol|Explosion|p1a: Heracross
+L	ab_0_23	77	|-damage|p1a: Heracross|0 fnt
+L	ab_0_23	78	|faint|p2a: Claydol
+L	ab_0_23	79	|faint|p1a: Heracross
+L	ab_0_23	80	|
+L	ab_0_23	81	|t:|<NORMALIZED>
+L	ab_0_23	82	|switch|p1a: Magneton|Magneton|301/301
+L	ab_0_23	83	|switch|p2a: Suicune|Suicune|401/401
+L	ab_0_23	84	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_23	85	|
+L	ab_0_23	86	|upkeep
+L	ab_0_23	87	|turn|6
+L	ab_0_23	88	|
+L	ab_0_23	89	|t:|<NORMALIZED>
+L	ab_0_23	90	|move|p1a: Magneton|Hidden Power|p2a: Suicune
+L	ab_0_23	91	|-resisted|p2a: Suicune
+L	ab_0_23	92	|-damage|p2a: Suicune|364/401
+L	ab_0_23	93	|move|p2a: Suicune|Roar|p1a: Magneton
+L	ab_0_23	94	|drag|p1a: Swampert|Swampert, M|385/385
+L	ab_0_23	95	|
+L	ab_0_23	96	|-heal|p2a: Suicune|389/401|[from] item: Leftovers
+L	ab_0_23	97	|upkeep
+L	ab_0_23	98	|turn|7
+L	ab_0_23	99	|
+L	ab_0_23	100	|t:|<NORMALIZED>
+L	ab_0_23	101	|switch|p2a: Dugtrio|Dugtrio, M|211/211
+L	ab_0_23	102	|move|p1a: Swampert|Earthquake|p2a: Dugtrio
+L	ab_0_23	103	|-damage|p2a: Dugtrio|0 fnt
+L	ab_0_23	104	|faint|p2a: Dugtrio
+L	ab_0_23	105	|
+L	ab_0_23	106	|t:|<NORMALIZED>
+L	ab_0_23	107	|switch|p2a: Zapdos|Zapdos|383/383
+L	ab_0_23	108	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_23	109	|
+L	ab_0_23	110	|upkeep
+L	ab_0_23	111	|turn|8
+L	ab_0_23	112	|
+L	ab_0_23	113	|t:|<NORMALIZED>
+L	ab_0_23	114	|move|p2a: Zapdos|Rest|p2a: Zapdos
+L	ab_0_23	115	|-fail|p2a: Zapdos|heal
+L	ab_0_23	116	|move|p1a: Swampert|Earthquake|p2a: Zapdos
+L	ab_0_23	117	|-immune|p2a: Zapdos
+L	ab_0_23	118	|
+L	ab_0_23	119	|upkeep
+L	ab_0_23	120	|turn|9
+L	ab_0_23	121	|
+L	ab_0_23	122	|t:|<NORMALIZED>
+L	ab_0_23	123	|switch|p2a: Suicune|Suicune|389/401
+L	ab_0_23	124	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_23	125	|move|p1a: Swampert|Hydro Pump|p2a: Suicune
+L	ab_0_23	126	|-resisted|p2a: Suicune
+L	ab_0_23	127	|-damage|p2a: Suicune|322/401
+L	ab_0_23	128	|
+L	ab_0_23	129	|-heal|p2a: Suicune|347/401|[from] item: Leftovers
+L	ab_0_23	130	|upkeep
+L	ab_0_23	131	|turn|10
+L	ab_0_23	132	|
+L	ab_0_23	133	|t:|<NORMALIZED>
+L	ab_0_23	134	|move|p1a: Swampert|Ice Beam|p2a: Suicune
+L	ab_0_23	135	|-resisted|p2a: Suicune
+L	ab_0_23	136	|-damage|p2a: Suicune|314/401
+L	ab_0_23	137	|move|p2a: Suicune|Roar|p1a: Swampert
+L	ab_0_23	138	|drag|p1a: Flygon|Flygon, M|305/305
+L	ab_0_23	139	|
+L	ab_0_23	140	|-heal|p2a: Suicune|339/401|[from] item: Leftovers
+L	ab_0_23	141	|upkeep
+L	ab_0_23	142	|turn|11
+L	ab_0_23	143	|
+L	ab_0_23	144	|t:|<NORMALIZED>
+L	ab_0_23	145	|move|p1a: Flygon|Rock Slide|p2a: Suicune
+L	ab_0_23	146	|-damage|p2a: Suicune|292/401
+L	ab_0_23	147	|move|p2a: Suicune|Calm Mind|p2a: Suicune
+L	ab_0_23	148	|-boost|p2a: Suicune|spa|1
+L	ab_0_23	149	|-boost|p2a: Suicune|spd|1
+L	ab_0_23	150	|
+L	ab_0_23	151	|-heal|p2a: Suicune|317/401|[from] item: Leftovers
+L	ab_0_23	152	|upkeep
+L	ab_0_23	153	|turn|12
+L	ab_0_23	154	|
+L	ab_0_23	155	|t:|<NORMALIZED>
+L	ab_0_23	156	|switch|p1a: Gyarados|Gyarados, M|331/331
+L	ab_0_23	157	|-ability|p1a: Gyarados|Intimidate|boost
+L	ab_0_23	158	|-unboost|p2a: Suicune|atk|1
+L	ab_0_23	159	|move|p2a: Suicune|Roar|p1a: Gyarados
+L	ab_0_23	160	|drag|p1a: Swampert|Swampert, M|385/385
+L	ab_0_23	161	|
+L	ab_0_23	162	|-heal|p2a: Suicune|342/401|[from] item: Leftovers
+L	ab_0_23	163	|upkeep
+L	ab_0_23	164	|turn|13
+L	ab_0_23	165	|
+L	ab_0_23	166	|t:|<NORMALIZED>
+L	ab_0_23	167	|move|p1a: Swampert|Earthquake|p2a: Suicune
+L	ab_0_23	168	|-crit|p2a: Suicune
+L	ab_0_23	169	|-damage|p2a: Suicune|105/401
+L	ab_0_23	170	|move|p2a: Suicune|Roar|p1a: Swampert
+L	ab_0_23	171	|drag|p1a: Magneton|Magneton|301/301
+L	ab_0_23	172	|
+L	ab_0_23	173	|-heal|p2a: Suicune|130/401|[from] item: Leftovers
+L	ab_0_23	174	|upkeep
+L	ab_0_23	175	|turn|14
+L	ab_0_23	176	|
+L	ab_0_23	177	|t:|<NORMALIZED>
+L	ab_0_23	178	|move|p2a: Suicune|Calm Mind|p2a: Suicune
+L	ab_0_23	179	|-boost|p2a: Suicune|spa|1
+L	ab_0_23	180	|-boost|p2a: Suicune|spd|1
+L	ab_0_23	181	|move|p1a: Magneton|Toxic|p2a: Suicune
+L	ab_0_23	182	|-status|p2a: Suicune|tox
+L	ab_0_23	183	|
+L	ab_0_23	184	|-heal|p2a: Suicune|155/401 tox|[from] item: Leftovers
+L	ab_0_23	185	|-damage|p2a: Suicune|130/401 tox|[from] psn
+L	ab_0_23	186	|upkeep
+L	ab_0_23	187	|turn|15
+L	ab_0_23	188	|
+L	ab_0_23	189	|t:|<NORMALIZED>
+L	ab_0_23	190	|move|p2a: Suicune|Surf|p1a: Magneton
+L	ab_0_23	191	|-crit|p1a: Magneton
+L	ab_0_23	192	|-damage|p1a: Magneton|0 fnt
+L	ab_0_23	193	|faint|p1a: Magneton
+L	ab_0_23	194	|
+L	ab_0_23	195	|t:|<NORMALIZED>
+L	ab_0_23	196	|switch|p1a: Flygon|Flygon, M|305/305
+L	ab_0_23	197	|
+L	ab_0_23	198	|-heal|p2a: Suicune|155/401 tox|[from] item: Leftovers
+L	ab_0_23	199	|-damage|p2a: Suicune|105/401 tox|[from] psn
+L	ab_0_23	200	|upkeep
+L	ab_0_23	201	|turn|16
+L	ab_0_23	202	|
+L	ab_0_23	203	|t:|<NORMALIZED>
+L	ab_0_23	204	|move|p1a: Flygon|Earthquake|p2a: Suicune
+L	ab_0_23	205	|-damage|p2a: Suicune|0 fnt
+L	ab_0_23	206	|faint|p2a: Suicune
+L	ab_0_23	207	|
+L	ab_0_23	208	|t:|<NORMALIZED>
+L	ab_0_23	209	|switch|p2a: Blissey|Blissey, F|585/708
+L	ab_0_23	210	|
+L	ab_0_23	211	|-heal|p2a: Blissey|629/708|[from] item: Leftovers
+L	ab_0_23	212	|upkeep
+L	ab_0_23	213	|turn|17
+L	ab_0_23	214	|
+L	ab_0_23	215	|t:|<NORMALIZED>
+L	ab_0_23	216	|move|p1a: Flygon|Rock Slide|p2a: Blissey
+L	ab_0_23	217	|-crit|p2a: Blissey
+L	ab_0_23	218	|-damage|p2a: Blissey|379/708
+L	ab_0_23	219	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_0_23	220	|-heal|p2a: Blissey|708/708
+L	ab_0_23	221	|
+L	ab_0_23	222	|upkeep
+L	ab_0_23	223	|turn|18
+L	ab_0_23	224	|
+L	ab_0_23	225	|t:|<NORMALIZED>
+L	ab_0_23	226	|move|p1a: Flygon|Substitute|p1a: Flygon
+L	ab_0_23	227	|-start|p1a: Flygon|Substitute
+L	ab_0_23	228	|-damage|p1a: Flygon|229/305
+L	ab_0_23	229	|move|p2a: Blissey|Thunder Wave|p1a: Flygon
+L	ab_0_23	230	|-immune|p1a: Flygon
+L	ab_0_23	231	|
+L	ab_0_23	232	|-heal|p1a: Flygon|248/305|[from] item: Leftovers
+L	ab_0_23	233	|upkeep
+L	ab_0_23	234	|turn|19
+L	ab_0_23	235	|
+L	ab_0_23	236	|t:|<NORMALIZED>
+L	ab_0_23	237	|move|p1a: Flygon|Hidden Power|p2a: Blissey
+L	ab_0_23	238	|-damage|p2a: Blissey|583/708
+L	ab_0_23	239	|move|p2a: Blissey|Seismic Toss|p1a: Flygon
+L	ab_0_23	240	|-end|p1a: Flygon|Substitute
+L	ab_0_23	241	|
+L	ab_0_23	242	|-heal|p1a: Flygon|267/305|[from] item: Leftovers
+L	ab_0_23	243	|-heal|p2a: Blissey|627/708|[from] item: Leftovers
+L	ab_0_23	244	|upkeep
+L	ab_0_23	245	|turn|20
+L	ab_0_23	246	|
+L	ab_0_23	247	|t:|<NORMALIZED>
+L	ab_0_23	248	|switch|p1a: Tyranitar|Tyranitar, M|403/403
+L	ab_0_23	249	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_0_23	250	|move|p2a: Blissey|Ice Beam|p1a: Tyranitar
+L	ab_0_23	251	|-damage|p1a: Tyranitar|350/403
+L	ab_0_23	252	|
+L	ab_0_23	253	|-weather|Sandstorm|[upkeep]
+L	ab_0_23	254	|-damage|p2a: Blissey|583/708|[from] Sandstorm
+L	ab_0_23	255	|-heal|p2a: Blissey|627/708|[from] item: Leftovers
+L	ab_0_23	256	|-heal|p1a: Tyranitar|375/403|[from] item: Leftovers
+L	ab_0_23	257	|upkeep
+L	ab_0_23	258	|turn|21
+L	ab_0_23	259	|
+L	ab_0_23	260	|t:|<NORMALIZED>
+L	ab_0_23	261	|switch|p2a: Zapdos|Zapdos|383/383
+L	ab_0_23	262	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_23	263	|move|p1a: Tyranitar|Rock Slide|p2a: Zapdos
+L	ab_0_23	264	|-supereffective|p2a: Zapdos
+L	ab_0_23	265	|-damage|p2a: Zapdos|114/383
+L	ab_0_23	266	|
+L	ab_0_23	267	|-weather|Sandstorm|[upkeep]
+L	ab_0_23	268	|-damage|p2a: Zapdos|91/383|[from] Sandstorm
+L	ab_0_23	269	|-heal|p2a: Zapdos|114/383|[from] item: Leftovers
+L	ab_0_23	270	|-heal|p1a: Tyranitar|400/403|[from] item: Leftovers
+L	ab_0_23	271	|upkeep
+L	ab_0_23	272	|turn|22
+L	ab_0_23	273	|
+L	ab_0_23	274	|t:|<NORMALIZED>
+L	ab_0_23	275	|move|p1a: Tyranitar|Pursuit|p2a: Zapdos
+L	ab_0_23	276	|-damage|p2a: Zapdos|70/383
+L	ab_0_23	277	|move|p2a: Zapdos|Roar|p1a: Tyranitar
+L	ab_0_23	278	|drag|p1a: Gyarados|Gyarados, M|331/331
+L	ab_0_23	279	|-ability|p1a: Gyarados|Intimidate|boost
+L	ab_0_23	280	|-unboost|p2a: Zapdos|atk|1
+L	ab_0_23	281	|
+L	ab_0_23	282	|-weather|Sandstorm|[upkeep]
+L	ab_0_23	283	|-damage|p1a: Gyarados|311/331|[from] Sandstorm
+L	ab_0_23	284	|-damage|p2a: Zapdos|47/383|[from] Sandstorm
+L	ab_0_23	285	|-heal|p1a: Gyarados|331/331|[from] item: Leftovers
+L	ab_0_23	286	|-heal|p2a: Zapdos|70/383|[from] item: Leftovers
+L	ab_0_23	287	|upkeep
+L	ab_0_23	288	|turn|23
+L	ab_0_23	289	|
+L	ab_0_23	290	|t:|<NORMALIZED>
+L	ab_0_23	291	|move|p1a: Gyarados|Substitute|p1a: Gyarados
+L	ab_0_23	292	|-start|p1a: Gyarados|Substitute
+L	ab_0_23	293	|-damage|p1a: Gyarados|249/331
+L	ab_0_23	294	|move|p2a: Zapdos|Thunderbolt|p1a: Gyarados
+L	ab_0_23	295	|-supereffective|p1a: Gyarados
+L	ab_0_23	296	|-end|p1a: Gyarados|Substitute
+L	ab_0_23	297	|
+L	ab_0_23	298	|-weather|Sandstorm|[upkeep]
+L	ab_0_23	299	|-damage|p1a: Gyarados|229/331|[from] Sandstorm
+L	ab_0_23	300	|-damage|p2a: Zapdos|47/383|[from] Sandstorm
+L	ab_0_23	301	|-heal|p1a: Gyarados|249/331|[from] item: Leftovers
+L	ab_0_23	302	|-heal|p2a: Zapdos|70/383|[from] item: Leftovers
+L	ab_0_23	303	|upkeep
+L	ab_0_23	304	|turn|24
+L	ab_0_23	305	|
+L	ab_0_23	306	|t:|<NORMALIZED>
+L	ab_0_23	307	|move|p1a: Gyarados|Substitute|p1a: Gyarados
+L	ab_0_23	308	|-start|p1a: Gyarados|Substitute
+L	ab_0_23	309	|-damage|p1a: Gyarados|167/331
+L	ab_0_23	310	|move|p2a: Zapdos|Thunderbolt|p1a: Gyarados
+L	ab_0_23	311	|-supereffective|p1a: Gyarados
+L	ab_0_23	312	|-end|p1a: Gyarados|Substitute
+L	ab_0_23	313	|
+L	ab_0_23	314	|-weather|Sandstorm|[upkeep]
+L	ab_0_23	315	|-damage|p1a: Gyarados|147/331|[from] Sandstorm
+L	ab_0_23	316	|-damage|p2a: Zapdos|47/383|[from] Sandstorm
+L	ab_0_23	317	|-heal|p1a: Gyarados|167/331|[from] item: Leftovers
+L	ab_0_23	318	|-heal|p2a: Zapdos|70/383|[from] item: Leftovers
+L	ab_0_23	319	|upkeep
+L	ab_0_23	320	|turn|25
+L	ab_0_23	321	|
+L	ab_0_23	322	|t:|<NORMALIZED>
+L	ab_0_23	323	|switch|p2a: Blissey|Blissey, F|627/708
+L	ab_0_23	324	|move|p1a: Gyarados|Dragon Dance|p1a: Gyarados
+L	ab_0_23	325	|-boost|p1a: Gyarados|atk|1
+L	ab_0_23	326	|-boost|p1a: Gyarados|spe|1
+L	ab_0_23	327	|
+L	ab_0_23	328	|-weather|Sandstorm|[upkeep]
+L	ab_0_23	329	|-damage|p1a: Gyarados|147/331|[from] Sandstorm
+L	ab_0_23	330	|-damage|p2a: Blissey|583/708|[from] Sandstorm
+L	ab_0_23	331	|-heal|p1a: Gyarados|167/331|[from] item: Leftovers
+L	ab_0_23	332	|-heal|p2a: Blissey|627/708|[from] item: Leftovers
+L	ab_0_23	333	|upkeep
+L	ab_0_23	334	|turn|26
+L	ab_0_23	335	|
+L	ab_0_23	336	|t:|<NORMALIZED>
+L	ab_0_23	337	|move|p1a: Gyarados|Substitute|p1a: Gyarados
+L	ab_0_23	338	|-start|p1a: Gyarados|Substitute
+L	ab_0_23	339	|-damage|p1a: Gyarados|85/331
+L	ab_0_23	340	|move|p2a: Blissey|Thunder Wave||[still]
+L	ab_0_23	341	|-fail|p2a: Blissey
+L	ab_0_23	342	|
+L	ab_0_23	343	|-weather|Sandstorm|[upkeep]
+L	ab_0_23	344	|-damage|p1a: Gyarados|65/331|[from] Sandstorm
+L	ab_0_23	345	|-damage|p2a: Blissey|583/708|[from] Sandstorm
+L	ab_0_23	346	|-heal|p1a: Gyarados|85/331|[from] item: Leftovers
+L	ab_0_23	347	|-heal|p2a: Blissey|627/708|[from] item: Leftovers
+L	ab_0_23	348	|upkeep
+L	ab_0_23	349	|turn|27
+L	ab_0_23	350	|
+L	ab_0_23	351	|t:|<NORMALIZED>
+L	ab_0_23	352	|move|p1a: Gyarados|Dragon Dance|p1a: Gyarados
+L	ab_0_23	353	|-boost|p1a: Gyarados|atk|1
+L	ab_0_23	354	|-boost|p1a: Gyarados|spe|1
+L	ab_0_23	355	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_0_23	356	|-heal|p2a: Blissey|708/708
+L	ab_0_23	357	|
+L	ab_0_23	358	|-weather|Sandstorm|[upkeep]
+L	ab_0_23	359	|-damage|p1a: Gyarados|65/331|[from] Sandstorm
+L	ab_0_23	360	|-damage|p2a: Blissey|664/708|[from] Sandstorm
+L	ab_0_23	361	|-heal|p1a: Gyarados|85/331|[from] item: Leftovers
+L	ab_0_23	362	|-heal|p2a: Blissey|708/708|[from] item: Leftovers
+L	ab_0_23	363	|upkeep
+L	ab_0_23	364	|turn|28
+L	ab_0_23	365	|
+L	ab_0_23	366	|t:|<NORMALIZED>
+L	ab_0_23	367	|move|p1a: Gyarados|Earthquake|p2a: Blissey
+L	ab_0_23	368	|-damage|p2a: Blissey|267/708
+L	ab_0_23	369	|move|p2a: Blissey|Thunder Wave||[still]
+L	ab_0_23	370	|-fail|p2a: Blissey
+L	ab_0_23	371	|
+L	ab_0_23	372	|-weather|Sandstorm|[upkeep]
+L	ab_0_23	373	|-damage|p1a: Gyarados|65/331|[from] Sandstorm
+L	ab_0_23	374	|-damage|p2a: Blissey|223/708|[from] Sandstorm
+L	ab_0_23	375	|-heal|p1a: Gyarados|85/331|[from] item: Leftovers
+L	ab_0_23	376	|-heal|p2a: Blissey|267/708|[from] item: Leftovers
+L	ab_0_23	377	|upkeep
+L	ab_0_23	378	|turn|29
+L	ab_0_23	379	|
+L	ab_0_23	380	|t:|<NORMALIZED>
+L	ab_0_23	381	|move|p1a: Gyarados|Earthquake|p2a: Blissey
+L	ab_0_23	382	|-damage|p2a: Blissey|0 fnt
+L	ab_0_23	383	|faint|p2a: Blissey
+L	ab_0_23	384	|
+L	ab_0_23	385	|t:|<NORMALIZED>
+L	ab_0_23	386	|switch|p2a: Zapdos|Zapdos|70/383
+L	ab_0_23	387	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_23	388	|
+L	ab_0_23	389	|-weather|Sandstorm|[upkeep]
+L	ab_0_23	390	|-damage|p1a: Gyarados|65/331|[from] Sandstorm
+L	ab_0_23	391	|-damage|p2a: Zapdos|47/383|[from] Sandstorm
+L	ab_0_23	392	|-heal|p1a: Gyarados|85/331|[from] item: Leftovers
+L	ab_0_23	393	|-heal|p2a: Zapdos|70/383|[from] item: Leftovers
+L	ab_0_23	394	|upkeep
+L	ab_0_23	395	|turn|30
+L	ab_0_23	396	|
+L	ab_0_23	397	|t:|<NORMALIZED>
+L	ab_0_23	398	|move|p1a: Gyarados|Earthquake|p2a: Zapdos
+L	ab_0_23	399	|-immune|p2a: Zapdos
+L	ab_0_23	400	|move|p2a: Zapdos|Thunderbolt|p1a: Gyarados
+L	ab_0_23	401	|-supereffective|p1a: Gyarados
+L	ab_0_23	402	|-end|p1a: Gyarados|Substitute
+L	ab_0_23	403	|
+L	ab_0_23	404	|-weather|Sandstorm|[upkeep]
+L	ab_0_23	405	|-damage|p1a: Gyarados|65/331|[from] Sandstorm
+L	ab_0_23	406	|-damage|p2a: Zapdos|47/383|[from] Sandstorm
+L	ab_0_23	407	|-heal|p1a: Gyarados|85/331|[from] item: Leftovers
+L	ab_0_23	408	|-heal|p2a: Zapdos|70/383|[from] item: Leftovers
+L	ab_0_23	409	|upkeep
+L	ab_0_23	410	|turn|31
+L	ab_0_23	411	|
+L	ab_0_23	412	|t:|<NORMALIZED>
+L	ab_0_23	413	|move|p1a: Gyarados|Hidden Power|p2a: Zapdos
+L	ab_0_23	414	|-resisted|p2a: Zapdos
+L	ab_0_23	415	|-damage|p2a: Zapdos|0 fnt
+L	ab_0_23	416	|faint|p2a: Zapdos
+L	ab_0_23	417	|
+L	ab_0_23	418	|win|P1

@@ -1,0 +1,576 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_45
+TEAM	ab_0_45	p1	Zapdos||Leftovers|Pressure|Thunderbolt,HiddenPowerIce,ThunderWave,Roar|Timid|,,,252,4,252|N|,2,30,,,|||,Ice,,,,]Swampert||SalacBerry|Torrent|HydroPump,IceBeam,Earthquake,FocusPunch|Rash|,4,,252,,252|M||||]Tyranitar||SalacBerry|SandStream|FireBlast,HiddenPowerGrass,IceBeam,BrickBreak|Naive|,32,,224,,252|M|,,30,30,,|||,Grass,,,,]Metagross||SalacBerry|ClearBody|MeteorMash,Earthquake,RockSlide,Explosion|Jolly|168,128,8,,,204|N||||]Jolteon||Leftovers|VoltAbsorb|Thunderbolt,HiddenPowerGrass,ThunderWave,BatonPass|Timid|76,,,180,,252|M|,2,,30,,|||,Grass,,,,]Cloyster||Leftovers|ShellArmor|Surf,HiddenPowerGrass,Explosion,Spikes|Timid|72,,,,244,192|M|,30,,30,,|||,Grass,,,,
+TEAM	ab_0_45	p2	Tyranitar||Leftovers|SandStream|RockSlide,Earthquake,Taunt,Toxic|Adamant|252,108,36,,,112|M||||]Skarmory||Leftovers|KeenEye|Toxic,Taunt,Spikes,Whirlwind|Calm|252,,,,212,44|M|,0,,,,|||]Swampert||Leftovers|Torrent|Earthquake,HydroPump,IceBeam,Protect|Relaxed|248,,148,64,4,44|M||||]Blissey||Leftovers|NaturalCure|Toxic,SeismicToss,IceBeam,SoftBoiled|Bold|,,252,236,,20|F|,0,,,,|||]Gengar||Leftovers|Levitate|Thunderbolt,IcePunch,Taunt,WillOWisp|Timid|252,,48,,112,96|M|,0,,,,|||]Moltres||Leftovers|Pressure|Flamethrower,HiddenPowerGrass,WillOWisp,Roar|Modest|,,4,252,,252|N|,2,,30,,|||,Grass,,,,
+FMT	ab_0_45	gen3customgame
+INIT	ab_0_45	54286,56195,60094,23539	805418010
+DEC	ab_0_45	0	move	0	0	m2	m2	23803,60435,45876,23639	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Tyranitar	404	404	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_45	1	move	0	0	m1	m2	3106,31763,6427,38986	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Tyranitar	347	404	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_45	2	move	0	0	m2	m1	34125,40957,16401,58975	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Tyranitar	372	404	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_45	3	move	0	0	m1	m0	62586,63928,24172,4850	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Tyranitar	316	404	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_45	4	move	0	0	m2	m2	7445,41800,34852,55143	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Tyranitar	341	404	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_45	5	move	0	0	m1	m1	35185,13066,26484,17797	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Tyranitar	198	404	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_45	6	move	0	0	s4	m1	45001,14402,10469,8393	Jolteon	0	290	1	fnt	0	0	0	0	0	0	5	Tyranitar	198	404	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_45	7	switch	1	0	s4	-	20953,29794,29335,7952	Zapdos	321	321	0	-	0	0	0	0	0	0	5	Tyranitar	223	404	0	par	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_45	8	move	0	0	m1	m2	45882,43588,60843,58038	Zapdos	321	321	0	-	0	0	0	0	0	0	5	Tyranitar	167	404	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_45	9	move	0	0	m0	m2	47979,37142,30247,21631	Zapdos	321	321	0	-	0	0	0	0	0	0	5	Tyranitar	38	404	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_45	10	move	0	0	m1	s3	29657,36749,46073,50211	Zapdos	321	321	0	-	0	0	0	0	0	0	5	Blissey	589	651	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_45	11	move	0	0	m3	m3	4287,29718,33631,44404	Zapdos	321	321	0	-	0	0	0	0	0	0	5	Tyranitar	63	404	0	par	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_45	12	move	0	0	m1	m3	10421,40108,62656,20257	Zapdos	321	321	0	-	0	0	0	0	0	0	5	Tyranitar	0	404	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_45	13	switch	0	1	-	s4	43945,21728,36933,32712	Zapdos	321	321	0	-	0	0	0	0	0	0	5	Gengar	324	324	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_45	14	move	0	0	m0	m3	57755,43003,23840,1838	Zapdos	281	321	0	brn	0	0	0	0	0	0	5	Gengar	134	324	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_45	15	move	0	0	m3	m2	49635,48921,11953,24752	Zapdos	241	321	0	brn	0	0	0	0	0	0	5	Gengar	134	324	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_45	16	move	0	0	m1	m2	29524,720,17782,61591	Zapdos	201	321	0	brn	0	0	0	0	0	0	5	Gengar	42	324	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_45	17	move	0	0	m1	s1	51661,45837,39797,36539	Zapdos	161	321	0	brn	0	0	0	0	0	0	5	Skarmory	282	334	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_45	18	move	0	0	m1	m3	41586,6047,611,58489	Metagross	343	343	0	-	0	0	0	0	0	0	5	Skarmory	228	334	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_45	19	move	0	0	m3	m1	33552,2537,17580,37938	Metagross	0	343	1	fnt	0	0	0	0	0	0	4	Skarmory	21	334	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_45	20	switch	1	0	s1	-	57529,3007,39145,55421	Swampert	341	341	0	-	0	0	0	0	0	0	4	Skarmory	41	334	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_45	21	move	0	0	m2	m0	752,21148,58467,42662	Swampert	320	341	0	tox	0	0	0	0	0	0	4	Skarmory	61	334	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_45	22	move	0	0	m0	s2	32765,20013,24011,39386	Swampert	278	341	0	tox	0	0	0	0	0	0	4	Swampert	252	403	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_45	23	move	0	0	m0	m2	8008,31028,59114,21072	Swampert	132	341	0	tox	0	0	0	0	0	0	4	Swampert	277	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_45	24	move	0	0	m1	m3	64043,11841,18358,40461	Swampert	48	341	0	tox	0	0	0	0	0	0	4	Swampert	302	403	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_45	25	move	0	0	m3	m1	62338,8073,65438,65526	Swampert	0	341	1	fnt	0	0	0	0	0	0	3	Swampert	302	403	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_45	26	switch	1	0	s3	-	21273,60064,47254,16593	Zapdos	121	321	0	brn	0	0	0	0	0	0	3	Swampert	327	403	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_45	27	move	0	0	m2	m3	59436,58389,2948,32298	Zapdos	81	321	0	brn	0	0	0	0	0	0	3	Swampert	352	403	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_45	28	move	0	0	s2	m3	55659,2530,40470,57173	Tyranitar	341	341	0	-	0	0	0	0	0	0	3	Swampert	377	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_45	29	move	0	0	m3	m0	26258,28238,14147,40146	Tyranitar	102	341	0	-	0	0	0	0	0	0	3	Swampert	331	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_45	30	move	0	0	m0	m0	61596,20840,47626,12523	Tyranitar	0	341	1	fnt	0	0	0	0	0	0	2	Swampert	275	403	0	brn	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_45	31	switch	1	0	s5	-	7155,29314,21702,44666	Cloyster	259	259	0	-	0	0	0	0	0	0	2	Swampert	250	403	0	brn	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_45	32	move	0	0	m0	m3	52584,50630,29509,37327	Cloyster	259	259	0	-	0	0	0	0	0	0	2	Swampert	225	403	0	brn	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_45	33	move	0	0	m2	m2	24427,48602,30249,62448	Cloyster	0	259	1	fnt	0	0	0	0	0	0	1	Swampert	0	403	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_45	34	switch	1	1	s2	s2	6511,19499,64975,19571	Zapdos	41	321	0	brn	0	0	0	0	0	0	1	Skarmory	81	334	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_45	35	move	0	0	m0	m1	37777,21590,907,17623	Zapdos	41	321	0	brn	0	0	0	0	0	0	1	Skarmory	0	334	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_45	36	switch	0	1	-	s5	24460,3457,33744,54934	Zapdos	1	321	0	brn	0	0	0	0	0	0	1	Moltres	321	321	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_45	37	move	0	0	m2	m3	61783,51374,21127,7931	Zapdos	0	321	1	brn	0	0	0	0	0	0	0	Moltres	301	321	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+END	ab_0_45	1	p2
+L	ab_0_45	0	|t:|<NORMALIZED>
+L	ab_0_45	1	|gametype|singles
+L	ab_0_45	2	|player|p1|P1||
+L	ab_0_45	3	|player|p2|P2||
+L	ab_0_45	4	|gen|3
+L	ab_0_45	5	|tier|[Gen 3] Custom Game
+L	ab_0_45	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_45	7	|
+L	ab_0_45	8	|t:|<NORMALIZED>
+L	ab_0_45	9	|teamsize|p1|6
+L	ab_0_45	10	|teamsize|p2|6
+L	ab_0_45	11	|start
+L	ab_0_45	12	|switch|p1a: Zapdos|Zapdos|321/321
+L	ab_0_45	13	|switch|p2a: Tyranitar|Tyranitar, M|404/404
+L	ab_0_45	14	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_45	15	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_0_45	16	|turn|1
+L	ab_0_45	17	|
+L	ab_0_45	18	|t:|<NORMALIZED>
+L	ab_0_45	19	|move|p1a: Zapdos|Thunder Wave|p2a: Tyranitar
+L	ab_0_45	20	|-status|p2a: Tyranitar|par
+L	ab_0_45	21	|move|p2a: Tyranitar|Taunt|p1a: Zapdos
+L	ab_0_45	22	|-start|p1a: Zapdos|move: Taunt
+L	ab_0_45	23	|
+L	ab_0_45	24	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	25	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	26	|debug|natural status immunity
+L	ab_0_45	27	|debug|weather immunity
+L	ab_0_45	28	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	29	|upkeep
+L	ab_0_45	30	|turn|2
+L	ab_0_45	31	|
+L	ab_0_45	32	|t:|<NORMALIZED>
+L	ab_0_45	33	|move|p1a: Zapdos|Hidden Power|p2a: Tyranitar
+L	ab_0_45	34	|debug|BP: 70
+L	ab_0_45	35	|-damage|p2a: Tyranitar|322/404 par
+L	ab_0_45	36	|cant|p2a: Tyranitar|par
+L	ab_0_45	37	|
+L	ab_0_45	38	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	39	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	40	|debug|natural status immunity
+L	ab_0_45	41	|debug|weather immunity
+L	ab_0_45	42	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	43	|-end|p1a: Zapdos|move: Taunt|[silent]
+L	ab_0_45	44	|-heal|p2a: Tyranitar|347/404 par|[from] item: Leftovers
+L	ab_0_45	45	|upkeep
+L	ab_0_45	46	|turn|3
+L	ab_0_45	47	|
+L	ab_0_45	48	|t:|<NORMALIZED>
+L	ab_0_45	49	|move|p1a: Zapdos|Thunder Wave|p2a: Tyranitar
+L	ab_0_45	50	|-fail|p2a: Tyranitar|par
+L	ab_0_45	51	|debug|move failed because it did nothing
+L	ab_0_45	52	|cant|p2a: Tyranitar|par
+L	ab_0_45	53	|
+L	ab_0_45	54	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	55	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	56	|debug|natural status immunity
+L	ab_0_45	57	|debug|weather immunity
+L	ab_0_45	58	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	59	|-heal|p2a: Tyranitar|372/404 par|[from] item: Leftovers
+L	ab_0_45	60	|upkeep
+L	ab_0_45	61	|turn|4
+L	ab_0_45	62	|
+L	ab_0_45	63	|t:|<NORMALIZED>
+L	ab_0_45	64	|move|p1a: Zapdos|Hidden Power|p2a: Tyranitar
+L	ab_0_45	65	|debug|BP: 70
+L	ab_0_45	66	|-damage|p2a: Tyranitar|291/404 par
+L	ab_0_45	67	|cant|p2a: Tyranitar|par
+L	ab_0_45	68	|
+L	ab_0_45	69	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	70	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	71	|debug|natural status immunity
+L	ab_0_45	72	|debug|weather immunity
+L	ab_0_45	73	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	74	|-heal|p2a: Tyranitar|316/404 par|[from] item: Leftovers
+L	ab_0_45	75	|upkeep
+L	ab_0_45	76	|turn|5
+L	ab_0_45	77	|
+L	ab_0_45	78	|t:|<NORMALIZED>
+L	ab_0_45	79	|move|p1a: Zapdos|Thunder Wave|p2a: Tyranitar
+L	ab_0_45	80	|-fail|p2a: Tyranitar|par
+L	ab_0_45	81	|debug|move failed because it did nothing
+L	ab_0_45	82	|cant|p2a: Tyranitar|par
+L	ab_0_45	83	|
+L	ab_0_45	84	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	85	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	86	|debug|natural status immunity
+L	ab_0_45	87	|debug|weather immunity
+L	ab_0_45	88	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	89	|-heal|p2a: Tyranitar|341/404 par|[from] item: Leftovers
+L	ab_0_45	90	|upkeep
+L	ab_0_45	91	|turn|6
+L	ab_0_45	92	|
+L	ab_0_45	93	|t:|<NORMALIZED>
+L	ab_0_45	94	|move|p1a: Zapdos|Hidden Power|p2a: Tyranitar
+L	ab_0_45	95	|debug|BP: 70
+L	ab_0_45	96	|-crit|p2a: Tyranitar
+L	ab_0_45	97	|-damage|p2a: Tyranitar|173/404 par
+L	ab_0_45	98	|move|p2a: Tyranitar|Earthquake|p1a: Zapdos
+L	ab_0_45	99	|-immune|p1a: Zapdos
+L	ab_0_45	100	|
+L	ab_0_45	101	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	102	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	103	|debug|natural status immunity
+L	ab_0_45	104	|debug|weather immunity
+L	ab_0_45	105	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	106	|-heal|p2a: Tyranitar|198/404 par|[from] item: Leftovers
+L	ab_0_45	107	|upkeep
+L	ab_0_45	108	|turn|7
+L	ab_0_45	109	|
+L	ab_0_45	110	|t:|<NORMALIZED>
+L	ab_0_45	111	|switch|p1a: Jolteon|Jolteon, M|290/290
+L	ab_0_45	112	|move|p2a: Tyranitar|Earthquake|p1a: Jolteon
+L	ab_0_45	113	|-supereffective|p1a: Jolteon
+L	ab_0_45	114	|-damage|p1a: Jolteon|0 fnt
+L	ab_0_45	115	|faint|p1a: Jolteon
+L	ab_0_45	116	|
+L	ab_0_45	117	|t:|<NORMALIZED>
+L	ab_0_45	118	|switch|p1a: Zapdos|Zapdos|321/321
+L	ab_0_45	119	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_45	120	|
+L	ab_0_45	121	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	122	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	123	|debug|natural status immunity
+L	ab_0_45	124	|debug|weather immunity
+L	ab_0_45	125	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	126	|-heal|p2a: Tyranitar|223/404 par|[from] item: Leftovers
+L	ab_0_45	127	|upkeep
+L	ab_0_45	128	|turn|8
+L	ab_0_45	129	|
+L	ab_0_45	130	|t:|<NORMALIZED>
+L	ab_0_45	131	|move|p1a: Zapdos|Hidden Power|p2a: Tyranitar
+L	ab_0_45	132	|debug|BP: 70
+L	ab_0_45	133	|-damage|p2a: Tyranitar|142/404 par
+L	ab_0_45	134	|move|p2a: Tyranitar|Taunt|p1a: Zapdos
+L	ab_0_45	135	|-start|p1a: Zapdos|move: Taunt
+L	ab_0_45	136	|
+L	ab_0_45	137	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	138	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	139	|debug|natural status immunity
+L	ab_0_45	140	|debug|weather immunity
+L	ab_0_45	141	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	142	|-heal|p2a: Tyranitar|167/404 par|[from] item: Leftovers
+L	ab_0_45	143	|upkeep
+L	ab_0_45	144	|turn|9
+L	ab_0_45	145	|
+L	ab_0_45	146	|t:|<NORMALIZED>
+L	ab_0_45	147	|move|p1a: Zapdos|Thunderbolt|p2a: Tyranitar
+L	ab_0_45	148	|-damage|p2a: Tyranitar|13/404 par
+L	ab_0_45	149	|move|p2a: Tyranitar|Taunt||[still]
+L	ab_0_45	150	|-fail|p2a: Tyranitar
+L	ab_0_45	151	|debug|move failed because it did nothing
+L	ab_0_45	152	|
+L	ab_0_45	153	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	154	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	155	|debug|natural status immunity
+L	ab_0_45	156	|debug|weather immunity
+L	ab_0_45	157	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	158	|-end|p1a: Zapdos|move: Taunt|[silent]
+L	ab_0_45	159	|-heal|p2a: Tyranitar|38/404 par|[from] item: Leftovers
+L	ab_0_45	160	|upkeep
+L	ab_0_45	161	|turn|10
+L	ab_0_45	162	|
+L	ab_0_45	163	|t:|<NORMALIZED>
+L	ab_0_45	164	|switch|p2a: Blissey|Blissey, F|651/651
+L	ab_0_45	165	|move|p1a: Zapdos|Hidden Power|p2a: Blissey
+L	ab_0_45	166	|debug|BP: 70
+L	ab_0_45	167	|-damage|p2a: Blissey|589/651
+L	ab_0_45	168	|
+L	ab_0_45	169	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	170	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	171	|-damage|p2a: Blissey|549/651|[from] Sandstorm
+L	ab_0_45	172	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	173	|-heal|p2a: Blissey|589/651|[from] item: Leftovers
+L	ab_0_45	174	|upkeep
+L	ab_0_45	175	|turn|11
+L	ab_0_45	176	|
+L	ab_0_45	177	|t:|<NORMALIZED>
+L	ab_0_45	178	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_0_45	179	|-heal|p2a: Blissey|651/651
+L	ab_0_45	180	|move|p1a: Zapdos|Roar|p2a: Blissey
+L	ab_0_45	181	|drag|p2a: Tyranitar|Tyranitar, M|38/404 par
+L	ab_0_45	182	|
+L	ab_0_45	183	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	184	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	185	|debug|natural status immunity
+L	ab_0_45	186	|debug|weather immunity
+L	ab_0_45	187	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	188	|-heal|p2a: Tyranitar|63/404 par|[from] item: Leftovers
+L	ab_0_45	189	|upkeep
+L	ab_0_45	190	|turn|12
+L	ab_0_45	191	|
+L	ab_0_45	192	|t:|<NORMALIZED>
+L	ab_0_45	193	|move|p1a: Zapdos|Hidden Power|p2a: Tyranitar
+L	ab_0_45	194	|debug|BP: 70
+L	ab_0_45	195	|-damage|p2a: Tyranitar|0 fnt
+L	ab_0_45	196	|faint|p2a: Tyranitar
+L	ab_0_45	197	|
+L	ab_0_45	198	|t:|<NORMALIZED>
+L	ab_0_45	199	|switch|p2a: Gengar|Gengar, M|324/324
+L	ab_0_45	200	|
+L	ab_0_45	201	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	202	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+L	ab_0_45	203	|-damage|p2a: Gengar|304/324|[from] Sandstorm
+L	ab_0_45	204	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+L	ab_0_45	205	|-heal|p2a: Gengar|324/324|[from] item: Leftovers
+L	ab_0_45	206	|upkeep
+L	ab_0_45	207	|turn|13
+L	ab_0_45	208	|
+L	ab_0_45	209	|t:|<NORMALIZED>
+L	ab_0_45	210	|move|p1a: Zapdos|Thunderbolt|p2a: Gengar
+L	ab_0_45	211	|-damage|p2a: Gengar|134/324
+L	ab_0_45	212	|move|p2a: Gengar|Will-O-Wisp|p1a: Zapdos
+L	ab_0_45	213	|-status|p1a: Zapdos|brn
+L	ab_0_45	214	|
+L	ab_0_45	215	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	216	|-damage|p1a: Zapdos|301/321 brn|[from] Sandstorm
+L	ab_0_45	217	|-damage|p2a: Gengar|114/324|[from] Sandstorm
+L	ab_0_45	218	|-heal|p1a: Zapdos|321/321 brn|[from] item: Leftovers
+L	ab_0_45	219	|-damage|p1a: Zapdos|281/321 brn|[from] brn
+L	ab_0_45	220	|-heal|p2a: Gengar|134/324|[from] item: Leftovers
+L	ab_0_45	221	|upkeep
+L	ab_0_45	222	|turn|14
+L	ab_0_45	223	|
+L	ab_0_45	224	|t:|<NORMALIZED>
+L	ab_0_45	225	|move|p2a: Gengar|Taunt|p1a: Zapdos
+L	ab_0_45	226	|-start|p1a: Zapdos|move: Taunt
+L	ab_0_45	227	|cant|p1a: Zapdos|move: Taunt|Roar
+L	ab_0_45	228	|
+L	ab_0_45	229	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	230	|-damage|p1a: Zapdos|261/321 brn|[from] Sandstorm
+L	ab_0_45	231	|-damage|p2a: Gengar|114/324|[from] Sandstorm
+L	ab_0_45	232	|-heal|p1a: Zapdos|281/321 brn|[from] item: Leftovers
+L	ab_0_45	233	|-damage|p1a: Zapdos|241/321 brn|[from] brn
+L	ab_0_45	234	|-heal|p2a: Gengar|134/324|[from] item: Leftovers
+L	ab_0_45	235	|upkeep
+L	ab_0_45	236	|turn|15
+L	ab_0_45	237	|
+L	ab_0_45	238	|t:|<NORMALIZED>
+L	ab_0_45	239	|move|p1a: Zapdos|Hidden Power|p2a: Gengar
+L	ab_0_45	240	|debug|BP: 70
+L	ab_0_45	241	|-damage|p2a: Gengar|42/324
+L	ab_0_45	242	|move|p2a: Gengar|Taunt||[still]
+L	ab_0_45	243	|-fail|p2a: Gengar
+L	ab_0_45	244	|debug|move failed because it did nothing
+L	ab_0_45	245	|
+L	ab_0_45	246	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	247	|-damage|p1a: Zapdos|221/321 brn|[from] Sandstorm
+L	ab_0_45	248	|-damage|p2a: Gengar|22/324|[from] Sandstorm
+L	ab_0_45	249	|-heal|p1a: Zapdos|241/321 brn|[from] item: Leftovers
+L	ab_0_45	250	|-damage|p1a: Zapdos|201/321 brn|[from] brn
+L	ab_0_45	251	|-end|p1a: Zapdos|move: Taunt|[silent]
+L	ab_0_45	252	|-heal|p2a: Gengar|42/324|[from] item: Leftovers
+L	ab_0_45	253	|upkeep
+L	ab_0_45	254	|turn|16
+L	ab_0_45	255	|
+L	ab_0_45	256	|t:|<NORMALIZED>
+L	ab_0_45	257	|switch|p2a: Skarmory|Skarmory, M|334/334
+L	ab_0_45	258	|move|p1a: Zapdos|Hidden Power|p2a: Skarmory
+L	ab_0_45	259	|debug|BP: 70
+L	ab_0_45	260	|-damage|p2a: Skarmory|262/334
+L	ab_0_45	261	|
+L	ab_0_45	262	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	263	|-damage|p1a: Zapdos|181/321 brn|[from] Sandstorm
+L	ab_0_45	264	|debug|natural status immunity
+L	ab_0_45	265	|debug|weather immunity
+L	ab_0_45	266	|-heal|p1a: Zapdos|201/321 brn|[from] item: Leftovers
+L	ab_0_45	267	|-damage|p1a: Zapdos|161/321 brn|[from] brn
+L	ab_0_45	268	|-heal|p2a: Skarmory|282/334|[from] item: Leftovers
+L	ab_0_45	269	|upkeep
+L	ab_0_45	270	|turn|17
+L	ab_0_45	271	|
+L	ab_0_45	272	|t:|<NORMALIZED>
+L	ab_0_45	273	|move|p1a: Zapdos|Hidden Power|p2a: Skarmory
+L	ab_0_45	274	|debug|BP: 70
+L	ab_0_45	275	|-damage|p2a: Skarmory|208/334
+L	ab_0_45	276	|move|p2a: Skarmory|Whirlwind|p1a: Zapdos
+L	ab_0_45	277	|drag|p1a: Metagross|Metagross|343/343
+L	ab_0_45	278	|
+L	ab_0_45	279	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	280	|debug|natural status immunity
+L	ab_0_45	281	|debug|weather immunity
+L	ab_0_45	282	|debug|natural status immunity
+L	ab_0_45	283	|debug|weather immunity
+L	ab_0_45	284	|-heal|p2a: Skarmory|228/334|[from] item: Leftovers
+L	ab_0_45	285	|upkeep
+L	ab_0_45	286	|turn|18
+L	ab_0_45	287	|
+L	ab_0_45	288	|t:|<NORMALIZED>
+L	ab_0_45	289	|move|p1a: Metagross|Explosion|p2a: Skarmory
+L	ab_0_45	290	|-resisted|p2a: Skarmory
+L	ab_0_45	291	|-damage|p2a: Skarmory|21/334
+L	ab_0_45	292	|faint|p1a: Metagross
+L	ab_0_45	293	|
+L	ab_0_45	294	|t:|<NORMALIZED>
+L	ab_0_45	295	|switch|p1a: Swampert|Swampert, M|341/341
+L	ab_0_45	296	|
+L	ab_0_45	297	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	298	|debug|natural status immunity
+L	ab_0_45	299	|debug|weather immunity
+L	ab_0_45	300	|debug|natural status immunity
+L	ab_0_45	301	|debug|weather immunity
+L	ab_0_45	302	|-heal|p2a: Skarmory|41/334|[from] item: Leftovers
+L	ab_0_45	303	|upkeep
+L	ab_0_45	304	|turn|19
+L	ab_0_45	305	|
+L	ab_0_45	306	|t:|<NORMALIZED>
+L	ab_0_45	307	|move|p1a: Swampert|Earthquake|p2a: Skarmory
+L	ab_0_45	308	|-immune|p2a: Skarmory
+L	ab_0_45	309	|move|p2a: Skarmory|Toxic|p1a: Swampert
+L	ab_0_45	310	|-status|p1a: Swampert|tox
+L	ab_0_45	311	|
+L	ab_0_45	312	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	313	|debug|natural status immunity
+L	ab_0_45	314	|debug|weather immunity
+L	ab_0_45	315	|debug|natural status immunity
+L	ab_0_45	316	|debug|weather immunity
+L	ab_0_45	317	|-damage|p1a: Swampert|320/341 tox|[from] psn
+L	ab_0_45	318	|-heal|p2a: Skarmory|61/334|[from] item: Leftovers
+L	ab_0_45	319	|upkeep
+L	ab_0_45	320	|turn|20
+L	ab_0_45	321	|
+L	ab_0_45	322	|t:|<NORMALIZED>
+L	ab_0_45	323	|switch|p2a: Swampert|Swampert, M|403/403
+L	ab_0_45	324	|move|p1a: Swampert|Hydro Pump|p2a: Swampert
+L	ab_0_45	325	|-damage|p2a: Swampert|227/403
+L	ab_0_45	326	|
+L	ab_0_45	327	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	328	|debug|natural status immunity
+L	ab_0_45	329	|debug|weather immunity
+L	ab_0_45	330	|debug|natural status immunity
+L	ab_0_45	331	|debug|weather immunity
+L	ab_0_45	332	|-damage|p1a: Swampert|278/341 tox|[from] psn
+L	ab_0_45	333	|-heal|p2a: Swampert|252/403|[from] item: Leftovers
+L	ab_0_45	334	|upkeep
+L	ab_0_45	335	|turn|21
+L	ab_0_45	336	|
+L	ab_0_45	337	|t:|<NORMALIZED>
+L	ab_0_45	338	|move|p1a: Swampert|Hydro Pump|p2a: Swampert|[miss]
+L	ab_0_45	339	|-miss|p1a: Swampert|p2a: Swampert
+L	ab_0_45	340	|move|p2a: Swampert|Ice Beam|p1a: Swampert
+L	ab_0_45	341	|-damage|p1a: Swampert|195/341 tox
+L	ab_0_45	342	|
+L	ab_0_45	343	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	344	|debug|natural status immunity
+L	ab_0_45	345	|debug|weather immunity
+L	ab_0_45	346	|debug|natural status immunity
+L	ab_0_45	347	|debug|weather immunity
+L	ab_0_45	348	|-damage|p1a: Swampert|132/341 tox|[from] psn
+L	ab_0_45	349	|-heal|p2a: Swampert|277/403|[from] item: Leftovers
+L	ab_0_45	350	|upkeep
+L	ab_0_45	351	|turn|22
+L	ab_0_45	352	|
+L	ab_0_45	353	|t:|<NORMALIZED>
+L	ab_0_45	354	|move|p2a: Swampert|Protect|p2a: Swampert
+L	ab_0_45	355	|-singleturn|p2a: Swampert|Protect
+L	ab_0_45	356	|move|p1a: Swampert|Ice Beam|p2a: Swampert
+L	ab_0_45	357	|-activate|p2a: Swampert|Protect
+L	ab_0_45	358	|
+L	ab_0_45	359	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	360	|debug|natural status immunity
+L	ab_0_45	361	|debug|weather immunity
+L	ab_0_45	362	|debug|natural status immunity
+L	ab_0_45	363	|debug|weather immunity
+L	ab_0_45	364	|-damage|p1a: Swampert|48/341 tox|[from] psn
+L	ab_0_45	365	|-heal|p2a: Swampert|302/403|[from] item: Leftovers
+L	ab_0_45	366	|upkeep
+L	ab_0_45	367	|turn|23
+L	ab_0_45	368	|
+L	ab_0_45	369	|t:|<NORMALIZED>
+L	ab_0_45	370	|debug|before turn callback: focuspunch
+L	ab_0_45	371	|-singleturn|p1a: Swampert|move: Focus Punch
+L	ab_0_45	372	|move|p2a: Swampert|Hydro Pump|p1a: Swampert
+L	ab_0_45	373	|-damage|p1a: Swampert|0 fnt
+L	ab_0_45	374	|faint|p1a: Swampert
+L	ab_0_45	375	|
+L	ab_0_45	376	|t:|<NORMALIZED>
+L	ab_0_45	377	|switch|p1a: Zapdos|Zapdos|161/321 brn
+L	ab_0_45	378	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_45	379	|
+L	ab_0_45	380	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	381	|-damage|p1a: Zapdos|141/321 brn|[from] Sandstorm
+L	ab_0_45	382	|debug|natural status immunity
+L	ab_0_45	383	|debug|weather immunity
+L	ab_0_45	384	|-heal|p1a: Zapdos|161/321 brn|[from] item: Leftovers
+L	ab_0_45	385	|-damage|p1a: Zapdos|121/321 brn|[from] brn
+L	ab_0_45	386	|-heal|p2a: Swampert|327/403|[from] item: Leftovers
+L	ab_0_45	387	|upkeep
+L	ab_0_45	388	|turn|24
+L	ab_0_45	389	|
+L	ab_0_45	390	|t:|<NORMALIZED>
+L	ab_0_45	391	|move|p2a: Swampert|Protect|p2a: Swampert
+L	ab_0_45	392	|-singleturn|p2a: Swampert|Protect
+L	ab_0_45	393	|move|p1a: Zapdos|Thunder Wave|p2a: Swampert
+L	ab_0_45	394	|-activate|p2a: Swampert|Protect
+L	ab_0_45	395	|
+L	ab_0_45	396	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	397	|-damage|p1a: Zapdos|101/321 brn|[from] Sandstorm
+L	ab_0_45	398	|debug|natural status immunity
+L	ab_0_45	399	|debug|weather immunity
+L	ab_0_45	400	|-heal|p1a: Zapdos|121/321 brn|[from] item: Leftovers
+L	ab_0_45	401	|-damage|p1a: Zapdos|81/321 brn|[from] brn
+L	ab_0_45	402	|-heal|p2a: Swampert|352/403|[from] item: Leftovers
+L	ab_0_45	403	|upkeep
+L	ab_0_45	404	|turn|25
+L	ab_0_45	405	|
+L	ab_0_45	406	|t:|<NORMALIZED>
+L	ab_0_45	407	|switch|p1a: Tyranitar|Tyranitar, M|341/341
+L	ab_0_45	408	|move|p2a: Swampert|Protect||[still]
+L	ab_0_45	409	|-fail|p2a: Swampert
+L	ab_0_45	410	|
+L	ab_0_45	411	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	412	|debug|natural status immunity
+L	ab_0_45	413	|debug|weather immunity
+L	ab_0_45	414	|debug|natural status immunity
+L	ab_0_45	415	|debug|weather immunity
+L	ab_0_45	416	|-heal|p2a: Swampert|377/403|[from] item: Leftovers
+L	ab_0_45	417	|upkeep
+L	ab_0_45	418	|turn|26
+L	ab_0_45	419	|
+L	ab_0_45	420	|t:|<NORMALIZED>
+L	ab_0_45	421	|move|p1a: Tyranitar|Brick Break|p2a: Swampert
+L	ab_0_45	422	|-damage|p2a: Swampert|306/403
+L	ab_0_45	423	|move|p2a: Swampert|Earthquake|p1a: Tyranitar
+L	ab_0_45	424	|-supereffective|p1a: Tyranitar
+L	ab_0_45	425	|-damage|p1a: Tyranitar|102/341
+L	ab_0_45	426	|
+L	ab_0_45	427	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	428	|debug|natural status immunity
+L	ab_0_45	429	|debug|weather immunity
+L	ab_0_45	430	|debug|natural status immunity
+L	ab_0_45	431	|debug|weather immunity
+L	ab_0_45	432	|-heal|p2a: Swampert|331/403|[from] item: Leftovers
+L	ab_0_45	433	|upkeep
+L	ab_0_45	434	|turn|27
+L	ab_0_45	435	|
+L	ab_0_45	436	|t:|<NORMALIZED>
+L	ab_0_45	437	|move|p1a: Tyranitar|Fire Blast|p2a: Swampert
+L	ab_0_45	438	|-resisted|p2a: Swampert
+L	ab_0_45	439	|-damage|p2a: Swampert|275/403
+L	ab_0_45	440	|-status|p2a: Swampert|brn
+L	ab_0_45	441	|move|p2a: Swampert|Earthquake|p1a: Tyranitar
+L	ab_0_45	442	|-supereffective|p1a: Tyranitar
+L	ab_0_45	443	|-damage|p1a: Tyranitar|0 fnt
+L	ab_0_45	444	|faint|p1a: Tyranitar
+L	ab_0_45	445	|
+L	ab_0_45	446	|t:|<NORMALIZED>
+L	ab_0_45	447	|switch|p1a: Cloyster|Cloyster, M|259/259
+L	ab_0_45	448	|
+L	ab_0_45	449	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	450	|-damage|p1a: Cloyster|243/259|[from] Sandstorm
+L	ab_0_45	451	|debug|natural status immunity
+L	ab_0_45	452	|debug|weather immunity
+L	ab_0_45	453	|-heal|p1a: Cloyster|259/259|[from] item: Leftovers
+L	ab_0_45	454	|-heal|p2a: Swampert|300/403 brn|[from] item: Leftovers
+L	ab_0_45	455	|-damage|p2a: Swampert|250/403 brn|[from] brn
+L	ab_0_45	456	|upkeep
+L	ab_0_45	457	|turn|28
+L	ab_0_45	458	|
+L	ab_0_45	459	|t:|<NORMALIZED>
+L	ab_0_45	460	|move|p2a: Swampert|Protect|p2a: Swampert
+L	ab_0_45	461	|-singleturn|p2a: Swampert|Protect
+L	ab_0_45	462	|move|p1a: Cloyster|Surf|p2a: Swampert
+L	ab_0_45	463	|-activate|p2a: Swampert|Protect
+L	ab_0_45	464	|
+L	ab_0_45	465	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	466	|-damage|p1a: Cloyster|243/259|[from] Sandstorm
+L	ab_0_45	467	|debug|natural status immunity
+L	ab_0_45	468	|debug|weather immunity
+L	ab_0_45	469	|-heal|p1a: Cloyster|259/259|[from] item: Leftovers
+L	ab_0_45	470	|-heal|p2a: Swampert|275/403 brn|[from] item: Leftovers
+L	ab_0_45	471	|-damage|p2a: Swampert|225/403 brn|[from] brn
+L	ab_0_45	472	|upkeep
+L	ab_0_45	473	|turn|29
+L	ab_0_45	474	|
+L	ab_0_45	475	|t:|<NORMALIZED>
+L	ab_0_45	476	|move|p1a: Cloyster|Explosion|p2a: Swampert
+L	ab_0_45	477	|-damage|p2a: Swampert|0 fnt
+L	ab_0_45	478	|faint|p1a: Cloyster
+L	ab_0_45	479	|faint|p2a: Swampert
+L	ab_0_45	480	|
+L	ab_0_45	481	|t:|<NORMALIZED>
+L	ab_0_45	482	|switch|p1a: Zapdos|Zapdos|81/321 brn
+L	ab_0_45	483	|switch|p2a: Skarmory|Skarmory, M|61/334
+L	ab_0_45	484	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_45	485	|
+L	ab_0_45	486	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	487	|-damage|p1a: Zapdos|61/321 brn|[from] Sandstorm
+L	ab_0_45	488	|debug|natural status immunity
+L	ab_0_45	489	|debug|weather immunity
+L	ab_0_45	490	|-heal|p1a: Zapdos|81/321 brn|[from] item: Leftovers
+L	ab_0_45	491	|-damage|p1a: Zapdos|41/321 brn|[from] brn
+L	ab_0_45	492	|-heal|p2a: Skarmory|81/334|[from] item: Leftovers
+L	ab_0_45	493	|upkeep
+L	ab_0_45	494	|turn|30
+L	ab_0_45	495	|
+L	ab_0_45	496	|t:|<NORMALIZED>
+L	ab_0_45	497	|move|p1a: Zapdos|Thunderbolt|p2a: Skarmory
+L	ab_0_45	498	|-supereffective|p2a: Skarmory
+L	ab_0_45	499	|-damage|p2a: Skarmory|0 fnt
+L	ab_0_45	500	|faint|p2a: Skarmory
+L	ab_0_45	501	|
+L	ab_0_45	502	|t:|<NORMALIZED>
+L	ab_0_45	503	|switch|p2a: Moltres|Moltres|321/321
+L	ab_0_45	504	|-ability|p2a: Moltres|Pressure|[silent]
+L	ab_0_45	505	|
+L	ab_0_45	506	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	507	|-damage|p1a: Zapdos|21/321 brn|[from] Sandstorm
+L	ab_0_45	508	|-damage|p2a: Moltres|301/321|[from] Sandstorm
+L	ab_0_45	509	|-heal|p1a: Zapdos|41/321 brn|[from] item: Leftovers
+L	ab_0_45	510	|-damage|p1a: Zapdos|1/321 brn|[from] brn
+L	ab_0_45	511	|-heal|p2a: Moltres|321/321|[from] item: Leftovers
+L	ab_0_45	512	|upkeep
+L	ab_0_45	513	|turn|31
+L	ab_0_45	514	|
+L	ab_0_45	515	|t:|<NORMALIZED>
+L	ab_0_45	516	|move|p1a: Zapdos|Thunder Wave|p2a: Moltres
+L	ab_0_45	517	|-status|p2a: Moltres|par
+L	ab_0_45	518	|move|p2a: Moltres|Roar||[still]
+L	ab_0_45	519	|-fail|p2a: Moltres
+L	ab_0_45	520	|debug|move failed because it did nothing
+L	ab_0_45	521	|
+L	ab_0_45	522	|-weather|Sandstorm|[upkeep]
+L	ab_0_45	523	|-damage|p1a: Zapdos|0 fnt|[from] Sandstorm
+L	ab_0_45	524	|-damage|p2a: Moltres|301/321 par|[from] Sandstorm
+L	ab_0_45	525	|faint|p1a: Zapdos
+L	ab_0_45	526	|
+L	ab_0_45	527	|win|P2

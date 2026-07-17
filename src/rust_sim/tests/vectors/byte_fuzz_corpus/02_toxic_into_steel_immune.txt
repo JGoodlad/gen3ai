@@ -1,0 +1,384 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_47
+TEAM	ab_0_47	p1	Metagross||Leftovers|ClearBody|MeteorMash,Earthquake,Explosion,Toxic|Adamant|252,200,24,,,32|N||||]Celebi||Leftovers|NaturalCure|Psychic,HiddenPowerGrass,LeechSeed,Recover|Bold|248,,76,104,48,32|N|,2,,30,,|||,Grass,,,,]Dugtrio||ChoiceBand|ArenaTrap|AerialAce,Earthquake,HiddenPowerBug,RockSlide|Jolly|,252,,,4,252|M|,30,30,,30,|||,Bug,,,,]Magneton||Magnet|MagnetPull|Thunderbolt,HiddenPowerFire,Toxic,Protect|Modest|,,4,252,,252|N|,2,,30,,30|||,Fire,,,,]Snorlax||Leftovers|Immunity|Curse,Return,HiddenPowerSteel,Rest|Careful|144,96,132,,136,|M|,,,,30,|||,Steel,,,,]Milotic||Leftovers|MarvelScale|Surf,Toxic,Refresh,Recover|Bold|248,,212,,,48|M||||
+TEAM	ab_0_47	p2	MÃ©talosse|Metagross|SalacBerry|ClearBody|MeteorMash,Earthquake,HiddenPowerGrass,Explosion|Jolly|168,128,8,,,204|N|,30,,30,,|||,Grass,,,,]Ronflex|Snorlax|Leftovers|Immunity|BodySlam,Earthquake,ShadowBall,SelfDestruct|Adamant|16,176,120,,160,36|M||||]Tyranocif|Tyranitar|LumBerry|SandStream|DragonDance,RockSlide,Earthquake,DoubleEdge|Jolly|4,252,,,,252|M||||]Drattak|Salamence|Leftovers|Intimidate|DragonDance,HiddenPowerFlying,Earthquake,RockSlide|Adamant|,180,,,188,140|M|30,30,30,30,30,|||,Flying,,,,]Voltali|Jolteon|Leftovers|VoltAbsorb|Thunderbolt,ThunderWave,Wish,HiddenPowerGrass|Timid|76,,,180,,252|M|,2,,30,,|||,Grass,,,,]MagnÃ©ton|Magneton|Magnet|MagnetPull|Thunderbolt,HiddenPowerGrass,ThunderWave,Screech|Timid|4,,,252,,252|N|,2,,30,,|||,Grass,,,,
+FMT	ab_0_47	gen3customgame
+INIT	ab_0_47	57535,7552,7896,56421	3756628082
+DEC	ab_0_47	0	move	0	0	m0	m2	20716,30477,31850,35501	Metagross	333	364	0	-	0	0	0	0	0	0	6	Metagross	271	343	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_47	1	move	0	0	m2	m0	24581,34025,18293,41841	Metagross	0	364	1	fnt	0	0	0	0	0	0	5	Metagross	12	343	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_47	2	switch	1	0	s1	-	12244,45831,18974,37720	Celebi	403	403	0	-	0	0	0	0	0	0	5	Metagross	12	343	0	-	0	0	0	0	1	0	6	none	0	0	0	0	0
+DEC	ab_0_47	3	move	0	0	m1	m3	33943,27597,60486,22517	Celebi	0	403	1	fnt	0	0	0	0	0	0	4	Metagross	0	343	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_47	4	switch	1	1	s3	s5	53624,39264,41132,28524	Magneton	241	241	0	-	0	0	0	0	0	0	4	Magneton	242	242	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_47	5	move	0	0	m3	m1	14178,52637,55712,27705	Magneton	241	241	0	-	0	0	0	0	0	0	4	Magneton	242	242	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_47	6	move	0	0	m1	m2	2459,42088,8669,5362	Magneton	241	241	0	par	0	0	0	0	0	0	4	Magneton	242	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_47	7	move	0	0	m2	m1	32929,31782,13406,33793	Magneton	190	241	0	par	0	0	0	0	0	0	4	Magneton	242	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_47	8	move	0	0	m1	m1	14150,38462,28737,2761	Magneton	139	241	0	par	0	0	0	0	0	0	4	Magneton	30	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_47	9	move	0	0	m0	m3	9123,35679,12007,33602	Magneton	139	241	0	par	0	-2	0	0	0	0	4	Magneton	30	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_47	10	move	0	0	m0	m2	11291,6202,61761,10359	Magneton	139	241	0	par	0	-2	0	0	0	0	4	Magneton	30	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_47	11	move	0	0	m2	m1	42862,14617,15405,17173	Magneton	86	241	0	par	0	-2	0	0	0	0	4	Magneton	30	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_47	12	move	0	0	m2	m3	59047,46539,42403,58713	Magneton	86	241	0	par	0	-4	0	0	0	0	4	Magneton	30	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_47	13	move	0	0	m3	m0	13414,46916,3947,24436	Magneton	0	241	1	fnt	0	0	0	0	0	0	3	Magneton	30	242	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_47	14	switch	1	0	s5	-	46088,5907,6084,23431	Milotic	393	393	0	-	0	0	0	0	0	0	3	Magneton	30	242	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_47	15	move	0	0	m0	m3	38763,1932,31579,43691	Milotic	393	393	0	-	0	-2	0	0	0	0	3	Magneton	0	242	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_47	16	switch	0	1	-	s3	47043,25193,34899,30522	Milotic	393	393	0	-	-1	-2	0	0	0	0	3	Salamence	330	330	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_47	17	move	0	0	m2	m0	28352,50702,11896,45733	Milotic	393	393	0	-	-1	-2	0	0	0	0	3	Salamence	330	330	0	-	1	0	0	0	1	0	4	p2	0	0	0	0	0
+DEC	ab_0_47	18	move	0	0	m1	m0	65099,43818,22920,61327	Milotic	393	393	0	-	-1	-2	0	0	0	0	3	Salamence	310	330	0	tox	2	0	0	0	2	0	4	p2	0	0	0	0	0
+DEC	ab_0_47	19	move	0	0	m0	m0	46393,7174,18510,20019	Milotic	393	393	0	-	-1	-2	0	0	0	0	3	Salamence	233	330	0	tox	3	0	0	0	3	0	4	p2	0	0	0	0	0
+DEC	ab_0_47	20	move	0	0	s2	m2	49511,766,41752,2372	Dugtrio	0	211	1	fnt	0	0	0	0	0	0	2	Salamence	233	330	0	tox	3	0	0	0	3	0	4	p1	0	0	0	0	0
+DEC	ab_0_47	21	switch	1	0	s2	-	14566,41251,9843,43671	Milotic	393	393	0	-	0	0	0	0	0	0	2	Salamence	193	330	0	tox	3	0	0	0	3	0	4	none	0	0	0	0	0
+DEC	ab_0_47	22	move	0	0	s4	m0	37778,34342,28724,47958	Snorlax	497	497	0	-	0	0	0	0	0	0	2	Salamence	133	330	0	tox	4	0	0	0	4	0	4	p1	0	0	0	0	0
+DEC	ab_0_47	23	move	0	0	m2	m0	25650,63130,4266,43195	Snorlax	497	497	0	-	0	0	0	0	0	0	2	Salamence	0	330	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_47	24	switch	0	1	-	s1	46988,19540,26852,17290	Snorlax	497	497	0	-	0	0	0	0	0	0	2	Snorlax	465	465	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_47	25	move	0	0	m0	m0	10772,61922,40375,21888	Snorlax	374	497	0	par	0	0	0	0	0	0	2	Snorlax	465	465	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_47	26	move	0	0	m2	m2	42433,48116,35558,34982	Snorlax	405	497	0	par	0	0	0	0	0	0	2	Snorlax	417	465	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_47	27	move	0	0	s4	m0	11091,9888,36716,34245	Milotic	292	393	0	-	0	0	0	0	0	0	2	Snorlax	446	465	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_47	28	move	0	0	m2	m0	45380,65119,51909,42064	Milotic	60	393	0	-	0	0	0	0	0	0	2	Snorlax	465	465	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_47	29	move	0	0	m3	m2	8751,63312,34330,40119	Milotic	203	393	0	-	0	0	0	0	0	0	2	Snorlax	465	465	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_47	30	move	0	0	s4	m3	58727,6681,16640,7224	Snorlax	0	497	1	fnt	0	0	0	0	0	0	1	Snorlax	0	465	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_47	31	switch	1	1	s4	s2	52319,11456,6611,47323	Milotic	203	393	0	-	0	0	0	0	0	0	1	Tyranitar	342	342	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_47	32	move	0	0	m0	m2	8234,4575,4869,40736	Milotic	92	393	0	-	0	0	0	0	0	0	1	Tyranitar	122	342	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_47	33	move	0	0	m2	m2	63770,3904,42142,43421	Milotic	0	393	1	-	0	0	0	0	0	0	0	Tyranitar	122	342	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+END	ab_0_47	1	p2
+L	ab_0_47	0	|t:|<NORMALIZED>
+L	ab_0_47	1	|gametype|singles
+L	ab_0_47	2	|player|p1|P1||
+L	ab_0_47	3	|player|p2|P2||
+L	ab_0_47	4	|gen|3
+L	ab_0_47	5	|tier|[Gen 3] Custom Game
+L	ab_0_47	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_47	7	|
+L	ab_0_47	8	|t:|<NORMALIZED>
+L	ab_0_47	9	|teamsize|p1|6
+L	ab_0_47	10	|teamsize|p2|6
+L	ab_0_47	11	|start
+L	ab_0_47	12	|switch|p1a: Metagross|Metagross|364/364
+L	ab_0_47	13	|switch|p2a: MÃ©talosse|Metagross|343/343
+L	ab_0_47	14	|turn|1
+L	ab_0_47	15	|
+L	ab_0_47	16	|t:|<NORMALIZED>
+L	ab_0_47	17	|move|p2a: MÃ©talosse|Hidden Power|p1a: Metagross
+L	ab_0_47	18	|debug|BP: 70
+L	ab_0_47	19	|-resisted|p1a: Metagross
+L	ab_0_47	20	|-crit|p1a: Metagross
+L	ab_0_47	21	|-damage|p1a: Metagross|311/364
+L	ab_0_47	22	|move|p1a: Metagross|Meteor Mash|p2a: MÃ©talosse
+L	ab_0_47	23	|-resisted|p2a: MÃ©talosse
+L	ab_0_47	24	|-damage|p2a: MÃ©talosse|271/343
+L	ab_0_47	25	|
+L	ab_0_47	26	|-heal|p1a: Metagross|333/364|[from] item: Leftovers
+L	ab_0_47	27	|upkeep
+L	ab_0_47	28	|turn|2
+L	ab_0_47	29	|
+L	ab_0_47	30	|t:|<NORMALIZED>
+L	ab_0_47	31	|move|p2a: MÃ©talosse|Meteor Mash|p1a: Metagross|[miss]
+L	ab_0_47	32	|-miss|p2a: MÃ©talosse|p1a: Metagross
+L	ab_0_47	33	|move|p1a: Metagross|Explosion|p2a: MÃ©talosse
+L	ab_0_47	34	|-resisted|p2a: MÃ©talosse
+L	ab_0_47	35	|-damage|p2a: MÃ©talosse|12/343
+L	ab_0_47	36	|faint|p1a: Metagross
+L	ab_0_47	37	|
+L	ab_0_47	38	|t:|<NORMALIZED>
+L	ab_0_47	39	|switch|p1a: Celebi|Celebi|403/403
+L	ab_0_47	40	|
+L	ab_0_47	41	|-enditem|p2a: MÃ©talosse|Salac Berry|[eat]
+L	ab_0_47	42	|-boost|p2a: MÃ©talosse|spe|1|[from] item: Salac Berry
+L	ab_0_47	43	|upkeep
+L	ab_0_47	44	|turn|3
+L	ab_0_47	45	|
+L	ab_0_47	46	|t:|<NORMALIZED>
+L	ab_0_47	47	|move|p2a: MÃ©talosse|Explosion|p1a: Celebi
+L	ab_0_47	48	|-damage|p1a: Celebi|0 fnt
+L	ab_0_47	49	|faint|p2a: MÃ©talosse
+L	ab_0_47	50	|faint|p1a: Celebi
+L	ab_0_47	51	|
+L	ab_0_47	52	|t:|<NORMALIZED>
+L	ab_0_47	53	|switch|p2a: MagnÃ©ton|Magneton|242/242
+L	ab_0_47	54	|switch|p1a: Magneton|Magneton|241/241
+L	ab_0_47	55	|
+L	ab_0_47	56	|upkeep
+L	ab_0_47	57	|turn|4
+L	ab_0_47	58	|
+L	ab_0_47	59	|t:|<NORMALIZED>
+L	ab_0_47	60	|move|p1a: Magneton|Protect|p1a: Magneton
+L	ab_0_47	61	|-singleturn|p1a: Magneton|Protect
+L	ab_0_47	62	|move|p2a: MagnÃ©ton|Hidden Power|p1a: Magneton
+L	ab_0_47	63	|-activate|p1a: Magneton|Protect
+L	ab_0_47	64	|
+L	ab_0_47	65	|upkeep
+L	ab_0_47	66	|turn|5
+L	ab_0_47	67	|
+L	ab_0_47	68	|t:|<NORMALIZED>
+L	ab_0_47	69	|move|p2a: MagnÃ©ton|Thunder Wave|p1a: Magneton
+L	ab_0_47	70	|-status|p1a: Magneton|par
+L	ab_0_47	71	|cant|p1a: Magneton|par
+L	ab_0_47	72	|
+L	ab_0_47	73	|upkeep
+L	ab_0_47	74	|turn|6
+L	ab_0_47	75	|
+L	ab_0_47	76	|t:|<NORMALIZED>
+L	ab_0_47	77	|move|p2a: MagnÃ©ton|Hidden Power|p1a: Magneton
+L	ab_0_47	78	|debug|BP: 70
+L	ab_0_47	79	|-resisted|p1a: Magneton
+L	ab_0_47	80	|-damage|p1a: Magneton|190/241 par
+L	ab_0_47	81	|cant|p1a: Magneton|par
+L	ab_0_47	82	|
+L	ab_0_47	83	|upkeep
+L	ab_0_47	84	|turn|7
+L	ab_0_47	85	|
+L	ab_0_47	86	|t:|<NORMALIZED>
+L	ab_0_47	87	|move|p2a: MagnÃ©ton|Hidden Power|p1a: Magneton
+L	ab_0_47	88	|debug|BP: 70
+L	ab_0_47	89	|-resisted|p1a: Magneton
+L	ab_0_47	90	|-damage|p1a: Magneton|139/241 par
+L	ab_0_47	91	|move|p1a: Magneton|Hidden Power|p2a: MagnÃ©ton
+L	ab_0_47	92	|debug|BP: 70
+L	ab_0_47	93	|-supereffective|p2a: MagnÃ©ton
+L	ab_0_47	94	|-damage|p2a: MagnÃ©ton|30/242
+L	ab_0_47	95	|
+L	ab_0_47	96	|upkeep
+L	ab_0_47	97	|turn|8
+L	ab_0_47	98	|
+L	ab_0_47	99	|t:|<NORMALIZED>
+L	ab_0_47	100	|move|p2a: MagnÃ©ton|Screech|p1a: Magneton
+L	ab_0_47	101	|-unboost|p1a: Magneton|def|2
+L	ab_0_47	102	|cant|p1a: Magneton|par
+L	ab_0_47	103	|
+L	ab_0_47	104	|upkeep
+L	ab_0_47	105	|turn|9
+L	ab_0_47	106	|
+L	ab_0_47	107	|t:|<NORMALIZED>
+L	ab_0_47	108	|move|p2a: MagnÃ©ton|Thunder Wave|p1a: Magneton
+L	ab_0_47	109	|-fail|p1a: Magneton|par
+L	ab_0_47	110	|debug|move failed because it did nothing
+L	ab_0_47	111	|cant|p1a: Magneton|par
+L	ab_0_47	112	|
+L	ab_0_47	113	|upkeep
+L	ab_0_47	114	|turn|10
+L	ab_0_47	115	|
+L	ab_0_47	116	|t:|<NORMALIZED>
+L	ab_0_47	117	|move|p2a: MagnÃ©ton|Hidden Power|p1a: Magneton
+L	ab_0_47	118	|debug|BP: 70
+L	ab_0_47	119	|-resisted|p1a: Magneton
+L	ab_0_47	120	|-damage|p1a: Magneton|86/241 par
+L	ab_0_47	121	|move|p1a: Magneton|Toxic|p2a: MagnÃ©ton|[miss]
+L	ab_0_47	122	|-miss|p1a: Magneton|p2a: MagnÃ©ton
+L	ab_0_47	123	|
+L	ab_0_47	124	|upkeep
+L	ab_0_47	125	|turn|11
+L	ab_0_47	126	|
+L	ab_0_47	127	|t:|<NORMALIZED>
+L	ab_0_47	128	|move|p2a: MagnÃ©ton|Screech|p1a: Magneton
+L	ab_0_47	129	|-unboost|p1a: Magneton|def|2
+L	ab_0_47	130	|move|p1a: Magneton|Toxic|p2a: MagnÃ©ton
+L	ab_0_47	131	|debug|natural status immunity
+L	ab_0_47	132	|debug|immune to status
+L	ab_0_47	133	|-immune|p2a: MagnÃ©ton
+L	ab_0_47	134	|debug|move failed because it did nothing
+L	ab_0_47	135	|
+L	ab_0_47	136	|upkeep
+L	ab_0_47	137	|turn|12
+L	ab_0_47	138	|
+L	ab_0_47	139	|t:|<NORMALIZED>
+L	ab_0_47	140	|cant|p1a: Magneton|par
+L	ab_0_47	141	|move|p2a: MagnÃ©ton|Thunderbolt|p1a: Magneton
+L	ab_0_47	142	|-resisted|p1a: Magneton
+L	ab_0_47	143	|-damage|p1a: Magneton|0 fnt
+L	ab_0_47	144	|faint|p1a: Magneton
+L	ab_0_47	145	|
+L	ab_0_47	146	|t:|<NORMALIZED>
+L	ab_0_47	147	|switch|p1a: Milotic|Milotic, M|393/393
+L	ab_0_47	148	|
+L	ab_0_47	149	|upkeep
+L	ab_0_47	150	|turn|13
+L	ab_0_47	151	|
+L	ab_0_47	152	|t:|<NORMALIZED>
+L	ab_0_47	153	|move|p2a: MagnÃ©ton|Screech|p1a: Milotic
+L	ab_0_47	154	|-unboost|p1a: Milotic|def|2
+L	ab_0_47	155	|move|p1a: Milotic|Surf|p2a: MagnÃ©ton
+L	ab_0_47	156	|-damage|p2a: MagnÃ©ton|0 fnt
+L	ab_0_47	157	|faint|p2a: MagnÃ©ton
+L	ab_0_47	158	|
+L	ab_0_47	159	|t:|<NORMALIZED>
+L	ab_0_47	160	|switch|p2a: Drattak|Salamence, M|330/330
+L	ab_0_47	161	|-ability|p2a: Drattak|Intimidate|boost
+L	ab_0_47	162	|-unboost|p1a: Milotic|atk|1
+L	ab_0_47	163	|
+L	ab_0_47	164	|upkeep
+L	ab_0_47	165	|turn|14
+L	ab_0_47	166	|
+L	ab_0_47	167	|t:|<NORMALIZED>
+L	ab_0_47	168	|move|p2a: Drattak|Dragon Dance|p2a: Drattak
+L	ab_0_47	169	|-boost|p2a: Drattak|atk|1
+L	ab_0_47	170	|-boost|p2a: Drattak|spe|1
+L	ab_0_47	171	|move|p1a: Milotic|Refresh||[still]
+L	ab_0_47	172	|-fail|p1a: Milotic
+L	ab_0_47	173	|debug|move failed because it did nothing
+L	ab_0_47	174	|
+L	ab_0_47	175	|upkeep
+L	ab_0_47	176	|turn|15
+L	ab_0_47	177	|
+L	ab_0_47	178	|t:|<NORMALIZED>
+L	ab_0_47	179	|move|p2a: Drattak|Dragon Dance|p2a: Drattak
+L	ab_0_47	180	|-boost|p2a: Drattak|atk|1
+L	ab_0_47	181	|-boost|p2a: Drattak|spe|1
+L	ab_0_47	182	|move|p1a: Milotic|Toxic|p2a: Drattak
+L	ab_0_47	183	|-status|p2a: Drattak|tox
+L	ab_0_47	184	|
+L	ab_0_47	185	|-damage|p2a: Drattak|310/330 tox|[from] psn
+L	ab_0_47	186	|upkeep
+L	ab_0_47	187	|turn|16
+L	ab_0_47	188	|
+L	ab_0_47	189	|t:|<NORMALIZED>
+L	ab_0_47	190	|move|p2a: Drattak|Dragon Dance|p2a: Drattak
+L	ab_0_47	191	|-boost|p2a: Drattak|atk|1
+L	ab_0_47	192	|-boost|p2a: Drattak|spe|1
+L	ab_0_47	193	|move|p1a: Milotic|Surf|p2a: Drattak
+L	ab_0_47	194	|-resisted|p2a: Drattak
+L	ab_0_47	195	|-damage|p2a: Drattak|253/330 tox
+L	ab_0_47	196	|
+L	ab_0_47	197	|-heal|p2a: Drattak|273/330 tox|[from] item: Leftovers
+L	ab_0_47	198	|-damage|p2a: Drattak|233/330 tox|[from] psn
+L	ab_0_47	199	|upkeep
+L	ab_0_47	200	|turn|17
+L	ab_0_47	201	|
+L	ab_0_47	202	|t:|<NORMALIZED>
+L	ab_0_47	203	|switch|p1a: Dugtrio|Dugtrio, M|211/211
+L	ab_0_47	204	|move|p2a: Drattak|Earthquake|p1a: Dugtrio
+L	ab_0_47	205	|-damage|p1a: Dugtrio|0 fnt
+L	ab_0_47	206	|faint|p1a: Dugtrio
+L	ab_0_47	207	|
+L	ab_0_47	208	|t:|<NORMALIZED>
+L	ab_0_47	209	|switch|p1a: Milotic|Milotic, M|393/393
+L	ab_0_47	210	|
+L	ab_0_47	211	|-heal|p2a: Drattak|253/330 tox|[from] item: Leftovers
+L	ab_0_47	212	|-damage|p2a: Drattak|193/330 tox|[from] psn
+L	ab_0_47	213	|upkeep
+L	ab_0_47	214	|turn|18
+L	ab_0_47	215	|
+L	ab_0_47	216	|t:|<NORMALIZED>
+L	ab_0_47	217	|switch|p1a: Snorlax|Snorlax, M|497/497
+L	ab_0_47	218	|move|p2a: Drattak|Dragon Dance|p2a: Drattak
+L	ab_0_47	219	|-boost|p2a: Drattak|atk|1
+L	ab_0_47	220	|-boost|p2a: Drattak|spe|1
+L	ab_0_47	221	|
+L	ab_0_47	222	|-heal|p2a: Drattak|213/330 tox|[from] item: Leftovers
+L	ab_0_47	223	|-damage|p2a: Drattak|133/330 tox|[from] psn
+L	ab_0_47	224	|upkeep
+L	ab_0_47	225	|turn|19
+L	ab_0_47	226	|
+L	ab_0_47	227	|t:|<NORMALIZED>
+L	ab_0_47	228	|move|p2a: Drattak|Dragon Dance|p2a: Drattak
+L	ab_0_47	229	|-boost|p2a: Drattak|atk|1
+L	ab_0_47	230	|-boost|p2a: Drattak|spe|1
+L	ab_0_47	231	|move|p1a: Snorlax|Hidden Power|p2a: Drattak
+L	ab_0_47	232	|debug|BP: 70
+L	ab_0_47	233	|-damage|p2a: Drattak|53/330 tox
+L	ab_0_47	234	|
+L	ab_0_47	235	|-heal|p2a: Drattak|73/330 tox|[from] item: Leftovers
+L	ab_0_47	236	|-damage|p2a: Drattak|0 fnt|[from] psn
+L	ab_0_47	237	|faint|p2a: Drattak
+L	ab_0_47	238	|upkeep
+L	ab_0_47	239	|
+L	ab_0_47	240	|t:|<NORMALIZED>
+L	ab_0_47	241	|switch|p2a: Ronflex|Snorlax, M|465/465
+L	ab_0_47	242	|turn|20
+L	ab_0_47	243	|
+L	ab_0_47	244	|t:|<NORMALIZED>
+L	ab_0_47	245	|move|p2a: Ronflex|Body Slam|p1a: Snorlax
+L	ab_0_47	246	|-damage|p1a: Snorlax|343/497
+L	ab_0_47	247	|-status|p1a: Snorlax|par
+L	ab_0_47	248	|cant|p1a: Snorlax|par
+L	ab_0_47	249	|
+L	ab_0_47	250	|-heal|p1a: Snorlax|374/497 par|[from] item: Leftovers
+L	ab_0_47	251	|upkeep
+L	ab_0_47	252	|turn|21
+L	ab_0_47	253	|
+L	ab_0_47	254	|t:|<NORMALIZED>
+L	ab_0_47	255	|move|p2a: Ronflex|Shadow Ball|p1a: Snorlax
+L	ab_0_47	256	|-immune|p1a: Snorlax
+L	ab_0_47	257	|move|p1a: Snorlax|Hidden Power|p2a: Ronflex
+L	ab_0_47	258	|debug|BP: 70
+L	ab_0_47	259	|-damage|p2a: Ronflex|388/465
+L	ab_0_47	260	|
+L	ab_0_47	261	|-heal|p2a: Ronflex|417/465|[from] item: Leftovers
+L	ab_0_47	262	|-heal|p1a: Snorlax|405/497 par|[from] item: Leftovers
+L	ab_0_47	263	|upkeep
+L	ab_0_47	264	|turn|22
+L	ab_0_47	265	|
+L	ab_0_47	266	|t:|<NORMALIZED>
+L	ab_0_47	267	|switch|p1a: Milotic|Milotic, M|393/393
+L	ab_0_47	268	|move|p2a: Ronflex|Body Slam|p1a: Milotic
+L	ab_0_47	269	|-damage|p1a: Milotic|268/393
+L	ab_0_47	270	|
+L	ab_0_47	271	|-heal|p1a: Milotic|292/393|[from] item: Leftovers
+L	ab_0_47	272	|-heal|p2a: Ronflex|446/465|[from] item: Leftovers
+L	ab_0_47	273	|upkeep
+L	ab_0_47	274	|turn|23
+L	ab_0_47	275	|
+L	ab_0_47	276	|t:|<NORMALIZED>
+L	ab_0_47	277	|move|p1a: Milotic|Refresh||[still]
+L	ab_0_47	278	|-fail|p1a: Milotic
+L	ab_0_47	279	|debug|move failed because it did nothing
+L	ab_0_47	280	|move|p2a: Ronflex|Body Slam|p1a: Milotic
+L	ab_0_47	281	|-crit|p1a: Milotic
+L	ab_0_47	282	|-damage|p1a: Milotic|36/393
+L	ab_0_47	283	|
+L	ab_0_47	284	|-heal|p1a: Milotic|60/393|[from] item: Leftovers
+L	ab_0_47	285	|-heal|p2a: Ronflex|465/465|[from] item: Leftovers
+L	ab_0_47	286	|upkeep
+L	ab_0_47	287	|turn|24
+L	ab_0_47	288	|
+L	ab_0_47	289	|t:|<NORMALIZED>
+L	ab_0_47	290	|move|p1a: Milotic|Recover|p1a: Milotic
+L	ab_0_47	291	|-heal|p1a: Milotic|256/393
+L	ab_0_47	292	|move|p2a: Ronflex|Shadow Ball|p1a: Milotic
+L	ab_0_47	293	|-damage|p1a: Milotic|179/393
+L	ab_0_47	294	|
+L	ab_0_47	295	|-heal|p1a: Milotic|203/393|[from] item: Leftovers
+L	ab_0_47	296	|upkeep
+L	ab_0_47	297	|turn|25
+L	ab_0_47	298	|
+L	ab_0_47	299	|t:|<NORMALIZED>
+L	ab_0_47	300	|switch|p1a: Snorlax|Snorlax, M|405/497 par
+L	ab_0_47	301	|move|p2a: Ronflex|Self-Destruct|p1a: Snorlax
+L	ab_0_47	302	|-damage|p1a: Snorlax|0 fnt
+L	ab_0_47	303	|faint|p2a: Ronflex
+L	ab_0_47	304	|faint|p1a: Snorlax
+L	ab_0_47	305	|
+L	ab_0_47	306	|t:|<NORMALIZED>
+L	ab_0_47	307	|switch|p2a: Tyranocif|Tyranitar, M|342/342
+L	ab_0_47	308	|switch|p1a: Milotic|Milotic, M|203/393
+L	ab_0_47	309	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranocif
+L	ab_0_47	310	|
+L	ab_0_47	311	|-weather|Sandstorm|[upkeep]
+L	ab_0_47	312	|debug|natural status immunity
+L	ab_0_47	313	|debug|weather immunity
+L	ab_0_47	314	|-damage|p1a: Milotic|179/393|[from] Sandstorm
+L	ab_0_47	315	|-heal|p1a: Milotic|203/393|[from] item: Leftovers
+L	ab_0_47	316	|upkeep
+L	ab_0_47	317	|turn|26
+L	ab_0_47	318	|
+L	ab_0_47	319	|t:|<NORMALIZED>
+L	ab_0_47	320	|move|p2a: Tyranocif|Earthquake|p1a: Milotic
+L	ab_0_47	321	|-damage|p1a: Milotic|92/393
+L	ab_0_47	322	|move|p1a: Milotic|Surf|p2a: Tyranocif
+L	ab_0_47	323	|-supereffective|p2a: Tyranocif
+L	ab_0_47	324	|-damage|p2a: Tyranocif|122/342
+L	ab_0_47	325	|
+L	ab_0_47	326	|-weather|Sandstorm|[upkeep]
+L	ab_0_47	327	|debug|natural status immunity
+L	ab_0_47	328	|debug|weather immunity
+L	ab_0_47	329	|-damage|p1a: Milotic|68/393|[from] Sandstorm
+L	ab_0_47	330	|-heal|p1a: Milotic|92/393|[from] item: Leftovers
+L	ab_0_47	331	|upkeep
+L	ab_0_47	332	|turn|27
+L	ab_0_47	333	|
+L	ab_0_47	334	|t:|<NORMALIZED>
+L	ab_0_47	335	|move|p2a: Tyranocif|Earthquake|p1a: Milotic
+L	ab_0_47	336	|-damage|p1a: Milotic|0 fnt
+L	ab_0_47	337	|faint|p1a: Milotic
+L	ab_0_47	338	|
+L	ab_0_47	339	|win|P2

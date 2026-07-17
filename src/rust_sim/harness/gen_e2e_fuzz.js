@@ -127,8 +127,10 @@ const MOVE_ID_BLOCKLIST = new Set([
   'eruption',
   'grassknot', 'magnitude', 'present', 'weatherball',
   'gyroball', 'fling', 'punishment', 'trumpcard', 'wringout', 'crushgrip',
-  // hidden power (every type — bp is fixed/wrong for gen3)
-  'hiddenpower',
+  // hidden power: gated in `isModeledMove` by the `allowHiddenPower` param (the
+  // byte fuzzer's `pool` mode admits it — engine models typed HP at fixed BP 70,
+  // byte-correct for gen3ou-validated 70-BP-IV teams), NOT here (this reject runs
+  // AFTER the `isHiddenPower` short-circuit, so a blocklist row would be dead).
   // fixed-damage / level / set-HP. NOTE: seismictoss/nightshade/sonicboom/dragonrage/
   // superfang were REMOVED from this list (`gen3_move_coverage_batch5_v1` housekeeping) —
   // they had been SHADOWING their own `MODELED_FIXED_DAMAGE_MOVES` admission (the
@@ -579,8 +581,16 @@ function rustSecondaryOk(id) {
   return Object.keys(sec).length <= 1;
 }
 
-function isModeledMove(id) {
-  if (isHiddenPower(id)) return false;
+// `allowHiddenPower` widens the picker to admit typed Hidden Power (which the engine
+// models bit-for-bit as an ORDINARY typed damaging move, num 355-370, real BP/type —
+// scan_move_coverage.js:8-13, scan_move_probe.rs). The engine models HP at a FIXED BP 70,
+// which is byte-correct ONLY for the 70-BP-IV mons every gen3ou-VALIDATED team carries
+// (pool / e2e). So HP is admitted ONLY when the caller vouches for BP-70 teams
+// (`allowHiddenPower` — the byte fuzzer's `pool` mode); the `random` mode's RANDOM IVs
+// could yield a non-70 HP BP, so it leaves HP excluded (default false). The committed e2e
+// golden is produced with the default (false) so it stays byte-reproducible.
+function isModeledMove(id, allowHiddenPower = false) {
+  if (isHiddenPower(id)) return allowHiddenPower;
   if (MOVE_ID_BLOCKLIST.has(id)) return false;
   const m = dex3.moves.get(id);
   if (!m || !m.exists) return false;
@@ -1131,7 +1141,7 @@ function encodeChoice(c) {
 // `mode`: 'modeled' (FILTERED) requires isModeledMove; 'damaging' (taxonomy) accepts
 // any non-status move (so it doesn't trivially desync on a chosen status move — the
 // taxonomy is about ability/item gaps, not "we chose a status move").
-function pickMove(battle, side, rng, mode) {
+function pickMove(battle, side, rng, mode, allowHiddenPower = false) {
   const req = battle.sides[side].activeRequest;
   if (!req || !req.active || !req.active[0]) return { choice: null, reason: 'no-active-request' };
   const moves = req.active[0].moves || [];
@@ -1148,7 +1158,7 @@ function pickMove(battle, side, rng, mode) {
         if (!BATCH5_E2E_EXCLUDED && sleepTalkPoolModeled(battle, side)) legalMoveSlots.push(k);
         continue;
       }
-      if (isModeledMove(id)) legalMoveSlots.push(k);
+      if (isModeledMove(id, allowHiddenPower)) legalMoveSlots.push(k);
     } else {
       // taxonomy: damaging (non-status), still skip the structurally-unreplayable
       // moves that would desync on the CHOICE side (variable power/fixed/2-turn/
@@ -1247,13 +1257,31 @@ function pickReplacement(battle, side, rng) {
 }
 
 // Run ONE battle to game-end (or until a drop/safety). Returns the record.
-async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode) {
+async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode, opts = {}) {
+  // `opts.format` (default gen3customgame) drives the `>start` formatid — gen3ou turns
+  // on the Sleep/Freeze-Clause SetStatus handler-sort shuffle + the OU framing, exactly
+  // the extra draw/emission path the byte fuzzer probes (the state fuzzer stays on the
+  // default). `opts.allowHiddenPower` widens the choice picker to admit typed HP (pool
+  // mode only — see isModeledMove). Both default to the committed-golden behavior.
+  const runFormat = opts.format || FORMAT;
+  const allowHiddenPower = !!opts.allowHiddenPower;
   const stream = new BattleStream();
   const streams = getPlayerStreams(stream);
   const log = [];
-  (async () => { for await (const ch of streams.omniscient) { for (const l of ch.split('\n')) if (l) log.push(l); } })();
+  // Tee the OMNISCIENT `|...|` stream verbatim (the SAME consumer pattern
+  // gen_protocol_capture.js uses), NORMALIZING `|t:|` to the shared placeholder so the
+  // captured golden stays byte-stable across regens (the byte-diff filter re-normalizes
+  // defensively too). This `log` doubles as the firstMoverSince source (unchanged — it
+  // scans |move|/|switch|/|cant|, none of which is a |t:| line).
+  (async () => {
+    for await (const ch of streams.omniscient) {
+      for (const l of ch.split('\n')) {
+        if (l) log.push(l.startsWith('|t:|') ? '|t:|<NORMALIZED>' : l);
+      }
+    }
+  })();
 
-  streams.omniscient.write(`>start {"formatid":"${FORMAT}","seed":${JSON.stringify(seed)}}`);
+  streams.omniscient.write(`>start {"formatid":"${runFormat}","seed":${JSON.stringify(seed)}}`);
   streams.omniscient.write(`>player p1 ${JSON.stringify({ name: 'P1', team: p1Packed })}`);
   streams.omniscient.write(`>player p2 ${JSON.stringify({ name: 'P2', team: p2Packed })}`);
   for (let i = 0; i < 12; i++) await tick();
@@ -1291,8 +1319,8 @@ async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode) {
       if (force[0]) { cp1 = pickReplacement(battle, 0, rng); if (!cp1) { rec.dropped = 'no-replacement-p1'; break; } }
       if (force[1]) { cp2 = pickReplacement(battle, 1, rng); if (!cp2) { rec.dropped = 'no-replacement-p2'; break; } }
     } else {
-      const r1 = pickMove(battle, 0, rng, mode);
-      const r2 = pickMove(battle, 1, rng, mode);
+      const r1 = pickMove(battle, 0, rng, mode, allowHiddenPower);
+      const r2 = pickMove(battle, 1, rng, mode, allowHiddenPower);
       if (r1.choice === null) { rec.dropped = r1.reason; break; }
       if (r2.choice === null) { rec.dropped = r2.reason; break; }
       cp1 = r1.choice; cp2 = r2.choice;
@@ -1344,6 +1372,12 @@ async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode) {
 
   rec.ended = !!stream.battle.ended;
   rec.winner = stream.battle.winner;
+  // Tee the captured OMNISCIENT lines (normalized) + the run format onto the record so
+  // the byte-differential path (ab_fuzz --protocol → emitBattle L/FMT rows → ab_replay)
+  // can diff them; the state-only golden path ignores both (emitBattle gates L/FMT on
+  // `opts.protocol`). The `[from]`/framing/emission bytes ride here verbatim.
+  rec.lines = log;
+  rec.format = runFormat;
   try { streams.omniscient.destroy(); } catch (e) {}
   return rec;
 }
@@ -1359,10 +1393,16 @@ function winTok(rec) {
 // Serialize a battle record into the SHARED golden line format (so the Rust e2e
 // test reuses the fullbattle parser shape: SCEN/TEAM/INIT/DEC/END, with DEC carrying
 // boosts[5]+confusion like the secondary golden).
-function emitBattle(lines, id, p1Packed, p2Packed, rec) {
+function emitBattle(lines, id, p1Packed, p2Packed, rec, opts = {}) {
   lines.push(`SCEN\t${id}`);
   lines.push(`TEAM\t${id}\tp1\t${p1Packed}`);
   lines.push(`TEAM\t${id}\tp2\t${p2Packed}`);
+  // FMT carries the run format (gen3customgame default) so the Rust byte replayer sets
+  // BattleOptions.format_id to match (gen3ou → sleep_clause ON + the OU reframe). Emitted
+  // ONLY in protocol mode (state-only chunks stay format-implicit gen3customgame); it sits
+  // before INIT so ab_replay's parser (which only tracks a case AFTER INIT) ignores it on
+  // the state path. `gen3_omniscient_byte_fuzz_v1`.
+  if (opts.protocol) lines.push(`FMT\t${id}\t${rec.format || FORMAT}`);
   lines.push(['INIT', id, rec.initSeed, rec.chooseSeed].join('\t'));
   rec.decisions.forEach((d, di) => {
     const sp = (s) => [s.species, s.hp, s.maxhp, s.fainted ? 1 : 0, s.status,
@@ -1380,6 +1420,14 @@ function emitBattle(lines, id, p1Packed, p2Packed, rec) {
     ].join('\t'));
   });
   lines.push(['END', id, rec.ended ? 1 : 0, winTok(rec)].join('\t'));
+  // The RAW captured OMNISCIENT `|...|` lines, verbatim (`|t:|` already normalized on
+  // capture), in emission order — the byte-diff target (`gen3_omniscient_byte_fuzz_v1`).
+  // Emitted ONLY in protocol mode. Grammar mirrors gen_protocol_capture.js:
+  //   L <id> <lineNo> <RAW line — MAY contain tabs/pipes; it's the LAST field>.
+  // ab_replay parses with splitn(4) so embedded tabs/pipes round-trip exactly.
+  if (opts.protocol && rec.lines) {
+    rec.lines.forEach((raw, li) => lines.push(['L', id, li, raw].join('\t')));
+  }
 }
 
 // ── Taxonomy classification ───────────────────────────────────────────────────

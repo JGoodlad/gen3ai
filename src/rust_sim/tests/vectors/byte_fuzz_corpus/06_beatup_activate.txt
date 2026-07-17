@@ -1,0 +1,373 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_79
+TEAM	ab_0_79	p1	Zapdos||Leftovers|Pressure|ThunderWave,Toxic,Thunderbolt,HiddenPowerIce|Modest|216,,,136,,156|N|,,,,,30|||,Ice,,,,]Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,252,,16|M||||]Jirachi||Leftovers|SereneGrace|CalmMind,FirePunch,HiddenPowerGrass,Psychic|Modest|252,,80,140,,36|N|,2,,30,,|||,Grass,,,,]Tyranitar||Leftovers|SandStream|DragonDance,Earthquake,RockSlide,DoubleEdge|Adamant|184,104,,,,220|M||||]Celebi||Leftovers|NaturalCure|CalmMind,GigaDrain,HiddenPowerFire,Psychic|Modest|188,,,140,,180|N|,2,,30,,30|||,Fire,,,,]Charizard||Leftovers|Blaze|DragonClaw,Flamethrower,HiddenPowerGrass,BeatUp|Modest|,,,252,4,252|M|,2,,30,,|||,Grass,,,,
+TEAM	ab_0_79	p2	Snorlax||ChoiceBand|Immunity|FocusPunch,BodySlam,SelfDestruct,SleepTalk|Adamant|8,252,48,,116,84|M||||]Starmie||Leftovers|NaturalCure|Surf,ThunderWave,Recover,RapidSpin|Timid|248,,44,,,216|N|,0,,,,|||]Regirock||Leftovers|ClearBody|HiddenPowerRock,ThunderWave,Earthquake,Explosion|Adamant|252,188,,,68,|N|,,30,,30,30|||,Rock,,,,]Zapdos||Leftovers|Pressure|Thunderbolt,HiddenPowerGrass,ThunderWave,RainDance|Modest|,,,252,80,176|N|,2,,30,,|||,Grass,,,,]Metagross||Leftovers|ClearBody|MeteorMash,Earthquake,Explosion,Agility|Adamant|108,252,,,,148|N||||]Heracross||SalacBerry|Swarm|SwordsDance,Megahorn,FocusPunch,Substitute|Adamant|,252,,,4,252|M|30,,,,,|||
+FMT	ab_0_79	gen3customgame
+INIT	ab_0_79	55122,55394,33783,30212	3575897513
+DEC	ab_0_79	0	move	0	0	s5	m3	14063,54431,26892,21079	Charizard	297	297	0	-	0	0	0	0	0	0	6	Snorlax	463	463	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_0_79	1	move	0	0	m2	m3	45922,58960,22990,21627	Charizard	297	297	0	-	0	0	0	0	0	0	6	Snorlax	393	463	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_0_79	2	move	0	0	m3	m3	37823,53624,59207,24577	Charizard	297	297	0	-	0	0	0	0	0	0	6	Snorlax	314	463	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_0_79	3	move	0	0	m0	s1	26540,18633,23591,60293	Charizard	297	297	0	-	0	0	0	0	0	0	6	Starmie	231	323	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_79	4	move	0	0	m1	m1	31481,42198,19944,61250	Charizard	297	297	0	par	0	0	0	0	0	0	6	Starmie	159	323	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_79	5	move	0	0	m2	m2	53283,61949,57486,64657	Charizard	297	297	0	par	0	0	0	0	0	0	6	Starmie	161	323	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_79	6	move	0	0	m1	m0	62827,34919,62286,2016	Charizard	59	297	0	par	0	0	0	0	0	0	6	Starmie	44	323	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_79	7	move	0	0	m2	s2	13546,17516,44800,38791	Charizard	77	297	0	par	0	0	0	0	0	0	6	Regirock	241	364	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_79	8	move	0	0	m1	s3	45816,141,1069,52901	Charizard	95	297	0	par	0	0	0	0	0	0	6	Zapdos	116	321	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_79	9	move	0	0	m1	s5	12013,49787,12676,65200	Charizard	95	297	0	par	0	0	0	0	0	0	6	Heracross	0	300	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_79	10	switch	0	1	-	s5	18278,10655,60603,18995	Charizard	113	297	0	par	0	0	0	0	0	0	6	Zapdos	136	321	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_79	11	move	0	0	m2	m1	29481,44611,52772,9403	Charizard	107	297	0	par	0	0	0	0	0	0	6	Zapdos	77	321	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_79	12	move	0	0	m0	s1	6550,19358,17793,64638	Charizard	125	297	0	par	0	0	0	0	0	0	6	Snorlax	241	463	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_79	13	move	0	0	m1	s1	25244,34165,13238,15997	Charizard	125	297	0	par	0	0	0	0	0	0	6	Zapdos	0	321	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_79	14	switch	0	1	-	s2	510,12947,24553,11028	Charizard	143	297	0	par	0	0	0	0	0	0	6	Starmie	64	323	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_79	15	move	0	0	m3	m0	55738,28540,51058,14913	Charizard	0	297	1	fnt	0	0	0	0	0	0	5	Starmie	64	323	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_79	16	switch	1	0	s2	-	46543,44622,54571,25448	Jirachi	404	404	0	-	0	0	0	0	0	0	5	Starmie	84	323	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_79	17	move	0	0	m1	m3	23023,16501,55702,61520	Jirachi	404	404	0	-	0	0	0	0	0	0	5	Starmie	59	323	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_79	18	move	0	0	s1	m1	60378,63715,36500,41090	Swampert	401	401	0	-	0	0	0	0	0	0	5	Starmie	79	323	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_79	19	move	0	0	m1	m3	23838,54934,7907,59448	Swampert	390	401	0	-	0	0	0	0	0	0	5	Starmie	0	323	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_79	20	switch	0	1	-	s1	35685,1037,8415,13531	Swampert	401	401	0	-	0	0	0	0	0	0	5	Snorlax	241	463	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_79	21	move	0	0	m1	s3	19978,64502,3603,46783	Swampert	401	401	0	-	0	0	0	0	0	0	5	Regirock	113	364	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_79	22	move	0	0	m3	m3	40016,46889,54537,6836	Swampert	0	401	1	fnt	0	0	0	0	0	0	4	Regirock	0	364	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_79	23	switch	1	1	s4	s4	5593,38410,38644,31687	Celebi	388	388	0	-	0	0	0	0	0	0	4	Metagross	328	328	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_79	24	move	0	0	m1	m3	54821,41231,17988,18155	Celebi	388	388	0	-	0	0	0	0	0	0	4	Metagross	299	328	0	-	0	0	0	0	2	0	2	p1	0	0	0	0	0
+DEC	ab_0_79	25	move	0	0	m3	m1	49835,21739,7572,41587	Celebi	349	388	0	-	0	0	0	0	0	0	4	Metagross	285	328	0	-	0	0	0	0	2	0	2	p2	0	0	0	0	0
+DEC	ab_0_79	26	move	0	0	m2	m1	59504,12786,4538,30168	Celebi	306	388	0	-	0	0	0	0	0	0	4	Metagross	160	328	0	-	0	0	0	0	2	0	2	p2	0	0	0	0	0
+DEC	ab_0_79	27	move	0	0	m2	m0	47622,8042,33758,58560	Celebi	138	388	0	-	0	0	0	0	0	0	4	Metagross	21	328	0	-	0	0	0	0	2	0	2	p2	0	0	0	0	0
+DEC	ab_0_79	28	move	0	0	m3	m1	53792,30886,64952,54401	Celebi	67	388	0	-	0	0	0	0	0	0	4	Metagross	0	328	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_79	29	switch	0	1	-	s3	26017,49987,16210,32424	Celebi	91	388	0	-	0	0	0	0	0	0	4	Snorlax	241	463	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_0_79	30	move	0	0	s5	m2	40524,14452,18047,6149	Zapdos	0	375	1	-	0	0	0	0	0	0	3	Snorlax	0	463	1	-	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_0_79	1	p1
+L	ab_0_79	0	|t:|<NORMALIZED>
+L	ab_0_79	1	|gametype|singles
+L	ab_0_79	2	|player|p1|P1||
+L	ab_0_79	3	|player|p2|P2||
+L	ab_0_79	4	|gen|3
+L	ab_0_79	5	|tier|[Gen 3] Custom Game
+L	ab_0_79	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_79	7	|
+L	ab_0_79	8	|t:|<NORMALIZED>
+L	ab_0_79	9	|teamsize|p1|6
+L	ab_0_79	10	|teamsize|p2|6
+L	ab_0_79	11	|start
+L	ab_0_79	12	|switch|p1a: Zapdos|Zapdos|375/375
+L	ab_0_79	13	|switch|p2a: Snorlax|Snorlax, M|463/463
+L	ab_0_79	14	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_79	15	|turn|1
+L	ab_0_79	16	|
+L	ab_0_79	17	|t:|<NORMALIZED>
+L	ab_0_79	18	|switch|p1a: Charizard|Charizard, M|297/297
+L	ab_0_79	19	|move|p2a: Snorlax|Sleep Talk|p2a: Snorlax
+L	ab_0_79	20	|
+L	ab_0_79	21	|upkeep
+L	ab_0_79	22	|turn|2
+L	ab_0_79	23	|
+L	ab_0_79	24	|t:|<NORMALIZED>
+L	ab_0_79	25	|move|p1a: Charizard|Hidden Power|p2a: Snorlax
+L	ab_0_79	26	|debug|BP: 70
+L	ab_0_79	27	|-damage|p2a: Snorlax|393/463
+L	ab_0_79	28	|move|p2a: Snorlax|Sleep Talk|p2a: Snorlax
+L	ab_0_79	29	|
+L	ab_0_79	30	|upkeep
+L	ab_0_79	31	|turn|3
+L	ab_0_79	32	|
+L	ab_0_79	33	|t:|<NORMALIZED>
+L	ab_0_79	34	|move|p1a: Charizard|Beat Up|p2a: Snorlax
+L	ab_0_79	35	|-activate|p1a: Charizard|move: Beat Up|[of] Charizard
+L	ab_0_79	36	|-damage|p2a: Snorlax|382/463
+L	ab_0_79	37	|-activate|p1a: Charizard|move: Beat Up|[of] Swampert
+L	ab_0_79	38	|-damage|p2a: Snorlax|367/463
+L	ab_0_79	39	|-activate|p1a: Charizard|move: Beat Up|[of] Jirachi
+L	ab_0_79	40	|-damage|p2a: Snorlax|354/463
+L	ab_0_79	41	|-activate|p1a: Charizard|move: Beat Up|[of] Tyranitar
+L	ab_0_79	42	|-damage|p2a: Snorlax|338/463
+L	ab_0_79	43	|-activate|p1a: Charizard|move: Beat Up|[of] Celebi
+L	ab_0_79	44	|-damage|p2a: Snorlax|325/463
+L	ab_0_79	45	|-activate|p1a: Charizard|move: Beat Up|[of] Zapdos
+L	ab_0_79	46	|-damage|p2a: Snorlax|314/463
+L	ab_0_79	47	|-hitcount|p2a: Snorlax|6
+L	ab_0_79	48	|move|p2a: Snorlax|Sleep Talk|p2a: Snorlax
+L	ab_0_79	49	|
+L	ab_0_79	50	|upkeep
+L	ab_0_79	51	|turn|4
+L	ab_0_79	52	|
+L	ab_0_79	53	|t:|<NORMALIZED>
+L	ab_0_79	54	|switch|p2a: Starmie|Starmie|323/323
+L	ab_0_79	55	|move|p1a: Charizard|Dragon Claw|p2a: Starmie
+L	ab_0_79	56	|-damage|p2a: Starmie|211/323
+L	ab_0_79	57	|
+L	ab_0_79	58	|-heal|p2a: Starmie|231/323|[from] item: Leftovers
+L	ab_0_79	59	|upkeep
+L	ab_0_79	60	|turn|5
+L	ab_0_79	61	|
+L	ab_0_79	62	|t:|<NORMALIZED>
+L	ab_0_79	63	|move|p2a: Starmie|Thunder Wave|p1a: Charizard
+L	ab_0_79	64	|-status|p1a: Charizard|par
+L	ab_0_79	65	|move|p1a: Charizard|Flamethrower|p2a: Starmie
+L	ab_0_79	66	|-resisted|p2a: Starmie
+L	ab_0_79	67	|-damage|p2a: Starmie|139/323
+L	ab_0_79	68	|
+L	ab_0_79	69	|-heal|p2a: Starmie|159/323|[from] item: Leftovers
+L	ab_0_79	70	|upkeep
+L	ab_0_79	71	|turn|6
+L	ab_0_79	72	|
+L	ab_0_79	73	|t:|<NORMALIZED>
+L	ab_0_79	74	|move|p2a: Starmie|Recover|p2a: Starmie
+L	ab_0_79	75	|-heal|p2a: Starmie|320/323
+L	ab_0_79	76	|move|p1a: Charizard|Hidden Power|p2a: Starmie
+L	ab_0_79	77	|debug|BP: 70
+L	ab_0_79	78	|-supereffective|p2a: Starmie
+L	ab_0_79	79	|-damage|p2a: Starmie|141/323
+L	ab_0_79	80	|
+L	ab_0_79	81	|-heal|p2a: Starmie|161/323|[from] item: Leftovers
+L	ab_0_79	82	|upkeep
+L	ab_0_79	83	|turn|7
+L	ab_0_79	84	|
+L	ab_0_79	85	|t:|<NORMALIZED>
+L	ab_0_79	86	|move|p2a: Starmie|Surf|p1a: Charizard
+L	ab_0_79	87	|-supereffective|p1a: Charizard
+L	ab_0_79	88	|-damage|p1a: Charizard|41/297 par
+L	ab_0_79	89	|move|p1a: Charizard|Flamethrower|p2a: Starmie
+L	ab_0_79	90	|debug|Blaze boost
+L	ab_0_79	91	|-resisted|p2a: Starmie
+L	ab_0_79	92	|-damage|p2a: Starmie|24/323
+L	ab_0_79	93	|
+L	ab_0_79	94	|-heal|p2a: Starmie|44/323|[from] item: Leftovers
+L	ab_0_79	95	|-heal|p1a: Charizard|59/297 par|[from] item: Leftovers
+L	ab_0_79	96	|upkeep
+L	ab_0_79	97	|turn|8
+L	ab_0_79	98	|
+L	ab_0_79	99	|t:|<NORMALIZED>
+L	ab_0_79	100	|switch|p2a: Regirock|Regirock|364/364
+L	ab_0_79	101	|move|p1a: Charizard|Hidden Power|p2a: Regirock
+L	ab_0_79	102	|debug|BP: 70
+L	ab_0_79	103	|-supereffective|p2a: Regirock
+L	ab_0_79	104	|-damage|p2a: Regirock|219/364
+L	ab_0_79	105	|
+L	ab_0_79	106	|-heal|p2a: Regirock|241/364|[from] item: Leftovers
+L	ab_0_79	107	|-heal|p1a: Charizard|77/297 par|[from] item: Leftovers
+L	ab_0_79	108	|upkeep
+L	ab_0_79	109	|turn|9
+L	ab_0_79	110	|
+L	ab_0_79	111	|t:|<NORMALIZED>
+L	ab_0_79	112	|switch|p2a: Zapdos|Zapdos|321/321
+L	ab_0_79	113	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_79	114	|move|p1a: Charizard|Flamethrower|p2a: Zapdos
+L	ab_0_79	115	|debug|Blaze boost
+L	ab_0_79	116	|-damage|p2a: Zapdos|96/321
+L	ab_0_79	117	|
+L	ab_0_79	118	|-heal|p2a: Zapdos|116/321|[from] item: Leftovers
+L	ab_0_79	119	|-heal|p1a: Charizard|95/297 par|[from] item: Leftovers
+L	ab_0_79	120	|upkeep
+L	ab_0_79	121	|turn|10
+L	ab_0_79	122	|
+L	ab_0_79	123	|t:|<NORMALIZED>
+L	ab_0_79	124	|switch|p2a: Heracross|Heracross, M|300/300
+L	ab_0_79	125	|move|p1a: Charizard|Flamethrower|p2a: Heracross
+L	ab_0_79	126	|debug|Blaze boost
+L	ab_0_79	127	|-supereffective|p2a: Heracross
+L	ab_0_79	128	|-damage|p2a: Heracross|0 fnt
+L	ab_0_79	129	|faint|p2a: Heracross
+L	ab_0_79	130	|
+L	ab_0_79	131	|t:|<NORMALIZED>
+L	ab_0_79	132	|switch|p2a: Zapdos|Zapdos|116/321
+L	ab_0_79	133	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_79	134	|
+L	ab_0_79	135	|-heal|p2a: Zapdos|136/321|[from] item: Leftovers
+L	ab_0_79	136	|-heal|p1a: Charizard|113/297 par|[from] item: Leftovers
+L	ab_0_79	137	|upkeep
+L	ab_0_79	138	|turn|11
+L	ab_0_79	139	|
+L	ab_0_79	140	|t:|<NORMALIZED>
+L	ab_0_79	141	|move|p2a: Zapdos|Hidden Power|p1a: Charizard
+L	ab_0_79	142	|debug|BP: 70
+L	ab_0_79	143	|-resisted|p1a: Charizard
+L	ab_0_79	144	|-damage|p1a: Charizard|89/297 par
+L	ab_0_79	145	|move|p1a: Charizard|Hidden Power|p2a: Zapdos
+L	ab_0_79	146	|debug|BP: 70
+L	ab_0_79	147	|-resisted|p2a: Zapdos
+L	ab_0_79	148	|-crit|p2a: Zapdos
+L	ab_0_79	149	|-damage|p2a: Zapdos|57/321
+L	ab_0_79	150	|
+L	ab_0_79	151	|-heal|p2a: Zapdos|77/321|[from] item: Leftovers
+L	ab_0_79	152	|-heal|p1a: Charizard|107/297 par|[from] item: Leftovers
+L	ab_0_79	153	|upkeep
+L	ab_0_79	154	|turn|12
+L	ab_0_79	155	|
+L	ab_0_79	156	|t:|<NORMALIZED>
+L	ab_0_79	157	|switch|p2a: Snorlax|Snorlax, M|314/463
+L	ab_0_79	158	|move|p1a: Charizard|Dragon Claw|p2a: Snorlax
+L	ab_0_79	159	|-damage|p2a: Snorlax|241/463
+L	ab_0_79	160	|
+L	ab_0_79	161	|-heal|p1a: Charizard|125/297 par|[from] item: Leftovers
+L	ab_0_79	162	|upkeep
+L	ab_0_79	163	|turn|13
+L	ab_0_79	164	|
+L	ab_0_79	165	|t:|<NORMALIZED>
+L	ab_0_79	166	|switch|p2a: Zapdos|Zapdos|77/321
+L	ab_0_79	167	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_79	168	|move|p1a: Charizard|Flamethrower|p2a: Zapdos
+L	ab_0_79	169	|-crit|p2a: Zapdos
+L	ab_0_79	170	|-damage|p2a: Zapdos|0 fnt
+L	ab_0_79	171	|faint|p2a: Zapdos
+L	ab_0_79	172	|
+L	ab_0_79	173	|t:|<NORMALIZED>
+L	ab_0_79	174	|switch|p2a: Starmie|Starmie|44/323
+L	ab_0_79	175	|
+L	ab_0_79	176	|-heal|p2a: Starmie|64/323|[from] item: Leftovers
+L	ab_0_79	177	|-heal|p1a: Charizard|143/297 par|[from] item: Leftovers
+L	ab_0_79	178	|upkeep
+L	ab_0_79	179	|turn|14
+L	ab_0_79	180	|
+L	ab_0_79	181	|t:|<NORMALIZED>
+L	ab_0_79	182	|move|p2a: Starmie|Surf|p1a: Charizard
+L	ab_0_79	183	|-supereffective|p1a: Charizard
+L	ab_0_79	184	|-damage|p1a: Charizard|0 fnt
+L	ab_0_79	185	|faint|p1a: Charizard
+L	ab_0_79	186	|
+L	ab_0_79	187	|t:|<NORMALIZED>
+L	ab_0_79	188	|switch|p1a: Jirachi|Jirachi|404/404
+L	ab_0_79	189	|
+L	ab_0_79	190	|-heal|p2a: Starmie|84/323|[from] item: Leftovers
+L	ab_0_79	191	|upkeep
+L	ab_0_79	192	|turn|15
+L	ab_0_79	193	|
+L	ab_0_79	194	|t:|<NORMALIZED>
+L	ab_0_79	195	|move|p2a: Starmie|Rapid Spin|p1a: Jirachi
+L	ab_0_79	196	|-resisted|p1a: Jirachi
+L	ab_0_79	197	|-damage|p1a: Jirachi|400/404
+L	ab_0_79	198	|debug|doubling secondary chance
+L	ab_0_79	199	|move|p1a: Jirachi|Fire Punch|p2a: Starmie
+L	ab_0_79	200	|-resisted|p2a: Starmie
+L	ab_0_79	201	|-damage|p2a: Starmie|39/323
+L	ab_0_79	202	|
+L	ab_0_79	203	|-heal|p2a: Starmie|59/323|[from] item: Leftovers
+L	ab_0_79	204	|-heal|p1a: Jirachi|404/404|[from] item: Leftovers
+L	ab_0_79	205	|upkeep
+L	ab_0_79	206	|turn|16
+L	ab_0_79	207	|
+L	ab_0_79	208	|t:|<NORMALIZED>
+L	ab_0_79	209	|switch|p1a: Swampert|Swampert, M|401/401
+L	ab_0_79	210	|move|p2a: Starmie|Thunder Wave|p1a: Swampert
+L	ab_0_79	211	|-immune|p1a: Swampert
+L	ab_0_79	212	|
+L	ab_0_79	213	|-heal|p2a: Starmie|79/323|[from] item: Leftovers
+L	ab_0_79	214	|upkeep
+L	ab_0_79	215	|turn|17
+L	ab_0_79	216	|
+L	ab_0_79	217	|t:|<NORMALIZED>
+L	ab_0_79	218	|move|p2a: Starmie|Rapid Spin|p1a: Swampert
+L	ab_0_79	219	|-damage|p1a: Swampert|390/401
+L	ab_0_79	220	|move|p1a: Swampert|Earthquake|p2a: Starmie
+L	ab_0_79	221	|-damage|p2a: Starmie|0 fnt
+L	ab_0_79	222	|faint|p2a: Starmie
+L	ab_0_79	223	|
+L	ab_0_79	224	|t:|<NORMALIZED>
+L	ab_0_79	225	|switch|p2a: Snorlax|Snorlax, M|241/463
+L	ab_0_79	226	|
+L	ab_0_79	227	|-heal|p1a: Swampert|401/401|[from] item: Leftovers
+L	ab_0_79	228	|upkeep
+L	ab_0_79	229	|turn|18
+L	ab_0_79	230	|
+L	ab_0_79	231	|t:|<NORMALIZED>
+L	ab_0_79	232	|switch|p2a: Regirock|Regirock|241/364
+L	ab_0_79	233	|move|p1a: Swampert|Earthquake|p2a: Regirock
+L	ab_0_79	234	|-supereffective|p2a: Regirock
+L	ab_0_79	235	|-damage|p2a: Regirock|91/364
+L	ab_0_79	236	|
+L	ab_0_79	237	|-heal|p2a: Regirock|113/364|[from] item: Leftovers
+L	ab_0_79	238	|upkeep
+L	ab_0_79	239	|turn|19
+L	ab_0_79	240	|
+L	ab_0_79	241	|t:|<NORMALIZED>
+L	ab_0_79	242	|move|p1a: Swampert|Ice Beam|p2a: Regirock
+L	ab_0_79	243	|-damage|p2a: Regirock|20/364
+L	ab_0_79	244	|move|p2a: Regirock|Explosion|p1a: Swampert
+L	ab_0_79	245	|-damage|p1a: Swampert|0 fnt
+L	ab_0_79	246	|faint|p2a: Regirock
+L	ab_0_79	247	|faint|p1a: Swampert
+L	ab_0_79	248	|
+L	ab_0_79	249	|t:|<NORMALIZED>
+L	ab_0_79	250	|switch|p1a: Celebi|Celebi|388/388
+L	ab_0_79	251	|switch|p2a: Metagross|Metagross|328/328
+L	ab_0_79	252	|
+L	ab_0_79	253	|upkeep
+L	ab_0_79	254	|turn|20
+L	ab_0_79	255	|
+L	ab_0_79	256	|t:|<NORMALIZED>
+L	ab_0_79	257	|move|p1a: Celebi|Giga Drain|p2a: Metagross
+L	ab_0_79	258	|-resisted|p2a: Metagross
+L	ab_0_79	259	|-damage|p2a: Metagross|279/328
+L	ab_0_79	260	|move|p2a: Metagross|Agility|p2a: Metagross
+L	ab_0_79	261	|-boost|p2a: Metagross|spe|2
+L	ab_0_79	262	|
+L	ab_0_79	263	|-heal|p2a: Metagross|299/328|[from] item: Leftovers
+L	ab_0_79	264	|upkeep
+L	ab_0_79	265	|turn|21
+L	ab_0_79	266	|
+L	ab_0_79	267	|t:|<NORMALIZED>
+L	ab_0_79	268	|move|p2a: Metagross|Earthquake|p1a: Celebi
+L	ab_0_79	269	|-resisted|p1a: Celebi
+L	ab_0_79	270	|-damage|p1a: Celebi|325/388
+L	ab_0_79	271	|move|p1a: Celebi|Psychic|p2a: Metagross
+L	ab_0_79	272	|-resisted|p2a: Metagross
+L	ab_0_79	273	|-damage|p2a: Metagross|265/328
+L	ab_0_79	274	|
+L	ab_0_79	275	|-heal|p2a: Metagross|285/328|[from] item: Leftovers
+L	ab_0_79	276	|-heal|p1a: Celebi|349/388|[from] item: Leftovers
+L	ab_0_79	277	|upkeep
+L	ab_0_79	278	|turn|22
+L	ab_0_79	279	|
+L	ab_0_79	280	|t:|<NORMALIZED>
+L	ab_0_79	281	|move|p2a: Metagross|Earthquake|p1a: Celebi
+L	ab_0_79	282	|-resisted|p1a: Celebi
+L	ab_0_79	283	|-damage|p1a: Celebi|282/388
+L	ab_0_79	284	|move|p1a: Celebi|Hidden Power|p2a: Metagross
+L	ab_0_79	285	|debug|BP: 70
+L	ab_0_79	286	|-supereffective|p2a: Metagross
+L	ab_0_79	287	|-damage|p2a: Metagross|140/328
+L	ab_0_79	288	|
+L	ab_0_79	289	|-heal|p2a: Metagross|160/328|[from] item: Leftovers
+L	ab_0_79	290	|-heal|p1a: Celebi|306/388|[from] item: Leftovers
+L	ab_0_79	291	|upkeep
+L	ab_0_79	292	|turn|23
+L	ab_0_79	293	|
+L	ab_0_79	294	|t:|<NORMALIZED>
+L	ab_0_79	295	|move|p2a: Metagross|Meteor Mash|p1a: Celebi
+L	ab_0_79	296	|-damage|p1a: Celebi|114/388
+L	ab_0_79	297	|move|p1a: Celebi|Hidden Power|p2a: Metagross
+L	ab_0_79	298	|debug|BP: 70
+L	ab_0_79	299	|-supereffective|p2a: Metagross
+L	ab_0_79	300	|-damage|p2a: Metagross|1/328
+L	ab_0_79	301	|
+L	ab_0_79	302	|-heal|p2a: Metagross|21/328|[from] item: Leftovers
+L	ab_0_79	303	|-heal|p1a: Celebi|138/388|[from] item: Leftovers
+L	ab_0_79	304	|upkeep
+L	ab_0_79	305	|turn|24
+L	ab_0_79	306	|
+L	ab_0_79	307	|t:|<NORMALIZED>
+L	ab_0_79	308	|move|p2a: Metagross|Earthquake|p1a: Celebi
+L	ab_0_79	309	|-resisted|p1a: Celebi
+L	ab_0_79	310	|-damage|p1a: Celebi|67/388
+L	ab_0_79	311	|move|p1a: Celebi|Psychic|p2a: Metagross
+L	ab_0_79	312	|-resisted|p2a: Metagross
+L	ab_0_79	313	|-damage|p2a: Metagross|0 fnt
+L	ab_0_79	314	|faint|p2a: Metagross
+L	ab_0_79	315	|
+L	ab_0_79	316	|t:|<NORMALIZED>
+L	ab_0_79	317	|switch|p2a: Snorlax|Snorlax, M|241/463
+L	ab_0_79	318	|
+L	ab_0_79	319	|-heal|p1a: Celebi|91/388|[from] item: Leftovers
+L	ab_0_79	320	|upkeep
+L	ab_0_79	321	|turn|25
+L	ab_0_79	322	|
+L	ab_0_79	323	|t:|<NORMALIZED>
+L	ab_0_79	324	|switch|p1a: Zapdos|Zapdos|375/375
+L	ab_0_79	325	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_79	326	|move|p2a: Snorlax|Self-Destruct|p1a: Zapdos
+L	ab_0_79	327	|-damage|p1a: Zapdos|0 fnt
+L	ab_0_79	328	|faint|p2a: Snorlax
+L	ab_0_79	329	|faint|p1a: Zapdos
+L	ab_0_79	330	|
+L	ab_0_79	331	|win|P1

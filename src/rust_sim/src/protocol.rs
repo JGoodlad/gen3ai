@@ -205,6 +205,12 @@ pub struct ProtocolBuilder {
     /// leaves it off; `run_full_battle_logged` turns it on. Either way NO PRNG is
     /// touched (the whole module is draw-free).
     enabled: bool,
+    /// The set of `-hint` messages ALREADY emitted this battle. The sim's `Battle.hint()`
+    /// dedups against `this.hints` (a Set), so each distinct hint text fires at most ONCE per
+    /// battle (`gen3_omniscient_byte_fuzz_v1` FORM 14 — the Knock Off hint over-emission: the
+    /// port re-emitted it on every 2nd+ Knock Off). Reset per battle (a fresh `BattleState` =
+    /// a fresh builder). PRNG-free like everything here.
+    hints_shown: std::collections::HashSet<String>,
     /// A ONE-SHOT `[from] <Effect>` attr the NEXT `|move|` announce carries
     /// (`gen3_move_coverage_batch5_v1` — the Sleep Talk CALLED move's
     /// `|move|<user>|<Picked>|<target>|[from] Sleep Talk`, byte-exact: ONE space, NO
@@ -218,7 +224,12 @@ pub struct ProtocolBuilder {
 
 impl ProtocolBuilder {
     pub fn new() -> Self {
-        Self { lines: Vec::new(), enabled: false, pending_move_from: None }
+        Self {
+            lines: Vec::new(),
+            enabled: false,
+            hints_shown: std::collections::HashSet::new(),
+            pending_move_from: None,
+        }
     }
 
     /// Arm the ONE-SHOT `[from] <Effect>` attr for the NEXT `|move|` announce (the
@@ -557,6 +568,13 @@ impl ProtocolBuilder {
     pub fn curestatus_silent(&mut self, ident: &str, status: &str) {
         self.push_raw(format!("|-curestatus|{ident}|{status}|[silent]"));
     }
+    /// `|-curestatus|<mon>|<status>|[from] ability: <Ability>|[silent]` — a status cured by
+    /// a switch-out ABILITY (`gen3_omniscient_byte_fuzz_v1` FORM 4, Natural Cure): emitted
+    /// BEFORE the outgoing mon's replacement `|switch|`/`|drag|` line. Silent (the client
+    /// only sees the mon leave). Observation-only.
+    pub fn curestatus_from_ability_silent(&mut self, mon: &MonRef, status: &str, ability: &str) {
+        self.push_raw(format!("|-curestatus|{mon}|{status}|[from] ability: {ability}|[silent]"));
+    }
     /// `|-cureteam|<mon>|[from] move: Aromatherapy` — Aromatherapy's team-cure banner
     /// (`gen3_move_coverage_batch2_v1`; unlike Heal Bell, Aromatherapy emits NO per-mon
     /// `-curestatus` line — a single `-cureteam` covers the whole side).
@@ -608,6 +626,27 @@ impl ProtocolBuilder {
             self.push_raw(format!("|-boost|{mon}|{stat}|{mag}"));
         } else {
             self.push_raw(format!("|-unboost|{mon}|{stat}|{mag}"));
+        }
+    }
+
+    /// `|-boost|`/`|-unboost|<mon>|<stat>|<mag>` — a PRIMARY move boost, emitted
+    /// UNCONDITIONALLY (INCLUDING a 0-magnitude delta at the ±6 cap —
+    /// `gen3_omniscient_byte_fuzz_v1` FORM 10). Unlike [`boost`], this does NOT skip a zero
+    /// delta: the sim's `boost()` emits `-boost/-unboost ... 0` for a primary move boost
+    /// (`!isSecondary && !isSelf` → the `else if (!isSecondary && !isSelf)` branch) even when
+    /// `boostBy == 0` (a Calm Mind / Agility into the +6 cap → `|-boost|…|spa|0`). The `-boost`
+    /// vs `-unboost` choice mirrors the sim exactly (`msg = -unboost iff requested < 0 ||
+    /// final_boost == -6`, using the REQUESTED sign, not the applied-delta sign). `applied` is
+    /// the CLAMPED-applied magnitude (0 at the cap). SECONDARY / self / ability boosts keep the
+    /// zero-skipping [`boost`] (they don't emit a 0-delta).
+    pub fn boost_applied(&mut self, mon: &MonRef, stat_idx: usize, requested: i8, applied: i8, final_boost: i8) {
+        let stat = STAT_TOKENS[stat_idx];
+        let unboost = requested < 0 || final_boost == -6;
+        let mag = applied.unsigned_abs();
+        if unboost {
+            self.push_raw(format!("|-unboost|{mon}|{stat}|{mag}"));
+        } else {
+            self.push_raw(format!("|-boost|{mon}|{stat}|{mag}"));
         }
     }
 
@@ -668,8 +707,17 @@ impl ProtocolBuilder {
         self.push_raw(format!("|-fail|{mon}|unboost|[from] ability: {ability}|[of] {mon}"));
     }
     /// `|-hint|<text>` — a client hint (poke-env-ignored, but part of the omniscient
-    /// byte stream — e.g. the gen3 Intimidate-vs-Substitute no-op). Phase 3.
+    /// byte stream — e.g. the gen3 Intimidate-vs-Substitute no-op, the Knock Off item note).
+    /// DEDUP per battle: the sim's `Battle.hint()` skips a message already in `this.hints`, so
+    /// each distinct text fires ONCE (`gen3_omniscient_byte_fuzz_v1` FORM 14). No-op when
+    /// disabled OR when this exact text was already emitted this battle.
     pub fn hint(&mut self, text: &str) {
+        if !self.enabled {
+            return;
+        }
+        if !self.hints_shown.insert(text.to_string()) {
+            return; // already shown this battle
+        }
         self.push_raw(format!("|-hint|{text}"));
     }
     /// `|-nothing` — Splash's "But nothing happened!" marker. Phase 3.

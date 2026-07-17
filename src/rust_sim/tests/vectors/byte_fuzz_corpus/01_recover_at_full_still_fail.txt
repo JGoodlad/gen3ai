@@ -1,0 +1,302 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_64
+TEAM	ab_0_64	p1	Raikou||Leftovers|Pressure|Thunderbolt,HiddenPowerIce,Roar,Substitute|Modest|,,4,252,,252|N|,2,30,,,|||,Ice,,,,]Dugtrio||ChoiceBand|ArenaTrap|Earthquake,AerialAce,HiddenPowerBug,BeatUp|Adamant|44,104,,,128,232|M|,,,,30,30|||,Bug,,,,]Zapdos||Leftovers|Pressure|Thunderbolt,HiddenPowerGrass,ThunderWave,BatonPass|Modest|252,,104,44,72,36|N|,2,,30,,|||,Grass,,,,]Cloyster||Leftovers|ShellArmor|Surf,Spikes,RapidSpin,Explosion|Modest|252,,,236,,20|M||||]Machamp||Leftovers|Guts|LowKick,Earthquake,RockSlide,HiddenPowerGhost|Adamant|252,136,112,,,8|M|,,30,,30,|||,Ghost,,,,]Snorlax||Leftovers|Immunity|BodySlam,ShadowBall,FocusPunch,SelfDestruct|Adamant|80,176,124,,108,20|M||||
+TEAM	ab_0_64	p2	Tyranitar||ChoiceBand|SandStream|HiddenPowerBug,FocusPunch,Earthquake,RockSlide|Adamant|200,244,,,,64|M|,,,,30,30|||,Bug,,,,]Zapdos||Leftovers|Pressure|DrillPeck,HiddenPowerFighting,Thunderbolt,ThunderWave|Lonely|,252,,12,,244|N|,,30,30,30,30|||,Fighting,,,,]Cloyster||Leftovers|ShellArmor|Surf,RapidSpin,Explosion,Spikes|Calm|144,,,,172,192|M||||]Metagross||Leftovers|ClearBody|MeteorMash,Earthquake,Agility,Explosion|Adamant|192,228,,,,88|N||||]Blissey||Leftovers|NaturalCure|ThunderWave,SeismicToss,IceBeam,SoftBoiled|Modest|20,,252,216,,20|F||||]Gengar||Leftovers|Levitate|HiddenPowerGrass,Explosion,WillOWisp,Hypnosis|Timid|248,,,,60,200|M|,30,,30,,|||,Grass,,,,
+FMT	ab_0_64	gen3customgame
+INIT	ab_0_64	58410,28342,41661,45072	2084157505
+DEC	ab_0_64	0	move	0	0	m2	m1	11620,8547,35834,23757	Raikou	0	321	1	fnt	0	0	0	0	0	0	5	Tyranitar	391	391	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_64	1	switch	1	0	s1	-	61639,53519,15153,61604	Dugtrio	222	222	0	-	0	0	0	0	0	0	5	Tyranitar	391	391	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_64	2	move	0	0	m1	m1	16187,29492,16057,37777	Dugtrio	222	222	0	-	0	0	0	0	0	0	5	Tyranitar	354	391	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_64	3	move	0	0	m1	m1	59441,3441,2728,32234	Dugtrio	222	222	0	-	0	0	0	0	0	0	5	Tyranitar	320	391	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_64	4	move	0	0	s2	m1	15803,51556,27355,9438	Zapdos	230	384	0	-	0	0	0	0	0	0	5	Tyranitar	320	391	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_64	5	move	0	0	m0	m1	47151,42275,63272,28253	Zapdos	230	384	0	-	0	0	0	0	0	0	5	Tyranitar	178	391	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_64	6	move	0	0	s2	s4	2629,16592,26292,61044	Dugtrio	222	222	0	-	0	0	0	0	0	0	5	Blissey	656	656	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_64	7	move	0	0	s3	m3	44228,19582,52816,50823	Cloyster	304	304	0	-	0	0	0	0	0	0	5	Blissey	656	656	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_64	8	move	0	0	m3	s1	58421,62356,61616,45256	Cloyster	0	304	1	fnt	0	0	0	0	0	0	4	Zapdos	0	321	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_64	9	switch	1	1	s5	s4	47539,17634,47599,26027	Snorlax	481	481	0	-	0	0	0	0	0	0	4	Tyranitar	178	391	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_64	10	move	0	0	m3	s1	1545,16281,38965,5596	Snorlax	0	481	1	fnt	0	0	0	0	0	0	3	Blissey	0	656	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_64	11	switch	1	1	s4	s3	11656,60549,57038,64143	Machamp	384	384	0	-	0	0	0	0	0	0	3	Metagross	349	349	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_64	12	move	0	0	m1	s5	2768,19409,7980,20201	Machamp	384	384	0	-	0	0	0	0	0	0	3	Gengar	323	323	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_64	13	move	0	0	m2	m3	17870,13843,45055,43746	Machamp	384	384	0	slp	0	0	0	0	0	0	3	Gengar	323	323	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_64	14	move	0	0	s2	m1	10528,36551,60767,21911	Zapdos	0	384	1	fnt	0	0	0	0	0	0	2	Gengar	0	323	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_64	15	switch	1	1	s3	s2	38618,51762,46770,12886	Dugtrio	222	222	0	-	0	0	0	0	0	0	2	Cloyster	277	277	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_64	16	move	0	0	m3	m1	14936,59347,26223,63391	Dugtrio	197	222	0	-	0	0	0	0	0	0	2	Cloyster	273	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_64	17	move	0	0	m3	m2	13956,45556,27612,1405	Dugtrio	0	222	1	fnt	0	0	0	0	0	0	1	Cloyster	0	277	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_64	18	switch	1	1	s2	s5	53638,53709,12111,44564	Machamp	384	384	0	slp	0	0	0	0	0	0	1	Metagross	349	349	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_64	19	move	0	0	m2	m0	14460,30829,26887,15819	Machamp	186	384	0	slp	0	0	0	0	0	0	1	Metagross	349	349	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_64	20	move	0	0	m1	m0	42510,28740,61590,37039	Machamp	0	384	1	slp	0	0	0	0	0	0	0	Metagross	349	349	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+END	ab_0_64	1	p2
+L	ab_0_64	0	|t:|<NORMALIZED>
+L	ab_0_64	1	|gametype|singles
+L	ab_0_64	2	|player|p1|P1||
+L	ab_0_64	3	|player|p2|P2||
+L	ab_0_64	4	|gen|3
+L	ab_0_64	5	|tier|[Gen 3] Custom Game
+L	ab_0_64	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_64	7	|
+L	ab_0_64	8	|t:|<NORMALIZED>
+L	ab_0_64	9	|teamsize|p1|6
+L	ab_0_64	10	|teamsize|p2|6
+L	ab_0_64	11	|start
+L	ab_0_64	12	|switch|p1a: Raikou|Raikou|321/321
+L	ab_0_64	13	|switch|p2a: Tyranitar|Tyranitar, M|391/391
+L	ab_0_64	14	|-ability|p1a: Raikou|Pressure|[silent]
+L	ab_0_64	15	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_0_64	16	|turn|1
+L	ab_0_64	17	|
+L	ab_0_64	18	|t:|<NORMALIZED>
+L	ab_0_64	19	|debug|before turn callback: focuspunch
+L	ab_0_64	20	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_0_64	21	|move|p2a: Tyranitar|Focus Punch|p1a: Raikou
+L	ab_0_64	22	|-damage|p1a: Raikou|0 fnt
+L	ab_0_64	23	|faint|p1a: Raikou
+L	ab_0_64	24	|
+L	ab_0_64	25	|t:|<NORMALIZED>
+L	ab_0_64	26	|switch|p1a: Dugtrio|Dugtrio, M|222/222
+L	ab_0_64	27	|
+L	ab_0_64	28	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	29	|debug|natural status immunity
+L	ab_0_64	30	|debug|weather immunity
+L	ab_0_64	31	|debug|natural status immunity
+L	ab_0_64	32	|debug|weather immunity
+L	ab_0_64	33	|upkeep
+L	ab_0_64	34	|turn|2
+L	ab_0_64	35	|
+L	ab_0_64	36	|t:|<NORMALIZED>
+L	ab_0_64	37	|debug|before turn callback: focuspunch
+L	ab_0_64	38	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_0_64	39	|move|p1a: Dugtrio|Aerial Ace|p2a: Tyranitar
+L	ab_0_64	40	|-resisted|p2a: Tyranitar
+L	ab_0_64	41	|-damage|p2a: Tyranitar|354/391
+L	ab_0_64	42	|move|p2a: Tyranitar|Focus Punch||[still]
+L	ab_0_64	43	|cant|p2a: Tyranitar|Focus Punch|Focus Punch
+L	ab_0_64	44	|
+L	ab_0_64	45	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	46	|debug|natural status immunity
+L	ab_0_64	47	|debug|weather immunity
+L	ab_0_64	48	|debug|natural status immunity
+L	ab_0_64	49	|debug|weather immunity
+L	ab_0_64	50	|upkeep
+L	ab_0_64	51	|turn|3
+L	ab_0_64	52	|
+L	ab_0_64	53	|t:|<NORMALIZED>
+L	ab_0_64	54	|debug|before turn callback: focuspunch
+L	ab_0_64	55	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_0_64	56	|move|p1a: Dugtrio|Aerial Ace|p2a: Tyranitar
+L	ab_0_64	57	|-resisted|p2a: Tyranitar
+L	ab_0_64	58	|-damage|p2a: Tyranitar|320/391
+L	ab_0_64	59	|move|p2a: Tyranitar|Focus Punch||[still]
+L	ab_0_64	60	|cant|p2a: Tyranitar|Focus Punch|Focus Punch
+L	ab_0_64	61	|
+L	ab_0_64	62	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	63	|debug|natural status immunity
+L	ab_0_64	64	|debug|weather immunity
+L	ab_0_64	65	|debug|natural status immunity
+L	ab_0_64	66	|debug|weather immunity
+L	ab_0_64	67	|upkeep
+L	ab_0_64	68	|turn|4
+L	ab_0_64	69	|
+L	ab_0_64	70	|t:|<NORMALIZED>
+L	ab_0_64	71	|debug|before turn callback: focuspunch
+L	ab_0_64	72	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_0_64	73	|switch|p1a: Zapdos|Zapdos|384/384
+L	ab_0_64	74	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_64	75	|move|p2a: Tyranitar|Focus Punch|p1a: Zapdos
+L	ab_0_64	76	|-resisted|p1a: Zapdos
+L	ab_0_64	77	|-damage|p1a: Zapdos|230/384
+L	ab_0_64	78	|
+L	ab_0_64	79	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	80	|-damage|p1a: Zapdos|206/384|[from] Sandstorm
+L	ab_0_64	81	|debug|natural status immunity
+L	ab_0_64	82	|debug|weather immunity
+L	ab_0_64	83	|-heal|p1a: Zapdos|230/384|[from] item: Leftovers
+L	ab_0_64	84	|upkeep
+L	ab_0_64	85	|turn|5
+L	ab_0_64	86	|
+L	ab_0_64	87	|t:|<NORMALIZED>
+L	ab_0_64	88	|debug|before turn callback: focuspunch
+L	ab_0_64	89	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_0_64	90	|move|p1a: Zapdos|Thunderbolt|p2a: Tyranitar
+L	ab_0_64	91	|-damage|p2a: Tyranitar|178/391
+L	ab_0_64	92	|move|p2a: Tyranitar|Focus Punch||[still]
+L	ab_0_64	93	|cant|p2a: Tyranitar|Focus Punch|Focus Punch
+L	ab_0_64	94	|
+L	ab_0_64	95	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	96	|-damage|p1a: Zapdos|206/384|[from] Sandstorm
+L	ab_0_64	97	|debug|natural status immunity
+L	ab_0_64	98	|debug|weather immunity
+L	ab_0_64	99	|-heal|p1a: Zapdos|230/384|[from] item: Leftovers
+L	ab_0_64	100	|upkeep
+L	ab_0_64	101	|turn|6
+L	ab_0_64	102	|
+L	ab_0_64	103	|t:|<NORMALIZED>
+L	ab_0_64	104	|switch|p1a: Dugtrio|Dugtrio, M|222/222
+L	ab_0_64	105	|switch|p2a: Blissey|Blissey, F|656/656
+L	ab_0_64	106	|
+L	ab_0_64	107	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	108	|debug|natural status immunity
+L	ab_0_64	109	|debug|weather immunity
+L	ab_0_64	110	|-damage|p2a: Blissey|615/656|[from] Sandstorm
+L	ab_0_64	111	|-heal|p2a: Blissey|656/656|[from] item: Leftovers
+L	ab_0_64	112	|upkeep
+L	ab_0_64	113	|turn|7
+L	ab_0_64	114	|
+L	ab_0_64	115	|t:|<NORMALIZED>
+L	ab_0_64	116	|switch|p1a: Cloyster|Cloyster, M|304/304
+L	ab_0_64	117	|move|p2a: Blissey|Soft-Boiled||[still]
+L	ab_0_64	118	|-fail|p2a: Blissey|heal
+L	ab_0_64	119	|debug|move failed because it did nothing
+L	ab_0_64	120	|
+L	ab_0_64	121	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	122	|-damage|p1a: Cloyster|285/304|[from] Sandstorm
+L	ab_0_64	123	|-damage|p2a: Blissey|615/656|[from] Sandstorm
+L	ab_0_64	124	|-heal|p1a: Cloyster|304/304|[from] item: Leftovers
+L	ab_0_64	125	|-heal|p2a: Blissey|656/656|[from] item: Leftovers
+L	ab_0_64	126	|upkeep
+L	ab_0_64	127	|turn|8
+L	ab_0_64	128	|
+L	ab_0_64	129	|t:|<NORMALIZED>
+L	ab_0_64	130	|switch|p2a: Zapdos|Zapdos|321/321
+L	ab_0_64	131	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_64	132	|move|p1a: Cloyster|Explosion|p2a: Zapdos
+L	ab_0_64	133	|-damage|p2a: Zapdos|0 fnt
+L	ab_0_64	134	|faint|p1a: Cloyster
+L	ab_0_64	135	|faint|p2a: Zapdos
+L	ab_0_64	136	|
+L	ab_0_64	137	|t:|<NORMALIZED>
+L	ab_0_64	138	|switch|p2a: Tyranitar|Tyranitar, M|178/391
+L	ab_0_64	139	|switch|p1a: Snorlax|Snorlax, M|481/481
+L	ab_0_64	140	|
+L	ab_0_64	141	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	142	|debug|natural status immunity
+L	ab_0_64	143	|debug|weather immunity
+L	ab_0_64	144	|-damage|p1a: Snorlax|451/481|[from] Sandstorm
+L	ab_0_64	145	|-heal|p1a: Snorlax|481/481|[from] item: Leftovers
+L	ab_0_64	146	|upkeep
+L	ab_0_64	147	|turn|9
+L	ab_0_64	148	|
+L	ab_0_64	149	|t:|<NORMALIZED>
+L	ab_0_64	150	|switch|p2a: Blissey|Blissey, F|656/656
+L	ab_0_64	151	|move|p1a: Snorlax|Self-Destruct|p2a: Blissey
+L	ab_0_64	152	|-damage|p2a: Blissey|0 fnt
+L	ab_0_64	153	|faint|p1a: Snorlax
+L	ab_0_64	154	|faint|p2a: Blissey
+L	ab_0_64	155	|
+L	ab_0_64	156	|t:|<NORMALIZED>
+L	ab_0_64	157	|switch|p2a: Metagross|Metagross|349/349
+L	ab_0_64	158	|switch|p1a: Machamp|Machamp, M|384/384
+L	ab_0_64	159	|
+L	ab_0_64	160	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	161	|debug|natural status immunity
+L	ab_0_64	162	|debug|weather immunity
+L	ab_0_64	163	|-damage|p1a: Machamp|360/384|[from] Sandstorm
+L	ab_0_64	164	|-heal|p1a: Machamp|384/384|[from] item: Leftovers
+L	ab_0_64	165	|upkeep
+L	ab_0_64	166	|turn|10
+L	ab_0_64	167	|
+L	ab_0_64	168	|t:|<NORMALIZED>
+L	ab_0_64	169	|switch|p2a: Gengar|Gengar, M|323/323
+L	ab_0_64	170	|move|p1a: Machamp|Earthquake|p2a: Gengar
+L	ab_0_64	171	|-immune|p2a: Gengar
+L	ab_0_64	172	|
+L	ab_0_64	173	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	174	|-damage|p2a: Gengar|303/323|[from] Sandstorm
+L	ab_0_64	175	|-damage|p1a: Machamp|360/384|[from] Sandstorm
+L	ab_0_64	176	|-heal|p2a: Gengar|323/323|[from] item: Leftovers
+L	ab_0_64	177	|-heal|p1a: Machamp|384/384|[from] item: Leftovers
+L	ab_0_64	178	|upkeep
+L	ab_0_64	179	|turn|11
+L	ab_0_64	180	|
+L	ab_0_64	181	|t:|<NORMALIZED>
+L	ab_0_64	182	|move|p2a: Gengar|Hypnosis|p1a: Machamp
+L	ab_0_64	183	|-status|p1a: Machamp|slp|[from] move: Hypnosis
+L	ab_0_64	184	|cant|p1a: Machamp|slp
+L	ab_0_64	185	|
+L	ab_0_64	186	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	187	|-damage|p2a: Gengar|303/323|[from] Sandstorm
+L	ab_0_64	188	|-damage|p1a: Machamp|360/384 slp|[from] Sandstorm
+L	ab_0_64	189	|-heal|p2a: Gengar|323/323|[from] item: Leftovers
+L	ab_0_64	190	|-heal|p1a: Machamp|384/384 slp|[from] item: Leftovers
+L	ab_0_64	191	|upkeep
+L	ab_0_64	192	|turn|12
+L	ab_0_64	193	|
+L	ab_0_64	194	|t:|<NORMALIZED>
+L	ab_0_64	195	|switch|p1a: Zapdos|Zapdos|230/384
+L	ab_0_64	196	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_64	197	|move|p2a: Gengar|Explosion|p1a: Zapdos
+L	ab_0_64	198	|-damage|p1a: Zapdos|0 fnt
+L	ab_0_64	199	|faint|p2a: Gengar
+L	ab_0_64	200	|faint|p1a: Zapdos
+L	ab_0_64	201	|
+L	ab_0_64	202	|t:|<NORMALIZED>
+L	ab_0_64	203	|switch|p2a: Cloyster|Cloyster, M|277/277
+L	ab_0_64	204	|switch|p1a: Dugtrio|Dugtrio, M|222/222
+L	ab_0_64	205	|
+L	ab_0_64	206	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	207	|debug|natural status immunity
+L	ab_0_64	208	|debug|weather immunity
+L	ab_0_64	209	|-damage|p2a: Cloyster|260/277|[from] Sandstorm
+L	ab_0_64	210	|-heal|p2a: Cloyster|277/277|[from] item: Leftovers
+L	ab_0_64	211	|upkeep
+L	ab_0_64	212	|turn|13
+L	ab_0_64	213	|
+L	ab_0_64	214	|t:|<NORMALIZED>
+L	ab_0_64	215	|move|p1a: Dugtrio|Beat Up|p2a: Cloyster
+L	ab_0_64	216	|-activate|p1a: Dugtrio|move: Beat Up|[of] Dugtrio
+L	ab_0_64	217	|-damage|p2a: Cloyster|273/277
+L	ab_0_64	218	|-hitcount|p2a: Cloyster|1
+L	ab_0_64	219	|move|p2a: Cloyster|Rapid Spin|p1a: Dugtrio
+L	ab_0_64	220	|-damage|p1a: Dugtrio|197/222
+L	ab_0_64	221	|
+L	ab_0_64	222	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	223	|debug|natural status immunity
+L	ab_0_64	224	|debug|weather immunity
+L	ab_0_64	225	|-damage|p2a: Cloyster|256/277|[from] Sandstorm
+L	ab_0_64	226	|-heal|p2a: Cloyster|273/277|[from] item: Leftovers
+L	ab_0_64	227	|upkeep
+L	ab_0_64	228	|turn|14
+L	ab_0_64	229	|
+L	ab_0_64	230	|t:|<NORMALIZED>
+L	ab_0_64	231	|move|p1a: Dugtrio|Beat Up|p2a: Cloyster
+L	ab_0_64	232	|-activate|p1a: Dugtrio|move: Beat Up|[of] Dugtrio
+L	ab_0_64	233	|-damage|p2a: Cloyster|269/277
+L	ab_0_64	234	|-hitcount|p2a: Cloyster|1
+L	ab_0_64	235	|move|p2a: Cloyster|Explosion|p1a: Dugtrio
+L	ab_0_64	236	|-damage|p1a: Dugtrio|0 fnt
+L	ab_0_64	237	|faint|p2a: Cloyster
+L	ab_0_64	238	|faint|p1a: Dugtrio
+L	ab_0_64	239	|
+L	ab_0_64	240	|t:|<NORMALIZED>
+L	ab_0_64	241	|switch|p1a: Machamp|Machamp, M|384/384 slp
+L	ab_0_64	242	|switch|p2a: Metagross|Metagross|349/349
+L	ab_0_64	243	|
+L	ab_0_64	244	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	245	|debug|natural status immunity
+L	ab_0_64	246	|debug|weather immunity
+L	ab_0_64	247	|-damage|p1a: Machamp|360/384 slp|[from] Sandstorm
+L	ab_0_64	248	|-heal|p1a: Machamp|384/384 slp|[from] item: Leftovers
+L	ab_0_64	249	|upkeep
+L	ab_0_64	250	|turn|15
+L	ab_0_64	251	|
+L	ab_0_64	252	|t:|<NORMALIZED>
+L	ab_0_64	253	|move|p2a: Metagross|Meteor Mash|p1a: Machamp
+L	ab_0_64	254	|-damage|p1a: Machamp|186/384 slp
+L	ab_0_64	255	|cant|p1a: Machamp|slp
+L	ab_0_64	256	|
+L	ab_0_64	257	|-weather|Sandstorm|[upkeep]
+L	ab_0_64	258	|debug|natural status immunity
+L	ab_0_64	259	|debug|weather immunity
+L	ab_0_64	260	|-damage|p1a: Machamp|162/384 slp|[from] Sandstorm
+L	ab_0_64	261	|-heal|p1a: Machamp|186/384 slp|[from] item: Leftovers
+L	ab_0_64	262	|upkeep
+L	ab_0_64	263	|turn|16
+L	ab_0_64	264	|
+L	ab_0_64	265	|t:|<NORMALIZED>
+L	ab_0_64	266	|move|p2a: Metagross|Meteor Mash|p1a: Machamp
+L	ab_0_64	267	|-damage|p1a: Machamp|0 fnt
+L	ab_0_64	268	|faint|p1a: Machamp
+L	ab_0_64	269	|
+L	ab_0_64	270	|win|P2

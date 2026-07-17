@@ -1,0 +1,518 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_58
+TEAM	ab_0_58	p1	Zapdos||Leftovers|Pressure|ThunderWave,Toxic,Thunderbolt,HiddenPowerIce|Modest|216,,,136,,156|N|,,,,,30|||,Ice,,,,]Magneton||Magnet|MagnetPull|ThunderWave,Toxic,Thunderbolt,HiddenPowerFire|Modest|4,,,252,,252|N|,2,,30,,30|||,Fire,,,,]Metagross||Leftovers|ClearBody|MeteorMash,Earthquake,HiddenPowerGrass,Explosion|Naughty|168,180,16,52,,92|N|,30,,30,,|||,Grass,,,,]Suicune||Leftovers|Pressure|Rest,CalmMind,Surf,IceBeam|Modest|252,,,228,,28|N|,0,,,,|||]Celebi||Leftovers|NaturalCure|LeechSeed,CalmMind,GigaDrain,Psychic|Modest|252,,,224,,32|N|,0,,,,|||]Salamence||Leftovers|Intimidate|Wish,DragonClaw,Flamethrower,BrickBreak|Rash|88,24,,252,,144|M||||
+TEAM	ab_0_58	p2	Jirachi||Leftovers|SereneGrace|Wish,BodySlam,FirePunch,HiddenPowerGrass|Sassy|252,,120,,136,|N|,30,,30,,|||,Grass,,,,]Tyranitar||Leftovers|SandStream|DragonDance,Earthquake,RockSlide,HiddenPowerBug|Adamant|184,104,,,,220|M|,,,,30,30|||,Bug,,,,]Claydol||Leftovers|Levitate|RapidSpin,Earthquake,Psychic,Explosion|Careful|252,96,112,32,16,|N||||]Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,252,,16|M||||]Snorlax||Leftovers|Immunity|BodySlam,Earthquake,ShadowBall,SelfDestruct|Adamant|32,136,152,,172,16|M||||]Salamence||Leftovers|Intimidate|DragonClaw,RockSlide,Flamethrower,BrickBreak|Rash|,4,,252,,252|M||||
+FMT	ab_0_58	gen3customgame
+INIT	ab_0_58	16757,28132,28278,22352	4101077025
+DEC	ab_0_58	0	move	0	0	m1	m0	63165,51943,28185,61314	Zapdos	375	375	0	-	0	0	0	0	0	0	6	Jirachi	404	404	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_58	1	move	0	0	m3	s2	46485,53885,32002,27894	Zapdos	375	375	0	-	0	0	0	0	0	0	6	Claydol	255	324	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_58	2	move	0	0	m2	m0	16554,26934,63903,53333	Zapdos	375	375	0	-	0	0	0	0	0	0	6	Claydol	275	324	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_58	3	move	0	0	m0	m2	35062,22813,4178,25955	Zapdos	319	375	0	-	0	0	0	0	0	0	6	Claydol	295	324	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_58	4	move	0	0	m2	s4	40720,29005,8810,37446	Zapdos	342	375	0	-	0	0	0	0	0	0	6	Snorlax	364	469	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_58	5	move	0	0	m1	m3	60235,57531,47332,2938	Zapdos	0	375	1	fnt	0	0	0	0	0	0	5	Snorlax	0	469	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_58	6	switch	1	1	s2	s2	53114,10295,50329,28645	Metagross	343	343	0	-	0	0	0	0	0	0	5	Jirachi	404	404	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_58	7	move	0	0	m3	m1	14712,10791,20210,11821	Metagross	0	343	1	fnt	0	0	0	0	0	0	4	Jirachi	110	404	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_58	8	switch	1	0	s1	-	37999,42396,65443,60292	Magneton	242	242	0	-	0	0	0	0	0	0	4	Jirachi	135	404	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_58	9	move	0	0	m2	m3	22133,32358,1872,31960	Magneton	242	242	0	-	0	0	0	0	0	0	4	Jirachi	0	404	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_58	10	switch	0	1	-	s5	30122,10561,32671,30715	Magneton	242	242	0	-	-1	0	0	0	0	0	4	Salamence	331	331	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_58	11	move	0	0	s4	m1	38533,33757,62352,4286	Celebi	351	404	0	-	0	0	0	0	0	0	4	Salamence	331	331	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_58	12	move	0	0	m3	m0	59489,23596,4885,230	Celebi	247	404	0	-	0	0	0	0	0	0	4	Salamence	175	331	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_58	13	move	0	0	m3	m1	34944,40687,63781,41733	Celebi	190	404	0	-	0	0	0	0	0	0	4	Salamence	195	331	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_58	14	move	0	0	m3	s4	33102,32738,59735,19088	Celebi	215	404	0	-	0	0	0	0	0	0	4	Claydol	262	324	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_58	15	move	0	0	m3	m3	619,48266,3641,52241	Celebi	0	404	1	fnt	0	0	0	0	0	0	3	Claydol	0	324	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_58	16	switch	1	1	s5	s3	21408,51061,19360,14968	Salamence	353	353	0	-	0	0	0	0	0	0	3	Swampert	401	401	0	-	-1	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_58	17	move	0	0	m3	m2	2756,19650,41668,41177	Salamence	254	353	0	-	0	0	0	0	0	0	3	Swampert	337	401	0	-	-1	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_58	18	move	0	0	m1	m1	39036,54831,24228,16628	Salamence	276	353	0	-	0	0	0	0	0	0	3	Swampert	209	401	0	-	-1	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_58	19	move	0	0	m0	m3	11240,8864,1939,56136	Salamence	0	353	1	fnt	0	0	0	0	0	0	2	Swampert	209	401	0	-	-1	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_58	20	switch	1	0	s4	-	53461,32294,31949,43563	Magneton	242	242	0	-	0	0	0	0	0	0	2	Swampert	234	401	0	-	-1	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_58	21	move	0	0	m0	m3	52654,49833,33860,55145	Magneton	242	242	0	-	0	0	0	0	0	0	2	Swampert	259	401	0	-	-1	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_58	22	move	0	0	m0	m1	37849,57277,45434,64621	Magneton	0	242	1	fnt	0	0	0	0	0	0	1	Swampert	259	401	0	-	-1	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_58	23	switch	1	0	s3	-	15822,19629,47549,35524	Suicune	404	404	0	-	0	0	0	0	0	0	1	Swampert	284	401	0	-	-1	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_58	24	move	0	0	m0	m2	32689,52884,51104,43032	Suicune	357	404	0	-	0	0	0	0	0	0	1	Swampert	309	401	0	-	-1	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_58	25	move	0	0	m2	m1	50424,19397,27633,18937	Suicune	301	404	0	-	0	0	0	0	0	0	1	Swampert	185	401	0	-	-1	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_58	26	move	0	0	m0	m2	8474,54292,35491,49300	Suicune	348	404	0	slp	0	0	0	0	0	0	1	Swampert	210	401	0	-	-1	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_58	27	move	0	0	m3	s4	29996,57449,2268,52519	Suicune	373	404	0	slp	-1	0	0	0	0	0	1	Salamence	215	331	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_58	28	move	0	0	m2	m2	64547,60950,18100,59738	Suicune	348	404	0	slp	-1	0	0	0	0	0	1	Salamence	235	331	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_58	29	move	0	0	m1	m0	56678,48643,61829,14670	Suicune	249	404	0	-	-1	0	1	1	0	0	1	Salamence	255	331	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_58	30	move	0	0	m0	m2	783,37585,33155,57956	Suicune	404	404	0	slp	-1	0	1	1	0	0	1	Salamence	275	331	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_58	31	move	0	0	m2	m2	23070,61738,41673,6235	Suicune	393	404	0	slp	-1	0	1	1	0	0	1	Salamence	295	331	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_58	32	move	0	0	m2	m2	26541,50350,51572,6302	Suicune	322	404	0	slp	-1	0	1	1	0	0	1	Salamence	315	331	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_58	33	move	0	0	m2	m3	19938,30561,38575,14151	Suicune	213	404	0	-	-1	0	1	1	0	0	1	Salamence	181	331	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_58	34	move	0	0	m3	m0	52416,25097,7823,40860	Suicune	132	404	0	-	-1	0	1	1	0	0	1	Salamence	0	331	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_58	35	switch	0	1	-	s4	55157,43203,6271,4943	Suicune	157	404	0	-	-1	0	1	1	0	0	1	Swampert	235	401	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_58	36	move	0	0	m0	m3	47095,15011,17163,35501	Suicune	400	404	0	slp	-1	0	1	1	0	0	1	Swampert	260	401	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_58	37	move	0	0	m3	m2	54454,27222,52742,41841	Suicune	370	404	0	slp	-1	0	1	1	0	0	1	Swampert	285	401	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_58	38	move	0	0	m0	m1	25906,8888,37831,22517	Suicune	282	404	0	slp	-1	0	1	1	0	0	1	Swampert	310	401	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_58	39	move	0	0	m3	m0	32406,52644,15320,53763	Suicune	307	404	0	-	-1	0	1	1	0	0	1	Swampert	178	401	0	frz	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_58	40	move	0	0	m1	m3	36106,59204,58543,33793	Suicune	310	404	0	-	-1	0	2	2	0	0	1	Swampert	203	401	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_58	41	move	0	0	m2	m3	65532,22585,8712,49818	Suicune	310	404	0	-	-1	0	2	2	0	0	1	Swampert	0	401	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_58	42	switch	0	1	-	s1	37823,26329,26613,53125	Suicune	310	404	0	-	-1	0	2	2	0	0	1	Tyranitar	387	387	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_0_58	43	move	0	0	m2	m3	28765,54838,6767,65166	Suicune	310	404	0	-	-1	0	2	2	0	0	1	Tyranitar	0	387	1	-	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_0_58	1	p1
+L	ab_0_58	0	|t:|<NORMALIZED>
+L	ab_0_58	1	|gametype|singles
+L	ab_0_58	2	|player|p1|P1||
+L	ab_0_58	3	|player|p2|P2||
+L	ab_0_58	4	|gen|3
+L	ab_0_58	5	|tier|[Gen 3] Custom Game
+L	ab_0_58	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_58	7	|
+L	ab_0_58	8	|t:|<NORMALIZED>
+L	ab_0_58	9	|teamsize|p1|6
+L	ab_0_58	10	|teamsize|p2|6
+L	ab_0_58	11	|start
+L	ab_0_58	12	|switch|p1a: Zapdos|Zapdos|375/375
+L	ab_0_58	13	|switch|p2a: Jirachi|Jirachi|404/404
+L	ab_0_58	14	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_58	15	|turn|1
+L	ab_0_58	16	|
+L	ab_0_58	17	|t:|<NORMALIZED>
+L	ab_0_58	18	|move|p1a: Zapdos|Toxic|p2a: Jirachi|[miss]
+L	ab_0_58	19	|-miss|p1a: Zapdos|p2a: Jirachi
+L	ab_0_58	20	|move|p2a: Jirachi|Wish|p2a: Jirachi
+L	ab_0_58	21	|
+L	ab_0_58	22	|upkeep
+L	ab_0_58	23	|turn|2
+L	ab_0_58	24	|
+L	ab_0_58	25	|t:|<NORMALIZED>
+L	ab_0_58	26	|switch|p2a: Claydol|Claydol|324/324
+L	ab_0_58	27	|move|p1a: Zapdos|Hidden Power|p2a: Claydol
+L	ab_0_58	28	|debug|BP: 70
+L	ab_0_58	29	|-supereffective|p2a: Claydol
+L	ab_0_58	30	|-crit|p2a: Claydol
+L	ab_0_58	31	|-damage|p2a: Claydol|73/324
+L	ab_0_58	32	|
+L	ab_0_58	33	|-heal|p2a: Claydol|235/324|[from] move: Wish|[wisher] Jirachi
+L	ab_0_58	34	|-heal|p2a: Claydol|255/324|[from] item: Leftovers
+L	ab_0_58	35	|upkeep
+L	ab_0_58	36	|turn|3
+L	ab_0_58	37	|
+L	ab_0_58	38	|t:|<NORMALIZED>
+L	ab_0_58	39	|move|p1a: Zapdos|Thunderbolt|p2a: Claydol
+L	ab_0_58	40	|-immune|p2a: Claydol
+L	ab_0_58	41	|move|p2a: Claydol|Rapid Spin|p1a: Zapdos
+L	ab_0_58	42	|-damage|p1a: Zapdos|360/375
+L	ab_0_58	43	|
+L	ab_0_58	44	|-heal|p1a: Zapdos|375/375|[from] item: Leftovers
+L	ab_0_58	45	|-heal|p2a: Claydol|275/324|[from] item: Leftovers
+L	ab_0_58	46	|upkeep
+L	ab_0_58	47	|turn|4
+L	ab_0_58	48	|
+L	ab_0_58	49	|t:|<NORMALIZED>
+L	ab_0_58	50	|move|p1a: Zapdos|Thunder Wave|p2a: Claydol
+L	ab_0_58	51	|-immune|p2a: Claydol
+L	ab_0_58	52	|move|p2a: Claydol|Psychic|p1a: Zapdos
+L	ab_0_58	53	|-damage|p1a: Zapdos|296/375
+L	ab_0_58	54	|
+L	ab_0_58	55	|-heal|p1a: Zapdos|319/375|[from] item: Leftovers
+L	ab_0_58	56	|-heal|p2a: Claydol|295/324|[from] item: Leftovers
+L	ab_0_58	57	|upkeep
+L	ab_0_58	58	|turn|5
+L	ab_0_58	59	|
+L	ab_0_58	60	|t:|<NORMALIZED>
+L	ab_0_58	61	|switch|p2a: Snorlax|Snorlax, M|469/469
+L	ab_0_58	62	|move|p1a: Zapdos|Thunderbolt|p2a: Snorlax
+L	ab_0_58	63	|-damage|p2a: Snorlax|335/469
+L	ab_0_58	64	|
+L	ab_0_58	65	|-heal|p1a: Zapdos|342/375|[from] item: Leftovers
+L	ab_0_58	66	|-heal|p2a: Snorlax|364/469|[from] item: Leftovers
+L	ab_0_58	67	|upkeep
+L	ab_0_58	68	|turn|6
+L	ab_0_58	69	|
+L	ab_0_58	70	|t:|<NORMALIZED>
+L	ab_0_58	71	|move|p1a: Zapdos|Toxic|p2a: Snorlax
+L	ab_0_58	72	|-immune|p2a: Snorlax|[from] ability: Immunity
+L	ab_0_58	73	|debug|set status [tox] interrupted
+L	ab_0_58	74	|debug|move failed because it did nothing
+L	ab_0_58	75	|move|p2a: Snorlax|Self-Destruct|p1a: Zapdos
+L	ab_0_58	76	|-damage|p1a: Zapdos|0 fnt
+L	ab_0_58	77	|faint|p2a: Snorlax
+L	ab_0_58	78	|faint|p1a: Zapdos
+L	ab_0_58	79	|
+L	ab_0_58	80	|t:|<NORMALIZED>
+L	ab_0_58	81	|switch|p1a: Metagross|Metagross|343/343
+L	ab_0_58	82	|switch|p2a: Jirachi|Jirachi|404/404
+L	ab_0_58	83	|
+L	ab_0_58	84	|upkeep
+L	ab_0_58	85	|turn|7
+L	ab_0_58	86	|
+L	ab_0_58	87	|t:|<NORMALIZED>
+L	ab_0_58	88	|debug|doubling secondary chance
+L	ab_0_58	89	|move|p2a: Jirachi|Body Slam|p1a: Metagross
+L	ab_0_58	90	|-resisted|p1a: Metagross
+L	ab_0_58	91	|-damage|p1a: Metagross|320/343
+L	ab_0_58	92	|-status|p1a: Metagross|par
+L	ab_0_58	93	|move|p1a: Metagross|Explosion|p2a: Jirachi
+L	ab_0_58	94	|-resisted|p2a: Jirachi
+L	ab_0_58	95	|-damage|p2a: Jirachi|110/404
+L	ab_0_58	96	|faint|p1a: Metagross
+L	ab_0_58	97	|
+L	ab_0_58	98	|t:|<NORMALIZED>
+L	ab_0_58	99	|switch|p1a: Magneton|Magneton|242/242
+L	ab_0_58	100	|
+L	ab_0_58	101	|-heal|p2a: Jirachi|135/404|[from] item: Leftovers
+L	ab_0_58	102	|upkeep
+L	ab_0_58	103	|turn|8
+L	ab_0_58	104	|
+L	ab_0_58	105	|t:|<NORMALIZED>
+L	ab_0_58	106	|move|p1a: Magneton|Thunderbolt|p2a: Jirachi
+L	ab_0_58	107	|-damage|p2a: Jirachi|0 fnt
+L	ab_0_58	108	|faint|p2a: Jirachi
+L	ab_0_58	109	|
+L	ab_0_58	110	|t:|<NORMALIZED>
+L	ab_0_58	111	|switch|p2a: Salamence|Salamence, M|331/331
+L	ab_0_58	112	|-ability|p2a: Salamence|Intimidate|boost
+L	ab_0_58	113	|-unboost|p1a: Magneton|atk|1
+L	ab_0_58	114	|
+L	ab_0_58	115	|upkeep
+L	ab_0_58	116	|turn|9
+L	ab_0_58	117	|
+L	ab_0_58	118	|t:|<NORMALIZED>
+L	ab_0_58	119	|switch|p1a: Celebi|Celebi|404/404
+L	ab_0_58	120	|move|p2a: Salamence|Rock Slide|p1a: Celebi
+L	ab_0_58	121	|-damage|p1a: Celebi|326/404
+L	ab_0_58	122	|
+L	ab_0_58	123	|-heal|p1a: Celebi|351/404|[from] item: Leftovers
+L	ab_0_58	124	|upkeep
+L	ab_0_58	125	|turn|10
+L	ab_0_58	126	|
+L	ab_0_58	127	|t:|<NORMALIZED>
+L	ab_0_58	128	|move|p2a: Salamence|Dragon Claw|p1a: Celebi
+L	ab_0_58	129	|-damage|p1a: Celebi|222/404
+L	ab_0_58	130	|move|p1a: Celebi|Psychic|p2a: Salamence
+L	ab_0_58	131	|-damage|p2a: Salamence|155/331
+L	ab_0_58	132	|
+L	ab_0_58	133	|-heal|p2a: Salamence|175/331|[from] item: Leftovers
+L	ab_0_58	134	|-heal|p1a: Celebi|247/404|[from] item: Leftovers
+L	ab_0_58	135	|upkeep
+L	ab_0_58	136	|turn|11
+L	ab_0_58	137	|
+L	ab_0_58	138	|t:|<NORMALIZED>
+L	ab_0_58	139	|move|p2a: Salamence|Rock Slide|p1a: Celebi
+L	ab_0_58	140	|-damage|p1a: Celebi|165/404
+L	ab_0_58	141	|cant|p1a: Celebi|flinch
+L	ab_0_58	142	|
+L	ab_0_58	143	|-heal|p2a: Salamence|195/331|[from] item: Leftovers
+L	ab_0_58	144	|-heal|p1a: Celebi|190/404|[from] item: Leftovers
+L	ab_0_58	145	|upkeep
+L	ab_0_58	146	|turn|12
+L	ab_0_58	147	|
+L	ab_0_58	148	|t:|<NORMALIZED>
+L	ab_0_58	149	|switch|p2a: Claydol|Claydol|295/324
+L	ab_0_58	150	|move|p1a: Celebi|Psychic|p2a: Claydol
+L	ab_0_58	151	|-resisted|p2a: Claydol
+L	ab_0_58	152	|-damage|p2a: Claydol|242/324
+L	ab_0_58	153	|
+L	ab_0_58	154	|-heal|p1a: Celebi|215/404|[from] item: Leftovers
+L	ab_0_58	155	|-heal|p2a: Claydol|262/324|[from] item: Leftovers
+L	ab_0_58	156	|upkeep
+L	ab_0_58	157	|turn|13
+L	ab_0_58	158	|
+L	ab_0_58	159	|t:|<NORMALIZED>
+L	ab_0_58	160	|move|p1a: Celebi|Psychic|p2a: Claydol
+L	ab_0_58	161	|-resisted|p2a: Claydol
+L	ab_0_58	162	|-damage|p2a: Claydol|202/324
+L	ab_0_58	163	|move|p2a: Claydol|Explosion|p1a: Celebi
+L	ab_0_58	164	|-damage|p1a: Celebi|0 fnt
+L	ab_0_58	165	|faint|p2a: Claydol
+L	ab_0_58	166	|faint|p1a: Celebi
+L	ab_0_58	167	|
+L	ab_0_58	168	|t:|<NORMALIZED>
+L	ab_0_58	169	|switch|p1a: Salamence|Salamence, M|353/353
+L	ab_0_58	170	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_0_58	171	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_58	172	|-unboost|p2a: Swampert|atk|1
+L	ab_0_58	173	|
+L	ab_0_58	174	|upkeep
+L	ab_0_58	175	|turn|14
+L	ab_0_58	176	|
+L	ab_0_58	177	|t:|<NORMALIZED>
+L	ab_0_58	178	|move|p1a: Salamence|Brick Break|p2a: Swampert
+L	ab_0_58	179	|-damage|p2a: Swampert|312/401
+L	ab_0_58	180	|move|p2a: Swampert|Hydro Pump|p1a: Salamence
+L	ab_0_58	181	|-resisted|p1a: Salamence
+L	ab_0_58	182	|-damage|p1a: Salamence|232/353
+L	ab_0_58	183	|
+L	ab_0_58	184	|-heal|p1a: Salamence|254/353|[from] item: Leftovers
+L	ab_0_58	185	|-heal|p2a: Swampert|337/401|[from] item: Leftovers
+L	ab_0_58	186	|upkeep
+L	ab_0_58	187	|turn|15
+L	ab_0_58	188	|
+L	ab_0_58	189	|t:|<NORMALIZED>
+L	ab_0_58	190	|move|p1a: Salamence|Dragon Claw|p2a: Swampert
+L	ab_0_58	191	|-damage|p2a: Swampert|184/401
+L	ab_0_58	192	|move|p2a: Swampert|Earthquake|p1a: Salamence
+L	ab_0_58	193	|-immune|p1a: Salamence
+L	ab_0_58	194	|
+L	ab_0_58	195	|-heal|p1a: Salamence|276/353|[from] item: Leftovers
+L	ab_0_58	196	|-heal|p2a: Swampert|209/401|[from] item: Leftovers
+L	ab_0_58	197	|upkeep
+L	ab_0_58	198	|turn|16
+L	ab_0_58	199	|
+L	ab_0_58	200	|t:|<NORMALIZED>
+L	ab_0_58	201	|move|p1a: Salamence|Wish|p1a: Salamence
+L	ab_0_58	202	|move|p2a: Swampert|Ice Beam|p1a: Salamence
+L	ab_0_58	203	|-supereffective|p1a: Salamence
+L	ab_0_58	204	|-damage|p1a: Salamence|0 fnt
+L	ab_0_58	205	|faint|p1a: Salamence
+L	ab_0_58	206	|
+L	ab_0_58	207	|t:|<NORMALIZED>
+L	ab_0_58	208	|switch|p1a: Magneton|Magneton|242/242
+L	ab_0_58	209	|
+L	ab_0_58	210	|-heal|p2a: Swampert|234/401|[from] item: Leftovers
+L	ab_0_58	211	|upkeep
+L	ab_0_58	212	|turn|17
+L	ab_0_58	213	|
+L	ab_0_58	214	|t:|<NORMALIZED>
+L	ab_0_58	215	|move|p1a: Magneton|Thunder Wave|p2a: Swampert
+L	ab_0_58	216	|-immune|p2a: Swampert
+L	ab_0_58	217	|move|p2a: Swampert|Ice Beam|p1a: Magneton
+L	ab_0_58	218	|-resisted|p1a: Magneton
+L	ab_0_58	219	|-damage|p1a: Magneton|185/242
+L	ab_0_58	220	|
+L	ab_0_58	221	|-heal|p1a: Magneton|242/242|[from] move: Wish|[wisher] Salamence
+L	ab_0_58	222	|-heal|p2a: Swampert|259/401|[from] item: Leftovers
+L	ab_0_58	223	|upkeep
+L	ab_0_58	224	|turn|18
+L	ab_0_58	225	|
+L	ab_0_58	226	|t:|<NORMALIZED>
+L	ab_0_58	227	|move|p1a: Magneton|Thunder Wave|p2a: Swampert
+L	ab_0_58	228	|-immune|p2a: Swampert
+L	ab_0_58	229	|move|p2a: Swampert|Earthquake|p1a: Magneton
+L	ab_0_58	230	|-supereffective|p1a: Magneton
+L	ab_0_58	231	|-damage|p1a: Magneton|0 fnt
+L	ab_0_58	232	|faint|p1a: Magneton
+L	ab_0_58	233	|
+L	ab_0_58	234	|t:|<NORMALIZED>
+L	ab_0_58	235	|switch|p1a: Suicune|Suicune|404/404
+L	ab_0_58	236	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_58	237	|
+L	ab_0_58	238	|-heal|p2a: Swampert|284/401|[from] item: Leftovers
+L	ab_0_58	239	|upkeep
+L	ab_0_58	240	|turn|19
+L	ab_0_58	241	|
+L	ab_0_58	242	|t:|<NORMALIZED>
+L	ab_0_58	243	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_58	244	|-fail|p1a: Suicune|heal
+L	ab_0_58	245	|move|p2a: Swampert|Hydro Pump|p1a: Suicune
+L	ab_0_58	246	|-resisted|p1a: Suicune
+L	ab_0_58	247	|-damage|p1a: Suicune|332/404
+L	ab_0_58	248	|
+L	ab_0_58	249	|-heal|p1a: Suicune|357/404|[from] item: Leftovers
+L	ab_0_58	250	|-heal|p2a: Swampert|309/401|[from] item: Leftovers
+L	ab_0_58	251	|upkeep
+L	ab_0_58	252	|turn|20
+L	ab_0_58	253	|
+L	ab_0_58	254	|t:|<NORMALIZED>
+L	ab_0_58	255	|move|p1a: Suicune|Surf|p2a: Swampert
+L	ab_0_58	256	|-damage|p2a: Swampert|160/401
+L	ab_0_58	257	|move|p2a: Swampert|Earthquake|p1a: Suicune
+L	ab_0_58	258	|-damage|p1a: Suicune|276/404
+L	ab_0_58	259	|
+L	ab_0_58	260	|-heal|p1a: Suicune|301/404|[from] item: Leftovers
+L	ab_0_58	261	|-heal|p2a: Swampert|185/401|[from] item: Leftovers
+L	ab_0_58	262	|upkeep
+L	ab_0_58	263	|turn|21
+L	ab_0_58	264	|
+L	ab_0_58	265	|t:|<NORMALIZED>
+L	ab_0_58	266	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_58	267	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_0_58	268	|-heal|p1a: Suicune|404/404 slp|[silent]
+L	ab_0_58	269	|move|p2a: Swampert|Hydro Pump|p1a: Suicune
+L	ab_0_58	270	|-resisted|p1a: Suicune
+L	ab_0_58	271	|-damage|p1a: Suicune|323/404 slp
+L	ab_0_58	272	|
+L	ab_0_58	273	|-heal|p1a: Suicune|348/404 slp|[from] item: Leftovers
+L	ab_0_58	274	|-heal|p2a: Swampert|210/401|[from] item: Leftovers
+L	ab_0_58	275	|upkeep
+L	ab_0_58	276	|turn|22
+L	ab_0_58	277	|
+L	ab_0_58	278	|t:|<NORMALIZED>
+L	ab_0_58	279	|switch|p2a: Salamence|Salamence, M|195/331
+L	ab_0_58	280	|-ability|p2a: Salamence|Intimidate|boost
+L	ab_0_58	281	|-unboost|p1a: Suicune|atk|1
+L	ab_0_58	282	|cant|p1a: Suicune|slp
+L	ab_0_58	283	|
+L	ab_0_58	284	|-heal|p2a: Salamence|215/331|[from] item: Leftovers
+L	ab_0_58	285	|-heal|p1a: Suicune|373/404 slp|[from] item: Leftovers
+L	ab_0_58	286	|upkeep
+L	ab_0_58	287	|turn|23
+L	ab_0_58	288	|
+L	ab_0_58	289	|t:|<NORMALIZED>
+L	ab_0_58	290	|move|p2a: Salamence|Flamethrower|p1a: Suicune
+L	ab_0_58	291	|-resisted|p1a: Suicune
+L	ab_0_58	292	|-damage|p1a: Suicune|323/404 slp
+L	ab_0_58	293	|cant|p1a: Suicune|slp
+L	ab_0_58	294	|
+L	ab_0_58	295	|-heal|p2a: Salamence|235/331|[from] item: Leftovers
+L	ab_0_58	296	|-heal|p1a: Suicune|348/404 slp|[from] item: Leftovers
+L	ab_0_58	297	|upkeep
+L	ab_0_58	298	|turn|24
+L	ab_0_58	299	|
+L	ab_0_58	300	|t:|<NORMALIZED>
+L	ab_0_58	301	|move|p2a: Salamence|Dragon Claw|p1a: Suicune
+L	ab_0_58	302	|-damage|p1a: Suicune|224/404 slp
+L	ab_0_58	303	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_0_58	304	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_0_58	305	|-boost|p1a: Suicune|spa|1
+L	ab_0_58	306	|-boost|p1a: Suicune|spd|1
+L	ab_0_58	307	|
+L	ab_0_58	308	|-heal|p2a: Salamence|255/331|[from] item: Leftovers
+L	ab_0_58	309	|-heal|p1a: Suicune|249/404|[from] item: Leftovers
+L	ab_0_58	310	|upkeep
+L	ab_0_58	311	|turn|25
+L	ab_0_58	312	|
+L	ab_0_58	313	|t:|<NORMALIZED>
+L	ab_0_58	314	|move|p2a: Salamence|Flamethrower|p1a: Suicune
+L	ab_0_58	315	|-resisted|p1a: Suicune
+L	ab_0_58	316	|-damage|p1a: Suicune|217/404
+L	ab_0_58	317	|-status|p1a: Suicune|brn
+L	ab_0_58	318	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_58	319	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_0_58	320	|-heal|p1a: Suicune|404/404 slp|[silent]
+L	ab_0_58	321	|
+L	ab_0_58	322	|-heal|p2a: Salamence|275/331|[from] item: Leftovers
+L	ab_0_58	323	|upkeep
+L	ab_0_58	324	|turn|26
+L	ab_0_58	325	|
+L	ab_0_58	326	|t:|<NORMALIZED>
+L	ab_0_58	327	|move|p2a: Salamence|Flamethrower|p1a: Suicune
+L	ab_0_58	328	|-resisted|p1a: Suicune
+L	ab_0_58	329	|-damage|p1a: Suicune|368/404 slp
+L	ab_0_58	330	|cant|p1a: Suicune|slp
+L	ab_0_58	331	|
+L	ab_0_58	332	|-heal|p2a: Salamence|295/331|[from] item: Leftovers
+L	ab_0_58	333	|-heal|p1a: Suicune|393/404 slp|[from] item: Leftovers
+L	ab_0_58	334	|upkeep
+L	ab_0_58	335	|turn|27
+L	ab_0_58	336	|
+L	ab_0_58	337	|t:|<NORMALIZED>
+L	ab_0_58	338	|move|p2a: Salamence|Flamethrower|p1a: Suicune
+L	ab_0_58	339	|debug|Negating (sp)def boost/penalty.
+L	ab_0_58	340	|-resisted|p1a: Suicune
+L	ab_0_58	341	|-crit|p1a: Suicune
+L	ab_0_58	342	|-damage|p1a: Suicune|297/404 slp
+L	ab_0_58	343	|cant|p1a: Suicune|slp
+L	ab_0_58	344	|
+L	ab_0_58	345	|-heal|p2a: Salamence|315/331|[from] item: Leftovers
+L	ab_0_58	346	|-heal|p1a: Suicune|322/404 slp|[from] item: Leftovers
+L	ab_0_58	347	|upkeep
+L	ab_0_58	348	|turn|28
+L	ab_0_58	349	|
+L	ab_0_58	350	|t:|<NORMALIZED>
+L	ab_0_58	351	|move|p2a: Salamence|Brick Break|p1a: Suicune
+L	ab_0_58	352	|-crit|p1a: Suicune
+L	ab_0_58	353	|-damage|p1a: Suicune|188/404 slp
+L	ab_0_58	354	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_0_58	355	|move|p1a: Suicune|Surf|p2a: Salamence
+L	ab_0_58	356	|-resisted|p2a: Salamence
+L	ab_0_58	357	|-damage|p2a: Salamence|161/331
+L	ab_0_58	358	|
+L	ab_0_58	359	|-heal|p2a: Salamence|181/331|[from] item: Leftovers
+L	ab_0_58	360	|-heal|p1a: Suicune|213/404|[from] item: Leftovers
+L	ab_0_58	361	|upkeep
+L	ab_0_58	362	|turn|29
+L	ab_0_58	363	|
+L	ab_0_58	364	|t:|<NORMALIZED>
+L	ab_0_58	365	|move|p2a: Salamence|Dragon Claw|p1a: Suicune
+L	ab_0_58	366	|-damage|p1a: Suicune|132/404
+L	ab_0_58	367	|move|p1a: Suicune|Ice Beam|p2a: Salamence
+L	ab_0_58	368	|-supereffective|p2a: Salamence
+L	ab_0_58	369	|-damage|p2a: Salamence|0 fnt
+L	ab_0_58	370	|faint|p2a: Salamence
+L	ab_0_58	371	|
+L	ab_0_58	372	|t:|<NORMALIZED>
+L	ab_0_58	373	|switch|p2a: Swampert|Swampert, M|210/401
+L	ab_0_58	374	|
+L	ab_0_58	375	|-heal|p1a: Suicune|157/404|[from] item: Leftovers
+L	ab_0_58	376	|-heal|p2a: Swampert|235/401|[from] item: Leftovers
+L	ab_0_58	377	|upkeep
+L	ab_0_58	378	|turn|30
+L	ab_0_58	379	|
+L	ab_0_58	380	|t:|<NORMALIZED>
+L	ab_0_58	381	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_0_58	382	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_0_58	383	|-heal|p1a: Suicune|404/404 slp|[silent]
+L	ab_0_58	384	|move|p2a: Swampert|Ice Beam|p1a: Suicune
+L	ab_0_58	385	|-resisted|p1a: Suicune
+L	ab_0_58	386	|-damage|p1a: Suicune|375/404 slp
+L	ab_0_58	387	|
+L	ab_0_58	388	|-heal|p1a: Suicune|400/404 slp|[from] item: Leftovers
+L	ab_0_58	389	|-heal|p2a: Swampert|260/401|[from] item: Leftovers
+L	ab_0_58	390	|upkeep
+L	ab_0_58	391	|turn|31
+L	ab_0_58	392	|
+L	ab_0_58	393	|t:|<NORMALIZED>
+L	ab_0_58	394	|cant|p1a: Suicune|slp
+L	ab_0_58	395	|move|p2a: Swampert|Hydro Pump|p1a: Suicune
+L	ab_0_58	396	|-resisted|p1a: Suicune
+L	ab_0_58	397	|-damage|p1a: Suicune|345/404 slp
+L	ab_0_58	398	|
+L	ab_0_58	399	|-heal|p1a: Suicune|370/404 slp|[from] item: Leftovers
+L	ab_0_58	400	|-heal|p2a: Swampert|285/401|[from] item: Leftovers
+L	ab_0_58	401	|upkeep
+L	ab_0_58	402	|turn|32
+L	ab_0_58	403	|
+L	ab_0_58	404	|t:|<NORMALIZED>
+L	ab_0_58	405	|cant|p1a: Suicune|slp
+L	ab_0_58	406	|move|p2a: Swampert|Earthquake|p1a: Suicune
+L	ab_0_58	407	|-damage|p1a: Suicune|257/404 slp
+L	ab_0_58	408	|
+L	ab_0_58	409	|-heal|p1a: Suicune|282/404 slp|[from] item: Leftovers
+L	ab_0_58	410	|-heal|p2a: Swampert|310/401|[from] item: Leftovers
+L	ab_0_58	411	|upkeep
+L	ab_0_58	412	|turn|33
+L	ab_0_58	413	|
+L	ab_0_58	414	|t:|<NORMALIZED>
+L	ab_0_58	415	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_0_58	416	|move|p1a: Suicune|Ice Beam|p2a: Swampert
+L	ab_0_58	417	|-damage|p2a: Swampert|153/401
+L	ab_0_58	418	|-status|p2a: Swampert|frz
+L	ab_0_58	419	|cant|p2a: Swampert|frz
+L	ab_0_58	420	|
+L	ab_0_58	421	|-heal|p1a: Suicune|307/404|[from] item: Leftovers
+L	ab_0_58	422	|-heal|p2a: Swampert|178/401 frz|[from] item: Leftovers
+L	ab_0_58	423	|upkeep
+L	ab_0_58	424	|turn|34
+L	ab_0_58	425	|
+L	ab_0_58	426	|t:|<NORMALIZED>
+L	ab_0_58	427	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_0_58	428	|-boost|p1a: Suicune|spa|1
+L	ab_0_58	429	|-boost|p1a: Suicune|spd|1
+L	ab_0_58	430	|-curestatus|p2a: Swampert|frz|[msg]
+L	ab_0_58	431	|move|p2a: Swampert|Ice Beam|p1a: Suicune
+L	ab_0_58	432	|-resisted|p1a: Suicune
+L	ab_0_58	433	|-damage|p1a: Suicune|285/404
+L	ab_0_58	434	|
+L	ab_0_58	435	|-heal|p1a: Suicune|310/404|[from] item: Leftovers
+L	ab_0_58	436	|-heal|p2a: Swampert|203/401|[from] item: Leftovers
+L	ab_0_58	437	|upkeep
+L	ab_0_58	438	|turn|35
+L	ab_0_58	439	|
+L	ab_0_58	440	|t:|<NORMALIZED>
+L	ab_0_58	441	|move|p1a: Suicune|Surf|p2a: Swampert
+L	ab_0_58	442	|-damage|p2a: Swampert|0 fnt
+L	ab_0_58	443	|faint|p2a: Swampert
+L	ab_0_58	444	|
+L	ab_0_58	445	|t:|<NORMALIZED>
+L	ab_0_58	446	|switch|p2a: Tyranitar|Tyranitar, M|387/387
+L	ab_0_58	447	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_0_58	448	|
+L	ab_0_58	449	|-weather|Sandstorm|[upkeep]
+L	ab_0_58	450	|-damage|p1a: Suicune|285/404|[from] Sandstorm
+L	ab_0_58	451	|debug|natural status immunity
+L	ab_0_58	452	|debug|weather immunity
+L	ab_0_58	453	|-heal|p1a: Suicune|310/404|[from] item: Leftovers
+L	ab_0_58	454	|upkeep
+L	ab_0_58	455	|turn|36
+L	ab_0_58	456	|
+L	ab_0_58	457	|t:|<NORMALIZED>
+L	ab_0_58	458	|move|p1a: Suicune|Surf|p2a: Tyranitar
+L	ab_0_58	459	|-supereffective|p2a: Tyranitar
+L	ab_0_58	460	|-damage|p2a: Tyranitar|0 fnt
+L	ab_0_58	461	|faint|p2a: Tyranitar
+L	ab_0_58	462	|
+L	ab_0_58	463	|win|P1

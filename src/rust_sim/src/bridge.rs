@@ -1026,7 +1026,11 @@ const GEN3OU_RULES: &[&str] = &[
 /// `|rule|HP Percentage Mod…` line with the OU tier + 12-rule list; everything else
 /// (players, gen, teamsize, leads, switch-in ability lines, `|turn|1`) is preserved.
 /// A non-OU format is passed through unchanged.
-fn reframe(raw: &[crate::protocol::ProtocolLine], format_id: &str) -> Vec<String> {
+///
+/// `pub` so the omniscient BYTE fuzzer (`src/bin/ab_replay.rs --protocol`) can rewrite a
+/// `run_full_battle_logged` framing to gen3ou before byte-diffing it against the real
+/// gen3ou omniscient capture (`gen3_omniscient_byte_fuzz_v1`).
+pub fn reframe(raw: &[crate::protocol::ProtocolLine], format_id: &str) -> Vec<String> {
     if !format_id.contains("gen3ou") {
         return raw.iter().map(|l| l.0.clone()).collect();
     }

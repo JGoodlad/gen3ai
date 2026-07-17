@@ -1,0 +1,474 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777002 run_id=rmro8hjvp chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_57
+TEAM	ab_0_57	p1	Suicune||Leftovers|Pressure|CalmMind,HydroPump,IceBeam,HiddenPowerGrass|Modest|4,,,252,,252|N|,2,,30,,|||,Grass,,,,]Tyranitar||LumBerry|SandStream|RockSlide,HiddenPowerBug,Earthquake,DragonDance|Adamant|12,204,120,,,172|M|,,,,30,30|||,Bug,,,,]Swampert||SalacBerry|Torrent|Substitute,HydroPump,Roar,Endeavor|Timid|,,4,252,,252|M|,0,,,,|||]Snorlax||Leftovers|Immunity|BodySlam,ShadowBall,Curse,SelfDestruct|Adamant|16,176,120,,160,36|M||||]Magneton||Magnet|MagnetPull|Thunderbolt,HiddenPowerGrass,Toxic,ThunderWave|Timid|4,,,252,,252|N|,2,,30,,|||,Grass,,,,]Salamence||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,Earthquake,RockSlide|Adamant|4,252,,,,252|M|30,30,30,30,30,|||,Flying,,,,
+TEAM	ab_0_57	p2	Electhor|Zapdos|Leftovers|Pressure|Thunderbolt,Roar,SleepTalk,Rest|Calm|252,,,,216,40|N|,0,,,,|||]Foretress|Forretress|Leftovers|Sturdy|Spikes,RapidSpin,HiddenPowerFire,Explosion|Sassy|252,4,,4,248,|M|,30,,30,,30|||,Fire,,,,]Tyranocif|Tyranitar|Leftovers|SandStream|Counter,Crunch,Pursuit,Flamethrower|Modest|124,,,252,,132|M|,0,,,,|||]Laggron|Swampert|Leftovers|Torrent|Surf,IceBeam,Earthquake,Protect|Relaxed|248,,184,44,32,|M||||]Jirachi||Leftovers|SereneGrace|Wish,Protect,Toxic,FirePunch|Calm|252,,76,,148,32|N|,0,,,,|||]PtÃ©ra|Aerodactyl|ChoiceBand|Pressure|RockSlide,HiddenPowerBug,Pursuit,Earthquake|Hasty|,252,,4,,252|M|,30,30,,30,|||,Bug,,,,
+FMT	ab_0_57	gen3ou
+INIT	ab_0_57	18206,47522,28994,2293	2970615816
+DEC	ab_0_57	0	move	0	0	m2	m0	64826,57021,24577,1236	Suicune	116	342	0	-	0	0	0	0	0	0	6	Zapdos	257	384	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_57	1	move	0	0	m2	m2	29893,28604,15989,7051	Suicune	137	342	0	-	0	0	0	0	0	0	6	Zapdos	124	384	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_0_57	2	move	0	0	s5	m0	3207,3344,49932,19342	Salamence	177	331	0	-	0	0	0	0	0	0	6	Zapdos	148	384	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_57	3	move	0	0	s4	m0	28461,2942,13118,2765	Magneton	154	242	0	-	0	0	0	0	0	0	6	Zapdos	172	384	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_57	4	move	0	0	m0	m1	11503,11844,19748,54250	Tyranitar	344	344	0	-	0	0	0	0	0	0	6	Zapdos	26	384	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_57	5	move	0	0	s4	m0	720,28429,55854,6878	Salamence	0	331	1	fnt	0	0	0	0	0	0	5	Zapdos	26	384	0	-	-2	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_57	6	switch	1	0	s4	-	34861,51304,9418,1625	Tyranitar	344	344	0	-	0	0	0	0	0	0	5	Zapdos	26	384	0	-	-2	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_57	7	move	0	0	m3	m2	23916,56599,22959,49376	Tyranitar	344	344	0	-	1	0	0	0	1	0	5	Zapdos	26	384	0	-	-2	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_0_57	8	move	0	0	m3	m3	38347,763,18756,40029	Tyranitar	344	344	0	-	2	0	0	0	2	0	5	Zapdos	384	384	0	slp	-2	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_57	9	move	0	0	m1	m1	47609,35400,11081,31265	Tyranitar	344	344	0	-	2	0	0	0	2	0	5	Zapdos	274	384	0	slp	-2	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_57	10	move	0	0	m0	m2	20970,15322,7817,41893	Tyranitar	344	344	0	-	2	0	0	0	2	0	5	Zapdos	0	384	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_0_57	11	switch	0	1	-	s3	19754,25931,51850,31708	Tyranitar	344	344	0	-	2	0	0	0	2	0	5	Swampert	403	403	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_57	12	move	0	0	s2	m3	31223,52769,14358,14479	Swampert	341	341	0	-	0	0	0	0	0	0	5	Swampert	403	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_57	13	move	0	0	s2	m1	2064,5094,31373,49378	Tyranitar	199	344	0	-	0	0	0	0	0	0	5	Swampert	403	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_57	14	move	0	0	m1	m1	36168,6714,16617,41098	Tyranitar	131	344	0	-	0	0	0	0	0	0	5	Swampert	360	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_57	15	move	0	0	m2	m0	62482,145,26372,55936	Tyranitar	0	344	1	fnt	0	0	0	0	0	0	4	Swampert	248	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_57	16	switch	1	0	s3	-	11365,39759,14207,21315	Snorlax	465	465	0	-	0	0	0	0	0	0	4	Swampert	273	403	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_57	17	move	0	0	s5	m1	19619,53385,1399,30118	Suicune	109	342	0	-	0	0	0	0	0	0	4	Swampert	298	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_57	18	move	0	0	m2	m2	40952,46775,22374,52911	Suicune	0	342	1	fnt	0	0	0	0	0	0	3	Swampert	205	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_57	19	switch	1	0	s2	-	31675,34599,64282,53454	Swampert	341	341	0	-	0	0	0	0	0	0	3	Swampert	230	403	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_57	20	move	0	0	m3	m1	50563,29512,29657,14605	Swampert	261	341	0	-	0	0	0	0	0	0	3	Swampert	255	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_0_57	21	move	0	0	m1	m0	24019,7055,51826,49464	Swampert	154	341	0	-	0	0	0	0	0	0	3	Swampert	280	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_57	22	move	0	0	m0	m0	63823,35077,41740,32588	Swampert	69	341	0	-	0	0	0	0	1	0	3	Swampert	305	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_57	23	move	0	0	m3	m2	4908,46862,25132,42016	Swampert	0	341	1	fnt	0	0	0	0	0	0	2	Swampert	69	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_0_57	24	switch	1	0	s5	-	38180,36940,40056,32611	Snorlax	465	465	0	-	0	0	0	0	0	0	2	Swampert	94	403	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_57	25	move	0	0	m0	s2	43723,55137,62092,46150	Snorlax	465	465	0	-	0	0	0	0	0	0	2	Tyranitar	332	372	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_57	26	move	0	0	m1	m3	38221,54039,6529,36649	Snorlax	389	465	0	-	0	0	0	0	0	0	2	Tyranitar	314	372	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_57	27	move	0	0	m3	m1	39763,63550,20783,26006	Snorlax	0	465	1	fnt	0	0	0	0	0	0	1	Tyranitar	18	372	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_57	28	switch	1	0	s1	-	31066,1885,29776,63729	Magneton	154	242	0	-	0	0	0	0	0	0	1	Tyranitar	41	372	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_57	29	move	0	0	m1	m2	56268,61346,19730,51658	Magneton	154	242	0	-	0	0	0	0	0	0	1	Tyranitar	0	372	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_57	30	switch	0	1	-	s2	50550,47518,13075,21877	Magneton	154	242	0	-	0	0	0	0	0	0	1	Swampert	119	403	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_57	31	move	0	0	m2	s4	13699,47760,12387,49631	Magneton	154	242	0	-	0	0	0	0	0	0	1	Jirachi	404	404	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_57	32	move	0	0	m1	m0	26041,57126,39241,7043	Magneton	154	242	0	-	0	0	0	0	0	0	1	Jirachi	398	404	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_57	33	move	0	0	m1	m0	34338,56458,61948,49895	Magneton	154	242	0	-	0	0	0	0	0	0	1	Jirachi	404	404	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_57	34	move	0	0	m2	m0	33970,34338,10209,31105	Magneton	154	242	0	-	0	0	0	0	0	0	1	Jirachi	404	404	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_57	35	move	0	0	m2	m2	41435,61179,12304,53786	Magneton	154	242	0	-	0	0	0	0	0	0	1	Jirachi	404	404	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_57	36	move	0	0	m3	m1	35146,63217,12703,19183	Magneton	154	242	0	-	0	0	0	0	0	0	1	Jirachi	404	404	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_57	37	move	0	0	m0	m2	52228,21510,18972,10061	Magneton	154	242	0	-	0	0	0	0	0	0	1	Jirachi	288	404	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_57	38	move	0	0	m2	m3	18324,16459,62375,35960	Magneton	0	242	1	-	0	0	0	0	0	0	0	Jirachi	288	404	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+END	ab_0_57	1	p2
+L	ab_0_57	0	|t:|<NORMALIZED>
+L	ab_0_57	1	|gametype|singles
+L	ab_0_57	2	|player|p1|P1||
+L	ab_0_57	3	|player|p2|P2||
+L	ab_0_57	4	|gen|3
+L	ab_0_57	5	|tier|[Gen 3] OU
+L	ab_0_57	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_57	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_0_57	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_0_57	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_0_57	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_0_57	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_0_57	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_0_57	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_0_57	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_0_57	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_0_57	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_0_57	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_0_57	18	|
+L	ab_0_57	19	|t:|<NORMALIZED>
+L	ab_0_57	20	|teamsize|p1|6
+L	ab_0_57	21	|teamsize|p2|6
+L	ab_0_57	22	|start
+L	ab_0_57	23	|switch|p1a: Suicune|Suicune|342/342
+L	ab_0_57	24	|switch|p2a: Electhor|Zapdos|384/384
+L	ab_0_57	25	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_57	26	|-ability|p2a: Electhor|Pressure|[silent]
+L	ab_0_57	27	|turn|1
+L	ab_0_57	28	|
+L	ab_0_57	29	|t:|<NORMALIZED>
+L	ab_0_57	30	|move|p1a: Suicune|Ice Beam|p2a: Electhor
+L	ab_0_57	31	|-supereffective|p2a: Electhor
+L	ab_0_57	32	|-damage|p2a: Electhor|233/384
+L	ab_0_57	33	|move|p2a: Electhor|Thunderbolt|p1a: Suicune
+L	ab_0_57	34	|-supereffective|p1a: Suicune
+L	ab_0_57	35	|-damage|p1a: Suicune|95/342
+L	ab_0_57	36	|
+L	ab_0_57	37	|-heal|p1a: Suicune|116/342|[from] item: Leftovers
+L	ab_0_57	38	|-heal|p2a: Electhor|257/384|[from] item: Leftovers
+L	ab_0_57	39	|upkeep
+L	ab_0_57	40	|turn|2
+L	ab_0_57	41	|
+L	ab_0_57	42	|t:|<NORMALIZED>
+L	ab_0_57	43	|move|p1a: Suicune|Ice Beam|p2a: Electhor
+L	ab_0_57	44	|-supereffective|p2a: Electhor
+L	ab_0_57	45	|-damage|p2a: Electhor|100/384
+L	ab_0_57	46	|move|p2a: Electhor|Sleep Talk|p2a: Electhor
+L	ab_0_57	47	|
+L	ab_0_57	48	|-heal|p1a: Suicune|137/342|[from] item: Leftovers
+L	ab_0_57	49	|-heal|p2a: Electhor|124/384|[from] item: Leftovers
+L	ab_0_57	50	|upkeep
+L	ab_0_57	51	|turn|3
+L	ab_0_57	52	|
+L	ab_0_57	53	|t:|<NORMALIZED>
+L	ab_0_57	54	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_0_57	55	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_57	56	|-unboost|p2a: Electhor|atk|1
+L	ab_0_57	57	|move|p2a: Electhor|Thunderbolt|p1a: Salamence
+L	ab_0_57	58	|-damage|p1a: Salamence|157/331
+L	ab_0_57	59	|
+L	ab_0_57	60	|-heal|p1a: Salamence|177/331|[from] item: Leftovers
+L	ab_0_57	61	|-heal|p2a: Electhor|148/384|[from] item: Leftovers
+L	ab_0_57	62	|upkeep
+L	ab_0_57	63	|turn|4
+L	ab_0_57	64	|
+L	ab_0_57	65	|t:|<NORMALIZED>
+L	ab_0_57	66	|switch|p1a: Magneton|Magneton|242/242
+L	ab_0_57	67	|move|p2a: Electhor|Thunderbolt|p1a: Magneton
+L	ab_0_57	68	|-resisted|p1a: Magneton
+L	ab_0_57	69	|-damage|p1a: Magneton|154/242
+L	ab_0_57	70	|
+L	ab_0_57	71	|-heal|p2a: Electhor|172/384|[from] item: Leftovers
+L	ab_0_57	72	|upkeep
+L	ab_0_57	73	|turn|5
+L	ab_0_57	74	|
+L	ab_0_57	75	|t:|<NORMALIZED>
+L	ab_0_57	76	|move|p1a: Magneton|Thunderbolt|p2a: Electhor
+L	ab_0_57	77	|-damage|p2a: Electhor|26/384
+L	ab_0_57	78	|move|p2a: Electhor|Roar|p1a: Magneton
+L	ab_0_57	79	|drag|p1a: Tyranitar|Tyranitar, M|344/344
+L	ab_0_57	80	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_0_57	81	|
+L	ab_0_57	82	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	83	|-damage|p2a: Electhor|2/384|[from] Sandstorm
+L	ab_0_57	84	|-heal|p2a: Electhor|26/384|[from] item: Leftovers
+L	ab_0_57	85	|upkeep
+L	ab_0_57	86	|turn|6
+L	ab_0_57	87	|
+L	ab_0_57	88	|t:|<NORMALIZED>
+L	ab_0_57	89	|switch|p1a: Salamence|Salamence, M|177/331
+L	ab_0_57	90	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_57	91	|-unboost|p2a: Electhor|atk|1
+L	ab_0_57	92	|move|p2a: Electhor|Thunderbolt|p1a: Salamence
+L	ab_0_57	93	|-damage|p1a: Salamence|0 fnt
+L	ab_0_57	94	|faint|p1a: Salamence
+L	ab_0_57	95	|
+L	ab_0_57	96	|t:|<NORMALIZED>
+L	ab_0_57	97	|switch|p1a: Tyranitar|Tyranitar, M|344/344
+L	ab_0_57	98	|
+L	ab_0_57	99	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	100	|-damage|p2a: Electhor|2/384|[from] Sandstorm
+L	ab_0_57	101	|-heal|p2a: Electhor|26/384|[from] item: Leftovers
+L	ab_0_57	102	|upkeep
+L	ab_0_57	103	|turn|7
+L	ab_0_57	104	|
+L	ab_0_57	105	|t:|<NORMALIZED>
+L	ab_0_57	106	|move|p2a: Electhor|Sleep Talk|p2a: Electhor
+L	ab_0_57	107	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_0_57	108	|-boost|p1a: Tyranitar|atk|1
+L	ab_0_57	109	|-boost|p1a: Tyranitar|spe|1
+L	ab_0_57	110	|
+L	ab_0_57	111	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	112	|-damage|p2a: Electhor|2/384|[from] Sandstorm
+L	ab_0_57	113	|-heal|p2a: Electhor|26/384|[from] item: Leftovers
+L	ab_0_57	114	|upkeep
+L	ab_0_57	115	|turn|8
+L	ab_0_57	116	|
+L	ab_0_57	117	|t:|<NORMALIZED>
+L	ab_0_57	118	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_0_57	119	|-boost|p1a: Tyranitar|atk|1
+L	ab_0_57	120	|-boost|p1a: Tyranitar|spe|1
+L	ab_0_57	121	|move|p2a: Electhor|Rest|p2a: Electhor
+L	ab_0_57	122	|-status|p2a: Electhor|slp|[from] move: Rest
+L	ab_0_57	123	|-heal|p2a: Electhor|384/384 slp|[silent]
+L	ab_0_57	124	|
+L	ab_0_57	125	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	126	|-damage|p2a: Electhor|360/384 slp|[from] Sandstorm
+L	ab_0_57	127	|-heal|p2a: Electhor|384/384 slp|[from] item: Leftovers
+L	ab_0_57	128	|upkeep
+L	ab_0_57	129	|turn|9
+L	ab_0_57	130	|
+L	ab_0_57	131	|t:|<NORMALIZED>
+L	ab_0_57	132	|move|p1a: Tyranitar|Hidden Power|p2a: Electhor
+L	ab_0_57	133	|-resisted|p2a: Electhor
+L	ab_0_57	134	|-damage|p2a: Electhor|274/384 slp
+L	ab_0_57	135	|cant|p2a: Electhor|slp
+L	ab_0_57	136	|
+L	ab_0_57	137	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	138	|-damage|p2a: Electhor|250/384 slp|[from] Sandstorm
+L	ab_0_57	139	|-heal|p2a: Electhor|274/384 slp|[from] item: Leftovers
+L	ab_0_57	140	|upkeep
+L	ab_0_57	141	|turn|10
+L	ab_0_57	142	|
+L	ab_0_57	143	|t:|<NORMALIZED>
+L	ab_0_57	144	|move|p1a: Tyranitar|Rock Slide|p2a: Electhor
+L	ab_0_57	145	|-supereffective|p2a: Electhor
+L	ab_0_57	146	|-damage|p2a: Electhor|0 fnt
+L	ab_0_57	147	|faint|p2a: Electhor
+L	ab_0_57	148	|
+L	ab_0_57	149	|t:|<NORMALIZED>
+L	ab_0_57	150	|switch|p2a: Laggron|Swampert, M|403/403
+L	ab_0_57	151	|
+L	ab_0_57	152	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	153	|upkeep
+L	ab_0_57	154	|turn|11
+L	ab_0_57	155	|
+L	ab_0_57	156	|t:|<NORMALIZED>
+L	ab_0_57	157	|switch|p1a: Swampert|Swampert, M|341/341
+L	ab_0_57	158	|move|p2a: Laggron|Protect||[still]
+L	ab_0_57	159	|-fail|p2a: Laggron
+L	ab_0_57	160	|
+L	ab_0_57	161	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	162	|upkeep
+L	ab_0_57	163	|turn|12
+L	ab_0_57	164	|
+L	ab_0_57	165	|t:|<NORMALIZED>
+L	ab_0_57	166	|switch|p1a: Tyranitar|Tyranitar, M|344/344
+L	ab_0_57	167	|move|p2a: Laggron|Ice Beam|p1a: Tyranitar
+L	ab_0_57	168	|-crit|p1a: Tyranitar
+L	ab_0_57	169	|-damage|p1a: Tyranitar|199/344
+L	ab_0_57	170	|
+L	ab_0_57	171	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	172	|upkeep
+L	ab_0_57	173	|turn|13
+L	ab_0_57	174	|
+L	ab_0_57	175	|t:|<NORMALIZED>
+L	ab_0_57	176	|move|p1a: Tyranitar|Hidden Power|p2a: Laggron
+L	ab_0_57	177	|-damage|p2a: Laggron|335/403
+L	ab_0_57	178	|move|p2a: Laggron|Ice Beam|p1a: Tyranitar
+L	ab_0_57	179	|-damage|p1a: Tyranitar|131/344
+L	ab_0_57	180	|
+L	ab_0_57	181	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	182	|-heal|p2a: Laggron|360/403|[from] item: Leftovers
+L	ab_0_57	183	|upkeep
+L	ab_0_57	184	|turn|14
+L	ab_0_57	185	|
+L	ab_0_57	186	|t:|<NORMALIZED>
+L	ab_0_57	187	|move|p1a: Tyranitar|Earthquake|p2a: Laggron
+L	ab_0_57	188	|-damage|p2a: Laggron|248/403
+L	ab_0_57	189	|move|p2a: Laggron|Surf|p1a: Tyranitar
+L	ab_0_57	190	|-supereffective|p1a: Tyranitar
+L	ab_0_57	191	|-damage|p1a: Tyranitar|0 fnt
+L	ab_0_57	192	|faint|p1a: Tyranitar
+L	ab_0_57	193	|
+L	ab_0_57	194	|t:|<NORMALIZED>
+L	ab_0_57	195	|switch|p1a: Snorlax|Snorlax, M|465/465
+L	ab_0_57	196	|
+L	ab_0_57	197	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	198	|-damage|p1a: Snorlax|436/465|[from] Sandstorm
+L	ab_0_57	199	|-heal|p2a: Laggron|273/403|[from] item: Leftovers
+L	ab_0_57	200	|-heal|p1a: Snorlax|465/465|[from] item: Leftovers
+L	ab_0_57	201	|upkeep
+L	ab_0_57	202	|turn|15
+L	ab_0_57	203	|
+L	ab_0_57	204	|t:|<NORMALIZED>
+L	ab_0_57	205	|switch|p1a: Suicune|Suicune|137/342
+L	ab_0_57	206	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_0_57	207	|move|p2a: Laggron|Ice Beam|p1a: Suicune
+L	ab_0_57	208	|-resisted|p1a: Suicune
+L	ab_0_57	209	|-damage|p1a: Suicune|109/342
+L	ab_0_57	210	|
+L	ab_0_57	211	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	212	|-damage|p1a: Suicune|88/342|[from] Sandstorm
+L	ab_0_57	213	|-heal|p1a: Suicune|109/342|[from] item: Leftovers
+L	ab_0_57	214	|-heal|p2a: Laggron|298/403|[from] item: Leftovers
+L	ab_0_57	215	|upkeep
+L	ab_0_57	216	|turn|16
+L	ab_0_57	217	|
+L	ab_0_57	218	|t:|<NORMALIZED>
+L	ab_0_57	219	|move|p1a: Suicune|Ice Beam|p2a: Laggron
+L	ab_0_57	220	|-damage|p2a: Laggron|205/403
+L	ab_0_57	221	|move|p2a: Laggron|Earthquake|p1a: Suicune
+L	ab_0_57	222	|-damage|p1a: Suicune|0 fnt
+L	ab_0_57	223	|faint|p1a: Suicune
+L	ab_0_57	224	|
+L	ab_0_57	225	|t:|<NORMALIZED>
+L	ab_0_57	226	|switch|p1a: Swampert|Swampert, M|341/341
+L	ab_0_57	227	|
+L	ab_0_57	228	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	229	|-heal|p2a: Laggron|230/403|[from] item: Leftovers
+L	ab_0_57	230	|upkeep
+L	ab_0_57	231	|turn|17
+L	ab_0_57	232	|
+L	ab_0_57	233	|t:|<NORMALIZED>
+L	ab_0_57	234	|move|p1a: Swampert|Endeavor|p2a: Laggron
+L	ab_0_57	235	|-fail|p1a: Swampert
+L	ab_0_57	236	|move|p2a: Laggron|Ice Beam|p1a: Swampert
+L	ab_0_57	237	|-damage|p1a: Swampert|261/341
+L	ab_0_57	238	|
+L	ab_0_57	239	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	240	|-heal|p2a: Laggron|255/403|[from] item: Leftovers
+L	ab_0_57	241	|upkeep
+L	ab_0_57	242	|turn|18
+L	ab_0_57	243	|
+L	ab_0_57	244	|t:|<NORMALIZED>
+L	ab_0_57	245	|move|p1a: Swampert|Hydro Pump|p2a: Laggron|[miss]
+L	ab_0_57	246	|-miss|p1a: Swampert|p2a: Laggron
+L	ab_0_57	247	|move|p2a: Laggron|Surf|p1a: Swampert
+L	ab_0_57	248	|-damage|p1a: Swampert|154/341
+L	ab_0_57	249	|
+L	ab_0_57	250	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	251	|-heal|p2a: Laggron|280/403|[from] item: Leftovers
+L	ab_0_57	252	|upkeep
+L	ab_0_57	253	|turn|19
+L	ab_0_57	254	|
+L	ab_0_57	255	|t:|<NORMALIZED>
+L	ab_0_57	256	|move|p1a: Swampert|Substitute|p1a: Swampert
+L	ab_0_57	257	|-start|p1a: Swampert|Substitute
+L	ab_0_57	258	|-damage|p1a: Swampert|69/341
+L	ab_0_57	259	|move|p2a: Laggron|Surf|p1a: Swampert
+L	ab_0_57	260	|-end|p1a: Swampert|Substitute
+L	ab_0_57	261	|
+L	ab_0_57	262	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	263	|-enditem|p1a: Swampert|Salac Berry|[eat]
+L	ab_0_57	264	|-boost|p1a: Swampert|spe|1|[from] item: Salac Berry
+L	ab_0_57	265	|-heal|p2a: Laggron|305/403|[from] item: Leftovers
+L	ab_0_57	266	|upkeep
+L	ab_0_57	267	|turn|20
+L	ab_0_57	268	|
+L	ab_0_57	269	|t:|<NORMALIZED>
+L	ab_0_57	270	|move|p1a: Swampert|Endeavor|p2a: Laggron
+L	ab_0_57	271	|-damage|p2a: Laggron|69/403
+L	ab_0_57	272	|move|p2a: Laggron|Earthquake|p1a: Swampert
+L	ab_0_57	273	|-damage|p1a: Swampert|0 fnt
+L	ab_0_57	274	|faint|p1a: Swampert
+L	ab_0_57	275	|
+L	ab_0_57	276	|t:|<NORMALIZED>
+L	ab_0_57	277	|switch|p1a: Snorlax|Snorlax, M|465/465
+L	ab_0_57	278	|
+L	ab_0_57	279	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	280	|-damage|p1a: Snorlax|436/465|[from] Sandstorm
+L	ab_0_57	281	|-heal|p2a: Laggron|94/403|[from] item: Leftovers
+L	ab_0_57	282	|-heal|p1a: Snorlax|465/465|[from] item: Leftovers
+L	ab_0_57	283	|upkeep
+L	ab_0_57	284	|turn|21
+L	ab_0_57	285	|
+L	ab_0_57	286	|t:|<NORMALIZED>
+L	ab_0_57	287	|switch|p2a: Tyranocif|Tyranitar, M|372/372
+L	ab_0_57	288	|move|p1a: Snorlax|Body Slam|p2a: Tyranocif
+L	ab_0_57	289	|-resisted|p2a: Tyranocif
+L	ab_0_57	290	|-damage|p2a: Tyranocif|309/372
+L	ab_0_57	291	|
+L	ab_0_57	292	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	293	|-damage|p1a: Snorlax|436/465|[from] Sandstorm
+L	ab_0_57	294	|-heal|p2a: Tyranocif|332/372|[from] item: Leftovers
+L	ab_0_57	295	|-heal|p1a: Snorlax|465/465|[from] item: Leftovers
+L	ab_0_57	296	|upkeep
+L	ab_0_57	297	|turn|22
+L	ab_0_57	298	|
+L	ab_0_57	299	|t:|<NORMALIZED>
+L	ab_0_57	300	|move|p2a: Tyranocif|Flamethrower|p1a: Snorlax
+L	ab_0_57	301	|-damage|p1a: Snorlax|389/465
+L	ab_0_57	302	|move|p1a: Snorlax|Shadow Ball|p2a: Tyranocif
+L	ab_0_57	303	|-resisted|p2a: Tyranocif
+L	ab_0_57	304	|-damage|p2a: Tyranocif|291/372
+L	ab_0_57	305	|
+L	ab_0_57	306	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	307	|-damage|p1a: Snorlax|360/465|[from] Sandstorm
+L	ab_0_57	308	|-heal|p2a: Tyranocif|314/372|[from] item: Leftovers
+L	ab_0_57	309	|-heal|p1a: Snorlax|389/465|[from] item: Leftovers
+L	ab_0_57	310	|upkeep
+L	ab_0_57	311	|turn|23
+L	ab_0_57	312	|
+L	ab_0_57	313	|t:|<NORMALIZED>
+L	ab_0_57	314	|move|p2a: Tyranocif|Crunch|p1a: Snorlax
+L	ab_0_57	315	|-crit|p1a: Snorlax
+L	ab_0_57	316	|-damage|p1a: Snorlax|179/465
+L	ab_0_57	317	|move|p1a: Snorlax|Self-Destruct|p2a: Tyranocif
+L	ab_0_57	318	|-resisted|p2a: Tyranocif
+L	ab_0_57	319	|-damage|p2a: Tyranocif|18/372
+L	ab_0_57	320	|faint|p1a: Snorlax
+L	ab_0_57	321	|
+L	ab_0_57	322	|t:|<NORMALIZED>
+L	ab_0_57	323	|switch|p1a: Magneton|Magneton|154/242
+L	ab_0_57	324	|
+L	ab_0_57	325	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	326	|-heal|p2a: Tyranocif|41/372|[from] item: Leftovers
+L	ab_0_57	327	|upkeep
+L	ab_0_57	328	|turn|24
+L	ab_0_57	329	|
+L	ab_0_57	330	|t:|<NORMALIZED>
+L	ab_0_57	331	|move|p1a: Magneton|Hidden Power|p2a: Tyranocif
+L	ab_0_57	332	|-supereffective|p2a: Tyranocif
+L	ab_0_57	333	|-damage|p2a: Tyranocif|0 fnt
+L	ab_0_57	334	|faint|p2a: Tyranocif
+L	ab_0_57	335	|
+L	ab_0_57	336	|t:|<NORMALIZED>
+L	ab_0_57	337	|switch|p2a: Laggron|Swampert, M|94/403
+L	ab_0_57	338	|
+L	ab_0_57	339	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	340	|-heal|p2a: Laggron|119/403|[from] item: Leftovers
+L	ab_0_57	341	|upkeep
+L	ab_0_57	342	|turn|25
+L	ab_0_57	343	|
+L	ab_0_57	344	|t:|<NORMALIZED>
+L	ab_0_57	345	|switch|p2a: Jirachi|Jirachi|404/404
+L	ab_0_57	346	|move|p1a: Magneton|Toxic|p2a: Jirachi
+L	ab_0_57	347	|-immune|p2a: Jirachi
+L	ab_0_57	348	|
+L	ab_0_57	349	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	350	|upkeep
+L	ab_0_57	351	|turn|26
+L	ab_0_57	352	|
+L	ab_0_57	353	|t:|<NORMALIZED>
+L	ab_0_57	354	|move|p1a: Magneton|Hidden Power|p2a: Jirachi
+L	ab_0_57	355	|-resisted|p2a: Jirachi
+L	ab_0_57	356	|-damage|p2a: Jirachi|373/404
+L	ab_0_57	357	|move|p2a: Jirachi|Wish|p2a: Jirachi
+L	ab_0_57	358	|
+L	ab_0_57	359	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	360	|-heal|p2a: Jirachi|398/404|[from] item: Leftovers
+L	ab_0_57	361	|upkeep
+L	ab_0_57	362	|turn|27
+L	ab_0_57	363	|
+L	ab_0_57	364	|t:|<NORMALIZED>
+L	ab_0_57	365	|move|p1a: Magneton|Hidden Power|p2a: Jirachi
+L	ab_0_57	366	|-resisted|p2a: Jirachi
+L	ab_0_57	367	|-damage|p2a: Jirachi|365/404
+L	ab_0_57	368	|move|p2a: Jirachi|Wish||[still]
+L	ab_0_57	369	|-fail|p2a: Jirachi
+L	ab_0_57	370	|
+L	ab_0_57	371	|-heal|p2a: Jirachi|404/404|[from] move: Wish|[wisher] Jirachi
+L	ab_0_57	372	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	373	|upkeep
+L	ab_0_57	374	|turn|28
+L	ab_0_57	375	|
+L	ab_0_57	376	|t:|<NORMALIZED>
+L	ab_0_57	377	|move|p1a: Magneton|Toxic|p2a: Jirachi|[miss]
+L	ab_0_57	378	|-miss|p1a: Magneton|p2a: Jirachi
+L	ab_0_57	379	|move|p2a: Jirachi|Wish|p2a: Jirachi
+L	ab_0_57	380	|
+L	ab_0_57	381	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	382	|upkeep
+L	ab_0_57	383	|turn|29
+L	ab_0_57	384	|
+L	ab_0_57	385	|t:|<NORMALIZED>
+L	ab_0_57	386	|move|p1a: Magneton|Toxic|p2a: Jirachi
+L	ab_0_57	387	|-immune|p2a: Jirachi
+L	ab_0_57	388	|move|p2a: Jirachi|Toxic|p1a: Magneton
+L	ab_0_57	389	|-immune|p1a: Magneton
+L	ab_0_57	390	|
+L	ab_0_57	391	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	392	|upkeep
+L	ab_0_57	393	|turn|30
+L	ab_0_57	394	|
+L	ab_0_57	395	|t:|<NORMALIZED>
+L	ab_0_57	396	|move|p2a: Jirachi|Protect|p2a: Jirachi
+L	ab_0_57	397	|-singleturn|p2a: Jirachi|Protect
+L	ab_0_57	398	|move|p1a: Magneton|Thunder Wave|p2a: Jirachi
+L	ab_0_57	399	|-activate|p2a: Jirachi|Protect
+L	ab_0_57	400	|
+L	ab_0_57	401	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	402	|upkeep
+L	ab_0_57	403	|turn|31
+L	ab_0_57	404	|
+L	ab_0_57	405	|t:|<NORMALIZED>
+L	ab_0_57	406	|move|p1a: Magneton|Thunderbolt|p2a: Jirachi
+L	ab_0_57	407	|-damage|p2a: Jirachi|263/404
+L	ab_0_57	408	|move|p2a: Jirachi|Toxic|p1a: Magneton
+L	ab_0_57	409	|-immune|p1a: Magneton
+L	ab_0_57	410	|
+L	ab_0_57	411	|-weather|Sandstorm|[upkeep]
+L	ab_0_57	412	|-heal|p2a: Jirachi|288/404|[from] item: Leftovers
+L	ab_0_57	413	|upkeep
+L	ab_0_57	414	|turn|32
+L	ab_0_57	415	|
+L	ab_0_57	416	|t:|<NORMALIZED>
+L	ab_0_57	417	|move|p1a: Magneton|Toxic|p2a: Jirachi
+L	ab_0_57	418	|-immune|p2a: Jirachi
+L	ab_0_57	419	|move|p2a: Jirachi|Fire Punch|p1a: Magneton
+L	ab_0_57	420	|-supereffective|p1a: Magneton
+L	ab_0_57	421	|-damage|p1a: Magneton|0 fnt
+L	ab_0_57	422	|faint|p1a: Magneton
+L	ab_0_57	423	|
+L	ab_0_57	424	|win|P2

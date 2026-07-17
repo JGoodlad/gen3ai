@@ -1,0 +1,345 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_49
+TEAM	ab_0_49	p1	Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,252,,16|M||||]Claydol||Leftovers|Levitate|RapidSpin,Earthquake,ShadowBall,Explosion|Jolly|4,252,,,,252|N||||]Metagross||Leftovers|ClearBody|MeteorMash,HiddenPowerFire,Psychic,Explosion|Rash|168,,16,252,,72|N|,30,,30,,30|||,Fire,,,,]Celebi||Leftovers|NaturalCure|LeechSeed,CalmMind,GigaDrain,Psychic|Modest|192,,4,136,,176|N|,0,,,,|||]Heracross||Leftovers|Guts|SwordsDance,Megahorn,BrickBreak,RockSlide|Jolly|,252,,,4,252|M||||]Salamence||Leftovers|Intimidate|DragonClaw,RockSlide,Flamethrower,BrickBreak|Mild|24,,,244,64,176|M||||
+TEAM	ab_0_49	p2	Zapdos||Leftovers|Pressure|ThunderWave,Toxic,Thunderbolt,HiddenPowerIce|Modest|216,,,136,,156|N|,,,,,30|||,Ice,,,,]Jirachi||Leftovers|SereneGrace|BodySlam,FirePunch,IcePunch,HiddenPowerFighting|Rash|,68,,252,,188|N|,,30,30,30,30|||,Fighting,,,,]Suicune||Leftovers|Pressure|Substitute,CalmMind,Surf,IceBeam|Modest|252,,,228,,28|N||||]Gengar||Leftovers|Levitate|Thunderbolt,FirePunch,HiddenPowerGrass,Explosion|Timid|4,,,252,,252|M|,30,,30,,|||,Grass,,,,]Tyranitar||Leftovers|SandStream|DragonDance,Earthquake,RockSlide,DoubleEdge|Adamant|184,72,,,,252|M||||]Dugtrio||ChoiceBand|ArenaTrap|Earthquake,HiddenPowerBug,AerialAce,RockSlide|Jolly|,252,4,,,252|M|,30,30,,30,|||,Bug,,,,
+FMT	ab_0_49	gen3customgame
+INIT	ab_0_49	41624,41699,42525,48781	925567891
+DEC	ab_0_49	0	move	0	0	m3	m1	446,23206,43674,58203	Swampert	376	401	0	tox	0	0	0	0	0	0	6	Zapdos	203	375	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_49	1	move	0	0	m2	m2	6123,16827,12821,32063	Swampert	376	401	0	tox	0	0	0	0	0	0	6	Zapdos	0	375	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_49	2	switch	0	1	-	s3	31073,10992,17248,49054	Swampert	351	401	0	tox	0	0	0	0	0	0	6	Gengar	262	262	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_49	3	move	0	0	m1	m2	35171,46174,3745,54098	Swampert	0	401	1	fnt	0	0	0	0	0	0	5	Gengar	262	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_49	4	switch	1	0	s3	-	15969,4061,48979,57373	Celebi	389	389	0	-	0	0	0	0	0	0	5	Gengar	262	262	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_49	5	move	0	0	s4	m0	30990,14139,50793,50568	Heracross	194	301	0	-	0	0	0	0	0	0	5	Gengar	262	262	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_49	6	move	0	0	m0	m1	59102,46622,38933,28239	Heracross	23	301	0	-	2	0	0	0	0	0	5	Gengar	262	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_49	7	move	0	0	m2	m0	28327,18270,25518,24819	Heracross	0	301	1	fnt	0	0	0	0	0	0	4	Gengar	262	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_49	8	switch	1	0	s1	-	36811,10015,53369,59810	Claydol	262	262	0	-	0	0	0	0	0	0	4	Gengar	262	262	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_49	9	move	0	0	m3	m1	5136,20378,61743,26225	Claydol	0	262	1	fnt	0	0	0	0	0	0	3	Gengar	262	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_49	10	switch	1	0	s4	-	22576,45131,65219,33368	Celebi	389	389	0	-	0	0	0	0	0	0	3	Gengar	262	262	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_49	11	move	0	0	m2	m3	29312,23441,5537,60149	Celebi	143	389	0	-	0	0	0	0	0	0	3	Gengar	0	262	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_49	12	switch	0	1	-	s1	52329,25862,63608,28268	Celebi	167	389	0	-	0	0	0	0	0	0	3	Jirachi	341	341	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_49	13	move	0	0	m1	m3	30417,50112,34060,57664	Celebi	160	389	0	-	0	0	1	1	0	0	3	Jirachi	341	341	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_49	14	move	0	0	s2	s5	57163,62153,35718,48387	Metagross	343	343	0	-	0	0	0	0	0	0	3	Dugtrio	211	211	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_49	15	move	0	0	m0	s5	44758,2464,44563,57958	Metagross	343	343	0	-	1	0	0	0	0	0	3	Jirachi	285	341	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_49	16	move	0	0	m0	m3	43209,65253,22773,25998	Metagross	315	343	0	-	1	0	0	0	0	0	3	Jirachi	191	341	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_49	17	move	0	0	m2	m3	32317,39610,46796,52150	Metagross	287	343	0	-	1	0	0	0	0	0	3	Jirachi	169	341	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_49	18	move	0	0	m2	s5	37958,52878,15683,22037	Metagross	308	343	0	-	1	0	0	0	0	0	3	Dugtrio	29	211	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_49	19	move	0	0	m2	m3	60033,16808,42218,19168	Metagross	308	343	0	-	1	0	0	0	0	0	3	Dugtrio	0	211	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_49	20	switch	0	1	-	s5	1640,44072,65224,2339	Metagross	329	343	0	-	1	0	0	0	0	0	3	Jirachi	190	341	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_49	21	move	0	0	s2	m0	36104,53793,63411,49414	Celebi	118	389	0	-	0	0	0	0	0	0	3	Jirachi	211	341	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_49	22	move	0	0	m0	m2	39000,46874,59413,52794	Celebi	0	389	1	fnt	0	0	0	0	0	0	2	Jirachi	211	341	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_49	23	switch	1	0	s2	-	20007,2636,22452,1445	Metagross	343	343	0	-	0	0	0	0	0	0	2	Jirachi	232	341	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_49	24	move	0	0	m2	m1	49760,50765,51389,59460	Metagross	122	343	0	brn	0	0	0	0	0	0	2	Jirachi	217	341	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_49	25	move	0	0	m2	m0	2560,19909,5714,18335	Metagross	74	343	0	brn	0	0	0	0	0	0	2	Jirachi	201	341	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_49	26	move	0	0	m3	m2	25049,56494,1145,48660	Metagross	0	343	1	fnt	0	0	0	0	0	0	1	Jirachi	73	341	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_49	27	switch	1	0	s5	-	7631,34421,36211,20647	Salamence	337	337	0	-	0	0	0	0	0	0	1	Jirachi	94	341	0	-	-1	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_49	28	move	0	0	m2	m3	10140,9254,22392,4476	Salamence	309	337	0	-	0	0	0	0	0	0	1	Jirachi	0	341	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_49	29	switch	0	1	-	s2	7267,3460,36420,57519	Salamence	330	337	0	-	0	0	0	0	0	0	1	Suicune	404	404	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_49	30	move	0	0	m2	m3	30644,44416,65353,6071	Salamence	0	337	1	-	0	0	0	0	0	0	0	Suicune	358	404	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+END	ab_0_49	1	p2
+L	ab_0_49	0	|t:|<NORMALIZED>
+L	ab_0_49	1	|gametype|singles
+L	ab_0_49	2	|player|p1|P1||
+L	ab_0_49	3	|player|p2|P2||
+L	ab_0_49	4	|gen|3
+L	ab_0_49	5	|tier|[Gen 3] Custom Game
+L	ab_0_49	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_49	7	|
+L	ab_0_49	8	|t:|<NORMALIZED>
+L	ab_0_49	9	|teamsize|p1|6
+L	ab_0_49	10	|teamsize|p2|6
+L	ab_0_49	11	|start
+L	ab_0_49	12	|switch|p1a: Swampert|Swampert, M|401/401
+L	ab_0_49	13	|switch|p2a: Zapdos|Zapdos|375/375
+L	ab_0_49	14	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_49	15	|turn|1
+L	ab_0_49	16	|
+L	ab_0_49	17	|t:|<NORMALIZED>
+L	ab_0_49	18	|move|p2a: Zapdos|Toxic|p1a: Swampert
+L	ab_0_49	19	|-status|p1a: Swampert|tox
+L	ab_0_49	20	|move|p1a: Swampert|Ice Beam|p2a: Zapdos
+L	ab_0_49	21	|-supereffective|p2a: Zapdos
+L	ab_0_49	22	|-damage|p2a: Zapdos|180/375
+L	ab_0_49	23	|
+L	ab_0_49	24	|-heal|p2a: Zapdos|203/375|[from] item: Leftovers
+L	ab_0_49	25	|-damage|p1a: Swampert|376/401 tox|[from] psn
+L	ab_0_49	26	|upkeep
+L	ab_0_49	27	|turn|2
+L	ab_0_49	28	|
+L	ab_0_49	29	|t:|<NORMALIZED>
+L	ab_0_49	30	|move|p2a: Zapdos|Thunderbolt|p1a: Swampert
+L	ab_0_49	31	|-immune|p1a: Swampert
+L	ab_0_49	32	|move|p1a: Swampert|Hydro Pump|p2a: Zapdos
+L	ab_0_49	33	|-damage|p2a: Zapdos|0 fnt
+L	ab_0_49	34	|faint|p2a: Zapdos
+L	ab_0_49	35	|
+L	ab_0_49	36	|t:|<NORMALIZED>
+L	ab_0_49	37	|switch|p2a: Gengar|Gengar, M|262/262
+L	ab_0_49	38	|
+L	ab_0_49	39	|-heal|p1a: Swampert|401/401 tox|[from] item: Leftovers
+L	ab_0_49	40	|-damage|p1a: Swampert|351/401 tox|[from] psn
+L	ab_0_49	41	|upkeep
+L	ab_0_49	42	|turn|3
+L	ab_0_49	43	|
+L	ab_0_49	44	|t:|<NORMALIZED>
+L	ab_0_49	45	|move|p2a: Gengar|Hidden Power|p1a: Swampert
+L	ab_0_49	46	|debug|BP: 70
+L	ab_0_49	47	|-supereffective|p1a: Swampert
+L	ab_0_49	48	|-damage|p1a: Swampert|15/401 tox
+L	ab_0_49	49	|move|p1a: Swampert|Earthquake|p2a: Gengar
+L	ab_0_49	50	|-immune|p2a: Gengar
+L	ab_0_49	51	|
+L	ab_0_49	52	|-heal|p1a: Swampert|40/401 tox|[from] item: Leftovers
+L	ab_0_49	53	|-damage|p1a: Swampert|0 fnt|[from] psn
+L	ab_0_49	54	|faint|p1a: Swampert
+L	ab_0_49	55	|upkeep
+L	ab_0_49	56	|
+L	ab_0_49	57	|t:|<NORMALIZED>
+L	ab_0_49	58	|switch|p1a: Celebi|Celebi|389/389
+L	ab_0_49	59	|turn|4
+L	ab_0_49	60	|
+L	ab_0_49	61	|t:|<NORMALIZED>
+L	ab_0_49	62	|switch|p1a: Heracross|Heracross, M|301/301
+L	ab_0_49	63	|move|p2a: Gengar|Thunderbolt|p1a: Heracross
+L	ab_0_49	64	|-damage|p1a: Heracross|176/301
+L	ab_0_49	65	|
+L	ab_0_49	66	|-heal|p1a: Heracross|194/301|[from] item: Leftovers
+L	ab_0_49	67	|upkeep
+L	ab_0_49	68	|turn|5
+L	ab_0_49	69	|
+L	ab_0_49	70	|t:|<NORMALIZED>
+L	ab_0_49	71	|move|p2a: Gengar|Fire Punch|p1a: Heracross
+L	ab_0_49	72	|-supereffective|p1a: Heracross
+L	ab_0_49	73	|-damage|p1a: Heracross|5/301
+L	ab_0_49	74	|move|p1a: Heracross|Swords Dance|p1a: Heracross
+L	ab_0_49	75	|-boost|p1a: Heracross|atk|2
+L	ab_0_49	76	|
+L	ab_0_49	77	|-heal|p1a: Heracross|23/301|[from] item: Leftovers
+L	ab_0_49	78	|upkeep
+L	ab_0_49	79	|turn|6
+L	ab_0_49	80	|
+L	ab_0_49	81	|t:|<NORMALIZED>
+L	ab_0_49	82	|move|p2a: Gengar|Thunderbolt|p1a: Heracross
+L	ab_0_49	83	|-crit|p1a: Heracross
+L	ab_0_49	84	|-damage|p1a: Heracross|0 fnt
+L	ab_0_49	85	|faint|p1a: Heracross
+L	ab_0_49	86	|
+L	ab_0_49	87	|t:|<NORMALIZED>
+L	ab_0_49	88	|switch|p1a: Claydol|Claydol|262/262
+L	ab_0_49	89	|
+L	ab_0_49	90	|upkeep
+L	ab_0_49	91	|turn|7
+L	ab_0_49	92	|
+L	ab_0_49	93	|t:|<NORMALIZED>
+L	ab_0_49	94	|move|p2a: Gengar|Fire Punch|p1a: Claydol
+L	ab_0_49	95	|-damage|p1a: Claydol|189/262
+L	ab_0_49	96	|move|p1a: Claydol|Explosion|p2a: Gengar
+L	ab_0_49	97	|-immune|p2a: Gengar
+L	ab_0_49	98	|faint|p1a: Claydol
+L	ab_0_49	99	|
+L	ab_0_49	100	|t:|<NORMALIZED>
+L	ab_0_49	101	|switch|p1a: Celebi|Celebi|389/389
+L	ab_0_49	102	|
+L	ab_0_49	103	|upkeep
+L	ab_0_49	104	|turn|8
+L	ab_0_49	105	|
+L	ab_0_49	106	|t:|<NORMALIZED>
+L	ab_0_49	107	|move|p2a: Gengar|Explosion|p1a: Celebi
+L	ab_0_49	108	|-damage|p1a: Celebi|143/389
+L	ab_0_49	109	|faint|p2a: Gengar
+L	ab_0_49	110	|
+L	ab_0_49	111	|t:|<NORMALIZED>
+L	ab_0_49	112	|switch|p2a: Jirachi|Jirachi|341/341
+L	ab_0_49	113	|
+L	ab_0_49	114	|-heal|p1a: Celebi|167/389|[from] item: Leftovers
+L	ab_0_49	115	|upkeep
+L	ab_0_49	116	|turn|9
+L	ab_0_49	117	|
+L	ab_0_49	118	|t:|<NORMALIZED>
+L	ab_0_49	119	|move|p2a: Jirachi|Hidden Power|p1a: Celebi
+L	ab_0_49	120	|debug|BP: 70
+L	ab_0_49	121	|-resisted|p1a: Celebi
+L	ab_0_49	122	|-damage|p1a: Celebi|136/389
+L	ab_0_49	123	|move|p1a: Celebi|Calm Mind|p1a: Celebi
+L	ab_0_49	124	|-boost|p1a: Celebi|spa|1
+L	ab_0_49	125	|-boost|p1a: Celebi|spd|1
+L	ab_0_49	126	|
+L	ab_0_49	127	|-heal|p1a: Celebi|160/389|[from] item: Leftovers
+L	ab_0_49	128	|upkeep
+L	ab_0_49	129	|turn|10
+L	ab_0_49	130	|
+L	ab_0_49	131	|t:|<NORMALIZED>
+L	ab_0_49	132	|switch|p2a: Dugtrio|Dugtrio, M|211/211
+L	ab_0_49	133	|switch|p1a: Metagross|Metagross|343/343
+L	ab_0_49	134	|
+L	ab_0_49	135	|upkeep
+L	ab_0_49	136	|turn|11
+L	ab_0_49	137	|
+L	ab_0_49	138	|t:|<NORMALIZED>
+L	ab_0_49	139	|switch|p2a: Jirachi|Jirachi|341/341
+L	ab_0_49	140	|move|p1a: Metagross|Meteor Mash|p2a: Jirachi
+L	ab_0_49	141	|-resisted|p2a: Jirachi
+L	ab_0_49	142	|-damage|p2a: Jirachi|264/341
+L	ab_0_49	143	|-boost|p1a: Metagross|atk|1
+L	ab_0_49	144	|
+L	ab_0_49	145	|-heal|p2a: Jirachi|285/341|[from] item: Leftovers
+L	ab_0_49	146	|upkeep
+L	ab_0_49	147	|turn|12
+L	ab_0_49	148	|
+L	ab_0_49	149	|t:|<NORMALIZED>
+L	ab_0_49	150	|move|p2a: Jirachi|Hidden Power|p1a: Metagross
+L	ab_0_49	151	|debug|BP: 70
+L	ab_0_49	152	|-damage|p1a: Metagross|294/343
+L	ab_0_49	153	|move|p1a: Metagross|Meteor Mash|p2a: Jirachi
+L	ab_0_49	154	|-resisted|p2a: Jirachi
+L	ab_0_49	155	|-damage|p2a: Jirachi|170/341
+L	ab_0_49	156	|
+L	ab_0_49	157	|-heal|p2a: Jirachi|191/341|[from] item: Leftovers
+L	ab_0_49	158	|-heal|p1a: Metagross|315/343|[from] item: Leftovers
+L	ab_0_49	159	|upkeep
+L	ab_0_49	160	|turn|13
+L	ab_0_49	161	|
+L	ab_0_49	162	|t:|<NORMALIZED>
+L	ab_0_49	163	|move|p2a: Jirachi|Hidden Power|p1a: Metagross
+L	ab_0_49	164	|debug|BP: 70
+L	ab_0_49	165	|-damage|p1a: Metagross|266/343
+L	ab_0_49	166	|move|p1a: Metagross|Psychic|p2a: Jirachi
+L	ab_0_49	167	|-resisted|p2a: Jirachi
+L	ab_0_49	168	|-damage|p2a: Jirachi|148/341
+L	ab_0_49	169	|
+L	ab_0_49	170	|-heal|p2a: Jirachi|169/341|[from] item: Leftovers
+L	ab_0_49	171	|-heal|p1a: Metagross|287/343|[from] item: Leftovers
+L	ab_0_49	172	|upkeep
+L	ab_0_49	173	|turn|14
+L	ab_0_49	174	|
+L	ab_0_49	175	|t:|<NORMALIZED>
+L	ab_0_49	176	|switch|p2a: Dugtrio|Dugtrio, M|211/211
+L	ab_0_49	177	|move|p1a: Metagross|Psychic|p2a: Dugtrio
+L	ab_0_49	178	|-damage|p2a: Dugtrio|29/211
+L	ab_0_49	179	|
+L	ab_0_49	180	|-heal|p1a: Metagross|308/343|[from] item: Leftovers
+L	ab_0_49	181	|upkeep
+L	ab_0_49	182	|turn|15
+L	ab_0_49	183	|
+L	ab_0_49	184	|t:|<NORMALIZED>
+L	ab_0_49	185	|move|p2a: Dugtrio|Rock Slide|p1a: Metagross|[miss]
+L	ab_0_49	186	|-miss|p2a: Dugtrio|p1a: Metagross
+L	ab_0_49	187	|move|p1a: Metagross|Psychic|p2a: Dugtrio
+L	ab_0_49	188	|-damage|p2a: Dugtrio|0 fnt
+L	ab_0_49	189	|faint|p2a: Dugtrio
+L	ab_0_49	190	|
+L	ab_0_49	191	|t:|<NORMALIZED>
+L	ab_0_49	192	|switch|p2a: Jirachi|Jirachi|169/341
+L	ab_0_49	193	|
+L	ab_0_49	194	|-heal|p2a: Jirachi|190/341|[from] item: Leftovers
+L	ab_0_49	195	|-heal|p1a: Metagross|329/343|[from] item: Leftovers
+L	ab_0_49	196	|upkeep
+L	ab_0_49	197	|turn|16
+L	ab_0_49	198	|
+L	ab_0_49	199	|t:|<NORMALIZED>
+L	ab_0_49	200	|switch|p1a: Celebi|Celebi|160/389
+L	ab_0_49	201	|debug|doubling secondary chance
+L	ab_0_49	202	|move|p2a: Jirachi|Body Slam|p1a: Celebi
+L	ab_0_49	203	|-damage|p1a: Celebi|94/389
+L	ab_0_49	204	|
+L	ab_0_49	205	|-heal|p2a: Jirachi|211/341|[from] item: Leftovers
+L	ab_0_49	206	|-heal|p1a: Celebi|118/389|[from] item: Leftovers
+L	ab_0_49	207	|upkeep
+L	ab_0_49	208	|turn|17
+L	ab_0_49	209	|
+L	ab_0_49	210	|t:|<NORMALIZED>
+L	ab_0_49	211	|debug|doubling secondary chance
+L	ab_0_49	212	|move|p2a: Jirachi|Ice Punch|p1a: Celebi
+L	ab_0_49	213	|-supereffective|p1a: Celebi
+L	ab_0_49	214	|-damage|p1a: Celebi|0 fnt
+L	ab_0_49	215	|faint|p1a: Celebi
+L	ab_0_49	216	|
+L	ab_0_49	217	|t:|<NORMALIZED>
+L	ab_0_49	218	|switch|p1a: Metagross|Metagross|329/343
+L	ab_0_49	219	|
+L	ab_0_49	220	|-heal|p2a: Jirachi|232/341|[from] item: Leftovers
+L	ab_0_49	221	|-heal|p1a: Metagross|343/343|[from] item: Leftovers
+L	ab_0_49	222	|upkeep
+L	ab_0_49	223	|turn|18
+L	ab_0_49	224	|
+L	ab_0_49	225	|t:|<NORMALIZED>
+L	ab_0_49	226	|debug|doubling secondary chance
+L	ab_0_49	227	|move|p2a: Jirachi|Fire Punch|p1a: Metagross
+L	ab_0_49	228	|-supereffective|p1a: Metagross
+L	ab_0_49	229	|-damage|p1a: Metagross|143/343
+L	ab_0_49	230	|-status|p1a: Metagross|brn
+L	ab_0_49	231	|move|p1a: Metagross|Psychic|p2a: Jirachi
+L	ab_0_49	232	|-resisted|p2a: Jirachi
+L	ab_0_49	233	|-damage|p2a: Jirachi|196/341
+L	ab_0_49	234	|
+L	ab_0_49	235	|-heal|p2a: Jirachi|217/341|[from] item: Leftovers
+L	ab_0_49	236	|-heal|p1a: Metagross|164/343 brn|[from] item: Leftovers
+L	ab_0_49	237	|-damage|p1a: Metagross|122/343 brn|[from] brn
+L	ab_0_49	238	|upkeep
+L	ab_0_49	239	|turn|19
+L	ab_0_49	240	|
+L	ab_0_49	241	|t:|<NORMALIZED>
+L	ab_0_49	242	|debug|doubling secondary chance
+L	ab_0_49	243	|move|p2a: Jirachi|Body Slam|p1a: Metagross
+L	ab_0_49	244	|-resisted|p1a: Metagross
+L	ab_0_49	245	|-damage|p1a: Metagross|95/343 brn
+L	ab_0_49	246	|debug|move failed because it did nothing
+L	ab_0_49	247	|move|p1a: Metagross|Psychic|p2a: Jirachi
+L	ab_0_49	248	|-resisted|p2a: Jirachi
+L	ab_0_49	249	|-damage|p2a: Jirachi|180/341
+L	ab_0_49	250	|
+L	ab_0_49	251	|-heal|p2a: Jirachi|201/341|[from] item: Leftovers
+L	ab_0_49	252	|-heal|p1a: Metagross|116/343 brn|[from] item: Leftovers
+L	ab_0_49	253	|-damage|p1a: Metagross|74/343 brn|[from] brn
+L	ab_0_49	254	|upkeep
+L	ab_0_49	255	|turn|20
+L	ab_0_49	256	|
+L	ab_0_49	257	|t:|<NORMALIZED>
+L	ab_0_49	258	|debug|doubling secondary chance
+L	ab_0_49	259	|move|p2a: Jirachi|Ice Punch|p1a: Metagross
+L	ab_0_49	260	|-resisted|p1a: Metagross
+L	ab_0_49	261	|-damage|p1a: Metagross|23/343 brn
+L	ab_0_49	262	|move|p1a: Metagross|Explosion|p2a: Jirachi
+L	ab_0_49	263	|-resisted|p2a: Jirachi
+L	ab_0_49	264	|-damage|p2a: Jirachi|73/341
+L	ab_0_49	265	|faint|p1a: Metagross
+L	ab_0_49	266	|
+L	ab_0_49	267	|t:|<NORMALIZED>
+L	ab_0_49	268	|switch|p1a: Salamence|Salamence, M|337/337
+L	ab_0_49	269	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_49	270	|-unboost|p2a: Jirachi|atk|1
+L	ab_0_49	271	|
+L	ab_0_49	272	|-heal|p2a: Jirachi|94/341|[from] item: Leftovers
+L	ab_0_49	273	|upkeep
+L	ab_0_49	274	|turn|21
+L	ab_0_49	275	|
+L	ab_0_49	276	|t:|<NORMALIZED>
+L	ab_0_49	277	|move|p2a: Jirachi|Hidden Power|p1a: Salamence
+L	ab_0_49	278	|debug|BP: 70
+L	ab_0_49	279	|-resisted|p1a: Salamence
+L	ab_0_49	280	|-damage|p1a: Salamence|309/337
+L	ab_0_49	281	|move|p1a: Salamence|Flamethrower|p2a: Jirachi
+L	ab_0_49	282	|-supereffective|p2a: Jirachi
+L	ab_0_49	283	|-damage|p2a: Jirachi|0 fnt
+L	ab_0_49	284	|faint|p2a: Jirachi
+L	ab_0_49	285	|
+L	ab_0_49	286	|t:|<NORMALIZED>
+L	ab_0_49	287	|switch|p2a: Suicune|Suicune|404/404
+L	ab_0_49	288	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_49	289	|
+L	ab_0_49	290	|-heal|p1a: Salamence|330/337|[from] item: Leftovers
+L	ab_0_49	291	|upkeep
+L	ab_0_49	292	|turn|22
+L	ab_0_49	293	|
+L	ab_0_49	294	|t:|<NORMALIZED>
+L	ab_0_49	295	|move|p1a: Salamence|Flamethrower|p2a: Suicune
+L	ab_0_49	296	|-resisted|p2a: Suicune
+L	ab_0_49	297	|-damage|p2a: Suicune|358/404
+L	ab_0_49	298	|move|p2a: Suicune|Ice Beam|p1a: Salamence
+L	ab_0_49	299	|-supereffective|p1a: Salamence
+L	ab_0_49	300	|-damage|p1a: Salamence|0 fnt
+L	ab_0_49	301	|faint|p1a: Salamence
+L	ab_0_49	302	|
+L	ab_0_49	303	|win|P2

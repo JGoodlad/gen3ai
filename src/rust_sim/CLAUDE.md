@@ -2791,6 +2791,123 @@ its first bounded smoke (see the fix queue below).
   `--mode random --battles 200 --master-seed S` (reproducible bounded hunt);
   replay any repro with `target/release/ab_replay <repro-dir>`.
 
+### The OMNISCIENT BYTE differential (`--protocol`, `gen3_omniscient_byte_fuzz_v1`)
+
+The A/B fuzzer above checks a RECONSTRUCTED per-decision STATE tuple + seed + winner. `--protocol`
+turns it into a **literal `|...|` protocol byte differential**: per battle it TEES the REAL omniscient
+filtered log (`gen_e2e_fuzz.js::runBattle` now attaches `rec.lines`, `|t:|`-normalized) into the chunk
+golden (`emitBattle` appends `FMT`/`L` rows in protocol mode only — the state golden is untouched), and
+`ab_replay --protocol` replays via `run_full_battle_logged`, filters BOTH sides through a shared DENYLIST
+(drop `debug`/`error`, normalize `|t:|` — a superset of `protocol_test.rs`'s allowlist, so newly-emitted
+batch-4c/5/6/snatch line types are diffed automatically), and first-divergence-diffs to a NEW
+**`kind:"protocol"`** verdict (reported ONLY after state/seed/winner match, so a draw bug still surfaces
+as `seed`). `--format {gen3customgame,gen3ou}` threads the run format (gen3ou = the clause-shuffle draw
+path + the OU framing, reframed via the now-`pub bridge::reframe` before the diff). The picker is widened
+to admit typed **Hidden Power** in `pool` mode (`isModeledMove(id, allowHiddenPower)` — engine models
+typed HP at fixed BP 70, byte-safe for gen3ou-validated 70-BP teams; `random` mode's random IVs keep it
+excluded). Genders are pinned (`pinGenders`) so the sim never draws one at construction (the switch-details
+construction-window gap). Isolated build + run:
+`CARGO_TARGET_DIR=/tmp/pokesim_target_bytefuzz cargo build --release --bin ab_replay` then
+`POKESIM_AB_REPLAY_BIN=/tmp/pokesim_target_bytefuzz/release/ab_replay node harness/ab_fuzz.js --mode pool
+--protocol --format {gen3customgame|gen3ou} --battles N`. FAULT-INJECTION PROVEN (a mangled
+`[from] item: Leftovers` tag → 6/6 flagged `kind=protocol` at the exact `-heal` line; restored
+byte-identical via cp-aside).
+
+**Byte bugs FIXED (revert-pinned in `tests/protocol_byte_fuzz_test.rs`, all observation-only — the full
+seed suite stays BYTE-IDENTICAL, e2e md5 unchanged):**
+- **BF1 typed-HP move-name leak** — the port rendered the typed dex name `Hidden Power Ice`; gen-3 HIDES
+  the HP type → `run_move` canonicalizes any `hiddenpower*` id to the bare `Hidden Power` for the announce.
+- **BF2 Toxic residual `[from]` cause** — the DoT chip was `[from] tox`; Showdown reports `[from] psn`
+  (the HP-field status token stays `tox`). A LATENT gap (the constructed protocol golden never realized a
+  Toxic residual).
+- **BF3 self/side-move announce target** — a NON-foe-directed move (`allySide`/`all`/`allyTeam` — Light
+  Screen / Sunny Day / Rain Dance / Perish Song / Heal Bell) renders the USER as the `|move|` target, not
+  the foe (`status_move_announce_renders_user`).
+- **BF4 Pursuit interrupt `[from] Pursuit`** — the interrupt strike's `|move|` announce now folds
+  `|[from] Pursuit` (via `set_next_move_from`).
+
+**The STATUS-MOVE EMISSION-FORM SWEEP (2026-07-17) — pool byte-clean rate 27% → ~95%.** A pool-mode
+`--protocol` fuzz over both formats surfaced ~8 general status-move / did-nothing emission forms that hit
+nearly every real-team battle. All FIXED + revert-pinned in `protocol_byte_fuzz_test.rs` (13 pins;
+`sleep_move_status_carries_from_move` / `toxic_into_steel_reports_immune` / `natural_cure_emits_curestatus_on_switch_out`
+/ `recover_at_full_hp_emits_still_and_fail_heal` / `beat_up_emits_per_strike_activate_in_customgame` /
+`protect_blocks_status_move_before_the_immune_report` / `shiny_mon_shows_the_shiny_details_flag` /
+`knock_off_hint_fires_once_per_battle` / `stat_drop_blocked_by_substitute_emits_still_and_fail`), **all
+observation-only — the full seed suite stays BYTE-IDENTICAL (cargo test green, e2e md5 unchanged):**
+- **`||[still]` did-nothing FAIL framing + the `-fail` line** (the sim `attrLastMove('[still]')`s the
+  announce + `runMoveEffects` `-fail`): Recover/Soft-Boiled@full → `[still]` + `-fail|<user>|heal` (the
+  `heal` sub-tag); Toxic-vs-Substitute / **STAT-DROP-vs-Substitute** (Screech/Charm/Metal Sound/&c. into a
+  non-`bypasssub` sub — the FORM-1 residual the byte fuzzer surfaced last, `BF-F15`, captured
+  `harness/probe_statdrop_substitute.js`; the stat-drop arm's sub-block used to return emitting NOTHING) /
+  repeat-Protect-or-willAct-fail / double-Wish / no-bench Roar /
+  Refresh-no-status / weather-set-into-same (Rain Dance) / Light-Screen-already-up / Beat-Up-fizzle →
+  `[still]` + BARE `-fail|<user>`. (The Protect willAct-fail — a Protect after the foe SWITCHED — also
+  emits `-fail`; the double-Wish `-fail` corrected a batch-3 comment that wrongly said "no -fail".)
+- **status-TYPE-immunity `-immune`** (Toxic→Steel/Poison, Will-O-Wisp→Fire) — the `try_set_status`
+  `status_type_immune` gate emits `|-immune|<target>` when the source is a status MOVE (`announce_immune_block`
+  == the sim's `sourceEffect?.status`); a secondary-inflicted type-immune status stays silent.
+- **Protect-before-immunity ORDER** — `run_status_move` reordered to match gen3 `tryMoveHit`: on a HIT the
+  `runEvent('TryHit')` handlers (Protect → `-activate Protect`; Soundproof) win BEFORE the naturalImmunity
+  `-immune`; on a MISS naturalImmunity still wins (`-immune`, no `-miss`). So Thunder Wave into a
+  Ground-typed PROTECTING foe shows `-activate Protect`, not `-immune`.
+- **sleep `-status …|[from] move: <Move>`** — threaded the source move name into `try_set_status_impl`; only
+  SLEEP carries it (par/psn/brn/frz from a move stay bare, per `conditions.js` per-status `onStart`).
+- **Natural Cure `-curestatus …|[from] ability: Natural Cure|[silent]`** — emitted in `execute_switch`
+  BEFORE the replacement `|switch|`/`|drag|` line (`curestatus_from_ability_silent`).
+- **confusion `-start|X|confusion` / `-activate|X|confusion` / `-end|X|confusion` + the self-hit
+  `-damage|…|[from] confusion`** — the `add_confusion` onStart, the `on_before_move` reveal + the counter-0
+  `onEnd`, and the self-hit damage line.
+- **fire-move thaw `-curestatus|<t>|frz|[msg]`** (`frz.onDamagingHit` `cureStatus()`).
+- **the delta-0 `-boost`/`-unboost` at the ±6 cap** — a PRIMARY self-boost MOVE emits `|-boost|…|spe|0`
+  (Agility@+6) via `boost_applied` (the sim's `boost()` `!isSecondary && !isSelf` branch); the Clear
+  Body / White Smoke / Hyper Cutter `-fail|unboost|[from] ability|[of]` for a PRIMARY foe-drop (Screech).
+- **CONTACT-PROC status is BARE** (`|-status|<atk>|slp`, not `[from] ability: Effect Spore`) — the sim's
+  `source.trySetStatus(status, target)` passes NO sourceEffect; the port let `try_set_status` emit the bare
+  form (CONTRAST Synchronize, which pre-emits `-activate ability: Synchronize`). Draws unchanged.
+- **Volt/Water Absorb `-heal` (not `-immune`) when the heal LANDS** — `apply_absorb_heal` now reports
+  whether it healed; a below-full holder shows `-heal|…|[from] ability: Volt Absorb|[of] <user>`, only a
+  full-HP holder shows `-immune|…|[from] ability` (the F3 capture had only exercised the full-HP case).
+- **Beat Up per-strike `-activate|<user>|move: Beat Up|[of] <ally>`** — gen3customgame EMITS it (the mod's
+  `condition.onModifySpA`, gated on `!beatupnicknamesmod` — a gen3 Standard rule present in gen3ou, absent
+  in customgame → aligned with `sleep_clause`). The task's "gen3 does not emit it" claim was WRONG; the
+  omniscient stream + resolved dist confirm the customgame emit.
+- **shiny details flag** (`|switch|…|Quagsire, M, shiny|…`) — `switch_details` appends `, shiny` from
+  `set.shiny`.
+- **Knock Off `-hint` once per battle** — `ProtocolBuilder::hint` now dedups per battle (a `HashSet`,
+  mirroring the sim's `this.hints`), so the Gens-3-4 Knock Off note fires once, not per Knock Off.
+- **gen3ou clause `-message`** — a Sleep-Clause-blocked 2nd sleep emits `|-message|Sleep Clause Mod
+  activated.` + a deduped `|-hint|`; a Freeze-Clause-blocked 2nd freeze emits `|-message|Freeze Clause
+  activated.` (rulesets.js). gen3customgame has no clauses → no message (so the e2e/seed suites, all
+  gen3customgame, are untouched).
+
+**The FROZEN regression CORPUS (`tests/vectors/byte_fuzz_corpus/`, a `cargo test` gate).** The byte
+fuzzer FINDS emission divergences but isn't itself a test gate, so the fixed forms are frozen as a
+corpus of ≥15 self-contained full-battle fuzzer repros (each a `SCEN`/`TEAM`/`FMT`/`INIT`/`DEC`/`END`/`L`
+chunk — a repro dir's `battle.txt`), named by the form each guards
+(`01_recover_at_full_still_fail.txt`, `02_toxic_into_steel_immune.txt`,
+`03_natural_cure_switchout_curestatus.txt`, `04_sleep_from_move.txt`, `05_confusion_start.txt`,
+`06_beatup_activate.txt`, `07_protect_blocks_status_activate.txt`, `08_shiny_details.txt`,
+`09_toxic_residual_from_psn.txt`, … through the gen3ou `18_freeze_clause_message_ou.txt` /
+`19_natural_cure_ou.txt` / `20_protect_activate_ou.txt`; 20 fixtures, both formats). **`tests/byte_fuzz_corpus_test.rs`**
+auto-discovers every `*.txt`, invokes the built `ab_replay` binary (`env!("CARGO_BIN_EXE_ab_replay")`)
+in byte mode on each, and asserts NO `kind=protocol` divergence (a floor of `len >= 15` keeps the corpus
+from silently shrinking; a per-file panic names the diverging file + line). FAULT-INJECTION PROVEN
+(a Toxic-residual `[from] psn`→`tox` emit perturbation → the gate FAILS naming
+`02_toxic_into_steel_immune.txt` at the exact line; restored byte-identical). To add a fixture, drop a
+clean fuzzer repro `battle.txt` in the folder (see its `README.md`) — the test auto-discovers it. The
+`ab_fuzz_out*` run dirs are gitignored — never commit run output.
+
+**Residual byte divergences (HONESTLY UN-fixed — genuinely-deep / rare):** the switch-in `-weather` /
+Pressure `-ability [silent]` **`[of]` p1-vs-p2 ATTRIBUTION** on a same-species speed-TIED lead (Tyranitar
+mirror / Zapdos mirror) — the KNOWN turn-0 construction-shuffle speed-tie gap (the port doesn't model the
+turn-0 construction window; a seedless deferral, ~2-3% of pool battles, masks the whole battle when it
+hits at line ~14); the end-of-turn **Leftovers `-heal` emit ORDER on a residual speed TIE** (two
+same-species same-para mons — the residual handler tie-shuffle permutation the emit loop doesn't follow;
+~1 in 300, seed matches). SEPARATELY, in `pool` mode ~1.5% of battles hit a GENUINE state/seed/status
+divergence (an hp off-by-1 cascading to a freeze/seed) — the **HP fixed-BP-70 caveat materializing**: a few
+gen3ou pool teams carry Hidden Power with non-70-BP IVs, which the engine (fixed BP 70) mis-damages; keep
+HP out of a byte run that must be state-clean, or restrict to teams verified 70-BP.
+
 ## Bridge / request A/B fuzzer (the per-side + `|request|` parity hunter)
 
 The **PER-SIDE sibling** of `ab_fuzz.js` (which A/Bs the OMNISCIENT stream): it verifies, over

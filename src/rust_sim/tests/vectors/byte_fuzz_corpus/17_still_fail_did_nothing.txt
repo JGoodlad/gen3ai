@@ -1,0 +1,391 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_12
+TEAM	ab_0_12	p1	Zapdos||Leftovers|Pressure|Thunderbolt,Roar,Toxic,Rest|Calm|248,,,,164,96|N||||]Blissey||Leftovers|NaturalCure|SoftBoiled,Thunderbolt,IceBeam,Sing|Modest|,,252,100,,156|F||||]Skarmory||Leftovers|KeenEye|Protect,Toxic,Whirlwind,Spikes|Careful|240,,,,244,24|M||||]Dugtrio||ChoiceBand|ArenaTrap|Earthquake,RockSlide,AerialAce,HiddenPowerBug|Jolly|4,252,,,,252|M|,30,30,,30,|||,Bug,,,,]Gengar||Leftovers|Levitate|Thunderbolt,IcePunch,WillOWisp,GigaDrain|Timid|248,,52,,112,96|M|,0,,,,|||]Metagross||Leftovers|ClearBody|MeteorMash,HiddenPowerFire,Psychic,Explosion|Quiet|184,,,224,,100|N|,30,,30,,30|||,Fire,,,,
+TEAM	ab_0_12	p2	Tyranitar||ChoiceBand|SandStream|BrickBreak,RockSlide,Earthquake,DoubleEdge|Jolly|,252,,,4,252|M||||]Porygon2||Leftovers|Trace|IceBeam,Thunderbolt,ThunderWave,Recover|Bold|252,,200,,56,|N|,0,,,,|||]Raikou||Leftovers|Pressure|CalmMind,Thunderbolt,HiddenPowerGrass,Crunch|Modest|,,,252,4,252|N|,2,,30,,|||,Grass,,,,]Registeel||Leftovers|ClearBody|ThunderWave,SeismicToss,Explosion,Counter|Impish|252,,136,,92,28|N||||]Swampert||Leftovers|Torrent|Surf,FocusPunch,Earthquake,Refresh|Rash|188,,4,136,,180|M||||]Salamence||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,Earthquake,RockSlide|Adamant|,116,,,212,180|M|30,30,30,30,30,|||,Flying,,,,
+FMT	ab_0_12	gen3customgame
+INIT	ab_0_12	35517,26850,14172,42638	479354521
+DEC	ab_0_12	0	move	0	0	m1	m0	12354,8401,32439,35236	Zapdos	310	383	0	-	0	0	0	0	0	0	6	Swampert	388	388	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_12	1	move	0	0	m0	m3	57370,24806,37664,60598	Zapdos	310	383	0	-	0	0	0	0	0	0	6	Swampert	388	388	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_12	2	move	0	0	m0	m0	49562,11888,23311,2837	Zapdos	208	383	0	-	0	0	0	0	0	0	6	Swampert	388	388	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_12	3	move	0	0	m0	m3	58491,40263,42686,22143	Zapdos	208	383	0	-	0	0	0	0	0	0	6	Swampert	388	388	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_12	4	move	0	0	m2	m3	44682,46792,7993,11609	Zapdos	208	383	0	-	0	0	0	0	0	0	6	Swampert	388	388	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_12	5	move	0	0	m2	m0	22640,55601,46354,18292	Zapdos	100	383	0	-	0	0	0	0	0	0	6	Swampert	364	388	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_12	6	move	0	0	m1	m0	33448,44963,10118,49441	Zapdos	0	383	1	fnt	0	0	0	0	0	0	5	Swampert	364	388	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_12	7	switch	1	0	s4	-	38925,42675,59794,31176	Gengar	323	323	0	-	0	0	0	0	0	0	5	Swampert	340	388	0	tox	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_12	8	move	0	0	m1	m3	7337,20105,12929,30607	Gengar	323	323	0	-	0	0	0	0	0	0	5	Swampert	278	388	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_12	9	move	0	0	m2	s2	63080,5387,6709,17385	Gengar	323	323	0	-	0	0	0	0	0	0	5	Raikou	281	321	0	brn	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_12	10	move	0	0	m2	m3	49459,55786,6019,12951	Gengar	107	323	0	-	0	0	0	0	0	0	5	Raikou	241	321	0	brn	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_12	11	move	0	0	m0	m1	64172,18283,51985,45243	Gengar	0	323	1	fnt	0	0	0	0	0	0	4	Raikou	241	321	0	brn	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_12	12	switch	1	0	s5	-	60935,9221,20178,27530	Metagross	347	347	0	-	0	0	0	0	0	0	4	Raikou	201	321	0	brn	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_12	13	move	0	0	m3	m2	34448,43454,50768,48512	Metagross	0	347	1	fnt	0	0	0	0	0	0	3	Raikou	0	321	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_12	14	switch	1	1	s1	s5	23178,53260,41450,57923	Blissey	651	651	0	-	-1	0	0	0	0	0	3	Salamence	330	330	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_12	15	move	0	0	m2	m0	24428,54793,65493,12454	Blissey	651	651	0	-	-1	0	0	0	0	0	3	Salamence	54	330	0	-	1	0	0	0	1	0	5	p2	0	0	0	0	0
+DEC	ab_0_12	16	move	0	0	s3	m1	12711,22069,9218,2763	Dugtrio	0	212	1	fnt	0	0	0	0	0	0	2	Salamence	54	330	0	-	1	0	0	0	1	0	5	p1	0	0	0	0	0
+DEC	ab_0_12	17	switch	1	0	s3	-	45118,50927,15432,33754	Blissey	651	651	0	-	0	0	0	0	0	0	2	Salamence	54	330	0	-	1	0	0	0	1	0	5	none	0	0	0	0	0
+DEC	ab_0_12	18	move	0	0	m1	m2	15930,24471,14427,19027	Blissey	273	651	0	-	0	0	0	0	0	0	2	Salamence	0	330	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_12	19	switch	0	1	-	s4	46080,5483,9014,23682	Blissey	273	651	0	-	0	0	0	0	0	0	2	Tyranitar	341	341	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_12	20	move	0	0	m1	m0	1464,3464,12486,9399	Blissey	0	651	1	fnt	0	0	0	0	0	0	1	Tyranitar	341	341	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_12	21	switch	1	0	s2	-	33323,65264,31994,2550	Skarmory	331	331	0	-	0	0	0	0	0	0	1	Tyranitar	341	341	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_12	22	move	0	0	m1	m0	34488,24712,40000,45397	Skarmory	243	331	0	-	0	0	0	0	0	0	1	Tyranitar	320	341	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_12	23	move	0	0	m2	m0	49861,3487,6896,36451	Skarmory	161	331	0	-	0	0	0	0	0	0	1	Swampert	302	388	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_12	24	move	0	0	m1	m3	39204,7686,29351,29085	Skarmory	181	331	0	-	0	0	0	0	0	0	1	Swampert	326	388	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_12	25	move	0	0	m2	m0	11039,64002,10176,53995	Skarmory	81	331	0	-	0	0	0	0	0	0	1	Tyranitar	299	341	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_12	26	move	0	0	m1	m3	16633,8259,50794,54812	Skarmory	0	331	1	-	0	0	0	0	0	0	0	Tyranitar	272	341	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+END	ab_0_12	1	p2
+L	ab_0_12	0	|t:|<NORMALIZED>
+L	ab_0_12	1	|gametype|singles
+L	ab_0_12	2	|player|p1|P1||
+L	ab_0_12	3	|player|p2|P2||
+L	ab_0_12	4	|gen|3
+L	ab_0_12	5	|tier|[Gen 3] Custom Game
+L	ab_0_12	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_12	7	|
+L	ab_0_12	8	|t:|<NORMALIZED>
+L	ab_0_12	9	|teamsize|p1|6
+L	ab_0_12	10	|teamsize|p2|6
+L	ab_0_12	11	|start
+L	ab_0_12	12	|switch|p1a: Zapdos|Zapdos|383/383
+L	ab_0_12	13	|switch|p2a: Tyranitar|Tyranitar, M|341/341
+L	ab_0_12	14	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_0_12	15	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_0_12	16	|turn|1
+L	ab_0_12	17	|
+L	ab_0_12	18	|t:|<NORMALIZED>
+L	ab_0_12	19	|move|p2a: Tyranitar|Brick Break|p1a: Zapdos
+L	ab_0_12	20	|-resisted|p1a: Zapdos
+L	ab_0_12	21	|-damage|p1a: Zapdos|310/383
+L	ab_0_12	22	|move|p1a: Zapdos|Roar|p2a: Tyranitar
+L	ab_0_12	23	|drag|p2a: Swampert|Swampert, M|388/388
+L	ab_0_12	24	|
+L	ab_0_12	25	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	26	|-damage|p1a: Zapdos|287/383|[from] Sandstorm
+L	ab_0_12	27	|debug|natural status immunity
+L	ab_0_12	28	|debug|weather immunity
+L	ab_0_12	29	|-heal|p1a: Zapdos|310/383|[from] item: Leftovers
+L	ab_0_12	30	|upkeep
+L	ab_0_12	31	|turn|2
+L	ab_0_12	32	|
+L	ab_0_12	33	|t:|<NORMALIZED>
+L	ab_0_12	34	|move|p1a: Zapdos|Thunderbolt|p2a: Swampert
+L	ab_0_12	35	|-immune|p2a: Swampert
+L	ab_0_12	36	|move|p2a: Swampert|Refresh||[still]
+L	ab_0_12	37	|-fail|p2a: Swampert
+L	ab_0_12	38	|debug|move failed because it did nothing
+L	ab_0_12	39	|
+L	ab_0_12	40	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	41	|-damage|p1a: Zapdos|287/383|[from] Sandstorm
+L	ab_0_12	42	|debug|natural status immunity
+L	ab_0_12	43	|debug|weather immunity
+L	ab_0_12	44	|-heal|p1a: Zapdos|310/383|[from] item: Leftovers
+L	ab_0_12	45	|upkeep
+L	ab_0_12	46	|turn|3
+L	ab_0_12	47	|
+L	ab_0_12	48	|t:|<NORMALIZED>
+L	ab_0_12	49	|move|p1a: Zapdos|Thunderbolt|p2a: Swampert
+L	ab_0_12	50	|-immune|p2a: Swampert
+L	ab_0_12	51	|move|p2a: Swampert|Surf|p1a: Zapdos
+L	ab_0_12	52	|-damage|p1a: Zapdos|208/383
+L	ab_0_12	53	|
+L	ab_0_12	54	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	55	|-damage|p1a: Zapdos|185/383|[from] Sandstorm
+L	ab_0_12	56	|debug|natural status immunity
+L	ab_0_12	57	|debug|weather immunity
+L	ab_0_12	58	|-heal|p1a: Zapdos|208/383|[from] item: Leftovers
+L	ab_0_12	59	|upkeep
+L	ab_0_12	60	|turn|4
+L	ab_0_12	61	|
+L	ab_0_12	62	|t:|<NORMALIZED>
+L	ab_0_12	63	|move|p1a: Zapdos|Thunderbolt|p2a: Swampert
+L	ab_0_12	64	|-immune|p2a: Swampert
+L	ab_0_12	65	|move|p2a: Swampert|Refresh||[still]
+L	ab_0_12	66	|-fail|p2a: Swampert
+L	ab_0_12	67	|debug|move failed because it did nothing
+L	ab_0_12	68	|
+L	ab_0_12	69	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	70	|-damage|p1a: Zapdos|185/383|[from] Sandstorm
+L	ab_0_12	71	|debug|natural status immunity
+L	ab_0_12	72	|debug|weather immunity
+L	ab_0_12	73	|-heal|p1a: Zapdos|208/383|[from] item: Leftovers
+L	ab_0_12	74	|upkeep
+L	ab_0_12	75	|turn|5
+L	ab_0_12	76	|
+L	ab_0_12	77	|t:|<NORMALIZED>
+L	ab_0_12	78	|move|p1a: Zapdos|Toxic|p2a: Swampert
+L	ab_0_12	79	|-status|p2a: Swampert|tox
+L	ab_0_12	80	|move|p2a: Swampert|Refresh|p2a: Swampert
+L	ab_0_12	81	|-curestatus|p2a: Swampert|tox|[msg]
+L	ab_0_12	82	|
+L	ab_0_12	83	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	84	|-damage|p1a: Zapdos|185/383|[from] Sandstorm
+L	ab_0_12	85	|debug|natural status immunity
+L	ab_0_12	86	|debug|weather immunity
+L	ab_0_12	87	|-heal|p1a: Zapdos|208/383|[from] item: Leftovers
+L	ab_0_12	88	|upkeep
+L	ab_0_12	89	|turn|6
+L	ab_0_12	90	|
+L	ab_0_12	91	|t:|<NORMALIZED>
+L	ab_0_12	92	|move|p1a: Zapdos|Toxic|p2a: Swampert
+L	ab_0_12	93	|-status|p2a: Swampert|tox
+L	ab_0_12	94	|move|p2a: Swampert|Surf|p1a: Zapdos
+L	ab_0_12	95	|-damage|p1a: Zapdos|100/383
+L	ab_0_12	96	|
+L	ab_0_12	97	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	98	|-damage|p1a: Zapdos|77/383|[from] Sandstorm
+L	ab_0_12	99	|debug|natural status immunity
+L	ab_0_12	100	|debug|weather immunity
+L	ab_0_12	101	|-heal|p1a: Zapdos|100/383|[from] item: Leftovers
+L	ab_0_12	102	|-damage|p2a: Swampert|364/388 tox|[from] psn
+L	ab_0_12	103	|upkeep
+L	ab_0_12	104	|turn|7
+L	ab_0_12	105	|
+L	ab_0_12	106	|t:|<NORMALIZED>
+L	ab_0_12	107	|move|p2a: Swampert|Surf|p1a: Zapdos
+L	ab_0_12	108	|-damage|p1a: Zapdos|0 fnt
+L	ab_0_12	109	|faint|p1a: Zapdos
+L	ab_0_12	110	|
+L	ab_0_12	111	|t:|<NORMALIZED>
+L	ab_0_12	112	|switch|p1a: Gengar|Gengar, M|323/323
+L	ab_0_12	113	|
+L	ab_0_12	114	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	115	|-damage|p1a: Gengar|303/323|[from] Sandstorm
+L	ab_0_12	116	|debug|natural status immunity
+L	ab_0_12	117	|debug|weather immunity
+L	ab_0_12	118	|-heal|p1a: Gengar|323/323|[from] item: Leftovers
+L	ab_0_12	119	|-heal|p2a: Swampert|388/388 tox|[from] item: Leftovers
+L	ab_0_12	120	|-damage|p2a: Swampert|340/388 tox|[from] psn
+L	ab_0_12	121	|upkeep
+L	ab_0_12	122	|turn|8
+L	ab_0_12	123	|
+L	ab_0_12	124	|t:|<NORMALIZED>
+L	ab_0_12	125	|move|p1a: Gengar|Ice Punch|p2a: Swampert
+L	ab_0_12	126	|-damage|p2a: Swampert|254/388 tox
+L	ab_0_12	127	|move|p2a: Swampert|Refresh|p2a: Swampert
+L	ab_0_12	128	|-curestatus|p2a: Swampert|tox|[msg]
+L	ab_0_12	129	|
+L	ab_0_12	130	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	131	|-damage|p1a: Gengar|303/323|[from] Sandstorm
+L	ab_0_12	132	|debug|natural status immunity
+L	ab_0_12	133	|debug|weather immunity
+L	ab_0_12	134	|-heal|p1a: Gengar|323/323|[from] item: Leftovers
+L	ab_0_12	135	|-heal|p2a: Swampert|278/388|[from] item: Leftovers
+L	ab_0_12	136	|upkeep
+L	ab_0_12	137	|turn|9
+L	ab_0_12	138	|
+L	ab_0_12	139	|t:|<NORMALIZED>
+L	ab_0_12	140	|switch|p2a: Raikou|Raikou|321/321
+L	ab_0_12	141	|-ability|p2a: Raikou|Pressure|[silent]
+L	ab_0_12	142	|move|p1a: Gengar|Will-O-Wisp|p2a: Raikou
+L	ab_0_12	143	|-status|p2a: Raikou|brn
+L	ab_0_12	144	|
+L	ab_0_12	145	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	146	|-damage|p2a: Raikou|301/321 brn|[from] Sandstorm
+L	ab_0_12	147	|-damage|p1a: Gengar|303/323|[from] Sandstorm
+L	ab_0_12	148	|-heal|p2a: Raikou|321/321 brn|[from] item: Leftovers
+L	ab_0_12	149	|-damage|p2a: Raikou|281/321 brn|[from] brn
+L	ab_0_12	150	|-heal|p1a: Gengar|323/323|[from] item: Leftovers
+L	ab_0_12	151	|upkeep
+L	ab_0_12	152	|turn|10
+L	ab_0_12	153	|
+L	ab_0_12	154	|t:|<NORMALIZED>
+L	ab_0_12	155	|move|p2a: Raikou|Crunch|p1a: Gengar
+L	ab_0_12	156	|-supereffective|p1a: Gengar
+L	ab_0_12	157	|-damage|p1a: Gengar|107/323
+L	ab_0_12	158	|move|p1a: Gengar|Will-O-Wisp|p2a: Raikou
+L	ab_0_12	159	|-fail|p2a: Raikou|brn
+L	ab_0_12	160	|debug|move failed because it did nothing
+L	ab_0_12	161	|
+L	ab_0_12	162	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	163	|-damage|p2a: Raikou|261/321 brn|[from] Sandstorm
+L	ab_0_12	164	|-damage|p1a: Gengar|87/323|[from] Sandstorm
+L	ab_0_12	165	|-heal|p2a: Raikou|281/321 brn|[from] item: Leftovers
+L	ab_0_12	166	|-damage|p2a: Raikou|241/321 brn|[from] brn
+L	ab_0_12	167	|-heal|p1a: Gengar|107/323|[from] item: Leftovers
+L	ab_0_12	168	|upkeep
+L	ab_0_12	169	|turn|11
+L	ab_0_12	170	|
+L	ab_0_12	171	|t:|<NORMALIZED>
+L	ab_0_12	172	|move|p2a: Raikou|Thunderbolt|p1a: Gengar
+L	ab_0_12	173	|-damage|p1a: Gengar|0 fnt
+L	ab_0_12	174	|faint|p1a: Gengar
+L	ab_0_12	175	|
+L	ab_0_12	176	|t:|<NORMALIZED>
+L	ab_0_12	177	|switch|p1a: Metagross|Metagross|347/347
+L	ab_0_12	178	|
+L	ab_0_12	179	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	180	|-damage|p2a: Raikou|221/321 brn|[from] Sandstorm
+L	ab_0_12	181	|debug|natural status immunity
+L	ab_0_12	182	|debug|weather immunity
+L	ab_0_12	183	|-heal|p2a: Raikou|241/321 brn|[from] item: Leftovers
+L	ab_0_12	184	|-damage|p2a: Raikou|201/321 brn|[from] brn
+L	ab_0_12	185	|upkeep
+L	ab_0_12	186	|turn|12
+L	ab_0_12	187	|
+L	ab_0_12	188	|t:|<NORMALIZED>
+L	ab_0_12	189	|move|p2a: Raikou|Hidden Power|p1a: Metagross
+L	ab_0_12	190	|debug|BP: 70
+L	ab_0_12	191	|-resisted|p1a: Metagross
+L	ab_0_12	192	|-damage|p1a: Metagross|299/347
+L	ab_0_12	193	|move|p1a: Metagross|Explosion|p2a: Raikou
+L	ab_0_12	194	|-damage|p2a: Raikou|0 fnt
+L	ab_0_12	195	|faint|p1a: Metagross
+L	ab_0_12	196	|faint|p2a: Raikou
+L	ab_0_12	197	|
+L	ab_0_12	198	|t:|<NORMALIZED>
+L	ab_0_12	199	|switch|p2a: Salamence|Salamence, M|330/330
+L	ab_0_12	200	|switch|p1a: Blissey|Blissey, F|651/651
+L	ab_0_12	201	|-ability|p2a: Salamence|Intimidate|boost
+L	ab_0_12	202	|-unboost|p1a: Blissey|atk|1
+L	ab_0_12	203	|
+L	ab_0_12	204	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	205	|-damage|p2a: Salamence|310/330|[from] Sandstorm
+L	ab_0_12	206	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_0_12	207	|-heal|p2a: Salamence|330/330|[from] item: Leftovers
+L	ab_0_12	208	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_12	209	|upkeep
+L	ab_0_12	210	|turn|13
+L	ab_0_12	211	|
+L	ab_0_12	212	|t:|<NORMALIZED>
+L	ab_0_12	213	|move|p2a: Salamence|Dragon Dance|p2a: Salamence
+L	ab_0_12	214	|-boost|p2a: Salamence|atk|1
+L	ab_0_12	215	|-boost|p2a: Salamence|spe|1
+L	ab_0_12	216	|move|p1a: Blissey|Ice Beam|p2a: Salamence
+L	ab_0_12	217	|-supereffective|p2a: Salamence
+L	ab_0_12	218	|-damage|p2a: Salamence|54/330
+L	ab_0_12	219	|
+L	ab_0_12	220	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	221	|-damage|p2a: Salamence|34/330|[from] Sandstorm
+L	ab_0_12	222	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_0_12	223	|-heal|p2a: Salamence|54/330|[from] item: Leftovers
+L	ab_0_12	224	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_12	225	|upkeep
+L	ab_0_12	226	|turn|14
+L	ab_0_12	227	|
+L	ab_0_12	228	|t:|<NORMALIZED>
+L	ab_0_12	229	|switch|p1a: Dugtrio|Dugtrio, M|212/212
+L	ab_0_12	230	|move|p2a: Salamence|Hidden Power|p1a: Dugtrio
+L	ab_0_12	231	|debug|BP: 70
+L	ab_0_12	232	|-damage|p1a: Dugtrio|0 fnt
+L	ab_0_12	233	|faint|p1a: Dugtrio
+L	ab_0_12	234	|
+L	ab_0_12	235	|t:|<NORMALIZED>
+L	ab_0_12	236	|switch|p1a: Blissey|Blissey, F|651/651
+L	ab_0_12	237	|
+L	ab_0_12	238	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	239	|-damage|p2a: Salamence|34/330|[from] Sandstorm
+L	ab_0_12	240	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_0_12	241	|-heal|p2a: Salamence|54/330|[from] item: Leftovers
+L	ab_0_12	242	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_0_12	243	|upkeep
+L	ab_0_12	244	|turn|15
+L	ab_0_12	245	|
+L	ab_0_12	246	|t:|<NORMALIZED>
+L	ab_0_12	247	|move|p2a: Salamence|Earthquake|p1a: Blissey
+L	ab_0_12	248	|-damage|p1a: Blissey|273/651
+L	ab_0_12	249	|move|p1a: Blissey|Thunderbolt|p2a: Salamence
+L	ab_0_12	250	|-damage|p2a: Salamence|0 fnt
+L	ab_0_12	251	|faint|p2a: Salamence
+L	ab_0_12	252	|
+L	ab_0_12	253	|t:|<NORMALIZED>
+L	ab_0_12	254	|switch|p2a: Tyranitar|Tyranitar, M|341/341
+L	ab_0_12	255	|
+L	ab_0_12	256	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	257	|debug|natural status immunity
+L	ab_0_12	258	|debug|weather immunity
+L	ab_0_12	259	|-damage|p1a: Blissey|233/651|[from] Sandstorm
+L	ab_0_12	260	|-heal|p1a: Blissey|273/651|[from] item: Leftovers
+L	ab_0_12	261	|upkeep
+L	ab_0_12	262	|turn|16
+L	ab_0_12	263	|
+L	ab_0_12	264	|t:|<NORMALIZED>
+L	ab_0_12	265	|move|p2a: Tyranitar|Brick Break|p1a: Blissey
+L	ab_0_12	266	|-supereffective|p1a: Blissey
+L	ab_0_12	267	|-damage|p1a: Blissey|0 fnt
+L	ab_0_12	268	|faint|p1a: Blissey
+L	ab_0_12	269	|
+L	ab_0_12	270	|t:|<NORMALIZED>
+L	ab_0_12	271	|switch|p1a: Skarmory|Skarmory, M|331/331
+L	ab_0_12	272	|
+L	ab_0_12	273	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	274	|debug|natural status immunity
+L	ab_0_12	275	|debug|weather immunity
+L	ab_0_12	276	|debug|natural status immunity
+L	ab_0_12	277	|debug|weather immunity
+L	ab_0_12	278	|upkeep
+L	ab_0_12	279	|turn|17
+L	ab_0_12	280	|
+L	ab_0_12	281	|t:|<NORMALIZED>
+L	ab_0_12	282	|move|p2a: Tyranitar|Brick Break|p1a: Skarmory
+L	ab_0_12	283	|-damage|p1a: Skarmory|223/331
+L	ab_0_12	284	|move|p1a: Skarmory|Toxic|p2a: Tyranitar
+L	ab_0_12	285	|-status|p2a: Tyranitar|tox
+L	ab_0_12	286	|
+L	ab_0_12	287	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	288	|debug|natural status immunity
+L	ab_0_12	289	|debug|weather immunity
+L	ab_0_12	290	|debug|natural status immunity
+L	ab_0_12	291	|debug|weather immunity
+L	ab_0_12	292	|-damage|p2a: Tyranitar|320/341 tox|[from] psn
+L	ab_0_12	293	|-heal|p1a: Skarmory|243/331|[from] item: Leftovers
+L	ab_0_12	294	|upkeep
+L	ab_0_12	295	|turn|18
+L	ab_0_12	296	|
+L	ab_0_12	297	|t:|<NORMALIZED>
+L	ab_0_12	298	|move|p2a: Tyranitar|Brick Break|p1a: Skarmory
+L	ab_0_12	299	|-damage|p1a: Skarmory|141/331
+L	ab_0_12	300	|move|p1a: Skarmory|Whirlwind|p2a: Tyranitar
+L	ab_0_12	301	|drag|p2a: Swampert|Swampert, M|278/388
+L	ab_0_12	302	|
+L	ab_0_12	303	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	304	|debug|natural status immunity
+L	ab_0_12	305	|debug|weather immunity
+L	ab_0_12	306	|debug|natural status immunity
+L	ab_0_12	307	|debug|weather immunity
+L	ab_0_12	308	|-heal|p2a: Swampert|302/388|[from] item: Leftovers
+L	ab_0_12	309	|-heal|p1a: Skarmory|161/331|[from] item: Leftovers
+L	ab_0_12	310	|upkeep
+L	ab_0_12	311	|turn|19
+L	ab_0_12	312	|
+L	ab_0_12	313	|t:|<NORMALIZED>
+L	ab_0_12	314	|move|p2a: Swampert|Refresh||[still]
+L	ab_0_12	315	|-fail|p2a: Swampert
+L	ab_0_12	316	|debug|move failed because it did nothing
+L	ab_0_12	317	|move|p1a: Skarmory|Toxic|p2a: Swampert|[miss]
+L	ab_0_12	318	|-miss|p1a: Skarmory|p2a: Swampert
+L	ab_0_12	319	|
+L	ab_0_12	320	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	321	|debug|natural status immunity
+L	ab_0_12	322	|debug|weather immunity
+L	ab_0_12	323	|debug|natural status immunity
+L	ab_0_12	324	|debug|weather immunity
+L	ab_0_12	325	|-heal|p2a: Swampert|326/388|[from] item: Leftovers
+L	ab_0_12	326	|-heal|p1a: Skarmory|181/331|[from] item: Leftovers
+L	ab_0_12	327	|upkeep
+L	ab_0_12	328	|turn|20
+L	ab_0_12	329	|
+L	ab_0_12	330	|t:|<NORMALIZED>
+L	ab_0_12	331	|move|p2a: Swampert|Surf|p1a: Skarmory
+L	ab_0_12	332	|-damage|p1a: Skarmory|61/331
+L	ab_0_12	333	|move|p1a: Skarmory|Whirlwind|p2a: Swampert
+L	ab_0_12	334	|drag|p2a: Tyranitar|Tyranitar, M|320/341 tox
+L	ab_0_12	335	|
+L	ab_0_12	336	|-weather|Sandstorm|[upkeep]
+L	ab_0_12	337	|debug|natural status immunity
+L	ab_0_12	338	|debug|weather immunity
+L	ab_0_12	339	|debug|natural status immunity
+L	ab_0_12	340	|debug|weather immunity
+L	ab_0_12	341	|-damage|p2a: Tyranitar|299/341 tox|[from] psn
+L	ab_0_12	342	|-heal|p1a: Skarmory|81/331|[from] item: Leftovers
+L	ab_0_12	343	|upkeep
+L	ab_0_12	344	|turn|21
+L	ab_0_12	345	|
+L	ab_0_12	346	|t:|<NORMALIZED>
+L	ab_0_12	347	|move|p2a: Tyranitar|Double-Edge|p1a: Skarmory
+L	ab_0_12	348	|-resisted|p1a: Skarmory
+L	ab_0_12	349	|-damage|p1a: Skarmory|0 fnt
+L	ab_0_12	350	|-damage|p2a: Tyranitar|272/341 tox|[from] Recoil|[of] p1a: Skarmory
+L	ab_0_12	351	|faint|p1a: Skarmory
+L	ab_0_12	352	|
+L	ab_0_12	353	|win|P2

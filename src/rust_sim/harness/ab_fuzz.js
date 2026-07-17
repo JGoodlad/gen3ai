@@ -72,7 +72,10 @@ const { Teams } = require(path.join(PS, 'dist/sim'));
 
 const ROOT = path.resolve(__dirname, '../../..');
 const CRATE = path.resolve(__dirname, '..');
-const REPLAYER = path.join(CRATE, 'target/release/ab_replay');
+// The isolated byte-fuzz build (CARGO_TARGET_DIR=/tmp/pokesim_target_bytefuzz) is
+// preferred via POKESIM_AB_REPLAY_BIN so a byte run never touches the shared target/
+// used by the live fuzzers (project law). Falls back to the shared target build.
+const REPLAYER = process.env.POKESIM_AB_REPLAY_BIN || path.join(CRATE, 'target/release/ab_replay');
 
 const rustMoves = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/pokemon/gen3_moves.json'), 'utf8'));
 const portSpecies = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/pokemon/gen3_species.json'), 'utf8'));
@@ -88,6 +91,13 @@ function parseFlags(argv) {
     chunk: 25,
     out: path.join(__dirname, 'ab_fuzz_out'),
     keepChunks: false,
+    // `--protocol` turns on the OMNISCIENT BYTE differential (gen3_omniscient_byte_fuzz_v1):
+    // capture the REAL filtered `|...|` log per battle + byte-diff it against the port's
+    // run_full_battle_logged output → a new `protocol` divergence kind. `--format`
+    // {gen3customgame,gen3ou} threads the run format (gen3ou = the clause-shuffle draw path
+    // the gen3customgame e2e capstone never hits).
+    protocol: false,
+    format: 'gen3customgame',
   };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -99,7 +109,13 @@ function parseFlags(argv) {
     else if (a === '--chunk') f.chunk = Number(next());
     else if (a === '--out') f.out = path.resolve(next());
     else if (a === '--keep-chunks') f.keepChunks = true;
+    else if (a === '--protocol') f.protocol = true;
+    else if (a === '--format') f.format = next();
     else { console.error(`unknown flag ${a}`); process.exit(2); }
+  }
+  if (!['gen3customgame', 'gen3ou'].includes(f.format)) {
+    console.error(`--format must be gen3customgame|gen3ou, got ${f.format}`);
+    process.exit(2);
   }
   if (!['randbats', 'random', 'pool'].includes(f.mode)) {
     console.error(`--mode must be randbats|random|pool, got ${f.mode}`);
@@ -301,6 +317,28 @@ function makePoolProvider(rng, stats) {
   };
 }
 
+// Pin every UNSET gender to an explicit letter (mirrors bridge_ab_fuzz.js::pinGenders):
+// a ratio species ('' → 'M') / a fixed-gender species (its letter). The byte path needs
+// this because an UNSET gender makes the SIM draw `battle.sample(['M','F'])` at
+// construction (a pre-initSeed draw the port cannot see → the `|switch|` DETAILS gender
+// diverges — the construction-window gap). Pinning makes BOTH engines read the SAME
+// explicit gender (no draw), so the switch details match + the batch emission forms
+// downstream become visible. Idempotent on already-gender-safe teams. `gen3_omniscient_byte_fuzz_v1`.
+function pinGenders(packed) {
+  const team = Teams.unpack(packed);
+  if (!team) return packed;
+  let touched = false;
+  for (const set of team) {
+    if (set.gender) continue;
+    const sid = toId(set.species || set.name);
+    const sp = dex3.species.get(sid);
+    if (!sp || !sp.exists) continue;
+    set.gender = sp.gender === '' ? 'M' : sp.gender;
+    touched = true;
+  }
+  return touched ? Teams.pack(team) : packed;
+}
+
 // ── Repro saving ──────────────────────────────────────────────────────────────
 function chunkHeader(flags, runId, chunkIdx) {
   return [
@@ -315,7 +353,7 @@ function saveRepro(outDir, runId, flags, battleMeta, verdict, chunkIdx) {
   const dir = path.join(outDir, 'divergences', `${runId}_${battleMeta.id}`);
   fs.mkdirSync(dir, { recursive: true });
   const lines = chunkHeader(flags, runId, chunkIdx);
-  emitBattle(lines, battleMeta.id, battleMeta.p1Packed, battleMeta.p2Packed, battleMeta.rec);
+  emitBattle(lines, battleMeta.id, battleMeta.p1Packed, battleMeta.p2Packed, battleMeta.rec, { protocol: flags.protocol });
   fs.writeFileSync(path.join(dir, 'battle.txt'), lines.join('\n') + '\n');
   const summary = {
     mode: flags.mode,
@@ -361,11 +399,15 @@ async function main() {
     `node src/rust_sim/harness/ab_fuzz.js --mode ${flags.mode} --master-seed ${flags.masterSeed}` +
     (flags.battles ? ` --battles ${flags.battles}` : ''));
 
-  // Build the Rust replayer once (fast if fresh).
-  {
+  // Build the Rust replayer once (fast if fresh) — UNLESS an explicit binary was
+  // provided via POKESIM_AB_REPLAY_BIN (the isolated byte-fuzz build), in which case we
+  // must NOT rebuild into the shared target/.
+  if (!process.env.POKESIM_AB_REPLAY_BIN) {
     const env = { ...process.env, PATH: `${process.env.HOME}/.cargo/bin:${process.env.PATH}` };
     const r = spawnSync('cargo', ['build', '--release', '--bin', 'ab_replay'], { cwd: CRATE, env, stdio: 'inherit' });
     if (r.status !== 0) { console.error('[ab_fuzz] cargo build failed'); process.exit(1); }
+  } else {
+    console.error(`[ab_fuzz] using replayer ${REPLAYER} (no rebuild)`);
   }
 
   // Deterministic streams, all derived from the master seed.
@@ -434,12 +476,21 @@ async function main() {
       for (let i = 0; i < target && !stopRequested; i++) {
         const t1 = provider();
         let t2 = provider();
+        // Byte mode: pin genders so the sim never draws one at construction (the
+        // switch-details construction-window gap). State mode is unchanged.
+        if (flags.protocol) { t1.packed = pinGenders(t1.packed); t2.packed = pinGenders(t2.packed); }
         // pool mode can hand back the same packed team — that's a legal mirror.
         const battleSeed = seedFrom((Math.floor(battleRng() * 4294967296)) >>> 0);
         const chooseSeed = (Math.floor(battleRng() * 4294967296) ^ 0x9e3779b9) >>> 0;
         let rec;
         try {
-          rec = await runBattle(t1.packed, t2.packed, battleSeed, chooseSeed, 'modeled');
+          // `pool` mode's teams are gen3ou-VALIDATED (BP-70 HP), so admit typed Hidden
+          // Power there; `random` mode's random IVs could yield a non-70 HP BP so it stays
+          // excluded (see isModeledMove). `--format` threads the run format for the byte path.
+          rec = await runBattle(t1.packed, t2.packed, battleSeed, chooseSeed, 'modeled', {
+            format: flags.format,
+            allowHiddenPower: flags.mode === 'pool',
+          });
         } catch (e) {
           cum.empty++;
           cum.dropReasons.set('sim-exception', (cum.dropReasons.get('sim-exception') || 0) + 1);
@@ -460,7 +511,7 @@ async function main() {
         }
         if (rec.ended) cum.ended++;
         const id = `ab_${chunkIdx}_${i}`;
-        emitBattle(lines, id, t1.packed, t2.packed, rec);
+        emitBattle(lines, id, t1.packed, t2.packed, rec, { protocol: flags.protocol });
         metas.set(id, {
           id, p1Packed: t1.packed, p2Packed: t2.packed, rec, battleSeed,
           genSeeds: [t1.genSeed, t2.genSeed],
@@ -492,7 +543,8 @@ async function main() {
       fs.writeFileSync(chunkFile, lines.join('\n') + '\n');
 
       let verdicts = [];
-      const stdout = execFileSync(REPLAYER, [chunkFile], { maxBuffer: 64 * 1024 * 1024 }).toString();
+      const replayArgs = flags.protocol ? ['--protocol', chunkFile] : [chunkFile];
+      const stdout = execFileSync(REPLAYER, replayArgs, { maxBuffer: 256 * 1024 * 1024 }).toString();
       for (const line of stdout.split('\n')) {
         if (!line.trim() || line.startsWith('{"chunk_summary"')) continue;
         try { verdicts.push(JSON.parse(line)); } catch (e) { /* non-JSON noise */ }

@@ -1,0 +1,287 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=777001 run_id=rmro8f8zh chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_19
+TEAM	ab_0_19	p1	Snorlax||ChoiceBand|Immunity|BodySlam,SelfDestruct,BrickBreak,ShadowBall|Adamant|8,252,48,,116,84|M||||]Camerupt||Leftovers|MagmaArmor|Flamethrower,SunnyDay,Explosion,HiddenPowerGrass|Mild|,,,180,76,252|M|,30,,30,,|||,Grass,,,,]Weezing||Leftovers|Levitate|Thunderbolt,HiddenPowerGrass,Explosion,WillOWisp|Modest|28,,,252,,228|M|,30,,30,,|||,Grass,,,,]Suicune||Leftovers|Pressure|CalmMind,Surf,Rest,IceBeam|Calm|248,,,176,56,28|N|,0,,,,|||]Salamence||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,BrickBreak,FireBlast|Lonely|,252,,56,,200|M|30,30,30,30,30,|||,Flying,,,,]Metagross||Leftovers|ClearBody|MeteorMash,Earthquake,Explosion,Agility|Adamant|104,252,,,,152|N||||
+TEAM	ab_0_19	p2	Zapdos||Leftovers|Pressure|ThunderWave,Toxic,Thunderbolt,HiddenPowerIce|Adamant|216,,,136,,156|N|,,,,,30|||,Ice,,,,]Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,252,,16|M||||]Metagross||Leftovers|ClearBody|Earthquake,ThunderPunch,HiddenPowerGrass,Explosion|Rash|168,,16,252,,72|N|,30,,30,,|||,Grass,,,,]Gengar||Leftovers|Levitate|IcePunch,Thunderbolt,GigaDrain,Explosion|Timid|4,,,252,,252|M||||]Tyranitar||Leftovers|SandStream|DragonDance,Earthquake,RockSlide,HiddenPowerGrass|Naughty|,240,,16,,252|M|,30,,30,,|||,Grass,,,,]Charizard||Leftovers|Blaze|DragonClaw,Flamethrower,HiddenPowerGrass,BrickBreak|Mild|,4,,252,,252|M|,30,,30,,|||,Grass,,,,
+FMT	ab_0_19	gen3customgame
+INIT	ab_0_19	58884,42146,9808,37943	1927462868
+DEC	ab_0_19	0	move	0	0	m3	m1	55099,41190,34203,31957	Snorlax	463	463	0	-	0	0	0	0	0	0	6	Zapdos	238	375	0	-	0	0	0	-1	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_19	1	move	0	0	m3	m1	12461,1008,43005,38371	Snorlax	463	463	0	-	0	0	0	0	0	0	6	Zapdos	101	375	0	-	0	0	0	-1	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_19	2	move	0	0	m3	m2	3919,7391,8074,27243	Snorlax	343	463	0	-	0	0	0	0	0	0	6	Zapdos	0	375	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_19	3	switch	0	1	-	s2	22846,8909,37282,56826	Snorlax	343	463	0	-	0	0	0	0	0	0	6	Metagross	343	343	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_19	4	move	0	0	m3	m1	51218,62993,41526,43693	Snorlax	281	463	0	-	0	0	0	0	0	0	6	Metagross	256	343	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_19	5	move	0	0	m3	m0	35765,37867,26414,30709	Snorlax	148	463	0	-	0	0	0	0	0	0	6	Metagross	164	343	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_19	6	move	0	0	m3	m2	55654,34461,53175,33853	Snorlax	91	463	0	-	0	0	0	0	0	0	6	Metagross	75	343	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_19	7	move	0	0	m3	m3	7640,48052,8291,15206	Snorlax	0	463	1	fnt	0	0	0	0	0	0	5	Metagross	0	343	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_19	8	switch	1	1	s5	s4	1027,1129,35296,41985	Metagross	327	327	0	-	0	0	0	0	0	0	5	Tyranitar	341	341	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_19	9	move	0	0	m0	m3	18726,21008,4646,40590	Metagross	296	327	0	-	0	0	0	0	0	0	5	Tyranitar	0	341	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_19	10	switch	0	1	-	s3	40005,27654,4639,10953	Metagross	316	327	0	-	0	0	0	0	0	0	5	Gengar	262	262	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_19	11	move	0	0	m1	m3	63616,57388,33153,9026	Metagross	226	327	0	-	0	0	0	0	0	0	5	Gengar	0	262	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_19	12	switch	0	1	-	s1	14706,1871,709,55757	Metagross	246	327	0	-	0	0	0	0	0	0	5	Swampert	401	401	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_19	13	move	0	0	m3	s5	5379,62164,27231,16804	Metagross	266	327	0	-	0	0	0	0	2	0	5	Charizard	297	297	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_19	14	move	0	0	m1	s5	59253,19318,431,45304	Metagross	286	327	0	-	0	0	0	0	2	0	5	Swampert	277	401	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_19	15	move	0	0	m1	m2	61510,9544,50141,44510	Metagross	0	327	1	fnt	0	0	0	0	0	0	4	Swampert	126	401	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_19	16	switch	1	0	s2	-	7020,43398,20922,1369	Weezing	278	278	0	-	0	0	0	0	0	0	4	Swampert	151	401	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_19	17	move	0	0	m3	m1	26237,35045,86,23954	Weezing	278	278	0	-	0	0	0	0	0	0	4	Swampert	126	401	0	brn	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_19	18	move	0	0	m1	m3	7321,44040,36307,31623	Weezing	278	278	0	-	0	0	0	0	0	0	4	Swampert	0	401	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_19	19	switch	0	1	-	s5	8108,38254,30306,39430	Weezing	278	278	0	-	0	0	0	0	0	0	4	Charizard	297	297	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_0_19	20	move	0	0	m1	m2	15702,54748,6996,3983	Weezing	226	278	0	-	0	0	0	0	0	0	4	Charizard	279	297	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_19	21	move	0	0	m2	m2	7323,30734,46318,63725	Weezing	0	278	1	-	0	0	0	0	0	0	3	Charizard	0	297	1	-	0	0	0	0	0	0	0	p2	0	0	0	0	0
+END	ab_0_19	1	p1
+L	ab_0_19	0	|t:|<NORMALIZED>
+L	ab_0_19	1	|gametype|singles
+L	ab_0_19	2	|player|p1|P1||
+L	ab_0_19	3	|player|p2|P2||
+L	ab_0_19	4	|gen|3
+L	ab_0_19	5	|tier|[Gen 3] Custom Game
+L	ab_0_19	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_19	7	|
+L	ab_0_19	8	|t:|<NORMALIZED>
+L	ab_0_19	9	|teamsize|p1|6
+L	ab_0_19	10	|teamsize|p2|6
+L	ab_0_19	11	|start
+L	ab_0_19	12	|switch|p1a: Snorlax|Snorlax, M|463/463
+L	ab_0_19	13	|switch|p2a: Zapdos|Zapdos|375/375
+L	ab_0_19	14	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_19	15	|turn|1
+L	ab_0_19	16	|
+L	ab_0_19	17	|t:|<NORMALIZED>
+L	ab_0_19	18	|move|p2a: Zapdos|Toxic|p1a: Snorlax|[miss]
+L	ab_0_19	19	|-miss|p2a: Zapdos|p1a: Snorlax
+L	ab_0_19	20	|move|p1a: Snorlax|Shadow Ball|p2a: Zapdos
+L	ab_0_19	21	|-damage|p2a: Zapdos|215/375
+L	ab_0_19	22	|-unboost|p2a: Zapdos|spd|1
+L	ab_0_19	23	|
+L	ab_0_19	24	|-heal|p2a: Zapdos|238/375|[from] item: Leftovers
+L	ab_0_19	25	|upkeep
+L	ab_0_19	26	|turn|2
+L	ab_0_19	27	|
+L	ab_0_19	28	|t:|<NORMALIZED>
+L	ab_0_19	29	|move|p2a: Zapdos|Toxic|p1a: Snorlax|[miss]
+L	ab_0_19	30	|-miss|p2a: Zapdos|p1a: Snorlax
+L	ab_0_19	31	|move|p1a: Snorlax|Shadow Ball|p2a: Zapdos
+L	ab_0_19	32	|-damage|p2a: Zapdos|78/375
+L	ab_0_19	33	|
+L	ab_0_19	34	|-heal|p2a: Zapdos|101/375|[from] item: Leftovers
+L	ab_0_19	35	|upkeep
+L	ab_0_19	36	|turn|3
+L	ab_0_19	37	|
+L	ab_0_19	38	|t:|<NORMALIZED>
+L	ab_0_19	39	|move|p2a: Zapdos|Thunderbolt|p1a: Snorlax
+L	ab_0_19	40	|-damage|p1a: Snorlax|343/463
+L	ab_0_19	41	|move|p1a: Snorlax|Shadow Ball|p2a: Zapdos
+L	ab_0_19	42	|-damage|p2a: Zapdos|0 fnt
+L	ab_0_19	43	|faint|p2a: Zapdos
+L	ab_0_19	44	|
+L	ab_0_19	45	|t:|<NORMALIZED>
+L	ab_0_19	46	|switch|p2a: Metagross|Metagross|343/343
+L	ab_0_19	47	|
+L	ab_0_19	48	|upkeep
+L	ab_0_19	49	|turn|4
+L	ab_0_19	50	|
+L	ab_0_19	51	|t:|<NORMALIZED>
+L	ab_0_19	52	|move|p2a: Metagross|Thunder Punch|p1a: Snorlax
+L	ab_0_19	53	|-damage|p1a: Snorlax|281/463
+L	ab_0_19	54	|move|p1a: Snorlax|Shadow Ball|p2a: Metagross
+L	ab_0_19	55	|-damage|p2a: Metagross|235/343
+L	ab_0_19	56	|
+L	ab_0_19	57	|-heal|p2a: Metagross|256/343|[from] item: Leftovers
+L	ab_0_19	58	|upkeep
+L	ab_0_19	59	|turn|5
+L	ab_0_19	60	|
+L	ab_0_19	61	|t:|<NORMALIZED>
+L	ab_0_19	62	|move|p2a: Metagross|Earthquake|p1a: Snorlax
+L	ab_0_19	63	|-damage|p1a: Snorlax|148/463
+L	ab_0_19	64	|move|p1a: Snorlax|Shadow Ball|p2a: Metagross
+L	ab_0_19	65	|-damage|p2a: Metagross|143/343
+L	ab_0_19	66	|
+L	ab_0_19	67	|-heal|p2a: Metagross|164/343|[from] item: Leftovers
+L	ab_0_19	68	|upkeep
+L	ab_0_19	69	|turn|6
+L	ab_0_19	70	|
+L	ab_0_19	71	|t:|<NORMALIZED>
+L	ab_0_19	72	|move|p2a: Metagross|Hidden Power|p1a: Snorlax
+L	ab_0_19	73	|debug|BP: 70
+L	ab_0_19	74	|-damage|p1a: Snorlax|91/463
+L	ab_0_19	75	|move|p1a: Snorlax|Shadow Ball|p2a: Metagross
+L	ab_0_19	76	|-damage|p2a: Metagross|54/343
+L	ab_0_19	77	|
+L	ab_0_19	78	|-heal|p2a: Metagross|75/343|[from] item: Leftovers
+L	ab_0_19	79	|upkeep
+L	ab_0_19	80	|turn|7
+L	ab_0_19	81	|
+L	ab_0_19	82	|t:|<NORMALIZED>
+L	ab_0_19	83	|move|p2a: Metagross|Explosion|p1a: Snorlax
+L	ab_0_19	84	|-damage|p1a: Snorlax|0 fnt
+L	ab_0_19	85	|faint|p2a: Metagross
+L	ab_0_19	86	|faint|p1a: Snorlax
+L	ab_0_19	87	|
+L	ab_0_19	88	|t:|<NORMALIZED>
+L	ab_0_19	89	|switch|p2a: Tyranitar|Tyranitar, M|341/341
+L	ab_0_19	90	|switch|p1a: Metagross|Metagross|327/327
+L	ab_0_19	91	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_0_19	92	|
+L	ab_0_19	93	|-weather|Sandstorm|[upkeep]
+L	ab_0_19	94	|debug|natural status immunity
+L	ab_0_19	95	|debug|weather immunity
+L	ab_0_19	96	|debug|natural status immunity
+L	ab_0_19	97	|debug|weather immunity
+L	ab_0_19	98	|upkeep
+L	ab_0_19	99	|turn|8
+L	ab_0_19	100	|
+L	ab_0_19	101	|t:|<NORMALIZED>
+L	ab_0_19	102	|move|p2a: Tyranitar|Hidden Power|p1a: Metagross
+L	ab_0_19	103	|debug|BP: 70
+L	ab_0_19	104	|-resisted|p1a: Metagross
+L	ab_0_19	105	|-damage|p1a: Metagross|296/327
+L	ab_0_19	106	|move|p1a: Metagross|Meteor Mash|p2a: Tyranitar
+L	ab_0_19	107	|-supereffective|p2a: Tyranitar
+L	ab_0_19	108	|-damage|p2a: Tyranitar|0 fnt
+L	ab_0_19	109	|faint|p2a: Tyranitar
+L	ab_0_19	110	|
+L	ab_0_19	111	|t:|<NORMALIZED>
+L	ab_0_19	112	|switch|p2a: Gengar|Gengar, M|262/262
+L	ab_0_19	113	|
+L	ab_0_19	114	|-weather|Sandstorm|[upkeep]
+L	ab_0_19	115	|-damage|p2a: Gengar|246/262|[from] Sandstorm
+L	ab_0_19	116	|debug|natural status immunity
+L	ab_0_19	117	|debug|weather immunity
+L	ab_0_19	118	|-heal|p2a: Gengar|262/262|[from] item: Leftovers
+L	ab_0_19	119	|-heal|p1a: Metagross|316/327|[from] item: Leftovers
+L	ab_0_19	120	|upkeep
+L	ab_0_19	121	|turn|9
+L	ab_0_19	122	|
+L	ab_0_19	123	|t:|<NORMALIZED>
+L	ab_0_19	124	|move|p2a: Gengar|Explosion|p1a: Metagross
+L	ab_0_19	125	|-resisted|p1a: Metagross
+L	ab_0_19	126	|-damage|p1a: Metagross|226/327
+L	ab_0_19	127	|faint|p2a: Gengar
+L	ab_0_19	128	|
+L	ab_0_19	129	|t:|<NORMALIZED>
+L	ab_0_19	130	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_0_19	131	|
+L	ab_0_19	132	|-weather|Sandstorm|[upkeep]
+L	ab_0_19	133	|debug|natural status immunity
+L	ab_0_19	134	|debug|weather immunity
+L	ab_0_19	135	|debug|natural status immunity
+L	ab_0_19	136	|debug|weather immunity
+L	ab_0_19	137	|-heal|p1a: Metagross|246/327|[from] item: Leftovers
+L	ab_0_19	138	|upkeep
+L	ab_0_19	139	|turn|10
+L	ab_0_19	140	|
+L	ab_0_19	141	|t:|<NORMALIZED>
+L	ab_0_19	142	|switch|p2a: Charizard|Charizard, M|297/297
+L	ab_0_19	143	|move|p1a: Metagross|Agility|p1a: Metagross
+L	ab_0_19	144	|-boost|p1a: Metagross|spe|2
+L	ab_0_19	145	|
+L	ab_0_19	146	|-weather|Sandstorm|[upkeep]
+L	ab_0_19	147	|debug|natural status immunity
+L	ab_0_19	148	|debug|weather immunity
+L	ab_0_19	149	|-damage|p2a: Charizard|279/297|[from] Sandstorm
+L	ab_0_19	150	|-heal|p1a: Metagross|266/327|[from] item: Leftovers
+L	ab_0_19	151	|-heal|p2a: Charizard|297/297|[from] item: Leftovers
+L	ab_0_19	152	|upkeep
+L	ab_0_19	153	|turn|11
+L	ab_0_19	154	|
+L	ab_0_19	155	|t:|<NORMALIZED>
+L	ab_0_19	156	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_0_19	157	|move|p1a: Metagross|Earthquake|p2a: Swampert
+L	ab_0_19	158	|-damage|p2a: Swampert|252/401
+L	ab_0_19	159	|
+L	ab_0_19	160	|-weather|Sandstorm|[upkeep]
+L	ab_0_19	161	|debug|natural status immunity
+L	ab_0_19	162	|debug|weather immunity
+L	ab_0_19	163	|debug|natural status immunity
+L	ab_0_19	164	|debug|weather immunity
+L	ab_0_19	165	|-heal|p1a: Metagross|286/327|[from] item: Leftovers
+L	ab_0_19	166	|-heal|p2a: Swampert|277/401|[from] item: Leftovers
+L	ab_0_19	167	|upkeep
+L	ab_0_19	168	|turn|12
+L	ab_0_19	169	|
+L	ab_0_19	170	|t:|<NORMALIZED>
+L	ab_0_19	171	|move|p1a: Metagross|Earthquake|p2a: Swampert
+L	ab_0_19	172	|-damage|p2a: Swampert|126/401
+L	ab_0_19	173	|move|p2a: Swampert|Hydro Pump|p1a: Metagross
+L	ab_0_19	174	|debug|Torrent boost
+L	ab_0_19	175	|-crit|p1a: Metagross
+L	ab_0_19	176	|-damage|p1a: Metagross|0 fnt
+L	ab_0_19	177	|faint|p1a: Metagross
+L	ab_0_19	178	|
+L	ab_0_19	179	|t:|<NORMALIZED>
+L	ab_0_19	180	|switch|p1a: Weezing|Weezing, M|278/278
+L	ab_0_19	181	|
+L	ab_0_19	182	|-weather|Sandstorm|[upkeep]
+L	ab_0_19	183	|-damage|p1a: Weezing|261/278|[from] Sandstorm
+L	ab_0_19	184	|debug|natural status immunity
+L	ab_0_19	185	|debug|weather immunity
+L	ab_0_19	186	|-heal|p1a: Weezing|278/278|[from] item: Leftovers
+L	ab_0_19	187	|-heal|p2a: Swampert|151/401|[from] item: Leftovers
+L	ab_0_19	188	|upkeep
+L	ab_0_19	189	|turn|13
+L	ab_0_19	190	|
+L	ab_0_19	191	|t:|<NORMALIZED>
+L	ab_0_19	192	|move|p1a: Weezing|Will-O-Wisp|p2a: Swampert
+L	ab_0_19	193	|-status|p2a: Swampert|brn
+L	ab_0_19	194	|move|p2a: Swampert|Earthquake|p1a: Weezing
+L	ab_0_19	195	|-immune|p1a: Weezing
+L	ab_0_19	196	|
+L	ab_0_19	197	|-weather|Sandstorm|[upkeep]
+L	ab_0_19	198	|-damage|p1a: Weezing|261/278|[from] Sandstorm
+L	ab_0_19	199	|debug|natural status immunity
+L	ab_0_19	200	|debug|weather immunity
+L	ab_0_19	201	|-heal|p1a: Weezing|278/278|[from] item: Leftovers
+L	ab_0_19	202	|-heal|p2a: Swampert|176/401 brn|[from] item: Leftovers
+L	ab_0_19	203	|-damage|p2a: Swampert|126/401 brn|[from] brn
+L	ab_0_19	204	|upkeep
+L	ab_0_19	205	|turn|14
+L	ab_0_19	206	|
+L	ab_0_19	207	|t:|<NORMALIZED>
+L	ab_0_19	208	|move|p1a: Weezing|Hidden Power|p2a: Swampert
+L	ab_0_19	209	|debug|BP: 70
+L	ab_0_19	210	|-supereffective|p2a: Swampert
+L	ab_0_19	211	|-damage|p2a: Swampert|0 fnt
+L	ab_0_19	212	|faint|p2a: Swampert
+L	ab_0_19	213	|
+L	ab_0_19	214	|t:|<NORMALIZED>
+L	ab_0_19	215	|switch|p2a: Charizard|Charizard, M|297/297
+L	ab_0_19	216	|
+L	ab_0_19	217	|-weather|Sandstorm|[upkeep]
+L	ab_0_19	218	|-damage|p2a: Charizard|279/297|[from] Sandstorm
+L	ab_0_19	219	|-damage|p1a: Weezing|261/278|[from] Sandstorm
+L	ab_0_19	220	|-heal|p2a: Charizard|297/297|[from] item: Leftovers
+L	ab_0_19	221	|-heal|p1a: Weezing|278/278|[from] item: Leftovers
+L	ab_0_19	222	|upkeep
+L	ab_0_19	223	|turn|15
+L	ab_0_19	224	|
+L	ab_0_19	225	|t:|<NORMALIZED>
+L	ab_0_19	226	|move|p2a: Charizard|Hidden Power|p1a: Weezing
+L	ab_0_19	227	|debug|BP: 70
+L	ab_0_19	228	|-resisted|p1a: Weezing
+L	ab_0_19	229	|-damage|p1a: Weezing|226/278
+L	ab_0_19	230	|move|p1a: Weezing|Hidden Power|p2a: Charizard
+L	ab_0_19	231	|debug|BP: 70
+L	ab_0_19	232	|-resisted|p2a: Charizard
+L	ab_0_19	233	|-damage|p2a: Charizard|279/297
+L	ab_0_19	234	|
+L	ab_0_19	235	|-weather|Sandstorm|[upkeep]
+L	ab_0_19	236	|-damage|p2a: Charizard|261/297|[from] Sandstorm
+L	ab_0_19	237	|-damage|p1a: Weezing|209/278|[from] Sandstorm
+L	ab_0_19	238	|-heal|p2a: Charizard|279/297|[from] item: Leftovers
+L	ab_0_19	239	|-heal|p1a: Weezing|226/278|[from] item: Leftovers
+L	ab_0_19	240	|upkeep
+L	ab_0_19	241	|turn|16
+L	ab_0_19	242	|
+L	ab_0_19	243	|t:|<NORMALIZED>
+L	ab_0_19	244	|move|p2a: Charizard|Hidden Power|p1a: Weezing
+L	ab_0_19	245	|debug|BP: 70
+L	ab_0_19	246	|-resisted|p1a: Weezing
+L	ab_0_19	247	|-damage|p1a: Weezing|176/278
+L	ab_0_19	248	|move|p1a: Weezing|Explosion|p2a: Charizard
+L	ab_0_19	249	|-crit|p2a: Charizard
+L	ab_0_19	250	|-damage|p2a: Charizard|0 fnt
+L	ab_0_19	251	|faint|p1a: Weezing
+L	ab_0_19	252	|faint|p2a: Charizard
+L	ab_0_19	253	|
+L	ab_0_19	254	|win|P1
