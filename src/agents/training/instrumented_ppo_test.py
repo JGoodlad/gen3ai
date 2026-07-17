@@ -219,6 +219,46 @@ def test_value_distill_grad_student_only():
     assert t.grad is None
 
 
+# --- FitNets value-FEATURE distillation (gen3_exploiter_value_feat_distill_v1) ------------------------
+
+def test_value_feat_distill_zero_when_aligned():
+    """Perfectly-aligned value_pooled (same direction) ⇒ 0 masked cosine distance; a POSITIVE-SCALED copy
+    is still 0 (cosine is scale-free — the whole point vs MSE)."""
+    f = th.randn(4, 8)
+    out = InstrumentedMaskablePPO._value_feat_distill(f.clone(), f.clone(), th.ones(4, 1))
+    assert float(out) == pytest.approx(0.0, abs=1e-6)
+    out_scaled = InstrumentedMaskablePPO._value_feat_distill(f.clone(), 7.5 * f.clone(), th.ones(4, 1))
+    assert float(out_scaled) == pytest.approx(0.0, abs=1e-6)          # magnitude ignored, direction matched
+
+
+def test_value_feat_distill_masks_non_teacher_rows():
+    """Only distill_mask==1 rows contribute; loss == masked-mean cosine distance of those rows."""
+    # rows 0,2 aligned (dist 0); rows 1,3 anti-aligned (cos −1 → dist 2)
+    s = th.tensor([[1., 0.], [1., 0.], [0., 1.], [0., 1.]])
+    t = th.tensor([[2., 0.], [-3., 0.], [0., 5.], [0., -4.]])
+    out = InstrumentedMaskablePPO._value_feat_distill(s, t, th.tensor([[1.], [0.], [1.], [0.]]))
+    assert float(out) == pytest.approx(0.0, abs=1e-6)                 # kept rows 0,2 aligned
+    out2 = InstrumentedMaskablePPO._value_feat_distill(s, t, th.tensor([[0.], [1.], [0.], [1.]]))
+    assert float(out2) == pytest.approx(2.0, rel=1e-5)                # kept rows 1,3 anti-aligned → (2+2)/2
+
+
+def test_value_feat_distill_none_no_rows():
+    """No teacher-team rows / None inputs ⇒ None (no NaN-poisoning an empty subset)."""
+    assert InstrumentedMaskablePPO._value_feat_distill(th.randn(3, 8), th.randn(3, 8), th.zeros(3, 1)) is None
+    assert InstrumentedMaskablePPO._value_feat_distill(None, th.randn(3, 8), th.ones(3, 1)) is None
+    assert InstrumentedMaskablePPO._value_feat_distill(th.randn(3, 8), None, th.ones(3, 1)) is None
+
+
+def test_value_feat_distill_grad_student_only():
+    """Gradient flows into the student hint; the frozen teacher hint gets none."""
+    s = th.randn(3, 8, requires_grad=True)
+    t = th.randn(3, 8)
+    out = InstrumentedMaskablePPO._value_feat_distill(s, t, th.ones(3, 1))
+    out.backward()
+    assert s.grad is not None and th.isfinite(s.grad).all()
+    assert t.grad is None
+
+
 def test_distill_reuse_masked_logits_bit_identical():
     """The #3 optimization (reuse the evaluate_actions forward, whose logits are MASKED) must give a
     BIT-IDENTICAL KL to a fresh (RAW) get_distribution forward: over LEGAL actions the logits are the same

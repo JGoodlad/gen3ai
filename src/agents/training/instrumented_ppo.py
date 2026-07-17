@@ -313,6 +313,17 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # the value-match). 0.0 = OFF (byte-identical); training-only, NOT version-locked. The A/B lever:
     # policy-only (=0) vs policy+value (>0), read out by the value_cls rank probe.
     distill_value_coef: float = 0.0
+    # FITNETS VALUE-FEATURE distillation (gen3_exploiter_value_feat_distill_v1) — the "hint" upgrade of scalar
+    # value distill. Matching only the teacher's SCALAR V crystallizes the critic (value_cls rank DROPS, A/B
+    # confirmed on ai_v7_20: value_mse falls but rank 4.15→3.55). This adds distill_value_feat_coef ·
+    # (1 − cos(value_pooled_student, value_pooled_teacher)) on the SAME teacher-team states — regressing the
+    # INTERMEDIATE 128-dim value-CLS pool (the FitNets hint layer) instead of the collapsed scalar, so the trunk
+    # inherits the teacher's per-team value STRUCTURE. COSINE (scale-free) chosen from the geometry analysis
+    # (complementary, non-competing, low-rank teacher subspaces — see _value_feat_distill). Requires
+    # distill_coef > 0 (the policy KL makes V_teacher the right target). 0.0 = OFF (byte-identical, no teacher
+    # value_pooled read); training-only, NOT version-locked. Composes with / is an A/B alternative to
+    # distill_value_coef (scalar) — read out by the value_cls effective-rank probe (does the HINT enrich it?).
+    distill_value_feat_coef: float = 0.0
 
     def _excluded_save_params(self):
         # The search-teacher's `_correction_buffer` lives on the model (the callback↔train() hand-off),
@@ -426,6 +437,35 @@ class InstrumentedMaskablePPO(MaskablePPO):
         else:
             se = (sv - tv) ** 2
         return (se * m).sum() / n_on.clamp(min=1e-6)
+
+    @staticmethod
+    def _value_feat_distill(student_feat, teacher_feat, distill_mask):
+        """FITNETS VALUE-FEATURE DISTILLATION — masked COSINE distance between the value-CLS pools.
+
+        The FitNets (Romero 2015) "hint" upgrade of scalar value distillation: instead of only matching the
+        teacher's scalar V (which collapses to a ~4-dim critic — `_value_distill_mse` CRYSTALLIZES the head,
+        value_cls rank DROPS), regress the student's INTERMEDIATE 128-dim `value_pooled` (the extractor's
+        `last_value_pooled` HINT layer) toward the teacher's on the teacher-team states, so the trunk inherits
+        the teacher's per-team value STRUCTURE, not just its output.
+
+        ``student_feat`` [B,D] carries grad (the student's live `value_pooled`); ``teacher_feat`` [B,D] is the
+        frozen teacher's (already under no_grad). ``distill_mask`` [B]/[B,1] = 1 on teacher-team states. COSINE
+        (not MSE): the geometry analysis (`tmp/fitnet_analysis.py`) found the teachers' value subspaces are
+        low-rank, COMPLEMENTARY (TSS orthogonal, collective effR ~12), and NON-competing (all pull-cosines
+        positive) — so a scale-free directional pull transfers the correct structure without over-constraining
+        a low-rank target the way an MSE on raw magnitudes would (the student/teacher live in separately-rotated
+        128-dim bases, so absolute coordinates aren't comparable; direction is). Loss = ``1 − cos`` per row,
+        masked-mean over the teacher-team rows. Returns the masked-mean cosine distance, or None when no
+        teacher-team rows (the None guard, like `_value_distill_mse`). Pure + static → unit-testable."""
+        if student_feat is None or teacher_feat is None or distill_mask is None:
+            return None
+        m = distill_mask.reshape(-1).to(student_feat.dtype)
+        n_on = m.sum()
+        if float(n_on) < 1.0:
+            return None
+        cos = F.cosine_similarity(student_feat, teacher_feat, dim=-1, eps=1e-6)   # [B] direction match per row
+        dist = 1.0 - cos                                                          # [B] cosine DISTANCE (0=aligned)
+        return (dist * m).sum() / n_on.clamp(min=1e-6)
 
     @staticmethod
     def _win_prob_loss(logits, target, mask, margin=None):
@@ -1472,7 +1512,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         # teacher predict_values forward is skipped, loss byte-identical.
                         _vd_on = self.distill_value_coef != 0.0
                         _s_val = values.flatten() if _vd_on else None        # student V (real-unit, WITH grad)
-                        _per_teacher_kl, _per_teacher_vd = [], []
+                        # +FITNETS VALUE-FEATURE distill (gen3_exploiter_value_feat_distill_v1): match the
+                        # teacher's INTERMEDIATE value-CLS pool (the 128-dim hint) instead of the collapsed
+                        # scalar. The student's `last_value_pooled` from the evaluate_actions forward above
+                        # (WITH grad) — the teacher forwards below run on their OWN extractors, so this student
+                        # stash is not clobbered. OFF (coef 0) → no teacher value_pooled read, loss byte-identical.
+                        _vfd_on = self.distill_value_feat_coef != 0.0
+                        _s_vfeat = self.policy.features_extractor.last_value_pooled if _vfd_on else None
+                        _per_teacher_kl, _per_teacher_vd, _per_teacher_vfd = [], [], []
                         for _k, _teacher in enumerate(self._distill_teachers, start=1):
                             _sel = (_tid_flat == _k).to(_s_logits.dtype)      # states on teacher k's team
                             if float(_sel.sum()) < 1.0:
@@ -1484,12 +1531,25 @@ class InstrumentedMaskablePPO(MaskablePPO):
                                       if key in _teacher.observation_space.spaces}
                             with th.no_grad():
                                 _t_logits = _teacher.policy.get_distribution(_t_obs).distribution.logits
+                                # gen3_exploiter_value_feat_distill_v1: the get_distribution forward above ran
+                                # the teacher's FULL extractor, so its `last_value_pooled` (the hint) is set for
+                                # THESE states — capture it now, BEFORE the predict_values forward below re-runs
+                                # + overwrites it. Under no_grad → detached (the FitNets target is frozen).
+                                _t_vfeat = (_teacher.policy.features_extractor.last_value_pooled
+                                            if _vfd_on else None)
                             _d_out = self._distill_loss(_s_logits, _t_logits, rollout_data.action_masks, _sel)
                             if _d_out is not None:
                                 _kl_k, _m_k = _d_out
                                 _per_teacher_kl.append(_kl_k)
                                 for _mk, _mv in _m_k.items():   # per-teacher diagnostics (distill/t{k}_*)
                                     distill_metrics.setdefault(f"t{_k}_{_mk}", []).append(float(_mv))
+                            if _vfd_on:
+                                # Masked cosine distance between the student + teacher value-CLS pools on
+                                # teacher-k's states (the FitNets hint match).
+                                _vfd_k = self._value_feat_distill(_s_vfeat, _t_vfeat, _sel)
+                                if _vfd_k is not None:
+                                    _per_teacher_vfd.append(_vfd_k)
+                                    distill_metrics.setdefault(f"t{_k}_value_feat_cos", []).append(float(_vfd_k))
                             if _vd_on:
                                 # Teacher V (real-unit, frozen); masked MSE vs student V in the PopArt frame.
                                 with th.no_grad():
@@ -1510,6 +1570,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             _distill_vd = th.stack(_per_teacher_vd).mean()    # balanced like the policy KL
                             loss = loss + self.distill_value_coef * _distill_vd
                             distill_metrics.setdefault("value_mse", []).append(float(_distill_vd))
+                        if _per_teacher_vfd:
+                            _distill_vfd = th.stack(_per_teacher_vfd).mean()  # balanced like the policy KL
+                            loss = loss + self.distill_value_feat_coef * _distill_vfd
+                            distill_metrics.setdefault("value_feat_cos", []).append(float(_distill_vfd))
 
                 # +SEARCH-TEACHER: AWR policy distillation toward the verified-better action. The
                 # corrections are OFF-POLICY (searched eval-trace states, not in this rollout), so this

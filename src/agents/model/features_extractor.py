@@ -3876,6 +3876,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Stashed each forward when the head is on (the [B,1] win logit, or None). Read by the PPO aux
         # loss + the offline prober/eval; NEVER fed into pi/vf (the OUTCOME label can't leak).
         self.last_win_prob_logits: Optional[torch.Tensor] = None
+        # Stashed EVERY forward (the [B,128] value-CLS pool). The FitNets distillation HINT layer — read by
+        # `instrumented_ppo._value_feat_distill` off both the student and teacher forwards. None until the
+        # first forward; never fed into pi/vf.
+        self.last_value_pooled: Optional[torch.Tensor] = None
 
         # Auxiliary PUBLIC-VALUE head (tri-state `pubval_mode`, gen3_pubval_aux_v1): the WinProbHead
         # pattern with the frozen HUMAN-replay-calibrated V_pub as the target (dense per-step, exogenous
@@ -4218,6 +4222,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx
         )
+        # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
+        # 128-dim FitNets HINT layer). Consumed ONLY by the FitNets value-feature distillation
+        # (`instrumented_ppo._value_feat_distill`): both student and teacher forwards leave it here, so the
+        # distill loop can regress the student's value_pooled toward each teacher's on the teacher-team
+        # states. NOT read by the forward → off-path/eval is byte-identical; carries grad on the student pass
+        # (a live activation) so the cosine distill gradient flows into the shared trunk.
+        self.last_value_pooled = value_pooled
         # Auxiliary win-probability readout (flag-guarded; None when off). Reads the whole-board
         # value_pooled and stashes a [B,1] logit for the aux loss + the prober/eval. NOT fed into the
         # assembler (a side readout — the future OUTCOME label can't leak into pi/vf). `read_only` feeds

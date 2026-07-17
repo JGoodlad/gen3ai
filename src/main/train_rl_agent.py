@@ -399,6 +399,7 @@ def _model_hparams(model) -> dict:
         "opd_coef": float(getattr(model, "opd_coef", 0.0)),
         "distill_coef": float(getattr(model, "distill_coef", 0.0)),
         "distill_value_coef": float(getattr(model, "distill_value_coef", 0.0)),
+        "distill_value_feat_coef": float(getattr(model, "distill_value_feat_coef", 0.0)),
         "opd_beta": float(getattr(model, "opd_beta", 1.0)),
         "batch_size": model.batch_size,
         "grad_accum_steps": int(getattr(model, "grad_accum_steps", 1)),
@@ -1151,6 +1152,16 @@ async def main():
                              "(the policy KL validates the value target). Training-only, inherited on resume. "
                              "The A/B lever for 'does distilling the value enrich it' — watch distill/value_mse ↓ "
                              "and the value_cls effective-rank probe rise. Distributional-value distill is future.")
+    parser.add_argument("--distill-value-feat-coef", "--distill_value_feat_coef", dest="distill_value_feat_coef",
+                        type=float, default=None,
+                        help="FITNETS VALUE-FEATURE distillation weight (gen3_exploiter_value_feat_distill_v1): "
+                             "match the teacher's INTERMEDIATE 128-dim value-CLS pool (the hint layer) instead of "
+                             "the collapsed scalar V — 1−cos(value_pooled_student, value_pooled_teacher) on the "
+                             "teacher-team states, so the trunk inherits the teacher's per-team value STRUCTURE "
+                             "(scalar value-distill CRYSTALLIZES the critic — value_cls rank DROPS). Default 0.0 = "
+                             "OFF (byte-identical; no teacher value_pooled read). Requires --distill-coef > 0. "
+                             "Training-only, inherited on resume. Composes with / is an A/B alternative to "
+                             "--distill-value-coef — watch distill/value_feat_cos ↓ + the value_cls rank probe.")
     parser.add_argument("--distill-team-bias", "--distill_team_bias", dest="distill_team_bias",
                         type=float, default=0.4,
                         help="Fraction of trainee episodes biased to the teacher's team (rest = pool "
@@ -1812,6 +1823,7 @@ async def main():
     _resolve("opd_coef", 0.0)                  # training-only OPD KL weight (inherited on flagless resume)
     _resolve("distill_coef", 0.0)              # training-only exploiter-distillation KL weight (inherited on resume)
     _resolve("distill_value_coef", 0.0)        # training-only exploiter VALUE-distillation MSE weight (inherited on resume)
+    _resolve("distill_value_feat_coef", 0.0)   # training-only FitNets value-FEATURE distill cosine weight (inherited on resume)
     _resolve("opd_beta", 1.0)                  # training-only OPD softmax temperature β
     _resolve("damage_topk_k", 0)               # v30 structural int (top-K incoming; version-checked, fresh-only)
     _resolve("damage_refine_rounds", 0)        # v31 structural int (iterative refine; version-checked, fresh-only)
@@ -1939,6 +1951,13 @@ async def main():
         parser.error("--distill-value-coef > 0 requires --distill-coef > 0 — the value distillation is "
                      "coherent only because the policy KL drives π_student→π_teacher on those states, "
                      "making V_teacher the right target (V^π is policy-relative).")
+    if args.distill_value_feat_coef is not None and args.distill_value_feat_coef < 0.0:
+        parser.error("--distill-value-feat-coef must be >= 0 (0 = off)")
+    if (args.distill_value_feat_coef and args.distill_value_feat_coef > 0
+            and not (args.distill_coef and args.distill_coef > 0)):
+        parser.error("--distill-value-feat-coef > 0 requires --distill-coef > 0 — the FitNets value-feature "
+                     "match is coherent only because the policy KL drives π_student→π_teacher on those states, "
+                     "making the teacher's value_pooled the right target (V^π is policy-relative).")
     # gen3_exploiter_distill_v1: parse --distill-teacher into (teacher_path, team_file) PAIRS once, stored on
     # args for the teambuilder + model-setup to reuse. Preferred form = 'TEACHER:TEAM' colon pairs (the colon
     # binds each teacher to its team → misalignment is impossible). Legacy form = bare teacher list + a
@@ -3269,6 +3288,7 @@ async def main():
         # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
         model.distill_coef = float(args.distill_coef or 0.0)
         model.distill_value_coef = float(args.distill_value_coef or 0.0)
+        model.distill_value_feat_coef = float(args.distill_value_feat_coef or 0.0)  # gen3_exploiter_value_feat_distill_v1
         model._distill_teachers = []   # gen3_exploiter_distill_v1: N frozen per-team teachers (teacher-id = index+1)
         if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
             from agents.model.snapshot import (
@@ -3584,6 +3604,7 @@ async def main():
         # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
         model.distill_coef = float(args.distill_coef or 0.0)
         model.distill_value_coef = float(args.distill_value_coef or 0.0)
+        model.distill_value_feat_coef = float(args.distill_value_feat_coef or 0.0)  # gen3_exploiter_value_feat_distill_v1
         model._distill_teachers = []   # gen3_exploiter_distill_v1: N frozen per-team teachers (teacher-id = index+1)
         if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
             from agents.model.snapshot import (

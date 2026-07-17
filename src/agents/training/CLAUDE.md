@@ -1694,7 +1694,7 @@ aux. Design + the K1 honesty frame: `designs/ai_v6/design_distributional_value_c
   `main/prober/engine_test.py` (`build_value_dist`). End-to-end `--debug --debug-eval --use-showdown-bridge
   --value-dist-mode read_only` smoke captures a trace whose npz carries `value_dist`.
 
-## Exploiter distillation (`--distill-teacher` / `--distill-coef` / `--distill-value-coef`)
+## Exploiter distillation (`--distill-teacher` / `--distill-coef` / `--distill-value-coef` / `--distill-value-feat-coef`)
 
 `gen3_exploiter_distill_v1` — pour a frozen per-team SPECIALIST (an exploiter) into the generalist so it
 learns to PILOT that team, closing the amortization gap the self-play average can't. `--distill-teacher`
@@ -1722,10 +1722,33 @@ transfers (TSS-piloting 0.475→0.75) and HOLDS under the double-sided recipe (s
   (`rank_metrics.py`, `tmp/value_rank_compare.py`) — does distilling the value ENRICH it. OFF byte-identical
   (no teacher predict_values forward); training-only. **Distributional-value distill** (distil the teacher's
   `ValueDistHead` return distribution, enabling later archetype-token conditioning) is a future follow-on.
+- **FITNETS value-FEATURE distillation (`gen3_exploiter_value_feat_distill_v1`, `--distill-value-feat-coef`,
+  default 0 = OFF).** Matching only the teacher's SCALAR V CRYSTALLIZES the critic — the A/B on ai_v7_20
+  confirmed `distill/value_mse` falls but the value_cls effective rank DROPS (4.15→3.55): a scalar target has
+  only ~1 dim of information, so the critic collapses onto it. The FitNets (Romero 2015) "hint" fix distils
+  the teacher's INTERMEDIATE representation instead: `distill_value_feat_coef · (1 − cos(value_pooled_student,
+  value_pooled_teacher))` on the SAME teacher-team states, where `value_pooled` is the extractor's 128-dim
+  value-CLS pool (`features_extractor.last_value_pooled`, stashed EVERY forward — the hint layer). So the
+  trunk inherits the teacher's per-team value STRUCTURE, not just its output. **COSINE, not MSE** (the loss
+  choice from the geometry analysis `tmp/fitnet_analysis.py`): the four teachers' value subspaces are low-rank
+  (PR ~3–5 even for specialists), COMPLEMENTARY (TSS orthogonal 0.04–0.07 to the others, collective effRank
+  ~12), and NON-competing (all pull-cosines positive) — so a scale-free directional pull transfers the correct
+  structure without over-constraining a low-rank target the way a raw-magnitude MSE would; the student/teacher
+  are common-ancestor forks (all forked from _14), so their `value_pooled` bases are approximately shared and a
+  direct (regressor-free) cosine is meaningful (a lower bound on alignment). The student hint (from the
+  `evaluate_actions` forward, WITH grad) + each teacher's hint (captured under `no_grad` right after the KL's
+  `get_distribution` forward, detached — no extra teacher forward) go through the static `_value_feat_distill`
+  (masked mean cosine distance, per-teacher averaged like the KL). **Requires `--distill-coef > 0`** (the
+  policy KL makes the teacher's `value_pooled` the right target — V^π is policy-relative). Metrics
+  `distill/{value_feat_cos, tK_value_feat_cos}`. **The A/B lever:** scalar (`--distill-value-coef`) vs FitNets
+  (`--distill-value-feat-coef`), read out by the value_cls effective-rank probe — does the HINT enrich the
+  critic where the scalar crystallized it. Composes with the scalar term (both can be on). OFF byte-identical
+  (no teacher `value_pooled` read); training-only, NOT version-locked (inherited on a flagless resume).
 
 Tests: `instrumented_ppo_test.py::test_distill_*` (policy KL: identical→0, masking, illegal-mask, None-guard,
 grad-student-only, reuse-bit-identical, multi-teacher averaging) + `::test_value_distill_*` (equal→0, masking,
-None-guard, PopArt-frame scaling, grad-student-only).
+None-guard, PopArt-frame scaling, grad-student-only) + `::test_value_feat_distill_*` (aligned→0 + scale-free,
+masking→cosine-distance, None-guards, grad-student-only).
 
 ## Search-as-teacher (`--search-teacher`, `teacher/` package)
 

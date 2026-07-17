@@ -83,6 +83,16 @@ from hyper-offense unsupervised, the self-discovery worked.
 
 ### FiLM — forcing the heads to USE it
 z_arch generates `(γ,β_film)` that *modulate* the pi/vf features: `h' = γ(z_arch)⊙h + β_film(z_arch)`.
+**Apply it to BOTH heads (separate γ/β generators, shared z_arch) — and the VALUE head is arguably the
+better target.** Value is intrinsically archetype-conditional (the SAME board is "winning" for stall,
+"losing" for offense), so an unconditioned critic averages them into the blurry ~4-effective-dim marginal
+we measured (`value_cls` rank flat `_14→_18→_19`). Value-FiLM is the escape-the-marginal move for the
+critic, and it's the **architectural complement to VALUE DISTILLATION** (`--distill-value-coef`):
+distillation supplies the per-team value TARGET, FiLM supplies the CAPACITY to represent it — do only one
+and it under-delivers (distill w/o capacity can't de-blur; FiLM w/o supervision = learns≠helps); together
+they de-blur the critic per archetype. Value-FiLM also helps the policy indirectly (better critic → better
+GAE). Gate: policy-FiLM by per-archetype win-rate, value-FiLM by per-archetype value CALIBRATION +
+`value_cls` rank rising off ~4.
 Multiplicative + in the main path → can't be ignored (a *concat* input can be zeroed out and washed
 away; a multiplicative γ puts z in the **control path** — the same board features produce different
 downstream activations per z). Identity-at-init (γ→1, β_film→0) → OFF byte-identical. (Not the VIB β.)
