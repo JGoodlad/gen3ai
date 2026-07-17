@@ -165,6 +165,26 @@ collapsing (too much) or memorizing team-ID (too little). Three tiers, cheap →
 Recipe: geometry (silhouette + kNN-purity) to narrow β *fast* per checkpoint; confirm finalists with
 the downstream A/B.
 
+### Dynamically tuning β (and why you can't tune it on the training fit)
+β is a **regularizer**, so the iron rule applies: **you cannot tune it on the training loss** — a LUT
+*fits training teams better* than a style code, so minimizing training distortion slides β *down toward
+LUT* every time. The signal that pulls toward *style* must be a **generalization** signal (held-out /
+transfer) — the only place LUT loses. The knob and the metric are inseparable, and the metric has to be
+held-out.
+- **Static (MVP):** fix β at the **rate-distortion elbow**; watch `rank/archetype_cls_*` (extend the
+  `rank_metrics.py` probe) as the live LUT-vs-style gauge — high effective rank ≈ LUT, low-but-alive ≈
+  style, ~0 = collapsed.
+- **Dynamic:** a **Lagrangian/PID controller (GECO, "Taming VAEs")** makes β a *dual variable* that
+  targets a level: slack → raise β (squeeze to style), hurting → lower β (keep more). Drive it with a
+  **generalization** signal — cheapest = a target **effective rank** of z_arch (self-catches collapse),
+  truer = held-out **kNN-purity-above-chance**, gold = **downstream per-archetype win-rate on held-out
+  teams** (EMA heavily; a PID on a noisy non-stationary RL signal needs strong smoothing). **Never
+  target the training distortion.**
+
+One sentence: β sets a point on the rate-distortion curve, but "correct" is defined only by a *held-out*
+signal — fit and generalization pull β in opposite directions, and only generalization tells style from
+a lookup table.
+
 ## Synthesis
 z_arch is the model's *own* answer to "what am I piloting." Grounding it with hand-picked stats works
 but imposes our ontology; the more self-discovered route (task+VIB backbone, self-predictive grounding)
