@@ -1011,6 +1011,38 @@ at the target and it's the only opponent.
   (sole-opponent + off-unchanged) + `test_pinned_*` (per-opponent teams),
   `fixed_opponent_pool_test.py::test_exploiter_*registration*`.
 
+### Consensus warm-start (`--warmstart-consensus`, `warmstart.py`) — EXPLOITER-ONLY
+
+`gen3_exploiter_consensus_warmstart_v1` — a low-bias INIT for a NEW exploiter: BEFORE training, build a
+competent, archetype-NEUTRAL warm start by **disagreement-gated CONSENSUS distillation** of N mature
+teacher exploiters into `--model` (the generalist init), then init the exploiter from it. The
+`build_consensus_target` math (pure, in `warmstart.py`): `consensus` = mean of the N teachers' masked
+action distributions; `d` = mean pairwise **Jensen-Shannon disagreement**; a quantile-normalized gate
+`g∈[0,1]` sets a per-state temperature `T = 1 + (tmax−1)·g`; `target = softmax(log consensus / T)` over
+legal actions — **SHARP where the teachers AGREE** (universal decisions the new exploiter just inherits)
+and **FLAT where they DISAGREE** (archetype forks left high-entropy → the new exploiter specializes
+FREELY, unbiased). BC also carries a KL anchor toward the student's OWN distribution (`anchor_coef`) so
+the warm start RETAINS the generalist's competence. Distills in **function space** (teacher outputs) —
+weight-averaging FAILED (from-scratch exploiters live in different loss basins → the average collapsed;
+`tmp/average_exploiters.py`).
+
+**Why EXPLOITER-ONLY (guarded, `parser.error` without `--exploiter`):** this SEEDS a new model with the
+consensus + freedom to diverge. It must NOT touch generalist training, whose objective is the OPPOSITE —
+absorb the DIVERGENT per-team specializations (that is `--distill-teacher`, one teacher per team-masked
+state). Distilling the consensus into the generalist would sharpen agreement and blur divergence,
+erasing the specialization it is trying to learn (and the generalist already ≈ the consensus → circular).
+`--self-play` is excluded automatically (exploiter mode already forbids it).
+
+**Integration.** `train_rl_agent` builds it ONCE into `<run>/warmstart/warmstart_consensus.zip` (via
+`run_consensus_warmstart`, live over the local bridge) right before the model load, then re-points
+`--model` at it. **Idempotent under launcher restarts:** skipped entirely once ANY training checkpoint
+exists (the normal resume path continues the trained state); the warm start is arch-identical to `--model`
+(its `model_config.json` is copied), so the resume-immutable checks stay valid. Standalone:
+`python -m agents.training.warmstart --student <run> --teachers <run,...> --out <dir>`. OFF (flag unset) =
+byte-identical. Knobs: `--warmstart-battles` (200), `--warmstart-bc-steps` (4000). Tests:
+`warmstart_test.py` (the pure consensus/JS/gate/temperature math: identical→0 disagreement, sums-to-1 over
+legal, mask respected, sharpens-agreement/flattens-disagreement, `tmax=1` recovers plain consensus).
+
 ## Team-side PFSP (`--team-pfsp`, `team_pfsp_callback.py`)
 
 The TEAM-axis complement to the opponent-side `--pfsp-scale`: bias the TRAINEE's team sampling toward

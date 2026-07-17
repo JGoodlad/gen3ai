@@ -1615,6 +1615,22 @@ async def main():
                              "--self-play. Recommended: init the exploiter from a strong checkpoint "
                              "(--model <target's checkpoint>) so it has a baseline to exploit from. "
                              "Default None (off).")
+    parser.add_argument("--warmstart-consensus", "--warmstart_consensus", dest="warmstart_consensus",
+                        type=str, default=None,
+                        help="EXPLOITER MODE (requires --exploiter): before training, build a competent, "
+                             "archetype-NEUTRAL warm start by disagreement-gated CONSENSUS distillation of "
+                             "N mature teacher exploiters (comma-separated run-dirs) into --model (the "
+                             "generalist init), then init the exploiter from it. The BC target is SHARP "
+                             "where the teachers AGREE (universal decisions inherited) and FLAT where they "
+                             "DISAGREE (archetype forks left high-entropy → the new exploiter specializes "
+                             "FREELY, unbiased). Built ONCE into <run>/warmstart/ (idempotent across "
+                             "launcher restarts; skipped once a training checkpoint exists). Deliberately "
+                             "NOT valid for generalist/self-play runs (whose job is the opposite — absorb "
+                             "divergence via --distill-teacher). See agents.training.warmstart. Default off.")
+    parser.add_argument("--warmstart-battles", dest="warmstart_battles", type=int, default=200,
+                        help="On-policy battles to collect for the --warmstart-consensus BC dataset (200).")
+    parser.add_argument("--warmstart-bc-steps", dest="warmstart_bc_steps", type=int, default=4000,
+                        help="BC gradient steps for --warmstart-consensus (early-stops on gated-KL; 4000).")
     parser.add_argument("--exploiter-keep-bots", dest="exploiter_keep_bots", action="store_true",
                         help="EXPLOITER MODE (requires --exploiter): mix the heuristic bots BACK IN "
                              "alongside the exploiter target instead of playing the target as the sole "
@@ -1867,6 +1883,12 @@ async def main():
     if args.exploiter_keep_bots and not args.exploiter:
         parser.error("--exploiter-keep-bots only applies in exploiter mode — pass --exploiter <target> "
                      "too (it mixes the bots in ALONGSIDE that target).")
+    if args.warmstart_consensus and not args.exploiter:
+        parser.error("--warmstart-consensus builds an EXPLOITER init (a disagreement-gated consensus of "
+                     "teacher exploiters, sharp-on-agree / flat-on-disagree) and only applies in exploiter "
+                     "mode — pass --exploiter <target>. It is deliberately NOT available for "
+                     "generalist / self-play training, whose objective is to ABSORB per-team divergence "
+                     "(--distill-teacher), the OPPOSITE of distilling the consensus.")
     if not 0.0 <= args.exploiter_bot_fraction <= 1.0:
         parser.error("--exploiter-bot-fraction must be a fraction in [0, 1]")
     if args.exploiter_temp_start is not None:
@@ -3143,6 +3165,40 @@ async def main():
             trainee_team_str=_specialist_team_str,
         )
         callbacks.append(eval_callback)
+
+    # gen3_exploiter_consensus_warmstart_v1: build (ONCE) the disagreement-gated consensus warm-start and
+    # re-point --model at it, so the exploiter inits from a competent, archetype-NEUTRAL base (sharp where
+    # the teacher exploiters AGREE, high-entropy where they FORK). Exploiter-only (guarded at parse).
+    # IDEMPOTENT under launcher restarts: skip entirely once ANY training checkpoint exists (the normal
+    # resume path continues from it); otherwise (re)use the built warm-start as the init. The warm-start is
+    # arch-identical to --model (its model_config.json is copied), so the resume-immutable checks above,
+    # computed on the original --model, stay valid.
+    if args.warmstart_consensus:
+        _ws_has_ckpt = (os.path.isdir(os.path.join(model_dir, "checkpoints"))
+                        and any(f.endswith(".zip")
+                                for f in os.listdir(os.path.join(model_dir, "checkpoints"))))
+        if _ws_has_ckpt:
+            print("🌱 [WARMSTART] training checkpoint already present → skipping consensus warm-start "
+                  "(resuming trained state).", flush=True)
+        else:
+            from agents.training.warmstart import run_consensus_warmstart
+            from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _ws_resolve
+            _ws_dir = os.path.join(model_dir, "warmstart")
+            _ws_ckpt = os.path.join(_ws_dir, "warmstart_consensus.zip")
+            if not os.path.exists(_ws_ckpt):
+                _ws_s_zip, _ws_s_cfg, _ = _ws_resolve(args.model, None)
+                _ws_teachers = {}
+                for _wi, _wt in enumerate([x.strip() for x in args.warmstart_consensus.split(",") if x.strip()]):
+                    _wz, _wcfg, _ = _ws_resolve(_wt, None)
+                    _ws_teachers[f"t{_wi + 1}"] = (_wz, _wcfg)
+                _ws_cv = _current_model_version(mappings, **_run_arch_toggles(args))
+                print(f"🌱 [WARMSTART] disagreement-gated consensus of {len(_ws_teachers)} teacher(s) "
+                      f"→ exploiter init ({args.warmstart_battles} battles, {args.warmstart_bc_steps} BC "
+                      f"steps)", flush=True)
+                run_consensus_warmstart(_ws_s_zip, _ws_s_cfg, _ws_teachers, _ws_dir, _ws_cv, mappings,
+                                        battles=args.warmstart_battles, bc_steps=args.warmstart_bc_steps,
+                                        device=str(args.device))
+            args.model = _ws_ckpt        # init training from the warm start
 
     if args.model:
         model_path = args.model
