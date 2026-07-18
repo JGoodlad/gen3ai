@@ -3195,9 +3195,9 @@ async def main():
                 print(f"🌱 [WARMSTART] disagreement-gated consensus of {len(_ws_teachers)} teacher(s) "
                       f"→ exploiter init ({args.warmstart_battles} battles, {args.warmstart_bc_steps} BC "
                       f"steps)", flush=True)
-                run_consensus_warmstart(_ws_s_zip, _ws_s_cfg, _ws_teachers, _ws_dir, _ws_cv, mappings,
-                                        battles=args.warmstart_battles, bc_steps=args.warmstart_bc_steps,
-                                        device=str(args.device))
+                await run_consensus_warmstart(_ws_s_zip, _ws_s_cfg, _ws_teachers, _ws_dir, _ws_cv, mappings,
+                                              battles=args.warmstart_battles, bc_steps=args.warmstart_bc_steps,
+                                              device=str(args.device))
             args.model = _ws_ckpt        # init training from the warm start
 
     if args.model:

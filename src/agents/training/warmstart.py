@@ -114,7 +114,7 @@ def masked_action_probs(model, obs: np.ndarray, mask: np.ndarray, device: str = 
     return np.concatenate(out, 0)
 
 
-def run_consensus_warmstart(student_ckpt: str, student_cfg: str,
+async def run_consensus_warmstart(student_ckpt: str, student_cfg: str,
                             teachers: "dict[str, tuple[str, str]]", out_dir: str, current_version,
                             mappings, *, battles: int = 200, bc_steps: int = 4000, lr: float = 3e-4,
                             tmax: float = 3.0, anchor_coef: float = 0.5, kl_stop: float = 0.15,
@@ -173,7 +173,7 @@ def run_consensus_warmstart(student_ckpt: str, student_cfg: str,
         o = RLPlayer(model=student, team=pool_tb, battle_format="gen3ou",
                      server_configuration=LocalhostServerConfiguration, mappings=mappings,
                      account_configuration=_acct("WsB"), stochastic=False, start_listening=False)
-        asyncio.run(run_local_battles(c, o, battles, concurrency=2))
+        await run_local_battles(c, o, battles, concurrency=2)   # awaited: main() runs in an event loop
         obs, mask = np.stack(c.O), np.stack(c.M)
         _log(f"[warmstart] collected {obs.shape[0]} states")
         tp = np.stack([masked_action_probs(teacher_models[k], obs, mask, device) for k in teacher_models])
@@ -232,7 +232,7 @@ def run_consensus_warmstart(student_ckpt: str, student_cfg: str,
         h = SimpleHeuristicsPlayer(battle_format="gen3ou", team=pool_tb,
                                    server_configuration=LocalhostServerConfiguration,
                                    account_configuration=_acct("WsH"), start_listening=False)
-        asyncio.run(run_local_battles(p, h, smoke_battles, concurrency=2))
+        await run_local_battles(p, h, smoke_battles, concurrency=2)
         wr = p.n_won_battles / max(1, p.n_finished_battles)
         _log(f"[warmstart] SMOKE vs SimpleHeuristics: {p.n_won_battles}/{p.n_finished_battles} = {wr:.3f}")
     return out_ckpt
@@ -266,10 +266,12 @@ def main(argv=None):
     for i, t in enumerate([x.strip() for x in a.teachers.split(",") if x.strip()]):
         z, cfg, _ = _resolve_zip_and_config(t, None)
         teachers[f"t{i + 1}"] = (z, cfg)
-    run_consensus_warmstart(s_zip, s_cfg, teachers, a.out, cv, mappings, battles=a.battles,
-                            bc_steps=a.bc_steps, lr=a.lr, tmax=a.tmax, anchor_coef=a.anchor_coef,
-                            kl_stop=a.kl_stop, batch=a.batch, device=a.device, cache=a.cache,
-                            smoke_battles=a.smoke_battles)
+    import asyncio
+    asyncio.run(run_consensus_warmstart(
+        s_zip, s_cfg, teachers, a.out, cv, mappings, battles=a.battles,
+        bc_steps=a.bc_steps, lr=a.lr, tmax=a.tmax, anchor_coef=a.anchor_coef,
+        kl_stop=a.kl_stop, batch=a.batch, device=a.device, cache=a.cache,
+        smoke_battles=a.smoke_battles))
 
 
 if __name__ == "__main__":

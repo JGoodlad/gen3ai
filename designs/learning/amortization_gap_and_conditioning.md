@@ -165,6 +165,46 @@ Note the team CLS pool alone is **core-dominated** and washes out the flex nuanc
 core silhouette +0.19, but the flex "twist" was ~chance) — so build `z_arch` by **aggregating the mon-role
 atoms** (where role is clean), not by reading the existing team pool.
 
+## Keeping `z_arch` alive — the anti-collapse regularizer
+
+Is the "play teams well" RL pressure enough to prevent trivial collapse? **No — it works *against* you.**
+The RL objective has a degenerate optimum where `z_arch` collapses to a constant and the shared policy
+plays generically-well (the amortized solution) — and that collapsed solution is *simpler*, so the
+simplicity bias favors it and the weak RL gradient to `z_arch` won't reliably escape it. Two distinct
+failure modes, two fixes:
+
+- **Collapse** (`z_arch` → constant / uninformative). Guard: **the composition-reconstruction objective
+  IS the anti-collapse anchor** — if `z_arch` must reconstruct the team composition, it *cannot* collapse
+  to a constant (a constant can't reconstruct different teams). This is the *same* objective as the
+  day-0 composition prior, so anti-collapse comes free with the structure, label-free, no exploiters.
+  Belt-and-suspenders: **VICReg** (a per-dim variance floor kills constant-collapse; a covariance term
+  decorrelates dims) — we already have this from the belief-latent head (`aux/belief_latent_std` is the
+  monitor). **The VIB β is NOT a collapse guard — it *causes* collapse if too high** (it compresses
+  toward the prior mean); β is the rate-distortion / LUT-vs-style knob, balanced *against*
+  reconstruction+variance. Don't reach for β to prevent collapse.
+- **Dead** (`z_arch` informative but FiLM ignores it — γ→1, β→0 downstream). Guard: the *use* pressure
+  from RL + specialist distillation (weak without exploiters → `z_arch` under-used but *harmless*, since
+  FiLM is identity-at-init; strong with exploiters → FiLM routes). Monitor: FiLM γ/β deviation from
+  identity + the gradient share into `z_arch`.
+
+So "play well" alone is insufficient, but **reconstruction + VICReg** guarantee an informative latent from
+day 0, and RL + specialists supply the *use* pressure that enriches it. Because reconstruction = the prior,
+the no-exploiter phase is non-degenerate by construction.
+
+## LUT vs style, and annealing β
+
+The LUT (low β, per-team memorization) vs style (high β, compressed generalizing axes) failure modes are
+**asymmetric**, which sets the safe default: **over-LUT fails gracefully** (per-team routing that *works*
+on-distribution, just doesn't generalize to unseen teams + more params) — **over-style fails
+catastrophically** (collapse → single code → no conditioning → back to the amortized baseline, the very
+problem). So **bias toward LUT** (low β). For a *fixed* pool a LUT is genuinely fine — generalization to
+unseen teams is a nice-to-have, not a requirement. If we want generalization, **anneal β LOW→HIGH
+(LUT→style)** as a curriculum (learn to condition first with distinct codes, then compress to force the
+transferable style axes), *slowly and monitored* — better still, **GECO-style dynamic β** (raise
+compression only while the reconstruction/task quality holds), which self-regulates away from the collapse
+cliff. The `z_arch` variance/rank monitor is the guardrail: if raising β drops variance toward collapse,
+back off.
+
 ## Bootstrapping (the chicken-and-egg)
 
 "Can't make an exploiter on a new arch without a generalist; FiLM needs exploiters; circular." Untangled:
