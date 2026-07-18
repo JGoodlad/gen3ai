@@ -101,13 +101,20 @@ def action_entropy(probs: np.ndarray) -> np.ndarray:
 
 # ------------------------------------------------------------------ model I/O + collection (needs bridge)
 
-def masked_action_probs(model, obs: np.ndarray, mask: np.ndarray, device: str = "cpu",
+def masked_action_probs(model, obs: np.ndarray, mask: np.ndarray,
                         chunk: int = _CHUNK) -> np.ndarray:
-    """Forward a model over ``obs``/``mask`` in chunks → masked softmax action probs [len(obs), A]."""
+    """Forward a model over ``obs``/``mask`` in chunks → masked softmax action probs [len(obs), A].
+
+    The tensor device is derived FROM THE MODEL (``next(model.policy.parameters()).device``), not
+    a caller-passed string — the ai_v7_22 launch crash was exactly this drift: the student loaded
+    on ``--device cuda`` while the teachers took ``_load``'s cpu default, and a shared device
+    param could not be right for both. Deriving per-model makes any student/teacher device mix
+    correct by construction (CPU teachers stay VRAM-free; the CUDA student forwards on the GPU)."""
+    dev = next(model.policy.parameters()).device
     out = []
     for i in range(0, len(obs), chunk):
-        mb = th.tensor(mask[i:i + chunk], device=device)
-        ob = {"observation": th.tensor(obs[i:i + chunk], device=device), "action_mask": mb}
+        mb = th.tensor(mask[i:i + chunk], device=dev)
+        ob = {"observation": th.tensor(obs[i:i + chunk], device=dev), "action_mask": mb}
         with th.no_grad():
             logits = model.policy.get_distribution(ob).distribution.logits
         out.append(th.softmax(logits + (mb - 1.0) * 1e9, dim=-1).cpu().numpy())
@@ -176,9 +183,9 @@ async def run_consensus_warmstart(student_ckpt: str, student_cfg: str,
         await run_local_battles(c, o, battles, concurrency=2)   # awaited: main() runs in an event loop
         obs, mask = np.stack(c.O), np.stack(c.M)
         _log(f"[warmstart] collected {obs.shape[0]} states")
-        tp = np.stack([masked_action_probs(teacher_models[k], obs, mask, device) for k in teacher_models])
+        tp = np.stack([masked_action_probs(teacher_models[k], obs, mask) for k in teacher_models])
         target, gate, _d = build_consensus_target(tp, mask, tmax=tmax)
-        anchor = masked_action_probs(student, obs, mask, device).astype(np.float32)   # competence anchor
+        anchor = masked_action_probs(student, obs, mask).astype(np.float32)   # competence anchor
         lo, hi = gate < 0.33, gate > 0.66
         if hi.any() and lo.any():
             _log(f"[warmstart] target entropy — AGREE {action_entropy(target[lo]).mean():.3f} | "
