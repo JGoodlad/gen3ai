@@ -152,6 +152,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # local (reset to None on a launcher restart → re-converges in a few hundred calls); not saved.
     _noise_ema_s: float = None    # EMA of tr(Σ)  (per-example gradient-variance trace)
     _noise_ema_g2: float = None   # EMA of |G|²   (true-gradient squared norm)
+    _noise_film_ema_s: float = None   # film-group EMA of tr(Σ)  (+FILM-NOISE-SCALE)
+    _noise_film_ema_g2: float = None  # film-group EMA of |G|²
 
     @staticmethod
     def _global_grad_sq(params) -> float:
@@ -1283,6 +1285,19 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # epoch 0) so |G_small|² and |G_big|² come from the SAME data; folded into the EMAs after the epochs.
         noise_g_small_sq = None   # ‖single micro-batch gradient‖²  (B = batch_size)
         noise_g_big_sq = None     # ‖accumulated group gradient‖²   (B = batch_size·accum)
+        # +FILM-NOISE-SCALE (gen3_zarch_film_v1 follow-up): the SAME two-point estimator restricted
+        # to the FiLM generator params — the per-GROUP critical batch size. The global noise scale
+        # cannot resolve whether the ~33k-param conditioning gradient is signal or noise (it is
+        # drowned by the ~10M-param total); B_simple(film) ≫ B_simple(global) ≫ effective batch would
+        # say the per-team RL gradient into the conditioners sits below its noise floor at our batch —
+        # the quantitative form of the sample-starvation/"persistent net cost" hypothesis.
+        noise_film_small_sq = None
+        noise_film_big_sq = None
+        _fe_ns = self.policy.features_extractor
+        film_noise_params = (
+            list(_fe_ns.film_pi.parameters()) + list(_fe_ns.film_vf.parameters())
+            if getattr(_fe_ns, "zarch_film", "off") != "off" else []
+        )
 
         # train for n_epochs epochs
         for epoch in range(self.n_epochs):
@@ -1813,7 +1828,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # micro-batch (B=batch_size) sample for the noise-scale estimate.
                 if accum >= 2 and epoch == 0 and micro_in_group == 1 and noise_g_small_sq is None:
                     noise_g_small_sq = (accum ** 2) * self._global_grad_sq(self.policy.parameters())
+                    if film_noise_params:
+                        noise_film_small_sq = (accum ** 2) * self._global_grad_sq(film_noise_params)
                 if micro_in_group == accum:
+                    # +FILM-NOISE-SCALE: the film-group accumulated norm must be read BEFORE
+                    # clip_grad_norm_ (which rescales grads IN PLACE when the global norm trips the
+                    # clip — the global path is safe because clip returns the PRE-clip value).
+                    if (accum >= 2 and epoch == 0 and noise_film_big_sq is None
+                            and noise_film_small_sq is not None):
+                        noise_film_big_sq = self._global_grad_sq(film_noise_params)
                     grad_norm = float(  # +INSTRUMENTATION: pre-clip total grad norm (per step)
                         th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                     )
@@ -1909,6 +1932,21 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 b_simple = self._noise_ema_s / self._noise_ema_g2
                 self.logger.record("train/noise_scale", float(b_simple))
                 self.logger.record("train/noise_scale_ratio", float(b_simple / b_big))
+        # +FILM-NOISE-SCALE: the FiLM-generator-group critical batch, same EMA treatment. Compare
+        # `film/noise_scale` to `train/noise_scale` AND the effective batch: film ≫ global means the
+        # conditioning gradient is far more noise-dominated than the aggregate — the direct
+        # sample-starvation read for the per-team routing.
+        if accum >= 2 and noise_film_small_sq is not None and noise_film_big_sq is not None:
+            b_small = float(self.batch_size)
+            b_big = b_small * accum
+            tr_f, g2_f = self._noise_scale_estimate(noise_film_small_sq, noise_film_big_sq, b_small, b_big)
+            d = _NOISE_SCALE_EMA_DECAY
+            self._noise_film_ema_s = tr_f if self._noise_film_ema_s is None else d * self._noise_film_ema_s + (1 - d) * tr_f
+            self._noise_film_ema_g2 = g2_f if self._noise_film_ema_g2 is None else d * self._noise_film_ema_g2 + (1 - d) * g2_f
+            if self._noise_film_ema_g2 > 1e-12 and self._noise_film_ema_s > 0.0:
+                b_film = self._noise_film_ema_s / self._noise_film_ema_g2
+                self.logger.record("film/noise_scale", float(b_film))
+                self.logger.record("film/noise_scale_ratio", float(b_film / b_big))
 
         # +BELIEF: hidden-opponent belief-aux diagnostics under their OWN `belief/` TB prefix (NOT
         # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`win_prob/`/`eval/`

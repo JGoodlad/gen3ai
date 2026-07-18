@@ -1371,6 +1371,13 @@ Two scalars ride the standard logger → TensorBoard + launcher TUI (`format.py`
 - **`train/noise_scale_ratio`** = `B_simple / (batch_size·accum)` — the actionable read: **≫1 ⇒
   noise-limited** (enlarge the effective batch), **≪1 ⇒ diminishing returns** (you have more than
   enough; could shrink for more/cheaper update steps), **~1 ⇒ the sweet spot**.
+- **`film/noise_scale`(+`_ratio`)** — the SAME two-point estimator restricted to the **FiLM
+  generator param group** (emitted only when `--zarch-film` is on; the film-group big-batch norm is
+  read BEFORE `clip_grad_norm_`, which mutates grads in place). The global metric can't resolve
+  whether the ~33k-param conditioning gradient is signal or noise (drowned by the ~10M-param total);
+  **film ≫ global ≫ effective batch ⇒ the per-team RL gradient into the conditioners sits below its
+  noise floor at our batch** — the quantitative sample-starvation / "persistent net cost" read
+  (`designs/learning/amortization_gap_and_conditioning.md`).
 
 Tests: `instrumented_ppo_test.py` — `test_noise_scale_estimate_recovers_known_values` (the two-point
 math recovers a planted `|G|²`/`tr(Σ)` exactly), `_smaller_batch_is_noisier_sign`, `_global_grad_sq`
@@ -1725,6 +1732,17 @@ collapsed constant z (= no conditioning, back to the amortized baseline). Two au
   degenerates to a learned per-team bias — harmless, arch-compatible with multi-team runs).
 - **Versioning.** The coefs are TRAINING-ONLY (flagless-resume-inherited, defaults 1.0 / 0.1); the
   `zarch_film`/`zarch_dim` structure is version-checked (v44, `check_compatible`).
+- **Function-space steady state — the churn probe (`churn_probe.py`).** Weight metrics cannot decide
+  whether the FiLM system has settled: Adam gives any small-but-consistent gradient constant-speed
+  weight motion and PPO moves a clip-bounded amount per update forever, so `film/dev` can grow
+  linearly at full FUNCTIONAL convergence (gauge drift — FiLM magnitude trades off against the
+  downstream weights). The probe measures policy KL between two checkpoints on a FROZEN probe-state
+  set (`collect` once via bridge battles → npz; `compare` any two checkpoints), overall + grouped by
+  OUR roster: falling aggregate KL = the function converging; a heavy per-team KL tail under a quiet
+  aggregate = per-team conditioning still being rewritten (the noise-fitting signature). `python -m
+  agents.training.churn_probe {collect,compare} …`; the pure math (`masked_kl` —
+  legal-actions-only, later-policy-first; `roster_keys` — layout-driven) is unit-tested in
+  `churn_probe_test.py`.
 - **Tests.** `agents/model/zarch_test.py` — the aux math (recon/topk-acc/pad-row, the VICReg floor at
   collapse vs diverse, grad flow, the 1-row + None guards) + identity-at-init / team-static /
   permutation-invariance / gradient-isolation / the v44 gate. End-to-end `--debug --use-bridge=node
