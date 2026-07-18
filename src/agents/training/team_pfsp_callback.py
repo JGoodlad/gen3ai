@@ -21,11 +21,20 @@ import time
 from stable_baselines3.common.callbacks import BaseCallback
 
 
-def compute_team_pfsp_weights(emas, floor, cap):
-    """Pure weight math (unit-tested): ``raw_i = floor + p_i*(1-p_i)``; then cap each at
+def compute_team_pfsp_weights(emas, floor, cap, onesided=False):
+    """Pure weight math (unit-tested): ``raw_i = floor + w(p_i)``; then cap each at
     ``cap × mean(raw)`` (no team may exceed ``cap`` × the uniform sampling share). Returns the
-    per-team weight list to hand to ``random.choices(weights=...)``."""
-    raw = [floor + p * (1.0 - p) for p in emas]
+    per-team weight list to hand to ``random.choices(weights=...)``.
+
+    ``w(p)``: default (symmetric variance) ``p*(1-p)`` — peaks at 50%, decays toward BOTH
+    extremes, so a badly-losing team is down-weighted like a mastered one ("truly lost, nothing
+    to learn"). ``onesided=True`` (the ``--team-pfsp onesided`` mode) keeps the LOSING side at
+    the MAXIMUM — ``w(p) = 0.25 for p < 0.5, else p*(1-p)`` (continuous at 0.5) — every
+    sub-50% team stays maximally sampled and only mastery retires a team. The owner's read
+    under the z_arch/FiLM conditioning hypothesis: the weak-team tail is exactly the learnable
+    headroom (the amortization gap), so "hopeless" is the diagnosis being TESTED, not a fact to
+    bake into the sampler. An unmeasured team's 0.5 seed gives the max either way."""
+    raw = [floor + (0.25 if (onesided and p < 0.5) else p * (1.0 - p)) for p in emas]
     n = len(raw)
     if n == 0:
         return []
@@ -41,8 +50,10 @@ class TeamPFSPCallback(BaseCallback):
       cap / floor    — the weight cap (× uniform share) and floor (raw = floor + p*(1-p)).
       ema_beta       — EMA smoothing of each team's win-rate (higher = slower, damps eval noise).
       update_every   — act only every N rollouts (the counts accumulate across the skipped ones).
-      mode           — "var" (bias sampling: push the variance weights) | "measure" (track + persist
-                       the per-team win-rate ONLY, never push → sampling stays uniform). Both persist.
+      mode           — "var" (bias sampling: push the symmetric variance weights) | "onesided"
+                       (bias sampling: losing side held at MAX weight — every sub-50% team stays
+                       maximally sampled, only mastery retires a team) | "measure" (track + persist
+                       the per-team win-rate ONLY, never push → sampling stays uniform). All persist.
       persist_dir    — if set, write a ``team_winrates.json`` snapshot there each update (the offline
                        "which team is the generalist weakest on → next exploiter target" artifact).
     """
@@ -128,10 +139,12 @@ class TeamPFSPCallback(BaseCallback):
                 self._ema[i] = self._ema_beta * self._ema[i] + (1.0 - self._ema_beta) * p
                 self._measured.add(i)
 
-        # 5) Compute the variance weights (capped) — 6) PUSH them ONLY in "var" mode ("measure" tracks
+        # 5) Compute the weights (capped) — 6) PUSH them ONLY in the biasing modes ("measure" tracks
         #    + persists the win-rate but never biases sampling, so the team distribution stays uniform).
-        w = compute_team_pfsp_weights(self._ema, self._floor, self._cap)
-        if self._mode == "var":
+        #    "onesided" = the losing side held at max weight (see compute_team_pfsp_weights).
+        w = compute_team_pfsp_weights(self._ema, self._floor, self._cap,
+                                      onesided=(self._mode == "onesided"))
+        if self._mode in ("var", "onesided"):
             self.training_env.env_method("set_team_pfsp_weights", w)
 
         # 7) Diagnostics + auditability.

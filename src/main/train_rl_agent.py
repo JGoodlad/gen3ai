@@ -1578,7 +1578,7 @@ async def main():
                              "up-weight. Default off = the legacy sliding window (byte-identical).")
     # ── Team-side PFSP: variance-weighted TEAM sampling by self-play win-rate (OFF by default) ──
     parser.add_argument("--team-pfsp", "--team_pfsp", dest="team_pfsp",
-                        choices=["off", "measure", "var"], default="off",
+                        choices=["off", "measure", "var", "onesided"], default="off",
                         help="Per-team self-play win-rate tracking for the trainee's pool teams (default "
                              "off = uniform random.choice, byte-identical). 'measure' TRACKS + persists "
                              "the per-team self-play win-rate to <run>/team_winrates.json (the offline "
@@ -1586,9 +1586,13 @@ async def main():
                              "WITHOUT biasing sampling. 'var' additionally weights each pool team by floor "
                              "+ p*(1-p) (p = the win-rate EMA, seed 0.5), capped at --team-pfsp-cap x the "
                              "uniform share — so the trainee drills the teams it wins ~half the time (max "
-                             "variance) and stops over-sampling the ones it crushes / always loses. Measured "
-                             "on SELF-PLAY pool battles only (bots excluded). Training-only, NOT "
-                             "version-locked.")
+                             "variance) and stops over-sampling the ones it crushes / always loses. "
+                             "'onesided' keeps the LOSING side at MAX weight instead — w(p)=0.25 for p<0.5, "
+                             "else p*(1-p) (continuous at 0.5): every sub-50% team stays maximally sampled "
+                             "and only mastery retires a team (under the z_arch/FiLM conditioning "
+                             "hypothesis the weak tail is the learnable headroom, so 'truly lost' is the "
+                             "claim under test, not a sampling prior). Measured on SELF-PLAY pool battles "
+                             "only (bots excluded). Training-only, NOT version-locked.")
     parser.add_argument("--team-pfsp-cap", "--team_pfsp_cap", dest="team_pfsp_cap",
                         type=float, default=3.0,
                         help="Over-representation cap for --team-pfsp: no team is sampled more than "

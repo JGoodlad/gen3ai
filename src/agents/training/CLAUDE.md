@@ -1048,16 +1048,21 @@ legal, mask respected, sharpens-agreement/flattens-disagreement, `tmax=1` recove
 The TEAM-axis complement to the opponent-side `--pfsp-scale`: bias the TRAINEE's team sampling toward
 the pool teams it is weakest on, so training spends gradient where the win-rate says there's headroom
 instead of uniformly over ~700 pool teams (the documented "uniform team sampling = headroom" gap).
-Three modes: **`off`** (default → byte-identical), **`measure`** (TRACK + persist the per-team
-self-play win-rate WITHOUT biasing sampling — pure observability), **`var`** (measure + bias).
+Four modes: **`off`** (default → byte-identical), **`measure`** (TRACK + persist the per-team
+self-play win-rate WITHOUT biasing sampling — pure observability), **`var`** (measure + bias,
+symmetric variance), **`onesided`** (measure + bias, losing side held at MAX).
 
 - **Variance weighting + cap + floor.** For pool team `i` the weight is `raw_i = --team-pfsp-floor +
-  p_i·(1−p_i)` where `p_i` is the team's self-play win-rate EMA (seed 0.5 → an unmeasured team gets the
-  MAX variance weight → explored), then capped `w_i = min(raw_i, --team-pfsp-cap·mean(raw))` (no team is
-  sampled more than `cap`× the uniform share — the over-representation bound). `p·(1−p)` peaks at 50%
-  (the most-to-learn matchups) and decays to the floor at both extremes, so it self-ignores both the
-  teams we crush AND the truly-lost teams; the floor keeps nothing fully starved. `compute_team_pfsp_
-  weights` is the pure, unit-tested math.
+  w(p_i)` where `p_i` is the team's self-play win-rate EMA (seed 0.5 → an unmeasured team gets the
+  MAX weight → explored), then capped `w_i = min(raw_i, --team-pfsp-cap·mean(raw))` (no team is
+  sampled more than `cap`× the uniform share — the over-representation bound). **`var`**: `w(p) =
+  p·(1−p)` — peaks at 50% and decays to the floor at BOTH extremes, so it self-ignores both the teams
+  we crush AND the truly-lost teams. **`onesided`** (owner-requested, the z_arch/FiLM companion):
+  `w(p) = 0.25 for p < 0.5, else p·(1−p)` (continuous at 0.5) — every sub-50% team stays MAXIMALLY
+  sampled and only mastery retires a team, because under the conditioning hypothesis the weak-team
+  tail is exactly the learnable headroom (the amortization gap): "truly lost" is the claim under
+  test, not a sampling prior to bake in. The floor keeps nothing fully starved either way.
+  `compute_team_pfsp_weights` is the pure, unit-tested math.
 - **Self-play only, pool teams only.** The per-team win-rate is measured ONLY on self-play POOL battles
   (bots wash the signal out — we win ~0.99 vs bots): `MaskableAgentWrapper.step` records the outcome to
   the trainee's `Gen3Teambuilder` (`self.env.agent1._team`) only when `self.opponent is

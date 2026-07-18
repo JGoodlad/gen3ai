@@ -255,3 +255,18 @@ def test_cap_and_floor_weights():
 def test_cap_and_floor_empty():
     """Degenerate empty EMA list → empty weights (no divide-by-zero)."""
     assert compute_team_pfsp_weights([], floor=0.05, cap=3.0) == []
+
+
+def test_onesided_weights():
+    """'onesided' mode: the LOSING side is held at the MAX weight — w(p)=0.25 for p<0.5, else
+    p(1-p) — so a badly-losing team samples like a 50/50 one and only MASTERY retires a team.
+    Continuous at 0.5; the unmeasured 0.5 seed gives the max either way."""
+    # losing (0.0, 0.2) → held at 0.25; winning (0.8, 1.0) → variance decay (0.16, 0.0).
+    w = compute_team_pfsp_weights([0.0, 0.2, 0.5, 0.8, 1.0], floor=0.05, cap=100.0, onesided=True)
+    assert w == pytest.approx([0.30, 0.30, 0.30, 0.21, 0.05])
+    # default (symmetric) still decays the losing side — the two modes differ only there.
+    ws = compute_team_pfsp_weights([0.0, 0.2, 0.5, 0.8, 1.0], floor=0.05, cap=100.0)
+    assert ws == pytest.approx([0.05, 0.21, 0.30, 0.21, 0.05])
+    # continuity at the boundary: p just below/at 0.5 give ~equal weight.
+    lo, hi = compute_team_pfsp_weights([0.4999, 0.5], floor=0.0, cap=100.0, onesided=True)
+    assert lo == pytest.approx(hi, abs=1e-3)
