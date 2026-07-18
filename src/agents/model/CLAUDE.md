@@ -893,6 +893,49 @@ threaded through `current_model_version` / `arch_toggles_from_model` / `_run_arc
 `extractor_kwargs` sites. Training half + the parity fuzz: `src/agents/training/CLAUDE.md` →
 public-replay value aux. `MODEL_CONFIG_VERSION` = **43**.
 
+**Team-archetype latent + head FiLM (v44, `gen3_zarch_film_v1`, `zarch_film` / `--zarch-film
+{off,heads}` + `zarch_dim` / `--zarch-dim`).** The amortization-gap STORAGE fix
+(`designs/learning/amortization_gap_and_conditioning.md`): one shared head averages conflicting
+per-team strategies (probes: per-team distillation fixed the distilled teams, did NOT lift neighbors,
+and regressed the rest — cancellation made visible); FiLM conditions the heads on a learned
+team-archetype code so per-team gradients land in different modulated subspaces. Two modules:
+- **`ZArchEncoder`** — z_arch [B, `zarch_dim`] from OUR team's **INVARIANT** facts only (species ⊕
+  item ⊕ ability ⊕ mean move-emb ⊕ the 18-dim spread block; slots 0..5 of ctx): shared atom MLP
+  (`ZARCH_ATOM_HIDDEN`=64) → **DeepSets mean** over the 6 mons → LayerNorm. Properties by
+  construction: **team-static** (invariant inputs + deterministic — no VIB sampling in v1: a
+  per-forward reparam sample would break team-static, add VIB noise to PPO's epoch-recomputed ratio,
+  and break eval determinism; the LUT-first operating point needs no rate limiter — the bottleneck IS
+  the dim), **permutation-invariant** (a team is a set; one swap = a 1/6 twist), and **trunk-decoupled**
+  (every embedding-table read is `.detach()`ed — recon/VICReg/FiLM gradients touch ONLY the encoder's
+  own params, verified by `zarch_test.test_recon_gradient_touches_only_zarch_params`). A `recon_head`
+  emits species multi-hot logits (side readout, aux-only). Leak-trivial (our own public roster).
+- **FiLM at the root heads** — `film_pi`/`film_vf` (`Linear(zarch_dim, 2·PROJECTION_DIM)`, **zero-init
+  weight+bias**) modulate each head's POST-projection PRE-ReLU features: `h·(1+Δγ(z)) + Δβ(z)`.
+  Post-projection so `pre_proj_norm` (LayerNorm) can't wash the per-feature scale out; identity-at-init
+  ⇒ ON starts byte-identical (the `refine_proj` convention); separate per-head generators (value is
+  archetype-conditional in its own way — the same board is winning-for-stall / losing-for-offense).
+  Downstream of every other phase (incl. the DamageOperator concat) → composes with all toggles.
+
+Stashes: `last_zarch` (live, read by forward()'s FiLM + the aux loss), `last_zarch_recon_logits` +
+`last_zarch_species_ids` (grad-gated — training epochs only). The aux loss
+(`instrumented_ppo._zarch_loss`, folded at `--zarch-recon-coef` [1.0] + `--zarch-vicreg-coef` [0.1]) =
+species multi-hot recon BCE (the ANTI-COLLAPSE anchor — a constant z can't reconstruct different
+teams; row 0 pad zeroed) + a VICReg per-dim variance floor `relu(1−std(z, batch))` (z is LayerNorm'd
+per-SAMPLE, which does not prevent cross-batch collapse). Metrics `zarch/{recon_bce, recon_topk_acc,
+std, vicreg}` + `film/{pi,vf}_{gamma,beta}_norm` (aliveness) + the GENERIC-vs-CONDITIONING split
+`film/{pi,vf}_dev` (mean |modulation|) vs `film/{pi,vf}_team_std` (per-dim modulation std ACROSS the
+minibatch's teams — the true conditioning read: the z SIGNAL is recon-supervised so it can't collapse,
+but nothing supervises the generators' USE of it, and RL alone can grow them on z's team-SHARED
+component [generic capacity] while the per-team differential stays weak; `team_std`≈0 with `dev`
+growing = that lazy mode — distillation pressure is the sharpening lever). Coefs are TRAINING-ONLY
+(flagless-resume-inherited) and **auto-zeroed on a single-team pinned-`--trainee-team` run**
+(constant z ⇒ degenerate variance floor; FiLM stays on as a learned per-team bias). Versioning:
+`zarch_film` (STRING) + `zarch_dim` (unconditional INT — the generators' in_features) gated in
+`check_compatible`; OFF byte-for-byte (NO `ARCH_SIGNATURE` bump); `MODEL_CONFIG_VERSION` = **44**;
+threaded through `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles` + both
+`extractor_kwargs` sites. Tests: `zarch_test.py` (identity-at-init forward == baseline, OFF-no-modules,
+team-static + permutation invariance, gradient isolation, the aux math, the v44 gate + migration).
+
 **Damage re-attend (v31, `damage_reattend` / `--damage-reattend`, `gen3_damage_reattend_v1`).** Lets
 attention reason OVER the computed physics — today the `DamageOperator` block is concatenated POST-pool
 into pi/vf, so NO attention ever sees it (and per-candidate switch reasoning is pooled away). When on,

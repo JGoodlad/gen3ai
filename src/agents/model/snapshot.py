@@ -672,6 +672,10 @@ def current_model_version(
     belief_grad_mode: str = "shaping",
     pubval_mode: str = "none",
     pubval_coef: float = 0.0,
+    zarch_film: str = "off",
+    zarch_dim: int = 0,
+    zarch_recon_coef: float = 0.0,
+    zarch_vicreg_coef: float = 0.0,
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -735,6 +739,8 @@ def current_model_version(
     ext_kwargs["hp_type_belief_mode"] = hp_type_belief_mode
     ext_kwargs["belief_grad_mode"] = belief_grad_mode
     ext_kwargs["pubval_mode"] = pubval_mode
+    ext_kwargs["zarch_film"] = zarch_film
+    ext_kwargs["zarch_dim"] = zarch_dim
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -748,6 +754,7 @@ def current_model_version(
         win_prob_coef=win_prob_coef, move_belief_latent_coef=move_belief_latent_coef,
         spread_belief_coef=spread_belief_coef, value_dist_coef=value_dist_coef,
         hp_type_belief_coef=hp_type_belief_coef, pubval_coef=pubval_coef,
+        zarch_recon_coef=zarch_recon_coef, zarch_vicreg_coef=zarch_vicreg_coef,
     )
 
 
@@ -782,6 +789,11 @@ def arch_toggles_from_model(model) -> dict:
         # v43 pubval aux head (gen3_pubval_aux_v1): STRUCTURAL string like win_prob_mode, gated in
         # check_compatible, so it must reach the worker's gate (a pubval-ON run's own snapshots carry it).
         "pubval_mode": str(getattr(fe, "pubval_mode", "none")),
+        # v44 z_arch/FiLM (gen3_zarch_film_v1): STRUCTURAL string + int gated in check_compatible
+        # (the encoder + generator params; the dim = generator in_features), so both must reach the
+        # worker's gate (a zarch-ON run's own pool/sentinel snapshots carry them).
+        "zarch_film": str(getattr(fe, "zarch_film", "off")),
+        "zarch_dim": int(getattr(fe, "zarch_dim", 0)),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),

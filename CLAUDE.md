@@ -1022,8 +1022,30 @@ end-to-end by `poke_env_gaps/pubval_parity_fuzz_test.py`). SIDE readout — neve
 human positional prior shapes the trunk (the experiment). STRUCTURAL + resume-immutable string gate (like
 `win_prob_mode`); OFF byte-identical (NO `ARCH_SIGNATURE` bump). Metrics `pubval/*` (watch `mae`→0, not the
 entropy-floored `bce`) + `grad/pubval_share`; the acceptance gate = the critic's defensive-AUC-by-style
-transfer. Design: `designs/ai_v8/design_public_info_value.md`. Current
-`MODEL_CONFIG_VERSION` = **43**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+transfer. Design: `designs/ai_v8/design_public_info_value.md`.
+**v44 the TEAM-ARCHETYPE latent + head FiLM** (`gen3_zarch_film_v1`; `zarch_film` / `--zarch-film
+{off,heads}` + `zarch_dim` / `--zarch-dim` [default 32 = `ZARCH_DIM`] + the training-only
+`--zarch-recon-coef` [1.0] / `--zarch-vicreg-coef` [0.1]) — the amortization-gap **STORAGE** fix
+(`designs/learning/amortization_gap_and_conditioning.md`: per-team distillation was shown to fix
+greedy-local play on distilled teams but NOT generalize to neighbors AND to interfere with the rest —
+the literal signature of conflicting per-team strategies cancelling in one shared head). `ZArchEncoder`
+builds a **TEAM-STATIC, permutation-invariant DeepSets latent z_arch** over OUR team's **INVARIANT**
+facts only — species ⊕ item ⊕ ability ⊕ moves (mean move-emb) ⊕ the 18-dim spread block, per-mon atom
+MLP → mean over 6 → LayerNorm — DETERMINISTIC (no VIB sampling in v1: per-forward sampling would break
+team-static, PPO's epoch ratio recompute, and eval determinism; LUT-first is the chosen operating
+point) with **DETACHED embedding reads** (zero trunk gradient interference, the `belief_grad_mode`
+philosophy). Two **zero-init FiLM generators** (one per root head) then modulate the post-projection
+pre-ReLU head features `h·(1+Δγ(z)) + Δβ(z)` — identity-at-init, so ON starts byte-identical; per-team
+gradients land in different rank-`zarch_dim` subspaces instead of cancelling. Anti-collapse = the
+species multi-hot **reconstruction BCE** (a constant z can't reconstruct different teams; Species
+Clause ⇒ lossless) + a **VICReg per-dim variance floor** (`zarch/std` is the collapse monitor;
+`film/{pi,vf}_{gamma,beta}_norm` the deviation-from-identity read). Coefs auto-zeroed on a single-team
+(pinned `--trainee-team`) run (z is constant there → degenerate variance floor; FiLM stays on as a
+learned per-team bias). STRUCTURAL: `zarch_film` string + `zarch_dim` int gated in `check_compatible`
+(the `value_dist_mode`/`bins` pattern); OFF byte-identical (NO `ARCH_SIGNATURE` bump); requires
+nothing (independent of the belief/damage stack); threaded through `current_model_version` /
+`arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs` sites. Current
+`MODEL_CONFIG_VERSION` = **44**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

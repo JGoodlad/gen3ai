@@ -83,7 +83,7 @@ estimate changes that pressure.
 | Sub-problem | Lever | Mechanism | Status |
 |---|---|---|---|
 | **Extraction** — get the small per-team signal | good critic + **distillation** | raise the SNR / hand over a supervised per-team target | distillation done; critic improved (FitNets un-crystallized it) |
-| **Storage** — hold conflicting behaviors without cancelling | **conditioning: FiLM on `z_arch`** | per-archetype affine gain/bias on the trunk features ⇒ per-team gradients modulate *different* subspaces instead of overwriting one shared weight | **the gap — not built (v8)** |
+| **Storage** — hold conflicting behaviors without cancelling | **conditioning: FiLM on `z_arch`** | per-archetype affine gain/bias on the head features ⇒ per-team gradients modulate *different* subspaces instead of overwriting one shared weight | **v1 BUILT (v44, `gen3_zarch_film_v1`, `--zarch-film heads`) — not yet run** |
 | **Surpassing** — improve *beyond* the distilled teacher | good critic again | advantage SNR for the non-imitation RL climb | gated by the critic |
 
 They're aligned in **goal** (close the gap) but act on **different mechanisms**, so a perfect critic maxes
@@ -291,11 +291,36 @@ per-team planning* (it fixes the greedy-local counter-trading on the teams it di
 *expensively, per-team, without generalizing to neighbors, and while interfering with the rest* — the
 literal signature of one head trying to hold conflicting strategies. Conditioning is the mechanism that
 keeps the per-team fixes from colliding and lets them spread across a core's neighborhood, turning an
-un-scalable per-team distillation loop into a few-anchors-plus-`z_arch` one. **Next step: run the `_18`-vs-
-`_14` interference control, then build FiLM the cheap way** (functional-composition `z_arch` from the
-mon-role atoms; composition-reconstruction as the day-0 prior + collapse guard; a few seed anchors to force
-routing; LUT-first β) and measure the payoff as: does distilling an anchor now *lift its neighbors without
-regressing the rest*.
+un-scalable per-team distillation loop into a few-anchors-plus-`z_arch` one.
+
+**Status (2026-07-17, later the same day): FiLM v1 is BUILT** — `gen3_zarch_film_v1` (v44,
+`--zarch-film heads` + `--zarch-dim 32`): a team-static, permutation-invariant DeepSets `z_arch` over
+OUR team's invariant facts (species/item/ability/moves/spread; detached embedding reads → zero trunk
+interference), DETERMINISTIC in v1 (no VIB — per-forward sampling would break team-static, PPO's
+ratio recompute, and eval determinism; LUT-first needs no rate limiter), conditioning BOTH root heads
+post-projection pre-ReLU with zero-init generators (identity-at-init, OFF byte-identical).
+Anti-collapse = species-recon BCE + a VICReg variance floor (auto-zeroed on single-team runs). Smoke:
+recon acc rises, z variance healthy, FiLM norms grow off zero. Details:
+`src/agents/model/CLAUDE.md` → Team-archetype latent + head FiLM; the as-built deviations from the
+original sketch are recorded in [[self_discovered_archetype_latent]]. **Remaining next steps: run the
+`_18`-vs-`_14` interference control (still outstanding — gates the strength of the "interference"
+claim), then the FiLM fresh run with at least one seed-anchor distillation**, measuring the payoff as:
+does distilling an anchor now *lift its neighbors without regressing the rest*.
+
+**Two refinements to the Collapse-vs-Dead section above (2026-07-17, owner discussion — same
+conclusion, sharper mechanics).** The section already splits the failure modes correctly (Collapse
+killed by reconstruction, no exploiters needed; Dead = under-used-but-harmless until specialists
+supply the use pressure — the Phase-0/Phase-2 bootstrapping plan). Two things sharpened since:
+(1) *why* pure RL still grows FiLM, not just "weakly": the generator gradient is an **outer product
+with z**, so per-team components write to different z-directions and don't cancel the way shared-head
+gradients do (the storage mechanism acting on FiLM's own weights; the smoke shows the norms rising
+immediately). The honest residual risk is therefore the LAZY mode — growing on z's team-SHARED
+component (a generic scale/shift = free capacity) while the per-team DIFFERENTIAL, the actual
+de-amortization, stays weak (fed by the small extraction-limited per-team advantage). Distillation =
+the *sharpener* of the differential, not an aliveness prerequisite. (2) The monitor this section
+prescribed ("FiLM γ/β deviation from identity") **cannot distinguish those two modes** — the shipped
+upgrade is the split `film/{side}_dev` (mean |modulation|) vs `film/{side}_team_std` (modulation
+spread ACROSS teams): `team_std`≈0 while `dev` grows = lazy generic mode, both rising = real routing.
 
 ## See also
 - [[objective_richness_and_representation]] — the simplicity bias / minimal-sufficient-statistic backbone (why the shared solution wins by default) + the distillation bits-ladder

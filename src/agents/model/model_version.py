@@ -318,7 +318,19 @@ from typing import Any, Dict, List
 #   obs key computed env-side from PUBLIC state only. STRUCTURAL + resume-IMMUTABLE STRING gate like
 #   win_prob_mode ('none'↔head = state_dict; read_only↔shaping = grad-flow); OFF byte-for-byte (NO
 #   ARCH_SIGNATURE bump). `pubval_coef` training-only. Design: designs/ai_v8/design_public_info_value.md.
-MODEL_CONFIG_VERSION = 43
+# v44: gen3_zarch_film_v1 — the team-archetype latent z_arch + head FiLM (the amortization-gap STORAGE
+#   fix: per-team gradients modulate different rank-z subspaces instead of cancelling in the shared
+#   heads — designs/learning/amortization_gap_and_conditioning.md). `zarch_film` (off|heads) builds a
+#   ZArchEncoder (a TEAM-STATIC, permutation-invariant DeepSets code over OUR team's INVARIANT facts:
+#   species ⊕ item ⊕ ability ⊕ moves ⊕ spread, detached embedding reads — zero trunk interference) +
+#   two ZERO-INIT FiLM generators applied post-projection pre-ReLU per root head (identity-at-init ⇒
+#   ON starts byte-identical). `zarch_dim` (int) is the latent width = the FiLM conditioning rank —
+#   the generators' in_features, so every distinct value is a weight-shape mismatch (unconditional int
+#   compare, the value_dist_bins pattern). STRING + INT gated in check_compatible; OFF (off/0) builds
+#   no modules = baseline byte-for-byte (NO ARCH_SIGNATURE bump). `zarch_recon_coef` (species multi-hot
+#   reconstruction BCE — the anti-collapse anchor) + `zarch_vicreg_coef` (per-dim variance floor) are
+#   TRAINING-ONLY loss coefs (recorded for provenance + flagless-resume read-back, NOT version-locked).
+MODEL_CONFIG_VERSION = 44
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -978,6 +990,19 @@ class ModelVersion:
     # BCE aux loss, affects no forward pass → recorded for provenance but NOT version-locked
     # (resume-mutable, inherited on a flagless resume).
     pubval_coef: float = 0.0
+    # v44 STRUCTURAL toggle (gen3_zarch_film_v1): the team-archetype latent + head FiLM. 'off' = no
+    # modules (baseline byte-for-byte); 'heads' = ZArchEncoder + two zero-init FiLM generators on the
+    # root heads (identity-at-init). STRING-gated in check_compatible (a state_dict + forward change).
+    zarch_film: str = "off"
+    # v44 STRUCTURAL int: the z_arch latent width (= the FiLM generators' in_features = the conditioning
+    # rank). Every distinct value is a weight-shape mismatch → unconditional int compare (the
+    # value_dist_bins pattern). 0 when zarch_film == 'off'.
+    zarch_dim: int = 0
+    # v44 TRAINING-ONLY loss coefs (like spread_belief_coef — recorded, NOT version-locked, inherited on
+    # a flagless resume): the species multi-hot reconstruction BCE (the anti-collapse anchor) + the
+    # VICReg per-dim variance floor on z across the batch.
+    zarch_recon_coef: float = 0.0
+    zarch_vicreg_coef: float = 0.0
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -996,6 +1021,8 @@ class ModelVersion:
         value_dist_coef: float = 1.0,
         hp_type_belief_coef: float = 0.0,
         pubval_coef: float = 0.0,
+        zarch_recon_coef: float = 0.0,
+        zarch_vicreg_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -1150,6 +1177,14 @@ class ModelVersion:
             pubval_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("pubval_mode", "none")
             ),
+            zarch_film=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("zarch_film", "off")
+            ),
+            zarch_dim=int(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("zarch_dim", 0)
+            ),
+            zarch_recon_coef=float(zarch_recon_coef),
+            zarch_vicreg_coef=float(zarch_vicreg_coef),
             pubval_coef=float(pubval_coef),
             hp_type_belief_coef=float(hp_type_belief_coef),
             value_tail_weight=float(value_tail_weight),
@@ -1451,6 +1486,25 @@ class ModelVersion:
                 "state_dict, and switching read_only↔shaping flips whether its loss shapes the shared "
                 "trunk (a silent mid-run training change).\n"
                 "Resume with the matching --pubval-mode setting, or start a fresh training run."
+            )
+
+        # v44 z_arch/FiLM (gen3_zarch_film_v1): the MODE gates off↔heads (the ZArchEncoder + FiLM
+        # generator params, a state_dict change — AND the forward the policy trained under); the DIM
+        # is the generators' in_features (weight-shape). Both FATAL on any load mismatch. The
+        # training-only recon/vicreg coefs are NOT checked.
+        if self.zarch_film != saved.zarch_film:
+            raise ModelVersionError(
+                f"zarch_film mismatch: saved={saved.zarch_film!r}, current={self.zarch_film!r}.\n"
+                "The team-archetype latent + head FiLM is fixed for a run's lifetime: adding/removing "
+                "it changes the state_dict AND the forward the policy trained under.\n"
+                "Resume with the matching --zarch-film setting, or start a fresh training run."
+            )
+        if self.zarch_dim != saved.zarch_dim:
+            raise ModelVersionError(
+                f"zarch_dim mismatch: saved={saved.zarch_dim}, current={self.zarch_dim}.\n"
+                "The z_arch latent width is the FiLM generators' input dim — a different value is a "
+                "weight-shape change.\n"
+                "Resume with the matching --zarch-dim setting, or start a fresh training run."
             )
 
         # v29 distributional VALUE head (like win_prob_mode): the MODE gates none↔head (the
@@ -1990,4 +2044,12 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("pubval_mode", "none")
         data.setdefault("pubval_coef", 0.0)
         data["config_version"] = 43
+    if version < 44:
+        # v44: gen3_zarch_film_v1 — the team-archetype latent + head FiLM (off/0) + its training-only
+        # recon/vicreg coefs (0.0). Old models had no ZArchEncoder and no FiLM generators.
+        data.setdefault("zarch_film", "off")
+        data.setdefault("zarch_dim", 0)
+        data.setdefault("zarch_recon_coef", 0.0)
+        data.setdefault("zarch_vicreg_coef", 0.0)
+        data["config_version"] = 44
     return data

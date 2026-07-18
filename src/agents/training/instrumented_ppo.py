@@ -258,6 +258,20 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # (pubval_mode); the loss is added whenever the mode is on AND this coef != 0.
     pubval_coef: float = 0.0
 
+    # Set by train_rl_agent (gen3_zarch_film_v1, like spread_belief_coef). The z_arch aux weights:
+    # zarch_recon_coef * BCE(recon_logits, our-team species multi-hot) — the ANTI-COLLAPSE anchor (a
+    # constant z cannot reconstruct different teams; Species Clause ⇒ multi-hot is lossless) — plus
+    # zarch_vicreg_coef * relu(1 − std(z, batch)).mean() — the VICReg per-dim variance floor. Both READ
+    # the extractor's last_zarch/last_zarch_recon_logits/last_zarch_species_ids stashes (grad-gated,
+    # training epochs only). The gradients touch ONLY the ZArchEncoder's own params (the encoder reads
+    # DETACHED embedding tables + raw obs slices — zero shared-trunk pull, so no grad-balance entry).
+    # 0.0/0.0 = OFF (byte-identical loss). Training-only → NOT version-locked; the ZArchEncoder + FiLM
+    # modules are gated by the version-checked zarch_film/zarch_dim arch toggles. NOTE: auto-zeroed by
+    # train_rl_agent on a single-team (pinned --trainee-team) run — z is a constant there, so the
+    # cross-batch variance floor is degenerate and the recon target is constant (harmless but useless).
+    zarch_recon_coef: float = 0.0
+    zarch_vicreg_coef: float = 0.0
+
     # Set by train_rl_agent (like win_prob_coef). The DISTRIBUTIONAL value head's HL-Gauss cross-entropy
     # loss weight: value_dist_coef * CE(value_dist_logits, return) over the rollout. Training-only (scales
     # the loss, never a forward pass) → NOT version-locked (recorded for provenance + flagless-resume
@@ -571,6 +585,46 @@ class InstrumentedMaskablePPO(MaskablePPO):
             "coverage": float((n_known / mask.numel()).item()),
         }
         return loss, metrics
+
+    @staticmethod
+    def _zarch_loss(z, recon_logits, species_ids):
+        """The z_arch aux terms (gen3_zarch_film_v1): species multi-hot reconstruction BCE (the
+        anti-collapse anchor) + the VICReg per-dim variance floor, returned SEPARATELY so the caller
+        folds each at its own coef.
+
+        ``z`` [B, D] = the team-archetype latent; ``recon_logits`` [B, n_species] = the
+        ZArchEncoder.recon_head output; ``species_ids`` [B, 6] = OUR team's species ids (public —
+        our own roster, no privileged label). The multi-hot target is exact under Species Clause
+        (no duplicate species on a legal team); row 0 (the pad/sentinel species) is zeroed out of
+        the target so a placeholder id never trains a spurious positive. The variance floor is the
+        latent-belief convention: relu(1 − std(z, dim=0)).mean() — a per-dim hinge across the batch
+        (z is LayerNorm'd per-sample, which does NOT prevent cross-batch collapse). Returns
+        ``(recon_loss, vicreg_loss, metrics)`` or ``None``. Pure + static → unit-testable."""
+        if z is None or recon_logits is None or species_ids is None:
+            return None
+        if z.shape[0] < 2:
+            return None                                  # a 1-row batch has no cross-batch variance
+        target = th.zeros_like(recon_logits)
+        target.scatter_(1, species_ids.long(), 1.0)
+        target[:, 0] = 0.0                               # pad/sentinel row — never a real team member
+        recon = F.binary_cross_entropy_with_logits(recon_logits, target)
+        std = z.std(dim=0)
+        vicreg = F.relu(1.0 - std).mean()
+        with th.no_grad():
+            # Recon health: does the true species rank in the top-6 logits? (multi-label top-k acc)
+            k = species_ids.shape[1]
+            topk = recon_logits.topk(k, dim=1).indices                      # [B, 6]
+            hits = (topk.unsqueeze(2) == species_ids.long().unsqueeze(1)).any(dim=1)  # [B, 6]
+            valid = species_ids.long() != 0
+            n_valid = valid.sum().clamp(min=1)
+            recon_acc = (hits & valid).sum().float() / n_valid.float()
+        metrics = {
+            "recon_bce": float(recon.item()),
+            "recon_topk_acc": float(recon_acc.item()),   # → 1 as z reconstructs the roster
+            "std": float(std.mean().item()),             # the collapse monitor (→0 = collapsed)
+            "vicreg": float(vicreg.item()),
+        }
+        return recon, vicreg, metrics
 
     @staticmethod
     def _value_dist_loss(logits, target, atoms):
@@ -1116,6 +1170,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         opd_metrics: dict[str, list[float]] = {}         # +OPD: on-policy self-distillation KL diagnostics
         distill_metrics: dict[str, list[float]] = {}     # +DISTILL: exploiter-distillation KL diagnostics
         value_dist_metrics: dict[str, list[float]] = {}  # +VALUE-DIST: per-minibatch HL-Gauss diagnostics
+        zarch_metrics: dict[str, list[float]] = {}       # +ZARCH: recon/VICReg diagnostics (gen3_zarch_film_v1)
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
         belief_aux_on = self.opp_belief_aux_coef > 0.0
         move_belief_on = self.move_belief_coef > 0.0  # +MOVE-BELIEF reinjection-head supervised loss
@@ -1136,6 +1191,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
         pubval_on = (
             getattr(self.policy.features_extractor, "pubval_mode", "none") != "none"
             and self.pubval_coef != 0.0
+        )
+        # +ZARCH (gen3_zarch_film_v1): the z_arch recon + VICReg aux. On when the extractor built the
+        # encoder AND either coef is non-zero. Gradients reach ONLY the ZArchEncoder's own params
+        # (detached embedding reads) — no trunk pull, hence no grad-balance entry. OFF → skipped.
+        zarch_on = (
+            getattr(self.policy.features_extractor, "zarch_film", "off") != "off"
+            and (self.zarch_recon_coef != 0.0 or self.zarch_vicreg_coef != 0.0)
         )
         # +VALUE-DIST: the distributional value head's HL-Gauss CE aux loss. On when the mode is set AND
         # the coef is non-zero. read_only vs shaping differ only in the extractor's stop-grad of the head's
@@ -1485,6 +1547,22 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             loss = loss + value_dist_term
                             for _vk, _vv in vd_m.items():
                                 value_dist_metrics.setdefault(_vk, []).append(float(_vv))
+
+                # +ZARCH (gen3_zarch_film_v1): the z_arch recon BCE + VICReg variance floor. The
+                # evaluate_actions forward above stashed last_zarch + the grad-gated recon
+                # logits/species ids for THIS minibatch; each term folds at its own coef. Touches
+                # only the ZArchEncoder's params (detached embedding reads → zero trunk gradient).
+                # OFF → skipped (loss byte-identical).
+                if zarch_on:
+                    _fe = self.policy.features_extractor
+                    z_out = self._zarch_loss(
+                        _fe.last_zarch, _fe.last_zarch_recon_logits, _fe.last_zarch_species_ids)
+                    if z_out is not None:
+                        z_recon, z_vicreg, z_m = z_out
+                        loss = loss + (self.zarch_recon_coef * z_recon
+                                       + self.zarch_vicreg_coef * z_vicreg)
+                        for _zk, _zv in z_m.items():
+                            zarch_metrics.setdefault(_zk, []).append(float(_zv))
 
                 # +DISTILL (gen3_exploiter_distill_v1): ON-POLICY KL toward a frozen per-team SPECIALIST,
                 # masked to the rollout states where the trainee pilots the teacher's team (`distill_mask`).
@@ -1851,6 +1929,38 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if value_dist_metrics:
             for _vk, _vvals in value_dist_metrics.items():
                 self.logger.record(f"value_dist/{_vk}", float(np.mean(_vvals)))
+
+        # +ZARCH (gen3_zarch_film_v1): z_arch diagnostics under their OWN `zarch/` TB prefix.
+        # `recon_topk_acc` → 1 as z carries the roster; `std` is the collapse monitor (→0 = collapsed
+        # — the NO-GO signal); the `film/*` generator norms are the deviation-from-identity read
+        # ("is FiLM alive or dead" — 0 at init, grows as conditioning is used; per-head so the
+        # policy-vs-value routing is separately attributable).
+        if zarch_metrics:
+            for _zk, _zvals in zarch_metrics.items():
+                self.logger.record(f"zarch/{_zk}", float(np.mean(_zvals)))
+        _zfe = self.policy.features_extractor
+        if getattr(_zfe, "zarch_film", "off") != "off":
+            with th.no_grad():
+                _z = _zfe.last_zarch                      # last minibatch's z [B, zdim] (many teams)
+                for _side, _gen in (("pi", _zfe.film_pi), ("vf", _zfe.film_vf)):
+                    _P = _gen.out_features // 2
+                    self.logger.record(f"film/{_side}_gamma_norm",
+                                       float(_gen.weight[:_P].norm().item()))
+                    self.logger.record(f"film/{_side}_beta_norm",
+                                       float(_gen.weight[_P:].norm().item()))
+                    # GENERIC vs CONDITIONING split: the generators can grow by exploiting the SHARED
+                    # component of z (a team-generic scale/shift = free capacity, not routing) while
+                    # the per-team DIFFERENTIAL stays weak — the norms alone can't tell. `*_dev` =
+                    # mean |modulation| (deviation-from-identity, generic + differential); `*_team_std`
+                    # = per-dim std of the modulation ACROSS the minibatch's teams (the true
+                    # conditioning signal — ≈0 while dev grows = the lazy generic mode; distillation
+                    # pressure is the lever that sharpens it).
+                    if _z is not None and _z.shape[0] > 1:
+                        _mod = _gen(_z)                   # [B, 2P] = [Δγ ‖ Δβ]
+                        self.logger.record(f"film/{_side}_dev",
+                                           float(_mod.abs().mean().item()))
+                        self.logger.record(f"film/{_side}_team_std",
+                                           float(_mod.std(dim=0).mean().item()))
 
         # +SEARCH-TEACHER: AWR diagnostics under their OWN `teacher/` TB prefix. `agree_rate` (policy ↔
         # A* — should RISE as the distillation lands), `mean_adv` (the confirmed win-rate improvement of

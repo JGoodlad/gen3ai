@@ -51,6 +51,12 @@ ROLE_ENCODER_HIDDEN = [256, 128]  # [hidden, output] of per-Pokémon role encode
 ACTIVE_CTX_HIDDEN = [64, 32]      # [hidden, output] of active context encoder
 NET_ARCH = [512, 512]             # MLP policy layers (SB3 policy_kwargs["net_arch"])
 N_HISTORY_TURNS = 7               # number of consecutive TurnDeltas in the observation
+# gen3_zarch_film_v1 (v44): the team-archetype latent z_arch + head FiLM. ZARCH_DIM is the DEFAULT
+# latent width (the CLI `--zarch-dim` records the run's actual value in model_config.json — the FiLM
+# modulation is rank-z_dim by construction, so this is the conditioning-capacity knob). Flag-gated
+# (`zarch_film != off`); OFF builds no modules (byte-identical baseline).
+ZARCH_DIM = 32                    # default z_arch latent dim (= the FiLM conditioning rank)
+ZARCH_ATOM_HIDDEN = 64            # hidden width of the per-mon static-atom MLP
 
 # Unified transformer hyperparameters. d_model matches ROLE_TOKEN_SIZE so team
 # role tokens enter the transformer without a projection step.
@@ -3443,6 +3449,62 @@ class ProjectionAssembler(torch.nn.Module):
         return pi_combined, vf_combined
 
 
+class ZArchEncoder(torch.nn.Module):
+    """Team-archetype latent z_arch from the INVARIANT parts of OUR team (gen3_zarch_film_v1, v44).
+
+    The amortization-gap storage fix's conditioning signal (designs/learning/
+    amortization_gap_and_conditioning.md): a TEAM-STATIC, permutation-invariant DeepSets code over
+    OUR 6 mons' invariant facts — species ⊕ item ⊕ ability ⊕ moves (mean of the 4 move embeddings)
+    ⊕ the 18-dim spread block (IVs/EVs/nature — our own side, known + invariant all battle). Each
+    mon → a shared atom MLP → MEAN over the 6 → LayerNorm → z [B, dim].
+
+    Design properties (each aimed at a measured failure mode):
+      - TEAM-STATIC by construction — every input is invariant within a battle, so z cannot
+        per-decision "flip" archetype (the composition_robustness_probe's 0.092 per-decision vs
+        0.030 static flip rate). Deterministic (no VIB sampling — v1 is the LUT-first operating
+        point; per-forward sampling would also break PPO's ratio recompute + eval determinism).
+      - DeepSets mean — order-free (a team is a SET) and a one-mon swap moves 1/6 of the sum
+        (a twist, not a flip; no single salient mon can dominate the code).
+      - DETACHED embedding reads — the shared species/move/item/ability tables are consumed
+        value-only, so the z-aux (recon/VICReg) and FiLM gradients cannot reshape the trunk's
+        embeddings (the belief_grad_mode='detached' philosophy: fully decoupled from the trunk,
+        zero gradient interference).
+      - recon_head — species multi-hot reconstruction logits (the day-0 anti-collapse anchor:
+        a constant z cannot reconstruct different teams; Species Clause ⇒ multi-hot is lossless).
+        A side readout for the aux loss only — never fed forward.
+
+    Leak-trivial: reads OUR OWN team only (fully public to us)."""
+
+    def __init__(self, layout: Dict[str, Any], dim: int):
+        super().__init__()
+        atom_in = (layout['species_embedding_dim'] + layout['item_embedding_dim']
+                   + layout['ability_embedding_dim'] + layout['move_embedding_dim']
+                   + POKEMON_SPREAD_DIM)
+        self.atom_mlp = torch.nn.Sequential(
+            torch.nn.Linear(atom_in, ZARCH_ATOM_HIDDEN),
+            torch.nn.ReLU(),
+            torch.nn.Linear(ZARCH_ATOM_HIDDEN, dim),
+        )
+        self.norm = torch.nn.LayerNorm(dim)
+        self.recon_head = torch.nn.Linear(dim, layout['max_species'])
+
+    def forward(self, ctx: ExtractorContext, embeddings: Embeddings) -> torch.Tensor:
+        # Invariant inputs only (our side = slots 0..5): no HP / status / boosts / PP.
+        # .detach() on every table read — see the class docstring (zero trunk interference).
+        sp = embeddings.species_embedding(ctx.species_ids[:, :TEAM_SIZE]).detach()      # [B,6,S]
+        it = embeddings.item_embedding(ctx.item_ids[:, :TEAM_SIZE]).detach()            # [B,6,I]
+        ab = embeddings.ability_embedding(ctx.ability1_ids[:, :TEAM_SIZE]).detach()     # [B,6,A]
+        mv = embeddings.move_embedding(ctx.all_move_ids[:, :TEAM_SIZE, :]).detach().mean(dim=2)  # [B,6,M]
+        spread = ctx.pokemon_part[:, :TEAM_SIZE,
+                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        atoms = self.atom_mlp(torch.cat([sp, it, ab, mv, spread], dim=-1))              # [B,6,dim]
+        return self.norm(atoms.mean(dim=1))                                             # [B,dim]
+
+    def recon_logits(self, z: torch.Tensor) -> torch.Tensor:
+        """Species multi-hot reconstruction logits [B, max_species] — aux-loss target only."""
+        return self.recon_head(z)
+
+
 class Gen3FeaturesExtractor(torch.nn.Module):
     """Orchestrates the phase modules. Data flow (bracketed phases are flag-gated; all off = the
     baseline ObsUnpack → PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler):
@@ -3477,7 +3539,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
                  threat_prob_outspeed: bool = False, threat_status_refine: bool = False,
                  hp_type_belief_mode: str = "off", belief_grad_mode: str = "shaping",
-                 pubval_mode: str = "none"):
+                 pubval_mode: str = "none",
+                 zarch_film: str = "off", zarch_dim: int = 0):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -3925,6 +3988,44 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # distributional aux loss + the offline prober/eval; NEVER fed into pi/vf (leak-safe side head).
         self.last_value_dist_logits: Optional[torch.Tensor] = None
 
+        # gen3_zarch_film_v1 (v44): the team-archetype latent + head FiLM — the amortization-gap
+        # STORAGE fix. 'off' = no modules (byte-identical baseline). 'heads' = build the ZArchEncoder
+        # (a team-static DeepSets code over OUR team's invariant facts) + two zero-init FiLM
+        # generators, one per root head; forward() then applies `h·(1+Δγ(z)) + Δβ(z)` to each head's
+        # post-projection pre-ReLU features. Zero-init ⇒ Δγ=Δβ=0 at init ⇒ ON starts byte-identical
+        # to the baseline forward (identity-at-init, the refine_proj convention); the modulation is
+        # rank-zarch_dim by construction (low-rank conditioning). STRUCTURAL toggle gated in
+        # check_compatible (string + int, the value_dist_mode/bins pattern); NO ARCH_SIGNATURE bump.
+        if zarch_film not in ("off", "heads"):
+            raise ValueError(f"zarch_film must be off|heads, got {zarch_film!r}")
+        if zarch_film != "off" and zarch_dim <= 0:
+            raise ValueError(
+                f"zarch_film={zarch_film!r} requires zarch_dim > 0 (the latent width), got {zarch_dim}")
+        if zarch_film == "off" and zarch_dim != 0:
+            raise ValueError(f"zarch_dim must be 0 when zarch_film == 'off', got {zarch_dim}")
+        self.zarch_film = zarch_film
+        self.zarch_dim = int(zarch_dim)
+        if zarch_film != "off":
+            self.zarch_encoder = ZArchEncoder(layout, self.zarch_dim)
+            # One FiLM generator per head (separate γ/β maps, shared z): Linear(z) → [Δγ ‖ Δβ],
+            # both chunks over PROJECTION_DIM. Zero-init weight AND bias → exact identity at init.
+            self.film_pi = torch.nn.Linear(self.zarch_dim, 2 * PROJECTION_DIM)
+            self.film_vf = torch.nn.Linear(self.zarch_dim, 2 * PROJECTION_DIM)
+            for _g in (self.film_pi, self.film_vf):
+                torch.nn.init.zeros_(_g.weight)
+                torch.nn.init.zeros_(_g.bias)
+        else:
+            self.zarch_encoder = None
+            self.film_pi = None
+            self.film_vf = None
+        # Stashed each forward when on (else None): the live z [B, zarch_dim] (read by forward()'s
+        # FiLM application + the aux loss + probes), the recon logits [B, max_species] + our-side
+        # species ids [B, 6] (grad-gated — training epochs only; read ONLY by the recon BCE, so the
+        # public our-team composition never routes anywhere new in the forward).
+        self.last_zarch: Optional[torch.Tensor] = None
+        self.last_zarch_recon_logits: Optional[torch.Tensor] = None
+        self.last_zarch_species_ids: Optional[torch.Tensor] = None
+
         self.role_token_size = ROLE_TOKEN_SIZE
 
         # gen3_belief_grad_mode_v1: stamp the per-head trunk-read detach flag now that every belief head
@@ -4030,6 +4131,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # `capture_refine_rounds` defaults False (set ONLY by the prober before a re-run forward), so the
         # rollout/training path never touches it → byte-for-byte unchanged. Reset the accumulator each forward.
         self.last_refine_rounds = [] if getattr(self, "capture_refine_rounds", False) else None
+        # gen3_zarch_film_v1: the team-archetype latent — computed from ctx's INVARIANT our-side
+        # facts only (team-static + deterministic ⇒ constant within a battle by construction).
+        # Stashed live for forward()'s FiLM application (same call) + the aux loss (same backward
+        # graph, the last_move_belief_logits pattern). The recon logits + species ids are grad-gated
+        # (training epochs only — rollout/eval pays only the tiny encoder forward FiLM needs).
+        self.last_zarch = None
+        self.last_zarch_recon_logits = None
+        self.last_zarch_species_ids = None
+        if self.zarch_encoder is not None:
+            self.last_zarch = self.zarch_encoder(ctx, self.embeddings)
+            if torch.is_grad_enabled():
+                self.last_zarch_recon_logits = self.zarch_encoder.recon_logits(self.last_zarch)
+                self.last_zarch_species_ids = ctx.species_ids[:, :TEAM_SIZE].detach()
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
         # In-place hidden-opponent belief: replace the un-revealed opp slots with distinct learned
         # unknown-mon tokens BEFORE the transformer, so the body refines them and every readout
@@ -4280,6 +4394,18 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         pi_combined, vf_combined = self.forward_internal(obs)
         if self._debugger is not None:
             self._debugger.on_forward(obs["observation"])
-        pi_features = self.activation(self.projection(self.pre_proj_norm(pi_combined)))
-        vf_features = self.activation(self.value_projection(self.value_pre_norm(vf_combined)))
+        pi_pre = self.projection(self.pre_proj_norm(pi_combined))
+        vf_pre = self.value_projection(self.value_pre_norm(vf_combined))
+        # gen3_zarch_film_v1: FiLM the head features on the team-archetype latent — POST-projection,
+        # PRE-ReLU (after the LayerNorm+Linear so the norm can't wash the per-feature scale out;
+        # before the activation, the standard FiLM site). `h·(1+Δγ) + Δβ` with zero-init generators
+        # ⇒ exact identity at init; each head has its own generator (value is archetype-conditional
+        # in its own way — the same board is "winning" for stall, "losing" for offense).
+        if self.zarch_film == "heads":
+            dg_pi, db_pi = self.film_pi(self.last_zarch).chunk(2, dim=-1)
+            dg_vf, db_vf = self.film_vf(self.last_zarch).chunk(2, dim=-1)
+            pi_pre = pi_pre * (1.0 + dg_pi) + db_pi
+            vf_pre = vf_pre * (1.0 + dg_vf) + db_vf
+        pi_features = self.activation(pi_pre)
+        vf_features = self.activation(vf_pre)
         return pi_features, vf_features

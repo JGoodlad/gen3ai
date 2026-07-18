@@ -9,6 +9,21 @@ win), **β** tunes how hard you squeeze, and **UMAP** (diagnostic only) lets you
 self-organized by play-style. The purest version has **no target at all** — the RL task + a
 compression penalty are the only pressures, so the model carves its own archetypes.
 
+**Status (2026-07-17): v1 is BUILT as `gen3_zarch_film_v1` (v44, `--zarch-film heads`), with three
+deliberate deviations from this note's original spec, each evidence-driven** (see
+[[amortization_gap_and_conditioning]] for the probes): **(1) the z source is NOT a CLSPool query over
+the trunk's team tokens** — the team pool probed core-dominated (flex twist ~chance) and a
+per-decision trunk read has 3× the archetype flip rate of a static code; v1 builds z from a dedicated
+DeepSets encoder over the obs's INVARIANT per-mon facts (species/item/ability/moves/spread, detached
+embedding reads → zero trunk gradient interference). **(2) v1 is DETERMINISTIC — no VIB sampling**:
+a per-forward reparam sample breaks team-static (per-decision z jitter), adds noise to PPO's
+epoch-recomputed ratio, and breaks eval determinism; and the chosen LUT-first operating point (β→0)
+needs no rate limiter — anti-collapse comes from composition-reconstruction + a VICReg variance floor
+instead (VIB is the *style-generalization phase's* tool, and needs per-EPISODE sampling when it
+lands). **(3) FiLM is applied at the two root heads only** (post-projection pre-ReLU, zero-init) —
+trunk-token FiLM is the follow-up A/B (`--zarch-film trunk`, not yet built). The β/rate-distortion
+theory below is kept as the design record for that later phase.
+
 ## Why a latent at all (the connection to the marginal trap)
 
 Self-play averages the gradient over teams, so a *team-conditional* strategy gets washed out by the
@@ -124,13 +139,18 @@ Team tokens → **attention-pool** into `N(μ,σ)` → **VIB** samples z_arch, *
 (+ optional self-prediction) shapes *what* survives → **FiLM** forces the heads to condition on it →
 **UMAP** reveals the emergent archetypes afterward. No labels, no fixed K, self-discovered.
 
-## Where this would live in our stack
-`archetype_cls` query in `CLSPool` (produces μ/σ) → VIB sample → FiLM in the `ProjectionAssembler`;
-new arch toggle `--archetype-latent` + a β and (optional) self-predictive coef, OFF byte-identical
-(FiLM identity-init, no head), version-gated in `check_compatible`, coefs training-only, **leak-safe**
-(signature is our own team + our own trajectories). Validation gate = *does conditioning improve
-per-archetype win-rate* (the team-PFSP win-rate history), NOT "does z_arch predict archetype." The
-belief-head pattern (see `src/agents/model/CLAUDE.md`) is the template.
+## Where this lives in our stack (v1 as-built — supersedes the original CLSPool sketch)
+**Shipped (v44, `gen3_zarch_film_v1`):** `ZArchEncoder` (a dedicated static-atom DeepSets encoder in
+`features_extractor.py` — NOT a CLSPool query; see the TL;DR status note for why) → deterministic z →
+zero-init `film_pi`/`film_vf` on the root heads. Flags `--zarch-film {off,heads}` + `--zarch-dim`
+(default 32), coefs `--zarch-recon-coef`/`--zarch-vicreg-coef` (training-only, auto-zeroed on
+single-team runs), OFF byte-identical, version-gated in `check_compatible`
+(`MODEL_CONFIG_VERSION` 44), **leak-trivial** (our own public roster). Monitors: `zarch/std`
+(collapse), `zarch/recon_topk_acc`, `film/{pi,vf}_{gamma,beta}_norm` (deviation-from-identity = is
+FiLM alive). Validation gate = *does conditioning improve per-archetype win-rate* (the team-PFSP
+win-rate history) and *does distilling an anchor now lift its neighbors without regressing the rest* —
+NOT "does z_arch predict archetype." Model details: `src/agents/model/CLAUDE.md` → Team-archetype
+latent + head FiLM.
 
 ## Implementation: FiLM via VIB + low-rank
 - **VIB:** the `archetype_cls` pool emits `(μ, logσ²)`; sample `z_arch = μ + σ⊙ε` (reparam), penalize

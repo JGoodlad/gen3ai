@@ -1687,6 +1687,46 @@ default; pieces:
   + the emitted `pubval_target` == the artifact's prediction (anti-vacuous-run guard; the capture hook
   must install BEFORE `attach_bridge_transport` — the bridge captures the bound handler at attach time).
 
+## z_arch aux — recon + VICReg (`--zarch-recon-coef` / `--zarch-vicreg-coef`)
+
+The training half of the v44 team-archetype latent + head FiLM (model side:
+`src/agents/model/CLAUDE.md` → Team-archetype latent + head FiLM; design rationale:
+`designs/learning/amortization_gap_and_conditioning.md`). The `ZArchEncoder` is trunk-DECOUPLED
+(detached embedding reads) and its z conditions both heads via zero-init FiLM — so WITHOUT an aux the
+only pressure on z is the weak RL gradient through the FiLM path, and the simplicity-bias optimum is a
+collapsed constant z (= no conditioning, back to the amortized baseline). Two aux terms keep it alive:
+
+- **Loss (`instrumented_ppo._zarch_loss`).** Reads the extractor's grad-gated stashes
+  (`last_zarch` / `last_zarch_recon_logits` / `last_zarch_species_ids` — OUR public roster, no
+  privileged label, no env/obs change): `zarch_recon_coef · BCE(recon_logits, species multi-hot)` —
+  the ANTI-COLLAPSE anchor (a constant z cannot reconstruct different teams; Species Clause makes the
+  multi-hot lossless; the pad row 0 is zeroed) — plus `zarch_vicreg_coef · relu(1 − std(z, batch)).mean()`
+  — the per-dim variance floor (z is LayerNorm'd per-sample, which does NOT prevent cross-batch
+  collapse). Gradients reach ONLY the ZArchEncoder's own params → **no grad-balance entry** (zero
+  shared-trunk pull by construction, pinned by `zarch_test.py`).
+- **Metrics (`zarch/*` + `film/*`).** `recon_bce` falls / `recon_topk_acc` rises (→1) as z carries
+  the roster; `std` is the collapse monitor (**→0 = NO-GO**). FiLM: `film/{pi,vf}_{gamma,beta}_norm`
+  (aliveness — grows off zero under RL alone, since the generator gradient is an outer product with z
+  and per-team components don't cancel) **plus the GENERIC-vs-CONDITIONING split** — `film/{side}_dev`
+  = mean |modulation| vs `film/{side}_team_std` = the modulation's per-dim std ACROSS the minibatch's
+  teams. The distinction matters because supervision covers only the z SIGNAL (recon — z cannot
+  collapse), never the generators' USE of it: RL can grow FiLM on z's team-SHARED component (a generic
+  scale/shift = free capacity) while the per-team DIFFERENTIAL — the actual de-amortization — stays
+  weak (it is fed by the small extraction-limited per-team advantage). `team_std` ≈ 0 while `dev`
+  grows = that lazy generic mode; seed-anchor distillation (Phase 2) is the sharpening lever, not an
+  aliveness requirement.
+- **Single-team auto-zero.** On a pinned `--trainee-team` run z is ONE constant vector across the
+  batch — the variance floor is degenerate (std ≡ 0 regardless of weights) and the recon target is
+  constant. `train_rl_agent` auto-zeros both coefs with a printed note; FiLM itself stays on (z
+  degenerates to a learned per-team bias — harmless, arch-compatible with multi-team runs).
+- **Versioning.** The coefs are TRAINING-ONLY (flagless-resume-inherited, defaults 1.0 / 0.1); the
+  `zarch_film`/`zarch_dim` structure is version-checked (v44, `check_compatible`).
+- **Tests.** `agents/model/zarch_test.py` — the aux math (recon/topk-acc/pad-row, the VICReg floor at
+  collapse vs diverse, grad flow, the 1-row + None guards) + identity-at-init / team-static /
+  permutation-invariance / gradient-isolation / the v44 gate. End-to-end `--debug --use-bridge=node
+  --zarch-film heads` smoke: roundtrip PASSED, `recon_bce` falls, `recon_topk_acc` rises, `std` rises,
+  `film/*` norms grow off zero.
+
 ## Distributional value head (`--value-dist-mode` / `--value-dist-coef`)
 
 The training half of the v29 interpretability side head (model side: `src/agents/model/CLAUDE.md` →

@@ -372,6 +372,8 @@ def _run_arch_toggles(args) -> dict:
         threat_status_refine=args.threat_status_refine,
         hp_type_belief_mode=args.hp_type_belief_mode,
         belief_grad_mode=args.belief_grad_mode,
+        zarch_film=args.zarch_film,
+        zarch_dim=args.zarch_dim,
     )
 
 
@@ -391,6 +393,8 @@ def _model_hparams(model) -> dict:
         "opp_belief_latent_coef": float(getattr(model, "opp_belief_latent_coef", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "pubval_coef": float(getattr(model, "pubval_coef", 0.0)),
+        "zarch_recon_coef": float(getattr(model, "zarch_recon_coef", 0.0)),
+        "zarch_vicreg_coef": float(getattr(model, "zarch_vicreg_coef", 0.0)),
         "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),
         "search_teacher_coef": float(getattr(model, "search_teacher_coef", 0.0)),
         "search_teacher_value_coef": float(getattr(model, "search_teacher_value_coef", 0.0)),
@@ -548,6 +552,8 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         spread_belief_coef=float(getattr(model, "spread_belief_coef", 0.0)),
         value_dist_coef=float(getattr(model, "value_dist_coef", 1.0)),
         pubval_coef=float(getattr(model, "pubval_coef", 0.0)),
+        zarch_recon_coef=float(getattr(model, "zarch_recon_coef", 0.0)),
+        zarch_vicreg_coef=float(getattr(model, "zarch_vicreg_coef", 0.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -1091,6 +1097,34 @@ async def main():
                              "--win-prob-coef. Default 0.1. TRAINING-only (not version-locked; inherited on a "
                              "flagless resume). Ignored when --pubval-mode none. Lower it if 'shaping' fights "
                              "the policy (watch grad/pubval_share).")
+    parser.add_argument("--zarch-film", "--zarch_film", dest="zarch_film",
+                        choices=("off", "heads"), default=None,
+                        help="Team-archetype latent + head FiLM (gen3_zarch_film_v1, v44) — the "
+                             "amortization-gap STORAGE fix (designs/learning/amortization_gap_and_"
+                             "conditioning.md). 'heads' builds a TEAM-STATIC DeepSets latent z_arch over "
+                             "OUR team's INVARIANT facts (species/item/ability/moves/spread — deterministic, "
+                             "no VIB sampling; detached embedding reads = zero trunk interference) and "
+                             "modulates BOTH root heads post-projection pre-ReLU with zero-init FiLM "
+                             "generators (identity-at-init ⇒ ON starts byte-identical). Per-team gradients "
+                             "then land in different rank-z subspaces instead of cancelling in the shared "
+                             "heads. 'off' (default) = no modules (byte-for-byte). STRUCTURAL + "
+                             "resume-IMMUTABLE (version-checked).")
+    parser.add_argument("--zarch-dim", "--zarch_dim", dest="zarch_dim",
+                        type=int, default=None,
+                        help="z_arch latent width = the FiLM conditioning rank (default 32 when "
+                             "--zarch-film is on; must be 0 when off). STRUCTURAL int (the generators' "
+                             "in_features) — version-checked like --value-dist-bins.")
+    parser.add_argument("--zarch-recon-coef", "--zarch_recon_coef", dest="zarch_recon_coef",
+                        type=float, default=None,
+                        help="Loss weight for the z_arch species multi-hot reconstruction BCE — the "
+                             "anti-collapse anchor (a constant z can't reconstruct different teams). "
+                             "Default 1.0 when --zarch-film is on. TRAINING-only (inherited on a flagless "
+                             "resume). Auto-zeroed on a single-team (pinned --trainee-team) run.")
+    parser.add_argument("--zarch-vicreg-coef", "--zarch_vicreg_coef", dest="zarch_vicreg_coef",
+                        type=float, default=None,
+                        help="Loss weight for the z_arch VICReg per-dim variance floor (relu(1−std) across "
+                             "the batch — the belt-and-suspenders collapse guard; watch zarch/std). Default "
+                             "0.1 when --zarch-film is on. TRAINING-only. Auto-zeroed on a single-team run.")
     # --- SEARCH-AS-TEACHER (offline ExIt plateau-breaker; designs/ai_v6/design_search_teacher.md) ---
     # All TRAINING-only (no version bump; coef 0 / flag absent = byte-identical). The coefs are
     # _resolve'd (flagless-resume-inherited); the operational knobs are forwarded by the launcher.
@@ -1853,6 +1887,11 @@ async def main():
     _resolve("hp_type_belief_mode", "off")     # v38 structural + resume-immutable (version-checked, fresh-only)
     _resolve("belief_grad_mode", "shaping")    # v41 resume-immutable training hparam (vf_coef class; flagless resume inherits)
     _resolve("hp_type_belief_coef", 0.0)       # training-only (inherited like spread_belief_coef)
+    _resolve("zarch_film", "off")              # v44 structural + resume-immutable (version-checked, fresh-only)
+    from agents.model.features_extractor import ZARCH_DIM as _ZARCH_DIM_DEFAULT
+    _resolve("zarch_dim", _ZARCH_DIM_DEFAULT if args.zarch_film != "off" else 0)  # v44 structural int
+    _resolve("zarch_recon_coef", 1.0)          # training-only (inherited like spread_belief_coef)
+    _resolve("zarch_vicreg_coef", 0.1)         # training-only (inherited like spread_belief_coef)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -1875,6 +1914,21 @@ async def main():
             "normalizes the value targets so value clipping is unnecessary — and an active clip "
             "would clip in un-normalized units and cripple the critic. Pass --clip-range-vf none."
         )
+    if args.zarch_film == "off" and args.zarch_dim:
+        parser.error("--zarch-dim requires --zarch-film heads (the latent only exists when FiLM is on; "
+                     "it must be 0/unset when off).")
+    # gen3_zarch_film_v1: on a SINGLE-TEAM run (pinned --trainee-team) z is one constant vector across
+    # the whole batch — the cross-batch VICReg variance floor is degenerate (std ≡ 0 regardless of
+    # weights) and the recon target is constant (nothing to learn). Auto-zero the aux coefs; FiLM
+    # itself stays on (z degenerates to a learned per-team bias — harmless, and arch-compatible with
+    # multi-team runs of the same config).
+    if (args.zarch_film != "off" and args.trainee_team
+            and (args.zarch_recon_coef > 0.0 or args.zarch_vicreg_coef > 0.0)):
+        print("[ZArch] single-team run (pinned --trainee-team): auto-zeroing --zarch-recon-coef / "
+              "--zarch-vicreg-coef (z_arch is constant across the batch — the variance floor is "
+              "degenerate and the recon target constant). FiLM stays on.")
+        args.zarch_recon_coef = 0.0
+        args.zarch_vicreg_coef = 0.0
     if not 0.0 <= args.stable_opponent_selfplay_share <= 1.0:
         parser.error("--stable-opponent-selfplay-share must be a fraction in [0, 1]")
     if args.exploiter and args.self_play:
@@ -3269,6 +3323,8 @@ async def main():
         _load_extractor_kwargs["threat_status_refine"] = args.threat_status_refine          # v37 (version-checked)
         _load_extractor_kwargs["hp_type_belief_mode"] = args.hp_type_belief_mode            # v38 (version-checked)
         _load_extractor_kwargs["belief_grad_mode"] = args.belief_grad_mode                  # v41 (resume-immutable)
+        _load_extractor_kwargs["zarch_film"] = args.zarch_film                              # v44 (version-checked)
+        _load_extractor_kwargs["zarch_dim"] = args.zarch_dim                                # v44 (version-checked)
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -3287,6 +3343,8 @@ async def main():
             spread_belief_coef=args.spread_belief_coef,
             value_dist_coef=args.value_dist_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
+            zarch_recon_coef=args.zarch_recon_coef,
+            zarch_vicreg_coef=args.zarch_vicreg_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -3328,6 +3386,8 @@ async def main():
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
         model.pubval_coef = args.pubval_coef  # pubval loss weight (training-only; resume-mutable)
+        model.zarch_recon_coef = args.zarch_recon_coef  # z_arch recon BCE weight (training-only; resume-mutable)
+        model.zarch_vicreg_coef = args.zarch_vicreg_coef  # z_arch VICReg floor weight (training-only; resume-mutable)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss weight (training-only; resume-mutable)
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). Buffer is filled by the
         # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
@@ -3597,6 +3657,11 @@ async def main():
         extractor_kwargs["threat_status_refine"] = args.threat_status_refine
         extractor_kwargs["hp_type_belief_mode"] = args.hp_type_belief_mode
         extractor_kwargs["belief_grad_mode"] = args.belief_grad_mode
+        # gen3_zarch_film_v1 (v44): team-archetype latent + head FiLM. 'off' = no modules (baseline
+        # byte-for-byte); 'heads' = identity-at-init conditioning on both root heads. STRUCTURAL +
+        # resume-immutable (mode + dim version-checked); the aux coefs are TRAINING hparams set below.
+        extractor_kwargs["zarch_film"] = args.zarch_film
+        extractor_kwargs["zarch_dim"] = args.zarch_dim
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
@@ -3645,6 +3710,8 @@ async def main():
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss (0.0 = off)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
         model.pubval_coef = args.pubval_coef  # pubval head soft-BCE (mode none = off)
+        model.zarch_recon_coef = args.zarch_recon_coef  # z_arch recon BCE (mode off = off)
+        model.zarch_vicreg_coef = args.zarch_vicreg_coef  # z_arch VICReg floor (mode off = off)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss (mode none = off)
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). See the resume site.
         model.search_teacher_coef = args.search_teacher_coef
@@ -3697,6 +3764,8 @@ async def main():
             spread_belief_coef=args.spread_belief_coef,
             value_dist_coef=args.value_dist_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
+            zarch_recon_coef=args.zarch_recon_coef,
+            zarch_vicreg_coef=args.zarch_vicreg_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both
