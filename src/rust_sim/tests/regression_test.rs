@@ -6274,6 +6274,68 @@ fn freeze_clause_blocks_the_second_freeze_in_gen3ou() {
     );
 }
 
+/// R15-P1: SLEEP CLAUSE MOD exempts a SELF-inflicted (Rest) sleeper
+/// (`gen3_sleep_clause_self_rest_exempt_v1`). The gen-3 `rulesets.ts`
+/// `sleepclausemod.onSetStatus` counts an existing sleeper toward the one-foe-asleep cap
+/// ONLY when `!pokemon.statusState.source?.isAlly(pokemon)` — a mon that put ITSELF to
+/// sleep via **Rest** does NOT count, so a foe sleep move on a DIFFERENT mon still LANDS.
+/// WRONG (pre-fix): `side_has_sleeper` counted ANY asleep mon (a stale "Rest is out of
+/// scope" assumption from before Rest was modeled), so a benched self-Rested mon blocked
+/// the foe's Spore — the Spore fizzled and the target's own move ran instead, drawing ONE
+/// EXTRA SetStatus clause shuffle (a real gen3ou pool desync — ab_3_15 @ master-seed
+/// 333444 dec 24: p1 Breloom Spores p2 Suicune while p2's benched Zapdos is asleep from
+/// its own turn-1 Rest → the port clause-blocked the Spore, Suicune Rested instead, +1
+/// draw → seed divergence). The fix: track `MonState::sleep_from_rest` (set in
+/// `run_rest`, cleared in `try_set_status_impl`) and skip self-Rest sleepers in
+/// `side_has_sleeper`. GROUND TRUTH: `harness/probe_r15_sleepclause.js` /
+/// `probe_r15_pin_truth.js` (gen3ou, the sim's first-decision seed 53118,34657,41207,29520
+/// — the port constructs to the SAME seed): T1 p1 HP-Rocks + p2 Zapdos self-Rests (→ slp);
+/// T2 p2 switches to Suicune while Zapdos sits asleep on the bench + p1 Spores → the Spore
+/// LANDS (Suicune slp, foe-inflicted counter) with post-T2 seed 21514,3448,20660,22314.
+#[test]
+fn sleep_clause_exempts_a_self_rest_sleeper_from_blocking_a_foe_sleep_move() {
+    let d = dex();
+    let p1 = "Breloom||Leftovers|EffectSpore|Spore,BrickBreak,HiddenPowerRock,FocusPunch|Jolly|,252,,,4,252|M|,,30,,30,30|||,Rock,,,,]Snorlax||Leftovers|Immunity|BodySlam,Earthquake,FocusPunch,SelfDestruct|Adamant|80,176,124,,108,20|M||||";
+    let p2 = "Zapdos||Leftovers|Pressure|Rest,Roar,Thunderbolt,Toxic|Calm|200,,,,252,56|N|,0,,,,|||]Suicune||Leftovers|Pressure|Rest,Surf,CalmMind,Roar|Bold|252,,228,,,28|N|,0,,,,|||";
+    let opts = BattleOptions {
+        format_id: "gen3ou".to_string(),
+        seed: Some("53118,34657,41207,29520".to_string()),
+        p1: PlayerOptions { name: "P1".to_string(), team: PackedTeam(p1.to_string()) },
+        p2: PlayerOptions { name: "P2".to_string(), team: PackedTeam(p2.to_string()) },
+    };
+    let mut battle = Battle::start_with_switchins(&opts, &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    assert!(st.sleep_clause, "gen3ou carries the clause formats flag");
+    let plan = [
+        // T1: p1 Hidden Power Rock chips Zapdos; p2 Zapdos REST (self-sleep + heal).
+        ScriptDecision::both(Choice::Move(2), Choice::Move(0)),
+        // T2: p1 SPORE; p2 switches to Suicune (Spore hits the switched-in Suicune while
+        //     the self-Rested Zapdos sits asleep on the bench).
+        ScriptDecision::both(Choice::Move(0), Choice::Switch(1)),
+    ];
+    let out = st.run_full_battle(&plan, &d);
+    // The benched Zapdos is asleep from its OWN Rest (Sleep(3), self-inflicted).
+    let zapdos = st.sides[1].pokemon.iter().find(|m| m.species_id == "zapdos").expect("zapdos");
+    assert_eq!(zapdos.status, Some(Status::Sleep(3)), "Zapdos self-Rested to sleep");
+    assert!(zapdos.sleep_from_rest, "Zapdos's sleep is self-inflicted (Rest)");
+    // THE FIX: the self-Rest sleeper does NOT block the foe's Spore — Suicune is asleep
+    // (foe-inflicted, so NOT `sleep_from_rest`). Under the revert the clause blocks the
+    // Spore and Suicune Rests instead (its own move runs → an extra clause shuffle).
+    let suicune = st.sides[1].pokemon.iter().find(|m| m.species_id == "suicune").expect("suicune");
+    assert!(
+        matches!(suicune.status, Some(Status::Sleep(_))),
+        "Spore LANDS on Suicune despite the benched self-Rest sleeper (Sleep Clause exempts Rest)"
+    );
+    assert!(!suicune.sleep_from_rest, "Suicune's sleep is foe-inflicted (Spore), not Rest");
+    // GROUND-TRUTH SEED: the extra clause shuffle a wrongly-blocked Spore would trigger
+    // (target's own move runs) shifts this — a wrong draw count trips it.
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "21514,3448,20660,22314",
+        "post-T2 seed == the real Showdown seed (the exempt Spore lands with its own counter draw)"
+    );
+}
+
 // ============================================================================
 // P3 — PROTOCOL PHASE 3's two request-boundary fixes (`gen3_protocol_phase3_v1`):
 //   P3-1: a scripted VOLUNTARY `switch` to a FAINTED / already-active / out-of-range
@@ -10426,6 +10488,63 @@ fn pursuit_interrupt_into_a_pressure_switcher_deducts_an_extra_pp() {
     assert_eq!(
         cout.decisions[0].active[0].move_pp[0], 31,
         "non-Pressure switcher → Pursuit PP 32→31 (strike only)"
+    );
+}
+
+/// MC107 — SLEEP TALK fails DRAW-FREE for an ENCORED mon (`gen3_encore_sleeptalk_trylhit_v1`,
+/// the R13 pool byte-fuzz find ab_15_15 dec 47). Sleep Talk's resolved onTryHit is
+/// `return !volatiles['choicelock'] && !volatiles['encore']` — so a mon carrying the `encore`
+/// volatile fails Sleep Talk at TryHit (`|move|…Sleep Talk||[still]` + `|-fail|`), drawing
+/// NOTHING (no sample, no called move). The port's sleeptalk arm gated ONLY on `choicelock`
+/// (batch 5 was written when Encore was still unmodeled — batch 6 later modeled it but the
+/// gate was never updated), so an Encored-into-Sleep-Talk asleep mon SAMPLED + ran the picked
+/// move (+4 draws) where the sim fails it draw-free — the ab_15_15 SEED desync.
+/// Scenario: a fast Electrode [Encore, Spore] vs a slow Snorlax [Sleep Talk, Splash]. dec0:
+/// Spore sleeps Snorlax. dec1: Snorlax (asleep) Sleep Talk → sample picks Splash (lastMove →
+/// sleeptalk). dec2: Electrode (faster) Encores Snorlax THIS turn (locks Sleep Talk); Snorlax's
+/// queued Sleep Talk is `cant slp` then FAILS onTryHit (encore present) — DRAW-FREE (only the
+/// Encore accuracy + its random(3,7) duration + Quick Claw draw). WRONG (pre-fix): the port
+/// sampled from {Splash} + ran it → +draws → a different seed. Ground truth
+/// `harness/probe_r13_encore_sleeptalk_rng.js` (raw seed [7,11,13,17] → initSeed
+/// 44317,42357,9927,48760).
+#[test]
+fn encored_mon_sleep_talk_fails_draw_free_via_ontryhit() {
+    let d = dex();
+    let electrode = "Electrode|||NoAbility|encore,spore,splash|Serious|,,,,,252|N||||";
+    let snorlax = "Snorlax|||NoAbility|sleeptalk,splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(electrode, snorlax, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // Spore ; Splash → Snorlax asleep
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)), // Splash ; Sleep Talk (sample→Splash)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Encore ; Sleep Talk → onTryHit encore FAIL
+        ],
+        &d,
+    );
+    // dec1: the asleep Sleep Talk sampled Splash (lastMove → sleeptalk); the pre-Encore seed.
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "22534,42410,55299,35327",
+        "dec1: Snorlax's asleep Sleep Talk samples + runs Splash (lastMove → sleeptalk)"
+    );
+    // dec2 (the PIN): Electrode Encores Snorlax → the encored Sleep Talk fails DRAW-FREE at
+    // onTryHit — the turn draws ONLY [Encore accuracy, Encore random(3,7) duration, Quick Claw].
+    // Pre-fix the port would sample {Splash} + run it (extra draws) → a different seed.
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "5621,5056,41416,14688",
+        "dec2: the ENCORED Sleep Talk fails draw-free (onTryHit !encore) — no sample, no called move"
+    );
+    assert!(
+        matches!(out.decisions[2].active[1].status, Some(Status::Sleep(_))),
+        "Snorlax stays asleep (the Sleep Talk cant'd + failed onTryHit; the counter decremented)"
+    );
+    assert!(
+        out.decisions[2].encore[1] > 0,
+        "Snorlax carries the encore volatile (locked to Sleep Talk) at the fail boundary"
     );
 }
 

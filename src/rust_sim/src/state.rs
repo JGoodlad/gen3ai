@@ -647,6 +647,17 @@ pub struct MonState {
     /// MIRROR at equal speed draws ONE residual tie-shuffle — probe-verified 8 vs the
     /// both-Splash control's 7). Cleared on switch-out + faint. `false` at construction.
     pub snatch: bool,
+
+    /// Whether this mon's CURRENT sleep was SELF-inflicted by **Rest** (vs foe-inflicted
+    /// by a sleep move / Effect Spore). Mirrors `statusState.source?.isAlly(pokemon)` for
+    /// the gen-3 **Sleep Clause Mod** (`rulesets.ts` `sleepclausemod.onSetStatus`): a mon
+    /// that put ITSELF to sleep via Rest does NOT count toward its side's one-foe-asleep
+    /// cap, so a foe sleep move on a DIFFERENT mon still lands (probe-verified — a
+    /// self-Rested Zapdos does NOT block a foe's Spore on Suicune). Set at EVERY sleep
+    /// application (`true` in `run_rest`, `false` in `try_set_status_impl`), read ONLY by
+    /// `side_has_sleeper` while `status == Some(Sleep(_))`. `false` at construction.
+    /// `gen3_sleep_clause_self_rest_exempt_v1` (R15-P1).
+    pub sleep_from_rest: bool,
 }
 
 /// The MIMIC moveslot-overlay restore record (`gen3_move_coverage_batch6_v1`).
@@ -902,6 +913,7 @@ impl MonState {
             charge: false,
             mimic_overlay: None,
             snatch: false,
+            sleep_from_rest: false,
         })
     }
 

@@ -1948,10 +1948,15 @@ settled Beat-Up→Mirror-Coat + Struggle→Counter behaviorally):
   RESTORED `time += skippedTime` at the runSwitch SwitchIn beside the tox reset — live-probed
   3→talk,talk→1,sk2→switch→3; same cancellation law as tox). The arm: onTry = asleep-only (an
   awake/wake-turn use fails SILENTLY — normal self-target announce, nothing else, zero draws);
-  onTryHit = the choicelock gate (a PRIOR-turn lock → the `[still]` retro-edit + `|-fail|` BEFORE
-  the sample; CB + Sleep Talk works exactly ONCE — the lock records Sleep Talk itself, and the
-  lock THIS use just set does NOT count → the `was_choice_locked` pre-move snapshot threaded
-  through run_move); onHit = the pool (moveSlots in SLOT ORDER keeping `!no_sleep_talk &&
+  onTryHit = the `!choicelock && !encore` gate (`return !volatiles['choicelock'] &&
+  !volatiles['encore']` → the `[still]` retro-edit + `|-fail|` BEFORE the sample, ZERO draws): a
+  PRIOR-turn CB lock (CB + Sleep Talk works exactly ONCE — the lock records Sleep Talk itself, and
+  the lock THIS use just set does NOT count → the `was_choice_locked` pre-move snapshot) OR the
+  **`encore` volatile** (`gen3_encore_sleeptalk_trylhit_v1`, the R13 pool-fuzz fix — since batch 6
+  MODELS Encore, an Encored-into-Sleep-Talk mon can NEVER resolve Sleep Talk while the encore holds;
+  the encore is read LIVE, not snapshotted, since a faster foe's Encore can land THIS turn before
+  the sleeper's Sleep Talk — pin `encored_mon_sleep_talk_fails_draw_free_via_ontryhit`);
+  onHit = the pool (moveSlots in SLOT ORDER keeping `!no_sleep_talk &&
   !is_charge` — the NEW data-enumerated `noSleepTalk`/`isCharge` move flags from `flags.nosleeptalk`
   / `flags.charge`; NO pp filter, NO disabled/Taunt filter) → **ONE `sample` = `random(n)`, drawn
   EVEN at n = 1** → a 0-PP pick wastes the turn (`|cant|…|nopp|<raw id>`, no further draws) → else
@@ -3251,6 +3256,56 @@ protocol + writeline golden stays BYTE-IDENTICAL. Pin: `leftovers_heal_order_fol
 byte-fuzz corpus fixture `23_leftovers_wish_heal_order.txt` (the repro replays byte-clean; reverting the fix →
 `kind=protocol` at the exact `-heal` line, fault-injection proven); ground truth
 `harness/probe_r2_wish_leftovers_regression_rng.js`.
+
+**R13 (the ENCORE × SLEEP TALK draw-count desync) — FIXED (`gen3_encore_sleeptalk_trylhit_v1`, the pool
+byte-fuzz `--protocol` gen3ou find ab_15_15 @ master-seed 222333, dec 47 — `kind=seed`).** Root-caused via
+the FIXED `harness/probe_repro_simtrace.js` (in `--format gen3ou` — the default is customgame, so a
+gen3ou repro MUST be replayed with `{format:'gen3ou', allowHiddenPower:true}` or the sim diverges from the
+golden) + an env-gated per-draw PRNG backtrace in the port: at dec 47 the port drew **7** where the sim
+drew **3** (+4). Suicune (asleep, lastMove Sleep Talk) is Encored by a FASTER Jumpluff THIS turn (Encore
+locks Sleep Talk); the port's Encore `onOverrideAction` redirects Suicune's queued Rest → the encored Sleep
+Talk slot, then RAN Sleep Talk (sampled a move + ran it, +4 draws). The SIM instead FAILS Sleep Talk
+DRAW-FREE: Sleep Talk's resolved **`onTryHit(pokemon){ return !volatiles['choicelock'] && !volatiles['encore']; }`**
+returns false when the user carries the `encore` volatile → `|move|…Sleep Talk||[still]` + `|-fail|`, NO
+sample. (probe-confirmed: the sim's `singleEvent('TryHit', sleeptalk)` → false at turn 43, activeMove
+sleeptalk, 0 draws; the golden protocol shows `cant slp` + `Sleep Talk [still]` + `-fail`.) So an
+Encored-into-Sleep-Talk mon can NEVER resolve Sleep Talk while the encore holds. The port's sleeptalk arm
+gated ONLY on `choicelock` (via `was_choice_locked`) — batch 5 wrote "Encore is unmodeled gen-3-wide" as
+the reason, but **batch 6 later MODELED Encore and the gate was never updated** — the latent bug the pool
+fuzzer surfaced. FIX (`turn.rs`, the sleeptalk arm): `if was_choice_locked || encore.is_some()` fails Sleep
+Talk draw-free (the encore is read at its CURRENT value, NOT a pre-move snapshot, because the foe's Encore
+can land THIS turn before the sleeper's Sleep Talk — matching the sim's live `volatiles['encore']` read).
+NOT a clause-path fix, but OBSERVATION-NEUTRAL for every committed golden (no gen3customgame e2e/seed board
+pairs an Encored mon USING Sleep Talk → full suite byte-identical, **e2e md5 `3155eb796cb4bf453c6053d769ba98e5`
+UNCHANGED**, every seed golden byte-identical). Pinned by the revert-verified
+`regression_test.rs::encored_mon_sleep_talk_fails_draw_free_via_ontryhit` (a fast Electrode Encores an
+asleep Snorlax RestTalker → the encored Sleep Talk fails draw-free; ground truth
+`harness/probe_r13_encore_sleeptalk_rng.js`, raw seed [7,11,13,17]). RE-VERIFIED: the 222333 pool
+`--protocol` gate is now GREEN both formats (gen3ou 0 non-allowlisted, ab_15_15 → `ok`; gen3customgame
+unchanged).
+
+**R15 (the SLEEP-CLAUSE × self-REST-sleeper draw-count desync) — FIXED
+(`gen3_sleep_clause_self_rest_exempt_v1`, the pool byte-fuzz `--protocol` gen3ou find ab_3_15 @
+master-seed 333444, dec 24 — `kind=seed`, expected `56120,…` got `20330,…`; DISTINCT from R13).**
+Root-caused via the R9-fixed `probe_repro_simtrace.js` + a temporary env-gated per-draw backtrace in
+`prng::next` (removed): the port did **one EXTRA draw** at dec 24 (a second SetStatus clause shuffle).
+The dec-24 turn is p1 Breloom **Spore → p2 Suicune** while p2's benched Zapdos is asleep FROM ITS OWN
+turn-1 **Rest**. gen3 **Sleep Clause Mod** (`rulesets.ts` `sleepclausemod.onSetStatus`) counts an
+existing sleeper toward the one-foe-asleep cap ONLY when `!pokemon.statusState.source?.isAlly(pokemon)`
+— a mon that put ITSELF to sleep via Rest is EXEMPT (probe-verified `harness/probe_r15_sleepclause.js`:
+a self-Rested Zapdos does NOT block a foe's Spore on Suicune → Suicune gets `slp`). WRONG (pre-fix):
+`turn.rs::side_has_sleeper` counted ANY asleep mon (a stale "Rest is out of scope" assumption from
+before Rest was modeled), so the port clause-BLOCKED the Spore; Suicune's own Rest then ran, drawing an
+EXTRA clause shuffle (+1 draw → the seed divergence + a silent Suicune-state divergence ab_replay's
+active-only state check missed). The fix: a new `MonState::sleep_from_rest` (appended LAST; set `true`
+in `run_rest`, `false` in `try_set_status_impl` — mirrors `statusState.source.isAlly`), and
+`side_has_sleeper` skips self-Rest sleepers. Revert-pinned:
+`regression_test.rs::sleep_clause_exempts_a_self_rest_sleeper_from_blocking_a_foe_sleep_move`
+(gen3ou, the sim's first-decision seed 53118,…; ground truth `harness/probe_r15_pin_truth.js` — post-T2
+seed `21514,3448,20660,22314`, FAILS on revert). SEED-NEUTRAL for every committed golden: e2e md5
+UNCHANGED `3155eb796cb4bf453c6053d769ba98e5`, all seed suites byte-identical (id-gated: only a gen3ou
+board with a benched self-Rest sleeper AND a foe sleep move on a different mon hits it). The 333444 pool
+`--protocol` gate is GREEN both formats (gen3ou ab_3_15 → `ok`, diverged 0; gen3customgame diverged 0).
 
 **T1 (the FREEZE-PERSISTENCE deep-STATE bug) — FIXED (`gen3_omniscient_byte_fuzz_v1`, byte-fuzz repro
 rmroh04is_ab_4_18 / _4_8 + cg rmrohcsti_ab_4_18/_11_23).** The round-1 "deep state/HP divergence" (the port at

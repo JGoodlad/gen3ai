@@ -6011,14 +6011,26 @@ impl BattleState {
                 return MoveResolution::done(false, false, false);
             }
             // onTryHit(pokemon){ return !volatiles['choicelock'] && !volatiles['encore'] }
-            // — a Choice lock from a PREVIOUS turn fails: the `[still]` retro-edit +
-            // `|-fail|<user>`, NO sample draw. The lock is always Sleep Talk ITSELF (the
-            // choicelock records the CHOSEN move, so CB + Sleep Talk works exactly ONCE
-            // then fails every later turn of the lock — probed); the lock THIS use just
-            // set does NOT count (`was_choice_locked` is the pre-move snapshot). Encore
-            // is unmodeled gen-3-wide (fail-loud as a move), so choicelock is the only
-            // live gate.
-            if was_choice_locked {
+            // — a Choice lock from a PREVIOUS turn OR the `encore` volatile fails Sleep
+            // Talk: the `[still]` retro-edit + `|-fail|<user>`, NO sample draw.
+            //   * CHOICE LOCK: the lock is always Sleep Talk ITSELF (choicelock records
+            //     the CHOSEN move, so CB + Sleep Talk works exactly ONCE then fails every
+            //     later turn of the lock — probed); the lock THIS use just set does NOT
+            //     count (`was_choice_locked` is the pre-move snapshot).
+            //   * ENCORE (`gen3_encore_sleeptalk_trylhit_v1`, the R13 byte-fuzz fix — since
+            //     batch 6 MODELS Encore, this gate is now LIVE): a mon carrying the `encore`
+            //     volatile fails Sleep Talk DRAW-FREE. The encore is checked at its CURRENT
+            //     value (NOT a pre-move snapshot) because the foe's Encore that set it can
+            //     land THIS turn BEFORE the sleeper's Sleep Talk (a faster foe Encores an
+            //     asleep mon → its `move_usable`/`onOverrideAction` redirects the queued move
+            //     to the encored Sleep Talk slot → THIS gate fails it draw-free, matching the
+            //     sim's onTryHit which reads the live `volatiles['encore']`). So an
+            //     Encored-into-Sleep-Talk mon can NEVER actually resolve Sleep Talk while the
+            //     encore holds (probe: `sleeptalk onTryHit -> false` when `volatiles['encore']`
+            //     is present). VERIFIED vs the sim on the R13 repro (ab_15_15 dec 47): the
+            //     port used to SAMPLE + run the picked move (+4 draws) where the sim fails it.
+            let encored = self.sides[_side].pokemon[_slot].encore.is_some();
+            if was_choice_locked || encored {
                 if self.logging() {
                     self.log.attr_last_move_still();
                     let user = self.mon_ref(_side, _slot, dex);
@@ -8045,6 +8057,11 @@ impl BattleState {
         //     the existing on_before_move handler (3 attempts → wake).
         let _discarded = self.prng.random_range(2, 6); // slp.onStart's random(2,6) — value discarded
         self.sides[side].pokemon[slot].status = Some(Status::Sleep(3));
+        // SELF-inflicted (Rest) → EXEMPT from the opponent's Sleep Clause Mod
+        // (`statusState.source.isAlly(target)`, `gen3_sleep_clause_self_rest_exempt_v1`):
+        // a self-Rested mon must NOT count as the side's one foe-asleep, so a foe sleep
+        // move on a DIFFERENT mon still lands.
+        self.sides[side].pokemon[slot].sleep_from_rest = true;
         // A fresh slp statusState → skippedTime 0 (`gen3_move_coverage_batch5_v1`).
         self.sides[side].pokemon[slot].sleep_skipped = 0;
 
@@ -9582,6 +9599,11 @@ impl BattleState {
         // A FRESH status gets a FRESH `statusState` — the slp `skippedTime` starts at 0
         // (`gen3_move_coverage_batch5_v1`; meaningless for the non-sleep statuses).
         self.sides[foe].pokemon[foe_slot].sleep_skipped = 0;
+        // FOE-inflicted sleep (a sleep move / Effect Spore — never Rest, which sets its
+        // own flag): this DOES count toward the target side's Sleep Clause Mod cap
+        // (`gen3_sleep_clause_self_rest_exempt_v1`). Always reset here so a mon re-slept by
+        // a foe after a prior self-Rest sleep is correctly counted.
+        self.sides[foe].pokemon[foe_slot].sleep_from_rest = false;
         self.sides[foe].pokemon[foe_slot].status = Some(new);
         // [EMIT] `|-status|<target>|<status>` — a foe-inflicted status (secondary /
         // standalone status move / Tri Attack). NO `[from]` (only Rest's self-inflict
@@ -9728,15 +9750,25 @@ impl BattleState {
         )
     }
 
-    /// Whether `side` has ANY living mon (active OR bench) already asleep — the
-    /// gen3ou Sleep Clause check. All sleep this engine inflicts is foe-sourced (Rest
-    /// is out of scope), so an asleep mon always counts toward the clause (the sim
-    /// excludes only ally-sourced / self Rest sleep, which we never set).
+    /// Whether `side` has a living mon (active OR bench) asleep from a FOE-inflicted
+    /// sleep — the gen3ou Sleep Clause check. A mon asleep from its OWN **Rest**
+    /// (`sleep_from_rest`) is EXEMPT and does NOT count (the sim's
+    /// `!statusState.source?.isAlly` gate; `gen3_sleep_clause_self_rest_exempt_v1`,
+    /// R15-P1). NOTE Rest IS modeled (batch 5) — the old "Rest is out of scope, so an
+    /// asleep mon always counts" premise was false and bred R15-P1.
     fn side_has_sleeper(&self, side: usize) -> bool {
-        self.sides[side]
-            .pokemon
-            .iter()
-            .any(|m| m.hp > 0 && !m.fainted && matches!(m.status, Some(Status::Sleep(_))))
+        // Sleep Clause Mod counts a living sleeper ONLY if its sleep was FOE-inflicted
+        // (`!pokemon.statusState.source?.isAlly(pokemon)`, `rulesets.ts`
+        // `sleepclausemod.onSetStatus`): a mon that put ITSELF to sleep via **Rest**
+        // (`sleep_from_rest`) is EXEMPT and does NOT block a foe sleep move on a different
+        // mon (probe-verified — a self-Rested Zapdos does not block a foe's Spore on
+        // Suicune). `gen3_sleep_clause_self_rest_exempt_v1` (R15-P1).
+        self.sides[side].pokemon.iter().any(|m| {
+            m.hp > 0
+                && !m.fainted
+                && matches!(m.status, Some(Status::Sleep(_)))
+                && !m.sleep_from_rest
+        })
     }
 
     /// Any LIVING mon on `side` frozen — the Freeze Clause Mod scan
