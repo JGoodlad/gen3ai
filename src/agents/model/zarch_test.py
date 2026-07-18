@@ -226,6 +226,20 @@ def test_zarch_loss_vicreg_floor():
     assert float(vic_d) < float(vic_c)
 
 
+def test_zarch_participation_ratio():
+    """The live LUT-vs-style dial: ≈dims on an isotropic cloud, ≈1 on a rank-1 cloud,
+    None on degenerate batches (tiny/constant)."""
+    from agents.training.instrumented_ppo import InstrumentedMaskablePPO as P
+    torch.manual_seed(0)
+    iso = torch.randn(5000, ZDIM)
+    assert P._zarch_participation_ratio(iso) > 0.8 * ZDIM
+    rank1 = torch.randn(5000, 1) * torch.randn(1, ZDIM) + 1e-4 * torch.randn(5000, ZDIM)
+    assert P._zarch_participation_ratio(rank1) < 2.0
+    assert P._zarch_participation_ratio(None) is None
+    assert P._zarch_participation_ratio(torch.randn(2, ZDIM)) is None          # too few rows
+    assert P._zarch_participation_ratio(torch.ones(64, ZDIM)) is None          # zero variance
+
+
 def test_zarch_loss_grad_flows():
     B, S = 4, 50
     z = torch.randn(B, ZDIM, requires_grad=True)

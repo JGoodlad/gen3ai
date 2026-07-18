@@ -1705,7 +1705,11 @@ collapsed constant z (= no conditioning, back to the amortized baseline). Two au
   collapse). Gradients reach ONLY the ZArchEncoder's own params → **no grad-balance entry** (zero
   shared-trunk pull by construction, pinned by `zarch_test.py`).
 - **Metrics (`zarch/*` + `film/*`).** `recon_bce` falls / `recon_topk_acc` rises (→1) as z carries
-  the roster; `std` is the collapse monitor (**→0 = NO-GO**). FiLM: `film/{pi,vf}_{gamma,beta}_norm`
+  the roster; `std` is the collapse monitor (**→0 = NO-GO**); `pr` (participation ratio of the
+  minibatch z cloud, `_zarch_participation_ratio`) is the LIVE LUT-vs-style dial — near `zarch_dim`
+  = identity-spread (LUT-leaning, the intended v1 operating point), falling = style compression, →1
+  = collapse (the 719-team offline read at 164M: PR 17.0/32, kNN archetype purity +0.20 — globally
+  LUT-leaning, locally style-coherent). FiLM: `film/{pi,vf}_{gamma,beta}_norm`
   (aliveness — grows off zero under RL alone, since the generator gradient is an outer product with z
   and per-team components don't cancel) **plus the GENERIC-vs-CONDITIONING split** — `film/{side}_dev`
   = mean |modulation| vs `film/{side}_team_std` = the modulation's per-dim std ACROSS the minibatch's

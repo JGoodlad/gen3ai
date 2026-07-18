@@ -180,10 +180,11 @@ collapsing (too much) or memorizing team-ID (too little). Three tiers, cheap →
   - *Density per anchor* (# teams within radius r + neighborhood overlap) → how populated & distinct
     each style is. *Effective modes* (participation ratio / effective rank of the z_arch cloud) → the
     **emergent number of styles**, with no K imposed.
-  - **TODO when we build the archetype token:** add a `rank/archetype_cls_*` metric (participation
-    ratio / effrank / n90-n95) alongside the existing `rank/{trunk,value_cls,policy}_*` probes
-    (`rank_metrics.py`) — the effective rank of the z_arch cloud IS the live "emergent number of
-    styles" read, and watching it vs β is the cheapest per-checkpoint compression gauge.
+  - **SHIPPED as `zarch/pr`** (v44 follow-up; `instrumented_ppo._zarch_participation_ratio`): the
+    participation ratio of the minibatch z cloud, recorded live each train() — the "emergent number
+    of styles" read this TODO called for. First offline measurement (719 teams, ai_v8_01 @164M):
+    **PR 17.0/32, flat spectrum, kNN(10) archetype purity above chance +0.198** — globally
+    LUT-leaning (identity-spread), locally style-coherent (archetype-sorted neighborhoods).
 - **Rate-distortion elbow (info-theoretic, from training).** VIB gives rate (KL = bits) + distortion
   (task loss). Sweep β, plot rate vs distortion; the **knee** — where more bits stop cutting task loss
   — is the natural compression (beyond it you're memorizing). Read straight off training metrics.

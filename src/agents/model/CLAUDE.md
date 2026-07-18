@@ -922,7 +922,9 @@ Stashes: `last_zarch` (live, read by forward()'s FiLM + the aux loss), `last_zar
 species multi-hot recon BCE (the ANTI-COLLAPSE anchor — a constant z can't reconstruct different
 teams; row 0 pad zeroed) + a VICReg per-dim variance floor `relu(1−std(z, batch))` (z is LayerNorm'd
 per-SAMPLE, which does not prevent cross-batch collapse). Metrics `zarch/{recon_bce, recon_topk_acc,
-std, vicreg}` + `film/{pi,vf}_{gamma,beta}_norm` (aliveness) + the GENERIC-vs-CONDITIONING split
+std, vicreg}` + **`zarch/pr`** (participation ratio of the minibatch z cloud — the LIVE LUT-vs-style
+dial: near `zarch_dim` = identity-spread/LUT-leaning, low = compressed style axes, →1 = collapse) +
+`film/{pi,vf}_{gamma,beta}_norm` (aliveness) + the GENERIC-vs-CONDITIONING split
 `film/{pi,vf}_dev` (mean |modulation|) vs `film/{pi,vf}_team_std` (per-dim modulation std ACROSS the
 minibatch's teams — the true conditioning read: the z SIGNAL is recon-supervised so it can't collapse,
 but nothing supervises the generators' USE of it, and RL alone can grow them on z's team-SHARED

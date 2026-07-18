@@ -587,6 +587,25 @@ class InstrumentedMaskablePPO(MaskablePPO):
         return loss, metrics
 
     @staticmethod
+    def _zarch_participation_ratio(z):
+        """Effective #axes of the batch z_arch cloud — the LIVE LUT-vs-style dial
+        (gen3_zarch_film_v1; the archetype-latent note's `rank/archetype_cls_*` TODO). PR =
+        (Σλ)²/Σλ² over the covariance eigenvalues of the minibatch z rows: near zarch_dim = the
+        teams spread toward orthogonal identity codes (LUT-leaning — linear FiLM can then treat
+        them independently); low-but-alive = compressed shared style axes; →1 = collapse. A
+        batch-sampled estimate of the offline 719-team probe (tmp/zarch_neighbors_probe.py
+        machinery). Returns None on a degenerate batch (too few rows / zero variance)."""
+        if z is None or z.shape[0] < 3:
+            return None
+        zc = z - z.mean(dim=0, keepdim=True)
+        cov = (zc.T @ zc) / (z.shape[0] - 1)
+        lam = th.linalg.eigvalsh(cov).clamp(min=0)
+        s = lam.sum()
+        if float(s) <= 1e-9:
+            return None
+        return float((s * s / (lam * lam).sum()).item())
+
+    @staticmethod
     def _zarch_loss(z, recon_logits, species_ids):
         """The z_arch aux terms (gen3_zarch_film_v1): species multi-hot reconstruction BCE (the
         anti-collapse anchor) + the VICReg per-dim variance floor, returned SEPARATELY so the caller
@@ -1942,6 +1961,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if getattr(_zfe, "zarch_film", "off") != "off":
             with th.no_grad():
                 _z = _zfe.last_zarch                      # last minibatch's z [B, zdim] (many teams)
+                # The LIVE LUT-vs-style dial: participation ratio of the minibatch z cloud (see
+                # _zarch_participation_ratio). Watch the TREND — drifting toward zarch_dim =
+                # LUT-ward identity spread; falling = style compression; →1 = collapse (pair
+                # with zarch/std, the VICReg floor monitor).
+                _pr = self._zarch_participation_ratio(_z)
+                if _pr is not None:
+                    self.logger.record("zarch/pr", _pr)
                 for _side, _gen in (("pi", _zfe.film_pi), ("vf", _zfe.film_vf)):
                     _P = _gen.out_features // 2
                     self.logger.record(f"film/{_side}_gamma_norm",
