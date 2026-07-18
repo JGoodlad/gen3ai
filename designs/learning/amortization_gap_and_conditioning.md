@@ -10,6 +10,14 @@ storage**, because the cancellation happens in the *shared parameters*, downstre
 storage fix is **conditioning** (FiLM on a learned archetype latent `z_arch`), an architectural change,
 not a critic change.
 
+**Status (2026-07-17): FiLM is justified by evidence.** Probes this session showed (a) the base model
+plays greedy-local and trades away its counters (the averaging is real), (b) distillation *fixes it on
+distilled teams* but does **not** generalize to neighbors and **interferes** with the rest of the
+distribution, and (c) the critic-richness route did not convert to strength. Per-team distillation is
+expensive *and* doesn't scale (no generalization, plus interference) — conditioning is the mechanism that
+makes the per-team fix *spread* (to neighbors) and *stop colliding* (with the rest). See **Empirical
+evidence** below.
+
 ---
 
 ## What "amortization" means here
@@ -96,13 +104,56 @@ gradient surgery (PCGrad — delete the conflicting gradient component), or simp
 parameter-efficient, elegant one, and the rich distillation we built is the prerequisite that makes
 conditioning on a *learned* `z_arch` tractable.
 
-**The falsifiable precondition.** If the per-team optima *don't actually conflict much* (the specialists
-mostly agree; the gap is really just extraction/SNR), then a better critic *would* mostly close it and FiLM
-would buy little. This is **testable, now**: `tmp/subspace_overlap_probe.py` measures how orthogonal the
-archetype representation subspaces are (orthogonal ⇒ storage conflict is real ⇒ FiLM has room; overlapping
-⇒ less conflict ⇒ FiLM buys less), and the `_21` **strength gate** tells us whether the un-crystallized
-critic *alone* starts closing the generalist-vs-specialist gap. If it does, storage isn't binding; if it
-stalls with a rich critic, storage (FiLM) is the wall.
+**The falsifiable precondition — now RESOLVED (see the Empirical evidence section below).** The test was:
+if the per-team optima don't conflict much (the gap is just extraction/SNR), a better critic closes it and
+FiLM buys little; if the gap persists with a rich critic *and* the per-team fix neither generalizes nor
+composes, storage (FiLM) is the wall. The 2026-07-17 probes ran this: the critic-richness route did **not**
+convert to strength (storage, not extraction, is binding), and per-team distillation was shown to *not
+generalize to neighbors* and to *interfere with the rest of the distribution* — the amortization/cancellation
+made visible. **Conclusion: FiLM is justified** as the scalable escape from per-team distillation.
+
+## Empirical evidence (2026-07-17 probes) — why FiLM is justified
+
+Four probes this session settled "is *storage* the binding wall," and the answer is yes:
+
+1. **The averaging is REAL — the base model plays greedy-local ("6 1v1s, not 6v6").**
+   `tmp/counter_preservation_probe.py` measures how often our team's *unique defensive answer to a live
+   threat gets traded away* (the "trades away the only counter" failure). The **un-distilled base `_14`
+   loses its counters +0.236 more than the specialists**, biggest on the patient archetypes (stall +0.364,
+   where the *specialist loses ZERO*; cmpass +0.346). That is the greedy-local averaging, quantified.
+   Distillation *fixes it on the distilled teams* (`gap_21 ≈ +0.010`) — so the shared head *can* store the
+   planning **when handed a strong per-team target**. (`tmp/amortization_gap_eval.py` agreed: `_21` matches
+   the specialists on the 4 distilled teams, gap ≈ 0.)
+
+2. **But distilling one team does NOT generalize, and it INTERFERES — the decisive result.**
+   `tmp/distill_generalization_probe.py` (100 games, WR vs a fixed `_14`-on-pool opponent) distilled the
+   Starmie-flex TSS team, then measured `_21` (distilled) vs `_14` (base) on a similarity gradient:
+   - EXACT (Starmie, distilled): **+0.160** — distillation helped a lot, *on the exact team*.
+   - SIM (same core, Zapdos flex / Moltres flex, *not* distilled): **−0.09 / −0.05** — **no** lift on the
+     close neighbors.
+   - DISSIM (different core): **−0.130** — the broader distribution **regressed**.
+
+   So per-team distillation into ONE *unconditioned* head has **no within-archetype generalization** (a few
+   anchors can't cover the space) **and interferes** (the distilled teams win the gradient tug-of-war at the
+   expense of the rest). **That −0.13 regression is the amortization/cancellation, made visible.**
+
+3. **The critic-richness route is NOT the lever.** The `_21` FitNets strength gate: un-crystallizing the
+   critic (rank ↑) did *not* convert to strength (`td_resid_tail` flat, ELO flat); V_pub / human-replay
+   value went NULL. So the wall is *storage*, not extraction/critic.
+
+**The economic point that makes FiLM the answer.** Per-team distillation is *unbelievably expensive* (a full
+exploiter run per team) and probe (2) shows it *neither generalizes to neighbors nor composes without
+interference*. Conditioning fixes both: a neighbor maps to a *nearby* `z_arch` (so the +0.16 spreads to the
+core's neighborhood), and each team's play routes to its own `z_arch` subspace (so distilling one can't drag
+down the rest — no −0.13 regression). **FiLM turns "one exploiter helps one team, hurts the rest" into "a few
+anchors lift whole neighborhoods without collateral damage" — the scalable version of a fix that otherwise
+doesn't scale.**
+
+**Honest caveats.** (a) At 100 games the neighbor deltas sit within ±7% noise — "no help" is solid, "actively
+hurts" is suggestive; (b) `_21`'s general regression could be *partly* arch drift since `_14` (FitNets etc.),
+not purely distillation interference — the clean control is `_18` (distill-only) vs `_14` on the same teams
+(run before committing engineering); (c) the counter heuristic (type-resist × bulk) is coarse. But the
+*pattern across probes* is coherent and points one way.
 
 ## The trilemma of a *self-created* archetype latent — and its resolution
 
@@ -234,6 +285,17 @@ incompatible team strategies partially cancel in the shared weights. A perfect c
 gradients *correct*; it cannot make them *compatible*. Extraction (critic + distillation) and storage
 (conditioning) are orthogonal, and the dream needs both — which is exactly why the whole rich-distillation
 arc was the *prerequisite* for the FiLM/`z_arch` step, not a substitute for it.
+
+The 2026-07-17 probes close the loop empirically: distillation *proves the shared head can store the
+per-team planning* (it fixes the greedy-local counter-trading on the teams it distills), but it does so
+*expensively, per-team, without generalizing to neighbors, and while interfering with the rest* — the
+literal signature of one head trying to hold conflicting strategies. Conditioning is the mechanism that
+keeps the per-team fixes from colliding and lets them spread across a core's neighborhood, turning an
+un-scalable per-team distillation loop into a few-anchors-plus-`z_arch` one. **Next step: run the `_18`-vs-
+`_14` interference control, then build FiLM the cheap way** (functional-composition `z_arch` from the
+mon-role atoms; composition-reconstruction as the day-0 prior + collapse guard; a few seed anchors to force
+routing; LUT-first β) and measure the payoff as: does distilling an anchor now *lift its neighbors without
+regressing the rest*.
 
 ## See also
 - [[objective_richness_and_representation]] — the simplicity bias / minimal-sufficient-statistic backbone (why the shared solution wins by default) + the distillation bits-ladder
