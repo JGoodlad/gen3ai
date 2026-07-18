@@ -7865,6 +7865,47 @@ fn pursuit_does_not_faint_a_low_hp_baton_pass_passer() {
     );
 }
 
+/// R21 (`gen3_batonpass_stall_pursuit_copy_v1`): a Pursuit-into-a-Baton-Passing foe that had
+/// Protected — the entrant inherits BOTH `stall` (the Protect counter) AND `pursuit` (the
+/// beforeTurnMove-laid volatile) via `copyVolatileFrom`, so its TWO NO_ORDER/subOrder-2 residual
+/// duration handlers TIE at the entrant's speed → the turn-2 residual draws ONE Fisher-Yates
+/// `random(0,2)` the port previously MISSED (the bab_9_4 pool desync: a BYTE-INVISIBLE hidden draw
+/// at the Pursuit-into-Baton-Pass forced-switch turn that shifted the seed and eventually flipped a
+/// downstream KO). Turn 1: Zapdos Protects (→ `stall`), Tyranitar Roars (blocked). Turn 2: Tyranitar
+/// Pursuit (lays `pursuit` on Zapdos), Zapdos Baton Passes → Metagross enters inheriting stall +
+/// pursuit; the resumed-turn Pursuit strikes Metagross (350 → 288) and the end-of-turn residual draws
+/// the stall↔pursuit tie-shuffle. WRONG (pre-fix, the pass-set omitted stall + pursuit): the entrant
+/// had NEITHER handler → no tie → the shuffle was NOT drawn → the dec-2 seed is one draw short. STATE
+/// (Metagross the entrant, 288 = post-Pursuit) + SEED (the residual tie-shuffle). Ground truth
+/// `harness/probe_r21_regression_rng.js` (seed [11,22,33,44], gen3customgame).
+#[test]
+fn baton_pass_copies_stall_and_pursuit_so_the_entrant_residual_ties() {
+    let d = dex();
+    let p1 = "Tyranitar||Leftovers|SandStream|Crunch,Pursuit,Flamethrower,Roar|Modest|240,,,176,76,16|M|,0,,,,|||";
+    let p2 = "Zapdos||Leftovers|Pressure|Thunderbolt,HiddenPowerGrass,Protect,BatonPass|Modest|,,,192,116,200|N|,2,,30,,|||,Grass,,,,]\
+              Metagross||ChoiceBand|ClearBody|MeteorMash,Earthquake,HiddenPowerRock,Explosion|Adamant|196,252,,,,60|N|,,30,,30,30|||,Rock,,,,";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "11,22,33,44"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(3), Choice::Move(2)), // T1: Roar (blocked) + Protect → stall
+            ScriptDecision::both(Choice::Move(1), Choice::Move(3)), // T2: Pursuit (lays pursuit) + Baton Pass
+            ScriptDecision::one(1, Choice::Switch(1)),              // T2 forced switch: Metagross in (stall + pursuit)
+        ],
+        &d,
+    );
+    // dec 2 (the Baton-Pass forced switch resuming turn 2): Metagross is the entrant, took the
+    // NORMAL Pursuit (350 → 288), and the end-of-turn residual drew the stall↔pursuit tie-shuffle.
+    assert_eq!(out.decisions[2].active_species[1], "metagross", "Metagross is the Baton-Pass entrant");
+    assert_eq!(out.decisions[2].active[1].hp, 288, "Metagross (the ENTRANT) took the normal Pursuit → 350 → 288");
+    assert_eq!(
+        seed_str(&out.decisions[2].seed_after),
+        "60833,51486,28767,2196",
+        "the entrant's inherited stall+pursuit tie their residual duration handlers → the shuffle draws (a pre-fix miss diverges this seed)"
+    );
+}
+
 /// MC37 (batch-4 nit): PURSUIT INTERRUPT composed with ENTRY HAZARDS — a VOLUNTARY switch into a
 /// Pursuit STRIKE, then the replacement enters through the runSwitch EntryHazard (Spikes chip). The
 /// strike (×2, on the switcher Jolteon 271 → 153) precedes the swap; the entrant Snorlax then takes

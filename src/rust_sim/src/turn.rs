@@ -12316,7 +12316,23 @@ impl BattleState {
             // exit frees it), and **charge** (noCopy undefined → falsy → copied).
             // Encore / Destiny Bond are noCopy TRUE → NOT passed (and DB was already
             // removed by the passer's own BP move attempt at onBeforeMove −1).
-            Some((m.boosts, m.substitute, m.leech_seed, m.confusion, m.curse, m.perish, m.trapped_by, m.charge))
+            //
+            // BATON-PASS residual-handler tie fix (`gen3_batonpass_stall_pursuit_copy_v1`,
+            // R21 — the bab_9_4 dec-2 hidden draw): `copyVolatileFrom` copies EVERY
+            // non-`noCopy` volatile, so the passer's **`stall`** (from a prior Protect;
+            // `protect_counter` + `stall_duration`, both noCopy FALSE) AND **`pursuit`**
+            // (the beforeTurnMove-laid volatile, if the passer is being Pursuit-targeted
+            // THIS turn — noCopy FALSE) both transfer to the entrant. Each registers a
+            // NO_ORDER/subOrder-2 residual DURATION handler (`run_residuals` lines
+            // `protect_counter > 0` / `pursuit.is_some()`), so on the entrant they TIE at
+            // the entrant's cached speed → the end-of-turn residual handler-sort draws ONE
+            // Fisher-Yates `random(0,2)` the port previously MISSED (SIM-verified vs this
+            // repro's turn-2 residual: Metagross carried BOTH `stall` + `pursuit` handlers
+            // at speed 190/subOrder 2). Appended LAST (never reorder the pass-set tuple).
+            Some((
+                m.boosts, m.substitute, m.leech_seed, m.confusion, m.curse, m.perish,
+                m.trapped_by, m.charge, m.protect_counter, m.stall_duration, m.pursuit,
+            ))
         } else {
             None
         };
@@ -12553,7 +12569,11 @@ impl BattleState {
         //     passed +Spe/-Spe boost is reflected in the entrant's post-switch cached speed
         //     (Showdown's copyVolatileFrom runs inside switchIn before the speed cache). Clear
         //     the pending marker. ---
-        if let Some((boosts, sub, leech, conf, curse, perish, trapped_by, charge)) = bp_snapshot.clone() {
+        if let Some((
+            boosts, sub, leech, conf, curse, perish, trapped_by, charge, protect_counter,
+            stall_duration, pursuit,
+        )) = bp_snapshot.clone()
+        {
             let m = &mut self.sides[side].pokemon[active];
             m.boosts = boosts;
             m.substitute = sub;
@@ -12566,6 +12586,13 @@ impl BattleState {
             m.perish = perish;
             m.trapped_by = trapped_by;
             m.charge = charge;
+            // The `stall` + `pursuit` noCopy-false volatiles (`gen3_batonpass_stall_pursuit_copy_v1`,
+            // R21): the entrant inherits the stall counter (Protect success odds) + the pursuit
+            // volatile, so BOTH register their NO_ORDER/subOrder-2 residual duration handlers on
+            // the entrant → the tie-shuffle the sim draws (the bab_9_4 dec-2 hidden draw).
+            m.protect_counter = protect_counter;
+            m.stall_duration = stall_duration;
+            m.pursuit = pursuit;
         }
         // TOXIC STAGE — the reset does NOT live here (`gen3_tox_stage_persists_v1`):
         // the resolved gen3 `tox.onSwitchIn(){ stage = 0 }` fires via the RUNSWITCH-time

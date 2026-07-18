@@ -986,9 +986,21 @@ pub fn run_full_battle_bridge_core(
             };
             let s = cmd.side;
             if !need[s] {
-                return Err(format!(
-                    "unexpected CMD for side {s} at boundary {guard} (kinds {kinds:?})"
-                ));
+                // The recorded CMD stream answers a side this boundary does NOT request — the
+                // REPLAYED game reached a different request state than the RECORDED game, i.e.
+                // the port's engine desynced UPSTREAM (an extra/missing PRNG draw shifted a
+                // faint / forced-switch onto a side the sim didn't have here). This is a
+                // SYMPTOM of a draw-count divergence, NOT a per-side/request serializer bug.
+                // Stop gracefully (R20): return the partial streams + `request_seeds` so
+                // `ab_verdict`'s SEED ANCHOR classifies it as `kind:"seed"` (upstream engine →
+                // the omniscient fix-queue) — the honest classification — instead of the driver
+                // crashing with an opaque "unexpected CMD" error that masked the seed anchor.
+                // The seeds already carry the divergence (captured at earlier boundaries), so
+                // the anchor reports it at the exact desync decision; if seeds happen to still
+                // align, the truncated per-side byte diff catches it as a non-allowlisted
+                // divergence — either way the gate stays red, nothing is swallowed.
+                plan_ended = true;
+                break;
             }
             // Resolve the wire token (numeric slot OR a NAME — `move earthquake` /
             // `switch Salamence`, the live RL runtime's form) against THIS boundary's

@@ -228,39 +228,53 @@ fn truncate(s: &str) -> String {
 /// (Curse target / return102 / gender-level details) is `allowlisted` NARROWLY.
 /// The A2 SEED-ANCHOR alignment (`gen3_perside_seed_anchor_makerequest_align_v1`).
 ///
-/// The port's per-`|request|`-boundary seed list (`got`) can carry MORE boundaries than the
-/// omniscient fuzzer's per-decision `rec.seeds` (`exp`): on a phaze-drag / on-entry-faint
-/// forced-switch turn the port records an EXTRA **zero-draw** boundary (a forced replacement
-/// that draws nothing, so its seed EQUALS the previous boundary's seed) where the fuzzer's
-/// per-while-iteration capture collapses it into the surrounding decision. The game is
-/// byte-identical to `|win|` (proven by the per-side byte diff without `--ab`), so this is a
-/// pure decision-boundary BOOKKEEPING offset, NOT an engine draw bug.
+/// The port's per-`|request|`-boundary seed list (`got`) is a SUPERSET of the omniscient
+/// fuzzer's per-decision `rec.seeds` (`exp`): on a phaze-drag / on-entry-faint / SEQUENTIAL
+/// double-forced-switch turn the port surfaces an EXTRA makeRequest boundary (checkpoint) that
+/// the fuzzer's synchronous write-cascade merges into ONE recorded decision. Concretely, when
+/// BOTH actives need a forced replacement the sim presents them one-side-at-a-time (p1 forced /
+/// p2 wait, then p1 wait / p2 forced), but the fuzzer's `.write(p1 switch)` synchronously
+/// surfaces p2's forced switch, so the SAME `requestState==='switch'` while-iteration writes
+/// BOTH sides and pushes ONE `rec.seeds` (the seed AFTER both switch-ins). The port instead
+/// checkpoints at each of the two boundaries, inserting one extra intermediate seed. That extra
+/// may be a zero-draw duplicate (`got[i]==got[i-1]`, the switch-in that drew nothing) OR a
+/// NON-zero intermediate value (draws occurred between the two forced switch-ins) — R20 proved
+/// both forms occur (bab_10_4 carries both in one group). In EVERY case the game is
+/// byte-identical to `|win|` (proven by the per-side byte diff without `--ab`), so it is a pure
+/// decision-boundary BOOKKEEPING offset, NOT an engine draw bug.
 ///
-/// This aligns the two seed streams as a SUBSEQUENCE, tolerating ONLY the port's extra
-/// ZERO-DRAW boundaries — a `got[i]` that equals `got[i-1]` (drew nothing) AND does not match
-/// the expected sim seed is skipped as one such artifact. A GENUINE draw-count desync (an
-/// extra/missing engine draw) necessarily changes a seed VALUE non-trivially, so it is NEVER a
-/// zero-draw duplicate → it surfaces here as `kind:"seed"` (and, being a real RNG divergence,
-/// ALSO breaks the per-side byte stream — the load-bearing discriminator: byte-equal ⇒
-/// harmless checkpoint offset, byte-diverge ⇒ real desync). Returns `(sim_decision_index,
-/// expected, got)` at the first UN-tolerated divergence, else `None`.
+/// This aligns `exp` as a SUBSEQUENCE of `got`: every sim decision-seed must appear, IN ORDER,
+/// among the port's checkpoints (the port may interleave extra checkpoints between them). This
+/// is STRUCTURALLY guaranteed for a byte-clean board — each sim decision-seed is captured at a
+/// makeRequest pause, which is ALWAYS also a port checkpoint — so it NEVER false-positives on a
+/// clean board. (The R20 fix generalizes the round-6 `got[i]==got[i-1]` zero-draw-only tolerance
+/// to the full subsequence, which the Pressure/switch-in NON-zero-draw extra requires.)
+///
+/// SAFETY — it can NEVER mask a genuine draw-count desync: an extra/missing engine draw
+/// PERMANENTLY shifts every downstream seed VALUE, so the sim's post-divergence seeds never
+/// reappear in the port's stream → `exp` is NOT a subsequence of `got` → reported `kind:"seed"`
+/// at the first unreconcilable sim decision. A coincidental subsequence match of a shifted
+/// 64-bit seed is ~2^-64; and even in that impossible case, the SAME desync breaks the per-side
+/// byte stream, which the downstream per-side byte diff catches as a non-allowlisted divergence
+/// (the load-bearing discriminator: byte-equal ⇒ harmless checkpoint offset, byte-diverge ⇒ real
+/// desync) — so a real desync FAILS the gate either way. Returns `(sim_decision_index, expected,
+/// got_at_divergence)` at the first sim seed that cannot be reconciled, else `None`.
 fn anchor_seed_divergence(got: &[String], exp: &[String]) -> Option<(usize, String, String)> {
-    let mut i = 0usize; // index into the port's request_seeds (`got`)
-    let mut j = 0usize; // index into the sim's rec.seeds (`exp`)
-    while i < got.len() && j < exp.len() {
-        if got[i] == exp[j] {
+    let mut i = 0usize; // index into the port's request_seeds (`got`, the SUPERSET)
+    for (j, want) in exp.iter().enumerate() {
+        // Advance past the port's extra checkpoint boundaries to find this sim decision-seed.
+        let start = i;
+        while i < got.len() && &got[i] != want {
             i += 1;
-            j += 1;
-            continue;
         }
-        // Tolerate ONLY an extra port ZERO-DRAW boundary: `got[i] == got[i-1]` (no draw since
-        // the prior boundary) — the phaze-drag / forced-switch checkpoint artifact. Anything
-        // else is a real seed divergence at the sim's decision `j`.
-        if i > 0 && got[i] == got[i - 1] {
-            i += 1;
-            continue;
+        if i >= got.len() {
+            // The sim seed was not found in the remaining port stream → a genuine draw-count
+            // desync (a real divergence shifts the whole stream so the value never reappears).
+            // Report the earliest port seed we could not reconcile to this sim decision.
+            let got_at = got.get(start).cloned().unwrap_or_default();
+            return Some((j, want.clone(), got_at));
         }
-        return Some((j, exp[j].clone(), got[i].clone()));
+        i += 1; // consume the matched checkpoint
     }
     None
 }
@@ -355,7 +369,11 @@ fn ab_verdict(b: &GoldenBattle, dex: &Dex) -> String {
         } else {
             (framing_window(&b.p2_expected), framing_window(&streams.p2))
         };
+        // B1 (pure framing PERMUTATION) first, then the A1-analog MIRROR IDENT FLIP (the
+        // single-line `[of]` content flip AND the Intimidate `-ability`+`-unboost` permutation —
+        // both the same harmless turn-0 construction speed-tie same-species mirror reorder).
         classify_perside_construction_order_flip(&gw, &ew, leads_speed_tie)
+            .or_else(|| classify_perside_construction_mirror_flip(&gw, &ew, leads_speed_tie))
     } else {
         None
     };
@@ -541,6 +559,230 @@ fn classify_perside_construction_order_flip(
     Some("turn0-construction-speed-tie-order-flip")
 }
 
+/// The A1-ANALOG per-side allowlist key `perside-construction-speed-tie-mirror-of-flip` — the
+/// per-side sibling of `ab_replay.rs::classify_construction_mirror_of_flip` (the omniscient A1).
+/// The unmodeled turn-0 construction speed-tie Fisher-Yates shuffle (the project-wide
+/// seed-convention deferral) decides, on a SAME-SPECIES MIRROR lead, which of the two identical
+/// mons' Sand-Stream / Intimidate resolves LAST — so a same-species mirror's framing `-weather`
+/// `[of]` clause, or its `-ability` actor + `-unboost` target idents, flip between the two active
+/// slots (`p1a` ↔ `p2a`). seed=None-INVISIBLE (`event::run_start_switchins` is deterministic +
+/// draws nothing at a raw-Speed tie → correct production obs under `--use-bridge=rust`; the port
+/// is the sole oracle at `seed=None`).
+///
+/// On the PER-SIDE stream this manifests in TWO structural forms — BOTH covered here (the R17
+/// find: 2 Tyranitar-mirror + 2 Salamence-mirror repros, all the same harmless root):
+///   (a) the SINGLE-LINE `[of]` CONTENT flip (Tyranitar mirror) — ONE `-weather` line whose
+///       `[of]` slot flips (multiset DIFFERS → E1/B1's permutation check can't catch it, exactly
+///       the A1-analog gap this key closes);
+///   (b) the whole-Intimidate-block PERMUTATION (Salamence mirror) — the two `-ability` + two
+///       `-unboost` lines reorder together (multiset SAME, but B1's clause-3 rejects the
+///       `-unboost` lines, so B1 misses it).
+/// Both reduce to the SAME per-field invariant: every framing line on which the two windows
+/// differ becomes byte-identical once its flipping `pNa: <name>` idents are resolved to their
+/// SPECIES (via the framing `|switch|` details) — i.e. the only thing that changed is WHICH
+/// same-species mirror slot an ident points to. This mirrors A1's 6 structural clauses, GENERALIZING
+/// A1's "differ in EXACTLY ONE line" to "every differing framing line is a same-species mirror ident
+/// flip" (needed because the Intimidate case rides its paired `-unboost` line, so the per-side form
+/// is a multi-line permutation rather than a single-line flip).
+///
+/// PREDICATE — all must hold, else `None` → the gate FAILS (a genuine per-side bug is NEVER swallowed):
+///  (1) `leads_speed_tie` — the two construction-time lead Speeds are EQUAL (the caller's precondition);
+///  (2) the two framing windows are EQUAL-LENGTH (a missing/extra line → `None`);
+///  (3) EVERY position on which they differ is, in BOTH windows, a framing `|-weather|`/`|-ability|`/
+///      `|-unboost|` line (a differing `|switch|`/HP/`|request|`/content line → `None`);
+///  (4) each such differing line is a PURE MIRROR IDENT FLIP (`line_is_mirror_ident_flip`): after
+///      the per-field diff, the ONLY differences are `pNa: <name>` / `[of] pNa: <name>` ident fields
+///      whose SLOT flips between the two DIFFERENT active slots that map (via `|switch|` details) to
+///      the SAME species; a same-slot name change (a nickname-render bug), a cross-species `[of]`
+///      attribution, a changed weather/ability prefix, or a stat/value change breaks it → `None`;
+///  (5) at least one line differs (identical windows are not a flip → the divergence is elsewhere);
+///  (6) THE STRICTNESS SPLIT (the R18-review gate-integrity fix — clauses (3)/(4) alone would SWALLOW
+///      a real mirror MIS-ATTRIBUTION: a same-species Salamence mirror where Intimidate mis-targets —
+///      golden `-unboost|p2a: …`, engine `-unboost|p1a: …`, ONE line differs, a valid mirror ident
+///      flip, BUT p1a is unboosted twice / p2a never → a REAL boost-state divergence). So a
+///      NON-multiset-preserving flip is admitted ONLY as the A1-analog single `[of]`/actor case; the
+///      multi-line form MUST be a pure permutation. Allowlist iff EITHER:
+///        (form a) EXACTLY ONE differing line, and it is a `|-weather|`/`|-ability|` line (mirroring
+///          omniscient A1's "differ in EXACTLY ONE line" — a `-weather` `[of]` / `-ability` actor
+///          flip; a lone `-unboost` mis-target lands here and is REJECTED, it is neither); OR
+///        (form b) the two framing windows are an IDENTICAL MULTISET (a pure PERMUTATION — the
+///          Intimidate `-ability`+`-unboost` block reorder; a mis-target that breaks the multiset
+///          returns `None` → the gate FAILS).
+fn classify_perside_construction_mirror_flip(
+    golden_window: &[String],
+    engine_window: &[String],
+    leads_speed_tie: bool,
+) -> Option<&'static str> {
+    // (1) construction speed-tie.
+    if !leads_speed_tie {
+        return None;
+    }
+    // (2) equal-length windows.
+    if golden_window.len() != engine_window.len() || golden_window.is_empty() {
+        return None;
+    }
+    let species = build_slot_species(&[golden_window, engine_window]);
+    let is_framing = |l: &str| {
+        l.starts_with("|-weather|") || l.starts_with("|-ability|") || l.starts_with("|-unboost|")
+    };
+    // Collect the differing positions; require EVERY one to be, in BOTH windows, a framing status
+    // line (3) AND a pure same-species mirror ident flip (4).
+    let mut diffs: Vec<usize> = Vec::new();
+    for (i, (g, e)) in golden_window.iter().zip(engine_window.iter()).enumerate() {
+        if g == e {
+            continue;
+        }
+        // (3) both a framing status line.
+        if !is_framing(g) || !is_framing(e) {
+            return None;
+        }
+        // (4) a pure same-species mirror ident flip.
+        match line_is_mirror_ident_flip(g, e, &species) {
+            Some(true) => diffs.push(i),
+            // g != e here, so `Some(false)` (identical) is unreachable — treat defensively.
+            _ => return None,
+        }
+    }
+    // (5) at least one flip.
+    if diffs.is_empty() {
+        return None;
+    }
+    // (6) THE STRICTNESS SPLIT (see the doc comment). Form (b): a pure permutation (identical
+    // multiset) — the Intimidate block reorder; a mis-target that breaks the multiset declines here.
+    let multiset_preserved = {
+        let mut g = golden_window.to_vec();
+        let mut e = engine_window.to_vec();
+        g.sort();
+        e.sort();
+        g == e
+    };
+    if multiset_preserved {
+        return Some("perside-construction-speed-tie-mirror-of-flip");
+    }
+    // Form (a): the A1-analog SINGLE differing `-weather`/`-ability` line (a `[of]`/actor flip). A
+    // lone `-unboost` diff (the reviewer's mis-target — it breaks the multiset AND is not
+    // weather/ability) is REJECTED here → None → the gate FAILS on a genuine boost mis-attribution.
+    if diffs.len() == 1 {
+        let g = golden_window[diffs[0]].as_str();
+        let e = engine_window[diffs[0]].as_str();
+        let is_wa = |l: &str| l.starts_with("|-weather|") || l.starts_with("|-ability|");
+        if is_wa(g) && is_wa(e) {
+            return Some("perside-construction-speed-tie-mirror-of-flip");
+        }
+    }
+    None
+}
+
+/// Build a `slot → (name, species)` map (`p1a`/`p2a` → the lead's on-field ident NAME + species)
+/// from the framing `|switch|` / `|drag|` lines across the given windows (the ident's `pNa: <name>`
+/// token + the details' species field, the 2nd `|`-token up to the first comma). Used by
+/// `line_is_mirror_ident_flip` to prove (a) each flipped ident's NAME is consistent with the roster
+/// (a mislabeled `[of]` is a real bug) AND (b) the two flipped slots are the SAME species (the
+/// sibling-mirror invariant, read past the nickname).
+fn build_slot_species(
+    windows: &[&[String]],
+) -> std::collections::HashMap<String, (String, String)> {
+    let mut map = std::collections::HashMap::new();
+    for w in windows {
+        for l in w.iter() {
+            let rest = match l
+                .strip_prefix("|switch|")
+                .or_else(|| l.strip_prefix("|drag|"))
+            {
+                Some(r) => r,
+                None => continue,
+            };
+            let mut it = rest.split('|');
+            let ident = it.next().unwrap_or(""); // `pNa: <name>`
+            let details = it.next().unwrap_or(""); // `<Species>, M`
+            if let Some(colon) = ident.find(": ") {
+                let slot = &ident[..colon];
+                let name = &ident[colon + 2..];
+                let species = details.split(',').next().unwrap_or(details).trim();
+                if is_active_slot(slot) && !name.is_empty() && !species.is_empty() {
+                    map.entry(slot.to_string())
+                        .or_insert_with(|| (name.to_string(), species.to_string()));
+                }
+            }
+        }
+    }
+    map
+}
+
+/// `true` iff `slot` is a singles ACTIVE slot ident prefix (`pNa`: `p`, a digit, then `a`).
+fn is_active_slot(slot: &str) -> bool {
+    let b = slot.as_bytes();
+    b.len() == 3 && b[0] == b'p' && b[1].is_ascii_digit() && b[2] == b'a'
+}
+
+/// Parse a per-side line FIELD that is a mon IDENT reference — either `pNa: <name>` or
+/// `[of] pNa: <name>`. Returns `(prefix, slot, name)` where `prefix` is `""` or `"[of] "`. `None`
+/// if the field is not a well-formed active-slot ident field.
+fn parse_ident_field(field: &str) -> Option<(&str, &str, &str)> {
+    let (prefix, rest) = match field.strip_prefix("[of] ") {
+        Some(r) => ("[of] ", r),
+        None => ("", field),
+    };
+    let colon = rest.find(": ")?;
+    let slot = &rest[..colon];
+    if !is_active_slot(slot) {
+        return None;
+    }
+    let name = &rest[colon + 2..];
+    if name.is_empty() {
+        return None;
+    }
+    Some((prefix, slot, name))
+}
+
+/// `Some(true)` iff `gl` and `el` differ ONLY by same-species `p1a`↔`p2a` mirror ident flips
+/// (each differing `|`-field is a `pNa: <name>` / `[of] pNa: <name>` ident whose SLOT flips
+/// between the two active slots that map to the SAME species); `Some(false)` if byte-identical;
+/// `None` on ANY real difference — a non-ident field change (different weather/ability/stat/value),
+/// a same-slot name change (a nickname-render bug), a cross-species flip, or a field-count mismatch.
+fn line_is_mirror_ident_flip(
+    gl: &str,
+    el: &str,
+    roster: &std::collections::HashMap<String, (String, String)>,
+) -> Option<bool> {
+    if gl == el {
+        return Some(false);
+    }
+    let gf: Vec<&str> = gl.split('|').collect();
+    let ef: Vec<&str> = el.split('|').collect();
+    if gf.len() != ef.len() {
+        return None;
+    }
+    let mut any_flip = false;
+    for (a, b) in gf.iter().zip(ef.iter()) {
+        if a == b {
+            continue;
+        }
+        // The ONLY allowed field difference is a same-species active-slot ident flip.
+        let (ap, aslot, aname) = parse_ident_field(a)?;
+        let (bp, bslot, bname) = parse_ident_field(b)?;
+        if ap != bp {
+            return None; // one carries `[of] `, the other doesn't → a real diff.
+        }
+        if aslot == bslot {
+            return None; // SAME slot, DIFFERENT name → a real nickname-render bug.
+        }
+        // Each ident's NAME must be consistent with its slot's roster mon (a mislabeled
+        // `[of]`/actor — e.g. `[of] p2a: Gengar` where p2a is Tyranitar — is a REAL bug).
+        let (a_rname, a_rsp) = roster.get(aslot)?;
+        let (b_rname, b_rsp) = roster.get(bslot)?;
+        if aname != a_rname || bname != b_rname {
+            return None;
+        }
+        // Both slots must be the SAME species (the sibling-mirror invariant).
+        if a_rsp != b_rsp {
+            return None; // cross-species `[of]`/actor attribution → a real bug.
+        }
+        any_flip = true;
+    }
+    Some(any_flip)
+}
+
 /// Reconcile the Curse move-slot's `"target":"normal"` (port) toward `"target":"self"` (sim),
 /// single-occurrence anchored at the curse id, IFF that leaves the strings closer without
 /// disturbing any other slot. Returns the reconciled `got` when the curse slot's target was the
@@ -711,9 +953,12 @@ fn json_str(s: &str) -> String {
 
 // ── A2 SEED-ANCHOR alignment integrity tests (gate-integrity is load-bearing) ──
 //
-// `anchor_seed_divergence` tolerates ONLY the port's extra ZERO-DRAW phaze-drag/forced-switch
-// boundaries (a `got[i]` equal to `got[i-1]`). Any GENUINE draw-count desync changes a seed
-// VALUE non-trivially, so it is NEVER a zero-draw duplicate → still reported as `kind:"seed"`.
+// `anchor_seed_divergence` aligns `exp` (the sim's per-decision seeds) as a SUBSEQUENCE of `got`
+// (the port's per-`|request|`-boundary seeds, a SUPERSET) — the port may interleave EXTRA
+// checkpoint boundaries (zero-draw OR non-zero-draw, both proven by R20's Pressure/switch-in
+// repros). Any GENUINE draw-count desync PERMANENTLY shifts every downstream seed VALUE, so the
+// sim's post-divergence seeds never reappear in the port's stream → `exp` is NOT a subsequence
+// → still reported `kind:"seed"`.
 #[cfg(test)]
 mod a2_anchor_tests {
     use super::*;
@@ -764,6 +1009,64 @@ mod a2_anchor_tests {
         // seeds on BOTH sides), they align 1:1 with no skip.
         let g = v(&["a", "b", "b", "c"]);
         assert_eq!(anchor_seed_divergence(&g, &g), None);
+    }
+
+    #[test]
+    fn extra_nonzero_draw_boundary_is_tolerated() {
+        // R20 (bab_9_6 / bab_10_4): a SEQUENTIAL double-forced-switch — the port checkpoints the
+        // intermediate p1-switched-in state (a NON-zero-draw value the sim never records, since
+        // the fuzzer merges both switches into ONE decision). `got[i]` is NEITHER `exp[j]` NOR a
+        // zero-draw duplicate of `got[i-1]`, yet the stream RE-SYNCS immediately after → tolerated
+        // by the subsequence alignment (the round-6 zero-draw-only rule wrongly reported this).
+        let got = v(&["s28", "s29", "sMID", "s30", "s31"]); // "sMID" = intermediate switch-in seed
+        let exp = v(&["s28", "s29", "s30", "s31"]);
+        assert_eq!(anchor_seed_divergence(&got, &exp), None);
+    }
+
+    #[test]
+    fn a_group_with_both_a_zero_draw_and_a_nonzero_extra_is_tolerated() {
+        // The bab_10_4 shape: one double-switch group inserts BOTH a zero-draw duplicate (the p1
+        // switch-in that drew nothing) AND a non-zero intermediate (the p2 switch-in), i.e. TWO
+        // extra port checkpoints between two sim-adjacent seeds. Both are skipped as long as the
+        // sim seeds remain an ordered subsequence.
+        let got = v(&["s21", "s21", "sMID", "s22", "s23"]); // "s21" dup (zero) + "sMID" (non-zero)
+        let exp = v(&["s21", "s22", "s23"]);
+        assert_eq!(anchor_seed_divergence(&got, &exp), None);
+    }
+
+    #[test]
+    fn multiple_isolated_extra_groups_across_a_battle_are_tolerated() {
+        // Several double-switch groups over one battle, each inserting an extra checkpoint,
+        // separated by clean matching decisions — all tolerated (each is a local, re-syncing
+        // superset insertion).
+        let got = v(&["a", "aX", "b", "c", "cX", "d", "e"]);
+        let exp = v(&["a", "b", "c", "d", "e"]);
+        assert_eq!(anchor_seed_divergence(&got, &exp), None);
+    }
+
+    #[test]
+    fn a_real_desync_that_shifts_the_whole_tail_is_still_caught() {
+        // The load-bearing negative: a genuine extra draw at decision 2 shifts EVERY downstream
+        // seed to a brand-new value — the sim's `s2..` never reappear in `got`, so the
+        // subsequence FAILS at the first shifted decision → reported `kind:"seed"` (it does NOT
+        // get swallowed as a checkpoint offset, even though the port merely has "different"
+        // values from that point on). This is the class the R20 fix must NOT weaken.
+        let got = v(&["s0", "s1", "s2b", "s3b", "s4b"]); // shifted from decision 2 onward
+        let exp = v(&["s0", "s1", "s2", "s3", "s4"]);
+        assert_eq!(
+            anchor_seed_divergence(&got, &exp),
+            Some((2usize, "s2".to_string(), "s2b".to_string()))
+        );
+    }
+
+    #[test]
+    fn a_desync_is_not_masked_by_a_coincidental_later_reappearance() {
+        // Even if a shifted seed happens to reappear LATER out of order (astronomically unlikely
+        // for a real 64-bit seed, but proven here), the subsequence still fails because the sim's
+        // NEXT seed after the reappearance is absent — the gate stays red.
+        let got = v(&["s0", "s1", "xx", "s2", "yy"]); // s2 reappears but s3/s4 are gone
+        let exp = v(&["s0", "s1", "s2", "s3", "s4"]);
+        assert!(anchor_seed_divergence(&got, &exp).is_some());
     }
 }
 
@@ -885,6 +1188,219 @@ mod perside_construction_order_flip_tests {
             "|-ability|p2a: Suicune|Pressure|[silent]",
         ]);
         assert_eq!(framing_window(&stream).len(), 1);
+    }
+}
+
+// ── A1-ANALOG (perside construction MIRROR IDENT FLIP) integrity tests ──
+//
+// `classify_perside_construction_mirror_flip` must fire ONLY on the same-species mirror
+// construction reorder — the single-line `[of]`/actor content flip (Tyranitar-mirror weather) AND
+// the Intimidate `-ability`+`-unboost` block permutation (Salamence-mirror) — and NEVER swallow a
+// genuinely-wrong per-side attribution (the load-bearing requirement). These lock each clause;
+// reverting a clause makes a NEG case start (wrongly) allowlisting → a test fails.
+#[cfg(test)]
+mod perside_construction_mirror_flip_tests {
+    use super::*;
+    fn v(xs: &[&str]) -> Vec<String> {
+        xs.iter().map(|s| s.to_string()).collect()
+    }
+
+    // Form (a) — the canonical Tyranitar-mirror WEATHER `[of]` single-line CONTENT flip
+    // (bab_7_13 / bab_3_9): the ONLY diff is the `-weather` `[of]` slot (p2a golden vs p1a engine),
+    // both Tyranitar. The multiset DIFFERS, so B1 can't catch it — this is exactly the A1-analog gap.
+    fn tyranitar_weather_windows() -> (Vec<String>, Vec<String>) {
+        let sw1 = "|switch|p1a: Tyranitar|Tyranitar, M|391/391".to_string();
+        let sw2 = "|switch|p2a: Tyranitar|Tyranitar, M|100/100".to_string();
+        let g = vec![
+            "|start".to_string(),
+            sw1.clone(),
+            sw2.clone(),
+            "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar".to_string(),
+        ];
+        let e = vec![
+            "|start".to_string(),
+            sw1,
+            sw2,
+            "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar".to_string(),
+        ];
+        (g, e)
+    }
+
+    // Form (b) — the Salamence-mirror INTIMIDATE block PERMUTATION (bab_6_14 / bab_7_4): the two
+    // `-ability` + two `-unboost` lines reorder together (multiset SAME, but B1's clause-3 rejects
+    // the `-unboost` lines). p1a carries the nickname "Drattak", p2a the bare species — so clause
+    // (4) must read the species via the `|switch|` details, not the ident name.
+    fn salamence_intimidate_windows() -> (Vec<String>, Vec<String>) {
+        let sw1 = "|switch|p1a: Drattak|Salamence, M|331/331".to_string();
+        let sw2 = "|switch|p2a: Salamence|Salamence, M|100/100".to_string();
+        let g = vec![
+            sw1.clone(),
+            sw2.clone(),
+            "|-ability|p2a: Salamence|Intimidate|boost".to_string(),
+            "|-unboost|p1a: Drattak|atk|1".to_string(),
+            "|-ability|p1a: Drattak|Intimidate|boost".to_string(),
+            "|-unboost|p2a: Salamence|atk|1".to_string(),
+        ];
+        let e = vec![
+            sw1,
+            sw2,
+            "|-ability|p1a: Drattak|Intimidate|boost".to_string(),
+            "|-unboost|p2a: Salamence|atk|1".to_string(),
+            "|-ability|p2a: Salamence|Intimidate|boost".to_string(),
+            "|-unboost|p1a: Drattak|atk|1".to_string(),
+        ];
+        (g, e)
+    }
+
+    #[test]
+    fn tyranitar_weather_of_flip_is_allowlisted_at_a_speed_tie() {
+        let (g, e) = tyranitar_weather_windows();
+        assert_eq!(
+            classify_perside_construction_mirror_flip(&g, &e, true),
+            Some("perside-construction-speed-tie-mirror-of-flip"),
+            "the single-line weather-[of] mirror flip must allowlist at a speed tie"
+        );
+    }
+
+    #[test]
+    fn salamence_intimidate_permutation_is_allowlisted() {
+        // The `-ability`+`-unboost` block permutation (with a nickname on one mirror slot).
+        let (g, e) = salamence_intimidate_windows();
+        assert_eq!(
+            classify_perside_construction_mirror_flip(&g, &e, true),
+            Some("perside-construction-speed-tie-mirror-of-flip")
+        );
+    }
+
+    #[test]
+    fn a_distinct_speed_pair_fails_clause_1() {
+        // Clause (1): NOT a construction speed tie → never allowlisted, both forms.
+        let (g, e) = tyranitar_weather_windows();
+        assert_eq!(classify_perside_construction_mirror_flip(&g, &e, false), None);
+        let (g2, e2) = salamence_intimidate_windows();
+        assert_eq!(classify_perside_construction_mirror_flip(&g2, &e2, false), None);
+    }
+
+    #[test]
+    fn a_wrong_of_to_a_real_different_species_mon_fails() {
+        // The LOAD-BEARING NEG: a `[of]` attributed to a NON-sibling (DIFFERENT species) mon at a
+        // mirror lead MUST NOT be swallowed. Leads are Tyranitar (p1a) vs Gengar (p2a).
+        let g = vec![
+            "|switch|p1a: Tyranitar|Tyranitar, M|391/391".to_string(),
+            "|switch|p2a: Gengar|Gengar, M|281/281".to_string(),
+            "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gengar".to_string(),
+        ];
+        let e = vec![
+            "|switch|p1a: Tyranitar|Tyranitar, M|391/391".to_string(),
+            "|switch|p2a: Gengar|Gengar, M|281/281".to_string(),
+            "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar".to_string(),
+        ];
+        assert_eq!(classify_perside_construction_mirror_flip(&g, &e, true), None);
+    }
+
+    #[test]
+    fn a_changed_weather_prefix_fails() {
+        // Clause (4): the non-ident portion (weather id / `[from]`) changed → not a pure ident flip.
+        let (g, mut e) = tyranitar_weather_windows();
+        e[3] = "|-weather|RainDance|[from] ability: Sand Stream|[of] p1a: Tyranitar".to_string();
+        assert_eq!(classify_perside_construction_mirror_flip(&g, &e, true), None);
+    }
+
+    #[test]
+    fn a_changed_ability_prefix_fails() {
+        // Clause (4): a changed `-ability` NAME (Intimidate → Insomnia) is a real content diff.
+        let (g, mut e) = salamence_intimidate_windows();
+        e[2] = "|-ability|p1a: Drattak|Insomnia|boost".to_string();
+        assert_eq!(classify_perside_construction_mirror_flip(&g, &e, true), None);
+    }
+
+    #[test]
+    fn a_missing_framing_line_fails() {
+        // Clause (2): a dropped framing line → unequal length → None.
+        let (g, mut e) = tyranitar_weather_windows();
+        e.remove(3);
+        assert_eq!(classify_perside_construction_mirror_flip(&g, &e, true), None);
+    }
+
+    #[test]
+    fn a_same_slot_nickname_change_is_a_real_bug_not_allowlisted() {
+        // A same-SLOT ident whose NAME differs (a port nickname-render bug) is NOT a mirror slot
+        // flip — clause (4) requires the slot to actually flip (p1a ↔ p2a).
+        let g = vec![
+            "|switch|p1a: Salamence|Salamence, M|331/331".to_string(),
+            "|switch|p2a: Salamence|Salamence, M|100/100".to_string(),
+            "|-ability|p1a: Salamence|Intimidate|boost".to_string(),
+        ];
+        let e = vec![
+            "|switch|p1a: Salamence|Salamence, M|331/331".to_string(),
+            "|switch|p2a: Salamence|Salamence, M|100/100".to_string(),
+            "|-ability|p1a: Drattak|Intimidate|boost".to_string(), // wrong NAME, same slot
+        ];
+        assert_eq!(classify_perside_construction_mirror_flip(&g, &e, true), None);
+    }
+
+    #[test]
+    fn a_non_framing_line_diff_fails_clause_3() {
+        // A differing NON-framing line (an HP-bearing `|-damage|` `[of]` flip) is out of scope for
+        // this key — clause (3) requires every differing line to be `-weather`/`-ability`/`-unboost`.
+        let g = vec![
+            "|switch|p1a: Tyranitar|Tyranitar, M|391/391".to_string(),
+            "|switch|p2a: Tyranitar|Tyranitar, M|100/100".to_string(),
+            "|-damage|p1a: Tyranitar|360/391|[from] Sandstorm|[of] p2a: Tyranitar".to_string(),
+        ];
+        let mut e = g.clone();
+        e[2] = "|-damage|p1a: Tyranitar|360/391|[from] Sandstorm|[of] p1a: Tyranitar".to_string();
+        assert_eq!(classify_perside_construction_mirror_flip(&g, &e, true), None);
+    }
+
+    #[test]
+    fn a_mislabeled_of_name_inconsistent_with_the_roster_fails() {
+        // The mangled-golden injection (cp-aside): the `[of]` ident NAME points at a mon that is
+        // NOT the slot's roster mon (`[of] p2a: Gengar` where the p2a switch line says Tyranitar).
+        // Reading species from the switch map alone would swallow it; the name-consistency check
+        // catches it → None. (Reverting the name check makes this wrongly allowlist.)
+        let (g, mut e) = tyranitar_weather_windows();
+        let mut g = g;
+        g[3] = "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gengar".to_string();
+        e[3] = "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar".to_string();
+        assert_eq!(classify_perside_construction_mirror_flip(&g, &e, true), None);
+    }
+
+    // THE REVIEWER'S REQUIRED NEG (the R18 gate-integrity hole): a same-species Salamence MIRROR
+    // where Intimidate MIS-TARGETS — golden `-unboost|p2a: Salamence|atk|1`, engine
+    // `-unboost|p1a: Salamence|atk|1`. Only ONE line differs and it IS a same-species mirror ident
+    // flip (so the loop's clause-4 passes), BUT the MULTISET is NOT preserved (p1a is unboosted
+    // twice / p2a never → a REAL boost-state divergence, p1a -2 / p2a 0 vs the correct -1/-1). The
+    // pre-fix predicate lacked the multiset guard, so it SWALLOWED this. The tightened predicate:
+    // form (b) demands an identical multiset (broken here → declines); form (a) admits a lone diff
+    // ONLY if it is a `-weather`/`-ability` line (this is `-unboost` → declines) → None → gate FAILS.
+    #[test]
+    fn a_single_line_unboost_mistarget_breaks_the_multiset_and_is_not_allowlisted() {
+        let g = v(&[
+            "|switch|p1a: Salamence|Salamence, M|331/331",
+            "|switch|p2a: Salamence|Salamence, M|100/100",
+            "|-ability|p1a: Salamence|Intimidate|boost",
+            "|-unboost|p2a: Salamence|atk|1", // p1a's Intimidate drops the FOE p2a (correct)
+            "|-ability|p2a: Salamence|Intimidate|boost",
+            "|-unboost|p1a: Salamence|atk|1", // p2a's Intimidate drops the FOE p1a (correct)
+        ]);
+        let e = v(&[
+            "|switch|p1a: Salamence|Salamence, M|331/331",
+            "|switch|p2a: Salamence|Salamence, M|100/100",
+            "|-ability|p1a: Salamence|Intimidate|boost",
+            "|-unboost|p1a: Salamence|atk|1", // BUG: mis-targets p1a's OWN atk (should be p2a)
+            "|-ability|p2a: Salamence|Intimidate|boost",
+            "|-unboost|p1a: Salamence|atk|1",
+        ]);
+        // A single-line `-unboost` mirror flip that does NOT preserve the multiset is a REAL
+        // per-side content bug — it must NOT be allowlisted (pre-fix this was wrongly Some(...)).
+        assert_eq!(classify_perside_construction_mirror_flip(&g, &e, true), None);
+    }
+
+    #[test]
+    fn identical_windows_are_not_a_flip() {
+        let (g, _) = tyranitar_weather_windows();
+        assert_eq!(classify_perside_construction_mirror_flip(&g, &g, true), None);
     }
 }
 
