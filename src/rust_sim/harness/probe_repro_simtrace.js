@@ -92,9 +92,20 @@ PRNG.prototype.getSeed = function () {
     return origWrite.apply(this, arguments);
   };
 
+  // REPLAY the RECORDED DEC choices (summary.choices, the encoded [tokenP1,tokenP2]
+  // pairs ab_fuzz.js wrote) rather than re-picking with the 'modeled' picker — a
+  // re-pick reproduces a DIFFERENT trajectory (picker/allow-list/state drift) whose
+  // seedAfter can match the PORT, not the golden (the round-8 blocker). Feeding the
+  // recorded choices makes the sim reproduce the recorded golden EXACTLY, so any
+  // random-mode divergence is reliably traceable per-draw. (Falls back to re-picking
+  // only if an old repro has no `choices` field.)
+  if (!summary.choices) {
+    console.error('WARNING: summary.json has no `choices` array — falling back to re-picking (unreliable trace).');
+  }
   const rec = await e2e.runBattle(
     summary.packed_teams.p1, summary.packed_teams.p2,
-    summary.battle_seed, summary.choose_seed, 'modeled');
+    summary.battle_seed, summary.choose_seed, 'modeled',
+    { replayChoices: summary.choices || null });
   traceOn = false;
   console.log('=== replay done. decisions=', rec.decisions.length, 'ended=', rec.ended, 'winner=', rec.winner, 'dropped=', rec.dropped);
   for (let i = Math.max(0, decFrom - 1); i <= Math.min(rec.decisions.length - 1, decTo === Infinity ? rec.decisions.length - 1 : decTo); i++) {

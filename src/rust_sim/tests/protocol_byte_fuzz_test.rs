@@ -392,3 +392,198 @@ fn stat_drop_blocked_by_substitute_emits_still_and_fail() {
         );
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Round-8 STATUS-MOVE / RARE-ABILITY emission-form pins (the wide-net sweep finds)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// BF-F16 — a locked SOLAR BEAM fire-turn announce carries `|[from] lockedmove` WITH a
+/// SPACE (the sim's `attrLastMove('[from] lockedmove')`). WRONG (pre-fix): the port emitted
+/// the no-space `|[from]lockedmove`, a divergence on any real gen3ou Solar Beam / Shiftry
+/// SolarBeam battle (POOL, both formats). (`gen3_omniscient_byte_fuzz_v1` FORM-A.)
+#[test]
+fn solar_beam_lockedmove_clause_has_a_space() {
+    let venu = "Venusaur|venusaur||overgrow|solarbeam,tackle|Serious||N||||";
+    let snor = "Snorlax|snorlax||thickfat|splash|Serious||N||||";
+    let script = [
+        ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // charge
+        ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // fire
+    ];
+    let raw = run_logged(venu, snor, SD, &script);
+    assert!(
+        line_present(&raw, "|move|p1a: Venusaur|Solar Beam|p2a: Snorlax|[from] lockedmove"),
+        "the fire-turn announce must carry `[from] lockedmove` WITH a space; lines:\n{}",
+        raw.join("\n")
+    );
+    // THE PIN — the no-space form must NEVER appear (reverting the space fails this).
+    for l in &raw {
+        assert!(
+            !l.contains("[from]lockedmove"),
+            "no line may carry the no-space `[from]lockedmove`. Offending: {l:?}"
+        );
+    }
+}
+
+/// BF-F17 — SPEED BOOST's end-of-turn residual emits the `|-ability|<mon>|Speed Boost|boost`
+/// ANNOUNCE before the `|-boost|<mon>|spe|1` (the sim's ability-source `boost()` announce).
+/// WRONG (pre-fix): the port emitted only the `-boost`, dropping the announce.
+#[test]
+fn speed_boost_residual_emits_the_ability_announce() {
+    let yanma = "Yanma|yanma||speedboost|tackle|Serious||N||||";
+    let snor = "Snorlax|snorlax||thickfat|splash|Serious||N||||";
+    let script = [ScriptDecision::both(Choice::Move(0), Choice::Move(0))];
+    let raw = run_logged(yanma, snor, SD, &script);
+    let ab = raw.iter().position(|l| l == "|-ability|p1a: Yanma|Speed Boost|boost");
+    let bo = raw.iter().position(|l| l == "|-boost|p1a: Yanma|spe|1");
+    assert!(ab.is_some(), "the Speed Boost `-ability` announce is missing; lines:\n{}", raw.join("\n"));
+    assert!(bo.is_some(), "the Speed Boost `-boost` is missing; lines:\n{}", raw.join("\n"));
+    // THE PIN — the announce PRECEDES the boost (a revert drops the announce → ab is None).
+    assert!(ab.unwrap() < bo.unwrap(), "the `-ability` announce must precede the `-boost`");
+}
+
+/// BF-F18 — HYPER CUTTER blocking an Atk drop emits the `|-fail|<mon>|unboost|Attack|[from]
+/// ability: Hyper Cutter|[of] <mon>` WITH the `Attack` stat token (the sim's single-stat
+/// `onTryBoost` form). WRONG (pre-fix): the port dropped `Attack` (the whole-table Clear-Body
+/// form). Here an Intimidate switch-in drops the Pinsir's Atk → Hyper Cutter blocks it.
+#[test]
+fn hyper_cutter_unboost_fail_carries_the_attack_stat_token() {
+    let pinsir = "Pinsir|pinsir||hypercutter|tackle|Serious||N||||";
+    let gyara = "Gyarados|gyarados||intimidate|tackle|Serious||N||||\
+                 ]Snorlax|snorlax||thickfat|splash|Serious||N||||";
+    // Turn 1: p2 switches Gyarados out then back in (re-Intimidate) so the block fires
+    // mid-battle. Simpler: the LEAD Gyarados Intimidates at switch-in (turn 0) already.
+    let script = [ScriptDecision::both(Choice::Move(0), Choice::Switch(1))];
+    let raw = run_logged(pinsir, gyara, SD, &script);
+    // The lead Intimidate (turn-0 framing) OR the switch-back re-Intimidate blocks the Atk drop.
+    assert!(
+        line_present(&raw, "|-fail|p1a: Pinsir|unboost|Attack|[from] ability: Hyper Cutter|[of] p1a: Pinsir"),
+        "Hyper Cutter's `-fail` must carry the `Attack` stat token; lines:\n{}",
+        raw.join("\n")
+    );
+    // THE PIN — the stat-less whole-table form must NOT appear for Hyper Cutter.
+    for l in &raw {
+        assert!(
+            l != "|-fail|p1a: Pinsir|unboost|[from] ability: Hyper Cutter|[of] p1a: Pinsir",
+            "Hyper Cutter must NOT emit the stat-less form. Offending: {l:?}"
+        );
+    }
+}
+
+/// BF-F19 — COLOR CHANGE's `|-start|<mon>|typechange|<Type>|…` renders the DISPLAY-cased type
+/// name (`Psychic`), NOT the internal UPPERCASE key (`PSYCHIC`). WRONG (pre-fix): the port
+/// emitted `PSYCHIC`.
+#[test]
+fn color_change_typechange_uses_display_cased_type() {
+    let kec = "Kecleon|kecleon||colorchange|tackle|Serious||N||||";
+    let ala = "Alakazam|alakazam||synchronize|psychic|Serious||N||||";
+    let script = [ScriptDecision::both(Choice::Move(0), Choice::Move(0))];
+    let raw = run_logged(kec, ala, SD, &script);
+    assert!(
+        line_present(&raw, "|-start|p1a: Kecleon|typechange|Psychic|[from] ability: Color Change"),
+        "Color Change must render the display-cased `Psychic`; lines:\n{}",
+        raw.join("\n")
+    );
+    // THE PIN — the uppercase key must NEVER leak into a typechange line.
+    for l in &raw {
+        assert!(
+            !(l.contains("typechange") && l.contains("PSYCHIC")),
+            "a typechange line must not carry the uppercase key. Offending: {l:?}"
+        );
+    }
+}
+
+/// BF-F20 — a Figy-family CONFUSION berry emits its `|-start|<mon>|confusion` reveal EXACTLY
+/// ONCE. WRONG (pre-fix): the berry site emitted it a SECOND time on top of `add_confusion`'s
+/// own reveal (a duplicate `-start confusion`). Snorlax (Modest → −Atk → dislikes the Figy
+/// spicy flavor) Belly Drums to exactly maxhp/2 (4 HP EVs → even maxhp) → the berry eats +
+/// confuses.
+#[test]
+fn confusion_berry_emits_a_single_start_confusion() {
+    // 4 HP EVs → maxhp even → Belly Drum lands hp == maxhp/2 → `2*hp <= maxhp` → berry eats.
+    let snor = "Snorlax|snorlax|figyberry|thickfat|bellydrum,splash|Modest|4|N||||";
+    let tauros = "Tauros|tauros||intimidate|splash|Serious||N||||";
+    let script = [ScriptDecision::both(Choice::Move(0), Choice::Move(0))];
+    let raw = run_logged(snor, tauros, SD, &script);
+    let n = raw.iter().filter(|l| *l == "|-start|p1a: Snorlax|confusion").count();
+    assert_eq!(
+        n, 1,
+        "the Figy-berry confusion `-start` must appear EXACTLY once (was double-emitted); lines:\n{}",
+        raw.join("\n")
+    );
+}
+
+/// P4b — PROTECT wins the TryHit precedence over SOUNDPROOF for a sound STATUS move.
+/// A sound status move (Screech) into a Protecting + Soundproof foe emits `-activate Protect`,
+/// NOT `-immune Soundproof` — gen3 runs Protect's `onTryHit` ahead of Soundproof's within the
+/// SAME TryHit event (SIM-PROBED: Loudred Screech into a Protecting Soundproof Electrode →
+/// `|-activate|Protect`). WRONG (pre-fix, `gen3_protect_before_soundproof_v1`): the stat-drop
+/// (and phaze) arms checked Soundproof FIRST → `-immune Soundproof`. Loudred is fast (base 71 spe
+/// + 252 EVs) so Screech resolves after Electrode's priority-3 Protect is up; seed forces the
+/// 85%-acc Screech to HIT.
+#[test]
+fn protect_before_soundproof_for_a_sound_status_move() {
+    let loudred = "Loudred|loudred||soundproof|screech,pound|Serious|,,,,,252|N||||";
+    let electrode = "Electrode|electrode||soundproof|protect,thunderbolt|Serious||N||||";
+    let raw = run_logged(loudred, electrode, "0,1,2,5",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))]);
+    assert!(
+        line_present(&raw, "|-activate|p2a: Electrode|Protect"),
+        "a Protecting Soundproof foe hit by a sound status move must show `-activate Protect`; \
+         lines:\n{}",
+        raw.join("\n")
+    );
+    assert!(
+        !raw.iter().any(|l| l.contains("|-immune|") && l.contains("Soundproof")),
+        "Protect wins the TryHit — no `-immune Soundproof` (a revert emits it); lines:\n{}",
+        raw.join("\n")
+    );
+}
+
+/// Round-7 missing pin #1 — EFFECT SPORE inflicting SLEEP emits a BARE `|-status|<attacker>|slp`
+/// (the gen3 `slp.onStart` drops the base `[from] ability` branch — only a MOVE source carries a
+/// `[from]` clause). WRONG (pre-fix): the port over-attributed it `[from] ability: Effect Spore|[of]`
+/// (par/psn/brn/frz from an ability STILL carry `[from] ability` — that path is unchanged). Muk
+/// (Poison → psn-immune) Tackles (contact) an Effect Spore Breloom; the seed forces a proc that
+/// samples `slp`.
+#[test]
+fn effect_spore_sleep_status_is_bare_not_ability_attributed() {
+    let muk = "Muk|muk||stench|poisonjab,tackle|Adamant||M||||";
+    let brel = "Breloom|breloom||effectspore|spore,machpunch|Adamant|||M||||";
+    let raw = run_logged(muk, brel, "40,96,171,230",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(1))]);
+    assert!(
+        line_present(&raw, "|-status|p1a: Muk|slp"),
+        "the Effect-Spore sleep must appear as a BARE `|-status|p1a: Muk|slp`; lines:\n{}",
+        raw.join("\n")
+    );
+    assert!(
+        !raw.iter().any(|l| l.starts_with("|-status|p1a: Muk|slp|")),
+        "the sleep `-status` must NOT carry a `[from] ability: Effect Spore` clause (a revert adds \
+         it); lines:\n{}",
+        raw.join("\n")
+    );
+}
+
+/// Round-7 missing pin #2 — FUTURE SIGHT resolving against a FAINTED slot occupant emits
+/// `|-hint|Future Sight did not hit because the target is fainted.` (the gen3 `futuremove.onEnd`
+/// early-return, `data/conditions.ts:399`; `once` falsy → no dedup). WRONG (pre-fix): the port
+/// skipped the `-hint` (the fainted-target resolve was uncaptured). Constructed: p1 Tyranitar
+/// (Sand Stream) casts Future Sight t1, chips p2 Growlithe (Fire → takes sand, water-weak, frail)
+/// with Water Gun t2, then Calm Minds t3 (no p2 damage) so the RESOLVE-turn (t3) SAND CHIP
+/// (residual order 8) KOs Growlithe BEFORE the order-11 Future Sight resolve → the slot occupant
+/// is fainted (its replacement is deferred to the end of the residual phase) → the `-hint` fires.
+#[test]
+fn future_sight_resolving_against_a_fainted_slot_emits_the_hint() {
+    let ttar = "Tyranitar|tyranitar||sandstream|futuresight,watergun,calmmind|Bold||M||||";
+    let p2 = "Growlithe|growlithe||intimidate|splash|Bold||M||||]Sableye|sableye||keeneye|splash|Bold||M||||";
+    let raw = run_logged(ttar, p2, "19,47,80,111", &[
+        ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ScriptDecision::both(Choice::Move(2), Choice::Move(0)),
+    ]);
+    assert!(
+        line_present(&raw, "|-hint|Future Sight did not hit because the target is fainted."),
+        "a Future Sight resolving against a fainted slot occupant must emit the `-hint`; lines:\n{}",
+        raw.join("\n")
+    );
+}

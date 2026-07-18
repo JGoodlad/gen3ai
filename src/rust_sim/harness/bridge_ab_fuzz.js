@@ -197,6 +197,12 @@ async function runBridgeBattle(p1Packed, p2Packed, seed, chooseSeed, format, tra
 
   const rec = {
     initSeed: stream.battle.prng.getSeed(), chunks, cmds, ended: false, winner: null,
+    // SEED ANCHOR: the omniscient PRNG seed AFTER each RESOLVED decision boundary (one per
+    // committed decision, in order) — the independent post-decision seed assertion the Rust
+    // `bridge_replay --ab` checks against `run_full_battle`'s per-decision engine seed BEFORE
+    // the per-side byte diff, so a per-side/request divergence is partitioned into an upstream
+    // engine desync vs a genuine per-side/request-serializer bug.
+    seeds: [],
     counts: { trapped: 0, maybeTrapped: 0, trappedTrue: 0, errorFrames: 0, forceSwitch: 0, requests: 0 },
   };
 
@@ -248,6 +254,9 @@ async function runBridgeBattle(p1Packed, p2Packed, seed, chooseSeed, format, tra
       }
     }
     for (let i = 0; i < 16; i++) await tick();
+    // Capture the post-decision seed for THIS resolved boundary (one per committed decision,
+    // aligned 1:1 with the Rust bridge's ScriptDecision list / run_full_battle decisions).
+    rec.seeds.push(stream.battle.prng.getSeed());
   }
   if (safety >= SAFETY) throw new Error('battle did not advance to game-end (safety cap)');
 
@@ -323,6 +332,8 @@ function emitBridgeBattle(lines, id, battleNo, p1Packed, p2Packed, format, rec) 
   lines.push(`TEAM\t${id}\tp2\t${p2Packed}`);
   lines.push(['INIT', id, battleNo, rec.initSeed, format].join('\t'));
   rec.cmds.forEach((c, ci) => lines.push(['CMD', id, battleNo, ci, c[0], c[1]].join('\t')));
+  // SEED ANCHOR rows — one per RESOLVED decision boundary, in order.
+  (rec.seeds || []).forEach((s, di) => lines.push(['SEED', id, battleNo, di, s].join('\t')));
   for (const side of ['p1', 'p2']) {
     rec.chunks[side].forEach((chunk, chunkNo) => {
       let lineNo = 0;
@@ -358,8 +369,8 @@ function chunkHeader(flags, runId, chunkIdx) {
   ];
 }
 
-function saveRepro(outDir, runId, flags, meta, verdict, chunkIdx) {
-  const dir = path.join(outDir, 'divergences', `${runId}_${meta.id}`);
+function saveRepro(outDir, runId, flags, meta, verdict, chunkIdx, subdir) {
+  const dir = path.join(outDir, subdir || 'divergences', `${runId}_${meta.id}`);
   fs.mkdirSync(dir, { recursive: true });
   const lines = chunkHeader(flags, runId, chunkIdx);
   emitBridgeBattle(lines, meta.id, 0, meta.p1Packed, meta.p2Packed, flags.format, meta.rec);
@@ -390,6 +401,7 @@ async function main() {
 
   fs.mkdirSync(path.join(flags.out, 'chunks'), { recursive: true });
   fs.mkdirSync(path.join(flags.out, 'divergences'), { recursive: true });
+  fs.mkdirSync(path.join(flags.out, 'allowlisted'), { recursive: true });
   const logPath = path.join(flags.out, 'bridge_ab_fuzz.log');
 
   console.error(`[bridge_ab_fuzz] run_id=${runId} mode=${flags.mode} format=${flags.format} ` +
@@ -458,8 +470,8 @@ async function main() {
   }
 
   const cum = {
-    battles: 0, ok: 0, diverged: 0, panic: 0, parseError: 0, empty: 0, ended: 0,
-    kinds: new Map(), dropReasons: new Map(), reproDirs: [], chunkErrors: 0,
+    battles: 0, ok: 0, diverged: 0, allowlisted: 0, panic: 0, parseError: 0, empty: 0, ended: 0,
+    kinds: new Map(), allowKinds: new Map(), dropReasons: new Map(), reproDirs: [], chunkErrors: 0,
     cov: { trapped: 0, maybeTrapped: 0, trappedTrue: 0, errorFrames: 0, forceSwitch: 0, requests: 0 },
     speciesRoster: new Set(),
   };
@@ -540,9 +552,19 @@ async function main() {
         try { const v = JSON.parse(line); if (v.chunk_summary) continue; verdicts.push(v); } catch (e) {}
       }
 
-      let chunkOk = 0; let chunkDiv = 0;
+      let chunkOk = 0; let chunkDiv = 0; let chunkAllow = 0;
       for (const v of verdicts) {
         if (v.verdict === 'ok') { cum.ok++; chunkOk++; continue; }
+        // A documented request-DISPLAY deferral (Curse target / return102 / gender-level
+        // details) is `allowlisted` NARROWLY by the Rust replayer — counted SEPARATELY, saved
+        // under allowlisted/, and NOT a gate failure (mirrors ab_fuzz.js --protocol).
+        if (v.allowlisted) {
+          cum.allowlisted++; chunkAllow++;
+          cum.allowKinds.set(v.allowlisted, (cum.allowKinds.get(v.allowlisted) || 0) + 1);
+          const meta = metas.get(v.battle);
+          if (meta) saveRepro(flags.out, runId, flags, meta, v, chunkIdx, 'allowlisted');
+          continue;
+        }
         chunkDiv++;
         if (v.verdict === 'panic') cum.panic++;
         else if (v.verdict === 'parse_error') cum.parseError++;
@@ -551,9 +573,9 @@ async function main() {
         cum.kinds.set(kind, (cum.kinds.get(kind) || 0) + 1);
         const meta = metas.get(v.battle);
         if (meta) {
-          const dir = saveRepro(flags.out, runId, flags, meta, v, chunkIdx);
+          const dir = saveRepro(flags.out, runId, flags, meta, v, chunkIdx, 'divergences');
           cum.reproDirs.push(dir);
-          console.error(`[DIVERGED] ${v.battle} kind=${kind} side=${v.side ?? '-'} line=${v.line ?? '-'} → ${dir}`);
+          console.error(`[DIVERGED] ${v.battle} kind=${kind} side=${v.side ?? '-'} line=${v.line ?? '-'} dec=${v.decision ?? '-'} → ${dir}`);
         }
       }
 
@@ -565,11 +587,12 @@ async function main() {
       const hrs = (Date.now() - t0) / 3600000;
       const bph = hrs > 0 ? Math.round(cum.battles / hrs) : 0;
       const kindsStr = [...cum.kinds.entries()].map(([k, c]) => `${k}=${c}`).join(',') || '-';
+      const allowStr = [...cum.allowKinds.entries()].map(([k, c]) => `${k}=${c}`).join(',') || '-';
       appendLog(logPath,
         `${new Date().toISOString()} run=${runId} mode=${flags.mode} fmt=${flags.format} chunk=${chunkIdx} ` +
-        `battles=${produced} ok=${chunkOk} diverged=${chunkDiv} ` +
-        `cum_battles=${cum.battles} cum_ok=${cum.ok} cum_diverged=${cum.diverged} cum_panic=${cum.panic} ` +
-        `cum_empty=${cum.empty} kinds=${kindsStr} ` +
+        `battles=${produced} ok=${chunkOk} diverged=${chunkDiv} allowlisted=${chunkAllow} ` +
+        `cum_battles=${cum.battles} cum_ok=${cum.ok} cum_diverged=${cum.diverged} cum_allowlisted=${cum.allowlisted} cum_panic=${cum.panic} ` +
+        `cum_empty=${cum.empty} kinds=${kindsStr} allow=${allowStr} ` +
         `trapped=${cum.cov.trapped} maybeTrapped=${cum.cov.maybeTrapped} trappedTrue=${cum.cov.trappedTrue} ` +
         `error=${cum.cov.errorFrames} forceSwitch=${cum.cov.forceSwitch} requests=${cum.cov.requests} ` +
         `species=${cum.speciesRoster.size} bph=${bph} chunk_s=${((Date.now() - chunkT0) / 1000).toFixed(1)}`);
@@ -586,9 +609,10 @@ async function main() {
   const summary = {
     run_id: runId, mode: flags.mode, format: flags.format, master_seed: flags.masterSeed,
     elapsed_hours: Number(hrs.toFixed(3)), battles: cum.battles, battles_per_hour: bph,
-    ok: cum.ok, diverged: cum.diverged, panic: cum.panic, parse_error: cum.parseError,
+    ok: cum.ok, diverged: cum.diverged, allowlisted: cum.allowlisted, panic: cum.panic, parse_error: cum.parseError,
     ended_battles: cum.ended, empty_skipped: cum.empty, chunk_errors: cum.chunkErrors,
     divergence_kinds: Object.fromEntries(cum.kinds),
+    allowlisted_kinds: Object.fromEntries(cum.allowKinds),
     drop_reasons: Object.fromEntries(cum.dropReasons),
     trapping_coverage: cum.cov,
     distinct_species_rostered: cum.speciesRoster.size,
@@ -600,7 +624,10 @@ async function main() {
   })}`);
   console.error('\n[bridge_ab_fuzz] SUMMARY');
   console.error(JSON.stringify(summary, null, 2));
-  process.exit(0);
+  // GREEN GATE: exit non-zero ONLY on a NON-allowlisted diverge / panic / parse_error
+  // (mirrors ab_fuzz.js --protocol). Allowlisted request-DISPLAY deferrals do NOT fail.
+  const hardFail = cum.diverged + cum.panic + cum.parseError;
+  process.exit(hardFail > 0 ? 1 : 0);
 }
 
 function appendLog(logPath, line) {

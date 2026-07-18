@@ -1122,7 +1122,7 @@ byte-diff 63/7223 → **66/8721**, 0 skipped). The draw model was nailed by `har
   extra, battle-actions.ts:472-483), DRAW-FREE, and only for a move whose **`pressureTargets`** include
   the Pressure foe — i.e. a FOE-directed target (`turn.rs::pressure_targets_foe`, `gen3_pressure_allyteam_v1`).
   This is NOT `!targets_self`: a `self` heal/setup/protect deducts 1, and so does an **`allyTeam`** move
-  (Aromatherapy / Heal Bell) / `allySide` / `allies` / `foeSide` (Spikes) — none put the foe in
+  (Aromatherapy / Heal Bell) / `allySide` / `allies` — none put the foe in
   `pressureTargets` (`getMoveTargets`, pokemon.ts:854-861; the e2e_182 root cause — the old `!targets_self`
   wrongly gave Aromatherapy under a Pressure foe −2, draining its PP so the port rejected a legitimate
   late use). Only `normal` / `any` / `randomNormal` / `adjacentFoe` / `allAdjacentFoes` / the spread
@@ -1528,7 +1528,7 @@ Pressure +1 extra PP drop on `!targets_self`, so an `allyTeam` move (Aromatherap
 Pressure foe wrongly deducted 2 PP → its 8 PP drained early → the port rejected a legitimate late use.
 Showdown's rule (`Pokemon.getMoveTargets`, pokemon.ts:854-861): the Pressure foe fires its `onDeductPP`
 only when it is in the move's **`pressureTargets`** — a FOE-directed target; `allyTeam` / `self` /
-`allySide` / `allies` / `foeSide` never put the foe there (VERIFIED vs a real battle: Aromatherapy under
+`allySide` / `allies` never put the foe there — but `foeSide`/Spikes DOES (`gen3_pressure_foeside_v1`, PA2) (VERIFIED vs a real battle: Aromatherapy under
 a Pressure Zapdos = −1, ThunderWave = −2). FIX: `turn.rs::pressure_targets_foe` replaces `!targets_self`,
 pinned by revert-verified `regression_test.rs::pressure_does_not_add_pp_for_an_allyteam_move`
 (ground truth `harness/probe_pressure_allyteam_rng.js`; the pre-fix predicate gives Aromatherapy 8→6).
@@ -2511,7 +2511,9 @@ pins** (the post-decision PRNG seed vs the REAL-Showdown ground truth captured b
 | MC15 SCREECH BLOCKED by Clear Body — the accuracy roll is STILL drawn, no drop lands. WRONG (a model ignoring Clear Body): Metagross Def −2 | `screech_blocked_by_clear_body_draws_accuracy_but_no_drop` | STATE (Metagross Def stays 0) + SEED (== a landed drop's seed) |
 | MC16 LIGHT SCREEN sets a 5-turn SIDE condition, DRAW-FREE; the side residual ticks it once → 4 remaining | `light_screen_sets_a_five_turn_side_condition_draw_free` | STATE (p1 light_screen 4) + SEED |
 | MC17 **the DOUBLE-SCREEN ModifyDamagePhase1 SHUFFLE (the CRUX)** — a physical hit into a side with BOTH Reflect AND Light Screen up draws ONE extra `random(0,2)` (the 2 screen `onAnyModifyDamagePhase1` handlers TIE → a size-2 shuffle). WRONG (pre-fix): NOT drawn → the seed matched the ONE-screen control. Pins the two-screen seed AND asserts it DIFFERS from the one-screen control | `double_screen_physical_hit_draws_the_modify_damage_phase1_shuffle` | SEED (both-screen ≠ one-screen — the extra draw) |
-| PA1 **Pressure × `allyTeam` PP-deduction** (`gen3_pressure_allyteam_v1`, the **batch-2 e2e admission** bug e2e_182) — an `allyTeam` move (Aromatherapy / Heal Bell) under a **Pressure** foe deducts ONE PP, not two (the Pressure extra fires only when the foe is in the move's `pressureTargets` — a FOE-directed target; `allyTeam`/`self`/`allySide`/`allies`/`foeSide` never put the foe there). WRONG (pre-fix `!targets_self`): Aromatherapy 8→6 under Pressure → drained early → the port rejects a legit late Aromatherapy as out-of-PP → the script shifts (e2e_182 decision-count + state desync). Pins Aromatherapy −1 (8→7) + a ThunderWave −2 (32→30) control, both DRAW-FREE seeds | `pressure_does_not_add_pp_for_an_allyteam_move` | STATE (PP 8→7 vs 8→6) + SEED (both draw-free) |
+| PA1 **Pressure × `allyTeam` PP-deduction** (`gen3_pressure_allyteam_v1`, the **batch-2 e2e admission** bug e2e_182) — an `allyTeam` move (Aromatherapy / Heal Bell) under a **Pressure** foe deducts ONE PP, not two (the Pressure extra fires only when the foe is in the move's `pressureTargets` — a FOE-directed target; `allyTeam`/`self`/`allySide`/`allies` never put the foe there — but `foeSide`/Spikes DOES). WRONG (pre-fix `!targets_self`): Aromatherapy 8→6 under Pressure → drained early → the port rejects a legit late Aromatherapy as out-of-PP → the script shifts (e2e_182 decision-count + state desync). Pins Aromatherapy −1 (8→7) + a ThunderWave −2 (32→30) control, both DRAW-FREE seeds | `pressure_does_not_add_pp_for_an_allyteam_move` | STATE (PP 8→7 vs 8→6) + SEED (both draw-free) |
+| PA2 **Pressure × `foeSide` PP-deduction** (`gen3_pressure_foeside_v1`, the per-side/request byte-fuzz round-4 find) — a `foeSide` move (Spikes, the ONLY gen-3 `foeSide` move) under a **Pressure** foe deducts **TWO** PP (`foeSide` DOES put the foe in `pressureTargets`). SIM-PROBE-CONFIRMED: Skarmory Spikes vs a Pressure Suicune = pp 30/32 (−2), vs non-Pressure = 31/32 (−1); DRAW-FREE so the post-turn seed matches. WRONG (the pre-fix predicate excluded `foeSide` alongside `allyTeam`): 32→31 — INVISIBLE to the omniscient byte fuzzer (no PP in the `\|...\|` stream), only the request-JSON `pp` field diverges. Does NOT touch PA1's `allyTeam` case | `pressure_adds_pp_for_a_foeside_spikes_move` | STATE (Spikes pp 32→30) + SEED (draw-free) |
+| PA3 **Pressure × a NON-GHOST CURSE PP-deduction** (`gen3_pressure_allyteam_v1`, the omniscient byte-fuzz round-4 DEEP-SEED find — the ROOT of 5_6 + 3_24 + the cg dec-30 cascade) — gen-3 `curse.onModifyMove` RE-TARGETS a non-Ghost user's Curse to `self` (`nonGhostTarget`) but the STATIC dex `target` is `"normal"`, so the Pressure foe wrongly landed in `pressureTargets` → **−2** PP instead of **−1**. WRONG (the pre-fix tuple reading `m.target`): a Swampert's 16 Curse PP drained 2/turn → exhausted ~1 cycle early → forced Struggle turns the sim still Curses (protocol `\|move\|…\|Struggle` vs `\|move\|…\|Curse`; Curse count SIM 16× / PORT 10×) → the deep seed desync + cascade. FIX: the move-resolution tuple feeds the RUNTIME-effective Curse target (`is_nonghost_curse → "self"`) to BOTH `targets_self` and `pressure_targets_foe`. DRAW-FREE (PP deduct consumes no PRNG) | `pressure_does_not_add_pp_for_a_nonghost_curse` | STATE (Curse pp 16→15 not →14; dec7 pp 8) + SEED (the dec7 post-decision seed) |
 | MC18 CURSE non-ghost self-boost {atk:+1, def:+1, spe:-1} (`gen3_move_coverage_batch3_v1`) — the `move.self` rides the gen3 `selfDrops` path → DRAWS ONE `random(100)` (NOT draw-free, like Overheat). WRONG (removing the curse arm): Snorlax un-boosted / the fail-loud panic; WRONG (skipping the selfDrops draw): the seed desyncs | `curse_non_ghost_self_boosts_atk_def_and_drops_spe` | STATE (the mixed +/- boosts) + SEED (the selfDrops draw) |
 | MC19 CURSE ghost pays floor(maxhp/2) HP + lays the `curse` volatile on the FOE, DRAW-FREE | `curse_ghost_pays_half_hp_and_lays_the_curse_on_the_foe` | STATE (Gengar −maxhp/2; foe cursed) + SEED |
 | MC20 CURSE residual chips the cursed foe floor(maxhp/4)/turn (order 10 subOrder 8), DRAW-FREE | `curse_residual_chips_the_cursed_foe_a_quarter_maxhp` | STATE (the maxhp/4 chip per turn) + SEED |
@@ -2861,9 +2863,14 @@ observation-only — the full seed suite stays BYTE-IDENTICAL (cargo test green,
 - **the delta-0 `-boost`/`-unboost` at the ±6 cap** — a PRIMARY self-boost MOVE emits `|-boost|…|spe|0`
   (Agility@+6) via `boost_applied` (the sim's `boost()` `!isSecondary && !isSelf` branch); the Clear
   Body / White Smoke / Hyper Cutter `-fail|unboost|[from] ability|[of]` for a PRIMARY foe-drop (Screech).
-- **CONTACT-PROC status is BARE** (`|-status|<atk>|slp`, not `[from] ability: Effect Spore`) — the sim's
-  `source.trySetStatus(status, target)` passes NO sourceEffect; the port let `try_set_status` emit the bare
-  form (CONTRAST Synchronize, which pre-emits `-activate ability: Synchronize`). Draws unchanged.
+- **CONTACT-PROC status carries `[from] ability: <A>|[of] <holder>`** (Static/Poison Point/Flame Body/Effect
+  Spore) — a CORRECTED earlier claim (this note used to say the form was BARE; the live sim capture refuted
+  it, `gen3_omniscient_byte_fuzz_v1`, golden `|-status|p1a: Metagross|par|[from] ability: Effect Spore|[of]
+  p2a: Breloom`). The sim's `source.trySetStatus(status, target)` runs INSIDE the ability's `onDamagingHit`,
+  so `setStatus`'s null `sourceEffect` falls back to `this.battle.effect` = the ABILITY → the status
+  `onStart`'s `sourceEffect.effectType === 'Ability'` gate is TRUE → the `[from] ability` form. `apply_contact_proc`
+  now threads the ability name through `try_set_status_impl`'s `ability_reveal` (the generalized Synchronize
+  path). Draws unchanged (emission-only); all seed goldens byte-identical.
 - **Volt/Water Absorb `-heal` (not `-immune`) when the heal LANDS** — `apply_absorb_heal` now reports
   whether it healed; a below-full holder shows `-heal|…|[from] ability: Volt Absorb|[of] <user>`, only a
   full-HP holder shows `-immune|…|[from] ability` (the F3 capture had only exercised the full-HP case).
@@ -2873,12 +2880,256 @@ observation-only — the full seed suite stays BYTE-IDENTICAL (cargo test green,
   omniscient stream + resolved dist confirm the customgame emit.
 - **shiny details flag** (`|switch|…|Quagsire, M, shiny|…`) — `switch_details` appends `, shiny` from
   `set.shiny`.
-- **Knock Off `-hint` once per battle** — `ProtocolBuilder::hint` now dedups per battle (a `HashSet`,
-  mirroring the sim's `this.hints`), so the Gens-3-4 Knock Off note fires once, not per Knock Off.
+- **`-hint` dedup mirrors the sim's `once` param (`ProtocolBuilder::hint(text, once)`)** — the sim's
+  `Battle.hint(hint, once, side)` (battle.ts:3092) returns early if the text is already in `this.hints`,
+  but only ADDS the text `if (once)`. So a `once: true` hint fires ONCE per battle (**Knock Off**,
+  gen4/moves.ts:703), while a `once: false` hint fires on EVERY occurrence (**Sleep Clause Mod**,
+  rulesets.ts:1395; the gen3 **Intimidate-vs-Substitute** + **Pursuit** notes, no `once` arg). The port
+  used to dedup ALL hints (a `HashSet` insert unconditionally) → a gen3ou **double sleep-clause block**
+  emitted the hint ONCE where the sim emits it twice (the byte-fuzzer-surfaced 4th residual). FIXED —
+  `hint` now takes `once: bool` (dedup only when `once`); the four call sites pass the sim's value.
+  Observation-only → all seed goldens byte-identical.
 - **gen3ou clause `-message`** — a Sleep-Clause-blocked 2nd sleep emits `|-message|Sleep Clause Mod
-  activated.` + a deduped `|-hint|`; a Freeze-Clause-blocked 2nd freeze emits `|-message|Freeze Clause
-  activated.` (rulesets.js). gen3customgame has no clauses → no message (so the e2e/seed suites, all
-  gen3customgame, are untouched).
+  activated.` + the `once:false` `|-hint|` (once PER block, not deduped); a Freeze-Clause-blocked 2nd
+  freeze emits `|-message|Freeze Clause activated.` (rulesets.js). gen3customgame has no clauses → no
+  message (so the e2e/seed suites, all gen3customgame, are untouched).
+
+**The WIDE-NET SWEEP round (2026-07-17, round 8) — 7 more emission forms + a bridge-request allowlist gap.**
+A broader fuzz (`--mode random` = every gen3 species/ability + `pool` both formats + new master-seeds)
+flushed rare forms the bounded pool missed. All SIM-PROBED (the sim is the oracle), FIXED, and pinned by
+revert-verified CONSTRUCTED-scenario tests in `protocol_byte_fuzz_test.rs` (BF-F16..BF-F20 + the shared
+builder pins); ALL observation-only — the full seed suite stays BYTE-IDENTICAL (cargo test 61/61 green,
+e2e md5 unchanged):
+- **BF-F16 the two-turn charge `[from] lockedmove` SPACE** — a locked Solar Beam fire-turn announce carries
+  `|move|…|[from] lockedmove` WITH a space (the sim's `attrLastMove('[from] lockedmove')`); the port emitted
+  the no-space `|[from]lockedmove`. Hits the real gen3ou POOL (Houndoom/Shiftry SolarBeam) at BOTH formats.
+  ALSO the fire-turn-MISS ORDER: the sim appends `[from] lockedmove` (useMove) BEFORE `[miss]` (accuracy) →
+  `|…|[from] lockedmove|[miss]`; the miss branch now emits the bare move line → lockedmove attr → miss attr.
+- **BF-F17 SPEED BOOST `-ability` announce** — the end-of-turn Speed Boost residual emits
+  `|-ability|<mon>|Speed Boost|boost` (the sim's ability-source `boost()` announce) BEFORE the
+  `|-boost|<mon>|spe|1`; the port dropped it. Emitted only when the stage actually rose (a +6-cap draws
+  nothing, both lines).
+- **BF-F18 HYPER CUTTER / KEEN EYE `-fail` STAT token** — a SINGLE-STAT boost-blocker carries its stat
+  token: Hyper Cutter → `unboost|Attack`, Keen Eye → `unboost|accuracy` (`unboost_fail_stat_token`); the
+  whole-table blockers (Clear Body / White Smoke) carry none. The port dropped Hyper Cutter's `Attack` →
+  a divergence on any Intimidate/Charm/Feather-Dance-into-Hyper-Cutter.
+- **BF-F19 COLOR CHANGE typechange CASE** — `|-start|<mon>|typechange|<Type>|…` renders the DISPLAY-cased
+  type (`Type::display_name`, e.g. `Psychic`), NOT the internal UPPERCASE key (`PSYCHIC`).
+- **BF-F20 the confusion-berry DOUBLE `-start|confusion`** — a Figy/Mago/Iapapa/Aguav/Wiki confusion berry
+  emitted its `-start confusion` TWICE (once inside `add_confusion`, once at the berry site); the redundant
+  berry-site emission is removed → EXACTLY one.
+- **the EFFECT-SPORE SLEEP over-attribution** — the gen3 `slp.onStart` (`mods/gen3/conditions.js`) DROPS
+  the base `[from] ability` branch (only a MOVE source carries `[from] move: <Name>`), so Effect Spore
+  inflicting sleep emits a BARE `|-status|<mon>|slp`; the port over-attributed it `[from] ability: Effect
+  Spore|[of]`. (par/psn/brn/frz from an ability STILL carry `[from] ability` — the port already matched.)
+  **PINNED (round-8 FIX)** by the revert-verified
+  `protocol_byte_fuzz_test.rs::effect_spore_sleep_status_is_bare_not_ability_attributed` (Muk Tackles an
+  Effect-Spore Breloom, seed `40,96,171,230` forces a proc that samples slp).
+- **FUTURE SIGHT fainted-target `-hint`** — a future move resolving against a FAINTED slot occupant emits
+  `|-hint|<Move> did not hit because the target is fainted.` (`futuremove.onEnd`, `once` falsy → no dedup);
+  the port skipped it (formerly "uncaptured"). **PINNED (round-8 FIX)** by the revert-verified
+  `protocol_byte_fuzz_test.rs::future_sight_resolving_against_a_fainted_slot_emits_the_hint` (Tyranitar
+  Sand Stream casts Future Sight, chips Growlithe, the RESOLVE-turn sand chip [order 8] KOs it before the
+  order-11 resolve → fainted slot → the hint; seed `19,47,80,111`; sim text confirmed vs `conditions.ts:399`).
+- **the HEAL BELL / AROMATHERAPY bench-cure IDENT (bonus, random-mode find)** — a Heal Bell curing a
+  STATUSED BENCH ally emits `|-curestatus|pN: <mon-name>|<status>|[silent]` (the mon's nickname/species,
+  position-less), NOT the player-name `pN: <PlayerName>` the port rendered via `side_ref`.
+- **[8]/[9] the bridge `|request|` allowlist gap** — the `return102`/`frustration102` numeric-BP alias and
+  the non-Ghost Curse `target:self` ESCAPED the per-side gate on a CO-OCCURRING Curse+Return team: the sim
+  renders the alias INCONSISTENTLY (roster `return102`, active id BARE `return`, active display `Return 102`
+  with a SPACE — SIM-PROBED), so the old single-direction `replace("return","return102")` OVER-corrected the
+  active id AND missed the display, leaving a residual that made the WHOLE reconcile (incl. the correct
+  Curse-target fix) return None → both escaped. FIX (`bridge_replay.rs::classify_known_perside_residual`,
+  gate-only): NORMALIZE BOTH sides by collapsing every alias form to the bare token before comparing (poke-env
+  resolves both). Pinned by `perside_request_residual_tests` (co-occurrence allowlisted + a genuine-diff
+  NOT swallowed). Verified GREEN: omniscient pool both formats (0 non-allowlisted) + `random` mode confirms
+  the 7 emission forms GONE + bridge pool 0 diverged (curse-target 73 / return102 10 correctly allowlisted).
+  HONESTLY-OPEN random-mode-only residuals (NOT gen3ou POOL, deferred): a phaze `[miss]` on an evasion-miss,
+  and the Damp-cancels-Self-Destruct `[still]` form. (The Protect-vs-Soundproof TryHit order was FIXED in
+  round-8 FIX below.)
+
+### ROUND 8 (FIX) — the deeper needs-triage edges (Quick Claw P1/P2, Protect-vs-Soundproof P4b) + the 2 missing pins
+
+The round-7 WIDE-NET sweep surfaced deeper `random`-mode STATE/FIRSTMOVER edges (real engine bugs, not
+gen3ou-pool-triggered). This round root-caused + fixed them, all OBSERVATION-NEUTRAL for the committed goldens
+(full `cargo test` 61/61 green, every seed golden BYTE-IDENTICAL, both POOL byte gates GREEN — 0 non-allowlisted):
+
+- **P1 + P2 — gen3 QUICK CLAW speed=65535 override (`gen3_quick_claw_speed_v1`, ONE fix closes BOTH the
+  state HP off-by-one + wrongful-faint AND the wrong-first-mover class).** `Battle.quickClawRoll`
+  (`randomChance(1,5)` at every completed `endTurn`, battle.js:1485) is read next turn by gen3
+  `getActionSpeed` (scripts.js:47-48): a Quick-Claw HOLDER whose roll hit TRUE returns `speed = 65535` →
+  moves FIRST within its priority bracket regardless of raw Speed. The port DREW the endTurn roll (for
+  seed parity) but DISCARDED it, ordering purely on raw speed → a QC-proc turn mis-ordered, and when a
+  swapped damage roll crossed a KO threshold it produced a wrongful faint / HP off-by-one (INVISIBLE to the
+  seed check — a move-order swap consumes the SAME draws). FIX (3 edits): a battle-global
+  `BattleState::quick_claw_roll: bool` (`state.rs`), STORED at the two endTurn draw sites (`turn.rs` — the
+  `run_turn` step + the `run_full_battle`/`turn_loop` `Done` arm, both were `let _ = …`), and APPLIED at the
+  top of `effective_speed` (`turn.rs`, consumed via `update_speed`→`cached_speed` + `order_actions`) —
+  return 65535 (uncapped, matching the gen3 override) for a `quickclaw` holder when the roll hit. VERIFIED:
+  the clean p_cg repro `rmrp6ml92_ab_4_2` (a Seadra/Torkoal turn where Torkoal's QC proc swaps the two moves'
+  `random(16)` damage rolls) flips to `ok`; 9 of the 13 p_cg state+firstmover repros close (the remaining 4
+  are a SEPARATE deeper class — see NOT-FIXED below). Pins: the revert-verified constructed
+  `regression_test.rs::quick_claw_proc_makes_the_slow_holder_move_first_seed` (a fast Electrode vs a slow
+  Quick-Claw Shuckle both spamming Swift; ground truth `harness/probe_quick_claw_rng.js` seed [15,106,198,260]
+  → post-construction initSeed 26217,1191,64492,10583; asserts the slow holder moves FIRST on turns 2-3 + the
+  exact per-turn seeds + final HP) + the corpus fixture `byte_fuzz_corpus/28_quick_claw_speed_override.txt`
+  (a state-divergence gate: reverting the override → `kind=state decision=17`).
+- **P4b — PROTECT wins the TryHit precedence over SOUNDPROOF (`gen3_protect_before_soundproof_v1`).** A sound
+  STATUS move (Screech / Metal Sound / Roar-phaze) into a Protecting + Soundproof foe emits `-activate Protect`,
+  NOT `-immune Soundproof` — gen3 runs Protect's `onTryHit` ahead of Soundproof's within the SAME TryHit event.
+  SIM-PROBED (the oracle): a Loudred Screech AND a Loudred Roar into a Protecting Soundproof Electrode both
+  emit `|-activate|Protect`. The port's stat-drop arm (`turn.rs` ~7573) AND phaze arm (~6722) checked Soundproof
+  FIRST → wrongly `-immune Soundproof`. FIX: reorder the Protect block BEFORE the Soundproof immune check in
+  both arms (emission-only — both paths return the same draw-free MoveResolution). Pinned by the revert-verified
+  `protocol_byte_fuzz_test.rs::protect_before_soundproof_for_a_sound_status_move`.
+- **P4a (freeze, rmrp6jub0_ab_8_16) — NOT A BUG, a STALE GOLDEN (disclosed).** The round-7 root cause read the
+  recorded golden as ground truth, but a faithful sim replay (`probe_repro_simtrace.js`, RECORDED choices m1/m3,
+  dec0 seedAfter 13456,58717,50465,6980 == the recorded golden's) shows Shroomish THAWS (the frozen onBeforeMove
+  `randomChance(1,5)=true → cureStatus`, then uses PoisonPowder) → ends UNFROZEN, AGREEING with the PORT (None),
+  NOT the golden's `frz`. The p_ou (rmrp6jub0) corpus goldens are UNRELIABLE (the harness-capture gap): the QC
+  repros there (6_22, 10_8) also merely shift their divergence to a later `seed` after the [correct] QC fix.
+  The p_cg (rmrp6ml92) corpus IS reliable (its QC repros close cleanly). No engine change — changing the port to
+  retain the freeze would BREAK parity with the real sim.
+- **P3 (miss-vs-evasion / seed draw-count) — NOT ISOLATED (honestly disclosed).** `probe_repro_simtrace.js`
+  RE-PICKS choices (the P3 harness gap) so per-draw tracing of these repros is unreliable except where the dec0
+  seedAfter coincidentally matches the recorded golden; the huge p_ou `seed` bucket (285) is dominated by that
+  stale-golden gap, NOT a mass of real evasion bugs. Code inspection confirmed `effective_accuracy` ALREADY folds
+  the defender evasion stage + Sand Veil, and the phaze arm routes through `roll_accuracy`; no reliable repro
+  named the exact bypassing move+effAcc, so no blind accuracy-pipeline edit was made (a wrong guess would break
+  parity). Deferred honestly.
+
+**NOT FIXED (a genuinely deeper class, disclosed):** 3 p_cg `state` repros remain — `rmrp6ml92_ab_5_9`
+(Lugia/Aerodactyl, ~80 HP, no Future Sight), `14_16` + `7_15` (both carry Future Sight + Reflect, ~67-69 HP).
+These are LARGE divergences (not the QC off-by-one class the root cause defined as P1), most likely a Future Sight
+damage / Reflect-interaction gap; the round-7 root cause already flagged `7_15` as SEPARATE and not root-caused.
+Left for a follow-up (needs the harness-picker fix to trace faithfully).
+
+### ROUND 9 (IMPROVE) — the fuzz TOOLING fix: the details LEVEL suffix (T1) + the probe CHOICE-replay (T2)
+
+Two tooling gaps blunted the WIDER-surface (randbats + random) fuzzing; both fixed, unblocking the
+wider byte coverage. OBSERVATION-NEUTRAL for the committed goldens (full `cargo test` 61/61 green;
+the e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED; both POOL byte gates GREEN —
+gen3ou/pool teams are always L100 so the level suffix never fires there).
+
+- **T1 — the `switch`/`drag`/request DETAILS LEVEL SUFFIX (`gen3_details_level_suffix_v1`).** Showdown's
+  `Pokemon.details` is `<Species>[, L<level>][, <gender>][, shiny]` — it emits `, L<n>` iff level != 100
+  and OMITS it at L100 (probe-confirmed `/tmp/probe_level_details.js`, gen3randombattle; the level sits
+  AFTER species, BEFORE gender). The port omitted it, so the randbats byte-differential arm WALLED at the
+  first non-L100 |switch| (`|switch|p1a: Lunatone|Lunatone|…` vs the sim's `|Lunatone, L84|…`, ~line 23).
+  FIX at the TWO emit sites: `turn.rs::switch_details` (the omniscient |switch|/|drag| AND, via
+  `fold_hp_line` preserving the details field, the per-side p1/p2 streams) + `bridge.rs::details` (the
+  |request| JSON `details` field); protocol.rs's switch()/drag() pass the pre-built string (doc-only
+  update). Pinned by the revert-verified `regression_test.rs::switch_details_emit_level_suffix_only_when_not_l100`
+  (a constructed L84 Lunatone shows `, L84`; an L100 Snorlax OMITS it — reverting the `, L{level}` push
+  fails the L84 assertion). Non-L100 STATS were already correct (stats.rs is level-parametric), so a
+  non-L100 switch-in HP/stat does not desync. **RESULT: the randbats OMNISCIENT byte arm now runs past the
+  ~line-23 wall to game-end** (verified: randbats-cg 57/60 ok, randbats-ou 40/40 clean — before T1 it
+  diverged immediately on the first non-L100 switch).
+- **T2 — probe_repro_simtrace.js REPLAYS the RECORDED choices (`gen_e2e_fuzz.js` `opts.replayChoices`).**
+  The probe used to RE-PICK every choice with the 'modeled' picker (`runBattle(…, 'modeled')`), so it drove
+  a FRESHLY re-picked trajectory — any picker/allow-list/state drift made the traced run diverge from the
+  saved golden (the round-8 blocker: the re-picked run's seedAfter matched the PORT, not the golden). FIX:
+  `runBattle` gains an optional `opts.replayChoices` (the decoded `summary.choices` array); when present the
+  decision loop SKIPS pickMove/pickReplacement and pops the recorded pair for `decisionNo` via the new
+  `decodeChoice` (`-`→null, `m<k>`→`move k+1`, `s<n>`→`switch n+1`) — everything else (the >start/>player
+  prime, 16-tick pump, seedBefore/seedAfter capture) stays byte-identical to the recorder, so the sim
+  reproduces the recorded golden EXACTLY. `probe_repro_simtrace.js` passes `{ replayChoices: summary.choices }`.
+  **DEMONSTRATED:** on a real randbats seed repro (dec-11 seed divergence) the fixed probe reproduces the
+  golden's dec-11 seedAfter `31523,44235,11679,12112` (== the recorded `expected`), NOT the port's
+  `8861,35110,57716,3081`, so any random-mode repro is now reliably traceable per-draw.
+
+**Round-9 SWEEP findings (the round-10 fix queue — REAL sim-byte bugs, separated from harness artifacts).**
+The improved tooling ran fresh randbats + random sweeps (both fuzzers, both formats, several master-seeds).
+REAL new engine bugs (needs-triage, round 10):
+- **RB1 — the forced-replacement-resume endTurn QUICK CLAW is skipped** (randbats-cg, repro
+  rmrpc94md_ab_0_1 dec 11; kind=seed). The fixed probe shows the sim, after a forced replacement resolves
+  and the resumed turn tail's `endTurn` completes, draws the trailing Quick Claw `randomChance(1,5)`
+  (battle.js:1485) — but the port's recorded seedAfter stops right after the residual speedSort shuffle,
+  MISSING that Quick Claw (port `8861,35110,57716,3081` = the golden's PRE-QuickClaw seed). A draw-count
+  desync on the forced-replacement-resume boundary.
+- **RM1 — modeled-universe damage-calc STATE divergences** (random-cg, 3 repros; kind=state, seed matches).
+  e.g. rmrpcdb58_ab_0_16 dec 0: AuroraBeam (Ice) into a ThickFat/DeepSeaScale Dewgong — the port
+  UNDER-deals 8 HP (golden 85 dmg vs port 77). The seed matches through the whole turn, so it is a pure
+  damage-modifier bug reachable only in the modeled-universe `random` mode (novel move/ability/item combos
+  the 722-pool never pairs); the other two (dec 78 / dec 44, 8-HP and 30-HP under-deals) are the same class.
+  Likely a ThickFat-vs-Ice-move or species-stat-item interaction — root-cause with the fixed probe in round 10.
+- **RM2 — random-mode seed divergences** (random-cg, 3 repros: dec 48 / 53 / 12; kind=seed) + **RM3** one
+  `protocol` divergence (Attract `-end` ordering vs a `|switch|` line, dec 252) — needs-triage.
+- **BR1 — a randbats |request| omits `trapped:true`** (bridge randbats-cg, rmrpch1ca_bab_1_0; kind=request).
+  The sim's active carries `"trapped":true` (a last-mon / no-eligible-switch state) where the port's request
+  JSON omits it — a bridge request-serialization gap reachable off the L100 pool.
+
+HARNESS-ADAPTER / COVERAGE ARTIFACTS (NOT engine bugs — the fail-loud + substitution surface):
+- the bridge randbats **`transform` fail-loud PANIC** (rmrpch1ca_bab_0_13) — Transform is an UNMODELED move;
+  the engine fail-louds rather than silently desync. A MODELED-universe coverage limit (the bridge picker
+  reached it), caught by the replayer's `catch_unwind` as verdict=panic.
+- the randbats adapter's item→Leftovers / ability substitutions + high rejection (Forecast/Wonder Guard/
+  Deoxys-forme teams rejection-sampled; ~⅔ of bridge randbats battles ended as prefix/dropped) — coverage
+  dilution, not divergences.
+- one omniscient-randbats `protocol` divergence (Leech Seed `-damage` vs Sandstorm `[upkeep]` order,
+  rmrpc94md_ab_0_2) — a residual emit-ORDER form to verify (may be a real emission-order bug, needs-triage).
+
+### ROUND 10 (FIX) — RB1 / RM1 / RM3 / BR1 (the round-9 fix queue; TWO root causes CORRECTED)
+
+The four queued bugs are FIXED bit-for-bit, each revert-verified. TWO round-9 root-cause GUESSES were
+OVERTURNED in the RootCause phase (the sim is the oracle) — RB1 is NOT a forced-replacement Quick-Claw
+skip, and RM1 is NOT a Thick Fat / DeepSeaScale damage bug. All four are OBSERVATION-NEUTRAL for the
+committed goldens: the full `cargo test` is green (61 binaries, 482 tests, 0 fail on a forced-clean
+rebuild), the e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` is UNCHANGED, and every seed golden
+(battle / fullbattle / secondary / protocol / writeline / bridge / every move-coverage batch) stays
+BYTE-IDENTICAL (no golden regenerated). Ground truth: `harness/probe_round10_regression_rng.js`.
+
+- **RB1 — the ENCORE `onDisableMove` handler was omitted from the endTurn DisableMove tie-shuffle count**
+  (`gen3_encore_disable_move_shuffle_v1`; `turn.rs::disable_move_event_shuffle`). NOT the round-9
+  "forced-replacement-resume Quick Claw is skipped" framing (that resume QC works). The gen3 `encore`
+  condition registers an `onDisableMove` handler (it disables every non-encored slot), so an encored mon
+  co-carrying choicelock / taunt / disable reaches n>=2 → its handlers TIE → a size-2 Fisher-Yates
+  tie-shuffle draws ONE `random` BEFORE the Quick Claw. The port counted only taunt+disable+choicelock, so
+  an encore+choicelock mon drew ONE FEWER at endTurn (a draw-count desync one call before the Quick Claw).
+  FIX: `+ (mon.encore.is_some() as usize)` in the handler-count. DRAW-ADDITIVE (adds the previously-MISSING
+  draw only when encore co-occurs with another disabling volatile; a lone-encore mon stays n==1 → no
+  change — the batch6 encore goldens use lone-encore mons, so they + the e2e stay byte-identical). Pins
+  (revert-verified) `encore_plus_choice_lock_draws_the_disable_move_shuffle` (SEED) +
+  `choice_lock_only_draws_no_disable_move_shuffle` (the n==1 control, seed DIFFERS).
+- **RM1 — BRICK BREAK did not break screens** (`gen3_brick_break_screens_v1`; `turn.rs::run_move`). NOT a
+  Thick Fat / DeepSeaScale bug (probe-disproven: a single BP chain can't diverge in magnitude; DeepSeaScale
+  is a no-op off Clamperl; the port matches the sim bit-for-bit there). The ACTUAL bug: Brick Break is the
+  ONLY gen3 screen-breaking move — its `onTryHit` removes BOTH the foe side's screens BEFORE the damage
+  step (draw-free). The port modeled it as a plain Fighting move, so `build_damage_context` read
+  `sides[foe].reflect>0` and `modify_damage` HALVED the damage (~2× under-deal) + the screen persisted.
+  FIX (on the CONFIRMED-LANDED, non-immune, non-protect-blocked, non-miss path, AFTER the immunity return —
+  probe: Brick Break into a Ghost does NOT remove the screen): clear `sides[foe].reflect`/`light_screen`
+  (so the both-screens `two_tied_handler_shuffle` doesn't fire) + `ctx.reflect`/`light_screen = false` (full
+  damage) + emit `|-sideend|<foe>|Reflect` / `|…|move: Light Screen` between the `|move|` and
+  `|-supereffective|` lines. DRAW-NEUTRAL for a one-screen board (removes only the spurious both-screens
+  shuffle where the port was already wrong). Pin `brick_break_removes_reflect_and_deals_full_damage` (STATE:
+  reflect==0 + full damage == the no-screen control + SEED).
+- **RM3 — the sand/hail `|-weather|…[upkeep]` line was omitted under Air Lock / Cloud Nine**
+  (`gen3_sand_upkeep_under_air_lock_v1`; `turn.rs::run_residuals` + `apply_weather_chip`). The port gated the
+  ENTIRE order-8 WeatherChip handler (including its unconditional upkeep-line emission) on
+  `effective_weather()`; the sim gates only the eachEvent shuffle + the chip. Under a weather-negater the sim
+  still emits the upkeep line, so the leech `-damage` (order 10.5) landed where the sim emits the sand
+  `[upkeep]` (order 8). FIX: schedule the WeatherChip handler off RAW weather for ALL weather; emit the
+  upkeep / `-weather none` line UNCONDITIONALLY; gate the eachEvent shuffle + the chip on
+  `effective || sun/rain`. DRAW-NEUTRAL (a negated sand/hail residual pushes the handler + emits the upkeep
+  line but draws nothing — identical draw count to the prior unscheduled behavior; the handler is alone in
+  its order-8 group, ties nothing). Emission-only + draw-neutral → the SEED alone can't catch a revert, so
+  the pin asserts the EMIT ORDER: pin `sand_upkeep_line_emitted_under_cloud_nine_before_leech_damage`
+  (protocol-byte: the upkeep line exists + precedes the leech `-damage` + a draw-neutrality seed check).
+- **BR1 — a move-LOCKED LAST mon's `|request|` omitted `trapped:true`** (`gen3_locked_last_mon_trapped_v1`;
+  `bridge.rs::serialize_active`). A move-locked mon (Hyper Beam's mustrecharge / a two-turn fire turn) is
+  `hardLocked` in getMoveRequestData, so `trapped:true` is emitted UNCONDITIONALLY — even for the last mon
+  with no live bench (probe-verified). The port gated it on `has_live_bench`, dropping it on a last-mon
+  recharge/fire turn → poke-env would think the recharge-trapped last mon could switch (a wrong legal-action
+  set under `--use-bridge=rust`). FIX: emit `,"trapped":true` unconditionally in the move-locked branch
+  (`has_live_bench` stays used by the normal-move branch). Pure `|request|`-JSON change — DRAW-NEUTRAL, no
+  engine/omniscient-stream change. Pin (in `bridge_test.rs`) `recharge_last_mon_request_carries_trapped_true`.
+
+Round-10 DEFERRED (honest): the RM3 pin is a constructed `regression_test.rs` protocol-byte assertion; the
+optional `byte_fuzz_corpus/NN_sand_upkeep_under_air_lock.txt` corpus fixture is NOT added (a follow-up — the
+regression pin already revert-verifies the fix). RM2 (the 3 random-cg seed divergences) + the round-9
+`RM3`-labeled Attract `-end` ordering artifact (REAL_MODELED_ONLY — Cute-Charm Latias, unreachable on real
+gen3ou pool teams) are NOT addressed this round — separate items.
 
 **The FROZEN regression CORPUS (`tests/vectors/byte_fuzz_corpus/`, a `cargo test` gate).** The byte
 fuzzer FINDS emission divergences but isn't itself a test gate, so the fixed forms are frozen as a
@@ -2888,25 +3139,186 @@ chunk — a repro dir's `battle.txt`), named by the form each guards
 `03_natural_cure_switchout_curestatus.txt`, `04_sleep_from_move.txt`, `05_confusion_start.txt`,
 `06_beatup_activate.txt`, `07_protect_blocks_status_activate.txt`, `08_shiny_details.txt`,
 `09_toxic_residual_from_psn.txt`, … through the gen3ou `18_freeze_clause_message_ou.txt` /
-`19_natural_cure_ou.txt` / `20_protect_activate_ou.txt`; 20 fixtures, both formats). **`tests/byte_fuzz_corpus_test.rs`**
-auto-discovers every `*.txt`, invokes the built `ab_replay` binary (`env!("CARGO_BIN_EXE_ab_replay")`)
-in byte mode on each, and asserts NO `kind=protocol` divergence (a floor of `len >= 15` keeps the corpus
-from silently shrinking; a per-file panic names the diverging file + line). FAULT-INJECTION PROVEN
+`19_natural_cure_ou.txt` / `20_protect_activate_ou.txt`; 20 emission-form fixtures, both formats) PLUS the
+one TAGGED allowlist fixture `21_construction_mirror_ability_of.txt` (R1, see the allowlist section below).
+**`tests/byte_fuzz_corpus_test.rs`** auto-discovers every `*.txt`, invokes the built `ab_replay` binary
+(`env!("CARGO_BIN_EXE_ab_replay")`) in byte mode on each, and asserts: an UNTAGGED fixture has NO
+`kind=protocol` divergence, while a fixture carrying a `# ALLOWLIST <reason>` header MUST diverge with
+EXACTLY that `allowlisted` reason (a floor of `len >= 15` keeps the corpus from silently shrinking; a
+per-file panic names the diverging file + line). FAULT-INJECTION PROVEN
 (a Toxic-residual `[from] psn`→`tox` emit perturbation → the gate FAILS naming
 `02_toxic_into_steel_immune.txt` at the exact line; restored byte-identical). To add a fixture, drop a
 clean fuzzer repro `battle.txt` in the folder (see its `README.md`) — the test auto-discovers it. The
 `ab_fuzz_out*` run dirs are gitignored — never commit run output.
 
-**Residual byte divergences (HONESTLY UN-fixed — genuinely-deep / rare):** the switch-in `-weather` /
-Pressure `-ability [silent]` **`[of]` p1-vs-p2 ATTRIBUTION** on a same-species speed-TIED lead (Tyranitar
-mirror / Zapdos mirror) — the KNOWN turn-0 construction-shuffle speed-tie gap (the port doesn't model the
-turn-0 construction window; a seedless deferral, ~2-3% of pool battles, masks the whole battle when it
-hits at line ~14); the end-of-turn **Leftovers `-heal` emit ORDER on a residual speed TIE** (two
-same-species same-para mons — the residual handler tie-shuffle permutation the emit loop doesn't follow;
-~1 in 300, seed matches). SEPARATELY, in `pool` mode ~1.5% of battles hit a GENUINE state/seed/status
-divergence (an hp off-by-1 cascading to a freeze/seed) — the **HP fixed-BP-70 caveat materializing**: a few
-gen3ou pool teams carry Hidden Power with non-70-BP IVs, which the engine (fixed BP 70) mis-damages; keep
-HP out of a byte run that must be state-clean, or restrict to teams verified 70-BP.
+### The KNOWN-RESIDUAL ALLOWLIST + the GREEN GATE (`gen3_omniscient_byte_fuzz_v1`)
+
+The byte fuzzer is a **GREEN GATE**: a NEW divergence fails loudly, while a DOCUMENTED, non-gen3ou-impacting
+artifact is EXPLICITLY allowlisted (not silently ignored). Mechanism:
+- **`ab_replay --protocol`** classifies a first-divergence protocol byte diff via
+  `classify_known_residual(golden_framing, engine_framing, leads_speed_tie)` and adds an `"allowlisted":<reason>`
+  field to the per-battle JSON verdict ONLY when the divergence FORM matches a documented residual; otherwise
+  `allowlisted` is absent → the divergence counts as a hard failure. Entries are NARROW + STRUCTURAL (never a
+  blanket "ignore protocol"):
+  - **E1 `turn0-construction-speed-tie-attribution`** (R1) — the R1-SPECIFIC signature is a PURE PERMUTATION
+    of identical-CONTENT framing lines at a construction speed-tie: the classifier takes the two FULL framing
+    WINDOWS (all lines BEFORE the first `|turn|1`), sorts both, and allowlists ONLY IF `leads_speed_tie` AND
+    the two windows are an IDENTICAL MULTISET (a pure reorder). The canonical R1 is a Zapdos-mirror both-Pressure
+    lead where the port emits the two `-ability|…|Pressure|[silent]` lines in the OPPOSITE order (same multiset,
+    different order — the unmodeled turn-0 construction speed-tie Fisher-Yates shuffle, the project-wide
+    seed-convention deferral EVERY seed golden depends on). Both port paths (offline replay
+    `run_full_battle_logged` AND the production bridge `run_full_battle_bridge` → `start_with_switchins`) share
+    `event::run_start_switchins`, which falls back to a DETERMINISTIC side-order at a raw-Speed tie and draws
+    nothing → ZERO production impact under `--use-bridge=rust` (seed=None: the port is the sole oracle). **This
+    signature was NARROWED (2026-07-16, the Lens-1 green-gate-integrity fix)** from the prior coarse
+    per-line-TYPE key (`line_type ∈ {-ability,-weather,-unboost}`), which SWALLOWED a content-DIFFERENT framing
+    divergence at a mirror lead (a genuinely-wrong `[of]` target / wrong weather / a missing-or-extra line — a
+    potential real bug). A CONTENT change now makes the multisets DIFFER → returns None → the gate FAILS
+    (fault-injection-proven: injecting `-weather|Sandstorm|…|[of] p2a: Zapdos` in place of one `-ability` line of
+    the R1 fixture no longer allowlists). The single-line weather-`[of]`-flip consequence is NOW covered by the
+    NARROW **A1** key below (it is the SAME construction-window root, but a distinct structural form E1's
+    permutation check deliberately does not match).
+  - **A1 `turn0-construction-speed-tie-mirror-of-flip`** (2026-07-17, `classify_construction_mirror_of_flip`) —
+    the single-line weather-`[of]`-FLIP on a same-species MIRROR lead (repros ab_4_8 / ab_11_20, BOTH formats):
+    on a same-species mirror lead at a construction speed-tie, ONE framing `-weather`/`-ability` line's
+    `[of] pNa: <name>` attribution flips between the two mirror active slots (golden `[of] p2a`, engine `[of]
+    p1a`) because the unmodeled turn-0 construction speed-tie shuffle decides which same-species mon's Sand
+    Stream fires last. NOT a pure permutation (the multiset DIFFERS — one line's `[of]` CONTENT changed), so E1
+    returns None. Allowlisted ONLY when ALL SIX STRUCTURAL clauses hold (else None → the gate FAILS): (1) the
+    construction speed-tie (`leads_speed_tie`); (2) the two equal-length framing windows differ in EXACTLY ONE
+    line; (3) that line, in BOTH golden + engine, is a `-weather`/`-ability` framing line; (4) the two are
+    byte-identical after stripping the trailing `|[of] pNa: <name>` clause (same weather/ability + `[from]`); (5)
+    the two `[of]` targets are the two DIFFERENT active slots (one `p1a:`, one `p2a:`); (6) both `[of]` idents
+    map — via the framing `|switch|pNa: <ident>|<Species>,…` details' species field — to the SAME species (the
+    sibling mirror). A `[of]` to a NON-sibling / different-species mon, a different weather/ability prefix, a
+    missing/extra framing line, or a non-mirror pair breaks a clause → None. seed=None-INVISIBLE (a cosmetic
+    `[of]` tag on identical-species mirror mons → ZERO production impact under `--use-bridge=rust`; the port is
+    the sole oracle at `seed=None`). **GATE-INTEGRITY PROVEN:** two cp-aside/mangled-golden injections (weather
+    `Sandstorm`→`RainDance` breaks clause (4); a non-mirror `Tyranitar`→`Blissey` lead breaks clause (2)/(6))
+    both replay to `diverged` with NO `allowlisted` field → the gate FAILS; plus 7 `#[cfg(test)]`
+    `a1_allowlist_tests` in `ab_replay.rs` (incl. `clause6_wrong_of_to_a_real_different_species_mon_fails` — the
+    load-bearing "wrong-[of]-to-a-real-different-mon → must FAIL"). Corpus fixture
+    `27_construction_mirror_weather_of.txt` (tagged). **GREEN both formats** (master-seed 424242, 300 battles
+    each): 0 non-allowlisted, 4 allowlisted (2 R1 `turn0-construction-speed-tie-attribution` + 2 A1
+    `turn0-construction-speed-tie-mirror-of-flip` = ab_4_8 + ab_11_20).
+- **`ab_fuzz.js --protocol`** counts `allowlisted` SEPARATELY from `diverged`, reports allowlisted-by-reason,
+  and **exits non-zero ONLY on a non-allowlisted `diverged`/`panic`/`parse_error`** (a non-protocol run stays
+  a hunter, exit 0). Allowlisted repros are saved under `<out>/allowlisted/` (auditable + a fixture source);
+  real divergences under `<out>/divergences/`.
+- **`tests/byte_fuzz_corpus_test.rs`** (the `cargo test` gate) enforces "no NEW kinds": each fixture resolves
+  to either `ok` (the 20 emission-form fixtures stay byte-clean) OR a `diverged` verdict whose `allowlisted`
+  reason EXACTLY equals a `# ALLOWLIST <reason>` header the fixture is tagged with — the R1 fixture
+  `21_construction_mirror_ability_of.txt` (`turn0-construction-speed-tie-attribution`) + the A1 fixture
+  `27_construction_mirror_weather_of.txt` (`turn0-construction-speed-tie-mirror-of-flip`). So (i) a residual
+  fixture that stops matching its reason FAILS,
+  and (ii) nobody can add a silently-ignored divergence — every escape is a named allowlist entry backed by a
+  tagged repro. FAULT-INJECTION PROVEN: stripping the R1 fixture's tag (→ an un-cataloged divergence) makes
+  the corpus test FAIL (`REGRESSION … kind=protocol`), restored byte-identical.
+
+**R3 (IV-derived Hidden Power BP) — FIXED in the engine (`gen3_iv_derived_hidden_power_bp_v1`), quarantine
+REMOVED.** gen-3 computes Hidden Power's base power from the ATTACKER's IVs (`Dex.getHiddenPower`,
+`⌊hpPowerX·40/63⌋+30`, range 30..=70), NOT the flat 70 the data ships (all 16 typed HP rows are BP 70 in
+`gen3_moves.json`). The port used to read the data's 70, over-damaging any real gen3ou HP mon whose IVs give
+BP != 70 (a -1 Atk-IV spread → BP 68 → ~2/68 ≈ 3% over-damage that cascaded KO thresholds — the ~1.5%-of-pool
+byte-fuzz STATE divergence). FIX: `state.rs::hidden_power_bp(ivs)` precomputes each mon's `MonState.hidden_power_bp`
+in `from_set` (the WEIGHT-ORDER CRUX: the sim iterates `{hp,atk,def,SPE,SPA,spd}` so Speed carries weight 8 —
+BEFORE SpA 16 / SpD 32 — while the port's IV array is `[hp,atk,def,spa,spd,spe]`; a naive array-order mapping is
+WRONG; GIGO-guarded to 30..=70). `run_move` overrides the data BP with it for any `hiddenpower*` move (the TYPE
+stays from the typed id); the bridge request-JSON move name reads it too (the sim renders `Hidden Power <Type>
+<IV-power>`). It is a bridge-correctness fix only — the Python RL obs / DamageOperator keep their own
+internally-consistent BP-70 assumption (untouched). Confirmed bit-for-bit vs `getHiddenPower` (source read) AND a
+live damage probe. The `ab_fuzz.js` pool `teamHpBp70Clean` picker quarantine is REMOVED — every real gen3ou HP
+team is now byte-safe. STATE-fix but OBSERVATION-NEUTRAL for the committed goldens (the e2e never PICKS HP —
+`isModeledMove` defaults `allowHiddenPower=false` — and the constructed goldens use IV-31 → BP 70 → unchanged; the
+e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` is UNCHANGED). Pins: `hidden_power_bp_is_iv_derived_not_flat_seventy`
+(a constructed BP-68 HP Ice → the sim's 53 dmg, revert-verified) + `hidden_power_bp_weight_order_and_boundaries`
+(the SPE-8-not-32 crux + 30..=70 boundaries); ground truth `harness/probe_hidden_power_bp_regression_rng.js`.
+
+**R2 (the Leftovers `-heal` emit ORDER on a residual speed TIE) — FIXED (`gen3_leftovers_slotcond_gather_order_v1`).**
+Root-caused via `harness/probe_r2_repro_trace.js` on a byte-fuzz repro (a Jolteon mirror, both Leftovers,
+sandstorm, a pending p2 Wish): `speed_sort` is a NON-STABLE selection sort whose swaps DISTURB the relative order
+of the tied handlers, so the tie-group Fisher-Yates shuffle reads whatever pre-sort order the swaps LEFT the tied
+pair in. Showdown gathers a side's SLOT CONDITIONS (Wish order 7 / Future Move order 11) via
+`findSideEventHandlers(…, active)` — AFTER that active's pokemon handlers — so Wish sits AFTER Leftovers in the
+pre-sort array. The port gathered Wish/FutureMove FIRST (a pre-loop at the array front), so the selection-sort's
+Wish/weather swaps REVERSED the tied Leftovers pair vs the sim → the two `-heal` lines emitted in the OPPOSITE
+order at the SAME shuffle value (the seed matched — the Sodium seed depends on the draw COUNT, not the
+permutation). FIX: `run_residuals` now gathers the Wish + FutureMove handlers PER-ACTIVE at the end of the
+per-active loop (after the item), mirroring the sim. DRAW-NEUTRAL (same handlers / sort keys / tie-group COUNT →
+the seed is unchanged; only the emit permutation moves to match Showdown) → OBSERVATION-ONLY, every seed +
+protocol + writeline golden stays BYTE-IDENTICAL. Pin: `leftovers_heal_order_follows_the_slot_condition_gather`
+(a Jolteon-mirror + pending-Wish scenario whose `-heal` marker sequence == Showdown's, revert-verified) + the
+byte-fuzz corpus fixture `23_leftovers_wish_heal_order.txt` (the repro replays byte-clean; reverting the fix →
+`kind=protocol` at the exact `-heal` line, fault-injection proven); ground truth
+`harness/probe_r2_wish_leftovers_regression_rng.js`.
+
+**T1 (the FREEZE-PERSISTENCE deep-STATE bug) — FIXED (`gen3_omniscient_byte_fuzz_v1`, byte-fuzz repro
+rmroh04is_ab_4_18 / _4_8 + cg rmrohcsti_ab_4_18/_11_23).** The round-1 "deep state/HP divergence" (the port at
+FULL HP where the sim was not) root-caused to the port OVER-THAWING a frozen mon hit by **Hidden Power Fire**
+(or Weather Ball). gen3 `frz.onDamagingHit` (conditions.ts:45-50) thaws ONLY when
+`this.dex.moves.get(move.id).type === 'Fire'` — the BASE-dex move type — with the explicit "don't count Hidden
+Power or Weather Ball as Fire-type" comment (`dex.moves.get('hiddenpower').type === 'Normal'`, `'weatherball'
+=== 'Normal'`). The port computed `is_fire` from the RESOLVED runtime type (Fire for the typed-HP nums
+355-370), so HP Fire WRONGLY thawed. It surfaced as a kind=status "sim=Freeze / port=None" (ab_replay compares
+only the ACTIVE mon's status per decision, so the lost freeze is caught only when the frozen mon becomes active
+again). FIX (turn.rs, the `is_fire` decl): `move_type == Some(Type::Fire) && category != Status &&
+!to_id(&m.id).starts_with("hiddenpower") && to_id(&m.id) != "weatherball"`. `is_fire` is used ONLY at the thaw
+(grep-confirmed decl + the thaw site) — Flash Fire absorb / fm_frozen read `move_type == Some(Type::Fire)`
+DIRECTLY (the resolved type), so a Flash Fire holder STILL correctly absorbs HP Fire. STATE fix but
+OBSERVATION-NEUTRAL for every committed golden (no committed golden pairs a frozen mon with an HP-Fire/Weather-
+Ball hit → full suite byte-identical, e2e md5 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED). Pins (revert-verified):
+`hidden_power_fire_does_not_thaw_a_frozen_defender` (STATE: still frozen — revert → thaws → None) +
+`flamethrower_does_thaw_a_frozen_defender` (control: a base-type-Fire move DOES thaw) +
+`flash_fire_still_absorbs_hidden_power_fire` (control: the narrowing didn't break the FF absorb); corpus fixture
+`26_freeze_persists_vs_hp_fire.txt`. The 4 freeze repros (4_18/4_8/11_23 + the freeze-adjacent seed 10_18) flip
+to ok.
+
+**Two EMISSION-FORM byte fixes (observation-only, seed suite BYTE-IDENTICAL) — the actual round-2 protocol
+tail (the round-1 T2-T6 list did NOT reproduce in the 600-battle pool run; do not trust it):**
+- **ENDURE survive-at-1 `-damage` at exactly 1 HP** (repro rmroh04is_ab_8_4 / cg): when an endurer is ALREADY at
+  1 HP, the endure clamp nets 0 damage (the mon stays at 1), so the caller's `realized > 0` emission gate SKIPPED
+  the `|-damage|<mon>|1/<max>` line the sim STILL emits after `|-activate|move: Endure`. FIX: `endure_clamp`
+  emits the `-damage` itself when it clamps to 0 (apply_damage(0) is a no-op → the current HP == post-apply HP),
+  covering all 4 endure sites; the `hp > 1` path stays caller-emitted (no double). Corpus fixture
+  `24_endure_survive_at_one_hp.txt`.
+- **NATURAL CURE `-curestatus` on a Pursuit-KO'd switcher** (repro rmroh04is_ab_10_1): the gen 2-4 Pursuit
+  interrupt runs the switcher's SwitchOut event (hence `naturalcure.onSwitchOut`) on the 0-HP-but-NOT-YET-fainted
+  mon, so its tox/etc is CURED with a `|-curestatus|<mon>|<tok>|[from] ability: Natural Cure|[silent]` line BEFORE
+  the `|-hint|`/`|faint|`. The port's Pursuit path called `process_faints` (setting `fainted`) BEFORE the switch,
+  so the later clearVolatile Natural-Cure block (`!fainted`-gated) skipped it. FIX: run the NC cure on the
+  hp==0-not-fainted switcher in the Pursuit-interrupt block, BEFORE the hint + process_faints (state-neutral —
+  the mon faints anyway). Corpus fixture `25_natural_cure_pursuit_ko_curestatus.txt`.
+
+**HONESTLY-OPEN residual TAIL (round-2, POST the T1 + emission + allowlist-narrowing fixes; master-seed 424242,
+ISOLATED build).** gen3ou 300 battles: **7 → 4** non-allowlisted; gen3cg 300: **5 → 3**. The remaining are TWO
+classes:
+- **2 REAL seed (draw-count) bugs — both ✅ FIXED (round-4, `gen3_pressure_allyteam_v1` PA3):** the ROOT of
+  BOTH **5_6** (both formats, ou dec159 + cg dec143) AND **3_24** (gen3ou, ou dec147) was the SAME
+  **Pressure-over-deducts-PP-on-a-non-Ghost-Curse** bug — NOT the "Roar-loop PHAZE" / "Magnet-Pull switch"
+  labels (those were wrong guesses). gen-3 `curse.onModifyMove` RE-TARGETS a NON-Ghost user's Curse to `self`
+  (`nonGhostTarget`), but the STATIC dex `target` is `"normal"`, so `pressure_targets_foe` read `"normal"` and
+  deducted 2 PP under a Pressure foe instead of 1 → the Curse-slot PP drained ~1 cycle early → forced Struggle
+  turns the sim still Curses → the deep seed desync + cascade (the recorded protocol-diff was `|move|…|Struggle`
+  vs `|move|…|Curse`; Curse counts SIM 16× / PORT 10× + 6 Struggles). FIX: `turn.rs`'s move-resolution tuple
+  now computes the RUNTIME-effective Curse target (`is_nonghost_curse` → `"self"`) and feeds it to BOTH
+  `targets_self` and `pressure_targets_foe`, so a non-Ghost Curse deducts 1 PP under Pressure. A NEW third case
+  of the `gen3_pressure_allyteam_v1`/`gen3_pressure_foeside_v1` class. Pin: revert-verified
+  `regression_test.rs::pressure_does_not_add_pp_for_a_nonghost_curse` (Zapdos(Pressure)-vs-Swampert(Curse):
+  Curse PP 16→15 not →14 + the dec7 post-decision seed; ground truth
+  `harness/probe_pressure_curse_regression_rng.js`). Verified: the 424242 pool run (both formats) now leaves
+  ONLY the 2 harmless construction `[of]`-flip artifacts (5_6 / 3_24 / the cg dec-30 Tyranitar-sandstorm
+  cascade all GONE — the cascade shared this same Pressure-Curse root).
+- **The construction weather-`[of]`-flip protocol artifacts (2/format, harmless) — ✅ now NARROWLY ALLOWLISTED
+  (round-6, A1 `turn0-construction-speed-tie-mirror-of-flip`, see the A1 entry above).** 4_8 / 11_20 (both
+  formats) are single-line `-weather|…|[of] p1a` vs `[of] p2a` mirror flips (seed=None-invisible, zero obs
+  impact) — the follow-on narrow signature the round-2 note anticipated. The 6-clause key allowlists ONLY this
+  exact same-species-mirror `[of]`-flip form; injection-proven not to swallow a wrong-`[of]`-to-a-real-different-
+  mon. So the OMNISCIENT gate is now GREEN both formats (0 non-allowlisted).
+
+The round-1 T2-T6 list (`-miss` p2:/p2a:, Light Screen `-sideend`/`-resisted` order, faint-vs-`|upkeep|` order,
+Solar Beam `|[from] lockedmove` gap, Morning Sun `||[still]`) did NOT reproduce as a non-allowlisted divergence
+in this 600-battle pool run — either already resolved by the intervening emission sweep or lower-frequency;
+NOT blind-fixed.
 
 ## Bridge / request A/B fuzzer (the per-side + `|request|` parity hunter)
 
@@ -2969,9 +3381,202 @@ are BYTE-IDENTICAL to the real Node `getPlayerStreams`. It is the validation har
   `ab_fuzz.js` already tracks. These belong to the omniscient fuzzer's fix-queue (they'd desync the
   raw stream too), not the bridge layer. `trapped:true` coverage is dense; a `gen3ou`-format trapping
   run additionally exercises the OU reframe + HP-privacy fold.
-- **Run it:** `node src/rust_sim/harness/bridge_ab_fuzz.js --mode trapping --battles 200
-  --master-seed S` (bounded), `--format gen3ou` (OU framing + HP fold), `--hours H` (overnight);
-  replay any repro with `/tmp/pokesim_target_bridge/release/bridge_replay <repro-dir> --ab`.
+### ROUND 4 — the POOL run, the SEED ANCHOR, the GREEN GATE + corpus (`gen3_perside_request_byte_fuzz_v1`)
+
+The per-side/request fuzzer now runs continuously on **real gen3ou POOL teams** (`--mode pool`, BOTH
+`gen3customgame` + `gen3ou`), seed-anchored + green-gated like the omniscient `ab_fuzz.js --protocol`:
+
+- **THE SEED ANCHOR.** The per-side path used to TRUST the omniscient engine bit-for-bit (it diffed only
+  the chunk BYTES), so a `request`/`perside` divergence was ambiguous (a genuine serializer bug OR an
+  upstream engine draw-desync leaking into the request JSON). Now `bridge_ab_fuzz.js` records the
+  omniscient `battle.prng.getSeed()` **per RESOLVED decision boundary** (the `SEED` golden rows, one per
+  committed decision), and `bridge_replay.rs::ab_verdict` — via the new `run_full_battle_bridge_core`,
+  which returns the `ScriptDecision` list it built — replays that script through `run_full_battle` and
+  asserts each decision's post-decision engine seed == the recorded `seedAfter` **BEFORE the per-side
+  byte diff**, emitting `kind:"seed"` on mismatch (mirroring `ab_replay.rs`'s seed-precedence). So every
+  divergence is partitioned into **SEED-ANCHORED** (upstream engine desync → the omniscient fix-queue)
+  vs **SEED-CLEAN** (a genuine per-side/request-layer bug). Alignment proven: 43/44 decisions of a real
+  pool battle match exactly (a mis-alignment would desync at a constant early offset across many battles,
+  not deep in one). Fault-injection: a perturbed `SEED` row → `kind=seed` at the exact decision.
+- **THE GREEN GATE + NARROW ALLOWLIST.** `bridge_replay.rs::classify_known_perside_residual` (the parallel
+  of `ab_replay.rs::classify_known_residual`) adds `"allowlisted":<reason>` to a `request` verdict ONLY when
+  the FULLY-RECONCILED `got` == `expected` after applying the documented request-DISPLAY transforms — a
+  co-occurring pair (Curse-target + return102 on the same team, common on real pool teams) is allowed as a
+  UNION, but any RESIDUAL (un-cataloged) byte difference leaves them unequal → `None` → the gate FAILS. The
+  three keyed forms (no legality/draw impact): **`curse-nonghost-target-self-vs-normal`** (the Curse slot's
+  `target:self` sim vs `normal` port — single-occurrence anchored at the curse id so an Earthquake
+  `target:normal` is never touched), **`return102-numeric-alias`** (`return102`↔`return` /
+  `frustration102`↔`frustration`), **`gender-level-details-construction-draw`** (a `, L<n>` / `, <gender>`
+  `details` suffix — inactive on the pinned-gender L100 pool, kept for randbats/random). `bridge_ab_fuzz.js`
+  counts `allowlisted` SEPARATELY, saves them under `<out>/allowlisted/`, and exits non-zero ONLY on a
+  non-allowlisted diverge/panic/parse_error. **GATE-INTEGRITY: the NEW Spikes-PP + shiny-details findings are
+  NOT allowlisted — the keys are narrow enough that they FAIL as genuine bugs.**
+- **THE FROZEN CORPUS** — `tests/bridge_corpus_test.rs` (modeled on `byte_fuzz_corpus_test.rs`) auto-discovers
+  `tests/vectors/bridge_corpus/*.txt` single-battle repros, runs the built `bridge_replay --ab`
+  (`env!("CARGO_BIN_EXE_bridge_replay")`) on each, and asserts an UNTAGGED fixture replays `ok` (per-side +
+  request byte-clean AND the seed anchor holds) while a `# ALLOWLIST <reason>`-tagged fixture MUST diverge
+  with EXACTLY that `allowlisted` reason (one per deferral: Curse-target `10_*`, return102 `11_*`). A floor
+  (≥6 files, ≥3 clean, ≥2 tagged) keeps it from silently shrinking. Fault-injection: a perturbed request
+  `disabled` flag → 8/8 `kind=request` at the exact field; restored byte-identical.
+- **TWO TRIVIAL FIXES landed (probe-verified + revert-pinned):** (1) **Spikes-under-Pressure PP**
+  (`gen3_pressure_foeside_v1`) — `turn.rs::pressure_targets_foe` wrongly EXCLUDED `foeSide` from the Pressure
+  −2 (grouping it with `allyTeam`); SIM-PROBE-CONFIRMED Skarmory Spikes vs a Pressure Suicune = pp 30/32
+  (−2), vs non-Pressure = 31/32 (−1). A DRAW-FREE ENGINE bug INVISIBLE to the omniscient fuzzer (no PP in
+  the `\|...\|` stream) — the request-JSON `pp` field is the only observable. Fix drops `foeSide` (only Spikes
+  is foeSide in gen3, so the e2e_182 `allyTeam` case PA1 is untouched); pin **PA2**
+  `pressure_adds_pp_for_a_foeside_spikes_move` (STATE pp 32→30 + the DRAW-FREE post-turn seed, revert-verified
+  31-vs-30). (2) **shiny `details` in the request JSON** (`gen3_shiny_details_v1`) — `bridge.rs::details`
+  now appends `, shiny` for a shiny set (the omniscient `\|switch\|` got the shiny fix in byte-fuzz fixture 08;
+  the request-JSON `details` field did not). Both OBSERVATION-NEUTRAL for the committed goldens — the full
+  cargo suite + e2e golden replay BYTE-IDENTICAL (e2e md5 unchanged).
+### ROUND 5 — the per-side residual-faint + the Pressure-Curse root (`gen3_perside_residual_faint_upkeep_order_v1`)
+
+The two round-4-enumerated per-side findings are RESOLVED (master-seed 771301, both formats):
+- **(a) The `perside` `|faint|`-vs-`|upkeep|` ORDER — ✅ FIXED (D4, draw-free serialize).** Repro
+  `rmrop4bzj_bab_0_2` (gen3ou): the sim emits a residual-enqueued perish **`|faint|` AFTER `|upkeep`**
+  (`…perish0, |upkeep, |faint|Swampert, |request`), but the port emitted it BEFORE `|upkeep`. ROOT CAUSE
+  (sim-oracle, NOT the "order faint before upkeep" guess — the opposite): the sim's `fieldEvent('Residual')`
+  SKIPS the per-handler `faintMessages()` for a duration handler that ENDS this turn (the
+  `handler.state.duration-- → end() → continue` branch), so a NO_ORDER duration tick (the Focus-Punch
+  `focuspunch` duration:1 volatile) that runs AFTER the order-12 Perish must NOT drain the Perish's
+  ENQUEUED-but-deferred faint — the sim defers it to the tail `faintMessages` AFTER `|upkeep`. The port's
+  duration-tick arms (VolatileDuration / Taunt / Disable / TwoTurn / Encore) fell through to the per-handler
+  `process_faints`, draining the perish faint early. FIX (`turn.rs::run_residuals`): each duration-tick arm
+  `continue`s ONLY when the volatile actually ENDS this turn (skips the per-handler faintMessages), mirroring
+  the sim — i.e. the `is_stall`/Taunt/Disable/TwoTurn/Encore arms continue only at their `duration-- == 0`
+  branch, and the duration:1 group (protect/flinch/focuspunch/pursuit/reactive/beatup/endure/snatch) always
+  continues since it always ends. **The ONE duration:2 non-stall member — `mustrecharge` (Hyper Beam), whose
+  cast-turn residual decrements 2 → 1 and NEVER ends via a residual — is the exception: it has its OWN
+  `MustRechargeDuration` arm that FALLS THROUGH to faintMessages** (a subsequent-round D4b fix; the initial D4
+  blanket `else { continue; }` on the shared no-op `VolatileDuration{is_stall:false}` handler wrongly skipped
+  it — the sim's `handler.state.duration-- (2→1) != 0` path RUNS faintMessages, so a Perish[order 12]-enqueued
+  faint drains at the NO_ORDER mustrecharge handler → `|faint|` BEFORE `|upkeep|`; pinned by
+  `regression_test.rs::mustrecharge_duration_two_runs_faintmessages_so_perish_faint_precedes_upkeep`,
+  revert-verified). DRAW-FREE (`process_faints` consumes no PRNG + the tail drain is idempotent) → the full
+  seed suite + protocol/writeline goldens stay BYTE-IDENTICAL (cargo test green). Fixture:
+  `tests/vectors/bridge_corpus/05_perish_faint_after_upkeep_ou.txt` (revert-verified — reverting the
+  non-stall `continue` diverges `kind=perside` at line 474, `|upkeep` vs `|faint|`).
+- **(b) The gen3cg "deep SEED cascade" (decision 30/44, Tyranitar-sandstorm) — DISCLOSED as a seed-anchor
+  CHECKPOINT-ALIGNMENT artifact on a phaze-drag turn, NOT a functional desync.** Repro
+  `rmroplbl0_bab_0_16`: decisions 0-29 seed-match; at decision 30 (a Roar phaze-DRAG turn) the port's
+  per-decision `seedAfter` = the sim's `seedAfter[29]` — EXACTLY ONE draw (the endTurn Quick-Claw
+  `randomChance(1,5)`) early (verified: sim `seedAfter[29]` + 1 draw == sim `seedAfter[30]`). CRITICALLY the
+  port plays the WHOLE game **BYTE-IDENTICALLY** to the sim through to `|win|P2` (same protocol, same winner)
+  — so the GLOBAL draw stream + all production `--use-bridge=rust` obs are CORRECT; only the fuzzer's
+  per-decision seed CHECKPOINT is misplaced by one Quick-Claw on the phaze-drag/forced-switch boundary (the
+  D2-class "seedAfter captured one frame early"). This is a bridge per-decision-boundary bookkeeping residual
+  (the seed anchor's checkpoint doesn't align with the sim's `makeRequest` on a phaze-drag turn), a
+  low-severity MEASUREMENT artifact — ✅ **FIXED in round 6 (A2, below), bookkeeping-only, engine untouched.**
+- **Run it:** `node src/rust_sim/harness/bridge_ab_fuzz.js --mode {pool,trapping} --format {gen3customgame,gen3ou}
+  --battles 200 --master-seed S` (bounded), `--hours H` (overnight); build ISOLATED first
+  (`CARGO_TARGET_DIR=/tmp/pokesim_target_bridge cargo build --release --bin bridge_replay` — NEVER the shared
+  `target/`); replay any repro with `/tmp/pokesim_target_bridge/release/bridge_replay <repro-dir> --ab`. The
+  gate exits non-zero on a non-allowlisted diverge; `<out>` run dirs are gitignored.
+
+### ROUND 6 — A1 (omniscient) GREEN + A2 (bridge) seed-anchor alignment; the ONE remaining deferral
+
+Two gate-hardening fixes (2026-07-17). Both are OBSERVATION-ONLY / bookkeeping-only — the engine
+(`turn.rs`/`state.rs`/`protocol.rs`) is UNTOUCHED, every committed seed golden + the full `cargo test`
+stay BYTE-IDENTICAL, and neither allowlist swallows a real content bug (injection-proven).
+
+- **A1 — the OMNISCIENT gate is now GREEN both formats** (the `turn0-construction-speed-tie-mirror-of-flip`
+  key, `src/bin/ab_replay.rs::classify_construction_mirror_of_flip`; see the "KNOWN-RESIDUAL ALLOWLIST" A1
+  entry above for the 6-clause predicate + the integrity injections). Master-seed 424242, 300 battles each
+  format: **0 non-allowlisted, 4 allowlisted** (2 R1 pure-permutation + 2 A1 mirror-of-flip = ab_4_8 +
+  ab_11_20). Corpus fixture `27_construction_mirror_weather_of.txt` (tagged) + 7 `a1_allowlist_tests`.
+
+- **A2 — the BRIDGE seed-anchor `makeRequest`-boundary ALIGNMENT** (`gen3_perside_seed_anchor_makerequest_align_v1`;
+  `src/bridge.rs::run_full_battle_bridge_core` returns a per-`|request|`-boundary seed list +
+  `src/bin/bridge_replay.rs::anchor_seed_divergence`). ROOT CAUSE (re-probed — the mechanism is more precise
+  than the round-5 "one Quick-Claw early" framing): on a phaze-drag / on-entry-faint forced-switch turn the
+  port's `run_full_battle_bridge_core` records an **EXTRA ZERO-DRAW decision boundary** (a forced replacement
+  that draws nothing → its boundary seed EQUALS the prior boundary's) where the omniscient fuzzer's
+  per-while-iteration `rec.seeds.push` COLLAPSES it — so the port's seed list is the sim's with extra
+  zero-draw duplicates inserted (bab_0_16: port `got[30] == got[29] == simSeed[29]`, one extra vs the sim's 44).
+  The game is BYTE-IDENTICAL to `|win|` (proven by `bridge_replay <dir>` WITHOUT `--ab` = ALL BYTE-EQUAL), so
+  this is a decision-boundary BOOKKEEPING offset, not an engine draw bug. FIX: (1) capture the anchor seed at
+  each `makeRequest` FLUSH boundary (post-endTurn-Quick-Claw), returning it from the core instead of
+  re-running `run_full_battle`'s DecisionRecord; (2) `anchor_seed_divergence` aligns the two seed streams as a
+  SUBSEQUENCE tolerating ONLY the port's extra ZERO-DRAW boundaries (a `got[i]` equal to `got[i-1]`). A GENUINE
+  draw-count desync changes a seed VALUE non-trivially → NEVER a zero-draw duplicate → still reported
+  `kind:"seed"` (AND, being a real RNG divergence, ALSO breaks the per-side byte stream — the load-bearing
+  discriminator: byte-equal ⇒ harmless checkpoint offset, byte-diverge ⇒ real desync). **INTEGRITY PROVEN**
+  end-to-end: a cp-aside crate copy with an INJECTED extra phaze `random_chance` draw in `drag_in` makes the
+  replay DIVERGE (byte path) + the `--ab` gate NOT return `ok` (detected, not swallowed), while the real
+  bab_0_16 is ALL BYTE-EQUAL + `ok`; plus 5 `a2_anchor_tests` (`a_genuine_value_shift_is_still_caught` /
+  `a_missing_draw_that_shifts_a_value_is_caught` lock the discrimination). RESOLVES all 7 round-5 A2 artifacts
+  (bab_0_16, 3_11, 4_20, 4_9, 5_7, 7_20 → `ok`; 4_23 → its curse-target diff now correctly ALLOWLISTED, no
+  longer seed-masked). Corpus fixture `06_anchor_clean_phaze_bab_0_16_cg.txt` (untagged, replays `ok`).
+
+- **THE ONE REMAINING DEFERRAL (a USER decision — NOT done this round): the turn-0 CONSTRUCTION WINDOW.**
+  The port starts `run_full_battle` at the PRE-first-decision seed and does NOT model the turn-0 construction
+  speed-tie Fisher-Yates shuffle (nor the per-mon gender `sample`). Modeling it would ripple the
+  pre-first-decision **seed convention EVERY committed seed golden depends on** (battle 2034 / fullbattle 2053
+  / secondary / e2e 11575 / protocol / writeline / bridge — all captured against the current convention), so
+  it is the project-wide deferral. Its ONLY observable residuals are seed=None-INVISIBLE and now NARROWLY
+  allowlisted / disclosed: A1's mirror `[of]`-flip (omniscient) + bab_3_15's non-mirror per-side framing-order
+  flip (bridge, below). **Deferring the deep seed-convention change to a user decision** — it is not forced
+  this round; the two artifacts are documented + integrity-gated, not swept under an allowlist that could
+  swallow a real bug.
+
+### ROUND 6 (FIX) — the 5 residual bridge bugs CLEARED → the bridge gate is TRULY GREEN (both formats)
+
+The round-5 "HONEST BRIDGE RESIDUAL" queue (4 content bugs + 1 construction artifact) is now RESOLVED.
+Master-seed 771301, pool, 200 battles BOTH formats: **ok=87, diverged=0, panic=0, allowlisted=113**
+(curse-target=100 + return102=12 + turn0-construction-speed-tie-order-flip=1) — **0 NON-allowlisted**.
+The five, each sim-oracle-verified (the byte fuzzer's real Node `getPlayerStreams`), corpus-fixtured +
+(for the engine changes) revert-pinned, ALL observation-only for the omniscient seed suite (full `cargo
+test` green; every seed golden byte-identical — the 4 engine fixes are per-side/emission-only or draw-free
+PP, invisible to the `|...|` stream, and no committed golden pairs a full-HP Morning Sun / a Snatch-or-
+Pursuit-into-a-Pressure-mon):
+
+- **B2 — Morning Sun successful weather-heal emit** (`gen3_omniscient_byte_fuzz_v1`, `bab_7_1`). The onHit
+  weather-heal family (morningsun/moonlight/synthesis, `heal:undefined` + an `onHit` calling `this.heal`)
+  SUCCEEDS at full HP (the `onHit` returns undefined/truthy even when `this.heal` returns 0) → the sim
+  renders the plain self-target announce and OMITS the `-heal` line; only the DECLARATIVE `move.heal:[1,2]`
+  Recover family emits the did-nothing `[still]`+`-fail|heal`. FIX: `turn.rs::run_status_move` recovery
+  branch splits the failed-heal `else` by family (`morningsun`/`moonlight`/`synthesis` emit nothing extra;
+  Recover keeps the fail gate). Fixture `12_morning_sun_success_cg.txt`.
+- **Pursuit-Pressure PP** (`gen3_pursuit_pressure_pp_v1`, surfaced in `bab_7_1` once B2 unmasked it — the
+  B5 sibling): a Pursuit INTERRUPT into a switching **Pressure** mon deducts an EXTRA Pursuit PP (the
+  `runMove('pursuit', source, {target: switcher})` DeductPP event). FIX: `turn.rs` execute_switch pursuit
+  interrupt deducts 2 iff the switcher has Pressure (was a flat 1). Pin MC106
+  `pursuit_interrupt_into_a_pressure_switcher_deducts_an_extra_pp`.
+- **B3 — the owner's OWN typed Hidden Power in the request roster** (`gen3_own_typed_hp_request_roster_v1`,
+  `bab_3_19`). The Showdown `Pokemon` constructor resolves a bare-stored `HiddenPower` moveslot to
+  `hiddenpower<hpType>` (from `set.hpType`, else IV-derived), and `getSwitchRequestData` emits that TYPED id
+  in the OWNER's own `side.pokemon[].moves[]`. FIX: `bridge.rs::side_move_id` resolves a bare `hiddenpower`
+  to the mon's typed id (`hidden_power_type` added to `state.rs`); the opponent-facing bare-collapse
+  (`active_move_display` + opp HP hiding) is untouched. `resolve_choice` collapses HP for choice-matching so
+  either wire form still resolves. Fixture `15_own_typed_hp_roster_curse_cg.txt` (tagged curse-target: the
+  own-HP fix leaves ONLY the documented curse deferral; a regression re-introduces a hiddenpower residual →
+  NOT allowlisted → FAILS).
+- **B4 — the Choice lock in the request `disabled` flags** (`gen3_choice_lock_request_disabled_v1`,
+  `bab_3_24`). Showdown applies the lock LAZILY at request-build (`choicelock.onDisableMove`: current-item
+  Choice ∧ knows lastMove → disable the other slots), so a mon that GAINED a Choice Band mid-turn (Skarmory
+  Thief'ing it while itemless) still locks even though the engine `choice_locked_move` was never set. FIX:
+  `bridge.rs::move_disabled` folds the lazy lock (bridge/request-only, NOT `move_usable`). Fixture
+  `13_choice_lock_disabled_cg.txt`.
+- **B5 — the Snatch-steal PP under Pressure** (`gen3_snatch_pressure_pp_v1`, `bab_4_16`). A Snatch steal
+  fires `runEvent("DeductPP", source=VICTIM, snatchUser=SNATCHER, Snatch)`; a **Pressure** victim's
+  `onDeductPP` returns 1 → the snatcher's Snatch loses an EXTRA PP (cast −1 + Pressure −1 = −2). FIX:
+  `turn.rs` snatch interception deducts the extra Snatch PP when the victim has Pressure (was a modeled
+  no-op). Fixture `14_snatch_pressure_pp_cg.txt` + pin MC105
+  `snatch_steal_of_a_pressure_victim_deducts_an_extra_snatch_pp`.
+- **B1 — the construction speed-tie framing-ORDER flip, ALLOWLISTED** (`turn0-construction-speed-tie-order-
+  flip`, `bab_3_15`). A NON-mirror construction speed-tie (Tyranitar 213 vs Suicune 213) emits two per-side
+  framing lines (`-ability|Pressure` / `-weather|Sandstorm|[of]`) in flipped order — the SAME unmodeled
+  turn-0 construction-window root as the omniscient E1/A1 keys, a DISTINCT per-side form. seed=None-INVISIBLE
+  (`event::run_start_switchins` is deterministic + draws nothing at a raw-Speed tie → correct production obs
+  under `--use-bridge=rust`). NARROW key in `bridge_replay.rs::classify_perside_construction_order_flip`,
+  threaded off `first.kind=="perside"` with `lead_speed`-derived `leads_speed_tie` + the full framing
+  windows: allowlisted ONLY IF (1) `leads_speed_tie`, (2) the two windows are equal-length + an IDENTICAL
+  MULTISET (pure permutation), (3) EVERY differing position is a framing `-ability`/`-weather` line in BOTH.
+  GATE-INTEGRITY PROVEN by 10 `perside_construction_order_flip_tests` (a content-flipped `[of]` / changed
+  weather-id / changed ability / dropped line breaks the multiset → None; a distinct-speed pair breaks
+  clause 1; a NON-framing `|switch|` reorder breaks clause 3). Tagged fixture
+  `16_construction_order_flip_cg.txt`. The DEEP turn-0 construction-window fix stays the project-wide
+  deferral (a user decision — it ripples every committed seed golden's pre-first-decision convention).
 
 ## Data-driven mechanics (the class framework)
 

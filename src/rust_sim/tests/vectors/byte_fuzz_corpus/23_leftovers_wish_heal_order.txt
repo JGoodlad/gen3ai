@@ -1,0 +1,593 @@
+# R2 Leftovers residual-tie -heal EMIT ORDER (gen3_leftovers_slotcond_gather_order_v1).
+# Jolteon mirror, both Leftovers, sandstorm, a pending p2 Wish (order-7 slot condition):
+# the sim heals p1a-first; the pre-fix port healed p2a-first at the SAME shuffle value
+# (Wish gathered per-active-after-item vs the old front pre-loop → the selection-sort swaps
+# reversed the tied Leftovers pair). UNTAGGED → must be byte-clean. Also exercises the R3
+# IV-derived Hidden Power BP (both teams carry typed HP). Byte-fuzz repro rmroeq9rd_ab_13_4.
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=7 run_id=rmroeq9rd chunk=13
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_13_4
+TEAM	ab_13_4	p1	Tyranitar||Leftovers|SandStream|FireBlast,HiddenPowerGrass,IceBeam,BrickBreak|Naive|,32,,224,,252|M|,,30,30,,|||,Grass,,,,]Swampert||Leftovers|Torrent|HydroPump,IceBeam,Earthquake,FocusPunch|Rash|,,108,252,,148|M||||]Jolteon||Leftovers|VoltAbsorb|Thunderbolt,HiddenPowerGrass,Roar,ThunderWave|Timid|76,,,180,,252|M|,2,,30,,|||,Grass,,,,]Cloyster||Leftovers|ShellArmor|Surf,HiddenPowerGrass,Explosion,Spikes|Timid|72,,,,244,192|M|,30,,30,,|||,Grass,,,,]Metagross||SalacBerry|ClearBody|MeteorMash,Earthquake,RockSlide,Explosion|Jolly|168,128,8,,,204|N||||]Gengar||Leftovers|Levitate|Explosion,FirePunch,IcePunch,HiddenPowerGrass|Hasty|8,,,248,,252|M|,30,,30,,|||,Grass,,,,
+TEAM	ab_13_4	p2	Salamence||ChoiceBand|Intimidate|Wish,Earthquake,RockSlide,HiddenPowerFlying|Adamant|116,252,,,,140|M|,,,30,30,30|||,Flying,,,,]Magneton||Magnet|MagnetPull|Rest,Toxic,Thunderbolt,HiddenPowerFire|Modest|8,,,252,24,224|N|,2,,30,,30|||,Fire,,,,]Swampert||Leftovers|Torrent|Rest,Curse,Earthquake,IceBeam|Relaxed|240,,136,,88,44|M||||]Celebi||Leftovers|NaturalCure|LeechSeed,CalmMind,GigaDrain,Psychic|Modest|252,,,220,,36|N|,0,,,,|||]Jolteon||Leftovers|VoltAbsorb|Wish,ThunderWave,Thunderbolt,HiddenPowerIce|Timid|8,,,248,,252|M|,2,30,,,|||,Ice,,,,]Snorlax||Leftovers|Immunity|Return,Earthquake,ShadowBall,SelfDestruct|Adamant|32,152,152,,172,|M||||
+FMT	ab_13_4	gen3ou
+INIT	ab_13_4	60657,63841,58514,22583	1038388674
+DEC	ab_13_4	0	move	0	0	m2	m0	53151,33472,27570,48219	Tyranitar	341	341	0	-	-1	0	0	0	0	0	6	Salamence	0	360	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_13_4	1	switch	0	1	-	s4	24491,41421,44788,41386	Tyranitar	341	341	0	-	-1	0	0	0	0	0	6	Jolteon	273	273	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_13_4	2	move	0	0	m1	m1	45257,43429,61294,39395	Tyranitar	341	341	0	par	-1	0	0	0	0	0	6	Jolteon	273	273	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_13_4	3	move	0	0	m1	m0	25118,25339,5354,45341	Tyranitar	341	341	0	par	-1	0	0	0	0	0	6	Jolteon	273	273	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_13_4	4	move	0	0	m2	m3	15604,7133,30808,13212	Tyranitar	284	341	0	par	-1	0	0	0	0	0	6	Jolteon	273	273	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_13_4	5	move	0	0	m0	s5	7691,24040,43943,42658	Tyranitar	305	341	0	par	-1	0	0	0	0	0	6	Snorlax	379	469	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_13_4	6	move	0	0	s1	m1	31088,56700,52919,61974	Swampert	253	341	0	-	0	0	0	0	0	0	6	Snorlax	379	469	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_13_4	7	move	0	0	m0	m2	23395,55281,37528,61246	Swampert	187	341	0	-	0	0	0	0	0	0	6	Snorlax	245	469	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_13_4	8	move	0	0	m0	m0	24493,16539,2181,59453	Swampert	40	341	0	-	0	0	0	0	0	0	6	Snorlax	245	469	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_13_4	9	move	0	0	m3	m3	33720,30802,28546,36710	Swampert	0	341	1	fnt	0	0	0	0	0	0	5	Snorlax	0	469	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_13_4	10	switch	1	1	s1	s1	64742,44161,53552,51201	Tyranitar	326	341	0	par	0	0	0	0	0	0	5	Magneton	243	243	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_13_4	11	move	0	0	m2	s3	51059,5155,51167,44399	Tyranitar	341	341	0	par	0	0	0	0	0	0	5	Celebi	230	404	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_13_4	12	move	0	0	m3	m3	3273,29481,25014,50448	Tyranitar	341	341	0	par	0	0	0	0	0	0	5	Celebi	230	404	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_13_4	13	move	0	0	m1	m1	28092,24614,39990,3191	Tyranitar	341	341	0	par	0	0	0	0	0	0	5	Celebi	207	404	0	-	0	0	1	1	0	0	4	p2	0	0	0	0	0
+DEC	ab_13_4	14	move	0	0	m1	m2	3065,10607,40567,43754	Tyranitar	60	341	0	par	0	0	0	0	0	0	5	Celebi	358	404	0	-	0	0	1	1	0	0	4	p2	0	0	0	0	0
+DEC	ab_13_4	15	move	0	0	m1	m0	42637,50465,62497,4064	Tyranitar	39	341	0	par	0	0	0	0	0	0	5	Celebi	380	404	0	-	0	0	1	1	0	0	4	p2	0	0	0	0	0
+DEC	ab_13_4	16	move	0	0	m2	m0	28303,9880,53015,3933	Tyranitar	18	341	0	par	0	0	0	0	0	0	5	Celebi	404	404	0	-	0	0	1	1	0	0	4	p2	0	0	0	0	0
+DEC	ab_13_4	17	move	0	0	m2	m2	5301,39546,28487,60934	Tyranitar	0	341	1	fnt	0	0	0	0	0	0	4	Celebi	404	404	0	-	0	0	1	1	0	0	4	p2	0	0	0	0	0
+DEC	ab_13_4	18	switch	1	0	s5	-	12619,1435,28690,48417	Gengar	263	263	0	-	0	0	0	0	0	0	4	Celebi	404	404	0	-	0	0	1	1	0	0	4	none	0	0	0	0	0
+DEC	ab_13_4	19	move	0	0	m3	m2	33733,16395,17324,7470	Gengar	167	263	0	-	0	0	0	0	0	0	4	Celebi	404	404	0	-	0	0	1	1	0	0	4	p1	0	0	0	0	0
+DEC	ab_13_4	20	move	0	0	m0	m3	4320,42296,62955,29235	Gengar	0	263	1	fnt	0	0	0	0	0	0	3	Celebi	112	404	0	-	0	0	1	1	0	0	4	p1	0	0	0	0	0
+DEC	ab_13_4	21	switch	1	0	s4	-	4808,30672,43404,63458	Metagross	343	343	0	-	0	0	0	0	0	0	3	Celebi	112	404	0	-	0	0	1	1	0	0	4	none	0	0	0	0	0
+DEC	ab_13_4	22	move	0	0	m0	m0	55469,33598,16588,44886	Metagross	343	343	0	-	0	0	0	0	0	0	3	Celebi	0	404	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_13_4	23	switch	0	1	-	s3	26944,5820,11798,53681	Metagross	343	343	0	-	0	0	0	0	0	0	3	Magneton	243	243	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_13_4	24	move	0	0	m0	m0	32930,33177,19132,17534	Metagross	343	343	0	-	0	0	0	0	0	0	3	Magneton	243	243	0	slp	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_13_4	25	move	0	0	m2	m1	11019,14306,57250,43392	Metagross	343	343	0	-	0	0	0	0	0	0	3	Magneton	243	243	0	slp	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_13_4	26	move	0	0	m2	s2	58893,29406,57921,63911	Metagross	343	343	0	-	0	0	0	0	0	0	3	Swampert	393	401	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_13_4	27	move	0	0	m3	m0	39849,45584,417,27496	Metagross	0	343	1	fnt	0	0	0	0	0	0	2	Swampert	0	401	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_13_4	28	switch	1	1	s2	s2	55070,52721,55080,42699	Jolteon	290	290	0	-	0	0	0	0	0	0	2	Magneton	243	243	0	slp	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_13_4	29	move	0	0	m0	m2	43401,1947,8142,63438	Jolteon	290	290	0	-	0	0	0	0	0	0	2	Magneton	158	243	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_13_4	30	move	0	0	m1	m0	5848,61618,34382,13540	Jolteon	290	290	0	-	0	0	0	0	0	0	2	Magneton	243	243	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_13_4	31	move	0	0	m3	m0	29393,58714,21779,22006	Jolteon	290	290	0	-	0	0	0	0	0	0	2	Magneton	243	243	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_13_4	32	move	0	0	s3	m2	64710,52228,2946,11985	Cloyster	259	259	0	-	0	0	0	0	0	0	2	Magneton	243	243	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_13_4	33	move	0	0	m3	m3	33538,53067,4047,60757	Cloyster	141	259	0	-	0	0	0	0	0	0	2	Magneton	243	243	0	-	0	0	0	0	0	0	2	p1	0	1	0	0	0
+DEC	ab_13_4	34	move	0	0	s3	m2	20778,14198,20080,24255	Jolteon	290	290	0	-	0	0	0	0	0	0	2	Magneton	243	243	0	-	0	0	0	0	0	0	2	p1	0	1	0	0	0
+DEC	ab_13_4	35	move	0	0	m3	m2	1721,6986,3549,53970	Jolteon	290	290	0	-	0	0	0	0	0	0	2	Magneton	243	243	0	par	0	0	0	0	0	0	2	p1	0	1	0	0	0
+DEC	ab_13_4	36	move	0	0	m1	s5	10612,28495,53084,61391	Jolteon	290	290	0	-	0	0	0	0	0	0	2	Jolteon	171	273	0	-	0	0	0	0	0	0	2	p2	0	1	0	0	0
+DEC	ab_13_4	37	move	0	0	m1	m1	17795,35050,33722,56571	Jolteon	290	290	0	par	0	0	0	0	0	0	2	Jolteon	101	273	0	-	0	0	0	0	0	0	2	p1	0	1	0	0	0
+DEC	ab_13_4	38	move	0	0	s3	m2	53064,41096,41858,7391	Cloyster	0	259	1	fnt	0	0	0	0	0	0	1	Jolteon	101	273	0	-	0	0	0	0	0	0	2	p1	0	1	0	0	0
+DEC	ab_13_4	39	switch	1	0	s3	-	50674,19233,520,22974	Jolteon	290	290	0	par	0	0	0	0	0	0	1	Jolteon	101	273	0	-	0	0	0	0	0	0	2	none	0	1	0	0	0
+DEC	ab_13_4	40	move	0	0	m3	m3	42187,36960,5760,34472	Jolteon	207	290	0	par	0	0	0	0	0	0	1	Jolteon	101	273	0	par	0	0	0	0	0	0	2	p2	0	1	0	0	0
+DEC	ab_13_4	41	move	0	0	m0	m0	40368,28832,35775,29732	Jolteon	207	290	0	par	0	0	0	0	0	0	1	Jolteon	169	273	0	par	0	0	0	0	0	0	2	p1	0	1	0	0	0
+DEC	ab_13_4	42	move	0	0	m3	m3	10821,38785,51234,37364	Jolteon	123	290	0	par	0	0	0	0	0	0	1	Jolteon	273	273	0	par	0	0	0	0	0	0	2	p2	0	1	0	0	0
+DEC	ab_13_4	43	move	0	0	m2	m3	63786,5700,46469,60720	Jolteon	48	290	0	par	0	0	0	0	0	0	1	Magneton	213	243	0	par	0	0	0	0	0	0	2	p2	0	1	0	0	0
+DEC	ab_13_4	44	move	0	0	m3	m3	8598,9612,46264,27094	Jolteon	0	290	1	par	0	0	0	0	0	0	0	Magneton	213	243	0	par	0	0	0	0	0	0	2	p1	0	1	0	0	0
+END	ab_13_4	1	p2
+L	ab_13_4	0	|t:|<NORMALIZED>
+L	ab_13_4	1	|gametype|singles
+L	ab_13_4	2	|player|p1|P1||
+L	ab_13_4	3	|player|p2|P2||
+L	ab_13_4	4	|gen|3
+L	ab_13_4	5	|tier|[Gen 3] OU
+L	ab_13_4	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_13_4	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_13_4	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_13_4	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_13_4	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_13_4	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_13_4	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_13_4	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_13_4	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_13_4	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_13_4	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_13_4	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_13_4	18	|
+L	ab_13_4	19	|t:|<NORMALIZED>
+L	ab_13_4	20	|teamsize|p1|6
+L	ab_13_4	21	|teamsize|p2|6
+L	ab_13_4	22	|start
+L	ab_13_4	23	|switch|p1a: Tyranitar|Tyranitar, M|341/341
+L	ab_13_4	24	|switch|p2a: Salamence|Salamence, M|360/360
+L	ab_13_4	25	|-ability|p2a: Salamence|Intimidate|boost
+L	ab_13_4	26	|-unboost|p1a: Tyranitar|atk|1
+L	ab_13_4	27	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_13_4	28	|turn|1
+L	ab_13_4	29	|
+L	ab_13_4	30	|t:|<NORMALIZED>
+L	ab_13_4	31	|move|p2a: Salamence|Wish|p2a: Salamence
+L	ab_13_4	32	|move|p1a: Tyranitar|Ice Beam|p2a: Salamence
+L	ab_13_4	33	|-supereffective|p2a: Salamence
+L	ab_13_4	34	|-damage|p2a: Salamence|0 fnt
+L	ab_13_4	35	|faint|p2a: Salamence
+L	ab_13_4	36	|
+L	ab_13_4	37	|t:|<NORMALIZED>
+L	ab_13_4	38	|switch|p2a: Jolteon|Jolteon, M|273/273
+L	ab_13_4	39	|
+L	ab_13_4	40	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	41	|-damage|p2a: Jolteon|256/273|[from] Sandstorm
+L	ab_13_4	42	|-heal|p2a: Jolteon|273/273|[from] item: Leftovers
+L	ab_13_4	43	|upkeep
+L	ab_13_4	44	|turn|2
+L	ab_13_4	45	|
+L	ab_13_4	46	|t:|<NORMALIZED>
+L	ab_13_4	47	|move|p2a: Jolteon|Thunder Wave|p1a: Tyranitar
+L	ab_13_4	48	|-status|p1a: Tyranitar|par
+L	ab_13_4	49	|move|p1a: Tyranitar|Hidden Power|p2a: Jolteon
+L	ab_13_4	50	|-damage|p2a: Jolteon|201/273
+L	ab_13_4	51	|
+L	ab_13_4	52	|-heal|p2a: Jolteon|273/273|[from] move: Wish|[wisher] Salamence
+L	ab_13_4	53	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	54	|-damage|p2a: Jolteon|256/273|[from] Sandstorm
+L	ab_13_4	55	|-heal|p2a: Jolteon|273/273|[from] item: Leftovers
+L	ab_13_4	56	|upkeep
+L	ab_13_4	57	|turn|3
+L	ab_13_4	58	|
+L	ab_13_4	59	|t:|<NORMALIZED>
+L	ab_13_4	60	|move|p2a: Jolteon|Wish|p2a: Jolteon
+L	ab_13_4	61	|cant|p1a: Tyranitar|par
+L	ab_13_4	62	|
+L	ab_13_4	63	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	64	|-damage|p2a: Jolteon|256/273|[from] Sandstorm
+L	ab_13_4	65	|-heal|p2a: Jolteon|273/273|[from] item: Leftovers
+L	ab_13_4	66	|upkeep
+L	ab_13_4	67	|turn|4
+L	ab_13_4	68	|
+L	ab_13_4	69	|t:|<NORMALIZED>
+L	ab_13_4	70	|move|p2a: Jolteon|Hidden Power|p1a: Tyranitar
+L	ab_13_4	71	|-damage|p1a: Tyranitar|263/341 par
+L	ab_13_4	72	|move|p1a: Tyranitar|Ice Beam|p2a: Jolteon
+L	ab_13_4	73	|-damage|p2a: Jolteon|176/273
+L	ab_13_4	74	|
+L	ab_13_4	75	|-heal|p2a: Jolteon|273/273|[from] move: Wish|[wisher] Jolteon
+L	ab_13_4	76	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	77	|-damage|p2a: Jolteon|256/273|[from] Sandstorm
+L	ab_13_4	78	|-heal|p2a: Jolteon|273/273|[from] item: Leftovers
+L	ab_13_4	79	|-heal|p1a: Tyranitar|284/341 par|[from] item: Leftovers
+L	ab_13_4	80	|upkeep
+L	ab_13_4	81	|turn|5
+L	ab_13_4	82	|
+L	ab_13_4	83	|t:|<NORMALIZED>
+L	ab_13_4	84	|switch|p2a: Snorlax|Snorlax, M|469/469
+L	ab_13_4	85	|move|p1a: Tyranitar|Fire Blast|p2a: Snorlax
+L	ab_13_4	86	|-damage|p2a: Snorlax|379/469
+L	ab_13_4	87	|
+L	ab_13_4	88	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	89	|-damage|p2a: Snorlax|350/469|[from] Sandstorm
+L	ab_13_4	90	|-heal|p2a: Snorlax|379/469|[from] item: Leftovers
+L	ab_13_4	91	|-heal|p1a: Tyranitar|305/341 par|[from] item: Leftovers
+L	ab_13_4	92	|upkeep
+L	ab_13_4	93	|turn|6
+L	ab_13_4	94	|
+L	ab_13_4	95	|t:|<NORMALIZED>
+L	ab_13_4	96	|switch|p1a: Swampert|Swampert, M|341/341
+L	ab_13_4	97	|move|p2a: Snorlax|Earthquake|p1a: Swampert
+L	ab_13_4	98	|-damage|p1a: Swampert|232/341
+L	ab_13_4	99	|
+L	ab_13_4	100	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	101	|-damage|p2a: Snorlax|350/469|[from] Sandstorm
+L	ab_13_4	102	|-heal|p1a: Swampert|253/341|[from] item: Leftovers
+L	ab_13_4	103	|-heal|p2a: Snorlax|379/469|[from] item: Leftovers
+L	ab_13_4	104	|upkeep
+L	ab_13_4	105	|turn|7
+L	ab_13_4	106	|
+L	ab_13_4	107	|t:|<NORMALIZED>
+L	ab_13_4	108	|move|p1a: Swampert|Hydro Pump|p2a: Snorlax
+L	ab_13_4	109	|-damage|p2a: Snorlax|245/469
+L	ab_13_4	110	|move|p2a: Snorlax|Shadow Ball|p1a: Swampert
+L	ab_13_4	111	|-damage|p1a: Swampert|166/341
+L	ab_13_4	112	|
+L	ab_13_4	113	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	114	|-damage|p2a: Snorlax|216/469|[from] Sandstorm
+L	ab_13_4	115	|-heal|p1a: Swampert|187/341|[from] item: Leftovers
+L	ab_13_4	116	|-heal|p2a: Snorlax|245/469|[from] item: Leftovers
+L	ab_13_4	117	|upkeep
+L	ab_13_4	118	|turn|8
+L	ab_13_4	119	|
+L	ab_13_4	120	|t:|<NORMALIZED>
+L	ab_13_4	121	|move|p1a: Swampert|Hydro Pump|p2a: Snorlax|[miss]
+L	ab_13_4	122	|-miss|p1a: Swampert|p2a: Snorlax
+L	ab_13_4	123	|move|p2a: Snorlax|Return|p1a: Swampert
+L	ab_13_4	124	|-damage|p1a: Swampert|19/341
+L	ab_13_4	125	|
+L	ab_13_4	126	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	127	|-damage|p2a: Snorlax|216/469|[from] Sandstorm
+L	ab_13_4	128	|-heal|p1a: Swampert|40/341|[from] item: Leftovers
+L	ab_13_4	129	|-heal|p2a: Snorlax|245/469|[from] item: Leftovers
+L	ab_13_4	130	|upkeep
+L	ab_13_4	131	|turn|9
+L	ab_13_4	132	|
+L	ab_13_4	133	|t:|<NORMALIZED>
+L	ab_13_4	134	|-singleturn|p1a: Swampert|move: Focus Punch
+L	ab_13_4	135	|move|p2a: Snorlax|Self-Destruct|p1a: Swampert
+L	ab_13_4	136	|-damage|p1a: Swampert|0 fnt
+L	ab_13_4	137	|faint|p2a: Snorlax
+L	ab_13_4	138	|faint|p1a: Swampert
+L	ab_13_4	139	|
+L	ab_13_4	140	|t:|<NORMALIZED>
+L	ab_13_4	141	|switch|p1a: Tyranitar|Tyranitar, M|305/341 par
+L	ab_13_4	142	|switch|p2a: Magneton|Magneton|243/243
+L	ab_13_4	143	|
+L	ab_13_4	144	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	145	|-heal|p1a: Tyranitar|326/341 par|[from] item: Leftovers
+L	ab_13_4	146	|upkeep
+L	ab_13_4	147	|turn|10
+L	ab_13_4	148	|
+L	ab_13_4	149	|t:|<NORMALIZED>
+L	ab_13_4	150	|switch|p2a: Celebi|Celebi|404/404
+L	ab_13_4	151	|move|p1a: Tyranitar|Ice Beam|p2a: Celebi
+L	ab_13_4	152	|-supereffective|p2a: Celebi
+L	ab_13_4	153	|-damage|p2a: Celebi|230/404
+L	ab_13_4	154	|
+L	ab_13_4	155	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	156	|-damage|p2a: Celebi|205/404|[from] Sandstorm
+L	ab_13_4	157	|-heal|p2a: Celebi|230/404|[from] item: Leftovers
+L	ab_13_4	158	|-heal|p1a: Tyranitar|341/341 par|[from] item: Leftovers
+L	ab_13_4	159	|upkeep
+L	ab_13_4	160	|turn|11
+L	ab_13_4	161	|
+L	ab_13_4	162	|t:|<NORMALIZED>
+L	ab_13_4	163	|move|p2a: Celebi|Psychic|p1a: Tyranitar
+L	ab_13_4	164	|-immune|p1a: Tyranitar
+L	ab_13_4	165	|cant|p1a: Tyranitar|par
+L	ab_13_4	166	|
+L	ab_13_4	167	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	168	|-damage|p2a: Celebi|205/404|[from] Sandstorm
+L	ab_13_4	169	|-heal|p2a: Celebi|230/404|[from] item: Leftovers
+L	ab_13_4	170	|upkeep
+L	ab_13_4	171	|turn|12
+L	ab_13_4	172	|
+L	ab_13_4	173	|t:|<NORMALIZED>
+L	ab_13_4	174	|move|p2a: Celebi|Calm Mind|p2a: Celebi
+L	ab_13_4	175	|-boost|p2a: Celebi|spa|1
+L	ab_13_4	176	|-boost|p2a: Celebi|spd|1
+L	ab_13_4	177	|move|p1a: Tyranitar|Hidden Power|p2a: Celebi
+L	ab_13_4	178	|-resisted|p2a: Celebi
+L	ab_13_4	179	|-damage|p2a: Celebi|207/404
+L	ab_13_4	180	|
+L	ab_13_4	181	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	182	|-damage|p2a: Celebi|182/404|[from] Sandstorm
+L	ab_13_4	183	|-heal|p2a: Celebi|207/404|[from] item: Leftovers
+L	ab_13_4	184	|upkeep
+L	ab_13_4	185	|turn|13
+L	ab_13_4	186	|
+L	ab_13_4	187	|t:|<NORMALIZED>
+L	ab_13_4	188	|move|p2a: Celebi|Giga Drain|p1a: Tyranitar
+L	ab_13_4	189	|-supereffective|p1a: Tyranitar
+L	ab_13_4	190	|-damage|p1a: Tyranitar|39/341 par
+L	ab_13_4	191	|-heal|p2a: Celebi|358/404|[from] drain|[of] p1a: Tyranitar
+L	ab_13_4	192	|cant|p1a: Tyranitar|par
+L	ab_13_4	193	|
+L	ab_13_4	194	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	195	|-damage|p2a: Celebi|333/404|[from] Sandstorm
+L	ab_13_4	196	|-heal|p2a: Celebi|358/404|[from] item: Leftovers
+L	ab_13_4	197	|-heal|p1a: Tyranitar|60/341 par|[from] item: Leftovers
+L	ab_13_4	198	|upkeep
+L	ab_13_4	199	|turn|14
+L	ab_13_4	200	|
+L	ab_13_4	201	|t:|<NORMALIZED>
+L	ab_13_4	202	|move|p2a: Celebi|Leech Seed|p1a: Tyranitar
+L	ab_13_4	203	|-start|p1a: Tyranitar|move: Leech Seed
+L	ab_13_4	204	|move|p1a: Tyranitar|Hidden Power|p2a: Celebi
+L	ab_13_4	205	|-resisted|p2a: Celebi
+L	ab_13_4	206	|-damage|p2a: Celebi|338/404
+L	ab_13_4	207	|
+L	ab_13_4	208	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	209	|-damage|p2a: Celebi|313/404|[from] Sandstorm
+L	ab_13_4	210	|-heal|p2a: Celebi|338/404|[from] item: Leftovers
+L	ab_13_4	211	|-heal|p1a: Tyranitar|81/341 par|[from] item: Leftovers
+L	ab_13_4	212	|-damage|p1a: Tyranitar|39/341 par|[from] Leech Seed|[of] p2a: Celebi
+L	ab_13_4	213	|-heal|p2a: Celebi|380/404|[silent]
+L	ab_13_4	214	|upkeep
+L	ab_13_4	215	|turn|15
+L	ab_13_4	216	|
+L	ab_13_4	217	|t:|<NORMALIZED>
+L	ab_13_4	218	|move|p2a: Celebi|Leech Seed||[still]
+L	ab_13_4	219	|-fail|p2a: Celebi
+L	ab_13_4	220	|cant|p1a: Tyranitar|par
+L	ab_13_4	221	|
+L	ab_13_4	222	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	223	|-damage|p2a: Celebi|355/404|[from] Sandstorm
+L	ab_13_4	224	|-heal|p2a: Celebi|380/404|[from] item: Leftovers
+L	ab_13_4	225	|-heal|p1a: Tyranitar|60/341 par|[from] item: Leftovers
+L	ab_13_4	226	|-damage|p1a: Tyranitar|18/341 par|[from] Leech Seed|[of] p2a: Celebi
+L	ab_13_4	227	|-heal|p2a: Celebi|404/404|[silent]
+L	ab_13_4	228	|upkeep
+L	ab_13_4	229	|turn|16
+L	ab_13_4	230	|
+L	ab_13_4	231	|t:|<NORMALIZED>
+L	ab_13_4	232	|move|p2a: Celebi|Giga Drain|p1a: Tyranitar
+L	ab_13_4	233	|-supereffective|p1a: Tyranitar
+L	ab_13_4	234	|-damage|p1a: Tyranitar|0 fnt
+L	ab_13_4	235	|faint|p1a: Tyranitar
+L	ab_13_4	236	|
+L	ab_13_4	237	|t:|<NORMALIZED>
+L	ab_13_4	238	|switch|p1a: Gengar|Gengar, M|263/263
+L	ab_13_4	239	|
+L	ab_13_4	240	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	241	|-damage|p1a: Gengar|247/263|[from] Sandstorm
+L	ab_13_4	242	|-damage|p2a: Celebi|379/404|[from] Sandstorm
+L	ab_13_4	243	|-heal|p1a: Gengar|263/263|[from] item: Leftovers
+L	ab_13_4	244	|-heal|p2a: Celebi|404/404|[from] item: Leftovers
+L	ab_13_4	245	|upkeep
+L	ab_13_4	246	|turn|17
+L	ab_13_4	247	|
+L	ab_13_4	248	|t:|<NORMALIZED>
+L	ab_13_4	249	|move|p1a: Gengar|Hidden Power|p2a: Celebi
+L	ab_13_4	250	|-resisted|p2a: Celebi
+L	ab_13_4	251	|-damage|p2a: Celebi|376/404
+L	ab_13_4	252	|move|p2a: Celebi|Giga Drain|p1a: Gengar
+L	ab_13_4	253	|-resisted|p1a: Gengar
+L	ab_13_4	254	|-damage|p1a: Gengar|167/263
+L	ab_13_4	255	|-heal|p2a: Celebi|404/404|[from] drain|[of] p1a: Gengar
+L	ab_13_4	256	|
+L	ab_13_4	257	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	258	|-damage|p1a: Gengar|151/263|[from] Sandstorm
+L	ab_13_4	259	|-damage|p2a: Celebi|379/404|[from] Sandstorm
+L	ab_13_4	260	|-heal|p1a: Gengar|167/263|[from] item: Leftovers
+L	ab_13_4	261	|-heal|p2a: Celebi|404/404|[from] item: Leftovers
+L	ab_13_4	262	|upkeep
+L	ab_13_4	263	|turn|18
+L	ab_13_4	264	|
+L	ab_13_4	265	|t:|<NORMALIZED>
+L	ab_13_4	266	|move|p1a: Gengar|Explosion|p2a: Celebi
+L	ab_13_4	267	|-damage|p2a: Celebi|112/404
+L	ab_13_4	268	|faint|p1a: Gengar
+L	ab_13_4	269	|
+L	ab_13_4	270	|t:|<NORMALIZED>
+L	ab_13_4	271	|switch|p1a: Metagross|Metagross|343/343
+L	ab_13_4	272	|
+L	ab_13_4	273	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	274	|-damage|p2a: Celebi|87/404|[from] Sandstorm
+L	ab_13_4	275	|-heal|p2a: Celebi|112/404|[from] item: Leftovers
+L	ab_13_4	276	|upkeep
+L	ab_13_4	277	|turn|19
+L	ab_13_4	278	|
+L	ab_13_4	279	|t:|<NORMALIZED>
+L	ab_13_4	280	|move|p1a: Metagross|Meteor Mash|p2a: Celebi
+L	ab_13_4	281	|-damage|p2a: Celebi|0 fnt
+L	ab_13_4	282	|faint|p2a: Celebi
+L	ab_13_4	283	|
+L	ab_13_4	284	|t:|<NORMALIZED>
+L	ab_13_4	285	|switch|p2a: Magneton|Magneton|243/243
+L	ab_13_4	286	|
+L	ab_13_4	287	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	288	|upkeep
+L	ab_13_4	289	|turn|20
+L	ab_13_4	290	|
+L	ab_13_4	291	|t:|<NORMALIZED>
+L	ab_13_4	292	|move|p1a: Metagross|Meteor Mash|p2a: Magneton
+L	ab_13_4	293	|-resisted|p2a: Magneton
+L	ab_13_4	294	|-damage|p2a: Magneton|203/243
+L	ab_13_4	295	|move|p2a: Magneton|Rest|p2a: Magneton
+L	ab_13_4	296	|-status|p2a: Magneton|slp|[from] move: Rest
+L	ab_13_4	297	|-heal|p2a: Magneton|243/243 slp|[silent]
+L	ab_13_4	298	|
+L	ab_13_4	299	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	300	|upkeep
+L	ab_13_4	301	|turn|21
+L	ab_13_4	302	|
+L	ab_13_4	303	|t:|<NORMALIZED>
+L	ab_13_4	304	|move|p1a: Metagross|Rock Slide|p2a: Magneton|[miss]
+L	ab_13_4	305	|-miss|p1a: Metagross|p2a: Magneton
+L	ab_13_4	306	|cant|p2a: Magneton|slp
+L	ab_13_4	307	|
+L	ab_13_4	308	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	309	|upkeep
+L	ab_13_4	310	|turn|22
+L	ab_13_4	311	|
+L	ab_13_4	312	|t:|<NORMALIZED>
+L	ab_13_4	313	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_13_4	314	|move|p1a: Metagross|Rock Slide|p2a: Swampert
+L	ab_13_4	315	|-resisted|p2a: Swampert
+L	ab_13_4	316	|-damage|p2a: Swampert|368/401
+L	ab_13_4	317	|
+L	ab_13_4	318	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	319	|-heal|p2a: Swampert|393/401|[from] item: Leftovers
+L	ab_13_4	320	|upkeep
+L	ab_13_4	321	|turn|23
+L	ab_13_4	322	|
+L	ab_13_4	323	|t:|<NORMALIZED>
+L	ab_13_4	324	|move|p1a: Metagross|Explosion|p2a: Swampert
+L	ab_13_4	325	|-damage|p2a: Swampert|0 fnt
+L	ab_13_4	326	|faint|p1a: Metagross
+L	ab_13_4	327	|faint|p2a: Swampert
+L	ab_13_4	328	|
+L	ab_13_4	329	|t:|<NORMALIZED>
+L	ab_13_4	330	|switch|p1a: Jolteon|Jolteon, M|290/290
+L	ab_13_4	331	|switch|p2a: Magneton|Magneton|243/243 slp
+L	ab_13_4	332	|
+L	ab_13_4	333	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	334	|-damage|p1a: Jolteon|272/290|[from] Sandstorm
+L	ab_13_4	335	|-heal|p1a: Jolteon|290/290|[from] item: Leftovers
+L	ab_13_4	336	|upkeep
+L	ab_13_4	337	|turn|24
+L	ab_13_4	338	|
+L	ab_13_4	339	|t:|<NORMALIZED>
+L	ab_13_4	340	|move|p1a: Jolteon|Thunderbolt|p2a: Magneton
+L	ab_13_4	341	|-resisted|p2a: Magneton
+L	ab_13_4	342	|-damage|p2a: Magneton|158/243 slp
+L	ab_13_4	343	|cant|p2a: Magneton|slp
+L	ab_13_4	344	|
+L	ab_13_4	345	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	346	|-damage|p1a: Jolteon|272/290|[from] Sandstorm
+L	ab_13_4	347	|-heal|p1a: Jolteon|290/290|[from] item: Leftovers
+L	ab_13_4	348	|upkeep
+L	ab_13_4	349	|turn|25
+L	ab_13_4	350	|
+L	ab_13_4	351	|t:|<NORMALIZED>
+L	ab_13_4	352	|move|p1a: Jolteon|Hidden Power|p2a: Magneton
+L	ab_13_4	353	|-resisted|p2a: Magneton
+L	ab_13_4	354	|-damage|p2a: Magneton|115/243 slp
+L	ab_13_4	355	|-curestatus|p2a: Magneton|slp|[msg]
+L	ab_13_4	356	|move|p2a: Magneton|Rest|p2a: Magneton
+L	ab_13_4	357	|-status|p2a: Magneton|slp|[from] move: Rest
+L	ab_13_4	358	|-heal|p2a: Magneton|243/243 slp|[silent]
+L	ab_13_4	359	|
+L	ab_13_4	360	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	361	|-damage|p1a: Jolteon|272/290|[from] Sandstorm
+L	ab_13_4	362	|-heal|p1a: Jolteon|290/290|[from] item: Leftovers
+L	ab_13_4	363	|upkeep
+L	ab_13_4	364	|turn|26
+L	ab_13_4	365	|
+L	ab_13_4	366	|t:|<NORMALIZED>
+L	ab_13_4	367	|move|p1a: Jolteon|Thunder Wave||[still]
+L	ab_13_4	368	|-fail|p1a: Jolteon
+L	ab_13_4	369	|cant|p2a: Magneton|slp
+L	ab_13_4	370	|
+L	ab_13_4	371	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	372	|-damage|p1a: Jolteon|272/290|[from] Sandstorm
+L	ab_13_4	373	|-heal|p1a: Jolteon|290/290|[from] item: Leftovers
+L	ab_13_4	374	|upkeep
+L	ab_13_4	375	|turn|27
+L	ab_13_4	376	|
+L	ab_13_4	377	|t:|<NORMALIZED>
+L	ab_13_4	378	|switch|p1a: Cloyster|Cloyster, M|259/259
+L	ab_13_4	379	|cant|p2a: Magneton|slp
+L	ab_13_4	380	|
+L	ab_13_4	381	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	382	|-damage|p1a: Cloyster|243/259|[from] Sandstorm
+L	ab_13_4	383	|-heal|p1a: Cloyster|259/259|[from] item: Leftovers
+L	ab_13_4	384	|upkeep
+L	ab_13_4	385	|turn|28
+L	ab_13_4	386	|
+L	ab_13_4	387	|t:|<NORMALIZED>
+L	ab_13_4	388	|move|p1a: Cloyster|Spikes|p2a: Magneton
+L	ab_13_4	389	|-sidestart|p2: P2|Spikes
+L	ab_13_4	390	|-curestatus|p2a: Magneton|slp|[msg]
+L	ab_13_4	391	|move|p2a: Magneton|Hidden Power|p1a: Cloyster
+L	ab_13_4	392	|-damage|p1a: Cloyster|141/259
+L	ab_13_4	393	|
+L	ab_13_4	394	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	395	|-damage|p1a: Cloyster|125/259|[from] Sandstorm
+L	ab_13_4	396	|-heal|p1a: Cloyster|141/259|[from] item: Leftovers
+L	ab_13_4	397	|upkeep
+L	ab_13_4	398	|turn|29
+L	ab_13_4	399	|
+L	ab_13_4	400	|t:|<NORMALIZED>
+L	ab_13_4	401	|switch|p1a: Jolteon|Jolteon, M|290/290
+L	ab_13_4	402	|move|p2a: Magneton|Thunderbolt|p1a: Jolteon
+L	ab_13_4	403	|-immune|p1a: Jolteon|[from] ability: Volt Absorb
+L	ab_13_4	404	|
+L	ab_13_4	405	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	406	|-damage|p1a: Jolteon|272/290|[from] Sandstorm
+L	ab_13_4	407	|-heal|p1a: Jolteon|290/290|[from] item: Leftovers
+L	ab_13_4	408	|upkeep
+L	ab_13_4	409	|turn|30
+L	ab_13_4	410	|
+L	ab_13_4	411	|t:|<NORMALIZED>
+L	ab_13_4	412	|move|p1a: Jolteon|Thunder Wave|p2a: Magneton
+L	ab_13_4	413	|-status|p2a: Magneton|par
+L	ab_13_4	414	|move|p2a: Magneton|Thunderbolt|p1a: Jolteon
+L	ab_13_4	415	|-immune|p1a: Jolteon|[from] ability: Volt Absorb
+L	ab_13_4	416	|
+L	ab_13_4	417	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	418	|-damage|p1a: Jolteon|272/290|[from] Sandstorm
+L	ab_13_4	419	|-heal|p1a: Jolteon|290/290|[from] item: Leftovers
+L	ab_13_4	420	|upkeep
+L	ab_13_4	421	|turn|31
+L	ab_13_4	422	|
+L	ab_13_4	423	|t:|<NORMALIZED>
+L	ab_13_4	424	|switch|p2a: Jolteon|Jolteon, M|273/273
+L	ab_13_4	425	|-damage|p2a: Jolteon|239/273|[from] Spikes
+L	ab_13_4	426	|move|p1a: Jolteon|Hidden Power|p2a: Jolteon
+L	ab_13_4	427	|-damage|p2a: Jolteon|171/273
+L	ab_13_4	428	|
+L	ab_13_4	429	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	430	|-damage|p1a: Jolteon|272/290|[from] Sandstorm
+L	ab_13_4	431	|-damage|p2a: Jolteon|154/273|[from] Sandstorm
+L	ab_13_4	432	|-heal|p1a: Jolteon|290/290|[from] item: Leftovers
+L	ab_13_4	433	|-heal|p2a: Jolteon|171/273|[from] item: Leftovers
+L	ab_13_4	434	|upkeep
+L	ab_13_4	435	|turn|32
+L	ab_13_4	436	|
+L	ab_13_4	437	|t:|<NORMALIZED>
+L	ab_13_4	438	|move|p1a: Jolteon|Hidden Power|p2a: Jolteon
+L	ab_13_4	439	|-damage|p2a: Jolteon|101/273
+L	ab_13_4	440	|move|p2a: Jolteon|Thunder Wave|p1a: Jolteon
+L	ab_13_4	441	|-status|p1a: Jolteon|par
+L	ab_13_4	442	|
+L	ab_13_4	443	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	444	|-damage|p2a: Jolteon|84/273|[from] Sandstorm
+L	ab_13_4	445	|-damage|p1a: Jolteon|272/290 par|[from] Sandstorm
+L	ab_13_4	446	|-heal|p2a: Jolteon|101/273|[from] item: Leftovers
+L	ab_13_4	447	|-heal|p1a: Jolteon|290/290 par|[from] item: Leftovers
+L	ab_13_4	448	|upkeep
+L	ab_13_4	449	|turn|33
+L	ab_13_4	450	|
+L	ab_13_4	451	|t:|<NORMALIZED>
+L	ab_13_4	452	|switch|p1a: Cloyster|Cloyster, M|141/259
+L	ab_13_4	453	|move|p2a: Jolteon|Thunderbolt|p1a: Cloyster
+L	ab_13_4	454	|-supereffective|p1a: Cloyster
+L	ab_13_4	455	|-damage|p1a: Cloyster|0 fnt
+L	ab_13_4	456	|faint|p1a: Cloyster
+L	ab_13_4	457	|
+L	ab_13_4	458	|t:|<NORMALIZED>
+L	ab_13_4	459	|switch|p1a: Jolteon|Jolteon, M|290/290 par
+L	ab_13_4	460	|
+L	ab_13_4	461	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	462	|-damage|p2a: Jolteon|84/273|[from] Sandstorm
+L	ab_13_4	463	|-damage|p1a: Jolteon|272/290 par|[from] Sandstorm
+L	ab_13_4	464	|-heal|p2a: Jolteon|101/273|[from] item: Leftovers
+L	ab_13_4	465	|-heal|p1a: Jolteon|290/290 par|[from] item: Leftovers
+L	ab_13_4	466	|upkeep
+L	ab_13_4	467	|turn|34
+L	ab_13_4	468	|
+L	ab_13_4	469	|t:|<NORMALIZED>
+L	ab_13_4	470	|move|p2a: Jolteon|Hidden Power|p1a: Jolteon
+L	ab_13_4	471	|-damage|p1a: Jolteon|207/290 par
+L	ab_13_4	472	|move|p1a: Jolteon|Thunder Wave|p2a: Jolteon
+L	ab_13_4	473	|-status|p2a: Jolteon|par
+L	ab_13_4	474	|
+L	ab_13_4	475	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	476	|-damage|p2a: Jolteon|84/273 par|[from] Sandstorm
+L	ab_13_4	477	|-damage|p1a: Jolteon|189/290 par|[from] Sandstorm
+L	ab_13_4	478	|-heal|p1a: Jolteon|207/290 par|[from] item: Leftovers
+L	ab_13_4	479	|-heal|p2a: Jolteon|101/273 par|[from] item: Leftovers
+L	ab_13_4	480	|upkeep
+L	ab_13_4	481	|turn|35
+L	ab_13_4	482	|
+L	ab_13_4	483	|t:|<NORMALIZED>
+L	ab_13_4	484	|move|p1a: Jolteon|Thunderbolt|p2a: Jolteon
+L	ab_13_4	485	|-heal|p2a: Jolteon|169/273 par|[from] ability: Volt Absorb|[of] p1a: Jolteon
+L	ab_13_4	486	|move|p2a: Jolteon|Wish|p2a: Jolteon
+L	ab_13_4	487	|
+L	ab_13_4	488	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	489	|-damage|p2a: Jolteon|152/273 par|[from] Sandstorm
+L	ab_13_4	490	|-damage|p1a: Jolteon|189/290 par|[from] Sandstorm
+L	ab_13_4	491	|-heal|p1a: Jolteon|207/290 par|[from] item: Leftovers
+L	ab_13_4	492	|-heal|p2a: Jolteon|169/273 par|[from] item: Leftovers
+L	ab_13_4	493	|upkeep
+L	ab_13_4	494	|turn|36
+L	ab_13_4	495	|
+L	ab_13_4	496	|t:|<NORMALIZED>
+L	ab_13_4	497	|move|p2a: Jolteon|Hidden Power|p1a: Jolteon
+L	ab_13_4	498	|-damage|p1a: Jolteon|123/290 par
+L	ab_13_4	499	|move|p1a: Jolteon|Thunder Wave|p2a: Jolteon
+L	ab_13_4	500	|-fail|p2a: Jolteon|par
+L	ab_13_4	501	|
+L	ab_13_4	502	|-heal|p2a: Jolteon|273/273 par|[from] move: Wish|[wisher] Jolteon
+L	ab_13_4	503	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	504	|-damage|p2a: Jolteon|256/273 par|[from] Sandstorm
+L	ab_13_4	505	|-damage|p1a: Jolteon|105/290 par|[from] Sandstorm
+L	ab_13_4	506	|-heal|p1a: Jolteon|123/290 par|[from] item: Leftovers
+L	ab_13_4	507	|-heal|p2a: Jolteon|273/273 par|[from] item: Leftovers
+L	ab_13_4	508	|upkeep
+L	ab_13_4	509	|turn|37
+L	ab_13_4	510	|
+L	ab_13_4	511	|t:|<NORMALIZED>
+L	ab_13_4	512	|move|p2a: Jolteon|Hidden Power|p1a: Jolteon
+L	ab_13_4	513	|-damage|p1a: Jolteon|48/290 par
+L	ab_13_4	514	|move|p1a: Jolteon|Roar|p2a: Jolteon
+L	ab_13_4	515	|drag|p2a: Magneton|Magneton|243/243 par
+L	ab_13_4	516	|-damage|p2a: Magneton|213/243 par|[from] Spikes
+L	ab_13_4	517	|
+L	ab_13_4	518	|-weather|Sandstorm|[upkeep]
+L	ab_13_4	519	|-damage|p1a: Jolteon|30/290 par|[from] Sandstorm
+L	ab_13_4	520	|-heal|p1a: Jolteon|48/290 par|[from] item: Leftovers
+L	ab_13_4	521	|upkeep
+L	ab_13_4	522	|turn|38
+L	ab_13_4	523	|
+L	ab_13_4	524	|t:|<NORMALIZED>
+L	ab_13_4	525	|move|p1a: Jolteon|Thunder Wave|p2a: Magneton
+L	ab_13_4	526	|-fail|p2a: Magneton|par
+L	ab_13_4	527	|move|p2a: Magneton|Hidden Power|p1a: Jolteon
+L	ab_13_4	528	|-damage|p1a: Jolteon|0 fnt
+L	ab_13_4	529	|faint|p1a: Jolteon
+L	ab_13_4	530	|
+L	ab_13_4	531	|win|P2

@@ -1,0 +1,396 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=424242 run_id=rmroh04is chunk=8
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_8_4
+TEAM	ab_8_4	p1	Zapdos||Leftovers|Pressure|Thunderbolt,HiddenPowerGrass,ThunderWave,BatonPass|Timid|4,,,252,,252|N|,2,,30,,|||,Grass,,,,]Swampert||Leftovers|Torrent|HydroPump,IceBeam,Earthquake,FocusPunch|Rash|,28,,252,,228|M||||]Tyranitar||ChoiceBand|SandStream|HiddenPowerBug,FocusPunch,Earthquake,RockSlide|Adamant|176,192,,,,140|M|,,,,30,30|||,Bug,,,,]Jirachi||Leftovers|SereneGrace|BodySlam,FirePunch,Wish,Protect|Sassy|252,,60,20,176,|N||||]Camerupt||Leftovers|MagmaArmor|Substitute,Earthquake,Explosion,Overheat|Brave|224,176,,108,,|M||||]Salamence||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,Earthquake,RockSlide|Adamant|,248,,,116,144|M|,,,30,30,30|||,Flying,,,,
+TEAM	ab_8_4	p2	Gengar||Leftovers|Levitate|Thunderbolt,IcePunch,Explosion,Hypnosis|Naive|56,44,52,148,8,200|M||||]Dugtrio||ChoiceBand|ArenaTrap|AerialAce,Earthquake,HiddenPowerBug,RockSlide|Jolly|,252,,,4,252|M|,30,30,,30,|||,Bug,,,,]Snorlax||Leftovers|Immunity|Return,ShadowBall,Curse,SelfDestruct|Adamant|80,252,136,,28,12|M||||]Raikou||SalacBerry|Pressure|Thunderbolt,HiddenPowerIce,CalmMind,Endure|Modest|,,4,252,,252|N|,2,30,,,|||,Ice,,,,]Ludicolo||Leftovers|SwiftSwim|HiddenPowerGrass,HydroPump,IceBeam,RainDance|Modest|104,,,252,,152|M|,2,,30,,|||,Grass,,,,]Jirachi||Leftovers|SereneGrace|Psychic,FirePunch,HiddenPowerGrass,CalmMind|Modest|248,,40,152,,68|N|,2,,30,,|||,Grass,,,,
+FMT	ab_8_4	gen3ou
+INIT	ab_8_4	23465,52684,16934,35996	1332863078
+DEC	ab_8_4	0	move	0	0	m1	m0	21123,31235,14928,14084	Zapdos	234	322	0	-	0	0	0	0	0	0	6	Gengar	238	275	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_8_4	1	move	0	0	m3	m2	62099,21643,26518,56433	Zapdos	0	322	1	fnt	0	0	0	0	0	0	5	Gengar	0	275	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_8_4	2	switch	1	1	s5	s2	18416,49956,19899,4184	Salamence	331	331	0	-	0	0	0	0	0	0	5	Snorlax	481	481	0	-	-1	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_8_4	3	move	0	0	m1	m2	56482,30769,59210,41311	Salamence	331	331	0	-	0	0	0	0	0	0	5	Snorlax	344	481	0	-	0	1	0	0	-1	0	5	p1	0	0	0	0	0
+DEC	ab_8_4	4	move	0	0	m2	m0	4434,32481,32942,56532	Salamence	122	331	0	-	0	0	0	0	0	0	5	Snorlax	274	481	0	-	0	1	0	0	-1	0	5	p1	0	0	0	1	0
+DEC	ab_8_4	5	move	0	0	m1	s4	3488,55995,59183,32001	Salamence	122	331	0	-	0	0	0	0	0	0	5	Ludicolo	0	327	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_8_4	6	switch	0	1	-	s3	2596,4680,30415,31016	Salamence	142	331	0	-	0	0	0	0	0	0	5	Raikou	321	321	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_8_4	7	move	0	0	m3	m3	18515,3374,15797,25486	Salamence	162	331	0	-	0	0	0	0	0	0	5	Raikou	185	321	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	1
+DEC	ab_8_4	8	move	0	0	m1	s1	63816,25085,51687,47891	Salamence	162	331	0	-	0	0	0	0	0	0	5	Dugtrio	0	211	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_8_4	9	switch	0	1	-	s1	34213,57838,52533,38978	Salamence	182	331	0	-	0	0	0	0	0	0	5	Raikou	185	321	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_8_4	10	move	0	0	m3	s4	62360,33642,18789,55697	Salamence	202	331	0	-	0	0	0	0	0	0	5	Snorlax	194	481	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_8_4	11	move	0	0	m0	m0	11195,46719,16305,27626	Salamence	0	331	1	fnt	0	0	0	0	0	0	4	Snorlax	194	481	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_8_4	12	switch	1	0	s3	-	62234,20988,48972,27669	Jirachi	404	404	0	-	0	0	0	0	0	0	4	Snorlax	224	481	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_8_4	13	move	0	0	m2	m3	17368,49545,7905,13022	Jirachi	65	404	0	-	0	0	0	0	0	0	4	Snorlax	0	481	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_8_4	14	switch	0	1	-	s4	32677,12755,48970,32345	Jirachi	90	404	0	-	0	0	0	0	0	0	4	Raikou	185	321	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_8_4	15	move	0	0	s4	m2	9194,52829,22167,6368	Camerupt	337	337	0	-	0	0	0	0	0	0	4	Raikou	185	321	0	-	0	0	1	1	0	0	2	p1	0	0	0	0	0
+DEC	ab_8_4	16	move	0	0	s1	m1	52063,41684,32594,60532	Swampert	204	341	0	-	0	0	0	0	0	0	4	Raikou	185	321	0	-	0	0	1	1	0	0	2	p1	0	0	0	0	0
+DEC	ab_8_4	17	move	0	0	m1	m3	34976,10118,13504,44090	Swampert	225	341	0	-	0	0	0	0	0	0	4	Raikou	117	321	0	-	0	0	1	1	0	0	2	p2	0	0	0	0	1
+DEC	ab_8_4	18	move	0	0	m2	m3	52949,59295,43095,53168	Swampert	246	341	0	-	0	0	0	0	0	0	4	Raikou	1	321	0	-	0	0	1	1	1	0	2	p2	0	0	0	0	1
+DEC	ab_8_4	19	move	0	0	s4	m1	35563,11928,30258,22084	Jirachi	71	404	0	-	0	0	0	0	0	0	4	Raikou	1	321	0	-	0	0	1	1	1	0	2	p1	0	0	0	0	0
+DEC	ab_8_4	20	move	0	0	m3	m1	57475,38066,37583,50865	Jirachi	96	404	0	-	0	0	0	0	0	0	4	Raikou	1	321	0	-	0	0	1	1	1	0	2	p1	0	0	0	0	0
+DEC	ab_8_4	21	move	0	0	m0	m3	48087,37282,21712,60831	Jirachi	121	404	0	-	0	0	0	0	0	0	4	Raikou	1	321	0	-	0	0	1	1	1	0	2	p2	0	0	0	0	1
+DEC	ab_8_4	22	move	0	0	m0	s5	18865,60424,18070,11133	Jirachi	146	404	0	-	0	0	0	0	0	0	4	Jirachi	398	403	0	par	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_8_4	23	move	0	0	m0	m0	16186,56293,47982,1711	Jirachi	143	404	0	-	0	0	0	0	0	0	4	Jirachi	393	403	0	par	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_8_4	24	move	0	0	m1	m0	59349,33761,27548,41937	Jirachi	142	404	0	-	0	0	0	-1	0	0	4	Jirachi	304	403	0	par	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_8_4	25	move	0	0	m0	m0	17970,2746,30046,14179	Jirachi	127	404	0	-	0	0	0	-1	0	0	4	Jirachi	297	403	0	par	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_8_4	26	move	0	0	m2	m1	50779,50002,14332,52294	Jirachi	0	404	1	fnt	0	0	0	0	0	0	3	Jirachi	297	403	0	par	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_8_4	27	switch	1	0	s4	-	25679,55067,32286,44129	Swampert	267	341	0	-	0	0	0	0	0	0	3	Jirachi	322	403	0	par	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_8_4	28	move	0	0	m2	m2	23445,39966,9120,29550	Swampert	0	341	1	fnt	0	0	0	0	0	0	2	Jirachi	53	403	0	par	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_8_4	29	switch	1	0	s1	-	65335,42864,31804,1833	Camerupt	337	337	0	-	0	0	0	0	0	0	2	Jirachi	78	403	0	par	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_8_4	30	move	0	0	s2	m1	13267,15349,4746,24535	Tyranitar	349	385	0	-	0	0	0	0	0	0	2	Jirachi	103	403	0	par	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_8_4	31	move	0	0	m1	s5	47305,39523,24767,9944	Tyranitar	349	385	0	-	0	0	0	0	0	0	2	Raikou	0	321	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_8_4	32	switch	0	1	-	s5	47218,64720,42818,35323	Tyranitar	349	385	0	-	0	0	0	0	0	0	2	Jirachi	128	403	0	par	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_8_4	33	move	0	0	m1	m3	43299,3421,29616,63967	Tyranitar	349	385	0	-	0	0	0	0	0	0	2	Jirachi	0	403	1	par	0	0	0	0	0	0	0	p2	0	0	0	0	0
+END	ab_8_4	1	p1
+L	ab_8_4	0	|t:|<NORMALIZED>
+L	ab_8_4	1	|gametype|singles
+L	ab_8_4	2	|player|p1|P1||
+L	ab_8_4	3	|player|p2|P2||
+L	ab_8_4	4	|gen|3
+L	ab_8_4	5	|tier|[Gen 3] OU
+L	ab_8_4	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_8_4	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_8_4	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_8_4	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_8_4	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_8_4	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_8_4	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_8_4	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_8_4	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_8_4	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_8_4	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_8_4	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_8_4	18	|
+L	ab_8_4	19	|t:|<NORMALIZED>
+L	ab_8_4	20	|teamsize|p1|6
+L	ab_8_4	21	|teamsize|p2|6
+L	ab_8_4	22	|start
+L	ab_8_4	23	|switch|p1a: Zapdos|Zapdos|322/322
+L	ab_8_4	24	|switch|p2a: Gengar|Gengar, M|275/275
+L	ab_8_4	25	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_8_4	26	|turn|1
+L	ab_8_4	27	|
+L	ab_8_4	28	|t:|<NORMALIZED>
+L	ab_8_4	29	|move|p2a: Gengar|Thunderbolt|p1a: Zapdos
+L	ab_8_4	30	|-damage|p1a: Zapdos|214/322
+L	ab_8_4	31	|move|p1a: Zapdos|Hidden Power|p2a: Gengar
+L	ab_8_4	32	|-resisted|p2a: Gengar
+L	ab_8_4	33	|-damage|p2a: Gengar|221/275
+L	ab_8_4	34	|
+L	ab_8_4	35	|-heal|p2a: Gengar|238/275|[from] item: Leftovers
+L	ab_8_4	36	|-heal|p1a: Zapdos|234/322|[from] item: Leftovers
+L	ab_8_4	37	|upkeep
+L	ab_8_4	38	|turn|2
+L	ab_8_4	39	|
+L	ab_8_4	40	|t:|<NORMALIZED>
+L	ab_8_4	41	|move|p2a: Gengar|Explosion|p1a: Zapdos
+L	ab_8_4	42	|-damage|p1a: Zapdos|0 fnt
+L	ab_8_4	43	|faint|p2a: Gengar
+L	ab_8_4	44	|faint|p1a: Zapdos
+L	ab_8_4	45	|
+L	ab_8_4	46	|t:|<NORMALIZED>
+L	ab_8_4	47	|switch|p2a: Snorlax|Snorlax, M|481/481
+L	ab_8_4	48	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_8_4	49	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_8_4	50	|-unboost|p2a: Snorlax|atk|1
+L	ab_8_4	51	|
+L	ab_8_4	52	|upkeep
+L	ab_8_4	53	|turn|3
+L	ab_8_4	54	|
+L	ab_8_4	55	|t:|<NORMALIZED>
+L	ab_8_4	56	|move|p1a: Salamence|Hidden Power|p2a: Snorlax
+L	ab_8_4	57	|-damage|p2a: Snorlax|314/481
+L	ab_8_4	58	|move|p2a: Snorlax|Curse|p2a: Snorlax
+L	ab_8_4	59	|-unboost|p2a: Snorlax|spe|1
+L	ab_8_4	60	|-boost|p2a: Snorlax|atk|1
+L	ab_8_4	61	|-boost|p2a: Snorlax|def|1
+L	ab_8_4	62	|
+L	ab_8_4	63	|-heal|p2a: Snorlax|344/481|[from] item: Leftovers
+L	ab_8_4	64	|upkeep
+L	ab_8_4	65	|turn|4
+L	ab_8_4	66	|
+L	ab_8_4	67	|t:|<NORMALIZED>
+L	ab_8_4	68	|move|p1a: Salamence|Earthquake|p2a: Snorlax
+L	ab_8_4	69	|-damage|p2a: Snorlax|244/481
+L	ab_8_4	70	|move|p2a: Snorlax|Return|p1a: Salamence
+L	ab_8_4	71	|-damage|p1a: Salamence|102/331
+L	ab_8_4	72	|
+L	ab_8_4	73	|-heal|p1a: Salamence|122/331|[from] item: Leftovers
+L	ab_8_4	74	|-heal|p2a: Snorlax|274/481|[from] item: Leftovers
+L	ab_8_4	75	|upkeep
+L	ab_8_4	76	|turn|5
+L	ab_8_4	77	|
+L	ab_8_4	78	|t:|<NORMALIZED>
+L	ab_8_4	79	|switch|p2a: Ludicolo|Ludicolo, M|327/327
+L	ab_8_4	80	|move|p1a: Salamence|Hidden Power|p2a: Ludicolo
+L	ab_8_4	81	|-supereffective|p2a: Ludicolo
+L	ab_8_4	82	|-damage|p2a: Ludicolo|0 fnt
+L	ab_8_4	83	|faint|p2a: Ludicolo
+L	ab_8_4	84	|
+L	ab_8_4	85	|t:|<NORMALIZED>
+L	ab_8_4	86	|switch|p2a: Raikou|Raikou|321/321
+L	ab_8_4	87	|-ability|p2a: Raikou|Pressure|[silent]
+L	ab_8_4	88	|
+L	ab_8_4	89	|-heal|p1a: Salamence|142/331|[from] item: Leftovers
+L	ab_8_4	90	|upkeep
+L	ab_8_4	91	|turn|6
+L	ab_8_4	92	|
+L	ab_8_4	93	|t:|<NORMALIZED>
+L	ab_8_4	94	|move|p2a: Raikou|Endure|p2a: Raikou
+L	ab_8_4	95	|-singleturn|p2a: Raikou|move: Endure
+L	ab_8_4	96	|move|p1a: Salamence|Rock Slide|p2a: Raikou
+L	ab_8_4	97	|-damage|p2a: Raikou|185/321
+L	ab_8_4	98	|
+L	ab_8_4	99	|-heal|p1a: Salamence|162/331|[from] item: Leftovers
+L	ab_8_4	100	|upkeep
+L	ab_8_4	101	|turn|7
+L	ab_8_4	102	|
+L	ab_8_4	103	|t:|<NORMALIZED>
+L	ab_8_4	104	|switch|p2a: Dugtrio|Dugtrio, M|211/211
+L	ab_8_4	105	|move|p1a: Salamence|Hidden Power|p2a: Dugtrio
+L	ab_8_4	106	|-damage|p2a: Dugtrio|0 fnt
+L	ab_8_4	107	|faint|p2a: Dugtrio
+L	ab_8_4	108	|
+L	ab_8_4	109	|t:|<NORMALIZED>
+L	ab_8_4	110	|switch|p2a: Raikou|Raikou|185/321
+L	ab_8_4	111	|-ability|p2a: Raikou|Pressure|[silent]
+L	ab_8_4	112	|
+L	ab_8_4	113	|-heal|p1a: Salamence|182/331|[from] item: Leftovers
+L	ab_8_4	114	|upkeep
+L	ab_8_4	115	|turn|8
+L	ab_8_4	116	|
+L	ab_8_4	117	|t:|<NORMALIZED>
+L	ab_8_4	118	|switch|p2a: Snorlax|Snorlax, M|274/481
+L	ab_8_4	119	|move|p1a: Salamence|Rock Slide|p2a: Snorlax
+L	ab_8_4	120	|-damage|p2a: Snorlax|164/481
+L	ab_8_4	121	|
+L	ab_8_4	122	|-heal|p1a: Salamence|202/331|[from] item: Leftovers
+L	ab_8_4	123	|-heal|p2a: Snorlax|194/481|[from] item: Leftovers
+L	ab_8_4	124	|upkeep
+L	ab_8_4	125	|turn|9
+L	ab_8_4	126	|
+L	ab_8_4	127	|t:|<NORMALIZED>
+L	ab_8_4	128	|move|p1a: Salamence|Dragon Dance|p1a: Salamence
+L	ab_8_4	129	|-boost|p1a: Salamence|atk|1
+L	ab_8_4	130	|-boost|p1a: Salamence|spe|1
+L	ab_8_4	131	|move|p2a: Snorlax|Return|p1a: Salamence
+L	ab_8_4	132	|-damage|p1a: Salamence|0 fnt
+L	ab_8_4	133	|faint|p1a: Salamence
+L	ab_8_4	134	|
+L	ab_8_4	135	|t:|<NORMALIZED>
+L	ab_8_4	136	|switch|p1a: Jirachi|Jirachi|404/404
+L	ab_8_4	137	|
+L	ab_8_4	138	|-heal|p2a: Snorlax|224/481|[from] item: Leftovers
+L	ab_8_4	139	|upkeep
+L	ab_8_4	140	|turn|10
+L	ab_8_4	141	|
+L	ab_8_4	142	|t:|<NORMALIZED>
+L	ab_8_4	143	|move|p1a: Jirachi|Wish|p1a: Jirachi
+L	ab_8_4	144	|move|p2a: Snorlax|Self-Destruct|p1a: Jirachi
+L	ab_8_4	145	|-resisted|p1a: Jirachi
+L	ab_8_4	146	|-damage|p1a: Jirachi|65/404
+L	ab_8_4	147	|faint|p2a: Snorlax
+L	ab_8_4	148	|
+L	ab_8_4	149	|t:|<NORMALIZED>
+L	ab_8_4	150	|switch|p2a: Raikou|Raikou|185/321
+L	ab_8_4	151	|-ability|p2a: Raikou|Pressure|[silent]
+L	ab_8_4	152	|
+L	ab_8_4	153	|-heal|p1a: Jirachi|90/404|[from] item: Leftovers
+L	ab_8_4	154	|upkeep
+L	ab_8_4	155	|turn|11
+L	ab_8_4	156	|
+L	ab_8_4	157	|t:|<NORMALIZED>
+L	ab_8_4	158	|switch|p1a: Camerupt|Camerupt, M|337/337
+L	ab_8_4	159	|move|p2a: Raikou|Calm Mind|p2a: Raikou
+L	ab_8_4	160	|-boost|p2a: Raikou|spa|1
+L	ab_8_4	161	|-boost|p2a: Raikou|spd|1
+L	ab_8_4	162	|
+L	ab_8_4	163	|upkeep
+L	ab_8_4	164	|turn|12
+L	ab_8_4	165	|
+L	ab_8_4	166	|t:|<NORMALIZED>
+L	ab_8_4	167	|switch|p1a: Swampert|Swampert, M|341/341
+L	ab_8_4	168	|move|p2a: Raikou|Hidden Power|p1a: Swampert
+L	ab_8_4	169	|-damage|p1a: Swampert|183/341
+L	ab_8_4	170	|
+L	ab_8_4	171	|-heal|p1a: Swampert|204/341|[from] item: Leftovers
+L	ab_8_4	172	|upkeep
+L	ab_8_4	173	|turn|13
+L	ab_8_4	174	|
+L	ab_8_4	175	|t:|<NORMALIZED>
+L	ab_8_4	176	|move|p2a: Raikou|Endure|p2a: Raikou
+L	ab_8_4	177	|-singleturn|p2a: Raikou|move: Endure
+L	ab_8_4	178	|move|p1a: Swampert|Ice Beam|p2a: Raikou
+L	ab_8_4	179	|-damage|p2a: Raikou|117/321
+L	ab_8_4	180	|
+L	ab_8_4	181	|-heal|p1a: Swampert|225/341|[from] item: Leftovers
+L	ab_8_4	182	|upkeep
+L	ab_8_4	183	|turn|14
+L	ab_8_4	184	|
+L	ab_8_4	185	|t:|<NORMALIZED>
+L	ab_8_4	186	|move|p2a: Raikou|Endure|p2a: Raikou
+L	ab_8_4	187	|-singleturn|p2a: Raikou|move: Endure
+L	ab_8_4	188	|move|p1a: Swampert|Earthquake|p2a: Raikou
+L	ab_8_4	189	|-supereffective|p2a: Raikou
+L	ab_8_4	190	|-crit|p2a: Raikou
+L	ab_8_4	191	|-activate|p2a: Raikou|move: Endure
+L	ab_8_4	192	|-damage|p2a: Raikou|1/321
+L	ab_8_4	193	|
+L	ab_8_4	194	|-enditem|p2a: Raikou|Salac Berry|[eat]
+L	ab_8_4	195	|-boost|p2a: Raikou|spe|1|[from] item: Salac Berry
+L	ab_8_4	196	|-heal|p1a: Swampert|246/341|[from] item: Leftovers
+L	ab_8_4	197	|upkeep
+L	ab_8_4	198	|turn|15
+L	ab_8_4	199	|
+L	ab_8_4	200	|t:|<NORMALIZED>
+L	ab_8_4	201	|switch|p1a: Jirachi|Jirachi|90/404
+L	ab_8_4	202	|move|p2a: Raikou|Hidden Power|p1a: Jirachi
+L	ab_8_4	203	|-resisted|p1a: Jirachi
+L	ab_8_4	204	|-damage|p1a: Jirachi|46/404
+L	ab_8_4	205	|
+L	ab_8_4	206	|-heal|p1a: Jirachi|71/404|[from] item: Leftovers
+L	ab_8_4	207	|upkeep
+L	ab_8_4	208	|turn|16
+L	ab_8_4	209	|
+L	ab_8_4	210	|t:|<NORMALIZED>
+L	ab_8_4	211	|move|p1a: Jirachi|Protect|p1a: Jirachi
+L	ab_8_4	212	|-singleturn|p1a: Jirachi|Protect
+L	ab_8_4	213	|move|p2a: Raikou|Hidden Power|p1a: Jirachi
+L	ab_8_4	214	|-activate|p1a: Jirachi|Protect
+L	ab_8_4	215	|
+L	ab_8_4	216	|-heal|p1a: Jirachi|96/404|[from] item: Leftovers
+L	ab_8_4	217	|upkeep
+L	ab_8_4	218	|turn|17
+L	ab_8_4	219	|
+L	ab_8_4	220	|t:|<NORMALIZED>
+L	ab_8_4	221	|move|p2a: Raikou|Endure|p2a: Raikou
+L	ab_8_4	222	|-singleturn|p2a: Raikou|move: Endure
+L	ab_8_4	223	|move|p1a: Jirachi|Body Slam|p2a: Raikou
+L	ab_8_4	224	|-activate|p2a: Raikou|move: Endure
+L	ab_8_4	225	|-damage|p2a: Raikou|1/321
+L	ab_8_4	226	|
+L	ab_8_4	227	|-heal|p1a: Jirachi|121/404|[from] item: Leftovers
+L	ab_8_4	228	|upkeep
+L	ab_8_4	229	|turn|18
+L	ab_8_4	230	|
+L	ab_8_4	231	|t:|<NORMALIZED>
+L	ab_8_4	232	|switch|p2a: Jirachi|Jirachi|403/403
+L	ab_8_4	233	|move|p1a: Jirachi|Body Slam|p2a: Jirachi
+L	ab_8_4	234	|-resisted|p2a: Jirachi
+L	ab_8_4	235	|-damage|p2a: Jirachi|373/403
+L	ab_8_4	236	|-status|p2a: Jirachi|par
+L	ab_8_4	237	|
+L	ab_8_4	238	|-heal|p1a: Jirachi|146/404|[from] item: Leftovers
+L	ab_8_4	239	|-heal|p2a: Jirachi|398/403 par|[from] item: Leftovers
+L	ab_8_4	240	|upkeep
+L	ab_8_4	241	|turn|19
+L	ab_8_4	242	|
+L	ab_8_4	243	|t:|<NORMALIZED>
+L	ab_8_4	244	|move|p1a: Jirachi|Body Slam|p2a: Jirachi
+L	ab_8_4	245	|-resisted|p2a: Jirachi
+L	ab_8_4	246	|-damage|p2a: Jirachi|368/403 par
+L	ab_8_4	247	|move|p2a: Jirachi|Psychic|p1a: Jirachi
+L	ab_8_4	248	|-resisted|p1a: Jirachi
+L	ab_8_4	249	|-damage|p1a: Jirachi|118/404
+L	ab_8_4	250	|
+L	ab_8_4	251	|-heal|p1a: Jirachi|143/404|[from] item: Leftovers
+L	ab_8_4	252	|-heal|p2a: Jirachi|393/403 par|[from] item: Leftovers
+L	ab_8_4	253	|upkeep
+L	ab_8_4	254	|turn|20
+L	ab_8_4	255	|
+L	ab_8_4	256	|t:|<NORMALIZED>
+L	ab_8_4	257	|move|p1a: Jirachi|Fire Punch|p2a: Jirachi
+L	ab_8_4	258	|-supereffective|p2a: Jirachi
+L	ab_8_4	259	|-damage|p2a: Jirachi|279/403 par
+L	ab_8_4	260	|move|p2a: Jirachi|Psychic|p1a: Jirachi
+L	ab_8_4	261	|-resisted|p1a: Jirachi
+L	ab_8_4	262	|-damage|p1a: Jirachi|117/404
+L	ab_8_4	263	|-unboost|p1a: Jirachi|spd|1
+L	ab_8_4	264	|
+L	ab_8_4	265	|-heal|p1a: Jirachi|142/404|[from] item: Leftovers
+L	ab_8_4	266	|-heal|p2a: Jirachi|304/403 par|[from] item: Leftovers
+L	ab_8_4	267	|upkeep
+L	ab_8_4	268	|turn|21
+L	ab_8_4	269	|
+L	ab_8_4	270	|t:|<NORMALIZED>
+L	ab_8_4	271	|move|p1a: Jirachi|Body Slam|p2a: Jirachi
+L	ab_8_4	272	|-resisted|p2a: Jirachi
+L	ab_8_4	273	|-damage|p2a: Jirachi|272/403 par
+L	ab_8_4	274	|move|p2a: Jirachi|Psychic|p1a: Jirachi
+L	ab_8_4	275	|-resisted|p1a: Jirachi
+L	ab_8_4	276	|-damage|p1a: Jirachi|102/404
+L	ab_8_4	277	|
+L	ab_8_4	278	|-heal|p1a: Jirachi|127/404|[from] item: Leftovers
+L	ab_8_4	279	|-heal|p2a: Jirachi|297/403 par|[from] item: Leftovers
+L	ab_8_4	280	|upkeep
+L	ab_8_4	281	|turn|22
+L	ab_8_4	282	|
+L	ab_8_4	283	|t:|<NORMALIZED>
+L	ab_8_4	284	|move|p1a: Jirachi|Wish|p1a: Jirachi
+L	ab_8_4	285	|move|p2a: Jirachi|Fire Punch|p1a: Jirachi
+L	ab_8_4	286	|-supereffective|p1a: Jirachi
+L	ab_8_4	287	|-damage|p1a: Jirachi|0 fnt
+L	ab_8_4	288	|faint|p1a: Jirachi
+L	ab_8_4	289	|
+L	ab_8_4	290	|t:|<NORMALIZED>
+L	ab_8_4	291	|switch|p1a: Swampert|Swampert, M|246/341
+L	ab_8_4	292	|
+L	ab_8_4	293	|-heal|p1a: Swampert|267/341|[from] item: Leftovers
+L	ab_8_4	294	|-heal|p2a: Jirachi|322/403 par|[from] item: Leftovers
+L	ab_8_4	295	|upkeep
+L	ab_8_4	296	|turn|23
+L	ab_8_4	297	|
+L	ab_8_4	298	|t:|<NORMALIZED>
+L	ab_8_4	299	|move|p1a: Swampert|Earthquake|p2a: Jirachi
+L	ab_8_4	300	|-supereffective|p2a: Jirachi
+L	ab_8_4	301	|-damage|p2a: Jirachi|53/403 par
+L	ab_8_4	302	|move|p2a: Jirachi|Hidden Power|p1a: Swampert
+L	ab_8_4	303	|-supereffective|p1a: Swampert
+L	ab_8_4	304	|-damage|p1a: Swampert|0 fnt
+L	ab_8_4	305	|faint|p1a: Swampert
+L	ab_8_4	306	|
+L	ab_8_4	307	|t:|<NORMALIZED>
+L	ab_8_4	308	|switch|p1a: Camerupt|Camerupt, M|337/337
+L	ab_8_4	309	|
+L	ab_8_4	310	|-heal|p2a: Jirachi|78/403 par|[from] item: Leftovers
+L	ab_8_4	311	|upkeep
+L	ab_8_4	312	|turn|24
+L	ab_8_4	313	|
+L	ab_8_4	314	|t:|<NORMALIZED>
+L	ab_8_4	315	|switch|p1a: Tyranitar|Tyranitar, M|385/385
+L	ab_8_4	316	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_8_4	317	|move|p2a: Jirachi|Fire Punch|p1a: Tyranitar
+L	ab_8_4	318	|-resisted|p1a: Tyranitar
+L	ab_8_4	319	|-damage|p1a: Tyranitar|349/385
+L	ab_8_4	320	|
+L	ab_8_4	321	|-weather|Sandstorm|[upkeep]
+L	ab_8_4	322	|-heal|p2a: Jirachi|103/403 par|[from] item: Leftovers
+L	ab_8_4	323	|upkeep
+L	ab_8_4	324	|turn|25
+L	ab_8_4	325	|
+L	ab_8_4	326	|t:|<NORMALIZED>
+L	ab_8_4	327	|-singleturn|p1a: Tyranitar|move: Focus Punch
+L	ab_8_4	328	|switch|p2a: Raikou|Raikou|1/321
+L	ab_8_4	329	|-ability|p2a: Raikou|Pressure|[silent]
+L	ab_8_4	330	|move|p1a: Tyranitar|Focus Punch|p2a: Raikou
+L	ab_8_4	331	|-damage|p2a: Raikou|0 fnt
+L	ab_8_4	332	|faint|p2a: Raikou
+L	ab_8_4	333	|
+L	ab_8_4	334	|t:|<NORMALIZED>
+L	ab_8_4	335	|switch|p2a: Jirachi|Jirachi|103/403 par
+L	ab_8_4	336	|
+L	ab_8_4	337	|-weather|Sandstorm|[upkeep]
+L	ab_8_4	338	|-heal|p2a: Jirachi|128/403 par|[from] item: Leftovers
+L	ab_8_4	339	|upkeep
+L	ab_8_4	340	|turn|26
+L	ab_8_4	341	|
+L	ab_8_4	342	|t:|<NORMALIZED>
+L	ab_8_4	343	|-singleturn|p1a: Tyranitar|move: Focus Punch
+L	ab_8_4	344	|move|p2a: Jirachi|Calm Mind|p2a: Jirachi
+L	ab_8_4	345	|-boost|p2a: Jirachi|spa|1
+L	ab_8_4	346	|-boost|p2a: Jirachi|spd|1
+L	ab_8_4	347	|move|p1a: Tyranitar|Focus Punch|p2a: Jirachi
+L	ab_8_4	348	|-damage|p2a: Jirachi|0 fnt
+L	ab_8_4	349	|faint|p2a: Jirachi
+L	ab_8_4	350	|
+L	ab_8_4	351	|win|P1

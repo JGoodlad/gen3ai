@@ -1,0 +1,360 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=424242 run_id=rmrobz89l chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_24
+TEAM	ab_0_24	p1	Blissey||Leftovers|NaturalCure|SeismicToss,IceBeam,Wish,SoftBoiled|Bold|224,,252,,,32|F||||]Metagross||Leftovers|ClearBody|MeteorMash,Earthquake,Agility,Explosion|Adamant|112,244,,,,152|N||||]Magneton||Magnet|MagnetPull|Thunderbolt,HiddenPowerFire,Toxic,ThunderWave|Modest|240,,,212,,56|N|,2,,30,,30|||,Fire,,,,]Salamence||ChoiceBand|Intimidate|BrickBreak,Earthquake,HiddenPowerFlying,RockSlide|Adamant|4,252,,,,252|M|30,30,30,30,30,|||,Flying,,,,]Milotic||Leftovers|MarvelScale|Surf,Toxic,Refresh,Recover|Bold|248,,212,,,48|M||||]Celebi||Leftovers|NaturalCure|HiddenPowerGrass,BatonPass,LeechSeed,Recover|Calm|248,,36,92,100,32|N|,2,,30,,|||,Grass,,,,
+TEAM	ab_0_24	p2	Suicune||SalacBerry|Pressure|CalmMind,HydroPump,IceBeam,Toxic|Modest|16,,,248,12,232|N|,0,,,,|||]Breloom||Leftovers|EffectSpore|Spore,FocusPunch,BrickBreak,MachPunch|Adamant|,252,,,68,188|M||||]Tyranitar||Leftovers|SandStream|HiddenPowerBug,RockSlide,Earthquake,FocusPunch|Adamant|200,192,,,,116|M|,30,30,,30,|||,Bug,,,,]Metagross||Leftovers|ClearBody|ThunderPunch,Psychic,Pursuit,Explosion|Modest|128,,,252,,128|N||||]Jirachi||Leftovers|SereneGrace|CalmMind,Psychic,FirePunch,HiddenPowerGrass|Modest|252,,44,148,,64|N|,2,,30,,|||,Grass,,,,]Salamence||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,FireBlast,BrickBreak|Lonely|,252,,48,,208|M|30,30,30,30,30,|||,Flying,,,,
+FMT	ab_0_24	gen3ou
+INIT	ab_0_24	46513,40516,28790,62951	2813142968
+DEC	ab_0_24	0	move	0	0	m0	m0	50925,23157,48489,46209	Blissey	707	707	0	-	0	0	0	0	0	0	6	Suicune	245	345	0	-	0	0	1	1	0	0	6	p2	0	0	1	0	0
+DEC	ab_0_24	1	move	0	0	m0	m2	45977,43679,63106,7663	Blissey	640	707	0	-	0	0	0	0	0	0	6	Suicune	145	345	0	-	0	0	1	1	0	0	6	p2	0	0	1	0	0
+DEC	ab_0_24	2	move	0	0	m1	m3	12763,11769,2849,19492	Blissey	640	707	0	tox	0	0	0	0	0	0	6	Suicune	127	345	0	-	0	0	1	1	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_24	3	move	0	0	m2	s2	623,23154,31492,60663	Blissey	552	707	0	tox	0	0	0	0	0	0	6	Tyranitar	391	391	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_24	4	move	0	0	m2	m0	39763,30077,7859,34075	Blissey	575	707	0	tox	0	0	0	0	0	0	6	Tyranitar	391	391	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_24	5	move	0	0	m2	m1	57588,3211,49534,50270	Blissey	128	707	0	tox	0	0	0	0	0	0	6	Tyranitar	391	391	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_24	6	move	0	0	m1	s5	65431,59819,4855,3090	Blissey	0	707	1	fnt	0	0	0	0	0	0	5	Salamence	34	330	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_24	7	switch	1	0	s2	-	479,1175,40338,989	Magneton	301	301	0	-	0	0	0	0	0	0	5	Salamence	34	330	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_24	8	move	0	0	m3	m2	37232,53452,25676,30138	Magneton	37	301	0	-	0	0	0	0	0	0	5	Salamence	34	330	0	par	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_24	9	move	0	0	m1	m3	45675,33387,29844,33807	Magneton	37	301	0	-	0	0	0	0	0	0	5	Salamence	0	330	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_24	10	switch	0	1	-	s2	19913,3193,27091,49070	Magneton	37	301	0	-	0	0	0	0	0	0	5	Suicune	106	345	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_24	11	move	0	0	m1	m1	30330,62747,28381,39603	Magneton	0	301	1	fnt	0	0	0	0	0	0	4	Suicune	106	345	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_24	12	switch	1	0	s5	-	5929,8473,5187,29282	Celebi	403	403	0	-	0	0	0	0	0	0	4	Suicune	85	345	0	-	0	0	0	0	1	0	5	none	0	0	0	0	0
+DEC	ab_0_24	13	move	0	0	m2	m2	22017,33085,41354,280	Celebi	278	403	0	-	0	0	0	0	0	0	4	Suicune	21	345	0	-	0	0	0	0	1	0	5	p2	0	0	0	0	0
+DEC	ab_0_24	14	move	0	0	m2	s1	60663,45234,3896,41482	Celebi	278	403	0	-	0	0	0	0	0	0	4	Breloom	261	261	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_24	15	move	0	0	s1	s1	60663,45234,3896,41482	Metagross	329	329	0	-	0	0	0	0	0	0	4	Suicune	0	345	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_24	16	switch	0	1	-	s5	5461,43839,63099,59061	Metagross	329	329	0	-	0	0	0	0	0	0	4	Tyranitar	391	391	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_24	17	move	0	0	m0	m0	1899,34094,43084,56061	Metagross	273	329	0	-	0	0	0	0	0	0	4	Tyranitar	62	391	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_24	18	move	0	0	m0	s1	32431,57949,30156,6746	Metagross	293	329	0	par	0	0	0	0	0	0	4	Breloom	0	261	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_24	19	switch	0	1	-	s3	50829,59934,25661,11845	Metagross	293	329	0	par	0	0	0	0	0	0	4	Metagross	333	333	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_24	20	move	0	0	m1	m1	30848,50350,40489,19300	Metagross	273	329	0	par	0	0	0	0	0	0	4	Metagross	152	333	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_24	21	move	0	0	s3	m1	43524,11623,24487,46427	Salamence	133	331	0	-	0	0	0	0	0	0	4	Metagross	172	333	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_24	22	move	0	0	m1	m2	53752,52444,57877,33996	Salamence	133	331	0	-	0	0	0	0	0	0	4	Metagross	0	333	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_24	23	switch	0	1	-	s1	27118,29499,26697,12095	Salamence	113	331	0	-	0	0	0	0	0	0	4	Tyranitar	86	391	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_24	24	move	0	0	m1	m2	35639,43978,52012,20896	Salamence	113	331	0	-	0	0	0	0	0	0	4	Tyranitar	0	391	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_24	25	switch	0	1	-	s4	24566,41602,39857,29411	Salamence	93	331	0	-	0	0	0	0	0	0	4	Jirachi	404	404	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_0_24	26	move	0	0	m1	m1	52064,20538,12560,44936	Salamence	0	331	1	fnt	0	0	0	0	0	0	3	Jirachi	9	404	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_24	27	switch	1	0	s3	-	45021,17761,30307,42859	Metagross	293	329	0	par	0	0	0	0	0	0	3	Jirachi	34	404	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_0_24	28	move	0	0	m1	m3	42011,51192,52321,22640	Metagross	258	329	0	par	0	0	0	0	0	0	3	Jirachi	0	404	1	-	0	0	0	0	0	0	0	p2	0	0	0	0	0
+END	ab_0_24	1	p1
+L	ab_0_24	0	|t:|<NORMALIZED>
+L	ab_0_24	1	|gametype|singles
+L	ab_0_24	2	|player|p1|P1||
+L	ab_0_24	3	|player|p2|P2||
+L	ab_0_24	4	|gen|3
+L	ab_0_24	5	|tier|[Gen 3] OU
+L	ab_0_24	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_24	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_0_24	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_0_24	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_0_24	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_0_24	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_0_24	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_0_24	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_0_24	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_0_24	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_0_24	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_0_24	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_0_24	18	|
+L	ab_0_24	19	|t:|<NORMALIZED>
+L	ab_0_24	20	|teamsize|p1|6
+L	ab_0_24	21	|teamsize|p2|6
+L	ab_0_24	22	|start
+L	ab_0_24	23	|switch|p1a: Blissey|Blissey, F|707/707
+L	ab_0_24	24	|switch|p2a: Suicune|Suicune|345/345
+L	ab_0_24	25	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_24	26	|turn|1
+L	ab_0_24	27	|
+L	ab_0_24	28	|t:|<NORMALIZED>
+L	ab_0_24	29	|move|p2a: Suicune|Calm Mind|p2a: Suicune
+L	ab_0_24	30	|-boost|p2a: Suicune|spa|1
+L	ab_0_24	31	|-boost|p2a: Suicune|spd|1
+L	ab_0_24	32	|move|p1a: Blissey|Seismic Toss|p2a: Suicune
+L	ab_0_24	33	|-damage|p2a: Suicune|245/345
+L	ab_0_24	34	|
+L	ab_0_24	35	|upkeep
+L	ab_0_24	36	|turn|2
+L	ab_0_24	37	|
+L	ab_0_24	38	|t:|<NORMALIZED>
+L	ab_0_24	39	|move|p2a: Suicune|Ice Beam|p1a: Blissey
+L	ab_0_24	40	|-damage|p1a: Blissey|596/707
+L	ab_0_24	41	|move|p1a: Blissey|Seismic Toss|p2a: Suicune
+L	ab_0_24	42	|-damage|p2a: Suicune|145/345
+L	ab_0_24	43	|
+L	ab_0_24	44	|-heal|p1a: Blissey|640/707|[from] item: Leftovers
+L	ab_0_24	45	|upkeep
+L	ab_0_24	46	|turn|3
+L	ab_0_24	47	|
+L	ab_0_24	48	|t:|<NORMALIZED>
+L	ab_0_24	49	|move|p2a: Suicune|Toxic|p1a: Blissey
+L	ab_0_24	50	|-status|p1a: Blissey|tox
+L	ab_0_24	51	|move|p1a: Blissey|Ice Beam|p2a: Suicune
+L	ab_0_24	52	|-resisted|p2a: Suicune
+L	ab_0_24	53	|-damage|p2a: Suicune|127/345
+L	ab_0_24	54	|
+L	ab_0_24	55	|-heal|p1a: Blissey|684/707 tox|[from] item: Leftovers
+L	ab_0_24	56	|-damage|p1a: Blissey|640/707 tox|[from] psn
+L	ab_0_24	57	|upkeep
+L	ab_0_24	58	|turn|4
+L	ab_0_24	59	|
+L	ab_0_24	60	|t:|<NORMALIZED>
+L	ab_0_24	61	|switch|p2a: Tyranitar|Tyranitar, M|391/391
+L	ab_0_24	62	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_0_24	63	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_0_24	64	|
+L	ab_0_24	65	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	66	|-damage|p1a: Blissey|596/707 tox|[from] Sandstorm
+L	ab_0_24	67	|-heal|p1a: Blissey|640/707 tox|[from] item: Leftovers
+L	ab_0_24	68	|-damage|p1a: Blissey|552/707 tox|[from] psn
+L	ab_0_24	69	|upkeep
+L	ab_0_24	70	|turn|5
+L	ab_0_24	71	|
+L	ab_0_24	72	|t:|<NORMALIZED>
+L	ab_0_24	73	|move|p2a: Tyranitar|Hidden Power|p1a: Blissey
+L	ab_0_24	74	|-damage|p1a: Blissey|385/707 tox
+L	ab_0_24	75	|move|p1a: Blissey|Wish||[still]
+L	ab_0_24	76	|-fail|p1a: Blissey
+L	ab_0_24	77	|
+L	ab_0_24	78	|-heal|p1a: Blissey|707/707 tox|[from] move: Wish|[wisher] Blissey
+L	ab_0_24	79	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	80	|-damage|p1a: Blissey|663/707 tox|[from] Sandstorm
+L	ab_0_24	81	|-heal|p1a: Blissey|707/707 tox|[from] item: Leftovers
+L	ab_0_24	82	|-damage|p1a: Blissey|575/707 tox|[from] psn
+L	ab_0_24	83	|upkeep
+L	ab_0_24	84	|turn|6
+L	ab_0_24	85	|
+L	ab_0_24	86	|t:|<NORMALIZED>
+L	ab_0_24	87	|move|p2a: Tyranitar|Rock Slide|p1a: Blissey
+L	ab_0_24	88	|-damage|p1a: Blissey|304/707 tox
+L	ab_0_24	89	|cant|p1a: Blissey|flinch
+L	ab_0_24	90	|
+L	ab_0_24	91	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	92	|-damage|p1a: Blissey|260/707 tox|[from] Sandstorm
+L	ab_0_24	93	|-heal|p1a: Blissey|304/707 tox|[from] item: Leftovers
+L	ab_0_24	94	|-damage|p1a: Blissey|128/707 tox|[from] psn
+L	ab_0_24	95	|upkeep
+L	ab_0_24	96	|turn|7
+L	ab_0_24	97	|
+L	ab_0_24	98	|t:|<NORMALIZED>
+L	ab_0_24	99	|switch|p2a: Salamence|Salamence, M|330/330
+L	ab_0_24	100	|-ability|p2a: Salamence|Intimidate|boost
+L	ab_0_24	101	|-unboost|p1a: Blissey|atk|1
+L	ab_0_24	102	|move|p1a: Blissey|Ice Beam|p2a: Salamence
+L	ab_0_24	103	|-supereffective|p2a: Salamence
+L	ab_0_24	104	|-damage|p2a: Salamence|34/330
+L	ab_0_24	105	|
+L	ab_0_24	106	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	107	|-damage|p2a: Salamence|14/330|[from] Sandstorm
+L	ab_0_24	108	|-damage|p1a: Blissey|84/707 tox|[from] Sandstorm
+L	ab_0_24	109	|-heal|p2a: Salamence|34/330|[from] item: Leftovers
+L	ab_0_24	110	|-heal|p1a: Blissey|128/707 tox|[from] item: Leftovers
+L	ab_0_24	111	|-damage|p1a: Blissey|0 fnt|[from] psn
+L	ab_0_24	112	|faint|p1a: Blissey
+L	ab_0_24	113	|upkeep
+L	ab_0_24	114	|
+L	ab_0_24	115	|t:|<NORMALIZED>
+L	ab_0_24	116	|switch|p1a: Magneton|Magneton|301/301
+L	ab_0_24	117	|turn|8
+L	ab_0_24	118	|
+L	ab_0_24	119	|t:|<NORMALIZED>
+L	ab_0_24	120	|move|p2a: Salamence|Fire Blast|p1a: Magneton
+L	ab_0_24	121	|-supereffective|p1a: Magneton
+L	ab_0_24	122	|-damage|p1a: Magneton|37/301
+L	ab_0_24	123	|move|p1a: Magneton|Thunder Wave|p2a: Salamence
+L	ab_0_24	124	|-status|p2a: Salamence|par
+L	ab_0_24	125	|
+L	ab_0_24	126	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	127	|-damage|p2a: Salamence|14/330 par|[from] Sandstorm
+L	ab_0_24	128	|-heal|p2a: Salamence|34/330 par|[from] item: Leftovers
+L	ab_0_24	129	|upkeep
+L	ab_0_24	130	|turn|9
+L	ab_0_24	131	|
+L	ab_0_24	132	|t:|<NORMALIZED>
+L	ab_0_24	133	|move|p1a: Magneton|Hidden Power|p2a: Salamence
+L	ab_0_24	134	|-resisted|p2a: Salamence
+L	ab_0_24	135	|-crit|p2a: Salamence
+L	ab_0_24	136	|-damage|p2a: Salamence|0 fnt
+L	ab_0_24	137	|faint|p2a: Salamence
+L	ab_0_24	138	|
+L	ab_0_24	139	|t:|<NORMALIZED>
+L	ab_0_24	140	|switch|p2a: Suicune|Suicune|127/345
+L	ab_0_24	141	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_24	142	|
+L	ab_0_24	143	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	144	|-damage|p2a: Suicune|106/345|[from] Sandstorm
+L	ab_0_24	145	|upkeep
+L	ab_0_24	146	|turn|10
+L	ab_0_24	147	|
+L	ab_0_24	148	|t:|<NORMALIZED>
+L	ab_0_24	149	|move|p2a: Suicune|Hydro Pump|p1a: Magneton
+L	ab_0_24	150	|-damage|p1a: Magneton|0 fnt
+L	ab_0_24	151	|faint|p1a: Magneton
+L	ab_0_24	152	|
+L	ab_0_24	153	|t:|<NORMALIZED>
+L	ab_0_24	154	|switch|p1a: Celebi|Celebi|403/403
+L	ab_0_24	155	|
+L	ab_0_24	156	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	157	|-damage|p2a: Suicune|85/345|[from] Sandstorm
+L	ab_0_24	158	|-damage|p1a: Celebi|378/403|[from] Sandstorm
+L	ab_0_24	159	|-enditem|p2a: Suicune|Salac Berry|[eat]
+L	ab_0_24	160	|-boost|p2a: Suicune|spe|1|[from] item: Salac Berry
+L	ab_0_24	161	|-heal|p1a: Celebi|403/403|[from] item: Leftovers
+L	ab_0_24	162	|upkeep
+L	ab_0_24	163	|turn|11
+L	ab_0_24	164	|
+L	ab_0_24	165	|t:|<NORMALIZED>
+L	ab_0_24	166	|move|p2a: Suicune|Ice Beam|p1a: Celebi
+L	ab_0_24	167	|-supereffective|p1a: Celebi
+L	ab_0_24	168	|-damage|p1a: Celebi|235/403
+L	ab_0_24	169	|move|p1a: Celebi|Leech Seed|p2a: Suicune
+L	ab_0_24	170	|-start|p2a: Suicune|move: Leech Seed
+L	ab_0_24	171	|
+L	ab_0_24	172	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	173	|-damage|p2a: Suicune|64/345|[from] Sandstorm
+L	ab_0_24	174	|-damage|p1a: Celebi|210/403|[from] Sandstorm
+L	ab_0_24	175	|-damage|p2a: Suicune|21/345|[from] Leech Seed|[of] p1a: Celebi
+L	ab_0_24	176	|-heal|p1a: Celebi|253/403|[silent]
+L	ab_0_24	177	|-heal|p1a: Celebi|278/403|[from] item: Leftovers
+L	ab_0_24	178	|upkeep
+L	ab_0_24	179	|turn|12
+L	ab_0_24	180	|
+L	ab_0_24	181	|t:|<NORMALIZED>
+L	ab_0_24	182	|switch|p2a: Breloom|Breloom, M|261/261
+L	ab_0_24	183	|move|p1a: Celebi|Leech Seed|p2a: Breloom
+L	ab_0_24	184	|-immune|p2a: Breloom
+L	ab_0_24	185	|
+L	ab_0_24	186	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	187	|-damage|p1a: Celebi|253/403|[from] Sandstorm
+L	ab_0_24	188	|-damage|p2a: Breloom|245/261|[from] Sandstorm
+L	ab_0_24	189	|-heal|p1a: Celebi|278/403|[from] item: Leftovers
+L	ab_0_24	190	|-heal|p2a: Breloom|261/261|[from] item: Leftovers
+L	ab_0_24	191	|upkeep
+L	ab_0_24	192	|turn|13
+L	ab_0_24	193	|
+L	ab_0_24	194	|t:|<NORMALIZED>
+L	ab_0_24	195	|switch|p1a: Metagross|Metagross|329/329
+L	ab_0_24	196	|switch|p2a: Suicune|Suicune|21/345
+L	ab_0_24	197	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_24	198	|
+L	ab_0_24	199	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	200	|-damage|p2a: Suicune|0 fnt|[from] Sandstorm
+L	ab_0_24	201	|faint|p2a: Suicune
+L	ab_0_24	202	|upkeep
+L	ab_0_24	203	|
+L	ab_0_24	204	|t:|<NORMALIZED>
+L	ab_0_24	205	|switch|p2a: Tyranitar|Tyranitar, M|391/391
+L	ab_0_24	206	|turn|14
+L	ab_0_24	207	|
+L	ab_0_24	208	|t:|<NORMALIZED>
+L	ab_0_24	209	|move|p1a: Metagross|Meteor Mash|p2a: Tyranitar
+L	ab_0_24	210	|-supereffective|p2a: Tyranitar
+L	ab_0_24	211	|-damage|p2a: Tyranitar|38/391
+L	ab_0_24	212	|move|p2a: Tyranitar|Hidden Power|p1a: Metagross
+L	ab_0_24	213	|-damage|p1a: Metagross|253/329
+L	ab_0_24	214	|
+L	ab_0_24	215	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	216	|-heal|p1a: Metagross|273/329|[from] item: Leftovers
+L	ab_0_24	217	|-heal|p2a: Tyranitar|62/391|[from] item: Leftovers
+L	ab_0_24	218	|upkeep
+L	ab_0_24	219	|turn|15
+L	ab_0_24	220	|
+L	ab_0_24	221	|t:|<NORMALIZED>
+L	ab_0_24	222	|switch|p2a: Breloom|Breloom, M|261/261
+L	ab_0_24	223	|move|p1a: Metagross|Meteor Mash|p2a: Breloom
+L	ab_0_24	224	|-damage|p2a: Breloom|8/261
+L	ab_0_24	225	|-status|p1a: Metagross|par|[from] ability: Effect Spore|[of] p2a: Breloom
+L	ab_0_24	226	|
+L	ab_0_24	227	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	228	|-damage|p2a: Breloom|0 fnt|[from] Sandstorm
+L	ab_0_24	229	|faint|p2a: Breloom
+L	ab_0_24	230	|-heal|p1a: Metagross|293/329 par|[from] item: Leftovers
+L	ab_0_24	231	|upkeep
+L	ab_0_24	232	|
+L	ab_0_24	233	|t:|<NORMALIZED>
+L	ab_0_24	234	|switch|p2a: Metagross|Metagross|333/333
+L	ab_0_24	235	|turn|16
+L	ab_0_24	236	|
+L	ab_0_24	237	|t:|<NORMALIZED>
+L	ab_0_24	238	|move|p2a: Metagross|Psychic|p1a: Metagross
+L	ab_0_24	239	|-resisted|p1a: Metagross
+L	ab_0_24	240	|-damage|p1a: Metagross|253/329 par
+L	ab_0_24	241	|move|p1a: Metagross|Earthquake|p2a: Metagross
+L	ab_0_24	242	|-supereffective|p2a: Metagross
+L	ab_0_24	243	|-damage|p2a: Metagross|132/333
+L	ab_0_24	244	|
+L	ab_0_24	245	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	246	|-heal|p2a: Metagross|152/333|[from] item: Leftovers
+L	ab_0_24	247	|-heal|p1a: Metagross|273/329 par|[from] item: Leftovers
+L	ab_0_24	248	|upkeep
+L	ab_0_24	249	|turn|17
+L	ab_0_24	250	|
+L	ab_0_24	251	|t:|<NORMALIZED>
+L	ab_0_24	252	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_0_24	253	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_24	254	|-fail|p2a: Metagross|unboost|[from] ability: Clear Body|[of] p2a: Metagross
+L	ab_0_24	255	|move|p2a: Metagross|Psychic|p1a: Salamence
+L	ab_0_24	256	|-damage|p1a: Salamence|153/331
+L	ab_0_24	257	|
+L	ab_0_24	258	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	259	|-damage|p1a: Salamence|133/331|[from] Sandstorm
+L	ab_0_24	260	|-heal|p2a: Metagross|172/333|[from] item: Leftovers
+L	ab_0_24	261	|upkeep
+L	ab_0_24	262	|turn|18
+L	ab_0_24	263	|
+L	ab_0_24	264	|t:|<NORMALIZED>
+L	ab_0_24	265	|move|p1a: Salamence|Earthquake|p2a: Metagross
+L	ab_0_24	266	|-supereffective|p2a: Metagross
+L	ab_0_24	267	|-damage|p2a: Metagross|0 fnt
+L	ab_0_24	268	|faint|p2a: Metagross
+L	ab_0_24	269	|
+L	ab_0_24	270	|t:|<NORMALIZED>
+L	ab_0_24	271	|switch|p2a: Tyranitar|Tyranitar, M|62/391
+L	ab_0_24	272	|
+L	ab_0_24	273	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	274	|-damage|p1a: Salamence|113/331|[from] Sandstorm
+L	ab_0_24	275	|-heal|p2a: Tyranitar|86/391|[from] item: Leftovers
+L	ab_0_24	276	|upkeep
+L	ab_0_24	277	|turn|19
+L	ab_0_24	278	|
+L	ab_0_24	279	|t:|<NORMALIZED>
+L	ab_0_24	280	|move|p1a: Salamence|Earthquake|p2a: Tyranitar
+L	ab_0_24	281	|-supereffective|p2a: Tyranitar
+L	ab_0_24	282	|-damage|p2a: Tyranitar|0 fnt
+L	ab_0_24	283	|faint|p2a: Tyranitar
+L	ab_0_24	284	|
+L	ab_0_24	285	|t:|<NORMALIZED>
+L	ab_0_24	286	|switch|p2a: Jirachi|Jirachi|404/404
+L	ab_0_24	287	|
+L	ab_0_24	288	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	289	|-damage|p1a: Salamence|93/331|[from] Sandstorm
+L	ab_0_24	290	|upkeep
+L	ab_0_24	291	|turn|20
+L	ab_0_24	292	|
+L	ab_0_24	293	|t:|<NORMALIZED>
+L	ab_0_24	294	|move|p1a: Salamence|Earthquake|p2a: Jirachi
+L	ab_0_24	295	|-supereffective|p2a: Jirachi
+L	ab_0_24	296	|-damage|p2a: Jirachi|9/404
+L	ab_0_24	297	|move|p2a: Jirachi|Psychic|p1a: Salamence
+L	ab_0_24	298	|-damage|p1a: Salamence|0 fnt
+L	ab_0_24	299	|faint|p1a: Salamence
+L	ab_0_24	300	|
+L	ab_0_24	301	|t:|<NORMALIZED>
+L	ab_0_24	302	|switch|p1a: Metagross|Metagross|273/329 par
+L	ab_0_24	303	|
+L	ab_0_24	304	|-weather|Sandstorm|[upkeep]
+L	ab_0_24	305	|-heal|p2a: Jirachi|34/404|[from] item: Leftovers
+L	ab_0_24	306	|-heal|p1a: Metagross|293/329 par|[from] item: Leftovers
+L	ab_0_24	307	|upkeep
+L	ab_0_24	308	|turn|21
+L	ab_0_24	309	|
+L	ab_0_24	310	|t:|<NORMALIZED>
+L	ab_0_24	311	|move|p2a: Jirachi|Hidden Power|p1a: Metagross
+L	ab_0_24	312	|-resisted|p1a: Metagross
+L	ab_0_24	313	|-damage|p1a: Metagross|258/329 par
+L	ab_0_24	314	|move|p1a: Metagross|Earthquake|p2a: Jirachi
+L	ab_0_24	315	|-supereffective|p2a: Jirachi
+L	ab_0_24	316	|-crit|p2a: Jirachi
+L	ab_0_24	317	|-damage|p2a: Jirachi|0 fnt
+L	ab_0_24	318	|faint|p2a: Jirachi
+L	ab_0_24	319	|
+L	ab_0_24	320	|win|P1

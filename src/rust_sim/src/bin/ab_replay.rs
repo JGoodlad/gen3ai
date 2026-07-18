@@ -383,6 +383,12 @@ struct Verdict {
     got: Option<String>,
     detail: Option<String>,
     decisions_compared: usize,
+    /// The KNOWN-RESIDUAL allowlist reason (`gen3_omniscient_byte_fuzz_v1` green gate).
+    /// `Some(reason)` iff this is a `protocol`-kind divergence whose FORM matches a
+    /// documented, non-gen3ou-impacting residual (see `classify_known_residual`); the
+    /// ab_fuzz `--protocol` gate counts these SEPARATELY and does NOT fail on them, while
+    /// any un-cataloged divergence keeps `allowlisted: None` → the gate FAILS loudly.
+    allowlisted: Option<&'static str>,
 }
 
 impl Verdict {
@@ -396,6 +402,7 @@ impl Verdict {
             got: None,
             detail: None,
             decisions_compared: decisions,
+            allowlisted: None,
         }
     }
     fn diverged(
@@ -416,8 +423,164 @@ impl Verdict {
             got: Some(got),
             detail: Some(detail),
             decisions_compared,
+            allowlisted: None,
         }
     }
+}
+
+// ── The KNOWN-RESIDUAL allowlist (`gen3_omniscient_byte_fuzz_v1` green gate) ─────
+//
+// Classifies a first-divergence PROTOCOL byte diff by FORM/REASON, returning a reason
+// string ONLY when it matches a documented, non-gen3ou-impacting residual — else None
+// (so a NEW divergence kind/form is NEVER silently swallowed: it stays `allowlisted: None`
+// → the ab_fuzz `--protocol` gate FAILS). Entries are NARROW + STRUCTURAL (never a blanket
+// "ignore protocol"), each backed by a tagged corpus fixture (`tests/byte_fuzz_corpus/`) so
+// the allowlist can only grow by a reviewed reason+fixture pair.
+//
+// E1 (R1) — the turn-0 CONSTRUCTION speed-tie `[of]` ATTRIBUTION on a same-species MIRROR
+// lead. On a same-raw-Speed lead matchup (Tyranitar/Zapdos mirror), the offline replay
+// (`run_full_battle_logged`) + the production bridge path (`run_full_battle_bridge` →
+// `start_with_switchins`, `event::run_start_switchins`) BOTH fall back to a DETERMINISTIC
+// side-order (the turn-0 construction speed-tie Fisher-Yates shuffle is unmodeled — the
+// project-wide deferral every seed golden depends on), so the switch-in `-ability`/`-weather`
+// framing block's `[of]` source attribution (or the whole block's ORDER) can flip vs the
+// real sim. It is a real gen3ou-vs-real-sim divergence rooted in that unmodeled construction
+// window, but has ZERO production impact under `--use-bridge=rust` (which runs seed=None: no
+// real-sim reference exists, the port is the sole oracle, and `[of]` is a cosmetic source tag
+// on identical mirror mons). Modeling the construction window would ripple the pre-first-decision
+// seed convention EVERY seed golden is captured against, so it is ALLOWLISTED, not fixed.
+//
+// FORM-KEY (the R1-SPECIFIC signature — narrowed 2026-07-16 to close the Lens-1 green-gate-integrity
+// hole): R1 is EXACTLY a PERMUTATION of identical-CONTENT framing lines at a construction speed-tie
+// (the fixture emits `-ability|p2a: Zapdos|Pressure|[silent]` then `-ability|p1a: Zapdos|Pressure|
+// [silent]`; the port flips the two — the MULTISET is identical, only the ORDER differs, from the
+// unmodeled turn-0 construction speed-tie shuffle). So the gate keys on the FULL framing WINDOWS (all
+// lines BEFORE the first `|turn|1`) being a PURE PERMUTATION: sort both windows and require the
+// MULTISETS to match. A CONTENT change (a wrong `[of]` target, a different weather, a missing/extra
+// framing line) makes the multisets DIFFER → returns None → the gate FAILS. This replaces the prior
+// coarse per-line-TYPE key, which would SWALLOW a content-different framing divergence at a mirror lead.
+// `golden_framing`/`engine_framing` are the two framing windows; `leads_speed_tie` is the EQUAL raw
+// Speed construction-tie precondition (the sim's own computed Speed, `stats[5]`).
+fn classify_known_residual(
+    golden_framing: &[String],
+    engine_framing: &[String],
+    leads_speed_tie: bool,
+) -> Option<&'static str> {
+    // BOTH entries require the construction speed-tie precondition (the unmodeled turn-0
+    // Fisher-Yates shuffle only decides side-order at a raw-Speed tie).
+    if !leads_speed_tie {
+        return None;
+    }
+    // E1 (R1): construction-mirror framing PERMUTATION — allowlist when the two framing
+    // windows are an identical MULTISET (a pure reorder).
+    {
+        let mut g = golden_framing.to_vec();
+        let mut e = engine_framing.to_vec();
+        g.sort_unstable();
+        e.sort_unstable();
+        if g == e {
+            return Some("turn0-construction-speed-tie-attribution");
+        }
+    }
+    // A1: the construction weather-`[of]`-FLIP on a same-species MIRROR lead (repros ab_4_8 /
+    // ab_11_20, both formats). NOT a pure permutation (the multiset DIFFERS — one framing line's
+    // `[of]` CONTENT flips between the two mirror active slots), so E1 above returns None. Same
+    // turn-0-construction-window ROOT as E1, but manifesting as a single CONTENT-different
+    // framing line whose only difference is which same-species mirror mon the `-weather`/
+    // `-ability` `[of]` clause attributes to. seed=None-INVISIBLE (a cosmetic source tag on
+    // identical-species mirror mons → zero production impact under `--use-bridge=rust`).
+    classify_construction_mirror_of_flip(golden_framing, engine_framing)
+}
+
+/// The A1 NARROW allowlist key `turn0-construction-speed-tie-mirror-of-flip`. Returns
+/// `Some(reason)` ONLY when ALL six STRUCTURAL clauses hold (else None → the gate FAILS,
+/// so a genuinely-wrong framing attribution at a mirror lead is NEVER swallowed):
+///  (2) the two equal-length framing windows differ in EXACTLY ONE line;
+///  (3) that one differing line, in BOTH golden and engine, is a `-weather`/`-ability` framing line;
+///  (4) the two lines are byte-identical after stripping the trailing `|[of] pNa: <name>` clause
+///      (same weather/ability, same `[from]`);
+///  (5) the two `[of]` targets are the two DIFFERENT active slots (one `p1a:`, one `p2a:`);
+///  (6) both `[of]` idents map — via the framing `|switch|pNa: <ident>|<Species>,…` lines (the
+///      details' species field) — to the SAME species (the sibling mirror).
+/// (Clause (1), the construction speed-tie, is enforced by the caller.) A `[of]` to a
+/// NON-sibling / different-species mon, a different weather/ability prefix, a missing/extra
+/// framing line, or a non-mirror pair breaks a clause → None.
+fn classify_construction_mirror_of_flip(gf: &[String], ef: &[String]) -> Option<&'static str> {
+    // (2) same length + differ in EXACTLY one line.
+    if gf.len() != ef.len() {
+        return None;
+    }
+    let mut diff_idx: Option<usize> = None;
+    for i in 0..gf.len() {
+        if gf[i] != ef[i] {
+            if diff_idx.is_some() {
+                return None; // >1 differing line
+            }
+            diff_idx = Some(i);
+        }
+    }
+    let idx = diff_idx?; // exactly one differing line
+    let (gl, el) = (gf[idx].as_str(), ef[idx].as_str());
+    // (3) both a `-weather` or `-ability` framing line.
+    let is_wa = |l: &str| l.starts_with("|-weather|") || l.starts_with("|-ability|");
+    if !is_wa(gl) || !is_wa(el) {
+        return None;
+    }
+    // (4) byte-identical after stripping the trailing `|[of] pNa: <name>` clause.
+    let (gp, g_of) = split_of_clause(gl)?;
+    let (ep, e_of) = split_of_clause(el)?;
+    if gp != ep {
+        return None;
+    }
+    // (5) the two `[of]` targets are the two DIFFERENT active slots (p1a ↔ p2a).
+    let g_slot = of_slot(g_of)?;
+    let e_slot = of_slot(e_of)?;
+    let slots_ok = (g_slot == "p1a" && e_slot == "p2a") || (g_slot == "p2a" && e_slot == "p1a");
+    if !slots_ok {
+        return None;
+    }
+    // (6) both `[of]` idents map to the SAME species via the framing `|switch|` details.
+    // The framing windows are permutations of the SAME `|switch|` lines, so both idents resolve
+    // in either window; look each up in both (concatenated) to be robust.
+    let g_species = species_of_switch_ident(gf, ef, g_of)?;
+    let e_species = species_of_switch_ident(gf, ef, e_of)?;
+    if g_species != e_species {
+        return None;
+    }
+    Some("turn0-construction-speed-tie-mirror-of-flip")
+}
+
+/// Split a `-weather`/`-ability` line into its prefix (everything before the trailing `|[of] `)
+/// and the `[of]` ident (`pNa: <name>`). Returns None if there is no trailing `[of]` clause.
+fn split_of_clause(line: &str) -> Option<(&str, &str)> {
+    const MARK: &str = "|[of] ";
+    let pos = line.rfind(MARK)?;
+    Some((&line[..pos], &line[pos + MARK.len()..]))
+}
+
+/// The active-slot prefix (`p1a` / `p2a`) of an `[of]` ident `pNa: <name>`.
+fn of_slot(of_ident: &str) -> Option<&str> {
+    let colon = of_ident.find(':')?;
+    Some(&of_ident[..colon])
+}
+
+/// Map an `[of]` ident (`pNa: <name>`) to its species via a framing `|switch|pNa: <name>|
+/// <Species>, …|<hp>` line's details field (the 2nd `|`-field, up to the first comma). Searches
+/// both framing windows (they carry the SAME `|switch|` lines, only reordered).
+fn species_of_switch_ident(gf: &[String], ef: &[String], of_ident: &str) -> Option<String> {
+    let needle = format!("|switch|{of_ident}|");
+    for window in [gf, ef] {
+        for l in window {
+            if let Some(rest) = l.strip_prefix(&needle) {
+                let details = &rest[..rest.find('|').unwrap_or(rest.len())];
+                let species = details.split(',').next().unwrap_or(details).trim();
+                if !species.is_empty() {
+                    return Some(species.to_string());
+                }
+            }
+        }
+    }
+    None
 }
 
 fn json_escape(s: &str) -> String {
@@ -457,6 +620,9 @@ fn emit(v: &Verdict) {
     }
     if let Some(d) = &v.detail {
         s.push_str(&format!(",\"detail\":\"{}\"", json_escape(d)));
+    }
+    if let Some(a) = v.allowlisted {
+        s.push_str(&format!(",\"allowlisted\":\"{a}\""));
     }
     s.push('}');
     println!("{s}");
@@ -508,6 +674,15 @@ fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
             0,
         );
     }
+
+    // Whether the two LEADS have EQUAL raw (unboosted, construction-time) Speed — a
+    // turn-0 construction speed TIE, the precondition for the R1 framing `[of]` attribution
+    // residual (`classify_known_residual` E1). `stats[5]` is the sim's own computed Speed
+    // stat, constant from construction.
+    let leads_speed_tie = {
+        let st = battle.state().unwrap();
+        st.sides[0].active().stats[5] == st.sides[1].active().stats[5]
+    };
 
     let script: Vec<ScriptDecision> =
         case.decisions.iter().map(|d| ScriptDecision { p1: d.choice[0], p2: d.choice[1] }).collect();
@@ -709,6 +884,9 @@ fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
     if byte_mode {
         let golden = filter_bytes(&case.lines);
         let engine = filter_bytes(&emitted);
+        // The FRAMING window = the filtered lines BEFORE the first `|turn|1` marker (the
+        // switch-in ability block). The R1 construction-mirror residual only lives there.
+        let first_turn_idx = golden.iter().position(|l| l.starts_with("|turn|"));
         let m = golden.len().max(engine.len());
         for i in 0..m {
             let g = golden.get(i).map(String::as_str);
@@ -718,7 +896,19 @@ fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
                 let ctx = |v: &[String]| -> String {
                     (lo..(i + 2).min(v.len())).map(|k| format!("[{k}] {}", v[k])).collect::<Vec<_>>().join(" ¦ ")
                 };
-                return Verdict::diverged(
+                // R1 lives ONLY in the framing window; pass the FULL framing WINDOWS (all lines
+                // before the first `|turn|1`) so the classifier can require a PURE PERMUTATION
+                // (identical multiset), not just a per-line-type match at the divergence.
+                let in_framing = first_turn_idx.is_some_and(|t| i < t);
+                let allowlisted = if in_framing {
+                    let t = first_turn_idx.unwrap();
+                    let gf = &golden[..t.min(golden.len())];
+                    let ef = &engine[..t.min(engine.len())];
+                    classify_known_residual(gf, ef, leads_speed_tie)
+                } else {
+                    None
+                };
+                let mut v = Verdict::diverged(
                     &case.id,
                     "protocol",
                     Some(i),
@@ -730,6 +920,8 @@ fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
                     ),
                     n,
                 );
+                v.allowlisted = allowlisted;
+                return v;
             }
         }
     }
@@ -810,6 +1002,7 @@ fn main() {
                         got: None,
                         detail: Some(why),
                         decisions_compared: 0,
+                        allowlisted: None,
                     };
                     emit(&v);
                 }
@@ -831,6 +1024,7 @@ fn main() {
                                 got: None,
                                 detail: Some(msg),
                                 decisions_compared: 0,
+                                allowlisted: None,
                             }
                         }
                     };
@@ -848,4 +1042,128 @@ fn main() {
     println!(
         "{{\"chunk_summary\":{{\"ok\":{ok},\"diverged\":{diverged},\"panic\":{panicked},\"parse_error\":{parse_errors}}}}}"
     );
+}
+
+// ── A1 KNOWN-RESIDUAL allowlist integrity tests (gate-integrity is load-bearing) ──
+//
+// The `turn0-construction-speed-tie-mirror-of-flip` key must fire ONLY on the exact
+// same-species-mirror weather-`[of]`-flip artifact, and NEVER swallow a genuinely-wrong
+// framing attribution (the load-bearing requirement). These lock each of the 6 clauses;
+// reverting any clause in `classify_construction_mirror_of_flip` makes a NEG case start
+// (wrongly) allowlisting → a test fails.
+#[cfg(test)]
+mod a1_allowlist_tests {
+    use super::*;
+
+    // The canonical ab_4_8 mirror framing: both leads Tyranitar, the sole diff a `-weather`
+    // `[of]` flip between the two active slots.
+    fn mirror_windows() -> (Vec<String>, Vec<String>) {
+        let sw1 = "|switch|p1a: Tyranitar|Tyranitar, M|387/387".to_string();
+        let sw2 = "|switch|p2a: Tyranitar|Tyranitar, M|387/387".to_string();
+        let golden = vec![
+            sw1.clone(),
+            sw2.clone(),
+            "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar".to_string(),
+        ];
+        let engine = vec![
+            sw1,
+            sw2,
+            "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar".to_string(),
+        ];
+        (golden, engine)
+    }
+
+    #[test]
+    fn mirror_of_flip_is_allowlisted_only_at_a_speed_tie() {
+        let (g, e) = mirror_windows();
+        assert_eq!(
+            classify_known_residual(&g, &e, true),
+            Some("turn0-construction-speed-tie-mirror-of-flip"),
+            "the same-species mirror weather-[of]-flip must allowlist at a speed tie"
+        );
+        // Clause (1): NOT a speed tie → never allowlisted.
+        assert_eq!(classify_known_residual(&g, &e, false), None);
+    }
+
+    #[test]
+    fn ab_11_20_form_nickname_differs_species_same_is_allowlisted() {
+        // ab_11_20: the two mirror mons carry DIFFERENT nicknames (Tyranocif vs Tyranitar) but
+        // the SAME species Tyranitar — clause (6) reads the |switch| details' SPECIES field.
+        let g = vec![
+            "|switch|p1a: Tyranocif|Tyranitar, M|375/375".to_string(),
+            "|switch|p2a: Tyranitar|Tyranitar, M|387/387".to_string(),
+            "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar".to_string(),
+        ];
+        let e = vec![
+            "|switch|p1a: Tyranocif|Tyranitar, M|375/375".to_string(),
+            "|switch|p2a: Tyranitar|Tyranitar, M|387/387".to_string(),
+            "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranocif".to_string(),
+        ];
+        assert_eq!(
+            classify_known_residual(&g, &e, true),
+            Some("turn0-construction-speed-tie-mirror-of-flip")
+        );
+    }
+
+    #[test]
+    fn clause6_wrong_of_to_a_real_different_species_mon_fails() {
+        // The load-bearing NEG: a `[of]` attributed to a NON-sibling (DIFFERENT species) mon at
+        // a mirror lead MUST NOT be swallowed. Leads are Tyranitar (p1a) vs Gengar (p2a) — the
+        // two `[of]` targets resolve to different species → clause (6) fails.
+        let g = vec![
+            "|switch|p1a: Tyranitar|Tyranitar, M|387/387".to_string(),
+            "|switch|p2a: Gengar|Gengar, M|281/281".to_string(),
+            "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gengar".to_string(),
+        ];
+        let e = vec![
+            "|switch|p1a: Tyranitar|Tyranitar, M|387/387".to_string(),
+            "|switch|p2a: Gengar|Gengar, M|281/281".to_string(),
+            "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar".to_string(),
+        ];
+        assert_eq!(classify_known_residual(&g, &e, true), None);
+    }
+
+    #[test]
+    fn clause4_different_weather_prefix_fails() {
+        let (g, mut e) = mirror_windows();
+        e[2] = "|-weather|RainDance|[from] ability: Sand Stream|[of] p1a: Tyranitar".to_string();
+        assert_eq!(classify_known_residual(&g, &e, true), None);
+    }
+
+    #[test]
+    fn clause5_same_slot_of_not_a_flip_fails() {
+        // Both `[of]` point at p1a (no flip) → clause (5) fails (identical → not even a diff,
+        // but a contrived same-slot content diff must not allowlist).
+        let g = vec![
+            "|switch|p1a: Tyranitar|Tyranitar, M|387/387".to_string(),
+            "|switch|p2a: Tyranitar|Tyranitar, M|387/387".to_string(),
+            "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar".to_string(),
+        ];
+        let mut e = g.clone();
+        // A CONTENT diff that is NOT a slot flip (e.g. a trailing HP token on the weather line).
+        e[2] = "|-weather|Hail|[from] ability: Snow Warning|[of] p1a: Tyranitar".to_string();
+        assert_eq!(classify_known_residual(&g, &e, true), None);
+    }
+
+    #[test]
+    fn clause2_two_line_diff_fails() {
+        // TWO framing lines differ → not the single-line `[of]` flip → must not allowlist.
+        let (mut g, mut e) = mirror_windows();
+        g[0] = "|switch|p1a: Tyranitar|Tyranitar, M|387/387".to_string();
+        e[0] = "|switch|p1a: Tyranitar|Tyranitar, M|999/999".to_string(); // a 2nd diff (HP)
+        assert_eq!(classify_known_residual(&g, &e, true), None);
+    }
+
+    #[test]
+    fn non_framing_line_type_fails() {
+        // The single differing line is NOT a `-weather`/`-ability` framing line → clause (3).
+        let g = vec![
+            "|switch|p1a: Tyranitar|Tyranitar, M|387/387".to_string(),
+            "|switch|p2a: Tyranitar|Tyranitar, M|387/387".to_string(),
+            "|-damage|p1a: Tyranitar|360/387|[from] Sandstorm|[of] p2a: Tyranitar".to_string(),
+        ];
+        let mut e = g.clone();
+        e[2] = "|-damage|p1a: Tyranitar|360/387|[from] Sandstorm|[of] p1a: Tyranitar".to_string();
+        assert_eq!(classify_known_residual(&g, &e, true), None);
+    }
 }

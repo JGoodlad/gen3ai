@@ -408,18 +408,19 @@ impl ProtocolBuilder {
         }
     }
 
-    /// The `attrLastMove('[from]lockedmove')` retro-edit (`gen3_move_coverage_batch4c_v1`
-    /// — Solar Beam's FIRE-turn announce: `|move|<user>|Solar Beam|<target>|[from]lockedmove`,
-    /// the sim's `useMove` locked-move attr; NO space after `[from]`, matching Showdown's
-    /// literal `'[from]lockedmove'`). Same append-only exception discipline as
-    /// [`Self::attr_last_move_miss`]. HONEST SCOPE: no capture scenario byte-gates a
-    /// solarbeam line yet — the shape is the probe-observed one. No-op when disabled.
+    /// The `attrLastMove('[from] lockedmove')` retro-edit (`gen3_move_coverage_batch4c_v1`
+    /// — Solar Beam's FIRE-turn announce: `|move|<user>|Solar Beam|<target>|[from] lockedmove`,
+    /// the sim's `useMove` locked-move attr. SIM-PROBED (the omniscient stream, the sim is the
+    /// oracle): there IS a SPACE after `[from]` (`|[from] lockedmove`) — the prior port emitted
+    /// the no-space form, an omniscient + per-side byte divergence on any real gen3ou Solar Beam /
+    /// Shiftry SolarBeam battle. Same append-only exception discipline as
+    /// [`Self::attr_last_move_miss`]. No-op when disabled.
     pub fn attr_last_move_from_lockedmove(&mut self) {
         if !self.enabled {
             return;
         }
         if let Some(line) = self.lines.iter_mut().rev().find(|l| l.0.starts_with("|move|")) {
-            line.0.push_str("|[from]lockedmove");
+            line.0.push_str("|[from] lockedmove");
         }
     }
 
@@ -444,9 +445,11 @@ impl ProtocolBuilder {
     }
 
     // ── Switch / drag / faint ───────────────────────────────────────────────────
-    /// `|switch|<mon>|<Details>|<HP>`. Details = `Species` (L100/genderless omitted,
-    /// matching the capture — a gen-3-singles L100 genderless mon shows just the
-    /// species name).
+    /// `|switch|<mon>|<Details>|<HP>`. Details is the pre-built `Pokemon.details`
+    /// string (`turn.rs::switch_details`): `<Species>[, L<level>][, <gender>][, shiny]`
+    /// — `, L<n>` iff level != 100 (gen3ou is always L100 so it is omitted there),
+    /// gender/shiny only when present. A gen-3-singles L100 genderless mon shows just
+    /// the species name.
     pub fn switch(&mut self, mon: &MonRef, details: &str, hp: &HpStatus) {
         self.push_raw(format!("|switch|{mon}|{details}|{hp}"));
     }
@@ -699,24 +702,41 @@ impl ProtocolBuilder {
     pub fn ability_traced(&mut self, mon: &MonRef, copied: &str, foe: &MonRef) {
         self.push_raw(format!("|-ability|{mon}|{copied}|Trace|[from] ability: Trace|[of] {foe}"));
     }
-    /// `|-fail|<mon>|unboost|[from] ability: <Blocker>|[of] <mon>` — a stat-drop
-    /// blocked by the target's own ability (Intimidate into Clear Body / White Smoke /
-    /// Hyper Cutter). The `[of]` is the BLOCKER itself (its own ability saved it).
-    /// Phase 3, byte-verified vs the capture golden.
-    pub fn fail_unboost_from_ability(&mut self, mon: &MonRef, ability: &str) {
-        self.push_raw(format!("|-fail|{mon}|unboost|[from] ability: {ability}|[of] {mon}"));
+    /// `|-fail|<mon>|unboost|[<Stat>|][from] ability: <Blocker>|[of] <mon>` — a stat-drop
+    /// blocked by the target's own ability. The `[of]` is the BLOCKER itself (its own ability
+    /// saved it). The `stat` token MIRRORS the sim's per-ability `onTryBoost` `this.add`:
+    /// the WHOLE-table blockers (Clear Body / White Smoke) pass `None` (no stat token — they
+    /// delete every negative boost), while the SINGLE-STAT blockers pass the ability's literal
+    /// token — **Hyper Cutter → `"Attack"`**, **Keen Eye → `"accuracy"`** (SIM-PROBED forms,
+    /// abilities.js: `add("-fail", target, "unboost", "Attack"|"accuracy", …)`). The prior
+    /// port dropped Hyper Cutter's `Attack` token → an omniscient byte divergence on any
+    /// Intimidate/Charm/Feather-Dance-into-Hyper-Cutter matchup.
+    pub fn fail_unboost_from_ability(&mut self, mon: &MonRef, ability: &str, stat: Option<&str>) {
+        match stat {
+            Some(s) => self.push_raw(format!("|-fail|{mon}|unboost|{s}|[from] ability: {ability}|[of] {mon}")),
+            None => self.push_raw(format!("|-fail|{mon}|unboost|[from] ability: {ability}|[of] {mon}")),
+        }
     }
     /// `|-hint|<text>` — a client hint (poke-env-ignored, but part of the omniscient
     /// byte stream — e.g. the gen3 Intimidate-vs-Substitute no-op, the Knock Off item note).
-    /// DEDUP per battle: the sim's `Battle.hint()` skips a message already in `this.hints`, so
-    /// each distinct text fires ONCE (`gen3_omniscient_byte_fuzz_v1` FORM 14). No-op when
-    /// disabled OR when this exact text was already emitted this battle.
-    pub fn hint(&mut self, text: &str) {
+    /// DEDUP semantics MIRROR the sim's `Battle.hint(hint, once, side)` (battle.ts:3092):
+    /// it returns early if the text is ALREADY in `this.hints`, but only ADDS the text to
+    /// `this.hints` **when `once` is true** — so a `once: true` hint (Knock Off, gen4/moves.ts:703)
+    /// fires EXACTLY ONCE per battle, while a `once: false` hint (Sleep Clause, rulesets.ts:1395;
+    /// the gen3 Intimidate-vs-Substitute + Pursuit notes, no `once` arg) fires on EVERY occurrence.
+    /// This is `gen3_omniscient_byte_fuzz_v1` FORM 14 — the Sleep-Clause over-dedup bug the byte
+    /// fuzzer surfaced (the port used to dedup ALL hints, so a double sleep-clause block emitted the
+    /// hint once where the sim emits it twice). No-op when disabled OR (only for `once`) when this
+    /// exact text was already emitted this battle.
+    pub fn hint(&mut self, text: &str, once: bool) {
         if !self.enabled {
             return;
         }
-        if !self.hints_shown.insert(text.to_string()) {
-            return; // already shown this battle
+        if self.hints_shown.contains(text) {
+            return; // already shown this battle (matches the sim's `this.hints.has(...)` early-return)
+        }
+        if once {
+            self.hints_shown.insert(text.to_string());
         }
         self.push_raw(format!("|-hint|{text}"));
     }
@@ -1079,8 +1099,8 @@ mod tests {
         // hint, nothing, fieldactivate.
         b.ability_silent(&user, "Pressure");
         b.ability_traced(&user, "Thick Fat", &target);
-        b.fail_unboost_from_ability(&target, "Clear Body");
-        b.hint("In Gen 3, Intimidate does not activate if every target has a Substitute.");
+        b.fail_unboost_from_ability(&target, "Clear Body", None);
+        b.hint("In Gen 3, Intimidate does not activate if every target has a Substitute.", false);
         b.nothing();
         b.fieldactivate_move("Pay Day");
         assert_eq!(b.lines()[1].0, "|-ability|p1a: Gengar|Pressure|[silent]");
@@ -1105,5 +1125,47 @@ mod tests {
         assert_eq!(b.lines()[7].0, "|-end|p2a: Snorlax|move: Taunt|[silent]");
         assert_eq!(b.lines()[8].0, "|-end|p2a: Snorlax|Disable");
         assert_eq!(b.lines()[9].0, "|-fail|p1a: Gengar|heal");
+        // Hyper Cutter carries the `unboost|Attack` stat token (the SIM-PROBED single-stat
+        // form); Keen Eye carries `accuracy`; the whole-table blockers carry no token.
+        b.fail_unboost_from_ability(&user, "Hyper Cutter", Some("Attack"));
+        b.fail_unboost_from_ability(&user, "Keen Eye", Some("accuracy"));
+        assert_eq!(
+            b.lines()[10].0,
+            "|-fail|p1a: Gengar|unboost|Attack|[from] ability: Hyper Cutter|[of] p1a: Gengar"
+        );
+        assert_eq!(
+            b.lines()[11].0,
+            "|-fail|p1a: Gengar|unboost|accuracy|[from] ability: Keen Eye|[of] p1a: Gengar"
+        );
+    }
+
+    /// The `-hint` `once` DEDUP semantics (`gen3_omniscient_byte_fuzz_v1`, the byte-fuzzer-surfaced
+    /// Sleep-Clause over-dedup): the sim's `Battle.hint(hint, once, side)` returns early if the text
+    /// is already in `this.hints` but only ADDS it `if (once)`. So a `once: false` hint (Sleep Clause
+    /// Mod / the gen3 Intimidate-vs-Sub / Pursuit notes) fires on EVERY call, while a `once: true`
+    /// hint (Knock Off) fires exactly ONCE per battle. WRONG (pre-fix): the port deduped ALL hints, so
+    /// a gen3ou double-sleep-clause-block emitted the hint ONCE where the sim emits it twice. Reverting
+    /// the `once` gate (dedup unconditionally) fails this pin.
+    #[test]
+    fn hint_dedup_follows_the_once_param() {
+        let sc = "Sleep Clause Mod prevents players from putting more than one of their opponent's \
+                  Pok\u{e9}mon to sleep at a time";
+        let ko = "In Gens 3-4, Knock Off only makes the target's item unusable; it cannot obtain a new item.";
+
+        // once=false (Sleep Clause) fires on EVERY call — a double block emits the hint TWICE.
+        let mut b = ProtocolBuilder::new();
+        b.enable();
+        b.hint(sc, false);
+        b.hint(sc, false);
+        let sc_count = b.lines().iter().filter(|l| l.0 == format!("|-hint|{sc}")).count();
+        assert_eq!(sc_count, 2, "a `once:false` hint must fire on EVERY call (Sleep Clause block)");
+
+        // once=true (Knock Off) fires exactly ONCE per battle.
+        let mut b = ProtocolBuilder::new();
+        b.enable();
+        b.hint(ko, true);
+        b.hint(ko, true);
+        let ko_count = b.lines().iter().filter(|l| l.0 == format!("|-hint|{ko}")).count();
+        assert_eq!(ko_count, 1, "a `once:true` hint must fire exactly ONCE per battle (Knock Off)");
     }
 }

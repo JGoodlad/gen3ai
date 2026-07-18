@@ -32,6 +32,21 @@ The fixtures are named by the form they guard, e.g.:
 | `18_freeze_clause_message_ou.txt` | gen3ou Freeze Clause → `\|-message\|Freeze Clause activated.` |
 | `19_natural_cure_ou.txt` | Natural Cure `-curestatus` under the gen3ou clause-shuffle path |
 | `20_protect_activate_ou.txt` | Protect-blocks-status `-activate` under gen3ou |
+| `21_construction_mirror_ability_of.txt` | **ALLOWLIST fixture** — R1 turn-0 construction speed-tie `[of]` attribution (Zapdos mirror); MUST diverge with `allowlisted:turn0-construction-speed-tie-attribution` |
+| `22_contact_proc_status_from_ability.txt` | contact-proc status → `\|-status\|…\|[from] ability: Effect Spore\|[of] <holder>` (Static/Poison Point/Flame Body/Effect Spore) |
+| `24_endure_survive_at_one_hp.txt` | Endure survive-at-1 emits `\|-damage\|<mon>\|1/<max>` even when already at 1 HP (0-net clamp) |
+| `25_natural_cure_pursuit_ko_curestatus.txt` | Natural Cure `-curestatus [silent]` on a Pursuit-KO'd switcher, BEFORE the `\|-hint\|`/`\|faint\|` |
+| `26_freeze_persists_vs_hp_fire.txt` | freeze PERSISTS through a Hidden Power Fire hit (base-type Fire only thaws — the T1 state fix) |
+
+## Two fixture classes (the KNOWN-RESIDUAL allowlist gate)
+
+- **Emission-form fixture** (the default, no header tag) — MUST replay **byte-clean** (`ok`).
+- **Allowlist fixture** — carries a `# ALLOWLIST <reason>` header comment. It MUST replay to a
+  `diverged` verdict whose `allowlisted` reason EXACTLY equals `<reason>` (the documented,
+  non-gen3ou-impacting residual `ab_replay`'s `classify_known_residual` tags — e.g. R1's
+  `turn0-construction-speed-tie-attribution`). This makes the allowlist AUDITABLE + BOUNDED: it can
+  only grow by a reviewed reason+fixture pair, and any un-cataloged divergence is a hard failure
+  (proven — stripping the tag makes the gate fail).
 
 ## How the gate works
 

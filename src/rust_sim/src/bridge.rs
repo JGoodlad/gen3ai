@@ -170,10 +170,25 @@ pub fn resolve_choice(state: &BattleState, side: usize, choice: &WireChoice) -> 
                 };
                 return if want == locked_id { Some(Choice::Move(0)) } else { None };
             }
+            // Match by move id, collapsing EITHER side's Hidden Power to bare so a wire
+            // choice (which poke-env may send TYPED, `move hiddenpowerdark`, or BARE,
+            // `move hiddenpower`) resolves against the slot regardless of how the request
+            // rendered it — a mon carries at most ONE Hidden Power, so the collapse is
+            // unambiguous (`gen3_own_typed_hp_request_roster_v1`; the roster serializer
+            // `side_move_id` now emits the TYPED id, but the choice-resolution here must
+            // stay lenient to both wire forms).
+            let hp_canon = |id: &str| -> String {
+                if id.starts_with("hiddenpower") {
+                    "hiddenpower".to_string()
+                } else {
+                    id.to_string()
+                }
+            };
+            let want_c = hp_canon(&want);
             mon.set
                 .moves
                 .iter()
-                .position(|m| side_move_id(m) == want)
+                .position(|m| hp_canon(&crate::dex::to_id(m)) == want_c)
                 .map(Choice::Move)
         }
         WireChoice::SwitchSpecies(name) => {
@@ -422,23 +437,52 @@ fn json_escape(s: &str) -> String {
 
 /// The `moves` array entry id for `side.pokemon[j]` (`getSwitchRequestData`): the
 /// mon's move ID (normalized), which for a gen<6 typed Hidden Power is the TYPED id
-/// (`hiddenpowergrass`). `set.moves` holds DISPLAY names, so normalize via `to_id`.
-fn side_move_id(mv: &str) -> String {
-    crate::dex::to_id(mv)
+/// (`hiddenpowerdark`). `set.moves` holds DISPLAY names, so normalize via `to_id`.
+///
+/// THE OWNER-OWN typed-HP RESOLUTION (`gen3_own_typed_hp_request_roster_v1`, the
+/// `bab_3_19` per-side request find): the Showdown `Pokemon` constructor resolves a
+/// BARE `HiddenPower` move slot to `hiddenpower<hpType>` (via `set.hpType` if the
+/// packed set carries the marker, else IV-derived — `getHiddenPower(ivs).type`), and
+/// `getSwitchRequestData` returns that TYPED moveSlot id — so the OWNER sees their own
+/// bench mon's TYPED HP id. (A set that already stores the explicit typed name
+/// [`HiddenPowerGrass`] `to_id`s straight to `hiddenpowergrass`, so this only fires for
+/// the bare-stored-plus-marker form Charizard uses: packed `HiddenPower` + `,Dark,,,,`.)
+/// The OPPONENT-facing bare-collapse (`active_move_display` + the opp HP hiding) is
+/// CORRECT and separate — gen 3 never reveals the opp HP type.
+fn side_move_id(mon: &MonState, mv: &str) -> String {
+    let id = crate::dex::to_id(mv);
+    if id == "hiddenpower" {
+        // Resolve the typed id, mirroring the sim constructor: prefer the packed
+        // `set.hpType` marker, else IV-derive.
+        let ty = if !mon.set.hp_type.is_empty() {
+            crate::dex::to_id(&mon.set.hp_type)
+        } else {
+            crate::state::hidden_power_type(&mon.set.ivs).to_string()
+        };
+        if !ty.is_empty() && ty != "normal" {
+            return format!("hiddenpower{ty}");
+        }
+    }
+    id
 }
 
 /// Split a crate move (a DISPLAY name from `set.moves`) into (bare id, display name)
 /// for the `active[].moves[]` request entry. gen<6 Hidden Power shows `id:"hiddenpower"`
 /// (BARE) + `move:"Hidden Power <Type> <BP>"`; every other move is `id`/`name`
 /// verbatim.
-fn active_move_display(mv: &str, dex: &Dex) -> (String, String) {
+///
+/// `hp_bp` is the ACTIVE mon's IV-derived Hidden Power BP (`MonState.hidden_power_bp`,
+/// `gen3_iv_derived_hidden_power_bp_v1`). The real sim renders `Hidden Power <Type>
+/// <this.hpPower>` (pokemon.ts, `getMoveRequestData`), and `hpPower` is IV-derived — so
+/// the request move NAME must use the mon's BP, NOT the flat data 70 (else a BP-68 HP mon
+/// shows "Hidden Power Ice 70" and diverges from the sim / confuses poke-env).
+fn active_move_display(mv: &str, dex: &Dex, hp_bp: u8) -> (String, String) {
     let id = crate::dex::to_id(mv);
     let data = dex.moves(&id);
     let name = data.map(|d| d.name.clone()).unwrap_or_else(|| mv.to_string());
     if id.starts_with("hiddenpower") && id != "hiddenpower" {
         // Typed HP: bare id + "<Name> <BP>" (name already reads "Hidden Power <Type>").
-        let bp = data.map(|d| d.base_power).unwrap_or(70);
-        return ("hiddenpower".to_string(), format!("{name} {bp}"));
+        return ("hiddenpower".to_string(), format!("{name} {hp_bp}"));
     }
     (id, name)
 }
@@ -448,8 +492,46 @@ fn active_move_display(mv: &str, dex: &Dex) -> (String, String) {
 /// is `disabled` iff it is NOT usable — EXCEPT when the whole mon must Struggle,
 /// where the sim substitutes Struggle (handled by the caller) rather than marking
 /// every slot disabled.
+///
+/// THE LAZY CHOICE LOCK (`gen3_choice_lock_request_disabled_v1`, the `bab_3_24`
+/// per-side request find): Showdown applies the Choice lock at REQUEST-BUILD via
+/// `choicelock.onDisableMove` — `if (pokemon.getItem().isChoice &&
+/// pokemon.hasMove(effectState.move)) disable every moveSlot != effectState.move`
+/// — a CURRENT-item + `lastMove` read. So a mon that GAINED a Choice item mid-turn
+/// (Skarmory Thief'ing a Choice Band while itemless) still locks to its last-used
+/// slot even though the engine `choice_locked_move` was never set (`run_move` only
+/// records it when the mon uses a move WHILE already holding the Choice item). We
+/// fold that lazy lock here (bridge/request-layer only — NOT `move_usable`, whose
+/// engine-wide legality must not change): a mon HOLDING a Choice item with a
+/// `last_move` it still knows disables every OTHER slot, in addition to the engine
+/// lock. (A mon that used its Choice move WHILE holding the item already has
+/// `choice_locked_move` set → `move_usable` covers it; this only adds the
+/// gained-mid-turn case.)
 fn move_disabled(mon: &MonState, k: usize, dex: &Dex) -> bool {
-    !mon.move_usable(k, dex)
+    if !mon.move_usable(k, dex) {
+        return true;
+    }
+    // Lazy choice lock: a CURRENT Choice item + a still-known last_move slot locks
+    // every other slot at request-build (mirroring `choicelock.onDisableMove`).
+    if dex
+        .item(&crate::dex::to_id(&mon.item))
+        .map(|i| i.choice)
+        .unwrap_or(false)
+    {
+        if let Some(locked) = mon.last_move {
+            // `hasMove(effectState.move)` — the locked slot must still hold a move.
+            // Disable every slot whose move id differs from the locked slot's.
+            if locked < mon.set.moves.len() {
+                let locked_id = crate::dex::to_id(&mon.set.moves[locked]);
+                if let Some(this_id) = mon.set.moves.get(k).map(|m| crate::dex::to_id(m)) {
+                    if this_id != locked_id {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    false
 }
 
 /// The `condition` string (`getHealth().secret`): `0 fnt` / `x/y` / `x/y <status>`.
@@ -495,18 +577,34 @@ fn display_name(mon: &MonState, dex: &Dex) -> String {
         .unwrap_or_else(|| mon.species_id.clone())
 }
 
-/// The `details` string (`Pokemon.details`): `<Species>` + `, <Gender>` when the
-/// mon has a gender ('M'/'F'; 'N'/none omitted). L100 is omitted (gen3 default).
+/// The `details` string (`Pokemon.details`): `<Species>` + `, L<level>` iff level
+/// != 100 + `, <Gender>` when the mon has a gender ('M'/'F'; 'N'/none omitted) +
+/// `, shiny` for a shiny set. Showdown emits `, L<n>` in the request-JSON `details`
+/// field for a non-L100 mon and OMITS it at L100 (gen3 default) — probe-confirmed
+/// order `<Species>[, L<level>][, <gender>][, shiny]` (level BEFORE gender),
+/// IDENTICAL to the omniscient `|switch|` details form (`turn.rs::switch_details`).
+/// gen3ou is always L100 so the pool request goldens never emit it (byte-identical);
+/// randbats surface it. The `, shiny` suffix mirrors the omniscient `|switch|`
+/// details form (`gen3_shiny_details_v1`, byte-fuzz fixture 08) — the sim's
+/// request-JSON carries it too (`"details":"Blissey, F, shiny"`).
 fn details(mon: &MonState, dex: &Dex) -> String {
     let species = dex
         .species(&mon.species_id)
         .map(|s| s.name.clone())
         .unwrap_or_else(|| mon.species_id.clone());
-    match mon.gender {
-        Some('M') => format!("{species}, M"),
-        Some('F') => format!("{species}, F"),
-        _ => species,
+    let mut d = species;
+    if mon.level != 100 {
+        d.push_str(&format!(", L{}", mon.level));
     }
+    match mon.gender {
+        Some('M') => d.push_str(", M"),
+        Some('F') => d.push_str(", F"),
+        _ => {}
+    }
+    if mon.set.shiny {
+        d.push_str(", shiny");
+    }
+    d
 }
 
 /// Serialize `side.pokemon[j]` (`getSwitchRequestData`) — the exact field order:
@@ -524,7 +622,7 @@ fn serialize_mon(side: usize, mon: &MonState, active: bool, dex: &Dex) -> String
         .set
         .moves
         .iter()
-        .map(|m| format!("\"{}\"", json_escape(&side_move_id(m))))
+        .map(|m| format!("\"{}\"", json_escape(&side_move_id(mon, m))))
         .collect::<Vec<_>>()
         .join(",");
     // baseAbility = the mon's ORIGINAL ability id (the set's ability, not a
@@ -587,13 +685,17 @@ fn serialize_active(
                 .and_then(|t| mon.set.moves.get(t.move_index))
                 .cloned()
                 .unwrap_or_else(|| "solarbeam".to_string());
-            let (id, name) = active_move_display(&mid, dex);
+            let (id, name) = active_move_display(&mid, dex, mon.hidden_power_bp);
             format!("{{\"move\":\"{}\",\"id\":\"{}\"}}", json_escape(&name), json_escape(&id))
         };
-        // The lockedmove request shows `trapped:true` iff a live bench exists (the
-        // `canSwitchIn` gate of getMoveRequestData — with no bench neither flag shows).
-        let flag = if has_live_bench(state, side) { ",\"trapped\":true" } else { "" };
-        return format!("{{\"moves\":[{entry}]{flag}}}");
+        // BR1 (`gen3_locked_last_mon_trapped_v1`): a move-LOCKED mon is `hardLocked` in
+        // getMoveRequestData (pokemon.js:726-727, 744-749): `this.trapped` is set true and
+        // `hardLocked || canSwitchIn` is ALWAYS true, so `trapped:true` is emitted
+        // UNCONDITIONALLY — even for the LAST mon with no live bench (probe-verified: the
+        // recharge / two-turn fire request carries `trapped:true` WITH and WITHOUT a bench;
+        // bridge-fuzz BR1). The old `has_live_bench` gate wrongly dropped it on a last-mon
+        // recharge/fire turn, so poke-env thought the last mon could switch.
+        return format!("{{\"moves\":[{entry}],\"trapped\":true}}");
     }
     // Struggle substitution: a mon with NO usable move offers only Struggle.
     let must_struggle = mon.must_struggle(dex);
@@ -607,7 +709,7 @@ fn serialize_active(
             .iter()
             .enumerate()
             .map(|(k, mv)| {
-                let (id, name) = active_move_display(mv, dex);
+                let (id, name) = active_move_display(mv, dex, mon.hidden_power_bp);
                 let pp = mon.move_pp.get(k).copied().unwrap_or(0);
                 let maxpp = mon.move_maxpp.get(k).copied().unwrap_or(0);
                 let target = dex
@@ -765,6 +867,34 @@ pub fn run_full_battle_bridge_chunked_ended(
     cmds: &[Cmd],
     dex: &Dex,
 ) -> Result<(BridgeChunks, bool), String> {
+    let (chunks, ended, _script, _seeds) = run_full_battle_bridge_core(opts, cmds, dex)?;
+    Ok((chunks, ended))
+}
+
+/// The CORE of the bridge emitter: identical to [`run_full_battle_bridge_chunked_ended`]
+/// but ALSO returns the [`ScriptDecision`] list it BUILT while consuming the CMD stream
+/// at each boundary AND the per-`|request|`-boundary PRNG seed list (the A2 SEED ANCHOR).
+///
+/// **The A2 seed-anchor fix (`gen3_perside_seed_anchor_makerequest_align_v1`).** The
+/// per-side/request A/B fuzzer's SEED ANCHOR (`src/bin/bridge_replay.rs --ab`) asserts the
+/// port's per-decision seed against the omniscient oracle's recorded `seedAfter` BEFORE the
+/// per-side byte diff — partitioning a divergence into an upstream engine desync
+/// (`kind:"seed"`) vs a genuine per-side/request-serializer bug. It used to re-run
+/// `run_full_battle` and read each `DecisionRecord.seed_after`, but that internal checkpoint
+/// is captured at a point that, on a **phaze-drag / forced-switch** boundary, is ONE endTurn
+/// Quick-Claw `randomChance(1,5)` draw EARLIER than the sim's `makeRequest` flush (the
+/// fuzzer's `rec.seeds.push` point) — a per-decision-boundary BOOKKEEPING misalignment (the
+/// game is byte-identical to `|win|`), not an engine draw bug. This returns instead the seed
+/// read at each **`makeRequest` FLUSH boundary** — the `state.prng_seed()` of the freshly
+/// replayed `[0..k]` script paused needing decision `k`'s input, i.e. AFTER decision `k-1`'s
+/// endTurn Quick Claw, 1:1 with the sim's `rec.seeds.push`. Reading the seed at a different,
+/// makeRequest-aligned checkpoint changes NO PRNG call, so `run_full_battle`'s DecisionRecord
+/// semantics (asserted by fullbattle/phaze/e2e) + every committed golden are untouched.
+pub fn run_full_battle_bridge_core(
+    opts: &BattleOptions,
+    cmds: &[Cmd],
+    dex: &Dex,
+) -> Result<(BridgeChunks, bool, Vec<ScriptDecision>, Vec<PrngSeed>), String> {
     let mut chunks = BridgeChunks::default();
     let mut battle_ended = false;
     // Percent HP fold applies only in non-debug formats (gen3ou). A `debug:true`
@@ -790,6 +920,13 @@ pub fn run_full_battle_bridge_chunked_ended(
     //    request state, and diff the omniscient log against the previous replay to get
     //    the batch flushed since. ──
     let mut script: Vec<ScriptDecision> = Vec::new();
+    // A2 SEED ANCHOR: the port's PRNG seed at each `makeRequest` FLUSH boundary. Captured at
+    // the TOP of each iteration whose `script` already holds ≥1 committed decision — that
+    // paused-state seed is the seed AFTER the last committed decision's endTurn Quick Claw
+    // (the makeRequest boundary), i.e. `rec.seeds[committed - 1]`, 1:1 with the sim's
+    // `rec.seeds.push`. Iteration 0 (empty script) is the pre-first-decision `initSeed` and
+    // is NOT a `rec.seed`, so it is skipped.
+    let mut request_seeds: Vec<PrngSeed> = Vec::new();
     let mut prev_log_len = raw_framing.len();
     let mut cmd_iter = cmds.iter().peekable();
     let mut guard = 0usize;
@@ -803,6 +940,11 @@ pub fn run_full_battle_bridge_chunked_ended(
         // Replay the accumulated script; snapshot the paused state + the full log.
         let (ended, log, state_holder) = replay_snapshot(opts, &script, dex)?;
         let state = state_holder.state().ok_or("paused battle has no state")?;
+
+        // [A2] Capture the makeRequest-boundary seed (post-Quick-Claw of the prior decision).
+        if !script.is_empty() {
+            request_seeds.push(state.prng_seed());
+        }
 
         // The log batch flushed since the previous boundary → ONE chunk per side.
         emit_log_batch_chunk(&mut chunks, &log[prev_log_len..], report_percent);
@@ -925,7 +1067,7 @@ pub fn run_full_battle_bridge_chunked_ended(
         script.push(dec);
     }
 
-    Ok((chunks, battle_ended))
+    Ok((chunks, battle_ended, script, request_seeds))
 }
 
 /// Split the reframed framing lines into the 3 `getPlayerStreams` chunks per side and
@@ -1108,6 +1250,12 @@ pub struct GoldenBattle {
     /// Expected p1 / p2 chunk lines (raw payloads, in chunk+line order).
     pub p1_expected: Vec<String>,
     pub p2_expected: Vec<String>,
+    /// The omniscient oracle's post-decision PRNG seed at each RESOLVED decision boundary
+    /// (`SEED <id> <bno> <decIdx> <m,n,o,p>` rows, one per committed decision, in order) —
+    /// the SEED ANCHOR the `--ab` verdict asserts against `run_full_battle`'s per-decision
+    /// engine seed before the per-side byte diff. Empty for a golden without SEED rows
+    /// (the anchor is then skipped — backward compatible with the pre-anchor grammar).
+    pub seeds: Vec<String>,
 }
 
 /// Parse a bridge golden's TAB grammar into per-battle records. Grammar
@@ -1174,6 +1322,13 @@ pub fn parse_bridge_golden(text: &str) -> Result<Vec<GoldenBattle>, String> {
                 } else {
                     b.p2_expected.push(raw);
                 }
+            }
+            "SEED" => {
+                ensure(&mut map, &mut order, f[1]);
+                let b = map.get_mut(f[1]).unwrap();
+                // f: SEED id bno decIdx "m,n,o,p" — the omniscient oracle's post-decision
+                // seed, one row per RESOLVED boundary, appended in order.
+                b.seeds.push(f[4].to_string());
             }
             "END" => {}
             _ => {}

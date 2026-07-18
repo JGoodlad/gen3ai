@@ -79,6 +79,33 @@ impl Type {
         }
     }
 
+    /// The DISPLAY-CASED (Title-Case) type name, as Showdown renders it in the protocol
+    /// stream (e.g. a Color Change `|-start|<mon>|typechange|Psychic|…`). Distinct from
+    /// [`Self::name`], which is the UPPERCASE key form the type chart / `agents.gen3_data`
+    /// use. Used ONLY for protocol emission.
+    pub fn display_name(self) -> &'static str {
+        match self {
+            Type::Normal => "Normal",
+            Type::Fire => "Fire",
+            Type::Water => "Water",
+            Type::Electric => "Electric",
+            Type::Grass => "Grass",
+            Type::Ice => "Ice",
+            Type::Fighting => "Fighting",
+            Type::Poison => "Poison",
+            Type::Ground => "Ground",
+            Type::Flying => "Flying",
+            Type::Psychic => "Psychic",
+            Type::Bug => "Bug",
+            Type::Rock => "Rock",
+            Type::Ghost => "Ghost",
+            Type::Dragon => "Dragon",
+            Type::Dark => "Dark",
+            Type::Steel => "Steel",
+            Type::Fairy => "Fairy",
+        }
+    }
+
     /// Gen 1-3 physical/special split is by TYPE (per-move categories arrived in
     /// Gen 4). These eight types are special; everything else is physical.
     /// Mirrors poke-env's `Move.SPECIAL_TYPES` for gen ≤ 3.

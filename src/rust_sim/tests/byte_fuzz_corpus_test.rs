@@ -19,8 +19,19 @@
 //!
 //! To ADD a fixture: drop a clean repro `battle.txt` into the corpus dir (see the
 //! folder README) — this test auto-discovers every `*.txt`.
+//!
+//! ── The KNOWN-RESIDUAL allowlist gate ("no NEW kinds", `gen3_omniscient_byte_fuzz_v1`) ──
+//! Two fixture classes, so the allowlist is AUDITABLE + BOUNDED (it can only grow by a
+//! reviewed reason+fixture pair, and any un-cataloged divergence kind is a hard failure):
+//!   1. an EMISSION-FORM fixture (the default, no tag) MUST replay `ok` — byte-clean.
+//!   2. an ALLOWLIST fixture carrying a `# ALLOWLIST <reason>` header line MUST replay to a
+//!      `diverged` verdict whose `allowlisted` reason EXACTLY equals `<reason>` — the tagged
+//!      documented residual (e.g. the R1 turn-0 construction-mirror `[of]` attribution). So
+//!      (i) a residual fixture that stops matching its reason (a new divergence appears BEFORE
+//!      it, or the residual is fixed) FAILS, and (ii) nobody can add a silently-ignored
+//!      divergence: every escape must be a named allowlist entry backed by a tagged repro.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn corpus_dir() -> PathBuf {
@@ -49,6 +60,20 @@ fn pluck<'a>(line: &'a str, key: &str) -> Option<&'a str> {
     Some(&rest[..end])
 }
 
+/// The allowlist REASON a fixture is tagged with, from a `# ALLOWLIST <reason>` header
+/// comment line (whitespace-trimmed). `None` = an untagged emission-form fixture (must
+/// replay `ok`).
+fn allowlist_tag(file: &Path) -> Option<String> {
+    let data = std::fs::read_to_string(file).ok()?;
+    for line in data.lines() {
+        let t = line.trim();
+        if let Some(rest) = t.strip_prefix("# ALLOWLIST ") {
+            return Some(rest.trim().to_string());
+        }
+    }
+    None
+}
+
 #[test]
 fn byte_fuzz_corpus_replays_clean() {
     let files = corpus_files();
@@ -65,6 +90,10 @@ fn byte_fuzz_corpus_replays_clean() {
     let mut checked = 0usize;
 
     for file in &files {
+        // A `# ALLOWLIST <reason>` header tags a KNOWN-RESIDUAL fixture (must diverge with
+        // that exact `allowlisted` reason); an untagged fixture must replay `ok`.
+        let tag = allowlist_tag(file);
+
         let out = Command::new(bin)
             .arg("--protocol")
             .arg(file)
@@ -80,19 +109,39 @@ fn byte_fuzz_corpus_replays_clean() {
             }
             saw_battle = true;
             let verdict = pluck(line, "verdict").unwrap_or("<none>");
-            if verdict != "ok" {
-                let kind = pluck(line, "kind").unwrap_or("-");
-                let dec = line
-                    .find("\"decision\":")
-                    .map(|i| &line[i + 11..])
-                    .and_then(|r| r.split([',', '}']).next())
-                    .unwrap_or("-");
-                let detail = pluck(line, "detail").unwrap_or("-");
-                panic!(
-                    "byte-fuzz corpus REGRESSION in {}: verdict={verdict} kind={kind} \
-                     decision={dec}\n  detail: {detail}\n  full verdict: {line}",
-                    file.display()
-                );
+            match &tag {
+                // Untagged emission-form fixture: MUST be byte-clean.
+                None => {
+                    if verdict != "ok" {
+                        let kind = pluck(line, "kind").unwrap_or("-");
+                        let dec = line
+                            .find("\"decision\":")
+                            .map(|i| &line[i + 11..])
+                            .and_then(|r| r.split([',', '}']).next())
+                            .unwrap_or("-");
+                        let detail = pluck(line, "detail").unwrap_or("-");
+                        panic!(
+                            "byte-fuzz corpus REGRESSION in {}: verdict={verdict} kind={kind} \
+                             decision={dec}\n  detail: {detail}\n  full verdict: {line}",
+                            file.display()
+                        );
+                    }
+                }
+                // Tagged allowlist fixture: MUST diverge with EXACTLY the tagged reason.
+                Some(reason) => {
+                    let got_reason = pluck(line, "allowlisted");
+                    if verdict != "diverged" || got_reason != Some(reason.as_str()) {
+                        let kind = pluck(line, "kind").unwrap_or("-");
+                        panic!(
+                            "byte-fuzz ALLOWLIST fixture {} must diverge with allowlisted=\
+                             {reason:?}, but got verdict={verdict} kind={kind} \
+                             allowlisted={got_reason:?}\n  (a residual fixture stopped matching \
+                             its reason — a new divergence appeared before it, or the residual \
+                             was fixed: re-tag or promote it)\n  full verdict: {line}",
+                            file.display()
+                        );
+                    }
+                }
             }
         }
         assert!(

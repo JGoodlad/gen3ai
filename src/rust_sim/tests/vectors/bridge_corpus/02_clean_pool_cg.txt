@@ -1,0 +1,984 @@
+# bridge_ab_fuzz chunk — REQUEST / PER-SIDE A/B fuzzer (real Node getPlayerStreams vs the Rust port).
+# mode=pool format=gen3customgame master_seed=771301 run_id=rmrom1on4 chunk=1
+# Format identical to tests/vectors/bridge_trapping_golden.txt (SCEN/TEAM/INIT/CMD/CHUNK/END).
+# Replay: /tmp/pokesim_target_bridge/release/bridge_replay <this-file>
+SCEN	bab_1_1
+TEAM	bab_1_1	p1	Tyranitar||BlackBelt|SandStream|BrickBreak,RockSlide,FocusPunch,Earthquake|Jolly|,252,,,4,252|M||||]Dugtrio||ChoiceBand|ArenaTrap|Earthquake,AerialAce,HiddenPowerBug,BeatUp|Jolly|,252,,,144,112|M|,30,30,,30,|||,Bug,,,,]Jirachi||Leftovers|SereneGrace|CalmMind,Psychic,FirePunch,HiddenPowerGrass|Modest|248,,36,156,,68|N|,2,,30,,|||,Grass,,,,]Zapdos||Leftovers|Pressure|Substitute,BatonPass,Thunderbolt,HiddenPowerGrass|Modest|,,,184,148,176|N|,2,,30,,|||,Grass,,,,]Swampert||Leftovers|Torrent|HydroPump,IceBeam,Earthquake,Refresh|Quiet|248,,88,96,36,40|M||||]Gengar||Leftovers|Levitate|Thunderbolt,IcePunch,Explosion,Hypnosis|Hasty|,96,,160,,252|M||||
+TEAM	bab_1_1	p2	Metagross||ChoiceBand|ClearBody|BrickBreak,DoubleEdge,MeteorMash,Explosion|Jolly|,224,,,68,216|N||||]Magneton||SalacBerry|MagnetPull|Endure,Substitute,HiddenPowerGrass,Thunderbolt|Timid|,,,252,32,224|N|,2,,30,,|||,Grass,,,,]Celebi||Leftovers|NaturalCure|Substitute,LeechSeed,Psychic,BatonPass|Timid|252,,,,4,252|N|,0,,,,|||]Tyranitar||LumBerry|SandStream|HiddenPowerGrass,DragonDance,Earthquake,RockSlide|Hasty|,232,,24,,252|M|,30,,30,,|||,Grass,,,,]Gyarados||Leftovers|Intimidate|HiddenPowerGhost,DoubleEdge,Earthquake,DragonDance|Jolly|28,252,,,,228|M|,,30,,30,|||,Ghost,,,,]Salamence||Leftovers|Intimidate|HiddenPowerFlying,RockSlide,Earthquake,DragonDance|Adamant|,180,,,212,116|M|,,,30,30,30|||,Flying,,,,
+INIT	bab_1_1	0	15990,46211,17599,52734	gen3customgame
+CMD	bab_1_1	0	0	p1	move 3
+CMD	bab_1_1	0	1	p2	move 4
+CMD	bab_1_1	0	2	p1	switch 5
+CMD	bab_1_1	0	3	p2	switch 2
+CMD	bab_1_1	0	4	p1	move 1
+CMD	bab_1_1	0	5	p2	switch 3
+CMD	bab_1_1	0	6	p1	move 2
+CMD	bab_1_1	0	7	p2	move 4
+CMD	bab_1_1	0	8	p2	switch 4
+CMD	bab_1_1	0	9	p1	move 4
+CMD	bab_1_1	0	10	p2	move 3
+CMD	bab_1_1	0	11	p1	move 2
+CMD	bab_1_1	0	12	p2	move 2
+CMD	bab_1_1	0	13	p1	move 2
+CMD	bab_1_1	0	14	p2	move 3
+CMD	bab_1_1	0	15	p1	move 2
+CMD	bab_1_1	0	16	p2	move 3
+CMD	bab_1_1	0	17	p1	switch 2
+CMD	bab_1_1	0	18	p2	move 3
+CMD	bab_1_1	0	19	p1	switch 3
+CMD	bab_1_1	0	20	p1	move 3
+CMD	bab_1_1	0	21	p2	move 3
+CMD	bab_1_1	0	22	p2	switch 6
+CMD	bab_1_1	0	23	p1	move 1
+CMD	bab_1_1	0	24	p2	move 2
+CMD	bab_1_1	0	25	p1	move 1
+CMD	bab_1_1	0	26	p2	move 3
+CMD	bab_1_1	0	27	p1	switch 2
+CMD	bab_1_1	0	28	p1	move 2
+CMD	bab_1_1	0	29	p2	move 4
+CMD	bab_1_1	0	30	p1	move 2
+CMD	bab_1_1	0	31	p2	switch 5
+CMD	bab_1_1	0	32	p1	move 2
+CMD	bab_1_1	0	33	p2	switch 5
+CMD	bab_1_1	0	34	p2	switch 5
+CMD	bab_1_1	0	35	p1	move 4
+CMD	bab_1_1	0	36	p2	switch 4
+CMD	bab_1_1	0	37	p1	move 1
+CMD	bab_1_1	0	38	p2	move 1
+CMD	bab_1_1	0	39	p1	move 2
+CMD	bab_1_1	0	40	p2	move 3
+CMD	bab_1_1	0	41	p1	switch 6
+CMD	bab_1_1	0	42	p1	move 2
+CMD	bab_1_1	0	43	p2	move 2
+CMD	bab_1_1	0	44	p1	switch 4
+CMD	bab_1_1	0	45	p2	move 2
+CMD	bab_1_1	0	46	p1	move 2
+CMD	bab_1_1	0	47	p2	move 3
+CMD	bab_1_1	0	48	p1	switch 4
+CMD	bab_1_1	0	49	p1	move 1
+CMD	bab_1_1	0	50	p2	move 4
+CMD	bab_1_1	0	51	p2	switch 3
+CMD	bab_1_1	0	52	p1	move 3
+CMD	bab_1_1	0	53	p2	move 2
+CMD	bab_1_1	0	54	p1	switch 4
+CMD	bab_1_1	0	55	p1	move 2
+CMD	bab_1_1	0	56	p2	switch 3
+CMD	bab_1_1	0	57	p1	move 2
+CMD	bab_1_1	0	58	p2	move 2
+CMD	bab_1_1	0	59	p1	move 3
+CMD	bab_1_1	0	60	p2	move 1
+CMD	bab_1_1	0	61	p1	move 3
+CMD	bab_1_1	0	62	p2	move 3
+SEED	bab_1_1	0	0	60925,52720,54708,53699
+SEED	bab_1_1	0	1	25689,58817,5395,48050
+SEED	bab_1_1	0	2	6319,49756,32243,22054
+SEED	bab_1_1	0	3	6319,49756,32243,22054
+SEED	bab_1_1	0	4	1545,35039,51164,57669
+SEED	bab_1_1	0	5	22166,36593,35809,32905
+SEED	bab_1_1	0	6	59033,46133,13549,2660
+SEED	bab_1_1	0	7	45814,53085,56460,25548
+SEED	bab_1_1	0	8	10063,65381,30106,6196
+SEED	bab_1_1	0	9	29125,50084,42390,1761
+SEED	bab_1_1	0	10	27738,88,47660,48776
+SEED	bab_1_1	0	11	47252,13215,55668,37289
+SEED	bab_1_1	0	12	34913,17344,29878,34672
+SEED	bab_1_1	0	13	56733,13245,53716,56919
+SEED	bab_1_1	0	14	53209,60345,64838,15192
+SEED	bab_1_1	0	15	63038,18584,16902,8315
+SEED	bab_1_1	0	16	33816,41514,36966,25406
+SEED	bab_1_1	0	17	32924,57029,53924,27709
+SEED	bab_1_1	0	18	63091,31650,29199,3073
+SEED	bab_1_1	0	19	39701,29951,52617,58408
+SEED	bab_1_1	0	20	46289,38072,65471,2699
+SEED	bab_1_1	0	21	59128,5937,64697,4463
+SEED	bab_1_1	0	22	41117,47427,4307,4627
+SEED	bab_1_1	0	23	32235,61275,6813,60226
+SEED	bab_1_1	0	24	47754,40320,46420,47352
+SEED	bab_1_1	0	25	51315,38457,52830,24298
+SEED	bab_1_1	0	26	19423,4037,6108,62942
+SEED	bab_1_1	0	27	28899,7138,2809,27993
+SEED	bab_1_1	0	28	12961,49836,41891,37725
+SEED	bab_1_1	0	29	33862,20484,23831,34676
+SEED	bab_1_1	0	30	58189,16067,127,289
+SEED	bab_1_1	0	31	34731,4907,7619,47560
+SEED	bab_1_1	0	32	21332,59794,61762,62123
+SEED	bab_1_1	0	33	8928,8551,45260,47781
+SEED	bab_1_1	0	34	9857,42623,55338,23216
+SEED	bab_1_1	0	35	57830,9636,7859,59032
+CHUNK	bab_1_1	0	p1	0	0	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	0	1	|gametype|singles
+CHUNK	bab_1_1	0	p1	1	0	|player|p1|P1||
+CHUNK	bab_1_1	0	p1	2	0	|player|p2|P2||
+CHUNK	bab_1_1	0	p1	2	1	|gen|3
+CHUNK	bab_1_1	0	p1	2	2	|tier|[Gen 3] Custom Game
+CHUNK	bab_1_1	0	p1	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	bab_1_1	0	p1	2	4	|
+CHUNK	bab_1_1	0	p1	2	5	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	2	6	|teamsize|p1|6
+CHUNK	bab_1_1	0	p1	2	7	|teamsize|p2|6
+CHUNK	bab_1_1	0	p1	2	8	|start
+CHUNK	bab_1_1	0	p1	2	9	|switch|p1a: Tyranitar|Tyranitar, M|341/341
+CHUNK	bab_1_1	0	p1	2	10	|switch|p2a: Metagross|Metagross|301/301
+CHUNK	bab_1_1	0	p1	2	11	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+CHUNK	bab_1_1	0	p1	2	12	|turn|1
+CHUNK	bab_1_1	0	p1	3	0	|request|{"active":[{"moves":[{"move":"Brick Break","id":"brickbreak","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":false},{"move":"Focus Punch","id":"focuspunch","pp":32,"maxpp":32,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"341/341","active":true,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"211/211","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"403/403","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	4	0	|
+CHUNK	bab_1_1	0	p1	4	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	4	2	|-singleturn|p1a: Tyranitar|move: Focus Punch
+CHUNK	bab_1_1	0	p1	4	3	|move|p2a: Metagross|Explosion|p1a: Tyranitar
+CHUNK	bab_1_1	0	p1	4	4	|-resisted|p1a: Tyranitar
+CHUNK	bab_1_1	0	p1	4	5	|-crit|p1a: Tyranitar
+CHUNK	bab_1_1	0	p1	4	6	|-damage|p1a: Tyranitar|0 fnt
+CHUNK	bab_1_1	0	p1	4	7	|faint|p2a: Metagross
+CHUNK	bab_1_1	0	p1	4	8	|faint|p1a: Tyranitar
+CHUNK	bab_1_1	0	p1	5	0	|request|{"forceSwitch":[true],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":true,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"211/211","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"403/403","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	6	0	|
+CHUNK	bab_1_1	0	p1	6	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	6	2	|switch|p2a: Magneton|Magneton|241/241
+CHUNK	bab_1_1	0	p1	6	3	|switch|p1a: Swampert|Swampert, M|403/403
+CHUNK	bab_1_1	0	p1	6	4	|
+CHUNK	bab_1_1	0	p1	6	5	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	6	6	|upkeep
+CHUNK	bab_1_1	0	p1	6	7	|turn|2
+CHUNK	bab_1_1	0	p1	7	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":32,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"403/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"211/211","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	8	0	|
+CHUNK	bab_1_1	0	p1	8	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	8	2	|switch|p2a: Celebi|Celebi|404/404
+CHUNK	bab_1_1	0	p1	8	3	|move|p1a: Swampert|Hydro Pump|p2a: Celebi
+CHUNK	bab_1_1	0	p1	8	4	|-resisted|p2a: Celebi
+CHUNK	bab_1_1	0	p1	8	5	|-damage|p2a: Celebi|331/404
+CHUNK	bab_1_1	0	p1	8	6	|
+CHUNK	bab_1_1	0	p1	8	7	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	8	8	|-damage|p2a: Celebi|306/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	8	9	|-heal|p2a: Celebi|331/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	8	10	|upkeep
+CHUNK	bab_1_1	0	p1	8	11	|turn|3
+CHUNK	bab_1_1	0	p1	9	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":32,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"403/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"211/211","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	10	0	|
+CHUNK	bab_1_1	0	p1	10	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	10	2	|move|p2a: Celebi|Baton Pass|p2a: Celebi
+CHUNK	bab_1_1	0	p1	11	0	|request|{"wait":true,"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"403/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"211/211","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	12	0	|
+CHUNK	bab_1_1	0	p1	12	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	12	2	|switch|p2a: Tyranitar|Tyranitar, M|341/341|[from] Baton Pass
+CHUNK	bab_1_1	0	p1	12	3	|move|p1a: Swampert|Ice Beam|p2a: Tyranitar
+CHUNK	bab_1_1	0	p1	12	4	|-damage|p2a: Tyranitar|265/341
+CHUNK	bab_1_1	0	p1	12	5	|
+CHUNK	bab_1_1	0	p1	12	6	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	12	7	|upkeep
+CHUNK	bab_1_1	0	p1	12	8	|turn|4
+CHUNK	bab_1_1	0	p1	13	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":15,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":32,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"403/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"211/211","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	14	0	|
+CHUNK	bab_1_1	0	p1	14	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	14	2	|move|p2a: Tyranitar|Earthquake|p1a: Swampert
+CHUNK	bab_1_1	0	p1	14	3	|-damage|p1a: Swampert|287/403
+CHUNK	bab_1_1	0	p1	14	4	|move|p1a: Swampert|Refresh||[still]
+CHUNK	bab_1_1	0	p1	14	5	|-fail|p1a: Swampert
+CHUNK	bab_1_1	0	p1	14	6	|
+CHUNK	bab_1_1	0	p1	14	7	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	14	8	|-heal|p1a: Swampert|312/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	14	9	|upkeep
+CHUNK	bab_1_1	0	p1	14	10	|turn|5
+CHUNK	bab_1_1	0	p1	15	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":15,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":31,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"312/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"211/211","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	16	0	|
+CHUNK	bab_1_1	0	p1	16	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	16	2	|move|p2a: Tyranitar|Dragon Dance|p2a: Tyranitar
+CHUNK	bab_1_1	0	p1	16	3	|-boost|p2a: Tyranitar|atk|1
+CHUNK	bab_1_1	0	p1	16	4	|-boost|p2a: Tyranitar|spe|1
+CHUNK	bab_1_1	0	p1	16	5	|move|p1a: Swampert|Ice Beam|p2a: Tyranitar
+CHUNK	bab_1_1	0	p1	16	6	|-damage|p2a: Tyranitar|181/341
+CHUNK	bab_1_1	0	p1	16	7	|
+CHUNK	bab_1_1	0	p1	16	8	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	16	9	|-heal|p1a: Swampert|337/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	16	10	|upkeep
+CHUNK	bab_1_1	0	p1	16	11	|turn|6
+CHUNK	bab_1_1	0	p1	17	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":14,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":31,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"337/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"211/211","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	18	0	|
+CHUNK	bab_1_1	0	p1	18	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	18	2	|move|p2a: Tyranitar|Earthquake|p1a: Swampert
+CHUNK	bab_1_1	0	p1	18	3	|-damage|p1a: Swampert|169/403
+CHUNK	bab_1_1	0	p1	18	4	|move|p1a: Swampert|Ice Beam|p2a: Tyranitar
+CHUNK	bab_1_1	0	p1	18	5	|-damage|p2a: Tyranitar|102/341
+CHUNK	bab_1_1	0	p1	18	6	|
+CHUNK	bab_1_1	0	p1	18	7	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	18	8	|-heal|p1a: Swampert|194/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	18	9	|upkeep
+CHUNK	bab_1_1	0	p1	18	10	|turn|7
+CHUNK	bab_1_1	0	p1	19	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":13,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":31,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"194/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"211/211","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	20	0	|
+CHUNK	bab_1_1	0	p1	20	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	20	2	|move|p2a: Tyranitar|Earthquake|p1a: Swampert
+CHUNK	bab_1_1	0	p1	20	3	|-damage|p1a: Swampert|18/403
+CHUNK	bab_1_1	0	p1	20	4	|move|p1a: Swampert|Ice Beam|p2a: Tyranitar
+CHUNK	bab_1_1	0	p1	20	5	|-damage|p2a: Tyranitar|22/341
+CHUNK	bab_1_1	0	p1	20	6	|
+CHUNK	bab_1_1	0	p1	20	7	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	20	8	|-heal|p1a: Swampert|43/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	20	9	|upkeep
+CHUNK	bab_1_1	0	p1	20	10	|turn|8
+CHUNK	bab_1_1	0	p1	21	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":12,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":31,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"43/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"211/211","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	22	0	|
+CHUNK	bab_1_1	0	p1	22	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	22	2	|switch|p1a: Dugtrio|Dugtrio, M|211/211
+CHUNK	bab_1_1	0	p1	22	3	|move|p2a: Tyranitar|Earthquake|p1a: Dugtrio
+CHUNK	bab_1_1	0	p1	22	4	|-damage|p1a: Dugtrio|0 fnt
+CHUNK	bab_1_1	0	p1	22	5	|faint|p1a: Dugtrio
+CHUNK	bab_1_1	0	p1	23	0	|request|{"forceSwitch":[true],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":true,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"43/403","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]},"noCancel":true}
+CHUNK	bab_1_1	0	p1	24	0	|
+CHUNK	bab_1_1	0	p1	24	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	24	2	|switch|p1a: Jirachi|Jirachi|403/403
+CHUNK	bab_1_1	0	p1	24	3	|
+CHUNK	bab_1_1	0	p1	24	4	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	24	5	|upkeep
+CHUNK	bab_1_1	0	p1	24	6	|turn|9
+CHUNK	bab_1_1	0	p1	25	0	|request|{"active":[{"moves":[{"move":"Calm Mind","id":"calmmind","pp":32,"maxpp":32,"target":"self","disabled":false},{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Fire Punch","id":"firepunch","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Jirachi","details":"Jirachi","condition":"403/403","active":true,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"43/403","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	26	0	|
+CHUNK	bab_1_1	0	p1	26	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	26	2	|move|p2a: Tyranitar|Earthquake|p1a: Jirachi
+CHUNK	bab_1_1	0	p1	26	3	|-supereffective|p1a: Jirachi
+CHUNK	bab_1_1	0	p1	26	4	|-damage|p1a: Jirachi|44/403
+CHUNK	bab_1_1	0	p1	26	5	|move|p1a: Jirachi|Fire Punch|p2a: Tyranitar
+CHUNK	bab_1_1	0	p1	26	6	|-resisted|p2a: Tyranitar
+CHUNK	bab_1_1	0	p1	26	7	|-damage|p2a: Tyranitar|0 fnt
+CHUNK	bab_1_1	0	p1	26	8	|faint|p2a: Tyranitar
+CHUNK	bab_1_1	0	p1	27	0	|request|{"wait":true,"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Jirachi","details":"Jirachi","condition":"44/403","active":true,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"43/403","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	28	0	|
+CHUNK	bab_1_1	0	p1	28	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	28	2	|switch|p2a: Salamence|Salamence, M|331/331
+CHUNK	bab_1_1	0	p1	28	3	|-ability|p2a: Salamence|Intimidate|boost
+CHUNK	bab_1_1	0	p1	28	4	|-unboost|p1a: Jirachi|atk|1
+CHUNK	bab_1_1	0	p1	28	5	|
+CHUNK	bab_1_1	0	p1	28	6	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	28	7	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	28	8	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	28	9	|-heal|p1a: Jirachi|69/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	28	10	|upkeep
+CHUNK	bab_1_1	0	p1	28	11	|turn|10
+CHUNK	bab_1_1	0	p1	29	0	|request|{"active":[{"moves":[{"move":"Calm Mind","id":"calmmind","pp":32,"maxpp":32,"target":"self","disabled":false},{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Fire Punch","id":"firepunch","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Jirachi","details":"Jirachi","condition":"69/403","active":true,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"43/403","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	30	0	|
+CHUNK	bab_1_1	0	p1	30	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	30	2	|move|p2a: Salamence|Rock Slide|p1a: Jirachi
+CHUNK	bab_1_1	0	p1	30	3	|-resisted|p1a: Jirachi
+CHUNK	bab_1_1	0	p1	30	4	|-damage|p1a: Jirachi|20/403
+CHUNK	bab_1_1	0	p1	30	5	|move|p1a: Jirachi|Calm Mind|p1a: Jirachi
+CHUNK	bab_1_1	0	p1	30	6	|-boost|p1a: Jirachi|spa|1
+CHUNK	bab_1_1	0	p1	30	7	|-boost|p1a: Jirachi|spd|1
+CHUNK	bab_1_1	0	p1	30	8	|
+CHUNK	bab_1_1	0	p1	30	9	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	30	10	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	30	11	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	30	12	|-heal|p1a: Jirachi|45/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	30	13	|upkeep
+CHUNK	bab_1_1	0	p1	30	14	|turn|11
+CHUNK	bab_1_1	0	p1	31	0	|request|{"active":[{"moves":[{"move":"Calm Mind","id":"calmmind","pp":31,"maxpp":32,"target":"self","disabled":false},{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Fire Punch","id":"firepunch","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Jirachi","details":"Jirachi","condition":"45/403","active":true,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"43/403","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	32	0	|
+CHUNK	bab_1_1	0	p1	32	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	32	2	|move|p2a: Salamence|Earthquake|p1a: Jirachi
+CHUNK	bab_1_1	0	p1	32	3	|-supereffective|p1a: Jirachi
+CHUNK	bab_1_1	0	p1	32	4	|-damage|p1a: Jirachi|0 fnt
+CHUNK	bab_1_1	0	p1	32	5	|faint|p1a: Jirachi
+CHUNK	bab_1_1	0	p1	33	0	|request|{"forceSwitch":[true],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":true,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"43/403","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]},"noCancel":true}
+CHUNK	bab_1_1	0	p1	34	0	|
+CHUNK	bab_1_1	0	p1	34	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	34	2	|switch|p1a: Swampert|Swampert, M|43/403
+CHUNK	bab_1_1	0	p1	34	3	|
+CHUNK	bab_1_1	0	p1	34	4	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	34	5	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	34	6	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	34	7	|-heal|p1a: Swampert|68/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	34	8	|upkeep
+CHUNK	bab_1_1	0	p1	34	9	|turn|12
+CHUNK	bab_1_1	0	p1	35	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":12,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":31,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"68/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	36	0	|
+CHUNK	bab_1_1	0	p1	36	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	36	2	|move|p2a: Salamence|Dragon Dance|p2a: Salamence
+CHUNK	bab_1_1	0	p1	36	3	|-boost|p2a: Salamence|atk|1
+CHUNK	bab_1_1	0	p1	36	4	|-boost|p2a: Salamence|spe|1
+CHUNK	bab_1_1	0	p1	36	5	|move|p1a: Swampert|Ice Beam|p2a: Salamence
+CHUNK	bab_1_1	0	p1	36	6	|-supereffective|p2a: Salamence
+CHUNK	bab_1_1	0	p1	36	7	|-damage|p2a: Salamence|23/331
+CHUNK	bab_1_1	0	p1	36	8	|
+CHUNK	bab_1_1	0	p1	36	9	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	36	10	|-damage|p2a: Salamence|3/331|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	36	11	|-heal|p2a: Salamence|23/331|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	36	12	|-heal|p1a: Swampert|93/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	36	13	|upkeep
+CHUNK	bab_1_1	0	p1	36	14	|turn|13
+CHUNK	bab_1_1	0	p1	37	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":11,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":31,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"93/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	38	0	|
+CHUNK	bab_1_1	0	p1	38	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	38	2	|switch|p2a: Gyarados|Gyarados, M|338/338
+CHUNK	bab_1_1	0	p1	38	3	|-ability|p2a: Gyarados|Intimidate|boost
+CHUNK	bab_1_1	0	p1	38	4	|-unboost|p1a: Swampert|atk|1
+CHUNK	bab_1_1	0	p1	38	5	|move|p1a: Swampert|Ice Beam|p2a: Gyarados
+CHUNK	bab_1_1	0	p1	38	6	|-damage|p2a: Gyarados|257/338
+CHUNK	bab_1_1	0	p1	38	7	|
+CHUNK	bab_1_1	0	p1	38	8	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	38	9	|-damage|p2a: Gyarados|236/338|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	38	10	|-heal|p2a: Gyarados|257/338|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	38	11	|-heal|p1a: Swampert|118/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	38	12	|upkeep
+CHUNK	bab_1_1	0	p1	38	13	|turn|14
+CHUNK	bab_1_1	0	p1	39	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":10,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":31,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"118/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	40	0	|
+CHUNK	bab_1_1	0	p1	40	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	40	2	|switch|p2a: Salamence|Salamence, M|23/331
+CHUNK	bab_1_1	0	p1	40	3	|-ability|p2a: Salamence|Intimidate|boost
+CHUNK	bab_1_1	0	p1	40	4	|-unboost|p1a: Swampert|atk|1
+CHUNK	bab_1_1	0	p1	40	5	|move|p1a: Swampert|Ice Beam|p2a: Salamence
+CHUNK	bab_1_1	0	p1	40	6	|-supereffective|p2a: Salamence
+CHUNK	bab_1_1	0	p1	40	7	|-damage|p2a: Salamence|0 fnt
+CHUNK	bab_1_1	0	p1	40	8	|faint|p2a: Salamence
+CHUNK	bab_1_1	0	p1	41	0	|request|{"wait":true,"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"118/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	42	0	|
+CHUNK	bab_1_1	0	p1	42	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	42	2	|switch|p2a: Gyarados|Gyarados, M|257/338
+CHUNK	bab_1_1	0	p1	42	3	|-ability|p2a: Gyarados|Intimidate|boost
+CHUNK	bab_1_1	0	p1	42	4	|-unboost|p1a: Swampert|atk|1
+CHUNK	bab_1_1	0	p1	42	5	|
+CHUNK	bab_1_1	0	p1	42	6	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	42	7	|-damage|p2a: Gyarados|236/338|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	42	8	|-heal|p2a: Gyarados|257/338|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	42	9	|-heal|p1a: Swampert|143/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	42	10	|upkeep
+CHUNK	bab_1_1	0	p1	42	11	|turn|15
+CHUNK	bab_1_1	0	p1	43	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":9,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":31,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"143/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	44	0	|
+CHUNK	bab_1_1	0	p1	44	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	44	2	|switch|p2a: Celebi|Celebi|331/404
+CHUNK	bab_1_1	0	p1	44	3	|move|p1a: Swampert|Refresh||[still]
+CHUNK	bab_1_1	0	p1	44	4	|-fail|p1a: Swampert
+CHUNK	bab_1_1	0	p1	44	5	|
+CHUNK	bab_1_1	0	p1	44	6	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	44	7	|-damage|p2a: Celebi|306/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	44	8	|-heal|p2a: Celebi|331/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	44	9	|-heal|p1a: Swampert|168/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	44	10	|upkeep
+CHUNK	bab_1_1	0	p1	44	11	|turn|16
+CHUNK	bab_1_1	0	p1	45	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":9,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":30,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"168/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	46	0	|
+CHUNK	bab_1_1	0	p1	46	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	46	2	|move|p2a: Celebi|Substitute|p2a: Celebi
+CHUNK	bab_1_1	0	p1	46	3	|-start|p2a: Celebi|Substitute
+CHUNK	bab_1_1	0	p1	46	4	|-damage|p2a: Celebi|230/404
+CHUNK	bab_1_1	0	p1	46	5	|move|p1a: Swampert|Hydro Pump|p2a: Celebi
+CHUNK	bab_1_1	0	p1	46	6	|-resisted|p2a: Celebi
+CHUNK	bab_1_1	0	p1	46	7	|-activate|p2a: Celebi|Substitute|[damage]
+CHUNK	bab_1_1	0	p1	46	8	|
+CHUNK	bab_1_1	0	p1	46	9	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	46	10	|-damage|p2a: Celebi|205/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	46	11	|-heal|p2a: Celebi|230/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	46	12	|-heal|p1a: Swampert|193/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	46	13	|upkeep
+CHUNK	bab_1_1	0	p1	46	14	|turn|17
+CHUNK	bab_1_1	0	p1	47	0	|request|{"active":[{"moves":[{"move":"Hydro Pump","id":"hydropump","pp":6,"maxpp":8,"target":"normal","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":9,"maxpp":16,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Refresh","id":"refresh","pp":30,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"193/403","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	48	0	|
+CHUNK	bab_1_1	0	p1	48	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	48	2	|move|p2a: Celebi|Psychic|p1a: Swampert
+CHUNK	bab_1_1	0	p1	48	3	|-crit|p1a: Swampert
+CHUNK	bab_1_1	0	p1	48	4	|-damage|p1a: Swampert|0 fnt
+CHUNK	bab_1_1	0	p1	48	5	|faint|p1a: Swampert
+CHUNK	bab_1_1	0	p1	49	0	|request|{"forceSwitch":[true],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":true,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"}]},"noCancel":true}
+CHUNK	bab_1_1	0	p1	50	0	|
+CHUNK	bab_1_1	0	p1	50	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	50	2	|switch|p1a: Gengar|Gengar, M|261/261
+CHUNK	bab_1_1	0	p1	50	3	|
+CHUNK	bab_1_1	0	p1	50	4	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	50	5	|-damage|p1a: Gengar|245/261|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	50	6	|-damage|p2a: Celebi|205/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	50	7	|-heal|p1a: Gengar|261/261|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	50	8	|-heal|p2a: Celebi|230/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	50	9	|upkeep
+CHUNK	bab_1_1	0	p1	50	10	|turn|18
+CHUNK	bab_1_1	0	p1	51	0	|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Ice Punch","id":"icepunch","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Explosion","id":"explosion","pp":8,"maxpp":8,"target":"allAdjacent","disabled":false},{"move":"Hypnosis","id":"hypnosis","pp":32,"maxpp":32,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":true,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	52	0	|
+CHUNK	bab_1_1	0	p1	52	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	52	2	|move|p1a: Gengar|Ice Punch|p2a: Celebi
+CHUNK	bab_1_1	0	p1	52	3	|-supereffective|p2a: Celebi
+CHUNK	bab_1_1	0	p1	52	4	|-end|p2a: Celebi|Substitute
+CHUNK	bab_1_1	0	p1	52	5	|move|p2a: Celebi|Leech Seed|p1a: Gengar|[miss]
+CHUNK	bab_1_1	0	p1	52	6	|-miss|p2a: Celebi|p1a: Gengar
+CHUNK	bab_1_1	0	p1	52	7	|
+CHUNK	bab_1_1	0	p1	52	8	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	52	9	|-damage|p1a: Gengar|245/261|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	52	10	|-damage|p2a: Celebi|205/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	52	11	|-heal|p1a: Gengar|261/261|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	52	12	|-heal|p2a: Celebi|230/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	52	13	|upkeep
+CHUNK	bab_1_1	0	p1	52	14	|turn|19
+CHUNK	bab_1_1	0	p1	53	0	|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Ice Punch","id":"icepunch","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Explosion","id":"explosion","pp":8,"maxpp":8,"target":"allAdjacent","disabled":false},{"move":"Hypnosis","id":"hypnosis","pp":32,"maxpp":32,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":true,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"321/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	54	0	|
+CHUNK	bab_1_1	0	p1	54	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	54	2	|switch|p1a: Zapdos|Zapdos|321/321
+CHUNK	bab_1_1	0	p1	54	3	|-ability|p1a: Zapdos|Pressure|[silent]
+CHUNK	bab_1_1	0	p1	54	4	|move|p2a: Celebi|Leech Seed|p1a: Zapdos
+CHUNK	bab_1_1	0	p1	54	5	|-start|p1a: Zapdos|move: Leech Seed
+CHUNK	bab_1_1	0	p1	54	6	|
+CHUNK	bab_1_1	0	p1	54	7	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	54	8	|-damage|p2a: Celebi|205/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	54	9	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	54	10	|-heal|p2a: Celebi|230/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	54	11	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	54	12	|-damage|p1a: Zapdos|281/321|[from] Leech Seed|[of] p2a: Celebi
+CHUNK	bab_1_1	0	p1	54	13	|-heal|p2a: Celebi|270/404|[silent]
+CHUNK	bab_1_1	0	p1	54	14	|upkeep
+CHUNK	bab_1_1	0	p1	54	15	|turn|20
+CHUNK	bab_1_1	0	p1	55	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":64,"maxpp":64,"target":"self","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Zapdos","details":"Zapdos","condition":"281/321","active":true,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	56	0	|
+CHUNK	bab_1_1	0	p1	56	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	56	2	|move|p2a: Celebi|Psychic|p1a: Zapdos
+CHUNK	bab_1_1	0	p1	56	3	|-damage|p1a: Zapdos|190/321
+CHUNK	bab_1_1	0	p1	56	4	|move|p1a: Zapdos|Baton Pass|p1a: Zapdos
+CHUNK	bab_1_1	0	p1	57	0	|request|{"forceSwitch":[true],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Zapdos","details":"Zapdos","condition":"190/321","active":true,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"261/261","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]},"noCancel":true}
+CHUNK	bab_1_1	0	p1	58	0	|
+CHUNK	bab_1_1	0	p1	58	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	58	2	|switch|p1a: Gengar|Gengar, M|261/261|[from] Baton Pass
+CHUNK	bab_1_1	0	p1	58	3	|
+CHUNK	bab_1_1	0	p1	58	4	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	58	5	|-damage|p1a: Gengar|245/261|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	58	6	|-damage|p2a: Celebi|245/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	58	7	|-heal|p1a: Gengar|261/261|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	58	8	|-damage|p1a: Gengar|229/261|[from] Leech Seed|[of] p2a: Celebi
+CHUNK	bab_1_1	0	p1	58	9	|-heal|p2a: Celebi|277/404|[silent]
+CHUNK	bab_1_1	0	p1	58	10	|-heal|p2a: Celebi|302/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	58	11	|upkeep
+CHUNK	bab_1_1	0	p1	58	12	|turn|21
+CHUNK	bab_1_1	0	p1	59	0	|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Ice Punch","id":"icepunch","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Explosion","id":"explosion","pp":8,"maxpp":8,"target":"allAdjacent","disabled":false},{"move":"Hypnosis","id":"hypnosis","pp":32,"maxpp":32,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"229/261","active":true,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"190/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	60	0	|
+CHUNK	bab_1_1	0	p1	60	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	60	2	|move|p1a: Gengar|Thunderbolt|p2a: Celebi
+CHUNK	bab_1_1	0	p1	60	3	|-resisted|p2a: Celebi
+CHUNK	bab_1_1	0	p1	60	4	|-damage|p2a: Celebi|252/404
+CHUNK	bab_1_1	0	p1	60	5	|move|p2a: Celebi|Baton Pass|p2a: Celebi
+CHUNK	bab_1_1	0	p1	61	0	|request|{"wait":true,"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"229/261","active":true,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"190/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	62	0	|
+CHUNK	bab_1_1	0	p1	62	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	62	2	|switch|p2a: Magneton|Magneton|241/241|[from] Baton Pass
+CHUNK	bab_1_1	0	p1	62	3	|
+CHUNK	bab_1_1	0	p1	62	4	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	62	5	|-damage|p1a: Gengar|213/261|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	62	6	|-heal|p1a: Gengar|229/261|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	62	7	|-damage|p1a: Gengar|197/261|[from] Leech Seed|[of] p2a: Magneton
+CHUNK	bab_1_1	0	p1	62	8	|upkeep
+CHUNK	bab_1_1	0	p1	62	9	|turn|22
+CHUNK	bab_1_1	0	p1	63	0	|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Ice Punch","id":"icepunch","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Explosion","id":"explosion","pp":8,"maxpp":8,"target":"allAdjacent","disabled":false},{"move":"Hypnosis","id":"hypnosis","pp":32,"maxpp":32,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"197/261","active":true,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"190/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	64	0	|
+CHUNK	bab_1_1	0	p1	64	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	64	2	|move|p1a: Gengar|Explosion|p2a: Magneton
+CHUNK	bab_1_1	0	p1	64	3	|-resisted|p2a: Magneton
+CHUNK	bab_1_1	0	p1	64	4	|-damage|p2a: Magneton|89/241
+CHUNK	bab_1_1	0	p1	64	5	|faint|p1a: Gengar
+CHUNK	bab_1_1	0	p1	65	0	|request|{"forceSwitch":[true],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"0 fnt","active":true,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Zapdos","details":"Zapdos","condition":"190/321","active":false,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]},"noCancel":true}
+CHUNK	bab_1_1	0	p1	66	0	|
+CHUNK	bab_1_1	0	p1	66	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	66	2	|switch|p1a: Zapdos|Zapdos|190/321
+CHUNK	bab_1_1	0	p1	66	3	|-ability|p1a: Zapdos|Pressure|[silent]
+CHUNK	bab_1_1	0	p1	66	4	|
+CHUNK	bab_1_1	0	p1	66	5	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	66	6	|-damage|p1a: Zapdos|170/321|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	66	7	|-heal|p1a: Zapdos|190/321|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	66	8	|upkeep
+CHUNK	bab_1_1	0	p1	66	9	|turn|23
+CHUNK	bab_1_1	0	p1	67	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":63,"maxpp":64,"target":"self","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Zapdos","details":"Zapdos","condition":"190/321","active":true,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"0 fnt","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	68	0	|
+CHUNK	bab_1_1	0	p1	68	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	68	2	|switch|p2a: Celebi|Celebi|252/404
+CHUNK	bab_1_1	0	p1	68	3	|move|p1a: Zapdos|Baton Pass||[still]
+CHUNK	bab_1_1	0	p1	68	4	|-fail|p1a: Zapdos
+CHUNK	bab_1_1	0	p1	68	5	|
+CHUNK	bab_1_1	0	p1	68	6	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	68	7	|-damage|p2a: Celebi|227/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	68	8	|-damage|p1a: Zapdos|170/321|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	68	9	|-heal|p2a: Celebi|252/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	68	10	|-heal|p1a: Zapdos|190/321|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	68	11	|upkeep
+CHUNK	bab_1_1	0	p1	68	12	|turn|24
+CHUNK	bab_1_1	0	p1	69	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":62,"maxpp":64,"target":"self","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Zapdos","details":"Zapdos","condition":"190/321","active":true,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"0 fnt","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	70	0	|
+CHUNK	bab_1_1	0	p1	70	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	70	2	|move|p2a: Celebi|Leech Seed|p1a: Zapdos
+CHUNK	bab_1_1	0	p1	70	3	|-start|p1a: Zapdos|move: Leech Seed
+CHUNK	bab_1_1	0	p1	70	4	|move|p1a: Zapdos|Baton Pass||[still]
+CHUNK	bab_1_1	0	p1	70	5	|-fail|p1a: Zapdos
+CHUNK	bab_1_1	0	p1	70	6	|
+CHUNK	bab_1_1	0	p1	70	7	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	70	8	|-damage|p2a: Celebi|227/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	70	9	|-damage|p1a: Zapdos|170/321|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	70	10	|-heal|p2a: Celebi|252/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	70	11	|-heal|p1a: Zapdos|190/321|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	70	12	|-damage|p1a: Zapdos|150/321|[from] Leech Seed|[of] p2a: Celebi
+CHUNK	bab_1_1	0	p1	70	13	|-heal|p2a: Celebi|292/404|[silent]
+CHUNK	bab_1_1	0	p1	70	14	|upkeep
+CHUNK	bab_1_1	0	p1	70	15	|turn|25
+CHUNK	bab_1_1	0	p1	71	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":61,"maxpp":64,"target":"self","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Zapdos","details":"Zapdos","condition":"150/321","active":true,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"0 fnt","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	72	0	|
+CHUNK	bab_1_1	0	p1	72	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	72	2	|move|p2a: Celebi|Substitute|p2a: Celebi
+CHUNK	bab_1_1	0	p1	72	3	|-start|p2a: Celebi|Substitute
+CHUNK	bab_1_1	0	p1	72	4	|-damage|p2a: Celebi|191/404
+CHUNK	bab_1_1	0	p1	72	5	|move|p1a: Zapdos|Thunderbolt|p2a: Celebi
+CHUNK	bab_1_1	0	p1	72	6	|-resisted|p2a: Celebi
+CHUNK	bab_1_1	0	p1	72	7	|-activate|p2a: Celebi|Substitute|[damage]
+CHUNK	bab_1_1	0	p1	72	8	|
+CHUNK	bab_1_1	0	p1	72	9	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	72	10	|-damage|p2a: Celebi|166/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	72	11	|-damage|p1a: Zapdos|130/321|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	72	12	|-heal|p2a: Celebi|191/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	72	13	|-heal|p1a: Zapdos|150/321|[from] item: Leftovers
+CHUNK	bab_1_1	0	p1	72	14	|-damage|p1a: Zapdos|110/321|[from] Leech Seed|[of] p2a: Celebi
+CHUNK	bab_1_1	0	p1	72	15	|-heal|p2a: Celebi|231/404|[silent]
+CHUNK	bab_1_1	0	p1	72	16	|upkeep
+CHUNK	bab_1_1	0	p1	72	17	|turn|26
+CHUNK	bab_1_1	0	p1	73	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":61,"maxpp":64,"target":"self","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Zapdos","details":"Zapdos","condition":"110/321","active":true,"stats":{"atk":168,"def":206,"spa":364,"spd":253,"spe":280},"moves":["substitute","batonpass","thunderbolt","hiddenpowergrass"],"baseAbility":"pressure","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Jirachi","details":"Jirachi","condition":"0 fnt","active":false,"stats":{"atk":186,"def":245,"spa":301,"spd":236,"spe":253},"moves":["calmmind","psychic","firepunch","hiddenpowergrass"],"baseAbility":"serenegrace","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Dugtrio","details":"Dugtrio, M","condition":"0 fnt","active":false,"stats":{"atk":258,"def":135,"spa":122,"spd":211,"spe":334},"moves":["earthquake","aerialace","hiddenpowerbug","beatup"],"baseAbility":"arenatrap","item":"choiceband","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"0 fnt","active":false,"stats":{"atk":190,"def":140,"spa":336,"spd":186,"spe":350},"moves":["thunderbolt","icepunch","explosion","hypnosis"],"baseAbility":"levitate","item":"leftovers","pokeball":"pokeball"},{"ident":"p1: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":367,"def":256,"spa":203,"spd":237,"spe":243},"moves":["brickbreak","rockslide","focuspunch","earthquake"],"baseAbility":"sandstream","item":"blackbelt","pokeball":"pokeball"},{"ident":"p1: Swampert","details":"Swampert, M","condition":"0 fnt","active":false,"stats":{"atk":256,"def":238,"spa":253,"spd":225,"spe":149},"moves":["hydropump","icebeam","earthquake","refresh"],"baseAbility":"torrent","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p1	74	0	|
+CHUNK	bab_1_1	0	p1	74	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p1	74	2	|move|p2a: Celebi|Psychic|p1a: Zapdos
+CHUNK	bab_1_1	0	p1	74	3	|-damage|p1a: Zapdos|19/321
+CHUNK	bab_1_1	0	p1	74	4	|move|p1a: Zapdos|Thunderbolt|p2a: Celebi
+CHUNK	bab_1_1	0	p1	74	5	|-resisted|p2a: Celebi
+CHUNK	bab_1_1	0	p1	74	6	|-end|p2a: Celebi|Substitute
+CHUNK	bab_1_1	0	p1	74	7	|
+CHUNK	bab_1_1	0	p1	74	8	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p1	74	9	|-damage|p2a: Celebi|206/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	74	10	|-damage|p1a: Zapdos|0 fnt|[from] Sandstorm
+CHUNK	bab_1_1	0	p1	74	11	|faint|p1a: Zapdos
+CHUNK	bab_1_1	0	p1	74	12	|
+CHUNK	bab_1_1	0	p1	74	13	|win|P2
+CHUNK	bab_1_1	0	p2	0	0	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	0	1	|gametype|singles
+CHUNK	bab_1_1	0	p2	1	0	|player|p1|P1||
+CHUNK	bab_1_1	0	p2	2	0	|player|p2|P2||
+CHUNK	bab_1_1	0	p2	2	1	|gen|3
+CHUNK	bab_1_1	0	p2	2	2	|tier|[Gen 3] Custom Game
+CHUNK	bab_1_1	0	p2	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	bab_1_1	0	p2	2	4	|
+CHUNK	bab_1_1	0	p2	2	5	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	2	6	|teamsize|p1|6
+CHUNK	bab_1_1	0	p2	2	7	|teamsize|p2|6
+CHUNK	bab_1_1	0	p2	2	8	|start
+CHUNK	bab_1_1	0	p2	2	9	|switch|p1a: Tyranitar|Tyranitar, M|341/341
+CHUNK	bab_1_1	0	p2	2	10	|switch|p2a: Metagross|Metagross|301/301
+CHUNK	bab_1_1	0	p2	2	11	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+CHUNK	bab_1_1	0	p2	2	12	|turn|1
+CHUNK	bab_1_1	0	p2	3	0	|request|{"active":[{"moves":[{"move":"Brick Break","id":"brickbreak","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Double-Edge","id":"doubleedge","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Meteor Mash","id":"meteormash","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Explosion","id":"explosion","pp":8,"maxpp":8,"target":"allAdjacent","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Metagross","details":"Metagross","condition":"301/301","active":true,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"404/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"341/341","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	4	0	|
+CHUNK	bab_1_1	0	p2	4	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	4	2	|-singleturn|p1a: Tyranitar|move: Focus Punch
+CHUNK	bab_1_1	0	p2	4	3	|move|p2a: Metagross|Explosion|p1a: Tyranitar
+CHUNK	bab_1_1	0	p2	4	4	|-resisted|p1a: Tyranitar
+CHUNK	bab_1_1	0	p2	4	5	|-crit|p1a: Tyranitar
+CHUNK	bab_1_1	0	p2	4	6	|-damage|p1a: Tyranitar|0 fnt
+CHUNK	bab_1_1	0	p2	4	7	|faint|p2a: Metagross
+CHUNK	bab_1_1	0	p2	4	8	|faint|p1a: Tyranitar
+CHUNK	bab_1_1	0	p2	5	0	|request|{"forceSwitch":[true],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":true,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"404/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"341/341","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	6	0	|
+CHUNK	bab_1_1	0	p2	6	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	6	2	|switch|p2a: Magneton|Magneton|241/241
+CHUNK	bab_1_1	0	p2	6	3	|switch|p1a: Swampert|Swampert, M|403/403
+CHUNK	bab_1_1	0	p2	6	4	|
+CHUNK	bab_1_1	0	p2	6	5	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	6	6	|upkeep
+CHUNK	bab_1_1	0	p2	6	7	|turn|2
+CHUNK	bab_1_1	0	p2	7	0	|request|{"active":[{"moves":[{"move":"Endure","id":"endure","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":true,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"404/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"341/341","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	8	0	|
+CHUNK	bab_1_1	0	p2	8	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	8	2	|switch|p2a: Celebi|Celebi|404/404
+CHUNK	bab_1_1	0	p2	8	3	|move|p1a: Swampert|Hydro Pump|p2a: Celebi
+CHUNK	bab_1_1	0	p2	8	4	|-resisted|p2a: Celebi
+CHUNK	bab_1_1	0	p2	8	5	|-damage|p2a: Celebi|331/404
+CHUNK	bab_1_1	0	p2	8	6	|
+CHUNK	bab_1_1	0	p2	8	7	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	8	8	|-damage|p2a: Celebi|306/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	8	9	|-heal|p2a: Celebi|331/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	8	10	|upkeep
+CHUNK	bab_1_1	0	p2	8	11	|turn|3
+CHUNK	bab_1_1	0	p2	9	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Leech Seed","id":"leechseed","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":64,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"341/341","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	10	0	|
+CHUNK	bab_1_1	0	p2	10	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	10	2	|move|p2a: Celebi|Baton Pass|p2a: Celebi
+CHUNK	bab_1_1	0	p2	11	0	|request|{"forceSwitch":[true],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"341/341","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]},"noCancel":true}
+CHUNK	bab_1_1	0	p2	12	0	|
+CHUNK	bab_1_1	0	p2	12	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	12	2	|switch|p2a: Tyranitar|Tyranitar, M|341/341|[from] Baton Pass
+CHUNK	bab_1_1	0	p2	12	3	|move|p1a: Swampert|Ice Beam|p2a: Tyranitar
+CHUNK	bab_1_1	0	p2	12	4	|-damage|p2a: Tyranitar|265/341
+CHUNK	bab_1_1	0	p2	12	5	|
+CHUNK	bab_1_1	0	p2	12	6	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	12	7	|upkeep
+CHUNK	bab_1_1	0	p2	12	8	|turn|4
+CHUNK	bab_1_1	0	p2	13	0	|request|{"active":[{"moves":[{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":32,"maxpp":32,"target":"self","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"265/341","active":true,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	14	0	|
+CHUNK	bab_1_1	0	p2	14	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	14	2	|move|p2a: Tyranitar|Earthquake|p1a: Swampert
+CHUNK	bab_1_1	0	p2	14	3	|-damage|p1a: Swampert|287/403
+CHUNK	bab_1_1	0	p2	14	4	|move|p1a: Swampert|Refresh||[still]
+CHUNK	bab_1_1	0	p2	14	5	|-fail|p1a: Swampert
+CHUNK	bab_1_1	0	p2	14	6	|
+CHUNK	bab_1_1	0	p2	14	7	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	14	8	|-heal|p1a: Swampert|312/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	14	9	|upkeep
+CHUNK	bab_1_1	0	p2	14	10	|turn|5
+CHUNK	bab_1_1	0	p2	15	0	|request|{"active":[{"moves":[{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":32,"maxpp":32,"target":"self","disabled":false},{"move":"Earthquake","id":"earthquake","pp":15,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"265/341","active":true,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	16	0	|
+CHUNK	bab_1_1	0	p2	16	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	16	2	|move|p2a: Tyranitar|Dragon Dance|p2a: Tyranitar
+CHUNK	bab_1_1	0	p2	16	3	|-boost|p2a: Tyranitar|atk|1
+CHUNK	bab_1_1	0	p2	16	4	|-boost|p2a: Tyranitar|spe|1
+CHUNK	bab_1_1	0	p2	16	5	|move|p1a: Swampert|Ice Beam|p2a: Tyranitar
+CHUNK	bab_1_1	0	p2	16	6	|-damage|p2a: Tyranitar|181/341
+CHUNK	bab_1_1	0	p2	16	7	|
+CHUNK	bab_1_1	0	p2	16	8	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	16	9	|-heal|p1a: Swampert|337/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	16	10	|upkeep
+CHUNK	bab_1_1	0	p2	16	11	|turn|6
+CHUNK	bab_1_1	0	p2	17	0	|request|{"active":[{"moves":[{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":31,"maxpp":32,"target":"self","disabled":false},{"move":"Earthquake","id":"earthquake","pp":15,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"181/341","active":true,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	18	0	|
+CHUNK	bab_1_1	0	p2	18	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	18	2	|move|p2a: Tyranitar|Earthquake|p1a: Swampert
+CHUNK	bab_1_1	0	p2	18	3	|-damage|p1a: Swampert|169/403
+CHUNK	bab_1_1	0	p2	18	4	|move|p1a: Swampert|Ice Beam|p2a: Tyranitar
+CHUNK	bab_1_1	0	p2	18	5	|-damage|p2a: Tyranitar|102/341
+CHUNK	bab_1_1	0	p2	18	6	|
+CHUNK	bab_1_1	0	p2	18	7	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	18	8	|-heal|p1a: Swampert|194/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	18	9	|upkeep
+CHUNK	bab_1_1	0	p2	18	10	|turn|7
+CHUNK	bab_1_1	0	p2	19	0	|request|{"active":[{"moves":[{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":31,"maxpp":32,"target":"self","disabled":false},{"move":"Earthquake","id":"earthquake","pp":14,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"102/341","active":true,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	20	0	|
+CHUNK	bab_1_1	0	p2	20	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	20	2	|move|p2a: Tyranitar|Earthquake|p1a: Swampert
+CHUNK	bab_1_1	0	p2	20	3	|-damage|p1a: Swampert|18/403
+CHUNK	bab_1_1	0	p2	20	4	|move|p1a: Swampert|Ice Beam|p2a: Tyranitar
+CHUNK	bab_1_1	0	p2	20	5	|-damage|p2a: Tyranitar|22/341
+CHUNK	bab_1_1	0	p2	20	6	|
+CHUNK	bab_1_1	0	p2	20	7	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	20	8	|-heal|p1a: Swampert|43/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	20	9	|upkeep
+CHUNK	bab_1_1	0	p2	20	10	|turn|8
+CHUNK	bab_1_1	0	p2	21	0	|request|{"active":[{"moves":[{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":31,"maxpp":32,"target":"self","disabled":false},{"move":"Earthquake","id":"earthquake","pp":13,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"22/341","active":true,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	22	0	|
+CHUNK	bab_1_1	0	p2	22	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	22	2	|switch|p1a: Dugtrio|Dugtrio, M|211/211
+CHUNK	bab_1_1	0	p2	22	3	|move|p2a: Tyranitar|Earthquake|p1a: Dugtrio
+CHUNK	bab_1_1	0	p2	22	4	|-damage|p1a: Dugtrio|0 fnt
+CHUNK	bab_1_1	0	p2	22	5	|faint|p1a: Dugtrio
+CHUNK	bab_1_1	0	p2	23	0	|request|{"wait":true,"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"22/341","active":true,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	24	0	|
+CHUNK	bab_1_1	0	p2	24	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	24	2	|switch|p1a: Jirachi|Jirachi|403/403
+CHUNK	bab_1_1	0	p2	24	3	|
+CHUNK	bab_1_1	0	p2	24	4	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	24	5	|upkeep
+CHUNK	bab_1_1	0	p2	24	6	|turn|9
+CHUNK	bab_1_1	0	p2	25	0	|request|{"active":[{"moves":[{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":31,"maxpp":32,"target":"self","disabled":false},{"move":"Earthquake","id":"earthquake","pp":12,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"22/341","active":true,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	26	0	|
+CHUNK	bab_1_1	0	p2	26	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	26	2	|move|p2a: Tyranitar|Earthquake|p1a: Jirachi
+CHUNK	bab_1_1	0	p2	26	3	|-supereffective|p1a: Jirachi
+CHUNK	bab_1_1	0	p2	26	4	|-damage|p1a: Jirachi|44/403
+CHUNK	bab_1_1	0	p2	26	5	|move|p1a: Jirachi|Fire Punch|p2a: Tyranitar
+CHUNK	bab_1_1	0	p2	26	6	|-resisted|p2a: Tyranitar
+CHUNK	bab_1_1	0	p2	26	7	|-damage|p2a: Tyranitar|0 fnt
+CHUNK	bab_1_1	0	p2	26	8	|faint|p2a: Tyranitar
+CHUNK	bab_1_1	0	p2	27	0	|request|{"forceSwitch":[true],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":true,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"}]},"noCancel":true}
+CHUNK	bab_1_1	0	p2	28	0	|
+CHUNK	bab_1_1	0	p2	28	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	28	2	|switch|p2a: Salamence|Salamence, M|331/331
+CHUNK	bab_1_1	0	p2	28	3	|-ability|p2a: Salamence|Intimidate|boost
+CHUNK	bab_1_1	0	p2	28	4	|-unboost|p1a: Jirachi|atk|1
+CHUNK	bab_1_1	0	p2	28	5	|
+CHUNK	bab_1_1	0	p2	28	6	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	28	7	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	28	8	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	28	9	|-heal|p1a: Jirachi|69/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	28	10	|upkeep
+CHUNK	bab_1_1	0	p2	28	11	|turn|10
+CHUNK	bab_1_1	0	p2	29	0	|request|{"active":[{"moves":[{"move":"Hidden Power Flying 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":32,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":true,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	30	0	|
+CHUNK	bab_1_1	0	p2	30	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	30	2	|move|p2a: Salamence|Rock Slide|p1a: Jirachi
+CHUNK	bab_1_1	0	p2	30	3	|-resisted|p1a: Jirachi
+CHUNK	bab_1_1	0	p2	30	4	|-damage|p1a: Jirachi|20/403
+CHUNK	bab_1_1	0	p2	30	5	|move|p1a: Jirachi|Calm Mind|p1a: Jirachi
+CHUNK	bab_1_1	0	p2	30	6	|-boost|p1a: Jirachi|spa|1
+CHUNK	bab_1_1	0	p2	30	7	|-boost|p1a: Jirachi|spd|1
+CHUNK	bab_1_1	0	p2	30	8	|
+CHUNK	bab_1_1	0	p2	30	9	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	30	10	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	30	11	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	30	12	|-heal|p1a: Jirachi|45/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	30	13	|upkeep
+CHUNK	bab_1_1	0	p2	30	14	|turn|11
+CHUNK	bab_1_1	0	p2	31	0	|request|{"active":[{"moves":[{"move":"Hidden Power Flying 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":15,"maxpp":16,"target":"allAdjacentFoes","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":32,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":true,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	32	0	|
+CHUNK	bab_1_1	0	p2	32	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	32	2	|move|p2a: Salamence|Earthquake|p1a: Jirachi
+CHUNK	bab_1_1	0	p2	32	3	|-supereffective|p1a: Jirachi
+CHUNK	bab_1_1	0	p2	32	4	|-damage|p1a: Jirachi|0 fnt
+CHUNK	bab_1_1	0	p2	32	5	|faint|p1a: Jirachi
+CHUNK	bab_1_1	0	p2	33	0	|request|{"wait":true,"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":true,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	34	0	|
+CHUNK	bab_1_1	0	p2	34	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	34	2	|switch|p1a: Swampert|Swampert, M|43/403
+CHUNK	bab_1_1	0	p2	34	3	|
+CHUNK	bab_1_1	0	p2	34	4	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	34	5	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	34	6	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	34	7	|-heal|p1a: Swampert|68/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	34	8	|upkeep
+CHUNK	bab_1_1	0	p2	34	9	|turn|12
+CHUNK	bab_1_1	0	p2	35	0	|request|{"active":[{"moves":[{"move":"Hidden Power Flying 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":15,"maxpp":16,"target":"allAdjacentFoes","disabled":false},{"move":"Earthquake","id":"earthquake","pp":15,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":32,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Salamence","details":"Salamence, M","condition":"331/331","active":true,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	36	0	|
+CHUNK	bab_1_1	0	p2	36	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	36	2	|move|p2a: Salamence|Dragon Dance|p2a: Salamence
+CHUNK	bab_1_1	0	p2	36	3	|-boost|p2a: Salamence|atk|1
+CHUNK	bab_1_1	0	p2	36	4	|-boost|p2a: Salamence|spe|1
+CHUNK	bab_1_1	0	p2	36	5	|move|p1a: Swampert|Ice Beam|p2a: Salamence
+CHUNK	bab_1_1	0	p2	36	6	|-supereffective|p2a: Salamence
+CHUNK	bab_1_1	0	p2	36	7	|-damage|p2a: Salamence|23/331
+CHUNK	bab_1_1	0	p2	36	8	|
+CHUNK	bab_1_1	0	p2	36	9	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	36	10	|-damage|p2a: Salamence|3/331|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	36	11	|-heal|p2a: Salamence|23/331|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	36	12	|-heal|p1a: Swampert|93/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	36	13	|upkeep
+CHUNK	bab_1_1	0	p2	36	14	|turn|13
+CHUNK	bab_1_1	0	p2	37	0	|request|{"active":[{"moves":[{"move":"Hidden Power Flying 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":15,"maxpp":16,"target":"allAdjacentFoes","disabled":false},{"move":"Earthquake","id":"earthquake","pp":15,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":31,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Salamence","details":"Salamence, M","condition":"23/331","active":true,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"338/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	38	0	|
+CHUNK	bab_1_1	0	p2	38	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	38	2	|switch|p2a: Gyarados|Gyarados, M|338/338
+CHUNK	bab_1_1	0	p2	38	3	|-ability|p2a: Gyarados|Intimidate|boost
+CHUNK	bab_1_1	0	p2	38	4	|-unboost|p1a: Swampert|atk|1
+CHUNK	bab_1_1	0	p2	38	5	|move|p1a: Swampert|Ice Beam|p2a: Gyarados
+CHUNK	bab_1_1	0	p2	38	6	|-damage|p2a: Gyarados|257/338
+CHUNK	bab_1_1	0	p2	38	7	|
+CHUNK	bab_1_1	0	p2	38	8	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	38	9	|-damage|p2a: Gyarados|236/338|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	38	10	|-heal|p2a: Gyarados|257/338|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	38	11	|-heal|p1a: Swampert|118/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	38	12	|upkeep
+CHUNK	bab_1_1	0	p2	38	13	|turn|14
+CHUNK	bab_1_1	0	p2	39	0	|request|{"active":[{"moves":[{"move":"Hidden Power Ghost 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Double-Edge","id":"doubleedge","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":32,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":true,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"23/331","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	40	0	|
+CHUNK	bab_1_1	0	p2	40	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	40	2	|switch|p2a: Salamence|Salamence, M|23/331
+CHUNK	bab_1_1	0	p2	40	3	|-ability|p2a: Salamence|Intimidate|boost
+CHUNK	bab_1_1	0	p2	40	4	|-unboost|p1a: Swampert|atk|1
+CHUNK	bab_1_1	0	p2	40	5	|move|p1a: Swampert|Ice Beam|p2a: Salamence
+CHUNK	bab_1_1	0	p2	40	6	|-supereffective|p2a: Salamence
+CHUNK	bab_1_1	0	p2	40	7	|-damage|p2a: Salamence|0 fnt
+CHUNK	bab_1_1	0	p2	40	8	|faint|p2a: Salamence
+CHUNK	bab_1_1	0	p2	41	0	|request|{"forceSwitch":[true],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":true,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]},"noCancel":true}
+CHUNK	bab_1_1	0	p2	42	0	|
+CHUNK	bab_1_1	0	p2	42	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	42	2	|switch|p2a: Gyarados|Gyarados, M|257/338
+CHUNK	bab_1_1	0	p2	42	3	|-ability|p2a: Gyarados|Intimidate|boost
+CHUNK	bab_1_1	0	p2	42	4	|-unboost|p1a: Swampert|atk|1
+CHUNK	bab_1_1	0	p2	42	5	|
+CHUNK	bab_1_1	0	p2	42	6	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	42	7	|-damage|p2a: Gyarados|236/338|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	42	8	|-heal|p2a: Gyarados|257/338|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	42	9	|-heal|p1a: Swampert|143/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	42	10	|upkeep
+CHUNK	bab_1_1	0	p2	42	11	|turn|15
+CHUNK	bab_1_1	0	p2	43	0	|request|{"active":[{"moves":[{"move":"Hidden Power Ghost 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Double-Edge","id":"doubleedge","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Dragon Dance","id":"dragondance","pp":32,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":true,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	44	0	|
+CHUNK	bab_1_1	0	p2	44	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	44	2	|switch|p2a: Celebi|Celebi|331/404
+CHUNK	bab_1_1	0	p2	44	3	|move|p1a: Swampert|Refresh||[still]
+CHUNK	bab_1_1	0	p2	44	4	|-fail|p1a: Swampert
+CHUNK	bab_1_1	0	p2	44	5	|
+CHUNK	bab_1_1	0	p2	44	6	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	44	7	|-damage|p2a: Celebi|306/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	44	8	|-heal|p2a: Celebi|331/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	44	9	|-heal|p1a: Swampert|168/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	44	10	|upkeep
+CHUNK	bab_1_1	0	p2	44	11	|turn|16
+CHUNK	bab_1_1	0	p2	45	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Leech Seed","id":"leechseed","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":63,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"331/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	46	0	|
+CHUNK	bab_1_1	0	p2	46	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	46	2	|move|p2a: Celebi|Substitute|p2a: Celebi
+CHUNK	bab_1_1	0	p2	46	3	|-start|p2a: Celebi|Substitute
+CHUNK	bab_1_1	0	p2	46	4	|-damage|p2a: Celebi|230/404
+CHUNK	bab_1_1	0	p2	46	5	|move|p1a: Swampert|Hydro Pump|p2a: Celebi
+CHUNK	bab_1_1	0	p2	46	6	|-resisted|p2a: Celebi
+CHUNK	bab_1_1	0	p2	46	7	|-activate|p2a: Celebi|Substitute|[damage]
+CHUNK	bab_1_1	0	p2	46	8	|
+CHUNK	bab_1_1	0	p2	46	9	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	46	10	|-damage|p2a: Celebi|205/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	46	11	|-heal|p2a: Celebi|230/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	46	12	|-heal|p1a: Swampert|193/403|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	46	13	|upkeep
+CHUNK	bab_1_1	0	p2	46	14	|turn|17
+CHUNK	bab_1_1	0	p2	47	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Leech Seed","id":"leechseed","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":63,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"230/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	48	0	|
+CHUNK	bab_1_1	0	p2	48	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	48	2	|move|p2a: Celebi|Psychic|p1a: Swampert
+CHUNK	bab_1_1	0	p2	48	3	|-crit|p1a: Swampert
+CHUNK	bab_1_1	0	p2	48	4	|-damage|p1a: Swampert|0 fnt
+CHUNK	bab_1_1	0	p2	48	5	|faint|p1a: Swampert
+CHUNK	bab_1_1	0	p2	49	0	|request|{"wait":true,"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"230/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	50	0	|
+CHUNK	bab_1_1	0	p2	50	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	50	2	|switch|p1a: Gengar|Gengar, M|261/261
+CHUNK	bab_1_1	0	p2	50	3	|
+CHUNK	bab_1_1	0	p2	50	4	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	50	5	|-damage|p1a: Gengar|245/261|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	50	6	|-damage|p2a: Celebi|205/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	50	7	|-heal|p1a: Gengar|261/261|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	50	8	|-heal|p2a: Celebi|230/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	50	9	|upkeep
+CHUNK	bab_1_1	0	p2	50	10	|turn|18
+CHUNK	bab_1_1	0	p2	51	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Leech Seed","id":"leechseed","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Psychic","id":"psychic","pp":15,"maxpp":16,"target":"normal","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":63,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"230/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	52	0	|
+CHUNK	bab_1_1	0	p2	52	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	52	2	|move|p1a: Gengar|Ice Punch|p2a: Celebi
+CHUNK	bab_1_1	0	p2	52	3	|-supereffective|p2a: Celebi
+CHUNK	bab_1_1	0	p2	52	4	|-end|p2a: Celebi|Substitute
+CHUNK	bab_1_1	0	p2	52	5	|move|p2a: Celebi|Leech Seed|p1a: Gengar|[miss]
+CHUNK	bab_1_1	0	p2	52	6	|-miss|p2a: Celebi|p1a: Gengar
+CHUNK	bab_1_1	0	p2	52	7	|
+CHUNK	bab_1_1	0	p2	52	8	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	52	9	|-damage|p1a: Gengar|245/261|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	52	10	|-damage|p2a: Celebi|205/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	52	11	|-heal|p1a: Gengar|261/261|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	52	12	|-heal|p2a: Celebi|230/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	52	13	|upkeep
+CHUNK	bab_1_1	0	p2	52	14	|turn|19
+CHUNK	bab_1_1	0	p2	53	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Leech Seed","id":"leechseed","pp":15,"maxpp":16,"target":"normal","disabled":false},{"move":"Psychic","id":"psychic","pp":15,"maxpp":16,"target":"normal","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":63,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"230/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	54	0	|
+CHUNK	bab_1_1	0	p2	54	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	54	2	|switch|p1a: Zapdos|Zapdos|321/321
+CHUNK	bab_1_1	0	p2	54	3	|move|p2a: Celebi|Leech Seed|p1a: Zapdos
+CHUNK	bab_1_1	0	p2	54	4	|-start|p1a: Zapdos|move: Leech Seed
+CHUNK	bab_1_1	0	p2	54	5	|
+CHUNK	bab_1_1	0	p2	54	6	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	54	7	|-damage|p2a: Celebi|205/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	54	8	|-damage|p1a: Zapdos|301/321|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	54	9	|-heal|p2a: Celebi|230/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	54	10	|-heal|p1a: Zapdos|321/321|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	54	11	|-damage|p1a: Zapdos|281/321|[from] Leech Seed|[of] p2a: Celebi
+CHUNK	bab_1_1	0	p2	54	12	|-heal|p2a: Celebi|270/404|[silent]
+CHUNK	bab_1_1	0	p2	54	13	|upkeep
+CHUNK	bab_1_1	0	p2	54	14	|turn|20
+CHUNK	bab_1_1	0	p2	55	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Leech Seed","id":"leechseed","pp":13,"maxpp":16,"target":"normal","disabled":false},{"move":"Psychic","id":"psychic","pp":15,"maxpp":16,"target":"normal","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":63,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"270/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	56	0	|
+CHUNK	bab_1_1	0	p2	56	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	56	2	|move|p2a: Celebi|Psychic|p1a: Zapdos
+CHUNK	bab_1_1	0	p2	56	3	|-damage|p1a: Zapdos|190/321
+CHUNK	bab_1_1	0	p2	56	4	|move|p1a: Zapdos|Baton Pass|p1a: Zapdos
+CHUNK	bab_1_1	0	p2	57	0	|request|{"wait":true,"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"270/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	58	0	|
+CHUNK	bab_1_1	0	p2	58	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	58	2	|switch|p1a: Gengar|Gengar, M|261/261|[from] Baton Pass
+CHUNK	bab_1_1	0	p2	58	3	|
+CHUNK	bab_1_1	0	p2	58	4	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	58	5	|-damage|p1a: Gengar|245/261|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	58	6	|-damage|p2a: Celebi|245/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	58	7	|-heal|p1a: Gengar|261/261|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	58	8	|-damage|p1a: Gengar|229/261|[from] Leech Seed|[of] p2a: Celebi
+CHUNK	bab_1_1	0	p2	58	9	|-heal|p2a: Celebi|277/404|[silent]
+CHUNK	bab_1_1	0	p2	58	10	|-heal|p2a: Celebi|302/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	58	11	|upkeep
+CHUNK	bab_1_1	0	p2	58	12	|turn|21
+CHUNK	bab_1_1	0	p2	59	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Leech Seed","id":"leechseed","pp":13,"maxpp":16,"target":"normal","disabled":false},{"move":"Psychic","id":"psychic","pp":13,"maxpp":16,"target":"normal","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":63,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"302/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	60	0	|
+CHUNK	bab_1_1	0	p2	60	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	60	2	|move|p1a: Gengar|Thunderbolt|p2a: Celebi
+CHUNK	bab_1_1	0	p2	60	3	|-resisted|p2a: Celebi
+CHUNK	bab_1_1	0	p2	60	4	|-damage|p2a: Celebi|252/404
+CHUNK	bab_1_1	0	p2	60	5	|move|p2a: Celebi|Baton Pass|p2a: Celebi
+CHUNK	bab_1_1	0	p2	61	0	|request|{"forceSwitch":[true],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"252/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]},"noCancel":true}
+CHUNK	bab_1_1	0	p2	62	0	|
+CHUNK	bab_1_1	0	p2	62	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	62	2	|switch|p2a: Magneton|Magneton|241/241|[from] Baton Pass
+CHUNK	bab_1_1	0	p2	62	3	|
+CHUNK	bab_1_1	0	p2	62	4	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	62	5	|-damage|p1a: Gengar|213/261|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	62	6	|-heal|p1a: Gengar|229/261|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	62	7	|-damage|p1a: Gengar|197/261|[from] Leech Seed|[of] p2a: Magneton
+CHUNK	bab_1_1	0	p2	62	8	|upkeep
+CHUNK	bab_1_1	0	p2	62	9	|turn|22
+CHUNK	bab_1_1	0	p2	63	0	|request|{"active":[{"moves":[{"move":"Endure","id":"endure","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Magneton","details":"Magneton","condition":"241/241","active":true,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"252/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	64	0	|
+CHUNK	bab_1_1	0	p2	64	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	64	2	|move|p1a: Gengar|Explosion|p2a: Magneton
+CHUNK	bab_1_1	0	p2	64	3	|-resisted|p2a: Magneton
+CHUNK	bab_1_1	0	p2	64	4	|-damage|p2a: Magneton|89/241
+CHUNK	bab_1_1	0	p2	64	5	|faint|p1a: Gengar
+CHUNK	bab_1_1	0	p2	65	0	|request|{"wait":true,"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Magneton","details":"Magneton","condition":"89/241","active":true,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"252/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	66	0	|
+CHUNK	bab_1_1	0	p2	66	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	66	2	|switch|p1a: Zapdos|Zapdos|190/321
+CHUNK	bab_1_1	0	p2	66	3	|
+CHUNK	bab_1_1	0	p2	66	4	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	66	5	|-damage|p1a: Zapdos|170/321|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	66	6	|-heal|p1a: Zapdos|190/321|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	66	7	|upkeep
+CHUNK	bab_1_1	0	p2	66	8	|turn|23
+CHUNK	bab_1_1	0	p2	67	0	|request|{"active":[{"moves":[{"move":"Endure","id":"endure","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Hidden Power Grass 70","id":"hiddenpower","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Magneton","details":"Magneton","condition":"89/241","active":true,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Celebi","details":"Celebi","condition":"252/404","active":false,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	68	0	|
+CHUNK	bab_1_1	0	p2	68	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	68	2	|switch|p2a: Celebi|Celebi|252/404
+CHUNK	bab_1_1	0	p2	68	3	|move|p1a: Zapdos|Baton Pass||[still]
+CHUNK	bab_1_1	0	p2	68	4	|-fail|p1a: Zapdos
+CHUNK	bab_1_1	0	p2	68	5	|
+CHUNK	bab_1_1	0	p2	68	6	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	68	7	|-damage|p2a: Celebi|227/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	68	8	|-damage|p1a: Zapdos|170/321|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	68	9	|-heal|p2a: Celebi|252/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	68	10	|-heal|p1a: Zapdos|190/321|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	68	11	|upkeep
+CHUNK	bab_1_1	0	p2	68	12	|turn|24
+CHUNK	bab_1_1	0	p2	69	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Leech Seed","id":"leechseed","pp":13,"maxpp":16,"target":"normal","disabled":false},{"move":"Psychic","id":"psychic","pp":13,"maxpp":16,"target":"normal","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":62,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"252/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"89/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	70	0	|
+CHUNK	bab_1_1	0	p2	70	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	70	2	|move|p2a: Celebi|Leech Seed|p1a: Zapdos
+CHUNK	bab_1_1	0	p2	70	3	|-start|p1a: Zapdos|move: Leech Seed
+CHUNK	bab_1_1	0	p2	70	4	|move|p1a: Zapdos|Baton Pass||[still]
+CHUNK	bab_1_1	0	p2	70	5	|-fail|p1a: Zapdos
+CHUNK	bab_1_1	0	p2	70	6	|
+CHUNK	bab_1_1	0	p2	70	7	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	70	8	|-damage|p2a: Celebi|227/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	70	9	|-damage|p1a: Zapdos|170/321|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	70	10	|-heal|p2a: Celebi|252/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	70	11	|-heal|p1a: Zapdos|190/321|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	70	12	|-damage|p1a: Zapdos|150/321|[from] Leech Seed|[of] p2a: Celebi
+CHUNK	bab_1_1	0	p2	70	13	|-heal|p2a: Celebi|292/404|[silent]
+CHUNK	bab_1_1	0	p2	70	14	|upkeep
+CHUNK	bab_1_1	0	p2	70	15	|turn|25
+CHUNK	bab_1_1	0	p2	71	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Leech Seed","id":"leechseed","pp":11,"maxpp":16,"target":"normal","disabled":false},{"move":"Psychic","id":"psychic","pp":13,"maxpp":16,"target":"normal","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":62,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"292/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"89/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	72	0	|
+CHUNK	bab_1_1	0	p2	72	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	72	2	|move|p2a: Celebi|Substitute|p2a: Celebi
+CHUNK	bab_1_1	0	p2	72	3	|-start|p2a: Celebi|Substitute
+CHUNK	bab_1_1	0	p2	72	4	|-damage|p2a: Celebi|191/404
+CHUNK	bab_1_1	0	p2	72	5	|move|p1a: Zapdos|Thunderbolt|p2a: Celebi
+CHUNK	bab_1_1	0	p2	72	6	|-resisted|p2a: Celebi
+CHUNK	bab_1_1	0	p2	72	7	|-activate|p2a: Celebi|Substitute|[damage]
+CHUNK	bab_1_1	0	p2	72	8	|
+CHUNK	bab_1_1	0	p2	72	9	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	72	10	|-damage|p2a: Celebi|166/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	72	11	|-damage|p1a: Zapdos|130/321|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	72	12	|-heal|p2a: Celebi|191/404|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	72	13	|-heal|p1a: Zapdos|150/321|[from] item: Leftovers
+CHUNK	bab_1_1	0	p2	72	14	|-damage|p1a: Zapdos|110/321|[from] Leech Seed|[of] p2a: Celebi
+CHUNK	bab_1_1	0	p2	72	15	|-heal|p2a: Celebi|231/404|[silent]
+CHUNK	bab_1_1	0	p2	72	16	|upkeep
+CHUNK	bab_1_1	0	p2	72	17	|turn|26
+CHUNK	bab_1_1	0	p2	73	0	|request|{"active":[{"moves":[{"move":"Substitute","id":"substitute","pp":14,"maxpp":16,"target":"self","disabled":false},{"move":"Leech Seed","id":"leechseed","pp":11,"maxpp":16,"target":"normal","disabled":false},{"move":"Psychic","id":"psychic","pp":13,"maxpp":16,"target":"normal","disabled":false},{"move":"Baton Pass","id":"batonpass","pp":62,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Celebi","details":"Celebi","condition":"231/404","active":true,"stats":{"atk":184,"def":236,"spa":236,"spd":237,"spe":328},"moves":["substitute","leechseed","psychic","batonpass"],"baseAbility":"naturalcure","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Metagross","details":"Metagross","condition":"0 fnt","active":false,"stats":{"atk":362,"def":296,"spa":203,"spd":233,"spe":253},"moves":["brickbreak","doubleedge","meteormash","explosion"],"baseAbility":"clearbody","item":"choiceband","pokeball":"pokeball"},{"ident":"p2: Magneton","details":"Magneton","condition":"89/241","active":false,"stats":{"atk":114,"def":226,"spa":338,"spd":184,"spe":255},"moves":["endure","substitute","hiddenpowergrass","thunderbolt"],"baseAbility":"magnetpull","item":"salacberry","pokeball":"pokeball"},{"ident":"p2: Gyarados","details":"Gyarados, M","condition":"257/338","active":false,"stats":{"atk":349,"def":193,"spa":140,"spd":235,"spe":280},"moves":["hiddenpowerghost","doubleedge","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Salamence","details":"Salamence, M","condition":"0 fnt","active":false,"stats":{"atk":386,"def":196,"spa":229,"spd":248,"spe":264},"moves":["hiddenpowerflying","rockslide","earthquake","dragondance"],"baseAbility":"intimidate","item":"leftovers","pokeball":"pokeball"},{"ident":"p2: Tyranitar","details":"Tyranitar, M","condition":"0 fnt","active":false,"stats":{"atk":361,"def":230,"spa":231,"spd":236,"spe":243},"moves":["hiddenpowergrass","dragondance","earthquake","rockslide"],"baseAbility":"sandstream","item":"lumberry","pokeball":"pokeball"}]}}
+CHUNK	bab_1_1	0	p2	74	0	|
+CHUNK	bab_1_1	0	p2	74	1	|t:|<NORMALIZED>
+CHUNK	bab_1_1	0	p2	74	2	|move|p2a: Celebi|Psychic|p1a: Zapdos
+CHUNK	bab_1_1	0	p2	74	3	|-damage|p1a: Zapdos|19/321
+CHUNK	bab_1_1	0	p2	74	4	|move|p1a: Zapdos|Thunderbolt|p2a: Celebi
+CHUNK	bab_1_1	0	p2	74	5	|-resisted|p2a: Celebi
+CHUNK	bab_1_1	0	p2	74	6	|-end|p2a: Celebi|Substitute
+CHUNK	bab_1_1	0	p2	74	7	|
+CHUNK	bab_1_1	0	p2	74	8	|-weather|Sandstorm|[upkeep]
+CHUNK	bab_1_1	0	p2	74	9	|-damage|p2a: Celebi|206/404|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	74	10	|-damage|p1a: Zapdos|0 fnt|[from] Sandstorm
+CHUNK	bab_1_1	0	p2	74	11	|faint|p1a: Zapdos
+CHUNK	bab_1_1	0	p2	74	12	|
+CHUNK	bab_1_1	0	p2	74	13	|win|P2
+END	bab_1_1	0	1	p2

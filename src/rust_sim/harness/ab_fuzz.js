@@ -305,12 +305,23 @@ function makeRandomProvider(rng, universe, stats) {
   };
 }
 
+// ── R3 RESOLVED: Hidden Power is now IV-derived, no quarantine ─────────────────
+// R3 (the flat-BP-70 Hidden Power divergence) is FIXED in the engine
+// (`gen3_iv_derived_hidden_power_bp_v1`): the port now computes each HP mon's base power
+// from its actual IVs (`MonState::hidden_power_bp`, `⌊hpPowerX·40/63⌋+30`, range 30..=70),
+// matching the sim bit-for-bit. So EVERY real gen3ou HP team is now byte-safe — the former
+// `teamHpBp70Clean` picker quarantine (which dropped the ~14 non-BP-70-spread teams) is
+// REMOVED. `random` mode still excludes HP by default (its random IVs give arbitrary types).
+
 // ── Pool provider (the e2e capstone's filter-clean real teams) ────────────────
 function makePoolProvider(rng, stats) {
   const { teams } = loadTeams();
+  // Filter-clean (modeled abilities/items/moves) — HP teams no longer need a BP-70 filter
+  // (R3 is fixed: the engine damages Hidden Power at its IV-true BP for every spread).
   const clean = teams.filter((t) => teamFilterClean(t.packed).ok);
   if (clean.length < 2) throw new Error(`pool mode: only ${clean.length} filter-clean teams`);
-  console.error(`[pool] ${clean.length} filter-clean teams of ${teams.length} loaded`);
+  console.error(`[pool] ${clean.length} filter-clean teams of ${teams.length} loaded` +
+    ` (R3 fixed: IV-derived Hidden Power BP — all HP teams byte-safe)`);
   return function nextTeam() {
     stats.teamsKept++;
     return { packed: clean[randInt(rng, clean.length)].packed, genSeed: null };
@@ -350,7 +361,11 @@ function chunkHeader(flags, runId, chunkIdx) {
 }
 
 function saveRepro(outDir, runId, flags, battleMeta, verdict, chunkIdx) {
-  const dir = path.join(outDir, 'divergences', `${runId}_${battleMeta.id}`);
+  // Allowlisted residuals go to a SEPARATE `allowlisted/` tree (auditable + a corpus-fixture
+  // source) so `divergences/` stays the gate-FAIL set only. A real (non-allowlisted) divergence
+  // lands in `divergences/`.
+  const sub = verdict.allowlisted ? 'allowlisted' : 'divergences';
+  const dir = path.join(outDir, sub, `${runId}_${battleMeta.id}`);
   fs.mkdirSync(dir, { recursive: true });
   const lines = chunkHeader(flags, runId, chunkIdx);
   emitBattle(lines, battleMeta.id, battleMeta.p1Packed, battleMeta.p2Packed, battleMeta.rec, { protocol: flags.protocol });
@@ -433,6 +448,11 @@ async function main() {
   // Cumulative tallies.
   const cum = {
     battles: 0, ok: 0, diverged: 0, panic: 0, parseError: 0, empty: 0,
+    // `--protocol` GREEN GATE: a `diverged` verdict carrying an `allowlisted` reason
+    // (a documented, non-gen3ou-impacting residual — see ab_replay's classify_known_residual)
+    // is counted HERE, NOT in `diverged`. The gate fails ONLY on a non-allowlisted divergence.
+    allowlisted: 0,
+    allowlistReasons: new Map(),
     prefix: 0, // dropped-mid-battle prefixes (still replayed + compared)
     ended: 0,
     decisions: 0,
@@ -553,6 +573,15 @@ async function main() {
       let chunkOk = 0; let chunkDiv = 0;
       for (const v of verdicts) {
         if (v.verdict === 'ok') { cum.ok++; chunkOk++; continue; }
+        // GREEN GATE: an ALLOWLISTED divergence (a documented non-gen3ou residual) is NOT
+        // a gate failure — count it by reason, don't save a repro, don't tally it as diverged.
+        if (v.allowlisted) {
+          cum.allowlisted++;
+          cum.allowlistReasons.set(v.allowlisted, (cum.allowlistReasons.get(v.allowlisted) || 0) + 1);
+          const meta = metas.get(v.battle);
+          if (meta) saveRepro(flags.out, runId, flags, meta, v, chunkIdx); // → allowlisted/ tree
+          continue;
+        }
         chunkDiv++;
         if (v.verdict === 'panic') cum.panic++;
         else if (v.verdict === 'parse_error') cum.parseError++;
@@ -584,6 +613,7 @@ async function main() {
         `${new Date().toISOString()} run=${runId} mode=${flags.mode} chunk=${chunkIdx} ` +
         `battles=${produced} ok=${chunkOk} diverged=${chunkDiv} ` +
         `cum_battles=${cum.battles} cum_ok=${cum.ok} cum_diverged=${cum.diverged} cum_panic=${cum.panic} ` +
+        `cum_allowlisted=${cum.allowlisted} ` +
         `cum_prefix=${cum.prefix} cum_empty=${cum.empty} kinds=${kindsStr} ` +
         `species=${cum.speciesRoster.size} active_species=${cum.speciesActive.size} moves=${cum.movesUsed.size} ` +
         `adj_rate=${adjRate} bph=${bph} chunk_s=${((Date.now() - chunkT0) / 1000).toFixed(1)}`);
@@ -612,6 +642,8 @@ async function main() {
     diverged: cum.diverged,
     panic: cum.panic,
     parse_error: cum.parseError,
+    allowlisted: cum.allowlisted,
+    allowlisted_by_reason: Object.fromEntries(cum.allowlistReasons),
     prefix_battles: cum.prefix,
     ended_battles: cum.ended,
     empty_skipped: cum.empty,
@@ -641,6 +673,23 @@ async function main() {
   })}`);
   console.error('\n[ab_fuzz] SUMMARY');
   console.error(JSON.stringify(summary, null, 2));
+
+  // GREEN GATE (`--protocol`): FAIL (exit non-zero) on ANY non-allowlisted divergence —
+  // a NEW divergence kind/form that matches NO documented residual. Allowlisted residuals
+  // (reported by reason above) + ok battles PASS. A non-protocol run keeps exit 0 (it's a
+  // hunter, not a gate). `gen3_omniscient_byte_fuzz_v1`.
+  if (flags.protocol) {
+    const hardFails = cum.diverged + cum.panic + cum.parseError;
+    if (hardFails > 0) {
+      console.error(`\n[ab_fuzz] GREEN-GATE FAIL: ${hardFails} NON-allowlisted divergence(s) ` +
+        `(diverged=${cum.diverged} panic=${cum.panic} parse_error=${cum.parseError}); ` +
+        `allowlisted=${cum.allowlisted} by reason ${JSON.stringify(Object.fromEntries(cum.allowlistReasons))}`);
+      process.exit(1);
+    }
+    console.error(`\n[ab_fuzz] GREEN-GATE PASS: 0 non-allowlisted divergences ` +
+      `(ok=${cum.ok}, allowlisted=${cum.allowlisted} by reason ` +
+      `${JSON.stringify(Object.fromEntries(cum.allowlistReasons))}).`);
+  }
   process.exit(0);
 }
 

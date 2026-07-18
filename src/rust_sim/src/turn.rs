@@ -362,6 +362,19 @@ enum ResidualAction {
     /// expiry zeros `protect_counter` — modeled here) from the `protect` volatile (`duration:
     /// 1`, whose expiry is the turn-top `protected` clear — a no-op here). DRAW-FREE.
     VolatileDuration { side: usize, slot: usize, is_stall: bool },
+    /// The **MUSTRECHARGE** (`mustrecharge`, Hyper Beam) `duration: 2` residual duration
+    /// handler on the CAST turn (`gen3_perside_residual_faint_upkeep_order_v1` D4 fix). It
+    /// registers the SAME NO_ORDER/subOrder-2 tie-group handler as the duration:1 group, but —
+    /// UNLIKE that group — it does NOT end this turn: `mustrecharge` is `duration: 2`, so its
+    /// only residual tick (the cast turn) decrements 2 → 1 (the volatile is removed by the NEXT
+    /// turn's recharge cant, never by a residual). Per the sim's `fieldEvent('Residual')`, a
+    /// duration handler whose `duration--` is NON-ZERO FALLS THROUGH to the per-handler
+    /// `faintMessages()` (only a `duration-- == 0` handler `continue`s past it). So this arm must
+    /// NOT `continue` (the blanket `else { continue; }` the duration:1 group uses would SKIP a
+    /// faint an earlier order-≤12 handler [e.g. Perish] enqueued-but-deferred, mis-emitting that
+    /// mon's `|faint|` BEFORE `|upkeep|`). No-op apply; participates in the tie-shuffle like its
+    /// siblings.
+    MustRechargeDuration { side: usize, slot: usize },
     /// The **TAUNT** volatile's residual duration handler (`gen3_taunt_disable_v1`, order 10,
     /// subOrder 15): decrement `MonState::taunt` and, on reaching 0, CLEAR it (→ `None`, freeing
     /// the mon's Status moves). NO HP effect (`taunt.onResidual` only ticks the duration + emits
@@ -736,8 +749,10 @@ impl BattleState {
         self.bump_active_turns();
 
         // --- [16] END-OF-TURN Quick Claw randomChance(1,5): UNCONDITIONAL in gen3
-        //     once endTurn completes (no faint this turn). ---
-        let _ = self.prng.random_chance(1, 5);
+        //     once endTurn completes (no faint this turn). PERSIST the result (was
+        //     drawn-and-discarded) — read NEXT turn by `effective_speed` for the gen3
+        //     `getActionSpeed` speed=65535 override (`gen3_quick_claw_speed_v1`). ---
+        self.quick_claw_roll = self.prng.random_chance(1, 5);
         result.quick_claw_drawn = true;
 
         result
@@ -897,7 +912,8 @@ impl BattleState {
     /// per-turn recompute that re-applies the mon's move-disabling volatiles. That event
     /// gathers the mon's `onDisableMove` handlers (**taunt** disables every Status move,
     /// **disable** disables the one slot, **choicelock** [Choice Band] disables the non-locked
-    /// slots). If a mon carries ≥2 of these volatiles at once, its handlers all TIE (same
+    /// slots, **encore** [`gen3_encore_disable_move_shuffle_v1`] disables every non-encored
+    /// slot). If a mon carries ≥2 of these volatiles at once, its handlers all TIE (same
     /// Condition order=false / priority 0 / SAME mon's speed / subOrder) → `speedSort` shuffles
     /// the tie group, drawing `n-1` `random(range)` calls (a size-2 group = 1 draw). Fires per
     /// mon INDEPENDENTLY, in array order. It runs in `endTurn` AFTER the residual, BEFORE the
@@ -921,9 +937,16 @@ impl BattleState {
                 continue;
             }
             // Count the mon's move-disabling volatiles carrying an `onDisableMove` handler.
+            // RB1 (`gen3_encore_disable_move_shuffle_v1`): the gen3 `encore` condition ALSO
+            // registers an `onDisableMove` handler (it disables every non-encored slot), so an
+            // encored mon that co-carries taunt / disable / choicelock reaches n>=2 and draws
+            // the size->=2 endTurn DisableMove tie-shuffle. A LONE-encore mon (n stays 1) draws
+            // nothing new. Omitting encore mis-counted the handler set → a MISSING draw one call
+            // before the Quick Claw on an encore+choicelock/taunt/disable endTurn.
             let n = (mon.taunt.is_some() as usize)
                 + (mon.disable.is_some() as usize)
-                + (mon.choice_locked_move.is_some() as usize);
+                + (mon.choice_locked_move.is_some() as usize)
+                + (mon.encore.is_some() as usize);
             if n >= 2 {
                 // The n handlers all tie (same mon's speed + Condition sort key) → speed_sort
                 // shuffles a size-n tie group, drawing n-1 `random(range)` calls. Model it with
@@ -1178,53 +1201,25 @@ impl BattleState {
         //     with its resolved comparePriority key + a typed action. ---
         let mut handlers: Vec<EventHandler<ResidualAction>> = Vec::new();
 
-        // --- The WISH slot condition (`gen3_move_coverage_batch3_v1`, order 7 — BEFORE the
-        //     sand chip order 8 and every order-10 mon handler). Gathered here (per side) so
-        //     it sorts FIRST among the residuals. Its `speed` is the slot's CURRENT active
-        //     mon's cached speed (the `effectHolder` is the slot occupant), so two Wishes
-        //     resolving the same turn at EQUAL speed TIE at order 7 → ONE tie-shuffle draw
-        //     (probe: a Blissey-mirror both-Wish resolve turn draws +1; distinct speed draws
-        //     none). Gathered whenever a Wish is PENDING (the duration decrement + the fire-at-0
-        //     check live in the apply, like a Leftovers-style gate). No subOrder (unset →
-        //     effectTypeOrder default; unobservable — order 7 is unique among the modeled
-        //     residuals). ---
-        for side in 0..2 {
-            if self.sides[side].wish_pending.is_some() {
-                let slot = self.sides[side].active;
-                let speed = self.sides[side].pokemon[slot].cached_speed as f64;
-                handlers.push(EventHandler {
-                    order: WISH_RESIDUAL_ORDER,
-                    priority: 0,
-                    speed,
-                    sub_order: 0,
-                    effect_order: 0,
-                    handler: ResidualAction::Wish { side },
-                });
-            }
-        }
-
-        // --- The pending FUTUREMOVE slot condition (`gen3_move_coverage_batch4c_v1`,
-        //     order 11 — AFTER every order-10 mon handler, BEFORE Truant's 27 and the
-        //     NO_ORDER duration volatiles). Gathered per side EVERY end-of-turn while
-        //     pending (cast turn included — probe: an equal-speed FS MIRROR draws ONE
-        //     tie-shuffle per residual, cast/idle/resolve alike). Its `speed` is the
-        //     slot's CURRENT active mon's cached speed (the effectHolder is the slot
-        //     occupant, like Wish). The duration decrement + the fire-at-0 resolve live
-        //     in `apply_future_move`. ---
-        for side in 0..2 {
-            if self.sides[side].future_move.is_some() {
-                let slot = self.sides[side].active;
-                let speed = self.sides[side].pokemon[slot].cached_speed as f64;
-                handlers.push(EventHandler {
-                    order: FUTURE_RESIDUAL_ORDER,
-                    priority: 0,
-                    speed,
-                    sub_order: 0,
-                    effect_order: 0,
-                    handler: ResidualAction::FutureMove { side },
-                });
-            }
-        }
+        // --- The WISH (order 7) + FUTUREMOVE (order 11) SLOT CONDITIONS are gathered
+        //     PER-ACTIVE at the END of the per-active loop below (after that active's
+        //     item), NOT here in a pre-loop (`gen3_leftovers_slotcond_gather_order_v1`,
+        //     the R2 fix). THE PRE-SORT ORDER IS LOAD-BEARING: `speed_sort` is a
+        //     NON-STABLE selection sort whose swaps DISTURB the relative order of the
+        //     tied handlers, so the tie-group Fisher-Yates shuffle reads whatever pre-sort
+        //     order the selection-sort swaps LEFT the tied pair in. Showdown's
+        //     `fieldEvent('Residual')` gathers a side's slot conditions via
+        //     `findSideEventHandlers(side, 'onResidual', …, active)` — which runs AFTER
+        //     `findPokemonEventHandlers(active)` — so Wish/FutureMove sit AFTER that
+        //     active's Leftovers in the pre-sort array. Gathering them FIRST (the old
+        //     pre-loop) made the selection sort's Wish/weather swaps REVERSE the tied
+        //     Leftovers pair vs the sim → the two `-heal` lines emitted in the OPPOSITE
+        //     order at the SAME shuffle value (the R2 byte-fuzz divergence — a Jolteon
+        //     mirror, both Leftovers, sandstorm, a pending p2 Wish: the sim heals p1 first,
+        //     the port healed p2 first, seed IDENTICAL). Moving them into the per-active
+        //     loop is DRAW-NEUTRAL (same handlers, same sort keys, same tie-group COUNT →
+        //     the seed is unchanged) — only the pre-sort POSITION, hence the emit
+        //     permutation, changes to match the sim. ---
 
         // The weather FIELD handler (`onFieldResidual`, order 8) sorts FIRST. It has no
         // holder speed (a Field handler), so its `speed` key is 0 — it never ties a
@@ -1260,17 +1255,20 @@ impl BattleState {
         // `isWeather`-false skip — and the field-order-8 handler is in its OWN sort group anyway
         // (never ties an order-10 mon handler), so a sun/rain handler that IS scheduled under a
         // negater still can't perturb any mon-held tie-shuffle.
+        // RM3 (`gen3_sand_upkeep_under_air_lock_v1`): the WeatherChip field-residual handler
+        // is scheduled off the RAW `field.weather` for ALL weather (sun/rain AND sand/hail).
+        // The sim's `onFieldResidual` (the whole order-8 handler, INCLUDING its unconditional
+        // `|-weather|<W>|[upkeep]` line emission) is NOT gated on `effectiveWeather()` — only
+        // the eachEvent('Weather') shuffle + the per-active chip are. So under Air Lock / Cloud
+        // Nine the sim STILL emits the upkeep line; the port used to omit it entirely (the
+        // handler was unscheduled), which let the order-10.5 leech `-damage` land where the sim
+        // emits the order-8 sand `[upkeep]`. DRAW-NEUTRAL: the negater-suppressed shuffle is
+        // gated OFF inside `apply_weather_chip` (`effective == false` → no `each_event_shuffle`),
+        // so a negated sand/hail residual pushes the handler + emits the upkeep line but draws
+        // NOTHING — identical draw count to the prior unscheduled behavior. The handler is alone
+        // in its order-8 sort group (field speed 0), so it never ties any mon handler.
         let raw_weather = self.field.weather;
-        let sched_weather = match raw_weather {
-            // Sun/rain: eachEvent('Weather') is unconditional → schedule off RAW weather
-            // (fires even under a WEATHER_NEGATE mon).
-            Some(w @ (Weather::Sun | Weather::Rain)) => Some(w),
-            // Sand/hail: gated on `isWeather` == `effectiveWeather()` → schedule only when NOT
-            // suppressed (a negater silences both the chip AND the shuffle).
-            Some(Weather::Sand) | Some(Weather::Hail) => self.effective_weather(dex),
-            None => None,
-        };
-        if let Some(w) = sched_weather {
+        if let Some(w) = raw_weather {
             handlers.push(EventHandler {
                 order: WEATHER_RESIDUAL_ORDER,
                 priority: 0,
@@ -1610,7 +1608,9 @@ impl BattleState {
             //     residual gathers it). NO HP effect (the 2 → 1 decrement is unobservable —
             //     the volatile never expires by duration), DRAW-FREE apply; its PRESENCE
             //     changes the residual tie-shuffle COUNT (an HB MIRROR at equal speed adds
-            //     one tie draw). ---
+            //     one tie draw). Its `duration: 2` NON-ending decrement means it must FALL
+            //     THROUGH to the per-handler faintMessages (NOT the duration:1 group's blanket
+            //     `continue`) — hence its OWN `MustRechargeDuration` variant, D4 fix. ---
             if mon.must_recharge {
                 handlers.push(EventHandler {
                     order: NO_ORDER,
@@ -1618,7 +1618,7 @@ impl BattleState {
                     speed,
                     sub_order: VOLATILE_RESIDUAL_SUBORDER,
                     effect_order: 0,
-                    handler: ResidualAction::VolatileDuration { side, slot, is_stall: false },
+                    handler: ResidualAction::MustRechargeDuration { side, slot },
                 });
             }
             // --- TWOTURNMOVE's `duration: 2` volatile (`gen3_move_coverage_batch4c_v1`,
@@ -1730,6 +1730,41 @@ impl BattleState {
                     handler: ResidualAction::BerryResidual { side, slot },
                 });
             }
+
+            // --- THE SIDE'S SLOT CONDITIONS (`findSideEventHandlers(side, 'onResidual',
+            //     …, active)`), gathered PER-ACTIVE AFTER that active's pokemon handlers
+            //     (`gen3_leftovers_slotcond_gather_order_v1`, the R2 fix — see the
+            //     pre-sort-order note above the weather handler). WISH (order 7, resolves
+            //     BEFORE the sand chip + all order-10 handlers) + FUTUREMOVE (order 11,
+            //     AFTER every order-10 mon handler). Their `speed` is the slot's CURRENT
+            //     active mon's cached speed (the effectHolder is the slot occupant), so two
+            //     Wishes (or two FutureMoves) resolving the same turn at EQUAL speed TIE at
+            //     their order → ONE tie-shuffle draw; distinct speed draws none. Gathered
+            //     whenever PENDING (the duration decrement + fire-at-0 resolve live in the
+            //     apply). No subOrder (unset → effectTypeOrder default; each order is unique
+            //     among the modeled residuals). Sitting AFTER the item here reproduces the
+            //     sim's selection-sort pre-shuffle order so a tied Leftovers pair emits its
+            //     two `-heal` lines in the SAME order as Showdown. ---
+            if self.sides[side].wish_pending.is_some() {
+                handlers.push(EventHandler {
+                    order: WISH_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: 0,
+                    effect_order: 0,
+                    handler: ResidualAction::Wish { side },
+                });
+            }
+            if self.sides[side].future_move.is_some() {
+                handlers.push(EventHandler {
+                    order: FUTURE_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: 0,
+                    effect_order: 0,
+                    handler: ResidualAction::FutureMove { side },
+                });
+            }
         }
 
         // --- Sort by comparePriority WITH the Fisher-Yates tie-shuffle (the only
@@ -1834,13 +1869,43 @@ impl BattleState {
                     if self.sides[side].pokemon[slot].fainted {
                         continue;
                     }
+                    // THE DURATION-END `continue` (`gen3_perside_residual_faint_upkeep_order_v1`,
+                    // D4): the sim's `fieldEvent('Residual')` SKIPS the per-handler
+                    // `faintMessages()` for a duration handler that hits 0 this turn (the
+                    // `handler.state.duration-- → end() → continue` branch). So a NO_ORDER
+                    // duration tick that ENDS must not drain a faint an EARLIER handler
+                    // ENQUEUED-but-deferred (the order-12 Perish `continue`) — else the port
+                    // emits that mon's `|faint|` BEFORE `|upkeep|`, where the sim defers it to
+                    // AFTER `|upkeep|` (the tail `process_faints`). The is_stall volatile is
+                    // duration:2 (may not end); the non-stall duration:1 volatiles
+                    // (protect/flinch/focuspunch/beatup/endure/snatch) ALWAYS end on their
+                    // residual → always `continue`. A non-ending decrement falls through to the
+                    // per-handler faintMessages (matching the sim's non-end path).
                     if is_stall {
                         let mon = &mut self.sides[side].pokemon[slot];
                         mon.stall_duration = mon.stall_duration.saturating_sub(1);
                         if mon.stall_duration == 0 {
                             mon.protect_counter = 0; // the volatile ended → reset
+                            continue; // duration-END → skip the per-handler faintMessages
                         }
+                    } else {
+                        continue; // a duration:1 volatile always ends → skip faintMessages
                     }
+                }
+                // MUSTRECHARGE duration handler on the Hyper Beam CAST turn
+                // (`gen3_perside_residual_faint_upkeep_order_v1` D4 fix). `mustrecharge` is
+                // `duration: 2`, so its only residual tick decrements 2 → 1 (NON-zero → the sim's
+                // `fieldEvent` does NOT take the `duration-- == 0` end/`continue` branch). So —
+                // UNLIKE the duration:1 group above — this arm FALLS THROUGH to the per-handler
+                // `process_faints`, draining any faint an earlier order-≤12 handler (Perish)
+                // enqueued-but-deferred (the sim emits that `|faint|` BEFORE `|upkeep|`; the old
+                // blanket `continue` mis-deferred it PAST `|upkeep|`). No-op apply; a fainted
+                // holder is still skipped (mirroring `fieldEvent`'s pre-duration fainted guard).
+                ResidualAction::MustRechargeDuration { side, slot } => {
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    // no `continue` — fall through to the per-handler faintMessages below
                 }
                 // TAUNT duration tick (`gen3_taunt_disable_v1`): decrement + expire at 0. NO HP
                 // effect, DRAW-FREE. On expiry the mon's Status moves are usable again.
@@ -1860,6 +1925,10 @@ impl BattleState {
                                 let m = self.mon_ref(side, slot, dex);
                                 self.log.volatile_end_silent(&m, "move: Taunt");
                             }
+                            // duration-END `continue` (`gen3_perside_residual_faint_upkeep_order_v1`):
+                            // skip the per-handler faintMessages so a deferred earlier faint
+                            // (Perish order 12) is not drained before `|upkeep`.
+                            continue;
                         } else {
                             mon.taunt = Some(next);
                         }
@@ -1883,6 +1952,7 @@ impl BattleState {
                                 let m = self.mon_ref(side, slot, dex);
                                 self.log.volatile_end(&m, "Disable");
                             }
+                            continue; // duration-END → skip faintMessages (D4 order fix)
                         } else {
                             mon.disable = Some((dslot, next));
                         }
@@ -1935,6 +2005,7 @@ impl BattleState {
                         t.duration = t.duration.saturating_sub(1);
                         if t.duration == 0 {
                             mon.two_turn = None; // the volatile expired (onEnd)
+                            continue; // duration-END → skip faintMessages (D4 order fix)
                         }
                     }
                 }
@@ -1972,9 +2043,12 @@ impl BattleState {
                         }
                     }
                     // [EMIT] `|-end|<mon>|Encore` (`encore.onEnd`) — both removal paths.
-                    if ended && self.logging() {
-                        let m = self.mon_ref(side, slot, dex);
-                        self.log.volatile_end(&m, "Encore");
+                    if ended {
+                        if self.logging() {
+                            let m = self.mon_ref(side, slot, dex);
+                            self.log.volatile_end(&m, "Encore");
+                        }
+                        continue; // duration-END → skip faintMessages (D4 order fix)
                     }
                 }
                 // PERISH SONG tick (`gen3_move_coverage_batch6_v1`): decrement, then
@@ -2050,6 +2124,13 @@ impl BattleState {
     /// first, then chip both actives in side order (the chip itself is draw-free; its
     /// order is unobservable as it touches distinct mons).
     fn apply_weather_chip(&mut self, weather: Weather, dex: &Dex) {
+        // RM3 (`gen3_sand_upkeep_under_air_lock_v1`): is THIS weather effective RIGHT NOW (no
+        // Air Lock / Cloud Nine active)? The upkeep-line / `-weather none` emission is
+        // UNCONDITIONAL (mirroring the sim's un-gated `onFieldResidual`), but the
+        // eachEvent('Weather') shuffle + the per-active chip fire ONLY when effective for
+        // sand/hail (sun/rain always run the shuffle — their `onFieldResidual` isWeather guard
+        // reads effectiveWeather() but the eachEvent is unconditional; they chip nothing).
+        let effective = self.effective_weather(dex) == Some(weather);
         // --- TIMED-WEATHER (`gen3_move_coverage_batch2_v1`) countdown + expiry. A MOVE-set
         //     weather (Rain Dance / Sunny Day) carries `weather_turns` 1..=5; the ability
         //     weather (Sand Stream) is PERMANENT (`weather_turns == 0` — never expires). At
@@ -2070,8 +2151,11 @@ impl BattleState {
             // The field residual STILL fires its eachEvent('Weather') shuffle on the expiry
             // turn (probe: the expiry turn draws the same count as an upkeep turn). No chip
             // (the weather is gone; even a would-be sand/hail chip is skipped — the shuffle
-            // is the whole residual). Run the shuffle, then return.
-            self.each_event_shuffle();
+            // is the whole residual). RM3: the shuffle is gated the same as the main path —
+            // sun/rain always run it, sand/hail only when effective (a negater suppresses it).
+            if matches!(weather, Weather::Sun | Weather::Rain) || effective {
+                self.each_event_shuffle();
+            }
             return;
         }
         if self.field.weather_turns > 1 {
@@ -2095,15 +2179,29 @@ impl BattleState {
         // already drew), so reading the permutation for the emit changes nothing the seed
         // suite asserts; it only fixes the emitted-line order. A collapsed <2 order (a
         // fainted active) falls back to a natural side walk for the surviving side.
-        // Fired for ALL weather (sun/rain INCLUDED — `gen3_ability_batch1_v1`): the
+        // Fired for ALL EFFECTIVE weather (sun/rain INCLUDED — `gen3_ability_batch1_v1`): the
         // `eachEvent('Weather')` shuffle draws on a tie regardless of whether the weather chips.
-        let shuffled = self.each_event_shuffle();
+        // RM3: under Air Lock / Cloud Nine a sand/hail residual STILL emits its upkeep line
+        // (above, unconditional) but draws NOTHING — the eachEvent shuffle is gated OFF, so the
+        // negated residual is draw-neutral vs the prior unscheduled behavior.
+        let run_eachevent = matches!(weather, Weather::Sun | Weather::Rain) || effective;
+        let shuffled = if run_eachevent {
+            self.each_event_shuffle()
+        } else {
+            Vec::new()
+        };
 
         // Sun / Rain have NO chip (`onWeather` has no damage handler) — the shuffle above IS the
         // whole field-residual for them. Return before the per-active chip walk (so the
         // Sand/Hail-only chip code below is unreachable for sun/rain by CONSTRUCTION, not by the
         // per-mon `weather_immune` short-circuit).
         if matches!(weather, Weather::Rain | Weather::Sun) {
+            return;
+        }
+
+        // RM3: a NEGATED sand/hail residual (Air Lock / Cloud Nine active) emitted its upkeep
+        // line but must chip NOTHING and draw NOTHING (the shuffle above was suppressed).
+        if !effective {
             return;
         }
 
@@ -2271,12 +2369,11 @@ impl BattleState {
                     // shared confusion-add gates (already-confused / Own Tempo → no draw).
                     let minus = nature_minus_stat(&self.sides[side].pokemon[slot].set.nature, dex);
                     if minus.as_deref() == Some(confuse_if_minus.as_str()) {
-                        let before = self.sides[side].pokemon[slot].confusion.is_some();
+                        // `add_confusion` ALREADY emits the `|-start|<mon>|confusion` reveal on a
+                        // successful add — do NOT emit it a second time here (the prior port
+                        // double-emitted the Figy/Mago/Iapapa/Aguav/Wiki `-start confusion`,
+                        // `gen3_omniscient_byte_fuzz_v1`).
                         self.add_confusion(side, slot, dex);
-                        if self.logging() && !before && self.sides[side].pokemon[slot].confusion.is_some() {
-                            let m = self.mon_ref(side, slot, dex);
-                            self.log.volatile_start(&m, "confusion");
-                        }
                     }
                 }
             }
@@ -2517,10 +2614,15 @@ impl BattleState {
         let s = &mut mon.boosts[4];
         let before = *s;
         *s = (*s + 1).min(6);
-        // [EMIT] `|-boost|<mon>|spe|1` (only when the stage actually rose; a +6-capped
-        // boost emits nothing — the clamped-delta-sign convention used elsewhere).
+        // [EMIT] the ability ANNOUNCE `|-ability|<mon>|Speed Boost|boost` THEN `|-boost|<mon>|
+        // spe|1` — only when the stage actually rose (a +6-capped boost draws NO `-boost` in
+        // the sim's `boost()`, so the ability announce is skipped too; the clamped-delta-sign
+        // convention used elsewhere). The `-ability|…|boost` line is the sim's `boost()`
+        // ability-source announce (SIM-PROBED: `|-ability|p1a: Yanma|Speed Boost|boost`
+        // precedes the `-boost`); the prior port omitted it (`gen3_omniscient_byte_fuzz_v1`).
         if self.logging() && self.sides[side].pokemon[slot].boosts[4] != before {
             let mon_ref = self.mon_ref(side, slot, dex);
+            self.log.ability(&mon_ref, "Speed Boost", Some("boost"));
             self.log.boost(&mon_ref, 4, 1); // stat_idx 4 == spe (STAT_TOKENS order)
         }
     }
@@ -2861,6 +2963,7 @@ impl BattleState {
                 self.log.hint(
                     "In Gens 3-4, Knock Off only makes the target's item unusable; \
                      it cannot obtain a new item.",
+                    true, // gen4/moves.ts:703 passes `once` — fires ONCE per battle
                 );
             }
         }
@@ -3081,15 +3184,22 @@ impl BattleState {
         // RESOLVE: consume the slot condition (removeSlotCondition), then strike.
         self.sides[side].future_move = None;
         let slot = self.sides[side].active;
-        if self.sides[side].pokemon[slot].fainted {
-            // A fainted occupant skips the strike ('-hint' in the sim, text uncaptured —
-            // not emitted; zero draws either way).
-            return;
-        }
         let move_name = dex
             .moves(&fm.move_id)
             .map(|m| m.name.clone())
             .unwrap_or_else(|| fm.move_id.clone());
+        if self.sides[side].pokemon[slot].fainted {
+            // A fainted occupant skips the strike (`futuremove.onEnd`'s early-return); the sim
+            // emits `|-hint|<Move> did not hit because the target is fainted.` (`once` falsy →
+            // fires every time, no dedup). The `target === source` "the user" branch is
+            // unreachable in gen3 singles (a foe-target future move can't occupy the caster's
+            // slot). Zero draws either way. (`gen3_omniscient_byte_fuzz_v1` — was uncaptured.)
+            if self.logging() {
+                self.log
+                    .hint(&format!("{move_name} did not hit because the target is fainted."), false);
+            }
+            return;
+        }
         // [EMIT] `|-end|<target>|move: Doom Desire` (on the TARGET, with the `move:`
         // prefix — probe-observed shape).
         if self.logging() {
@@ -3421,15 +3531,24 @@ impl BattleState {
     /// against the sim (a raw-350 Tauros reports 87 = floor(350·0.25) under para,
     /// not 175). For a clean (no-para, no-boost) mon this is just `stats[5]`.
     ///
-    /// **Deferred `onModifySpe`/`getActionSpeed` inputs (none on our golden teams,
-    /// so seed-parity holds; wire them with the full `runEvent` gather in the
-    /// turn-loop step):** the gen-3 weather-speed abilities **Swift Swim** /
-    /// **Chlorophyll** (×2 in rain/sun) and the **Quick Claw** `speed = 65535`
-    /// override (a QC holder whose end-of-prev-turn `randomChance(1,5)` hit moves
-    /// first). A Swift-Swim mon under rain or a Quick-Claw proc would mis-order
-    /// here and could desync — out of this bounded step's scope.
+    /// The **Quick Claw** `speed = 65535` override (a QC holder whose end-of-prev-turn
+    /// `randomChance(1,5)` hit) IS now applied at the top of this fn
+    /// (`gen3_quick_claw_speed_v1`, reading the persisted `self.quick_claw_roll`).
+    /// **Remaining deferred `onModifySpe` input (none on our golden teams, so seed-parity
+    /// holds):** the gen-3 weather-speed abilities are handled via the `weather_speed` chain
+    /// below; no other `getActionSpeed` overrides apply in gen3 singles.
     fn effective_speed(&self, side: usize, slot: usize, dex: &Dex) -> u32 {
         let mon = &self.sides[side].pokemon[slot];
+        // gen3 `getActionSpeed` (scripts.js:47-48): a Quick-Claw HOLDER whose end-of-
+        // PREV-turn `battle.quickClawRoll` hit TRUE returns `speed = 65535` — moving FIRST
+        // within its priority bracket regardless of raw Speed (`gen3_quick_claw_speed_v1`).
+        // Uncapped (the gen3 override returns the raw 65535, NOT the 10000 `min`), so two
+        // proc'd QC holders both read 65535 → an exact tie → the action-order shuffle draws,
+        // matching the sim. Applied BEFORE the boost/para/weather chain (the override wholly
+        // replaces the computed speed in `getActionSpeed`).
+        if self.quick_claw_roll && to_id(&mon.item) == "quickclaw" {
+            return 65535;
+        }
         let base = mon.stats[5] as u32;
         // boost-table floor (boosts index 4 == spe) — applied BEFORE the ModifySpe chain
         // (VERIFIED vs the sim's getStat: +1 Swift-Swim mon in rain = boost then ×2).
@@ -3698,7 +3817,21 @@ impl BattleState {
             )
         } else {
             match self.move_at(side, slot, move_index, dex) {
-                Some(m) => (
+                Some(m) => {
+                // CURSE PP CRUX (`gen3_pressure_allyteam_v1`, D1): gen-3 `curse.onModifyMove`
+                // RE-TARGETS a NON-GHOST user's Curse to `self` at runtime (`nonGhostTarget`),
+                // but the static dex `target` is `"normal"`. The Pressure PP path (below) must
+                // read the RUNTIME-effective target — else a non-Ghost Curse facing a Pressure
+                // foe wrongly deducts 2 PP (static "normal" → foe in `pressureTargets`) instead
+                // of 1 (self → foe NOT in `pressureTargets`), draining its PP ~1 cycle/turn early
+                // and forcing Struggle turns the sim still Curses (the byte-fuzz 5_6 desync). So
+                // feed BOTH `targets_self` and `pressure_targets_foe` the effective "self" target.
+                // (The GHOST branch keeps the base `normal` foe target — a ghost Curse is
+                // foe-directed, so `pressure_targets_foe` stays true.)
+                let is_nonghost_curse = to_id(&m.id) == "curse"
+                    && !mon_types(&self.sides[side].pokemon[slot], dex).contains(&Type::Ghost);
+                let eff_target: &str = if is_nonghost_curse { "self" } else { &m.target };
+                (
                     m.accuracy,
                     m.never_miss,
                     m.base_power,
@@ -3706,15 +3839,27 @@ impl BattleState {
                     m.category,
                     to_id(&m.id) == "explosion" || to_id(&m.id) == "selfdestruct",
                     m.crit_ratio,
-                    m.move_type == Some(Type::Fire) && m.category != MoveCategory::Status,
+                    // `is_fire` gates the frozen-defender thaw (turn.rs thaw site). gen3
+                    // `frz.onDamagingHit` (conditions.ts:45-50) thaws ONLY when the move's
+                    // BASE-dex type is Fire — with the explicit "don't count Hidden Power or
+                    // Weather Ball as Fire-type" comment. dex.moves.get('hiddenpower').type is
+                    // 'Normal' and 'weatherball' is 'Normal', so a typed HP-Fire (runtime type
+                    // Fire, move nums 355-370) must NOT thaw. We compute the RESOLVED runtime
+                    // type here, so exclude those two by base id to match the base-type
+                    // semantics (`gen3_omniscient_byte_fuzz_v1` freeze-persistence fix).
+                    m.move_type == Some(Type::Fire)
+                        && m.category != MoveCategory::Status
+                        && !to_id(&m.id).starts_with("hiddenpower")
+                        && to_id(&m.id) != "weatherball",
                     to_id(&m.id),
                     m.status_inflicted.clone(),
                     m.is_protect,
-                    m.target == "self",
+                    eff_target == "self",
                     m.name.clone(),
                     m.contact,
-                    pressure_targets_foe(&m.target),
-                ),
+                    pressure_targets_foe(eff_target),
+                )
+                }
                 // Not a known move — resolve as a no-op (draws nothing). This is a
                 // programming error in scope (the caller picks damaging slots).
                 None => return MoveResolution::no_op(),
@@ -3862,6 +4007,51 @@ impl BattleState {
             ((150u32 * mon.hp as u32) / mon.maxhp as u32).max(1) as u16
         } else {
             base_power
+        };
+
+        // --- HIDDEN POWER IV-derived BASE POWER (`gen3_iv_derived_hidden_power_bp_v1`):
+        //     gen-3 computes HP's BP from the ATTACKER's IVs (`Dex.getHiddenPower`,
+        //     range 30..=70), NOT the flat 70 the data ships (all 16 typed HP rows are
+        //     BP 70 in `gen3_moves.json`). The port precomputes `MonState.hidden_power_bp`
+        //     in `from_set`; override the data BP with it for any `hiddenpower*` id here
+        //     (the same id-gate site as Water Spout / Pursuit). The TYPE stays from the
+        //     typed id (`move_type` untouched). DRAW-NEUTRAL — a deterministic STATE read
+        //     of a precomputed value, no PRNG, so seed goldens are unaffected; it only
+        //     changes the damage magnitude for an HP mon whose IVs give BP != 70. ---
+        let base_power = if move_id.starts_with("hiddenpower") {
+            self.sides[side].pokemon[slot].hidden_power_bp as u16
+        } else {
+            base_power
+        };
+
+        // --- BARE HIDDEN POWER type + category resolution (`gen3_typed_hidden_power_ids_v1`
+        //     / `gen3_iv_derived_hidden_power_bp_v1`, the round-12 pool-crash P0 fix): a
+        //     packed gen3ou team can store the move SLOT as the BARE `hiddenpower` (num 237,
+        //     data type Normal, BP 0), with the real HP type carried ONLY by the IVs (Showdown's
+        //     `Pokemon` constructor resolves a bare HiddenPower slot to its typed variant at
+        //     construction). The data-237 row derives category **Status** (BP 0) AND type
+        //     **Normal** — BOTH WRONG — so without this the bp-0 Status mis-classification routes
+        //     a real damaging Hidden Power into `run_status_move`'s fail-loud guard (the crash),
+        //     and even if routed correctly it would deal Normal-type (not the mon's actual HP
+        //     type) damage. Resolve the RUNTIME type from the attacker's IVs
+        //     (`hidden_power_type`, the sibling of the BP override above) and RE-DERIVE the
+        //     category from the overridden BP + that type — exactly like the variable-BP block
+        //     immediately below, so the bare HP executes as the correct TYPED damaging move
+        //     (right type, right BP, right phys/spec split). The TYPED ids (`hiddenpower<type>`,
+        //     nums 355-370) already carry the right type+category, so gate on the BARE id only.
+        //     `is_fire` (the frozen-defender thaw gate) was computed above and already excludes
+        //     `hiddenpower*` by base id (a bare HP Fire must NOT thaw), so it stays correct; the
+        //     reactive counter/mirrorcoat qualification keys on `starts_with("hiddenpower")`, so
+        //     Counter still catches a physical-type bare HP and Mirror Coat never a bare HP —
+        //     matching the sim's typed→bare collapse. DRAW-NEUTRAL (a deterministic IV read, no
+        //     PRNG). ---
+        let (move_type, category) = if move_id == "hiddenpower" {
+            let hp_type = Type::from_name(crate::state::hidden_power_type(
+                &self.sides[side].pokemon[slot].set.ivs,
+            ));
+            (hp_type, crate::dex::moves::derive_category(3, base_power, hp_type))
+        } else {
+            (move_type, category)
         };
 
         // --- The VARIABLE-BP family (`gen3_move_coverage_batch5_v1`, `basePowerCallback`
@@ -4495,9 +4685,17 @@ impl BattleState {
                 let user = self.mon_ref(side, slot, dex);
                 let target = self.mon_ref(foe, foe_slot, dex);
                 if !suppress_announce {
-                    self.log.move_used(&user, &move_name, Some(&target), true, false);
                     if announce_lockedmove {
+                        // A locked Solar Beam fire-turn MISS: the sim appends `[from] lockedmove`
+                        // (in the useMove announce) BEFORE the `[miss]` (in the accuracy check) →
+                        // `|move|…|[from] lockedmove|[miss]`. So emit the BARE move line, the
+                        // lockedmove attr, THEN the miss attr (NOT `move_used(miss=true)`, which
+                        // would put `[miss]` first). SIM-PROBED (`gen3_omniscient_byte_fuzz_v1`).
+                        self.log.move_used(&user, &move_name, Some(&target), false, false);
                         self.log.attr_last_move_from_lockedmove();
+                        self.log.attr_last_move_miss();
+                    } else {
+                        self.log.move_used(&user, &move_name, Some(&target), true, false);
                     }
                 }
                 self.log.miss(&user, Some(&target));
@@ -4530,6 +4728,34 @@ impl BattleState {
             return self.run_beat_up(side, slot, foe, foe_slot, crit_ratio, &move_name, dex);
         }
 
+        // --- BRICK BREAK screen-break (RM1, `gen3_brick_break_screens_v1`) — Brick Break is
+        //     the ONLY gen3 screen-breaking move. Its `onTryHit` removes BOTH the FOE side's
+        //     screens (Reflect + Light Screen) BEFORE the damage step, draw-free. Gated on a
+        //     CONFIRMED-LANDED, non-immune (the immunity short-circuit above — probe: Brick
+        //     Break into a Ghost does NOT remove the screen, since `runImmunity` precedes
+        //     `onTryHit`), non-protect-blocked, non-miss hit (both the protect block and the
+        //     genuine-miss `!acc_hit` returns are above). Clearing the STATE (sides[foe]
+        //     screens) makes the both-screens `two_tied_handler_shuffle` below NOT fire (it
+        //     reads sides[foe].reflect/light_screen directly) — the sim removes both screens
+        //     in `onTryHit` before ModifyDamagePhase1, so there is no tie to shuffle; and
+        //     clearing the CTX makes `calc_damage` compute screen-free full damage. Both are
+        //     probe-confirmed vs the sim (`harness/probe_brickbreak_screens.js`). ---
+        let (bb_removed_reflect, bb_removed_ls) = if move_id == "brickbreak" {
+            let rr = self.sides[foe].reflect > 0;
+            let rl = self.sides[foe].light_screen > 0;
+            if rr {
+                self.sides[foe].reflect = 0;
+            }
+            if rl {
+                self.sides[foe].light_screen = 0;
+            }
+            ctx.reflect = false;
+            ctx.light_screen = false;
+            (rr, rl)
+        } else {
+            (false, false)
+        };
+
         // [EMIT] `|move|<user>|<Name>|<foe>` (a landed damaging move — the effectiveness
         // / crit / damage lines follow). Emitted BEFORE the crit roll so the line order
         // matches the sim; the emit reads already-resolved state (draws nothing).
@@ -4540,6 +4766,20 @@ impl BattleState {
                 self.log.move_used(&user, &move_name, Some(&target), false, false);
                 if announce_lockedmove {
                     self.log.attr_last_move_from_lockedmove();
+                }
+                // BRICK BREAK (RM1): the screen `|-sideend|` lines emit BETWEEN the `|move|`
+                // line and the `|-supereffective|` line (probe-confirmed order: |move| then
+                // |-sideend| then |-supereffective|), Reflect first then Light Screen, on the
+                // FOE side ref, with the exact tokens the residual-expiry path uses.
+                if bb_removed_reflect || bb_removed_ls {
+                    let side_ref =
+                        crate::protocol::ProtocolBuilder::side_ref(foe, &self.sides[foe].name);
+                    if bb_removed_reflect {
+                        self.log.sideend(&side_ref, "Reflect");
+                    }
+                    if bb_removed_ls {
+                        self.log.sideend(&side_ref, "move: Light Screen");
+                    }
                 }
             }
             // Effectiveness (the DEFENDER's ident) — the type-chart product of the
@@ -5687,8 +5927,16 @@ impl BattleState {
         //       (1) `removeVolatile('snatch')` on the SNATCHER — FIRST, so the snatcher's
         //           own nested `useMove` below can't re-trigger the interception;
         //       (2) `|-activate|SNATCHER|move: Snatch|[of] FOE`;
-        //       (3) `runEvent('DeductPP', foe, snatcher)` — DRAW-FREE, returns true → 0
-        //           extra snatch PP (no Pressure interaction in gen3) → a NO-OP here;
+        //       (3) `runEvent('DeductPP', source=VICTIM, snatchUser=SNATCHER, Snatch)` —
+        //           DRAW-FREE. The EVENT-TARGET is `source` = the FOE whose self-target
+        //           move was stolen (the VICTIM, `_side`/`_slot`). If that victim has
+        //           **Pressure**, its `onDeductPP(target, source){ if(target===source)
+        //           return; return 1; }` returns 1 → the SNATCHER's Snatch loses an
+        //           EXTRA 1 PP (`snatchUser.deductPP('snatch', 1)`). So a Snatch steal
+        //           costs the snatcher 1 Snatch PP (the cast) + 1 more iff the stolen
+        //           move's user has Pressure (`bab_4_16`: a Blissey snatching a Pressure
+        //           Zapdos's Rest → the sim deducts 2 Snatch PP total → `pp:14`; the
+        //           port used to model (3) as a pure no-op → under-deducted → `pp:15`);
         //       (4) `this.actions.useMove(stolenId, snatcher)` — the snatcher executes the
         //           stolen move in ITS OWN context (a bare useMove: no accuracy/on_before_move/
         //           PP/lastMove, just the effect + the stolen move's NATIVE draws — SwordsDance/
@@ -5713,7 +5961,21 @@ impl BattleState {
                 self.log
                     .activate(&snatcher, "move: Snatch", Some(&format!("[of] {victim}")));
             }
-            // (3) DeductPP — draw-free no-op in gen3 (returns true → 0 extra snatch PP).
+            // (3) DeductPP — draw-free. The event-target is the VICTIM (`_side`/`_slot`,
+            //     the stolen move's user); if it has Pressure, deduct 1 EXTRA Snatch PP
+            //     from the SNATCHER (`foe`/`foe_slot`) — mirroring `runEvent("DeductPP",
+            //     victim, snatcher, Snatch)` returning 1 for a Pressure source
+            //     (`gen3_snatch_pressure_pp_v1`, the `bab_4_16` per-side request find).
+            if crate::dex::to_id(&self.sides[_side].pokemon[_slot].ability) == "pressure" {
+                if let Some(snatch_slot) = self.sides[foe].pokemon[foe_slot]
+                    .set
+                    .moves
+                    .iter()
+                    .position(|m| crate::dex::to_id(m) == "snatch")
+                {
+                    self.sides[foe].pokemon[foe_slot].deduct_pp(snatch_slot, 1);
+                }
+            }
             // (4) the SNATCHER uses the stolen move (the bare `useMove` — a recursive
             //     `run_status_move` in the snatcher's context, with the `[from] Snatch`
             //     announce fold). The stolen self-target moves are all category Status, so
@@ -5923,20 +6185,34 @@ impl BattleState {
             // nothing extra — the seed is unchanged either way; only the user's HP changes.
             let healed = self.apply_heal(_side, _slot, amount);
             // [EMIT] a Recover-family heal has NO `[from]` tag (`|-heal|<user>|<HP>`); a
-            // full-HP / heal-0 fail emits the did-nothing `[still]` announce form + a
-            // `|-fail|<user>|heal` (the `heal` sub-tag — `gen3_omniscient_byte_fuzz_v1`
-            // FORMS 1+2: the sim `attrLastMove('[still]')`s the announce, then the heal
-            // `onHit` returns false → `this.add('-fail', target, 'heal')`; verified vs the
-            // captured L-rows, e.g. `|move|p2a: Milotic|Recover||[still]`,`|-fail|…|heal`).
+            // full-HP / heal-0 FAIL emission differs by MOVE FAMILY (the `bab_7_1`
+            // per-side byte-fuzz find, `gen3_omniscient_byte_fuzz_v1`):
+            //   - the DECLARATIVE `move.heal:[1,2]` family (Recover / Soft-Boiled /
+            //     Slack Off / Milk Drink): at full HP `this.heal` returns false → the
+            //     move FAILS → `attrLastMove('[still]')` + `-fail|<user>|heal` (the sim
+            //     path — corpus fixture 04, e.g. `|move|…|Recover||[still]`,`|-fail|…|heal`).
+            //   - the ONHIT weather-heal family (Morning Sun / Moonlight / Synthesis):
+            //     `heal:undefined` + an `onHit` fn that calls `this.heal(...)`; at full HP
+            //     that `this.heal` returns 0 but the `onHit` returns UNDEFINED (truthy),
+            //     so the move SUCCEEDS — the sim renders the NORMAL self-target announce
+            //     (already emitted at the top of this fn) and simply OMITS the `-heal`
+            //     line (never `[still]`/`-fail`). VERIFIED vs the sim getPlayerStreams:
+            //     sim `|move|p2a: Moltres|Morning Sun|p2a: Moltres` (self-target success)
+            //     vs the old port `|move|…|Morning Sun||[still]` (the did-nothing form).
+            let onhit_weather_heal =
+                matches!(move_id, "morningsun" | "moonlight" | "synthesis");
             if self.logging() {
                 let user = self.mon_ref(_side, _slot, dex);
                 if healed {
                     let hp = self.hp_status(_side, _slot);
                     self.log.heal(&user, &hp, None);
-                } else {
+                } else if !onhit_weather_heal {
+                    // The declarative Recover family: the `[still]`+`-fail|heal` gate.
                     self.log.attr_last_move_still();
                     self.log.fail(&user, Some("heal"), false);
                 }
+                // else: the onHit weather-heal family at heal-0 emits NOTHING extra —
+                // the plain self-target announce already stands (the move SUCCEEDED).
             }
             // A status move never fires the in-tryMoveHit Update shuffle: not missed,
             // NOT landed. No accuracy draw (never-miss). cached_speed is untouched.
@@ -6544,23 +6820,7 @@ impl BattleState {
                     return MoveResolution::done(true, false, false);
                 }
             }
-            // (2a) SOUNDPROOF — Roar IS a `flags.sound` move (Whirlwind is NOT), so a Roar into a
-            //      Soundproof holder is IMMUNE at `onTryHit` (after the accuracy roll): `-immune|
-            //      [from] ability: Soundproof`, NO `forceSwitchFlag`, NO drag → **NO `sample`
-            //      draw**. VERIFIED vs the sim (probe above): identical to the natural-immune
-            //      status path (accuracy drawn, then immune, no further roll). This precedes the
-            //      Protect block (a Soundproof holder is immune before any TryHit drag signal).
-            if self.move_is_sound(move_id, dex)
-                && dex.ability(&to_id(&self.sides[foe].pokemon[foe_slot].ability)).map(|a| a.blocks_sound).unwrap_or(false)
-            {
-                // [EMIT] `|-immune|<target>|[from] ability: Soundproof`. No drag, no `-fail`.
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.immune_from_ability(&target, "Soundproof");
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            // (2b) PROTECT BLOCK — gen-3 Roar / Whirlwind BOTH carry the `protect: 1` flag, so
+            // (2a) PROTECT BLOCK — gen-3 Roar / Whirlwind BOTH carry the `protect: 1` flag, so
             //      a Protect / Detect on the target BLOCKS the phaze at the `TryHit` event
             //      (`runEvent('TryHit')`, `scripts.ts:369`, AFTER the accuracy roll above). A
             //      blocked phaze draws its accuracy then is blocked → `-activate Protect`, and
@@ -6573,12 +6833,33 @@ impl BattleState {
             //      mirrors the leechseed / standalone-status arms' `protect_blocks` check.
             //      (Substitute does NOT block a phaze — Roar/Whirlwind carry `bypasssub: 1`, so
             //      there is intentionally no substitute check here; only Protect blocks.)
+            //      This PRECEDES the Soundproof immune check — gen3 runs Protect's `onTryHit`
+            //      ahead of Soundproof's within the SAME TryHit event, so a Roar into a
+            //      Protecting + Soundproof foe emits `-activate Protect`, NOT `-immune Soundproof`
+            //      (SIM-PROBED: Loudred Roar into a Protecting Soundproof Electrode →
+            //      `|-activate|Protect`). `gen3_protect_before_soundproof_v1`.
             if self.protect_blocks(foe, foe_slot, false) {
                 // [EMIT] `|-activate|<protector>|Protect` — the blocked phaze (the `|move|`
                 // announce already showed). No drag, no `-fail`. Observation-only.
                 if self.logging() {
                     let target = self.mon_ref(foe, foe_slot, dex);
                     self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (2b) SOUNDPROOF — Roar IS a `flags.sound` move (Whirlwind is NOT), so a Roar into a
+            //      Soundproof holder (that is NOT protecting — the Protect check above already
+            //      returned) is IMMUNE at `onTryHit` (after the accuracy roll): `-immune|
+            //      [from] ability: Soundproof`, NO `forceSwitchFlag`, NO drag → **NO `sample`
+            //      draw**. VERIFIED vs the sim: identical to the natural-immune status path
+            //      (accuracy drawn, then immune, no further roll).
+            if self.move_is_sound(move_id, dex)
+                && dex.ability(&to_id(&self.sides[foe].pokemon[foe_slot].ability)).map(|a| a.blocks_sound).unwrap_or(false)
+            {
+                // [EMIT] `|-immune|<target>|[from] ability: Soundproof`. No drag, no `-fail`.
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.immune_from_ability(&target, "Soundproof");
                 }
                 return MoveResolution::done(false, false, false);
             }
@@ -7254,10 +7535,16 @@ impl BattleState {
                 // Heal Bell emits a per-mon `-curestatus [silent]`; Aromatherapy emits none
                 // (its single `-cureteam` banner covers the side).
                 if is_heal_bell && self.logging() {
+                    // The cured ally's ident: an ACTIVE ally is `pNa: <name>`; a BENCH ally is
+                    // the position-less `pN: <name>` (the sim's `Pokemon.toString()` for a
+                    // non-active mon) — the MON's nickname/species, NOT the player name. The
+                    // prior port rendered `side_ref` = `pN: <player_name>` (e.g. `p2: P2`), a
+                    // byte divergence on any Heal Bell curing a statused BENCH mon
+                    // (`gen3_omniscient_byte_fuzz_v1`).
                     let ident = if i == active {
                         self.mon_ref(_side, i, dex).to_string()
                     } else {
-                        crate::protocol::ProtocolBuilder::side_ref(_side, &self.sides[_side].name)
+                        format!("p{}: {}", _side + 1, self.display_name(_side, i, dex))
                     };
                     self.log.curestatus_silent(&ident, tok);
                 }
@@ -7394,21 +7681,27 @@ impl BattleState {
                 }
                 return MoveResolution::done(true, false, false);
             }
-            // (2) SOUNDPROOF (sound stat-drops only): immune after the accuracy roll.
+            // (2) PROTECT BLOCK (foe-targeting): blocked at TryHit after accuracy — and
+            //     BEFORE the Soundproof immune check. gen3 runs Protect's `onTryHit` ahead of
+            //     Soundproof's within the SAME TryHit event, so a sound stat-drop into a
+            //     Protecting + Soundproof foe emits `-activate Protect`, NOT `-immune Soundproof`
+            //     (SIM-PROBED: Loudred Screech into a Protecting Soundproof Electrode →
+            //     `|-activate|Protect`). `gen3_protect_before_soundproof_v1`.
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (3) SOUNDPROOF (sound stat-drops only): immune after the accuracy roll + AFTER
+            //     the Protect check (a Protecting foe already returned above).
             if self.move_is_sound(move_id, dex)
                 && dex.ability(&to_id(&self.sides[foe].pokemon[foe_slot].ability)).map(|a| a.blocks_sound).unwrap_or(false)
             {
                 if self.logging() {
                     let target = self.mon_ref(foe, foe_slot, dex);
                     self.log.immune_from_ability(&target, "Soundproof");
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            // (3) PROTECT BLOCK (foe-targeting): blocked at TryHit after accuracy.
-            if self.protect_blocks(foe, foe_slot, false) {
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.activate(&target, "Protect", None);
                 }
                 return MoveResolution::done(false, false, false);
             }
@@ -7668,7 +7961,7 @@ impl BattleState {
         // `announce_immune_block=true`: a status MOVE blocked by a setStatus-phase
         // STATUS_IMMUNE ability announces `|-immune|…|[from] ability: <A>` (Phase 3).
         // `src_move=Some(move_name)`: a landed SLEEP carries `[from] move: <Name>` (FORM 5).
-        self.try_set_status_impl(foe, foe_slot, status, Some((_side, _slot)), true, None, Some(move_name), dex);
+        self.try_set_status_impl(foe, foe_slot, status, Some((_side, _slot)), true, None, Some(move_name), dex); // ability_reveal=None
 
         // A status move never fires the in-tryMoveHit Update shuffle (moveHit returns
         // undefined): not missed, NOT landed.
@@ -8790,20 +9083,24 @@ impl BattleState {
                 } else {
                     &cp.statuses[0]
                 };
-                // Apply to the ATTACKER; the DEFENDER (the ability holder) is the Synchronize
-                // source (so a Synchronize attacker would reflect it back — an ability-on-ability
-                // interaction the choke point handles). [EMIT] a contact proc emits a BARE
-                // `|-status|<attacker>|<status>` — the sim's `source.trySetStatus(status, target)`
-                // passes NO `sourceEffect`, so the status `onStart`'s `sourceEffect.effectType
-                // === 'Ability'` gate is FALSE → the bare form (`gen3_omniscient_byte_fuzz_v1`,
-                // byte-fuzzer-surfaced: the port wrongly emitted `[from] ability: Effect Spore`;
-                // captured L-row `|-status|p1a: Starmie|slp`). CONTRAST Synchronize, which
-                // pre-emits `-activate ability: Synchronize` + passes a status-move sourceEffect
-                // → the `[from] ability: Synchronize` form (byte-verified separately). So we let
-                // `try_set_status` emit the bare form directly (draws — the gen3ou clause shuffle
-                // — unchanged; emission-only fix).
+                // Apply to the ATTACKER; the DEFENDER (the ability holder) is BOTH the status
+                // SOURCE (so a Synchronize attacker reflects it back — the choke point handles it)
+                // AND the `[of]` in the emitted line. [EMIT] `|-status|<attacker>|<status>|[from]
+                // ability: <Ability>|[of] <holder>` — the sim's `source.trySetStatus(status,
+                // target)` runs INSIDE the ability's `onDamagingHit`, so `setStatus`'s null
+                // `sourceEffect` falls back to `this.battle.effect` = the ABILITY → the status
+                // `onStart`'s `sourceEffect.effectType === 'Ability'` gate is TRUE → the
+                // `[from] ability` form. (`gen3_omniscient_byte_fuzz_v1`, byte-fuzzer-surfaced
+                // golden `|-status|p1a: Metagross|par|[from] ability: Effect Spore|[of] p2a:
+                // Breloom`; the port used to emit the BARE form — a stale conclusion the live sim
+                // capture refuted.) Draws (the gen3ou clause shuffle) unchanged — emission-only.
                 let status_owned = status.to_string();
-                self.try_set_status(atk_side, atk_slot, &status_owned, Some((def_side, def_slot)), dex);
+                let ability_name =
+                    dex.ability(&ability).map(|a| a.name.clone()).unwrap_or_else(|| ability.clone());
+                self.try_set_status_impl(
+                    atk_side, atk_slot, &status_owned, Some((def_side, def_slot)), false,
+                    Some((def_side, def_slot, ability_name)), None, dex,
+                );
             }
         } else if let Some((num, den)) = contact_attract {
             // CUTE CHARM (`gen3_ability_batch4_v1`): the SAME DamagingHit-position roll as the
@@ -8869,7 +9166,20 @@ impl BattleState {
             let m = self.mon_ref(side, slot, dex);
             self.log.activate(&m, "move: Endure", None);
         }
-        self.sides[side].pokemon[slot].hp - 1
+        let clamped = self.sides[side].pokemon[slot].hp - 1;
+        // When the endurer is ALREADY at 1 HP, the clamped damage is 0 (the mon stays at
+        // 1) — the caller's `realized > 0` emission gate then SKIPS the `-damage` line the
+        // sim STILL emits (`|-damage|<mon>|1/<max>` after `-activate move: Endure`; the
+        // gen3 `spreadDamage` reports the survived HP even for a 0-HP-delta clamp — the
+        // `gen3_omniscient_byte_fuzz_v1` Endure-at-1 repro rmroh04is_ab_8_4 dec225). Emit
+        // it here (apply_damage(0) is a no-op, so the current HP == the post-apply HP).
+        // For hp > 1 the caller emits it post-apply (clamped > 0), so this never double-emits.
+        if clamped == 0 && self.logging() {
+            let target = self.mon_ref(side, slot, dex);
+            let hp = self.hp_status(side, slot);
+            self.log.damage(&target, &hp, None);
+        }
+        clamped
     }
 
     fn focus_band_damage(&mut self, side: usize, slot: usize, dmg: u16, is_move: bool, dex: &Dex) -> u16 {
@@ -9025,7 +9335,7 @@ impl BattleState {
         if self.logging() {
             let mon_ref = self.mon_ref(side, slot, dex);
             self.log
-                .push_raw(format!("|-start|{mon_ref}|typechange|{}|[from] ability: Color Change", t.name()));
+                .push_raw(format!("|-start|{mon_ref}|typechange|{}|[from] ability: Color Change", t.display_name()));
         }
     }
 
@@ -9049,11 +9359,17 @@ impl BattleState {
     ///   Toxic / Hypnosis; byte-verified vs the status_immune_lines capture). A SECONDARY /
     ///   contact-proc / Tri-Attack block is SILENT (same gate, no line). Only the
     ///   standalone-status-move arm passes `true`.
-    /// - `sync_reveal`: `Some((holder_side, holder_slot))` when this apply IS a Synchronize
-    ///   reflect — the `-status` line then carries the `[from] ability: Synchronize|[of]
-    ///   <holder>` reveal INSTEAD of the plain form, at the same position, so the holder's
-    ///   Lum `-enditem`/`-curestatus` tail (fired from THIS apply) lands AFTER it
-    ///   (byte-verified interleave vs the synchronize_lum_rest capture).
+    /// - `ability_reveal`: `Some((holder_side, holder_slot, ability_name))` when this apply's
+    ///   `-status` line carries a `[from] ability: <ability_name>|[of] <holder>` reveal INSTEAD
+    ///   of the plain form (at the same position). TWO cases share it: a **Synchronize** reflect
+    ///   (`ability_name = "Synchronize"`, so the holder's Lum `-enditem`/`-curestatus` tail lands
+    ///   AFTER it — byte-verified vs the synchronize_lum_rest capture) AND a **contact-proc**
+    ///   status (Static/Poison Point/Flame Body/Effect Spore — the sim's `source.trySetStatus`
+    ///   runs inside the ability's `onDamagingHit`, so `setStatus`'s `sourceEffect` falls back to
+    ///   `this.battle.effect` = the ABILITY → `<status>.onStart` renders `[from] ability: <A>|[of]
+    ///   <holder>`; `gen3_omniscient_byte_fuzz_v1`, byte-fuzzer-surfaced golden
+    ///   `|-status|p1a: Metagross|par|[from] ability: Effect Spore|[of] p2a: Breloom` — the port
+    ///   used to emit the BARE form, a stale-conclusion bug the live sim capture refuted).
     fn try_set_status_impl(
         &mut self,
         foe: usize,
@@ -9061,7 +9377,7 @@ impl BattleState {
         effect: &str,
         source: Option<(usize, usize)>,
         announce_immune_block: bool,
-        sync_reveal: Option<(usize, usize)>,
+        ability_reveal: Option<(usize, usize, String)>,
         // The SOURCE-MOVE display name, when this apply comes from a status MOVE (the
         // standalone status-move arm passes it; the secondary / ability / Rest paths pass
         // `None`). Consumed ONLY by the SLEEP emit: gen-3 `slp.onStart` carries `[from]
@@ -9218,7 +9534,7 @@ impl BattleState {
             // `|-hint|…` (rulesets.js:6028-6029). Draw-free / observation-only.
             if self.logging() {
                 self.log.push_raw("|-message|Sleep Clause Mod activated.");
-                self.log.hint("Sleep Clause Mod prevents players from putting more than one of their opponent's Pok\u{e9}mon to sleep at a time");
+                self.log.hint("Sleep Clause Mod prevents players from putting more than one of their opponent's Pok\u{e9}mon to sleep at a time", false); // rulesets.ts:1395 — no `once` → fires on EVERY block
             }
             return;
         }
@@ -9275,10 +9591,17 @@ impl BattleState {
         // it in the byte-verified order. Observation-only.
         if self.logging() {
             let target = self.mon_ref(foe, foe_slot, dex);
-            match sync_reveal {
-                Some((h_side, h_slot)) => {
-                    let holder_ref = self.mon_ref(h_side, h_slot, dex);
-                    self.log.status_from_ability(&target, effect, "Synchronize", &holder_ref);
+            match &ability_reveal {
+                // SLEEP is the gen3 EXCEPTION: `data/mods/gen3/conditions.js::slp.onStart`
+                // ONLY renders `[from] move: <Name>` for a MOVE source and falls to a PLAIN
+                // `else` for everything else — it DROPS the base-`conditions.js` `[from]
+                // ability` branch every OTHER status keeps. So Effect Spore inflicting sleep
+                // emits a BARE `|-status|<mon>|slp` (SIM-PROBED); the port used to over-attribute
+                // it `[from] ability: Effect Spore|[of]` (`gen3_omniscient_byte_fuzz_v1`).
+                Some(_) if effect == "slp" => self.log.status(&target, effect, None),
+                Some((h_side, h_slot, ability_name)) => {
+                    let holder_ref = self.mon_ref(*h_side, *h_slot, dex);
+                    self.log.status_from_ability(&target, effect, ability_name, &holder_ref);
                 }
                 // SLEEP from a status MOVE carries `[from] move: <Name>` (FORM 5); every
                 // OTHER status (par/psn/brn/frz) — and sleep from a non-move source — is
@@ -9357,7 +9680,8 @@ impl BattleState {
         // byte-verified Phase-3 interleave (`-status holder → -status source [from]
         // Synchronize → -enditem → -curestatus`).
         self.try_set_status_impl(
-            src_side, src_slot, refl, None, false, Some((holder_side, holder_slot)), None, dex,
+            src_side, src_slot, refl, None, false,
+            Some((holder_side, holder_slot, "Synchronize".to_string())), None, dex,
         );
     }
 
@@ -9474,19 +9798,21 @@ impl BattleState {
         } else {
             to_id(&self.sides[t_side].pokemon[t_slot].ability)
         };
-        // [EMIT] the Clear Body / White Smoke / Hyper Cutter `-fail` — ONCE, BEFORE any
-        // surviving `-boost`/`-unboost` (the sim's `onTryBoost` runs over the whole boost
-        // object first). Only for a PRIMARY drop (FORM 2); a SECONDARY drop is silent. Keen
-        // Eye's accuracy-specific form is not modeled (rare on a stat-drop move).
+        // [EMIT] the Clear Body / White Smoke / Hyper Cutter / Keen Eye `-fail` — ONCE, BEFORE
+        // any surviving `-boost`/`-unboost` (the sim's `onTryBoost` runs over the whole boost
+        // object first). Only for a PRIMARY drop (FORM 2); a SECONDARY drop is silent. The
+        // single-stat blockers (Hyper Cutter / Keen Eye) carry their `unboost|<Stat>` token
+        // (`unboost_fail_stat_token`), the whole-table ones (Clear Body / White Smoke) none.
         if is_primary_drop && !want_self && self.logging() {
             let any_blocked = spec
                 .boosts
                 .iter()
-                .any(|&(idx, _)| matches!(foe_ability.as_str(), "clearbody" | "whitesmoke" | "hypercutter") && stat_drop_blocked(&foe_ability, idx));
+                .any(|&(idx, _)| stat_drop_blocked(&foe_ability, idx));
             if any_blocked {
                 let name = _dex.ability(&foe_ability).map(|a| a.name.clone()).unwrap_or_else(|| foe_ability.clone());
+                let stat = unboost_fail_stat_token(&foe_ability);
                 let target = self.mon_ref(t_side, t_slot, _dex);
-                self.log.fail_unboost_from_ability(&target, &name);
+                self.log.fail_unboost_from_ability(&target, &name, stat);
             }
         }
         for &(idx, stages) in &spec.boosts {
@@ -10131,25 +10457,36 @@ impl BattleState {
     }
 
     /// The `switch`/`drag` Details string (`Pokemon.details`): the species display
-    /// name, then `, <Gender>` when the mon has a real gender ('M'/'F'); L100 +
-    /// genderless ('N'/none) are omitted by Showdown. Genderless capture teams show
-    /// just the species (`|switch|p1a: Snorlax|Snorlax|524/524`); a gendered mon
-    /// shows `|switch|p2a: Snorlax|Snorlax, M|461/461` (the bridge goldens). This is
-    /// observation-only: the protocol/writeline goldens use genderless teams (so the
-    /// output is unchanged there), and the e2e_fuzz gate compares SEED+STATE, not
-    /// protocol lines.
+    /// name, then `, L<level>` iff level != 100, then `, <Gender>` when the mon has a
+    /// real gender ('M'/'F'), then `, shiny` for a shiny set. Showdown emits `, L<n>`
+    /// in details/switch/drag for a non-L100 mon and OMITS it at L100 — probe-confirmed
+    /// (`/tmp/probe_level_details.js`, gen3randombattle): order is
+    /// `<Species>[, L<level>][, <gender>][, shiny]` (level BEFORE gender). gen3ou is
+    /// always L100 so the pool goldens never emit it (byte-identical); randbats surface
+    /// it. Genderless capture teams show just the species
+    /// (`|switch|p1a: Snorlax|Snorlax|524/524`); a gendered mon shows
+    /// `|switch|p2a: Snorlax|Snorlax, M|461/461`; a non-L100 mon shows
+    /// `|switch|p1a: Lunatone|Lunatone, L84|255/255`. This is observation-only: the
+    /// protocol/writeline goldens use L100 genderless teams (so the output is unchanged
+    /// there), and the e2e_fuzz gate compares SEED+STATE, not protocol lines.
     fn switch_details(&self, side: usize, slot: usize, dex: &Dex) -> String {
         let species = self.species_name(side, slot, dex);
-        // The sim's `Pokemon` details = `<species>[, L<level>][, <gender>][, shiny]` (level
-        // omitted at 100 — the port targets L100). Append the gender then the SHINY flag
-        // (`gen3_omniscient_byte_fuzz_v1` FORM 12 — a pool team declaring a shiny mon shows
-        // `|switch|…|Quagsire, M, shiny|…`; the port dropped the `set.shiny` flag).
-        let mut s = match self.sides[side].pokemon[slot].gender {
-            Some('M') => format!("{species}, M"),
-            Some('F') => format!("{species}, F"),
-            _ => species,
-        };
-        if self.sides[side].pokemon[slot].set.shiny {
+        let mon = &self.sides[side].pokemon[slot];
+        // The sim's `Pokemon` details = `<species>[, L<level>][, <gender>][, shiny]`
+        // (level omitted at 100). The `, L<n>` suffix sits AFTER species, BEFORE gender.
+        let mut s = species;
+        if mon.level != 100 {
+            s.push_str(&format!(", L{}", mon.level));
+        }
+        // The SHINY flag (`gen3_omniscient_byte_fuzz_v1` FORM 12 — a pool team declaring
+        // a shiny mon shows `|switch|…|Quagsire, M, shiny|…`; the port dropped the
+        // `set.shiny` flag).
+        match mon.gender {
+            Some('M') => s.push_str(", M"),
+            Some('F') => s.push_str(", F"),
+            _ => {}
+        }
+        if mon.set.shiny {
             s.push_str(", shiny");
         }
         s
@@ -10302,6 +10639,7 @@ impl BattleState {
                     // The gen3 mod's sub skip: NO `-ability`, just the hint.
                     self.log.hint(
                         "In Gen 3, Intimidate does not activate if every target has a Substitute.",
+                        false, // gen3/abilities.ts:73 passes `false` → fires on EVERY occurrence
                     );
                     return;
                 }
@@ -10310,11 +10648,12 @@ impl BattleState {
                 let foe_ability = to_id(&self.sides[foe].pokemon[foe_slot].ability);
                 let foe_ref = self.mon_ref(foe, foe_slot, dex);
                 if matches!(foe_ability.as_str(), "clearbody" | "whitesmoke" | "hypercutter") {
+                    let stat = unboost_fail_stat_token(&foe_ability); // Hyper Cutter → "Attack"
                     let display = dex
                         .ability(&foe_ability)
                         .map(|a| a.name.clone())
                         .unwrap_or(foe_ability);
-                    self.log.fail_unboost_from_ability(&foe_ref, &display);
+                    self.log.fail_unboost_from_ability(&foe_ref, &display, stat);
                 } else {
                     // The CLAMPED-APPLIED delta `new_atk − pre_atk` ∈ {−1, 0}: a foe already
                     // at the −6 floor drops by 0 → `|-unboost|…|atk|0` (the sim STILL emits
@@ -10862,7 +11201,10 @@ impl BattleState {
                         // `activeTurns++` per active (battle.ts:1762) — DRAW-FREE, feeds the
                         // Speed Boost residual gate (`gen3_ability_batch1_v1`).
                         self.bump_active_turns();
-                        let _ = self.prng.random_chance(1, 5);
+                        // PERSIST the endTurn Quick Claw roll (was drawn-and-discarded) —
+                        // read NEXT turn by `effective_speed`/`update_speed` for the gen3
+                        // `getActionSpeed` speed=65535 override (`gen3_quick_claw_speed_v1`).
+                        self.quick_claw_roll = self.prng.random_chance(1, 5);
                         break Some(TurnEnd::Done);
                     }
                     TurnLoopStop::NeedSwitch { force } => {
@@ -11826,9 +12168,21 @@ impl BattleState {
                         let sw = self.mon_ref(side, active, dex);
                         self.log.activate(&sw, "move: Pursuit", None);
                     }
-                    // (c) `source.deductPP('pursuit')` (draw-free, −1 — the sim passes NO target
-                    //     so there is no Pressure extra) + `source.moveUsed` (sets lastMove).
-                    self.sides[pside].pokemon[pslot].deduct_pp(pmi, 1);
+                    // (c) `runMove('pursuit', source, {target: switcher})` deducts the
+                    //     pursuer's Pursuit PP with the SWITCHER as the target — so if the
+                    //     SWITCHING mon (the Pursuit target, `self.sides[side].pokemon[active]`)
+                    //     has **Pressure**, its `onDeductPP` returns 1 → the pursuer's Pursuit
+                    //     loses an EXTRA 1 PP (−2 total). Pursuit is a foe-directed (`normal`)
+                    //     move, so it always puts the switcher in `pressureTargets`. (The prior
+                    //     "no Pressure extra" claim was WRONG — the per-side/request byte fuzzer's
+                    //     `bab_7_1`: a Umbreon Pursuit intercepting a switching Pressure Moltres →
+                    //     the sim's request shows Pursuit `pp:29` where the flat-1 port showed
+                    //     `pp:30`; `gen3_pursuit_pressure_pp_v1`, the Snatch-Pressure `bab_4_16`
+                    //     sibling.) + `source.moveUsed` (sets lastMove).
+                    let pressure_extra =
+                        to_id(&self.sides[side].pokemon[active].ability) == "pressure";
+                    self.sides[pside].pokemon[pslot]
+                        .deduct_pp(pmi, if pressure_extra { 2 } else { 1 });
                     self.sides[pside].pokemon[pslot].last_move = Some(pmi);
                     // (d) `useMove(pursuit, source, {target: switcher})` — the strike at ×2 BP +
                     //     never-miss (the transient `pursuit_strike` flag, read+cleared inside
@@ -11868,9 +12222,38 @@ impl BattleState {
                     if self.sides[side].pokemon[active].hp == 0
                         && !self.sides[side].pokemon[active].fainted
                     {
+                        // NATURAL CURE onSwitchOut fires on the 0-HP-but-NOT-YET-fainted
+                        // switcher BEFORE faintMessages (`gen3_natural_cure_v1` /
+                        // `gen3_omniscient_byte_fuzz_v1`): gen 2-4 Pursuit runs the switcher's
+                        // SwitchOut event (hence naturalcure.onSwitchOut) as part of the
+                        // interrupted switch, so an NC holder's tox/etc is CURED — its
+                        // `onSwitchOut` guard is `if (!status || status==='fnt') return`, and
+                        // `fnt` is only set below by process_faints, so status is still live
+                        // here. The sim emits `|-curestatus|<mon>|<tok>|[from] ability: Natural
+                        // Cure|[silent]` BEFORE the `|-hint|`/`|faint|` (byte-fuzz repro
+                        // rmroh04is_ab_10_1 dec461: the port's later clearVolatile NC block is
+                        // `!fainted`-gated, so process_faints skipped it — emit it here first).
+                        // DRAW-FREE. Curing status now is state-neutral (the mon faints anyway).
+                        {
+                            let m = &mut self.sides[side].pokemon[active];
+                            if to_id(&m.ability) == "naturalcure" {
+                                if let Some(tok) = status_token(m.status) {
+                                    m.status = None;
+                                    if self.logging() {
+                                        let mr = self.mon_ref(side, active, dex);
+                                        self.log.curestatus_from_ability_silent(
+                                            &mr,
+                                            tok,
+                                            "Natural Cure",
+                                        );
+                                    }
+                                }
+                            }
+                        }
                         if self.logging() {
                             self.log.hint(
                                 "Previously chosen switches continue in Gen 2-4 after a Pursuit target faints.",
+                                false, // battle.ts:2791 — no `once` → fires on EVERY occurrence
                             );
                         }
                         self.process_faints(dex);
@@ -12605,10 +12988,14 @@ fn status_move_announce_renders_user(target: &str) -> bool {
 }
 
 fn pressure_targets_foe(target: &str) -> bool {
+    // `foeSide` (the only gen-3 `foeSide` move is Spikes) DOES put the Pressure foe in the
+    // move's `pressureTargets` → the −2 deduction (SIM-PROBE-CONFIRMED, `gen3_pressure_foeside_v1`:
+    // Skarmory Spikes vs a Pressure Suicune = pp 30/32 = −2, vs a non-Pressure foe = 31/32 = −1).
+    // Only `self` / `allyTeam` / `allySide` / `allies` / ally-adjacent (Aromatherapy / Heal Bell /
+    // setup / recovery) escape the extra — the e2e_182 `allyTeam` case stays −1.
     !matches!(
         target,
         "self" | "allyTeam" | "allySide" | "allies" | "adjacentAlly" | "adjacentAllyOrSelf"
-            | "foeSide"
     )
 }
 
@@ -12976,6 +13363,18 @@ fn stat_drop_blocked(ability_id: &str, stat_idx: usize) -> bool {
         "hypercutter" => stat_idx == 0,  // atk
         "keeneye" => stat_idx == 5,      // accuracy
         _ => false,
+    }
+}
+
+/// The `-fail|<mon>|unboost|<Stat>|…` STAT TOKEN a boost-blocking ability's `onTryBoost`
+/// emits, SIM-PROBED (abilities.js): the SINGLE-STAT blockers carry the ability's own literal
+/// token — Hyper Cutter → `"Attack"`, Keen Eye → `"accuracy"` — while the WHOLE-table
+/// blockers (Clear Body / White Smoke) carry NONE. (`gen3_omniscient_byte_fuzz_v1`.)
+fn unboost_fail_stat_token(ability_id: &str) -> Option<&'static str> {
+    match ability_id {
+        "hypercutter" => Some("Attack"),
+        "keeneye" => Some("accuracy"),
+        _ => None, // clearbody / whitesmoke → whole-table block, no stat token
     }
 }
 

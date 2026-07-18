@@ -1,0 +1,572 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=424242 run_id=rmroh04is chunk=10
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_10_1
+TEAM	ab_10_1	p1	Slaking||ChoiceBand|Truant|DoubleEdge,Earthquake,Encore,FocusPunch|Jolly|,252,,,4,252|M||||]Forretress||Leftovers|Sturdy|Spikes,HiddenPowerFire,Explosion,RapidSpin|Relaxed|252,,160,96,,|M|,30,,30,,30|||,Fire,,,,]Umbreon||Leftovers|Synchronize|Pursuit,Wish,Protect,Toxic|Calm|248,,,196,56,8|M|,0,,,,|||]Salamence||Leftovers|Intimidate|DragonClaw,Flamethrower,BrickBreak,Refresh|Rash|,4,,252,,252|M||||]Blissey||Leftovers|NaturalCure|IceBeam,Thunderbolt,SoftBoiled,CalmMind|Modest|,,252,200,,56|F|,0,,,,|||]Swampert||Leftovers|Torrent|Surf,Counter,Roar,Protect|Bold|248,,136,80,44,|M|,0,,,,|||
+TEAM	ab_10_1	p2	Vaporeon||Leftovers|WaterAbsorb|Substitute,HydroPump,IceBeam,BatonPass|Bold|16,,252,176,12,52|M|,0,,,,|||]Tyranitar||Leftovers|SandStream|DragonDance,Earthquake,RockSlide,DoubleEdge|Adamant|184,104,,,,220|M||||]Starmie||Leftovers|NaturalCure|RapidSpin,Surf,IceBeam,Thunderbolt|Timid|4,,,252,,252|N||||]Jirachi||Leftovers|SereneGrace|BodySlam,FirePunch,Psychic,HiddenPowerFighting|Rash|,68,8,252,,180|N|,,30,30,30,30|||,Fighting,,,,]Celebi||Leftovers|NaturalCure|CalmMind,GigaDrain,HiddenPowerFire,Psychic|Modest|188,,,180,,140|N|,2,,30,,30|||,Fire,,,,]Charizard||Leftovers|Blaze|DragonClaw,Flamethrower,HiddenPowerGrass,BeatUp|Modest|,,,252,4,252|M|,2,,30,,|||,Grass,,,,
+FMT	ab_10_1	gen3ou
+INIT	ab_10_1	44940,35428,42114,34736	2141806237
+DEC	ab_10_1	0	move	0	0	m2	m3	16817,54384,57303,20706	Slaking	441	441	0	-	0	0	0	0	0	0	6	Vaporeon	405	405	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_10_1	1	switch	0	1	-	s1	41963,52351,6288,31213	Slaking	414	441	0	-	0	0	0	0	0	0	6	Tyranitar	387	387	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_10_1	2	move	0	0	m2	m1	59776,5391,39469,7857	Slaking	260	441	0	-	0	0	0	0	0	0	6	Tyranitar	387	387	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_10_1	3	move	0	0	m2	m3	37226,46555,65471,1439	Slaking	122	441	0	-	0	0	0	0	0	0	6	Tyranitar	387	387	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_10_1	4	move	0	0	m2	m1	19840,22421,28140,60032	Slaking	0	441	1	fnt	0	0	0	0	0	0	5	Tyranitar	387	387	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_10_1	5	switch	1	0	s5	-	53187,32432,37277,41795	Swampert	403	403	0	-	0	0	0	0	0	0	5	Tyranitar	387	387	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_10_1	6	move	0	0	m1	s3	3086,49205,35467,58162	Swampert	403	403	0	-	0	0	0	0	0	0	5	Jirachi	341	341	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_10_1	7	move	0	0	m2	m0	26832,47861,55729,43979	Swampert	363	403	0	-	0	0	0	0	0	0	5	Celebi	388	388	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_1	8	move	0	0	m1	m1	55219,57298,25695,30588	Swampert	0	403	1	fnt	0	0	0	0	0	0	4	Celebi	388	388	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_10_1	9	switch	1	0	s3	-	52226,25257,17702,7855	Salamence	331	331	0	-	0	0	0	0	0	0	4	Celebi	388	388	0	-	-1	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_10_1	10	move	0	0	m0	m3	47370,60578,3864,38327	Salamence	157	331	0	-	0	0	0	0	0	0	4	Celebi	257	388	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_1	11	move	0	0	m0	m2	40885,3536,48413,36684	Salamence	109	331	0	-	0	0	0	0	0	0	4	Celebi	108	388	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_1	12	move	0	0	m3	m0	57064,39374,27027,54207	Salamence	109	331	0	-	0	0	0	0	0	0	4	Celebi	108	388	0	-	-1	0	1	1	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_1	13	move	0	0	m3	m3	40896,44836,14638,53091	Salamence	0	331	1	fnt	0	0	0	0	0	0	3	Celebi	108	388	0	-	-1	0	1	1	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_1	14	switch	1	0	s4	-	29175,24249,3151,27602	Blissey	651	651	0	-	0	0	0	0	0	0	3	Celebi	108	388	0	-	-1	0	1	1	0	0	6	none	0	0	0	0	0
+DEC	ab_10_1	15	move	0	0	m0	m0	42760,43764,20753,17478	Blissey	651	651	0	-	0	0	0	0	0	0	3	Celebi	0	388	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_1	16	switch	0	1	-	s2	35515,41898,40810,1121	Blissey	651	651	0	-	0	0	0	0	0	0	3	Starmie	262	262	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_10_1	17	move	0	0	m0	s1	43235,16435,59897,4892	Blissey	651	651	0	-	0	0	0	0	0	0	3	Vaporeon	365	405	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_1	18	move	0	0	m2	m0	12649,21660,61545,9423	Blissey	651	651	0	-	0	0	0	0	0	0	3	Vaporeon	264	405	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_1	19	move	0	0	m3	s1	11565,14245,29693,60270	Blissey	651	651	0	-	0	0	1	1	0	0	3	Starmie	262	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_1	20	move	0	0	m2	m1	40683,50063,17032,25122	Blissey	651	651	0	-	0	0	1	1	0	0	3	Starmie	262	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_1	21	move	0	0	m0	s1	27444,44792,37337,51441	Blissey	651	651	0	-	0	0	1	1	0	0	3	Vaporeon	201	405	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_1	22	move	0	0	m1	m2	47024,44316,29779,25017	Blissey	599	651	0	-	0	0	1	1	0	0	3	Vaporeon	0	405	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_10_1	23	switch	0	1	-	s4	47551,58105,15463,11712	Blissey	599	651	0	-	0	0	1	1	0	0	3	Jirachi	341	341	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_10_1	24	move	0	0	m2	m1	615,54863,46714,45798	Blissey	570	651	0	brn	0	0	1	1	0	0	3	Jirachi	341	341	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_10_1	25	move	0	0	m3	m2	13692,23294,42359,15621	Blissey	412	651	0	brn	0	0	2	2	0	0	3	Jirachi	341	341	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_10_1	26	move	0	0	m2	m0	55795,26058,5770,60560	Blissey	390	651	0	brn	0	0	2	2	0	0	3	Jirachi	341	341	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_10_1	27	move	0	0	m3	m2	49147,49078,322,51703	Blissey	248	651	0	brn	0	0	3	3	0	0	3	Jirachi	341	341	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_10_1	28	move	0	0	m1	m0	3199,5656,23392,49151	Blissey	112	651	0	brn	0	0	3	3	0	0	3	Jirachi	0	341	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_10_1	29	switch	0	1	-	s5	2625,17858,43018,54622	Blissey	31	651	0	brn	0	0	3	3	0	0	3	Charizard	297	297	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_10_1	30	move	0	0	m0	m1	49669,60182,27980,3346	Blissey	0	651	1	fnt	0	0	0	0	0	0	2	Charizard	297	297	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_10_1	31	switch	1	0	s1	-	3367,49416,50596,26845	Forretress	354	354	0	-	0	0	0	0	0	0	2	Charizard	297	297	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_10_1	32	move	0	0	m2	m0	57268,8554,13972,54315	Forretress	0	354	1	fnt	0	0	0	0	0	0	1	Charizard	0	297	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_10_1	33	switch	1	1	s2	s1	18068,23464,8086,22202	Umbreon	393	393	0	-	0	0	0	0	0	0	1	Starmie	262	262	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_10_1	34	move	0	0	m3	m3	18652,11139,64649,51123	Umbreon	330	393	0	-	0	0	0	0	0	0	1	Starmie	246	262	0	tox	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_10_1	35	move	0	0	m1	m2	17822,59398,15829,13014	Umbreon	267	393	0	-	0	0	0	0	0	0	1	Starmie	214	262	0	tox	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_10_1	36	move	0	0	m2	m2	21126,39034,38446,29243	Umbreon	393	393	0	-	0	0	0	0	0	0	1	Starmie	166	262	0	tox	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_10_1	37	move	0	0	m3	m3	28769,45080,29461,50169	Umbreon	331	393	0	-	0	0	0	0	0	0	1	Starmie	102	262	0	tox	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_10_1	38	move	0	0	m0	s3	21454,19604,10709,9650	Umbreon	331	393	0	-	0	0	0	0	0	0	1	Tyranitar	387	387	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_10_1	39	move	0	0	m0	m2	9343,28974,36539,41921	Umbreon	331	393	0	-	0	0	0	0	0	0	1	Tyranitar	387	387	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_10_1	40	move	0	0	m3	m1	60722,10323,64928,55087	Umbreon	213	393	0	-	0	0	0	0	0	0	1	Tyranitar	363	387	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_10_1	41	move	0	0	m1	m3	13141,36238,6847,64467	Umbreon	87	393	0	-	0	0	0	0	0	0	1	Tyranitar	297	387	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_10_1	42	move	0	0	m3	m2	4409,46004,11934,48695	Umbreon	0	393	1	-	0	0	0	0	0	0	0	Tyranitar	297	387	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+END	ab_10_1	1	p2
+L	ab_10_1	0	|t:|<NORMALIZED>
+L	ab_10_1	1	|gametype|singles
+L	ab_10_1	2	|player|p1|P1||
+L	ab_10_1	3	|player|p2|P2||
+L	ab_10_1	4	|gen|3
+L	ab_10_1	5	|tier|[Gen 3] OU
+L	ab_10_1	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_10_1	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_10_1	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_10_1	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_10_1	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_10_1	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_10_1	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_10_1	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_10_1	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_10_1	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_10_1	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_10_1	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_10_1	18	|
+L	ab_10_1	19	|t:|<NORMALIZED>
+L	ab_10_1	20	|teamsize|p1|6
+L	ab_10_1	21	|teamsize|p2|6
+L	ab_10_1	22	|start
+L	ab_10_1	23	|switch|p1a: Slaking|Slaking, M|441/441
+L	ab_10_1	24	|switch|p2a: Vaporeon|Vaporeon, M|405/405
+L	ab_10_1	25	|turn|1
+L	ab_10_1	26	|
+L	ab_10_1	27	|t:|<NORMALIZED>
+L	ab_10_1	28	|move|p1a: Slaking|Encore||[still]
+L	ab_10_1	29	|-fail|p1a: Slaking
+L	ab_10_1	30	|move|p2a: Vaporeon|Baton Pass|p2a: Vaporeon
+L	ab_10_1	31	|
+L	ab_10_1	32	|t:|<NORMALIZED>
+L	ab_10_1	33	|switch|p2a: Tyranitar|Tyranitar, M|387/387|[from] Baton Pass
+L	ab_10_1	34	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_10_1	35	|
+L	ab_10_1	36	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	37	|-damage|p1a: Slaking|414/441|[from] Sandstorm
+L	ab_10_1	38	|upkeep
+L	ab_10_1	39	|turn|2
+L	ab_10_1	40	|
+L	ab_10_1	41	|t:|<NORMALIZED>
+L	ab_10_1	42	|cant|p1a: Slaking|ability: Truant
+L	ab_10_1	43	|move|p2a: Tyranitar|Earthquake|p1a: Slaking
+L	ab_10_1	44	|-damage|p1a: Slaking|287/441
+L	ab_10_1	45	|
+L	ab_10_1	46	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	47	|-damage|p1a: Slaking|260/441|[from] Sandstorm
+L	ab_10_1	48	|upkeep
+L	ab_10_1	49	|turn|3
+L	ab_10_1	50	|
+L	ab_10_1	51	|t:|<NORMALIZED>
+L	ab_10_1	52	|move|p1a: Slaking|Encore|p2a: Tyranitar
+L	ab_10_1	53	|-start|p2a: Tyranitar|Encore
+L	ab_10_1	54	|move|p2a: Tyranitar|Earthquake|p1a: Slaking
+L	ab_10_1	55	|-damage|p1a: Slaking|149/441
+L	ab_10_1	56	|
+L	ab_10_1	57	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	58	|-damage|p1a: Slaking|122/441|[from] Sandstorm
+L	ab_10_1	59	|upkeep
+L	ab_10_1	60	|turn|4
+L	ab_10_1	61	|
+L	ab_10_1	62	|t:|<NORMALIZED>
+L	ab_10_1	63	|cant|p1a: Slaking|ability: Truant
+L	ab_10_1	64	|move|p2a: Tyranitar|Earthquake|p1a: Slaking
+L	ab_10_1	65	|-crit|p1a: Slaking
+L	ab_10_1	66	|-damage|p1a: Slaking|0 fnt
+L	ab_10_1	67	|faint|p1a: Slaking
+L	ab_10_1	68	|
+L	ab_10_1	69	|t:|<NORMALIZED>
+L	ab_10_1	70	|switch|p1a: Swampert|Swampert, M|403/403
+L	ab_10_1	71	|
+L	ab_10_1	72	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	73	|upkeep
+L	ab_10_1	74	|turn|5
+L	ab_10_1	75	|
+L	ab_10_1	76	|t:|<NORMALIZED>
+L	ab_10_1	77	|switch|p2a: Jirachi|Jirachi|341/341
+L	ab_10_1	78	|move|p1a: Swampert|Counter|p2a: Jirachi
+L	ab_10_1	79	|
+L	ab_10_1	80	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	81	|upkeep
+L	ab_10_1	82	|turn|6
+L	ab_10_1	83	|
+L	ab_10_1	84	|t:|<NORMALIZED>
+L	ab_10_1	85	|move|p2a: Jirachi|Body Slam|p1a: Swampert
+L	ab_10_1	86	|-damage|p1a: Swampert|338/403
+L	ab_10_1	87	|move|p1a: Swampert|Roar|p2a: Jirachi
+L	ab_10_1	88	|drag|p2a: Celebi|Celebi|388/388
+L	ab_10_1	89	|
+L	ab_10_1	90	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	91	|-damage|p2a: Celebi|364/388|[from] Sandstorm
+L	ab_10_1	92	|-heal|p2a: Celebi|388/388|[from] item: Leftovers
+L	ab_10_1	93	|-heal|p1a: Swampert|363/403|[from] item: Leftovers
+L	ab_10_1	94	|upkeep
+L	ab_10_1	95	|turn|7
+L	ab_10_1	96	|
+L	ab_10_1	97	|t:|<NORMALIZED>
+L	ab_10_1	98	|move|p2a: Celebi|Giga Drain|p1a: Swampert
+L	ab_10_1	99	|-supereffective|p1a: Swampert
+L	ab_10_1	100	|-damage|p1a: Swampert|0 fnt
+L	ab_10_1	101	|faint|p1a: Swampert
+L	ab_10_1	102	|
+L	ab_10_1	103	|t:|<NORMALIZED>
+L	ab_10_1	104	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_10_1	105	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_10_1	106	|-unboost|p2a: Celebi|atk|1
+L	ab_10_1	107	|
+L	ab_10_1	108	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	109	|-damage|p1a: Salamence|311/331|[from] Sandstorm
+L	ab_10_1	110	|-damage|p2a: Celebi|364/388|[from] Sandstorm
+L	ab_10_1	111	|-heal|p1a: Salamence|331/331|[from] item: Leftovers
+L	ab_10_1	112	|-heal|p2a: Celebi|388/388|[from] item: Leftovers
+L	ab_10_1	113	|upkeep
+L	ab_10_1	114	|turn|8
+L	ab_10_1	115	|
+L	ab_10_1	116	|t:|<NORMALIZED>
+L	ab_10_1	117	|move|p1a: Salamence|Dragon Claw|p2a: Celebi
+L	ab_10_1	118	|-damage|p2a: Celebi|257/388
+L	ab_10_1	119	|move|p2a: Celebi|Psychic|p1a: Salamence
+L	ab_10_1	120	|-damage|p1a: Salamence|157/331
+L	ab_10_1	121	|
+L	ab_10_1	122	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	123	|-damage|p1a: Salamence|137/331|[from] Sandstorm
+L	ab_10_1	124	|-damage|p2a: Celebi|233/388|[from] Sandstorm
+L	ab_10_1	125	|-heal|p1a: Salamence|157/331|[from] item: Leftovers
+L	ab_10_1	126	|-heal|p2a: Celebi|257/388|[from] item: Leftovers
+L	ab_10_1	127	|upkeep
+L	ab_10_1	128	|turn|9
+L	ab_10_1	129	|
+L	ab_10_1	130	|t:|<NORMALIZED>
+L	ab_10_1	131	|move|p1a: Salamence|Dragon Claw|p2a: Celebi
+L	ab_10_1	132	|-damage|p2a: Celebi|108/388
+L	ab_10_1	133	|move|p2a: Celebi|Hidden Power|p1a: Salamence
+L	ab_10_1	134	|-resisted|p1a: Salamence
+L	ab_10_1	135	|-damage|p1a: Salamence|109/331
+L	ab_10_1	136	|
+L	ab_10_1	137	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	138	|-damage|p1a: Salamence|89/331|[from] Sandstorm
+L	ab_10_1	139	|-damage|p2a: Celebi|84/388|[from] Sandstorm
+L	ab_10_1	140	|-heal|p1a: Salamence|109/331|[from] item: Leftovers
+L	ab_10_1	141	|-heal|p2a: Celebi|108/388|[from] item: Leftovers
+L	ab_10_1	142	|upkeep
+L	ab_10_1	143	|turn|10
+L	ab_10_1	144	|
+L	ab_10_1	145	|t:|<NORMALIZED>
+L	ab_10_1	146	|move|p1a: Salamence|Refresh||[still]
+L	ab_10_1	147	|-fail|p1a: Salamence
+L	ab_10_1	148	|move|p2a: Celebi|Calm Mind|p2a: Celebi
+L	ab_10_1	149	|-boost|p2a: Celebi|spa|1
+L	ab_10_1	150	|-boost|p2a: Celebi|spd|1
+L	ab_10_1	151	|
+L	ab_10_1	152	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	153	|-damage|p1a: Salamence|89/331|[from] Sandstorm
+L	ab_10_1	154	|-damage|p2a: Celebi|84/388|[from] Sandstorm
+L	ab_10_1	155	|-heal|p1a: Salamence|109/331|[from] item: Leftovers
+L	ab_10_1	156	|-heal|p2a: Celebi|108/388|[from] item: Leftovers
+L	ab_10_1	157	|upkeep
+L	ab_10_1	158	|turn|11
+L	ab_10_1	159	|
+L	ab_10_1	160	|t:|<NORMALIZED>
+L	ab_10_1	161	|move|p1a: Salamence|Refresh||[still]
+L	ab_10_1	162	|-fail|p1a: Salamence
+L	ab_10_1	163	|move|p2a: Celebi|Psychic|p1a: Salamence
+L	ab_10_1	164	|-damage|p1a: Salamence|0 fnt
+L	ab_10_1	165	|faint|p1a: Salamence
+L	ab_10_1	166	|
+L	ab_10_1	167	|t:|<NORMALIZED>
+L	ab_10_1	168	|switch|p1a: Blissey|Blissey, F|651/651
+L	ab_10_1	169	|
+L	ab_10_1	170	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	171	|-damage|p2a: Celebi|84/388|[from] Sandstorm
+L	ab_10_1	172	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_10_1	173	|-heal|p2a: Celebi|108/388|[from] item: Leftovers
+L	ab_10_1	174	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_10_1	175	|upkeep
+L	ab_10_1	176	|turn|12
+L	ab_10_1	177	|
+L	ab_10_1	178	|t:|<NORMALIZED>
+L	ab_10_1	179	|move|p2a: Celebi|Calm Mind|p2a: Celebi
+L	ab_10_1	180	|-boost|p2a: Celebi|spa|1
+L	ab_10_1	181	|-boost|p2a: Celebi|spd|1
+L	ab_10_1	182	|move|p1a: Blissey|Ice Beam|p2a: Celebi
+L	ab_10_1	183	|-supereffective|p2a: Celebi
+L	ab_10_1	184	|-damage|p2a: Celebi|19/388
+L	ab_10_1	185	|
+L	ab_10_1	186	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	187	|-damage|p2a: Celebi|0 fnt|[from] Sandstorm
+L	ab_10_1	188	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_10_1	189	|faint|p2a: Celebi
+L	ab_10_1	190	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_10_1	191	|upkeep
+L	ab_10_1	192	|
+L	ab_10_1	193	|t:|<NORMALIZED>
+L	ab_10_1	194	|switch|p2a: Starmie|Starmie|262/262
+L	ab_10_1	195	|turn|13
+L	ab_10_1	196	|
+L	ab_10_1	197	|t:|<NORMALIZED>
+L	ab_10_1	198	|switch|p2a: Vaporeon|Vaporeon, M|405/405
+L	ab_10_1	199	|move|p1a: Blissey|Ice Beam|p2a: Vaporeon
+L	ab_10_1	200	|-resisted|p2a: Vaporeon
+L	ab_10_1	201	|-damage|p2a: Vaporeon|365/405
+L	ab_10_1	202	|
+L	ab_10_1	203	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	204	|-damage|p2a: Vaporeon|340/405|[from] Sandstorm
+L	ab_10_1	205	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_10_1	206	|-heal|p2a: Vaporeon|365/405|[from] item: Leftovers
+L	ab_10_1	207	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_10_1	208	|upkeep
+L	ab_10_1	209	|turn|14
+L	ab_10_1	210	|
+L	ab_10_1	211	|t:|<NORMALIZED>
+L	ab_10_1	212	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_10_1	213	|-start|p2a: Vaporeon|Substitute
+L	ab_10_1	214	|-damage|p2a: Vaporeon|264/405
+L	ab_10_1	215	|move|p1a: Blissey|Soft-Boiled||[still]
+L	ab_10_1	216	|-fail|p1a: Blissey|heal
+L	ab_10_1	217	|
+L	ab_10_1	218	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	219	|-damage|p2a: Vaporeon|239/405|[from] Sandstorm
+L	ab_10_1	220	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_10_1	221	|-heal|p2a: Vaporeon|264/405|[from] item: Leftovers
+L	ab_10_1	222	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_10_1	223	|upkeep
+L	ab_10_1	224	|turn|15
+L	ab_10_1	225	|
+L	ab_10_1	226	|t:|<NORMALIZED>
+L	ab_10_1	227	|switch|p2a: Starmie|Starmie|262/262
+L	ab_10_1	228	|move|p1a: Blissey|Calm Mind|p1a: Blissey
+L	ab_10_1	229	|-boost|p1a: Blissey|spa|1
+L	ab_10_1	230	|-boost|p1a: Blissey|spd|1
+L	ab_10_1	231	|
+L	ab_10_1	232	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	233	|-damage|p2a: Starmie|246/262|[from] Sandstorm
+L	ab_10_1	234	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_10_1	235	|-heal|p2a: Starmie|262/262|[from] item: Leftovers
+L	ab_10_1	236	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_10_1	237	|upkeep
+L	ab_10_1	238	|turn|16
+L	ab_10_1	239	|
+L	ab_10_1	240	|t:|<NORMALIZED>
+L	ab_10_1	241	|move|p2a: Starmie|Surf|p1a: Blissey
+L	ab_10_1	242	|-damage|p1a: Blissey|574/651
+L	ab_10_1	243	|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+L	ab_10_1	244	|-heal|p1a: Blissey|651/651
+L	ab_10_1	245	|
+L	ab_10_1	246	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	247	|-damage|p2a: Starmie|246/262|[from] Sandstorm
+L	ab_10_1	248	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_10_1	249	|-heal|p2a: Starmie|262/262|[from] item: Leftovers
+L	ab_10_1	250	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_10_1	251	|upkeep
+L	ab_10_1	252	|turn|17
+L	ab_10_1	253	|
+L	ab_10_1	254	|t:|<NORMALIZED>
+L	ab_10_1	255	|switch|p2a: Vaporeon|Vaporeon, M|264/405
+L	ab_10_1	256	|move|p1a: Blissey|Ice Beam|p2a: Vaporeon
+L	ab_10_1	257	|-resisted|p2a: Vaporeon
+L	ab_10_1	258	|-damage|p2a: Vaporeon|201/405
+L	ab_10_1	259	|
+L	ab_10_1	260	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	261	|-damage|p2a: Vaporeon|176/405|[from] Sandstorm
+L	ab_10_1	262	|-damage|p1a: Blissey|611/651|[from] Sandstorm
+L	ab_10_1	263	|-heal|p2a: Vaporeon|201/405|[from] item: Leftovers
+L	ab_10_1	264	|-heal|p1a: Blissey|651/651|[from] item: Leftovers
+L	ab_10_1	265	|upkeep
+L	ab_10_1	266	|turn|18
+L	ab_10_1	267	|
+L	ab_10_1	268	|t:|<NORMALIZED>
+L	ab_10_1	269	|move|p2a: Vaporeon|Ice Beam|p1a: Blissey
+L	ab_10_1	270	|-damage|p1a: Blissey|599/651
+L	ab_10_1	271	|move|p1a: Blissey|Thunderbolt|p2a: Vaporeon
+L	ab_10_1	272	|-supereffective|p2a: Vaporeon
+L	ab_10_1	273	|-damage|p2a: Vaporeon|0 fnt
+L	ab_10_1	274	|faint|p2a: Vaporeon
+L	ab_10_1	275	|
+L	ab_10_1	276	|t:|<NORMALIZED>
+L	ab_10_1	277	|switch|p2a: Jirachi|Jirachi|341/341
+L	ab_10_1	278	|
+L	ab_10_1	279	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	280	|-damage|p1a: Blissey|559/651|[from] Sandstorm
+L	ab_10_1	281	|-heal|p1a: Blissey|599/651|[from] item: Leftovers
+L	ab_10_1	282	|upkeep
+L	ab_10_1	283	|turn|19
+L	ab_10_1	284	|
+L	ab_10_1	285	|t:|<NORMALIZED>
+L	ab_10_1	286	|move|p2a: Jirachi|Fire Punch|p1a: Blissey
+L	ab_10_1	287	|-damage|p1a: Blissey|557/651
+L	ab_10_1	288	|-status|p1a: Blissey|brn
+L	ab_10_1	289	|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+L	ab_10_1	290	|-heal|p1a: Blissey|651/651 brn
+L	ab_10_1	291	|
+L	ab_10_1	292	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	293	|-damage|p1a: Blissey|611/651 brn|[from] Sandstorm
+L	ab_10_1	294	|-heal|p1a: Blissey|651/651 brn|[from] item: Leftovers
+L	ab_10_1	295	|-damage|p1a: Blissey|570/651 brn|[from] brn
+L	ab_10_1	296	|upkeep
+L	ab_10_1	297	|turn|20
+L	ab_10_1	298	|
+L	ab_10_1	299	|t:|<NORMALIZED>
+L	ab_10_1	300	|move|p2a: Jirachi|Psychic|p1a: Blissey
+L	ab_10_1	301	|-damage|p1a: Blissey|493/651 brn
+L	ab_10_1	302	|move|p1a: Blissey|Calm Mind|p1a: Blissey
+L	ab_10_1	303	|-boost|p1a: Blissey|spa|1
+L	ab_10_1	304	|-boost|p1a: Blissey|spd|1
+L	ab_10_1	305	|
+L	ab_10_1	306	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	307	|-damage|p1a: Blissey|453/651 brn|[from] Sandstorm
+L	ab_10_1	308	|-heal|p1a: Blissey|493/651 brn|[from] item: Leftovers
+L	ab_10_1	309	|-damage|p1a: Blissey|412/651 brn|[from] brn
+L	ab_10_1	310	|upkeep
+L	ab_10_1	311	|turn|21
+L	ab_10_1	312	|
+L	ab_10_1	313	|t:|<NORMALIZED>
+L	ab_10_1	314	|move|p2a: Jirachi|Body Slam|p1a: Blissey
+L	ab_10_1	315	|-crit|p1a: Blissey
+L	ab_10_1	316	|-damage|p1a: Blissey|146/651 brn
+L	ab_10_1	317	|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+L	ab_10_1	318	|-heal|p1a: Blissey|471/651 brn
+L	ab_10_1	319	|
+L	ab_10_1	320	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	321	|-damage|p1a: Blissey|431/651 brn|[from] Sandstorm
+L	ab_10_1	322	|-heal|p1a: Blissey|471/651 brn|[from] item: Leftovers
+L	ab_10_1	323	|-damage|p1a: Blissey|390/651 brn|[from] brn
+L	ab_10_1	324	|upkeep
+L	ab_10_1	325	|turn|22
+L	ab_10_1	326	|
+L	ab_10_1	327	|t:|<NORMALIZED>
+L	ab_10_1	328	|move|p2a: Jirachi|Psychic|p1a: Blissey
+L	ab_10_1	329	|-damage|p1a: Blissey|329/651 brn
+L	ab_10_1	330	|move|p1a: Blissey|Calm Mind|p1a: Blissey
+L	ab_10_1	331	|-boost|p1a: Blissey|spa|1
+L	ab_10_1	332	|-boost|p1a: Blissey|spd|1
+L	ab_10_1	333	|
+L	ab_10_1	334	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	335	|-damage|p1a: Blissey|289/651 brn|[from] Sandstorm
+L	ab_10_1	336	|-heal|p1a: Blissey|329/651 brn|[from] item: Leftovers
+L	ab_10_1	337	|-damage|p1a: Blissey|248/651 brn|[from] brn
+L	ab_10_1	338	|upkeep
+L	ab_10_1	339	|turn|23
+L	ab_10_1	340	|
+L	ab_10_1	341	|t:|<NORMALIZED>
+L	ab_10_1	342	|move|p2a: Jirachi|Body Slam|p1a: Blissey
+L	ab_10_1	343	|-damage|p1a: Blissey|112/651 brn
+L	ab_10_1	344	|move|p1a: Blissey|Thunderbolt|p2a: Jirachi
+L	ab_10_1	345	|-crit|p2a: Jirachi
+L	ab_10_1	346	|-damage|p2a: Jirachi|0 fnt
+L	ab_10_1	347	|faint|p2a: Jirachi
+L	ab_10_1	348	|
+L	ab_10_1	349	|t:|<NORMALIZED>
+L	ab_10_1	350	|switch|p2a: Charizard|Charizard, M|297/297
+L	ab_10_1	351	|
+L	ab_10_1	352	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	353	|-damage|p2a: Charizard|279/297|[from] Sandstorm
+L	ab_10_1	354	|-damage|p1a: Blissey|72/651 brn|[from] Sandstorm
+L	ab_10_1	355	|-heal|p2a: Charizard|297/297|[from] item: Leftovers
+L	ab_10_1	356	|-heal|p1a: Blissey|112/651 brn|[from] item: Leftovers
+L	ab_10_1	357	|-damage|p1a: Blissey|31/651 brn|[from] brn
+L	ab_10_1	358	|upkeep
+L	ab_10_1	359	|turn|24
+L	ab_10_1	360	|
+L	ab_10_1	361	|t:|<NORMALIZED>
+L	ab_10_1	362	|move|p2a: Charizard|Flamethrower|p1a: Blissey
+L	ab_10_1	363	|-damage|p1a: Blissey|0 fnt
+L	ab_10_1	364	|faint|p1a: Blissey
+L	ab_10_1	365	|
+L	ab_10_1	366	|t:|<NORMALIZED>
+L	ab_10_1	367	|switch|p1a: Forretress|Forretress, M|354/354
+L	ab_10_1	368	|
+L	ab_10_1	369	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	370	|-damage|p2a: Charizard|279/297|[from] Sandstorm
+L	ab_10_1	371	|-heal|p2a: Charizard|297/297|[from] item: Leftovers
+L	ab_10_1	372	|upkeep
+L	ab_10_1	373	|turn|25
+L	ab_10_1	374	|
+L	ab_10_1	375	|t:|<NORMALIZED>
+L	ab_10_1	376	|move|p2a: Charizard|Dragon Claw|p1a: Forretress
+L	ab_10_1	377	|-resisted|p1a: Forretress
+L	ab_10_1	378	|-damage|p1a: Forretress|285/354
+L	ab_10_1	379	|move|p1a: Forretress|Explosion|p2a: Charizard
+L	ab_10_1	380	|-damage|p2a: Charizard|0 fnt
+L	ab_10_1	381	|faint|p1a: Forretress
+L	ab_10_1	382	|faint|p2a: Charizard
+L	ab_10_1	383	|
+L	ab_10_1	384	|t:|<NORMALIZED>
+L	ab_10_1	385	|switch|p2a: Starmie|Starmie|262/262
+L	ab_10_1	386	|switch|p1a: Umbreon|Umbreon, M|393/393
+L	ab_10_1	387	|
+L	ab_10_1	388	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	389	|-damage|p2a: Starmie|246/262|[from] Sandstorm
+L	ab_10_1	390	|-damage|p1a: Umbreon|369/393|[from] Sandstorm
+L	ab_10_1	391	|-heal|p2a: Starmie|262/262|[from] item: Leftovers
+L	ab_10_1	392	|-heal|p1a: Umbreon|393/393|[from] item: Leftovers
+L	ab_10_1	393	|upkeep
+L	ab_10_1	394	|turn|26
+L	ab_10_1	395	|
+L	ab_10_1	396	|t:|<NORMALIZED>
+L	ab_10_1	397	|move|p2a: Starmie|Thunderbolt|p1a: Umbreon
+L	ab_10_1	398	|-damage|p1a: Umbreon|330/393
+L	ab_10_1	399	|move|p1a: Umbreon|Toxic|p2a: Starmie
+L	ab_10_1	400	|-status|p2a: Starmie|tox
+L	ab_10_1	401	|
+L	ab_10_1	402	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	403	|-damage|p2a: Starmie|246/262 tox|[from] Sandstorm
+L	ab_10_1	404	|-damage|p1a: Umbreon|306/393|[from] Sandstorm
+L	ab_10_1	405	|-heal|p2a: Starmie|262/262 tox|[from] item: Leftovers
+L	ab_10_1	406	|-damage|p2a: Starmie|246/262 tox|[from] psn
+L	ab_10_1	407	|-heal|p1a: Umbreon|330/393|[from] item: Leftovers
+L	ab_10_1	408	|upkeep
+L	ab_10_1	409	|turn|27
+L	ab_10_1	410	|
+L	ab_10_1	411	|t:|<NORMALIZED>
+L	ab_10_1	412	|move|p2a: Starmie|Ice Beam|p1a: Umbreon
+L	ab_10_1	413	|-damage|p1a: Umbreon|267/393
+L	ab_10_1	414	|move|p1a: Umbreon|Wish|p1a: Umbreon
+L	ab_10_1	415	|
+L	ab_10_1	416	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	417	|-damage|p2a: Starmie|230/262 tox|[from] Sandstorm
+L	ab_10_1	418	|-damage|p1a: Umbreon|243/393|[from] Sandstorm
+L	ab_10_1	419	|-heal|p2a: Starmie|246/262 tox|[from] item: Leftovers
+L	ab_10_1	420	|-damage|p2a: Starmie|214/262 tox|[from] psn
+L	ab_10_1	421	|-heal|p1a: Umbreon|267/393|[from] item: Leftovers
+L	ab_10_1	422	|upkeep
+L	ab_10_1	423	|turn|28
+L	ab_10_1	424	|
+L	ab_10_1	425	|t:|<NORMALIZED>
+L	ab_10_1	426	|move|p1a: Umbreon|Protect|p1a: Umbreon
+L	ab_10_1	427	|-singleturn|p1a: Umbreon|Protect
+L	ab_10_1	428	|move|p2a: Starmie|Ice Beam|p1a: Umbreon
+L	ab_10_1	429	|-activate|p1a: Umbreon|Protect
+L	ab_10_1	430	|
+L	ab_10_1	431	|-heal|p1a: Umbreon|393/393|[from] move: Wish|[wisher] Umbreon
+L	ab_10_1	432	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	433	|-damage|p2a: Starmie|198/262 tox|[from] Sandstorm
+L	ab_10_1	434	|-damage|p1a: Umbreon|369/393|[from] Sandstorm
+L	ab_10_1	435	|-heal|p2a: Starmie|214/262 tox|[from] item: Leftovers
+L	ab_10_1	436	|-damage|p2a: Starmie|166/262 tox|[from] psn
+L	ab_10_1	437	|-heal|p1a: Umbreon|393/393|[from] item: Leftovers
+L	ab_10_1	438	|upkeep
+L	ab_10_1	439	|turn|29
+L	ab_10_1	440	|
+L	ab_10_1	441	|t:|<NORMALIZED>
+L	ab_10_1	442	|move|p2a: Starmie|Thunderbolt|p1a: Umbreon
+L	ab_10_1	443	|-damage|p1a: Umbreon|331/393
+L	ab_10_1	444	|move|p1a: Umbreon|Toxic|p2a: Starmie|[miss]
+L	ab_10_1	445	|-miss|p1a: Umbreon|p2a: Starmie
+L	ab_10_1	446	|
+L	ab_10_1	447	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	448	|-damage|p2a: Starmie|150/262 tox|[from] Sandstorm
+L	ab_10_1	449	|-damage|p1a: Umbreon|307/393|[from] Sandstorm
+L	ab_10_1	450	|-heal|p2a: Starmie|166/262 tox|[from] item: Leftovers
+L	ab_10_1	451	|-damage|p2a: Starmie|102/262 tox|[from] psn
+L	ab_10_1	452	|-heal|p1a: Umbreon|331/393|[from] item: Leftovers
+L	ab_10_1	453	|upkeep
+L	ab_10_1	454	|turn|30
+L	ab_10_1	455	|
+L	ab_10_1	456	|t:|<NORMALIZED>
+L	ab_10_1	457	|-activate|p2a: Starmie|move: Pursuit
+L	ab_10_1	458	|move|p1a: Umbreon|Pursuit|p2a: Starmie|[from] Pursuit
+L	ab_10_1	459	|-supereffective|p2a: Starmie
+L	ab_10_1	460	|-damage|p2a: Starmie|0 fnt
+L	ab_10_1	461	|-curestatus|p2a: Starmie|tox|[from] ability: Natural Cure|[silent]
+L	ab_10_1	462	|-hint|Previously chosen switches continue in Gen 2-4 after a Pursuit target faints.
+L	ab_10_1	463	|faint|p2a: Starmie
+L	ab_10_1	464	|switch|p2a: Tyranitar|Tyranitar, M|387/387
+L	ab_10_1	465	|
+L	ab_10_1	466	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	467	|-damage|p1a: Umbreon|307/393|[from] Sandstorm
+L	ab_10_1	468	|-heal|p1a: Umbreon|331/393|[from] item: Leftovers
+L	ab_10_1	469	|upkeep
+L	ab_10_1	470	|turn|31
+L	ab_10_1	471	|
+L	ab_10_1	472	|t:|<NORMALIZED>
+L	ab_10_1	473	|move|p2a: Tyranitar|Rock Slide|p1a: Umbreon|[miss]
+L	ab_10_1	474	|-miss|p2a: Tyranitar|p1a: Umbreon
+L	ab_10_1	475	|move|p1a: Umbreon|Pursuit|p2a: Tyranitar
+L	ab_10_1	476	|-resisted|p2a: Tyranitar
+L	ab_10_1	477	|-damage|p2a: Tyranitar|367/387
+L	ab_10_1	478	|
+L	ab_10_1	479	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	480	|-damage|p1a: Umbreon|307/393|[from] Sandstorm
+L	ab_10_1	481	|-heal|p2a: Tyranitar|387/387|[from] item: Leftovers
+L	ab_10_1	482	|-heal|p1a: Umbreon|331/393|[from] item: Leftovers
+L	ab_10_1	483	|upkeep
+L	ab_10_1	484	|turn|32
+L	ab_10_1	485	|
+L	ab_10_1	486	|t:|<NORMALIZED>
+L	ab_10_1	487	|move|p2a: Tyranitar|Earthquake|p1a: Umbreon
+L	ab_10_1	488	|-damage|p1a: Umbreon|213/393
+L	ab_10_1	489	|move|p1a: Umbreon|Toxic|p2a: Tyranitar
+L	ab_10_1	490	|-status|p2a: Tyranitar|tox
+L	ab_10_1	491	|
+L	ab_10_1	492	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	493	|-damage|p1a: Umbreon|189/393|[from] Sandstorm
+L	ab_10_1	494	|-damage|p2a: Tyranitar|363/387 tox|[from] psn
+L	ab_10_1	495	|-heal|p1a: Umbreon|213/393|[from] item: Leftovers
+L	ab_10_1	496	|upkeep
+L	ab_10_1	497	|turn|33
+L	ab_10_1	498	|
+L	ab_10_1	499	|t:|<NORMALIZED>
+L	ab_10_1	500	|move|p2a: Tyranitar|Double-Edge|p1a: Umbreon
+L	ab_10_1	501	|-damage|p1a: Umbreon|87/393
+L	ab_10_1	502	|-damage|p2a: Tyranitar|321/387 tox|[from] Recoil|[of] p1a: Umbreon
+L	ab_10_1	503	|move|p1a: Umbreon|Wish|p1a: Umbreon
+L	ab_10_1	504	|
+L	ab_10_1	505	|-weather|Sandstorm|[upkeep]
+L	ab_10_1	506	|-damage|p1a: Umbreon|63/393|[from] Sandstorm
+L	ab_10_1	507	|-heal|p2a: Tyranitar|345/387 tox|[from] item: Leftovers
+L	ab_10_1	508	|-damage|p2a: Tyranitar|297/387 tox|[from] psn
+L	ab_10_1	509	|-heal|p1a: Umbreon|87/393|[from] item: Leftovers
+L	ab_10_1	510	|upkeep
+L	ab_10_1	511	|turn|34
+L	ab_10_1	512	|
+L	ab_10_1	513	|t:|<NORMALIZED>
+L	ab_10_1	514	|move|p2a: Tyranitar|Rock Slide|p1a: Umbreon
+L	ab_10_1	515	|-damage|p1a: Umbreon|0 fnt
+L	ab_10_1	516	|faint|p1a: Umbreon
+L	ab_10_1	517	|
+L	ab_10_1	518	|win|P2

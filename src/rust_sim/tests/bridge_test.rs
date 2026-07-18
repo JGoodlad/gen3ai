@@ -30,7 +30,7 @@
 //!    these become full byte-equal battles with no bridge change.)
 
 use pokesim::bridge::{
-    bridge_opts, parse_bridge_golden, run_full_battle_bridge, GoldenBattle,
+    bridge_opts, parse_bridge_golden, parse_choice, run_full_battle_bridge, Cmd, GoldenBattle,
 };
 use pokesim::dex::Dex;
 
@@ -276,4 +276,49 @@ fn bridge_golden_parses() {
         assert!(!b.p1_expected.is_empty(), "[{}] empty p1 chunks", b.id);
         let _ = GoldenBattle::default();
     }
+}
+
+// ── ROUND 10 BR1: a move-LOCKED LAST mon's `|request|` carries `trapped:true`
+//    unconditionally (`gen3_locked_last_mon_trapped_v1`). ──
+
+/// BR1: a move-LOCKED mon (Hyper Beam's mustrecharge, or a two-turn fire turn) is `hardLocked`
+/// in getMoveRequestData, so its `|request|` emits `trapped:true` UNCONDITIONALLY — even for
+/// the LAST mon with no live bench (probe-verified vs the sim: `serialize_active`'s
+/// move-locked branch). WRONG (pre-fix): the `has_live_bench` gate dropped `trapped:true` on a
+/// last-mon recharge/fire turn, so poke-env thought the recharge-trapped last mon could switch
+/// (a wrong legal-action set under `--use-bridge=rust`). p1 is a SINGLE-mon team (Snorlax with
+/// Hyper Beam), so the recharge turn is a genuine no-bench state. Reverting restores the gate →
+/// the recharge request omits `,"trapped":true` → this fails.
+#[test]
+fn recharge_last_mon_request_carries_trapped_true() {
+    let dex = Dex::for_gen(3);
+    // A weak L5 Snorlax (single-mon team → no live bench) Hyper Beams a bulky Steelix wall (so
+    // Snorlax survives to the recharge turn). Two turns: T1 Hyper Beam / Iron Defense,
+    // T2 recharge (p1 `move 1` maps to the recharge pseudo-move) / Iron Defense.
+    let p1 = "Snorlax|||thickfat|hyperbeam,splash|Brave|252,252,,,,|||||55";
+    let p2 = "Steelix|||sturdy|irondefense,splash|Impish|252,,252,,,|||||";
+    let opts = bridge_opts("gen3customgame", "5,5,5,5".to_string(), p1, p2);
+    let mk = |side: usize, tok: &str| Cmd { side, choice: parse_choice(tok).unwrap() };
+    let cmds = vec![
+        mk(0, "move 1"),
+        mk(1, "move 1"),
+        mk(0, "move 1"),
+        mk(1, "move 1"),
+    ];
+    let streams = run_full_battle_bridge(&opts, &cmds, &dex).expect("bridge replay");
+    // Find the recharge `|request|` on p1 — it must carry `trapped:true` despite the empty bench.
+    let recharge_req = streams
+        .p1
+        .iter()
+        .find(|l| l.starts_with("|request|") && l.contains("\"recharge\""))
+        .unwrap_or_else(|| {
+            panic!(
+                "no recharge |request| on p1 (Hyper Beam must hit + lock at this seed); p1 lines:\n{}",
+                streams.p1.join("\n")
+            )
+        });
+    assert!(
+        recharge_req.contains("\"trapped\":true"),
+        "the LAST-mon recharge |request| MUST carry `\"trapped\":true` (BR1) — got:\n{recharge_req}"
+    );
 }

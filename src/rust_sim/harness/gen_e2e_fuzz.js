@@ -1133,6 +1133,19 @@ function encodeChoice(c) {
   throw new Error(`unencodable choice ${JSON.stringify(c)}`);
 }
 
+// The exact inverse of encodeChoice — decode a recorded token back into the wire
+// choice string (used by runBattle's `opts.replayChoices` path so a saved repro
+// replays the RECORDED choices rather than re-picking a fresh trajectory). `-` ->
+// null (no `>pN` write), `m<k>` -> `move (k+1)`, `s<n>` -> `switch (n+1)`.
+function decodeChoice(tok) {
+  if (tok === '-' || tok === null || tok === undefined) return null;
+  const m = String(tok).match(/^m(\d+)$/);
+  if (m) return `move ${Number(m[1]) + 1}`;
+  const s = String(tok).match(/^s(\d+)$/);
+  if (s) return `switch ${Number(s[1]) + 1}`;
+  throw new Error(`undecodable choice token ${JSON.stringify(tok)}`);
+}
+
 // Pick the move-choice for a side at a `move` request: choose a random MODELED (or,
 // for the taxonomy, damaging) legal move; if none, a random legal switch; else null
 // (a forced-unmodeled state — the caller drops the battle from the FILTERED set, or
@@ -1265,6 +1278,15 @@ async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode, opts = {}) 
   // mode only — see isModeledMove). Both default to the committed-golden behavior.
   const runFormat = opts.format || FORMAT;
   const allowHiddenPower = !!opts.allowHiddenPower;
+  // `opts.replayChoices` (the decoded summary.choices array — one `[tokenP1,tokenP2]`
+  // per resolved decision boundary) REPLAYS the RECORDED choices instead of re-picking
+  // a fresh trajectory: when present the decision loop SKIPS pickMove/pickReplacement
+  // and pops the recorded pair for the current decisionNo (decodeChoice each token:
+  // `-`->null, `m<k>`->`move k+1`, `s<n>`->`switch n+1`). Everything else (the
+  // >start/>player prime, the 16-tick pump, seedBefore/seedAfter capture) is
+  // BYTE-IDENTICAL to the recorder, so the sim reproduces the recorded golden EXACTLY
+  // — the reliable per-draw trace path (probe_repro_simtrace.js).
+  const replayChoices = opts.replayChoices || null;
   const stream = new BattleStream();
   const streams = getPlayerStreams(stream);
   const log = [];
@@ -1315,7 +1337,15 @@ async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode, opts = {}) 
     let fixedMoveThisDec = false;
     let batch5MoveThisDec = false;
     let batch6MoveThisDec = false;
-    if (reqState === 'switch') {
+    if (replayChoices) {
+      // REPLAY the recorded choices for this decision boundary (no re-picking) — the
+      // sim reproduces the recorded golden bit-for-bit. Decode `-`->null uniformly for
+      // both reqState kinds (a switch request records `-` for the non-flagged side).
+      const rec_pair = replayChoices[decisionNo];
+      if (!rec_pair) { rec.dropped = 'replay-exhausted'; break; }
+      cp1 = decodeChoice(rec_pair[0]);
+      cp2 = decodeChoice(rec_pair[1]);
+    } else if (reqState === 'switch') {
       if (force[0]) { cp1 = pickReplacement(battle, 0, rng); if (!cp1) { rec.dropped = 'no-replacement-p1'; break; } }
       if (force[1]) { cp2 = pickReplacement(battle, 1, rng); if (!cp2) { rec.dropped = 'no-replacement-p2'; break; } }
     } else {

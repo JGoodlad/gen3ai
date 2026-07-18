@@ -1,0 +1,49 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=605010 run_id=rmrp6ml92 chunk=4
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_4_2
+TEAM	ab_4_2	p1	Mawile||seaincense|hypercutter|bite,rockslide,crunch,astonish|Calm|,184,28,132,132,32||10,24,2,24,23,3|||]Lombre||persimberry|swiftswim|surf,strength,astonish,rest|Jolly|124,80,156,48,28,72||6,27,2,27,3,13|||]Cleffa||spelltag|cutecharm|flamethrower,softboiled,counter,mimic|Relaxed|160,8,,104,132,104||11,14,20,9,23,27|||]Seadra||petayaberry|poisonpoint|bubble,frustration,twister,toxic|Gentle|44,68,76,136,16,168||6,10,0,2,22,28|||]Aggron||blackbelt|sturdy|facade,substitute,frustration,irontail|Jolly|80,,144,12,196,76||8,7,4,22,7,26|||]Ponyta||nevermeltice|flashfire|stomp,flamewheel,fireblast,facade|Gentle|156,,,140,36,176||2,7,26,24,20,17|||
+TEAM	ab_4_2	p2	Growlithe||leppaberry|intimidate|heatwave,agility,flamethrower,strength|Mild|212,40,8,172,28,48||2,25,8,19,6,29|||]Steelix||charcoal|sturdy|cut,harden,mimic,substitute|Adamant|136,,120,,112,140||10,6,5,13,23,4|||]Lanturn||waveincense|illuminate|shockwave,hyperbeam,return,waterpulse|Hasty|116,16,72,140,64,100||25,8,14,,6,27|||]Torkoal||quickclaw|whitesmoke|ember,mimic,mudslap,toxic|Modest|188,116,164,,,40||14,,23,8,18,6|||]Wynaut||rockincense|shadowtag|mirrorcoat,counter,charm,destinybond|Gentle|24,36,60,148,204,36||20,24,17,20,22,9|||]Metagross||starfberry|clearbody|doubleedge,substitute,earthquake,reflect|Quirky|96,16,,80,216,100||20,8,27,,27,12|||
+INIT	ab_4_2	29793,59883,47735,27386	2992269209
+DEC	ab_4_2	0	move	0	0	m1	m3	28542,40586,3149,65442	Mawile	189	220	0	-	0	0	0	0	0	0	6	Growlithe	4	275	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_2	1	move	0	0	m0	m0	46764,22398,28498,47894	Mawile	0	220	1	fnt	0	0	0	0	0	0	5	Growlithe	4	275	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_2	2	switch	1	0	s4	-	11525,57939,38787,13425	Aggron	278	278	0	-	0	0	0	0	0	0	5	Growlithe	4	275	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_4_2	3	move	0	0	m2	m3	406,10420,34047,47455	Aggron	272	278	0	-	0	0	0	0	0	0	5	Growlithe	0	275	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_4_2	4	switch	0	1	-	s5	53060,59154,30935,38974	Aggron	272	278	0	-	0	0	0	0	0	0	5	Metagross	314	314	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_4_2	5	move	0	0	m3	m2	16845,9810,51680,39683	Aggron	0	278	1	fnt	0	0	0	0	0	0	4	Metagross	314	314	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_2	6	switch	1	0	s2	-	45744,31851,22989,25074	Cleffa	261	261	0	-	0	0	0	0	0	0	4	Metagross	314	314	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_4_2	7	move	0	0	m0	m1	21919,41151,5589,54529	Cleffa	261	261	0	-	0	0	0	0	0	0	4	Metagross	236	314	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_2	8	move	0	0	m2	m3	33997,4397,19336,12584	Cleffa	261	261	0	-	0	0	0	0	0	0	4	Metagross	236	314	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_4_2	9	move	0	0	s5	m1	58463,42632,59208,27531	Ponyta	251	251	0	-	0	0	0	0	0	0	4	Metagross	158	314	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_2	10	move	0	0	m1	m1	18315,28646,61681,56206	Ponyta	251	251	0	-	0	0	0	0	0	0	4	Metagross	80	314	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_2	11	move	0	0	s3	m3	50766,5457,26355,15305	Seadra	237	237	0	-	0	0	0	0	0	0	4	Metagross	80	314	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_2	12	move	0	0	m0	m3	26398,49948,1625,42660	Seadra	237	237	0	-	0	0	0	0	0	0	4	Metagross	80	314	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_2	13	move	0	0	m0	s1	50288,5530,50615,29083	Seadra	237	237	0	-	0	0	0	0	0	0	4	Steelix	238	304	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_2	14	move	0	0	m2	s4	20039,29503,31375,43742	Seadra	237	237	0	-	0	0	0	0	0	0	4	Wynaut	289	326	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_2	15	move	0	0	m2	m2	63358,50466,41763,9332	Seadra	237	237	0	-	-2	0	0	0	0	0	4	Wynaut	252	326	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_2	16	move	0	0	m3	s3	3138,62877,22805,63238	Seadra	237	237	0	-	-2	0	0	0	0	0	4	Torkoal	292	311	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_2	17	move	0	0	m0	m2	27243,30083,48583,44265	Seadra	220	237	0	-	-2	0	0	0	0	0	4	Torkoal	188	311	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_2	18	move	0	0	s3	m0	37080,290,46290,22323	Ponyta	251	251	0	-	0	0	0	0	0	0	4	Torkoal	131	311	0	tox	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_2	19	move	0	0	m3	m2	14265,825,34794,37307	Ponyta	198	251	0	-	0	0	0	0	0	0	4	Torkoal	26	311	0	tox	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_2	20	move	0	0	m3	m2	39247,57796,12340,52140	Ponyta	198	251	0	-	0	0	0	0	0	0	4	Torkoal	0	311	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_4_2	21	switch	0	1	-	s3	23444,26221,26542,1439	Ponyta	198	251	0	-	0	0	0	0	0	0	4	Wynaut	252	326	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_4_2	22	move	0	0	m3	m3	29635,60502,61596,41795	Ponyta	198	251	0	-	0	0	0	0	0	0	4	Wynaut	168	326	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	1
+DEC	ab_4_2	23	move	0	0	m0	m3	65018,5959,31599,1446	Ponyta	198	251	0	-	0	0	0	0	0	0	4	Wynaut	86	326	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	1
+DEC	ab_4_2	24	move	0	0	m1	m1	45402,6117,17399,2266	Ponyta	198	251	0	-	0	0	0	0	0	0	4	Wynaut	0	326	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_4_2	25	switch	0	1	-	s4	48763,3666,14927,50885	Ponyta	198	251	0	-	0	0	0	0	0	0	4	Steelix	238	304	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_4_2	26	move	0	0	m0	s2	26954,43134,11758,63824	Ponyta	198	251	0	-	0	0	0	0	0	0	4	Lanturn	349	414	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_4_2	27	move	0	0	m2	m3	56686,18381,16999,38327	Ponyta	0	251	1	fnt	0	0	0	0	0	0	3	Lanturn	349	414	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_4_2	28	switch	1	0	s5	-	21152,7861,60964,40694	Cleffa	261	261	0	-	0	0	0	0	0	0	3	Lanturn	349	414	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_4_2	29	move	0	0	m0	m3	39759,10251,2254,24606	Cleffa	124	261	0	-	0	0	0	0	0	2	3	Lanturn	349	414	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_4_2	30	move	0	0	m1	s1	25657,46448,11437,53091	Cleffa	100	261	0	-	0	0	0	0	0	1	3	Metagross	80	314	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_4_2	31	move	0	0	m2	m0	59113,30190,36576,63687	Cleffa	0	261	1	fnt	0	0	0	0	0	0	2	Metagross	47	314	0	-	0	0	0	0	0	0	3	p2	0	0	0	1	0
+DEC	ab_4_2	32	switch	1	0	s1	-	63584,28719,37025,1121	Lombre	267	267	0	-	0	0	0	0	0	0	2	Metagross	47	314	0	-	0	2	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_4_2	33	move	0	0	m1	m2	56280,34437,25096,60270	Lombre	193	267	0	-	0	0	0	0	0	0	2	Metagross	39	314	0	-	0	2	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_4_2	34	move	0	0	m1	m1	32231,38333,24035,25122	Lombre	193	267	0	-	0	0	0	0	0	0	2	Metagross	32	314	0	-	0	2	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_4_2	35	move	0	0	s3	m1	11768,5884,49486,34861	Seadra	220	237	0	-	0	0	0	0	0	0	2	Metagross	32	314	0	-	0	2	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_4_2	36	move	0	0	s3	m0	49318,42096,24602,62870	Lombre	17	267	0	-	0	0	0	0	0	0	2	Metagross	0	314	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_4_2	37	switch	0	1	-	s1	36584,23114,22352,51441	Lombre	17	267	0	-	0	0	0	0	0	0	2	Lanturn	349	414	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_4_2	38	move	0	0	m1	m1	57874,4568,36581,22986	Lombre	0	267	1	fnt	0	0	0	0	0	0	1	Lanturn	349	414	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_4_2	39	switch	1	0	s3	-	56719,46017,51766,9589	Seadra	220	237	0	-	0	0	0	0	0	0	1	Lanturn	349	414	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+END	ab_4_2	0	none

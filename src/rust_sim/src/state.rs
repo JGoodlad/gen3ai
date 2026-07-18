@@ -111,6 +111,14 @@ pub struct MonState {
     pub hp: u16,
     /// Max HP (== `stats[0]`, kept denormalized for convenience).
     pub maxhp: u16,
+    /// The IV-derived Hidden Power BASE POWER (`gen3_iv_derived_hidden_power_bp_v1`),
+    /// precomputed once from `set.ivs` via [`hidden_power_bp`] (range 30..=70). The
+    /// damage path (`run_move`) and the bridge request-JSON move name read THIS for a
+    /// `hiddenpower*` move instead of the data's hard-coded 70 — so a real gen3ou HP mon
+    /// whose IVs give BP != 70 (e.g. a -1 Speed IV → BP 68) damages at its IV-true BP.
+    /// The TYPE stays from the typed move id (untouched). Obs-neutral (a Rust-bridge
+    /// correctness value; the Python obs/DamageOperator keep their own BP-70 assumption).
+    pub hidden_power_bp: u8,
     /// Major status, or `None` (empty at construction).
     pub status: Option<Status>,
     /// Stat-stage boosts `[atk, def, spa, spd, spe, accuracy, evasion]`, all 0
@@ -737,6 +745,66 @@ pub struct FutureMove {
     pub source_uid: usize,
 }
 
+/// Compute a gen-3 Hidden Power's BASE POWER from the attacker's IVs, mirroring
+/// Showdown's `Dex.getHiddenPower` (`sim/dex.ts`, the gen 3-5 branch):
+///   `hpPowerX = Σ i·(⌊iv_s/2⌋ mod 2)` over the six stats in Showdown's iteration
+///   order `{hp, atk, def, spe, spa, spd}` with weights `i = 1,2,4,8,16,32`, then
+///   `power = ⌊hpPowerX·40/63⌋ + 30` (range 30..=70). `⌊iv/2⌋ mod 2` is the IV's
+///   2nd-LSB (`(iv >> 1) & 1`); the TYPE is derived from the LSBs (already carried
+///   by the typed move id, so untouched here).
+///
+/// THE WEIGHT-ORDER CRUX (`gen3_iv_derived_hidden_power_bp_v1`): the port's IV array
+/// is `[HP, Atk, Def, SpA, SpD, Spe]` (= [`PokemonSet::ivs`] / `stats` order), but the
+/// sim iterates `{hp, atk, def, SPE, SPA, spd}` — so the **Speed** IV (port idx 5)
+/// carries weight **8** (BEFORE SpA idx 3 at weight 16 and SpD idx 4 at weight 32).
+/// A naive `[HP,Atk,Def,SpA,SpD,Spe]→1,2,4,8,16,32` mapping is WRONG. Confirmed
+/// bit-for-bit vs `getHiddenPower` (source read) AND a live damage probe (IV-31
+/// spread → BP 70 → 84 dmg; a `spe:0` spread → BP 64 → 77 dmg — the port used to
+/// deal 84 for both because the data hard-codes BP 70).
+pub fn hidden_power_bp(ivs: &[u8; 6]) -> u8 {
+    let bit = |iv: u8| ((iv >> 1) & 1) as u32; // ⌊iv/2⌋ mod 2 == the 2nd-LSB
+    let hp_power_x = bit(ivs[0])   // hp  → 1
+        + 2 * bit(ivs[1])          // atk → 2
+        + 4 * bit(ivs[2])          // def → 4
+        + 8 * bit(ivs[5])          // spe → 8  (SPE BEFORE SPA/SPD — the crux)
+        + 16 * bit(ivs[3])         // spa → 16
+        + 32 * bit(ivs[4]); // spd → 32
+    let bp = (hp_power_x * 40 / 63) + 30;
+    // GIGO guard: the gen3 formula's output is mathematically bounded to 30..=70
+    // (hpPowerX ∈ 0..=63 → ⌊hpPowerX·40/63⌋ ∈ 0..=40). A value outside this range
+    // means the weight order or the arithmetic was corrupted — fail loud rather
+    // than silently mis-damage every Hidden Power.
+    assert!(
+        (30..=70).contains(&bp),
+        "gen3_iv_derived_hidden_power_bp_v1: Hidden Power BP {bp} out of range 30..=70 \
+         (ivs={ivs:?}) — the IV weight order is corrupted"
+    );
+    bp as u8
+}
+
+/// The IV-derived Hidden Power TYPE id suffix (e.g. `"dark"`), gen 3 formula
+/// (`Dex.getHiddenPower`) — the sibling of [`hidden_power_bp`], sharing the SAME
+/// weight order (the SPE crux) but reading the IV's **LSB** (`iv % 2`, the type
+/// bits) where BP reads the 2nd-LSB. `type = HP_TYPES[⌊hpTypeX·15/63⌋]` over the
+/// 16-type table. Used to serialize the OWNER's own roster move id for a bare-stored
+/// Hidden Power (`getSwitchRequestData` resolves each moveSlot to its typed id).
+pub fn hidden_power_type(ivs: &[u8; 6]) -> &'static str {
+    // The gen-3 Hidden Power type table (`Dex.getHiddenPower`'s `hpTypes`).
+    const HP_TYPES: [&str; 16] = [
+        "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire",
+        "water", "grass", "electric", "psychic", "ice", "dragon", "dark",
+    ];
+    let bit = |iv: u8| (iv & 1) as u32; // iv % 2 == the LSB (the type bit)
+    let hp_type_x = bit(ivs[0])   // hp  → 1
+        + 2 * bit(ivs[1])          // atk → 2
+        + 4 * bit(ivs[2])          // def → 4
+        + 8 * bit(ivs[5])          // spe → 8  (SPE BEFORE SPA/SPD — the weight crux)
+        + 16 * bit(ivs[3])         // spa → 16
+        + 32 * bit(ivs[4]); // spd → 32
+    let idx = (hp_type_x * 15 / 63) as usize;
+    HP_TYPES[idx.min(15)]
+}
+
 impl MonState {
     /// Build the construction-time state for one decoded set: compute its stats,
     /// set `hp == maxhp == stats[0]`, status empty, boosts 0, not fainted.
@@ -773,6 +841,7 @@ impl MonState {
         let move_pp = move_maxpp.clone();
         let item = set.item.clone();
         let ability = set.ability.clone();
+        let hp_bp = hidden_power_bp(&set.ivs); // read before `set` is moved into the struct
         let set_gender = set.gender; // read before `set` is moved into the struct
         Ok(MonState {
             set,
@@ -785,6 +854,7 @@ impl MonState {
             stats,
             hp: maxhp,
             maxhp,
+            hidden_power_bp: hp_bp,
             status: None,
             boosts: [0; BOOST_LEN],
             fainted: false,
@@ -1161,6 +1231,16 @@ pub struct BattleState {
     /// otherwise runs its FULL NORMAL draw chain (acc/crit/damage/secondary — probed).
     /// The `pursuit_strike` transient pattern.
     pub sleep_talk_call: bool,
+    /// The battle-global **Quick Claw roll** (`Battle.quickClawRoll`, sim battle.js:1485
+    /// `gen === 3` ⇒ `randomChance(1, 5)`, drawn UNCONDITIONALLY at every completed `endTurn`).
+    /// Read next turn by gen3 `getActionSpeed` (scripts.js:47-48): a Quick-Claw HOLDER whose
+    /// roll hit TRUE gets `speed = 65535` (moves first WITHIN its priority bracket, regardless
+    /// of raw Speed). Persisted here so `effective_speed` can apply the override — the port
+    /// previously drew-and-DISCARDED the endTurn roll (turn.rs), so it ordered purely on raw
+    /// speed and mis-ordered / mis-damaged (the swapped damage rolls) every QC-proc turn
+    /// (`gen3_quick_claw_speed_v1` — the P1 state-HP off-by-one + wrongful-faint AND the P2
+    /// wrong-first-mover class, one fix). Init false; a fresh construct has no prior endTurn.
+    pub quick_claw_roll: bool,
 }
 
 impl BattleState {
@@ -1211,6 +1291,7 @@ impl BattleState {
             pursuit_strike: false,
             sleep_talk_call: false,
             pursuit_first_mover: None,
+            quick_claw_roll: false,
         })
     }
 

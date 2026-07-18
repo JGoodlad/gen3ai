@@ -1,0 +1,457 @@
+# ALLOWLIST turn0-construction-speed-tie-attribution
+# R1 turn-0 CONSTRUCTION speed-tie [of] ATTRIBUTION on a same-species MIRROR lead (Zapdos
+# mirror, both Pressure, equal raw Speed): the switch-in -ability|Pressure framing block's
+# [of]/order flips vs the real sim because the turn-0 construction speed-tie shuffle is
+# unmodeled (the project-wide seed-convention deferral). ZERO production impact (seed=None).
+# ab_replay classifies it -> allowlisted:turn0-construction-speed-tie-attribution (E1).
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=7 run_id=rmrocd562 chunk=2
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_2_24
+TEAM	ab_2_24	p1	Zapdos||Leftovers|Pressure|ThunderWave,Toxic,Thunderbolt,HiddenPowerIce|Adamant|216,,,136,,156|N|,,,,,30|||,Ice,,,,]Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,252,,16|M||||]Metagross||Leftovers|ClearBody|Earthquake,ThunderPunch,HiddenPowerGrass,Explosion|Rash|168,,16,252,,72|N|,30,,30,,|||,Grass,,,,]Tyranitar||Leftovers|SandStream|DragonDance,Earthquake,RockSlide,DoubleEdge|Adamant|184,104,,,,220|M||||]Snorlax||Leftovers|Immunity|BodySlam,ShadowBall,FocusPunch,SelfDestruct|Adamant|32,136,152,,172,16|M||||]Salamence||Leftovers|Intimidate|DragonDance,Earthquake,RockSlide,HiddenPowerFlying|Adamant|,156,,,212,140|M|,,,30,30,30|||,Flying,,,,
+TEAM	ab_2_24	p2	Zapdos||Leftovers|Pressure|ThunderWave,Toxic,Thunderbolt,HiddenPowerIce|Modest|216,,,136,,156|N|,,,,,30|||,Ice,,,,]Tyranitar||Leftovers|SandStream|DragonDance,Earthquake,RockSlide,DoubleEdge|Adamant|184,104,,,,220|M||||]Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,252,,16|M||||]Metagross||LumBerry|ClearBody|Agility,MeteorMash,Earthquake,Explosion|Adamant|168,232,16,,,92|N||||]Gengar||Leftovers|Levitate|IcePunch,FirePunch,HiddenPowerGrass,Explosion|Timid|4,,,252,,252|M|,30,,30,,|||,Grass,,,,]Charizard||Leftovers|Blaze|DragonClaw,Flamethrower,HiddenPowerGrass,BeatUp|Modest|,,,252,4,252|M|,2,,30,,|||,Grass,,,,
+FMT	ab_2_24	gen3ou
+INIT	ab_2_24	5350,28399,52674,27995	2016367863
+DEC	ab_2_24	0	move	0	0	m1	m2	8307,2448,10283,1928	Zapdos	220	375	0	-	0	0	0	0	0	0	6	Zapdos	352	375	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_2_24	1	move	0	0	s2	m1	49769,9299,48405,32924	Metagross	343	343	0	-	0	0	0	0	0	0	6	Zapdos	329	375	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_2_24	2	move	0	0	m0	s5	55608,24013,51044,15598	Metagross	343	343	0	-	0	0	0	0	0	0	6	Charizard	297	297	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_2_24	3	move	0	0	s5	m2	20543,35129,15752,39842	Salamence	331	331	0	-	0	0	0	0	0	0	6	Charizard	297	297	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_2_24	4	move	0	0	s4	m2	7456,51941,11131,38678	Snorlax	439	469	0	-	0	0	0	0	0	0	6	Charizard	297	297	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_2_24	5	move	0	0	m3	m3	53471,19843,30846,20692	Snorlax	0	469	1	fnt	0	0	0	0	0	0	5	Charizard	0	297	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_2_24	6	switch	1	1	s2	s4	27291,34187,51465,63079	Zapdos	243	375	0	-	0	0	0	0	0	0	5	Gengar	262	262	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_2_24	7	move	0	0	s4	m0	27946,20770,60984,22411	Salamence	0	331	1	fnt	0	0	0	0	0	0	4	Gengar	262	262	0	-	-1	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_2_24	8	switch	1	0	s4	-	54812,65428,11271,35738	Zapdos	266	375	0	-	0	0	0	0	0	0	4	Gengar	262	262	0	-	-1	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_2_24	9	move	0	0	m0	m1	53378,9794,54259,48915	Zapdos	193	375	0	-	0	0	0	0	0	0	4	Gengar	262	262	0	par	-1	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_2_24	10	move	0	0	m3	m2	31014,58772,48660,23963	Zapdos	174	375	0	-	0	0	0	0	0	0	4	Gengar	190	262	0	par	-1	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_2_24	11	move	0	0	s1	m1	42319,61525,10055,20501	Swampert	401	401	0	-	0	0	0	0	0	0	4	Gengar	206	262	0	par	-1	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_2_24	12	move	0	0	m2	m3	32421,54821,13727,52448	Swampert	223	401	0	-	0	0	0	0	0	0	4	Gengar	0	262	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_2_24	13	switch	0	1	-	s2	48473,61292,49102,49287	Swampert	248	401	0	-	0	0	0	0	0	0	4	Swampert	401	401	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_2_24	14	move	0	0	m3	s5	48415,41269,35012,18396	Swampert	273	401	0	-	0	0	0	0	0	0	4	Zapdos	136	375	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_2_24	15	move	0	0	m1	m1	46604,27174,15499,33712	Swampert	273	401	0	tox	0	0	0	0	0	0	4	Zapdos	113	375	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_2_24	16	move	0	0	m3	m3	63217,5162,36050,60081	Swampert	184	401	0	tox	0	0	0	0	0	0	4	Zapdos	0	375	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_2_24	17	switch	0	1	-	s5	24235,58051,61191,34732	Swampert	159	401	0	tox	0	0	0	0	0	0	4	Swampert	401	401	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_2_24	18	move	0	0	m0	m0	48707,65296,29868,57766	Swampert	109	401	0	tox	1	1	0	0	-1	0	4	Swampert	401	401	0	-	1	1	0	0	-1	0	3	p2	0	0	0	0	0
+DEC	ab_2_24	19	move	0	0	m0	s3	7419,47052,32879,9434	Swampert	34	401	0	tox	2	2	0	0	-2	0	4	Metagross	343	343	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_2_24	20	move	0	0	m2	m3	29841,29757,28658,19119	Swampert	0	401	1	fnt	0	0	0	0	0	0	3	Metagross	0	343	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_2_24	21	switch	1	1	s5	s1	58828,32850,45950,48334	Metagross	343	343	0	-	0	0	0	0	0	0	3	Tyranitar	387	387	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_2_24	22	move	0	0	m1	m1	54992,27552,317,51153	Metagross	169	343	0	-	0	0	0	0	0	0	3	Tyranitar	338	387	0	par	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_2_24	23	move	0	0	m2	m1	38107,53459,43341,48158	Metagross	0	343	1	fnt	0	0	0	0	0	0	2	Tyranitar	199	387	0	par	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_2_24	24	switch	1	0	s3	-	61392,38767,12879,58521	Tyranitar	387	387	0	-	0	0	0	0	0	0	2	Tyranitar	223	387	0	par	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_2_24	25	move	0	0	s1	s3	45014,39112,26416,45088	Zapdos	174	375	0	-	0	0	0	0	0	0	2	Swampert	401	401	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_2_24	26	move	0	0	m2	m0	35693,26038,53971,5789	Zapdos	174	375	0	-	0	0	0	0	0	0	2	Swampert	401	401	0	-	1	1	0	0	-1	0	2	p1	0	0	0	0	0
+DEC	ab_2_24	27	move	0	0	m3	s3	35004,51329,23278,53345	Zapdos	174	375	0	-	0	0	0	0	0	0	2	Tyranitar	185	387	0	par	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_2_24	28	move	0	0	m1	m1	46063,30495,50160,5605	Zapdos	174	375	0	-	0	0	0	0	0	0	2	Tyranitar	209	387	0	par	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_2_24	29	move	0	0	m3	m3	3219,31442,58149,65058	Zapdos	0	375	1	fnt	0	0	0	0	0	0	1	Tyranitar	79	387	0	par	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_2_24	30	switch	1	0	s1	-	11052,18285,15890,5165	Tyranitar	387	387	0	-	0	0	0	0	0	0	1	Tyranitar	103	387	0	par	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_2_24	31	move	0	0	m3	m2	63553,41314,12780,23256	Tyranitar	387	387	0	-	0	0	0	0	0	0	1	Tyranitar	66	387	0	par	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_2_24	32	move	0	0	m2	m3	23864,31846,51576,48876	Tyranitar	387	387	0	-	0	0	0	0	0	0	1	Tyranitar	0	387	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_2_24	33	switch	0	1	-	s3	12056,83,58218,15839	Tyranitar	387	387	0	-	0	0	0	0	0	0	1	Swampert	401	401	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_2_24	34	move	0	0	m1	m2	53925,45903,57924,44884	Tyranitar	31	387	0	-	0	0	0	0	0	0	1	Swampert	291	401	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_2_24	35	move	0	0	m2	m0	11333,58497,26102,38923	Tyranitar	55	387	0	-	0	0	0	0	0	0	1	Swampert	243	401	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_2_24	36	move	0	0	m0	m3	60365,61146,19022,50927	Tyranitar	0	387	1	-	0	0	0	0	0	0	0	Swampert	243	401	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+END	ab_2_24	1	p2
+L	ab_2_24	0	|t:|<NORMALIZED>
+L	ab_2_24	1	|gametype|singles
+L	ab_2_24	2	|player|p1|P1||
+L	ab_2_24	3	|player|p2|P2||
+L	ab_2_24	4	|gen|3
+L	ab_2_24	5	|tier|[Gen 3] OU
+L	ab_2_24	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_2_24	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_2_24	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_2_24	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_2_24	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_2_24	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_2_24	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_2_24	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_2_24	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_2_24	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_2_24	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_2_24	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_2_24	18	|
+L	ab_2_24	19	|t:|<NORMALIZED>
+L	ab_2_24	20	|teamsize|p1|6
+L	ab_2_24	21	|teamsize|p2|6
+L	ab_2_24	22	|start
+L	ab_2_24	23	|switch|p1a: Zapdos|Zapdos|375/375
+L	ab_2_24	24	|switch|p2a: Zapdos|Zapdos|375/375
+L	ab_2_24	25	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_2_24	26	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_2_24	27	|turn|1
+L	ab_2_24	28	|
+L	ab_2_24	29	|t:|<NORMALIZED>
+L	ab_2_24	30	|move|p1a: Zapdos|Toxic|p2a: Zapdos
+L	ab_2_24	31	|-status|p2a: Zapdos|tox
+L	ab_2_24	32	|move|p2a: Zapdos|Thunderbolt|p1a: Zapdos
+L	ab_2_24	33	|-damage|p1a: Zapdos|197/375
+L	ab_2_24	34	|
+L	ab_2_24	35	|-heal|p1a: Zapdos|220/375|[from] item: Leftovers
+L	ab_2_24	36	|-damage|p2a: Zapdos|352/375 tox|[from] psn
+L	ab_2_24	37	|upkeep
+L	ab_2_24	38	|turn|2
+L	ab_2_24	39	|
+L	ab_2_24	40	|t:|<NORMALIZED>
+L	ab_2_24	41	|switch|p1a: Metagross|Metagross|343/343
+L	ab_2_24	42	|move|p2a: Zapdos|Toxic|p1a: Metagross
+L	ab_2_24	43	|-immune|p1a: Metagross
+L	ab_2_24	44	|
+L	ab_2_24	45	|-heal|p2a: Zapdos|375/375 tox|[from] item: Leftovers
+L	ab_2_24	46	|-damage|p2a: Zapdos|329/375 tox|[from] psn
+L	ab_2_24	47	|upkeep
+L	ab_2_24	48	|turn|3
+L	ab_2_24	49	|
+L	ab_2_24	50	|t:|<NORMALIZED>
+L	ab_2_24	51	|switch|p2a: Charizard|Charizard, M|297/297
+L	ab_2_24	52	|move|p1a: Metagross|Earthquake|p2a: Charizard
+L	ab_2_24	53	|-immune|p2a: Charizard
+L	ab_2_24	54	|
+L	ab_2_24	55	|upkeep
+L	ab_2_24	56	|turn|4
+L	ab_2_24	57	|
+L	ab_2_24	58	|t:|<NORMALIZED>
+L	ab_2_24	59	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_2_24	60	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_2_24	61	|-unboost|p2a: Charizard|atk|1
+L	ab_2_24	62	|move|p2a: Charizard|Hidden Power|p1a: Salamence
+L	ab_2_24	63	|-resisted|p1a: Salamence
+L	ab_2_24	64	|-damage|p1a: Salamence|312/331
+L	ab_2_24	65	|
+L	ab_2_24	66	|-heal|p1a: Salamence|331/331|[from] item: Leftovers
+L	ab_2_24	67	|upkeep
+L	ab_2_24	68	|turn|5
+L	ab_2_24	69	|
+L	ab_2_24	70	|t:|<NORMALIZED>
+L	ab_2_24	71	|switch|p1a: Snorlax|Snorlax, M|469/469
+L	ab_2_24	72	|move|p2a: Charizard|Hidden Power|p1a: Snorlax
+L	ab_2_24	73	|-damage|p1a: Snorlax|410/469
+L	ab_2_24	74	|
+L	ab_2_24	75	|-heal|p1a: Snorlax|439/469|[from] item: Leftovers
+L	ab_2_24	76	|upkeep
+L	ab_2_24	77	|turn|6
+L	ab_2_24	78	|
+L	ab_2_24	79	|t:|<NORMALIZED>
+L	ab_2_24	80	|move|p2a: Charizard|Beat Up|p1a: Snorlax
+L	ab_2_24	81	|-crit|p1a: Snorlax
+L	ab_2_24	82	|-damage|p1a: Snorlax|416/469
+L	ab_2_24	83	|-crit|p1a: Snorlax
+L	ab_2_24	84	|-damage|p1a: Snorlax|380/469
+L	ab_2_24	85	|-damage|p1a: Snorlax|366/469
+L	ab_2_24	86	|-damage|p1a: Snorlax|348/469
+L	ab_2_24	87	|-damage|p1a: Snorlax|339/469
+L	ab_2_24	88	|-hitcount|p1a: Snorlax|5
+L	ab_2_24	89	|move|p1a: Snorlax|Self-Destruct|p2a: Charizard
+L	ab_2_24	90	|-damage|p2a: Charizard|0 fnt
+L	ab_2_24	91	|faint|p1a: Snorlax
+L	ab_2_24	92	|faint|p2a: Charizard
+L	ab_2_24	93	|
+L	ab_2_24	94	|t:|<NORMALIZED>
+L	ab_2_24	95	|switch|p2a: Gengar|Gengar, M|262/262
+L	ab_2_24	96	|switch|p1a: Zapdos|Zapdos|220/375
+L	ab_2_24	97	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_2_24	98	|
+L	ab_2_24	99	|-heal|p1a: Zapdos|243/375|[from] item: Leftovers
+L	ab_2_24	100	|upkeep
+L	ab_2_24	101	|turn|7
+L	ab_2_24	102	|
+L	ab_2_24	103	|t:|<NORMALIZED>
+L	ab_2_24	104	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_2_24	105	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_2_24	106	|-unboost|p2a: Gengar|atk|1
+L	ab_2_24	107	|move|p2a: Gengar|Ice Punch|p1a: Salamence
+L	ab_2_24	108	|-supereffective|p1a: Salamence
+L	ab_2_24	109	|-damage|p1a: Salamence|0 fnt
+L	ab_2_24	110	|faint|p1a: Salamence
+L	ab_2_24	111	|
+L	ab_2_24	112	|t:|<NORMALIZED>
+L	ab_2_24	113	|switch|p1a: Zapdos|Zapdos|243/375
+L	ab_2_24	114	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_2_24	115	|
+L	ab_2_24	116	|-heal|p1a: Zapdos|266/375|[from] item: Leftovers
+L	ab_2_24	117	|upkeep
+L	ab_2_24	118	|turn|8
+L	ab_2_24	119	|
+L	ab_2_24	120	|t:|<NORMALIZED>
+L	ab_2_24	121	|move|p2a: Gengar|Fire Punch|p1a: Zapdos
+L	ab_2_24	122	|-damage|p1a: Zapdos|170/375
+L	ab_2_24	123	|move|p1a: Zapdos|Thunder Wave|p2a: Gengar
+L	ab_2_24	124	|-status|p2a: Gengar|par
+L	ab_2_24	125	|
+L	ab_2_24	126	|-heal|p1a: Zapdos|193/375|[from] item: Leftovers
+L	ab_2_24	127	|upkeep
+L	ab_2_24	128	|turn|9
+L	ab_2_24	129	|
+L	ab_2_24	130	|t:|<NORMALIZED>
+L	ab_2_24	131	|move|p1a: Zapdos|Hidden Power|p2a: Gengar
+L	ab_2_24	132	|-damage|p2a: Gengar|174/262 par
+L	ab_2_24	133	|move|p2a: Gengar|Hidden Power|p1a: Zapdos
+L	ab_2_24	134	|-resisted|p1a: Zapdos
+L	ab_2_24	135	|-damage|p1a: Zapdos|151/375
+L	ab_2_24	136	|
+L	ab_2_24	137	|-heal|p1a: Zapdos|174/375|[from] item: Leftovers
+L	ab_2_24	138	|-heal|p2a: Gengar|190/262 par|[from] item: Leftovers
+L	ab_2_24	139	|upkeep
+L	ab_2_24	140	|turn|10
+L	ab_2_24	141	|
+L	ab_2_24	142	|t:|<NORMALIZED>
+L	ab_2_24	143	|switch|p1a: Swampert|Swampert, M|401/401
+L	ab_2_24	144	|cant|p2a: Gengar|par
+L	ab_2_24	145	|
+L	ab_2_24	146	|-heal|p2a: Gengar|206/262 par|[from] item: Leftovers
+L	ab_2_24	147	|upkeep
+L	ab_2_24	148	|turn|11
+L	ab_2_24	149	|
+L	ab_2_24	150	|t:|<NORMALIZED>
+L	ab_2_24	151	|move|p1a: Swampert|Hydro Pump|p2a: Gengar|[miss]
+L	ab_2_24	152	|-miss|p1a: Swampert|p2a: Gengar
+L	ab_2_24	153	|move|p2a: Gengar|Explosion|p1a: Swampert
+L	ab_2_24	154	|-damage|p1a: Swampert|223/401
+L	ab_2_24	155	|faint|p2a: Gengar
+L	ab_2_24	156	|
+L	ab_2_24	157	|t:|<NORMALIZED>
+L	ab_2_24	158	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_2_24	159	|
+L	ab_2_24	160	|-heal|p1a: Swampert|248/401|[from] item: Leftovers
+L	ab_2_24	161	|upkeep
+L	ab_2_24	162	|turn|12
+L	ab_2_24	163	|
+L	ab_2_24	164	|t:|<NORMALIZED>
+L	ab_2_24	165	|switch|p2a: Zapdos|Zapdos|329/375 tox
+L	ab_2_24	166	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_2_24	167	|move|p1a: Swampert|Ice Beam|p2a: Zapdos
+L	ab_2_24	168	|-supereffective|p2a: Zapdos
+L	ab_2_24	169	|-damage|p2a: Zapdos|136/375 tox
+L	ab_2_24	170	|
+L	ab_2_24	171	|-heal|p2a: Zapdos|159/375 tox|[from] item: Leftovers
+L	ab_2_24	172	|-damage|p2a: Zapdos|136/375 tox|[from] psn
+L	ab_2_24	173	|-heal|p1a: Swampert|273/401|[from] item: Leftovers
+L	ab_2_24	174	|upkeep
+L	ab_2_24	175	|turn|13
+L	ab_2_24	176	|
+L	ab_2_24	177	|t:|<NORMALIZED>
+L	ab_2_24	178	|move|p2a: Zapdos|Toxic|p1a: Swampert
+L	ab_2_24	179	|-status|p1a: Swampert|tox
+L	ab_2_24	180	|move|p1a: Swampert|Earthquake|p2a: Zapdos
+L	ab_2_24	181	|-immune|p2a: Zapdos
+L	ab_2_24	182	|
+L	ab_2_24	183	|-heal|p2a: Zapdos|159/375 tox|[from] item: Leftovers
+L	ab_2_24	184	|-damage|p2a: Zapdos|113/375 tox|[from] psn
+L	ab_2_24	185	|-heal|p1a: Swampert|298/401 tox|[from] item: Leftovers
+L	ab_2_24	186	|-damage|p1a: Swampert|273/401 tox|[from] psn
+L	ab_2_24	187	|upkeep
+L	ab_2_24	188	|turn|14
+L	ab_2_24	189	|
+L	ab_2_24	190	|t:|<NORMALIZED>
+L	ab_2_24	191	|move|p2a: Zapdos|Hidden Power|p1a: Swampert
+L	ab_2_24	192	|-damage|p1a: Swampert|184/401 tox
+L	ab_2_24	193	|move|p1a: Swampert|Ice Beam|p2a: Zapdos
+L	ab_2_24	194	|-supereffective|p2a: Zapdos
+L	ab_2_24	195	|-damage|p2a: Zapdos|0 fnt
+L	ab_2_24	196	|faint|p2a: Zapdos
+L	ab_2_24	197	|
+L	ab_2_24	198	|t:|<NORMALIZED>
+L	ab_2_24	199	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_2_24	200	|
+L	ab_2_24	201	|-heal|p1a: Swampert|209/401 tox|[from] item: Leftovers
+L	ab_2_24	202	|-damage|p1a: Swampert|159/401 tox|[from] psn
+L	ab_2_24	203	|upkeep
+L	ab_2_24	204	|turn|15
+L	ab_2_24	205	|
+L	ab_2_24	206	|t:|<NORMALIZED>
+L	ab_2_24	207	|move|p2a: Swampert|Curse|p2a: Swampert
+L	ab_2_24	208	|-unboost|p2a: Swampert|spe|1
+L	ab_2_24	209	|-boost|p2a: Swampert|atk|1
+L	ab_2_24	210	|-boost|p2a: Swampert|def|1
+L	ab_2_24	211	|move|p1a: Swampert|Curse|p1a: Swampert
+L	ab_2_24	212	|-unboost|p1a: Swampert|spe|1
+L	ab_2_24	213	|-boost|p1a: Swampert|atk|1
+L	ab_2_24	214	|-boost|p1a: Swampert|def|1
+L	ab_2_24	215	|
+L	ab_2_24	216	|-heal|p1a: Swampert|184/401 tox|[from] item: Leftovers
+L	ab_2_24	217	|-damage|p1a: Swampert|109/401 tox|[from] psn
+L	ab_2_24	218	|upkeep
+L	ab_2_24	219	|turn|16
+L	ab_2_24	220	|
+L	ab_2_24	221	|t:|<NORMALIZED>
+L	ab_2_24	222	|switch|p2a: Metagross|Metagross|343/343
+L	ab_2_24	223	|move|p1a: Swampert|Curse|p1a: Swampert
+L	ab_2_24	224	|-unboost|p1a: Swampert|spe|1
+L	ab_2_24	225	|-boost|p1a: Swampert|atk|1
+L	ab_2_24	226	|-boost|p1a: Swampert|def|1
+L	ab_2_24	227	|
+L	ab_2_24	228	|-heal|p1a: Swampert|134/401 tox|[from] item: Leftovers
+L	ab_2_24	229	|-damage|p1a: Swampert|34/401 tox|[from] psn
+L	ab_2_24	230	|upkeep
+L	ab_2_24	231	|turn|17
+L	ab_2_24	232	|
+L	ab_2_24	233	|t:|<NORMALIZED>
+L	ab_2_24	234	|move|p2a: Metagross|Explosion|p1a: Swampert
+L	ab_2_24	235	|-damage|p1a: Swampert|0 fnt
+L	ab_2_24	236	|faint|p2a: Metagross
+L	ab_2_24	237	|faint|p1a: Swampert
+L	ab_2_24	238	|
+L	ab_2_24	239	|t:|<NORMALIZED>
+L	ab_2_24	240	|switch|p2a: Tyranitar|Tyranitar, M|387/387
+L	ab_2_24	241	|switch|p1a: Metagross|Metagross|343/343
+L	ab_2_24	242	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_2_24	243	|
+L	ab_2_24	244	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	245	|upkeep
+L	ab_2_24	246	|turn|18
+L	ab_2_24	247	|
+L	ab_2_24	248	|t:|<NORMALIZED>
+L	ab_2_24	249	|move|p2a: Tyranitar|Earthquake|p1a: Metagross
+L	ab_2_24	250	|-supereffective|p1a: Metagross
+L	ab_2_24	251	|-damage|p1a: Metagross|148/343
+L	ab_2_24	252	|move|p1a: Metagross|Thunder Punch|p2a: Tyranitar
+L	ab_2_24	253	|-damage|p2a: Tyranitar|314/387
+L	ab_2_24	254	|-status|p2a: Tyranitar|par
+L	ab_2_24	255	|
+L	ab_2_24	256	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	257	|-heal|p1a: Metagross|169/343|[from] item: Leftovers
+L	ab_2_24	258	|-heal|p2a: Tyranitar|338/387 par|[from] item: Leftovers
+L	ab_2_24	259	|upkeep
+L	ab_2_24	260	|turn|19
+L	ab_2_24	261	|
+L	ab_2_24	262	|t:|<NORMALIZED>
+L	ab_2_24	263	|move|p1a: Metagross|Hidden Power|p2a: Tyranitar
+L	ab_2_24	264	|-supereffective|p2a: Tyranitar
+L	ab_2_24	265	|-damage|p2a: Tyranitar|199/387 par
+L	ab_2_24	266	|move|p2a: Tyranitar|Earthquake|p1a: Metagross
+L	ab_2_24	267	|-supereffective|p1a: Metagross
+L	ab_2_24	268	|-damage|p1a: Metagross|0 fnt
+L	ab_2_24	269	|faint|p1a: Metagross
+L	ab_2_24	270	|
+L	ab_2_24	271	|t:|<NORMALIZED>
+L	ab_2_24	272	|switch|p1a: Tyranitar|Tyranitar, M|387/387
+L	ab_2_24	273	|
+L	ab_2_24	274	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	275	|-heal|p2a: Tyranitar|223/387 par|[from] item: Leftovers
+L	ab_2_24	276	|upkeep
+L	ab_2_24	277	|turn|20
+L	ab_2_24	278	|
+L	ab_2_24	279	|t:|<NORMALIZED>
+L	ab_2_24	280	|switch|p1a: Zapdos|Zapdos|174/375
+L	ab_2_24	281	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_2_24	282	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_2_24	283	|
+L	ab_2_24	284	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	285	|-damage|p1a: Zapdos|151/375|[from] Sandstorm
+L	ab_2_24	286	|-heal|p1a: Zapdos|174/375|[from] item: Leftovers
+L	ab_2_24	287	|upkeep
+L	ab_2_24	288	|turn|21
+L	ab_2_24	289	|
+L	ab_2_24	290	|t:|<NORMALIZED>
+L	ab_2_24	291	|move|p1a: Zapdos|Thunderbolt|p2a: Swampert
+L	ab_2_24	292	|-immune|p2a: Swampert
+L	ab_2_24	293	|move|p2a: Swampert|Curse|p2a: Swampert
+L	ab_2_24	294	|-unboost|p2a: Swampert|spe|1
+L	ab_2_24	295	|-boost|p2a: Swampert|atk|1
+L	ab_2_24	296	|-boost|p2a: Swampert|def|1
+L	ab_2_24	297	|
+L	ab_2_24	298	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	299	|-damage|p1a: Zapdos|151/375|[from] Sandstorm
+L	ab_2_24	300	|-heal|p1a: Zapdos|174/375|[from] item: Leftovers
+L	ab_2_24	301	|upkeep
+L	ab_2_24	302	|turn|22
+L	ab_2_24	303	|
+L	ab_2_24	304	|t:|<NORMALIZED>
+L	ab_2_24	305	|switch|p2a: Tyranitar|Tyranitar, M|223/387 par
+L	ab_2_24	306	|move|p1a: Zapdos|Hidden Power|p2a: Tyranitar
+L	ab_2_24	307	|-damage|p2a: Tyranitar|161/387 par
+L	ab_2_24	308	|
+L	ab_2_24	309	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	310	|-damage|p1a: Zapdos|151/375|[from] Sandstorm
+L	ab_2_24	311	|-heal|p1a: Zapdos|174/375|[from] item: Leftovers
+L	ab_2_24	312	|-heal|p2a: Tyranitar|185/387 par|[from] item: Leftovers
+L	ab_2_24	313	|upkeep
+L	ab_2_24	314	|turn|23
+L	ab_2_24	315	|
+L	ab_2_24	316	|t:|<NORMALIZED>
+L	ab_2_24	317	|move|p1a: Zapdos|Toxic||[still]
+L	ab_2_24	318	|-fail|p1a: Zapdos
+L	ab_2_24	319	|move|p2a: Tyranitar|Earthquake|p1a: Zapdos
+L	ab_2_24	320	|-immune|p1a: Zapdos
+L	ab_2_24	321	|
+L	ab_2_24	322	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	323	|-damage|p1a: Zapdos|151/375|[from] Sandstorm
+L	ab_2_24	324	|-heal|p1a: Zapdos|174/375|[from] item: Leftovers
+L	ab_2_24	325	|-heal|p2a: Tyranitar|209/387 par|[from] item: Leftovers
+L	ab_2_24	326	|upkeep
+L	ab_2_24	327	|turn|24
+L	ab_2_24	328	|
+L	ab_2_24	329	|t:|<NORMALIZED>
+L	ab_2_24	330	|move|p1a: Zapdos|Hidden Power|p2a: Tyranitar
+L	ab_2_24	331	|-damage|p2a: Tyranitar|137/387 par
+L	ab_2_24	332	|move|p2a: Tyranitar|Double-Edge|p1a: Zapdos
+L	ab_2_24	333	|-damage|p1a: Zapdos|0 fnt
+L	ab_2_24	334	|-damage|p2a: Tyranitar|79/387 par|[from] Recoil|[of] p1a: Zapdos
+L	ab_2_24	335	|faint|p1a: Zapdos
+L	ab_2_24	336	|
+L	ab_2_24	337	|t:|<NORMALIZED>
+L	ab_2_24	338	|switch|p1a: Tyranitar|Tyranitar, M|387/387
+L	ab_2_24	339	|
+L	ab_2_24	340	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	341	|-heal|p2a: Tyranitar|103/387 par|[from] item: Leftovers
+L	ab_2_24	342	|upkeep
+L	ab_2_24	343	|turn|25
+L	ab_2_24	344	|
+L	ab_2_24	345	|t:|<NORMALIZED>
+L	ab_2_24	346	|move|p1a: Tyranitar|Double-Edge|p2a: Tyranitar
+L	ab_2_24	347	|-resisted|p2a: Tyranitar
+L	ab_2_24	348	|-damage|p2a: Tyranitar|42/387 par
+L	ab_2_24	349	|-damage|p1a: Tyranitar|367/387|[from] Recoil|[of] p2a: Tyranitar
+L	ab_2_24	350	|cant|p2a: Tyranitar|par
+L	ab_2_24	351	|
+L	ab_2_24	352	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	353	|-heal|p1a: Tyranitar|387/387|[from] item: Leftovers
+L	ab_2_24	354	|-heal|p2a: Tyranitar|66/387 par|[from] item: Leftovers
+L	ab_2_24	355	|upkeep
+L	ab_2_24	356	|turn|26
+L	ab_2_24	357	|
+L	ab_2_24	358	|t:|<NORMALIZED>
+L	ab_2_24	359	|move|p1a: Tyranitar|Rock Slide|p2a: Tyranitar
+L	ab_2_24	360	|-damage|p2a: Tyranitar|0 fnt
+L	ab_2_24	361	|faint|p2a: Tyranitar
+L	ab_2_24	362	|
+L	ab_2_24	363	|t:|<NORMALIZED>
+L	ab_2_24	364	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_2_24	365	|
+L	ab_2_24	366	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	367	|upkeep
+L	ab_2_24	368	|turn|27
+L	ab_2_24	369	|
+L	ab_2_24	370	|t:|<NORMALIZED>
+L	ab_2_24	371	|move|p1a: Tyranitar|Earthquake|p2a: Swampert
+L	ab_2_24	372	|-damage|p2a: Swampert|266/401
+L	ab_2_24	373	|move|p2a: Swampert|Hydro Pump|p1a: Tyranitar
+L	ab_2_24	374	|-supereffective|p1a: Tyranitar
+L	ab_2_24	375	|-damage|p1a: Tyranitar|7/387
+L	ab_2_24	376	|
+L	ab_2_24	377	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	378	|-heal|p1a: Tyranitar|31/387|[from] item: Leftovers
+L	ab_2_24	379	|-heal|p2a: Swampert|291/401|[from] item: Leftovers
+L	ab_2_24	380	|upkeep
+L	ab_2_24	381	|turn|28
+L	ab_2_24	382	|
+L	ab_2_24	383	|t:|<NORMALIZED>
+L	ab_2_24	384	|move|p1a: Tyranitar|Rock Slide|p2a: Swampert
+L	ab_2_24	385	|-resisted|p2a: Swampert
+L	ab_2_24	386	|-damage|p2a: Swampert|218/401
+L	ab_2_24	387	|cant|p2a: Swampert|flinch
+L	ab_2_24	388	|
+L	ab_2_24	389	|-weather|Sandstorm|[upkeep]
+L	ab_2_24	390	|-heal|p1a: Tyranitar|55/387|[from] item: Leftovers
+L	ab_2_24	391	|-heal|p2a: Swampert|243/401|[from] item: Leftovers
+L	ab_2_24	392	|upkeep
+L	ab_2_24	393	|turn|29
+L	ab_2_24	394	|
+L	ab_2_24	395	|t:|<NORMALIZED>
+L	ab_2_24	396	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_2_24	397	|-boost|p1a: Tyranitar|atk|1
+L	ab_2_24	398	|-boost|p1a: Tyranitar|spe|1
+L	ab_2_24	399	|move|p2a: Swampert|Ice Beam|p1a: Tyranitar
+L	ab_2_24	400	|-damage|p1a: Tyranitar|0 fnt
+L	ab_2_24	401	|faint|p1a: Tyranitar
+L	ab_2_24	402	|
+L	ab_2_24	403	|win|P2

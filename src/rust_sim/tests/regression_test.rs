@@ -2058,6 +2058,100 @@ fn pressure_does_not_add_pp_for_an_allyteam_move() {
     );
 }
 
+/// PA2 (`gen3_pressure_foeside_v1`, the per-side/request byte-fuzz round-4 find): a **`foeSide`**
+/// move (Spikes — the only gen-3 `foeSide` move) under a **Pressure** foe deducts **TWO** PP (the
+/// Pressure extra fires because `foeSide` DOES put the Pressure foe in the move's `pressureTargets`).
+/// SIM-PROBE-CONFIRMED (`/tmp/probe_spikes_pressure.js`): Skarmory Spikes (slot 0, target foeSide,
+/// 32 PP) into a Pressure Suicune → PP 32→**30** (−2); vs a non-Pressure foe → 32→**31** (−1). It is
+/// DRAW-FREE (DeductPP is a deterministic modifier) so the post-turn seed matches the real sim.
+/// WRONG (the pre-fix predicate excluded `foeSide` alongside `allyTeam`): 32→31 — invisible to the
+/// OMNISCIENT byte fuzzer (no PP in the `|...|` stream), but the request-JSON `pp` field diverges.
+/// This does NOT touch the e2e_182 `allyTeam` case (PA1) — `allyTeam` stays −1. Ground truth from
+/// `/tmp/probe_spikes_pressure_seed.js`.
+#[test]
+fn pressure_adds_pp_for_a_foeside_spikes_move() {
+    let d = dex();
+    let skarmory = "Skarmory||Leftovers|KeenEye|Spikes,DrillPeck|Serious||M||||";
+    let suicune = "Suicune||Leftovers|Pressure|Surf,Splash|Serious||N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(skarmory, suicune, "30982,33910,19571,50263"), &d)
+            .expect("start");
+    // dec0: p1 Spikes (foeSide, slot 0) into a Pressure Suicune; p2 Splash (slot 1, draw-free)
+    // so the ONLY turn draws are the shared action-order/Quick-Claw ones — matching the probe.
+    let out = battle
+        .state_mut()
+        .expect("state")
+        .run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(1))], &d);
+    // Spikes (foeSide, slot 0) drops 32→30 (−2, the Pressure extra); DrillPeck untouched.
+    assert_eq!(
+        out.decisions[0].active[0].move_pp[0], 30,
+        "Spikes (foeSide) under a Pressure foe deducts 2 PP (32→30) — foeSide IS in the Pressure \
+         foe's pressureTargets; the pre-fix predicate wrongly gave 32→31"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "57890,13032,12358,42006",
+        "the foeSide Pressure −2 is DRAW-FREE — the post-turn seed matches the real sim"
+    );
+}
+
+/// PA3 (`gen3_pressure_allyteam_v1`, the byte-fuzz 5_6 / D1 deep-seed find): a **NON-GHOST**
+/// user's **Curse** is RE-TARGETED to `self` at runtime (`curse.onModifyMove` → `nonGhostTarget`),
+/// so under a **Pressure** foe it deducts **ONE** PP, not two — the STATIC dex `target` is
+/// `"normal"` (which would put the foe in the move's `pressureTargets` → −2), but the RUNTIME
+/// target is `self` (foe NOT in `pressureTargets` → −1). WRONG (the pre-fix `pressure_targets_foe`
+/// reading the static `"normal"`): 2 PP/turn → a Swampert's 16 Curse PP drains ~1 cycle early →
+/// forced Struggle turns the sim still Curses → the deep-seed desync (ou dec159 / cg dec143). The
+/// PP deduction is DRAW-FREE, so the direct revert-catch is the PP STATE (dec1: fixed 14 vs broken
+/// 12; by dec7 the broken port has 0 Curse PP → Struggle → wrong atkBoost + a diverged seed). Ground
+/// truth `harness/probe_pressure_curse_regression_rng.js` (Swampert Curse vs a Pressure Zapdos that
+/// Agilities each turn — draw-free, stays faster than the Curse-slowed Swampert so no ties).
+#[test]
+fn pressure_does_not_add_pp_for_a_nonghost_curse() {
+    let d = dex();
+    let swampert = "Swampert||Leftovers|Torrent|Curse,Surf,Earthquake,IcePunch|Relaxed|252,,252,,4,|N||||";
+    let zapdos = "Zapdos||Leftovers|Pressure|Agility,Thunderbolt,Rest,ThunderWave|Modest|252,,,252,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(swampert, zapdos, "57890,13032,12358,42006"), &d)
+            .expect("start");
+    // 9 decisions: p1 Swampert Curse (slot 0), p2 Zapdos Agility (slot 0, self, draw-free).
+    let script: Vec<ScriptDecision> =
+        (0..9).map(|_| ScriptDecision::both(Choice::Move(0), Choice::Move(0))).collect();
+    let out = battle.state_mut().expect("state").run_full_battle(&script, &d);
+
+    // dec0: the first Curse under Pressure deducts 1 PP (16→15), NOT 2 (→14). +1 Atk applied.
+    assert_eq!(
+        out.decisions[0].active[0].move_pp[0], 15,
+        "a non-Ghost Curse (runtime target=self) under a Pressure foe deducts 1 PP (16→15), NOT 2 — \
+         the pre-fix predicate read the static target=\"normal\" and gave 16→14"
+    );
+    assert_eq!(out.decisions[0].active[0].boosts[0], 1, "Curse raises the user's Atk +1");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "8769,17248,37115,18776",
+        "the non-Ghost Curse selfDrops random(100) is the only per-move draw — the PP deduct is \
+         DRAW-FREE, so the post-turn seed matches the real sim"
+    );
+    // dec1: still −1/turn (16→14, NOT 16→12).
+    assert_eq!(
+        out.decisions[1].active[0].move_pp[0], 14,
+        "the second Curse deducts 1 more PP (→14), NOT 2 (→12)"
+    );
+    // dec7: Curse PP is 8 (16 − 8). With the pre-fix −2, PP would be 0 by dec7 → the port would be
+    // FORCED to Struggle (Atk stuck at +6, no more Curse) and the seed would diverge here.
+    assert_eq!(
+        out.decisions[7].active[0].move_pp[0], 8,
+        "after 8 Curses at −1 PP each, Curse PP is 8 (NOT 0 — the pre-fix −2 exhausts it, forcing a \
+         Struggle turn the sim still Curses)"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[7].seed_after),
+        "61380,11535,34528,49510",
+        "dec7 still Curses (selfDrops draw), matching the sim — the pre-fix Struggle-at-dec7 would \
+         diverge the seed from here on"
+    );
+}
+
 /// PP3 + PP4: a mon with NO usable move is FORCED to Struggle, and gen-3 Struggle recoil is
 /// `max(floor(damageDealt / 4), 1)` (the `recoil:[1,4]` path, NOT struggleRecoil = maxhp/4).
 /// A CHOICE-BAND Snorlax with Extreme Speed (m0, 8 PP) LOCKS to it and spams it 8× into a
@@ -10238,5 +10332,833 @@ fn snatch_mirror_draws_the_residual_duration_tie_shuffle() {
     assert_ne!(
         out.decisions[0].seed_after, ctrl_out.decisions[0].seed_after,
         "the mirror's extra residual tie-shuffle draw MUST make its seed differ from the control"
+    );
+}
+
+/// MC105 — SNATCH steal of a PRESSURE victim deducts an EXTRA Snatch PP
+/// (`gen3_snatch_pressure_pp_v1`, the `bab_4_16` per-side/request byte-fuzz find). The
+/// snatch interception fires `runEvent("DeductPP", source=VICTIM, snatchUser=SNATCHER,
+/// Snatch)`; if the VICTIM (the stolen move's user) has **Pressure**, its `onDeductPP`
+/// returns 1 → the SNATCHER's Snatch loses an EXTRA 1 PP. So a Snatch steal costs the
+/// snatcher 1 (cast) + 1 (Pressure victim) = 2 Snatch PP (16→14); a NON-Pressure victim
+/// costs 1 (16→15). DRAW-FREE (a PP deduct consumes no PRNG) → invisible to the omniscient
+/// stream, surfaced only in the request `pp` field. WRONG (pre-fix): the port modeled the
+/// DeductPP step as a pure no-op → 16→15 under Pressure too (`pp:15` where the sim shows
+/// `pp:14`). STATE pin (the snatcher's Snatch PP) + a non-Pressure control.
+#[test]
+fn snatch_steal_of_a_pressure_victim_deducts_an_extra_snatch_pp() {
+    let d = dex();
+    let umbreon = "Umbreon|||NoAbility|snatch,splash|Serious|252,,,,,|N||||";
+    // The VICTIM has Pressure + Rest (a snatchable self-target move).
+    let suicune_pressure = "Suicune|||Pressure|rest,splash|Serious|252,,,,,|N||||";
+    let mut battle = Battle::start_with_switchins(
+        &opts_cg(umbreon, suicune_pressure, "44317,42357,9927,48760"),
+        &d,
+    )
+    .expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[0].pokemon[0].hp = 100; // so the stolen Rest's heal is observable (steal confirmed)
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert!(
+        matches!(out.decisions[0].active[0].status, Some(Status::Sleep(_))),
+        "the SNATCHER stole the Rest (asleep) — the interception fired"
+    );
+    assert_eq!(
+        out.decisions[0].active[0].move_pp[0], 14,
+        "Snatch PP: 16 -1 (cast) -1 (Pressure victim DeductPP) = 14"
+    );
+
+    // CONTROL: a NON-Pressure victim (NaturalCure) → NO Pressure extra → Snatch PP 16→15.
+    let suicune_plain = "Suicune|||NaturalCure|rest,splash|Serious|252,,,,,|N||||";
+    let mut ctrl = Battle::start_with_switchins(
+        &opts_cg(umbreon, suicune_plain, "44317,42357,9927,48760"),
+        &d,
+    )
+    .expect("start");
+    let cst = ctrl.state_mut().expect("state");
+    cst.sides[0].pokemon[0].hp = 100;
+    let cout = cst.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        cout.decisions[0].active[0].move_pp[0], 15,
+        "non-Pressure victim → Snatch PP 16→15 (cast only)"
+    );
+}
+
+/// MC106 — PURSUIT INTERRUPT into a switching PRESSURE mon deducts an EXTRA Pursuit PP
+/// (`gen3_pursuit_pressure_pp_v1`, the `bab_7_1` per-side/request byte-fuzz find — the
+/// Snatch-Pressure sibling). The interrupt runs `runMove('pursuit', source, {target:
+/// switcher})`, which deducts the pursuer's Pursuit PP with the SWITCHER as the target; a
+/// **Pressure** switcher's `onDeductPP` returns 1 → −2 total. WRONG (pre-fix, the port's
+/// stated "the sim passes NO target so no Pressure extra" comment): the interrupt deducted a
+/// flat 1 (`pp:30` where the sim shows `pp:29`). DRAW-FREE → surfaced only in the request
+/// `pp`. STATE pin (Pursuit PP after intercepting a switching Pressure Moltres) + control.
+#[test]
+fn pursuit_interrupt_into_a_pressure_switcher_deducts_an_extra_pp() {
+    let d = dex();
+    let umbreon = "Umbreon|||NoAbility|pursuit,splash|Serious|252,,,,,|N||||";
+    // p2 LEADS a Pressure Moltres + a bench Snorlax to switch to. Umbreon Pursuits the
+    // LEAVING Moltres (the Pressure target).
+    let p2_pressure =
+        "Moltres|||Pressure|flamethrower,splash|Serious|252,,,,,|N||||]Snorlax|||NoAbility|splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(umbreon, p2_pressure, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    // p2 SWITCHES (Moltres → Snorlax); p1 Pursuits → the interrupt strikes the leaving Moltres.
+    let out = battle.state_mut().expect("state").run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Switch(1))],
+        &d,
+    );
+    assert_eq!(
+        out.decisions[0].active[0].move_pp[0], 30,
+        "Pursuit PP: 32 -1 (strike) -1 (Pressure switcher DeductPP) = 30"
+    );
+
+    // CONTROL: a NON-Pressure switcher (Insomnia) → NO extra → Pursuit PP 32→31.
+    let p2_plain =
+        "Moltres|||Insomnia|flamethrower,splash|Serious|252,,,,,|N||||]Snorlax|||NoAbility|splash|Serious|252,,,,,|N||||";
+    let mut ctrl =
+        Battle::start_with_switchins(&opts_cg(umbreon, p2_plain, "44317,42357,9927,48760"), &d)
+            .expect("start");
+    let cout = ctrl.state_mut().expect("state").run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Switch(1))],
+        &d,
+    );
+    assert_eq!(
+        cout.decisions[0].active[0].move_pp[0], 31,
+        "non-Pressure switcher → Pursuit PP 32→31 (strike only)"
+    );
+}
+
+// ============================================================================
+// R3 / HP1 — HIDDEN POWER's BASE POWER is IV-DERIVED, not the flat 70 the data ships
+//       (`gen3_iv_derived_hidden_power_bp_v1`). gen-3 computes HP's BP from the ATTACKER's IVs
+//       (Dex.getHiddenPower, `⌊hpPowerX·40/63⌋+30`, range 30..=70), so a real gen3ou HP mon
+//       whose IVs give BP != 70 (e.g. a -1 Atk IV → BP 68) must damage at its IV-true BP. WRONG
+//       (pre-fix): the engine read the data's hard-coded 70 for every HP → it over-damaged any
+//       non-BP-70 HP mon (the ~1.5%-of-pool byte-fuzz divergence). STATE pin (a BP-68 HP Ice
+//       deals the sim's 53, not the BP-70 55) + SEED pin (the BP change is DRAW-NEUTRAL — a
+//       precomputed state read — so the seed is UNCHANGED both ways). Ground truth from
+//       probe_hidden_power_bp_regression_rng.js (HP-ICE-BP68).
+// ============================================================================
+
+/// R3: a BP-68 Hidden Power Ice (IVs [hp31,atk28,def30,spa31,spd31,spe31] → hpType Ice,
+/// hpPower 68) from a Starmie into a bulky Blissey deals the SIM's IV-true-BP damage (53),
+/// NOT the flat-BP-70 damage (55). WRONG (pre-fix): the data's hard-coded BP 70 over-damaged.
+/// The BP override is a precomputed STATE read (draw-neutral), so the post-turn seed is
+/// UNCHANGED — the pin's teeth are the STATE (the exact HP), verified against the real sim.
+#[test]
+fn hidden_power_bp_is_iv_derived_not_flat_seventy() {
+    let d = dex();
+    // p1 Starmie HP Ice (BP 68) into a p2 Blissey (neutral to Ice, huge HP → never faints, a
+    // clear HP delta); Blissey Splashes (draw-free). Distinct speeds (Starmie 115 > Blissey 55,
+    // no action-order tie). The IV field `,28,30,,,` = [hp31,atk28,def30,spa31,spd31,spe31].
+    let starmie = "Starmie|||NoAbility|hiddenpowerice|Serious|,,,252,,252|N|,28,30,,,|||";
+    let blissey = "Blissey|||NoAbility|splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(starmie, blissey, "4905,34237,46622,24710"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let blissey_maxhp = st.sides[1].pokemon[0].maxhp;
+    assert_eq!(blissey_maxhp, 714, "Blissey max HP is 714 (sanity)");
+
+    // Turn 1: p1 HP Ice (BP 68) ; p2 Splash.
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions.len(), 1, "one move boundary");
+
+    // STATE (the pin's teeth): the Blissey is at EXACTLY 661/714 — the sim's BP-68 damage (53).
+    // WRONG (pre-fix, BP 70): the sim deals 55 → Blissey 659/714. So a flat-BP-70 engine trips
+    // this by 2 HP (the ~2/68 ≈ 3% over-damage that cascades KO thresholds on real teams).
+    assert_eq!(
+        st.sides[1].pokemon[0].hp, 661,
+        "a BP-68 Hidden Power Ice deals the SIM's IV-true-BP damage (53 → Blissey 661/714), \
+         NOT the flat-BP-70 damage (55 → 659/714)"
+    );
+
+    // GROUND TRUTH (probe_hidden_power_bp_regression_rng.js, HP-ICE-BP68): the post-turn seed ==
+    // the real Showdown seed. The IV-derived BP is a DRAW-NEUTRAL precomputed state read, so the
+    // seed is IDENTICAL whether the engine uses BP 68 or BP 70 (only the damage magnitude moves).
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "41902,55468,4897,30138",
+        "post-turn seed == the real Showdown seed (the IV-derived BP is draw-neutral)"
+    );
+}
+
+/// R3 unit gate: the `hidden_power_bp` weight-order + boundary values, pinned as a
+/// data-independent regression (a companion to the engine pin above). These pin the
+/// SPE-before-SPA/SPD weight crux — a naive [hp,atk,def,spa,spd,spe]→1,2,4,8,16,32
+/// mapping (weighting Spe 32 instead of 8) mis-computes any spread with an asymmetric
+/// Spe/SpD IV. IV order is [hp,atk,def,spa,spd,spe].
+#[test]
+fn hidden_power_bp_weight_order_and_boundaries() {
+    use pokesim::state::hidden_power_bp;
+    // IV 31 in every stat → all six 2nd-LSBs set → hpPowerX 63 → ⌊63·40/63⌋+30 = 70.
+    assert_eq!(hidden_power_bp(&[31, 31, 31, 31, 31, 31]), 70, "IV-31 spread → BP 70");
+    // A -1 Atk bit (atk28, 2nd-LSB 0) drops weight 2 → hpPowerX 61 → ⌊61·40/63⌋+30 = 68.
+    assert_eq!(hidden_power_bp(&[31, 28, 30, 31, 31, 31]), 68, "the HP-Ice BP-68 spread");
+    // A -1 Spe bit (spe idx 5 = 0, weight 8) drops 8 → hpPowerX 55 → ⌊55·40/63⌋+30 = 64. If Spe
+    // were mis-weighted 32 (the naive array-order bug), dropping it would give hpPowerX 31 → BP 49.
+    assert_eq!(hidden_power_bp(&[31, 31, 31, 31, 31, 0]), 64, "SPE weighted 8, not 32 (the crux)");
+    // A -1 SpD bit (spd idx 4 = 0, weight 32) drops 32 → hpPowerX 31 → ⌊31·40/63⌋+30 = 49.
+    assert_eq!(hidden_power_bp(&[31, 31, 31, 31, 0, 31]), 49, "SPD weighted 32");
+    // The floor: all 2nd-LSBs clear (IV 0/1) → hpPowerX 0 → BP 30.
+    assert_eq!(hidden_power_bp(&[0, 0, 0, 0, 0, 0]), 30, "the 30..=70 floor");
+}
+
+// ============================================================================
+// R12 / HP-BARE — a BARE-STORED Hidden Power executes as the correct TYPED damaging move
+//       (`gen3_typed_hidden_power_ids_v1` round-12 pool-crash P0). A packed gen3ou team can
+//       store the move SLOT as the BARE `hiddenpower` (num 237, data type **Normal**, BP **0**),
+//       with the real HP type carried ONLY by the IVs (Showdown's Pokemon constructor resolves it
+//       to the typed variant at construction). The bp-0 data row derives category **Status**, so
+//       WRONG (pre-fix): `run_move`'s BP override fixed BP but left `category`==Status → the move
+//       ROUTED into `run_status_move`'s fail-loud guard → a PANIC ("status move \"hiddenpower\" is
+//       not modeled …" at turn.rs). This is PRODUCTION-REACHABLE: `sim_bridge` (--use-bridge=rust)
+//       shares the SAME team.rs unpack + run_move, so it CRASHED on any real gen3ou Hidden Power
+//       team (the byte-fuzz pool gate found it on battle ab_7_10: a Charizard with a bare
+//       `HiddenPower`/hpType Dark). FIX (turn.rs, after the BP override): for the bare `hiddenpower`
+//       id, resolve the RUNTIME type from the attacker's IVs (`hidden_power_type`) and RE-DERIVE
+//       the category from the overridden BP + that type — so the bare HP executes as the correct
+//       TYPED damaging move (right type, right BP, right phys/spec split), mirroring the variable-BP
+//       block. STATE pin (the move DEALS Dark-type SUPER-EFFECTIVE damage — Dark 2× vs Psychic —
+//       NOT Normal 1×, and NOT a panic) + SEED pin (the resolution is a deterministic IV read →
+//       DRAW-NEUTRAL, so the post-turn seed == the sim's). Ground truth from the cloned R3 probe
+//       (/tmp/probe_bare_hp3.js: Starmie bare HP Dark into Slowbro, post-construction seed
+//       4905,34237,46622,24710) + the byte-fuzz pool gate (ab_7_10 flips panic → ok).
+// ============================================================================
+
+/// R12: a Starmie whose move SLOT stores the BARE `hiddenpower` (all-31 IVs → hpType Dark, BP 70)
+/// USES it into a bulky Slowbro (Water/Psychic). The move must execute as the correct TYPED damaging
+/// move — Dark is SUPER-EFFECTIVE (2×) vs Psychic — dealing the sim's exact damage (Slowbro 223/394),
+/// NOT panicking (pre-fix) and NOT dealing Normal-type (1×, the data-237 type) damage. The type +
+/// category resolution is a deterministic IV read → DRAW-NEUTRAL, so the post-turn seed == the sim's.
+#[test]
+fn bare_hidden_power_executes_as_the_typed_damaging_move() {
+    let d = dex();
+    // p1 Starmie (base SpA 100), move slot = BARE `hiddenpower`, empty IV field → all-31 → hpType
+    // Dark, BP 70. p2 Slowbro (Water/Psychic, bulky) Splashes (draw-free). Distinct speeds
+    // (Starmie 115 > Slowbro 30, no action-order tie). Seed = the sim's POST-CONSTRUCTION seed
+    // (the port does not model the turn-0 construction window; probe read 4905,… after construction).
+    let starmie = "Starmie|||NoAbility|hiddenpower|Serious|,,,252,,252|N||||";
+    let slowbro = "Slowbro|||NoAbility|splash|Serious|252,,252,,,|M||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(starmie, slowbro, "4905,34237,46622,24710"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let slowbro_maxhp = st.sides[1].pokemon[0].maxhp;
+    assert_eq!(slowbro_maxhp, 394, "Slowbro max HP is 394 (sanity)");
+
+    // Turn 1: p1 bare Hidden Power (Dark) ; p2 Splash. Pre-fix this PANICS (routes to
+    // run_status_move's fail-loud guard) — so reaching the asserts at all is the crash-fix teeth.
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions.len(), 1, "one move boundary");
+
+    // STATE (the pin's teeth): the bare HP resolved to Dark (super-effective 2× vs Psychic) — the
+    // sim deals 171 → Slowbro 223/394. A NORMAL-type (data-237) resolution would be neutral (1×,
+    // ~half) → a much higher HP; the pre-fix panic never reaches here at all.
+    assert_eq!(
+        st.sides[1].pokemon[0].hp, 223,
+        "a BARE Hidden Power (hpType Dark) deals Dark super-effective damage (171 → Slowbro 223/394), \
+         NOT Normal-type neutral damage and NOT a fail-loud panic"
+    );
+
+    // GROUND TRUTH (probe: Starmie bare HP Dark into Slowbro, post-construction seed 4905,…): the
+    // post-turn seed == the real Showdown seed. The type/category resolution is a deterministic IV
+    // read (DRAW-NEUTRAL), so the seed is IDENTICAL — the fix adds no draw, only corrects routing.
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "41902,55468,4897,30138",
+        "post-turn seed == the real Showdown seed (the bare-HP type/category resolution is draw-neutral)"
+    );
+}
+
+// ============================================================================
+// R2 — the LEFTOVERS residual-tie -heal EMIT ORDER on a same-speed mirror with a pending
+//       Wish (`gen3_leftovers_slotcond_gather_order_v1`). The residual handler-sort
+//       (`speed_sort`) is a NON-STABLE selection sort whose swaps DISTURB the relative order
+//       of the tied handlers, so the tie-group Fisher-Yates shuffle reads whatever pre-sort
+//       order the swaps LEFT the tied pair in. Showdown gathers a side's slot conditions
+//       (Wish order 7 / Future Move order 11) via `findSideEventHandlers(…, active)` — AFTER
+//       that active's pokemon handlers — so Wish sits AFTER Leftovers in the pre-sort array.
+//       WRONG (pre-fix): the port gathered Wish FIRST (a pre-loop at the array front), so the
+//       selection-sort's Wish/weather swaps REVERSED the tied Leftovers pair vs the sim → the
+//       two `-heal` lines emitted in the OPPOSITE order at the SAME shuffle value (the R2
+//       byte-fuzz divergence). FIX: gather Wish/FutureMove per-active, after the item. It is
+//       OBSERVATION-ONLY (draw-neutral — same handlers/keys/tie-count) → the seed is
+//       UNCHANGED; only the emit permutation moves to match Showdown. Ground truth from
+//       harness/probe_r2_wish_leftovers_regression_rng.js (seed [2,2,2,2]).
+// ============================================================================
+
+/// R2: a Jolteon mirror (both Leftovers, equal speed) under sandstorm with a PENDING p2 Wish
+/// emits its Leftovers `-heal` lines in Showdown's exact order — `[p2, p1]` on turn 1 (no Wish
+/// yet) then `[p1, p2]` on turn 2 (p2 Wish pending, order-7 handler in the pre-sort array).
+/// WRONG (pre-fix): the port gathered Wish at the array front, so turn 2 emitted `[p2, p1]` —
+/// the reversed pair at the SAME shuffle value. The post-turn seed is UNCHANGED both ways (the
+/// fix is emission-only), so the pin's teeth are the `-heal` MARKER SEQUENCE.
+#[test]
+fn leftovers_heal_order_follows_the_slot_condition_gather() {
+    let d = dex();
+    let p1 = "Tyranitar||Leftovers|SandStream|splash|Serious||N||||]Jolteon||Leftovers|VoltAbsorb|splash|Serious|4,,,,,|N||||";
+    let p2 = "Tyranitar||Leftovers|SandStream|splash|Serious||N||||]Jolteon||Leftovers|VoltAbsorb|wish,splash|Serious|4,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "10126,34169,19989,9144"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    // Turn 1: both switch Tyranitar → Jolteon (slot 2). Turn 2: p1 Splash, p2 Wish (leaves a
+    // pending p2 Wish → the order-7 slot-condition handler at turn 2's residual).
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Switch(1), Choice::Switch(1)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+
+    // The Leftovers `-heal` side-marker sequence == Showdown's EXACTLY (2 pairs: turn 1's
+    // residual then turn 2's Wish-pending residual). Pre-fix, turn 2's pair was reversed.
+    let heals: Vec<&str> = lines
+        .iter()
+        .filter(|l| l.0.contains("-heal") && l.0.contains("Leftovers"))
+        .map(|l| if l.0.contains("p1a") { "p1" } else { "p2" })
+        .collect();
+    assert_eq!(
+        heals,
+        vec!["p2", "p1", "p1", "p2"],
+        "the Leftovers -heal order matches Showdown (turn 2's Wish-pending pair is p1-then-p2, \
+         NOT the pre-fix reversed p2-then-p1)"
+    );
+
+    // GROUND TRUTH (probe_r2_wish_leftovers_regression_rng.js, seed [2,2,2,2]): the post-turn
+    // seed == the real Showdown seed — the -heal ORDER fix is DRAW-NEUTRAL (emission-only), so
+    // the seed is IDENTICAL whether the pair emits p1-first or p2-first.
+    assert_eq!(
+        seed_str(&out.decisions.last().unwrap().seed_after),
+        "28797,58885,11195,27642",
+        "post-turn seed == the real Showdown seed (the emit-order fix is draw-neutral)"
+    );
+}
+
+// ============================================================================
+// T1F — FREEZE PERSISTENCE vs Hidden Power Fire / Weather Ball
+//       (`gen3_omniscient_byte_fuzz_v1`, the deep-state byte-fuzz repro
+//       rmroh04is_ab_4_18: a frozen Tyranitar hit by Metagross Hidden Power Fire).
+//       gen3 `frz.onDamagingHit` (deps/pokemon-showdown/data/mods/gen3/conditions.ts:45-50)
+//       thaws a frozen DEFENDER only when `this.dex.moves.get(move.id).type === 'Fire'` — the
+//       BASE-dex move type — with the explicit "don't count Hidden Power or Weather Ball as
+//       Fire-type" comment (`dex.moves.get('hiddenpower').type === 'Normal'`, `'weatherball'
+//       === 'Normal'`). The port computed `is_fire` from the RESOLVED runtime type (Fire for
+//       the typed-HP move nums 355-370), so a Hidden Power Fire hit WRONGLY thawed the frozen
+//       mon. It surfaced as a kind=status "sim=Freeze / port=None" divergence (ab_replay
+//       compares the ACTIVE mon's status per decision, so the lost freeze is caught only when
+//       the frozen mon becomes active again). The fix excludes `hiddenpower*`/`weatherball`
+//       from `is_fire` (turn.rs, mirroring the base-type semantics). DRAW-NEUTRAL (the thaw is
+//       a pure status clear — no PRNG), so the STATE (still frozen) is the diagnostic; the seed
+//       is a stability anchor. Revert the `is_fire` narrowing → HP Fire thaws → the STATE fails.
+#[test]
+fn hidden_power_fire_does_not_thaw_a_frozen_defender() {
+    let d = dex();
+    // p1 Metagross Hidden-Power-Fires a FROZEN Regirock (pure Rock → Fire resisted 0.5x + big
+    // SpD → survives; genderless → no construction gender draw). Regirock is slower, so it also
+    // rolls its OWN on_before_move freeze-thaw (1/5) — this seed FAILS that roll, so a
+    // still-frozen result isolates the onDamagingHit (non-)thaw the fix controls.
+    let atk = "Metagross|||ClearBody|hiddenpowerfire,flamethrower,psychic,earthquake|Hardy|,,,252,,|N||||";
+    let def = "Regirock|||ClearBody|rockslide,earthquake,rest,curse|Sassy|252,,,,252,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(atk, def, "8,15,20,27"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[1].pokemon[0].status = Some(Status::Freeze);
+
+    // p1 Hidden Power Fire (slot 0); p2 "Rock Slide" (slot 0) — but frozen + the thaw roll fails
+    // → p2 cants (draw-free past its freeze roll).
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+
+    assert_eq!(
+        st.sides[1].pokemon[0].species_id, "regirock",
+        "Regirock is p2's active"
+    );
+    // THE FIX: Regirock is STILL FROZEN after the HP Fire hit (its OWN thaw roll failed at this
+    // seed, and HP Fire does NOT run the onDamagingHit thaw). Under the bug it would be None.
+    assert_eq!(
+        out.decisions[0].active[1].status, Some(Status::Freeze),
+        "Hidden Power Fire does NOT thaw the frozen defender (REVERT the is_fire narrowing → \
+         onDamagingHit thaws it → status None)"
+    );
+    // Regirock took the (resisted) HP Fire damage — the hit LANDED; only the thaw was suppressed.
+    assert!(
+        out.decisions[0].active[1].hp < out.decisions[0].active[1].maxhp,
+        "Regirock took the Hidden Power Fire damage (the hit landed; only the thaw was suppressed)"
+    );
+    // Draw-neutral stability anchor (the thaw is a pure status clear — no PRNG; the STATE above
+    // is the true signal). BAKE the port's post-turn seed.
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "42908,65324,10639,56158",
+        "post-turn seed (draw-neutral: the freeze-persistence fix consumes no PRNG)"
+    );
+}
+
+/// T1F control (a): a REAL Fire move (Flamethrower — base type Fire) DOES thaw the frozen
+/// defender via `frz.onDamagingHit` — proving the fix is scoped to Hidden Power / Weather Ball
+/// only (not a blanket "no thaw"). Revert the narrowing and BOTH this and the HP-Fire test
+/// thaw; keep the narrowing and only this one thaws.
+#[test]
+fn flamethrower_does_thaw_a_frozen_defender() {
+    let d = dex();
+    let atk = "Metagross|||ClearBody|hiddenpowerfire,flamethrower,psychic,earthquake|Hardy|,,,252,,|N||||";
+    let def = "Regirock|||ClearBody|rockslide,earthquake,rest,curse|Sassy|252,,,,252,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(atk, def, "8,15,20,27"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    st.sides[1].pokemon[0].status = Some(Status::Freeze);
+
+    // p1 Flamethrower (slot 1); p2 cants (frozen, thaw roll fails at this seed).
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(1), Choice::Move(0))], &d);
+
+    assert_eq!(
+        out.decisions[0].active[1].status, None,
+        "Flamethrower (base-type Fire) THAWS the frozen defender via frz.onDamagingHit"
+    );
+}
+
+/// T1F control (b): Flash Fire STILL ABSORBS a Hidden Power Fire hit (its `onTryHit` reads the
+/// RESOLVED move type, not `is_fire`), so the `is_fire` narrowing did NOT break the absorb.
+/// An un-frozen Ninetales absorbs the HP Fire (0 damage) and ARMS `flash_fire`.
+#[test]
+fn flash_fire_still_absorbs_hidden_power_fire() {
+    let d = dex();
+    let atk = "Metagross|||ClearBody|hiddenpowerfire,flamethrower,psychic,earthquake|Hardy|,,,252,,|N||||";
+    let def = "Ninetales|||FlashFire|rest,protect,flamethrower,psychic|Modest|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(atk, def, "1,2,3,4"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+
+    // p1 Hidden Power Fire (slot 0) into the Flash Fire Ninetales; p2 Rest (slot 0, idle at full HP).
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+
+    assert_eq!(
+        out.decisions[0].active[1].hp, out.decisions[0].active[1].maxhp,
+        "Flash Fire ABSORBS the Hidden Power Fire hit (0 damage — the absorb reads the resolved \
+         Fire type, unaffected by the is_fire thaw narrowing)"
+    );
+    assert!(
+        battle.state().unwrap().sides[1].pokemon[0].flash_fire,
+        "Ninetales' Flash Fire is ARMED after absorbing the Hidden Power Fire"
+    );
+}
+
+
+
+// ============================================================================
+// D4b — MUSTRECHARGE's `duration: 2` residual handler RUNS faintMessages
+//       (`gen3_perside_residual_faint_upkeep_order_v1`, the round-5 D4 regression).
+//       The D4 fix added a blanket `else { continue; }` to the non-stall
+//       VolatileDuration arm — correct for the duration:1 group
+//       (protect/flinch/focuspunch/pursuit/reactive/beatup/endure/snatch), each of
+//       which decrements 1 → 0 this turn so the sim's `fieldEvent('Residual')` takes
+//       the `duration-- == 0` end/`continue` branch (SKIP faintMessages). But
+//       `mustrecharge` is `duration: 2`: its ONLY residual tick (the Hyper Beam CAST
+//       turn) decrements 2 → 1 (NON-zero), so the sim FALLS THROUGH to
+//       `this.faintMessages()` (battle.ts:508-567; `handler.end` = removeVolatile is
+//       truthy for every volatile, so the branch fires but does NOT end at 2→1) and
+//       `|upkeep` is added AFTER `fieldEvent` (battle.ts:2837-2838). So a faint an
+//       earlier order-≤12 handler (Perish, order 12) enqueued-but-deferred is DRAINED
+//       at the NO_ORDER mustrecharge handler → `|faint|` BEFORE `|upkeep|`. WRONG
+//       (post-D4, pre-D4b): the blanket `continue` treated mustrecharge as duration:1
+//       → SKIPPED faintMessages → the Perish `|faint|` deferred PAST `|upkeep|` to the
+//       runAction-tail `process_faints`. FIX: mustrecharge gets its own
+//       `MustRechargeDuration` residual variant that falls through (no `continue`).
+//       Emission-order fix (draw-neutral — process_faints consumes no PRNG here), so
+//       the teeth are the `|faint|`-vs-`|upkeep|` SEQUENCE.
+// ============================================================================
+
+/// D4b: a Celebi perishing-out on the SAME turn the foe's Chansey has `mustrecharge`
+/// (from a Hyper Beam that hit) emits the perish `|faint|` BEFORE `|upkeep|` — the sim
+/// drains the deferred faint at Chansey's NO_ORDER mustrecharge handler (duration 2→1,
+/// runs faintMessages), inside `fieldEvent('Residual')`, ahead of the trailing
+/// `|upkeep|`. WRONG (pre-fix blanket `continue`): the faint deferred past `|upkeep|`.
+/// The p2 Snorlax perishes with Celebi on the cast turn, then SWITCHES OUT (its perish
+/// clears) so ONLY Celebi reaches perish0 while the un-perished Chansey casts Hyper Beam.
+#[test]
+fn mustrecharge_duration_two_runs_faintmessages_so_perish_faint_precedes_upkeep() {
+    let d = dex();
+    let p1 = "Celebi|||NoAbility|perishsong,splash|Serious|252,,,,,|N||||]Snorlax|||NoAbility|splash|Serious|252,,,,,|N||||";
+    let p2 = "Snorlax|||NoAbility|splash|Serious|252,,,,,|N||||]Chansey|||NoAbility|hyperbeam,splash|Serious|252,,,,,|N||||";
+    // seed 44317,42357,9927,48760 → the Hyper Beam HITS (so Chansey gets mustrecharge).
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Celebi Perish Song (both →perish3)
+            ScriptDecision::both(Choice::Move(1), Choice::Switch(1)), // Celebi Splash; p2 Snorlax→Chansey (clears p2 perish)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // Celebi Splash; Chansey Splash
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Celebi Splash; Chansey Hyper Beam → mustrecharge; Celebi perish0
+            ScriptDecision::one(0, Choice::Switch(1)),              // Celebi's forced replacement
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+
+    // Sanity: the Hyper Beam landed (Chansey is under mustrecharge) and Celebi hit perish0.
+    let mr = raw.iter().position(|l| l.contains("-mustrecharge") && l.contains("Chansey"));
+    let mr = mr.expect("Chansey's Hyper Beam must land → |-mustrecharge| (else the scenario is vacuous)");
+    let faint = raw[mr..]
+        .iter()
+        .position(|l| l.contains("faint") && l.contains("Celebi"))
+        .map(|i| i + mr)
+        .expect("Celebi must faint from perish0 after the mustrecharge line");
+    let upkeep = raw[mr..]
+        .iter()
+        .position(|l| l.contains("upkeep"))
+        .map(|i| i + mr)
+        .expect("the |upkeep| marker of the perish turn");
+
+    // THE PIN: the perish `|faint|` is DRAINED at the mustrecharge handler → BEFORE
+    // `|upkeep|`. Pre-fix (blanket continue): `|upkeep|` came first (faint deferred to
+    // the runAction tail).
+    assert!(
+        faint < upkeep,
+        "the mustrecharge (duration:2) handler must RUN faintMessages so the deferred perish \
+         |faint| (idx {faint}) precedes |upkeep| (idx {upkeep}); pre-fix the blanket `continue` \
+         skipped it → |upkeep| first. Emitted tail:\n{}",
+        raw[mr..=upkeep].join("\n")
+    );
+
+    // Draw-neutral: emission-order only (process_faints consumes no PRNG on this board),
+    // so the final decision's post-turn seed is unchanged by the fix.
+    assert!(out.decisions[3].active[0].fainted, "Celebi fainted at perish0 on the Hyper Beam turn");
+}
+
+// ============================================================================
+// #QC — gen3 QUICK CLAW speed=65535 override (`gen3_quick_claw_speed_v1`, the P1/P2
+//        byte-fuzz fix). `Battle.quickClawRoll` is drawn UNCONDITIONALLY at every
+//        completed `endTurn` (`randomChance(1,5)`, battle.js:1485); next turn gen3
+//        `getActionSpeed` (scripts.js:47-48) returns `speed = 65535` for a Quick-Claw
+//        HOLDER whose roll hit TRUE, so the (raw-)SLOWER holder moves FIRST within its
+//        priority bracket. The port previously drew-and-DISCARDED the endTurn roll and
+//        ordered purely on raw speed, so a QC-proc turn mis-ordered (and, when a swapped
+//        damage roll crossed a KO threshold, produced a wrongful faint / HP off-by-one —
+//        invisible to the seed check because a move-order swap consumes the SAME draws).
+//        Constructed: a FAST Electrode (no item) vs a SLOW Shuckle holding Quick Claw,
+//        both spamming Swift (never-miss, no secondary). GROUND TRUTH from the real
+//        Showdown sim (`harness/probe_quick_claw_rng.js`, seed [15,106,198,260] →
+//        post-construction initSeed 26217,1191,64492,10583):
+//          turn 1: firstMover=p1 (raw speed), qcRoll set TRUE at endTurn,
+//                  seedAfter=1766,21561,8304,26954, p1=245/261 p2=169/181
+//          turn 2: firstMover=p2  (QC 65535 override — the SLOW Shuckle moves FIRST),
+//                  seedAfter=3406,14238,51840,10041, p1=230/261 p2=162/181
+//          turn 3: firstMover=p2  (qcRoll still TRUE from turn 2),
+//                  seedAfter=56758,26706,56190,9940, p1=215/261 p2=156/181
+//        Pre-fix the port keeps p1 first on turns 2-3 (raw speed) → wrong first_mover +
+//        divergent post-turn seeds (the swapped draws) — this test FAILS if the fix is
+//        reverted. Both mons are No-Ability so construction/switch-ins draw nothing (the
+//        Rust initSeed == the sim's post-construction getSeed).
+// ============================================================================
+#[test]
+fn quick_claw_proc_makes_the_slow_holder_move_first_seed() {
+    let d = dex();
+    let p1 = "Electrode|||NoAbility|swift|Serious||N||||";
+    let p2 = "Shuckle||QuickClaw|NoAbility|swift|Serious||N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "26217,1191,64492,10583"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+
+    let dec = ScriptDecision::both(Choice::Move(0), Choice::Move(0));
+    let out = st.run_full_battle(&[dec, dec, dec], &d);
+
+    assert_eq!(out.decisions.len(), 3, "three move decisions recorded");
+
+    // FIRST MOVER: p1 (raw-fast Electrode) on turn 1; then the Quick-Claw holder (p2
+    // Shuckle) FIRST on turns 2-3 via the 65535 override. Pre-fix: p1 all three turns.
+    let expect_first: [Option<usize>; 3] = [Some(0), Some(1), Some(1)];
+    for (i, exp) in expect_first.iter().enumerate() {
+        assert_eq!(
+            out.decisions[i].first_mover, *exp,
+            "decision {i} first mover: turn 1 = raw-fast p1, turns 2-3 = the Quick-Claw \
+             holder p2 (65535 override). Pre-fix the port kept p1 first → wrong order"
+        );
+    }
+
+    // POST-TURN SEEDS: the QC reorder swaps which mon's move draws run first, so a
+    // mis-order desyncs these even though the draw COUNT is unchanged.
+    let expect_seed = [
+        "1766,21561,8304,26954",
+        "3406,14238,51840,10041",
+        "56758,26706,56190,9940",
+    ];
+    for (i, exp) in expect_seed.iter().enumerate() {
+        assert_eq!(
+            seed_str(&out.decisions[i].seed_after), *exp,
+            "decision {i} post-turn seed == the real Showdown seed"
+        );
+    }
+
+    // FINAL HP after turn 3 (the swapped Swift damage rolls under the QC order).
+    assert_eq!(st.sides[0].pokemon[0].hp, 215, "p1 Electrode HP after turn 3");
+    assert_eq!(st.sides[1].pokemon[0].hp, 156, "p2 Shuckle HP after turn 3");
+}
+
+// ============================================================================
+// L1D — the `switch`/`drag` DETAILS LEVEL SUFFIX (`gen3_details_level_suffix_v1`,
+//       the round-9 randbats-byte-arm unblock). Showdown's `Pokemon.details` is
+//       `<Species>[, L<level>][, <gender>][, shiny]` — it emits `, L<n>` iff level
+//       != 100 and OMITS it at L100 (probe-confirmed via /tmp/probe_level_details.js,
+//       gen3randombattle). The port's `switch_details` (turn.rs, the omniscient
+//       |switch|/|drag| + the per-side stream via fold_hp_line) and `bridge.rs::details`
+//       (the request JSON) used to emit NO level suffix, so the randbats byte-differential
+//       arm WALLED at the first non-L100 |switch|. gen3ou is always L100, which is why the
+//       pool goldens never hit it (and stay byte-identical). WRONG (pre-fix): a non-L100
+//       lead showed `|switch|p1a: Lunatone|Lunatone|255/255` where the sim shows
+//       `|switch|p1a: Lunatone|Lunatone, L84|255/255`. Revert the `, L{level}` insertion
+//       in switch_details → the L84 assertion fails; the L100 mon must still OMIT it.
+#[test]
+fn switch_details_emit_level_suffix_only_when_not_l100() {
+    let d = dex();
+    // p1 lead is an L84 Lunatone (genderless → no construction gender draw), p2 an L100
+    // Snorlax. Both Splash a turn (draw-free besides Quick Claw) — the framing |switch|
+    // lines are what we assert.
+    let p1 = "Lunatone|||Levitate|splash|Serious|,,,,,|N|||84|";
+    let p2 = "Snorlax|||Immunity|splash|Serious|,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "1,2,3,4"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (_out, lines) =
+        st.run_full_battle_logged(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+
+    // The non-L100 lead's framing |switch| DETAILS carries `, L84` after the species.
+    let p1_switch = lines
+        .iter()
+        .map(|l| l.0.as_str())
+        .find(|l| l.starts_with("|switch|p1a:"))
+        .expect("a p1 lead |switch| line");
+    assert!(
+        p1_switch.contains("|Lunatone, L84|"),
+        "the L84 lead's |switch| DETAILS must carry `, L84` after the species — got `{p1_switch}`"
+    );
+
+    // The L100 mon OMITS the level suffix entirely (bare species in DETAILS).
+    let p2_switch = lines
+        .iter()
+        .map(|l| l.0.as_str())
+        .find(|l| l.starts_with("|switch|p2a:"))
+        .expect("a p2 lead |switch| line");
+    assert!(
+        p2_switch.contains("|Snorlax|") && !p2_switch.contains(", L"),
+        "the L100 mon's |switch| DETAILS must be the bare species (no `, L<n>`) — got `{p2_switch}`"
+    );
+}
+
+// ============================================================================
+// ROUND 10 — the byte-fuzz sweep bugs (RB1 / RM1 / RM3; BR1 lives in bridge_test.rs).
+// Ground truth: `harness/probe_round10_regression_rng.js`.
+// ============================================================================
+
+/// RB1 (`gen3_encore_disable_move_shuffle_v1`): a Choice-Band mon (choicelock) whose FOE
+/// Encores it carries BOTH `choicelock` + `encore` at that turn's endTurn, so
+/// `runEvent('DisableMove')` gathers >=2 move-disabling `onDisableMove` volatiles → a size-2
+/// Fisher-Yates tie-shuffle draws ONE `random` BEFORE the Quick Claw. The port's
+/// `disable_move_event_shuffle` used to OMIT `encore` from the handler count, so an
+/// encore+choicelock mon drew ONE FEWER at endTurn → a draw-count desync one call before the
+/// Quick Claw. WRONG (pre-fix): the port draws one fewer at endTurn → the post-turn seed
+/// diverges from the ground truth (revert-verified: it lands on `60833,51486,28767,2196`).
+/// With the fix the extra shuffle fires and the post-turn seed equals the real Showdown ground
+/// truth. The `choice_lock_only_draws_no_disable_move_shuffle` control (no encore, n==1) draws
+/// NO shuffle — its seed DIFFERS, proving the extra draw is encore-gated.
+#[test]
+fn encore_plus_choice_lock_draws_the_disable_move_shuffle() {
+    let d = dex();
+    // p1 Snorlax holds Choice Band → Body Slam LOCKS the slot (choicelock). p2 BULKY Blissey
+    // (survives the hit so the turn reaches endTurn) Encores the Snorlax.
+    let snorlax = "Snorlax||choiceband|thickfat|bodyslam,earthquake|Jolly|,252,,,4,252|||||";
+    let blissey = "Blissey|||naturalcure|encore,splash|Bold|252,,252,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(snorlax, blissey, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    // Turn 1: p1 Body Slam (locks + sets lastMove) ; p2 Encore the Snorlax. endTurn: the
+    // encore+choicelock mon draws the size-2 DisableMove tie-shuffle.
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions.len(), 1, "one move boundary");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "21177,35776,56648,13607",
+        "encore+choicelock mon draws the DisableMove tie-shuffle before the Quick Claw — post-turn \
+         seed == the real Showdown ground truth (reverting the `+ encore` addend drops the shuffle \
+         → the port draws one fewer → the seed diverges)"
+    );
+}
+
+/// RB1 CONTROL: a choicelock-ONLY mon (the foe does NOT Encore) carries a SINGLE
+/// move-disabling volatile at endTurn (n==1) → NO tie-shuffle → the post-turn seed DIFFERS
+/// from the encore+choicelock case. This pins that the shuffle is EncorE-gated (n>=2), not
+/// always drawn — so the fix adds the draw ONLY when a second disabling volatile co-occurs.
+#[test]
+fn choice_lock_only_draws_no_disable_move_shuffle() {
+    let d = dex();
+    let snorlax = "Snorlax||choiceband|thickfat|bodyslam,earthquake|Jolly|,252,,,4,252|||||";
+    let blissey = "Blissey|||naturalcure|splash,softboiled|Bold|252,,252,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(snorlax, blissey, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "55318,8071,46680,56242",
+        "choicelock-only (no encore) → n==1 → NO DisableMove shuffle → the control seed \
+         (DIFFERS from the encore+choicelock case, proving the extra draw is encore-gated)"
+    );
+}
+
+/// RM1 (`gen3_brick_break_screens_v1`): Brick Break — the ONLY gen3 screen-breaking move —
+/// removes BOTH the foe side's screens BEFORE the damage step (draw-free `onTryHit`), so it
+/// deals FULL (non-halved) damage AND clears the screen. WRONG (pre-fix): the port modeled
+/// Brick Break as a plain Fighting move, so `build_damage_context` read `sides[foe].reflect>0`
+/// and `modify_damage` halved the damage (~2× under-deal), and the screen persisted. STATE
+/// pin: after Brick Break into a Reflecting foe, `sides[1].reflect == 0` AND the defender's HP
+/// == the NO-screen control's HP (full damage) — reverting leaves reflect==1 + ~half damage
+/// (higher HP). SEED pin: draws are unchanged (acc+crit+dmg+QC; the screen removal is
+/// draw-free and no both-screens tie-shuffle fires), so the post-turn seed == the real sim.
+#[test]
+fn brick_break_removes_reflect_and_deals_full_damage() {
+    let d = dex();
+    let machamp = "Machamp|||noability|brickbreak,splash|Adamant|252,252,,,,|||||";
+    let snorlax = "Snorlax|||thickfat|reflect,splash|Careful|252,,,,252,|||||";
+    // Turn 1: p1 Splash, p2 Reflect (screen up). Turn 2: p1 Brick Break (removes + full dmg).
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(machamp, snorlax, "59913,41696,27939,16894"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions.len(), 2, "two move boundaries");
+    // The screen is REMOVED (Brick Break's onTryHit).
+    assert_eq!(
+        st.sides[1].reflect, 0,
+        "Brick Break removes the foe's Reflect (pre-fix it persisted → reflect stays 1)"
+    );
+    // FULL (non-halved) damage: the defender lands on the SAME HP as the no-screen control
+    // (probe RM1: 122/524). Pre-fix, the Reflect halved the damage → higher HP.
+    assert_eq!(
+        st.sides[1].pokemon[0].hp, 122,
+        "Brick Break deals FULL non-halved damage (== the no-screen control's 122); pre-fix the \
+         Reflect ×0.5 left the defender at a HIGHER HP"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "13764,11416,53420,29181",
+        "the screen removal is draw-free + no both-screens ModifyDamagePhase1 tie-shuffle fires \
+         → post-turn seed == the real Showdown ground truth"
+    );
+}
+
+/// RM1 negative pin (`gen3_brick_break_screens_v1`, round-11 hardening): the Brick Break
+/// screen-clear sits AFTER the immunity short-circuit in `run_move` — a GHOST is Fighting-immune,
+/// so the hit-but-immune return fires BEFORE the screen-removal site. So a Brick Break into a
+/// Ghost must LEAVE the foe's Reflect + Light Screen UP (only the normal end-of-turn SIDE residual
+/// ticks them down by one — reflect 3→2, light_screen 5→4). WRONG (a mis-placed clear that fired
+/// on an immune hit — i.e. moving the RM1 clear ABOVE the immune return): both screens would drop
+/// to 0. The LANDING case is covered by `brick_break_removes_reflect_and_deals_full_damage`; this
+/// hardens the immune branch. STATE pin (screens NOT cleared to 0 — the residual tick only). No
+/// seed pin: the screen-clear is draw-free and the immune move draws only its accuracy roll.
+#[test]
+fn brick_break_into_a_ghost_does_not_clear_screens() {
+    let d = dex();
+    let machamp = "Machamp|||noability|brickbreak,splash|Adamant|252,252,,,,|||||";
+    // Gengar (Ghost/Poison) — Fighting is 0× vs Ghost, so Brick Break is IMMUNE.
+    let gengar = "Gengar|||levitate|splash|Timid|,,,252,,252|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(machamp, gengar, "59913,41696,27939,16894"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    // Screens already UP on the Ghost's side (as if cast on a prior turn).
+    st.sides[1].reflect = 3;
+    st.sides[1].light_screen = 5;
+    let out = st.run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert_eq!(out.decisions.len(), 1, "one move boundary");
+    // Brick Break is Fighting-IMMUNE vs the Ghost → the immune return fires BEFORE the screen-clear
+    // site, so the screens are NOT removed; the end-of-turn SIDE residual just ticks them once
+    // (reflect 3→2, light_screen 5→4). A clear-on-immune bug would leave BOTH at 0.
+    assert_ne!(
+        st.sides[1].reflect, 0,
+        "Brick Break into a Ghost must NOT clear Reflect (the immune return precedes the clear)"
+    );
+    assert_ne!(
+        st.sides[1].light_screen, 0,
+        "Brick Break into a Ghost must NOT clear Light Screen (the immune return precedes the clear)"
+    );
+    assert_eq!(
+        st.sides[1].reflect, 2,
+        "the screens are untouched by the immune Brick Break — only the residual ticks Reflect 3→2"
+    );
+    assert_eq!(
+        st.sides[1].light_screen, 4,
+        "the screens are untouched by the immune Brick Break — only the residual ticks Light Screen 5→4"
+    );
+    // The Ghost took ZERO damage (Fighting-immune) — confirms the immune path really fired.
+    assert_eq!(
+        st.sides[1].pokemon[0].hp, st.sides[1].pokemon[0].maxhp,
+        "the Ghost is Fighting-immune → takes no Brick Break damage"
+    );
+}
+
+/// RM3 (`gen3_sand_upkeep_under_air_lock_v1`): under Air Lock / Cloud Nine the sand/hail field
+/// residual STILL emits its `|-weather|Sandstorm|[upkeep]` line (order 8) BEFORE the leech
+/// `|-damage|` (order 10.5) — the sim gates only the eachEvent shuffle + the chip on
+/// `effectiveWeather()`, NOT the whole handler + its upkeep-line emission. WRONG (pre-fix): the
+/// port gated the ENTIRE WeatherChip handler off `effective_weather()`, so under Cloud Nine the
+/// upkeep line was OMITTED and the leech `-damage` led. This is emission-only + DRAW-NEUTRAL
+/// (the negated residual draws nothing either way), so the pin asserts the EMIT ORDER (the
+/// upkeep line exists + precedes the leech damage) — reverting drops the upkeep line, failing
+/// the order. The post-turn seed is unchanged (a draw-neutrality confirmation).
+#[test]
+fn sand_upkeep_line_emitted_under_cloud_nine_before_leech_damage() {
+    let d = dex();
+    // p1 Tyranitar (Sand Stream) + Leech Seed. p2 Golduck (Cloud Nine, Water so leech lands,
+    // grounded non-Rock/Ground/Steel). T1: p1 Leech Seed, p2 Splash. T2 (record): both Splash.
+    let ttar = "Tyranitar|||sandstream|leechseed,splash|Adamant|252,252,,,,|||||";
+    let golduck = "Golduck|||cloudnine|splash,surf|Bold|252,,252,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(ttar, golduck, "42281,21615,44080,6072"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions.len(), 2, "two move boundaries");
+    let raw: Vec<&str> = lines.iter().map(|l| l.0.as_str()).collect();
+    let upkeep_idx = raw
+        .iter()
+        .position(|l| *l == "|-weather|Sandstorm|[upkeep]")
+        .expect(
+            "the sand `|-weather|Sandstorm|[upkeep]` line MUST be emitted under Cloud Nine \
+             (pre-fix the whole WeatherChip handler was gated off effective_weather → no upkeep line)",
+        );
+    let leech_idx = raw
+        .iter()
+        .position(|l| l.contains("[from] Leech Seed"))
+        .expect("a leech `|-damage|…|[from] Leech Seed` line");
+    assert!(
+        upkeep_idx < leech_idx,
+        "the order-8 sand `[upkeep]` line must precede the order-10.5 leech `-damage` — got \
+         upkeep@{upkeep_idx} leech@{leech_idx}"
+    );
+    // DRAW-NEUTRAL: the post-turn seed is unchanged (the negated residual draws nothing).
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "44727,38044,16858,42709",
+        "RM3 is draw-neutral — the post-turn seed == the real Showdown ground truth"
     );
 }

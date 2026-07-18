@@ -1,0 +1,574 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=424242 run_id=rmroh04is chunk=4
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_4_18
+TEAM	ab_4_18	p1	Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,176,44,48|M||||]Tyranitar||Leftovers|SandStream|Crunch,Pursuit,Flamethrower,Roar|Modest|240,,,252,,16|M|,0,,,,|||]Cloyster||Leftovers|ShellArmor|Spikes,RapidSpin,IceBeam,Explosion|Modest|,,,168,244,96|M||||]Jirachi||Leftovers|SereneGrace|BodySlam,FirePunch,IcePunch,HiddenPowerFighting|Rash|,68,,252,,188|N|,,30,30,30,30|||,Fighting,,,,]Snorlax||Leftovers|Immunity|Curse,Return,FocusPunch,SelfDestruct|Adamant|32,152,152,,172,|M||||]Aerodactyl||ChoiceBand|RockHead|Earthquake,RockSlide,HiddenPowerFlying,DoubleEdge|Jolly|4,252,,,,252|M|30,30,30,30,30,|||,Flying,,,,
+TEAM	ab_4_18	p2	Zapdos||Leftovers|Pressure|ThunderWave,Toxic,Thunderbolt,HiddenPowerIce|Modest|216,,,136,,156|N|,,,,,30|||,Ice,,,,]Swampert||Leftovers|Torrent|Curse,Earthquake,HydroPump,IceBeam|Quiet|240,,,252,,16|M||||]Metagross||Leftovers|ClearBody|MeteorMash,HiddenPowerFire,Psychic,Explosion|Rash|168,40,16,252,,32|N|,30,,30,,30|||,Fire,,,,]Suicune||Leftovers|Pressure|Substitute,CalmMind,Surf,IceBeam|Modest|252,,,240,,16|N|,0,,,,|||]Celebi||Leftovers|NaturalCure|LeechSeed,CalmMind,GigaDrain,Psychic|Modest|192,,,176,,140|N|,0,,,,|||]Charizard||Leftovers|Blaze|Substitute,Flamethrower,HiddenPowerGrass,FocusPunch|Mild|,4,,252,,252|M|,30,,30,,|||,Grass,,,,
+FMT	ab_4_18	gen3ou
+INIT	ab_4_18	50375,45187,31769,18448	1068947720
+DEC	ab_4_18	0	move	0	0	m2	m3	40181,11706,40154,19345	Swampert	346	401	0	-	0	0	0	0	0	0	6	Zapdos	227	375	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	1	move	0	0	m0	m0	65129,1816,20513,21994	Swampert	371	401	0	-	1	1	0	0	-1	0	6	Zapdos	250	375	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	2	move	0	0	m3	s1	49851,25830,44682,45145	Swampert	396	401	0	-	1	1	0	0	-1	0	6	Swampert	325	401	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	3	move	0	0	m2	s3	34208,40935,42078,42589	Swampert	401	401	0	-	1	1	0	0	-1	0	6	Suicune	356	404	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	4	move	0	0	m1	m2	35202,43996,58562,5690	Swampert	269	401	0	-	1	1	0	0	-1	0	6	Suicune	199	404	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	5	move	0	0	m2	m2	42698,23500,53984,41267	Swampert	132	401	0	-	1	1	0	0	-1	0	6	Suicune	124	404	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	6	move	0	0	m0	s4	31695,8750,20062,13293	Swampert	157	401	0	-	2	2	0	0	-2	0	6	Celebi	389	389	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	7	move	0	0	m0	m0	7412,43878,30868,35414	Swampert	132	401	0	-	3	3	0	0	-3	0	6	Celebi	389	389	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	8	move	0	0	m2	s4	33650,45216,2429,8842	Swampert	107	401	0	-	3	3	0	0	-3	0	6	Suicune	99	404	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	9	move	0	0	m3	s4	6347,22867,11257,39289	Swampert	82	401	0	-	3	3	0	0	-3	0	6	Celebi	298	389	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	10	move	0	0	m0	m3	4555,27749,2454,15741	Swampert	0	401	1	fnt	0	0	0	0	0	0	5	Celebi	298	389	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	11	switch	1	0	s4	-	24755,40027,39359,50708	Snorlax	469	469	0	-	0	0	0	0	0	0	5	Celebi	322	389	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_4_18	12	move	0	0	m1	s3	28785,54310,8774,20072	Snorlax	469	469	0	-	0	0	0	0	0	0	5	Swampert	157	401	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_4_18	13	move	0	0	s1	m0	14324,35521,51815,31450	Tyranitar	401	401	0	-	0	0	0	0	0	0	5	Swampert	182	401	0	-	1	1	0	0	-1	0	6	p1	0	0	0	0	0
+DEC	ab_4_18	14	move	0	0	m1	m3	56082,41116,11055,49933	Tyranitar	329	401	0	frz	0	0	0	0	0	0	5	Swampert	140	401	0	-	1	1	0	0	-1	0	6	p1	0	0	0	0	0
+DEC	ab_4_18	15	move	0	0	s2	m0	10745,16811,24344,16311	Cloyster	241	241	0	-	0	0	0	0	0	0	5	Swampert	165	401	0	-	2	2	0	0	-2	0	6	p1	0	0	0	0	0
+DEC	ab_4_18	16	move	0	0	m1	s2	1661,40144,59637,11227	Cloyster	241	241	0	-	0	0	0	0	0	0	5	Metagross	343	343	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	17	move	0	0	s3	m1	15358,16056,48016,15807	Jirachi	209	341	0	-	0	0	0	0	0	0	5	Metagross	343	343	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_4_18	18	move	0	0	m2	m0	2332,57650,56339,50333	Jirachi	230	341	0	-	0	0	0	0	0	0	5	Metagross	311	343	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_4_18	19	move	0	0	s2	m1	35894,168,21808,40545	Tyranitar	316	401	0	frz	0	0	0	0	0	0	5	Metagross	332	343	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_4_18	20	move	0	0	m1	m2	5535,64902,9438,3962	Tyranitar	341	401	0	frz	0	0	0	0	0	0	5	Metagross	343	343	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_18	21	move	0	0	s5	m3	57636,49857,7639,3791	Aerodactyl	0	301	1	fnt	0	0	0	0	0	0	4	Metagross	0	343	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_18	22	switch	1	1	s3	s1	8355,63220,39061,15726	Cloyster	241	241	0	-	0	0	0	0	0	0	4	Zapdos	250	375	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_4_18	23	move	0	0	s2	m3	53421,21152,2206,37922	Jirachi	204	341	0	-	0	0	0	0	0	0	4	Zapdos	250	375	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_18	24	move	0	0	m1	m1	58702,15506,58147,8408	Jirachi	225	341	0	-	0	0	0	0	0	0	4	Zapdos	162	375	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_18	25	move	0	0	s2	m2	58801,31113,22079,9452	Cloyster	0	241	1	fnt	0	0	0	0	0	0	3	Zapdos	162	375	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_18	26	switch	1	0	s5	-	39241,9920,25670,31711	Tyranitar	366	401	0	frz	0	0	0	0	0	0	3	Zapdos	162	375	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_4_18	27	move	0	0	m1	m1	59095,27262,31161,12224	Tyranitar	391	401	0	frz	0	0	0	0	0	0	3	Zapdos	162	375	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_18	28	move	0	0	s2	m3	64941,24612,15260,21844	Jirachi	204	341	0	-	0	0	0	0	0	0	3	Zapdos	162	375	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_18	29	move	0	0	m0	m2	49089,40756,43859,64073	Jirachi	44	341	0	-	0	0	0	0	0	0	3	Zapdos	86	375	0	par	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_4_18	30	move	0	0	m2	m0	36873,51885,7128,45389	Jirachi	44	341	0	-	0	0	0	0	0	0	3	Zapdos	0	375	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_4_18	31	switch	0	1	-	s5	13321,35405,18593,50980	Jirachi	65	341	0	-	0	0	0	0	0	0	3	Charizard	297	297	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_4_18	32	move	0	0	m1	m1	48756,16676,9552,56952	Jirachi	0	341	1	fnt	0	0	0	0	0	0	2	Charizard	297	297	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_4_18	33	switch	1	0	s1	-	5480,7075,46436,39963	Snorlax	469	469	0	-	0	0	0	0	0	0	2	Charizard	297	297	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_4_18	34	move	0	0	m2	m3	27838,20354,28387,10751	Snorlax	244	469	0	-	0	0	0	0	0	0	2	Charizard	297	297	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_4_18	35	move	0	0	m3	m2	26645,63926,56832,41693	Snorlax	0	469	1	fnt	0	0	0	0	0	0	1	Charizard	0	297	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_4_18	36	switch	1	1	s2	s3	156,63710,40346,9460	Tyranitar	401	401	0	frz	0	0	0	0	0	0	1	Celebi	322	389	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_4_18	37	move	0	0	m1	m0	47372,5114,45750,6305	Tyranitar	351	401	0	frz	0	0	0	0	0	0	1	Celebi	372	389	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_4_18	38	move	0	0	m2	m1	35571,56258,21010,27407	Tyranitar	326	401	0	-	0	0	0	0	0	0	1	Celebi	282	389	0	-	0	0	1	1	0	0	3	p2	0	0	0	0	0
+DEC	ab_4_18	39	move	0	0	m0	m3	38491,42615,5184,4205	Tyranitar	301	401	0	-	0	0	0	0	0	0	1	Celebi	150	389	0	-	0	0	1	1	0	0	3	p2	0	0	0	0	0
+DEC	ab_4_18	40	move	0	0	m2	m2	28339,38912,28611,58805	Tyranitar	18	401	0	-	0	0	0	0	0	0	1	Celebi	205	389	0	-	0	0	1	1	0	0	3	p2	0	0	0	0	0
+DEC	ab_4_18	41	move	0	0	m0	m3	43661,4438,21740,13056	Tyranitar	0	401	1	-	0	0	0	0	0	0	0	Celebi	72	389	0	-	0	0	1	1	0	0	3	p2	0	0	0	0	0
+END	ab_4_18	1	p2
+L	ab_4_18	0	|t:|<NORMALIZED>
+L	ab_4_18	1	|gametype|singles
+L	ab_4_18	2	|player|p1|P1||
+L	ab_4_18	3	|player|p2|P2||
+L	ab_4_18	4	|gen|3
+L	ab_4_18	5	|tier|[Gen 3] OU
+L	ab_4_18	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_4_18	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_4_18	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_4_18	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_4_18	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_4_18	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_4_18	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_4_18	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_4_18	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_4_18	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_4_18	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_4_18	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_4_18	18	|
+L	ab_4_18	19	|t:|<NORMALIZED>
+L	ab_4_18	20	|teamsize|p1|6
+L	ab_4_18	21	|teamsize|p2|6
+L	ab_4_18	22	|start
+L	ab_4_18	23	|switch|p1a: Swampert|Swampert, M|401/401
+L	ab_4_18	24	|switch|p2a: Zapdos|Zapdos|375/375
+L	ab_4_18	25	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_4_18	26	|turn|1
+L	ab_4_18	27	|
+L	ab_4_18	28	|t:|<NORMALIZED>
+L	ab_4_18	29	|move|p2a: Zapdos|Hidden Power|p1a: Swampert
+L	ab_4_18	30	|-damage|p1a: Swampert|321/401
+L	ab_4_18	31	|move|p1a: Swampert|Hydro Pump|p2a: Zapdos
+L	ab_4_18	32	|-damage|p2a: Zapdos|204/375
+L	ab_4_18	33	|
+L	ab_4_18	34	|-heal|p2a: Zapdos|227/375|[from] item: Leftovers
+L	ab_4_18	35	|-heal|p1a: Swampert|346/401|[from] item: Leftovers
+L	ab_4_18	36	|upkeep
+L	ab_4_18	37	|turn|2
+L	ab_4_18	38	|
+L	ab_4_18	39	|t:|<NORMALIZED>
+L	ab_4_18	40	|move|p2a: Zapdos|Thunder Wave|p1a: Swampert
+L	ab_4_18	41	|-immune|p1a: Swampert
+L	ab_4_18	42	|move|p1a: Swampert|Curse|p1a: Swampert
+L	ab_4_18	43	|-unboost|p1a: Swampert|spe|1
+L	ab_4_18	44	|-boost|p1a: Swampert|atk|1
+L	ab_4_18	45	|-boost|p1a: Swampert|def|1
+L	ab_4_18	46	|
+L	ab_4_18	47	|-heal|p2a: Zapdos|250/375|[from] item: Leftovers
+L	ab_4_18	48	|-heal|p1a: Swampert|371/401|[from] item: Leftovers
+L	ab_4_18	49	|upkeep
+L	ab_4_18	50	|turn|3
+L	ab_4_18	51	|
+L	ab_4_18	52	|t:|<NORMALIZED>
+L	ab_4_18	53	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_4_18	54	|move|p1a: Swampert|Ice Beam|p2a: Swampert
+L	ab_4_18	55	|-damage|p2a: Swampert|300/401
+L	ab_4_18	56	|
+L	ab_4_18	57	|-heal|p2a: Swampert|325/401|[from] item: Leftovers
+L	ab_4_18	58	|-heal|p1a: Swampert|396/401|[from] item: Leftovers
+L	ab_4_18	59	|upkeep
+L	ab_4_18	60	|turn|4
+L	ab_4_18	61	|
+L	ab_4_18	62	|t:|<NORMALIZED>
+L	ab_4_18	63	|switch|p2a: Suicune|Suicune|404/404
+L	ab_4_18	64	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_4_18	65	|move|p1a: Swampert|Hydro Pump|p2a: Suicune
+L	ab_4_18	66	|-resisted|p2a: Suicune
+L	ab_4_18	67	|-damage|p2a: Suicune|331/404
+L	ab_4_18	68	|
+L	ab_4_18	69	|-heal|p2a: Suicune|356/404|[from] item: Leftovers
+L	ab_4_18	70	|-heal|p1a: Swampert|401/401|[from] item: Leftovers
+L	ab_4_18	71	|upkeep
+L	ab_4_18	72	|turn|5
+L	ab_4_18	73	|
+L	ab_4_18	74	|t:|<NORMALIZED>
+L	ab_4_18	75	|move|p2a: Suicune|Surf|p1a: Swampert
+L	ab_4_18	76	|-damage|p1a: Swampert|244/401
+L	ab_4_18	77	|move|p1a: Swampert|Earthquake|p2a: Suicune
+L	ab_4_18	78	|-damage|p2a: Suicune|174/404
+L	ab_4_18	79	|
+L	ab_4_18	80	|-heal|p2a: Suicune|199/404|[from] item: Leftovers
+L	ab_4_18	81	|-heal|p1a: Swampert|269/401|[from] item: Leftovers
+L	ab_4_18	82	|upkeep
+L	ab_4_18	83	|turn|6
+L	ab_4_18	84	|
+L	ab_4_18	85	|t:|<NORMALIZED>
+L	ab_4_18	86	|move|p2a: Suicune|Surf|p1a: Swampert
+L	ab_4_18	87	|-damage|p1a: Swampert|107/401
+L	ab_4_18	88	|move|p1a: Swampert|Hydro Pump|p2a: Suicune
+L	ab_4_18	89	|-resisted|p2a: Suicune
+L	ab_4_18	90	|-damage|p2a: Suicune|99/404
+L	ab_4_18	91	|
+L	ab_4_18	92	|-heal|p2a: Suicune|124/404|[from] item: Leftovers
+L	ab_4_18	93	|-heal|p1a: Swampert|132/401|[from] item: Leftovers
+L	ab_4_18	94	|upkeep
+L	ab_4_18	95	|turn|7
+L	ab_4_18	96	|
+L	ab_4_18	97	|t:|<NORMALIZED>
+L	ab_4_18	98	|switch|p2a: Celebi|Celebi|389/389
+L	ab_4_18	99	|move|p1a: Swampert|Curse|p1a: Swampert
+L	ab_4_18	100	|-unboost|p1a: Swampert|spe|1
+L	ab_4_18	101	|-boost|p1a: Swampert|atk|1
+L	ab_4_18	102	|-boost|p1a: Swampert|def|1
+L	ab_4_18	103	|
+L	ab_4_18	104	|-heal|p1a: Swampert|157/401|[from] item: Leftovers
+L	ab_4_18	105	|upkeep
+L	ab_4_18	106	|turn|8
+L	ab_4_18	107	|
+L	ab_4_18	108	|t:|<NORMALIZED>
+L	ab_4_18	109	|move|p2a: Celebi|Leech Seed|p1a: Swampert
+L	ab_4_18	110	|-start|p1a: Swampert|move: Leech Seed
+L	ab_4_18	111	|move|p1a: Swampert|Curse|p1a: Swampert
+L	ab_4_18	112	|-unboost|p1a: Swampert|spe|1
+L	ab_4_18	113	|-boost|p1a: Swampert|atk|1
+L	ab_4_18	114	|-boost|p1a: Swampert|def|1
+L	ab_4_18	115	|
+L	ab_4_18	116	|-heal|p1a: Swampert|182/401|[from] item: Leftovers
+L	ab_4_18	117	|-damage|p1a: Swampert|132/401|[from] Leech Seed|[of] p2a: Celebi
+L	ab_4_18	118	|upkeep
+L	ab_4_18	119	|turn|9
+L	ab_4_18	120	|
+L	ab_4_18	121	|t:|<NORMALIZED>
+L	ab_4_18	122	|switch|p2a: Suicune|Suicune|124/404
+L	ab_4_18	123	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_4_18	124	|move|p1a: Swampert|Hydro Pump|p2a: Suicune
+L	ab_4_18	125	|-resisted|p2a: Suicune
+L	ab_4_18	126	|-damage|p2a: Suicune|24/404
+L	ab_4_18	127	|
+L	ab_4_18	128	|-heal|p2a: Suicune|49/404|[from] item: Leftovers
+L	ab_4_18	129	|-heal|p1a: Swampert|157/401|[from] item: Leftovers
+L	ab_4_18	130	|-damage|p1a: Swampert|107/401|[from] Leech Seed|[of] p2a: Suicune
+L	ab_4_18	131	|-heal|p2a: Suicune|99/404|[silent]
+L	ab_4_18	132	|upkeep
+L	ab_4_18	133	|turn|10
+L	ab_4_18	134	|
+L	ab_4_18	135	|t:|<NORMALIZED>
+L	ab_4_18	136	|switch|p2a: Celebi|Celebi|389/389
+L	ab_4_18	137	|move|p1a: Swampert|Ice Beam|p2a: Celebi
+L	ab_4_18	138	|-supereffective|p2a: Celebi
+L	ab_4_18	139	|-damage|p2a: Celebi|224/389
+L	ab_4_18	140	|
+L	ab_4_18	141	|-heal|p2a: Celebi|248/389|[from] item: Leftovers
+L	ab_4_18	142	|-heal|p1a: Swampert|132/401|[from] item: Leftovers
+L	ab_4_18	143	|-damage|p1a: Swampert|82/401|[from] Leech Seed|[of] p2a: Celebi
+L	ab_4_18	144	|-heal|p2a: Celebi|298/389|[silent]
+L	ab_4_18	145	|upkeep
+L	ab_4_18	146	|turn|11
+L	ab_4_18	147	|
+L	ab_4_18	148	|t:|<NORMALIZED>
+L	ab_4_18	149	|move|p2a: Celebi|Psychic|p1a: Swampert
+L	ab_4_18	150	|-damage|p1a: Swampert|0 fnt
+L	ab_4_18	151	|faint|p1a: Swampert
+L	ab_4_18	152	|
+L	ab_4_18	153	|t:|<NORMALIZED>
+L	ab_4_18	154	|switch|p1a: Snorlax|Snorlax, M|469/469
+L	ab_4_18	155	|
+L	ab_4_18	156	|-heal|p2a: Celebi|322/389|[from] item: Leftovers
+L	ab_4_18	157	|upkeep
+L	ab_4_18	158	|turn|12
+L	ab_4_18	159	|
+L	ab_4_18	160	|t:|<NORMALIZED>
+L	ab_4_18	161	|switch|p2a: Swampert|Swampert, M|325/401
+L	ab_4_18	162	|move|p1a: Snorlax|Return|p2a: Swampert
+L	ab_4_18	163	|-damage|p2a: Swampert|132/401
+L	ab_4_18	164	|
+L	ab_4_18	165	|-heal|p2a: Swampert|157/401|[from] item: Leftovers
+L	ab_4_18	166	|upkeep
+L	ab_4_18	167	|turn|13
+L	ab_4_18	168	|
+L	ab_4_18	169	|t:|<NORMALIZED>
+L	ab_4_18	170	|switch|p1a: Tyranitar|Tyranitar, M|401/401
+L	ab_4_18	171	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_4_18	172	|move|p2a: Swampert|Curse|p2a: Swampert
+L	ab_4_18	173	|-unboost|p2a: Swampert|spe|1
+L	ab_4_18	174	|-boost|p2a: Swampert|atk|1
+L	ab_4_18	175	|-boost|p2a: Swampert|def|1
+L	ab_4_18	176	|
+L	ab_4_18	177	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	178	|-heal|p2a: Swampert|182/401|[from] item: Leftovers
+L	ab_4_18	179	|upkeep
+L	ab_4_18	180	|turn|14
+L	ab_4_18	181	|
+L	ab_4_18	182	|t:|<NORMALIZED>
+L	ab_4_18	183	|move|p1a: Tyranitar|Pursuit|p2a: Swampert
+L	ab_4_18	184	|-damage|p2a: Swampert|115/401
+L	ab_4_18	185	|move|p2a: Swampert|Ice Beam|p1a: Tyranitar
+L	ab_4_18	186	|-damage|p1a: Tyranitar|304/401
+L	ab_4_18	187	|-status|p1a: Tyranitar|frz
+L	ab_4_18	188	|
+L	ab_4_18	189	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	190	|-heal|p1a: Tyranitar|329/401 frz|[from] item: Leftovers
+L	ab_4_18	191	|-heal|p2a: Swampert|140/401|[from] item: Leftovers
+L	ab_4_18	192	|upkeep
+L	ab_4_18	193	|turn|15
+L	ab_4_18	194	|
+L	ab_4_18	195	|t:|<NORMALIZED>
+L	ab_4_18	196	|switch|p1a: Cloyster|Cloyster, M|241/241
+L	ab_4_18	197	|move|p2a: Swampert|Curse|p2a: Swampert
+L	ab_4_18	198	|-unboost|p2a: Swampert|spe|1
+L	ab_4_18	199	|-boost|p2a: Swampert|atk|1
+L	ab_4_18	200	|-boost|p2a: Swampert|def|1
+L	ab_4_18	201	|
+L	ab_4_18	202	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	203	|-damage|p1a: Cloyster|226/241|[from] Sandstorm
+L	ab_4_18	204	|-heal|p1a: Cloyster|241/241|[from] item: Leftovers
+L	ab_4_18	205	|-heal|p2a: Swampert|165/401|[from] item: Leftovers
+L	ab_4_18	206	|upkeep
+L	ab_4_18	207	|turn|16
+L	ab_4_18	208	|
+L	ab_4_18	209	|t:|<NORMALIZED>
+L	ab_4_18	210	|switch|p2a: Metagross|Metagross|343/343
+L	ab_4_18	211	|move|p1a: Cloyster|Rapid Spin|p2a: Metagross
+L	ab_4_18	212	|-resisted|p2a: Metagross
+L	ab_4_18	213	|-damage|p2a: Metagross|338/343
+L	ab_4_18	214	|
+L	ab_4_18	215	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	216	|-damage|p1a: Cloyster|226/241|[from] Sandstorm
+L	ab_4_18	217	|-heal|p1a: Cloyster|241/241|[from] item: Leftovers
+L	ab_4_18	218	|-heal|p2a: Metagross|343/343|[from] item: Leftovers
+L	ab_4_18	219	|upkeep
+L	ab_4_18	220	|turn|17
+L	ab_4_18	221	|
+L	ab_4_18	222	|t:|<NORMALIZED>
+L	ab_4_18	223	|switch|p1a: Jirachi|Jirachi|341/341
+L	ab_4_18	224	|move|p2a: Metagross|Hidden Power|p1a: Jirachi
+L	ab_4_18	225	|-supereffective|p1a: Jirachi
+L	ab_4_18	226	|-damage|p1a: Jirachi|188/341
+L	ab_4_18	227	|
+L	ab_4_18	228	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	229	|-heal|p1a: Jirachi|209/341|[from] item: Leftovers
+L	ab_4_18	230	|upkeep
+L	ab_4_18	231	|turn|18
+L	ab_4_18	232	|
+L	ab_4_18	233	|t:|<NORMALIZED>
+L	ab_4_18	234	|move|p1a: Jirachi|Ice Punch|p2a: Metagross
+L	ab_4_18	235	|-resisted|p2a: Metagross
+L	ab_4_18	236	|-damage|p2a: Metagross|290/343
+L	ab_4_18	237	|move|p2a: Metagross|Meteor Mash|p1a: Jirachi|[miss]
+L	ab_4_18	238	|-miss|p2a: Metagross|p1a: Jirachi
+L	ab_4_18	239	|
+L	ab_4_18	240	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	241	|-heal|p1a: Jirachi|230/341|[from] item: Leftovers
+L	ab_4_18	242	|-heal|p2a: Metagross|311/343|[from] item: Leftovers
+L	ab_4_18	243	|upkeep
+L	ab_4_18	244	|turn|19
+L	ab_4_18	245	|
+L	ab_4_18	246	|t:|<NORMALIZED>
+L	ab_4_18	247	|switch|p1a: Tyranitar|Tyranitar, M|329/401 frz
+L	ab_4_18	248	|move|p2a: Metagross|Hidden Power|p1a: Tyranitar
+L	ab_4_18	249	|-resisted|p1a: Tyranitar
+L	ab_4_18	250	|-damage|p1a: Tyranitar|291/401 frz
+L	ab_4_18	251	|
+L	ab_4_18	252	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	253	|-heal|p2a: Metagross|332/343|[from] item: Leftovers
+L	ab_4_18	254	|-heal|p1a: Tyranitar|316/401 frz|[from] item: Leftovers
+L	ab_4_18	255	|upkeep
+L	ab_4_18	256	|turn|20
+L	ab_4_18	257	|
+L	ab_4_18	258	|t:|<NORMALIZED>
+L	ab_4_18	259	|move|p2a: Metagross|Psychic|p1a: Tyranitar
+L	ab_4_18	260	|-immune|p1a: Tyranitar
+L	ab_4_18	261	|cant|p1a: Tyranitar|frz
+L	ab_4_18	262	|
+L	ab_4_18	263	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	264	|-heal|p2a: Metagross|343/343|[from] item: Leftovers
+L	ab_4_18	265	|-heal|p1a: Tyranitar|341/401 frz|[from] item: Leftovers
+L	ab_4_18	266	|upkeep
+L	ab_4_18	267	|turn|21
+L	ab_4_18	268	|
+L	ab_4_18	269	|t:|<NORMALIZED>
+L	ab_4_18	270	|switch|p1a: Aerodactyl|Aerodactyl, M|301/301
+L	ab_4_18	271	|move|p2a: Metagross|Explosion|p1a: Aerodactyl
+L	ab_4_18	272	|-resisted|p1a: Aerodactyl
+L	ab_4_18	273	|-damage|p1a: Aerodactyl|0 fnt
+L	ab_4_18	274	|faint|p2a: Metagross
+L	ab_4_18	275	|faint|p1a: Aerodactyl
+L	ab_4_18	276	|
+L	ab_4_18	277	|t:|<NORMALIZED>
+L	ab_4_18	278	|switch|p1a: Cloyster|Cloyster, M|241/241
+L	ab_4_18	279	|switch|p2a: Zapdos|Zapdos|250/375
+L	ab_4_18	280	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_4_18	281	|
+L	ab_4_18	282	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	283	|-damage|p2a: Zapdos|227/375|[from] Sandstorm
+L	ab_4_18	284	|-damage|p1a: Cloyster|226/241|[from] Sandstorm
+L	ab_4_18	285	|-heal|p2a: Zapdos|250/375|[from] item: Leftovers
+L	ab_4_18	286	|-heal|p1a: Cloyster|241/241|[from] item: Leftovers
+L	ab_4_18	287	|upkeep
+L	ab_4_18	288	|turn|22
+L	ab_4_18	289	|
+L	ab_4_18	290	|t:|<NORMALIZED>
+L	ab_4_18	291	|switch|p1a: Jirachi|Jirachi|230/341
+L	ab_4_18	292	|move|p2a: Zapdos|Hidden Power|p1a: Jirachi
+L	ab_4_18	293	|-resisted|p1a: Jirachi
+L	ab_4_18	294	|-damage|p1a: Jirachi|183/341
+L	ab_4_18	295	|
+L	ab_4_18	296	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	297	|-damage|p2a: Zapdos|227/375|[from] Sandstorm
+L	ab_4_18	298	|-heal|p1a: Jirachi|204/341|[from] item: Leftovers
+L	ab_4_18	299	|-heal|p2a: Zapdos|250/375|[from] item: Leftovers
+L	ab_4_18	300	|upkeep
+L	ab_4_18	301	|turn|23
+L	ab_4_18	302	|
+L	ab_4_18	303	|t:|<NORMALIZED>
+L	ab_4_18	304	|move|p1a: Jirachi|Fire Punch|p2a: Zapdos
+L	ab_4_18	305	|-damage|p2a: Zapdos|162/375
+L	ab_4_18	306	|move|p2a: Zapdos|Toxic|p1a: Jirachi
+L	ab_4_18	307	|-immune|p1a: Jirachi
+L	ab_4_18	308	|
+L	ab_4_18	309	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	310	|-damage|p2a: Zapdos|139/375|[from] Sandstorm
+L	ab_4_18	311	|-heal|p1a: Jirachi|225/341|[from] item: Leftovers
+L	ab_4_18	312	|-heal|p2a: Zapdos|162/375|[from] item: Leftovers
+L	ab_4_18	313	|upkeep
+L	ab_4_18	314	|turn|24
+L	ab_4_18	315	|
+L	ab_4_18	316	|t:|<NORMALIZED>
+L	ab_4_18	317	|switch|p1a: Cloyster|Cloyster, M|241/241
+L	ab_4_18	318	|move|p2a: Zapdos|Thunderbolt|p1a: Cloyster
+L	ab_4_18	319	|-supereffective|p1a: Cloyster
+L	ab_4_18	320	|-damage|p1a: Cloyster|0 fnt
+L	ab_4_18	321	|faint|p1a: Cloyster
+L	ab_4_18	322	|
+L	ab_4_18	323	|t:|<NORMALIZED>
+L	ab_4_18	324	|switch|p1a: Tyranitar|Tyranitar, M|341/401 frz
+L	ab_4_18	325	|
+L	ab_4_18	326	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	327	|-damage|p2a: Zapdos|139/375|[from] Sandstorm
+L	ab_4_18	328	|-heal|p2a: Zapdos|162/375|[from] item: Leftovers
+L	ab_4_18	329	|-heal|p1a: Tyranitar|366/401 frz|[from] item: Leftovers
+L	ab_4_18	330	|upkeep
+L	ab_4_18	331	|turn|25
+L	ab_4_18	332	|
+L	ab_4_18	333	|t:|<NORMALIZED>
+L	ab_4_18	334	|move|p2a: Zapdos|Toxic||[still]
+L	ab_4_18	335	|-fail|p2a: Zapdos
+L	ab_4_18	336	|cant|p1a: Tyranitar|frz
+L	ab_4_18	337	|
+L	ab_4_18	338	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	339	|-damage|p2a: Zapdos|139/375|[from] Sandstorm
+L	ab_4_18	340	|-heal|p2a: Zapdos|162/375|[from] item: Leftovers
+L	ab_4_18	341	|-heal|p1a: Tyranitar|391/401 frz|[from] item: Leftovers
+L	ab_4_18	342	|upkeep
+L	ab_4_18	343	|turn|26
+L	ab_4_18	344	|
+L	ab_4_18	345	|t:|<NORMALIZED>
+L	ab_4_18	346	|switch|p1a: Jirachi|Jirachi|225/341
+L	ab_4_18	347	|move|p2a: Zapdos|Hidden Power|p1a: Jirachi
+L	ab_4_18	348	|-resisted|p1a: Jirachi
+L	ab_4_18	349	|-damage|p1a: Jirachi|183/341
+L	ab_4_18	350	|
+L	ab_4_18	351	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	352	|-damage|p2a: Zapdos|139/375|[from] Sandstorm
+L	ab_4_18	353	|-heal|p1a: Jirachi|204/341|[from] item: Leftovers
+L	ab_4_18	354	|-heal|p2a: Zapdos|162/375|[from] item: Leftovers
+L	ab_4_18	355	|upkeep
+L	ab_4_18	356	|turn|27
+L	ab_4_18	357	|
+L	ab_4_18	358	|t:|<NORMALIZED>
+L	ab_4_18	359	|move|p1a: Jirachi|Body Slam|p2a: Zapdos
+L	ab_4_18	360	|-damage|p2a: Zapdos|86/375
+L	ab_4_18	361	|-status|p2a: Zapdos|par
+L	ab_4_18	362	|move|p2a: Zapdos|Thunderbolt|p1a: Jirachi
+L	ab_4_18	363	|-damage|p1a: Jirachi|23/341
+L	ab_4_18	364	|
+L	ab_4_18	365	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	366	|-damage|p2a: Zapdos|63/375 par|[from] Sandstorm
+L	ab_4_18	367	|-heal|p1a: Jirachi|44/341|[from] item: Leftovers
+L	ab_4_18	368	|-heal|p2a: Zapdos|86/375 par|[from] item: Leftovers
+L	ab_4_18	369	|upkeep
+L	ab_4_18	370	|turn|28
+L	ab_4_18	371	|
+L	ab_4_18	372	|t:|<NORMALIZED>
+L	ab_4_18	373	|move|p1a: Jirachi|Ice Punch|p2a: Zapdos
+L	ab_4_18	374	|-supereffective|p2a: Zapdos
+L	ab_4_18	375	|-damage|p2a: Zapdos|0 fnt
+L	ab_4_18	376	|faint|p2a: Zapdos
+L	ab_4_18	377	|
+L	ab_4_18	378	|t:|<NORMALIZED>
+L	ab_4_18	379	|switch|p2a: Charizard|Charizard, M|297/297
+L	ab_4_18	380	|
+L	ab_4_18	381	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	382	|-damage|p2a: Charizard|279/297|[from] Sandstorm
+L	ab_4_18	383	|-heal|p2a: Charizard|297/297|[from] item: Leftovers
+L	ab_4_18	384	|-heal|p1a: Jirachi|65/341|[from] item: Leftovers
+L	ab_4_18	385	|upkeep
+L	ab_4_18	386	|turn|29
+L	ab_4_18	387	|
+L	ab_4_18	388	|t:|<NORMALIZED>
+L	ab_4_18	389	|move|p2a: Charizard|Flamethrower|p1a: Jirachi
+L	ab_4_18	390	|-supereffective|p1a: Jirachi
+L	ab_4_18	391	|-damage|p1a: Jirachi|0 fnt
+L	ab_4_18	392	|faint|p1a: Jirachi
+L	ab_4_18	393	|
+L	ab_4_18	394	|t:|<NORMALIZED>
+L	ab_4_18	395	|switch|p1a: Snorlax|Snorlax, M|469/469
+L	ab_4_18	396	|
+L	ab_4_18	397	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	398	|-damage|p2a: Charizard|279/297|[from] Sandstorm
+L	ab_4_18	399	|-damage|p1a: Snorlax|440/469|[from] Sandstorm
+L	ab_4_18	400	|-heal|p2a: Charizard|297/297|[from] item: Leftovers
+L	ab_4_18	401	|-heal|p1a: Snorlax|469/469|[from] item: Leftovers
+L	ab_4_18	402	|upkeep
+L	ab_4_18	403	|turn|30
+L	ab_4_18	404	|
+L	ab_4_18	405	|t:|<NORMALIZED>
+L	ab_4_18	406	|-singleturn|p2a: Charizard|move: Focus Punch
+L	ab_4_18	407	|-singleturn|p1a: Snorlax|move: Focus Punch
+L	ab_4_18	408	|move|p2a: Charizard|Focus Punch|p1a: Snorlax
+L	ab_4_18	409	|-supereffective|p1a: Snorlax
+L	ab_4_18	410	|-damage|p1a: Snorlax|244/469
+L	ab_4_18	411	|move|p1a: Snorlax|Focus Punch||[still]
+L	ab_4_18	412	|cant|p1a: Snorlax|Focus Punch|Focus Punch
+L	ab_4_18	413	|
+L	ab_4_18	414	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	415	|-damage|p2a: Charizard|279/297|[from] Sandstorm
+L	ab_4_18	416	|-damage|p1a: Snorlax|215/469|[from] Sandstorm
+L	ab_4_18	417	|-heal|p2a: Charizard|297/297|[from] item: Leftovers
+L	ab_4_18	418	|-heal|p1a: Snorlax|244/469|[from] item: Leftovers
+L	ab_4_18	419	|upkeep
+L	ab_4_18	420	|turn|31
+L	ab_4_18	421	|
+L	ab_4_18	422	|t:|<NORMALIZED>
+L	ab_4_18	423	|move|p2a: Charizard|Hidden Power|p1a: Snorlax
+L	ab_4_18	424	|-damage|p1a: Snorlax|181/469
+L	ab_4_18	425	|move|p1a: Snorlax|Self-Destruct|p2a: Charizard
+L	ab_4_18	426	|-damage|p2a: Charizard|0 fnt
+L	ab_4_18	427	|faint|p1a: Snorlax
+L	ab_4_18	428	|faint|p2a: Charizard
+L	ab_4_18	429	|
+L	ab_4_18	430	|t:|<NORMALIZED>
+L	ab_4_18	431	|switch|p2a: Celebi|Celebi|322/389
+L	ab_4_18	432	|switch|p1a: Tyranitar|Tyranitar, M|391/401 frz
+L	ab_4_18	433	|
+L	ab_4_18	434	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	435	|-damage|p2a: Celebi|298/389|[from] Sandstorm
+L	ab_4_18	436	|-heal|p2a: Celebi|322/389|[from] item: Leftovers
+L	ab_4_18	437	|-heal|p1a: Tyranitar|401/401 frz|[from] item: Leftovers
+L	ab_4_18	438	|upkeep
+L	ab_4_18	439	|turn|32
+L	ab_4_18	440	|
+L	ab_4_18	441	|t:|<NORMALIZED>
+L	ab_4_18	442	|move|p2a: Celebi|Leech Seed|p1a: Tyranitar
+L	ab_4_18	443	|-start|p1a: Tyranitar|move: Leech Seed
+L	ab_4_18	444	|cant|p1a: Tyranitar|frz
+L	ab_4_18	445	|
+L	ab_4_18	446	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	447	|-damage|p2a: Celebi|298/389|[from] Sandstorm
+L	ab_4_18	448	|-heal|p2a: Celebi|322/389|[from] item: Leftovers
+L	ab_4_18	449	|-damage|p1a: Tyranitar|351/401 frz|[from] Leech Seed|[of] p2a: Celebi
+L	ab_4_18	450	|-heal|p2a: Celebi|372/389|[silent]
+L	ab_4_18	451	|upkeep
+L	ab_4_18	452	|turn|33
+L	ab_4_18	453	|
+L	ab_4_18	454	|t:|<NORMALIZED>
+L	ab_4_18	455	|move|p2a: Celebi|Calm Mind|p2a: Celebi
+L	ab_4_18	456	|-boost|p2a: Celebi|spa|1
+L	ab_4_18	457	|-boost|p2a: Celebi|spd|1
+L	ab_4_18	458	|-curestatus|p1a: Tyranitar|frz|[msg]
+L	ab_4_18	459	|move|p1a: Tyranitar|Flamethrower|p2a: Celebi
+L	ab_4_18	460	|-supereffective|p2a: Celebi
+L	ab_4_18	461	|-damage|p2a: Celebi|232/389
+L	ab_4_18	462	|
+L	ab_4_18	463	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	464	|-damage|p2a: Celebi|208/389|[from] Sandstorm
+L	ab_4_18	465	|-heal|p2a: Celebi|232/389|[from] item: Leftovers
+L	ab_4_18	466	|-heal|p1a: Tyranitar|376/401|[from] item: Leftovers
+L	ab_4_18	467	|-damage|p1a: Tyranitar|326/401|[from] Leech Seed|[of] p2a: Celebi
+L	ab_4_18	468	|-heal|p2a: Celebi|282/389|[silent]
+L	ab_4_18	469	|upkeep
+L	ab_4_18	470	|turn|34
+L	ab_4_18	471	|
+L	ab_4_18	472	|t:|<NORMALIZED>
+L	ab_4_18	473	|move|p2a: Celebi|Psychic|p1a: Tyranitar
+L	ab_4_18	474	|-immune|p1a: Tyranitar
+L	ab_4_18	475	|move|p1a: Tyranitar|Crunch|p2a: Celebi
+L	ab_4_18	476	|-supereffective|p2a: Celebi
+L	ab_4_18	477	|-damage|p2a: Celebi|100/389
+L	ab_4_18	478	|
+L	ab_4_18	479	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	480	|-damage|p2a: Celebi|76/389|[from] Sandstorm
+L	ab_4_18	481	|-heal|p2a: Celebi|100/389|[from] item: Leftovers
+L	ab_4_18	482	|-heal|p1a: Tyranitar|351/401|[from] item: Leftovers
+L	ab_4_18	483	|-damage|p1a: Tyranitar|301/401|[from] Leech Seed|[of] p2a: Celebi
+L	ab_4_18	484	|-heal|p2a: Celebi|150/389|[silent]
+L	ab_4_18	485	|upkeep
+L	ab_4_18	486	|turn|35
+L	ab_4_18	487	|
+L	ab_4_18	488	|t:|<NORMALIZED>
+L	ab_4_18	489	|move|p2a: Celebi|Giga Drain|p1a: Tyranitar
+L	ab_4_18	490	|-supereffective|p1a: Tyranitar
+L	ab_4_18	491	|-damage|p1a: Tyranitar|43/401
+L	ab_4_18	492	|-heal|p2a: Celebi|279/389|[from] drain|[of] p1a: Tyranitar
+L	ab_4_18	493	|move|p1a: Tyranitar|Flamethrower|p2a: Celebi
+L	ab_4_18	494	|-supereffective|p2a: Celebi
+L	ab_4_18	495	|-damage|p2a: Celebi|155/389
+L	ab_4_18	496	|
+L	ab_4_18	497	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	498	|-damage|p2a: Celebi|131/389|[from] Sandstorm
+L	ab_4_18	499	|-heal|p2a: Celebi|155/389|[from] item: Leftovers
+L	ab_4_18	500	|-heal|p1a: Tyranitar|68/401|[from] item: Leftovers
+L	ab_4_18	501	|-damage|p1a: Tyranitar|18/401|[from] Leech Seed|[of] p2a: Celebi
+L	ab_4_18	502	|-heal|p2a: Celebi|205/389|[silent]
+L	ab_4_18	503	|upkeep
+L	ab_4_18	504	|turn|36
+L	ab_4_18	505	|
+L	ab_4_18	506	|t:|<NORMALIZED>
+L	ab_4_18	507	|move|p2a: Celebi|Psychic|p1a: Tyranitar
+L	ab_4_18	508	|-immune|p1a: Tyranitar
+L	ab_4_18	509	|move|p1a: Tyranitar|Crunch|p2a: Celebi
+L	ab_4_18	510	|-supereffective|p2a: Celebi
+L	ab_4_18	511	|-damage|p2a: Celebi|29/389
+L	ab_4_18	512	|
+L	ab_4_18	513	|-weather|Sandstorm|[upkeep]
+L	ab_4_18	514	|-damage|p2a: Celebi|5/389|[from] Sandstorm
+L	ab_4_18	515	|-heal|p2a: Celebi|29/389|[from] item: Leftovers
+L	ab_4_18	516	|-heal|p1a: Tyranitar|43/401|[from] item: Leftovers
+L	ab_4_18	517	|-damage|p1a: Tyranitar|0 fnt|[from] Leech Seed|[of] p2a: Celebi
+L	ab_4_18	518	|-heal|p2a: Celebi|72/389|[silent]
+L	ab_4_18	519	|faint|p1a: Tyranitar
+L	ab_4_18	520	|
+L	ab_4_18	521	|win|P2
