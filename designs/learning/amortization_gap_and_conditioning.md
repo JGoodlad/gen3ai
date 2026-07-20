@@ -307,6 +307,41 @@ original sketch are recorded in [[self_discovered_archetype_latent]]. **Remainin
 claim), then the FiLM fresh run with at least one seed-anchor distillation**, measuring the payoff as:
 does distilling an anchor now *lift its neighbors without regressing the rest*.
 
+**The Phase-0 verdict (2026-07-19, the ablation probe — the capstone sentence, measured).** After
+~28M steps of pure-RL FiLM across ai_v8_01/02/03: zeroing the FiLM generators on the live checkpoint
+(exact identity — the multiplicative design makes the ablation surgical, `tmp/film_ablation_probe.py`)
+costs NOTHING — ablated beat intact 0.567 ± 0.08 over 150 games, and a WRONG-Z model (mismatched team
+code) drew intact at 0.500, even though FiLM flips ~16% of greedy actions (KL 0.048). So the learned
+modulation is behaviorally present but strength-neutral and team-content-free — and the ai_v8_03
+plateau-break (first promotions + ELO 2009 vs the ~1970 baseline) is attributable to the CURRICULUM
+(dropping the stable exploiters + one-sided team-PFSP), NOT the conditioning. Four independent
+instruments now agree: `film/noise_scale` ≈ 8–9× the batch (the per-team RL gradient is starved),
+the post-FiLM value features are THINNER than the no-FiLM baseline (PR 2.9–3.0 vs 3.24, between-team
+share +2pp — the critic never became archetype-conditional), per-team evals flat, and the ablation.
+**This is "FiLM is the ENABLER, not the cause," measured**: the architecture is built, alive, and
+EMPTY under the weak RL diet — Phase-2 distillation (policy side) + the categorical-critic /
+value-feature-hint work (value side) are the specifically-indicated fill, and this ablation probe is
+their acceptance test (ablated-vs-intact must drop below 0.5; wrong-z must start costing).
+
+**REVISION (2026-07-19, later — the owner's fixed-matchup design overturns "content-free").** The
+pool-vs-pool head-to-heads let BOTH sides' team draws vary, and that matchup variance washed the
+signal out. Freezing the matchup (`tmp/film_fixed_matchup_probe.py`: pilot TSS-starmie vs the
+intact model on the stall team, 250 games/arm, @186M) revealed: **INTACT 0.536 ± 0.062, ABLATED
+0.484 ± 0.062, WRONG-Z (stall code) 0.368 ± 0.060** — feeding the style-mismatched code craters
+play by ~17pp (~4σ vs intact). So the policy DOES condition on z's content — the earlier
+"wrong-z costs nothing" was a measurement artifact of pooled matchups (a pinned code is only badly
+wrong for a subset of drawn teams, and the harm concentrates on style-contrast matchups). The
+ASYMMETRY is the signature of early-phase conditioning: removing the signal degrades gracefully to
+near-marginal play (−5pp, ~1σ — real-but-small benefit, not yet significant), while a WRONG signal
+actively misleads (−17pp) — harm-sensitivity precedes benefit, like a student who has started
+trusting a textbook: take it away and they cope from memory; hand them the wrong one and they follow
+it off a cliff. Implication: pure RL HAS partially filled the conditioning pathway (the discovery
+barriers — gradient competition, starvation, exploration collapse — slow it but don't zero it), which
+STRENGTHENS the case for the in-loop discovery boosters (per-group FiLM grad accumulation,
+team-blocked episodes, style compression) as alternatives to heavy distillation. Measurement lesson
+(general): when hunting a small conditional effect, FREEZE every non-treatment factor — pooled
+designs average a concentrated effect into invisibility.
+
 **Two refinements to the Collapse-vs-Dead section above (2026-07-17, owner discussion — same
 conclusion, sharper mechanics).** The section already splits the failure modes correctly (Collapse
 killed by reconstruction, no exploiters needed; Dead = under-used-but-harmless until specialists

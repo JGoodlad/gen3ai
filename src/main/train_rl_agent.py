@@ -1601,6 +1601,16 @@ async def main():
                         type=float, default=0.05,
                         help="Weight floor for --team-pfsp (raw_i = floor + p*(1-p)) so a fully-won / "
                              "fully-lost team is never starved to zero. Default 0.05.")
+    parser.add_argument("--team-block-episodes", "--team_block_episodes", dest="team_block_episodes",
+                        type=int, default=1,
+                        help="TRAINEE team-BLOCKED episodes (K2): each env holds its drawn team for K "
+                             "consecutive episodes before redrawing (1 = off, byte-identical). The "
+                             "per-team gradient-density counter to the measured FiLM sample starvation "
+                             "(film/noise_scale ~8-9x the batch): at K~64 (~one rollout of episodes) "
+                             "per-update per-team density rises ~15x AND blocks span an update boundary "
+                             "(the mini-exploiter learn-and-retest loop). Composes with --team-pfsp "
+                             "(weights apply at each redraw; outcomes attribute to the blocked team). "
+                             "Trainee side only; training-only, NOT version-locked, resume-forwarded.")
     # ── Stable (cross-run) opponents: load a model from ANOTHER run as a fixed opponent ──
     parser.add_argument("--stable-opponents", "--stable_opponents", dest="stable_opponents",
                         type=str, default=None,
@@ -2407,6 +2417,11 @@ async def main():
         all_teams, sample_teams,
         team_pfsp=args.team_pfsp, team_pfsp_cap=args.team_pfsp_cap,
         team_pfsp_floor=args.team_pfsp_floor)
+    # Team-BLOCKED episodes (K₂): hold each drawn trainee team for K consecutive episodes — the
+    # per-team gradient-density counter to the measured FiLM sample starvation. Trainee side ONLY
+    # (opponent draws stay per-episode); 1 = off, byte-identical. Training-only, not version-locked.
+    if args.team_block_episodes > 1:
+        trainee_teambuilder.set_block_episodes(args.team_block_episodes)
     opponent_teambuilder = matchup.opponent_teams.build(all_teams, sample_teams)
     # gen3_exploiter_distill_v1: bias the trainee toward the teacher's team (rest = pool rehearsal) so it
     # gets enough distillation signal, and precompute the teacher team's species id-set for the env's

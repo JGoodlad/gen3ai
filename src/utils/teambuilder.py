@@ -84,11 +84,49 @@ class Gen3Teambuilder(Teambuilder):
         self._tp_weights = None
         # The pool index yielded for the CURRENT battle (None → not a tracked pool battle).
         self._last_pool_idx = None
+        # ── Team-BLOCKED episodes (K₂, --team-block-episodes; 1 = off, byte-identical) ──
+        # Hold each drawn team for K consecutive yields before redrawing. Rationale (the FiLM
+        # sample-starvation counter): per-episode redraw sprays ~700 teams at ~4 episodes each per
+        # rollout, so the per-team residual gradient in any update is estimated from ~140 decisions;
+        # at K≈64 (≈ one rollout of episodes) each env carries ONE team per rollout at ~2k decisions
+        # (~15× density) AND the block spans an update boundary — the env replays the same team right
+        # after that team's gradient landed (the mini-exploiter learn-and-retest loop). The WHOLE
+        # draw procedure is held (bias branch, PFSP weights, tracking index), so every sampling
+        # feature composes: weights apply at redraw, outcomes attribute to the blocked team all K
+        # episodes, a bias-drawn block stays untracked. Each env worker unpickles its OWN builder
+        # copy, so blocks are per-env by construction.
+        self._block_episodes = 1
+        self._block_cached = None       # packed team held for the current block
+        self._block_cached_idx = None   # its pool index (None = untracked bias draw)
+        self._block_left = 0            # remaining yields before redraw
+
+    def set_block_episodes(self, k: int) -> None:
+        """Set the team-block length (K consecutive episodes per draw; 1 = off). Resets any
+        in-flight block so a mid-run push takes effect at the next yield."""
+        self._block_episodes = max(1, int(k))
+        self._block_cached = None
+        self._block_left = 0
 
     def yield_team(self):
-        """Returns a random team from the pool, biased toward bias_packed_teams if configured.
+        """Returns a team for the next battle. With ``_block_episodes > 1`` the last drawn team is
+        held for K consecutive yields (see __init__); otherwise (default) every yield is a fresh
+        draw — the exact legacy behavior, no extra RNG."""
+        if self._block_episodes > 1:
+            if self._block_left > 0 and self._block_cached is not None:
+                self._block_left -= 1
+                self._last_pool_idx = self._block_cached_idx   # outcomes keep attributing to the block's team
+                return self._block_cached
+            team = self._draw_team()
+            self._block_cached = team
+            self._block_cached_idx = self._last_pool_idx
+            self._block_left = self._block_episodes - 1
+            return team
+        return self._draw_team()
 
-        With team_pfsp == "var" the pool draw is variance-weighted (per-team win-rate) and the
+    def _draw_team(self):
+        """One fresh draw from the pool, biased toward bias_packed_teams if configured.
+
+        With team_pfsp in a biasing mode the pool draw is weighted (per-team win-rate) and the
         yielded index is tracked so the battle outcome can be recorded. A bias-team battle is
         never tracked (it uses a pinned distill/bias team, not a pool team). "off" is the exact
         legacy uniform ``random.choice`` — no extra RNG draws, no tracking (byte-identical)."""

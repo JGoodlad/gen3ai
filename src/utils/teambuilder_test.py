@@ -257,6 +257,54 @@ def test_cap_and_floor_empty():
     assert compute_team_pfsp_weights([], floor=0.05, cap=3.0) == []
 
 
+def test_block_episodes_holds_and_redraws():
+    """K₂ blocking: the same team is yielded K consecutive times, then a fresh draw happens;
+    the PFSP tracking index stays pinned to the block's team for every yield of the block."""
+    tb = _make_builder([TEAM_A, TEAM_B], team_pfsp="var")   # tracked draws (sets _last_pool_idx)
+    tb.set_block_episodes(3)
+    random.seed(7)
+    teams = [tb.yield_team() for _ in range(9)]
+    # 3 blocks of 3 identical yields each.
+    for b in range(3):
+        assert teams[3 * b] == teams[3 * b + 1] == teams[3 * b + 2]
+    # tracking index constant within a block (outcome attribution) — record 3 outcomes, all land
+    # on ONE team.
+    tb2 = _make_builder([TEAM_A, TEAM_B], team_pfsp="var")
+    tb2.set_block_episodes(3)
+    random.seed(11)
+    for _ in range(3):
+        tb2.yield_team()
+        tb2.record_team_pfsp_outcome(1.0)
+    wins, games, _ = tb2.drain_team_pfsp_counts()
+    assert sum(games) == 3.0 and max(games) == 3.0    # all 3 games on the same pool team
+
+
+def test_block_episodes_off_is_byte_identical():
+    """K=1 (default) must take the exact legacy path — identical RNG stream and draws."""
+    tb_a = _make_builder([TEAM_A, TEAM_B])
+    tb_b = _make_builder([TEAM_A, TEAM_B])
+    tb_b.set_block_episodes(1)                        # explicit off
+    random.seed(42)
+    seq_a = [tb_a.yield_team() for _ in range(6)]
+    random.seed(42)
+    seq_b = [tb_b.yield_team() for _ in range(6)]
+    assert seq_a == seq_b
+
+
+def test_block_episodes_weights_apply_at_redraw():
+    """A weight push mid-block takes effect at the NEXT redraw, not mid-block."""
+    tb = _make_builder([TEAM_A, TEAM_B], team_pfsp="var")
+    tb.set_block_episodes(2)
+    random.seed(3)
+    first = tb.yield_team()
+    # push weights that force pool index 0 for future draws
+    n = len(tb.packed_teams)
+    tb.set_team_pfsp_weights([1.0] + [0.0] * (n - 1))
+    assert tb.yield_team() == first                    # still inside the block
+    assert tb.yield_team() == tb.packed_teams[0]       # redraw honors the pushed weights
+    assert tb._last_pool_idx == 0
+
+
 def test_onesided_weights():
     """'onesided' mode: the LOSING side is held at the MAX weight — w(p)=0.25 for p<0.5, else
     p(1-p) — so a badly-losing team samples like a 50/50 one and only MASTERY retires a team.
