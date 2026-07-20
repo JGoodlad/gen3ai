@@ -277,3 +277,31 @@ def test_migration_defaults_off():
     assert out["zarch_film"] == "off" and out["zarch_dim"] == 0
     assert out["zarch_recon_coef"] == 0.0 and out["zarch_vicreg_coef"] == 0.0
     assert out["config_version"] == 44
+
+
+# ---------------------------------------------------------------- per-group grad accumulation
+
+def test_group_grad_accumulator_gates_and_averages():
+    """--film-grad-accum-steps mechanics: k=1 passthrough (grads untouched); k=3 → two gated steps
+    set grads to None (optimizer skips), the third applies the AVERAGE of all three captures."""
+    from agents.training.instrumented_ppo import _GroupGradAccumulator
+    p = torch.nn.Parameter(torch.zeros(4))
+
+    # k=1: pure passthrough — grad object untouched, always applies.
+    p.grad = torch.ones(4)
+    acc = _GroupGradAccumulator([p])
+    assert acc.gate(1) is True
+    assert torch.equal(p.grad, torch.ones(4))
+
+    # k=3: capture g1,g2 (grad → None), apply mean(g1,g2,g3) on the third.
+    acc = _GroupGradAccumulator([p])
+    p.grad = torch.full((4,), 1.0)
+    assert acc.gate(3) is False and p.grad is None
+    p.grad = torch.full((4,), 2.0)
+    assert acc.gate(3) is False and p.grad is None
+    p.grad = torch.full((4,), 6.0)
+    assert acc.gate(3) is True
+    assert torch.allclose(p.grad, torch.full((4,), 3.0))   # mean(1, 2, 6)
+    # buffer reset: the next cycle starts fresh.
+    p.grad = torch.full((4,), 10.0)
+    assert acc.gate(3) is False and p.grad is None

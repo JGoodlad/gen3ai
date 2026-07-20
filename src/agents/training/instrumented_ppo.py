@@ -29,6 +29,45 @@ import numpy as np
 import torch as th
 from gymnasium import spaces
 from stable_baselines3.common.utils import explained_variance
+
+
+class _GroupGradAccumulator:
+    """Per-param-GROUP gradient accumulation across OPTIMIZER steps (--film-grad-accum-steps).
+
+    ``gate(k)`` is called at each optimizer-step boundary (after clipping, before ``step()``): it
+    adds the group's current post-clip grads into a persistent buffer; on the k-th capture it
+    writes the AVERAGED accumulated grad back into ``p.grad`` (one clean large-batch update for the
+    group); on non-apply steps it sets ``p.grad = None`` — torch optimizers SKIP None-grad params,
+    so Adam takes no stale-momentum step and its moment state is untouched between applies.
+    Capturing POST-clip keeps the global clip semantics identical to baseline (the group's grads
+    participate in the global norm every step) and bounds the average by construction. k<=1 is a
+    pure passthrough (never touches grads — byte-identical)."""
+
+    def __init__(self, params):
+        self.params = list(params)
+        self.buf = None
+        self.count = 0
+
+    def gate(self, k: int) -> bool:
+        if k <= 1:
+            return True
+        import torch as th
+        if self.buf is None:
+            self.buf = [th.zeros_like(p) for p in self.params]
+        for b, p in zip(self.buf, self.params):
+            if p.grad is not None:
+                b.add_(p.grad)
+        self.count += 1
+        if self.count >= k:
+            for b, p in zip(self.buf, self.params):
+                b.div_(self.count)
+                p.grad = b
+            self.buf = None
+            self.count = 0
+            return True
+        for p in self.params:
+            p.grad = None
+        return False
 from torch.nn import functional as F
 
 from sb3_contrib import MaskablePPO
@@ -587,6 +626,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
             "coverage": float((n_known / mask.numel()).item()),
         }
         return loss, metrics
+
+    # Set by train_rl_agent (--film-grad-accum-steps; 1 = off, byte-identical). Per-GROUP gradient
+    # accumulation for the FiLM generators: their grads are accumulated across N consecutive
+    # OPTIMIZER steps and applied once, averaged — so each film update is computed from N× the
+    # effective batch while every other parameter updates normally. The precision counter to the
+    # residual film-group noise (film/noise_scale_ratio): pick N ≈ that ratio so each film update
+    # lands at the group's critical batch. Training-only, NOT version-locked, resume-forwarded.
+    film_grad_accum_steps: int = 1
+    _film_grad_accumulator = None      # persistent across train() calls (partial groups carry over)
 
     @staticmethod
     def _zarch_participation_ratio(z):
@@ -1298,6 +1346,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
             list(_fe_ns.film_pi.parameters()) + list(_fe_ns.film_vf.parameters())
             if getattr(_fe_ns, "zarch_film", "off") != "off" else []
         )
+        # +FILM-GRAD-ACCUM (--film-grad-accum-steps): per-group accumulation for the FiLM
+        # generators — see _GroupGradAccumulator. Persistent on self so partial groups carry
+        # across train() calls; None (off / no film group) ⇒ every step site is byte-identical.
+        _film_accum_k = int(getattr(self, "film_grad_accum_steps", 1) or 1)
+        film_grad_accum = None
+        if film_noise_params and _film_accum_k > 1:
+            if self._film_grad_accumulator is None:
+                self._film_grad_accumulator = _GroupGradAccumulator(film_noise_params)
+            film_grad_accum = self._film_grad_accumulator
 
         # train for n_epochs epochs
         for epoch in range(self.n_epochs):
@@ -1845,6 +1902,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     # from clip_grad_norm_. Captured on group 0 (same data as the micro-batch above).
                     if accum >= 2 and epoch == 0 and noise_g_big_sq is None:
                         noise_g_big_sq = grad_norm * grad_norm
+                    # +FILM-GRAD-ACCUM: gate the film group's grads (accumulate-or-apply) after the
+                    # clip (baseline-identical clip semantics) and before the optimizer step.
+                    if film_grad_accum is not None:
+                        film_grad_accum.gate(_film_accum_k)
                     self.policy.optimizer.step()
                     self.policy.optimizer.zero_grad()
                     micro_in_group = 0
@@ -1868,6 +1929,9 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 grad_norms.append(float(
                     th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 ))
+                # +FILM-GRAD-ACCUM: same gate at the trailing-group step site.
+                if film_grad_accum is not None:
+                    film_grad_accum.gate(_film_accum_k)
                 self.policy.optimizer.step()
                 self.policy.optimizer.zero_grad()
                 micro_in_group = 0

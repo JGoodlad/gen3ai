@@ -1125,6 +1125,15 @@ async def main():
                         help="Loss weight for the z_arch VICReg per-dim variance floor (relu(1−std) across "
                              "the batch — the belt-and-suspenders collapse guard; watch zarch/std). Default "
                              "0.1 when --zarch-film is on. TRAINING-only. Auto-zeroed on a single-team run.")
+    parser.add_argument("--film-grad-accum-steps", "--film_grad_accum_steps", dest="film_grad_accum_steps",
+                        type=int, default=1,
+                        help="Accumulate the FiLM generators' gradients across N consecutive optimizer "
+                             "steps and apply them once, averaged (1 = off, byte-identical) — a per-GROUP "
+                             "batch enlargement for exactly the params whose gradient is noise-starved "
+                             "(film/noise_scale_ratio >> 1) while everything else updates normally. Pick "
+                             "N ~ the measured film/noise_scale_ratio so each film update lands at the "
+                             "group's critical batch. Requires --zarch-film heads. Training-only, NOT "
+                             "version-locked, resume-forwarded.")
     # --- SEARCH-AS-TEACHER (offline ExIt plateau-breaker; designs/ai_v6/design_search_teacher.md) ---
     # All TRAINING-only (no version bump; coef 0 / flag absent = byte-identical). The coefs are
     # _resolve'd (flagless-resume-inherited); the operational knobs are forwarded by the launcher.
@@ -1932,6 +1941,9 @@ async def main():
     if args.zarch_film == "off" and args.zarch_dim:
         parser.error("--zarch-dim requires --zarch-film heads (the latent only exists when FiLM is on; "
                      "it must be 0/unset when off).")
+    if args.film_grad_accum_steps > 1 and args.zarch_film == "off":
+        parser.error("--film-grad-accum-steps > 1 requires --zarch-film heads (there is no FiLM "
+                     "generator group to accumulate without the conditioning).")
     # gen3_zarch_film_v1: on a SINGLE-TEAM run (pinned --trainee-team) z is one constant vector across
     # the whole batch — the cross-batch VICReg variance floor is degenerate (std ≡ 0 regardless of
     # weights) and the recon target is constant (nothing to learn). Auto-zero the aux coefs; FiLM
@@ -3408,6 +3420,7 @@ async def main():
         model.pubval_coef = args.pubval_coef  # pubval loss weight (training-only; resume-mutable)
         model.zarch_recon_coef = args.zarch_recon_coef  # z_arch recon BCE weight (training-only; resume-mutable)
         model.zarch_vicreg_coef = args.zarch_vicreg_coef  # z_arch VICReg floor weight (training-only; resume-mutable)
+        model.film_grad_accum_steps = args.film_grad_accum_steps  # FiLM per-group grad accumulation (1 = off)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss weight (training-only; resume-mutable)
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). Buffer is filled by the
         # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
@@ -3732,6 +3745,7 @@ async def main():
         model.pubval_coef = args.pubval_coef  # pubval head soft-BCE (mode none = off)
         model.zarch_recon_coef = args.zarch_recon_coef  # z_arch recon BCE (mode off = off)
         model.zarch_vicreg_coef = args.zarch_vicreg_coef  # z_arch VICReg floor (mode off = off)
+        model.film_grad_accum_steps = args.film_grad_accum_steps  # FiLM per-group grad accumulation (1 = off)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss (mode none = off)
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). See the resume site.
         model.search_teacher_coef = args.search_teacher_coef

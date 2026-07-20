@@ -1396,6 +1396,19 @@ Two scalars ride the standard logger → TensorBoard + launcher TUI (`format.py`
   **film ≫ global ≫ effective batch ⇒ the per-team RL gradient into the conditioners sits below its
   noise floor at our batch** — the quantitative sample-starvation / "persistent net cost" read
   (`designs/learning/amortization_gap_and_conditioning.md`).
+- **`--film-grad-accum-steps` (default 1 = off, byte-identical)** — the surgical response to a high
+  `film/noise_scale_ratio`: accumulate the FiLM generators' grads across N consecutive OPTIMIZER
+  steps and apply once, averaged (`_GroupGradAccumulator`: capture POST-clip so the global clip
+  semantics are baseline-identical; non-apply steps set the group's `p.grad = None`, which torch
+  optimizers SKIP — no Adam state decay, no stale-momentum step; partial groups persist across
+  train() calls). Each film update is then computed from N× the effective batch while everything
+  else updates normally — "a bigger batch, but only where the noise scale says it's needed". Pick
+  N ≈ the measured residual `film/noise_scale_ratio`. Requires `--zarch-film heads`; training-only,
+  NOT version-locked, resume-forwarded. (The live `rank/vf_feat_*` family — the participation
+  ratio/effrank of the POST-FiLM value features the critic MLP actually consumes, the in-training
+  version of `tmp/vf_rank_probe.py` — is the companion outcome read: `value_cls` measures the pool
+  BEFORE the vf FiLM, so only `vf_feat` can show the conditioning enriching vs thinning the
+  critic's real input.)
 
 Tests: `instrumented_ppo_test.py` — `test_noise_scale_estimate_recovers_known_values` (the two-point
 math recovers a planted `|G|²`/`tr(Σ)` exactly), `_smaller_batch_is_noisier_sign`, `_global_grad_sq`

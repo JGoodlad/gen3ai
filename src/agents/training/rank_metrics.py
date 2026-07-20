@@ -71,8 +71,13 @@ def rank_probe(features_extractor, obs, extract_features_fn) -> dict:
         h2 = fe.cls_pool.register_forward_hook(_cls_hook)
         try:
             with th.no_grad():
-                pi_feat, _vf_feat = extract_features_fn(obs)
+                pi_feat, vf_feat = extract_features_fn(obs)
                 cap["policy"] = pi_feat.detach()
+                # The POST-FiLM value features (what the critic MLP consumes) — the live version of
+                # the offline vf-rank probe (tmp/vf_rank_probe.py): value_cls measures the pool
+                # BEFORE the vf FiLM, so it cannot see whether the conditioning enriches or thins
+                # the critic's actual input; this can (the crystallization-vs-division-of-labor read).
+                cap["vf_feat"] = vf_feat.detach()
         finally:
             h1.remove()
             h2.remove()
@@ -80,12 +85,12 @@ def rank_probe(features_extractor, obs, extract_features_fn) -> dict:
         return {}
 
     out: dict = {}
-    for name in ("trunk", "value_cls", "policy"):
+    for name in ("trunk", "value_cls", "policy", "vf_feat"):
         Z = cap.get(name)
         if Z is None:
             continue
         r = effective_rank(Z.float().cpu().numpy())
-        # value_cls/trunk report pr/effrank/n90/n95; policy additionally n99 (the "relevant percentiles").
+        # value_cls/trunk/vf_feat report pr/effrank/n90/n95; policy additionally n99.
         keys = ("pr", "effrank", "n90", "n95", "n99") if name == "policy" else ("pr", "effrank", "n90", "n95")
         for k in keys:
             out[f"rank/{name}_{k}"] = float(r[k])
