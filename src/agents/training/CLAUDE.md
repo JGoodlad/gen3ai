@@ -1063,14 +1063,14 @@ symmetric variance), **`onesided`** (measure + bias, losing side held at MAX).
   tail is exactly the learnable headroom (the amortization gap): "truly lost" is the claim under
   test, not a sampling prior to bake in. The floor keeps nothing fully starved either way.
   `compute_team_pfsp_weights` is the pure, unit-tested math.
-- **Team-BLOCKED episodes (`--team-block-episodes` K₂, default 1 = off, byte-identical).** Each env
-  holds its drawn TRAINEE team for K consecutive episodes before redrawing
+- **Team-blocked episodes (`--team-block-episodes`, default 1 = off, byte-identical).** Each env
+  holds its drawn TRAINEE team for N consecutive episodes before redrawing
   (`Gen3Teambuilder.set_block_episodes`; the WHOLE draw is held — bias branch, PFSP weights,
-  tracking index — so weights apply at redraw and outcomes attribute to the blocked team all K
-  episodes; each SubprocVecEnv worker unpickles its own builder copy ⇒ blocks are per-env). The
+  tracking index — so weights apply at redraw and outcomes attribute to the blocked team for the
+  whole block; each SubprocVecEnv worker unpickles its own builder copy ⇒ blocks are per-env). The
   per-team gradient-DENSITY counter to the measured FiLM sample starvation (`film/noise_scale` ≈
   8–9× the batch): per-episode redraw gives ~700 teams × ~4 episodes (~140 decisions) per rollout;
-  at K≈64 (≈ `n_steps`/ep_len — the phase-transition value) each env carries ONE team per rollout at
+  at ~64 (≈ `n_steps`/ep_len — the phase-transition value) each env carries ONE team per rollout at
   ~2k decisions (~15× density) AND the block spans an update boundary, so the env replays the team
   right after its gradient landed (the mini-exploiter learn-and-retest loop — the piece of the
   exploiter regime per-episode redraw never provides). Acceptance: `film/noise_scale_ratio` falling

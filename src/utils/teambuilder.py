@@ -84,7 +84,7 @@ class Gen3Teambuilder(Teambuilder):
         self._tp_weights = None
         # The pool index yielded for the CURRENT battle (None → not a tracked pool battle).
         self._last_pool_idx = None
-        # ── Team-BLOCKED episodes (K₂, --team-block-episodes; 1 = off, byte-identical) ──
+        # ── Team-blocked episodes (--team-block-episodes; 1 = off, byte-identical) ──
         # Hold each drawn team for K consecutive yields before redrawing. Rationale (the FiLM
         # sample-starvation counter): per-episode redraw sprays ~700 teams at ~4 episodes each per
         # rollout, so the per-team residual gradient in any update is estimated from ~140 decisions;

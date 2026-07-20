@@ -258,7 +258,7 @@ def test_cap_and_floor_empty():
 
 
 def test_block_episodes_holds_and_redraws():
-    """K₂ blocking: the same team is yielded K consecutive times, then a fresh draw happens;
+    """Team blocking: the same team is yielded K consecutive times, then a fresh draw happens;
     the PFSP tracking index stays pinned to the block's team for every yield of the block."""
     tb = _make_builder([TEAM_A, TEAM_B], team_pfsp="var")   # tracked draws (sets _last_pool_idx)
     tb.set_block_episodes(3)
