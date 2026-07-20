@@ -305,3 +305,21 @@ def test_group_grad_accumulator_gates_and_averages():
     # buffer reset: the next cycle starts fresh.
     p.grad = torch.full((4,), 10.0)
     assert acc.gate(3) is False and p.grad is None
+
+
+def test_noise_scale_advice():
+    """The NSR advisor's pure logic: healthy → no warnings; each out-of-band case names its fix;
+    a film ratio COVERED by the configured --film-grad-accum-steps warns nothing."""
+    from agents.training.instrumented_ppo import InstrumentedMaskablePPO as P
+    b = 32768.0
+    assert P._noise_scale_advice(1.1, None, 1, b) == []                      # healthy global
+    hi = P._noise_scale_advice(2.6, None, 1, b)
+    assert len(hi) == 1 and hi[0][0] == "global_high" and "--grad-accum-steps" in hi[0][1]
+    lo = P._noise_scale_advice(0.3, None, 1, b)
+    assert len(lo) == 1 and lo[0][0] == "global_low" and "lower --grad-accum-steps" in lo[0][1]
+    # film ratio 3.4 covered by film accum 4 (applied 0.85) → no warning.
+    assert P._noise_scale_advice(1.1, 3.4, 4, b) == []
+    # film ratio 8 with accum 1 → warn, recommending ~ceil(ratio).
+    fw = P._noise_scale_advice(1.1, 8.2, 1, b)
+    assert len(fw) == 1 and fw[0][0] == "film_high" and "--film-grad-accum-steps ~9" in fw[0][1]
+    assert P._noise_scale_advice(None, None, 1, b) == []                     # nothing measured

@@ -627,6 +627,11 @@ class InstrumentedMaskablePPO(MaskablePPO):
         }
         return loss, metrics
 
+    # +NSR-ADVISOR state: rate-limited Events-panel warnings when a noise-scale ratio is out of
+    # band (see _noise_scale_advice). Process-local (resets each child — fine, it re-warns).
+    _nsr_warn_last: dict = None
+    _nsr_samples: int = 0
+
     # Set by train_rl_agent (--film-grad-accum-steps; 1 = off, byte-identical). Per-GROUP gradient
     # accumulation for the FiLM generators: their grads are accumulated across N consecutive
     # OPTIMIZER steps and applied once, averaged — so each film update is computed from N× the
@@ -635,6 +640,61 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # lands at the group's critical batch. Training-only, NOT version-locked, resume-forwarded.
     film_grad_accum_steps: int = 1
     _film_grad_accumulator = None      # persistent across train() calls (partial groups carry over)
+
+    @staticmethod
+    def _noise_scale_advice(global_ratio, film_ratio, film_accum, b_eff):
+        """PURE advisory logic for the noise-scale ratios → list of (key, warning) pairs; [] when
+        healthy. The TUI-warning half of the McCandlish instrumentation: a ratio ≫ 1 means updates
+        are noise-dominated (each step's direction is mostly sideways — and under Adam the noise
+        still moves params at full speed, so spurious content gets WRITTEN, not just slowed); ≪ 1
+        means samples are being spent polishing an already-clean gradient instead of taking more
+        steps. Each warning names the concrete fix. The film check accounts for the CONFIGURED
+        --film-grad-accum-steps (applied film updates see film_accum× the batch), so a covered
+        ratio warns nothing."""
+        import math
+        out = []
+        if global_ratio is not None:
+            if global_ratio > 2.0:
+                out.append(("global_high", (
+                    f"⚠️ [NOISE] train/noise_scale_ratio {global_ratio:.1f} — gradient NOISE-LIMITED "
+                    f"(critical batch ≈ {global_ratio * b_eff / 1000:.0f}k vs effective {b_eff / 1000:.0f}k; "
+                    f"updates are mostly sideways). Fix: raise --grad-accum-steps ~{math.ceil(global_ratio)}× "
+                    f"(free — no VRAM/FPS cost, same rollout).")))
+            elif global_ratio < 0.5:
+                out.append(("global_low", (
+                    f"⚠️ [NOISE] train/noise_scale_ratio {global_ratio:.2f} — OVER-BATCHED (effective "
+                    f"{b_eff / 1000:.0f}k is ≫ the critical batch; samples polish an already-clean gradient). "
+                    f"Fix: lower --grad-accum-steps for more update steps per sample.")))
+        if film_ratio is not None:
+            applied = film_ratio / max(1, int(film_accum))
+            if applied > 2.0:
+                out.append(("film_high", (
+                    f"⚠️ [NOISE] film/noise_scale_ratio {film_ratio:.1f} with --film-grad-accum-steps "
+                    f"{int(film_accum)} → APPLIED film updates still {applied:.1f}× under the FiLM group's "
+                    f"critical batch (conditioning grads mostly noise → spurious per-team content). Fix: "
+                    f"set --film-grad-accum-steps ~{math.ceil(film_ratio)}.")))
+        return out
+
+    def _emit_noise_scale_warnings(self, global_ratio, film_ratio, b_eff):
+        """Rate-limited (30 min per key) Events-panel emit of _noise_scale_advice, after an EMA
+        warm-up (first ~20 samples are settling and would false-alarm)."""
+        import time
+        self._nsr_samples += 1
+        if self._nsr_samples < 20:
+            return
+        if self._nsr_warn_last is None:
+            self._nsr_warn_last = {}
+        advice = self._noise_scale_advice(
+            global_ratio, film_ratio, getattr(self, "film_grad_accum_steps", 1), b_eff)
+        now = time.time()
+        for key, msg in advice:
+            if now - self._nsr_warn_last.get(key, 0.0) >= 1800.0:
+                self._nsr_warn_last[key] = now
+                try:
+                    from main.launcher.ipc import emit
+                    emit(msg)
+                except Exception:
+                    print(msg, flush=True)
 
     @staticmethod
     def _zarch_participation_ratio(z):
@@ -1985,6 +2045,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # effective; ≫1 ⇒ noise-limited (a bigger batch buys ~linear per-step progress), ≪1 ⇒
         # diminishing returns (could shrink for more update steps). Only when accumulating (needs two
         # batch sizes) AND both norms were captured (a full first group formed).
+        _nsr_global = None   # +NSR-ADVISOR: this call's smoothed ratios (None until EMAs positive)
+        _nsr_film = None
         if accum >= 2 and noise_g_small_sq is not None and noise_g_big_sq is not None:
             b_small = float(self.batch_size)
             b_big = b_small * accum
@@ -1996,6 +2058,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 b_simple = self._noise_ema_s / self._noise_ema_g2
                 self.logger.record("train/noise_scale", float(b_simple))
                 self.logger.record("train/noise_scale_ratio", float(b_simple / b_big))
+                _nsr_global = float(b_simple / b_big)
         # +FILM-NOISE-SCALE: the FiLM-generator-group critical batch, same EMA treatment. Compare
         # `film/noise_scale` to `train/noise_scale` AND the effective batch: film ≫ global means the
         # conditioning gradient is far more noise-dominated than the aggregate — the direct
@@ -2011,6 +2074,18 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 b_film = self._noise_film_ema_s / self._noise_film_ema_g2
                 self.logger.record("film/noise_scale", float(b_film))
                 self.logger.record("film/noise_scale_ratio", float(b_film / b_big))
+                _nsr_film = float(b_film / b_big)
+                # The APPLIED-update view: each film update the optimizer actually takes is computed
+                # from film_grad_accum_steps× the effective batch, so this is the ratio a FiLM step
+                # really experiences — readable without the accumulation factor in your head.
+                # ≈1 = at the group's critical batch; >2 = raise --film-grad-accum-steps.
+                self.logger.record("film/noise_scale_ratio_applied",
+                                   float(b_film / b_big) / max(1, int(getattr(self, "film_grad_accum_steps", 1) or 1)))
+        # +NSR-ADVISOR: rate-limited TUI Events warnings when a smoothed noise-scale ratio is out
+        # of band, with the concrete fix in the message (see _noise_scale_advice). Only on the
+        # accumulating path (the estimator needs two batch sizes).
+        if accum >= 2 and (_nsr_global is not None or _nsr_film is not None):
+            self._emit_noise_scale_warnings(_nsr_global, _nsr_film, float(self.batch_size) * accum)
 
         # +BELIEF: hidden-opponent belief-aux diagnostics under their OWN `belief/` TB prefix (NOT
         # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`win_prob/`/`eval/`

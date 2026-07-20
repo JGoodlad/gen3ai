@@ -1396,6 +1396,19 @@ Two scalars ride the standard logger → TensorBoard + launcher TUI (`format.py`
   **film ≫ global ≫ effective batch ⇒ the per-team RL gradient into the conditioners sits below its
   noise floor at our batch** — the quantitative sample-starvation / "persistent net cost" read
   (`designs/learning/amortization_gap_and_conditioning.md`).
+- **`film/noise_scale_ratio_applied`** = `film/noise_scale_ratio ÷ --film-grad-accum-steps` — the
+  ratio each APPLIED film update actually experiences (accumulated updates see accum× the batch),
+  readable without the accumulation factor in your head: ≈1 = the group's critical batch, >2 = raise
+  `--film-grad-accum-steps`. The raw `film/noise_scale_ratio` stays the per-step measurement the
+  accumulation K is set from.
+- **The NSR advisor (`_noise_scale_advice` / `_emit_noise_scale_warnings`)** — when a SMOOTHED ratio
+  is out of band, a `⚠️ [NOISE]` warning is emitted to the launcher **Events panel** (via
+  `main.launcher.ipc.emit`; plain print standalone) naming the concrete fix: global ratio > 2 →
+  "raise `--grad-accum-steps` ~ratio× (free)"; < 0.5 → "over-batched, lower it for more steps per
+  sample"; film ratio ÷ the CONFIGURED `--film-grad-accum-steps` > 2 → "set `--film-grad-accum-steps`
+  ~ceil(ratio)" (a covered ratio warns nothing). **Rate-limited to one warning per key per 30 min**,
+  suppressed for the first ~20 EMA folds (warm-up false-alarm guard). Pure decision logic
+  unit-tested (`zarch_test.test_noise_scale_advice`).
 - **`--film-grad-accum-steps` (default 1 = off, byte-identical)** — the surgical response to a high
   `film/noise_scale_ratio`: accumulate the FiLM generators' grads across N consecutive OPTIMIZER
   steps and apply once, averaged (`_GroupGradAccumulator`: capture POST-clip so the global clip
