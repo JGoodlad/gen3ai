@@ -810,3 +810,20 @@ def test_eval_manifest_records_the_regime(tmp_path):
     # regime absent (the old call shape) → explicit Nones, never a KeyError for readers
     m2 = write_eval_manifest(str(tmp_path), 2000, opponents=["heuristic"], n_games=100)
     assert m2["trainee_team_sha"] is None and m2["opponent_pins"] == {}
+
+
+def test_eval_games_override_flows_through_schedule():
+    """--eval-games overrides the per-opponent game count via the _schedule() seam (None → the
+    module default EVAL_GAMES). Both callbacks read _schedule() for the pending cycle AND record
+    the actual cycle size into eval_results.jsonl, so the override is a single-seam change."""
+    from agents.training.eval_callback import PerOpponentEvalCallback, EVAL_FREQ_STEPS, EVAL_GAMES
+    from agents.training.selfplay_callback import SelfPlayCallback
+
+    for cls in (PerOpponentEvalCallback, SelfPlayCallback):
+        cb = cls.__new__(cls)
+        cb._eval_games = 200
+        if cls is SelfPlayCallback:
+            cb._debug = False
+        assert cb._schedule() == (EVAL_FREQ_STEPS, 200), cls.__name__
+        cb._eval_games = EVAL_GAMES
+        assert cb._schedule() == (EVAL_FREQ_STEPS, EVAL_GAMES), cls.__name__

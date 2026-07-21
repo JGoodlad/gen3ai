@@ -386,7 +386,8 @@ Bot eval runs in **frozen-snapshot subprocesses** (`--eval-workers`, default 5) 
 **work-steal at battle granularity** from a shared pool and play the live server (or the bridge)
 **without pausing training**; results merge into TensorBoard + TUI + best-model and land in
 `metadata.json` as a top-level `latest_eval` block. Each opponent's `EVAL_GAMES` are split into
-**shard units** (`--eval-shard-games`, default 25 → 4 shards/opponent) so any idle worker drains a
+**shard units** (`--eval-shard-games`, default 25 → 4 shards/opponent; per-opponent game count
+overridable with `--eval-games`) so any idle worker drains a
 straggler's remaining games instead of one worker grinding a whole opponent — the long eval tail
 collapses to one shard. The mechanism lives in the well-encapsulated **`eval_sharding/` package**
 (deep `ShardedEvalPool` interface; aggregation is **exact** — Σwon/Σfinished etc., raw δ pooled then

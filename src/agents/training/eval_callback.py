@@ -1042,6 +1042,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         eval_device: str = "cpu",
         eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
         eval_shard_games: int = EVAL_SHARD_GAMES,
+        eval_games: int | None = None,
         showdown_port: int | None = None,
         use_showdown_bridge: bool = False,
         bridge_impl: str = "node",
@@ -1055,6 +1056,10 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # Per-opponent games per eval cycle (--eval-games; None → the module default EVAL_GAMES).
+        # n=100 → ±0.098 (95% CI) per cell; n=200 → ±0.069 — the owner opted into 200 (2026-07-21)
+        # for tighter sentinel cells at ~2× eval cost (work-stolen, off the training path).
+        self._eval_games = int(eval_games) if eval_games else EVAL_GAMES
         self._model_dir = model_dir
         self._server_config = server_config
         # SPECIALIST eval alignment (--trainee-team): the raw Showdown-export team string the
@@ -1107,7 +1112,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         self.abort_fn = None
 
     def _schedule(self) -> tuple[int, int]:
-        return EVAL_FREQ_STEPS, EVAL_GAMES
+        return EVAL_FREQ_STEPS, self._eval_games
 
     def _init_callback(self) -> None:
         if self.best_model_save_path is not None:

@@ -21,12 +21,13 @@ To orient yourself:
 - When in doubt, ask: "is this an implementation doc for new code, or a record of what
   a running experiment does?"
 
-**Current state as of 2026-05-31:**
+**Current state as of 2026-07-21:**
 
 | What | Version | Notes |
 |------|---------|-------|
-| **Active training run** | **ai_v4** | Fresh run started 2026-05-31 (`run_20260531_182804`, git `63220dd`, 300M-step target) on the v4 arch (`gen3_trapping_signals_v1`, obs 3321); fixed-bot eval pool — **pathology-hunting phase before self-play**. The long ai_v3 ~350M run is retired. |
-| **Code on main** | **ai_v4 (closed out)** | Event-sourced battle layer / strict battle-API / observation richness / obs-build perf — landed across impl_step1–9. Open tail: **pathology hunting** (eval-replay analysis). Self-play code has landed (`selfplay_callback.py`, `--self-play`) but is gated behind pathology cleanup; self-play/league as a chapter is ai_v5. |
+| **Active training run** | **ai_v8** | `ai_v8_03_zarch_control_0718` — the v44 zarch/FiLM epoch (cold-control fork from the ai_v8_01 init), full booster stack (team-block-64, accum-16, onesided team-PFSP, film-accum-4), full LR (anneal removed 07-20), ~232M steps, pool 8 snapshots, ELO band ~1990–2018. |
+| **Code on main** | **ai_v8 (v44)** | `MODEL_CONFIG_VERSION` 44 (`gen3_zarch_film_v1`), booster flags + NSR advisor + the `_film_grad_accumulator` save-exclusion fix (8903a1c). The next fresh-run pre-flight list is `designs/ai_v8/next_run_plan.md`. |
+| **ai_v9** | design-only | Entity-graph skeleton (`designs/ai_v9/design_entity_graph.md`) — no code. |
 
 ---
 
@@ -113,10 +114,19 @@ fine-tune a model per top team, and take them to the ranked Showdown ladder. Als
 **cheap** MCTS (shallow K=3 action sampling, depth 1) into the training loop.
 
 ### ai_v8
-Rust battle simulator (via PyO3). Replaces the Node.js MCTS bridge for ~50× more rollouts per
-turn — unlocking deep MCTS at inference and full MCTS during training-data generation. Game
-mechanics unchanged; built mechanic-by-mechanic and validated against the bridge via fuzz
-testing (10k battles, zero divergence).
+The conditioning/credit-assignment epoch on the v44 model family: the public-info value aux
+(v43 `gen3_pubval_aux_v1`, `design_public_info_value.md`), the team-archetype latent + head
+FiLM (v44 `gen3_zarch_film_v1` — the amortization-gap storage fix), the discovery boosters
+(team-blocked episodes, grad accumulation + NSR instrumentation, onesided team-PFSP), and the
+**next-run pre-flight list** (`next_run_plan.md`: privileged critic, categorical value loss,
+top-K=16+tail op candidates, refine=1, obs-skip, belief-grad decision). (The Rust simulator
+work originally sketched for this slot shipped as `src/rust_sim/` under its own docs.)
+
+### ai_v9 (design-only)
+The entity-graph skeleton: entities/tokens (mons, moves, sides, global), computed physics as
+attention EDGE BIASES, pointer action heads, op head-concat deprecation. Full inventory:
+`design_entity_graph.md`. No implementation; the staged on-ramp (Form-A cross-attention) is an
+ai_v8 next-run experiment.
 
 ---
 

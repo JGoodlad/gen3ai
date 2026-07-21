@@ -153,6 +153,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         eval_device: str = "cpu",
         eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
         eval_shard_games: int = EVAL_SHARD_GAMES,
+        eval_games: int | None = None,
         keep_eval_snapshots: int = 10,
         keep_eval_trace_steps: int = 20,
         keep_stalls: int = KEEP_STALLS_DEFAULT,
@@ -171,6 +172,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # Per-opponent games per eval cycle (--eval-games; None → EVAL_GAMES). Sentinel cells at
+        # n=100 carry ±0.098 95% CIs; 200 tightens to ±0.069 (~2× eval cost, work-stolen).
+        self._eval_games = int(eval_games) if eval_games else EVAL_GAMES
         self._pool = pool
         # SPECIALIST eval alignment (--trainee-team): the raw Showdown-export team string the trainee
         # is pinned to, threaded into every eval-worker cfg so eval measures the model piloting the
@@ -298,7 +302,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
     def _schedule(self) -> tuple[int, int]:
         if self._debug:
             return 4000, 3  # fast cadence for --debug --self-play smoke tests
-        return EVAL_FREQ_STEPS, EVAL_GAMES
+        return EVAL_FREQ_STEPS, self._eval_games
 
     def _on_step(self) -> bool:
         if self._pending is not None:

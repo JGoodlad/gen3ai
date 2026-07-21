@@ -342,6 +342,52 @@ team-blocked episodes, style compression) as alternatives to heavy distillation.
 (general): when hunting a small conditional effect, FREEZE every non-treatment factor — pooled
 designs average a concentrated effect into invisibility.
 
+**REVISION (2026-07-20 — the two-direction probe @~205M catches the LAZY mode red-handed).** After
+~15M steps of the booster stack (team-block-64, global accum-16, film-accum-4) the modulation grew
+2–3× (`vf_dev` 0.56→0.85, `team_std` ~3×) and the SAME probe run in BOTH directions now reads:
+TSS pilot — INTACT 0.348, ABLATED 0.524, WRONG-Z(stall) 0.396; stall pilot — INTACT 0.696, ABLATED
+0.648, WRONG-Z(TSS) 0.700 (250 games/arm; the two intact-vs-intact mirrors agree, 65.2% vs 69.6%
+for the stall side; TSS-starmie verified IN the 719-team trainee pool, so this is in-distribution).
+Decomposition: modulation ON-vs-OFF moves play a lot, but the CODE CONTENT moves it ~nil in both
+directions (intact ≈ wrong-z) — i.e. FiLM's behavioral effect at this checkpoint is dominated by its
+team-SHARED component, a global style tilt (helps the stall pilot +5pp, hurts the TSS pilot −18pp on
+this matchup pair; the model's stall play also strengthened outright — the intact mirror flipped
+from 54/46 TSS-favored @186M to ~2:1 stall-favored). This is EXACTLY the lazy mode §(1) below
+predicted — dev is growing ~3.4× faster than the differential (`dev` 0.85 vs `team_std` 0.25) and
+the probe confirms the differential is behaviorally inert. The 186M content-sensitivity (wrong-z
+−17pp) did not persist: under the boosters the shared component grew fastest and swamped it.
+Candidate fix (not yet built): **center the FiLM output across teams** — subtract the running
+team-mean modulation so FiLM can only express per-team DEVIATIONS and the shared tilt is forced back
+into the trunk (the PopArt pattern applied to conditioning); alternatively freeze/shrink film LR and
+let the trunk absorb the shared shift. Global signals (4 promotions, ELO high-water ~2010) say the
+shared tilt is not net-harmful to strength — but it is not de-amortization either.
+
+**REVISION (2026-07-20, later — the owner's emphasis critique + the stratified GRID probe).** The
+owner asked whether the two frozen matchups were themselves unrepresentative — out-of-distribution
+w.r.t. what team-PFSP currently EMPHASIZES. Checked: only 321/719 pool teams have live win-rate
+EMAs; the TSS twin is mid-pack (0.540) and the stall anchor is COLD (unmeasured) — neither sits in
+the emphasis. The grid probe (`tmp/film_grid_probe.py`, @208.6M: 7 pilots stratified by live EMA —
+HIGH = the 3 weakest/most-drawn under onesided PFSP, all defensive archetypes; MID = the TSS twin;
+LOW = 2 de-emphasized strong teams; COLD = the stall anchor — × 2 median-EMA opponents ×
+intact/ablated, 100 games/cell) found: **HIGH intact 0.178 vs ablated 0.087 (δ +9.2pp, ~4σ — FiLM
+DOUBLES the win rate exactly where training is grinding); MID −3.5, LOW −4.0, COLD −7.5pp**
+(net over all 14 pairs ≈ +1pp). So the earlier "modulation hurts in-distribution" was a SAMPLING
+artifact — both old anchors sat outside the emphasis. But the content channel stays inert: wrong-z
+(a balance team's code) matched or BEAT intact on every HIGH cell it ran (0.117 vs 0.090 on the
+balance defender). The sharpest mechanism read is the HIGH-vs-COLD contrast — both defensive-
+archetype pilots, own codes, modulation ON: the heavily-TRAINED one gains +9.2, the UNTRAINED one
+loses 7.5. So the benefit is tied to per-team training EXPOSURE (PFSP grinds a weak team →
+modulation becomes the delivery vehicle for what was learned there), while the z code that unlocks
+it is interchangeable among in-distribution codes. FiLM + onesided team-PFSP are functioning as a
+COUPLED improvement loop (point at the weakest teams, store the gains in the fast modulation
+channel, EMAs rise, PFSP moves on) — which retracts the centering recommendation in its "do it
+soon" form: centering would amputate the demonstrably active shared component mid-loop. Untested
+cell that would settle the mechanism: wrong-z on COLD/MID/LOW (does generic modulation help
+independent of exposure?). Measurement lesson (general): when a treatment interacts with the
+TRAINING DISTRIBUTION, stratify the eval by the sampler's own emphasis weights — a "representative"
+probe pair chosen by salience (well-known teams) can still be OOD w.r.t. where learning is
+happening.
+
 **Two refinements to the Collapse-vs-Dead section above (2026-07-17, owner discussion — same
 conclusion, sharper mechanics).** The section already splits the failure modes correctly (Collapse
 killed by reconstruction, no exploiters needed; Dead = under-used-but-harmless until specialists
@@ -356,6 +402,146 @@ the *sharpener* of the differential, not an aliveness prerequisite. (2) The moni
 prescribed ("FiLM γ/β deviation from identity") **cannot distinguish those two modes** — the shipped
 upgrade is the split `film/{side}_dev` (mean |modulation|) vs `film/{side}_team_std` (modulation
 spread ACROSS teams): `team_std`≈0 while `dev` grows = lazy generic mode, both rising = real routing.
+
+## Why FiLM "adds capacity" — three distinct claims (2026-07-20 owner discussion)
+
+"FiLM adds capacity" tangles three claims with different evidence:
+
+1. **Representational capacity — only the DIFFERENTIAL is new.** The team-SHARED part of the
+   modulation (a constant scale/shift on head features) is mathematically absorbable into the
+   projection Linear the old model already had — zero new expressiveness. The team-differential
+   part IS new: the head goes from one function of the trunk features to a FAMILY of functions
+   indexed by team. The trunk always saw the team in the obs but compressed it away (the value
+   features run in ~3–5 effective dims — the minimal-sufficient-statistic bias); FiLM re-injects
+   team identity at the last layer, where using it is cheapest.
+2. **Optimization capacity — the escape hatch (the mechanism that carried the plateau break).**
+   A converged trunk is fired clay: every weight load-bearing, Adam second moments calibrated to
+   tiny gradients — the model isn't out of things to learn, it's out of CHEAP DIRECTIONS to learn
+   them in. FiLM's fresh zero-init weights (identity at init → moving them initially breaks
+   nothing, clean Adam state → large permissible steps) are a new low-interference direction —
+   the LoRA-on-a-frozen-LLM effect. The measured shared "defensive tilt" is a shift the trunk
+   could always REPRESENT but was too converged to REACH.
+3. **Gradient-coherence capacity — why K same-team episodes "update the same weights."** The
+   generator gradient is an outer product (head error ⊗ z), so a team-block's 64 consecutive
+   episodes all write into the SAME z-slice — and the next block (different team) writes into a
+   DIFFERENT slice. In the shared head both blocks hit identical weights: coherent within a
+   block, then partially cancelled by the next team's pull (the amortization gap's storage
+   failure). The outer product routes per-team lessons into separate subspaces so they accumulate
+   across the pool instead of averaging out.
+
+**The counterfactual (would old-arch + new opponent selection have grown too?) — unmeasured,
+bracketed honestly:** no zarch-off fork on the new diet exists. Some growth WAS architecture-free
+(the boosters cut global gradient noise 1.7→1.07 for the trunk too; onesided PFSP concentrates
+signal regardless of arch). But the eval-time ablation shows the learning CHOSE the modulation
+pathway as storage (removing it halves the win rate on exactly the emphasized teams — if the trunk
+could have absorbed those lessons as easily, ablation would be harmless), and the HIGH-vs-COLD
+contrast shows the break needed BOTH legs: emphasis without storage did nothing historically (v7
+plateaued with weak teams always in the pool), storage without emphasis does nothing now (the cold
+stall team gains nothing from the same machinery). Selection supplies concentrated signal; FiLM
+supplies a place to put it that other teams' gradients can't erase — a PRODUCT, not a sum. Honest
+weighting today: escape hatch + PFSP targeting first (team_std still ~3.5× below dev; wrong-z codes
+interchangeable), subspace routing second and growing. The clean falsifier = an old-arch fork on
+the identical diet (a full run's cost for one attribution bit; the ablation buys most of it cheap).
+
+## The FiLM family — what else exploits the same three mechanisms (2026-07-20 owner discussion)
+
+Each mechanism FiLM exploited generalizes into a family; each family has a member matched to a
+measured disease of this system:
+
+1. **More conditioning axes** (the representational win). **z_opp / matchup FiLM** — condition on
+   the REVEALED/believed opponent team (the belief heads already infer it); sharpens within-episode
+   (deterministic per state → PPO-legal); ~5 opponent archetype clusters ⇒ ~100× the sample density
+   of per-team codes; unlocks adapting *to who you fight*, the exploiter skill team-conditioning
+   can't express. **Privileged-critic conditioning** (asymmetric actor-critic, the sleeper) — FiLM
+   the TRUE hidden opponent team (training-only labels we already extract) onto the VALUE head:
+   the baseline may condition on anything without biasing the policy gradient, and our critic's
+   diseases (tail-blindness, PR ~2.9 thin features, the falsify-scan `unattributed` bucket) are
+   partly UNLEARNABLE-TARGET problems — returns depend on hidden state the critic can't see. Keep
+   the public-input critic as the deployed readout (prober/search); the privileged one is the GAE
+   baseline only.
+2. **Fresh identity-at-init capacity** (the escape-hatch / optimization win). The literature name
+   for the disease is PLASTICITY LOSS. Members: **trunk adapters** (zero-init residuals between
+   transformer layers — the damage-refine/re-attend pattern, generalized; a `--zarch-film trunk`
+   A/B), **periodic capacity grafts** (Net2Net/progressive-networks lineage on our version-gated
+   playbook), and the nuclear **reincarnation** (distill the converged policy into a re-initialized
+   net at an epoch boundary — every piece already built). NOT from this shelf: dropout, batch norm
+   (unmodeled nonstationarity), noisy-nets (off-policy exploration tool).
+3. **Stronger gradient routing** (the coherence win). The ladder: FiLM (diagonal) → conditional
+   LoRA (z-generated low-rank deltas) → hypernetworks → MoE heads (router keyed by z). All
+   deterministic/PPO-safe — but **storage is no longer the binding constraint; SIGNAL is**
+   (team_std 3.5× below dev because the per-team advantage is extraction-limited, not because FiLM
+   lacks rank). Climb the ladder only when team_std saturates while per-team probes still show
+   headroom.
+
+Shortlist (in order): privileged critic (gate: the falsify-scan unattributed bucket shrinks) →
+z_opp (gate: per-archetype win-rate spread narrows) → trunk adapters (gate: the escape-hatch
+fast-early-movement signature). Every candidate must pass the FiLM shippability checklist:
+deterministic, OFF-byte-identical, identity-at-init, version-gated, with a named falsifying metric.
+
+**The scouting caveat on the privileged critic (owner catch, 2026-07-20).** A NAIVE oracle critic
+(true state INSTEAD of the observation) devalues information gathering: on a Swampert
+Protect-scout for HP Grass the oracle sees tempo burned and nothing learned (it already knew), so
+the bootstrapped TD error on the scouting move is NEGATIVE while the real benefit lands later,
+diffusely. (With pure MC returns any baseline is unbiased; with GAE the critic's VALUES enter the
+advantages, and a critic without uncertainty assigns no value to reducing uncertainty.) The fix
+(Baisero & Amato, unbiased asymmetric actor-critic): condition on the agent's INFORMATION STATE
+AND the true state — the full public obs (belief features, threat provenance) PLUS a privileged
+FiLM — so a reveal changes the critic's input and information gain is priceable. Residual risk =
+shortcut learning (the privileged wire atrophies the belief-pricing); the falsifying gate is a
+scouting probe: V(s) must still jump on reveal events with the privileged branch ABLATED.
+
+**The conditioning ladder, precisely.** Head = W·h + b; the ladder is "how much of that
+computation does z command": **FiLM** h′=h·(1+γ(z))+β(z) — a mixing board, per-dim gain/offset on
+FIXED channels, no feature mixing (the DIAGONAL of a hypernetwork); **conditional LoRA**
+W′=W+U(z)·Vᵀ — z generates a low-rank weight UPDATE, so each team gets r NEW feature
+combinations (a low-rank-truncated hypernetwork; still zero-init-able → identity); **hypernetwork**
+W(z) generated whole — every team its own head, smooth in team space, costs |W| outputs + delicate
+init; **MoE** = a hypernetwork QUANTIZED to N choices + a router.
+
+**Signal extraction (the actual binding constraint).** "Signal" = advantage differences between
+team-specific best play and generalist play REACHING the gradient. On-policy PPO cannot see the
+advantage of a line the collapsed policy never samples — counterfactual invisibility at any batch
+size (blocking/batch fixed density and noise; this barrier remains). Ranked by yield: (1)
+**search-as-teacher** (BUILT, coef-0) — the CRN beam finds VERIFIED better lines and distils them
+(AWR × confirmed Δwin): manufactures counterfactual signal instead of waiting to sample it; (2)
+**exploiter distillation** (validated, ai_v7_19 double-sided recipe) — a dedicated per-team
+signal-mining run, and FiLM now provides per-team storage for the transfer (the Phase-2 pairing);
+(3) the fixed **privileged critic** — variance reduction IS extraction (same samples, cleaner
+advantages); (4) **tail-weighted/distributional value objectives** — per-team differences
+concentrate in tail events. Ordering logic: (1)/(2) CREATE signal absent from the on-policy
+stream; (3)/(4) conserve what's present. Creation beats conservation while exploration collapse
+binds.
+
+**Signal per unit compute (2026-07-20, compute-limited prioritization).** At the margin,
+signal/FLOP is about TARGETING, not volume: near convergence almost all rollout signal is
+REDUNDANT (the policy already plays those states as the gradient would push — that redundancy IS
+the plateau), yet ~100% of the box runs rollouts. Ranking: (1) **free riders** (~2–5% overhead) —
+privileged critic + tail-weighted vf loss reweight samples already paid for (variance reduction ≡
+a larger effective batch); (2) **the mining assembly line** — triage/falsify-scan (offline, idle
+CPU, converts existing LOSSES into a ranked list of provably-thrown states; the
+`policy_reducible` bucket is extracted signal sitting unused) → better-line search verifies ONLY
+those states (~tens of s/state; yields counterfactual signal on-policy sampling cannot produce at
+ANY volume) → AWR distill folds corrections at ~zero GPU cost. Filter-then-verify economics:
+every expensive FLOP is spent where cheap FLOPs proved there's something to learn — orders of
+magnitude better per bit than rollouts at a plateau; (3) **exploiter distillation** — ~100–1000×
+cost per improvement but extracts STRATEGIC (multi-turn closed-loop) signal that depth-2 search
+can't see; use for archetype-level holes; (4) **more generic self-play** — worst at a plateau,
+but do NOT cannibalize a run that's climbing (ai_v8_03 @full-LR is): STAGE the pipeline on spare
+CPU (traces are already written, corrections bank at coef-0) so the reallocation is pre-loaded
+when the slope flattens.
+
+**Correction (owner: "we are CPU-flops limited").** The scarce currency is CPU-HOURS (~86% of
+wall is rollout, obs-build ~88% of per-decision CPU, encode ~80%); the GPU is ~86% IDLE. This
+re-sorts the list: **(0) engineering multipliers on the CPU bottleneck** — a Rust
+`state_encoder` hot path (the Rust bridge exists; "encoder is the bottleneck, not the
+transformer") and verifying whether `--unified-obs` still COMPUTES the masked blocks env-side (if
+so, skipping them is a pure CPU refund) — a 2–3× encoder speedup buys 2–3× of EVERY signal
+source; **(1) GPU-side free riders are even freer** (privileged critic, tail-weighted vf, bigger
+critic — they spend the idle resource); **(2) mining vs rollouts is a REALLOCATION of the same
+saturated CPU** (search/falsify re-rolls ARE bridge battles + obs builds; "spare CPU" ≈ cycle
+tails only; trace-reading triage/scan is the near-free exception) — the exchange rate is
+slope-dependent: rollouts pay while climbing, mining dominates at plateau; **(3) exploiters =
+bulk CPU for strategic-depth signal.**
 
 ## See also
 - [[objective_richness_and_representation]] — the simplicity bias / minimal-sufficient-statistic backbone (why the shared solution wins by default) + the distillation bits-ladder

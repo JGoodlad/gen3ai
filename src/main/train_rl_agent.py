@@ -1504,6 +1504,12 @@ async def main():
                              "websocket) more connection churn; the in-process bridge (--use-showdown-bridge) is "
                              "preferred for fine shards. >= the per-opponent game count disables sharding (one shard "
                              "per opponent = the original opponent-level behaviour).")
+    parser.add_argument("--eval-games", "--eval_games", dest="eval_games", type=int, default=None,
+                        help="Games per OPPONENT per eval cycle (default: the module EVAL_GAMES, 100). "
+                             "Per-cell 95%% CI: n=100 -> +/-0.098, n=200 -> +/-0.069 — raise for tighter "
+                             "sentinel/promotion reads at proportionally more eval compute (work-stolen "
+                             "across --eval-workers, off the training path). Shards per opponent = "
+                             "eval-games / --eval-shard-games.")
     parser.add_argument("--keep-eval-snapshots", "--keep_eval_snapshots", dest="keep_eval_snapshots",
                         type=int, default=10,
                         help="Retain the N most-recent eval weight snapshots in eval_traces/step_<N>/snapshot.zip "
@@ -3177,6 +3183,7 @@ async def main():
         # exercises seed → pool eval → promotion; a plain --debug smoke skips it.
         eval_callback = SelfPlayCallback(
             pool=_pool,
+            eval_games=args.eval_games,
             model_dir=model_dir,
             server_config=server_config,
             showdown_port=args.showdown_port,
@@ -3232,6 +3239,7 @@ async def main():
         # dir, so nothing live is constructed here.
         eval_callback = PerOpponentEvalCallback(
             model_dir=model_dir,
+            eval_games=args.eval_games,
             server_config=server_config,
             best_model_save_path=os.path.join(model_dir, "best_model"),
             n_workers=args.eval_workers,
