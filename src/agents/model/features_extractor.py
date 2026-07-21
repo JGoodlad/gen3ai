@@ -4063,6 +4063,27 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         else:
             self._debugger = None
 
+    def set_belief_grad_mode(self, mode: str) -> None:
+        """Apply a belief-grad-mode at RUNTIME (the --allow-belief-grad-mode-change migration path).
+
+        SB3's load reconstructs the extractor from the ZIP's saved policy_kwargs, so a resume that
+        passes a different --belief-grad-mode would otherwise be a SILENT NO-OP (the 2026-07-21
+        incident: the migration notice printed but the loaded extractor kept 'detached' —
+        grad/*_norm_shared stayed exactly 0). The mode lives in THREE places (this attr,
+        `_belief_detach`, and the `detach_read` flag stamped on each belief head); this is the ONE
+        setter that updates them all — call it post-load on the resume path (a no-op when unchanged)."""
+        if mode not in ("shaping", "detached"):
+            raise ValueError(f"belief_grad_mode must be shaping|detached, got {mode!r}")
+        changed = mode != getattr(self, "belief_grad_mode", None)
+        self.belief_grad_mode = mode
+        self._belief_detach = (mode == "detached")
+        for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head, self.belief_head):
+            if _bh is not None:
+                _bh.detach_read = self._belief_detach
+        if changed:
+            print(f"[Gen3FeaturesExtractor] belief_grad_mode APPLIED at runtime -> {mode!r} "
+                  f"(detach_read={'on' if self._belief_detach else 'off'} across the belief heads)")
+
     # Read-only forwarders for the shared embedding tables — they are a model-level concept
     # and several tests/inspectors reach for them by name. Properties add no state_dict keys.
     @property

@@ -3408,6 +3408,11 @@ async def main():
                 enforce_belief_grad_mode=args.belief_grad_mode,  # FATAL if the belief-trunk-grad mode drifts (v41)
                 allow_belief_grad_mode_change=args.allow_belief_grad_mode_change,  # intentional migration
             )
+            # gen3_belief_grad_mode_v1 MIGRATION FIX: SB3 reconstructs the extractor from the ZIP's
+            # saved policy_kwargs, so the requested mode must be APPLIED to the live extractor
+            # post-load (else --allow-belief-grad-mode-change is a silent no-op — the 2026-07-21
+            # incident, visible as grad/*_norm_shared == 0 under 'shaping'). No-op when unchanged.
+            model.policy.features_extractor.set_belief_grad_mode(args.belief_grad_mode)
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
             sys.stdout.flush()  # os._exit() skips buffer flushing — make sure the reason reaches the log

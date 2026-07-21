@@ -133,3 +133,30 @@ def test_detached_preserves_normal_trunk_training():
     pi, vf = dt.forward_internal(obs)
     (pi.float().sum() + vf.float().sum()).backward()
     assert _grad_mass(dt, ("team_transformer",)) > 0.0    # normal trunk training intact under detached
+
+
+def test_set_belief_grad_mode_updates_all_three_places():
+    """The runtime setter (the --allow-belief-grad-mode-change migration fix) must flip the extractor
+    attr, _belief_detach, AND every belief head's detach_read — SB3 load reconstructs the extractor
+    from the ZIP's saved kwargs, so without this post-load application the migration is a silent
+    no-op (grad/*_norm_shared stays 0 under a requested 'shaping')."""
+    from types import SimpleNamespace
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+
+    fe = Gen3FeaturesExtractor.__new__(Gen3FeaturesExtractor)
+    heads = [SimpleNamespace(detach_read=True) for _ in range(3)]
+    fe.move_belief, fe.spread_belief, fe.hp_type_belief_head, fe.belief_head = (
+        heads[0], heads[1], None, heads[2])
+    fe.belief_grad_mode = "detached"
+    fe._belief_detach = True
+
+    fe.set_belief_grad_mode("shaping")
+    assert fe.belief_grad_mode == "shaping" and fe._belief_detach is False
+    assert all(h.detach_read is False for h in heads)
+
+    fe.set_belief_grad_mode("detached")
+    assert fe._belief_detach is True and all(h.detach_read is True for h in heads)
+
+    import pytest
+    with pytest.raises(ValueError):
+        fe.set_belief_grad_mode("bogus")
