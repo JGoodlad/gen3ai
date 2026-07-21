@@ -1690,7 +1690,7 @@ class ModelVersion:
                 f"{requested!r}."
             )
 
-    def check_belief_grad_mode(self, requested: str) -> None:
+    def check_belief_grad_mode(self, requested: str, allow_change: bool = False) -> None:
         """Raise ModelVersionError if `requested` (the resume `--belief-grad-mode`) differs from this
         saved config's belief_grad_mode. Call as: saved_version.check_belief_grad_mode(args.belief_grad_mode).
 
@@ -1699,13 +1699,29 @@ class ModelVersion:
         the belief reshape the trunk) differs. So, like vf_coef, it is EXCLUDED from check_compatible (gating
         a frozen opponent on it would be a false rejection that breaks self-play) and enforced ONLY on the
         training-resume path: flipping shaping↔detached mid-run silently changes whether the belief
-        gradient shapes the shared trunk, so a drift is a hard error rather than a quiet change."""
+        gradient shapes the shared trunk, so a drift is a hard error rather than a quiet change.
+
+        ``allow_change=True`` (--allow-belief-grad-mode-change) is the INTENTIONAL-migration escape hatch:
+        because detach() is value-preserving, flipping the mode on a converged checkpoint is weight-safe —
+        the gate exists to prevent ACCIDENTAL drift, not because the transition is unsound. A permitted
+        mismatch prints a loud notice; the next checkpoint save records the new mode, so the flag is only
+        needed once per migration (the staged shaping-flip experiment, next_run_plan item 5)."""
         if self.belief_grad_mode != requested:
+            if allow_change:
+                print(
+                    f"[ModelVersion] NOTICE: belief_grad_mode MIGRATION {self.belief_grad_mode!r} -> "
+                    f"{requested!r} (--allow-belief-grad-mode-change). Forward is bit-identical; the "
+                    "belief-aux gradient now "
+                    + ("SHAPES the shared trunk." if requested == "shaping" else "STOPS at the heads.")
+                    + " The next checkpoint save records the new mode."
+                )
+                return
             raise ModelVersionError(
                 f"belief_grad_mode mismatch: saved={self.belief_grad_mode!r}, requested={requested!r}.\n"
                 "Whether the belief heads reshape the shared trunk is fixed for a run's lifetime — flipping "
                 "it on resume silently changes the training signal.\n"
-                f"Fix: resume with --belief-grad-mode {self.belief_grad_mode}, or start a fresh run."
+                f"Fix: resume with --belief-grad-mode {self.belief_grad_mode}, pass "
+                "--allow-belief-grad-mode-change for an intentional migration, or start a fresh run."
             )
 
     def check_value_tail_weight(self, requested: float) -> None:

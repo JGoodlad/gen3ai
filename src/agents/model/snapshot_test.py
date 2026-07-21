@@ -2196,3 +2196,14 @@ def test_checkpoint_sidecar_carries_matchup_hash(version):
         assert sidecar["matchup_hash"] == "cafe000042"
         meta = json.load(open(os.path.join(tmp, "metadata.json")))
         assert meta["snapshot_history"]["checkpoint_9_steps.zip"]["matchup_hash"] == "cafe000042"
+
+
+def test_check_belief_grad_mode_allow_change_permits_migration(version, capsys):
+    """--allow-belief-grad-mode-change: a mismatch prints a loud migration notice instead of raising
+    (the intentional shaping<->detached flip; the gate exists against ACCIDENTAL drift only)."""
+    saved = dataclasses.replace(version, belief_grad_mode="detached")
+    saved.check_belief_grad_mode("shaping", allow_change=True)  # must not raise
+    out = capsys.readouterr().out
+    assert "MIGRATION" in out and "'detached' -> 'shaping'" in out
+    with pytest.raises(ModelVersionError):
+        saved.check_belief_grad_mode("shaping")  # default stays FATAL

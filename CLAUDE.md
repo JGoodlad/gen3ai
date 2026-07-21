@@ -997,7 +997,8 @@ NO belief gradient reshapes the trunk — the belief stays computed / reinjected
 (kills the belief↔policy gradient interference). `detach()` is value-preserving → the FORWARD (eval /
 frozen pool / distill opponent) is BIT-IDENTICAL; only the TRAINING gradient differs. So it is a
 **RESUME-IMMUTABLE training hparam** (the `vf_coef` class): recorded on `ModelVersion`, enforced
-resume-only via `check_belief_grad_mode`, EXCLUDED from `check_compatible` (a frozen opponent's forward is
+resume-only via `check_belief_grad_mode` (intentional migration: `--allow-belief-grad-mode-change`),
+EXCLUDED from `check_compatible` (a frozen opponent's forward is
 unaffected, so gating it would break self-play). NO `ARCH_SIGNATURE` bump; `shaping` is byte-for-byte the
 v40 forward+backward. The win-aligned heads (`--win-prob-mode` / `--value-dist-mode`) keep their own
 `read_only`/`shaping`. Design rationale: a representation-rank probe found the 128-dim trunk runs in ~3–5

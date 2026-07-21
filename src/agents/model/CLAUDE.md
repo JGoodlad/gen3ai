@@ -855,7 +855,9 @@ representation-rank probe (the 128-dim trunk runs in ~3–5 effective dims) says
 interference is the risk this isolates. **Crucially `detach()` is value-preserving** → the FORWARD
 (eval / inference / a frozen pool / distill opponent) is BIT-IDENTICAL regardless of the mode; only the TRAINING
 gradient differs. So it is a **RESUME-IMMUTABLE training hparam (the `vf_coef` class)**: recorded on `ModelVersion`,
-enforced ONLY on the training-resume path by `check_belief_grad_mode` (+ `enforce_belief_grad_mode` on
+enforced ONLY on the training-resume path by `check_belief_grad_mode` — an INTENTIONAL migration is
+permitted with `--allow-belief-grad-mode-change` (detach() is value-preserving so the flip is
+weight-safe; loud notice, next save records the new mode) — (+ `enforce_belief_grad_mode` on
 `load_model_snapshot`), and **EXCLUDED from `check_compatible` / `_WEIGHT_FIELDS`** (gating a frozen opponent on it
 would be a false rejection that breaks self-play). NO `ARCH_SIGNATURE` bump (forward identical); `shaping` is
 byte-for-byte the v40 forward AND backward. Threaded through `current_model_version` / `arch_toggles_from_model` /

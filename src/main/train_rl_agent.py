@@ -1439,6 +1439,13 @@ async def main():
                              "op-damage gradient + sits at the Smogon prior). Only meaningful with "
                              "--hp-type-belief learned. TRAINING-only (not version-locked); metrics ride "
                              "belief/hptype_* (acc, n_slots). Suggested 0.05.")
+    parser.add_argument("--allow-belief-grad-mode-change", "--allow_belief_grad_mode_change",
+                        dest="allow_belief_grad_mode_change", action="store_true", default=False,
+                        help="Permit an INTENTIONAL belief-grad-mode migration on resume (the v41 gate "
+                             "otherwise makes a drift FATAL). detach() is value-preserving, so flipping "
+                             "shaping<->detached on a converged checkpoint is weight-safe — only future "
+                             "gradients change. Prints a loud notice; the next checkpoint save records "
+                             "the new mode, so this flag is needed once per migration.")
     parser.add_argument("--belief-grad-mode", "--belief_grad_mode", dest="belief_grad_mode",
                         choices=["shaping", "detached"], default=None,
                         help="gen3_belief_grad_mode_v1: how the STATE-prediction belief heads (move / spread / "
@@ -3399,6 +3406,7 @@ async def main():
                 enforce_value_tail_weight=args.value_tail_weight,  # FATAL if the value-loss tail weight drifts
                 enforce_value_dist=(args.value_dist_vmin, args.value_dist_vmax),  # FATAL if the dist support drifts
                 enforce_belief_grad_mode=args.belief_grad_mode,  # FATAL if the belief-trunk-grad mode drifts (v41)
+                allow_belief_grad_mode_change=args.allow_belief_grad_mode_change,  # intentional migration
             )
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
