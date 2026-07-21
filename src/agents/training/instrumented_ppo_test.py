@@ -656,3 +656,21 @@ def test_opd_skips_awr_only_buffer():
     with_awr_only = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
     for k in base:
         assert th.allclose(base[k], with_awr_only[k], atol=1e-7), f"OPD acted on a π'-less buffer at {k}"
+
+
+# --------------------------------------------------------------------------------------
+# Save-exclusion of transient CUDA-bearing state. `_film_grad_accumulator` holds CUDA grad
+# clones; if pickled into a snapshot's data section it deserializes WITHOUT map_location, so
+# every env/eval worker that loads the snapshot (device="cpu") silently initializes a ~252 MiB
+# GPU context — dozens of workers exhausted the card (the 2026-07-20 OOM cascade). The
+# accumulator is transient (train() lazily recreates it) and must NEVER be saved.
+# --------------------------------------------------------------------------------------
+
+
+def test_film_grad_accumulator_excluded_from_save():
+    """The FiLM grad accumulator (CUDA tensors) must be in _excluded_save_params — a snapshot
+    carrying it poisons every CPU worker that loads it with a GPU context."""
+    excluded = InstrumentedMaskablePPO._excluded_save_params(
+        InstrumentedMaskablePPO.__new__(InstrumentedMaskablePPO))
+    assert "_film_grad_accumulator" in excluded
+    assert "_correction_buffer" in excluded  # the pre-existing transient exclusions survive

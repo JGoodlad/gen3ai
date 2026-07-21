@@ -388,7 +388,12 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # and the workers/cycle refill it. Mirrors SB3 excluding `rollout_buffer`.
         # `_distill_teacher` is a full frozen model (a foreign exploiter) attached at setup — never pickle
         # it into our checkpoint; it is re-loaded from its own path on resume (like a stable opponent).
-        return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher", "_distill_teachers"]
+        # `_film_grad_accumulator` holds CUDA gradient clones: pickled into the zip's data section they
+        # deserialize WITHOUT map_location, so any process that loads the snapshot (env/eval workers,
+        # device="cpu") silently initializes a 252 MiB GPU context — dozens of workers ≈ the whole card
+        # (the 2026-07-20 OOM cascade). Transient like the rollout buffer; train() lazily recreates it.
+        return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher",
+                                                  "_distill_teachers", "_film_grad_accumulator"]
 
     @staticmethod
     def _searchteacher_loss(logits, action_mask, better_action, advantage,
