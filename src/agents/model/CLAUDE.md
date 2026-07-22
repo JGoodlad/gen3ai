@@ -591,8 +591,17 @@ edge-tail-absorbed, CE; folded at `value_dist_coef`; the target is PopArt-normal
 critic is, so the support lives in normalized space — see `src/agents/training/CLAUDE.md`), **trace
 capture** (`RLPlayer._value_dist` → a `value_dist` npz array), the **prober** histogram + spread/PIT
 (`engine.build_value_dist` / `ValueDistView`, rendered in the Summary + the `analyze` CLI), and the
-**launcher** `value_dist/*` aggregate metrics. NOT YET (Phase B, a separate fresh-run A/B): making the
-scalar critic ITSELF distributional (replace `value_net`).
+**launcher** `value_dist/*` aggregate metrics. **Phase B is now BUILT (v45, `gen3_dist_critic_v1`,
+`value_from_dist` / `--value-from-dist`):** the distributional head BECOMES the critic — GAE /
+bootstrap / deployment read `E[Z]` (`policy._critic_value` → `ValueDistHead.mean(logits)` → `_denorm`,
+same PopArt peg), the HL-Gauss CE is the PRIMARY value loss (`vf_coef` weight, not `value_dist_coef`),
+and the scalar `value_net` FREEZES as a fallback (MSE term dropped; PopArt still POPs it + keeps the
+μ/σ peg alive for the CE's normalized targets). WARM-STARTABLE (no state_dict change, both heads
+exist; the offline probe confirmed E[Z]≈V) → RESUME-IMMUTABLE (the `belief_grad_mode` class):
+recorded on `ModelVersion`, resume-only `check_value_from_dist` (+ `--allow-value-from-dist-change`
+migration hatch), EXCLUDED from `check_compatible`. NO `ARCH_SIGNATURE` bump; requires
+`--value-dist-mode shaping`. A POLICY kwarg (like `use_popart`); tests in `dist_critic_test.py`.
+Current `MODEL_CONFIG_VERSION` = **45**.
 
 **Discrete top-K incoming move-space (v30, `damage_topk_k` / `--damage-topk`, `gen3_unified_topk_incoming_v1`).**
 The `DamageOperator`'s incoming block collapses the opp active's whole moveset into the worst phys/spec

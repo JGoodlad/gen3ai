@@ -1336,9 +1336,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # +VALUE-DIST: the distributional value head's HL-Gauss CE aux loss. On when the mode is set AND
         # the coef is non-zero. read_only vs shaping differ only in the extractor's stop-grad of the head's
         # input — the loss term is identical. OFF → skipped (loss byte-identical to upstream).
+        # gen3_dist_critic_v1 (Phase B): the distributional head IS the critic — GAE reads E[Z]
+        # (policy._critic_value), the HL-Gauss CE is the PRIMARY value loss (weighted by vf_coef,
+        # not value_dist_coef), and the scalar MSE term is dropped (value_net freezes as a fallback).
+        value_from_dist = bool(getattr(self.policy, "_value_from_dist", False))
         value_dist_on = (
             getattr(self.policy.features_extractor, "value_dist_mode", "none") != "none"
-            and self.value_dist_coef != 0.0
+            and (self.value_dist_coef != 0.0 or value_from_dist)   # Phase B forces the CE on
         )
         # +SEARCH-TEACHER: AWR policy distillation. On when enabled, the coef is non-zero, AND the
         # standalone correction buffer has been populated (the callback fills it from worker shards).
@@ -1506,7 +1510,11 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 else:
                     ent_loss_used = entropy_loss
 
-                loss = policy_loss + self.ent_coef * ent_loss_used + self.vf_coef * value_loss
+                # Phase B (value_from_dist): the scalar MSE value term is DROPPED (value_net frozen —
+                # the CE below at vf_coef is the critic). value_loss is still logged as the
+                # E[Z]-mean-vs-return diagnostic. Off → the standard vf_coef·MSE term.
+                _vf_term = 0.0 if value_from_dist else self.vf_coef * value_loss
+                loss = policy_loss + self.ent_coef * ent_loss_used + _vf_term
 
                 # +BELIEF: hidden-opponent belief aux loss. evaluate_actions(rollout_data.observations,
                 # …) ran the extractor forward just above, stashing per-slot logits for THIS minibatch;
@@ -1699,7 +1707,9 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         vd_out = self._value_dist_loss(_vd_logits, _vd_target, _vd_head.atoms)
                         if vd_out is not None:
                             vd_loss, vd_m = vd_out
-                            value_dist_term = self.value_dist_coef * vd_loss
+                            # Phase B: the CE is the PRIMARY critic loss (vf_coef weight); else the aux coef.
+                            _ce_w = self.vf_coef if value_from_dist else self.value_dist_coef
+                            value_dist_term = _ce_w * vd_loss
                             loss = loss + value_dist_term
                             for _vk, _vv in vd_m.items():
                                 value_dist_metrics.setdefault(_vk, []).append(float(_vv))
@@ -1903,7 +1913,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         and (not win_prob_on or win_prob_term is not None)):  # don't drop grad/win_prob_share
                     grad_balance = grad_balance_metrics(
                         policy_loss + self.ent_coef * entropy_loss,
-                        self.vf_coef * value_loss,
+                        # Phase B: the REAL critic term is the CE (value_dist_term); the scalar
+                        # vf_coef·value_loss is dropped from the loss, so measure the CE instead.
+                        (value_dist_term if (value_from_dist and value_dist_term is not None)
+                         else self.vf_coef * value_loss),
                         shared_trunk,
                         # Each ACTIVE scaffold broken out on the trunk: species/move/latent/move-latent
                         # belief + win-prob (≈0 under read_only) + value-dist. Empty → RL-heads-only.

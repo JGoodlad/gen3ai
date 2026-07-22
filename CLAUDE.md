@@ -1046,8 +1046,24 @@ Clause ⇒ lossless) + a **VICReg per-dim variance floor** (`zarch/std` is the c
 learned per-team bias). STRUCTURAL: `zarch_film` string + `zarch_dim` int gated in `check_compatible`
 (the `value_dist_mode`/`bins` pattern); OFF byte-identical (NO `ARCH_SIGNATURE` bump); requires
 nothing (independent of the belief/damage stack); threaded through `current_model_version` /
-`arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs` sites. Current
-`MODEL_CONFIG_VERSION` = **44**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+`arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs` sites.
+**v45 the DISTRIBUTIONAL VALUE CRITIC — Phase B** (`gen3_dist_critic_v1`; `value_from_dist` /
+`--value-from-dist` + the migration hatch `--allow-value-from-dist-change`) — promotes the v29
+`ValueDistHead` from a SIDE readout to the actual CRITIC. When on: GAE / bootstrap / deployment read
+**E[Z]** (the distribution's mean, `policy._critic_value` → `head.mean(logits)` → `_denorm`, same
+PopArt peg as the scalar), the **HL-Gauss CE becomes the PRIMARY value loss** (weighted by `vf_coef`,
+not the aux `value_dist_coef`), and the scalar `value_net` FREEZES as a fallback + the E[Z]-vs-V
+monitor (its MSE term dropped from the loss; PopArt still POPs it harmlessly + keeps the μ/σ peg
+alive for the CE's normalized targets). The "Stop Regressing" recipe (Farebrother) — a categorical
+critic resists the crystallization the scalar MSE breeds. **WARM-STARTABLE** on a `--value-dist-mode
+shaping` lineage (the offline probe confirmed E[Z]≈V at pearson 0.988): no state_dict change (both
+heads always exist) and the frozen forward's ACTION selection is unchanged, so it is RESUME-IMMUTABLE
+(the `belief_grad_mode`/`vf_coef` class) — recorded on `ModelVersion`, enforced resume-only via
+`check_value_from_dist`, EXCLUDED from `check_compatible` (gating a frozen opponent would false-reject
+self-play). NO `ARCH_SIGNATURE` bump; requires `--value-dist-mode shaping` (the head must be a live
+trunk-shaping critic). Threaded as a POLICY kwarg (`value_from_dist`, like `use_popart`) through both
+`policy_kwargs` sites + the resume enforce; `value_share` (grad-balance) now points at the CE term.
+Current `MODEL_CONFIG_VERSION` = **45**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

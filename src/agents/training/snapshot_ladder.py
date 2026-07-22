@@ -30,12 +30,21 @@ CLI:
 """
 from __future__ import annotations
 
+import os
+
+# Cap torch/BLAS intra-op threads BEFORE any (transitive) torch import — mirrors eval_worker.
+# Each shard runs on a shared box; without this every process defaults torch to all cores, so N
+# parallel shards spawn N×cores threads → oversubscription thrash → battles blow the 180s bridge
+# timeout (the 2026-07-22 4-shard-on-16-cores failure). One thread/process + event-loop concurrency
+# is the right shape for B=1 CPU inference.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
 import argparse
 import asyncio
 import glob
 import itertools
 import json
-import os
 import sys
 from datetime import datetime, timezone
 
@@ -176,6 +185,8 @@ def fit_ladder(run_dir: str, base: float | None = None) -> dict:
 def _play_pair(run_dir, step_a, step_b, n_games, mappings, cv, all_teams, sample_teams,
                concurrency, impl):
     """Round-robin one frozen pair on the bridge; return (wins_a, games_finished)."""
+    import torch
+    torch.set_num_threads(1)  # defensive: B=1 CPU inference; the parallelism is across shards
     from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
     from agents.inference.player import RLPlayer
     from agents.model.snapshot import load_foreign_opponent
@@ -229,7 +240,9 @@ def _measure_missing(run_dir, target_pairs, n_games, concurrency, impl):
             played += 1
             print(f"[ladder] {a//1_000_000}M vs {b//1_000_000}M: {wins_a}/{finished}", flush=True)
         except Exception as e:  # noqa: BLE001 — one bad pair must not abort the sweep
-            print(f"[ladder] pair {a} vs {b} FAILED: {e}", flush=True)
+            import traceback
+            print(f"[ladder] pair {a} vs {b} FAILED: {type(e).__name__}: {e}\n"
+                  f"{traceback.format_exc()}", flush=True)
     return played
 
 
@@ -241,11 +254,22 @@ def update_for_promotion(run_dir, new_step, n_games=100, concurrency=4, impl="no
     return fit_ladder(run_dir)
 
 
-def backfill(run_dir, n_games=100, concurrency=4, impl="node") -> dict:
+def backfill(run_dir, n_games=100, concurrency=4, impl="node", shard=None) -> dict:
     """The one-time back tax: round-robin ALL frozen snapshots currently on disk (only the
-    pairs not yet in games.jsonl), then refit. Idempotent — reruns skip measured pairs."""
+    pairs not yet in games.jsonl), then refit. Idempotent — reruns skip measured pairs.
+
+    ``shard`` = (i, n): play only pairs whose index % n == i — the disjoint-slice split for
+    running N backfill PROCESSES in parallel (true multi-core: each spawns its own bridge; the
+    slices are disjoint so no pair is double-played, and games.jsonl appends stay race-safe).
+    A sharded run does NOT refit (the last shard to finish, or a `--fit-only`, does)."""
     steps = pool_snapshot_steps(run_dir)
     pairs = list(itertools.combinations(steps, 2))
+    if shard is not None:
+        i, n = shard
+        pairs = [p for k, p in enumerate(pairs) if k % n == i]
+        print(f"[ladder] shard {i}/{n}: {len(pairs)} pairs @ {n_games} games", flush=True)
+        _measure_missing(run_dir, pairs, n_games, concurrency, impl)
+        return {}  # sharded workers don't refit; caller fits once all shards finish
     print(f"[ladder] backfill over {len(steps)} snapshots = {len(pairs)} pairs "
           f"(measuring the missing ones @ {n_games} games)", flush=True)
     _measure_missing(run_dir, pairs, n_games, concurrency, impl)
@@ -274,6 +298,7 @@ def main() -> int:
     ap.add_argument("--n-games", type=int, default=100)
     ap.add_argument("--concurrency", type=int, default=4)
     ap.add_argument("--impl", default="node")
+    ap.add_argument("--shard", default=None, help="I:N — play only pair-slice I of N (parallel workers)")
     ap.add_argument("--fit-only", action="store_true", help="refit from games.jsonl, play nothing")
     a = ap.parse_args()
     if a.fit_only:
@@ -281,7 +306,11 @@ def main() -> int:
     elif a.promote is not None:
         ladder = update_for_promotion(a.run_dir, a.promote, a.n_games, a.concurrency, a.impl)
     elif a.backfill:
-        ladder = backfill(a.run_dir, a.n_games, a.concurrency, a.impl)
+        shard = tuple(int(x) for x in a.shard.split(":")) if a.shard else None
+        ladder = backfill(a.run_dir, a.n_games, a.concurrency, a.impl, shard=shard)
+        if not ladder:  # sharded worker — no fit, no ladder table to print
+            print(f"[ladder] shard {a.shard} done (fit deferred to --fit-only)", flush=True)
+            return 0
     else:
         ap.error("pass --backfill, --promote <step>, or --fit-only")
     ranked = sorted(ladder["ratings"].items(), key=lambda kv: -kv[1])

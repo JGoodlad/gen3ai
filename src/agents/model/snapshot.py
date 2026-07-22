@@ -491,6 +491,8 @@ def load_model_snapshot(
     enforce_value_dist: Optional[Tuple[float, float]] = None,
     enforce_belief_grad_mode: Optional[str] = None,
     allow_belief_grad_mode_change: bool = False,
+    enforce_value_from_dist: Optional[bool] = None,
+    allow_value_from_dist_change: bool = False,
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
@@ -537,6 +539,9 @@ def load_model_snapshot(
         if enforce_belief_grad_mode is not None:
             saved_version.check_belief_grad_mode(enforce_belief_grad_mode,
                                                  allow_change=allow_belief_grad_mode_change)
+        if enforce_value_from_dist is not None:
+            saved_version.check_value_from_dist(enforce_value_from_dist,
+                                                allow_change=allow_value_from_dist_change)
         arch_validated = True
     else:
         print(

@@ -45,15 +45,33 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     be toggled on a resumed model.
     """
 
-    def __init__(self, *args, use_popart: bool = False, **kwargs):
+    def __init__(self, *args, use_popart: bool = False, value_from_dist: bool = False, **kwargs):
         # super().__init__ builds value_net (SB3 _build); the normalizer wraps it afterwards.
         super().__init__(*args, **kwargs)
         self.popart = PopArtNormalizer() if use_popart else None
+        # gen3_dist_critic_v1 (Phase B): when True the GAE/bootstrap/deployed value is E[Z] from the
+        # distributional head instead of the scalar value_net (which freezes as a fallback + monitor).
+        # A resume-immutable training-behavior toggle (the belief_grad_mode class) — see set_ / the
+        # ModelVersion gate. Requires value_dist_mode == "shaping" (the head must be a live critic).
+        self._value_from_dist = bool(value_from_dist)
 
     def _denorm(self, values: th.Tensor) -> th.Tensor:
         """Map the value head's (possibly normalized) output to a real-unit value. Identity when
         PopArt is disabled, so the real-unit GAE / advantage path is unchanged."""
         return self.popart.denormalize(values) if self.popart is not None else values
+
+    def _critic_value(self, latent_vf: th.Tensor) -> th.Tensor:
+        """The real-unit critic value used by GAE / bootstrap / deployment. Phase B: E[Z] from the
+        distributional head (normalized) → _denorm (same PopArt peg as the scalar) → real units, so
+        the plumbing is byte-for-byte the scalar path except the source. Falls back to the scalar
+        value_net when off, or if the dist logits aren't stashed (defensive — never silently wrong)."""
+        if self._value_from_dist:
+            fe = self.features_extractor
+            head = getattr(fe, "value_dist_head", None)
+            logits = getattr(fe, "last_value_dist_logits", None)
+            if head is not None and logits is not None:
+                return self._denorm(head.mean(logits))
+        return self._denorm(self.value_net(latent_vf))
 
     def forward(
         self,
@@ -64,7 +82,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         pi_features, vf_features = self.extract_features(obs)
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)
-        values = self._denorm(self.value_net(latent_vf))
+        values = self._critic_value(latent_vf)
         distribution = self._get_action_dist_from_latent(latent_pi)
         if action_masks is not None:
             distribution.apply_masking(action_masks)
@@ -91,7 +109,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         # unchanged; illegal actions contribute exactly 0 either way). A no-op for any non-distill run.
         self._last_pi_distribution = distribution
         log_prob = distribution.log_prob(actions)
-        values = self._denorm(self.value_net(latent_vf))
+        values = self._critic_value(latent_vf)
         return values, log_prob, distribution.entropy()
 
     def get_distribution(
@@ -107,4 +125,4 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     def predict_values(self, obs) -> th.Tensor:
         _, vf_features = self.extract_features(obs)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)
-        return self._denorm(self.value_net(latent_vf))
+        return self._critic_value(latent_vf)

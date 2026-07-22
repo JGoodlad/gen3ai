@@ -1439,6 +1439,18 @@ async def main():
                              "op-damage gradient + sits at the Smogon prior). Only meaningful with "
                              "--hp-type-belief learned. TRAINING-only (not version-locked); metrics ride "
                              "belief/hptype_* (acc, n_slots). Suggested 0.05.")
+    parser.add_argument("--value-from-dist", "--value_from_dist", dest="value_from_dist",
+                        action=BoolFlag, default=None,
+                        help="Phase B (gen3_dist_critic_v1): make the DISTRIBUTIONAL value head the critic "
+                             "— GAE/bootstrap/deployment read E[Z] and the HL-Gauss CE is the primary value "
+                             "loss (vf_coef weight); the scalar value_net freezes as a fallback. Requires "
+                             "--value-dist-mode shaping. Resume-immutable (the belief-grad-mode class); flip "
+                             "on a warm-started run with --allow-value-from-dist-change.")
+    parser.add_argument("--allow-value-from-dist-change", "--allow_value_from_dist_change",
+                        dest="allow_value_from_dist_change", action="store_true", default=False,
+                        help="Permit the INTENTIONAL Phase-B critic-source migration on resume (the v45 gate "
+                             "otherwise FATALs a drift). The offline probe confirmed E[Z]≈V, so the swap is "
+                             "near-seamless. Loud notice; next save records the new mode. Needed once.")
     parser.add_argument("--allow-belief-grad-mode-change", "--allow_belief_grad_mode_change",
                         dest="allow_belief_grad_mode_change", action="store_true", default=False,
                         help="Permit an INTENTIONAL belief-grad-mode migration on resume (the v41 gate "
@@ -1931,12 +1943,18 @@ async def main():
     _resolve("threat_status_refine", False)      # v37 structural (status→trunk; version-checked, fresh-only)
     _resolve("hp_type_belief_mode", "off")     # v38 structural + resume-immutable (version-checked, fresh-only)
     _resolve("belief_grad_mode", "shaping")    # v41 resume-immutable training hparam (vf_coef class; flagless resume inherits)
+    _resolve("value_from_dist", False)         # v45 Phase B: dist head is the critic (resume-immutable; flagless resume inherits)
     _resolve("hp_type_belief_coef", 0.0)       # training-only (inherited like spread_belief_coef)
     _resolve("zarch_film", "off")              # v44 structural + resume-immutable (version-checked, fresh-only)
     from agents.model.features_extractor import ZARCH_DIM as _ZARCH_DIM_DEFAULT
     _resolve("zarch_dim", _ZARCH_DIM_DEFAULT if args.zarch_film != "off" else 0)  # v44 structural int
     _resolve("zarch_recon_coef", 1.0)          # training-only (inherited like spread_belief_coef)
     _resolve("zarch_vicreg_coef", 0.1)         # training-only (inherited like spread_belief_coef)
+    # Phase B (v45): the dist head can only BE the critic if it's a live, trunk-shaping head.
+    if args.value_from_dist and args.value_dist_mode != "shaping":
+        parser.error("--value-from-dist requires --value-dist-mode shaping (the distributional head must "
+                     "be a live critic that shapes the trunk; got value_dist_mode="
+                     f"{args.value_dist_mode!r}).")
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -3386,6 +3404,7 @@ async def main():
             "features_extractor_kwargs": _load_extractor_kwargs,
             "net_arch": NET_ARCH,
             "use_popart": args.use_popart,  # version-checked vs the saved model_config.json
+            "value_from_dist": args.value_from_dist,  # Phase B: dist head is the critic (resume-immutable)
         }
         current_version = ModelVersion.from_layout_and_policy_kwargs(
             _load_extractor_kwargs["layout"], _load_policy_kwargs, vf_coef=args.vf_coef,
@@ -3416,6 +3435,8 @@ async def main():
                 enforce_value_dist=(args.value_dist_vmin, args.value_dist_vmax),  # FATAL if the dist support drifts
                 enforce_belief_grad_mode=args.belief_grad_mode,  # FATAL if the belief-trunk-grad mode drifts (v41)
                 allow_belief_grad_mode_change=args.allow_belief_grad_mode_change,  # intentional migration
+                enforce_value_from_dist=args.value_from_dist,  # FATAL if the Phase-B critic source drifts (v45)
+                allow_value_from_dist_change=args.allow_value_from_dist_change,
             )
             # gen3_belief_grad_mode_v1 MIGRATION FIX: SB3 reconstructs the extractor from the ZIP's
             # saved policy_kwargs, so the requested mode must be APPLIED to the live extractor
@@ -3733,6 +3754,7 @@ async def main():
             "optimizer_class": torch.optim.AdamW,
             "optimizer_kwargs": {"weight_decay": args.weight_decay, "eps": 1e-5},
             "use_popart": args.use_popart,  # builds the PopArtNormalizer in the policy; recorded in model_config.json
+            "value_from_dist": args.value_from_dist,  # Phase B: GAE reads E[Z]; recorded in model_config.json
         }
         
         # --- Model Initialization ---

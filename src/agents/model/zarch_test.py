@@ -276,7 +276,9 @@ def test_migration_defaults_off():
     out = _migrate_config(dict(data))
     assert out["zarch_film"] == "off" and out["zarch_dim"] == 0
     assert out["zarch_recon_coef"] == 0.0 and out["zarch_vicreg_coef"] == 0.0
-    assert out["config_version"] == 44
+    # the migration chain always advances to the latest version (v45+ append value_from_dist etc.)
+    from agents.model.model_version import MODEL_CONFIG_VERSION
+    assert out["config_version"] == MODEL_CONFIG_VERSION
 
 
 # ---------------------------------------------------------------- per-group grad accumulation

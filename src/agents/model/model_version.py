@@ -330,7 +330,7 @@ from typing import Any, Dict, List
 #   no modules = baseline byte-for-byte (NO ARCH_SIGNATURE bump). `zarch_recon_coef` (species multi-hot
 #   reconstruction BCE — the anti-collapse anchor) + `zarch_vicreg_coef` (per-dim variance floor) are
 #   TRAINING-ONLY loss coefs (recorded for provenance + flagless-resume read-back, NOT version-locked).
-MODEL_CONFIG_VERSION = 44
+MODEL_CONFIG_VERSION = 45
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -979,6 +979,14 @@ class ModelVersion:
     # check_compatible / _WEIGHT_FIELDS (a frozen eval/pool/distill opponent's forward is identical, so
     # gating it would be a false rejection that breaks league play). NO ARCH_SIGNATURE bump.
     belief_grad_mode: str = "shaping"
+    # gen3_dist_critic_v1 (config v45, Phase B): the distributional value head IS the critic — GAE /
+    # bootstrap / deployment read E[Z] (policy._critic_value) and the HL-Gauss CE is the primary value
+    # loss (vf_coef weight); the scalar value_net freezes as a fallback. No state_dict change (both heads
+    # exist regardless) and the FORWARD's ACTION selection is unchanged (only the value output differs), so
+    # a frozen eval/pool/distill opponent plays identically → RESUME-IMMUTABLE (the belief_grad_mode class):
+    # recorded here, enforced ONLY on the training-resume path via check_value_from_dist, EXCLUDED from
+    # check_compatible / _WEIGHT_FIELDS. NO ARCH_SIGNATURE bump. Requires value_dist_mode == 'shaping'.
+    value_from_dist: bool = False
     # v43 STRUCTURAL + resume-IMMUTABLE tri-state (gen3_pubval_aux_v1, the win_prob_mode pattern): the
     # PUBLIC-information value aux head. 'none' = no module (baseline byte-for-byte). 'read_only'/'shaping'
     # build a PubValHead (side readout off value_pooled — NOT in pi/vf; the only state_dict delta is the
@@ -1174,6 +1182,7 @@ class ModelVersion:
             belief_grad_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("belief_grad_mode", "shaping")
             ),
+            value_from_dist=bool(policy_kwargs.get("value_from_dist", False)),
             pubval_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("pubval_mode", "none")
             ),
@@ -1724,6 +1733,33 @@ class ModelVersion:
                 "--allow-belief-grad-mode-change for an intentional migration, or start a fresh run."
             )
 
+    def check_value_from_dist(self, requested: bool, allow_change: bool = False) -> None:
+        """Raise ModelVersionError if `requested` (the resume `--value-from-dist`) differs from this
+        saved config's value_from_dist. gen3_dist_critic_v1 (Phase B): swapping the GAE/bootstrap value
+        source between the scalar value_net and the distributional E[Z] silently changes the training
+        objective, so — like belief_grad_mode/vf_coef — a mid-run drift is a hard error, enforced ONLY on
+        the training-resume path (a frozen opponent's ACTION selection is unchanged, so it's EXCLUDED from
+        check_compatible). ``allow_change=True`` (--allow-value-from-dist-change) is the intentional
+        warm-start-migration hatch (the offline probe confirmed E[Z]≈V, so the swap is near-seamless);
+        it prints a loud notice and the next save records the new mode."""
+        if bool(self.value_from_dist) != bool(requested):
+            if allow_change:
+                print(
+                    f"[ModelVersion] NOTICE: value_from_dist MIGRATION {self.value_from_dist} -> {requested} "
+                    "(--allow-value-from-dist-change). The GAE/bootstrap critic is now "
+                    + ("the distributional E[Z] (scalar value_net frozen as fallback)." if requested
+                       else "the scalar value_net.")
+                    + " The next checkpoint save records the new mode."
+                )
+                return
+            raise ModelVersionError(
+                f"value_from_dist mismatch: saved={self.value_from_dist}, requested={requested}.\n"
+                "Whether the critic is the scalar value_net or the distributional E[Z] is fixed for a run's "
+                "lifetime — flipping it on resume silently changes the value objective + GAE source.\n"
+                f"Fix: resume with --value-from-dist={self.value_from_dist}, pass "
+                "--allow-value-from-dist-change for the intentional Phase-B migration, or start a fresh run."
+            )
+
     def check_value_tail_weight(self, requested: float) -> None:
         """Raise ModelVersionError if `requested` (the resume `--value-tail-weight`) differs from this
         saved config's value_tail_weight. Call as: saved_version.check_value_tail_weight(args...).
@@ -2068,4 +2104,10 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("zarch_recon_coef", 0.0)
         data.setdefault("zarch_vicreg_coef", 0.0)
         data["config_version"] = 44
+    if version < 45:
+        # v45: gen3_dist_critic_v1 (Phase B) — the distributional value head becomes the critic
+        # (GAE reads E[Z], the CE is the primary value loss). Old models used the scalar value_net.
+        # Resume-immutable (check_value_from_dist), excluded from check_compatible. No new module.
+        data.setdefault("value_from_dist", False)
+        data["config_version"] = 45
     return data
