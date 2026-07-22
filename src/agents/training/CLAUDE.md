@@ -1185,6 +1185,30 @@ fixed bots.
   the bot-anchored scale is preserved since trainee-vs-bot records are unchanged). Tests:
   `elo_test.py` (synthetic-ladder recovery, anchoring, perfect-score, loaders, `fit_pairwise`).
 
+### Frozen-snapshot ELO ladder — the dense, pay-once resolution (`snapshot_ladder.py`)
+
+The live ELO above is RESOLUTION-limited at the frontier: the fixed bots have SATURATED (we sit
+~400 Elo above them, out on the flat tail of the logistic — a 10-Elo trainee move shifts its
+bot-WR by ~0.5% against a 1.9%/200-game noise floor), so the bots pin the absolute LEVEL but the
+fine ordering rides on the sparse, near-50% sentinel edges (±15 Elo CIs). Fix from the other side:
+a promoted snapshot is FROZEN, so snapshot-A-vs-snapshot-B is a STATIONARY Bernoulli — measure it
+ONCE (dense round-robin) and it is permanent. On each promotion, `SelfPlayCallback._spawn_snapshot_ladder_update`
+fires a **DETACHED** `python -m agents.training.snapshot_ladder <run> --promote <step>` subprocess
+(bridge, off the training path) that plays the new frozen node vs the current frozen pool
+(`--snapshot-ladder-games`, default 100/pair; 0 disables) and appends to
+`<run>/snapshot_ladder/games.jsonl` (**forever, race-safe line appends; a measured pair is NEVER
+replayed**). `fit_ladder` combines that dense frozen-vs-frozen matrix with each snapshot's
+historical bot edges (from `eval_results.jsonl` — the anchor connection) → an anchored BT fit
+(`fit_pairwise`, bots pinned) written to `<run>/snapshot_ladder/ladder.json` (the sidecar metric);
+`_record_ladder_elo` surfaces the latest promoted node's rating as `eval/ladder_elo` (+`_ci`) on
+TB/TUI — the high-resolution counterpart to the saturated `eval/elo`. Snapshots load via
+`load_foreign_opponent` (their own saved config → PopArt/toggles honored, `check_compatible`
+skipped). `--backfill` pays the one-time back tax over the whole current pool (idempotent — skips
+measured pairs); `--fit-only` refits without playing. `ladder.json.fit_quality.mean_abs_err`
+QUANTIFIES non-transitivity (a scalar Elo is lossy if the pool is rock-paper-scissors — the dense
+matrix at least measures it). Tests: `snapshot_ladder_test.py` (store accumulation/symmetry,
+measure-once contract, fit-recovers-ordering, sidecar read).
+
 ## Rollout collection: sync barrier vs `--async-rollout` (`async_vec_env.py`)
 
 The default `SubprocVecEnv.step()` is a **per-step barrier** — the trainer waits for the slowest of

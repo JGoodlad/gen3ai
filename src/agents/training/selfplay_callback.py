@@ -28,6 +28,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 import time
 
 from stable_baselines3.common.callbacks import BaseCallback
@@ -169,12 +170,16 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         n_sentinels: int = 5,
         debug: bool = False,
         trainee_team_str: "str | None" = None,
+        snapshot_ladder_games: int = 100,
         verbose: int = 1,
     ):
         super().__init__(verbose)
         # Per-opponent games per eval cycle (--eval-games; None → EVAL_GAMES). Sentinel cells at
         # n=100 carry ±0.098 95% CIs; 200 tightens to ±0.069 (~2× eval cost, work-stolen).
         self._eval_games = int(eval_games) if eval_games else EVAL_GAMES
+        # Frozen-snapshot ELO ladder: games per pair for the per-promotion round-robin tax
+        # (0 = disable). Detached, off the training path — see _spawn_snapshot_ladder_update.
+        self._ladder_games = int(snapshot_ladder_games)
         self._pool = pool
         # SPECIALIST eval alignment (--trainee-team): the raw Showdown-export team string the trainee
         # is pinned to, threaded into every eval-worker cfg so eval measures the model piloting the
@@ -715,6 +720,16 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             self._pool.add_from_path(pending["snapshot"], step)
             self._pool_generation += 1
             self.logger.record("train/selfplay_promoted_steps", float(step))
+            # Pay the one-time snapshot-ladder tax for the NEW frozen node — a DETACHED subprocess
+            # (bridge round-robin vs the current frozen pool, ~pool_size × N games), fully off the
+            # training path. Frozen-vs-frozen is stationary → measured once, appended to
+            # snapshot_ladder/games.jsonl forever. Best-effort: a failure never touches training.
+            self._spawn_snapshot_ladder_update(step)
+
+        # ── Surface the dense frozen-ladder ELO of the latest promoted snapshot (best-effort;
+        #    computed by the detached updater, read here so the TUI/TB shows the high-resolution
+        #    rating that the saturated-bot live ELO can't resolve). ──
+        self._record_ladder_elo()
 
         # ── Push the live curriculum target to every training env (after any seed/promote so
         #    the pool-generation bump reaches the workers this cycle) + persist resume state ──
@@ -742,6 +757,43 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)
         prune_run_artifacts(self._model_dir, self._keep_stalls, self._keep_crashes)  # bound stalls/ + crashes/
         self._cleanup(pending, keep_logs=bool(missing or bad_exits))
+
+    def _spawn_snapshot_ladder_update(self, step: int) -> None:
+        """Fire a DETACHED subprocess that round-robins the just-promoted frozen snapshot vs the
+        current frozen pool (bridge) and appends the results to snapshot_ladder/games.jsonl, then
+        refits. Fully off the training path (its own session); stdout → snapshot_ladder/updater.log.
+        Best-effort — a spawn failure is logged and ignored, never touching training."""
+        if not self._model_dir or self._ladder_games <= 0:
+            return
+        try:
+            os.makedirs(os.path.join(self._model_dir, "snapshot_ladder"), exist_ok=True)
+            logf = open(os.path.join(self._model_dir, "snapshot_ladder", "updater.log"), "a")
+            subprocess.Popen(
+                [sys.executable, "-m", "agents.training.snapshot_ladder", self._model_dir,
+                 "--promote", str(int(step)), "--n-games", str(self._ladder_games),
+                 "--impl", self._bridge_impl if self._use_showdown_bridge else "node"],
+                stdout=logf, stderr=subprocess.STDOUT, start_new_session=True)
+            print(f"🪜 [LADDER] spawned round-robin update for promoted snapshot @{step}", flush=True)
+        except Exception as e:  # noqa: BLE001 — telemetry, never break training
+            print(f"⚠️ [LADDER] spawn failed at step {step}: {e}", flush=True)
+
+    def _record_ladder_elo(self) -> None:
+        """Read the frozen-ladder sidecar (written by the detached updater) and surface the latest
+        promoted snapshot's dense anchored ELO to TB + TUI as ``eval/ladder_elo`` — the
+        high-resolution counterpart to the saturated-bot ``eval/elo``. Best-effort."""
+        if not self._model_dir:
+            return
+        try:
+            from agents.training import snapshot_ladder as _sl
+            from agents.training import elo as _sl_elo
+            latest = _sl.latest_promoted_elo(self._model_dir)
+            if latest is None:
+                return
+            _step, elo_val, se = latest
+            self.logger.record("eval/ladder_elo", elo_val)
+            self.logger.record("eval/ladder_elo_ci", _sl_elo.ci95(se))
+        except Exception:  # noqa: BLE001
+            pass
 
     def _push_self_play_target(self, fraction: float) -> None:
         """Push the live (fraction, pool_generation) to every training env via env_method, so

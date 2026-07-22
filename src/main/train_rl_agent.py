@@ -1517,6 +1517,14 @@ async def main():
                              "sentinel/promotion reads at proportionally more eval compute (work-stolen "
                              "across --eval-workers, off the training path). Shards per opponent = "
                              "eval-games / --eval-shard-games.")
+    parser.add_argument("--snapshot-ladder-games", "--snapshot_ladder_games",
+                        dest="snapshot_ladder_games", type=int, default=100,
+                        help="Frozen-snapshot ELO ladder: games per pair for the per-promotion "
+                             "round-robin tax (0 = disable). On each promotion a DETACHED bridge "
+                             "subprocess plays the new frozen snapshot vs the current pool and "
+                             "appends to <run>/snapshot_ladder/games.jsonl (measured once, kept "
+                             "forever) — a dense, high-resolution internal ladder the saturated "
+                             "bots can't provide. Off the training path.")
     parser.add_argument("--keep-eval-snapshots", "--keep_eval_snapshots", dest="keep_eval_snapshots",
                         type=int, default=10,
                         help="Retain the N most-recent eval weight snapshots in eval_traces/step_<N>/snapshot.zip "
@@ -3191,6 +3199,7 @@ async def main():
         eval_callback = SelfPlayCallback(
             pool=_pool,
             eval_games=args.eval_games,
+            snapshot_ladder_games=args.snapshot_ladder_games,
             model_dir=model_dir,
             server_config=server_config,
             showdown_port=args.showdown_port,
