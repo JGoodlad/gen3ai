@@ -220,6 +220,24 @@ pub struct ProtocolBuilder {
     /// just before the recursive called-move run; consumed (cleared) by the next
     /// `move_used`. PRNG-free like everything here.
     pending_move_from: Option<String>,
+    /// The index (into `lines`) just past the most recent `|turn|N` marker — the
+    /// sim's "SEND boundary" (`gen3_omniscient_byte_fuzz_v1`, class A: the spurious
+    /// `[miss]` retro-tag). Showdown STREAMS each turn's lines at `makeRequest`, so an
+    /// already-sent (prior-turn) `|move|` line can NEVER be observably mutated by a
+    /// LATER retro-edit; only the port's single-buffer diff can. A resolving
+    /// Future Sight / Doom Desire MISS (turn.rs `apply_future_move`) is the ONE
+    /// retro-edit that can cross a turn boundary — its `attrLastMove('[miss]')` would
+    /// tag whatever the LAST `|move|` line is, which on a switch-only resolve turn is a
+    /// PRIOR-turn move line. Modeling the send boundary makes `attr_last_move_miss` /
+    /// `attr_last_move_still` NO-OP on an already-flushed (index < `flush_boundary`)
+    /// line, so a cross-turn retro-tag can't corrupt a streamed line. Set in `turn()`
+    /// (points just past the `|turn|N` marker = every current-turn move line is after
+    /// it, every prior-turn one before it), reset to 0 in `drain()` (a drain is the
+    /// bridge/writeline "send"). All same-turn retro-edits (the other 5 miss sites +
+    /// every `[still]` site) have their `|move|` line AFTER the current `|turn|` marker
+    /// (`idx >= flush_boundary`) so the gate is a no-op for them. PRNG-free,
+    /// state-free, emission-only.
+    flush_boundary: usize,
 }
 
 impl ProtocolBuilder {
@@ -229,6 +247,7 @@ impl ProtocolBuilder {
             enabled: false,
             hints_shown: std::collections::HashSet::new(),
             pending_move_from: None,
+            flush_boundary: 0,
         }
     }
 
@@ -269,6 +288,10 @@ impl ProtocolBuilder {
     /// Drain everything emitted so far (the per-decision / per-battle batch the
     /// bridge relays). Leaves the buffer empty.
     pub fn drain(&mut self) -> Vec<ProtocolLine> {
+        // A drain is the bridge/writeline "send" — every buffered line is now flushed, so
+        // reset the send boundary (the next batch has no already-sent prior-turn move line
+        // until a fresh `|turn|` marker re-arms it). `gen3_omniscient_byte_fuzz_v1` class A.
+        self.flush_boundary = 0;
         std::mem::take(&mut self.lines)
     }
 
@@ -326,9 +349,31 @@ impl ProtocolBuilder {
     }
     pub fn turn(&mut self, n: u32) {
         self.push_raw(format!("|turn|{n}"));
+        // Model the sim's SEND boundary: the `|turn|N` marker is the point Showdown streams
+        // the accumulated batch, so every line up to and including it is "sent". Point the
+        // boundary just past it — every current-turn move line is emitted after it (retro-edits
+        // still apply), every prior-turn move line is before it (retro-edits no-op). Only
+        // meaningful when emission is enabled; `push_raw` no-ops otherwise but `lines.len()` is
+        // then 0 so the boundary stays 0 (harmless). `gen3_omniscient_byte_fuzz_v1` class A.
+        self.flush_boundary = self.lines.len();
     }
     pub fn upkeep(&mut self) {
         self.push_raw("|upkeep");
+    }
+
+    /// Advance the SEND boundary to the current buffer length — the port's model of the
+    /// sim's `sendUpdates()` FLUSH at a `makeRequest('switch')` (a mid-turn forced
+    /// replacement), which STREAMS every buffered line to the client. Every line up to
+    /// now is "sent", so a LATER retro-edit (`attr_last_move_miss` / `attr_last_move_still`)
+    /// can no longer observably mutate it. `turn()` already advances the boundary for the
+    /// move request; this covers the OTHER `makeRequest` point (the forced-replacement
+    /// pause), so a future-move resolve-MISS at the end-of-turn residual does NOT retro-tag
+    /// a `|move|` line that a mid-turn faint already flushed (golden ab_20_4 L79: the
+    /// Fire Blast line stays untagged; the `-miss` lands on the resolve).
+    /// `gen3_omniscient_byte_fuzz_v1` class A. No-op formatting cost when disabled (the
+    /// boundary is only consulted by the retro-edits, themselves gated on `enabled`).
+    pub fn mark_sent(&mut self) {
+        self.flush_boundary = self.lines.len();
     }
 
     // ── Move / action ───────────────────────────────────────────────────────────
@@ -381,7 +426,15 @@ impl ProtocolBuilder {
         if !self.enabled {
             return;
         }
-        if let Some(line) = self.lines.iter_mut().rev().find(|l| l.0.starts_with("|move|")) {
+        // NO-OP on an already-SENT (prior-turn) `|move|` line — see `flush_boundary`. Every
+        // `attr_last_move_still` caller is SAME-TURN (its move line is emitted after the current
+        // `|turn|` marker → `idx >= flush_boundary` → the edit still applies), so this gate is
+        // load-bearing only for consistency with `attr_last_move_miss`.
+        if let Some(idx) = self.lines.iter().rposition(|l| l.0.starts_with("|move|")) {
+            if idx < self.flush_boundary {
+                return;
+            }
+            let line = &mut self.lines[idx];
             let mut parts: Vec<&str> = line.0.split('|').collect();
             // parts: ["", "move", "<user>", "<MoveName>", "<target>", ...attrs]
             if parts.len() >= 5 {
@@ -403,8 +456,20 @@ impl ProtocolBuilder {
         if !self.enabled {
             return;
         }
-        if let Some(line) = self.lines.iter_mut().rev().find(|l| l.0.starts_with("|move|")) {
-            line.0.push_str("|[miss]");
+        // NO-OP on an already-SENT (prior-turn) `|move|` line — see `flush_boundary`. The ONE
+        // caller that can cross a turn boundary is the future-move (Future Sight / Doom Desire)
+        // resolve MISS in `apply_future_move`: on a switch-only resolve turn the last `|move|`
+        // line is a PRIOR-turn move that Showdown already STREAMED and can never re-tag, so
+        // tagging it here would corrupt an already-sent line (golden L237: the sim leaves the
+        // prior turn's `Ice Beam|p1a: Jirachi` untouched + emits the `-miss` on the resolve
+        // turn; the port used to append `|[miss]`). The other 5 miss sites are SAME-TURN
+        // (`idx >= flush_boundary`) so the gate is a no-op for them.
+        // `gen3_omniscient_byte_fuzz_v1` class A.
+        if let Some(idx) = self.lines.iter().rposition(|l| l.0.starts_with("|move|")) {
+            if idx < self.flush_boundary {
+                return;
+            }
+            self.lines[idx].0.push_str("|[miss]");
         }
     }
 
@@ -535,6 +600,18 @@ impl ProtocolBuilder {
             Some(t) => self.push_raw(format!("|-miss|{user}|{t}")),
             None => self.push_raw(format!("|-miss|{user}")),
         }
+    }
+    /// `|-miss|<user>|<target>` where the USER is a PRE-RENDERED ident string
+    /// (`gen3_omniscient_byte_fuzz_v1`, the future-move `-miss` source ref). Showdown
+    /// renders every protocol mon via `Pokemon.toString()` — active mons as the slot
+    /// form `pNa: <Name>`, but a mon NOT on the field as the SLOT-LESS `pN: <Name>`
+    /// (pokemon.ts:532-534). A resolving Future Sight / Doom Desire's CASTER may have
+    /// switched out or fainted, so its `-miss` source must render slot-less
+    /// (`p1: Jirachi`), NOT the active-slot `p1a: Jirachi` that [`miss`]'s `MonRef`
+    /// always produces. The caller renders the correct form via
+    /// [`crate::state::BattleState::mon_toref`]. Observation-only.
+    pub fn miss_raw_user(&mut self, user: &str, target: &MonRef) {
+        self.push_raw(format!("|-miss|{user}|{target}"));
     }
 
     // ── Status ───────────────────────────────────────────────────────────────────

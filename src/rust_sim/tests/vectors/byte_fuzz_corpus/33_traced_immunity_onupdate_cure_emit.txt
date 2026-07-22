@@ -1,0 +1,551 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=14140718 run_id=rmrr03rmc chunk=1370
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_1370_13
+TEAM	ab_1370_13	p1	Swampert||SalacBerry|Torrent|Surf,Roar,Substitute,Endeavor|Timid|,,,252,4,252|M|,0,,,,|||]Celebi||Leftovers|NaturalCure|LeechSeed,Psychic,GigaDrain,HiddenPowerFire|Modest|,,,252,76,180|N|,2,,30,,30|||,Fire,,,,]Tyranitar||SilkScarf|SandStream|DragonDance,RockSlide,Earthquake,HyperBeam|Adamant|,252,,,4,252|M||||]Porygon2||Leftovers|Trace|IceBeam,Thunderbolt,Recover,ThunderWave|Bold|248,,200,,60,|N|,0,,,,|||]Metagross||Leftovers|ClearBody|MeteorMash,Earthquake,Agility,Explosion|Adamant|240,176,,,,92|N||||]Salamence||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,Earthquake,RockSlide|Adamant|,144,,,212,152|M|30,30,30,30,30,|||,Flying,,,,
+TEAM	ab_1370_13	p2	Swampert||Leftovers|Torrent|Rest,Curse,Earthquake,IceBeam|Relaxed|240,,136,,84,48|M||||]Magneton||Magnet|MagnetPull|Substitute,Toxic,Thunderbolt,HiddenPowerFire|Modest|4,,,252,,252|N|,2,,30,,30|||,Fire,,,,]Celebi||Leftovers|NaturalCure|LeechSeed,CalmMind,GigaDrain,Psychic|Modest|252,,,220,,36|N|,0,,,,|||]Snorlax||Leftovers|Immunity|BodySlam,Earthquake,ShadowBall,SelfDestruct|Adamant|32,136,152,,172,16|M||||]Metagross||Leftovers|ClearBody|Toxic,MeteorMash,Earthquake,Explosion|Adamant|252,176,20,,28,32|N||||]Charizard||Leftovers|Blaze|DragonClaw,Flamethrower,HiddenPowerGrass,BrickBreak|Mild|,4,,252,,252|M|,30,,30,,|||,Grass,,,,
+FMT	ab_1370_13	gen3ou
+INIT	ab_1370_13	51736,17417,20721,27710	769281723
+DEC	ab_1370_13	0	move	0	0	m2	m0	17080,17080,16389,33081	Swampert	256	341	0	-	0	0	0	0	0	0	6	Swampert	401	401	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1370_13	1	move	0	0	s1	s4	56416,60955,51465,6976	Celebi	341	341	0	-	0	0	0	0	0	0	6	Metagross	364	364	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1370_13	2	move	0	0	m2	m0	2582,5498,19852,27750	Celebi	320	341	0	tox	0	0	0	0	0	0	6	Metagross	332	364	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1370_13	3	move	0	0	s3	m1	65403,45051,18007,17468	Porygon2	237	373	0	-	0	0	0	0	0	0	6	Metagross	354	364	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1370_13	4	move	0	0	m3	m0	53289,65458,5327,22291	Porygon2	237	373	0	tox	0	0	0	0	0	0	6	Metagross	364	364	0	par	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_1370_13	5	move	0	0	m3	m0	25832,5140,45194,6820	Porygon2	214	373	0	tox	0	0	0	0	0	0	6	Metagross	364	364	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1370_13	6	move	0	0	m3	m2	45070,5543,13369,21905	Porygon2	168	373	0	tox	0	0	0	0	0	0	6	Metagross	364	364	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1370_13	7	move	0	0	m1	m3	3594,63882,46268,60287	Porygon2	99	373	0	tox	0	0	0	0	0	0	6	Metagross	308	364	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1370_13	8	move	0	0	s5	m2	43555,6851,31809,34016	Salamence	330	330	0	-	0	0	0	0	0	0	6	Metagross	330	364	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1370_13	9	move	0	0	m2	m2	48142,28855,26143,19206	Salamence	330	330	0	-	0	0	0	0	0	0	6	Metagross	157	364	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1370_13	10	move	0	0	m0	m0	13673,33850,28140,47162	Salamence	310	330	0	tox	1	0	0	0	1	0	6	Metagross	179	364	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1370_13	11	move	0	0	m2	m3	11852,195,18272,52367	Salamence	310	330	0	tox	1	0	0	0	1	0	6	Metagross	0	364	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1370_13	12	switch	0	1	-	s2	21570,61850,58040,55854	Salamence	290	330	0	tox	1	0	0	0	1	0	6	Celebi	404	404	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_1370_13	13	move	0	0	m3	s5	32571,18656,11663,58594	Salamence	290	330	0	tox	1	0	0	0	1	0	6	Charizard	0	297	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1370_13	14	switch	0	1	-	s3	24697,44924,38294,56813	Salamence	250	330	0	tox	1	0	0	0	1	0	6	Snorlax	469	469	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1370_13	15	move	0	0	m3	m2	62347,26432,45520,49068	Salamence	92	330	0	tox	1	0	0	0	1	0	6	Snorlax	334	469	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1370_13	16	move	0	0	m3	s4	32097,31749,13099,42819	Salamence	12	330	0	tox	1	0	0	0	1	0	6	Swampert	369	401	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1370_13	17	move	0	0	m2	m0	54234,38319,62782,22950	Salamence	0	330	1	fnt	0	0	0	0	0	0	5	Swampert	401	401	0	slp	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1370_13	18	switch	1	0	s3	-	40436,48046,39747,54081	Celebi	320	341	0	-	0	0	0	0	0	0	5	Swampert	401	401	0	slp	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1370_13	19	move	0	0	m2	m0	5459,9910,61941,43717	Celebi	341	341	0	-	0	0	0	0	0	0	5	Swampert	28	401	0	slp	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1370_13	20	move	0	0	m2	m1	13654,38096,15545,13518	Celebi	341	341	0	-	0	0	0	0	0	0	5	Swampert	0	401	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_1370_13	21	switch	0	1	-	s5	52649,41284,27676,45577	Celebi	341	341	0	-	0	0	0	0	0	0	5	Celebi	404	404	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_1370_13	22	move	0	0	m2	s1	10402,16431,16075,27917	Celebi	341	341	0	-	0	0	0	0	0	0	5	Magneton	180	242	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_1370_13	23	move	0	0	m1	s4	43363,6773,53333,1336	Celebi	341	341	0	-	0	0	0	0	0	0	5	Snorlax	246	469	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_1370_13	24	move	0	0	s5	m3	6203,58881,28914,33612	Porygon2	0	373	1	fnt	0	0	0	0	0	0	4	Snorlax	0	469	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_1370_13	25	switch	1	1	s2	s4	32384,64260,65324,6079	Tyranitar	341	341	0	-	0	0	0	0	0	0	4	Magneton	180	242	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_1370_13	26	move	0	0	m3	m2	27529,17143,28880,61085	Tyranitar	146	341	0	-	0	0	0	0	0	0	4	Magneton	180	242	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_1370_13	27	move	0	0	m2	m0	21320,49843,22655,10337	Tyranitar	146	341	0	-	0	0	0	0	0	0	4	Magneton	120	242	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_1370_13	28	move	0	0	s1	m1	58985,44404,6427,30699	Swampert	256	341	0	-	0	0	0	0	0	0	4	Magneton	120	242	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_1370_13	29	move	0	0	m2	m3	30847,52873,36648,26831	Swampert	171	341	0	-	0	0	0	0	0	0	4	Magneton	120	242	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_1370_13	30	move	0	0	m1	m0	58677,8155,32756,52976	Swampert	171	341	0	-	0	0	0	0	0	0	4	Celebi	404	404	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_1370_13	31	move	0	0	s4	m3	12523,9312,43062,15319	Metagross	341	361	0	-	0	0	0	0	0	0	4	Celebi	404	404	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_1370_13	32	move	0	0	m0	m2	28309,20876,21229,21983	Metagross	315	361	0	-	0	0	0	0	0	0	4	Celebi	201	404	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_1370_13	33	move	0	0	s5	m1	5194,40816,10198,54974	Celebi	341	341	0	-	0	0	0	0	0	0	4	Celebi	201	404	0	-	0	0	1	1	0	0	2	p1	0	0	0	0	0
+DEC	ab_1370_13	34	move	0	0	m1	m3	15320,42524,63561,28033	Celebi	236	341	0	-	0	0	0	0	0	0	4	Celebi	152	404	0	-	0	0	1	1	0	0	2	p1	0	0	0	0	0
+DEC	ab_1370_13	35	move	0	0	s5	m0	63258,48088,40573,12299	Metagross	292	361	0	-	0	0	0	0	0	0	4	Celebi	197	404	0	-	0	0	1	1	0	0	2	p1	0	0	0	0	0
+DEC	ab_1370_13	36	move	0	0	m3	m3	7955,2535,54169,41104	Metagross	0	361	1	fnt	0	0	0	0	0	0	3	Celebi	0	404	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_1370_13	37	switch	1	1	s4	s1	60598,6771,54944,1939	Swampert	171	341	0	-	0	0	0	0	0	0	3	Magneton	60	242	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_1370_13	38	move	0	0	m2	m3	25801,22518,37371,36343	Swampert	86	341	0	-	0	0	0	0	0	0	3	Magneton	60	242	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_1370_13	39	move	0	0	m3	m2	26469,55074,60826,43537	Swampert	86	341	0	-	0	0	0	0	0	0	3	Magneton	60	242	0	-	0	0	0	0	0	0	1	p1	0	0	0	1	0
+DEC	ab_1370_13	40	move	0	0	m1	m2	152,697,61586,51818	Swampert	86	341	0	-	0	0	0	0	0	0	3	Magneton	60	242	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_1370_13	41	move	0	0	s5	m0	52803,32852,47433,13461	Celebi	236	341	0	-	0	0	0	0	0	0	3	Magneton	60	242	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_1370_13	42	move	0	0	s1	m2	50033,58898,21311,48857	Tyranitar	0	341	1	fnt	0	0	0	0	0	0	2	Magneton	60	242	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_1370_13	43	switch	1	0	s5	-	64012,56742,47454,2912	Swampert	86	341	0	-	0	0	0	0	0	0	2	Magneton	60	242	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_1370_13	44	move	0	0	m3	m3	59850,58386,35795,46836	Swampert	37	341	0	-	0	0	0	0	1	0	2	Magneton	60	242	0	-	0	0	0	0	0	0	1	p1	0	0	0	1	0
+DEC	ab_1370_13	45	move	0	0	m0	m0	27374,65052,6250,41633	Swampert	37	341	0	-	0	0	0	0	1	0	2	Magneton	0	242	1	-	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_1370_13	1	p1
+L	ab_1370_13	0	|t:|<NORMALIZED>
+L	ab_1370_13	1	|gametype|singles
+L	ab_1370_13	2	|player|p1|P1||
+L	ab_1370_13	3	|player|p2|P2||
+L	ab_1370_13	4	|gen|3
+L	ab_1370_13	5	|tier|[Gen 3] OU
+L	ab_1370_13	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_1370_13	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_1370_13	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_1370_13	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_1370_13	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_1370_13	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_1370_13	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_1370_13	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_1370_13	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_1370_13	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_1370_13	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_1370_13	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_1370_13	18	|
+L	ab_1370_13	19	|t:|<NORMALIZED>
+L	ab_1370_13	20	|teamsize|p1|6
+L	ab_1370_13	21	|teamsize|p2|6
+L	ab_1370_13	22	|start
+L	ab_1370_13	23	|switch|p1a: Swampert|Swampert, M|341/341
+L	ab_1370_13	24	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_1370_13	25	|turn|1
+L	ab_1370_13	26	|
+L	ab_1370_13	27	|t:|<NORMALIZED>
+L	ab_1370_13	28	|move|p1a: Swampert|Substitute|p1a: Swampert
+L	ab_1370_13	29	|-start|p1a: Swampert|Substitute
+L	ab_1370_13	30	|-damage|p1a: Swampert|256/341
+L	ab_1370_13	31	|move|p2a: Swampert|Rest|p2a: Swampert
+L	ab_1370_13	32	|-fail|p2a: Swampert|heal
+L	ab_1370_13	33	|
+L	ab_1370_13	34	|upkeep
+L	ab_1370_13	35	|turn|2
+L	ab_1370_13	36	|
+L	ab_1370_13	37	|t:|<NORMALIZED>
+L	ab_1370_13	38	|switch|p1a: Celebi|Celebi|341/341
+L	ab_1370_13	39	|switch|p2a: Metagross|Metagross|364/364
+L	ab_1370_13	40	|
+L	ab_1370_13	41	|upkeep
+L	ab_1370_13	42	|turn|3
+L	ab_1370_13	43	|
+L	ab_1370_13	44	|t:|<NORMALIZED>
+L	ab_1370_13	45	|move|p1a: Celebi|Giga Drain|p2a: Metagross
+L	ab_1370_13	46	|-resisted|p2a: Metagross
+L	ab_1370_13	47	|-damage|p2a: Metagross|310/364
+L	ab_1370_13	48	|move|p2a: Metagross|Toxic|p1a: Celebi
+L	ab_1370_13	49	|-status|p1a: Celebi|tox
+L	ab_1370_13	50	|
+L	ab_1370_13	51	|-damage|p1a: Celebi|320/341 tox|[from] psn
+L	ab_1370_13	52	|-heal|p2a: Metagross|332/364|[from] item: Leftovers
+L	ab_1370_13	53	|upkeep
+L	ab_1370_13	54	|turn|4
+L	ab_1370_13	55	|
+L	ab_1370_13	56	|t:|<NORMALIZED>
+L	ab_1370_13	57	|-curestatus|p1a: Celebi|tox|[from] ability: Natural Cure|[silent]
+L	ab_1370_13	58	|switch|p1a: Porygon2|Porygon2|373/373
+L	ab_1370_13	59	|-ability|p1a: Porygon2|Clear Body|Trace|[from] ability: Trace|[of] p2a: Metagross
+L	ab_1370_13	60	|move|p2a: Metagross|Meteor Mash|p1a: Porygon2
+L	ab_1370_13	61	|-damage|p1a: Porygon2|214/373
+L	ab_1370_13	62	|
+L	ab_1370_13	63	|-heal|p2a: Metagross|354/364|[from] item: Leftovers
+L	ab_1370_13	64	|-heal|p1a: Porygon2|237/373|[from] item: Leftovers
+L	ab_1370_13	65	|upkeep
+L	ab_1370_13	66	|turn|5
+L	ab_1370_13	67	|
+L	ab_1370_13	68	|t:|<NORMALIZED>
+L	ab_1370_13	69	|move|p2a: Metagross|Toxic|p1a: Porygon2
+L	ab_1370_13	70	|-status|p1a: Porygon2|tox
+L	ab_1370_13	71	|move|p1a: Porygon2|Thunder Wave|p2a: Metagross
+L	ab_1370_13	72	|-status|p2a: Metagross|par
+L	ab_1370_13	73	|
+L	ab_1370_13	74	|-heal|p1a: Porygon2|260/373 tox|[from] item: Leftovers
+L	ab_1370_13	75	|-damage|p1a: Porygon2|237/373 tox|[from] psn
+L	ab_1370_13	76	|-heal|p2a: Metagross|364/364 par|[from] item: Leftovers
+L	ab_1370_13	77	|upkeep
+L	ab_1370_13	78	|turn|6
+L	ab_1370_13	79	|
+L	ab_1370_13	80	|t:|<NORMALIZED>
+L	ab_1370_13	81	|move|p1a: Porygon2|Thunder Wave|p2a: Metagross
+L	ab_1370_13	82	|-fail|p2a: Metagross|par
+L	ab_1370_13	83	|cant|p2a: Metagross|par
+L	ab_1370_13	84	|
+L	ab_1370_13	85	|-heal|p1a: Porygon2|260/373 tox|[from] item: Leftovers
+L	ab_1370_13	86	|-damage|p1a: Porygon2|214/373 tox|[from] psn
+L	ab_1370_13	87	|upkeep
+L	ab_1370_13	88	|turn|7
+L	ab_1370_13	89	|
+L	ab_1370_13	90	|t:|<NORMALIZED>
+L	ab_1370_13	91	|move|p1a: Porygon2|Thunder Wave|p2a: Metagross
+L	ab_1370_13	92	|-fail|p2a: Metagross|par
+L	ab_1370_13	93	|cant|p2a: Metagross|par
+L	ab_1370_13	94	|
+L	ab_1370_13	95	|-heal|p1a: Porygon2|237/373 tox|[from] item: Leftovers
+L	ab_1370_13	96	|-damage|p1a: Porygon2|168/373 tox|[from] psn
+L	ab_1370_13	97	|upkeep
+L	ab_1370_13	98	|turn|8
+L	ab_1370_13	99	|
+L	ab_1370_13	100	|t:|<NORMALIZED>
+L	ab_1370_13	101	|move|p1a: Porygon2|Thunderbolt|p2a: Metagross
+L	ab_1370_13	102	|-damage|p2a: Metagross|286/364 par
+L	ab_1370_13	103	|cant|p2a: Metagross|par
+L	ab_1370_13	104	|
+L	ab_1370_13	105	|-heal|p1a: Porygon2|191/373 tox|[from] item: Leftovers
+L	ab_1370_13	106	|-damage|p1a: Porygon2|99/373 tox|[from] psn
+L	ab_1370_13	107	|-heal|p2a: Metagross|308/364 par|[from] item: Leftovers
+L	ab_1370_13	108	|upkeep
+L	ab_1370_13	109	|turn|9
+L	ab_1370_13	110	|
+L	ab_1370_13	111	|t:|<NORMALIZED>
+L	ab_1370_13	112	|switch|p1a: Salamence|Salamence, M|330/330
+L	ab_1370_13	113	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_1370_13	114	|-fail|p2a: Metagross|unboost|[from] ability: Clear Body|[of] p2a: Metagross
+L	ab_1370_13	115	|move|p2a: Metagross|Earthquake|p1a: Salamence
+L	ab_1370_13	116	|-immune|p1a: Salamence
+L	ab_1370_13	117	|
+L	ab_1370_13	118	|-heal|p2a: Metagross|330/364 par|[from] item: Leftovers
+L	ab_1370_13	119	|upkeep
+L	ab_1370_13	120	|turn|10
+L	ab_1370_13	121	|
+L	ab_1370_13	122	|t:|<NORMALIZED>
+L	ab_1370_13	123	|move|p1a: Salamence|Earthquake|p2a: Metagross
+L	ab_1370_13	124	|-supereffective|p2a: Metagross
+L	ab_1370_13	125	|-damage|p2a: Metagross|135/364 par
+L	ab_1370_13	126	|move|p2a: Metagross|Earthquake|p1a: Salamence
+L	ab_1370_13	127	|-immune|p1a: Salamence
+L	ab_1370_13	128	|
+L	ab_1370_13	129	|-heal|p2a: Metagross|157/364 par|[from] item: Leftovers
+L	ab_1370_13	130	|upkeep
+L	ab_1370_13	131	|turn|11
+L	ab_1370_13	132	|
+L	ab_1370_13	133	|t:|<NORMALIZED>
+L	ab_1370_13	134	|move|p1a: Salamence|Dragon Dance|p1a: Salamence
+L	ab_1370_13	135	|-boost|p1a: Salamence|atk|1
+L	ab_1370_13	136	|-boost|p1a: Salamence|spe|1
+L	ab_1370_13	137	|move|p2a: Metagross|Toxic|p1a: Salamence
+L	ab_1370_13	138	|-status|p1a: Salamence|tox
+L	ab_1370_13	139	|
+L	ab_1370_13	140	|-damage|p1a: Salamence|310/330 tox|[from] psn
+L	ab_1370_13	141	|-heal|p2a: Metagross|179/364 par|[from] item: Leftovers
+L	ab_1370_13	142	|upkeep
+L	ab_1370_13	143	|turn|12
+L	ab_1370_13	144	|
+L	ab_1370_13	145	|t:|<NORMALIZED>
+L	ab_1370_13	146	|move|p1a: Salamence|Earthquake|p2a: Metagross
+L	ab_1370_13	147	|-supereffective|p2a: Metagross
+L	ab_1370_13	148	|-damage|p2a: Metagross|0 fnt
+L	ab_1370_13	149	|faint|p2a: Metagross
+L	ab_1370_13	150	|
+L	ab_1370_13	151	|t:|<NORMALIZED>
+L	ab_1370_13	152	|switch|p2a: Celebi|Celebi|404/404
+L	ab_1370_13	153	|
+L	ab_1370_13	154	|-heal|p1a: Salamence|330/330 tox|[from] item: Leftovers
+L	ab_1370_13	155	|-damage|p1a: Salamence|290/330 tox|[from] psn
+L	ab_1370_13	156	|upkeep
+L	ab_1370_13	157	|turn|13
+L	ab_1370_13	158	|
+L	ab_1370_13	159	|t:|<NORMALIZED>
+L	ab_1370_13	160	|switch|p2a: Charizard|Charizard, M|297/297
+L	ab_1370_13	161	|move|p1a: Salamence|Rock Slide|p2a: Charizard
+L	ab_1370_13	162	|-supereffective|p2a: Charizard
+L	ab_1370_13	163	|-damage|p2a: Charizard|0 fnt
+L	ab_1370_13	164	|faint|p2a: Charizard
+L	ab_1370_13	165	|
+L	ab_1370_13	166	|t:|<NORMALIZED>
+L	ab_1370_13	167	|switch|p2a: Snorlax|Snorlax, M|469/469
+L	ab_1370_13	168	|
+L	ab_1370_13	169	|-heal|p1a: Salamence|310/330 tox|[from] item: Leftovers
+L	ab_1370_13	170	|-damage|p1a: Salamence|250/330 tox|[from] psn
+L	ab_1370_13	171	|upkeep
+L	ab_1370_13	172	|turn|14
+L	ab_1370_13	173	|
+L	ab_1370_13	174	|t:|<NORMALIZED>
+L	ab_1370_13	175	|move|p1a: Salamence|Rock Slide|p2a: Snorlax
+L	ab_1370_13	176	|-damage|p2a: Snorlax|305/469
+L	ab_1370_13	177	|move|p2a: Snorlax|Shadow Ball|p1a: Salamence
+L	ab_1370_13	178	|-damage|p1a: Salamence|152/330 tox
+L	ab_1370_13	179	|
+L	ab_1370_13	180	|-heal|p1a: Salamence|172/330 tox|[from] item: Leftovers
+L	ab_1370_13	181	|-damage|p1a: Salamence|92/330 tox|[from] psn
+L	ab_1370_13	182	|-heal|p2a: Snorlax|334/469|[from] item: Leftovers
+L	ab_1370_13	183	|upkeep
+L	ab_1370_13	184	|turn|15
+L	ab_1370_13	185	|
+L	ab_1370_13	186	|t:|<NORMALIZED>
+L	ab_1370_13	187	|switch|p2a: Swampert|Swampert, M|401/401
+L	ab_1370_13	188	|move|p1a: Salamence|Rock Slide|p2a: Swampert
+L	ab_1370_13	189	|-resisted|p2a: Swampert
+L	ab_1370_13	190	|-damage|p2a: Swampert|344/401
+L	ab_1370_13	191	|
+L	ab_1370_13	192	|-heal|p1a: Salamence|112/330 tox|[from] item: Leftovers
+L	ab_1370_13	193	|-damage|p1a: Salamence|12/330 tox|[from] psn
+L	ab_1370_13	194	|-heal|p2a: Swampert|369/401|[from] item: Leftovers
+L	ab_1370_13	195	|upkeep
+L	ab_1370_13	196	|turn|16
+L	ab_1370_13	197	|
+L	ab_1370_13	198	|t:|<NORMALIZED>
+L	ab_1370_13	199	|move|p1a: Salamence|Earthquake|p2a: Swampert
+L	ab_1370_13	200	|-damage|p2a: Swampert|217/401
+L	ab_1370_13	201	|move|p2a: Swampert|Rest|p2a: Swampert
+L	ab_1370_13	202	|-status|p2a: Swampert|slp|[from] move: Rest
+L	ab_1370_13	203	|-heal|p2a: Swampert|401/401 slp|[silent]
+L	ab_1370_13	204	|
+L	ab_1370_13	205	|-heal|p1a: Salamence|32/330 tox|[from] item: Leftovers
+L	ab_1370_13	206	|-damage|p1a: Salamence|0 fnt|[from] psn
+L	ab_1370_13	207	|faint|p1a: Salamence
+L	ab_1370_13	208	|upkeep
+L	ab_1370_13	209	|
+L	ab_1370_13	210	|t:|<NORMALIZED>
+L	ab_1370_13	211	|switch|p1a: Celebi|Celebi|320/341
+L	ab_1370_13	212	|turn|17
+L	ab_1370_13	213	|
+L	ab_1370_13	214	|t:|<NORMALIZED>
+L	ab_1370_13	215	|move|p1a: Celebi|Giga Drain|p2a: Swampert
+L	ab_1370_13	216	|-supereffective|p2a: Swampert
+L	ab_1370_13	217	|-damage|p2a: Swampert|3/401 slp
+L	ab_1370_13	218	|-heal|p1a: Celebi|341/341|[from] drain|[of] p2a: Swampert
+L	ab_1370_13	219	|cant|p2a: Swampert|slp
+L	ab_1370_13	220	|
+L	ab_1370_13	221	|-heal|p2a: Swampert|28/401 slp|[from] item: Leftovers
+L	ab_1370_13	222	|upkeep
+L	ab_1370_13	223	|turn|18
+L	ab_1370_13	224	|
+L	ab_1370_13	225	|t:|<NORMALIZED>
+L	ab_1370_13	226	|move|p1a: Celebi|Giga Drain|p2a: Swampert
+L	ab_1370_13	227	|-supereffective|p2a: Swampert
+L	ab_1370_13	228	|-damage|p2a: Swampert|0 fnt
+L	ab_1370_13	229	|faint|p2a: Swampert
+L	ab_1370_13	230	|
+L	ab_1370_13	231	|t:|<NORMALIZED>
+L	ab_1370_13	232	|switch|p2a: Celebi|Celebi|404/404
+L	ab_1370_13	233	|
+L	ab_1370_13	234	|upkeep
+L	ab_1370_13	235	|turn|19
+L	ab_1370_13	236	|
+L	ab_1370_13	237	|t:|<NORMALIZED>
+L	ab_1370_13	238	|switch|p2a: Magneton|Magneton|242/242
+L	ab_1370_13	239	|move|p1a: Celebi|Giga Drain|p2a: Magneton
+L	ab_1370_13	240	|-resisted|p2a: Magneton
+L	ab_1370_13	241	|-damage|p2a: Magneton|180/242
+L	ab_1370_13	242	|
+L	ab_1370_13	243	|upkeep
+L	ab_1370_13	244	|turn|20
+L	ab_1370_13	245	|
+L	ab_1370_13	246	|t:|<NORMALIZED>
+L	ab_1370_13	247	|switch|p2a: Snorlax|Snorlax, M|334/469
+L	ab_1370_13	248	|move|p1a: Celebi|Psychic|p2a: Snorlax
+L	ab_1370_13	249	|-damage|p2a: Snorlax|217/469
+L	ab_1370_13	250	|
+L	ab_1370_13	251	|-heal|p2a: Snorlax|246/469|[from] item: Leftovers
+L	ab_1370_13	252	|upkeep
+L	ab_1370_13	253	|turn|21
+L	ab_1370_13	254	|
+L	ab_1370_13	255	|t:|<NORMALIZED>
+L	ab_1370_13	256	|switch|p1a: Porygon2|Porygon2|99/373 tox
+L	ab_1370_13	257	|-ability|p1a: Porygon2|Immunity|Trace|[from] ability: Trace|[of] p2a: Snorlax
+L	ab_1370_13	258	|-activate|p1a: Porygon2|ability: Immunity
+L	ab_1370_13	259	|-curestatus|p1a: Porygon2|tox|[msg]
+L	ab_1370_13	260	|move|p2a: Snorlax|Self-Destruct|p1a: Porygon2
+L	ab_1370_13	261	|-crit|p1a: Porygon2
+L	ab_1370_13	262	|-damage|p1a: Porygon2|0 fnt
+L	ab_1370_13	263	|faint|p2a: Snorlax
+L	ab_1370_13	264	|faint|p1a: Porygon2
+L	ab_1370_13	265	|
+L	ab_1370_13	266	|t:|<NORMALIZED>
+L	ab_1370_13	267	|switch|p1a: Tyranitar|Tyranitar, M|341/341
+L	ab_1370_13	268	|switch|p2a: Magneton|Magneton|180/242
+L	ab_1370_13	269	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_1370_13	270	|
+L	ab_1370_13	271	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	272	|upkeep
+L	ab_1370_13	273	|turn|22
+L	ab_1370_13	274	|
+L	ab_1370_13	275	|t:|<NORMALIZED>
+L	ab_1370_13	276	|move|p2a: Magneton|Thunderbolt|p1a: Tyranitar
+L	ab_1370_13	277	|-damage|p1a: Tyranitar|146/341
+L	ab_1370_13	278	|move|p1a: Tyranitar|Hyper Beam|p2a: Magneton|[miss]
+L	ab_1370_13	279	|-miss|p1a: Tyranitar|p2a: Magneton
+L	ab_1370_13	280	|
+L	ab_1370_13	281	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	282	|upkeep
+L	ab_1370_13	283	|turn|23
+L	ab_1370_13	284	|
+L	ab_1370_13	285	|t:|<NORMALIZED>
+L	ab_1370_13	286	|move|p2a: Magneton|Substitute|p2a: Magneton
+L	ab_1370_13	287	|-start|p2a: Magneton|Substitute
+L	ab_1370_13	288	|-damage|p2a: Magneton|120/242
+L	ab_1370_13	289	|move|p1a: Tyranitar|Earthquake|p2a: Magneton
+L	ab_1370_13	290	|-supereffective|p2a: Magneton
+L	ab_1370_13	291	|-end|p2a: Magneton|Substitute
+L	ab_1370_13	292	|
+L	ab_1370_13	293	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	294	|upkeep
+L	ab_1370_13	295	|turn|24
+L	ab_1370_13	296	|
+L	ab_1370_13	297	|t:|<NORMALIZED>
+L	ab_1370_13	298	|switch|p1a: Swampert|Swampert, M|256/341
+L	ab_1370_13	299	|move|p2a: Magneton|Toxic|p1a: Swampert|[miss]
+L	ab_1370_13	300	|-miss|p2a: Magneton|p1a: Swampert
+L	ab_1370_13	301	|
+L	ab_1370_13	302	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	303	|upkeep
+L	ab_1370_13	304	|turn|25
+L	ab_1370_13	305	|
+L	ab_1370_13	306	|t:|<NORMALIZED>
+L	ab_1370_13	307	|move|p1a: Swampert|Substitute|p1a: Swampert
+L	ab_1370_13	308	|-start|p1a: Swampert|Substitute
+L	ab_1370_13	309	|-damage|p1a: Swampert|171/341
+L	ab_1370_13	310	|move|p2a: Magneton|Hidden Power|p1a: Swampert
+L	ab_1370_13	311	|-resisted|p1a: Swampert
+L	ab_1370_13	312	|-crit|p1a: Swampert
+L	ab_1370_13	313	|-end|p1a: Swampert|Substitute
+L	ab_1370_13	314	|
+L	ab_1370_13	315	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	316	|upkeep
+L	ab_1370_13	317	|turn|26
+L	ab_1370_13	318	|
+L	ab_1370_13	319	|t:|<NORMALIZED>
+L	ab_1370_13	320	|move|p2a: Magneton|Substitute|p2a: Magneton
+L	ab_1370_13	321	|-start|p2a: Magneton|Substitute
+L	ab_1370_13	322	|-damage|p2a: Magneton|60/242
+L	ab_1370_13	323	|move|p1a: Swampert|Roar|p2a: Magneton
+L	ab_1370_13	324	|drag|p2a: Celebi|Celebi|404/404
+L	ab_1370_13	325	|
+L	ab_1370_13	326	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	327	|-damage|p2a: Celebi|379/404|[from] Sandstorm
+L	ab_1370_13	328	|-heal|p2a: Celebi|404/404|[from] item: Leftovers
+L	ab_1370_13	329	|upkeep
+L	ab_1370_13	330	|turn|27
+L	ab_1370_13	331	|
+L	ab_1370_13	332	|t:|<NORMALIZED>
+L	ab_1370_13	333	|switch|p1a: Metagross|Metagross|361/361
+L	ab_1370_13	334	|move|p2a: Celebi|Psychic|p1a: Metagross
+L	ab_1370_13	335	|-resisted|p1a: Metagross
+L	ab_1370_13	336	|-damage|p1a: Metagross|319/361
+L	ab_1370_13	337	|
+L	ab_1370_13	338	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	339	|-damage|p2a: Celebi|379/404|[from] Sandstorm
+L	ab_1370_13	340	|-heal|p2a: Celebi|404/404|[from] item: Leftovers
+L	ab_1370_13	341	|-heal|p1a: Metagross|341/361|[from] item: Leftovers
+L	ab_1370_13	342	|upkeep
+L	ab_1370_13	343	|turn|28
+L	ab_1370_13	344	|
+L	ab_1370_13	345	|t:|<NORMALIZED>
+L	ab_1370_13	346	|move|p2a: Celebi|Giga Drain|p1a: Metagross
+L	ab_1370_13	347	|-resisted|p1a: Metagross
+L	ab_1370_13	348	|-damage|p1a: Metagross|293/361
+L	ab_1370_13	349	|move|p1a: Metagross|Meteor Mash|p2a: Celebi
+L	ab_1370_13	350	|-damage|p2a: Celebi|201/404
+L	ab_1370_13	351	|
+L	ab_1370_13	352	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	353	|-damage|p2a: Celebi|176/404|[from] Sandstorm
+L	ab_1370_13	354	|-heal|p2a: Celebi|201/404|[from] item: Leftovers
+L	ab_1370_13	355	|-heal|p1a: Metagross|315/361|[from] item: Leftovers
+L	ab_1370_13	356	|upkeep
+L	ab_1370_13	357	|turn|29
+L	ab_1370_13	358	|
+L	ab_1370_13	359	|t:|<NORMALIZED>
+L	ab_1370_13	360	|switch|p1a: Celebi|Celebi|341/341
+L	ab_1370_13	361	|move|p2a: Celebi|Calm Mind|p2a: Celebi
+L	ab_1370_13	362	|-boost|p2a: Celebi|spa|1
+L	ab_1370_13	363	|-boost|p2a: Celebi|spd|1
+L	ab_1370_13	364	|
+L	ab_1370_13	365	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	366	|-damage|p1a: Celebi|320/341|[from] Sandstorm
+L	ab_1370_13	367	|-damage|p2a: Celebi|176/404|[from] Sandstorm
+L	ab_1370_13	368	|-heal|p1a: Celebi|341/341|[from] item: Leftovers
+L	ab_1370_13	369	|-heal|p2a: Celebi|201/404|[from] item: Leftovers
+L	ab_1370_13	370	|upkeep
+L	ab_1370_13	371	|turn|30
+L	ab_1370_13	372	|
+L	ab_1370_13	373	|t:|<NORMALIZED>
+L	ab_1370_13	374	|move|p1a: Celebi|Psychic|p2a: Celebi
+L	ab_1370_13	375	|-resisted|p2a: Celebi
+L	ab_1370_13	376	|-damage|p2a: Celebi|152/404
+L	ab_1370_13	377	|move|p2a: Celebi|Psychic|p1a: Celebi
+L	ab_1370_13	378	|-resisted|p1a: Celebi
+L	ab_1370_13	379	|-damage|p1a: Celebi|236/341
+L	ab_1370_13	380	|
+L	ab_1370_13	381	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	382	|-damage|p1a: Celebi|215/341|[from] Sandstorm
+L	ab_1370_13	383	|-damage|p2a: Celebi|127/404|[from] Sandstorm
+L	ab_1370_13	384	|-heal|p1a: Celebi|236/341|[from] item: Leftovers
+L	ab_1370_13	385	|-heal|p2a: Celebi|152/404|[from] item: Leftovers
+L	ab_1370_13	386	|upkeep
+L	ab_1370_13	387	|turn|31
+L	ab_1370_13	388	|
+L	ab_1370_13	389	|t:|<NORMALIZED>
+L	ab_1370_13	390	|switch|p1a: Metagross|Metagross|315/361
+L	ab_1370_13	391	|move|p2a: Celebi|Leech Seed|p1a: Metagross
+L	ab_1370_13	392	|-start|p1a: Metagross|move: Leech Seed
+L	ab_1370_13	393	|
+L	ab_1370_13	394	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	395	|-damage|p2a: Celebi|127/404|[from] Sandstorm
+L	ab_1370_13	396	|-heal|p2a: Celebi|152/404|[from] item: Leftovers
+L	ab_1370_13	397	|-heal|p1a: Metagross|337/361|[from] item: Leftovers
+L	ab_1370_13	398	|-damage|p1a: Metagross|292/361|[from] Leech Seed|[of] p2a: Celebi
+L	ab_1370_13	399	|-heal|p2a: Celebi|197/404|[silent]
+L	ab_1370_13	400	|upkeep
+L	ab_1370_13	401	|turn|32
+L	ab_1370_13	402	|
+L	ab_1370_13	403	|t:|<NORMALIZED>
+L	ab_1370_13	404	|move|p2a: Celebi|Psychic|p1a: Metagross
+L	ab_1370_13	405	|-resisted|p1a: Metagross
+L	ab_1370_13	406	|-damage|p1a: Metagross|229/361
+L	ab_1370_13	407	|move|p1a: Metagross|Explosion|p2a: Celebi
+L	ab_1370_13	408	|-damage|p2a: Celebi|0 fnt
+L	ab_1370_13	409	|faint|p1a: Metagross
+L	ab_1370_13	410	|faint|p2a: Celebi
+L	ab_1370_13	411	|
+L	ab_1370_13	412	|t:|<NORMALIZED>
+L	ab_1370_13	413	|switch|p2a: Magneton|Magneton|60/242
+L	ab_1370_13	414	|switch|p1a: Swampert|Swampert, M|171/341
+L	ab_1370_13	415	|
+L	ab_1370_13	416	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	417	|upkeep
+L	ab_1370_13	418	|turn|33
+L	ab_1370_13	419	|
+L	ab_1370_13	420	|t:|<NORMALIZED>
+L	ab_1370_13	421	|move|p1a: Swampert|Substitute|p1a: Swampert
+L	ab_1370_13	422	|-start|p1a: Swampert|Substitute
+L	ab_1370_13	423	|-damage|p1a: Swampert|86/341
+L	ab_1370_13	424	|move|p2a: Magneton|Hidden Power|p1a: Swampert
+L	ab_1370_13	425	|-resisted|p1a: Swampert
+L	ab_1370_13	426	|-activate|p1a: Swampert|Substitute|[damage]
+L	ab_1370_13	427	|
+L	ab_1370_13	428	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	429	|upkeep
+L	ab_1370_13	430	|turn|34
+L	ab_1370_13	431	|
+L	ab_1370_13	432	|t:|<NORMALIZED>
+L	ab_1370_13	433	|move|p1a: Swampert|Endeavor|p2a: Magneton
+L	ab_1370_13	434	|-fail|p1a: Swampert
+L	ab_1370_13	435	|move|p2a: Magneton|Thunderbolt|p1a: Swampert
+L	ab_1370_13	436	|-immune|p1a: Swampert
+L	ab_1370_13	437	|
+L	ab_1370_13	438	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	439	|upkeep
+L	ab_1370_13	440	|turn|35
+L	ab_1370_13	441	|
+L	ab_1370_13	442	|t:|<NORMALIZED>
+L	ab_1370_13	443	|move|p2a: Magneton|Thunderbolt|p1a: Swampert
+L	ab_1370_13	444	|-immune|p1a: Swampert
+L	ab_1370_13	445	|move|p1a: Swampert|Roar||[still]
+L	ab_1370_13	446	|-fail|p1a: Swampert
+L	ab_1370_13	447	|
+L	ab_1370_13	448	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	449	|upkeep
+L	ab_1370_13	450	|turn|36
+L	ab_1370_13	451	|
+L	ab_1370_13	452	|t:|<NORMALIZED>
+L	ab_1370_13	453	|switch|p1a: Celebi|Celebi|236/341
+L	ab_1370_13	454	|move|p2a: Magneton|Substitute|p2a: Magneton
+L	ab_1370_13	455	|-fail|p2a: Magneton|move: Substitute|[weak]
+L	ab_1370_13	456	|
+L	ab_1370_13	457	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	458	|-damage|p1a: Celebi|215/341|[from] Sandstorm
+L	ab_1370_13	459	|-heal|p1a: Celebi|236/341|[from] item: Leftovers
+L	ab_1370_13	460	|upkeep
+L	ab_1370_13	461	|turn|37
+L	ab_1370_13	462	|
+L	ab_1370_13	463	|t:|<NORMALIZED>
+L	ab_1370_13	464	|switch|p1a: Tyranitar|Tyranitar, M|146/341
+L	ab_1370_13	465	|move|p2a: Magneton|Thunderbolt|p1a: Tyranitar
+L	ab_1370_13	466	|-damage|p1a: Tyranitar|0 fnt
+L	ab_1370_13	467	|faint|p1a: Tyranitar
+L	ab_1370_13	468	|
+L	ab_1370_13	469	|t:|<NORMALIZED>
+L	ab_1370_13	470	|switch|p1a: Swampert|Swampert, M|86/341
+L	ab_1370_13	471	|
+L	ab_1370_13	472	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	473	|upkeep
+L	ab_1370_13	474	|turn|38
+L	ab_1370_13	475	|
+L	ab_1370_13	476	|t:|<NORMALIZED>
+L	ab_1370_13	477	|move|p1a: Swampert|Endeavor|p2a: Magneton
+L	ab_1370_13	478	|-fail|p1a: Swampert
+L	ab_1370_13	479	|move|p2a: Magneton|Hidden Power|p1a: Swampert
+L	ab_1370_13	480	|-resisted|p1a: Swampert
+L	ab_1370_13	481	|-damage|p1a: Swampert|37/341
+L	ab_1370_13	482	|
+L	ab_1370_13	483	|-weather|Sandstorm|[upkeep]
+L	ab_1370_13	484	|-enditem|p1a: Swampert|Salac Berry|[eat]
+L	ab_1370_13	485	|-boost|p1a: Swampert|spe|1|[from] item: Salac Berry
+L	ab_1370_13	486	|upkeep
+L	ab_1370_13	487	|turn|39
+L	ab_1370_13	488	|
+L	ab_1370_13	489	|t:|<NORMALIZED>
+L	ab_1370_13	490	|move|p1a: Swampert|Surf|p2a: Magneton
+L	ab_1370_13	491	|-damage|p2a: Magneton|0 fnt
+L	ab_1370_13	492	|faint|p2a: Magneton
+L	ab_1370_13	493	|
+L	ab_1370_13	494	|win|P1

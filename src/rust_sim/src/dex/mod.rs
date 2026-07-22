@@ -335,6 +335,12 @@ mod batch5_tests {
         for id in ["counter", "mirrorcoat", "endeavor", "seismictoss"] {
             assert!(!d.moves(id).unwrap().blocked_by_taunt(), "{id} must stay selectable under Taunt");
         }
+        // The BARE `hiddenpower` (num 237, data BP 0 → derived Status) is a real damaging move
+        // (`gen3_iv_derived_hidden_power_bp_v1`): a TAUNTED mon's Hidden Power stays selectable
+        // (VERIFIED vs the sim — the ab_233_8 over-KO). The typed ids carry BP 70 → non-Status.
+        for id in ["hiddenpower", "hiddenpowerdark", "hiddenpowergrass", "hiddenpowerice"] {
+            assert!(!d.moves(id).unwrap().blocked_by_taunt(), "{id} must stay selectable under Taunt");
+        }
         let st = d.moves("sleeptalk").unwrap();
         assert!(st.blocked_by_taunt(), "Sleep Talk (Status) IS taunt-blocked");
         // The pool-exclusion flags ride the data (never hand-listed): sleeptalk excludes

@@ -1,0 +1,1811 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=14140718 run_id=rmrr03rmc chunk=453
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_453_2
+TEAM	ab_453_2	p1	Aquali|Vaporeon|Leftovers|WaterAbsorb|Substitute,BatonPass,Surf,Roar|Timid|72,,44,64,76,252|M|,0,,,,|||]SÃ©lÃ©roc|Lunatone|Leftovers|Levitate|CalmMind,IceBeam,BatonPass,Toxic|Bold|252,,216,,,40|N|,0,,,,|||]Electhor|Zapdos|Leftovers|Pressure|Thunderbolt,BatonPass,Substitute,HiddenPowerGrass|Timid|,,4,252,,252|N|,2,,30,,|||,Grass,,,,]Jirachi||Leftovers|SereneGrace|Wish,Protect,HiddenPowerFighting,BodySlam|Impish|252,,220,,,36|N|,,30,30,30,30|||,Fighting,,,,]Celebi||Leftovers|NaturalCure|LeechSeed,BatonPass,Recover,Psychic|Timid|176,,80,76,,176|N|,0,,,,|||]MagnÃ©ton|Magneton|Magnet|MagnetPull|Substitute,Thunderbolt,HiddenPowerIce,Toxic|Modest|,,,252,4,252|N|,2,30,,,|||,Ice,,,,
+TEAM	ab_453_2	p2	Skarmory||Leftovers|KeenEye|Spikes,DrillPeck,Roar,Protect|Careful|248,,,,248,12|M||||]Aerodactyl||ChoiceBand|RockHead|RockSlide,Earthquake,DoubleEdge,HiddenPowerBug|Jolly|,252,,,4,252|M|,30,30,,30,|||,Bug,,,,]Magneton||Magnet|MagnetPull|Thunderbolt,HiddenPowerFire,ThunderWave,MetalSound|Modest|,,,252,4,252|N|,2,,30,,30|||,Fire,,,,]Celebi||Leftovers|NaturalCure|LeechSeed,HiddenPowerGrass,Recover,PerishSong|Calm|252,,168,,56,32|N|,2,,30,,|||,Grass,,,,]Swampert||Leftovers|Torrent|Curse,IceBeam,Earthquake,Rest|Brave|248,,184,,32,44|M||||]Blissey||Leftovers|NaturalCure|ThunderWave,SoftBoiled,SeismicToss,Aromatherapy|Bold|168,,252,,,88|F|,0,,,,|||
+FMT	ab_453_2	gen3ou
+INIT	ab_453_2	2679,20208,65414,36301	2839643336
+DEC	ab_453_2	0	move	0	0	m2	m1	60280,46670,16990,47850	Vaporeon	331	419	0	-	0	0	0	0	0	0	6	Skarmory	238	333	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_453_2	1	move	0	0	m2	m2	405,48094,10980,40928	Magneton	241	241	0	-	0	0	0	0	0	0	6	Skarmory	144	333	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_453_2	2	move	0	0	m0	m1	40388,25516,3886,884	Magneton	181	241	0	-	0	0	0	0	0	0	6	Skarmory	164	333	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_453_2	3	move	0	0	m3	m2	51796,12230,42954,30152	Vaporeon	357	419	0	-	0	0	0	0	0	0	6	Skarmory	184	333	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_453_2	4	move	0	0	m0	s2	17300,14669,9351,7851	Vaporeon	279	419	0	-	0	0	0	0	0	0	6	Magneton	241	241	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_453_2	5	move	0	0	m1	m2	17300,14669,9351,7851	Vaporeon	279	419	0	-	0	0	0	0	0	0	6	Magneton	241	241	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_453_2	6	switch	1	0	s1	-	52685,56564,63682,1701	Lunatone	344	344	0	-	0	0	0	0	0	0	6	Magneton	241	241	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_453_2	7	move	0	0	m1	m2	61356,2940,48783,16947	Lunatone	344	344	0	-	0	0	0	0	0	0	6	Magneton	193	241	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_453_2	8	move	0	0	s2	m3	62728,43261,36677,44269	Zapdos	321	321	0	-	0	0	0	-2	0	0	6	Magneton	193	241	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_453_2	9	move	0	0	m1	m0	62728,43261,36677,44269	Zapdos	321	321	0	-	0	0	0	-2	0	0	6	Magneton	193	241	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_453_2	10	switch	1	0	s4	-	51015,50927,35283,41624	Celebi	209	385	0	-	0	0	0	-2	0	0	6	Magneton	193	241	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_453_2	11	move	0	0	m0	m2	24429,18863,53569,2732	Celebi	233	385	0	par	0	0	0	-2	0	0	6	Magneton	193	241	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_453_2	12	move	0	0	m3	m2	30187,56616,38243,25209	Celebi	257	385	0	par	0	0	0	-2	0	0	6	Magneton	193	241	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_453_2	13	move	0	0	m3	m0	59070,63758,46158,30411	Celebi	89	385	0	par	0	0	0	-2	0	0	6	Magneton	112	241	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_453_2	14	move	0	0	m1	m0	463,32275,16004,14767	Celebi	0	385	1	fnt	0	0	0	0	0	0	5	Magneton	112	241	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_453_2	15	switch	1	0	s5	-	12000,20234,54521,1998	Magneton	181	241	0	-	0	0	0	0	0	0	5	Magneton	112	241	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_453_2	16	move	0	0	m0	m0	6272,14521,10726,48141	Magneton	121	241	0	-	0	0	0	0	0	0	5	Magneton	112	241	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_453_2	17	move	0	0	m3	m1	47517,43414,2352,32465	Magneton	0	241	1	fnt	0	0	0	0	0	0	4	Magneton	112	241	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_453_2	18	switch	1	0	s4	-	965,27749,14301,32824	Zapdos	321	321	0	-	0	0	0	0	0	0	4	Magneton	112	241	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_453_2	19	move	0	0	m1	m2	965,27749,14301,32824	Zapdos	321	321	0	-	0	0	0	0	0	0	4	Magneton	112	241	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_453_2	20	switch	1	0	s1	-	23693,52686,6073,15701	Vaporeon	305	419	0	par	0	0	0	0	0	0	4	Magneton	112	241	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_453_2	21	move	0	0	m1	m2	27097,23082,12421,11967	Vaporeon	305	419	0	par	0	0	0	0	0	0	4	Magneton	112	241	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_453_2	22	switch	1	0	s3	-	16693,53332,17903,18206	Jirachi	404	404	0	-	0	0	0	0	0	0	4	Magneton	112	241	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_453_2	23	move	0	0	m2	m3	46028,42422,30008,31331	Jirachi	404	404	0	-	0	0	0	0	0	0	4	Magneton	0	241	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_453_2	24	switch	0	1	-	s4	59553,6131,38306,58066	Jirachi	404	404	0	-	0	0	0	0	0	0	4	Swampert	403	403	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_453_2	25	move	0	0	s1	m2	32067,1475,65358,12980	Zapdos	321	321	0	-	0	0	0	0	0	0	4	Swampert	403	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_453_2	26	move	0	0	m3	m2	35078,27438,11623,16107	Zapdos	321	321	0	-	0	0	0	0	0	0	4	Swampert	94	403	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_453_2	27	move	0	0	m0	m0	53536,39998,9951,4636	Zapdos	321	321	0	-	0	0	0	0	0	0	4	Swampert	119	403	0	-	1	1	0	0	-1	0	5	p1	0	0	0	0	0
+DEC	ab_453_2	28	move	0	0	m3	m3	5875,61930,25670,49705	Zapdos	321	321	0	-	0	0	0	0	0	0	4	Swampert	0	403	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_453_2	29	switch	0	1	-	s5	47322,22057,2328,10736	Zapdos	321	321	0	-	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_453_2	30	move	0	0	m3	m0	63111,34435,53330,15510	Zapdos	321	321	0	par	0	0	0	0	0	0	4	Blissey	674	693	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_453_2	31	move	0	0	m3	m2	63692,9803,15479,16876	Zapdos	241	321	0	par	0	0	0	0	0	0	4	Blissey	659	693	0	-	0	0	0	0	0	0	4	p2	0	0	1	0	0
+DEC	ab_453_2	32	move	0	0	s3	m0	44538,10956,47942,27070	Vaporeon	331	419	0	par	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_453_2	33	move	0	0	m2	m0	49757,63656,22383,38531	Vaporeon	357	419	0	par	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_453_2	34	move	0	0	m3	m0	44295,24986,26573,14822	Vaporeon	383	419	0	par	0	0	0	0	0	0	4	Skarmory	204	333	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_453_2	35	move	0	0	m1	m1	38054,41199,49567,20485	Vaporeon	298	419	0	par	0	0	0	0	0	0	4	Skarmory	224	333	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_453_2	36	move	0	0	s3	m2	5988,2156,53873,19726	Lunatone	344	344	0	-	0	0	0	0	0	0	4	Skarmory	244	333	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_453_2	37	move	0	0	m0	s1	1301,7598,44152,33609	Lunatone	344	344	0	-	0	0	1	1	0	0	4	Aerodactyl	301	301	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_453_2	38	move	0	0	s2	m3	60878,42399,40174,43597	Zapdos	142	321	0	par	0	0	0	0	0	0	4	Aerodactyl	301	301	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_453_2	39	move	0	0	m0	m3	30713,11861,53230,41877	Zapdos	84	321	0	par	0	0	0	0	0	0	4	Aerodactyl	0	301	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	40	switch	0	1	-	s3	8029,372,5098,58764	Zapdos	104	321	0	par	0	0	0	0	0	0	4	Celebi	404	404	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_453_2	41	move	0	0	m1	m2	21115,59891,59263,6911	Zapdos	104	321	0	par	0	0	0	0	0	0	4	Celebi	404	404	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	42	switch	1	0	s3	-	27105,58261,43959,48222	Vaporeon	324	419	0	par	0	0	0	0	0	0	4	Celebi	404	404	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_453_2	43	move	0	0	s1	s2	28551,29573,57860,15833	Jirachi	404	404	0	-	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	44	move	0	0	m1	m2	2173,4535,17488,33810	Jirachi	404	404	0	-	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	3	p1	0	0	1	0	0
+DEC	ab_453_2	45	move	0	0	m2	s2	56345,34375,24992,22876	Jirachi	404	404	0	-	0	0	0	0	0	0	4	Celebi	404	404	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	46	move	0	0	m3	m3	44050,13596,30957,64827	Jirachi	404	404	0	-	0	0	0	0	0	0	4	Celebi	368	404	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	1
+DEC	ab_453_2	47	move	0	0	s3	m3	7927,34534,45607,16053	Zapdos	124	321	0	par	0	0	0	0	0	0	4	Celebi	393	404	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	1
+DEC	ab_453_2	48	move	0	0	s2	s2	39441,8267,23844,14636	Lunatone	344	344	0	-	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	49	move	0	0	s2	m2	38810,26957,20075,16126	Zapdos	44	321	0	par	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	3	p1	0	0	1	0	0
+DEC	ab_453_2	50	move	0	0	s3	m2	33117,37401,31759,32768	Jirachi	329	404	0	-	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	3	p1	0	0	1	0	0
+DEC	ab_453_2	51	move	0	0	m0	m2	15261,58804,61010,7346	Jirachi	254	404	0	-	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	3	p1	0	0	1	0	0
+DEC	ab_453_2	52	move	0	0	m0	m2	58233,40234,12072,8596	Jirachi	381	404	0	-	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	3	p1	0	0	1	0	0
+DEC	ab_453_2	53	move	0	0	m3	m1	31654,2950,1514,14155	Jirachi	404	404	0	-	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	54	move	0	0	m3	m0	36403,23330,52559,6914	Jirachi	404	404	0	par	0	0	0	0	0	0	4	Blissey	613	693	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	55	move	0	0	m3	m0	11771,19267,43346,52571	Jirachi	404	404	0	par	0	0	0	0	0	0	4	Blissey	540	693	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	56	move	0	0	s2	m3	8300,57051,26835,51669	Lunatone	344	344	0	-	0	0	0	0	0	0	4	Blissey	583	693	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	57	move	0	0	m2	m1	8300,57051,26835,51669	Lunatone	344	344	0	-	0	0	0	0	0	0	4	Blissey	583	693	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	58	switch	1	0	s3	-	53965,54947,5003,15564	Zapdos	64	321	0	par	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_453_2	59	move	0	0	m0	s2	61060,55923,4889,64029	Zapdos	84	321	0	par	0	0	0	0	0	0	4	Celebi	349	404	0	par	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	60	move	0	0	s3	m1	33412,38968,5803,59272	Lunatone	162	344	0	-	0	0	0	0	0	0	4	Celebi	374	404	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	61	move	0	0	m2	m0	33412,38968,5803,59272	Lunatone	162	344	0	-	0	0	0	0	0	0	4	Celebi	374	404	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	62	switch	1	0	s2	-	15297,44862,17965,36976	Jirachi	354	404	0	par	0	0	0	0	0	0	4	Celebi	404	404	0	par	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_453_2	63	move	0	0	m1	m0	58929,34528,47932,17653	Jirachi	329	404	0	par	0	0	0	0	0	0	4	Celebi	404	404	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	64	move	0	0	m2	m0	57331,9644,27573,27546	Jirachi	304	404	0	par	0	0	0	0	0	0	4	Celebi	404	404	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	65	move	0	0	m1	m3	58456,11344,13093,11639	Jirachi	279	404	0	par	0	0	0	0	0	0	4	Celebi	404	404	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	1
+DEC	ab_453_2	66	move	0	0	s1	s2	28515,29711,21060,48539	Vaporeon	350	419	0	par	0	0	0	0	0	0	4	Blissey	693	693	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	67	move	0	0	m2	m0	26381,43284,266,33369	Vaporeon	376	419	0	par	0	0	0	0	0	0	4	Blissey	639	693	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	68	move	0	0	m0	m3	35588,42664,48378,45859	Vaporeon	298	419	0	par	0	0	0	0	0	0	4	Blissey	682	693	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	69	move	0	0	m2	m2	33146,62858,16294,30241	Vaporeon	324	419	0	par	0	0	0	0	0	0	4	Blissey	624	693	0	-	0	0	0	0	0	0	3	p2	0	0	1	0	0
+DEC	ab_453_2	70	move	0	0	m0	s2	56504,29725,7530,8107	Vaporeon	350	419	0	par	0	0	0	0	0	0	4	Celebi	404	404	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	71	move	0	0	m0	s1	27064,61406,55150,57253	Vaporeon	376	419	0	par	0	0	0	0	0	0	4	Skarmory	264	333	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	72	move	0	0	m1	m2	17460,25008,3607,10204	Vaporeon	376	419	0	par	0	0	0	0	0	0	4	Skarmory	264	333	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	73	switch	1	0	s2	-	15280,29264,64695,22761	Zapdos	104	321	0	par	0	0	0	0	0	0	4	Skarmory	284	333	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_453_2	74	move	0	0	m2	m2	5918,50822,38052,26093	Vaporeon	402	419	0	par	0	0	0	0	0	0	4	Skarmory	304	333	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	75	move	0	0	s1	m2	54088,12616,21223,13398	Lunatone	183	344	0	-	0	0	0	0	0	0	4	Skarmory	324	333	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	76	move	0	0	m1	m1	47112,60030,33519,10622	Lunatone	163	344	0	-	0	0	0	0	0	0	4	Skarmory	274	333	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	77	move	0	0	m3	m1	56501,43644,28875,61309	Lunatone	144	344	0	-	0	0	0	0	0	0	4	Skarmory	294	333	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	78	move	0	0	m1	m2	50363,27125,7997,1242	Jirachi	304	404	0	par	0	0	0	0	0	0	4	Skarmory	246	333	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	79	move	0	0	m0	m3	64400,50741,60116,43695	Jirachi	329	404	0	par	0	0	0	0	0	0	4	Skarmory	266	333	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	80	move	0	0	m3	m3	65040,6204,10415,48514	Jirachi	404	404	0	par	0	0	0	0	0	0	4	Skarmory	286	333	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	81	move	0	0	m1	m2	40095,23683,33415,23286	Jirachi	404	404	0	par	0	0	0	0	0	0	4	Skarmory	306	333	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_453_2	82	move	0	0	m2	m1	55242,10900,16453,39966	Jirachi	401	404	0	par	0	0	0	0	0	0	4	Skarmory	236	333	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	83	move	0	0	m2	m1	50792,25838,60408,70	Jirachi	397	404	0	par	0	0	0	0	0	0	4	Skarmory	213	333	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	84	move	0	0	m1	m3	22009,57814,44385,16363	Jirachi	404	404	0	par	0	0	0	0	0	0	4	Skarmory	233	333	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_453_2	85	move	0	0	s3	m0	61520,37330,22054,39290	Lunatone	165	344	0	-	0	0	0	0	0	0	4	Skarmory	253	333	0	-	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_453_2	86	move	0	0	m0	s1	44395,34566,20441,30181	Lunatone	186	344	0	-	0	0	1	1	0	0	4	Celebi	404	404	0	-	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_453_2	87	move	0	0	m3	m3	45496,25421,46457,10094	Lunatone	207	344	0	-	0	0	1	1	0	0	4	Celebi	379	404	0	tox	0	0	0	0	0	0	3	p2	1	0	0	0	1
+DEC	ab_453_2	88	move	0	0	m3	m1	52645,31941,57775,29741	Lunatone	99	344	0	-	0	0	1	1	0	0	4	Celebi	354	404	0	tox	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_453_2	89	move	0	0	m3	m2	35750,36158,30894,33751	Lunatone	120	344	0	-	0	0	1	1	0	0	4	Celebi	329	404	0	tox	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_453_2	90	move	0	0	m0	s2	35750,36158,30894,33751	Lunatone	0	344	1	fnt	0	0	0	0	0	0	3	Blissey	667	693	0	-	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_453_2	91	switch	1	0	s3	-	15682,54642,20591,45462	Jirachi	354	404	0	par	0	0	0	0	0	0	3	Blissey	667	693	0	-	0	0	0	0	0	0	3	none	1	0	0	0	0
+DEC	ab_453_2	92	move	0	0	m1	s1	52395,14498,18613,15064	Jirachi	379	404	0	par	0	0	0	0	0	0	3	Skarmory	273	333	0	-	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_453_2	93	move	0	0	m0	m1	42315,45428,9796,40415	Jirachi	375	404	0	par	0	0	0	0	0	0	3	Skarmory	293	333	0	-	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_453_2	94	move	0	0	m0	m3	15186,7924,18986,2496	Jirachi	404	404	0	par	0	0	0	0	0	0	3	Skarmory	313	333	0	-	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_453_2	95	move	0	0	m1	m1	14176,22041,28227,36692	Jirachi	404	404	0	par	0	0	0	0	0	0	3	Skarmory	333	333	0	-	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_453_2	96	move	0	0	m0	s1	19633,6389,6995,28390	Jirachi	404	404	0	par	0	0	0	0	0	0	3	Blissey	693	693	0	-	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_453_2	97	move	0	0	s2	m1	57510,39202,32436,30081	Zapdos	204	321	0	par	0	0	0	0	0	0	3	Blissey	693	693	0	-	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_453_2	98	move	0	0	m1	s2	49514,57297,12994,936	Zapdos	204	321	0	par	0	0	0	0	0	0	3	Celebi	329	404	0	-	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_453_2	99	switch	1	0	s1	-	35163,10195,54334,63499	Vaporeon	376	419	0	par	0	0	0	0	0	0	3	Celebi	354	404	0	-	0	0	0	0	0	0	3	none	1	0	0	0	0
+DEC	ab_453_2	100	move	0	0	s1	m2	40426,18140,56329,24090	Zapdos	224	321	0	par	0	0	0	0	0	0	3	Celebi	404	404	0	-	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_453_2	101	move	0	0	m1	s1	31474,23834,24042,43269	Zapdos	224	321	0	par	0	0	0	0	0	0	3	Skarmory	333	333	0	-	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_453_2	102	switch	1	0	s2	-	17115,52827,23889,64188	Jirachi	379	404	0	par	0	0	0	0	0	0	3	Skarmory	333	333	0	-	0	0	0	0	0	0	3	none	1	0	0	0	0
+DEC	ab_453_2	103	move	0	0	s2	m3	801,29229,56273,9967	Zapdos	244	321	0	par	0	0	0	0	0	0	3	Skarmory	333	333	0	-	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_453_2	104	move	0	0	s2	m0	6425,63274,35849,57870	Jirachi	354	404	0	par	0	0	0	0	0	0	3	Skarmory	333	333	0	-	0	0	0	0	0	0	3	p1	2	0	0	0	0
+DEC	ab_453_2	105	move	0	0	m3	m1	41729,46755,60571,58189	Jirachi	351	404	0	par	0	0	0	0	0	0	3	Skarmory	333	333	0	-	0	0	0	0	0	0	3	p2	2	0	0	0	0
+DEC	ab_453_2	106	move	0	0	m1	s2	5057,38984,30895,54775	Jirachi	376	404	0	par	0	0	0	0	0	0	3	Blissey	693	693	0	-	0	0	0	0	0	0	3	p2	2	0	0	0	0
+DEC	ab_453_2	107	move	0	0	m0	s2	13198,52922,6835,45585	Jirachi	401	404	0	par	0	0	0	0	0	0	3	Skarmory	333	333	0	-	0	0	0	0	0	0	3	p2	2	0	0	0	0
+DEC	ab_453_2	108	move	0	0	m1	m1	44803,15811,7713,48277	Jirachi	404	404	0	par	0	0	0	0	0	0	3	Skarmory	333	333	0	-	0	0	0	0	0	0	3	p1	2	0	0	0	0
+DEC	ab_453_2	109	move	0	0	m2	m2	43570,53746,64358,35090	Zapdos	264	321	0	par	0	0	0	0	0	0	3	Skarmory	310	333	0	-	0	0	0	0	0	0	3	p1	2	0	0	0	0
+DEC	ab_453_2	110	move	0	0	m0	s1	4251,651,45596,24308	Zapdos	284	321	0	par	0	0	0	0	0	0	3	Celebi	404	404	0	-	0	0	0	0	0	0	3	p2	2	0	0	0	0
+DEC	ab_453_2	111	move	0	0	m1	s1	30490,35975,64724,43271	Zapdos	284	321	0	par	0	0	0	0	0	0	3	Skarmory	310	333	0	-	0	0	0	0	0	0	3	p2	2	0	0	0	0
+DEC	ab_453_2	112	switch	1	0	s2	-	17957,21975,8627,3462	Jirachi	362	404	0	par	0	0	0	0	0	0	3	Skarmory	330	333	0	-	0	0	0	0	0	0	3	none	2	0	0	0	0
+DEC	ab_453_2	113	move	0	0	m3	m0	40739,15737,42024,63068	Jirachi	387	404	0	par	0	0	0	0	0	0	3	Skarmory	303	333	0	-	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_453_2	114	move	0	0	m2	m2	57460,60466,37250,17005	Vaporeon	298	419	0	par	0	0	0	0	0	0	3	Skarmory	283	333	0	-	0	0	0	0	0	0	3	p1	3	0	0	0	0
+DEC	ab_453_2	115	move	0	0	s1	m2	50618,57495,46008,61142	Vaporeon	220	419	0	par	0	0	0	0	0	0	3	Skarmory	303	333	0	-	0	0	0	0	0	0	3	p1	3	0	0	0	0
+DEC	ab_453_2	116	move	0	0	m3	m3	39516,50302,3256,16138	Vaporeon	246	419	0	par	0	0	0	0	0	0	3	Skarmory	323	333	0	-	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_453_2	117	move	0	0	m1	m0	29932,23325,36825,55221	Vaporeon	246	419	0	par	0	0	0	0	0	0	3	Skarmory	323	333	0	-	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_453_2	118	switch	1	0	s2	-	33994,64515,38779,38444	Zapdos	304	321	0	par	0	0	0	0	0	0	3	Skarmory	333	333	0	-	0	0	0	0	0	0	3	none	3	0	0	0	0
+DEC	ab_453_2	119	move	0	0	s1	m3	58976,50323,37498,27167	Jirachi	210	404	0	par	0	0	0	0	0	0	3	Skarmory	333	333	0	-	0	0	0	0	0	0	3	p1	3	0	0	0	0
+DEC	ab_453_2	120	move	0	0	m3	s1	853,53699,54577,44029	Jirachi	235	404	0	par	0	0	0	0	0	0	3	Celebi	367	404	0	-	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_453_2	121	move	0	0	m0	m1	15332,516,60878,57064	Jirachi	217	404	0	par	0	0	0	0	0	0	3	Celebi	392	404	0	-	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_453_2	122	move	0	0	m1	m0	31798,4913,36921,41468	Jirachi	404	404	0	par	0	0	0	0	0	0	3	Celebi	404	404	0	-	0	0	0	0	0	0	3	p1	3	0	0	0	0
+DEC	ab_453_2	123	move	0	0	m3	m0	15457,50473,1885,40585	Jirachi	354	404	0	par	0	0	0	0	0	0	3	Celebi	404	404	0	-	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_453_2	124	move	0	0	m1	m3	57836,57871,54723,24578	Jirachi	329	404	0	par	0	0	0	0	0	0	3	Celebi	404	404	0	-	0	0	0	0	0	0	3	p1	3	0	0	0	1
+DEC	ab_453_2	125	move	0	0	m0	m1	45996,11280,64605,64593	Jirachi	263	404	0	par	0	0	0	0	0	0	3	Celebi	404	404	0	-	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_453_2	126	move	0	0	m0	m3	60059,42084,48285,3675	Jirachi	354	404	0	par	0	0	0	0	0	0	3	Celebi	404	404	0	-	0	0	0	0	0	0	3	p2	3	0	0	0	1
+DEC	ab_453_2	127	move	0	0	m0	m0	33244,10622,41029,58069	Jirachi	0	404	1	fnt	0	0	0	0	0	0	2	Celebi	0	404	1	fnt	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	128	switch	1	1	s2	s2	14191,34180,30274,63551	Vaporeon	142	419	0	par	0	0	0	0	0	0	2	Blissey	693	693	0	-	0	0	0	0	0	0	2	none	3	0	0	0	0
+DEC	ab_453_2	129	move	0	0	m1	s1	21461,13046,56613,18078	Vaporeon	142	419	0	par	0	0	0	0	0	0	2	Skarmory	333	333	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	130	switch	1	0	s1	-	57035,41955,51448,2329	Zapdos	321	321	0	par	0	0	0	0	0	0	2	Skarmory	333	333	0	-	0	0	0	0	0	0	2	none	3	0	0	0	0
+DEC	ab_453_2	131	move	0	0	m0	m0	14864,32815,17755,3399	Zapdos	321	321	0	par	0	0	0	0	0	0	2	Skarmory	62	333	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	132	move	0	0	s1	m0	22578,63454,26654,56006	Vaporeon	64	419	0	par	0	0	0	0	0	0	2	Skarmory	82	333	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_453_2	133	move	0	0	m0	s1	55617,51051,36148,21640	Vaporeon	90	419	0	par	0	0	0	0	0	0	2	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	134	move	0	0	m3	s1	15401,13634,21227,64924	Vaporeon	116	419	0	par	0	0	0	0	0	0	2	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	135	move	0	0	s1	m1	60669,6024,49470,10575	Zapdos	321	321	0	par	0	0	0	0	0	0	2	Blissey	693	693	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_453_2	136	move	0	0	m2	m1	44081,40388,18057,44969	Zapdos	321	321	0	par	0	0	0	0	0	0	2	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	137	move	0	0	m3	m2	31972,52918,55710,27735	Zapdos	241	321	0	par	0	0	0	0	0	0	2	Blissey	614	693	0	-	0	0	0	0	0	0	2	p2	3	0	1	0	0
+DEC	ab_453_2	138	move	0	0	m0	m2	10963,1171,27612,20824	Zapdos	161	321	0	par	0	0	0	0	0	0	2	Blissey	657	693	0	-	0	0	0	0	0	0	2	p2	3	0	1	0	0
+DEC	ab_453_2	139	move	0	0	s1	m1	16531,30705,52994,52859	Vaporeon	38	419	0	par	0	0	0	0	0	0	2	Blissey	693	693	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_453_2	140	move	0	0	m2	m1	40493,57826,40966,43326	Vaporeon	64	419	0	par	0	0	0	0	0	0	2	Blissey	632	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	141	move	0	0	m2	m2	12935,1303,31755,37433	Vaporeon	0	419	1	fnt	0	0	0	0	0	0	1	Blissey	632	693	0	-	0	0	0	0	0	0	2	p2	3	0	1	0	0
+DEC	ab_453_2	142	switch	1	0	s1	-	28293,32036,11654,53312	Zapdos	181	321	0	par	0	0	0	0	0	0	1	Blissey	675	693	0	-	0	0	0	0	0	0	2	none	3	0	0	0	0
+DEC	ab_453_2	143	move	0	0	m3	s1	5012,54832,12010,59239	Zapdos	201	321	0	par	0	0	0	0	0	0	1	Skarmory	85	333	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	144	move	0	0	m3	m1	34006,27764,58992,20634	Zapdos	177	321	0	par	0	0	0	0	0	0	1	Skarmory	105	333	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	145	move	0	0	m1	m3	25186,21431,36103,24431	Zapdos	197	321	0	par	0	0	0	0	0	0	1	Skarmory	125	333	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	146	move	0	0	m3	m0	21033,31541,12304,20802	Zapdos	217	321	0	par	0	0	0	0	0	0	1	Skarmory	126	333	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	147	move	0	0	m1	m0	9587,56545,50795,16292	Zapdos	237	321	0	par	0	0	0	0	0	0	1	Skarmory	146	333	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	148	move	0	0	m3	m2	60890,44093,34612,1681	Zapdos	257	321	0	par	0	0	0	0	0	0	1	Skarmory	166	333	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_453_2	149	move	0	0	m1	s1	803,33694,45925,65179	Zapdos	277	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	150	move	0	0	m1	m1	41771,4753,63065,51477	Zapdos	297	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	151	move	0	0	m0	m2	65453,40276,47070,2962	Zapdos	217	321	0	par	0	0	0	0	0	0	1	Blissey	598	693	0	-	0	0	0	0	0	0	2	p2	3	0	1	0	0
+DEC	ab_453_2	152	move	0	0	m3	s1	37902,12741,15275,57121	Zapdos	237	321	0	par	0	0	0	0	0	0	1	Skarmory	167	333	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	153	move	0	0	m1	s1	1769,9361,39081,8363	Zapdos	257	321	0	par	0	0	0	0	0	0	1	Blissey	641	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	154	move	0	0	m2	m1	30028,27240,37399,47269	Zapdos	197	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	155	move	0	0	m3	m3	19678,11472,48603,1423	Zapdos	217	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	156	move	0	0	m1	m1	2164,45640,8236,41449	Zapdos	237	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	157	move	0	0	m1	m2	6983,9155,1267,37346	Zapdos	257	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	1	0	0
+DEC	ab_453_2	158	move	0	0	m3	m2	41080,2397,4945,151	Zapdos	177	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	1	0	0
+DEC	ab_453_2	159	move	0	0	m2	m1	15862,22903,24835,29617	Zapdos	117	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	160	move	0	0	m0	m1	45852,31302,56499,17055	Zapdos	137	321	0	par	0	0	0	0	0	0	1	Blissey	601	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	161	move	0	0	m1	m1	57877,23174,30761,29817	Zapdos	157	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	162	move	0	0	m2	m2	64061,60823,9477,58418	Zapdos	97	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	1	0	0
+DEC	ab_453_2	163	move	0	0	m2	m1	51893,25536,59827,48404	Zapdos	117	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	164	move	0	0	m1	m2	43961,40607,57363,50241	Zapdos	137	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	1	0	0
+DEC	ab_453_2	165	move	0	0	m0	m1	25953,44879,60743,30923	Zapdos	157	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_453_2	166	move	0	0	m3	m2	10510,10477,9437,12412	Zapdos	77	321	0	par	0	0	0	0	0	0	1	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	1	0	0
+DEC	ab_453_2	167	move	0	0	m3	m2	19389,54710,36289,7087	Zapdos	0	321	1	par	0	0	0	0	0	0	0	Blissey	693	693	0	-	0	0	0	0	0	0	2	p2	3	0	1	0	0
+END	ab_453_2	1	p2
+L	ab_453_2	0	|t:|<NORMALIZED>
+L	ab_453_2	1	|gametype|singles
+L	ab_453_2	2	|player|p1|P1||
+L	ab_453_2	3	|player|p2|P2||
+L	ab_453_2	4	|gen|3
+L	ab_453_2	5	|tier|[Gen 3] OU
+L	ab_453_2	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_453_2	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_453_2	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_453_2	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_453_2	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_453_2	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_453_2	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_453_2	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_453_2	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_453_2	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_453_2	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_453_2	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_453_2	18	|
+L	ab_453_2	19	|t:|<NORMALIZED>
+L	ab_453_2	20	|teamsize|p1|6
+L	ab_453_2	21	|teamsize|p2|6
+L	ab_453_2	22	|start
+L	ab_453_2	23	|switch|p1a: Aquali|Vaporeon, M|419/419
+L	ab_453_2	24	|switch|p2a: Skarmory|Skarmory, M|333/333
+L	ab_453_2	25	|turn|1
+L	ab_453_2	26	|
+L	ab_453_2	27	|t:|<NORMALIZED>
+L	ab_453_2	28	|move|p1a: Aquali|Surf|p2a: Skarmory
+L	ab_453_2	29	|-damage|p2a: Skarmory|218/333
+L	ab_453_2	30	|move|p2a: Skarmory|Drill Peck|p1a: Aquali
+L	ab_453_2	31	|-damage|p1a: Aquali|305/419
+L	ab_453_2	32	|
+L	ab_453_2	33	|-heal|p1a: Aquali|331/419|[from] item: Leftovers
+L	ab_453_2	34	|-heal|p2a: Skarmory|238/333|[from] item: Leftovers
+L	ab_453_2	35	|upkeep
+L	ab_453_2	36	|turn|2
+L	ab_453_2	37	|
+L	ab_453_2	38	|t:|<NORMALIZED>
+L	ab_453_2	39	|move|p1a: Aquali|Surf|p2a: Skarmory
+L	ab_453_2	40	|-damage|p2a: Skarmory|124/333
+L	ab_453_2	41	|move|p2a: Skarmory|Roar|p1a: Aquali
+L	ab_453_2	42	|drag|p1a: MagnÃ©ton|Magneton|241/241
+L	ab_453_2	43	|
+L	ab_453_2	44	|-heal|p2a: Skarmory|144/333|[from] item: Leftovers
+L	ab_453_2	45	|upkeep
+L	ab_453_2	46	|turn|3
+L	ab_453_2	47	|
+L	ab_453_2	48	|t:|<NORMALIZED>
+L	ab_453_2	49	|move|p1a: MagnÃ©ton|Substitute|p1a: MagnÃ©ton
+L	ab_453_2	50	|-start|p1a: MagnÃ©ton|Substitute
+L	ab_453_2	51	|-damage|p1a: MagnÃ©ton|181/241
+L	ab_453_2	52	|move|p2a: Skarmory|Drill Peck|p1a: MagnÃ©ton
+L	ab_453_2	53	|-resisted|p1a: MagnÃ©ton
+L	ab_453_2	54	|-activate|p1a: MagnÃ©ton|Substitute|[damage]
+L	ab_453_2	55	|
+L	ab_453_2	56	|-heal|p2a: Skarmory|164/333|[from] item: Leftovers
+L	ab_453_2	57	|upkeep
+L	ab_453_2	58	|turn|4
+L	ab_453_2	59	|
+L	ab_453_2	60	|t:|<NORMALIZED>
+L	ab_453_2	61	|move|p1a: MagnÃ©ton|Toxic|p2a: Skarmory|[miss]
+L	ab_453_2	62	|-miss|p1a: MagnÃ©ton|p2a: Skarmory
+L	ab_453_2	63	|move|p2a: Skarmory|Roar|p1a: MagnÃ©ton
+L	ab_453_2	64	|drag|p1a: Aquali|Vaporeon, M|331/419
+L	ab_453_2	65	|
+L	ab_453_2	66	|-heal|p1a: Aquali|357/419|[from] item: Leftovers
+L	ab_453_2	67	|-heal|p2a: Skarmory|184/333|[from] item: Leftovers
+L	ab_453_2	68	|upkeep
+L	ab_453_2	69	|turn|5
+L	ab_453_2	70	|
+L	ab_453_2	71	|t:|<NORMALIZED>
+L	ab_453_2	72	|switch|p2a: Magneton|Magneton|241/241
+L	ab_453_2	73	|move|p1a: Aquali|Substitute|p1a: Aquali
+L	ab_453_2	74	|-start|p1a: Aquali|Substitute
+L	ab_453_2	75	|-damage|p1a: Aquali|253/419
+L	ab_453_2	76	|
+L	ab_453_2	77	|-heal|p1a: Aquali|279/419|[from] item: Leftovers
+L	ab_453_2	78	|upkeep
+L	ab_453_2	79	|turn|6
+L	ab_453_2	80	|
+L	ab_453_2	81	|t:|<NORMALIZED>
+L	ab_453_2	82	|move|p1a: Aquali|Baton Pass|p1a: Aquali
+L	ab_453_2	83	|
+L	ab_453_2	84	|t:|<NORMALIZED>
+L	ab_453_2	85	|switch|p1a: SÃ©lÃ©roc|Lunatone|344/344|[from] Baton Pass
+L	ab_453_2	86	|move|p2a: Magneton|Thunder Wave||[still]
+L	ab_453_2	87	|-fail|p2a: Magneton
+L	ab_453_2	88	|
+L	ab_453_2	89	|upkeep
+L	ab_453_2	90	|turn|7
+L	ab_453_2	91	|
+L	ab_453_2	92	|t:|<NORMALIZED>
+L	ab_453_2	93	|move|p2a: Magneton|Thunder Wave||[still]
+L	ab_453_2	94	|-fail|p2a: Magneton
+L	ab_453_2	95	|move|p1a: SÃ©lÃ©roc|Ice Beam|p2a: Magneton
+L	ab_453_2	96	|-resisted|p2a: Magneton
+L	ab_453_2	97	|-damage|p2a: Magneton|193/241
+L	ab_453_2	98	|
+L	ab_453_2	99	|upkeep
+L	ab_453_2	100	|turn|8
+L	ab_453_2	101	|
+L	ab_453_2	102	|t:|<NORMALIZED>
+L	ab_453_2	103	|switch|p1a: Electhor|Zapdos|321/321
+L	ab_453_2	104	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	105	|move|p2a: Magneton|Metal Sound|p1a: Electhor
+L	ab_453_2	106	|-unboost|p1a: Electhor|spd|2
+L	ab_453_2	107	|
+L	ab_453_2	108	|upkeep
+L	ab_453_2	109	|turn|9
+L	ab_453_2	110	|
+L	ab_453_2	111	|t:|<NORMALIZED>
+L	ab_453_2	112	|move|p1a: Electhor|Baton Pass|p1a: Electhor
+L	ab_453_2	113	|
+L	ab_453_2	114	|t:|<NORMALIZED>
+L	ab_453_2	115	|switch|p1a: Celebi|Celebi|385/385|[from] Baton Pass
+L	ab_453_2	116	|move|p2a: Magneton|Thunderbolt|p1a: Celebi
+L	ab_453_2	117	|-resisted|p1a: Celebi
+L	ab_453_2	118	|-damage|p1a: Celebi|185/385
+L	ab_453_2	119	|
+L	ab_453_2	120	|-heal|p1a: Celebi|209/385|[from] item: Leftovers
+L	ab_453_2	121	|upkeep
+L	ab_453_2	122	|turn|10
+L	ab_453_2	123	|
+L	ab_453_2	124	|t:|<NORMALIZED>
+L	ab_453_2	125	|move|p1a: Celebi|Leech Seed|p2a: Magneton|[miss]
+L	ab_453_2	126	|-miss|p1a: Celebi|p2a: Magneton
+L	ab_453_2	127	|move|p2a: Magneton|Thunder Wave|p1a: Celebi
+L	ab_453_2	128	|-status|p1a: Celebi|par
+L	ab_453_2	129	|
+L	ab_453_2	130	|-heal|p1a: Celebi|233/385 par|[from] item: Leftovers
+L	ab_453_2	131	|upkeep
+L	ab_453_2	132	|turn|11
+L	ab_453_2	133	|
+L	ab_453_2	134	|t:|<NORMALIZED>
+L	ab_453_2	135	|move|p2a: Magneton|Thunder Wave|p1a: Celebi
+L	ab_453_2	136	|-fail|p1a: Celebi|par
+L	ab_453_2	137	|cant|p1a: Celebi|par
+L	ab_453_2	138	|
+L	ab_453_2	139	|-heal|p1a: Celebi|257/385 par|[from] item: Leftovers
+L	ab_453_2	140	|upkeep
+L	ab_453_2	141	|turn|12
+L	ab_453_2	142	|
+L	ab_453_2	143	|t:|<NORMALIZED>
+L	ab_453_2	144	|move|p2a: Magneton|Thunderbolt|p1a: Celebi
+L	ab_453_2	145	|-resisted|p1a: Celebi
+L	ab_453_2	146	|-damage|p1a: Celebi|65/385 par
+L	ab_453_2	147	|move|p1a: Celebi|Psychic|p2a: Magneton
+L	ab_453_2	148	|-resisted|p2a: Magneton
+L	ab_453_2	149	|-damage|p2a: Magneton|112/241
+L	ab_453_2	150	|
+L	ab_453_2	151	|-heal|p1a: Celebi|89/385 par|[from] item: Leftovers
+L	ab_453_2	152	|upkeep
+L	ab_453_2	153	|turn|13
+L	ab_453_2	154	|
+L	ab_453_2	155	|t:|<NORMALIZED>
+L	ab_453_2	156	|move|p2a: Magneton|Thunderbolt|p1a: Celebi
+L	ab_453_2	157	|-resisted|p1a: Celebi
+L	ab_453_2	158	|-damage|p1a: Celebi|0 fnt
+L	ab_453_2	159	|faint|p1a: Celebi
+L	ab_453_2	160	|
+L	ab_453_2	161	|t:|<NORMALIZED>
+L	ab_453_2	162	|switch|p1a: MagnÃ©ton|Magneton|181/241
+L	ab_453_2	163	|
+L	ab_453_2	164	|upkeep
+L	ab_453_2	165	|turn|14
+L	ab_453_2	166	|
+L	ab_453_2	167	|t:|<NORMALIZED>
+L	ab_453_2	168	|move|p1a: MagnÃ©ton|Substitute|p1a: MagnÃ©ton
+L	ab_453_2	169	|-start|p1a: MagnÃ©ton|Substitute
+L	ab_453_2	170	|-damage|p1a: MagnÃ©ton|121/241
+L	ab_453_2	171	|move|p2a: Magneton|Thunderbolt|p1a: MagnÃ©ton
+L	ab_453_2	172	|-resisted|p1a: MagnÃ©ton
+L	ab_453_2	173	|-end|p1a: MagnÃ©ton|Substitute
+L	ab_453_2	174	|
+L	ab_453_2	175	|upkeep
+L	ab_453_2	176	|turn|15
+L	ab_453_2	177	|
+L	ab_453_2	178	|t:|<NORMALIZED>
+L	ab_453_2	179	|move|p1a: MagnÃ©ton|Toxic|p2a: Magneton
+L	ab_453_2	180	|-immune|p2a: Magneton
+L	ab_453_2	181	|move|p2a: Magneton|Hidden Power|p1a: MagnÃ©ton
+L	ab_453_2	182	|-supereffective|p1a: MagnÃ©ton
+L	ab_453_2	183	|-damage|p1a: MagnÃ©ton|0 fnt
+L	ab_453_2	184	|faint|p1a: MagnÃ©ton
+L	ab_453_2	185	|
+L	ab_453_2	186	|t:|<NORMALIZED>
+L	ab_453_2	187	|switch|p1a: Electhor|Zapdos|321/321
+L	ab_453_2	188	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	189	|
+L	ab_453_2	190	|upkeep
+L	ab_453_2	191	|turn|16
+L	ab_453_2	192	|
+L	ab_453_2	193	|t:|<NORMALIZED>
+L	ab_453_2	194	|move|p1a: Electhor|Baton Pass|p1a: Electhor
+L	ab_453_2	195	|
+L	ab_453_2	196	|t:|<NORMALIZED>
+L	ab_453_2	197	|switch|p1a: Aquali|Vaporeon, M|279/419|[from] Baton Pass
+L	ab_453_2	198	|move|p2a: Magneton|Thunder Wave|p1a: Aquali
+L	ab_453_2	199	|-status|p1a: Aquali|par
+L	ab_453_2	200	|
+L	ab_453_2	201	|-heal|p1a: Aquali|305/419 par|[from] item: Leftovers
+L	ab_453_2	202	|upkeep
+L	ab_453_2	203	|turn|17
+L	ab_453_2	204	|
+L	ab_453_2	205	|t:|<NORMALIZED>
+L	ab_453_2	206	|move|p2a: Magneton|Thunder Wave|p1a: Aquali
+L	ab_453_2	207	|-fail|p1a: Aquali|par
+L	ab_453_2	208	|move|p1a: Aquali|Baton Pass|p1a: Aquali
+L	ab_453_2	209	|
+L	ab_453_2	210	|t:|<NORMALIZED>
+L	ab_453_2	211	|switch|p1a: Jirachi|Jirachi|404/404|[from] Baton Pass
+L	ab_453_2	212	|
+L	ab_453_2	213	|upkeep
+L	ab_453_2	214	|turn|18
+L	ab_453_2	215	|
+L	ab_453_2	216	|t:|<NORMALIZED>
+L	ab_453_2	217	|move|p1a: Jirachi|Hidden Power|p2a: Magneton
+L	ab_453_2	218	|-supereffective|p2a: Magneton
+L	ab_453_2	219	|-damage|p2a: Magneton|0 fnt
+L	ab_453_2	220	|faint|p2a: Magneton
+L	ab_453_2	221	|
+L	ab_453_2	222	|t:|<NORMALIZED>
+L	ab_453_2	223	|switch|p2a: Swampert|Swampert, M|403/403
+L	ab_453_2	224	|
+L	ab_453_2	225	|upkeep
+L	ab_453_2	226	|turn|19
+L	ab_453_2	227	|
+L	ab_453_2	228	|t:|<NORMALIZED>
+L	ab_453_2	229	|switch|p1a: Electhor|Zapdos|321/321
+L	ab_453_2	230	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	231	|move|p2a: Swampert|Earthquake|p1a: Electhor
+L	ab_453_2	232	|-immune|p1a: Electhor
+L	ab_453_2	233	|
+L	ab_453_2	234	|upkeep
+L	ab_453_2	235	|turn|20
+L	ab_453_2	236	|
+L	ab_453_2	237	|t:|<NORMALIZED>
+L	ab_453_2	238	|move|p1a: Electhor|Hidden Power|p2a: Swampert
+L	ab_453_2	239	|-supereffective|p2a: Swampert
+L	ab_453_2	240	|-damage|p2a: Swampert|69/403
+L	ab_453_2	241	|move|p2a: Swampert|Earthquake|p1a: Electhor
+L	ab_453_2	242	|-immune|p1a: Electhor
+L	ab_453_2	243	|
+L	ab_453_2	244	|-heal|p2a: Swampert|94/403|[from] item: Leftovers
+L	ab_453_2	245	|upkeep
+L	ab_453_2	246	|turn|21
+L	ab_453_2	247	|
+L	ab_453_2	248	|t:|<NORMALIZED>
+L	ab_453_2	249	|move|p1a: Electhor|Thunderbolt|p2a: Swampert
+L	ab_453_2	250	|-immune|p2a: Swampert
+L	ab_453_2	251	|move|p2a: Swampert|Curse|p2a: Swampert
+L	ab_453_2	252	|-unboost|p2a: Swampert|spe|1
+L	ab_453_2	253	|-boost|p2a: Swampert|atk|1
+L	ab_453_2	254	|-boost|p2a: Swampert|def|1
+L	ab_453_2	255	|
+L	ab_453_2	256	|-heal|p2a: Swampert|119/403|[from] item: Leftovers
+L	ab_453_2	257	|upkeep
+L	ab_453_2	258	|turn|22
+L	ab_453_2	259	|
+L	ab_453_2	260	|t:|<NORMALIZED>
+L	ab_453_2	261	|move|p1a: Electhor|Hidden Power|p2a: Swampert
+L	ab_453_2	262	|-supereffective|p2a: Swampert
+L	ab_453_2	263	|-damage|p2a: Swampert|0 fnt
+L	ab_453_2	264	|faint|p2a: Swampert
+L	ab_453_2	265	|
+L	ab_453_2	266	|t:|<NORMALIZED>
+L	ab_453_2	267	|switch|p2a: Blissey|Blissey, F|693/693
+L	ab_453_2	268	|
+L	ab_453_2	269	|upkeep
+L	ab_453_2	270	|turn|23
+L	ab_453_2	271	|
+L	ab_453_2	272	|t:|<NORMALIZED>
+L	ab_453_2	273	|move|p1a: Electhor|Hidden Power|p2a: Blissey
+L	ab_453_2	274	|-damage|p2a: Blissey|631/693
+L	ab_453_2	275	|move|p2a: Blissey|Thunder Wave|p1a: Electhor
+L	ab_453_2	276	|-status|p1a: Electhor|par
+L	ab_453_2	277	|
+L	ab_453_2	278	|-heal|p2a: Blissey|674/693|[from] item: Leftovers
+L	ab_453_2	279	|upkeep
+L	ab_453_2	280	|turn|24
+L	ab_453_2	281	|
+L	ab_453_2	282	|t:|<NORMALIZED>
+L	ab_453_2	283	|move|p2a: Blissey|Seismic Toss|p1a: Electhor
+L	ab_453_2	284	|-damage|p1a: Electhor|221/321 par
+L	ab_453_2	285	|move|p1a: Electhor|Hidden Power|p2a: Blissey
+L	ab_453_2	286	|-damage|p2a: Blissey|616/693
+L	ab_453_2	287	|
+L	ab_453_2	288	|-heal|p2a: Blissey|659/693|[from] item: Leftovers
+L	ab_453_2	289	|-heal|p1a: Electhor|241/321 par|[from] item: Leftovers
+L	ab_453_2	290	|upkeep
+L	ab_453_2	291	|turn|25
+L	ab_453_2	292	|
+L	ab_453_2	293	|t:|<NORMALIZED>
+L	ab_453_2	294	|switch|p1a: Aquali|Vaporeon, M|305/419 par
+L	ab_453_2	295	|move|p2a: Blissey|Thunder Wave|p1a: Aquali
+L	ab_453_2	296	|-fail|p1a: Aquali|par
+L	ab_453_2	297	|
+L	ab_453_2	298	|-heal|p2a: Blissey|693/693|[from] item: Leftovers
+L	ab_453_2	299	|-heal|p1a: Aquali|331/419 par|[from] item: Leftovers
+L	ab_453_2	300	|upkeep
+L	ab_453_2	301	|turn|26
+L	ab_453_2	302	|
+L	ab_453_2	303	|t:|<NORMALIZED>
+L	ab_453_2	304	|move|p2a: Blissey|Thunder Wave|p1a: Aquali
+L	ab_453_2	305	|-fail|p1a: Aquali|par
+L	ab_453_2	306	|cant|p1a: Aquali|par
+L	ab_453_2	307	|
+L	ab_453_2	308	|-heal|p1a: Aquali|357/419 par|[from] item: Leftovers
+L	ab_453_2	309	|upkeep
+L	ab_453_2	310	|turn|27
+L	ab_453_2	311	|
+L	ab_453_2	312	|t:|<NORMALIZED>
+L	ab_453_2	313	|move|p2a: Blissey|Thunder Wave|p1a: Aquali
+L	ab_453_2	314	|-fail|p1a: Aquali|par
+L	ab_453_2	315	|move|p1a: Aquali|Roar|p2a: Blissey
+L	ab_453_2	316	|drag|p2a: Skarmory|Skarmory, M|184/333
+L	ab_453_2	317	|
+L	ab_453_2	318	|-heal|p2a: Skarmory|204/333|[from] item: Leftovers
+L	ab_453_2	319	|-heal|p1a: Aquali|383/419 par|[from] item: Leftovers
+L	ab_453_2	320	|upkeep
+L	ab_453_2	321	|turn|28
+L	ab_453_2	322	|
+L	ab_453_2	323	|t:|<NORMALIZED>
+L	ab_453_2	324	|move|p2a: Skarmory|Drill Peck|p1a: Aquali
+L	ab_453_2	325	|-damage|p1a: Aquali|272/419 par
+L	ab_453_2	326	|cant|p1a: Aquali|par
+L	ab_453_2	327	|
+L	ab_453_2	328	|-heal|p2a: Skarmory|224/333|[from] item: Leftovers
+L	ab_453_2	329	|-heal|p1a: Aquali|298/419 par|[from] item: Leftovers
+L	ab_453_2	330	|upkeep
+L	ab_453_2	331	|turn|29
+L	ab_453_2	332	|
+L	ab_453_2	333	|t:|<NORMALIZED>
+L	ab_453_2	334	|switch|p1a: Electhor|Zapdos|241/321 par
+L	ab_453_2	335	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	336	|move|p2a: Skarmory|Roar|p1a: Electhor
+L	ab_453_2	337	|drag|p1a: SÃ©lÃ©roc|Lunatone|344/344
+L	ab_453_2	338	|
+L	ab_453_2	339	|-heal|p2a: Skarmory|244/333|[from] item: Leftovers
+L	ab_453_2	340	|upkeep
+L	ab_453_2	341	|turn|30
+L	ab_453_2	342	|
+L	ab_453_2	343	|t:|<NORMALIZED>
+L	ab_453_2	344	|switch|p2a: Aerodactyl|Aerodactyl, M|301/301
+L	ab_453_2	345	|move|p1a: SÃ©lÃ©roc|Calm Mind|p1a: SÃ©lÃ©roc
+L	ab_453_2	346	|-boost|p1a: SÃ©lÃ©roc|spa|1
+L	ab_453_2	347	|-boost|p1a: SÃ©lÃ©roc|spd|1
+L	ab_453_2	348	|
+L	ab_453_2	349	|upkeep
+L	ab_453_2	350	|turn|31
+L	ab_453_2	351	|
+L	ab_453_2	352	|t:|<NORMALIZED>
+L	ab_453_2	353	|switch|p1a: Electhor|Zapdos|241/321 par
+L	ab_453_2	354	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	355	|move|p2a: Aerodactyl|Hidden Power|p1a: Electhor
+L	ab_453_2	356	|-resisted|p1a: Electhor
+L	ab_453_2	357	|-crit|p1a: Electhor
+L	ab_453_2	358	|-damage|p1a: Electhor|122/321 par
+L	ab_453_2	359	|
+L	ab_453_2	360	|-heal|p1a: Electhor|142/321 par|[from] item: Leftovers
+L	ab_453_2	361	|upkeep
+L	ab_453_2	362	|turn|32
+L	ab_453_2	363	|
+L	ab_453_2	364	|t:|<NORMALIZED>
+L	ab_453_2	365	|move|p2a: Aerodactyl|Hidden Power|p1a: Electhor
+L	ab_453_2	366	|-resisted|p1a: Electhor
+L	ab_453_2	367	|-damage|p1a: Electhor|84/321 par
+L	ab_453_2	368	|move|p1a: Electhor|Thunderbolt|p2a: Aerodactyl
+L	ab_453_2	369	|-supereffective|p2a: Aerodactyl
+L	ab_453_2	370	|-damage|p2a: Aerodactyl|0 fnt
+L	ab_453_2	371	|faint|p2a: Aerodactyl
+L	ab_453_2	372	|
+L	ab_453_2	373	|t:|<NORMALIZED>
+L	ab_453_2	374	|switch|p2a: Celebi|Celebi|404/404
+L	ab_453_2	375	|
+L	ab_453_2	376	|-heal|p1a: Electhor|104/321 par|[from] item: Leftovers
+L	ab_453_2	377	|upkeep
+L	ab_453_2	378	|turn|33
+L	ab_453_2	379	|
+L	ab_453_2	380	|t:|<NORMALIZED>
+L	ab_453_2	381	|move|p2a: Celebi|Recover||[still]
+L	ab_453_2	382	|-fail|p2a: Celebi|heal
+L	ab_453_2	383	|move|p1a: Electhor|Baton Pass|p1a: Electhor
+L	ab_453_2	384	|
+L	ab_453_2	385	|t:|<NORMALIZED>
+L	ab_453_2	386	|switch|p1a: Aquali|Vaporeon, M|298/419 par|[from] Baton Pass
+L	ab_453_2	387	|
+L	ab_453_2	388	|-heal|p1a: Aquali|324/419 par|[from] item: Leftovers
+L	ab_453_2	389	|upkeep
+L	ab_453_2	390	|turn|34
+L	ab_453_2	391	|
+L	ab_453_2	392	|t:|<NORMALIZED>
+L	ab_453_2	393	|switch|p2a: Blissey|Blissey, F|693/693
+L	ab_453_2	394	|switch|p1a: Jirachi|Jirachi|404/404
+L	ab_453_2	395	|
+L	ab_453_2	396	|upkeep
+L	ab_453_2	397	|turn|35
+L	ab_453_2	398	|
+L	ab_453_2	399	|t:|<NORMALIZED>
+L	ab_453_2	400	|move|p1a: Jirachi|Protect|p1a: Jirachi
+L	ab_453_2	401	|-singleturn|p1a: Jirachi|Protect
+L	ab_453_2	402	|move|p2a: Blissey|Seismic Toss|p1a: Jirachi
+L	ab_453_2	403	|-activate|p1a: Jirachi|Protect
+L	ab_453_2	404	|
+L	ab_453_2	405	|upkeep
+L	ab_453_2	406	|turn|36
+L	ab_453_2	407	|
+L	ab_453_2	408	|t:|<NORMALIZED>
+L	ab_453_2	409	|switch|p2a: Celebi|Celebi|404/404
+L	ab_453_2	410	|move|p1a: Jirachi|Hidden Power|p2a: Celebi
+L	ab_453_2	411	|-resisted|p2a: Celebi
+L	ab_453_2	412	|-damage|p2a: Celebi|383/404
+L	ab_453_2	413	|
+L	ab_453_2	414	|-heal|p2a: Celebi|404/404|[from] item: Leftovers
+L	ab_453_2	415	|upkeep
+L	ab_453_2	416	|turn|37
+L	ab_453_2	417	|
+L	ab_453_2	418	|t:|<NORMALIZED>
+L	ab_453_2	419	|move|p1a: Jirachi|Body Slam|p2a: Celebi
+L	ab_453_2	420	|-damage|p2a: Celebi|343/404
+L	ab_453_2	421	|-status|p2a: Celebi|par
+L	ab_453_2	422	|move|p2a: Celebi|Perish Song|p2a: Celebi
+L	ab_453_2	423	|-start|p1a: Jirachi|perish3|[silent]
+L	ab_453_2	424	|-start|p2a: Celebi|perish3|[silent]
+L	ab_453_2	425	|-fieldactivate|move: Perish Song
+L	ab_453_2	426	|
+L	ab_453_2	427	|-heal|p2a: Celebi|368/404 par|[from] item: Leftovers
+L	ab_453_2	428	|-start|p1a: Jirachi|perish3
+L	ab_453_2	429	|-start|p2a: Celebi|perish3
+L	ab_453_2	430	|upkeep
+L	ab_453_2	431	|turn|38
+L	ab_453_2	432	|
+L	ab_453_2	433	|t:|<NORMALIZED>
+L	ab_453_2	434	|switch|p1a: Electhor|Zapdos|104/321 par
+L	ab_453_2	435	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	436	|move|p2a: Celebi|Perish Song|p2a: Celebi
+L	ab_453_2	437	|-start|p1a: Electhor|perish3|[silent]
+L	ab_453_2	438	|-fieldactivate|move: Perish Song
+L	ab_453_2	439	|
+L	ab_453_2	440	|-heal|p1a: Electhor|124/321 par|[from] item: Leftovers
+L	ab_453_2	441	|-heal|p2a: Celebi|393/404 par|[from] item: Leftovers
+L	ab_453_2	442	|-start|p1a: Electhor|perish3
+L	ab_453_2	443	|-start|p2a: Celebi|perish2
+L	ab_453_2	444	|upkeep
+L	ab_453_2	445	|turn|39
+L	ab_453_2	446	|
+L	ab_453_2	447	|t:|<NORMALIZED>
+L	ab_453_2	448	|switch|p1a: SÃ©lÃ©roc|Lunatone|344/344
+L	ab_453_2	449	|-curestatus|p2a: Celebi|par|[from] ability: Natural Cure|[silent]
+L	ab_453_2	450	|switch|p2a: Blissey|Blissey, F|693/693
+L	ab_453_2	451	|
+L	ab_453_2	452	|upkeep
+L	ab_453_2	453	|turn|40
+L	ab_453_2	454	|
+L	ab_453_2	455	|t:|<NORMALIZED>
+L	ab_453_2	456	|switch|p1a: Electhor|Zapdos|124/321 par
+L	ab_453_2	457	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	458	|move|p2a: Blissey|Seismic Toss|p1a: Electhor
+L	ab_453_2	459	|-damage|p1a: Electhor|24/321 par
+L	ab_453_2	460	|
+L	ab_453_2	461	|-heal|p1a: Electhor|44/321 par|[from] item: Leftovers
+L	ab_453_2	462	|upkeep
+L	ab_453_2	463	|turn|41
+L	ab_453_2	464	|
+L	ab_453_2	465	|t:|<NORMALIZED>
+L	ab_453_2	466	|switch|p1a: Jirachi|Jirachi|404/404
+L	ab_453_2	467	|move|p2a: Blissey|Seismic Toss|p1a: Jirachi
+L	ab_453_2	468	|-damage|p1a: Jirachi|304/404
+L	ab_453_2	469	|
+L	ab_453_2	470	|-heal|p1a: Jirachi|329/404|[from] item: Leftovers
+L	ab_453_2	471	|upkeep
+L	ab_453_2	472	|turn|42
+L	ab_453_2	473	|
+L	ab_453_2	474	|t:|<NORMALIZED>
+L	ab_453_2	475	|move|p1a: Jirachi|Wish|p1a: Jirachi
+L	ab_453_2	476	|move|p2a: Blissey|Seismic Toss|p1a: Jirachi
+L	ab_453_2	477	|-damage|p1a: Jirachi|229/404
+L	ab_453_2	478	|
+L	ab_453_2	479	|-heal|p1a: Jirachi|254/404|[from] item: Leftovers
+L	ab_453_2	480	|upkeep
+L	ab_453_2	481	|turn|43
+L	ab_453_2	482	|
+L	ab_453_2	483	|t:|<NORMALIZED>
+L	ab_453_2	484	|move|p1a: Jirachi|Wish||[still]
+L	ab_453_2	485	|-fail|p1a: Jirachi
+L	ab_453_2	486	|move|p2a: Blissey|Seismic Toss|p1a: Jirachi
+L	ab_453_2	487	|-damage|p1a: Jirachi|154/404
+L	ab_453_2	488	|
+L	ab_453_2	489	|-heal|p1a: Jirachi|356/404|[from] move: Wish|[wisher] Jirachi
+L	ab_453_2	490	|-heal|p1a: Jirachi|381/404|[from] item: Leftovers
+L	ab_453_2	491	|upkeep
+L	ab_453_2	492	|turn|44
+L	ab_453_2	493	|
+L	ab_453_2	494	|t:|<NORMALIZED>
+L	ab_453_2	495	|move|p1a: Jirachi|Body Slam|p2a: Blissey
+L	ab_453_2	496	|-damage|p2a: Blissey|564/693
+L	ab_453_2	497	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_453_2	498	|-heal|p2a: Blissey|693/693
+L	ab_453_2	499	|
+L	ab_453_2	500	|-heal|p1a: Jirachi|404/404|[from] item: Leftovers
+L	ab_453_2	501	|upkeep
+L	ab_453_2	502	|turn|45
+L	ab_453_2	503	|
+L	ab_453_2	504	|t:|<NORMALIZED>
+L	ab_453_2	505	|move|p1a: Jirachi|Body Slam|p2a: Blissey
+L	ab_453_2	506	|-damage|p2a: Blissey|570/693
+L	ab_453_2	507	|-status|p2a: Blissey|par
+L	ab_453_2	508	|move|p2a: Blissey|Thunder Wave|p1a: Jirachi
+L	ab_453_2	509	|-status|p1a: Jirachi|par
+L	ab_453_2	510	|
+L	ab_453_2	511	|-heal|p2a: Blissey|613/693 par|[from] item: Leftovers
+L	ab_453_2	512	|upkeep
+L	ab_453_2	513	|turn|46
+L	ab_453_2	514	|
+L	ab_453_2	515	|t:|<NORMALIZED>
+L	ab_453_2	516	|move|p1a: Jirachi|Body Slam|p2a: Blissey
+L	ab_453_2	517	|-damage|p2a: Blissey|497/693 par
+L	ab_453_2	518	|cant|p2a: Blissey|par
+L	ab_453_2	519	|
+L	ab_453_2	520	|-heal|p2a: Blissey|540/693 par|[from] item: Leftovers
+L	ab_453_2	521	|upkeep
+L	ab_453_2	522	|turn|47
+L	ab_453_2	523	|
+L	ab_453_2	524	|t:|<NORMALIZED>
+L	ab_453_2	525	|switch|p1a: SÃ©lÃ©roc|Lunatone|344/344
+L	ab_453_2	526	|move|p2a: Blissey|Aromatherapy|p2a: Blissey
+L	ab_453_2	527	|-cureteam|p2a: Blissey|[from] move: Aromatherapy
+L	ab_453_2	528	|
+L	ab_453_2	529	|-heal|p2a: Blissey|583/693|[from] item: Leftovers
+L	ab_453_2	530	|upkeep
+L	ab_453_2	531	|turn|48
+L	ab_453_2	532	|
+L	ab_453_2	533	|t:|<NORMALIZED>
+L	ab_453_2	534	|move|p1a: SÃ©lÃ©roc|Baton Pass|p1a: SÃ©lÃ©roc
+L	ab_453_2	535	|
+L	ab_453_2	536	|t:|<NORMALIZED>
+L	ab_453_2	537	|switch|p1a: Electhor|Zapdos|44/321 par|[from] Baton Pass
+L	ab_453_2	538	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	539	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_453_2	540	|-heal|p2a: Blissey|693/693
+L	ab_453_2	541	|
+L	ab_453_2	542	|-heal|p1a: Electhor|64/321 par|[from] item: Leftovers
+L	ab_453_2	543	|upkeep
+L	ab_453_2	544	|turn|49
+L	ab_453_2	545	|
+L	ab_453_2	546	|t:|<NORMALIZED>
+L	ab_453_2	547	|switch|p2a: Celebi|Celebi|393/404
+L	ab_453_2	548	|move|p1a: Electhor|Thunderbolt|p2a: Celebi
+L	ab_453_2	549	|-resisted|p2a: Celebi
+L	ab_453_2	550	|-damage|p2a: Celebi|324/404
+L	ab_453_2	551	|-status|p2a: Celebi|par
+L	ab_453_2	552	|
+L	ab_453_2	553	|-heal|p1a: Electhor|84/321 par|[from] item: Leftovers
+L	ab_453_2	554	|-heal|p2a: Celebi|349/404 par|[from] item: Leftovers
+L	ab_453_2	555	|upkeep
+L	ab_453_2	556	|turn|50
+L	ab_453_2	557	|
+L	ab_453_2	558	|t:|<NORMALIZED>
+L	ab_453_2	559	|switch|p1a: SÃ©lÃ©roc|Lunatone|344/344
+L	ab_453_2	560	|move|p2a: Celebi|Hidden Power|p1a: SÃ©lÃ©roc
+L	ab_453_2	561	|-supereffective|p1a: SÃ©lÃ©roc
+L	ab_453_2	562	|-damage|p1a: SÃ©lÃ©roc|141/344
+L	ab_453_2	563	|
+L	ab_453_2	564	|-heal|p1a: SÃ©lÃ©roc|162/344|[from] item: Leftovers
+L	ab_453_2	565	|-heal|p2a: Celebi|374/404 par|[from] item: Leftovers
+L	ab_453_2	566	|upkeep
+L	ab_453_2	567	|turn|51
+L	ab_453_2	568	|
+L	ab_453_2	569	|t:|<NORMALIZED>
+L	ab_453_2	570	|move|p1a: SÃ©lÃ©roc|Baton Pass|p1a: SÃ©lÃ©roc
+L	ab_453_2	571	|
+L	ab_453_2	572	|t:|<NORMALIZED>
+L	ab_453_2	573	|switch|p1a: Jirachi|Jirachi|404/404 par|[from] Baton Pass
+L	ab_453_2	574	|move|p2a: Celebi|Leech Seed|p1a: Jirachi
+L	ab_453_2	575	|-start|p1a: Jirachi|move: Leech Seed
+L	ab_453_2	576	|
+L	ab_453_2	577	|-heal|p2a: Celebi|399/404 par|[from] item: Leftovers
+L	ab_453_2	578	|-damage|p1a: Jirachi|354/404 par|[from] Leech Seed|[of] p2a: Celebi
+L	ab_453_2	579	|-heal|p2a: Celebi|404/404 par|[silent]
+L	ab_453_2	580	|upkeep
+L	ab_453_2	581	|turn|52
+L	ab_453_2	582	|
+L	ab_453_2	583	|t:|<NORMALIZED>
+L	ab_453_2	584	|move|p1a: Jirachi|Protect|p1a: Jirachi
+L	ab_453_2	585	|-singleturn|p1a: Jirachi|Protect
+L	ab_453_2	586	|move|p2a: Celebi|Leech Seed|p1a: Jirachi
+L	ab_453_2	587	|-activate|p1a: Jirachi|Protect
+L	ab_453_2	588	|
+L	ab_453_2	589	|-heal|p1a: Jirachi|379/404 par|[from] item: Leftovers
+L	ab_453_2	590	|-damage|p1a: Jirachi|329/404 par|[from] Leech Seed|[of] p2a: Celebi
+L	ab_453_2	591	|upkeep
+L	ab_453_2	592	|turn|53
+L	ab_453_2	593	|
+L	ab_453_2	594	|t:|<NORMALIZED>
+L	ab_453_2	595	|move|p1a: Jirachi|Hidden Power|p2a: Celebi
+L	ab_453_2	596	|-resisted|p2a: Celebi
+L	ab_453_2	597	|-damage|p2a: Celebi|382/404 par
+L	ab_453_2	598	|move|p2a: Celebi|Leech Seed||[still]
+L	ab_453_2	599	|-fail|p2a: Celebi
+L	ab_453_2	600	|
+L	ab_453_2	601	|-heal|p1a: Jirachi|354/404 par|[from] item: Leftovers
+L	ab_453_2	602	|-heal|p2a: Celebi|404/404 par|[from] item: Leftovers
+L	ab_453_2	603	|-damage|p1a: Jirachi|304/404 par|[from] Leech Seed|[of] p2a: Celebi
+L	ab_453_2	604	|upkeep
+L	ab_453_2	605	|turn|54
+L	ab_453_2	606	|
+L	ab_453_2	607	|t:|<NORMALIZED>
+L	ab_453_2	608	|move|p1a: Jirachi|Protect|p1a: Jirachi
+L	ab_453_2	609	|-singleturn|p1a: Jirachi|Protect
+L	ab_453_2	610	|move|p2a: Celebi|Perish Song|p2a: Celebi
+L	ab_453_2	611	|-start|p1a: Jirachi|perish3|[silent]
+L	ab_453_2	612	|-start|p2a: Celebi|perish3|[silent]
+L	ab_453_2	613	|-fieldactivate|move: Perish Song
+L	ab_453_2	614	|
+L	ab_453_2	615	|-heal|p1a: Jirachi|329/404 par|[from] item: Leftovers
+L	ab_453_2	616	|-damage|p1a: Jirachi|279/404 par|[from] Leech Seed|[of] p2a: Celebi
+L	ab_453_2	617	|-start|p2a: Celebi|perish3
+L	ab_453_2	618	|-start|p1a: Jirachi|perish3
+L	ab_453_2	619	|upkeep
+L	ab_453_2	620	|turn|55
+L	ab_453_2	621	|
+L	ab_453_2	622	|t:|<NORMALIZED>
+L	ab_453_2	623	|-curestatus|p2a: Celebi|par|[from] ability: Natural Cure|[silent]
+L	ab_453_2	624	|switch|p2a: Blissey|Blissey, F|693/693
+L	ab_453_2	625	|switch|p1a: Aquali|Vaporeon, M|324/419 par
+L	ab_453_2	626	|
+L	ab_453_2	627	|-heal|p1a: Aquali|350/419 par|[from] item: Leftovers
+L	ab_453_2	628	|upkeep
+L	ab_453_2	629	|turn|56
+L	ab_453_2	630	|
+L	ab_453_2	631	|t:|<NORMALIZED>
+L	ab_453_2	632	|move|p2a: Blissey|Thunder Wave|p1a: Aquali
+L	ab_453_2	633	|-fail|p1a: Aquali|par
+L	ab_453_2	634	|move|p1a: Aquali|Surf|p2a: Blissey
+L	ab_453_2	635	|-damage|p2a: Blissey|596/693
+L	ab_453_2	636	|
+L	ab_453_2	637	|-heal|p2a: Blissey|639/693|[from] item: Leftovers
+L	ab_453_2	638	|-heal|p1a: Aquali|376/419 par|[from] item: Leftovers
+L	ab_453_2	639	|upkeep
+L	ab_453_2	640	|turn|57
+L	ab_453_2	641	|
+L	ab_453_2	642	|t:|<NORMALIZED>
+L	ab_453_2	643	|move|p2a: Blissey|Aromatherapy|p2a: Blissey
+L	ab_453_2	644	|-cureteam|p2a: Blissey|[from] move: Aromatherapy
+L	ab_453_2	645	|move|p1a: Aquali|Substitute|p1a: Aquali
+L	ab_453_2	646	|-start|p1a: Aquali|Substitute
+L	ab_453_2	647	|-damage|p1a: Aquali|272/419 par
+L	ab_453_2	648	|
+L	ab_453_2	649	|-heal|p2a: Blissey|682/693|[from] item: Leftovers
+L	ab_453_2	650	|-heal|p1a: Aquali|298/419 par|[from] item: Leftovers
+L	ab_453_2	651	|upkeep
+L	ab_453_2	652	|turn|58
+L	ab_453_2	653	|
+L	ab_453_2	654	|t:|<NORMALIZED>
+L	ab_453_2	655	|move|p2a: Blissey|Seismic Toss|p1a: Aquali
+L	ab_453_2	656	|-activate|p1a: Aquali|Substitute|[damage]
+L	ab_453_2	657	|move|p1a: Aquali|Surf|p2a: Blissey
+L	ab_453_2	658	|-damage|p2a: Blissey|581/693
+L	ab_453_2	659	|
+L	ab_453_2	660	|-heal|p2a: Blissey|624/693|[from] item: Leftovers
+L	ab_453_2	661	|-heal|p1a: Aquali|324/419 par|[from] item: Leftovers
+L	ab_453_2	662	|upkeep
+L	ab_453_2	663	|turn|59
+L	ab_453_2	664	|
+L	ab_453_2	665	|t:|<NORMALIZED>
+L	ab_453_2	666	|switch|p2a: Celebi|Celebi|404/404
+L	ab_453_2	667	|cant|p1a: Aquali|par
+L	ab_453_2	668	|
+L	ab_453_2	669	|-heal|p1a: Aquali|350/419 par|[from] item: Leftovers
+L	ab_453_2	670	|upkeep
+L	ab_453_2	671	|turn|60
+L	ab_453_2	672	|
+L	ab_453_2	673	|t:|<NORMALIZED>
+L	ab_453_2	674	|switch|p2a: Skarmory|Skarmory, M|244/333
+L	ab_453_2	675	|move|p1a: Aquali|Substitute|p1a: Aquali
+L	ab_453_2	676	|-fail|p1a: Aquali|move: Substitute
+L	ab_453_2	677	|
+L	ab_453_2	678	|-heal|p2a: Skarmory|264/333|[from] item: Leftovers
+L	ab_453_2	679	|-heal|p1a: Aquali|376/419 par|[from] item: Leftovers
+L	ab_453_2	680	|upkeep
+L	ab_453_2	681	|turn|61
+L	ab_453_2	682	|
+L	ab_453_2	683	|t:|<NORMALIZED>
+L	ab_453_2	684	|move|p1a: Aquali|Baton Pass|p1a: Aquali
+L	ab_453_2	685	|
+L	ab_453_2	686	|t:|<NORMALIZED>
+L	ab_453_2	687	|switch|p1a: SÃ©lÃ©roc|Lunatone|162/344|[from] Baton Pass
+L	ab_453_2	688	|move|p2a: Skarmory|Roar|p1a: SÃ©lÃ©roc
+L	ab_453_2	689	|drag|p1a: Electhor|Zapdos|84/321 par
+L	ab_453_2	690	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	691	|
+L	ab_453_2	692	|-heal|p2a: Skarmory|284/333|[from] item: Leftovers
+L	ab_453_2	693	|-heal|p1a: Electhor|104/321 par|[from] item: Leftovers
+L	ab_453_2	694	|upkeep
+L	ab_453_2	695	|turn|62
+L	ab_453_2	696	|
+L	ab_453_2	697	|t:|<NORMALIZED>
+L	ab_453_2	698	|move|p1a: Electhor|Substitute|p1a: Electhor
+L	ab_453_2	699	|-start|p1a: Electhor|Substitute
+L	ab_453_2	700	|-damage|p1a: Electhor|24/321 par
+L	ab_453_2	701	|move|p2a: Skarmory|Roar|p1a: Electhor
+L	ab_453_2	702	|drag|p1a: Aquali|Vaporeon, M|376/419 par
+L	ab_453_2	703	|
+L	ab_453_2	704	|-heal|p2a: Skarmory|304/333|[from] item: Leftovers
+L	ab_453_2	705	|-heal|p1a: Aquali|402/419 par|[from] item: Leftovers
+L	ab_453_2	706	|upkeep
+L	ab_453_2	707	|turn|63
+L	ab_453_2	708	|
+L	ab_453_2	709	|t:|<NORMALIZED>
+L	ab_453_2	710	|switch|p1a: Jirachi|Jirachi|279/404 par
+L	ab_453_2	711	|move|p2a: Skarmory|Roar|p1a: Jirachi
+L	ab_453_2	712	|drag|p1a: SÃ©lÃ©roc|Lunatone|162/344
+L	ab_453_2	713	|
+L	ab_453_2	714	|-heal|p1a: SÃ©lÃ©roc|183/344|[from] item: Leftovers
+L	ab_453_2	715	|-heal|p2a: Skarmory|324/333|[from] item: Leftovers
+L	ab_453_2	716	|upkeep
+L	ab_453_2	717	|turn|64
+L	ab_453_2	718	|
+L	ab_453_2	719	|t:|<NORMALIZED>
+L	ab_453_2	720	|move|p1a: SÃ©lÃ©roc|Ice Beam|p2a: Skarmory
+L	ab_453_2	721	|-damage|p2a: Skarmory|254/333
+L	ab_453_2	722	|move|p2a: Skarmory|Drill Peck|p1a: SÃ©lÃ©roc
+L	ab_453_2	723	|-resisted|p1a: SÃ©lÃ©roc
+L	ab_453_2	724	|-damage|p1a: SÃ©lÃ©roc|142/344
+L	ab_453_2	725	|
+L	ab_453_2	726	|-heal|p1a: SÃ©lÃ©roc|163/344|[from] item: Leftovers
+L	ab_453_2	727	|-heal|p2a: Skarmory|274/333|[from] item: Leftovers
+L	ab_453_2	728	|upkeep
+L	ab_453_2	729	|turn|65
+L	ab_453_2	730	|
+L	ab_453_2	731	|t:|<NORMALIZED>
+L	ab_453_2	732	|move|p1a: SÃ©lÃ©roc|Toxic|p2a: Skarmory
+L	ab_453_2	733	|-immune|p2a: Skarmory
+L	ab_453_2	734	|move|p2a: Skarmory|Drill Peck|p1a: SÃ©lÃ©roc
+L	ab_453_2	735	|-resisted|p1a: SÃ©lÃ©roc
+L	ab_453_2	736	|-damage|p1a: SÃ©lÃ©roc|123/344
+L	ab_453_2	737	|
+L	ab_453_2	738	|-heal|p1a: SÃ©lÃ©roc|144/344|[from] item: Leftovers
+L	ab_453_2	739	|-heal|p2a: Skarmory|294/333|[from] item: Leftovers
+L	ab_453_2	740	|upkeep
+L	ab_453_2	741	|turn|66
+L	ab_453_2	742	|
+L	ab_453_2	743	|t:|<NORMALIZED>
+L	ab_453_2	744	|move|p1a: SÃ©lÃ©roc|Ice Beam|p2a: Skarmory
+L	ab_453_2	745	|-damage|p2a: Skarmory|226/333
+L	ab_453_2	746	|move|p2a: Skarmory|Roar|p1a: SÃ©lÃ©roc
+L	ab_453_2	747	|drag|p1a: Jirachi|Jirachi|279/404 par
+L	ab_453_2	748	|
+L	ab_453_2	749	|-heal|p2a: Skarmory|246/333|[from] item: Leftovers
+L	ab_453_2	750	|-heal|p1a: Jirachi|304/404 par|[from] item: Leftovers
+L	ab_453_2	751	|upkeep
+L	ab_453_2	752	|turn|67
+L	ab_453_2	753	|
+L	ab_453_2	754	|t:|<NORMALIZED>
+L	ab_453_2	755	|move|p2a: Skarmory|Protect|p2a: Skarmory
+L	ab_453_2	756	|-singleturn|p2a: Skarmory|Protect
+L	ab_453_2	757	|move|p1a: Jirachi|Wish|p1a: Jirachi
+L	ab_453_2	758	|
+L	ab_453_2	759	|-heal|p2a: Skarmory|266/333|[from] item: Leftovers
+L	ab_453_2	760	|-heal|p1a: Jirachi|329/404 par|[from] item: Leftovers
+L	ab_453_2	761	|upkeep
+L	ab_453_2	762	|turn|68
+L	ab_453_2	763	|
+L	ab_453_2	764	|t:|<NORMALIZED>
+L	ab_453_2	765	|move|p2a: Skarmory|Protect|p2a: Skarmory
+L	ab_453_2	766	|-singleturn|p2a: Skarmory|Protect
+L	ab_453_2	767	|move|p1a: Jirachi|Body Slam|p2a: Skarmory
+L	ab_453_2	768	|-activate|p2a: Skarmory|Protect
+L	ab_453_2	769	|
+L	ab_453_2	770	|-heal|p1a: Jirachi|404/404 par|[from] move: Wish|[wisher] Jirachi
+L	ab_453_2	771	|-heal|p2a: Skarmory|286/333|[from] item: Leftovers
+L	ab_453_2	772	|upkeep
+L	ab_453_2	773	|turn|69
+L	ab_453_2	774	|
+L	ab_453_2	775	|t:|<NORMALIZED>
+L	ab_453_2	776	|move|p1a: Jirachi|Protect|p1a: Jirachi
+L	ab_453_2	777	|-singleturn|p1a: Jirachi|Protect
+L	ab_453_2	778	|move|p2a: Skarmory|Roar|p1a: Jirachi
+L	ab_453_2	779	|-activate|p1a: Jirachi|Protect
+L	ab_453_2	780	|
+L	ab_453_2	781	|-heal|p2a: Skarmory|306/333|[from] item: Leftovers
+L	ab_453_2	782	|upkeep
+L	ab_453_2	783	|turn|70
+L	ab_453_2	784	|
+L	ab_453_2	785	|t:|<NORMALIZED>
+L	ab_453_2	786	|move|p2a: Skarmory|Drill Peck|p1a: Jirachi
+L	ab_453_2	787	|-resisted|p1a: Jirachi
+L	ab_453_2	788	|-damage|p1a: Jirachi|376/404 par
+L	ab_453_2	789	|move|p1a: Jirachi|Hidden Power|p2a: Skarmory
+L	ab_453_2	790	|-crit|p2a: Skarmory
+L	ab_453_2	791	|-damage|p2a: Skarmory|216/333
+L	ab_453_2	792	|
+L	ab_453_2	793	|-heal|p2a: Skarmory|236/333|[from] item: Leftovers
+L	ab_453_2	794	|-heal|p1a: Jirachi|401/404 par|[from] item: Leftovers
+L	ab_453_2	795	|upkeep
+L	ab_453_2	796	|turn|71
+L	ab_453_2	797	|
+L	ab_453_2	798	|t:|<NORMALIZED>
+L	ab_453_2	799	|move|p2a: Skarmory|Drill Peck|p1a: Jirachi
+L	ab_453_2	800	|-resisted|p1a: Jirachi
+L	ab_453_2	801	|-damage|p1a: Jirachi|372/404 par
+L	ab_453_2	802	|move|p1a: Jirachi|Hidden Power|p2a: Skarmory
+L	ab_453_2	803	|-damage|p2a: Skarmory|193/333
+L	ab_453_2	804	|
+L	ab_453_2	805	|-heal|p2a: Skarmory|213/333|[from] item: Leftovers
+L	ab_453_2	806	|-heal|p1a: Jirachi|397/404 par|[from] item: Leftovers
+L	ab_453_2	807	|upkeep
+L	ab_453_2	808	|turn|72
+L	ab_453_2	809	|
+L	ab_453_2	810	|t:|<NORMALIZED>
+L	ab_453_2	811	|move|p2a: Skarmory|Protect|p2a: Skarmory
+L	ab_453_2	812	|-singleturn|p2a: Skarmory|Protect
+L	ab_453_2	813	|move|p1a: Jirachi|Protect||[still]
+L	ab_453_2	814	|-fail|p1a: Jirachi
+L	ab_453_2	815	|
+L	ab_453_2	816	|-heal|p2a: Skarmory|233/333|[from] item: Leftovers
+L	ab_453_2	817	|-heal|p1a: Jirachi|404/404 par|[from] item: Leftovers
+L	ab_453_2	818	|upkeep
+L	ab_453_2	819	|turn|73
+L	ab_453_2	820	|
+L	ab_453_2	821	|t:|<NORMALIZED>
+L	ab_453_2	822	|switch|p1a: SÃ©lÃ©roc|Lunatone|144/344
+L	ab_453_2	823	|move|p2a: Skarmory|Spikes|p1a: SÃ©lÃ©roc
+L	ab_453_2	824	|-sidestart|p1: P1|Spikes
+L	ab_453_2	825	|
+L	ab_453_2	826	|-heal|p1a: SÃ©lÃ©roc|165/344|[from] item: Leftovers
+L	ab_453_2	827	|-heal|p2a: Skarmory|253/333|[from] item: Leftovers
+L	ab_453_2	828	|upkeep
+L	ab_453_2	829	|turn|74
+L	ab_453_2	830	|
+L	ab_453_2	831	|t:|<NORMALIZED>
+L	ab_453_2	832	|switch|p2a: Celebi|Celebi|404/404
+L	ab_453_2	833	|move|p1a: SÃ©lÃ©roc|Calm Mind|p1a: SÃ©lÃ©roc
+L	ab_453_2	834	|-boost|p1a: SÃ©lÃ©roc|spa|1
+L	ab_453_2	835	|-boost|p1a: SÃ©lÃ©roc|spd|1
+L	ab_453_2	836	|
+L	ab_453_2	837	|-heal|p1a: SÃ©lÃ©roc|186/344|[from] item: Leftovers
+L	ab_453_2	838	|upkeep
+L	ab_453_2	839	|turn|75
+L	ab_453_2	840	|
+L	ab_453_2	841	|t:|<NORMALIZED>
+L	ab_453_2	842	|move|p2a: Celebi|Perish Song|p2a: Celebi
+L	ab_453_2	843	|-start|p1a: SÃ©lÃ©roc|perish3|[silent]
+L	ab_453_2	844	|-start|p2a: Celebi|perish3|[silent]
+L	ab_453_2	845	|-fieldactivate|move: Perish Song
+L	ab_453_2	846	|move|p1a: SÃ©lÃ©roc|Toxic|p2a: Celebi
+L	ab_453_2	847	|-status|p2a: Celebi|tox
+L	ab_453_2	848	|
+L	ab_453_2	849	|-damage|p2a: Celebi|379/404 tox|[from] psn
+L	ab_453_2	850	|-heal|p1a: SÃ©lÃ©roc|207/344|[from] item: Leftovers
+L	ab_453_2	851	|-start|p2a: Celebi|perish3
+L	ab_453_2	852	|-start|p1a: SÃ©lÃ©roc|perish3
+L	ab_453_2	853	|upkeep
+L	ab_453_2	854	|turn|76
+L	ab_453_2	855	|
+L	ab_453_2	856	|t:|<NORMALIZED>
+L	ab_453_2	857	|move|p2a: Celebi|Hidden Power|p1a: SÃ©lÃ©roc
+L	ab_453_2	858	|-supereffective|p1a: SÃ©lÃ©roc
+L	ab_453_2	859	|-damage|p1a: SÃ©lÃ©roc|78/344
+L	ab_453_2	860	|move|p1a: SÃ©lÃ©roc|Toxic|p2a: Celebi
+L	ab_453_2	861	|-fail|p2a: Celebi|tox
+L	ab_453_2	862	|
+L	ab_453_2	863	|-heal|p2a: Celebi|404/404 tox|[from] item: Leftovers
+L	ab_453_2	864	|-damage|p2a: Celebi|354/404 tox|[from] psn
+L	ab_453_2	865	|-heal|p1a: SÃ©lÃ©roc|99/344|[from] item: Leftovers
+L	ab_453_2	866	|-start|p2a: Celebi|perish2
+L	ab_453_2	867	|-start|p1a: SÃ©lÃ©roc|perish2
+L	ab_453_2	868	|upkeep
+L	ab_453_2	869	|turn|77
+L	ab_453_2	870	|
+L	ab_453_2	871	|t:|<NORMALIZED>
+L	ab_453_2	872	|move|p2a: Celebi|Recover|p2a: Celebi
+L	ab_453_2	873	|-heal|p2a: Celebi|404/404 tox
+L	ab_453_2	874	|move|p1a: SÃ©lÃ©roc|Toxic|p2a: Celebi
+L	ab_453_2	875	|-fail|p2a: Celebi|tox
+L	ab_453_2	876	|
+L	ab_453_2	877	|-damage|p2a: Celebi|329/404 tox|[from] psn
+L	ab_453_2	878	|-heal|p1a: SÃ©lÃ©roc|120/344|[from] item: Leftovers
+L	ab_453_2	879	|-start|p2a: Celebi|perish1
+L	ab_453_2	880	|-start|p1a: SÃ©lÃ©roc|perish1
+L	ab_453_2	881	|upkeep
+L	ab_453_2	882	|turn|78
+L	ab_453_2	883	|
+L	ab_453_2	884	|t:|<NORMALIZED>
+L	ab_453_2	885	|-curestatus|p2a: Celebi|tox|[from] ability: Natural Cure|[silent]
+L	ab_453_2	886	|switch|p2a: Blissey|Blissey, F|624/693
+L	ab_453_2	887	|move|p1a: SÃ©lÃ©roc|Calm Mind|p1a: SÃ©lÃ©roc
+L	ab_453_2	888	|-boost|p1a: SÃ©lÃ©roc|spa|1
+L	ab_453_2	889	|-boost|p1a: SÃ©lÃ©roc|spd|1
+L	ab_453_2	890	|
+L	ab_453_2	891	|-heal|p1a: SÃ©lÃ©roc|141/344|[from] item: Leftovers
+L	ab_453_2	892	|-heal|p2a: Blissey|667/693|[from] item: Leftovers
+L	ab_453_2	893	|-start|p1a: SÃ©lÃ©roc|perish0
+L	ab_453_2	894	|upkeep
+L	ab_453_2	895	|faint|p1a: SÃ©lÃ©roc
+L	ab_453_2	896	|
+L	ab_453_2	897	|t:|<NORMALIZED>
+L	ab_453_2	898	|switch|p1a: Jirachi|Jirachi|404/404 par
+L	ab_453_2	899	|-damage|p1a: Jirachi|354/404 par|[from] Spikes
+L	ab_453_2	900	|turn|79
+L	ab_453_2	901	|
+L	ab_453_2	902	|t:|<NORMALIZED>
+L	ab_453_2	903	|switch|p2a: Skarmory|Skarmory, M|253/333
+L	ab_453_2	904	|move|p1a: Jirachi|Protect||[still]
+L	ab_453_2	905	|-fail|p1a: Jirachi
+L	ab_453_2	906	|
+L	ab_453_2	907	|-heal|p2a: Skarmory|273/333|[from] item: Leftovers
+L	ab_453_2	908	|-heal|p1a: Jirachi|379/404 par|[from] item: Leftovers
+L	ab_453_2	909	|upkeep
+L	ab_453_2	910	|turn|80
+L	ab_453_2	911	|
+L	ab_453_2	912	|t:|<NORMALIZED>
+L	ab_453_2	913	|move|p2a: Skarmory|Drill Peck|p1a: Jirachi
+L	ab_453_2	914	|-resisted|p1a: Jirachi
+L	ab_453_2	915	|-damage|p1a: Jirachi|350/404 par
+L	ab_453_2	916	|move|p1a: Jirachi|Wish|p1a: Jirachi
+L	ab_453_2	917	|
+L	ab_453_2	918	|-heal|p2a: Skarmory|293/333|[from] item: Leftovers
+L	ab_453_2	919	|-heal|p1a: Jirachi|375/404 par|[from] item: Leftovers
+L	ab_453_2	920	|upkeep
+L	ab_453_2	921	|turn|81
+L	ab_453_2	922	|
+L	ab_453_2	923	|t:|<NORMALIZED>
+L	ab_453_2	924	|move|p2a: Skarmory|Protect|p2a: Skarmory
+L	ab_453_2	925	|-singleturn|p2a: Skarmory|Protect
+L	ab_453_2	926	|cant|p1a: Jirachi|par
+L	ab_453_2	927	|
+L	ab_453_2	928	|-heal|p1a: Jirachi|404/404 par|[from] move: Wish|[wisher] Jirachi
+L	ab_453_2	929	|-heal|p2a: Skarmory|313/333|[from] item: Leftovers
+L	ab_453_2	930	|upkeep
+L	ab_453_2	931	|turn|82
+L	ab_453_2	932	|
+L	ab_453_2	933	|t:|<NORMALIZED>
+L	ab_453_2	934	|move|p1a: Jirachi|Protect|p1a: Jirachi
+L	ab_453_2	935	|-singleturn|p1a: Jirachi|Protect
+L	ab_453_2	936	|move|p2a: Skarmory|Drill Peck|p1a: Jirachi
+L	ab_453_2	937	|-activate|p1a: Jirachi|Protect
+L	ab_453_2	938	|
+L	ab_453_2	939	|-heal|p2a: Skarmory|333/333|[from] item: Leftovers
+L	ab_453_2	940	|upkeep
+L	ab_453_2	941	|turn|83
+L	ab_453_2	942	|
+L	ab_453_2	943	|t:|<NORMALIZED>
+L	ab_453_2	944	|switch|p2a: Blissey|Blissey, F|667/693
+L	ab_453_2	945	|move|p1a: Jirachi|Wish|p1a: Jirachi
+L	ab_453_2	946	|
+L	ab_453_2	947	|-heal|p2a: Blissey|693/693|[from] item: Leftovers
+L	ab_453_2	948	|upkeep
+L	ab_453_2	949	|turn|84
+L	ab_453_2	950	|
+L	ab_453_2	951	|t:|<NORMALIZED>
+L	ab_453_2	952	|switch|p1a: Electhor|Zapdos|24/321 par
+L	ab_453_2	953	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	954	|move|p2a: Blissey|Soft-Boiled||[still]
+L	ab_453_2	955	|-fail|p2a: Blissey|heal
+L	ab_453_2	956	|
+L	ab_453_2	957	|-heal|p1a: Electhor|184/321 par|[from] move: Wish|[wisher] Jirachi
+L	ab_453_2	958	|-heal|p1a: Electhor|204/321 par|[from] item: Leftovers
+L	ab_453_2	959	|upkeep
+L	ab_453_2	960	|turn|85
+L	ab_453_2	961	|
+L	ab_453_2	962	|t:|<NORMALIZED>
+L	ab_453_2	963	|switch|p2a: Celebi|Celebi|329/404
+L	ab_453_2	964	|move|p1a: Electhor|Baton Pass|p1a: Electhor
+L	ab_453_2	965	|
+L	ab_453_2	966	|t:|<NORMALIZED>
+L	ab_453_2	967	|switch|p1a: Aquali|Vaporeon, M|402/419 par|[from] Baton Pass
+L	ab_453_2	968	|-damage|p1a: Aquali|350/419 par|[from] Spikes
+L	ab_453_2	969	|
+L	ab_453_2	970	|-heal|p2a: Celebi|354/404|[from] item: Leftovers
+L	ab_453_2	971	|-heal|p1a: Aquali|376/419 par|[from] item: Leftovers
+L	ab_453_2	972	|upkeep
+L	ab_453_2	973	|turn|86
+L	ab_453_2	974	|
+L	ab_453_2	975	|t:|<NORMALIZED>
+L	ab_453_2	976	|switch|p1a: Electhor|Zapdos|204/321 par
+L	ab_453_2	977	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	978	|move|p2a: Celebi|Recover|p2a: Celebi
+L	ab_453_2	979	|-heal|p2a: Celebi|404/404
+L	ab_453_2	980	|
+L	ab_453_2	981	|-heal|p1a: Electhor|224/321 par|[from] item: Leftovers
+L	ab_453_2	982	|upkeep
+L	ab_453_2	983	|turn|87
+L	ab_453_2	984	|
+L	ab_453_2	985	|t:|<NORMALIZED>
+L	ab_453_2	986	|switch|p2a: Skarmory|Skarmory, M|333/333
+L	ab_453_2	987	|move|p1a: Electhor|Baton Pass|p1a: Electhor
+L	ab_453_2	988	|
+L	ab_453_2	989	|t:|<NORMALIZED>
+L	ab_453_2	990	|switch|p1a: Jirachi|Jirachi|404/404 par|[from] Baton Pass
+L	ab_453_2	991	|-damage|p1a: Jirachi|354/404 par|[from] Spikes
+L	ab_453_2	992	|
+L	ab_453_2	993	|-heal|p1a: Jirachi|379/404 par|[from] item: Leftovers
+L	ab_453_2	994	|upkeep
+L	ab_453_2	995	|turn|88
+L	ab_453_2	996	|
+L	ab_453_2	997	|t:|<NORMALIZED>
+L	ab_453_2	998	|switch|p1a: Electhor|Zapdos|224/321 par
+L	ab_453_2	999	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	1000	|move|p2a: Skarmory|Protect||[still]
+L	ab_453_2	1001	|-fail|p2a: Skarmory
+L	ab_453_2	1002	|
+L	ab_453_2	1003	|-heal|p1a: Electhor|244/321 par|[from] item: Leftovers
+L	ab_453_2	1004	|upkeep
+L	ab_453_2	1005	|turn|89
+L	ab_453_2	1006	|
+L	ab_453_2	1007	|t:|<NORMALIZED>
+L	ab_453_2	1008	|switch|p1a: Jirachi|Jirachi|379/404 par
+L	ab_453_2	1009	|-damage|p1a: Jirachi|329/404 par|[from] Spikes
+L	ab_453_2	1010	|move|p2a: Skarmory|Spikes|p1a: Jirachi
+L	ab_453_2	1011	|-sidestart|p1: P1|Spikes
+L	ab_453_2	1012	|
+L	ab_453_2	1013	|-heal|p1a: Jirachi|354/404 par|[from] item: Leftovers
+L	ab_453_2	1014	|upkeep
+L	ab_453_2	1015	|turn|90
+L	ab_453_2	1016	|
+L	ab_453_2	1017	|t:|<NORMALIZED>
+L	ab_453_2	1018	|move|p2a: Skarmory|Drill Peck|p1a: Jirachi
+L	ab_453_2	1019	|-resisted|p1a: Jirachi
+L	ab_453_2	1020	|-damage|p1a: Jirachi|326/404 par
+L	ab_453_2	1021	|cant|p1a: Jirachi|par
+L	ab_453_2	1022	|
+L	ab_453_2	1023	|-heal|p1a: Jirachi|351/404 par|[from] item: Leftovers
+L	ab_453_2	1024	|upkeep
+L	ab_453_2	1025	|turn|91
+L	ab_453_2	1026	|
+L	ab_453_2	1027	|t:|<NORMALIZED>
+L	ab_453_2	1028	|switch|p2a: Blissey|Blissey, F|693/693
+L	ab_453_2	1029	|move|p1a: Jirachi|Protect||[still]
+L	ab_453_2	1030	|-fail|p1a: Jirachi
+L	ab_453_2	1031	|
+L	ab_453_2	1032	|-heal|p1a: Jirachi|376/404 par|[from] item: Leftovers
+L	ab_453_2	1033	|upkeep
+L	ab_453_2	1034	|turn|92
+L	ab_453_2	1035	|
+L	ab_453_2	1036	|t:|<NORMALIZED>
+L	ab_453_2	1037	|switch|p2a: Skarmory|Skarmory, M|333/333
+L	ab_453_2	1038	|move|p1a: Jirachi|Wish|p1a: Jirachi
+L	ab_453_2	1039	|
+L	ab_453_2	1040	|-heal|p1a: Jirachi|401/404 par|[from] item: Leftovers
+L	ab_453_2	1041	|upkeep
+L	ab_453_2	1042	|turn|93
+L	ab_453_2	1043	|
+L	ab_453_2	1044	|t:|<NORMALIZED>
+L	ab_453_2	1045	|move|p1a: Jirachi|Protect|p1a: Jirachi
+L	ab_453_2	1046	|-singleturn|p1a: Jirachi|Protect
+L	ab_453_2	1047	|move|p2a: Skarmory|Drill Peck|p1a: Jirachi
+L	ab_453_2	1048	|-activate|p1a: Jirachi|Protect
+L	ab_453_2	1049	|
+L	ab_453_2	1050	|-heal|p1a: Jirachi|404/404 par|[from] move: Wish|[wisher] Jirachi
+L	ab_453_2	1051	|upkeep
+L	ab_453_2	1052	|turn|94
+L	ab_453_2	1053	|
+L	ab_453_2	1054	|t:|<NORMALIZED>
+L	ab_453_2	1055	|move|p1a: Jirachi|Hidden Power|p2a: Skarmory
+L	ab_453_2	1056	|-damage|p2a: Skarmory|290/333
+L	ab_453_2	1057	|move|p2a: Skarmory|Roar|p1a: Jirachi
+L	ab_453_2	1058	|drag|p1a: Electhor|Zapdos|244/321 par
+L	ab_453_2	1059	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	1060	|
+L	ab_453_2	1061	|-heal|p2a: Skarmory|310/333|[from] item: Leftovers
+L	ab_453_2	1062	|-heal|p1a: Electhor|264/321 par|[from] item: Leftovers
+L	ab_453_2	1063	|upkeep
+L	ab_453_2	1064	|turn|95
+L	ab_453_2	1065	|
+L	ab_453_2	1066	|t:|<NORMALIZED>
+L	ab_453_2	1067	|switch|p2a: Celebi|Celebi|404/404
+L	ab_453_2	1068	|cant|p1a: Electhor|par
+L	ab_453_2	1069	|
+L	ab_453_2	1070	|-heal|p1a: Electhor|284/321 par|[from] item: Leftovers
+L	ab_453_2	1071	|upkeep
+L	ab_453_2	1072	|turn|96
+L	ab_453_2	1073	|
+L	ab_453_2	1074	|t:|<NORMALIZED>
+L	ab_453_2	1075	|switch|p2a: Skarmory|Skarmory, M|310/333
+L	ab_453_2	1076	|move|p1a: Electhor|Baton Pass|p1a: Electhor
+L	ab_453_2	1077	|
+L	ab_453_2	1078	|t:|<NORMALIZED>
+L	ab_453_2	1079	|switch|p1a: Jirachi|Jirachi|404/404 par|[from] Baton Pass
+L	ab_453_2	1080	|-damage|p1a: Jirachi|337/404 par|[from] Spikes
+L	ab_453_2	1081	|
+L	ab_453_2	1082	|-heal|p2a: Skarmory|330/333|[from] item: Leftovers
+L	ab_453_2	1083	|-heal|p1a: Jirachi|362/404 par|[from] item: Leftovers
+L	ab_453_2	1084	|upkeep
+L	ab_453_2	1085	|turn|97
+L	ab_453_2	1086	|
+L	ab_453_2	1087	|t:|<NORMALIZED>
+L	ab_453_2	1088	|move|p2a: Skarmory|Spikes|p1a: Jirachi
+L	ab_453_2	1089	|-sidestart|p1: P1|Spikes
+L	ab_453_2	1090	|move|p1a: Jirachi|Body Slam|p2a: Skarmory
+L	ab_453_2	1091	|-resisted|p2a: Skarmory
+L	ab_453_2	1092	|-crit|p2a: Skarmory
+L	ab_453_2	1093	|-damage|p2a: Skarmory|283/333
+L	ab_453_2	1094	|
+L	ab_453_2	1095	|-heal|p2a: Skarmory|303/333|[from] item: Leftovers
+L	ab_453_2	1096	|-heal|p1a: Jirachi|387/404 par|[from] item: Leftovers
+L	ab_453_2	1097	|upkeep
+L	ab_453_2	1098	|turn|98
+L	ab_453_2	1099	|
+L	ab_453_2	1100	|t:|<NORMALIZED>
+L	ab_453_2	1101	|move|p1a: Jirachi|Hidden Power|p2a: Skarmory
+L	ab_453_2	1102	|-damage|p2a: Skarmory|263/333
+L	ab_453_2	1103	|move|p2a: Skarmory|Roar|p1a: Jirachi
+L	ab_453_2	1104	|drag|p1a: Aquali|Vaporeon, M|376/419 par
+L	ab_453_2	1105	|-damage|p1a: Aquali|272/419 par|[from] Spikes
+L	ab_453_2	1106	|
+L	ab_453_2	1107	|-heal|p2a: Skarmory|283/333|[from] item: Leftovers
+L	ab_453_2	1108	|-heal|p1a: Aquali|298/419 par|[from] item: Leftovers
+L	ab_453_2	1109	|upkeep
+L	ab_453_2	1110	|turn|99
+L	ab_453_2	1111	|
+L	ab_453_2	1112	|t:|<NORMALIZED>
+L	ab_453_2	1113	|switch|p1a: Jirachi|Jirachi|387/404 par
+L	ab_453_2	1114	|-damage|p1a: Jirachi|286/404 par|[from] Spikes
+L	ab_453_2	1115	|move|p2a: Skarmory|Roar|p1a: Jirachi
+L	ab_453_2	1116	|drag|p1a: Aquali|Vaporeon, M|298/419 par
+L	ab_453_2	1117	|-damage|p1a: Aquali|194/419 par|[from] Spikes
+L	ab_453_2	1118	|
+L	ab_453_2	1119	|-heal|p2a: Skarmory|303/333|[from] item: Leftovers
+L	ab_453_2	1120	|-heal|p1a: Aquali|220/419 par|[from] item: Leftovers
+L	ab_453_2	1121	|upkeep
+L	ab_453_2	1122	|turn|100
+L	ab_453_2	1123	|
+L	ab_453_2	1124	|t:|<NORMALIZED>
+L	ab_453_2	1125	|move|p2a: Skarmory|Protect|p2a: Skarmory
+L	ab_453_2	1126	|-singleturn|p2a: Skarmory|Protect
+L	ab_453_2	1127	|move|p1a: Aquali|Roar|p2a: Skarmory
+L	ab_453_2	1128	|-activate|p2a: Skarmory|Protect
+L	ab_453_2	1129	|
+L	ab_453_2	1130	|-heal|p2a: Skarmory|323/333|[from] item: Leftovers
+L	ab_453_2	1131	|-heal|p1a: Aquali|246/419 par|[from] item: Leftovers
+L	ab_453_2	1132	|upkeep
+L	ab_453_2	1133	|turn|101
+L	ab_453_2	1134	|
+L	ab_453_2	1135	|t:|<NORMALIZED>
+L	ab_453_2	1136	|move|p2a: Skarmory|Spikes||[still]
+L	ab_453_2	1137	|-fail|p2a: Skarmory
+L	ab_453_2	1138	|move|p1a: Aquali|Baton Pass|p1a: Aquali
+L	ab_453_2	1139	|
+L	ab_453_2	1140	|t:|<NORMALIZED>
+L	ab_453_2	1141	|switch|p1a: Electhor|Zapdos|284/321 par|[from] Baton Pass
+L	ab_453_2	1142	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	1143	|
+L	ab_453_2	1144	|-heal|p2a: Skarmory|333/333|[from] item: Leftovers
+L	ab_453_2	1145	|-heal|p1a: Electhor|304/321 par|[from] item: Leftovers
+L	ab_453_2	1146	|upkeep
+L	ab_453_2	1147	|turn|102
+L	ab_453_2	1148	|
+L	ab_453_2	1149	|t:|<NORMALIZED>
+L	ab_453_2	1150	|switch|p1a: Jirachi|Jirachi|286/404 par
+L	ab_453_2	1151	|-damage|p1a: Jirachi|185/404 par|[from] Spikes
+L	ab_453_2	1152	|move|p2a: Skarmory|Protect||[still]
+L	ab_453_2	1153	|-fail|p2a: Skarmory
+L	ab_453_2	1154	|
+L	ab_453_2	1155	|-heal|p1a: Jirachi|210/404 par|[from] item: Leftovers
+L	ab_453_2	1156	|upkeep
+L	ab_453_2	1157	|turn|103
+L	ab_453_2	1158	|
+L	ab_453_2	1159	|t:|<NORMALIZED>
+L	ab_453_2	1160	|switch|p2a: Celebi|Celebi|404/404
+L	ab_453_2	1161	|move|p1a: Jirachi|Body Slam|p2a: Celebi
+L	ab_453_2	1162	|-damage|p2a: Celebi|342/404
+L	ab_453_2	1163	|
+L	ab_453_2	1164	|-heal|p2a: Celebi|367/404|[from] item: Leftovers
+L	ab_453_2	1165	|-heal|p1a: Jirachi|235/404 par|[from] item: Leftovers
+L	ab_453_2	1166	|upkeep
+L	ab_453_2	1167	|turn|104
+L	ab_453_2	1168	|
+L	ab_453_2	1169	|t:|<NORMALIZED>
+L	ab_453_2	1170	|move|p2a: Celebi|Hidden Power|p1a: Jirachi
+L	ab_453_2	1171	|-resisted|p1a: Jirachi
+L	ab_453_2	1172	|-damage|p1a: Jirachi|192/404 par
+L	ab_453_2	1173	|move|p1a: Jirachi|Wish|p1a: Jirachi
+L	ab_453_2	1174	|
+L	ab_453_2	1175	|-heal|p2a: Celebi|392/404|[from] item: Leftovers
+L	ab_453_2	1176	|-heal|p1a: Jirachi|217/404 par|[from] item: Leftovers
+L	ab_453_2	1177	|upkeep
+L	ab_453_2	1178	|turn|105
+L	ab_453_2	1179	|
+L	ab_453_2	1180	|t:|<NORMALIZED>
+L	ab_453_2	1181	|move|p1a: Jirachi|Protect|p1a: Jirachi
+L	ab_453_2	1182	|-singleturn|p1a: Jirachi|Protect
+L	ab_453_2	1183	|move|p2a: Celebi|Leech Seed|p1a: Jirachi|[miss]
+L	ab_453_2	1184	|-miss|p2a: Celebi|p1a: Jirachi
+L	ab_453_2	1185	|
+L	ab_453_2	1186	|-heal|p1a: Jirachi|404/404 par|[from] move: Wish|[wisher] Jirachi
+L	ab_453_2	1187	|-heal|p2a: Celebi|404/404|[from] item: Leftovers
+L	ab_453_2	1188	|upkeep
+L	ab_453_2	1189	|turn|106
+L	ab_453_2	1190	|
+L	ab_453_2	1191	|t:|<NORMALIZED>
+L	ab_453_2	1192	|move|p2a: Celebi|Leech Seed|p1a: Jirachi
+L	ab_453_2	1193	|-start|p1a: Jirachi|move: Leech Seed
+L	ab_453_2	1194	|cant|p1a: Jirachi|par
+L	ab_453_2	1195	|
+L	ab_453_2	1196	|-damage|p1a: Jirachi|354/404 par|[from] Leech Seed|[of] p2a: Celebi
+L	ab_453_2	1197	|upkeep
+L	ab_453_2	1198	|turn|107
+L	ab_453_2	1199	|
+L	ab_453_2	1200	|t:|<NORMALIZED>
+L	ab_453_2	1201	|move|p1a: Jirachi|Protect|p1a: Jirachi
+L	ab_453_2	1202	|-singleturn|p1a: Jirachi|Protect
+L	ab_453_2	1203	|move|p2a: Celebi|Perish Song|p2a: Celebi
+L	ab_453_2	1204	|-start|p1a: Jirachi|perish3|[silent]
+L	ab_453_2	1205	|-start|p2a: Celebi|perish3|[silent]
+L	ab_453_2	1206	|-fieldactivate|move: Perish Song
+L	ab_453_2	1207	|
+L	ab_453_2	1208	|-heal|p1a: Jirachi|379/404 par|[from] item: Leftovers
+L	ab_453_2	1209	|-damage|p1a: Jirachi|329/404 par|[from] Leech Seed|[of] p2a: Celebi
+L	ab_453_2	1210	|-start|p2a: Celebi|perish3
+L	ab_453_2	1211	|-start|p1a: Jirachi|perish3
+L	ab_453_2	1212	|upkeep
+L	ab_453_2	1213	|turn|108
+L	ab_453_2	1214	|
+L	ab_453_2	1215	|t:|<NORMALIZED>
+L	ab_453_2	1216	|move|p2a: Celebi|Hidden Power|p1a: Jirachi
+L	ab_453_2	1217	|-resisted|p1a: Jirachi
+L	ab_453_2	1218	|-damage|p1a: Jirachi|288/404 par
+L	ab_453_2	1219	|move|p1a: Jirachi|Wish|p1a: Jirachi
+L	ab_453_2	1220	|
+L	ab_453_2	1221	|-heal|p1a: Jirachi|313/404 par|[from] item: Leftovers
+L	ab_453_2	1222	|-damage|p1a: Jirachi|263/404 par|[from] Leech Seed|[of] p2a: Celebi
+L	ab_453_2	1223	|-start|p2a: Celebi|perish2
+L	ab_453_2	1224	|-start|p1a: Jirachi|perish2
+L	ab_453_2	1225	|upkeep
+L	ab_453_2	1226	|turn|109
+L	ab_453_2	1227	|
+L	ab_453_2	1228	|t:|<NORMALIZED>
+L	ab_453_2	1229	|move|p2a: Celebi|Perish Song||[still]
+L	ab_453_2	1230	|-fail|p2a: Celebi
+L	ab_453_2	1231	|cant|p1a: Jirachi|par
+L	ab_453_2	1232	|
+L	ab_453_2	1233	|-heal|p1a: Jirachi|404/404 par|[from] move: Wish|[wisher] Jirachi
+L	ab_453_2	1234	|-damage|p1a: Jirachi|354/404 par|[from] Leech Seed|[of] p2a: Celebi
+L	ab_453_2	1235	|-start|p2a: Celebi|perish1
+L	ab_453_2	1236	|-start|p1a: Jirachi|perish1
+L	ab_453_2	1237	|upkeep
+L	ab_453_2	1238	|turn|110
+L	ab_453_2	1239	|
+L	ab_453_2	1240	|t:|<NORMALIZED>
+L	ab_453_2	1241	|move|p2a: Celebi|Leech Seed||[still]
+L	ab_453_2	1242	|-fail|p2a: Celebi
+L	ab_453_2	1243	|move|p1a: Jirachi|Wish|p1a: Jirachi
+L	ab_453_2	1244	|
+L	ab_453_2	1245	|-heal|p1a: Jirachi|379/404 par|[from] item: Leftovers
+L	ab_453_2	1246	|-damage|p1a: Jirachi|329/404 par|[from] Leech Seed|[of] p2a: Celebi
+L	ab_453_2	1247	|-start|p2a: Celebi|perish0
+L	ab_453_2	1248	|-start|p1a: Jirachi|perish0
+L	ab_453_2	1249	|upkeep
+L	ab_453_2	1250	|faint|p2a: Celebi
+L	ab_453_2	1251	|faint|p1a: Jirachi
+L	ab_453_2	1252	|
+L	ab_453_2	1253	|t:|<NORMALIZED>
+L	ab_453_2	1254	|switch|p1a: Aquali|Vaporeon, M|246/419 par
+L	ab_453_2	1255	|switch|p2a: Blissey|Blissey, F|693/693
+L	ab_453_2	1256	|-damage|p1a: Aquali|142/419 par|[from] Spikes
+L	ab_453_2	1257	|turn|111
+L	ab_453_2	1258	|
+L	ab_453_2	1259	|t:|<NORMALIZED>
+L	ab_453_2	1260	|switch|p2a: Skarmory|Skarmory, M|333/333
+L	ab_453_2	1261	|move|p1a: Aquali|Baton Pass|p1a: Aquali
+L	ab_453_2	1262	|
+L	ab_453_2	1263	|t:|<NORMALIZED>
+L	ab_453_2	1264	|switch|p1a: Electhor|Zapdos|304/321 par|[from] Baton Pass
+L	ab_453_2	1265	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	1266	|
+L	ab_453_2	1267	|-heal|p1a: Electhor|321/321 par|[from] move: Wish|[wisher] Jirachi
+L	ab_453_2	1268	|upkeep
+L	ab_453_2	1269	|turn|112
+L	ab_453_2	1270	|
+L	ab_453_2	1271	|t:|<NORMALIZED>
+L	ab_453_2	1272	|move|p2a: Skarmory|Spikes||[still]
+L	ab_453_2	1273	|-fail|p2a: Skarmory
+L	ab_453_2	1274	|move|p1a: Electhor|Thunderbolt|p2a: Skarmory
+L	ab_453_2	1275	|-supereffective|p2a: Skarmory
+L	ab_453_2	1276	|-damage|p2a: Skarmory|42/333
+L	ab_453_2	1277	|
+L	ab_453_2	1278	|-heal|p2a: Skarmory|62/333|[from] item: Leftovers
+L	ab_453_2	1279	|upkeep
+L	ab_453_2	1280	|turn|113
+L	ab_453_2	1281	|
+L	ab_453_2	1282	|t:|<NORMALIZED>
+L	ab_453_2	1283	|switch|p1a: Aquali|Vaporeon, M|142/419 par
+L	ab_453_2	1284	|-damage|p1a: Aquali|38/419 par|[from] Spikes
+L	ab_453_2	1285	|move|p2a: Skarmory|Spikes||[still]
+L	ab_453_2	1286	|-fail|p2a: Skarmory
+L	ab_453_2	1287	|
+L	ab_453_2	1288	|-heal|p2a: Skarmory|82/333|[from] item: Leftovers
+L	ab_453_2	1289	|-heal|p1a: Aquali|64/419 par|[from] item: Leftovers
+L	ab_453_2	1290	|upkeep
+L	ab_453_2	1291	|turn|114
+L	ab_453_2	1292	|
+L	ab_453_2	1293	|t:|<NORMALIZED>
+L	ab_453_2	1294	|switch|p2a: Blissey|Blissey, F|693/693
+L	ab_453_2	1295	|move|p1a: Aquali|Substitute|p1a: Aquali
+L	ab_453_2	1296	|-fail|p1a: Aquali|move: Substitute|[weak]
+L	ab_453_2	1297	|
+L	ab_453_2	1298	|-heal|p1a: Aquali|90/419 par|[from] item: Leftovers
+L	ab_453_2	1299	|upkeep
+L	ab_453_2	1300	|turn|115
+L	ab_453_2	1301	|
+L	ab_453_2	1302	|t:|<NORMALIZED>
+L	ab_453_2	1303	|switch|p2a: Skarmory|Skarmory, M|82/333
+L	ab_453_2	1304	|move|p1a: Aquali|Roar|p2a: Skarmory
+L	ab_453_2	1305	|drag|p2a: Blissey|Blissey, F|693/693
+L	ab_453_2	1306	|
+L	ab_453_2	1307	|-heal|p1a: Aquali|116/419 par|[from] item: Leftovers
+L	ab_453_2	1308	|upkeep
+L	ab_453_2	1309	|turn|116
+L	ab_453_2	1310	|
+L	ab_453_2	1311	|t:|<NORMALIZED>
+L	ab_453_2	1312	|switch|p1a: Electhor|Zapdos|321/321 par
+L	ab_453_2	1313	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	1314	|move|p2a: Blissey|Soft-Boiled||[still]
+L	ab_453_2	1315	|-fail|p2a: Blissey|heal
+L	ab_453_2	1316	|
+L	ab_453_2	1317	|upkeep
+L	ab_453_2	1318	|turn|117
+L	ab_453_2	1319	|
+L	ab_453_2	1320	|t:|<NORMALIZED>
+L	ab_453_2	1321	|move|p2a: Blissey|Soft-Boiled||[still]
+L	ab_453_2	1322	|-fail|p2a: Blissey|heal
+L	ab_453_2	1323	|cant|p1a: Electhor|par
+L	ab_453_2	1324	|
+L	ab_453_2	1325	|upkeep
+L	ab_453_2	1326	|turn|118
+L	ab_453_2	1327	|
+L	ab_453_2	1328	|t:|<NORMALIZED>
+L	ab_453_2	1329	|move|p2a: Blissey|Seismic Toss|p1a: Electhor
+L	ab_453_2	1330	|-damage|p1a: Electhor|221/321 par
+L	ab_453_2	1331	|move|p1a: Electhor|Hidden Power|p2a: Blissey
+L	ab_453_2	1332	|-crit|p2a: Blissey
+L	ab_453_2	1333	|-damage|p2a: Blissey|571/693
+L	ab_453_2	1334	|
+L	ab_453_2	1335	|-heal|p2a: Blissey|614/693|[from] item: Leftovers
+L	ab_453_2	1336	|-heal|p1a: Electhor|241/321 par|[from] item: Leftovers
+L	ab_453_2	1337	|upkeep
+L	ab_453_2	1338	|turn|119
+L	ab_453_2	1339	|
+L	ab_453_2	1340	|t:|<NORMALIZED>
+L	ab_453_2	1341	|move|p2a: Blissey|Seismic Toss|p1a: Electhor
+L	ab_453_2	1342	|-damage|p1a: Electhor|141/321 par
+L	ab_453_2	1343	|cant|p1a: Electhor|par
+L	ab_453_2	1344	|
+L	ab_453_2	1345	|-heal|p2a: Blissey|657/693|[from] item: Leftovers
+L	ab_453_2	1346	|-heal|p1a: Electhor|161/321 par|[from] item: Leftovers
+L	ab_453_2	1347	|upkeep
+L	ab_453_2	1348	|turn|120
+L	ab_453_2	1349	|
+L	ab_453_2	1350	|t:|<NORMALIZED>
+L	ab_453_2	1351	|switch|p1a: Aquali|Vaporeon, M|116/419 par
+L	ab_453_2	1352	|-damage|p1a: Aquali|12/419 par|[from] Spikes
+L	ab_453_2	1353	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_453_2	1354	|-heal|p2a: Blissey|693/693
+L	ab_453_2	1355	|
+L	ab_453_2	1356	|-heal|p1a: Aquali|38/419 par|[from] item: Leftovers
+L	ab_453_2	1357	|upkeep
+L	ab_453_2	1358	|turn|121
+L	ab_453_2	1359	|
+L	ab_453_2	1360	|t:|<NORMALIZED>
+L	ab_453_2	1361	|move|p2a: Blissey|Soft-Boiled||[still]
+L	ab_453_2	1362	|-fail|p2a: Blissey|heal
+L	ab_453_2	1363	|move|p1a: Aquali|Surf|p2a: Blissey
+L	ab_453_2	1364	|-damage|p2a: Blissey|589/693
+L	ab_453_2	1365	|
+L	ab_453_2	1366	|-heal|p2a: Blissey|632/693|[from] item: Leftovers
+L	ab_453_2	1367	|-heal|p1a: Aquali|64/419 par|[from] item: Leftovers
+L	ab_453_2	1368	|upkeep
+L	ab_453_2	1369	|turn|122
+L	ab_453_2	1370	|
+L	ab_453_2	1371	|t:|<NORMALIZED>
+L	ab_453_2	1372	|move|p2a: Blissey|Seismic Toss|p1a: Aquali
+L	ab_453_2	1373	|-damage|p1a: Aquali|0 fnt
+L	ab_453_2	1374	|faint|p1a: Aquali
+L	ab_453_2	1375	|
+L	ab_453_2	1376	|t:|<NORMALIZED>
+L	ab_453_2	1377	|switch|p1a: Electhor|Zapdos|161/321 par
+L	ab_453_2	1378	|-ability|p1a: Electhor|Pressure|[silent]
+L	ab_453_2	1379	|
+L	ab_453_2	1380	|-heal|p2a: Blissey|675/693|[from] item: Leftovers
+L	ab_453_2	1381	|-heal|p1a: Electhor|181/321 par|[from] item: Leftovers
+L	ab_453_2	1382	|upkeep
+L	ab_453_2	1383	|turn|123
+L	ab_453_2	1384	|
+L	ab_453_2	1385	|t:|<NORMALIZED>
+L	ab_453_2	1386	|switch|p2a: Skarmory|Skarmory, M|82/333
+L	ab_453_2	1387	|move|p1a: Electhor|Hidden Power|p2a: Skarmory
+L	ab_453_2	1388	|-resisted|p2a: Skarmory
+L	ab_453_2	1389	|-damage|p2a: Skarmory|65/333
+L	ab_453_2	1390	|
+L	ab_453_2	1391	|-heal|p2a: Skarmory|85/333|[from] item: Leftovers
+L	ab_453_2	1392	|-heal|p1a: Electhor|201/321 par|[from] item: Leftovers
+L	ab_453_2	1393	|upkeep
+L	ab_453_2	1394	|turn|124
+L	ab_453_2	1395	|
+L	ab_453_2	1396	|t:|<NORMALIZED>
+L	ab_453_2	1397	|move|p2a: Skarmory|Drill Peck|p1a: Electhor
+L	ab_453_2	1398	|-resisted|p1a: Electhor
+L	ab_453_2	1399	|-damage|p1a: Electhor|157/321 par
+L	ab_453_2	1400	|cant|p1a: Electhor|par
+L	ab_453_2	1401	|
+L	ab_453_2	1402	|-heal|p2a: Skarmory|105/333|[from] item: Leftovers
+L	ab_453_2	1403	|-heal|p1a: Electhor|177/321 par|[from] item: Leftovers
+L	ab_453_2	1404	|upkeep
+L	ab_453_2	1405	|turn|125
+L	ab_453_2	1406	|
+L	ab_453_2	1407	|t:|<NORMALIZED>
+L	ab_453_2	1408	|move|p2a: Skarmory|Protect|p2a: Skarmory
+L	ab_453_2	1409	|-singleturn|p2a: Skarmory|Protect
+L	ab_453_2	1410	|move|p1a: Electhor|Baton Pass||[still]
+L	ab_453_2	1411	|-fail|p1a: Electhor
+L	ab_453_2	1412	|
+L	ab_453_2	1413	|-heal|p2a: Skarmory|125/333|[from] item: Leftovers
+L	ab_453_2	1414	|-heal|p1a: Electhor|197/321 par|[from] item: Leftovers
+L	ab_453_2	1415	|upkeep
+L	ab_453_2	1416	|turn|126
+L	ab_453_2	1417	|
+L	ab_453_2	1418	|t:|<NORMALIZED>
+L	ab_453_2	1419	|move|p2a: Skarmory|Spikes||[still]
+L	ab_453_2	1420	|-fail|p2a: Skarmory
+L	ab_453_2	1421	|move|p1a: Electhor|Hidden Power|p2a: Skarmory
+L	ab_453_2	1422	|-resisted|p2a: Skarmory
+L	ab_453_2	1423	|-damage|p2a: Skarmory|106/333
+L	ab_453_2	1424	|
+L	ab_453_2	1425	|-heal|p2a: Skarmory|126/333|[from] item: Leftovers
+L	ab_453_2	1426	|-heal|p1a: Electhor|217/321 par|[from] item: Leftovers
+L	ab_453_2	1427	|upkeep
+L	ab_453_2	1428	|turn|127
+L	ab_453_2	1429	|
+L	ab_453_2	1430	|t:|<NORMALIZED>
+L	ab_453_2	1431	|move|p2a: Skarmory|Spikes||[still]
+L	ab_453_2	1432	|-fail|p2a: Skarmory
+L	ab_453_2	1433	|cant|p1a: Electhor|par
+L	ab_453_2	1434	|
+L	ab_453_2	1435	|-heal|p2a: Skarmory|146/333|[from] item: Leftovers
+L	ab_453_2	1436	|-heal|p1a: Electhor|237/321 par|[from] item: Leftovers
+L	ab_453_2	1437	|upkeep
+L	ab_453_2	1438	|turn|128
+L	ab_453_2	1439	|
+L	ab_453_2	1440	|t:|<NORMALIZED>
+L	ab_453_2	1441	|cant|p1a: Electhor|par
+L	ab_453_2	1442	|move|p2a: Skarmory|Roar||[still]
+L	ab_453_2	1443	|-fail|p2a: Skarmory
+L	ab_453_2	1444	|
+L	ab_453_2	1445	|-heal|p2a: Skarmory|166/333|[from] item: Leftovers
+L	ab_453_2	1446	|-heal|p1a: Electhor|257/321 par|[from] item: Leftovers
+L	ab_453_2	1447	|upkeep
+L	ab_453_2	1448	|turn|129
+L	ab_453_2	1449	|
+L	ab_453_2	1450	|t:|<NORMALIZED>
+L	ab_453_2	1451	|switch|p2a: Blissey|Blissey, F|675/693
+L	ab_453_2	1452	|cant|p1a: Electhor|par
+L	ab_453_2	1453	|
+L	ab_453_2	1454	|-heal|p2a: Blissey|693/693|[from] item: Leftovers
+L	ab_453_2	1455	|-heal|p1a: Electhor|277/321 par|[from] item: Leftovers
+L	ab_453_2	1456	|upkeep
+L	ab_453_2	1457	|turn|130
+L	ab_453_2	1458	|
+L	ab_453_2	1459	|t:|<NORMALIZED>
+L	ab_453_2	1460	|move|p2a: Blissey|Soft-Boiled||[still]
+L	ab_453_2	1461	|-fail|p2a: Blissey|heal
+L	ab_453_2	1462	|move|p1a: Electhor|Baton Pass||[still]
+L	ab_453_2	1463	|-fail|p1a: Electhor
+L	ab_453_2	1464	|
+L	ab_453_2	1465	|-heal|p1a: Electhor|297/321 par|[from] item: Leftovers
+L	ab_453_2	1466	|upkeep
+L	ab_453_2	1467	|turn|131
+L	ab_453_2	1468	|
+L	ab_453_2	1469	|t:|<NORMALIZED>
+L	ab_453_2	1470	|move|p2a: Blissey|Seismic Toss|p1a: Electhor
+L	ab_453_2	1471	|-damage|p1a: Electhor|197/321 par
+L	ab_453_2	1472	|move|p1a: Electhor|Thunderbolt|p2a: Blissey
+L	ab_453_2	1473	|-damage|p2a: Blissey|555/693
+L	ab_453_2	1474	|
+L	ab_453_2	1475	|-heal|p2a: Blissey|598/693|[from] item: Leftovers
+L	ab_453_2	1476	|-heal|p1a: Electhor|217/321 par|[from] item: Leftovers
+L	ab_453_2	1477	|upkeep
+L	ab_453_2	1478	|turn|132
+L	ab_453_2	1479	|
+L	ab_453_2	1480	|t:|<NORMALIZED>
+L	ab_453_2	1481	|switch|p2a: Skarmory|Skarmory, M|166/333
+L	ab_453_2	1482	|move|p1a: Electhor|Hidden Power|p2a: Skarmory
+L	ab_453_2	1483	|-resisted|p2a: Skarmory
+L	ab_453_2	1484	|-damage|p2a: Skarmory|147/333
+L	ab_453_2	1485	|
+L	ab_453_2	1486	|-heal|p2a: Skarmory|167/333|[from] item: Leftovers
+L	ab_453_2	1487	|-heal|p1a: Electhor|237/321 par|[from] item: Leftovers
+L	ab_453_2	1488	|upkeep
+L	ab_453_2	1489	|turn|133
+L	ab_453_2	1490	|
+L	ab_453_2	1491	|t:|<NORMALIZED>
+L	ab_453_2	1492	|switch|p2a: Blissey|Blissey, F|598/693
+L	ab_453_2	1493	|cant|p1a: Electhor|par
+L	ab_453_2	1494	|
+L	ab_453_2	1495	|-heal|p2a: Blissey|641/693|[from] item: Leftovers
+L	ab_453_2	1496	|-heal|p1a: Electhor|257/321 par|[from] item: Leftovers
+L	ab_453_2	1497	|upkeep
+L	ab_453_2	1498	|turn|134
+L	ab_453_2	1499	|
+L	ab_453_2	1500	|t:|<NORMALIZED>
+L	ab_453_2	1501	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_453_2	1502	|-heal|p2a: Blissey|693/693
+L	ab_453_2	1503	|move|p1a: Electhor|Substitute|p1a: Electhor
+L	ab_453_2	1504	|-start|p1a: Electhor|Substitute
+L	ab_453_2	1505	|-damage|p1a: Electhor|177/321 par
+L	ab_453_2	1506	|
+L	ab_453_2	1507	|-heal|p1a: Electhor|197/321 par|[from] item: Leftovers
+L	ab_453_2	1508	|upkeep
+L	ab_453_2	1509	|turn|135
+L	ab_453_2	1510	|
+L	ab_453_2	1511	|t:|<NORMALIZED>
+L	ab_453_2	1512	|move|p2a: Blissey|Aromatherapy|p2a: Blissey
+L	ab_453_2	1513	|-cureteam|p2a: Blissey|[from] move: Aromatherapy
+L	ab_453_2	1514	|cant|p1a: Electhor|par
+L	ab_453_2	1515	|
+L	ab_453_2	1516	|-heal|p1a: Electhor|217/321 par|[from] item: Leftovers
+L	ab_453_2	1517	|upkeep
+L	ab_453_2	1518	|turn|136
+L	ab_453_2	1519	|
+L	ab_453_2	1520	|t:|<NORMALIZED>
+L	ab_453_2	1521	|move|p2a: Blissey|Soft-Boiled||[still]
+L	ab_453_2	1522	|-fail|p2a: Blissey|heal
+L	ab_453_2	1523	|cant|p1a: Electhor|par
+L	ab_453_2	1524	|
+L	ab_453_2	1525	|-heal|p1a: Electhor|237/321 par|[from] item: Leftovers
+L	ab_453_2	1526	|upkeep
+L	ab_453_2	1527	|turn|137
+L	ab_453_2	1528	|
+L	ab_453_2	1529	|t:|<NORMALIZED>
+L	ab_453_2	1530	|move|p2a: Blissey|Seismic Toss|p1a: Electhor
+L	ab_453_2	1531	|-end|p1a: Electhor|Substitute
+L	ab_453_2	1532	|cant|p1a: Electhor|par
+L	ab_453_2	1533	|
+L	ab_453_2	1534	|-heal|p1a: Electhor|257/321 par|[from] item: Leftovers
+L	ab_453_2	1535	|upkeep
+L	ab_453_2	1536	|turn|138
+L	ab_453_2	1537	|
+L	ab_453_2	1538	|t:|<NORMALIZED>
+L	ab_453_2	1539	|move|p2a: Blissey|Seismic Toss|p1a: Electhor
+L	ab_453_2	1540	|-damage|p1a: Electhor|157/321 par
+L	ab_453_2	1541	|cant|p1a: Electhor|par
+L	ab_453_2	1542	|
+L	ab_453_2	1543	|-heal|p1a: Electhor|177/321 par|[from] item: Leftovers
+L	ab_453_2	1544	|upkeep
+L	ab_453_2	1545	|turn|139
+L	ab_453_2	1546	|
+L	ab_453_2	1547	|t:|<NORMALIZED>
+L	ab_453_2	1548	|move|p2a: Blissey|Soft-Boiled||[still]
+L	ab_453_2	1549	|-fail|p2a: Blissey|heal
+L	ab_453_2	1550	|move|p1a: Electhor|Substitute|p1a: Electhor
+L	ab_453_2	1551	|-start|p1a: Electhor|Substitute
+L	ab_453_2	1552	|-damage|p1a: Electhor|97/321 par
+L	ab_453_2	1553	|
+L	ab_453_2	1554	|-heal|p1a: Electhor|117/321 par|[from] item: Leftovers
+L	ab_453_2	1555	|upkeep
+L	ab_453_2	1556	|turn|140
+L	ab_453_2	1557	|
+L	ab_453_2	1558	|t:|<NORMALIZED>
+L	ab_453_2	1559	|move|p2a: Blissey|Soft-Boiled||[still]
+L	ab_453_2	1560	|-fail|p2a: Blissey|heal
+L	ab_453_2	1561	|move|p1a: Electhor|Thunderbolt|p2a: Blissey
+L	ab_453_2	1562	|-damage|p2a: Blissey|558/693
+L	ab_453_2	1563	|
+L	ab_453_2	1564	|-heal|p2a: Blissey|601/693|[from] item: Leftovers
+L	ab_453_2	1565	|-heal|p1a: Electhor|137/321 par|[from] item: Leftovers
+L	ab_453_2	1566	|upkeep
+L	ab_453_2	1567	|turn|141
+L	ab_453_2	1568	|
+L	ab_453_2	1569	|t:|<NORMALIZED>
+L	ab_453_2	1570	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_453_2	1571	|-heal|p2a: Blissey|693/693
+L	ab_453_2	1572	|cant|p1a: Electhor|par
+L	ab_453_2	1573	|
+L	ab_453_2	1574	|-heal|p1a: Electhor|157/321 par|[from] item: Leftovers
+L	ab_453_2	1575	|upkeep
+L	ab_453_2	1576	|turn|142
+L	ab_453_2	1577	|
+L	ab_453_2	1578	|t:|<NORMALIZED>
+L	ab_453_2	1579	|move|p2a: Blissey|Seismic Toss|p1a: Electhor
+L	ab_453_2	1580	|-end|p1a: Electhor|Substitute
+L	ab_453_2	1581	|move|p1a: Electhor|Substitute|p1a: Electhor
+L	ab_453_2	1582	|-start|p1a: Electhor|Substitute
+L	ab_453_2	1583	|-damage|p1a: Electhor|77/321 par
+L	ab_453_2	1584	|
+L	ab_453_2	1585	|-heal|p1a: Electhor|97/321 par|[from] item: Leftovers
+L	ab_453_2	1586	|upkeep
+L	ab_453_2	1587	|turn|143
+L	ab_453_2	1588	|
+L	ab_453_2	1589	|t:|<NORMALIZED>
+L	ab_453_2	1590	|move|p2a: Blissey|Soft-Boiled||[still]
+L	ab_453_2	1591	|-fail|p2a: Blissey|heal
+L	ab_453_2	1592	|move|p1a: Electhor|Substitute|p1a: Electhor
+L	ab_453_2	1593	|-fail|p1a: Electhor|move: Substitute
+L	ab_453_2	1594	|
+L	ab_453_2	1595	|-heal|p1a: Electhor|117/321 par|[from] item: Leftovers
+L	ab_453_2	1596	|upkeep
+L	ab_453_2	1597	|turn|144
+L	ab_453_2	1598	|
+L	ab_453_2	1599	|t:|<NORMALIZED>
+L	ab_453_2	1600	|move|p2a: Blissey|Seismic Toss|p1a: Electhor
+L	ab_453_2	1601	|-end|p1a: Electhor|Substitute
+L	ab_453_2	1602	|move|p1a: Electhor|Baton Pass||[still]
+L	ab_453_2	1603	|-fail|p1a: Electhor
+L	ab_453_2	1604	|
+L	ab_453_2	1605	|-heal|p1a: Electhor|137/321 par|[from] item: Leftovers
+L	ab_453_2	1606	|upkeep
+L	ab_453_2	1607	|turn|145
+L	ab_453_2	1608	|
+L	ab_453_2	1609	|t:|<NORMALIZED>
+L	ab_453_2	1610	|move|p2a: Blissey|Soft-Boiled||[still]
+L	ab_453_2	1611	|-fail|p2a: Blissey|heal
+L	ab_453_2	1612	|cant|p1a: Electhor|par
+L	ab_453_2	1613	|
+L	ab_453_2	1614	|-heal|p1a: Electhor|157/321 par|[from] item: Leftovers
+L	ab_453_2	1615	|upkeep
+L	ab_453_2	1616	|turn|146
+L	ab_453_2	1617	|
+L	ab_453_2	1618	|t:|<NORMALIZED>
+L	ab_453_2	1619	|move|p2a: Blissey|Seismic Toss|p1a: Electhor
+L	ab_453_2	1620	|-damage|p1a: Electhor|57/321 par
+L	ab_453_2	1621	|cant|p1a: Electhor|par
+L	ab_453_2	1622	|
+L	ab_453_2	1623	|-heal|p1a: Electhor|77/321 par|[from] item: Leftovers
+L	ab_453_2	1624	|upkeep
+L	ab_453_2	1625	|turn|147
+L	ab_453_2	1626	|
+L	ab_453_2	1627	|t:|<NORMALIZED>
+L	ab_453_2	1628	|move|p2a: Blissey|Seismic Toss|p1a: Electhor
+L	ab_453_2	1629	|-damage|p1a: Electhor|0 fnt
+L	ab_453_2	1630	|faint|p1a: Electhor
+L	ab_453_2	1631	|
+L	ab_453_2	1632	|win|P2

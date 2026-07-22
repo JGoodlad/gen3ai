@@ -1,0 +1,517 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=14140718 run_id=rmrr03rmc chunk=20
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_20_4
+TEAM	ab_20_4	p1	Jirachi||ChoiceBand|SereneGrace|BodySlam,FirePunch,DoomDesire,HiddenPowerFighting|Lonely|,252,,52,,204|N|,,30,30,30,30|||,Fighting,,,,]Celebi||Leftovers|NaturalCure|CalmMind,Psychic,HiddenPowerFire,GigaDrain|Modest|,,,252,4,252|N|,2,,30,,30|||,Fire,,,,]Tyranitar||Leftovers|SandStream|DragonDance,RockSlide,Earthquake,DoubleEdge|Adamant|200,140,,,,168|M||||]Suicune||Leftovers|Pressure|Surf,CalmMind,Rest,SleepTalk|Modest|248,,,232,,28|N|,0,,,,|||]Claydol||Leftovers|Levitate|Earthquake,Explosion,RapidSpin,Psychic|Relaxed|252,212,16,,28,|N||||]Salamence||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,FireBlast,BrickBreak|Lonely|,252,,56,,200|M|30,30,30,30,30,|||,Flying,,,,
+TEAM	ab_20_4	p2	Swampert||Leftovers|Torrent|HydroPump,IceBeam,Earthquake,FocusPunch|Rash|,4,,252,,252|M||||]Forretress||Leftovers|Sturdy|ZapCannon,Spikes,RapidSpin,Counter|Calm|252,,4,,252,|M||||]Flygon||ChoiceBand|Levitate|Earthquake,RockSlide,HiddenPowerBug,FireBlast|Naive|,252,,4,,252|M|,30,30,,30,|||,Bug,,,,]Tyranitar||Leftovers|SandStream|Crunch,Pursuit,FireBlast,HiddenPowerGrass|Modest|184,,,220,,104|M|,30,,30,,|||,Grass,,,,]Gengar||Leftovers|Levitate|Thunderbolt,IcePunch,WillOWisp,Explosion|Timid|248,,4,,68,188|M||||]Blissey||Leftovers|NaturalCure|SeismicToss,Sing,Toxic,SoftBoiled|Jolly|4,,252,,,252|F||||
+FMT	ab_20_4	gen3ou
+INIT	ab_20_4	23887,47165,55961,24774	1197760415
+DEC	ab_20_4	0	move	0	0	m2	s3	23363,32531,50453,60040	Jirachi	341	341	0	-	0	0	0	0	0	0	6	Tyranitar	387	387	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_20_4	1	move	0	0	m2	s2	40975,47480,17926,61035	Jirachi	341	341	0	-	0	0	0	0	0	0	6	Flygon	301	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_20_4	2	move	0	0	m2	s2	54308,17031,61720,57445	Jirachi	341	341	0	-	0	0	0	0	0	0	6	Tyranitar	202	387	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_20_4	3	move	0	0	m2	m2	45325,55022,10111,55795	Jirachi	111	341	0	-	0	0	0	0	0	0	6	Tyranitar	226	387	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_20_4	4	move	0	0	m2	m1	31517,33765,30473,64087	Jirachi	51	341	0	-	0	0	0	0	0	0	6	Tyranitar	250	387	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_20_4	5	move	0	0	m2	m2	64859,6679,43905,31867	Jirachi	0	341	1	fnt	0	0	0	0	0	0	5	Tyranitar	250	387	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_20_4	6	switch	1	0	s2	-	43837,41922,37437,23541	Tyranitar	391	391	0	-	0	0	0	0	0	0	5	Tyranitar	274	387	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_20_4	7	move	0	0	m2	s2	50261,9646,47657,50271	Tyranitar	391	391	0	-	0	0	0	0	0	0	5	Flygon	301	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_20_4	8	move	0	0	m2	m2	44570,6454,54583,18674	Tyranitar	207	391	0	-	0	0	0	0	0	0	5	Flygon	301	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_20_4	9	move	0	0	m0	m2	41321,43817,40250,36710	Tyranitar	48	391	0	-	1	0	0	0	1	0	5	Flygon	301	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_20_4	10	move	0	0	m1	s5	7566,46255,24738,54149	Tyranitar	72	391	0	-	1	0	0	0	1	0	5	Blissey	239	652	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_20_4	11	move	0	0	m2	m2	27081,45477,45047,29326	Tyranitar	72	391	0	-	1	0	0	0	1	0	5	Blissey	0	652	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_20_4	12	switch	0	1	-	s1	11532,16807,58102,52937	Tyranitar	96	391	0	-	1	0	0	0	1	0	5	Forretress	354	354	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_20_4	13	move	0	0	m1	s5	23666,26787,58179,46500	Tyranitar	120	391	0	-	1	0	0	0	1	0	5	Flygon	185	301	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_20_4	14	move	0	0	m3	s2	25417,30823,596,58616	Tyranitar	110	391	0	-	1	0	0	0	1	0	5	Tyranitar	194	387	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_20_4	15	move	0	0	m1	m1	8846,31426,9273,59148	Tyranitar	110	391	0	-	1	0	0	0	1	0	5	Tyranitar	0	387	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_20_4	16	switch	0	1	-	s5	42987,27333,43256,12927	Tyranitar	134	391	0	-	1	0	0	0	1	0	5	Forretress	354	354	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_20_4	17	move	0	0	m2	m2	4901,12049,59259,29556	Tyranitar	152	391	0	-	1	0	0	0	1	0	5	Forretress	239	354	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_20_4	18	move	0	0	m0	m0	42405,46511,48833,11066	Tyranitar	66	391	0	par	2	0	0	0	2	0	5	Forretress	261	354	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_20_4	19	move	0	0	m2	m2	142,13151,32964,63458	Tyranitar	84	391	0	par	2	0	0	0	2	0	5	Forretress	84	354	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_20_4	20	move	0	0	s4	m0	46339,54470,51643,7492	Claydol	324	324	0	-	0	0	0	0	0	0	5	Forretress	106	354	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_20_4	21	move	0	0	m3	m1	54857,13213,34927,19643	Claydol	324	324	0	-	0	0	0	0	0	0	5	Forretress	44	354	0	-	0	0	0	0	0	0	4	p1	1	0	0	0	0
+DEC	ab_20_4	22	move	0	0	m1	m3	6057,36972,47188,31404	Claydol	0	324	1	fnt	0	0	0	0	0	0	4	Forretress	0	354	1	fnt	0	0	0	0	0	0	3	p1	1	0	0	1	0
+DEC	ab_20_4	23	switch	1	1	s5	s2	9212,41333,55765,4255	Salamence	330	330	0	-	0	0	0	0	0	0	4	Flygon	185	301	0	-	-1	0	0	0	0	0	3	none	1	0	0	0	0
+DEC	ab_20_4	24	move	0	0	s3	m1	40626,14645,10577,51762	Suicune	284	403	0	-	0	0	0	0	0	0	4	Flygon	185	301	0	-	-1	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_20_4	25	move	0	0	s1	m1	54726,21938,41803,41537	Celebi	219	341	0	-	0	0	0	0	0	0	4	Flygon	185	301	0	-	-1	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_20_4	26	move	0	0	m0	s4	4395,5895,49817,27496	Celebi	219	341	0	-	0	0	1	1	0	0	4	Gengar	323	323	0	-	0	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_20_4	27	move	0	0	s4	m0	28565,61404,15176,26236	Tyranitar	0	391	1	fnt	0	0	0	0	0	0	3	Gengar	323	323	0	-	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_20_4	28	switch	1	0	s4	-	46434,27328,16371,27055	Celebi	177	341	0	-	0	0	0	0	0	0	3	Gengar	323	323	0	-	0	0	0	0	0	0	3	none	1	0	0	0	0
+DEC	ab_20_4	29	move	0	0	m1	m3	30294,56623,46059,63568	Celebi	0	341	1	fnt	0	0	0	0	0	0	2	Gengar	0	323	1	fnt	0	0	0	0	0	0	2	p2	1	0	0	0	0
+DEC	ab_20_4	30	switch	1	1	s1	s3	57413,43744,52818,26195	Suicune	234	403	0	-	0	0	0	0	0	0	2	Swampert	341	341	0	-	0	0	0	0	0	0	2	none	1	0	0	0	0
+DEC	ab_20_4	31	move	0	0	m2	m3	493,13790,7962,11985	Suicune	189	403	0	slp	0	0	0	0	0	0	2	Swampert	341	341	0	-	0	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_20_4	32	move	0	0	m1	s4	25651,63539,48191,61496	Suicune	189	403	0	slp	0	0	0	0	0	0	2	Flygon	185	301	0	-	0	0	0	0	0	0	2	p2	1	0	0	0	0
+DEC	ab_20_4	33	move	0	0	m0	m2	23012,57959,28668,48716	Suicune	89	403	0	slp	0	0	0	0	0	0	2	Flygon	185	301	0	-	0	0	0	0	0	0	2	p2	1	0	0	0	0
+DEC	ab_20_4	34	move	0	0	m0	m2	14199,37976,64146,27545	Suicune	0	403	1	fnt	0	0	0	0	0	0	1	Flygon	185	301	0	-	0	0	0	0	0	0	2	p2	1	0	0	0	0
+DEC	ab_20_4	35	switch	1	0	s3	-	26238,19189,46254,62240	Salamence	330	330	0	-	0	0	0	0	0	0	1	Flygon	185	301	0	-	-1	0	0	0	0	0	2	none	1	0	0	0	0
+DEC	ab_20_4	36	move	0	0	m0	s4	13547,7068,3880,43619	Salamence	330	330	0	-	1	0	0	0	1	0	1	Swampert	341	341	0	-	0	0	0	0	0	0	2	p2	1	0	0	0	0
+DEC	ab_20_4	37	move	0	0	m3	s4	22096,62849,44203,41652	Salamence	330	330	0	-	1	0	0	0	1	0	1	Flygon	0	301	1	fnt	0	0	0	0	0	0	1	p2	1	0	0	0	0
+DEC	ab_20_4	38	switch	0	1	-	s4	28582,20458,23772,9159	Salamence	330	330	0	-	1	0	0	0	1	0	1	Swampert	341	341	0	-	0	0	0	0	0	0	1	none	1	0	0	0	0
+DEC	ab_20_4	39	move	0	0	m0	m0	53240,16001,12659,30561	Salamence	330	330	0	-	2	0	0	0	2	0	1	Swampert	341	341	0	-	0	0	0	0	0	0	1	p1	1	0	0	0	0
+DEC	ab_20_4	40	move	0	0	m2	m0	16354,60425,50462,29225	Salamence	224	330	0	-	2	0	0	0	2	0	1	Swampert	302	341	0	-	0	0	0	0	0	0	1	p1	1	0	0	0	0
+DEC	ab_20_4	41	move	0	0	m1	m3	44740,60573,27511,2338	Salamence	224	330	0	-	2	0	0	0	2	0	1	Swampert	0	341	1	-	0	0	0	0	0	0	0	p1	1	0	0	0	0
+END	ab_20_4	1	p1
+L	ab_20_4	0	|t:|<NORMALIZED>
+L	ab_20_4	1	|gametype|singles
+L	ab_20_4	2	|player|p1|P1||
+L	ab_20_4	3	|player|p2|P2||
+L	ab_20_4	4	|gen|3
+L	ab_20_4	5	|tier|[Gen 3] OU
+L	ab_20_4	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_20_4	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_20_4	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_20_4	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_20_4	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_20_4	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_20_4	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_20_4	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_20_4	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_20_4	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_20_4	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_20_4	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_20_4	18	|
+L	ab_20_4	19	|t:|<NORMALIZED>
+L	ab_20_4	20	|teamsize|p1|6
+L	ab_20_4	21	|teamsize|p2|6
+L	ab_20_4	22	|start
+L	ab_20_4	23	|switch|p1a: Jirachi|Jirachi|341/341
+L	ab_20_4	24	|switch|p2a: Swampert|Swampert, M|341/341
+L	ab_20_4	25	|turn|1
+L	ab_20_4	26	|
+L	ab_20_4	27	|t:|<NORMALIZED>
+L	ab_20_4	28	|switch|p2a: Tyranitar|Tyranitar, M|387/387
+L	ab_20_4	29	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	ab_20_4	30	|move|p1a: Jirachi|Doom Desire|p2a: Tyranitar
+L	ab_20_4	31	|-start|p1a: Jirachi|Doom Desire
+L	ab_20_4	32	|
+L	ab_20_4	33	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	34	|upkeep
+L	ab_20_4	35	|turn|2
+L	ab_20_4	36	|
+L	ab_20_4	37	|t:|<NORMALIZED>
+L	ab_20_4	38	|switch|p2a: Flygon|Flygon, M|301/301
+L	ab_20_4	39	|move|p1a: Jirachi|Doom Desire|p2a: Flygon
+L	ab_20_4	40	|
+L	ab_20_4	41	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	42	|upkeep
+L	ab_20_4	43	|turn|3
+L	ab_20_4	44	|
+L	ab_20_4	45	|t:|<NORMALIZED>
+L	ab_20_4	46	|switch|p2a: Tyranitar|Tyranitar, M|387/387
+L	ab_20_4	47	|move|p1a: Jirachi|Doom Desire|p2a: Tyranitar
+L	ab_20_4	48	|
+L	ab_20_4	49	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	50	|-end|p2a: Tyranitar|move: Doom Desire
+L	ab_20_4	51	|-damage|p2a: Tyranitar|202/387
+L	ab_20_4	52	|upkeep
+L	ab_20_4	53	|turn|4
+L	ab_20_4	54	|
+L	ab_20_4	55	|t:|<NORMALIZED>
+L	ab_20_4	56	|move|p1a: Jirachi|Doom Desire|p2a: Tyranitar
+L	ab_20_4	57	|-start|p1a: Jirachi|Doom Desire
+L	ab_20_4	58	|move|p2a: Tyranitar|Fire Blast|p1a: Jirachi
+L	ab_20_4	59	|-supereffective|p1a: Jirachi
+L	ab_20_4	60	|-damage|p1a: Jirachi|111/341
+L	ab_20_4	61	|
+L	ab_20_4	62	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	63	|-heal|p2a: Tyranitar|226/387|[from] item: Leftovers
+L	ab_20_4	64	|upkeep
+L	ab_20_4	65	|turn|5
+L	ab_20_4	66	|
+L	ab_20_4	67	|t:|<NORMALIZED>
+L	ab_20_4	68	|move|p1a: Jirachi|Doom Desire|p2a: Tyranitar
+L	ab_20_4	69	|move|p2a: Tyranitar|Pursuit|p1a: Jirachi
+L	ab_20_4	70	|-damage|p1a: Jirachi|51/341
+L	ab_20_4	71	|
+L	ab_20_4	72	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	73	|-heal|p2a: Tyranitar|250/387|[from] item: Leftovers
+L	ab_20_4	74	|upkeep
+L	ab_20_4	75	|turn|6
+L	ab_20_4	76	|
+L	ab_20_4	77	|t:|<NORMALIZED>
+L	ab_20_4	78	|move|p1a: Jirachi|Doom Desire|p2a: Tyranitar
+L	ab_20_4	79	|move|p2a: Tyranitar|Fire Blast|p1a: Jirachi
+L	ab_20_4	80	|-supereffective|p1a: Jirachi
+L	ab_20_4	81	|-damage|p1a: Jirachi|0 fnt
+L	ab_20_4	82	|faint|p1a: Jirachi
+L	ab_20_4	83	|
+L	ab_20_4	84	|t:|<NORMALIZED>
+L	ab_20_4	85	|switch|p1a: Tyranitar|Tyranitar, M|391/391
+L	ab_20_4	86	|
+L	ab_20_4	87	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	88	|-heal|p2a: Tyranitar|274/387|[from] item: Leftovers
+L	ab_20_4	89	|-end|p2a: Tyranitar|move: Doom Desire
+L	ab_20_4	90	|-miss|p1: Jirachi|p2a: Tyranitar
+L	ab_20_4	91	|upkeep
+L	ab_20_4	92	|turn|7
+L	ab_20_4	93	|
+L	ab_20_4	94	|t:|<NORMALIZED>
+L	ab_20_4	95	|switch|p2a: Flygon|Flygon, M|301/301
+L	ab_20_4	96	|move|p1a: Tyranitar|Earthquake|p2a: Flygon
+L	ab_20_4	97	|-immune|p2a: Flygon
+L	ab_20_4	98	|
+L	ab_20_4	99	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	100	|upkeep
+L	ab_20_4	101	|turn|8
+L	ab_20_4	102	|
+L	ab_20_4	103	|t:|<NORMALIZED>
+L	ab_20_4	104	|move|p2a: Flygon|Hidden Power|p1a: Tyranitar
+L	ab_20_4	105	|-supereffective|p1a: Tyranitar
+L	ab_20_4	106	|-damage|p1a: Tyranitar|183/391
+L	ab_20_4	107	|move|p1a: Tyranitar|Earthquake|p2a: Flygon
+L	ab_20_4	108	|-immune|p2a: Flygon
+L	ab_20_4	109	|
+L	ab_20_4	110	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	111	|-heal|p1a: Tyranitar|207/391|[from] item: Leftovers
+L	ab_20_4	112	|upkeep
+L	ab_20_4	113	|turn|9
+L	ab_20_4	114	|
+L	ab_20_4	115	|t:|<NORMALIZED>
+L	ab_20_4	116	|move|p2a: Flygon|Hidden Power|p1a: Tyranitar
+L	ab_20_4	117	|-supereffective|p1a: Tyranitar
+L	ab_20_4	118	|-damage|p1a: Tyranitar|24/391
+L	ab_20_4	119	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_20_4	120	|-boost|p1a: Tyranitar|atk|1
+L	ab_20_4	121	|-boost|p1a: Tyranitar|spe|1
+L	ab_20_4	122	|
+L	ab_20_4	123	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	124	|-heal|p1a: Tyranitar|48/391|[from] item: Leftovers
+L	ab_20_4	125	|upkeep
+L	ab_20_4	126	|turn|10
+L	ab_20_4	127	|
+L	ab_20_4	128	|t:|<NORMALIZED>
+L	ab_20_4	129	|switch|p2a: Blissey|Blissey, F|652/652
+L	ab_20_4	130	|move|p1a: Tyranitar|Rock Slide|p2a: Blissey
+L	ab_20_4	131	|-damage|p2a: Blissey|239/652
+L	ab_20_4	132	|
+L	ab_20_4	133	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	134	|-damage|p2a: Blissey|199/652|[from] Sandstorm
+L	ab_20_4	135	|-heal|p1a: Tyranitar|72/391|[from] item: Leftovers
+L	ab_20_4	136	|-heal|p2a: Blissey|239/652|[from] item: Leftovers
+L	ab_20_4	137	|upkeep
+L	ab_20_4	138	|turn|11
+L	ab_20_4	139	|
+L	ab_20_4	140	|t:|<NORMALIZED>
+L	ab_20_4	141	|move|p1a: Tyranitar|Earthquake|p2a: Blissey
+L	ab_20_4	142	|-damage|p2a: Blissey|0 fnt
+L	ab_20_4	143	|faint|p2a: Blissey
+L	ab_20_4	144	|
+L	ab_20_4	145	|t:|<NORMALIZED>
+L	ab_20_4	146	|switch|p2a: Forretress|Forretress, M|354/354
+L	ab_20_4	147	|
+L	ab_20_4	148	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	149	|-heal|p1a: Tyranitar|96/391|[from] item: Leftovers
+L	ab_20_4	150	|upkeep
+L	ab_20_4	151	|turn|12
+L	ab_20_4	152	|
+L	ab_20_4	153	|t:|<NORMALIZED>
+L	ab_20_4	154	|switch|p2a: Flygon|Flygon, M|301/301
+L	ab_20_4	155	|move|p1a: Tyranitar|Rock Slide|p2a: Flygon
+L	ab_20_4	156	|-resisted|p2a: Flygon
+L	ab_20_4	157	|-damage|p2a: Flygon|185/301
+L	ab_20_4	158	|
+L	ab_20_4	159	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	160	|-heal|p1a: Tyranitar|120/391|[from] item: Leftovers
+L	ab_20_4	161	|upkeep
+L	ab_20_4	162	|turn|13
+L	ab_20_4	163	|
+L	ab_20_4	164	|t:|<NORMALIZED>
+L	ab_20_4	165	|switch|p2a: Tyranitar|Tyranitar, M|274/387
+L	ab_20_4	166	|move|p1a: Tyranitar|Double-Edge|p2a: Tyranitar
+L	ab_20_4	167	|-resisted|p2a: Tyranitar
+L	ab_20_4	168	|-damage|p2a: Tyranitar|170/387
+L	ab_20_4	169	|-damage|p1a: Tyranitar|86/391|[from] Recoil|[of] p2a: Tyranitar
+L	ab_20_4	170	|
+L	ab_20_4	171	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	172	|-heal|p1a: Tyranitar|110/391|[from] item: Leftovers
+L	ab_20_4	173	|-heal|p2a: Tyranitar|194/387|[from] item: Leftovers
+L	ab_20_4	174	|upkeep
+L	ab_20_4	175	|turn|14
+L	ab_20_4	176	|
+L	ab_20_4	177	|t:|<NORMALIZED>
+L	ab_20_4	178	|move|p1a: Tyranitar|Rock Slide|p2a: Tyranitar
+L	ab_20_4	179	|-damage|p2a: Tyranitar|0 fnt
+L	ab_20_4	180	|faint|p2a: Tyranitar
+L	ab_20_4	181	|
+L	ab_20_4	182	|t:|<NORMALIZED>
+L	ab_20_4	183	|switch|p2a: Forretress|Forretress, M|354/354
+L	ab_20_4	184	|
+L	ab_20_4	185	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	186	|-heal|p1a: Tyranitar|134/391|[from] item: Leftovers
+L	ab_20_4	187	|upkeep
+L	ab_20_4	188	|turn|15
+L	ab_20_4	189	|
+L	ab_20_4	190	|t:|<NORMALIZED>
+L	ab_20_4	191	|move|p1a: Tyranitar|Earthquake|p2a: Forretress
+L	ab_20_4	192	|-damage|p2a: Forretress|217/354
+L	ab_20_4	193	|move|p2a: Forretress|Rapid Spin|p1a: Tyranitar
+L	ab_20_4	194	|-resisted|p1a: Tyranitar
+L	ab_20_4	195	|-damage|p1a: Tyranitar|128/391
+L	ab_20_4	196	|
+L	ab_20_4	197	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	198	|-heal|p1a: Tyranitar|152/391|[from] item: Leftovers
+L	ab_20_4	199	|-heal|p2a: Forretress|239/354|[from] item: Leftovers
+L	ab_20_4	200	|upkeep
+L	ab_20_4	201	|turn|16
+L	ab_20_4	202	|
+L	ab_20_4	203	|t:|<NORMALIZED>
+L	ab_20_4	204	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_20_4	205	|-boost|p1a: Tyranitar|atk|1
+L	ab_20_4	206	|-boost|p1a: Tyranitar|spe|1
+L	ab_20_4	207	|move|p2a: Forretress|Zap Cannon|p1a: Tyranitar
+L	ab_20_4	208	|-crit|p1a: Tyranitar
+L	ab_20_4	209	|-damage|p1a: Tyranitar|42/391
+L	ab_20_4	210	|-status|p1a: Tyranitar|par
+L	ab_20_4	211	|
+L	ab_20_4	212	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	213	|-heal|p2a: Forretress|261/354|[from] item: Leftovers
+L	ab_20_4	214	|-heal|p1a: Tyranitar|66/391 par|[from] item: Leftovers
+L	ab_20_4	215	|upkeep
+L	ab_20_4	216	|turn|17
+L	ab_20_4	217	|
+L	ab_20_4	218	|t:|<NORMALIZED>
+L	ab_20_4	219	|move|p2a: Forretress|Rapid Spin|p1a: Tyranitar
+L	ab_20_4	220	|-resisted|p1a: Tyranitar
+L	ab_20_4	221	|-damage|p1a: Tyranitar|60/391 par
+L	ab_20_4	222	|move|p1a: Tyranitar|Earthquake|p2a: Forretress
+L	ab_20_4	223	|-damage|p2a: Forretress|62/354
+L	ab_20_4	224	|
+L	ab_20_4	225	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	226	|-heal|p2a: Forretress|84/354|[from] item: Leftovers
+L	ab_20_4	227	|-heal|p1a: Tyranitar|84/391 par|[from] item: Leftovers
+L	ab_20_4	228	|upkeep
+L	ab_20_4	229	|turn|18
+L	ab_20_4	230	|
+L	ab_20_4	231	|t:|<NORMALIZED>
+L	ab_20_4	232	|switch|p1a: Claydol|Claydol|324/324
+L	ab_20_4	233	|move|p2a: Forretress|Zap Cannon|p1a: Claydol
+L	ab_20_4	234	|-immune|p1a: Claydol
+L	ab_20_4	235	|
+L	ab_20_4	236	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	237	|-heal|p2a: Forretress|106/354|[from] item: Leftovers
+L	ab_20_4	238	|upkeep
+L	ab_20_4	239	|turn|19
+L	ab_20_4	240	|
+L	ab_20_4	241	|t:|<NORMALIZED>
+L	ab_20_4	242	|move|p1a: Claydol|Psychic|p2a: Forretress
+L	ab_20_4	243	|-resisted|p2a: Forretress
+L	ab_20_4	244	|-crit|p2a: Forretress
+L	ab_20_4	245	|-damage|p2a: Forretress|22/354
+L	ab_20_4	246	|move|p2a: Forretress|Spikes|p1a: Claydol
+L	ab_20_4	247	|-sidestart|p1: P1|Spikes
+L	ab_20_4	248	|
+L	ab_20_4	249	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	250	|-heal|p2a: Forretress|44/354|[from] item: Leftovers
+L	ab_20_4	251	|upkeep
+L	ab_20_4	252	|turn|20
+L	ab_20_4	253	|
+L	ab_20_4	254	|t:|<NORMALIZED>
+L	ab_20_4	255	|move|p1a: Claydol|Explosion|p2a: Forretress
+L	ab_20_4	256	|-resisted|p2a: Forretress
+L	ab_20_4	257	|-damage|p2a: Forretress|0 fnt
+L	ab_20_4	258	|faint|p1a: Claydol
+L	ab_20_4	259	|faint|p2a: Forretress
+L	ab_20_4	260	|
+L	ab_20_4	261	|t:|<NORMALIZED>
+L	ab_20_4	262	|switch|p1a: Salamence|Salamence, M|330/330
+L	ab_20_4	263	|switch|p2a: Flygon|Flygon, M|185/301
+L	ab_20_4	264	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_20_4	265	|-unboost|p2a: Flygon|atk|1
+L	ab_20_4	266	|
+L	ab_20_4	267	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	268	|-damage|p1a: Salamence|310/330|[from] Sandstorm
+L	ab_20_4	269	|-heal|p1a: Salamence|330/330|[from] item: Leftovers
+L	ab_20_4	270	|upkeep
+L	ab_20_4	271	|turn|21
+L	ab_20_4	272	|
+L	ab_20_4	273	|t:|<NORMALIZED>
+L	ab_20_4	274	|switch|p1a: Suicune|Suicune|403/403
+L	ab_20_4	275	|-damage|p1a: Suicune|353/403|[from] Spikes
+L	ab_20_4	276	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_20_4	277	|move|p2a: Flygon|Rock Slide|p1a: Suicune
+L	ab_20_4	278	|-damage|p1a: Suicune|284/403
+L	ab_20_4	279	|
+L	ab_20_4	280	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	281	|-damage|p1a: Suicune|259/403|[from] Sandstorm
+L	ab_20_4	282	|-heal|p1a: Suicune|284/403|[from] item: Leftovers
+L	ab_20_4	283	|upkeep
+L	ab_20_4	284	|turn|22
+L	ab_20_4	285	|
+L	ab_20_4	286	|t:|<NORMALIZED>
+L	ab_20_4	287	|switch|p1a: Celebi|Celebi|341/341
+L	ab_20_4	288	|-damage|p1a: Celebi|299/341|[from] Spikes
+L	ab_20_4	289	|move|p2a: Flygon|Rock Slide|p1a: Celebi
+L	ab_20_4	290	|-damage|p1a: Celebi|219/341
+L	ab_20_4	291	|
+L	ab_20_4	292	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	293	|-damage|p1a: Celebi|198/341|[from] Sandstorm
+L	ab_20_4	294	|-heal|p1a: Celebi|219/341|[from] item: Leftovers
+L	ab_20_4	295	|upkeep
+L	ab_20_4	296	|turn|23
+L	ab_20_4	297	|
+L	ab_20_4	298	|t:|<NORMALIZED>
+L	ab_20_4	299	|switch|p2a: Gengar|Gengar, M|323/323
+L	ab_20_4	300	|move|p1a: Celebi|Calm Mind|p1a: Celebi
+L	ab_20_4	301	|-boost|p1a: Celebi|spa|1
+L	ab_20_4	302	|-boost|p1a: Celebi|spd|1
+L	ab_20_4	303	|
+L	ab_20_4	304	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	305	|-damage|p2a: Gengar|303/323|[from] Sandstorm
+L	ab_20_4	306	|-damage|p1a: Celebi|198/341|[from] Sandstorm
+L	ab_20_4	307	|-heal|p2a: Gengar|323/323|[from] item: Leftovers
+L	ab_20_4	308	|-heal|p1a: Celebi|219/341|[from] item: Leftovers
+L	ab_20_4	309	|upkeep
+L	ab_20_4	310	|turn|24
+L	ab_20_4	311	|
+L	ab_20_4	312	|t:|<NORMALIZED>
+L	ab_20_4	313	|switch|p1a: Tyranitar|Tyranitar, M|84/391 par
+L	ab_20_4	314	|-damage|p1a: Tyranitar|36/391 par|[from] Spikes
+L	ab_20_4	315	|move|p2a: Gengar|Thunderbolt|p1a: Tyranitar
+L	ab_20_4	316	|-crit|p1a: Tyranitar
+L	ab_20_4	317	|-damage|p1a: Tyranitar|0 fnt
+L	ab_20_4	318	|faint|p1a: Tyranitar
+L	ab_20_4	319	|
+L	ab_20_4	320	|t:|<NORMALIZED>
+L	ab_20_4	321	|switch|p1a: Celebi|Celebi|219/341
+L	ab_20_4	322	|-damage|p1a: Celebi|177/341|[from] Spikes
+L	ab_20_4	323	|
+L	ab_20_4	324	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	325	|-damage|p2a: Gengar|303/323|[from] Sandstorm
+L	ab_20_4	326	|-damage|p1a: Celebi|156/341|[from] Sandstorm
+L	ab_20_4	327	|-heal|p2a: Gengar|323/323|[from] item: Leftovers
+L	ab_20_4	328	|-heal|p1a: Celebi|177/341|[from] item: Leftovers
+L	ab_20_4	329	|upkeep
+L	ab_20_4	330	|turn|25
+L	ab_20_4	331	|
+L	ab_20_4	332	|t:|<NORMALIZED>
+L	ab_20_4	333	|move|p2a: Gengar|Explosion|p1a: Celebi
+L	ab_20_4	334	|-damage|p1a: Celebi|0 fnt
+L	ab_20_4	335	|faint|p2a: Gengar
+L	ab_20_4	336	|faint|p1a: Celebi
+L	ab_20_4	337	|
+L	ab_20_4	338	|t:|<NORMALIZED>
+L	ab_20_4	339	|switch|p2a: Swampert|Swampert, M|341/341
+L	ab_20_4	340	|switch|p1a: Suicune|Suicune|284/403
+L	ab_20_4	341	|-damage|p1a: Suicune|234/403|[from] Spikes
+L	ab_20_4	342	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_20_4	343	|
+L	ab_20_4	344	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	345	|-damage|p1a: Suicune|209/403|[from] Sandstorm
+L	ab_20_4	346	|-heal|p1a: Suicune|234/403|[from] item: Leftovers
+L	ab_20_4	347	|upkeep
+L	ab_20_4	348	|turn|26
+L	ab_20_4	349	|
+L	ab_20_4	350	|t:|<NORMALIZED>
+L	ab_20_4	351	|-singleturn|p2a: Swampert|move: Focus Punch
+L	ab_20_4	352	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_20_4	353	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_20_4	354	|-heal|p1a: Suicune|403/403 slp|[silent]
+L	ab_20_4	355	|move|p2a: Swampert|Focus Punch|p1a: Suicune
+L	ab_20_4	356	|-crit|p1a: Suicune
+L	ab_20_4	357	|-damage|p1a: Suicune|189/403 slp
+L	ab_20_4	358	|
+L	ab_20_4	359	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	360	|-damage|p1a: Suicune|164/403 slp|[from] Sandstorm
+L	ab_20_4	361	|-heal|p1a: Suicune|189/403 slp|[from] item: Leftovers
+L	ab_20_4	362	|upkeep
+L	ab_20_4	363	|turn|27
+L	ab_20_4	364	|
+L	ab_20_4	365	|t:|<NORMALIZED>
+L	ab_20_4	366	|switch|p2a: Flygon|Flygon, M|185/301
+L	ab_20_4	367	|cant|p1a: Suicune|slp
+L	ab_20_4	368	|
+L	ab_20_4	369	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	370	|-damage|p1a: Suicune|164/403 slp|[from] Sandstorm
+L	ab_20_4	371	|-heal|p1a: Suicune|189/403 slp|[from] item: Leftovers
+L	ab_20_4	372	|upkeep
+L	ab_20_4	373	|turn|28
+L	ab_20_4	374	|
+L	ab_20_4	375	|t:|<NORMALIZED>
+L	ab_20_4	376	|move|p2a: Flygon|Hidden Power|p1a: Suicune
+L	ab_20_4	377	|-damage|p1a: Suicune|89/403 slp
+L	ab_20_4	378	|cant|p1a: Suicune|slp
+L	ab_20_4	379	|
+L	ab_20_4	380	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	381	|-damage|p1a: Suicune|64/403 slp|[from] Sandstorm
+L	ab_20_4	382	|-heal|p1a: Suicune|89/403 slp|[from] item: Leftovers
+L	ab_20_4	383	|upkeep
+L	ab_20_4	384	|turn|29
+L	ab_20_4	385	|
+L	ab_20_4	386	|t:|<NORMALIZED>
+L	ab_20_4	387	|move|p2a: Flygon|Hidden Power|p1a: Suicune
+L	ab_20_4	388	|-damage|p1a: Suicune|0 fnt
+L	ab_20_4	389	|faint|p1a: Suicune
+L	ab_20_4	390	|
+L	ab_20_4	391	|t:|<NORMALIZED>
+L	ab_20_4	392	|switch|p1a: Salamence|Salamence, M|330/330
+L	ab_20_4	393	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_20_4	394	|-unboost|p2a: Flygon|atk|1
+L	ab_20_4	395	|
+L	ab_20_4	396	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	397	|-damage|p1a: Salamence|310/330|[from] Sandstorm
+L	ab_20_4	398	|-heal|p1a: Salamence|330/330|[from] item: Leftovers
+L	ab_20_4	399	|upkeep
+L	ab_20_4	400	|turn|30
+L	ab_20_4	401	|
+L	ab_20_4	402	|t:|<NORMALIZED>
+L	ab_20_4	403	|switch|p2a: Swampert|Swampert, M|341/341
+L	ab_20_4	404	|move|p1a: Salamence|Dragon Dance|p1a: Salamence
+L	ab_20_4	405	|-boost|p1a: Salamence|atk|1
+L	ab_20_4	406	|-boost|p1a: Salamence|spe|1
+L	ab_20_4	407	|
+L	ab_20_4	408	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	409	|-damage|p1a: Salamence|310/330|[from] Sandstorm
+L	ab_20_4	410	|-heal|p1a: Salamence|330/330|[from] item: Leftovers
+L	ab_20_4	411	|upkeep
+L	ab_20_4	412	|turn|31
+L	ab_20_4	413	|
+L	ab_20_4	414	|t:|<NORMALIZED>
+L	ab_20_4	415	|switch|p2a: Flygon|Flygon, M|185/301
+L	ab_20_4	416	|move|p1a: Salamence|Brick Break|p2a: Flygon
+L	ab_20_4	417	|-damage|p2a: Flygon|0 fnt
+L	ab_20_4	418	|faint|p2a: Flygon
+L	ab_20_4	419	|
+L	ab_20_4	420	|t:|<NORMALIZED>
+L	ab_20_4	421	|switch|p2a: Swampert|Swampert, M|341/341
+L	ab_20_4	422	|
+L	ab_20_4	423	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	424	|-damage|p1a: Salamence|310/330|[from] Sandstorm
+L	ab_20_4	425	|-heal|p1a: Salamence|330/330|[from] item: Leftovers
+L	ab_20_4	426	|upkeep
+L	ab_20_4	427	|turn|32
+L	ab_20_4	428	|
+L	ab_20_4	429	|t:|<NORMALIZED>
+L	ab_20_4	430	|move|p1a: Salamence|Dragon Dance|p1a: Salamence
+L	ab_20_4	431	|-boost|p1a: Salamence|atk|1
+L	ab_20_4	432	|-boost|p1a: Salamence|spe|1
+L	ab_20_4	433	|move|p2a: Swampert|Hydro Pump|p1a: Salamence|[miss]
+L	ab_20_4	434	|-miss|p2a: Swampert|p1a: Salamence
+L	ab_20_4	435	|
+L	ab_20_4	436	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	437	|-damage|p1a: Salamence|310/330|[from] Sandstorm
+L	ab_20_4	438	|-heal|p1a: Salamence|330/330|[from] item: Leftovers
+L	ab_20_4	439	|upkeep
+L	ab_20_4	440	|turn|33
+L	ab_20_4	441	|
+L	ab_20_4	442	|t:|<NORMALIZED>
+L	ab_20_4	443	|move|p1a: Salamence|Fire Blast|p2a: Swampert
+L	ab_20_4	444	|-resisted|p2a: Swampert
+L	ab_20_4	445	|-damage|p2a: Swampert|281/341
+L	ab_20_4	446	|move|p2a: Swampert|Hydro Pump|p1a: Salamence
+L	ab_20_4	447	|-resisted|p1a: Salamence
+L	ab_20_4	448	|-damage|p1a: Salamence|224/330
+L	ab_20_4	449	|
+L	ab_20_4	450	|-weather|Sandstorm|[upkeep]
+L	ab_20_4	451	|-damage|p1a: Salamence|204/330|[from] Sandstorm
+L	ab_20_4	452	|-heal|p1a: Salamence|224/330|[from] item: Leftovers
+L	ab_20_4	453	|-heal|p2a: Swampert|302/341|[from] item: Leftovers
+L	ab_20_4	454	|upkeep
+L	ab_20_4	455	|turn|34
+L	ab_20_4	456	|
+L	ab_20_4	457	|t:|<NORMALIZED>
+L	ab_20_4	458	|-singleturn|p2a: Swampert|move: Focus Punch
+L	ab_20_4	459	|move|p1a: Salamence|Hidden Power|p2a: Swampert
+L	ab_20_4	460	|-crit|p2a: Swampert
+L	ab_20_4	461	|-damage|p2a: Swampert|0 fnt
+L	ab_20_4	462	|faint|p2a: Swampert
+L	ab_20_4	463	|
+L	ab_20_4	464	|win|P1

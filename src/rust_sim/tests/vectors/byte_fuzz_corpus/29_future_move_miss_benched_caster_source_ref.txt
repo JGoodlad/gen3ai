@@ -1,0 +1,490 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=pool master_seed=14140718 run_id=rmrr03rmc chunk=1133
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_1133_8
+TEAM	ab_1133_8	p1	Jirachi||ChoiceBand|SereneGrace|BodySlam,FirePunch,DoomDesire,HiddenPowerFighting|Lonely|,252,,52,,204|N|,,30,30,30,30|||,Fighting,,,,]Celebi||Leftovers|NaturalCure|CalmMind,Psychic,HiddenPowerFire,GigaDrain|Modest|,,,252,4,252|N|,2,,30,,30|||,Fire,,,,]Tyranitar||Leftovers|SandStream|DragonDance,RockSlide,Earthquake,DoubleEdge|Adamant|200,140,,,,168|M||||]Suicune||Leftovers|Pressure|Surf,CalmMind,Rest,SleepTalk|Modest|248,,,232,,28|N|,0,,,,|||]Claydol||Leftovers|Levitate|Earthquake,Explosion,RapidSpin,Psychic|Relaxed|252,212,16,,28,|N||||]Salamence||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,FireBlast,BrickBreak|Lonely|,252,,56,,200|M|30,30,30,30,30,|||,Flying,,,,
+TEAM	ab_1133_8	p2	Zapdos||Leftovers|Pressure|Thunderbolt,HiddenPowerIce,Roar,ThunderWave|Timid|4,,,252,,252|N|,2,30,,,|||,Ice,,,,]Suicune||Leftovers|Pressure|CalmMind,HydroPump,IceBeam,Roar|Modest|4,,,252,,252|N|,0,,,,|||]Tyranitar||Leftovers|SandStream|FireBlast,Pursuit,HiddenPowerGrass,FocusPunch|Quiet|184,12,,224,,88|M|,30,,30,,|||,Grass,,,,]Metagross||Leftovers|ClearBody|MeteorMash,Earthquake,Agility,Explosion|Adamant|192,228,,,,88|N||||]Gyarados||Leftovers|Intimidate|DragonDance,HiddenPowerFlying,Earthquake,Taunt|Adamant|48,252,,,,208|M|,,,30,30,30|||,Flying,,,,]Snorlax||Leftovers|Immunity|BodySlam,FocusPunch,ShadowBall,SelfDestruct|Adamant|16,176,120,,160,36|M||||
+FMT	ab_1133_8	gen3ou
+INIT	ab_1133_8	1371,1342,26679,59846	2058647723
+DEC	ab_1133_8	0	move	0	0	m0	m2	932,13826,45309,15017	Tyranitar	391	391	0	-	0	0	0	0	0	0	6	Zapdos	172	322	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1133_8	1	move	0	0	m3	m1	11720,57775,21693,32674	Tyranitar	334	391	0	-	0	0	0	0	0	0	6	Zapdos	0	322	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1133_8	2	switch	0	1	-	s1	49491,29302,44453,43949	Tyranitar	358	391	0	-	0	0	0	0	0	0	6	Suicune	342	342	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_1133_8	3	move	0	0	m1	s2	17842,13669,41437,18520	Tyranitar	382	391	0	-	0	0	0	0	0	0	6	Tyranitar	282	387	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_1133_8	4	move	0	0	m1	m2	60457,48393,38705,14687	Tyranitar	391	391	0	-	0	0	0	0	0	0	6	Tyranitar	167	387	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1133_8	5	move	0	0	m1	m0	50691,44472,12256,39014	Tyranitar	358	391	0	-	0	0	0	0	0	0	6	Tyranitar	66	387	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1133_8	6	move	0	0	m0	m0	61460,48377,36351,53308	Tyranitar	272	391	0	brn	1	0	0	0	1	0	6	Tyranitar	90	387	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1133_8	7	move	0	0	m1	m2	24352,65200,62102,17936	Tyranitar	272	391	0	brn	1	0	0	0	1	0	6	Tyranitar	0	387	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1133_8	8	switch	0	1	-	s3	83,35228,52062,54035	Tyranitar	248	391	0	brn	1	0	0	0	1	0	6	Metagross	349	349	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1133_8	9	move	0	0	m1	m3	51772,23037,23120,41335	Tyranitar	0	391	1	fnt	0	0	0	0	0	0	5	Metagross	0	349	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_1133_8	10	switch	1	1	s2	s5	37730,58255,26272,438	Jirachi	341	341	0	-	0	0	0	0	0	0	5	Snorlax	465	465	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_1133_8	11	move	0	0	m2	s2	42682,19745,62561,17912	Jirachi	341	341	0	-	0	0	0	0	0	0	5	Suicune	342	342	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_1133_8	12	move	0	0	m2	m1	23488,27709,43818,14348	Jirachi	164	341	0	-	0	0	0	0	0	0	5	Suicune	342	342	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_1133_8	13	move	0	0	s3	m1	22426,36008,53300,26403	Suicune	324	403	0	-	0	0	0	0	0	0	5	Suicune	342	342	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_1133_8	14	move	0	0	m1	m3	48435,22692,16774,42100	Claydol	324	324	0	-	0	0	0	0	0	0	5	Suicune	342	342	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_1133_8	15	move	0	0	m0	m0	64944,47758,23747,1736	Claydol	324	324	0	-	0	0	0	0	0	0	5	Suicune	233	342	0	-	0	0	1	1	0	0	3	p2	0	0	0	0	0
+DEC	ab_1133_8	16	move	0	0	s3	m2	9058,40681,49534,2191	Jirachi	97	341	0	-	0	0	0	0	0	0	5	Suicune	233	342	0	-	0	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_1133_8	17	move	0	0	s4	m2	53546,31893,6945,53474	Suicune	255	403	0	-	0	0	0	0	0	0	5	Suicune	233	342	0	-	0	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_1133_8	18	move	0	0	m3	m3	3392,47444,6482,41879	Jirachi	97	341	0	-	0	0	0	0	0	0	5	Suicune	233	342	0	-	0	0	1	1	0	0	3	p1	0	0	0	1	0
+DEC	ab_1133_8	19	move	0	0	m1	m2	58692,38140,1841,16249	Jirachi	31	341	0	frz	0	0	0	0	0	0	5	Suicune	215	342	0	-	0	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_1133_8	20	move	0	0	m1	m2	742,57152,2318,25620	Jirachi	0	341	1	fnt	0	0	0	0	0	0	4	Suicune	215	342	0	-	0	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_1133_8	21	switch	1	0	s4	-	57094,669,29422,52903	Suicune	255	403	0	-	0	0	0	0	0	0	4	Suicune	215	342	0	-	0	0	1	1	0	0	3	none	0	0	0	0	0
+DEC	ab_1133_8	22	move	0	0	s5	m3	8222,2965,36631,3176	Suicune	255	403	0	-	0	0	0	0	0	0	4	Suicune	215	342	0	-	-1	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_1133_8	23	move	0	0	m3	s2	11542,39802,186,11211	Suicune	255	403	0	-	0	0	0	0	0	0	4	Snorlax	465	465	0	-	0	0	0	0	0	0	3	p2	0	0	0	1	0
+DEC	ab_1133_8	24	move	0	0	m1	m3	4008,40702,47637,63356	Suicune	0	403	1	fnt	0	0	0	0	0	0	3	Snorlax	0	465	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_1133_8	25	switch	1	1	s1	s2	45248,24323,16550,40623	Celebi	341	341	0	-	0	0	0	0	0	0	3	Suicune	215	342	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_1133_8	26	move	0	0	m1	m2	32470,13111,25865,5559	Celebi	0	341	1	fnt	0	0	0	0	0	0	2	Suicune	84	342	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_1133_8	27	switch	1	0	s3	-	11862,24712,34140,7926	Claydol	324	324	0	-	0	0	0	0	0	0	2	Suicune	84	342	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_1133_8	28	move	0	0	m1	m2	12892,14518,64500,21439	Claydol	0	324	1	fnt	0	0	0	0	0	0	1	Suicune	0	342	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_1133_8	29	switch	1	1	s5	s4	13710,869,1685,57374	Salamence	330	330	0	-	-1	0	0	0	0	0	1	Gyarados	343	343	0	-	-1	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_1133_8	30	move	0	0	m2	m1	57211,12536,59347,50246	Salamence	219	330	0	-	-1	0	0	0	0	0	1	Gyarados	293	343	0	-	-1	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_1133_8	31	move	0	0	m1	m3	27856,53957,11444,35301	Salamence	219	330	0	-	-1	0	0	0	0	0	1	Gyarados	186	343	0	-	-1	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_1133_8	32	move	0	0	m3	m0	56162,12489,40576,57129	Salamence	219	330	0	-	-1	0	0	0	0	0	1	Gyarados	144	343	0	-	0	0	0	0	1	0	1	p1	0	0	0	0	0
+DEC	ab_1133_8	33	move	0	0	m3	m2	33886,16144,22336,60804	Salamence	219	330	0	-	-1	0	0	0	0	0	1	Gyarados	104	343	0	-	0	0	0	0	1	0	1	p2	0	0	0	0	0
+DEC	ab_1133_8	34	move	0	0	m1	m2	51804,35151,29425,24280	Salamence	219	330	0	-	-1	0	0	0	0	0	1	Gyarados	0	343	1	-	0	0	0	0	0	0	0	p2	0	0	0	0	0
+END	ab_1133_8	1	p1
+L	ab_1133_8	0	|t:|<NORMALIZED>
+L	ab_1133_8	1	|gametype|singles
+L	ab_1133_8	2	|player|p1|P1||
+L	ab_1133_8	3	|player|p2|P2||
+L	ab_1133_8	4	|gen|3
+L	ab_1133_8	5	|tier|[Gen 3] OU
+L	ab_1133_8	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_1133_8	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_1133_8	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_1133_8	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_1133_8	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_1133_8	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_1133_8	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_1133_8	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_1133_8	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_1133_8	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_1133_8	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_1133_8	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_1133_8	18	|
+L	ab_1133_8	19	|t:|<NORMALIZED>
+L	ab_1133_8	20	|teamsize|p1|6
+L	ab_1133_8	21	|teamsize|p2|6
+L	ab_1133_8	22	|start
+L	ab_1133_8	23	|switch|p1a: Jirachi|Jirachi|341/341
+L	ab_1133_8	24	|switch|p2a: Zapdos|Zapdos|322/322
+L	ab_1133_8	25	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_1133_8	26	|turn|1
+L	ab_1133_8	27	|
+L	ab_1133_8	28	|t:|<NORMALIZED>
+L	ab_1133_8	29	|move|p1a: Jirachi|Body Slam|p2a: Zapdos
+L	ab_1133_8	30	|-damage|p2a: Zapdos|172/322
+L	ab_1133_8	31	|-status|p2a: Zapdos|par
+L	ab_1133_8	32	|move|p2a: Zapdos|Roar|p1a: Jirachi
+L	ab_1133_8	33	|drag|p1a: Tyranitar|Tyranitar, M|391/391
+L	ab_1133_8	34	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_1133_8	35	|
+L	ab_1133_8	36	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	37	|-damage|p2a: Zapdos|152/322 par|[from] Sandstorm
+L	ab_1133_8	38	|-heal|p2a: Zapdos|172/322 par|[from] item: Leftovers
+L	ab_1133_8	39	|upkeep
+L	ab_1133_8	40	|turn|2
+L	ab_1133_8	41	|
+L	ab_1133_8	42	|t:|<NORMALIZED>
+L	ab_1133_8	43	|move|p1a: Tyranitar|Double-Edge|p2a: Zapdos
+L	ab_1133_8	44	|-damage|p2a: Zapdos|0 fnt
+L	ab_1133_8	45	|-damage|p1a: Tyranitar|334/391|[from] Recoil|[of] p2a: Zapdos
+L	ab_1133_8	46	|faint|p2a: Zapdos
+L	ab_1133_8	47	|
+L	ab_1133_8	48	|t:|<NORMALIZED>
+L	ab_1133_8	49	|switch|p2a: Suicune|Suicune|342/342
+L	ab_1133_8	50	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_1133_8	51	|
+L	ab_1133_8	52	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	53	|-damage|p2a: Suicune|321/342|[from] Sandstorm
+L	ab_1133_8	54	|-heal|p2a: Suicune|342/342|[from] item: Leftovers
+L	ab_1133_8	55	|-heal|p1a: Tyranitar|358/391|[from] item: Leftovers
+L	ab_1133_8	56	|upkeep
+L	ab_1133_8	57	|turn|3
+L	ab_1133_8	58	|
+L	ab_1133_8	59	|t:|<NORMALIZED>
+L	ab_1133_8	60	|switch|p2a: Tyranitar|Tyranitar, M|387/387
+L	ab_1133_8	61	|move|p1a: Tyranitar|Rock Slide|p2a: Tyranitar
+L	ab_1133_8	62	|-damage|p2a: Tyranitar|258/387
+L	ab_1133_8	63	|
+L	ab_1133_8	64	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	65	|-heal|p1a: Tyranitar|382/391|[from] item: Leftovers
+L	ab_1133_8	66	|-heal|p2a: Tyranitar|282/387|[from] item: Leftovers
+L	ab_1133_8	67	|upkeep
+L	ab_1133_8	68	|turn|4
+L	ab_1133_8	69	|
+L	ab_1133_8	70	|t:|<NORMALIZED>
+L	ab_1133_8	71	|move|p1a: Tyranitar|Rock Slide|p2a: Tyranitar
+L	ab_1133_8	72	|-damage|p2a: Tyranitar|143/387
+L	ab_1133_8	73	|cant|p2a: Tyranitar|flinch
+L	ab_1133_8	74	|
+L	ab_1133_8	75	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	76	|-heal|p1a: Tyranitar|391/391|[from] item: Leftovers
+L	ab_1133_8	77	|-heal|p2a: Tyranitar|167/387|[from] item: Leftovers
+L	ab_1133_8	78	|upkeep
+L	ab_1133_8	79	|turn|5
+L	ab_1133_8	80	|
+L	ab_1133_8	81	|t:|<NORMALIZED>
+L	ab_1133_8	82	|move|p1a: Tyranitar|Rock Slide|p2a: Tyranitar
+L	ab_1133_8	83	|-damage|p2a: Tyranitar|42/387
+L	ab_1133_8	84	|move|p2a: Tyranitar|Fire Blast|p1a: Tyranitar
+L	ab_1133_8	85	|-resisted|p1a: Tyranitar
+L	ab_1133_8	86	|-damage|p1a: Tyranitar|334/391
+L	ab_1133_8	87	|
+L	ab_1133_8	88	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	89	|-heal|p1a: Tyranitar|358/391|[from] item: Leftovers
+L	ab_1133_8	90	|-heal|p2a: Tyranitar|66/387|[from] item: Leftovers
+L	ab_1133_8	91	|upkeep
+L	ab_1133_8	92	|turn|6
+L	ab_1133_8	93	|
+L	ab_1133_8	94	|t:|<NORMALIZED>
+L	ab_1133_8	95	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_1133_8	96	|-boost|p1a: Tyranitar|atk|1
+L	ab_1133_8	97	|-boost|p1a: Tyranitar|spe|1
+L	ab_1133_8	98	|move|p2a: Tyranitar|Fire Blast|p1a: Tyranitar
+L	ab_1133_8	99	|-resisted|p1a: Tyranitar
+L	ab_1133_8	100	|-damage|p1a: Tyranitar|296/391
+L	ab_1133_8	101	|-status|p1a: Tyranitar|brn
+L	ab_1133_8	102	|
+L	ab_1133_8	103	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	104	|-heal|p1a: Tyranitar|320/391 brn|[from] item: Leftovers
+L	ab_1133_8	105	|-damage|p1a: Tyranitar|272/391 brn|[from] brn
+L	ab_1133_8	106	|-heal|p2a: Tyranitar|90/387|[from] item: Leftovers
+L	ab_1133_8	107	|upkeep
+L	ab_1133_8	108	|turn|7
+L	ab_1133_8	109	|
+L	ab_1133_8	110	|t:|<NORMALIZED>
+L	ab_1133_8	111	|move|p1a: Tyranitar|Rock Slide|p2a: Tyranitar
+L	ab_1133_8	112	|-damage|p2a: Tyranitar|0 fnt
+L	ab_1133_8	113	|faint|p2a: Tyranitar
+L	ab_1133_8	114	|
+L	ab_1133_8	115	|t:|<NORMALIZED>
+L	ab_1133_8	116	|switch|p2a: Metagross|Metagross|349/349
+L	ab_1133_8	117	|
+L	ab_1133_8	118	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	119	|-heal|p1a: Tyranitar|296/391 brn|[from] item: Leftovers
+L	ab_1133_8	120	|-damage|p1a: Tyranitar|248/391 brn|[from] brn
+L	ab_1133_8	121	|upkeep
+L	ab_1133_8	122	|turn|8
+L	ab_1133_8	123	|
+L	ab_1133_8	124	|t:|<NORMALIZED>
+L	ab_1133_8	125	|move|p1a: Tyranitar|Rock Slide|p2a: Metagross|[miss]
+L	ab_1133_8	126	|-miss|p1a: Tyranitar|p2a: Metagross
+L	ab_1133_8	127	|move|p2a: Metagross|Explosion|p1a: Tyranitar
+L	ab_1133_8	128	|-resisted|p1a: Tyranitar
+L	ab_1133_8	129	|-crit|p1a: Tyranitar
+L	ab_1133_8	130	|-damage|p1a: Tyranitar|0 fnt
+L	ab_1133_8	131	|faint|p2a: Metagross
+L	ab_1133_8	132	|faint|p1a: Tyranitar
+L	ab_1133_8	133	|
+L	ab_1133_8	134	|t:|<NORMALIZED>
+L	ab_1133_8	135	|switch|p1a: Jirachi|Jirachi|341/341
+L	ab_1133_8	136	|switch|p2a: Snorlax|Snorlax, M|465/465
+L	ab_1133_8	137	|
+L	ab_1133_8	138	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	139	|-damage|p2a: Snorlax|436/465|[from] Sandstorm
+L	ab_1133_8	140	|-heal|p2a: Snorlax|465/465|[from] item: Leftovers
+L	ab_1133_8	141	|upkeep
+L	ab_1133_8	142	|turn|9
+L	ab_1133_8	143	|
+L	ab_1133_8	144	|t:|<NORMALIZED>
+L	ab_1133_8	145	|switch|p2a: Suicune|Suicune|342/342
+L	ab_1133_8	146	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_1133_8	147	|move|p1a: Jirachi|Doom Desire|p2a: Suicune
+L	ab_1133_8	148	|-start|p1a: Jirachi|Doom Desire
+L	ab_1133_8	149	|
+L	ab_1133_8	150	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	151	|-damage|p2a: Suicune|321/342|[from] Sandstorm
+L	ab_1133_8	152	|-heal|p2a: Suicune|342/342|[from] item: Leftovers
+L	ab_1133_8	153	|upkeep
+L	ab_1133_8	154	|turn|10
+L	ab_1133_8	155	|
+L	ab_1133_8	156	|t:|<NORMALIZED>
+L	ab_1133_8	157	|move|p1a: Jirachi|Doom Desire|p2a: Suicune
+L	ab_1133_8	158	|move|p2a: Suicune|Hydro Pump|p1a: Jirachi
+L	ab_1133_8	159	|-damage|p1a: Jirachi|164/341
+L	ab_1133_8	160	|
+L	ab_1133_8	161	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	162	|-damage|p2a: Suicune|321/342|[from] Sandstorm
+L	ab_1133_8	163	|-heal|p2a: Suicune|342/342|[from] item: Leftovers
+L	ab_1133_8	164	|upkeep
+L	ab_1133_8	165	|turn|11
+L	ab_1133_8	166	|
+L	ab_1133_8	167	|t:|<NORMALIZED>
+L	ab_1133_8	168	|switch|p1a: Suicune|Suicune|403/403
+L	ab_1133_8	169	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_1133_8	170	|move|p2a: Suicune|Hydro Pump|p1a: Suicune|[miss]
+L	ab_1133_8	171	|-resisted|p1a: Suicune
+L	ab_1133_8	172	|-damage|p1a: Suicune|324/403
+L	ab_1133_8	173	|
+L	ab_1133_8	174	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	175	|-damage|p2a: Suicune|321/342|[from] Sandstorm
+L	ab_1133_8	176	|-damage|p1a: Suicune|299/403|[from] Sandstorm
+L	ab_1133_8	177	|-heal|p2a: Suicune|342/342|[from] item: Leftovers
+L	ab_1133_8	178	|-heal|p1a: Suicune|324/403|[from] item: Leftovers
+L	ab_1133_8	179	|-end|p2a: Suicune|move: Doom Desire
+L	ab_1133_8	180	|-miss|p1: Jirachi|p2a: Suicune
+L	ab_1133_8	181	|upkeep
+L	ab_1133_8	182	|turn|12
+L	ab_1133_8	183	|
+L	ab_1133_8	184	|t:|<NORMALIZED>
+L	ab_1133_8	185	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_1133_8	186	|-boost|p1a: Suicune|spa|1
+L	ab_1133_8	187	|-boost|p1a: Suicune|spd|1
+L	ab_1133_8	188	|move|p2a: Suicune|Roar|p1a: Suicune
+L	ab_1133_8	189	|drag|p1a: Claydol|Claydol|324/324
+L	ab_1133_8	190	|
+L	ab_1133_8	191	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	192	|-damage|p2a: Suicune|321/342|[from] Sandstorm
+L	ab_1133_8	193	|-heal|p2a: Suicune|342/342|[from] item: Leftovers
+L	ab_1133_8	194	|upkeep
+L	ab_1133_8	195	|turn|13
+L	ab_1133_8	196	|
+L	ab_1133_8	197	|t:|<NORMALIZED>
+L	ab_1133_8	198	|move|p2a: Suicune|Calm Mind|p2a: Suicune
+L	ab_1133_8	199	|-boost|p2a: Suicune|spa|1
+L	ab_1133_8	200	|-boost|p2a: Suicune|spd|1
+L	ab_1133_8	201	|move|p1a: Claydol|Earthquake|p2a: Suicune
+L	ab_1133_8	202	|-damage|p2a: Suicune|233/342
+L	ab_1133_8	203	|
+L	ab_1133_8	204	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	205	|-damage|p2a: Suicune|212/342|[from] Sandstorm
+L	ab_1133_8	206	|-heal|p2a: Suicune|233/342|[from] item: Leftovers
+L	ab_1133_8	207	|upkeep
+L	ab_1133_8	208	|turn|14
+L	ab_1133_8	209	|
+L	ab_1133_8	210	|t:|<NORMALIZED>
+L	ab_1133_8	211	|switch|p1a: Jirachi|Jirachi|164/341
+L	ab_1133_8	212	|move|p2a: Suicune|Ice Beam|p1a: Jirachi
+L	ab_1133_8	213	|-resisted|p1a: Jirachi
+L	ab_1133_8	214	|-damage|p1a: Jirachi|97/341
+L	ab_1133_8	215	|
+L	ab_1133_8	216	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	217	|-damage|p2a: Suicune|212/342|[from] Sandstorm
+L	ab_1133_8	218	|-heal|p2a: Suicune|233/342|[from] item: Leftovers
+L	ab_1133_8	219	|upkeep
+L	ab_1133_8	220	|turn|15
+L	ab_1133_8	221	|
+L	ab_1133_8	222	|t:|<NORMALIZED>
+L	ab_1133_8	223	|switch|p1a: Suicune|Suicune|324/403
+L	ab_1133_8	224	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_1133_8	225	|move|p2a: Suicune|Ice Beam|p1a: Suicune
+L	ab_1133_8	226	|-resisted|p1a: Suicune
+L	ab_1133_8	227	|-damage|p1a: Suicune|255/403
+L	ab_1133_8	228	|
+L	ab_1133_8	229	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	230	|-damage|p2a: Suicune|212/342|[from] Sandstorm
+L	ab_1133_8	231	|-damage|p1a: Suicune|230/403|[from] Sandstorm
+L	ab_1133_8	232	|-heal|p2a: Suicune|233/342|[from] item: Leftovers
+L	ab_1133_8	233	|-heal|p1a: Suicune|255/403|[from] item: Leftovers
+L	ab_1133_8	234	|upkeep
+L	ab_1133_8	235	|turn|16
+L	ab_1133_8	236	|
+L	ab_1133_8	237	|t:|<NORMALIZED>
+L	ab_1133_8	238	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_1133_8	239	|move|p2a: Suicune|Roar|p1a: Suicune
+L	ab_1133_8	240	|drag|p1a: Jirachi|Jirachi|97/341
+L	ab_1133_8	241	|
+L	ab_1133_8	242	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	243	|-damage|p2a: Suicune|212/342|[from] Sandstorm
+L	ab_1133_8	244	|-heal|p2a: Suicune|233/342|[from] item: Leftovers
+L	ab_1133_8	245	|upkeep
+L	ab_1133_8	246	|turn|17
+L	ab_1133_8	247	|
+L	ab_1133_8	248	|t:|<NORMALIZED>
+L	ab_1133_8	249	|move|p1a: Jirachi|Fire Punch|p2a: Suicune
+L	ab_1133_8	250	|-resisted|p2a: Suicune
+L	ab_1133_8	251	|-damage|p2a: Suicune|215/342
+L	ab_1133_8	252	|move|p2a: Suicune|Ice Beam|p1a: Jirachi
+L	ab_1133_8	253	|-resisted|p1a: Jirachi
+L	ab_1133_8	254	|-damage|p1a: Jirachi|31/341
+L	ab_1133_8	255	|-status|p1a: Jirachi|frz
+L	ab_1133_8	256	|
+L	ab_1133_8	257	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	258	|-damage|p2a: Suicune|194/342|[from] Sandstorm
+L	ab_1133_8	259	|-heal|p2a: Suicune|215/342|[from] item: Leftovers
+L	ab_1133_8	260	|upkeep
+L	ab_1133_8	261	|turn|18
+L	ab_1133_8	262	|
+L	ab_1133_8	263	|t:|<NORMALIZED>
+L	ab_1133_8	264	|cant|p1a: Jirachi|frz
+L	ab_1133_8	265	|move|p2a: Suicune|Ice Beam|p1a: Jirachi
+L	ab_1133_8	266	|-resisted|p1a: Jirachi
+L	ab_1133_8	267	|-damage|p1a: Jirachi|0 fnt
+L	ab_1133_8	268	|faint|p1a: Jirachi
+L	ab_1133_8	269	|
+L	ab_1133_8	270	|t:|<NORMALIZED>
+L	ab_1133_8	271	|switch|p1a: Suicune|Suicune|255/403
+L	ab_1133_8	272	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_1133_8	273	|
+L	ab_1133_8	274	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	275	|-damage|p2a: Suicune|194/342|[from] Sandstorm
+L	ab_1133_8	276	|-damage|p1a: Suicune|230/403|[from] Sandstorm
+L	ab_1133_8	277	|-heal|p2a: Suicune|215/342|[from] item: Leftovers
+L	ab_1133_8	278	|-heal|p1a: Suicune|255/403|[from] item: Leftovers
+L	ab_1133_8	279	|upkeep
+L	ab_1133_8	280	|turn|19
+L	ab_1133_8	281	|
+L	ab_1133_8	282	|t:|<NORMALIZED>
+L	ab_1133_8	283	|switch|p1a: Salamence|Salamence, M|330/330
+L	ab_1133_8	284	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_1133_8	285	|-unboost|p2a: Suicune|atk|1
+L	ab_1133_8	286	|move|p2a: Suicune|Roar|p1a: Salamence
+L	ab_1133_8	287	|drag|p1a: Suicune|Suicune|255/403
+L	ab_1133_8	288	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_1133_8	289	|
+L	ab_1133_8	290	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	291	|-damage|p2a: Suicune|194/342|[from] Sandstorm
+L	ab_1133_8	292	|-damage|p1a: Suicune|230/403|[from] Sandstorm
+L	ab_1133_8	293	|-heal|p2a: Suicune|215/342|[from] item: Leftovers
+L	ab_1133_8	294	|-heal|p1a: Suicune|255/403|[from] item: Leftovers
+L	ab_1133_8	295	|upkeep
+L	ab_1133_8	296	|turn|20
+L	ab_1133_8	297	|
+L	ab_1133_8	298	|t:|<NORMALIZED>
+L	ab_1133_8	299	|switch|p2a: Snorlax|Snorlax, M|465/465
+L	ab_1133_8	300	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_1133_8	301	|
+L	ab_1133_8	302	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	303	|-damage|p1a: Suicune|230/403|[from] Sandstorm
+L	ab_1133_8	304	|-damage|p2a: Snorlax|436/465|[from] Sandstorm
+L	ab_1133_8	305	|-heal|p1a: Suicune|255/403|[from] item: Leftovers
+L	ab_1133_8	306	|-heal|p2a: Snorlax|465/465|[from] item: Leftovers
+L	ab_1133_8	307	|upkeep
+L	ab_1133_8	308	|turn|21
+L	ab_1133_8	309	|
+L	ab_1133_8	310	|t:|<NORMALIZED>
+L	ab_1133_8	311	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_1133_8	312	|-boost|p1a: Suicune|spa|1
+L	ab_1133_8	313	|-boost|p1a: Suicune|spd|1
+L	ab_1133_8	314	|move|p2a: Snorlax|Self-Destruct|p1a: Suicune
+L	ab_1133_8	315	|-damage|p1a: Suicune|0 fnt
+L	ab_1133_8	316	|faint|p2a: Snorlax
+L	ab_1133_8	317	|faint|p1a: Suicune
+L	ab_1133_8	318	|
+L	ab_1133_8	319	|t:|<NORMALIZED>
+L	ab_1133_8	320	|switch|p1a: Celebi|Celebi|341/341
+L	ab_1133_8	321	|switch|p2a: Suicune|Suicune|215/342
+L	ab_1133_8	322	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_1133_8	323	|
+L	ab_1133_8	324	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	325	|-damage|p1a: Celebi|320/341|[from] Sandstorm
+L	ab_1133_8	326	|-damage|p2a: Suicune|194/342|[from] Sandstorm
+L	ab_1133_8	327	|-heal|p1a: Celebi|341/341|[from] item: Leftovers
+L	ab_1133_8	328	|-heal|p2a: Suicune|215/342|[from] item: Leftovers
+L	ab_1133_8	329	|upkeep
+L	ab_1133_8	330	|turn|22
+L	ab_1133_8	331	|
+L	ab_1133_8	332	|t:|<NORMALIZED>
+L	ab_1133_8	333	|move|p1a: Celebi|Psychic|p2a: Suicune
+L	ab_1133_8	334	|-damage|p2a: Suicune|84/342
+L	ab_1133_8	335	|move|p2a: Suicune|Ice Beam|p1a: Celebi
+L	ab_1133_8	336	|-supereffective|p1a: Celebi
+L	ab_1133_8	337	|-crit|p1a: Celebi
+L	ab_1133_8	338	|-damage|p1a: Celebi|0 fnt
+L	ab_1133_8	339	|faint|p1a: Celebi
+L	ab_1133_8	340	|
+L	ab_1133_8	341	|t:|<NORMALIZED>
+L	ab_1133_8	342	|switch|p1a: Claydol|Claydol|324/324
+L	ab_1133_8	343	|
+L	ab_1133_8	344	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	345	|-damage|p2a: Suicune|63/342|[from] Sandstorm
+L	ab_1133_8	346	|-heal|p2a: Suicune|84/342|[from] item: Leftovers
+L	ab_1133_8	347	|upkeep
+L	ab_1133_8	348	|turn|23
+L	ab_1133_8	349	|
+L	ab_1133_8	350	|t:|<NORMALIZED>
+L	ab_1133_8	351	|move|p2a: Suicune|Ice Beam|p1a: Claydol
+L	ab_1133_8	352	|-supereffective|p1a: Claydol
+L	ab_1133_8	353	|-damage|p1a: Claydol|161/324
+L	ab_1133_8	354	|move|p1a: Claydol|Explosion|p2a: Suicune
+L	ab_1133_8	355	|-damage|p2a: Suicune|0 fnt
+L	ab_1133_8	356	|faint|p1a: Claydol
+L	ab_1133_8	357	|faint|p2a: Suicune
+L	ab_1133_8	358	|
+L	ab_1133_8	359	|t:|<NORMALIZED>
+L	ab_1133_8	360	|switch|p2a: Gyarados|Gyarados, M|343/343
+L	ab_1133_8	361	|switch|p1a: Salamence|Salamence, M|330/330
+L	ab_1133_8	362	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_1133_8	363	|-unboost|p2a: Gyarados|atk|1
+L	ab_1133_8	364	|-ability|p2a: Gyarados|Intimidate|boost
+L	ab_1133_8	365	|-unboost|p1a: Salamence|atk|1
+L	ab_1133_8	366	|
+L	ab_1133_8	367	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	368	|-damage|p1a: Salamence|310/330|[from] Sandstorm
+L	ab_1133_8	369	|-damage|p2a: Gyarados|322/343|[from] Sandstorm
+L	ab_1133_8	370	|-heal|p1a: Salamence|330/330|[from] item: Leftovers
+L	ab_1133_8	371	|-heal|p2a: Gyarados|343/343|[from] item: Leftovers
+L	ab_1133_8	372	|upkeep
+L	ab_1133_8	373	|turn|24
+L	ab_1133_8	374	|
+L	ab_1133_8	375	|t:|<NORMALIZED>
+L	ab_1133_8	376	|move|p1a: Salamence|Fire Blast|p2a: Gyarados
+L	ab_1133_8	377	|-resisted|p2a: Gyarados
+L	ab_1133_8	378	|-damage|p2a: Gyarados|293/343
+L	ab_1133_8	379	|move|p2a: Gyarados|Hidden Power|p1a: Salamence
+L	ab_1133_8	380	|-damage|p1a: Salamence|219/330
+L	ab_1133_8	381	|
+L	ab_1133_8	382	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	383	|-damage|p1a: Salamence|199/330|[from] Sandstorm
+L	ab_1133_8	384	|-damage|p2a: Gyarados|272/343|[from] Sandstorm
+L	ab_1133_8	385	|-heal|p1a: Salamence|219/330|[from] item: Leftovers
+L	ab_1133_8	386	|-heal|p2a: Gyarados|293/343|[from] item: Leftovers
+L	ab_1133_8	387	|upkeep
+L	ab_1133_8	388	|turn|25
+L	ab_1133_8	389	|
+L	ab_1133_8	390	|t:|<NORMALIZED>
+L	ab_1133_8	391	|move|p1a: Salamence|Hidden Power|p2a: Gyarados
+L	ab_1133_8	392	|-damage|p2a: Gyarados|186/343
+L	ab_1133_8	393	|move|p2a: Gyarados|Taunt|p1a: Salamence
+L	ab_1133_8	394	|-start|p1a: Salamence|move: Taunt
+L	ab_1133_8	395	|
+L	ab_1133_8	396	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	397	|-damage|p1a: Salamence|199/330|[from] Sandstorm
+L	ab_1133_8	398	|-damage|p2a: Gyarados|165/343|[from] Sandstorm
+L	ab_1133_8	399	|-heal|p1a: Salamence|219/330|[from] item: Leftovers
+L	ab_1133_8	400	|-heal|p2a: Gyarados|186/343|[from] item: Leftovers
+L	ab_1133_8	401	|upkeep
+L	ab_1133_8	402	|turn|26
+L	ab_1133_8	403	|
+L	ab_1133_8	404	|t:|<NORMALIZED>
+L	ab_1133_8	405	|move|p1a: Salamence|Brick Break|p2a: Gyarados
+L	ab_1133_8	406	|-resisted|p2a: Gyarados
+L	ab_1133_8	407	|-damage|p2a: Gyarados|144/343
+L	ab_1133_8	408	|move|p2a: Gyarados|Dragon Dance|p2a: Gyarados
+L	ab_1133_8	409	|-boost|p2a: Gyarados|atk|1
+L	ab_1133_8	410	|-boost|p2a: Gyarados|spe|1
+L	ab_1133_8	411	|
+L	ab_1133_8	412	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	413	|-damage|p2a: Gyarados|123/343|[from] Sandstorm
+L	ab_1133_8	414	|-damage|p1a: Salamence|199/330|[from] Sandstorm
+L	ab_1133_8	415	|-heal|p2a: Gyarados|144/343|[from] item: Leftovers
+L	ab_1133_8	416	|-heal|p1a: Salamence|219/330|[from] item: Leftovers
+L	ab_1133_8	417	|-end|p1a: Salamence|move: Taunt|[silent]
+L	ab_1133_8	418	|upkeep
+L	ab_1133_8	419	|turn|27
+L	ab_1133_8	420	|
+L	ab_1133_8	421	|t:|<NORMALIZED>
+L	ab_1133_8	422	|move|p2a: Gyarados|Earthquake|p1a: Salamence
+L	ab_1133_8	423	|-immune|p1a: Salamence
+L	ab_1133_8	424	|move|p1a: Salamence|Brick Break|p2a: Gyarados
+L	ab_1133_8	425	|-resisted|p2a: Gyarados
+L	ab_1133_8	426	|-damage|p2a: Gyarados|104/343
+L	ab_1133_8	427	|
+L	ab_1133_8	428	|-weather|Sandstorm|[upkeep]
+L	ab_1133_8	429	|-damage|p2a: Gyarados|83/343|[from] Sandstorm
+L	ab_1133_8	430	|-damage|p1a: Salamence|199/330|[from] Sandstorm
+L	ab_1133_8	431	|-heal|p2a: Gyarados|104/343|[from] item: Leftovers
+L	ab_1133_8	432	|-heal|p1a: Salamence|219/330|[from] item: Leftovers
+L	ab_1133_8	433	|upkeep
+L	ab_1133_8	434	|turn|28
+L	ab_1133_8	435	|
+L	ab_1133_8	436	|t:|<NORMALIZED>
+L	ab_1133_8	437	|move|p2a: Gyarados|Earthquake|p1a: Salamence
+L	ab_1133_8	438	|-immune|p1a: Salamence
+L	ab_1133_8	439	|move|p1a: Salamence|Hidden Power|p2a: Gyarados
+L	ab_1133_8	440	|-crit|p2a: Gyarados
+L	ab_1133_8	441	|-damage|p2a: Gyarados|0 fnt
+L	ab_1133_8	442	|faint|p2a: Gyarados
+L	ab_1133_8	443	|
+L	ab_1133_8	444	|win|P1

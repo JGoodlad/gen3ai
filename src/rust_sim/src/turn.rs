@@ -97,7 +97,7 @@ use crate::damage::{
 use crate::dex::{to_id, Dex, DmgFold, MoveCategory, Type, TypeBoostFold};
 use crate::event::{single_event_ability_start, speed_sort, EventHandler, NO_ORDER};
 use crate::prng::PrngSeed;
-use crate::protocol::{Cause, HpStatus, MonRef, ProtocolLine};
+use crate::protocol::{Cause, HpStatus, MonRef, Player, ProtocolLine};
 use crate::state::{BattleState, FutureMove, Status, TwoTurnMove, Weather, BOOST_LEN};
 
 /// The denominators `critMult[critRatio]` for gen ≤ 5 (`battle-actions.ts:1631`):
@@ -1377,25 +1377,10 @@ impl BattleState {
                 });
             }
 
-            // --- The PERISH SONG counter's residual handler (`gen3_move_coverage_batch6_v1`).
-            //     Order **12** — its OWN group, LAST in the modeled ladder (after the
-            //     order-10 mon handlers + the order-11 futuremove, before Truant's 27 and
-            //     the NO_ORDER duration volatiles). subOrder = the Condition
-            //     effectTypeOrder default 2 (no explicit onResidualSubOrder). A VOLATILE
-            //     on the holder; its only tie is the OTHER mon's perish counter at equal
-            //     cached speed (the P5 mirror: ONE `random(0,2)` per residual — the
-            //     decrement + the `-start perish<d>` print ride ONE handler visit, so a
-            //     perished pair is a size-2 tie group, NOT two). ---
-            if mon.perish.is_some() {
-                handlers.push(EventHandler {
-                    order: PERISH_RESIDUAL_ORDER,
-                    priority: 0,
-                    speed,
-                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
-                    effect_order: 0,
-                    handler: ResidualAction::Perish { side, slot },
-                });
-            }
+            // NOTE: the PERISH SONG counter's residual handler is gathered LATER — after
+            // the NO_ORDER duration volatiles (protect/stall/flinch/…/two_turn) — so its
+            // pre-shuffle GATHER position matches Showdown's `pokemon.volatiles` INSERTION
+            // order (`gen3_perish_start_volatile_insertion_order_v1`). See the block below.
 
             // --- The TAUNT volatile's duration handler (`gen3_taunt_disable_v1`). Order 10,
             //     subOrder 15 (the gen-3 `taunt` condition's `onResidualOrder: 10,
@@ -1633,6 +1618,46 @@ impl BattleState {
                     sub_order: VOLATILE_RESIDUAL_SUBORDER,
                     effect_order: 0,
                     handler: ResidualAction::TwoTurnDuration { side, slot },
+                });
+            }
+
+            // --- The PERISH SONG counter's residual handler (`gen3_move_coverage_batch6_v1`).
+            //     Order **12** — its OWN group, LAST in the modeled ladder (after the
+            //     order-10 mon handlers + the order-11 futuremove, before Truant's 27 and
+            //     the NO_ORDER duration volatiles by sort key). subOrder = the Condition
+            //     effectTypeOrder default 2 (no explicit onResidualSubOrder). A VOLATILE
+            //     on the holder; its only tie is the OTHER mon's perish counter at equal
+            //     cached speed (the P5 mirror: ONE `random(0,2)` per residual — the
+            //     decrement + the `-start perish<d>` print ride ONE handler visit, so a
+            //     perished pair is a size-2 tie group, NOT two).
+            //
+            //     GATHER POSITION (`gen3_perish_start_volatile_insertion_order_v1`, the
+            //     Stage-B byte-fuzz find rmrr03rmc_ab_453_2): the `speed_sort` is a NON-STABLE
+            //     selection sort, so the tie-group Fisher-Yates shuffle permutes the two
+            //     equal-speed perish handlers in whatever PRE-SORT order the selection swaps
+            //     left them in — which depends on their GATHER index. Showdown gathers a mon's
+            //     volatile handlers in `pokemon.volatiles` INSERTION order (`findPokemonEventHandlers`
+            //     iterates the volatiles object). A perishing mon's `perish` volatile is
+            //     inserted (by the FOE's Perish Song, priority 0) AFTER any `protect`/`stall`
+            //     it added this turn (Protect is priority 3 → moves first → its volatile is
+            //     inserted first), so `perish` sorts AFTER the NO_ORDER duration volatiles in
+            //     the mon's gather. Gathering perish HERE — after the whole NO_ORDER
+            //     duration-volatile block — reproduces that for the reproduced (same-turn
+            //     perish-after-protect) board: the repro flips to 168/168 byte-clean with NO
+            //     seed divergence (draw-free — the tie-group SIZE + draw COUNT are unchanged;
+            //     only the pre-shuffle PERMUTATION of the tied perish pair moves). HONEST
+            //     LIMITATION: a mon perished on an EARLIER turn than it Protects would have
+            //     `perish` inserted BEFORE `protect`; that distinct (unreproduced) board is
+            //     not modeled by this fixed position — a full per-volatile insertion-sequence
+            //     stamp would be the general fix. Emission-only + draw-free + state-free. ---
+            if mon.perish.is_some() {
+                handlers.push(EventHandler {
+                    order: PERISH_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::Perish { side, slot },
                 });
             }
 
@@ -2487,6 +2512,22 @@ impl BattleState {
             .map(|si| si.blocks(tok))
             .unwrap_or(false);
         if cures {
+            // [EMIT] Showdown's STATUS_IMMUNE `onUpdate` (abilities.ts) does
+            // `this.add('-activate', pokemon, 'ability: <A>'); pokemon.cureStatus();` → TWO
+            // lines the port used to skip (setting `status = None` SILENTLY), so the next
+            // `|move|` slid up into the 2-line gap (golden ab_1370_13 [256-259]:
+            // `|-activate|p1a: Porygon2|ability: Immunity` → `|-curestatus|p1a: Porygon2|tox|[msg]`).
+            // `gen3_statusimmune_onupdate_cure_v1` (byte). DRAW-FREE (the cure was already
+            // applied; the emit is protocol-only). Emit BEFORE clearing so `tok`/the ident hold.
+            if self.logging() {
+                let ability_name = dex
+                    .ability(&to_id(&self.sides[side].pokemon[slot].ability))
+                    .map(|a| a.name.clone())
+                    .unwrap_or_else(|| self.sides[side].pokemon[slot].ability.clone());
+                let m = self.mon_ref(side, slot, dex);
+                self.log.activate(&m, &format!("ability: {ability_name}"), None);
+                self.log.curestatus(&m, tok, true);
+            }
             self.sides[side].pokemon[slot].status = None;
         }
     }
@@ -3222,9 +3263,13 @@ impl BattleState {
             // protocol quirk) then `|-miss|<caster>|<target>`.
             if self.logging() {
                 self.log.attr_last_move_miss();
-                let u = self.mon_ref(src_side, src_slot, dex);
+                // The `-miss` SOURCE is the future-move CASTER, which may have switched out /
+                // fainted since casting → render via `Pokemon.toString()` (slot-less `pN:` when
+                // not the active), NOT `mon_ref`'s always-`pNa:` form (golden L226:
+                // `|-miss|p1: Jirachi|p2a: Suicune`). `gen3_omniscient_byte_fuzz_v1` class B.
+                let u = self.mon_toref(src_side, src_slot, dex);
                 let t = self.mon_ref(side, slot, dex);
-                self.log.miss(&u, Some(&t));
+                self.log.miss_raw_user(&u, &t);
             }
             return;
         }
@@ -6622,10 +6667,28 @@ impl BattleState {
                             match self.move_at(foe, foe_slot, lslot, dex) {
                                 None => true,
                                 Some(lm) => {
-                                    let copied_id = lm.id.clone();
-                                    lm.fail_mimic
+                                    // gen3_mimic_hidden_power_type_v1: compare the BARE-canonicalized
+                                    // copied id, so a mimicker that owns its OWN Hidden Power fails
+                                    // to Mimic the foe's Hidden Power (Showdown compares bare
+                                    // `hiddenpower == hiddenpower`).
+                                    let copied_id = if lm.id.starts_with("hiddenpower") {
+                                        "hiddenpower".to_string()
+                                    } else {
+                                        lm.id.clone()
+                                    };
+                                    let fail_mimic = lm.fail_mimic;
+                                    fail_mimic
                                         || self.sides[_side].pokemon[_slot].set.moves.iter().any(|mid| {
-                                            dex.moves(mid).map(|m| m.id == copied_id).unwrap_or(false)
+                                            dex.moves(mid)
+                                                .map(|m| {
+                                                    let m_id = if m.id.starts_with("hiddenpower") {
+                                                        "hiddenpower"
+                                                    } else {
+                                                        m.id.as_str()
+                                                    };
+                                                    m_id == copied_id
+                                                })
+                                                .unwrap_or(false)
                                         })
                                 }
                             }
@@ -6645,7 +6708,16 @@ impl BattleState {
             let lslot = self.sides[foe].pokemon[foe_slot].last_move.expect("checked above");
             let (copied_id, copied_name, copied_pp, copied_maxpp) = {
                 let lm = self.move_at(foe, foe_slot, lslot, dex).expect("checked above");
-                (lm.id.clone(), lm.name.clone(), lm.pp.min(5), lm.max_pp())
+                // gen3_mimic_hidden_power_type_v1: Hidden Power's TYPE is derived from the USER's
+                // IVs at use time (Showdown stores the moveslot id bare `hiddenpower`), so a MIMIC
+                // of Hidden Power must store the BARE id (+ bare "Hidden Power" name), else the
+                // mimicker keeps the copied mon's TYPED HP type (e.g. Grass) instead of re-deriving
+                // from its OWN IVs (the ab_777_3 Claydol-Mimic-Charizard-HP over-resist bug).
+                if lm.id.starts_with("hiddenpower") {
+                    ("hiddenpower".to_string(), "Hidden Power".to_string(), lm.pp.min(5), lm.max_pp())
+                } else {
+                    (lm.id.clone(), lm.name.clone(), lm.pp.min(5), lm.max_pp())
+                }
             };
             let mslot = (0..self.sides[_side].pokemon[_slot].set.moves.len()).find(|&k| {
                 self.move_at(_side, _slot, k, dex).map(|m| m.id == "mimic").unwrap_or(false)
@@ -10356,6 +10428,9 @@ impl BattleState {
                 // gather a residual duration handler on re-entry).
                 mon.snatch = false;
                 mon.trapped_by = None;
+                // The pending switch-in Intimidate target (`gen3_intimidate_forced_replacement_v1`,
+                // M3) — cleared with the corpse so a fainted mon carries no stale foe uid.
+                mon.switchin_foe_uid = None;
                 mon.restore_mimic_overlay();
                 // DESTINY BOND (`gen3_move_coverage_batch6_v1`, `destinybond.onFaint`):
                 // consume the pending-KO record (set at the qualifying FOE-Move damage
@@ -10474,6 +10549,25 @@ impl BattleState {
     /// A `MonRef` (`p<N>a: <Name>`) for `side`'s `slot` mon.
     fn mon_ref(&self, side: usize, slot: usize, dex: &Dex) -> MonRef {
         MonRef { side, name: self.display_name(side, slot, dex) }
+    }
+
+    /// A faithful `Pokemon.toString()` ident STRING for `side`'s `slot` mon
+    /// (`gen3_omniscient_byte_fuzz_v1`, the future-move `-miss` source ref). Showdown's
+    /// `Pokemon.toString()` (sim/pokemon.ts:532-534) renders an ACTIVE mon as the slot form
+    /// `pNa: <Name>` (== [`mon_ref`]'s Display) but a mon NOT on the field as the SLOT-LESS
+    /// `pN: <Name>`. A resolving Future Sight / Doom Desire's CASTER has usually switched out
+    /// or fainted since casting (`conditions.ts` futuremove.onEnd strikes via the STORED
+    /// `data.source`), so the `-miss` SOURCE must render slot-less when the caster isn't the
+    /// current active — unlike `mon_ref`, whose `MonRef::Display` ALWAYS produces `pNa:`. Used
+    /// only for the future-move resolve-miss caster ident (via [`ProtocolBuilder::miss_raw_user`]).
+    fn mon_toref(&self, side: usize, slot: usize, dex: &Dex) -> String {
+        let name = self.display_name(side, slot, dex);
+        let tag = Player::from_side(side).tag();
+        if slot == self.sides[side].active {
+            format!("{tag}a: {name}")
+        } else {
+            format!("{tag}: {name}")
+        }
     }
 
     /// A `MonRef` for `side`'s ACTIVE mon.
@@ -10667,6 +10761,37 @@ impl BattleState {
             "intimidate" => {
                 let foe = 1 - side;
                 let foe_slot = self.sides[foe].active;
+                // FORCED-REPLACEMENT mis-target guard (`gen3_intimidate_forced_replacement_v1`,
+                // M3): if the intended foe was FORCE-REPLACED because it FAINTED between this mon's
+                // switch action and the deferred `RunSwitch`, `intimidate_on_start` applied NO drop
+                // — so emit NOTHING (matching the unchanged foe boosts), never a phantom `-unboost
+                // atk|0`. This mirrors the `event::intimidate_on_start` suppression predicate
+                // EXACTLY (the STATE and the EMISSION must agree): suppress ONLY when the captured
+                // original is now FAINTED/absent (a forced replacement), NOT for a live foe-active
+                // change (a DOUBLE VOLUNTARY switch leaves the original alive → the sim DOES drop
+                // the new foe). The SIM instead resolves this Intimidate INLINE within the switch
+                // action (empty `adjacentFoes()` → the gen3 "not activated" `-hint`); the port
+                // DEFERS the entrant's RunSwitch past the turn boundary, so a byte-level match of
+                // that hint's POSITION is out of scope — suppressing the drop is the STATE fix this
+                // pins. DRAW-FREE.
+                let replaced_by_faint = self.sides[side].pokemon[slot]
+                    .switchin_foe_uid
+                    .map(|u| {
+                        u != self.sides[foe].pokemon[foe_slot].uid
+                            && self.sides[foe]
+                                .pokemon
+                                .iter()
+                                .find(|m| m.uid == u)
+                                .map(|m| m.fainted || m.hp == 0)
+                                .unwrap_or(true)
+                    })
+                    .unwrap_or(false);
+                let mistarget = replaced_by_faint
+                    || self.sides[foe].pokemon[foe_slot].fainted
+                    || self.sides[foe].pokemon[foe_slot].hp == 0;
+                if mistarget {
+                    return;
+                }
                 if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
                     // The gen3 mod's sub skip: NO `-ability`, just the hint.
                     self.log.hint(
@@ -11243,6 +11368,15 @@ impl BattleState {
                         // makeRequest('switch') paused the turn. Record the boundary
                         // we JUST finished (the move request, or the prior forced
                         // switch) at the PAUSE seed, then take the next replacement.
+                        // [SEND] `makeRequest('switch')` runs `sendUpdates()`, STREAMING
+                        // every buffered line so far — so a LATER retro-edit (a future-move
+                        // resolve-MISS at the end-of-turn residual) can no longer observably
+                        // tag a `|move|` line this mid-turn faint already flushed (golden
+                        // ab_20_4: Fire Blast stays untagged; the `-miss` lands on the
+                        // resolve). `gen3_omniscient_byte_fuzz_v1` class A.
+                        if self.logging() {
+                            self.log.mark_sent();
+                        }
                         decisions.push(self.boundary_record(request, first_mover, dex));
 
                         // Pull the replacement decision(s); commit the flagged sides'
@@ -12509,6 +12643,10 @@ impl BattleState {
             m.destiny_bond = false;
             m.destiny_bond_ko_by = None;
             m.trapped_by = None;
+            // The pending switch-in Intimidate target (`gen3_intimidate_forced_replacement_v1`,
+            // M3) — a transient consumed at run_switch; clear it on switch-out too so a corpse /
+            // outgoing mon never carries a stale foe uid.
+            m.switchin_foe_uid = None;
             m.restore_mimic_overlay();
         }
         // [EMIT] NATURAL CURE `-curestatus` (`gen3_omniscient_byte_fuzz_v1` FORM 4):
@@ -12560,6 +12698,22 @@ impl BattleState {
         self.sides[side].pokemon.swap(active, target);
         self.sides[side].pokemon[active].position = active;
         self.sides[side].pokemon[target].position = target;
+        // Capture the foe active's uid at SWITCH-IN time (`gen3_intimidate_forced_replacement_v1`,
+        // M3) — ONLY for a VOLUNTARY switch. The deferred `RunSwitch` fires this entrant's
+        // switch-in Intimidate LATER (a separate runAction), by which point a mid-action foe
+        // faint may have force-replaced the intended target. A VOLUNTARY switch's Intimidate
+        // resolves INLINE in Showdown (during the switch action, before the foe's forced
+        // replacement at the next `makeRequest`), so recording the foe present NOW lets
+        // `event::intimidate_on_start` suppress a drop whose target FAINTED (the ab_1381_0
+        // Pursuit→Destiny-Bond→replacement mis-target). A FORCED REPLACEMENT (is_voluntary=false,
+        // e.g. a mutual-Self-Destruct DOUBLE replacement) instead switches BOTH sides in together
+        // and fires abilities AFTER — its Intimidate DOES drop the co-replacement, so leave the
+        // uid None (the pre-fix behavior, e2e-verified). A phaze DRAG likewise leaves it None.
+        // Draw-free (a boost-suppression is state-only).
+        if is_voluntary {
+            self.sides[side].pokemon[active].switchin_foe_uid =
+                Some(self.sides[1 - side].pokemon[self.sides[1 - side].active].uid);
+        }
         // --- BATON PASS copyVolatileFrom APPLY (`gen3_move_coverage_batch3_v1`): the entrant
         //     is now at `active` (the clearVolatile block above already zeroed its fresh state).
         //     Apply the passer's snapshot: the boosts array + the four copyable volatile fields
@@ -12834,6 +12988,11 @@ impl BattleState {
         // re-set — e.g. a re-dragged Sand Stream Tyranitar under standing sand — is a
         // setWeather no-op and emits nothing). Observation-only.
         self.emit_ability_start_lines(side, slot, weather_changed, Some(intim_atk_pre), dex);
+        // The switch-in Intimidate (STATE via `intimidate_on_start`, EMISSION via
+        // `emit_ability_start_lines`) has now BOTH resolved — clear the captured foe uid so a
+        // later switch of a DIFFERENT mon into this slot can't read a stale target
+        // (`gen3_intimidate_forced_replacement_v1`, M3). Draw-free.
+        self.sides[side].pokemon[slot].switchin_foe_uid = None;
         weather_changed
     }
 

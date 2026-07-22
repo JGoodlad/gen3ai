@@ -127,6 +127,18 @@
 //!       `gen3_trapping_v1`'s e2e regen (e2e_171/e2e_204); ground truth
 //!       `harness/probe_intimidate_substitute_rng.js`
 //!                                                  → `intimidate_into_a_substitute_is_a_noop`
+//!   I2  gen-3 INTIMIDATE vs a FORCED REPLACEMENT (`gen3_intimidate_forced_replacement_v1`) —
+//!       a deferred switch-in Intimidate (a VOLUNTARY switch whose intended foe FAINTED +
+//!       force-replaced mid-turn, the Pursuit→Destiny-Bond→replacement composition) must NOT
+//!       drop the replacement's Atk (Showdown resolves the entrant Intimidate INLINE against
+//!       the fainted original). Repro ab_1381_0. STATE pin
+//!                                                  → `intimidate_entrant_does_not_drop_a_forced_replacement_foe`
+//!   HP-TAUNT  a Taunted mon keeps its BARE `hiddenpower` selectable
+//!       (`gen3_iv_derived_hidden_power_bp_v1` legality sibling; repro ab_233_8) — STATE pin
+//!                                                  → `taunt_does_not_block_a_bare_hidden_power`
+//!   HP-MIMIC  a Mimic of Hidden Power re-derives the type from the MIMICKER's OWN IVs
+//!       (`gen3_mimic_hidden_power_type_v1`; repro ab_777_3) — STATE pin
+//!                                                  → `mimic_of_hidden_power_uses_the_mimickers_own_type`
 
 use pokesim::battle::{Battle, BattleOptions, PackedTeam, PlayerOptions};
 use pokesim::dex::Dex;
@@ -11320,5 +11332,166 @@ fn sand_upkeep_line_emitted_under_cloud_nine_before_leech_damage() {
         seed_str(&out.decisions[1].seed_after),
         "44727,38044,16858,42709",
         "RM3 is draw-neutral — the post-turn seed == the real Showdown ground truth"
+    );
+}
+
+// ============================================================================
+// HP-TAUNT — a Taunted mon keeps its BARE `hiddenpower` selectable
+//      (`gen3_iv_derived_hidden_power_bp_v1`, the LEGALITY sibling; repro ab_233_8).
+// ============================================================================
+
+/// A Taunted mon's BARE Hidden Power stays selectable (the ab_233_8 legality fix).
+#[test]
+fn taunt_does_not_block_a_bare_hidden_power() {
+    let d = dex();
+    let mon = "Charizard|||blaze|hiddenpower,swordsdance,flamethrower,toxic|Modest|,,,252,,252|N||||";
+    let foe = "Snorlax|||immunity|splash|Serious|252,,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(mon, foe, "1,2,3,4"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    assert!(!d.moves("hiddenpower").unwrap().blocked_by_taunt());
+    assert!(d.moves("swordsdance").unwrap().blocked_by_taunt());
+    st.sides[0].pokemon[0].taunt = Some(2);
+    let cha = &st.sides[0].pokemon[0];
+    assert!(cha.move_usable(0, &d), "bare Hidden Power selectable under Taunt (ab_233_8)");
+    assert!(!cha.move_usable(1, &d), "Swords Dance (Status) IS taunt-blocked");
+    assert!(cha.move_usable(2, &d), "Flamethrower selectable under Taunt");
+    assert!(!cha.move_usable(3, &d), "Toxic (Status) IS taunt-blocked");
+    assert!(!cha.must_struggle(&d), "not forced to Struggle");
+}
+
+// ============================================================================
+// HP-MIMIC — a Mimic of Hidden Power uses the MIMICKER's OWN HP type
+//      (`gen3_mimic_hidden_power_type_v1`; repro rmrr03rmc_ab_777_3). gen-3 Hidden
+//      Power's TYPE is a property of the USER (derived from the user's IVs at use
+//      time); Showdown stores the moveslot id BARE (`hiddenpower`) and re-derives
+//      per holder, so a Mimic-copied HP takes the MIMICKER's type. WRONG (pre-fix):
+//      `turn.rs`'s Mimic success block stored the copied mon's TYPED HP id
+//      (`hiddenpowergrass`, num 363), so the mimicker used the ORIGINAL user's Grass
+//      type instead of re-deriving Dark from its own IVs -> a Grass 0.25x hit that
+//      barely dented the target (ab_777_3: Claydol's Mimic-copied HP left Charizard
+//      near full instead of dealing neutral Dark damage). The fix canonicalizes a
+//      copied `hiddenpower*` id to the BARE `hiddenpower`. STATE pin (the isolated
+//      T3 mimicked-HP damage is NEUTRAL Dark, not 0.25x Grass).
+// ============================================================================
+
+/// A Mimic of a foe's Hidden Power re-derives the type from the MIMICKER's own IVs
+/// (the ab_777_3 fix). WRONG (pre-fix): the mimicker kept the copied mon's typed HP
+/// (Grass 0.25x). Moltres (all-31 IVs -> HP Dark) Mimics a foe's HP Grass then uses
+/// it vs a Fire/Flying target -> NEUTRAL Dark damage. Reverting the bare-HP
+/// canonicalization stores `hiddenpowergrass` -> Grass 0.25x -> the T3 hit is ~1/4.
+#[test]
+fn mimic_of_hidden_power_uses_the_mimickers_own_type() {
+    let d = dex();
+    // p1 Moltres (Fire/Flying, all-31 IVs -> its OWN Hidden Power is Dark, BP 70) uses only
+    // Mimic + a harmless SPLASH filler, so the ONLY damage Charizard takes is the mimicked HP.
+    let p1 = "Moltres|||pressure|mimic,splash|Modest|,,,252,,252|N||||";
+    // p2 Charizard (Fire/Flying) carries the TYPED `hiddenpowergrass` (num 363, type Grass);
+    // its last move becomes HP Grass so Mimic copies it. Dark is NEUTRAL vs Fire/Flying (1x);
+    // Grass is 0.25x -> the two differ ~4x, isolating the bug.
+    let p2 = "Charizard|||blaze|hiddenpowergrass,splash|Modest|,,,252,,4|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "53303,35262,36397,29520"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let cha_max = st.sides[1].pokemon[0].maxhp;
+
+    // T1: p1 SPLASH ; p2 HP Grass -> p2's last_move = HP Grass (Charizard untouched).
+    // T2: p1 Mimic (faster) -> copies HP Grass into slot 0 (stored BARE `hiddenpower` by the
+    //     fix, BEFORE p2's T2 move) ; p2 splash.
+    let _ = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),
+        ],
+        &d,
+    );
+    // Post-Mimic: the mimicked slot is the BARE `hiddenpower` (the fix; reverting stores
+    // `hiddenpowergrass`). Pin the stored id directly (the mechanism).
+    assert_eq!(
+        st.sides[0].pokemon[0].set.moves[0], "hiddenpower",
+        "Mimic canonicalizes the copied Hidden Power to the BARE id (reverting stores \
+         `hiddenpowergrass` -> the mimicker keeps Grass instead of its own Dark)"
+    );
+    // T3: p1 uses the mimicked slot 0 -> Hidden Power re-derived from Moltres's OWN IVs (DARK,
+    //     NEUTRAL vs Fire/Flying) ; p2 splash. Measure ONLY the T3 mimicked-HP damage.
+    let cha_before = st.sides[1].pokemon[st.sides[1].active].hp;
+    let _ = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(1))], &d);
+    let cha_after = st.sides[1].pokemon[st.sides[1].active].hp;
+    let dealt = cha_before - cha_after;
+    // A NEUTRAL Dark HP (BP 70) deals a substantial chunk (>1/4 maxhp); the pre-fix
+    // `hiddenpowergrass` storage would deal 0.25x -> ~1/4 as much (well under 1/4 maxhp).
+    assert!(
+        dealt > cha_max / 4,
+        "the mimicked HP hit NEUTRALLY (Moltres's OWN Dark type), NOT 0.25x Grass — the T3 hit \
+         dealt {dealt} of {cha_max}"
+    );
+}
+
+// ============================================================================
+// I2 — gen-3 INTIMIDATE vs a FORCED REPLACEMENT
+//      (`gen3_intimidate_forced_replacement_v1`; repro rmrr03rmc_ab_1381_0, DEC 51).
+//      A deferred switch-in Intimidate must NOT drop the Atk of a foe that REPLACED
+//      the intended target between the switch action and the deferred `RunSwitch`.
+//      Composition: p1 Tyranitar Pursuit-KOs a switching Destiny-Bond Gengar; the DB
+//      faints Tyranitar; p2's Salamence (Intimidate) enters; p1 force-replaces the
+//      DB-fainted Tyranitar with Snorlax. In Showdown the entrant's runSwitch/
+//      Intimidate resolves as part of its own switch action (against the original,
+//      now-fainted Tyranitar), NEVER against the later Snorlax. WRONG (pre-fix): the
+//      port's deferred RunSwitch read the post-replacement foe active (Snorlax) ->
+//      dropped its Atk to -1 (golden DEC 51 p1 Snorlax boosts [0,0,0,0,0]; port
+//      [-1,0,0,0,0]). The fix captures the foe uid at switch-in (`switchin_foe_uid`)
+//      and suppresses the drop on a mis-target. STATE pin (Snorlax's Atk stays 0).
+//      (The residual PROTOCOL byte-ORDERING of the deferred hint is a pre-existing
+//      deferred-RunSwitch limitation, unmasked once the STATE matches — the spec's
+//      rejected higher-risk reorder; out of scope for this STATE pin.)
+// ============================================================================
+
+/// I2: a deferred switch-in Intimidate does not drop a foe that force-replaced its
+/// intended target. WRONG (pre-fix): `intimidate_on_start` read the post-replacement
+/// foe -> Atk -1. Reverting the `switchin_foe_uid` guard drops the replacement's Atk to -1.
+#[test]
+fn intimidate_entrant_does_not_drop_a_forced_replacement_foe() {
+    let d = dex();
+    // p1: Tyranitar (Pursuit) — the pursuer that KOs the switching Gengar then FAINTS to its
+    // Destiny Bond — + Snorlax, the forced replacement whose Atk must stay 0.
+    let p1 = "Tyranitar|||sandstream|pursuit,crunch|Adamant|252,252,,,,|N||||\
+              ]Snorlax|||immunity|bodyslam,splash|Adamant|252,252,,,,|N||||";
+    // p2: Gengar (Destiny Bond, injected low-HP + armed) + Salamence (Intimidate), the entrant.
+    let p2 = "Gengar|||levitate|destinybond,shadowball|Timid|,,,252,,252|N||||\
+              ]Salamence|||intimidate|dragonclaw,splash|Adamant|,252,,,,|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "53303,35262,36397,29520"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    // INJECT: Gengar at 1 HP (Pursuit x2 KOs it on the switch-out interrupt) + its Destiny Bond
+    // ARMED (as if it had used Destiny Bond).
+    st.sides[1].pokemon[0].hp = 1;
+    st.sides[1].pokemon[0].destiny_bond = true;
+
+    // dec0: p1 Tyranitar Pursuit ; p2 voluntarily switches Gengar -> Salamence. The Pursuit
+    // INTERRUPT strikes the switching Gengar -> KO -> its Destiny Bond faints Tyranitar ->
+    // Salamence enters -> p1 is forced to replace the DB-fainted Tyranitar.
+    // dec1: p1 forced-switch -> Snorlax (slot 1).
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Switch(1)),
+            ScriptDecision::one(0, Choice::Switch(1)),
+        ],
+        &d,
+    );
+    assert!(
+        out.decisions.len() >= 2,
+        "the Pursuit -> Destiny Bond -> forced-replacement composition chains >=2 boundaries"
+    );
+    // Snorlax (p1's forced replacement) is now active. Its Atk MUST stay 0 — Salamence's
+    // deferred switch-in Intimidate targeted the (now-fainted/replaced) Tyranitar, NOT Snorlax.
+    let lax = &st.sides[0].pokemon[st.sides[0].active];
+    assert_eq!(lax.species_id, "snorlax", "p1's forced replacement is Snorlax");
+    assert_eq!(
+        lax.boosts[0], 0,
+        "the forced-replacement Snorlax's Atk stays 0 — the deferred switch-in Intimidate must \
+         NOT drop a foe that REPLACED its intended target (reverting the switchin_foe_uid guard \
+         in intimidate_on_start drops it to -1)"
     );
 }

@@ -188,8 +188,22 @@ impl MoveData {
     /// So a move is taunt-blocked iff it is derived-Status AND not one of those fixed-damage /
     /// counter-family moves. (Every REAL gen-3 Status move — boosts/heal/hazard/phaze/status-
     /// inflict/protect/etc. — has bp 0 and a genuine Status category, so it is still blocked.)
+    ///
+    /// The BARE `hiddenpower` (num 237) is the SAME mis-classification class
+    /// (`gen3_iv_derived_hidden_power_bp_v1`, the round-12 pool-crash fix's LEGALITY sibling): the
+    /// data ships it BP 0 → derived Status, but a packed gen3ou team stores a real damaging Hidden
+    /// Power there (the type/BP come from the attacker's IVs, resolved at `run_move`). Showdown
+    /// resolves the slot to a TYPED variant whose category is the type-split (Special) → NOT
+    /// taunt-blocked, so a TAUNTED mon's Hidden Power stays selectable (VERIFIED vs the sim). The
+    /// port must NOT reject it (else `choice_is_legal` rejects the legal HP → the choice stream
+    /// misaligns and the wrong move runs — the ab_233_8 over-KO). The TYPED ids
+    /// (`hiddenpower<type>`, nums 355-370) already carry BP 70 → non-Status → not blocked, so
+    /// gate on the bare id — every `hiddenpower*` id must stay selectable under Taunt.
     pub fn blocked_by_taunt(&self) -> bool {
-        self.category == MoveCategory::Status && !self.is_fixed_damage() && !self.is_variable_bp()
+        self.category == MoveCategory::Status
+            && !self.is_fixed_damage()
+            && !self.is_variable_bp()
+            && !self.id.starts_with("hiddenpower")
     }
 
     /// Whether this is a gen-3 FIXED-DAMAGE / `damageCallback` / Counter-family move (bp 0 but

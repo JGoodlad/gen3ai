@@ -658,6 +658,18 @@ pub struct MonState {
     /// `side_has_sleeper` while `status == Some(Sleep(_))`. `false` at construction.
     /// `gen3_sleep_clause_self_rest_exempt_v1` (R15-P1).
     pub sleep_from_rest: bool,
+
+    /// The foe active's `uid` at the moment THIS mon switched in (`gen3_intimidate_forced_replacement_v1`,
+    /// M3). Captured in `execute_switch` right after the array swap; consumed by the DEFERRED
+    /// switch-in Intimidate (`event::intimidate_on_start`) to SUPPRESS a mis-fired drop whose
+    /// intended target was REPLACED (a forced replacement) between the switch action and the deferred
+    /// `RunSwitch`. In Showdown the entrant's `runSwitch`/Intimidate ALWAYS resolves as part of its own
+    /// switch action (before the action-tail `faintMessages` + `makeRequest('switch')`), so it targets
+    /// the mon present at switch time — NEVER a later replacement (the ab_1381_0 mis-target where a
+    /// Destiny-Bond-fainted Tyranitar was replaced by Snorlax, whose Atk the port wrongly dropped −1).
+    /// `Some(uid)` while a switch-in Intimidate is pending, `None` otherwise (cleared once run_switch
+    /// consumes it + on faint). `None` at construction. Draw-free (a boost-suppression is state-only).
+    pub switchin_foe_uid: Option<usize>,
 }
 
 /// The MIMIC moveslot-overlay restore record (`gen3_move_coverage_batch6_v1`).
@@ -914,6 +926,7 @@ impl MonState {
             mimic_overlay: None,
             snatch: false,
             sleep_from_rest: false,
+            switchin_foe_uid: None,
         })
     }
 

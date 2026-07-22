@@ -2571,6 +2571,32 @@ EQ-KO'd burned NC Blissey KEEPS its burn — the `!fainted` gate; reverting the 
 cured on the bench; STATE + the DRAW-FREE seed) — ground truth `harness/probe_naturalcure_regression_rng.js`,
 semantics probe-settled by `probe_naturalcure_{dump,rng}.js`.
 
+**The gen3ou-POOL byte-fuzz Hidden-Power / Intimidate pins (the 14h `sweep_fuzz14_omni_ou` finds, all
+revert-verified STATE pins).** (1) **`taunt_does_not_block_a_bare_hidden_power`**
+(`gen3_iv_derived_hidden_power_bp_v1`, the LEGALITY sibling of the round-12 IV-derived-HP fix; repro
+ab_233_8): the BARE `hiddenpower` (num 237, data BP 0 → derived Status) is a REAL damaging move, so
+`MoveData::blocked_by_taunt()` gates on `!self.id.starts_with("hiddenpower")` — a Taunted mon keeps its
+HP selectable (else `choice_is_legal` rejects the legal HP → the choice accumulator runs the WRONG move,
+the ab_233_8 over-KO). The dex lockstep test (`dex/mod.rs`) already pins the classifier. (2)
+**`mimic_of_hidden_power_uses_the_mimickers_own_type`** (`gen3_mimic_hidden_power_type_v1`; repro
+ab_777_3): gen-3 Hidden Power's TYPE is a property of the USER (Showdown stores the moveslot id BARE),
+so `turn.rs`'s Mimic success block canonicalizes a copied `hiddenpower*` id to the BARE `hiddenpower` —
+the mimicker re-derives the type from its OWN IVs (else it keeps the copied mon's TYPED HP, e.g. Grass
+0.25x where the sim's neutral Dark lands). (3) **`intimidate_entrant_does_not_drop_a_forced_replacement_foe`**
+(`gen3_intimidate_forced_replacement_v1`; repro ab_1381_0, DEC 51): a deferred switch-in Intimidate must
+NOT drop the Atk of a foe that force-replaced its intended target between the switch action and the
+deferred `RunSwitch` (the Pursuit→Destiny-Bond→replacement composition). `execute_switch` captures the
+foe uid at switch-in **only for a VOLUNTARY switch** (`switchin_foe_uid`), and `event::intimidate_on_start`
+suppresses the drop when that captured original is now FAINTED — matching Showdown, whose entrant
+Intimidate resolves INLINE against the fainted original (`adjacentFoes()` empty → the "not activated"
+hint). The `is_voluntary` gate + the original-FAINTED narrowing keep a DOUBLE FORCED replacement
+(mutual Self-Destruct) and a live-foe double switch on the pre-fix path (both DO drop the co-/new foe —
+e2e + byte-fuzz-corpus-verified). STATE-only fix; the residual PROTOCOL byte-ORDERING of the deferred
+hint (the port runs the entrant RunSwitch past the turn boundary vs the sim inline) is a pre-existing
+deferred-RunSwitch limitation, unmasked once the STATE matches — the spec's rejected higher-risk reorder,
+out of scope. All three are OBSERVATION-NEUTRAL for the committed suites (e2e md5
+`3155eb796cb4bf453c6053d769ba98e5` UNCHANGED, all 508 tests green).
+
 The **BATCH-1 ability-class pins** (`gen3_ability_batch1_v1`, ground truth
 `harness/probe_ability_batch1_regression_rng.js`) — each a CONSTRUCTED scenario reseeded to the RAW seed
 (so the port's draw-free `start_with_switchins` aligns), revert-verified (each FAILS when its class's engine

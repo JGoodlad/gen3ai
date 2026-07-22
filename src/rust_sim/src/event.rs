@@ -352,9 +352,44 @@ fn ability_on_start(state: &mut BattleState, side: usize, slot: usize, ability_i
 /// `onTryBoost`/`boost`/the sub check — probed identical seeds with/without the
 /// sub), so this is a STATE-only gate. When not blocked, the net effect is the
 /// clamped Atk-stage decrement.
-fn intimidate_on_start(state: &mut BattleState, side: usize, _slot: usize) {
+fn intimidate_on_start(state: &mut BattleState, side: usize, slot: usize) {
     let foe = 1 - side; // singles: the one opposing side
     let foe_active = state.sides[foe].active;
+    // FORCED-REPLACEMENT mis-target guard (`gen3_intimidate_forced_replacement_v1`, M3): the
+    // deferred `RunSwitch` fires this switch-in Intimidate LATER than the switch action. If the
+    // intended foe (the one present when this mon switched in — its captured `switchin_foe_uid`)
+    // was FORCE-REPLACED because it FAINTED between the switch and this deferred fire (a
+    // Destiny-Bond / on-entry-faint forced replacement), Showdown's entrant Intimidate resolved
+    // INLINE against the (fainted) original — an EMPTY `adjacentFoes()` → NO drop (the ab_1381_0
+    // "not activated" hint). So SUPPRESS the drop only in that case (the original faints
+    // regardless → state-equivalent). NARROW: suppress ONLY when the captured original is now
+    // FAINTED/absent — NOT for a live foe-active change (a DOUBLE VOLUNTARY switch leaves the
+    // original alive on the bench and the sim DOES drop the new foe, e2e-verified). The lead
+    // switch-in path leaves `switchin_foe_uid == None` (draw-free `run_start_switchins`), so a
+    // lead Intimidate is never suppressed. DRAW-FREE (a boost-suppression is state-only).
+    if let Some(target_uid) = state.sides[side].pokemon[slot].switchin_foe_uid {
+        if state.sides[foe].pokemon[foe_active].uid != target_uid {
+            // The intended target was replaced. Suppress ONLY if it FAINTED (a forced
+            // replacement — the M3 case); if it merely switched to the bench alive, drop the
+            // new foe (matching the sim + the pre-fix behavior).
+            let original_fainted = state.sides[foe]
+                .pokemon
+                .iter()
+                .find(|m| m.uid == target_uid)
+                .map(|m| m.fainted || m.hp == 0)
+                .unwrap_or(true); // absent entirely → treat as gone
+            if original_fainted {
+                return;
+            }
+        }
+    }
+    // Belt-and-braces: a fainted/0-HP CURRENT foe active is a genuine no-op (`adjacentFoes()`
+    // excludes it).
+    if state.sides[foe].pokemon[foe_active].fainted
+        || state.sides[foe].pokemon[foe_active].hp == 0
+    {
+        return;
+    }
     // gen-3 Intimidate vs SUBSTITUTE: a subbed foe is NOT dropped (the gen3 mod's
     // per-foe substitute skip; probe `harness/probe_intimidate_substitute_rng.js` + the sim's
     // `-unboost` absence). DRAW-FREE.
