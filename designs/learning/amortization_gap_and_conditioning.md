@@ -543,6 +543,83 @@ tails only; trace-reading triage/scan is the near-free exception) — the exchan
 slope-dependent: rollouts pay while climbing, mining dominates at plateau; **(3) exploiters =
 bulk CPU for strategic-depth signal.**
 
+## How much per-team divergence does the game actually reward? (2026-07-22, the ground-truth probe)
+
+The "team_std is stuck at 5:1 (dev:team_std)" concern rested on an unexamined assumption — that
+per-team differentiation *should* be large. `tmp/specialist_divergence_probe.py` measured the
+ground truth: a per-team specialist (exploiter) IS the optimal per-team policy, so the BEHAVIORAL
+divergence between each exploiter and the generalist (ai_v7_14), on the exploiter's own team, is
+the target amount of per-team conditioning. Basis-independent (independently-trained nets → feature
+L2 meaningless), so KL(π_spec‖π_gen) + action agreement + a **control** (a second, non-specialized
+generalist ai_v7_02 vs the same reference — the baseline "two generalists disagree" from arbitrary
+tie-breaking). 4 teams, ~1000-2000 states each:
+
+- Raw KL(spec‖gen) ≈ 0.65 and ~50% action agreement LOOK huge — but the CONTROL generalist already
+  diverges KL ≈ 0.42 / agrees 59%. So ~2/3 of the apparent divergence is baseline noise, not
+  specialization. **Specialist-attributable EXCESS = +0.23 KL (≈21% of the policy's 1.10 entropy);
+  the action-agreement gap is only +6pp.** → the true per-team play the generalist misses is
+  MODEST. **5:1 team_std is NOT clearly wrong** — the owner's "maybe it's optimal" challenge is
+  substantially borne out.
+- Concentrated on STRATEGY-DEFINING teams: trap (+0.32) / cmpass (+0.30) carry ~2× the excess of
+  TSS (+0.12) / stall (+0.18) — mechanic-driven plans (trap, Baton-Pass) reward per-team play;
+  generically-defensive teams barely do.
+- Moderately spread (top-10% of states hold ~38% of KL — some concentration, not pivotal-only).
+- Both caveats push the SAME way (→ +0.23 is an UPPER BOUND): the exploiters were trained to beat
+  ai_v7_14 *specifically* (some excess = opponent-exploitation, not team-optimal), and states come
+  from the specialist's own steered trajectory. True headroom < +0.23.
+
+**Implication:** the per-team FiLM prize is real but MODEST and team-specific (gimmick teams), best
+captured by targeted distillation for those archetypes — NOT a broad push to inflate team_std. This
+explains why team_std stays small under pure RL (the per-team advantage signal is genuinely small →
+extraction-limited, not architecture-limited) and DE-prioritizes the FiLM-differential work vs the
+broader levers (privileged critic, categorical critic, search-teacher). The metric wasn't lying;
+the assumption that it should be bigger was.
+
+## CORRECTION: the per-team prize is LARGE, not modest — the KL proxy misled (2026-07-22 mirror)
+
+The "How much per-team divergence does the game reward?" section above concluded (from the
+divergence probe's ~0.23 excess KL) that the prize was MODEST and "5:1 team_std is fine." **That
+was wrong — KL magnitude was a poor proxy for the prize.** The equal-pilot mirror
+(`tmp/piloting_mirror_eval.py`, 60 games/side vs the current ai_v8_03) measures the OUTCOME
+directly: exploiter-pilots-team vs current-on-pool MINUS current-pilots-SAME-team vs current-on-pool
+= the pure PILOTING edge (team advantage cancels). Result: mean **+0.183 win-rate** (trap +0.300,
+stall +0.166, TSS +0.134, cmpass +0.133), team-only baseline ~0.53. So the exploiters' ~71% win vs
+current is almost ENTIRELY piloting, not team. **trap is the smoking gun: the current model pilots
+the trap team to 0.400 — it LOSES with a legal team — while the exploiter pilots it to 0.700**, a
++30pp purely-piloting gap. Reconciliation: a MODEST policy change (0.23 KL) LEVERAGED at pivotal
+decisions produces a LARGE win-rate swing — the two are consistent; I conflated "how differently
+they play" with "how much better the outcome." So team_std being low is a REAL deficit (the
+washing), NOT the optimal, and distillation-into-FiLM is WELL-JUSTIFIED (~18pp distillable,
+gimmick-team-concentrated). Exploiters are good teachers AS-IS (they beat current on piloting, not
+anti-v7_14 gimmicks). CI caveat: individual per-team edges ±0.17 at 60g (cmpass/TSS suggestive);
+the mean and trap are solid. This is the washing-limited story made concrete: trap's per-team play
+washed out of the generalist entirely; the dedicated exploiter has it; distill it.
+
+## "Signal-limited" was imprecise — it's WASHING-limited (2026-07-22 owner catch)
+
+The owner pushed back on "team_std stays small because the per-team signal is small/extraction-
+limited": **an exploiter trained against ourselves is NOT signal-limited** — it converges to strong
+per-team play, proving the per-team signal EXISTS and is EXTRACTABLE. The precise diagnosis is
+WASHING, not absence. The generalist loses the (real) signal to three things the exploiter doesn't
+face: (1) sample DILUTION (~0.14%/team vs the exploiter's 100%), (2) gradient INTERFERENCE in the
+shared trunk (team A's "stay" vs team B's "switch" at similar features sum to ~0), (3) FiLM ROUTING
+to the shared tilt (simplicity bias). The exploiter avoids all three by DEDICATING params+samples
+to one team.
+
+**The fix is therefore not more RL or more storage — it's transferring the already-extracted
+exploiter signal into isolated storage:** (Move 1) distill the exploiter's FULL action-distribution
+target (replayable → no dilution; supervised → no extraction fight; higher-SNR than a scalar
+advantage); (Move 2) distill INTO FiLM, not the shared head — the shared head washes out exactly
+like RL (this is why the earlier shared-head distillation "interfered with the rest"). **The
+mechanism that forces team_std up where RL couldn't:** N DISTINCT per-team targets CANNOT be fit by
+one shared modulation, so the shared component can only capture the common part and everything
+team-specific is FORCED into the differential channel — the supervised targets deny the shared
+solution its low-complexity escape hatch. (Move 3, optional: center FiLM to structurally forbid the
+shared absorption.) Bounded by the modest measured per-team divergence (~0.23 excess KL, gimmick
+teams) — so a targeted lift, not a transformation. This IS the Phase-2 exploiter-distill-into-FiLM
+pairing: both halves are BUILT (exploiters exist, FiLM shipped v44); the never-run step is feeding
+FiLM the concentrated exploiter signal instead of the washed RL advantage.
+
 ## See also
 - [[objective_richness_and_representation]] — the simplicity bias / minimal-sufficient-statistic backbone (why the shared solution wins by default) + the distillation bits-ladder
 - `src/agents/model/CLAUDE.md` → dual-head value readout, the shared trunk (where the interference lives)
