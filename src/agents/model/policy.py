@@ -55,6 +55,19 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         # ModelVersion gate. Requires value_dist_mode == "shaping" (the head must be a live critic).
         self._value_from_dist = bool(value_from_dist)
 
+    def set_value_from_dist(self, on: bool) -> None:
+        """Apply value_from_dist at RUNTIME (the --value-from-dist migration path). SB3's load
+        reconstructs the policy from the ZIP's SAVED policy_kwargs, so a first Phase-B resume (from a
+        pre-v45 checkpoint whose kwargs lack the key) would otherwise be a SILENT NO-OP — the migration
+        notice prints but the loaded policy keeps _value_from_dist=False (the 2026-07-22 catch:
+        grad/value_dist_share stayed ~0.05 instead of ~0.5). Call this post-load on resume; no-op when
+        unchanged. Same fix as features_extractor.set_belief_grad_mode."""
+        changed = bool(on) != bool(getattr(self, "_value_from_dist", False))
+        self._value_from_dist = bool(on)
+        if changed:
+            print(f"[Gen3DualHeadMaskablePolicy] value_from_dist APPLIED at runtime -> {bool(on)} "
+                  f"(critic = {'distributional E[Z]' if on else 'scalar value_net'})")
+
     def _denorm(self, values: th.Tensor) -> th.Tensor:
         """Map the value head's (possibly normalized) output to a real-unit value. Identity when
         PopArt is disabled, so the real-unit GAE / advantage path is unchanged."""

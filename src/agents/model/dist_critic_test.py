@@ -69,3 +69,17 @@ def test_check_value_from_dist_resume_gate(capsys):
     v.check_value_from_dist(True, allow_change=True)       # migration hatch: no raise
     assert "MIGRATION" in capsys.readouterr().out
     v.check_value_from_dist(False)                         # match: no raise
+
+
+def test_set_value_from_dist_runtime_toggle(capsys):
+    """The runtime setter (the migration fix) flips _value_from_dist on the LIVE policy — SB3 load
+    rebuilds from saved kwargs, so without this post-load call a first Phase-B resume is a silent
+    no-op (grad/value_dist_share stays ~aux-level instead of ~0.5)."""
+    p = types.SimpleNamespace()
+    p._value_from_dist = False
+    p.set_value_from_dist = Gen3DualHeadMaskablePolicy.set_value_from_dist.__get__(p)
+    p.set_value_from_dist(True)
+    assert p._value_from_dist is True
+    assert "APPLIED at runtime -> True" in capsys.readouterr().out
+    p.set_value_from_dist(True)  # no-op (unchanged) — no second notice
+    assert capsys.readouterr().out == ""

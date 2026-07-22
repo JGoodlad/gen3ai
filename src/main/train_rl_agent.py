@@ -3443,6 +3443,10 @@ async def main():
             # post-load (else --allow-belief-grad-mode-change is a silent no-op — the 2026-07-21
             # incident, visible as grad/*_norm_shared == 0 under 'shaping'). No-op when unchanged.
             model.policy.features_extractor.set_belief_grad_mode(args.belief_grad_mode)
+            # gen3_dist_critic_v1 (Phase B) MIGRATION FIX: same silent-no-op class — the loaded policy
+            # is rebuilt from the ZIP's saved policy_kwargs (a pre-v45 checkpoint lacks value_from_dist),
+            # so apply the requested source to the live policy post-load (no-op when unchanged).
+            model.policy.set_value_from_dist(args.value_from_dist)
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
             sys.stdout.flush()  # os._exit() skips buffer flushing — make sure the reason reaches the log
