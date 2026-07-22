@@ -38,7 +38,7 @@ use crate::battle::{Battle, BattleOptions, PackedTeam, PlayerOptions};
 use crate::dex::Dex;
 use crate::prng::{Prng, PrngSeed};
 use crate::state::{BattleState, MonState, Status};
-use crate::turn::{Choice, ScriptDecision};
+use crate::turn::{Choice, FullBattleDriver, ScriptDecision};
 
 // ===========================================================================
 // The `>start` construction-window seed advance (the `sim_bridge` drop-in seed
@@ -46,9 +46,9 @@ use crate::turn::{Choice, ScriptDecision};
 // ===========================================================================
 
 /// Advance a RAW `>start` seed by the sim's turn-0 CONSTRUCTION-WINDOW draw so the
-/// port's replay-from-genesis (which does NOT model that window) starts from the SAME
-/// PRNG state Showdown reaches after `>start`+`>player`. This makes the `sim_bridge`
-/// binary byte-identical to the real Node bridge on a seeded battle.
+/// port's replay (which does NOT model that window) starts from the SAME PRNG state
+/// Showdown reaches after `>start`+`>player`. This makes the `sim_bridge` binary
+/// byte-identical to the real Node bridge on a seeded battle.
 ///
 /// The construction window consumes exactly ONE PRNG draw — the gen-3 **turn-0 Quick
 /// Claw** `randomChance(1, 5)` (fired once when the battle starts) — for a team with
@@ -1080,6 +1080,305 @@ pub fn run_full_battle_bridge_core(
     }
 
     Ok((chunks, battle_ended, script, request_seeds))
+}
+
+// ===========================================================================
+// The INCREMENTAL per-side bridge (`gen3_bridge_incremental_replay_v1`) — a
+// PERSISTENT live-battle session that advances ONE request boundary per fed CMD,
+// O(1) per input, NEVER re-simulating a prior turn. This is the production path
+// (`sim_bridge` holds one across CHOOSE lines); [`run_full_battle_bridge_core`]
+// (above) stays the genesis-replay REFERENCE ORACLE the parity test checks against.
+// ===========================================================================
+
+/// The mid-boundary progress a [`BridgeSession`] persists across CMD feeds (a `move`
+/// request needs BOTH sides' choices, possibly arriving on separate CHOOSE lines; a
+/// trapped reject holds the boundary open).
+struct BoundaryProgress {
+    kinds: [SideRequest; 2],
+    got: [Option<Choice>; 2],
+    need: [bool; 2],
+}
+
+/// A PERSISTENT per-side bridge session over a LIVE battle. It owns the same
+/// `Battle` + [`FullBattleDriver`] stepping primitive [`BattleStream`] uses (the ONE
+/// turn-loop), plus the per-side chunk/log/seed bookkeeping the genesis-replay core
+/// kept in locals. `feed_cmd` appends one CMD and advances the driver to the next
+/// request boundary, emitting ONLY the new chunk — so a battle costs O(N), not O(N²)
+/// (the wedge fix): `sim_bridge` builds ONE session per battle and feeds each CHOOSE
+/// into it, instead of re-running the whole accumulated stream per CHOOSE.
+///
+/// Plain data (the `Battle`/queue are `Clone`-able), so a future `Battle::serialize`
+/// can snapshot a paused session mechanically (Tier 3 — not built here). Shares the
+/// caller's `&Dex` (a `Dex` owns ~16 MB of parsed data — a per-battle load would be a
+/// real regression), so the bridge threads it per method, unlike the writeline
+/// `BattleStream` which owns its Dex for the standalone `new()` surface.
+pub struct BridgeSession {
+    battle: Battle,
+    driver: FullBattleDriver,
+    report_percent: bool,
+    chunks: BridgeChunks,
+    /// The A2 seed anchor — the makeRequest-boundary seed per committed decision.
+    request_seeds: Vec<PrngSeed>,
+    /// The committed decisions, in order (parity with the genesis core's `script`).
+    script: Vec<ScriptDecision>,
+    /// Cursor into the LIVE battle log (`prev_log_len` in the genesis core).
+    prev_log_len: usize,
+    /// The open boundary's per-side progress, or `None` between boundaries.
+    boundary: Option<BoundaryProgress>,
+    /// Unconsumed CMDs (fed but not yet answering a boundary — e.g. a partial
+    /// double-replacement, or cmds queued ahead of the boundary that needs them).
+    cmd_buf: std::collections::VecDeque<Cmd>,
+    /// The battle reached its natural WIN/LOSS/TIE end.
+    ended: bool,
+    /// An upstream-desync graceful stop (the R20 `!need[s]` case) — no further advance.
+    stopped: bool,
+}
+
+impl BridgeSession {
+    /// Build a session: construct the live battle, emit + chunk the framing, and advance
+    /// to the FIRST request boundary (emitting its request), paused for the first CMD.
+    pub fn new(opts: &BattleOptions, dex: &Dex) -> Result<BridgeSession, String> {
+        // Percent HP fold applies only in non-debug formats (gen3ou); a `debug:true`
+        // format (gen3customgame) sets `reportExactHP` → both sides see exact HP.
+        let report_percent = !format_is_debug(&opts.format_id);
+        let mut battle = Battle::start_with_switchins(opts, dex)?;
+        // Emit the framing INTO the live log (kept, not drained — continuous cursor
+        // coords), exactly the lines `run_full_battle_logged(&[])` produces.
+        let raw_framing: Vec<crate::protocol::ProtocolLine> = {
+            let bs = battle.state_mut().ok_or("no state")?;
+            bs.log.enable();
+            bs.emit_framing(dex);
+            bs.log.lines().to_vec()
+        };
+        let framing = reframe(&raw_framing, &opts.format_id);
+        let mut chunks = BridgeChunks::default();
+        emit_framing_chunks(&mut chunks, &framing, report_percent);
+        let prev_log_len = raw_framing.len();
+        let mut sess = BridgeSession {
+            battle,
+            driver: FullBattleDriver::new(),
+            report_percent,
+            chunks,
+            request_seeds: Vec::new(),
+            script: Vec::new(),
+            prev_log_len,
+            boundary: None,
+            cmd_buf: std::collections::VecDeque::new(),
+            ended: false,
+            stopped: false,
+        };
+        sess.advance(dex);
+        Ok(sess)
+    }
+
+    /// Feed ONE command (the `sim_bridge` per-CHOOSE entry) and advance. O(1) amortized.
+    pub fn feed_cmd(&mut self, cmd: Cmd, dex: &Dex) {
+        self.cmd_buf.push_back(cmd);
+        self.advance(dex);
+    }
+
+    /// Feed a batch of commands and advance (the single-call oracle/parity path).
+    pub fn feed_cmds(&mut self, cmds: &[Cmd], dex: &Dex) {
+        for c in cmds {
+            self.cmd_buf.push_back(c.clone());
+        }
+        self.advance(dex);
+    }
+
+    /// All per-side chunks emitted so far (the `sim_bridge` cursor reads `[emitted..]`).
+    pub fn chunks(&self) -> &BridgeChunks {
+        &self.chunks
+    }
+
+    /// The battle reached game-end.
+    pub fn is_ended(&self) -> bool {
+        self.ended
+    }
+
+    /// The A2 seed-anchor list (parity with the genesis core).
+    pub fn request_seeds(&self) -> &[PrngSeed] {
+        &self.request_seeds
+    }
+
+    /// The committed decisions (parity with the genesis core).
+    pub fn script(&self) -> &[ScriptDecision] {
+        &self.script
+    }
+
+    /// Advance from the current paused state as far as the buffered CMDs allow: at each
+    /// request boundary emit the log delta + request, consume CMD(s), emit the struggle
+    /// line, feed ONE decision to the driver, repeat — pausing when the CMD buffer runs
+    /// out mid-boundary. Byte-identical (chunks + seeds + script) to the genesis-replay
+    /// core fed the same CMD stream (asserted by the parity test); the incremental engine
+    /// draws the SAME PRNG numbers a genesis replay would, by construction.
+    fn advance(&mut self, dex: &Dex) {
+        // Defensive spin guard (the driver's `BATTLE_TURN_CAP`/`turn_loop` watchdogs are the
+        // real runaway protection; this only catches a logic bug in THIS loop).
+        let mut guard: u64 = 0;
+        loop {
+            guard += 1;
+            if guard > 100_000_000 {
+                panic!("BridgeSession::advance spin guard exceeded (a boundary never resolved)");
+            }
+            if self.stopped || self.ended {
+                return;
+            }
+            // ── Start a new boundary if not mid-boundary. ──
+            if self.boundary.is_none() {
+                // [A2] makeRequest-boundary seed (skip the pre-first-decision boundary).
+                if !self.script.is_empty() {
+                    let seed = self.battle.state().expect("state").prng_seed();
+                    self.request_seeds.push(seed);
+                }
+                // The log delta flushed since the previous boundary → ONE chunk per side.
+                let (delta, new_len) = {
+                    let bs = self.battle.state().expect("state");
+                    let lines = bs.log.lines();
+                    (lines[self.prev_log_len..].to_vec(), lines.len())
+                };
+                emit_log_batch_chunk(&mut self.chunks, &delta, self.report_percent);
+                self.prev_log_len = new_len;
+                if self.driver.is_ended() {
+                    self.ended = true;
+                    return;
+                }
+                // Determine the pending request kind per side from the paused state.
+                let (kinds, no_cancel_forced) = {
+                    let bs = self.battle.state().expect("state");
+                    let force = pending_force(bs);
+                    let is_switch = force[0] || force[1];
+                    let kinds = boundary_kinds(bs, &force, is_switch);
+                    let non_wait = kinds.iter().filter(|k| **k != SideRequest::Wait).count();
+                    (kinds, non_wait < 2)
+                };
+                {
+                    let bs = self.battle.state().expect("state");
+                    emit_boundary_request_chunks(&mut self.chunks, bs, &kinds, no_cancel_forced, dex);
+                }
+                self.boundary = Some(BoundaryProgress {
+                    kinds,
+                    got: [None, None],
+                    need: [kinds[0] != SideRequest::Wait, kinds[1] != SideRequest::Wait],
+                });
+            }
+
+            // ── Consume CMD(s) answering this boundary. ──
+            loop {
+                let (need0, need1) = {
+                    let bp = self.boundary.as_ref().expect("boundary");
+                    (bp.need[0], bp.need[1])
+                };
+                if !need0 && !need1 {
+                    break; // boundary satisfied
+                }
+                let cmd = match self.cmd_buf.front() {
+                    Some(c) => c.clone(),
+                    None => return, // PAUSE — out of CMDs; resume on the next fed CMD
+                };
+                let s = cmd.side;
+                if !self.boundary.as_ref().expect("boundary").need[s] {
+                    // A CMD for a side this boundary does NOT request — an UPSTREAM engine
+                    // desync (an extra/missing draw shifted a faint/forced-switch onto a side
+                    // the recorded game did not have here). Stop gracefully (R20) so the seed
+                    // anchor classifies it, instead of crashing.
+                    self.stopped = true;
+                    return;
+                }
+                // Resolve the wire token (numeric slot OR a NAME) against THIS boundary's
+                // state, exactly like Showdown's `side.chooseMove`/`chooseSwitch`.
+                let resolved = {
+                    let bs = self.battle.state().expect("state");
+                    resolve_choice(bs, s, &cmd.choice).unwrap_or_else(|| match cmd.choice {
+                        WireChoice::Switch(_) | WireChoice::SwitchSpecies(_) => {
+                            Choice::Switch(bs.sides[s].pokemon.len())
+                        }
+                        _ => Choice::Move(bs.sides[s].pokemon[bs.sides[s].active].set.moves.len()),
+                    })
+                };
+                self.cmd_buf.pop_front();
+                // Trapped-switch rejection at a MOVE boundary — the `|error|` + (hidden trap)
+                // the re-request are SEPARATE chunks; the side still needs a choice.
+                let (reject, firm) = {
+                    let bs = self.battle.state().expect("state");
+                    let kind_s = self.boundary.as_ref().expect("boundary").kinds[s];
+                    let locked = bs.sides[s].pokemon[bs.sides[s].active].move_locked();
+                    let reject = kind_s == SideRequest::Move
+                        && matches!(resolved, Choice::Switch(_))
+                        && ((bs.is_trapped(s, dex) && has_live_bench(bs, s)) || locked);
+                    let firm = locked || bs.trap_is_firm(s, dex);
+                    (reject, firm)
+                };
+                if reject {
+                    if firm {
+                        self.chunks.push_chunk(
+                            s,
+                            vec!["|error|[Invalid choice] Can't switch: The active Pokémon is trapped"
+                                .to_string()],
+                        );
+                    } else {
+                        self.chunks.push_chunk(
+                            s,
+                            vec!["|error|[Unavailable choice] Can't switch: The active Pokémon is trapped"
+                                .to_string()],
+                        );
+                        let rereq = {
+                            let bs = self.battle.state().expect("state");
+                            build_request(bs, s, SideRequest::Move, true, true, false, dex)
+                        };
+                        self.chunks.push_chunk(s, vec![rereq]);
+                    }
+                    continue; // side s still needs a choice
+                }
+                let bp = self.boundary.as_mut().expect("boundary");
+                bp.got[s] = Some(resolved);
+                bp.need[s] = false;
+            }
+
+            // ── Boundary satisfied → struggle announce, commit, feed the driver. ──
+            let bp = self.boundary.take().expect("boundary");
+            {
+                let bs = self.battle.state().expect("state");
+                for s in 0..2 {
+                    if matches!(bp.got[s], Some(Choice::Move(_))) {
+                        let mon = &bs.sides[s].pokemon[bs.sides[s].active];
+                        if !mon.move_locked() && mon.must_struggle(dex) {
+                            let name = display_name(mon, dex);
+                            self.chunks.push_chunk(
+                                s,
+                                vec![format!("|-activate|p{}a: {}|move: Struggle", s + 1, name)],
+                            );
+                        }
+                    }
+                }
+            }
+            let mut dec = ScriptDecision::default();
+            for s in 0..2 {
+                if let Some(c) = bp.got[s] {
+                    dec.set_side(s, c);
+                }
+            }
+            self.script.push(dec);
+            {
+                let driver = &mut self.driver;
+                let bs = self.battle.state_mut().expect("state");
+                driver.feed(bs, dec, dex);
+            }
+            // loop back → start a new boundary
+        }
+    }
+}
+
+/// The INCREMENTAL sibling of [`run_full_battle_bridge_core`]: drive the whole `cmds`
+/// stream through a single [`BridgeSession`] (O(N)) and return the SAME 4-tuple. The
+/// parity test asserts this equals the genesis-replay core bit-for-bit.
+pub fn run_full_battle_bridge_incremental(
+    opts: &BattleOptions,
+    cmds: &[Cmd],
+    dex: &Dex,
+) -> Result<(BridgeChunks, bool, Vec<ScriptDecision>, Vec<PrngSeed>), String> {
+    let mut sess = BridgeSession::new(opts, dex)?;
+    sess.feed_cmds(cmds, dex);
+    Ok((sess.chunks, sess.ended, sess.script, sess.request_seeds))
 }
 
 /// Split the reframed framing lines into the 3 `getPlayerStreams` chunks per side and

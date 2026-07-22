@@ -21,18 +21,20 @@
 //! `|request|` — one stdout line == exactly one side-tagged chunk, so the Python side
 //! can demux unambiguously.
 //!
-//! # Emission engine — replay-from-genesis (same pattern as `BattleStream::write_line`)
+//! # Emission engine — TRULY INCREMENTAL (`gen3_bridge_incremental_replay_v1`)
 //!
-//! The bridge does NOT keep a paused incremental engine. It accumulates the one-sided
-//! `CHOOSE` command stream and, on every START/CHOOSE, re-runs
-//! [`run_full_battle_bridge_chunked`] over the whole accumulated stream, then emits the
-//! NEW per-side CHUNK suffix (past what has already been written) as `pN <base64>` lines.
-//! Deterministic (the engine is bit-for-bit → each replay reproduces every prior chunk
-//! byte-identically) and cheap at bridge scale. The chunk boundaries + the HP-privacy
-//! fold + the `|request|` frames + the trapped state machine are all produced by the
-//! shared [`crate::bridge`] emitter (byte-gated by `tests/bridge_test.rs` at line level,
-//! and by `harness/gen_sim_bridge_diff.js` at the chunk/stdout level vs the real Node
-//! bridge).
+//! The session holds ONE PERSISTENT live-battle [`pokesim::bridge::BridgeSession`] across
+//! CHOOSE lines. On START it builds the battle + emits the framing + the first request; on
+//! each CHOOSE it feeds ONE command to the session, which advances the live battle to its
+//! next request boundary and appends ONLY the new per-side chunk(s) — **O(1) per CHOOSE,
+//! O(N) per battle, no re-simulation of a prior turn EVER**. (The previous design
+//! re-ran the whole accumulated stream from genesis on every CHOOSE — O(N²)/battle — which
+//! WEDGED long staller battles under `--use-bridge=rust`: each late step took minutes and
+//! the `SubprocVecEnv` step-barrier deadlocked.) The chunk boundaries + the HP-privacy fold
+//! + the `|request|` frames + the trapped state machine are all produced by the shared
+//! [`pokesim::bridge`] emitter (byte-gated by `tests/bridge_test.rs` at line level, a
+//! bit-for-bit parity test vs the genesis-replay reference core in `tests/bridge_test.rs`,
+//! and by `harness/gen_sim_bridge_diff.js` at the chunk/stdout level vs the real Node bridge).
 //!
 //! # DEFERRED — honest scope
 //!
@@ -46,17 +48,17 @@
 //!   reconstruction sibling is affected). We do NOT fake `__RECON__` content parity.
 //! - **`resumeReseed`** (`{turn, seed}` — swap the battle's PRNG at the start of a
 //!   divergence turn for the counterfactual Monte-Carlo re-roll) needs a mid-battle
-//!   `Battle::reseed`, which the replay-from-genesis driver has no hook for (and
-//!   `Battle::reseed` is still `todo!()`). It is IGNORED with a one-line stderr note; a
+//!   `Battle::reseed`, which the driver has no hook for yet (and `Battle::reseed` is still
+//!   `todo!()` — the incremental session's paused live `Battle` is a clean plain-data
+//!   struct, so a future `serialize`/`reseed` is a mechanical add). It is IGNORED with a
+//!   one-line stderr note; a
 //!   `START` that carries it runs the ordinary battle under its base seed. Again this
 //!   serves the search layer only, never core training/eval.
 
 use std::io::{self, BufRead, Write};
 
 use pokesim::battle::{BattleOptions, PackedTeam, PlayerOptions};
-use pokesim::bridge::{
-    advance_seed_for_construction, parse_choice, run_full_battle_bridge_chunked_ended, Cmd,
-};
+use pokesim::bridge::{advance_seed_for_construction, parse_choice, BridgeSession, Cmd};
 use pokesim::dex::Dex;
 use pokesim::json::Json;
 
@@ -102,34 +104,26 @@ enum LineResult {
     Exit,
 }
 
-/// One live bridge session — the accumulated battle setup + command stream, plus how
-/// many chunks have already been flushed to stdout (the replay-suffix cursor).
+/// One live bridge session — the PERSISTENT incremental battle engine
+/// ([`BridgeSession`], the live `Battle` + stepping primitive), plus how many chunks
+/// have already been flushed to stdout (the emit cursor). `None` between battles in
+/// persistent mode.
 struct Session {
     /// Sticky: once any START asks for it, the process survives battle ends.
     persistent: bool,
-    /// The current battle's setup (`None` between battles in persistent mode).
-    setup: Option<Setup>,
-    /// The accumulated `CHOOSE` commands, in processing order.
-    cmds: Vec<Cmd>,
-    /// How many chunks of the concatenated per-side stream have been emitted.
+    /// The live incremental battle engine (`None` before START / between battles).
+    bridge: Option<BridgeSession>,
+    /// How many chunks of the session's per-side stream have been emitted.
     emitted: usize,
     /// Whether the current battle has already emitted `__END__` (guard).
     ended: bool,
-}
-
-struct Setup {
-    format_id: String,
-    seed: Option<String>,
-    p1: PlayerOptions,
-    p2: PlayerOptions,
 }
 
 impl Session {
     fn new() -> Self {
         Session {
             persistent: false,
-            setup: None,
-            cmds: Vec::new(),
+            bridge: None,
             emitted: 0,
             ended: false,
         }
@@ -138,20 +132,9 @@ impl Session {
     /// Reset for the next battle on the SAME process (persistent mode) — a fresh START
     /// rebuilds a clean battle (mirrors the Node bridge's `streams = null; …` reset).
     fn reset(&mut self) {
-        self.setup = None;
-        self.cmds.clear();
+        self.bridge = None;
         self.emitted = 0;
         self.ended = false;
-    }
-
-    fn opts(&self) -> Result<BattleOptions, String> {
-        let s = self.setup.as_ref().ok_or("no battle in progress (missing START)")?;
-        Ok(BattleOptions {
-            format_id: s.format_id.clone(),
-            seed: s.seed.clone(),
-            p1: s.p1.clone(),
-            p2: s.p2.clone(),
-        })
     }
 }
 
@@ -167,18 +150,18 @@ fn handle_line(
     };
     match cmd {
         "START" => {
-            handle_start(sess, rest)?;
-            // A fresh START emits the framing chunks + the initial request(s).
-            flush_new_chunks(sess, dex, out)?;
+            // A fresh START builds the live session (framing + first request into its chunks).
+            handle_start(sess, rest, dex)?;
+            flush_new_chunks(sess, out)?;
             Ok(LineResult::Continue)
         }
         "CHOOSE" => {
-            handle_choose(sess, rest)?;
-            flush_new_chunks(sess, dex, out)?;
+            handle_choose(sess, rest, dex)?;
+            flush_new_chunks(sess, out)?;
             Ok(LineResult::Continue)
         }
         "FORCELOSE" => {
-            handle_forcelose(sess, rest.trim(), dex, out)?;
+            handle_forcelose(sess, rest.trim(), out)?;
             Ok(LineResult::Continue)
         }
         "END" => Ok(LineResult::Exit),
@@ -187,15 +170,16 @@ fn handle_line(
 }
 
 /// `START <json>` — parse `{formatid, seed?, persistent?, resumeReseed?, p1, p2}` and
-/// build a fresh session (a fresh battle in persistent mode).
-fn handle_start(sess: &mut Session, json: &str) -> Result<(), String> {
+/// BUILD a fresh live [`BridgeSession`] (the framing + first request are emitted into its
+/// chunks, flushed by the caller). A fresh battle in persistent mode.
+fn handle_start(sess: &mut Session, json: &str, dex: &Dex) -> Result<(), String> {
     let v = Json::parse(json).map_err(|e| format!("START JSON: {e}"))?;
     if v.get("persistent").and_then(|p| p.as_bool()).unwrap_or(false) {
         sess.persistent = true;
     }
     if v.get("resumeReseed").map(|r| !r.is_null()).unwrap_or(false) {
-        // DEFERRED — the replay-from-genesis driver has no mid-battle reseed hook (see
-        // the module docs). Note it once; run the ordinary battle under the base seed.
+        // DEFERRED — the driver has no mid-battle reseed hook yet (`Battle::reseed` is
+        // `todo!()`; see the module docs). Note it once; run under the base seed.
         eprintln!(
             "[sim_bridge] resumeReseed is not supported (search-layer only) — ignoring; \
              running under the base seed"
@@ -206,9 +190,9 @@ fn handle_start(sess: &mut Session, json: &str) -> Result<(), String> {
         .ok_or("START: missing formatid")?
         .to_string();
     // A given `>start` seed is the RAW seed; advance it by the sim's turn-0 construction
-    // draw (the Quick Claw) so the port's draw-free replay-from-genesis lines up with the
-    // real sim's post-`>start` PRNG state — the "pre-first-decision seed convention" the
-    // engine's own draw suites use. `None` seed → the port picks its default (no reference).
+    // draw (the Quick Claw) so the port's draw-free replay lines up with the real sim's
+    // post-`>start` PRNG state — the "pre-first-decision seed convention" the engine's own
+    // draw suites use. `None` seed → the port picks its default (no reference).
     let seed = v.get("seed").and_then(|s| s.as_array()).map(|a| {
         let raw = a
             .iter()
@@ -220,9 +204,11 @@ fn handle_start(sess: &mut Session, json: &str) -> Result<(), String> {
     let p1 = parse_player(&v, "p1")?;
     let p2 = parse_player(&v, "p2")?;
 
-    // A new battle: reset the per-battle state (persistent keeps `persistent`).
+    // A new battle: reset the per-battle state (persistent keeps `persistent`), then build
+    // the live incremental engine (advances to + emits the first request boundary).
     sess.reset();
-    sess.setup = Some(Setup { format_id, seed, p1, p2 });
+    let opts = BattleOptions { format_id, seed, p1, p2 };
+    sess.bridge = Some(BridgeSession::new(&opts, dex)?);
     Ok(())
 }
 
@@ -239,11 +225,12 @@ fn parse_player(v: &Json, key: &str) -> Result<PlayerOptions, String> {
     Ok(PlayerOptions { name, team: PackedTeam(team) })
 }
 
-/// `CHOOSE <side> <choice>` — accumulate the one-sided command. An unknown side / choice
-/// token is a hard error (a malformed driver). If no battle is live it is dropped
-/// silently (mirrors the Node bridge's `if (streams && streams[side])` guard).
-fn handle_choose(sess: &mut Session, rest: &str) -> Result<(), String> {
-    if sess.setup.is_none() || sess.ended {
+/// `CHOOSE <side> <choice>` — feed the one-sided command to the live session, which
+/// advances the battle O(1) to its next request boundary. An unknown side / choice token
+/// is a hard error (a malformed driver). If no battle is live it is dropped silently
+/// (mirrors the Node bridge's `if (streams && streams[side])` guard).
+fn handle_choose(sess: &mut Session, rest: &str, dex: &Dex) -> Result<(), String> {
+    if sess.bridge.is_none() || sess.ended {
         // No live battle (mirrors the Node bridge's guard: a stray CHOOSE is ignored).
         return Ok(());
     }
@@ -258,7 +245,10 @@ fn handle_choose(sess: &mut Session, rest: &str) -> Result<(), String> {
     };
     let choice = parse_choice(choice_tok)
         .ok_or_else(|| format!("CHOOSE: unsupported choice {choice_tok:?}"))?;
-    sess.cmds.push(Cmd { side, choice });
+    sess.bridge
+        .as_mut()
+        .expect("bridge present")
+        .feed_cmd(Cmd { side, choice }, dex);
     Ok(())
 }
 
@@ -268,36 +258,36 @@ fn handle_choose(sess: &mut Session, rest: &str) -> Result<(), String> {
 /// accumulated stream produced so far, then emits `__END__` (+ persistent reset). This
 /// keeps the Python side (which only needs the battle to TERMINATE on a forfeit) working
 /// — the forfeiting side simply gets no further protocol.
-fn handle_forcelose(
-    sess: &mut Session,
-    _side: &str,
-    dex: &Dex,
-    out: &mut impl Write,
-) -> Result<(), String> {
-    if sess.setup.is_none() || sess.ended {
+fn handle_forcelose(sess: &mut Session, _side: &str, out: &mut impl Write) -> Result<(), String> {
+    if sess.bridge.is_none() || sess.ended {
         return Ok(());
     }
-    // Flush any pending chunks from the stream so far, then terminate.
-    flush_new_chunks(sess, dex, out)?;
+    // Flush any pending chunks the session already produced, then terminate.
+    flush_new_chunks(sess, out)?;
     end_battle(sess, out);
     Ok(())
 }
 
-/// Re-run the chunked emitter over the accumulated command stream and write the NEW
-/// per-side chunk suffix as `pN <base64>` lines. Emits `__END__` when the battle ends.
-fn flush_new_chunks(sess: &mut Session, dex: &Dex, out: &mut impl Write) -> Result<(), String> {
+/// Write the NEW per-side chunk suffix the live session produced (past the emit cursor)
+/// as `pN <base64>` lines. Emits `__END__` when the battle ends.
+fn flush_new_chunks(sess: &mut Session, out: &mut impl Write) -> Result<(), String> {
     if sess.ended {
         return Ok(());
     }
-    let opts = sess.opts()?;
-    let (chunks, ended) = run_full_battle_bridge_chunked_ended(&opts, &sess.cmds, dex)?;
-    // Emit every chunk past the cursor, in flush order (both sides interleaved).
-    for c in chunks.chunks.iter().skip(sess.emitted) {
-        emit_chunk(out, c.side, &c.lines);
-    }
-    sess.emitted = chunks.chunks.len();
-
-    if ended {
+    let (len, is_ended) = {
+        let bridge = sess
+            .bridge
+            .as_ref()
+            .ok_or("no battle in progress (missing START)")?;
+        let all = &bridge.chunks().chunks;
+        // Emit every chunk past the cursor, in flush order (both sides interleaved).
+        for c in all.iter().skip(sess.emitted) {
+            emit_chunk(out, c.side, &c.lines);
+        }
+        (all.len(), bridge.is_ended())
+    };
+    sess.emitted = len;
+    if is_ended {
         end_battle(sess, out);
     }
     Ok(())

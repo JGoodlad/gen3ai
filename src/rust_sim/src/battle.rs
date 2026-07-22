@@ -207,29 +207,38 @@ impl Battle {
 ///   `side.choose` — no lines, boundary stays open (the per-side pending
 ///   acceptance in `run_full_battle`).
 ///
-/// # Internals — replay-from-genesis (honest scope)
+/// # Internals — TRULY INCREMENTAL (`gen3_bridge_incremental_replay_v1`)
 ///
-/// The surface does NOT keep a paused incremental engine: on every choice write
-/// it re-runs the whole battle from `>start` through the accumulated one-sided
-/// [`ScriptDecision`] stream (`run_full_battle_logged` — the SAME request-
-/// boundary machinery every golden gate exercises, so the streamed bytes are
-/// the gated bytes by construction) and returns the NEW suffix of the
-/// concatenated omniscient stream. Deterministic (the engine is bit-for-bit,
-/// so each replay reproduces every prior line byte-identically) and cheap
-/// (<1ms/battle); the O(turns²) replay cost is irrelevant at bridge scale.
-/// `|request|` / `sideupdate` JSON frames are OUT OF SCOPE (the omniscient log
-/// stream is the deliverable; the request frames live with the privacy fold).
+/// The surface keeps a PAUSED live engine: once both `>player` writes are in, it
+/// builds ONE [`Battle`] and drives it with the shared [`crate::turn::FullBattleDriver`]
+/// stepping primitive (the SAME one `run_full_battle` uses — so this gate is a byte
+/// oracle for it). Each `>pN` write feeds ONE (one-sided) [`ScriptDecision`] to the
+/// driver, which advances the LIVE battle to its next request boundary and returns
+/// ONLY the new suffix of the omniscient log — **O(1) per input, O(N) per battle,
+/// no re-simulation of a prior turn EVER**. The per-side pending acceptance the old
+/// replay-from-genesis relied on now lives INSIDE the driver (`FullBattleDriver`'s
+/// `pending`), so the write-order semantics (incl. the F4 first-accepted-wins scope
+/// limit below) are preserved bit-for-bit. `|request|` / `sideupdate` JSON frames are
+/// OUT OF SCOPE (the omniscient log stream is the deliverable; the request frames live
+/// with the per-side privacy fold in [`crate::bridge`]).
 pub struct BattleStream {
     dex: Dex,
     format_id: Option<String>,
     seed: Option<PrngSeed>,
     players: [Option<PlayerOptions>; 2],
-    /// The accumulated one-sided choice decisions (one per `>pN` write, in write
-    /// order) — `run_full_battle`'s per-side pending acceptance pairs them.
-    script: Vec<crate::turn::ScriptDecision>,
-    /// How many lines of the concatenated omniscient stream have been returned.
+    /// The LIVE battle — built once both `>player` writes are in, then advanced ONE
+    /// request boundary per `>pN` write (no genesis replay). `None` until the battle
+    /// starts. Plain `Battle`, so a future `Battle::serialize` snapshots it directly.
+    battle: Option<Battle>,
+    /// The resumable stepping primitive driving `battle` — the SAME `FullBattleDriver`
+    /// `run_full_battle` (batch) drives, so the writeline gate byte-verifies it.
+    driver: crate::turn::FullBattleDriver,
+    /// Cursor into the returned stream. PRE-battle it counts the framing lines already
+    /// returned via the `>start`/`>player` throwaways (2, then 3); once the battle is
+    /// built it is the LIVE log cursor — the two coincide because the throwaway lines
+    /// ARE the live log's first three (`|t:|`, `|gametype|singles`, `|player|p1|…`).
     emitted: usize,
-    /// The battle outcome of the last replay (`ended` short-circuits writes).
+    /// The battle ended (`|win|`/`|tie`) — short-circuits post-game writes.
     ended: bool,
 }
 
@@ -246,15 +255,23 @@ impl BattleStream {
             format_id: None,
             seed: None,
             players: [None, None],
-            script: Vec::new(),
+            battle: None,
+            driver: crate::turn::FullBattleDriver::new(),
             emitted: 0,
             ended: false,
         }
     }
 
-    /// Whether the battle has ended (the last replay produced `|win|`/`|tie`).
+    /// Whether the battle has ended (the driver reached `|win|`/`|tie`).
     pub fn battle_ended(&self) -> bool {
         self.ended
+    }
+
+    /// The live paused [`BattleState`], once the battle has started (both `>player`
+    /// writes in). `None` before that. Read-only — the per-side bridge reads this for
+    /// its request framing / HP-privacy fold / seed anchor.
+    pub fn state(&self) -> Option<&BattleState> {
+        self.battle.as_ref()?.state()
     }
 
     /// Feed one command line. Returns the omniscient protocol lines this write
@@ -284,8 +301,9 @@ impl BattleStream {
                 .expect(">start seed");
             self.seed = Some(seed);
             // The construction chunk: `|t:|` + `|gametype|singles` (probe-verified
-            // attribution). Byte-identical to `emit_framing`'s first two lines, which
-            // the replay skips via `emitted`.
+            // attribution). Byte-identical to `emit_framing`'s first two lines, which the
+            // live-log cursor skips (the built battle's log opens with these two lines, so
+            // `emitted` = 2 aligns the cursor with the eventual live log).
             let mut pre = crate::protocol::ProtocolBuilder::new();
             pre.enable();
             pre.timestamp();
@@ -303,10 +321,34 @@ impl BattleStream {
             let team = v.str_at("team").expect(">player team").to_string();
             self.players[side] = Some(PlayerOptions { name: name.clone(), team: PackedTeam(team) });
             if self.players[0].is_some() && self.players[1].is_some() {
-                // Both players present → the battle starts: the replay's framing
-                // (which re-emits the construction chunk + the first player line —
-                // already returned) yields this write's chunk from `emitted` on.
-                return self.replay();
+                // Both players present → BUILD the live battle + emit the framing ONCE. The
+                // framing's first 3 lines (`|t:|`, `|gametype`, `|player|p1`) were already
+                // returned via the throwaways above, so `emitted` (== 3) skips them; the
+                // rest (`|player|p2` … `|turn|1`) is this write's chunk.
+                let opts = BattleOptions {
+                    format_id: self.format_id.clone().expect(">start before players"),
+                    seed: Some(self.seed.clone().expect(">start seed before players")),
+                    p1: self.players[0].clone().expect(">player p1"),
+                    p2: self.players[1].clone().expect(">player p2"),
+                };
+                let mut battle = Battle::start_with_switchins(&opts, &self.dex)
+                    .expect("write_line battle start");
+                {
+                    let bs = battle.state_mut().expect("state");
+                    bs.log.enable();
+                    bs.emit_framing(&self.dex);
+                }
+                let out: Vec<ProtocolLine> = battle
+                    .state()
+                    .expect("state")
+                    .log
+                    .lines()[self.emitted..]
+                    .to_vec();
+                self.emitted += out.len();
+                self.battle = Some(battle);
+                self.driver = crate::turn::FullBattleDriver::new();
+                self.ended = false;
+                return out;
             }
             // Only this side's `|player|` line flushes now (probe-verified).
             let mut pre = crate::protocol::ProtocolBuilder::new();
@@ -327,47 +369,50 @@ impl BattleStream {
             }
             // SCOPE-LIMIT — CHOICE REVISION is FIRST-ACCEPTED-WINS, not the sim's
             // last-write-wins (`gen3_writeline_choice_revision_v1`, review finding F4).
-            // Each `>pN` write APPENDS a fresh per-side [`ScriptDecision`]; a SECOND
-            // pre-commit `>pN` for the SAME open boundary appends ANOTHER decision instead
-            // of REPLACING the pending one. The real sim's `side.choose` CLEARS and
-            // re-parses on every subsequent pre-commit write (LAST-write-wins — probe
-            // `harness/probe_f4_choice_revision.js`, resolved Dex.mod('gen3'): `>p1 move 1`
-            // then `>p1 move 2` executes Earthquake, seed-identical to a single
-            // `>p1 move 2`; a 1→2→3 chain executes Rest). This gap is DOCUMENTED-not-fixed
-            // BY DESIGN: the replay-from-genesis accumulator carries no open-boundary
-            // marker, so a same-side overwrite cannot be distinguished from a same side in
-            // an already-COMMITTED prior decision without new boundary tracking — an
-            // overwrite rule that fires on the latter DESTABILIZES the writeline gate (a
-            // forced-replacement `>p2 switch N` after a completed turn whose last decision
-            // already carries a p2 choice — verified: it dropped the replacement chunk).
-            // The real bridge sends exactly ONE choice per request, so a revised `>pN`
-            // never occurs in production and this scope-limit is unreachable there. See
-            // CLAUDE.md → Protocol emission (the write_line scope-limit list).
+            // Each `>pN` write feeds a fresh one-sided [`ScriptDecision`] to the driver; a
+            // SECOND pre-commit `>pN` for the SAME open boundary is DISCARDED by the driver's
+            // per-side accumulator (`FullBattleDriver`'s `pending` sets a side only `if
+            // pending.for_side(side).is_none()`), NOT re-parsed. The real sim's `side.choose`
+            // CLEARS and re-parses on every subsequent pre-commit write (LAST-write-wins —
+            // probe `harness/probe_f4_choice_revision.js`). Unchanged from the previous
+            // replay-from-genesis surface (which relied on the SAME `run_full_battle`
+            // accumulator): the real bridge sends exactly ONE choice per request, so a revised
+            // `>pN` never occurs in production and this scope-limit is unreachable there.
             let mut dec = crate::turn::ScriptDecision::default();
             dec.set_side(side, choice);
-            self.script.push(dec);
-            return self.replay();
+            self.feed_decision(dec);
+            let out: Vec<ProtocolLine> = self
+                .battle
+                .as_ref()
+                .expect(">pN before battle start")
+                .state()
+                .expect("state")
+                .log
+                .lines()[self.emitted..]
+                .to_vec();
+            self.emitted += out.len();
+            return out;
         }
         panic!("unsupported write_line command {line:?} (supported: >start / >player pN / >pN move K|switch N)");
     }
 
-    /// Replay the battle from genesis through the accumulated script and return
-    /// the NEW lines past `emitted` (see the type-level docs).
-    fn replay(&mut self) -> Vec<ProtocolLine> {
-        let opts = BattleOptions {
-            format_id: self.format_id.clone().expect(">start before choices"),
-            seed: Some(self.seed.clone().expect(">start seed before choices")),
-            p1: self.players[0].clone().expect(">player p1 before choices"),
-            p2: self.players[1].clone().expect(">player p2 before choices"),
-        };
-        let mut battle =
-            Battle::start_with_switchins(&opts, &self.dex).expect("write_line battle start");
-        let st = battle.state_mut().expect("state");
-        let (outcome, lines) = st.run_full_battle_logged(&self.script, &self.dex);
-        self.ended = outcome.ended;
-        let out: Vec<ProtocolLine> = lines.into_iter().skip(self.emitted).collect();
-        self.emitted += out.len();
-        out
+    /// Advance the LIVE battle by ONE (possibly one-sided) decision — the O(1) step
+    /// shared by `write_line` and the per-side bridge. No genesis replay: the driver
+    /// resumes from the persisted paused state. `ended` short-circuits.
+    pub fn feed_decision(&mut self, dec: crate::turn::ScriptDecision) {
+        if self.ended {
+            return;
+        }
+        let dex = &self.dex;
+        let driver = &mut self.driver;
+        let bs = self
+            .battle
+            .as_mut()
+            .expect("feed_decision before battle start")
+            .state_mut()
+            .expect("state");
+        driver.feed(bs, dec, dex);
+        self.ended = self.driver.is_ended();
     }
 }
 

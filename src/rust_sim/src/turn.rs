@@ -195,6 +195,18 @@ const RESIDUAL_ABILITY_SUBORDER: i32 = 3;
 const LEECH_SEED_SUBORDER: i32 = 5;
 /// brn/psn/tox `onResidualSubOrder` 6 (`data/mods/gen4/conditions.ts:5/58/63`).
 const STATUS_DOT_SUBORDER: i32 = 6;
+/// FAIL-LOUD runaway watchdogs (`gen3_bridge_turn_watchdog_v1`). A single turn processes a
+/// BOUNDED number of queued actions (both moves + any switches + their RunSwitches + the
+/// residual — a few dozen at most), and a whole battle terminates in a few hundred turns
+/// (the ladder/env forfeits a stall well before). If a queued action ever re-enqueues in a
+/// cycle, or a battle never reaches a terminal state, the engine would spin at 100% CPU
+/// forever — a SILENT hang that deadlocks the `SubprocVecEnv` step barrier in a
+/// `--use-bridge=rust` training run (the launcher auto-restarts a CRASH but not a 0-FPS
+/// wedge). These caps sit astronomically above any legitimate battle and PANIC with the
+/// state, converting a hang into a catchable crash + a self-documenting repro. NEVER reached
+/// on any real gen-3 battle; a trip is always a bug.
+const TURN_LOOP_ACTION_CAP: usize = 100_000;
+const BATTLE_TURN_CAP: u32 = 1_000;
 /// A duration-only volatile's residual handler subOrder. `resolvePriority` falls back to
 /// the effect's `effectTypeOrder` when no `onResidualSubOrder` is set; for a Condition
 /// (the `protect`/`stall` volatiles) that is **2** (`battle.ts` effectTypeOrder), VERIFIED
@@ -10624,7 +10636,7 @@ impl BattleState {
     /// leads' `|switch|` + the `|turn|1` marker ARE emitted here (Phase 1). The
     /// `tier`/`rule` strings are the gen3customgame Custom-Game values the capture
     /// records (the port targets that format).
-    fn emit_framing(&mut self, dex: &Dex) {
+    pub(crate) fn emit_framing(&mut self, dex: &Dex) {
         self.log.timestamp();
         self.log.gametype_singles();
         // `|player|p1|<name>|` / `|player|p2|<name>|`.
@@ -10915,7 +10927,7 @@ pub enum Choice {
 /// [`ScriptDecision`] per request boundary, in order — a regular `move` request
 /// consumes both sides' choices, a forced-`switch` request consumes only the
 /// flagged side(s) (matching the sim's `forceSwitch` table).
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct ScriptDecision {
     pub p1: Option<Choice>,
     pub p2: Option<Choice>,
@@ -11161,355 +11173,23 @@ impl BattleState {
     /// the battle ends OR the script is exhausted (a missing required choice ends
     /// the run, recorded but not asserted as game-end).
     pub fn run_full_battle(&mut self, script: &[ScriptDecision], dex: &Dex) -> BattleOutcome {
-        let mut decisions: Vec<DecisionRecord> = Vec::new();
-        let mut script_iter = script.iter();
-
-        // PER-SIDE pending choices at the open `move` request (Phase 3 — the sim's
-        // `side.choose` is PER-SIDE: one side's valid choice is ACCEPTED and held while
-        // the other side's invalid choice is rejected, and a later re-submission by the
-        // already-chosen side is itself rejected ("You already made choices") — so the
-        // turn can commit with choices accepted at DIFFERENT capture decisions. The old
-        // whole-decision skip mis-mapped that split (midswitch_ability_lines/2: p2's
-        // `move 2` accepted at the decision whose p1 `switch` was rejected; the turn ran
-        // with p2's HELD choice + p1's NEXT one). Zero-draw / observation-only: only the
-        // boundary MAPPING changes; every pre-Phase-3 golden script has no split-accept
-        // (their rejects came with the other side empty), so their replay is unchanged.
-        let mut pending = ScriptDecision::default();
-
-        // Whether the NEXT turn was already opened EAGERLY at the previous turn's end
-        // (the sim's `makeRequest('move')` emits `|turn|N+1` in the COMPLETING write's
-        // flush — `gen3_writeline_stream_v1`): the increment + marker then must not
-        // re-fire at the next decision pull (which still emits the separator + `|t:|`,
-        // the next chunk's opening bytes). The CONCATENATED stream is byte-identical
-        // either way (the protocol gate pins it); eager emission only moves the marker
-        // into the right per-write chunk for the `BattleStream::write_line` surface.
-        let mut turn_already_opened = false;
-
-        loop {
-            // Pull the next `move`-request decision (both sides choose).
-            let dec = match script_iter.next() {
+        // Thin wrapper over the resumable stepping primitive [`FullBattleDriver`] — the
+        // SINGLE turn-loop that the streaming surface (`BattleStream::write_line`) and the
+        // per-side bridge (`bridge::BridgeSession`) also drive. Feeding the whole script in
+        // one loop reproduces the previous monolithic driver BIT-FOR-BIT (the batch seed
+        // suites + the e2e capstone are the byte oracle for this primitive), while the SAME
+        // primitive advances a LIVE battle ONE request boundary per fed decision for the
+        // O(1)-per-input streaming/bridge paths (no genesis replay).
+        let mut driver = FullBattleDriver::new();
+        let mut it = script.iter();
+        while !driver.is_ended() {
+            let dec = match it.next() {
                 Some(d) => *d,
-                None => break, // script exhausted at a turn boundary
+                None => break,
             };
-
-            // [side.choose validation — the sim's request-boundary reject-and-re-request]
-            // A `move` request commits ONLY when every choosing side submits a VALID
-            // choice; the sim's `side.choose` rejects a `move K` whose slot the active
-            // mon doesn't have ("Your <mon> doesn't have a move K"), drawing NOTHING and
-            // leaving `requestState === 'move'`, so the boundary STAYS OPEN for the next
-            // submission. The omniscient capture, submitting from a stale per-turn plan,
-            // can therefore record a PHANTOM zero-draw `move` decision right after a
-            // replacement changed the active mon to one with fewer moves (e.g. a 3-move
-            // Tyranitar → a 2-move Snorlax, then a scripted `move 3`): its `seedAfter`
-            // equals the prior boundary's (nothing ran). We mirror the sim EXACTLY —
-            // SKIP an invalid `move` decision (run no turn, emit nothing, draw nothing,
-            // record nothing) and re-pull the next decision for the SAME boundary. A
-            // forced-`switch` request is handled inside the turnLoop below (this gate is
-            // only for a top-of-turn `move` request); a valid script never trips it, so
-            // the fullbattle / secondary / e2e goldens are unaffected. VERIFIED vs the sim
-            // (`harness/probe_forced_replacement_resume.js`): the rejected decision is
-            // zero-draw — an observation-only decision-boundary MAPPING fix, not a seed
-            // change.
-            // PER-SIDE acceptance (the sim's `side.choose`, Phase 3): a side that already
-            // holds an accepted pending choice DISCARDS a re-submission ("You already made
-            // choices"); a side with an ILLEGAL fresh choice is rejected (draw-free); a
-            // legal fresh choice is HELD. The turn commits only when BOTH sides hold one.
-            for side in 0..2 {
-                if pending.for_side(side).is_none() {
-                    if let Some(c) = dec.for_side(side) {
-                        if self.choice_is_legal(side, c, dex) {
-                            pending.set_side(side, c);
-                        }
-                    }
-                }
-            }
-            if pending.p1.is_none() || pending.p2.is_none() {
-                // The boundary stays OPEN (any one-side HELD choice included); re-pull the
-                // next decision for the SAME turn. Draw-free / zero-state / zero-EMIT (a
-                // rejected/half boundary flushes NOTHING — the sim's separator + `|t:|`
-                // are part of the turn-RUN batch, not the request; probe-verified per-write
-                // attribution, `gen3_writeline_stream_v1`).
-                continue;
-            }
-            let dec = pending;
-            pending = ScriptDecision::default();
-
-            // The turn COMMITS now. [makeRequest → commitChoices framing]: increment the
-            // turn (unless the previous turn's end already opened it EAGERLY — the
-            // `|turn|N` marker then already emitted in the completing chunk) + emit the
-            // batch separator + `|t:|` that OPEN this turn's run batch. The concatenated
-            // order (`…|upkeep`, `|turn|N`, `|`, `|t:|`, `|move|…`) is byte-identical to
-            // the pre-Phase-3 flow (the protocol golden pins it); only the per-WRITE chunk
-            // attribution moved (the separator/timestamp belong to the completing write).
-            if !turn_already_opened {
-                // Only the FIRST turn reaches here un-opened (turn 0 → 1, no marker —
-                // `|turn|1` is in the framing); every later turn was opened EAGERLY at
-                // the previous turn's end, so no reset is needed (the flag is always
-                // true again before the next commit reads it).
-                self.turn += 1;
-                if self.logging() && self.turn >= 2 {
-                    self.log.turn(self.turn);
-                }
-            }
-            if self.logging() {
-                self.log.separator();
-                self.log.timestamp();
-            }
-
-            // Clear the per-turn Explosion self-KO diagnostic flag; `run_move` re-sets it if a
-            // selfdestruct move self-KOs this turn (read into every boundary record of this turn).
-            self.pending_explosion_self_ko = false;
-            // Clear the per-turn PHAZE-drag diagnostic flag; `drag_in` re-sets it if a Roar /
-            // Whirlwind drag fires this turn (read into every boundary record of this turn).
-            self.pending_phaze_drag = false;
-            // Clear the per-turn PURSUIT-INTERRUPT first-mover override; `execute_switch` re-sets
-            // it to the pursuer's side when a pursuit strike fires this turn (the pursuer emits its
-            // `|move|` before the switcher's `|switch|`, so the sim reads it as the first mover).
-            self.pursuit_first_mover = None;
-            // Expire the `duration:1` FLINCH volatiles from the previous turn (see
-            // `run_turn`). DRAW-FREE.
-            self.clear_flinch();
-            // `commitChoices` refreshes the cached `pokemon.speed` at turn start
-            // (`battle.js:2494` `this.updateSpeed()`) — para/boost-aware — BEFORE the
-            // action-order sort + the per-action `eachEvent` shuffles read it.
-            self.update_speed(dex);
-
-            // --- Build + sort the turn's action queue. ---
-            let mut actions: Vec<QAction> = Vec::new();
-            for side in 0..2 {
-                let active = self.sides[side].active;
-                let uid = self.sides[side].pokemon[active].uid;
-                match dec.for_side(side) {
-                    Some(Choice::Move(mi)) => {
-                        // MOVE-LOCKED requests (`gen3_move_coverage_batch4c_v1`): a
-                        // MUSTRECHARGE mon's request offered ONLY `Recharge` and a CHARGING
-                        // (twoturnmove) mon's ONLY its locked Solar Beam — the accepted
-                        // `move 1` (Choice::Move(0), the single request entry) maps to the
-                        // recharge pseudo-move (run_move's mustrecharge gate reads the
-                        // volatile, `move_index` unused) / the LOCKED move's REAL slot.
-                        // Neither substitutes Struggle (the sim's `side.choose` creates
-                        // the locked move, not Struggle) nor unshifts a beforeTurnMove
-                        // (recharge/solarbeam carry no beforeTurnCallback).
-                        let locked = self.sides[side].pokemon[active].move_locked();
-                        let mi = self.sides[side].pokemon[active]
-                            .two_turn
-                            .filter(|t| t.charging)
-                            .map(|t| t.move_index)
-                            .unwrap_or(mi);
-                        // `gen3_pp_tracking_v1`: a mon with NO usable move (all slots at 0
-                        // PP) has `moveid:'struggle'` substituted by `side.choose` at
-                        // choice-commit time — regardless of the scripted slot `mi`. This
-                        // mirrors the sim: PP is exhausted on a PRIOR turn (a move deducts
-                        // its own PP as it runs), so the Struggle substitution is decided
-                        // from the mon's CURRENT PP state at the TOP of this turn. (A
-                        // `Move(mi)` on a 0-PP slot while ANOTHER slot still has PP is
-                        // REJECTED earlier by `move_decision_is_legal`, mirroring the sim's
-                        // "doesn't have PP" reject — so it never reaches here.)
-                        let struggle =
-                            !locked && self.sides[side].pokemon[active].must_struggle(dex);
-                        // `beforeTurnMove` unshift (`gen3_move_coverage_batch4_v1`, mirroring
-                        // `battle-queue.ts:107`): a `move` action whose move carries a
-                        // `beforeTurnCallback` (Focus Punch / Pursuit) ALSO enqueues an order-5
-                        // `beforeTurnMove` action for the same actor. A forced Struggle carries no
-                        // beforeTurnCallback. Resolve the picked move's id from the CURRENT slot.
-                        if !struggle && !locked {
-                            if let Some(m) = self.move_at(side, active, mi, dex) {
-                                if move_has_before_turn_callback(&to_id(&m.id)) {
-                                    actions.push(QAction::BeforeTurnMove { side, uid, move_index: mi });
-                                }
-                            }
-                        }
-                        actions.push(QAction::Move { side, uid, move_index: mi, struggle });
-                    }
-                    Some(Choice::Switch(target)) => {
-                        actions.push(QAction::Switch { side, target });
-                    }
-                    None => {} // no choice this side (not expected on a move request)
-                }
-            }
-            // [commitChoices] ACTION-ORDER sort (the tie shuffle on an
-            // order+priority+speed tie — two same-kind switches / two equal moves).
-            self.sort_actions(&mut actions, dex);
-
-            // First mover = the first move/switch action (post action-order sort).
-            let first_mover = actions.iter().find_map(|a| match a {
-                QAction::Move { side, .. } => Some(*side),
-                QAction::Switch { side, .. } => Some(*side),
-                _ => None,
-            });
-
-            // The turn's queue: [beforeTurn, <sorted actions>, residual].
-            let mut queue: Vec<QAction> = Vec::with_capacity(actions.len() + 2);
-            queue.push(QAction::BeforeTurn);
-            queue.extend(actions);
-            queue.push(QAction::Residual);
-
-            // --- [turnLoop] run the queue, pausing for forced replacements. ---
-            let mut request = RequestKind::Move; // the request THIS boundary answers
-            let mut script_exhausted = false;
-            let stop = loop {
-                match self.turn_loop(&mut queue, dex) {
-                    TurnLoopStop::Ended { winner } => break Some(TurnEnd::Ended(winner)),
-                    TurnLoopStop::Done => {
-                        // endTurn: the `runEvent('DisableMove')` handler-sort shuffle (a
-                        // taunt+disable mon draws one size-2 shuffle here, `gen3_taunt_disable_v1`)
-                        // fires BEFORE the unconditional Quick Claw roll (no faint pause).
-                        self.disable_move_event_shuffle();
-                        // `activeTurns++` per active (battle.ts:1762) — DRAW-FREE, feeds the
-                        // Speed Boost residual gate (`gen3_ability_batch1_v1`).
-                        self.bump_active_turns();
-                        // PERSIST the endTurn Quick Claw roll (was drawn-and-discarded) —
-                        // read NEXT turn by `effective_speed`/`update_speed` for the gen3
-                        // `getActionSpeed` speed=65535 override (`gen3_quick_claw_speed_v1`).
-                        self.quick_claw_roll = self.prng.random_chance(1, 5);
-                        break Some(TurnEnd::Done);
-                    }
-                    TurnLoopStop::NeedSwitch { force } => {
-                        // makeRequest('switch') paused the turn. Record the boundary
-                        // we JUST finished (the move request, or the prior forced
-                        // switch) at the PAUSE seed, then take the next replacement.
-                        // [SEND] `makeRequest('switch')` runs `sendUpdates()`, STREAMING
-                        // every buffered line so far — so a LATER retro-edit (a future-move
-                        // resolve-MISS at the end-of-turn residual) can no longer observably
-                        // tag a `|move|` line this mid-turn faint already flushed (golden
-                        // ab_20_4: Fire Blast stays untagged; the `-miss` lands on the
-                        // resolve). `gen3_omniscient_byte_fuzz_v1` class A.
-                        if self.logging() {
-                            self.log.mark_sent();
-                        }
-                        decisions.push(self.boundary_record(request, first_mover, dex));
-
-                        // Pull the replacement decision(s); commit the flagged sides'
-                        // instaswitch(es); prepend them before the saved tail. PER-SIDE
-                        // accumulation (Phase 3, mirroring the top-of-turn accumulator +
-                        // the sim's per-side `side.choose`): a DOUBLE replacement may
-                        // arrive as ONE decision carrying both (the capture's DEC grammar
-                        // — every pre-Phase-3 golden) OR as one-sided decisions across
-                        // writes (the `write_line` streaming surface's `>p1 switch 3` /
-                        // `>p2 switch 2`). An INVALID forced target (fainted / out-of-
-                        // range / the active) or a non-switch token for a forced side is
-                        // REJECTED draw-free and the boundary stays open (the sim's
-                        // "can't switch to a fainted Pokémon"); a token for a NON-forced
-                        // side is DISCARDED (the sim rejects choices from a side with
-                        // nothing to choose).
-                        let mut have: [Option<usize>; 2] = [None, None];
-                        let satisfied = |have: &[Option<usize>; 2]| {
-                            (0..2).all(|s| !force[s] || have[s].is_some())
-                        };
-                        while !satisfied(&have) {
-                            let rep_dec = match script_iter.next() {
-                                Some(d) => *d,
-                                None => {
-                                    script_exhausted = true;
-                                    break;
-                                }
-                            };
-                            for side in 0..2 {
-                                if force[side] && have[side].is_none() {
-                                    if let Some(Choice::Switch(t)) = rep_dec.for_side(side) {
-                                        let sd = &self.sides[side];
-                                        if t < sd.pokemon.len()
-                                            && !sd.pokemon[t].fainted
-                                            && t != sd.active
-                                        {
-                                            have[side] = Some(t);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if !satisfied(&have) {
-                            break None; // script exhausted mid-replacement
-                        }
-                        let mut insta: Vec<QAction> = Vec::new();
-                        for side in 0..2 {
-                            if force[side] {
-                                insta.push(QAction::InstaSwitch { side, target: have[side].expect("satisfied") });
-                                self.sides[side].switch_flag = false;
-                            }
-                        }
-                        // [commitChoices on a switch request] `commitChoices()` runs
-                        // `this.updateSpeed()` at its TOP (battle.ts:3020) on EVERY choice
-                        // commit — INCLUDING a mid-turn FORCED-replacement submit. So the
-                        // cached `pokemon.speed` of BOTH actives is refreshed para/boost-
-                        // aware HERE, before the instaswitch sorts + the resumed tail's
-                        // `eachEvent('Update')` tie-shuffles read it. CRUX (the e2e-capstone
-                        // forced-replacement fix): a foe mon paralyzed mid-turn keeps its
-                        // STALE turn-start speed through the move phase, but the replacement
-                        // commit's `updateSpeed` drops it to its para speed — so the
-                        // resumed-turn trailing-Update shuffle no longer spuriously TIES the
-                        // (now-para-slowed) foe with the fresh entrant (verified vs the sim:
-                        // a Jirachi mirror where the foe Jirachi was para'd mid-turn must
-                        // read 53, not its stale 212, during the post-replacement Updates —
-                        // else 2 phantom tie-shuffle draws desync the seed).
-                        self.update_speed(dex);
-                        // [EMIT] open the REPLACEMENT batch: `|` (separator) + `|t:|`,
-                        // right before the instaswitch(es) run (their `|switch|` line emits
-                        // in `execute_switch`). Every forced replacement is its own batch,
-                        // matching the golden (`…|faint| / | / |t:| / |switch|…`).
-                        if self.logging() {
-                            self.log.separator();
-                            self.log.timestamp();
-                        }
-                        // sort ONLY the new instaswitch(es) (the double-replacement tie
-                        // shuffle), then PREPEND before the saved remainder (oldQueue).
-                        self.sort_actions(&mut insta, dex);
-                        let old_queue = std::mem::take(&mut queue);
-                        queue = insta;
-                        queue.extend(old_queue);
-
-                        // The NEXT boundary we record answers THIS forced switch.
-                        request = RequestKind::ForceSwitch { force };
-                    }
-                }
-            };
-
-            // --- Record the final boundary of this turn (move request, or the last
-            //     forced-switch request) at the post-turn seed, then handle end. ---
-            match stop {
-                Some(TurnEnd::Done) => {
-                    decisions.push(self.boundary_record(request, first_mover, dex));
-                    // [EMIT] the NEXT turn's `|turn|N+1` marker EAGERLY — the sim's
-                    // `makeRequest('move')` flushes it in the COMPLETING write's chunk
-                    // (`gen3_writeline_stream_v1`; probe: the real BattleStream's turn
-                    // chunk ends `…|upkeep, |turn|N+1`). The next decision pull skips the
-                    // increment/marker (`turn_already_opened`) and emits only the
-                    // separator + `|t:|` — the next chunk's opening bytes. Concatenated
-                    // order is UNCHANGED (the protocol golden pins it byte-for-byte).
-                    self.turn += 1;
-                    if self.logging() && self.turn >= 2 {
-                        self.log.turn(self.turn);
-                    }
-                    turn_already_opened = true;
-                }
-                Some(TurnEnd::Ended(winner)) => {
-                    // [EMIT] the deciding `|` separator then `|win|<PlayerName>` (or `|tie`).
-                    // The deciding faint's `|faint|` line was already emitted; the game-end
-                    // line follows a bare separator (no residual/upkeep on a deciding faint —
-                    // `turn_loop` returned before the Residual action). Observation-only.
-                    if self.logging() {
-                        self.log.separator();
-                        match winner {
-                            Some(side) => {
-                                let name = self.sides[side].name.clone();
-                                self.log.win(&name);
-                            }
-                            None => self.log.tie(),
-                        }
-                    }
-                    decisions.push(self.boundary_record(request, first_mover, dex));
-                    return BattleOutcome { winner, ended: true, decisions };
-                }
-                None => {
-                    // Script exhausted mid-turn (a required replacement missing). The
-                    // pause boundary was already recorded; stop here, not game-end.
-                    let _ = script_exhausted;
-                    return BattleOutcome { winner: None, ended: false, decisions };
-                }
-            }
+            driver.feed(self, dec, dex);
         }
-
-        BattleOutcome { winner: None, ended: false, decisions }
+        driver.into_outcome()
     }
 
     /// Whether ONE side's top-of-turn `move`-request choice would be ACCEPTED by the
@@ -11680,6 +11360,335 @@ impl BattleState {
     }
 }
 
+// ===========================================================================
+// The resumable stepping primitive (`FullBattleDriver`) — ONE request boundary
+// per fed `ScriptDecision`, on a LIVE `&mut BattleState`. This is the ONE
+// turn-loop in the codebase: `run_full_battle` (batch), `BattleStream::write_line`
+// (streaming), and `bridge::BridgeSession` (per-side) all drive THIS. Extracting
+// the old monolithic `run_full_battle` outer-loop body here — behaviour-preserving
+// by construction — lets a drive PAUSE at any request boundary and RESUME on the
+// next fed decision, so the incremental (stream/bridge) paths never re-simulate a
+// prior turn.
+// ===========================================================================
+
+/// The resumable state of a full-battle drive. Every per-turn control datum the
+/// old `run_full_battle` kept in locals lives here so a drive can pause between
+/// turns (`AwaitMove`) or mid-turn at a forced replacement (`AwaitSwitch`). Plain
+/// data (the queue + choices are `Clone`/`Copy`), so a future `Battle::serialize`
+/// can snapshot it mechanically (Tier 3 — not built here).
+pub(crate) struct FullBattleDriver {
+    decisions: Vec<DecisionRecord>,
+    /// The per-side pending `move`-request accumulator (the sim's `side.choose`,
+    /// FIRST-accepted-wins) — held across feeds while one side is set and the other
+    /// isn't yet.
+    pending: ScriptDecision,
+    turn_already_opened: bool,
+    /// COMMITTED-turn counter for the `BATTLE_TURN_CAP` runaway watchdog
+    /// (`gen3_bridge_turn_watchdog_v1`, relocated from the old `run_full_battle`
+    /// local into the primitive so it still fires on a non-terminating battle).
+    committed_turns: u32,
+    phase: DrivePhase,
+}
+
+/// Where a paused drive is waiting.
+enum DrivePhase {
+    /// Between turns, waiting for a top-of-turn `move` decision.
+    AwaitMove,
+    /// Paused mid-turn for a forced replacement (`makeRequest('switch')`).
+    AwaitSwitch(SwitchWait),
+    /// The battle ended (`winner`, `None` on a tie).
+    Ended(Option<usize>),
+}
+
+/// The mid-turn pause state for a forced replacement — the saved turn tail plus
+/// the per-side replacement accumulator, exactly the locals the old inner loop held
+/// across a `NeedSwitch` pause.
+struct SwitchWait {
+    /// The saved turn-loop tail (`oldQueue`) the instaswitch(es) prepend before.
+    queue: Vec<QAction>,
+    /// Which side(s) must replace this pause.
+    force: [bool; 2],
+    /// The per-side replacement target accepted so far.
+    have: [Option<usize>; 2],
+    /// The request the NEXT boundary record answers (`ForceSwitch{force}`).
+    request: RequestKind,
+    /// The turn's first mover (carried across every boundary record of the turn).
+    first_mover: Option<usize>,
+}
+
+impl FullBattleDriver {
+    pub(crate) fn new() -> Self {
+        FullBattleDriver {
+            decisions: Vec::new(),
+            pending: ScriptDecision::default(),
+            turn_already_opened: false,
+            committed_turns: 0,
+            phase: DrivePhase::AwaitMove,
+        }
+    }
+
+    /// Whether the drive has reached game-end.
+    pub(crate) fn is_ended(&self) -> bool {
+        matches!(self.phase, DrivePhase::Ended(_))
+    }
+
+    /// The final [`BattleOutcome`] — `ended:true` ONLY once game-end was reached (a
+    /// script-exhaustion at any boundary is a partial `ended:false`, matching the old
+    /// driver's returns exactly).
+    pub(crate) fn into_outcome(self) -> BattleOutcome {
+        match self.phase {
+            DrivePhase::Ended(winner) => {
+                BattleOutcome { winner, ended: true, decisions: self.decisions }
+            }
+            _ => BattleOutcome { winner: None, ended: false, decisions: self.decisions },
+        }
+    }
+
+    /// Feed ONE [`ScriptDecision`], advancing the live battle up to the next request
+    /// boundary (or game-end). Byte-identical to the old `run_full_battle` consuming the
+    /// same decision at the same point.
+    pub(crate) fn feed(&mut self, bs: &mut BattleState, dec: ScriptDecision, dex: &Dex) {
+        match std::mem::replace(&mut self.phase, DrivePhase::AwaitMove) {
+            DrivePhase::AwaitMove => self.feed_await_move(bs, dec, dex),
+            DrivePhase::AwaitSwitch(sw) => self.feed_await_switch(bs, sw, dec, dex),
+            DrivePhase::Ended(w) => self.phase = DrivePhase::Ended(w),
+        }
+    }
+
+    /// A top-of-turn `move` decision — the old outer-loop body from the `move`-request
+    /// pull through building + sorting the action queue, then run the turn to its next
+    /// boundary. Per-side FIRST-accepted-wins acceptance is preserved across partial
+    /// feeds via `self.pending`.
+    fn feed_await_move(&mut self, bs: &mut BattleState, dec: ScriptDecision, dex: &Dex) {
+        // [side.choose validation — the sim's per-side reject-and-re-request] A `move`
+        // request commits ONLY when both choosing sides submit a VALID choice; an illegal
+        // side draws nothing and leaves its half of the boundary open. (See `choice_is_legal`.)
+        for side in 0..2 {
+            if self.pending.for_side(side).is_none() {
+                if let Some(c) = dec.for_side(side) {
+                    if bs.choice_is_legal(side, c, dex) {
+                        self.pending.set_side(side, c);
+                    }
+                }
+            }
+        }
+        if self.pending.p1.is_none() || self.pending.p2.is_none() {
+            // The boundary stays OPEN (any one-side HELD choice included); wait for the
+            // next fed decision. Draw-free / zero-state / zero-EMIT.
+            self.phase = DrivePhase::AwaitMove;
+            return;
+        }
+        let dec = self.pending;
+        self.pending = ScriptDecision::default();
+
+        self.committed_turns += 1;
+        if self.committed_turns > BATTLE_TURN_CAP {
+            panic!(
+                "run_full_battle runaway: >{} committed turns without game-end (self.turn={}) \
+                 — a non-terminating battle (stalemate the forfeit failed to end)",
+                BATTLE_TURN_CAP, bs.turn,
+            );
+        }
+
+        // [makeRequest -> commitChoices framing]: increment the turn (unless the previous
+        // turn's end already opened it EAGERLY) + emit the batch separator + `|t:|`.
+        if !self.turn_already_opened {
+            bs.turn += 1;
+            if bs.logging() && bs.turn >= 2 {
+                bs.log.turn(bs.turn);
+            }
+        }
+        if bs.logging() {
+            bs.log.separator();
+            bs.log.timestamp();
+        }
+
+        // Clear the per-turn diagnostic flags; `run_move`/`drag_in`/`execute_switch` re-set them.
+        bs.pending_explosion_self_ko = false;
+        bs.pending_phaze_drag = false;
+        bs.pursuit_first_mover = None;
+        // Expire the `duration:1` FLINCH volatiles from the previous turn. DRAW-FREE.
+        bs.clear_flinch();
+        // `commitChoices` refreshes the cached `pokemon.speed` at turn start (para/boost-aware)
+        // BEFORE the action-order sort + the per-action `eachEvent` shuffles read it.
+        bs.update_speed(dex);
+
+        // --- Build + sort the turn's action queue. ---
+        let mut actions: Vec<QAction> = Vec::new();
+        for side in 0..2 {
+            let active = bs.sides[side].active;
+            let uid = bs.sides[side].pokemon[active].uid;
+            match dec.for_side(side) {
+                Some(Choice::Move(mi)) => {
+                    // MOVE-LOCKED requests: a MUSTRECHARGE mon's request offered ONLY
+                    // `Recharge` and a CHARGING (twoturnmove) mon's ONLY its locked Solar
+                    // Beam — the accepted `move 1` maps to the recharge pseudo-move / the
+                    // LOCKED move's REAL slot; neither substitutes Struggle nor unshifts a
+                    // beforeTurnMove.
+                    let locked = bs.sides[side].pokemon[active].move_locked();
+                    let mi = bs.sides[side].pokemon[active]
+                        .two_turn
+                        .filter(|t| t.charging)
+                        .map(|t| t.move_index)
+                        .unwrap_or(mi);
+                    // A mon with NO usable move (all slots at 0 PP) has `moveid:'struggle'`
+                    // substituted by `side.choose` — regardless of the scripted slot `mi`.
+                    let struggle =
+                        !locked && bs.sides[side].pokemon[active].must_struggle(dex);
+                    // `beforeTurnMove` unshift (Focus Punch / Pursuit): a `move` whose move
+                    // carries a `beforeTurnCallback` ALSO enqueues an order-5 `beforeTurnMove`.
+                    if !struggle && !locked {
+                        if let Some(m) = bs.move_at(side, active, mi, dex) {
+                            if move_has_before_turn_callback(&to_id(&m.id)) {
+                                actions.push(QAction::BeforeTurnMove { side, uid, move_index: mi });
+                            }
+                        }
+                    }
+                    actions.push(QAction::Move { side, uid, move_index: mi, struggle });
+                }
+                Some(Choice::Switch(target)) => {
+                    actions.push(QAction::Switch { side, target });
+                }
+                None => {} // no choice this side (not expected on a move request)
+            }
+        }
+        // [commitChoices] ACTION-ORDER sort (the tie shuffle on an order+priority+speed tie).
+        bs.sort_actions(&mut actions, dex);
+
+        // First mover = the first move/switch action (post action-order sort).
+        let first_mover = actions.iter().find_map(|a| match a {
+            QAction::Move { side, .. } => Some(*side),
+            QAction::Switch { side, .. } => Some(*side),
+            _ => None,
+        });
+
+        // The turn's queue: [beforeTurn, <sorted actions>, residual].
+        let mut queue: Vec<QAction> = Vec::with_capacity(actions.len() + 2);
+        queue.push(QAction::BeforeTurn);
+        queue.extend(actions);
+        queue.push(QAction::Residual);
+
+        self.run_queue(bs, queue, RequestKind::Move, first_mover, dex);
+    }
+
+    /// A forced-replacement decision — the old `NeedSwitch` replacement pull + instaswitch
+    /// build + resume. PER-SIDE accumulation across feeds (a double replacement may arrive
+    /// as two one-sided decisions).
+    fn feed_await_switch(
+        &mut self,
+        bs: &mut BattleState,
+        mut sw: SwitchWait,
+        dec: ScriptDecision,
+        dex: &Dex,
+    ) {
+        for side in 0..2 {
+            if sw.force[side] && sw.have[side].is_none() {
+                if let Some(Choice::Switch(t)) = dec.for_side(side) {
+                    let sd = &bs.sides[side];
+                    if t < sd.pokemon.len() && !sd.pokemon[t].fainted && t != sd.active {
+                        sw.have[side] = Some(t);
+                    }
+                }
+            }
+        }
+        let satisfied = (0..2).all(|s| !sw.force[s] || sw.have[s].is_some());
+        if !satisfied {
+            self.phase = DrivePhase::AwaitSwitch(sw);
+            return;
+        }
+        let mut insta: Vec<QAction> = Vec::new();
+        for side in 0..2 {
+            if sw.force[side] {
+                insta.push(QAction::InstaSwitch { side, target: sw.have[side].expect("satisfied") });
+                bs.sides[side].switch_flag = false;
+            }
+        }
+        // [commitChoices on a switch request] `updateSpeed()` at the TOP on EVERY choice
+        // commit — including a mid-turn FORCED-replacement submit (para/boost-aware).
+        bs.update_speed(dex);
+        // [EMIT] open the REPLACEMENT batch: `|` (separator) + `|t:|`.
+        if bs.logging() {
+            bs.log.separator();
+            bs.log.timestamp();
+        }
+        // sort ONLY the new instaswitch(es) (the double-replacement tie shuffle), then
+        // PREPEND before the saved remainder (oldQueue).
+        bs.sort_actions(&mut insta, dex);
+        let mut queue = insta;
+        queue.extend(sw.queue);
+        self.run_queue(bs, queue, sw.request, sw.first_mover, dex);
+    }
+
+    /// Run the (committed) turn queue via `turn_loop` ONCE and handle its result — the
+    /// shared tail of both feed paths (the old post-`turn_loop` match). `Done` records the
+    /// boundary + eager-opens the next turn; `NeedSwitch` records the boundary + PAUSES for
+    /// the replacement; `Ended` emits win/tie + records + ends.
+    fn run_queue(
+        &mut self,
+        bs: &mut BattleState,
+        mut queue: Vec<QAction>,
+        request: RequestKind,
+        first_mover: Option<usize>,
+        dex: &Dex,
+    ) {
+        match bs.turn_loop(&mut queue, dex) {
+            TurnLoopStop::Ended { winner } => {
+                // [EMIT] the deciding `|` separator then `|win|<PlayerName>` (or `|tie`).
+                if bs.logging() {
+                    bs.log.separator();
+                    match winner {
+                        Some(side) => {
+                            let name = bs.sides[side].name.clone();
+                            bs.log.win(&name);
+                        }
+                        None => bs.log.tie(),
+                    }
+                }
+                self.decisions.push(bs.boundary_record(request, first_mover, dex));
+                self.phase = DrivePhase::Ended(winner);
+            }
+            TurnLoopStop::Done => {
+                // endTurn: the `runEvent('DisableMove')` handler-sort shuffle fires BEFORE
+                // the unconditional Quick Claw roll (no faint pause).
+                bs.disable_move_event_shuffle();
+                bs.bump_active_turns();
+                // PERSIST the endTurn Quick Claw roll — read NEXT turn by
+                // `effective_speed`/`update_speed` for the gen3 speed=65535 override.
+                bs.quick_claw_roll = bs.prng.random_chance(1, 5);
+                self.decisions.push(bs.boundary_record(request, first_mover, dex));
+                // [EMIT] the NEXT turn's `|turn|N+1` marker EAGERLY (the sim's
+                // `makeRequest('move')` flushes it in the COMPLETING write's chunk).
+                bs.turn += 1;
+                if bs.logging() && bs.turn >= 2 {
+                    bs.log.turn(bs.turn);
+                }
+                self.turn_already_opened = true;
+                self.phase = DrivePhase::AwaitMove;
+            }
+            TurnLoopStop::NeedSwitch { force } => {
+                // makeRequest('switch') paused the turn. Record the boundary we JUST finished
+                // (the move request, or the prior forced switch) at the PAUSE seed, then PAUSE
+                // for the replacement decision.
+                // [SEND] `makeRequest('switch')` runs `sendUpdates()`, STREAMING every
+                // buffered line so far so a LATER retro-edit can no longer tag an already-
+                // flushed `|move|` line.
+                if bs.logging() {
+                    bs.log.mark_sent();
+                }
+                self.decisions.push(bs.boundary_record(request, first_mover, dex));
+                self.phase = DrivePhase::AwaitSwitch(SwitchWait {
+                    queue,
+                    force,
+                    have: [None, None],
+                    // The NEXT boundary we record answers THIS forced switch.
+                    request: RequestKind::ForceSwitch { force },
+                    first_mover,
+                });
+            }
+        }
+    }
+}
+
 /// How a foe-targeting major-status MOVE fails when the foe is ALREADY statused — the
 /// two gen-3 `setStatus` fail branches (pokemon.ts:1699-1706), which emit DIFFERENT
 /// `|-fail|` lines. `Same` = the move's inflicted status matches the foe's current one
@@ -11689,14 +11698,6 @@ impl BattleState {
 enum StatusMoveFail {
     Same,
     Different,
-}
-
-/// How a single turn-loop pass ended.
-enum TurnEnd {
-    /// The turn completed (the endTurn Quick Claw drew).
-    Done,
-    /// The battle ended this turn (no Quick Claw on the deciding faint).
-    Ended(Option<usize>),
 }
 
 /// Why [`BattleState::turn_loop`] returned — mirroring `turnLoop`'s exit
@@ -11789,7 +11790,20 @@ impl BattleState {
     /// On `NeedSwitch`/`Ended` it RETURNS with the queue's remaining tail intact
     /// (the saved `oldQueue` the caller resumes after committing replacements).
     fn turn_loop(&mut self, queue: &mut Vec<QAction>, dex: &Dex) -> TurnLoopStop {
+        // Runaway guard (`gen3_bridge_turn_watchdog_v1`): a re-enqueuing cycle would spin here
+        // forever. Cap far above any legit turn and PANIC with the queue so the cycling action
+        // is self-evident. See TURN_LOOP_ACTION_CAP.
+        let mut guard = 0usize;
         while !queue.is_empty() {
+            guard += 1;
+            if guard > TURN_LOOP_ACTION_CAP {
+                let head: Vec<&QAction> = queue.iter().take(6).collect();
+                panic!(
+                    "turn_loop runaway: >{} actions in ONE turn (turn={}, queue_len={}, head={:?}) \
+                     — a queued action is re-enqueuing in a cycle",
+                    TURN_LOOP_ACTION_CAP, self.turn, queue.len(), head,
+                );
+            }
             let action = queue.remove(0);
 
             // --- Run the action body. A move/residual may faint a mon (HP zeroed,

@@ -30,7 +30,9 @@
 //!    these become full byte-equal battles with no bridge change.)
 
 use pokesim::bridge::{
-    bridge_opts, parse_bridge_golden, parse_choice, run_full_battle_bridge, Cmd, GoldenBattle,
+    bridge_opts, parse_bridge_golden, parse_choice, run_full_battle_bridge,
+    run_full_battle_bridge_core, run_full_battle_bridge_incremental, BridgeChunks, BridgeSession,
+    Cmd, GoldenBattle,
 };
 use pokesim::dex::Dex;
 
@@ -320,5 +322,253 @@ fn recharge_last_mon_request_carries_trapped_true() {
     assert!(
         recharge_req.contains("\"trapped\":true"),
         "the LAST-mon recharge |request| MUST carry `\"trapped\":true` (BR1) — got:\n{recharge_req}"
+    );
+}
+
+// ===========================================================================
+// The INCREMENTAL-vs-GENESIS byte-PARITY gate (`gen3_bridge_incremental_replay_v1`).
+//
+// The new O(N) persistent `BridgeSession` (which `sim_bridge` drives across CHOOSE
+// lines) must be BIT-FOR-BIT identical to the genesis-replay REFERENCE core
+// (`run_full_battle_bridge_core`, kept as the oracle) over the goldens' battles +
+// constructed LONG STALL battles — chunks, ended, script, AND the A2 seed anchor.
+// Determinism guarantees this by construction (resuming from the persisted state
+// draws the same PRNG numbers a genesis replay would); the test PROVES the
+// per-boundary emission logic was ported faithfully.
+// ===========================================================================
+
+/// Compare two `BridgeChunks` for exact equality (no `PartialEq` derive) — panic at
+/// the first divergent chunk boundary or line.
+fn assert_chunks_equal(id: &str, incr: &BridgeChunks, genesis: &BridgeChunks) {
+    assert!(
+        incr.chunks.len() == genesis.chunks.len(),
+        "[{id}] chunk COUNT differs: incremental={} genesis={}",
+        incr.chunks.len(),
+        genesis.chunks.len()
+    );
+    for (i, (a, b)) in incr.chunks.iter().zip(genesis.chunks.iter()).enumerate() {
+        assert!(
+            a.side == b.side,
+            "[{id}] chunk {i} side differs: incr p{} genesis p{}",
+            a.side + 1,
+            b.side + 1
+        );
+        assert!(
+            a.lines == b.lines,
+            "[{id}] chunk {i} (side p{}) lines differ:\n  incremental: {:?}\n  genesis:     {:?}",
+            a.side + 1,
+            a.lines,
+            b.lines
+        );
+    }
+}
+
+/// Assert the incremental session — BOTH the single-call `run_full_battle_bridge_incremental`
+/// AND the PERSISTENT one-CMD-at-a-time path (exactly what `sim_bridge` does per CHOOSE) —
+/// matches the genesis-replay reference core bit-for-bit over `opts`+`cmds`.
+fn assert_incremental_parity(
+    id: &str,
+    opts: &pokesim::battle::BattleOptions,
+    cmds: &[Cmd],
+    dex: &Dex,
+) {
+    let (gc, ge, gs, gseeds) =
+        run_full_battle_bridge_core(opts, cmds, dex).expect("genesis core");
+
+    // (1) single-call incremental.
+    let (ic, ie, is_script, iseeds) =
+        run_full_battle_bridge_incremental(opts, cmds, dex).expect("incremental single-call");
+    assert_chunks_equal(id, &ic, &gc);
+    assert!(ie == ge, "[{id}] ended differs: incr={ie} genesis={ge}");
+    assert!(is_script == gs, "[{id}] committed script differs");
+    assert!(iseeds == gseeds, "[{id}] A2 request_seeds differ");
+
+    // (2) PERSISTENT one-CMD-at-a-time — the true O(1)/CHOOSE path.
+    let mut sess = BridgeSession::new(opts, dex).expect("session");
+    for c in cmds {
+        sess.feed_cmd(c.clone(), dex);
+    }
+    assert_chunks_equal(&format!("{id}/persistent"), sess.chunks(), &gc);
+    assert!(sess.is_ended() == ge, "[{id}/persistent] ended differs");
+    assert!(sess.request_seeds() == gseeds.as_slice(), "[{id}/persistent] seeds differ");
+    assert!(sess.script() == gs.as_slice(), "[{id}/persistent] script differs");
+}
+
+/// A packed team of `n` bulky single-move (Splash) Snorlax — a battle of these STALLS
+/// (both Splash ~64 turns doing nothing, then forced Struggle chips to a faint, then a
+/// replacement enters), reaching hundreds of decisions with a trivially-scriptable
+/// auto-policy (`move 1` always legal via Struggle substitution).
+fn splasher_team(n: usize) -> String {
+    let mon = "Snorlax|||thickfat|splash|Brave|252,,252,,4,|||||";
+    std::iter::repeat(mon).take(n).collect::<Vec<_>>().join("]")
+}
+
+/// Options for a LONG stall battle (`n_mons` bulky Splashers per side).
+fn long_stall_opts(n_mons: usize) -> pokesim::battle::BattleOptions {
+    bridge_opts(
+        "gen3customgame",
+        "1,2,3,4".to_string(),
+        &splasher_team(n_mons),
+        &splasher_team(n_mons),
+    )
+}
+
+/// The 1-based wire `switch N` for the first LIVE, non-active bench mon in a forceSwitch
+/// request's `side.pokemon`, or `None` if none is live.
+fn pick_switch_target(request_line: &str) -> Option<usize> {
+    let json = request_line.strip_prefix("|request|")?;
+    let v = pokesim::json::Json::parse(json).ok()?;
+    let pokemon = v.get("side")?.get("pokemon")?.as_array()?;
+    for (i, p) in pokemon.iter().enumerate() {
+        let active = p.get("active").and_then(|a| a.as_bool()).unwrap_or(false);
+        let cond = p.str_at("condition").unwrap_or("");
+        if !active && !cond.contains("fnt") {
+            return Some(i + 1);
+        }
+    }
+    None
+}
+
+/// The last `|request|` line emitted to `side` (its current pending request).
+fn latest_request(sess: &BridgeSession, side: usize) -> Option<String> {
+    sess.chunks()
+        .chunks
+        .iter()
+        .filter(|c| c.side == side)
+        .flat_map(|c| c.lines.iter())
+        .filter(|l| l.starts_with("|request|"))
+        .last()
+        .cloned()
+}
+
+/// Generate a long battle's CMD stream by driving a persistent [`BridgeSession`] with a
+/// deterministic auto-policy — `move 1` at every move request (single-move teams → always
+/// legal via Struggle substitution), the first live bench mon at a forced switch. O(N)
+/// generation. Stops at game-end or `max` decisions.
+fn generate_long_battle_cmds(
+    opts: &pokesim::battle::BattleOptions,
+    dex: &Dex,
+    max: usize,
+) -> Vec<Cmd> {
+    let mut sess = BridgeSession::new(opts, dex).expect("session");
+    let mut cmds: Vec<Cmd> = Vec::new();
+    while !sess.is_ended() && cmds.len() < max {
+        let mut boundary: Vec<Cmd> = Vec::new();
+        for side in 0..2 {
+            let req = match latest_request(&sess, side) {
+                Some(r) => r,
+                None => continue,
+            };
+            if req.contains("\"wait\":true") {
+                continue;
+            }
+            let tok = if req.contains("\"forceSwitch\"") {
+                match pick_switch_target(&req) {
+                    Some(n) => format!("switch {n}"),
+                    None => return cmds, // no live bench — the faint should have ended it
+                }
+            } else {
+                "move 1".to_string()
+            };
+            boundary.push(Cmd { side, choice: parse_choice(&tok).expect("choice") });
+        }
+        if boundary.is_empty() {
+            break;
+        }
+        for c in boundary {
+            sess.feed_cmd(c.clone(), dex);
+            cmds.push(c);
+        }
+    }
+    cmds
+}
+
+#[test]
+fn bridge_incremental_matches_genesis_replay() {
+    let dex = Dex::for_gen(3);
+
+    // (a) The trapping golden's battles — forced switches + trapped rejects + re-requests.
+    let battles = parse_bridge_golden(TRAPPING_GOLDEN).expect("parse trapping golden");
+    assert!(!battles.is_empty());
+    for b in &battles {
+        let opts = bridge_opts(&b.format_id, b.seed.clone(), &b.p1_team, &b.p2_team);
+        assert_incremental_parity(&b.id, &opts, &b.cmds, &dex);
+    }
+
+    // (b) A couple of CONSTRUCTED LONG STALL battles (the wedge scenario) — hundreds of
+    //     decisions incl. many forced replacements (single + double).
+    for n_mons in [3usize, 6] {
+        let opts = long_stall_opts(n_mons);
+        let cmds = generate_long_battle_cmds(&opts, &dex, 800);
+        assert!(
+            cmds.len() >= 60,
+            "stall battle with {n_mons} mons produced only {} decisions",
+            cmds.len()
+        );
+        assert_incremental_parity(&format!("stall_{n_mons}mon"), &opts, &cmds, &dex);
+    }
+}
+
+/// Timing proof: per-CHOOSE cost is ~CONSTANT for the incremental session (total O(N)),
+/// while the genesis-replay per-CHOOSE cost GROWS with the decision index (total O(N²)) —
+/// run explicitly:
+///   `cargo test --release timing_bridge_incremental -- --ignored --nocapture`
+#[test]
+#[ignore]
+fn timing_bridge_incremental_linear_vs_genesis_quadratic() {
+    let dex = Dex::for_gen(3);
+    let opts = long_stall_opts(6);
+    let cmds = generate_long_battle_cmds(&opts, &dex, 2000);
+    let n = cmds.len();
+    println!("\n=== LONG STALL BATTLE: {n} decisions ===");
+
+    // (A) INCREMENTAL: feed cmd-by-cmd into ONE persistent session; time each step.
+    let mut sess = BridgeSession::new(&opts, &dex).unwrap();
+    let mut inc_us: Vec<u128> = Vec::with_capacity(n);
+    for c in &cmds {
+        let t = std::time::Instant::now();
+        sess.feed_cmd(c.clone(), &dex);
+        inc_us.push(t.elapsed().as_nanos() / 1000);
+    }
+    let inc_total: u128 = inc_us.iter().sum();
+
+    // Report incremental per-step avg by decile (should be FLAT).
+    print!("INCREMENTAL per-step us by decile: ");
+    for d in 0..10 {
+        let lo = d * n / 10;
+        let hi = ((d + 1) * n / 10).max(lo + 1).min(n);
+        let s = &inc_us[lo..hi];
+        let avg = s.iter().sum::<u128>() as f64 / s.len() as f64;
+        print!("{avg:.1} ");
+    }
+    println!("\nINCREMENTAL total: {} us for {} steps ({:.2} us/step)", inc_total, n, inc_total as f64 / n as f64);
+
+    // (B) GENESIS (the OLD sim_bridge per-CHOOSE cost): re-run the whole core over
+    //     cmds[0..=k] — this is exactly what the old bridge paid on CHOOSE #k. Sample a
+    //     handful of k (timing ALL k would be O(N^3)) to show the per-CHOOSE GROWTH.
+    println!("GENESIS per-CHOOSE cost (the OLD path re-simulates cmds[0..=k]):");
+    let samples: Vec<usize> = (1..=8).map(|i| (i * n / 8).max(1).min(n)).collect();
+    for &k in &samples {
+        let t = std::time::Instant::now();
+        let _ = run_full_battle_bridge_core(&opts, &cmds[..k], &dex).unwrap();
+        let us = t.elapsed().as_nanos() / 1000;
+        println!("  CHOOSE #{k:>4}: {us:>8} us  (incremental step here: {} us)", inc_us[k - 1]);
+    }
+
+    // Cumulative: the OLD total was Σ genesis(k) ≈ O(N^2); the NEW total is O(N).
+    // Estimate the old total by integrating the sampled genesis curve (trapezoid).
+    println!(
+        "\nCONCLUSION: incremental per-step is ~flat (O(N) total = {} us); \
+         genesis per-CHOOSE grows ~linearly with k (O(N^2) total).",
+        inc_total
+    );
+
+    // Sanity assert: the incremental per-step at the END must not be dramatically larger
+    // than at the START (flat), i.e. no super-linear per-step growth.
+    let first_decile: u128 = inc_us[..n / 10].iter().sum::<u128>() / (n / 10).max(1) as u128;
+    let last_decile: u128 = inc_us[9 * n / 10..].iter().sum::<u128>() / (n - 9 * n / 10).max(1) as u128;
+    assert!(
+        last_decile <= first_decile * 4 + 50,
+        "incremental per-step grew super-linearly: first-decile {first_decile}us vs last-decile {last_decile}us"
     );
 }
