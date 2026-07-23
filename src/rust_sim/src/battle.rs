@@ -103,6 +103,15 @@ impl Battle {
         })
     }
 
+    /// Construct from a RAW `>start` seed, running the FULL turn-0 construction window
+    /// (`gen3_turn0_construction_v1`) — the bridge's raw-seed entry. See
+    /// [`BattleState::start_with_turn0_construction`].
+    pub fn start_with_turn0_construction(opts: &BattleOptions, dex: &Dex) -> Result<Battle, String> {
+        Ok(Battle {
+            state: Some(BattleState::start_with_turn0_construction(opts, dex)?),
+        })
+    }
+
     /// The constructed state, if [`Battle::start`] has run.
     pub fn state(&self) -> Option<&BattleState> {
         self.state.as_ref()

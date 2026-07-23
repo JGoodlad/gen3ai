@@ -404,7 +404,12 @@ fn ab_verdict(b: &GoldenBattle, dex: &Dex) -> String {
 /// Both lines must be `|request|` JSON. The diff is located as the single field whose value
 /// differs; the allowlist fires only if that field is one of:
 ///   - **curse-nonghost-target-self-vs-normal** — a Curse move-slot's `"target":"self"` (sim,
-///     Curse's `nonGhostTarget`) vs `"target":"normal"` (port renders the base dex target).
+///     Curse's `nonGhostTarget`) vs `"target":"normal"` (port). **DORMANT/LEGACY as of
+///     `gen3_bridge_curse_request_target_v1`:** the port's request serializer now emits the
+///     runtime-effective `"self"` for a non-Ghost Curse, so this diff no longer occurs and this
+///     reconciliation never fires. Retained defensively (a REVERT would still be classified, not
+///     crash), but the byte-CLEAN corpus fixtures `10`/`15` are the real guard — they replay `ok`
+///     and FAIL loudly (untagged → `ok`-required) if the serializer regresses.
 ///   - **return102-numeric-alias** — a `side.pokemon[].moves[]` entry `"return102"`↔`"return"`
 ///     (or `"frustration102"`↔`"frustration"`), the numeric-BP moveid alias.
 ///   - **gender-level-details-construction-draw** — a `details` field differing SOLELY by a

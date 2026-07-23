@@ -36,40 +36,9 @@
 
 use crate::battle::{Battle, BattleOptions, PackedTeam, PlayerOptions};
 use crate::dex::Dex;
-use crate::prng::{Prng, PrngSeed};
+use crate::prng::PrngSeed;
 use crate::state::{BattleState, MonState, Status};
 use crate::turn::{Choice, FullBattleDriver, ScriptDecision};
-
-// ===========================================================================
-// The `>start` construction-window seed advance (the `sim_bridge` drop-in seed
-// convention).
-// ===========================================================================
-
-/// Advance a RAW `>start` seed by the sim's turn-0 CONSTRUCTION-WINDOW draw so the
-/// port's replay (which does NOT model that window) starts from the SAME PRNG state
-/// Showdown reaches after `>start`+`>player`. This makes the `sim_bridge` binary
-/// byte-identical to the real Node bridge on a seeded battle.
-///
-/// The construction window consumes exactly ONE PRNG draw — the gen-3 **turn-0 Quick
-/// Claw** `randomChance(1, 5)` (fired once when the battle starts) — for a team with
-/// EXPLICIT genders. VERIFIED vs the real sim: `[7,11,13,17]` → `[44317,42357,9927,48760]`
-/// after `>start`, matched bit-for-bit by one `random_chance(1, 5)` here (see the unit
-/// test `construction_seed_advance_matches_the_sim`). The engine's own draw suites use
-/// this same "pre-first-decision seed convention" (the golden captures the sim's
-/// post-construction `initSeed`; `Battle::start_with_switchins` then replays draw-free
-/// from it) — this helper computes that post-construction seed from the raw one.
-///
-/// HONEST GAP: a mon with an UNSPECIFIED gender RATIO makes the sim draw an ADDITIONAL
-/// construction-time `sample(['M','F'])` per such mon (an `addPokemon` draw the port
-/// also does not model), which this helper does NOT account for. So the advance is
-/// exact only for EXPLICIT-gender teams (the training/eval reality when packed teams
-/// carry genders). The differential harness pins genders; the residual gender-sample
-/// gap is documented, not faked.
-pub fn advance_seed_for_construction(raw: &PrngSeed) -> PrngSeed {
-    let mut p = Prng::new(raw);
-    let _ = p.random_chance(1, 5); // the turn-0 Quick Claw
-    p.get_seed()
-}
 
 // ===========================================================================
 // Wire choice tokens (the CMD stream the driver replays).
@@ -463,8 +432,10 @@ fn json_escape(s: &str) -> String {
 /// bench mon's TYPED HP id. (A set that already stores the explicit typed name
 /// [`HiddenPowerGrass`] `to_id`s straight to `hiddenpowergrass`, so this only fires for
 /// the bare-stored-plus-marker form Charizard uses: packed `HiddenPower` + `,Dark,,,,`.)
-/// The OPPONENT-facing bare-collapse (`active_move_display` + the opp HP hiding) is
-/// CORRECT and separate — gen 3 never reveals the opp HP type.
+/// The OWNER-facing `active[].moves[]` request ALSO resolves the typed HP — the caller
+/// runs `side_move_id` before `active_move_display` (`gen3_own_typed_hp_active_request_v1`,
+/// the sibling of this roster fix). Only the opponent HP hiding + the omniscient `|move|`
+/// bare-collapse (BF1) stay bare — gen 3 never reveals the opp HP type.
 fn side_move_id(mon: &MonState, mv: &str) -> String {
     let id = crate::dex::to_id(mv);
     if id == "hiddenpower" {
@@ -725,13 +696,37 @@ fn serialize_active(
             .iter()
             .enumerate()
             .map(|(k, mv)| {
-                let (id, name) = active_move_display(mv, dex, mon.hidden_power_bp);
+                // Resolve a BARE-stored Hidden Power to its TYPED id first
+                // (`gen3_own_typed_hp_active_request_v1`, the sibling of the B3 roster
+                // fix `gen3_own_typed_hp_request_roster_v1`): the OWNER's own `active[].
+                // moves[]` request shows the TYPED name ("Hidden Power Dark 70"), IV/marker-
+                // derived — like the roster — while the id stays bare `hiddenpower`. A set
+                // that stores the typed name already `to_id`s to `hiddenpowerdark`; this
+                // only fires for the bare-stored-plus-marker form (e.g. Charizard's packed
+                // `HiddenPower` + `,Dark,,,,`). Owner-only + request-only, so the opponent HP
+                // hiding + the omniscient `|move|` bare-collapse (BF1) are untouched.
+                let (id, name) = active_move_display(&side_move_id(mon, mv), dex, mon.hidden_power_bp);
                 let pp = mon.move_pp.get(k).copied().unwrap_or(0);
                 let maxpp = mon.move_maxpp.get(k).copied().unwrap_or(0);
-                let target = dex
+                let base_target = dex
                     .moves(mv)
                     .map(|d| d.target.clone())
                     .unwrap_or_else(|| "normal".to_string());
+                // CURSE's `nonGhostTarget` (`gen3_bridge_curse_request_target_v1`): gen-3
+                // `curse.onModifyMove` re-targets a NON-GHOST user's Curse to `self` at
+                // runtime, and the sim's `getMoveRequestData` reports that RUNTIME target
+                // (`"self"`) while the STATIC dex target is `"normal"`. Render the effective
+                // target so the request matches the sim — the SAME runtime read the
+                // Pressure-PP path uses (`is_nonghost_curse`, `turn/moves.rs`); a GHOST Curse
+                // is foe-directed so it keeps the base `normal`. (This retires the per-side
+                // fuzzer's `curse-nonghost-target-self-vs-normal` request-DISPLAY allowlist.)
+                let target = if crate::dex::to_id(mv) == "curse"
+                    && !crate::turn::mon_types(mon, dex).contains(&crate::dex::Type::Ghost)
+                {
+                    "self".to_string()
+                } else {
+                    base_target
+                };
                 let disabled = move_disabled(mon, k, dex);
                 format!(
                     "{{\"move\":\"{}\",\"id\":\"{}\",\"pp\":{},\"maxpp\":{},\"target\":\"{}\",\"disabled\":{}}}",
@@ -1153,11 +1148,30 @@ pub struct BridgeSession {
 impl BridgeSession {
     /// Build a session: construct the live battle, emit + chunk the framing, and advance
     /// to the FIRST request boundary (emitting its request), paused for the first CMD.
+    ///
+    /// The `opts.seed` is the sim's PRE-FIRST-DECISION (post-construction) seed — the
+    /// convention the committed goldens capture. For the LIVE bridge (`sim_bridge`),
+    /// which is fed poke-env's RAW `>start` seed, use [`new_construct_turn0`] instead.
     pub fn new(opts: &BattleOptions, dex: &Dex) -> Result<BridgeSession, String> {
+        Self::new_from_battle(Battle::start_with_switchins(opts, dex)?, opts, dex)
+    }
+
+    /// Build a session from a RAW `>start` seed, running the FULL turn-0 CONSTRUCTION
+    /// WINDOW (`gen3_turn0_construction_v1`, [`Battle::start_with_turn0_construction`])
+    /// so the live incremental engine lines up with the real sim's post-`>start` PRNG
+    /// state on a speed-TIED lead or an unspecified-gender mon. This is the drop-in the
+    /// `sim_bridge` binary uses (poke-env sends the raw seed); it REPLACES the old pure
+    /// `advance_seed_for_construction` seed hack.
+    pub fn new_construct_turn0(opts: &BattleOptions, dex: &Dex) -> Result<BridgeSession, String> {
+        Self::new_from_battle(Battle::start_with_turn0_construction(opts, dex)?, opts, dex)
+    }
+
+    /// The shared session body: emit + chunk the framing from an already-constructed
+    /// battle, then advance to the first request boundary.
+    fn new_from_battle(mut battle: Battle, opts: &BattleOptions, dex: &Dex) -> Result<BridgeSession, String> {
         // Percent HP fold applies only in non-debug formats (gen3ou); a `debug:true`
         // format (gen3customgame) sets `reportExactHP` → both sides see exact HP.
         let report_percent = !format_is_debug(&opts.format_id);
-        let mut battle = Battle::start_with_switchins(opts, dex)?;
         // Emit the framing INTO the live log (kept, not drained — continuous cursor
         // coords), exactly the lines `run_full_battle_logged(&[])` produces.
         let raw_framing: Vec<crate::protocol::ProtocolLine> = {
@@ -1682,24 +1696,6 @@ pub fn bridge_opts(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// `advance_seed_for_construction` must reproduce the real sim's post-`>start` PRNG state
-    /// for a DISTINCT-SPEED lead matchup (the common case): the sim's turn-0 construction
-    /// window is exactly the Quick Claw `random(1,5)` there, matched by one `random_chance(1,5)`.
-    /// Ground truth captured from the omniscient `getPlayerStreams` (raw seed → post-`>start`
-    /// `battle.prng.getSeed()`): `[7,11,13,17]` → `[44317,42357,9927,48760]`, and a second seed
-    /// `[99,88,77,66]` → `[17147,43298,11641,2765]` (see the module docs for the SPEED-TIE gap).
-    #[test]
-    fn construction_seed_advance_matches_the_sim() {
-        assert_eq!(
-            advance_seed_for_construction(&"7,11,13,17".to_string()),
-            "44317,42357,9927,48760"
-        );
-        assert_eq!(
-            advance_seed_for_construction(&"99,88,77,66".to_string()),
-            "17147,43298,11641,2765"
-        );
-    }
 
     /// The chunked emitter's `flatten()` must equal the flat `run_full_battle_bridge` output —
     /// the invariant that lets the line-level `bridge_test` golden validate the chunk logic.

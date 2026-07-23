@@ -321,8 +321,9 @@ behavior). `--use-bridge=rust` swaps the child binary for the std-only pokesim
 require `--use-bridge=node` — `train_rl_agent` emits a one-time startup warning and errors if
 `--search-teacher`/`--teacher-persistent` is combined with `rust`. The pokesim port also models a
 large-but-INCOMPLETE gen3 move set and **fail-louds** on an unmodeled move, so `rust` is only safe
-for a run whose teams stay in the modeled universe; and a **seeded** speed-tied lead may differ
-from node (the turn-0 construction-shuffle convention gap; `seed=None` training is unaffected). See
+for a run whose teams stay in the modeled universe. (The former **seeded speed-tied-lead** /
+unspecified-gender divergence is now FIXED — `gen3_turn0_construction_v1` models the turn-0
+construction window in the bridge, so a seeded rust battle is byte-for-byte with node.) See
 `src/utils/bridge/README.md`. Transport parity (poke-env sends move-ids/species names, e.g.
 `move hiddenpowerice`) is guarded by `src/utils/bridge/bridge_impl_parity_test.py`.
 

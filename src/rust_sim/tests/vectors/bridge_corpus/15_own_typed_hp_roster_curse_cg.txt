@@ -1,5 +1,4 @@
-# ALLOWLIST curse-nonghost-target-self-vs-normal
-# GUARDS gen3_own_typed_hp_request_roster_v1 (bab_3_19): the owner's own bench Charizard bare-stored Hidden Power resolves to the TYPED roster id (hiddenpowerdark). After the own-HP fix the ONLY residual is the documented Curse target:self-vs-normal deferral — a regression of the own-HP fix re-introduces a hiddenpower residual → NOT allowlisted → this fixture FAILS.
+# GUARDS gen3_own_typed_hp_request_roster_v1 (bab_3_19) + gen3_own_typed_hp_active_request_v1 + gen3_bridge_curse_request_target_v1: the owner's own bare-stored Hidden Power resolves to the TYPED name in BOTH the roster (hiddenpowerdark) AND the active moves ("Hidden Power Dark 70"), and the non-Ghost Curse target is "self". This fixture is now byte-CLEAN (untagged) — a regression of ANY of those three fixes re-introduces a request divergence → NOT allowlisted → this fixture FAILS to replay `ok`.
 # bridge_ab_fuzz chunk — REQUEST / PER-SIDE A/B fuzzer (real Node getPlayerStreams vs the Rust port).
 # mode=pool format=gen3customgame master_seed=771301 run_id=rmrovr92r chunk=3
 # Format identical to tests/vectors/bridge_trapping_golden.txt (SCEN/TEAM/INIT/CMD/CHUNK/END).

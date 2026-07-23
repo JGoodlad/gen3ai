@@ -58,7 +58,7 @@
 use std::io::{self, BufRead, Write};
 
 use pokesim::battle::{BattleOptions, PackedTeam, PlayerOptions};
-use pokesim::bridge::{advance_seed_for_construction, parse_choice, BridgeSession, Cmd};
+use pokesim::bridge::{parse_choice, BridgeSession, Cmd};
 use pokesim::dex::Dex;
 use pokesim::json::Json;
 
@@ -189,17 +189,18 @@ fn handle_start(sess: &mut Session, json: &str, dex: &Dex) -> Result<(), String>
         .str_at("formatid")
         .ok_or("START: missing formatid")?
         .to_string();
-    // A given `>start` seed is the RAW seed; advance it by the sim's turn-0 construction
-    // draw (the Quick Claw) so the port's draw-free replay lines up with the real sim's
-    // post-`>start` PRNG state — the "pre-first-decision seed convention" the engine's own
-    // draw suites use. `None` seed → the port picks its default (no reference).
+    // A given `>start` seed is the RAW seed, passed THROUGH unmodified: the turn-0
+    // CONSTRUCTION WINDOW is now modeled in the engine (`gen3_turn0_construction_v1`,
+    // via `BridgeSession::new_construct_turn0` below), so the port reproduces the sim's
+    // gender samples + speed-tie shuffles + Quick Claw from the raw seed bit-for-bit
+    // (the old pure `advance_seed_for_construction` seed hack modeled ONLY the Quick
+    // Claw → it desynced a speed-TIED lead or an unspecified-gender mon). `None` seed →
+    // the port picks its default (no reference).
     let seed = v.get("seed").and_then(|s| s.as_array()).map(|a| {
-        let raw = a
-            .iter()
+        a.iter()
             .map(|x| format!("{}", x.as_f64().unwrap_or(0.0) as u64))
             .collect::<Vec<_>>()
-            .join(",");
-        advance_seed_for_construction(&raw)
+            .join(",")
     });
     let p1 = parse_player(&v, "p1")?;
     let p2 = parse_player(&v, "p2")?;
@@ -208,7 +209,7 @@ fn handle_start(sess: &mut Session, json: &str, dex: &Dex) -> Result<(), String>
     // the live incremental engine (advances to + emits the first request boundary).
     sess.reset();
     let opts = BattleOptions { format_id, seed, p1, p2 };
-    sess.bridge = Some(BridgeSession::new(&opts, dex)?);
+    sess.bridge = Some(BridgeSession::new_construct_turn0(&opts, dex)?);
     Ok(())
 }
 

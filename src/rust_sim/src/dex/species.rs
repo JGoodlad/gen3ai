@@ -26,6 +26,17 @@ pub struct SpeciesData {
     /// weight (probe: Skarmory `getWeight()` == 505 == weighthg). 0 when the data
     /// omits it (no gen-3 species does; a 0 would floor into the lightest bucket).
     pub weighthg: u32,
+    /// The species' FIXED gender (`gen3_turn0_construction_v1`, Showdown pokedex
+    /// `gender`): `Some('N')` genderless (Magnemite/Ditto/Metagross), `Some('M')`/
+    /// `Some('F')` a fixed-gender species (Nidoran-M/F, Tauros, the Lati twins).
+    /// `None` for a normal RATIO'd species (Snorlax etc. — the pokedex carries a
+    /// `genderRatio` instead, which Showdown IGNORES for the actual assignment). This
+    /// is the `species.gender` in the ctor's `gender = set.gender || species.gender ||
+    /// sample(['M','F'])` (pokemon.ts): a mon whose PACKED set omits the gender AND
+    /// whose species has `gender == None` here draws ONE construction-time uniform
+    /// `sample(['M','F'])`; a `Some(_)` species gender is used draw-free. Parsed from
+    /// the `gender` JSON key (present only for the 58 fixed/genderless gen-3 species).
+    pub gender: Option<char>,
 }
 
 pub(super) fn parse(root: &Json) -> Result<HashMap<String, SpeciesData>, String> {
@@ -56,6 +67,7 @@ pub(super) fn parse(root: &Json) -> Result<HashMap<String, SpeciesData>, String>
                 types,
                 max_hp: v.get("maxHP").and_then(Json::as_f64).map(|n| n as u16),
                 weighthg: v.int_or("weighthg", 0) as u32,
+                gender: v.str_at("gender").and_then(|s| s.chars().next()),
             },
         );
     }

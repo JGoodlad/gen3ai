@@ -472,6 +472,92 @@ impl crate::state::BattleState {
         TurnLoopStop::Done
     }
 
+    /// The `>start` CONSTRUCTION WINDOW — advance the PRNG (and set the sampled
+    /// genders + weather/boosts) from the RAW `>start` seed to the sim's
+    /// PRE-FIRST-DECISION state, reproducing every turn-0 draw bit-for-bit
+    /// (`gen3_turn0_construction_v1`). This is the bridge's replacement for the pure
+    /// [`crate::bridge::advance_seed_for_construction`] seed-advance (which modeled
+    /// ONLY the Quick Claw, so it desynced a speed-TIED lead or an unspecified-gender
+    /// mon). It runs ONLY on the bridge's raw-seed path — the committed seed goldens
+    /// seed at the POST-construction `initSeed` and keep the draw-free
+    /// [`BattleState::start_with_switchins`].
+    ///
+    /// The window, in Showdown's EXACT draw order (probe-verified against the real sim
+    /// — `Side.addPokemon` gender draws, then `Battle.start`'s `start` action + the two
+    /// `runSwitch` actions, then `endTurn`; NO turn-0 residual — `start` sets
+    /// `midTurn=true` so `turnLoop` skips the `beforeTurn`/`residual` inserts, hence no
+    /// chip + no `|upkeep|`):
+    ///
+    /// 1. **Gender samples** ([`draw_turn0_genders`]) — one uniform `sample(['M','F'])`
+    ///    per mon (p1's team then p2's, in position order) whose PACKED gender is
+    ///    unspecified AND whose species has no FIXED gender.
+    /// 2. **The `start` action's `switchIn`s** — enqueue both leads' `runSwitch`
+    ///    actions via [`insert_runswitch`], which draws the `insertChoice` tie-break
+    ///    `random(2)` when the leads TIE on raw Speed (the 2nd insert's order-101 tie
+    ///    window; distinct speed → no draw).
+    /// 3. **The `start` action's trailing `eachEvent('Update')`** (the gen<5 runAction
+    ///    tail) — [`each_event_shuffle`] draws one tie-shuffle iff the actives tie.
+    /// 4. **The two `runSwitch` runActions** via [`turn_loop`] — each fires the lead's
+    ///    ability `Start` (Intimidate boosts / Sand Stream weather; a weather CHANGE
+    ///    fires the `eachEvent('WeatherChange')` tie-shuffle inside the runAction) then
+    ///    the trailing `eachEvent('Update')` tail. Reuses the validated mid-battle
+    ///    switch-in machinery, so mixed-weather ties + boost order are handled by
+    ///    construction. (There is NO `residual` action, so `turn_loop` returns `Done`
+    ///    with an empty queue and draws no weather chip — matching the sim's turn 0.)
+    /// 5. **`endTurn`** — the `runEvent('DisableMove')` handler-sort shuffle (a no-op at
+    ///    turn 0 — no mon carries a disabling volatile) then the unconditional gen-3
+    ///    Quick Claw `randomChance(1,5)`, persisted for the next turn's speed override.
+    ///
+    /// Runs with logging OFF (the caller enables logging + `emit_framing` AFTER this,
+    /// reconstructing the switch-in ability lines from the post-construction state), so
+    /// the `run_switch` ability/weather emissions are suppressed here.
+    pub fn run_turn0_construction(&mut self, dex: &Dex) {
+        // (1) the per-mon gender `sample(['M','F'])` (addPokemon order: p1 then p2).
+        self.draw_turn0_genders(dex);
+        // (2) the `start` action's two `switchIn`s → the runSwitch queue (+ the
+        //     insertChoice tie-break draw on a raw-Speed tie).
+        let mut queue: Vec<QAction> = Vec::new();
+        for side in 0..self.sides.len() {
+            self.insert_runswitch(side, &mut queue, dex);
+        }
+        // (3) the `start` action's trailing gen<5 `eachEvent('Update')` tail.
+        self.each_event_shuffle();
+        // (4) the two runSwitch runActions (ability Start + WeatherChange + Update
+        //     tail), through the shared turn machinery. No residual is queued → `Done`.
+        let _ = self.turn_loop(&mut queue, dex);
+        // (5) endTurn: the DisableMove handler shuffle (no-op at turn 0) + Quick Claw.
+        self.disable_move_event_shuffle();
+        self.quick_claw_roll = self.prng.random_chance(1, 5);
+    }
+
+    /// The turn-0 per-mon GENDER draw (`gen3_turn0_construction_v1`,
+    /// `Pokemon` ctor `gender = set.gender || species.gender || sample(['M','F'])`,
+    /// pokemon.ts): for every mon on both sides, in `addPokemon` order (p1's team then
+    /// p2's, position order), a mon whose PACKED set left the gender unspecified
+    /// (`MonState::gender == None`) resolves it — to the species' FIXED gender
+    /// (`SpeciesData::gender`, genderless `'N'` / a fixed `'M'`/`'F'`) DRAW-FREE, else
+    /// (a normal RATIO'd species) via ONE uniform `sample(['M','F'])`. A mon whose set
+    /// already specified the gender is untouched (no draw). This both advances the PRNG
+    /// exactly as the sim does AND fills the gender the `|switch|` details render
+    /// (`, M`/`, F`; a genderless `'N'` shows no suffix, like the sim's `'N' → ''`).
+    fn draw_turn0_genders(&mut self, dex: &Dex) {
+        for side in 0..self.sides.len() {
+            for slot in 0..self.sides[side].pokemon.len() {
+                if self.sides[side].pokemon[slot].gender.is_some() {
+                    continue; // the packed set specified it — no draw
+                }
+                let species_gender = dex
+                    .species(&self.sides[side].pokemon[slot].species_id)
+                    .and_then(|s| s.gender);
+                let g = match species_gender {
+                    Some(fixed) => fixed,                  // genderless/fixed — draw-free
+                    None => *self.prng.sample(&['M', 'F']), // ratio'd — the uniform draw
+                };
+                self.sides[side].pokemon[slot].gender = Some(g);
+            }
+        }
+    }
+
     /// `checkWin` (battle.ts:2155): both sides out → gen-3 TIE (`Ended{winner:None}`);
     /// a side whose FOE is out → that side wins. Returns `Some(winner_or_tie)` when
     /// the battle ends, `None` otherwise. (Wrapped in an `Option<Option<usize>>` via

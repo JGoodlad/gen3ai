@@ -67,10 +67,14 @@ node) if cargo/crate/binary is unavailable.
   **fail-louds** (`__ERR__ … is not modeled`) on anything outside it rather than silently desync.
   Real `gen3ou` sample teams routinely carry an unmodeled move (Aromatherapy, Wish, …), so
   `--use-bridge=rust` is only safe for a run whose teams stay inside the port's modeled universe.
-- **Seed-tie construction convention.** The port's `run_full_battle` omits the sim's turn-0
-  construction endTurn (the per-mon gender `sample` + speed-tie construction shuffles), so a *seeded*
-  speed-tied lead matchup may differ from node. `seed=None` training is unaffected (no shared
-  reference). See `advance_seed_for_construction` in `src/rust_sim/src/bridge.rs`.
+- **Turn-0 construction — MODELED (`gen3_turn0_construction_v1`).** The bridge builds via
+  `BridgeSession::new_construct_turn0`, which runs the sim's full turn-0 construction window from the
+  RAW `>start` seed — the per-mon gender `sample(['M','F'])` + the speed-tie insertChoice/eachEvent
+  shuffles (incl. Magnet Pull's `onAny` trap shuffles + a weather-setter's WeatherChange) + the Quick
+  Claw — so a *seeded* rust battle is byte-for-byte with node even on a **speed-tied lead** or an
+  **unspecified-gender** mon. (Formerly `advance_seed_for_construction` modeled only the Quick Claw and
+  the diff harness skipped speed ties; both are gone.) Gated by
+  `src/rust_sim/tests/turn0_construction_test.rs` + `harness/gen_sim_bridge_diff.js`.
 
 The move-name/switch-species transport parity (poke-env serializes choices by move-id + species
 name, e.g. `move hiddenpowerice` / `switch Salamence` — not slot numbers) is exercised by

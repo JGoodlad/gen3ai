@@ -105,6 +105,11 @@ mod status;
 mod status_moves;
 mod switch;
 
+/// Re-export the live per-mon TYPE read (species types ⊕ Color Change `types_override`)
+/// so the bridge's `|request|` serializer can price Curse's `nonGhostTarget` off the SAME
+/// runtime types the engine uses (`gen3_bridge_curse_request_target_v1`).
+pub(crate) use helpers::mon_types;
+
 /// The denominators `critMult[critRatio]` for gen ≤ 5 (`battle-actions.ts:1631`):
 /// index by the (clamped 0..5) crit ratio. A normal damaging move resolves to
 /// `critRatio == 1` ⇒ `randomChance(1, 16)`; high-crit moves use 8/4/3/2.

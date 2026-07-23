@@ -1337,6 +1337,26 @@ impl BattleState {
         Ok(state)
     }
 
+    /// Construct from a RAW `>start` seed and run the FULL turn-0 CONSTRUCTION WINDOW
+    /// (`gen3_turn0_construction_v1`) — the gender samples + the two `runSwitch`
+    /// actions + `endTurn`, reproducing every pre-first-decision PRNG draw bit-for-bit
+    /// (see [`BattleState::run_turn0_construction`]). This is the BRIDGE's construction
+    /// entry (`sim_bridge` feeds poke-env's raw `>start` seed); it REPLACES the draw-
+    /// free [`start_with_switchins`] + the old pure `advance_seed_for_construction` seed
+    /// hack, so a speed-TIED lead or an unspecified-gender mon lines up with the real
+    /// sim's post-`>start` state. The committed seed goldens (which capture the sim's
+    /// POST-construction `initSeed`) keep [`start_with_switchins`] — this is opt-in.
+    ///
+    /// The `opts.seed` is the RAW seed (NOT pre-advanced). Runs the construction with
+    /// the log DISABLED (its ctor default), so the ability/weather emissions are
+    /// suppressed here — the bridge re-emits the framing from the post-construction
+    /// state afterwards.
+    pub fn start_with_turn0_construction(opts: &BattleOptions, dex: &Dex) -> Result<BattleState, String> {
+        let mut state = BattleState::start(opts, dex)?;
+        state.run_turn0_construction(dex);
+        Ok(state)
+    }
+
     /// Read a side by index (0 = p1, 1 = p2).
     pub fn side(&self, i: usize) -> &SideState {
         &self.sides[i]

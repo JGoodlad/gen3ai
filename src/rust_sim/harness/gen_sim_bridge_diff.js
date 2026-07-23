@@ -195,22 +195,14 @@ async function diffOneBattle(node, rust, startJson, chooseSeed, trapProb, verbos
   collect(await drainQuiescent(node), nodeSide);
   collect(await drainQuiescent(rust), rustSide);
 
-  // SKIP a SPEED-TIED lead matchup. The sim's turn-0 CONSTRUCTION endTurn draws the eachEvent
-  // tie-shuffles (+ Magnet Pull's onAny trap shuffles) when the two leads share Spe — draws the
-  // port's `run_full_battle` deliberately omits (the "pre-first-decision seed convention"), and
-  // `advance_seed_for_construction` only models the 1 Quick Claw draw. So a speed-TIED lead
-  // desyncs the turn-1 first-mover (a documented ENGINE seed-convention gap, NOT a bridge defect
-  // — the per-side chunk BYTES are correct up to the first-mover flip). Skipping it isolates the
-  // bridge layer on the representative distinct-speed case. (A tie can also arise mid-battle via
-  // paralysis/boosts; those are rarer and left to the report's honest-gap note.)
-  {
-    const r = latestRequests(nodeSide);
-    const s1 = r.p1 && r.p1.side && r.p1.side.pokemon && r.p1.side.pokemon.find((m) => m.active);
-    const s2 = r.p2 && r.p2.side && r.p2.side.pokemon && r.p2.side.pokemon.find((m) => m.active);
-    if (s1 && s2 && s1.stats && s2.stats && s1.stats.spe === s2.stats.spe) {
-      return { skip: 'lead_speed_tie', cmds };
-    }
-  }
+  // A SPEED-TIED lead matchup is now VALIDATED (was skipped). The sim's turn-0 CONSTRUCTION
+  // window — the `start` action's insertChoice tie-break + the eachEvent('Update'/'WeatherChange')
+  // shuffles + Magnet Pull's onAny trap shuffles when the two leads share Spe — is modeled
+  // bit-for-bit by `gen3_turn0_construction_v1` (`BridgeSession::new_construct_turn0` runs the
+  // real turn-0 through the driver machinery from the RAW seed). So a speed-TIED lead no longer
+  // desyncs the turn-1 first-mover, and the per-mon gender `sample(['M','F'])` is modeled too
+  // (unspecified-gender teams are byte-correct). Gated by `turn0_construction_test.rs` vs the
+  // omniscient sim; this harness re-proves it end-to-end on the LIVE `sim_bridge` binary.
 
   const rng = mulberry32(chooseSeed);
   const SAFETY = 600;

@@ -245,7 +245,8 @@
             "ICE",
             "FLYING"
         ],
-        "weighthg": 554
+        "weighthg": 554,
+        "gender": "N"
     },
     "azumarill": {
         "baseStats": {
@@ -310,7 +311,8 @@
             "GROUND",
             "PSYCHIC"
         ],
-        "weighthg": 215
+        "weighthg": 215,
+        "gender": "N"
     },
     "banette": {
         "baseStats": {
@@ -410,7 +412,8 @@
             "STEEL",
             "PSYCHIC"
         ],
-        "weighthg": 952
+        "weighthg": 952,
+        "gender": "N"
     },
     "bellossom": {
         "baseStats": {
@@ -492,7 +495,8 @@
         "types": [
             "NORMAL"
         ],
-        "weighthg": 468
+        "weighthg": 468,
+        "gender": "F"
     },
     "breloom": {
         "baseStats": {
@@ -675,7 +679,8 @@
             "PSYCHIC",
             "GRASS"
         ],
-        "weighthg": 50
+        "weighthg": 50,
+        "gender": "N"
     },
     "chansey": {
         "baseStats": {
@@ -691,7 +696,8 @@
         "types": [
             "NORMAL"
         ],
-        "weighthg": 346
+        "weighthg": 346,
+        "gender": "F"
     },
     "charizard": {
         "baseStats": {
@@ -822,7 +828,8 @@
             "GROUND",
             "PSYCHIC"
         ],
-        "weighthg": 1080
+        "weighthg": 1080,
+        "gender": "N"
     },
     "clefable": {
         "baseStats": {
@@ -1085,7 +1092,8 @@
         "types": [
             "PSYCHIC"
         ],
-        "weighthg": 608
+        "weighthg": 608,
+        "gender": "N"
     },
     "dewgong": {
         "baseStats": {
@@ -1134,7 +1142,8 @@
         "types": [
             "NORMAL"
         ],
-        "weighthg": 40
+        "weighthg": 40,
+        "gender": "N"
     },
     "dodrio": {
         "baseStats": {
@@ -1410,7 +1419,8 @@
         "types": [
             "ELECTRIC"
         ],
-        "weighthg": 666
+        "weighthg": 666,
+        "gender": "N"
     },
     "elekid": {
         "baseStats": {
@@ -1442,7 +1452,8 @@
         "types": [
             "FIRE"
         ],
-        "weighthg": 1980
+        "weighthg": 1980,
+        "gender": "N"
     },
     "espeon": {
         "baseStats": {
@@ -1937,7 +1948,8 @@
         "types": [
             "GROUND"
         ],
-        "weighthg": 9500
+        "weighthg": 9500,
+        "gender": "N"
     },
     "grovyle": {
         "baseStats": {
@@ -2084,7 +2096,8 @@
         "types": [
             "FIGHTING"
         ],
-        "weighthg": 502
+        "weighthg": 502,
+        "gender": "M"
     },
     "hitmonlee": {
         "baseStats": {
@@ -2100,7 +2113,8 @@
         "types": [
             "FIGHTING"
         ],
-        "weighthg": 498
+        "weighthg": 498,
+        "gender": "M"
     },
     "hitmontop": {
         "baseStats": {
@@ -2116,7 +2130,8 @@
         "types": [
             "FIGHTING"
         ],
-        "weighthg": 480
+        "weighthg": 480,
+        "gender": "M"
     },
     "hooh": {
         "baseStats": {
@@ -2133,7 +2148,8 @@
             "FIRE",
             "FLYING"
         ],
-        "weighthg": 1990
+        "weighthg": 1990,
+        "gender": "N"
     },
     "hoothoot": {
         "baseStats": {
@@ -2281,7 +2297,8 @@
         "types": [
             "BUG"
         ],
-        "weighthg": 177
+        "weighthg": 177,
+        "gender": "F"
     },
     "ivysaur": {
         "baseStats": {
@@ -2331,7 +2348,8 @@
             "STEEL",
             "PSYCHIC"
         ],
-        "weighthg": 11
+        "weighthg": 11,
+        "gender": "N"
     },
     "jolteon": {
         "baseStats": {
@@ -2381,7 +2399,8 @@
             "ICE",
             "PSYCHIC"
         ],
-        "weighthg": 406
+        "weighthg": 406,
+        "gender": "F"
     },
     "kabuto": {
         "baseStats": {
@@ -2464,7 +2483,8 @@
         "types": [
             "NORMAL"
         ],
-        "weighthg": 800
+        "weighthg": 800,
+        "gender": "F"
     },
     "kecleon": {
         "baseStats": {
@@ -2577,7 +2597,8 @@
         "types": [
             "WATER"
         ],
-        "weighthg": 3520
+        "weighthg": 3520,
+        "gender": "N"
     },
     "lairon": {
         "baseStats": {
@@ -2662,7 +2683,8 @@
             "DRAGON",
             "PSYCHIC"
         ],
-        "weighthg": 400
+        "weighthg": 400,
+        "gender": "F"
     },
     "latios": {
         "baseStats": {
@@ -2679,7 +2701,8 @@
             "DRAGON",
             "PSYCHIC"
         ],
-        "weighthg": 600
+        "weighthg": 600,
+        "gender": "M"
     },
     "ledian": {
         "baseStats": {
@@ -2846,7 +2869,8 @@
             "PSYCHIC",
             "FLYING"
         ],
-        "weighthg": 2160
+        "weighthg": 2160,
+        "gender": "N"
     },
     "lunatone": {
         "baseStats": {
@@ -2863,7 +2887,8 @@
             "ROCK",
             "PSYCHIC"
         ],
-        "weighthg": 1680
+        "weighthg": 1680,
+        "gender": "N"
     },
     "luvdisc": {
         "baseStats": {
@@ -3009,7 +3034,8 @@
             "ELECTRIC",
             "STEEL"
         ],
-        "weighthg": 60
+        "weighthg": 60,
+        "gender": "N"
     },
     "magneton": {
         "baseStats": {
@@ -3026,7 +3052,8 @@
             "ELECTRIC",
             "STEEL"
         ],
-        "weighthg": 600
+        "weighthg": 600,
+        "gender": "N"
     },
     "makuhita": {
         "baseStats": {
@@ -3272,7 +3299,8 @@
             "STEEL",
             "PSYCHIC"
         ],
-        "weighthg": 5500
+        "weighthg": 5500,
+        "gender": "N"
     },
     "metang": {
         "baseStats": {
@@ -3289,7 +3317,8 @@
             "STEEL",
             "PSYCHIC"
         ],
-        "weighthg": 2025
+        "weighthg": 2025,
+        "gender": "N"
     },
     "metapod": {
         "baseStats": {
@@ -3321,7 +3350,8 @@
         "types": [
             "PSYCHIC"
         ],
-        "weighthg": 40
+        "weighthg": 40,
+        "gender": "N"
     },
     "mewtwo": {
         "baseStats": {
@@ -3337,7 +3367,8 @@
         "types": [
             "PSYCHIC"
         ],
-        "weighthg": 1220
+        "weighthg": 1220,
+        "gender": "N"
     },
     "mightyena": {
         "baseStats": {
@@ -3385,7 +3416,8 @@
         "types": [
             "NORMAL"
         ],
-        "weighthg": 755
+        "weighthg": 755,
+        "gender": "F"
     },
     "minun": {
         "baseStats": {
@@ -3434,7 +3466,8 @@
             "FIRE",
             "FLYING"
         ],
-        "weighthg": 600
+        "weighthg": 600,
+        "gender": "N"
     },
     "mrmime": {
         "baseStats": {
@@ -3533,7 +3566,8 @@
             "POISON",
             "GROUND"
         ],
-        "weighthg": 620
+        "weighthg": 620,
+        "gender": "M"
     },
     "nidoqueen": {
         "baseStats": {
@@ -3550,7 +3584,8 @@
             "POISON",
             "GROUND"
         ],
-        "weighthg": 600
+        "weighthg": 600,
+        "gender": "F"
     },
     "nidoranf": {
         "baseStats": {
@@ -3566,7 +3601,8 @@
         "types": [
             "POISON"
         ],
-        "weighthg": 70
+        "weighthg": 70,
+        "gender": "F"
     },
     "nidoranm": {
         "baseStats": {
@@ -3582,7 +3618,8 @@
         "types": [
             "POISON"
         ],
-        "weighthg": 90
+        "weighthg": 90,
+        "gender": "M"
     },
     "nidorina": {
         "baseStats": {
@@ -3598,7 +3635,8 @@
         "types": [
             "POISON"
         ],
-        "weighthg": 200
+        "weighthg": 200,
+        "gender": "F"
     },
     "nidorino": {
         "baseStats": {
@@ -3614,7 +3652,8 @@
         "types": [
             "POISON"
         ],
-        "weighthg": 195
+        "weighthg": 195,
+        "gender": "M"
     },
     "nincada": {
         "baseStats": {
@@ -4159,7 +4198,8 @@
         "types": [
             "NORMAL"
         ],
-        "weighthg": 365
+        "weighthg": 365,
+        "gender": "N"
     },
     "porygon2": {
         "baseStats": {
@@ -4175,7 +4215,8 @@
         "types": [
             "NORMAL"
         ],
-        "weighthg": 325
+        "weighthg": 325,
+        "gender": "N"
     },
     "primeape": {
         "baseStats": {
@@ -4306,7 +4347,8 @@
         "types": [
             "ELECTRIC"
         ],
-        "weighthg": 1780
+        "weighthg": 1780,
+        "gender": "N"
     },
     "ralts": {
         "baseStats": {
@@ -4387,7 +4429,8 @@
             "DRAGON",
             "FLYING"
         ],
-        "weighthg": 2065
+        "weighthg": 2065,
+        "gender": "N"
     },
     "regice": {
         "baseStats": {
@@ -4403,7 +4446,8 @@
         "types": [
             "ICE"
         ],
-        "weighthg": 1750
+        "weighthg": 1750,
+        "gender": "N"
     },
     "regirock": {
         "baseStats": {
@@ -4419,7 +4463,8 @@
         "types": [
             "ROCK"
         ],
-        "weighthg": 2300
+        "weighthg": 2300,
+        "gender": "N"
     },
     "registeel": {
         "baseStats": {
@@ -4435,7 +4480,8 @@
         "types": [
             "STEEL"
         ],
-        "weighthg": 2050
+        "weighthg": 2050,
+        "gender": "N"
     },
     "relicanth": {
         "baseStats": {
@@ -4783,7 +4829,8 @@
             "GHOST"
         ],
         "maxHP": 1,
-        "weighthg": 12
+        "weighthg": 12,
+        "gender": "N"
     },
     "shelgon": {
         "baseStats": {
@@ -5079,7 +5126,8 @@
             "ICE",
             "PSYCHIC"
         ],
-        "weighthg": 60
+        "weighthg": 60,
+        "gender": "F"
     },
     "sneasel": {
         "baseStats": {
@@ -5161,7 +5209,8 @@
             "ROCK",
             "PSYCHIC"
         ],
-        "weighthg": 1540
+        "weighthg": 1540,
+        "gender": "N"
     },
     "spearow": {
         "baseStats": {
@@ -5293,7 +5342,8 @@
             "WATER",
             "PSYCHIC"
         ],
-        "weighthg": 800
+        "weighthg": 800,
+        "gender": "N"
     },
     "staryu": {
         "baseStats": {
@@ -5309,7 +5359,8 @@
         "types": [
             "WATER"
         ],
-        "weighthg": 345
+        "weighthg": 345,
+        "gender": "N"
     },
     "steelix": {
         "baseStats": {
@@ -5358,7 +5409,8 @@
         "types": [
             "WATER"
         ],
-        "weighthg": 1870
+        "weighthg": 1870,
+        "gender": "N"
     },
     "sunflora": {
         "baseStats": {
@@ -5540,7 +5592,8 @@
         "types": [
             "NORMAL"
         ],
-        "weighthg": 884
+        "weighthg": 884,
+        "gender": "M"
     },
     "teddiursa": {
         "baseStats": {
@@ -5769,7 +5822,8 @@
         "types": [
             "FIGHTING"
         ],
-        "weighthg": 210
+        "weighthg": 210,
+        "gender": "M"
     },
     "umbreon": {
         "baseStats": {
@@ -5801,7 +5855,8 @@
         "types": [
             "PSYCHIC"
         ],
-        "weighthg": 50
+        "weighthg": 50,
+        "gender": "N"
     },
     "ursaring": {
         "baseStats": {
@@ -5967,7 +6022,8 @@
         "types": [
             "BUG"
         ],
-        "weighthg": 177
+        "weighthg": 177,
+        "gender": "M"
     },
     "voltorb": {
         "baseStats": {
@@ -5983,7 +6039,8 @@
         "types": [
             "ELECTRIC"
         ],
-        "weighthg": 104
+        "weighthg": 104,
+        "gender": "N"
     },
     "vulpix": {
         "baseStats": {
@@ -6312,7 +6369,8 @@
             "ELECTRIC",
             "FLYING"
         ],
-        "weighthg": 526
+        "weighthg": 526,
+        "gender": "N"
     },
     "zigzagoon": {
         "baseStats": {

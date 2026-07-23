@@ -887,6 +887,19 @@ def build_species(gen):
         # ignores the key; it reads base stats only).
         if "weightkg" in mon:
             entry["weighthg"] = int(round(float(mon["weightkg"]) * 10))
+        # gen3_turn0_construction_v1: the species' FIXED gender (Showdown pokedex
+        # `gender`): "N" (genderless — Magnemite/Ditto/Metagross), "M"/"F" (a
+        # fixed-gender species — Nidoran-M/F, Tauros, the Lati twins). ABSENT for a
+        # normal RATIO'd species (Snorlax etc., which carry `genderRatio` instead).
+        # Carried ONLY when present, obs-neutral (the facade ignores it, like maxHP/
+        # weighthg). Consumed by the `src/rust_sim` port's turn-0 CONSTRUCTION window:
+        # `Pokemon` sets `gender = set.gender || species.gender || sample(['M','F'])`
+        # (pokemon.ts) — so a mon whose packed set OMITS the gender AND whose species
+        # has no fixed gender draws ONE construction-time `sample(['M','F'])`; the
+        # `species.gender` present here is used (no draw). The bridge models this from
+        # the RAW `>start` seed for full node byte-parity on gendered teams.
+        if "gender" in mon:
+            entry["gender"] = mon["gender"]
         species_map[mon_id] = entry
 
     return {sid: species_map[sid] for sid in sorted(species_map)}

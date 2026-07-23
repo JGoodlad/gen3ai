@@ -1,4 +1,4 @@
-# ALLOWLIST curse-nonghost-target-self-vs-normal
+# GUARDS gen3_bridge_curse_request_target_v1: a NON-GHOST Curse's |request| move target is now "self" (the sim's runtime nonGhostTarget), not the base-dex "normal". This fixture is now byte-CLEAN (untagged) — a regression re-introduces the curse-target divergence → NOT allowlisted → this fixture FAILS to replay `ok`.
 # bridge_ab_fuzz chunk — REQUEST / PER-SIDE A/B fuzzer (real Node getPlayerStreams vs the Rust port).
 # mode=pool format=gen3customgame master_seed=771301 run_id=rmrom1on4 chunk=1
 # Format identical to tests/vectors/bridge_trapping_golden.txt (SCEN/TEAM/INIT/CMD/CHUNK/END).

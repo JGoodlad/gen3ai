@@ -1054,7 +1054,7 @@ impl crate::state::BattleState {
     /// before the leftover move/residual (no tie) → no draw; for a DOUBLE
     /// replacement the 2nd runSwitch ties the 1st (both order 101, both entrants'
     /// speeds) → one splice draw.
-    fn insert_runswitch(&mut self, side: usize, queue: &mut Vec<QAction>, dex: &Dex) {
+    pub(crate) fn insert_runswitch(&mut self, side: usize, queue: &mut Vec<QAction>, dex: &Dex) {
         let new = QAction::RunSwitch { side };
         let new_key = self.action_sort_key(&new, dex);
 
