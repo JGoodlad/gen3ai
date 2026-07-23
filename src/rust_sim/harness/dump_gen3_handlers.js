@@ -268,8 +268,15 @@ function anchorGreps(anchor) {
   const files = srcFiles();
   const m = anchor.match(/^([\w/]+\.rs)::(.+)$/);
   if (m) {
+    // A "file.rs::symbol" anchor names a Rust MODULE. Rust lets one module live as
+    // `foo.rs` PLUS a sibling `foo/` submodule directory (the turn.rs -> turn/ split),
+    // so accept the symbol in `foo.rs` OR in any file under `foo/` — either form of the
+    // same module. This keeps the anchor an intra-module existence check.
+    const modDir = m[1].slice(0, -3) + '/'; // "turn.rs" -> "turn/"
     for (const [rel, content] of files) {
-      if ((rel === m[1] || rel.endsWith('/' + m[1])) && content.includes(m[2])) return true;
+      const inModule =
+        rel === m[1] || rel.endsWith('/' + m[1]) || rel.startsWith(modDir) || rel.includes('/' + modDir);
+      if (inModule && content.includes(m[2])) return true;
     }
     return false;
   }
