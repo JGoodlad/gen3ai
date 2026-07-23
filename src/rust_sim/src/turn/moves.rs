@@ -1,6 +1,7 @@
 use crate::damage::{
     calc_damage, AtkStatMod, BpMod, Combatant, DamageContext, MoveInput, Weather as DmgWeather,
 };
+use crate::dex::moves::MultiHit;
 use crate::dex::{to_id, Dex, DmgFold, MoveCategory, Type};
 use crate::protocol::Cause;
 use crate::state::{FutureMove, Status, TwoTurnMove, Weather};
@@ -993,6 +994,28 @@ impl crate::state::BattleState {
             return self.run_beat_up(side, slot, foe, foe_slot, crit_ratio, &move_name, dex);
         }
 
+        // --- MULTI-STRIKE moves (`gen3_move_coverage_batch7_v1`) — Double Kick / Twineedle /
+        //     Bonemerang (fixed 2), Triple Kick (fixed 3, multiaccuracy → FAIL-LOUD in
+        //     `run_multihit`), and the variable [2,5] family (Pin Missile / Bullet Seed / Icicle
+        //     Spear / Rock Blast / Barrage / Comet Punch / Double Slap / Spike Cannon / Arm
+        //     Thrust / Fury Attack / Fury Swipes / Bone Rush). Routed here (like Beat Up) AFTER
+        //     the shared accuracy + immunity/protect checks, BEFORE the single-hit block: each
+        //     strike runs the NORMAL damage path over the `ctx` `run_move` already built. The
+        //     whole-move accuracy roll already drew (`acc_hit`); a variable count draws ONE more
+        //     `sample` HERE, then per strike crit + `random(16)` + the move's per-strike
+        //     secondary. ---
+        if let Some(mh) = self.move_at(side, slot, move_index, dex).and_then(|m| m.multihit) {
+            let multiaccuracy = self
+                .move_at(side, slot, move_index, dex)
+                .map(|m| m.multiaccuracy)
+                .unwrap_or(false);
+            return self.run_multihit(
+                side, slot, foe, foe_slot, ctx, move_type, category, move_index, crit_ratio,
+                &move_id, &move_name, is_contact, is_fire, suppress_announce, mh, multiaccuracy,
+                dex,
+            );
+        }
+
         // --- BRICK BREAK screen-break (RM1, `gen3_brick_break_screens_v1`) — Brick Break is
         //     the ONLY gen3 screen-breaking move. Its `onTryHit` removes BOTH the FOE side's
         //     screens (Reflect + Light Screen) BEFORE the damage step, draw-free. Gated on a
@@ -1000,9 +1023,9 @@ impl crate::state::BattleState {
         //     Break into a Ghost does NOT remove the screen, since `runImmunity` precedes
         //     `onTryHit`), non-protect-blocked, non-miss hit (both the protect block and the
         //     genuine-miss `!acc_hit` returns are above). Clearing the STATE (sides[foe]
-        //     screens) makes the both-screens `two_tied_handler_shuffle` below NOT fire (it
-        //     reads sides[foe].reflect/light_screen directly) — the sim removes both screens
-        //     in `onTryHit` before ModifyDamagePhase1, so there is no tie to shuffle; and
+        //     screens) drops them from the `modify_damage_phase1_shuffle` count below (it counts
+        //     every screen up across BOTH sides) — the sim removes both foe screens in `onTryHit`
+        //     before ModifyDamagePhase1, so those handlers no longer gather; and
         //     clearing the CTX makes `calc_damage` compute screen-free full damage. Both are
         //     probe-confirmed vs the sim (`harness/probe_brickbreak_screens.js`). ---
         let (bb_removed_reflect, bb_removed_ls) = if move_id == "brickbreak" {
@@ -1114,9 +1137,7 @@ impl crate::state::BattleState {
         //     `random(16)` damage roll — the exact position in the sim's draw stream. A crit
         //     ignores screens for the DAMAGE, but the handlers still GATHER (the event runs
         //     regardless of crit), so the shuffle draws even under a crit. ---
-        if self.sides[foe].reflect > 0 && self.sides[foe].light_screen > 0 {
-            self.two_tied_handler_shuffle();
-        }
+        self.modify_damage_phase1_shuffle();
 
         // --- 3. DAMAGE: random(16) selects rolls[r] (gen-3 randomizer). ---
         let r = self.prng.random_below(16) as usize;
@@ -1691,6 +1712,229 @@ impl crate::state::BattleState {
         MoveResolution::done(false, false, true)
     }
 
+    /// Resolve a GENERIC MULTI-STRIKE move (`gen3_move_coverage_batch7_v1`) — Double Kick /
+    /// Twineedle / Bonemerang (fixed 2), and the variable [2,5] family (Pin Missile / Bullet
+    /// Seed / Icicle Spear / Rock Blast / Barrage / Comet Punch / Double Slap / Spike Cannon /
+    /// Arm Thrust / Fury Attack / Fury Swipes / Bone Rush). Unlike Beat Up (a stat-swap
+    /// `basePowerCallback`), each strike runs the NORMAL damage path with the move's real
+    /// type/BP/category, so this REUSES the `ctx` `run_move` already built (refreshing only the
+    /// crit flag + the defender types per strike — the latter for a mid-multihit Color Change).
+    ///
+    /// The DRAW MODEL, verified bit-for-bit vs the omniscient sim
+    /// (`harness/probe_batch7_multihit.js` + the resolved `hitStepMoveHitLoop`,
+    /// battle-actions.ts:748):
+    ///   - the whole-move ACCURACY roll ALREADY drew in `run_move` (`acc_hit`); this is only
+    ///     reached on a landed, non-immune, non-protect-blocked hit.
+    ///   - the COUNT: `Fixed(n)` draws NOTHING; `Range(2,5)` (gen<5) draws ONE
+    ///     `sample([2,2,2,3,3,3,4,5])` = one `random(8)` (8-elem, power-of-2 → clean), drawn
+    ///     HERE, AFTER accuracy and BEFORE the per-strike loop.
+    ///   - PER STRIKE (the sim's `spreadMoveHit`): the effectiveness lines, crit
+    ///     `randomChance(1,critMult)`, (both screens → the ModifyDamagePhase1 tie-shuffle),
+    ///     damage `random(16)`, then the move's SECONDARY `random(100)` (Twineedle 20% psn — PER
+    ///     STRIKE, already-statused-gated after the first) + King's Rock + the DEFENDER's
+    ///     contact-proc / fire-thaw / Color Change, then the per-strike `eachEvent('Update')`
+    ///     (drawn on a speed tie). The loop STOPS when the target FAINTS (mirroring the sim's
+    ///     `targets.every(!hp)` guard at the top of each iteration); a KO on the last landing
+    ///     strike defers the Quick Claw (the deferred-faint protocol).
+    /// Emits `|move|` once + per-strike effectiveness/`-crit`/`-damage` + `|-hitcount|N`.
+    /// TRIPLE KICK (multiaccuracy) — the ONLY gen3 carrier — re-rolls accuracy per strike AND
+    /// escalates BP per strike; it FAIL-LOUDS here rather than silently mismodel (no gen3ou team
+    /// carries it, and the picker never admits it).
+    #[allow(clippy::too_many_arguments)]
+    fn run_multihit(
+        &mut self,
+        side: usize,
+        slot: usize,
+        foe: usize,
+        foe_slot: usize,
+        mut ctx: DamageContext,
+        move_type: Option<Type>,
+        category: MoveCategory,
+        move_index: usize,
+        crit_ratio: u8,
+        move_id: &str,
+        move_name: &str,
+        is_contact: bool,
+        is_fire: bool,
+        suppress_announce: bool,
+        mh: MultiHit,
+        multiaccuracy: bool,
+        dex: &Dex,
+    ) -> MoveResolution {
+        assert!(
+            !multiaccuracy,
+            "run_multihit: multiaccuracy move ({move_id}) is unmodeled (per-strike accuracy \
+             re-roll + escalating BP — Triple Kick) — fail-loud rather than silently desync"
+        );
+
+        // [EMIT] the move announce `|move|<user>|<Name>|<foe>` ONCE, before the strikes. A
+        // Sleep-Talk-called multihit carries `[from] Sleep Talk` via the ProtocolBuilder's
+        // one-shot (set by the caller); no gen3 multihit move is a lockedmove, so no lockedmove
+        // attr. Observation-only (reads resolved state, draws nothing).
+        if self.logging() && !suppress_announce {
+            let user = self.mon_ref(side, slot, dex);
+            let target = self.mon_ref(foe, foe_slot, dex);
+            self.log.move_used(&user, move_name, Some(&target), false, false);
+        }
+
+        // THE COUNT — `Fixed` draws nothing; the `[2,5]` variable draws ONE `sample` (gen<5).
+        let count: u32 = match mh {
+            MultiHit::Fixed(n) => n as u32,
+            MultiHit::Range(2, 5) => {
+                const MH_2_5: [u32; 8] = [2, 2, 2, 3, 3, 3, 4, 5];
+                MH_2_5[self.prng.random_below(8) as usize]
+            }
+            MultiHit::Range(lo, hi) => {
+                // No non-`[2,5]` gen3 multihit range exists; mirror the sim's `random(lo, hi+1)`
+                // defensively so a future data shape can't silently desync.
+                lo as u32 + self.prng.random_below((hi + 1 - lo) as u32)
+            }
+        };
+
+        let crit_immune = dex
+            .ability(&self.sides[foe].pokemon[foe_slot].ability)
+            .map(|a| a.crit_immune)
+            .unwrap_or(false);
+        let focus_energy = self.sides[side].pokemon[slot].focus_energy;
+        let eff_crit_ratio = if focus_energy {
+            (crit_ratio as u32 + 2).min(5)
+        } else {
+            crit_ratio as u32
+        };
+
+        let mut hits = 0u32;
+        for _ in 0..count {
+            // STOP if the target already fainted (a prior strike KO'd it, OR the target entered
+            // at 0 HP) — the sim's `targets.every(!hp)` guard at the top of each iteration.
+            if self.sides[foe].pokemon[foe_slot].hp == 0 {
+                break;
+            }
+
+            // Per-strike EFFECTIVENESS — read from the LIVE defender types (a mid-multihit Color
+            // Change re-types later strikes). Emitted BEFORE `-crit`, per the sim's per-hit order.
+            let def_types = mon_types(&self.sides[foe].pokemon[foe_slot], dex);
+            if let (Some(mt), true) = (move_type, self.logging()) {
+                let eff = dex.type_chart().effectiveness(mt, &def_types);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                if eff > 1.0 {
+                    self.log.supereffective(&target);
+                } else if eff < 1.0 && eff > 0.0 {
+                    self.log.resisted(&target);
+                }
+            }
+
+            // [crit] per strike — `randomChance(1, critMult[effRatio])`; CRIT_IMMUNE draws the
+            // roll then overrides to false (draw-count unchanged), like the single-hit path.
+            let mut crit = self.prng.random_chance(1, CRIT_MULT[eff_crit_ratio as usize]);
+            if crit && crit_immune {
+                crit = false;
+            }
+            if crit && self.logging() {
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.crit(&target);
+            }
+
+            // Refresh the ctx per strike: the crit flag + the LIVE defender types.
+            ctx.crit = crit;
+            ctx.defender.types = def_types;
+            let dmg = crate::damage::calc_damage(&ctx, dex);
+
+            // [ModifyDamagePhase1 shuffle] the FULL screen tie group (all screens across BOTH
+            // sides — `onAnyModifyDamagePhase1`) → `k-1` draws for k screens, PER STRIKE
+            // (getDamage runs per hit; drawn AFTER crit, BEFORE the `random(16)`).
+            self.modify_damage_phase1_shuffle();
+
+            // [damage] `random(16)` per strike.
+            let r = self.prng.random_below(16) as usize;
+            let realized = dmg.rolls[r];
+
+            // SUBSTITUTE absorb (a break lets later strikes hit the mon) — the same sub-intercept
+            // as the single-hit path; the acc/crit/damage draws are unchanged.
+            let target_hp_before = match self.sides[foe].pokemon[foe_slot].substitute {
+                Some(sub_hp) => sub_hp,
+                None => self.sides[foe].pokemon[foe_slot].hp,
+            };
+            let mut dealt = realized.min(target_hp_before);
+            let sub = self.absorb_into_sub(foe, foe_slot, realized);
+            let absorbed = sub != SubAbsorb::NoSub;
+
+            if !absorbed {
+                // ENDURE clamps EVERY strike; FOCUS BAND draws per strike (a Damage event).
+                let realized = self.endure_clamp(foe, foe_slot, realized, dex);
+                let realized = self.focus_band_damage(foe, foe_slot, realized, true, dex);
+                dealt = realized.min(target_hp_before);
+                self.apply_damage(foe, foe_slot, realized);
+                // DESTINY BOND + FOCUS PUNCH lostFocus + COUNTER/MIRROR COAT recorder — each a
+                // DIRECT foe Move hit, per strike (the recorder OVERWRITES → 2× the LAST strike).
+                if self.sides[foe].pokemon[foe_slot].hp == 0
+                    && self.sides[foe].pokemon[foe_slot].destiny_bond
+                {
+                    self.sides[foe].pokemon[foe_slot].destiny_bond_ko_by = Some(side);
+                }
+                if let Some(fp) = self.sides[foe].pokemon[foe_slot].focus_punch.as_mut() {
+                    *fp = true;
+                }
+                self.record_reactive_hit(foe, foe_slot, category, move_id, dealt);
+                if realized > 0 && self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    let hp = self.hp_status(foe, foe_slot);
+                    self.log.damage(&target, &hp, None);
+                }
+            } else if self.logging() {
+                let target = self.mon_ref(foe, foe_slot, dex);
+                match sub {
+                    SubAbsorb::Held => self.log.activate(&target, "Substitute", Some("[damage]")),
+                    SubAbsorb::Broke => self.log.volatile_end(&target, "Substitute"),
+                    SubAbsorb::NoSub => unreachable!(),
+                }
+            }
+
+            // Per-strike SECONDARY (Twineedle psn) → King's Rock → contact-proc / fire-thaw /
+            // Color Change — the sim's `spreadMoveHit` per-hit tail (secondaries → onAfterHit →
+            // DamagingHit), each on its own mon.
+            self.apply_secondaries(side, slot, foe, foe_slot, move_index, absorbed, dex);
+            self.apply_kings_rock_secondary(side, slot, foe, foe_slot, move_id, absorbed, dex);
+            if is_contact && !absorbed && dealt > 0 {
+                self.apply_contact_proc(side, slot, foe, foe_slot, dex);
+            }
+            if is_fire
+                && !absorbed
+                && self.sides[foe].pokemon[foe_slot].status == Some(Status::Freeze)
+            {
+                let alive = self.sides[foe].pokemon[foe_slot].hp > 0;
+                self.sides[foe].pokemon[foe_slot].status = None;
+                if alive && self.logging() {
+                    let t = self.mon_ref(foe, foe_slot, dex);
+                    self.log.curestatus(&t, "frz", true);
+                }
+            }
+            if !absorbed && dealt > 0 {
+                self.apply_color_change(foe, foe_slot, move_type, dex);
+            }
+
+            hits += 1;
+
+            // The per-strike `eachEvent('Update')` (drawn on a speed tie) + item onUpdate — the
+            // sim's `eachEvent("Update")` at the end of each multihit iteration.
+            let upd = self.each_event_shuffle();
+            self.run_update_items(&upd, dex);
+
+            // STOP at the target's faint (the remaining strikes + the Quick Claw skip).
+            if self.sides[foe].pokemon[foe_slot].hp == 0 {
+                break;
+            }
+        }
+
+        // [EMIT] `|-hitcount|<target>|N` (N = the strikes that actually FIRED).
+        if self.logging() {
+            let target = self.mon_ref(foe, foe_slot, dex);
+            self.log.hitcount(&target, hits);
+        }
+
+        // The move landed (>=1 strike hit → the in-tryMoveHit Update fires via `landed=true`).
+        MoveResolution::done(false, false, true)
+    }
+
     /// Resolve + APPLY a FIXED-DAMAGE / FIXED-FORMULA move (Seismic Toss / Night Shade /
     /// Sonic Boom / Dragon Rage / Super Fang) — Showdown's `damage:` / `damageCallback`
     /// path that BYPASSES `getDamage`. The draw model, VERIFIED bit-for-bit vs the
@@ -2017,12 +2261,10 @@ impl crate::state::BattleState {
             side, slot, foe, foe_slot, base_power, None, category, false, dex,
         );
         ctx.crit = false; // willCrit: false — no crit roll, crit never true
-        // The ModifyDamagePhase1 handler-sort shuffle (both screens on the DEFENDER's
-        // side tie → one random(0,2)), mirroring the damaging path's position: inside
-        // modifyDamage, BEFORE the randomizer.
-        if self.sides[foe].reflect > 0 && self.sides[foe].light_screen > 0 {
-            self.two_tied_handler_shuffle();
-        }
+        // The ModifyDamagePhase1 handler-sort shuffle (the FULL screen tie group across BOTH
+        // sides — `onAnyModifyDamagePhase1`; `k-1` draws for k screens), mirroring the damaging
+        // path's position: inside modifyDamage, BEFORE the randomizer.
+        self.modify_damage_phase1_shuffle();
         let dmg = crate::damage::calc_damage(&ctx, dex);
         // ONE random(16) — the getDamage randomizer (the cast's only draw).
         let r = self.prng.random_below(16) as usize;

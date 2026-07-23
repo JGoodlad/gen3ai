@@ -157,6 +157,16 @@ Notes that bite:
   then applies the drop draw-free via `apply_secondary_boost`); obs-neutral (the facade ignores it).
   Refresh / Heal Bell / Aromatherapy reuse the pre-existing `curesSelfStatus` / `curesTeamStatus`
   flags; the weather/screen ids are pinned in `turn.rs`.
+- **`build_moves`** ALSO passes through **`multihit`** + **`multiaccuracy`** (only-when-present,
+  `gen3_move_coverage_batch7_v1`) from the poke-env static `gen3moves.json` — the MULTI-STRIKE spec:
+  `multihit` is a plain integer (Double Kick / Twineedle / Bonemerang **2**, Triple Kick **3**) or a
+  `[2, 5]` array (the variable family Pin Missile / Bullet Seed / Icicle Spear / Rock Blast / Barrage /
+  Comet Punch / Double Slap / Spike Cannon / Arm Thrust / Fury Attack / Fury Swipes / Bone Rush);
+  `multiaccuracy: true` marks Triple Kick's per-strike accuracy re-roll. Both are **obs-neutral** (the
+  `agents.gen3_data` facade ignores them, like `critRatio`/`selfDrops`) and exist for the
+  **`src/rust_sim` Rust port** (`MoveData::{multihit, multiaccuracy}` → `turn.rs::run_multihit`: a
+  fixed count draws NO count roll, `[2,5]` draws ONE `sample([2,2,2,3,3,3,4,5])`, then each strike runs
+  the normal damage path + per-strike secondary; a `multiaccuracy` move FAIL-LOUDS — unmodeled).
 
 ## Team downloaders — one manifest entry per team
 

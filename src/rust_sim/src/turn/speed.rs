@@ -80,7 +80,39 @@ impl crate::state::BattleState {
     /// Reflect + Light-Screen pair (`gen3_move_coverage_batch2_v1` — two `onAnyModifyDamage
     /// Phase1` side-condition handlers). The payload is irrelevant — we only need the DRAW.
     pub(crate) fn two_tied_handler_shuffle(&mut self) {
-        let mut handlers: Vec<EventHandler<usize>> = (0..2)
+        self.n_tied_handler_shuffle(2);
+    }
+
+    /// The `runEvent('ModifyDamagePhase1')` HANDLER-SORT SHUFFLE, generalized over the FULL
+    /// screen tie group (`gen3_move_coverage_batch7_v1` — the multi-strike / random-mode fix).
+    /// gen3 Reflect + Light Screen register `onAnyModifyDamagePhase1` side-condition handlers —
+    /// the **`onAny`** prefix means each fires for damage on EITHER side, so EVERY screen up
+    /// across BOTH sides gathers into ONE tie group (equal order/priority/speed(0)/subOrder), and
+    /// a size-k tie draws `k-1` in the Fisher-Yates speed-sort (0/1 handler → no draw). The prior
+    /// `two_tied_handler_shuffle`-gated-on-`foe.reflect && foe.light_screen` MISSED the cross-side
+    /// combos (e.g. BOTH sides carrying Light Screen = 2 handlers → 1 draw, or a foe's two screens
+    /// + the attacker's own screen = 3 handlers → 2 draws) — a latent single-hit desync the
+    /// admitted multi-strike moves amplified (each strike re-runs `getDamage` → this event) and
+    /// the random-mode byte fuzz surfaced (both-Light-Screen boards). Flash Fire's
+    /// `onModifyDamagePhase1` is a DIFFERENT (attacker-speed) tie group → NOT counted here.
+    /// VERIFIED vs the sim's per-hit `speedSort <- runEvent('ModifyDamagePhase1')` draw
+    /// (`harness/probe_batch7_multihit.js` + the dec-44 Bullet-Seed trace).
+    pub(crate) fn modify_damage_phase1_shuffle(&mut self) {
+        let n = (self.sides[0].reflect > 0) as usize
+            + (self.sides[0].light_screen > 0) as usize
+            + (self.sides[1].reflect > 0) as usize
+            + (self.sides[1].light_screen > 0) as usize;
+        if n >= 2 {
+            self.n_tied_handler_shuffle(n);
+        }
+    }
+
+    /// Run the Fisher-Yates speed-sort tie-shuffle over `n` handlers at EQUAL order/priority/
+    /// speed(0)/subOrder (a group that ALWAYS ties) — draws `n-1` `random(range)` calls, exactly
+    /// as the sim's `speedSort` shuffles a size-`n` tie group. The payload is irrelevant; only the
+    /// DRAW matters. `n < 2` draws nothing.
+    pub(crate) fn n_tied_handler_shuffle(&mut self, n: usize) {
+        let mut handlers: Vec<EventHandler<usize>> = (0..n)
             .map(|i| EventHandler {
                 order: NO_ORDER,
                 priority: 0,

@@ -327,6 +327,21 @@ const BATCH4_E2E_EXCLUDED = false;
 const MODELED_BATCH4B_MOVES = new Set(['beatup', 'thunder', 'waterspout']);
 const BATCH4B_E2E_EXCLUDED = false;
 
+// MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the GENERIC MULTI-STRIKE family: the
+// FIXED-2 moves (Double Kick / Twineedle / Bonemerang) + the VARIABLE [2,5] family (Pin Missile /
+// Bullet Seed / Icicle Spear / Rock Blast / Barrage / Comet Punch / Double Slap / Spike Cannon /
+// Arm Thrust / Fury Attack / Fury Swipes / Bone Rush). All carry `m.multihit` (which is rejected
+// below), so `isModeledMove` ADMITS them by an EARLY special-case (before the `m.multihit` reject),
+// kept in lockstep with `run_multihit` in src/turn.rs. TRIPLE KICK (`triplekick`) is EXCLUDED — it
+// is `multiaccuracy` (a per-strike accuracy re-roll + escalating BP), which the engine FAIL-LOUDS
+// on, so the picker must never pick it. Twineedle's 20% psn is the ordinary per-strike secondary.
+const MODELED_BATCH7_MULTIHIT_MOVES = new Set([
+  'doublekick', 'twineedle', 'bonemerang',
+  'pinmissile', 'bulletseed', 'iciclespear', 'rockblast', 'barrage', 'cometpunch', 'doubleslap',
+  'spikecannon', 'armthrust', 'furyattack', 'furyswipes', 'bonerush',
+]);
+const BATCH7_E2E_EXCLUDED = false;
+
 // MOVE-COVERAGE BATCH 4c (`gen3_move_coverage_batch4c_v1`) — the TURN-SPANNING classes:
 // HYPER BEAM (mustrecharge — the locked single-`Recharge` request), SOLAR BEAM (the
 // two-turn charge + sun skip — the locked single-move request), DOOM DESIRE + FUTURE
@@ -407,7 +422,10 @@ const MODELED_FIXED_DAMAGE_MOVES = new Set([
 // RECOIL — `recoil:[num,den]`: the USER takes max(floor(dmgDealt·num/den),1) HP; Rock Head
 // negates; fires behind a sub. DRAW-FREE. The clean gen-3 recoil moves (no charge/callback/
 // onModifyMove): Double-Edge / Take Down / Submission (Struggle is its own path).
-const MODELED_RECOIL_MOVES = new Set(['doubleedge', 'takedown', 'submission']);
+// `volttackle` (`gen3_move_coverage_batch7_v1`): a Pikachu-only 120-BP recoil-1/3 move — in GEN 3
+// it has NO secondary (the 10% para was added in gen4), so it is an ordinary recoil move the
+// engine already prices via `recoil_fraction` (`apply_recoil`); just picker-admitted here.
+const MODELED_RECOIL_MOVES = new Set(['doubleedge', 'takedown', 'submission', 'volttackle']);
 // DRAIN — `drain:[num,den]`: the USER heals the fraction of the damage dealt (floor non-sub /
 // ceil behind a sub); heal-at-full fails. DRAW-FREE. Liquid Ooze reverses it (fail-loud —
 // excluded via the NOOP-ability filter). Dream Eater is EXCLUDED (its `onTryImmunity`
@@ -417,7 +435,9 @@ const MODELED_DRAIN_MOVES = new Set(['absorb', 'megadrain', 'gigadrain', 'leechl
 // SELF-DROP — the top-level `move.self.boosts` on a DAMAGING move (Overheat −2 SpA, Superpower
 // −1 Atk/−1 Def): the port applies the drop AND draws the gen3 `selfDrops` random(100) (the
 // `secondaryRoll`, applied unconditionally since `self.chance === undefined`) — NOT draw-free.
-const MODELED_SELFDROP_MOVES = new Set(['overheat', 'superpower']);
+// `psychoboost` (`gen3_move_coverage_batch7_v1`): a Deoxys 140-BP Special move with `self.boosts
+// {spa:-2}` — the SAME `selfDrops` `random(100)` path as Overheat, already engine-modeled.
+const MODELED_SELFDROP_MOVES = new Set(['overheat', 'superpower', 'psychoboost']);
 // ITEM REMOVAL — Knock Off (removes; gen3 no dmg boost) / Thief / Covet (steal iff the attacker
 // is itemless); Sticky Hold blocks; the onAfterHit fires ONLY when the MON was damaged (not
 // behind a sub). DRAW-FREE. A Liquid-Ooze-style item complication doesn't exist here.
@@ -666,6 +686,10 @@ function isModeledMove(id, allowHiddenPower = false) {
   }
   if (!(m.basePower > 0)) return false; // variable / fixed-damage carrier
   if (m.ohko) return false;
+  // MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the GENERIC MULTI-STRIKE family,
+  // ADMITTED HERE (before the `m.multihit` reject), the port runs the per-strike loop bit-for-bit
+  // (`run_multihit`). Triple Kick (multiaccuracy) is NOT in the set → still rejected by `m.multihit`.
+  if (!BATCH7_E2E_EXCLUDED && MODELED_BATCH7_MULTIHIT_MOVES.has(id)) return true;
   if (m.multihit) return false;
   // RECOIL / DRAIN (`gen3_move_coverage_batch1_v1`) — a recoil/drain damaging move is admitted
   // ONLY if it is in the explicit modeled set (a recoil/drain move with an EXTRA unmodeled

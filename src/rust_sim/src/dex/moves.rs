@@ -124,6 +124,30 @@ pub struct MoveData {
     /// (±6 clamp, Clear Body / White Smoke / Hyper Cutter / Keen Eye `onTryBoost` gated) —
     /// see `turn.rs`'s stat-drop-move arm in `run_status_move`.
     pub stat_drop_boosts: Vec<(usize, i8)>,
+    /// The MULTI-STRIKE spec (`gen3_move_coverage_batch7_v1`, `multihit` in the data). `None` =
+    /// a single hit. `Fixed(n)` = exactly n strikes (Double Kick / Twineedle / Bonemerang 2,
+    /// Triple Kick 3). `Range(lo, hi)` = a variable count — the only gen3 shape is `[2, 5]`,
+    /// whose count is `sample([2,2,2,3,3,3,4,5])` (gen<5) = ONE `random(8)` draw, drawn AFTER
+    /// the whole-move accuracy roll and BEFORE the per-strike loop. Each strike runs the NORMAL
+    /// damage path (crit + `random(16)` + the move's own secondary, per strike) then the
+    /// per-strike `eachEvent('Update')`; the loop STOPS when the target faints. See
+    /// `turn.rs::run_multihit`.
+    pub multihit: Option<MultiHit>,
+    /// `multiaccuracy` (`gen3_move_coverage_batch7_v1`): each strike AFTER the first re-rolls
+    /// the move's accuracy, breaking on a miss (Triple Kick — the ONLY gen3 carrier, which ALSO
+    /// escalates BP per strike). The engine FAIL-LOUDS on a multiaccuracy move rather than
+    /// silently mismodel the per-strike accuracy re-roll; no gen3ou team carries Triple Kick.
+    pub multiaccuracy: bool,
+}
+
+/// A move's multi-strike count spec (`gen3_move_coverage_batch7_v1`). See [`MoveData::multihit`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MultiHit {
+    /// Exactly `n` strikes, no count draw (Double Kick / Twineedle / Bonemerang 2, Triple Kick 3).
+    Fixed(u8),
+    /// A variable count over `[lo, hi]`; the only gen3 shape is `[2, 5]`, sampled from
+    /// `[2,2,2,3,3,3,4,5]` (one draw). Stored as the raw pair for the sampler.
+    Range(u8, u8),
 }
 
 /// A foe stat-drop / self stat-raise SECONDARY (`secondaryBoosts[i]` in the data).
@@ -352,6 +376,27 @@ pub(super) fn parse(root: &Json, gen: u8) -> Result<HashMap<String, MoveData>, S
             stat_drop_boosts.sort_by_key(|&(idx, _)| idx);
         }
 
+        // The MULTI-STRIKE spec (`multihit`, only-when-present, `gen3_move_coverage_batch7_v1`):
+        // a plain integer (Fixed — Double Kick 2, Triple Kick 3) or a 2-element `[lo, hi]` array
+        // (Range — the only gen3 shape is `[2, 5]`). GIGO-guarded: a malformed array throws.
+        let multihit = match v.get("multihit") {
+            None => None,
+            Some(j) => {
+                if let Some(arr) = j.as_array() {
+                    if arr.len() != 2 {
+                        return Err(format!("move {id}: multihit array must be [lo, hi], got {arr:?}"));
+                    }
+                    let lo = arr[0].as_f64().map_or(0, |n| n as u8);
+                    let hi = arr[1].as_f64().map_or(0, |n| n as u8);
+                    Some(MultiHit::Range(lo, hi))
+                } else if let Some(n) = j.as_f64() {
+                    Some(MultiHit::Fixed(n as u8))
+                } else {
+                    return Err(format!("move {id}: multihit must be an int or [lo, hi]"));
+                }
+            }
+        };
+
         out.insert(
             id.clone(),
             MoveData {
@@ -392,6 +437,8 @@ pub(super) fn parse(root: &Json, gen: u8) -> Result<HashMap<String, MoveData>, S
                 self_boosts,
                 self_drops,
                 stat_drop_boosts,
+                multihit,
+                multiaccuracy: v.bool_or("multiaccuracy", false),
             },
         );
     }

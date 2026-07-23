@@ -597,6 +597,14 @@ function moveRule(row, d3) {
   // random(100)) post-hit effects, admitted via MODELED_{RECOIL,DRAIN,SELFDROP,ITEM_REMOVAL,
   // RAPIDSPIN}_MOVES. A recoil/drain/self move NOT in a modeled set is unreachable
   // (isModeledMove rejects it), so a row here is for an ADMITTED member.
+  if (h === 'multihit') {
+    // The MULTI-STRIKE count (`gen3_move_coverage_batch7_v1`): a fixed integer (Double Kick /
+    // Twineedle / Bonemerang 2) draws nothing; a `[2,5]` array draws ONE `sample([2,2,2,3,3,3,
+    // 4,5])`. Each strike runs the normal damage path (crit + random(16) + the per-strike
+    // secondary) + the per-strike eachEvent, stopping at the target faint. Triple Kick
+    // (multiaccuracy) is NOT reachable (the picker never admits it → the engine fail-louds).
+    return IMPL('turn.rs::run_multihit', 'the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint');
+  }
   if (h === 'recoil') {
     return IMPL('turn.rs::apply_recoil', 'the recoil family (Double-Edge/Take Down/Submission); Rock Head negates, draw-free');
   }

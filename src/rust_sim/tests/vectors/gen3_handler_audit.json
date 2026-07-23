@@ -6,8 +6,8 @@
    "abilities": 74,
    "items": 59,
    "conditions": 47,
-   "moves": 236,
-   "rows": 897
+   "moves": 253,
+   "rows": 915
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); NOT in MODELED/NOOP so the e2e filter excludes its teams",
@@ -3138,6 +3138,12 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:armthrust:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
+  },
   "move:aromatherapy:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -3167,6 +3173,12 @@
    "fp": "val:[{\"chance\":10,\"boosts\":{\"atk\":-1}}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:barrage:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
   },
   "move:barrier:boosts": {
    "disposition": "implemented",
@@ -3293,6 +3305,18 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:bonemerang:multihit": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
+  },
+  "move:bonerush:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
+  },
   "move:brickbreak:onTryHit": {
    "disposition": "unreachable_justified",
    "fp": "fn:9f3bf201:onTryHit(target, source) { const foe = source.side.foe; foe.removeSideCondition(\"reflect\"); foe.removeSideCondition(\"lig",
@@ -3327,6 +3351,12 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:bulletseed:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
   },
   "move:calmmind:boosts": {
    "disposition": "implemented",
@@ -3375,6 +3405,12 @@
    "fp": "val:true",
    "anchor": "turn.rs::run_status_move",
    "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:cometpunch:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
   },
   "move:confusion:secondaries": {
    "disposition": "implemented",
@@ -3603,6 +3639,18 @@
    "anchor": "turn.rs::apply_recoil",
    "reason": "the recoil family (Double-Edge/Take Down/Submission); Rock Head negates, draw-free"
   },
+  "move:doublekick:multihit": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
+  },
+  "move:doubleslap:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
+  },
   "move:dragonbreath:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":30,\"status\":\"par\"}]",
@@ -3801,6 +3849,18 @@
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
   },
+  "move:furyattack:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
+  },
+  "move:furyswipes:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
+  },
   "move:futuresight:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -3962,6 +4022,12 @@
    "fp": "val:[{\"chance\":10,\"status\":\"frz\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:iciclespear:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
   },
   "move:icywind:secondaries": {
    "disposition": "implemented",
@@ -4358,6 +4424,12 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the perishsong arm: getAllActive in SIDE order — Soundproof -immune (counted as a result), fresh counters Some(4), ONE -fieldactivate iff >=1 newly applied, the all-counted [still]+-fail, the >=1-immune SILENT re-cast; ZERO draws every branch"
   },
+  "move:pinmissile:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
+  },
   "move:poisonfang:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":30,\"status\":\"tox\"}]",
@@ -4464,6 +4536,12 @@
    "fp": "val:[{\"chance\":10,\"boosts\":{\"spd\":-1}}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:psychoboost:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"boosts\":{\"spa\":-2}}",
+   "anchor": "turn.rs::apply_self_drops",
+   "reason": "the self stat-drop (Overheat/Superpower) + the gen3 selfDrops random(100)"
   },
   "move:psychup:ignoreImmunity": {
    "disposition": "implemented",
@@ -4631,6 +4709,12 @@
    "fp": "val:-6",
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:rockblast:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
   },
   "move:rockslide:secondaries": {
    "disposition": "implemented",
@@ -4931,6 +5015,12 @@
    "fp": "fn:87e84bff:onHit(target, source, move) { return target.addVolatile(\"trapped\", source, move, \"trapper\"); }",
    "anchor": "turn.rs::run_status_move",
    "reason": "the trap-move arm: protect block → substitute block ([still]+-fail) → already-trapped fail → the linked trapped_by = Some(trapper uid); ZERO draws every branch (MC90/MC91)"
+  },
+  "move:spikecannon:multihit": {
+   "disposition": "implemented",
+   "fp": "val:[2,5]",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
   },
   "move:spikes:ignoreImmunity": {
    "disposition": "implemented",
@@ -5237,6 +5327,18 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "Tri Attack's ONE random(100) + brn/par/frz sample (special-cased)"
   },
+  "move:twineedle:multihit": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::run_multihit",
+   "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
+  },
+  "move:twineedle:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":20,\"status\":\"psn\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
   "move:twister:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":20,\"volatileStatus\":\"flinch\"}]",
@@ -5254,6 +5356,12 @@
    "fp": "val:-1",
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:volttackle:recoil": {
+   "disposition": "implemented",
+   "fp": "val:[1,3]",
+   "anchor": "turn.rs::apply_recoil",
+   "reason": "the recoil family (Double-Edge/Take Down/Submission); Rock Head negates, draw-free"
   },
   "move:waterpulse:secondaries": {
    "disposition": "implemented",

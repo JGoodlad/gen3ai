@@ -307,7 +307,11 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "aromatherapy": {
         "name": "Aromatherapy",
@@ -484,7 +488,11 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "barrier": {
         "name": "Barrier",
@@ -879,7 +887,8 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "multihit": 2
     },
     "bonerush": {
         "name": "Bone Rush",
@@ -906,7 +915,11 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "bounce": {
         "name": "Bounce",
@@ -1099,7 +1112,11 @@
         "pp": 30,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "calmmind": {
         "name": "Calm Mind",
@@ -1271,7 +1288,11 @@
         "pp": 15,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "confuseray": {
         "name": "Confuse Ray",
@@ -1998,7 +2019,8 @@
         "pp": 30,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "multihit": 2
     },
     "doubleslap": {
         "name": "Double Slap",
@@ -2025,7 +2047,11 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "doubleteam": {
         "name": "Double Team",
@@ -3166,7 +3192,11 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "furycutter": {
         "name": "Fury Cutter",
@@ -3220,7 +3250,11 @@
         "pp": 15,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "futuresight": {
         "name": "Future Sight",
@@ -4512,7 +4546,11 @@
         "pp": 30,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "icywind": {
         "name": "Icy Wind",
@@ -6329,7 +6367,11 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "poisonfang": {
         "name": "Poison Fang",
@@ -7200,7 +7242,11 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "rockslide": {
         "name": "Rock Slide",
@@ -8617,7 +8663,11 @@
         "pp": 15,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "multihit": [
+            2,
+            5
+        ]
     },
     "spikes": {
         "name": "Spikes",
@@ -9934,7 +9984,9 @@
         "pp": 10,
         "noPPBoosts": false,
         "contact": true,
-        "sound": false
+        "sound": false,
+        "multihit": 3,
+        "multiaccuracy": true
     },
     "twineedle": {
         "name": "Twineedle",
@@ -9963,7 +10015,8 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "multihit": 2
     },
     "twister": {
         "name": "Twister",

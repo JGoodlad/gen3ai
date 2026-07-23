@@ -820,6 +820,20 @@ def build_moves(gen):
         stat_drop_boosts = _stat_drop_boosts(entry)
         if stat_drop_boosts:
             move_dict["statDropBoosts"] = stat_drop_boosts
+        # gen3_move_coverage_batch7_v1: the MULTIHIT strike count — a fixed int (Double
+        # Kick / Bonemerang / Twineedle 2) or a [min, max] list (the 2-5 hit family:
+        # Pin Missile / Fury Attack / Bullet Seed / …). The `src/rust_sim` engine loops
+        # the strike count (a `[2, 5]` draws `sample([2,2,2,3,3,3,4,5])` — the gen3
+        # distribution, battle-actions/scripts; a fixed count draws none), rolling each
+        # strike's OWN crit + damage and stopping at the target's/user's faint. Only-
+        # when-present, obs-neutral (the facade ignores it, like selfDrops/multihit).
+        # `multiaccuracy` (Triple Kick — per-hit accuracy + a BP ramp) is carried so the
+        # engine FAIL-LOUDs on that one special case rather than silently mismodel it.
+        multihit = entry.get("multihit")
+        if multihit is not None:
+            move_dict["multihit"] = multihit
+            if entry.get("multiaccuracy"):
+                move_dict["multiaccuracy"] = True
         moves_map[move_id] = move_dict
 
     return moves_map

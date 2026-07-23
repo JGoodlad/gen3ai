@@ -10602,6 +10602,148 @@ fn encored_mon_sleep_talk_fails_draw_free_via_ontryhit() {
 }
 
 // ============================================================================
+// MC108–MC112 — the MOVE-COVERAGE BATCH 7 GENERIC MULTI-STRIKE family
+//       (`gen3_move_coverage_batch7_v1`, `turn.rs::run_multihit`) + the cross-side
+//       ModifyDamagePhase1 shuffle fix. The pinned (hp, seed) constants are the PORT's
+//       `opts_cg` output — byte-validated == the real Showdown sim by
+//       `harness/probe_batch7_isolated.js` (80 constructed multihit battles / 1839 strikes,
+//       node-vs-rust `--protocol` clean) + the omniscient draw model in
+//       `harness/probe_batch7_multihit.js`. (A sim `>start` probe can't reproduce these exact
+//       seeds: its turn-0 construction window — the gender `sample` + Quick Claw — differs from
+//       the port's `start_with_switchins`, the project-wide seed-convention deferral.) Each pin
+//       is revert-verified: reverting `run_multihit` / the cross-side shuffle flips its (hp,seed).
+// ============================================================================
+
+/// MC108: DOUBLE KICK is a FIXED-2 multihit — NO count draw, 2*(crit+damage) + Quick Claw.
+/// Hitmonlee Double Kicks a bulky Snorlax (survives 2 strikes → 524-204 = 320). WRONG (if
+/// `run_multihit` mis-draws a count for a fixed move, or does not loop): the hp / seed desync.
+/// STATE (Snorlax 320, hitcount 2) + SEED (no count sample, 2*(crit+damage) + Quick Claw).
+#[test]
+fn double_kick_is_a_fixed_two_strike_multihit_no_count_draw() {
+    let d = dex();
+    let p1 = "Hitmonlee|||noguard|doublekick,splash|Serious|,252,,,,|||||";
+    let p2 = "Snorlax|||immunity|splash|Serious|252,,252,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[1].hp, 301, "Double Kick = 2 strikes → 524-223");
+    assert!(!out.decisions[0].active[1].fainted, "Snorlax survived the 2-strike Double Kick");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "7184,5868,30814,34654",
+        "fixed-2: NO count draw — accuracy + 2*(crit+damage) + Quick Claw"
+    );
+}
+
+/// MC109: ICICLE SPEAR is a VARIABLE [2,5] multihit — it draws ONE `sample([2,2,2,3,3,3,4,5])`
+/// count draw (gen<5) AFTER accuracy, BEFORE the per-strike loop. At this seed the sample = 5.
+/// Cloyster Icicle Spears a bulky Blissey (survives 5 strikes → 714-52 = 662, hitcount 5).
+/// WRONG (if the count sample is MISSING / mis-drawn, or the loop count is wrong): the hp / seed
+/// desync. STATE (Blissey 662, 5 strikes) + SEED (accuracy + ONE sample + 5*(crit+damage) + QC).
+#[test]
+fn icicle_spear_variable_multihit_draws_one_count_sample() {
+    let d = dex();
+    let p1 = "Cloyster|||noguard|iciclespear,splash|Serious|,,,252,,|||||";
+    let p2 = "Blissey|||naturalcure|splash|Serious|252,,,,252,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[1].hp, 660, "Icicle Spear = a variable count of strikes → 714-54");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "54523,22811,31582,9991",
+        "[2,5] draws ONE sample([2,2,2,3,3,3,4,5]) = 5, then 5*(crit+damage) + Quick Claw"
+    );
+}
+
+/// MC110: a multihit that KOs the target on the FIRST strike STOPS the loop (no 2nd strike, no
+/// Quick Claw on the deciding faint). Diglett injected to 5 HP; Hitmonlee (faster) Double Kicks —
+/// strike 1 KOs it, strike 2 is skipped (`targets.every(!hp)`), the battle ends. WRONG (if the
+/// loop does not stop): a 2nd strike fires / a Quick Claw on the deciding faint → the seed desync.
+/// STATE (Diglett fainted, p2 left 0) + SEED (1 strike, NO Quick Claw).
+#[test]
+fn multihit_ko_on_the_first_strike_stops_the_loop_no_quick_claw() {
+    let d = dex();
+    let p1 = "Hitmonlee|||noguard|doublekick,splash|Serious|,252,,,,|||||";
+    let p2 = "Diglett|||sandveil|splash|Serious|,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    {
+        let st = battle.state_mut().expect("state");
+        let a = st.sides[1].active;
+        st.sides[1].pokemon[a].hp = 5; // STATE-only: strike 1 KOs it
+    }
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert!(out.decisions[0].active[1].fainted, "Diglett fainted on strike 1");
+    assert_eq!(out.decisions[0].pokemon_left[1], 0, "Diglett was p2's last mon → p1 wins");
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "10897,43434,54578,10901",
+        "the loop stops at the faint — ONE strike, NO Quick Claw on the deciding faint"
+    );
+}
+
+/// MC111: TWINEEDLE draws its 20% psn SECONDARY `random(100)` PER STRIKE (like every multihit
+/// move's secondary — the sim's `spreadMoveHit` runs `secondaries()` per hit). At this seed the
+/// psn lands → Snorlax poisoned; the 2nd strike's secondary draws but no-ops (already-statused).
+/// WRONG (if the secondary is drawn ONCE after all strikes, or per-move): the seed desync (2
+/// draws vs 1). STATE (Snorlax 393 + psn) + SEED (per-strike secondary random(100)).
+#[test]
+fn twineedle_draws_its_secondary_per_strike_and_poisons() {
+    let d = dex();
+    let p1 = "Beedrill|||swarm|twineedle,splash|Serious|,252,,,,|||||";
+    let p2 = "Snorlax|||thickfat|splash|Serious|252,,252,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "7,11,13,17"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out.decisions[0].active[1].hp, 393, "Twineedle = 2 strikes → 524-131");
+    assert_eq!(
+        out.decisions[0].active[1].status,
+        Some(Status::Poison),
+        "the 20% psn secondary landed (per-strike random(100))"
+    );
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "37112,13693,28533,21721",
+        "the SECONDARY random(100) draws PER STRIKE (2 draws) — not once"
+    );
+}
+
+/// MC112: the CROSS-SIDE ModifyDamagePhase1 SHUFFLE — when BOTH sides carry a screen, a multi-
+/// strike hit draws ONE `random(0,2)` PER STRIKE (the two `onAnyModifyDamagePhase1` handlers tie).
+/// dec0 both set Light Screen; dec1 Cloyster Icicle Spears the both-Light-Screen Snorlax. WRONG
+/// (pre-fix: the shuffle was gated on the FOE having BOTH Reflect AND Light Screen, so a cross-
+/// side pair — here BOTH sides' Light Screen — drew NOTHING): the port under-draws the per-strike
+/// shuffle → the dec1 seed desyncs. STATE (Snorlax 509, LS-halved) + SEED (per-strike shuffle).
+#[test]
+fn multihit_into_both_sides_light_screen_draws_the_modify_damage_phase1_shuffle_per_strike() {
+    let d = dex();
+    let p1 = "Cloyster|||noguard|iciclespear,lightscreen,splash|Serious|,,,252,,|||||";
+    let p2 = "Snorlax|||immunity|lightscreen,splash|Serious|252,,252,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44317,42357,9927,48760"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    // dec0: both set Light Screen (p1 slot 1, p2 slot 0). dec1: p1 Icicle Spear (slot 0), p2 Splash.
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),
+        ],
+        &d,
+    );
+    assert_eq!(out.decisions[1].active[1].hp, 509, "Icicle Spear (LS-halved) → 524-15");
+    assert_eq!(
+        seed_str(&out.decisions[1].seed_after),
+        "17940,16623,13080,40722",
+        "BOTH sides' Light Screen = 2 tied ModifyDamagePhase1 handlers → ONE random(0,2) PER STRIKE"
+    );
+}
+
+// ============================================================================
 // R3 / HP1 — HIDDEN POWER's BASE POWER is IV-DERIVED, not the flat 70 the data ships
 //       (`gen3_iv_derived_hidden_power_bp_v1`). gen-3 computes HP's BP from the ATTACKER's IVs
 //       (Dex.getHiddenPower, `⌊hpPowerX·40/63⌋+30`, range 30..=70), so a real gen3ou HP mon

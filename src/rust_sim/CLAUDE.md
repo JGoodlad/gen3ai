@@ -2157,6 +2157,69 @@ situation. OBSERVATION-ONLY for the OTHER seed suites (battle / fullbattle / sec
 / every move-coverage batch stay BYTE-IDENTICAL — the snatch code is an id-gated no-op on any board with
 no snatch cast).
 
+## Move-coverage BATCH 7: the GENERIC MULTI-STRIKE family (`gen3_move_coverage_batch7_v1`)
+
+`gen3_move_coverage_batch7_v1` — the 15 gen-3 MULTI-STRIKE moves (the last big UNMODELED class, for
+the random-battle universe): FIXED-2 (Double Kick / Twineedle / Bonemerang) + the VARIABLE `[2,5]`
+family (Pin Missile / Bullet Seed / Icicle Spear / Rock Blast / Barrage / Comet Punch / Double Slap /
+Spike Cannon / Arm Thrust / Fury Attack / Fury Swipes / Bone Rush). Unlike Beat Up (a stat-swap
+`basePowerCallback`, its own `run_beat_up`), these run the NORMAL damage path N times, so
+**`turn.rs::run_multihit`** REUSES the `ctx` `run_move` already built (refreshing only the crit flag +
+the live defender types per strike, for a mid-multihit Color Change). Routed in `run_move` like Beat
+Up — AFTER the shared accuracy + immunity/protect checks, BEFORE the single-hit block. The DRAW model,
+verified bit-for-bit vs the omniscient sim (`harness/probe_batch7_multihit.js` + the resolved
+`hitStepMoveHitLoop`, battle-actions.ts:748):
+
+- **DATA** (`gen3_moves.json`, extractor pass-through, obs-neutral like `critRatio`): `MoveData::multihit`
+  (`MultiHit::Fixed(n)` / `MultiHit::Range(lo,hi)`) + `multiaccuracy`. The count: `Fixed` draws NOTHING;
+  `Range(2,5)` (gen<5) draws ONE `sample([2,2,2,3,3,3,4,5])` = one `random(8)` (power-of-2, clean),
+  drawn HERE (after accuracy, before the loop).
+- **PER STRIKE** (the sim's `spreadMoveHit`, mirroring the single-hit tail): the effectiveness lines →
+  crit `randomChance(1,critMult)` → the `modify_damage_phase1_shuffle` → damage `random(16)` → sub-absorb
+  / apply / DB+focus-punch+counter recorders + Focus Band + Endure → the move's SECONDARY `random(100)`
+  (Twineedle 20% psn — **PER STRIKE**, already-statused-gated after the first) → King's Rock → the
+  DEFENDER's contact-proc / fire-thaw / Color Change → the per-strike `eachEvent('Update')` (drawn on a
+  speed tie). The loop STOPS at the target's faint (`targets.every(!hp)`); a KO on the last landing strike
+  DEFERS the Quick Claw (the deferred-faint protocol). Emits `|move|` once + per-strike effectiveness/
+  `-crit`/`-damage` + `|-hitcount|N`.
+- **TRIPLE KICK** (`triplekick`, the ONLY `multiaccuracy` carrier — per-strike accuracy re-roll + escalating
+  BP) **FAIL-LOUDS** in `run_multihit` (`assert!(!multiaccuracy, …)`); the picker never admits it.
+- **A CROSS-SIDE ModifyDamagePhase1 fix rode this batch** (`turn/speed.rs::modify_damage_phase1_shuffle`,
+  replacing the old `two_tied_handler_shuffle`-gated-on-`foe.reflect && foe.light_screen`). gen3 Reflect +
+  Light Screen register **`onAnyModifyDamagePhase1`** handlers — the `onAny` prefix means EVERY screen up
+  across BOTH sides gathers into ONE tie group, so a size-k tie draws `k-1` in the Fisher-Yates speed-sort
+  (0/1 handler → no draw). The old gate MISSED the cross-side combos (e.g. BOTH sides carrying Light Screen
+  = 2 handlers → 1 draw per hit) — a latent SINGLE-HIT desync the admitted multi-strike moves amplified
+  (each strike re-runs getDamage → this event) and the random-mode byte fuzz surfaced. Now `n` counts every
+  screen across both sides; used at the single-hit path + `run_multihit` + the DD/FS cast snapshot. Flash
+  Fire's `onModifyDamagePhase1` is a DIFFERENT (attacker-speed) tie group → not counted. VERIFIED
+  byte-identical on ALL committed goldens (no committed golden exercises the cross-side case).
+- **VOLT TACKLE + PSYCHO BOOST** admitted alongside (engine-ready, picker-only): `volttackle` (Pikachu,
+  120-BP recoil-1/3, NO secondary in gen3 — the 10% para is gen4) via `MODELED_RECOIL_MOVES`; `psychoboost`
+  (Deoxys, `self.boosts {spa:-2}` — the SAME `selfDrops` `random(100)` path as Overheat) via
+  `MODELED_SELFDROP_MOVES`.
+
+**Validated** by `harness/probe_batch7_isolated.js` — an ISOLATED node-vs-rust `--protocol` byte
+differential over 80 constructed multihit battles (1839 strikes, clean teams — no screens/evasion/
+Cute-Charm confounds) that **replays each battle through `ab_replay` byte-for-byte: 80/80 ok** (the
+authoritative multihit byte gate, since the picker never draws a multihit move into the committed e2e's
+220-battle sample — the leech-seed / disable / snatch situation, so the e2e golden is UNCHANGED, md5
+`3155eb796cb4bf453c6053d769ba98e5`) + **5 revert-verified `regression_test.rs` pins MC108–MC112**
+(fixed-2 no-count-draw / variable `[2,5]` count sample / KO-on-first-strike stops the loop no-Quick-Claw /
+Twineedle per-strike secondary+psn / the CROSS-SIDE both-Light-Screen ModifyDamagePhase1 shuffle — MC112
+revert-fails when the shuffle is gated back to foe-both-screens). The pins' (hp, seed) constants are the
+port's `opts_cg` output, byte-validated vs the sim by `probe_batch7_isolated.js` (a sim `>start` probe
+can't reproduce the exact seeds — its turn-0 construction gender-`sample`/Quick-Claw window differs from
+the port's `start_with_switchins`, the project-wide seed-convention deferral). The handler-audit manifest
+grew to **915 rows** (the `multihit` class rule → `run_multihit`, all implemented). e2e-ADMITTED
+(`MODELED_BATCH7_MULTIHIT_MOVES` before the `m.multihit` reject; `triplekick` EXCLUDED) — the pre-regen
+golden replayed BYTE-IDENTICAL; the OTHER seed suites stay BYTE-IDENTICAL (the batch-7 code is an id-gated
+no-op on any board without a multihit move / cross-side screens). **`--use-bridge=rust`:** these were the
+last big UNMODELED move class — a serverless-rust random-battle run reaching a multi-strike move now
+produces correct obs (the remaining random-mode tail — the eachEvent/Quick-Claw boundary, evasion-stage
+accuracy, Cute-Charm Attract-`-end` order — is the mismodeled-hunt queue, orthogonal to multihit). Probes
+kept: `harness/probe_batch7_{multihit,isolated}.js`.
+
 ## E2E capstone: real teams, full battles, bit-for-bit (per-decision STATE+SEED+winner differential)
 
 This is the closure: instead of constructed scenarios with hand-picked mons + scripted moves, the

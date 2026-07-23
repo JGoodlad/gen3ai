@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
-47 conditions (engine state space + attached), 236 modeled moves
-→ **897 (effect, hook) rows**.
+47 conditions (engine state space + attached), 253 modeled moves
+→ **915 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 833 |
+| implemented | 851 |
 | noop_justified | 36 |
 | unreachable_justified | 28 |
 
@@ -546,7 +546,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | wish | onEnd | implemented | `turn.rs::apply_wish` |
 | wish | onResidualOrder | implemented | `turn.rs::apply_wish` |
 
-## move (382 rows: implemented=378, noop_justified=2, unreachable_justified=2)
+## move (400 rows: implemented=396, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -565,11 +565,13 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | amnesia | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | amnesia | neverMiss | implemented | `turn.rs::never_miss` |
 | ancientpower | secondaries | implemented | `turn.rs::apply_secondaries` |
+| armthrust | multihit | implemented | `turn.rs::run_multihit` |
 | aromatherapy | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | aromatherapy | neverMiss | implemented | `turn.rs::never_miss` |
 | aromatherapy | onHit | implemented | `turn.rs::run_status_move` |
 | astonish | secondaries | implemented | `turn.rs::apply_secondaries` |
 | aurorabeam | secondaries | implemented | `turn.rs::apply_secondaries` |
+| barrage | multihit | implemented | `turn.rs::run_multihit` |
 | barrier | boosts | implemented | `turn.rs::self_boost_spec` |
 | barrier | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | barrier | neverMiss | implemented | `turn.rs::never_miss` |
@@ -591,12 +593,15 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | block | onHit | implemented | `turn.rs::run_status_move` |
 | bodyslam | secondaries | implemented | `turn.rs::apply_secondaries` |
 | boneclub | secondaries | implemented | `turn.rs::apply_secondaries` |
+| bonemerang | multihit | implemented | `turn.rs::run_multihit` |
+| bonerush | multihit | implemented | `turn.rs::run_multihit` |
 | brickbreak | onTryHit | unreachable_justified | removes Reflect/Light Screen before the hit — the screens are unmodeled SIDE CONDITIONS no modeled move can set, so there is never a screen to break (the move's damaging path is fully modeled) |
 | bubble | secondaries | implemented | `turn.rs::apply_secondaries` |
 | bubblebeam | secondaries | implemented | `turn.rs::apply_secondaries` |
 | bulkup | boosts | implemented | `turn.rs::self_boost_spec` |
 | bulkup | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | bulkup | neverMiss | implemented | `turn.rs::never_miss` |
+| bulletseed | multihit | implemented | `turn.rs::run_multihit` |
 | calmmind | boosts | implemented | `turn.rs::self_boost_spec` |
 | calmmind | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | calmmind | neverMiss | implemented | `turn.rs::never_miss` |
@@ -605,6 +610,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | charge | volatileStatus | implemented | `turn.rs::run_status_move` |
 | charm | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | charm | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| cometpunch | multihit | implemented | `turn.rs::run_multihit` |
 | confusion | secondaries | implemented | `turn.rs::apply_secondaries` |
 | constrict | secondaries | implemented | `turn.rs::apply_secondaries` |
 | cosmicpower | boosts | implemented | `turn.rs::self_boost_spec` |
@@ -643,6 +649,8 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | dizzypunch | secondaries | implemented | `turn.rs::apply_secondaries` |
 | doomdesire | onTry | implemented | `turn.rs::run_future_move_cast` |
 | doubleedge | recoil | implemented | `turn.rs::apply_recoil` |
+| doublekick | multihit | implemented | `turn.rs::run_multihit` |
+| doubleslap | multihit | implemented | `turn.rs::run_multihit` |
 | dragonbreath | secondaries | implemented | `turn.rs::apply_secondaries` |
 | dragondance | boosts | implemented | `turn.rs::self_boost_spec` |
 | dragondance | ignoreImmunity | implemented | `turn.rs::run_status_move` |
@@ -676,6 +684,8 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | flamewheel | secondaries | implemented | `turn.rs::apply_secondaries` |
 | focuspunch | onTry | implemented | `turn.rs::run_move` |
 | focuspunch | priority | implemented | `turn.rs::move_priority` |
+| furyattack | multihit | implemented | `turn.rs::run_multihit` |
+| furyswipes | multihit | implemented | `turn.rs::run_multihit` |
 | futuresight | ignoreImmunity | implemented | `turn.rs::run_future_move_cast` |
 | futuresight | onTry | implemented | `turn.rs::run_future_move_cast` |
 | gigadrain | drain | implemented | `turn.rs::apply_drain` |
@@ -703,6 +713,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | hypnosis | status | implemented | `turn.rs::modeled_status_move` |
 | icebeam | secondaries | implemented | `turn.rs::apply_secondaries` |
 | icepunch | secondaries | implemented | `turn.rs::apply_secondaries` |
+| iciclespear | multihit | implemented | `turn.rs::run_multihit` |
 | icywind | secondaries | implemented | `turn.rs::apply_secondaries` |
 | irondefense | boosts | implemented | `turn.rs::self_boost_spec` |
 | irondefense | ignoreImmunity | implemented | `turn.rs::run_status_move` |
@@ -769,6 +780,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | perishsong | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | perishsong | neverMiss | implemented | `turn.rs::run_status_move` |
 | perishsong | onHitField | implemented | `turn.rs::run_status_move` |
+| pinmissile | multihit | implemented | `turn.rs::run_multihit` |
 | poisonfang | secondaries | implemented | `turn.rs::apply_secondaries` |
 | poisongas | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | poisongas | status | implemented | `turn.rs::modeled_status_move` |
@@ -787,6 +799,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | protect | volatileStatus | implemented | `turn.rs::run_protect` |
 | psybeam | secondaries | implemented | `turn.rs::apply_secondaries` |
 | psychic | secondaries | implemented | `turn.rs::apply_secondaries` |
+| psychoboost | self | implemented | `turn.rs::apply_self_drops` |
 | psychup | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | psychup | neverMiss | implemented | `turn.rs::run_status_move` |
 | psychup | onHit | implemented | `turn.rs::run_status_move` |
@@ -815,6 +828,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | roar | forceSwitch | implemented | `turn.rs::drag_in` |
 | roar | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | roar | priority | implemented | `turn.rs::move_priority` |
+| rockblast | multihit | implemented | `turn.rs::run_multihit` |
 | rockslide | secondaries | implemented | `turn.rs::apply_secondaries` |
 | rocksmash | secondaries | implemented | `turn.rs::apply_secondaries` |
 | rocktomb | secondaries | implemented | `turn.rs::apply_secondaries` |
@@ -865,6 +879,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | spiderweb | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | spiderweb | neverMiss | implemented | `turn.rs::run_status_move` |
 | spiderweb | onHit | implemented | `turn.rs::run_status_move` |
+| spikecannon | multihit | implemented | `turn.rs::run_multihit` |
 | spikes | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | spikes | neverMiss | implemented | `turn.rs::never_miss` |
 | spikes | sideCondition | implemented | `turn.rs::apply_entry_hazards` |
@@ -916,9 +931,12 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | toxic | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | toxic | status | implemented | `turn.rs::modeled_status_move` |
 | triattack | secondaries | implemented | `turn.rs::apply_secondaries` |
+| twineedle | multihit | implemented | `turn.rs::run_multihit` |
+| twineedle | secondaries | implemented | `turn.rs::apply_secondaries` |
 | twister | secondaries | implemented | `turn.rs::apply_secondaries` |
 | vitalthrow | neverMiss | implemented | `turn.rs::never_miss` |
 | vitalthrow | priority | implemented | `turn.rs::move_priority` |
+| volttackle | recoil | implemented | `turn.rs::apply_recoil` |
 | waterpulse | secondaries | implemented | `turn.rs::apply_secondaries` |
 | whirlwind | forceSwitch | implemented | `turn.rs::drag_in` |
 | whirlwind | ignoreImmunity | implemented | `turn.rs::run_status_move` |
