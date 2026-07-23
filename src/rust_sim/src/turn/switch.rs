@@ -906,22 +906,21 @@ impl crate::state::BattleState {
             }
         }
         // ATTRACT source-left clear (`attract.onUpdate`, `gen3_ability_batch4_v1`): when the
-        // DEPARTING mon is the SOURCE of the foe active's attraction, the volatile is removed
-        // (probe: Miltank pivots out → Zangoose's Attract ends, `-end …|Attract|[silent]`).
-        // DRAW-FREE; checked here at the switch (the sim's next Update — nothing between reads it).
-        {
+        // DEPARTING mon is the SOURCE of the foe active's attraction, the volatile is removed +
+        // `|-end|<mon>|Attract|[silent]` emitted (probe: Miltank pivots out → Zangoose's Attract
+        // ends). DRAW-FREE. The sim fires this as the onUpdate AFTER the switch-in, so the `-end`
+        // must FOLLOW the `|switch|` line (`gen3_attract_end_order_v1` — the random-mode byte-fuzz
+        // Cute-Charm ORDER fix: the port emitted it BEFORE the switch). CAPTURED here (pre-swap,
+        // while `side`'s active is still the departing source); the CLEAR + `-end` run AFTER the
+        // `|switch|` emit below. (`side`'s switch does not change the FOE active, so the captured
+        // foe_active stays valid.)
+        let attract_clear_foe: Option<usize> = {
             let departing_uid = self.sides[side].pokemon[self.sides[side].active].uid;
             let foe = 1 - side;
             let foe_active = self.sides[foe].active;
-            if self.sides[foe].pokemon[foe_active].attract == Some((side, departing_uid)) {
-                self.sides[foe].pokemon[foe_active].attract = None;
-                // [EMIT] `|-end|<mon>|Attract|[silent]` — the onUpdate removal.
-                if self.logging() {
-                    let mon_ref = self.mon_ref(foe, foe_active, dex);
-                    self.log.volatile_end_silent(&mon_ref, "Attract");
-                }
-            }
-        }
+            (self.sides[foe].pokemon[foe_active].attract == Some((side, departing_uid)))
+                .then_some(foe_active)
+        };
         // SWAP the team-array entries (the entrant → active position, outgoing →
         // the entrant's old bench position) + fix each mon's `position` field.
         self.sides[side].pokemon.swap(active, target);
@@ -1039,6 +1038,18 @@ impl crate::state::BattleState {
                 self.log.switch_from(&entrant, &details, &hp, "Baton Pass");
             } else {
                 self.log.switch(&entrant, &details, &hp);
+            }
+        }
+
+        // [EMIT — AFTER the |switch| line] the captured ATTRACT source-left clear + `-end`
+        // (`gen3_attract_end_order_v1`): the sim's `attract.onUpdate` runs AFTER the switch-in, so
+        // the `|-end|<foe>|Attract|[silent]` must FOLLOW the `|switch|` line (probe/byte-fuzz).
+        if let Some(foe_active) = attract_clear_foe {
+            let foe = 1 - side;
+            self.sides[foe].pokemon[foe_active].attract = None;
+            if self.logging() {
+                let mon_ref = self.mon_ref(foe, foe_active, dex);
+                self.log.volatile_end_silent(&mon_ref, "Attract");
             }
         }
 

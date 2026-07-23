@@ -356,6 +356,18 @@ impl crate::state::BattleState {
             if !never_miss {
                 let acc_hit = self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
                 if !acc_hit {
+                    // [EMIT] a genuine miss (acc<100 via Bright Powder / Lax Incense / a
+                    // defender evasion boost — never at the flat 100, but reachable): the
+                    // announce gains the `[miss]` attr + `|-miss|`, matching the sim
+                    // (`gen3_status_move_miss_emit_v1` — these arms previously returned
+                    // draw-free but emitted NOTHING, so a missed Encore/Roar/setup showed
+                    // `|move|…` without `[miss]`).
+                    if self.logging() {
+                        let user = self.mon_ref(_side, _slot, dex);
+                        let target = self.mon_ref(foe, foe_slot, dex);
+                        self.log.attr_last_move_miss();
+                        self.log.miss(&user, Some(&target));
+                    }
                     return MoveResolution::done(true, false, false);
                 }
             }
@@ -511,6 +523,18 @@ impl crate::state::BattleState {
             if !never_miss {
                 let acc_hit = self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
                 if !acc_hit {
+                    // [EMIT] a genuine miss (acc<100 via Bright Powder / Lax Incense / a
+                    // defender evasion boost — never at the flat 100, but reachable): the
+                    // announce gains the `[miss]` attr + `|-miss|`, matching the sim
+                    // (`gen3_status_move_miss_emit_v1` — these arms previously returned
+                    // draw-free but emitted NOTHING, so a missed Encore/Roar/setup showed
+                    // `|move|…` without `[miss]`).
+                    if self.logging() {
+                        let user = self.mon_ref(_side, _slot, dex);
+                        let target = self.mon_ref(foe, foe_slot, dex);
+                        self.log.attr_last_move_miss();
+                        self.log.miss(&user, Some(&target));
+                    }
                     return MoveResolution::done(true, false, false);
                 }
             }
@@ -1083,6 +1107,18 @@ impl crate::state::BattleState {
             if !never_miss {
                 let acc_hit = self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
                 if !acc_hit {
+                    // [EMIT] a genuine miss (acc<100 via Bright Powder / Lax Incense / a
+                    // defender evasion boost — never at the flat 100, but reachable): the
+                    // announce gains the `[miss]` attr + `|-miss|`, matching the sim
+                    // (`gen3_status_move_miss_emit_v1` — these arms previously returned
+                    // draw-free but emitted NOTHING, so a missed Encore/Roar/setup showed
+                    // `|move|…` without `[miss]`).
+                    if self.logging() {
+                        let user = self.mon_ref(_side, _slot, dex);
+                        let target = self.mon_ref(foe, foe_slot, dex);
+                        self.log.attr_last_move_miss();
+                        self.log.miss(&user, Some(&target));
+                    }
                     return MoveResolution::done(true, false, false);
                 }
             }
@@ -1199,10 +1235,13 @@ impl crate::state::BattleState {
             if !never_miss {
                 let acc_hit = self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
                 if !acc_hit {
-                    // [EMIT] a genuine miss (never at 100, but defensive).
+                    // [EMIT] a genuine miss (acc<100 via Bright Powder / Lax Incense / a
+                    // defender evasion boost): the announce gains the `[miss]` attr THEN
+                    // `|-miss|` (`gen3_status_move_miss_emit_v1` — the attr was missing).
                     if self.logging() {
                         let user = self.mon_ref(_side, _slot, dex);
                         let target = self.mon_ref(foe, foe_slot, dex);
+                        self.log.attr_last_move_miss();
                         self.log.miss(&user, Some(&target));
                     }
                     return MoveResolution::done(true, false, false);

@@ -715,10 +715,22 @@ fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
         (battle.state_mut().unwrap().run_full_battle(&script, dex), Vec::new())
     };
 
+    // DIAGNOSTIC (`POKESIM_PROTOCOL_ONLY=1`): skip the per-decision SEED + STATE checkpoints and
+    // go straight to the byte diff. A `seed` divergence can be a real draw bug OR a decision-
+    // boundary-segmentation artifact (the port's `run_full_battle` DecisionRecord captures
+    // seed_after at a different frame than the fuzz's per-`makeRequest` recording — the bridge
+    // A2-anchor class). If the protocol BYTES are clean under this flag, the seed divergence is
+    // a harness artifact (the port plays the whole battle byte-correctly → obs is fine); if the
+    // bytes diverge too, it is a real engine bug. Not for the gate — a triage lens only.
+    let protocol_only = std::env::var("POKESIM_PROTOCOL_ONLY").is_ok();
+
     let n = outcome.decisions.len().min(case.decisions.len());
     for di in 0..n {
         let rec = &outcome.decisions[di];
         let exp = &case.decisions[di];
+        if protocol_only {
+            continue; // skip the seed + state per-decision checkpoints; only the byte diff runs
+        }
 
         // Priority 1: the SEED (a draw bug dominates any downstream state noise).
         if rec.seed_after != exp.seed_after {
@@ -846,7 +858,7 @@ fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
         }
     }
 
-    if outcome.decisions.len() != case.decisions.len() {
+    if !protocol_only && outcome.decisions.len() != case.decisions.len() {
         return Verdict::diverged(
             &case.id,
             "decision_count",
@@ -858,7 +870,7 @@ fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
         );
     }
 
-    if outcome.ended != case.ended {
+    if !protocol_only && outcome.ended != case.ended {
         return Verdict::diverged(
             &case.id,
             "ended",
