@@ -120,6 +120,64 @@ const SCENARIOS = [
       { side: 'p2', choice: 'move 2' },
     ],
   },
+  {
+    id: 'taunt_struggle',
+    // A SHORT forced-Struggle capture (the STRUGGLE-resolve class, NOT trapping): Gengar (Levitate)
+    // Taunts a MAX-bulk Skarmory whose whole moveset is STATUS (Spikes / Roar / Whirlwind / Toxic),
+    // so by turn 2 every slot is un-selectable → Skarmory has NO usable move → the request offers
+    // ONLY `{"move":"Struggle","id":"struggle"}` and poke-env answers with the NAME `move struggle`
+    // (the EXACT wire + the exact `bridge::resolve_choice` path the Struggle wedge bug lived in —
+    // it returned None for the `struggle` NAME so the boundary never committed). gen3 Taunt strands
+    // Skarmory for EXACTLY one forced-Struggle turn (turn 2), so the plan STOPS after it (a non-ended
+    // prefix, like the trapping scenarios above) — a later `move struggle` would be a real move again
+    // and node rejects it (probe-verified), diverging from the Move(0) mapping. Turn 2 emits the
+    // `|move|…|Struggle` + `|-damage|…|[from] Recoil` we gate on.
+    seed: [59, 61, 67, 71],
+    p1: [mon('Gengar', ['taunt', 'shadowball'],
+             { ability: 'Levitate', evs: { spa: 252, spe: 252, hp: 4 }, nature: 'Timid', gender: 'M' })],
+    p2: [mon('Skarmory', ['spikes', 'roar', 'whirlwind', 'toxic'],
+             { ability: 'Keen Eye', evs: { hp: 252, def: 252, spd: 4 }, nature: 'Impish', gender: 'M' })],
+    plan: [
+      { side: 'p1', choice: 'move 1' },                // Gengar Taunt
+      { side: 'p2', choice: 'move 1' },                // Skarmory Spikes → cant'd by Taunt (no PP spent)
+      { side: 'p1', choice: 'move 2' },                // Gengar Shadow Ball
+      { side: 'p2', choice: 'move struggle' },          // Taunt-stranded → forced Struggle (the NAME)
+    ],
+  },
+  {
+    id: 'pp_stall_struggle',
+    // A LONGER forced-Struggle capture via PP EXHAUSTION (the 0-PP branch of the SAME class): p1's
+    // ONLY move is Mean Look (8 in-battle PP, harmless — its trap is invisible since the lone-mon
+    // foe has no bench so the request omits the flag), so 8 uses drain it to 0 → p1 is PERMANENTLY
+    // forced to Struggle → poke-env answers `move struggle` (the NAME) every turn thereafter, and
+    // Struggle's ¼-damage recoil + its hit end the frail mirror. Only the POST-exhaustion turns
+    // submit `move struggle` (while Mean Look has PP node offers the real move, so the plan spends
+    // it with `move 1` — a mid-PP `move struggle` would be a real move node rejects). Leads are
+    // DISTINCT-speed (Serious vs Brave Rattata) to avoid the seeded speed-tie lead convention gap.
+    seed: [73, 79, 83, 89],
+    p1: [mon('Rattata', ['meanlook'], { nature: 'Serious', gender: 'M' })],
+    p2: [mon('Rattata', ['splash'], { nature: 'Brave', gender: 'F' })],
+    plan: [
+      // Spend Mean Look's 8 PP (node offers only the real move here) → p1 goes to 0 PP.
+      { side: 'p1', choice: 'move 1' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move 1' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move 1' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move 1' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move 1' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move 1' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move 1' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move 1' }, { side: 'p2', choice: 'move 1' },
+      // Mean Look exhausted → p1 forced to Struggle → answer with the NAME every turn to game-end.
+      { side: 'p1', choice: 'move struggle' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move struggle' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move struggle' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move struggle' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move struggle' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move struggle' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move struggle' }, { side: 'p2', choice: 'move 1' },
+      { side: 'p1', choice: 'move struggle' }, { side: 'p2', choice: 'move 1' },
+    ],
+  },
 ];
 
 // Run ONE scenario, driving the scripted plan and capturing per-side chunks (incl. the
@@ -203,6 +261,12 @@ async function main() {
         totalChunks++;
         const lines = chunk.split('\n');
         lines.forEach((rawLine, lineNo) => {
+          // DROP `|debug|` free-form sim text (poke-env-ignored, a deliberate rust non-emit —
+          // gen3customgame is `debug:true` so the player stream carries it, e.g. Mean Look
+          // re-trapping an already-trapped foe → `|debug|move failed because it did nothing`;
+          // the rust bridge omits it, so the byte gate must too — the same convention every
+          // other golden uses). `|error|` is KEPT (rust emits it — the trapped-reject).
+          if (rawLine.startsWith('|debug|')) return;
           const raw = rawLine.startsWith('|t:|') ? '|t:|<NORMALIZED>' : rawLine;
           out.push(['CHUNK', id, battleNo, side, chunkNo, lineNo, raw].join('\t'));
           totalLines++;

@@ -11,7 +11,7 @@
 #   CMD   <id>  <battleNo>  <cmdNo>  <side>  <choice>   (INCLUDING a rejected attempt)
 #   CHUNK <id>  <battleNo>  <side>  <chunkNo>  <lineNo>  <raw line>   (incl. |error| + trapped:true re-request)
 #   END   <id>  <battleNo>  <ended:0|1>  <winner:p1|p2|tie|none>
-# format gen3customgame  scenarios 3
+# format gen3customgame  scenarios 5
 SCEN	arena_trap_reject
 TEAM	arena_trap_reject	p1	Dugtrio|||ArenaTrap|earthquake,splash|Serious||N||||
 TEAM	arena_trap_reject	p2	Snorlax|||NoAbility|bodyslam,splash|Serious||M||||]Regice|||NoAbility|icebeam,splash|Serious||N||||
@@ -271,3 +271,396 @@ CHUNK	shadow_tag_firm_trap	2	p2	8	7	|upkeep
 CHUNK	shadow_tag_firm_trap	2	p2	8	8	|turn|3
 CHUNK	shadow_tag_firm_trap	2	p2	9	0	|request|{"active":[{"moves":[{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Splash","id":"splash","pp":62,"maxpp":64,"target":"self","disabled":false}],"trapped":true}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Snorlax","details":"Snorlax, M","condition":"461/461","active":true,"stats":{"atk":256,"def":166,"spa":166,"spd":256,"spe":96},"moves":["bodyslam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Regice","details":"Regice","condition":"301/301","active":false,"stats":{"atk":136,"def":236,"spa":236,"spd":436,"spe":136},"moves":["icebeam","splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
 END	shadow_tag_firm_trap	2	0	none
+SCEN	taunt_struggle
+TEAM	taunt_struggle	p1	Gengar|||Levitate|taunt,shadowball|Timid|4,,,252,,252|M||||
+TEAM	taunt_struggle	p2	Skarmory|||KeenEye|spikes,roar,whirlwind,toxic|Impish|252,,252,,4,|M||||
+INIT	taunt_struggle	3	50988,44074,60332,47558	gen3customgame
+CMD	taunt_struggle	3	0	p1	move 1
+CMD	taunt_struggle	3	1	p2	move 1
+CMD	taunt_struggle	3	2	p1	move 2
+CMD	taunt_struggle	3	3	p2	move struggle
+CHUNK	taunt_struggle	3	p1	0	0	|t:|<NORMALIZED>
+CHUNK	taunt_struggle	3	p1	0	1	|gametype|singles
+CHUNK	taunt_struggle	3	p1	1	0	|player|p1|P1||
+CHUNK	taunt_struggle	3	p1	2	0	|player|p2|P2||
+CHUNK	taunt_struggle	3	p1	2	1	|gen|3
+CHUNK	taunt_struggle	3	p1	2	2	|tier|[Gen 3] Custom Game
+CHUNK	taunt_struggle	3	p1	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	taunt_struggle	3	p1	2	4	|
+CHUNK	taunt_struggle	3	p1	2	5	|t:|<NORMALIZED>
+CHUNK	taunt_struggle	3	p1	2	6	|teamsize|p1|1
+CHUNK	taunt_struggle	3	p1	2	7	|teamsize|p2|1
+CHUNK	taunt_struggle	3	p1	2	8	|start
+CHUNK	taunt_struggle	3	p1	2	9	|switch|p1a: Gengar|Gengar, M|262/262
+CHUNK	taunt_struggle	3	p1	2	10	|switch|p2a: Skarmory|Skarmory, M|334/334
+CHUNK	taunt_struggle	3	p1	2	11	|turn|1
+CHUNK	taunt_struggle	3	p1	3	0	|request|{"active":[{"moves":[{"move":"Taunt","id":"taunt","pp":32,"maxpp":32,"target":"normal","disabled":false},{"move":"Shadow Ball","id":"shadowball","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"262/262","active":true,"stats":{"atk":149,"def":156,"spa":359,"spd":186,"spe":350},"moves":["taunt","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"}]}}
+CHUNK	taunt_struggle	3	p1	4	0	|
+CHUNK	taunt_struggle	3	p1	4	1	|t:|<NORMALIZED>
+CHUNK	taunt_struggle	3	p1	4	2	|move|p1a: Gengar|Taunt|p2a: Skarmory
+CHUNK	taunt_struggle	3	p1	4	3	|-start|p2a: Skarmory|move: Taunt
+CHUNK	taunt_struggle	3	p1	4	4	|cant|p2a: Skarmory|move: Taunt|Spikes
+CHUNK	taunt_struggle	3	p1	4	5	|
+CHUNK	taunt_struggle	3	p1	4	6	|upkeep
+CHUNK	taunt_struggle	3	p1	4	7	|turn|2
+CHUNK	taunt_struggle	3	p1	5	0	|request|{"active":[{"moves":[{"move":"Taunt","id":"taunt","pp":31,"maxpp":32,"target":"normal","disabled":false},{"move":"Shadow Ball","id":"shadowball","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"262/262","active":true,"stats":{"atk":149,"def":156,"spa":359,"spd":186,"spe":350},"moves":["taunt","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"}]}}
+CHUNK	taunt_struggle	3	p1	6	0	|
+CHUNK	taunt_struggle	3	p1	6	1	|t:|<NORMALIZED>
+CHUNK	taunt_struggle	3	p1	6	2	|move|p1a: Gengar|Shadow Ball|p2a: Skarmory
+CHUNK	taunt_struggle	3	p1	6	3	|-resisted|p2a: Skarmory
+CHUNK	taunt_struggle	3	p1	6	4	|-damage|p2a: Skarmory|318/334
+CHUNK	taunt_struggle	3	p1	6	5	|move|p2a: Skarmory|Struggle|p1a: Gengar
+CHUNK	taunt_struggle	3	p1	6	6	|-damage|p1a: Gengar|210/262
+CHUNK	taunt_struggle	3	p1	6	7	|-damage|p2a: Skarmory|305/334|[from] Recoil|[of] p1a: Gengar
+CHUNK	taunt_struggle	3	p1	6	8	|
+CHUNK	taunt_struggle	3	p1	6	9	|-end|p2a: Skarmory|move: Taunt|[silent]
+CHUNK	taunt_struggle	3	p1	6	10	|upkeep
+CHUNK	taunt_struggle	3	p1	6	11	|turn|3
+CHUNK	taunt_struggle	3	p1	7	0	|request|{"active":[{"moves":[{"move":"Taunt","id":"taunt","pp":31,"maxpp":32,"target":"normal","disabled":false},{"move":"Shadow Ball","id":"shadowball","pp":23,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"210/262","active":true,"stats":{"atk":149,"def":156,"spa":359,"spd":186,"spe":350},"moves":["taunt","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"}]}}
+CHUNK	taunt_struggle	3	p2	0	0	|t:|<NORMALIZED>
+CHUNK	taunt_struggle	3	p2	0	1	|gametype|singles
+CHUNK	taunt_struggle	3	p2	1	0	|player|p1|P1||
+CHUNK	taunt_struggle	3	p2	2	0	|player|p2|P2||
+CHUNK	taunt_struggle	3	p2	2	1	|gen|3
+CHUNK	taunt_struggle	3	p2	2	2	|tier|[Gen 3] Custom Game
+CHUNK	taunt_struggle	3	p2	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	taunt_struggle	3	p2	2	4	|
+CHUNK	taunt_struggle	3	p2	2	5	|t:|<NORMALIZED>
+CHUNK	taunt_struggle	3	p2	2	6	|teamsize|p1|1
+CHUNK	taunt_struggle	3	p2	2	7	|teamsize|p2|1
+CHUNK	taunt_struggle	3	p2	2	8	|start
+CHUNK	taunt_struggle	3	p2	2	9	|switch|p1a: Gengar|Gengar, M|262/262
+CHUNK	taunt_struggle	3	p2	2	10	|switch|p2a: Skarmory|Skarmory, M|334/334
+CHUNK	taunt_struggle	3	p2	2	11	|turn|1
+CHUNK	taunt_struggle	3	p2	3	0	|request|{"active":[{"moves":[{"move":"Spikes","id":"spikes","pp":32,"maxpp":32,"target":"foeSide","disabled":false},{"move":"Roar","id":"roar","pp":32,"maxpp":32,"target":"normal","disabled":false},{"move":"Whirlwind","id":"whirlwind","pp":32,"maxpp":32,"target":"normal","disabled":false},{"move":"Toxic","id":"toxic","pp":16,"maxpp":16,"target":"normal","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Skarmory","details":"Skarmory, M","condition":"334/334","active":true,"stats":{"atk":196,"def":416,"spa":104,"spd":177,"spe":176},"moves":["spikes","roar","whirlwind","toxic"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"}]}}
+CHUNK	taunt_struggle	3	p2	4	0	|
+CHUNK	taunt_struggle	3	p2	4	1	|t:|<NORMALIZED>
+CHUNK	taunt_struggle	3	p2	4	2	|move|p1a: Gengar|Taunt|p2a: Skarmory
+CHUNK	taunt_struggle	3	p2	4	3	|-start|p2a: Skarmory|move: Taunt
+CHUNK	taunt_struggle	3	p2	4	4	|cant|p2a: Skarmory|move: Taunt|Spikes
+CHUNK	taunt_struggle	3	p2	4	5	|
+CHUNK	taunt_struggle	3	p2	4	6	|upkeep
+CHUNK	taunt_struggle	3	p2	4	7	|turn|2
+CHUNK	taunt_struggle	3	p2	5	0	|request|{"active":[{"moves":[{"move":"Struggle","id":"struggle","target":"randomNormal","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Skarmory","details":"Skarmory, M","condition":"334/334","active":true,"stats":{"atk":196,"def":416,"spa":104,"spd":177,"spe":176},"moves":["spikes","roar","whirlwind","toxic"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"}]}}
+CHUNK	taunt_struggle	3	p2	6	0	|-activate|p2a: Skarmory|move: Struggle
+CHUNK	taunt_struggle	3	p2	7	0	|
+CHUNK	taunt_struggle	3	p2	7	1	|t:|<NORMALIZED>
+CHUNK	taunt_struggle	3	p2	7	2	|move|p1a: Gengar|Shadow Ball|p2a: Skarmory
+CHUNK	taunt_struggle	3	p2	7	3	|-resisted|p2a: Skarmory
+CHUNK	taunt_struggle	3	p2	7	4	|-damage|p2a: Skarmory|318/334
+CHUNK	taunt_struggle	3	p2	7	5	|move|p2a: Skarmory|Struggle|p1a: Gengar
+CHUNK	taunt_struggle	3	p2	7	6	|-damage|p1a: Gengar|210/262
+CHUNK	taunt_struggle	3	p2	7	7	|-damage|p2a: Skarmory|305/334|[from] Recoil|[of] p1a: Gengar
+CHUNK	taunt_struggle	3	p2	7	8	|
+CHUNK	taunt_struggle	3	p2	7	9	|-end|p2a: Skarmory|move: Taunt|[silent]
+CHUNK	taunt_struggle	3	p2	7	10	|upkeep
+CHUNK	taunt_struggle	3	p2	7	11	|turn|3
+CHUNK	taunt_struggle	3	p2	8	0	|request|{"active":[{"moves":[{"move":"Spikes","id":"spikes","pp":32,"maxpp":32,"target":"foeSide","disabled":false},{"move":"Roar","id":"roar","pp":32,"maxpp":32,"target":"normal","disabled":false},{"move":"Whirlwind","id":"whirlwind","pp":32,"maxpp":32,"target":"normal","disabled":false},{"move":"Toxic","id":"toxic","pp":16,"maxpp":16,"target":"normal","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Skarmory","details":"Skarmory, M","condition":"305/334","active":true,"stats":{"atk":196,"def":416,"spa":104,"spd":177,"spe":176},"moves":["spikes","roar","whirlwind","toxic"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"}]}}
+END	taunt_struggle	3	0	none
+SCEN	pp_stall_struggle
+TEAM	pp_stall_struggle	p1	Rattata|||NoAbility|meanlook|Serious||M||||
+TEAM	pp_stall_struggle	p2	Rattata|||NoAbility|splash|Brave||F||||
+INIT	pp_stall_struggle	4	10698,58079,6788,25312	gen3customgame
+CMD	pp_stall_struggle	4	0	p1	move 1
+CMD	pp_stall_struggle	4	1	p2	move 1
+CMD	pp_stall_struggle	4	2	p1	move 1
+CMD	pp_stall_struggle	4	3	p2	move 1
+CMD	pp_stall_struggle	4	4	p1	move 1
+CMD	pp_stall_struggle	4	5	p2	move 1
+CMD	pp_stall_struggle	4	6	p1	move 1
+CMD	pp_stall_struggle	4	7	p2	move 1
+CMD	pp_stall_struggle	4	8	p1	move 1
+CMD	pp_stall_struggle	4	9	p2	move 1
+CMD	pp_stall_struggle	4	10	p1	move 1
+CMD	pp_stall_struggle	4	11	p2	move 1
+CMD	pp_stall_struggle	4	12	p1	move 1
+CMD	pp_stall_struggle	4	13	p2	move 1
+CMD	pp_stall_struggle	4	14	p1	move 1
+CMD	pp_stall_struggle	4	15	p2	move 1
+CMD	pp_stall_struggle	4	16	p1	move struggle
+CMD	pp_stall_struggle	4	17	p2	move 1
+CMD	pp_stall_struggle	4	18	p1	move struggle
+CMD	pp_stall_struggle	4	19	p2	move 1
+CMD	pp_stall_struggle	4	20	p1	move struggle
+CMD	pp_stall_struggle	4	21	p2	move 1
+CMD	pp_stall_struggle	4	22	p1	move struggle
+CMD	pp_stall_struggle	4	23	p2	move 1
+CHUNK	pp_stall_struggle	4	p1	0	0	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	0	1	|gametype|singles
+CHUNK	pp_stall_struggle	4	p1	1	0	|player|p1|P1||
+CHUNK	pp_stall_struggle	4	p1	2	0	|player|p2|P2||
+CHUNK	pp_stall_struggle	4	p1	2	1	|gen|3
+CHUNK	pp_stall_struggle	4	p1	2	2	|tier|[Gen 3] Custom Game
+CHUNK	pp_stall_struggle	4	p1	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	pp_stall_struggle	4	p1	2	4	|
+CHUNK	pp_stall_struggle	4	p1	2	5	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	2	6	|teamsize|p1|1
+CHUNK	pp_stall_struggle	4	p1	2	7	|teamsize|p2|1
+CHUNK	pp_stall_struggle	4	p1	2	8	|start
+CHUNK	pp_stall_struggle	4	p1	2	9	|switch|p1a: Rattata|Rattata, M|201/201
+CHUNK	pp_stall_struggle	4	p1	2	10	|switch|p2a: Rattata|Rattata, F|201/201
+CHUNK	pp_stall_struggle	4	p1	2	11	|turn|1
+CHUNK	pp_stall_struggle	4	p1	3	0	|request|{"active":[{"moves":[{"move":"Mean Look","id":"meanlook","pp":8,"maxpp":8,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"201/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	4	0	|
+CHUNK	pp_stall_struggle	4	p1	4	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	4	2	|move|p1a: Rattata|Mean Look|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	4	3	|-activate|p2a: Rattata|trapped
+CHUNK	pp_stall_struggle	4	p1	4	4	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	4	5	|-nothing
+CHUNK	pp_stall_struggle	4	p1	4	6	|
+CHUNK	pp_stall_struggle	4	p1	4	7	|upkeep
+CHUNK	pp_stall_struggle	4	p1	4	8	|turn|2
+CHUNK	pp_stall_struggle	4	p1	5	0	|request|{"active":[{"moves":[{"move":"Mean Look","id":"meanlook","pp":7,"maxpp":8,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"201/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	6	0	|
+CHUNK	pp_stall_struggle	4	p1	6	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	6	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p1	6	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p1	6	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	6	6	|-nothing
+CHUNK	pp_stall_struggle	4	p1	6	7	|
+CHUNK	pp_stall_struggle	4	p1	6	8	|upkeep
+CHUNK	pp_stall_struggle	4	p1	6	9	|turn|3
+CHUNK	pp_stall_struggle	4	p1	7	0	|request|{"active":[{"moves":[{"move":"Mean Look","id":"meanlook","pp":6,"maxpp":8,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"201/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	8	0	|
+CHUNK	pp_stall_struggle	4	p1	8	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	8	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p1	8	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p1	8	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	8	6	|-nothing
+CHUNK	pp_stall_struggle	4	p1	8	7	|
+CHUNK	pp_stall_struggle	4	p1	8	8	|upkeep
+CHUNK	pp_stall_struggle	4	p1	8	9	|turn|4
+CHUNK	pp_stall_struggle	4	p1	9	0	|request|{"active":[{"moves":[{"move":"Mean Look","id":"meanlook","pp":5,"maxpp":8,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"201/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	10	0	|
+CHUNK	pp_stall_struggle	4	p1	10	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	10	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p1	10	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p1	10	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	10	6	|-nothing
+CHUNK	pp_stall_struggle	4	p1	10	7	|
+CHUNK	pp_stall_struggle	4	p1	10	8	|upkeep
+CHUNK	pp_stall_struggle	4	p1	10	9	|turn|5
+CHUNK	pp_stall_struggle	4	p1	11	0	|request|{"active":[{"moves":[{"move":"Mean Look","id":"meanlook","pp":4,"maxpp":8,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"201/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	12	0	|
+CHUNK	pp_stall_struggle	4	p1	12	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	12	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p1	12	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p1	12	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	12	6	|-nothing
+CHUNK	pp_stall_struggle	4	p1	12	7	|
+CHUNK	pp_stall_struggle	4	p1	12	8	|upkeep
+CHUNK	pp_stall_struggle	4	p1	12	9	|turn|6
+CHUNK	pp_stall_struggle	4	p1	13	0	|request|{"active":[{"moves":[{"move":"Mean Look","id":"meanlook","pp":3,"maxpp":8,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"201/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	14	0	|
+CHUNK	pp_stall_struggle	4	p1	14	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	14	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p1	14	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p1	14	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	14	6	|-nothing
+CHUNK	pp_stall_struggle	4	p1	14	7	|
+CHUNK	pp_stall_struggle	4	p1	14	8	|upkeep
+CHUNK	pp_stall_struggle	4	p1	14	9	|turn|7
+CHUNK	pp_stall_struggle	4	p1	15	0	|request|{"active":[{"moves":[{"move":"Mean Look","id":"meanlook","pp":2,"maxpp":8,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"201/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	16	0	|
+CHUNK	pp_stall_struggle	4	p1	16	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	16	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p1	16	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p1	16	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	16	6	|-nothing
+CHUNK	pp_stall_struggle	4	p1	16	7	|
+CHUNK	pp_stall_struggle	4	p1	16	8	|upkeep
+CHUNK	pp_stall_struggle	4	p1	16	9	|turn|8
+CHUNK	pp_stall_struggle	4	p1	17	0	|request|{"active":[{"moves":[{"move":"Mean Look","id":"meanlook","pp":1,"maxpp":8,"target":"normal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"201/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	18	0	|
+CHUNK	pp_stall_struggle	4	p1	18	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	18	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p1	18	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p1	18	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	18	6	|-nothing
+CHUNK	pp_stall_struggle	4	p1	18	7	|
+CHUNK	pp_stall_struggle	4	p1	18	8	|upkeep
+CHUNK	pp_stall_struggle	4	p1	18	9	|turn|9
+CHUNK	pp_stall_struggle	4	p1	19	0	|request|{"active":[{"moves":[{"move":"Struggle","id":"struggle","target":"randomNormal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"201/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	20	0	|-activate|p1a: Rattata|move: Struggle
+CHUNK	pp_stall_struggle	4	p1	21	0	|
+CHUNK	pp_stall_struggle	4	p1	21	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	21	2	|move|p1a: Rattata|Struggle|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	21	3	|-damage|p2a: Rattata|147/201
+CHUNK	pp_stall_struggle	4	p1	21	4	|-damage|p1a: Rattata|188/201|[from] Recoil|[of] p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	21	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	21	6	|-nothing
+CHUNK	pp_stall_struggle	4	p1	21	7	|
+CHUNK	pp_stall_struggle	4	p1	21	8	|upkeep
+CHUNK	pp_stall_struggle	4	p1	21	9	|turn|10
+CHUNK	pp_stall_struggle	4	p1	22	0	|request|{"active":[{"moves":[{"move":"Struggle","id":"struggle","target":"randomNormal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"188/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	23	0	|-activate|p1a: Rattata|move: Struggle
+CHUNK	pp_stall_struggle	4	p1	24	0	|
+CHUNK	pp_stall_struggle	4	p1	24	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	24	2	|move|p1a: Rattata|Struggle|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	24	3	|-damage|p2a: Rattata|89/201
+CHUNK	pp_stall_struggle	4	p1	24	4	|-damage|p1a: Rattata|174/201|[from] Recoil|[of] p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	24	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	24	6	|-nothing
+CHUNK	pp_stall_struggle	4	p1	24	7	|
+CHUNK	pp_stall_struggle	4	p1	24	8	|upkeep
+CHUNK	pp_stall_struggle	4	p1	24	9	|turn|11
+CHUNK	pp_stall_struggle	4	p1	25	0	|request|{"active":[{"moves":[{"move":"Struggle","id":"struggle","target":"randomNormal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"174/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	26	0	|-activate|p1a: Rattata|move: Struggle
+CHUNK	pp_stall_struggle	4	p1	27	0	|
+CHUNK	pp_stall_struggle	4	p1	27	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	27	2	|move|p1a: Rattata|Struggle|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	27	3	|-damage|p2a: Rattata|38/201
+CHUNK	pp_stall_struggle	4	p1	27	4	|-damage|p1a: Rattata|162/201|[from] Recoil|[of] p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	27	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	27	6	|-nothing
+CHUNK	pp_stall_struggle	4	p1	27	7	|
+CHUNK	pp_stall_struggle	4	p1	27	8	|upkeep
+CHUNK	pp_stall_struggle	4	p1	27	9	|turn|12
+CHUNK	pp_stall_struggle	4	p1	28	0	|request|{"active":[{"moves":[{"move":"Struggle","id":"struggle","target":"randomNormal","disabled":false}]}],"side":{"name":"P1","id":"p1","pokemon":[{"ident":"p1: Rattata","details":"Rattata, M","condition":"162/201","active":true,"stats":{"atk":148,"def":106,"spa":86,"spd":106,"spe":180},"moves":["meanlook"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p1	29	0	|-activate|p1a: Rattata|move: Struggle
+CHUNK	pp_stall_struggle	4	p1	30	0	|
+CHUNK	pp_stall_struggle	4	p1	30	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p1	30	2	|move|p1a: Rattata|Struggle|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	30	3	|-damage|p2a: Rattata|0 fnt
+CHUNK	pp_stall_struggle	4	p1	30	4	|-damage|p1a: Rattata|153/201|[from] Recoil|[of] p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	30	5	|faint|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p1	30	6	|
+CHUNK	pp_stall_struggle	4	p1	30	7	|win|P1
+CHUNK	pp_stall_struggle	4	p2	0	0	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	0	1	|gametype|singles
+CHUNK	pp_stall_struggle	4	p2	1	0	|player|p1|P1||
+CHUNK	pp_stall_struggle	4	p2	2	0	|player|p2|P2||
+CHUNK	pp_stall_struggle	4	p2	2	1	|gen|3
+CHUNK	pp_stall_struggle	4	p2	2	2	|tier|[Gen 3] Custom Game
+CHUNK	pp_stall_struggle	4	p2	2	3	|rule|HP Percentage Mod: HP is shown in percentages
+CHUNK	pp_stall_struggle	4	p2	2	4	|
+CHUNK	pp_stall_struggle	4	p2	2	5	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	2	6	|teamsize|p1|1
+CHUNK	pp_stall_struggle	4	p2	2	7	|teamsize|p2|1
+CHUNK	pp_stall_struggle	4	p2	2	8	|start
+CHUNK	pp_stall_struggle	4	p2	2	9	|switch|p1a: Rattata|Rattata, M|201/201
+CHUNK	pp_stall_struggle	4	p2	2	10	|switch|p2a: Rattata|Rattata, F|201/201
+CHUNK	pp_stall_struggle	4	p2	2	11	|turn|1
+CHUNK	pp_stall_struggle	4	p2	3	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":64,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"201/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	4	0	|
+CHUNK	pp_stall_struggle	4	p2	4	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	4	2	|move|p1a: Rattata|Mean Look|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	4	3	|-activate|p2a: Rattata|trapped
+CHUNK	pp_stall_struggle	4	p2	4	4	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	4	5	|-nothing
+CHUNK	pp_stall_struggle	4	p2	4	6	|
+CHUNK	pp_stall_struggle	4	p2	4	7	|upkeep
+CHUNK	pp_stall_struggle	4	p2	4	8	|turn|2
+CHUNK	pp_stall_struggle	4	p2	5	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":63,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"201/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	6	0	|
+CHUNK	pp_stall_struggle	4	p2	6	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	6	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p2	6	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p2	6	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	6	6	|-nothing
+CHUNK	pp_stall_struggle	4	p2	6	7	|
+CHUNK	pp_stall_struggle	4	p2	6	8	|upkeep
+CHUNK	pp_stall_struggle	4	p2	6	9	|turn|3
+CHUNK	pp_stall_struggle	4	p2	7	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":62,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"201/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	8	0	|
+CHUNK	pp_stall_struggle	4	p2	8	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	8	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p2	8	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p2	8	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	8	6	|-nothing
+CHUNK	pp_stall_struggle	4	p2	8	7	|
+CHUNK	pp_stall_struggle	4	p2	8	8	|upkeep
+CHUNK	pp_stall_struggle	4	p2	8	9	|turn|4
+CHUNK	pp_stall_struggle	4	p2	9	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":61,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"201/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	10	0	|
+CHUNK	pp_stall_struggle	4	p2	10	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	10	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p2	10	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p2	10	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	10	6	|-nothing
+CHUNK	pp_stall_struggle	4	p2	10	7	|
+CHUNK	pp_stall_struggle	4	p2	10	8	|upkeep
+CHUNK	pp_stall_struggle	4	p2	10	9	|turn|5
+CHUNK	pp_stall_struggle	4	p2	11	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":60,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"201/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	12	0	|
+CHUNK	pp_stall_struggle	4	p2	12	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	12	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p2	12	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p2	12	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	12	6	|-nothing
+CHUNK	pp_stall_struggle	4	p2	12	7	|
+CHUNK	pp_stall_struggle	4	p2	12	8	|upkeep
+CHUNK	pp_stall_struggle	4	p2	12	9	|turn|6
+CHUNK	pp_stall_struggle	4	p2	13	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":59,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"201/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	14	0	|
+CHUNK	pp_stall_struggle	4	p2	14	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	14	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p2	14	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p2	14	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	14	6	|-nothing
+CHUNK	pp_stall_struggle	4	p2	14	7	|
+CHUNK	pp_stall_struggle	4	p2	14	8	|upkeep
+CHUNK	pp_stall_struggle	4	p2	14	9	|turn|7
+CHUNK	pp_stall_struggle	4	p2	15	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":58,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"201/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	16	0	|
+CHUNK	pp_stall_struggle	4	p2	16	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	16	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p2	16	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p2	16	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	16	6	|-nothing
+CHUNK	pp_stall_struggle	4	p2	16	7	|
+CHUNK	pp_stall_struggle	4	p2	16	8	|upkeep
+CHUNK	pp_stall_struggle	4	p2	16	9	|turn|8
+CHUNK	pp_stall_struggle	4	p2	17	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":57,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"201/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	18	0	|
+CHUNK	pp_stall_struggle	4	p2	18	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	18	2	|move|p1a: Rattata|Mean Look||[still]
+CHUNK	pp_stall_struggle	4	p2	18	3	|-fail|p1a: Rattata
+CHUNK	pp_stall_struggle	4	p2	18	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	18	6	|-nothing
+CHUNK	pp_stall_struggle	4	p2	18	7	|
+CHUNK	pp_stall_struggle	4	p2	18	8	|upkeep
+CHUNK	pp_stall_struggle	4	p2	18	9	|turn|9
+CHUNK	pp_stall_struggle	4	p2	19	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":56,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"201/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	20	0	|
+CHUNK	pp_stall_struggle	4	p2	20	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	20	2	|move|p1a: Rattata|Struggle|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	20	3	|-damage|p2a: Rattata|147/201
+CHUNK	pp_stall_struggle	4	p2	20	4	|-damage|p1a: Rattata|188/201|[from] Recoil|[of] p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	20	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	20	6	|-nothing
+CHUNK	pp_stall_struggle	4	p2	20	7	|
+CHUNK	pp_stall_struggle	4	p2	20	8	|upkeep
+CHUNK	pp_stall_struggle	4	p2	20	9	|turn|10
+CHUNK	pp_stall_struggle	4	p2	21	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":55,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"147/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	22	0	|
+CHUNK	pp_stall_struggle	4	p2	22	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	22	2	|move|p1a: Rattata|Struggle|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	22	3	|-damage|p2a: Rattata|89/201
+CHUNK	pp_stall_struggle	4	p2	22	4	|-damage|p1a: Rattata|174/201|[from] Recoil|[of] p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	22	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	22	6	|-nothing
+CHUNK	pp_stall_struggle	4	p2	22	7	|
+CHUNK	pp_stall_struggle	4	p2	22	8	|upkeep
+CHUNK	pp_stall_struggle	4	p2	22	9	|turn|11
+CHUNK	pp_stall_struggle	4	p2	23	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":54,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"89/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	24	0	|
+CHUNK	pp_stall_struggle	4	p2	24	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	24	2	|move|p1a: Rattata|Struggle|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	24	3	|-damage|p2a: Rattata|38/201
+CHUNK	pp_stall_struggle	4	p2	24	4	|-damage|p1a: Rattata|162/201|[from] Recoil|[of] p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	24	5	|move|p2a: Rattata|Splash|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	24	6	|-nothing
+CHUNK	pp_stall_struggle	4	p2	24	7	|
+CHUNK	pp_stall_struggle	4	p2	24	8	|upkeep
+CHUNK	pp_stall_struggle	4	p2	24	9	|turn|12
+CHUNK	pp_stall_struggle	4	p2	25	0	|request|{"active":[{"moves":[{"move":"Splash","id":"splash","pp":53,"maxpp":64,"target":"self","disabled":false}]}],"side":{"name":"P2","id":"p2","pokemon":[{"ident":"p2: Rattata","details":"Rattata, F","condition":"38/201","active":true,"stats":{"atk":162,"def":106,"spa":86,"spd":106,"spe":162},"moves":["splash"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}
+CHUNK	pp_stall_struggle	4	p2	26	0	|
+CHUNK	pp_stall_struggle	4	p2	26	1	|t:|<NORMALIZED>
+CHUNK	pp_stall_struggle	4	p2	26	2	|move|p1a: Rattata|Struggle|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	26	3	|-damage|p2a: Rattata|0 fnt
+CHUNK	pp_stall_struggle	4	p2	26	4	|-damage|p1a: Rattata|153/201|[from] Recoil|[of] p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	26	5	|faint|p2a: Rattata
+CHUNK	pp_stall_struggle	4	p2	26	6	|
+CHUNK	pp_stall_struggle	4	p2	26	7	|win|P1
+END	pp_stall_struggle	4	1	p1

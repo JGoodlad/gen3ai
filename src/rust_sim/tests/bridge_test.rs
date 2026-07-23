@@ -7,11 +7,17 @@
 //! TWO goldens, two gates:
 //!
 //! 1. `bridge_trapping_golden.txt` — the DEFINITIVE Phase-1 gate. A constructed,
-//!    IN-SCOPE corpus (explicit genders, MODELED moves only: Splash / Body Slam /
-//!    Earthquake / Thunderbolt / Drill Peck) that exercises the trapped state machine
-//!    (`maybeTrapped` → rejected switch → `|error|` → `trapped:true` re-request +
-//!    `"update":true`). Asserted BYTE-FOR-BYTE, all per-side chunks — the pass
-//!    criterion "every per-side chunk + every `|request|` JSON byte-identical".
+//!    IN-SCOPE corpus (explicit genders, MODELED moves only) that exercises the trapped
+//!    state machine (`maybeTrapped` → rejected switch → `|error|` → `trapped:true`
+//!    re-request + `"update":true`) AND the forced-Struggle-resolve class
+//!    (`gen3_bridge_struggle_resolve_v1`): `taunt_struggle` (a Taunt-stranded status-only
+//!    mon) + `pp_stall_struggle` (0-PP exhaustion) each drive a mon whose request offers
+//!    ONLY Struggle, answered by the wire NAME `move struggle` — the exact
+//!    `bridge::resolve_choice` path the wedge bug lived in (it returned None for the NAME
+//!    → the boundary never committed → an infinite re-request), so the `|move|…|Struggle`
+//!    + `|-damage|…|[from] Recoil` lines are now byte-checked vs node. Asserted
+//!    BYTE-FOR-BYTE, all per-side chunks — "every per-side chunk + every `|request|` JSON
+//!    byte-identical".
 //!
 //! 2. `bridge_capture_golden.txt` — 30 gen3ou battles driven with the FULL move set
 //!    + gender-ratio species with UNSPECIFIED genders. These are OUT of the crate's
@@ -149,6 +155,8 @@ fn bridge_trapping_streams_byte_equal() {
     let mut total_requests = 0usize;
     let mut total_trapped = 0usize;
     let mut total_errors = 0usize;
+    let mut total_struggle = 0usize;
+    let mut total_recoil = 0usize;
     for b in &battles {
         let opts = bridge_opts(&b.format_id, b.seed.clone(), &b.p1_team, &b.p2_team);
         let streams = run_full_battle_bridge(&opts, &b.cmds, &dex)
@@ -163,18 +171,41 @@ fn bridge_trapping_streams_byte_equal() {
                 }
             } else if l.starts_with("|error|") {
                 total_errors += 1;
+            } else if l.starts_with("|move|") && l.contains("|Struggle|") {
+                // A forced-Struggle EXECUTION (`gen3_bridge_struggle_resolve_v1`): the mon whose
+                // request offered ONLY Struggle (Taunt-stranded or 0-PP) and answered the wire
+                // NAME `move struggle` — the exact `resolve_choice` path the wedge bug lived in
+                // (broadcast to BOTH per-side streams under gen3customgame's exact-HP fold).
+                total_struggle += 1;
+            }
+            if l.contains("[from] Recoil") {
+                total_recoil += 1;
             }
         }
     }
     // The trapping corpus MUST exercise the trapped state machine.
     assert!(total_trapped >= 2, "expected >=2 trapped:true re-requests, got {total_trapped}");
     assert!(total_errors >= 2, "expected >=2 |error| frames, got {total_errors}");
+    // …AND the forced-Struggle class (taunt_struggle + pp_stall_struggle): both the `|move|…|Struggle`
+    // line AND its gen-3 `[from] Recoil` must replay bit-for-bit vs node on BOTH per-side streams.
+    assert!(
+        total_struggle >= 2,
+        "expected >=2 |move|…|Struggle lines (the forced-Struggle class), got {total_struggle} — \
+         did a Struggle scenario fail to reach Struggle?"
+    );
+    assert!(
+        total_recoil >= 2,
+        "expected >=2 Struggle `[from] Recoil` lines, got {total_recoil} — Struggle must have EXECUTED"
+    );
     eprintln!(
-        "[bridge trapping gate] {} battles, {} |request| frames ({} trapped:true), {} |error| — ALL BYTE-EQUAL",
+        "[bridge trapping gate] {} battles, {} |request| frames ({} trapped:true), {} |error|, \
+         {} |move|…Struggle ({} recoil) — ALL BYTE-EQUAL",
         battles.len(),
         total_requests,
         total_trapped,
         total_errors,
+        total_struggle,
+        total_recoil,
     );
 }
 
@@ -266,11 +297,14 @@ fn bridge_golden_parses() {
     let cap = parse_bridge_golden(CAPTURE_GOLDEN).expect("capture parse");
     let trap = parse_bridge_golden(TRAPPING_GOLDEN).expect("trapping parse");
     assert_eq!(cap.len(), 30);
-    // 3 trapping scenarios: arena_trap_reject, magnet_pull_reject (the `'hidden'`
+    // 5 trapping/forced-move scenarios: arena_trap_reject, magnet_pull_reject (the `'hidden'`
     // maybeTrapped→trapped machine) + shadow_tag_firm_trap (the FIRM `trapped:true`-from-
     // the-first-request + `[Invalid choice]`-no-re-request distinction, the request/per-side
-    // A/B fuzzer's find, `gen3_shadowtag_firm_trap_v1`).
-    assert_eq!(trap.len(), 3);
+    // A/B fuzzer's find, `gen3_shadowtag_firm_trap_v1`) + taunt_struggle / pp_stall_struggle
+    // (the STRUGGLE-resolve class, `gen3_bridge_struggle_resolve_v1`: a mon forced to Struggle —
+    // by Taunt or 0-PP — answers the wire NAME `move struggle`, the exact `resolve_choice` path
+    // the bridge wedge bug lived in; NO node-vs-rust byte test drove a battle to Struggle before).
+    assert_eq!(trap.len(), 5);
     for b in cap.iter().chain(trap.iter()) {
         assert!(!b.p1_team.is_empty(), "[{}] empty p1 team", b.id);
         assert!(!b.p2_team.is_empty(), "[{}] empty p2 team", b.id);

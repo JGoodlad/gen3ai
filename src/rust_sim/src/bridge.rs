@@ -154,6 +154,22 @@ pub fn resolve_choice(state: &BattleState, side: usize, choice: &WireChoice) -> 
         WireChoice::MoveName(id) => {
             let want = crate::dex::to_id(id);
             let mon = &state.sides[side].pokemon[state.sides[side].active];
+            // STRUGGLE (`gen3_bridge_struggle_resolve_v1`, the PP-exhaustion wedge fix): a mon
+            // with NO usable move (all slots at 0 PP / disabled / taunted) gets a request
+            // offering ONLY the synthetic `{"move":"Struggle","id":"struggle"}` (see
+            // `build_request`'s `must_struggle` branch), and poke-env answers `move struggle` —
+            // a move-ID that is NEVER present in the REAL moveset. Map it to `Move(0)`:
+            // `feed_await_move` then accepts it (the `must_struggle` exception in
+            // `choice_is_legal`) and the queue build substitutes Struggle. WITHOUT this, the
+            // moveset search below returns `None` → the caller's out-of-range fallback
+            // (`Move(moves.len())`) → `choice_is_legal` rejects it → the bridge re-issues the
+            // SAME request forever (a bridge↔Python no-progress loop that wedged
+            // `--use-bridge=rust` training on any battle reaching Struggle — node resolves it
+            // and the game ends). `"struggle"` is never a real moveslot id, so this is
+            // unambiguous; a numeric `move 1` already resolves via the `WireChoice::Move` arm.
+            if want == "struggle" {
+                return Some(Choice::Move(0));
+            }
             // MOVE-LOCKED request (`gen3_move_coverage_batch4c_v1`): the request offered a
             // SINGLE pseudo/locked entry, so the wire's `move recharge` / `move solarbeam`
             // resolves to slot 1 of the REQUEST = the engine's Move(0) (the sim accepts
@@ -1706,6 +1722,141 @@ mod tests {
         assert_eq!(chunked.flatten().p2, flat.p2);
         // And the chunk grouping is non-trivial (framing splits into 3 chunks/side + requests).
         assert!(chunked.side_chunks(0).count() >= 4, "p1 must have ≥4 chunks (framing + requests)");
+    }
+
+    /// `gen3_bridge_struggle_resolve_v1` — the STRUGGLE / full-PP-exhaustion WEDGE regression.
+    /// A mon with NO usable move (every slot at 0 PP) gets a `|request|` offering ONLY the
+    /// synthetic `{"move":"Struggle","id":"struggle"}` (see `build_request`'s `must_struggle`
+    /// branch), and poke-env answers with the move-ID `move struggle` — a name that is NEVER
+    /// present in the REAL moveset. `resolve_choice` MUST map it to `Move(0)` (the single request
+    /// entry; the driver then substitutes Struggle via the `must_struggle` exception in
+    /// `choice_is_legal`). WITHOUT the mapping, the moveset search returns `None` → the caller's
+    /// out-of-range fallback (`Move(moves.len())`) → `choice_is_legal` rejects it → the bridge
+    /// re-issues the SAME request forever: a bridge↔Python no-progress loop that wedged
+    /// `--use-bridge=rust` training on ANY battle reaching Struggle (node = ~5k lines / completes,
+    /// rust = >1M lines / loops; deterministic repro `designs/ai_v8/BUG_rust_struggle_wedge.md`).
+    /// The numeric `move 1` already resolved via the `WireChoice::Move` arm; only the NAME form was
+    /// broken — which is exactly the form the real RL runtime + poke-env send. Revert the
+    /// `want == "struggle"` early-return in `resolve_choice` and this fails (`None != Some(Move(0))`).
+    #[test]
+    fn struggle_name_choice_resolves_to_move_zero_not_a_wedge() {
+        let dex = Dex::for_gen(3);
+        let p1 = "Snorlax||||bodyslam,splash|Serious||M||||";
+        let p2 = "Tauros||||bodyslam,splash|Serious||M||||";
+        let opts = bridge_opts("gen3customgame", "44317,42357,9927,48760".to_string(), p1, p2);
+        let mut battle = Battle::start_with_switchins(&opts, &dex).expect("start");
+        let st = battle.state_mut().expect("state");
+        // Exhaust every PP of p1's active mon → it MUST Struggle (the wedge trigger).
+        let a = st.sides[0].active;
+        for pp in st.sides[0].pokemon[a].move_pp.iter_mut() {
+            *pp = 0;
+        }
+        assert!(
+            st.sides[0].pokemon[a].must_struggle(&dex),
+            "setup: the 0-PP mon must Struggle"
+        );
+        // poke-env sends the move-ID for the offered Struggle; BOTH the NAME and the numeric
+        // `move 1` must resolve to the single request entry = the engine's Move(0).
+        assert_eq!(
+            resolve_choice(st, 0, &WireChoice::MoveName("struggle".to_string())),
+            Some(Choice::Move(0)),
+            "`move struggle` must resolve to Move(0) for a must-Struggle mon (pre-fix: None → wedge)"
+        );
+        assert_eq!(
+            resolve_choice(st, 0, &WireChoice::Move(0)),
+            Some(Choice::Move(0)),
+            "the numeric `move 1` path already resolved to Move(0)"
+        );
+    }
+
+    /// `gen3_bridge_struggle_resolve_v1` — the END-TO-END class gate (closes the coverage hole
+    /// that let the Struggle wedge escape: the bridge byte-differential harness only ran SHORT
+    /// battles that never reach PP exhaustion). Drive a real battle to Struggle through the
+    /// INCREMENTAL path (`run_full_battle_bridge_incremental`, exactly what `sim_bridge` runs) and
+    /// answer p1 with `move struggle` (the NAME form poke-env sends). p1's only move is Mean Look
+    /// (harmless, no damage) so it exhausts its PP and is forced to Struggle; the ¼-damage recoil
+    /// then ends the frail mirror. WITHOUT the fix, `move struggle` never resolves → the boundary
+    /// never commits → the battle never ends (`ended=false`; the standalone repro loops forever).
+    /// WITH the fix it completes AND Struggle actually runs (its `[from] Recoil` line appears).
+    #[test]
+    fn a_bridge_battle_reaching_struggle_completes_not_wedges() {
+        let dex = Dex::for_gen(3);
+        // Two frail single-mon sides. p1's ONLY move is Mean Look (harmless — traps, no damage),
+        // so after its PP is spent p1 must Struggle; p2 just Splashes. Struggle then decides it.
+        let p1 = "Rattata||||meanlook|Serious||M||||";
+        let p2 = "Rattata||||splash|Serious||F||||";
+        let opts = bridge_opts("gen3customgame", "44317,42357,9927,48760".to_string(), p1, p2);
+        // p1 ALWAYS answers `move struggle` (the NAME): while Mean Look has PP it resolves to
+        // Move(0)=Mean Look; once exhausted the request offers only Struggle and this is the exact
+        // wire poke-env sends. p2 Splashes. Extra decisions past game-end are ignored.
+        let mut cmds = Vec::new();
+        for _ in 0..40 {
+            cmds.push(Cmd { side: 0, choice: WireChoice::MoveName("struggle".to_string()) });
+            cmds.push(Cmd { side: 1, choice: WireChoice::Move(0) });
+        }
+        let (chunks, ended, _script, _seeds) =
+            run_full_battle_bridge_incremental(&opts, &cmds, &dex).expect("incremental");
+        assert!(
+            ended,
+            "the PP-exhaustion battle MUST complete — pre-fix the `move struggle` NAME never \
+             resolves → the boundary never commits → the bridge wedges (ended=false)"
+        );
+        let all: String = chunks
+            .chunks
+            .iter()
+            .flat_map(|c| c.lines.iter().cloned())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            all.contains("[from] Recoil"),
+            "Struggle must have EXECUTED (its gen-3 recoil `[from] Recoil` line must appear), \
+             not merely been announced"
+        );
+    }
+
+    /// `gen3_bridge_struggle_resolve_v1` — the SHORT forced-Struggle trigger (the named case):
+    /// TAUNT, not PP grind. Gengar Taunts a Skarmory whose whole moveset is STATUS (Spikes / Roar
+    /// / Whirlwind / Toxic); Taunt makes every slot un-selectable → Skarmory has NO usable move →
+    /// `must_struggle` on turn 2, WITHOUT any PP being spent. This exercises the SAME
+    /// `resolve_choice("struggle")` bridge path as PP exhaustion but reaches it in ~2 turns — the
+    /// class this locks down is "ANY reason a mon is forced to Struggle," not just 0-PP. Skarmory
+    /// answers `move struggle` (the wire poke-env sends); pre-fix the name never resolves → the
+    /// boundary never commits → the bridge wedges. WITH the fix it completes + Struggle runs.
+    #[test]
+    fn taunt_forced_struggle_bridge_battle_completes_not_wedges() {
+        let dex = Dex::for_gen(3);
+        // Gengar (fast) with Taunt + Shadow Ball to finish; a MAX-bulk Skarmory whose 4 moves are
+        // ALL status → Taunt strands it into Struggle. (The bridge does not validate learnsets.)
+        let p1 = "Gengar|||levitate|taunt,shadowball|Timid|,,,252,4,252||M||||";
+        let p2 = "Skarmory|||keeneye|spikes,roar,whirlwind,toxic|Impish|252,,252,,,||M||||";
+        let opts = bridge_opts("gen3customgame", "44317,42357,9927,48760".to_string(), p1, p2);
+        // Turn 1: Gengar Taunts (move 1); Skarmory's status move is cant'd. Turn 2+: Skarmory is
+        // Taunt-stranded → must Struggle → answers `move struggle`; Gengar Shadow Balls it down.
+        let mut cmds = vec![
+            Cmd { side: 0, choice: WireChoice::Move(0) },                          // Gengar Taunt
+            Cmd { side: 1, choice: WireChoice::MoveName("struggle".to_string()) }, // Skarmory (cant)
+        ];
+        for _ in 0..24 {
+            cmds.push(Cmd { side: 0, choice: WireChoice::Move(1) }); // Gengar Shadow Ball
+            cmds.push(Cmd { side: 1, choice: WireChoice::MoveName("struggle".to_string()) });
+        }
+        let (chunks, ended, _script, _seeds) =
+            run_full_battle_bridge_incremental(&opts, &cmds, &dex).expect("incremental");
+        assert!(
+            ended,
+            "the Taunt-forced-Struggle battle MUST complete — pre-fix `move struggle` never resolves \
+             → the boundary never commits → the bridge wedges (ended=false)"
+        );
+        let all: String = chunks
+            .chunks
+            .iter()
+            .flat_map(|c| c.lines.iter().cloned())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            all.contains("|Struggle|"),
+            "Skarmory must have RUN Struggle (a `|move|…|Struggle|…` line), not looped on the request"
+        );
     }
 
     /// `gen3_sim_bridge_name_choices_v1` — the REAL RL runtime serializes choices as
