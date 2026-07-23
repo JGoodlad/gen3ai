@@ -4485,6 +4485,532 @@ fn battle_armor_prevents_the_crit_but_draws_the_roll() {
     );
 }
 
+/// CI1/CI2 CRIT_ITEM (`gen3_crit_item_v1`, STICK) — a Farfetch'd holding **Stick** folds
+/// `onModifyCritRatio critRatio + 2` (species-gated to Farfetch'd), so its base critRatio 1 → 3
+/// (`randomChance(1, CRIT_MULT[3]=4)` = 1/4). On the chosen raw seed the crit COMES UP (Cut into
+/// Snorlax crits → 347/524), while the SAME board WITHOUT the item stays critRatio 1
+/// (`randomChance(1,16)`) → NO crit → 436/524. WRONG (a model that ignores `crit_boost`): the
+/// Stick Farfetch'd would NOT crit at this seed (same as the control). The crit roll draws ONE
+/// `random(denom)` either way (same PRNG consumption), so both boards share the IDENTICAL
+/// post-turn seed — the DRAW-FREE-denominator-shift proof (ground truth
+/// `harness/probe_batch89_stick_regression_rng.js`).
+#[test]
+fn stick_boosts_farfetchd_crit_ratio_by_two() {
+    let d = dex();
+    let snorlax = "Snorlax|||Immunity|bodyslam,rest|Careful|252,,,,252,|N||||";
+    let seed = "8,15,9,14";
+
+    // CI1 STICK: the crit LANDS (critRatio 3 → 1/4).
+    let stick = "Farfetch'd||stick|KeenEye|cut,rest|Adamant|,252,,,,252|N||||";
+    let mut bs = Battle::start_with_switchins(&opts_cg(stick, snorlax, seed), &d).expect("start");
+    let os = bs.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    let s_hp = bs.state().unwrap().sides[1].pokemon[0].hp;
+    assert_eq!(s_hp, 347, "CI1: the Stick Farfetch'd CRITS Cut into Snorlax (347/524)");
+    assert_eq!(
+        seed_str(&os.decisions[0].seed_after),
+        "50794,12741,4441,38454",
+        "CI1: the crit roll is DRAWN either way (draw-free denominator shift) — post-turn seed"
+    );
+
+    // CI2 CONTROL: no item → critRatio 1 (1/16) → NO crit at the SAME seed (more HP left).
+    let noitem = "Farfetch'd|||KeenEye|cut,rest|Adamant|,252,,,,252|N||||";
+    let mut bc = Battle::start_with_switchins(&opts_cg(noitem, snorlax, seed), &d).expect("start");
+    let oc = bc.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    let c_hp = bc.state().unwrap().sides[1].pokemon[0].hp;
+    assert_eq!(c_hp, 436, "CI2: the no-item control does NOT crit (436/524) — proving the +2 fold");
+    assert!(s_hp < c_hp, "Stick's +2 crit ratio → the crit landed → MORE damage than the control");
+    assert_eq!(
+        seed_str(&oc.decisions[0].seed_after),
+        "50794,12741,4441,38454",
+        "CI2: the control's post-turn seed is IDENTICAL to Stick's (the crit-ratio fold is draw-free)"
+    );
+}
+
+/// HZ1 HAZE (`gen3_haze_v1`) — Snorlax climbs to +4 Atk (Swords Dance) while Alakazam climbs to
+/// +2 SpA/SpD (Calm Mind), then Snorlax HAZES → `getAllActive().clearBoosts()` zeroes BOTH actives'
+/// boost stages INCLUDING the user's OWN +4 Atk. DRAW-FREE (the Haze turn's post-turn seed is
+/// exact). WRONG (a model that only clears the foe, or nothing): the boosts stand at the Haze turn.
+/// Ground truth `harness/probe_batch89_haze_regression_rng.js`.
+#[test]
+fn haze_clears_both_actives_boosts_including_the_users_own() {
+    let d = dex();
+    let snorlax = "Snorlax|||Immunity|swordsdance,haze,bodyslam,splash|Careful|252,4,,,252,|N||||";
+    let alakazam = "Alakazam|||Synchronize|calmmind,psychic|Modest|4,,252,,252,|N||||";
+    let seed = "7,19,23,31";
+    let mut b = Battle::start_with_switchins(&opts_cg(snorlax, alakazam, seed), &d).expect("start");
+    let o = b.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // dec0: SD +2 / CM +1
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // dec1: SD +4 / CM +2
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // dec2: HAZE (Alakazam CMs first at +3, then Haze wipes)
+        ],
+        &d,
+    );
+    // dec1: the boosts are UP (Snorlax +4 Atk, Alakazam +2 SpA/+2 SpD) — the pre-Haze peak.
+    assert_eq!(o.decisions[1].active[0].boosts[0], 4, "HZ1: Snorlax reached +4 Atk before Haze");
+    assert_eq!(
+        (o.decisions[1].active[1].boosts[2], o.decisions[1].active[1].boosts[3]),
+        (2, 2),
+        "HZ1: Alakazam reached +2 SpA/+2 SpD before Haze"
+    );
+    // dec2: HAZE zeroed BOTH actives' 7 boost stages (the user's own +4 Atk INCLUDED).
+    assert_eq!(
+        o.decisions[2].active[0].boosts, [0i8; 7],
+        "HZ1: Haze clears the USER's OWN boosts too (getAllActive)"
+    );
+    assert_eq!(
+        o.decisions[2].active[1].boosts, [0i8; 7],
+        "HZ1: Haze clears the FOE's boosts"
+    );
+    assert_eq!(
+        seed_str(&o.decisions[2].seed_after),
+        "21454,21319,1997,2816",
+        "HZ1: the Haze turn is DRAW-FREE — exact post-turn seed"
+    );
+}
+
+/// HZ2 HAZE draw-freeness — Haze cast with NO boosts up is a pure no-op: the post-turn seed is
+/// IDENTICAL to a Splash control on the SAME board/seed (only the endTurn Quick Claw draws either
+/// way). WRONG (a Haze that drew anything): the seeds would differ.
+#[test]
+fn haze_with_no_boosts_is_draw_free_like_splash() {
+    let d = dex();
+    let snorlax = "Snorlax|||Immunity|swordsdance,haze,bodyslam,splash|Careful|252,4,,,252,|N||||";
+    let alakazam = "Alakazam|||Synchronize|calmmind,psychic|Modest|4,,252,,252,|N||||";
+    let seed = "7,19,23,31";
+
+    // Haze (move 2 = idx 1) with nothing to clear vs the foe's Psychic.
+    let mut bh = Battle::start_with_switchins(&opts_cg(snorlax, alakazam, seed), &d).expect("start");
+    let oh = bh.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(1))],
+        &d,
+    );
+    assert_eq!(oh.decisions[0].active[0].boosts, [0i8; 7], "HZ2: nothing to clear (stays all-0)");
+    assert_eq!(
+        seed_str(&oh.decisions[0].seed_after),
+        "41538,50205,58183,61362",
+        "HZ2: the Haze no-op post-turn seed"
+    );
+
+    // Splash (move 4 = idx 3) control — the SAME draws (Haze's clear is draw-free) → SAME seed.
+    let mut bs = Battle::start_with_switchins(&opts_cg(snorlax, alakazam, seed), &d).expect("start");
+    let os = bs.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(3), Choice::Move(1))],
+        &d,
+    );
+    assert_eq!(
+        seed_str(&os.decisions[0].seed_after),
+        seed_str(&oh.decisions[0].seed_after),
+        "HZ2: the Splash control's post-turn seed is IDENTICAL to Haze's (Haze is draw-free)"
+    );
+}
+
+/// LO1 LIQUID OOZE drain reversal (`gen3_liquid_ooze_v1`) — a Giga Drain into a Liquid Ooze mon
+/// turns the would-be heal into DAMAGE on the DRAINER (`onSourceTryHeal`). Venusaur takes the
+/// reversal (364 → 328) instead of healing; a Clear-Body control on the SAME board/seed does NOT
+/// (Venusaur stays 364), and the two share the IDENTICAL post-turn seed (the reversal is DRAW-FREE).
+/// WRONG (a model that heals, or the old fail-loud): the drainer would not lose HP. Ground truth
+/// `harness/probe_batch89_liquidooze_regression_rng.js`.
+#[test]
+fn liquid_ooze_reverses_a_drain_heal_into_damage_on_the_drainer() {
+    let d = dex();
+    let venu = "Venusaur|||Overgrow|gigadrain,sludgebomb|Modest|252,,4,252,,|N||||";
+    let seed = "11,23,37,41";
+
+    // Liquid Ooze Tentacruel — the reversal DAMAGES Venusaur (364 → 328).
+    let tenta_lo = "Tentacruel|||Liquid Ooze|barrier,splash|Bold|252,,,,252,|N||||";
+    let mut bo = Battle::start_with_switchins(&opts_cg(venu, tenta_lo, seed), &d).expect("start");
+    let oo = bo.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &d,
+    );
+    assert_eq!(bo.state().unwrap().sides[0].pokemon[0].hp, 328, "LO1: the drainer TAKES the reversal (328)");
+    assert_eq!(
+        seed_str(&oo.decisions[0].seed_after),
+        "35719,30677,88,6445",
+        "LO1: the reversal is DRAW-FREE — the drain move's normal draws only"
+    );
+
+    // Clear Body control — Venusaur does NOT take the reversal (stays at full 364).
+    let tenta_cb = "Tentacruel|||Clear Body|barrier,splash|Bold|252,,,,252,|N||||";
+    let mut bc = Battle::start_with_switchins(&opts_cg(venu, tenta_cb, seed), &d).expect("start");
+    let oc = bc.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &d,
+    );
+    assert_eq!(bc.state().unwrap().sides[0].pokemon[0].hp, 364, "LO1: the Clear-Body control does NOT reverse (364)");
+    assert_eq!(
+        seed_str(&oc.decisions[0].seed_after),
+        "35719,30677,88,6445",
+        "LO1: the control's post-turn seed is IDENTICAL to Liquid Ooze's (the reversal is draw-free)"
+    );
+}
+
+/// LO2 LIQUID OOZE leech-seed reversal (`gen3_liquid_ooze_v1`) — the Leech Seed residual into a
+/// Liquid Ooze mon drains the seeded mon (Tentacruel `-damage [from] Leech Seed`, 364 → 319 =
+/// maxhp/8) THEN reverses the seeder's would-be heal into DAMAGE (Venusaur `-damage [from] ability:
+/// Liquid Ooze`, 364 → 319). DRAW-FREE. WRONG (a model that heals the seeder, or fail-louds): the
+/// seeder gains HP instead of losing it. Ground truth `harness/probe_batch89_liquidooze_regression_rng.js`.
+#[test]
+fn liquid_ooze_reverses_the_leech_seed_drain_onto_the_seeder() {
+    let d = dex();
+    let venu = "Venusaur|||Overgrow|leechseed,sludgebomb|Modest|252,,4,252,,|N||||";
+    let tenta_lo = "Tentacruel|||Liquid Ooze|barrier,splash|Bold|252,,,,252,|N||||";
+    let seed = "11,23,37,41";
+    let mut b = Battle::start_with_switchins(&opts_cg(venu, tenta_lo, seed), &d).expect("start");
+    let o = b.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(1))], // Leech Seed + first residual
+        &d,
+    );
+    assert_eq!(o.decisions[0].active[0].hp, 319, "LO2: the SEEDER takes the reversal (Venusaur 364 → 319)");
+    assert_eq!(o.decisions[0].active[1].hp, 319, "LO2: the seeded Liquid Ooze mon still takes the leech drain (Tentacruel 364 → 319)");
+    assert_eq!(
+        seed_str(&o.decisions[0].seed_after),
+        "50750,2780,45521,10355",
+        "LO2: the leech residual + reversal are DRAW-FREE"
+    );
+}
+
+/// LO3 LIQUID OOZE drain reversal KO (`gen3_liquid_ooze_v1`) — the reversal DAMAGE can KO the
+/// drainer through the normal deferred-faint machinery (like a recoil KO). A frail Venusaur
+/// draining a Liquid Ooze Tentacruel (that Surfs it low first) FAINTS to its OWN Giga Drain's
+/// reversal on dec2 → a mono Venusaur loses. WRONG (a model that heals): the drainer never dies.
+/// Ground truth `harness/probe_batch89_liquidooze_regression_rng.js`.
+#[test]
+fn liquid_ooze_drain_reversal_can_ko_the_drainer() {
+    let d = dex();
+    let venu = "Venusaur|||Overgrow|gigadrain,synthesis|Modest|,,,252,,252|N||||";
+    let tenta = "Tentacruel|||Liquid Ooze|surf,splash|Modest|252,,,252,,|N||||";
+    let seed = "11,23,37,41";
+    let mut b = Battle::start_with_switchins(&opts_cg(venu, tenta, seed), &d).expect("start");
+    let o = b.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert_eq!(o.decisions.len(), 3, "LO3: the reversal KO ends the battle at dec2 (mono Venusaur)");
+    assert!(o.decisions[2].active[0].fainted, "LO3: Venusaur FAINTED to its OWN Giga Drain reversal");
+    assert_eq!(o.decisions[2].active[0].hp, 0, "LO3: Venusaur is at 0 HP");
+    assert_eq!(o.winner, Some(1), "LO3: mono Venusaur fainting to the reversal → P2 wins");
+    assert_eq!(
+        seed_str(&o.decisions[2].seed_after),
+        "23735,6545,34360,21181",
+        "LO3: the reversal KO turn's post-turn seed"
+    );
+}
+
+/// WH1 WHITE HERB self-drop restore + single-use (`gen3_white_herb_v1`) — a White Herb Snorlax
+/// SUPERPOWERS: the 1st self-drop (Atk/Def −1) is RESTORED to 0 + the item consumed (dec0); the 2nd
+/// Superpower drops −1/−1 with NO restore (item gone — SINGLE-USE). The restore is DRAW-FREE, so
+/// dec0's post-turn seed is IDENTICAL to a no-White-Herb control's (which shows the unrestored
+/// −1/−1). WRONG (a model that skips the restore): dec0 shows −1/−1 + the item retained.
+/// Ground truth `harness/probe_batch89_whiteherb_regression_rng.js`.
+#[test]
+fn white_herb_self_drop_restores_then_single_use() {
+    let d = dex();
+    let wh = "Snorlax||whiteherb|Own Tempo|superpower,splash|Adamant|252,252,4,,,|N||||";
+    let noitem = "Snorlax|||Own Tempo|superpower,splash|Adamant|252,252,4,,,|N||||";
+    let foe = "Snorlax|||Own Tempo|splash|Careful|252,,252,,4,|N||||";
+    let seed = "11,29,37,53";
+    // White Herb: dec0 restores Atk/Def to 0 + consumes; dec1 drops −1/−1 (single-use).
+    let mut bo = Battle::start_with_switchins(&opts_cg(wh, foe, seed), &d).expect("start");
+    let o = bo.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert_eq!(o.decisions[0].active[0].boosts, [0i8; 7], "WH1: the self-drop Atk/Def −1 is RESTORED to 0");
+    assert!(!o.decisions[0].active[0].item_held, "WH1: White Herb was CONSUMED (single-use)");
+    assert_eq!(
+        (o.decisions[1].active[0].boosts[0], o.decisions[1].active[0].boosts[1]),
+        (-1, -1),
+        "WH1: the 2nd Superpower drops −1/−1 with NO restore (item gone — single-use)"
+    );
+    assert_eq!(
+        seed_str(&o.decisions[0].seed_after),
+        "24105,41226,41889,57409",
+        "WH1: the restore is DRAW-FREE — dec0 post-turn seed"
+    );
+    // The no-item control: dec0 shows the UNrestored −1/−1 at the SAME seed (draw-free proof).
+    let mut bc = Battle::start_with_switchins(&opts_cg(noitem, foe, seed), &d).expect("start");
+    let c = bc.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert_eq!(
+        (c.decisions[0].active[0].boosts[0], c.decisions[0].active[0].boosts[1]),
+        (-1, -1),
+        "WH1: the no-White-Herb control does NOT restore (−1/−1)"
+    );
+    assert_eq!(
+        seed_str(&c.decisions[0].seed_after),
+        "24105,41226,41889,57409",
+        "WH1: the control's post-turn seed is IDENTICAL to White Herb's (the restore is draw-free)"
+    );
+}
+
+/// WH2 WHITE HERB foe stat-drop-MOVE restore (`gen3_white_herb_v1`) — a foe Charm (−2 Atk) into a
+/// White Herb Snorlax is RESTORED to 0 + the item consumed (the `apply_secondary_boost` trigger
+/// path). DRAW-FREE. WRONG (a model that skips the restore): Atk stays −2 + the item retained.
+/// Ground truth `harness/probe_batch89_whiteherb_regression_rng.js`.
+#[test]
+fn white_herb_restores_a_foe_charm_stat_drop() {
+    let d = dex();
+    let wh = "Snorlax||whiteherb|Own Tempo|bodyslam,splash|Adamant|252,252,4,,,|N||||";
+    let foe = "Alakazam|||Own Tempo|charm,splash|Timid|4,,,,,252|N||||";
+    let seed = "11,29,37,53";
+    let mut bo = Battle::start_with_switchins(&opts_cg(wh, foe, seed), &d).expect("start");
+    let o = bo.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0))], // p1 splash, p2 Charm
+        &d,
+    );
+    assert_eq!(o.decisions[0].active[0].boosts, [0i8; 7], "WH2: the Charm −2 Atk is RESTORED to 0");
+    assert!(!o.decisions[0].active[0].item_held, "WH2: White Herb was CONSUMED");
+    assert_eq!(
+        seed_str(&o.decisions[0].seed_after),
+        "16359,1042,61688,16031",
+        "WH2: the restore is DRAW-FREE — dec0 post-turn seed"
+    );
+}
+
+/// WH3 WHITE HERB net-non-negative NO-trigger (`gen3_white_herb_v1`) — a White Herb Snorlax Swords
+/// Dances (+2 Atk, a self-RAISE → no trigger), then a foe Charm (−2 Atk) brings it to NET 0: with
+/// NO negative stage, White Herb does NOT trigger, the item is RETAINED. WRONG (a model that
+/// triggers on any drop / on `item present`): the item is consumed at dec0/dec1. Ground truth
+/// `harness/probe_batch89_whiteherb_regression_rng.js`.
+#[test]
+fn white_herb_does_not_trigger_when_the_net_leaves_no_negative_stage() {
+    let d = dex();
+    let wh = "Snorlax||whiteherb|Own Tempo|swordsdance,bodyslam,splash|Adamant|252,252,4,,,|N||||";
+    let foe = "Alakazam|||Own Tempo|charm,splash|Timid|4,,,,,252|N||||";
+    let seed = "11,29,37,53";
+    let mut bo = Battle::start_with_switchins(&opts_cg(wh, foe, seed), &d).expect("start");
+    let o = bo.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // p1 SD +2, p2 splash
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)), // p1 splash, p2 Charm −2 → net 0
+        ],
+        &d,
+    );
+    // dec0: SD +2 (a self-RAISE — no negative → no trigger), item RETAINED.
+    assert_eq!(o.decisions[0].active[0].boosts[0], 2, "WH3: Swords Dance +2 Atk");
+    assert!(o.decisions[0].active[0].item_held, "WH3: a self-RAISE does NOT trigger White Herb (retained)");
+    // dec1: Charm −2 → net 0 (NO negative stage) → NO trigger, item STILL RETAINED.
+    assert_eq!(o.decisions[1].active[0].boosts[0], 0, "WH3: +2 then −2 = net 0");
+    assert!(
+        o.decisions[1].active[0].item_held,
+        "WH3: net 0 leaves NO negative stage → White Herb must NOT trigger (item retained)"
+    );
+}
+
+/// WH4 WHITE HERB LEAD-Intimidate switch-in restore (`gen3_white_herb_v1`, onAnySwitchIn) — a
+/// White Herb Snorlax whose Atk was dropped −1 by the opposing lead's Intimidate restores it to 0
+/// + consumes the item DURING CONSTRUCTION (`start_with_switchins`), so dec0 already reads Atk 0 +
+/// item gone. WRONG (a model missing the construction restore): dec0 shows Atk −1 + item retained.
+/// Ground truth `harness/probe_batch89_whiteherb_regression_rng.js`.
+#[test]
+fn white_herb_restores_a_lead_intimidate_drop_during_construction() {
+    let d = dex();
+    let mence = "Salamence|||Intimidate|earthquake,splash|Adamant|4,252,,,,252|N||||";
+    let wh = "Snorlax||whiteherb|Own Tempo|splash|Careful|252,,252,,4,|N||||";
+    let seed = "11,29,37,53";
+    let mut bo = Battle::start_with_switchins(&opts_cg(mence, wh, seed), &d).expect("start");
+    // The construction restore already fired: the WH holder (p2) reads Atk 0 + no item.
+    let st = bo.state().unwrap();
+    let p2 = &st.sides[1].pokemon[st.sides[1].active];
+    assert_eq!(p2.boosts[0], 0, "WH4: the lead Intimidate −1 Atk was RESTORED to 0 (construction)");
+    assert!(pokesim::dex::to_id(&p2.item).is_empty(), "WH4: White Herb was CONSUMED (construction)");
+    let o = bo.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert_eq!(o.decisions[0].active[1].boosts[0], 0, "WH4: dec0 p2 Atk stays 0 (restored)");
+    assert!(!o.decisions[0].active[1].item_held, "WH4: dec0 p2 no longer holds White Herb");
+    assert_eq!(
+        seed_str(&o.decisions[0].seed_after),
+        "6904,16547,7839,4217",
+        "WH4: the construction restore is DRAW-FREE — dec0 post-turn seed"
+    );
+}
+
+/// WH5 WHITE HERB MID-BATTLE Intimidate switch-in restore (`gen3_white_herb_v1`, onAnySwitchIn) —
+/// p1 switches to a Salamence whose Intimidate drops the White Herb Snorlax's Atk −1 → restored to
+/// 0 + consumed via `run_switch`. WRONG (a model missing the run_switch check): p2 shows Atk −1 +
+/// item retained after the switch. Ground truth `harness/probe_batch89_whiteherb_regression_rng.js`.
+#[test]
+fn white_herb_restores_a_mid_battle_intimidate_drop_via_run_switch() {
+    let d = dex();
+    let p1 = "Snorlax|||Own Tempo|splash|Adamant|252,,252,,4,|N||||\
+              ]Salamence|||Intimidate|earthquake,splash|Adamant|4,252,,,,252|N||||";
+    let wh = "Snorlax||whiteherb|Own Tempo|splash|Careful|252,,252,,4,|N||||";
+    let seed = "11,29,37,53";
+    let mut bo = Battle::start_with_switchins(&opts_cg(p1, wh, seed), &d).expect("start");
+    let o = bo.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Switch(1), Choice::Move(0))], // p1 -> Salamence (Intimidate), p2 splash
+        &d,
+    );
+    assert_eq!(o.decisions[0].active[1].boosts[0], 0, "WH5: the mid-battle Intimidate −1 Atk was RESTORED to 0");
+    assert!(!o.decisions[0].active[1].item_held, "WH5: White Herb was CONSUMED (run_switch path)");
+    assert_eq!(
+        seed_str(&o.decisions[0].seed_after),
+        "5913,6493,46579,27262",
+        "WH5: the run_switch restore is DRAW-FREE — dec0 post-turn seed"
+    );
+}
+
+/// WG1 WONDER GUARD neutral block (`gen3_wonder_guard_v1`) — a NEUTRAL damaging move (Water Gun,
+/// Water 1× vs Bug/Ghost) into a Wonder Guard Shedinja is BLOCKED (`runEffectiveness <= 0`): Shedinja
+/// stays 1/1 and the block draws ONLY its accuracy roll (`-immune [from] ability: Wonder Guard`). A
+/// COMPOUND-EYES (no-WG) Shedinja on the SAME board HITS + KOs (a DIFFERENT seed — the hit's
+/// crit+damage draws). WRONG (a model without the gate): Water Gun connects → the WG Shedinja dies
+/// (HP 0) at a control-matching seed. Ground truth `harness/probe_batch89_wonderguard_regression_rng.js`.
+#[test]
+fn wonder_guard_blocks_a_neutral_move_drawing_only_accuracy() {
+    let d = dex();
+    let chari = "Charizard|||Blaze|watergun,magicalleaf,ember,bodyslam|Serious|,,,,,|N||||";
+    let shed_wg = "Shedinja|||Wonder Guard|splash|Serious|,,,,,|N||||";
+    let shed_no = "Shedinja|||Compound Eyes|splash|Serious|,,,,,|N||||";
+    let seed = "13,29,41,53";
+
+    // Wonder Guard: Water Gun (move 1 = idx 0) is BLOCKED — Shedinja survives at 1 HP, draws only acc.
+    let mut bw = Battle::start_with_switchins(&opts_cg(chari, shed_wg, seed), &d).expect("start");
+    let ow = bw.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert_eq!(ow.decisions[0].active[1].hp, 1, "WG1: Wonder Guard BLOCKS the neutral Water Gun (Shedinja stays 1/1)");
+    assert!(!ow.decisions[0].active[1].fainted, "WG1: the blocked-neutral Shedinja survives");
+    assert_eq!(
+        seed_str(&ow.decisions[0].seed_after),
+        "37625,6431,63580,16031",
+        "WG1: the block draws ONLY the accuracy roll (no crit/damage/secondary)"
+    );
+
+    // Control (no WG): Water Gun HITS + KOs the 1-HP Shedinja → P1 wins, a DIFFERENT seed.
+    let mut bc = Battle::start_with_switchins(&opts_cg(chari, shed_no, seed), &d).expect("start");
+    let oc = bc.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert!(oc.decisions[0].active[1].fainted, "WG1: without Wonder Guard the neutral Water Gun KOs the 1-HP Shedinja");
+    assert_eq!(oc.winner, Some(0), "WG1: the no-WG Shedinja fainting → P1 wins");
+    assert_eq!(
+        seed_str(&oc.decisions[0].seed_after),
+        "54124,50226,9319,27262",
+        "WG1: the hitting control's seed DIFFERS from the block (it drew crit+damage)"
+    );
+}
+
+/// WG2 WONDER GUARD resisted NEVER-MISS block (`gen3_wonder_guard_v1`) — a RESISTED never-miss move
+/// (Magical Leaf, Grass 0.5× vs Bug/Ghost, `accuracy: true`) into a Wonder Guard Shedinja is BLOCKED
+/// drawing NOTHING (no accuracy roll): Shedinja stays 1/1 and the turn draws only the endTurn Quick
+/// Claw. A no-WG control HITS + KOs. WRONG (a model without the gate): Magical Leaf connects → the WG
+/// Shedinja dies + the seed picks up crit+damage draws. Ground truth
+/// `harness/probe_batch89_wonderguard_regression_rng.js`.
+#[test]
+fn wonder_guard_blocks_a_resisted_never_miss_move_drawing_nothing() {
+    let d = dex();
+    let chari = "Charizard|||Blaze|watergun,magicalleaf,ember,bodyslam|Serious|,,,,,|N||||";
+    let shed_wg = "Shedinja|||Wonder Guard|splash|Serious|,,,,,|N||||";
+    let shed_no = "Shedinja|||Compound Eyes|splash|Serious|,,,,,|N||||";
+    let seed = "13,29,41,53";
+
+    // Wonder Guard: Magical Leaf (move 2 = idx 1) BLOCKED — Shedinja survives, the block draws NOTHING.
+    let mut bw = Battle::start_with_switchins(&opts_cg(chari, shed_wg, seed), &d).expect("start");
+    let ow = bw.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0))],
+        &d,
+    );
+    assert_eq!(ow.decisions[0].active[1].hp, 1, "WG2: Wonder Guard BLOCKS the resisted never-miss Magical Leaf");
+    assert!(!ow.decisions[0].active[1].fainted, "WG2: the blocked-resisted Shedinja survives");
+    assert_eq!(
+        seed_str(&ow.decisions[0].seed_after),
+        "56718,47525,24291,4268",
+        "WG2: a NEVER-MISS blocked move draws NOTHING (only the endTurn Quick Claw)"
+    );
+
+    // Control (no WG): Magical Leaf HITS + KOs.
+    let mut bc = Battle::start_with_switchins(&opts_cg(chari, shed_no, seed), &d).expect("start");
+    let oc = bc.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0))],
+        &d,
+    );
+    assert!(oc.decisions[0].active[1].fainted, "WG2: without Wonder Guard the never-miss Magical Leaf KOs Shedinja");
+    assert_eq!(oc.winner, Some(0), "WG2: the no-WG Shedinja fainting → P1 wins");
+}
+
+/// WG3 WONDER GUARD leech-residual bypass KO (`gen3_wonder_guard_v1`) — Leech Seed is a STATUS move
+/// so it BYPASSES Wonder Guard and plants on the 1-HP Shedinja; the end-of-turn Leech Seed RESIDUAL
+/// (a residual is NOT a MOVE hook → also bypasses WG; `this.damage(maxhp/8)` clamps to min 1) drains
+/// Shedinja to 0 → it FAINTS on the cast turn → P1 wins. WRONG (the pre-fix `maxhp/8` early-return on
+/// a sub-8-maxhp mon): the drain is 0 → Shedinja survives → the battle does not end (fainted false).
+/// Ground truth `harness/probe_batch89_wonderguard_regression_rng.js`.
+#[test]
+fn wonder_guard_leech_seed_residual_kos_the_one_hp_shedinja() {
+    let d = dex();
+    let venu = "Venusaur|||Overgrow|leechseed,ember|Modest|252,,,252,,|N||||";
+    let shed_wg = "Shedinja|||Wonder Guard|splash|Serious|,,,,,|N||||";
+    let seed = "13,29,41,53";
+    let mut b = Battle::start_with_switchins(&opts_cg(venu, shed_wg, seed), &d).expect("start");
+    let o = b.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], // Leech Seed (bypass) + the residual KO
+        &d,
+    );
+    assert_eq!(o.decisions.len(), 1, "WG3: the leech residual KOs Shedinja on the cast turn → the battle ends");
+    assert!(o.decisions[0].active[1].fainted, "WG3: Shedinja FAINTED to the Leech Seed residual (a residual bypasses WG)");
+    assert_eq!(o.decisions[0].active[1].hp, 0, "WG3: Shedinja is at 0 HP");
+    assert_eq!(o.winner, Some(0), "WG3: mono Shedinja fainting to the residual → P1 wins");
+    assert_eq!(
+        seed_str(&o.decisions[0].seed_after),
+        "56718,47525,24291,4268",
+        "WG3: the leech move accuracy is the only draw (the KO defers the Quick Claw)"
+    );
+}
+
+/// WG4 WONDER GUARD status bypass + SE connect (`gen3_wonder_guard_v1`) — Thunder Wave is a STATUS
+/// move so it BYPASSES Wonder Guard and PARALYZES Shedinja (dec0 status → par); then Shadow Ball
+/// (Ghost 2× vs Ghost — STRICTLY super-effective) CONNECTS and KOs it (WG lets an SE move through).
+/// Ground truth `harness/probe_batch89_wonderguard_regression_rng.js`.
+#[test]
+fn wonder_guard_status_move_bypasses_then_super_effective_connects() {
+    let d = dex();
+    let gengar = "Gengar|||Levitate|thunderwave,shadowball|Timid|,,,252,,252|N||||";
+    let shed_wg = "Shedinja|||Wonder Guard|splash|Serious|,,,,,|N||||";
+    let seed = "13,29,41,53";
+    let mut b = Battle::start_with_switchins(&opts_cg(gengar, shed_wg, seed), &d).expect("start");
+    let o = b.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Thunder Wave → par (status bypass)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Shadow Ball SE → KO
+        ],
+        &d,
+    );
+    assert_eq!(
+        o.decisions[0].active[1].status,
+        Some(Status::Paralysis),
+        "WG4: Thunder Wave (a Status move) BYPASSES Wonder Guard and paralyzes Shedinja"
+    );
+    assert!(!o.decisions[0].active[1].fainted, "WG4: Shedinja survives the status-move turn (WG doesn't block a KO — TWave deals 0)");
+    assert!(o.decisions[1].active[1].fainted, "WG4: the super-effective Shadow Ball CONNECTS and KOs Shedinja");
+    assert_eq!(o.winner, Some(0), "WG4: Shedinja fainting to the SE move → P1 wins");
+    assert_eq!(
+        seed_str(&o.decisions[1].seed_after),
+        "63086,37694,32206,36914",
+        "WG4: the SE-connect turn's post-decision seed"
+    );
+}
+
 /// B2 WEATHER_SPEED: a slow Chlorophyll Bellossom (spe 136) FLIPS the first mover under sun (its
 /// ×2 → 272 > Groudon's 216). WRONG (a model that ignores the ×2): Groudon (216) moves first, and
 /// the tie-shuffle / action-order draws desync the seed. Groudon's own Drought sets the sun.
@@ -11709,5 +12235,312 @@ fn intimidate_entrant_does_not_drop_a_forced_replacement_foe() {
         "the forced-replacement Snorlax's Atk stays 0 — the deferred switch-in Intimidate must \
          NOT drop a foe that REPLACED its intended target (reverting the switchin_foe_uid guard \
          in intimidate_on_start drops it to -1)"
+    );
+}
+
+/// Y1 YAWN — the resolve draws the sleep `random(2,6)` at the RIGHT turn (`gen3_yawn_v1`, the KEY
+/// draw-model pin). Yawn's CAST is DRAW-FREE (the volatile add draws nothing), and the sleep
+/// `random(2,6)` fires at the RESOLVE — the end of the turn AFTER cast, via the residual `Yawn`
+/// handler's `onEnd` → `trySetStatus('slp')`. So: the CAST turn's post-turn seed is IDENTICAL to a
+/// Splash control (draw-free), and the RESOLVE turn's seed carries the extra `random(2,6)` (differs
+/// from the Splash control). WRONG (the draw at cast, or absent, or the wrong turn): the resolve
+/// seed diverges. Ground truth `harness/probe_batch89_yawn_regression_rng.js`.
+#[test]
+fn yawn_resolve_draws_the_sleep_random_2_6_at_the_next_turn_end() {
+    let d = dex();
+    let lax = "Snorlax|||Immunity|yawn,splash,earthquake,thunderwave|Adamant|4,252,,,252,|N||||";
+    let bliss = "Blissey|||NaturalCure|splash|Careful|252,,,252,,|N||||";
+    let seed = "13,27,41,55";
+
+    // Yawn (move 1 = idx 0) at dec0 (cast), then Splash (move 2 = idx 1) at dec1 (the RESOLVE).
+    let mut by = Battle::start_with_switchins(&opts_cg(lax, bliss, seed), &d).expect("start");
+    let oy = by.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // dec0: Yawn cast (DRAW-FREE)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // dec1: Splash — the yawn RESOLVES
+        ],
+        &d,
+    );
+    // dec0: the cast is draw-free — Blissey is NOT yet asleep.
+    assert!(oy.decisions[0].active[1].status.is_none(), "Y1: the Yawn cast does NOT sleep the foe");
+    // dec1: the yawn RESOLVED — Blissey is asleep with the random(2,6) counter (3 at this seed).
+    assert_eq!(
+        oy.decisions[1].active[1].status,
+        Some(Status::Sleep(3)),
+        "Y1: the resolve sleeps the foe with the random(2,6) counter (3)"
+    );
+    assert_eq!(
+        seed_str(&oy.decisions[0].seed_after),
+        "49200,48550,14066,9078",
+        "Y1: the CAST turn is DRAW-FREE — exact post-turn seed"
+    );
+    assert_eq!(
+        seed_str(&oy.decisions[1].seed_after),
+        "25367,53124,63953,41400",
+        "Y1: the RESOLVE turn draws the sleep random(2,6) — exact post-turn seed"
+    );
+
+    // Splash control — the CAST-turn seed is IDENTICAL (draw-free), the RESOLVE-turn seed DIFFERS
+    // (no random(2,6) — the discriminator that the draw is at the RESOLVE, not the cast).
+    let mut bc = Battle::start_with_switchins(&opts_cg(lax, bliss, seed), &d).expect("start");
+    let oc = bc.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // dec0: Splash
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // dec1: Splash (no resolve)
+        ],
+        &d,
+    );
+    assert_eq!(
+        seed_str(&oc.decisions[0].seed_after),
+        seed_str(&oy.decisions[0].seed_after),
+        "Y1: the Splash control's cast-turn seed == Yawn's (the cast is draw-free)"
+    );
+    assert_ne!(
+        seed_str(&oc.decisions[1].seed_after),
+        seed_str(&oy.decisions[1].seed_after),
+        "Y1: the Splash control's dec1 seed DIFFERS from Yawn's resolve (the extra random(2,6))"
+    );
+}
+
+/// Y2 YAWN MIRROR — the `yawn` residual DURATION handler registers at (order 10, subOrder 19) and so
+/// participates in the residual `speed_sort` tie-shuffle (`gen3_yawn_v1`). Two Snorlax Yawn each
+/// OTHER at EQUAL speed → BOTH carry a yawn handler at (10, 19, equal speed) → they TIE → ONE
+/// Fisher-Yates `random(0,2)` per residual (both the cast-turn 2→1 tick AND the resolve-turn 1→0
+/// tick). A single-yawn control (only one mon carries the volatile) has NO tie → NO shuffle. WRONG
+/// (a yawn handler NOT registered in the residual sort): the mirror loses the tie draws → the seed
+/// matches the single-yawn control. Ground truth `harness/probe_batch89_yawn_regression_rng.js`.
+#[test]
+fn yawn_mirror_residual_handler_ties_and_draws_the_shuffle() {
+    let d = dex();
+    let lax = "Snorlax|||Immunity|yawn,splash|Adamant|4,252,,,252,|N||||";
+    let seed = "17,33,49,61";
+
+    // BOTH cast Yawn (dec0), BOTH Splash (dec1 → both resolve). The tie-shuffle draws at BOTH ticks.
+    let mut bm = Battle::start_with_switchins(&opts_cg(lax, lax, seed), &d).expect("start");
+    let om = bm.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // dec0: BOTH Yawn (draw-free casts)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // dec1: BOTH Splash — both resolve
+        ],
+        &d,
+    );
+    // dec1: BOTH slept (each its own random(2,6) counter).
+    assert!(matches!(om.decisions[1].active[0].status, Some(Status::Sleep(_))), "Y2: p1 slept");
+    assert!(matches!(om.decisions[1].active[1].status, Some(Status::Sleep(_))), "Y2: p2 slept");
+    assert_eq!(
+        seed_str(&om.decisions[0].seed_after),
+        "26004,37838,20426,60293",
+        "Y2: the cast-turn residual (both yawn 2→1) draws the (10,19) tie-shuffle — exact seed"
+    );
+    assert_eq!(
+        seed_str(&om.decisions[1].seed_after),
+        "33154,17033,24911,25719",
+        "Y2: the resolve-turn residual (both yawn 1→0) draws the tie-shuffle + 2×random(2,6)"
+    );
+
+    // Single-yawn control — only p2's mon carries a yawn volatile (p1 Splashes at dec0) → NO
+    // tie → the cast-turn seed DIFFERS from the mirror (the mirror's extra tie-shuffle).
+    let mut bs = Battle::start_with_switchins(&opts_cg(lax, lax, seed), &d).expect("start");
+    let os = bs.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // dec0: p1 Splash / p2 Yawn
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // dec1: BOTH Splash — one resolve
+        ],
+        &d,
+    );
+    assert_ne!(
+        seed_str(&os.decisions[0].seed_after),
+        seed_str(&om.decisions[0].seed_after),
+        "Y2: the single-yawn control's dec0 seed DIFFERS from the mirror (no residual tie-shuffle)"
+    );
+}
+
+/// Y3 YAWN × gen3ou SLEEP CLAUSE at RESOLVE — the resolve routes through the EXISTING
+/// `try_set_status('slp')` path, so the gen3ou **Sleep Clause Mod** applies at the resolve
+/// (`gen3_yawn_v1`). Smeargle Spores Blissey-A (asleep, foe-inflicted), p2 switches A→B (A benched,
+/// still asleep — Serene Grace, no cure), p1 Yawns B; B's yawn RESOLVES but p2's side already has a
+/// living foe-slept mon (benched A) → the clause BLOCKS the sleep at the SetStatus event: it DRAWS
+/// the 2-clause shuffle (+ the `|-message|Sleep Clause Mod activated.`) but NO `random(2,6)` (B stays
+/// AWAKE). A no-prior-sleeper control resolves normally (the shuffle + random(2,6) → B sleeps), so
+/// its resolve seed DIFFERS (the extra random(2,6)). WRONG (yawn NOT routed through try_set_status):
+/// B would sleep + draw a stray random(2,6). Ground truth
+/// `harness/probe_batch89_yawn_regression_rng.js`.
+#[test]
+fn yawn_resolve_is_blocked_by_the_sleep_clause_in_gen3ou() {
+    let d = dex();
+    let smeargle = "Smeargle|||Own Tempo|spore,yawn,splash,earthquake|Jolly|4,,,,,252|N||||";
+    let bliss_a = "A|Blissey||Serene Grace|splash|Careful|252,,,252,,|N||||";
+    let bliss_b = "B|Blissey||Serene Grace|splash|Careful|252,,,252,,|N||||";
+    let p2 = format!("{bliss_a}]{bliss_b}");
+    let opts = BattleOptions {
+        format_id: "gen3ou".to_string(),
+        seed: Some("23,37,51,63".to_string()),
+        p1: PlayerOptions { name: "P1".to_string(), team: PackedTeam(smeargle.to_string()) },
+        p2: PlayerOptions { name: "P2".to_string(), team: PackedTeam(p2.clone()) },
+    };
+    let mut bb = Battle::start_with_switchins(&opts, &d).expect("start");
+    assert!(bb.state().unwrap().sleep_clause, "gen3ou carries the Sleep Clause Mod flag");
+    let ob = bb.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // dec0: Spore -> Blissey-A slp
+            ScriptDecision::both(Choice::Move(1), Choice::Switch(1)), // dec1: p2 switch A->B; p1 Yawn B
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)), // dec2: Splash — B's yawn RESOLVES -> CLAUSE
+        ],
+        &d,
+    );
+    // dec2: the clause BLOCKED the resolve — Blissey-B stays AWAKE (no slp).
+    assert!(
+        ob.decisions[2].active[1].status.is_none(),
+        "Y3: the Sleep Clause blocks the Yawn resolve — Blissey-B stays awake"
+    );
+    assert_eq!(
+        seed_str(&ob.decisions[2].seed_after),
+        "51902,63332,1987,30260",
+        "Y3: the clause-blocked resolve draws the SetStatus shuffle but NO random(2,6) — exact seed"
+    );
+
+    // Control (no prior sleeper — Splash at dec0 instead of Spore) — B's yawn resolves NORMALLY
+    // (the shuffle + random(2,6) → B sleeps), so the resolve seed DIFFERS (the extra random(2,6)).
+    let opts_c = BattleOptions {
+        format_id: "gen3ou".to_string(),
+        seed: Some("23,37,51,63".to_string()),
+        p1: PlayerOptions { name: "P1".to_string(), team: PackedTeam(smeargle.to_string()) },
+        p2: PlayerOptions { name: "P2".to_string(), team: PackedTeam(p2) },
+    };
+    let mut bc = Battle::start_with_switchins(&opts_c, &d).expect("start");
+    let oc = bc.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)), // dec0: Splash (no Spore)
+            ScriptDecision::both(Choice::Move(1), Choice::Switch(1)), // dec1: p2 switch A->B; p1 Yawn B
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)), // dec2: Splash — B's yawn RESOLVES normally
+        ],
+        &d,
+    );
+    assert!(
+        matches!(oc.decisions[2].active[1].status, Some(Status::Sleep(_))),
+        "Y3: the control (no prior sleeper) sleeps Blissey-B normally"
+    );
+    assert_ne!(
+        seed_str(&oc.decisions[2].seed_after),
+        seed_str(&ob.decisions[2].seed_after),
+        "Y3: the control's resolve seed DIFFERS from the clause-blocked one (the extra random(2,6))"
+    );
+}
+
+/// TR1/TR2/TR3 TRICK — the SWAP is DRAW-FREE past accuracy (`gen3_trick_v1`). Trick draws ONE
+/// accuracy roll then a draw-free item swap, so a genuine two-item SWAP, a Sticky-Hold `-immune`
+/// (onTryImmunity), and a both-itemless FAIL (onHit `return false`) ALL draw the SAME count
+/// (accuracy + the endTurn Quick Claw) → their post-turn seeds COINCIDE at the same init seed. This
+/// pins BOTH the swap STATE (which item each side holds) AND the draw-parity (the three seeds are
+/// equal — a spurious/missing swap draw would break it). WRONG (a swap that draws, or a Sticky-Hold /
+/// fail that SKIPS the accuracy roll): the seeds diverge. Ground truth
+/// `harness/probe_batch89_trick_regression_rng.js`.
+#[test]
+fn trick_swap_immune_and_fail_all_draw_only_accuracy_and_quick_claw() {
+    let d = dex();
+    let zam = |item: &str| format!("Alakazam||{item}|Synchronize|trick,splash|Timid|4,,,252,,252|N||||");
+
+    // TR1: a full two-item swap (Silk Scarf <-> Leftovers).
+    let foe1 = "Snorlax||leftovers|Immunity|splash|Careful|252,,252,,,|N||||";
+    let mut b1 = Battle::start_with_switchins(&opts_cg(&zam("silkscarf"), foe1, "23,44,61,82"), &d).expect("start");
+    let o1 = b1.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    let s1 = b1.state().unwrap();
+    assert_eq!(pokesim::dex::to_id(&s1.sides[0].pokemon[0].item), "leftovers", "TR1: the user GAINS the foe's Leftovers");
+    assert_eq!(pokesim::dex::to_id(&s1.sides[1].pokemon[0].item), "silkscarf", "TR1: the foe GAINS the user's Silk Scarf");
+    assert_eq!(
+        seed_str(&o1.decisions[0].seed_after),
+        "28749,32144,46574,46132",
+        "TR1: the swap is draw-free past accuracy — exact post-turn seed (accuracy + Quick Claw only)"
+    );
+
+    // TR2: a Sticky-Hold target → PLAIN `-immune`, NO swap. SAME draw count as TR1.
+    let foe2 = "Muk||leftovers|StickyHold|splash|Careful|252,,252,,,|N||||";
+    let mut b2 = Battle::start_with_switchins(&opts_cg(&zam("silkscarf"), foe2, "23,44,61,82"), &d).expect("start");
+    let o2 = b2.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    let s2 = b2.state().unwrap();
+    assert_eq!(pokesim::dex::to_id(&s2.sides[0].pokemon[0].item), "silkscarf", "TR2: Sticky Hold blocks the swap — the user keeps its item");
+    assert_eq!(pokesim::dex::to_id(&s2.sides[1].pokemon[0].item), "leftovers", "TR2: the Sticky-Hold target keeps its item");
+    assert_eq!(
+        seed_str(&o2.decisions[0].seed_after),
+        seed_str(&o1.decisions[0].seed_after),
+        "TR2: a Sticky-Hold `-immune` Trick draws the SAME as a swap (accuracy + Quick Claw, no swap draw)"
+    );
+
+    // TR3: both sides itemless → FAIL (`[still]`+`-fail`), NO swap. SAME draw count.
+    let foe3 = "Snorlax|||Immunity|splash|Careful|252,,252,,,|N||||";
+    let mut b3 = Battle::start_with_switchins(&opts_cg(&zam(""), foe3, "23,44,61,82"), &d).expect("start");
+    let o3 = b3.state_mut().unwrap().run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    let s3 = b3.state().unwrap();
+    assert!(s3.sides[0].pokemon[0].item.is_empty() && s3.sides[1].pokemon[0].item.is_empty(), "TR3: both stay itemless (the fail does not swap)");
+    assert_eq!(
+        seed_str(&o3.decisions[0].seed_after),
+        seed_str(&o1.decisions[0].seed_after),
+        "TR3: a both-itemless FAIL draws the SAME as a swap (accuracy + Quick Claw)"
+    );
+}
+
+/// TR4 TRICK CHOICE-LOCK RELEASE — a Choice-Band mon that Tricks its Band AWAY is UNLOCKED
+/// (`gen3_trick_v1`): the lock is enforced by the item's `choiceband.onDisableMove`, so with the Band
+/// gone the mon may pick any move again. This scripts a CB Alakazam that Tricks (locking to the Trick
+/// slot, then swapping the Band away) then uses a DIFFERENT slot (Psychic) the NEXT turn. If the port
+/// FAILED to release the user's `choice_locked_move`, `run_full_battle` would REJECT the second
+/// decision (a locked-out slot) and skip it → only ONE decision record. WRONG (kept lock):
+/// `decisions.len() == 1`. Ground truth `harness/probe_batch89_trick_regression_rng.js`.
+#[test]
+fn trick_away_a_choice_band_releases_the_users_choice_lock() {
+    let d = dex();
+    let zam = "Alakazam||choiceband|Synchronize|trick,psychic,splash|Timid|4,,,252,,252|N||||";
+    let foe = "Snorlax||leftovers|Immunity|splash|Careful|252,,252,,,|N||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(zam, foe, "23,44,61,82"), &d).expect("start");
+    let o = b.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // dec0: Trick (CB away, lock then RELEASED)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // dec1: Psychic — a DIFFERENT slot
+        ],
+        &d,
+    );
+    // BOTH decisions ran — the port accepted the follow-up Psychic (the lock was released). A kept
+    // lock rejects dec1 draw-free → only ONE decision record.
+    assert_eq!(
+        o.decisions.len(),
+        2,
+        "TR4: the CB user is UNLOCKED after Tricking its Band away (both decisions ran); a kept lock would reject the 2nd move"
+    );
+    let s = b.state().unwrap();
+    assert_eq!(pokesim::dex::to_id(&s.sides[0].pokemon[0].item), "leftovers", "TR4: the user swapped its Band for Leftovers");
+    assert_eq!(pokesim::dex::to_id(&s.sides[1].pokemon[0].item), "choiceband", "TR4: the foe received the Choice Band");
+    assert_eq!(
+        seed_str(&o.decisions[1].seed_after),
+        "59422,2393,22649,24171",
+        "TR4: dec1 (the released Psychic) runs — exact post-turn seed"
+    );
+}
+
+/// TR5 TRICK INTO A SUBSTITUTE — a Substitute blocks Trick (no `bypasssub`, `gen3_trick_v1`): the
+/// accuracy is STILL drawn, then the move FAILS (`[still]`+`-fail`) with NO swap. This subs the foe
+/// (dec0) then Tricks into it (dec1); the items stay UNCHANGED and the fail is draw-free past
+/// accuracy (dec1 seed literal). WRONG (a swap through the sub, or a skipped accuracy roll): the
+/// items diverge / the seed diverges. Ground truth `harness/probe_batch89_trick_regression_rng.js`.
+#[test]
+fn trick_into_a_substitute_fails_and_does_not_swap() {
+    let d = dex();
+    let zam = "Alakazam||silkscarf|Synchronize|trick,splash|Timid|4,,,252,,252|N||||";
+    let foe = "Snorlax||leftovers|Immunity|substitute,splash|Careful|252,,252,,,|N||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(zam, foe, "23,44,61,82"), &d).expect("start");
+    let o = b.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // dec0: p1 Splash / p2 Substitute
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // dec1: p1 Trick into the sub (FAIL) / p2 Splash
+        ],
+        &d,
+    );
+    let s = b.state().unwrap();
+    assert!(s.sides[1].pokemon[0].substitute.is_some(), "TR5: the foe's Substitute is up");
+    assert_eq!(pokesim::dex::to_id(&s.sides[0].pokemon[0].item), "silkscarf", "TR5: the user keeps its item (sub blocked the swap)");
+    assert_eq!(pokesim::dex::to_id(&s.sides[1].pokemon[0].item), "leftovers", "TR5: the foe keeps its item behind the sub");
+    assert_eq!(
+        seed_str(&o.decisions[1].seed_after),
+        "31583,64901,25391,35655",
+        "TR5: the sub-blocked Trick draws its accuracy then fails draw-free — exact post-turn seed"
     );
 }

@@ -1,0 +1,1067 @@
+# liquidooze_golden.txt — the gen3_liquid_ooze_v1 heal-reversal golden.
+# Per-decision-boundary STATE+HP+STATUS+SEED differential to GAME-END: Liquid Ooze
+# turns a drain / Leech Seed heal into DAMAGE on the HEALER (the healer's HP goes DOWN,
+# emitted |-damage|…|[from] ability: Liquid Ooze|[of] <ooze>). DRAW-FREE (the per-decision
+# seed matches the drain move / leech residual bit-for-bit). `oozed`=a Liquid-Ooze
+# reversal -damage fired this decision (coverage marker).
+# SCEN  <id>
+# TEAM  <id>  <p1|p2>  <packed team string>
+# INIT  <id>  <seed>  <m,n,o,p>
+# DEC   <id> <seed> <req> <fP1> <fP2> <cP1> <cP2> <seedAfter> \
+#        p1(species hp max fnt status left) p2(...) first oozed
+# END   <id>  <seed>  <ended:0|1>  <winner:p1|p2|tie|none>
+SCEN	lo_drain_reversal
+TEAM	lo_drain_reversal	p1	Venusaur|||Overgrow|gigadrain,sludgebomb|Modest|252,,4,252,,|N||||
+TEAM	lo_drain_reversal	p2	Tentacruel|||LiquidOoze|barrier,splash|Bold|252,,252,,,|N||||
+INIT	lo_drain_reversal	18886,40016,56773,44286	37440,62841,37566,36639
+DEC	lo_drain_reversal	37440,62841,37566,36639	move	0	0	m0	m1	23951,40031,22161,43698	Venusaur	319	364	0	-	1	Tentacruel	274	364	0	-	1	p2	1
+DEC	lo_drain_reversal	37440,62841,37566,36639	move	0	0	m0	m1	13352,27454,61192,21798	Venusaur	279	364	0	-	1	Tentacruel	193	364	0	-	1	p2	1
+DEC	lo_drain_reversal	37440,62841,37566,36639	move	0	0	m1	m1	63087,18473,6480,52293	Venusaur	279	364	0	-	1	Tentacruel	152	364	0	-	1	p2	0
+DEC	lo_drain_reversal	37440,62841,37566,36639	move	0	0	m1	m1	50703,47578,9343,60624	Venusaur	279	364	0	-	1	Tentacruel	112	364	0	-	1	p2	0
+DEC	lo_drain_reversal	37440,62841,37566,36639	move	0	0	m1	m1	38379,42030,55021,3895	Venusaur	279	364	0	-	1	Tentacruel	74	364	0	-	1	p2	0
+DEC	lo_drain_reversal	37440,62841,37566,36639	move	0	0	m1	m1	26597,44770,62904,42154	Venusaur	279	364	0	-	1	Tentacruel	33	364	0	-	1	p2	0
+DEC	lo_drain_reversal	37440,62841,37566,36639	move	0	0	m1	m1	42726,56006,2580,24478	Venusaur	279	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	37440,62841,37566,36639	1	p1
+INIT	lo_drain_reversal	44502,29809,54759,32522	37484,28725,7370,65083
+DEC	lo_drain_reversal	37484,28725,7370,65083	move	0	0	m0	m1	29826,52125,61137,21502	Venusaur	321	364	0	-	1	Tentacruel	277	364	0	-	1	p2	1
+DEC	lo_drain_reversal	37484,28725,7370,65083	move	0	0	m0	m1	49180,64715,49288,57778	Venusaur	279	364	0	-	1	Tentacruel	193	364	0	-	1	p2	1
+DEC	lo_drain_reversal	37484,28725,7370,65083	move	0	0	m1	m1	31859,47842,25894,4033	Venusaur	279	364	0	-	1	Tentacruel	152	364	0	-	1	p2	0
+DEC	lo_drain_reversal	37484,28725,7370,65083	move	0	0	m1	m1	23467,64613,38582,57852	Venusaur	279	364	0	-	1	Tentacruel	112	364	0	-	1	p2	0
+DEC	lo_drain_reversal	37484,28725,7370,65083	move	0	0	m1	m1	51185,37813,20140,2003	Venusaur	279	364	0	-	1	Tentacruel	71	364	0	-	1	p2	0
+DEC	lo_drain_reversal	37484,28725,7370,65083	move	0	0	m1	m1	24443,22768,2477,5494	Venusaur	279	364	0	-	1	Tentacruel	35	364	0	-	1	p2	0
+DEC	lo_drain_reversal	37484,28725,7370,65083	move	0	0	m1	m1	23631,24263,32728,15274	Venusaur	279	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	37484,28725,7370,65083	1	p1
+INIT	lo_drain_reversal	24753,6988,30199,26070	26968,55985,15254,17175
+DEC	lo_drain_reversal	26968,55985,15254,17175	move	0	0	m0	m1	38119,5845,38613,17930	Venusaur	323	364	0	-	1	Tentacruel	281	364	0	-	1	p2	1
+DEC	lo_drain_reversal	26968,55985,15254,17175	move	0	0	m0	m1	53091,3893,23496,43774	Venusaur	237	364	0	-	1	Tentacruel	109	364	0	-	1	p2	1
+DEC	lo_drain_reversal	26968,55985,15254,17175	move	0	0	m1	m1	53248,7235,51083,3837	Venusaur	237	364	0	-	1	Tentacruel	71	364	0	-	1	p2	0
+DEC	lo_drain_reversal	26968,55985,15254,17175	move	0	0	m1	m1	9567,45039,210,65000	Venusaur	237	364	0	-	1	Tentacruel	30	364	0	-	1	p2	0
+DEC	lo_drain_reversal	26968,55985,15254,17175	move	0	0	m1	m1	27248,4926,21073,53500	Venusaur	237	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	26968,55985,15254,17175	1	p1
+INIT	lo_drain_reversal	1673,30850,42104,60770	49924,28909,31522,63923
+DEC	lo_drain_reversal	49924,28909,31522,63923	move	0	0	m0	m1	53554,55725,50912,19670	Venusaur	326	364	0	-	1	Tentacruel	287	364	0	-	1	p2	1
+DEC	lo_drain_reversal	49924,28909,31522,63923	move	0	0	m0	m1	17471,65508,48981,48394	Venusaur	282	364	0	-	1	Tentacruel	199	364	0	-	1	p2	1
+DEC	lo_drain_reversal	49924,28909,31522,63923	move	0	0	m1	m1	11220,62185,54114,50681	Venusaur	282	364	0	-	1	Tentacruel	160	364	0	-	1	p2	0
+DEC	lo_drain_reversal	49924,28909,31522,63923	move	0	0	m1	m1	11176,58901,9566,60564	Venusaur	282	364	0	-	1	Tentacruel	120	364	0	-	1	p2	0
+DEC	lo_drain_reversal	49924,28909,31522,63923	move	0	0	m1	m1	4860,12408,18207,56907	Venusaur	282	364	0	-	1	Tentacruel	81	364	0	-	1	p2	0
+DEC	lo_drain_reversal	49924,28909,31522,63923	move	0	0	m1	m1	56317,31159,12812,1358	Venusaur	282	364	0	-	1	Tentacruel	42	364	0	-	1	p2	0
+DEC	lo_drain_reversal	49924,28909,31522,63923	move	0	0	m1	m1	57413,62426,24521,1933	Venusaur	282	364	0	-	1	Tentacruel	7	364	0	-	1	p2	0
+DEC	lo_drain_reversal	49924,28909,31522,63923	move	0	0	m1	m1	49378,16908,62321,4689	Venusaur	282	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	49924,28909,31522,63923	1	p1
+INIT	lo_drain_reversal	34449,55861,30365,25006	2928,12009,10094,32271
+DEC	lo_drain_reversal	2928,12009,10094,32271	move	0	0	m0	m1	45614,51913,52358,62562	Venusaur	322	364	0	-	1	Tentacruel	279	364	0	-	1	p2	1
+DEC	lo_drain_reversal	2928,12009,10094,32271	move	0	0	m0	m1	47472,65398,58227,58326	Venusaur	283	364	0	-	1	Tentacruel	200	364	0	-	1	p2	1
+DEC	lo_drain_reversal	2928,12009,10094,32271	move	0	0	m1	m1	28682,18095,5176,61621	Venusaur	283	364	0	-	1	Tentacruel	160	364	0	-	1	p2	0
+DEC	lo_drain_reversal	2928,12009,10094,32271	move	0	0	m1	m1	61335,4664,10365,6656	Venusaur	283	364	0	-	1	Tentacruel	124	364	0	-	1	p2	0
+DEC	lo_drain_reversal	2928,12009,10094,32271	move	0	0	m1	m1	40918,7439,11135,46119	Venusaur	283	364	0	-	1	Tentacruel	88	364	0	-	1	p2	0
+DEC	lo_drain_reversal	2928,12009,10094,32271	move	0	0	m1	m1	4797,47981,38996,56410	Venusaur	283	364	0	-	1	Tentacruel	49	364	0	-	1	p2	0
+DEC	lo_drain_reversal	2928,12009,10094,32271	move	0	0	m1	m1	27004,24789,55072,59273	Venusaur	283	364	0	-	1	Tentacruel	13	364	0	-	1	p2	0
+DEC	lo_drain_reversal	2928,12009,10094,32271	move	0	0	m1	m1	5494,37142,40435,19085	Venusaur	283	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	2928,12009,10094,32271	1	p1
+INIT	lo_drain_reversal	47314,16410,36405,52922	28316,53413,19578,60459
+DEC	lo_drain_reversal	28316,53413,19578,60459	move	0	0	m0	m1	40666,53281,32129,34990	Venusaur	322	364	0	-	1	Tentacruel	279	364	0	-	1	p2	1
+DEC	lo_drain_reversal	28316,53413,19578,60459	move	0	0	m0	m1	56210,16152,13262,43874	Venusaur	277	364	0	-	1	Tentacruel	188	364	0	-	1	p2	1
+DEC	lo_drain_reversal	28316,53413,19578,60459	move	0	0	m1	m1	19712,28886,988,2865	Venusaur	277	364	0	-	1	Tentacruel	149	364	0	-	1	p2	0
+DEC	lo_drain_reversal	28316,53413,19578,60459	move	0	0	m1	m1	39902,58665,14217,45612	Venusaur	277	364	0	-	1	Tentacruel	113	364	0	-	1	p2	0
+DEC	lo_drain_reversal	28316,53413,19578,60459	move	0	0	m1	m1	38450,56441,44980,3011	Venusaur	277	364	0	-	1	Tentacruel	76	364	0	-	1	p2	0
+DEC	lo_drain_reversal	28316,53413,19578,60459	move	0	0	m1	m1	35177,45569,63109,6182	Venusaur	277	364	0	-	1	Tentacruel	37	364	0	-	1	p2	0
+DEC	lo_drain_reversal	28316,53413,19578,60459	move	0	0	m1	m1	27233,36118,55060,62298	Venusaur	277	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	28316,53413,19578,60459	1	p1
+INIT	lo_drain_reversal	10422,62217,17702,134	55432,53793,46662,8199
+DEC	lo_drain_reversal	55432,53793,46662,8199	move	0	0	m0	m1	16562,41009,51695,5562	Venusaur	320	364	0	-	1	Tentacruel	276	364	0	-	1	p2	1
+DEC	lo_drain_reversal	55432,53793,46662,8199	move	0	0	m0	m1	3738,26412,15244,24494	Venusaur	275	364	0	-	1	Tentacruel	185	364	0	-	1	p2	1
+DEC	lo_drain_reversal	55432,53793,46662,8199	move	0	0	m1	m1	3982,2789,18156,20845	Venusaur	275	364	0	-	1	Tentacruel	148	364	0	-	1	p2	0
+DEC	lo_drain_reversal	55432,53793,46662,8199	move	0	0	m1	m1	4285,34768,3029,41240	Venusaur	275	364	0	-	1	Tentacruel	109	364	0	-	1	p2	0
+DEC	lo_drain_reversal	55432,53793,46662,8199	move	0	0	m1	m1	42098,43542,32508,16671	Venusaur	275	364	0	-	1	Tentacruel	71	364	0	-	1	p2	0
+DEC	lo_drain_reversal	55432,53793,46662,8199	move	0	0	m1	m1	60193,47699,13467,17586	Venusaur	275	364	0	-	1	Tentacruel	30	364	0	-	1	p2	0
+DEC	lo_drain_reversal	55432,53793,46662,8199	move	0	0	m1	m1	33444,11546,46396,20262	Venusaur	275	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	55432,53793,46662,8199	1	p1
+INIT	lo_drain_reversal	36156,55971,33265,33554	62772,28509,61650,46499
+DEC	lo_drain_reversal	62772,28509,61650,46499	move	0	0	m0	m1	13398,38562,10770,26502	Venusaur	326	364	0	-	1	Tentacruel	287	364	0	-	1	p2	1
+DEC	lo_drain_reversal	62772,28509,61650,46499	move	0	0	m0	m1	32856,54555,63803,3258	Venusaur	288	364	0	-	1	Tentacruel	210	364	0	-	1	p2	1
+DEC	lo_drain_reversal	62772,28509,61650,46499	move	0	0	m1	m1	22213,39801,28748,49001	Venusaur	288	364	0	-	1	Tentacruel	174	364	0	-	1	p2	0
+DEC	lo_drain_reversal	62772,28509,61650,46499	move	0	0	m1	m1	43883,3019,26603,37572	Venusaur	288	364	0	-	1	Tentacruel	139	364	0	-	1	p2	0
+DEC	lo_drain_reversal	62772,28509,61650,46499	move	0	0	m1	m1	31427,54505,5908,28731	Venusaur	288	364	0	-	1	Tentacruel	104	364	0	-	1	p2	0
+DEC	lo_drain_reversal	62772,28509,61650,46499	move	0	0	m1	m1	21573,50943,40593,44542	Venusaur	288	364	0	-	1	Tentacruel	64	364	0	-	1	p2	0
+DEC	lo_drain_reversal	62772,28509,61650,46499	move	0	0	m1	m1	7886,34841,18903,19965	Venusaur	288	364	0	-	1	Tentacruel	22	364	0	-	1	p2	0
+DEC	lo_drain_reversal	62772,28509,61650,46499	move	0	0	m1	m1	18259,44645,49453,20929	Venusaur	288	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	62772,28509,61650,46499	1	p1
+INIT	lo_drain_reversal	52630,17674,22985,41566	12448,42073,18462,2303
+DEC	lo_drain_reversal	12448,42073,18462,2303	move	0	0	m0	m1	655,27157,60288,2578	Venusaur	321	364	0	-	1	Tentacruel	278	364	0	-	1	p2	1
+DEC	lo_drain_reversal	12448,42073,18462,2303	move	0	0	m0	m1	52106,47492,25886,32390	Venusaur	281	364	0	-	1	Tentacruel	197	364	0	-	1	p2	1
+DEC	lo_drain_reversal	12448,42073,18462,2303	move	0	0	m1	m1	703,10861,2953,4389	Venusaur	281	364	0	-	1	Tentacruel	160	364	0	-	1	p2	0
+DEC	lo_drain_reversal	12448,42073,18462,2303	move	0	0	m1	m1	60662,58491,28653,62256	Venusaur	281	364	0	-	1	Tentacruel	124	364	0	-	1	p2	0
+DEC	lo_drain_reversal	12448,42073,18462,2303	move	0	0	m1	m1	61967,19784,24043,29975	Venusaur	281	364	0	-	1	Tentacruel	88	364	0	-	1	p2	0
+DEC	lo_drain_reversal	12448,42073,18462,2303	move	0	0	m1	m1	58035,45157,14924,24586	Venusaur	281	364	0	-	1	Tentacruel	47	364	0	-	1	p2	0
+DEC	lo_drain_reversal	12448,42073,18462,2303	move	0	0	m1	m1	57446,46398,64909,9465	Venusaur	281	364	0	-	1	Tentacruel	8	364	0	-	1	p2	0
+DEC	lo_drain_reversal	12448,42073,18462,2303	move	0	0	m1	m1	15528,37091,6388,4349	Venusaur	281	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	12448,42073,18462,2303	1	p1
+INIT	lo_drain_reversal	6920,47960,28287,27242	46796,11541,51242,13851
+DEC	lo_drain_reversal	46796,11541,51242,13851	move	0	0	m0	m1	17105,17817,58352,18782	Venusaur	319	364	0	-	1	Tentacruel	273	364	0	-	1	p2	1
+DEC	lo_drain_reversal	46796,11541,51242,13851	move	0	0	m0	m1	6922,27478,60130,16658	Venusaur	277	364	0	-	1	Tentacruel	188	364	0	-	1	p2	1
+DEC	lo_drain_reversal	46796,11541,51242,13851	move	0	0	m1	m1	20664,17195,37487,49825	Venusaur	277	364	0	-	1	Tentacruel	151	364	0	-	1	p2	0
+DEC	lo_drain_reversal	46796,11541,51242,13851	move	0	0	m1	m1	60429,60686,20792,61020	Venusaur	277	364	0	-	1	Tentacruel	111	364	0	-	1	p2	0
+DEC	lo_drain_reversal	46796,11541,51242,13851	move	0	0	m1	m1	56531,46867,3052,60339	Venusaur	277	364	0	-	1	Tentacruel	71	364	0	-	1	p2	0
+DEC	lo_drain_reversal	46796,11541,51242,13851	move	0	0	m1	m1	58139,12608,29099,9942	Venusaur	277	364	0	-	1	Tentacruel	32	364	0	-	1	p2	0
+DEC	lo_drain_reversal	46796,11541,51242,13851	move	0	0	m1	m1	508,60289,27318,63242	Venusaur	277	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	46796,11541,51242,13851	1	p1
+INIT	lo_drain_reversal	20613,57250,41819,42806	29624,34193,15606,6391
+DEC	lo_drain_reversal	29624,34193,15606,6391	move	0	0	m0	m1	55499,4127,18583,12650	Venusaur	326	364	0	-	1	Tentacruel	287	364	0	-	1	p2	1
+DEC	lo_drain_reversal	29624,34193,15606,6391	move	0	0	m0	m1	13841,4405,15217,41054	Venusaur	281	364	0	-	1	Tentacruel	196	364	0	-	1	p2	1
+DEC	lo_drain_reversal	29624,34193,15606,6391	move	0	0	m1	m1	9407,3096,56266,4061	Venusaur	281	364	0	-	1	Tentacruel	159	364	0	-	1	p2	0
+DEC	lo_drain_reversal	29624,34193,15606,6391	move	0	0	m1	m1	55322,14947,61306,28744	Venusaur	281	364	0	-	1	Tentacruel	120	364	0	-	1	p2	0
+DEC	lo_drain_reversal	29624,34193,15606,6391	move	0	0	m1	m1	50972,17364,22265,12303	Venusaur	281	364	0	-	1	Tentacruel	79	364	0	-	1	p2	0
+DEC	lo_drain_reversal	29624,34193,15606,6391	move	0	0	m1	m1	28259,25298,61665,36450	Venusaur	281	364	0	-	1	Tentacruel	40	364	0	-	1	p2	0
+DEC	lo_drain_reversal	29624,34193,15606,6391	move	0	0	m1	m1	17511,13934,38120,56790	Venusaur	281	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	29624,34193,15606,6391	1	p1
+INIT	lo_drain_reversal	23785,54341,52247,58562	4964,59853,12930,19859
+DEC	lo_drain_reversal	4964,59853,12930,19859	move	0	0	m0	m1	53475,14907,1933,36406	Venusaur	324	364	0	-	1	Tentacruel	284	364	0	-	1	p2	1
+DEC	lo_drain_reversal	4964,59853,12930,19859	move	0	0	m0	m1	44337,49282,2512,43114	Venusaur	233	364	0	-	1	Tentacruel	101	364	0	-	1	p2	1
+DEC	lo_drain_reversal	4964,59853,12930,19859	move	0	0	m1	m1	2021,36293,5672,62681	Venusaur	233	364	0	-	1	Tentacruel	65	364	0	-	1	p2	0
+DEC	lo_drain_reversal	4964,59853,12930,19859	move	0	0	m1	m1	49766,45424,47235,9460	Venusaur	233	364	0	-	1	Tentacruel	24	364	0	-	1	p2	0
+DEC	lo_drain_reversal	4964,59853,12930,19859	move	0	0	m1	m1	62307,27781,62444,32584	Venusaur	233	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	4964,59853,12930,19859	1	p1
+INIT	lo_drain_reversal	38767,18647,4271,28430	464,21961,62670,12271
+DEC	lo_drain_reversal	464,21961,62670,12271	move	0	0	m0	m1	42168,13537,63633,60354	Venusaur	324	364	0	-	1	Tentacruel	284	364	0	-	1	p2	1
+DEC	lo_drain_reversal	464,21961,62670,12271	move	0	0	m0	m1	42095,25391,39373,9526	Venusaur	280	364	0	-	1	Tentacruel	195	364	0	-	1	p2	1
+DEC	lo_drain_reversal	464,21961,62670,12271	move	0	0	m1	m1	11606,58514,12650,11669	Venusaur	280	364	0	-	1	Tentacruel	154	364	0	-	1	p2	0
+DEC	lo_drain_reversal	464,21961,62670,12271	move	0	0	m1	m1	47855,29014,9519,30816	Venusaur	280	364	0	-	1	Tentacruel	113	364	0	-	1	p2	0
+DEC	lo_drain_reversal	464,21961,62670,12271	move	0	0	m1	m1	52218,16456,63697,20999	Venusaur	280	364	0	-	1	Tentacruel	74	364	0	-	1	p2	0
+DEC	lo_drain_reversal	464,21961,62670,12271	move	0	0	m1	m1	64030,53910,40916,12218	Venusaur	280	364	0	-	1	Tentacruel	35	364	0	-	1	p2	0
+DEC	lo_drain_reversal	464,21961,62670,12271	move	0	0	m1	m1	26607,46337,40675,55726	Venusaur	280	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	464,21961,62670,12271	1	p1
+INIT	lo_drain_reversal	37383,13525,35214,21018	27388,34181,36826,56331
+DEC	lo_drain_reversal	27388,34181,36826,56331	move	0	0	m0	m1	61523,23598,44103,38414	Venusaur	323	364	0	-	1	Tentacruel	282	364	0	-	1	p2	1
+DEC	lo_drain_reversal	27388,34181,36826,56331	move	0	0	m0	m1	2894,61267,12621,41666	Venusaur	281	364	0	-	1	Tentacruel	198	364	0	-	1	p2	1
+DEC	lo_drain_reversal	27388,34181,36826,56331	move	0	0	m1	m1	49395,57880,30003,13841	Venusaur	281	364	0	-	1	Tentacruel	162	364	0	-	1	p2	0
+DEC	lo_drain_reversal	27388,34181,36826,56331	move	0	0	m1	m1	821,27420,14462,38540	Venusaur	281	364	0	-	1	Tentacruel	126	364	0	-	1	p2	0
+DEC	lo_drain_reversal	27388,34181,36826,56331	move	0	0	m1	m1	20209,44989,30872,42915	Venusaur	281	364	0	-	1	Tentacruel	50	364	0	-	1	p2	0
+DEC	lo_drain_reversal	27388,34181,36826,56331	move	0	0	m1	m1	1455,39952,905,16774	Venusaur	281	364	0	-	1	Tentacruel	14	364	0	-	1	p2	0
+DEC	lo_drain_reversal	27388,34181,36826,56331	move	0	0	m1	m1	9354,32998,8328,18106	Venusaur	281	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	27388,34181,36826,56331	1	p1
+INIT	lo_drain_reversal	14737,62434,37016,23014	15080,62721,53158,11751
+DEC	lo_drain_reversal	15080,62721,53158,11751	move	0	0	m0	m1	6017,61640,4813,39194	Venusaur	324	364	0	-	1	Tentacruel	284	364	0	-	1	p2	1
+DEC	lo_drain_reversal	15080,62721,53158,11751	move	0	0	m0	m1	65308,22746,23416,27918	Venusaur	281	364	0	-	1	Tentacruel	197	364	0	-	1	p2	1
+DEC	lo_drain_reversal	15080,62721,53158,11751	move	0	0	m1	m1	9242,33840,34340,19021	Venusaur	281	364	0	-	1	Tentacruel	162	364	0	-	1	p2	0
+DEC	lo_drain_reversal	15080,62721,53158,11751	move	0	0	m1	m1	10039,7268,43969,27512	Venusaur	281	364	0	-	1	Tentacruel	121	364	0	-	1	p2	0
+DEC	lo_drain_reversal	15080,62721,53158,11751	move	0	0	m1	m1	7373,57330,53791,47871	Venusaur	281	364	0	-	1	Tentacruel	84	364	0	-	1	p2	0
+DEC	lo_drain_reversal	15080,62721,53158,11751	move	0	0	m1	m1	11375,30784,36509,42002	Venusaur	281	364	0	-	1	Tentacruel	45	364	0	-	1	p2	0
+DEC	lo_drain_reversal	15080,62721,53158,11751	move	0	0	m1	m1	65129,3852,40061,57761	Venusaur	281	364	0	-	1	Tentacruel	9	364	0	-	1	p2	0
+DEC	lo_drain_reversal	15080,62721,53158,11751	move	0	0	m1	m1	14527,46554,10386,37669	Venusaur	281	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	15080,62721,53158,11751	1	p1
+INIT	lo_drain_reversal	20383,58427,3153,4722	7572,57405,16434,49539
+DEC	lo_drain_reversal	7572,57405,16434,49539	move	0	0	m0	m1	46897,2368,42086,49382	Venusaur	319	364	0	-	1	Tentacruel	274	364	0	-	1	p2	1
+DEC	lo_drain_reversal	7572,57405,16434,49539	move	0	0	m0	m1	48665,55145,5851,36890	Venusaur	276	364	0	-	1	Tentacruel	188	364	0	-	1	p2	1
+DEC	lo_drain_reversal	7572,57405,16434,49539	move	0	0	m1	m1	53893,8013,63264,26185	Venusaur	276	364	0	-	1	Tentacruel	148	364	0	-	1	p2	0
+DEC	lo_drain_reversal	7572,57405,16434,49539	move	0	0	m1	m1	6429,27761,16770,41764	Venusaur	276	364	0	-	1	Tentacruel	113	364	0	-	1	p2	0
+DEC	lo_drain_reversal	7572,57405,16434,49539	move	0	0	m1	m1	20397,38219,33570,43035	Venusaur	276	364	0	-	1	Tentacruel	72	364	0	-	1	p2	0
+DEC	lo_drain_reversal	7572,57405,16434,49539	move	0	0	m1	m1	33212,38289,36107,41822	Venusaur	276	364	0	-	1	Tentacruel	34	364	0	-	1	p2	0
+DEC	lo_drain_reversal	7572,57405,16434,49539	move	0	0	m1	m1	52402,55888,50315,64274	Venusaur	276	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	7572,57405,16434,49539	1	p1
+INIT	lo_drain_reversal	38258,53969,39758,51134	32512,17209,11646,62175
+DEC	lo_drain_reversal	32512,17209,11646,62175	move	0	0	m0	m1	26753,41219,62396,39282	Venusaur	322	364	0	-	1	Tentacruel	280	364	0	-	1	p2	1
+DEC	lo_drain_reversal	32512,17209,11646,62175	move	0	0	m0	m1	54867,45294,33151,55270	Venusaur	281	364	0	-	1	Tentacruel	197	364	0	-	1	p2	1
+DEC	lo_drain_reversal	32512,17209,11646,62175	move	0	0	m1	m1	16284,4300,34268,17925	Venusaur	281	364	0	-	1	Tentacruel	157	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32512,17209,11646,62175	move	0	0	m1	m1	633,25614,18497,43408	Venusaur	281	364	0	-	1	Tentacruel	121	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32512,17209,11646,62175	move	0	0	m1	m1	41306,57550,64561,19191	Venusaur	281	364	0	-	1	Tentacruel	83	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32512,17209,11646,62175	move	0	0	m1	m1	37786,39319,51436,19306	Venusaur	281	364	0	-	1	Tentacruel	47	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32512,17209,11646,62175	move	0	0	m1	m1	24086,53388,53340,21465	Venusaur	281	364	0	-	1	Tentacruel	7	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32512,17209,11646,62175	move	0	0	m1	m1	32839,41542,14857,4573	Venusaur	281	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	32512,17209,11646,62175	1	p1
+INIT	lo_drain_reversal	59813,24039,52376,34250	35628,55797,41866,56827
+DEC	lo_drain_reversal	35628,55797,41866,56827	move	0	0	m0	m1	23688,58296,19549,28350	Venusaur	323	364	0	-	1	Tentacruel	282	364	0	-	1	p2	1
+DEC	lo_drain_reversal	35628,55797,41866,56827	move	0	0	m0	m1	17755,23873,48006,53362	Venusaur	285	364	0	-	1	Tentacruel	205	364	0	-	1	p2	1
+DEC	lo_drain_reversal	35628,55797,41866,56827	move	0	0	m1	m1	38531,40295,18388,25985	Venusaur	285	364	0	-	1	Tentacruel	163	364	0	-	1	p2	0
+DEC	lo_drain_reversal	35628,55797,41866,56827	move	0	0	m1	m1	21686,2123,39072,43708	Venusaur	285	364	0	-	1	Tentacruel	124	364	0	-	1	p2	0
+DEC	lo_drain_reversal	35628,55797,41866,56827	move	0	0	m1	m1	50192,14908,57461,16275	Venusaur	285	364	0	-	1	Tentacruel	88	364	0	-	1	p2	0
+DEC	lo_drain_reversal	35628,55797,41866,56827	move	0	0	m1	m1	7228,11532,9141,26678	Venusaur	285	364	0	-	1	Tentacruel	49	364	0	-	1	p2	0
+DEC	lo_drain_reversal	35628,55797,41866,56827	move	0	0	m1	m1	23816,21212,30086,44181	Venusaur	285	364	0	-	1	Tentacruel	8	364	0	-	1	p2	0
+DEC	lo_drain_reversal	35628,55797,41866,56827	move	0	0	m1	m1	54160,30989,54101,46809	Venusaur	285	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	35628,55797,41866,56827	1	p1
+INIT	lo_drain_reversal	63746,7423,3292,6294	11800,8305,28246,24279
+DEC	lo_drain_reversal	11800,8305,28246,24279	move	0	0	m0	m1	64880,47106,10386,19658	Venusaur	323	364	0	-	1	Tentacruel	282	364	0	-	1	p2	1
+DEC	lo_drain_reversal	11800,8305,28246,24279	move	0	0	m0	m1	35489,62097,39840,50622	Venusaur	280	364	0	-	1	Tentacruel	195	364	0	-	1	p2	1
+DEC	lo_drain_reversal	11800,8305,28246,24279	move	0	0	m1	m1	50928,3802,17915,189	Venusaur	280	364	0	-	1	Tentacruel	155	364	0	-	1	p2	0
+DEC	lo_drain_reversal	11800,8305,28246,24279	move	0	0	m1	m1	10229,55576,16554,37544	Venusaur	280	364	0	-	1	Tentacruel	117	364	0	-	1	p2	0
+DEC	lo_drain_reversal	11800,8305,28246,24279	move	0	0	m1	m1	31080,26927,61551,57839	Venusaur	280	364	0	-	1	Tentacruel	81	364	0	-	1	p2	0
+DEC	lo_drain_reversal	11800,8305,28246,24279	move	0	0	m1	m1	4930,29234,3535,34242	Venusaur	280	364	0	-	1	Tentacruel	42	364	0	-	1	p2	0
+DEC	lo_drain_reversal	11800,8305,28246,24279	move	0	0	m1	m1	56304,46823,43017,54545	Venusaur	280	364	0	-	1	Tentacruel	4	364	0	-	1	p2	0
+DEC	lo_drain_reversal	11800,8305,28246,24279	move	0	0	m1	m1	5466,27214,49427,44949	Venusaur	280	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	11800,8305,28246,24279	1	p1
+INIT	lo_drain_reversal	57996,43279,12243,3106	5060,21165,6626,4467
+DEC	lo_drain_reversal	5060,21165,6626,4467	move	0	0	m0	m1	27712,18785,30323,65430	Venusaur	323	364	0	-	1	Tentacruel	282	364	0	-	1	p2	1
+DEC	lo_drain_reversal	5060,21165,6626,4467	move	0	0	m0	m1	56897,24699,54481,50122	Venusaur	284	364	0	-	1	Tentacruel	203	364	0	-	1	p2	1
+DEC	lo_drain_reversal	5060,21165,6626,4467	move	0	0	m1	m1	65343,15244,44769,5049	Venusaur	284	364	0	-	1	Tentacruel	167	364	0	-	1	p2	0
+DEC	lo_drain_reversal	5060,21165,6626,4467	move	0	0	m1	m1	52200,37131,44592,3412	Venusaur	284	364	0	-	1	Tentacruel	130	364	0	-	1	p2	0
+DEC	lo_drain_reversal	5060,21165,6626,4467	move	0	0	m1	m1	59640,12399,38043,19979	Venusaur	284	364	0	-	1	Tentacruel	91	364	0	-	1	p2	0
+DEC	lo_drain_reversal	5060,21165,6626,4467	move	0	0	m1	m1	3265,38467,19146,61454	Venusaur	284	364	0	-	1	Tentacruel	50	364	0	-	1	p2	0
+DEC	lo_drain_reversal	5060,21165,6626,4467	move	0	0	m1	m1	1012,3688,16184,2381	Venusaur	284	364	0	-	1	Tentacruel	12	364	0	-	1	p2	0
+DEC	lo_drain_reversal	5060,21165,6626,4467	move	0	0	m1	m1	61877,38183,48201,30737	Venusaur	284	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	5060,21165,6626,4467	1	p1
+INIT	lo_drain_reversal	62700,42777,59101,44142	43056,27817,61998,20943
+DEC	lo_drain_reversal	43056,27817,61998,20943	move	0	0	m0	m1	48485,2174,21206,4898	Venusaur	319	364	0	-	1	Tentacruel	273	364	0	-	1	p2	1
+DEC	lo_drain_reversal	43056,27817,61998,20943	move	0	0	m0	m1	45960,32895,53420,38550	Venusaur	277	364	0	-	1	Tentacruel	188	364	0	-	1	p2	1
+DEC	lo_drain_reversal	43056,27817,61998,20943	move	0	0	m1	m1	18150,25400,42125,23157	Venusaur	277	364	0	-	1	Tentacruel	149	364	0	-	1	p2	0
+DEC	lo_drain_reversal	43056,27817,61998,20943	move	0	0	m1	m1	58038,47702,33898,34496	Venusaur	277	364	0	-	1	Tentacruel	113	364	0	-	1	p2	0
+DEC	lo_drain_reversal	43056,27817,61998,20943	move	0	0	m1	m1	60210,47072,21193,24551	Venusaur	277	364	0	-	1	Tentacruel	73	364	0	-	1	p2	0
+DEC	lo_drain_reversal	43056,27817,61998,20943	move	0	0	m1	m1	10250,51310,11562,45850	Venusaur	277	364	0	-	1	Tentacruel	35	364	0	-	1	p2	0
+DEC	lo_drain_reversal	43056,27817,61998,20943	move	0	0	m1	m1	1491,8906,27591,59150	Venusaur	277	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	43056,27817,61998,20943	1	p1
+INIT	lo_drain_reversal	11382,44330,14238,1402	5980,10853,826,15339
+DEC	lo_drain_reversal	5980,10853,826,15339	move	0	0	m0	m1	34750,38689,50225,54126	Venusaur	319	364	0	-	1	Tentacruel	274	364	0	-	1	p2	1
+DEC	lo_drain_reversal	5980,10853,826,15339	move	0	0	m0	m1	55714,36701,35213,51746	Venusaur	279	364	0	-	1	Tentacruel	193	364	0	-	1	p2	1
+DEC	lo_drain_reversal	5980,10853,826,15339	move	0	0	m1	m1	44559,17135,2643,20721	Venusaur	279	364	0	-	1	Tentacruel	152	364	0	-	1	p2	0
+DEC	lo_drain_reversal	5980,10853,826,15339	move	0	0	m1	m1	30080,39487,29087,10988	Venusaur	279	364	0	-	1	Tentacruel	115	364	0	-	1	p2	0
+DEC	lo_drain_reversal	5980,10853,826,15339	move	0	0	m1	m1	42527,52208,17282,45955	Venusaur	279	364	0	-	1	Tentacruel	76	364	0	-	1	p2	0
+DEC	lo_drain_reversal	5980,10853,826,15339	move	0	0	m1	m1	7615,8191,53807,39654	Venusaur	279	364	0	-	1	Tentacruel	41	364	0	-	1	p2	0
+DEC	lo_drain_reversal	5980,10853,826,15339	move	0	0	m1	m1	56895,59423,56790,17669	Venusaur	279	364	0	-	1	Tentacruel	5	364	0	-	1	p2	0
+DEC	lo_drain_reversal	5980,10853,826,15339	move	0	0	m1	m1	58494,18462,35378,10313	Venusaur	279	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	5980,10853,826,15339	1	p1
+INIT	lo_drain_reversal	3495,58461,6182,58182	19784,2017,6406,43975
+DEC	lo_drain_reversal	19784,2017,6406,43975	move	0	0	m0	m1	53087,43746,35301,19578	Venusaur	322	364	0	-	1	Tentacruel	279	364	0	-	1	p2	1
+DEC	lo_drain_reversal	19784,2017,6406,43975	move	0	0	m0	m1	60916,1055,64490,43630	Venusaur	283	364	0	-	1	Tentacruel	201	364	0	-	1	p2	1
+DEC	lo_drain_reversal	19784,2017,6406,43975	move	0	0	m1	m1	25280,56895,6990,13101	Venusaur	283	364	0	-	1	Tentacruel	127	364	0	-	1	p2	0
+DEC	lo_drain_reversal	19784,2017,6406,43975	move	0	0	m1	m1	28610,39643,44597,58840	Venusaur	283	364	0	-	1	Tentacruel	87	364	0	-	1	p2	0
+DEC	lo_drain_reversal	19784,2017,6406,43975	move	0	0	m1	m1	64924,27180,45545,42207	Venusaur	283	364	0	-	1	Tentacruel	46	364	0	-	1	p2	0
+DEC	lo_drain_reversal	19784,2017,6406,43975	move	0	0	m1	m1	61459,5340,28279,13170	Venusaur	283	364	0	-	1	Tentacruel	9	364	0	-	1	p2	0
+DEC	lo_drain_reversal	19784,2017,6406,43975	move	0	0	m1	m1	34409,11155,58196,53734	Venusaur	283	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	19784,2017,6406,43975	1	p1
+INIT	lo_drain_reversal	8679,33846,18791,53714	62964,16669,49042,15715
+DEC	lo_drain_reversal	62964,16669,49042,15715	move	0	0	m0	m1	45093,46319,2015,19014	Venusaur	324	364	0	-	1	Tentacruel	284	364	0	-	1	p2	1
+DEC	lo_drain_reversal	62964,16669,49042,15715	move	0	0	m0	m1	2109,5391,36669,17274	Venusaur	280	364	0	-	1	Tentacruel	196	364	0	-	1	p2	1
+DEC	lo_drain_reversal	62964,16669,49042,15715	move	0	0	m1	m1	30625,63240,41404,64809	Venusaur	280	364	0	-	1	Tentacruel	123	364	0	-	1	p2	0
+DEC	lo_drain_reversal	62964,16669,49042,15715	move	0	0	m1	m1	59595,51969,21317,25476	Venusaur	280	364	0	-	1	Tentacruel	83	364	0	-	1	p2	0
+DEC	lo_drain_reversal	62964,16669,49042,15715	move	0	0	m1	m1	20290,46046,61750,20475	Venusaur	280	364	0	-	1	Tentacruel	43	364	0	-	1	p2	0
+DEC	lo_drain_reversal	62964,16669,49042,15715	move	0	0	m1	m1	4193,34415,15655,51390	Venusaur	280	364	0	-	1	Tentacruel	4	364	0	-	1	p2	0
+DEC	lo_drain_reversal	62964,16669,49042,15715	move	0	0	m1	m1	44512,26231,22511,35442	Venusaur	280	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	62964,16669,49042,15715	1	p1
+INIT	lo_drain_reversal	34961,400,1574,7454	32096,53785,17118,19647
+DEC	lo_drain_reversal	32096,53785,17118,19647	move	0	0	m0	m1	13289,4430,40968,22738	Venusaur	319	364	0	-	1	Tentacruel	273	364	0	-	1	p2	1
+DEC	lo_drain_reversal	32096,53785,17118,19647	move	0	0	m0	m1	59836,62500,53981,24902	Venusaur	275	364	0	-	1	Tentacruel	184	364	0	-	1	p2	1
+DEC	lo_drain_reversal	32096,53785,17118,19647	move	0	0	m1	m1	13790,10169,61903,27365	Venusaur	275	364	0	-	1	Tentacruel	143	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32096,53785,17118,19647	move	0	0	m1	m1	15493,30332,11876,4080	Venusaur	275	364	0	-	1	Tentacruel	105	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32096,53785,17118,19647	move	0	0	m1	m1	12416,15479,4571,37079	Venusaur	275	364	0	-	1	Tentacruel	67	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32096,53785,17118,19647	move	0	0	m1	m1	16011,39956,21753,26314	Venusaur	275	364	0	-	1	Tentacruel	28	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32096,53785,17118,19647	move	0	0	m1	m1	186,15835,49498,16318	Venusaur	275	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	32096,53785,17118,19647	1	p1
+INIT	lo_drain_reversal	23583,3445,56680,53546	3980,30421,44778,62939
+DEC	lo_drain_reversal	3980,30421,44778,62939	move	0	0	m0	m1	12732,30161,40430,50206	Venusaur	323	364	0	-	1	Tentacruel	281	364	0	-	1	p2	1
+DEC	lo_drain_reversal	3980,30421,44778,62939	move	0	0	m0	m1	45638,25792,59116,36818	Venusaur	281	364	0	-	1	Tentacruel	197	364	0	-	1	p2	1
+DEC	lo_drain_reversal	3980,30421,44778,62939	move	0	0	m1	m1	5245,6496,8449,63585	Venusaur	281	364	0	-	1	Tentacruel	158	364	0	-	1	p2	0
+DEC	lo_drain_reversal	3980,30421,44778,62939	move	0	0	m1	m1	56999,63254,6196,5916	Venusaur	281	364	0	-	1	Tentacruel	121	364	0	-	1	p2	0
+DEC	lo_drain_reversal	3980,30421,44778,62939	move	0	0	m1	m1	51849,37110,46851,883	Venusaur	281	364	0	-	1	Tentacruel	82	364	0	-	1	p2	0
+DEC	lo_drain_reversal	3980,30421,44778,62939	move	0	0	m1	m1	29118,34542,38753,55702	Venusaur	281	364	0	-	1	Tentacruel	45	364	0	-	1	p2	0
+DEC	lo_drain_reversal	3980,30421,44778,62939	move	0	0	m1	m1	875,44139,9850,55669	Venusaur	281	364	0	-	1	Tentacruel	7	364	0	-	1	p2	0
+DEC	lo_drain_reversal	3980,30421,44778,62939	move	0	0	m1	m1	48991,1765,46699,54713	Venusaur	281	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	3980,30421,44778,62939	1	p1
+INIT	lo_drain_reversal	22565,26458,10515,47606	39032,43857,53174,5303
+DEC	lo_drain_reversal	39032,43857,53174,5303	move	0	0	m0	m1	26556,21471,61873,38954	Venusaur	322	364	0	-	1	Tentacruel	279	364	0	-	1	p2	1
+DEC	lo_drain_reversal	39032,43857,53174,5303	move	0	0	m0	m1	27990,59778,22161,6942	Venusaur	281	364	0	-	1	Tentacruel	196	364	0	-	1	p2	1
+DEC	lo_drain_reversal	39032,43857,53174,5303	move	0	0	m1	m1	1441,13144,54260,57757	Venusaur	281	364	0	-	1	Tentacruel	159	364	0	-	1	p2	0
+DEC	lo_drain_reversal	39032,43857,53174,5303	move	0	0	m1	m1	60885,19289,51718,25864	Venusaur	281	364	0	-	1	Tentacruel	123	364	0	-	1	p2	0
+DEC	lo_drain_reversal	39032,43857,53174,5303	move	0	0	m1	m1	24627,25115,35820,975	Venusaur	281	364	0	-	1	Tentacruel	82	364	0	-	1	p2	0
+DEC	lo_drain_reversal	39032,43857,53174,5303	move	0	0	m1	m1	23788,57255,60511,44322	Venusaur	281	364	0	-	1	Tentacruel	43	364	0	-	1	p2	0
+DEC	lo_drain_reversal	39032,43857,53174,5303	move	0	0	m1	m1	25467,61987,53689,61425	Venusaur	281	364	0	-	1	Tentacruel	4	364	0	-	1	p2	0
+DEC	lo_drain_reversal	39032,43857,53174,5303	move	0	0	m1	m1	45824,50390,65202,56437	Venusaur	281	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	39032,43857,53174,5303	1	p1
+INIT	lo_drain_reversal	43579,63198,53162,25474	50212,43917,12610,17747
+DEC	lo_drain_reversal	50212,43917,12610,17747	move	0	0	m0	m1	11636,1825,5011,41206	Venusaur	323	364	0	-	1	Tentacruel	281	364	0	-	1	p2	1
+DEC	lo_drain_reversal	50212,43917,12610,17747	move	0	0	m0	m1	8952,57298,8281,3882	Venusaur	284	364	0	-	1	Tentacruel	203	364	0	-	1	p2	1
+DEC	lo_drain_reversal	50212,43917,12610,17747	move	0	0	m1	m1	30259,64576,40331,8857	Venusaur	284	364	0	-	1	Tentacruel	163	364	0	-	1	p2	0
+DEC	lo_drain_reversal	50212,43917,12610,17747	move	0	0	m1	m1	40168,34022,1637,42420	Venusaur	284	364	0	-	1	Tentacruel	123	364	0	-	1	p2	0
+DEC	lo_drain_reversal	50212,43917,12610,17747	move	0	0	m1	m1	5898,65257,3666,44523	Venusaur	284	364	0	-	1	Tentacruel	82	364	0	-	1	p2	0
+DEC	lo_drain_reversal	50212,43917,12610,17747	move	0	0	m1	m1	22593,39134,40941,11630	Venusaur	284	364	0	-	1	Tentacruel	45	364	0	-	1	p2	0
+DEC	lo_drain_reversal	50212,43917,12610,17747	move	0	0	m1	m1	18721,4306,5841,61997	Venusaur	284	364	0	-	1	Tentacruel	5	364	0	-	1	p2	0
+DEC	lo_drain_reversal	50212,43917,12610,17747	move	0	0	m1	m1	62162,46862,34177,37617	Venusaur	284	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	50212,43917,12610,17747	1	p1
+INIT	lo_drain_reversal	40713,62717,63784,6606	65168,29577,8078,58287
+DEC	lo_drain_reversal	65168,29577,8078,58287	move	0	0	m0	m1	64565,17822,56147,27266	Venusaur	322	364	0	-	1	Tentacruel	280	364	0	-	1	p2	1
+DEC	lo_drain_reversal	65168,29577,8078,58287	move	0	0	m0	m1	59068,22375,34834,14326	Venusaur	281	364	0	-	1	Tentacruel	198	364	0	-	1	p2	1
+DEC	lo_drain_reversal	65168,29577,8078,58287	move	0	0	m1	m1	48312,49826,28066,30549	Venusaur	281	364	0	-	1	Tentacruel	163	364	0	-	1	p2	0
+DEC	lo_drain_reversal	65168,29577,8078,58287	move	0	0	m1	m1	26348,60729,17966,17696	Venusaur	281	364	0	-	1	Tentacruel	123	364	0	-	1	p2	0
+DEC	lo_drain_reversal	65168,29577,8078,58287	move	0	0	m1	m1	64895,33749,14695,56775	Venusaur	281	364	0	-	1	Tentacruel	84	364	0	-	1	p2	0
+DEC	lo_drain_reversal	65168,29577,8078,58287	move	0	0	m1	m1	40065,40180,16472,26234	Venusaur	281	364	0	-	1	Tentacruel	48	364	0	-	1	p2	0
+DEC	lo_drain_reversal	65168,29577,8078,58287	move	0	0	m1	m1	63083,22197,4965,56361	Venusaur	281	364	0	-	1	Tentacruel	6	364	0	-	1	p2	0
+DEC	lo_drain_reversal	65168,29577,8078,58287	move	0	0	m1	m1	2907,60565,29859,13613	Venusaur	281	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	65168,29577,8078,58287	1	p1
+INIT	lo_drain_reversal	29946,10218,8649,59610	29628,48965,42650,3019
+DEC	lo_drain_reversal	29628,48965,42650,3019	move	0	0	m0	m1	65438,50627,2645,16590	Venusaur	324	364	0	-	1	Tentacruel	283	364	0	-	1	p2	1
+DEC	lo_drain_reversal	29628,48965,42650,3019	move	0	0	m0	m1	34150,13449,25172,8578	Venusaur	284	364	0	-	1	Tentacruel	203	364	0	-	1	p2	1
+DEC	lo_drain_reversal	29628,48965,42650,3019	move	0	0	m1	m1	3060,59610,62821,23505	Venusaur	284	364	0	-	1	Tentacruel	167	364	0	-	1	p2	0
+DEC	lo_drain_reversal	29628,48965,42650,3019	move	0	0	m1	m1	61436,2047,3400,28492	Venusaur	284	364	0	-	1	Tentacruel	130	364	0	-	1	p2	0
+DEC	lo_drain_reversal	29628,48965,42650,3019	move	0	0	m1	m1	37344,20930,39699,12131	Venusaur	284	364	0	-	1	Tentacruel	89	364	0	-	1	p2	0
+DEC	lo_drain_reversal	29628,48965,42650,3019	move	0	0	m1	m1	51752,2824,9901,9286	Venusaur	284	364	0	-	1	Tentacruel	53	364	0	-	1	p2	0
+DEC	lo_drain_reversal	29628,48965,42650,3019	move	0	0	m1	m1	2457,35807,11113,27109	Venusaur	284	364	0	-	1	Tentacruel	12	364	0	-	1	p2	0
+DEC	lo_drain_reversal	29628,48965,42650,3019	move	0	0	m1	m1	31304,6349,26279,48937	Venusaur	284	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	29628,48965,42650,3019	1	p1
+INIT	lo_drain_reversal	1132,27451,21100,40102	4008,2753,37478,39335
+DEC	lo_drain_reversal	4008,2753,37478,39335	move	0	0	m0	m1	34689,40460,59937,12250	Venusaur	321	364	0	-	1	Tentacruel	277	364	0	-	1	p2	1
+DEC	lo_drain_reversal	4008,2753,37478,39335	move	0	0	m0	m1	13495,60094,63262,6094	Venusaur	277	364	0	-	1	Tentacruel	188	364	0	-	1	p2	1
+DEC	lo_drain_reversal	4008,2753,37478,39335	move	0	0	m1	m1	12054,35891,54337,3085	Venusaur	277	364	0	-	1	Tentacruel	149	364	0	-	1	p2	0
+DEC	lo_drain_reversal	4008,2753,37478,39335	move	0	0	m1	m1	28420,5948,59606,4152	Venusaur	277	364	0	-	1	Tentacruel	113	364	0	-	1	p2	0
+DEC	lo_drain_reversal	4008,2753,37478,39335	move	0	0	m1	m1	7768,21143,37816,65215	Venusaur	277	364	0	-	1	Tentacruel	72	364	0	-	1	p2	0
+DEC	lo_drain_reversal	4008,2753,37478,39335	move	0	0	m1	m1	40270,54212,4082,62162	Venusaur	277	364	0	-	1	Tentacruel	33	364	0	-	1	p2	0
+DEC	lo_drain_reversal	4008,2753,37478,39335	move	0	0	m1	m1	64083,3493,46818,23366	Venusaur	277	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	4008,2753,37478,39335	1	p1
+INIT	lo_drain_reversal	51764,5074,49818,49458	32340,37373,28402,10563
+DEC	lo_drain_reversal	32340,37373,28402,10563	move	0	0	m0	m1	5202,51745,39313,934	Venusaur	321	364	0	-	1	Tentacruel	277	364	0	-	1	p2	1
+DEC	lo_drain_reversal	32340,37373,28402,10563	move	0	0	m0	m1	40000,3149,34853,9946	Venusaur	281	364	0	-	1	Tentacruel	196	364	0	-	1	p2	1
+DEC	lo_drain_reversal	32340,37373,28402,10563	move	0	0	m1	m1	43818,44934,41547,33801	Venusaur	281	364	0	-	1	Tentacruel	158	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32340,37373,28402,10563	move	0	0	m1	m1	16198,4979,51088,54244	Venusaur	281	364	0	-	1	Tentacruel	117	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32340,37373,28402,10563	move	0	0	m1	m1	52365,9935,60400,26587	Venusaur	281	364	0	-	1	Tentacruel	78	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32340,37373,28402,10563	move	0	0	m1	m1	43462,22011,29467,7710	Venusaur	281	364	0	-	1	Tentacruel	39	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32340,37373,28402,10563	move	0	0	m1	m1	37374,12629,14358,8349	Venusaur	281	364	0	-	1	Tentacruel	1	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32340,37373,28402,10563	move	0	0	m1	m1	28927,4272,58661,14945	Venusaur	281	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	32340,37373,28402,10563	1	p1
+INIT	lo_drain_reversal	43761,43348,44313,41598	11200,20729,34878,5791
+DEC	lo_drain_reversal	11200,20729,34878,5791	move	0	0	m0	m1	39677,12338,31373,18482	Venusaur	324	364	0	-	1	Tentacruel	284	364	0	-	1	p2	1
+DEC	lo_drain_reversal	11200,20729,34878,5791	move	0	0	m0	m1	50500,5815,42177,6822	Venusaur	285	364	0	-	1	Tentacruel	205	364	0	-	1	p2	1
+DEC	lo_drain_reversal	11200,20729,34878,5791	move	0	0	m1	m1	18281,20883,46004,32709	Venusaur	285	364	0	-	1	Tentacruel	167	364	0	-	1	p2	0
+DEC	lo_drain_reversal	11200,20729,34878,5791	move	0	0	m1	m1	59733,40233,30479,9808	Venusaur	285	364	0	-	1	Tentacruel	131	364	0	-	1	p2	0
+DEC	lo_drain_reversal	11200,20729,34878,5791	move	0	0	m1	m1	13191,30493,46124,18103	Venusaur	285	364	0	-	1	Tentacruel	95	364	0	-	1	p2	0
+DEC	lo_drain_reversal	11200,20729,34878,5791	move	0	0	m1	m1	45215,16756,26333,45610	Venusaur	285	364	0	-	1	Tentacruel	56	364	0	-	1	p2	0
+DEC	lo_drain_reversal	11200,20729,34878,5791	move	0	0	m1	m1	48909,12252,49243,33177	Venusaur	285	364	0	-	1	Tentacruel	17	364	0	-	1	p2	0
+DEC	lo_drain_reversal	11200,20729,34878,5791	move	0	0	m1	m1	43430,62564,44710,58269	Venusaur	285	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	11200,20729,34878,5791	1	p1
+INIT	lo_drain_reversal	64474,51714,41200,19594	17388,949,59978,32187
+DEC	lo_drain_reversal	17388,949,59978,32187	move	0	0	m0	m1	1920,64485,55460,18814	Venusaur	325	364	0	-	1	Tentacruel	285	364	0	-	1	p2	1
+DEC	lo_drain_reversal	17388,949,59978,32187	move	0	0	m0	m1	34704,33236,27923,32562	Venusaur	282	364	0	-	1	Tentacruel	198	364	0	-	1	p2	1
+DEC	lo_drain_reversal	17388,949,59978,32187	move	0	0	m1	m1	64717,46870,7672,31553	Venusaur	282	364	0	-	1	Tentacruel	160	364	0	-	1	p2	0
+DEC	lo_drain_reversal	17388,949,59978,32187	move	0	0	m1	m1	46144,47469,53235,13180	Venusaur	282	364	0	-	1	Tentacruel	125	364	0	-	1	p2	0
+DEC	lo_drain_reversal	17388,949,59978,32187	move	0	0	m1	m1	31456,47936,36758,14163	Venusaur	282	364	0	-	1	Tentacruel	89	364	0	-	1	p2	0
+DEC	lo_drain_reversal	17388,949,59978,32187	move	0	0	m1	m1	42967,16103,52400,31478	Venusaur	282	364	0	-	1	Tentacruel	18	364	0	-	1	p2	0
+DEC	lo_drain_reversal	17388,949,59978,32187	move	0	0	m1	m1	35030,21010,59628,18730	Venusaur	282	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	17388,949,59978,32187	1	p1
+INIT	lo_drain_reversal	31363,41302,33127,35670	45784,9777,24854,14999
+DEC	lo_drain_reversal	45784,9777,24854,14999	move	0	0	m0	m1	45846,22849,59658,5002	Venusaur	321	364	0	-	1	Tentacruel	278	364	0	-	1	p2	1
+DEC	lo_drain_reversal	45784,9777,24854,14999	move	0	0	m0	m1	20065,39434,37383,41086	Venusaur	277	364	0	-	1	Tentacruel	189	364	0	-	1	p2	1
+DEC	lo_drain_reversal	45784,9777,24854,14999	move	0	0	m1	m1	28268,14490,47072,45693	Venusaur	277	364	0	-	1	Tentacruel	151	364	0	-	1	p2	0
+DEC	lo_drain_reversal	45784,9777,24854,14999	move	0	0	m1	m1	58822,42877,46570,59240	Venusaur	277	364	0	-	1	Tentacruel	112	364	0	-	1	p2	0
+DEC	lo_drain_reversal	45784,9777,24854,14999	move	0	0	m1	m1	44913,44900,46094,38319	Venusaur	277	364	0	-	1	Tentacruel	40	364	0	-	1	p2	0
+DEC	lo_drain_reversal	45784,9777,24854,14999	move	0	0	m1	m1	44076,26580,45810,53843	Venusaur	277	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	45784,9777,24854,14999	1	p1
+INIT	lo_drain_reversal	10898,48564,43933,60130	9348,62573,30882,59699
+DEC	lo_drain_reversal	9348,62573,30882,59699	move	0	0	m0	m1	53097,29561,57068,29270	Venusaur	323	364	0	-	1	Tentacruel	282	364	0	-	1	p2	1
+DEC	lo_drain_reversal	9348,62573,30882,59699	move	0	0	m0	m1	21907,16004,60518,35466	Venusaur	282	364	0	-	1	Tentacruel	200	364	0	-	1	p2	1
+DEC	lo_drain_reversal	9348,62573,30882,59699	move	0	0	m1	m1	15002,53216,57895,8569	Venusaur	282	364	0	-	1	Tentacruel	158	364	0	-	1	p2	0
+DEC	lo_drain_reversal	9348,62573,30882,59699	move	0	0	m1	m1	2825,36095,49443,60948	Venusaur	282	364	0	-	1	Tentacruel	120	364	0	-	1	p2	0
+DEC	lo_drain_reversal	9348,62573,30882,59699	move	0	0	m1	m1	17312,44129,5296,32203	Venusaur	282	364	0	-	1	Tentacruel	36	364	0	-	1	p2	0
+DEC	lo_drain_reversal	9348,62573,30882,59699	move	0	0	m1	m1	26005,8532,54827,53423	Venusaur	282	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	9348,62573,30882,59699	1	p1
+INIT	lo_drain_reversal	57968,55621,48681,46894	1264,27241,31982,58767
+DEC	lo_drain_reversal	1264,27241,31982,58767	move	0	0	m0	m1	63028,48079,19700,61922	Venusaur	321	364	0	-	1	Tentacruel	277	364	0	-	1	p2	1
+DEC	lo_drain_reversal	1264,27241,31982,58767	move	0	0	m0	m1	19479,27048,39481,2390	Venusaur	282	364	0	-	1	Tentacruel	198	364	0	-	1	p2	1
+DEC	lo_drain_reversal	1264,27241,31982,58767	move	0	0	m1	m1	36369,30194,23168,33845	Venusaur	282	364	0	-	1	Tentacruel	160	364	0	-	1	p2	0
+DEC	lo_drain_reversal	1264,27241,31982,58767	move	0	0	m1	m1	30588,7686,16413,45952	Venusaur	282	364	0	-	1	Tentacruel	125	364	0	-	1	p2	0
+DEC	lo_drain_reversal	1264,27241,31982,58767	move	0	0	m1	m1	50456,44539,8715,52135	Venusaur	282	364	0	-	1	Tentacruel	85	364	0	-	1	p2	0
+DEC	lo_drain_reversal	1264,27241,31982,58767	move	0	0	m1	m1	13915,37830,5416,18906	Venusaur	282	364	0	-	1	Tentacruel	48	364	0	-	1	p2	0
+DEC	lo_drain_reversal	1264,27241,31982,58767	move	0	0	m1	m1	34112,23326,29047,37326	Venusaur	282	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	1264,27241,31982,58767	1	p1
+INIT	lo_drain_reversal	32952,37451,18449,64570	32796,17445,31226,19371
+DEC	lo_drain_reversal	32796,17445,31226,19371	move	0	0	m0	m1	22669,24040,32433,56878	Venusaur	321	364	0	-	1	Tentacruel	278	364	0	-	1	p2	1
+DEC	lo_drain_reversal	32796,17445,31226,19371	move	0	0	m0	m1	12159,37708,48032,43234	Venusaur	277	364	0	-	1	Tentacruel	189	364	0	-	1	p2	1
+DEC	lo_drain_reversal	32796,17445,31226,19371	move	0	0	m1	m1	37876,28554,13929,22193	Venusaur	277	364	0	-	1	Tentacruel	148	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32796,17445,31226,19371	move	0	0	m1	m1	40073,24481,2938,25516	Venusaur	277	364	0	-	1	Tentacruel	107	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32796,17445,31226,19371	move	0	0	m1	m1	58900,11250,32586,6979	Venusaur	277	364	0	-	1	Tentacruel	67	364	0	-	1	p2	0
+DEC	lo_drain_reversal	32796,17445,31226,19371	move	0	0	m1	m1	19521,41433,49267,18087	Venusaur	277	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	32796,17445,31226,19371	1	p1
+INIT	lo_drain_reversal	53557,57786,51406,34310	33288,64929,15302,63367
+DEC	lo_drain_reversal	33288,64929,15302,63367	move	0	0	m0	m1	43739,64187,30870,17210	Venusaur	320	364	0	-	1	Tentacruel	275	364	0	-	1	p2	1
+DEC	lo_drain_reversal	33288,64929,15302,63367	move	0	0	m0	m1	50523,35573,29399,46382	Venusaur	243	364	0	-	1	Tentacruel	120	364	0	-	1	p2	1
+DEC	lo_drain_reversal	33288,64929,15302,63367	move	0	0	m1	m1	35288,6891,58149,54509	Venusaur	243	364	0	-	1	Tentacruel	81	364	0	-	1	p2	0
+DEC	lo_drain_reversal	33288,64929,15302,63367	move	0	0	m1	m1	62737,32128,34302,60056	Venusaur	243	364	0	-	1	Tentacruel	39	364	0	-	1	p2	0
+DEC	lo_drain_reversal	33288,64929,15302,63367	move	0	0	m1	m1	30992,26301,647,53932	Venusaur	243	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	33288,64929,15302,63367	1	p1
+INIT	lo_drain_reversal	11048,7285,30697,57490	46772,53981,20050,34083
+DEC	lo_drain_reversal	46772,53981,20050,34083	move	0	0	m0	m1	22849,36333,22907,60678	Venusaur	326	364	0	-	1	Tentacruel	287	364	0	-	1	p2	1
+DEC	lo_drain_reversal	46772,53981,20050,34083	move	0	0	m0	m1	7717,58088,403,14906	Venusaur	286	364	0	-	1	Tentacruel	206	364	0	-	1	p2	1
+DEC	lo_drain_reversal	46772,53981,20050,34083	move	0	0	m1	m1	11301,31472,63691,64233	Venusaur	286	364	0	-	1	Tentacruel	170	364	0	-	1	p2	0
+DEC	lo_drain_reversal	46772,53981,20050,34083	move	0	0	m1	m1	13025,28709,40548,62532	Venusaur	286	364	0	-	1	Tentacruel	134	364	0	-	1	p2	0
+DEC	lo_drain_reversal	46772,53981,20050,34083	move	0	0	m1	m1	18522,30911,29520,61371	Venusaur	286	364	0	-	1	Tentacruel	97	364	0	-	1	p2	0
+DEC	lo_drain_reversal	46772,53981,20050,34083	move	0	0	m1	m1	52866,51307,12005,41854	Venusaur	286	364	0	-	1	Tentacruel	61	364	0	-	1	p2	0
+DEC	lo_drain_reversal	46772,53981,20050,34083	move	0	0	m1	m1	57727,49155,18149,61821	Venusaur	286	364	0	-	1	Tentacruel	23	364	0	-	1	p2	0
+DEC	lo_drain_reversal	46772,53981,20050,34083	move	0	0	m1	m1	27095,8161,16452,48449	Venusaur	286	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_drain_reversal	46772,53981,20050,34083	1	p1
+SCEN	lo_control_heal
+TEAM	lo_control_heal	p1	Venusaur|||Overgrow|gigadrain,sludgebomb|Modest|252,,4,252,,|N||||
+TEAM	lo_control_heal	p2	Tentacruel|||ClearBody|barrier,splash|Bold|252,,252,,,|N||||
+INIT	lo_control_heal	18886,40016,56773,44286	37440,62841,37566,36639
+DEC	lo_control_heal	37440,62841,37566,36639	move	0	0	m0	m1	23951,40031,22161,43698	Venusaur	364	364	0	-	1	Tentacruel	274	364	0	-	1	p2	0
+DEC	lo_control_heal	37440,62841,37566,36639	move	0	0	m0	m1	13352,27454,61192,21798	Venusaur	364	364	0	-	1	Tentacruel	193	364	0	-	1	p2	0
+DEC	lo_control_heal	37440,62841,37566,36639	move	0	0	m1	m1	63087,18473,6480,52293	Venusaur	364	364	0	-	1	Tentacruel	152	364	0	-	1	p2	0
+DEC	lo_control_heal	37440,62841,37566,36639	move	0	0	m1	m1	50703,47578,9343,60624	Venusaur	364	364	0	-	1	Tentacruel	112	364	0	-	1	p2	0
+DEC	lo_control_heal	37440,62841,37566,36639	move	0	0	m1	m1	38379,42030,55021,3895	Venusaur	364	364	0	-	1	Tentacruel	74	364	0	-	1	p2	0
+DEC	lo_control_heal	37440,62841,37566,36639	move	0	0	m1	m1	26597,44770,62904,42154	Venusaur	364	364	0	-	1	Tentacruel	33	364	0	-	1	p2	0
+DEC	lo_control_heal	37440,62841,37566,36639	move	0	0	m1	m1	42726,56006,2580,24478	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	37440,62841,37566,36639	1	p1
+INIT	lo_control_heal	44502,29809,54759,32522	37484,28725,7370,65083
+DEC	lo_control_heal	37484,28725,7370,65083	move	0	0	m0	m1	29826,52125,61137,21502	Venusaur	364	364	0	-	1	Tentacruel	277	364	0	-	1	p2	0
+DEC	lo_control_heal	37484,28725,7370,65083	move	0	0	m0	m1	49180,64715,49288,57778	Venusaur	364	364	0	-	1	Tentacruel	193	364	0	-	1	p2	0
+DEC	lo_control_heal	37484,28725,7370,65083	move	0	0	m1	m1	31859,47842,25894,4033	Venusaur	364	364	0	-	1	Tentacruel	152	364	0	-	1	p2	0
+DEC	lo_control_heal	37484,28725,7370,65083	move	0	0	m1	m1	23467,64613,38582,57852	Venusaur	364	364	0	-	1	Tentacruel	112	364	0	-	1	p2	0
+DEC	lo_control_heal	37484,28725,7370,65083	move	0	0	m1	m1	51185,37813,20140,2003	Venusaur	364	364	0	-	1	Tentacruel	71	364	0	-	1	p2	0
+DEC	lo_control_heal	37484,28725,7370,65083	move	0	0	m1	m1	24443,22768,2477,5494	Venusaur	364	364	0	-	1	Tentacruel	35	364	0	-	1	p2	0
+DEC	lo_control_heal	37484,28725,7370,65083	move	0	0	m1	m1	23631,24263,32728,15274	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	37484,28725,7370,65083	1	p1
+INIT	lo_control_heal	24753,6988,30199,26070	26968,55985,15254,17175
+DEC	lo_control_heal	26968,55985,15254,17175	move	0	0	m0	m1	38119,5845,38613,17930	Venusaur	364	364	0	-	1	Tentacruel	281	364	0	-	1	p2	0
+DEC	lo_control_heal	26968,55985,15254,17175	move	0	0	m0	m1	53091,3893,23496,43774	Venusaur	364	364	0	-	1	Tentacruel	109	364	0	-	1	p2	0
+DEC	lo_control_heal	26968,55985,15254,17175	move	0	0	m1	m1	53248,7235,51083,3837	Venusaur	364	364	0	-	1	Tentacruel	71	364	0	-	1	p2	0
+DEC	lo_control_heal	26968,55985,15254,17175	move	0	0	m1	m1	9567,45039,210,65000	Venusaur	364	364	0	-	1	Tentacruel	30	364	0	-	1	p2	0
+DEC	lo_control_heal	26968,55985,15254,17175	move	0	0	m1	m1	27248,4926,21073,53500	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	26968,55985,15254,17175	1	p1
+INIT	lo_control_heal	1673,30850,42104,60770	49924,28909,31522,63923
+DEC	lo_control_heal	49924,28909,31522,63923	move	0	0	m0	m1	53554,55725,50912,19670	Venusaur	364	364	0	-	1	Tentacruel	287	364	0	-	1	p2	0
+DEC	lo_control_heal	49924,28909,31522,63923	move	0	0	m0	m1	17471,65508,48981,48394	Venusaur	364	364	0	-	1	Tentacruel	199	364	0	-	1	p2	0
+DEC	lo_control_heal	49924,28909,31522,63923	move	0	0	m1	m1	11220,62185,54114,50681	Venusaur	364	364	0	-	1	Tentacruel	160	364	0	-	1	p2	0
+DEC	lo_control_heal	49924,28909,31522,63923	move	0	0	m1	m1	11176,58901,9566,60564	Venusaur	364	364	0	-	1	Tentacruel	120	364	0	-	1	p2	0
+DEC	lo_control_heal	49924,28909,31522,63923	move	0	0	m1	m1	4860,12408,18207,56907	Venusaur	364	364	0	-	1	Tentacruel	81	364	0	-	1	p2	0
+DEC	lo_control_heal	49924,28909,31522,63923	move	0	0	m1	m1	56317,31159,12812,1358	Venusaur	364	364	0	-	1	Tentacruel	42	364	0	-	1	p2	0
+DEC	lo_control_heal	49924,28909,31522,63923	move	0	0	m1	m1	57413,62426,24521,1933	Venusaur	364	364	0	-	1	Tentacruel	7	364	0	-	1	p2	0
+DEC	lo_control_heal	49924,28909,31522,63923	move	0	0	m1	m1	49378,16908,62321,4689	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	49924,28909,31522,63923	1	p1
+INIT	lo_control_heal	34449,55861,30365,25006	2928,12009,10094,32271
+DEC	lo_control_heal	2928,12009,10094,32271	move	0	0	m0	m1	45614,51913,52358,62562	Venusaur	364	364	0	-	1	Tentacruel	279	364	0	-	1	p2	0
+DEC	lo_control_heal	2928,12009,10094,32271	move	0	0	m0	m1	47472,65398,58227,58326	Venusaur	364	364	0	-	1	Tentacruel	200	364	0	-	1	p2	0
+DEC	lo_control_heal	2928,12009,10094,32271	move	0	0	m1	m1	28682,18095,5176,61621	Venusaur	364	364	0	-	1	Tentacruel	160	364	0	-	1	p2	0
+DEC	lo_control_heal	2928,12009,10094,32271	move	0	0	m1	m1	61335,4664,10365,6656	Venusaur	364	364	0	-	1	Tentacruel	124	364	0	-	1	p2	0
+DEC	lo_control_heal	2928,12009,10094,32271	move	0	0	m1	m1	40918,7439,11135,46119	Venusaur	364	364	0	-	1	Tentacruel	88	364	0	-	1	p2	0
+DEC	lo_control_heal	2928,12009,10094,32271	move	0	0	m1	m1	4797,47981,38996,56410	Venusaur	364	364	0	-	1	Tentacruel	49	364	0	-	1	p2	0
+DEC	lo_control_heal	2928,12009,10094,32271	move	0	0	m1	m1	27004,24789,55072,59273	Venusaur	364	364	0	-	1	Tentacruel	13	364	0	-	1	p2	0
+DEC	lo_control_heal	2928,12009,10094,32271	move	0	0	m1	m1	5494,37142,40435,19085	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	2928,12009,10094,32271	1	p1
+INIT	lo_control_heal	47314,16410,36405,52922	28316,53413,19578,60459
+DEC	lo_control_heal	28316,53413,19578,60459	move	0	0	m0	m1	40666,53281,32129,34990	Venusaur	364	364	0	-	1	Tentacruel	279	364	0	-	1	p2	0
+DEC	lo_control_heal	28316,53413,19578,60459	move	0	0	m0	m1	56210,16152,13262,43874	Venusaur	364	364	0	-	1	Tentacruel	188	364	0	-	1	p2	0
+DEC	lo_control_heal	28316,53413,19578,60459	move	0	0	m1	m1	19712,28886,988,2865	Venusaur	364	364	0	-	1	Tentacruel	149	364	0	-	1	p2	0
+DEC	lo_control_heal	28316,53413,19578,60459	move	0	0	m1	m1	39902,58665,14217,45612	Venusaur	364	364	0	-	1	Tentacruel	113	364	0	-	1	p2	0
+DEC	lo_control_heal	28316,53413,19578,60459	move	0	0	m1	m1	38450,56441,44980,3011	Venusaur	364	364	0	-	1	Tentacruel	76	364	0	-	1	p2	0
+DEC	lo_control_heal	28316,53413,19578,60459	move	0	0	m1	m1	35177,45569,63109,6182	Venusaur	364	364	0	-	1	Tentacruel	37	364	0	-	1	p2	0
+DEC	lo_control_heal	28316,53413,19578,60459	move	0	0	m1	m1	27233,36118,55060,62298	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	28316,53413,19578,60459	1	p1
+INIT	lo_control_heal	10422,62217,17702,134	55432,53793,46662,8199
+DEC	lo_control_heal	55432,53793,46662,8199	move	0	0	m0	m1	16562,41009,51695,5562	Venusaur	364	364	0	-	1	Tentacruel	276	364	0	-	1	p2	0
+DEC	lo_control_heal	55432,53793,46662,8199	move	0	0	m0	m1	3738,26412,15244,24494	Venusaur	364	364	0	-	1	Tentacruel	185	364	0	-	1	p2	0
+DEC	lo_control_heal	55432,53793,46662,8199	move	0	0	m1	m1	3982,2789,18156,20845	Venusaur	364	364	0	-	1	Tentacruel	148	364	0	-	1	p2	0
+DEC	lo_control_heal	55432,53793,46662,8199	move	0	0	m1	m1	4285,34768,3029,41240	Venusaur	364	364	0	-	1	Tentacruel	109	364	0	-	1	p2	0
+DEC	lo_control_heal	55432,53793,46662,8199	move	0	0	m1	m1	42098,43542,32508,16671	Venusaur	364	364	0	-	1	Tentacruel	71	364	0	-	1	p2	0
+DEC	lo_control_heal	55432,53793,46662,8199	move	0	0	m1	m1	60193,47699,13467,17586	Venusaur	364	364	0	-	1	Tentacruel	30	364	0	-	1	p2	0
+DEC	lo_control_heal	55432,53793,46662,8199	move	0	0	m1	m1	33444,11546,46396,20262	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	55432,53793,46662,8199	1	p1
+INIT	lo_control_heal	36156,55971,33265,33554	62772,28509,61650,46499
+DEC	lo_control_heal	62772,28509,61650,46499	move	0	0	m0	m1	13398,38562,10770,26502	Venusaur	364	364	0	-	1	Tentacruel	287	364	0	-	1	p2	0
+DEC	lo_control_heal	62772,28509,61650,46499	move	0	0	m0	m1	32856,54555,63803,3258	Venusaur	364	364	0	-	1	Tentacruel	210	364	0	-	1	p2	0
+DEC	lo_control_heal	62772,28509,61650,46499	move	0	0	m1	m1	22213,39801,28748,49001	Venusaur	364	364	0	-	1	Tentacruel	174	364	0	-	1	p2	0
+DEC	lo_control_heal	62772,28509,61650,46499	move	0	0	m1	m1	43883,3019,26603,37572	Venusaur	364	364	0	-	1	Tentacruel	139	364	0	-	1	p2	0
+DEC	lo_control_heal	62772,28509,61650,46499	move	0	0	m1	m1	31427,54505,5908,28731	Venusaur	364	364	0	-	1	Tentacruel	104	364	0	-	1	p2	0
+DEC	lo_control_heal	62772,28509,61650,46499	move	0	0	m1	m1	21573,50943,40593,44542	Venusaur	364	364	0	-	1	Tentacruel	64	364	0	-	1	p2	0
+DEC	lo_control_heal	62772,28509,61650,46499	move	0	0	m1	m1	7886,34841,18903,19965	Venusaur	364	364	0	-	1	Tentacruel	22	364	0	-	1	p2	0
+DEC	lo_control_heal	62772,28509,61650,46499	move	0	0	m1	m1	18259,44645,49453,20929	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	62772,28509,61650,46499	1	p1
+INIT	lo_control_heal	52630,17674,22985,41566	12448,42073,18462,2303
+DEC	lo_control_heal	12448,42073,18462,2303	move	0	0	m0	m1	655,27157,60288,2578	Venusaur	364	364	0	-	1	Tentacruel	278	364	0	-	1	p2	0
+DEC	lo_control_heal	12448,42073,18462,2303	move	0	0	m0	m1	52106,47492,25886,32390	Venusaur	364	364	0	-	1	Tentacruel	197	364	0	-	1	p2	0
+DEC	lo_control_heal	12448,42073,18462,2303	move	0	0	m1	m1	703,10861,2953,4389	Venusaur	364	364	0	-	1	Tentacruel	160	364	0	-	1	p2	0
+DEC	lo_control_heal	12448,42073,18462,2303	move	0	0	m1	m1	60662,58491,28653,62256	Venusaur	364	364	0	-	1	Tentacruel	124	364	0	-	1	p2	0
+DEC	lo_control_heal	12448,42073,18462,2303	move	0	0	m1	m1	61967,19784,24043,29975	Venusaur	364	364	0	-	1	Tentacruel	88	364	0	-	1	p2	0
+DEC	lo_control_heal	12448,42073,18462,2303	move	0	0	m1	m1	58035,45157,14924,24586	Venusaur	364	364	0	-	1	Tentacruel	47	364	0	-	1	p2	0
+DEC	lo_control_heal	12448,42073,18462,2303	move	0	0	m1	m1	57446,46398,64909,9465	Venusaur	364	364	0	-	1	Tentacruel	8	364	0	-	1	p2	0
+DEC	lo_control_heal	12448,42073,18462,2303	move	0	0	m1	m1	15528,37091,6388,4349	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	12448,42073,18462,2303	1	p1
+INIT	lo_control_heal	6920,47960,28287,27242	46796,11541,51242,13851
+DEC	lo_control_heal	46796,11541,51242,13851	move	0	0	m0	m1	17105,17817,58352,18782	Venusaur	364	364	0	-	1	Tentacruel	273	364	0	-	1	p2	0
+DEC	lo_control_heal	46796,11541,51242,13851	move	0	0	m0	m1	6922,27478,60130,16658	Venusaur	364	364	0	-	1	Tentacruel	188	364	0	-	1	p2	0
+DEC	lo_control_heal	46796,11541,51242,13851	move	0	0	m1	m1	20664,17195,37487,49825	Venusaur	364	364	0	-	1	Tentacruel	151	364	0	-	1	p2	0
+DEC	lo_control_heal	46796,11541,51242,13851	move	0	0	m1	m1	60429,60686,20792,61020	Venusaur	364	364	0	-	1	Tentacruel	111	364	0	-	1	p2	0
+DEC	lo_control_heal	46796,11541,51242,13851	move	0	0	m1	m1	56531,46867,3052,60339	Venusaur	364	364	0	-	1	Tentacruel	71	364	0	-	1	p2	0
+DEC	lo_control_heal	46796,11541,51242,13851	move	0	0	m1	m1	58139,12608,29099,9942	Venusaur	364	364	0	-	1	Tentacruel	32	364	0	-	1	p2	0
+DEC	lo_control_heal	46796,11541,51242,13851	move	0	0	m1	m1	508,60289,27318,63242	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	46796,11541,51242,13851	1	p1
+INIT	lo_control_heal	20613,57250,41819,42806	29624,34193,15606,6391
+DEC	lo_control_heal	29624,34193,15606,6391	move	0	0	m0	m1	55499,4127,18583,12650	Venusaur	364	364	0	-	1	Tentacruel	287	364	0	-	1	p2	0
+DEC	lo_control_heal	29624,34193,15606,6391	move	0	0	m0	m1	13841,4405,15217,41054	Venusaur	364	364	0	-	1	Tentacruel	196	364	0	-	1	p2	0
+DEC	lo_control_heal	29624,34193,15606,6391	move	0	0	m1	m1	9407,3096,56266,4061	Venusaur	364	364	0	-	1	Tentacruel	159	364	0	-	1	p2	0
+DEC	lo_control_heal	29624,34193,15606,6391	move	0	0	m1	m1	55322,14947,61306,28744	Venusaur	364	364	0	-	1	Tentacruel	120	364	0	-	1	p2	0
+DEC	lo_control_heal	29624,34193,15606,6391	move	0	0	m1	m1	50972,17364,22265,12303	Venusaur	364	364	0	-	1	Tentacruel	79	364	0	-	1	p2	0
+DEC	lo_control_heal	29624,34193,15606,6391	move	0	0	m1	m1	28259,25298,61665,36450	Venusaur	364	364	0	-	1	Tentacruel	40	364	0	-	1	p2	0
+DEC	lo_control_heal	29624,34193,15606,6391	move	0	0	m1	m1	17511,13934,38120,56790	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	29624,34193,15606,6391	1	p1
+INIT	lo_control_heal	23785,54341,52247,58562	4964,59853,12930,19859
+DEC	lo_control_heal	4964,59853,12930,19859	move	0	0	m0	m1	53475,14907,1933,36406	Venusaur	364	364	0	-	1	Tentacruel	284	364	0	-	1	p2	0
+DEC	lo_control_heal	4964,59853,12930,19859	move	0	0	m0	m1	44337,49282,2512,43114	Venusaur	364	364	0	-	1	Tentacruel	101	364	0	-	1	p2	0
+DEC	lo_control_heal	4964,59853,12930,19859	move	0	0	m1	m1	2021,36293,5672,62681	Venusaur	364	364	0	-	1	Tentacruel	65	364	0	-	1	p2	0
+DEC	lo_control_heal	4964,59853,12930,19859	move	0	0	m1	m1	49766,45424,47235,9460	Venusaur	364	364	0	-	1	Tentacruel	24	364	0	-	1	p2	0
+DEC	lo_control_heal	4964,59853,12930,19859	move	0	0	m1	m1	62307,27781,62444,32584	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	4964,59853,12930,19859	1	p1
+INIT	lo_control_heal	38767,18647,4271,28430	464,21961,62670,12271
+DEC	lo_control_heal	464,21961,62670,12271	move	0	0	m0	m1	42168,13537,63633,60354	Venusaur	364	364	0	-	1	Tentacruel	284	364	0	-	1	p2	0
+DEC	lo_control_heal	464,21961,62670,12271	move	0	0	m0	m1	42095,25391,39373,9526	Venusaur	364	364	0	-	1	Tentacruel	195	364	0	-	1	p2	0
+DEC	lo_control_heal	464,21961,62670,12271	move	0	0	m1	m1	11606,58514,12650,11669	Venusaur	364	364	0	-	1	Tentacruel	154	364	0	-	1	p2	0
+DEC	lo_control_heal	464,21961,62670,12271	move	0	0	m1	m1	47855,29014,9519,30816	Venusaur	364	364	0	-	1	Tentacruel	113	364	0	-	1	p2	0
+DEC	lo_control_heal	464,21961,62670,12271	move	0	0	m1	m1	52218,16456,63697,20999	Venusaur	364	364	0	-	1	Tentacruel	74	364	0	-	1	p2	0
+DEC	lo_control_heal	464,21961,62670,12271	move	0	0	m1	m1	64030,53910,40916,12218	Venusaur	364	364	0	-	1	Tentacruel	35	364	0	-	1	p2	0
+DEC	lo_control_heal	464,21961,62670,12271	move	0	0	m1	m1	26607,46337,40675,55726	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	464,21961,62670,12271	1	p1
+INIT	lo_control_heal	37383,13525,35214,21018	27388,34181,36826,56331
+DEC	lo_control_heal	27388,34181,36826,56331	move	0	0	m0	m1	61523,23598,44103,38414	Venusaur	364	364	0	-	1	Tentacruel	282	364	0	-	1	p2	0
+DEC	lo_control_heal	27388,34181,36826,56331	move	0	0	m0	m1	2894,61267,12621,41666	Venusaur	364	364	0	-	1	Tentacruel	198	364	0	-	1	p2	0
+DEC	lo_control_heal	27388,34181,36826,56331	move	0	0	m1	m1	49395,57880,30003,13841	Venusaur	364	364	0	-	1	Tentacruel	162	364	0	-	1	p2	0
+DEC	lo_control_heal	27388,34181,36826,56331	move	0	0	m1	m1	821,27420,14462,38540	Venusaur	364	364	0	-	1	Tentacruel	126	364	0	-	1	p2	0
+DEC	lo_control_heal	27388,34181,36826,56331	move	0	0	m1	m1	20209,44989,30872,42915	Venusaur	364	364	0	-	1	Tentacruel	50	364	0	-	1	p2	0
+DEC	lo_control_heal	27388,34181,36826,56331	move	0	0	m1	m1	1455,39952,905,16774	Venusaur	364	364	0	-	1	Tentacruel	14	364	0	-	1	p2	0
+DEC	lo_control_heal	27388,34181,36826,56331	move	0	0	m1	m1	9354,32998,8328,18106	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	27388,34181,36826,56331	1	p1
+INIT	lo_control_heal	14737,62434,37016,23014	15080,62721,53158,11751
+DEC	lo_control_heal	15080,62721,53158,11751	move	0	0	m0	m1	6017,61640,4813,39194	Venusaur	364	364	0	-	1	Tentacruel	284	364	0	-	1	p2	0
+DEC	lo_control_heal	15080,62721,53158,11751	move	0	0	m0	m1	65308,22746,23416,27918	Venusaur	364	364	0	-	1	Tentacruel	197	364	0	-	1	p2	0
+DEC	lo_control_heal	15080,62721,53158,11751	move	0	0	m1	m1	9242,33840,34340,19021	Venusaur	364	364	0	-	1	Tentacruel	162	364	0	-	1	p2	0
+DEC	lo_control_heal	15080,62721,53158,11751	move	0	0	m1	m1	10039,7268,43969,27512	Venusaur	364	364	0	-	1	Tentacruel	121	364	0	-	1	p2	0
+DEC	lo_control_heal	15080,62721,53158,11751	move	0	0	m1	m1	7373,57330,53791,47871	Venusaur	364	364	0	-	1	Tentacruel	84	364	0	-	1	p2	0
+DEC	lo_control_heal	15080,62721,53158,11751	move	0	0	m1	m1	11375,30784,36509,42002	Venusaur	364	364	0	-	1	Tentacruel	45	364	0	-	1	p2	0
+DEC	lo_control_heal	15080,62721,53158,11751	move	0	0	m1	m1	65129,3852,40061,57761	Venusaur	364	364	0	-	1	Tentacruel	9	364	0	-	1	p2	0
+DEC	lo_control_heal	15080,62721,53158,11751	move	0	0	m1	m1	14527,46554,10386,37669	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	15080,62721,53158,11751	1	p1
+INIT	lo_control_heal	20383,58427,3153,4722	7572,57405,16434,49539
+DEC	lo_control_heal	7572,57405,16434,49539	move	0	0	m0	m1	46897,2368,42086,49382	Venusaur	364	364	0	-	1	Tentacruel	274	364	0	-	1	p2	0
+DEC	lo_control_heal	7572,57405,16434,49539	move	0	0	m0	m1	48665,55145,5851,36890	Venusaur	364	364	0	-	1	Tentacruel	188	364	0	-	1	p2	0
+DEC	lo_control_heal	7572,57405,16434,49539	move	0	0	m1	m1	53893,8013,63264,26185	Venusaur	364	364	0	-	1	Tentacruel	148	364	0	-	1	p2	0
+DEC	lo_control_heal	7572,57405,16434,49539	move	0	0	m1	m1	6429,27761,16770,41764	Venusaur	364	364	0	-	1	Tentacruel	113	364	0	-	1	p2	0
+DEC	lo_control_heal	7572,57405,16434,49539	move	0	0	m1	m1	20397,38219,33570,43035	Venusaur	364	364	0	-	1	Tentacruel	72	364	0	-	1	p2	0
+DEC	lo_control_heal	7572,57405,16434,49539	move	0	0	m1	m1	33212,38289,36107,41822	Venusaur	364	364	0	-	1	Tentacruel	34	364	0	-	1	p2	0
+DEC	lo_control_heal	7572,57405,16434,49539	move	0	0	m1	m1	52402,55888,50315,64274	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	7572,57405,16434,49539	1	p1
+INIT	lo_control_heal	38258,53969,39758,51134	32512,17209,11646,62175
+DEC	lo_control_heal	32512,17209,11646,62175	move	0	0	m0	m1	26753,41219,62396,39282	Venusaur	364	364	0	-	1	Tentacruel	280	364	0	-	1	p2	0
+DEC	lo_control_heal	32512,17209,11646,62175	move	0	0	m0	m1	54867,45294,33151,55270	Venusaur	364	364	0	-	1	Tentacruel	197	364	0	-	1	p2	0
+DEC	lo_control_heal	32512,17209,11646,62175	move	0	0	m1	m1	16284,4300,34268,17925	Venusaur	364	364	0	-	1	Tentacruel	157	364	0	-	1	p2	0
+DEC	lo_control_heal	32512,17209,11646,62175	move	0	0	m1	m1	633,25614,18497,43408	Venusaur	364	364	0	-	1	Tentacruel	121	364	0	-	1	p2	0
+DEC	lo_control_heal	32512,17209,11646,62175	move	0	0	m1	m1	41306,57550,64561,19191	Venusaur	364	364	0	-	1	Tentacruel	83	364	0	-	1	p2	0
+DEC	lo_control_heal	32512,17209,11646,62175	move	0	0	m1	m1	37786,39319,51436,19306	Venusaur	364	364	0	-	1	Tentacruel	47	364	0	-	1	p2	0
+DEC	lo_control_heal	32512,17209,11646,62175	move	0	0	m1	m1	24086,53388,53340,21465	Venusaur	364	364	0	-	1	Tentacruel	7	364	0	-	1	p2	0
+DEC	lo_control_heal	32512,17209,11646,62175	move	0	0	m1	m1	32839,41542,14857,4573	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	32512,17209,11646,62175	1	p1
+INIT	lo_control_heal	59813,24039,52376,34250	35628,55797,41866,56827
+DEC	lo_control_heal	35628,55797,41866,56827	move	0	0	m0	m1	23688,58296,19549,28350	Venusaur	364	364	0	-	1	Tentacruel	282	364	0	-	1	p2	0
+DEC	lo_control_heal	35628,55797,41866,56827	move	0	0	m0	m1	17755,23873,48006,53362	Venusaur	364	364	0	-	1	Tentacruel	205	364	0	-	1	p2	0
+DEC	lo_control_heal	35628,55797,41866,56827	move	0	0	m1	m1	38531,40295,18388,25985	Venusaur	364	364	0	-	1	Tentacruel	163	364	0	-	1	p2	0
+DEC	lo_control_heal	35628,55797,41866,56827	move	0	0	m1	m1	21686,2123,39072,43708	Venusaur	364	364	0	-	1	Tentacruel	124	364	0	-	1	p2	0
+DEC	lo_control_heal	35628,55797,41866,56827	move	0	0	m1	m1	50192,14908,57461,16275	Venusaur	364	364	0	-	1	Tentacruel	88	364	0	-	1	p2	0
+DEC	lo_control_heal	35628,55797,41866,56827	move	0	0	m1	m1	7228,11532,9141,26678	Venusaur	364	364	0	-	1	Tentacruel	49	364	0	-	1	p2	0
+DEC	lo_control_heal	35628,55797,41866,56827	move	0	0	m1	m1	23816,21212,30086,44181	Venusaur	364	364	0	-	1	Tentacruel	8	364	0	-	1	p2	0
+DEC	lo_control_heal	35628,55797,41866,56827	move	0	0	m1	m1	54160,30989,54101,46809	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	35628,55797,41866,56827	1	p1
+INIT	lo_control_heal	63746,7423,3292,6294	11800,8305,28246,24279
+DEC	lo_control_heal	11800,8305,28246,24279	move	0	0	m0	m1	64880,47106,10386,19658	Venusaur	364	364	0	-	1	Tentacruel	282	364	0	-	1	p2	0
+DEC	lo_control_heal	11800,8305,28246,24279	move	0	0	m0	m1	35489,62097,39840,50622	Venusaur	364	364	0	-	1	Tentacruel	195	364	0	-	1	p2	0
+DEC	lo_control_heal	11800,8305,28246,24279	move	0	0	m1	m1	50928,3802,17915,189	Venusaur	364	364	0	-	1	Tentacruel	155	364	0	-	1	p2	0
+DEC	lo_control_heal	11800,8305,28246,24279	move	0	0	m1	m1	10229,55576,16554,37544	Venusaur	364	364	0	-	1	Tentacruel	117	364	0	-	1	p2	0
+DEC	lo_control_heal	11800,8305,28246,24279	move	0	0	m1	m1	31080,26927,61551,57839	Venusaur	364	364	0	-	1	Tentacruel	81	364	0	-	1	p2	0
+DEC	lo_control_heal	11800,8305,28246,24279	move	0	0	m1	m1	4930,29234,3535,34242	Venusaur	364	364	0	-	1	Tentacruel	42	364	0	-	1	p2	0
+DEC	lo_control_heal	11800,8305,28246,24279	move	0	0	m1	m1	56304,46823,43017,54545	Venusaur	364	364	0	-	1	Tentacruel	4	364	0	-	1	p2	0
+DEC	lo_control_heal	11800,8305,28246,24279	move	0	0	m1	m1	5466,27214,49427,44949	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	11800,8305,28246,24279	1	p1
+INIT	lo_control_heal	57996,43279,12243,3106	5060,21165,6626,4467
+DEC	lo_control_heal	5060,21165,6626,4467	move	0	0	m0	m1	27712,18785,30323,65430	Venusaur	364	364	0	-	1	Tentacruel	282	364	0	-	1	p2	0
+DEC	lo_control_heal	5060,21165,6626,4467	move	0	0	m0	m1	56897,24699,54481,50122	Venusaur	364	364	0	-	1	Tentacruel	203	364	0	-	1	p2	0
+DEC	lo_control_heal	5060,21165,6626,4467	move	0	0	m1	m1	65343,15244,44769,5049	Venusaur	364	364	0	-	1	Tentacruel	167	364	0	-	1	p2	0
+DEC	lo_control_heal	5060,21165,6626,4467	move	0	0	m1	m1	52200,37131,44592,3412	Venusaur	364	364	0	-	1	Tentacruel	130	364	0	-	1	p2	0
+DEC	lo_control_heal	5060,21165,6626,4467	move	0	0	m1	m1	59640,12399,38043,19979	Venusaur	364	364	0	-	1	Tentacruel	91	364	0	-	1	p2	0
+DEC	lo_control_heal	5060,21165,6626,4467	move	0	0	m1	m1	3265,38467,19146,61454	Venusaur	364	364	0	-	1	Tentacruel	50	364	0	-	1	p2	0
+DEC	lo_control_heal	5060,21165,6626,4467	move	0	0	m1	m1	1012,3688,16184,2381	Venusaur	364	364	0	-	1	Tentacruel	12	364	0	-	1	p2	0
+DEC	lo_control_heal	5060,21165,6626,4467	move	0	0	m1	m1	61877,38183,48201,30737	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	5060,21165,6626,4467	1	p1
+INIT	lo_control_heal	62700,42777,59101,44142	43056,27817,61998,20943
+DEC	lo_control_heal	43056,27817,61998,20943	move	0	0	m0	m1	48485,2174,21206,4898	Venusaur	364	364	0	-	1	Tentacruel	273	364	0	-	1	p2	0
+DEC	lo_control_heal	43056,27817,61998,20943	move	0	0	m0	m1	45960,32895,53420,38550	Venusaur	364	364	0	-	1	Tentacruel	188	364	0	-	1	p2	0
+DEC	lo_control_heal	43056,27817,61998,20943	move	0	0	m1	m1	18150,25400,42125,23157	Venusaur	364	364	0	-	1	Tentacruel	149	364	0	-	1	p2	0
+DEC	lo_control_heal	43056,27817,61998,20943	move	0	0	m1	m1	58038,47702,33898,34496	Venusaur	364	364	0	-	1	Tentacruel	113	364	0	-	1	p2	0
+DEC	lo_control_heal	43056,27817,61998,20943	move	0	0	m1	m1	60210,47072,21193,24551	Venusaur	364	364	0	-	1	Tentacruel	73	364	0	-	1	p2	0
+DEC	lo_control_heal	43056,27817,61998,20943	move	0	0	m1	m1	10250,51310,11562,45850	Venusaur	364	364	0	-	1	Tentacruel	35	364	0	-	1	p2	0
+DEC	lo_control_heal	43056,27817,61998,20943	move	0	0	m1	m1	1491,8906,27591,59150	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	43056,27817,61998,20943	1	p1
+INIT	lo_control_heal	11382,44330,14238,1402	5980,10853,826,15339
+DEC	lo_control_heal	5980,10853,826,15339	move	0	0	m0	m1	34750,38689,50225,54126	Venusaur	364	364	0	-	1	Tentacruel	274	364	0	-	1	p2	0
+DEC	lo_control_heal	5980,10853,826,15339	move	0	0	m0	m1	55714,36701,35213,51746	Venusaur	364	364	0	-	1	Tentacruel	193	364	0	-	1	p2	0
+DEC	lo_control_heal	5980,10853,826,15339	move	0	0	m1	m1	44559,17135,2643,20721	Venusaur	364	364	0	-	1	Tentacruel	152	364	0	-	1	p2	0
+DEC	lo_control_heal	5980,10853,826,15339	move	0	0	m1	m1	30080,39487,29087,10988	Venusaur	364	364	0	-	1	Tentacruel	115	364	0	-	1	p2	0
+DEC	lo_control_heal	5980,10853,826,15339	move	0	0	m1	m1	42527,52208,17282,45955	Venusaur	364	364	0	-	1	Tentacruel	76	364	0	-	1	p2	0
+DEC	lo_control_heal	5980,10853,826,15339	move	0	0	m1	m1	7615,8191,53807,39654	Venusaur	364	364	0	-	1	Tentacruel	41	364	0	-	1	p2	0
+DEC	lo_control_heal	5980,10853,826,15339	move	0	0	m1	m1	56895,59423,56790,17669	Venusaur	364	364	0	-	1	Tentacruel	5	364	0	-	1	p2	0
+DEC	lo_control_heal	5980,10853,826,15339	move	0	0	m1	m1	58494,18462,35378,10313	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	5980,10853,826,15339	1	p1
+INIT	lo_control_heal	3495,58461,6182,58182	19784,2017,6406,43975
+DEC	lo_control_heal	19784,2017,6406,43975	move	0	0	m0	m1	53087,43746,35301,19578	Venusaur	364	364	0	-	1	Tentacruel	279	364	0	-	1	p2	0
+DEC	lo_control_heal	19784,2017,6406,43975	move	0	0	m0	m1	60916,1055,64490,43630	Venusaur	364	364	0	-	1	Tentacruel	201	364	0	-	1	p2	0
+DEC	lo_control_heal	19784,2017,6406,43975	move	0	0	m1	m1	25280,56895,6990,13101	Venusaur	364	364	0	-	1	Tentacruel	127	364	0	-	1	p2	0
+DEC	lo_control_heal	19784,2017,6406,43975	move	0	0	m1	m1	28610,39643,44597,58840	Venusaur	364	364	0	-	1	Tentacruel	87	364	0	-	1	p2	0
+DEC	lo_control_heal	19784,2017,6406,43975	move	0	0	m1	m1	64924,27180,45545,42207	Venusaur	364	364	0	-	1	Tentacruel	46	364	0	-	1	p2	0
+DEC	lo_control_heal	19784,2017,6406,43975	move	0	0	m1	m1	61459,5340,28279,13170	Venusaur	364	364	0	-	1	Tentacruel	9	364	0	-	1	p2	0
+DEC	lo_control_heal	19784,2017,6406,43975	move	0	0	m1	m1	34409,11155,58196,53734	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	19784,2017,6406,43975	1	p1
+INIT	lo_control_heal	8679,33846,18791,53714	62964,16669,49042,15715
+DEC	lo_control_heal	62964,16669,49042,15715	move	0	0	m0	m1	45093,46319,2015,19014	Venusaur	364	364	0	-	1	Tentacruel	284	364	0	-	1	p2	0
+DEC	lo_control_heal	62964,16669,49042,15715	move	0	0	m0	m1	2109,5391,36669,17274	Venusaur	364	364	0	-	1	Tentacruel	196	364	0	-	1	p2	0
+DEC	lo_control_heal	62964,16669,49042,15715	move	0	0	m1	m1	30625,63240,41404,64809	Venusaur	364	364	0	-	1	Tentacruel	123	364	0	-	1	p2	0
+DEC	lo_control_heal	62964,16669,49042,15715	move	0	0	m1	m1	59595,51969,21317,25476	Venusaur	364	364	0	-	1	Tentacruel	83	364	0	-	1	p2	0
+DEC	lo_control_heal	62964,16669,49042,15715	move	0	0	m1	m1	20290,46046,61750,20475	Venusaur	364	364	0	-	1	Tentacruel	43	364	0	-	1	p2	0
+DEC	lo_control_heal	62964,16669,49042,15715	move	0	0	m1	m1	4193,34415,15655,51390	Venusaur	364	364	0	-	1	Tentacruel	4	364	0	-	1	p2	0
+DEC	lo_control_heal	62964,16669,49042,15715	move	0	0	m1	m1	44512,26231,22511,35442	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	62964,16669,49042,15715	1	p1
+INIT	lo_control_heal	34961,400,1574,7454	32096,53785,17118,19647
+DEC	lo_control_heal	32096,53785,17118,19647	move	0	0	m0	m1	13289,4430,40968,22738	Venusaur	364	364	0	-	1	Tentacruel	273	364	0	-	1	p2	0
+DEC	lo_control_heal	32096,53785,17118,19647	move	0	0	m0	m1	59836,62500,53981,24902	Venusaur	364	364	0	-	1	Tentacruel	184	364	0	-	1	p2	0
+DEC	lo_control_heal	32096,53785,17118,19647	move	0	0	m1	m1	13790,10169,61903,27365	Venusaur	364	364	0	-	1	Tentacruel	143	364	0	-	1	p2	0
+DEC	lo_control_heal	32096,53785,17118,19647	move	0	0	m1	m1	15493,30332,11876,4080	Venusaur	364	364	0	-	1	Tentacruel	105	364	0	-	1	p2	0
+DEC	lo_control_heal	32096,53785,17118,19647	move	0	0	m1	m1	12416,15479,4571,37079	Venusaur	364	364	0	-	1	Tentacruel	67	364	0	-	1	p2	0
+DEC	lo_control_heal	32096,53785,17118,19647	move	0	0	m1	m1	16011,39956,21753,26314	Venusaur	364	364	0	-	1	Tentacruel	28	364	0	-	1	p2	0
+DEC	lo_control_heal	32096,53785,17118,19647	move	0	0	m1	m1	186,15835,49498,16318	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	32096,53785,17118,19647	1	p1
+INIT	lo_control_heal	23583,3445,56680,53546	3980,30421,44778,62939
+DEC	lo_control_heal	3980,30421,44778,62939	move	0	0	m0	m1	12732,30161,40430,50206	Venusaur	364	364	0	-	1	Tentacruel	281	364	0	-	1	p2	0
+DEC	lo_control_heal	3980,30421,44778,62939	move	0	0	m0	m1	45638,25792,59116,36818	Venusaur	364	364	0	-	1	Tentacruel	197	364	0	-	1	p2	0
+DEC	lo_control_heal	3980,30421,44778,62939	move	0	0	m1	m1	5245,6496,8449,63585	Venusaur	364	364	0	-	1	Tentacruel	158	364	0	-	1	p2	0
+DEC	lo_control_heal	3980,30421,44778,62939	move	0	0	m1	m1	56999,63254,6196,5916	Venusaur	364	364	0	-	1	Tentacruel	121	364	0	-	1	p2	0
+DEC	lo_control_heal	3980,30421,44778,62939	move	0	0	m1	m1	51849,37110,46851,883	Venusaur	364	364	0	-	1	Tentacruel	82	364	0	-	1	p2	0
+DEC	lo_control_heal	3980,30421,44778,62939	move	0	0	m1	m1	29118,34542,38753,55702	Venusaur	364	364	0	-	1	Tentacruel	45	364	0	-	1	p2	0
+DEC	lo_control_heal	3980,30421,44778,62939	move	0	0	m1	m1	875,44139,9850,55669	Venusaur	364	364	0	-	1	Tentacruel	7	364	0	-	1	p2	0
+DEC	lo_control_heal	3980,30421,44778,62939	move	0	0	m1	m1	48991,1765,46699,54713	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	3980,30421,44778,62939	1	p1
+INIT	lo_control_heal	22565,26458,10515,47606	39032,43857,53174,5303
+DEC	lo_control_heal	39032,43857,53174,5303	move	0	0	m0	m1	26556,21471,61873,38954	Venusaur	364	364	0	-	1	Tentacruel	279	364	0	-	1	p2	0
+DEC	lo_control_heal	39032,43857,53174,5303	move	0	0	m0	m1	27990,59778,22161,6942	Venusaur	364	364	0	-	1	Tentacruel	196	364	0	-	1	p2	0
+DEC	lo_control_heal	39032,43857,53174,5303	move	0	0	m1	m1	1441,13144,54260,57757	Venusaur	364	364	0	-	1	Tentacruel	159	364	0	-	1	p2	0
+DEC	lo_control_heal	39032,43857,53174,5303	move	0	0	m1	m1	60885,19289,51718,25864	Venusaur	364	364	0	-	1	Tentacruel	123	364	0	-	1	p2	0
+DEC	lo_control_heal	39032,43857,53174,5303	move	0	0	m1	m1	24627,25115,35820,975	Venusaur	364	364	0	-	1	Tentacruel	82	364	0	-	1	p2	0
+DEC	lo_control_heal	39032,43857,53174,5303	move	0	0	m1	m1	23788,57255,60511,44322	Venusaur	364	364	0	-	1	Tentacruel	43	364	0	-	1	p2	0
+DEC	lo_control_heal	39032,43857,53174,5303	move	0	0	m1	m1	25467,61987,53689,61425	Venusaur	364	364	0	-	1	Tentacruel	4	364	0	-	1	p2	0
+DEC	lo_control_heal	39032,43857,53174,5303	move	0	0	m1	m1	45824,50390,65202,56437	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	39032,43857,53174,5303	1	p1
+INIT	lo_control_heal	43579,63198,53162,25474	50212,43917,12610,17747
+DEC	lo_control_heal	50212,43917,12610,17747	move	0	0	m0	m1	11636,1825,5011,41206	Venusaur	364	364	0	-	1	Tentacruel	281	364	0	-	1	p2	0
+DEC	lo_control_heal	50212,43917,12610,17747	move	0	0	m0	m1	8952,57298,8281,3882	Venusaur	364	364	0	-	1	Tentacruel	203	364	0	-	1	p2	0
+DEC	lo_control_heal	50212,43917,12610,17747	move	0	0	m1	m1	30259,64576,40331,8857	Venusaur	364	364	0	-	1	Tentacruel	163	364	0	-	1	p2	0
+DEC	lo_control_heal	50212,43917,12610,17747	move	0	0	m1	m1	40168,34022,1637,42420	Venusaur	364	364	0	-	1	Tentacruel	123	364	0	-	1	p2	0
+DEC	lo_control_heal	50212,43917,12610,17747	move	0	0	m1	m1	5898,65257,3666,44523	Venusaur	364	364	0	-	1	Tentacruel	82	364	0	-	1	p2	0
+DEC	lo_control_heal	50212,43917,12610,17747	move	0	0	m1	m1	22593,39134,40941,11630	Venusaur	364	364	0	-	1	Tentacruel	45	364	0	-	1	p2	0
+DEC	lo_control_heal	50212,43917,12610,17747	move	0	0	m1	m1	18721,4306,5841,61997	Venusaur	364	364	0	-	1	Tentacruel	5	364	0	-	1	p2	0
+DEC	lo_control_heal	50212,43917,12610,17747	move	0	0	m1	m1	62162,46862,34177,37617	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	50212,43917,12610,17747	1	p1
+INIT	lo_control_heal	40713,62717,63784,6606	65168,29577,8078,58287
+DEC	lo_control_heal	65168,29577,8078,58287	move	0	0	m0	m1	64565,17822,56147,27266	Venusaur	364	364	0	-	1	Tentacruel	280	364	0	-	1	p2	0
+DEC	lo_control_heal	65168,29577,8078,58287	move	0	0	m0	m1	59068,22375,34834,14326	Venusaur	364	364	0	-	1	Tentacruel	198	364	0	-	1	p2	0
+DEC	lo_control_heal	65168,29577,8078,58287	move	0	0	m1	m1	48312,49826,28066,30549	Venusaur	364	364	0	-	1	Tentacruel	163	364	0	-	1	p2	0
+DEC	lo_control_heal	65168,29577,8078,58287	move	0	0	m1	m1	26348,60729,17966,17696	Venusaur	364	364	0	-	1	Tentacruel	123	364	0	-	1	p2	0
+DEC	lo_control_heal	65168,29577,8078,58287	move	0	0	m1	m1	64895,33749,14695,56775	Venusaur	364	364	0	-	1	Tentacruel	84	364	0	-	1	p2	0
+DEC	lo_control_heal	65168,29577,8078,58287	move	0	0	m1	m1	40065,40180,16472,26234	Venusaur	364	364	0	-	1	Tentacruel	48	364	0	-	1	p2	0
+DEC	lo_control_heal	65168,29577,8078,58287	move	0	0	m1	m1	63083,22197,4965,56361	Venusaur	364	364	0	-	1	Tentacruel	6	364	0	-	1	p2	0
+DEC	lo_control_heal	65168,29577,8078,58287	move	0	0	m1	m1	2907,60565,29859,13613	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	65168,29577,8078,58287	1	p1
+INIT	lo_control_heal	29946,10218,8649,59610	29628,48965,42650,3019
+DEC	lo_control_heal	29628,48965,42650,3019	move	0	0	m0	m1	65438,50627,2645,16590	Venusaur	364	364	0	-	1	Tentacruel	283	364	0	-	1	p2	0
+DEC	lo_control_heal	29628,48965,42650,3019	move	0	0	m0	m1	34150,13449,25172,8578	Venusaur	364	364	0	-	1	Tentacruel	203	364	0	-	1	p2	0
+DEC	lo_control_heal	29628,48965,42650,3019	move	0	0	m1	m1	3060,59610,62821,23505	Venusaur	364	364	0	-	1	Tentacruel	167	364	0	-	1	p2	0
+DEC	lo_control_heal	29628,48965,42650,3019	move	0	0	m1	m1	61436,2047,3400,28492	Venusaur	364	364	0	-	1	Tentacruel	130	364	0	-	1	p2	0
+DEC	lo_control_heal	29628,48965,42650,3019	move	0	0	m1	m1	37344,20930,39699,12131	Venusaur	364	364	0	-	1	Tentacruel	89	364	0	-	1	p2	0
+DEC	lo_control_heal	29628,48965,42650,3019	move	0	0	m1	m1	51752,2824,9901,9286	Venusaur	364	364	0	-	1	Tentacruel	53	364	0	-	1	p2	0
+DEC	lo_control_heal	29628,48965,42650,3019	move	0	0	m1	m1	2457,35807,11113,27109	Venusaur	364	364	0	-	1	Tentacruel	12	364	0	-	1	p2	0
+DEC	lo_control_heal	29628,48965,42650,3019	move	0	0	m1	m1	31304,6349,26279,48937	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	29628,48965,42650,3019	1	p1
+INIT	lo_control_heal	1132,27451,21100,40102	4008,2753,37478,39335
+DEC	lo_control_heal	4008,2753,37478,39335	move	0	0	m0	m1	34689,40460,59937,12250	Venusaur	364	364	0	-	1	Tentacruel	277	364	0	-	1	p2	0
+DEC	lo_control_heal	4008,2753,37478,39335	move	0	0	m0	m1	13495,60094,63262,6094	Venusaur	364	364	0	-	1	Tentacruel	188	364	0	-	1	p2	0
+DEC	lo_control_heal	4008,2753,37478,39335	move	0	0	m1	m1	12054,35891,54337,3085	Venusaur	364	364	0	-	1	Tentacruel	149	364	0	-	1	p2	0
+DEC	lo_control_heal	4008,2753,37478,39335	move	0	0	m1	m1	28420,5948,59606,4152	Venusaur	364	364	0	-	1	Tentacruel	113	364	0	-	1	p2	0
+DEC	lo_control_heal	4008,2753,37478,39335	move	0	0	m1	m1	7768,21143,37816,65215	Venusaur	364	364	0	-	1	Tentacruel	72	364	0	-	1	p2	0
+DEC	lo_control_heal	4008,2753,37478,39335	move	0	0	m1	m1	40270,54212,4082,62162	Venusaur	364	364	0	-	1	Tentacruel	33	364	0	-	1	p2	0
+DEC	lo_control_heal	4008,2753,37478,39335	move	0	0	m1	m1	64083,3493,46818,23366	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	4008,2753,37478,39335	1	p1
+INIT	lo_control_heal	51764,5074,49818,49458	32340,37373,28402,10563
+DEC	lo_control_heal	32340,37373,28402,10563	move	0	0	m0	m1	5202,51745,39313,934	Venusaur	364	364	0	-	1	Tentacruel	277	364	0	-	1	p2	0
+DEC	lo_control_heal	32340,37373,28402,10563	move	0	0	m0	m1	40000,3149,34853,9946	Venusaur	364	364	0	-	1	Tentacruel	196	364	0	-	1	p2	0
+DEC	lo_control_heal	32340,37373,28402,10563	move	0	0	m1	m1	43818,44934,41547,33801	Venusaur	364	364	0	-	1	Tentacruel	158	364	0	-	1	p2	0
+DEC	lo_control_heal	32340,37373,28402,10563	move	0	0	m1	m1	16198,4979,51088,54244	Venusaur	364	364	0	-	1	Tentacruel	117	364	0	-	1	p2	0
+DEC	lo_control_heal	32340,37373,28402,10563	move	0	0	m1	m1	52365,9935,60400,26587	Venusaur	364	364	0	-	1	Tentacruel	78	364	0	-	1	p2	0
+DEC	lo_control_heal	32340,37373,28402,10563	move	0	0	m1	m1	43462,22011,29467,7710	Venusaur	364	364	0	-	1	Tentacruel	39	364	0	-	1	p2	0
+DEC	lo_control_heal	32340,37373,28402,10563	move	0	0	m1	m1	37374,12629,14358,8349	Venusaur	364	364	0	-	1	Tentacruel	1	364	0	-	1	p2	0
+DEC	lo_control_heal	32340,37373,28402,10563	move	0	0	m1	m1	28927,4272,58661,14945	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	32340,37373,28402,10563	1	p1
+INIT	lo_control_heal	43761,43348,44313,41598	11200,20729,34878,5791
+DEC	lo_control_heal	11200,20729,34878,5791	move	0	0	m0	m1	39677,12338,31373,18482	Venusaur	364	364	0	-	1	Tentacruel	284	364	0	-	1	p2	0
+DEC	lo_control_heal	11200,20729,34878,5791	move	0	0	m0	m1	50500,5815,42177,6822	Venusaur	364	364	0	-	1	Tentacruel	205	364	0	-	1	p2	0
+DEC	lo_control_heal	11200,20729,34878,5791	move	0	0	m1	m1	18281,20883,46004,32709	Venusaur	364	364	0	-	1	Tentacruel	167	364	0	-	1	p2	0
+DEC	lo_control_heal	11200,20729,34878,5791	move	0	0	m1	m1	59733,40233,30479,9808	Venusaur	364	364	0	-	1	Tentacruel	131	364	0	-	1	p2	0
+DEC	lo_control_heal	11200,20729,34878,5791	move	0	0	m1	m1	13191,30493,46124,18103	Venusaur	364	364	0	-	1	Tentacruel	95	364	0	-	1	p2	0
+DEC	lo_control_heal	11200,20729,34878,5791	move	0	0	m1	m1	45215,16756,26333,45610	Venusaur	364	364	0	-	1	Tentacruel	56	364	0	-	1	p2	0
+DEC	lo_control_heal	11200,20729,34878,5791	move	0	0	m1	m1	48909,12252,49243,33177	Venusaur	364	364	0	-	1	Tentacruel	17	364	0	-	1	p2	0
+DEC	lo_control_heal	11200,20729,34878,5791	move	0	0	m1	m1	43430,62564,44710,58269	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	11200,20729,34878,5791	1	p1
+INIT	lo_control_heal	64474,51714,41200,19594	17388,949,59978,32187
+DEC	lo_control_heal	17388,949,59978,32187	move	0	0	m0	m1	1920,64485,55460,18814	Venusaur	364	364	0	-	1	Tentacruel	285	364	0	-	1	p2	0
+DEC	lo_control_heal	17388,949,59978,32187	move	0	0	m0	m1	34704,33236,27923,32562	Venusaur	364	364	0	-	1	Tentacruel	198	364	0	-	1	p2	0
+DEC	lo_control_heal	17388,949,59978,32187	move	0	0	m1	m1	64717,46870,7672,31553	Venusaur	364	364	0	-	1	Tentacruel	160	364	0	-	1	p2	0
+DEC	lo_control_heal	17388,949,59978,32187	move	0	0	m1	m1	46144,47469,53235,13180	Venusaur	364	364	0	-	1	Tentacruel	125	364	0	-	1	p2	0
+DEC	lo_control_heal	17388,949,59978,32187	move	0	0	m1	m1	31456,47936,36758,14163	Venusaur	364	364	0	-	1	Tentacruel	89	364	0	-	1	p2	0
+DEC	lo_control_heal	17388,949,59978,32187	move	0	0	m1	m1	42967,16103,52400,31478	Venusaur	364	364	0	-	1	Tentacruel	18	364	0	-	1	p2	0
+DEC	lo_control_heal	17388,949,59978,32187	move	0	0	m1	m1	35030,21010,59628,18730	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	17388,949,59978,32187	1	p1
+INIT	lo_control_heal	31363,41302,33127,35670	45784,9777,24854,14999
+DEC	lo_control_heal	45784,9777,24854,14999	move	0	0	m0	m1	45846,22849,59658,5002	Venusaur	364	364	0	-	1	Tentacruel	278	364	0	-	1	p2	0
+DEC	lo_control_heal	45784,9777,24854,14999	move	0	0	m0	m1	20065,39434,37383,41086	Venusaur	364	364	0	-	1	Tentacruel	189	364	0	-	1	p2	0
+DEC	lo_control_heal	45784,9777,24854,14999	move	0	0	m1	m1	28268,14490,47072,45693	Venusaur	364	364	0	-	1	Tentacruel	151	364	0	-	1	p2	0
+DEC	lo_control_heal	45784,9777,24854,14999	move	0	0	m1	m1	58822,42877,46570,59240	Venusaur	364	364	0	-	1	Tentacruel	112	364	0	-	1	p2	0
+DEC	lo_control_heal	45784,9777,24854,14999	move	0	0	m1	m1	44913,44900,46094,38319	Venusaur	364	364	0	-	1	Tentacruel	40	364	0	-	1	p2	0
+DEC	lo_control_heal	45784,9777,24854,14999	move	0	0	m1	m1	44076,26580,45810,53843	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	45784,9777,24854,14999	1	p1
+INIT	lo_control_heal	10898,48564,43933,60130	9348,62573,30882,59699
+DEC	lo_control_heal	9348,62573,30882,59699	move	0	0	m0	m1	53097,29561,57068,29270	Venusaur	364	364	0	-	1	Tentacruel	282	364	0	-	1	p2	0
+DEC	lo_control_heal	9348,62573,30882,59699	move	0	0	m0	m1	21907,16004,60518,35466	Venusaur	364	364	0	-	1	Tentacruel	200	364	0	-	1	p2	0
+DEC	lo_control_heal	9348,62573,30882,59699	move	0	0	m1	m1	15002,53216,57895,8569	Venusaur	364	364	0	-	1	Tentacruel	158	364	0	-	1	p2	0
+DEC	lo_control_heal	9348,62573,30882,59699	move	0	0	m1	m1	2825,36095,49443,60948	Venusaur	364	364	0	-	1	Tentacruel	120	364	0	-	1	p2	0
+DEC	lo_control_heal	9348,62573,30882,59699	move	0	0	m1	m1	17312,44129,5296,32203	Venusaur	364	364	0	-	1	Tentacruel	36	364	0	-	1	p2	0
+DEC	lo_control_heal	9348,62573,30882,59699	move	0	0	m1	m1	26005,8532,54827,53423	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	9348,62573,30882,59699	1	p1
+INIT	lo_control_heal	57968,55621,48681,46894	1264,27241,31982,58767
+DEC	lo_control_heal	1264,27241,31982,58767	move	0	0	m0	m1	63028,48079,19700,61922	Venusaur	364	364	0	-	1	Tentacruel	277	364	0	-	1	p2	0
+DEC	lo_control_heal	1264,27241,31982,58767	move	0	0	m0	m1	19479,27048,39481,2390	Venusaur	364	364	0	-	1	Tentacruel	198	364	0	-	1	p2	0
+DEC	lo_control_heal	1264,27241,31982,58767	move	0	0	m1	m1	36369,30194,23168,33845	Venusaur	364	364	0	-	1	Tentacruel	160	364	0	-	1	p2	0
+DEC	lo_control_heal	1264,27241,31982,58767	move	0	0	m1	m1	30588,7686,16413,45952	Venusaur	364	364	0	-	1	Tentacruel	125	364	0	-	1	p2	0
+DEC	lo_control_heal	1264,27241,31982,58767	move	0	0	m1	m1	50456,44539,8715,52135	Venusaur	364	364	0	-	1	Tentacruel	85	364	0	-	1	p2	0
+DEC	lo_control_heal	1264,27241,31982,58767	move	0	0	m1	m1	13915,37830,5416,18906	Venusaur	364	364	0	-	1	Tentacruel	48	364	0	-	1	p2	0
+DEC	lo_control_heal	1264,27241,31982,58767	move	0	0	m1	m1	34112,23326,29047,37326	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	1264,27241,31982,58767	1	p1
+INIT	lo_control_heal	32952,37451,18449,64570	32796,17445,31226,19371
+DEC	lo_control_heal	32796,17445,31226,19371	move	0	0	m0	m1	22669,24040,32433,56878	Venusaur	364	364	0	-	1	Tentacruel	278	364	0	-	1	p2	0
+DEC	lo_control_heal	32796,17445,31226,19371	move	0	0	m0	m1	12159,37708,48032,43234	Venusaur	364	364	0	-	1	Tentacruel	189	364	0	-	1	p2	0
+DEC	lo_control_heal	32796,17445,31226,19371	move	0	0	m1	m1	37876,28554,13929,22193	Venusaur	364	364	0	-	1	Tentacruel	148	364	0	-	1	p2	0
+DEC	lo_control_heal	32796,17445,31226,19371	move	0	0	m1	m1	40073,24481,2938,25516	Venusaur	364	364	0	-	1	Tentacruel	107	364	0	-	1	p2	0
+DEC	lo_control_heal	32796,17445,31226,19371	move	0	0	m1	m1	58900,11250,32586,6979	Venusaur	364	364	0	-	1	Tentacruel	67	364	0	-	1	p2	0
+DEC	lo_control_heal	32796,17445,31226,19371	move	0	0	m1	m1	19521,41433,49267,18087	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	32796,17445,31226,19371	1	p1
+INIT	lo_control_heal	53557,57786,51406,34310	33288,64929,15302,63367
+DEC	lo_control_heal	33288,64929,15302,63367	move	0	0	m0	m1	43739,64187,30870,17210	Venusaur	364	364	0	-	1	Tentacruel	275	364	0	-	1	p2	0
+DEC	lo_control_heal	33288,64929,15302,63367	move	0	0	m0	m1	50523,35573,29399,46382	Venusaur	364	364	0	-	1	Tentacruel	120	364	0	-	1	p2	0
+DEC	lo_control_heal	33288,64929,15302,63367	move	0	0	m1	m1	35288,6891,58149,54509	Venusaur	364	364	0	-	1	Tentacruel	81	364	0	-	1	p2	0
+DEC	lo_control_heal	33288,64929,15302,63367	move	0	0	m1	m1	62737,32128,34302,60056	Venusaur	364	364	0	-	1	Tentacruel	39	364	0	-	1	p2	0
+DEC	lo_control_heal	33288,64929,15302,63367	move	0	0	m1	m1	30992,26301,647,53932	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	33288,64929,15302,63367	1	p1
+INIT	lo_control_heal	11048,7285,30697,57490	46772,53981,20050,34083
+DEC	lo_control_heal	46772,53981,20050,34083	move	0	0	m0	m1	22849,36333,22907,60678	Venusaur	364	364	0	-	1	Tentacruel	287	364	0	-	1	p2	0
+DEC	lo_control_heal	46772,53981,20050,34083	move	0	0	m0	m1	7717,58088,403,14906	Venusaur	364	364	0	-	1	Tentacruel	206	364	0	-	1	p2	0
+DEC	lo_control_heal	46772,53981,20050,34083	move	0	0	m1	m1	11301,31472,63691,64233	Venusaur	364	364	0	-	1	Tentacruel	170	364	0	-	1	p2	0
+DEC	lo_control_heal	46772,53981,20050,34083	move	0	0	m1	m1	13025,28709,40548,62532	Venusaur	364	364	0	-	1	Tentacruel	134	364	0	-	1	p2	0
+DEC	lo_control_heal	46772,53981,20050,34083	move	0	0	m1	m1	18522,30911,29520,61371	Venusaur	364	364	0	-	1	Tentacruel	97	364	0	-	1	p2	0
+DEC	lo_control_heal	46772,53981,20050,34083	move	0	0	m1	m1	52866,51307,12005,41854	Venusaur	364	364	0	-	1	Tentacruel	61	364	0	-	1	p2	0
+DEC	lo_control_heal	46772,53981,20050,34083	move	0	0	m1	m1	57727,49155,18149,61821	Venusaur	364	364	0	-	1	Tentacruel	23	364	0	-	1	p2	0
+DEC	lo_control_heal	46772,53981,20050,34083	move	0	0	m1	m1	27095,8161,16452,48449	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_control_heal	46772,53981,20050,34083	1	p1
+SCEN	lo_leech_reversal
+TEAM	lo_leech_reversal	p1	Venusaur|||Overgrow|leechseed,sludgebomb|Modest|252,,4,252,,|N||||
+TEAM	lo_leech_reversal	p2	Tentacruel|||LiquidOoze|barrier,splash|Bold|252,,252,,,|N||||
+INIT	lo_leech_reversal	18886,40016,56773,44286	37440,62841,37566,36639
+DEC	lo_leech_reversal	37440,62841,37566,36639	move	0	0	m0	m1	43322,53332,49060,48640	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	37440,62841,37566,36639	move	0	0	m1	m1	43753,16836,30964,10279	Venusaur	274	364	0	-	1	Tentacruel	238	364	0	-	1	p2	1
+DEC	lo_leech_reversal	37440,62841,37566,36639	move	0	0	m1	m1	28086,50772,60966,24666	Venusaur	229	364	0	-	1	Tentacruel	153	364	0	-	1	p2	1
+DEC	lo_leech_reversal	37440,62841,37566,36639	move	0	0	m1	m1	26052,37160,53732,48009	Venusaur	184	364	0	-	1	Tentacruel	72	364	0	-	1	p2	1
+DEC	lo_leech_reversal	37440,62841,37566,36639	move	0	0	m1	m1	40086,31958,4161,56973	Venusaur	148	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	37440,62841,37566,36639	1	p1
+INIT	lo_leech_reversal	44502,29809,54759,32522	37484,28725,7370,65083
+DEC	lo_leech_reversal	37484,28725,7370,65083	move	0	0	m0	m1	46583,39771,57288,54828	Venusaur	364	364	0	-	1	Tentacruel	364	364	0	-	1	p2	0
+DEC	lo_leech_reversal	37484,28725,7370,65083	move	0	0	m1	m1	31789,60698,47509,65475	Venusaur	364	364	0	-	1	Tentacruel	323	364	0	-	1	p2	0
+DEC	lo_leech_reversal	37484,28725,7370,65083	move	0	0	m1	m1	58093,31646,17618,7206	Venusaur	364	364	0	-	1	Tentacruel	287	364	0	-	1	p2	0
+DEC	lo_leech_reversal	37484,28725,7370,65083	move	0	0	m1	m1	55844,12089,22401,8005	Venusaur	364	364	0	-	1	Tentacruel	250	364	0	-	1	p2	0
+DEC	lo_leech_reversal	37484,28725,7370,65083	move	0	0	m1	m1	33299,7443,32469,48080	Venusaur	364	364	0	-	1	Tentacruel	210	364	0	-	1	p2	0
+DEC	lo_leech_reversal	37484,28725,7370,65083	move	0	0	m1	m1	40752,9880,8898,2615	Venusaur	364	364	0	-	1	Tentacruel	171	364	0	-	1	p2	0
+DEC	lo_leech_reversal	37484,28725,7370,65083	move	0	0	m1	m1	23631,24263,32728,15274	Venusaur	364	364	0	-	1	Tentacruel	135	364	0	-	1	p2	0
+DEC	lo_leech_reversal	37484,28725,7370,65083	move	0	0	m1	m1	17824,14321,12536,18713	Venusaur	364	364	0	-	1	Tentacruel	100	364	0	-	1	p2	0
+DEC	lo_leech_reversal	37484,28725,7370,65083	move	0	0	m1	m1	3231,34165,19642,20020	Venusaur	364	364	0	-	1	Tentacruel	28	364	0	-	1	p2	0
+DEC	lo_leech_reversal	37484,28725,7370,65083	move	0	0	m1	m1	65215,55350,40613,38024	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	37484,28725,7370,65083	1	p1
+INIT	lo_leech_reversal	24753,6988,30199,26070	26968,55985,15254,17175
+DEC	lo_leech_reversal	26968,55985,15254,17175	move	0	0	m0	m1	31533,8476,64065,17688	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	26968,55985,15254,17175	move	0	0	m1	m1	26192,5440,18692,46367	Venusaur	274	364	0	-	1	Tentacruel	233	364	0	-	1	p2	1
+DEC	lo_leech_reversal	26968,55985,15254,17175	move	0	0	m1	m1	50136,23988,42640,51378	Venusaur	229	364	0	-	1	Tentacruel	149	364	0	-	1	p2	1
+DEC	lo_leech_reversal	26968,55985,15254,17175	move	0	0	m1	m1	11116,31411,63247,705	Venusaur	184	364	0	-	1	Tentacruel	66	364	0	-	1	p2	1
+DEC	lo_leech_reversal	26968,55985,15254,17175	move	0	0	m1	m1	33525,35644,63480,57925	Venusaur	184	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	26968,55985,15254,17175	1	p1
+INIT	lo_leech_reversal	1673,30850,42104,60770	49924,28909,31522,63923
+DEC	lo_leech_reversal	49924,28909,31522,63923	move	0	0	m0	m1	33939,56197,32539,46788	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	49924,28909,31522,63923	move	0	0	m1	m1	14676,4427,12219,25659	Venusaur	274	364	0	-	1	Tentacruel	235	364	0	-	1	p2	1
+DEC	lo_leech_reversal	49924,28909,31522,63923	move	0	0	m1	m1	4515,28675,15367,45566	Venusaur	229	364	0	-	1	Tentacruel	154	364	0	-	1	p2	1
+DEC	lo_leech_reversal	49924,28909,31522,63923	move	0	0	m1	m1	19535,3220,31641,41469	Venusaur	184	364	0	-	1	Tentacruel	70	364	0	-	1	p2	1
+DEC	lo_leech_reversal	49924,28909,31522,63923	move	0	0	m1	m1	27328,64839,7058,26049	Venusaur	151	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	49924,28909,31522,63923	1	p1
+INIT	lo_leech_reversal	34449,55861,30365,25006	2928,12009,10094,32271
+DEC	lo_leech_reversal	2928,12009,10094,32271	move	0	0	m0	m1	49269,3428,52589,38704	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	2928,12009,10094,32271	move	0	0	m1	m1	56788,49295,43159,59671	Venusaur	274	364	0	-	1	Tentacruel	236	364	0	-	1	p2	1
+DEC	lo_leech_reversal	2928,12009,10094,32271	move	0	0	m1	m1	50703,32534,28085,58378	Venusaur	229	364	0	-	1	Tentacruel	155	364	0	-	1	p2	1
+DEC	lo_leech_reversal	2928,12009,10094,32271	move	0	0	m1	m1	47525,37291,7624,63737	Venusaur	184	364	0	-	1	Tentacruel	72	364	0	-	1	p2	1
+DEC	lo_leech_reversal	2928,12009,10094,32271	move	0	0	m1	m1	53134,51905,2362,42237	Venusaur	150	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	2928,12009,10094,32271	1	p1
+INIT	lo_leech_reversal	47314,16410,36405,52922	28316,53413,19578,60459
+DEC	lo_leech_reversal	28316,53413,19578,60459	move	0	0	m0	m1	20222,9401,18294,4700	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	28316,53413,19578,60459	move	0	0	m1	m1	748,33371,61860,57267	Venusaur	274	364	0	-	1	Tentacruel	237	364	0	-	1	p2	1
+DEC	lo_leech_reversal	28316,53413,19578,60459	move	0	0	m1	m1	9169,45814,30342,10966	Venusaur	229	364	0	-	1	Tentacruel	153	364	0	-	1	p2	1
+DEC	lo_leech_reversal	28316,53413,19578,60459	move	0	0	m1	m1	12927,49063,58331,50101	Venusaur	184	364	0	-	1	Tentacruel	69	364	0	-	1	p2	1
+DEC	lo_leech_reversal	28316,53413,19578,60459	move	0	0	m1	m1	43106,47135,26396,39929	Venusaur	151	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	28316,53413,19578,60459	1	p1
+INIT	lo_leech_reversal	10422,62217,17702,134	55432,53793,46662,8199
+DEC	lo_leech_reversal	55432,53793,46662,8199	move	0	0	m0	m1	24429,42875,23065,5192	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	55432,53793,46662,8199	move	0	0	m1	m1	3717,22414,4144,41999	Venusaur	274	364	0	-	1	Tentacruel	232	364	0	-	1	p2	1
+DEC	lo_leech_reversal	55432,53793,46662,8199	move	0	0	m1	m1	30059,27260,44210,4706	Venusaur	229	364	0	-	1	Tentacruel	146	364	0	-	1	p2	1
+DEC	lo_leech_reversal	55432,53793,46662,8199	move	0	0	m1	m1	11806,14808,52038,32305	Venusaur	184	364	0	-	1	Tentacruel	24	364	0	-	1	p2	1
+DEC	lo_leech_reversal	55432,53793,46662,8199	move	0	0	m1	m1	38189,23545,16573,1717	Venusaur	184	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	55432,53793,46662,8199	1	p1
+INIT	lo_leech_reversal	36156,55971,33265,33554	62772,28509,61650,46499
+DEC	lo_leech_reversal	62772,28509,61650,46499	move	0	0	m0	m1	46262,3992,30052,18676	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	62772,28509,61650,46499	move	0	0	m1	m1	64101,38716,3254,21035	Venusaur	274	364	0	-	1	Tentacruel	235	364	0	-	1	p2	1
+DEC	lo_leech_reversal	62772,28509,61650,46499	move	0	0	m1	m1	29426,43284,14558,59054	Venusaur	229	364	0	-	1	Tentacruel	155	364	0	-	1	p2	1
+DEC	lo_leech_reversal	62772,28509,61650,46499	move	0	0	m1	m1	45668,39225,40724,25709	Venusaur	184	364	0	-	1	Tentacruel	69	364	0	-	1	p2	1
+DEC	lo_leech_reversal	62772,28509,61650,46499	move	0	0	m1	m1	64785,17012,8523,24881	Venusaur	150	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	62772,28509,61650,46499	1	p1
+INIT	lo_leech_reversal	52630,17674,22985,41566	12448,42073,18462,2303
+DEC	lo_leech_reversal	12448,42073,18462,2303	move	0	0	m0	m1	15648,40927,63597,7264	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	12448,42073,18462,2303	move	0	0	m1	m1	44840,8378,8723,50695	Venusaur	274	364	0	-	1	Tentacruel	195	364	0	-	1	p2	1
+DEC	lo_leech_reversal	12448,42073,18462,2303	move	0	0	m1	m1	5672,15177,33675,46010	Venusaur	229	364	0	-	1	Tentacruel	114	364	0	-	1	p2	1
+DEC	lo_leech_reversal	12448,42073,18462,2303	move	0	0	m1	m1	15404,35482,38893,29289	Venusaur	184	364	0	-	1	Tentacruel	29	364	0	-	1	p2	1
+DEC	lo_leech_reversal	12448,42073,18462,2303	move	0	0	m1	m1	51448,42596,12103,59245	Venusaur	184	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	12448,42073,18462,2303	1	p1
+INIT	lo_leech_reversal	6920,47960,28287,27242	46796,11541,51242,13851
+DEC	lo_leech_reversal	46796,11541,51242,13851	move	0	0	m0	m1	19541,57837,17778,47756	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	46796,11541,51242,13851	move	0	0	m1	m1	24663,59447,36435,39843	Venusaur	274	364	0	-	1	Tentacruel	239	364	0	-	1	p2	1
+DEC	lo_leech_reversal	46796,11541,51242,13851	move	0	0	m1	m1	13308,9369,51107,17798	Venusaur	229	364	0	-	1	Tentacruel	158	364	0	-	1	p2	1
+DEC	lo_leech_reversal	46796,11541,51242,13851	move	0	0	m1	m1	55990,19780,48144,25637	Venusaur	184	364	0	-	1	Tentacruel	78	364	0	-	1	p2	1
+DEC	lo_leech_reversal	46796,11541,51242,13851	move	0	0	m1	m1	18770,5703,4317,38249	Venusaur	145	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	46796,11541,51242,13851	1	p1
+INIT	lo_leech_reversal	20613,57250,41819,42806	29624,34193,15606,6391
+DEC	lo_leech_reversal	29624,34193,15606,6391	move	0	0	m0	m1	12359,36659,58614,3960	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	29624,34193,15606,6391	move	0	0	m1	m1	2797,29442,60325,12031	Venusaur	274	364	0	-	1	Tentacruel	233	364	0	-	1	p2	1
+DEC	lo_leech_reversal	29624,34193,15606,6391	move	0	0	m1	m1	47274,22041,14036,10258	Venusaur	229	364	0	-	1	Tentacruel	152	364	0	-	1	p2	1
+DEC	lo_leech_reversal	29624,34193,15606,6391	move	0	0	m1	m1	7344,54454,37514,46497	Venusaur	184	364	0	-	1	Tentacruel	66	364	0	-	1	p2	1
+DEC	lo_leech_reversal	29624,34193,15606,6391	move	0	0	m1	m1	5100,33310,39834,10021	Venusaur	153	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	29624,34193,15606,6391	1	p1
+INIT	lo_leech_reversal	23785,54341,52247,58562	4964,59853,12930,19859
+DEC	lo_leech_reversal	4964,59853,12930,19859	move	0	0	m0	m1	9000,33649,4042,50980	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	4964,59853,12930,19859	move	0	0	m1	m1	1681,58767,6337,39963	Venusaur	274	364	0	-	1	Tentacruel	238	364	0	-	1	p2	1
+DEC	lo_leech_reversal	4964,59853,12930,19859	move	0	0	m1	m1	53202,63443,17113,42846	Venusaur	229	364	0	-	1	Tentacruel	158	364	0	-	1	p2	1
+DEC	lo_leech_reversal	4964,59853,12930,19859	move	0	0	m1	m1	49755,1624,54069,41693	Venusaur	184	364	0	-	1	Tentacruel	72	364	0	-	1	p2	1
+DEC	lo_leech_reversal	4964,59853,12930,19859	move	0	0	m1	m1	47969,12072,50843,6305	Venusaur	150	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	4964,59853,12930,19859	1	p1
+INIT	lo_leech_reversal	38767,18647,4271,28430	464,21961,62670,12271
+DEC	lo_leech_reversal	464,21961,62670,12271	move	0	0	m0	m1	35145,62075,23616,19856	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	464,21961,62670,12271	move	0	0	m1	m1	10738,4214,31304,48887	Venusaur	274	364	0	-	1	Tentacruel	233	364	0	-	1	p2	1
+DEC	lo_leech_reversal	464,21961,62670,12271	move	0	0	m1	m1	18620,17427,2844,53098	Venusaur	229	364	0	-	1	Tentacruel	149	364	0	-	1	p2	1
+DEC	lo_leech_reversal	464,21961,62670,12271	move	0	0	m1	m1	7055,57177,51691,10201	Venusaur	184	364	0	-	1	Tentacruel	64	364	0	-	1	p2	1
+DEC	lo_leech_reversal	464,21961,62670,12271	move	0	0	m1	m1	26494,64828,19570,42461	Venusaur	184	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	464,21961,62670,12271	1	p1
+INIT	lo_leech_reversal	37383,13525,35214,21018	27388,34181,36826,56331
+DEC	lo_leech_reversal	27388,34181,36826,56331	move	0	0	m0	m1	48400,36037,4344,52924	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	27388,34181,36826,56331	move	0	0	m1	m1	31136,58929,47460,13203	Venusaur	274	364	0	-	1	Tentacruel	233	364	0	-	1	p2	1
+DEC	lo_leech_reversal	27388,34181,36826,56331	move	0	0	m1	m1	50300,34652,61203,27702	Venusaur	229	364	0	-	1	Tentacruel	147	364	0	-	1	p2	1
+DEC	lo_leech_reversal	27388,34181,36826,56331	move	0	0	m1	m1	1384,5435,62289,149	Venusaur	184	364	0	-	1	Tentacruel	63	364	0	-	1	p2	1
+DEC	lo_leech_reversal	27388,34181,36826,56331	move	0	0	m1	m1	40479,25910,2370,51929	Venusaur	163	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	27388,34181,36826,56331	1	p1
+INIT	lo_leech_reversal	14737,62434,37016,23014	15080,62721,53158,11751
+DEC	lo_leech_reversal	15080,62721,53158,11751	move	0	0	m0	m1	57026,3968,39640,13992	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	15080,62721,53158,11751	move	0	0	m1	m1	19662,37216,56162,21999	Venusaur	274	364	0	-	1	Tentacruel	238	364	0	-	1	p2	1
+DEC	lo_leech_reversal	15080,62721,53158,11751	move	0	0	m1	m1	64339,55156,17655,2498	Venusaur	229	364	0	-	1	Tentacruel	156	364	0	-	1	p2	1
+DEC	lo_leech_reversal	15080,62721,53158,11751	move	0	0	m1	m1	18306,24191,19675,43281	Venusaur	184	364	0	-	1	Tentacruel	75	364	0	-	1	p2	1
+DEC	lo_leech_reversal	15080,62721,53158,11751	move	0	0	m1	m1	42037,37311,2192,17301	Venusaur	145	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	15080,62721,53158,11751	1	p1
+INIT	lo_leech_reversal	20383,58427,3153,4722	7572,57405,16434,49539
+DEC	lo_leech_reversal	7572,57405,16434,49539	move	0	0	m0	m1	11006,55550,27116,12628	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	7572,57405,16434,49539	move	0	0	m1	m1	23085,54328,59582,16907	Venusaur	274	364	0	-	1	Tentacruel	236	364	0	-	1	p2	1
+DEC	lo_leech_reversal	7572,57405,16434,49539	move	0	0	m1	m1	32958,23631,13676,62478	Venusaur	229	364	0	-	1	Tentacruel	155	364	0	-	1	p2	1
+DEC	lo_leech_reversal	7572,57405,16434,49539	move	0	0	m1	m1	64198,51846,41366,23885	Venusaur	184	364	0	-	1	Tentacruel	72	364	0	-	1	p2	1
+DEC	lo_leech_reversal	7572,57405,16434,49539	move	0	0	m1	m1	10590,17651,54666,35857	Venusaur	148	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	7572,57405,16434,49539	1	p1
+INIT	lo_leech_reversal	38258,53969,39758,51134	32512,17209,11646,62175
+DEC	lo_leech_reversal	32512,17209,11646,62175	move	0	0	m0	m1	60195,52732,63719,10944	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32512,17209,11646,62175	move	0	0	m1	m1	34478,26114,45366,54247	Venusaur	274	364	0	-	1	Tentacruel	235	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32512,17209,11646,62175	move	0	0	m1	m1	42742,57993,1129,14106	Venusaur	229	364	0	-	1	Tentacruel	152	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32512,17209,11646,62175	move	0	0	m1	m1	6819,31926,46018,6473	Venusaur	184	364	0	-	1	Tentacruel	69	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32512,17209,11646,62175	move	0	0	m1	m1	39473,15159,24762,57421	Venusaur	153	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	32512,17209,11646,62175	1	p1
+INIT	lo_leech_reversal	59813,24039,52376,34250	35628,55797,41866,56827
+DEC	lo_leech_reversal	35628,55797,41866,56827	move	0	0	m0	m1	44473,27507,29390,20204	Venusaur	364	364	0	-	1	Tentacruel	364	364	0	-	1	p2	0
+DEC	lo_leech_reversal	35628,55797,41866,56827	move	0	0	m1	m1	65143,46278,18708,42883	Venusaur	364	364	0	-	1	Tentacruel	327	364	0	-	1	p2	0
+DEC	lo_leech_reversal	35628,55797,41866,56827	move	0	0	m1	m1	65464,9323,13804,40678	Venusaur	364	364	0	-	1	Tentacruel	289	364	0	-	1	p2	0
+DEC	lo_leech_reversal	35628,55797,41866,56827	move	0	0	m1	m1	2445,55905,30315,39173	Venusaur	364	364	0	-	1	Tentacruel	251	364	0	-	1	p2	0
+DEC	lo_leech_reversal	35628,55797,41866,56827	move	0	0	m1	m1	54232,15583,57186,30864	Venusaur	364	364	0	-	1	Tentacruel	210	364	0	-	1	p2	0
+DEC	lo_leech_reversal	35628,55797,41866,56827	move	0	0	m1	m1	18435,5217,64429,17911	Venusaur	364	364	0	-	1	Tentacruel	173	364	0	-	1	p2	0
+DEC	lo_leech_reversal	35628,55797,41866,56827	move	0	0	m1	m1	50054,18022,4798,57962	Venusaur	364	364	0	-	1	Tentacruel	133	364	0	-	1	p2	0
+DEC	lo_leech_reversal	35628,55797,41866,56827	move	0	0	m1	m1	54160,30989,54101,46809	Venusaur	364	364	0	-	1	Tentacruel	92	364	0	-	1	p2	0
+DEC	lo_leech_reversal	35628,55797,41866,56827	move	0	0	m1	m1	53586,16377,2425,3828	Venusaur	364	364	0	-	1	Tentacruel	57	364	0	-	1	p2	0
+DEC	lo_leech_reversal	35628,55797,41866,56827	move	0	0	m1	m1	42647,13247,65480,36907	Venusaur	364	364	0	-	1	Tentacruel	21	364	0	-	1	p2	0
+DEC	lo_leech_reversal	35628,55797,41866,56827	move	0	0	m1	m1	3508,28303,23662,32015	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	35628,55797,41866,56827	1	p1
+INIT	lo_leech_reversal	63746,7423,3292,6294	11800,8305,28246,24279
+DEC	lo_leech_reversal	11800,8305,28246,24279	move	0	0	m0	m1	24120,61735,31679,35288	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	11800,8305,28246,24279	move	0	0	m1	m1	19969,35045,57192,6367	Venusaur	274	364	0	-	1	Tentacruel	235	364	0	-	1	p2	1
+DEC	lo_leech_reversal	11800,8305,28246,24279	move	0	0	m1	m1	62516,14243,55066,46962	Venusaur	229	364	0	-	1	Tentacruel	152	364	0	-	1	p2	1
+DEC	lo_leech_reversal	11800,8305,28246,24279	move	0	0	m1	m1	54427,50176,64057,22657	Venusaur	184	364	0	-	1	Tentacruel	67	364	0	-	1	p2	1
+DEC	lo_leech_reversal	11800,8305,28246,24279	move	0	0	m1	m1	55036,63176,34719,23557	Venusaur	157	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	11800,8305,28246,24279	1	p1
+INIT	lo_leech_reversal	57996,43279,12243,3106	5060,21165,6626,4467
+DEC	lo_leech_reversal	5060,21165,6626,4467	move	0	0	m0	m1	7927,7993,19598,34692	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	5060,21165,6626,4467	move	0	0	m1	m1	56677,29171,21226,17403	Venusaur	274	364	0	-	1	Tentacruel	234	364	0	-	1	p2	1
+DEC	lo_leech_reversal	5060,21165,6626,4467	move	0	0	m1	m1	63813,26825,22958,52414	Venusaur	229	364	0	-	1	Tentacruel	151	364	0	-	1	p2	1
+DEC	lo_leech_reversal	5060,21165,6626,4467	move	0	0	m1	m1	30068,38244,63236,37821	Venusaur	184	364	0	-	1	Tentacruel	69	364	0	-	1	p2	1
+DEC	lo_leech_reversal	5060,21165,6626,4467	move	0	0	m1	m1	29713,57042,47623,48001	Venusaur	151	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	5060,21165,6626,4467	1	p1
+INIT	lo_leech_reversal	62700,42777,59101,44142	43056,27817,61998,20943
+DEC	lo_leech_reversal	43056,27817,61998,20943	move	0	0	m0	m1	24640,45009,38695,46064	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	43056,27817,61998,20943	move	0	0	m1	m1	26195,33692,40220,1239	Venusaur	274	364	0	-	1	Tentacruel	233	364	0	-	1	p2	1
+DEC	lo_leech_reversal	43056,27817,61998,20943	move	0	0	m1	m1	51452,5824,47238,60106	Venusaur	229	364	0	-	1	Tentacruel	151	364	0	-	1	p2	1
+DEC	lo_leech_reversal	43056,27817,61998,20943	move	0	0	m1	m1	57534,14519,16960,18105	Venusaur	184	364	0	-	1	Tentacruel	65	364	0	-	1	p2	1
+DEC	lo_leech_reversal	43056,27817,61998,20943	move	0	0	m1	m1	17419,58230,55310,38589	Venusaur	156	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	43056,27817,61998,20943	1	p1
+INIT	lo_leech_reversal	11382,44330,14238,1402	5980,10853,826,15339
+DEC	lo_leech_reversal	5980,10853,826,15339	move	0	0	m0	m1	38910,25179,27379,15132	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	5980,10853,826,15339	move	0	0	m1	m1	43976,48916,15716,63347	Venusaur	274	364	0	-	1	Tentacruel	232	364	0	-	1	p2	1
+DEC	lo_leech_reversal	5980,10853,826,15339	move	0	0	m1	m1	49429,8271,39982,56726	Venusaur	229	364	0	-	1	Tentacruel	146	364	0	-	1	p2	1
+DEC	lo_leech_reversal	5980,10853,826,15339	move	0	0	m1	m1	64044,4892,17760,11637	Venusaur	184	364	0	-	1	Tentacruel	62	364	0	-	1	p2	1
+DEC	lo_leech_reversal	5980,10853,826,15339	move	0	0	m1	m1	26043,55439,10691,59833	Venusaur	163	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	5980,10853,826,15339	1	p1
+INIT	lo_leech_reversal	3495,58461,6182,58182	19784,2017,6406,43975
+DEC	lo_leech_reversal	19784,2017,6406,43975	move	0	0	m0	m1	20635,20421,34732,2312	Venusaur	364	364	0	-	1	Tentacruel	364	364	0	-	1	p2	0
+DEC	lo_leech_reversal	19784,2017,6406,43975	move	0	0	m1	m1	59002,61042,63414,30671	Venusaur	364	364	0	-	1	Tentacruel	328	364	0	-	1	p2	0
+DEC	lo_leech_reversal	19784,2017,6406,43975	move	0	0	m1	m1	41818,21020,60735,12578	Venusaur	364	364	0	-	1	Tentacruel	286	364	0	-	1	p2	0
+DEC	lo_leech_reversal	19784,2017,6406,43975	move	0	0	m1	m1	14993,36564,39587,50161	Venusaur	364	364	0	-	1	Tentacruel	209	364	0	-	1	p2	0
+DEC	lo_leech_reversal	19784,2017,6406,43975	move	0	0	m1	m1	33252,51502,61751,39404	Venusaur	364	364	0	-	1	Tentacruel	169	364	0	-	1	p2	0
+DEC	lo_leech_reversal	19784,2017,6406,43975	move	0	0	m1	m1	38968,33716,21230,52867	Venusaur	364	364	0	-	1	Tentacruel	131	364	0	-	1	p2	0
+DEC	lo_leech_reversal	19784,2017,6406,43975	move	0	0	m1	m1	34409,11155,58196,53734	Venusaur	364	364	0	-	1	Tentacruel	95	364	0	-	1	p2	0
+DEC	lo_leech_reversal	19784,2017,6406,43975	move	0	0	m1	m1	1859,45778,16310,51205	Venusaur	364	364	0	-	1	Tentacruel	54	364	0	-	1	p2	0
+DEC	lo_leech_reversal	19784,2017,6406,43975	move	0	0	m1	m1	39727,4334,43064,21392	Venusaur	364	364	0	-	1	Tentacruel	14	364	0	-	1	p2	0
+DEC	lo_leech_reversal	19784,2017,6406,43975	move	0	0	m1	m1	65174,37830,62453,23588	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	19784,2017,6406,43975	1	p1
+INIT	lo_leech_reversal	8679,33846,18791,53714	62964,16669,49042,15715
+DEC	lo_leech_reversal	62964,16669,49042,15715	move	0	0	m0	m1	51184,18216,61163,51636	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	62964,16669,49042,15715	move	0	0	m1	m1	15597,45060,33031,41451	Venusaur	274	364	0	-	1	Tentacruel	238	364	0	-	1	p2	1
+DEC	lo_leech_reversal	62964,16669,49042,15715	move	0	0	m1	m1	41292,35584,26249,12654	Venusaur	229	364	0	-	1	Tentacruel	151	364	0	-	1	p2	1
+DEC	lo_leech_reversal	62964,16669,49042,15715	move	0	0	m1	m1	41520,46929,59058,17965	Venusaur	184	364	0	-	1	Tentacruel	70	364	0	-	1	p2	1
+DEC	lo_leech_reversal	62964,16669,49042,15715	move	0	0	m1	m1	14459,41416,2084,42737	Venusaur	149	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	62964,16669,49042,15715	1	p1
+INIT	lo_leech_reversal	34961,400,1574,7454	32096,53785,17118,19647
+DEC	lo_leech_reversal	32096,53785,17118,19647	move	0	0	m0	m1	60174,6796,28219,59680	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32096,53785,17118,19647	move	0	0	m1	m1	10219,1798,26554,20935	Venusaur	274	364	0	-	1	Tentacruel	235	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32096,53785,17118,19647	move	0	0	m1	m1	5799,57508,56927,60026	Venusaur	229	364	0	-	1	Tentacruel	151	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32096,53785,17118,19647	move	0	0	m1	m1	50825,15701,34967,45097	Venusaur	184	364	0	-	1	Tentacruel	65	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32096,53785,17118,19647	move	0	0	m1	m1	33298,29401,18047,51501	Venusaur	155	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	32096,53785,17118,19647	1	p1
+INIT	lo_leech_reversal	23583,3445,56680,53546	3980,30421,44778,62939
+DEC	lo_leech_reversal	3980,30421,44778,62939	move	0	0	m0	m1	51984,32289,12449,37708	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	3980,30421,44778,62939	move	0	0	m1	m1	29020,35650,49175,9059	Venusaur	274	364	0	-	1	Tentacruel	235	364	0	-	1	p2	1
+DEC	lo_leech_reversal	3980,30421,44778,62939	move	0	0	m1	m1	38161,50237,55492,10310	Venusaur	229	364	0	-	1	Tentacruel	154	364	0	-	1	p2	1
+DEC	lo_leech_reversal	3980,30421,44778,62939	move	0	0	m1	m1	13322,39267,29536,48613	Venusaur	184	364	0	-	1	Tentacruel	72	364	0	-	1	p2	1
+DEC	lo_leech_reversal	3980,30421,44778,62939	move	0	0	m1	m1	30090,41467,58865,54057	Venusaur	152	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	3980,30421,44778,62939	1	p1
+INIT	lo_leech_reversal	22565,26458,10515,47606	39032,43857,53174,5303
+DEC	lo_leech_reversal	39032,43857,53174,5303	move	0	0	m0	m1	32599,56386,41728,46136	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	39032,43857,53174,5303	move	0	0	m1	m1	36764,43190,36716,29375	Venusaur	274	364	0	-	1	Tentacruel	238	364	0	-	1	p2	1
+DEC	lo_leech_reversal	39032,43857,53174,5303	move	0	0	m1	m1	45125,47407,44015,30418	Venusaur	229	364	0	-	1	Tentacruel	152	364	0	-	1	p2	1
+DEC	lo_leech_reversal	39032,43857,53174,5303	move	0	0	m1	m1	39773,58672,42113,60257	Venusaur	184	364	0	-	1	Tentacruel	71	364	0	-	1	p2	1
+DEC	lo_leech_reversal	39032,43857,53174,5303	move	0	0	m1	m1	9074,64445,61951,32997	Venusaur	149	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	39032,43857,53174,5303	1	p1
+INIT	lo_leech_reversal	43579,63198,53162,25474	50212,43917,12610,17747
+DEC	lo_leech_reversal	50212,43917,12610,17747	move	0	0	m0	m1	44857,44766,13670,63460	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	50212,43917,12610,17747	move	0	0	m1	m1	59280,46711,56885,23515	Venusaur	274	364	0	-	1	Tentacruel	238	364	0	-	1	p2	1
+DEC	lo_leech_reversal	50212,43917,12610,17747	move	0	0	m1	m1	17636,49893,32903,8734	Venusaur	229	364	0	-	1	Tentacruel	155	364	0	-	1	p2	1
+DEC	lo_leech_reversal	50212,43917,12610,17747	move	0	0	m1	m1	30925,47544,59142,29853	Venusaur	184	364	0	-	1	Tentacruel	73	364	0	-	1	p2	1
+DEC	lo_leech_reversal	50212,43917,12610,17747	move	0	0	m1	m1	10469,3140,62936,20065	Venusaur	150	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	50212,43917,12610,17747	1	p1
+INIT	lo_leech_reversal	40713,62717,63784,6606	65168,29577,8078,58287
+DEC	lo_leech_reversal	65168,29577,8078,58287	move	0	0	m0	m1	17753,17767,32291,51792	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	65168,29577,8078,58287	move	0	0	m1	m1	37625,6658,4369,47799	Venusaur	274	364	0	-	1	Tentacruel	236	364	0	-	1	p2	1
+DEC	lo_leech_reversal	65168,29577,8078,58287	move	0	0	m1	m1	18126,63263,30196,13866	Venusaur	229	364	0	-	1	Tentacruel	155	364	0	-	1	p2	1
+DEC	lo_leech_reversal	65168,29577,8078,58287	move	0	0	m1	m1	2352,40387,34504,21913	Venusaur	184	364	0	-	1	Tentacruel	70	364	0	-	1	p2	1
+DEC	lo_leech_reversal	65168,29577,8078,58287	move	0	0	m1	m1	25909,32112,44046,30621	Venusaur	155	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	65168,29577,8078,58287	1	p1
+INIT	lo_leech_reversal	29946,10218,8649,59610	29628,48965,42650,3019
+DEC	lo_leech_reversal	29628,48965,42650,3019	move	0	0	m0	m1	29205,18283,28930,22396	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	29628,48965,42650,3019	move	0	0	m1	m1	49018,58616,4744,11091	Venusaur	274	364	0	-	1	Tentacruel	239	364	0	-	1	p2	1
+DEC	lo_leech_reversal	29628,48965,42650,3019	move	0	0	m1	m1	10495,32221,22861,32502	Venusaur	229	364	0	-	1	Tentacruel	154	364	0	-	1	p2	1
+DEC	lo_leech_reversal	29628,48965,42650,3019	move	0	0	m1	m1	41618,12253,25506,19029	Venusaur	184	364	0	-	1	Tentacruel	70	364	0	-	1	p2	1
+DEC	lo_leech_reversal	29628,48965,42650,3019	move	0	0	m1	m1	5879,37817,37544,63641	Venusaur	151	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	29628,48965,42650,3019	1	p1
+INIT	lo_leech_reversal	1132,27451,21100,40102	4008,2753,37478,39335
+DEC	lo_leech_reversal	4008,2753,37478,39335	move	0	0	m0	m1	8279,13519,1271,35688	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	4008,2753,37478,39335	move	0	0	m1	m1	11488,59987,53324,2479	Venusaur	274	364	0	-	1	Tentacruel	237	364	0	-	1	p2	1
+DEC	lo_leech_reversal	4008,2753,37478,39335	move	0	0	m1	m1	5389,18491,51733,34946	Venusaur	229	364	0	-	1	Tentacruel	119	364	0	-	1	p2	1
+DEC	lo_leech_reversal	4008,2753,37478,39335	move	0	0	m1	m1	40922,31400,11013,52945	Venusaur	184	364	0	-	1	Tentacruel	39	364	0	-	1	p2	1
+DEC	lo_leech_reversal	4008,2753,37478,39335	move	0	0	m1	m1	11855,48925,42841,36181	Venusaur	184	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	4008,2753,37478,39335	1	p1
+INIT	lo_leech_reversal	51764,5074,49818,49458	32340,37373,28402,10563
+DEC	lo_leech_reversal	32340,37373,28402,10563	move	0	0	m0	m1	36512,36243,8192,4628	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32340,37373,28402,10563	move	0	0	m1	m1	42194,44815,27251,29131	Venusaur	274	364	0	-	1	Tentacruel	238	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32340,37373,28402,10563	move	0	0	m1	m1	39650,51042,42920,40654	Venusaur	229	364	0	-	1	Tentacruel	153	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32340,37373,28402,10563	move	0	0	m1	m1	13943,45003,63489,7949	Venusaur	184	364	0	-	1	Tentacruel	70	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32340,37373,28402,10563	move	0	0	m1	m1	22078,45659,33570,45521	Venusaur	152	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	32340,37373,28402,10563	1	p1
+INIT	lo_leech_reversal	43761,43348,44313,41598	11200,20729,34878,5791
+DEC	lo_leech_reversal	11200,20729,34878,5791	move	0	0	m0	m1	18482,23288,36773,22400	Venusaur	364	364	0	-	1	Tentacruel	364	364	0	-	1	p2	0
+DEC	lo_leech_reversal	11200,20729,34878,5791	move	0	0	m1	m1	53949,24618,28512,16295	Venusaur	364	364	0	-	1	Tentacruel	324	364	0	-	1	p2	0
+DEC	lo_leech_reversal	11200,20729,34878,5791	move	0	0	m1	m1	61851,51174,51289,52698	Venusaur	364	364	0	-	1	Tentacruel	287	364	0	-	1	p2	0
+DEC	lo_leech_reversal	11200,20729,34878,5791	move	0	0	m1	m1	44924,37692,10656,14089	Venusaur	364	364	0	-	1	Tentacruel	248	364	0	-	1	p2	0
+DEC	lo_leech_reversal	11200,20729,34878,5791	move	0	0	m1	m1	43068,20262,12226,33508	Venusaur	364	364	0	-	1	Tentacruel	209	364	0	-	1	p2	0
+DEC	lo_leech_reversal	11200,20729,34878,5791	move	0	0	m1	m1	42520,23127,56878,49883	Venusaur	364	364	0	-	1	Tentacruel	173	364	0	-	1	p2	0
+DEC	lo_leech_reversal	11200,20729,34878,5791	move	0	0	m1	m1	57167,5383,19135,38174	Venusaur	364	364	0	-	1	Tentacruel	136	364	0	-	1	p2	0
+DEC	lo_leech_reversal	11200,20729,34878,5791	move	0	0	m1	m1	43430,62564,44710,58269	Venusaur	364	364	0	-	1	Tentacruel	97	364	0	-	1	p2	0
+DEC	lo_leech_reversal	11200,20729,34878,5791	move	0	0	m1	m1	51885,661,61738,36616	Venusaur	364	364	0	-	1	Tentacruel	57	364	0	-	1	p2	0
+DEC	lo_leech_reversal	11200,20729,34878,5791	move	0	0	m1	m1	30560,61293,27957,30159	Venusaur	364	364	0	-	1	Tentacruel	21	364	0	-	1	p2	0
+DEC	lo_leech_reversal	11200,20729,34878,5791	move	0	0	m1	m1	59159,11586,4904,61555	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	11200,20729,34878,5791	1	p1
+INIT	lo_leech_reversal	64474,51714,41200,19594	17388,949,59978,32187
+DEC	lo_leech_reversal	17388,949,59978,32187	move	0	0	m0	m1	49144,6646,32492,34732	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	17388,949,59978,32187	move	0	0	m1	m1	19943,27564,62299,3907	Venusaur	274	364	0	-	1	Tentacruel	197	364	0	-	1	p2	1
+DEC	lo_leech_reversal	17388,949,59978,32187	move	0	0	m1	m1	53118,1041,45097,57766	Venusaur	229	364	0	-	1	Tentacruel	111	364	0	-	1	p2	1
+DEC	lo_leech_reversal	17388,949,59978,32187	move	0	0	m1	m1	58309,35402,45807,53957	Venusaur	184	364	0	-	1	Tentacruel	27	364	0	-	1	p2	1
+DEC	lo_leech_reversal	17388,949,59978,32187	move	0	0	m1	m1	50605,16455,36356,23049	Venusaur	184	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	17388,949,59978,32187	1	p1
+INIT	lo_leech_reversal	31363,41302,33127,35670	45784,9777,24854,14999
+DEC	lo_leech_reversal	45784,9777,24854,14999	move	0	0	m0	m1	37627,40861,30294,36504	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	45784,9777,24854,14999	move	0	0	m1	m1	11418,60358,37011,15519	Venusaur	274	364	0	-	1	Tentacruel	233	364	0	-	1	p2	1
+DEC	lo_leech_reversal	45784,9777,24854,14999	move	0	0	m1	m1	36469,18540,37063,26162	Venusaur	229	364	0	-	1	Tentacruel	150	364	0	-	1	p2	1
+DEC	lo_leech_reversal	45784,9777,24854,14999	move	0	0	m1	m1	15307,4623,6909,28225	Venusaur	184	364	0	-	1	Tentacruel	69	364	0	-	1	p2	1
+DEC	lo_leech_reversal	45784,9777,24854,14999	move	0	0	m1	m1	60028,46194,42179,38341	Venusaur	157	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	45784,9777,24854,14999	1	p1
+INIT	lo_leech_reversal	10898,48564,43933,60130	9348,62573,30882,59699
+DEC	lo_leech_reversal	9348,62573,30882,59699	move	0	0	m0	m1	47187,12895,51796,6212	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	9348,62573,30882,59699	move	0	0	m1	m1	36914,45852,47778,58299	Venusaur	274	364	0	-	1	Tentacruel	237	364	0	-	1	p2	1
+DEC	lo_leech_reversal	9348,62573,30882,59699	move	0	0	m1	m1	55100,1575,46946,42878	Venusaur	229	364	0	-	1	Tentacruel	109	364	0	-	1	p2	1
+DEC	lo_leech_reversal	9348,62573,30882,59699	move	0	0	m1	m1	17101,29524,41787,17789	Venusaur	184	364	0	-	1	Tentacruel	24	364	0	-	1	p2	1
+DEC	lo_leech_reversal	9348,62573,30882,59699	move	0	0	m1	m1	4049,46975,31244,53569	Venusaur	184	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	9348,62573,30882,59699	1	p1
+INIT	lo_leech_reversal	57968,55621,48681,46894	1264,27241,31982,58767
+DEC	lo_leech_reversal	1264,27241,31982,58767	move	0	0	m0	m1	27831,32705,62871,37040	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	1264,27241,31982,58767	move	0	0	m1	m1	55159,20278,16712,57495	Venusaur	274	364	0	-	1	Tentacruel	236	364	0	-	1	p2	1
+DEC	lo_leech_reversal	1264,27241,31982,58767	move	0	0	m1	m1	45785,21236,26607,45450	Venusaur	229	364	0	-	1	Tentacruel	152	364	0	-	1	p2	1
+DEC	lo_leech_reversal	1264,27241,31982,58767	move	0	0	m1	m1	6723,48718,3562,21625	Venusaur	184	364	0	-	1	Tentacruel	28	364	0	-	1	p2	1
+DEC	lo_leech_reversal	1264,27241,31982,58767	move	0	0	m1	m1	13112,29118,65129,18557	Venusaur	184	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	1264,27241,31982,58767	1	p1
+INIT	lo_leech_reversal	32952,37451,18449,64570	32796,17445,31226,19371
+DEC	lo_leech_reversal	32796,17445,31226,19371	move	0	0	m0	m1	16049,1211,8998,9180	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32796,17445,31226,19371	move	0	0	m1	m1	11920,11803,14541,53043	Venusaur	274	364	0	-	1	Tentacruel	238	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32796,17445,31226,19371	move	0	0	m1	m1	45831,59676,9839,20566	Venusaur	229	364	0	-	1	Tentacruel	153	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32796,17445,31226,19371	move	0	0	m1	m1	9379,22605,19991,22325	Venusaur	184	364	0	-	1	Tentacruel	72	364	0	-	1	p2	1
+DEC	lo_leech_reversal	32796,17445,31226,19371	move	0	0	m1	m1	17095,675,17393,63353	Venusaur	150	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	32796,17445,31226,19371	1	p1
+INIT	lo_leech_reversal	53557,57786,51406,34310	33288,64929,15302,63367
+DEC	lo_leech_reversal	33288,64929,15302,63367	move	0	0	m0	m1	6609,61976,11863,48584	Venusaur	364	364	0	-	1	Tentacruel	364	364	0	-	1	p2	0
+DEC	lo_leech_reversal	33288,64929,15302,63367	move	0	0	m1	m1	63596,2419,64004,2959	Venusaur	364	364	0	-	1	Tentacruel	325	364	0	-	1	p2	0
+DEC	lo_leech_reversal	33288,64929,15302,63367	move	0	0	m1	m1	24520,19467,46831,4066	Venusaur	364	364	0	-	1	Tentacruel	287	364	0	-	1	p2	0
+DEC	lo_leech_reversal	33288,64929,15302,63367	move	0	0	m1	m1	61952,29226,34714,51633	Venusaur	364	364	0	-	1	Tentacruel	249	364	0	-	1	p2	0
+DEC	lo_leech_reversal	33288,64929,15302,63367	move	0	0	m1	m1	30992,26301,647,53932	Venusaur	364	364	0	-	1	Tentacruel	211	364	0	-	1	p2	0
+DEC	lo_leech_reversal	33288,64929,15302,63367	move	0	0	m1	m1	53113,22468,58447,13891	Venusaur	364	364	0	-	1	Tentacruel	171	364	0	-	1	p2	0
+DEC	lo_leech_reversal	33288,64929,15302,63367	move	0	0	m1	m1	15832,16640,21684,5286	Venusaur	364	364	0	-	1	Tentacruel	131	364	0	-	1	p2	0
+DEC	lo_leech_reversal	33288,64929,15302,63367	move	0	0	m1	m1	39416,25232,60421,453	Venusaur	364	364	0	-	1	Tentacruel	95	364	0	-	1	p2	0
+DEC	lo_leech_reversal	33288,64929,15302,63367	move	0	0	m1	m1	36017,57921,1203,53328	Venusaur	364	364	0	-	1	Tentacruel	56	364	0	-	1	p2	0
+DEC	lo_leech_reversal	33288,64929,15302,63367	move	0	0	m1	m1	27595,27230,41088,14519	Venusaur	364	364	0	-	1	Tentacruel	16	364	0	-	1	p2	0
+DEC	lo_leech_reversal	33288,64929,15302,63367	move	0	0	m1	m1	55367,56591,31351,38107	Venusaur	364	364	0	-	1	Tentacruel	0	364	1	-	0	p2	0
+END	lo_leech_reversal	33288,64929,15302,63367	1	p1
+INIT	lo_leech_reversal	11048,7285,30697,57490	46772,53981,20050,34083
+DEC	lo_leech_reversal	46772,53981,20050,34083	move	0	0	m0	m1	52775,51161,64809,2676	Venusaur	319	364	0	-	1	Tentacruel	319	364	0	-	1	p2	1
+DEC	lo_leech_reversal	46772,53981,20050,34083	move	0	0	m1	m1	43822,26170,42241,45483	Venusaur	274	364	0	-	1	Tentacruel	236	364	0	-	1	p2	1
+DEC	lo_leech_reversal	46772,53981,20050,34083	move	0	0	m1	m1	56112,60650,63691,15406	Venusaur	229	364	0	-	1	Tentacruel	155	364	0	-	1	p2	1
+DEC	lo_leech_reversal	46772,53981,20050,34083	move	0	0	m1	m1	37221,15757,54658,59373	Venusaur	184	364	0	-	1	Tentacruel	73	364	0	-	1	p2	1
+DEC	lo_leech_reversal	46772,53981,20050,34083	move	0	0	m1	m1	42523,16567,18052,44209	Venusaur	152	364	0	-	1	Tentacruel	0	364	1	-	0	p2	1
+END	lo_leech_reversal	46772,53981,20050,34083	1	p1

@@ -106,6 +106,35 @@ impl crate::state::BattleState {
         let curse_still = move_id == "curse"
             && curse_ghost
             && self.sides[foe].pokemon[foe_slot].substitute.is_some();
+        // --- YAWN disposition (`gen3_yawn_v1`) — the TryHit-order resolution of a Yawn cast,
+        //     computed ONCE (draw-free reads) so the announce `[still]` form + the yawn arm below
+        //     agree. The sim's gen-3 `yawn.onTryHit(target)` fails if `target.status ||
+        //     !target.runStatusImmunity('slp')`; a Protect (`protect: 1`) blocks it at TryHit
+        //     BEFORE that; a Substitute (no `bypasssub`) blocks it at `onTryPrimaryHit` AFTER.
+        //     TryHit priority order: Protect > already-statused > sleep-immune > substitute > add.
+        //     `yawn_protect`/`yawn_statused`/`yawn_immune`/`yawn_subbed` are mutually exclusive by
+        //     construction (each gates on the prior being false); `yawn_still` = the two cases whose
+        //     announce is the `[still]` did-nothing form (already-statused OR substituted; Protect
+        //     + sleep-immune keep the normal target announce). VERIFIED bit-for-bit vs the
+        //     omniscient sim (`harness/probe_batch89_haze_trick_yawn.js` + `probe_yawn_edges`). ---
+        let yawn_protect = move_id == "yawn" && self.protect_blocks(foe, foe_slot, false);
+        let yawn_statused = move_id == "yawn"
+            && !yawn_protect
+            && self.sides[foe].pokemon[foe_slot].status.is_some();
+        let yawn_immune = move_id == "yawn"
+            && !yawn_protect
+            && !yawn_statused
+            && dex
+                .ability(&to_id(&self.sides[foe].pokemon[foe_slot].ability))
+                .and_then(|a| a.status_immune.as_ref())
+                .map(|si| si.blocks("slp"))
+                .unwrap_or(false);
+        let yawn_subbed = move_id == "yawn"
+            && !yawn_protect
+            && !yawn_statused
+            && !yawn_immune
+            && self.sides[foe].pokemon[foe_slot].substitute.is_some();
+        let yawn_still = yawn_statused || yawn_subbed;
         if self.logging() {
             let user = self.mon_ref(_side, _slot, dex);
             // Spikes at the cap is a top-level `[still]` (did-nothing) case; a
@@ -117,9 +146,11 @@ impl crate::state::BattleState {
             // FIRST, and a MISSED move keeps its target-form announce + gains `[miss]`
             // (byte-verified: `|move|…|Hypnosis|<target>|[miss]` into a paralyzed Hypno).
             // Spikes-at-cap stays up-front (never-miss, no roll before the fail).)
-            // A ghost-Curse-into-a-sub is the SAME did-nothing `[still]` case.
+            // A ghost-Curse-into-a-sub is the SAME did-nothing `[still]` case; a Yawn cast into
+            // an already-statused OR substituted (non-protected, non-immune) foe is likewise
+            // (`yawn_still`, `gen3_yawn_v1`).
             let still_form =
-                (move_id == "spikes" && self.sides[foe].spikes >= 3) || curse_still;
+                (move_id == "spikes" && self.sides[foe].spikes >= 3) || curse_still || yawn_still;
             if still_form {
                 self.log.move_used(&user, move_name, None, false, true);
             } else {
@@ -2054,6 +2085,240 @@ impl crate::state::BattleState {
             if self.logging() {
                 let user = self.mon_ref(_side, _slot, dex);
                 self.log.singleturn(&user, "Snatch");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- HAZE (`gen3_haze_v1`, the gen-3 `haze` — a Status FIELD move,
+        //     `type Ice`, `accuracy: true` [never-miss → NO accuracy draw], `target: all`,
+        //     `priority 0`, resolved at the user's speed slot [NOT a residual]). Its gen-3
+        //     `onHitField`: `this.add('-clearallboost'); for (const p of this.getAllActive())
+        //     p.clearBoosts();` — so it emits ONE `|-clearallboost` FIELD line (NO per-mon
+        //     `-clearboost`) and zeroes BOTH actives' boost stages INCLUDING the USER's own
+        //     (`getAllActive()`). DRAW-FREE (probe `harness/probe_batch89_haze_trick_yawn.js` +
+        //     the re-probe here: a Haze turn draws the SAME count as a Splash control — only the
+        //     endTurn Quick Claw). `landed` FALSE (a status `moveHit` returns undefined → the
+        //     in-tryMoveHit Update is skipped). The `|move|<user>|Haze|<user>` announce is
+        //     already emitted at the top (`target: all` → `status_move_announce_renders_user`).
+        //     No type-immunity / Substitute interaction (it's a field effect). ---
+        if move_id == "haze" {
+            // [EMIT] the ONE `|-clearallboost` field line (before the silent per-mon clears).
+            if self.logging() {
+                self.log.push_raw("|-clearallboost".to_string());
+            }
+            // clearBoosts() on BOTH actives (getAllActive — incl. the USER's own boosts).
+            for (s, sl) in [(_side, _slot), (foe, foe_slot)] {
+                self.sides[s].pokemon[sl].boosts = [0; crate::state::BOOST_LEN];
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- YAWN (`gen3_yawn_v1`, the gen-3 `yawn` — a category-Status foe-target move, type
+        //     Normal, `accuracy: true` [never-miss → NO accuracy draw], `volatileStatus: 'yawn'`,
+        //     flags `{protect, reflectable, mirror, metronome}` [NO `bypasssub`]). DELAYED SLEEP —
+        //     the CRUX is that the sleep `random(2,6)` fires at RESOLVE (the residual `onEnd`), not
+        //     at cast: the CAST is entirely DRAW-FREE. VERIFIED bit-for-bit vs the omniscient sim
+        //     (`harness/probe_batch89_haze_trick_yawn.js` + `probe_yawn_edges`).
+        //
+        //     TryHit-order resolution (dispositions computed draw-free at the top): Protect
+        //     (`-activate Protect`) > onTryHit already-statused (`[still]` + `-fail|<user>`, no
+        //     volatile) > onTryHit sleep-immune (Insomnia / Vital Spirit via `runStatusImmunity
+        //     ('slp')` → `-immune|<target>|[from] ability: <A>`, no volatile) > onTryPrimaryHit
+        //     substitute (`[still]` + `-fail|<user>`, no volatile) > ADD the `yawn` volatile
+        //     (`duration: 2`, DRAW-FREE) + `|-start|<target>|move: Yawn|[of] <source>`. `landed`
+        //     ALWAYS FALSE. The RESOLVE (the residual `Yawn` handler at order 10 subOrder 19)
+        //     routes through the existing `try_set_status('slp')` path. ---
+        if move_id == "yawn" {
+            // (1) PROTECT block (TryHit, highest priority — the announce kept the normal target
+            //     form since `yawn_still` excludes the protected case).
+            if yawn_protect {
+                // [EMIT] `|-activate|<target>|Protect` (the standard block line).
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (2) onTryHit: the target ALREADY has a major status → `[still]` + `-fail|<user>`, no
+            //     volatile. The announce ALREADY emitted the `[still]` form up-front via
+            //     `yawn_still` (the Spikes-at-cap / ghost-Curse-into-sub precedent), so DO NOT
+            //     re-append `[still]` here (that double-`[still]` bug — `|Yawn||[still]|[still]` —
+            //     was the omniscient byte-fuzz find, master-seed 80808, ab_0_13/ab_4_12). Emit
+            //     only the `|-fail|<user>`. DRAW-FREE.
+            if yawn_statused {
+                // [EMIT] just `|-fail|<user>` (the `[still]` is already on the announce).
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (3) onTryHit: the target is SLEEP-IMMUNE (Insomnia / Vital Spirit — their `onImmunity`
+            //     blocks `runStatusImmunity('slp')`) → `|-immune|<target>|[from] ability: <A>`, no
+            //     volatile (the announce used the NORMAL target form). DRAW-FREE.
+            if yawn_immune {
+                if self.logging() {
+                    let ability = to_id(&self.sides[foe].pokemon[foe_slot].ability);
+                    let display = dex
+                        .ability(&ability)
+                        .map(|a| a.name.clone())
+                        .unwrap_or_else(|| ability.clone());
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.immune_from_ability(&target, &display);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (4) onTryPrimaryHit: a SUBSTITUTE (no `bypasssub`) blocks the volatile → `[still]` +
+            //     `-fail|<user>`, no volatile. Like (2), the announce ALREADY carried `[still]` via
+            //     `yawn_still` up-front — emit only the `|-fail|<user>` (no double `[still]`).
+            if yawn_subbed {
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (5) ADD the `yawn` volatile (duration 2), recording the SOURCE uid for the `[of]`
+            //     clause + the `trySetStatus` source. DRAW-FREE.
+            let src_uid = self.sides[_side].pokemon[_slot].uid;
+            self.sides[foe].pokemon[foe_slot].yawn = Some((2, src_uid));
+            // [EMIT] `|-start|<target>|move: Yawn|[of] <source>` (the `yawn.onStart`).
+            if self.logging() {
+                let target = self.mon_ref(foe, foe_slot, dex);
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.volatile_start_of(&target, "move: Yawn", &user);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- TRICK (`gen3_trick_v1`, the gen-3 `trick` num 271 — a category-Status ITEM-SWAP
+        //     move, type Psychic, `accuracy: 100` [NOT never-miss → draws ONE
+        //     randomChance(100,100)], `target: normal`, `ignoreImmunity: true`, flags
+        //     `{protect, mirror, allyanim, noassist, failcopycat}` [NO `bypasssub`]). `switcheroo`
+        //     (num 415, gen4) is NOT gen3-legal — do not add. DRAW MODEL: ONE accuracy draw, then
+        //     a DRAW-FREE swap (the swap adds nothing). Probe-settled bit-for-bit vs the
+        //     omniscient sim (`harness/probe_batch89_trick_edges.js` +
+        //     `probe_batch89_haze_trick_yawn.js` + `probe_trick_open_qs{,2}.js`). The
+        //     `|move|<user>|Trick|<foe>` announce is already emitted at the top (target: normal →
+        //     foe form; Trick has no `move.status` so `foe_status_move_fail` is None).
+        //
+        //     Resolution ORDER (probe-verified priority): ACCURACY draw → on HIT: Protect
+        //     (`-activate Protect`) > Sticky Hold `onTryImmunity` (PLAIN `-immune|<foe>`, NO
+        //     `[from] ability`) > Substitute `onTryPrimaryHit` (no `bypasssub` → `[still]` +
+        //     `-fail|<user>`) > the `onHit` item conditions. The gen-3 `trick.onHit` (moves.ts):
+        //       `yourItem = target.takeItem(source); myItem = source.takeItem();`
+        //       `takeItem` returns FALSE (gen<=4) iff EITHER side is `itemKnockedOff` (gen3 Knock
+        //       Off CLEARS the item AND marks the slot, so a knocked-off mon is itemless-BUT-
+        //       marked and its `takeItem` returns `false`, NOT the plain-itemless `undefined`);
+        //       a truly itemless (non-knocked) mon returns `undefined` (falsy, not `=== false`).
+        //       FAIL (`return false` → `[still]` + `-fail|<user>`, no swap) iff
+        //       `yourItem === false || myItem === false || (!yourItem && !myItem)` — i.e. EITHER
+        //       side `item_knocked_off`, OR both TRULY itemless. In gen3 Mail AND berries SWAP
+        //       fine (their `TakeItem` event passes for Trick — probe-confirmed; the task's
+        //       "Mail untradeable" hypothesis was WRONG).
+        //       Else SWAP: `-activate|<user>|move: Trick|[of] <foe>`, then the TARGET's new-item
+        //       line FIRST (user HAD an item → `-item|<foe>|<myItem>`, else the target loses its
+        //       own item `-enditem|<foe>|<yourItem>|[silent]`), then the USER's (foe HAD an item →
+        //       `-item|<user>|<yourItem>`, else `-enditem|<user>|<myItem>|[silent]`), all
+        //       `|[from] move: Trick` (NO `[of]` — DISTINCT from Thief/Knock-Off).
+        //     CHOICE-LOCK interaction: a Choice-Band mon that Tricks AWAY its Band loses the lock
+        //       (the item's `choiceband.onDisableMove` no longer fires — probe (C): the CB user is
+        //       UNLOCKED next turn); the RECEIVER of a Choice Band gets locked on its NEXT move via
+        //       the existing `run_move` set-lock logic (probe (D): the receiver locks on the move it
+        //       makes AFTER receiving the Band — AUTOMATIC, needs no special handling). So on a
+        //       successful swap clear BOTH sides' `choice_locked_move` (mirroring
+        //       `apply_item_removal`'s clear; a no-op for a non-Choice holder). `landed` FALSE (a
+        //       status `moveHit` returns undefined → no in-tryMoveHit Update — probe: draws =
+        //       accuracy + endTurn Quick Claw only). ---
+        if move_id == "trick" {
+            // ACCURACY (acc 100, not never-miss → ONE draw; always passes barring an evasion boost).
+            let acc_hit = if never_miss {
+                true
+            } else {
+                self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex)
+            };
+            if !acc_hit {
+                // A genuine miss (evasion): `[miss]` retro-edit + `-miss` (the standalone path).
+                if self.logging() {
+                    self.log.attr_last_move_miss();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.miss(&user, Some(&target));
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (TryHit) PROTECT blocks Trick (`protect: 1` flag) — `-activate|<foe>|Protect`.
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (onTryImmunity) STICKY HOLD on the target → PLAIN `-immune|<foe>` (NO `[from]
+            // ability`), no swap. (Probe: `|move|…|Trick|p2a: Muk` then `|-immune|p2a: Muk`.)
+            if to_id(&self.sides[foe].pokemon[foe_slot].ability) == "stickyhold" {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.immune(&target);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // The takeItem-false gate (either side Knocked-Off), the Substitute block (no
+            // `bypasssub`), and the both-itemless case all FAIL the same: `[still]` (retro-edit)
+            // + `-fail|<user>`, no swap. DRAW-FREE past the accuracy roll.
+            let user_item = self.sides[_side].pokemon[_slot].item.clone();
+            let foe_item = self.sides[foe].pokemon[foe_slot].item.clone();
+            let knocked = self.sides[_side].pokemon[_slot].item_knocked_off
+                || self.sides[foe].pokemon[foe_slot].item_knocked_off;
+            let subbed = self.sides[foe].pokemon[foe_slot].substitute.is_some();
+            let both_itemless = user_item.is_empty() && foe_item.is_empty();
+            if subbed || knocked || both_itemless {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // SWAP: at least one side has an item, neither knocked-off, no sub. Resolve display
+            // names BEFORE mutating.
+            let name_of = |id: &str| -> String {
+                if id.is_empty() {
+                    return String::new();
+                }
+                dex.item(&to_id(id))
+                    .map(|i| i.name.clone())
+                    .unwrap_or_else(|| id.to_string())
+            };
+            let my_name = name_of(&user_item); // the USER's OLD item's display name
+            let your_name = name_of(&foe_item); // the TARGET's OLD item's display name
+            let user_had = !user_item.is_empty();
+            let foe_had = !foe_item.is_empty();
+            // The swap: the user GAINS the foe's item, the foe GAINS the user's item.
+            self.sides[_side].pokemon[_slot].item = foe_item.clone();
+            self.sides[foe].pokemon[foe_slot].item = user_item.clone();
+            // Release BOTH Choice locks (the lock-enforcing item changed on each side). A no-op
+            // for a non-Choice holder; the receiver re-acquires its lock on its NEXT move.
+            self.sides[_side].pokemon[_slot].choice_locked_move = None;
+            self.sides[foe].pokemon[foe_slot].choice_locked_move = None;
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log
+                    .activate(&user, "move: Trick", Some(&format!("[of] {target}")));
+                // TARGET's new-item line FIRST (the sim's `if (myItem)` branch).
+                if user_had {
+                    self.log.item_from_move(&target, &my_name, "Trick");
+                } else {
+                    self.log.enditem_silent_from_move(&target, &your_name, "Trick");
+                }
+                // USER's new-item line (the sim's `if (yourItem)` branch).
+                if foe_had {
+                    self.log.item_from_move(&user, &your_name, "Trick");
+                } else {
+                    self.log.enditem_silent_from_move(&user, &my_name, "Trick");
+                }
             }
             return MoveResolution::done(false, false, false);
         }

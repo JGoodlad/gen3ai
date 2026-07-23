@@ -218,8 +218,8 @@ impl crate::state::BattleState {
             let ended_on_faint = self.any_active_fainted();
             records.push(TurnRecord {
                 turn: self.turn,
-                p1: self.side_snapshot(0),
-                p2: self.side_snapshot(1),
+                p1: self.side_snapshot(0, dex),
+                p2: self.side_snapshot(1, dex),
                 result,
                 ended_on_faint,
             });
@@ -231,7 +231,7 @@ impl crate::state::BattleState {
     }
 
     /// Snapshot one side's active mon (post-turn STATE the differential asserts).
-    fn side_snapshot(&self, side: usize) -> MonSnapshot {
+    fn side_snapshot(&self, side: usize, dex: &Dex) -> MonSnapshot {
         let mon = self.sides[side].active();
         MonSnapshot {
             hp: mon.hp,
@@ -247,6 +247,7 @@ impl crate::state::BattleState {
             taunted: mon.taunt.is_some(),
             disabled_slot: mon.disable.map(|(k, _)| k as i8).unwrap_or(-1),
             item_held: !mon.item.is_empty(),
+            item_num: dex.item(&to_id(&mon.item)).map(|i| i.num).unwrap_or(0),
         }
     }
 
@@ -705,7 +706,7 @@ impl crate::state::BattleState {
     ) -> DecisionRecord {
         DecisionRecord {
             request,
-            active: [self.active_snapshot(0), self.active_snapshot(1)],
+            active: [self.active_snapshot(0, dex), self.active_snapshot(1, dex)],
             active_species: [self.active_species_id(0), self.active_species_id(1)],
             pokemon_left: [self.sides[0].pokemon_left, self.sides[1].pokemon_left],
             spikes: [self.sides[0].spikes, self.sides[1].spikes],
@@ -753,7 +754,7 @@ impl crate::state::BattleState {
     }
 
     /// Active-mon snapshot (the per-decision STATE the differential asserts).
-    fn active_snapshot(&self, side: usize) -> MonSnapshot {
+    fn active_snapshot(&self, side: usize, dex: &Dex) -> MonSnapshot {
         let a = self.sides[side].active;
         let mon = &self.sides[side].pokemon[a];
         MonSnapshot {
@@ -770,6 +771,7 @@ impl crate::state::BattleState {
             taunted: mon.taunt.is_some(),
             disabled_slot: mon.disable.map(|(k, _)| k as i8).unwrap_or(-1),
             item_held: !mon.item.is_empty(),
+            item_num: dex.item(&to_id(&mon.item)).map(|i| i.num).unwrap_or(0),
         }
     }
 
@@ -1418,6 +1420,33 @@ fn species_gate_passes(mods: &crate::dex::StatMods, species_id: &str) -> bool {
     mods.only_species.is_empty() || {
         let sid = to_id(species_id);
         mods.only_species.iter().any(|s| *s == sid)
+    }
+}
+
+impl crate::state::BattleState {
+    /// The EFFECTIVE crit ratio for a move used by `(side, slot)` — the move's base ratio
+    /// (`gen3_moves.json critRatio`, 1 normal / 2 for the high-crit set) folded with the two
+    /// gen-3 `onModifyCritRatio` handlers the port models, then `clampIntRange(_, 0, 5)` (the
+    /// `CRIT_MULT` table cap): **FOCUS ENERGY** (+2 — in gen3 reachable only via a Lansat Berry
+    /// eat) + a **CRIT_ITEM** (`gen3_crit_item_v1`, `ItemData.crit_boost` — Scope Lens +1
+    /// unconditional; Lucky Punch +2 Chansey; Stick +2 Farfetch'd; the species gate is
+    /// `user.species.id`). BOTH are DRAW-FREE folds: they shift the `randomChance(1,
+    /// CRIT_MULT[ratio])` DENOMINATOR (1→3 ⇒ 1/16→1/4), never the draw COUNT. Used at every
+    /// crit-roll site (`run_move` / `run_multihit` / `run_beat_up` / the jump-kick crash).
+    pub(crate) fn effective_crit_ratio(&self, side: usize, slot: usize, base: u8, dex: &Dex) -> u32 {
+        let mon = &self.sides[side].pokemon[slot];
+        let mut ratio = base as u32;
+        if mon.focus_energy {
+            ratio += 2;
+        }
+        if let Some(cb) = dex.item(&to_id(&mon.item)).and_then(|i| i.crit_boost.as_ref()) {
+            let species_ok = cb.only_species.is_empty()
+                || cb.only_species.iter().any(|s| *s == to_id(&mon.species_id));
+            if species_ok {
+                ratio += cb.boost as u32;
+            }
+        }
+        ratio.min(5)
     }
 }
 

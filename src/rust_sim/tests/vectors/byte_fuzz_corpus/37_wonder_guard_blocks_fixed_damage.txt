@@ -1,0 +1,669 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=80808 run_id=rmrxxfg75 chunk=5
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_5_20
+TEAM	ab_5_20	p1	Skarmory||PinkBow|KeenEye|Facade,Counter,MudSlap,RockSmash|Rash|212,44,8,140,,104|M|15,1,4,,30,7|||]Latias||RawstBerry|Levitate|Return,Substitute,PsychUp,Frustration|Serious|196,44,,68,28,172|F|1,13,23,13,14,15|||]Nidoran-F||StarfBerry|PoisonPoint|DoubleKick,RockSmash,Frustration,RainDance|Modest|88,180,148,4,52,36|F|28,21,12,23,14,25|||]Starmie||WaveIncense|NaturalCure|Blizzard,Protect,Frustration,Toxic|Naive|80,148,40,,88,152|N|2,9,10,26,7,2|||]Poliwhirl||HardStone|Damp|Psychic,Earthquake,Substitute,Endure|Hardy|12,44,20,188,140,104|M|15,11,1,28,17,8|||]Aggron|||Sturdy|IcyWind,FireBlast,BrickBreak,RockSmash|Docile|128,132,,40,140,68|M|18,20,0,1,0,18|||
+TEAM	ab_5_20	p2	Cyndaquil||LansatBerry|Blaze|Return,AerialAce,Protect,Howl|Calm|,52,180,184,40,52|M|13,16,28,0,13,13|||]Shedinja||BlackBelt|WonderGuard|GigaDrain,Slash,Rest,Toxic|Calm|24,16,52,152,160,104|N|11,12,8,4,29,25|||]Entei||PersimBerry|Pressure|MudSlap,Toxic,Ember,Flamethrower|Naive|124,156,,132,92,4|N|21,21,27,23,17,30|||]Spoink||SalacBerry|OwnTempo|Thief,CalmMind,IcyWind,Psybeam|Rash|36,128,148,192,4,|M|10,26,20,15,18,17|||]Grimer||FocusBand|StickyHold|SelfDestruct,Harden,Memento,Facade|Impish|80,88,,144,160,36|M|26,0,14,26,,24|||]Donphan||LiechiBerry|Sturdy|RapidSpin,IronTail,HornAttack,HyperBeam|Hardy|148,128,84,,144,4|M|2,27,27,13,18,0|||
+FMT	ab_5_20	gen3customgame
+INIT	ab_5_20	50392,43565,44562,22696	2630255607
+DEC	ab_5_20	0	move	0	0	s3	m0	39594,45837,47694,65468	Starmie	202	252	0	-	0	0	0	0	0	0	6	Cyndaquil	201	201	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_5_20	1	move	0	0	m2	m3	8029,4229,26845,32144	Starmie	202	252	0	-	0	0	0	0	0	0	6	Cyndaquil	199	201	0	-	1	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_5_20	2	move	0	0	s4	m1	52141,7339,45991,58445	Poliwhirl	128	258	0	-	0	0	0	0	0	0	6	Cyndaquil	199	201	0	-	1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_5_20	3	move	0	0	m2	m2	28531,14995,33053,44791	Poliwhirl	64	258	0	-	0	0	0	0	0	0	6	Cyndaquil	199	201	0	-	1	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_5_20	4	move	0	0	m1	m2	12507,15233,11924,10011	Poliwhirl	64	258	0	-	0	0	0	0	0	0	6	Cyndaquil	199	201	0	-	1	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_5_20	5	move	0	0	m1	m0	61357,37157,44320,43104	Poliwhirl	64	258	0	-	0	0	0	0	0	0	6	Cyndaquil	60	201	0	-	1	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_5_20	6	move	0	0	m3	s5	6535,32336,58052,27811	Poliwhirl	64	258	0	-	0	0	0	0	0	0	6	Donphan	329	329	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_5_20	7	move	0	0	m1	m0	53905,8299,31863,61000	Poliwhirl	31	258	0	-	0	0	0	0	0	0	6	Donphan	288	329	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_5_20	8	move	0	0	m0	m0	22319,586,65217,3689	Poliwhirl	0	258	1	fnt	0	0	0	0	0	0	5	Donphan	221	329	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_5_20	9	switch	1	0	s4	-	44898,9652,33766,32560	Starmie	202	252	0	-	0	0	0	0	0	0	5	Donphan	221	329	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_5_20	10	move	0	0	m2	m1	3851,31173,62761,64280	Starmie	142	252	0	-	0	0	0	0	0	0	5	Donphan	219	329	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_5_20	11	move	0	0	m0	m0	32695,17609,28310,56108	Starmie	142	252	0	-	0	0	0	0	0	0	5	Donphan	0	329	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	12	switch	0	1	-	s1	12524,63129,60201,41759	Starmie	142	252	0	-	0	0	0	0	0	0	5	Shedinja	1	1	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_5_20	13	move	0	0	s3	m2	33671,55490,39352,37118	Skarmory	308	308	0	-	0	0	0	0	0	0	5	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	14	move	0	0	m2	m0	44479,23991,31030,60669	Skarmory	300	308	0	-	0	0	0	0	0	0	5	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	15	move	0	0	s3	m2	61983,33933,28304,33684	Starmie	142	252	0	-	0	0	0	0	0	0	5	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	16	move	0	0	m0	m1	325,8289,55268,16715	Starmie	36	252	0	-	0	0	0	0	0	0	5	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	17	move	0	0	m0	m3	62270,33671,21161,42748	Starmie	21	252	0	tox	0	0	0	0	0	0	5	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	18	move	0	0	m0	m2	51417,55842,18518,23599	Starmie	0	252	1	fnt	0	0	0	0	0	0	4	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	19	switch	1	0	s3	-	29291,46344,6871,9294	Skarmory	300	308	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_5_20	20	move	0	0	m1	m2	24402,61064,40855,44937	Skarmory	300	308	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_5_20	21	move	0	0	m1	m1	10154,40064,61321,58724	Skarmory	284	308	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_5_20	22	move	0	0	m3	m2	57574,4379,25084,29302	Skarmory	284	308	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	23	move	0	0	m2	m1	60706,7472,35485,50133	Skarmory	268	308	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	24	move	0	0	m0	m0	38220,31071,39274,2976	Skarmory	260	308	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	25	move	0	0	s1	m2	46236,28863,6293,54499	Latias	320	320	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	26	move	0	0	m2	s3	24675,57348,30822,5970	Latias	320	320	0	-	0	0	0	0	0	0	4	Spoink	249	249	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_5_20	27	move	0	0	m0	m2	649,29016,28646,22778	Latias	252	320	0	-	0	0	0	0	-1	0	4	Spoink	138	249	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_5_20	28	move	0	0	s1	m1	38563,8510,21115,33637	Skarmory	260	308	0	-	0	0	0	0	0	0	4	Spoink	138	249	0	-	0	0	1	1	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	29	move	0	0	s1	m0	44030,46986,59239,16553	Latias	178	320	0	-	0	0	0	0	0	0	4	Spoink	138	249	0	-	0	0	1	1	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	30	move	0	0	m3	m0	19439,32575,22531,2326	Latias	96	320	0	-	0	0	0	0	0	0	4	Spoink	136	249	0	-	0	0	1	1	0	0	5	p1	0	0	0	1	0
+DEC	ab_5_20	31	move	0	0	m3	m2	24903,32664,7512,12127	Latias	0	320	1	fnt	0	0	0	0	0	0	3	Spoink	134	249	0	-	0	0	1	1	0	0	5	p1	0	0	0	1	0
+DEC	ab_5_20	32	switch	1	0	s1	-	36659,1432,9444,9790	Skarmory	260	308	0	-	0	0	0	0	0	0	3	Spoink	134	249	0	-	0	0	1	1	0	0	5	none	0	0	0	0	0
+DEC	ab_5_20	33	move	0	0	m3	s3	1044,27174,49410,50496	Skarmory	260	308	0	-	0	0	0	0	0	0	3	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_5_20	34	move	0	0	m2	m3	9549,9493,16516,27453	Skarmory	260	308	0	-	0	0	0	0	0	0	3	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	35	move	0	0	m2	m1	10617,422,37540,53032	Skarmory	244	308	0	-	0	0	0	0	0	0	3	Shedinja	1	1	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	36	move	0	0	m3	s2	24538,55643,29509,22639	Skarmory	244	308	0	-	0	0	0	0	0	0	3	Entei	378	392	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_5_20	37	move	0	0	s5	m1	63931,18269,63223,49609	Aggron	300	300	0	-	0	0	0	0	0	0	3	Entei	378	392	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	38	move	0	0	m1	m2	64891,59121,25134,58360	Aggron	227	300	0	-	0	0	0	0	0	0	3	Entei	343	392	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_5_20	39	move	0	0	m2	m1	13797,9158,43413,7551	Aggron	227	300	0	-	0	0	0	0	0	0	3	Entei	257	392	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_5_20	40	move	0	0	m0	m0	64444,14695,8119,50438	Aggron	173	300	0	-	0	0	0	0	0	0	3	Entei	242	392	0	-	0	0	0	0	-1	0	5	p2	0	0	0	0	0
+DEC	ab_5_20	41	move	0	0	m0	m1	13394,42267,2002,18908	Aggron	173	300	0	-	0	0	0	0	0	0	3	Entei	224	392	0	-	0	0	0	0	-2	0	5	p2	0	0	0	0	0
+DEC	ab_5_20	42	move	0	0	m3	m0	34430,40233,10716,22935	Aggron	120	300	0	-	0	0	0	0	0	0	3	Entei	203	392	0	-	0	-1	0	0	-2	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	43	move	0	0	m2	m2	25297,52068,40608,31647	Aggron	53	300	0	-	0	0	0	0	0	0	3	Entei	89	392	0	-	0	-1	0	0	-2	0	5	p1	0	0	0	0	0
+DEC	ab_5_20	44	move	0	0	m2	m0	15675,59749,5028,18560	Aggron	53	300	0	-	0	0	0	0	0	0	3	Entei	0	392	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_5_20	45	switch	0	1	-	s3	40389,7927,42563,47427	Aggron	53	300	0	-	0	0	0	0	0	0	3	Spoink	134	249	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_5_20	46	move	0	0	m2	m3	35959,12567,47167,1191	Aggron	0	300	1	fnt	0	0	0	0	0	0	2	Spoink	134	249	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_5_20	47	switch	1	0	s5	-	47736,12935,65297,54182	Skarmory	244	308	0	-	0	0	0	0	0	0	2	Spoink	134	249	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_5_20	48	move	0	0	m1	m3	41063,54847,3120,44229	Skarmory	190	308	0	-	0	0	0	0	0	0	2	Spoink	134	249	0	-	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_5_20	49	move	0	0	m3	m0	5646,4314,52688,12045	Skarmory	166	308	0	-	0	0	0	0	0	0	2	Spoink	123	249	0	-	0	-1	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_5_20	50	move	0	0	s2	s5	8583,53795,25042,9188	Nidoran-F	270	270	0	-	0	0	0	0	0	0	2	Cyndaquil	60	201	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_5_20	51	move	0	0	m1	m2	61664,9375,37024,49617	Nidoran-F	270	270	0	-	0	0	0	0	0	0	2	Cyndaquil	60	201	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_5_20	52	move	0	0	m2	m0	29480,22066,17621,40601	Nidoran-F	205	270	0	-	0	0	0	0	0	0	2	Cyndaquil	58	201	0	-	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_5_20	53	move	0	0	m2	m1	52424,40838,12704,4678	Nidoran-F	166	270	0	-	0	0	0	0	0	0	2	Cyndaquil	31	201	0	psn	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_5_20	54	move	0	0	m0	m2	59454,34877,55642,18923	Nidoran-F	166	270	0	-	0	0	0	0	0	0	2	Cyndaquil	6	201	0	psn	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_5_20	55	move	0	0	m1	m0	53189,37433,45993,17779	Nidoran-F	108	270	0	-	0	0	0	0	0	0	2	Cyndaquil	0	201	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	1	0
+DEC	ab_5_20	56	switch	0	1	-	s2	31896,48181,57918,36898	Nidoran-F	108	270	0	-	0	0	0	0	0	0	2	Shedinja	1	1	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_5_20	57	move	0	0	m1	s5	54451,36236,10801,36593	Nidoran-F	108	270	0	-	0	0	0	0	0	0	2	Spoink	105	249	0	-	0	-1	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_5_20	58	move	0	0	m0	m1	51278,35590,16194,34783	Nidoran-F	108	270	0	-	0	0	0	0	0	0	2	Spoink	67	249	0	-	0	-1	1	1	0	0	3	p2	0	0	0	0	0
+DEC	ab_5_20	59	move	0	0	m2	m3	31412,7452,14647,33155	Nidoran-F	0	270	1	fnt	0	0	0	0	0	0	1	Spoink	67	249	0	-	0	-1	1	1	0	0	3	p2	0	0	0	1	0
+DEC	ab_5_20	60	switch	1	0	s2	-	21196,52120,5616,53874	Skarmory	166	308	0	-	0	0	0	0	0	0	1	Spoink	67	249	0	-	0	-1	1	1	0	0	3	none	0	0	0	0	0
+DEC	ab_5_20	61	move	0	0	m3	m2	11399,8777,60489,8965	Skarmory	72	308	0	-	0	0	0	0	-1	0	1	Spoink	52	249	0	-	0	-2	1	1	1	0	3	p1	0	0	0	0	0
+DEC	ab_5_20	62	move	0	0	m0	m3	60546,7238,1635,9801	Skarmory	0	308	1	-	0	0	0	0	0	0	0	Spoink	52	249	0	-	0	-2	1	1	1	0	3	p2	0	0	0	0	0
+END	ab_5_20	1	p2
+L	ab_5_20	0	|t:|<NORMALIZED>
+L	ab_5_20	1	|gametype|singles
+L	ab_5_20	2	|player|p1|P1||
+L	ab_5_20	3	|player|p2|P2||
+L	ab_5_20	4	|gen|3
+L	ab_5_20	5	|tier|[Gen 3] Custom Game
+L	ab_5_20	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_5_20	7	|
+L	ab_5_20	8	|t:|<NORMALIZED>
+L	ab_5_20	9	|teamsize|p1|6
+L	ab_5_20	10	|teamsize|p2|6
+L	ab_5_20	11	|start
+L	ab_5_20	12	|switch|p1a: Skarmory|Skarmory, M|308/308
+L	ab_5_20	13	|switch|p2a: Cyndaquil|Cyndaquil, M|201/201
+L	ab_5_20	14	|turn|1
+L	ab_5_20	15	|
+L	ab_5_20	16	|t:|<NORMALIZED>
+L	ab_5_20	17	|switch|p1a: Starmie|Starmie|252/252
+L	ab_5_20	18	|move|p2a: Cyndaquil|Return|p1a: Starmie
+L	ab_5_20	19	|-damage|p1a: Starmie|202/252
+L	ab_5_20	20	|
+L	ab_5_20	21	|upkeep
+L	ab_5_20	22	|turn|2
+L	ab_5_20	23	|
+L	ab_5_20	24	|t:|<NORMALIZED>
+L	ab_5_20	25	|move|p1a: Starmie|Frustration|p2a: Cyndaquil
+L	ab_5_20	26	|-damage|p2a: Cyndaquil|199/201
+L	ab_5_20	27	|move|p2a: Cyndaquil|Howl|p2a: Cyndaquil
+L	ab_5_20	28	|-boost|p2a: Cyndaquil|atk|1
+L	ab_5_20	29	|
+L	ab_5_20	30	|upkeep
+L	ab_5_20	31	|turn|3
+L	ab_5_20	32	|
+L	ab_5_20	33	|t:|<NORMALIZED>
+L	ab_5_20	34	|switch|p1a: Poliwhirl|Poliwhirl, M|258/258
+L	ab_5_20	35	|move|p2a: Cyndaquil|Aerial Ace|p1a: Poliwhirl
+L	ab_5_20	36	|-crit|p1a: Poliwhirl
+L	ab_5_20	37	|-damage|p1a: Poliwhirl|128/258
+L	ab_5_20	38	|
+L	ab_5_20	39	|upkeep
+L	ab_5_20	40	|turn|4
+L	ab_5_20	41	|
+L	ab_5_20	42	|t:|<NORMALIZED>
+L	ab_5_20	43	|move|p2a: Cyndaquil|Protect|p2a: Cyndaquil
+L	ab_5_20	44	|-singleturn|p2a: Cyndaquil|Protect
+L	ab_5_20	45	|move|p1a: Poliwhirl|Substitute|p1a: Poliwhirl
+L	ab_5_20	46	|-start|p1a: Poliwhirl|Substitute
+L	ab_5_20	47	|-damage|p1a: Poliwhirl|64/258
+L	ab_5_20	48	|
+L	ab_5_20	49	|upkeep
+L	ab_5_20	50	|turn|5
+L	ab_5_20	51	|
+L	ab_5_20	52	|t:|<NORMALIZED>
+L	ab_5_20	53	|move|p2a: Cyndaquil|Protect|p2a: Cyndaquil
+L	ab_5_20	54	|debug|Success chance: 50%
+L	ab_5_20	55	|-singleturn|p2a: Cyndaquil|Protect
+L	ab_5_20	56	|move|p1a: Poliwhirl|Earthquake|p2a: Cyndaquil
+L	ab_5_20	57	|-activate|p2a: Cyndaquil|Protect
+L	ab_5_20	58	|
+L	ab_5_20	59	|upkeep
+L	ab_5_20	60	|turn|6
+L	ab_5_20	61	|
+L	ab_5_20	62	|t:|<NORMALIZED>
+L	ab_5_20	63	|move|p1a: Poliwhirl|Earthquake|p2a: Cyndaquil
+L	ab_5_20	64	|-supereffective|p2a: Cyndaquil
+L	ab_5_20	65	|-damage|p2a: Cyndaquil|60/201
+L	ab_5_20	66	|move|p2a: Cyndaquil|Return|p1a: Poliwhirl
+L	ab_5_20	67	|-end|p1a: Poliwhirl|Substitute
+L	ab_5_20	68	|
+L	ab_5_20	69	|upkeep
+L	ab_5_20	70	|turn|7
+L	ab_5_20	71	|
+L	ab_5_20	72	|t:|<NORMALIZED>
+L	ab_5_20	73	|switch|p2a: Donphan|Donphan, M|329/329
+L	ab_5_20	74	|move|p1a: Poliwhirl|Endure||[still]
+L	ab_5_20	75	|-fail|p1a: Poliwhirl
+L	ab_5_20	76	|
+L	ab_5_20	77	|upkeep
+L	ab_5_20	78	|turn|8
+L	ab_5_20	79	|
+L	ab_5_20	80	|t:|<NORMALIZED>
+L	ab_5_20	81	|move|p1a: Poliwhirl|Earthquake|p2a: Donphan
+L	ab_5_20	82	|-damage|p2a: Donphan|288/329
+L	ab_5_20	83	|move|p2a: Donphan|Rapid Spin|p1a: Poliwhirl
+L	ab_5_20	84	|-damage|p1a: Poliwhirl|31/258
+L	ab_5_20	85	|
+L	ab_5_20	86	|upkeep
+L	ab_5_20	87	|turn|9
+L	ab_5_20	88	|
+L	ab_5_20	89	|t:|<NORMALIZED>
+L	ab_5_20	90	|move|p1a: Poliwhirl|Psychic|p2a: Donphan
+L	ab_5_20	91	|-damage|p2a: Donphan|221/329
+L	ab_5_20	92	|move|p2a: Donphan|Rapid Spin|p1a: Poliwhirl
+L	ab_5_20	93	|-damage|p1a: Poliwhirl|0 fnt
+L	ab_5_20	94	|faint|p1a: Poliwhirl
+L	ab_5_20	95	|
+L	ab_5_20	96	|t:|<NORMALIZED>
+L	ab_5_20	97	|switch|p1a: Starmie|Starmie|202/252
+L	ab_5_20	98	|
+L	ab_5_20	99	|upkeep
+L	ab_5_20	100	|turn|10
+L	ab_5_20	101	|
+L	ab_5_20	102	|t:|<NORMALIZED>
+L	ab_5_20	103	|move|p1a: Starmie|Frustration|p2a: Donphan
+L	ab_5_20	104	|-damage|p2a: Donphan|219/329
+L	ab_5_20	105	|move|p2a: Donphan|Iron Tail|p1a: Starmie
+L	ab_5_20	106	|-resisted|p1a: Starmie
+L	ab_5_20	107	|-damage|p1a: Starmie|142/252
+L	ab_5_20	108	|
+L	ab_5_20	109	|upkeep
+L	ab_5_20	110	|turn|11
+L	ab_5_20	111	|
+L	ab_5_20	112	|t:|<NORMALIZED>
+L	ab_5_20	113	|move|p1a: Starmie|Blizzard|p2a: Donphan
+L	ab_5_20	114	|-supereffective|p2a: Donphan
+L	ab_5_20	115	|-damage|p2a: Donphan|0 fnt
+L	ab_5_20	116	|faint|p2a: Donphan
+L	ab_5_20	117	|
+L	ab_5_20	118	|t:|<NORMALIZED>
+L	ab_5_20	119	|switch|p2a: Shedinja|Shedinja|1/1
+L	ab_5_20	120	|
+L	ab_5_20	121	|upkeep
+L	ab_5_20	122	|turn|12
+L	ab_5_20	123	|
+L	ab_5_20	124	|t:|<NORMALIZED>
+L	ab_5_20	125	|switch|p1a: Skarmory|Skarmory, M|308/308
+L	ab_5_20	126	|move|p2a: Shedinja|Rest|p2a: Shedinja
+L	ab_5_20	127	|-fail|p2a: Shedinja|heal
+L	ab_5_20	128	|
+L	ab_5_20	129	|upkeep
+L	ab_5_20	130	|turn|13
+L	ab_5_20	131	|
+L	ab_5_20	132	|t:|<NORMALIZED>
+L	ab_5_20	133	|move|p1a: Skarmory|Mud-Slap|p2a: Shedinja
+L	ab_5_20	134	|debug|Wonder Guard immunity: mudslap
+L	ab_5_20	135	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_5_20	136	|move|p2a: Shedinja|Giga Drain|p1a: Skarmory
+L	ab_5_20	137	|-resisted|p1a: Skarmory
+L	ab_5_20	138	|-damage|p1a: Skarmory|300/308
+L	ab_5_20	139	|
+L	ab_5_20	140	|upkeep
+L	ab_5_20	141	|turn|14
+L	ab_5_20	142	|
+L	ab_5_20	143	|t:|<NORMALIZED>
+L	ab_5_20	144	|switch|p1a: Starmie|Starmie|142/252
+L	ab_5_20	145	|move|p2a: Shedinja|Rest|p2a: Shedinja
+L	ab_5_20	146	|-fail|p2a: Shedinja|heal
+L	ab_5_20	147	|
+L	ab_5_20	148	|upkeep
+L	ab_5_20	149	|turn|15
+L	ab_5_20	150	|
+L	ab_5_20	151	|t:|<NORMALIZED>
+L	ab_5_20	152	|move|p1a: Starmie|Blizzard|p2a: Shedinja|[miss]
+L	ab_5_20	153	|-miss|p1a: Starmie|p2a: Shedinja
+L	ab_5_20	154	|move|p2a: Shedinja|Slash|p1a: Starmie
+L	ab_5_20	155	|-crit|p1a: Starmie
+L	ab_5_20	156	|-damage|p1a: Starmie|36/252
+L	ab_5_20	157	|
+L	ab_5_20	158	|upkeep
+L	ab_5_20	159	|turn|16
+L	ab_5_20	160	|
+L	ab_5_20	161	|t:|<NORMALIZED>
+L	ab_5_20	162	|move|p1a: Starmie|Blizzard|p2a: Shedinja
+L	ab_5_20	163	|debug|Wonder Guard immunity: blizzard
+L	ab_5_20	164	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_5_20	165	|move|p2a: Shedinja|Toxic|p1a: Starmie
+L	ab_5_20	166	|-status|p1a: Starmie|tox
+L	ab_5_20	167	|
+L	ab_5_20	168	|-damage|p1a: Starmie|21/252 tox|[from] psn
+L	ab_5_20	169	|upkeep
+L	ab_5_20	170	|turn|17
+L	ab_5_20	171	|
+L	ab_5_20	172	|t:|<NORMALIZED>
+L	ab_5_20	173	|move|p1a: Starmie|Blizzard|p2a: Shedinja|[miss]
+L	ab_5_20	174	|-miss|p1a: Starmie|p2a: Shedinja
+L	ab_5_20	175	|move|p2a: Shedinja|Rest|p2a: Shedinja
+L	ab_5_20	176	|-fail|p2a: Shedinja|heal
+L	ab_5_20	177	|
+L	ab_5_20	178	|-damage|p1a: Starmie|0 fnt|[from] psn
+L	ab_5_20	179	|faint|p1a: Starmie
+L	ab_5_20	180	|upkeep
+L	ab_5_20	181	|
+L	ab_5_20	182	|t:|<NORMALIZED>
+L	ab_5_20	183	|switch|p1a: Skarmory|Skarmory, M|300/308
+L	ab_5_20	184	|turn|18
+L	ab_5_20	185	|
+L	ab_5_20	186	|t:|<NORMALIZED>
+L	ab_5_20	187	|debug|before turn callback: counter
+L	ab_5_20	188	|move|p2a: Shedinja|Rest|p2a: Shedinja
+L	ab_5_20	189	|-fail|p2a: Shedinja|heal
+L	ab_5_20	190	|move|p1a: Skarmory|Counter|p2a: Shedinja
+L	ab_5_20	191	|
+L	ab_5_20	192	|upkeep
+L	ab_5_20	193	|turn|19
+L	ab_5_20	194	|
+L	ab_5_20	195	|t:|<NORMALIZED>
+L	ab_5_20	196	|debug|before turn callback: counter
+L	ab_5_20	197	|move|p2a: Shedinja|Slash|p1a: Skarmory
+L	ab_5_20	198	|-resisted|p1a: Skarmory
+L	ab_5_20	199	|-damage|p1a: Skarmory|284/308
+L	ab_5_20	200	|move|p1a: Skarmory|Counter|p2a: Shedinja
+L	ab_5_20	201	|debug|Wonder Guard immunity: counter
+L	ab_5_20	202	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_5_20	203	|
+L	ab_5_20	204	|upkeep
+L	ab_5_20	205	|turn|20
+L	ab_5_20	206	|
+L	ab_5_20	207	|t:|<NORMALIZED>
+L	ab_5_20	208	|move|p1a: Skarmory|Rock Smash|p2a: Shedinja
+L	ab_5_20	209	|debug|Wonder Guard immunity: rocksmash
+L	ab_5_20	210	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_5_20	211	|move|p2a: Shedinja|Rest|p2a: Shedinja
+L	ab_5_20	212	|-fail|p2a: Shedinja|heal
+L	ab_5_20	213	|
+L	ab_5_20	214	|upkeep
+L	ab_5_20	215	|turn|21
+L	ab_5_20	216	|
+L	ab_5_20	217	|t:|<NORMALIZED>
+L	ab_5_20	218	|move|p1a: Skarmory|Mud-Slap|p2a: Shedinja
+L	ab_5_20	219	|debug|Wonder Guard immunity: mudslap
+L	ab_5_20	220	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_5_20	221	|move|p2a: Shedinja|Slash|p1a: Skarmory
+L	ab_5_20	222	|-resisted|p1a: Skarmory
+L	ab_5_20	223	|-damage|p1a: Skarmory|268/308
+L	ab_5_20	224	|
+L	ab_5_20	225	|upkeep
+L	ab_5_20	226	|turn|22
+L	ab_5_20	227	|
+L	ab_5_20	228	|t:|<NORMALIZED>
+L	ab_5_20	229	|move|p1a: Skarmory|Facade|p2a: Shedinja
+L	ab_5_20	230	|debug|Wonder Guard immunity: facade
+L	ab_5_20	231	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_5_20	232	|move|p2a: Shedinja|Giga Drain|p1a: Skarmory
+L	ab_5_20	233	|-resisted|p1a: Skarmory
+L	ab_5_20	234	|-damage|p1a: Skarmory|260/308
+L	ab_5_20	235	|
+L	ab_5_20	236	|upkeep
+L	ab_5_20	237	|turn|23
+L	ab_5_20	238	|
+L	ab_5_20	239	|t:|<NORMALIZED>
+L	ab_5_20	240	|switch|p1a: Latias|Latias, F|320/320
+L	ab_5_20	241	|move|p2a: Shedinja|Rest|p2a: Shedinja
+L	ab_5_20	242	|-fail|p2a: Shedinja|heal
+L	ab_5_20	243	|
+L	ab_5_20	244	|upkeep
+L	ab_5_20	245	|turn|24
+L	ab_5_20	246	|
+L	ab_5_20	247	|t:|<NORMALIZED>
+L	ab_5_20	248	|switch|p2a: Spoink|Spoink, M|249/249
+L	ab_5_20	249	|move|p1a: Latias|Psych Up|p2a: Spoink
+L	ab_5_20	250	|-copyboost|p1a: Latias|p2a: Spoink|[from] move: Psych Up
+L	ab_5_20	251	|
+L	ab_5_20	252	|upkeep
+L	ab_5_20	253	|turn|25
+L	ab_5_20	254	|
+L	ab_5_20	255	|t:|<NORMALIZED>
+L	ab_5_20	256	|move|p1a: Latias|Return|p2a: Spoink
+L	ab_5_20	257	|-damage|p2a: Spoink|138/249
+L	ab_5_20	258	|move|p2a: Spoink|Icy Wind|p1a: Latias
+L	ab_5_20	259	|-supereffective|p1a: Latias
+L	ab_5_20	260	|-damage|p1a: Latias|252/320
+L	ab_5_20	261	|-unboost|p1a: Latias|spe|1
+L	ab_5_20	262	|
+L	ab_5_20	263	|upkeep
+L	ab_5_20	264	|turn|26
+L	ab_5_20	265	|
+L	ab_5_20	266	|t:|<NORMALIZED>
+L	ab_5_20	267	|switch|p1a: Skarmory|Skarmory, M|260/308
+L	ab_5_20	268	|move|p2a: Spoink|Calm Mind|p2a: Spoink
+L	ab_5_20	269	|-boost|p2a: Spoink|spa|1
+L	ab_5_20	270	|-boost|p2a: Spoink|spd|1
+L	ab_5_20	271	|
+L	ab_5_20	272	|upkeep
+L	ab_5_20	273	|turn|27
+L	ab_5_20	274	|
+L	ab_5_20	275	|t:|<NORMALIZED>
+L	ab_5_20	276	|switch|p1a: Latias|Latias, F|252/320
+L	ab_5_20	277	|move|p2a: Spoink|Thief|p1a: Latias
+L	ab_5_20	278	|-supereffective|p1a: Latias
+L	ab_5_20	279	|-damage|p1a: Latias|178/320
+L	ab_5_20	280	|
+L	ab_5_20	281	|upkeep
+L	ab_5_20	282	|turn|28
+L	ab_5_20	283	|
+L	ab_5_20	284	|t:|<NORMALIZED>
+L	ab_5_20	285	|move|p1a: Latias|Frustration|p2a: Spoink
+L	ab_5_20	286	|-damage|p2a: Spoink|136/249
+L	ab_5_20	287	|move|p2a: Spoink|Thief|p1a: Latias
+L	ab_5_20	288	|-supereffective|p1a: Latias
+L	ab_5_20	289	|-damage|p1a: Latias|96/320
+L	ab_5_20	290	|
+L	ab_5_20	291	|upkeep
+L	ab_5_20	292	|turn|29
+L	ab_5_20	293	|
+L	ab_5_20	294	|t:|<NORMALIZED>
+L	ab_5_20	295	|move|p1a: Latias|Frustration|p2a: Spoink
+L	ab_5_20	296	|-damage|p2a: Spoink|134/249
+L	ab_5_20	297	|move|p2a: Spoink|Icy Wind|p1a: Latias
+L	ab_5_20	298	|-supereffective|p1a: Latias
+L	ab_5_20	299	|-damage|p1a: Latias|0 fnt
+L	ab_5_20	300	|faint|p1a: Latias
+L	ab_5_20	301	|
+L	ab_5_20	302	|t:|<NORMALIZED>
+L	ab_5_20	303	|switch|p1a: Skarmory|Skarmory, M|260/308
+L	ab_5_20	304	|
+L	ab_5_20	305	|upkeep
+L	ab_5_20	306	|turn|30
+L	ab_5_20	307	|
+L	ab_5_20	308	|t:|<NORMALIZED>
+L	ab_5_20	309	|switch|p2a: Shedinja|Shedinja|1/1
+L	ab_5_20	310	|move|p1a: Skarmory|Rock Smash|p2a: Shedinja
+L	ab_5_20	311	|debug|Wonder Guard immunity: rocksmash
+L	ab_5_20	312	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_5_20	313	|
+L	ab_5_20	314	|upkeep
+L	ab_5_20	315	|turn|31
+L	ab_5_20	316	|
+L	ab_5_20	317	|t:|<NORMALIZED>
+L	ab_5_20	318	|move|p1a: Skarmory|Mud-Slap|p2a: Shedinja
+L	ab_5_20	319	|debug|Wonder Guard immunity: mudslap
+L	ab_5_20	320	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_5_20	321	|move|p2a: Shedinja|Toxic|p1a: Skarmory
+L	ab_5_20	322	|debug|natural status immunity
+L	ab_5_20	323	|debug|immune to status
+L	ab_5_20	324	|-immune|p1a: Skarmory
+L	ab_5_20	325	|debug|move failed because it did nothing
+L	ab_5_20	326	|
+L	ab_5_20	327	|upkeep
+L	ab_5_20	328	|turn|32
+L	ab_5_20	329	|
+L	ab_5_20	330	|t:|<NORMALIZED>
+L	ab_5_20	331	|move|p1a: Skarmory|Mud-Slap|p2a: Shedinja
+L	ab_5_20	332	|debug|Wonder Guard immunity: mudslap
+L	ab_5_20	333	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_5_20	334	|move|p2a: Shedinja|Slash|p1a: Skarmory
+L	ab_5_20	335	|-resisted|p1a: Skarmory
+L	ab_5_20	336	|-damage|p1a: Skarmory|244/308
+L	ab_5_20	337	|
+L	ab_5_20	338	|upkeep
+L	ab_5_20	339	|turn|33
+L	ab_5_20	340	|
+L	ab_5_20	341	|t:|<NORMALIZED>
+L	ab_5_20	342	|switch|p2a: Entei|Entei|392/392
+L	ab_5_20	343	|-ability|p2a: Entei|Pressure|[silent]
+L	ab_5_20	344	|move|p1a: Skarmory|Rock Smash|p2a: Entei
+L	ab_5_20	345	|-damage|p2a: Entei|378/392
+L	ab_5_20	346	|
+L	ab_5_20	347	|upkeep
+L	ab_5_20	348	|turn|34
+L	ab_5_20	349	|
+L	ab_5_20	350	|t:|<NORMALIZED>
+L	ab_5_20	351	|switch|p1a: Aggron|Aggron, M|300/300
+L	ab_5_20	352	|move|p2a: Entei|Toxic|p1a: Aggron
+L	ab_5_20	353	|debug|natural status immunity
+L	ab_5_20	354	|debug|immune to status
+L	ab_5_20	355	|-immune|p1a: Aggron
+L	ab_5_20	356	|debug|move failed because it did nothing
+L	ab_5_20	357	|
+L	ab_5_20	358	|upkeep
+L	ab_5_20	359	|turn|35
+L	ab_5_20	360	|
+L	ab_5_20	361	|t:|<NORMALIZED>
+L	ab_5_20	362	|move|p2a: Entei|Ember|p1a: Aggron
+L	ab_5_20	363	|-damage|p1a: Aggron|227/300
+L	ab_5_20	364	|move|p1a: Aggron|Fire Blast|p2a: Entei
+L	ab_5_20	365	|-resisted|p2a: Entei
+L	ab_5_20	366	|-damage|p2a: Entei|343/392
+L	ab_5_20	367	|
+L	ab_5_20	368	|upkeep
+L	ab_5_20	369	|turn|36
+L	ab_5_20	370	|
+L	ab_5_20	371	|t:|<NORMALIZED>
+L	ab_5_20	372	|move|p2a: Entei|Toxic|p1a: Aggron
+L	ab_5_20	373	|debug|natural status immunity
+L	ab_5_20	374	|debug|immune to status
+L	ab_5_20	375	|-immune|p1a: Aggron
+L	ab_5_20	376	|debug|move failed because it did nothing
+L	ab_5_20	377	|move|p1a: Aggron|Brick Break|p2a: Entei
+L	ab_5_20	378	|-damage|p2a: Entei|257/392
+L	ab_5_20	379	|
+L	ab_5_20	380	|upkeep
+L	ab_5_20	381	|turn|37
+L	ab_5_20	382	|
+L	ab_5_20	383	|t:|<NORMALIZED>
+L	ab_5_20	384	|move|p2a: Entei|Mud-Slap|p1a: Aggron
+L	ab_5_20	385	|-supereffective|p1a: Aggron
+L	ab_5_20	386	|-damage|p1a: Aggron|173/300
+L	ab_5_20	387	|-unboost|p1a: Aggron|accuracy|1
+L	ab_5_20	388	|move|p1a: Aggron|Icy Wind|p2a: Entei
+L	ab_5_20	389	|-resisted|p2a: Entei
+L	ab_5_20	390	|-damage|p2a: Entei|242/392
+L	ab_5_20	391	|-unboost|p2a: Entei|spe|1
+L	ab_5_20	392	|
+L	ab_5_20	393	|upkeep
+L	ab_5_20	394	|turn|38
+L	ab_5_20	395	|
+L	ab_5_20	396	|t:|<NORMALIZED>
+L	ab_5_20	397	|move|p2a: Entei|Toxic|p1a: Aggron
+L	ab_5_20	398	|debug|natural status immunity
+L	ab_5_20	399	|debug|immune to status
+L	ab_5_20	400	|-immune|p1a: Aggron
+L	ab_5_20	401	|debug|move failed because it did nothing
+L	ab_5_20	402	|move|p1a: Aggron|Icy Wind|p2a: Entei
+L	ab_5_20	403	|-resisted|p2a: Entei
+L	ab_5_20	404	|-damage|p2a: Entei|224/392
+L	ab_5_20	405	|-unboost|p2a: Entei|spe|1
+L	ab_5_20	406	|
+L	ab_5_20	407	|upkeep
+L	ab_5_20	408	|turn|39
+L	ab_5_20	409	|
+L	ab_5_20	410	|t:|<NORMALIZED>
+L	ab_5_20	411	|move|p1a: Aggron|Rock Smash|p2a: Entei
+L	ab_5_20	412	|-damage|p2a: Entei|203/392
+L	ab_5_20	413	|-unboost|p2a: Entei|def|1
+L	ab_5_20	414	|move|p2a: Entei|Mud-Slap|p1a: Aggron
+L	ab_5_20	415	|-supereffective|p1a: Aggron
+L	ab_5_20	416	|-damage|p1a: Aggron|120/300
+L	ab_5_20	417	|-unboost|p1a: Aggron|accuracy|1
+L	ab_5_20	418	|
+L	ab_5_20	419	|upkeep
+L	ab_5_20	420	|turn|40
+L	ab_5_20	421	|
+L	ab_5_20	422	|t:|<NORMALIZED>
+L	ab_5_20	423	|move|p1a: Aggron|Brick Break|p2a: Entei
+L	ab_5_20	424	|-damage|p2a: Entei|89/392
+L	ab_5_20	425	|move|p2a: Entei|Ember|p1a: Aggron
+L	ab_5_20	426	|-damage|p1a: Aggron|53/300
+L	ab_5_20	427	|
+L	ab_5_20	428	|upkeep
+L	ab_5_20	429	|turn|41
+L	ab_5_20	430	|
+L	ab_5_20	431	|t:|<NORMALIZED>
+L	ab_5_20	432	|move|p1a: Aggron|Brick Break|p2a: Entei
+L	ab_5_20	433	|-damage|p2a: Entei|0 fnt
+L	ab_5_20	434	|faint|p2a: Entei
+L	ab_5_20	435	|
+L	ab_5_20	436	|t:|<NORMALIZED>
+L	ab_5_20	437	|switch|p2a: Spoink|Spoink, M|134/249
+L	ab_5_20	438	|
+L	ab_5_20	439	|upkeep
+L	ab_5_20	440	|turn|42
+L	ab_5_20	441	|
+L	ab_5_20	442	|t:|<NORMALIZED>
+L	ab_5_20	443	|move|p2a: Spoink|Psybeam|p1a: Aggron
+L	ab_5_20	444	|-resisted|p1a: Aggron
+L	ab_5_20	445	|-damage|p1a: Aggron|0 fnt
+L	ab_5_20	446	|faint|p1a: Aggron
+L	ab_5_20	447	|
+L	ab_5_20	448	|t:|<NORMALIZED>
+L	ab_5_20	449	|switch|p1a: Skarmory|Skarmory, M|244/308
+L	ab_5_20	450	|
+L	ab_5_20	451	|upkeep
+L	ab_5_20	452	|turn|43
+L	ab_5_20	453	|
+L	ab_5_20	454	|t:|<NORMALIZED>
+L	ab_5_20	455	|debug|before turn callback: counter
+L	ab_5_20	456	|move|p2a: Spoink|Psybeam|p1a: Skarmory
+L	ab_5_20	457	|-resisted|p1a: Skarmory
+L	ab_5_20	458	|-damage|p1a: Skarmory|190/308
+L	ab_5_20	459	|move|p1a: Skarmory|Counter|p2a: Spoink
+L	ab_5_20	460	|
+L	ab_5_20	461	|upkeep
+L	ab_5_20	462	|turn|44
+L	ab_5_20	463	|
+L	ab_5_20	464	|t:|<NORMALIZED>
+L	ab_5_20	465	|move|p1a: Skarmory|Rock Smash|p2a: Spoink
+L	ab_5_20	466	|-resisted|p2a: Spoink
+L	ab_5_20	467	|-damage|p2a: Spoink|123/249
+L	ab_5_20	468	|-unboost|p2a: Spoink|def|1
+L	ab_5_20	469	|move|p2a: Spoink|Thief|p1a: Skarmory
+L	ab_5_20	470	|-resisted|p1a: Skarmory
+L	ab_5_20	471	|-damage|p1a: Skarmory|166/308
+L	ab_5_20	472	|
+L	ab_5_20	473	|upkeep
+L	ab_5_20	474	|turn|45
+L	ab_5_20	475	|
+L	ab_5_20	476	|t:|<NORMALIZED>
+L	ab_5_20	477	|switch|p1a: Nidoran-F|Nidoran-F, F|270/270
+L	ab_5_20	478	|switch|p2a: Cyndaquil|Cyndaquil, M|60/201
+L	ab_5_20	479	|
+L	ab_5_20	480	|upkeep
+L	ab_5_20	481	|turn|46
+L	ab_5_20	482	|
+L	ab_5_20	483	|t:|<NORMALIZED>
+L	ab_5_20	484	|move|p2a: Cyndaquil|Protect|p2a: Cyndaquil
+L	ab_5_20	485	|-singleturn|p2a: Cyndaquil|Protect
+L	ab_5_20	486	|move|p1a: Nidoran-F|Rock Smash|p2a: Cyndaquil
+L	ab_5_20	487	|-activate|p2a: Cyndaquil|Protect
+L	ab_5_20	488	|
+L	ab_5_20	489	|upkeep
+L	ab_5_20	490	|turn|47
+L	ab_5_20	491	|
+L	ab_5_20	492	|t:|<NORMALIZED>
+L	ab_5_20	493	|move|p2a: Cyndaquil|Return|p1a: Nidoran-F
+L	ab_5_20	494	|-damage|p1a: Nidoran-F|205/270
+L	ab_5_20	495	|move|p1a: Nidoran-F|Frustration|p2a: Cyndaquil
+L	ab_5_20	496	|-damage|p2a: Cyndaquil|58/201
+L	ab_5_20	497	|
+L	ab_5_20	498	|upkeep
+L	ab_5_20	499	|turn|48
+L	ab_5_20	500	|
+L	ab_5_20	501	|t:|<NORMALIZED>
+L	ab_5_20	502	|move|p2a: Cyndaquil|Aerial Ace|p1a: Nidoran-F
+L	ab_5_20	503	|-damage|p1a: Nidoran-F|166/270
+L	ab_5_20	504	|-status|p2a: Cyndaquil|psn|[from] ability: Poison Point|[of] p1a: Nidoran-F
+L	ab_5_20	505	|move|p1a: Nidoran-F|Frustration|p2a: Cyndaquil
+L	ab_5_20	506	|-damage|p2a: Cyndaquil|56/201 psn
+L	ab_5_20	507	|
+L	ab_5_20	508	|-damage|p2a: Cyndaquil|31/201 psn|[from] psn
+L	ab_5_20	509	|upkeep
+L	ab_5_20	510	|turn|49
+L	ab_5_20	511	|
+L	ab_5_20	512	|t:|<NORMALIZED>
+L	ab_5_20	513	|move|p2a: Cyndaquil|Protect|p2a: Cyndaquil
+L	ab_5_20	514	|-singleturn|p2a: Cyndaquil|Protect
+L	ab_5_20	515	|move|p1a: Nidoran-F|Double Kick|p2a: Cyndaquil
+L	ab_5_20	516	|-activate|p2a: Cyndaquil|Protect
+L	ab_5_20	517	|
+L	ab_5_20	518	|-enditem|p2a: Cyndaquil|Lansat Berry|[eat]
+L	ab_5_20	519	|-start|p2a: Cyndaquil|move: Focus Energy
+L	ab_5_20	520	|-damage|p2a: Cyndaquil|6/201 psn|[from] psn
+L	ab_5_20	521	|upkeep
+L	ab_5_20	522	|turn|50
+L	ab_5_20	523	|
+L	ab_5_20	524	|t:|<NORMALIZED>
+L	ab_5_20	525	|move|p2a: Cyndaquil|Return|p1a: Nidoran-F
+L	ab_5_20	526	|-damage|p1a: Nidoran-F|108/270
+L	ab_5_20	527	|move|p1a: Nidoran-F|Rock Smash|p2a: Cyndaquil
+L	ab_5_20	528	|-crit|p2a: Cyndaquil
+L	ab_5_20	529	|-damage|p2a: Cyndaquil|0 fnt
+L	ab_5_20	530	|faint|p2a: Cyndaquil
+L	ab_5_20	531	|
+L	ab_5_20	532	|t:|<NORMALIZED>
+L	ab_5_20	533	|switch|p2a: Shedinja|Shedinja|1/1
+L	ab_5_20	534	|
+L	ab_5_20	535	|upkeep
+L	ab_5_20	536	|turn|51
+L	ab_5_20	537	|
+L	ab_5_20	538	|t:|<NORMALIZED>
+L	ab_5_20	539	|switch|p2a: Spoink|Spoink, M|123/249
+L	ab_5_20	540	|move|p1a: Nidoran-F|Rock Smash|p2a: Spoink
+L	ab_5_20	541	|-resisted|p2a: Spoink
+L	ab_5_20	542	|-crit|p2a: Spoink
+L	ab_5_20	543	|-damage|p2a: Spoink|105/249
+L	ab_5_20	544	|-unboost|p2a: Spoink|def|1
+L	ab_5_20	545	|
+L	ab_5_20	546	|upkeep
+L	ab_5_20	547	|turn|52
+L	ab_5_20	548	|
+L	ab_5_20	549	|t:|<NORMALIZED>
+L	ab_5_20	550	|move|p2a: Spoink|Calm Mind|p2a: Spoink
+L	ab_5_20	551	|-boost|p2a: Spoink|spa|1
+L	ab_5_20	552	|-boost|p2a: Spoink|spd|1
+L	ab_5_20	553	|move|p1a: Nidoran-F|Double Kick|p2a: Spoink
+L	ab_5_20	554	|-resisted|p2a: Spoink
+L	ab_5_20	555	|-damage|p2a: Spoink|85/249
+L	ab_5_20	556	|-resisted|p2a: Spoink
+L	ab_5_20	557	|-damage|p2a: Spoink|67/249
+L	ab_5_20	558	|-hitcount|p2a: Spoink|2
+L	ab_5_20	559	|
+L	ab_5_20	560	|upkeep
+L	ab_5_20	561	|turn|53
+L	ab_5_20	562	|
+L	ab_5_20	563	|t:|<NORMALIZED>
+L	ab_5_20	564	|move|p2a: Spoink|Psybeam|p1a: Nidoran-F
+L	ab_5_20	565	|-supereffective|p1a: Nidoran-F
+L	ab_5_20	566	|-damage|p1a: Nidoran-F|0 fnt
+L	ab_5_20	567	|faint|p1a: Nidoran-F
+L	ab_5_20	568	|
+L	ab_5_20	569	|t:|<NORMALIZED>
+L	ab_5_20	570	|switch|p1a: Skarmory|Skarmory, M|166/308
+L	ab_5_20	571	|
+L	ab_5_20	572	|upkeep
+L	ab_5_20	573	|turn|54
+L	ab_5_20	574	|
+L	ab_5_20	575	|t:|<NORMALIZED>
+L	ab_5_20	576	|move|p1a: Skarmory|Rock Smash|p2a: Spoink
+L	ab_5_20	577	|-resisted|p2a: Spoink
+L	ab_5_20	578	|-damage|p2a: Spoink|52/249
+L	ab_5_20	579	|-unboost|p2a: Spoink|def|1
+L	ab_5_20	580	|move|p2a: Spoink|Icy Wind|p1a: Skarmory
+L	ab_5_20	581	|-damage|p1a: Skarmory|72/308
+L	ab_5_20	582	|-unboost|p1a: Skarmory|spe|1
+L	ab_5_20	583	|
+L	ab_5_20	584	|-enditem|p2a: Spoink|Salac Berry|[eat]
+L	ab_5_20	585	|-boost|p2a: Spoink|spe|1|[from] item: Salac Berry
+L	ab_5_20	586	|upkeep
+L	ab_5_20	587	|turn|55
+L	ab_5_20	588	|
+L	ab_5_20	589	|t:|<NORMALIZED>
+L	ab_5_20	590	|move|p2a: Spoink|Psybeam|p1a: Skarmory
+L	ab_5_20	591	|-resisted|p1a: Skarmory
+L	ab_5_20	592	|-damage|p1a: Skarmory|0 fnt
+L	ab_5_20	593	|faint|p1a: Skarmory
+L	ab_5_20	594	|
+L	ab_5_20	595	|win|P2

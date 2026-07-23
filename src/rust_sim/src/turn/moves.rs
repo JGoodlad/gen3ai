@@ -759,6 +759,55 @@ impl crate::state::BattleState {
             side, slot, foe, foe_slot, base_power, move_type, category, halves_def, dex,
         );
 
+        // --- WONDER GUARD (`gen3_wonder_guard_v1`): the SE-ONLY damage gate. The gen4-override
+        //     (gen3-inherited) `onTryHit` blocks a DAMAGING move into a Wonder Guard holder unless
+        //     it is STRICTLY super-effective (`runEffectiveness(move) > 0`) AND not type-immune,
+        //     emitting `-immune|<t>|[from] ability: Wonder Guard`. It runs at the `TryHit` event —
+        //     AFTER the accuracy roll (already drawn; `acc_hit`-gated, since a MISS never reaches
+        //     TryHit → the genuine-miss `-miss` return below) and BEFORE the crit/damage/secondary
+        //     draws — so a BLOCKED move draws ONLY its accuracy roll (EXACTLY a type-immune move's
+        //     draw count), then `-immune`. It fires BEFORE the plain type-immunity short-circuit
+        //     (`move_is_immune`), so a 0×-type-immune move ALSO routes through WG's `-immune` (a
+        //     DISTINCT byte form from a plain type `-immune` — probe-confirmed vs the sim: Tackle
+        //     into Shedinja shows `[from] ability: Wonder Guard`). BYPASSED (WG never gates them):
+        //     Status moves (this is the damaging path, so `category == Status` never reaches here),
+        //     a SELF-target hit (`targets_self`), a TYPELESS `???`/Struggle move
+        //     (`move_type.is_none()`), and ALL residual damage (a MOVE hook only — the Leech Seed /
+        //     weather chip / burn / poison residuals bypass it, so a 1-HP Shedinja still dies to a
+        //     residual). The gen3 `runEffectiveness` log2-SUM `> 0` (STRICTLY SE) is bit-equivalent
+        //     to the type-chart effectiveness PRODUCT `> 1.0` (each per-type factor ∈ {0.5,1,2}; a
+        //     0× factor makes the product 0 → not `> 1.0` → the WG `-immune` form). No new state (a
+        //     read-only incoming-move gate; a Traced Wonder Guard reads its LIVE copied ability). ---
+        if acc_hit
+            && category != MoveCategory::Status
+            && !targets_self
+            && move_type.is_some()
+            && dex
+                .ability(&self.sides[foe].pokemon[foe_slot].ability)
+                .map(|a| a.wonder_guard)
+                .unwrap_or(false)
+        {
+            let connects = match move_type {
+                Some(t) => dex.type_chart().effectiveness(t, &ctx.defender.types) > 1.0,
+                None => true, // unreachable (guarded by move_type.is_some() above)
+            };
+            if !connects {
+                // [EMIT] `|move|<user>|<Name>|<foe>` then `|-immune|<foe>|[from] ability: Wonder
+                // Guard`. Observation-only: draws nothing beyond the accuracy roll already drawn.
+                if self.logging() && !suppress_announce {
+                    let user = self.mon_ref(side, slot, dex);
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.move_used(&user, &move_name, Some(&target), false, false);
+                    if announce_lockedmove {
+                        self.log.attr_last_move_from_lockedmove();
+                    }
+                    self.log.immune_from_ability(&target, "Wonder Guard");
+                }
+                // acc_hit is true here → not missed, not landed (no in-tryMoveHit Update).
+                return MoveResolution::done(false, false, false);
+            }
+        }
+
         // --- FACADE ×2-when-statused (`gen3_facade_v1`, probe
         //     `harness/probe_facade_gen3.js`): the move's OWN dist `onBasePower` is
         //     `if (pokemon.status && pokemon.status !== 'slp') return chainModify(2)` —
@@ -1086,17 +1135,12 @@ impl crate::state::BattleState {
         }
 
         // --- 2. CRIT: randomChance(1, critMult[critRatio]) — UNCONDITIONAL for a
-        //     damaging, non-immune move (critRatio >= 1). After accuracy, before
-        //     damage. FOCUS ENERGY (`gen3_berry_trace_shedskin_v1` — in gen3 reachable
-        //     only via a Lansat Berry eat): the volatile's `onModifyCritRatio` adds +2
-        //     inside `runEvent('ModifyCritRatio')`, then `clampIntRange(critRatio, 0, 5)`
-        //     — so the DENOMINATOR shifts (1→3 ⇒ 1/4; a high-crit 2→4 ⇒ 1/3) while the
-        //     draw COUNT is unchanged. ---
-        let eff_crit_ratio = if self.sides[side].pokemon[slot].focus_energy {
-            (crit_ratio as u32 + 2).min(5)
-        } else {
-            crit_ratio as u32
-        };
+        //     damaging, non-immune move (critRatio >= 1). After accuracy, before damage.
+        //     `effective_crit_ratio` folds the `onModifyCritRatio` handlers (FOCUS ENERGY +2
+        //     — Lansat-berry-only; a CRIT_ITEM +N — Scope Lens / Lucky Punch / Stick) then
+        //     `clampIntRange(_, 0, 5)`, so the DENOMINATOR shifts (1→3 ⇒ 1/4; a high-crit
+        //     2→4 ⇒ 1/3) while the draw COUNT is unchanged. ---
+        let eff_crit_ratio = self.effective_crit_ratio(side, slot, crit_ratio, dex);
         let mut crit = self.prng.random_chance(1, CRIT_MULT[eff_crit_ratio as usize]);
         // CRIT_IMMUNE (`gen3_ability_batch1_v1`, Battle Armor / Shell Armor): the roll above
         // is DRAWN normally (draw-count unchanged), THEN `runEvent('CriticalHit')` reads the
@@ -1539,12 +1583,16 @@ impl crate::state::BattleState {
             .map(|a| a.crit_immune)
             .unwrap_or(false);
 
+        // The ACTIVE user's `onModifyCritRatio` fold (Focus Energy / a CRIT_ITEM) — read
+        // ONCE (constant across the multi-strike; the crit-ratio event reads the SOURCE, the
+        // active user, not each ally). Beat Up's dex critRatio is 1 → 1/16 by default.
+        let eff_crit_ratio = self.effective_crit_ratio(side, slot, crit_ratio, dex);
         let mut hits = 0u32;
         for (ally_idx, ally_atk) in strikes {
-            // [crit] `randomChance(1, critMult[critRatio])` — Beat Up critRatio 1 → 1/16,
-            // independent per strike. CRIT_IMMUNE (Battle/Shell Armor) draws the roll then
-            // overrides it to false (draw-count unchanged), like the main damaging path.
-            let mut crit = self.prng.random_chance(1, CRIT_MULT[crit_ratio as usize]);
+            // [crit] `randomChance(1, critMult[critRatio])` — independent per strike.
+            // CRIT_IMMUNE (Battle/Shell Armor) draws the roll then overrides it to false
+            // (draw-count unchanged), like the main damaging path.
+            let mut crit = self.prng.random_chance(1, CRIT_MULT[eff_crit_ratio as usize]);
             if crit && crit_immune {
                 crit = false;
             }
@@ -1795,12 +1843,9 @@ impl crate::state::BattleState {
             .ability(&self.sides[foe].pokemon[foe_slot].ability)
             .map(|a| a.crit_immune)
             .unwrap_or(false);
-        let focus_energy = self.sides[side].pokemon[slot].focus_energy;
-        let eff_crit_ratio = if focus_energy {
-            (crit_ratio as u32 + 2).min(5)
-        } else {
-            crit_ratio as u32
-        };
+        // The `onModifyCritRatio` fold (Focus Energy / a CRIT_ITEM — Scope Lens / Lucky
+        // Punch / Stick), read once (constant across the multi-strike).
+        let eff_crit_ratio = self.effective_crit_ratio(side, slot, crit_ratio, dex);
 
         let mut hits = 0u32;
         for _ in 0..count {
@@ -2065,6 +2110,47 @@ impl crate::state::BattleState {
                 self.log.activate(&target, "Protect", None);
             }
             return MoveResolution::done(false, false, false);
+        }
+
+        // --- WONDER GUARD (`gen3_wonder_guard_v1`) on the FIXED-DAMAGE path: a fixed-damage move
+        //     (Seismic Toss / Night Shade / Sonic Boom / Dragon Rage / Super Fang / Counter /
+        //     Mirror Coat / Endeavor) into a Wonder Guard holder is BLOCKED unless STRICTLY
+        //     super-effective — the SAME gate as `run_move`'s normal-damage path. Fixed-damage
+        //     moves route to `run_fixed_damage_move` BEFORE the `category == Status` branch, so
+        //     they bypassed the `run_move` WG gate: a NEUTRAL one (Dragon Rage vs Bug/Ghost) would
+        //     DEAL its fixed number (KO'ing the 1-HP Shedinja → skipping the endTurn Quick Claw →
+        //     a SEED desync, ab_2_13), and a 0×-immune one (Counter Fighting → Ghost) would emit
+        //     the PLAIN type `-immune` instead of the WG byte form (ab_5_20). It fires at the
+        //     `TryHit` event: AFTER the accuracy roll (`acc_hit`-gated — a MISS never reaches
+        //     TryHit → the plain type-immune / genuine-miss returns below win) and BEFORE damage
+        //     (a fixed-damage move draws NO crit/damage roll → the block draws ONLY the accuracy
+        //     roll already rolled, the SAME count as the plain type-immune path). Placed BEFORE
+        //     `move_is_immune` so a 0×-type-immune fixed-damage move ALSO routes through WG's
+        //     `-immune` (the byte-form distinction). Byte-fuzz master-seed 80808, ab_5_20/ab_2_13.
+        if acc_hit
+            && !targets_self
+            && move_type.is_some()
+            && dex
+                .ability(&self.sides[foe].pokemon[foe_slot].ability)
+                .map(|a| a.wonder_guard)
+                .unwrap_or(false)
+        {
+            let def_types = mon_types(&self.sides[foe].pokemon[foe_slot], dex);
+            let connects = match move_type {
+                Some(t) => dex.type_chart().effectiveness(t, &def_types) > 1.0,
+                None => true, // unreachable (guarded by move_type.is_some())
+            };
+            if !connects {
+                // [EMIT] `|move|<user>|<Name>|<foe>` then `|-immune|<foe>|[from] ability: Wonder
+                // Guard`. Observation-only: draws nothing beyond the accuracy roll already drawn.
+                if self.logging() {
+                    let user = self.mon_ref(side, slot, dex);
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.move_used(&user, move_name, Some(&target), false, false);
+                    self.log.immune_from_ability(&target, "Wonder Guard");
+                }
+                return MoveResolution::done(false, false, false);
+            }
         }
 
         // --- IMMUNITY short-circuit: a type-chart 0× (Fighting→Ghost, Ghost→Normal,
@@ -2983,13 +3069,10 @@ impl crate::state::BattleState {
         if move_is_immune(&ctx, dex) {
             return;
         }
-        // The crash `getDamage` draws the SAME crit + damage-roll sequence as a landed
-        // hit (Focus Energy denominator shift + the crit-immune draw-free override).
-        let eff_crit_ratio = if self.sides[side].pokemon[slot].focus_energy {
-            (crit_ratio as u32 + 2).min(5)
-        } else {
-            crit_ratio as u32
-        };
+        // The crash `getDamage` draws the SAME crit + damage-roll sequence as a landed hit
+        // (the `onModifyCritRatio` denominator shift — Focus Energy / a CRIT_ITEM — + the
+        // crit-immune draw-free override).
+        let eff_crit_ratio = self.effective_crit_ratio(side, slot, crit_ratio, dex);
         let mut crit = self.prng.random_chance(1, CRIT_MULT[eff_crit_ratio as usize]);
         if crit
             && dex

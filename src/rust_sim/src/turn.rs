@@ -170,6 +170,15 @@ const SCREEN_DURATION: u8 = 5;
 /// possible only at order 10 with the speed tiebreak; base order-15 would reverse them).
 const TAUNT_RESIDUAL_SUBORDER: i32 = 15;
 
+/// The **YAWN** delayed-sleep volatile's residual `onResidualSubOrder` (`gen3_yawn_v1`) — the
+/// gen-3 `yawn` condition carries `onResidualOrder: 10, onResidualSubOrder: 19` (VERIFIED vs the
+/// resolved `Dex.mod('gen3')`). At the shared order 10 it sorts AFTER Leftovers (4) / Leech (5) /
+/// status DoT (6) / Curse (8) / Encore (14) / Taunt (15) at equal speed — unique among the
+/// order-10 handlers, so its ONLY residual tie is the OTHER mon's yawn at equal cached speed (a
+/// yawn MIRROR → one `random(0,2)` handler-sort tie-shuffle). Its handler decrements the duration
+/// and, at 1 → 0, fires the `onEnd` (`-end [silent]` + `trySetStatus('slp')`).
+const YAWN_RESIDUAL_SUBORDER: i32 = 19;
+
 // === Gen-3 RESIDUAL `comparePriority` keys (the gen4-mod overrides gen3 inherits —
 //     NOT the base-data values; the base burn/Leftovers orders are wrong for gen3).
 //     Smaller `order` resolves FIRST. ===
@@ -418,6 +427,16 @@ enum ResidualAction {
     /// tied handler at order 10 subOrder 15 — its only tie is the OTHER mon's taunt at equal
     /// speed).
     TauntDuration { side: usize, slot: usize },
+    /// The **YAWN** volatile's residual duration handler (`gen3_yawn_v1`, order 10, subOrder 19):
+    /// decrement `MonState::yawn`'s duration and, at 1 → 0, fire the `onEnd` — emit
+    /// `|-end|<target>|move: Yawn|[silent]` then `trySetStatus('slp', source)` via the existing
+    /// [`crate::state::BattleState::try_set_status`] path (so the sleep `random(2,6)` onStart draw,
+    /// the gen3ou Sleep Clause block, AND the gen3ou SetStatus 2-clause shuffle all come for free).
+    /// The 2 → 1 (cast-turn) tick is unobservable + draw-free. Its ONLY residual tie is the other
+    /// mon's yawn at equal speed (unique subOrder 19). On the 1 → 0 (resolve) tick the sleep set
+    /// draws the `random(2,6)` in gen3customgame / the SetStatus shuffle (+ the `random(2,6)` if it
+    /// lands) in gen3ou.
+    Yawn { side: usize, slot: usize },
     /// The **DISABLE** volatile's residual duration handler (`gen3_taunt_disable_v1`, order
     /// NO_ORDER, subOrder 2 — the SAME tie-group as protect/stall/flinch): decrement
     /// `MonState::disable`'s turn counter and, on reaching 0, CLEAR it (→ `None`, freeing the
@@ -608,6 +627,13 @@ pub struct MonSnapshot {
     /// stays gone; the WHICH-item is fixed per scenario/set, so the boolean is the
     /// full item state). `bool` keeps the `Copy` derive `TurnRecord` relies on.
     pub item_held: bool,
+    /// The active mon's HELD item's dex `num` (`0` = itemless, `gen3_trick_v1`) — so the
+    /// Trick differential asserts WHICH item each side holds after an item SWAP (a two-item
+    /// swap keeps `item_held` true on BOTH sides, so the boolean can't distinguish it — the
+    /// num pins the identity). Copy-safe (`u16`); no gen-3 item has num 0, and both the
+    /// omniscient sim (`dex.items.get('').num`) and the port map itemless → 0, so it is a
+    /// collision-free itemless sentinel.
+    pub item_num: u16,
 }
 
 /// The record of one turn in a [`BattleState::run_battle`] sequence: the turn
@@ -1643,16 +1669,22 @@ mod tests {
     // as of THIS step the gen-3 PHAZE moves Roar / Whirlwind are MODELED too — so the
     // example is re-keyed to a STILL-unmodeled status move: **Haze** [boost reset — a
     // DIFFERENT mechanic from a forceSwitch phaze, explicitly deferred].)
+    // TRICK (`gen3_trick_v1`) is now MODELED (the item-swap move) — so this smoke asserts the
+    // SWAP instead of a fail-loud panic. (This test was re-keyed from a `#[should_panic]`
+    // fail-loud guard as Trick moved from unmodeled → modeled, mirroring the Snatch re-key; the
+    // deep draw model + fail/block set are pinned bit-for-bit in `regression_test.rs` +
+    // `trick_test.rs`.) A Trick between two item-holders SWAPS the items and never lands.
     #[test]
-    #[should_panic(expected = "is not modeled")]
-    fn unmodeled_status_move_panics() {
+    fn trick_swaps_the_two_items_and_never_lands() {
         let d = dex();
-        // Haze is a Status move (resets all boosts — NOT a phaze) NOT in the modeled
-        // set → panic. (Roar/Whirlwind would NOT panic now — they are the modeled phaze.)
-        let suicune = "Suicune||leftovers||haze,surf|Bold|252,,252,,,|||||";
-        let snorlax = "Snorlax||leftovers||bodyslam,earthquake|Adamant|252,252,,,,|||||";
+        // Suicune (Leftovers) Tricks a Choice-Band Snorlax → the items swap; not landed.
+        let suicune = "Suicune||leftovers||trick,surf|Bold|252,,252,,,|||||";
+        let snorlax = "Snorlax||choiceband||bodyslam,earthquake|Adamant|252,252,,,,|||||";
         let mut state = BattleState::start(&opts_cg(suicune, snorlax, "1,2,3,4"), &d).expect("start");
-        let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
+        let res = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
+        assert_eq!(to_id(&state.sides[0].pokemon[0].item), "choiceband", "user gains the foe's Choice Band");
+        assert_eq!(to_id(&state.sides[1].pokemon[0].item), "leftovers", "foe gains the user's Leftovers");
+        assert!(!res.landed && !res.missed, "a status Trick never lands and never misses");
     }
 
     // SNATCH (`gen3_snatch_v1`) is now MODELED (the LAST gen-3 status move — this closes

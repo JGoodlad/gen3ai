@@ -257,6 +257,14 @@ _GEN3_ABILITY_MECHANICS = {
     # ability's passive effects are LIVE; switch-out reverts to Trace (re-entry re-traces,
     # a new draw). Probe `probe_trace_shedskin_rng.js`.
     "trace": {"trace": True},
+    # WONDER GUARD (`gen3_wonder_guard_v1`) — Shedinja's SE-only damage gate. The gen4-override
+    # (gen3-inherited) `onTryHit` blocks a DAMAGING move unless it is STRICTLY super-effective
+    # (`runEffectiveness(move) > 0`) AND not type-immune; Status / self-target / typeless (`???`
+    # Struggle) BYPASS, and ALL residual damage (Leech Seed / weather chip / burn / poison) bypasses
+    # (it is an `onTryHit` MOVE hook). A blocked move draws ONLY its accuracy roll then
+    # `-immune|<t>|[from] ability: Wonder Guard` (a DISTINCT byte form — a 0×-type-immune move ALSO
+    # routes through it). Read by `turn.rs::run_move`. Probe `probe_batch89_abilities_items.js`.
+    "wonderguard": {"wonderGuard": True},
 }
 
 
@@ -1006,6 +1014,27 @@ _GEN3_ITEM_MECHANICS = {
     # last bit for many accuracy values — proven).
     "brightpowder": {"accMod": {"op": "multiply", "mod": 0.9, "side": "defender"}},
     "laxincense": {"accMod": {"op": "multiply", "mod": 0.95, "side": "defender"}},
+    # CRIT_ITEM (`gen3_crit_item_v1`) — the `onModifyCritRatio critRatio + N` fold, optionally
+    # species-gated. A DRAW-FREE crit-stage boost (the Focus Energy precedent: only the
+    # `CRIT_MULT` denominator index shifts, the crit `randomChance(1, denom)` draw COUNT is
+    # unchanged). Scope Lens +1 (unconditional); Lucky Punch +2 (Chansey); Stick +2
+    # (Farfetch'd). `leek` is the gen8 rename (same num 259, itemUser Farfetch'd/Sirfetch'd)
+    # — NOT gen3-legal, so not an entry. CONSUMED by the src/rust_sim port
+    # (dex/items.rs -> ItemData.crit_boost -> turn.rs::effective_crit_ratio).
+    "scopelens": {"critBoost": {"boost": 1}},
+    "luckypunch": {"critBoost": {"boost": 2, "onlySpecies": ["chansey"]}},
+    "stick": {"critBoost": {"boost": 2, "onlySpecies": ["farfetchd"]}},
+    # BOOST_RESTORE (`gen3_white_herb_v1`) — White Herb: a single-use item that restores ALL
+    # of the holder's NEGATIVE boost stages to 0 (positives untouched) then consumes itself.
+    # The resolved gen3 handlers (RAW dump): `onStart` scans `pokemon.boosts[i] < 0` and, if
+    # any, `useItem()`; `onUse` does `setBoost(negatives → 0)` + `-clearnegativeboost [silent]`
+    # (the `-enditem` precedes it, emitted by `useItem`). It fires from `onAnyAfterMove` /
+    # `onAnySwitchIn` / `onResidual(order 29)`, so it triggers immediately after the causing
+    # stat-drop (the holder's OWN self-drop move OR a foe's Growl / Intimidate-on-switch-in).
+    # DRAW-FREE (no PRNG anywhere). A boolean flag — the restore math has no parameters.
+    # CONSUMED by the `src/rust_sim` port (dex/items.rs -> ItemData.boost_restore ->
+    # turn.rs::white_herb_restore, wired at the after-move / switch-in stat-drop sites).
+    "whiteherb": {"boostRestore": True},
     # PROC_ITEM (`gen3_ability_batch4_v1`) — the two draw-bearing proc items, PROBE-settled
     # against the RESOLVED `Dex.mod('gen3')` (`src/rust_sim/harness/probe_kingsrock_rng.js` /
     # `probe_kingsrock_order_rng.js` / `probe_focusband_rng.js` / `probe_focusband_confusion_rng.js`):

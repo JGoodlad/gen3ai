@@ -21,6 +21,52 @@ impl crate::state::BattleState {
         display
     }
 
+    /// WHITE HERB — the BOOST_RESTORE trigger (`gen3_white_herb_v1`, `ItemData.boost_restore`).
+    /// If the mon at `(side, slot)` holds White Herb AND has ANY boost stage `< 0`, restore
+    /// ONLY the negative stages to 0 (positives untouched) and CONSUME the item, emitting
+    /// `|-enditem|<mon>|White Herb` then `|-clearnegativeboost|<mon>|[silent]`. Otherwise a
+    /// no-op (retained). DRAW-FREE (no PRNG). The resolved gen3 item fires from
+    /// `onAnyAfterMove` / `onAnySwitchIn` / `onResidual(order 29)`, so this is called RIGHT
+    /// AFTER any stat-drop resolves on the holder — its OWN self-drop move (Overheat /
+    /// Superpower / Psycho Boost / Curse-non-ghost's −Spe, via `apply_self_drops`), a foe's
+    /// stat-drop move / secondary (Growl / Screech / Crunch, via `apply_secondary_boost`), or a
+    /// foe's Intimidate-on-switch-in (via `run_switch` / `start_with_switchins`). Restoring only
+    /// the negatives is what makes +2-then-−1 (net +1) NOT trigger (no negative stage) while a
+    /// genuine −1 on a different stat DOES (that lone stage restored, the positives kept).
+    ///
+    /// Emission order matches the resolved gen3 `useItem` (which emits `-enditem` BEFORE
+    /// running `onUse`'s `setBoost` + `-clearnegativeboost`) — probe-confirmed
+    /// (`harness/probe_batch89_abilities_items.js`: `-enditem White Herb` then
+    /// `-clearnegativeboost [silent]`).
+    pub(crate) fn white_herb_restore(&mut self, side: usize, slot: usize, dex: &Dex) {
+        // Data-driven identify (BOOST_RESTORE class == White Herb, the sole gen-3 member).
+        let is_wh = {
+            let item_id = to_id(&self.sides[side].pokemon[slot].item);
+            dex.item(&item_id).map_or(false, |i| i.boost_restore)
+        };
+        if !is_wh {
+            return;
+        }
+        {
+            let mon = &mut self.sides[side].pokemon[slot];
+            if mon.fainted || !mon.boosts.iter().any(|&b| b < 0) {
+                return; // no negative stage to restore ⇒ item retained (the net-positive case)
+            }
+            for b in mon.boosts.iter_mut() {
+                if *b < 0 {
+                    *b = 0;
+                }
+            }
+            mon.item = String::new(); // single-use consumption
+        }
+        if self.logging() {
+            // [EMIT] `|-enditem|<mon>|White Herb` then `|-clearnegativeboost|<mon>|[silent]`.
+            let m = self.mon_ref(side, slot, dex);
+            self.log.push_raw(format!("|-enditem|{m}|White Herb"));
+            self.log.push_raw(format!("|-clearnegativeboost|{m}|[silent]"));
+        }
+    }
+
     /// A HEAL/PINCH berry's RESIDUAL apply (`gen3_berry_trace_shedskin_v1`, order 10
     /// subOrder 4 — the Leftovers slot). The threshold reads the holder's hp AT APPLY
     /// TIME (`hp <= maxhp/2` == `2*hp <= maxhp` exactly; pinch `4*hp <= maxhp` — the

@@ -353,6 +353,20 @@ impl crate::state::BattleState {
                             }
                         }
                     }
+                    // --- WHITE HERB `onAnyAfterMove` (`gen3_white_herb_v1`): at the AfterMove
+                    //     event (runMove's tail, AFTER the move body / in-tryMoveHit Update,
+                    //     BEFORE the runAction-tail forceSwitch), a White Herb holder — EITHER
+                    //     active, `onAnyAfterMove` — with any negative boost restores it + consumes
+                    //     the item, DRAW-FREE. This is the GENERAL post-move hook the sim uses; the
+                    //     self-drop (Overheat, `apply_self_drops`) + foe-secondary-drop (Crunch,
+                    //     `apply_secondary_boost`) sites already consume the item INSIDE run_move so
+                    //     this is a no-op for them (no double). It IS the site that restores an
+                    //     Intimidate-switch-in drop AFTER the holder's next move (ab_4_6): the
+                    //     switch-in `onAnySwitchIn` fires before the entrant's Intimidate Start, so
+                    //     the drop is only visible here. Mover's side first (the common holder).
+                    let wh_foe = 1 - side;
+                    self.white_herb_restore(side, self.sides[side].active, dex);
+                    self.white_herb_restore(wh_foe, self.sides[wh_foe].active, dex);
                     // --- forceSwitchFlag consumption (battle.ts:2348-2353): at the END of
                     //     the move's runAction (AFTER the move body / any in-tryMoveHit
                     //     Update, BEFORE faintMessages), a SUCCESSFUL phaze (Roar /

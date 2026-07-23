@@ -351,5 +351,11 @@ impl crate::state::BattleState {
                 }
             }
         }
+        // WHITE HERB (`gen3_white_herb_v1`, onAnyAfterMove): a stat-DROP on a White Herb holder
+        // (a foe stat-drop MOVE — Growl / Screech / Charm — OR a damaging move's foe stat-drop
+        // secondary — Crunch's −SpD) is restored immediately + the item consumed. A self-RAISE
+        // (`want_self`) leaves no negative stage → no trigger (the no-op is data-driven inside
+        // `white_herb_restore`). DRAW-FREE.
+        self.white_herb_restore(t_side, t_slot, _dex);
     }
 }

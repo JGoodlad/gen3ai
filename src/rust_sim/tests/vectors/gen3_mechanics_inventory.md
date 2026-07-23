@@ -30,7 +30,7 @@ before wiring); draw-free otherwise.
 
 | id | num | params | status | draw | resolved handlers |
 |---|---|---|---|---|---|
-| whiteherb | 214 | - | unmodeled | free | onAnyAfterMega, onAnyAfterMove, onAnySwitchIn, onAnySwitchInPriority, onResidual, onResidualOrder, onStart, onUse |
+| whiteherb | 214 | - | **modeled** | free | onAnyAfterMega, onAnyAfterMove, onAnySwitchIn, onAnySwitchInPriority, onResidual, onResidualOrder, onStart, onUse |
 
 ### CHOICE (1 entries, 0 draw-bearing)
 
@@ -42,9 +42,9 @@ before wiring); draw-free otherwise.
 
 | id | num | params | status | draw | resolved handlers |
 |---|---|---|---|---|---|
-| luckypunch | 256 | - | unmodeled | free | onModifyCritRatio |
-| scopelens | 232 | - | unmodeled | free | onModifyCritRatio |
-| stick | 259 | - | unmodeled | free | onModifyCritRatio |
+| luckypunch | 256 | - | **modeled** | free | onModifyCritRatio |
+| scopelens | 232 | - | **modeled** | free | onModifyCritRatio |
+| stick | 259 | - | **modeled** | free | onModifyCritRatio |
 
 ### CURE_BERRY (14 entries, 0 draw-bearing)
 
@@ -280,6 +280,12 @@ before wiring); draw-free otherwise.
 | battlearmor | 4 | - | **modeled** | free | - |
 | shellarmor | 75 | - | **modeled** | free | - |
 
+### DAMAGE_GATE (1 entries, 0 draw-bearing)
+
+| id | num | params | status | draw | resolved handlers |
+|---|---|---|---|---|---|
+| wonderguard | 25 | - | **modeled** | free | onTryHit |
+
 ### DMG_MOD (10 entries, 0 draw-bearing)
 
 | id | num | params | status | draw | resolved handlers |
@@ -295,7 +301,7 @@ before wiring); draw-free otherwise.
 | thickfat | 47 | dmgMod x1/2 @sourceBasePower | **modeled** | free | onSourceBasePower, onSourceBasePowerPriority, onSourceModifyAtkPriority, onSourceModifySpAPriority |
 | torrent | 67 | dmgMod x3/2 @basePower type=Water pinch<=1/3 | **modeled** | free | onBasePower, onBasePowerPriority, onModifyAtkPriority, onModifySpAPriority |
 
-### MISC (12 entries, 0 draw-bearing)
+### MISC (11 entries, 0 draw-bearing)
 
 | id | num | params | status | draw | resolved handlers |
 |---|---|---|---|---|---|
@@ -303,14 +309,13 @@ before wiring); draw-free otherwise.
 | cloudnine | 13 | - | **modeled** | free | onEnd, onStart |
 | earlybird | 48 | - | *noop-admitted* | free | - |
 | innerfocus | 39 | - | **modeled** | free | onTryAddVolatile |
-| liquidooze | 64 | - | unmodeled | free | onSourceTryHeal |
-| minus | 58 | - | *noop-admitted* | free | onModifySpA |
-| plus | 57 | - | *noop-admitted* | free | onModifySpA |
+| liquidooze | 64 | - | **modeled** | free | onSourceTryHeal |
+| minus | 58 | - | **modeled** | free | onModifySpA |
+| plus | 57 | - | **modeled** | free | onModifySpA |
 | pressure | 46 | - | *noop-admitted* | free | onDeductPP, onStart |
 | rockhead | 69 | - | *noop-admitted* | free | onDamage |
 | sturdy | 5 | - | *noop-admitted* | free | onDamagePriority, onTryHit |
 | truant | 54 | - | **modeled** | free | onBeforeMove, onBeforeMovePriority, onResidual, onResidualOrder, onSwitchIn |
-| wonderguard | 25 | - | unmodeled | free | onTryHit |
 
 ### NO_OP (4 entries, 0 draw-bearing)
 
@@ -420,8 +425,9 @@ before wiring); draw-free otherwise.
 | RESIDUAL_ITEM | **modeled (dedicated)** | Leftovers heal in `run_residuals` (predates the framework) |
 | PROC_ITEM | Quick Claw **modeled (dedicated)**; King's Rock / Focus Band unmodeled | draw-bearing — need draw-order probes when built |
 | ACCURACY_ITEM | **WIRED (data-driven)** | `ItemData.acc_mod` (Bright Powder x0.9 / Lax Incense x0.95 DIRECT) folded into `turn.rs::effective_accuracy` — the to-hit roll now = `move.accuracy x acc/eva stage table x accMod`, then `random(100) < effAcc` (DRAW-RELEVANT: a hit/miss flip desyncs the seed) |
-| CRIT_ITEM | UNMAPPED (engine) | fold into `critRatio` (the dex already carries move critRatio) |
-| DRAIN_ITEM / BOOST_RESTORE / CURE_ITEM / SPEED_MOD | UNMAPPED | each a small dedicated hook |
+| CRIT_ITEM | **WIRED (data-driven)** | `ItemData.crit_boost` (`critBoost {boost, onlySpecies}`) folds +N crit stages into `effective_crit_ratio` (the Focus Energy precedent): Scope Lens +1 (unconditional), Lucky Punch +2 (Chansey), Stick +2 (Farfetch'd) — DRAW-FREE (only the `CRIT_MULT` denominator index shifts) |
+| BOOST_RESTORE | **WIRED (data-driven)** | `ItemData.boost_restore` (`boostRestore: true`) — White Herb: restore all NEGATIVE boost stages to 0 + consume, at the after-move / switch-in stat-drop sites (`turn.rs::white_herb_restore`); DRAW-FREE |
+| DRAIN_ITEM / CURE_ITEM / SPEED_MOD | UNMAPPED | each a small dedicated hook |
 | ability DMG_MOD | **WIRED (data-driven)** | the pinch family (BP x1.5 @hp<=1/3) / Huge-Pure (Atk x2) / Guts (Atk x1.5 statused + burn-skip) / Marvel Scale (Def x1.5 statused) fold via `resolve_atk_stat_mods`/`resolve_def_stat_mods`/`resolve_bp_mods`; **Hustle** ships its Atk x1.5 (dmgMod) WITH its acc x0.8 (accMod) in the accuracy phase; Thick Fat keeps the dedicated `defender_thick_fat` |
 | ability ACCURACY | **WIRED (data-driven)** | `AbilityData.acc_mod` — Compound Eyes (x1.3 chain, attacker), Sand Veil (x0.8 chain in sand, defender), Hustle (x3277/4096 chain, attacker, physical-type moves) — folded into `turn.rs::effective_accuracy` (the runEvent integer-guard mirrored: a chain member is SKIPPED when the accuracy is a non-integer float) |
 | ability STATUS_IMMUNE | **WIRED (data-driven)** | `AbilityData.status_immune` — Limber (par) / Insomnia + Vital Spirit (slp) / Immunity (psn,tox) / Water Veil (brn) block via onSetStatus (phase=setStatus, INSIDE runEvent SetStatus, after the clause shuffle drew, DRAW-FREE block); Magma Armor (frz) blocks via onImmunity (phase=immunity, at runStatusImmunity BEFORE the SetStatus event, so NO clause shuffle) — read by `turn.rs::try_set_status` |

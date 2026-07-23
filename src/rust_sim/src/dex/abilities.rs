@@ -221,6 +221,16 @@ pub struct AbilityData {
     /// every ability read; switch-out reverts to Trace. Read by the switch-in ability-start
     /// dispatch. Probe `probe_trace_shedskin_rng.js`.
     pub trace: bool,
+    /// WONDER GUARD (`gen3_wonder_guard_v1`) — Shedinja's SE-only damage gate. `true` ⇒ a
+    /// DAMAGING move into the holder CONNECTS only if it is STRICTLY super-effective
+    /// (`runEffectiveness > 0`, i.e. the type-chart effectiveness product `> 1.0`) AND not
+    /// type-immune; every neutral / resisted / 0×-immune move is BLOCKED with
+    /// `-immune|<t>|[from] ability: Wonder Guard`. The gen4-override `onTryHit` runs AFTER the
+    /// accuracy roll and BEFORE crit/damage, so a blocked move draws ONLY its accuracy roll
+    /// (the type-immune draw count). BYPASSED by Status moves, self-target hits, typeless
+    /// (`???`/Struggle) moves, and ALL residual damage (a MOVE hook only). Read by
+    /// `turn.rs::run_move`. `false` for a non-Wonder-Guard ability.
+    pub wonder_guard: bool,
 }
 
 fn parse_ratio(v: &Json) -> Result<(u64, u64), String> {
@@ -385,6 +395,7 @@ pub(super) fn parse(root: &Json) -> Result<HashMap<String, AbilityData>, String>
                 synchronize: v.bool_or("synchronize", false),
                 shed_skin: v.bool_or("shedSkin", false),
                 trace: v.bool_or("trace", false),
+                wonder_guard: v.bool_or("wonderGuard", false),
             },
         );
     }
@@ -606,5 +617,17 @@ mod tests {
         assert!(!intim.shed_skin && !intim.trace);
         assert!(!d.ability("naturalcure").unwrap().shed_skin);
         assert!(!d.ability("synchronize").unwrap().trace);
+    }
+
+    /// `gen3_wonder_guard_v1` dex-parse pin — Wonder Guard carries the `wonderGuard` flag; a
+    /// plain ability does not (drift-gated by `dump_gen3_mechanics.js --check`).
+    #[test]
+    fn ability_wonder_guard_field_parses() {
+        let d = Dex::for_gen(3);
+        assert!(d.ability("wonderguard").unwrap().wonder_guard);
+        // Non-members carry no wonderGuard flag.
+        assert!(!d.ability("intimidate").unwrap().wonder_guard);
+        assert!(!d.ability("levitate").unwrap().wonder_guard);
+        assert!(!d.ability("liquidooze").unwrap().wonder_guard);
     }
 }

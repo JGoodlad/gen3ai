@@ -146,12 +146,14 @@ const MOVE_ID_BLOCKLIST = new Set([
   // MODELED bit-for-bit (`gen3_move_coverage_batch1_v1`) and ADMITTED via
   // MODELED_ITEM_REMOVAL_MOVES / MODELED_RAPIDSPIN_MOVES in `isModeledMove`. `pursuit` is likewise
   // NO LONGER blocklisted — it is MODELED bit-for-bit AND e2e-ADMITTED (`gen3_move_coverage_batch4_v1`,
-  // BATCH4_E2E_EXCLUDED=false) via MODELED_BATCH4_MOVES in `isModeledMove`. Trick / Switcheroo
-  // (item SWAP, not removal) stay out.
+  // BATCH4_E2E_EXCLUDED=false) via MODELED_BATCH4_MOVES in `isModeledMove`. NOTE: `trick` (the item
+  // SWAP move) is NO LONGER blocklisted — MODELED bit-for-bit (`gen3_trick_v1`) and ADMITTED via
+  // MODELED_TRICK_MOVES in the Status branch. `switcheroo` (num 415) is a gen4 move — NOT gen3-legal
+  // (no gen3 mon learns it) — so it stays out of the modeled universe.
   // NOTE: futuresight/doomdesire are NO LONGER blocklisted — MODELED bit-for-bit AND
   // e2e-ADMITTED (`gen3_move_coverage_batch4c_v1`, BATCH4C_E2E_EXCLUDED=false) via
   // MODELED_BATCH4C_MOVES in `isModeledMove`.
-  'trick', 'switcheroo', 'falseswipe',
+  'switcheroo', 'falseswipe',
   // NOTE: `sleeptalk` is NO LONGER blocklisted — MODELED (`gen3_move_coverage_batch5_v1`);
   // its pickability is CARRIER-conditional (see `sleepTalkPoolModeled` in pickMove: the
   // sampled pool must be all-modeled, since the CALLED move bypasses the picker). `snore`
@@ -392,6 +394,36 @@ const BATCH6_E2E_EXCLUDED = false;
 // it closes 722/722 (the last team-blocking move). The port no longer FAIL-LOUDs on snatch.
 const MODELED_SNATCH_MOVES = new Set(['snatch']);
 const SNATCH_E2E_EXCLUDED = false;
+
+// HAZE (`gen3_haze_v1`) — a category-Status FIELD move (`target: all`, `accuracy: true`) that
+// emits ONE `|-clearallboost` line + zeroes BOTH actives' boost stages (incl. the USER's own).
+// DRAW-FREE (probe-settled). Modeled bit-for-bit in `run_status_move`'s haze arm (the DEDICATED
+// golden + the HZ1/HZ2 pins). 0 team-carry (no gen3ou sample team runs Haze — the leech-seed
+// situation), so admitting it is byte-neutral on the e2e sample; kept for random-battle coverage.
+const MODELED_HAZE_MOVES = new Set(['haze']);
+const HAZE_E2E_EXCLUDED = false;
+
+// YAWN (`gen3_yawn_v1`) — a category-Status foe-target DELAYED-SLEEP move (`volatileStatus: 'yawn'`,
+// `accuracy: true`). The CAST is DRAW-FREE; the sleep `random(2,6)` fires at the RESOLVE (the residual
+// `onEnd` at order 10 subOrder 19, end of the turn AFTER cast), routed through the EXISTING
+// `try_set_status('slp')` path (so the sleep counter + the gen3ou Sleep Clause + the SetStatus shuffle
+// all come for free). Modeled bit-for-bit in `run_status_move`'s yawn arm + the residual `Yawn`
+// handler (the DEDICATED golden + the Y1/Y2/Y3 pins). UNLIKE Haze, Yawn MAY have gen3ou team-carry —
+// admitting it can grow the filter-clean pool; a plain regen reproduces the committed golden iff the
+// sampled teams don't carry it.
+const MODELED_YAWN_MOVES = new Set(['yawn']);
+const YAWN_E2E_EXCLUDED = false;
+
+// TRICK (`gen3_trick_v1`) — a category-Status ITEM-SWAP move (`target: normal`, accuracy 100 → ONE
+// `randomChance(100,100)` draw, NO `bypasssub`). ONE accuracy draw then a DRAW-FREE swap: Sticky Hold
+// blocks (`-immune`), a Substitute / both-itemless / knocked-off item FAILS (`[still]`+`-fail`), else
+// the two items swap. Modeled bit-for-bit in `run_status_move`'s trick arm (the DEDICATED golden +
+// the TR1-TR5 pins). `switcheroo` (num 415) is gen4 — NOT gen3-legal — so Trick is the only gen-3
+// item-swap move. UNLIKE Haze, Trick MAY have gen3ou team-carry, so admitting it can grow the
+// filter-clean pool / change the sampled golden; a plain regen reproduces the committed golden iff the
+// sampled teams don't carry it.
+const MODELED_TRICK_MOVES = new Set(['trick']);
+const TRICK_E2E_EXCLUDED = false;
 
 // The MODELED gen-3 FIXED-DAMAGE moves (a `damage:` / `damageCallback` move that BYPASSES
 // getDamage — NO crit roll, NO 16-way damage roll) the port now executes bit-for-bit (the
@@ -682,6 +714,12 @@ function isModeledMove(id, allowHiddenPower = false) {
       // moves the picker also picks (all `isModeledMove`), so the steal always re-dispatches
       // a modeled arm (never a fail-loud). Closes 722/722.
       (SNATCH_E2E_EXCLUDED ? false : MODELED_SNATCH_MOVES.has(id)) ||
+      // HAZE (`gen3_haze_v1`) — the boost-reset FIELD move, category Status + bit-for-bit modeled.
+      (HAZE_E2E_EXCLUDED ? false : MODELED_HAZE_MOVES.has(id)) ||
+      // YAWN (`gen3_yawn_v1`) — the delayed-sleep move, category Status + bit-for-bit modeled.
+      (YAWN_E2E_EXCLUDED ? false : MODELED_YAWN_MOVES.has(id)) ||
+      // TRICK (`gen3_trick_v1`) — the item-SWAP move, category Status + bit-for-bit modeled.
+      (TRICK_E2E_EXCLUDED ? false : MODELED_TRICK_MOVES.has(id)) ||
       (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));
   }
   if (!(m.basePower > 0)) return false; // variable / fixed-damage carrier
@@ -931,16 +969,28 @@ const MODELED_ABILITIES = new Set([
   // draw-free). The port models it as a ModifySpA chain member; probe
   // `harness/probe_plus_minus_gen3.js`; pin `minus_boosts_spa_when_the_foe_active_has_plus`.
   'plus', 'minus',
+  // LIQUID OOZE (`gen3_liquid_ooze_v1`) — the drain/leech-seed heal REVERSAL, now MODELED
+  // bit-for-bit (`apply_drain` / `apply_leech_seed`): a Giga/Mega/Absorb/Leech-Life drain OR a
+  // Leech Seed residual into a Liquid Ooze mon turns the would-be heal into DAMAGE on the
+  // healer (`|-damage|<healer>|<HP>|[from] ability: Liquid Ooze|[of] <ooze-mon>`, can KO). DRAW-FREE
+  // (probe-settled). Dream Eater is EXCLUDED (not a modeled drain move). The DEDICATED golden +
+  // the LO1-LO3 pins are the proof; 0 team-carry, so admitting it is byte-neutral on the e2e sample.
+  'liquidooze',
+  // WONDER GUARD (`gen3_wonder_guard_v1`) — Shedinja's SE-only damage gate, now MODELED bit-for-bit
+  // (`turn.rs::run_move`): a DAMAGING move into a Wonder Guard holder CONNECTS only if STRICTLY
+  // super-effective (`runEffectiveness > 0`) AND not type-immune; every neutral / resisted /
+  // 0×-immune move is BLOCKED (`-immune [from] ability: Wonder Guard`) drawing ONLY its accuracy
+  // roll. Status moves + residuals BYPASS it. The DEDICATED golden (`wonderguard_test.rs`) + the
+  // WG1-WG4 pins are the proof; 0 sample teams carry Shedinja, so admitting it is byte-neutral on
+  // the e2e sample (the committed golden md5 is unchanged — no filter-clean team gains Shedinja).
+  'wonderguard',
 ]);
 // Provably no-op in a damaging-move-only, no-PP, no-attract, no-sleep, no-OHKO,
 // no-recoil, no-drain fuzz.
 //
-// **LIQUID OOZE is NO LONGER no-op now that LEECH SEED is modeled** — it REVERSES the
-// leech drain (the seeder takes the damage instead of healing). The port FAIL-LOUDs on a
-// Liquid Ooze leech target (`apply_leech_seed`), so it MUST be excluded from the filtered
-// gate (a Liquid Ooze mon that gets seeded would panic + diverge). Removed from the no-op
-// set → its teams are kept off the modeled path (the deferred treatment). If a drain/leech
-// reversal is ever modeled, re-add it.
+// **LIQUID OOZE moved to MODELED_ABILITIES** (`gen3_liquid_ooze_v1`) — it REVERSES the drain /
+// leech-seed heal into damage on the healer, now modeled bit-for-bit (`apply_drain` /
+// `apply_leech_seed`), so it is no longer a no-op NOR a fail-loud exclusion.
 const NOOP_ABILITIES = new Set([
   'pressure', 'oblivious', 'runaway', 'illuminate', 'honeygather', 'pickup',
   'stench', 'sturdy', 'rockhead', 'earlybird',
@@ -997,6 +1047,19 @@ const MODELED_ITEMS = new Set([
   // `turn.rs::effective_accuracy`). Draw-relevant (a hit/miss flip desyncs the seed);
   // validated by `tests/accuracy_test.rs` + the AC3 pin.
   'brightpowder', 'laxincense',
+  // CRIT_ITEM (`gen3_crit_item_v1`, 0 team-carry — Farfetch'd/Chansey aren't gen3 OU;
+  // admitted for completeness): the `onModifyCritRatio critRatio + N` fold (`ItemData.crit_boost`
+  // → `effective_crit_ratio`). Scope Lens +1 (unconditional), Lucky Punch +2 (Chansey), Stick +2
+  // (Farfetch'd). DRAW-FREE (only the crit denominator shifts — NOT the draw count), so the crit
+  // outcome (crit-inclusive HP) is the only observable; validated by the CI1/CI2 pins.
+  'scopelens', 'luckypunch', 'stick',
+  // BOOST_RESTORE (`gen3_white_herb_v1`) — White Herb: restore all NEGATIVE boost stages to 0 +
+  // consume (`ItemData.boost_restore` → `turn.rs::white_herb_restore`, at the after-move /
+  // switch-in stat-drop sites). DRAW-FREE, so it never shifts the LCG; the boosts + item-held are
+  // the only observable. Validated by `gen_whiteherb_golden.js` → `tests/whiteherb_test.rs` + the
+  // WH1-WH5 pins. (0 sample teams carry it — the leech-seed situation — so admitting it is
+  // byte-neutral on the e2e sample; a real Overheat/Superpower user could carry it.)
+  'whiteherb',
   // PROC_ITEM (`gen3_ability_batch4_v1`, batch 4 — 0 team-carry, admitted for completeness):
   //   kingsrock — the appended trailing `{chance:10, flinch}` secondary for the LISTED moves
   //     (`ItemData.flinch_secondary`, execution-derived list): one extra random(100) AFTER

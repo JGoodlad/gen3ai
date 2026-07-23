@@ -944,6 +944,20 @@ impl ProtocolBuilder {
     pub fn item_stolen(&mut self, mon: &MonRef, item: &str, move_name: &str, of: &MonRef) {
         self.push_raw(format!("|-item|{mon}|{item}|[from] move: {move_name}|[of] {of}"));
     }
+    /// `|-item|<mon>|<Item>|[from] move: <Move>` — an item GAINED via a move, with NO `[of]`
+    /// clause (`gen3_trick_v1`, the TRICK swap: `setItem` emits `|-item|<mon>|<name>|[from]
+    /// move: Trick` for each side that RECEIVES an item). DISTINCT from `item_stolen` (Thief /
+    /// Covet), which carries `[of] <target>`.
+    pub fn item_from_move(&mut self, mon: &MonRef, item: &str, move_name: &str) {
+        self.push_raw(format!("|-item|{mon}|{item}|[from] move: {move_name}"));
+    }
+    /// `|-enditem|<mon>|<Item>|[silent]|[from] move: <Move>` — an item SILENTLY lost via a move,
+    /// with NO `[of]` clause (`gen3_trick_v1`, the TRICK one-sided swap: the ITEMLESS receiver's
+    /// counterpart loses its item via `-enditem [silent]`). DISTINCT from `enditem_thief_silent`
+    /// (which carries `[of] <of>`).
+    pub fn enditem_silent_from_move(&mut self, mon: &MonRef, item: &str, move_name: &str) {
+        self.push_raw(format!("|-enditem|{mon}|{item}|[silent]|[from] move: {move_name}"));
+    }
 
     // ── End of battle (player layer — the bridge relays these) ──────────────────
     pub fn win(&mut self, player_name: &str) {

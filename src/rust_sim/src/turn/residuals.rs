@@ -285,6 +285,27 @@ impl crate::state::BattleState {
                 });
             }
 
+            // --- The YAWN volatile's duration handler (`gen3_yawn_v1`). Order 10, subOrder 19
+            //     (the gen-3 `yawn` condition's `onResidualOrder: 10, onResidualSubOrder: 19`,
+            //     VERIFIED vs the resolved dex) — so at order 10 it sorts AFTER Leftovers (4) /
+            //     Leech (5) / status DoT (6) / Curse (8) / Encore (14) / Taunt (15). It is a
+            //     VOLATILE, gathered in the volatiles group (after taunt). Unlike the pure
+            //     duration handlers it has a REAL `onEnd` effect: at 1 → 0 it emits `-end [silent]`
+            //     + `trySetStatus('slp')` (the sleep `random(2,6)` at RESOLVE — the draw crux). Its
+            //     ONLY tie is the OTHER mon's yawn at equal speed (subOrder 19 is unique among
+            //     order-10 handlers), so its gather position vs the other order-10 volatiles is
+            //     unobservable; a yawn MIRROR at equal speed draws one handler-sort tie-shuffle. ---
+            if mon.yawn.is_some() {
+                handlers.push(EventHandler {
+                    order: STATUS_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: YAWN_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::Yawn { side, slot },
+                });
+            }
+
             // --- DURATION-ONLY VOLATILE handlers (`protect` / `stall`) — gathered AFTER
             //     the status DoT but BEFORE the item (the status→volatiles→ability→item
             //     order of `findPokemonEventHandlers`). They have NO `onResidual` callback;
@@ -877,6 +898,57 @@ impl crate::state::BattleState {
                         }
                     }
                 }
+                // YAWN duration tick + RESOLVE (`gen3_yawn_v1`, order 10 subOrder 19): decrement
+                // the yawn duration; at 1 → 0 fire the `onEnd` — `|-end|<target>|move: Yawn|
+                // [silent]` then `trySetStatus('slp', source)` routed through the EXISTING status
+                // path (so the sleep `random(2,6)` onStart draw, the gen3ou Sleep Clause block, AND
+                // the gen3ou SetStatus 2-clause shuffle all come for free + bit-for-bit). The 2 → 1
+                // (cast-turn) tick is a draw-free no-op. If the target got statused between cast +
+                // resolve (or is now sleep-immune / Sleep-Clause-blocked), the `-end [silent]` still
+                // fires but no sleep sets (`try_set_status` no-ops draw-appropriately).
+                ResidualAction::Yawn { side, slot } => {
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    let ended = {
+                        let mon = &mut self.sides[side].pokemon[slot];
+                        match mon.yawn {
+                            Some((dur, src)) => {
+                                let next = dur.saturating_sub(1);
+                                if next == 0 {
+                                    mon.yawn = None; // the volatile expired (onEnd fires below)
+                                    Some(src)
+                                } else {
+                                    mon.yawn = Some((next, src));
+                                    None
+                                }
+                            }
+                            None => None,
+                        }
+                    };
+                    if ended.is_some() {
+                        // [EMIT] `|-end|<target>|move: Yawn|[silent]` (the yawn `onEnd`).
+                        if self.logging() {
+                            let m = self.mon_ref(side, slot, dex);
+                            self.log.volatile_end_silent(&m, "move: Yawn");
+                        }
+                        // `target.trySetStatus('slp', this.effectState.source)`. In gen-3 singles
+                        // the source side is always the OPPOSITE of the yawn holder; the exact
+                        // source slot never affects a `slp` apply (only the SIDE matters, for the
+                        // Sleep Clause self-exemption), so pass that side's CURRENT active. The
+                        // resolve emits a PLAIN `|-status|<target>|slp` (the yawn condition is not a
+                        // Move, so `src_move` is `None` → the plain `-status` branch).
+                        let src_side = 1 - side;
+                        let src_slot = self.sides[src_side].active;
+                        self.try_set_status(side, slot, "slp", Some((src_side, src_slot)), dex);
+                        // duration-END → skip the per-handler faintMessages, mirroring the sim's
+                        // `fieldEvent('Residual')` `handler.state.duration-- → end() → continue`
+                        // (the D4 order fix). Setting sleep cannot faint, so this only preserves the
+                        // deferred-faint ORDER exactly (a Perish [order 12] faint stays deferred past
+                        // `|upkeep`). A non-ending (2 → 1) tick falls through to faintMessages.
+                        continue;
+                    }
+                }
                 // DISABLE duration tick (`gen3_taunt_disable_v1`): decrement + expire at 0. NO HP
                 // effect, DRAW-FREE. On expiry the disabled move is usable again.
                 ResidualAction::DisableDuration { side, slot } => {
@@ -1399,10 +1471,15 @@ impl crate::state::BattleState {
     /// floor/ceil split**: the non-sub path (`battle.ts::damage`) uses `floor(dmg·num/den)`
     /// clamped to `>=1`; the SUB path (`substitute.onTryPrimaryHit`) uses `ceil(dmg·num/den)` —
     /// so `absorbed` selects the rounding (equal for `[1,2]` and EVEN `dealt`, differ by 1 for
-    /// odd). **Liquid Ooze** REVERSES the drain (the seeder takes damage) — FAIL-LOUD, the
-    /// move never reaches here (the e2e/A-B filter excludes a Liquid Ooze target, matching the
-    /// Leech-Seed liquidooze deferral). Emitted as `|-heal|<user>|<HP>|[from] drain|[of]
-    /// <target>`.
+    /// odd). **LIQUID OOZE** (`gen3_liquid_ooze_v1`, the drain TARGET's ability, `onSourceTryHeal`)
+    /// REVERSES it: the USER (drainer) takes the would-be heal as DAMAGE instead of healing —
+    /// `|-damage|<user>|<HP>|[from] ability: Liquid Ooze|[of] <target>` (NO `-heal`; can KO the
+    /// user). Dream Eater is EXCLUDED from the reversal in gen3 (the gen4 override's
+    /// `activeMove?.id !== 'dreameater'` gate) — moot here since Dream Eater is not a
+    /// `MODELED_DRAIN_MOVES` member, so it never routes to `apply_drain`. DRAW-FREE reversal
+    /// (probe `harness/probe_batch89_abilities_items.js`: a Giga Drain into a Liquid Ooze mon
+    /// draws the SAME accuracy/crit/damage chain as any drain move). Otherwise emitted as the
+    /// normal `|-heal|<user>|<HP>|[from] drain|[of] <target>`.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn apply_drain(
         &mut self,
@@ -1418,14 +1495,6 @@ impl crate::state::BattleState {
         if drain_fraction <= 0.0 || dealt == 0 {
             return;
         }
-        // LIQUID OOZE reverses the drain (the seeder takes damage) — fail-loud, unreachable
-        // on the filtered e2e/A-B path (a Liquid Ooze target is excluded), mirroring the
-        // Leech-Seed liquidooze deferral. Guard so it can never silently mis-heal.
-        assert!(
-            to_id(&self.sides[target_side].pokemon[target_slot].ability) != "liquidooze",
-            "Liquid Ooze reverses a drain heal (the drainer takes damage) — NOT modeled; \
-             excluded from the e2e/A-B filter (the Leech-Seed liquidooze deferral)."
-        );
         // gen<5: non-sub `floor(dmg·num/den)` clamped `>=1` (battle.ts:2168); the SUB path
         // `ceil(dmg·num/den)` (substitute.onTryPrimaryHit). Compute via INTEGER rational math
         // (recovered from the fraction: `[1,2]`=0.5 / `[3,4]`=0.75) — NOT a float floor/ceil
@@ -1441,6 +1510,21 @@ impl crate::state::BattleState {
             // floor(prod/den), clamped >=1
             ((prod / den as u32) as u16).max(1)
         };
+        // LIQUID OOZE (`gen3_liquid_ooze_v1`): the drain TARGET reverses the heal into DAMAGE on
+        // the USER. Focus Band on the USER draws its `onDamage` roll (but NEVER survives — the
+        // reversal's effect is the ABILITY, not a Move, so `is_move = false`); the damage can KO
+        // the drainer through the normal deferred-faint machinery (like a recoil KO).
+        if to_id(&self.sides[target_side].pokemon[target_slot].ability) == "liquidooze" {
+            let dmg = self.focus_band_damage(side, slot, heal, false, dex);
+            self.apply_damage(side, slot, dmg);
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                let target = self.mon_ref(target_side, target_slot, dex);
+                let hp = self.hp_status(side, slot);
+                self.log.damage_of(&user, &hp, &Cause::Ability("Liquid Ooze".into()), &target);
+            }
+            return;
+        }
         let healed = self.apply_heal(side, slot, heal);
         if self.logging() && healed {
             let user = self.mon_ref(side, slot, dex);
@@ -1485,6 +1569,11 @@ impl crate::state::BattleState {
                 self.log.boost(&user, idx, delta);
             }
         }
+        // WHITE HERB (`gen3_white_herb_v1`, onAnyAfterMove): the USER's own self-drop
+        // (Overheat −2 SpA / Superpower −1 Atk/−1 Def / Psycho Boost / Curse-non-ghost's
+        // −Spe) is restored immediately + the item consumed. DRAW-FREE. (For Curse's mixed
+        // {+atk,+def,−spe}, only the −Spe is negative → only it is restored, keeping +atk/+def.)
+        self.white_herb_restore(side, slot, dex);
     }
 
     /// FLASH FIRE activation (gen3 `flashfire.onTryHit`): a Fire-type move that LANDS on a
@@ -1787,20 +1876,14 @@ impl crate::state::BattleState {
     ///     the sim's `damage()` return), clamped to the seeder's maxhp via `apply_heal`.
     ///     The heal is applied even when the drain KOs the seeded mon (the heal is inside
     ///     the same `onResidual`, before `faintMessages`).
-    ///   * **LIQUID OOZE** (the seeded mon's ability) REVERSES it — the seeder takes the
-    ///     damage instead of healing. Rare in gen-3 OU; FAIL-LOUD (the e2e filter keeps a
-    ///     Liquid Ooze team out, and no modeled scenario uses it) so it can never silently
-    ///     mis-resolve. DRAW-FREE either way.
+    ///   * **LIQUID OOZE** (`gen3_liquid_ooze_v1`, the seeded mon's ability, `onSourceTryHeal`)
+    ///     REVERSES it — the SEEDER takes the drained amount as DAMAGE instead of healing
+    ///     (`|-damage|<seeder-active>|<HP>|[from] ability: Liquid Ooze|[of] <seeded>`, AFTER the
+    ///     seeded mon's own `-damage [from] Leech Seed`; can KO the seeder). DRAW-FREE (probe:
+    ///     the residual draws nothing either way). Focus Band on the seeder draws its `onDamage`
+    ///     roll but never survives (the effect is the ABILITY, not a Move).
     fn apply_leech_seed(&mut self, side: usize, slot: usize, seeder_side: usize, dex: &Dex) {
-        // LIQUID OOZE fail-loud: the seeded mon's ability reverses the drain into damage
-        // on the SEEDER. Not modeled (rare in gen-3 OU; excluded from the e2e filter).
-        let seeded_ability = to_id(&self.sides[side].pokemon[slot].ability);
-        assert!(
-            seeded_ability != "liquidooze",
-            "Leech Seed into a Liquid Ooze holder reverses the drain (seeder takes damage) \
-             — NOT modeled (rare in gen-3 OU). Exclude it or model it before a battle uses it."
-        );
-        let _ = dex; // reserved (no dex read needed for the gen-3 drain/heal math)
+        let seeded_liquid_ooze = to_id(&self.sides[side].pokemon[slot].ability) == "liquidooze";
 
         // The seeder's CURRENT active (the heal recipient / `getAtSlot(sourceSlot)`).
         let seeder_slot = self.sides[seeder_side].active;
@@ -1812,13 +1895,15 @@ impl crate::state::BattleState {
         }
 
         // DRAIN the seeded mon `floor(maxhp/8)`, clamped to its HP (apply_damage saturates
-        // at 0 + returns whether it KO'd; the dealt amount is min(drain, hp_before)).
+        // at 0 + returns whether it KO'd; the dealt amount is min(drain, hp_before)). The gen-3
+        // `this.damage(baseMaxhp/8)` passes through `clampIntRange(_, 1)`, so the drain is at LEAST
+        // 1 for any live mon: BYTE-IDENTICAL for maxhp >= 8 (floor >= 1), but a sub-8-maxhp mon
+        // (Shedinja, maxhp 1 → floor 0) still takes 1 — the `gen3_wonder_guard_v1` Leech-Seed
+        // residual bypass (a residual is NOT a move → Wonder Guard doesn't block it → a 1-HP
+        // Shedinja dies to the drain, VERIFIED vs the sim).
         let seeded = &self.sides[side].pokemon[slot];
         let hp_before = seeded.hp;
-        let drain = seeded.maxhp / 8; // floor; gen-3 baseMaxhp == maxhp
-        if drain == 0 {
-            return; // a sub-8-maxhp construct: damage 0 → no heal (the `if (damage)` gate)
-        }
+        let drain = (seeded.maxhp / 8).max(1); // floor, clampIntRange(_, 1); gen-3 baseMaxhp == maxhp
         // FOCUS BAND: the onDamage roll draws on the drain (no survive — not a Move).
         let drain = self.focus_band_damage(side, slot, drain, false, dex);
         let dealt = drain.min(hp_before); // the sim's `damage()` return (actual dealt)
@@ -1838,13 +1923,30 @@ impl crate::state::BattleState {
         // `if (damage)` gate: a 0-deal (the seeded mon was already at 0) heals nothing —
         // but apply_damage already no-ops at hp 0 and dealt would be 0, so this is safe.
         if dealt > 0 {
-            let healed = self.apply_heal(seeder_side, seeder_slot, dealt);
-            // [EMIT] `|-heal|<seeder-active>|<HP>|[silent]` — the drain's heal half
-            // (byte-verified vs the capture: the `[silent]` bare tag, no `[from]`).
-            if self.logging() && healed {
-                let m = self.mon_ref(seeder_side, seeder_slot, dex);
-                let hp = self.hp_status(seeder_side, seeder_slot);
-                self.log.push_raw(format!("|-heal|{m}|{hp}|[silent]"));
+            if seeded_liquid_ooze {
+                // LIQUID OOZE (`gen3_liquid_ooze_v1`): the SEEDER takes `dealt` as DAMAGE
+                // instead of healing. Focus Band on the seeder draws its `onDamage` roll but
+                // never survives (the effect is the ability, `is_move = false`); the reversal
+                // can KO the seeder via the residual per-handler faint machinery.
+                let dmg = self.focus_band_damage(seeder_side, seeder_slot, dealt, false, dex);
+                self.apply_damage(seeder_side, seeder_slot, dmg);
+                // [EMIT] `|-damage|<seeder-active>|<HP>|[from] ability: Liquid Ooze|[of] <seeded>`
+                // — AFTER the seeded mon's `-damage [from] Leech Seed` above (probe-verified order).
+                if self.logging() {
+                    let seeder_ref = self.mon_ref(seeder_side, seeder_slot, dex);
+                    let hp = self.hp_status(seeder_side, seeder_slot);
+                    let of = self.mon_ref(side, slot, dex);
+                    self.log.damage_of(&seeder_ref, &hp, &Cause::Ability("Liquid Ooze".into()), &of);
+                }
+            } else {
+                let healed = self.apply_heal(seeder_side, seeder_slot, dealt);
+                // [EMIT] `|-heal|<seeder-active>|<HP>|[silent]` — the drain's heal half
+                // (byte-verified vs the capture: the `[silent]` bare tag, no `[from]`).
+                if self.logging() && healed {
+                    let m = self.mon_ref(seeder_side, seeder_slot, dex);
+                    let hp = self.hp_status(seeder_side, seeder_slot);
+                    self.log.push_raw(format!("|-heal|{m}|{hp}|[silent]"));
+                }
             }
         }
     }

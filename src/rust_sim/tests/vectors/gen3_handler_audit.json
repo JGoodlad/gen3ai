@@ -3,11 +3,11 @@
   "generator": "harness/dump_gen3_handlers.js",
   "gate": "node harness/dump_gen3_handlers.js --audit (cargo: tests/handler_audit_test.rs)",
   "surface": {
-   "abilities": 74,
-   "items": 59,
-   "conditions": 47,
-   "moves": 253,
-   "rows": 915
+   "abilities": 76,
+   "items": 63,
+   "conditions": 48,
+   "moves": 256,
+   "rows": 943
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); NOT in MODELED/NOOP so the e2e filter excludes its teams",
@@ -281,6 +281,12 @@
    "fp": "fn:dbcbf21b:onUpdate(pokemon) { if (pokemon.status === \"par\") { this.add(\"-activate\", pokemon, \"ability: Limber\"); pokemon.cureStatu",
    "anchor": "turn.rs::status_immune_on_update",
    "reason": "the Update-site cure — reachable ONLY via a statused mon TRACING the ability (gen3_statusimmune_onupdate_cure_v1, the A/B Trace-Porygon2 cluster)"
+  },
+  "ability:liquidooze:onSourceTryHeal": {
+   "disposition": "implemented",
+   "fp": "fn:1bb60278:onSourceTryHeal(damage, target, source, effect) { this.debug(`Heal is occurring: ${target} <- ${source} :: ${effect.id}`",
+   "anchor": "turn.rs::apply_drain",
+   "reason": "the drain/leechseed heal REVERSAL (gen3_liquid_ooze_v1): the drainer/seeder takes the would-be heal as damage (|-damage|…|[from] ability: Liquid Ooze|[of]); apply_drain (drain moves) + apply_leech_seed (the leech residual); Dream Eater excluded (not a modeled drain move); DRAW-FREE"
   },
   "ability:magmaarmor:onImmunity": {
    "disposition": "implemented",
@@ -766,6 +772,12 @@
    "fp": "fn:7c3b143a:onTryBoost(boost, target, source, effect) { if (source && target === source) return; let showMsg = false; let i; for (i ",
    "anchor": "event.rs::intimidate_on_start",
    "reason": "the boost-drop immunity gate (Intimidate + secondary stat-drops)"
+  },
+  "ability:wonderguard:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:844277d3:onTryHit(target, source, move) { if (move.id === \"firefang\") { this.hint(\"In Gen 4, Fire Fang is always able to hit thro",
+   "anchor": "turn.rs::run_move",
+   "reason": "the SE-only damage gate (gen3_wonder_guard_v1): a damaging move into a Wonder Guard holder CONNECTS only if runEffectiveness>0 (type-chart product >1.0) AND not type-immune, else -immune|[from] ability: Wonder Guard drawing only its accuracy roll; BYPASSED by Status / self-target / typeless(???/Struggle) / residuals; read-only gate, no new state; the firefang gen4-hint branch is unreachable (firefang not gen3-legal)"
   },
   "condition:attract:onBeforeMove": {
    "disposition": "implemented",
@@ -2000,6 +2012,36 @@
    "anchor": "turn.rs::apply_wish",
    "reason": "order 7 — the Wish heal fires BEFORE the sand chip (order 8) + all order-10 handlers"
   },
+  "condition:yawn:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the duration:2 volatile: decrements 2→1 (cast turn) then 1→0 (resolve → fires onEnd); the handler is gathered while yawn.is_some(); cleared on switch-out + faint"
+  },
+  "condition:yawn:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:49a39258:onEnd(target) { this.add(\"-end\", target, \"move: Yawn\", \"[silent]\"); target.trySetStatus(\"slp\", this.effectState.source);",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the RESOLVE (ResidualAction::Yawn at order 10 subOrder 19): |-end|…|move: Yawn|[silent] then trySetStatus(slp) via the EXISTING try_set_status path — so the sleep random(2,6) at RESOLVE + the gen3ou Sleep Clause + the SetStatus shuffle come for free; the (10,19) tie-shuffle in a yawn MIRROR (Y1/Y2/Y3)"
+  },
+  "condition:yawn:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the RESOLVE (ResidualAction::Yawn at order 10 subOrder 19): |-end|…|move: Yawn|[silent] then trySetStatus(slp) via the EXISTING try_set_status path — so the sleep random(2,6) at RESOLVE + the gen3ou Sleep Clause + the SetStatus shuffle come for free; the (10,19) tie-shuffle in a yawn MIRROR (Y1/Y2/Y3)"
+  },
+  "condition:yawn:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:19",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the RESOLVE (ResidualAction::Yawn at order 10 subOrder 19): |-end|…|move: Yawn|[silent] then trySetStatus(slp) via the EXISTING try_set_status path — so the sleep random(2,6) at RESOLVE + the gen3ou Sleep Clause + the SetStatus shuffle come for free; the (10,19) tie-shuffle in a yawn MIRROR (Y1/Y2/Y3)"
+  },
+  "condition:yawn:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:6eb912fc:onStart(target, source) { this.add(\"-start\", target, \"move: Yawn\", `[of] ${source}`); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the |-start|<t>|move: Yawn|[of] <source> line — EMITTED at the cast (volatile_start_of); DRAW-FREE"
+  },
   "item:aguavberry:onEat": {
    "disposition": "implemented",
    "fp": "fn:833097ac:onEat(pokemon) { this.heal(pokemon.baseMaxhp / 8); if (pokemon.getNature().minus === \"spd\") { pokemon.addVolatile(\"confu",
@@ -2447,6 +2489,12 @@
    "anchor": "turn.rs::resolve_atk_stat_mods",
    "reason": "the species-gated offensive stat chain"
   },
+  "item:luckypunch:onModifyCritRatio": {
+   "disposition": "implemented",
+   "fp": "fn:ec6c75a5:onModifyCritRatio(critRatio, user) { if (user.species.name === \"Chansey\") { return critRatio + 2; } }",
+   "anchor": "turn.rs::effective_crit_ratio",
+   "reason": "the CRIT_ITEM +N crit-ratio fold (gen3_crit_item_v1): Scope Lens +1, Lucky Punch +2 Chansey, Stick +2 Farfetch'd — species-gated, draw-free (only the CRIT_MULT denominator index shifts)"
+  },
   "item:lumberry:onAfterSetStatus": {
    "disposition": "implemented",
    "fp": "fn:ca2588d8:onAfterSetStatus(status, pokemon) { pokemon.eatItem(); }",
@@ -2787,6 +2835,12 @@
    "anchor": "turn.rs::apply_berry_residual",
    "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
   },
+  "item:scopelens:onModifyCritRatio": {
+   "disposition": "implemented",
+   "fp": "fn:998e33ef:onModifyCritRatio(critRatio) { return critRatio + 1; }",
+   "anchor": "turn.rs::effective_crit_ratio",
+   "reason": "the CRIT_ITEM +N crit-ratio fold (gen3_crit_item_v1): Scope Lens +1, Lucky Punch +2 Chansey, Stick +2 Farfetch'd — species-gated, draw-free (only the CRIT_MULT denominator index shifts)"
+  },
   "item:seaincense:onBasePowerPriority": {
    "disposition": "implemented",
    "fp": "val:15",
@@ -2977,6 +3031,12 @@
    "anchor": "turn.rs::apply_berry_residual",
    "reason": "the order-10 subOrder-4 threshold eat (heal <=1/2, pinch <=1/4, exact — BR6) — (order metadata of the sibling onResidual handler)"
   },
+  "item:stick:onModifyCritRatio": {
+   "disposition": "implemented",
+   "fp": "fn:81d86889:onModifyCritRatio(critRatio, user) { if (user.species.id === \"farfetchd\") { return critRatio + 2; } }",
+   "anchor": "turn.rs::effective_crit_ratio",
+   "reason": "the CRIT_ITEM +N crit-ratio fold (gen3_crit_item_v1): Scope Lens +1, Lucky Punch +2 Chansey, Stick +2 Farfetch'd — species-gated, draw-free (only the CRIT_MULT denominator index shifts)"
+  },
   "item:thickclub:onModifyAtk": {
    "disposition": "implemented",
    "fp": "fn:43a78e97:onModifyAtk(atk, pokemon) { if (pokemon.species.name === \"Cubone\" || pokemon.species.name === \"Marowak\") { return this.c",
@@ -3018,6 +3078,53 @@
    "fp": "val:15",
    "anchor": "turn.rs::resolve_bp_mods",
    "reason": "the BP chain / direct-float fold (bows + incenses; the stat-fold members carry only the base-data BP priority residue, same anchor)"
+  },
+  "item:whiteherb:onAnyAfterMega": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:2888c020:onAnyAfterMega() { this.effect.onStart.call(this, this.effectState.target); }",
+   "reason": "Mega Evolution is gen6+ — no AfterMega event fires in gen3"
+  },
+  "item:whiteherb:onAnyAfterMove": {
+   "disposition": "implemented",
+   "fp": "fn:2ff64a31:onAnyAfterMove() { this.effect.onStart.call(this, this.effectState.target); }",
+   "anchor": "turn.rs::white_herb_restore",
+   "reason": "restore all NEGATIVE boost stages to 0 + consume, single-use (gen3_white_herb_v1); called at the after-move / switch-in stat-drop sites (apply_secondary_boost / apply_self_drops / run_switch / start_with_switchins); DRAW-FREE"
+  },
+  "item:whiteherb:onAnySwitchIn": {
+   "disposition": "implemented",
+   "fp": "fn:da1690f1:onAnySwitchIn() { this.effect.onStart.call(this, this.effectState.target); }",
+   "anchor": "turn.rs::white_herb_restore",
+   "reason": "restore all NEGATIVE boost stages to 0 + consume, single-use (gen3_white_herb_v1); called at the after-move / switch-in stat-drop sites (apply_secondary_boost / apply_self_drops / run_switch / start_with_switchins); DRAW-FREE"
+  },
+  "item:whiteherb:onAnySwitchInPriority": {
+   "disposition": "implemented",
+   "fp": "val:-2",
+   "anchor": "turn.rs::white_herb_restore",
+   "reason": "restore all NEGATIVE boost stages to 0 + consume, single-use (gen3_white_herb_v1); called at the after-move / switch-in stat-drop sites (apply_secondary_boost / apply_self_drops / run_switch / start_with_switchins); DRAW-FREE"
+  },
+  "item:whiteherb:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:1357fd7a:onResidual(pokemon) { this.effect.onStart.call(this, pokemon); }",
+   "anchor": "turn.rs::white_herb_restore",
+   "reason": "restore all NEGATIVE boost stages to 0 + consume, single-use (gen3_white_herb_v1); called at the after-move / switch-in stat-drop sites (apply_secondary_boost / apply_self_drops / run_switch / start_with_switchins); DRAW-FREE"
+  },
+  "item:whiteherb:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:29",
+   "anchor": "turn.rs::white_herb_restore",
+   "reason": "restore all NEGATIVE boost stages to 0 + consume, single-use (gen3_white_herb_v1); called at the after-move / switch-in stat-drop sites (apply_secondary_boost / apply_self_drops / run_switch / start_with_switchins); DRAW-FREE"
+  },
+  "item:whiteherb:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:0f9dd333:onStart(pokemon) { this.effectState.boosts = {}; let ready = false; let i; for (i in pokemon.boosts) { if (pokemon.boost",
+   "anchor": "turn.rs::white_herb_restore",
+   "reason": "restore all NEGATIVE boost stages to 0 + consume, single-use (gen3_white_herb_v1); called at the after-move / switch-in stat-drop sites (apply_secondary_boost / apply_self_drops / run_switch / start_with_switchins); DRAW-FREE"
+  },
+  "item:whiteherb:onUse": {
+   "disposition": "implemented",
+   "fp": "fn:e07812f2:onUse(pokemon) { pokemon.setBoost(this.effectState.boosts); this.add(\"-clearnegativeboost\", pokemon, \"[silent]\"); }",
+   "anchor": "turn.rs::white_herb_restore",
+   "reason": "restore all NEGATIVE boost stages to 0 + consume, single-use (gen3_white_herb_v1); called at the after-move / switch-in stat-drop sites (apply_secondary_boost / apply_self_drops / run_switch / start_with_switchins); DRAW-FREE"
   },
   "item:wikiberry:onEat": {
    "disposition": "implemented",
@@ -3932,6 +4039,24 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:haze:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:haze:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:haze:onHitField": {
+   "disposition": "implemented",
+   "fp": "fn:8eede83c:onHitField() { this.add(\"-clearallboost\"); for (const pokemon of this.getAllActive()) { pokemon.clearBoosts(); } }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the haze arm (gen3_haze_v1): ONE |-clearallboost line + getAllActive().clearBoosts() zeroes BOTH actives' 7 boost stages incl. the user's own; DRAW-FREE, landed FALSE"
   },
   "move:headbutt:secondaries": {
    "disposition": "implemented",
@@ -5327,6 +5452,24 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "Tri Attack's ONE random(100) + brn/par/frz sample (special-cased)"
   },
+  "move:trick:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:trick:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:2c132dec:onHit(target, source, move) { const yourItem = target.takeItem(source); const myItem = source.takeItem(); if (yourItem =",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the trick arm swap: yourItem=target.takeItem(source), myItem=source.takeItem(); FAIL ([still]+-fail, no swap) if EITHER side item_knocked_off (gen<=4 takeItem→false) OR both itemless OR the foe has a Substitute (no bypasssub); else swap the two items (TARGET new-item line first, then USER; -item/-enditem [silent] [from] move: Trick) + RELEASE both choice_locked_move; DRAW-FREE (TR1-TR5)"
+  },
+  "move:trick:onTryImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:f4c83ddf:onTryImmunity(target) { return !target.hasAbility(\"stickyhold\"); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the trick arm Sticky-Hold onTryImmunity gate (!target.hasAbility(stickyhold)): a Sticky-Hold target draws the accuracy then reports PLAIN |-immune|<foe> (NO [from] ability), NO swap"
+  },
   "move:twineedle:multihit": {
    "disposition": "implemented",
    "fp": "val:2",
@@ -5434,6 +5577,30 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:yawn:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:yawn:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:yawn:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:df1f2340:onTryHit(target) { if (target.status || !target.runStatusImmunity(\"slp\")) { return false; } }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the yawn arm TryHit gates: Protect blocks (-activate Protect) > already-statused → [still]+-fail > sleep-immune (Insomnia/Vital Spirit via runStatusImmunity(slp)) → -immune|[from] ability > Substitute → [still]+-fail > add the yawn volatile; ALL DRAW-FREE (accuracy true → no accuracy draw)"
+  },
+  "move:yawn:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"yawn\"",
+   "anchor": "state.rs::yawn",
+   "reason": "the `yawn` delayed-sleep volatile marker laid on the foe (Some((duration, source_uid)))"
   },
   "move:zapcannon:secondaries": {
    "disposition": "implemented",

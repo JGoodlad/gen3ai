@@ -98,6 +98,8 @@ add([ab('damp', 'onAnyTryMove')], IMPL('turn.rs::damp_holder', 'Explosion/Self-D
 add([ab('damp', 'onAnyDamage')], UNREACH('the Aftermath guard — Aftermath is a gen4 ability, not in the gen3 universe'));
 add([ab('suctioncups', 'onDragOut')], IMPL('turn.rs::drag_in', 'the phaze-arm Suction Cups gate — no drag, no sample draw (B2-6)'));
 add([ab('synchronize', 'onAfterSetStatus')], IMPL('turn.rs::try_set_status', 'the source-aware status reflect (B2-7)'));
+add([ab('liquidooze', 'onSourceTryHeal')], IMPL('turn.rs::apply_drain', 'the drain/leechseed heal REVERSAL (gen3_liquid_ooze_v1): the drainer/seeder takes the would-be heal as damage (|-damage|…|[from] ability: Liquid Ooze|[of]); apply_drain (drain moves) + apply_leech_seed (the leech residual); Dream Eater excluded (not a modeled drain move); DRAW-FREE'));
+add([ab('wonderguard', 'onTryHit')], IMPL('turn.rs::run_move', 'the SE-only damage gate (gen3_wonder_guard_v1): a damaging move into a Wonder Guard holder CONNECTS only if runEffectiveness>0 (type-chart product >1.0) AND not type-immune, else -immune|[from] ability: Wonder Guard drawing only its accuracy roll; BYPASSED by Status / self-target / typeless(???/Struggle) / residuals; read-only gate, no new state; the firefang gen4-hint branch is unreachable (firefang not gen3-legal)'));
 
 // Trapping + switch-in/out + trace.
 for (const id of ['arenatrap', 'magnetpull', 'shadowtag']) {
@@ -296,6 +298,19 @@ add([it('quickclaw', 'onFractionalPriorityPriority')], IMPL('turn.rs::quick_claw
 add([it('leftovers', 'onResidual')], IMPL('turn.rs::run_residuals', 'the maxhp/16 heal at order 10 subOrder 4'));
 add([it('lumberry', 'onAfterSetStatus')], IMPL('turn.rs::try_set_status', 'LUM\'s IMMEDIATE eat (priority -1, AFTER Synchronize) at the setStatus tail'));
 add([it('focusband', 'onDamage')], IMPL('turn.rs::focus_band_damage', 'the randomChance(1,10) on EVERY Damage event + survive-at-1 on a lethal MOVE hit'));
+add([it('scopelens', 'onModifyCritRatio'), it('luckypunch', 'onModifyCritRatio'), it('stick', 'onModifyCritRatio')],
+  IMPL('turn.rs::effective_crit_ratio', 'the CRIT_ITEM +N crit-ratio fold (gen3_crit_item_v1): Scope Lens +1, Lucky Punch +2 Chansey, Stick +2 Farfetch\'d — species-gated, draw-free (only the CRIT_MULT denominator index shifts)'));
+// BOOST_RESTORE — White Herb (gen3_white_herb_v1): onStart scans boosts<0 → useItem; onUse
+// setBoost(negatives→0) + -clearnegativeboost; fires from onAnyAfterMove / onAnySwitchIn /
+// onResidual(29). All map to `white_herb_restore` (the scan + restore + emit), called at the
+// after-move / switch-in stat-drop sites. DRAW-FREE.
+add([it('whiteherb', 'onStart'), it('whiteherb', 'onUse'),
+     it('whiteherb', 'onAnyAfterMove'),
+     it('whiteherb', 'onAnySwitchIn'), it('whiteherb', 'onAnySwitchInPriority'),
+     it('whiteherb', 'onResidual'), it('whiteherb', 'onResidualOrder')],
+  IMPL('turn.rs::white_herb_restore', 'restore all NEGATIVE boost stages to 0 + consume, single-use (gen3_white_herb_v1); called at the after-move / switch-in stat-drop sites (apply_secondary_boost / apply_self_drops / run_switch / start_with_switchins); DRAW-FREE'));
+add([it('whiteherb', 'onAnyAfterMega')],
+  UNREACH('Mega Evolution is gen6+ — no AfterMega event fires in gen3'));
 add([it('kingsrock', 'onModifyMove')], IMPL('turn.rs::flinch_secondary', 'the appended trailing 10% flinch secondary (execution-derived move list)'));
 add([it('brightpowder', 'onModifyAccuracy'), it('laxincense', 'onModifyAccuracy')],
   IMPL('turn.rs::effective_accuracy', 'the DIRECT defender acc multiply (gen3_accuracy_pipeline_v1, AC3)'));
@@ -495,6 +510,27 @@ add([cond('endure', 'duration')],
   IMPL('turn.rs::run_residuals', 'the duration:1 volatile registers a NO_ORDER/subOrder-2 residual duration handler (the endure+stall intra-mon tie — ONE shuffle on every SUCCESS turn); cleared at turn-top (clear_flinch)'));
 add([mv('perishsong', 'onHitField'), cond('perishsong', 'duration')],
   IMPL('turn.rs::run_status_move', 'the perishsong arm: getAllActive in SIDE order — Soundproof -immune (counted as a result), fresh counters Some(4), ONE -fieldactivate iff >=1 newly applied, the all-counted [still]+-fail, the >=1-immune SILENT re-cast; ZERO draws every branch'));
+add([mv('haze', 'onHitField')],
+  IMPL('turn.rs::run_status_move', 'the haze arm (gen3_haze_v1): ONE |-clearallboost line + getAllActive().clearBoosts() zeroes BOTH actives\' 7 boost stages incl. the user\'s own; DRAW-FREE, landed FALSE'));
+// YAWN (`gen3_yawn_v1`) — the delayed-sleep move + condition. The CAST is DRAW-FREE; the sleep
+// random(2,6) fires at the RESOLVE (the residual onEnd at order 10 subOrder 19), routed through
+// the EXISTING try_set_status(slp) path.
+add([mv('yawn', 'onTryHit')],
+  IMPL('turn.rs::run_status_move', 'the yawn arm TryHit gates: Protect blocks (-activate Protect) > already-statused → [still]+-fail > sleep-immune (Insomnia/Vital Spirit via runStatusImmunity(slp)) → -immune|[from] ability > Substitute → [still]+-fail > add the yawn volatile; ALL DRAW-FREE (accuracy true → no accuracy draw)'));
+add([mv('yawn', 'volatileStatus')],
+  IMPL('state.rs::yawn', 'the `yawn` delayed-sleep volatile marker laid on the foe (Some((duration, source_uid)))'));
+add([cond('yawn', 'onStart')],
+  IMPL('turn.rs::run_status_move', 'the |-start|<t>|move: Yawn|[of] <source> line — EMITTED at the cast (volatile_start_of); DRAW-FREE'));
+add([cond('yawn', 'onEnd'), cond('yawn', 'onResidualOrder'), cond('yawn', 'onResidualSubOrder')],
+  IMPL('turn.rs::run_residuals', 'the RESOLVE (ResidualAction::Yawn at order 10 subOrder 19): |-end|…|move: Yawn|[silent] then trySetStatus(slp) via the EXISTING try_set_status path — so the sleep random(2,6) at RESOLVE + the gen3ou Sleep Clause + the SetStatus shuffle come for free; the (10,19) tie-shuffle in a yawn MIRROR (Y1/Y2/Y3)'));
+add([cond('yawn', 'duration')],
+  IMPL('turn.rs::run_residuals', 'the duration:2 volatile: decrements 2→1 (cast turn) then 1→0 (resolve → fires onEnd); the handler is gathered while yawn.is_some(); cleared on switch-out + faint'));
+// TRICK (`gen3_trick_v1`) — the item-SWAP move. ONE accuracy draw then a DRAW-FREE swap. onTryImmunity
+// = the Sticky Hold block; onHit = the swap / knocked-off / both-itemless fail.
+add([mv('trick', 'onTryImmunity')],
+  IMPL('turn.rs::run_status_move', 'the trick arm Sticky-Hold onTryImmunity gate (!target.hasAbility(stickyhold)): a Sticky-Hold target draws the accuracy then reports PLAIN |-immune|<foe> (NO [from] ability), NO swap'));
+add([mv('trick', 'onHit')],
+  IMPL('turn.rs::run_status_move', 'the trick arm swap: yourItem=target.takeItem(source), myItem=source.takeItem(); FAIL ([still]+-fail, no swap) if EITHER side item_knocked_off (gen<=4 takeItem→false) OR both itemless OR the foe has a Substitute (no bypasssub); else swap the two items (TARGET new-item line first, then USER; -item/-enditem [silent] [from] move: Trick) + RELEASE both choice_locked_move; DRAW-FREE (TR1-TR5)'));
 add([cond('perishsong', 'onResidual'), cond('perishsong', 'onResidualOrder'), cond('perishsong', 'onEnd')],
   IMPL('turn.rs::run_residuals', 'the order-12 (LAST) tick (ResidualAction::Perish): decrement + |-start|perish<d>; the 1→0 tick prints perish0 + zeroes HP with the DURATION-END `continue` (NO per-handler faintMessages — the mutual perish-out double faint processes at the tail → the gen-3 TIE, MC89)'));
 add([mv('meanlook', 'onHit'), mv('spiderweb', 'onHit'), mv('block', 'onHit')],

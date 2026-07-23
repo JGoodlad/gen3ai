@@ -233,6 +233,10 @@ impl crate::state::BattleState {
                 // gather a residual duration handler on re-entry).
                 mon.snatch = false;
                 mon.trapped_by = None;
+                // YAWN (`gen3_yawn_v1`): drop the pending delayed-sleep volatile with the corpse
+                // (clearVolatile) — a fainted mon carries no pending Yawn, and its re-entry must
+                // not gather a stale residual duration handler (the `beat_up` stale-flag class).
+                mon.yawn = None;
                 // The pending switch-in Intimidate target (`gen3_intimidate_forced_replacement_v1`,
                 // M3) — cleared with the corpse so a fainted mon carries no stale foe uid.
                 mon.switchin_foe_uid = None;
@@ -872,6 +876,10 @@ impl crate::state::BattleState {
             m.destiny_bond = false;
             m.destiny_bond_ko_by = None;
             m.trapped_by = None;
+            // YAWN (`gen3_yawn_v1`): the pending delayed-sleep volatile clears on switch-out
+            // (`clearVolatile`) — a mon that pivots out before the Yawn resolves comes back with no
+            // pending sleep (a fresh Yawn is needed); noCopy so it is never Baton-Passed.
+            m.yawn = None;
             // The pending switch-in Intimidate target (`gen3_intimidate_forced_replacement_v1`,
             // M3) — a transient consumed at run_switch; clear it on switch-out too so a corpse /
             // outgoing mon never carries a stale foe uid.
@@ -1202,6 +1210,14 @@ impl crate::state::BattleState {
         // re-set — e.g. a re-dragged Sand Stream Tyranitar under standing sand — is a
         // setWeather no-op and emits nothing). Observation-only.
         self.emit_ability_start_lines(side, slot, weather_changed, Some(intim_atk_pre), dex);
+        // WHITE HERB is NOT restored here: the resolved gen3 `whiteherb.onAnySwitchIn` fires at
+        // the `runEvent('SwitchIn')` step, which precedes the entrant's ability `Start`
+        // (`singleEvent('Start', …)` — Intimidate), so at the SwitchIn event the opposing active
+        // has NO negative boost yet (Intimidate hasn't dropped it). The restore therefore fires
+        // LATER via `onAnyAfterMove` — after the holder's next move — NOT at this switch-in
+        // (`gen3_white_herb_v1`; the omniscient byte-fuzz find ab_4_6, master-seed 80808: the sim
+        // has Weepinbell MOVE then White Herb fires, where the port fired it at the switch-in).
+        // The general `onAnyAfterMove` hook in `driver.rs` owns the post-move restore.
         // The switch-in Intimidate (STATE via `intimidate_on_start`, EMISSION via
         // `emit_ability_start_lines`) has now BOTH resolved — clear the captured foe uid so a
         // later switch of a DIFFERENT mon into this slot can't read a stale target

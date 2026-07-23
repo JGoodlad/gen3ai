@@ -6,17 +6,17 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 `cargo test` via `tests/handler_audit_test.rs`). It fails on: a NEW un-dispositioned
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
-Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
-47 conditions (engine state space + attached), 253 modeled moves
-→ **915 (effect, hook) rows**.
+Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
+48 conditions (engine state space + attached), 256 modeled moves
+→ **943 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 851 |
+| implemented | 878 |
 | noop_justified | 36 |
-| unreachable_justified | 28 |
+| unreachable_justified | 29 |
 
-## ability (129 rows: implemented=104, noop_justified=17, unreachable_justified=8)
+## ability (131 rows: implemented=106, noop_justified=17, unreachable_justified=8)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -65,6 +65,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | lightningrod | onFoeRedirectTarget | noop_justified | redirects Electric moves in doubles — a singles battle has one target, nothing to redirect — probe: `probe_ability_batch1_noop_verify.js` |
 | limber | onSetStatus | implemented | `turn.rs::status_immune_of` |
 | limber | onUpdate | implemented | `turn.rs::status_immune_on_update` |
+| liquidooze | onSourceTryHeal | implemented | `turn.rs::apply_drain` |
 | magmaarmor | onImmunity | implemented | `turn.rs::status_immune_of` |
 | magmaarmor | onUpdate | implemented | `turn.rs::status_immune_on_update` |
 | magnetpull | onAnyMaybeTrapPokemon | implemented | `turn.rs::is_trapped` |
@@ -149,8 +150,9 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | waterveil | onSetStatus | implemented | `turn.rs::status_immune_of` |
 | waterveil | onUpdate | implemented | `turn.rs::status_immune_on_update` |
 | whitesmoke | onTryBoost | implemented | `event.rs::intimidate_on_start` |
+| wonderguard | onTryHit | implemented | `turn.rs::run_move` |
 
-## item (176 rows: implemented=168, noop_justified=8)
+## item (187 rows: implemented=178, noop_justified=8, unreachable_justified=1)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -229,6 +231,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | lightball | onModifyAtkPriority | implemented | `turn.rs::resolve_atk_stat_mods` |
 | lightball | onModifySpA | implemented | `turn.rs::resolve_atk_stat_mods` |
 | lightball | onModifySpAPriority | implemented | `turn.rs::resolve_atk_stat_mods` |
+| luckypunch | onModifyCritRatio | implemented | `turn.rs::effective_crit_ratio` |
 | lumberry | onAfterSetStatus | implemented | `turn.rs::try_set_status` |
 | lumberry | onAfterSetStatusPriority | implemented | `turn.rs::try_set_status` |
 | lumberry | onEat | implemented | `turn.rs::berry_cure` |
@@ -286,6 +289,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | salacberry | onResidual | implemented | `turn.rs::apply_berry_residual` |
 | salacberry | onResidualOrder | implemented | `turn.rs::apply_berry_residual` |
 | salacberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
+| scopelens | onModifyCritRatio | implemented | `turn.rs::effective_crit_ratio` |
 | seaincense | onBasePowerPriority | implemented | `turn.rs::resolve_bp_mods` |
 | seaincense | onModifySpA | implemented | `turn.rs::resolve_atk_stat_mods` |
 | seaincense | onModifySpAPriority | implemented | `turn.rs::resolve_atk_stat_mods` |
@@ -318,6 +322,7 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | starfberry | onResidual | implemented | `turn.rs::apply_berry_residual` |
 | starfberry | onResidualOrder | implemented | `turn.rs::apply_berry_residual` |
 | starfberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
+| stick | onModifyCritRatio | implemented | `turn.rs::effective_crit_ratio` |
 | thickclub | onModifyAtk | implemented | `turn.rs::resolve_atk_stat_mods` |
 | thickclub | onModifyAtkPriority | implemented | `turn.rs::resolve_atk_stat_mods` |
 | twistedspoon | onBasePowerPriority | implemented | `turn.rs::resolve_bp_mods` |
@@ -325,13 +330,21 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | twistedspoon | onModifySpAPriority | implemented | `turn.rs::resolve_atk_stat_mods` |
 | waveincense | onBasePower | implemented | `turn.rs::resolve_bp_mods` |
 | waveincense | onBasePowerPriority | implemented | `turn.rs::resolve_bp_mods` |
+| whiteherb | onAnyAfterMega | unreachable_justified | Mega Evolution is gen6+ — no AfterMega event fires in gen3 |
+| whiteherb | onAnyAfterMove | implemented | `turn.rs::white_herb_restore` |
+| whiteherb | onAnySwitchIn | implemented | `turn.rs::white_herb_restore` |
+| whiteherb | onAnySwitchInPriority | implemented | `turn.rs::white_herb_restore` |
+| whiteherb | onResidual | implemented | `turn.rs::white_herb_restore` |
+| whiteherb | onResidualOrder | implemented | `turn.rs::white_herb_restore` |
+| whiteherb | onStart | implemented | `turn.rs::white_herb_restore` |
+| whiteherb | onUse | implemented | `turn.rs::white_herb_restore` |
 | wikiberry | onEat | implemented | `turn.rs::BE::Heal` |
 | wikiberry | onResidual | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onResidualOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (210 rows: implemented=183, noop_justified=9, unreachable_justified=18)
+## condition (215 rows: implemented=188, noop_justified=9, unreachable_justified=18)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -545,8 +558,13 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | wish | duration | implemented | `state.rs::wish_pending` |
 | wish | onEnd | implemented | `turn.rs::apply_wish` |
 | wish | onResidualOrder | implemented | `turn.rs::apply_wish` |
+| yawn | duration | implemented | `turn.rs::run_residuals` |
+| yawn | onEnd | implemented | `turn.rs::run_residuals` |
+| yawn | onResidualOrder | implemented | `turn.rs::run_residuals` |
+| yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
+| yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (400 rows: implemented=396, noop_justified=2, unreachable_justified=2)
+## move (410 rows: implemented=406, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -698,6 +716,9 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | harden | boosts | implemented | `turn.rs::self_boost_spec` |
 | harden | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | harden | neverMiss | implemented | `turn.rs::never_miss` |
+| haze | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| haze | neverMiss | implemented | `turn.rs::never_miss` |
+| haze | onHitField | implemented | `turn.rs::run_status_move` |
 | headbutt | secondaries | implemented | `turn.rs::apply_secondaries` |
 | healbell | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | healbell | neverMiss | implemented | `turn.rs::never_miss` |
@@ -931,6 +952,9 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | toxic | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | toxic | status | implemented | `turn.rs::modeled_status_move` |
 | triattack | secondaries | implemented | `turn.rs::apply_secondaries` |
+| trick | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| trick | onHit | implemented | `turn.rs::run_status_move` |
+| trick | onTryImmunity | implemented | `turn.rs::run_status_move` |
 | twineedle | multihit | implemented | `turn.rs::run_multihit` |
 | twineedle | secondaries | implemented | `turn.rs::apply_secondaries` |
 | twister | secondaries | implemented | `turn.rs::apply_secondaries` |
@@ -949,5 +973,9 @@ Surface: 74 abilities (MODELED ∪ NOOP), 59 items,
 | withdraw | boosts | implemented | `turn.rs::self_boost_spec` |
 | withdraw | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | withdraw | neverMiss | implemented | `turn.rs::never_miss` |
+| yawn | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| yawn | neverMiss | implemented | `turn.rs::never_miss` |
+| yawn | onTryHit | implemented | `turn.rs::run_status_move` |
+| yawn | volatileStatus | implemented | `state.rs::yawn` |
 | zapcannon | secondaries | implemented | `turn.rs::apply_secondaries` |
 

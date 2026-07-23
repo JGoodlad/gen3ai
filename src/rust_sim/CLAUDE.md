@@ -2228,6 +2228,258 @@ produces correct obs (the remaining random-mode tail — the eachEvent/Quick-Cla
 accuracy, Cute-Charm Attract-`-end` order — is the mismodeled-hunt queue, orthogonal to multihit). Probes
 kept: `harness/probe_batch7_{multihit,isolated}.js`.
 
+## BATCH 8/9: STICK (crit item) + HAZE (boost reset) + LIQUID OOZE (heal reversal) + WHITE HERB (boost restore) + WONDER GUARD (SE-only gate)
+
+Probe-settled batch-8/9 mechanics (research spec: `harness/BATCH89_RESEARCH.md`), each
+DRAW-FREE and OBSERVATION-NEUTRAL on every committed golden (the pre-regen e2e golden replays
+byte-identical; each adds no PRNG draw and is an id/ability-gated no-op on any board that
+doesn't use it):
+
+- **STICK / SCOPE LENS / LUCKY PUNCH — the CRIT_ITEM class** (`gen3_crit_item_v1`). The gen-3
+  `onModifyCritRatio critRatio + N` fold, DATA-DRIVEN: a `critBoost {boost, onlySpecies}` field in
+  `gen3_items.json` (`dex/items.rs::ItemData.crit_boost`, extractor + `dump_gen3_mechanics.js
+  --check` drift gate) folded by **`turn.rs::effective_crit_ratio`** (the shared crit-ratio helper
+  now used at ALL crit sites — `run_move` / `run_multihit` / `run_beat_up` / the jump-kick crash —
+  which also folds Focus Energy). Scope Lens +1 (unconditional), Lucky Punch +2 (Chansey), Stick +2
+  (Farfetch'd), species-gated on `user.species.id`. DRAW-FREE — only the `CRIT_MULT` denominator
+  index shifts (1→3 ⇒ 1/16→1/4), never the crit `randomChance(1, denom)` draw COUNT (so a crit
+  item's board shares the seedAfter of a no-item control). `leek` is the gen8 rename, NOT
+  gen3-legal. e2e: `scopelens`/`luckypunch`/`stick` in `MODELED_ITEMS` (0 team-carry — the
+  leech-seed situation). Pins: CI1/CI2 `stick_boosts_farfetchd_crit_ratio_by_two` (Stick crits vs a
+  no-item control at the SAME seed → SAME seedAfter, revert-verified) + the `dex/items.rs`
+  `item_mechanics_fields_parse` crit-boost assertions. Ground truth
+  `harness/probe_batch89_stick_regression_rng.js`.
+
+- **HAZE** (`gen3_haze_v1`, `haze` num 114) — a category-Status FIELD move (`type Ice`,
+  `accuracy: true` → never-miss/NO accuracy draw, `target: all`, `priority 0`, resolved at the
+  user's speed slot, NOT a residual). Its gen-3 `onHitField` emits ONE `|-clearallboost` line (NO
+  per-mon `-clearboost`) and `getAllActive().clearBoosts()` zeroes BOTH actives' 7 boost stages
+  INCLUDING the USER's own. Modeled in **`run_status_move`'s haze arm** (before the fail-loud):
+  DRAW-FREE (a Haze turn draws the SAME count as a Splash control), `landed` FALSE, no
+  type-immunity / Substitute interaction (a field effect). Validated by the DEDICATED
+  `gen_haze_golden.js` → `haze_test.rs` (per-seed PER-DECISION STATE+HP+STATUS+**7-stage BOOSTS**+
+  SEED+winner to game-end, 2 scenarios × 40 seeds — both actives climb their boosts, then HAZE
+  resets BOTH to all-0) + the revert-verified HZ1/HZ2 pins (`haze_clears_both_actives_boosts_
+  including_the_users_own` + `haze_with_no_boosts_is_draw_free_like_splash`; ground truth
+  `harness/probe_batch89_haze_regression_rng.js`). e2e: `MODELED_HAZE_MOVES` in the Status branch of
+  `isModeledMove` (0 team-carry). The `unmodeled_status_move_panics` fail-loud test was re-keyed
+  from Haze → Trick (still-unmodeled).
+
+- **LIQUID OOZE** (`gen3_liquid_ooze_v1`) — the gen4-override `onSourceTryHeal` that REVERSES a
+  `drain`/`leechseed` heal into DAMAGE on the HEALER. Modeled in **`apply_drain`** (a Giga/Mega/
+  Absorb/Leech-Life drain into a Liquid Ooze mon damages the DRAINER by the would-be heal —
+  `|-damage|<drainer>|<HP>|[from] ability: Liquid Ooze|[of] <ooze-mon>`, NO `-heal`) + **`apply_leech_seed`**
+  (the residual drains the seeded Liquid Ooze mon FIRST — `-damage [from] Leech Seed` — THEN reverses
+  the seeder's would-be heal into `-damage [from] ability: Liquid Ooze`). Both can KO the healer
+  (via the normal deferred/per-handler faint machinery — like a recoil KO); Focus Band on the healer
+  draws its `onDamage` roll but NEVER survives (the reversal's effect is the ABILITY, not a Move →
+  `is_move = false`). Dream Eater is EXCLUDED in gen3 (moot — not a `MODELED_DRAIN_MOVES` member).
+  DRAW-FREE (probe: the drain move's normal chain only; the leech residual draws nothing extra). The
+  two prior FAIL-LOUD asserts are REMOVED. Validated by the DEDICATED `gen_liquidooze_golden.js` →
+  `liquidooze_test.rs` (per-seed PER-DECISION STATE+HP+SEED+winner to game-end, 3 scenarios × 40
+  seeds — drain reversal / leech reversal / a Clear-Body control that HEALS) + the revert-verified
+  LO1-LO3 pins (drain reversal + control same-seed, leech reversal order, the reversal KO'ing the
+  drainer; ground truth `harness/probe_batch89_liquidooze_regression_rng.js`). e2e: `liquidooze`
+  moved into `MODELED_ABILITIES` (0 team-carry). Handler-audit rows: `haze:onHitField` +
+  `liquidooze:onSourceTryHeal` + the 3 crit items' `onModifyCritRatio` (manifest 897 → 922 rows).
+
+- **WHITE HERB — the BOOST_RESTORE class** (`gen3_white_herb_v1`, `whiteherb` num 214). A single-use
+  item that restores ALL of the holder's NEGATIVE boost stages to 0 (positives untouched) then
+  consumes itself, DATA-DRIVEN: a `boostRestore: true` field in `gen3_items.json`
+  (`dex/items.rs::ItemData.boost_restore`, extractor + `dump_gen3_mechanics.js --check` drift gate,
+  the `critBoost`/`berryEffect` precedent — obs-neutral). The resolved gen3 item (RAW dump: `onStart`
+  scans `boosts[i] < 0` → `useItem`; `onUse` `setBoost(negatives→0)` + `-clearnegativeboost`) fires
+  from `onAnyAfterMove` / `onAnySwitchIn` / `onResidual(order 29)`, so **`turn.rs::white_herb_restore`**
+  is called RIGHT AFTER any stat-drop resolves on the holder — at the FOUR sites: the holder's OWN
+  self-drop move (`apply_self_drops` — Overheat/Superpower/Psycho Boost/Curse-non-ghost's −Spe), a
+  foe's stat-drop MOVE or damaging-move secondary (`apply_secondary_boost` — Growl/Screech/Charm/Crunch),
+  a foe's LEAD Intimidate (`start_with_switchins`, the golden/seed convention path), and a foe's
+  MID-BATTLE Intimidate switch-in (`run_switch`). Restoring ONLY the negatives is what makes
+  +2-then-−1 (net +1) / +2-then-−2 (net 0) NOT trigger (no stage `< 0`) while a genuine −1 on a
+  different stat DOES (that lone stage restored, positives kept). Single-use (whiteherb → item gone;
+  a later drop is NOT restored). DRAW-FREE — the restore/consume touch no PRNG, so a White Herb board
+  shares the seedAfter of a no-item control (the boosts + `item_held` are the only observable). Emits
+  `|-enditem|<mon>|White Herb` then `|-clearnegativeboost|<mon>|[silent]` (the resolved `useItem`
+  emits `-enditem` before `onUse`'s `-clearnegativeboost` — after the causing move's `-unboost`).
+  Validated by the DEDICATED `gen_whiteherb_golden.js` → `whiteherb_test.rs` (per-seed PER-DECISION
+  STATE+HP+STATUS+**7-stage BOOSTS**+**ITEM-held**+SEED+winner to game-end, 4 scenarios × 40 seeds —
+  self-drop restore + single-use / foe-Charm restore / lead-Intimidate construction restore /
+  net-non-negative no-trigger) + the 5 revert-verified WH1-WH5 pins (self-drop+single-use with a
+  draw-free same-seed control, foe-Charm, net-non-negative no-trigger [perturbation: removing the
+  negative-scan guard], lead-Intimidate construction restore, mid-battle-Intimidate run_switch
+  restore; ground truth `harness/probe_batch89_whiteherb_regression_rng.js`). e2e: `whiteherb` in
+  `MODELED_ITEMS` (0 team-carry — the leech-seed situation, so byte-neutral on the e2e sample; a real
+  Overheat/Superpower user could carry it). Handler-audit rows: `whiteherb`'s
+  onStart/onUse/onAnyAfterMove/onAnySwitchIn/onResidual → `white_herb_restore` (+ onAnyAfterMega
+  UNREACH, Mega is gen6+).
+
+- **WONDER GUARD** (`gen3_wonder_guard_v1`, `wonderguard`) — Shedinja's SE-ONLY damage gate. The
+  gen4-override `onTryHit` (gen3-inherited) blocks a DAMAGING move into a Wonder Guard holder unless it
+  is STRICTLY super-effective (`runEffectiveness(move) > 0` — the gen3 log2-effectiveness SUM) AND not
+  type-immune; every NEUTRAL (0), RESISTED (<0), and 0×-immune move is BLOCKED with `|-immune|<t>|[from]
+  ability: Wonder Guard`. Modeled in **`turn.rs::run_move`** as a read-only incoming-move gate (DATA-DRIVEN:
+  a `wonderGuard: true` field in `gen3_abilities.json`, `dex/abilities.rs::AbilityData.wonder_guard`,
+  extractor + `dump_gen3_mechanics.js --check` drift gate — the `liquidooze`/`whiteherb` precedent, obs-neutral),
+  placed AFTER the shared accuracy roll + protect block and BEFORE the plain `move_is_immune` short-circuit
+  (so a 0×-immune move ALSO routes through WG's `-immune` — a DISTINCT byte form from a plain type `-immune`).
+  **THE DRAW-COUNT CRUX** (probe `harness/probe_batch89_abilities_items.js`): the gate runs at the `TryHit`
+  event — AFTER the accuracy roll (so `acc_hit`-gated: a MISS never reaches TryHit → a normal `-miss`) and
+  BEFORE crit/damage/secondary — so a BLOCKED move draws EXACTLY its accuracy roll (a never-miss Magical
+  Leaf draws NOTHING), the SAME draw count as a type-immune move. **The gen3 `runEffectiveness` SUM `> 0`
+  (STRICTLY SE) is bit-equivalent to the type-chart effectiveness PRODUCT `> 1.0`** (each per-type factor ∈
+  {0.5,1,2}; a 0× factor makes the product 0 → not `> 1.0` → the WG `-immune` form) — the port reads the
+  existing `type_chart().effectiveness()` product, no new SUM primitive. **BYPASSED** (WG never gates them):
+  category-Status moves (the damaging path never reaches with `category == Status`), a SELF-target hit
+  (`targets_self`), a TYPELESS `???`/Struggle move (`move_type.is_none()`), and ALL residual damage (WG is a
+  MOVE hook only — a Leech Seed / weather chip / burn / poison residual bypasses it, so a **1-HP Shedinja
+  dies to a residual**; LIVE-confirmed vs the sim). **A COMPANION LEECH-CLAMP FIX rode this** (`apply_leech_seed`):
+  the gen3 `this.damage(maxhp/8)` passes through `clampIntRange(_, 1)`, so the leech drain is at LEAST 1 for
+  any live mon — BYTE-IDENTICAL for maxhp ≥ 8, but a sub-8-maxhp mon (Shedinja, maxhp 1 → floor 0) now takes
+  1 (the port used to early-return at `drain == 0` → Shedinja survived), which is what makes the Leech-Seed
+  residual KO the 1-HP Shedinja (byte-neutral on every committed golden — no golden leech-seeds a sub-8-maxhp
+  mon). NO NEW STATE. Validated by the DEDICATED `gen_wonderguard_golden.js` → `wonderguard_test.rs` (per-seed
+  PER-DECISION STATE+HP+STATUS+SEED+winner to game-end, 4 scenarios × 40 seeds = 160 game-end runs, 363
+  decision rows: the 4 byte forms [0×-immune WG / neutral WG / resisted never-miss WG / SE-connect KO] in one
+  battle + a leech-residual bypass KO + a Thunder-Wave status bypass + a COMPOUND-EYES no-WG control where a
+  neutral Water Gun HITS + KOs — the discriminator) + **4 revert-verified `regression_test.rs` pins WG1-WG4**
+  (WG1 neutral block draws-only-accuracy + a hitting no-WG control at a DIFFERENT seed / WG2 resisted
+  never-miss block draws-NOTHING + control / WG3 the Leech-Seed residual KO [also pins the clamp fix] / WG4
+  Thunder-Wave status bypass → par then a SE Shadow Ball connect; ground truth
+  `harness/probe_batch89_wonderguard_regression_rng.js`). e2e: `wonderguard` moved into `MODELED_ABILITIES`
+  (0 sample teams carry Shedinja → byte-neutral, the committed e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5`
+  is UNCHANGED, no regen). Handler-audit row: `wonderguard:onTryHit` → `turn.rs::run_move` (manifest → 931
+  rows; the firefang gen4-hint branch is unreachable — Fire Fang isn't gen3-legal). HONEST SCOPE: the gate
+  lives ONLY in `run_move`, so a FIXED-DAMAGE move into a Shedinja (Seismic Toss / Night Shade / Sonic Boom /
+  Super Fang, via `run_fixed_damage_move`) keeps its plain type-immunity short-circuit rather than the WG
+  `-immune` byte form — an unreachable byte difference (0 teams carry Shedinja, and no golden fixed-damages
+  it); the SE/neutral/resisted/0× behaviour is otherwise complete.
+
+## YAWN: the delayed-sleep move (`gen3_yawn_v1`)
+
+**YAWN** (`yawn`, num 281) — a category-Status foe-target move (`volatileStatus: 'yawn'`, type Normal,
+`accuracy: true`, flags `{protect, reflectable, mirror, metronome}` — NO `bypasssub`; the condition is
+`noCopy`, `duration: 2`, `onResidualOrder: 10`, `onResidualSubOrder: 19`). **THE CRUX: the sleep
+`random(2,6)` fires at RESOLVE, not at cast** — the CAST is entirely DRAW-FREE. Probe-settled bit-for-bit
+vs the omniscient sim (`harness/probe_batch89_haze_trick_yawn.js` YAWN section + `probe_yawn_edges` +
+the resolved `Dex.mod('gen3')` yawn move/condition dump):
+
+- **CAST** (`run_status_move`'s yawn arm, before the fail-loud; new `MonState::yawn:
+  Option<(u8 duration, usize source_uid)>` appended LAST). Never-miss → NO accuracy draw. The gen-3
+  `yawn.onTryHit(target)` fails if `target.status || !target.runStatusImmunity('slp')`. The TryHit-order
+  resolution (computed draw-free at the top so the `[still]` announce form + the arm agree): **Protect**
+  (`protect: 1` → `-activate Protect`, normal target announce) > **already-statused** (`target.status` →
+  `|move|<u>|Yawn||[still]` + `|-fail|<u>`, no volatile) > **sleep-immune** (Insomnia / Vital Spirit — their
+  `onImmunity` blocks `runStatusImmunity('slp')`, detected via `AbilityData.status_immune.blocks("slp")`
+  regardless of phase → `-immune|<t>|[from] ability: <A>`, normal target announce, no volatile) >
+  **Substitute** (no `bypasssub` → `onTryPrimaryHit` → `[still]` + `-fail|<u>`, no volatile) > **ADD** the
+  `yawn` volatile `duration = 2` + `|-start|<t>|move: Yawn|[of] <source>` (`volatile_start_of`). ALL
+  DRAW-FREE; `landed` FALSE. `yawn_still` (already-statused ∨ substituted, and not protected/immune) drives
+  the top-level `[still]` announce alongside the Spikes-at-cap / ghost-Curse-into-sub cases.
+- **RESOLVE** — the `yawn` residual DURATION handler (`ResidualAction::Yawn`, order 10 subOrder **19**,
+  gathered in `run_residuals` while `yawn.is_some()`; `YAWN_RESIDUAL_SUBORDER`). It decrements 2 → 1 (end
+  of the CAST turn, a draw-free no-op) then 1 → 0 (end of the NEXT turn) → on the 1 → 0 tick the `onEnd`
+  fires: emit `|-end|<t>|move: Yawn|[silent]` then `target.trySetStatus('slp', source)` **routed through
+  the EXISTING `try_set_status('slp')` path** — so the sleep `random(2,6)` onStart draw + the sleep counter,
+  the gen3ou **Sleep Clause** block, AND the gen3ou **SetStatus 2-clause shuffle** all come for FREE and
+  bit-for-bit (gen3customgame resolve = ONE `random(2,6)`; gen3ou resolve = the SetStatus shuffle + [if it
+  lands] the `random(2,6)`). The resolve emits a PLAIN `|-status|<t>|slp` (the yawn condition's `effectType`
+  is not a Move → the plain `-status` branch, `src_move: None`). The source side is `1 - holder_side` (the
+  exact slot never affects a `slp` apply — only the side, for the Sleep Clause self-exemption). The
+  duration-END `continue` (like Taunt/Encore) skips the per-handler `faintMessages` (setting sleep can't
+  faint; keeps the deferred-faint ORDER exact). If the target got statused between cast + resolve (or is now
+  sleep-immune / Sleep-Clause-blocked), the `-end [silent]` still fires but no sleep sets (draw-free). The
+  (10,19) handler participates in the residual `speed_sort` — a yawn MIRROR at equal speed draws ONE
+  tie-shuffle per residual (BOTH the 2→1 and the 1→0 ticks). CLEARED on switch-out + faint (`clearVolatile`);
+  `noCopy` so NOT Baton-Passable.
+- **State:** `MonState::yawn` appended LAST (never reorder — the resume-optimizer lesson); `None` at
+  construction; cleared in `execute_switch` (voluntary + faint paths). No bridge/request change (yawn does
+  not restrict move selection or trap).
+
+**Validated** by `gen_yawn_golden.js` → `yawn_test.rs` (a per-seed PER-DECISION STATE+HP+STATUS+**SLEEP
+COUNTER**+SEED+winner differential to GAME-END over 5 scenarios × 40 seeds — cast→resolve→sleep-lands (the
+random(2,6) at resolve, the counter, the wake) / cast-into-already-statused (draw-free `[still]`+`-fail`) /
+cast-into-Vital-Spirit (`-immune`) / statused-between (`-end [silent]`, NO sleep) / yawn-into-a-real
+multi-mon game with a forced replacement; 200 wins) + **3 revert-verified `regression_test.rs` pins**
+(ground truth `harness/probe_batch89_yawn_regression_rng.js`): **Y1**
+`yawn_resolve_draws_the_sleep_random_2_6_at_the_next_turn_end` (the KEY draw-model pin — the cast turn is
+DRAW-FREE [== a Splash control], the resolve turn draws the `random(2,6)`; revert = the draw at the wrong
+place/absent → the resolve seed diverges), **Y2**
+`yawn_mirror_residual_handler_ties_and_draws_the_shuffle` (the (10,19) tie — a Snorlax mirror Yawning each
+other at equal speed draws the residual tie-shuffle at BOTH ticks, DIFFERING from a single-yawn control),
+**Y3** `yawn_resolve_is_blocked_by_the_sleep_clause_in_gen3ou` (the resolve routes through
+`try_set_status`, so the gen3ou Sleep Clause blocks a 2nd side-sleep at the resolve — drawing the
+SetStatus shuffle but NO `random(2,6)`; distinct seed from the no-prior-sleeper control). **e2e ADMITTED**
+(`YAWN_E2E_EXCLUDED = false`, `MODELED_YAWN_MOVES` in the Status branch of `isModeledMove`): the pre-regen
+committed golden replayed BYTE-IDENTICAL (md5 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED — the yawn code
+is a no-op on it), and the deliberate regen reproduced it byte-for-byte (**md5 UNCHANGED, filter-clean
+722/722, 0 yawn decisions in the 220-battle sample** — no sampled team drew Yawn active, the leech-seed /
+snatch situation), so NO regen was needed. The OTHER seed suites stay BYTE-IDENTICAL (the yawn code is an
+id-gated no-op on any board without a Yawn cast). The handler-audit manifest grew 931 → **940 rows** (the
+yawn move `onTryHit`/`volatileStatus` + the `yawn` condition onStart/onEnd/onResidualOrder/onResidualSubOrder/
+duration handlers, all implemented). Probes kept: `harness/probe_batch89_haze_trick_yawn.js` (YAWN section),
+`probe_batch89_yawn_regression_rng.js`.
+
+## TRICK: the item-swap move (`gen3_trick_v1`)
+
+**TRICK** (`trick`, num 271) — a category-Status ITEM-SWAP move (type Psychic, `accuracy: 100`,
+`target: 'normal'`, `ignoreImmunity: true`, flags `{protect, mirror, allyanim, noassist, failcopycat}` —
+**NO `bypasssub`**). `switcheroo` (num 415) is a **gen4** move — no gen3 mon learns it — so Trick is the
+ONLY gen-3 item-swap move; it stays out. **THE DRAW MODEL: ONE accuracy draw** (acc 100, NOT never-miss →
+draws `randomChance(100,100)`) **then a DRAW-FREE swap** — the swap adds nothing. Probe-settled bit-for-bit
+vs the omniscient sim (`harness/probe_batch89_trick_edges.js` + `probe_batch89_haze_trick_yawn.js` (TRICK
+section) + `probe_trick_open_qs{,2}.js`). Modeled in **`run_status_move`'s trick arm** (before the
+fail-loud, alongside haze/yawn/snatch):
+
+- **RESOLUTION ORDER** (probe-verified priority): the top-of-fn announce renders the FOE (`|move|<user>|
+  Trick|<foe>`, `target: normal` → not a self-render, and Trick has no `move.status` so `foe_status_move_fail`
+  is None) → **ACCURACY** draw (a genuine evasion MISS → `[miss]` retro-edit + `-miss`) → on HIT:
+  **Protect** (`protect: 1` → `-activate|<foe>|Protect`) > **Sticky Hold** `onTryImmunity`
+  (`!target.hasAbility('stickyhold')` → PLAIN `|-immune|<foe>`, **NO `[from] ability`** tag) > **Substitute**
+  `onTryPrimaryHit` (no `bypasssub` → `[still]` retro-edit + `-fail|<user>`) > the `onHit` item conditions.
+- **THE `onHit` SWAP** (`moves.ts`): `yourItem = target.takeItem(source)`, `myItem = source.takeItem()`.
+  `takeItem` returns **`false`** (gen≤4) iff EITHER side is **`item_knocked_off`** (gen3 Knock Off CLEARS the
+  item AND marks the slot, so a knocked-off mon is itemless-BUT-marked and its `takeItem` returns `false`, NOT
+  the plain-itemless `undefined`); a TRULY itemless (non-knocked) mon returns `undefined`. FAIL (`return false`
+  → `[still]` + `-fail|<user>`, no swap) iff `yourItem===false || myItem===false || (!yourItem && !myItem)` —
+  i.e. **EITHER side `item_knocked_off`, OR both TRULY itemless**. In gen3 **Mail AND berries SWAP fine**
+  (their `TakeItem` event passes for Trick — probe-confirmed; the task's "Mail untradeable" / "berries block"
+  hypotheses were WRONG, the sim is the oracle). Else SWAP: `-activate|<user>|move: Trick|[of] <foe>`, then the
+  **TARGET's new-item line FIRST** (user HAD an item → `-item|<foe>|<myItem>`, else the target loses its own
+  item `-enditem|<foe>|<yourItem>|[silent]`), then the **USER's** (foe HAD an item → `-item|<user>|<yourItem>`,
+  else `-enditem|<user>|<myItem>|[silent]`), all `|[from] move: Trick` (NO `[of]` clause — DISTINCT from
+  Thief/Knock-Off's `-item`/`-enditem` forms; new `ProtocolBuilder::item_from_move` / `enditem_silent_from_move`).
+- **THE CHOICE-LOCK interaction** (the task-flagged bit): a Choice-Band mon that Tricks AWAY its Band is
+  UNLOCKED (the lock is the item's `choiceband.onDisableMove` — with the Band gone it no longer fires; probe:
+  the CB user uses a DIFFERENT slot the NEXT turn). The RECEIVER of a Choice Band locks on its OWN next move
+  (the existing `run_move` set-lock logic — AUTOMATIC, no special handling). So on a successful swap the arm
+  clears BOTH sides' `choice_locked_move` (mirroring `apply_item_removal`'s clear; a no-op for a non-Choice
+  holder). `landed` FALSE (a status `moveHit` returns undefined → no in-tryMoveHit Update — probe: draws =
+  accuracy + endTurn Quick Claw only). **State: none NEW** (reuses the per-mon item slot); a Copy-safe
+  `MonSnapshot::item_num` (the item dex `num`, 0 = itemless) was added so the golden asserts the swap IDENTITY
+  (a two-item swap keeps `item_held` true on BOTH sides — the num pins WHICH item each holds).
+
+**Validated** by `gen_trick_golden.js` → `tests/trick_test.rs` (a per-seed PER-DECISION
+STATE+HP+STATUS+BOOSTS(7-stage/side)+**ITEM-NUM(/side)**+SEED+winner differential to GAME-END over 7 scenarios
+× 40 seeds — a two-item swap / a one-sided swap (`-enditem [silent]`) / a Sticky-Hold `-immune` / a Substitute
+block (`[still]`+`-fail`) / both-itemless fail / a Choice-Band trick-away (lock RELEASED — a kept lock diverges
+the DECISION COUNT) / trick-into-a-real-battle with a switch + a forced replacement; 280 wins) + **5
+revert-verified `regression_test.rs` pins**: **TR1/TR2/TR3**
+`trick_swap_immune_and_fail_all_draw_only_accuracy_and_quick_claw` (the SWAP, a Sticky-Hold `-immune`, and a
+both-itemless FAIL ALL share the SAME post-turn seed = accuracy + Quick Claw — the draw-parity proof — with the
+swap STATE asserted), **TR4** `trick_away_a_choice_band_releases_the_users_choice_lock` (the CB user runs a
+DIFFERENT slot next turn → BOTH decisions ran; a kept lock rejects the 2nd → decision-count mismatch), **TR5**
+`trick_into_a_substitute_fails_and_does_not_swap`. Ground truth
+`harness/probe_batch89_trick_regression_rng.js`. **e2e ADMITTED** (`TRICK_E2E_EXCLUDED = false`,
+`MODELED_TRICK_MOVES` in the Status branch of `isModeledMove`; `trick` removed from `MOVE_ID_BLOCKLIST`):
+the pre-regen committed golden replayed BYTE-IDENTICAL (md5 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED — the
+trick code is a no-op on it), and the deliberate regen reproduced it byte-for-byte (**md5 UNCHANGED, 0 trick
+decisions in the 220-battle sample** — NO `data/teams/` team carries Trick, the leech-seed / snatch / yawn
+situation), so NO regen was needed. The OTHER seed suites stay BYTE-IDENTICAL (the trick code is an id-gated
+no-op on any board without a Trick cast). The handler-audit manifest grew 940 → **943 rows** (the trick move
+`onTryImmunity` + `onHit` + the `ignoreImmunity` metadata, all implemented). Probes kept:
+`harness/probe_batch89_trick_edges.js`, `probe_batch89_haze_trick_yawn.js` (TRICK section),
+`probe_trick_open_qs{,2}.js`, `probe_batch89_trick_regression_rng.js`.
+
 ## E2E capstone: real teams, full battles, bit-for-bit (per-decision STATE+SEED+winner differential)
 
 This is the closure: instead of constructed scenarios with hand-picked mons + scripted moves, the
@@ -2419,8 +2671,10 @@ game-end**, asserting per-decision state + status + boosts + confusion + running
   LEECH-MOVE decisions** (the old honest "0 leech decisions" disclosure is CLOSED — the gen3ou leech
   users like Celebi/Venusaur pair Leech Seed with berries/Lum, which used to keep them off the
   filtered path). It also stays proven by its DEDICATED golden (`leechseed_test.rs`, 560 runs) + the 3
-  regression pins. (`liquidooze` was REMOVED from the harness's `NOOP_ABILITIES` since it is no longer a
-  no-op once leech is modeled — it reverses the drain, which the port fail-louds on.) The headline assertion tallies are CLEAN-ONLY: the per-decision loop
+  regression pins. (`liquidooze` is now in **`MODELED_ABILITIES`** — `gen3_liquid_ooze_v1`: the
+  drain/leech-seed heal REVERSAL is MODELED bit-for-bit [`apply_drain` / `apply_leech_seed` turn the
+  would-be heal into damage on the healer, DRAW-FREE], no longer a `NOOP_ABILITIES`/fail-loud
+  exclusion; proven by the DEDICATED `liquidooze_test.rs` golden + the LO1-LO3 pins.) The headline assertion tallies are CLEAN-ONLY: the per-decision loop
   breaks at the first divergence so post-desync rows are never counted (today nothing diverges, so it
   never trips). **The RECOVERY-move expansion surfaced + FIXED one more real-team-only engine bug — the
   RESIDUAL HANDLER GATHER ORDER** (a Gengar-vs-Gengar burn+Leftovers+sand turn where the residual KO'd
@@ -4114,9 +4368,17 @@ class, validated by one class-sweep golden.
      burn/sand chips, the leech drain, Spikes, Struggle/Rough-Skin recoil, confusion self-hits
      [effectType Move → CAN survive]; NOT sub-absorbed hits — probes `probe_focusband_rng.js` +
      `probe_focusband_confusion_rng.js`); Quick Claw was already modeled.
-  5. **CRIT_ITEM** (Scope Lens / Lucky Punch / Stick → the existing `critRatio` fold),
-     DRAIN_ITEM (Shell Bell), BOOST_RESTORE (White Herb), CURE_ITEM (Mental Herb), SPEED_MOD
-     (Macho Brace), TAKE_ITEM_GUARD (Mail — with Thief/Knock Off).
+  5. **CRIT_ITEM — WIRED (`gen3_crit_item_v1`).** Scope Lens (+1 unconditional) / Lucky Punch
+     (+2 Chansey) / Stick (+2 Farfetch'd) fold `onModifyCritRatio critRatio + N` into
+     `turn.rs::effective_crit_ratio` (the Focus Energy precedent — DRAW-FREE, only the `CRIT_MULT`
+     denominator index shifts; the crit `randomChance(1, denom)` draw COUNT is unchanged). Data:
+     the `critBoost {boost, onlySpecies}` field in `gen3_items.json` (`ItemData.crit_boost`,
+     extractor + `dump_gen3_mechanics.js --check` drift gate). Species-gated via `user.species.id`.
+     `leek` is the gen8 rename — NOT gen3-legal. 0 team-carry (Farfetch'd/Chansey aren't gen3 OU),
+     so admitting `scopelens`/`luckypunch`/`stick` to `MODELED_ITEMS` is byte-neutral on the e2e
+     sample; proven by the CI1/CI2 pins (Stick crits vs a no-item control at the same seed → same
+     seedAfter, the draw-free proof). Still UNMAPPED: DRAIN_ITEM (Shell Bell), BOOST_RESTORE (White
+     Herb), CURE_ITEM (Mental Herb), SPEED_MOD (Macho Brace), TAKE_ITEM_GUARD (Mail).
   6. **Ability classes beyond DMG_MOD** — **SWITCH_OUT (Natural Cure) ✅ DONE** (`gen3_natural_cure_v1`,
      2026-07-06 — the BIGGEST admission lever, 151 → 449) + **STATUS_IMMUNE ✅ DONE** (`gen3_status_immune_v1`,
      2026-07-06, below — the #2 gap, immunity=97) + **BATCH-1 ✅ DONE** (`gen3_ability_batch1_v1`, 2026-07-07,

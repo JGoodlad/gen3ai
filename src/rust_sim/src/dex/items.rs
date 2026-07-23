@@ -133,6 +133,29 @@ pub struct ItemData {
     /// the damage at `hp - 1` (survive at 1 HP). Probe-settled `probe_focusband_rng.js` /
     /// `probe_focusband_confusion_rng.js`.
     pub survive_lethal: Option<(u32, u32)>,
+    /// CRIT_ITEM (`gen3_crit_item_v1`, `critBoost`) — the holder's `onModifyCritRatio
+    /// critRatio + N` fold (Scope Lens +1 unconditional; Lucky Punch +2 Chansey; Stick +2
+    /// Farfetch'd). DRAW-FREE: it only shifts the crit-ratio denominator index (the Focus
+    /// Energy precedent), never the `randomChance` draw COUNT. Read by
+    /// `turn.rs::effective_crit_ratio`. `None` for a non-crit item.
+    pub crit_boost: Option<CritBoost>,
+    /// BOOST_RESTORE (`gen3_white_herb_v1`, `boostRestore`) — White Herb. `true` ⇒ a
+    /// single-use item that restores ALL of the holder's NEGATIVE boost stages to 0
+    /// (positives untouched) then consumes itself, DRAW-FREE. The resolved gen3 item fires
+    /// from `onAnyAfterMove` / `onAnySwitchIn` / `onResidual(order 29)`, so it triggers
+    /// immediately after the causing stat-drop (the holder's OWN self-drop move OR a foe's
+    /// Growl / Intimidate-on-switch-in). Read by `turn.rs::white_herb_restore` (wired at the
+    /// after-move / switch-in stat-drop sites). `false` for a non-White-Herb item.
+    pub boost_restore: bool,
+}
+
+/// A crit-item's crit-ratio boost (`critBoost` in `gen3_items.json`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct CritBoost {
+    /// +N crit stages (`onModifyCritRatio critRatio + N`): Scope Lens 1, Lucky Punch/Stick 2.
+    pub boost: u8,
+    /// Holder-species gate (lowercase ids). Empty == unconditional (Scope Lens).
+    pub only_species: Vec<String>,
 }
 
 /// King's Rock's appended flinch secondary (`flinchSecondary` in `gen3_items.json`).
@@ -299,6 +322,24 @@ pub(super) fn parse(root: &Json) -> Result<HashMap<String, ItemData>, String> {
             }
             None => None,
         };
+        let crit_boost = match v.get("critBoost") {
+            Some(cb) => {
+                let boost = cb
+                    .get("boost")
+                    .and_then(|b| b.as_f64())
+                    .ok_or_else(|| format!("item {id}: critBoost.boost missing"))? as u8;
+                if boost == 0 {
+                    return Err(format!("item {id}: critBoost.boost is 0"));
+                }
+                let only_species = cb
+                    .get("onlySpecies")
+                    .and_then(|s| s.as_array())
+                    .map(|arr| arr.iter().filter_map(|s| s.as_str().map(str::to_string)).collect())
+                    .unwrap_or_default();
+                Some(CritBoost { boost, only_species })
+            }
+            None => None,
+        };
         out.insert(
             id.clone(),
             ItemData {
@@ -313,6 +354,8 @@ pub(super) fn parse(root: &Json) -> Result<HashMap<String, ItemData>, String> {
                 acc_mod: crate::dex::accmod::parse(id, v)?,
                 flinch_secondary,
                 survive_lethal,
+                crit_boost,
+                boost_restore: v.bool_or("boostRestore", false),
             },
         );
     }
@@ -394,10 +437,25 @@ mod tests {
         assert!(d.item("salacberry").expect("salacberry").is_berry);
         assert!(!d.item("leftovers").expect("leftovers").is_berry);
 
+        // CRIT_ITEM (`gen3_crit_item_v1`): the `onModifyCritRatio critRatio + N` fold, optionally
+        // species-gated. Scope Lens +1 (unconditional), Lucky Punch +2 (Chansey), Stick +2
+        // (Farfetch'd).
+        let scope = d.item("scopelens").unwrap().crit_boost.clone().expect("scopelens critBoost");
+        assert_eq!(scope.boost, 1, "Scope Lens is +1");
+        assert!(scope.only_species.is_empty(), "Scope Lens is unconditional");
+        let lucky = d.item("luckypunch").unwrap().crit_boost.clone().expect("luckypunch critBoost");
+        assert_eq!((lucky.boost, lucky.only_species.as_slice()), (2, &["chansey".to_string()][..]));
+        let stick = d.item("stick").unwrap().crit_boost.clone().expect("stick critBoost");
+        assert_eq!((stick.boost, stick.only_species.as_slice()), (2, &["farfetchd".to_string()][..]));
+
+        // BOOST_RESTORE (`gen3_white_herb_v1`): White Herb restores negative boosts + consumes.
+        assert!(d.item("whiteherb").unwrap().boost_restore, "White Herb is BOOST_RESTORE");
+        assert!(!d.item("leftovers").unwrap().boost_restore);
+
         // Plain items carry NO mechanics fields.
         let lefties = d.item("leftovers").unwrap();
         assert!(lefties.type_boost.is_none() && lefties.stat_mods.is_none() && !lefties.choice);
-        assert!(lefties.acc_mod.is_none());
+        assert!(lefties.acc_mod.is_none() && lefties.crit_boost.is_none() && !lefties.boost_restore);
     }
 
     /// `gen3_berry_trace_shedskin_v1` — the 22 gen-3 berry `berryEffect` rows parse to the

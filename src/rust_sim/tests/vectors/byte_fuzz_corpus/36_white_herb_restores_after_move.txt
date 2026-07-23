@@ -1,0 +1,325 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=80808 run_id=rmrxxfg75 chunk=4
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_4_6
+TEAM	ab_4_6	p1	Sunkern||SalacBerry|Chlorophyll|BulletSeed,Substitute,GrassWhistle,LightScreen|Modest|132,12,144,44,28,148|M|30,30,19,7,24,8|||]Weepinbell||WhiteHerb|Chlorophyll|BulletSeed,Facade,Growth,StunSpore|Lonely|88,184,160,20,56,|M|1,28,24,4,26,14|||]Carvanha||SilkScarf|RoughSkin|Bite,Toxic,Endure,Frustration|Naughty|160,64,,152,,132|M|28,19,29,13,17,27|||]Vulpix||BrightPowder|FlashFire|DoubleEdge,HeatWave,Facade,Frustration|Quiet|136,92,60,32,,188|M|19,7,4,12,28,26|||]Ludicolo||BlackBelt|RainDish|DynamicPunch,FirePunch,HyperBeam,FocusPunch|Quirky|116,96,4,208,56,28|M|7,1,11,15,0,12|||]Ariados||RawstBerry|Swarm|FurySwipes,SludgeBomb,BodySlam,Protect|Careful|120,48,64,104,52,120|M|12,2,27,4,5,25|||
+TEAM	ab_4_6	p2	Delibird||PersimBerry|VitalSpirit|FutureSight,Frustration,QuickAttack,SeismicToss|Hardy|116,108,,,96,188|M|11,1,15,28,11,8|||]Arcanine||LeppaBerry|Intimidate|Bite,Rest,Mimic,Ember|Quirky|68,60,52,104,76,148|M|28,15,16,4,22,14|||]Sandshrew||LeppaBerry|SandVeil|PoisonSting,RockSmash,Facade,Frustration|Naive|128,124,108,20,12,116|M|27,5,5,29,13,6|||]Aggron||SoftSand|RockHead|MetalClaw,RainDance,SunnyDay,RockTomb|Adamant|,52,24,124,172,136|M|24,11,3,13,26,18|||]Noctowl||SitrusBerry|Insomnia|Facade,Frustration,SunnyDay,DoubleEdge|Docile|76,148,,128,20,136|M|28,3,3,12,21,17|||]Poliwhirl||LightBall|WaterAbsorb|DoubleSlap,Rest,MegaKick,Waterfall|Calm|44,160,64,192,,48|M|10,11,1,6,,7|||
+FMT	ab_4_6	gen3customgame
+INIT	ab_4_6	36282,13790,32872,46595	3991500921
+DEC	ab_4_6	0	move	0	0	m0	m2	35215,16064,11525,36553	Sunkern	194	233	0	-	0	0	0	0	0	0	6	Delibird	222	240	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_6	1	move	0	0	m3	m3	8305,30007,13376,44563	Sunkern	94	233	0	-	0	0	0	0	0	0	6	Delibird	222	240	0	-	0	0	0	0	0	0	6	p2	0	0	1	0	0
+DEC	ab_4_6	2	move	0	0	m1	m2	30543,2780,28226,52343	Sunkern	12	233	0	-	0	0	0	0	1	0	6	Delibird	222	240	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_6	3	move	0	0	m0	m3	62161,47618,2861,63670	Sunkern	0	233	1	fnt	0	0	0	0	0	0	5	Delibird	222	240	0	-	0	0	0	0	0	0	6	p2	0	0	1	0	0
+DEC	ab_4_6	4	switch	1	0	s1	-	63437,8134,39005,9361	Weepinbell	263	263	0	-	0	0	0	0	0	0	5	Delibird	222	240	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_4_6	5	move	0	0	s3	m2	39624,47058,8285,1813	Vulpix	152	239	0	-	0	0	0	0	0	0	5	Delibird	222	240	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_4_6	6	move	0	0	m3	m2	51825,37916,6768,45458	Vulpix	107	239	0	-	0	0	0	0	0	0	5	Delibird	220	240	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_4_6	7	move	0	0	m3	m0	58129,45264,19569,32033	Vulpix	107	239	0	-	0	0	0	0	0	0	5	Delibird	217	240	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_4_6	8	move	0	0	m2	s5	21559,15358,20207,30373	Vulpix	107	239	0	-	0	0	0	0	0	0	5	Poliwhirl	219	261	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_6	9	move	0	0	m0	m2	39343,62122,32715,56622	Vulpix	0	239	1	fnt	0	0	0	0	0	0	4	Poliwhirl	219	261	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_6	10	switch	1	0	s5	-	9135,33666,13743,50864	Ariados	226	292	0	-	0	0	0	0	0	0	4	Poliwhirl	219	261	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_4_6	11	move	0	0	m0	m0	43993,51172,59985,53407	Ariados	193	292	0	-	0	0	0	0	0	0	4	Poliwhirl	182	261	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_6	12	move	0	0	m3	m2	36802,31650,19548,27008	Ariados	193	292	0	-	0	0	0	0	0	0	4	Poliwhirl	182	261	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_4_6	13	move	0	0	m0	m2	62374,10761,374,9852	Ariados	105	292	0	-	0	0	0	0	0	0	4	Poliwhirl	127	261	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_6	14	move	0	0	m0	m0	41120,23151,14329,27235	Ariados	72	292	0	-	0	0	0	0	0	0	4	Poliwhirl	14	261	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_6	15	move	0	0	m2	m0	63443,48359,21517,12841	Ariados	24	292	0	-	0	0	0	0	0	0	4	Poliwhirl	0	261	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_6	16	switch	0	1	-	s5	20211,15857,58450,23024	Ariados	24	292	0	-	0	0	0	0	0	0	4	Delibird	217	240	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_4_6	17	move	0	0	m0	m2	42671,47192,19825,11053	Ariados	0	292	1	fnt	0	0	0	0	0	0	3	Delibird	217	240	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_6	18	switch	1	0	s3	-	18592,20568,18466,48260	Weepinbell	263	263	0	-	0	0	0	0	0	0	3	Delibird	217	240	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_4_6	19	move	0	0	m1	m2	63646,52169,53475,26741	Weepinbell	235	263	0	-	0	0	0	0	0	0	3	Delibird	74	240	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_6	20	move	0	0	m2	s1	5377,51931,21496,29164	Weepinbell	235	263	0	-	0	0	1	0	0	0	3	Arcanine	335	335	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_6	21	move	0	0	m1	s1	4631,33677,38913,29881	Weepinbell	235	263	0	-	0	0	1	0	0	0	3	Delibird	0	240	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_4_6	22	switch	0	1	-	s4	9528,62074,64831,44224	Weepinbell	235	263	0	-	0	0	1	0	0	0	3	Noctowl	357	357	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_4_6	23	move	0	0	m2	m2	19546,44395,46840,34435	Weepinbell	235	263	0	-	0	0	2	0	0	0	3	Noctowl	357	357	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_4_6	24	move	0	0	s2	m0	10887,47257,9091,32231	Carvanha	95	268	0	-	0	0	0	0	0	0	3	Noctowl	335	357	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_4_6	25	move	0	0	m0	m0	49740,51136,61698,18088	Carvanha	0	268	1	fnt	0	0	0	0	0	0	2	Noctowl	313	357	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_4_6	26	switch	1	0	s4	-	16167,46400,7284,26379	Ludicolo	306	306	0	-	0	0	0	0	0	0	2	Noctowl	313	357	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_4_6	27	move	0	0	m3	m1	30475,50039,8997,42479	Ludicolo	303	306	0	-	0	0	0	0	0	0	2	Noctowl	313	357	0	-	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_4_6	28	move	0	0	m2	s2	64554,29927,14003,24211	Ludicolo	303	306	0	-	0	0	0	0	0	0	2	Sandshrew	168	269	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+END	ab_4_6	0	none
+L	ab_4_6	0	|t:|<NORMALIZED>
+L	ab_4_6	1	|gametype|singles
+L	ab_4_6	2	|player|p1|P1||
+L	ab_4_6	3	|player|p2|P2||
+L	ab_4_6	4	|gen|3
+L	ab_4_6	5	|tier|[Gen 3] Custom Game
+L	ab_4_6	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_4_6	7	|
+L	ab_4_6	8	|t:|<NORMALIZED>
+L	ab_4_6	9	|teamsize|p1|6
+L	ab_4_6	10	|teamsize|p2|6
+L	ab_4_6	11	|start
+L	ab_4_6	12	|switch|p1a: Sunkern|Sunkern, M|233/233
+L	ab_4_6	13	|switch|p2a: Delibird|Delibird, M|240/240
+L	ab_4_6	14	|turn|1
+L	ab_4_6	15	|
+L	ab_4_6	16	|t:|<NORMALIZED>
+L	ab_4_6	17	|move|p2a: Delibird|Quick Attack|p1a: Sunkern
+L	ab_4_6	18	|-damage|p1a: Sunkern|194/233
+L	ab_4_6	19	|move|p1a: Sunkern|Bullet Seed|p2a: Delibird
+L	ab_4_6	20	|-resisted|p2a: Delibird
+L	ab_4_6	21	|-damage|p2a: Delibird|236/240
+L	ab_4_6	22	|-resisted|p2a: Delibird
+L	ab_4_6	23	|-damage|p2a: Delibird|231/240
+L	ab_4_6	24	|-resisted|p2a: Delibird
+L	ab_4_6	25	|-damage|p2a: Delibird|226/240
+L	ab_4_6	26	|-resisted|p2a: Delibird
+L	ab_4_6	27	|-damage|p2a: Delibird|222/240
+L	ab_4_6	28	|-hitcount|p2a: Delibird|4
+L	ab_4_6	29	|
+L	ab_4_6	30	|upkeep
+L	ab_4_6	31	|turn|2
+L	ab_4_6	32	|
+L	ab_4_6	33	|t:|<NORMALIZED>
+L	ab_4_6	34	|move|p2a: Delibird|Seismic Toss|p1a: Sunkern
+L	ab_4_6	35	|-damage|p1a: Sunkern|94/233
+L	ab_4_6	36	|move|p1a: Sunkern|Light Screen|p1a: Sunkern
+L	ab_4_6	37	|-sidestart|p1: P1|move: Light Screen
+L	ab_4_6	38	|
+L	ab_4_6	39	|upkeep
+L	ab_4_6	40	|turn|3
+L	ab_4_6	41	|
+L	ab_4_6	42	|t:|<NORMALIZED>
+L	ab_4_6	43	|move|p2a: Delibird|Quick Attack|p1a: Sunkern
+L	ab_4_6	44	|-crit|p1a: Sunkern
+L	ab_4_6	45	|-damage|p1a: Sunkern|12/233
+L	ab_4_6	46	|move|p1a: Sunkern|Substitute|p1a: Sunkern
+L	ab_4_6	47	|-fail|p1a: Sunkern|move: Substitute|[weak]
+L	ab_4_6	48	|
+L	ab_4_6	49	|-enditem|p1a: Sunkern|Salac Berry|[eat]
+L	ab_4_6	50	|-boost|p1a: Sunkern|spe|1|[from] item: Salac Berry
+L	ab_4_6	51	|upkeep
+L	ab_4_6	52	|turn|4
+L	ab_4_6	53	|
+L	ab_4_6	54	|t:|<NORMALIZED>
+L	ab_4_6	55	|move|p2a: Delibird|Seismic Toss|p1a: Sunkern
+L	ab_4_6	56	|-damage|p1a: Sunkern|0 fnt
+L	ab_4_6	57	|faint|p1a: Sunkern
+L	ab_4_6	58	|
+L	ab_4_6	59	|t:|<NORMALIZED>
+L	ab_4_6	60	|switch|p1a: Weepinbell|Weepinbell, M|263/263
+L	ab_4_6	61	|
+L	ab_4_6	62	|upkeep
+L	ab_4_6	63	|turn|5
+L	ab_4_6	64	|
+L	ab_4_6	65	|t:|<NORMALIZED>
+L	ab_4_6	66	|switch|p1a: Vulpix|Vulpix, M|239/239
+L	ab_4_6	67	|move|p2a: Delibird|Quick Attack|p1a: Vulpix
+L	ab_4_6	68	|debug|brightpowder - decreasing accuracy
+L	ab_4_6	69	|-crit|p1a: Vulpix
+L	ab_4_6	70	|-damage|p1a: Vulpix|152/239
+L	ab_4_6	71	|
+L	ab_4_6	72	|upkeep
+L	ab_4_6	73	|turn|6
+L	ab_4_6	74	|
+L	ab_4_6	75	|t:|<NORMALIZED>
+L	ab_4_6	76	|move|p2a: Delibird|Quick Attack|p1a: Vulpix
+L	ab_4_6	77	|debug|brightpowder - decreasing accuracy
+L	ab_4_6	78	|-damage|p1a: Vulpix|107/239
+L	ab_4_6	79	|move|p1a: Vulpix|Frustration|p2a: Delibird
+L	ab_4_6	80	|-damage|p2a: Delibird|220/240
+L	ab_4_6	81	|
+L	ab_4_6	82	|-sideend|p1: P1|move: Light Screen
+L	ab_4_6	83	|upkeep
+L	ab_4_6	84	|turn|7
+L	ab_4_6	85	|
+L	ab_4_6	86	|t:|<NORMALIZED>
+L	ab_4_6	87	|move|p2a: Delibird|Future Sight|p1a: Vulpix
+L	ab_4_6	88	|-start|p2a: Delibird|Future Sight
+L	ab_4_6	89	|move|p1a: Vulpix|Frustration|p2a: Delibird
+L	ab_4_6	90	|-damage|p2a: Delibird|217/240
+L	ab_4_6	91	|
+L	ab_4_6	92	|upkeep
+L	ab_4_6	93	|turn|8
+L	ab_4_6	94	|
+L	ab_4_6	95	|t:|<NORMALIZED>
+L	ab_4_6	96	|switch|p2a: Poliwhirl|Poliwhirl, M|261/261
+L	ab_4_6	97	|move|p1a: Vulpix|Facade|p2a: Poliwhirl
+L	ab_4_6	98	|-damage|p2a: Poliwhirl|219/261
+L	ab_4_6	99	|
+L	ab_4_6	100	|upkeep
+L	ab_4_6	101	|turn|9
+L	ab_4_6	102	|
+L	ab_4_6	103	|t:|<NORMALIZED>
+L	ab_4_6	104	|move|p2a: Poliwhirl|Mega Kick|p1a: Vulpix
+L	ab_4_6	105	|debug|brightpowder - decreasing accuracy
+L	ab_4_6	106	|-damage|p1a: Vulpix|0 fnt
+L	ab_4_6	107	|faint|p1a: Vulpix
+L	ab_4_6	108	|
+L	ab_4_6	109	|t:|<NORMALIZED>
+L	ab_4_6	110	|switch|p1a: Ariados|Ariados, M|292/292
+L	ab_4_6	111	|
+L	ab_4_6	112	|-end|p1a: Ariados|move: Future Sight
+L	ab_4_6	113	|-damage|p1a: Ariados|226/292
+L	ab_4_6	114	|upkeep
+L	ab_4_6	115	|turn|10
+L	ab_4_6	116	|
+L	ab_4_6	117	|t:|<NORMALIZED>
+L	ab_4_6	118	|move|p2a: Poliwhirl|Double Slap|p1a: Ariados
+L	ab_4_6	119	|-crit|p1a: Ariados
+L	ab_4_6	120	|-damage|p1a: Ariados|204/292
+L	ab_4_6	121	|-damage|p1a: Ariados|193/292
+L	ab_4_6	122	|-hitcount|p1a: Ariados|2
+L	ab_4_6	123	|move|p1a: Ariados|Fury Swipes|p2a: Poliwhirl
+L	ab_4_6	124	|-damage|p2a: Poliwhirl|200/261
+L	ab_4_6	125	|-damage|p2a: Poliwhirl|182/261
+L	ab_4_6	126	|-hitcount|p2a: Poliwhirl|2
+L	ab_4_6	127	|
+L	ab_4_6	128	|upkeep
+L	ab_4_6	129	|turn|11
+L	ab_4_6	130	|
+L	ab_4_6	131	|t:|<NORMALIZED>
+L	ab_4_6	132	|move|p1a: Ariados|Protect|p1a: Ariados
+L	ab_4_6	133	|-singleturn|p1a: Ariados|Protect
+L	ab_4_6	134	|move|p2a: Poliwhirl|Mega Kick|p1a: Ariados
+L	ab_4_6	135	|-activate|p1a: Ariados|Protect
+L	ab_4_6	136	|
+L	ab_4_6	137	|upkeep
+L	ab_4_6	138	|turn|12
+L	ab_4_6	139	|
+L	ab_4_6	140	|t:|<NORMALIZED>
+L	ab_4_6	141	|move|p2a: Poliwhirl|Mega Kick|p1a: Ariados
+L	ab_4_6	142	|-damage|p1a: Ariados|105/292
+L	ab_4_6	143	|move|p1a: Ariados|Fury Swipes|p2a: Poliwhirl
+L	ab_4_6	144	|-damage|p2a: Poliwhirl|164/261
+L	ab_4_6	145	|-damage|p2a: Poliwhirl|145/261
+L	ab_4_6	146	|-damage|p2a: Poliwhirl|127/261
+L	ab_4_6	147	|-hitcount|p2a: Poliwhirl|3
+L	ab_4_6	148	|
+L	ab_4_6	149	|upkeep
+L	ab_4_6	150	|turn|13
+L	ab_4_6	151	|
+L	ab_4_6	152	|t:|<NORMALIZED>
+L	ab_4_6	153	|move|p2a: Poliwhirl|Double Slap|p1a: Ariados
+L	ab_4_6	154	|-damage|p1a: Ariados|94/292
+L	ab_4_6	155	|-damage|p1a: Ariados|83/292
+L	ab_4_6	156	|-damage|p1a: Ariados|72/292
+L	ab_4_6	157	|-hitcount|p1a: Ariados|3
+L	ab_4_6	158	|move|p1a: Ariados|Fury Swipes|p2a: Poliwhirl
+L	ab_4_6	159	|-damage|p2a: Poliwhirl|109/261
+L	ab_4_6	160	|-crit|p2a: Poliwhirl
+L	ab_4_6	161	|-damage|p2a: Poliwhirl|72/261
+L	ab_4_6	162	|-damage|p2a: Poliwhirl|53/261
+L	ab_4_6	163	|-damage|p2a: Poliwhirl|33/261
+L	ab_4_6	164	|-damage|p2a: Poliwhirl|14/261
+L	ab_4_6	165	|-hitcount|p2a: Poliwhirl|5
+L	ab_4_6	166	|
+L	ab_4_6	167	|upkeep
+L	ab_4_6	168	|turn|14
+L	ab_4_6	169	|
+L	ab_4_6	170	|t:|<NORMALIZED>
+L	ab_4_6	171	|move|p2a: Poliwhirl|Double Slap|p1a: Ariados
+L	ab_4_6	172	|-damage|p1a: Ariados|60/292
+L	ab_4_6	173	|-damage|p1a: Ariados|48/292
+L	ab_4_6	174	|-damage|p1a: Ariados|36/292
+L	ab_4_6	175	|-damage|p1a: Ariados|24/292
+L	ab_4_6	176	|-hitcount|p1a: Ariados|4
+L	ab_4_6	177	|move|p1a: Ariados|Body Slam|p2a: Poliwhirl
+L	ab_4_6	178	|-damage|p2a: Poliwhirl|0 fnt
+L	ab_4_6	179	|faint|p2a: Poliwhirl
+L	ab_4_6	180	|
+L	ab_4_6	181	|t:|<NORMALIZED>
+L	ab_4_6	182	|switch|p2a: Delibird|Delibird, M|217/240
+L	ab_4_6	183	|
+L	ab_4_6	184	|upkeep
+L	ab_4_6	185	|turn|15
+L	ab_4_6	186	|
+L	ab_4_6	187	|t:|<NORMALIZED>
+L	ab_4_6	188	|move|p2a: Delibird|Quick Attack|p1a: Ariados
+L	ab_4_6	189	|-crit|p1a: Ariados
+L	ab_4_6	190	|-damage|p1a: Ariados|0 fnt
+L	ab_4_6	191	|faint|p1a: Ariados
+L	ab_4_6	192	|
+L	ab_4_6	193	|t:|<NORMALIZED>
+L	ab_4_6	194	|switch|p1a: Weepinbell|Weepinbell, M|263/263
+L	ab_4_6	195	|
+L	ab_4_6	196	|upkeep
+L	ab_4_6	197	|turn|16
+L	ab_4_6	198	|
+L	ab_4_6	199	|t:|<NORMALIZED>
+L	ab_4_6	200	|move|p2a: Delibird|Quick Attack|p1a: Weepinbell
+L	ab_4_6	201	|-damage|p1a: Weepinbell|235/263
+L	ab_4_6	202	|move|p1a: Weepinbell|Facade|p2a: Delibird
+L	ab_4_6	203	|-damage|p2a: Delibird|74/240
+L	ab_4_6	204	|
+L	ab_4_6	205	|upkeep
+L	ab_4_6	206	|turn|17
+L	ab_4_6	207	|
+L	ab_4_6	208	|t:|<NORMALIZED>
+L	ab_4_6	209	|switch|p2a: Arcanine|Arcanine, M|335/335
+L	ab_4_6	210	|-ability|p2a: Arcanine|Intimidate|boost
+L	ab_4_6	211	|-unboost|p1a: Weepinbell|atk|1
+L	ab_4_6	212	|move|p1a: Weepinbell|Growth|p1a: Weepinbell
+L	ab_4_6	213	|-boost|p1a: Weepinbell|spa|1
+L	ab_4_6	214	|-enditem|p1a: Weepinbell|White Herb
+L	ab_4_6	215	|-clearnegativeboost|p1a: Weepinbell|[silent]
+L	ab_4_6	216	|
+L	ab_4_6	217	|upkeep
+L	ab_4_6	218	|turn|18
+L	ab_4_6	219	|
+L	ab_4_6	220	|t:|<NORMALIZED>
+L	ab_4_6	221	|switch|p2a: Delibird|Delibird, M|74/240
+L	ab_4_6	222	|move|p1a: Weepinbell|Facade|p2a: Delibird
+L	ab_4_6	223	|-damage|p2a: Delibird|0 fnt
+L	ab_4_6	224	|faint|p2a: Delibird
+L	ab_4_6	225	|
+L	ab_4_6	226	|t:|<NORMALIZED>
+L	ab_4_6	227	|switch|p2a: Noctowl|Noctowl, M|357/357
+L	ab_4_6	228	|
+L	ab_4_6	229	|upkeep
+L	ab_4_6	230	|turn|19
+L	ab_4_6	231	|
+L	ab_4_6	232	|t:|<NORMALIZED>
+L	ab_4_6	233	|move|p2a: Noctowl|Sunny Day|p2a: Noctowl
+L	ab_4_6	234	|-weather|SunnyDay
+L	ab_4_6	235	|move|p1a: Weepinbell|Growth|p1a: Weepinbell
+L	ab_4_6	236	|-boost|p1a: Weepinbell|spa|1
+L	ab_4_6	237	|
+L	ab_4_6	238	|-weather|SunnyDay|[upkeep]
+L	ab_4_6	239	|upkeep
+L	ab_4_6	240	|turn|20
+L	ab_4_6	241	|
+L	ab_4_6	242	|t:|<NORMALIZED>
+L	ab_4_6	243	|switch|p1a: Carvanha|Carvanha, M|268/268
+L	ab_4_6	244	|move|p2a: Noctowl|Facade|p1a: Carvanha
+L	ab_4_6	245	|-damage|p1a: Carvanha|95/268
+L	ab_4_6	246	|-damage|p2a: Noctowl|335/357|[from] ability: Rough Skin|[of] p1a: Carvanha
+L	ab_4_6	247	|
+L	ab_4_6	248	|-weather|SunnyDay|[upkeep]
+L	ab_4_6	249	|upkeep
+L	ab_4_6	250	|turn|21
+L	ab_4_6	251	|
+L	ab_4_6	252	|t:|<NORMALIZED>
+L	ab_4_6	253	|move|p2a: Noctowl|Facade|p1a: Carvanha
+L	ab_4_6	254	|-damage|p1a: Carvanha|0 fnt
+L	ab_4_6	255	|-damage|p2a: Noctowl|313/357|[from] ability: Rough Skin|[of] p1a: Carvanha
+L	ab_4_6	256	|faint|p1a: Carvanha
+L	ab_4_6	257	|
+L	ab_4_6	258	|t:|<NORMALIZED>
+L	ab_4_6	259	|switch|p1a: Ludicolo|Ludicolo, M|306/306
+L	ab_4_6	260	|
+L	ab_4_6	261	|-weather|SunnyDay|[upkeep]
+L	ab_4_6	262	|upkeep
+L	ab_4_6	263	|turn|22
+L	ab_4_6	264	|
+L	ab_4_6	265	|t:|<NORMALIZED>
+L	ab_4_6	266	|debug|before turn callback: focuspunch
+L	ab_4_6	267	|-singleturn|p1a: Ludicolo|move: Focus Punch
+L	ab_4_6	268	|move|p2a: Noctowl|Frustration|p1a: Ludicolo
+L	ab_4_6	269	|-damage|p1a: Ludicolo|303/306
+L	ab_4_6	270	|move|p1a: Ludicolo|Focus Punch||[still]
+L	ab_4_6	271	|cant|p1a: Ludicolo|Focus Punch|Focus Punch
+L	ab_4_6	272	|
+L	ab_4_6	273	|-weather|SunnyDay|[upkeep]
+L	ab_4_6	274	|upkeep
+L	ab_4_6	275	|turn|23
+L	ab_4_6	276	|
+L	ab_4_6	277	|t:|<NORMALIZED>
+L	ab_4_6	278	|switch|p2a: Sandshrew|Sandshrew, M|269/269
+L	ab_4_6	279	|move|p1a: Ludicolo|Hyper Beam|p2a: Sandshrew
+L	ab_4_6	280	|-damage|p2a: Sandshrew|168/269
+L	ab_4_6	281	|-mustrecharge|p1a: Ludicolo
+L	ab_4_6	282	|
+L	ab_4_6	283	|-weather|none
+L	ab_4_6	284	|upkeep
+L	ab_4_6	285	|turn|24

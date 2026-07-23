@@ -23,7 +23,7 @@ pub mod types;
 
 pub use abilities::{AbilityData, ContactProc, DmgFold, DmgMod, StatusImmune, StatusImmunePhase};
 pub use accmod::{AccMod, AccOp, AccSide};
-pub use items::{BerryEffect, ItemData, StatMods, TypeBoost, TypeBoostFold};
+pub use items::{BerryEffect, CritBoost, ItemData, StatMods, TypeBoost, TypeBoostFold};
 pub use moves::MoveData;
 pub use species::SpeciesData;
 pub use type_chart::TypeChart;

@@ -670,6 +670,44 @@ pub struct MonState {
     /// `Some(uid)` while a switch-in Intimidate is pending, `None` otherwise (cleared once run_switch
     /// consumes it + on faint). `None` at construction. Draw-free (a boost-suppression is state-only).
     pub switchin_foe_uid: Option<usize>,
+
+    /// The **YAWN** delayed-sleep volatile (`gen3_yawn_v1`, the gen-3 `yawn` condition —
+    /// `duration: 2`, `noCopy`): `Some((remaining_duration, source_uid))` while a Yawn cast on
+    /// THIS mon is pending, `None` otherwise (the construction-time value). The CRUX is that the
+    /// sleep `random(2,6)` fires at RESOLVE, not at cast — so the cast is DRAW-FREE.
+    ///
+    /// The gen-3 model, VERIFIED bit-for-bit vs the omniscient sim
+    /// (`harness/probe_batch89_haze_trick_yawn.js` + `probe_yawn_edges`):
+    ///   - CAST (a category-Status foe-target move, `accuracy: true` → NO accuracy draw): the
+    ///     `onTryHit` FAILS draw-free if the target ALREADY has a major status (`[still]` +
+    ///     `-fail|<user>`, no volatile) OR is sleep-immune (Insomnia / Vital Spirit via
+    ///     `runStatusImmunity('slp')` → `-immune|<target>|[from] ability: <A>`, no volatile); a
+    ///     Protect BLOCKS it (`protect: 1` → `-activate Protect`); a Substitute BLOCKS it (no
+    ///     `bypasssub` → `onTryPrimaryHit` → `[still]` + `-fail|<user>`). TryHit order: Protect >
+    ///     already-statused > sleep-immune > substitute. Otherwise it adds this volatile with
+    ///     `duration = 2` DRAW-FREE, emitting `|-start|<target>|move: Yawn|[of] <source>`.
+    ///   - RESOLVE — the volatile is a RESIDUAL DURATION handler at `(onResidualOrder 10,
+    ///     onResidualSubOrder 19)`. It decrements 2 → 1 (end of the CAST turn) then 1 → 0 (end of
+    ///     the NEXT turn); on the 1 → 0 tick the `onEnd` fires: emit `|-end|<target>|move: Yawn|
+    ///     [silent]` then `target.trySetStatus('slp', source)` — routed through the EXISTING
+    ///     [`Self::try_set_status`] path so the sleep `random(2,6)` onStart draw, the gen3ou Sleep
+    ///     Clause block, AND the gen3ou SetStatus 2-clause shuffle all come for free + bit-for-bit
+    ///     (gen3customgame resolve = ONE `random(2,6)`; gen3ou resolve = the SetStatus shuffle +
+    ///     [if it lands] the `random(2,6)`). The resolve emits a PLAIN `|-status|<target>|slp`
+    ///     (the yawn condition's `effectType` is not a Move → the plain `-status` branch). If the
+    ///     target got statused between cast and resolve (or is now sleep-immune / Sleep-Clause-
+    ///     blocked under gen3ou), the `-end [silent]` still fires but no sleep sets (`try_set_status`
+    ///     no-ops draw-appropriately).
+    ///   - The residual handler participates in the residual speed-sort tie-shuffle at (10, 19) —
+    ///     unique among order-10 handlers, so its only tie is the OTHER mon's yawn at equal speed
+    ///     (a yawn MIRROR at equal cached speed draws one `random(0,2)`).
+    ///
+    /// CLEARED on switch-out + faint (`clearVolatile`, like the other volatiles); `noCopy` so NOT
+    /// Baton-Passable (never in the pass-set). `source_uid` is recorded for the `[of]` clause /
+    /// the `trySetStatus` source (in gen-3 singles the source side is always `1 - holder_side`, so
+    /// the resolve reads that side's CURRENT active — the exact slot never affects a `slp` apply,
+    /// only the side matters for the Sleep Clause self-exemption). `None` at construction.
+    pub yawn: Option<(u8, usize)>,
 }
 
 /// The MIMIC moveslot-overlay restore record (`gen3_move_coverage_batch6_v1`).
@@ -927,6 +965,7 @@ impl MonState {
             snatch: false,
             sleep_from_rest: false,
             switchin_foe_uid: None,
+            yawn: None,
         })
     }
 
@@ -1334,6 +1373,17 @@ impl BattleState {
     pub fn start_with_switchins(opts: &BattleOptions, dex: &Dex) -> Result<BattleState, String> {
         let mut state = BattleState::start(opts, dex)?;
         state.run_start_switchins();
+        // WHITE HERB (`gen3_white_herb_v1`, onAnySwitchIn): a LEAD whose Atk was dropped by the
+        // opposing lead's Intimidate restores it immediately + consumes the item. `run_start_
+        // switchins` is the golden/seed convention path (seeds at the post-construction seed);
+        // DRAW-FREE, so the seed convention is unaffected. (The BRIDGE's turn-0 construction runs
+        // the leads through `run_switch`, which has its own White Herb check — this covers the
+        // `start_with_switchins` path used by every committed seed golden. A no-op unless a lead
+        // holds White Herb AND has a negative boost, so all existing tests are untouched.)
+        for side in 0..state.sides.len() {
+            let slot = state.sides[side].active;
+            state.white_herb_restore(side, slot, dex);
+        }
         Ok(state)
     }
 

@@ -514,6 +514,7 @@
     },
     "wonderguard": {
         "name": "Wonder Guard",
-        "num": 25
+        "num": 25,
+        "wonderGuard": true
     }
 }

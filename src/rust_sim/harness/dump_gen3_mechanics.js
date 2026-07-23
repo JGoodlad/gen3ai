@@ -191,6 +191,31 @@ function extractItem(id, it) {
   }
 
   if (it.isBerry) mech.isBerry = true;
+  // --- CRIT_ITEM (`gen3_crit_item_v1`): `onModifyCritRatio` critRatio + N, optionally
+  //     species-gated. Scope Lens +1 (unconditional); Lucky Punch +2 (Chansey); Stick +2
+  //     (Farfetch'd). A DRAW-FREE fold into the existing crit-ratio (the Focus Energy
+  //     precedent) — the crit `randomChance(1, CRIT_MULT[ratio])` draw COUNT is unchanged;
+  //     only the denominator index shifts (1→3 ⇒ 1/16→1/4). `leek` is the gen8 rename (same
+  //     mechanic, NOT gen3-legal → not an entry).
+  const cr = inv.onModifyCritRatio;
+  if (typeof cr === 'string' && cr) {
+    const boostM = cr.match(/critRatio \+ (\d+)/);
+    if (!boostM) throw new Error(`${id}: onModifyCritRatio without a critRatio + N`);
+    const boost = Number(boostM[1]);
+    const ids = [...cr.matchAll(/species\.id === "(\w+)"/g)].map((m) => m[1]);
+    const names = [...cr.matchAll(/species\.name === "([^"]+)"/g)].map((m) => toId(m[1]));
+    const species = [...new Set([...ids, ...names])].sort();
+    mech.critBoost = species.length ? { boost, onlySpecies: species } : { boost };
+  }
+  // --- BOOST_RESTORE (`gen3_white_herb_v1`): White Herb — restore all NEGATIVE boost stages
+  //     to 0 (positives untouched) + consume, single-use. The resolved gen3 shape: an
+  //     `onStart` that scans `boosts[i] < 0` → `useItem()`, and an `onUse` that does
+  //     `setBoost(...)` + `-clearnegativeboost`; it fires from onAnyAfterMove / onAnySwitchIn
+  //     / onResidual(29). DRAW-FREE — a boolean flag (no parameters). Detect on the unique
+  //     onUse `setBoost` + `-clearnegativeboost` signature.
+  if (typeof inv.onUse === 'string' && /-clearnegativeboost/.test(inv.onUse) && /setBoost/.test(inv.onUse)) {
+    mech.boostRestore = true;
+  }
   // ACCURACY_ITEM (Bright Powder / Lax Incense) — DEFENDER-side accMod.
   const accMod = extractAccMod(inv);
   if (accMod) mech.accMod = accMod;
@@ -300,7 +325,7 @@ const ITEM_CLASS_OVERRIDES = {
   stick: 'CRIT_ITEM',       // Farfetch'd-only +2
   leftovers: 'RESIDUAL_ITEM', // onResidual heal maxhp/16
   shellbell: 'DRAIN_ITEM',  // onAfterMoveSecondarySelf heal damage/8
-  whiteherb: 'BOOST_RESTORE', // onUpdate restore negative boosts (gen3: onResidual? resolved says onUpdate)
+  whiteherb: 'BOOST_RESTORE', // restore negative boosts + consume (onStart/useItem, fires onAnyAfterMove/onAnySwitchIn/onResidual(29))
   mentalherb: 'CURE_ITEM',  // cures Attract
   machobrace: 'SPEED_MOD',  // onModifySpe x0.5
   souldew: 'SPECIES_STAT',  // SpA+SpD x1.5 (Latias/Latios) — dual-stat
@@ -369,7 +394,8 @@ const ABILITY_CLASS_OVERRIDES = {
   stickyhold: 'TAKE_ITEM_GUARD', // onTakeItem false — the ability twin of Mail
   pressure: 'MISC', truant: 'MISC', rockhead: 'MISC', liquidooze: 'MISC',
   sturdy: 'MISC', airlock: 'MISC', cloudnine: 'MISC',
-  innerfocus: 'MISC', earlybird: 'MISC', wonderguard: 'MISC',
+  wonderguard: 'DAMAGE_GATE', // the SE-only onTryHit damage gate (`gen3_wonder_guard_v1`)
+  innerfocus: 'MISC', earlybird: 'MISC',
   voltabsorb2: 'MISC', minus: 'MISC', plus: 'MISC', overcoat: 'MISC',
   swiftswim2: 'MISC', anticipation: 'MISC',
 };
@@ -514,6 +540,14 @@ function extractAbility(id, ab) {
   if (stSrc && /randomFoe\(\)/.test(stSrc) && /setAbility/.test(stSrc)) {
     mech.trace = true;
   }
+  // WONDER GUARD (`gen3_wonder_guard_v1`) — the SE-only damage gate: the gen4-override
+  // (gen3-inherited) `onTryHit` blocks a damaging move unless `runEffectiveness(move) > 0`
+  // AND not type-immune, emitting `-immune ... [from] ability: Wonder Guard`. Detected by the
+  // resolved handler's `runEffectiveness(move) <= 0` guard.
+  const wgSrc = typeof inv.onTryHit === 'string' ? inv.onTryHit : '';
+  if (wgSrc && /runEffectiveness\(move\) <= 0/.test(wgSrc) && /Wonder Guard/.test(wgSrc)) {
+    mech.wonderGuard = true;
+  }
   return { inv, mech };
 }
 
@@ -603,7 +637,7 @@ function buildAbilities() {
 function checkItemsJson(items) {
   const committed = JSON.parse(fs.readFileSync(ITEMS_JSON, 'utf8'));
   const errors = [];
-  const mechanicsKeys = ['typeBoost', 'statMods', 'onlySpecies', 'untransformedOnly', 'choice', 'isBerry', 'accMod', 'berryEffect',
+  const mechanicsKeys = ['typeBoost', 'statMods', 'onlySpecies', 'untransformedOnly', 'choice', 'isBerry', 'critBoost', 'boostRestore', 'accMod', 'berryEffect',
     'flinchSecondary', 'surviveLethal'];
   for (const row of items) {
     const c = committed[row.id];
@@ -633,7 +667,7 @@ function checkAbilitiesJson(abilities) {
   const errors = [];
   const abilityKeys = ['dmgMod', 'accMod', 'statusImmune', 'critImmune', 'weatherSpeed', 'weatherNegate',
     'contactProc', 'contactRecoil', 'blocksSound', 'blocksExplosion', 'blocksPhazeDrag', 'synchronize', 'shedSkin', 'trace',
-    'contactAttract'];
+    'contactAttract', 'wonderGuard'];
   const byId = new Map(abilities.map((r) => [r.id, r]));
   for (const row of abilities) {
     const c = committed[row.id];
@@ -738,8 +772,9 @@ function writeMd(items, abilities) {
   lines.push('| RESIDUAL_ITEM | **modeled (dedicated)** | Leftovers heal in `run_residuals` (predates the framework) |');
   lines.push('| PROC_ITEM | Quick Claw **modeled (dedicated)**; King\'s Rock / Focus Band unmodeled | draw-bearing — need draw-order probes when built |');
   lines.push('| ACCURACY_ITEM | **WIRED (data-driven)** | `ItemData.acc_mod` (Bright Powder x0.9 / Lax Incense x0.95 DIRECT) folded into `turn.rs::effective_accuracy` — the to-hit roll now = `move.accuracy x acc/eva stage table x accMod`, then `random(100) < effAcc` (DRAW-RELEVANT: a hit/miss flip desyncs the seed) |');
-  lines.push('| CRIT_ITEM | UNMAPPED (engine) | fold into `critRatio` (the dex already carries move critRatio) |');
-  lines.push('| DRAIN_ITEM / BOOST_RESTORE / CURE_ITEM / SPEED_MOD | UNMAPPED | each a small dedicated hook |');
+  lines.push('| CRIT_ITEM | **WIRED (data-driven)** | `ItemData.crit_boost` (`critBoost {boost, onlySpecies}`) folds +N crit stages into `effective_crit_ratio` (the Focus Energy precedent): Scope Lens +1 (unconditional), Lucky Punch +2 (Chansey), Stick +2 (Farfetch\'d) — DRAW-FREE (only the `CRIT_MULT` denominator index shifts) |');
+  lines.push('| BOOST_RESTORE | **WIRED (data-driven)** | `ItemData.boost_restore` (`boostRestore: true`) — White Herb: restore all NEGATIVE boost stages to 0 + consume, at the after-move / switch-in stat-drop sites (`turn.rs::white_herb_restore`); DRAW-FREE |');
+  lines.push('| DRAIN_ITEM / CURE_ITEM / SPEED_MOD | UNMAPPED | each a small dedicated hook |');
   lines.push('| ability DMG_MOD | **WIRED (data-driven)** | the pinch family (BP x1.5 @hp<=1/3) / Huge-Pure (Atk x2) / Guts (Atk x1.5 statused + burn-skip) / Marvel Scale (Def x1.5 statused) fold via `resolve_atk_stat_mods`/`resolve_def_stat_mods`/`resolve_bp_mods`; **Hustle** ships its Atk x1.5 (dmgMod) WITH its acc x0.8 (accMod) in the accuracy phase; Thick Fat keeps the dedicated `defender_thick_fat` |');
   lines.push('| ability ACCURACY | **WIRED (data-driven)** | `AbilityData.acc_mod` — Compound Eyes (x1.3 chain, attacker), Sand Veil (x0.8 chain in sand, defender), Hustle (x3277/4096 chain, attacker, physical-type moves) — folded into `turn.rs::effective_accuracy` (the runEvent integer-guard mirrored: a chain member is SKIPPED when the accuracy is a non-integer float) |');
   lines.push('| ability STATUS_IMMUNE | **WIRED (data-driven)** | `AbilityData.status_immune` — Limber (par) / Insomnia + Vital Spirit (slp) / Immunity (psn,tox) / Water Veil (brn) block via onSetStatus (phase=setStatus, INSIDE runEvent SetStatus, after the clause shuffle drew, DRAW-FREE block); Magma Armor (frz) blocks via onImmunity (phase=immunity, at runStatusImmunity BEFORE the SetStatus event, so NO clause shuffle) — read by `turn.rs::try_set_status` |');

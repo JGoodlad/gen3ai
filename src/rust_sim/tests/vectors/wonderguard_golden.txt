@@ -1,0 +1,707 @@
+# wonderguard_golden.txt — the gen3_wonder_guard_v1 SE-only damage-gate golden.
+# Per-decision-boundary STATE+HP+STATUS+SEED differential to GAME-END: a DAMAGING move
+# into a Wonder Guard Shedinja (Bug/Ghost, 1 HP) connects ONLY if STRICTLY SE, else it is
+# blocked (-immune [from] ability: Wonder Guard) drawing ONLY its accuracy roll. Status
+# moves + residuals BYPASS WG (so a residual KOs the 1-HP Shedinja). `wgBlocked`=a WG
+# block fired this decision (coverage marker).
+# SCEN  <id>
+# TEAM  <id>  <p1|p2>  <packed team string>
+# INIT  <id>  <seed>  <m,n,o,p>
+# DEC   <id> <seed> <req> <fP1> <fP2> <cP1> <cP2> <seedAfter> \
+#        p1(species hp max fnt status left) p2(...) first wgBlocked
+# END   <id>  <seed>  <ended:0|1>  <winner:p1|p2|tie|none>
+SCEN	wg_block_forms_then_ko
+TEAM	wg_block_forms_then_ko	p1	Charizard|||Blaze|bodyslam,watergun,magicalleaf,ember|Serious||N||||
+TEAM	wg_block_forms_then_ko	p2	Shedinja|||WonderGuard|splash|Serious||N||||
+INIT	wg_block_forms_then_ko	47740,31193,58888,65298	4404,23389,27858,33187
+DEC	wg_block_forms_then_ko	4404,23389,27858,33187	move	0	0	m0	m0	17094,7086,47048,25844	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	4404,23389,27858,33187	move	0	0	m1	m0	6445,28955,12298,9094	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	4404,23389,27858,33187	move	0	0	m2	m0	10705,35216,57811,22689	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	4404,23389,27858,33187	move	0	0	m3	m0	3747,16847,2646,39461	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	4404,23389,27858,33187	1	p1
+INIT	wg_block_forms_then_ko	21006,23634,9452,56926	3232,20569,33822,38143
+DEC	wg_block_forms_then_ko	3232,20569,33822,38143	move	0	0	m0	m0	3398,4275,53126,63584	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	3232,20569,33822,38143	move	0	0	m1	m0	35388,17493,25927,34322	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	3232,20569,33822,38143	move	0	0	m2	m0	6812,17794,32412,9693	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	3232,20569,33822,38143	move	0	0	m3	m0	55205,46507,32343,27553	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	3232,20569,33822,38143	1	p1
+INIT	wg_block_forms_then_ko	34993,21829,5961,26218	21196,39189,50218,33307
+DEC	wg_block_forms_then_ko	21196,39189,50218,33307	move	0	0	m0	m0	28210,12588,38309,22156	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	21196,39189,50218,33307	move	0	0	m1	m0	6042,8172,35954,34142	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	21196,39189,50218,33307	move	0	0	m2	m0	2948,65272,70,35545	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	21196,39189,50218,33307	move	0	0	m3	m0	19326,16103,5269,55517	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	21196,39189,50218,33307	1	p1
+INIT	wg_block_forms_then_ko	35329,34201,10700,25398	53176,45457,63734,9463
+DEC	wg_block_forms_then_ko	53176,45457,63734,9463	move	0	0	m0	m0	62194,55419,44609,27512	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	53176,45457,63734,9463	move	0	0	m1	m0	28729,12186,8148,11626	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	53176,45457,63734,9463	move	0	0	m2	m0	5500,7583,4368,17301	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	53176,45457,63734,9463	move	0	0	m3	m0	42328,15739,60747,56793	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	53176,45457,63734,9463	1	p1
+INIT	wg_block_forms_then_ko	63024,64737,12335,24770	12132,54733,44674,6547
+DEC	wg_block_forms_then_ko	12132,54733,44674,6547	move	0	0	m0	m0	7149,43812,21038,58148	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	12132,54733,44674,6547	move	0	0	m1	m0	28760,22985,3461,18998	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	12132,54733,44674,6547	move	0	0	m2	m0	46733,14288,31213,52241	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	12132,54733,44674,6547	move	0	0	m3	m0	27802,41442,10110,13973	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	12132,54733,44674,6547	1	p1
+INIT	wg_block_forms_then_ko	45023,54969,56274,43790	56784,457,12494,48111
+DEC	wg_block_forms_then_ko	56784,457,12494,48111	move	0	0	m0	m0	61114,18354,13146,10640	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	56784,457,12494,48111	move	0	0	m1	m0	29126,51724,29273,26562	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	56784,457,12494,48111	move	0	0	m2	m0	55663,32220,42049,24653	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	56784,457,12494,48111	move	0	0	m3	m0	41962,25656,36163,24337	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	56784,457,12494,48111	1	p1
+INIT	wg_block_forms_then_ko	29770,25274,43251,19994	1788,61829,35802,10251
+DEC	wg_block_forms_then_ko	1788,61829,35802,10251	move	0	0	m0	m0	15782,29007,17806,27324	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	1788,61829,35802,10251	move	0	0	m1	m0	58603,31715,4020,53774	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	1788,61829,35802,10251	move	0	0	m2	m0	12094,37906,40264,64585	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	1788,61829,35802,10251	move	0	0	m3	m0	24463,52003,60497,37709	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	1788,61829,35802,10251	1	p1
+INIT	wg_block_forms_then_ko	32161,4212,5897,5606	38632,8449,35750,14823
+DEC	wg_block_forms_then_ko	38632,8449,35750,14823	move	0	0	m0	m0	6939,15659,25635,37544	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	38632,8449,35750,14823	move	0	0	m1	m0	44860,52013,59914,38170	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	38632,8449,35750,14823	move	0	0	m2	m0	24775,35280,3028,23557	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	38632,8449,35750,14823	move	0	0	m3	m0	3890,39942,3156,53065	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	38632,8449,35750,14823	1	p1
+INIT	wg_block_forms_then_ko	59623,3286,28776,36466	14740,52285,48178,36227
+DEC	wg_block_forms_then_ko	14740,52285,48178,36227	move	0	0	m0	m0	9156,177,44112,19796	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	14740,52285,48178,36227	move	0	0	m1	m0	22182,10446,43614,31974	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	14740,52285,48178,36227	move	0	0	m2	m0	27411,24762,14990,64385	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	14740,52285,48178,36227	move	0	0	m3	m0	3033,15999,47256,52997	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	14740,52285,48178,36227	1	p1
+INIT	wg_block_forms_then_ko	6122,32273,56589,958	23296,61241,27006,32479
+DEC	wg_block_forms_then_ko	23296,61241,27006,32479	move	0	0	m0	m0	13727,54299,46180,1728	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	23296,61241,27006,32479	move	0	0	m1	m0	21778,49317,10351,5490	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	23296,61241,27006,32479	move	0	0	m2	m0	39097,47068,5266,5821	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	23296,61241,27006,32479	move	0	0	m3	m0	8643,31334,26491,3713	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	23296,61241,27006,32479	1	p1
+INIT	wg_block_forms_then_ko	17027,35788,60413,33226	10028,17909,40842,10747
+DEC	wg_block_forms_then_ko	10028,17909,40842,10747	move	0	0	m0	m0	4786,20477,42851,60140	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	10028,17909,40842,10747	move	0	0	m1	m0	3084,876,45002,43710	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	10028,17909,40842,10747	move	0	0	m2	m0	15791,22909,41901,43449	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	10028,17909,40842,10747	move	0	0	m3	m0	30278,20351,36387,51645	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	10028,17909,40842,10747	1	p1
+INIT	wg_block_forms_then_ko	50806,14736,37708,54422	35352,19569,10838,27351
+DEC	wg_block_forms_then_ko	35352,19569,10838,27351	move	0	0	m0	m0	46639,7890,17674,58840	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	35352,19569,10838,27351	move	0	0	m1	m0	55872,37479,65487,18634	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	35352,19569,10838,27351	move	0	0	m2	m0	27476,16896,4200,28789	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	35352,19569,10838,27351	move	0	0	m3	m0	5514,42652,41093,64697	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	35352,19569,10838,27351	1	p1
+INIT	wg_block_forms_then_ko	1849,15794,7503,34850	12228,16045,38370,56691
+DEC	wg_block_forms_then_ko	12228,16045,38370,56691	move	0	0	m0	m0	47362,45473,43663,41860	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	12228,16045,38370,56691	move	0	0	m1	m0	60390,9101,49536,48022	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	12228,16045,38370,56691	move	0	0	m2	m0	14473,61777,42349,59121	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	12228,16045,38370,56691	move	0	0	m3	m0	58947,15127,27117,25461	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	12228,16045,38370,56691	1	p1
+INIT	wg_block_forms_then_ko	3421,13564,45568,59502	33840,6313,11822,56783
+DEC	wg_block_forms_then_ko	33840,6313,11822,56783	move	0	0	m0	m0	50609,1288,28225,36848	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	33840,6313,11822,56783	move	0	0	m1	m0	35443,40360,52381,36642	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	33840,6313,11822,56783	move	0	0	m2	m0	55677,34868,19927,18733	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	33840,6313,11822,56783	move	0	0	m3	m0	32657,33036,24759,31217	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	33840,6313,11822,56783	1	p1
+INIT	wg_block_forms_then_ko	1574,53371,57448,378	45916,38501,65338,34795
+DEC	wg_block_forms_then_ko	45916,38501,65338,34795	move	0	0	m0	m0	9359,52535,47909,55068	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	45916,38501,65338,34795	move	0	0	m1	m0	5925,46729,27828,3950	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	45916,38501,65338,34795	move	0	0	m2	m0	13161,20281,4980,37673	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	45916,38501,65338,34795	move	0	0	m3	m0	14099,52217,64012,31789	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	45916,38501,65338,34795	1	p1
+INIT	wg_block_forms_then_ko	18211,35411,40599,40774	43336,13281,54534,47047
+DEC	wg_block_forms_then_ko	43336,13281,54534,47047	move	0	0	m0	m0	4934,39181,20727,25864	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	43336,13281,54534,47047	move	0	0	m1	m0	26317,51805,24866,18554	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	43336,13281,54534,47047	move	0	0	m2	m0	51669,50296,7884,32997	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	43336,13281,54534,47047	move	0	0	m3	m0	16695,45304,43487,26153	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	43336,13281,54534,47047	1	p1
+INIT	wg_block_forms_then_ko	20263,9068,44415,19922	4596,11549,15250,2403
+DEC	wg_block_forms_then_ko	4596,11549,15250,2403	move	0	0	m0	m0	22016,21311,12623,58804	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	4596,11549,15250,2403	move	0	0	m1	m0	38140,36712,3543,1606	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	4596,11549,15250,2403	move	0	0	m2	m0	36447,54938,15425,36449	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	4596,11549,15250,2403	move	0	0	m3	m0	18805,47896,59330,62437	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	4596,11549,15250,2403	1	p1
+INIT	wg_block_forms_then_ko	3337,6359,53577,22814	22880,32281,32478,55487
+DEC	wg_block_forms_then_ko	22880,32281,32478,55487	move	0	0	m0	m0	47923,35680,17749,50464	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	22880,32281,32478,55487	move	0	0	m1	m0	48021,60302,6607,54482	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	22880,32281,32478,55487	move	0	0	m2	m0	6840,23089,53703,63389	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	22880,32281,32478,55487	move	0	0	m3	m0	36595,61267,9535,41313	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	22880,32281,32478,55487	1	p1
+INIT	wg_block_forms_then_ko	15970,15194,64717,52522	43916,58069,43754,16859
+DEC	wg_block_forms_then_ko	43916,58069,43754,16859	move	0	0	m0	m0	19366,25259,25911,12108	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	43916,58069,43754,16859	move	0	0	m1	m0	9812,38278,348,30	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	43916,58069,43754,16859	move	0	0	m2	m0	28748,58367,28244,47257	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	43916,58069,43754,16859	move	0	0	m3	m0	27539,4169,56402,43677	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	43916,58069,43754,16859	1	p1
+INIT	wg_block_forms_then_ko	9625,33771,44932,30198	62584,55121,35766,8375
+DEC	wg_block_forms_then_ko	62584,55121,35766,8375	move	0	0	m0	m0	55118,2541,27724,4152	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	62584,55121,35766,8375	move	0	0	m1	m0	17548,11845,51438,37930	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	62584,55121,35766,8375	move	0	0	m2	m0	50626,425,47287,36181	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	62584,55121,35766,8375	move	0	0	m3	m0	9910,14103,54440,2969	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	62584,55121,35766,8375	1	p1
+INIT	wg_block_forms_then_ko	17283,8058,13249,57218	57380,38797,44354,4435
+DEC	wg_block_forms_then_ko	57380,38797,44354,4435	move	0	0	m0	m0	43006,54929,30667,5092	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	57380,38797,44354,4435	move	0	0	m1	m0	52457,9903,6539,23798	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	57380,38797,44354,4435	move	0	0	m2	m0	40261,46293,64411,61905	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	57380,38797,44354,4435	move	0	0	m3	m0	7736,52061,55691,32853	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	57380,38797,44354,4435	1	p1
+INIT	wg_block_forms_then_ko	38940,41022,15078,21966	55952,8073,23438,28591
+DEC	wg_block_forms_then_ko	55952,8073,23438,28591	move	0	0	m0	m0	29752,19334,14752,42576	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	55952,8073,23438,28591	move	0	0	m1	m0	41905,25920,4101,59010	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	55952,8073,23438,28591	move	0	0	m2	m0	19675,44939,41060,8717	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	55952,8073,23438,28591	move	0	0	m3	m0	52200,29057,46355,34001	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	55952,8073,23438,28591	1	p1
+INIT	wg_block_forms_then_ko	22845,49622,51859,58586	4028,11077,41626,22475
+DEC	wg_block_forms_then_ko	4028,11077,41626,22475	move	0	0	m0	m0	30804,38570,49460,62332	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	4028,11077,41626,22475	move	0	0	m1	m0	36690,40981,45783,31950	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	4028,11077,41626,22475	move	0	0	m2	m0	38887,43286,12951,6665	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	4028,11077,41626,22475	move	0	0	m3	m0	41655,19640,34991,21773	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	4028,11077,41626,22475	1	p1
+INIT	wg_block_forms_then_ko	53728,34764,55517,22694	27560,14017,20070,42407
+DEC	wg_block_forms_then_ko	27560,14017,20070,42407	move	0	0	m0	m0	30797,25209,52802,59240	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	27560,14017,20070,42407	move	0	0	m1	m0	25681,30834,49502,11226	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	27560,14017,20070,42407	move	0	0	m2	m0	37687,40406,55995,38341	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	27560,14017,20070,42407	move	0	0	m3	m0	1884,17875,51281,60681	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	27560,14017,20070,42407	1	p1
+INIT	wg_block_forms_then_ko	61152,43125,45079,15666	39508,32253,60146,62787
+DEC	wg_block_forms_then_ko	39508,32253,60146,62787	move	0	0	m0	m0	10412,8187,32257,11796	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	39508,32253,60146,62787	move	0	0	m1	m0	37880,42061,58525,49062	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	39508,32253,60146,62787	move	0	0	m2	m0	54262,3515,58237,4417	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	39508,32253,60146,62787	move	0	0	m3	m0	13379,6189,16199,2245	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	39508,32253,60146,62787	1	p1
+INIT	wg_block_forms_then_ko	47310,49308,30780,56958	1984,64761,50238,41631
+DEC	wg_block_forms_then_ko	1984,64761,50238,41631	move	0	0	m0	m0	13300,52172,26303,13184	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	1984,64761,50238,41631	move	0	0	m1	m0	26559,2673,62548,50226	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	1984,64761,50238,41631	move	0	0	m2	m0	36432,6535,14324,51325	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	1984,64761,50238,41631	move	0	0	m3	m0	49293,14305,25580,9281	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	1984,64761,50238,41631	1	p1
+INIT	wg_block_forms_then_ko	27011,25583,18874,18570	57324,28597,58954,51643
+DEC	wg_block_forms_then_ko	57324,28597,58954,51643	move	0	0	m0	m0	57812,26933,53023,9132	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	57324,28597,58954,51643	move	0	0	m1	m0	56393,54840,33062,34174	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	57324,28597,58954,51643	move	0	0	m2	m0	42699,40573,24635,46969	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	57324,28597,58954,51643	move	0	0	m3	m0	33778,33093,65314,31613	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	57324,28597,58954,51643	1	p1
+INIT	wg_block_forms_then_ko	18423,48616,2008,18262	3800,21041,7446,18071
+DEC	wg_block_forms_then_ko	3800,21041,7446,18071	move	0	0	m0	m0	60145,52552,16289,60056	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	3800,21041,7446,18071	move	0	0	m1	m0	36838,13223,49223,3978	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	3800,21041,7446,18071	move	0	0	m2	m0	4372,29446,34886,39477	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	3800,21041,7446,18071	move	0	0	m3	m0	32356,9227,56683,2681	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	3800,21041,7446,18071	1	p1
+INIT	wg_block_forms_then_ko	50137,58960,4021,26338	16516,57453,62626,46387
+DEC	wg_block_forms_then_ko	16516,57453,62626,46387	move	0	0	m0	m0	45336,23059,3256,13380	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	16516,57453,62626,46387	move	0	0	m1	m0	28382,37639,58596,11862	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	16516,57453,62626,46387	move	0	0	m2	m0	37637,47954,63314,60593	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	16516,57453,62626,46387	move	0	0	m3	m0	54037,59494,29059,36149	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	16516,57453,62626,46387	1	p1
+INIT	wg_block_forms_then_ko	56195,33925,65511,62254	57584,5737,47342,29071
+DEC	wg_block_forms_then_ko	57584,5737,47342,29071	move	0	0	m0	m0	39830,34272,45332,27824	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	57584,5737,47342,29071	move	0	0	m1	m0	40368,56176,33191,28130	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	57584,5737,47342,29071	move	0	0	m2	m0	16996,1759,6704,60141	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	57584,5737,47342,29071	move	0	0	m3	m0	36619,4648,56848,32689	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	57584,5737,47342,29071	1	p1
+INIT	wg_block_forms_then_ko	61025,11319,61659,63546	7196,45093,30202,38827
+DEC	wg_block_forms_then_ko	7196,45093,30202,38827	move	0	0	m0	m0	24717,21498,29528,49116	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	7196,45093,30202,38827	move	0	0	m1	m0	11606,14395,10036,6702	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	7196,45093,30202,38827	move	0	0	m2	m0	64729,13039,30969,37097	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	7196,45093,30202,38827	move	0	0	m3	m0	55519,32168,60403,7661	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	7196,45093,30202,38827	1	p1
+INIT	wg_block_forms_then_ko	62951,7081,50650,16902	56840,10657,63430,903
+DEC	wg_block_forms_then_ko	56840,10657,63430,903	move	0	0	m0	m0	8089,53418,56326,6600	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	56840,10657,63430,903	move	0	0	m1	m0	7428,24472,2750,16186	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	56840,10657,63430,903	move	0	0	m2	m0	58086,4734,16289,39589	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	56840,10657,63430,903	move	0	0	m3	m0	6849,521,26540,25577	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	56840,10657,63430,903	1	p1
+INIT	wg_block_forms_then_ko	50287,17680,56321,23698	53940,48861,51794,20771
+DEC	wg_block_forms_then_ko	53940,48861,51794,20771	move	0	0	m0	m0	50924,61325,16269,9844	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	53940,48861,51794,20771	move	0	0	m1	m0	63670,44411,24435,43270	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	53940,48861,51794,20771	move	0	0	m2	m0	27397,53399,46438,33825	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	53940,48861,51794,20771	move	0	0	m3	m0	44308,6297,50170,3493	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	53940,48861,51794,20771	1	p1
+INIT	wg_block_forms_then_ko	10191,22530,23372,37854	26144,27609,14750,56447
+DEC	wg_block_forms_then_ko	26144,27609,14750,56447	move	0	0	m0	m0	40762,58488,13373,20960	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	26144,27609,14750,56447	move	0	0	m1	m0	62710,37593,64786,58258	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	26144,27609,14750,56447	move	0	0	m2	m0	62156,35471,50529,35165	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	26144,27609,14750,56447	move	0	0	m3	m0	14504,56552,30521,38689	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	26144,27609,14750,56447	1	p1
+INIT	wg_block_forms_then_ko	57156,4125,18781,62442	50252,60565,20906,49563
+DEC	wg_block_forms_then_ko	50252,60565,20906,49563	move	0	0	m0	m0	122,56650,51582,51212	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	50252,60565,20906,49563	move	0	0	m1	m0	7494,50640,59925,15070	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	50252,60565,20906,49563	move	0	0	m2	m0	48102,63409,64281,42585	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	50252,60565,20906,49563	move	0	0	m3	m0	33834,29226,41690,15453	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	50252,60565,20906,49563	1	p1
+INIT	wg_block_forms_then_ko	6249,64079,40008,18614	55608,48401,56950,56439
+DEC	wg_block_forms_then_ko	55608,48401,56950,56439	move	0	0	m0	m0	64958,40988,48908,29944	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	55608,48401,56950,56439	move	0	0	m1	m0	48053,11447,58840,47850	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	55608,48401,56950,56439	move	0	0	m2	m0	28630,37544,32533,38677	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	55608,48401,56950,56439	move	0	0	m3	m0	32039,5354,47822,63833	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	55608,48401,56950,56439	1	p1
+INIT	wg_block_forms_then_ko	31750,12479,40544,7746	20708,6477,27650,51475
+DEC	wg_block_forms_then_ko	20708,6477,27650,51475	move	0	0	m0	m0	2928,19231,12829,1188	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	20708,6477,27650,51475	move	0	0	m1	m0	4529,44614,39265,12214	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	20708,6477,27650,51475	move	0	0	m2	m0	27344,24710,39936,55185	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	20708,6477,27650,51475	move	0	0	m3	m0	51289,34135,35427,35349	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	20708,6477,27650,51475	1	p1
+INIT	wg_block_forms_then_ko	62703,22639,261,49294	38736,64841,17998,58223
+DEC	wg_block_forms_then_ko	38736,64841,17998,58223	move	0	0	m0	m0	60595,39034,54428,58128	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	38736,64841,17998,58223	move	0	0	m1	m0	744,47909,8578,9538	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	38736,64841,17998,58223	move	0	0	m2	m0	9571,4069,47933,41933	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	38736,64841,17998,58223	move	0	0	m3	m0	16418,3912,56238,27281	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	38736,64841,17998,58223	1	p1
+INIT	wg_block_forms_then_ko	10081,41879,51675,15258	55420,9477,31066,18315
+DEC	wg_block_forms_then_ko	55420,9477,31066,18315	move	0	0	m0	m0	1209,39537,46580,15420	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	55420,9477,31066,18315	move	0	0	m1	m0	34517,50267,33972,59278	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	55420,9477,31066,18315	move	0	0	m2	m0	22225,55752,26706,63433	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	55420,9477,31066,18315	move	0	0	m3	m0	11262,33338,53278,54989	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	55420,9477,31066,18315	1	p1
+INIT	wg_block_forms_then_ko	61939,2863,30808,23398	104,3201,53542,53607
+DEC	wg_block_forms_then_ko	104,3201,53542,53607	move	0	0	m0	m0	30286,33232,45434,64552	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	104,3201,53542,53607	move	0	0	m1	m0	56331,27359,51052,33434	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	104,3201,53542,53607	move	0	0	m2	m0	45212,19413,18960,36741	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	1
+DEC	wg_block_forms_then_ko	104,3201,53542,53607	move	0	0	m3	m0	52860,63304,12128,51913	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_block_forms_then_ko	104,3201,53542,53607	1	p1
+SCEN	wg_control_hits
+TEAM	wg_control_hits	p1	Charizard|||Blaze|bodyslam,watergun,magicalleaf,ember|Serious||N||||
+TEAM	wg_control_hits	p2	Shedinja|||CompoundEyes|splash|Serious||N||||
+INIT	wg_control_hits	47740,31193,58888,65298	4404,23389,27858,33187
+DEC	wg_control_hits	4404,23389,27858,33187	move	0	0	m0	m0	17094,7086,47048,25844	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	4404,23389,27858,33187	move	0	0	m1	m0	10705,35216,57811,22689	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	4404,23389,27858,33187	1	p1
+INIT	wg_control_hits	21006,23634,9452,56926	3232,20569,33822,38143
+DEC	wg_control_hits	3232,20569,33822,38143	move	0	0	m0	m0	3398,4275,53126,63584	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	3232,20569,33822,38143	move	0	0	m1	m0	6812,17794,32412,9693	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	3232,20569,33822,38143	1	p1
+INIT	wg_control_hits	34993,21829,5961,26218	21196,39189,50218,33307
+DEC	wg_control_hits	21196,39189,50218,33307	move	0	0	m0	m0	28210,12588,38309,22156	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	21196,39189,50218,33307	move	0	0	m1	m0	2948,65272,70,35545	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	21196,39189,50218,33307	1	p1
+INIT	wg_control_hits	35329,34201,10700,25398	53176,45457,63734,9463
+DEC	wg_control_hits	53176,45457,63734,9463	move	0	0	m0	m0	62194,55419,44609,27512	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	53176,45457,63734,9463	move	0	0	m1	m0	5500,7583,4368,17301	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	53176,45457,63734,9463	1	p1
+INIT	wg_control_hits	63024,64737,12335,24770	12132,54733,44674,6547
+DEC	wg_control_hits	12132,54733,44674,6547	move	0	0	m0	m0	7149,43812,21038,58148	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	12132,54733,44674,6547	move	0	0	m1	m0	46733,14288,31213,52241	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	12132,54733,44674,6547	1	p1
+INIT	wg_control_hits	45023,54969,56274,43790	56784,457,12494,48111
+DEC	wg_control_hits	56784,457,12494,48111	move	0	0	m0	m0	61114,18354,13146,10640	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	56784,457,12494,48111	move	0	0	m1	m0	55663,32220,42049,24653	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	56784,457,12494,48111	1	p1
+INIT	wg_control_hits	29770,25274,43251,19994	1788,61829,35802,10251
+DEC	wg_control_hits	1788,61829,35802,10251	move	0	0	m0	m0	15782,29007,17806,27324	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	1788,61829,35802,10251	move	0	0	m1	m0	12094,37906,40264,64585	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	1788,61829,35802,10251	1	p1
+INIT	wg_control_hits	32161,4212,5897,5606	38632,8449,35750,14823
+DEC	wg_control_hits	38632,8449,35750,14823	move	0	0	m0	m0	6939,15659,25635,37544	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	38632,8449,35750,14823	move	0	0	m1	m0	24775,35280,3028,23557	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	38632,8449,35750,14823	1	p1
+INIT	wg_control_hits	59623,3286,28776,36466	14740,52285,48178,36227
+DEC	wg_control_hits	14740,52285,48178,36227	move	0	0	m0	m0	9156,177,44112,19796	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	14740,52285,48178,36227	move	0	0	m1	m0	27411,24762,14990,64385	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	14740,52285,48178,36227	1	p1
+INIT	wg_control_hits	6122,32273,56589,958	23296,61241,27006,32479
+DEC	wg_control_hits	23296,61241,27006,32479	move	0	0	m0	m0	13727,54299,46180,1728	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	23296,61241,27006,32479	move	0	0	m1	m0	39097,47068,5266,5821	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	23296,61241,27006,32479	1	p1
+INIT	wg_control_hits	17027,35788,60413,33226	10028,17909,40842,10747
+DEC	wg_control_hits	10028,17909,40842,10747	move	0	0	m0	m0	4786,20477,42851,60140	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	10028,17909,40842,10747	move	0	0	m1	m0	15791,22909,41901,43449	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	10028,17909,40842,10747	1	p1
+INIT	wg_control_hits	50806,14736,37708,54422	35352,19569,10838,27351
+DEC	wg_control_hits	35352,19569,10838,27351	move	0	0	m0	m0	46639,7890,17674,58840	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	35352,19569,10838,27351	move	0	0	m1	m0	27476,16896,4200,28789	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	35352,19569,10838,27351	1	p1
+INIT	wg_control_hits	1849,15794,7503,34850	12228,16045,38370,56691
+DEC	wg_control_hits	12228,16045,38370,56691	move	0	0	m0	m0	47362,45473,43663,41860	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	12228,16045,38370,56691	move	0	0	m1	m0	14473,61777,42349,59121	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	12228,16045,38370,56691	1	p1
+INIT	wg_control_hits	3421,13564,45568,59502	33840,6313,11822,56783
+DEC	wg_control_hits	33840,6313,11822,56783	move	0	0	m0	m0	50609,1288,28225,36848	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	33840,6313,11822,56783	move	0	0	m1	m0	55677,34868,19927,18733	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	33840,6313,11822,56783	1	p1
+INIT	wg_control_hits	1574,53371,57448,378	45916,38501,65338,34795
+DEC	wg_control_hits	45916,38501,65338,34795	move	0	0	m0	m0	9359,52535,47909,55068	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	45916,38501,65338,34795	move	0	0	m1	m0	13161,20281,4980,37673	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	45916,38501,65338,34795	1	p1
+INIT	wg_control_hits	18211,35411,40599,40774	43336,13281,54534,47047
+DEC	wg_control_hits	43336,13281,54534,47047	move	0	0	m0	m0	4934,39181,20727,25864	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	43336,13281,54534,47047	move	0	0	m1	m0	51669,50296,7884,32997	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	43336,13281,54534,47047	1	p1
+INIT	wg_control_hits	20263,9068,44415,19922	4596,11549,15250,2403
+DEC	wg_control_hits	4596,11549,15250,2403	move	0	0	m0	m0	22016,21311,12623,58804	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	4596,11549,15250,2403	move	0	0	m1	m0	36447,54938,15425,36449	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	4596,11549,15250,2403	1	p1
+INIT	wg_control_hits	3337,6359,53577,22814	22880,32281,32478,55487
+DEC	wg_control_hits	22880,32281,32478,55487	move	0	0	m0	m0	47923,35680,17749,50464	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	22880,32281,32478,55487	move	0	0	m1	m0	6840,23089,53703,63389	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	22880,32281,32478,55487	1	p1
+INIT	wg_control_hits	15970,15194,64717,52522	43916,58069,43754,16859
+DEC	wg_control_hits	43916,58069,43754,16859	move	0	0	m0	m0	19366,25259,25911,12108	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	43916,58069,43754,16859	move	0	0	m1	m0	28748,58367,28244,47257	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	43916,58069,43754,16859	1	p1
+INIT	wg_control_hits	9625,33771,44932,30198	62584,55121,35766,8375
+DEC	wg_control_hits	62584,55121,35766,8375	move	0	0	m0	m0	55118,2541,27724,4152	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	62584,55121,35766,8375	move	0	0	m1	m0	50626,425,47287,36181	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	62584,55121,35766,8375	1	p1
+INIT	wg_control_hits	17283,8058,13249,57218	57380,38797,44354,4435
+DEC	wg_control_hits	57380,38797,44354,4435	move	0	0	m0	m0	43006,54929,30667,5092	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	57380,38797,44354,4435	move	0	0	m1	m0	40261,46293,64411,61905	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	57380,38797,44354,4435	1	p1
+INIT	wg_control_hits	38940,41022,15078,21966	55952,8073,23438,28591
+DEC	wg_control_hits	55952,8073,23438,28591	move	0	0	m0	m0	29752,19334,14752,42576	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	55952,8073,23438,28591	move	0	0	m1	m0	19675,44939,41060,8717	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	55952,8073,23438,28591	1	p1
+INIT	wg_control_hits	22845,49622,51859,58586	4028,11077,41626,22475
+DEC	wg_control_hits	4028,11077,41626,22475	move	0	0	m0	m0	30804,38570,49460,62332	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	4028,11077,41626,22475	move	0	0	m1	m0	38887,43286,12951,6665	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	4028,11077,41626,22475	1	p1
+INIT	wg_control_hits	53728,34764,55517,22694	27560,14017,20070,42407
+DEC	wg_control_hits	27560,14017,20070,42407	move	0	0	m0	m0	30797,25209,52802,59240	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	27560,14017,20070,42407	move	0	0	m1	m0	37687,40406,55995,38341	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	27560,14017,20070,42407	1	p1
+INIT	wg_control_hits	61152,43125,45079,15666	39508,32253,60146,62787
+DEC	wg_control_hits	39508,32253,60146,62787	move	0	0	m0	m0	10412,8187,32257,11796	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	39508,32253,60146,62787	move	0	0	m1	m0	54262,3515,58237,4417	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	39508,32253,60146,62787	1	p1
+INIT	wg_control_hits	47310,49308,30780,56958	1984,64761,50238,41631
+DEC	wg_control_hits	1984,64761,50238,41631	move	0	0	m0	m0	13300,52172,26303,13184	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	1984,64761,50238,41631	move	0	0	m1	m0	36432,6535,14324,51325	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	1984,64761,50238,41631	1	p1
+INIT	wg_control_hits	27011,25583,18874,18570	57324,28597,58954,51643
+DEC	wg_control_hits	57324,28597,58954,51643	move	0	0	m0	m0	57812,26933,53023,9132	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	57324,28597,58954,51643	move	0	0	m1	m0	42699,40573,24635,46969	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	57324,28597,58954,51643	1	p1
+INIT	wg_control_hits	18423,48616,2008,18262	3800,21041,7446,18071
+DEC	wg_control_hits	3800,21041,7446,18071	move	0	0	m0	m0	60145,52552,16289,60056	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	3800,21041,7446,18071	move	0	0	m1	m0	4372,29446,34886,39477	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	3800,21041,7446,18071	1	p1
+INIT	wg_control_hits	50137,58960,4021,26338	16516,57453,62626,46387
+DEC	wg_control_hits	16516,57453,62626,46387	move	0	0	m0	m0	45336,23059,3256,13380	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	16516,57453,62626,46387	move	0	0	m1	m0	37637,47954,63314,60593	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	16516,57453,62626,46387	1	p1
+INIT	wg_control_hits	56195,33925,65511,62254	57584,5737,47342,29071
+DEC	wg_control_hits	57584,5737,47342,29071	move	0	0	m0	m0	39830,34272,45332,27824	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	57584,5737,47342,29071	move	0	0	m1	m0	16996,1759,6704,60141	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	57584,5737,47342,29071	1	p1
+INIT	wg_control_hits	61025,11319,61659,63546	7196,45093,30202,38827
+DEC	wg_control_hits	7196,45093,30202,38827	move	0	0	m0	m0	24717,21498,29528,49116	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	7196,45093,30202,38827	move	0	0	m1	m0	64729,13039,30969,37097	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	7196,45093,30202,38827	1	p1
+INIT	wg_control_hits	62951,7081,50650,16902	56840,10657,63430,903
+DEC	wg_control_hits	56840,10657,63430,903	move	0	0	m0	m0	8089,53418,56326,6600	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	56840,10657,63430,903	move	0	0	m1	m0	58086,4734,16289,39589	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	56840,10657,63430,903	1	p1
+INIT	wg_control_hits	50287,17680,56321,23698	53940,48861,51794,20771
+DEC	wg_control_hits	53940,48861,51794,20771	move	0	0	m0	m0	50924,61325,16269,9844	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	53940,48861,51794,20771	move	0	0	m1	m0	27397,53399,46438,33825	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	53940,48861,51794,20771	1	p1
+INIT	wg_control_hits	10191,22530,23372,37854	26144,27609,14750,56447
+DEC	wg_control_hits	26144,27609,14750,56447	move	0	0	m0	m0	40762,58488,13373,20960	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	26144,27609,14750,56447	move	0	0	m1	m0	62156,35471,50529,35165	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	26144,27609,14750,56447	1	p1
+INIT	wg_control_hits	57156,4125,18781,62442	50252,60565,20906,49563
+DEC	wg_control_hits	50252,60565,20906,49563	move	0	0	m0	m0	122,56650,51582,51212	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	50252,60565,20906,49563	move	0	0	m1	m0	48102,63409,64281,42585	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	50252,60565,20906,49563	1	p1
+INIT	wg_control_hits	6249,64079,40008,18614	55608,48401,56950,56439
+DEC	wg_control_hits	55608,48401,56950,56439	move	0	0	m0	m0	64958,40988,48908,29944	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	55608,48401,56950,56439	move	0	0	m1	m0	28630,37544,32533,38677	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	55608,48401,56950,56439	1	p1
+INIT	wg_control_hits	31750,12479,40544,7746	20708,6477,27650,51475
+DEC	wg_control_hits	20708,6477,27650,51475	move	0	0	m0	m0	2928,19231,12829,1188	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	20708,6477,27650,51475	move	0	0	m1	m0	27344,24710,39936,55185	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	20708,6477,27650,51475	1	p1
+INIT	wg_control_hits	62703,22639,261,49294	38736,64841,17998,58223
+DEC	wg_control_hits	38736,64841,17998,58223	move	0	0	m0	m0	60595,39034,54428,58128	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	38736,64841,17998,58223	move	0	0	m1	m0	9571,4069,47933,41933	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	38736,64841,17998,58223	1	p1
+INIT	wg_control_hits	10081,41879,51675,15258	55420,9477,31066,18315
+DEC	wg_control_hits	55420,9477,31066,18315	move	0	0	m0	m0	1209,39537,46580,15420	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	55420,9477,31066,18315	move	0	0	m1	m0	22225,55752,26706,63433	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	55420,9477,31066,18315	1	p1
+INIT	wg_control_hits	61939,2863,30808,23398	104,3201,53542,53607
+DEC	wg_control_hits	104,3201,53542,53607	move	0	0	m0	m0	30286,33232,45434,64552	Charizard	297	297	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_control_hits	104,3201,53542,53607	move	0	0	m1	m0	45212,19413,18960,36741	Charizard	297	297	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_control_hits	104,3201,53542,53607	1	p1
+SCEN	wg_leech_bypass_ko
+TEAM	wg_leech_bypass_ko	p1	Venusaur|||Overgrow|leechseed,ember|Modest|252,,,252,,|N||||
+TEAM	wg_leech_bypass_ko	p2	Shedinja|||WonderGuard|splash|Serious||N||||
+INIT	wg_leech_bypass_ko	47740,31193,58888,65298	4404,23389,27858,33187
+DEC	wg_leech_bypass_ko	4404,23389,27858,33187	move	0	0	m0	m0	20110,11527,9137,58077	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	4404,23389,27858,33187	1	p1
+INIT	wg_leech_bypass_ko	21006,23634,9452,56926	3232,20569,33822,38143
+DEC	wg_leech_bypass_ko	3232,20569,33822,38143	move	0	0	m0	m0	358,6027,4396,42969	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	3232,20569,33822,38143	1	p1
+INIT	wg_leech_bypass_ko	34993,21829,5961,26218	21196,39189,50218,33307
+DEC	wg_leech_bypass_ko	21196,39189,50218,33307	move	0	0	m0	m0	4176,11712,64720,49301	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	21196,39189,50218,33307	1	p1
+INIT	wg_leech_bypass_ko	35329,34201,10700,25398	53176,45457,63734,9463
+DEC	wg_leech_bypass_ko	53176,45457,63734,9463	move	0	0	m0	m0	47100,33163,23899,43281	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	53176,45457,63734,9463	1	p1
+INIT	wg_leech_bypass_ko	63024,64737,12335,24770	12132,54733,44674,6547
+DEC	wg_leech_bypass_ko	12132,54733,44674,6547	move	0	0	m0	m0	48143,6216,56045,40269	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	12132,54733,44674,6547	1	p1
+INIT	wg_leech_bypass_ko	45023,54969,56274,43790	56784,457,12494,48111
+DEC	wg_leech_bypass_ko	56784,457,12494,48111	move	0	0	m0	m0	29913,10090,3376,39241	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	56784,457,12494,48111	1	p1
+INIT	wg_leech_bypass_ko	29770,25274,43251,19994	1788,61829,35802,10251
+DEC	wg_leech_bypass_ko	1788,61829,35802,10251	move	0	0	m0	m0	12518,2538,63398,22789	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	1788,61829,35802,10251	1	p1
+INIT	wg_leech_bypass_ko	32161,4212,5897,5606	38632,8449,35750,14823
+DEC	wg_leech_bypass_ko	38632,8449,35750,14823	move	0	0	m0	m0	18887,39515,38078,22657	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	38632,8449,35750,14823	1	p1
+INIT	wg_leech_bypass_ko	59623,3286,28776,36466	14740,52285,48178,36227
+DEC	wg_leech_bypass_ko	14740,52285,48178,36227	move	0	0	m0	m0	55832,6832,19135,54205	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	14740,52285,48178,36227	1	p1
+INIT	wg_leech_bypass_ko	6122,32273,56589,958	23296,61241,27006,32479
+DEC	wg_leech_bypass_ko	23296,61241,27006,32479	move	0	0	m0	m0	32564,31037,28539,50873	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	23296,61241,27006,32479	1	p1
+INIT	wg_leech_bypass_ko	17027,35788,60413,33226	10028,17909,40842,10747
+DEC	wg_leech_bypass_ko	10028,17909,40842,10747	move	0	0	m0	m0	43469,7045,35365,60789	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	10028,17909,40842,10747	1	p1
+INIT	wg_leech_bypass_ko	50806,14736,37708,54422	35352,19569,10838,27351
+DEC	wg_leech_bypass_ko	35352,19569,10838,27351	move	0	0	m0	m0	35032,54997,21332,50161	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	35352,19569,10838,27351	1	p1
+INIT	wg_leech_bypass_ko	1849,15794,7503,34850	12228,16045,38370,56691
+DEC	wg_leech_bypass_ko	12228,16045,38370,56691	move	0	0	m0	m0	13521,12026,12623,34349	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	12228,16045,38370,56691	1	p1
+INIT	wg_leech_bypass_ko	3421,13564,45568,59502	33840,6313,11822,56783
+DEC	wg_leech_bypass_ko	33840,6313,11822,56783	move	0	0	m0	m0	51585,53359,31207,12329	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	33840,6313,11822,56783	1	p1
+INIT	wg_leech_bypass_ko	1574,53371,57448,378	45916,38501,65338,34795
+DEC	wg_leech_bypass_ko	45916,38501,65338,34795	move	0	0	m0	m0	9359,52535,47909,55068	Venusaur	364	364	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_leech_bypass_ko	45916,38501,65338,34795	move	0	0	m1	m0	22195,54624,25092,40688	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	45916,38501,65338,34795	1	p1
+INIT	wg_leech_bypass_ko	18211,35411,40599,40774	43336,13281,54534,47047
+DEC	wg_leech_bypass_ko	43336,13281,54534,47047	move	0	0	m0	m0	14490,30929,39198,60257	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	43336,13281,54534,47047	1	p1
+INIT	wg_leech_bypass_ko	20263,9068,44415,19922	4596,11549,15250,2403
+DEC	wg_leech_bypass_ko	4596,11549,15250,2403	move	0	0	m0	m0	39483,20451,19651,46237	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	4596,11549,15250,2403	1	p1
+INIT	wg_leech_bypass_ko	3337,6359,53577,22814	22880,32281,32478,55487
+DEC	wg_leech_bypass_ko	22880,32281,32478,55487	move	0	0	m0	m0	43703,27029,60057,54681	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	22880,32281,32478,55487	1	p1
+INIT	wg_leech_bypass_ko	15970,15194,64717,52522	43916,58069,43754,16859
+DEC	wg_leech_bypass_ko	43916,58069,43754,16859	move	0	0	m0	m0	29872,38896,13386,2645	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	43916,58069,43754,16859	1	p1
+INIT	wg_leech_bypass_ko	9625,33771,44932,30198	62584,55121,35766,8375
+DEC	wg_leech_bypass_ko	62584,55121,35766,8375	move	0	0	m0	m0	7302,63323,9283,52945	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	62584,55121,35766,8375	1	p1
+INIT	wg_leech_bypass_ko	17283,8058,13249,57218	57380,38797,44354,4435
+DEC	wg_leech_bypass_ko	57380,38797,44354,4435	move	0	0	m0	m0	43006,54929,30667,5092	Venusaur	364	364	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_leech_bypass_ko	57380,38797,44354,4435	move	0	0	m1	m0	36849,27087,33228,57144	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	57380,38797,44354,4435	1	p1
+INIT	wg_leech_bypass_ko	38940,41022,15078,21966	55952,8073,23438,28591
+DEC	wg_leech_bypass_ko	55952,8073,23438,28591	move	0	0	m0	m0	39392,727,49555,46857	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	55952,8073,23438,28591	1	p1
+INIT	wg_leech_bypass_ko	22845,49622,51859,58586	4028,11077,41626,22475
+DEC	wg_leech_bypass_ko	4028,11077,41626,22475	move	0	0	m0	m0	17147,704,19438,37573	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	4028,11077,41626,22475	1	p1
+INIT	wg_leech_bypass_ko	53728,34764,55517,22694	27560,14017,20070,42407
+DEC	wg_leech_bypass_ko	27560,14017,20070,42407	move	0	0	m0	m0	40415,40657,30837,28225	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	27560,14017,20070,42407	1	p1
+INIT	wg_leech_bypass_ko	61152,43125,45079,15666	39508,32253,60146,62787
+DEC	wg_leech_bypass_ko	39508,32253,60146,62787	move	0	0	m0	m0	1248,23256,44399,34173	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	39508,32253,60146,62787	1	p1
+INIT	wg_leech_bypass_ko	47310,49308,30780,56958	1984,64761,50238,41631
+DEC	wg_leech_bypass_ko	1984,64761,50238,41631	move	0	0	m0	m0	37832,58193,16557,54393	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	1984,64761,50238,41631	1	p1
+INIT	wg_leech_bypass_ko	27011,25583,18874,18570	57324,28597,58954,51643
+DEC	wg_leech_bypass_ko	57324,28597,58954,51643	move	0	0	m0	m0	57812,26933,53023,9132	Venusaur	364	364	0	-	1	Shedinja	1	1	0	-	1	p1	0
+DEC	wg_leech_bypass_ko	57324,28597,58954,51643	move	0	0	m1	m0	27379,35004,64820,49792	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	57324,28597,58954,51643	1	p1
+INIT	wg_leech_bypass_ko	18423,48616,2008,18262	3800,21041,7446,18071
+DEC	wg_leech_bypass_ko	3800,21041,7446,18071	move	0	0	m0	m0	22694,25774,4609,51633	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	3800,21041,7446,18071	1	p1
+INIT	wg_leech_bypass_ko	50137,58960,4021,26338	16516,57453,62626,46387
+DEC	wg_leech_bypass_ko	16516,57453,62626,46387	move	0	0	m0	m0	7463,63621,28405,10221	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	16516,57453,62626,46387	1	p1
+INIT	wg_leech_bypass_ko	56195,33925,65511,62254	57584,5737,47342,29071
+DEC	wg_leech_bypass_ko	57584,5737,47342,29071	move	0	0	m0	m0	22987,50150,9743,11753	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	57584,5737,47342,29071	1	p1
+INIT	wg_leech_bypass_ko	61025,11319,61659,63546	7196,45093,30202,38827
+DEC	wg_leech_bypass_ko	7196,45093,30202,38827	move	0	0	m0	m0	47269,12694,92,38821	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	7196,45093,30202,38827	1	p1
+INIT	wg_leech_bypass_ko	62951,7081,50650,16902	56840,10657,63430,903
+DEC	wg_leech_bypass_ko	56840,10657,63430,903	move	0	0	m0	m0	33821,36877,12993,57633	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	56840,10657,63430,903	1	p1
+INIT	wg_leech_bypass_ko	50287,17680,56321,23698	53940,48861,51794,20771
+DEC	wg_leech_bypass_ko	53940,48861,51794,20771	move	0	0	m0	m0	29215,43028,42808,18013	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	53940,48861,51794,20771	1	p1
+INIT	wg_leech_bypass_ko	10191,22530,23372,37854	26144,27609,14750,56447
+DEC	wg_leech_bypass_ko	26144,27609,14750,56447	move	0	0	m0	m0	9547,43481,45968,50009	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	26144,27609,14750,56447	1	p1
+INIT	wg_leech_bypass_ko	57156,4125,18781,62442	50252,60565,20906,49563
+DEC	wg_leech_bypass_ko	50252,60565,20906,49563	move	0	0	m0	m0	7723,62875,40230,5141	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	50252,60565,20906,49563	1	p1
+INIT	wg_leech_bypass_ko	6249,64079,40008,18614	55608,48401,56950,56439
+DEC	wg_leech_bypass_ko	55608,48401,56950,56439	move	0	0	m0	m0	52079,41600,7310,46225	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	55608,48401,56950,56439	1	p1
+INIT	wg_leech_bypass_ko	31750,12479,40544,7746	20708,6477,27650,51475
+DEC	wg_leech_bypass_ko	20708,6477,27650,51475	move	0	0	m0	m0	30623,28361,38929,57549	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	20708,6477,27650,51475	1	p1
+INIT	wg_leech_bypass_ko	62703,22639,261,49294	38736,64841,17998,58223
+DEC	wg_leech_bypass_ko	38736,64841,17998,58223	move	0	0	m0	m0	17882,53697,42841,38089	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	38736,64841,17998,58223	1	p1
+INIT	wg_leech_bypass_ko	10081,41879,51675,15258	55420,9477,31066,18315
+DEC	wg_leech_bypass_ko	55420,9477,31066,18315	move	0	0	m0	m0	26667,59854,36800,35973	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	55420,9477,31066,18315	1	p1
+INIT	wg_leech_bypass_ko	61939,2863,30808,23398	104,3201,53542,53607
+DEC	wg_leech_bypass_ko	104,3201,53542,53607	move	0	0	m0	m0	51325,54105,19382,17409	Venusaur	364	364	0	-	1	Shedinja	0	1	1	-	0	p1	0
+END	wg_leech_bypass_ko	104,3201,53542,53607	1	p1
+SCEN	wg_status_bypass_ko
+TEAM	wg_status_bypass_ko	p1	Gengar|||Levitate|thunderwave,shadowball|Timid|,,,252,,252|N||||
+TEAM	wg_status_bypass_ko	p2	Shedinja|||WonderGuard|splash|Serious||N||||
+INIT	wg_status_bypass_ko	47740,31193,58888,65298	4404,23389,27858,33187
+DEC	wg_status_bypass_ko	4404,23389,27858,33187	move	0	0	m0	m0	32009,19870,29417,1799	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	4404,23389,27858,33187	move	0	0	m1	m0	22071,35605,49784,40491	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	4404,23389,27858,33187	1	p1
+INIT	wg_status_bypass_ko	21006,23634,9452,56926	3232,20569,33822,38143
+DEC	wg_status_bypass_ko	3232,20569,33822,38143	move	0	0	m0	m0	30248,35929,26097,64675	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	3232,20569,33822,38143	move	0	0	m1	m0	20484,18146,34686,53767	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	3232,20569,33822,38143	1	p1
+INIT	wg_status_bypass_ko	34993,21829,5961,26218	21196,39189,50218,33307
+DEC	wg_status_bypass_ko	21196,39189,50218,33307	move	0	0	m0	m0	59857,17392,62342,45055	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	21196,39189,50218,33307	move	0	0	m1	m0	63515,64923,3718,26531	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	21196,39189,50218,33307	1	p1
+INIT	wg_status_bypass_ko	35329,34201,10700,25398	53176,45457,63734,9463
+DEC	wg_status_bypass_ko	53176,45457,63734,9463	move	0	0	m0	m0	46840,33925,21185,15643	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	53176,45457,63734,9463	move	0	0	m1	m0	45803,3202,34463,47871	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	53176,45457,63734,9463	1	p1
+INIT	wg_status_bypass_ko	63024,64737,12335,24770	12132,54733,44674,6547
+DEC	wg_status_bypass_ko	12132,54733,44674,6547	move	0	0	m0	m0	16441,9630,59952,32759	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	12132,54733,44674,6547	move	0	0	m1	m0	4246,28233,52867,59419	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	12132,54733,44674,6547	1	p1
+INIT	wg_status_bypass_ko	45023,54969,56274,43790	56784,457,12494,48111
+DEC	wg_status_bypass_ko	56784,457,12494,48111	move	0	0	m0	m0	54281,44441,26087,5267	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	56784,457,12494,48111	move	0	0	m1	m0	7323,41405,57267,51959	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	56784,457,12494,48111	1	p1
+INIT	wg_status_bypass_ko	29770,25274,43251,19994	1788,61829,35802,10251
+DEC	wg_status_bypass_ko	1788,61829,35802,10251	move	0	0	m0	m0	45461,19607,58265,22255	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	1788,61829,35802,10251	move	0	0	m1	m0	56468,19810,42165,65427	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	1788,61829,35802,10251	1	p1
+INIT	wg_status_bypass_ko	32161,4212,5897,5606	38632,8449,35750,14823
+DEC	wg_status_bypass_ko	38632,8449,35750,14823	move	0	0	m0	m0	33876,11733,28227,25355	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	38632,8449,35750,14823	move	0	0	m1	m0	45496,38399,30300,57839	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	38632,8449,35750,14823	1	p1
+INIT	wg_status_bypass_ko	59623,3286,28776,36466	14740,52285,48178,36227
+DEC	wg_status_bypass_ko	14740,52285,48178,36227	move	0	0	m0	m0	43212,4165,33411,5351	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	14740,52285,48178,36227	move	0	0	m1	m0	25650,23795,40576,36363	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	14740,52285,48178,36227	1	p1
+INIT	wg_status_bypass_ko	6122,32273,56589,958	23296,61241,27006,32479
+DEC	wg_status_bypass_ko	23296,61241,27006,32479	move	0	0	m0	m0	47758,36300,57978,2179	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	23296,61241,27006,32479	move	0	0	m1	m0	34714,56824,33216,57319	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	23296,61241,27006,32479	1	p1
+INIT	wg_status_bypass_ko	17027,35788,60413,33226	10028,17909,40842,10747
+DEC	wg_status_bypass_ko	10028,17909,40842,10747	move	0	0	m0	m0	51151,56218,32702,39391	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	10028,17909,40842,10747	move	0	0	m1	m0	52362,7159,13414,29571	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	10028,17909,40842,10747	1	p1
+INIT	wg_status_bypass_ko	50806,14736,37708,54422	35352,19569,10838,27351
+DEC	wg_status_bypass_ko	35352,19569,10838,27351	move	0	0	m0	m0	18255,8803,31579,58619	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	35352,19569,10838,27351	move	0	0	m1	m0	18380,36228,31330,42207	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	35352,19569,10838,27351	1	p1
+INIT	wg_status_bypass_ko	1849,15794,7503,34850	12228,16045,38370,56691
+DEC	wg_status_bypass_ko	12228,16045,38370,56691	move	0	0	m0	m0	61524,2828,20975,50647	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	12228,16045,38370,56691	move	0	0	m1	m0	7226,43232,40333,36859	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	12228,16045,38370,56691	1	p1
+INIT	wg_status_bypass_ko	3421,13564,45568,59502	33840,6313,11822,56783
+DEC	wg_status_bypass_ko	33840,6313,11822,56783	move	0	0	m0	m0	12236,17800,50587,55411	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	33840,6313,11822,56783	move	0	0	m1	m0	22781,5348,647,4311	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	33840,6313,11822,56783	1	p1
+INIT	wg_status_bypass_ko	1574,53371,57448,378	45916,38501,65338,34795
+DEC	wg_status_bypass_ko	45916,38501,65338,34795	move	0	0	m0	m0	98,61688,51190,30927	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	45916,38501,65338,34795	move	0	0	m1	m0	61887,26968,48535,50035	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	45916,38501,65338,34795	1	p1
+INIT	wg_status_bypass_ko	18211,35411,40599,40774	43336,13281,54534,47047
+DEC	wg_status_bypass_ko	43336,13281,54534,47047	move	0	0	m0	m0	6270,19488,31242,49899	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	43336,13281,54534,47047	move	0	0	m1	m0	36472,34802,37553,975	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	43336,13281,54534,47047	1	p1
+INIT	wg_status_bypass_ko	20263,9068,44415,19922	4596,11549,15250,2403
+DEC	wg_status_bypass_ko	4596,11549,15250,2403	move	0	0	m0	m0	14932,4973,28293,37575	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	4596,11549,15250,2403	move	0	0	m1	m0	39103,41950,14025,60907	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	4596,11549,15250,2403	1	p1
+INIT	wg_status_bypass_ko	3337,6359,53577,22814	22880,32281,32478,55487
+DEC	wg_status_bypass_ko	22880,32281,32478,55487	move	0	0	m0	m0	11693,48184,9563,33891	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	22880,32281,32478,55487	move	0	0	m1	m0	51399,11566,52517,24007	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	22880,32281,32478,55487	1	p1
+INIT	wg_status_bypass_ko	15970,15194,64717,52522	43916,58069,43754,16859
+DEC	wg_status_bypass_ko	43916,58069,43754,16859	move	0	0	m0	m0	43113,41019,53839,62399	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	43916,58069,43754,16859	move	0	0	m1	m0	54351,62067,43880,61283	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	43916,58069,43754,16859	1	p1
+INIT	wg_status_bypass_ko	9625,33771,44932,30198	62584,55121,35766,8375
+DEC	wg_status_bypass_ko	62584,55121,35766,8375	move	0	0	m0	m0	5720,54436,32862,64731	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	62584,55121,35766,8375	move	0	0	m1	m0	35175,44373,10854,65215	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	62584,55121,35766,8375	1	p1
+INIT	wg_status_bypass_ko	17283,8058,13249,57218	57380,38797,44354,4435
+DEC	wg_status_bypass_ko	57380,38797,44354,4435	move	0	0	m0	m0	5678,6245,44070,31671	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	57380,38797,44354,4435	move	0	0	m1	m0	61845,16178,37879,42971	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	57380,38797,44354,4435	1	p1
+INIT	wg_status_bypass_ko	38940,41022,15078,21966	55952,8073,23438,28591
+DEC	wg_status_bypass_ko	55952,8073,23438,28591	move	0	0	m0	m0	56779,2026,441,3155	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	55952,8073,23438,28591	move	0	0	m1	m0	65284,37367,57755,50871	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	55952,8073,23438,28591	1	p1
+INIT	wg_status_bypass_ko	22845,49622,51859,58586	4028,11077,41626,22475
+DEC	wg_status_bypass_ko	4028,11077,41626,22475	move	0	0	m0	m0	40678,54746,35004,2735	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	4028,11077,41626,22475	move	0	0	m1	m0	49757,64091,37562,63315	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	4028,11077,41626,22475	1	p1
+INIT	wg_status_bypass_ko	53728,34764,55517,22694	27560,14017,20070,42407
+DEC	wg_status_bypass_ko	27560,14017,20070,42407	move	0	0	m0	m0	64606,43756,25146,37579	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	27560,14017,20070,42407	move	0	0	m1	m0	9899,61170,27462,38319	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	27560,14017,20070,42407	1	p1
+INIT	wg_status_bypass_ko	61152,43125,45079,15666	39508,32253,60146,62787
+DEC	wg_status_bypass_ko	39508,32253,60146,62787	move	0	0	m0	m0	38763,12292,2770,32935	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	39508,32253,60146,62787	move	0	0	m1	m0	58279,58876,46358,48587	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	39508,32253,60146,62787	1	p1
+INIT	wg_status_bypass_ko	47310,49308,30780,56958	1984,64761,50238,41631
+DEC	wg_status_bypass_ko	1984,64761,50238,41631	move	0	0	m0	m0	56570,5397,17573,28739	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	1984,64761,50238,41631	move	0	0	m1	m0	2170,34386,54475,19367	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	1984,64761,50238,41631	1	p1
+INIT	wg_status_bypass_ko	27011,25583,18874,18570	57324,28597,58954,51643
+DEC	wg_status_bypass_ko	57324,28597,58954,51643	move	0	0	m0	m0	47036,37332,60218,48543	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	57324,28597,58954,51643	move	0	0	m1	m0	58795,33040,29581,56131	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	57324,28597,58954,51643	1	p1
+INIT	wg_status_bypass_ko	18423,48616,2008,18262	3800,21041,7446,18071
+DEC	wg_status_bypass_ko	3800,21041,7446,18071	move	0	0	m0	m0	4501,51692,19387,33979	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	3800,21041,7446,18071	move	0	0	m1	m0	9829,61541,11149,51359	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	3800,21041,7446,18071	1	p1
+INIT	wg_status_bypass_ko	50137,58960,4021,26338	16516,57453,62626,46387
+DEC	wg_status_bypass_ko	16516,57453,62626,46387	move	0	0	m0	m0	6944,21820,46759,41367	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	16516,57453,62626,46387	move	0	0	m1	m0	39479,15319,28773,12219	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	16516,57453,62626,46387	1	p1
+INIT	wg_status_bypass_ko	56195,33925,65511,62254	57584,5737,47342,29071
+DEC	wg_status_bypass_ko	57584,5737,47342,29071	move	0	0	m0	m0	42099,63299,1071,45107	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	57584,5737,47342,29071	move	0	0	m1	m0	17282,50988,4562,60567	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	57584,5737,47342,29071	1	p1
+INIT	wg_status_bypass_ko	61025,11319,61659,63546	7196,45093,30202,38827
+DEC	wg_status_bypass_ko	7196,45093,30202,38827	move	0	0	m0	m0	16389,59316,4059,3215	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	7196,45093,30202,38827	move	0	0	m1	m0	50772,17278,47360,39731	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	7196,45093,30202,38827	1	p1
+INIT	wg_status_bypass_ko	62951,7081,50650,16902	56840,10657,63430,903
+DEC	wg_status_bypass_ko	56840,10657,63430,903	move	0	0	m0	m0	13569,7707,9938,53931	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	56840,10657,63430,903	move	0	0	m1	m0	54967,62657,29,38799	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	56840,10657,63430,903	1	p1
+INIT	wg_status_bypass_ko	50287,17680,56321,23698	53940,48861,51794,20771
+DEC	wg_status_bypass_ko	53940,48861,51794,20771	move	0	0	m0	m0	32202,35477,39318,56967	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	53940,48861,51794,20771	move	0	0	m1	m0	46386,61173,23235,64939	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	53940,48861,51794,20771	1	p1
+INIT	wg_status_bypass_ko	10191,22530,23372,37854	26144,27609,14750,56447
+DEC	wg_status_bypass_ko	26144,27609,14750,56447	move	0	0	m0	m0	47225,45305,10824,52259	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	26144,27609,14750,56447	move	0	0	m1	m0	41873,694,11667,43399	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	26144,27609,14750,56447	1	p1
+INIT	wg_status_bypass_ko	57156,4125,18781,62442	50252,60565,20906,49563
+DEC	wg_status_bypass_ko	50252,60565,20906,49563	move	0	0	m0	m0	182,50158,57485,63359	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	50252,60565,20906,49563	move	0	0	m1	m0	18267,33977,63476,14115	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	50252,60565,20906,49563	1	p1
+INIT	wg_status_bypass_ko	6249,64079,40008,18614	55608,48401,56950,56439
+DEC	wg_status_bypass_ko	55608,48401,56950,56439	move	0	0	m0	m0	4595,54812,56689,31899	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	55608,48401,56950,56439	move	0	0	m1	m0	42222,32886,32215,639	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	55608,48401,56950,56439	1	p1
+INIT	wg_status_bypass_ko	31750,12479,40544,7746	20708,6477,27650,51475
+DEC	wg_status_bypass_ko	20708,6477,27650,51475	move	0	0	m0	m0	34263,53908,40337,14199	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	20708,6477,27650,51475	move	0	0	m1	m0	26987,44425,2324,10139	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	20708,6477,27650,51475	1	p1
+INIT	wg_status_bypass_ko	62703,22639,261,49294	38736,64841,17998,58223
+DEC	wg_status_bypass_ko	38736,64841,17998,58223	move	0	0	m0	m0	27442,10658,52479,50195	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	38736,64841,17998,58223	move	0	0	m1	m0	3366,8095,37676,33399	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	38736,64841,17998,58223	1	p1
+INIT	wg_status_bypass_ko	10081,41879,51675,15258	55420,9477,31066,18315
+DEC	wg_status_bypass_ko	55420,9477,31066,18315	move	0	0	m0	m0	18800,9215,29538,32367	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	55420,9477,31066,18315	move	0	0	m1	m0	40719,38543,39815,44819	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	55420,9477,31066,18315	1	p1
+INIT	wg_status_bypass_ko	61939,2863,30808,23398	104,3201,53542,53607
+DEC	wg_status_bypass_ko	104,3201,53542,53607	move	0	0	m0	m0	18997,54998,39861,33419	Gengar	261	261	0	-	1	Shedinja	1	1	0	par	1	p1	0
+DEC	wg_status_bypass_ko	104,3201,53542,53607	move	0	0	m1	m0	43992,52225,31480,2415	Gengar	261	261	0	-	1	Shedinja	0	1	1	par	0	p1	0
+END	wg_status_bypass_ko	104,3201,53542,53607	1	p1

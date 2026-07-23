@@ -1,0 +1,506 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=80808 run_id=rmrxxfg75 chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_13
+TEAM	ab_0_13	p1	Torkoal||MetalCoat|WhiteSmoke|Strength,Yawn,Flamethrower,SludgeBomb|Careful|32,,,136,180,160|M|6,20,29,4,16,26|||]Machop||Charcoal|Guts|RockTomb,ScaryFace,Encore,LightScreen|Brave|104,20,152,212,,20|M|3,28,16,9,1,13|||]Chikorita||RockIncense|Overgrow|Frustration,Mimic,SwordsDance,Toxic|Rash|52,24,204,24,28,176|M|10,12,13,19,8,23|||]Hoothoot||TwistedSpoon|Insomnia|ShadowBall,Whirlwind,AerialAce,SunnyDay|Relaxed|76,56,112,68,68,128|M|13,4,25,29,7,0|||]Tangela||NeverMeltIce|Chlorophyll|Facade,Reflect,SleepPowder,MorningSun|Gentle|,56,108,56,88,200|M|13,22,19,17,17,2|||]Togetic||SoulDew|SereneGrace|Facade,RainDance,Substitute,SteelWing|Lonely|64,96,228,20,,100|M|29,4,10,15,27,29|||
+TEAM	ab_0_13	p2	Piloswine||LightBall|Oblivious|BodySlam,Strength,MudSlap,Facade|Hasty|96,76,148,88,100,|M|4,23,26,6,0,11|||]Zigzagoon||HardStone|Pickup|Covet,ThunderWave,BodySlam,Toxic|Hasty|20,32,108,200,148,|M|14,5,0,8,8,25|||]Kecleon||CheriBerry|ColorChange|Blizzard,MudSlap,ShockWave,BrickBreak|Modest|68,124,8,,112,80|M|28,10,17,19,,26|||]Spinda||DragonFang|OwnTempo|Tackle,DizzyPunch,MegaPunch,Sing|Naive|32,180,176,,108,12|M|20,11,13,8,0,9|||]Rayquaza||KingsRock|AirLock|Return,FireBlast,BrickBreak,Toxic|Lonely|,48,88,40,212,120|N|28,9,26,2,19,6|||]Ledyba||PinkBow|Swarm|DoubleEdge,Mimic,SunnyDay,Rest|Serious|32,116,92,156,24,88|M|22,18,25,25,8,21|||
+FMT	ab_0_13	gen3customgame
+INIT	ab_0_13	62427,52476,57156,39973	1908862685
+DEC	ab_0_13	0	move	0	0	m3	m1	27068,28752,55673,4717	Torkoal	210	264	0	-	0	0	0	0	0	0	6	Piloswine	261	338	0	psn	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_13	1	move	0	0	m1	m1	18147,50978,8817,12081	Torkoal	160	264	0	-	0	0	0	0	0	0	6	Piloswine	219	338	0	psn	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_13	2	move	0	0	m1	m1	4805,51946,8198,42933	Torkoal	107	264	0	-	0	0	0	0	0	0	6	Piloswine	177	338	0	psn	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_13	3	move	0	0	m3	m0	20186,28074,3648,61076	Torkoal	54	264	0	-	0	0	0	0	0	0	6	Piloswine	103	338	0	psn	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_13	4	move	0	0	m1	m2	61651,50021,34868,2123	Torkoal	15	264	0	-	0	0	0	0	0	0	6	Piloswine	61	338	0	psn	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_13	5	move	0	0	m2	s4	8069,10925,58373,30542	Torkoal	15	264	0	-	0	0	0	0	0	0	6	Rayquaza	263	348	0	brn	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_13	6	move	0	0	s2	m0	15152,27351,37113,24973	Chikorita	156	223	0	-	0	0	0	0	0	0	6	Rayquaza	220	348	0	brn	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_0_13	7	move	0	0	m3	s5	64620,37561,54206,6711	Chikorita	156	223	0	-	0	0	0	0	0	0	6	Ledyba	207	220	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_13	8	move	0	0	m1	m2	55784,34710,12719,25974	Chikorita	156	223	0	-	0	0	0	0	0	0	6	Ledyba	181	220	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_0_13	9	move	0	0	m0	m3	46630,46142,51658,45781	Chikorita	156	223	0	-	0	0	0	0	0	0	6	Ledyba	220	220	0	slp	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_0_13	10	move	0	0	m2	m0	34013,62408,54950,10700	Chikorita	156	223	0	-	2	0	0	0	0	0	6	Ledyba	220	220	0	slp	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_13	11	move	0	0	m3	m3	61021,51256,25992,54942	Chikorita	156	223	0	-	2	0	0	0	0	0	6	Ledyba	220	220	0	slp	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_13	12	move	0	0	s2	m2	1883,9268,53327,55577	Torkoal	15	264	0	-	0	0	0	0	0	0	6	Ledyba	220	220	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_13	13	move	0	0	m2	m1	49528,60785,36048,49949	Torkoal	15	264	0	-	0	0	0	0	0	0	6	Ledyba	0	220	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_0_13	14	switch	0	1	-	s4	62608,6046,55481,7732	Torkoal	15	264	0	-	0	0	0	0	0	0	6	Piloswine	19	338	0	psn	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_13	15	move	0	0	m1	m2	48204,23232,25815,25736	Torkoal	0	264	1	fnt	0	0	0	0	0	0	5	Piloswine	19	338	0	psn	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_13	16	switch	1	0	s5	-	48204,23232,25815,25736	Togetic	265	265	0	-	0	0	0	0	0	0	5	Piloswine	0	338	1	fnt	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_13	17	switch	0	1	-	s3	32718,58836,11686,4203	Togetic	265	265	0	-	0	0	0	0	0	0	5	Spinda	258	258	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_13	18	move	0	0	s3	m1	63683,19617,30288,49646	Hoothoot	142	262	0	-	0	0	0	0	0	0	5	Spinda	258	258	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_13	19	move	0	0	m3	m1	45400,55025,11011,41133	Hoothoot	24	262	0	-	0	0	0	0	0	0	5	Spinda	258	258	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_13	20	move	0	0	m2	m3	41156,24542,26777,22897	Hoothoot	24	262	0	-	0	0	0	0	0	0	5	Spinda	225	258	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_13	21	move	0	0	m0	m2	36136,25244,64035,30794	Hoothoot	0	262	1	fnt	0	0	0	0	0	0	4	Spinda	225	258	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_13	22	switch	1	0	s3	-	26437,23221,11658,44533	Togetic	265	265	0	-	0	0	0	0	0	0	4	Spinda	225	258	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_13	23	move	0	0	m1	m3	38893,10905,30342,18015	Togetic	265	265	0	-	0	0	0	0	0	0	4	Spinda	225	258	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_13	24	move	0	0	m0	m1	39172,33290,27629,14183	Togetic	192	265	0	-	0	0	0	0	0	0	4	Spinda	167	258	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_13	25	move	0	0	m3	m2	51483,1696,8783,44911	Togetic	109	265	0	-	0	1	0	0	0	0	4	Spinda	126	258	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_13	26	move	0	0	m1	m3	63187,33391,48082,32969	Togetic	109	265	0	-	0	1	0	0	0	0	4	Spinda	126	258	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_13	27	move	0	0	s2	s5	63133,9468,4765,65296	Chikorita	156	223	0	-	0	0	0	0	0	0	4	Rayquaza	177	348	0	brn	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_13	28	move	0	0	m0	m0	62791,13549,46110,57080	Chikorita	83	223	0	-	0	0	0	0	0	0	4	Rayquaza	132	348	0	brn	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_0_13	29	move	0	0	s2	s1	11110,43501,20079,20123	Togetic	109	265	0	-	0	0	0	0	0	0	4	Zigzagoon	205	205	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_13	30	move	0	0	m0	m2	1477,21354,19512,9251	Togetic	75	265	0	par	0	0	0	0	0	0	4	Zigzagoon	0	205	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_13	31	switch	0	1	-	s2	45402,54096,56984,39826	Togetic	75	265	0	par	0	0	0	0	0	0	4	Kecleon	275	275	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_13	32	move	0	0	m1	m3	3471,2473,37321,44833	Togetic	20	265	0	par	0	0	0	0	0	0	4	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_13	33	move	0	0	m3	m2	32761,48601,39358,28843	Togetic	0	265	1	fnt	0	0	0	0	0	0	3	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_13	34	switch	1	0	s4	-	2824,12884,52033,38202	Tangela	253	253	0	-	0	0	0	0	0	0	3	Kecleon	275	275	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_13	35	move	0	0	m3	m3	53228,62511,52673,59182	Tangela	209	253	0	-	0	0	0	0	0	0	3	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_13	36	move	0	0	m2	s5	52795,56637,50070,21555	Tangela	209	253	0	-	0	0	0	0	0	0	3	Spinda	126	258	0	slp	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_13	37	move	0	0	m2	s5	20190,7189,21461,61165	Tangela	209	253	0	-	0	0	0	0	0	0	3	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_13	38	move	0	0	m1	m0	44774,22895,26381,17329	Tangela	0	253	1	fnt	0	0	0	0	0	0	2	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_13	39	switch	1	0	s2	-	9752,8410,18291,3224	Chikorita	83	223	0	-	0	0	0	0	0	0	2	Kecleon	275	275	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_13	40	move	0	0	m1	m1	11734,19778,10719,37535	Chikorita	79	223	0	-	0	0	0	0	0	0	2	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	1
+DEC	ab_0_13	41	move	0	0	m3	m0	60596,51476,25538,25472	Chikorita	79	223	0	-	0	0	0	0	0	0	2	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_13	42	move	0	0	m1	m0	55898,11588,4606,15271	Chikorita	0	223	1	fnt	0	0	0	0	0	0	1	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_13	43	switch	1	0	s1	-	44122,15997,15601,34470	Machop	279	279	0	-	0	0	0	0	0	0	1	Kecleon	275	275	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_13	44	move	0	0	m3	m2	56802,248,26996,51403	Machop	177	279	0	-	0	0	0	0	0	0	1	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_13	45	move	0	0	m1	m1	60168,60393,42623,21257	Machop	157	279	0	-	0	0	0	0	0	0	1	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_13	46	move	0	0	m2	m0	50119,2281,6900,57334	Machop	64	279	0	-	0	0	0	0	0	0	1	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	1
+DEC	ab_0_13	47	move	0	0	m0	m0	30778,17884,20540,24106	Machop	0	279	1	-	0	0	0	0	0	0	0	Kecleon	275	275	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+END	ab_0_13	1	p2
+L	ab_0_13	0	|t:|<NORMALIZED>
+L	ab_0_13	1	|gametype|singles
+L	ab_0_13	2	|player|p1|P1||
+L	ab_0_13	3	|player|p2|P2||
+L	ab_0_13	4	|gen|3
+L	ab_0_13	5	|tier|[Gen 3] Custom Game
+L	ab_0_13	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_13	7	|
+L	ab_0_13	8	|t:|<NORMALIZED>
+L	ab_0_13	9	|teamsize|p1|6
+L	ab_0_13	10	|teamsize|p2|6
+L	ab_0_13	11	|start
+L	ab_0_13	12	|switch|p1a: Torkoal|Torkoal, M|264/264
+L	ab_0_13	13	|switch|p2a: Piloswine|Piloswine, M|338/338
+L	ab_0_13	14	|turn|1
+L	ab_0_13	15	|
+L	ab_0_13	16	|t:|<NORMALIZED>
+L	ab_0_13	17	|move|p2a: Piloswine|Strength|p1a: Torkoal
+L	ab_0_13	18	|-damage|p1a: Torkoal|210/264
+L	ab_0_13	19	|move|p1a: Torkoal|Sludge Bomb|p2a: Piloswine
+L	ab_0_13	20	|-resisted|p2a: Piloswine
+L	ab_0_13	21	|-damage|p2a: Piloswine|303/338
+L	ab_0_13	22	|-status|p2a: Piloswine|psn
+L	ab_0_13	23	|
+L	ab_0_13	24	|-damage|p2a: Piloswine|261/338 psn|[from] psn
+L	ab_0_13	25	|upkeep
+L	ab_0_13	26	|turn|2
+L	ab_0_13	27	|
+L	ab_0_13	28	|t:|<NORMALIZED>
+L	ab_0_13	29	|move|p2a: Piloswine|Strength|p1a: Torkoal
+L	ab_0_13	30	|-damage|p1a: Torkoal|160/264
+L	ab_0_13	31	|move|p1a: Torkoal|Yawn||[still]
+L	ab_0_13	32	|-fail|p1a: Torkoal
+L	ab_0_13	33	|
+L	ab_0_13	34	|-damage|p2a: Piloswine|219/338 psn|[from] psn
+L	ab_0_13	35	|upkeep
+L	ab_0_13	36	|turn|3
+L	ab_0_13	37	|
+L	ab_0_13	38	|t:|<NORMALIZED>
+L	ab_0_13	39	|move|p2a: Piloswine|Strength|p1a: Torkoal
+L	ab_0_13	40	|-damage|p1a: Torkoal|107/264
+L	ab_0_13	41	|move|p1a: Torkoal|Yawn||[still]
+L	ab_0_13	42	|-fail|p1a: Torkoal
+L	ab_0_13	43	|
+L	ab_0_13	44	|-damage|p2a: Piloswine|177/338 psn|[from] psn
+L	ab_0_13	45	|upkeep
+L	ab_0_13	46	|turn|4
+L	ab_0_13	47	|
+L	ab_0_13	48	|t:|<NORMALIZED>
+L	ab_0_13	49	|move|p2a: Piloswine|Body Slam|p1a: Torkoal
+L	ab_0_13	50	|-damage|p1a: Torkoal|54/264
+L	ab_0_13	51	|move|p1a: Torkoal|Sludge Bomb|p2a: Piloswine
+L	ab_0_13	52	|-resisted|p2a: Piloswine
+L	ab_0_13	53	|-damage|p2a: Piloswine|145/338 psn
+L	ab_0_13	54	|debug|move failed because it did nothing
+L	ab_0_13	55	|
+L	ab_0_13	56	|-damage|p2a: Piloswine|103/338 psn|[from] psn
+L	ab_0_13	57	|upkeep
+L	ab_0_13	58	|turn|5
+L	ab_0_13	59	|
+L	ab_0_13	60	|t:|<NORMALIZED>
+L	ab_0_13	61	|move|p2a: Piloswine|Mud-Slap|p1a: Torkoal
+L	ab_0_13	62	|-supereffective|p1a: Torkoal
+L	ab_0_13	63	|-damage|p1a: Torkoal|15/264
+L	ab_0_13	64	|debug|move failed because it did nothing
+L	ab_0_13	65	|move|p1a: Torkoal|Yawn||[still]
+L	ab_0_13	66	|-fail|p1a: Torkoal
+L	ab_0_13	67	|
+L	ab_0_13	68	|-damage|p2a: Piloswine|61/338 psn|[from] psn
+L	ab_0_13	69	|upkeep
+L	ab_0_13	70	|turn|6
+L	ab_0_13	71	|
+L	ab_0_13	72	|t:|<NORMALIZED>
+L	ab_0_13	73	|switch|p2a: Rayquaza|Rayquaza|348/348
+L	ab_0_13	74	|move|p1a: Torkoal|Flamethrower|p2a: Rayquaza
+L	ab_0_13	75	|-resisted|p2a: Rayquaza
+L	ab_0_13	76	|-damage|p2a: Rayquaza|306/348
+L	ab_0_13	77	|-status|p2a: Rayquaza|brn
+L	ab_0_13	78	|
+L	ab_0_13	79	|-damage|p2a: Rayquaza|263/348 brn|[from] brn
+L	ab_0_13	80	|upkeep
+L	ab_0_13	81	|turn|7
+L	ab_0_13	82	|
+L	ab_0_13	83	|t:|<NORMALIZED>
+L	ab_0_13	84	|switch|p1a: Chikorita|Chikorita, M|223/223
+L	ab_0_13	85	|move|p2a: Rayquaza|Return|p1a: Chikorita
+L	ab_0_13	86	|-damage|p1a: Chikorita|156/223
+L	ab_0_13	87	|
+L	ab_0_13	88	|-damage|p2a: Rayquaza|220/348 brn|[from] brn
+L	ab_0_13	89	|upkeep
+L	ab_0_13	90	|turn|8
+L	ab_0_13	91	|
+L	ab_0_13	92	|t:|<NORMALIZED>
+L	ab_0_13	93	|switch|p2a: Ledyba|Ledyba, M|220/220
+L	ab_0_13	94	|move|p1a: Chikorita|Toxic|p2a: Ledyba
+L	ab_0_13	95	|-status|p2a: Ledyba|tox
+L	ab_0_13	96	|
+L	ab_0_13	97	|-damage|p2a: Ledyba|207/220 tox|[from] psn
+L	ab_0_13	98	|upkeep
+L	ab_0_13	99	|turn|9
+L	ab_0_13	100	|
+L	ab_0_13	101	|t:|<NORMALIZED>
+L	ab_0_13	102	|move|p1a: Chikorita|Mimic||[still]
+L	ab_0_13	103	|-fail|p1a: Chikorita
+L	ab_0_13	104	|debug|move failed because it did nothing
+L	ab_0_13	105	|move|p2a: Ledyba|Sunny Day|p2a: Ledyba
+L	ab_0_13	106	|-weather|SunnyDay
+L	ab_0_13	107	|
+L	ab_0_13	108	|-weather|SunnyDay|[upkeep]
+L	ab_0_13	109	|-damage|p2a: Ledyba|181/220 tox|[from] psn
+L	ab_0_13	110	|upkeep
+L	ab_0_13	111	|turn|10
+L	ab_0_13	112	|
+L	ab_0_13	113	|t:|<NORMALIZED>
+L	ab_0_13	114	|move|p1a: Chikorita|Frustration|p2a: Ledyba
+L	ab_0_13	115	|-damage|p2a: Ledyba|179/220 tox
+L	ab_0_13	116	|move|p2a: Ledyba|Rest|p2a: Ledyba
+L	ab_0_13	117	|-status|p2a: Ledyba|slp|[from] move: Rest
+L	ab_0_13	118	|-heal|p2a: Ledyba|220/220 slp|[silent]
+L	ab_0_13	119	|
+L	ab_0_13	120	|-weather|SunnyDay|[upkeep]
+L	ab_0_13	121	|upkeep
+L	ab_0_13	122	|turn|11
+L	ab_0_13	123	|
+L	ab_0_13	124	|t:|<NORMALIZED>
+L	ab_0_13	125	|move|p1a: Chikorita|Swords Dance|p1a: Chikorita
+L	ab_0_13	126	|-boost|p1a: Chikorita|atk|2
+L	ab_0_13	127	|cant|p2a: Ledyba|slp
+L	ab_0_13	128	|
+L	ab_0_13	129	|-weather|SunnyDay|[upkeep]
+L	ab_0_13	130	|upkeep
+L	ab_0_13	131	|turn|12
+L	ab_0_13	132	|
+L	ab_0_13	133	|t:|<NORMALIZED>
+L	ab_0_13	134	|move|p1a: Chikorita|Toxic|p2a: Ledyba|[miss]
+L	ab_0_13	135	|-miss|p1a: Chikorita|p2a: Ledyba
+L	ab_0_13	136	|cant|p2a: Ledyba|slp
+L	ab_0_13	137	|
+L	ab_0_13	138	|-weather|SunnyDay|[upkeep]
+L	ab_0_13	139	|upkeep
+L	ab_0_13	140	|turn|13
+L	ab_0_13	141	|
+L	ab_0_13	142	|t:|<NORMALIZED>
+L	ab_0_13	143	|switch|p1a: Torkoal|Torkoal, M|15/264
+L	ab_0_13	144	|-curestatus|p2a: Ledyba|slp|[msg]
+L	ab_0_13	145	|move|p2a: Ledyba|Sunny Day||[still]
+L	ab_0_13	146	|-fail|p2a: Ledyba
+L	ab_0_13	147	|debug|move failed because it did nothing
+L	ab_0_13	148	|
+L	ab_0_13	149	|-weather|none
+L	ab_0_13	150	|upkeep
+L	ab_0_13	151	|turn|14
+L	ab_0_13	152	|
+L	ab_0_13	153	|t:|<NORMALIZED>
+L	ab_0_13	154	|move|p2a: Ledyba|Mimic||[still]
+L	ab_0_13	155	|-fail|p2a: Ledyba
+L	ab_0_13	156	|debug|move failed because it did nothing
+L	ab_0_13	157	|move|p1a: Torkoal|Flamethrower|p2a: Ledyba
+L	ab_0_13	158	|-supereffective|p2a: Ledyba
+L	ab_0_13	159	|-damage|p2a: Ledyba|0 fnt
+L	ab_0_13	160	|faint|p2a: Ledyba
+L	ab_0_13	161	|
+L	ab_0_13	162	|t:|<NORMALIZED>
+L	ab_0_13	163	|switch|p2a: Piloswine|Piloswine, M|61/338 psn
+L	ab_0_13	164	|
+L	ab_0_13	165	|-damage|p2a: Piloswine|19/338 psn|[from] psn
+L	ab_0_13	166	|upkeep
+L	ab_0_13	167	|turn|15
+L	ab_0_13	168	|
+L	ab_0_13	169	|t:|<NORMALIZED>
+L	ab_0_13	170	|move|p2a: Piloswine|Mud-Slap|p1a: Torkoal
+L	ab_0_13	171	|-supereffective|p1a: Torkoal
+L	ab_0_13	172	|-damage|p1a: Torkoal|0 fnt
+L	ab_0_13	173	|faint|p1a: Torkoal
+L	ab_0_13	174	|
+L	ab_0_13	175	|t:|<NORMALIZED>
+L	ab_0_13	176	|switch|p1a: Togetic|Togetic, M|265/265
+L	ab_0_13	177	|
+L	ab_0_13	178	|-damage|p2a: Piloswine|0 fnt|[from] psn
+L	ab_0_13	179	|faint|p2a: Piloswine
+L	ab_0_13	180	|upkeep
+L	ab_0_13	181	|
+L	ab_0_13	182	|t:|<NORMALIZED>
+L	ab_0_13	183	|switch|p2a: Spinda|Spinda, M|258/258
+L	ab_0_13	184	|turn|16
+L	ab_0_13	185	|
+L	ab_0_13	186	|t:|<NORMALIZED>
+L	ab_0_13	187	|switch|p1a: Hoothoot|Hoothoot, M|262/262
+L	ab_0_13	188	|move|p2a: Spinda|Dizzy Punch|p1a: Hoothoot
+L	ab_0_13	189	|-damage|p1a: Hoothoot|142/262
+L	ab_0_13	190	|
+L	ab_0_13	191	|upkeep
+L	ab_0_13	192	|turn|17
+L	ab_0_13	193	|
+L	ab_0_13	194	|t:|<NORMALIZED>
+L	ab_0_13	195	|move|p2a: Spinda|Dizzy Punch|p1a: Hoothoot
+L	ab_0_13	196	|-damage|p1a: Hoothoot|24/262
+L	ab_0_13	197	|move|p1a: Hoothoot|Sunny Day|p1a: Hoothoot
+L	ab_0_13	198	|-weather|SunnyDay
+L	ab_0_13	199	|
+L	ab_0_13	200	|-weather|SunnyDay|[upkeep]
+L	ab_0_13	201	|upkeep
+L	ab_0_13	202	|turn|18
+L	ab_0_13	203	|
+L	ab_0_13	204	|t:|<NORMALIZED>
+L	ab_0_13	205	|move|p2a: Spinda|Sing|p1a: Hoothoot
+L	ab_0_13	206	|-immune|p1a: Hoothoot|[from] ability: Insomnia
+L	ab_0_13	207	|debug|set status [slp] interrupted
+L	ab_0_13	208	|debug|move failed because it did nothing
+L	ab_0_13	209	|move|p1a: Hoothoot|Aerial Ace|p2a: Spinda
+L	ab_0_13	210	|-damage|p2a: Spinda|225/258
+L	ab_0_13	211	|
+L	ab_0_13	212	|-weather|SunnyDay|[upkeep]
+L	ab_0_13	213	|upkeep
+L	ab_0_13	214	|turn|19
+L	ab_0_13	215	|
+L	ab_0_13	216	|t:|<NORMALIZED>
+L	ab_0_13	217	|move|p2a: Spinda|Mega Punch|p1a: Hoothoot
+L	ab_0_13	218	|-damage|p1a: Hoothoot|0 fnt
+L	ab_0_13	219	|faint|p1a: Hoothoot
+L	ab_0_13	220	|
+L	ab_0_13	221	|t:|<NORMALIZED>
+L	ab_0_13	222	|switch|p1a: Togetic|Togetic, M|265/265
+L	ab_0_13	223	|
+L	ab_0_13	224	|-weather|SunnyDay|[upkeep]
+L	ab_0_13	225	|upkeep
+L	ab_0_13	226	|turn|20
+L	ab_0_13	227	|
+L	ab_0_13	228	|t:|<NORMALIZED>
+L	ab_0_13	229	|move|p2a: Spinda|Sing|p1a: Togetic|[miss]
+L	ab_0_13	230	|-miss|p2a: Spinda|p1a: Togetic
+L	ab_0_13	231	|move|p1a: Togetic|Rain Dance|p1a: Togetic
+L	ab_0_13	232	|-weather|RainDance
+L	ab_0_13	233	|
+L	ab_0_13	234	|-weather|RainDance|[upkeep]
+L	ab_0_13	235	|upkeep
+L	ab_0_13	236	|turn|21
+L	ab_0_13	237	|
+L	ab_0_13	238	|t:|<NORMALIZED>
+L	ab_0_13	239	|move|p2a: Spinda|Dizzy Punch|p1a: Togetic
+L	ab_0_13	240	|-damage|p1a: Togetic|192/265
+L	ab_0_13	241	|move|p1a: Togetic|Facade|p2a: Spinda
+L	ab_0_13	242	|-damage|p2a: Spinda|167/258
+L	ab_0_13	243	|
+L	ab_0_13	244	|-weather|RainDance|[upkeep]
+L	ab_0_13	245	|upkeep
+L	ab_0_13	246	|turn|22
+L	ab_0_13	247	|
+L	ab_0_13	248	|t:|<NORMALIZED>
+L	ab_0_13	249	|move|p2a: Spinda|Mega Punch|p1a: Togetic
+L	ab_0_13	250	|-damage|p1a: Togetic|109/265
+L	ab_0_13	251	|debug|doubling secondary chance
+L	ab_0_13	252	|move|p1a: Togetic|Steel Wing|p2a: Spinda
+L	ab_0_13	253	|-damage|p2a: Spinda|126/258
+L	ab_0_13	254	|-boost|p1a: Togetic|def|1
+L	ab_0_13	255	|
+L	ab_0_13	256	|-weather|RainDance|[upkeep]
+L	ab_0_13	257	|upkeep
+L	ab_0_13	258	|turn|23
+L	ab_0_13	259	|
+L	ab_0_13	260	|t:|<NORMALIZED>
+L	ab_0_13	261	|move|p2a: Spinda|Sing|p1a: Togetic|[miss]
+L	ab_0_13	262	|-miss|p2a: Spinda|p1a: Togetic
+L	ab_0_13	263	|move|p1a: Togetic|Rain Dance||[still]
+L	ab_0_13	264	|-fail|p1a: Togetic
+L	ab_0_13	265	|debug|move failed because it did nothing
+L	ab_0_13	266	|
+L	ab_0_13	267	|-weather|RainDance|[upkeep]
+L	ab_0_13	268	|upkeep
+L	ab_0_13	269	|turn|24
+L	ab_0_13	270	|
+L	ab_0_13	271	|t:|<NORMALIZED>
+L	ab_0_13	272	|switch|p2a: Rayquaza|Rayquaza|220/348 brn
+L	ab_0_13	273	|switch|p1a: Chikorita|Chikorita, M|156/223
+L	ab_0_13	274	|
+L	ab_0_13	275	|-weather|none
+L	ab_0_13	276	|-damage|p2a: Rayquaza|177/348 brn|[from] brn
+L	ab_0_13	277	|upkeep
+L	ab_0_13	278	|turn|25
+L	ab_0_13	279	|
+L	ab_0_13	280	|t:|<NORMALIZED>
+L	ab_0_13	281	|move|p2a: Rayquaza|Return|p1a: Chikorita
+L	ab_0_13	282	|-damage|p1a: Chikorita|83/223
+L	ab_0_13	283	|move|p1a: Chikorita|Frustration|p2a: Rayquaza
+L	ab_0_13	284	|-damage|p2a: Rayquaza|175/348 brn
+L	ab_0_13	285	|
+L	ab_0_13	286	|-damage|p2a: Rayquaza|132/348 brn|[from] brn
+L	ab_0_13	287	|upkeep
+L	ab_0_13	288	|turn|26
+L	ab_0_13	289	|
+L	ab_0_13	290	|t:|<NORMALIZED>
+L	ab_0_13	291	|switch|p2a: Zigzagoon|Zigzagoon, M|205/205
+L	ab_0_13	292	|switch|p1a: Togetic|Togetic, M|109/265
+L	ab_0_13	293	|
+L	ab_0_13	294	|upkeep
+L	ab_0_13	295	|turn|27
+L	ab_0_13	296	|
+L	ab_0_13	297	|t:|<NORMALIZED>
+L	ab_0_13	298	|move|p2a: Zigzagoon|Body Slam|p1a: Togetic
+L	ab_0_13	299	|-damage|p1a: Togetic|75/265
+L	ab_0_13	300	|-status|p1a: Togetic|par
+L	ab_0_13	301	|move|p1a: Togetic|Facade|p2a: Zigzagoon
+L	ab_0_13	302	|-damage|p2a: Zigzagoon|0 fnt
+L	ab_0_13	303	|faint|p2a: Zigzagoon
+L	ab_0_13	304	|
+L	ab_0_13	305	|t:|<NORMALIZED>
+L	ab_0_13	306	|switch|p2a: Kecleon|Kecleon, M|275/275
+L	ab_0_13	307	|
+L	ab_0_13	308	|upkeep
+L	ab_0_13	309	|turn|28
+L	ab_0_13	310	|
+L	ab_0_13	311	|t:|<NORMALIZED>
+L	ab_0_13	312	|move|p2a: Kecleon|Brick Break|p1a: Togetic
+L	ab_0_13	313	|-damage|p1a: Togetic|20/265 par
+L	ab_0_13	314	|move|p1a: Togetic|Rain Dance|p1a: Togetic
+L	ab_0_13	315	|-weather|RainDance
+L	ab_0_13	316	|
+L	ab_0_13	317	|-weather|RainDance|[upkeep]
+L	ab_0_13	318	|upkeep
+L	ab_0_13	319	|turn|29
+L	ab_0_13	320	|
+L	ab_0_13	321	|t:|<NORMALIZED>
+L	ab_0_13	322	|move|p2a: Kecleon|Shock Wave|p1a: Togetic
+L	ab_0_13	323	|-supereffective|p1a: Togetic
+L	ab_0_13	324	|-damage|p1a: Togetic|0 fnt
+L	ab_0_13	325	|faint|p1a: Togetic
+L	ab_0_13	326	|
+L	ab_0_13	327	|t:|<NORMALIZED>
+L	ab_0_13	328	|switch|p1a: Tangela|Tangela, M|253/253
+L	ab_0_13	329	|
+L	ab_0_13	330	|-weather|RainDance|[upkeep]
+L	ab_0_13	331	|upkeep
+L	ab_0_13	332	|turn|30
+L	ab_0_13	333	|
+L	ab_0_13	334	|t:|<NORMALIZED>
+L	ab_0_13	335	|move|p1a: Tangela|Morning Sun|p1a: Tangela
+L	ab_0_13	336	|move|p2a: Kecleon|Brick Break|p1a: Tangela
+L	ab_0_13	337	|-damage|p1a: Tangela|209/253
+L	ab_0_13	338	|
+L	ab_0_13	339	|-weather|RainDance|[upkeep]
+L	ab_0_13	340	|upkeep
+L	ab_0_13	341	|turn|31
+L	ab_0_13	342	|
+L	ab_0_13	343	|t:|<NORMALIZED>
+L	ab_0_13	344	|switch|p2a: Spinda|Spinda, M|126/258
+L	ab_0_13	345	|move|p1a: Tangela|Sleep Powder|p2a: Spinda
+L	ab_0_13	346	|-status|p2a: Spinda|slp|[from] move: Sleep Powder
+L	ab_0_13	347	|
+L	ab_0_13	348	|-weather|RainDance|[upkeep]
+L	ab_0_13	349	|upkeep
+L	ab_0_13	350	|turn|32
+L	ab_0_13	351	|
+L	ab_0_13	352	|t:|<NORMALIZED>
+L	ab_0_13	353	|switch|p2a: Kecleon|Kecleon, M|275/275
+L	ab_0_13	354	|move|p1a: Tangela|Sleep Powder|p2a: Kecleon|[miss]
+L	ab_0_13	355	|-miss|p1a: Tangela|p2a: Kecleon
+L	ab_0_13	356	|
+L	ab_0_13	357	|-weather|none
+L	ab_0_13	358	|upkeep
+L	ab_0_13	359	|turn|33
+L	ab_0_13	360	|
+L	ab_0_13	361	|t:|<NORMALIZED>
+L	ab_0_13	362	|move|p1a: Tangela|Reflect|p1a: Tangela
+L	ab_0_13	363	|-sidestart|p1: P1|Reflect
+L	ab_0_13	364	|move|p2a: Kecleon|Blizzard|p1a: Tangela
+L	ab_0_13	365	|-supereffective|p1a: Tangela
+L	ab_0_13	366	|-damage|p1a: Tangela|0 fnt
+L	ab_0_13	367	|faint|p1a: Tangela
+L	ab_0_13	368	|
+L	ab_0_13	369	|t:|<NORMALIZED>
+L	ab_0_13	370	|switch|p1a: Chikorita|Chikorita, M|83/223
+L	ab_0_13	371	|
+L	ab_0_13	372	|upkeep
+L	ab_0_13	373	|turn|34
+L	ab_0_13	374	|
+L	ab_0_13	375	|t:|<NORMALIZED>
+L	ab_0_13	376	|move|p1a: Chikorita|Mimic|p2a: Kecleon
+L	ab_0_13	377	|-activate|p1a: Chikorita|move: Mimic|Blizzard
+L	ab_0_13	378	|move|p2a: Kecleon|Mud-Slap|p1a: Chikorita
+L	ab_0_13	379	|debug|Reflect weaken
+L	ab_0_13	380	|-resisted|p1a: Chikorita
+L	ab_0_13	381	|-damage|p1a: Chikorita|79/223
+L	ab_0_13	382	|-unboost|p1a: Chikorita|accuracy|1
+L	ab_0_13	383	|
+L	ab_0_13	384	|upkeep
+L	ab_0_13	385	|turn|35
+L	ab_0_13	386	|
+L	ab_0_13	387	|t:|<NORMALIZED>
+L	ab_0_13	388	|move|p1a: Chikorita|Toxic|p2a: Kecleon|[miss]
+L	ab_0_13	389	|-miss|p1a: Chikorita|p2a: Kecleon
+L	ab_0_13	390	|move|p2a: Kecleon|Blizzard|p1a: Chikorita|[miss]
+L	ab_0_13	391	|-miss|p2a: Kecleon|p1a: Chikorita
+L	ab_0_13	392	|
+L	ab_0_13	393	|upkeep
+L	ab_0_13	394	|turn|36
+L	ab_0_13	395	|
+L	ab_0_13	396	|t:|<NORMALIZED>
+L	ab_0_13	397	|move|p1a: Chikorita|Blizzard|p2a: Kecleon|[miss]
+L	ab_0_13	398	|-miss|p1a: Chikorita|p2a: Kecleon
+L	ab_0_13	399	|move|p2a: Kecleon|Blizzard|p1a: Chikorita
+L	ab_0_13	400	|-supereffective|p1a: Chikorita
+L	ab_0_13	401	|-crit|p1a: Chikorita
+L	ab_0_13	402	|-damage|p1a: Chikorita|0 fnt
+L	ab_0_13	403	|faint|p1a: Chikorita
+L	ab_0_13	404	|
+L	ab_0_13	405	|t:|<NORMALIZED>
+L	ab_0_13	406	|switch|p1a: Machop|Machop, M|279/279
+L	ab_0_13	407	|
+L	ab_0_13	408	|upkeep
+L	ab_0_13	409	|turn|37
+L	ab_0_13	410	|
+L	ab_0_13	411	|t:|<NORMALIZED>
+L	ab_0_13	412	|move|p2a: Kecleon|Shock Wave|p1a: Machop
+L	ab_0_13	413	|-damage|p1a: Machop|177/279
+L	ab_0_13	414	|move|p1a: Machop|Light Screen|p1a: Machop
+L	ab_0_13	415	|-sidestart|p1: P1|move: Light Screen
+L	ab_0_13	416	|
+L	ab_0_13	417	|-sideend|p1: P1|Reflect
+L	ab_0_13	418	|upkeep
+L	ab_0_13	419	|turn|38
+L	ab_0_13	420	|
+L	ab_0_13	421	|t:|<NORMALIZED>
+L	ab_0_13	422	|move|p2a: Kecleon|Mud-Slap|p1a: Machop
+L	ab_0_13	423	|-damage|p1a: Machop|157/279
+L	ab_0_13	424	|-unboost|p1a: Machop|accuracy|1
+L	ab_0_13	425	|move|p1a: Machop|Scary Face|p2a: Kecleon|[miss]
+L	ab_0_13	426	|-miss|p1a: Machop|p2a: Kecleon
+L	ab_0_13	427	|
+L	ab_0_13	428	|upkeep
+L	ab_0_13	429	|turn|39
+L	ab_0_13	430	|
+L	ab_0_13	431	|t:|<NORMALIZED>
+L	ab_0_13	432	|move|p2a: Kecleon|Blizzard|p1a: Machop
+L	ab_0_13	433	|debug|Light Screen weaken
+L	ab_0_13	434	|-damage|p1a: Machop|64/279
+L	ab_0_13	435	|move|p1a: Machop|Encore|p2a: Kecleon
+L	ab_0_13	436	|-start|p2a: Kecleon|Encore
+L	ab_0_13	437	|
+L	ab_0_13	438	|upkeep
+L	ab_0_13	439	|turn|40
+L	ab_0_13	440	|
+L	ab_0_13	441	|t:|<NORMALIZED>
+L	ab_0_13	442	|move|p2a: Kecleon|Blizzard|p1a: Machop
+L	ab_0_13	443	|debug|Light Screen weaken
+L	ab_0_13	444	|-damage|p1a: Machop|0 fnt
+L	ab_0_13	445	|faint|p1a: Machop
+L	ab_0_13	446	|
+L	ab_0_13	447	|win|P2

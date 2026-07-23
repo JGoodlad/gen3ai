@@ -545,7 +545,13 @@
     },
     "luckypunch": {
         "name": "Lucky Punch",
-        "num": 256
+        "num": 256,
+        "critBoost": {
+            "boost": 2,
+            "onlySpecies": [
+                "chansey"
+            ]
+        }
     },
     "lumberry": {
         "name": "Lum Berry",
@@ -942,7 +948,10 @@
     },
     "scopelens": {
         "name": "Scope Lens",
-        "num": 232
+        "num": 232,
+        "critBoost": {
+            "boost": 1
+        }
     },
     "seaincense": {
         "name": "Sea Incense",
@@ -1075,7 +1084,13 @@
     },
     "stick": {
         "name": "Stick",
-        "num": 259
+        "num": 259,
+        "critBoost": {
+            "boost": 2,
+            "onlySpecies": [
+                "farfetchd"
+            ]
+        }
     },
     "sunstone": {
         "name": "Sun Stone",
@@ -1156,7 +1171,8 @@
     },
     "whiteherb": {
         "name": "White Herb",
-        "num": 214
+        "num": 214,
+        "boostRestore": true
     },
     "wikiberry": {
         "name": "Wiki Berry",

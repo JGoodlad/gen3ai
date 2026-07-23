@@ -1,0 +1,1420 @@
+# yawn_golden.txt — the gen3_yawn_v1 delayed-sleep golden.
+# Per-decision-boundary STATE+HP+STATUS+SLEEP-COUNTER+SEED differential to GAME-END:
+# Yawn is DRAW-FREE at cast; the sleep random(2,6) fires at the RESOLVE (end of the
+# turn AFTER cast), routed through try_set_status → the SAME slp counter machinery.
+# sleepTime = the slp remaining-turn counter (statusState.time); 0 else.
+# yawnResolved = a `|-end|...|move: Yawn` fired this decision (coverage marker).
+# SCEN  <id>
+# TEAM  <id>  <p1|p2>  <packed team string>
+# INIT  <id>  <seed>  <m,n,o,p>
+# DEC   <id> <seed> <req> <fP1> <fP2> <cP1> <cP2> <seedAfter> \
+#        p1(species hp max fnt status left) sleep1 p2(...) sleep2 first yawnResolved
+# END   <id>  <seed>  <ended:0|1>  <winner:p1|p2|tie|none>
+SCEN	yawn_resolve_sleep_wake
+TEAM	yawn_resolve_sleep_wake	p1	Snorlax|||Immunity|yawn,earthquake,thunderwave,splash|Adamant|4,252,,,,252|N||||
+TEAM	yawn_resolve_sleep_wake	p2	Blissey|||NaturalCure|splash|Careful|252,,,,252,|N||||
+INIT	yawn_resolve_sleep_wake	55026,4577,12455,12874	17324,26741,20490,20603
+DEC	yawn_resolve_sleep_wake	17324,26741,20490,20603	move	0	0	m0	m0	64630,29661,17421,4085	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	17324,26741,20490,20603	move	0	0	m3	m0	19429,52053,19437,22623	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	5	p1	1
+DEC	yawn_resolve_sleep_wake	17324,26741,20490,20603	move	0	0	m3	m0	11806,34185,30638,21310	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	0
+DEC	yawn_resolve_sleep_wake	17324,26741,20490,20603	move	0	0	m3	m0	12042,37536,61739,42041	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	17324,26741,20490,20603	move	0	0	m3	m0	8387,47494,2767,59968	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	17324,26741,20490,20603	move	0	0	m3	m0	14579,7021,61514,18947	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	17324,26741,20490,20603	move	0	0	m1	m0	43672,47838,5612,2407	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	17324,26741,20490,20603	move	0	0	m1	m0	31336,50248,17238,21544	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	17324,26741,20490,20603	1	p1
+INIT	yawn_resolve_sleep_wake	49148,34433,51989,3350	61080,5873,25302,31063
+DEC	yawn_resolve_sleep_wake	61080,5873,25302,31063	move	0	0	m0	m0	23759,4522,1807,36465	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	61080,5873,25302,31063	move	0	0	m3	m0	25015,3625,49564,2939	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	5	p1	1
+DEC	yawn_resolve_sleep_wake	61080,5873,25302,31063	move	0	0	m3	m0	17075,24505,6456,63818	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	0
+DEC	yawn_resolve_sleep_wake	61080,5873,25302,31063	move	0	0	m3	m0	31224,5234,31247,37621	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	61080,5873,25302,31063	move	0	0	m3	m0	56985,16017,56995,46700	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	61080,5873,25302,31063	move	0	0	m3	m0	49311,33726,81,25439	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	61080,5873,25302,31063	move	0	0	m1	m0	37102,15422,34683,42243	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	61080,5873,25302,31063	move	0	0	m1	m0	57837,45575,43806,14036	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	61080,5873,25302,31063	1	p1
+INIT	yawn_resolve_sleep_wake	44755,22218,899,51362	23620,12589,54882,21491
+DEC	yawn_resolve_sleep_wake	23620,12589,54882,21491	move	0	0	m0	m0	28275,10429,48625,30893	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	23620,12589,54882,21491	move	0	0	m3	m0	12684,31906,40264,54359	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	1
+DEC	yawn_resolve_sleep_wake	23620,12589,54882,21491	move	0	0	m3	m0	61404,15417,35301,62486	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	23620,12589,54882,21491	move	0	0	m3	m0	37551,38000,27673,45425	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	23620,12589,54882,21491	move	0	0	m3	m0	63414,57944,60502,6488	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	23620,12589,54882,21491	move	0	0	m3	m0	64102,29779,8982,46715	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	23620,12589,54882,21491	move	0	0	m1	m0	5108,28284,16751,24159	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	23620,12589,54882,21491	move	0	0	m1	m0	64633,62393,36911,38976	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	23620,12589,54882,21491	1	p1
+INIT	yawn_resolve_sleep_wake	41844,5361,35667,45294	63664,45865,63150,15439
+DEC	yawn_resolve_sleep_wake	63664,45865,63150,15439	move	0	0	m0	m0	50761,44208,92,51881	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	63664,45865,63150,15439	move	0	0	m3	m0	61767,45866,35590,20211	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	1
+DEC	yawn_resolve_sleep_wake	63664,45865,63150,15439	move	0	0	m3	m0	6623,392,59016,53154	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	63664,45865,63150,15439	move	0	0	m3	m0	53044,50338,12460,15277	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	63664,45865,63150,15439	move	0	0	m3	m0	57046,55340,64964,48900	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	63664,45865,63150,15439	move	0	0	m3	m0	55411,55065,21019,8023	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	63664,45865,63150,15439	move	0	0	m1	m0	39420,30845,47698,20859	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	63664,45865,63150,15439	move	0	0	m1	m0	1433,50472,7630,42092	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	63664,45865,63150,15439	1	p1
+INIT	yawn_resolve_sleep_wake	57418,24377,61835,53754	61404,22757,53178,20075
+DEC	yawn_resolve_sleep_wake	61404,22757,53178,20075	move	0	0	m0	m0	36326,49450,21893,16485	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	61404,22757,53178,20075	move	0	0	m3	m0	49829,64767,31850,55119	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	1
+DEC	yawn_resolve_sleep_wake	61404,22757,53178,20075	move	0	0	m3	m0	8849,56141,31407,55278	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	61404,22757,53178,20075	move	0	0	m3	m0	62006,61702,53655,11689	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	61404,22757,53178,20075	move	0	0	m3	m0	19405,1773,9178,4976	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	61404,22757,53178,20075	move	0	0	m3	m0	51276,6680,41383,14835	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	61404,22757,53178,20075	move	0	0	m1	m0	21261,27973,11387,23127	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	61404,22757,53178,20075	move	0	0	m1	m0	47484,26969,53364,18264	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	61404,22757,53178,20075	1	p1
+INIT	yawn_resolve_sleep_wake	41916,22153,41689,63430	11720,40545,11654,26183
+DEC	yawn_resolve_sleep_wake	11720,40545,11654,26183	move	0	0	m0	m0	34220,30735,13352,21985	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	11720,40545,11654,26183	move	0	0	m3	m0	22654,27201,43152,35179	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	11720,40545,11654,26183	move	0	0	m3	m0	17168,62784,49316,6394	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	11720,40545,11654,26183	move	0	0	m3	m0	4408,33099,63768,17253	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	11720,40545,11654,26183	move	0	0	m3	m0	60809,9528,46733,17052	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	11720,40545,11654,26183	move	0	0	m3	m0	22557,39572,16587,25167	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	11720,40545,11654,26183	move	0	0	m1	m0	55844,23327,38413,5363	Snorlax	462	462	0	-	1	0	Blissey	261	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	11720,40545,11654,26183	move	0	0	m1	m0	11538,28516,30158,11524	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	11720,40545,11654,26183	1	p1
+INIT	yawn_resolve_sleep_wake	20800,45365,59794,44626	24180,49053,39954,8163
+DEC	yawn_resolve_sleep_wake	24180,49053,39954,8163	move	0	0	m0	m0	50708,21804,653,18205	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	24180,49053,39954,8163	move	0	0	m3	m0	27160,41941,35861,16711	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	1
+DEC	yawn_resolve_sleep_wake	24180,49053,39954,8163	move	0	0	m3	m0	42898,1369,24937,24262	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	24180,49053,39954,8163	move	0	0	m3	m0	17178,62815,61914,63713	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	24180,49053,39954,8163	move	0	0	m3	m0	45433,33033,21730,14472	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	24180,49053,39954,8163	move	0	0	m3	m0	43712,52940,31071,46187	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	24180,49053,39954,8163	move	0	0	m1	m0	50471,11590,47349,56655	Snorlax	462	462	0	-	1	0	Blissey	230	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	24180,49053,39954,8163	move	0	0	m1	m0	20312,10439,11454,49520	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	24180,49053,39954,8163	1	p1
+INIT	yawn_resolve_sleep_wake	2098,58393,123,16798	60896,47257,26462,55103
+DEC	yawn_resolve_sleep_wake	60896,47257,26462,55103	move	0	0	m0	m0	21146,3970,39479,4121	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	60896,47257,26462,55103	move	0	0	m3	m0	61758,24250,48380,39651	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	5	p1	1
+DEC	yawn_resolve_sleep_wake	60896,47257,26462,55103	move	0	0	m3	m0	23021,26526,48872,13650	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	0
+DEC	yawn_resolve_sleep_wake	60896,47257,26462,55103	move	0	0	m3	m0	55743,37885,41866,35357	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	60896,47257,26462,55103	move	0	0	m3	m0	15700,18197,44163,41268	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	60896,47257,26462,55103	move	0	0	m3	m0	14591,47614,55750,3143	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	60896,47257,26462,55103	move	0	0	m1	m0	58242,15315,64657,53099	Snorlax	462	462	0	-	1	0	Blissey	235	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	60896,47257,26462,55103	move	0	0	m1	m0	55960,10932,56247,12444	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	60896,47257,26462,55103	1	p1
+INIT	yawn_resolve_sleep_wake	59808,16074,25552,48554	2060,17749,39786,43099
+DEC	yawn_resolve_sleep_wake	2060,17749,39786,43099	move	0	0	m0	m0	46142,526,65191,27861	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	2060,17749,39786,43099	move	0	0	m3	m0	28487,51988,22778,62015	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	5	p1	1
+DEC	yawn_resolve_sleep_wake	2060,17749,39786,43099	move	0	0	m3	m0	64331,6031,39556,59550	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	0
+DEC	yawn_resolve_sleep_wake	2060,17749,39786,43099	move	0	0	m3	m0	2919,372,7012,62233	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	2060,17749,39786,43099	move	0	0	m3	m0	59792,34726,1729,59552	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	2060,17749,39786,43099	move	0	0	m3	m0	18897,687,19589,1507	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	2060,17749,39786,43099	move	0	0	m1	m0	25043,18066,47509,51015	Snorlax	462	462	0	-	1	0	Blissey	261	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	2060,17749,39786,43099	move	0	0	m1	m0	13340,18997,35030,26248	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	2060,17749,39786,43099	1	p1
+INIT	yawn_resolve_sleep_wake	21324,50387,2469,61046	39160,57809,1078,28471
+DEC	yawn_resolve_sleep_wake	39160,57809,1078,28471	move	0	0	m0	m0	6647,541,59508,55633	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	39160,57809,1078,28471	move	0	0	m3	m0	23284,4503,33051,25435	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	39160,57809,1078,28471	move	0	0	m3	m0	59993,46702,45981,33962	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	39160,57809,1078,28471	move	0	0	m3	m0	59761,14884,33264,61397	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	39160,57809,1078,28471	move	0	0	m3	m0	38937,62142,40801,15052	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	39160,57809,1078,28471	move	0	0	m3	m0	61953,8050,38285,64831	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	39160,57809,1078,28471	move	0	0	m1	m0	17458,36098,57077,24803	Snorlax	462	462	0	-	1	0	Blissey	209	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	39160,57809,1078,28471	move	0	0	m1	m0	61331,28615,48375,3892	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	39160,57809,1078,28471	1	p1
+INIT	yawn_resolve_sleep_wake	43695,39055,50612,24578	19620,51725,11714,51155
+DEC	yawn_resolve_sleep_wake	19620,51725,11714,51155	move	0	0	m0	m0	52797,39103,65471,37261	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	19620,51725,11714,51155	move	0	0	m3	m0	18439,56750,39916,51767	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	1
+DEC	yawn_resolve_sleep_wake	19620,51725,11714,51155	move	0	0	m3	m0	61034,46288,63562,54646	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	19620,51725,11714,51155	move	0	0	m3	m0	6992,53497,40994,64593	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	19620,51725,11714,51155	move	0	0	m3	m0	25279,45962,63794,33720	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	19620,51725,11714,51155	move	0	0	m3	m0	62552,13499,37786,3675	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	19620,51725,11714,51155	move	0	0	m1	m0	47828,7266,8047,63551	Snorlax	462	462	0	-	1	0	Blissey	261	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	19620,51725,11714,51155	move	0	0	m1	m0	54305,384,21032,38560	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	19620,51725,11714,51155	1	p1
+INIT	yawn_resolve_sleep_wake	25184,29737,13970,24142	36624,64009,25614,3631
+DEC	yawn_resolve_sleep_wake	36624,64009,25614,3631	move	0	0	m0	m0	49185,44806,22655,37257	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	36624,64009,25614,3631	move	0	0	m3	m0	51577,50872,33183,49875	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	36624,64009,25614,3631	move	0	0	m3	m0	28791,33783,64310,26370	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	36624,64009,25614,3631	move	0	0	m3	m0	22430,20993,58059,21645	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	36624,64009,25614,3631	move	0	0	m3	m0	32685,17145,5753,28516	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	36624,64009,25614,3631	move	0	0	m3	m0	28225,53265,5736,5431	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	36624,64009,25614,3631	move	0	0	m1	m0	1691,55183,4078,43355	Snorlax	462	462	0	-	1	0	Blissey	230	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	36624,64009,25614,3631	move	0	0	m1	m0	45526,4605,64853,10444	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	36624,64009,25614,3631	1	p1
+INIT	yawn_resolve_sleep_wake	54165,52719,65040,62810	35900,11717,45850,24139
+DEC	yawn_resolve_sleep_wake	35900,11717,45850,24139	move	0	0	m0	m0	231,29472,64922,38213	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	35900,11717,45850,24139	move	0	0	m3	m0	36323,7422,63404,43311	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	1
+DEC	yawn_resolve_sleep_wake	35900,11717,45850,24139	move	0	0	m3	m0	37559,50374,37400,34126	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	35900,11717,45850,24139	move	0	0	m3	m0	32445,12085,20555,62601	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	35900,11717,45850,24139	move	0	0	m3	m0	50962,16971,53178,27088	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	35900,11717,45850,24139	move	0	0	m3	m0	14051,48096,23554,44499	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	35900,11717,45850,24139	move	0	0	m1	m0	14069,28592,39660,36452	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	35900,11717,45850,24139	1	p1
+INIT	yawn_resolve_sleep_wake	15029,23234,65400,61734	12328,57665,59110,37927
+DEC	yawn_resolve_sleep_wake	12328,57665,59110,37927	move	0	0	m0	m0	7921,61871,9205,6337	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	12328,57665,59110,37927	move	0	0	m3	m0	27549,60956,19260,39243	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	1
+DEC	yawn_resolve_sleep_wake	12328,57665,59110,37927	move	0	0	m3	m0	62251,59479,61989,15450	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	12328,57665,59110,37927	move	0	0	m3	m0	5534,48453,5273,38981	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	12328,57665,59110,37927	move	0	0	m3	m0	47997,35568,39199,40700	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	12328,57665,59110,37927	move	0	0	m3	m0	15484,42809,65177,13359	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	12328,57665,59110,37927	move	0	0	m1	m0	61724,49849,25140,35027	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	12328,57665,59110,37927	move	0	0	m1	m0	15878,28254,32920,56676	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	12328,57665,59110,37927	1	p1
+INIT	yawn_resolve_sleep_wake	4188,48685,34078,56754	9940,20605,35698,19395
+DEC	yawn_resolve_sleep_wake	9940,20605,35698,19395	move	0	0	m0	m0	42114,10956,12758,22525	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	9940,20605,35698,19395	move	0	0	m3	m0	16644,3858,63725,28455	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	1
+DEC	yawn_resolve_sleep_wake	9940,20605,35698,19395	move	0	0	m3	m0	48803,6776,50272,22566	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	9940,20605,35698,19395	move	0	0	m3	m0	4249,32653,31327,48065	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	9940,20605,35698,19395	move	0	0	m3	m0	51295,41799,4524,64232	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	9940,20605,35698,19395	move	0	0	m3	m0	7101,56988,18435,50251	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	9940,20605,35698,19395	move	0	0	m1	m0	192,59543,37691,44847	Snorlax	462	462	0	-	1	0	Blissey	245	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	9940,20605,35698,19395	move	0	0	m1	m0	30914,4070,35347,6096	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	9940,20605,35698,19395	1	p1
+INIT	yawn_resolve_sleep_wake	51912,2360,51656,1790	56384,30585,60606,57631
+DEC	yawn_resolve_sleep_wake	56384,30585,60606,57631	move	0	0	m0	m0	10383,39685,193,20217	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	56384,30585,60606,57631	move	0	0	m3	m0	58194,62133,38594,50883	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	1
+DEC	yawn_resolve_sleep_wake	56384,30585,60606,57631	move	0	0	m3	m0	47354,34415,27314,25778	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	56384,30585,60606,57631	move	0	0	m3	m0	63254,14244,26953,39677	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	56384,30585,60606,57631	move	0	0	m3	m0	62110,25452,59149,10644	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	56384,30585,60606,57631	move	0	0	m3	m0	33227,9191,50852,14887	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	56384,30585,60606,57631	move	0	0	m1	m0	46037,45498,50907,57163	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	56384,30585,60606,57631	move	0	0	m1	m0	35362,47300,46127,36092	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	56384,30585,60606,57631	1	p1
+INIT	yawn_resolve_sleep_wake	48520,61261,18865,30986	31852,4661,5834,28731
+DEC	yawn_resolve_sleep_wake	31852,4661,5834,28731	move	0	0	m0	m0	57975,55242,37943,47541	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	31852,4661,5834,28731	move	0	0	m3	m0	57952,2900,17008,64543	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	1
+DEC	yawn_resolve_sleep_wake	31852,4661,5834,28731	move	0	0	m3	m0	3690,22651,42623,44542	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	31852,4661,5834,28731	move	0	0	m3	m0	18455,3837,61077,12793	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	31852,4661,5834,28731	move	0	0	m3	m0	5966,12355,25232,38656	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	31852,4661,5834,28731	move	0	0	m3	m0	5666,24317,25857,12739	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	31852,4661,5834,28731	move	0	0	m1	m0	57372,2939,21961,62759	Snorlax	462	462	0	-	1	0	Blissey	235	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	31852,4661,5834,28731	move	0	0	m1	m0	56964,3194,1293,10472	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	31852,4661,5834,28731	1	p1
+INIT	yawn_resolve_sleep_wake	33255,1423,33874,65494	62296,40113,54678,54551
+DEC	yawn_resolve_sleep_wake	62296,40113,54678,54551	move	0	0	m0	m0	35350,49936,59049,5169	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	62296,40113,54678,54551	move	0	0	m3	m0	34160,11246,1780,11067	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	1
+DEC	yawn_resolve_sleep_wake	62296,40113,54678,54551	move	0	0	m3	m0	59467,210,31803,16394	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	62296,40113,54678,54551	move	0	0	m3	m0	28616,3611,45330,15541	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	62296,40113,54678,54551	move	0	0	m3	m0	40272,9780,41928,28460	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	62296,40113,54678,54551	move	0	0	m3	m0	56107,2088,31725,1823	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	62296,40113,54678,54551	move	0	0	m1	m0	40155,6817,8138,36035	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	62296,40113,54678,54551	move	0	0	m1	m0	61247,62670,49331,38804	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	62296,40113,54678,54551	1	p1
+INIT	yawn_resolve_sleep_wake	46704,28857,15004,10082	60676,21229,46370,43955
+DEC	yawn_resolve_sleep_wake	60676,21229,46370,43955	move	0	0	m0	m0	27943,54270,7299,39533	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	60676,21229,46370,43955	move	0	0	m3	m0	51540,21277,30457,12311	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	5	p1	1
+DEC	yawn_resolve_sleep_wake	60676,21229,46370,43955	move	0	0	m3	m0	25363,26232,20435,59094	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	0
+DEC	yawn_resolve_sleep_wake	60676,21229,46370,43955	move	0	0	m3	m0	44021,43211,32035,14129	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	60676,21229,46370,43955	move	0	0	m3	m0	2384,9940,26091,40472	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	60676,21229,46370,43955	move	0	0	m3	m0	28993,37874,49246,54843	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	60676,21229,46370,43955	move	0	0	m1	m0	31736,58653,62971,543	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	60676,21229,46370,43955	move	0	0	m1	m0	2682,49656,19160,17664	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	60676,21229,46370,43955	1	p1
+INIT	yawn_resolve_sleep_wake	20623,19559,7661,15278	54640,12521,366,20495
+DEC	yawn_resolve_sleep_wake	54640,12521,366,20495	move	0	0	m0	m0	26542,16386,52593,18537	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	54640,12521,366,20495	move	0	0	m3	m0	53349,1854,16018,42675	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	1
+DEC	yawn_resolve_sleep_wake	54640,12521,366,20495	move	0	0	m3	m0	25276,46336,15901,11874	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	54640,12521,366,20495	move	0	0	m3	m0	58345,3933,48170,23917	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	54640,12521,366,20495	move	0	0	m3	m0	36615,18753,29399,53188	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	54640,12521,366,20495	move	0	0	m3	m0	3493,33065,11223,31511	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	54640,12521,366,20495	move	0	0	m1	m0	63131,33449,20198,28987	Snorlax	462	462	0	-	1	0	Blissey	235	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	54640,12521,366,20495	move	0	0	m1	m0	15235,27373,52927,23852	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	54640,12521,366,20495	1	p1
+INIT	yawn_resolve_sleep_wake	2285,46508,18098,18618	55452,62117,50810,56875
+DEC	yawn_resolve_sleep_wake	55452,62117,50810,56875	move	0	0	m0	m0	42318,46013,49790,55845	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	55452,62117,50810,56875	move	0	0	m3	m0	23483,27126,14663,60175	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	55452,62117,50810,56875	move	0	0	m3	m0	10420,23768,55226,25262	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	55452,62117,50810,56875	move	0	0	m3	m0	2998,40287,63040,43881	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	55452,62117,50810,56875	move	0	0	m3	m0	30837,6438,48964,28720	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	55452,62117,50810,56875	move	0	0	m3	m0	55507,5576,26496,37299	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	55452,62117,50810,56875	move	0	0	m1	m0	60819,2539,21940,46615	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	55452,62117,50810,56875	move	0	0	m1	m0	29026,48549,33806,52248	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	55452,62117,50810,56875	1	p1
+INIT	yawn_resolve_sleep_wake	2435,58006,3791,6790	57992,5153,53318,12807
+DEC	yawn_resolve_sleep_wake	57992,5153,53318,12807	move	0	0	m0	m0	60624,45784,61111,52129	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	57992,5153,53318,12807	move	0	0	m3	m0	58498,45687,51793,6443	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	5	p1	1
+DEC	yawn_resolve_sleep_wake	57992,5153,53318,12807	move	0	0	m3	m0	42020,35413,3274,36794	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	0
+DEC	yawn_resolve_sleep_wake	57992,5153,53318,12807	move	0	0	m3	m0	64527,38900,55569,56613	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	57992,5153,53318,12807	move	0	0	m3	m0	2709,52005,56206,43868	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	57992,5153,53318,12807	move	0	0	m3	m0	18286,10476,30888,30223	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	57992,5153,53318,12807	move	0	0	m1	m0	56914,25479,9958,27827	Snorlax	462	462	0	-	1	0	Blissey	256	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	57992,5153,53318,12807	move	0	0	m1	m0	33921,43439,49690,15812	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	57992,5153,53318,12807	1	p1
+INIT	yawn_resolve_sleep_wake	4485,17451,23751,15634	40756,53597,43730,59299
+DEC	yawn_resolve_sleep_wake	40756,53597,43730,59299	move	0	0	m0	m0	46166,36626,32238,22749	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	40756,53597,43730,59299	move	0	0	m3	m0	6794,42824,11295,3335	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	1
+DEC	yawn_resolve_sleep_wake	40756,53597,43730,59299	move	0	0	m3	m0	64394,56881,21904,33158	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	40756,53597,43730,59299	move	0	0	m3	m0	56971,14775,10788,28321	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	40756,53597,43730,59299	move	0	0	m3	m0	5475,24833,4641,27976	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	40756,53597,43730,59299	move	0	0	m3	m0	49170,42636,26570,17451	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	40756,53597,43730,59299	move	0	0	m1	m0	41308,61425,22236,61711	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	40756,53597,43730,59299	move	0	0	m1	m0	62967,799,55627,7728	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	40756,53597,43730,59299	1	p1
+INIT	yawn_resolve_sleep_wake	20119,45554,17867,64606	31392,9817,41502,23295
+DEC	yawn_resolve_sleep_wake	31392,9817,41502,23295	move	0	0	m0	m0	29943,28177,16961,32217	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	31392,9817,41502,23295	move	0	0	m3	m0	9501,50993,19697,25251	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	1
+DEC	yawn_resolve_sleep_wake	31392,9817,41502,23295	move	0	0	m3	m0	24058,21541,65440,50194	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	31392,9817,41502,23295	move	0	0	m3	m0	29888,31233,55295,39901	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	31392,9817,41502,23295	move	0	0	m3	m0	3289,23105,33139,25076	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	31392,9817,41502,23295	move	0	0	m3	m0	34314,733,28611,55303	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	31392,9817,41502,23295	move	0	0	m1	m0	19255,24789,35248,24363	Snorlax	462	462	0	-	1	0	Blissey	235	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	31392,9817,41502,23295	move	0	0	m1	m0	10849,33579,50014,39260	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	31392,9817,41502,23295	1	p1
+INIT	yawn_resolve_sleep_wake	16261,41531,27566,25706	41164,53013,49706,43035
+DEC	yawn_resolve_sleep_wake	41164,53013,49706,43035	move	0	0	m0	m0	18267,32261,18070,63125	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	41164,53013,49706,43035	move	0	0	m3	m0	23193,25212,62016,30207	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	41164,53013,49706,43035	move	0	0	m3	m0	510,36117,57523,41822	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	41164,53013,49706,43035	move	0	0	m3	m0	38966,51916,59653,24793	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	41164,53013,49706,43035	move	0	0	m3	m0	22619,22570,520,62816	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	41164,53013,49706,43035	move	0	0	m3	m0	50174,2124,52895,52643	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	41164,53013,49706,43035	move	0	0	m1	m0	58731,3389,56153,37639	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	41164,53013,49706,43035	move	0	0	m1	m0	61772,38405,29479,39752	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	41164,53013,49706,43035	1	p1
+INIT	yawn_resolve_sleep_wake	29115,51685,45495,16694	64952,18321,55030,43767
+DEC	yawn_resolve_sleep_wake	64952,18321,55030,43767	move	0	0	m0	m0	28840,52109,49107,16145	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	64952,18321,55030,43767	move	0	0	m3	m0	65442,34501,26933,25371	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	64952,18321,55030,43767	move	0	0	m3	m0	11310,64028,11773,11114	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	64952,18321,55030,43767	move	0	0	m3	m0	22130,32969,35114,31125	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	64952,18321,55030,43767	move	0	0	m3	m0	1911,13352,2060,21388	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	64952,18321,55030,43767	move	0	0	m3	m0	32712,26091,7821,33023	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	64952,18321,55030,43767	move	0	0	m1	m0	48273,57715,22826,10403	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	64952,18321,55030,43767	move	0	0	m1	m0	57248,46636,64294,53236	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	64952,18321,55030,43767	1	p1
+INIT	yawn_resolve_sleep_wake	38966,14467,60320,7874	15716,52173,27778,65427
+DEC	yawn_resolve_sleep_wake	15716,52173,27778,65427	move	0	0	m0	m0	14389,23561,22038,37709	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	15716,52173,27778,65427	move	0	0	m3	m0	19126,2963,6239,1527	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	1
+DEC	yawn_resolve_sleep_wake	15716,52173,27778,65427	move	0	0	m3	m0	17140,33187,54678,10294	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	15716,52173,27778,65427	move	0	0	m3	m0	10769,12880,33123,25105	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	15716,52173,27778,65427	move	0	0	m3	m0	2252,20941,5710,26744	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	15716,52173,27778,65427	move	0	0	m3	m0	29520,5737,15942,3611	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	15716,52173,27778,65427	move	0	0	m1	m0	32796,2321,46561,31743	Snorlax	462	462	0	-	1	0	Blissey	235	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	15716,52173,27778,65427	move	0	0	m1	m0	32777,54109,13675,41824	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	15716,52173,27778,65427	1	p1
+INIT	yawn_resolve_sleep_wake	24940,47880,47103,18702	52176,22473,52942,495
+DEC	yawn_resolve_sleep_wake	52176,22473,52942,495	move	0	0	m0	m0	53772,39995,7512,61257	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	52176,22473,52942,495	move	0	0	m3	m0	5635,23590,55277,64147	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	52176,22473,52942,495	move	0	0	m3	m0	21830,7960,27176,9666	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	52176,22473,52942,495	move	0	0	m3	m0	29897,26626,16000,22093	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	52176,22473,52942,495	move	0	0	m3	m0	41346,61857,12050,57380	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	52176,22473,52942,495	move	0	0	m3	m0	22978,53519,64904,20727	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	52176,22473,52942,495	move	0	0	m1	m0	57986,18585,34408,43291	Snorlax	462	462	0	-	1	0	Blissey	187	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	52176,22473,52942,495	move	0	0	m1	m0	39485,30350,55008,16780	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	52176,22473,52942,495	1	p1
+INIT	yawn_resolve_sleep_wake	30235,8450,16906,52250	54524,42885,2522,52747
+DEC	yawn_resolve_sleep_wake	54524,42885,2522,52747	move	0	0	m0	m0	32335,15332,25177,3845	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	54524,42885,2522,52747	move	0	0	m3	m0	36696,63342,22347,40175	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	54524,42885,2522,52747	move	0	0	m3	m0	49038,41937,1664,28686	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	54524,42885,2522,52747	move	0	0	m3	m0	31418,43585,17708,21065	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	54524,42885,2522,52747	move	0	0	m3	m0	43771,51839,3755,9872	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	54524,42885,2522,52747	move	0	0	m3	m0	41300,58557,12095,58771	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	54524,42885,2522,52747	move	0	0	m1	m0	17300,14198,55177,35831	Snorlax	462	462	0	-	1	0	Blissey	235	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	54524,42885,2522,52747	move	0	0	m1	m0	44226,43567,36228,38520	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	54524,42885,2522,52747	1	p1
+INIT	yawn_resolve_sleep_wake	6750,58223,23105,29670	17640,14081,59814,16359
+DEC	yawn_resolve_sleep_wake	17640,14081,59814,16359	move	0	0	m0	m0	60438,680,54857,28289	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	17640,14081,59814,16359	move	0	0	m3	m0	24578,41931,4031,2315	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	17640,14081,59814,16359	move	0	0	m3	m0	31475,56043,21929,4890	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	17640,14081,59814,16359	move	0	0	m3	m0	58099,41632,50378,4613	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	17640,14081,59814,16359	move	0	0	m3	m0	36811,42711,24999,26556	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	17640,14081,59814,16359	move	0	0	m3	m0	34231,25279,17370,10223	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	17640,14081,59814,16359	move	0	0	m1	m0	12426,20573,54515,49299	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	17640,14081,59814,16359	move	0	0	m1	m0	7879,61722,62847,20004	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	17640,14081,59814,16359	1	p1
+INIT	yawn_resolve_sleep_wake	46730,55079,59174,52338	51092,16957,64050,62339
+DEC	yawn_resolve_sleep_wake	51092,16957,64050,62339	move	0	0	m0	m0	65031,31931,42236,18877	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	51092,16957,64050,62339	move	0	0	m3	m0	23644,27119,15289,6887	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	5	p1	1
+DEC	yawn_resolve_sleep_wake	51092,16957,64050,62339	move	0	0	m3	m0	62446,38372,53220,56038	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	0
+DEC	yawn_resolve_sleep_wake	51092,16957,64050,62339	move	0	0	m3	m0	41348,4320,33504,4481	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	51092,16957,64050,62339	move	0	0	m3	m0	49340,56581,29298,36776	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	51092,16957,64050,62339	move	0	0	m3	m0	14636,30826,17362,13323	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	51092,16957,64050,62339	move	0	0	m1	m0	14906,8528,4872,41711	Snorlax	462	462	0	-	1	0	Blissey	261	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	51092,16957,64050,62339	move	0	0	m1	m0	48456,60893,24377,54416	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	51092,16957,64050,62339	1	p1
+INIT	yawn_resolve_sleep_wake	5235,54193,65004,8638	51456,50489,34686,17631
+DEC	yawn_resolve_sleep_wake	51456,50489,34686,17631	move	0	0	m0	m0	62149,53187,41104,40121	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	51456,50489,34686,17631	move	0	0	m3	m0	27011,51364,51577,28291	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	5	p1	1
+DEC	yawn_resolve_sleep_wake	51456,50489,34686,17631	move	0	0	m3	m0	10448,53365,49864,21362	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	0
+DEC	yawn_resolve_sleep_wake	51456,50489,34686,17631	move	0	0	m3	m0	62173,60507,28149,36029	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	51456,50489,34686,17631	move	0	0	m3	m0	23857,60562,24451,19028	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	51456,50489,34686,17631	move	0	0	m3	m0	48544,39411,27141,58855	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	51456,50489,34686,17631	move	0	0	m1	m0	18331,23545,13792,20235	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	51456,50489,34686,17631	move	0	0	m1	m0	7787,22956,50289,21948	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	51456,50489,34686,17631	1	p1
+INIT	yawn_resolve_sleep_wake	63831,55491,16482,32714	29996,31733,40330,20475
+DEC	yawn_resolve_sleep_wake	29996,31733,40330,20475	move	0	0	m0	m0	57560,27593,54252,9077	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	29996,31733,40330,20475	move	0	0	m3	m0	14487,64038,32376,24543	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	1
+DEC	yawn_resolve_sleep_wake	29996,31733,40330,20475	move	0	0	m3	m0	63088,28822,1035,51390	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	29996,31733,40330,20475	move	0	0	m3	m0	51809,9554,35948,32697	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	29996,31733,40330,20475	move	0	0	m3	m0	6796,23182,350,960	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	29996,31733,40330,20475	move	0	0	m3	m0	39020,9896,62591,55683	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	29996,31733,40330,20475	move	0	0	m1	m0	49399,18484,22899,41191	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	29996,31733,40330,20475	move	0	0	m1	m0	14748,23528,6136,48552	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	29996,31733,40330,20475	1	p1
+INIT	yawn_resolve_sleep_wake	14229,32221,6967,45718	47128,57969,2134,61655
+DEC	yawn_resolve_sleep_wake	47128,57969,2134,61655	move	0	0	m0	m0	33630,8407,46540,23025	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	47128,57969,2134,61655	move	0	0	m3	m0	31210,9379,37328,2811	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	47128,57969,2134,61655	move	0	0	m3	m0	56139,23786,3576,18122	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	47128,57969,2134,61655	move	0	0	m3	m0	10899,42282,34946,42613	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	47128,57969,2134,61655	move	0	0	m3	m0	51849,63946,45049,59372	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	47128,57969,2134,61655	move	0	0	m3	m0	43402,59117,4688,27359	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	47128,57969,2134,61655	move	0	0	m1	m0	8007,893,31717,13443	Snorlax	462	462	0	-	1	0	Blissey	256	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	47128,57969,2134,61655	move	0	0	m1	m0	3894,51320,10109,47188	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	47128,57969,2134,61655	1	p1
+INIT	yawn_resolve_sleep_wake	7641,3405,20315,17954	15812,13485,21474,50035
+DEC	yawn_resolve_sleep_wake	15812,13485,21474,50035	move	0	0	m0	m0	15647,28023,27295,31789	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	15812,13485,21474,50035	move	0	0	m3	m0	13410,61050,38445,19415	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	1
+DEC	yawn_resolve_sleep_wake	15812,13485,21474,50035	move	0	0	m3	m0	56913,37066,17532,39318	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	15812,13485,21474,50035	move	0	0	m3	m0	40243,55509,11930,31985	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	15812,13485,21474,50035	move	0	0	m3	m0	26270,15120,9869,58072	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	15812,13485,21474,50035	move	0	0	m3	m0	18979,41677,30830,46587	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	15812,13485,21474,50035	move	0	0	m1	m0	31872,22282,28242,26079	Snorlax	462	462	0	-	1	0	Blissey	198	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	15812,13485,21474,50035	move	0	0	m1	m0	16309,56390,22197,45504	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	15812,13485,21474,50035	1	p1
+INIT	yawn_resolve_sleep_wake	48874,6475,36397,34414	29232,28329,52270,9167
+DEC	yawn_resolve_sleep_wake	29232,28329,52270,9167	move	0	0	m0	m0	9909,17728,35343,34345	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	29232,28329,52270,9167	move	0	0	m3	m0	29125,62486,14242,48755	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	29232,28329,52270,9167	move	0	0	m3	m0	28146,62132,50284,19746	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	29232,28329,52270,9167	move	0	0	m3	m0	29911,29273,59414,16173	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	29232,28329,52270,9167	move	0	0	m3	m0	10525,20912,12023,41092	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	29232,28329,52270,9167	move	0	0	m3	m0	38436,17462,8283,38615	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	29232,28329,52270,9167	move	0	0	m1	m0	8342,27073,42822,20731	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	29232,28329,52270,9167	move	0	0	m1	m0	31999,54044,53476,54764	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	29232,28329,52270,9167	1	p1
+INIT	yawn_resolve_sleep_wake	31890,8891,61466,32634	33116,19557,32058,11755
+DEC	yawn_resolve_sleep_wake	33116,19557,32058,11755	move	0	0	m0	m0	55368,36678,56617,13285	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	33116,19557,32058,11755	move	0	0	m3	m0	6072,39241,20919,48847	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	4	p1	1
+DEC	yawn_resolve_sleep_wake	33116,19557,32058,11755	move	0	0	m3	m0	4504,9177,7786,44398	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	0
+DEC	yawn_resolve_sleep_wake	33116,19557,32058,11755	move	0	0	m3	m0	28683,21099,15630,59689	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	33116,19557,32058,11755	move	0	0	m3	m0	64727,7662,48622,36080	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	33116,19557,32058,11755	move	0	0	m3	m0	33199,21120,45888,43379	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	33116,19557,32058,11755	move	0	0	m1	m0	42155,32728,20968,53719	Snorlax	462	462	0	-	1	0	Blissey	198	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	33116,19557,32058,11755	move	0	0	m1	m0	514,18794,52657,4312	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	33116,19557,32058,11755	1	p1
+INIT	yawn_resolve_sleep_wake	30681,54249,57807,64838	22344,18913,13062,48583
+DEC	yawn_resolve_sleep_wake	22344,18913,13062,48583	move	0	0	m0	m0	54693,40773,55978,353	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	22344,18913,13062,48583	move	0	0	m3	m0	61862,55333,7046,26859	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	1
+DEC	yawn_resolve_sleep_wake	22344,18913,13062,48583	move	0	0	m3	m0	30694,38149,52416,50810	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	22344,18913,13062,48583	move	0	0	m3	m0	14597,24319,55234,14053	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	22344,18913,13062,48583	move	0	0	m3	m0	35360,14904,11113,54300	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	22344,18913,13062,48583	move	0	0	m3	m0	46148,49105,24622,18895	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	22344,18913,13062,48583	move	0	0	m1	m0	54511,39020,27740,33907	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	22344,18913,13062,48583	move	0	0	m1	m0	15638,35187,6856,3716	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	22344,18913,13062,48583	1	p1
+INIT	yawn_resolve_sleep_wake	42543,60862,9277,35794	40948,41757,31122,28515
+DEC	yawn_resolve_sleep_wake	40948,41757,31122,28515	move	0	0	m0	m0	3,45550,42752,10909	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	40948,41757,31122,28515	move	0	0	m3	m0	55253,27927,10171,39111	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	1
+DEC	yawn_resolve_sleep_wake	40948,41757,31122,28515	move	0	0	m3	m0	30553,64638,13149,25670	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	40948,41757,31122,28515	move	0	0	m3	m0	17177,34496,33938,42081	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	40948,41757,31122,28515	move	0	0	m3	m0	46292,13191,12960,25096	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	40948,41757,31122,28515	move	0	0	m3	m0	666,48980,56347,37867	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	40948,41757,31122,28515	move	0	0	m1	m0	35574,35810,51134,50383	Snorlax	462	462	0	-	1	0	Blissey	230	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	40948,41757,31122,28515	move	0	0	m1	m0	12412,5362,7135,15088	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	40948,41757,31122,28515	1	p1
+INIT	yawn_resolve_sleep_wake	2450,28279,61992,30494	51040,21529,40158,40639
+DEC	yawn_resolve_sleep_wake	51040,21529,40158,40639	move	0	0	m0	m0	7752,49180,7086,43929	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	51040,21529,40158,40639	move	0	0	m3	m0	56482,63248,3162,60003	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	3	p1	1
+DEC	yawn_resolve_sleep_wake	51040,21529,40158,40639	move	0	0	m3	m0	36691,64350,46121,4818	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	2	p1	0
+DEC	yawn_resolve_sleep_wake	51040,21529,40158,40639	move	0	0	m3	m0	29916,36529,11051,28061	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	slp	1	1	p1	0
+DEC	yawn_resolve_sleep_wake	51040,21529,40158,40639	move	0	0	m3	m0	7182,6751,33084,58036	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	51040,21529,40158,40639	move	0	0	m3	m0	65228,59689,46442,25543	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	51040,21529,40158,40639	move	0	0	m1	m0	51039,41765,52075,44779	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	-	1	0	p1	0
+DEC	yawn_resolve_sleep_wake	51040,21529,40158,40639	move	0	0	m1	m0	61414,15431,46951,49692	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_resolve_sleep_wake	51040,21529,40158,40639	1	p1
+SCEN	yawn_into_statused
+TEAM	yawn_into_statused	p1	Snorlax|||Immunity|yawn,earthquake,thunderwave,splash|Adamant|4,252,,,,252|N||||
+TEAM	yawn_into_statused	p2	Blissey|||NaturalCure|splash|Careful|252,,,,252,|N||||
+INIT	yawn_into_statused	55026,4577,12455,12874	17324,26741,20490,20603
+DEC	yawn_into_statused	17324,26741,20490,20603	move	0	0	m2	m0	19429,52053,19437,22623	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	17324,26741,20490,20603	move	0	0	m0	m0	12042,37536,61739,42041	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	17324,26741,20490,20603	move	0	0	m1	m0	28325,23189,26176,26580	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	17324,26741,20490,20603	move	0	0	m1	m0	5652,9915,21018,48129	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	17324,26741,20490,20603	1	p1
+INIT	yawn_into_statused	49148,34433,51989,3350	61080,5873,25302,31063
+DEC	yawn_into_statused	61080,5873,25302,31063	move	0	0	m2	m0	25015,3625,49564,2939	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	61080,5873,25302,31063	move	0	0	m0	m0	31224,5234,31247,37621	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	61080,5873,25302,31063	move	0	0	m1	m0	13851,54797,83,43328	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	61080,5873,25302,31063	move	0	0	m1	m0	21440,13456,53548,16189	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	61080,5873,25302,31063	1	p1
+INIT	yawn_into_statused	44755,22218,899,51362	23620,12589,54882,21491
+DEC	yawn_into_statused	23620,12589,54882,21491	move	0	0	m2	m0	12684,31906,40264,54359	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	23620,12589,54882,21491	move	0	0	m0	m0	37551,38000,27673,45425	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	23620,12589,54882,21491	move	0	0	m1	m0	23205,48067,32231,38252	Snorlax	462	462	0	-	1	0	Blissey	224	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	23620,12589,54882,21491	move	0	0	m1	m0	34628,40482,41448,47673	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	23620,12589,54882,21491	1	p1
+INIT	yawn_into_statused	41844,5361,35667,45294	63664,45865,63150,15439
+DEC	yawn_into_statused	63664,45865,63150,15439	move	0	0	m2	m0	61767,45866,35590,20211	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	63664,45865,63150,15439	move	0	0	m0	m0	53044,50338,12460,15277	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	63664,45865,63150,15439	move	0	0	m1	m0	63388,20469,1591,6232	Snorlax	462	462	0	-	1	0	Blissey	224	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	63664,45865,63150,15439	move	0	0	m1	m0	2017,16088,58966,59637	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	63664,45865,63150,15439	1	p1
+INIT	yawn_into_statused	57418,24377,61835,53754	61404,22757,53178,20075
+DEC	yawn_into_statused	61404,22757,53178,20075	move	0	0	m2	m0	49829,64767,31850,55119	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	61404,22757,53178,20075	move	0	0	m0	m0	62006,61702,53655,11689	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	61404,22757,53178,20075	move	0	0	m1	m0	41188,63399,65085,56836	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	61404,22757,53178,20075	move	0	0	m1	m0	27199,23406,46067,18289	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	61404,22757,53178,20075	1	p1
+INIT	yawn_into_statused	41916,22153,41689,63430	11720,40545,11654,26183
+DEC	yawn_into_statused	11720,40545,11654,26183	move	0	0	m2	m0	22654,27201,43152,35179	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	11720,40545,11654,26183	move	0	0	m0	m0	4408,33099,63768,17253	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	11720,40545,11654,26183	move	0	0	m1	m0	61207,12208,2232,21104	Snorlax	462	462	0	-	1	0	Blissey	256	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	11720,40545,11654,26183	move	0	0	m1	m0	22502,28617,5040,4525	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	11720,40545,11654,26183	1	p1
+INIT	yawn_into_statused	20800,45365,59794,44626	24180,49053,39954,8163
+DEC	yawn_into_statused	24180,49053,39954,8163	move	0	0	m2	m0	27160,41941,35861,16711	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	24180,49053,39954,8163	move	0	0	m0	m0	17178,62815,61914,63713	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	24180,49053,39954,8163	move	0	0	m1	m0	33319,40616,1571,41372	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	24180,49053,39954,8163	move	0	0	m1	m0	30413,37705,501,17321	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	24180,49053,39954,8163	1	p1
+INIT	yawn_into_statused	2098,58393,123,16798	60896,47257,26462,55103
+DEC	yawn_into_statused	60896,47257,26462,55103	move	0	0	m2	m0	61758,24250,48380,39651	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	60896,47257,26462,55103	move	0	0	m0	m0	55743,37885,41866,35357	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	60896,47257,26462,55103	move	0	0	m1	m0	38378,6045,9911,46984	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	60896,47257,26462,55103	move	0	0	m1	m0	4128,24668,54002,39269	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	60896,47257,26462,55103	1	p1
+INIT	yawn_into_statused	59808,16074,25552,48554	2060,17749,39786,43099
+DEC	yawn_into_statused	2060,17749,39786,43099	move	0	0	m2	m0	28487,51988,22778,62015	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	2060,17749,39786,43099	move	0	0	m0	m0	2919,372,7012,62233	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	2060,17749,39786,43099	move	0	0	m1	m0	61053,55542,48502,16436	Snorlax	462	462	0	-	1	0	Blissey	261	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	2060,17749,39786,43099	move	0	0	m1	m0	5546,27530,14290,36577	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	2060,17749,39786,43099	1	p1
+INIT	yawn_into_statused	21324,50387,2469,61046	39160,57809,1078,28471
+DEC	yawn_into_statused	39160,57809,1078,28471	move	0	0	m2	m0	23284,4503,33051,25435	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	39160,57809,1078,28471	move	0	0	m0	m0	59761,14884,33264,61397	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	39160,57809,1078,28471	move	0	0	m1	m0	17652,61017,30232,42912	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	39160,57809,1078,28471	move	0	0	m1	m0	8926,61372,27568,24605	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	39160,57809,1078,28471	1	p1
+INIT	yawn_into_statused	43695,39055,50612,24578	19620,51725,11714,51155
+DEC	yawn_into_statused	19620,51725,11714,51155	move	0	0	m2	m0	18439,56750,39916,51767	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	19620,51725,11714,51155	move	0	0	m0	m0	6992,53497,40994,64593	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	19620,51725,11714,51155	move	0	0	m1	m0	59535,38446,14873,6604	Snorlax	462	462	0	-	1	0	Blissey	187	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	19620,51725,11714,51155	move	0	0	m1	m0	36518,62851,40221,2329	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	19620,51725,11714,51155	1	p1
+INIT	yawn_into_statused	25184,29737,13970,24142	36624,64009,25614,3631
+DEC	yawn_into_statused	36624,64009,25614,3631	move	0	0	m2	m0	51577,50872,33183,49875	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	36624,64009,25614,3631	move	0	0	m0	m0	22430,20993,58059,21645	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	36624,64009,25614,3631	move	0	0	m1	m0	36114,58645,7864,33464	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	36624,64009,25614,3631	move	0	0	m1	m0	7221,30185,35277,17877	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	36624,64009,25614,3631	1	p1
+INIT	yawn_into_statused	54165,52719,65040,62810	35900,11717,45850,24139
+DEC	yawn_into_statused	35900,11717,45850,24139	move	0	0	m2	m0	36323,7422,63404,43311	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	35900,11717,45850,24139	move	0	0	m0	m0	32445,12085,20555,62601	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	35900,11717,45850,24139	move	0	0	m1	m0	14069,28592,39660,36452	Snorlax	462	462	0	-	1	0	Blissey	224	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	35900,11717,45850,24139	move	0	0	m1	m0	9833,38919,43919,37457	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	35900,11717,45850,24139	1	p1
+INIT	yawn_into_statused	15029,23234,65400,61734	12328,57665,59110,37927
+DEC	yawn_into_statused	12328,57665,59110,37927	move	0	0	m2	m0	27549,60956,19260,39243	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	12328,57665,59110,37927	move	0	0	m0	m0	5534,48453,5273,38981	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	12328,57665,59110,37927	move	0	0	m1	m0	53123,6918,18548,43216	Snorlax	462	462	0	-	1	0	Blissey	209	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	12328,57665,59110,37927	move	0	0	m1	m0	42456,59027,55597,10893	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	12328,57665,59110,37927	1	p1
+INIT	yawn_into_statused	4188,48685,34078,56754	9940,20605,35698,19395
+DEC	yawn_into_statused	9940,20605,35698,19395	move	0	0	m2	m0	16644,3858,63725,28455	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	9940,20605,35698,19395	move	0	0	m0	m0	4249,32653,31327,48065	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	9940,20605,35698,19395	move	0	0	m1	m0	46362,31671,1997,65020	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	9940,20605,35698,19395	move	0	0	m1	m0	63946,5277,3854,2697	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	9940,20605,35698,19395	1	p1
+INIT	yawn_into_statused	51912,2360,51656,1790	56384,30585,60606,57631
+DEC	yawn_into_statused	56384,30585,60606,57631	move	0	0	m2	m0	58194,62133,38594,50883	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	56384,30585,60606,57631	move	0	0	m0	m0	63254,14244,26953,39677	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	56384,30585,60606,57631	move	0	0	m1	m0	64755,32711,2352,31208	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	56384,30585,60606,57631	move	0	0	m1	m0	41800,21260,41313,60997	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	56384,30585,60606,57631	1	p1
+INIT	yawn_into_statused	48520,61261,18865,30986	31852,4661,5834,28731
+DEC	yawn_into_statused	31852,4661,5834,28731	move	0	0	m2	m0	57952,2900,17008,64543	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	31852,4661,5834,28731	move	0	0	m0	m0	18455,3837,61077,12793	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	31852,4661,5834,28731	move	0	0	m1	m0	39622,19110,40861,51348	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	31852,4661,5834,28731	move	0	0	m1	m0	36456,40941,16723,20929	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	31852,4661,5834,28731	1	p1
+INIT	yawn_into_statused	33255,1423,33874,65494	62296,40113,54678,54551
+DEC	yawn_into_statused	62296,40113,54678,54551	move	0	0	m2	m0	34160,11246,1780,11067	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	62296,40113,54678,54551	move	0	0	m0	m0	28616,3611,45330,15541	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	62296,40113,54678,54551	move	0	0	m1	m0	24357,41916,32716,22016	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	62296,40113,54678,54551	move	0	0	m1	m0	65141,61437,23590,28925	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	62296,40113,54678,54551	1	p1
+INIT	yawn_into_statused	46704,28857,15004,10082	60676,21229,46370,43955
+DEC	yawn_into_statused	60676,21229,46370,43955	move	0	0	m2	m0	51540,21277,30457,12311	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	60676,21229,46370,43955	move	0	0	m0	m0	44021,43211,32035,14129	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	60676,21229,46370,43955	move	0	0	m1	m0	51592,30177,33084,20012	Snorlax	462	462	0	-	1	0	Blissey	245	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	60676,21229,46370,43955	move	0	0	m1	m0	48998,41162,48154,18425	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	60676,21229,46370,43955	1	p1
+INIT	yawn_into_statused	20623,19559,7661,15278	54640,12521,366,20495
+DEC	yawn_into_statused	54640,12521,366,20495	move	0	0	m2	m0	53349,1854,16018,42675	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	54640,12521,366,20495	move	0	0	m0	m0	58345,3933,48170,23917	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	54640,12521,366,20495	move	0	0	m1	m0	53707,9625,44714,32214	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	54640,12521,366,20495	1	p1
+INIT	yawn_into_statused	2285,46508,18098,18618	55452,62117,50810,56875
+DEC	yawn_into_statused	55452,62117,50810,56875	move	0	0	m2	m0	23483,27126,14663,60175	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	55452,62117,50810,56875	move	0	0	m0	m0	2998,40287,63040,43881	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	55452,62117,50810,56875	move	0	0	m1	m0	21129,31698,52105,61124	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	55452,62117,50810,56875	move	0	0	m1	m0	25134,59276,63773,52529	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	55452,62117,50810,56875	1	p1
+INIT	yawn_into_statused	2435,58006,3791,6790	57992,5153,53318,12807
+DEC	yawn_into_statused	57992,5153,53318,12807	move	0	0	m2	m0	58498,45687,51793,6443	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	57992,5153,53318,12807	move	0	0	m0	m0	64527,38900,55569,56613	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	57992,5153,53318,12807	move	0	0	m1	m0	54113,63915,4898,44848	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	57992,5153,53318,12807	move	0	0	m1	m0	15050,19698,49779,13165	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	57992,5153,53318,12807	1	p1
+INIT	yawn_into_statused	4485,17451,23751,15634	40756,53597,43730,59299
+DEC	yawn_into_statused	40756,53597,43730,59299	move	0	0	m2	m0	6794,42824,11295,3335	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	40756,53597,43730,59299	move	0	0	m0	m0	56971,14775,10788,28321	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	40756,53597,43730,59299	move	0	0	m1	m0	28048,60639,40295,2652	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	40756,53597,43730,59299	move	0	0	m1	m0	64609,43229,29208,49513	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	40756,53597,43730,59299	1	p1
+INIT	yawn_into_statused	20119,45554,17867,64606	31392,9817,41502,23295
+DEC	yawn_into_statused	31392,9817,41502,23295	move	0	0	m2	m0	9501,50993,19697,25251	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	31392,9817,41502,23295	move	0	0	m0	m0	29888,31233,55295,39901	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	31392,9817,41502,23295	move	0	0	m1	m0	36972,56127,30362,60488	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	31392,9817,41502,23295	move	0	0	m1	m0	44952,13648,37786,13093	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	31392,9817,41502,23295	1	p1
+INIT	yawn_into_statused	16261,41531,27566,25706	41164,53013,49706,43035
+DEC	yawn_into_statused	41164,53013,49706,43035	move	0	0	m2	m0	23193,25212,62016,30207	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	41164,53013,49706,43035	move	0	0	m0	m0	38966,51916,59653,24793	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	41164,53013,49706,43035	move	0	0	m1	m0	25696,22893,5556,244	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	41164,53013,49706,43035	move	0	0	m1	m0	30705,6501,41158,1185	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	41164,53013,49706,43035	1	p1
+INIT	yawn_into_statused	29115,51685,45495,16694	64952,18321,55030,43767
+DEC	yawn_into_statused	64952,18321,55030,43767	move	0	0	m2	m0	65442,34501,26933,25371	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	64952,18321,55030,43767	move	0	0	m0	m0	22130,32969,35114,31125	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	64952,18321,55030,43767	move	0	0	m1	m0	42438,19566,5233,46176	Snorlax	462	462	0	-	1	0	Blissey	230	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	64952,18321,55030,43767	move	0	0	m1	m0	21300,57298,28773,29149	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	64952,18321,55030,43767	1	p1
+INIT	yawn_into_statused	38966,14467,60320,7874	15716,52173,27778,65427
+DEC	yawn_into_statused	15716,52173,27778,65427	move	0	0	m2	m0	19126,2963,6239,1527	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	15716,52173,27778,65427	move	0	0	m0	m0	10769,12880,33123,25105	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	15716,52173,27778,65427	move	0	0	m1	m0	38966,57521,23630,12940	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	15716,52173,27778,65427	move	0	0	m1	m0	32402,11477,12553,30425	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	15716,52173,27778,65427	1	p1
+INIT	yawn_into_statused	24940,47880,47103,18702	52176,22473,52942,495
+DEC	yawn_into_statused	52176,22473,52942,495	move	0	0	m2	m0	5635,23590,55277,64147	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	52176,22473,52942,495	move	0	0	m0	m0	29897,26626,16000,22093	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	52176,22473,52942,495	move	0	0	m1	m0	1052,15569,650,26488	Snorlax	462	462	0	-	1	0	Blissey	245	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	52176,22473,52942,495	move	0	0	m1	m0	2335,24009,41062,53141	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	52176,22473,52942,495	1	p1
+INIT	yawn_into_statused	30235,8450,16906,52250	54524,42885,2522,52747
+DEC	yawn_into_statused	54524,42885,2522,52747	move	0	0	m2	m0	36696,63342,22347,40175	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	54524,42885,2522,52747	move	0	0	m0	m0	31418,43585,17708,21065	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	54524,42885,2522,52747	move	0	0	m1	m0	37264,31555,34584,65316	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	54524,42885,2522,52747	move	0	0	m1	m0	58611,9894,27252,63505	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	54524,42885,2522,52747	1	p1
+INIT	yawn_into_statused	6750,58223,23105,29670	17640,14081,59814,16359
+DEC	yawn_into_statused	17640,14081,59814,16359	move	0	0	m2	m0	24578,41931,4031,2315	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	17640,14081,59814,16359	move	0	0	m0	m0	58099,41632,50378,4613	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	17640,14081,59814,16359	move	0	0	m1	m0	23748,27753,29119,26000	Snorlax	462	462	0	-	1	0	Blissey	187	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	17640,14081,59814,16359	move	0	0	m1	m0	20310,50750,427,11341	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	17640,14081,59814,16359	1	p1
+INIT	yawn_into_statused	46730,55079,59174,52338	51092,16957,64050,62339
+DEC	yawn_into_statused	51092,16957,64050,62339	move	0	0	m2	m0	23644,27119,15289,6887	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	51092,16957,64050,62339	move	0	0	m0	m0	41348,4320,33504,4481	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	51092,16957,64050,62339	move	0	0	m1	m0	57672,23123,48625,50876	Snorlax	462	462	0	-	1	0	Blissey	209	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	51092,16957,64050,62339	move	0	0	m1	m0	14119,24282,63724,26697	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	51092,16957,64050,62339	1	p1
+INIT	yawn_into_statused	5235,54193,65004,8638	51456,50489,34686,17631
+DEC	yawn_into_statused	51456,50489,34686,17631	move	0	0	m2	m0	27011,51364,51577,28291	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	51456,50489,34686,17631	move	0	0	m0	m0	62173,60507,28149,36029	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	51456,50489,34686,17631	move	0	0	m1	m0	43369,51921,30708,3752	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	51456,50489,34686,17631	move	0	0	m1	m0	15235,10880,56260,26629	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	51456,50489,34686,17631	1	p1
+INIT	yawn_into_statused	63831,55491,16482,32714	29996,31733,40330,20475
+DEC	yawn_into_statused	29996,31733,40330,20475	move	0	0	m2	m0	14487,64038,32376,24543	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	29996,31733,40330,20475	move	0	0	m0	m0	51809,9554,35948,32697	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	29996,31733,40330,20475	move	0	0	m1	m0	20845,23426,5819,59732	Snorlax	462	462	0	-	1	0	Blissey	235	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	29996,31733,40330,20475	move	0	0	m1	m0	43128,33394,9217,42881	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	29996,31733,40330,20475	1	p1
+INIT	yawn_into_statused	14229,32221,6967,45718	47128,57969,2134,61655
+DEC	yawn_into_statused	47128,57969,2134,61655	move	0	0	m2	m0	31210,9379,37328,2811	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	47128,57969,2134,61655	move	0	0	m0	m0	10899,42282,34946,42613	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	47128,57969,2134,61655	move	0	0	m1	m0	55836,32828,15621,49856	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	47128,57969,2134,61655	move	0	0	m1	m0	13919,45162,55958,25277	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	47128,57969,2134,61655	1	p1
+INIT	yawn_into_statused	7641,3405,20315,17954	15812,13485,21474,50035
+DEC	yawn_into_statused	15812,13485,21474,50035	move	0	0	m2	m0	13410,61050,38445,19415	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	15812,13485,21474,50035	move	0	0	m0	m0	40243,55509,11930,31985	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	15812,13485,21474,50035	move	0	0	m1	m0	8742,18380,49745,50924	Snorlax	462	462	0	-	1	0	Blissey	256	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	15812,13485,21474,50035	move	0	0	m1	m0	30187,55964,51649,38329	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	15812,13485,21474,50035	1	p1
+INIT	yawn_into_statused	48874,6475,36397,34414	29232,28329,52270,9167
+DEC	yawn_into_statused	29232,28329,52270,9167	move	0	0	m2	m0	29125,62486,14242,48755	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	29232,28329,52270,9167	move	0	0	m0	m0	29911,29273,59414,16173	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	29232,28329,52270,9167	move	0	0	m1	m0	22237,63087,52698,57816	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	29232,28329,52270,9167	move	0	0	m1	m0	8878,56432,5001,64629	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	29232,28329,52270,9167	1	p1
+INIT	yawn_into_statused	31890,8891,61466,32634	33116,19557,32058,11755
+DEC	yawn_into_statused	33116,19557,32058,11755	move	0	0	m2	m0	6072,39241,20919,48847	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	33116,19557,32058,11755	move	0	0	m0	m0	28683,21099,15630,59689	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	33116,19557,32058,11755	move	0	0	m1	m0	11427,32764,52633,49028	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	33116,19557,32058,11755	move	0	0	m1	m0	49981,47525,65429,4849	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	33116,19557,32058,11755	1	p1
+INIT	yawn_into_statused	30681,54249,57807,64838	22344,18913,13062,48583
+DEC	yawn_into_statused	22344,18913,13062,48583	move	0	0	m2	m0	61862,55333,7046,26859	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	22344,18913,13062,48583	move	0	0	m0	m0	14597,24319,55234,14053	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	22344,18913,13062,48583	move	0	0	m1	m0	51935,27204,25674,52208	Snorlax	462	462	0	-	1	0	Blissey	198	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	22344,18913,13062,48583	move	0	0	m1	m0	49190,8268,38613,5421	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	22344,18913,13062,48583	1	p1
+INIT	yawn_into_statused	42543,60862,9277,35794	40948,41757,31122,28515
+DEC	yawn_into_statused	40948,41757,31122,28515	move	0	0	m2	m0	55253,27927,10171,39111	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	40948,41757,31122,28515	move	0	0	m0	m0	17177,34496,33938,42081	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	40948,41757,31122,28515	move	0	0	m1	m0	59289,33316,51357,48506	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	40948,41757,31122,28515	1	p1
+INIT	yawn_into_statused	2450,28279,61992,30494	51040,21529,40158,40639
+DEC	yawn_into_statused	51040,21529,40158,40639	move	0	0	m2	m0	56482,63248,3162,60003	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	51040,21529,40158,40639	move	0	0	m0	m0	29916,36529,11051,28061	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	51040,21529,40158,40639	move	0	0	m1	m0	13808,20093,3387,57608	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	par	1	0	p1	0
+DEC	yawn_into_statused	51040,21529,40158,40639	move	0	0	m1	m0	58039,12957,31200,36069	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_into_statused	51040,21529,40158,40639	1	p1
+SCEN	yawn_into_vitalspirit
+TEAM	yawn_into_vitalspirit	p1	Snorlax|||Immunity|yawn,earthquake,thunderwave,splash|Adamant|4,252,,,,252|N||||
+TEAM	yawn_into_vitalspirit	p2	Primeape|||VitalSpirit|splash|Careful|252,,,,252,|N||||
+INIT	yawn_into_vitalspirit	55026,4577,12455,12874	17324,26741,20490,20603
+DEC	yawn_into_vitalspirit	17324,26741,20490,20603	move	0	0	m0	m0	64630,29661,17421,4085	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	17324,26741,20490,20603	move	0	0	m1	m0	12042,37536,61739,42041	Snorlax	462	462	0	-	1	0	Primeape	148	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	17324,26741,20490,20603	move	0	0	m1	m0	24191,25959,55590,27890	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	17324,26741,20490,20603	1	p1
+INIT	yawn_into_vitalspirit	49148,34433,51989,3350	61080,5873,25302,31063
+DEC	yawn_into_vitalspirit	61080,5873,25302,31063	move	0	0	m0	m0	23759,4522,1807,36465	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	61080,5873,25302,31063	move	0	0	m1	m0	31224,5234,31247,37621	Snorlax	462	462	0	-	1	0	Primeape	152	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	61080,5873,25302,31063	move	0	0	m1	m0	7036,51650,31241,43582	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	61080,5873,25302,31063	1	p1
+INIT	yawn_into_vitalspirit	44755,22218,899,51362	23620,12589,54882,21491
+DEC	yawn_into_vitalspirit	23620,12589,54882,21491	move	0	0	m0	m0	28275,10429,48625,30893	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	23620,12589,54882,21491	move	0	0	m1	m0	37551,38000,27673,45425	Snorlax	462	462	0	-	1	0	Primeape	171	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	23620,12589,54882,21491	move	0	0	m1	m0	30226,46261,57633,28746	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	23620,12589,54882,21491	1	p1
+INIT	yawn_into_vitalspirit	41844,5361,35667,45294	63664,45865,63150,15439
+DEC	yawn_into_vitalspirit	63664,45865,63150,15439	move	0	0	m0	m0	50761,44208,92,51881	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	63664,45865,63150,15439	move	0	0	m1	m0	53044,50338,12460,15277	Snorlax	462	462	0	-	1	0	Primeape	146	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	63664,45865,63150,15439	move	0	0	m1	m0	29636,46135,30720,35606	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	63664,45865,63150,15439	1	p1
+INIT	yawn_into_vitalspirit	57418,24377,61835,53754	61404,22757,53178,20075
+DEC	yawn_into_vitalspirit	61404,22757,53178,20075	move	0	0	m0	m0	36326,49450,21893,16485	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	61404,22757,53178,20075	move	0	0	m1	m0	62006,61702,53655,11689	Snorlax	462	462	0	-	1	0	Primeape	148	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	61404,22757,53178,20075	move	0	0	m1	m0	41173,16414,24264,34466	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	61404,22757,53178,20075	1	p1
+INIT	yawn_into_vitalspirit	41916,22153,41689,63430	11720,40545,11654,26183
+DEC	yawn_into_vitalspirit	11720,40545,11654,26183	move	0	0	m0	m0	34220,30735,13352,21985	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	11720,40545,11654,26183	move	0	0	m1	m0	4408,33099,63768,17253	Snorlax	462	462	0	-	1	0	Primeape	152	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	11720,40545,11654,26183	move	0	0	m1	m0	56721,37982,27689,44782	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	11720,40545,11654,26183	1	p1
+INIT	yawn_into_vitalspirit	20800,45365,59794,44626	24180,49053,39954,8163
+DEC	yawn_into_vitalspirit	24180,49053,39954,8163	move	0	0	m0	m0	50708,21804,653,18205	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	24180,49053,39954,8163	move	0	0	m1	m0	17178,62815,61914,63713	Snorlax	462	462	0	-	1	0	Primeape	163	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	24180,49053,39954,8163	move	0	0	m1	m0	13576,64658,11619,4090	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	24180,49053,39954,8163	1	p1
+INIT	yawn_into_vitalspirit	2098,58393,123,16798	60896,47257,26462,55103
+DEC	yawn_into_vitalspirit	60896,47257,26462,55103	move	0	0	m0	m0	21146,3970,39479,4121	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	60896,47257,26462,55103	move	0	0	m1	m0	55743,37885,41866,35357	Snorlax	462	462	0	-	1	0	Primeape	154	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	60896,47257,26462,55103	move	0	0	m1	m0	26746,43698,12748,30150	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	60896,47257,26462,55103	1	p1
+INIT	yawn_into_vitalspirit	59808,16074,25552,48554	2060,17749,39786,43099
+DEC	yawn_into_vitalspirit	2060,17749,39786,43099	move	0	0	m0	m0	46142,526,65191,27861	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	2060,17749,39786,43099	move	0	0	m1	m0	2919,372,7012,62233	Snorlax	462	462	0	-	1	0	Primeape	173	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	2060,17749,39786,43099	move	0	0	m1	m0	41128,10631,62040,15645	Snorlax	462	462	0	-	1	0	Primeape	10	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	2060,17749,39786,43099	move	0	0	m1	m0	21536,52321,50900,15558	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	2060,17749,39786,43099	1	p1
+INIT	yawn_into_vitalspirit	21324,50387,2469,61046	39160,57809,1078,28471
+DEC	yawn_into_vitalspirit	39160,57809,1078,28471	move	0	0	m0	m0	6647,541,59508,55633	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	39160,57809,1078,28471	move	0	0	m1	m0	59761,14884,33264,61397	Snorlax	462	462	0	-	1	0	Primeape	171	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	39160,57809,1078,28471	move	0	0	m1	m0	20909,54993,32363,16286	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	39160,57809,1078,28471	1	p1
+INIT	yawn_into_vitalspirit	43695,39055,50612,24578	19620,51725,11714,51155
+DEC	yawn_into_vitalspirit	19620,51725,11714,51155	move	0	0	m0	m0	52797,39103,65471,37261	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	19620,51725,11714,51155	move	0	0	m1	m0	6992,53497,40994,64593	Snorlax	462	462	0	-	1	0	Primeape	171	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	19620,51725,11714,51155	move	0	0	m1	m0	3654,18986,30233,64426	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	19620,51725,11714,51155	1	p1
+INIT	yawn_into_vitalspirit	25184,29737,13970,24142	36624,64009,25614,3631
+DEC	yawn_into_vitalspirit	36624,64009,25614,3631	move	0	0	m0	m0	49185,44806,22655,37257	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	36624,64009,25614,3631	move	0	0	m1	m0	22430,20993,58059,21645	Snorlax	462	462	0	-	1	0	Primeape	158	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	36624,64009,25614,3631	move	0	0	m1	m0	16056,64826,21266,27766	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	36624,64009,25614,3631	1	p1
+INIT	yawn_into_vitalspirit	54165,52719,65040,62810	35900,11717,45850,24139
+DEC	yawn_into_vitalspirit	35900,11717,45850,24139	move	0	0	m0	m0	231,29472,64922,38213	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	35900,11717,45850,24139	move	0	0	m1	m0	32445,12085,20555,62601	Snorlax	462	462	0	-	1	0	Primeape	162	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	35900,11717,45850,24139	move	0	0	m1	m0	31311,64360,33024,7682	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	35900,11717,45850,24139	1	p1
+INIT	yawn_into_vitalspirit	15029,23234,65400,61734	12328,57665,59110,37927
+DEC	yawn_into_vitalspirit	12328,57665,59110,37927	move	0	0	m0	m0	7921,61871,9205,6337	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	12328,57665,59110,37927	move	0	0	m1	m0	5534,48453,5273,38981	Snorlax	462	462	0	-	1	0	Primeape	173	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	12328,57665,59110,37927	move	0	0	m1	m0	16793,46816,45262,23630	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	12328,57665,59110,37927	1	p1
+INIT	yawn_into_vitalspirit	4188,48685,34078,56754	9940,20605,35698,19395
+DEC	yawn_into_vitalspirit	9940,20605,35698,19395	move	0	0	m0	m0	42114,10956,12758,22525	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	9940,20605,35698,19395	move	0	0	m1	m0	4249,32653,31327,48065	Snorlax	462	462	0	-	1	0	Primeape	165	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	9940,20605,35698,19395	move	0	0	m1	m0	49291,12211,28604,13146	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	9940,20605,35698,19395	1	p1
+INIT	yawn_into_vitalspirit	51912,2360,51656,1790	56384,30585,60606,57631
+DEC	yawn_into_vitalspirit	56384,30585,60606,57631	move	0	0	m0	m0	10383,39685,193,20217	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	56384,30585,60606,57631	move	0	0	m1	m0	63254,14244,26953,39677	Snorlax	462	462	0	-	1	0	Primeape	165	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	56384,30585,60606,57631	move	0	0	m1	m0	24902,2344,19745,28454	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	56384,30585,60606,57631	1	p1
+INIT	yawn_into_vitalspirit	48520,61261,18865,30986	31852,4661,5834,28731
+DEC	yawn_into_vitalspirit	31852,4661,5834,28731	move	0	0	m0	m0	57975,55242,37943,47541	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	31852,4661,5834,28731	move	0	0	m1	m0	18455,3837,61077,12793	Snorlax	462	462	0	-	1	0	Primeape	144	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	31852,4661,5834,28731	move	0	0	m1	m0	4468,56316,7573,39858	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	31852,4661,5834,28731	1	p1
+INIT	yawn_into_vitalspirit	33255,1423,33874,65494	62296,40113,54678,54551
+DEC	yawn_into_vitalspirit	62296,40113,54678,54551	move	0	0	m0	m0	35350,49936,59049,5169	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	62296,40113,54678,54551	move	0	0	m1	m0	28616,3611,45330,15541	Snorlax	462	462	0	-	1	0	Primeape	171	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	62296,40113,54678,54551	move	0	0	m1	m0	6596,59650,851,1278	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	62296,40113,54678,54551	1	p1
+INIT	yawn_into_vitalspirit	46704,28857,15004,10082	60676,21229,46370,43955
+DEC	yawn_into_vitalspirit	60676,21229,46370,43955	move	0	0	m0	m0	27943,54270,7299,39533	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	60676,21229,46370,43955	move	0	0	m1	m0	44021,43211,32035,14129	Snorlax	462	462	0	-	1	0	Primeape	156	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	60676,21229,46370,43955	move	0	0	m1	m0	45788,6904,26067,46858	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	60676,21229,46370,43955	1	p1
+INIT	yawn_into_vitalspirit	20623,19559,7661,15278	54640,12521,366,20495
+DEC	yawn_into_vitalspirit	54640,12521,366,20495	move	0	0	m0	m0	26542,16386,52593,18537	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	54640,12521,366,20495	move	0	0	m1	m0	58345,3933,48170,23917	Snorlax	462	462	0	-	1	0	Primeape	156	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	54640,12521,366,20495	move	0	0	m1	m0	53707,9625,44714,32214	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	54640,12521,366,20495	1	p1
+INIT	yawn_into_vitalspirit	2285,46508,18098,18618	55452,62117,50810,56875
+DEC	yawn_into_vitalspirit	55452,62117,50810,56875	move	0	0	m0	m0	42318,46013,49790,55845	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	55452,62117,50810,56875	move	0	0	m1	m0	2998,40287,63040,43881	Snorlax	462	462	0	-	1	0	Primeape	148	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	55452,62117,50810,56875	move	0	0	m1	m0	26482,38415,9149,58722	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	55452,62117,50810,56875	1	p1
+INIT	yawn_into_vitalspirit	2435,58006,3791,6790	57992,5153,53318,12807
+DEC	yawn_into_vitalspirit	57992,5153,53318,12807	move	0	0	m0	m0	60624,45784,61111,52129	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	57992,5153,53318,12807	move	0	0	m1	m0	64527,38900,55569,56613	Snorlax	462	462	0	-	1	0	Primeape	163	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	57992,5153,53318,12807	move	0	0	m1	m0	7795,51506,20532,14766	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	57992,5153,53318,12807	1	p1
+INIT	yawn_into_vitalspirit	4485,17451,23751,15634	40756,53597,43730,59299
+DEC	yawn_into_vitalspirit	40756,53597,43730,59299	move	0	0	m0	m0	46166,36626,32238,22749	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	40756,53597,43730,59299	move	0	0	m1	m0	56971,14775,10788,28321	Snorlax	462	462	0	-	1	0	Primeape	173	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	40756,53597,43730,59299	move	0	0	m1	m0	24501,16945,12955,34490	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	40756,53597,43730,59299	1	p1
+INIT	yawn_into_vitalspirit	20119,45554,17867,64606	31392,9817,41502,23295
+DEC	yawn_into_vitalspirit	31392,9817,41502,23295	move	0	0	m0	m0	29943,28177,16961,32217	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	31392,9817,41502,23295	move	0	0	m1	m0	29888,31233,55295,39901	Snorlax	462	462	0	-	1	0	Primeape	154	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	31392,9817,41502,23295	move	0	0	m1	m0	63656,22381,49975,39046	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	31392,9817,41502,23295	1	p1
+INIT	yawn_into_vitalspirit	16261,41531,27566,25706	41164,53013,49706,43035
+DEC	yawn_into_vitalspirit	41164,53013,49706,43035	move	0	0	m0	m0	18267,32261,18070,63125	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	41164,53013,49706,43035	move	0	0	m1	m0	38966,51916,59653,24793	Snorlax	462	462	0	-	1	0	Primeape	144	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	41164,53013,49706,43035	move	0	0	m1	m0	6059,5199,28083,64274	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	41164,53013,49706,43035	1	p1
+INIT	yawn_into_vitalspirit	29115,51685,45495,16694	64952,18321,55030,43767
+DEC	yawn_into_vitalspirit	64952,18321,55030,43767	move	0	0	m0	m0	28840,52109,49107,16145	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	64952,18321,55030,43767	move	0	0	m1	m0	22130,32969,35114,31125	Snorlax	462	462	0	-	1	0	Primeape	148	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	64952,18321,55030,43767	move	0	0	m1	m0	32882,60161,58107,64094	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	64952,18321,55030,43767	1	p1
+INIT	yawn_into_vitalspirit	38966,14467,60320,7874	15716,52173,27778,65427
+DEC	yawn_into_vitalspirit	15716,52173,27778,65427	move	0	0	m0	m0	14389,23561,22038,37709	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	15716,52173,27778,65427	move	0	0	m1	m0	10769,12880,33123,25105	Snorlax	462	462	0	-	1	0	Primeape	152	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	15716,52173,27778,65427	move	0	0	m1	m0	41297,42333,54803,41578	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	15716,52173,27778,65427	1	p1
+INIT	yawn_into_vitalspirit	24940,47880,47103,18702	52176,22473,52942,495
+DEC	yawn_into_vitalspirit	52176,22473,52942,495	move	0	0	m0	m0	53772,39995,7512,61257	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	52176,22473,52942,495	move	0	0	m1	m0	29897,26626,16000,22093	Snorlax	462	462	0	-	1	0	Primeape	154	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	52176,22473,52942,495	move	0	0	m1	m0	48329,35154,25859,48950	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	52176,22473,52942,495	1	p1
+INIT	yawn_into_vitalspirit	30235,8450,16906,52250	54524,42885,2522,52747
+DEC	yawn_into_vitalspirit	54524,42885,2522,52747	move	0	0	m0	m0	32335,15332,25177,3845	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	54524,42885,2522,52747	move	0	0	m1	m0	31418,43585,17708,21065	Snorlax	462	462	0	-	1	0	Primeape	165	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	54524,42885,2522,52747	move	0	0	m1	m0	52583,8325,8508,56514	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	54524,42885,2522,52747	1	p1
+INIT	yawn_into_vitalspirit	6750,58223,23105,29670	17640,14081,59814,16359
+DEC	yawn_into_vitalspirit	17640,14081,59814,16359	move	0	0	m0	m0	60438,680,54857,28289	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	17640,14081,59814,16359	move	0	0	m1	m0	58099,41632,50378,4613	Snorlax	462	462	0	-	1	0	Primeape	158	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	17640,14081,59814,16359	move	0	0	m1	m0	3829,47840,28704,18190	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	17640,14081,59814,16359	1	p1
+INIT	yawn_into_vitalspirit	46730,55079,59174,52338	51092,16957,64050,62339
+DEC	yawn_into_vitalspirit	51092,16957,64050,62339	move	0	0	m0	m0	65031,31931,42236,18877	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	51092,16957,64050,62339	move	0	0	m1	m0	41348,4320,33504,4481	Snorlax	462	462	0	-	1	0	Primeape	173	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	51092,16957,64050,62339	move	0	0	m1	m0	16761,27203,20540,2586	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	51092,16957,64050,62339	1	p1
+INIT	yawn_into_vitalspirit	5235,54193,65004,8638	51456,50489,34686,17631
+DEC	yawn_into_vitalspirit	51456,50489,34686,17631	move	0	0	m0	m0	62149,53187,41104,40121	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	51456,50489,34686,17631	move	0	0	m1	m0	62173,60507,28149,36029	Snorlax	462	462	0	-	1	0	Primeape	148	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	51456,50489,34686,17631	move	0	0	m1	m0	41906,34063,47571,61926	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	51456,50489,34686,17631	1	p1
+INIT	yawn_into_vitalspirit	63831,55491,16482,32714	29996,31733,40330,20475
+DEC	yawn_into_vitalspirit	29996,31733,40330,20475	move	0	0	m0	m0	57560,27593,54252,9077	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	29996,31733,40330,20475	move	0	0	m1	m0	51809,9554,35948,32697	Snorlax	462	462	0	-	1	0	Primeape	173	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	29996,31733,40330,20475	move	0	0	m1	m0	63774,22421,34961,16317	Snorlax	462	462	0	-	1	0	Primeape	1	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	29996,31733,40330,20475	move	0	0	m1	m0	54210,41652,1585,47334	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	29996,31733,40330,20475	1	p1
+INIT	yawn_into_vitalspirit	14229,32221,6967,45718	47128,57969,2134,61655
+DEC	yawn_into_vitalspirit	47128,57969,2134,61655	move	0	0	m0	m0	33630,8407,46540,23025	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	47128,57969,2134,61655	move	0	0	m1	m0	10899,42282,34946,42613	Snorlax	462	462	0	-	1	0	Primeape	169	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	47128,57969,2134,61655	move	0	0	m1	m0	12544,42649,17195,8126	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	47128,57969,2134,61655	1	p1
+INIT	yawn_into_vitalspirit	7641,3405,20315,17954	15812,13485,21474,50035
+DEC	yawn_into_vitalspirit	15812,13485,21474,50035	move	0	0	m0	m0	15647,28023,27295,31789	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	15812,13485,21474,50035	move	0	0	m1	m0	40243,55509,11930,31985	Snorlax	462	462	0	-	1	0	Primeape	169	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	15812,13485,21474,50035	move	0	0	m1	m0	23425,63259,3948,39285	Snorlax	462	462	0	-	1	0	Primeape	4	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	15812,13485,21474,50035	move	0	0	m1	m0	57476,63837,31814,9918	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	15812,13485,21474,50035	1	p1
+INIT	yawn_into_vitalspirit	48874,6475,36397,34414	29232,28329,52270,9167
+DEC	yawn_into_vitalspirit	29232,28329,52270,9167	move	0	0	m0	m0	9909,17728,35343,34345	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	29232,28329,52270,9167	move	0	0	m1	m0	29911,29273,59414,16173	Snorlax	462	462	0	-	1	0	Primeape	156	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	29232,28329,52270,9167	move	0	0	m1	m0	52194,42658,39907,12438	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	29232,28329,52270,9167	1	p1
+INIT	yawn_into_vitalspirit	31890,8891,61466,32634	33116,19557,32058,11755
+DEC	yawn_into_vitalspirit	33116,19557,32058,11755	move	0	0	m0	m0	55368,36678,56617,13285	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	33116,19557,32058,11755	move	0	0	m1	m0	28683,21099,15630,59689	Snorlax	462	462	0	-	1	0	Primeape	146	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	33116,19557,32058,11755	move	0	0	m1	m0	25986,58964,31101,1058	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	33116,19557,32058,11755	1	p1
+INIT	yawn_into_vitalspirit	30681,54249,57807,64838	22344,18913,13062,48583
+DEC	yawn_into_vitalspirit	22344,18913,13062,48583	move	0	0	m0	m0	54693,40773,55978,353	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	22344,18913,13062,48583	move	0	0	m1	m0	14597,24319,55234,14053	Snorlax	462	462	0	-	1	0	Primeape	158	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	22344,18913,13062,48583	move	0	0	m1	m0	9106,26150,4242,33902	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	22344,18913,13062,48583	1	p1
+INIT	yawn_into_vitalspirit	42543,60862,9277,35794	40948,41757,31122,28515
+DEC	yawn_into_vitalspirit	40948,41757,31122,28515	move	0	0	m0	m0	3,45550,42752,10909	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	40948,41757,31122,28515	move	0	0	m1	m0	17177,34496,33938,42081	Snorlax	462	462	0	-	1	0	Primeape	158	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	40948,41757,31122,28515	move	0	0	m1	m0	59289,33316,51357,48506	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	40948,41757,31122,28515	1	p1
+INIT	yawn_into_vitalspirit	2450,28279,61992,30494	51040,21529,40158,40639
+DEC	yawn_into_vitalspirit	51040,21529,40158,40639	move	0	0	m0	m0	7752,49180,7086,43929	Snorlax	462	462	0	-	1	0	Primeape	334	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	51040,21529,40158,40639	move	0	0	m1	m0	29916,36529,11051,28061	Snorlax	462	462	0	-	1	0	Primeape	160	334	0	-	1	0	p2	0
+DEC	yawn_into_vitalspirit	51040,21529,40158,40639	move	0	0	m1	m0	5850,37390,12534,31558	Snorlax	462	462	0	-	1	0	Primeape	0	334	1	-	0	0	p2	0
+END	yawn_into_vitalspirit	51040,21529,40158,40639	1	p1
+SCEN	yawn_statused_between
+TEAM	yawn_statused_between	p1	Snorlax|||Immunity|yawn,earthquake,thunderwave,splash|Adamant|4,252,,,,252|N||||
+TEAM	yawn_statused_between	p2	Blissey|||NaturalCure|splash|Careful|252,,,,252,|N||||
+INIT	yawn_statused_between	55026,4577,12455,12874	17324,26741,20490,20603
+DEC	yawn_statused_between	17324,26741,20490,20603	move	0	0	m0	m0	64630,29661,17421,4085	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	17324,26741,20490,20603	move	0	0	m2	m0	11806,34185,30638,21310	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	17324,26741,20490,20603	move	0	0	m1	m0	61819,7339,20283,7229	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	17324,26741,20490,20603	move	0	0	m1	m0	19767,25448,44319,29542	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	17324,26741,20490,20603	1	p1
+INIT	yawn_statused_between	49148,34433,51989,3350	61080,5873,25302,31063
+DEC	yawn_statused_between	61080,5873,25302,31063	move	0	0	m0	m0	23759,4522,1807,36465	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	61080,5873,25302,31063	move	0	0	m2	m0	17075,24505,6456,63818	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	61080,5873,25302,31063	move	0	0	m1	m0	41105,60309,8643,63289	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	61080,5873,25302,31063	move	0	0	m1	m0	6529,54362,26194,21490	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	61080,5873,25302,31063	1	p1
+INIT	yawn_statused_between	44755,22218,899,51362	23620,12589,54882,21491
+DEC	yawn_statused_between	23620,12589,54882,21491	move	0	0	m0	m0	28275,10429,48625,30893	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	23620,12589,54882,21491	move	0	0	m2	m0	61404,15417,35301,62486	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	23620,12589,54882,21491	move	0	0	m1	m0	47523,24504,373,34293	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	23620,12589,54882,21491	move	0	0	m1	m0	23654,44129,4912,45374	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	23620,12589,54882,21491	1	p1
+INIT	yawn_statused_between	41844,5361,35667,45294	63664,45865,63150,15439
+DEC	yawn_statused_between	63664,45865,63150,15439	move	0	0	m0	m0	50761,44208,92,51881	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	63664,45865,63150,15439	move	0	0	m2	m0	6623,392,59016,53154	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	63664,45865,63150,15439	move	0	0	m1	m0	46717,7545,47206,17521	Snorlax	462	462	0	-	1	0	Blissey	256	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	63664,45865,63150,15439	move	0	0	m1	m0	6433,37751,44696,38730	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	63664,45865,63150,15439	1	p1
+INIT	yawn_statused_between	57418,24377,61835,53754	61404,22757,53178,20075
+DEC	yawn_statused_between	61404,22757,53178,20075	move	0	0	m0	m0	36326,49450,21893,16485	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	61404,22757,53178,20075	move	0	0	m2	m0	8849,56141,31407,55278	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	61404,22757,53178,20075	move	0	0	m1	m0	35882,53478,48062,28333	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	61404,22757,53178,20075	move	0	0	m1	m0	20238,17383,48266,53782	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	61404,22757,53178,20075	1	p1
+INIT	yawn_statused_between	41916,22153,41689,63430	11720,40545,11654,26183
+DEC	yawn_statused_between	11720,40545,11654,26183	move	0	0	m0	m0	34220,30735,13352,21985	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	11720,40545,11654,26183	move	0	0	m2	m0	17168,62784,49316,6394	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	11720,40545,11654,26183	move	0	0	m1	m0	7497,55801,11192,169	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	11720,40545,11654,26183	move	0	0	m1	m0	7767,44756,18986,60834	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	11720,40545,11654,26183	1	p1
+INIT	yawn_statused_between	20800,45365,59794,44626	24180,49053,39954,8163
+DEC	yawn_statused_between	24180,49053,39954,8163	move	0	0	m0	m0	50708,21804,653,18205	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	24180,49053,39954,8163	move	0	0	m2	m0	42898,1369,24937,24262	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	24180,49053,39954,8163	move	0	0	m1	m0	20620,62474,54174,46693	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	24180,49053,39954,8163	move	0	0	m1	m0	4344,45859,60863,13806	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	24180,49053,39954,8163	1	p1
+INIT	yawn_statused_between	2098,58393,123,16798	60896,47257,26462,55103
+DEC	yawn_statused_between	60896,47257,26462,55103	move	0	0	m0	m0	21146,3970,39479,4121	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	60896,47257,26462,55103	move	0	0	m2	m0	23021,26526,48872,13650	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	60896,47257,26462,55103	move	0	0	m1	m0	51533,19544,53570,3041	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	60896,47257,26462,55103	move	0	0	m1	m0	33453,26241,32154,46842	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	60896,47257,26462,55103	1	p1
+INIT	yawn_statused_between	59808,16074,25552,48554	2060,17749,39786,43099
+DEC	yawn_statused_between	2060,17749,39786,43099	move	0	0	m0	m0	46142,526,65191,27861	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	2060,17749,39786,43099	move	0	0	m2	m0	64331,6031,39556,59550	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	2060,17749,39786,43099	move	0	0	m1	m0	41128,10631,62040,15645	Snorlax	462	462	0	-	1	0	Blissey	209	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	2060,17749,39786,43099	move	0	0	m1	m0	21536,52321,50900,15558	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	2060,17749,39786,43099	1	p1
+INIT	yawn_statused_between	21324,50387,2469,61046	39160,57809,1078,28471
+DEC	yawn_statused_between	39160,57809,1078,28471	move	0	0	m0	m0	6647,541,59508,55633	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	39160,57809,1078,28471	move	0	0	m2	m0	59993,46702,45981,33962	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	39160,57809,1078,28471	move	0	0	m1	m0	58054,29801,43732,17945	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	39160,57809,1078,28471	move	0	0	m1	m0	65022,17303,45572,21330	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	39160,57809,1078,28471	1	p1
+INIT	yawn_statused_between	43695,39055,50612,24578	19620,51725,11714,51155
+DEC	yawn_statused_between	19620,51725,11714,51155	move	0	0	m0	m0	52797,39103,65471,37261	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	19620,51725,11714,51155	move	0	0	m2	m0	61034,46288,63562,54646	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	19620,51725,11714,51155	move	0	0	m1	m0	10429,50408,6586,58069	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	19620,51725,11714,51155	move	0	0	m1	m0	53360,62510,45286,18078	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	19620,51725,11714,51155	1	p1
+INIT	yawn_statused_between	25184,29737,13970,24142	36624,64009,25614,3631
+DEC	yawn_statused_between	36624,64009,25614,3631	move	0	0	m0	m0	49185,44806,22655,37257	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	36624,64009,25614,3631	move	0	0	m2	m0	28791,33783,64310,26370	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	36624,64009,25614,3631	move	0	0	m1	m0	13277,1608,25008,36689	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	36624,64009,25614,3631	move	0	0	m1	m0	26334,62424,1902,8874	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	36624,64009,25614,3631	1	p1
+INIT	yawn_statused_between	54165,52719,65040,62810	35900,11717,45850,24139
+DEC	yawn_statused_between	35900,11717,45850,24139	move	0	0	m0	m0	231,29472,64922,38213	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	35900,11717,45850,24139	move	0	0	m2	m0	37559,50374,37400,34126	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	35900,11717,45850,24139	move	0	0	m1	m0	1383,40375,40783,34701	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	35900,11717,45850,24139	move	0	0	m1	m0	1006,36646,61574,45942	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	35900,11717,45850,24139	1	p1
+INIT	yawn_statused_between	15029,23234,65400,61734	12328,57665,59110,37927
+DEC	yawn_statused_between	12328,57665,59110,37927	move	0	0	m0	m0	7921,61871,9205,6337	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	12328,57665,59110,37927	move	0	0	m2	m0	62251,59479,61989,15450	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	12328,57665,59110,37927	move	0	0	m1	m0	52632,3743,40728,51081	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	12328,57665,59110,37927	move	0	0	m1	m0	410,28185,40414,34050	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	12328,57665,59110,37927	1	p1
+INIT	yawn_statused_between	4188,48685,34078,56754	9940,20605,35698,19395
+DEC	yawn_statused_between	9940,20605,35698,19395	move	0	0	m0	m0	42114,10956,12758,22525	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	9940,20605,35698,19395	move	0	0	m2	m0	48803,6776,50272,22566	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	9940,20605,35698,19395	move	0	0	m1	m0	4750,27880,11352,2885	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	9940,20605,35698,19395	move	0	0	m1	m0	41129,47276,42427,58190	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	9940,20605,35698,19395	1	p1
+INIT	yawn_statused_between	51912,2360,51656,1790	56384,30585,60606,57631
+DEC	yawn_statused_between	56384,30585,60606,57631	move	0	0	m0	m0	10383,39685,193,20217	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	56384,30585,60606,57631	move	0	0	m2	m0	47354,34415,27314,25778	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	56384,30585,60606,57631	move	0	0	m1	m0	46278,57593,25820,52929	Snorlax	462	462	0	-	1	0	Blissey	230	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	56384,30585,60606,57631	move	0	0	m1	m0	53041,5865,56945,55898	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	56384,30585,60606,57631	1	p1
+INIT	yawn_statused_between	48520,61261,18865,30986	31852,4661,5834,28731
+DEC	yawn_statused_between	31852,4661,5834,28731	move	0	0	m0	m0	57975,55242,37943,47541	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	31852,4661,5834,28731	move	0	0	m2	m0	3690,22651,42623,44542	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	31852,4661,5834,28731	move	0	0	m1	m0	58356,46669,5725,19965	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	31852,4661,5834,28731	move	0	0	m1	m0	46839,63975,5399,13862	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	31852,4661,5834,28731	1	p1
+INIT	yawn_statused_between	33255,1423,33874,65494	62296,40113,54678,54551
+DEC	yawn_statused_between	62296,40113,54678,54551	move	0	0	m0	m0	35350,49936,59049,5169	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	62296,40113,54678,54551	move	0	0	m2	m0	59467,210,31803,16394	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	62296,40113,54678,54551	move	0	0	m1	m0	9374,297,2181,34041	Snorlax	462	462	0	-	1	0	Blissey	256	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	62296,40113,54678,54551	move	0	0	m1	m0	38626,30576,3513,33458	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	62296,40113,54678,54551	1	p1
+INIT	yawn_statused_between	46704,28857,15004,10082	60676,21229,46370,43955
+DEC	yawn_statused_between	60676,21229,46370,43955	move	0	0	m0	m0	27943,54270,7299,39533	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	60676,21229,46370,43955	move	0	0	m2	m0	25363,26232,20435,59094	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	60676,21229,46370,43955	move	0	0	m1	m0	28993,37874,49246,54843	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	60676,21229,46370,43955	1	p1
+INIT	yawn_statused_between	20623,19559,7661,15278	54640,12521,366,20495
+DEC	yawn_statused_between	54640,12521,366,20495	move	0	0	m0	m0	26542,16386,52593,18537	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	54640,12521,366,20495	move	0	0	m2	m0	25276,46336,15901,11874	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	54640,12521,366,20495	move	0	0	m1	m0	54351,40776,57243,51761	Snorlax	462	462	0	-	1	0	Blissey	187	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	54640,12521,366,20495	move	0	0	m1	m0	8159,15710,28742,56842	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	54640,12521,366,20495	1	p1
+INIT	yawn_statused_between	2285,46508,18098,18618	55452,62117,50810,56875
+DEC	yawn_statused_between	55452,62117,50810,56875	move	0	0	m0	m0	42318,46013,49790,55845	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	55452,62117,50810,56875	move	0	0	m2	m0	10420,23768,55226,25262	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	55452,62117,50810,56875	move	0	0	m1	m0	18729,6842,22401,36973	Snorlax	462	462	0	-	1	0	Blissey	256	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	55452,62117,50810,56875	move	0	0	m1	m0	56059,50060,13445,50390	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	55452,62117,50810,56875	1	p1
+INIT	yawn_statused_between	2435,58006,3791,6790	57992,5153,53318,12807
+DEC	yawn_statused_between	57992,5153,53318,12807	move	0	0	m0	m0	60624,45784,61111,52129	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	57992,5153,53318,12807	move	0	0	m2	m0	42020,35413,3274,36794	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	57992,5153,53318,12807	move	0	0	m1	m0	18286,10476,30888,30223	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	57992,5153,53318,12807	1	p1
+INIT	yawn_statused_between	4485,17451,23751,15634	40756,53597,43730,59299
+DEC	yawn_statused_between	40756,53597,43730,59299	move	0	0	m0	m0	46166,36626,32238,22749	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	40756,53597,43730,59299	move	0	0	m2	m0	64394,56881,21904,33158	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	40756,53597,43730,59299	move	0	0	m1	m0	40724,38391,22962,20517	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	40756,53597,43730,59299	move	0	0	m1	m0	21127,42843,28091,49326	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	40756,53597,43730,59299	1	p1
+INIT	yawn_statused_between	20119,45554,17867,64606	31392,9817,41502,23295
+DEC	yawn_statused_between	31392,9817,41502,23295	move	0	0	m0	m0	29943,28177,16961,32217	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	31392,9817,41502,23295	move	0	0	m2	m0	24058,21541,65440,50194	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	31392,9817,41502,23295	move	0	0	m1	m0	34314,733,28611,55303	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	31392,9817,41502,23295	1	p1
+INIT	yawn_statused_between	16261,41531,27566,25706	41164,53013,49706,43035
+DEC	yawn_statused_between	41164,53013,49706,43035	move	0	0	m0	m0	18267,32261,18070,63125	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	41164,53013,49706,43035	move	0	0	m2	m0	510,36117,57523,41822	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	41164,53013,49706,43035	move	0	0	m1	m0	52822,18173,3843,20189	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	41164,53013,49706,43035	move	0	0	m1	m0	34080,60423,29533,24454	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	41164,53013,49706,43035	1	p1
+INIT	yawn_statused_between	29115,51685,45495,16694	64952,18321,55030,43767
+DEC	yawn_statused_between	64952,18321,55030,43767	move	0	0	m0	m0	28840,52109,49107,16145	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	64952,18321,55030,43767	move	0	0	m2	m0	11310,64028,11773,11114	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	64952,18321,55030,43767	move	0	0	m1	m0	32712,26091,7821,33023	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	64952,18321,55030,43767	1	p1
+INIT	yawn_statused_between	38966,14467,60320,7874	15716,52173,27778,65427
+DEC	yawn_statused_between	15716,52173,27778,65427	move	0	0	m0	m0	14389,23561,22038,37709	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	15716,52173,27778,65427	move	0	0	m2	m0	17140,33187,54678,10294	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	15716,52173,27778,65427	move	0	0	m1	m0	29520,5737,15942,3611	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	15716,52173,27778,65427	1	p1
+INIT	yawn_statused_between	24940,47880,47103,18702	52176,22473,52942,495
+DEC	yawn_statused_between	52176,22473,52942,495	move	0	0	m0	m0	53772,39995,7512,61257	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	52176,22473,52942,495	move	0	0	m2	m0	21830,7960,27176,9666	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	52176,22473,52942,495	move	0	0	m1	m0	5563,24483,56942,62737	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	52176,22473,52942,495	move	0	0	m1	m0	41612,603,3501,51562	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	52176,22473,52942,495	1	p1
+INIT	yawn_statused_between	30235,8450,16906,52250	54524,42885,2522,52747
+DEC	yawn_statused_between	54524,42885,2522,52747	move	0	0	m0	m0	32335,15332,25177,3845	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	54524,42885,2522,52747	move	0	0	m2	m0	49038,41937,1664,28686	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	54524,42885,2522,52747	move	0	0	m1	m0	52561,6053,37019,35149	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	54524,42885,2522,52747	move	0	0	m1	m0	12929,48253,44307,1590	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	54524,42885,2522,52747	1	p1
+INIT	yawn_statused_between	6750,58223,23105,29670	17640,14081,59814,16359
+DEC	yawn_statused_between	17640,14081,59814,16359	move	0	0	m0	m0	60438,680,54857,28289	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	17640,14081,59814,16359	move	0	0	m2	m0	31475,56043,21929,4890	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	17640,14081,59814,16359	move	0	0	m1	m0	31110,10223,23627,9545	Snorlax	462	462	0	-	1	0	Blissey	230	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	17640,14081,59814,16359	move	0	0	m1	m0	60222,24290,48741,17346	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	17640,14081,59814,16359	1	p1
+INIT	yawn_statused_between	46730,55079,59174,52338	51092,16957,64050,62339
+DEC	yawn_statused_between	51092,16957,64050,62339	move	0	0	m0	m0	65031,31931,42236,18877	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	51092,16957,64050,62339	move	0	0	m2	m0	62446,38372,53220,56038	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	51092,16957,64050,62339	move	0	0	m1	m0	18577,37544,2036,34053	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	51092,16957,64050,62339	move	0	0	m1	m0	52739,13835,27209,52750	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	51092,16957,64050,62339	1	p1
+INIT	yawn_statused_between	5235,54193,65004,8638	51456,50489,34686,17631
+DEC	yawn_statused_between	51456,50489,34686,17631	move	0	0	m0	m0	62149,53187,41104,40121	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	51456,50489,34686,17631	move	0	0	m2	m0	10448,53365,49864,21362	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	51456,50489,34686,17631	move	0	0	m1	m0	32381,47677,25219,9345	Snorlax	462	462	0	-	1	0	Blissey	245	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	51456,50489,34686,17631	move	0	0	m1	m0	16960,59897,6463,45338	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	51456,50489,34686,17631	1	p1
+INIT	yawn_statused_between	63831,55491,16482,32714	29996,31733,40330,20475
+DEC	yawn_statused_between	29996,31733,40330,20475	move	0	0	m0	m0	57560,27593,54252,9077	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	29996,31733,40330,20475	move	0	0	m2	m0	63088,28822,1035,51390	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	29996,31733,40330,20475	move	0	0	m1	m0	63774,22421,34961,16317	Snorlax	462	462	0	-	1	0	Blissey	235	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	29996,31733,40330,20475	move	0	0	m1	m0	54210,41652,1585,47334	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	29996,31733,40330,20475	1	p1
+INIT	yawn_statused_between	14229,32221,6967,45718	47128,57969,2134,61655
+DEC	yawn_statused_between	47128,57969,2134,61655	move	0	0	m0	m0	33630,8407,46540,23025	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	47128,57969,2134,61655	move	0	0	m2	m0	56139,23786,3576,18122	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	47128,57969,2134,61655	move	0	0	m1	m0	48768,30449,39512,53945	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	47128,57969,2134,61655	move	0	0	m1	m0	22926,30186,15939,29042	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	47128,57969,2134,61655	1	p1
+INIT	yawn_statused_between	7641,3405,20315,17954	15812,13485,21474,50035
+DEC	yawn_statused_between	15812,13485,21474,50035	move	0	0	m0	m0	15647,28023,27295,31789	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	15812,13485,21474,50035	move	0	0	m2	m0	56913,37066,17532,39318	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	15812,13485,21474,50035	move	0	0	m1	m0	23425,63259,3948,39285	Snorlax	462	462	0	-	1	0	Blissey	209	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	15812,13485,21474,50035	move	0	0	m1	m0	57476,63837,31814,9918	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	15812,13485,21474,50035	1	p1
+INIT	yawn_statused_between	48874,6475,36397,34414	29232,28329,52270,9167
+DEC	yawn_statused_between	29232,28329,52270,9167	move	0	0	m0	m0	9909,17728,35343,34345	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	29232,28329,52270,9167	move	0	0	m2	m0	28146,62132,50284,19746	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	29232,28329,52270,9167	move	0	0	m1	m0	61794,31863,45539,4081	Snorlax	462	462	0	-	1	0	Blissey	235	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	29232,28329,52270,9167	move	0	0	m1	m0	8907,54536,47895,58570	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	29232,28329,52270,9167	1	p1
+INIT	yawn_statused_between	31890,8891,61466,32634	33116,19557,32058,11755
+DEC	yawn_statused_between	33116,19557,32058,11755	move	0	0	m0	m0	55368,36678,56617,13285	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	33116,19557,32058,11755	move	0	0	m2	m0	4504,9177,7786,44398	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	33116,19557,32058,11755	move	0	0	m1	m0	40633,15339,19101,29229	Snorlax	462	462	0	-	1	0	Blissey	230	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	33116,19557,32058,11755	move	0	0	m1	m0	30783,12517,23086,30614	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	33116,19557,32058,11755	1	p1
+INIT	yawn_statused_between	30681,54249,57807,64838	22344,18913,13062,48583
+DEC	yawn_statused_between	22344,18913,13062,48583	move	0	0	m0	m0	54693,40773,55978,353	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	22344,18913,13062,48583	move	0	0	m2	m0	30694,38149,52416,50810	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	22344,18913,13062,48583	move	0	0	m1	m0	52986,59688,63957,48169	Snorlax	462	462	0	-	1	0	Blissey	245	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	22344,18913,13062,48583	move	0	0	m1	m0	28345,55691,26285,27426	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	22344,18913,13062,48583	1	p1
+INIT	yawn_statused_between	42543,60862,9277,35794	40948,41757,31122,28515
+DEC	yawn_statused_between	40948,41757,31122,28515	move	0	0	m0	m0	3,45550,42752,10909	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	40948,41757,31122,28515	move	0	0	m2	m0	30553,64638,13149,25670	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	40948,41757,31122,28515	move	0	0	m1	m0	55783,3905,14110,43493	Snorlax	462	462	0	-	1	0	Blissey	187	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	40948,41757,31122,28515	move	0	0	m1	m0	32993,35143,39782,2926	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	40948,41757,31122,28515	1	p1
+INIT	yawn_statused_between	2450,28279,61992,30494	51040,21529,40158,40639
+DEC	yawn_statused_between	51040,21529,40158,40639	move	0	0	m0	m0	7752,49180,7086,43929	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	p1	0
+DEC	yawn_statused_between	51040,21529,40158,40639	move	0	0	m2	m0	36691,64350,46121,4818	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	par	1	0	p1	1
+DEC	yawn_statused_between	51040,21529,40158,40639	move	0	0	m1	m0	60334,12074,8263,46945	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	par	1	0	p1	0
+DEC	yawn_statused_between	51040,21529,40158,40639	move	0	0	m1	m0	30754,12601,52907,25722	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	par	0	0	p1	0
+END	yawn_statused_between	51040,21529,40158,40639	1	p1
+SCEN	yawn_real_battle
+TEAM	yawn_real_battle	p1	Snorlax|||Immunity|yawn,earthquake,thunderwave,splash|Adamant|4,252,,,,252|N||||
+TEAM	yawn_real_battle	p2	Blissey|||NaturalCure|splash|Careful|252,,,,252,|N||||]Blissey|||NaturalCure|splash|Careful|252,,,,252,|N||||
+INIT	yawn_real_battle	55026,4577,12455,12874	17324,26741,20490,20603
+DEC	yawn_real_battle	17324,26741,20490,20603	move	0	0	m0	m0	64630,29661,17421,4085	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	17324,26741,20490,20603	move	0	0	m1	m0	8387,47494,2767,59968	Snorlax	462	462	0	-	1	0	Blissey	198	714	0	slp	2	2	p1	1
+DEC	yawn_real_battle	17324,26741,20490,20603	move	0	0	m1	m0	61819,7339,20283,7229	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	17324,26741,20490,20603	switch	0	1	-	s1	28325,23189,26176,26580	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	17324,26741,20490,20603	move	0	0	m1	m0	31336,50248,17238,21544	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	17324,26741,20490,20603	move	0	0	m1	m0	48890,44561,6109,34693	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	17324,26741,20490,20603	1	p1
+INIT	yawn_real_battle	49148,34433,51989,3350	61080,5873,25302,31063
+DEC	yawn_real_battle	61080,5873,25302,31063	move	0	0	m0	m0	23759,4522,1807,36465	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	61080,5873,25302,31063	move	0	0	m1	m0	56985,16017,56995,46700	Snorlax	462	462	0	-	1	0	Blissey	209	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	61080,5873,25302,31063	move	0	0	m1	m0	41105,60309,8643,63289	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	61080,5873,25302,31063	switch	0	1	-	s1	13851,54797,83,43328	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	61080,5873,25302,31063	move	0	0	m1	m0	57837,45575,43806,14036	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	61080,5873,25302,31063	move	0	0	m1	m0	30926,63388,19959,44801	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	61080,5873,25302,31063	1	p1
+INIT	yawn_real_battle	44755,22218,899,51362	23620,12589,54882,21491
+DEC	yawn_real_battle	23620,12589,54882,21491	move	0	0	m0	m0	28275,10429,48625,30893	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	23620,12589,54882,21491	move	0	0	m1	m0	63414,57944,60502,6488	Snorlax	462	462	0	-	1	0	Blissey	261	714	0	slp	2	4	p1	1
+DEC	yawn_real_battle	23620,12589,54882,21491	move	0	0	m1	m0	47523,24504,373,34293	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	23620,12589,54882,21491	switch	0	1	-	s1	23205,48067,32231,38252	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	23620,12589,54882,21491	move	0	0	m1	m0	64633,62393,36911,38976	Snorlax	462	462	0	-	1	0	Blissey	230	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	23620,12589,54882,21491	move	0	0	m1	m0	54430,48135,14402,53821	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	23620,12589,54882,21491	1	p1
+INIT	yawn_real_battle	41844,5361,35667,45294	63664,45865,63150,15439
+DEC	yawn_real_battle	63664,45865,63150,15439	move	0	0	m0	m0	50761,44208,92,51881	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	63664,45865,63150,15439	move	0	0	m1	m0	57046,55340,64964,48900	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	slp	2	5	p1	1
+DEC	yawn_real_battle	63664,45865,63150,15439	move	0	0	m1	m0	46717,7545,47206,17521	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	63664,45865,63150,15439	switch	0	1	-	s1	63388,20469,1591,6232	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	63664,45865,63150,15439	move	0	0	m1	m0	1433,50472,7630,42092	Snorlax	462	462	0	-	1	0	Blissey	187	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	63664,45865,63150,15439	move	0	0	m1	m0	35299,53833,44081,60729	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	63664,45865,63150,15439	1	p1
+INIT	yawn_real_battle	57418,24377,61835,53754	61404,22757,53178,20075
+DEC	yawn_real_battle	61404,22757,53178,20075	move	0	0	m0	m0	36326,49450,21893,16485	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	61404,22757,53178,20075	move	0	0	m1	m0	19405,1773,9178,4976	Snorlax	462	462	0	-	1	0	Blissey	198	714	0	slp	2	5	p1	1
+DEC	yawn_real_battle	61404,22757,53178,20075	move	0	0	m1	m0	35882,53478,48062,28333	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	61404,22757,53178,20075	switch	0	1	-	s1	41188,63399,65085,56836	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	61404,22757,53178,20075	move	0	0	m1	m0	47484,26969,53364,18264	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	61404,22757,53178,20075	move	0	0	m1	m0	24136,40885,40145,48117	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	61404,22757,53178,20075	1	p1
+INIT	yawn_real_battle	41916,22153,41689,63430	11720,40545,11654,26183
+DEC	yawn_real_battle	11720,40545,11654,26183	move	0	0	m0	m0	34220,30735,13352,21985	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	11720,40545,11654,26183	move	0	0	m1	m0	60809,9528,46733,17052	Snorlax	462	462	0	-	1	0	Blissey	209	714	0	slp	2	2	p1	1
+DEC	yawn_real_battle	11720,40545,11654,26183	move	0	0	m1	m0	7497,55801,11192,169	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	11720,40545,11654,26183	switch	0	1	-	s1	61207,12208,2232,21104	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	11720,40545,11654,26183	move	0	0	m1	m0	11538,28516,30158,11524	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	11720,40545,11654,26183	move	0	0	m1	m0	59561,36446,6856,47729	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	11720,40545,11654,26183	1	p1
+INIT	yawn_real_battle	20800,45365,59794,44626	24180,49053,39954,8163
+DEC	yawn_real_battle	24180,49053,39954,8163	move	0	0	m0	m0	50708,21804,653,18205	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	24180,49053,39954,8163	move	0	0	m1	m0	45433,33033,21730,14472	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	24180,49053,39954,8163	move	0	0	m1	m0	20620,62474,54174,46693	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	24180,49053,39954,8163	switch	0	1	-	s1	33319,40616,1571,41372	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	24180,49053,39954,8163	move	0	0	m1	m0	20312,10439,11454,49520	Snorlax	462	462	0	-	1	0	Blissey	224	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	24180,49053,39954,8163	move	0	0	m1	m0	42973,8265,21591,9389	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	24180,49053,39954,8163	1	p1
+INIT	yawn_real_battle	2098,58393,123,16798	60896,47257,26462,55103
+DEC	yawn_real_battle	60896,47257,26462,55103	move	0	0	m0	m0	21146,3970,39479,4121	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	60896,47257,26462,55103	move	0	0	m1	m0	15700,18197,44163,41268	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	slp	2	5	p1	1
+DEC	yawn_real_battle	60896,47257,26462,55103	move	0	0	m1	m0	51533,19544,53570,3041	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	60896,47257,26462,55103	switch	0	1	-	s1	38378,6045,9911,46984	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	60896,47257,26462,55103	move	0	0	m1	m0	55960,10932,56247,12444	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	60896,47257,26462,55103	move	0	0	m1	m0	12643,1592,43144,63145	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	60896,47257,26462,55103	1	p1
+INIT	yawn_real_battle	59808,16074,25552,48554	2060,17749,39786,43099
+DEC	yawn_real_battle	2060,17749,39786,43099	move	0	0	m0	m0	46142,526,65191,27861	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	2060,17749,39786,43099	move	0	0	m1	m0	59792,34726,1729,59552	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	slp	2	2	p1	1
+DEC	yawn_real_battle	2060,17749,39786,43099	move	0	0	m1	m0	41128,10631,62040,15645	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	2060,17749,39786,43099	switch	0	1	-	s1	61053,55542,48502,16436	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	2060,17749,39786,43099	move	0	0	m1	m0	13340,18997,35030,26248	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	2060,17749,39786,43099	move	0	0	m1	m0	46352,26705,63288,60517	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	2060,17749,39786,43099	1	p1
+INIT	yawn_real_battle	21324,50387,2469,61046	39160,57809,1078,28471
+DEC	yawn_real_battle	39160,57809,1078,28471	move	0	0	m0	m0	6647,541,59508,55633	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	39160,57809,1078,28471	move	0	0	m1	m0	38937,62142,40801,15052	Snorlax	462	462	0	-	1	0	Blissey	261	714	0	slp	2	5	p1	1
+DEC	yawn_real_battle	39160,57809,1078,28471	move	0	0	m1	m0	58054,29801,43732,17945	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	39160,57809,1078,28471	switch	0	1	-	s1	17652,61017,30232,42912	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	39160,57809,1078,28471	move	0	0	m1	m0	61331,28615,48375,3892	Snorlax	462	462	0	-	1	0	Blissey	198	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	39160,57809,1078,28471	move	0	0	m1	m0	42951,35441,55974,33249	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	39160,57809,1078,28471	1	p1
+INIT	yawn_real_battle	43695,39055,50612,24578	19620,51725,11714,51155
+DEC	yawn_real_battle	19620,51725,11714,51155	move	0	0	m0	m0	52797,39103,65471,37261	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	19620,51725,11714,51155	move	0	0	m1	m0	25279,45962,63794,33720	Snorlax	462	462	0	-	1	0	Blissey	261	714	0	slp	2	2	p1	1
+DEC	yawn_real_battle	19620,51725,11714,51155	move	0	0	m1	m0	10429,50408,6586,58069	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	19620,51725,11714,51155	switch	0	1	-	s1	59535,38446,14873,6604	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	19620,51725,11714,51155	move	0	0	m1	m0	54305,384,21032,38560	Snorlax	462	462	0	-	1	0	Blissey	230	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	19620,51725,11714,51155	move	0	0	m1	m0	16430,20993,2730,62237	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	19620,51725,11714,51155	1	p1
+INIT	yawn_real_battle	25184,29737,13970,24142	36624,64009,25614,3631
+DEC	yawn_real_battle	36624,64009,25614,3631	move	0	0	m0	m0	49185,44806,22655,37257	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	36624,64009,25614,3631	move	0	0	m1	m0	32685,17145,5753,28516	Snorlax	462	462	0	-	1	0	Blissey	224	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	36624,64009,25614,3631	move	0	0	m1	m0	13277,1608,25008,36689	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	36624,64009,25614,3631	switch	0	1	-	s1	36114,58645,7864,33464	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	36624,64009,25614,3631	move	0	0	m1	m0	45526,4605,64853,10444	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	36624,64009,25614,3631	move	0	0	m1	m0	15494,53042,18823,15385	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	36624,64009,25614,3631	1	p1
+INIT	yawn_real_battle	54165,52719,65040,62810	35900,11717,45850,24139
+DEC	yawn_real_battle	35900,11717,45850,24139	move	0	0	m0	m0	231,29472,64922,38213	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	35900,11717,45850,24139	move	0	0	m1	m0	50962,16971,53178,27088	Snorlax	462	462	0	-	1	0	Blissey	235	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	35900,11717,45850,24139	move	0	0	m1	m0	1383,40375,40783,34701	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	35900,11717,45850,24139	switch	0	1	-	s1	14069,28592,39660,36452	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	35900,11717,45850,24139	move	0	0	m1	m0	9833,38919,43919,37457	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	35900,11717,45850,24139	1	p1
+INIT	yawn_real_battle	15029,23234,65400,61734	12328,57665,59110,37927
+DEC	yawn_real_battle	12328,57665,59110,37927	move	0	0	m0	m0	7921,61871,9205,6337	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	12328,57665,59110,37927	move	0	0	m1	m0	47997,35568,39199,40700	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	slp	2	2	p1	1
+DEC	yawn_real_battle	12328,57665,59110,37927	move	0	0	m1	m0	52632,3743,40728,51081	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	12328,57665,59110,37927	switch	0	1	-	s1	53123,6918,18548,43216	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	12328,57665,59110,37927	move	0	0	m1	m0	42456,59027,55597,10893	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	12328,57665,59110,37927	1	p1
+INIT	yawn_real_battle	4188,48685,34078,56754	9940,20605,35698,19395
+DEC	yawn_real_battle	9940,20605,35698,19395	move	0	0	m0	m0	42114,10956,12758,22525	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	9940,20605,35698,19395	move	0	0	m1	m0	51295,41799,4524,64232	Snorlax	462	462	0	-	1	0	Blissey	245	714	0	slp	2	2	p1	1
+DEC	yawn_real_battle	9940,20605,35698,19395	move	0	0	m1	m0	4750,27880,11352,2885	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	9940,20605,35698,19395	switch	0	1	-	s1	46362,31671,1997,65020	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	9940,20605,35698,19395	move	0	0	m1	m0	30914,4070,35347,6096	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	9940,20605,35698,19395	move	0	0	m1	m0	32292,5122,18444,15757	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	9940,20605,35698,19395	1	p1
+INIT	yawn_real_battle	51912,2360,51656,1790	56384,30585,60606,57631
+DEC	yawn_real_battle	56384,30585,60606,57631	move	0	0	m0	m0	10383,39685,193,20217	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	56384,30585,60606,57631	move	0	0	m1	m0	62110,25452,59149,10644	Snorlax	462	462	0	-	1	0	Blissey	245	714	0	slp	2	5	p1	1
+DEC	yawn_real_battle	56384,30585,60606,57631	move	0	0	m1	m0	46278,57593,25820,52929	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	56384,30585,60606,57631	switch	0	1	-	s1	64755,32711,2352,31208	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	56384,30585,60606,57631	move	0	0	m1	m0	35362,47300,46127,36092	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	56384,30585,60606,57631	move	0	0	m1	m0	58863,22366,11255,48521	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	56384,30585,60606,57631	1	p1
+INIT	yawn_real_battle	48520,61261,18865,30986	31852,4661,5834,28731
+DEC	yawn_real_battle	31852,4661,5834,28731	move	0	0	m0	m0	57975,55242,37943,47541	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	31852,4661,5834,28731	move	0	0	m1	m0	5966,12355,25232,38656	Snorlax	462	462	0	-	1	0	Blissey	187	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	31852,4661,5834,28731	move	0	0	m1	m0	58356,46669,5725,19965	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	31852,4661,5834,28731	switch	0	1	-	s1	39622,19110,40861,51348	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	31852,4661,5834,28731	move	0	0	m1	m0	56964,3194,1293,10472	Snorlax	462	462	0	-	1	0	Blissey	230	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	31852,4661,5834,28731	move	0	0	m1	m0	52481,51935,6446,16709	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	31852,4661,5834,28731	1	p1
+INIT	yawn_real_battle	33255,1423,33874,65494	62296,40113,54678,54551
+DEC	yawn_real_battle	62296,40113,54678,54551	move	0	0	m0	m0	35350,49936,59049,5169	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	62296,40113,54678,54551	move	0	0	m1	m0	40272,9780,41928,28460	Snorlax	462	462	0	-	1	0	Blissey	261	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	62296,40113,54678,54551	move	0	0	m1	m0	9374,297,2181,34041	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	62296,40113,54678,54551	switch	0	1	-	s1	24357,41916,32716,22016	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	62296,40113,54678,54551	move	0	0	m1	m0	61247,62670,49331,38804	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	62296,40113,54678,54551	move	0	0	m1	m0	30512,15400,13192,17601	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	62296,40113,54678,54551	1	p1
+INIT	yawn_real_battle	46704,28857,15004,10082	60676,21229,46370,43955
+DEC	yawn_real_battle	60676,21229,46370,43955	move	0	0	m0	m0	27943,54270,7299,39533	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	60676,21229,46370,43955	move	0	0	m1	m0	2384,9940,26091,40472	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	slp	2	4	p1	1
+DEC	yawn_real_battle	60676,21229,46370,43955	move	0	0	m1	m0	37215,20850,45800,12213	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	60676,21229,46370,43955	switch	0	1	-	s1	51592,30177,33084,20012	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	60676,21229,46370,43955	move	0	0	m1	m0	2682,49656,19160,17664	Snorlax	462	462	0	-	1	0	Blissey	245	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	60676,21229,46370,43955	move	0	0	m1	m0	2757,41849,8109,1021	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	60676,21229,46370,43955	1	p1
+INIT	yawn_real_battle	20623,19559,7661,15278	54640,12521,366,20495
+DEC	yawn_real_battle	54640,12521,366,20495	move	0	0	m0	m0	26542,16386,52593,18537	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	54640,12521,366,20495	move	0	0	m1	m0	36615,18753,29399,53188	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	slp	2	5	p1	1
+DEC	yawn_real_battle	54640,12521,366,20495	move	0	0	m1	m0	54351,40776,57243,51761	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	54640,12521,366,20495	switch	0	1	-	s1	38419,3662,52008,40216	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	54640,12521,366,20495	move	0	0	m1	m0	15235,27373,52927,23852	Snorlax	462	462	0	-	1	0	Blissey	209	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	54640,12521,366,20495	move	0	0	m1	m0	11319,24930,45839,31481	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	54640,12521,366,20495	1	p1
+INIT	yawn_real_battle	2285,46508,18098,18618	55452,62117,50810,56875
+DEC	yawn_real_battle	55452,62117,50810,56875	move	0	0	m0	m0	42318,46013,49790,55845	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	55452,62117,50810,56875	move	0	0	m1	m0	30837,6438,48964,28720	Snorlax	462	462	0	-	1	0	Blissey	198	714	0	slp	2	2	p1	1
+DEC	yawn_real_battle	55452,62117,50810,56875	move	0	0	m1	m0	18729,6842,22401,36973	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	55452,62117,50810,56875	switch	0	1	-	s1	21129,31698,52105,61124	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	55452,62117,50810,56875	move	0	0	m1	m0	29026,48549,33806,52248	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	55452,62117,50810,56875	move	0	0	m1	m0	48271,20939,27221,26037	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	55452,62117,50810,56875	1	p1
+INIT	yawn_real_battle	2435,58006,3791,6790	57992,5153,53318,12807
+DEC	yawn_real_battle	57992,5153,53318,12807	move	0	0	m0	m0	60624,45784,61111,52129	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	57992,5153,53318,12807	move	0	0	m1	m0	2709,52005,56206,43868	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	slp	2	5	p1	1
+DEC	yawn_real_battle	57992,5153,53318,12807	move	0	0	m1	m0	48716,49966,37729,32361	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	57992,5153,53318,12807	switch	0	1	-	s1	54113,63915,4898,44848	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	57992,5153,53318,12807	move	0	0	m1	m0	33921,43439,49690,15812	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	57992,5153,53318,12807	move	0	0	m1	m0	58032,1231,17139,16433	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	57992,5153,53318,12807	1	p1
+INIT	yawn_real_battle	4485,17451,23751,15634	40756,53597,43730,59299
+DEC	yawn_real_battle	40756,53597,43730,59299	move	0	0	m0	m0	46166,36626,32238,22749	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	40756,53597,43730,59299	move	0	0	m1	m0	5475,24833,4641,27976	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	slp	2	5	p1	1
+DEC	yawn_real_battle	40756,53597,43730,59299	move	0	0	m1	m0	40724,38391,22962,20517	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	40756,53597,43730,59299	switch	0	1	-	s1	28048,60639,40295,2652	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	40756,53597,43730,59299	move	0	0	m1	m0	62967,799,55627,7728	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	40756,53597,43730,59299	move	0	0	m1	m0	42154,40195,2036,18029	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	40756,53597,43730,59299	1	p1
+INIT	yawn_real_battle	20119,45554,17867,64606	31392,9817,41502,23295
+DEC	yawn_real_battle	31392,9817,41502,23295	move	0	0	m0	m0	29943,28177,16961,32217	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	31392,9817,41502,23295	move	0	0	m1	m0	3289,23105,33139,25076	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	31392,9817,41502,23295	move	0	0	m1	m0	13407,62850,31071,33185	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	31392,9817,41502,23295	switch	0	1	-	s1	36972,56127,30362,60488	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	31392,9817,41502,23295	move	0	0	m1	m0	10849,33579,50014,39260	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	31392,9817,41502,23295	move	0	0	m1	m0	48215,20687,61952,29801	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	31392,9817,41502,23295	1	p1
+INIT	yawn_real_battle	16261,41531,27566,25706	41164,53013,49706,43035
+DEC	yawn_real_battle	41164,53013,49706,43035	move	0	0	m0	m0	18267,32261,18070,63125	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	41164,53013,49706,43035	move	0	0	m1	m0	22619,22570,520,62816	Snorlax	462	462	0	-	1	0	Blissey	187	714	0	slp	2	4	p1	1
+DEC	yawn_real_battle	41164,53013,49706,43035	move	0	0	m1	m0	52822,18173,3843,20189	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	41164,53013,49706,43035	switch	0	1	-	s1	25696,22893,5556,244	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	41164,53013,49706,43035	move	0	0	m1	m0	61772,38405,29479,39752	Snorlax	462	462	0	-	1	0	Blissey	224	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	41164,53013,49706,43035	move	0	0	m1	m0	39061,19533,1878,34341	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	41164,53013,49706,43035	1	p1
+INIT	yawn_real_battle	29115,51685,45495,16694	64952,18321,55030,43767
+DEC	yawn_real_battle	64952,18321,55030,43767	move	0	0	m0	m0	28840,52109,49107,16145	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	64952,18321,55030,43767	move	0	0	m1	m0	1911,13352,2060,21388	Snorlax	462	462	0	-	1	0	Blissey	198	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	64952,18321,55030,43767	move	0	0	m1	m0	64149,3536,59166,46041	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	64952,18321,55030,43767	switch	0	1	-	s1	42438,19566,5233,46176	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	64952,18321,55030,43767	move	0	0	m1	m0	57248,46636,64294,53236	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	64952,18321,55030,43767	move	0	0	m1	m0	26740,38442,52995,63393	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	64952,18321,55030,43767	1	p1
+INIT	yawn_real_battle	38966,14467,60320,7874	15716,52173,27778,65427
+DEC	yawn_real_battle	15716,52173,27778,65427	move	0	0	m0	m0	14389,23561,22038,37709	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	15716,52173,27778,65427	move	0	0	m1	m0	2252,20941,5710,26744	Snorlax	462	462	0	-	1	0	Blissey	209	714	0	slp	2	2	p1	1
+DEC	yawn_real_battle	15716,52173,27778,65427	move	0	0	m1	m0	59381,14966,8374,27797	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	15716,52173,27778,65427	switch	0	1	-	s1	38966,57521,23630,12940	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	15716,52173,27778,65427	move	0	0	m1	m0	32777,54109,13675,41824	Snorlax	462	462	0	-	1	0	Blissey	224	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	15716,52173,27778,65427	move	0	0	m1	m0	49722,160,226,1245	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	15716,52173,27778,65427	1	p1
+INIT	yawn_real_battle	24940,47880,47103,18702	52176,22473,52942,495
+DEC	yawn_real_battle	52176,22473,52942,495	move	0	0	m0	m0	53772,39995,7512,61257	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	52176,22473,52942,495	move	0	0	m1	m0	41346,61857,12050,57380	Snorlax	462	462	0	-	1	0	Blissey	214	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	52176,22473,52942,495	move	0	0	m1	m0	5563,24483,56942,62737	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	52176,22473,52942,495	switch	0	1	-	s1	1052,15569,650,26488	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	52176,22473,52942,495	move	0	0	m1	m0	39485,30350,55008,16780	Snorlax	462	462	0	-	1	0	Blissey	187	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	52176,22473,52942,495	move	0	0	m1	m0	36385,44817,24369,43481	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	52176,22473,52942,495	1	p1
+INIT	yawn_real_battle	30235,8450,16906,52250	54524,42885,2522,52747
+DEC	yawn_real_battle	54524,42885,2522,52747	move	0	0	m0	m0	32335,15332,25177,3845	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	54524,42885,2522,52747	move	0	0	m1	m0	43771,51839,3755,9872	Snorlax	462	462	0	-	1	0	Blissey	245	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	54524,42885,2522,52747	move	0	0	m1	m0	52561,6053,37019,35149	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	54524,42885,2522,52747	switch	0	1	-	s1	37264,31555,34584,65316	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	54524,42885,2522,52747	move	0	0	m1	m0	44226,43567,36228,38520	Snorlax	462	462	0	-	1	0	Blissey	261	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	54524,42885,2522,52747	move	0	0	m1	m0	11285,7622,31178,41621	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	54524,42885,2522,52747	1	p1
+INIT	yawn_real_battle	6750,58223,23105,29670	17640,14081,59814,16359
+DEC	yawn_real_battle	17640,14081,59814,16359	move	0	0	m0	m0	60438,680,54857,28289	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	17640,14081,59814,16359	move	0	0	m1	m0	36811,42711,24999,26556	Snorlax	462	462	0	-	1	0	Blissey	224	714	0	slp	2	5	p1	1
+DEC	yawn_real_battle	17640,14081,59814,16359	move	0	0	m1	m0	31110,10223,23627,9545	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	17640,14081,59814,16359	switch	0	1	-	s1	23748,27753,29119,26000	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	17640,14081,59814,16359	move	0	0	m1	m0	7879,61722,62847,20004	Snorlax	462	462	0	-	1	0	Blissey	209	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	17640,14081,59814,16359	move	0	0	m1	m0	64532,10613,50312,27409	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	17640,14081,59814,16359	1	p1
+INIT	yawn_real_battle	46730,55079,59174,52338	51092,16957,64050,62339
+DEC	yawn_real_battle	51092,16957,64050,62339	move	0	0	m0	m0	65031,31931,42236,18877	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	51092,16957,64050,62339	move	0	0	m1	m0	49340,56581,29298,36776	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	slp	2	4	p1	1
+DEC	yawn_real_battle	51092,16957,64050,62339	move	0	0	m1	m0	18577,37544,2036,34053	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	51092,16957,64050,62339	switch	0	1	-	s1	57672,23123,48625,50876	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	51092,16957,64050,62339	move	0	0	m1	m0	48456,60893,24377,54416	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	51092,16957,64050,62339	move	0	0	m1	m0	50902,22505,2678,16205	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	51092,16957,64050,62339	1	p1
+INIT	yawn_real_battle	5235,54193,65004,8638	51456,50489,34686,17631
+DEC	yawn_real_battle	51456,50489,34686,17631	move	0	0	m0	m0	62149,53187,41104,40121	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	51456,50489,34686,17631	move	0	0	m1	m0	23857,60562,24451,19028	Snorlax	462	462	0	-	1	0	Blissey	198	714	0	slp	2	5	p1	1
+DEC	yawn_real_battle	51456,50489,34686,17631	move	0	0	m1	m0	32381,47677,25219,9345	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	51456,50489,34686,17631	switch	0	1	-	s1	43369,51921,30708,3752	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	51456,50489,34686,17631	move	0	0	m1	m0	7787,22956,50289,21948	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	51456,50489,34686,17631	move	0	0	m1	m0	58110,57225,33852,6985	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	51456,50489,34686,17631	1	p1
+INIT	yawn_real_battle	63831,55491,16482,32714	29996,31733,40330,20475
+DEC	yawn_real_battle	29996,31733,40330,20475	move	0	0	m0	m0	57560,27593,54252,9077	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	29996,31733,40330,20475	move	0	0	m1	m0	6796,23182,350,960	Snorlax	462	462	0	-	1	0	Blissey	267	714	0	slp	2	5	p1	1
+DEC	yawn_real_battle	29996,31733,40330,20475	move	0	0	m1	m0	63774,22421,34961,16317	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	29996,31733,40330,20475	switch	0	1	-	s1	20845,23426,5819,59732	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	29996,31733,40330,20475	move	0	0	m1	m0	14748,23528,6136,48552	Snorlax	462	462	0	-	1	0	Blissey	240	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	29996,31733,40330,20475	move	0	0	m1	m0	64619,30215,14360,47877	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	29996,31733,40330,20475	1	p1
+INIT	yawn_real_battle	14229,32221,6967,45718	47128,57969,2134,61655
+DEC	yawn_real_battle	47128,57969,2134,61655	move	0	0	m0	m0	33630,8407,46540,23025	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	47128,57969,2134,61655	move	0	0	m1	m0	51849,63946,45049,59372	Snorlax	462	462	0	-	1	0	Blissey	256	714	0	slp	2	2	p1	1
+DEC	yawn_real_battle	47128,57969,2134,61655	move	0	0	m1	m0	48768,30449,39512,53945	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	47128,57969,2134,61655	switch	0	1	-	s1	55836,32828,15621,49856	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	47128,57969,2134,61655	move	0	0	m1	m0	3894,51320,10109,47188	Snorlax	462	462	0	-	1	0	Blissey	203	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	47128,57969,2134,61655	move	0	0	m1	m0	18069,64476,14002,39553	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	47128,57969,2134,61655	1	p1
+INIT	yawn_real_battle	7641,3405,20315,17954	15812,13485,21474,50035
+DEC	yawn_real_battle	15812,13485,21474,50035	move	0	0	m0	m0	15647,28023,27295,31789	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	15812,13485,21474,50035	move	0	0	m1	m0	26270,15120,9869,58072	Snorlax	462	462	0	-	1	0	Blissey	256	714	0	slp	2	4	p1	1
+DEC	yawn_real_battle	15812,13485,21474,50035	move	0	0	m1	m0	23425,63259,3948,39285	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	15812,13485,21474,50035	switch	0	1	-	s1	8742,18380,49745,50924	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	15812,13485,21474,50035	move	0	0	m1	m0	16309,56390,22197,45504	Snorlax	462	462	0	-	1	0	Blissey	224	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	15812,13485,21474,50035	move	0	0	m1	m0	30035,36780,9392,62909	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	15812,13485,21474,50035	1	p1
+INIT	yawn_real_battle	48874,6475,36397,34414	29232,28329,52270,9167
+DEC	yawn_real_battle	29232,28329,52270,9167	move	0	0	m0	m0	9909,17728,35343,34345	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	29232,28329,52270,9167	move	0	0	m1	m0	10525,20912,12023,41092	Snorlax	462	462	0	-	1	0	Blissey	219	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	29232,28329,52270,9167	move	0	0	m1	m0	61794,31863,45539,4081	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	29232,28329,52270,9167	switch	0	1	-	s1	22237,63087,52698,57816	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	29232,28329,52270,9167	move	0	0	m1	m0	31999,54044,53476,54764	Snorlax	462	462	0	-	1	0	Blissey	198	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	29232,28329,52270,9167	move	0	0	m1	m0	21328,2158,55174,51385	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	29232,28329,52270,9167	1	p1
+INIT	yawn_real_battle	31890,8891,61466,32634	33116,19557,32058,11755
+DEC	yawn_real_battle	33116,19557,32058,11755	move	0	0	m0	m0	55368,36678,56617,13285	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	33116,19557,32058,11755	move	0	0	m1	m0	64727,7662,48622,36080	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	33116,19557,32058,11755	move	0	0	m1	m0	40633,15339,19101,29229	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	33116,19557,32058,11755	switch	0	1	-	s1	11427,32764,52633,49028	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	33116,19557,32058,11755	move	0	0	m1	m0	514,18794,52657,4312	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	33116,19557,32058,11755	move	0	0	m1	m0	33851,42303,52185,53109	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	33116,19557,32058,11755	1	p1
+INIT	yawn_real_battle	30681,54249,57807,64838	22344,18913,13062,48583
+DEC	yawn_real_battle	22344,18913,13062,48583	move	0	0	m0	m0	54693,40773,55978,353	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	22344,18913,13062,48583	move	0	0	m1	m0	35360,14904,11113,54300	Snorlax	462	462	0	-	1	0	Blissey	224	714	0	slp	2	2	p1	1
+DEC	yawn_real_battle	22344,18913,13062,48583	move	0	0	m1	m0	52986,59688,63957,48169	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	22344,18913,13062,48583	switch	0	1	-	s1	51935,27204,25674,52208	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	22344,18913,13062,48583	move	0	0	m1	m0	15638,35187,6856,3716	Snorlax	462	462	0	-	1	0	Blissey	251	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	22344,18913,13062,48583	move	0	0	m1	m0	30908,22987,4688,34289	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	22344,18913,13062,48583	1	p1
+INIT	yawn_real_battle	42543,60862,9277,35794	40948,41757,31122,28515
+DEC	yawn_real_battle	40948,41757,31122,28515	move	0	0	m0	m0	3,45550,42752,10909	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	40948,41757,31122,28515	move	0	0	m1	m0	46292,13191,12960,25096	Snorlax	462	462	0	-	1	0	Blissey	224	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	40948,41757,31122,28515	move	0	0	m1	m0	55783,3905,14110,43493	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	40948,41757,31122,28515	switch	0	1	-	s1	35436,47894,26990,13084	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	40948,41757,31122,28515	move	0	0	m1	m0	12412,5362,7135,15088	Snorlax	462	462	0	-	1	0	Blissey	193	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	40948,41757,31122,28515	move	0	0	m1	m0	38006,47899,20370,10285	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	40948,41757,31122,28515	1	p1
+INIT	yawn_real_battle	2450,28279,61992,30494	51040,21529,40158,40639
+DEC	yawn_real_battle	51040,21529,40158,40639	move	0	0	m0	m0	7752,49180,7086,43929	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	2	0	p1	0
+DEC	yawn_real_battle	51040,21529,40158,40639	move	0	0	m1	m0	7182,6751,33084,58036	Snorlax	462	462	0	-	1	0	Blissey	230	714	0	slp	2	3	p1	1
+DEC	yawn_real_battle	51040,21529,40158,40639	move	0	0	m1	m0	60334,12074,8263,46945	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	fnt	1	0	p1	0
+DEC	yawn_real_battle	51040,21529,40158,40639	switch	0	1	-	s1	13808,20093,3387,57608	Snorlax	462	462	0	-	1	0	Blissey	714	714	0	-	1	0	none	0
+DEC	yawn_real_battle	51040,21529,40158,40639	move	0	0	m1	m0	61414,15431,46951,49692	Snorlax	462	462	0	-	1	0	Blissey	261	714	0	-	1	0	p1	0
+DEC	yawn_real_battle	51040,21529,40158,40639	move	0	0	m1	m0	18100,906,58026,45609	Snorlax	462	462	0	-	1	0	Blissey	0	714	1	-	0	0	p1	0
+END	yawn_real_battle	51040,21529,40158,40639	1	p1
