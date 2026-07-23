@@ -39,17 +39,31 @@ class TeamSource:
                              Showdown export, ``pin_file`` its provenance
       * ``pin_biased``     — the pinned team with prob ``bias_prob``, else a pool draw (the
                              future ``--trainee-team-prob`` 50/50; supported here, no CLI yet)
+      * ``pin_multi``      — a SMALL FIXED SET of teams, sampled uniformly (``--trainee-teams``);
+                             ``pin_strs`` are the raw exports, ``pin_files`` their provenance. For
+                             a z-near multi-team exploiter (the 1-vs-3-team A/B). ``pin_str`` mirrors
+                             ``pin_strs[0]`` so single-team consumers (eval pin, provenance) still work.
     """
     kind: str
     pin_file: "str | None" = None
     pin_str: "str | None" = None
     bias_prob: float = 0.0
+    pin_strs: "tuple[str, ...] | None" = None
+    pin_files: "tuple[str, ...] | None" = None
 
     def __post_init__(self):
-        if self.kind not in ("pool", "default_biased", "pinned", "pin_biased"):
+        if self.kind not in ("pool", "default_biased", "pinned", "pin_biased", "pin_multi"):
             raise ValueError(f"unknown TeamSource kind {self.kind!r}")
         if self.kind in ("pinned", "pin_biased") and not self.pin_str:
             raise ValueError(f"TeamSource kind {self.kind!r} needs pin_str (the team export)")
+        if self.kind == "pin_multi":
+            if not self.pin_strs:
+                raise ValueError("TeamSource kind 'pin_multi' needs pin_strs (the team exports)")
+            # mirror the first team into pin_str so single-team consumers keep working
+            if self.pin_str is None:
+                object.__setattr__(self, "pin_str", self.pin_strs[0])
+            if self.pin_file is None and self.pin_files:
+                object.__setattr__(self, "pin_file", self.pin_files[0])
 
     def build(self, all_teams, sample_teams, team_pfsp="off",
               team_pfsp_cap=3.0, team_pfsp_floor=0.05):
@@ -67,6 +81,9 @@ class TeamSource:
             return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=self.bias_prob, **_tp)
         if self.kind == "pinned":
             return Gen3Teambuilder([self.pin_str], **_tp)
+        if self.kind == "pin_multi":
+            # the fixed set, sampled uniformly per episode (like a mini-pool of just these teams)
+            return Gen3Teambuilder(list(self.pin_strs), **_tp)
         # pin_biased: the pinned team bias_prob of the time, else the full pool.
         return Gen3Teambuilder(all_teams, bias_teams=[self.pin_str], bias_prob=self.bias_prob, **_tp)
 
@@ -77,6 +94,9 @@ class TeamSource:
             return f"full pool + {self.bias_prob:.0%} sample-team bias"
         if self.kind == "pinned":
             return f"PINNED {self.pin_file or '<inline>'}"
+        if self.kind == "pin_multi":
+            names = ", ".join(self.pin_files or [f"<team {i}>" for i in range(len(self.pin_strs))])
+            return f"PINNED {len(self.pin_strs)} teams: {names}"
         return f"PINNED {self.pin_file or '<inline>'} @ {self.bias_prob:.0%}, else pool"
 
 
@@ -120,10 +140,13 @@ class MatchupSpec:
     # -- provenance --
     def to_dict(self) -> dict:
         def ts(t: TeamSource) -> dict:
-            return {"kind": t.kind, "pin_file": t.pin_file, "bias_prob": t.bias_prob,
-                    # provenance keeps a short fingerprint of the pinned team, not the full text
-                    "pin_sha": (hashlib.sha1(t.pin_str.encode()).hexdigest()[:10]
-                                if t.pin_str else None)}
+            d = {"kind": t.kind, "pin_file": t.pin_file, "bias_prob": t.bias_prob,
+                 # provenance keeps a short fingerprint of the pinned team, not the full text
+                 "pin_sha": (hashlib.sha1(t.pin_str.encode()).hexdigest()[:10]
+                             if t.pin_str else None)}
+            if t.kind == "pin_multi":
+                d["pin_shas"] = [hashlib.sha1(s.encode()).hexdigest()[:10] for s in t.pin_strs]
+            return d
         return {
             "trainee_teams": ts(self.trainee_teams),
             "opponent_teams": ts(self.opponent_teams),
@@ -164,7 +187,15 @@ class MatchupSpec:
     def from_args(cls, args) -> "MatchupSpec":
         """The single CLI → matchup mapping. Reads the pinned team file here (one place)."""
         pin_str = None
-        if getattr(args, "trainee_team", None):
+        if getattr(args, "trainee_teams", None):
+            # a small FIXED SET, sampled uniformly (the multi-team exploiter, --trainee-teams f1,f2,..)
+            files = [f.strip() for f in args.trainee_teams.split(",") if f.strip()]
+            strs = []
+            for fp in files:
+                with open(fp, "r", encoding="utf-8") as f:
+                    strs.append(f.read())
+            trainee = TeamSource(kind="pin_multi", pin_strs=tuple(strs), pin_files=tuple(files))
+        elif getattr(args, "trainee_team", None):
             with open(args.trainee_team, "r", encoding="utf-8") as f:
                 pin_str = f.read()
             trainee = TeamSource(kind="pinned", pin_file=args.trainee_team, pin_str=pin_str)
@@ -220,17 +251,23 @@ def validate_exploiter_trainee_is_sample(spec: "MatchupSpec", sample_teams) -> N
     if spec.mix_kind != "exploiter":
         return
     ts = spec.trainee_teams
-    if ts.kind not in ("pinned", "pin_biased") or not ts.pin_str:
-        return
     shas = sample_team_shas(sample_teams)
-    pin = hashlib.sha1(ts.pin_str.strip().encode()).hexdigest()[:10]
-    if pin not in shas:
-        raise ValueError(
-            f"exploiter trainee team {ts.pin_file or '<inline>'!r} (sha {pin}) is NOT one of the "
-            f"{len(shas)} curated SAMPLE teams. Exploiters must only ever pilot a vetted, "
-            "tournament-proven sample team (a subset of data/teams/sample/) — bulk-downloaded / "
-            "hand-crafted teams are not allowed here. Pick a sample team, or promote this one into "
-            "the sample set first if it is proven.")
+    # each pinned member (single or multi) must be a vetted sample team
+    if ts.kind == "pin_multi":
+        members = list(zip(ts.pin_files or [None] * len(ts.pin_strs), ts.pin_strs))
+    elif ts.kind in ("pinned", "pin_biased") and ts.pin_str:
+        members = [(ts.pin_file, ts.pin_str)]
+    else:
+        return
+    for pin_file, pin_str in members:
+        pin = hashlib.sha1(pin_str.strip().encode()).hexdigest()[:10]
+        if pin not in shas:
+            raise ValueError(
+                f"exploiter trainee team {pin_file or '<inline>'!r} (sha {pin}) is NOT one of the "
+                f"{len(shas)} curated SAMPLE teams. Exploiters must only ever pilot a vetted, "
+                "tournament-proven sample team (a subset of data/teams/sample/) — bulk-downloaded / "
+                "hand-crafted teams are not allowed here. Pick a sample team, or promote this one into "
+                "the sample set first if it is proven.")
 
 
 def describe_drift(recorded: "dict | None", current: "dict | None") -> "list[str]":

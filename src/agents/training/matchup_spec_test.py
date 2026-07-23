@@ -17,12 +17,50 @@ def teams():
 
 
 def _args(**kw):
-    base = dict(trainee_team=None, exploiter=None, self_play=False, bot_weights=None,
-                exploiter_keep_bots=False, exploiter_bot_fraction=0.5,
+    base = dict(trainee_team=None, trainee_teams=None, exploiter=None, self_play=False,
+                bot_weights=None, exploiter_keep_bots=False, exploiter_bot_fraction=0.5,
                 exploiter_temp_start=None, exploiter_temp_mode="fixed",
                 stable_opponent_temp=1.0)
     base.update(kw)
     return SimpleNamespace(**base)
+
+
+# ── multi-team pin (--trainee-teams): the 1-vs-3-team exploiter A/B ─
+
+_K6_TRIO = ("data/teams/sample/9d5f845869e899ee.txt",   # 564b9be3ae
+            "data/teams/sample/f7ba5702fe856292.txt",   # 4771662cf7
+            "data/teams/sample/0972146213a667c9.txt")   # 45995e432f
+
+
+def test_pin_multi_builds_the_fixed_set(teams):
+    all_teams, sample_teams = teams
+    spec = MatchupSpec.from_args(_args(trainee_teams=",".join(_K6_TRIO)))
+    ts = spec.trainee_teams
+    assert ts.kind == "pin_multi" and len(ts.pin_strs) == 3
+    # pin_str mirrors the first member so single-team consumers (eval pin, provenance) still work
+    assert ts.pin_str == ts.pin_strs[0]
+    tb = ts.build(all_teams, sample_teams)
+    expected = [open(f, encoding="utf-8").read() for f in _K6_TRIO]
+    assert tb.packed_teams == Gen3Teambuilder(expected).packed_teams and len(tb.packed_teams) == 3
+    # provenance records every member's fingerprint
+    d = spec.to_dict()["trainee_teams"]
+    assert len(d["pin_shas"]) == 3
+
+
+def test_pin_multi_exploiter_sample_gate(teams):
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
+    all_teams, sample_teams = teams
+    # all-sample trio passes
+    spec = MatchupSpec.from_args(_args(trainee_teams=",".join(_K6_TRIO), exploiter="models/x"))
+    validate_exploiter_trainee_is_sample(spec, sample_teams)   # no raise
+    # a non-sample member is rejected — build a pin_multi with one non-sample team directly
+    non_sample = "FakeMon @ Leftovers\nAbility: Levitate\n- Tackle\n"
+    bad = MatchupSpec(
+        trainee_teams=TeamSource(kind="pin_multi", pin_strs=(sample_teams[0], non_sample),
+                                 pin_files=("s0.txt", "bad.txt")),
+        opponent_teams=TeamSource(kind="pool"), mix_kind="exploiter")
+    with pytest.raises(ValueError, match="NOT one of"):
+        validate_exploiter_trainee_is_sample(bad, sample_teams)
 
 
 # ── builder parity: the spec must reproduce the legacy constructions byte-for-byte ─

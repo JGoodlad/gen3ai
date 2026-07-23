@@ -1786,8 +1786,19 @@ async def main():
                              "diverse pool. Use to train a single-team specialist (e.g. --trainee-team "
                              "data/teams/specialist/tss_starmie.txt). Default None = the full trainee "
                              "pool (byte-identical).")
+    parser.add_argument("--trainee-teams", dest="trainee_teams", type=str, default=None,
+                        help="MULTI-TEAM SPECIALIST MODE: pin the TRAINEE's team pool to the SMALL "
+                             "FIXED SET of teams in these files (comma-separated Showdown-export paths), "
+                             "sampled UNIFORMLY per episode — a z-near multi-team exploiter (the "
+                             "1-vs-3-team A/B). Opponents still draw the full pool. Mutually exclusive "
+                             "with --trainee-team; under --exploiter EVERY member must be a sample team. "
+                             "Unlike a single pin, z_arch varies across the set so --zarch-film keeps its "
+                             "recon/VICReg aux ON. Default None.")
 
     args = parser.parse_args()
+    if getattr(args, "trainee_teams", None) and getattr(args, "trainee_team", None):
+        parser.error("--trainee-teams (multi-team pin) is mutually exclusive with --trainee-team "
+                     "(single-team pin) — use one or the other.")
 
     # --- Resolve the bridge-transport flags into ONE internal state -----------------------------
     # Two knobs feed it: the new `--use-bridge {off,node,rust}` and the DEPRECATED back-compat
@@ -2127,10 +2138,11 @@ async def main():
                 parser.error(f"legacy --distill-teacher ({len(_items)}) / --distill-teacher-team ({len(_teams)}) "
                              "must be equal-length — or use the 'TEACHER:TEAM' pair form in --distill-teacher")
             args._distill_pairs = list(zip(_items, _teams))
-    if args.distill_coef and args.distill_coef > 0 and args.trainee_team:
-        parser.error("--distill-coef is mutually exclusive with --trainee-team: distillation biases the "
-                     "trainee toward the teacher team via --distill-team-bias while keeping the pool for "
-                     "rehearsal; a hard pin would remove the rehearsal (and cause forgetting)")
+    if args.distill_coef and args.distill_coef > 0 and (args.trainee_team or args.trainee_teams):
+        parser.error("--distill-coef is mutually exclusive with --trainee-team/--trainee-teams: "
+                     "distillation biases the trainee toward the teacher team via --distill-team-bias "
+                     "while keeping the pool for rehearsal; a hard pin would remove the rehearsal (and "
+                     "cause forgetting)")
     if args.move_belief_mode != "off":
         # The MoveBelief module reads/refines the opp slots, so (like the BeliefHead) it requires the
         # unrevealed slots to be attendable — auto-enable the unmask flag (the model side hard-gates
@@ -2503,7 +2515,11 @@ async def main():
             emit(f"   [{_i}] {_tp} ← {os.path.basename(_tf)} ({', '.join(sorted(_species_sets[_i-1]))})")
     for _ln in matchup.summary_lines():
         emit(_ln)
-    if _specialist_team_str:
+    if matchup.trainee_teams.kind == "pin_multi":
+        _tt = matchup.trainee_teams
+        emit(f"🎯 [MULTI-SPECIALIST] trainee pinned to {len(_tt.pin_strs)} teams (sampled uniformly): "
+             f"{', '.join(os.path.basename(f) for f in _tt.pin_files)} (opponents keep the full pool)")
+    elif _specialist_team_str:
         _spec_mons = [ln.split("@")[0].split("(")[0].strip()
                       for ln in _specialist_team_str.splitlines()
                       if ln.strip() and "@" in ln]

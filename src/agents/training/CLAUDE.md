@@ -282,7 +282,10 @@ CONSUMED — never re-derived — by the consumers (the `plan.json` pattern).
 - **`TeamSource`** — where one side's teams come from; its `build(all_teams, sample_teams)` is the ONLY
   constructor of that side's `Gen3Teambuilder` (the env factory no longer assembles builders inline).
   Kinds: `pool` (opponent default), `default_biased` (trainee default — full pool + 10% sample-team
-  bias, `DEFAULT_TRAINEE_BIAS_PROB`), `pinned` (`--trainee-team`), `pin_biased` (the future
+  bias, `DEFAULT_TRAINEE_BIAS_PROB`), `pinned` (`--trainee-team`), `pin_multi` (`--trainee-teams` — a
+  SMALL FIXED SET sampled uniformly, the z-near multi-team exploiter / 1-vs-3-team A/B; `pin_str`
+  mirrors `pin_strs[0]` so single-team consumers keep working, and unlike a single pin z_arch VARIES
+  across the set so `--zarch-film` keeps its recon/VICReg aux on), `pin_biased` (the future
   `--trainee-team-prob` shape — supported, no CLI yet). Each is byte-parity with the legacy
   construction (pinned by `matchup_spec_test.py`). **The two sides are independent BY CONSTRUCTION**
   (`trainee_teams` / `opponent_teams` → `Gen3Env(team=, opponent_team=)`) — the mirror-bug class is
@@ -952,9 +955,10 @@ at the target and it's the only opponent.
   `mix_kind == 'exploiter'` run with a pinned `--trainee-team` pins a team whose strip-normalized
   fingerprint is in the sample set — else it refuses to launch with a clear message. Out of scope:
   non-exploiter runs (any pin allowed), and an exploiter with an UNPINNED trainee (a full-pool
-  exploiter, not a single-team specialist). The shipped TSS pin IS a sample team, so it passes; a
-  future multi-team exploiter pool must validate every member. Tests:
-  `matchup_spec_test.py::test_exploiter_*sample*` + the e2e FATAL.
+  exploiter, not a single-team specialist). The shipped TSS pin IS a sample team, so it passes. **A
+  multi-team exploiter (`--trainee-teams` → `pin_multi`) validates EVERY member likewise** (each of the
+  N teams must be a sample). Tests: `matchup_spec_test.py::test_exploiter_*sample*` +
+  `::test_pin_multi_*` + the e2e FATAL.
 - **Mutually exclusive with `--self-play`** (arg-parse error — the exploiter needs no pool). Because
   it's not self-play, `_opp_version` (the arch gate for the foreign load) is set explicitly for this
   path before the factories are built. Training-only; not version-locked.
