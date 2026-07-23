@@ -33,36 +33,20 @@ impl crate::state::BattleState {
         // with a stale raw cached speed.
         self.update_speed(dex);
 
-        // --- SCREENS countdown (`gen3_move_coverage_batch2_v1`) — the Light Screen / Reflect
-        //     SIDE-condition residual (`onSideResidualOrder` reflect 1 / lightscreen 2, well
-        //     BEFORE the field weather residual at order 8 and the mon handlers at order 10).
-        //     DRAW-FREE + state-only (VERIFIED: a screen turn draws only the existing shuffles
-        //     + Quick Claw — the screen residual has no drawing handler; its own SideCondition
-        //     effectType sort group never ties a mon-held handler). Each screen ticks once; at
-        //     0 it expires (`|-sideend|<side>|<Effect>`). Reflect ticks before Light Screen
-        //     (subOrder 1 < 2), side 0 before side 1. ---
-        for side in 0..2 {
-            for is_reflect in [true, false] {
-                let ptr = if is_reflect {
-                    &mut self.sides[side].reflect
-                } else {
-                    &mut self.sides[side].light_screen
-                };
-                if *ptr == 0 {
-                    continue;
-                }
-                *ptr -= 1;
-                if *ptr == 0 {
-                    // [EMIT] `|-sideend|<side>|Reflect` / `|…|move: Light Screen`.
-                    if self.logging() {
-                        let side_ref =
-                            crate::protocol::ProtocolBuilder::side_ref(side, &self.sides[side].name);
-                        let effect = if is_reflect { "Reflect" } else { "move: Light Screen" };
-                        self.log.sideend(&side_ref, effect);
-                    }
-                }
-            }
-        }
+        // --- SCREENS are gathered as SIDE-condition residual DURATION handlers below
+        //     (`ResidualAction::ScreenDuration`, `gen3_screen_residual_tie_shuffle_v1`), NOT
+        //     decremented directly here. Reflect `onSideResidualOrder` 1 / Light Screen 2
+        //     (the gen4-mod override gen3 inherits, `data/mods/gen4/moves.ts`), priority 0,
+        //     speed 0, subOrder 4 (the `resolvePriority` SideCondition effectTypeOrder). They
+        //     sort well BEFORE the field weather residual (order 8) and the mon handlers (order
+        //     10), so the one-screen `-sideend` expiry still emits at the SAME stream position
+        //     (first among the residuals). THE DRAW: `fieldEvent('Residual')` gathers a side's
+        //     `onSideResidual` duration handlers via `findSideEventHandlers` and speed-sorts them
+        //     with EVERYTHING else — so when BOTH sides carry the SAME screen (two Reflects tie at
+        //     order 1, two Light Screens at order 2; speed 0 both) the tie-group Fisher-Yates
+        //     shuffle draws ONE `random(0,2)` — the draw the old direct decrement MISSED (the
+        //     residual-side sibling of the batch-7 per-hit `modify_damage_phase1_shuffle`). A
+        //     SINGLE screen (one side) is alone in its order group → NO tie → NO draw, byte-neutral. ---
 
         // --- Gather residual handlers (one per active per applicable effect), each
         //     with its resolved comparePriority key + a typed action. ---
@@ -162,6 +146,38 @@ impl crate::state::BattleState {
         // [or a 2-mon Leftovers tie] reads the gather order). Mirror it: DoT then
         // Leftovers, per mon, side 0 then side 1.
         for side in 0..2 {
+            // --- SCREENS (Reflect / Light Screen) as `onSideResidual` DURATION handlers
+            //     (`gen3_screen_residual_tie_shuffle_v1`). Gathered PER SIDE, BEFORE this side's
+            //     mon handlers — mirroring `fieldEvent('Residual')`, which concats
+            //     `findSideEventHandlers(side, 'onSideResidual', 'duration')` BEFORE the per-active
+            //     `findPokemonEventHandlers(active, 'onResidual', 'duration')`. And INDEPENDENT of
+            //     the active mon being fainted (a side handler's effectHolder is the SIDE, not the
+            //     active — so the gather sits above the `mon.fainted` continue below). speed 0 /
+            //     priority 0; Reflect order 1, Light Screen order 2, subOrder 4. Only the SAME
+            //     screen on the OTHER side ties (order 1↔1 / 2↔2, speed 0↔0), so the relative
+            //     gather order of reflect vs lightscreen within a side is unobservable (distinct
+            //     orders never tie). The apply decrements the counter and emits `|-sideend|` at 0. ---
+            if self.sides[side].reflect > 0 {
+                handlers.push(EventHandler {
+                    order: REFLECT_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed: 0.0,
+                    sub_order: SIDE_CONDITION_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::ScreenDuration { side, is_reflect: true },
+                });
+            }
+            if self.sides[side].light_screen > 0 {
+                handlers.push(EventHandler {
+                    order: LIGHT_SCREEN_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed: 0.0,
+                    sub_order: SIDE_CONDITION_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::ScreenDuration { side, is_reflect: false },
+                });
+            }
+
             let slot = self.sides[side].active;
             let mon = &self.sides[side].pokemon[slot];
             if mon.fainted {
@@ -782,6 +798,41 @@ impl crate::state::BattleState {
                         }
                     } else {
                         continue; // a duration:1 volatile always ends → skip faintMessages
+                    }
+                }
+                // SCREEN duration tick (`gen3_screen_residual_tie_shuffle_v1`): the Reflect /
+                // Light Screen SIDE condition. NO HP effect, DRAW-FREE apply. Mirror
+                // `fieldEvent('Residual')`'s `handler.state.duration--; if (!duration) end()`
+                // for a duration-only handler (callback undefined): decrement the counter; on
+                // reaching 0 remove the side condition → emit `|-sideend|<side>|<Effect>` (the
+                // sim's `removeSideCondition`). The effectHolder is the SIDE, so a fainted active
+                // NEVER skips it (no per-mon fainted guard). On the duration-END emit, `continue`
+                // (skip the per-handler faintMessages — the D4 order fix; a screen can't faint
+                // anything and, being order 1/2, runs FIRST so nothing is deferred yet — but keep
+                // the sim's END-branch `continue` exact). A non-ending decrement falls through to
+                // the per-handler process_faints (a no-op for a screen).
+                ResidualAction::ScreenDuration { side, is_reflect } => {
+                    let ptr = if is_reflect {
+                        &mut self.sides[side].reflect
+                    } else {
+                        &mut self.sides[side].light_screen
+                    };
+                    // Gathered only when > 0, but guard anyway (a prior handler never touches it).
+                    if *ptr == 0 {
+                        continue;
+                    }
+                    *ptr -= 1;
+                    if *ptr == 0 {
+                        // [EMIT] `|-sideend|<side>|Reflect` / `|…|move: Light Screen`.
+                        if self.logging() {
+                            let side_ref = crate::protocol::ProtocolBuilder::side_ref(
+                                side,
+                                &self.sides[side].name,
+                            );
+                            let effect = if is_reflect { "Reflect" } else { "move: Light Screen" };
+                            self.log.sideend(&side_ref, effect);
+                        }
+                        continue; // duration-END → skip faintMessages (D4 order fix)
                     }
                 }
                 // MUSTRECHARGE duration handler on the Hyper Beam CAST turn

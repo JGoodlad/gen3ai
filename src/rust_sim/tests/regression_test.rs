@@ -10718,7 +10718,12 @@ fn twineedle_draws_its_secondary_per_strike_and_poisons() {
 /// dec0 both set Light Screen; dec1 Cloyster Icicle Spears the both-Light-Screen Snorlax. WRONG
 /// (pre-fix: the shuffle was gated on the FOE having BOTH Reflect AND Light Screen, so a cross-
 /// side pair — here BOTH sides' Light Screen — drew NOTHING): the port under-draws the per-strike
-/// shuffle → the dec1 seed desyncs. STATE (Snorlax 509, LS-halved) + SEED (per-strike shuffle).
+/// shuffle → the dec1 seed desyncs. STATE (Snorlax 501, LS-halved) + SEED (per-strike shuffle).
+/// NOTE (`gen3_screen_residual_tie_shuffle_v1`): dec0's END-OF-TURN RESIDUAL now ALSO draws the
+/// both-sides-Light-Screen tie-shuffle (a SEPARATE event from this per-strike one — see
+/// `both_sides_light_screen_residual_draws_the_handler_sort_shuffle`), so the constants were
+/// updated from the pre-residual-fix (509 / `17940,…`) to include that dec0 residual draw. The
+/// per-strike ModifyDamagePhase1 shuffle this pin guards is unaffected (reverting it still fails).
 #[test]
 fn multihit_into_both_sides_light_screen_draws_the_modify_damage_phase1_shuffle_per_strike() {
     let d = dex();
@@ -10735,11 +10740,80 @@ fn multihit_into_both_sides_light_screen_draws_the_modify_damage_phase1_shuffle_
         ],
         &d,
     );
-    assert_eq!(out.decisions[1].active[1].hp, 509, "Icicle Spear (LS-halved) → 524-15");
+    assert_eq!(out.decisions[1].active[1].hp, 501, "Icicle Spear (LS-halved) → 524-23");
     assert_eq!(
         seed_str(&out.decisions[1].seed_after),
-        "17940,16623,13080,40722",
+        "56830,34298,10811,30881",
         "BOTH sides' Light Screen = 2 tied ModifyDamagePhase1 handlers → ONE random(0,2) PER STRIKE"
+    );
+}
+
+/// LS-RESIDUAL (`gen3_screen_residual_tie_shuffle_v1`): the BOTH-SIDES-SAME-SCREEN RESIDUAL
+/// tie-shuffle — the residual-side sibling of MC17's per-hit ModifyDamagePhase1 shuffle (a
+/// SEPARATE event; do not conflate). `fieldEvent('Residual')` gathers each side's Reflect /
+/// Light Screen as an `onSideResidual` DURATION handler (`findSideEventHandlers(..., 'duration')`,
+/// order 1/2, speed 0, subOrder 4) and speed-sorts them with every other residual handler — so
+/// when BOTH sides carry the SAME screen the two tie (order 2↔2, speed 0↔0) and the tie-group
+/// Fisher-Yates shuffle draws ONE `random(0,2)`. WRONG (pre-fix): the port DECREMENTED the screens
+/// directly at the top of `run_residuals`, before the handler list was built, so the screens never
+/// became sorted duration handlers and never tie-shuffled — a both-sides-same-screen residual drew
+/// ONE FEWER call than the sim → downstream RNG desync (the ab_1_6 draw-#191 divergence). The pin
+/// injects Light Screen on BOTH sides (the tie) vs ONE side (the control), runs a draw-minimal
+/// splash/splash turn, and asserts the both-sides post-turn seed == the REAL-Showdown ground truth
+/// AND that it DIFFERS from the one-side control (reverting the fix — screens not gathered as
+/// handlers — makes the two seeds EQUAL). Ground truth: harness/probe_screen_residual_regression_rng.js
+/// (sim `>start` [11,22,33,44] → post-construction initSeed 13127,45333,18295,15391; the sim's
+/// both-vs-one draw is confirmed separately by harness/probe_screen_residual_shuffle.js).
+#[test]
+fn both_sides_light_screen_residual_draws_the_handler_sort_shuffle() {
+    let d = dex();
+    // Genderless-treated Blissey (55 spe) + Snorlax (30 spe) — distinct speeds (no action-order /
+    // eachEvent tie) both SPLASH (draw-free move phase), so the ONLY turn draws are the residual
+    // (the screen shuffle in the both-sides case) + the end-of-turn Quick Claw.
+    let blissey = "Blissey|||naturalcure|splash|Serious|,,,,,|||||";
+    let snorlax = "Snorlax|||immunity|splash|Serious|,,,,,|||||";
+
+    // BOTH sides Light Screen (duration 5) → the residual ties the two Light Screen handlers.
+    let mut both =
+        Battle::start_with_switchins(&opts_cg(blissey, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    {
+        let st = both.state_mut().unwrap();
+        st.sides[0].light_screen = 5;
+        st.sides[1].light_screen = 5;
+    }
+    let out_both = both
+        .state_mut()
+        .unwrap()
+        .run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        seed_str(&out_both.decisions[0].seed_after),
+        "57388,452,34593,29177",
+        "BOTH sides' Light Screen ties at the residual → ONE random(0,2) shuffle → the real Showdown seed"
+    );
+
+    // ONE side Light Screen (control) — no tie, no residual shuffle → a DIFFERENT seed.
+    let mut one =
+        Battle::start_with_switchins(&opts_cg(blissey, snorlax, "13127,45333,18295,15391"), &d)
+            .expect("start");
+    {
+        let st = one.state_mut().unwrap();
+        st.sides[0].light_screen = 5;
+    }
+    let out_one = one
+        .state_mut()
+        .unwrap()
+        .run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        seed_str(&out_one.decisions[0].seed_after),
+        "18464,3966,47670,60926",
+        "ONE side's Light Screen is alone in its residual order group → NO tie → NO shuffle draw"
+    );
+    assert_ne!(
+        seed_str(&out_both.decisions[0].seed_after),
+        seed_str(&out_one.decisions[0].seed_after),
+        "the residual tie-shuffle draw MUST make the two seeds differ (the crux — reverting the fix, \
+         so screens are not gathered as handlers, makes them equal)"
     );
 }
 

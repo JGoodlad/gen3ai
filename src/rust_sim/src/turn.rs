@@ -286,6 +286,20 @@ const FUTURE_MOVE_DURATION: u8 = 3;
 /// 8). Its subOrder is unobservable within the group (both members share it) —
 /// the ability effectTypeOrder slot is reused.
 const TRUANT_RESIDUAL_ORDER: u64 = 27;
+/// The **SCREEN** side conditions' residual sort keys (`gen3_screen_residual_tie_shuffle_v1`) —
+/// the gen4-mod override gen3 inherits (`data/mods/gen4/moves.ts`: `reflect.condition
+/// onSideResidualOrder: 1`, `lightscreen.condition onSideResidualOrder: 2`; both
+/// `onSideResidualSubOrder: undefined`). Order 1/2 sort FIRST — well before the weather field
+/// residual (order 8) and every mon handler (order 10) — so a single screen's `-sideend` expiry
+/// stays first among the residuals (its old direct-decrement stream position). priority 0.
+const REFLECT_RESIDUAL_ORDER: u64 = 1;
+const LIGHT_SCREEN_RESIDUAL_ORDER: u64 = 2;
+/// A (non-slot) SIDE condition's residual subOrder — `resolvePriority`'s effectTypeOrder for a
+/// `Condition` whose `state.target instanceof Side` (not a slot condition) = **4**
+/// (`sim/battle.ts` `resolvePriority`). Unobservable for the sort ORDER (reflect 1 / lightscreen
+/// 2 already differ), but load-bearing for the TIE: the two same-type screens share it, so they
+/// tie exactly (order/priority/speed/subOrder all equal) → the size-2 shuffle draws.
+const SIDE_CONDITION_SUBORDER: i32 = 4;
 
 /// A resolved per-move action, in the order it will be run. `slot` is the team
 /// slot of the actor; `target_slot` the opposing active.
@@ -484,6 +498,19 @@ enum ResidualAction {
     /// double faint → double replacement, NO Quick Claw). DRAW-FREE apply; two
     /// perished mons at equal cached speed tie (ONE shuffle per residual — P5).
     Perish { side: usize, slot: usize },
+    /// A **SCREEN** side condition's residual DURATION handler (`gen3_screen_residual_tie_
+    /// shuffle_v1`): Reflect (`onSideResidualOrder` 1) / Light Screen (order 2), priority 0,
+    /// speed 0, subOrder 4 (the `resolvePriority` SideCondition effectTypeOrder). Gathered per
+    /// side via `fieldEvent('Residual')`'s `findSideEventHandlers(side, 'onSideResidual',
+    /// 'duration')` — a callback-less duration-only handler — so it SPEED-SORTS with every other
+    /// residual handler: when BOTH sides carry the SAME screen the two tie (order 1↔1 / 2↔2,
+    /// speed 0↔0) and the tie-group Fisher-Yates shuffle draws ONE `random(0,2)` (the draw the
+    /// old direct-decrement MISSED — the residual sibling of the per-hit ModifyDamagePhase1
+    /// shuffle). The apply mirrors the sim's `handler.state.duration--; if (!duration) end()`:
+    /// decrement the counter, emit `|-sideend|<side>|<Effect>` at 0. `is_reflect` picks the
+    /// counter/effect (`reflect` → `Reflect`, `light_screen` → `move: Light Screen`). NO HP
+    /// effect, DRAW-FREE apply; the effectHolder is the SIDE (a fainted active never skips it).
+    ScreenDuration { side: usize, is_reflect: bool },
 }
 
 /// The per-mon outcome of a turn (what THIS step validates against the sim).

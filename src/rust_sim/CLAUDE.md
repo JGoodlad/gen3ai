@@ -1481,8 +1481,16 @@ wired into `run_status_move` (all four are category-Status):
   move: Light Screen` / `|-sidestart|<side>|Reflect`; gen3 has no Light Clay → always 5). DRAW-FREE
   set; a re-use while ALREADY up FAILS (`|-fail|<caster>`, the timer unchanged). The damage calc
   reads `sides[foe].reflect/light_screen > 0` (`damage.rs::modify_damage` ModifyDamagePhase1 ×0.5,
-  crit-bypassed). The 5-turn countdown + expiry (`|-sideend|`) are the end-of-turn SIDE residual
-  (`run_residuals`, reflect subOrder 1 / lightscreen 2, DRAW-FREE). **THE DRAW CRUX (the finding that
+  crit-bypassed). The 5-turn countdown + expiry (`|-sideend|`) run as **`ResidualAction::ScreenDuration { side,
+  is_reflect }` handlers** gathered into the residual handler-sort (reflect `onSideResidualOrder` 1 /
+  lightscreen 2, subOrder 4, speed 0 — mirroring `fieldEvent('Residual')`'s `findSideEventHandlers`
+  gather; the old top-of-`run_residuals` direct decrement is REMOVED). A SINGLE screen (or a
+  Reflect+Light-Screen pair, different orders) draws NOTHING at the residual, but **BOTH sides carrying
+  the SAME screen TIE → ONE size-2 Fisher-Yates `random(0,2)` handler-sort shuffle** — the RESIDUAL
+  sibling of the per-hit `modify_damage_phase1_shuffle` below (a `--mode random` omniscient byte-fuzz
+  find, ab_1_6 @ master-seed 70701 turn-37; pin
+  `both_sides_light_screen_residual_draws_the_handler_sort_shuffle` vs real-Showdown ground truth; e2e
+  md5 unchanged). **THE DRAW CRUX (the finding that
   cost the effort):** a damaging hit into a side with BOTH Reflect AND Light Screen up draws ONE EXTRA
   `random(0,2)` — the gen3 `modifyDamage`'s `runEvent('ModifyDamagePhase1')` gathers the two screens'
   `onAnyModifyDamagePhase1` handlers, which TIE (both side-condition handlers, speed 0) → a size-2
