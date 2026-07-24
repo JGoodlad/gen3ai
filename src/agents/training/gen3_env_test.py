@@ -45,3 +45,63 @@ def test_default_keeps_both_sides_on_team(builders):
     tss, _ = builders
     env = _env(team=tss)
     assert env.agent1._team is tss and env.agent2._team is tss
+
+
+# ── distill_mask: a teacher may own MANY teams (multi-team z-cluster exploiter) ────────────────
+
+def _mask_env(distill_team_species):
+    """A Gen3Env shell exercising ONLY the _distill_mask matching (no PokeEnv construction)."""
+    env = Gen3Env.__new__(Gen3Env)
+    env._distill_team_species = [
+        [sp] if isinstance(sp, (set, frozenset)) else list(sp) for sp in (distill_team_species or [])
+    ]
+    env._distill_team_id = None
+    return env
+
+
+def _battle_with(species):
+    class _M:
+        def __init__(self, s): self.species = s
+    class _B:
+        team = None
+    b = _B()
+    b.team = {s: _M(s) for s in species}
+    return b
+
+
+A = ["skarmory", "blissey", "tyranitar", "swampert", "gengar", "starmie"]
+B = ["salamence", "hariyama", "claydol", "suicune", "jirachi", "blissey"]
+C = ["celebi", "charizard", "metagross", "swampert", "tyranitar", "zapdos"]
+
+
+def _fs(names):
+    return frozenset(names)
+
+
+def test_distill_mask_multi_team_teacher_fires_on_any_of_its_teams():
+    # ONE teacher owning teams A and B → both map to teacher-id 1 (a multi-team exploiter teacher).
+    env = _mask_env([[_fs(A), _fs(B)]])
+    env.battle1 = _battle_with(A)
+    assert env._distill_mask() == 1.0
+    env._distill_team_id = None
+    env.battle1 = _battle_with(B)
+    assert env._distill_mask() == 1.0
+    env._distill_team_id = None
+    env.battle1 = _battle_with(C)          # not this teacher's → 0
+    assert env._distill_mask() == 0.0
+
+
+def test_distill_mask_teacher_ids_are_1_indexed_positions():
+    env = _mask_env([[_fs(A)], [_fs(B), _fs(C)]])
+    env.battle1 = _battle_with(A)
+    assert env._distill_mask() == 1.0      # teacher 1
+    env._distill_team_id = None
+    env.battle1 = _battle_with(C)
+    assert env._distill_mask() == 2.0      # teacher 2 (its SECOND team)
+
+
+def test_distill_mask_accepts_the_legacy_bare_set_shape():
+    # back-compat: a bare frozenset per teacher (the pre-multi-team form) is wrapped and still matches.
+    env = _mask_env([_fs(A), _fs(B)])
+    env.battle1 = _battle_with(B)
+    assert env._distill_mask() == 2.0

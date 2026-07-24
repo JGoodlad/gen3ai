@@ -2117,25 +2117,27 @@ async def main():
         parser.error("--distill-value-feat-coef > 0 requires --distill-coef > 0 — the FitNets value-feature "
                      "match is coherent only because the policy KL drives π_student→π_teacher on those states, "
                      "making the teacher's value_pooled the right target (V^π is policy-relative).")
-    # gen3_exploiter_distill_v1: parse --distill-teacher into (teacher_path, team_file) PAIRS once, stored on
-    # args for the teambuilder + model-setup to reuse. Preferred form = 'TEACHER:TEAM' colon pairs (the colon
-    # binds each teacher to its team → misalignment is impossible). Legacy form = bare teacher list + a
-    # parallel --distill-teacher-team (kept only so in-flight runs don't crash on restart).
+    # gen3_exploiter_distill_v1: parse --distill-teacher into (teacher_path, [team_files]) GROUPS once,
+    # stored on args for the teambuilder + model-setup to reuse. Preferred form =
+    # 'TEACHER:TEAM[,TEAM...][;TEACHER2:...]' — ';' separates TEACHERS, ',' separates that teacher's TEAMS,
+    # so ONE multi-team teacher (a --trainee-teams z-cluster exploiter) binds to all its teams without being
+    # repeated N times (which would cost N identical teacher forwards per batch). The legacy comma-separated
+    # pair form ('T1:a.txt,T2:b.txt') still parses (a comma segment containing ':' starts a new teacher).
+    # Oldest form = bare teacher list + a parallel --distill-teacher-team (kept so in-flight runs resume).
     args._distill_pairs = []
     if args.distill_coef and args.distill_coef > 0:
         _items = [x.strip() for x in (args.distill_teacher or "").split(",") if x.strip()]
         if not _items:
-            parser.error("--distill-coef > 0 requires --distill-teacher (as 'TEACHER:TEAM' pairs)")
-        if any(":" in x for x in _items):                       # PREFERRED: colon pairs
+            parser.error("--distill-coef > 0 requires --distill-teacher (as 'TEACHER:TEAM[,TEAM...]' groups)")
+        if any(":" in x for x in _items):                       # PREFERRED: colon groups
             if args.distill_teacher_team:
-                parser.error("--distill-teacher uses 'TEACHER:TEAM' pairs — do NOT also pass the deprecated "
-                             "--distill-teacher-team")
-            for x in _items:
-                _tp, _sep, _tm = x.partition(":")
-                if not _sep or not _tp.strip() or not _tm.strip():
-                    parser.error(f"--distill-teacher item {x!r} must be 'TEACHER:TEAM' (a checkpoint path, a "
-                                 "colon, then its Showdown team file)")
-                args._distill_pairs.append((_tp.strip(), _tm.strip()))
+                parser.error("--distill-teacher uses 'TEACHER:TEAM[,TEAM...]' groups — do NOT also pass the "
+                             "deprecated --distill-teacher-team")
+            from agents.training.distill_spec import parse_distill_teacher_spec
+            try:
+                args._distill_pairs = parse_distill_teacher_spec(args.distill_teacher)
+            except ValueError as _e:
+                parser.error(str(_e))
         else:                                                   # LEGACY: bare list + parallel --distill-teacher-team
             print("[Distill] WARNING: bare --distill-teacher + --distill-teacher-team is DEPRECATED; "
                   "prefer 'TEACHER:TEAM' colon pairs in --distill-teacher.")
@@ -2143,7 +2145,7 @@ async def main():
             if len(_teams) != len(_items):
                 parser.error(f"legacy --distill-teacher ({len(_items)}) / --distill-teacher-team ({len(_teams)}) "
                              "must be equal-length — or use the 'TEACHER:TEAM' pair form in --distill-teacher")
-            args._distill_pairs = list(zip(_items, _teams))
+            args._distill_pairs = [(_t, [_tm]) for _t, _tm in zip(_items, _teams)]
     if args.distill_coef and args.distill_coef > 0 and (args.trainee_team or args.trainee_teams):
         parser.error("--distill-coef is mutually exclusive with --trainee-team/--trainee-teams: "
                      "distillation biases the trainee toward the teacher team via --distill-team-bias "
@@ -2509,23 +2511,30 @@ async def main():
         from poke_env.teambuilder.teambuilder import Teambuilder as _TB
         from poke_env.data.normalize import to_id_str as _to_id
         _species_sets, _team_strs = [], []
-        for _tp, _tf in args._distill_pairs:
-            with open(_tf, encoding="utf-8") as _df:
-                _s = _df.read()
-            _team_strs.append(_s)
-            # poke-env parks the species in `nickname` when the export has no nickname → fall back to it.
-            _species_sets.append(frozenset(_to_id(m.species or m.nickname) for m in _TB.parse_showdown_team(_s)))
-        args._distill_species = _species_sets   # list of frozensets, one per teacher (teacher-id = index+1)
+        for _tp, _tfs in args._distill_pairs:
+            _sets = []
+            for _tf in _tfs:
+                with open(_tf, encoding="utf-8") as _df:
+                    _s = _df.read()
+                _team_strs.append(_s)
+                # poke-env parks the species in `nickname` when the export has no nickname → fall back to it.
+                _sets.append(frozenset(_to_id(m.species or m.nickname) for m in _TB.parse_showdown_team(_s)))
+            _species_sets.append(_sets)
+        # list (per TEACHER, teacher-id = index+1) of LISTS of species-frozensets (that teacher's teams) —
+        # a multi-team teacher's KL fires on ANY of its teams (the env matches `cur in sp_list`).
+        args._distill_species = _species_sets
         # Bias the trainee across ALL N teacher teams (bias_prob total, split evenly); rest = pool rehearsal.
         trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=_team_strs,
                                               bias_prob=args.distill_team_bias,
                                               team_pfsp=args.team_pfsp,
                                               team_pfsp_cap=args.team_pfsp_cap,
                                               team_pfsp_floor=args.team_pfsp_floor)
-        emit(f"🧪 [DISTILL] {len(args._distill_pairs)} teacher(s), coef={args.distill_coef} | trainee biased "
-             f"{args.distill_team_bias:.0%} across {len(args._distill_pairs)} teacher team(s); rest = pool rehearsal")
-        for _i, (_tp, _tf) in enumerate(args._distill_pairs, start=1):
-            emit(f"   [{_i}] {_tp} ← {os.path.basename(_tf)} ({', '.join(sorted(_species_sets[_i-1]))})")
+        emit(f"🧪 [DISTILL] {len(args._distill_pairs)} teacher(s) / {len(_team_strs)} team(s), "
+             f"coef={args.distill_coef} | trainee biased {args.distill_team_bias:.0%} across all "
+             f"{len(_team_strs)} teacher team(s); rest = pool rehearsal")
+        for _i, (_tp, _tfs) in enumerate(args._distill_pairs, start=1):
+            emit(f"   [{_i}] {_tp} ← {len(_tfs)} team(s): "
+                 f"{', '.join(os.path.basename(_f) for _f in _tfs)}")
     for _ln in matchup.summary_lines():
         emit(_ln)
     if matchup.trainee_teams.kind == "pin_multi":

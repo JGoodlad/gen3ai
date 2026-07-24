@@ -152,8 +152,14 @@ class Gen3Env(SinglesEnv):
         # N teachers: distill_team_species is a LIST of species id-sets (one per teacher). The distill_mask
         # obs key holds the INTEGER team-id (0=none, k=teacher k, 1-indexed). N=1 → id ∈ {0,1}, obs space
         # unchanged vs the single-teacher form (Box high = len(list) = 1) → running single-teacher runs resume.
+        # A teacher may own MANY teams (a multi-team `--trainee-teams` z-cluster exploiter), so each entry
+        # is a LIST of species-sets and teacher k's mask fires on ANY of them. A BARE set (the older
+        # one-team-per-teacher form) is wrapped, so both shapes work and old callers are unaffected.
         self._emit_distill_mask = bool(distill_team_species)
-        self._distill_team_species = list(distill_team_species) if distill_team_species else []
+        self._distill_team_species = [
+            [sp] if isinstance(sp, (set, frozenset)) else list(sp)
+            for sp in (distill_team_species or [])
+        ]
         self._distill_team_id = None  # per-battle cache (0=none, k=teacher k)
         # Per-battle cache of the fresh per-mon identity encodes (keyed by species id). A hidden mon is
         # untouched (full HP, no status) until revealed, at which point it leaves the believed set, so a
@@ -564,8 +570,8 @@ class Gen3Env(SinglesEnv):
             return 0.0  # team not fully known yet — don't cache a partial set
         cur = frozenset(to_id_str(m.species) for m in team.values())
         self._distill_team_id = 0
-        for k, sp in enumerate(self._distill_team_species, start=1):
-            if cur == sp:
+        for k, sp_list in enumerate(self._distill_team_species, start=1):
+            if cur in sp_list:          # teacher k owns >=1 team; its KL fires on ANY of them
                 self._distill_team_id = k
                 break
         return float(self._distill_team_id)
