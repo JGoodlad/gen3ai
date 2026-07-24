@@ -2134,9 +2134,14 @@ async def main():
                 parser.error("--distill-teacher uses 'TEACHER:TEAM[,TEAM...]' groups — do NOT also pass the "
                              "deprecated --distill-teacher-team")
             from agents.training.distill_spec import parse_distill_teacher_spec
+            from agents.training.matchup_spec import read_recorded_trainee_teams
             try:
-                args._distill_pairs = parse_distill_teacher_spec(args.distill_teacher)
-            except ValueError as _e:
+                # 'TEACHER:*' → EXACTLY the teams that teacher trained on, from its own recorded
+                # provenance (single source of truth — a hand-typed list could mismatch and fire the
+                # distill mask where the teacher is off-distribution, silently).
+                args._distill_pairs = parse_distill_teacher_spec(
+                    args.distill_teacher, resolve_wildcard=read_recorded_trainee_teams)
+            except (ValueError, FileNotFoundError) as _e:
                 parser.error(str(_e))
         else:                                                   # LEGACY: bare list + parallel --distill-teacher-team
             print("[Distill] WARNING: bare --distill-teacher + --distill-teacher-team is DEPRECATED; "
@@ -2840,7 +2845,7 @@ async def main():
                         # Fold-back: a specialist opponent pilots ITS OWN pinned team (entry
                         # team_str from its run's metadata); the wrapper switches agent2._team to
                         # this builder on the episodes it plays. None = pool pilot (generalist).
-                        _pin_tb = _G3TB([e.team_str]) if e.team_str else None
+                        _pin_tb = _G3TB(list(e.team_strs)) if e.team_strs else None   # multi-team specialist samples among ITS OWN teams
                         stable_players.append(RLPlayer(
                             model=opp_model, team=(_pin_tb or opponent_teambuilder),
                             battle_format=BATTLE_FORMAT,
@@ -2865,8 +2870,8 @@ async def main():
                         exploiter_entry.zip_path, current_version=opponent_version,
                         device=opponent_device, config_path=exploiter_entry.config_path)
                     # Fold-back: an exploiter-of-a-specialist faces the target ON ITS OWN pinned team.
-                    exploiter_team = (_G3TB([exploiter_entry.team_str])
-                                      if exploiter_entry.team_str else None)
+                    exploiter_team = (_G3TB(list(exploiter_entry.team_strs))
+                                      if exploiter_entry.team_strs else None)
                     exploiter_player = RLPlayer(
                         model=_ex_model, team=(exploiter_team or opponent_teambuilder),
                         battle_format=BATTLE_FORMAT,

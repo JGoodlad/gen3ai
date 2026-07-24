@@ -74,10 +74,13 @@ def _build_trainee_tb(cfg: dict, all_teams, sample_teams):
 
 def _fixed_opponent_tb(item, opp_tb):
     """A FIXED (stable/exploiter) opponent's eval teambuilder. A specialist opponent is MEASURED
-    piloting ITS OWN pinned team (``item.team_str``, threaded from ``FixedOpponentEntry.to_cfg`` —
+    piloting ITS OWN pinned team(s) (``item.team_strs``, threaded from ``FixedOpponentEntry.to_cfg`` —
     the fold-back contract), so eval matches the training mix — the same eval-vs-training
     consistency rule as the trainee's own pin above. No pin → the shared pool builder."""
-    team_str = getattr(item, "team_str", None)
+    team_strs = getattr(item, "team_strs", None)
+    if team_strs:
+        return Gen3Teambuilder(list(team_strs))   # multi-team specialist samples among ITS OWN teams
+    team_str = getattr(item, "team_str", None)    # back-compat: older cfgs carry only the single pin
     if team_str:
         return Gen3Teambuilder([team_str])
     return opp_tb

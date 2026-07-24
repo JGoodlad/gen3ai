@@ -356,3 +356,43 @@ def test_exploiter_registration_dedups_label_collision():
 def test_exploiter_registration_none_is_noop():
     fixed, appended = register_exploiter_for_eval([], None)
     assert not appended and fixed == []
+
+
+def _write_multi_pin_run(tmp, version, *, name="multi_run", contents=("A @ Leftovers\n", "B @ Leftovers\n")):
+    """A fake MULTI-team specialist run (--trainee-teams / pin_multi) + its pin_shas fingerprints."""
+    import hashlib
+    run = _write_run(tmp, version, name=name)
+    files = []
+    for i, c in enumerate(contents):
+        f = os.path.join(tmp, f"{name}_t{i}.txt")
+        with open(f, "w") as fh:
+            fh.write(c)
+        files.append(f)
+    meta = {"cli_args": {"trainee_teams": ",".join(files)},
+            "matchup_history": [{"spec": {"trainee_teams": {
+                "kind": "pin_multi",
+                "pin_shas": [hashlib.sha1(c.encode()).hexdigest()[:10] for c in contents]}}}]}
+    with open(os.path.join(run, "metadata.json"), "w") as f:
+        json.dump(meta, f)
+    return run, files, list(contents)
+
+
+def test_resolve_reads_a_MULTI_team_opponent_pin(version):
+    """The fold-back contract for a multi-team z-cluster exploiter: it must carry ALL its teams, so
+    as an opponent it samples among them (piloting the shared pool would evaporate its pressure)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run, files, contents = _write_multi_pin_run(tmp, version)
+        e = resolve_stable_opponents(run, version)[0]
+    assert list(e.team_strs) == contents          # ALL teams carried
+    assert list(e.team_files) == files
+    assert e.team_str == contents[0]              # back-compat mirror of element 0
+    assert e.to_cfg()["team_strs"] == contents    # and it reaches the eval worker
+
+
+def test_multi_pin_sha_mismatch_fails_loud(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run, files, _ = _write_multi_pin_run(tmp, version)
+        with open(files[1], "w") as f:            # a member changed since that run trained on it
+            f.write("MUTATED @ Leftovers\n")
+        with pytest.raises(ValueError, match="pin_sha"):
+            resolve_stable_opponents(run, version)

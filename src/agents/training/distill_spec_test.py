@@ -54,3 +54,38 @@ def test_teacher_without_a_team_raises():
 
 def test_empty_spec_is_empty():
     assert P("") == [] and P(None) == []
+
+
+# ── the '*' / 'auto' wildcard: resolve a teacher's teams from ITS OWN provenance ────────────────
+
+def _fake_resolver(teacher):
+    return {"models/T1": ["a.txt", "b.txt", "c.txt"], "models/GEN": []}.get(teacher, [])
+
+
+def test_wildcard_expands_from_provenance():
+    assert P("models/T1:*", resolve_wildcard=_fake_resolver) == [("models/T1", ["a.txt", "b.txt", "c.txt"])]
+
+
+def test_auto_is_the_globproof_spelling():
+    assert P("models/T1:auto", resolve_wildcard=_fake_resolver) == P("models/T1:*", resolve_wildcard=_fake_resolver)
+
+
+def test_wildcard_mixes_with_explicit_teachers():
+    got = P("models/T1:*;models/T2:x.txt", resolve_wildcard=_fake_resolver)
+    assert got == [("models/T1", ["a.txt", "b.txt", "c.txt"]), ("models/T2", ["x.txt"])]
+
+
+def test_wildcard_on_a_generalist_raises():
+    # a run that recorded NO trainee teams can't be expanded — fail loud rather than distil nothing
+    with pytest.raises(ValueError, match="recorded NO trainee teams"):
+        P("models/GEN:*", resolve_wildcard=_fake_resolver)
+
+
+def test_wildcard_without_resolver_raises():
+    with pytest.raises(ValueError, match="no resolver"):
+        P("models/T1:*")
+
+
+def test_wildcard_cannot_mix_with_explicit_teams():
+    with pytest.raises(ValueError, match="mixes the"):
+        P("models/T1:*,extra.txt", resolve_wildcard=_fake_resolver)

@@ -46,8 +46,13 @@ class FixedOpponentEntry:
     # (--trainee-team, read from its run's metadata) must PILOT that team when it plays here as an
     # opponent — in training (the wrapper's per-episode agent2._team switch) AND in eval (the
     # worker's FIXED branch). None = the run had no pin → it pilots the shared pool (a generalist).
-    team_str: "str | None" = None   # the raw Showdown export (the whole pin, not a path)
-    team_file: "str | None" = None  # provenance (the pin file recorded in the opponent's metadata)
+    team_str: "str | None" = None   # the raw Showdown export (the FIRST pin; back-compat mirror of team_strs[0])
+    team_file: "str | None" = None  # provenance (the first pin file recorded in the opponent's metadata)
+    # A MULTI-team specialist (--trainee-teams / pin_multi) trained piloting a WHOLE z-cluster, so as an
+    # opponent it must sample among ALL of them — piloting just one (or worse, the shared pool) throws
+    # away the pressure it was trained to apply. `team_str`/`team_file` mirror element 0 for back-compat.
+    team_strs: "tuple[str, ...]" = ()
+    team_files: "tuple[str, ...]" = ()
 
     def to_cfg(self) -> dict:
         """The subset threaded to an eval worker via ``base_cfg['fixed_opponents']`` (eval plays the
@@ -57,6 +62,7 @@ class FixedOpponentEntry:
             "path": self.zip_path,
             "config_path": self.config_path,
             "team_str": self.team_str,
+            "team_strs": list(self.team_strs),
         }
 
 
@@ -197,12 +203,14 @@ def resolve_stable_opponents(
                 "unique :label.")
         seen_labels.add(label)
 
-        team_str, team_file = _read_trainee_pin(config_path)
+        team_strs, team_files = _read_trainee_pin(config_path)
         entries.append(FixedOpponentEntry(
             label=label, zip_path=zip_path, config_path=config_path,
             arch_signature=foreign.arch_signature, temperature=default_temperature,
             source_elo=_read_source_elo(config_path),
-            team_str=team_str, team_file=team_file,
+            team_str=(team_strs[0] if team_strs else None),
+            team_file=(team_files[0] if team_files else None),
+            team_strs=tuple(team_strs), team_files=tuple(team_files),
         ))
     return entries
 
@@ -232,52 +240,28 @@ def register_exploiter_for_eval(
     return list(fixed) + [exploiter], True
 
 
-def _read_trainee_pin(config_path: str) -> "tuple[str | None, str | None]":
-    """The opponent run's OWN pinned team ``(team_str, team_file)`` — the fold-back contract.
+def _read_trainee_pin(config_path: str) -> "tuple[list[str], list[str]]":
+    """The opponent run's OWN pinned team(s) ``(team_strs, team_files)`` — the fold-back contract.
 
-    A specialist run records its ``--trainee-team`` pin in ``metadata.json:cli_args.trainee_team``;
-    when that run is later used as a stable/exploiter OPPONENT it must pilot THAT team, not the
-    shared pool (otherwise a trapper exploiter folds back piloting random teams and the pressure it
-    was trained to apply evaporates — the realized-matchup lesson applied to the opponent side).
-    Search mirrors ``_read_source_elo`` (metadata next to the config, then the run level). A
-    generalist run (no pin recorded) → ``(None, None)``.
+    A specialist run records its pin in ``metadata.json:cli_args`` — ``trainee_team`` (one team) or
+    ``trainee_teams`` (a MULTI-team z-cluster exploiter). When that run is later used as a
+    stable/exploiter OPPONENT it must pilot THOSE teams, not the shared pool (otherwise a trapper
+    exploiter folds back piloting random teams and the pressure it was trained to apply evaporates —
+    the realized-matchup lesson applied to the opponent side). A multi-team specialist SAMPLES among
+    its own teams, mirroring how it trained.
 
-    FAIL-LOUD, never silently degrade: a recorded pin whose team file is missing raises
-    ``FileNotFoundError`` (the opponent would silently become a pool pilot — realized ≠ declared);
-    a pin whose content no longer matches the run's recorded ``pin_sha`` (MatchupSpec provenance,
-    when present) raises ``ValueError`` (the file changed since that run trained on it).
+    Delegates to ``matchup_spec.read_recorded_trainee_teams`` — the SINGLE provenance reader shared
+    with ``--distill-teacher '<model>:*'``, so the two consumers cannot drift. It is FAIL-LOUD: a
+    recorded team file that is missing raises ``FileNotFoundError``; one whose content no longer
+    matches the run's recorded fingerprint raises ``ValueError``. Generalist run → ``([], [])``.
     """
-    d = os.path.dirname(config_path)
-    meta = None
-    for cand in (os.path.join(d, "metadata.json"),
-                 os.path.join(os.path.dirname(d), "metadata.json")):
-        if os.path.isfile(cand):
-            try:
-                meta = json.load(open(cand))
-                break
-            except (OSError, ValueError):
-                continue
-    if not isinstance(meta, dict):
-        return None, None
-    cli_args = meta.get("cli_args") or {}
-    team_file = cli_args.get("trainee_team")
-    if not team_file:
-        return None, None
-    if not os.path.isfile(team_file):
-        raise FileNotFoundError(
-            f"stable opponent {config_path!r}: its run pinned --trainee-team {team_file!r} but the "
-            "file no longer exists — refusing to silently fall back to pool teams (the fold-back "
-            "contract is that a specialist opponent pilots ITS OWN team).")
-    with open(team_file, "r", encoding="utf-8") as f:
-        team_str = f.read()
-    # MatchupSpec provenance check (runs from gen3_matchup_spec_v1 on record a pin fingerprint).
-    import hashlib
-    pin_sha = ((cli_args.get("_matchup_spec") or {}).get("trainee_teams") or {}).get("pin_sha")
-    if pin_sha and hashlib.sha1(team_str.encode()).hexdigest()[:10] != pin_sha:
-        raise ValueError(
-            f"stable opponent {config_path!r}: {team_file!r} no longer matches the pin_sha its run "
-            f"recorded ({pin_sha}) — the team file changed since that opponent trained on it.")
-    return team_str, team_file
+    from agents.training.matchup_spec import read_recorded_trainee_teams
+    files = read_recorded_trainee_teams(config_path)
+    strs = []
+    for f in files:
+        with open(f, "r", encoding="utf-8") as fh:
+            strs.append(fh.read())
+    return strs, files
 
 
 def _read_source_elo(config_path: str) -> "float | None":

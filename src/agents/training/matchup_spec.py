@@ -270,6 +270,72 @@ def validate_exploiter_trainee_is_sample(spec: "MatchupSpec", sample_teams) -> N
                 "the sample set first if it is proven.")
 
 
+def read_recorded_trainee_teams(path: str) -> "list[str]":
+    """THE single provenance reader: which team files did the run at ``path`` train its trainee on?
+
+    ``path`` is a run dir, a checkpoint ``.zip``, or a ``model_config.json`` — the run's
+    ``metadata.json`` is searched next to it and one level up (mirroring ``_read_source_elo``).
+    Reads ``cli_args.trainee_teams`` (the multi-team ``pin_multi`` form) or ``cli_args.trainee_team``
+    (the single pin); a generalist run (neither) returns ``[]``.
+
+    TWO consumers share this so producer and consumer cannot drift:
+      * ``--distill-teacher '<model>:*'`` — distil a teacher over EXACTLY the teams it trained on.
+        Hand-typing that list risks a mismatch, which would fire the distill mask on states where
+        the teacher is OFF-DISTRIBUTION — silently, since nothing checks it.
+      * the fold-back contract (``fixed_opponent_pool._read_trainee_pin``) — a specialist used as an
+        OPPONENT must pilot its OWN team(s), not the shared pool.
+
+    FAIL-LOUD, never silently degrade: a recorded team file that is missing raises
+    ``FileNotFoundError``; a file whose content no longer matches the run's recorded fingerprint
+    (``pin_shas`` / ``pin_sha`` from the MatchupSpec provenance, when present) raises ``ValueError``
+    — the file changed since that run trained on it, so distilling/piloting it would be a lie.
+    """
+    import os
+    d = path if os.path.isdir(path) else os.path.dirname(path)
+    meta = None
+    for cand in (os.path.join(d, "metadata.json"),
+                 os.path.join(os.path.dirname(d), "metadata.json")):
+        if os.path.isfile(cand):
+            try:
+                with open(cand, "r", encoding="utf-8") as f:
+                    meta = json.load(f)
+                break
+            except (OSError, ValueError):
+                continue
+    if not isinstance(meta, dict):
+        return []
+    cli = meta.get("cli_args") or {}
+    raw = cli.get("trainee_teams") or cli.get("trainee_team")
+    if not raw:
+        return []
+    files = [x.strip() for x in str(raw).split(",") if x.strip()]
+    for f in files:
+        if not os.path.isfile(f):
+            raise FileNotFoundError(
+                f"run {path!r} recorded trainee team {f!r} but the file no longer exists — refusing "
+                "to silently fall back (a specialist must train/pilot ITS OWN teams).")
+    # Fingerprint check against the recorded MatchupSpec, when present. TWO locations, newest first:
+    # `matchup_history[-1].spec` (the append-only era record) and the older
+    # `cli_args._matchup_spec` stamp — older runs carry only the latter.
+    hist = meta.get("matchup_history") or []
+    spec_ts = (hist[-1].get("spec", {}).get("trainee_teams") or {}) if hist else {}
+    if not spec_ts:
+        spec_ts = ((cli.get("_matchup_spec") or {}).get("trainee_teams") or {})
+    recorded = spec_ts.get("pin_shas") or ([spec_ts["pin_sha"]] if spec_ts.get("pin_sha") else [])
+    if recorded:
+        # UNSTRIPPED, matching how `MatchupSpec.to_dict` records pin_sha/pin_shas (raw file content).
+        got = []
+        for f in files:
+            with open(f, "r", encoding="utf-8") as fh:
+                got.append(hashlib.sha1(fh.read().encode()).hexdigest()[:10])
+        if set(got) != set(recorded):
+            raise ValueError(
+                f"run {path!r}: the team file(s) no longer match the pin_sha its run recorded "
+                f"(recorded {sorted(recorded)}, on disk {sorted(got)}) — a team file changed since "
+                "that run trained on it.")
+    return files
+
+
 def describe_drift(recorded: "dict | None", current: "dict | None") -> "list[str]":
     """Field-level diff of two ``MatchupSpec.to_dict()``s — the resume drift guard's payload.
 
