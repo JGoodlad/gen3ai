@@ -174,6 +174,21 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             self._exploiter_games += 1
             self._exploiter_wins += float(won)
 
+    def _maybe_record_team_pfsp(self, won: float) -> None:
+        """Record the trainee's team outcome for ``--team-pfsp``, but ONLY on SELF-PLAY POOL battles
+        (``opponent is _pool_player``) OR EXPLOITER-TARGET battles (``opponent is _exploiter_player``)
+        — bots are excluded either way (we win ~0.99 vs bots, which washes out the per-team variance
+        signal). In EXPLOITER mode this is what lets ``--team-pfsp`` weight a multi-team
+        (``--trainee-teams``/pin_multi) exploiter toward the teams it is LOSING with vs the target
+        (concentrate the per-team budget on the laggards). No-op off / vs bots / on a bias-team yield
+        (the builder's own guards); ``_exploiter_player`` is None off the exploiter path, so a self-play
+        run is byte-identical. Aggregated centrally by ``TeamPFSPCallback``."""
+        if self.opponent is self._pool_player or (
+                self._exploiter_player is not None and self.opponent is self._exploiter_player):
+            _tb = self._trainee_teambuilder()
+            if _tb is not None and hasattr(_tb, "record_team_pfsp_outcome"):
+                _tb.record_team_pfsp_outcome(won)
+
     def exploiter_winrate_totals(self):
         """(cumulative target-games, cumulative target-wins) this worker has played vs the EXPLOITER
         target — read via ``VecEnv.env_method`` by ``ExploiterTempRatchetCallback``, which diffs to a
@@ -360,14 +375,7 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             won = 1.0 if (b is not None and b.won is True) else 0.0
             info["win_outcome"] = won
             self._record_exploiter_outcome(won)   # ratchet-mode WR signal (no-op off / vs bots)
-            # Team-side PFSP: record this outcome against the trainee's yielded pool team, but ONLY
-            # on SELF-PLAY POOL battles (`opponent is _pool_player`) — bots are excluded (we win
-            # ~0.99 vs bots, which washes out the per-team variance signal). No-op off / vs bots /
-            # on a bias-team yield (the builder's own guards). Aggregated centrally by TeamPFSPCallback.
-            if self.opponent is self._pool_player:
-                _tb = self._trainee_teambuilder()
-                if _tb is not None and hasattr(_tb, "record_team_pfsp_outcome"):
-                    _tb.record_team_pfsp_outcome(won)
+            self._maybe_record_team_pfsp(won)     # team-side PFSP per-team WR (pool + exploiter-target)
         return obs, reward, term, trunc, info
 
     def action_masks(self):

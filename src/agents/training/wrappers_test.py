@@ -159,6 +159,34 @@ def test_exploiter_winrate_totals_zero_without_exploiter():
     assert w.exploiter_winrate_totals() == (0, 0.0)
 
 
+def test_team_pfsp_records_on_exploiter_target_not_bots():
+    # gen3_exploiter_team_pfsp_v1: in exploiter mode the per-team WR is recorded ONLY on target
+    # battles (bots excluded), so --team-pfsp can weight a multi-team exploiter toward its laggards.
+    exploiter = MagicMock(name="exploiter")
+    w, heuristics = _make_wrapper(exploiter_player=exploiter, exploiter_keep_bots=True)
+    tb = MagicMock()
+    w._trainee_teambuilder = lambda: tb
+    w.opponent = exploiter
+    w._maybe_record_team_pfsp(1.0)        # target → recorded
+    w.opponent = heuristics[0]
+    w._maybe_record_team_pfsp(0.0)        # a BOT → must NOT record
+    tb.record_team_pfsp_outcome.assert_called_once_with(1.0)
+
+
+def test_team_pfsp_records_on_selfplay_pool_not_bots():
+    # Self-play path unchanged: records on the pool player, not bots; exploiter_player=None never fires
+    # the exploiter branch (byte-identical to pre-change behavior).
+    pool_player = MagicMock(name="pool")
+    w, heuristics = _make_wrapper(pool=_stub_pool(), pool_player=pool_player, exploiter_player=None)
+    tb = MagicMock()
+    w._trainee_teambuilder = lambda: tb
+    w.opponent = pool_player
+    w._maybe_record_team_pfsp(1.0)        # self-play pool → recorded
+    w.opponent = heuristics[0]
+    w._maybe_record_team_pfsp(0.0)        # bot → not recorded
+    tb.record_team_pfsp_outcome.assert_called_once_with(1.0)
+
+
 def test_requires_an_opponent_or_roster():
     with pytest.raises(ValueError):
         MaskableAgentWrapper(_stub_env())
