@@ -1794,6 +1794,12 @@ async def main():
                              "with --trainee-team; under --exploiter EVERY member must be a sample team. "
                              "Unlike a single pin, z_arch varies across the set so --zarch-film keeps its "
                              "recon/VICReg aux ON. Default None.")
+    parser.add_argument("--allow-nonsample-trainee", dest="allow_nonsample_trainee", action="store_true",
+                        help="RESEARCH override: skip the exploiter vetted-SAMPLE gate so --trainee-team(s) "
+                             "may pin NON-sample POOL teams (anchor on a sample, nearest neighbors from all "
+                             "719 pool teams → a tighter z-cluster than the 32 samples allow). For FiLM "
+                             "capacity / count-vs-diversity studies; NOT for a teacher you'll distil as-is. "
+                             "Training-only, not version-locked. Default off (gate enforced).")
 
     args = parser.parse_args()
     if getattr(args, "trainee_teams", None) and getattr(args, "trainee_team", None):
@@ -2467,13 +2473,20 @@ async def main():
     # curated, tournament-proven set) — never a bulk-downloaded `other` team. FATAL otherwise (a
     # deliberate startup gate, like the stable-opponent arch check). Non-exploiter / unpinned runs
     # are unaffected; the existing TSS specialist pin IS a sample team, so it passes.
-    try:
-        from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
-        validate_exploiter_trainee_is_sample(matchup, sample_teams)
-    except ValueError as _e:
-        print(f"\n[Exploiter] FATAL: {_e}")
-        sys.stdout.flush()
-        os._exit(int(TrainExitCode.FATAL_CONFIG))
+    if getattr(args, "allow_nonsample_trainee", False):
+        # RESEARCH override: skip the vetted-sample gate so an exploiter can pilot whole-POOL z-near
+        # teams (anchor on a sample, nearest neighbors from all 719 teams). Use for capacity studies
+        # (count-vs-diversity of the FiLM cluster), NOT for a teacher you intend to distil as-is.
+        print("⚠️ [Exploiter] --allow-nonsample-trainee: SKIPPING the vetted-sample gate — trainee may "
+              "pilot non-sample pool teams (research/capacity mode).")
+    else:
+        try:
+            from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
+            validate_exploiter_trainee_is_sample(matchup, sample_teams)
+        except ValueError as _e:
+            print(f"\n[Exploiter] FATAL: {_e}")
+            sys.stdout.flush()
+            os._exit(int(TrainExitCode.FATAL_CONFIG))
     _specialist_team_str = matchup.trainee_teams.pin_str   # → eval callbacks (trainee_team_str)
     # Team-side PFSP threads ONLY into the TRAINEE builder (opponent teams aren't win-rate-sampled);
     # "off" (default) is byte-identical construction.
