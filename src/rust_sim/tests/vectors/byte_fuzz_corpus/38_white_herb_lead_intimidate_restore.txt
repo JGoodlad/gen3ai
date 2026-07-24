@@ -1,0 +1,471 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=55667 run_id=rmry3vbgm chunk=6
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_6_13
+TEAM	ab_6_13	p1	Slowbro||WhiteHerb|Oblivious|Headbutt,WaterPulse,Amnesia,Endure|Docile|,,,84,212,212|M|21,8,8,27,8,7|||]Houndour||WikiBerry|FlashFire|Swift,Endure,FeintAttack,SolarBeam|Mild|160,196,80,40,,32|M|13,18,6,29,1,29|||]Glalie||IapapaBerry|InnerFocus|HyperBeam,Return,Bite,DoubleEdge|Bold|128,56,4,220,68,32|M|13,3,18,10,5,0|||]Sableye||NeverMeltIce|KeenEye|ThunderPunch,AerialAce,RockTomb,DynamicPunch|Naive|184,124,,8,96,96|M|5,8,8,28,0,|||]Nidoqueen||MysticWater|PoisonPoint|RockSlide,Toxic,RockSmash,Frustration|Brave|40,124,136,8,72,128|F|13,29,0,19,4,9|||]Meditite||StarfBerry|PurePower|MegaKick,BrickBreak,BodySlam,RainDance|Hardy|144,28,56,104,96,80|M|24,15,13,0,7,15|||
+TEAM	ab_6_13	p2	Mightyena||SilverPowder|Intimidate|Frustration,Snatch,Bite,Crunch|Relaxed|108,128,88,52,68,28|M|10,17,10,30,23,11|||]Flygon||MetalPowder|Levitate|DoubleEdge,Rest,Swift,Facade|Calm|124,68,176,140,,|M|5,7,14,10,23,17|||]Pidgeot||ApicotBerry|KeenEye|MudSlap,Endure,Protect,Frustration|Gentle|28,,216,84,72,52|M|27,8,14,0,25,20|||]Gardevoir||BlackBelt|Synchronize|ShadowBall,Taunt,Return,Reflect|Naive|128,28,152,20,88,92|M|28,4,15,25,20,27|||]Doduo||WikiBerry|EarlyBird|Pursuit,SteelWing,Agility,DoubleEdge|Careful|132,20,,168,188,|M|14,5,8,6,11,0|||]Natu||WaveIncense|EarlyBird|FutureSight,Swift,Endure,Reflect|Bashful|20,12,120,136,108,112|M|3,16,16,10,9,0|||
+FMT	ab_6_13	gen3customgame
+INIT	ab_6_13	19838,34725,64228,25992	2263149590
+DEC	ab_6_13	0	move	0	0	m1	m0	55275,65393,8364,20080	Slowbro	319	321	0	-	0	0	0	0	0	0	6	Mightyena	177	287	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_6_13	1	move	0	0	m1	m1	56615,64786,24967,42262	Slowbro	319	321	0	-	0	0	0	0	0	0	6	Mightyena	64	287	0	-	0	0	0	0	0	4	6	p2	0	0	0	0	0
+DEC	ab_6_13	2	move	0	0	m2	m1	3275,22702,5462,8792	Slowbro	319	321	0	-	0	0	0	0	0	0	6	Mightyena	64	287	0	-	0	0	0	2	0	3	6	p2	0	0	0	0	0
+DEC	ab_6_13	3	move	0	0	s1	m0	53894,25605,33902,2805	Houndour	253	253	0	-	0	0	0	0	0	0	6	Mightyena	25	287	0	-	0	0	0	2	0	2	6	p1	0	0	0	1	0
+DEC	ab_6_13	4	move	0	0	m1	m2	30146,7189,11997,7007	Houndour	253	253	0	-	0	0	0	0	0	0	6	Mightyena	0	287	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	1
+DEC	ab_6_13	5	switch	0	1	-	s1	12248,22902,14314,61241	Houndour	253	253	0	-	0	0	0	0	0	0	6	Flygon	306	306	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_6_13	6	move	0	0	s5	m1	35386,34918,24683,33088	Meditite	230	230	0	-	0	0	0	0	0	0	6	Flygon	306	306	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_6_13	7	move	0	0	m3	m3	57764,56500,3368,36564	Meditite	157	230	0	-	0	0	0	0	0	0	6	Flygon	306	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	8	move	0	0	s5	s5	37390,23573,15714,27751	Houndour	253	253	0	-	0	0	0	0	0	0	6	Natu	198	198	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	9	move	0	0	m1	s2	8324,38730,20175,33382	Houndour	253	253	0	-	0	0	0	0	0	0	6	Pidgeot	310	310	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_6_13	10	move	0	0	m2	m0	17739,36388,22263,17519	Houndour	191	253	0	-	0	0	0	0	0	0	6	Pidgeot	231	310	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	11	move	0	0	m3	s5	26733,32077,22109,1422	Houndour	191	253	0	-	0	0	0	0	0	0	6	Flygon	306	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	12	move	0	0	m0	m1	59769,36556,25371,24592	Houndour	191	253	0	-	0	0	0	0	0	0	6	Flygon	306	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	13	move	0	0	m0	m3	321,49053,38752,27574	Houndour	91	253	0	-	0	0	0	0	0	0	6	Flygon	267	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	14	move	0	0	m2	m3	7886,10490,9711,62363	Houndour	0	253	1	fnt	0	0	0	0	0	0	5	Flygon	267	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	15	switch	1	0	s4	-	28500,37498,28268,44522	Nidoqueen	313	313	0	-	0	0	0	0	0	0	5	Flygon	267	306	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_6_13	16	move	0	0	m2	m0	29118,60350,38929,24157	Nidoqueen	221	313	0	-	0	0	0	0	0	0	5	Flygon	219	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	17	move	0	0	m3	m2	64337,43097,33403,54699	Nidoqueen	175	313	0	-	0	0	0	0	0	0	5	Flygon	217	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_6_13	18	move	0	0	m3	m3	45989,10714,35440,6451	Nidoqueen	117	313	0	-	0	0	0	0	0	0	5	Flygon	177	306	0	psn	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_6_13	19	move	0	0	m2	s3	25645,19644,17073,25174	Nidoqueen	117	313	0	-	0	0	0	0	0	0	5	Gardevoir	296	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	20	move	0	0	m0	m3	50845,11896,21124,52632	Nidoqueen	117	313	0	-	0	0	0	0	0	0	5	Gardevoir	296	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	21	move	0	0	m2	m3	30773,61283,63833,26527	Nidoqueen	117	313	0	-	0	0	0	0	0	0	5	Gardevoir	291	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	22	move	0	0	m2	m0	15026,41961,59771,28582	Nidoqueen	72	313	0	-	0	0	0	0	0	0	5	Gardevoir	286	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	23	move	0	0	m0	m1	50437,52880,5144,45436	Nidoqueen	72	313	0	-	0	0	0	0	0	0	5	Gardevoir	247	306	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	24	move	0	0	s1	s3	43516,60178,20292,175	Slowbro	319	321	0	-	0	0	0	0	0	0	5	Flygon	139	306	0	psn	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	25	move	0	0	s5	m2	48636,45985,23365,37712	Meditite	83	230	0	-	0	0	0	0	0	0	5	Flygon	101	306	0	psn	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_6_13	26	move	0	0	m3	s5	43438,40990,1439,36179	Meditite	83	230	0	-	0	0	0	0	0	0	5	Pidgeot	231	310	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	27	move	0	0	s5	s4	1533,34453,31743,52098	Slowbro	319	321	0	-	0	0	0	0	0	0	5	Doduo	227	227	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	28	move	0	0	s1	s4	50829,18041,14472,31501	Nidoqueen	72	313	0	-	0	0	0	0	0	0	5	Pidgeot	231	310	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	29	move	0	0	m0	m3	64229,9143,57972,18764	Nidoqueen	69	313	0	-	0	0	0	0	0	0	5	Pidgeot	84	310	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_6_13	30	move	0	0	m1	s3	64637,19816,31681,2590	Nidoqueen	69	313	0	-	0	0	0	0	0	0	5	Gardevoir	228	306	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	31	move	0	0	m0	m1	15405,27446,35352,52660	Nidoqueen	69	313	0	-	0	0	0	0	0	0	5	Gardevoir	105	306	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_6_13	32	move	0	0	m0	m2	23704,48915,35469,19740	Nidoqueen	14	313	0	-	0	0	0	0	0	0	5	Gardevoir	0	306	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_6_13	33	switch	0	1	-	s2	52926,56908,13294,1743	Nidoqueen	14	313	0	-	0	0	0	0	0	0	5	Natu	198	198	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_6_13	34	move	0	0	m0	s4	10924,52446,30690,29043	Nidoqueen	14	313	0	-	0	0	0	0	0	0	5	Doduo	0	227	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_13	35	switch	0	1	-	s4	51952,58458,6488,60450	Nidoqueen	14	313	0	-	0	0	0	0	0	0	5	Natu	198	198	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_6_13	36	move	0	0	m0	m3	21271,59327,34395,57238	Nidoqueen	14	313	0	-	0	0	0	0	0	0	5	Natu	0	198	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_6_13	37	switch	0	1	-	s5	62613,1147,37415,6897	Nidoqueen	14	313	0	-	0	0	0	0	0	0	5	Flygon	63	306	0	psn	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_6_13	38	move	0	0	m1	m2	1459,65281,59582,41979	Nidoqueen	0	313	1	fnt	0	0	0	0	0	0	4	Flygon	63	306	0	psn	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_6_13	39	switch	1	0	s5	-	15937,26298,14587,41930	Meditite	83	230	0	-	0	0	0	0	0	0	4	Flygon	25	306	0	psn	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_6_13	40	move	0	0	m3	m0	29150,7171,36655,29663	Meditite	0	230	1	fnt	0	0	0	0	0	0	3	Flygon	0	306	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_6_13	41	switch	1	1	s1	s3	10090,45105,8698,44222	Slowbro	319	321	0	-	0	0	0	0	0	0	3	Pidgeot	84	310	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_6_13	42	move	0	0	m0	m2	36449,61761,46605,44419	Slowbro	319	321	0	-	0	0	0	0	0	0	3	Pidgeot	84	310	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_6_13	43	move	0	0	m1	m1	5015,52229,28039,33192	Slowbro	319	321	0	-	0	0	0	0	0	0	3	Pidgeot	1	310	0	-	0	0	0	1	0	0	1	p2	0	0	0	0	1
+DEC	ab_6_13	44	move	0	0	m0	m3	8948,27494,60744,12873	Slowbro	316	321	0	-	0	0	0	0	0	0	3	Pidgeot	0	310	1	-	0	0	0	0	0	0	0	p2	0	0	0	1	0
+END	ab_6_13	1	p1
+L	ab_6_13	0	|t:|<NORMALIZED>
+L	ab_6_13	1	|gametype|singles
+L	ab_6_13	2	|player|p1|P1||
+L	ab_6_13	3	|player|p2|P2||
+L	ab_6_13	4	|gen|3
+L	ab_6_13	5	|tier|[Gen 3] Custom Game
+L	ab_6_13	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_6_13	7	|
+L	ab_6_13	8	|t:|<NORMALIZED>
+L	ab_6_13	9	|teamsize|p1|6
+L	ab_6_13	10	|teamsize|p2|6
+L	ab_6_13	11	|start
+L	ab_6_13	12	|switch|p1a: Slowbro|Slowbro, M|321/321
+L	ab_6_13	13	|switch|p2a: Mightyena|Mightyena, M|287/287
+L	ab_6_13	14	|-ability|p2a: Mightyena|Intimidate|boost
+L	ab_6_13	15	|-unboost|p1a: Slowbro|atk|1
+L	ab_6_13	16	|-enditem|p1a: Slowbro|White Herb
+L	ab_6_13	17	|-clearnegativeboost|p1a: Slowbro|[silent]
+L	ab_6_13	18	|turn|1
+L	ab_6_13	19	|
+L	ab_6_13	20	|t:|<NORMALIZED>
+L	ab_6_13	21	|move|p2a: Mightyena|Frustration|p1a: Slowbro
+L	ab_6_13	22	|-damage|p1a: Slowbro|319/321
+L	ab_6_13	23	|move|p1a: Slowbro|Water Pulse|p2a: Mightyena
+L	ab_6_13	24	|-damage|p2a: Mightyena|177/287
+L	ab_6_13	25	|
+L	ab_6_13	26	|upkeep
+L	ab_6_13	27	|turn|2
+L	ab_6_13	28	|
+L	ab_6_13	29	|t:|<NORMALIZED>
+L	ab_6_13	30	|move|p2a: Mightyena|Snatch|p2a: Mightyena
+L	ab_6_13	31	|-singleturn|p2a: Mightyena|Snatch
+L	ab_6_13	32	|move|p1a: Slowbro|Water Pulse|p2a: Mightyena
+L	ab_6_13	33	|-damage|p2a: Mightyena|64/287
+L	ab_6_13	34	|-start|p2a: Mightyena|confusion
+L	ab_6_13	35	|
+L	ab_6_13	36	|upkeep
+L	ab_6_13	37	|turn|3
+L	ab_6_13	38	|
+L	ab_6_13	39	|t:|<NORMALIZED>
+L	ab_6_13	40	|-activate|p2a: Mightyena|confusion
+L	ab_6_13	41	|move|p2a: Mightyena|Snatch|p2a: Mightyena
+L	ab_6_13	42	|-singleturn|p2a: Mightyena|Snatch
+L	ab_6_13	43	|move|p1a: Slowbro|Amnesia|p1a: Slowbro
+L	ab_6_13	44	|-activate|p2a: Mightyena|move: Snatch|[of] p1a: Slowbro
+L	ab_6_13	45	|move|p2a: Mightyena|Amnesia|p2a: Mightyena|[from] Snatch
+L	ab_6_13	46	|-boost|p2a: Mightyena|spd|2
+L	ab_6_13	47	|
+L	ab_6_13	48	|upkeep
+L	ab_6_13	49	|turn|4
+L	ab_6_13	50	|
+L	ab_6_13	51	|t:|<NORMALIZED>
+L	ab_6_13	52	|switch|p1a: Houndour|Houndour, M|253/253
+L	ab_6_13	53	|-activate|p2a: Mightyena|confusion
+L	ab_6_13	54	|-damage|p2a: Mightyena|25/287|[from] confusion
+L	ab_6_13	55	|
+L	ab_6_13	56	|upkeep
+L	ab_6_13	57	|turn|5
+L	ab_6_13	58	|
+L	ab_6_13	59	|t:|<NORMALIZED>
+L	ab_6_13	60	|move|p1a: Houndour|Endure|p1a: Houndour
+L	ab_6_13	61	|-singleturn|p1a: Houndour|move: Endure
+L	ab_6_13	62	|-activate|p2a: Mightyena|confusion
+L	ab_6_13	63	|-damage|p2a: Mightyena|0 fnt|[from] confusion
+L	ab_6_13	64	|faint|p2a: Mightyena
+L	ab_6_13	65	|
+L	ab_6_13	66	|t:|<NORMALIZED>
+L	ab_6_13	67	|switch|p2a: Flygon|Flygon, M|306/306
+L	ab_6_13	68	|
+L	ab_6_13	69	|upkeep
+L	ab_6_13	70	|turn|6
+L	ab_6_13	71	|
+L	ab_6_13	72	|t:|<NORMALIZED>
+L	ab_6_13	73	|switch|p1a: Meditite|Meditite, M|230/230
+L	ab_6_13	74	|move|p2a: Flygon|Rest|p2a: Flygon
+L	ab_6_13	75	|-fail|p2a: Flygon|heal
+L	ab_6_13	76	|
+L	ab_6_13	77	|upkeep
+L	ab_6_13	78	|turn|7
+L	ab_6_13	79	|
+L	ab_6_13	80	|t:|<NORMALIZED>
+L	ab_6_13	81	|move|p2a: Flygon|Facade|p1a: Meditite
+L	ab_6_13	82	|-damage|p1a: Meditite|157/230
+L	ab_6_13	83	|move|p1a: Meditite|Rain Dance|p1a: Meditite
+L	ab_6_13	84	|-weather|RainDance
+L	ab_6_13	85	|
+L	ab_6_13	86	|-weather|RainDance|[upkeep]
+L	ab_6_13	87	|upkeep
+L	ab_6_13	88	|turn|8
+L	ab_6_13	89	|
+L	ab_6_13	90	|t:|<NORMALIZED>
+L	ab_6_13	91	|switch|p2a: Natu|Natu, M|198/198
+L	ab_6_13	92	|switch|p1a: Houndour|Houndour, M|253/253
+L	ab_6_13	93	|
+L	ab_6_13	94	|-weather|RainDance|[upkeep]
+L	ab_6_13	95	|upkeep
+L	ab_6_13	96	|turn|9
+L	ab_6_13	97	|
+L	ab_6_13	98	|t:|<NORMALIZED>
+L	ab_6_13	99	|switch|p2a: Pidgeot|Pidgeot, M|310/310
+L	ab_6_13	100	|move|p1a: Houndour|Endure||[still]
+L	ab_6_13	101	|-fail|p1a: Houndour
+L	ab_6_13	102	|
+L	ab_6_13	103	|-weather|RainDance|[upkeep]
+L	ab_6_13	104	|upkeep
+L	ab_6_13	105	|turn|10
+L	ab_6_13	106	|
+L	ab_6_13	107	|t:|<NORMALIZED>
+L	ab_6_13	108	|move|p2a: Pidgeot|Mud-Slap|p1a: Houndour
+L	ab_6_13	109	|-supereffective|p1a: Houndour
+L	ab_6_13	110	|-damage|p1a: Houndour|191/253
+L	ab_6_13	111	|-unboost|p1a: Houndour|accuracy|1
+L	ab_6_13	112	|move|p1a: Houndour|Feint Attack|p2a: Pidgeot
+L	ab_6_13	113	|-damage|p2a: Pidgeot|231/310
+L	ab_6_13	114	|
+L	ab_6_13	115	|-weather|RainDance|[upkeep]
+L	ab_6_13	116	|upkeep
+L	ab_6_13	117	|turn|11
+L	ab_6_13	118	|
+L	ab_6_13	119	|t:|<NORMALIZED>
+L	ab_6_13	120	|switch|p2a: Flygon|Flygon, M|306/306
+L	ab_6_13	121	|move|p1a: Houndour|Solar Beam||[still]
+L	ab_6_13	122	|-prepare|p1a: Houndour|Solar Beam
+L	ab_6_13	123	|
+L	ab_6_13	124	|-weather|none
+L	ab_6_13	125	|upkeep
+L	ab_6_13	126	|turn|12
+L	ab_6_13	127	|
+L	ab_6_13	128	|t:|<NORMALIZED>
+L	ab_6_13	129	|move|p2a: Flygon|Rest|p2a: Flygon
+L	ab_6_13	130	|-fail|p2a: Flygon|heal
+L	ab_6_13	131	|move|p1a: Houndour|Solar Beam|p2a: Flygon|[from] lockedmove|[miss]
+L	ab_6_13	132	|-miss|p1a: Houndour|p2a: Flygon
+L	ab_6_13	133	|
+L	ab_6_13	134	|upkeep
+L	ab_6_13	135	|turn|13
+L	ab_6_13	136	|
+L	ab_6_13	137	|t:|<NORMALIZED>
+L	ab_6_13	138	|move|p2a: Flygon|Facade|p1a: Houndour
+L	ab_6_13	139	|-damage|p1a: Houndour|60/253
+L	ab_6_13	140	|move|p1a: Houndour|Swift|p2a: Flygon
+L	ab_6_13	141	|-damage|p2a: Flygon|267/306
+L	ab_6_13	142	|
+L	ab_6_13	143	|-enditem|p1a: Houndour|Wiki Berry|[eat]
+L	ab_6_13	144	|-heal|p1a: Houndour|91/253|[from] item: Wiki Berry
+L	ab_6_13	145	|upkeep
+L	ab_6_13	146	|turn|14
+L	ab_6_13	147	|
+L	ab_6_13	148	|t:|<NORMALIZED>
+L	ab_6_13	149	|move|p2a: Flygon|Facade|p1a: Houndour
+L	ab_6_13	150	|-crit|p1a: Houndour
+L	ab_6_13	151	|-damage|p1a: Houndour|0 fnt
+L	ab_6_13	152	|faint|p1a: Houndour
+L	ab_6_13	153	|
+L	ab_6_13	154	|t:|<NORMALIZED>
+L	ab_6_13	155	|switch|p1a: Nidoqueen|Nidoqueen, F|313/313
+L	ab_6_13	156	|
+L	ab_6_13	157	|upkeep
+L	ab_6_13	158	|turn|15
+L	ab_6_13	159	|
+L	ab_6_13	160	|t:|<NORMALIZED>
+L	ab_6_13	161	|move|p2a: Flygon|Double-Edge|p1a: Nidoqueen
+L	ab_6_13	162	|-damage|p1a: Nidoqueen|221/313
+L	ab_6_13	163	|-damage|p2a: Flygon|237/306|[from] Recoil|[of] p1a: Nidoqueen
+L	ab_6_13	164	|move|p1a: Nidoqueen|Rock Smash|p2a: Flygon
+L	ab_6_13	165	|-damage|p2a: Flygon|219/306
+L	ab_6_13	166	|
+L	ab_6_13	167	|upkeep
+L	ab_6_13	168	|turn|16
+L	ab_6_13	169	|
+L	ab_6_13	170	|t:|<NORMALIZED>
+L	ab_6_13	171	|move|p2a: Flygon|Swift|p1a: Nidoqueen
+L	ab_6_13	172	|-damage|p1a: Nidoqueen|175/313
+L	ab_6_13	173	|move|p1a: Nidoqueen|Frustration|p2a: Flygon
+L	ab_6_13	174	|-damage|p2a: Flygon|217/306
+L	ab_6_13	175	|
+L	ab_6_13	176	|upkeep
+L	ab_6_13	177	|turn|17
+L	ab_6_13	178	|
+L	ab_6_13	179	|t:|<NORMALIZED>
+L	ab_6_13	180	|move|p2a: Flygon|Facade|p1a: Nidoqueen
+L	ab_6_13	181	|-damage|p1a: Nidoqueen|117/313
+L	ab_6_13	182	|-status|p2a: Flygon|psn|[from] ability: Poison Point|[of] p1a: Nidoqueen
+L	ab_6_13	183	|move|p1a: Nidoqueen|Frustration|p2a: Flygon
+L	ab_6_13	184	|-damage|p2a: Flygon|215/306 psn
+L	ab_6_13	185	|
+L	ab_6_13	186	|-damage|p2a: Flygon|177/306 psn|[from] psn
+L	ab_6_13	187	|upkeep
+L	ab_6_13	188	|turn|18
+L	ab_6_13	189	|
+L	ab_6_13	190	|t:|<NORMALIZED>
+L	ab_6_13	191	|switch|p2a: Gardevoir|Gardevoir, M|306/306
+L	ab_6_13	192	|move|p1a: Nidoqueen|Rock Smash|p2a: Gardevoir
+L	ab_6_13	193	|-resisted|p2a: Gardevoir
+L	ab_6_13	194	|-damage|p2a: Gardevoir|296/306
+L	ab_6_13	195	|
+L	ab_6_13	196	|upkeep
+L	ab_6_13	197	|turn|19
+L	ab_6_13	198	|
+L	ab_6_13	199	|t:|<NORMALIZED>
+L	ab_6_13	200	|move|p2a: Gardevoir|Reflect|p2a: Gardevoir
+L	ab_6_13	201	|-sidestart|p2: P2|Reflect
+L	ab_6_13	202	|move|p1a: Nidoqueen|Rock Slide|p2a: Gardevoir|[miss]
+L	ab_6_13	203	|-miss|p1a: Nidoqueen|p2a: Gardevoir
+L	ab_6_13	204	|
+L	ab_6_13	205	|upkeep
+L	ab_6_13	206	|turn|20
+L	ab_6_13	207	|
+L	ab_6_13	208	|t:|<NORMALIZED>
+L	ab_6_13	209	|move|p2a: Gardevoir|Reflect||[still]
+L	ab_6_13	210	|-fail|p2a: Gardevoir
+L	ab_6_13	211	|debug|move failed because it did nothing
+L	ab_6_13	212	|move|p1a: Nidoqueen|Rock Smash|p2a: Gardevoir
+L	ab_6_13	213	|debug|Reflect weaken
+L	ab_6_13	214	|-resisted|p2a: Gardevoir
+L	ab_6_13	215	|-damage|p2a: Gardevoir|291/306
+L	ab_6_13	216	|
+L	ab_6_13	217	|upkeep
+L	ab_6_13	218	|turn|21
+L	ab_6_13	219	|
+L	ab_6_13	220	|t:|<NORMALIZED>
+L	ab_6_13	221	|move|p2a: Gardevoir|Shadow Ball|p1a: Nidoqueen
+L	ab_6_13	222	|-damage|p1a: Nidoqueen|72/313
+L	ab_6_13	223	|move|p1a: Nidoqueen|Rock Smash|p2a: Gardevoir
+L	ab_6_13	224	|debug|Reflect weaken
+L	ab_6_13	225	|-resisted|p2a: Gardevoir
+L	ab_6_13	226	|-damage|p2a: Gardevoir|286/306
+L	ab_6_13	227	|
+L	ab_6_13	228	|upkeep
+L	ab_6_13	229	|turn|22
+L	ab_6_13	230	|
+L	ab_6_13	231	|t:|<NORMALIZED>
+L	ab_6_13	232	|move|p2a: Gardevoir|Taunt|p1a: Nidoqueen
+L	ab_6_13	233	|-start|p1a: Nidoqueen|move: Taunt
+L	ab_6_13	234	|move|p1a: Nidoqueen|Rock Slide|p2a: Gardevoir
+L	ab_6_13	235	|debug|Reflect weaken
+L	ab_6_13	236	|-damage|p2a: Gardevoir|247/306
+L	ab_6_13	237	|
+L	ab_6_13	238	|upkeep
+L	ab_6_13	239	|turn|23
+L	ab_6_13	240	|
+L	ab_6_13	241	|t:|<NORMALIZED>
+L	ab_6_13	242	|switch|p2a: Flygon|Flygon, M|177/306 psn
+L	ab_6_13	243	|switch|p1a: Slowbro|Slowbro, M|319/321
+L	ab_6_13	244	|
+L	ab_6_13	245	|-sideend|p2: P2|Reflect
+L	ab_6_13	246	|-damage|p2a: Flygon|139/306 psn|[from] psn
+L	ab_6_13	247	|upkeep
+L	ab_6_13	248	|turn|24
+L	ab_6_13	249	|
+L	ab_6_13	250	|t:|<NORMALIZED>
+L	ab_6_13	251	|switch|p1a: Meditite|Meditite, M|157/230
+L	ab_6_13	252	|move|p2a: Flygon|Swift|p1a: Meditite
+L	ab_6_13	253	|-damage|p1a: Meditite|83/230
+L	ab_6_13	254	|
+L	ab_6_13	255	|-damage|p2a: Flygon|101/306 psn|[from] psn
+L	ab_6_13	256	|upkeep
+L	ab_6_13	257	|turn|25
+L	ab_6_13	258	|
+L	ab_6_13	259	|t:|<NORMALIZED>
+L	ab_6_13	260	|switch|p2a: Pidgeot|Pidgeot, M|231/310
+L	ab_6_13	261	|move|p1a: Meditite|Rain Dance|p1a: Meditite
+L	ab_6_13	262	|-weather|RainDance
+L	ab_6_13	263	|
+L	ab_6_13	264	|-weather|RainDance|[upkeep]
+L	ab_6_13	265	|upkeep
+L	ab_6_13	266	|turn|26
+L	ab_6_13	267	|
+L	ab_6_13	268	|t:|<NORMALIZED>
+L	ab_6_13	269	|switch|p2a: Doduo|Doduo, M|227/227
+L	ab_6_13	270	|switch|p1a: Slowbro|Slowbro, M|319/321
+L	ab_6_13	271	|
+L	ab_6_13	272	|-weather|RainDance|[upkeep]
+L	ab_6_13	273	|upkeep
+L	ab_6_13	274	|turn|27
+L	ab_6_13	275	|
+L	ab_6_13	276	|t:|<NORMALIZED>
+L	ab_6_13	277	|switch|p2a: Pidgeot|Pidgeot, M|231/310
+L	ab_6_13	278	|switch|p1a: Nidoqueen|Nidoqueen, F|72/313
+L	ab_6_13	279	|
+L	ab_6_13	280	|-weather|RainDance|[upkeep]
+L	ab_6_13	281	|upkeep
+L	ab_6_13	282	|turn|28
+L	ab_6_13	283	|
+L	ab_6_13	284	|t:|<NORMALIZED>
+L	ab_6_13	285	|move|p2a: Pidgeot|Frustration|p1a: Nidoqueen
+L	ab_6_13	286	|-damage|p1a: Nidoqueen|69/313
+L	ab_6_13	287	|move|p1a: Nidoqueen|Rock Slide|p2a: Pidgeot
+L	ab_6_13	288	|-supereffective|p2a: Pidgeot
+L	ab_6_13	289	|-damage|p2a: Pidgeot|84/310
+L	ab_6_13	290	|
+L	ab_6_13	291	|-weather|RainDance|[upkeep]
+L	ab_6_13	292	|upkeep
+L	ab_6_13	293	|turn|29
+L	ab_6_13	294	|
+L	ab_6_13	295	|t:|<NORMALIZED>
+L	ab_6_13	296	|switch|p2a: Gardevoir|Gardevoir, M|247/306
+L	ab_6_13	297	|move|p1a: Nidoqueen|Toxic|p2a: Gardevoir
+L	ab_6_13	298	|-status|p2a: Gardevoir|tox
+L	ab_6_13	299	|debug|natural status immunity
+L	ab_6_13	300	|debug|immune to status
+L	ab_6_13	301	|
+L	ab_6_13	302	|-weather|none
+L	ab_6_13	303	|-damage|p2a: Gardevoir|228/306 tox|[from] psn
+L	ab_6_13	304	|upkeep
+L	ab_6_13	305	|turn|30
+L	ab_6_13	306	|
+L	ab_6_13	307	|t:|<NORMALIZED>
+L	ab_6_13	308	|move|p2a: Gardevoir|Taunt|p1a: Nidoqueen
+L	ab_6_13	309	|-start|p1a: Nidoqueen|move: Taunt
+L	ab_6_13	310	|move|p1a: Nidoqueen|Rock Slide|p2a: Gardevoir
+L	ab_6_13	311	|-damage|p2a: Gardevoir|143/306 tox
+L	ab_6_13	312	|
+L	ab_6_13	313	|-damage|p2a: Gardevoir|105/306 tox|[from] psn
+L	ab_6_13	314	|upkeep
+L	ab_6_13	315	|turn|31
+L	ab_6_13	316	|
+L	ab_6_13	317	|t:|<NORMALIZED>
+L	ab_6_13	318	|move|p2a: Gardevoir|Return|p1a: Nidoqueen
+L	ab_6_13	319	|-damage|p1a: Nidoqueen|14/313
+L	ab_6_13	320	|move|p1a: Nidoqueen|Rock Slide|p2a: Gardevoir
+L	ab_6_13	321	|-damage|p2a: Gardevoir|21/306 tox
+L	ab_6_13	322	|
+L	ab_6_13	323	|-damage|p2a: Gardevoir|0 fnt|[from] psn
+L	ab_6_13	324	|faint|p2a: Gardevoir
+L	ab_6_13	325	|-end|p1a: Nidoqueen|move: Taunt|[silent]
+L	ab_6_13	326	|upkeep
+L	ab_6_13	327	|
+L	ab_6_13	328	|t:|<NORMALIZED>
+L	ab_6_13	329	|switch|p2a: Natu|Natu, M|198/198
+L	ab_6_13	330	|turn|32
+L	ab_6_13	331	|
+L	ab_6_13	332	|t:|<NORMALIZED>
+L	ab_6_13	333	|switch|p2a: Doduo|Doduo, M|227/227
+L	ab_6_13	334	|move|p1a: Nidoqueen|Rock Slide|p2a: Doduo
+L	ab_6_13	335	|-supereffective|p2a: Doduo
+L	ab_6_13	336	|-damage|p2a: Doduo|0 fnt
+L	ab_6_13	337	|debug|move failed because it did nothing
+L	ab_6_13	338	|faint|p2a: Doduo
+L	ab_6_13	339	|
+L	ab_6_13	340	|t:|<NORMALIZED>
+L	ab_6_13	341	|switch|p2a: Natu|Natu, M|198/198
+L	ab_6_13	342	|
+L	ab_6_13	343	|upkeep
+L	ab_6_13	344	|turn|33
+L	ab_6_13	345	|
+L	ab_6_13	346	|t:|<NORMALIZED>
+L	ab_6_13	347	|move|p1a: Nidoqueen|Rock Slide|p2a: Natu
+L	ab_6_13	348	|-supereffective|p2a: Natu
+L	ab_6_13	349	|-damage|p2a: Natu|0 fnt
+L	ab_6_13	350	|faint|p2a: Natu
+L	ab_6_13	351	|
+L	ab_6_13	352	|t:|<NORMALIZED>
+L	ab_6_13	353	|switch|p2a: Flygon|Flygon, M|101/306 psn
+L	ab_6_13	354	|
+L	ab_6_13	355	|-damage|p2a: Flygon|63/306 psn|[from] psn
+L	ab_6_13	356	|upkeep
+L	ab_6_13	357	|turn|34
+L	ab_6_13	358	|
+L	ab_6_13	359	|t:|<NORMALIZED>
+L	ab_6_13	360	|move|p2a: Flygon|Swift|p1a: Nidoqueen
+L	ab_6_13	361	|-damage|p1a: Nidoqueen|0 fnt
+L	ab_6_13	362	|faint|p1a: Nidoqueen
+L	ab_6_13	363	|
+L	ab_6_13	364	|t:|<NORMALIZED>
+L	ab_6_13	365	|switch|p1a: Meditite|Meditite, M|83/230
+L	ab_6_13	366	|
+L	ab_6_13	367	|-damage|p2a: Flygon|25/306 psn|[from] psn
+L	ab_6_13	368	|upkeep
+L	ab_6_13	369	|turn|35
+L	ab_6_13	370	|
+L	ab_6_13	371	|t:|<NORMALIZED>
+L	ab_6_13	372	|move|p2a: Flygon|Double-Edge|p1a: Meditite
+L	ab_6_13	373	|-damage|p1a: Meditite|0 fnt
+L	ab_6_13	374	|-damage|p2a: Flygon|0 fnt|[from] Recoil|[of] p1a: Meditite
+L	ab_6_13	375	|faint|p1a: Meditite
+L	ab_6_13	376	|faint|p2a: Flygon
+L	ab_6_13	377	|
+L	ab_6_13	378	|t:|<NORMALIZED>
+L	ab_6_13	379	|switch|p2a: Pidgeot|Pidgeot, M|84/310
+L	ab_6_13	380	|switch|p1a: Slowbro|Slowbro, M|319/321
+L	ab_6_13	381	|
+L	ab_6_13	382	|upkeep
+L	ab_6_13	383	|turn|36
+L	ab_6_13	384	|
+L	ab_6_13	385	|t:|<NORMALIZED>
+L	ab_6_13	386	|move|p2a: Pidgeot|Protect|p2a: Pidgeot
+L	ab_6_13	387	|-singleturn|p2a: Pidgeot|Protect
+L	ab_6_13	388	|move|p1a: Slowbro|Headbutt|p2a: Pidgeot
+L	ab_6_13	389	|-activate|p2a: Pidgeot|Protect
+L	ab_6_13	390	|
+L	ab_6_13	391	|upkeep
+L	ab_6_13	392	|turn|37
+L	ab_6_13	393	|
+L	ab_6_13	394	|t:|<NORMALIZED>
+L	ab_6_13	395	|move|p2a: Pidgeot|Endure|p2a: Pidgeot
+L	ab_6_13	396	|debug|Success chance: 50%
+L	ab_6_13	397	|-singleturn|p2a: Pidgeot|move: Endure
+L	ab_6_13	398	|move|p1a: Slowbro|Water Pulse|p2a: Pidgeot
+L	ab_6_13	399	|-activate|p2a: Pidgeot|move: Endure
+L	ab_6_13	400	|-damage|p2a: Pidgeot|1/310
+L	ab_6_13	401	|
+L	ab_6_13	402	|-enditem|p2a: Pidgeot|Apicot Berry|[eat]
+L	ab_6_13	403	|-boost|p2a: Pidgeot|spd|1|[from] item: Apicot Berry
+L	ab_6_13	404	|upkeep
+L	ab_6_13	405	|turn|38
+L	ab_6_13	406	|
+L	ab_6_13	407	|t:|<NORMALIZED>
+L	ab_6_13	408	|move|p2a: Pidgeot|Frustration|p1a: Slowbro
+L	ab_6_13	409	|-damage|p1a: Slowbro|316/321
+L	ab_6_13	410	|move|p1a: Slowbro|Headbutt|p2a: Pidgeot
+L	ab_6_13	411	|-damage|p2a: Pidgeot|0 fnt
+L	ab_6_13	412	|debug|move failed because it did nothing
+L	ab_6_13	413	|faint|p2a: Pidgeot
+L	ab_6_13	414	|
+L	ab_6_13	415	|win|P1

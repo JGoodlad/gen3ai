@@ -1,0 +1,60 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# Guards the DAMAGING Soundproof `-immune` form (gen3_ability_batch2_v1): a Hyper Voice
+#   (flags.sound) into a Soundproof holder → |move|…|Hyper Voice|<foe> then
+#   |-immune|<foe>|[from] ability: Soundproof (accuracy-only draw, no crit/damage).
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/FMT/INIT/DEC/END/L).
+SCEN	soundproof_dmg
+TEAM	soundproof_dmg	p1	Snorlax|||Immunity|hypervoice,bodyslam|Serious||N||||
+TEAM	soundproof_dmg	p2	Mr. Mime|||Soundproof|calmmind,tackle|Serious||N||||
+FMT	soundproof_dmg	gen3customgame
+INIT	soundproof_dmg	29916,13677,21367,29520	0
+DEC	soundproof_dmg	0	move	0	0	m0	m0	3927,17645,10278,43906	Snorlax	461	461	0	-	0	0	0	0	0	0	1	Mr. Mime	221	221	0	-	0	0	1	1	0	0	1	p2	0	0	0	0	0
+DEC	soundproof_dmg	1	move	0	0	m1	m0	28591,5521,6876,44497	Snorlax	461	461	0	-	0	0	0	0	0	0	1	Mr. Mime	72	221	0	-	0	0	2	2	0	0	1	p2	0	0	0	0	0
+DEC	soundproof_dmg	2	move	0	0	m1	m0	10021,45329,56472,31829	Snorlax	461	461	0	-	0	0	0	0	0	0	1	Mr. Mime	0	221	1	-	0	0	0	0	0	0	0	p2	0	0	0	0	0
+END	soundproof_dmg	1	p1
+L	soundproof_dmg	0	|t:|<NORMALIZED>
+L	soundproof_dmg	1	|gametype|singles
+L	soundproof_dmg	2	|player|p1|P1||
+L	soundproof_dmg	3	|player|p2|P2||
+L	soundproof_dmg	4	|gen|3
+L	soundproof_dmg	5	|tier|[Gen 3] Custom Game
+L	soundproof_dmg	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	soundproof_dmg	7	|
+L	soundproof_dmg	8	|t:|<NORMALIZED>
+L	soundproof_dmg	9	|teamsize|p1|1
+L	soundproof_dmg	10	|teamsize|p2|1
+L	soundproof_dmg	11	|start
+L	soundproof_dmg	12	|switch|p1a: Snorlax|Snorlax|461/461
+L	soundproof_dmg	13	|switch|p2a: Mr. Mime|Mr. Mime|221/221
+L	soundproof_dmg	14	|turn|1
+L	soundproof_dmg	15	|
+L	soundproof_dmg	16	|t:|<NORMALIZED>
+L	soundproof_dmg	17	|move|p2a: Mr. Mime|Calm Mind|p2a: Mr. Mime
+L	soundproof_dmg	18	|-boost|p2a: Mr. Mime|spa|1
+L	soundproof_dmg	19	|-boost|p2a: Mr. Mime|spd|1
+L	soundproof_dmg	20	|move|p1a: Snorlax|Hyper Voice|p2a: Mr. Mime
+L	soundproof_dmg	21	|-immune|p2a: Mr. Mime|[from] ability: Soundproof
+L	soundproof_dmg	22	|
+L	soundproof_dmg	23	|upkeep
+L	soundproof_dmg	24	|turn|2
+L	soundproof_dmg	25	|
+L	soundproof_dmg	26	|t:|<NORMALIZED>
+L	soundproof_dmg	27	|move|p2a: Mr. Mime|Calm Mind|p2a: Mr. Mime
+L	soundproof_dmg	28	|-boost|p2a: Mr. Mime|spa|1
+L	soundproof_dmg	29	|-boost|p2a: Mr. Mime|spd|1
+L	soundproof_dmg	30	|move|p1a: Snorlax|Body Slam|p2a: Mr. Mime
+L	soundproof_dmg	31	|-damage|p2a: Mr. Mime|72/221
+L	soundproof_dmg	32	|
+L	soundproof_dmg	33	|upkeep
+L	soundproof_dmg	34	|turn|3
+L	soundproof_dmg	35	|
+L	soundproof_dmg	36	|t:|<NORMALIZED>
+L	soundproof_dmg	37	|move|p2a: Mr. Mime|Calm Mind|p2a: Mr. Mime
+L	soundproof_dmg	38	|-boost|p2a: Mr. Mime|spa|1
+L	soundproof_dmg	39	|-boost|p2a: Mr. Mime|spd|1
+L	soundproof_dmg	40	|move|p1a: Snorlax|Body Slam|p2a: Mr. Mime
+L	soundproof_dmg	41	|-damage|p2a: Mr. Mime|0 fnt
+L	soundproof_dmg	42	|debug|move failed because it did nothing
+L	soundproof_dmg	43	|faint|p2a: Mr. Mime
+L	soundproof_dmg	44	|
+L	soundproof_dmg	45	|win|P1

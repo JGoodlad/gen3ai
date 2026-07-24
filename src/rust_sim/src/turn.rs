@@ -295,6 +295,16 @@ const FUTURE_MOVE_DURATION: u8 = 3;
 /// 8). Its subOrder is unobservable within the group (both members share it) —
 /// the ability effectTypeOrder slot is reused.
 const TRUANT_RESIDUAL_ORDER: u64 = 27;
+/// **WHITE HERB** end-of-turn restore (`gen3_white_herb_v1`, `whiteherb.onResidualOrder = 29`,
+/// `onResidualSubOrder = undefined`) — the LAST modeled residual handler, its own order group
+/// AFTER Truant (27). The resolved gen3 item's `onResidual` calls its `onStart` (scan `boosts<0`
+/// → restore + consume). It is the site that restores an Intimidate-switch-in drop when the
+/// holder does NOT move that turn (a forced-replacement / no-move turn — the omniscient byte-fuzz
+/// find rmry3vbgm_ab_7_4: the sim restores at the residual, the port kept the −1). Gathered
+/// UNCONDITIONALLY for an active White Herb holder (the item's onResidual registers regardless of
+/// the boost state — the `boosts<0` gate lives in the apply), so it participates in the residual
+/// tie-shuffle; its ONLY tie is a two-White-Herb-holder board at equal speed (one extra draw).
+const WHITE_HERB_RESIDUAL_ORDER: u64 = 29;
 /// The **SCREEN** side conditions' residual sort keys (`gen3_screen_residual_tie_shuffle_v1`) —
 /// the gen4-mod override gen3 inherits (`data/mods/gen4/moves.ts`: `reflect.condition
 /// onSideResidualOrder: 1`, `lightscreen.condition onSideResidualOrder: 2`; both
@@ -473,6 +483,15 @@ enum ResidualAction {
     /// earlier this residual is skipped (the effectHolder.fainted guard), which is what
     /// leaves a POST-residual replacement's armed `true` un-toggled (probe edge E1).
     TruantToggle { side: usize, slot: usize },
+    /// **WHITE HERB**'s end-of-turn restore (`gen3_white_herb_v1`, order **29** — the LAST
+    /// residual, its own group after Truant 27): `white_herb_restore` — if the holder has any
+    /// negative boost, restore the negatives to 0 + consume the item (`-enditem`/`-clearnegativeboost`);
+    /// else a no-op. DRAW-FREE apply. Gathered UNCONDITIONALLY for an active holder (the item's
+    /// onResidual registers regardless of the boost state), so it participates in the residual
+    /// tie-shuffle (its only tie is another White Herb holder at equal speed). This restores an
+    /// Intimidate-switch-in drop on a turn the holder does NOT move (the residual — vs
+    /// `onAnyAfterMove` when it does move).
+    WhiteHerb { side: usize, slot: usize },
     /// A HEAL/PINCH **BERRY**'s residual trigger (`gen3_berry_trace_shedskin_v1`, order 10
     /// subOrder **4** — the ITEM slot, the SAME sort key as Leftovers, gathered in the item
     /// position): at apply time, if the holder's CURRENT hp is at/below the class threshold

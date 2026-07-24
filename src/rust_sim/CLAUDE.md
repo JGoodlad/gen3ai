@@ -2280,8 +2280,12 @@ doesn't use it):
   seeds — drain reversal / leech reversal / a Clear-Body control that HEALS) + the revert-verified
   LO1-LO3 pins (drain reversal + control same-seed, leech reversal order, the reversal KO'ing the
   drainer; ground truth `harness/probe_batch89_liquidooze_regression_rng.js`). e2e: `liquidooze`
-  moved into `MODELED_ABILITIES` (0 team-carry). Handler-audit rows: `haze:onHitField` +
-  `liquidooze:onSourceTryHeal` + the 3 crit items' `onModifyCritRatio` (manifest 897 → 922 rows).
+  moved into `MODELED_ABILITIES` (0 team-carry) AND into the **`TRACE_COPYABLE` lockstep set**
+  (`event.rs`) — it is SPECIES-AGNOSTIC (keys on the mon's CURRENT ability, so a Trace copy onto any mon
+  reverses drains/leech via `apply_drain`/`apply_leech_seed`); omitting it made Trace-of-Liquid-Ooze
+  FAIL-LOUD panic under `--use-bridge=rust` (repro rmry3vbgm_ab_1_15). Handler-audit rows:
+  `haze:onHitField` + `liquidooze:onSourceTryHeal` + the 3 crit items' `onModifyCritRatio`
+  (manifest 897 → 922 rows).
 
 - **WHITE HERB — the BOOST_RESTORE class** (`gen3_white_herb_v1`, `whiteherb` num 214). A single-use
   item that restores ALL of the holder's NEGATIVE boost stages to 0 (positives untouched) then
@@ -2290,11 +2294,18 @@ doesn't use it):
   the `critBoost`/`berryEffect` precedent — obs-neutral). The resolved gen3 item (RAW dump: `onStart`
   scans `boosts[i] < 0` → `useItem`; `onUse` `setBoost(negatives→0)` + `-clearnegativeboost`) fires
   from `onAnyAfterMove` / `onAnySwitchIn` / `onResidual(order 29)`, so **`turn.rs::white_herb_restore`**
-  is called RIGHT AFTER any stat-drop resolves on the holder — at the FOUR sites: the holder's OWN
+  is called RIGHT AFTER any stat-drop resolves on the holder — at the FIVE sites: the holder's OWN
   self-drop move (`apply_self_drops` — Overheat/Superpower/Psycho Boost/Curse-non-ghost's −Spe), a
-  foe's stat-drop MOVE or damaging-move secondary (`apply_secondary_boost` — Growl/Screech/Charm/Crunch),
-  a foe's LEAD Intimidate (`start_with_switchins`, the golden/seed convention path), and a foe's
-  MID-BATTLE Intimidate switch-in (`run_switch`). Restoring ONLY the negatives is what makes
+  foe's stat-drop MOVE or damaging-move secondary (`apply_secondary_boost` — Growl/Screech/Charm/Crunch,
+  the `onAnyAfterMove` trigger), the **SPEED-AWARE slow-LEAD `onAnySwitchIn`** (`state.rs` — a White-Herb
+  LEAD dropped by a FASTER lead's Intimidate is restored when its OWN switch-in fires AFTER the drop
+  [priority −2]; the golden/seed construction path, **byte-fuzz fixture 38**
+  `38_white_herb_lead_intimidate_restore.txt`), a foe's MID-BATTLE Intimidate switch-in
+  (`driver.rs`/`run_switch` `onAnySwitchIn`), and the **order-29 END-OF-TURN RESIDUAL**
+  (`residuals.rs::ResidualAction::WhiteHerb`, `WHITE_HERB_RESIDUAL_ORDER = 29` — the LAST residual, its
+  own group after Truant 27, gathered UNCONDITIONALLY for a holder so it joins the residual tie-shuffle;
+  restores a drop on a turn the holder does NOT move — the ab_7_4 forced-replacement / no-move case,
+  **byte-fuzz fixture 39** `39_white_herb_midbattle_residual_restore.txt`). Restoring ONLY the negatives is what makes
   +2-then-−1 (net +1) / +2-then-−2 (net 0) NOT trigger (no stage `< 0`) while a genuine −1 on a
   different stat DOES (that lone stage restored, positives kept). Single-use (whiteherb → item gone;
   a later drop is NOT restored). DRAW-FREE — the restore/consume touch no PRNG, so a White Herb board
@@ -2347,7 +2358,10 @@ doesn't use it):
   Thunder-Wave status bypass → par then a SE Shadow Ball connect; ground truth
   `harness/probe_batch89_wonderguard_regression_rng.js`). e2e: `wonderguard` moved into `MODELED_ABILITIES`
   (0 sample teams carry Shedinja → byte-neutral, the committed e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5`
-  is UNCHANGED, no regen). Handler-audit row: `wonderguard:onTryHit` → `turn.rs::run_move` (manifest → 931
+  is UNCHANGED, no regen) AND into the **`TRACE_COPYABLE` lockstep set** (`event.rs`) — the SE-only gate reads
+  the traced holder's LIVE ability (`run_move`), so a Trace copy of Wonder Guard works on any mon; omitting it
+  made Trace-of-Wonder-Guard FAIL-LOUD panic under `--use-bridge=rust` (the same rmry3vbgm_ab_1_15-class repro).
+  Handler-audit row: `wonderguard:onTryHit` → `turn.rs::run_move` (manifest → 931
   rows; the firefang gen4-hint branch is unreachable — Fire Fang isn't gen3-legal). HONEST SCOPE: the gate
   lives ONLY in `run_move`, so a FIXED-DAMAGE move into a Shedinja (Seismic Toss / Night Shade / Sonic Boom /
   Super Fang, via `run_fixed_damage_move`) keeps its plain type-immunity short-circuit rather than the WG
@@ -2863,6 +2877,20 @@ pins** (the post-decision PRNG seed vs the REAL-Showdown ground truth captured b
 | MC27 BATON PASS substitute transfer — the SUB HP passes to the entrant | `baton_pass_transfers_the_substitute_to_the_entrant` | STATE (Snorlax sub HP 83 after the pass) + SEED |
 | MC28 BATON PASS leech-seed transfer — the seed passes (the seeder keeps draining the new mon) | `baton_pass_transfers_the_leech_seed_to_the_entrant` | STATE (Snorlax leech-drained + the +2 Spe passed) + SEED |
 | MC29 BATON PASS with NO eligible bench FAILS ([still]+-fail, draw-free — NOT_FAIL, no switch request) | `baton_pass_with_no_bench_fails_draw_free` | STATE (the mon stays active, no forced switch) + SEED |
+| RS1 REST into a SLEEP-IMMUNE ability (`gen3_rest_sleep_immune_v1`, the A/B repro rmry3vbgm_ab_1_1/ab_3_21 seed@15/62) — a damaged INSOMNIA / VITAL SPIRIT mon's Rest is BLOCKED by its own `onSetStatus` BEFORE `slp.onStart`, so the sleep `random(2,6)` NEVER draws (no sleep, no heal); WRONG (pre-fix) `run_rest` drew it + slept + healed → +1 draw. The Insomnia-Rest seed == a draw-free Amnesia control's, DIFFERS from a sleep-able Rest | `rest_into_a_sleep_immune_ability_fails_draw_free` | STATE (awake, un-healed) + SEED (draw-free == Amnesia, ≠ sleep-able Rest) |
+| MD1 DISABLE of a MIMIC-overwritten slot (`gen3_mimic_disable_self_overwrite_v1`, rmry3vbgm_ab_6_16 seed@46) — Showdown's Disable stores the used move ID (`"mimic"`), gone from any slot after Mimic overwrote its OWN slot → `onStart` `!hasMove` returns false → Disable FAILS (draw-CONSUMED — the `random(2,6)` still drew). The port stored Disable by SLOT index → wrongly disabled the COPIED move. New `MonState::last_move_was_self_overwrite` flag (set by the Mimic success block, reset every `run_move`) drives the disable-arm guard | `disable_of_a_mimic_overwritten_slot_fails_leaving_the_copied_move_usable` | STATE (the copied move deals damage next turn) + SEED |
+| YW1 YAWN RE-CAST into a still-pending yawn (`gen3_yawn_recast_v1`, rmry3ytkn_ab_6_22 seed@44) — Showdown's `addVolatile('yawn')` returns false (no `onRestart`) → the re-cast FAILS ([still]+`-fail`) and the EXISTING yawn is UNCHANGED (resolves on its ORIGINAL schedule); WRONG (pre-fix) the port RE-SET the duration to 2 → the sleep `random(2,6)` slipped ONE turn late (a draw-ORDER desync). The already-yawned guard sits in the yawn cast arm | `yawn_recast_into_a_pending_yawn_does_not_reset_the_duration` | STATE (foe asleep at the resolve turn) + SEED |
+
+(RS1/MD1/YW1 capture the draw-count/first-mover tail fixes the `rmry3vbgm`/`rmry3ytkn` A/B round
+surfaced — ground truth `harness/probe_dc_batch_regression_rng.js`. The one un-fixed repro of that
+round, **rmry3vbgm_ab_4_6** [firstmover@0], is the project-wide turn-0 CONSTRUCTION-window deferral:
+a QuickClaw holder [Shuppet] whose turn-0 `endTurn` `randomChance(1,5)` HIT gets the gen3
+`getActionSpeed` speed=65535 override on turn 1, moving first despite a slower raw Speed — but the
+offline `ab_replay` path [`start_with_switchins` from the POST-construction `initSeed`] does not
+model the construction endTurn QC roll, so it cannot know it. Seed-identical [Pikachu's Agility is a
+draw-free setup move, so p1-first vs p2-first draw the same stream]; the bridge path
+[`BridgeSession::new_construct_turn0`] DOES model it. Modeling it offline would ripple the
+pre-first-decision seed convention every committed golden depends on — the documented deferral.)
 
 (The FZ1/FZ2 pins capture the two bugs the DMG_MOD e2e admission surfaced — FZ1 the sun-freeze
 immunity gate [ground truth `harness/probe_sun_freeze_regression_rng.js`, semantics probe-settled by
@@ -3503,7 +3531,20 @@ chunk — a repro dir's `battle.txt`), named by the form each guards
 `06_beatup_activate.txt`, `07_protect_blocks_status_activate.txt`, `08_shiny_details.txt`,
 `09_toxic_residual_from_psn.txt`, … through the gen3ou `18_freeze_clause_message_ou.txt` /
 `19_natural_cure_ou.txt` / `20_protect_activate_ou.txt`; 20 emission-form fixtures, both formats) PLUS the
-one TAGGED allowlist fixture `21_construction_mirror_ability_of.txt` (R1, see the allowlist section below).
+one TAGGED allowlist fixture `21_construction_mirror_ability_of.txt` (R1, see the allowlist section below),
+and the later run-numbered fixtures (`22`…`41`). **Two byte-fuzz finds from the master-seed 55667 round are
+frozen here:** **`40_soundproof_damaging_immune.txt`** guards the DAMAGING Soundproof block
+(`gen3_ability_batch2_v1`, the `random`-mode find) — a DAMAGING `flags.sound` move (Hyper Voice) into a
+Soundproof holder emits `|move|…|Hyper Voice|<foe>` + `|-immune|<foe>|[from] ability: Soundproof` and draws
+ONLY its accuracy roll (NO crit/damage — the DAMAGING-path mirror of the STATUS-move Soundproof gate; the
+`move_is_sound` helper existed but was UNUSED in `run_move`'s damaging path, so the port emitted `-damage`;
+pinned deterministically by `regression_test.rs::soundproof_blocks_a_damaging_sound_move`, ground truth
+`harness/probe_soundproof_regression_rng.js`). **`41_liechi_atcap_boost.txt`** (from the `randbats` repro
+ab_1_6) guards the PINCH-berry AT-CAP boost line (`gen3_liechi_atcap_boost_v1`) — a Liechi Berry eaten by a
+Swords-Danced-to-+6 mon emits `|-enditem|…|Liechi Berry|[eat]` then `|-boost|…|<stat>|0` (the delta-0 line,
+NO `[from] item:` cause — the ITEM sibling of the setup-move Agility@+6 `spe|0`, battle.js:1705-1706; the port
+`berry_boost` had emitted only when `delta > 0`); a DRAW-FREE emission fix (probe
+`harness/probe_liechi_atcap.js`; revert → `kind=protocol` at the `-boost` line).
 **`tests/byte_fuzz_corpus_test.rs`** auto-discovers every `*.txt`, invokes the built `ab_replay` binary
 (`env!("CARGO_BIN_EXE_ab_replay")`) in byte mode on each, and asserts: an UNTAGGED fixture has NO
 `kind=protocol` divergence, while a fixture carrying a `# ALLOWLIST <reason>` header MUST diverge with
@@ -4403,7 +4444,18 @@ class, validated by one class-sweep golden.
      the weather→forme map / revert-on-end / bench-revert / switch-in re-forme / draw-freeness
      [`probe_forecast_rng.js`], but the forme-change REPORTING surface + the Cloud-Nine
      effective-weather composition stay unprobed, so it is deferred honestly — the e2e filter keeps
-     every Castform-Forecast team off the modeled path).
+     every Castform-Forecast team off the modeled path). **FAIL-LOUD GIGO guard** (`gen3_forecast_failloud_v1`,
+     2026-07-23): an unmodeled ability would SILENTLY no-op in the engine (no handler matches `forecast`)
+     then desync the moment weather touched a Castform, so `state::MonState::from_set` now **PANICS** at
+     construction (`forecast (Castform) is unmodeled — GIGO guard; reject the team upstream`) — catching
+     ACTIVE and BENCH mons before any turn; pinned `forecast_castform_fails_loud_at_construction`
+     (`#[should_panic]`, regression_test.rs). The byte-fuzz filters REJECT every Forecast/Castform team
+     upstream — `gen_e2e_fuzz.js` `REJECT_ABILITIES`/`REJECT_SPECIES` (hard-deny in `abilityAllowed` +
+     `teamFilterClean`; consumed by the e2e generator + `--mode pool`/`random`) and `ab_fuzz.js`
+     `adaptRandbatsTeam` (Castform's only ability IS Forecast → the whole team is rejection-sampled,
+     tallied `ability:forecast` in `drop_reasons`, never ability-substituted) — so the panic never fires
+     on the modeled path (byte-neutral: the e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` is
+     unchanged, no committed team carries Castform).
   - **STATUS_IMMUNE ability — DONE as a DATA-DRIVEN class** (`gen3_status_immune_v1`, 2026-07-06). The gen-3
     abilities that grant immunity to a specific MAJOR status: **Limber** (par) / **Insomnia** + **Vital
     Spirit** (slp) / **Immunity** (psn,tox) / **Water Veil** (brn) block via `onSetStatus`; **Magma Armor**
@@ -4468,7 +4520,8 @@ class, validated by one class-sweep golden.
     them PARTNER-LESS vs an Insomnia control, `probe_ability_batch1_noop_verify.js` — which missed
     the CROSS-FIELD Plus↔Minus pairing; **`plus`/`minus` are now MODELED**, `gen3_plus_minus_v1`,
     probe `probe_plus_minus_gen3.js`; `lightningrod`/`stickyhold` remain true no-ops); **FORECAST is DEFERRED** (a Castform forme+TYPE change under
-    rain/sun/hail — the probe diverges — not a no-op). DEFERRED to batch 2: the DRAW-BEARING procs
+    rain/sun/hail — the probe diverges — not a no-op; now **FAIL-LOUD** in `state::from_set` + fuzz-rejected —
+    see the deferred fail-loud section below). DEFERRED to batch 2: the DRAW-BEARING procs
     (static/poisonpoint/flamebody/cutecharm/effectspore/synchronize/shedskin/trace/shadowtag/roughskin/colorchange).
   - **BATCH-2 DRAW-BEARING "reactive" classes + block tail — DONE** (`gen3_ability_batch2_v1`, 2026-07-07).
     The draw-bearing ability procs the batch-1 note deferred, each PROBE-settled (the sim is the only oracle;

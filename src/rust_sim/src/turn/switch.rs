@@ -199,6 +199,7 @@ impl crate::state::BattleState {
                 mon.taunt = None;
                 mon.disable = None;
                 mon.last_move = None;
+                mon.last_move_was_self_overwrite = false;
                 // clearVolatile also drops the FLASH FIRE activation on faint — a fainted FF
                 // mon carries no boost, and if re-encoded must not show a stale `flash_fire`.
                 mon.flash_fire = false;
@@ -782,6 +783,7 @@ impl crate::state::BattleState {
             m.taunt = None;
             m.disable = None;
             m.last_move = None;
+            m.last_move_was_self_overwrite = false;
             // The FLASH FIRE activation volatile clears on switch-out (`clearVolatile` →
             // `flashfire.onEnd`, verified vs the sim `harness/probe_flashfire_rng.js` A5): an
             // FF mon that pivots out loses its ×1.5 boost and must re-absorb a Fire move to

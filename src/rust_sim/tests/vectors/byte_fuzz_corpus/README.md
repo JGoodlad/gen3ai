@@ -37,6 +37,10 @@ The fixtures are named by the form they guard, e.g.:
 | `24_endure_survive_at_one_hp.txt` | Endure survive-at-1 emits `\|-damage\|<mon>\|1/<max>` even when already at 1 HP (0-net clamp) |
 | `25_natural_cure_pursuit_ko_curestatus.txt` | Natural Cure `-curestatus [silent]` on a Pursuit-KO'd switcher, BEFORE the `\|-hint\|`/`\|faint\|` |
 | `26_freeze_persists_vs_hp_fire.txt` | freeze PERSISTS through a Hidden Power Fire hit (base-type Fire only thaws — the T1 state fix) |
+| `38_white_herb_lead_intimidate_restore.txt` | White Herb restores a slower LEAD's Intimidate drop at its switch-in (`-enditem`/`-clearnegativeboost` before `\|turn\|1` — the ab_6_13 lead case) |
+| `39_white_herb_midbattle_residual_restore.txt` | White Herb restores a MID-BATTLE Intimidate-switch-in drop at the order-29 end-of-turn residual when the holder does not move (the ab_7_4 case) |
+| `40_soundproof_damaging_immune.txt` | a DAMAGING `flags.sound` move (Hyper Voice) into a Soundproof holder → `\|-immune\|…\|[from] ability: Soundproof` (accuracy-only draw, no crit/damage — `gen3_ability_batch2_v1`) |
+| `41_liechi_atcap_boost.txt` | a pinch-berry (Liechi) eaten at the +6 stat cap emits the delta-0 `\|-boost\|…\|<stat>\|0` line (NO `[from] item:` cause — the item sibling of Agility@+6 `spe\|0`; the ab_1_6 case) |
 
 ## Two fixture classes (the KNOWN-RESIDUAL allowlist gate)
 

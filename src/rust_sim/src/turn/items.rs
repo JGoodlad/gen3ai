@@ -175,19 +175,30 @@ impl crate::state::BattleState {
     }
 
     /// A berry stat boost (`this.boost({stat: n})` from onEat): clamped to +6, with the
-    /// `|-boost|<mon>|<stat>|<n>|[from] item: <Berry>` reveal. A no-op at the cap emits
-    /// nothing (the eat still happened — the caller consumed the item first).
+    /// `|-boost|<mon>|<stat>|<n>` reveal. **AT the +6 cap the sim STILL emits a delta-0
+    /// `-boost` line** (`gen3_liechi_atcap_boost_v1`, the omniscient-byte-fuzz find ab_1_6 —
+    /// a Liechi Berry eaten by a Swords-Danced-to-+6 Scyther: `|-enditem|…|Liechi Berry|[eat]`
+    /// then `|-boost|p2a: Scyther|atk|0`, PROBE-verified via `harness/probe_liechi_atcap.js`).
+    /// The CAUSE differs by delta (battle.js:1673-1707): delta > 0 → the Item branch carries
+    /// `[from] item: <Berry>`; delta == 0 (`boostBy == 0`) falls to the `!isSecondary && !isSelf`
+    /// branch → NO cause (the Agility@+6 `spe|0` precedent). A pinch berry is always +N and the
+    /// holder is at +6, so `msg` is always `-boost` (never `-unboost`). The eat already happened
+    /// (the caller consumed the item first).
     fn berry_boost(&mut self, side: usize, slot: usize, stat: usize, stages: i8, item_name: &str, dex: &Dex) {
         let s = &mut self.sides[side].pokemon[slot].boosts[stat];
         let before = *s;
         *s = (*s + stages).min(6);
         let delta = self.sides[side].pokemon[slot].boosts[stat] - before;
-        if self.logging() && delta > 0 {
+        if self.logging() {
             let m = self.mon_ref(side, slot, dex);
-            self.log.push_raw(format!(
-                "|-boost|{m}|{}|{delta}|[from] item: {item_name}",
-                crate::protocol::STAT_TOKENS[stat]
-            ));
+            let stat_tok = crate::protocol::STAT_TOKENS[stat];
+            if delta > 0 {
+                self.log
+                    .push_raw(format!("|-boost|{m}|{stat_tok}|{delta}|[from] item: {item_name}"));
+            } else {
+                // At the +6 cap: the delta-0 `-boost` line, NO `[from] item:` cause.
+                self.log.push_raw(format!("|-boost|{m}|{stat_tok}|0"));
+            }
         }
     }
 

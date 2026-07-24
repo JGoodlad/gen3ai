@@ -483,6 +483,9 @@ impl crate::state::BattleState {
         //     point (like PP), so it leaves `last_move` unchanged — mirroring `moveUsed` running
         //     only after BeforeMove passes. ---
         self.sides[side].pokemon[slot].last_move = if struggle { None } else { Some(move_index) };
+        // `gen3_mimic_disable_self_overwrite_v1`: reset the self-overwrite flag for EVERY move;
+        // the Mimic success block re-sets it TRUE after it overlays its own slot.
+        self.sides[side].pokemon[slot].last_move_was_self_overwrite = false;
         } // end `if !pursuit_strike && !sleep_talk_call` (on_before_move + PP + lastMove)
 
         // --- FOCUS PUNCH onTry cancel (`gen3_move_coverage_batch4_v1`,
@@ -750,6 +753,41 @@ impl crate::state::BattleState {
                     side, slot, foe, foe_slot, base_power, move_type, category, crit_ratio, dex,
                 );
             }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- SOUNDPROOF (`gen3_ability_batch2_v1`, `soundproof.onTryHit`): a DAMAGING
+        //     `flags.sound` move (Hyper Voice / Uproar) into a Soundproof holder is IMMUNE —
+        //     the mirror of the STATUS-move Soundproof gate in `run_status_move` (Sing / Grass
+        //     Whistle). It fires at the `TryHit` event AFTER the accuracy roll (`acc_hit`-gated,
+        //     so a MISS never reaches TryHit → the genuine-miss `-miss` path below) and BEFORE
+        //     the crit/damage draws — so a BLOCKED move draws ONLY its accuracy roll (EXACTLY a
+        //     type-immune / Wonder-Guard-blocked move's draw count), then `-immune`. PROBE-SETTLED
+        //     bit-for-bit vs the sim (`harness/probe_soundproof_damaging.js`): Hyper Voice into a
+        //     Soundproof Mr. Mime draws `random(100)`(accuracy) then `-immune`, NO crit / damage
+        //     roll (4 draws vs the 7-draw non-Soundproof control). It sits after the Protect block
+        //     (Protect wins TryHit) and before the type-immunity short-circuit (matching the
+        //     status path's Protect → Soundproof → naturalImmunity order); the `move_is_sound`
+        //     helper already existed but was UNUSED on this damaging path. Emission-only past the
+        //     accuracy roll (draw-free). ---
+        if acc_hit
+            && self.move_is_sound(&move_id, dex)
+            && dex
+                .ability(&to_id(&self.sides[foe].pokemon[foe_slot].ability))
+                .map(|a| a.blocks_sound)
+                .unwrap_or(false)
+        {
+            // [EMIT] `|move|<user>|<Name>|<foe>` then `|-immune|<foe>|[from] ability: Soundproof`.
+            if self.logging() && !suppress_announce {
+                let user = self.mon_ref(side, slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.move_used(&user, &move_name, Some(&target), false, false);
+                if announce_lockedmove {
+                    self.log.attr_last_move_from_lockedmove();
+                }
+                self.log.immune_from_ability(&target, "Soundproof");
+            }
+            // acc_hit is true here → not missed, not landed (no in-tryMoveHit Update).
             return MoveResolution::done(false, false, false);
         }
 

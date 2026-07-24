@@ -4869,6 +4869,79 @@ fn white_herb_restores_a_mid_battle_intimidate_drop_via_run_switch() {
     );
 }
 
+/// TRACE-LO the batch-8/9 `TRACE_COPYABLE` lockstep gap (`gen3_liquid_ooze_v1`) — Trace copying a
+/// NEWLY-admitted MODELED ability must NOT fail-loud panic. Batch 8/9 admitted **Liquid Ooze** (+
+/// Wonder Guard) to `MODELED_ABILITIES` but did NOT sync the `event.rs::TRACE_COPYABLE` set, so a
+/// Porygon2 that Traced a Liquid Ooze mon PANICKED ("Trace copied the UNMODELED ability liquidooze"
+/// — a `--use-bridge=rust` crash, repro rmry3vbgm_ab_1_15). With Liquid Ooze in the set the copy
+/// succeeds AND — species-agnostically (Liquid Ooze keys on the mon's CURRENT ability) — REVERSES a
+/// drain: p1 Tentacruel Giga Drains the Porygon2 it just gave Liquid Ooze to, so the DRAINER
+/// (Tentacruel) TAKES the would-be heal as damage instead of healing. REVERT-VERIFIED: without the
+/// `TRACE_COPYABLE` sync the test PANICS at `Battle::start_with_switchins` (the Trace copy).
+#[test]
+fn trace_of_liquid_ooze_does_not_panic_and_reverses_the_drain() {
+    let d = dex();
+    // p1 lead = a Liquid Ooze drainer (Tentacruel); p2 = Porygon2 (Trace) copies its Liquid Ooze.
+    let tenta = "Tentacruel|||Liquid Ooze|gigadrain,splash|Bold|252,,,,252,|N||||";
+    let p2gon = "Porygon2|||Trace|recover,splash|Bold|252,252,4,,,|N||||";
+    let seed = "11,23,37,41";
+    let mut bo = Battle::start_with_switchins(&opts_cg(tenta, p2gon, seed), &d).expect("start");
+    // The Trace copy ALREADY fired at construction (reaching here at all is the no-panic proof).
+    {
+        let st = bo.state().unwrap();
+        assert_eq!(
+            pokesim::dex::to_id(&st.sides[1].pokemon[st.sides[1].active].ability),
+            "liquidooze",
+            "TRACE-LO: Porygon2 Traced the foe's Liquid Ooze (no fail-loud panic)"
+        );
+    }
+    // p1 Tentacruel Giga Drains (move 0) the now-Liquid-Ooze Porygon2 (move 1 = splash) → the drain
+    // heal REVERSES onto the drainer: Tentacruel TAKES damage (HP < maxhp) instead of healing.
+    let o = bo.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &d,
+    );
+    let (thp, tmax) = (o.decisions[0].active[0].hp, o.decisions[0].active[0].maxhp);
+    assert!(thp < tmax, "TRACE-LO: the drainer took the Liquid Ooze reversal (HP {thp} < {tmax})");
+    assert!(
+        o.decisions[0].active[1].hp < o.decisions[0].active[1].maxhp,
+        "TRACE-LO: Porygon2 took the Giga Drain damage"
+    );
+}
+
+/// TRACE-WG the batch-8/9 `TRACE_COPYABLE` lockstep gap (`gen3_wonder_guard_v1`) — the Wonder Guard
+/// half of the same sync: a Porygon2 that Traces a Wonder Guard mon must NOT panic, and the copied
+/// gate is SPECIES-AGNOSTIC (it keys on the holder's CURRENT ability, not Shedinja). p1 Shedinja
+/// (Wonder Guard) Tackles the Porygon2 that Traced its Wonder Guard: Normal-vs-Normal is NEUTRAL, so
+/// the traced Wonder Guard BLOCKS it → Porygon2 stays at full HP. REVERT-VERIFIED: without the
+/// `TRACE_COPYABLE` sync the test PANICS at construction (the Trace copy of `wonderguard`).
+#[test]
+fn trace_of_wonder_guard_does_not_panic_and_blocks_a_neutral_move() {
+    let d = dex();
+    let shed = "Shedinja|||Wonder Guard|tackle,splash|Serious|,,,,,|N||||";
+    let p2gon = "Porygon2|||Trace|splash,recover|Bold|252,252,4,,,|N||||";
+    let seed = "13,29,41,53";
+    let mut bo = Battle::start_with_switchins(&opts_cg(shed, p2gon, seed), &d).expect("start");
+    {
+        let st = bo.state().unwrap();
+        assert_eq!(
+            pokesim::dex::to_id(&st.sides[1].pokemon[st.sides[1].active].ability),
+            "wonderguard",
+            "TRACE-WG: Porygon2 Traced the foe's Wonder Guard (no fail-loud panic)"
+        );
+    }
+    // p1 Shedinja Tackles (move 0, Normal → NEUTRAL vs Porygon2/Normal) the Wonder Guard Porygon2
+    // (move 1 = recover) → the traced Wonder Guard BLOCKS the neutral move → Porygon2 stays full.
+    let o = bo.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &d,
+    );
+    assert_eq!(
+        o.decisions[0].active[1].hp, o.decisions[0].active[1].maxhp,
+        "TRACE-WG: the traced Wonder Guard blocked the neutral Tackle (Porygon2 at full HP)"
+    );
+}
+
 /// WG1 WONDER GUARD neutral block (`gen3_wonder_guard_v1`) — a NEUTRAL damaging move (Water Gun,
 /// Water 1× vs Bug/Ghost) into a Wonder Guard Shedinja is BLOCKED (`runEffectiveness <= 0`): Shedinja
 /// stays 1/1 and the block draws ONLY its accuracy roll (`-immune [from] ability: Wonder Guard`). A
@@ -5008,6 +5081,58 @@ fn wonder_guard_status_move_bypasses_then_super_effective_connects() {
         seed_str(&o.decisions[1].seed_after),
         "63086,37694,32206,36914",
         "WG4: the SE-connect turn's post-decision seed"
+    );
+}
+
+/// SP DAMAGING Soundproof block (`gen3_ability_batch2_v1`) — a DAMAGING `flags.sound` move
+/// (Hyper Voice, bp 90) into a Soundproof holder (Mr. Mime) is IMMUNE: the target takes NO damage
+/// and the block draws ONLY its accuracy roll then `-immune|<mon>|[from] ability: Soundproof`
+/// (SIM-PROBED bit-for-bit, `harness/probe_soundproof_regression_rng.js`: Hyper Voice into a
+/// Soundproof Mr. Mime draws `random(100)`(accuracy) then `-immune`, NO crit / damage roll — 4
+/// draws vs the 7-draw non-Soundproof control). This is the DAMAGING-path MIRROR of the STATUS-move
+/// Soundproof gate (Sing / Grass Whistle) in `run_status_move`; the `move_is_sound` helper existed
+/// but was UNUSED on `run_move`'s damaging path, so the port emitted `-damage`. A no-Soundproof
+/// (Own Tempo) Mr. Mime on the SAME board TAKES damage (68/221) at a DIFFERENT seed (the hit's
+/// crit+damage draws). WRONG (a model without the gate): Hyper Voice connects → damage.
+#[test]
+fn soundproof_blocks_a_damaging_sound_move() {
+    let d = dex();
+    let snorlax = "Snorlax|||Immunity|hypervoice,bodyslam|Serious|,,,,,|N||||";
+    let mime_sp = "Mr. Mime|||Soundproof|calmmind,tackle|Serious|,,,,,|N||||";
+    let mime_no = "Mr. Mime|||Own Tempo|calmmind,tackle|Serious|,,,,,|N||||";
+    let seed = "13,29,41,53";
+
+    // Soundproof: Hyper Voice (move 1 = idx 0) is BLOCKED — Mr. Mime takes NO damage, draws only acc.
+    let mut bw = Battle::start_with_switchins(&opts_cg(snorlax, mime_sp, seed), &d).expect("start");
+    let ow = bw.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert_eq!(
+        ow.decisions[0].active[1].hp, 221,
+        "SP: Soundproof BLOCKS the damaging Hyper Voice (Mr. Mime stays 221/221)"
+    );
+    assert!(!ow.decisions[0].active[1].fainted, "SP: the blocked Mr. Mime is untouched");
+    assert_eq!(
+        seed_str(&ow.decisions[0].seed_after),
+        "37625,6431,63580,16031",
+        "SP: the block draws ONLY the accuracy roll (no crit/damage/secondary)"
+    );
+
+    // Control (no Soundproof): Hyper Voice HITS + damages → 68/221, a DIFFERENT seed (crit+damage drew).
+    let mut bc = Battle::start_with_switchins(&opts_cg(snorlax, mime_no, seed), &d).expect("start");
+    let oc = bc.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    assert_eq!(
+        oc.decisions[0].active[1].hp, 68,
+        "SP: without Soundproof the Hyper Voice HITS (Mr. Mime 68/221)"
+    );
+    assert_eq!(
+        seed_str(&oc.decisions[0].seed_after),
+        "2194,19130,50787,4217",
+        "SP: the hitting control's seed DIFFERS from the block (it drew crit+damage)"
     );
 }
 
@@ -12543,4 +12668,132 @@ fn trick_into_a_substitute_fails_and_does_not_swap() {
         "31583,64901,25391,35655",
         "TR5: the sub-blocked Trick draws its accuracy then fails draw-free — exact post-turn seed"
     );
+}
+
+// ============================================================================
+// FORECAST fail-loud GIGO guard (Castform is DEFERRED / UNMODELED).
+//
+// Forecast swaps Castform's forme + TYPE under rain/sun/hail — an unmodeled
+// mechanic. Left unmodeled, the engine would SILENTLY treat `forecast` as a
+// no-op (no ability handler matches the id) and desync the moment weather
+// touched a Castform. `MonState::from_set` now PANICS at construction — better
+// a loud crash than a silent mismodel. The byte-fuzz team generators/adapters
+// REJECT every Forecast/Castform team upstream, so this never fires on the
+// modeled path (no committed golden team carries Castform).
+// ============================================================================
+
+/// A Castform (Forecast) mon in ANY slot fail-louds at construction. WRONG
+/// (pre-guard): the port built the mon and silently no-op'd the ability, then
+/// desynced under weather. The fix (`state::MonState::from_set`) panics with a
+/// clear GIGO message. This proves the guard would catch a Forecast team.
+#[test]
+#[should_panic(expected = "forecast (Castform) is unmodeled")]
+fn forecast_castform_fails_loud_at_construction() {
+    let d = dex();
+    // gen3customgame accepts the packed ability verbatim; Castform's only real
+    // ability is Forecast anyway. Any moves suffice — the panic fires at
+    // construction, before a turn runs.
+    let castform = "Castform|||forecast|tackle|Hardy|252,,,,,|||||";
+    let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
+    // The panic fires inside `BattleState::start` (via `MonState::from_set`).
+    let _ = Battle::start_with_switchins(&opts_cg(castform, foe, "1,2,3,4"), &d);
+}
+
+// ── Draw-count / first-mover tail fixes (rmry3vbgm / rmry3ytkn A/B round) ──────────────
+//
+// Ground truth: `harness/probe_dc_batch_regression_rng.js` (raw seed 13,27,41,55, aligned to
+// the port's draw-free `start_with_switchins` via a post-construction PRNG reset).
+
+/// RS1 `gen3_rest_sleep_immune_v1` — a damaged mon with a SLEEP-IMMUNE ability (INSOMNIA /
+/// VITAL SPIRIT) that uses REST FAILS DRAW-FREE: gen3 `setStatus('slp')` is blocked by the
+/// ability's `onSetStatus` BEFORE `slp.onStart`, so the sleep `random(2,6)` is NEVER drawn
+/// (no sleep, no heal). The A/B repro rmry3vbgm_ab_1_1 (seed@15) = a damaged Insomnia Hypno
+/// Resting. WRONG (pre-fix): `run_rest` drew the `random(2,6)` + slept + healed → +1 draw. The
+/// Insomnia-Rest turn's seed == a draw-free Amnesia control's (proof it's draw-free) and DIFFERS
+/// from a genuinely sleep-able Rest (which draws the `random(2,6)`).
+#[test]
+fn rest_into_a_sleep_immune_ability_fails_draw_free() {
+    let d = dex();
+    let hypno = "Hypno|||Insomnia|rest,amnesia,,|Careful|248,,,,,|N||||";
+    let snor = "Snorlax|||Immunity|amnesia,rest,,|Careful|,,,,,|N||||";
+
+    // RS1a: Insomnia Hypno (damaged to 100) uses Rest → FAILS draw-free.
+    let mut ba = Battle::start_with_switchins(&opts_cg(hypno, snor, "13,27,41,55"), &d).expect("start");
+    ba.state_mut().unwrap().sides[0].pokemon[0].hp = 100;
+    let oa = ba.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert!(oa.decisions[0].active[0].status.is_none(), "RS1: Insomnia blocks Rest's self-sleep");
+    assert_eq!(oa.decisions[0].active[0].hp, 100, "RS1: a failed Rest does NOT heal");
+    assert_eq!(seed_str(&oa.decisions[0].seed_after), "49200,48550,14066,9078",
+        "RS1: the Insomnia-Rest turn is DRAW-FREE — exact post-turn seed");
+
+    // RS1b control: the SAME Hypno does a draw-free Amnesia instead → IDENTICAL seed.
+    let mut bb = Battle::start_with_switchins(&opts_cg(hypno, snor, "13,27,41,55"), &d).expect("start");
+    bb.state_mut().unwrap().sides[0].pokemon[0].hp = 100;
+    let ob = bb.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0))], &d);
+    assert_eq!(seed_str(&oa.decisions[0].seed_after), seed_str(&ob.decisions[0].seed_after),
+        "RS1: Insomnia-Rest == draw-free Amnesia (both draw only the endTurn Quick Claw)");
+
+    // RS1c control: a genuinely SLEEP-ABLE Rest (Snorlax@Immunity blocks psn, NOT slp) DRAWS the
+    // random(2,6) → a DIFFERENT seed (the discriminator that Rest normally draws it).
+    let mut bc = Battle::start_with_switchins(&opts_cg(snor, snor, "13,27,41,55"), &d).expect("start");
+    bc.state_mut().unwrap().sides[0].pokemon[0].hp = 100;
+    let oc = bc.state_mut().unwrap().run_full_battle(
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0))], &d); // Snorlax move 2 = Rest
+    assert_eq!(oc.decisions[0].active[0].status, Some(Status::Sleep(3)), "RS1: a sleep-able Rest sleeps");
+    assert_eq!(seed_str(&oc.decisions[0].seed_after), "52334,26639,37779,28223",
+        "RS1: a sleep-able Rest draws the random(2,6) — exact post-turn seed");
+    assert_ne!(seed_str(&oa.decisions[0].seed_after), seed_str(&oc.decisions[0].seed_after),
+        "RS1: the Insomnia-Rest seed DIFFERS from a sleep-able Rest (the missing random(2,6))");
+}
+
+/// MD1 `gen3_mimic_disable_self_overwrite_v1` — a Disable of a mon whose LAST move was a MIMIC
+/// that OVERWROTE its own slot FAILS: Showdown's Disable stores the used move ID (`"mimic"`),
+/// which is no longer in any moveSlot (the slot now holds the COPIED move), so `onStart`'s
+/// `!hasMove` returns false. The port stored Disable by SLOT index → it wrongly disabled the
+/// copied move (the A/B repro rmry3vbgm_ab_6_16 seed@46). Observable: the Mimic-copied move
+/// stays USABLE and deals damage at the next turn (a disabled move would be rejected → the foe
+/// takes no damage + the seed drifts).
+#[test]
+fn disable_of_a_mimic_overwritten_slot_fails_leaving_the_copied_move_usable() {
+    let d = dex();
+    let noctowl = "Noctowl|||Insomnia|mimic,amnesia,recover,rest|Careful|248,,,,,|N||||";
+    let grimer = "Grimer|||Stench|tackle,disable,amnesia,recover|Careful|248,,,,,|N||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(noctowl, grimer, "13,27,41,55"), &d).expect("start");
+    let o = b.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Noctowl Amnesia; Grimer Tackle
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Noctowl Mimic(Tackle); Grimer Disable → FAILS
+            ScriptDecision::both(Choice::Move(0), Choice::Move(2)), // Noctowl uses the copied Tackle → Grimer takes damage
+        ], &d);
+    assert_eq!(o.decisions.len(), 3, "MD1: all 3 decisions committed (the copied move was NOT rejected)");
+    assert_eq!(o.decisions[2].active[1].hp, 317,
+        "MD1: the Mimic-copied Tackle is USABLE (Grimer 363 → 317); a wrongly-disabled slot leaves 363");
+    assert_eq!(seed_str(&o.decisions[2].seed_after), "58462,50702,46937,62624",
+        "MD1: exact post-decision seed with the disable correctly FAILED");
+}
+
+/// YW1 `gen3_yawn_recast_v1` — a Yawn re-cast into an ALREADY-pending yawn FAILS without
+/// resetting the duration (Showdown's `addVolatile('yawn')` returns false), so the sleep
+/// resolves on the ORIGINAL schedule. WRONG (pre-fix): the port RE-SET the duration to 2 → the
+/// resolve (the sleep `random(2,6)`) slipped ONE turn late (the A/B repro rmry3ytkn_ab_6_22
+/// seed@44). Observable: the target is ALREADY ASLEEP at dec1 (the resolve turn), and the dec1
+/// seed carries the resolve's `random(2,6)`.
+#[test]
+fn yawn_recast_into_a_pending_yawn_does_not_reset_the_duration() {
+    let d = dex();
+    let swalot = "Swalot|||LiquidOoze|yawn,amnesia,,|Careful|248,,,,,|N||||";
+    let snor = "Snorlax|||Immunity|amnesia,rest,,|Careful|,,,,,|N||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(swalot, snor, "13,27,41,55"), &d).expect("start");
+    let o = b.state_mut().unwrap().run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // dec0: Yawn cast (draw-free)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // dec1: Yawn RE-CAST — the yawn RESOLVES here
+        ], &d);
+    assert!(o.decisions[0].active[1].status.is_none(), "YW1: the cast does not sleep the foe");
+    assert!(matches!(o.decisions[1].active[1].status, Some(Status::Sleep(_))),
+        "YW1: the re-cast does NOT delay the resolve — the foe sleeps at dec1 (original schedule)");
+    assert_eq!(seed_str(&o.decisions[1].seed_after), "25367,53124,63953,41400",
+        "YW1: the resolve's random(2,6) draws at dec1 — exact post-turn seed");
 }

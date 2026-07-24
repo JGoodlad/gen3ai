@@ -250,6 +250,13 @@ const TRACE_COPYABLE: &[&str] = &[
     "soundproof", "damp", "suctioncups", "synchronize",
     "trace", "shedskin",
     "truant", "innerfocus", "shadowtag", "cutecharm", "colorchange",
+    // BATCH 8/9 admissions (`gen3_liquid_ooze_v1` / `gen3_wonder_guard_v1`) — both are
+    // MODELED bit-for-bit and SPECIES-AGNOSTIC (they key on the mon's CURRENT ability, so a
+    // Trace copy onto ANY mon works: Liquid Ooze reverses drains/leech against the Porygon2
+    // it lands on, `apply_drain`/`apply_leech_seed`; Wonder Guard's SE-only gate reads the
+    // traced holder's live ability, `run_move`). Missing them here made Trace-of-Liquid-Ooze
+    // (or -Wonder-Guard) FAIL-LOUD panic under `--use-bridge=rust` (repro rmry3vbgm_ab_1_15).
+    "liquidooze", "wonderguard",
     // NOOP_ABILITIES:
     "pressure", "oblivious", "runaway", "illuminate", "honeygather", "pickup",
     "stench", "sturdy", "rockhead", "earlybird", "noability",

@@ -65,6 +65,7 @@ const e2e = require('./gen_e2e_fuzz.js');
 const {
   runBattle, emitBattle, isModeledMove, abilityAllowed, itemAllowed,
   teamFilterClean, loadTeams, mulberry32, randInt, seedFrom, toId, dex3,
+  REJECT_ABILITIES, REJECT_SPECIES,
 } = e2e;
 
 const PS = path.resolve(__dirname, '../../../deps/pokemon-showdown');
@@ -147,6 +148,16 @@ function adaptRandbatsTeam(team) {
   for (const set of team) {
     let touched = false;
     const sid = toId(set.species || set.name);
+    // FORECAST / Castform is DEFERRED + fail-loud in the engine (`state::from_set`
+    // panics). Castform's ONLY ability IS Forecast, so it can NEVER be ability-
+    // substituted — REJECT the whole team (rejection-sampled), never substitute the
+    // ability. Explicit (belt-and-suspenders over the `speciesAllowedAbility→null`
+    // path below): the reject wins even for a hand-hacked non-Forecast Castform, and
+    // even if `forecast` were ever mistakenly added to a modeled/no-op set. Tallies
+    // as `ability:forecast` in `drop_reasons`.
+    if (REJECT_ABILITIES.has(toId(set.ability)) || REJECT_SPECIES.has(sid)) {
+      return { reject: `ability:forecast` };
+    }
     // Port-data ingest guards (safety net — gen3 randbats should always pass):
     if (!portSpecies[sid]) return { reject: `species:${sid}` };
     for (const mv of set.moves) {

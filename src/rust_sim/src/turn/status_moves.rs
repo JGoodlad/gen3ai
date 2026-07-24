@@ -980,6 +980,11 @@ impl crate::state::BattleState {
                     *mp = copied_maxpp;
                 }
             }
+            // `gen3_mimic_disable_self_overwrite_v1`: Mimic OVERWROTE its own slot, so the
+            // move actually USED (`mimic`) is no longer in any slot. A FOE's Disable on this
+            // mon (while `lastMove` is still this Mimic) must FAIL (Showdown's `onStart`
+            // `!hasMove` return-false) — flag it so the disable arm reproduces that.
+            self.sides[_side].pokemon[_slot].last_move_was_self_overwrite = true;
             // [EMIT] `|-activate|<user>|move: Mimic|<MoveName>`.
             if self.logging() {
                 let user = self.mon_ref(_side, _slot, dex);
@@ -1409,6 +1414,23 @@ impl crate::state::BattleState {
             //     onStart `duration++` iff the target has ALREADY moved this turn (`!foe_will_move`).
             let rolled = self.prng.random_range(2, 6); // random(2,6) → 2..=5
             let duration = if foe_will_move { rolled } else { rolled + 1 };
+            // (4a) THE MIMIC SELF-OVERWRITE GUARD (`gen3_mimic_disable_self_overwrite_v1`) —
+            //     the target's LAST move was a Mimic that OVERWROTE its own slot, so the used
+            //     move id (`"mimic"`) is no longer in any moveSlot. Showdown's Disable stores
+            //     `lastMove.id` and its `onStart` `!hasMove` returns false → Disable FAILS. Like
+            //     the 0-PP guard this is an onStart return-false, so it sits AFTER the
+            //     `random(2,6)` draw (DRAW-CONSUMED — the `durationCallback` fired first) and
+            //     emits the `[still]` did-nothing form + `-fail`, NO volatile / `-start` /
+            //     residual handler. The A/B repro rmry3vbgm_ab_6_16: a Mimic-copied Dynamic
+            //     Punch the port wrongly disabled by SLOT where the sim leaves it usable.
+            if self.sides[foe].pokemon[foe_slot].last_move_was_self_overwrite {
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.attr_last_move_still();
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
             // (4b) THE onStart 0-PP GUARD (`gen3_disable_zero_pp_v1` — the gen4-inherited
             //     `!moveSlot.pp → return false`, which gen3's condition INHERITS; gen3 only
             //     overrides durationCallback + the residual orders). Reachable in real gen3
@@ -2178,6 +2200,22 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
+            // (4b) ALREADY-YAWNED GUARD (`gen3_yawn_recast_v1`) — the target ALREADY has a
+            //      pending `yawn` volatile: Showdown's `addVolatile('yawn')` returns false (yawn
+            //      has no `onRestart`), so the re-cast FAILS and the EXISTING yawn is UNCHANGED
+            //      (it resolves on its ORIGINAL schedule). The port used to RE-SET the duration
+            //      to 2 → the resolve (the sleep `random(2,6)`) slipped ONE turn late → a
+            //      draw-ORDER desync (the A/B repro rmry3ytkn_ab_6_22 seed@44 — a Swalot
+            //      re-Yawning a still-pending Blastoise). DRAW-FREE; emit `|move|…|Yawn||[still]`
+            //      + `|-fail|<user>` (probe-verified, `harness/probe_yawn_recast_rng.js`).
+            if self.sides[foe].pokemon[foe_slot].yawn.is_some() {
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.attr_last_move_still();
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
             // (5) ADD the `yawn` volatile (duration 2), recording the SOURCE uid for the `[of]`
             //     clause + the `trySetStatus` source. DRAW-FREE.
             let src_uid = self.sides[_side].pokemon[_slot].uid;
@@ -2605,6 +2643,37 @@ impl crate::state::BattleState {
         //     block.
         if self.sleep_clause {
             self.set_status_event_shuffle();
+        }
+
+        // (2c) SLEEP-IMMUNE ABILITY GUARD (`gen3_rest_sleep_immune_v1`) — gen3
+        //      `setStatus('slp')` is BLOCKED by the user's OWN sleep-immunity ability
+        //      (INSOMNIA / VITAL SPIRIT, `AbilityData.status_immune.blocks("slp")`) at
+        //      `runEvent('SetStatus')`, BEFORE `singleEvent('Start', slp)` — so the sleep
+        //      `random(2,6)` is NEVER drawn and Rest FAILS (`onHit` returns false: no sleep,
+        //      no heal). The port used to draw the `random(2,6)` + sleep + heal
+        //      unconditionally → +1 draw + wrong state (the A/B repro rmry3vbgm_ab_1_1
+        //      seed@15 = a damaged Insomnia Hypno Resting). It sits AFTER the gen3ou clause
+        //      shuffle above (the ability sorts into its own speed group → the 2 clauses stay
+        //      a size-2 tie → the shuffle STILL draws — `gen3_status_immune_v1`) and emits the
+        //      sim's `|-fail|<user>|[from] ability: <A>|[of] <user>` (probe-verified,
+        //      `harness/probe_rest_sleep_immune_rng.js`).
+        {
+            let ability_id = to_id(&self.sides[side].pokemon[slot].ability);
+            let blocks_slp = dex
+                .ability(&ability_id)
+                .and_then(|a| a.status_immune.as_ref())
+                .map(|si| si.blocks("slp"))
+                .unwrap_or(false);
+            if blocks_slp {
+                if self.logging() {
+                    let user = self.mon_ref(side, slot, dex);
+                    let ability_name =
+                        dex.ability(&ability_id).map(|a| a.name.clone()).unwrap_or(ability_id);
+                    self.log
+                        .push_raw(format!("|-fail|{user}|[from] ability: {ability_name}|[of] {user}"));
+                }
+                return MoveResolution::done(false, false, false);
+            }
         }
 
         // (3)+(4) SELF-SLEEP + status CURE (setStatus overrides any prior major status).

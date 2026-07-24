@@ -1,0 +1,456 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=55667 run_id=rmry3ytkn chunk=1
+# Guards the Liechi/pinch-berry AT-CAP boost line: an at-+6 Liechi eat emits
+#   |-enditem|…|Liechi Berry|[eat] then |-boost|…|<stat>|0 (NO [from] item: cause),
+#   the ITEM sibling of the setup-move Agility@+6 spe|0 (gen3_liechi_atcap_boost_v1).
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_1_6
+TEAM	ab_1_6	p1	Raticate||ChoiceBand|Guts|doubleedge,hiddenpowerground,shadowball,facade|Hardy|85,85,85,85,85,85|M|,,,30,30,||85|]Sandslash||ChoiceBand|SandVeil|rockslide,rapidspin,hiddenpowerbug,earthquake|Hardy|85,85,85,85,85,85|M|,30,30,,30,||85|]Roselia||Leftovers|NaturalCure|spikes,magicalleaf,hiddenpowerfire,synthesis|Hardy|85,,85,85,85,85|M|,2,,30,,30||97|]Houndoom||Leftovers|FlashFire|crunch,fireblast,pursuit,willowisp|Hardy|85,,85,85,85,85|M|,0,,,,||79|]Quagsire||Leftovers|WaterAbsorb|earthquake,toxic,protect,icebeam|Hardy|85,85,85,85,85,85|M|||84|]Sneasel||LiechiBerry|InnerFocus|swordsdance,shadowball,substitute,brickbreak|Hardy|85,85,85,85,85,85|M|||88|
+TEAM	ab_1_6	p2	Piloswine||Leftovers|Oblivious|earthquake,protect,toxic,icebeam|Hardy|85,85,85,85,85,85|M|||87|]Scyther||LiechiBerry|Swarm|aerialace,swordsdance,hiddenpowerground,silverwind|Hardy|85,85,85,85,85,85|M|,,,30,30,||81|]Rayquaza||ChoiceBand|AirLock|hiddenpowerflying,earthquake,extremespeed,overheat|Hardy|85,85,85,85,85,85|N|30,30,30,30,30,||70|]Linoone||LumBerry|Pickup|hiddenpowerground,bellydrum,return,shadowball|Hardy|81,85,85,85,85,85|M|,,,30,30,||82|]Seviper||Leftovers|ShedSkin|flamethrower,hiddenpowergrass,earthquake,sludgebomb|Hardy|85,85,85,85,85,85|M|,30,,30,,||88|]Metagross||ChoiceBand|ClearBody|meteormash,rockslide,earthquake,explosion|Hardy|85,85,85,85,85,85|N|||73|
+FMT	ab_1_6	gen3customgame
+INIT	ab_1_6	41231,55239,59674,21910	562438938
+DEC	ab_1_6	0	move	0	0	m3	m3	20626,7693,5016,25278	Raticate	143	232	0	-	0	0	0	0	0	0	6	Piloswine	232	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	1	move	0	0	s2	m1	49766,52334,9039,16825	Roselia	254	254	0	-	0	0	0	0	0	0	6	Piloswine	251	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	2	move	0	0	m1	m2	53639,18997,49307,57789	Roselia	254	254	0	-	0	0	0	0	0	0	6	Piloswine	34	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	3	move	0	0	m3	m0	6563,36114,48502,10625	Roselia	120	254	0	-	0	0	0	0	0	0	6	Piloswine	53	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	4	move	0	0	s5	m2	33308,926,20772,35851	Sneasel	225	240	0	tox	0	0	0	0	0	0	6	Piloswine	72	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	5	move	0	0	m1	m1	46860,51791,53433,48828	Sneasel	195	240	0	tox	0	0	0	0	0	0	6	Piloswine	91	316	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_1_6	6	move	0	0	m2	m2	27245,13738,963,1550	Sneasel	90	240	0	tox	0	0	0	0	0	0	6	Piloswine	110	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	7	move	0	0	s1	m0	22531,30993,5490,4802	Sandslash	175	266	0	-	0	0	0	0	0	0	6	Piloswine	129	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	8	move	0	0	m1	m0	25649,6236,39618,29211	Sandslash	72	266	0	-	0	0	0	0	0	0	6	Piloswine	125	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	9	move	0	0	m1	m2	8006,32441,15001,13662	Sandslash	56	266	0	tox	0	0	0	0	0	0	6	Piloswine	121	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	10	move	0	0	m1	m2	44107,51298,27442,18653	Sandslash	24	266	0	tox	0	0	0	0	0	0	6	Piloswine	116	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	11	move	0	0	m1	m1	4773,29630,23205,32007	Sandslash	0	266	1	fnt	0	0	0	0	0	0	5	Piloswine	135	316	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_1_6	12	switch	1	0	s4	-	33342,62628,45706,45446	Quagsire	297	297	0	-	0	0	0	0	0	0	5	Piloswine	135	316	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_1_6	13	move	0	0	m1	m2	41868,2782,49225,46123	Quagsire	279	297	0	tox	0	0	0	0	0	0	5	Piloswine	135	316	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_1_6	14	move	0	0	m1	s5	19345,44743,2344,16421	Quagsire	261	297	0	tox	0	0	0	0	0	0	5	Metagross	237	237	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_1_6	15	move	0	0	m2	m1	23691,18942,10591,61614	Quagsire	225	297	0	tox	0	0	0	0	0	0	5	Metagross	237	237	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	16	move	0	0	s5	m1	63322,60197,19804,13933	Roselia	24	254	0	-	0	0	0	0	0	0	5	Metagross	237	237	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	17	move	0	0	m3	m1	38298,14822,43786,4913	Roselia	0	254	1	fnt	0	0	0	0	0	0	4	Metagross	237	237	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_1_6	18	switch	1	0	s2	-	52617,25662,4540,27160	Raticate	143	232	0	-	0	0	0	0	0	0	4	Metagross	237	237	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_1_6	19	move	0	0	m3	s3	11534,207,18040,23084	Raticate	143	232	0	-	0	0	0	0	0	0	4	Linoone	125	261	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_1_6	20	move	0	0	m3	m1	46514,32982,33585,41977	Raticate	143	232	0	-	0	0	0	0	0	0	4	Linoone	0	261	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	1
+DEC	ab_1_6	21	switch	0	1	-	s4	50380,3228,56139,37120	Raticate	143	232	0	-	0	0	0	0	0	0	4	Seviper	272	272	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_1_6	22	move	0	0	s5	m2	1264,50395,22317,8852	Quagsire	147	297	0	tox	0	0	0	0	0	0	4	Seviper	272	272	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1_6	23	move	0	0	m2	m2	15724,57660,38075,33729	Quagsire	129	297	0	tox	0	0	0	0	0	0	4	Seviper	272	272	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1_6	24	move	0	0	m1	m3	43628,43240,9175,46895	Quagsire	41	297	0	tox	0	0	0	0	0	0	4	Seviper	272	272	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_1_6	25	move	0	0	m0	m3	2183,63504,26184,56275	Quagsire	0	297	1	fnt	0	0	0	0	0	0	3	Seviper	272	272	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_1_6	26	switch	1	0	s5	-	63137,31023,24398,17410	Raticate	143	232	0	-	0	0	0	0	0	0	3	Seviper	272	272	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_1_6	27	move	0	0	m2	m2	5284,54339,63019,24490	Raticate	34	232	0	-	0	0	0	0	0	0	3	Seviper	200	272	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1_6	28	move	0	0	m2	m3	26596,8463,63821,52818	Raticate	0	232	1	fnt	0	0	0	0	0	0	2	Seviper	11	272	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1_6	29	switch	1	0	s3	-	2104,10301,15232,59165	Houndoom	248	248	0	-	0	0	0	0	0	0	2	Seviper	28	272	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_1_6	30	move	0	0	m3	m2	5637,59855,8088,21611	Houndoom	142	248	0	-	0	0	0	0	0	0	2	Seviper	45	272	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1_6	31	move	0	0	m0	m2	52364,37049,56804,32079	Houndoom	142	248	0	-	0	0	0	0	0	0	2	Seviper	0	272	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1_6	32	switch	0	1	-	s1	44273,23643,37764,21998	Houndoom	157	248	0	-	0	0	0	0	0	0	2	Scyther	246	246	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1_6	33	move	0	0	m2	m1	51322,18014,39809,9378	Houndoom	172	248	0	-	0	0	0	0	0	0	2	Scyther	196	246	0	-	2	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1_6	34	move	0	0	m0	m1	9241,27598,62894,15729	Houndoom	187	248	0	-	0	0	0	0	0	0	2	Scyther	110	246	0	-	4	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1_6	35	move	0	0	s1	m0	13173,3329,7565,25211	Sneasel	0	240	1	fnt	0	0	0	0	0	0	1	Scyther	110	246	0	-	4	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1_6	36	switch	1	0	s1	-	47915,53809,59391,19530	Houndoom	202	248	0	-	0	0	0	0	0	0	1	Scyther	110	246	0	-	4	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1_6	37	move	0	0	m0	m1	42217,9710,50791,50745	Houndoom	217	248	0	-	0	0	0	0	0	0	1	Scyther	13	246	0	-	6	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1_6	38	move	0	0	m1	m1	55122,31878,29129,7741	Houndoom	217	248	0	-	0	0	0	0	0	0	1	Scyther	0	246	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_1_6	39	switch	0	1	-	s2	56729,5698,5465,12756	Houndoom	232	248	0	-	0	0	0	0	0	0	1	Rayquaza	262	262	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_1_6	40	move	0	0	m2	m1	23104,29802,7471,46234	Houndoom	0	248	1	-	0	0	0	0	0	0	0	Rayquaza	212	262	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+END	ab_1_6	1	p2
+L	ab_1_6	0	|t:|<NORMALIZED>
+L	ab_1_6	1	|gametype|singles
+L	ab_1_6	2	|player|p1|P1||
+L	ab_1_6	3	|player|p2|P2||
+L	ab_1_6	4	|gen|3
+L	ab_1_6	5	|tier|[Gen 3] Custom Game
+L	ab_1_6	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_1_6	7	|
+L	ab_1_6	8	|t:|<NORMALIZED>
+L	ab_1_6	9	|teamsize|p1|6
+L	ab_1_6	10	|teamsize|p2|6
+L	ab_1_6	11	|start
+L	ab_1_6	12	|switch|p1a: Raticate|Raticate, L85, M|232/232
+L	ab_1_6	13	|switch|p2a: Piloswine|Piloswine, L87, M|316/316
+L	ab_1_6	14	|turn|1
+L	ab_1_6	15	|
+L	ab_1_6	16	|t:|<NORMALIZED>
+L	ab_1_6	17	|move|p1a: Raticate|Facade|p2a: Piloswine
+L	ab_1_6	18	|-damage|p2a: Piloswine|213/316
+L	ab_1_6	19	|move|p2a: Piloswine|Ice Beam|p1a: Raticate
+L	ab_1_6	20	|-damage|p1a: Raticate|143/232
+L	ab_1_6	21	|
+L	ab_1_6	22	|-heal|p2a: Piloswine|232/316|[from] item: Leftovers
+L	ab_1_6	23	|upkeep
+L	ab_1_6	24	|turn|2
+L	ab_1_6	25	|
+L	ab_1_6	26	|t:|<NORMALIZED>
+L	ab_1_6	27	|switch|p1a: Roselia|Roselia, L97, M|254/254
+L	ab_1_6	28	|move|p2a: Piloswine|Protect||[still]
+L	ab_1_6	29	|-fail|p2a: Piloswine
+L	ab_1_6	30	|
+L	ab_1_6	31	|-heal|p2a: Piloswine|251/316|[from] item: Leftovers
+L	ab_1_6	32	|upkeep
+L	ab_1_6	33	|turn|3
+L	ab_1_6	34	|
+L	ab_1_6	35	|t:|<NORMALIZED>
+L	ab_1_6	36	|move|p1a: Roselia|Magical Leaf|p2a: Piloswine
+L	ab_1_6	37	|-supereffective|p2a: Piloswine
+L	ab_1_6	38	|-damage|p2a: Piloswine|15/316
+L	ab_1_6	39	|move|p2a: Piloswine|Toxic|p1a: Roselia
+L	ab_1_6	40	|debug|natural status immunity
+L	ab_1_6	41	|debug|immune to status
+L	ab_1_6	42	|-immune|p1a: Roselia
+L	ab_1_6	43	|debug|move failed because it did nothing
+L	ab_1_6	44	|
+L	ab_1_6	45	|-heal|p2a: Piloswine|34/316|[from] item: Leftovers
+L	ab_1_6	46	|upkeep
+L	ab_1_6	47	|turn|4
+L	ab_1_6	48	|
+L	ab_1_6	49	|t:|<NORMALIZED>
+L	ab_1_6	50	|move|p1a: Roselia|Synthesis|p1a: Roselia
+L	ab_1_6	51	|move|p2a: Piloswine|Earthquake|p1a: Roselia
+L	ab_1_6	52	|-damage|p1a: Roselia|105/254
+L	ab_1_6	53	|
+L	ab_1_6	54	|-heal|p1a: Roselia|120/254|[from] item: Leftovers
+L	ab_1_6	55	|-heal|p2a: Piloswine|53/316|[from] item: Leftovers
+L	ab_1_6	56	|upkeep
+L	ab_1_6	57	|turn|5
+L	ab_1_6	58	|
+L	ab_1_6	59	|t:|<NORMALIZED>
+L	ab_1_6	60	|switch|p1a: Sneasel|Sneasel, L88, M|240/240
+L	ab_1_6	61	|move|p2a: Piloswine|Toxic|p1a: Sneasel
+L	ab_1_6	62	|-status|p1a: Sneasel|tox
+L	ab_1_6	63	|
+L	ab_1_6	64	|-damage|p1a: Sneasel|225/240 tox|[from] psn
+L	ab_1_6	65	|-heal|p2a: Piloswine|72/316|[from] item: Leftovers
+L	ab_1_6	66	|upkeep
+L	ab_1_6	67	|turn|6
+L	ab_1_6	68	|
+L	ab_1_6	69	|t:|<NORMALIZED>
+L	ab_1_6	70	|move|p2a: Piloswine|Protect|p2a: Piloswine
+L	ab_1_6	71	|-singleturn|p2a: Piloswine|Protect
+L	ab_1_6	72	|move|p1a: Sneasel|Shadow Ball|p2a: Piloswine
+L	ab_1_6	73	|-activate|p2a: Piloswine|Protect
+L	ab_1_6	74	|
+L	ab_1_6	75	|-damage|p1a: Sneasel|195/240 tox|[from] psn
+L	ab_1_6	76	|-heal|p2a: Piloswine|91/316|[from] item: Leftovers
+L	ab_1_6	77	|upkeep
+L	ab_1_6	78	|turn|7
+L	ab_1_6	79	|
+L	ab_1_6	80	|t:|<NORMALIZED>
+L	ab_1_6	81	|move|p1a: Sneasel|Substitute|p1a: Sneasel
+L	ab_1_6	82	|-start|p1a: Sneasel|Substitute
+L	ab_1_6	83	|-damage|p1a: Sneasel|135/240 tox
+L	ab_1_6	84	|move|p2a: Piloswine|Toxic||[still]
+L	ab_1_6	85	|-fail|p2a: Piloswine
+L	ab_1_6	86	|debug|move failed because it did nothing
+L	ab_1_6	87	|
+L	ab_1_6	88	|-damage|p1a: Sneasel|90/240 tox|[from] psn
+L	ab_1_6	89	|-heal|p2a: Piloswine|110/316|[from] item: Leftovers
+L	ab_1_6	90	|upkeep
+L	ab_1_6	91	|turn|8
+L	ab_1_6	92	|
+L	ab_1_6	93	|t:|<NORMALIZED>
+L	ab_1_6	94	|switch|p1a: Sandslash|Sandslash, L85, M|266/266
+L	ab_1_6	95	|move|p2a: Piloswine|Earthquake|p1a: Sandslash
+L	ab_1_6	96	|-damage|p1a: Sandslash|175/266
+L	ab_1_6	97	|
+L	ab_1_6	98	|-heal|p2a: Piloswine|129/316|[from] item: Leftovers
+L	ab_1_6	99	|upkeep
+L	ab_1_6	100	|turn|9
+L	ab_1_6	101	|
+L	ab_1_6	102	|t:|<NORMALIZED>
+L	ab_1_6	103	|move|p1a: Sandslash|Rapid Spin|p2a: Piloswine
+L	ab_1_6	104	|-damage|p2a: Piloswine|106/316
+L	ab_1_6	105	|move|p2a: Piloswine|Earthquake|p1a: Sandslash
+L	ab_1_6	106	|-damage|p1a: Sandslash|72/266
+L	ab_1_6	107	|
+L	ab_1_6	108	|-heal|p2a: Piloswine|125/316|[from] item: Leftovers
+L	ab_1_6	109	|upkeep
+L	ab_1_6	110	|turn|10
+L	ab_1_6	111	|
+L	ab_1_6	112	|t:|<NORMALIZED>
+L	ab_1_6	113	|move|p1a: Sandslash|Rapid Spin|p2a: Piloswine
+L	ab_1_6	114	|-damage|p2a: Piloswine|102/316
+L	ab_1_6	115	|move|p2a: Piloswine|Toxic|p1a: Sandslash
+L	ab_1_6	116	|-status|p1a: Sandslash|tox
+L	ab_1_6	117	|
+L	ab_1_6	118	|-damage|p1a: Sandslash|56/266 tox|[from] psn
+L	ab_1_6	119	|-heal|p2a: Piloswine|121/316|[from] item: Leftovers
+L	ab_1_6	120	|upkeep
+L	ab_1_6	121	|turn|11
+L	ab_1_6	122	|
+L	ab_1_6	123	|t:|<NORMALIZED>
+L	ab_1_6	124	|move|p1a: Sandslash|Rapid Spin|p2a: Piloswine
+L	ab_1_6	125	|-damage|p2a: Piloswine|97/316
+L	ab_1_6	126	|move|p2a: Piloswine|Toxic|p1a: Sandslash
+L	ab_1_6	127	|-fail|p1a: Sandslash|tox
+L	ab_1_6	128	|debug|move failed because it did nothing
+L	ab_1_6	129	|
+L	ab_1_6	130	|-damage|p1a: Sandslash|24/266 tox|[from] psn
+L	ab_1_6	131	|-heal|p2a: Piloswine|116/316|[from] item: Leftovers
+L	ab_1_6	132	|upkeep
+L	ab_1_6	133	|turn|12
+L	ab_1_6	134	|
+L	ab_1_6	135	|t:|<NORMALIZED>
+L	ab_1_6	136	|move|p2a: Piloswine|Protect|p2a: Piloswine
+L	ab_1_6	137	|-singleturn|p2a: Piloswine|Protect
+L	ab_1_6	138	|move|p1a: Sandslash|Rapid Spin|p2a: Piloswine
+L	ab_1_6	139	|-activate|p2a: Piloswine|Protect
+L	ab_1_6	140	|
+L	ab_1_6	141	|-damage|p1a: Sandslash|0 fnt|[from] psn
+L	ab_1_6	142	|faint|p1a: Sandslash
+L	ab_1_6	143	|-heal|p2a: Piloswine|135/316|[from] item: Leftovers
+L	ab_1_6	144	|upkeep
+L	ab_1_6	145	|
+L	ab_1_6	146	|t:|<NORMALIZED>
+L	ab_1_6	147	|switch|p1a: Quagsire|Quagsire, L84, M|297/297
+L	ab_1_6	148	|turn|13
+L	ab_1_6	149	|
+L	ab_1_6	150	|t:|<NORMALIZED>
+L	ab_1_6	151	|move|p2a: Piloswine|Toxic|p1a: Quagsire
+L	ab_1_6	152	|-status|p1a: Quagsire|tox
+L	ab_1_6	153	|move|p1a: Quagsire|Toxic|p2a: Piloswine
+L	ab_1_6	154	|-status|p2a: Piloswine|tox
+L	ab_1_6	155	|
+L	ab_1_6	156	|-heal|p2a: Piloswine|154/316 tox|[from] item: Leftovers
+L	ab_1_6	157	|-damage|p2a: Piloswine|135/316 tox|[from] psn
+L	ab_1_6	158	|-damage|p1a: Quagsire|279/297 tox|[from] psn
+L	ab_1_6	159	|upkeep
+L	ab_1_6	160	|turn|14
+L	ab_1_6	161	|
+L	ab_1_6	162	|t:|<NORMALIZED>
+L	ab_1_6	163	|switch|p2a: Metagross|Metagross, L73|237/237
+L	ab_1_6	164	|move|p1a: Quagsire|Toxic|p2a: Metagross
+L	ab_1_6	165	|debug|natural status immunity
+L	ab_1_6	166	|debug|immune to status
+L	ab_1_6	167	|-immune|p2a: Metagross
+L	ab_1_6	168	|debug|move failed because it did nothing
+L	ab_1_6	169	|
+L	ab_1_6	170	|-heal|p1a: Quagsire|297/297 tox|[from] item: Leftovers
+L	ab_1_6	171	|-damage|p1a: Quagsire|261/297 tox|[from] psn
+L	ab_1_6	172	|upkeep
+L	ab_1_6	173	|turn|15
+L	ab_1_6	174	|
+L	ab_1_6	175	|t:|<NORMALIZED>
+L	ab_1_6	176	|move|p1a: Quagsire|Protect|p1a: Quagsire
+L	ab_1_6	177	|-singleturn|p1a: Quagsire|Protect
+L	ab_1_6	178	|move|p2a: Metagross|Rock Slide|p1a: Quagsire
+L	ab_1_6	179	|-activate|p1a: Quagsire|Protect
+L	ab_1_6	180	|
+L	ab_1_6	181	|-heal|p1a: Quagsire|279/297 tox|[from] item: Leftovers
+L	ab_1_6	182	|-damage|p1a: Quagsire|225/297 tox|[from] psn
+L	ab_1_6	183	|upkeep
+L	ab_1_6	184	|turn|16
+L	ab_1_6	185	|
+L	ab_1_6	186	|t:|<NORMALIZED>
+L	ab_1_6	187	|switch|p1a: Roselia|Roselia, L97, M|120/254
+L	ab_1_6	188	|move|p2a: Metagross|Rock Slide|p1a: Roselia
+L	ab_1_6	189	|-damage|p1a: Roselia|9/254
+L	ab_1_6	190	|
+L	ab_1_6	191	|-heal|p1a: Roselia|24/254|[from] item: Leftovers
+L	ab_1_6	192	|upkeep
+L	ab_1_6	193	|turn|17
+L	ab_1_6	194	|
+L	ab_1_6	195	|t:|<NORMALIZED>
+L	ab_1_6	196	|move|p1a: Roselia|Synthesis|p1a: Roselia
+L	ab_1_6	197	|-heal|p1a: Roselia|151/254
+L	ab_1_6	198	|move|p2a: Metagross|Rock Slide|p1a: Roselia
+L	ab_1_6	199	|-crit|p1a: Roselia
+L	ab_1_6	200	|-damage|p1a: Roselia|0 fnt
+L	ab_1_6	201	|faint|p1a: Roselia
+L	ab_1_6	202	|
+L	ab_1_6	203	|t:|<NORMALIZED>
+L	ab_1_6	204	|switch|p1a: Raticate|Raticate, L85, M|143/232
+L	ab_1_6	205	|
+L	ab_1_6	206	|upkeep
+L	ab_1_6	207	|turn|18
+L	ab_1_6	208	|
+L	ab_1_6	209	|t:|<NORMALIZED>
+L	ab_1_6	210	|switch|p2a: Linoone|Linoone, L82, M|261/261
+L	ab_1_6	211	|move|p1a: Raticate|Facade|p2a: Linoone
+L	ab_1_6	212	|-damage|p2a: Linoone|125/261
+L	ab_1_6	213	|
+L	ab_1_6	214	|upkeep
+L	ab_1_6	215	|turn|19
+L	ab_1_6	216	|
+L	ab_1_6	217	|t:|<NORMALIZED>
+L	ab_1_6	218	|move|p1a: Raticate|Facade|p2a: Linoone
+L	ab_1_6	219	|-damage|p2a: Linoone|0 fnt
+L	ab_1_6	220	|faint|p2a: Linoone
+L	ab_1_6	221	|
+L	ab_1_6	222	|t:|<NORMALIZED>
+L	ab_1_6	223	|switch|p2a: Seviper|Seviper, L88, M|272/272
+L	ab_1_6	224	|
+L	ab_1_6	225	|upkeep
+L	ab_1_6	226	|turn|20
+L	ab_1_6	227	|
+L	ab_1_6	228	|t:|<NORMALIZED>
+L	ab_1_6	229	|switch|p1a: Quagsire|Quagsire, L84, M|225/297 tox
+L	ab_1_6	230	|move|p2a: Seviper|Earthquake|p1a: Quagsire
+L	ab_1_6	231	|-damage|p1a: Quagsire|147/297 tox
+L	ab_1_6	232	|
+L	ab_1_6	233	|-heal|p1a: Quagsire|165/297 tox|[from] item: Leftovers
+L	ab_1_6	234	|-damage|p1a: Quagsire|147/297 tox|[from] psn
+L	ab_1_6	235	|upkeep
+L	ab_1_6	236	|turn|21
+L	ab_1_6	237	|
+L	ab_1_6	238	|t:|<NORMALIZED>
+L	ab_1_6	239	|move|p1a: Quagsire|Protect|p1a: Quagsire
+L	ab_1_6	240	|-singleturn|p1a: Quagsire|Protect
+L	ab_1_6	241	|move|p2a: Seviper|Earthquake|p1a: Quagsire
+L	ab_1_6	242	|-activate|p1a: Quagsire|Protect
+L	ab_1_6	243	|
+L	ab_1_6	244	|-heal|p1a: Quagsire|165/297 tox|[from] item: Leftovers
+L	ab_1_6	245	|-damage|p1a: Quagsire|129/297 tox|[from] psn
+L	ab_1_6	246	|upkeep
+L	ab_1_6	247	|turn|22
+L	ab_1_6	248	|
+L	ab_1_6	249	|t:|<NORMALIZED>
+L	ab_1_6	250	|move|p2a: Seviper|Sludge Bomb|p1a: Quagsire
+L	ab_1_6	251	|-resisted|p1a: Quagsire
+L	ab_1_6	252	|-damage|p1a: Quagsire|77/297 tox
+L	ab_1_6	253	|debug|move failed because it did nothing
+L	ab_1_6	254	|move|p1a: Quagsire|Toxic|p2a: Seviper
+L	ab_1_6	255	|debug|natural status immunity
+L	ab_1_6	256	|debug|immune to status
+L	ab_1_6	257	|-immune|p2a: Seviper
+L	ab_1_6	258	|debug|move failed because it did nothing
+L	ab_1_6	259	|
+L	ab_1_6	260	|-heal|p1a: Quagsire|95/297 tox|[from] item: Leftovers
+L	ab_1_6	261	|-damage|p1a: Quagsire|41/297 tox|[from] psn
+L	ab_1_6	262	|upkeep
+L	ab_1_6	263	|turn|23
+L	ab_1_6	264	|
+L	ab_1_6	265	|t:|<NORMALIZED>
+L	ab_1_6	266	|move|p2a: Seviper|Sludge Bomb|p1a: Quagsire
+L	ab_1_6	267	|-resisted|p1a: Quagsire
+L	ab_1_6	268	|-damage|p1a: Quagsire|0 fnt
+L	ab_1_6	269	|debug|move failed because it did nothing
+L	ab_1_6	270	|faint|p1a: Quagsire
+L	ab_1_6	271	|
+L	ab_1_6	272	|t:|<NORMALIZED>
+L	ab_1_6	273	|switch|p1a: Raticate|Raticate, L85, M|143/232
+L	ab_1_6	274	|
+L	ab_1_6	275	|upkeep
+L	ab_1_6	276	|turn|24
+L	ab_1_6	277	|
+L	ab_1_6	278	|t:|<NORMALIZED>
+L	ab_1_6	279	|move|p1a: Raticate|Shadow Ball|p2a: Seviper
+L	ab_1_6	280	|-damage|p2a: Seviper|183/272
+L	ab_1_6	281	|move|p2a: Seviper|Earthquake|p1a: Raticate
+L	ab_1_6	282	|-damage|p1a: Raticate|34/232
+L	ab_1_6	283	|
+L	ab_1_6	284	|-heal|p2a: Seviper|200/272|[from] item: Leftovers
+L	ab_1_6	285	|upkeep
+L	ab_1_6	286	|turn|25
+L	ab_1_6	287	|
+L	ab_1_6	288	|t:|<NORMALIZED>
+L	ab_1_6	289	|move|p1a: Raticate|Shadow Ball|p2a: Seviper
+L	ab_1_6	290	|-crit|p2a: Seviper
+L	ab_1_6	291	|-damage|p2a: Seviper|11/272
+L	ab_1_6	292	|move|p2a: Seviper|Sludge Bomb|p1a: Raticate
+L	ab_1_6	293	|-damage|p1a: Raticate|0 fnt
+L	ab_1_6	294	|faint|p1a: Raticate
+L	ab_1_6	295	|
+L	ab_1_6	296	|t:|<NORMALIZED>
+L	ab_1_6	297	|switch|p1a: Houndoom|Houndoom, L79, M|248/248
+L	ab_1_6	298	|
+L	ab_1_6	299	|-heal|p2a: Seviper|28/272|[from] item: Leftovers
+L	ab_1_6	300	|upkeep
+L	ab_1_6	301	|turn|26
+L	ab_1_6	302	|
+L	ab_1_6	303	|t:|<NORMALIZED>
+L	ab_1_6	304	|move|p1a: Houndoom|Will-O-Wisp|p2a: Seviper
+L	ab_1_6	305	|-status|p2a: Seviper|brn
+L	ab_1_6	306	|move|p2a: Seviper|Earthquake|p1a: Houndoom
+L	ab_1_6	307	|-supereffective|p1a: Houndoom
+L	ab_1_6	308	|-damage|p1a: Houndoom|127/248
+L	ab_1_6	309	|
+L	ab_1_6	310	|-heal|p1a: Houndoom|142/248|[from] item: Leftovers
+L	ab_1_6	311	|debug|shed skin
+L	ab_1_6	312	|-activate|p2a: Seviper|ability: Shed Skin
+L	ab_1_6	313	|-curestatus|p2a: Seviper|brn|[msg]
+L	ab_1_6	314	|-heal|p2a: Seviper|45/272|[from] item: Leftovers
+L	ab_1_6	315	|upkeep
+L	ab_1_6	316	|turn|27
+L	ab_1_6	317	|
+L	ab_1_6	318	|t:|<NORMALIZED>
+L	ab_1_6	319	|move|p1a: Houndoom|Crunch|p2a: Seviper
+L	ab_1_6	320	|-damage|p2a: Seviper|0 fnt
+L	ab_1_6	321	|faint|p2a: Seviper
+L	ab_1_6	322	|
+L	ab_1_6	323	|t:|<NORMALIZED>
+L	ab_1_6	324	|switch|p2a: Scyther|Scyther, L81, M|246/246
+L	ab_1_6	325	|
+L	ab_1_6	326	|-heal|p1a: Houndoom|157/248|[from] item: Leftovers
+L	ab_1_6	327	|upkeep
+L	ab_1_6	328	|turn|28
+L	ab_1_6	329	|
+L	ab_1_6	330	|t:|<NORMALIZED>
+L	ab_1_6	331	|debug|before turn callback: pursuit
+L	ab_1_6	332	|move|p2a: Scyther|Swords Dance|p2a: Scyther
+L	ab_1_6	333	|-boost|p2a: Scyther|atk|2
+L	ab_1_6	334	|move|p1a: Houndoom|Pursuit|p2a: Scyther
+L	ab_1_6	335	|-damage|p2a: Scyther|196/246
+L	ab_1_6	336	|
+L	ab_1_6	337	|-heal|p1a: Houndoom|172/248|[from] item: Leftovers
+L	ab_1_6	338	|upkeep
+L	ab_1_6	339	|turn|29
+L	ab_1_6	340	|
+L	ab_1_6	341	|t:|<NORMALIZED>
+L	ab_1_6	342	|move|p2a: Scyther|Swords Dance|p2a: Scyther
+L	ab_1_6	343	|-boost|p2a: Scyther|atk|2
+L	ab_1_6	344	|move|p1a: Houndoom|Crunch|p2a: Scyther
+L	ab_1_6	345	|-damage|p2a: Scyther|110/246
+L	ab_1_6	346	|
+L	ab_1_6	347	|-heal|p1a: Houndoom|187/248|[from] item: Leftovers
+L	ab_1_6	348	|upkeep
+L	ab_1_6	349	|turn|30
+L	ab_1_6	350	|
+L	ab_1_6	351	|t:|<NORMALIZED>
+L	ab_1_6	352	|switch|p1a: Sneasel|Sneasel, L88, M|90/240 tox
+L	ab_1_6	353	|move|p2a: Scyther|Aerial Ace|p1a: Sneasel
+L	ab_1_6	354	|-damage|p1a: Sneasel|0 fnt
+L	ab_1_6	355	|faint|p1a: Sneasel
+L	ab_1_6	356	|
+L	ab_1_6	357	|t:|<NORMALIZED>
+L	ab_1_6	358	|switch|p1a: Houndoom|Houndoom, L79, M|187/248
+L	ab_1_6	359	|
+L	ab_1_6	360	|-heal|p1a: Houndoom|202/248|[from] item: Leftovers
+L	ab_1_6	361	|upkeep
+L	ab_1_6	362	|turn|31
+L	ab_1_6	363	|
+L	ab_1_6	364	|t:|<NORMALIZED>
+L	ab_1_6	365	|move|p2a: Scyther|Swords Dance|p2a: Scyther
+L	ab_1_6	366	|-boost|p2a: Scyther|atk|2
+L	ab_1_6	367	|move|p1a: Houndoom|Crunch|p2a: Scyther
+L	ab_1_6	368	|-damage|p2a: Scyther|13/246
+L	ab_1_6	369	|
+L	ab_1_6	370	|-enditem|p2a: Scyther|Liechi Berry|[eat]
+L	ab_1_6	371	|-boost|p2a: Scyther|atk|0
+L	ab_1_6	372	|-heal|p1a: Houndoom|217/248|[from] item: Leftovers
+L	ab_1_6	373	|upkeep
+L	ab_1_6	374	|turn|32
+L	ab_1_6	375	|
+L	ab_1_6	376	|t:|<NORMALIZED>
+L	ab_1_6	377	|move|p2a: Scyther|Swords Dance|p2a: Scyther
+L	ab_1_6	378	|-boost|p2a: Scyther|atk|0
+L	ab_1_6	379	|debug|move failed because it did nothing
+L	ab_1_6	380	|move|p1a: Houndoom|Fire Blast|p2a: Scyther
+L	ab_1_6	381	|-supereffective|p2a: Scyther
+L	ab_1_6	382	|-damage|p2a: Scyther|0 fnt
+L	ab_1_6	383	|faint|p2a: Scyther
+L	ab_1_6	384	|
+L	ab_1_6	385	|t:|<NORMALIZED>
+L	ab_1_6	386	|switch|p2a: Rayquaza|Rayquaza, L70|262/262
+L	ab_1_6	387	|
+L	ab_1_6	388	|-heal|p1a: Houndoom|232/248|[from] item: Leftovers
+L	ab_1_6	389	|upkeep
+L	ab_1_6	390	|turn|33
+L	ab_1_6	391	|
+L	ab_1_6	392	|t:|<NORMALIZED>
+L	ab_1_6	393	|debug|before turn callback: pursuit
+L	ab_1_6	394	|move|p1a: Houndoom|Pursuit|p2a: Rayquaza
+L	ab_1_6	395	|-damage|p2a: Rayquaza|212/262
+L	ab_1_6	396	|move|p2a: Rayquaza|Earthquake|p1a: Houndoom
+L	ab_1_6	397	|-supereffective|p1a: Houndoom
+L	ab_1_6	398	|-damage|p1a: Houndoom|0 fnt
+L	ab_1_6	399	|faint|p1a: Houndoom
+L	ab_1_6	400	|
+L	ab_1_6	401	|win|P2

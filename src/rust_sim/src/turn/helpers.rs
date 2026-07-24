@@ -658,6 +658,29 @@ impl crate::state::BattleState {
                         None => -1,
                     };
                     self.log.unboost_atk_applied(&foe_ref, applied.unsigned_abs());
+                    // WHITE HERB restore during the LEAD framing (`gen3_white_herb_v1`,
+                    // `whiteherb.onAnySwitchIn`): a SLOWER White Herb holder dropped by this
+                    // (faster) Intimidate lead restores at its own switch-in, emitting
+                    // `-enditem`/`-clearnegativeboost` RIGHT AFTER the `-unboost` (the sim's byte
+                    // order — the omniscient byte-fuzz find ab_6_13). FRAMING-ONLY (`intim_atk_pre
+                    // .is_none()` — the lead reconstruction; a MID-BATTLE Intimidate switch-in does
+                    // NOT restore here, since the holder's onAnySwitchIn already fired BEFORE this
+                    // entrant's Start → no drop yet → it restores at `onAnyAfterMove` / the order-29
+                    // residual). The STATE restore already fired in `start_with_switchins`; this is
+                    // the reconstructed emission, keyed on the dropped foe being a CONSUMED White
+                    // Herb holder (SET item whiteherb, current item now empty). DRAW-FREE.
+                    if intim_atk_pre.is_none() {
+                        let set_white_herb = dex
+                            .item(&to_id(&self.sides[foe].pokemon[foe_slot].set.item))
+                            .map_or(false, |i| i.boost_restore);
+                        let consumed =
+                            to_id(&self.sides[foe].pokemon[foe_slot].item).is_empty();
+                        if set_white_herb && consumed {
+                            self.log.push_raw(format!("|-enditem|{foe_ref}|White Herb"));
+                            self.log
+                                .push_raw(format!("|-clearnegativeboost|{foe_ref}|[silent]"));
+                        }
+                    }
                 }
             }
             "sandstream" | "drizzle" | "drought" => {

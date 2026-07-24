@@ -660,6 +660,24 @@ impl crate::state::BattleState {
                 });
             }
 
+            // WHITE HERB (`gen3_white_herb_v1`): order **29** (the LAST residual, its own group
+            // after Truant 27). Gathered UNCONDITIONALLY for an active White Herb holder (the item
+            // registers its onResidual regardless of the boost state — the `boosts<0` check lives in
+            // the apply), so it participates in the residual tie-shuffle. This is the site that
+            // restores an Intimidate-switch-in drop on a turn the holder does NOT move (a
+            // forced-replacement / no-move turn — the omniscient byte-fuzz find ab_7_4). subOrder is
+            // unset in the sim (undefined); its only tie is a two-White-Herb-holder equal-speed board.
+            if dex.item(&to_id(&mon.item)).map_or(false, |i| i.boost_restore) {
+                handlers.push(EventHandler {
+                    order: WHITE_HERB_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: 0,
+                    effect_order: 0,
+                    handler: ResidualAction::WhiteHerb { side, slot },
+                });
+            }
+
             // --- THE SIDE'S SLOT CONDITIONS (`findSideEventHandlers(side, 'onResidual',
             //     …, active)`), gathered PER-ACTIVE AFTER that active's pokemon handlers
             //     (`gen3_leftovers_slotcond_gather_order_v1`, the R2 fix — see the
@@ -772,6 +790,15 @@ impl crate::state::BattleState {
                     }
                     let m = &mut self.sides[side].pokemon[slot];
                     m.truant_turn = !m.truant_turn;
+                }
+                ResidualAction::WhiteHerb { side, slot } => {
+                    // `whiteherb.onResidual` → its `onStart` (restore negatives + consume, emitting
+                    // `-enditem`/`-clearnegativeboost`; a no-op when no boost is negative). DRAW-FREE.
+                    // The fainted guard mirrors `if (handler.effectHolder.fainted) continue`.
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    self.white_herb_restore(side, slot, dex);
                 }
                 ResidualAction::StatusDot { side, slot } => {
                     if self.sides[side].pokemon[slot].fainted {

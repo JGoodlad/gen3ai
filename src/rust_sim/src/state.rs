@@ -286,6 +286,17 @@ pub struct MonState {
     /// set it to a slot (Disable into a Struggler fails), so it stays as it was. (We store the
     /// SLOT rather than the move id since Disable disables the slot; PP/legality are per-slot.)
     pub last_move: Option<usize>,
+    /// `gen3_mimic_disable_self_overwrite_v1` — TRUE iff the LAST move this mon used was a
+    /// **Mimic that SUCCESSFULLY overwrote its own slot** (so the slot now holds the COPIED
+    /// move, not `mimic`). Showdown's Disable stores the used move's **ID** (`lastMove.id`)
+    /// and its `onStart` looks for a moveSlot with that id: for a Mimic-overwrite the used id
+    /// (`"mimic"`) is no longer in any slot → `onStart` returns false → **Disable FAILS**
+    /// (draw-consumed: the `random(2,6)` still drew). The port stores `last_move` as a SLOT
+    /// index, so a naive read would disable whatever move now occupies the Mimic slot (the
+    /// copied move) — the ab_6_16 divergence. This flag lets the Disable arm reproduce the
+    /// sim's `!hasMove` fail. Set FALSE by every move at `run_move` (before the body), TRUE by
+    /// the Mimic success block AFTER the overlay; cleared on switch-out (like `last_move`).
+    pub last_move_was_self_overwrite: bool,
     /// The **CHOICE-LOCK** slot (`gen3_pp_tracking_v1`, the `choicelock` volatile):
     /// `Some(k)` when this mon holds a Choice item (gen-3: only **Choice Band**) and has
     /// already used move slot `k` — so it is LOCKED to slot `k` and every OTHER slot is
@@ -902,6 +913,21 @@ impl MonState {
         let move_pp = move_maxpp.clone();
         let item = set.item.clone();
         let ability = set.ability.clone();
+        // FAIL-LOUD GIGO guard: FORECAST (Castform) is DEFERRED / UNMODELED. Its
+        // `onWeatherChange` swaps Castform's forme + TYPE under rain/sun/hail — a mechanic
+        // the port does not model, so the engine would SILENTLY treat `forecast` as a no-op
+        // (no handler matches the id) and desync the moment weather touched a Castform. Better
+        // a loud crash than a silent mismodel: PANIC at construction (this catches ACTIVE and
+        // BENCH mons alike, before any turn runs). The byte-fuzz team generators/adapters
+        // REJECT every Forecast/Castform team upstream (`gen_e2e_fuzz.js` / `ab_fuzz.js`), so
+        // this panic never fires on the modeled path — it only trips a GIGO team. See
+        // `src/rust_sim/CLAUDE.md` (Forecast/deferred section).
+        if crate::dex::to_id(&ability) == "forecast" {
+            panic!(
+                "MonState::from_set(slot {position}): forecast (Castform) is unmodeled — \
+                 GIGO guard; reject the team upstream"
+            );
+        }
         let hp_bp = hidden_power_bp(&set.ivs); // read before `set` is moved into the struct
         let set_gender = set.gender; // read before `set` is moved into the struct
         Ok(MonState {
@@ -929,6 +955,7 @@ impl MonState {
             taunt: None,
             disable: None,
             last_move: None,
+            last_move_was_self_overwrite: false,
             move_pp,
             move_maxpp,
             choice_locked_move: None,
@@ -1373,16 +1400,34 @@ impl BattleState {
     pub fn start_with_switchins(opts: &BattleOptions, dex: &Dex) -> Result<BattleState, String> {
         let mut state = BattleState::start(opts, dex)?;
         state.run_start_switchins();
-        // WHITE HERB (`gen3_white_herb_v1`, onAnySwitchIn): a LEAD whose Atk was dropped by the
-        // opposing lead's Intimidate restores it immediately + consumes the item. `run_start_
-        // switchins` is the golden/seed convention path (seeds at the post-construction seed);
-        // DRAW-FREE, so the seed convention is unaffected. (The BRIDGE's turn-0 construction runs
-        // the leads through `run_switch`, which has its own White Herb check — this covers the
-        // `start_with_switchins` path used by every committed seed golden. A no-op unless a lead
-        // holds White Herb AND has a negative boost, so all existing tests are untouched.)
+        // WHITE HERB (`gen3_white_herb_v1`, `whiteherb.onAnySwitchIn` priority −2): a LEAD whose
+        // Atk was dropped by the opposing lead's Intimidate restores it + consumes the item —
+        // but ONLY when the holder's own switch-in fires AFTER that drop. White Herb's onAnySwitchIn
+        // runs at EACH lead's `runEvent('SwitchIn')`, which PRECEDES that lead's ability `Start`
+        // (Intimidate). So a holder restores at construction iff its runSwitch is processed AFTER
+        // the Intimidate foe's — i.e. the holder is SLOWER (the two leads' runSwitch dequeue
+        // faster-first; a tie keeps side order, side 0 before side 1). A FASTER holder's switch-in
+        // precedes the foe's Intimidate Start → no drop yet → NOT restored at construction; it
+        // restores at turn-1's order-29 residual (`ResidualAction::WhiteHerb`) instead. The
+        // slower-holder case emits its `-enditem`/`-clearnegativeboost` in the framing (see
+        // `emit_ability_start_lines`). Probe-settled bit-for-bit vs the sim (the omniscient byte-fuzz
+        // finds ab_6_13 [lead, restore before |turn|1] + ab_7_4 [mid-battle, restore at the residual]).
+        // DRAW-FREE (the seed convention is unaffected); a no-op unless a lead holds White Herb AND
+        // was Intimidate-dropped by a FASTER foe, so all existing tests are untouched.
         for side in 0..state.sides.len() {
             let slot = state.sides[side].active;
-            state.white_herb_restore(side, slot, dex);
+            let foe = 1 - side;
+            let foe_slot = state.sides[foe].active;
+            let holder_spe = state.sides[side].pokemon[slot].stats[5];
+            let foe_spe = state.sides[foe].pokemon[foe_slot].stats[5];
+            // The holder's runSwitch resolves AFTER the foe's iff it is SLOWER (faster-first; a
+            // raw-Speed tie keeps side order → side 0 before side 1). `white_herb_restore` no-ops
+            // unless the holder actually has a negative boost (i.e. was Intimidate-dropped).
+            let holder_switch_in_after_foe =
+                holder_spe < foe_spe || (holder_spe == foe_spe && side > foe);
+            if holder_switch_in_after_foe {
+                state.white_herb_restore(side, slot, dex);
+            }
         }
         Ok(state)
     }

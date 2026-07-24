@@ -1,0 +1,296 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=55667 run_id=rmry3vbgm chunk=7
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_7_4
+TEAM	ab_7_4	p1	Pidgeot||WikiBerry|KeenEye|Frustration,Toxic,Gust,Swift|Naughty|120,8,112,180,32,56|M|12,25,29,27,28,19|||]Slowpoke||PoisonBarb|OwnTempo|Psychic,Protect,Frustration,Swift|Lax|,164,140,88,116,|M|2,8,22,26,2,4|||]Clamperl||FigyBerry|ShellArmor|Waterfall,IcyWind,Endure,Facade|Serious|148,56,64,32,,208|M|15,18,8,16,23,23|||]Xatu||WhiteHerb|Synchronize|Psychic,Toxic,GigaDrain,Peck|Naive|36,164,68,100,128,12|M|5,9,14,22,3,2|||]Murkrow||Stick|Insomnia|DoubleEdge,IcyWind,SteelWing,CalmMind|Brave|100,,148,84,116,60|M|1,11,7,26,19,4|||]Poliwag||GanlonBerry|Damp|Facade,BodySlam,Hypnosis,BubbleBeam|Bashful|184,,,96,164,64|M|20,22,4,17,18,23|||
+TEAM	ab_7_4	p2	Heracross||AguavBerry|Swarm|RockSmash,Harden,TakeDown,Cut|Hasty|124,40,32,76,108,128|M|5,0,15,21,3,7|||]Arbok||ThickClub|Intimidate|IronTail,HyperBeam,Substitute,Frustration|Jolly|128,,56,208,4,112|M|1,7,27,6,18,19|||]Mightyena||LaxIncense|Intimidate|BodySlam,Substitute,Rest,PsychUp|Sassy|64,96,,172,44,132|M|24,7,2,16,10,7|||]Jigglypuff||PechaBerry|CuteCharm|Thunder,Counter,HyperVoice,DynamicPunch|Lonely|,140,136,48,184,|M|3,10,24,14,11,14|||]Magcargo||DragonFang|MagmaArmor|Earthquake,Protect,Return,Strength|Naughty|,80,132,,152,144|M|13,30,14,28,26,25|||]Roselia||SilverPowder|NaturalCure|MegaDrain,LeechSeed,PsychUp,GigaDrain|Modest|104,112,164,,,128|M|7,12,27,24,29,9|||
+FMT	ab_7_4	gen3customgame
+INIT	ab_7_4	56180,10875,8381,47738	3568880866
+DEC	ab_7_4	0	move	0	0	m3	m2	23541,1592,1924,24560	Pidgeot	230	318	0	-	0	0	0	0	0	0	6	Heracross	194	306	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_7_4	1	move	0	0	m1	m3	29733,9334,63250,8407	Pidgeot	183	318	0	-	0	0	0	0	0	0	6	Heracross	175	306	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_7_4	2	move	0	0	s2	m0	16974,47398,46915,14026	Clamperl	202	232	0	-	0	-1	0	0	0	0	6	Heracross	137	306	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_7_4	3	move	0	0	m1	s3	47649,20524,53294,33465	Clamperl	202	232	0	-	0	-1	0	0	0	0	6	Jigglypuff	201	343	0	-	0	0	0	0	-1	0	6	p2	0	0	0	0	0
+DEC	ab_7_4	4	move	0	0	m1	m1	51119,2968,51829,10324	Clamperl	202	232	0	-	0	-1	0	0	0	0	6	Jigglypuff	135	343	0	-	0	0	0	0	-2	0	6	p1	0	0	0	1	0
+DEC	ab_7_4	5	move	0	0	m2	m3	13608,65130,30029,11781	Clamperl	140	232	0	-	0	-1	0	0	0	4	6	Jigglypuff	135	343	0	-	0	0	0	0	-2	0	6	p1	0	0	0	0	1
+DEC	ab_7_4	6	move	0	0	m2	m1	21379,2426,20604,29454	Clamperl	99	232	0	-	0	-1	0	0	0	3	6	Jigglypuff	135	343	0	-	0	0	0	0	-2	0	6	p1	0	0	0	1	1
+DEC	ab_7_4	7	move	0	0	m0	m1	29967,37577,16926,48275	Clamperl	57	232	0	-	0	-1	0	0	0	2	6	Jigglypuff	135	343	0	-	0	0	0	0	-2	0	6	p1	0	0	0	1	0
+DEC	ab_7_4	8	move	0	0	m3	m2	57023,46110,61291,11035	Clamperl	0	232	1	fnt	0	0	0	0	0	0	5	Jigglypuff	43	343	0	-	0	0	0	0	-2	0	6	p1	0	0	0	0	0
+DEC	ab_7_4	9	switch	1	0	s3	-	47320,2841,24893,4970	Xatu	254	254	0	-	0	0	0	0	0	0	5	Jigglypuff	43	343	0	-	0	0	0	0	-2	0	6	none	0	0	0	0	0
+DEC	ab_7_4	10	move	0	0	m1	m2	2181,16743,34020,48089	Xatu	161	254	0	-	0	0	0	0	0	0	5	Jigglypuff	43	343	0	-	0	0	0	0	-2	0	6	p1	0	0	0	0	0
+DEC	ab_7_4	11	move	0	0	m0	m3	55564,31272,23834,63965	Xatu	161	254	0	-	0	0	0	0	0	0	5	Jigglypuff	0	343	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_7_4	12	switch	0	1	-	s2	15349,19479,15501,30708	Xatu	161	254	0	-	0	0	0	0	0	0	5	Mightyena	290	290	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_7_4	13	move	0	0	m2	s3	3216,59768,50735,41544	Xatu	172	254	0	-	0	0	0	0	0	0	5	Heracross	133	306	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_7_4	14	move	0	0	m2	m1	38996,50748,38403,61276	Xatu	184	254	0	-	0	0	0	0	0	0	5	Heracross	71	306	0	tox	0	1	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_7_4	15	move	0	0	m1	m0	6512,28002,63752,45154	Xatu	175	254	0	-	0	0	0	0	0	0	5	Heracross	14	306	0	tox	0	1	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_7_4	16	move	0	0	m1	m1	9868,26018,4518,42861	Xatu	175	254	0	-	0	0	0	0	0	0	5	Heracross	0	306	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_7_4	17	switch	0	1	-	s4	6344,56212,46715,452	Xatu	175	254	0	-	0	0	0	0	0	0	5	Magcargo	223	223	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_7_4	18	move	0	0	m1	m3	7886,42437,46019,35643	Xatu	111	254	0	-	0	0	0	0	0	0	5	Magcargo	210	223	0	tox	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_7_4	19	move	0	0	m0	m2	45799,38104,42381,60611	Xatu	34	254	0	-	0	0	0	0	0	0	5	Magcargo	60	223	0	tox	0	0	0	0	0	0	4	p1	0	0	0	1	0
+DEC	ab_7_4	20	move	0	0	s1	m1	38494,23237,558,25266	Slowpoke	292	292	0	-	0	0	0	0	0	0	5	Magcargo	21	223	0	tox	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_7_4	21	move	0	0	m3	s1	45900,18742,22393,39	Slowpoke	292	292	0	-	-1	0	0	0	0	0	5	Arbok	165	263	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_7_4	22	move	0	0	m0	m3	13789,38950,44474,8239	Slowpoke	289	292	0	-	-1	0	0	0	0	0	5	Arbok	6	263	0	-	0	0	0	-1	0	0	4	p2	0	0	0	1	0
+DEC	ab_7_4	23	move	0	0	s5	m0	35196,16001,33581,57602	Poliwag	172	256	0	-	0	0	0	0	0	0	5	Arbok	6	263	0	-	0	0	0	-1	0	0	4	p1	0	0	0	0	0
+DEC	ab_7_4	24	move	0	0	m0	m1	45251,44605,54539,59191	Poliwag	0	256	1	fnt	0	0	0	0	0	0	4	Arbok	6	263	0	-	0	0	0	-1	0	0	4	p2	0	0	0	0	0
+DEC	ab_7_4	25	switch	1	0	s4	-	18729,50169,62230,18038	Murkrow	256	256	0	-	0	0	0	0	0	0	4	Arbok	6	263	0	-	0	0	0	-1	0	0	4	none	0	0	0	0	0
+END	ab_7_4	0	none
+L	ab_7_4	0	|t:|<NORMALIZED>
+L	ab_7_4	1	|gametype|singles
+L	ab_7_4	2	|player|p1|P1||
+L	ab_7_4	3	|player|p2|P2||
+L	ab_7_4	4	|gen|3
+L	ab_7_4	5	|tier|[Gen 3] Custom Game
+L	ab_7_4	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_7_4	7	|
+L	ab_7_4	8	|t:|<NORMALIZED>
+L	ab_7_4	9	|teamsize|p1|6
+L	ab_7_4	10	|teamsize|p2|6
+L	ab_7_4	11	|start
+L	ab_7_4	12	|switch|p1a: Pidgeot|Pidgeot, M|318/318
+L	ab_7_4	13	|switch|p2a: Heracross|Heracross, M|306/306
+L	ab_7_4	14	|turn|1
+L	ab_7_4	15	|
+L	ab_7_4	16	|t:|<NORMALIZED>
+L	ab_7_4	17	|move|p2a: Heracross|Take Down|p1a: Pidgeot
+L	ab_7_4	18	|-damage|p1a: Pidgeot|230/318
+L	ab_7_4	19	|-damage|p2a: Heracross|284/306|[from] Recoil|[of] p1a: Pidgeot
+L	ab_7_4	20	|move|p1a: Pidgeot|Swift|p2a: Heracross
+L	ab_7_4	21	|-damage|p2a: Heracross|194/306
+L	ab_7_4	22	|
+L	ab_7_4	23	|upkeep
+L	ab_7_4	24	|turn|2
+L	ab_7_4	25	|
+L	ab_7_4	26	|t:|<NORMALIZED>
+L	ab_7_4	27	|move|p2a: Heracross|Cut|p1a: Pidgeot
+L	ab_7_4	28	|-damage|p1a: Pidgeot|183/318
+L	ab_7_4	29	|move|p1a: Pidgeot|Toxic|p2a: Heracross
+L	ab_7_4	30	|-status|p2a: Heracross|tox
+L	ab_7_4	31	|
+L	ab_7_4	32	|-damage|p2a: Heracross|175/306 tox|[from] psn
+L	ab_7_4	33	|upkeep
+L	ab_7_4	34	|turn|3
+L	ab_7_4	35	|
+L	ab_7_4	36	|t:|<NORMALIZED>
+L	ab_7_4	37	|switch|p1a: Clamperl|Clamperl, M|232/232
+L	ab_7_4	38	|move|p2a: Heracross|Rock Smash|p1a: Clamperl
+L	ab_7_4	39	|-damage|p1a: Clamperl|202/232
+L	ab_7_4	40	|-unboost|p1a: Clamperl|def|1
+L	ab_7_4	41	|
+L	ab_7_4	42	|-damage|p2a: Heracross|137/306 tox|[from] psn
+L	ab_7_4	43	|upkeep
+L	ab_7_4	44	|turn|4
+L	ab_7_4	45	|
+L	ab_7_4	46	|t:|<NORMALIZED>
+L	ab_7_4	47	|switch|p2a: Jigglypuff|Jigglypuff, M|343/343
+L	ab_7_4	48	|move|p1a: Clamperl|Icy Wind|p2a: Jigglypuff
+L	ab_7_4	49	|-crit|p2a: Jigglypuff
+L	ab_7_4	50	|-damage|p2a: Jigglypuff|201/343
+L	ab_7_4	51	|-unboost|p2a: Jigglypuff|spe|1
+L	ab_7_4	52	|
+L	ab_7_4	53	|upkeep
+L	ab_7_4	54	|turn|5
+L	ab_7_4	55	|
+L	ab_7_4	56	|t:|<NORMALIZED>
+L	ab_7_4	57	|debug|before turn callback: counter
+L	ab_7_4	58	|move|p1a: Clamperl|Icy Wind|p2a: Jigglypuff
+L	ab_7_4	59	|-damage|p2a: Jigglypuff|135/343
+L	ab_7_4	60	|-unboost|p2a: Jigglypuff|spe|1
+L	ab_7_4	61	|move|p2a: Jigglypuff|Counter|p1a: Clamperl
+L	ab_7_4	62	|
+L	ab_7_4	63	|upkeep
+L	ab_7_4	64	|turn|6
+L	ab_7_4	65	|
+L	ab_7_4	66	|t:|<NORMALIZED>
+L	ab_7_4	67	|move|p1a: Clamperl|Endure|p1a: Clamperl
+L	ab_7_4	68	|-singleturn|p1a: Clamperl|move: Endure
+L	ab_7_4	69	|move|p2a: Jigglypuff|Dynamic Punch|p1a: Clamperl
+L	ab_7_4	70	|-damage|p1a: Clamperl|111/232
+L	ab_7_4	71	|-start|p1a: Clamperl|confusion
+L	ab_7_4	72	|
+L	ab_7_4	73	|-enditem|p1a: Clamperl|Figy Berry|[eat]
+L	ab_7_4	74	|-heal|p1a: Clamperl|140/232|[from] item: Figy Berry
+L	ab_7_4	75	|upkeep
+L	ab_7_4	76	|turn|7
+L	ab_7_4	77	|
+L	ab_7_4	78	|t:|<NORMALIZED>
+L	ab_7_4	79	|debug|before turn callback: counter
+L	ab_7_4	80	|-activate|p1a: Clamperl|confusion
+L	ab_7_4	81	|-damage|p1a: Clamperl|99/232|[from] confusion
+L	ab_7_4	82	|move|p2a: Jigglypuff|Counter|p1a: Clamperl
+L	ab_7_4	83	|
+L	ab_7_4	84	|upkeep
+L	ab_7_4	85	|turn|8
+L	ab_7_4	86	|
+L	ab_7_4	87	|t:|<NORMALIZED>
+L	ab_7_4	88	|debug|before turn callback: counter
+L	ab_7_4	89	|-activate|p1a: Clamperl|confusion
+L	ab_7_4	90	|-damage|p1a: Clamperl|57/232|[from] confusion
+L	ab_7_4	91	|move|p2a: Jigglypuff|Counter|p1a: Clamperl
+L	ab_7_4	92	|
+L	ab_7_4	93	|upkeep
+L	ab_7_4	94	|turn|9
+L	ab_7_4	95	|
+L	ab_7_4	96	|t:|<NORMALIZED>
+L	ab_7_4	97	|-activate|p1a: Clamperl|confusion
+L	ab_7_4	98	|move|p1a: Clamperl|Facade|p2a: Jigglypuff
+L	ab_7_4	99	|-damage|p2a: Jigglypuff|43/343
+L	ab_7_4	100	|move|p2a: Jigglypuff|Hyper Voice|p1a: Clamperl
+L	ab_7_4	101	|-damage|p1a: Clamperl|0 fnt
+L	ab_7_4	102	|faint|p1a: Clamperl
+L	ab_7_4	103	|
+L	ab_7_4	104	|t:|<NORMALIZED>
+L	ab_7_4	105	|switch|p1a: Xatu|Xatu, M|254/254
+L	ab_7_4	106	|
+L	ab_7_4	107	|upkeep
+L	ab_7_4	108	|turn|10
+L	ab_7_4	109	|
+L	ab_7_4	110	|t:|<NORMALIZED>
+L	ab_7_4	111	|move|p1a: Xatu|Toxic|p2a: Jigglypuff
+L	ab_7_4	112	|-status|p2a: Jigglypuff|tox
+L	ab_7_4	113	|-enditem|p2a: Jigglypuff|Pecha Berry|[eat]
+L	ab_7_4	114	|-curestatus|p2a: Jigglypuff|tox|[msg]
+L	ab_7_4	115	|move|p2a: Jigglypuff|Hyper Voice|p1a: Xatu
+L	ab_7_4	116	|-damage|p1a: Xatu|161/254
+L	ab_7_4	117	|
+L	ab_7_4	118	|upkeep
+L	ab_7_4	119	|turn|11
+L	ab_7_4	120	|
+L	ab_7_4	121	|t:|<NORMALIZED>
+L	ab_7_4	122	|move|p1a: Xatu|Psychic|p2a: Jigglypuff
+L	ab_7_4	123	|-damage|p2a: Jigglypuff|0 fnt
+L	ab_7_4	124	|faint|p2a: Jigglypuff
+L	ab_7_4	125	|
+L	ab_7_4	126	|t:|<NORMALIZED>
+L	ab_7_4	127	|switch|p2a: Mightyena|Mightyena, M|290/290
+L	ab_7_4	128	|-ability|p2a: Mightyena|Intimidate|boost
+L	ab_7_4	129	|-unboost|p1a: Xatu|atk|1
+L	ab_7_4	130	|
+L	ab_7_4	131	|-enditem|p1a: Xatu|White Herb
+L	ab_7_4	132	|-clearnegativeboost|p1a: Xatu|[silent]
+L	ab_7_4	133	|upkeep
+L	ab_7_4	134	|turn|12
+L	ab_7_4	135	|
+L	ab_7_4	136	|t:|<NORMALIZED>
+L	ab_7_4	137	|switch|p2a: Heracross|Heracross, M|137/306 tox
+L	ab_7_4	138	|move|p1a: Xatu|Giga Drain|p2a: Heracross
+L	ab_7_4	139	|-resisted|p2a: Heracross
+L	ab_7_4	140	|-damage|p2a: Heracross|114/306 tox
+L	ab_7_4	141	|-heal|p1a: Xatu|172/254|[from] drain|[of] p2a: Heracross
+L	ab_7_4	142	|
+L	ab_7_4	143	|-enditem|p2a: Heracross|Aguav Berry|[eat]
+L	ab_7_4	144	|-heal|p2a: Heracross|152/306 tox|[from] item: Aguav Berry
+L	ab_7_4	145	|-damage|p2a: Heracross|133/306 tox|[from] psn
+L	ab_7_4	146	|upkeep
+L	ab_7_4	147	|turn|13
+L	ab_7_4	148	|
+L	ab_7_4	149	|t:|<NORMALIZED>
+L	ab_7_4	150	|move|p2a: Heracross|Harden|p2a: Heracross
+L	ab_7_4	151	|-boost|p2a: Heracross|def|1
+L	ab_7_4	152	|move|p1a: Xatu|Giga Drain|p2a: Heracross
+L	ab_7_4	153	|-resisted|p2a: Heracross
+L	ab_7_4	154	|-damage|p2a: Heracross|109/306 tox
+L	ab_7_4	155	|-heal|p1a: Xatu|184/254|[from] drain|[of] p2a: Heracross
+L	ab_7_4	156	|
+L	ab_7_4	157	|-damage|p2a: Heracross|71/306 tox|[from] psn
+L	ab_7_4	158	|upkeep
+L	ab_7_4	159	|turn|14
+L	ab_7_4	160	|
+L	ab_7_4	161	|t:|<NORMALIZED>
+L	ab_7_4	162	|move|p2a: Heracross|Rock Smash|p1a: Xatu
+L	ab_7_4	163	|-resisted|p1a: Xatu
+L	ab_7_4	164	|-damage|p1a: Xatu|175/254
+L	ab_7_4	165	|move|p1a: Xatu|Toxic|p2a: Heracross
+L	ab_7_4	166	|-fail|p2a: Heracross|tox
+L	ab_7_4	167	|debug|move failed because it did nothing
+L	ab_7_4	168	|
+L	ab_7_4	169	|-damage|p2a: Heracross|14/306 tox|[from] psn
+L	ab_7_4	170	|upkeep
+L	ab_7_4	171	|turn|15
+L	ab_7_4	172	|
+L	ab_7_4	173	|t:|<NORMALIZED>
+L	ab_7_4	174	|move|p2a: Heracross|Harden|p2a: Heracross
+L	ab_7_4	175	|-boost|p2a: Heracross|def|1
+L	ab_7_4	176	|move|p1a: Xatu|Toxic|p2a: Heracross
+L	ab_7_4	177	|-fail|p2a: Heracross|tox
+L	ab_7_4	178	|debug|move failed because it did nothing
+L	ab_7_4	179	|
+L	ab_7_4	180	|-damage|p2a: Heracross|0 fnt|[from] psn
+L	ab_7_4	181	|faint|p2a: Heracross
+L	ab_7_4	182	|upkeep
+L	ab_7_4	183	|
+L	ab_7_4	184	|t:|<NORMALIZED>
+L	ab_7_4	185	|switch|p2a: Magcargo|Magcargo, M|223/223
+L	ab_7_4	186	|turn|16
+L	ab_7_4	187	|
+L	ab_7_4	188	|t:|<NORMALIZED>
+L	ab_7_4	189	|move|p1a: Xatu|Toxic|p2a: Magcargo
+L	ab_7_4	190	|-status|p2a: Magcargo|tox
+L	ab_7_4	191	|move|p2a: Magcargo|Strength|p1a: Xatu
+L	ab_7_4	192	|-damage|p1a: Xatu|111/254
+L	ab_7_4	193	|
+L	ab_7_4	194	|-damage|p2a: Magcargo|210/223 tox|[from] psn
+L	ab_7_4	195	|upkeep
+L	ab_7_4	196	|turn|17
+L	ab_7_4	197	|
+L	ab_7_4	198	|t:|<NORMALIZED>
+L	ab_7_4	199	|move|p1a: Xatu|Psychic|p2a: Magcargo
+L	ab_7_4	200	|-damage|p2a: Magcargo|86/223 tox
+L	ab_7_4	201	|move|p2a: Magcargo|Return|p1a: Xatu
+L	ab_7_4	202	|-damage|p1a: Xatu|34/254
+L	ab_7_4	203	|
+L	ab_7_4	204	|-damage|p2a: Magcargo|60/223 tox|[from] psn
+L	ab_7_4	205	|upkeep
+L	ab_7_4	206	|turn|18
+L	ab_7_4	207	|
+L	ab_7_4	208	|t:|<NORMALIZED>
+L	ab_7_4	209	|switch|p1a: Slowpoke|Slowpoke, M|292/292
+L	ab_7_4	210	|move|p2a: Magcargo|Protect||[still]
+L	ab_7_4	211	|-fail|p2a: Magcargo
+L	ab_7_4	212	|
+L	ab_7_4	213	|-damage|p2a: Magcargo|21/223 tox|[from] psn
+L	ab_7_4	214	|upkeep
+L	ab_7_4	215	|turn|19
+L	ab_7_4	216	|
+L	ab_7_4	217	|t:|<NORMALIZED>
+L	ab_7_4	218	|switch|p2a: Arbok|Arbok, M|263/263
+L	ab_7_4	219	|-ability|p2a: Arbok|Intimidate|boost
+L	ab_7_4	220	|-unboost|p1a: Slowpoke|atk|1
+L	ab_7_4	221	|move|p1a: Slowpoke|Swift|p2a: Arbok
+L	ab_7_4	222	|debug|Negating (sp)atk boost/penalty.
+L	ab_7_4	223	|-crit|p2a: Arbok
+L	ab_7_4	224	|-damage|p2a: Arbok|165/263
+L	ab_7_4	225	|
+L	ab_7_4	226	|upkeep
+L	ab_7_4	227	|turn|20
+L	ab_7_4	228	|
+L	ab_7_4	229	|t:|<NORMALIZED>
+L	ab_7_4	230	|move|p2a: Arbok|Frustration|p1a: Slowpoke
+L	ab_7_4	231	|-damage|p1a: Slowpoke|289/292
+L	ab_7_4	232	|move|p1a: Slowpoke|Psychic|p2a: Arbok
+L	ab_7_4	233	|-supereffective|p2a: Arbok
+L	ab_7_4	234	|-damage|p2a: Arbok|6/263
+L	ab_7_4	235	|-unboost|p2a: Arbok|spd|1
+L	ab_7_4	236	|
+L	ab_7_4	237	|upkeep
+L	ab_7_4	238	|turn|21
+L	ab_7_4	239	|
+L	ab_7_4	240	|t:|<NORMALIZED>
+L	ab_7_4	241	|switch|p1a: Poliwag|Poliwag, M|256/256
+L	ab_7_4	242	|move|p2a: Arbok|Iron Tail|p1a: Poliwag
+L	ab_7_4	243	|-resisted|p1a: Poliwag
+L	ab_7_4	244	|-damage|p1a: Poliwag|172/256
+L	ab_7_4	245	|
+L	ab_7_4	246	|upkeep
+L	ab_7_4	247	|turn|22
+L	ab_7_4	248	|
+L	ab_7_4	249	|t:|<NORMALIZED>
+L	ab_7_4	250	|move|p2a: Arbok|Hyper Beam|p1a: Poliwag
+L	ab_7_4	251	|-damage|p1a: Poliwag|0 fnt
+L	ab_7_4	252	|-mustrecharge|p2a: Arbok
+L	ab_7_4	253	|faint|p1a: Poliwag
+L	ab_7_4	254	|
+L	ab_7_4	255	|t:|<NORMALIZED>
+L	ab_7_4	256	|switch|p1a: Murkrow|Murkrow, M|256/256
+L	ab_7_4	257	|
+L	ab_7_4	258	|upkeep
+L	ab_7_4	259	|turn|23

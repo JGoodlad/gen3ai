@@ -1016,8 +1016,20 @@ const NOOP_ABILITIES = new Set([
   // filter-clean Castform under weather would desync. Left OUT for batch 2 (a forme-change model).
   'lightningrod', 'stickyhold',
 ]);
+// FAIL-LOUD / DEFERRED abilities the ENGINE PANICS on (a GIGO guard) — the fuzz
+// must NEVER feed one to the port. **FORECAST** (Castform) is DEFERRED: its
+// `onWeatherChange` swaps Castform's forme + TYPE under rain/sun/hail, an unmodeled
+// mechanic (`state::MonState::from_set` panics `forecast (Castform) is unmodeled …`).
+// Castform's ONLY ability IS Forecast, so it can NEVER be ability-substituted — the
+// WHOLE team must be rejection-sampled / dropped. This set makes the reject EXPLICIT
+// + robust: `abilityAllowed` HARD-denies it even if it were ever mistakenly added to
+// a modeled/no-op set (the reject wins), and `adaptRandbatsTeam` (ab_fuzz) rejects the
+// team outright. `castform` is the only holder; keyed by species too as belt-and-suspenders.
+const REJECT_ABILITIES = new Set(['forecast']);
+const REJECT_SPECIES = new Set(['castform']);
 function abilityAllowed(id) {
   const a = toId(id);
+  if (REJECT_ABILITIES.has(a)) return false; // deferred / fail-loud → never admitted
   return MODELED_ABILITIES.has(a) || NOOP_ABILITIES.has(a) || a === '';
 }
 
@@ -1097,10 +1109,16 @@ function toId(s) {
   return ('' + (s || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-// A team is FILTER-CLEAN iff every mon's ability + item is allowed.
+// A team is FILTER-CLEAN iff every mon's ability + item is allowed AND it carries no
+// DEFERRED/fail-loud species (Castform-Forecast — the engine panics on it, so it must
+// never reach the port). Castform's only ability IS Forecast, so the ability reject
+// already catches it; the explicit species reject covers a hand-hacked non-Forecast
+// Castform (gen3customgame) too.
 function teamFilterClean(packed) {
   const team = Teams.unpack(packed);
   for (const set of team) {
+    const sid = toId(set.species || set.name);
+    if (REJECT_SPECIES.has(sid)) return { ok: false, why: `ability:forecast` };
     if (!abilityAllowed(set.ability)) return { ok: false, why: `ability:${toId(set.ability)}` };
     if (!itemAllowed(set.item)) return { ok: false, why: `item:${toId(set.item)}` };
   }
@@ -1750,7 +1768,7 @@ module.exports = {
   runBattle, emitBattle, winTok, encodeChoice,
   isModeledMove, isHiddenPower,
   abilityAllowed, itemAllowed, teamFilterClean, loadTeams, classifyTeamsGaps,
-  MODELED_ABILITIES, NOOP_ABILITIES, MODELED_ITEMS,
+  MODELED_ABILITIES, NOOP_ABILITIES, REJECT_ABILITIES, REJECT_SPECIES, MODELED_ITEMS,
   MODELED_STATUS_MOVES, MODELED_SETUP_MOVES, MODELED_RECOVERY_MOVES,
   MODELED_PROTECT_MOVES, MODELED_HAZARD_MOVES, MODELED_PHAZE_MOVES,
   MODELED_LEECH_MOVES, MODELED_FIXED_DAMAGE_MOVES, MODELED_SUBSTITUTE_MOVES,
