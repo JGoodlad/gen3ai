@@ -1261,7 +1261,7 @@ impl crate::state::BattleState {
             let chip = (maxhp / 16).max(1); // clampIntRange(maxhp/16, 1)
             // FOCUS BAND: the onDamage roll draws on the chip too (a lethal chip still
             // faints — effectType Weather, not Move). `gen3_ability_batch4_v1`.
-            let chip = self.focus_band_damage(side, slot, chip, false, dex);
+            let chip = self.focus_band_damage(side, slot, chip, false, false, dex);
             self.apply_damage(side, slot, chip);
             // [EMIT] `|-damage|<mon>|<HP>|[from] Sandstorm` (or `Hail`) — the residual
             // weather chip, post-chip HP (`0 fnt` if it KO'd). Observation-only.
@@ -1481,7 +1481,7 @@ impl crate::state::BattleState {
         let recoil = recoil.min(user_hp_before);
         // FOCUS BAND: the recoil is a Damage event into the user (effect 'recoil', NOT a
         // Move) — the roll draws, no survive. `gen3_ability_batch4_v1`.
-        let recoil = self.focus_band_damage(side, slot, recoil, false, dex);
+        let recoil = self.focus_band_damage(side, slot, recoil, false, false, dex);
         self.apply_damage(side, slot, recoil);
         if self.logging() {
             let user = self.mon_ref(side, slot, dex);
@@ -1542,7 +1542,7 @@ impl crate::state::BattleState {
         // reversal's effect is the ABILITY, not a Move, so `is_move = false`); the damage can KO
         // the drainer through the normal deferred-faint machinery (like a recoil KO).
         if to_id(&self.sides[target_side].pokemon[target_slot].ability) == "liquidooze" {
-            let dmg = self.focus_band_damage(side, slot, heal, false, dex);
+            let dmg = self.focus_band_damage(side, slot, heal, false, false, dex);
             self.apply_damage(side, slot, dmg);
             if self.logging() {
                 let user = self.mon_ref(side, slot, dex);
@@ -1664,7 +1664,7 @@ impl crate::state::BattleState {
             _ => return,
         };
         // FOCUS BAND: the onDamage roll draws on the DoT chip (no survive — not a Move).
-        let dmg = self.focus_band_damage(side, slot, dmg, false, dex);
+        let dmg = self.focus_band_damage(side, slot, dmg, false, false, dex);
         self.apply_damage(side, slot, dmg);
         // [EMIT] `|-damage|<mon>|<HP>|[from] <brn|psn|tox>` (the residual DoT chip;
         // the HP is post-chip, `0 fnt` if the DoT KO'd). Observation-only.
@@ -1688,7 +1688,7 @@ impl crate::state::BattleState {
         }
         let dmg = (mon.maxhp / 4).max(1);
         // Focus Band's onDamage roll draws on the curse chip (no survive — not a Move).
-        let dmg = self.focus_band_damage(side, slot, dmg, false, dex);
+        let dmg = self.focus_band_damage(side, slot, dmg, false, false, dex);
         self.apply_damage(side, slot, dmg);
         // [EMIT] `|-damage|<foe>|<HP>|[from] Curse`.
         if dmg > 0 && self.logging() {
@@ -1847,7 +1847,7 @@ impl crate::state::BattleState {
             // endure volatile is still up at the same turn's residual). No golden
             // scenario composes them — disclosed, not probe-verified. DRAW-FREE.
             let realized = self.endure_clamp(side, slot, realized, dex);
-            let realized = self.focus_band_damage(side, slot, realized, true, dex);
+            let realized = self.focus_band_damage(side, slot, realized, true, true, dex);
             self.apply_damage(side, slot, realized);
             if realized > 0 && self.logging() {
                 let t = self.mon_ref(side, slot, dex);
@@ -1932,7 +1932,7 @@ impl crate::state::BattleState {
         let hp_before = seeded.hp;
         let drain = (seeded.maxhp / 8).max(1); // floor, clampIntRange(_, 1); gen-3 baseMaxhp == maxhp
         // FOCUS BAND: the onDamage roll draws on the drain (no survive — not a Move).
-        let drain = self.focus_band_damage(side, slot, drain, false, dex);
+        let drain = self.focus_band_damage(side, slot, drain, false, false, dex);
         let dealt = drain.min(hp_before); // the sim's `damage()` return (actual dealt)
         self.apply_damage(side, slot, drain);
         // [EMIT] `|-damage|<seeded>|<HP>|[from] Leech Seed|[of] <seeder-active>` — the
@@ -1955,7 +1955,7 @@ impl crate::state::BattleState {
                 // instead of healing. Focus Band on the seeder draws its `onDamage` roll but
                 // never survives (the effect is the ability, `is_move = false`); the reversal
                 // can KO the seeder via the residual per-handler faint machinery.
-                let dmg = self.focus_band_damage(seeder_side, seeder_slot, dealt, false, dex);
+                let dmg = self.focus_band_damage(seeder_side, seeder_slot, dealt, false, false, dex);
                 self.apply_damage(seeder_side, seeder_slot, dmg);
                 // [EMIT] `|-damage|<seeder-active>|<HP>|[from] ability: Liquid Ooze|[of] <seeded>`
                 // — AFTER the seeded mon's `-damage [from] Leech Seed` above (probe-verified order).

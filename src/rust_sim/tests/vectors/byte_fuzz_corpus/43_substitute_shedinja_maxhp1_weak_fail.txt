@@ -1,0 +1,83 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# Guards the SUBSTITUTE Shedinja `maxhp === 1` clause (moves.js:18364): a 1-HP-maxhp Shedinja's
+#   Substitute FAILS |-fail|<u>|move: Substitute|[weak] (floor(1/4)==0 so the cost check misses
+#   it). The port used to emit |-start|<u>|Substitute (create the sub).
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/FMT/INIT/DEC/END/L).
+SCEN	ab_132_15
+TEAM	ab_132_15	p1	Shedinja||ChestoBerry|WonderGuard|HyperBeam,ShadowBall,Substitute,SwordsDance|Rash|168,,108,88,56,88|N|3,18,23,17,16,13|||]Shuckle||MagoBerry|Sturdy|Constrict,Mimic,RockSlide,Substitute|Careful|188,64,72,148,,36|M|30,0,,22,28,21|||]Starmie||PersimBerry|NaturalCure|Psychic,Toxic,DoubleEdge,IcyWind|Sassy|84,24,84,228,68,20|N|4,21,29,10,1,4|||]Dusclops||MysticWater|Pressure|RockSlide,RainDance,Thief,ShadowPunch|Bashful|216,8,144,28,112,|M|18,13,18,23,25,18|||]Larvitar||LightBall|Guts|Stomp,Protect,Curse,RockSlide|Careful|160,100,40,8,72,128|M|28,12,16,4,29,20|||]Blastoise||LightBall|Torrent|Return,FocusPunch,Surf,Blizzard|Impish|,96,56,152,72,132|M|7,,,5,1,11|||
+TEAM	ab_132_15	p2	Milotic||BlackBelt|MarvelScale|HyperBeam,RainDance,Swift,Surf|Naughty|76,60,228,124,20,|M|29,9,9,25,27,28|||]Crawdaunt||LaxIncense|ShellArmor|Waterfall,AerialAce,SwordsDance,KnockOff|Mild|20,12,180,56,148,92|M|6,14,1,0,21,|||]Dusclops||FocusBand|Pressure|ShadowPunch,BodySlam,Curse,MegaPunch|Quiet|,80,104,96,36,192|M|4,28,2,,23,5|||]Shedinja||CheriBerry|WonderGuard|Facade,SwordsDance,SolarBeam,Frustration|Quirky|8,,196,72,100,132|N|,1,18,17,30,4|||]Staryu||DragonFang|Illuminate|DoubleEdge,Surf,Facade,WaterGun|Calm|152,32,180,,8,136|N|29,3,22,11,22,23|||]Omanyte||AspearBerry|ShellArmor|Thief,AncientPower,Return,IceBeam|Jolly|192,,56,92,56,112|M|23,10,12,27,7,20|||
+FMT	ab_132_15	gen3customgame
+INIT	ab_132_15	9995,59770,17387,25660	2515688975
+DEC	ab_132_15	0	move	0	0	m2	m0	3632,43551,5213,53134	Shedinja	1	1	0	-	0	0	0	0	0	0	6	Milotic	348	348	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_132_15	1	move	0	0	m2	m0	12622,64507,33552,39440	Shedinja	1	1	0	-	0	0	0	0	0	0	6	Milotic	348	348	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_132_15	2	move	0	0	m2	m0	52689,4704,18447,17474	Shedinja	1	1	0	-	0	0	0	0	0	0	6	Milotic	348	348	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_132_15	3	move	0	0	m1	s1	16334,19494,12444,62865	Shedinja	1	1	0	-	0	0	0	0	0	0	6	Crawdaunt	197	247	0	-	0	0	0	-1	0	0	6	p2	0	0	0	0	0
+DEC	ab_132_15	4	move	0	0	m0	m2	21554,58924,7849,51221	Shedinja	1	1	0	-	0	0	0	0	0	0	6	Crawdaunt	72	247	0	-	2	0	0	-1	0	0	6	p2	0	0	0	0	0
+END	ab_132_15	0	none
+L	ab_132_15	0	|t:|<NORMALIZED>
+L	ab_132_15	1	|gametype|singles
+L	ab_132_15	2	|player|p1|P1||
+L	ab_132_15	3	|player|p2|P2||
+L	ab_132_15	4	|gen|3
+L	ab_132_15	5	|tier|[Gen 3] Custom Game
+L	ab_132_15	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_132_15	7	|
+L	ab_132_15	8	|t:|<NORMALIZED>
+L	ab_132_15	9	|teamsize|p1|6
+L	ab_132_15	10	|teamsize|p2|6
+L	ab_132_15	11	|start
+L	ab_132_15	12	|switch|p1a: Shedinja|Shedinja|1/1
+L	ab_132_15	13	|switch|p2a: Milotic|Milotic, M|348/348
+L	ab_132_15	14	|turn|1
+L	ab_132_15	15	|
+L	ab_132_15	16	|t:|<NORMALIZED>
+L	ab_132_15	17	|move|p2a: Milotic|Hyper Beam|p1a: Shedinja
+L	ab_132_15	18	|debug|Wonder Guard immunity: hyperbeam
+L	ab_132_15	19	|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+L	ab_132_15	20	|move|p1a: Shedinja|Substitute|p1a: Shedinja
+L	ab_132_15	21	|-fail|p1a: Shedinja|move: Substitute|[weak]
+L	ab_132_15	22	|
+L	ab_132_15	23	|upkeep
+L	ab_132_15	24	|turn|2
+L	ab_132_15	25	|
+L	ab_132_15	26	|t:|<NORMALIZED>
+L	ab_132_15	27	|move|p2a: Milotic|Hyper Beam|p1a: Shedinja
+L	ab_132_15	28	|debug|Wonder Guard immunity: hyperbeam
+L	ab_132_15	29	|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+L	ab_132_15	30	|move|p1a: Shedinja|Substitute|p1a: Shedinja
+L	ab_132_15	31	|-fail|p1a: Shedinja|move: Substitute|[weak]
+L	ab_132_15	32	|
+L	ab_132_15	33	|upkeep
+L	ab_132_15	34	|turn|3
+L	ab_132_15	35	|
+L	ab_132_15	36	|t:|<NORMALIZED>
+L	ab_132_15	37	|move|p2a: Milotic|Hyper Beam|p1a: Shedinja
+L	ab_132_15	38	|debug|Wonder Guard immunity: hyperbeam
+L	ab_132_15	39	|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+L	ab_132_15	40	|move|p1a: Shedinja|Substitute|p1a: Shedinja
+L	ab_132_15	41	|-fail|p1a: Shedinja|move: Substitute|[weak]
+L	ab_132_15	42	|
+L	ab_132_15	43	|upkeep
+L	ab_132_15	44	|turn|4
+L	ab_132_15	45	|
+L	ab_132_15	46	|t:|<NORMALIZED>
+L	ab_132_15	47	|switch|p2a: Crawdaunt|Crawdaunt, M|247/247
+L	ab_132_15	48	|move|p1a: Shedinja|Shadow Ball|p2a: Crawdaunt
+L	ab_132_15	49	|debug|lax incense - decreasing accuracy
+L	ab_132_15	50	|-resisted|p2a: Crawdaunt
+L	ab_132_15	51	|-damage|p2a: Crawdaunt|197/247
+L	ab_132_15	52	|-unboost|p2a: Crawdaunt|spd|1
+L	ab_132_15	53	|
+L	ab_132_15	54	|upkeep
+L	ab_132_15	55	|turn|5
+L	ab_132_15	56	|
+L	ab_132_15	57	|t:|<NORMALIZED>
+L	ab_132_15	58	|move|p2a: Crawdaunt|Swords Dance|p2a: Crawdaunt
+L	ab_132_15	59	|-boost|p2a: Crawdaunt|atk|2
+L	ab_132_15	60	|move|p1a: Shedinja|Hyper Beam|p2a: Crawdaunt
+L	ab_132_15	61	|debug|lax incense - decreasing accuracy
+L	ab_132_15	62	|-damage|p2a: Crawdaunt|72/247
+L	ab_132_15	63	|-mustrecharge|p1a: Shedinja
+L	ab_132_15	64	|
+L	ab_132_15	65	|upkeep
+L	ab_132_15	66	|turn|6

@@ -353,17 +353,32 @@ pub(crate) struct MoveResolution {
     /// `None` = no phaze (or a phaze that FAILED — foe's last mon, draw-free except its
     /// accuracy roll). Set ONLY by the phaze arm; every other path leaves it `None`.
     force_switch_foe: Option<usize>,
+    /// The move was **ABORTED at `onBeforeMove`** (a cant — full-para / still-asleep /
+    /// frozen-no-thaw / flinch / confusion self-hit / disabled / taunted status move) so it
+    /// NEVER reached the sim's `AfterMove` event (`runMove` runs `MoveAborted` and returns
+    /// BEFORE `runEvent('AfterMove')`). The caller uses this to SKIP the `onAnyAfterMove`
+    /// White Herb restore (`gen3_white_herb_v1`): a cant'd holder's Intimidate-dropped stat
+    /// waits for the end-of-turn `onResidual` (order 29), not this move's tail — golden
+    /// ab_154_12 (a cant Hoppip's White Herb fires at the residual `|` boundary, not mid-turn).
+    /// A move that PASSED BeforeMove then missed / was immune / Damp-blocked / applied a
+    /// status STILL reaches `AfterMove` → NOT aborted (those return via `done()`).
+    aborted: bool,
 }
 
 impl MoveResolution {
     /// An out-of-scope (unknown / status / 0-BP) move: no draws, never landed.
     fn no_op() -> MoveResolution {
-        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None }
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false }
     }
     /// The common terminal: a resolved move that drew its taxes but is not landed and
     /// triggers no forced switch (a miss / immune / status-applied / boost / heal).
     fn done(missed: bool, crit: bool, landed: bool) -> MoveResolution {
-        MoveResolution { missed, crit, landed, force_switch_foe: None }
+        MoveResolution { missed, crit, landed, force_switch_foe: None, aborted: false }
+    }
+    /// A move ABORTED at `onBeforeMove` (a cant) — like [`Self::done`] but flags that the
+    /// sim's `AfterMove` event never fired (so the `onAnyAfterMove` White Herb hook is skipped).
+    fn aborted() -> MoveResolution {
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true }
     }
 }
 

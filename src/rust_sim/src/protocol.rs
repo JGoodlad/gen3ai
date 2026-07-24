@@ -465,7 +465,16 @@ impl ProtocolBuilder {
         // turn; the port used to append `|[miss]`). The other 5 miss sites are SAME-TURN
         // (`idx >= flush_boundary`) so the gate is a no-op for them.
         // `gen3_omniscient_byte_fuzz_v1` class A.
-        if let Some(idx) = self.lines.iter().rposition(|l| l.0.starts_with("|move|")) {
+        //
+        // Matches the last `|move|` OR `|-anim|` line — the sim's `attrLastMove` tracks the
+        // last `addMove` line, and a SUN-SKIP Solar Beam's most recent move-family line is the
+        // `|-anim|` (emitted after `[still]`+`-prepare`); a missed sun-skip beam appends `[miss]`
+        // to THAT anim line (`|-anim|<u>|Solar Beam|<t>|[miss]`), not the `[still]` charge line.
+        if let Some(idx) = self
+            .lines
+            .iter()
+            .rposition(|l| l.0.starts_with("|move|") || l.0.starts_with("|-anim|"))
+        {
             if idx < self.flush_boundary {
                 return;
             }

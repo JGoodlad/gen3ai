@@ -1,0 +1,517 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# Guards the SUN-SKIP Solar Beam MISS anim (gen3_move_coverage_batch4c_v1): a charge move firing
+#   immediately emits [still]+-prepare+-anim; on a miss the sim appends [miss] to the last
+#   move-family line (the |-anim|), so |-anim|<u>|Solar Beam|<t>|[miss]. The port omitted [miss].
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/FMT/INIT/DEC/END/L).
+SCEN	ab_34_10
+TEAM	ab_34_10	p1	Banette||WaveIncense|Insomnia|FeintAttack,Psychic,MudSlap,ShadowBall|Naughty|112,32,96,92,176,|M|11,7,0,15,30,12|||]Cubone||MagoBerry|LightningRod|BoneClub,SeismicToss,BrickBreak,BodySlam|Modest|84,16,4,188,216,|M|4,7,10,16,27,10|||]Carvanha||ChoiceBand|RoughSkin|Swift,Endure,Substitute,RainDance|Timid|60,4,28,56,124,196|M|0,14,2,27,6,0|||]Politoed||LumBerry|WaterAbsorb|Frustration,PerishSong,FocusPunch,Substitute|Quirky|192,12,216,16,,72|M|28,3,6,1,0,6|||]Doduo||MagoBerry|EarlyBird|Flail,SunnyDay,Thief,Swift|Timid|156,20,132,8,,192|M|16,25,3,20,26,28|||]Ledyba||QuickClaw|EarlyBird|Swift,SolarBeam,SwordsDance,Refresh|Modest|48,92,104,,168,96|M|1,6,25,9,16,13|||
+TEAM	ab_34_10	p2	Delibird||MysticWater|VitalSpirit|Counter,Rest,DoubleEdge,Protect|Quirky|120,4,72,4,68,164|M|20,3,27,11,30,11|||]Huntail||HardStone|SwiftSwim|IcyWind,Frustration,DoubleEdge,Toxic|Quirky|,172,164,20,,152|M|29,22,28,13,17,11|||]Seadra||OranBerry|PoisonPoint|Swift,Waterfall,Surf,WaterGun|Modest|156,20,28,140,64,100|M|22,4,21,19,4,22|||]Sharpedo||ScopeLens|RoughSkin|Bite,Mimic,Crunch,Rest|Hardy|8,108,32,60,92,208|M|19,15,0,0,10,7|||]Manectric||BrightPowder|LightningRod|Tackle,Spark,MudSlap,RainDance|Hardy|128,,32,20,132,196|M|16,12,3,1,19,7|||]Carvanha||PolkadotBow|RoughSkin|Bite,Thief,Mimic,MudSlap|Hardy|52,40,,160,48,208|M|29,12,20,30,16,14|||
+FMT	ab_34_10	gen3customgame
+INIT	ab_34_10	53452,65025,25778,50195	3190396930
+DEC	ab_34_10	0	move	0	0	s4	m2	21104,23229,19887,33399	Doduo	146	235	0	-	0	0	0	0	0	0	6	Delibird	221	250	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_34_10	1	move	0	0	m3	m2	55105,15956,48700,22762	Doduo	66	235	0	-	0	0	0	0	0	0	6	Delibird	0	250	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_34_10	2	switch	0	1	-	s2	45105,48312,32752,60693	Doduo	95	235	0	-	0	0	0	0	0	0	6	Seadra	281	281	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_34_10	3	move	0	0	m3	s4	37910,39864,53855,20446	Doduo	95	235	0	-	0	0	0	0	0	0	6	Manectric	205	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	4	move	0	0	m1	m3	39767,23394,55440,61273	Doduo	95	235	0	-	0	0	0	0	0	0	6	Manectric	205	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	5	move	0	0	m3	m3	55005,11827,52945,57234	Doduo	95	235	0	-	0	0	0	0	0	0	6	Manectric	113	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	6	move	0	0	m1	m3	45833,41159,40598,62813	Doduo	95	235	0	-	0	0	0	0	0	0	6	Manectric	113	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	7	move	0	0	m2	m1	53398,18374,44496,17185	Doduo	0	235	1	fnt	0	0	0	0	0	0	5	Manectric	113	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	8	switch	1	0	s5	-	14187,43119,51492,50120	Ledyba	203	203	0	-	0	0	0	0	0	0	5	Manectric	113	298	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_34_10	9	move	0	0	m2	m0	29225,14100,57797,63708	Ledyba	163	203	0	-	2	0	0	0	0	0	5	Manectric	113	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	10	move	0	0	m3	m2	44025,36959,26690,27438	Ledyba	163	203	0	-	2	0	0	0	0	0	5	Manectric	113	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	11	move	0	0	m1	m2	29754,14144,26195,18483	Ledyba	163	203	0	-	2	0	0	0	0	0	5	Manectric	113	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	12	move	0	0	m3	m0	16806,14005,53933,1175	Ledyba	122	203	0	-	2	0	0	0	0	0	5	Manectric	113	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	13	move	0	0	m0	m0	49773,5117,35270,51253	Ledyba	80	203	0	-	2	0	0	0	0	0	5	Manectric	67	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	14	move	0	0	m2	m2	45026,52889,1762,50847	Ledyba	80	203	0	-	4	0	0	0	0	0	5	Manectric	67	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	15	move	0	0	m1	m1	30012,48953,6639,21571	Ledyba	0	203	1	fnt	0	0	0	0	0	0	4	Manectric	67	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	16	switch	1	0	s1	-	37122,19694,57727,47154	Cubone	235	235	0	-	0	0	0	0	0	0	4	Manectric	67	298	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_34_10	17	move	0	0	m0	m0	6902,44504,1078,10305	Cubone	213	235	0	-	0	0	0	0	0	0	4	Manectric	67	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	18	move	0	0	s2	m0	26819,49351,30324,44997	Carvanha	131	215	0	-	0	0	0	0	0	0	4	Manectric	49	298	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_34_10	19	move	0	0	m2	m3	38660,37927,6307,25724	Carvanha	78	215	0	-	0	0	0	0	0	0	4	Manectric	49	298	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	20	move	0	0	m2	s1	39475,62308,14535,40879	Carvanha	78	215	0	-	0	0	0	0	0	0	4	Huntail	249	249	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	21	move	0	0	m2	m0	57028,55808,16294,54914	Carvanha	25	215	0	-	0	0	0	0	0	0	4	Huntail	249	249	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	22	move	0	0	m2	m0	47751,63734,21655,29412	Carvanha	25	215	0	-	0	0	0	0	0	0	4	Huntail	249	249	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	23	move	0	0	s3	s3	975,24836,49310,63159	Politoed	366	366	0	-	0	0	0	0	0	0	4	Sharpedo	271	271	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	24	move	0	0	m2	m2	41910,47723,62902,8746	Politoed	265	366	0	-	0	0	0	-1	0	0	4	Sharpedo	271	271	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	25	move	0	0	m2	s3	29916,20073,62065,1310	Politoed	265	366	0	-	0	0	0	-1	0	0	4	Huntail	183	249	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	26	move	0	0	m1	m1	49262,52032,51124,49362	Politoed	263	366	0	-	0	0	0	-1	0	0	4	Huntail	183	249	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	1
+DEC	ab_34_10	27	move	0	0	s4	s4	39603,43922,25445,5021	Banette	277	277	0	-	0	0	0	0	0	0	4	Seadra	281	281	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_34_10	28	move	0	0	m3	m0	40776,5966,42932,32520	Banette	277	277	0	-	0	0	0	0	0	0	4	Seadra	171	281	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	29	move	0	0	s2	s5	64448,31606,39824,1259	Cubone	213	235	0	-	0	0	0	0	0	0	4	Carvanha	242	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	30	move	0	0	m1	m0	26782,9944,51035,14377	Cubone	125	235	0	-	0	0	0	0	0	0	4	Carvanha	142	242	0	-	0	0	0	0	0	0	5	p2	0	0	1	0	0
+DEC	ab_34_10	31	move	0	0	m3	m0	52854,4030,31015,14980	Cubone	73	235	0	-	0	0	0	0	0	0	4	Carvanha	142	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	32	move	0	0	m1	m0	3572,63831,63956,56280	Cubone	0	235	1	fnt	0	0	0	0	0	0	3	Carvanha	142	242	0	-	0	0	0	0	0	0	5	p2	0	0	1	0	0
+DEC	ab_34_10	33	switch	1	0	s3	-	47229,6705,40367,62203	Carvanha	25	215	0	-	0	0	0	0	0	0	3	Carvanha	142	242	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_34_10	34	move	0	0	m2	m2	55010,37710,59510,52938	Carvanha	25	215	0	-	0	0	0	0	0	0	3	Carvanha	142	242	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	1
+DEC	ab_34_10	35	move	0	0	m2	m1	49643,62872,37441,53983	Carvanha	0	215	1	fnt	0	0	0	0	0	0	2	Carvanha	127	242	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_34_10	36	switch	1	0	s2	-	52869,38708,50705,10174	Banette	277	277	0	-	0	0	0	0	0	0	2	Carvanha	127	242	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_34_10	37	move	0	0	m2	s5	40536,49981,34717,2749	Banette	277	277	0	-	0	0	0	0	0	0	2	Seadra	149	281	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	38	move	0	0	m3	m2	54779,63592,55506,9733	Banette	114	277	0	-	0	0	0	0	0	0	2	Seadra	44	281	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_10	39	move	0	0	m3	m3	2720,24253,39885,2448	Banette	114	277	0	-	0	0	0	0	0	0	2	Seadra	0	281	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_34_10	40	switch	0	1	-	s3	65144,37283,13593,29843	Banette	114	277	0	-	0	0	0	0	0	0	2	Sharpedo	271	271	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_34_10	41	move	0	0	m3	m2	42793,34426,42880,10999	Banette	0	277	1	fnt	0	0	0	0	0	0	1	Sharpedo	271	271	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_34_10	42	switch	1	0	s4	-	50475,26908,3446,49462	Politoed	263	366	0	-	0	0	0	0	0	0	1	Sharpedo	271	271	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_34_10	43	move	0	0	m3	s5	36389,32597,60896,48913	Politoed	172	366	0	-	0	0	0	0	0	0	1	Carvanha	127	242	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_34_10	44	move	0	0	m1	m2	40422,10153,34185,6520	Politoed	172	366	0	-	0	0	0	0	0	0	1	Carvanha	127	242	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	1
+DEC	ab_34_10	45	move	0	0	m1	m2	35371,4142,24614,58139	Politoed	172	366	0	-	0	0	0	0	0	0	1	Carvanha	127	242	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	1
+DEC	ab_34_10	46	move	0	0	m1	m3	55851,23354,15435,31326	Politoed	172	366	0	-	0	0	0	0	0	0	1	Carvanha	127	242	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	1
+DEC	ab_34_10	47	move	0	0	m1	m1	20115,46499,363,43171	Politoed	0	366	1	-	0	0	0	0	0	0	0	Carvanha	0	242	1	-	0	0	0	0	0	0	3	p2	0	0	0	0	1
+END	ab_34_10	1	p2
+L	ab_34_10	0	|t:|<NORMALIZED>
+L	ab_34_10	1	|gametype|singles
+L	ab_34_10	2	|player|p1|P1||
+L	ab_34_10	3	|player|p2|P2||
+L	ab_34_10	4	|gen|3
+L	ab_34_10	5	|tier|[Gen 3] Custom Game
+L	ab_34_10	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_34_10	7	|
+L	ab_34_10	8	|t:|<NORMALIZED>
+L	ab_34_10	9	|teamsize|p1|6
+L	ab_34_10	10	|teamsize|p2|6
+L	ab_34_10	11	|start
+L	ab_34_10	12	|switch|p1a: Banette|Banette, M|277/277
+L	ab_34_10	13	|switch|p2a: Delibird|Delibird, M|250/250
+L	ab_34_10	14	|turn|1
+L	ab_34_10	15	|
+L	ab_34_10	16	|t:|<NORMALIZED>
+L	ab_34_10	17	|switch|p1a: Doduo|Doduo, M|235/235
+L	ab_34_10	18	|move|p2a: Delibird|Double-Edge|p1a: Doduo
+L	ab_34_10	19	|-damage|p1a: Doduo|146/235
+L	ab_34_10	20	|-damage|p2a: Delibird|221/250|[from] Recoil|[of] p1a: Doduo
+L	ab_34_10	21	|
+L	ab_34_10	22	|upkeep
+L	ab_34_10	23	|turn|2
+L	ab_34_10	24	|
+L	ab_34_10	25	|t:|<NORMALIZED>
+L	ab_34_10	26	|move|p1a: Doduo|Swift|p2a: Delibird
+L	ab_34_10	27	|-crit|p2a: Delibird
+L	ab_34_10	28	|-damage|p2a: Delibird|20/250
+L	ab_34_10	29	|move|p2a: Delibird|Double-Edge|p1a: Doduo
+L	ab_34_10	30	|-damage|p1a: Doduo|66/235
+L	ab_34_10	31	|-damage|p2a: Delibird|0 fnt|[from] Recoil|[of] p1a: Doduo
+L	ab_34_10	32	|faint|p2a: Delibird
+L	ab_34_10	33	|
+L	ab_34_10	34	|t:|<NORMALIZED>
+L	ab_34_10	35	|switch|p2a: Seadra|Seadra, M|281/281
+L	ab_34_10	36	|
+L	ab_34_10	37	|-enditem|p1a: Doduo|Mago Berry|[eat]
+L	ab_34_10	38	|-heal|p1a: Doduo|95/235|[from] item: Mago Berry
+L	ab_34_10	39	|upkeep
+L	ab_34_10	40	|turn|3
+L	ab_34_10	41	|
+L	ab_34_10	42	|t:|<NORMALIZED>
+L	ab_34_10	43	|switch|p2a: Manectric|Manectric, M|298/298
+L	ab_34_10	44	|move|p1a: Doduo|Swift|p2a: Manectric
+L	ab_34_10	45	|-damage|p2a: Manectric|205/298
+L	ab_34_10	46	|
+L	ab_34_10	47	|upkeep
+L	ab_34_10	48	|turn|4
+L	ab_34_10	49	|
+L	ab_34_10	50	|t:|<NORMALIZED>
+L	ab_34_10	51	|move|p2a: Manectric|Rain Dance|p2a: Manectric
+L	ab_34_10	52	|-weather|RainDance
+L	ab_34_10	53	|move|p1a: Doduo|Sunny Day|p1a: Doduo
+L	ab_34_10	54	|-weather|SunnyDay
+L	ab_34_10	55	|
+L	ab_34_10	56	|-weather|SunnyDay|[upkeep]
+L	ab_34_10	57	|upkeep
+L	ab_34_10	58	|turn|5
+L	ab_34_10	59	|
+L	ab_34_10	60	|t:|<NORMALIZED>
+L	ab_34_10	61	|move|p2a: Manectric|Rain Dance|p2a: Manectric
+L	ab_34_10	62	|-weather|RainDance
+L	ab_34_10	63	|move|p1a: Doduo|Swift|p2a: Manectric
+L	ab_34_10	64	|-damage|p2a: Manectric|113/298
+L	ab_34_10	65	|
+L	ab_34_10	66	|-weather|RainDance|[upkeep]
+L	ab_34_10	67	|upkeep
+L	ab_34_10	68	|turn|6
+L	ab_34_10	69	|
+L	ab_34_10	70	|t:|<NORMALIZED>
+L	ab_34_10	71	|move|p2a: Manectric|Rain Dance||[still]
+L	ab_34_10	72	|-fail|p2a: Manectric
+L	ab_34_10	73	|debug|move failed because it did nothing
+L	ab_34_10	74	|move|p1a: Doduo|Sunny Day|p1a: Doduo
+L	ab_34_10	75	|-weather|SunnyDay
+L	ab_34_10	76	|
+L	ab_34_10	77	|-weather|SunnyDay|[upkeep]
+L	ab_34_10	78	|upkeep
+L	ab_34_10	79	|turn|7
+L	ab_34_10	80	|
+L	ab_34_10	81	|t:|<NORMALIZED>
+L	ab_34_10	82	|move|p2a: Manectric|Spark|p1a: Doduo
+L	ab_34_10	83	|-supereffective|p1a: Doduo
+L	ab_34_10	84	|-damage|p1a: Doduo|0 fnt
+L	ab_34_10	85	|faint|p1a: Doduo
+L	ab_34_10	86	|
+L	ab_34_10	87	|t:|<NORMALIZED>
+L	ab_34_10	88	|switch|p1a: Ledyba|Ledyba, M|203/203
+L	ab_34_10	89	|
+L	ab_34_10	90	|-weather|SunnyDay|[upkeep]
+L	ab_34_10	91	|upkeep
+L	ab_34_10	92	|turn|8
+L	ab_34_10	93	|
+L	ab_34_10	94	|t:|<NORMALIZED>
+L	ab_34_10	95	|move|p2a: Manectric|Tackle|p1a: Ledyba
+L	ab_34_10	96	|-damage|p1a: Ledyba|163/203
+L	ab_34_10	97	|move|p1a: Ledyba|Swords Dance|p1a: Ledyba
+L	ab_34_10	98	|-boost|p1a: Ledyba|atk|2
+L	ab_34_10	99	|
+L	ab_34_10	100	|-weather|SunnyDay|[upkeep]
+L	ab_34_10	101	|upkeep
+L	ab_34_10	102	|turn|9
+L	ab_34_10	103	|
+L	ab_34_10	104	|t:|<NORMALIZED>
+L	ab_34_10	105	|move|p2a: Manectric|Mud-Slap|p1a: Ledyba
+L	ab_34_10	106	|-immune|p1a: Ledyba
+L	ab_34_10	107	|move|p1a: Ledyba|Refresh||[still]
+L	ab_34_10	108	|-fail|p1a: Ledyba
+L	ab_34_10	109	|debug|move failed because it did nothing
+L	ab_34_10	110	|
+L	ab_34_10	111	|-weather|SunnyDay|[upkeep]
+L	ab_34_10	112	|upkeep
+L	ab_34_10	113	|turn|10
+L	ab_34_10	114	|
+L	ab_34_10	115	|t:|<NORMALIZED>
+L	ab_34_10	116	|move|p2a: Manectric|Mud-Slap|p1a: Ledyba
+L	ab_34_10	117	|-immune|p1a: Ledyba
+L	ab_34_10	118	|move|p1a: Ledyba|Solar Beam||[still]
+L	ab_34_10	119	|-prepare|p1a: Ledyba|Solar Beam
+L	ab_34_10	120	|-anim|p1a: Ledyba|Solar Beam|p2a: Manectric|[miss]
+L	ab_34_10	121	|debug|brightpowder - decreasing accuracy
+L	ab_34_10	122	|-miss|p1a: Ledyba|p2a: Manectric
+L	ab_34_10	123	|
+L	ab_34_10	124	|-weather|none
+L	ab_34_10	125	|upkeep
+L	ab_34_10	126	|turn|11
+L	ab_34_10	127	|
+L	ab_34_10	128	|t:|<NORMALIZED>
+L	ab_34_10	129	|move|p2a: Manectric|Tackle|p1a: Ledyba
+L	ab_34_10	130	|-damage|p1a: Ledyba|122/203
+L	ab_34_10	131	|move|p1a: Ledyba|Refresh||[still]
+L	ab_34_10	132	|-fail|p1a: Ledyba
+L	ab_34_10	133	|debug|move failed because it did nothing
+L	ab_34_10	134	|
+L	ab_34_10	135	|upkeep
+L	ab_34_10	136	|turn|12
+L	ab_34_10	137	|
+L	ab_34_10	138	|t:|<NORMALIZED>
+L	ab_34_10	139	|move|p2a: Manectric|Tackle|p1a: Ledyba
+L	ab_34_10	140	|-damage|p1a: Ledyba|80/203
+L	ab_34_10	141	|move|p1a: Ledyba|Swift|p2a: Manectric
+L	ab_34_10	142	|-damage|p2a: Manectric|67/298
+L	ab_34_10	143	|
+L	ab_34_10	144	|upkeep
+L	ab_34_10	145	|turn|13
+L	ab_34_10	146	|
+L	ab_34_10	147	|t:|<NORMALIZED>
+L	ab_34_10	148	|move|p2a: Manectric|Mud-Slap|p1a: Ledyba
+L	ab_34_10	149	|-immune|p1a: Ledyba
+L	ab_34_10	150	|move|p1a: Ledyba|Swords Dance|p1a: Ledyba
+L	ab_34_10	151	|-boost|p1a: Ledyba|atk|2
+L	ab_34_10	152	|
+L	ab_34_10	153	|upkeep
+L	ab_34_10	154	|turn|14
+L	ab_34_10	155	|
+L	ab_34_10	156	|t:|<NORMALIZED>
+L	ab_34_10	157	|move|p2a: Manectric|Spark|p1a: Ledyba
+L	ab_34_10	158	|-supereffective|p1a: Ledyba
+L	ab_34_10	159	|-damage|p1a: Ledyba|0 fnt
+L	ab_34_10	160	|faint|p1a: Ledyba
+L	ab_34_10	161	|
+L	ab_34_10	162	|t:|<NORMALIZED>
+L	ab_34_10	163	|switch|p1a: Cubone|Cubone, M|235/235
+L	ab_34_10	164	|
+L	ab_34_10	165	|upkeep
+L	ab_34_10	166	|turn|15
+L	ab_34_10	167	|
+L	ab_34_10	168	|t:|<NORMALIZED>
+L	ab_34_10	169	|move|p2a: Manectric|Tackle|p1a: Cubone
+L	ab_34_10	170	|-damage|p1a: Cubone|213/235
+L	ab_34_10	171	|move|p1a: Cubone|Bone Club|p2a: Manectric|[miss]
+L	ab_34_10	172	|debug|brightpowder - decreasing accuracy
+L	ab_34_10	173	|-miss|p1a: Cubone|p2a: Manectric
+L	ab_34_10	174	|
+L	ab_34_10	175	|upkeep
+L	ab_34_10	176	|turn|16
+L	ab_34_10	177	|
+L	ab_34_10	178	|t:|<NORMALIZED>
+L	ab_34_10	179	|switch|p1a: Carvanha|Carvanha, M|215/215
+L	ab_34_10	180	|move|p2a: Manectric|Tackle|p1a: Carvanha
+L	ab_34_10	181	|-damage|p1a: Carvanha|131/215
+L	ab_34_10	182	|-damage|p2a: Manectric|49/298|[from] ability: Rough Skin|[of] p1a: Carvanha
+L	ab_34_10	183	|
+L	ab_34_10	184	|upkeep
+L	ab_34_10	185	|turn|17
+L	ab_34_10	186	|
+L	ab_34_10	187	|t:|<NORMALIZED>
+L	ab_34_10	188	|move|p2a: Manectric|Rain Dance|p2a: Manectric
+L	ab_34_10	189	|-weather|RainDance
+L	ab_34_10	190	|move|p1a: Carvanha|Substitute|p1a: Carvanha
+L	ab_34_10	191	|-start|p1a: Carvanha|Substitute
+L	ab_34_10	192	|-damage|p1a: Carvanha|78/215
+L	ab_34_10	193	|
+L	ab_34_10	194	|-weather|RainDance|[upkeep]
+L	ab_34_10	195	|upkeep
+L	ab_34_10	196	|turn|18
+L	ab_34_10	197	|
+L	ab_34_10	198	|t:|<NORMALIZED>
+L	ab_34_10	199	|switch|p2a: Huntail|Huntail, M|249/249
+L	ab_34_10	200	|move|p1a: Carvanha|Substitute|p1a: Carvanha
+L	ab_34_10	201	|-fail|p1a: Carvanha|move: Substitute
+L	ab_34_10	202	|
+L	ab_34_10	203	|-weather|RainDance|[upkeep]
+L	ab_34_10	204	|upkeep
+L	ab_34_10	205	|turn|19
+L	ab_34_10	206	|
+L	ab_34_10	207	|t:|<NORMALIZED>
+L	ab_34_10	208	|move|p2a: Huntail|Icy Wind|p1a: Carvanha
+L	ab_34_10	209	|-resisted|p1a: Carvanha
+L	ab_34_10	210	|-end|p1a: Carvanha|Substitute
+L	ab_34_10	211	|move|p1a: Carvanha|Substitute|p1a: Carvanha
+L	ab_34_10	212	|-start|p1a: Carvanha|Substitute
+L	ab_34_10	213	|-damage|p1a: Carvanha|25/215
+L	ab_34_10	214	|
+L	ab_34_10	215	|-weather|RainDance|[upkeep]
+L	ab_34_10	216	|upkeep
+L	ab_34_10	217	|turn|20
+L	ab_34_10	218	|
+L	ab_34_10	219	|t:|<NORMALIZED>
+L	ab_34_10	220	|move|p2a: Huntail|Icy Wind|p1a: Carvanha|[miss]
+L	ab_34_10	221	|-miss|p2a: Huntail|p1a: Carvanha
+L	ab_34_10	222	|move|p1a: Carvanha|Substitute|p1a: Carvanha
+L	ab_34_10	223	|-fail|p1a: Carvanha|move: Substitute
+L	ab_34_10	224	|
+L	ab_34_10	225	|-weather|RainDance|[upkeep]
+L	ab_34_10	226	|upkeep
+L	ab_34_10	227	|turn|21
+L	ab_34_10	228	|
+L	ab_34_10	229	|t:|<NORMALIZED>
+L	ab_34_10	230	|switch|p2a: Sharpedo|Sharpedo, M|271/271
+L	ab_34_10	231	|switch|p1a: Politoed|Politoed, M|366/366
+L	ab_34_10	232	|
+L	ab_34_10	233	|-weather|none
+L	ab_34_10	234	|upkeep
+L	ab_34_10	235	|turn|22
+L	ab_34_10	236	|
+L	ab_34_10	237	|t:|<NORMALIZED>
+L	ab_34_10	238	|debug|before turn callback: focuspunch
+L	ab_34_10	239	|-singleturn|p1a: Politoed|move: Focus Punch
+L	ab_34_10	240	|move|p2a: Sharpedo|Crunch|p1a: Politoed
+L	ab_34_10	241	|-damage|p1a: Politoed|265/366
+L	ab_34_10	242	|-unboost|p1a: Politoed|spd|1
+L	ab_34_10	243	|move|p1a: Politoed|Focus Punch||[still]
+L	ab_34_10	244	|cant|p1a: Politoed|Focus Punch|Focus Punch
+L	ab_34_10	245	|
+L	ab_34_10	246	|upkeep
+L	ab_34_10	247	|turn|23
+L	ab_34_10	248	|
+L	ab_34_10	249	|t:|<NORMALIZED>
+L	ab_34_10	250	|debug|before turn callback: focuspunch
+L	ab_34_10	251	|-singleturn|p1a: Politoed|move: Focus Punch
+L	ab_34_10	252	|switch|p2a: Huntail|Huntail, M|249/249
+L	ab_34_10	253	|move|p1a: Politoed|Focus Punch|p2a: Huntail
+L	ab_34_10	254	|-damage|p2a: Huntail|183/249
+L	ab_34_10	255	|
+L	ab_34_10	256	|upkeep
+L	ab_34_10	257	|turn|24
+L	ab_34_10	258	|
+L	ab_34_10	259	|t:|<NORMALIZED>
+L	ab_34_10	260	|move|p1a: Politoed|Perish Song|p1a: Politoed
+L	ab_34_10	261	|-start|p1a: Politoed|perish3|[silent]
+L	ab_34_10	262	|-start|p2a: Huntail|perish3|[silent]
+L	ab_34_10	263	|-fieldactivate|move: Perish Song
+L	ab_34_10	264	|move|p2a: Huntail|Frustration|p1a: Politoed
+L	ab_34_10	265	|-damage|p1a: Politoed|263/366
+L	ab_34_10	266	|
+L	ab_34_10	267	|-start|p1a: Politoed|perish3
+L	ab_34_10	268	|-start|p2a: Huntail|perish3
+L	ab_34_10	269	|upkeep
+L	ab_34_10	270	|turn|25
+L	ab_34_10	271	|
+L	ab_34_10	272	|t:|<NORMALIZED>
+L	ab_34_10	273	|switch|p1a: Banette|Banette, M|277/277
+L	ab_34_10	274	|switch|p2a: Seadra|Seadra, M|281/281
+L	ab_34_10	275	|
+L	ab_34_10	276	|upkeep
+L	ab_34_10	277	|turn|26
+L	ab_34_10	278	|
+L	ab_34_10	279	|t:|<NORMALIZED>
+L	ab_34_10	280	|move|p2a: Seadra|Swift|p1a: Banette
+L	ab_34_10	281	|-immune|p1a: Banette
+L	ab_34_10	282	|move|p1a: Banette|Shadow Ball|p2a: Seadra
+L	ab_34_10	283	|-damage|p2a: Seadra|171/281
+L	ab_34_10	284	|
+L	ab_34_10	285	|upkeep
+L	ab_34_10	286	|turn|27
+L	ab_34_10	287	|
+L	ab_34_10	288	|t:|<NORMALIZED>
+L	ab_34_10	289	|switch|p2a: Carvanha|Carvanha, M|242/242
+L	ab_34_10	290	|switch|p1a: Cubone|Cubone, M|213/235
+L	ab_34_10	291	|
+L	ab_34_10	292	|upkeep
+L	ab_34_10	293	|turn|28
+L	ab_34_10	294	|
+L	ab_34_10	295	|t:|<NORMALIZED>
+L	ab_34_10	296	|move|p2a: Carvanha|Bite|p1a: Cubone
+L	ab_34_10	297	|-damage|p1a: Cubone|139/235
+L	ab_34_10	298	|move|p1a: Cubone|Seismic Toss|p2a: Carvanha
+L	ab_34_10	299	|-damage|p2a: Carvanha|142/242
+L	ab_34_10	300	|-damage|p1a: Cubone|125/235|[from] ability: Rough Skin|[of] p2a: Carvanha
+L	ab_34_10	301	|
+L	ab_34_10	302	|upkeep
+L	ab_34_10	303	|turn|29
+L	ab_34_10	304	|
+L	ab_34_10	305	|t:|<NORMALIZED>
+L	ab_34_10	306	|move|p2a: Carvanha|Bite|p1a: Cubone
+L	ab_34_10	307	|-damage|p1a: Cubone|44/235
+L	ab_34_10	308	|cant|p1a: Cubone|flinch
+L	ab_34_10	309	|
+L	ab_34_10	310	|-enditem|p1a: Cubone|Mago Berry|[eat]
+L	ab_34_10	311	|-heal|p1a: Cubone|73/235|[from] item: Mago Berry
+L	ab_34_10	312	|upkeep
+L	ab_34_10	313	|turn|30
+L	ab_34_10	314	|
+L	ab_34_10	315	|t:|<NORMALIZED>
+L	ab_34_10	316	|move|p2a: Carvanha|Bite|p1a: Cubone
+L	ab_34_10	317	|-damage|p1a: Cubone|0 fnt
+L	ab_34_10	318	|debug|move failed because it did nothing
+L	ab_34_10	319	|faint|p1a: Cubone
+L	ab_34_10	320	|
+L	ab_34_10	321	|t:|<NORMALIZED>
+L	ab_34_10	322	|switch|p1a: Carvanha|Carvanha, M|25/215
+L	ab_34_10	323	|
+L	ab_34_10	324	|upkeep
+L	ab_34_10	325	|turn|31
+L	ab_34_10	326	|
+L	ab_34_10	327	|t:|<NORMALIZED>
+L	ab_34_10	328	|move|p1a: Carvanha|Substitute|p1a: Carvanha
+L	ab_34_10	329	|-fail|p1a: Carvanha|move: Substitute|[weak]
+L	ab_34_10	330	|move|p2a: Carvanha|Mimic|p1a: Carvanha
+L	ab_34_10	331	|-activate|p2a: Carvanha|move: Mimic|Substitute
+L	ab_34_10	332	|
+L	ab_34_10	333	|upkeep
+L	ab_34_10	334	|turn|32
+L	ab_34_10	335	|
+L	ab_34_10	336	|t:|<NORMALIZED>
+L	ab_34_10	337	|move|p1a: Carvanha|Substitute|p1a: Carvanha
+L	ab_34_10	338	|-fail|p1a: Carvanha|move: Substitute|[weak]
+L	ab_34_10	339	|move|p2a: Carvanha|Thief|p1a: Carvanha
+L	ab_34_10	340	|-resisted|p1a: Carvanha
+L	ab_34_10	341	|-damage|p1a: Carvanha|0 fnt
+L	ab_34_10	342	|-damage|p2a: Carvanha|127/242|[from] ability: Rough Skin|[of] p1a: Carvanha
+L	ab_34_10	343	|faint|p1a: Carvanha
+L	ab_34_10	344	|
+L	ab_34_10	345	|t:|<NORMALIZED>
+L	ab_34_10	346	|switch|p1a: Banette|Banette, M|277/277
+L	ab_34_10	347	|
+L	ab_34_10	348	|upkeep
+L	ab_34_10	349	|turn|33
+L	ab_34_10	350	|
+L	ab_34_10	351	|t:|<NORMALIZED>
+L	ab_34_10	352	|switch|p2a: Seadra|Seadra, M|171/281
+L	ab_34_10	353	|move|p1a: Banette|Mud-Slap|p2a: Seadra
+L	ab_34_10	354	|-damage|p2a: Seadra|149/281
+L	ab_34_10	355	|-unboost|p2a: Seadra|accuracy|1
+L	ab_34_10	356	|
+L	ab_34_10	357	|upkeep
+L	ab_34_10	358	|turn|34
+L	ab_34_10	359	|
+L	ab_34_10	360	|t:|<NORMALIZED>
+L	ab_34_10	361	|move|p2a: Seadra|Surf|p1a: Banette
+L	ab_34_10	362	|-damage|p1a: Banette|114/277
+L	ab_34_10	363	|move|p1a: Banette|Shadow Ball|p2a: Seadra
+L	ab_34_10	364	|-damage|p2a: Seadra|34/281
+L	ab_34_10	365	|
+L	ab_34_10	366	|-enditem|p2a: Seadra|Oran Berry|[eat]
+L	ab_34_10	367	|-heal|p2a: Seadra|44/281|[from] item: Oran Berry
+L	ab_34_10	368	|upkeep
+L	ab_34_10	369	|turn|35
+L	ab_34_10	370	|
+L	ab_34_10	371	|t:|<NORMALIZED>
+L	ab_34_10	372	|move|p2a: Seadra|Water Gun|p1a: Banette|[miss]
+L	ab_34_10	373	|-miss|p2a: Seadra|p1a: Banette
+L	ab_34_10	374	|move|p1a: Banette|Shadow Ball|p2a: Seadra
+L	ab_34_10	375	|-damage|p2a: Seadra|0 fnt
+L	ab_34_10	376	|faint|p2a: Seadra
+L	ab_34_10	377	|
+L	ab_34_10	378	|t:|<NORMALIZED>
+L	ab_34_10	379	|switch|p2a: Sharpedo|Sharpedo, M|271/271
+L	ab_34_10	380	|
+L	ab_34_10	381	|upkeep
+L	ab_34_10	382	|turn|36
+L	ab_34_10	383	|
+L	ab_34_10	384	|t:|<NORMALIZED>
+L	ab_34_10	385	|move|p2a: Sharpedo|Crunch|p1a: Banette
+L	ab_34_10	386	|-supereffective|p1a: Banette
+L	ab_34_10	387	|-damage|p1a: Banette|0 fnt
+L	ab_34_10	388	|faint|p1a: Banette
+L	ab_34_10	389	|
+L	ab_34_10	390	|t:|<NORMALIZED>
+L	ab_34_10	391	|switch|p1a: Politoed|Politoed, M|263/366
+L	ab_34_10	392	|
+L	ab_34_10	393	|upkeep
+L	ab_34_10	394	|turn|37
+L	ab_34_10	395	|
+L	ab_34_10	396	|t:|<NORMALIZED>
+L	ab_34_10	397	|switch|p2a: Carvanha|Carvanha, M|127/242
+L	ab_34_10	398	|move|p1a: Politoed|Substitute|p1a: Politoed
+L	ab_34_10	399	|-start|p1a: Politoed|Substitute
+L	ab_34_10	400	|-damage|p1a: Politoed|172/366
+L	ab_34_10	401	|
+L	ab_34_10	402	|upkeep
+L	ab_34_10	403	|turn|38
+L	ab_34_10	404	|
+L	ab_34_10	405	|t:|<NORMALIZED>
+L	ab_34_10	406	|move|p2a: Carvanha|Mimic||[still]
+L	ab_34_10	407	|-fail|p2a: Carvanha
+L	ab_34_10	408	|debug|move failed because it did nothing
+L	ab_34_10	409	|move|p1a: Politoed|Perish Song|p1a: Politoed
+L	ab_34_10	410	|-start|p1a: Politoed|perish3|[silent]
+L	ab_34_10	411	|-start|p2a: Carvanha|perish3|[silent]
+L	ab_34_10	412	|-fieldactivate|move: Perish Song
+L	ab_34_10	413	|
+L	ab_34_10	414	|-start|p2a: Carvanha|perish3
+L	ab_34_10	415	|-start|p1a: Politoed|perish3
+L	ab_34_10	416	|upkeep
+L	ab_34_10	417	|turn|39
+L	ab_34_10	418	|
+L	ab_34_10	419	|t:|<NORMALIZED>
+L	ab_34_10	420	|move|p2a: Carvanha|Mimic||[still]
+L	ab_34_10	421	|-fail|p2a: Carvanha
+L	ab_34_10	422	|debug|move failed because it did nothing
+L	ab_34_10	423	|move|p1a: Politoed|Perish Song||[still]
+L	ab_34_10	424	|-fail|p1a: Politoed
+L	ab_34_10	425	|debug|move failed because it did nothing
+L	ab_34_10	426	|
+L	ab_34_10	427	|-start|p2a: Carvanha|perish2
+L	ab_34_10	428	|-start|p1a: Politoed|perish2
+L	ab_34_10	429	|upkeep
+L	ab_34_10	430	|turn|40
+L	ab_34_10	431	|
+L	ab_34_10	432	|t:|<NORMALIZED>
+L	ab_34_10	433	|move|p2a: Carvanha|Mud-Slap|p1a: Politoed
+L	ab_34_10	434	|-activate|p1a: Politoed|Substitute|[damage]
+L	ab_34_10	435	|move|p1a: Politoed|Perish Song||[still]
+L	ab_34_10	436	|-fail|p1a: Politoed
+L	ab_34_10	437	|debug|move failed because it did nothing
+L	ab_34_10	438	|
+L	ab_34_10	439	|-start|p2a: Carvanha|perish1
+L	ab_34_10	440	|-start|p1a: Politoed|perish1
+L	ab_34_10	441	|upkeep
+L	ab_34_10	442	|turn|41
+L	ab_34_10	443	|
+L	ab_34_10	444	|t:|<NORMALIZED>
+L	ab_34_10	445	|move|p2a: Carvanha|Thief|p1a: Politoed
+L	ab_34_10	446	|-activate|p1a: Politoed|Substitute|[damage]
+L	ab_34_10	447	|move|p1a: Politoed|Perish Song||[still]
+L	ab_34_10	448	|-fail|p1a: Politoed
+L	ab_34_10	449	|debug|move failed because it did nothing
+L	ab_34_10	450	|
+L	ab_34_10	451	|-start|p2a: Carvanha|perish0
+L	ab_34_10	452	|-start|p1a: Politoed|perish0
+L	ab_34_10	453	|upkeep
+L	ab_34_10	454	|faint|p2a: Carvanha
+L	ab_34_10	455	|faint|p1a: Politoed
+L	ab_34_10	456	|
+L	ab_34_10	457	|win|P2

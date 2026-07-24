@@ -1,0 +1,151 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# Guards TRACE-copies-TRACE (a Porygon2-vs-Porygon Trace mirror): BOTH leads trace each other's
+#   Trace and the sim emits |-ability|<mon>|Trace|Trace|[from] ability: Trace|[of] <foe> for each.
+#   The port's emit gate `cur != trace` wrongly SKIPPED the line when the copied ability was Trace.
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/FMT/INIT/DEC/END/L).
+SCEN	ab_112_13
+TEAM	ab_112_13	p1	Porygon||OranBerry|Trace|HyperBeam,Psychic,Rest,Tackle|Naughty|128,136,120,76,,48|N|18,12,15,22,29,9|||]Hoppip||ApicotBerry|Chlorophyll|Frustration,Facade,SleepPowder,AerialAce|Bashful|,28,164,72,124,120|M|29,6,18,2,26,21|||]Nidoran-F||DeepSeaTooth|PoisonPoint|DoubleEdge,Blizzard,Endure,TakeDown|Bold|,4,176,176,8,144|F|1,8,11,6,13,6|||]Sharpedo||LeppaBerry|RoughSkin|Slash,Screech,Earthquake,Protect|Hasty|28,,44,80,252,80|M|24,7,12,26,0,9|||]Rhydon||MysticWater|LightningRod|MegaPunch,Thunderbolt,Thunder,RockBlast|Mild|76,52,,136,64,180|M|23,,6,14,11,26|||]Shedinja||SharpBeak|WonderGuard|HyperBeam,Protect,AerialAce,Facade|Lax|80,24,64,64,40,20|N|15,11,7,6,2,0|||
+TEAM	ab_112_13	p2	Porygon2||ScopeLens|Trace|Blizzard,Thunder,Protect,ShadowBall|Gentle|100,124,4,,168,112|N|27,23,25,12,5,20|||]Slaking||ScopeLens|Truant|IcePunch,Roar,Facade,AerialAce|Lax|136,16,120,100,16,120|M|14,9,28,8,7,19|||]Cyndaquil||LaxIncense|Blaze|Cut,CrushClaw,Return,Endure|Modest|112,196,,128,44,28|M|10,4,16,27,28,5|||]Staryu||MagoBerry|NaturalCure|Waterfall,WaterGun,Swift,Rest|Adamant|44,160,76,148,,80|N|15,18,2,9,17,16|||]Wailord||MagoBerry|Oblivious|Return,Astonish,IceBeam,RockTomb|Hardy|56,220,204,,24,4|M|25,15,0,18,9,8|||]Snorlax||DeepSeaScale|Immunity|FocusPunch,IcyWind,Substitute,MegaPunch|Adamant|128,,,124,120,136|M|12,15,0,4,30,17|||
+FMT	ab_112_13	gen3customgame
+INIT	ab_112_13	64908,40808,1479,13520	2885497540
+DEC	ab_112_13	0	move	0	0	m3	m2	6850,46801,42385,1677	Porygon	290	290	0	-	0	0	0	0	0	0	6	Porygon2	332	332	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_112_13	1	move	0	0	m2	m0	17574,2776,63533,63287	Porygon	290	290	0	-	0	0	0	0	0	0	6	Porygon2	332	332	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_112_13	2	move	0	0	m0	m3	61642,25335,15850,7352	Porygon	290	290	0	-	0	0	0	0	0	0	6	Porygon2	332	332	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_112_13	3	move	0	0	s3	m2	37862,3530,8170,27483	Sharpedo	281	281	0	-	0	0	0	0	0	0	6	Porygon2	332	332	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_112_13	4	move	0	0	s1	m0	64825,14006,51318,47061	Hoppip	209	209	0	-	0	0	0	0	0	0	6	Porygon2	332	332	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_112_13	5	move	0	0	m2	m1	34392,46383,45963,26851	Hoppip	93	209	0	-	0	0	0	0	0	0	6	Porygon2	332	332	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_112_13	6	move	0	0	m3	m0	733,19535,62899,64071	Hoppip	0	209	1	fnt	0	0	0	0	0	0	5	Porygon2	332	332	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_112_13	7	switch	1	0	s1	-	56651,54926,3337,23494	Sharpedo	281	281	0	-	0	0	0	0	0	0	5	Porygon2	332	332	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_112_13	8	move	0	0	s3	m0	17433,54892,49480,50844	Porygon	159	290	0	-	0	0	0	0	0	0	5	Porygon2	332	332	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_112_13	9	move	0	0	m3	s3	10080,8678,25187,38512	Porygon	159	290	0	-	0	0	0	0	0	0	5	Staryu	137	196	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_112_13	10	move	0	0	m1	m2	45316,44258,51770,11889	Porygon	124	290	0	-	0	0	0	0	0	0	5	Staryu	51	196	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_112_13	11	move	0	0	m0	m1	38644,5170,8761,863	Porygon	72	290	0	-	0	0	0	0	0	0	5	Staryu	0	196	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_112_13	12	switch	0	1	-	s1	484,45710,12043,51774	Porygon	72	290	0	-	0	0	0	0	0	0	5	Slaking	458	458	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+END	ab_112_13	0	none
+L	ab_112_13	0	|t:|<NORMALIZED>
+L	ab_112_13	1	|gametype|singles
+L	ab_112_13	2	|player|p1|P1||
+L	ab_112_13	3	|player|p2|P2||
+L	ab_112_13	4	|gen|3
+L	ab_112_13	5	|tier|[Gen 3] Custom Game
+L	ab_112_13	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_112_13	7	|
+L	ab_112_13	8	|t:|<NORMALIZED>
+L	ab_112_13	9	|teamsize|p1|6
+L	ab_112_13	10	|teamsize|p2|6
+L	ab_112_13	11	|start
+L	ab_112_13	12	|switch|p1a: Porygon|Porygon|290/290
+L	ab_112_13	13	|switch|p2a: Porygon2|Porygon2|332/332
+L	ab_112_13	14	|-ability|p2a: Porygon2|Trace|Trace|[from] ability: Trace|[of] p1a: Porygon
+L	ab_112_13	15	|-ability|p1a: Porygon|Trace|Trace|[from] ability: Trace|[of] p2a: Porygon2
+L	ab_112_13	16	|turn|1
+L	ab_112_13	17	|
+L	ab_112_13	18	|t:|<NORMALIZED>
+L	ab_112_13	19	|move|p2a: Porygon2|Protect|p2a: Porygon2
+L	ab_112_13	20	|-singleturn|p2a: Porygon2|Protect
+L	ab_112_13	21	|move|p1a: Porygon|Tackle|p2a: Porygon2
+L	ab_112_13	22	|-activate|p2a: Porygon2|Protect
+L	ab_112_13	23	|
+L	ab_112_13	24	|upkeep
+L	ab_112_13	25	|turn|2
+L	ab_112_13	26	|
+L	ab_112_13	27	|t:|<NORMALIZED>
+L	ab_112_13	28	|move|p2a: Porygon2|Blizzard|p1a: Porygon|[miss]
+L	ab_112_13	29	|-miss|p2a: Porygon2|p1a: Porygon
+L	ab_112_13	30	|move|p1a: Porygon|Rest|p1a: Porygon
+L	ab_112_13	31	|-fail|p1a: Porygon|heal
+L	ab_112_13	32	|
+L	ab_112_13	33	|upkeep
+L	ab_112_13	34	|turn|3
+L	ab_112_13	35	|
+L	ab_112_13	36	|t:|<NORMALIZED>
+L	ab_112_13	37	|move|p2a: Porygon2|Shadow Ball|p1a: Porygon
+L	ab_112_13	38	|-immune|p1a: Porygon
+L	ab_112_13	39	|move|p1a: Porygon|Hyper Beam|p2a: Porygon2|[miss]
+L	ab_112_13	40	|-miss|p1a: Porygon|p2a: Porygon2
+L	ab_112_13	41	|
+L	ab_112_13	42	|upkeep
+L	ab_112_13	43	|turn|4
+L	ab_112_13	44	|
+L	ab_112_13	45	|t:|<NORMALIZED>
+L	ab_112_13	46	|switch|p1a: Sharpedo|Sharpedo, M|281/281
+L	ab_112_13	47	|move|p2a: Porygon2|Protect||[still]
+L	ab_112_13	48	|-fail|p2a: Porygon2
+L	ab_112_13	49	|
+L	ab_112_13	50	|upkeep
+L	ab_112_13	51	|turn|5
+L	ab_112_13	52	|
+L	ab_112_13	53	|t:|<NORMALIZED>
+L	ab_112_13	54	|switch|p1a: Hoppip|Hoppip, M|209/209
+L	ab_112_13	55	|move|p2a: Porygon2|Blizzard|p1a: Hoppip|[miss]
+L	ab_112_13	56	|-miss|p2a: Porygon2|p1a: Hoppip
+L	ab_112_13	57	|
+L	ab_112_13	58	|upkeep
+L	ab_112_13	59	|turn|6
+L	ab_112_13	60	|
+L	ab_112_13	61	|t:|<NORMALIZED>
+L	ab_112_13	62	|move|p2a: Porygon2|Thunder|p1a: Hoppip
+L	ab_112_13	63	|-damage|p1a: Hoppip|93/209
+L	ab_112_13	64	|move|p1a: Hoppip|Sleep Powder|p2a: Porygon2|[miss]
+L	ab_112_13	65	|-miss|p1a: Hoppip|p2a: Porygon2
+L	ab_112_13	66	|
+L	ab_112_13	67	|upkeep
+L	ab_112_13	68	|turn|7
+L	ab_112_13	69	|
+L	ab_112_13	70	|t:|<NORMALIZED>
+L	ab_112_13	71	|move|p2a: Porygon2|Blizzard|p1a: Hoppip
+L	ab_112_13	72	|-supereffective|p1a: Hoppip
+L	ab_112_13	73	|-damage|p1a: Hoppip|0 fnt
+L	ab_112_13	74	|debug|move failed because it did nothing
+L	ab_112_13	75	|faint|p1a: Hoppip
+L	ab_112_13	76	|
+L	ab_112_13	77	|t:|<NORMALIZED>
+L	ab_112_13	78	|switch|p1a: Sharpedo|Sharpedo, M|281/281
+L	ab_112_13	79	|
+L	ab_112_13	80	|upkeep
+L	ab_112_13	81	|turn|8
+L	ab_112_13	82	|
+L	ab_112_13	83	|t:|<NORMALIZED>
+L	ab_112_13	84	|switch|p1a: Porygon|Porygon|290/290
+L	ab_112_13	85	|-ability|p1a: Porygon|Trace|Trace|[from] ability: Trace|[of] p2a: Porygon2
+L	ab_112_13	86	|move|p2a: Porygon2|Blizzard|p1a: Porygon
+L	ab_112_13	87	|-damage|p1a: Porygon|159/290
+L	ab_112_13	88	|
+L	ab_112_13	89	|upkeep
+L	ab_112_13	90	|turn|9
+L	ab_112_13	91	|
+L	ab_112_13	92	|t:|<NORMALIZED>
+L	ab_112_13	93	|switch|p2a: Staryu|Staryu|196/196
+L	ab_112_13	94	|move|p1a: Porygon|Tackle|p2a: Staryu
+L	ab_112_13	95	|-damage|p2a: Staryu|137/196
+L	ab_112_13	96	|
+L	ab_112_13	97	|upkeep
+L	ab_112_13	98	|turn|10
+L	ab_112_13	99	|
+L	ab_112_13	100	|t:|<NORMALIZED>
+L	ab_112_13	101	|move|p2a: Staryu|Swift|p1a: Porygon
+L	ab_112_13	102	|-damage|p1a: Porygon|114/290
+L	ab_112_13	103	|move|p1a: Porygon|Psychic|p2a: Staryu
+L	ab_112_13	104	|-damage|p2a: Staryu|27/196
+L	ab_112_13	105	|
+L	ab_112_13	106	|-enditem|p2a: Staryu|Mago Berry|[eat]
+L	ab_112_13	107	|-heal|p2a: Staryu|51/196|[from] item: Mago Berry
+L	ab_112_13	108	|-enditem|p1a: Porygon|Oran Berry|[eat]
+L	ab_112_13	109	|-heal|p1a: Porygon|124/290|[from] item: Oran Berry
+L	ab_112_13	110	|upkeep
+L	ab_112_13	111	|turn|11
+L	ab_112_13	112	|
+L	ab_112_13	113	|t:|<NORMALIZED>
+L	ab_112_13	114	|move|p2a: Staryu|Water Gun|p1a: Porygon
+L	ab_112_13	115	|-damage|p1a: Porygon|72/290
+L	ab_112_13	116	|move|p1a: Porygon|Hyper Beam|p2a: Staryu
+L	ab_112_13	117	|-crit|p2a: Staryu
+L	ab_112_13	118	|-damage|p2a: Staryu|0 fnt
+L	ab_112_13	119	|-mustrecharge|p1a: Porygon
+L	ab_112_13	120	|faint|p2a: Staryu
+L	ab_112_13	121	|
+L	ab_112_13	122	|t:|<NORMALIZED>
+L	ab_112_13	123	|switch|p2a: Slaking|Slaking, M|458/458
+L	ab_112_13	124	|
+L	ab_112_13	125	|upkeep
+L	ab_112_13	126	|turn|12

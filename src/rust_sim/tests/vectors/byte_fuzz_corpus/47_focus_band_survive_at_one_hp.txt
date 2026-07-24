@@ -1,0 +1,620 @@
+# ab_fuzz repro (real Showdown vs the Rust port), --mode random master_seed=100125.
+# Guards the FOCUS BAND survive-at-1 -damage EMISSION (gen3_focus_band_survive_zero_v1): a Focus
+#   Band hit into a holder ALREADY at 1 HP nets 0 damage (stays at 1) but the sim STILL emits
+#   |-damage|<mon>|1/<max> after |-activate|item: Focus Band. The >0-gated caller skipped it;
+#   focus_band_damage now self-emits at hp==1 (the Endure-at-1 precedent). Repro ab_9_9: a Zubat
+#   Frustration into a 1-HP Focus-Band Venusaur. Revert => kind=protocol at the -damage line.
+# Format: SCEN/TEAM/FMT/INIT/DEC/END/L (as tests/vectors/e2e_fuzz_golden.txt).
+SCEN	ab_9_9
+TEAM	ab_9_9	p1	Aron||TwistedSpoon|Sturdy|Frustration,Endeavor,SunnyDay,IronDefense|Serious|52,168,,132,156,|M|14,19,20,7,3,1|||]Granbull||QuickClaw|Intimidate|SeismicToss,Thunder,MegaKick,TakeDown|Jolly|128,48,,176,144,12|M|25,3,13,6,7,|||]Minun||MagoBerry|Minus|DynamicPunch,Swift,Thunderbolt,Charm|Lax|32,92,116,8,92,20|M|10,,12,17,0,28|||]Charizard||HardStone|Blaze|FocusPunch,SunnyDay,DragonClaw,Strength|Sassy|192,48,104,148,,16|M|26,9,22,22,1,30|||]Alakazam||IapapaBerry|Synchronize|FocusPunch,SeismicToss,FirePunch,Facade|Naughty|88,184,136,24,48,28|M|15,11,28,0,14,21|||]Zubat||BrightPowder|InnerFocus|Return,Facade,Frustration,Toxic|Impish|20,152,72,128,96,40|M|10,7,7,23,5,8|||
+TEAM	ab_9_9	p2	Nosepass||Charcoal|Sturdy|RockTomb,Strength,Tackle,FirePunch|Quiet|,140,68,,192,108|M|19,18,30,25,5,12|||]Slugma||SilverPowder|FlameBody|HeatWave,RockSmash,Endure,Overheat|Modest|24,60,92,124,152,56|M|18,1,23,15,18,28|||]Venusaur||FocusBand|Overgrow|Frustration,SludgeBomb,RockSmash,Endure|Rash|88,16,12,124,144,124|M|30,13,29,1,17,6|||]Tropius||QuickClaw|Chlorophyll|HyperBeam,GigaDrain,Return,Mimic|Brave|100,,76,92,160,80|M|19,8,22,4,14,1|||]Steelix||MetalCoat|RockHead|Return,Crunch,Screech,Substitute|Brave|4,44,184,32,40,168|M|26,2,8,10,19,20|||]Eevee||LiechiBerry|RunAway|Facade,Frustration,Rest,MudSlap|Serious|,56,148,144,,160|M|10,12,26,23,24,25|||
+FMT	ab_9_9	gen3customgame
+INIT	ab_9_9	10781,65390,32336,57463	400172618
+DEC	ab_9_9	0	move	0	0	m0	m1	46556,26674,50745,43788	Aron	226	237	0	-	0	0	0	0	0	0	6	Nosepass	188	189	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_9_9	1	move	0	0	m2	m0	50756,50470,11383,54819	Aron	207	237	0	-	0	0	0	0	-1	0	6	Nosepass	188	189	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_9_9	2	move	0	0	m2	m1	10868,50326,15862,4999	Aron	188	237	0	-	0	0	0	0	-1	0	6	Nosepass	188	189	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_9_9	3	move	0	0	m1	m2	44150,10710,41215,36666	Aron	184	237	0	-	0	0	0	0	-1	0	6	Nosepass	184	189	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_9_9	4	move	0	0	m1	m1	39076,43034,46487,62441	Aron	173	237	0	-	0	0	0	0	-1	0	6	Nosepass	173	189	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_9_9	5	move	0	0	m3	m3	18057,52546,49981,24900	Aron	68	237	0	-	0	2	0	0	-1	0	6	Nosepass	173	189	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_9_9	6	move	0	0	m1	m2	33273,25559,5234,57531	Aron	67	237	0	-	0	2	0	0	-1	0	6	Nosepass	67	189	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_9_9	7	move	0	0	s4	m1	11197,50453,52967,25759	Alakazam	131	257	0	-	0	0	0	0	0	0	6	Nosepass	67	189	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_9_9	8	move	0	0	m0	s2	40412,38074,3190,44594	Alakazam	131	257	0	-	0	0	0	0	0	0	6	Venusaur	272	322	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_9_9	9	move	0	0	m3	s1	25186,26430,61126,22081	Alakazam	131	257	0	-	0	0	0	0	0	0	6	Slugma	133	214	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_9_9	10	move	0	0	m2	m0	24870,4159,9564,31824	Alakazam	0	257	1	fnt	0	0	0	0	0	0	5	Slugma	70	214	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_9_9	11	switch	1	0	s5	-	34991,47473,25178,31315	Zubat	205	205	0	-	0	0	0	0	0	0	5	Slugma	70	214	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_9_9	12	move	0	0	s1	m0	28678,32647,22232,63990	Granbull	197	347	0	-	0	0	0	0	0	0	5	Slugma	70	214	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_9_9	13	move	0	0	s2	m3	8577,1945,45626,24917	Minun	90	248	0	-	0	0	0	0	0	0	5	Slugma	70	214	0	-	-1	0	-2	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_9_9	14	move	0	0	m0	m3	62879,53445,17590,30496	Minun	0	248	1	fnt	0	0	0	0	0	0	4	Slugma	70	214	0	-	-1	0	-4	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_9_9	15	switch	1	0	s4	-	7892,10872,33731,48739	Aron	67	237	0	-	0	0	0	0	0	0	4	Slugma	70	214	0	-	-1	0	-4	0	0	0	6	none	0	0	0	0	0
+DEC	ab_9_9	16	move	0	0	s2	m2	25331,19658,46584,46802	Granbull	197	347	0	-	0	0	0	0	0	0	4	Slugma	70	214	0	-	-2	0	-4	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_9_9	17	move	0	0	m3	m2	53421,47387,13353,42248	Granbull	137	347	0	brn	0	0	0	0	0	0	4	Slugma	1	214	0	-	-2	0	-4	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_9_9	18	move	0	0	m0	m2	30295,54522,349,49381	Granbull	137	347	0	brn	0	0	0	0	0	0	4	Slugma	0	214	1	fnt	0	0	0	0	0	0	5	p2	0	0	1	0	1
+DEC	ab_9_9	19	switch	0	1	-	s4	61051,55719,39073,17948	Granbull	94	347	0	brn	0	0	0	0	0	0	4	Steelix	287	287	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_9_9	20	move	0	0	m1	m3	1793,45329,36484,9838	Granbull	51	347	0	brn	0	0	0	0	0	0	4	Steelix	216	287	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_9_9	21	move	0	0	m3	m1	61704,22725,54681,46807	Granbull	0	347	1	fnt	0	0	0	0	0	0	3	Steelix	216	287	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_9_9	22	switch	1	0	s2	-	9254,30086,15493,53398	Aron	67	237	0	-	0	0	0	0	0	0	3	Steelix	216	287	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_9_9	23	move	0	0	s3	s5	27362,3375,31148,12273	Charizard	340	340	0	-	0	0	0	0	0	0	3	Eevee	230	230	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_9_9	24	move	0	0	s3	m0	1203,31750,54785,7285	Aron	55	237	0	-	0	0	0	0	0	0	3	Eevee	230	230	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_9_9	25	move	0	0	m3	m1	30642,12925,62923,59577	Aron	54	237	0	-	0	2	0	0	0	0	3	Eevee	230	230	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_9_9	26	move	0	0	s3	m1	31485,56255,7924,6333	Charizard	337	340	0	-	0	0	0	0	0	0	3	Eevee	230	230	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_9_9	27	move	0	0	m1	m3	38321,16575,46934,37351	Charizard	337	340	0	-	0	0	0	0	0	0	3	Eevee	230	230	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_9_9	28	move	0	0	m1	m1	55689,2285,51038,15115	Charizard	333	340	0	-	0	0	0	0	0	0	3	Eevee	230	230	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_9_9	29	move	0	0	m1	s1	54392,15956,22329,52506	Charizard	333	340	0	-	0	0	0	0	0	0	3	Venusaur	272	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_9_9	30	move	0	0	m0	m2	20994,39791,19276,26441	Charizard	327	340	0	-	0	-1	0	0	0	0	3	Venusaur	272	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_9_9	31	move	0	0	m1	m1	43191,45759,41827,47140	Charizard	177	340	0	-	0	-1	0	0	0	0	3	Venusaur	272	322	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_9_9	32	move	0	0	m1	m0	44050,41482,20285,49016	Charizard	175	340	0	-	0	-1	0	0	0	0	3	Venusaur	272	322	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_9_9	33	move	0	0	m1	m1	36776,30557,38390,40703	Charizard	34	340	0	-	0	-1	0	0	0	0	3	Venusaur	272	322	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_9_9	34	move	0	0	m3	m0	10553,24261,4135,39943	Charizard	32	340	0	-	0	-1	0	0	0	0	3	Venusaur	213	322	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_9_9	35	move	0	0	m1	m2	60412,48660,30682,16826	Charizard	22	340	0	-	0	-2	0	0	0	0	3	Venusaur	213	322	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_9_9	36	move	0	0	m3	m2	19137,54974,31297,11629	Charizard	9	340	0	-	0	-2	0	0	0	0	3	Venusaur	148	322	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_9_9	37	move	0	0	m0	m2	36166,44504,42597,39473	Charizard	0	340	1	fnt	0	0	0	0	0	0	2	Venusaur	148	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_9_9	38	switch	1	0	s1	-	21937,25006,59671,44312	Zubat	205	205	0	-	0	0	0	0	0	0	2	Venusaur	148	322	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_9_9	39	move	0	0	m1	m3	11672,2750,24092,21246	Zubat	205	205	0	-	0	0	0	0	0	0	2	Venusaur	109	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_9_9	40	move	0	0	m0	m3	57061,21540,55689,5671	Zubat	205	205	0	-	0	0	0	0	0	0	2	Venusaur	56	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	1
+DEC	ab_9_9	41	move	0	0	s3	m0	3523,54282,10378,64331	Aron	53	237	0	-	0	0	0	0	0	0	2	Venusaur	56	322	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_9_9	42	move	0	0	m0	m1	26978,33388,50862,47497	Aron	53	237	0	-	0	0	0	0	0	0	2	Venusaur	54	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_9_9	43	move	0	0	m1	m2	22612,23688,20631,64653	Aron	0	237	1	fnt	0	0	0	0	0	0	1	Venusaur	54	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_9_9	44	switch	1	0	s3	-	25622,64061,34335,46948	Zubat	205	205	0	-	0	0	0	0	0	0	1	Venusaur	54	322	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_9_9	45	move	0	0	m0	m2	9022,18698,59014,19263	Zubat	199	205	0	-	0	0	0	0	0	0	1	Venusaur	3	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_9_9	46	move	0	0	m0	m1	45392,58960,24300,47558	Zubat	114	205	0	-	0	0	0	0	0	0	1	Venusaur	1	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_9_9	47	move	0	0	m3	m3	5706,22160,9351,33643	Zubat	114	205	0	-	0	0	0	0	0	0	1	Venusaur	1	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_9_9	48	move	0	0	m2	m2	30549,36961,45403,20386	Zubat	108	205	0	-	0	-1	0	0	0	0	1	Venusaur	1	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_9_9	49	move	0	0	m3	m2	36517,13264,30525,39000	Zubat	98	205	0	-	0	-1	0	0	0	0	1	Venusaur	1	322	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_9_9	50	move	0	0	m1	s1	31753,50684,61293,9324	Zubat	98	205	0	-	0	-1	0	0	0	0	1	Eevee	184	230	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_9_9	51	move	0	0	m2	m2	3572,35275,5799,43779	Zubat	98	205	0	-	0	-1	0	0	0	0	1	Eevee	228	230	0	slp	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_9_9	52	move	0	0	m3	m0	36405,1459,60675,21821	Zubat	98	205	0	-	0	-1	0	0	0	0	1	Eevee	228	230	0	slp	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_9_9	53	move	0	0	m3	s2	48955,49087,38429,23143	Zubat	98	205	0	-	0	-1	0	0	0	0	1	Nosepass	56	189	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_9_9	54	move	0	0	m2	m1	30792,45492,42955,41093	Zubat	0	205	1	-	0	0	0	0	0	0	0	Nosepass	55	189	0	tox	0	0	0	0	0	0	5	p1	0	0	0	1	0
+END	ab_9_9	1	p2
+L	ab_9_9	0	|t:|<NORMALIZED>
+L	ab_9_9	1	|gametype|singles
+L	ab_9_9	2	|player|p1|P1||
+L	ab_9_9	3	|player|p2|P2||
+L	ab_9_9	4	|gen|3
+L	ab_9_9	5	|tier|[Gen 3] Custom Game
+L	ab_9_9	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_9_9	7	|
+L	ab_9_9	8	|t:|<NORMALIZED>
+L	ab_9_9	9	|teamsize|p1|6
+L	ab_9_9	10	|teamsize|p2|6
+L	ab_9_9	11	|start
+L	ab_9_9	12	|switch|p1a: Aron|Aron, M|237/237
+L	ab_9_9	13	|switch|p2a: Nosepass|Nosepass, M|189/189
+L	ab_9_9	14	|turn|1
+L	ab_9_9	15	|
+L	ab_9_9	16	|t:|<NORMALIZED>
+L	ab_9_9	17	|move|p2a: Nosepass|Strength|p1a: Aron
+L	ab_9_9	18	|-resisted|p1a: Aron
+L	ab_9_9	19	|-damage|p1a: Aron|226/237
+L	ab_9_9	20	|move|p1a: Aron|Frustration|p2a: Nosepass
+L	ab_9_9	21	|-resisted|p2a: Nosepass
+L	ab_9_9	22	|-damage|p2a: Nosepass|188/189
+L	ab_9_9	23	|
+L	ab_9_9	24	|upkeep
+L	ab_9_9	25	|turn|2
+L	ab_9_9	26	|
+L	ab_9_9	27	|t:|<NORMALIZED>
+L	ab_9_9	28	|move|p2a: Nosepass|Rock Tomb|p1a: Aron
+L	ab_9_9	29	|-resisted|p1a: Aron
+L	ab_9_9	30	|-damage|p1a: Aron|207/237
+L	ab_9_9	31	|-unboost|p1a: Aron|spe|1
+L	ab_9_9	32	|move|p1a: Aron|Sunny Day|p1a: Aron
+L	ab_9_9	33	|-weather|SunnyDay
+L	ab_9_9	34	|
+L	ab_9_9	35	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	36	|upkeep
+L	ab_9_9	37	|turn|3
+L	ab_9_9	38	|
+L	ab_9_9	39	|t:|<NORMALIZED>
+L	ab_9_9	40	|move|p2a: Nosepass|Strength|p1a: Aron
+L	ab_9_9	41	|-resisted|p1a: Aron
+L	ab_9_9	42	|-crit|p1a: Aron
+L	ab_9_9	43	|-damage|p1a: Aron|188/237
+L	ab_9_9	44	|move|p1a: Aron|Sunny Day||[still]
+L	ab_9_9	45	|-fail|p1a: Aron
+L	ab_9_9	46	|debug|move failed because it did nothing
+L	ab_9_9	47	|
+L	ab_9_9	48	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	49	|upkeep
+L	ab_9_9	50	|turn|4
+L	ab_9_9	51	|
+L	ab_9_9	52	|t:|<NORMALIZED>
+L	ab_9_9	53	|move|p2a: Nosepass|Tackle|p1a: Aron
+L	ab_9_9	54	|-resisted|p1a: Aron
+L	ab_9_9	55	|-damage|p1a: Aron|184/237
+L	ab_9_9	56	|move|p1a: Aron|Endeavor|p2a: Nosepass
+L	ab_9_9	57	|-damage|p2a: Nosepass|184/189
+L	ab_9_9	58	|
+L	ab_9_9	59	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	60	|upkeep
+L	ab_9_9	61	|turn|5
+L	ab_9_9	62	|
+L	ab_9_9	63	|t:|<NORMALIZED>
+L	ab_9_9	64	|move|p2a: Nosepass|Strength|p1a: Aron
+L	ab_9_9	65	|-resisted|p1a: Aron
+L	ab_9_9	66	|-damage|p1a: Aron|173/237
+L	ab_9_9	67	|move|p1a: Aron|Endeavor|p2a: Nosepass
+L	ab_9_9	68	|-damage|p2a: Nosepass|173/189
+L	ab_9_9	69	|
+L	ab_9_9	70	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	71	|upkeep
+L	ab_9_9	72	|turn|6
+L	ab_9_9	73	|
+L	ab_9_9	74	|t:|<NORMALIZED>
+L	ab_9_9	75	|move|p2a: Nosepass|Fire Punch|p1a: Aron
+L	ab_9_9	76	|debug|Sunny Day fire boost
+L	ab_9_9	77	|-damage|p1a: Aron|68/237
+L	ab_9_9	78	|move|p1a: Aron|Iron Defense|p1a: Aron
+L	ab_9_9	79	|-boost|p1a: Aron|def|2
+L	ab_9_9	80	|
+L	ab_9_9	81	|-weather|none
+L	ab_9_9	82	|upkeep
+L	ab_9_9	83	|turn|7
+L	ab_9_9	84	|
+L	ab_9_9	85	|t:|<NORMALIZED>
+L	ab_9_9	86	|move|p2a: Nosepass|Tackle|p1a: Aron
+L	ab_9_9	87	|-resisted|p1a: Aron
+L	ab_9_9	88	|-damage|p1a: Aron|67/237
+L	ab_9_9	89	|move|p1a: Aron|Endeavor|p2a: Nosepass
+L	ab_9_9	90	|-damage|p2a: Nosepass|67/189
+L	ab_9_9	91	|
+L	ab_9_9	92	|upkeep
+L	ab_9_9	93	|turn|8
+L	ab_9_9	94	|
+L	ab_9_9	95	|t:|<NORMALIZED>
+L	ab_9_9	96	|switch|p1a: Alakazam|Alakazam, M|257/257
+L	ab_9_9	97	|move|p2a: Nosepass|Strength|p1a: Alakazam
+L	ab_9_9	98	|-crit|p1a: Alakazam
+L	ab_9_9	99	|-damage|p1a: Alakazam|131/257
+L	ab_9_9	100	|
+L	ab_9_9	101	|upkeep
+L	ab_9_9	102	|turn|9
+L	ab_9_9	103	|
+L	ab_9_9	104	|t:|<NORMALIZED>
+L	ab_9_9	105	|debug|before turn callback: focuspunch
+L	ab_9_9	106	|-singleturn|p1a: Alakazam|move: Focus Punch
+L	ab_9_9	107	|switch|p2a: Venusaur|Venusaur, M|322/322
+L	ab_9_9	108	|move|p1a: Alakazam|Focus Punch|p2a: Venusaur
+L	ab_9_9	109	|-resisted|p2a: Venusaur
+L	ab_9_9	110	|-damage|p2a: Venusaur|272/322
+L	ab_9_9	111	|
+L	ab_9_9	112	|upkeep
+L	ab_9_9	113	|turn|10
+L	ab_9_9	114	|
+L	ab_9_9	115	|t:|<NORMALIZED>
+L	ab_9_9	116	|switch|p2a: Slugma|Slugma, M|214/214
+L	ab_9_9	117	|move|p1a: Alakazam|Facade|p2a: Slugma
+L	ab_9_9	118	|-damage|p2a: Slugma|133/214
+L	ab_9_9	119	|
+L	ab_9_9	120	|upkeep
+L	ab_9_9	121	|turn|11
+L	ab_9_9	122	|
+L	ab_9_9	123	|t:|<NORMALIZED>
+L	ab_9_9	124	|move|p1a: Alakazam|Fire Punch|p2a: Slugma
+L	ab_9_9	125	|-resisted|p2a: Slugma
+L	ab_9_9	126	|-damage|p2a: Slugma|70/214
+L	ab_9_9	127	|move|p2a: Slugma|Heat Wave|p1a: Alakazam
+L	ab_9_9	128	|-damage|p1a: Alakazam|0 fnt
+L	ab_9_9	129	|faint|p1a: Alakazam
+L	ab_9_9	130	|
+L	ab_9_9	131	|t:|<NORMALIZED>
+L	ab_9_9	132	|switch|p1a: Zubat|Zubat, M|205/205
+L	ab_9_9	133	|
+L	ab_9_9	134	|upkeep
+L	ab_9_9	135	|turn|12
+L	ab_9_9	136	|
+L	ab_9_9	137	|t:|<NORMALIZED>
+L	ab_9_9	138	|switch|p1a: Granbull|Granbull, M|347/347
+L	ab_9_9	139	|-ability|p1a: Granbull|Intimidate|boost
+L	ab_9_9	140	|-unboost|p2a: Slugma|atk|1
+L	ab_9_9	141	|move|p2a: Slugma|Heat Wave|p1a: Granbull
+L	ab_9_9	142	|-damage|p1a: Granbull|197/347
+L	ab_9_9	143	|
+L	ab_9_9	144	|upkeep
+L	ab_9_9	145	|turn|13
+L	ab_9_9	146	|
+L	ab_9_9	147	|t:|<NORMALIZED>
+L	ab_9_9	148	|switch|p1a: Minun|Minun, M|248/248
+L	ab_9_9	149	|move|p2a: Slugma|Overheat|p1a: Minun
+L	ab_9_9	150	|-damage|p1a: Minun|59/248
+L	ab_9_9	151	|-unboost|p2a: Slugma|spa|2
+L	ab_9_9	152	|
+L	ab_9_9	153	|-enditem|p1a: Minun|Mago Berry|[eat]
+L	ab_9_9	154	|-heal|p1a: Minun|90/248|[from] item: Mago Berry
+L	ab_9_9	155	|upkeep
+L	ab_9_9	156	|turn|14
+L	ab_9_9	157	|
+L	ab_9_9	158	|t:|<NORMALIZED>
+L	ab_9_9	159	|move|p1a: Minun|Dynamic Punch|p2a: Slugma|[miss]
+L	ab_9_9	160	|-miss|p1a: Minun|p2a: Slugma
+L	ab_9_9	161	|move|p2a: Slugma|Overheat|p1a: Minun
+L	ab_9_9	162	|-damage|p1a: Minun|0 fnt
+L	ab_9_9	163	|-unboost|p2a: Slugma|spa|2
+L	ab_9_9	164	|faint|p1a: Minun
+L	ab_9_9	165	|
+L	ab_9_9	166	|t:|<NORMALIZED>
+L	ab_9_9	167	|switch|p1a: Aron|Aron, M|67/237
+L	ab_9_9	168	|
+L	ab_9_9	169	|upkeep
+L	ab_9_9	170	|turn|15
+L	ab_9_9	171	|
+L	ab_9_9	172	|t:|<NORMALIZED>
+L	ab_9_9	173	|switch|p1a: Granbull|Granbull, M|197/347
+L	ab_9_9	174	|-ability|p1a: Granbull|Intimidate|boost
+L	ab_9_9	175	|-unboost|p2a: Slugma|atk|1
+L	ab_9_9	176	|move|p2a: Slugma|Endure||[still]
+L	ab_9_9	177	|-fail|p2a: Slugma
+L	ab_9_9	178	|
+L	ab_9_9	179	|upkeep
+L	ab_9_9	180	|turn|16
+L	ab_9_9	181	|
+L	ab_9_9	182	|t:|<NORMALIZED>
+L	ab_9_9	183	|move|p2a: Slugma|Endure|p2a: Slugma
+L	ab_9_9	184	|-singleturn|p2a: Slugma|move: Endure
+L	ab_9_9	185	|move|p1a: Granbull|Take Down|p2a: Slugma
+L	ab_9_9	186	|-activate|p2a: Slugma|move: Endure
+L	ab_9_9	187	|-damage|p2a: Slugma|1/214
+L	ab_9_9	188	|-status|p1a: Granbull|brn|[from] ability: Flame Body|[of] p2a: Slugma
+L	ab_9_9	189	|-damage|p1a: Granbull|180/347 brn|[from] Recoil|[of] p2a: Slugma
+L	ab_9_9	190	|
+L	ab_9_9	191	|-damage|p1a: Granbull|137/347 brn|[from] brn
+L	ab_9_9	192	|upkeep
+L	ab_9_9	193	|turn|17
+L	ab_9_9	194	|
+L	ab_9_9	195	|t:|<NORMALIZED>
+L	ab_9_9	196	|move|p2a: Slugma|Endure||[still]
+L	ab_9_9	197	|debug|Success chance: 50%
+L	ab_9_9	198	|-fail|p2a: Slugma
+L	ab_9_9	199	|move|p1a: Granbull|Seismic Toss|p2a: Slugma
+L	ab_9_9	200	|-damage|p2a: Slugma|0 fnt
+L	ab_9_9	201	|faint|p2a: Slugma
+L	ab_9_9	202	|
+L	ab_9_9	203	|t:|<NORMALIZED>
+L	ab_9_9	204	|switch|p2a: Steelix|Steelix, M|287/287
+L	ab_9_9	205	|
+L	ab_9_9	206	|-damage|p1a: Granbull|94/347 brn|[from] brn
+L	ab_9_9	207	|upkeep
+L	ab_9_9	208	|turn|18
+L	ab_9_9	209	|
+L	ab_9_9	210	|t:|<NORMALIZED>
+L	ab_9_9	211	|move|p1a: Granbull|Thunder|p2a: Steelix
+L	ab_9_9	212	|-immune|p2a: Steelix
+L	ab_9_9	213	|move|p2a: Steelix|Substitute|p2a: Steelix
+L	ab_9_9	214	|-start|p2a: Steelix|Substitute
+L	ab_9_9	215	|-damage|p2a: Steelix|216/287
+L	ab_9_9	216	|
+L	ab_9_9	217	|-damage|p1a: Granbull|51/347 brn|[from] brn
+L	ab_9_9	218	|upkeep
+L	ab_9_9	219	|turn|19
+L	ab_9_9	220	|
+L	ab_9_9	221	|t:|<NORMALIZED>
+L	ab_9_9	222	|move|p1a: Granbull|Take Down|p2a: Steelix
+L	ab_9_9	223	|-resisted|p2a: Steelix
+L	ab_9_9	224	|-activate|p2a: Steelix|Substitute|[damage]
+L	ab_9_9	225	|-damage|p1a: Granbull|47/347 brn|[from] Recoil|[of] p2a: Steelix
+L	ab_9_9	226	|move|p2a: Steelix|Crunch|p1a: Granbull
+L	ab_9_9	227	|-damage|p1a: Granbull|0 fnt
+L	ab_9_9	228	|faint|p1a: Granbull
+L	ab_9_9	229	|
+L	ab_9_9	230	|t:|<NORMALIZED>
+L	ab_9_9	231	|switch|p1a: Aron|Aron, M|67/237
+L	ab_9_9	232	|
+L	ab_9_9	233	|upkeep
+L	ab_9_9	234	|turn|20
+L	ab_9_9	235	|
+L	ab_9_9	236	|t:|<NORMALIZED>
+L	ab_9_9	237	|switch|p2a: Eevee|Eevee, M|230/230
+L	ab_9_9	238	|switch|p1a: Charizard|Charizard, M|340/340
+L	ab_9_9	239	|
+L	ab_9_9	240	|upkeep
+L	ab_9_9	241	|turn|21
+L	ab_9_9	242	|
+L	ab_9_9	243	|t:|<NORMALIZED>
+L	ab_9_9	244	|switch|p1a: Aron|Aron, M|67/237
+L	ab_9_9	245	|move|p2a: Eevee|Facade|p1a: Aron
+L	ab_9_9	246	|-resisted|p1a: Aron
+L	ab_9_9	247	|-damage|p1a: Aron|55/237
+L	ab_9_9	248	|
+L	ab_9_9	249	|upkeep
+L	ab_9_9	250	|turn|22
+L	ab_9_9	251	|
+L	ab_9_9	252	|t:|<NORMALIZED>
+L	ab_9_9	253	|move|p2a: Eevee|Frustration|p1a: Aron
+L	ab_9_9	254	|-resisted|p1a: Aron
+L	ab_9_9	255	|-damage|p1a: Aron|54/237
+L	ab_9_9	256	|move|p1a: Aron|Iron Defense|p1a: Aron
+L	ab_9_9	257	|-boost|p1a: Aron|def|2
+L	ab_9_9	258	|
+L	ab_9_9	259	|upkeep
+L	ab_9_9	260	|turn|23
+L	ab_9_9	261	|
+L	ab_9_9	262	|t:|<NORMALIZED>
+L	ab_9_9	263	|switch|p1a: Charizard|Charizard, M|340/340
+L	ab_9_9	264	|move|p2a: Eevee|Frustration|p1a: Charizard
+L	ab_9_9	265	|-damage|p1a: Charizard|337/340
+L	ab_9_9	266	|
+L	ab_9_9	267	|upkeep
+L	ab_9_9	268	|turn|24
+L	ab_9_9	269	|
+L	ab_9_9	270	|t:|<NORMALIZED>
+L	ab_9_9	271	|move|p1a: Charizard|Sunny Day|p1a: Charizard
+L	ab_9_9	272	|-weather|SunnyDay
+L	ab_9_9	273	|move|p2a: Eevee|Mud-Slap|p1a: Charizard
+L	ab_9_9	274	|-immune|p1a: Charizard
+L	ab_9_9	275	|
+L	ab_9_9	276	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	277	|upkeep
+L	ab_9_9	278	|turn|25
+L	ab_9_9	279	|
+L	ab_9_9	280	|t:|<NORMALIZED>
+L	ab_9_9	281	|move|p1a: Charizard|Sunny Day||[still]
+L	ab_9_9	282	|-fail|p1a: Charizard
+L	ab_9_9	283	|debug|move failed because it did nothing
+L	ab_9_9	284	|move|p2a: Eevee|Frustration|p1a: Charizard
+L	ab_9_9	285	|-damage|p1a: Charizard|333/340
+L	ab_9_9	286	|
+L	ab_9_9	287	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	288	|upkeep
+L	ab_9_9	289	|turn|26
+L	ab_9_9	290	|
+L	ab_9_9	291	|t:|<NORMALIZED>
+L	ab_9_9	292	|switch|p2a: Venusaur|Venusaur, M|272/322
+L	ab_9_9	293	|move|p1a: Charizard|Sunny Day||[still]
+L	ab_9_9	294	|-fail|p1a: Charizard
+L	ab_9_9	295	|debug|move failed because it did nothing
+L	ab_9_9	296	|
+L	ab_9_9	297	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	298	|upkeep
+L	ab_9_9	299	|turn|27
+L	ab_9_9	300	|
+L	ab_9_9	301	|t:|<NORMALIZED>
+L	ab_9_9	302	|debug|before turn callback: focuspunch
+L	ab_9_9	303	|-singleturn|p1a: Charizard|move: Focus Punch
+L	ab_9_9	304	|move|p2a: Venusaur|Rock Smash|p1a: Charizard
+L	ab_9_9	305	|-resisted|p1a: Charizard
+L	ab_9_9	306	|-damage|p1a: Charizard|327/340
+L	ab_9_9	307	|-unboost|p1a: Charizard|def|1
+L	ab_9_9	308	|move|p1a: Charizard|Focus Punch||[still]
+L	ab_9_9	309	|cant|p1a: Charizard|Focus Punch|Focus Punch
+L	ab_9_9	310	|
+L	ab_9_9	311	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	312	|upkeep
+L	ab_9_9	313	|turn|28
+L	ab_9_9	314	|
+L	ab_9_9	315	|t:|<NORMALIZED>
+L	ab_9_9	316	|move|p1a: Charizard|Sunny Day||[still]
+L	ab_9_9	317	|-fail|p1a: Charizard
+L	ab_9_9	318	|debug|move failed because it did nothing
+L	ab_9_9	319	|move|p2a: Venusaur|Sludge Bomb|p1a: Charizard
+L	ab_9_9	320	|-damage|p1a: Charizard|177/340
+L	ab_9_9	321	|
+L	ab_9_9	322	|-weather|none
+L	ab_9_9	323	|upkeep
+L	ab_9_9	324	|turn|29
+L	ab_9_9	325	|
+L	ab_9_9	326	|t:|<NORMALIZED>
+L	ab_9_9	327	|move|p1a: Charizard|Sunny Day|p1a: Charizard
+L	ab_9_9	328	|-weather|SunnyDay
+L	ab_9_9	329	|move|p2a: Venusaur|Frustration|p1a: Charizard
+L	ab_9_9	330	|-damage|p1a: Charizard|175/340
+L	ab_9_9	331	|
+L	ab_9_9	332	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	333	|upkeep
+L	ab_9_9	334	|turn|30
+L	ab_9_9	335	|
+L	ab_9_9	336	|t:|<NORMALIZED>
+L	ab_9_9	337	|move|p1a: Charizard|Sunny Day||[still]
+L	ab_9_9	338	|-fail|p1a: Charizard
+L	ab_9_9	339	|debug|move failed because it did nothing
+L	ab_9_9	340	|move|p2a: Venusaur|Sludge Bomb|p1a: Charizard
+L	ab_9_9	341	|-damage|p1a: Charizard|34/340
+L	ab_9_9	342	|
+L	ab_9_9	343	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	344	|upkeep
+L	ab_9_9	345	|turn|31
+L	ab_9_9	346	|
+L	ab_9_9	347	|t:|<NORMALIZED>
+L	ab_9_9	348	|move|p1a: Charizard|Strength|p2a: Venusaur
+L	ab_9_9	349	|-damage|p2a: Venusaur|213/322
+L	ab_9_9	350	|move|p2a: Venusaur|Frustration|p1a: Charizard
+L	ab_9_9	351	|-damage|p1a: Charizard|32/340
+L	ab_9_9	352	|
+L	ab_9_9	353	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	354	|upkeep
+L	ab_9_9	355	|turn|32
+L	ab_9_9	356	|
+L	ab_9_9	357	|t:|<NORMALIZED>
+L	ab_9_9	358	|move|p1a: Charizard|Sunny Day||[still]
+L	ab_9_9	359	|-fail|p1a: Charizard
+L	ab_9_9	360	|debug|move failed because it did nothing
+L	ab_9_9	361	|move|p2a: Venusaur|Rock Smash|p1a: Charizard
+L	ab_9_9	362	|-resisted|p1a: Charizard
+L	ab_9_9	363	|-damage|p1a: Charizard|22/340
+L	ab_9_9	364	|-unboost|p1a: Charizard|def|1
+L	ab_9_9	365	|
+L	ab_9_9	366	|-weather|SunnyDay|[upkeep]
+L	ab_9_9	367	|upkeep
+L	ab_9_9	368	|turn|33
+L	ab_9_9	369	|
+L	ab_9_9	370	|t:|<NORMALIZED>
+L	ab_9_9	371	|move|p1a: Charizard|Strength|p2a: Venusaur
+L	ab_9_9	372	|-damage|p2a: Venusaur|148/322
+L	ab_9_9	373	|move|p2a: Venusaur|Rock Smash|p1a: Charizard
+L	ab_9_9	374	|-resisted|p1a: Charizard
+L	ab_9_9	375	|-damage|p1a: Charizard|9/340
+L	ab_9_9	376	|
+L	ab_9_9	377	|-weather|none
+L	ab_9_9	378	|upkeep
+L	ab_9_9	379	|turn|34
+L	ab_9_9	380	|
+L	ab_9_9	381	|t:|<NORMALIZED>
+L	ab_9_9	382	|debug|before turn callback: focuspunch
+L	ab_9_9	383	|-singleturn|p1a: Charizard|move: Focus Punch
+L	ab_9_9	384	|move|p2a: Venusaur|Rock Smash|p1a: Charizard
+L	ab_9_9	385	|-resisted|p1a: Charizard
+L	ab_9_9	386	|-damage|p1a: Charizard|0 fnt
+L	ab_9_9	387	|faint|p1a: Charizard
+L	ab_9_9	388	|
+L	ab_9_9	389	|t:|<NORMALIZED>
+L	ab_9_9	390	|switch|p1a: Zubat|Zubat, M|205/205
+L	ab_9_9	391	|
+L	ab_9_9	392	|upkeep
+L	ab_9_9	393	|turn|35
+L	ab_9_9	394	|
+L	ab_9_9	395	|t:|<NORMALIZED>
+L	ab_9_9	396	|move|p2a: Venusaur|Endure|p2a: Venusaur
+L	ab_9_9	397	|-singleturn|p2a: Venusaur|move: Endure
+L	ab_9_9	398	|move|p1a: Zubat|Facade|p2a: Venusaur
+L	ab_9_9	399	|-damage|p2a: Venusaur|109/322
+L	ab_9_9	400	|
+L	ab_9_9	401	|upkeep
+L	ab_9_9	402	|turn|36
+L	ab_9_9	403	|
+L	ab_9_9	404	|t:|<NORMALIZED>
+L	ab_9_9	405	|move|p2a: Venusaur|Endure|p2a: Venusaur
+L	ab_9_9	406	|debug|Success chance: 50%
+L	ab_9_9	407	|-singleturn|p2a: Venusaur|move: Endure
+L	ab_9_9	408	|move|p1a: Zubat|Return|p2a: Venusaur
+L	ab_9_9	409	|-damage|p2a: Venusaur|56/322
+L	ab_9_9	410	|
+L	ab_9_9	411	|upkeep
+L	ab_9_9	412	|turn|37
+L	ab_9_9	413	|
+L	ab_9_9	414	|t:|<NORMALIZED>
+L	ab_9_9	415	|switch|p1a: Aron|Aron, M|54/237
+L	ab_9_9	416	|move|p2a: Venusaur|Frustration|p1a: Aron
+L	ab_9_9	417	|-resisted|p1a: Aron
+L	ab_9_9	418	|-damage|p1a: Aron|53/237
+L	ab_9_9	419	|
+L	ab_9_9	420	|upkeep
+L	ab_9_9	421	|turn|38
+L	ab_9_9	422	|
+L	ab_9_9	423	|t:|<NORMALIZED>
+L	ab_9_9	424	|move|p2a: Venusaur|Sludge Bomb|p1a: Aron
+L	ab_9_9	425	|-immune|p1a: Aron
+L	ab_9_9	426	|move|p1a: Aron|Frustration|p2a: Venusaur
+L	ab_9_9	427	|-damage|p2a: Venusaur|54/322
+L	ab_9_9	428	|
+L	ab_9_9	429	|upkeep
+L	ab_9_9	430	|turn|39
+L	ab_9_9	431	|
+L	ab_9_9	432	|t:|<NORMALIZED>
+L	ab_9_9	433	|move|p2a: Venusaur|Rock Smash|p1a: Aron
+L	ab_9_9	434	|-supereffective|p1a: Aron
+L	ab_9_9	435	|-damage|p1a: Aron|0 fnt
+L	ab_9_9	436	|faint|p1a: Aron
+L	ab_9_9	437	|
+L	ab_9_9	438	|t:|<NORMALIZED>
+L	ab_9_9	439	|switch|p1a: Zubat|Zubat, M|205/205
+L	ab_9_9	440	|
+L	ab_9_9	441	|upkeep
+L	ab_9_9	442	|turn|40
+L	ab_9_9	443	|
+L	ab_9_9	444	|t:|<NORMALIZED>
+L	ab_9_9	445	|move|p2a: Venusaur|Rock Smash|p1a: Zubat
+L	ab_9_9	446	|debug|brightpowder - decreasing accuracy
+L	ab_9_9	447	|-resisted|p1a: Zubat
+L	ab_9_9	448	|-damage|p1a: Zubat|199/205
+L	ab_9_9	449	|move|p1a: Zubat|Return|p2a: Venusaur
+L	ab_9_9	450	|-damage|p2a: Venusaur|3/322
+L	ab_9_9	451	|
+L	ab_9_9	452	|upkeep
+L	ab_9_9	453	|turn|41
+L	ab_9_9	454	|
+L	ab_9_9	455	|t:|<NORMALIZED>
+L	ab_9_9	456	|move|p2a: Venusaur|Sludge Bomb|p1a: Zubat
+L	ab_9_9	457	|debug|brightpowder - decreasing accuracy
+L	ab_9_9	458	|-resisted|p1a: Zubat
+L	ab_9_9	459	|-damage|p1a: Zubat|114/205
+L	ab_9_9	460	|move|p1a: Zubat|Return|p2a: Venusaur
+L	ab_9_9	461	|-activate|p2a: Venusaur|item: Focus Band
+L	ab_9_9	462	|-damage|p2a: Venusaur|1/322
+L	ab_9_9	463	|
+L	ab_9_9	464	|upkeep
+L	ab_9_9	465	|turn|42
+L	ab_9_9	466	|
+L	ab_9_9	467	|t:|<NORMALIZED>
+L	ab_9_9	468	|move|p2a: Venusaur|Endure|p2a: Venusaur
+L	ab_9_9	469	|-singleturn|p2a: Venusaur|move: Endure
+L	ab_9_9	470	|move|p1a: Zubat|Toxic|p2a: Venusaur
+L	ab_9_9	471	|debug|natural status immunity
+L	ab_9_9	472	|debug|immune to status
+L	ab_9_9	473	|-immune|p2a: Venusaur
+L	ab_9_9	474	|debug|move failed because it did nothing
+L	ab_9_9	475	|
+L	ab_9_9	476	|upkeep
+L	ab_9_9	477	|turn|43
+L	ab_9_9	478	|
+L	ab_9_9	479	|t:|<NORMALIZED>
+L	ab_9_9	480	|move|p2a: Venusaur|Rock Smash|p1a: Zubat
+L	ab_9_9	481	|debug|brightpowder - decreasing accuracy
+L	ab_9_9	482	|-resisted|p1a: Zubat
+L	ab_9_9	483	|-damage|p1a: Zubat|108/205
+L	ab_9_9	484	|-unboost|p1a: Zubat|def|1
+L	ab_9_9	485	|move|p1a: Zubat|Frustration|p2a: Venusaur
+L	ab_9_9	486	|-activate|p2a: Venusaur|item: Focus Band
+L	ab_9_9	487	|-damage|p2a: Venusaur|1/322
+L	ab_9_9	488	|
+L	ab_9_9	489	|upkeep
+L	ab_9_9	490	|turn|44
+L	ab_9_9	491	|
+L	ab_9_9	492	|t:|<NORMALIZED>
+L	ab_9_9	493	|move|p2a: Venusaur|Rock Smash|p1a: Zubat
+L	ab_9_9	494	|debug|brightpowder - decreasing accuracy
+L	ab_9_9	495	|-resisted|p1a: Zubat
+L	ab_9_9	496	|-damage|p1a: Zubat|98/205
+L	ab_9_9	497	|move|p1a: Zubat|Toxic|p2a: Venusaur
+L	ab_9_9	498	|debug|natural status immunity
+L	ab_9_9	499	|debug|immune to status
+L	ab_9_9	500	|-immune|p2a: Venusaur
+L	ab_9_9	501	|debug|move failed because it did nothing
+L	ab_9_9	502	|
+L	ab_9_9	503	|upkeep
+L	ab_9_9	504	|turn|45
+L	ab_9_9	505	|
+L	ab_9_9	506	|t:|<NORMALIZED>
+L	ab_9_9	507	|switch|p2a: Eevee|Eevee, M|230/230
+L	ab_9_9	508	|move|p1a: Zubat|Facade|p2a: Eevee
+L	ab_9_9	509	|-damage|p2a: Eevee|184/230
+L	ab_9_9	510	|
+L	ab_9_9	511	|upkeep
+L	ab_9_9	512	|turn|46
+L	ab_9_9	513	|
+L	ab_9_9	514	|t:|<NORMALIZED>
+L	ab_9_9	515	|move|p2a: Eevee|Rest|p2a: Eevee
+L	ab_9_9	516	|-status|p2a: Eevee|slp|[from] move: Rest
+L	ab_9_9	517	|-heal|p2a: Eevee|230/230 slp|[silent]
+L	ab_9_9	518	|move|p1a: Zubat|Frustration|p2a: Eevee
+L	ab_9_9	519	|-damage|p2a: Eevee|228/230 slp
+L	ab_9_9	520	|
+L	ab_9_9	521	|upkeep
+L	ab_9_9	522	|turn|47
+L	ab_9_9	523	|
+L	ab_9_9	524	|t:|<NORMALIZED>
+L	ab_9_9	525	|cant|p2a: Eevee|slp
+L	ab_9_9	526	|move|p1a: Zubat|Toxic||[still]
+L	ab_9_9	527	|-fail|p1a: Zubat
+L	ab_9_9	528	|debug|move failed because it did nothing
+L	ab_9_9	529	|
+L	ab_9_9	530	|upkeep
+L	ab_9_9	531	|turn|48
+L	ab_9_9	532	|
+L	ab_9_9	533	|t:|<NORMALIZED>
+L	ab_9_9	534	|switch|p2a: Nosepass|Nosepass, M|67/189
+L	ab_9_9	535	|move|p1a: Zubat|Toxic|p2a: Nosepass
+L	ab_9_9	536	|-status|p2a: Nosepass|tox
+L	ab_9_9	537	|
+L	ab_9_9	538	|-damage|p2a: Nosepass|56/189 tox|[from] psn
+L	ab_9_9	539	|upkeep
+L	ab_9_9	540	|turn|49
+L	ab_9_9	541	|
+L	ab_9_9	542	|t:|<NORMALIZED>
+L	ab_9_9	543	|move|p1a: Zubat|Frustration|p2a: Nosepass
+L	ab_9_9	544	|-resisted|p2a: Nosepass
+L	ab_9_9	545	|-damage|p2a: Nosepass|55/189 tox
+L	ab_9_9	546	|move|p2a: Nosepass|Strength|p1a: Zubat
+L	ab_9_9	547	|debug|brightpowder - decreasing accuracy
+L	ab_9_9	548	|-damage|p1a: Zubat|0 fnt
+L	ab_9_9	549	|faint|p1a: Zubat
+L	ab_9_9	550	|
+L	ab_9_9	551	|win|P2

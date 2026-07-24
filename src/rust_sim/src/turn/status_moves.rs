@@ -979,6 +979,18 @@ impl crate::state::BattleState {
                 if let Some(mp) = m.move_maxpp.get_mut(mslot) {
                     *mp = copied_maxpp;
                 }
+                // `gen3_mimic_choice_lock_self_overwrite_v1`: a CHOICE-BAND mon whose FIRST move
+                // is Mimic gets Choice-locked to the Mimic slot; Mimic then overwrites THAT slot,
+                // so the locked move (`mimic`) is no longer in any slot. Showdown's
+                // `choicelock.onDisableMove` fires `!pokemon.hasMove(effectState.move)` →
+                // `removeVolatile('choicelock')` — the lock is DROPPED, so the mon uses any move
+                // next (re-locking to it). The port keys the lock by SLOT, so an untouched
+                // `Some(mslot)` would wrongly restrict the mon to the now-copied slot, rejecting
+                // every other move → a decision-stream desync (repro ab_17_3: a CB Geodude that
+                // Mimics Rest, whose Return is then rejected). Clear it here, mirroring the sim.
+                if m.choice_locked_move == Some(mslot) {
+                    m.choice_locked_move = None;
+                }
             }
             // `gen3_mimic_disable_self_overwrite_v1`: Mimic OVERWROTE its own slot, so the
             // move actually USED (`mimic`) is no longer in any slot. A FOE's Disable on this
@@ -1239,7 +1251,7 @@ impl crate::state::BattleState {
                 let caster = self.mon_ref(_side, _slot, dex);
                 self.log.fail(&caster, None, false);
             }
-            return MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: force };
+            return MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: force, aborted: false };
         }
 
         // --- TAUNT (`taunt` — a foe-targeting `volatileStatus:'taunt'` Status move, type Dark,
@@ -1619,8 +1631,12 @@ impl crate::state::BattleState {
             );
             let mon = &self.sides[_side].pokemon[_slot];
             let cost = sub_cost(mon.maxhp); // floor(maxhp/4)
-            // FAIL (draw-free): already-subbed OR can't afford (hp <= floor(maxhp/4)).
-            if mon.substitute.is_some() || mon.hp <= cost {
+            // FAIL (draw-free): already-subbed OR can't afford. The gen-3 `onTryHit` fails when
+            // `source.hp <= source.maxhp / 4 || source.maxhp === 1` (moves.js:18364) — the
+            // SECOND disjunct is the **Shedinja clause** (`maxhp === 1`: `floor(1/4) == 0`, so
+            // `hp(1) <= 0` is false and the cost check MISSES it, but the sim STILL fails it
+            // `[weak]`). Both the can't-afford AND the maxhp==1 branch emit `[weak]`.
+            if mon.substitute.is_some() || mon.hp <= cost || mon.maxhp == 1 {
                 // [EMIT] `|-fail|<user>|move: Substitute` (already-subbed — the sub is
                 // still up) OR `|-fail|<user>|move: Substitute|[weak]` (can't afford the
                 // HP cost — the too-weak fail). VERIFIED vs the golden: already-subbed has

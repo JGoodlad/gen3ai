@@ -422,7 +422,9 @@ impl crate::state::BattleState {
             // volatile's own `onMoveAborted` (any move != charge) is consumed by the
             // CALLER (turn_loop's post-run_move consumption — the abort path included).
             self.sides[side].pokemon[slot].destiny_bond = false;
-            return MoveResolution::done(false, false, false);
+            // ABORTED (cant) — the sim runs `MoveAborted` and returns BEFORE `AfterMove`, so
+            // the caller must SKIP the `onAnyAfterMove` White Herb restore this move.
+            return MoveResolution::aborted();
         }
 
         // --- DESTINY BOND's `onBeforeMove` (priority −1, `gen3_move_coverage_batch6_v1`):
@@ -672,12 +674,18 @@ impl crate::state::BattleState {
         //     matches the port's PP deduction at the on_before_move-passed site above. ---
         if halves_def {
             if let Some((damp_side, damp_slot)) = self.damp_holder(dex) {
-                // [EMIT] `|cant|<damp holder>|ability: Damp|<MoveName>|[of] <user>` — the CANT is
-                // on the DAMP HOLDER (the sim's `this.effectState.target`), the move name, and
-                // `[of]` the move's user. Observation-only; the move draws nothing.
+                // [EMIT] the sim announces the move FIRST (`useMoveInner` emits `|move|<user>|
+                // <Move>|<target>` before `runEvent('TryMove')`), then Damp's `onAnyTryMove`
+                // retro-edits it to the `[still]` did-nothing form (`attrLastMove('[still]')`,
+                // blank target + append `|[still]`) and adds the `|cant|`. So the golden is TWO
+                // lines: `|move|<user>|<Move>||[still]` then the cant — we emit the `[still]`
+                // announce directly (`move_used(None, still=true)` renders the identical bytes).
+                // The CANT is on the DAMP HOLDER (the sim's `this.effectState.target`), the move
+                // name, and `[of]` the move's user. Observation-only; the move draws nothing.
                 if self.logging() {
-                    let holder = self.mon_ref(damp_side, damp_slot, dex);
                     let user = self.mon_ref(side, slot, dex);
+                    let holder = self.mon_ref(damp_side, damp_slot, dex);
+                    self.log.move_used(&user, &move_name, None, false, true);
                     self.log.cant_of_move(&holder, "ability: Damp", &move_name, &user);
                 }
                 // No self-KO, no accuracy, no damage — a full no-op that draws nothing.
@@ -1050,6 +1058,12 @@ impl crate::state::BattleState {
                     } else {
                         self.log.move_used(&user, &move_name, Some(&target), true, false);
                     }
+                } else {
+                    // SUN-SKIP Solar Beam (`suppress_announce`): its `[still]`+`-prepare`+`-anim`
+                    // lines already emitted BEFORE the accuracy roll. A MISS appends `[miss]` to
+                    // the last move-family line — the `|-anim|` — via `attrLastMove('[miss]')`
+                    // (`|-anim|<u>|Solar Beam|<t>|[miss]`, golden ab_34_10 line 120), THEN `-miss`.
+                    self.log.attr_last_move_miss();
                 }
                 self.log.miss(&user, Some(&target));
             }
@@ -1269,7 +1283,7 @@ impl crate::state::BattleState {
             // FOCUS BAND (`gen3_ability_batch4_v1`): the onDamage roll draws AFTER the
             // damage rolls, BEFORE the apply; a lethal MOVE hit that passes survives at
             // 1 HP (probe seed 8: crit path included). A sub-absorbed hit never draws.
-            let realized = self.focus_band_damage(foe, foe_slot, realized, true, dex);
+            let realized = self.focus_band_damage(foe, foe_slot, realized, true, true, dex);
             // Refresh `dealt` to the POST-Focus-Band applied amount (the recoil/drain basis).
             dealt = realized.min(target_hp_before);
             self.apply_damage(foe, foe_slot, realized);
@@ -1502,7 +1516,7 @@ impl crate::state::BattleState {
             let recoil = (dealt / 4).max(1).min(user_hp_before);
             // FOCUS BAND: the recoil is a Damage event into the user (effect 'recoil',
             // not a Move) — the roll draws, no survive. `gen3_ability_batch4_v1`.
-            let recoil = self.focus_band_damage(side, slot, recoil, false, dex);
+            let recoil = self.focus_band_damage(side, slot, recoil, false, false, dex);
             self.apply_damage(side, slot, recoil);
             if self.logging() {
                 let user = self.mon_ref(side, slot, dex);
@@ -1833,7 +1847,7 @@ impl crate::state::BattleState {
         slot: usize,
         foe: usize,
         foe_slot: usize,
-        mut ctx: DamageContext,
+        ctx: DamageContext,
         move_type: Option<Type>,
         category: MoveCategory,
         move_index: usize,
@@ -1917,10 +1931,30 @@ impl crate::state::BattleState {
                 self.log.crit(&target);
             }
 
-            // Refresh the ctx per strike: the crit flag + the LIVE defender types.
-            ctx.crit = crit;
-            ctx.defender.types = def_types;
-            let dmg = crate::damage::calc_damage(&ctx, dex);
+            // REBUILD the ctx from the LIVE battle state per strike — the sim re-runs
+            // `getDamage` fresh per hit (`spreadMoveHit`), so a mid-multihit state change
+            // is reflected in later strikes' damage: an ATTACKER status gained from a
+            // CONTACT-PROC ability (Poison Point poisoning a GUTS user → Atk ×1.5 on
+            // strikes 2+ — the ab_34_9 repro), a per-strike SECONDARY statusing the
+            // defender (→ Marvel Scale), a pinch-berry HP threshold, a Color Change
+            // re-type, etc. `build_damage_context` is DRAW-FREE (seed-neutral) and, for
+            // an UNCHANGED state (strike 1, or no proc), reproduces the passed ctx exactly
+            // — so this stays byte-identical everywhere except a genuine mid-multihit
+            // change. No gen3 multihit move carries the Facade/Charge/Solar-Beam
+            // post-build bp_mods (all single-hit, id-gated), so a full rebuild loses none.
+            let mut sctx = self.build_damage_context(
+                side,
+                slot,
+                foe,
+                foe_slot,
+                ctx.mv.base_power,
+                move_type,
+                category,
+                ctx.mv.halves_defense,
+                dex,
+            );
+            sctx.crit = crit;
+            let dmg = crate::damage::calc_damage(&sctx, dex);
 
             // [ModifyDamagePhase1 shuffle] the FULL screen tie group (all screens across BOTH
             // sides — `onAnyModifyDamagePhase1`) → `k-1` draws for k screens, PER STRIKE
@@ -1944,7 +1978,7 @@ impl crate::state::BattleState {
             if !absorbed {
                 // ENDURE clamps EVERY strike; FOCUS BAND draws per strike (a Damage event).
                 let realized = self.endure_clamp(foe, foe_slot, realized, dex);
-                let realized = self.focus_band_damage(foe, foe_slot, realized, true, dex);
+                let realized = self.focus_band_damage(foe, foe_slot, realized, true, true, dex);
                 dealt = realized.min(target_hp_before);
                 self.apply_damage(foe, foe_slot, realized);
                 // DESTINY BOND + FOCUS PUNCH lostFocus + COUNTER/MIRROR COAT recorder — each a
@@ -2253,7 +2287,7 @@ impl crate::state::BattleState {
             // FOCUS BAND: a fixed-damage move is a MOVE-effect Damage event — the roll
             // draws and a lethal Seismic Toss can be survived at 1. `gen3_ability_batch4_v1`.
             let pre_hp = self.sides[foe].pokemon[foe_slot].hp;
-            let amount = self.focus_band_damage(foe, foe_slot, amount, true, dex);
+            let amount = self.focus_band_damage(foe, foe_slot, amount, true, true, dex);
             self.apply_damage(foe, foe_slot, amount);
             // DESTINY BOND trigger record (`gen3_move_coverage_batch6_v1`): a
             // fixed-damage foe Move KO — incl. a Counter/Mirror-Coat RETURN (a foe
@@ -2830,7 +2864,7 @@ impl crate::state::BattleState {
         // FOCUS BAND: the confusion self-hit is dealt with `effectType: 'Move'` (the
         // gen4-inherited condition) — the roll draws AFTER the randomizer (probe
         // `probe_focusband_confusion_rng.js`) and a lethal self-hit can be survived.
-        let realized = self.focus_band_damage(side, slot, realized, true, dex);
+        let realized = self.focus_band_damage(side, slot, realized, true, false, dex);
         self.apply_damage(side, slot, realized);
         // [EMIT] `|-damage|<mon>|<HP>|[from] confusion` (`gen3_omniscient_byte_fuzz_v1` —
         // the confusion self-hit damage line, following the `-activate|<mon>|confusion`
@@ -3130,7 +3164,7 @@ impl crate::state::BattleState {
         let crash = (rolled / 2).clamp(1, ceiling);
         // The Damage event into the USER (effect = the MOVE): Focus Band rolls + can
         // survive-at-1 a lethal crash (`is_move = true`).
-        let crash = self.focus_band_damage(side, slot, crash, true, dex);
+        let crash = self.focus_band_damage(side, slot, crash, true, false, dex);
         self.apply_damage(side, slot, crash);
         // [EMIT] `|-damage|<user>|<HP>` (after the `-miss` / Protect `-activate` line).
         if self.logging() {

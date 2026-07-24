@@ -364,9 +364,16 @@ impl crate::state::BattleState {
                     //     Intimidate-switch-in drop AFTER the holder's next move (ab_4_6): the
                     //     switch-in `onAnySwitchIn` fires before the entrant's Intimidate Start, so
                     //     the drop is only visible here. Mover's side first (the common holder).
-                    let wh_foe = 1 - side;
-                    self.white_herb_restore(side, self.sides[side].active, dex);
-                    self.white_herb_restore(wh_foe, self.sides[wh_foe].active, dex);
+                    //     SKIP on a CANT (`res.aborted`): the sim's `AfterMove` NEVER fires for an
+                    //     `onBeforeMove`-aborted move (it runs `MoveAborted` + returns before it), so
+                    //     a cant'd holder's Intimidate drop waits for the end-of-turn `onResidual`
+                    //     (order 29), NOT this tail (`gen3_white_herb_v1`, golden ab_154_12: a slp
+                    //     Hoppip's White Herb fires at the residual `|` boundary, not after the cant).
+                    if !res.aborted {
+                        let wh_foe = 1 - side;
+                        self.white_herb_restore(side, self.sides[side].active, dex);
+                        self.white_herb_restore(wh_foe, self.sides[wh_foe].active, dex);
+                    }
                     // --- forceSwitchFlag consumption (battle.ts:2348-2353): at the END of
                     //     the move's runAction (AFTER the move body / any in-tryMoveHit
                     //     Update, BEFORE faintMessages), a SUCCESSFUL phaze (Roar /

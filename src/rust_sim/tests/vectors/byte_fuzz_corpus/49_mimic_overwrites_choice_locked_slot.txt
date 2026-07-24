@@ -1,0 +1,548 @@
+# ab_fuzz repro (real Showdown vs the Rust port), --mode random master_seed=100125.
+# Guards the MIMIC x CHOICE-LOCK self-overwrite (gen3_mimic_choice_lock_self_overwrite_v1): a
+#   CHOICE-BAND mon whose FIRST move is Mimic is Choice-locked to the Mimic slot; Mimic then
+#   overwrites THAT slot, so hasMove('mimic') is false and choicelock.onDisableMove removes the
+#   lock (the mon uses any move next). The port keyed the lock by SLOT -> stayed stuck, rejecting
+#   every other move -> a decision-stream desync. Repro ab_17_3: a CB Geodude Mimics Rest, then
+#   its Return is wrongly rejected. Revert => kind=seed (the desynced turn).
+# Format: SCEN/TEAM/FMT/INIT/DEC/END/L (as tests/vectors/e2e_fuzz_golden.txt).
+SCEN	ab_17_3
+TEAM	ab_17_3	p1	Suicune||Charcoal|Pressure|Gust,IceBeam,Return,RainDance|Relaxed|120,20,60,136,,172|N|18,29,6,16,23,24|||]Vigoroth||PoisonBarb|VitalSpirit|AerialAce,FirePunch,Protect,Cut|Quirky|224,88,,116,,80|M|10,11,26,20,22,26|||]Vileplume||LiechiBerry|Chlorophyll|Cut,SunnyDay,Return,Rest|Hardy|200,36,24,72,72,104|M|1,10,2,21,26,11|||]Nidoran-M||PoisonBarb|PoisonPoint|Confusion,MudSlap,Toxic,Strength|Relaxed|128,4,92,60,88,136|M|11,17,22,25,22,9|||]Lunatone||BlackBelt|Levitate|IceBeam,Protect,Frustration,DoubleEdge|Mild|88,176,92,,124,28|N|20,28,20,9,28,25|||]Armaldo||PolkadotBow|BattleArmor|IronTail,Protect,Toxic,Substitute|Bold|132,,120,36,160,60|M|7,30,13,20,9,13|||
+TEAM	ab_17_3	p2	Registeel||SilkScarf|ClearBody|MegaKick,PsychUp,Endure,RockSmash|Relaxed|136,140,12,136,,84|N|24,16,,13,25,24|||]Geodude||ChoiceBand|RockHead|FocusPunch,RockTomb,Return,Mimic|Serious|,184,,68,156,100|M|15,25,14,13,18,0|||]Magmar||PinkBow|FlameBody|BodySlam,IronTail,SunnyDay,Mimic|Sassy|,180,,140,100,88|M|2,14,8,3,10,21|||]Magneton||ScopeLens|MagnetPull|Return,Thunderbolt,ThunderWave,Screech|Lonely|24,132,,148,72,132|N|12,10,9,13,5,19|||]Graveler||MysticWater|Sturdy|SeismicToss,SunnyDay,Facade,MudSlap|Gentle|,168,148,60,132,|M|25,19,1,5,17,27|||]Ivysaur||SoulDew|Overgrow|VineWhip,SludgeBomb,RockSmash,LeechSeed|Careful|76,144,36,88,104,52|M|5,29,9,15,17,3|||
+FMT	ab_17_3	gen3customgame
+INIT	ab_17_3	39324,52414,31017,1641	3067711655
+DEC	ab_17_3	0	move	0	0	m0	m0	3826,9303,31815,41942	Suicune	202	358	0	-	0	0	0	0	0	0	6	Registeel	320	328	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_17_3	1	move	0	0	s5	m0	27281,12065,50893,41994	Armaldo	263	300	0	-	0	0	0	0	0	0	6	Registeel	320	328	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_17_3	2	move	0	0	s5	m1	25583,637,12375,45237	Suicune	202	358	0	-	0	0	0	0	0	0	6	Registeel	320	328	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_17_3	3	move	0	0	m3	s5	26165,18846,12611,13100	Suicune	202	358	0	-	0	0	0	0	0	0	6	Ivysaur	254	254	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_17_3	4	move	0	0	m0	m3	17575,47512,51632,41155	Suicune	158	358	0	-	0	0	0	0	0	0	6	Ivysaur	221	254	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_17_3	5	move	0	0	m3	m0	48350,9835,30200,29735	Suicune	51	358	0	-	0	0	0	0	0	0	6	Ivysaur	254	254	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_17_3	6	move	0	0	m1	m0	40394,49634,11506,30789	Suicune	7	358	0	-	0	0	0	0	0	0	6	Ivysaur	149	254	0	frz	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_17_3	7	move	0	0	m3	s1	40394,49634,11506,30789	Suicune	0	358	1	fnt	0	0	0	0	0	0	5	Geodude	205	205	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_17_3	8	switch	1	0	s2	-	18068,63456,58383,65276	Vileplume	311	311	0	-	0	0	0	0	0	0	5	Geodude	205	205	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_17_3	9	move	0	0	m3	m3	5420,36660,53967,5167	Vileplume	311	311	0	-	0	0	0	0	0	0	5	Geodude	205	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_17_3	10	move	0	0	m2	m2	6468,7446,5469,15716	Vileplume	144	311	0	-	0	0	0	0	0	0	5	Geodude	174	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	11	move	0	0	m3	m2	45267,232,33572,36699	Vileplume	168	311	0	slp	0	0	0	0	0	0	5	Geodude	174	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	12	move	0	0	s4	m2	17348,11947,46396,26943	Lunatone	205	292	0	-	0	0	0	0	0	0	5	Geodude	174	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	13	move	0	0	m3	m2	10743,59196,29031,35636	Lunatone	99	292	0	-	0	0	0	0	0	0	5	Geodude	137	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	14	move	0	0	s1	m2	55631,50060,33601,392	Vigoroth	196	336	0	-	0	0	0	0	0	0	5	Geodude	137	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	15	move	0	0	m1	m2	43031,16386,64577,27248	Vigoroth	40	336	0	-	0	0	0	0	0	0	5	Geodude	97	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	16	move	0	0	m2	m2	29114,46645,56395,51629	Vigoroth	40	336	0	-	0	0	0	0	0	0	5	Geodude	97	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	17	move	0	0	m1	m2	39922,34054,50759,19786	Vigoroth	0	336	1	fnt	0	0	0	0	0	0	4	Geodude	54	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	18	switch	1	0	s4	-	13117,18568,47018,46837	Vileplume	168	311	0	slp	0	0	0	0	0	0	4	Geodude	54	205	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_17_3	19	move	0	0	m1	m2	34218,57977,2196,56121	Vileplume	25	311	0	slp	1	0	0	0	0	0	4	Geodude	54	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	20	move	0	0	m1	m2	36114,20368,12410,10226	Vileplume	0	311	1	fnt	0	0	0	0	0	0	3	Geodude	54	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	21	switch	1	0	s3	-	36676,37503,44886,58173	Nidoran-M	245	245	0	-	0	0	0	0	0	0	3	Geodude	54	205	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_17_3	22	move	0	0	m3	m2	47861,23544,32083,28293	Nidoran-M	61	245	0	-	0	0	0	0	0	0	3	Geodude	34	205	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	23	move	0	0	s5	s5	30548,46460,14809,26172	Armaldo	263	300	0	-	0	0	0	0	0	0	3	Registeel	320	328	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_17_3	24	move	0	0	m0	m3	61867,21541,15215,3959	Armaldo	250	300	0	-	0	0	0	0	0	0	3	Registeel	294	328	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_17_3	25	move	0	0	m3	m0	4149,54861,51332,32667	Armaldo	139	300	0	-	0	0	0	0	0	0	3	Registeel	294	328	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_17_3	26	move	0	0	s1	m2	7037,3994,58867,59882	Lunatone	99	292	0	-	0	0	0	0	0	0	3	Registeel	294	328	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_17_3	27	move	0	0	m2	m0	21633,10811,27436,13603	Lunatone	27	292	0	-	0	0	0	0	0	0	3	Registeel	293	328	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	28	move	0	0	m3	m0	7790,3751,967,23814	Lunatone	20	292	0	-	0	0	0	0	0	0	3	Registeel	270	328	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_17_3	29	move	0	0	m3	m2	10709,53481,58971,53669	Lunatone	13	292	0	-	0	0	0	0	0	0	3	Registeel	247	328	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_17_3	30	move	0	0	m2	m0	43746,47856,1364,9523	Lunatone	0	292	1	fnt	0	0	0	0	0	0	2	Registeel	246	328	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_17_3	31	switch	1	0	s1	-	15163,13993,43686,38626	Armaldo	139	300	0	-	0	0	0	0	0	0	2	Registeel	246	328	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_17_3	32	move	0	0	m0	s3	45958,63854,12377,58436	Armaldo	139	300	0	-	0	0	0	0	0	0	2	Magneton	228	228	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_17_3	33	move	0	0	m1	m1	29123,22315,20235,56497	Armaldo	139	300	0	-	0	0	0	0	0	0	2	Magneton	228	228	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_17_3	34	move	0	0	m2	m2	51609,43997,2317,32053	Armaldo	139	300	0	par	0	0	0	0	0	0	2	Magneton	228	228	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_17_3	35	move	0	0	m0	m2	33224,20621,9373,43314	Armaldo	139	300	0	par	0	0	0	0	0	0	2	Magneton	203	228	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_17_3	36	move	0	0	s5	s4	34483,47794,35396,8573	Nidoran-M	61	245	0	-	0	0	0	0	0	0	2	Graveler	245	245	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_17_3	37	move	0	0	m3	m0	56329,42795,18174,616	Nidoran-M	0	245	1	fnt	0	0	0	0	0	0	1	Graveler	228	245	0	-	0	0	0	0	0	0	6	p1	0	0	1	0	0
+DEC	ab_17_3	38	switch	1	0	s5	-	22444,41486,57983,14795	Armaldo	139	300	0	par	0	0	0	0	0	0	1	Graveler	228	245	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_17_3	39	move	0	0	m1	m0	20118,60452,27366,52399	Armaldo	139	300	0	par	0	0	0	0	0	0	1	Graveler	228	245	0	-	0	0	0	0	0	0	6	p1	0	0	1	0	0
+DEC	ab_17_3	40	move	0	0	m2	m3	33973,544,47477,31716	Armaldo	115	300	0	par	0	0	0	0	0	0	1	Graveler	213	245	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_17_3	41	move	0	0	m0	m2	21574,45334,53485,447	Armaldo	63	300	0	par	0	0	0	0	0	0	1	Graveler	30	245	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_17_3	42	move	0	0	m1	m0	17534,40800,4951,59936	Armaldo	63	300	0	par	0	0	0	0	0	0	1	Graveler	0	245	1	fnt	0	0	0	0	0	0	5	p1	0	0	1	0	0
+DEC	ab_17_3	43	switch	0	1	-	s2	9687,43022,38145,7523	Armaldo	63	300	0	par	0	0	0	0	0	0	1	Magmar	242	242	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_17_3	44	move	0	0	m2	m2	31257,57218,58763,10676	Armaldo	63	300	0	par	0	0	0	0	0	0	1	Magmar	242	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_17_3	45	move	0	0	m0	m3	5388,22885,44119,43590	Armaldo	63	300	0	par	0	0	0	0	0	0	1	Magmar	242	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_17_3	46	move	0	0	m3	m2	2346,22098,40075,47112	Armaldo	63	300	0	par	0	0	0	0	0	0	1	Magmar	242	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_17_3	47	move	0	0	m1	m1	6483,29163,65344,10524	Armaldo	63	300	0	par	0	0	0	0	0	0	1	Magmar	242	242	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_17_3	48	move	0	0	m3	m0	14803,14603,63649,43042	Armaldo	29	300	0	par	0	0	0	0	0	0	1	Magmar	242	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_17_3	49	move	0	0	m0	m0	8207,57773,39152,56214	Armaldo	0	300	1	par	0	0	0	0	0	0	0	Magmar	242	242	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+END	ab_17_3	1	p2
+L	ab_17_3	0	|t:|<NORMALIZED>
+L	ab_17_3	1	|gametype|singles
+L	ab_17_3	2	|player|p1|P1||
+L	ab_17_3	3	|player|p2|P2||
+L	ab_17_3	4	|gen|3
+L	ab_17_3	5	|tier|[Gen 3] Custom Game
+L	ab_17_3	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_17_3	7	|
+L	ab_17_3	8	|t:|<NORMALIZED>
+L	ab_17_3	9	|teamsize|p1|6
+L	ab_17_3	10	|teamsize|p2|6
+L	ab_17_3	11	|start
+L	ab_17_3	12	|switch|p1a: Suicune|Suicune|358/358
+L	ab_17_3	13	|switch|p2a: Registeel|Registeel|328/328
+L	ab_17_3	14	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_17_3	15	|turn|1
+L	ab_17_3	16	|
+L	ab_17_3	17	|t:|<NORMALIZED>
+L	ab_17_3	18	|move|p1a: Suicune|Gust|p2a: Registeel
+L	ab_17_3	19	|-resisted|p2a: Registeel
+L	ab_17_3	20	|-damage|p2a: Registeel|320/328
+L	ab_17_3	21	|move|p2a: Registeel|Mega Kick|p1a: Suicune
+L	ab_17_3	22	|-crit|p1a: Suicune
+L	ab_17_3	23	|-damage|p1a: Suicune|202/358
+L	ab_17_3	24	|
+L	ab_17_3	25	|upkeep
+L	ab_17_3	26	|turn|2
+L	ab_17_3	27	|
+L	ab_17_3	28	|t:|<NORMALIZED>
+L	ab_17_3	29	|switch|p1a: Armaldo|Armaldo, M|300/300
+L	ab_17_3	30	|move|p2a: Registeel|Mega Kick|p1a: Armaldo
+L	ab_17_3	31	|-resisted|p1a: Armaldo
+L	ab_17_3	32	|-damage|p1a: Armaldo|263/300
+L	ab_17_3	33	|
+L	ab_17_3	34	|upkeep
+L	ab_17_3	35	|turn|3
+L	ab_17_3	36	|
+L	ab_17_3	37	|t:|<NORMALIZED>
+L	ab_17_3	38	|switch|p1a: Suicune|Suicune|202/358
+L	ab_17_3	39	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_17_3	40	|move|p2a: Registeel|Psych Up|p1a: Suicune
+L	ab_17_3	41	|-copyboost|p2a: Registeel|p1a: Suicune|[from] move: Psych Up
+L	ab_17_3	42	|
+L	ab_17_3	43	|upkeep
+L	ab_17_3	44	|turn|4
+L	ab_17_3	45	|
+L	ab_17_3	46	|t:|<NORMALIZED>
+L	ab_17_3	47	|switch|p2a: Ivysaur|Ivysaur, M|254/254
+L	ab_17_3	48	|move|p1a: Suicune|Rain Dance|p1a: Suicune
+L	ab_17_3	49	|-weather|RainDance
+L	ab_17_3	50	|
+L	ab_17_3	51	|-weather|RainDance|[upkeep]
+L	ab_17_3	52	|upkeep
+L	ab_17_3	53	|turn|5
+L	ab_17_3	54	|
+L	ab_17_3	55	|t:|<NORMALIZED>
+L	ab_17_3	56	|move|p1a: Suicune|Gust|p2a: Ivysaur
+L	ab_17_3	57	|-supereffective|p2a: Ivysaur
+L	ab_17_3	58	|-damage|p2a: Ivysaur|177/254
+L	ab_17_3	59	|move|p2a: Ivysaur|Leech Seed|p1a: Suicune
+L	ab_17_3	60	|-start|p1a: Suicune|move: Leech Seed
+L	ab_17_3	61	|
+L	ab_17_3	62	|-weather|RainDance|[upkeep]
+L	ab_17_3	63	|-damage|p1a: Suicune|158/358|[from] Leech Seed|[of] p2a: Ivysaur
+L	ab_17_3	64	|-heal|p2a: Ivysaur|221/254|[silent]
+L	ab_17_3	65	|upkeep
+L	ab_17_3	66	|turn|6
+L	ab_17_3	67	|
+L	ab_17_3	68	|t:|<NORMALIZED>
+L	ab_17_3	69	|move|p1a: Suicune|Rain Dance||[still]
+L	ab_17_3	70	|-fail|p1a: Suicune
+L	ab_17_3	71	|debug|move failed because it did nothing
+L	ab_17_3	72	|move|p2a: Ivysaur|Vine Whip|p1a: Suicune
+L	ab_17_3	73	|-supereffective|p1a: Suicune
+L	ab_17_3	74	|-damage|p1a: Suicune|95/358
+L	ab_17_3	75	|
+L	ab_17_3	76	|-weather|RainDance|[upkeep]
+L	ab_17_3	77	|-damage|p1a: Suicune|51/358|[from] Leech Seed|[of] p2a: Ivysaur
+L	ab_17_3	78	|-heal|p2a: Ivysaur|254/254|[silent]
+L	ab_17_3	79	|upkeep
+L	ab_17_3	80	|turn|7
+L	ab_17_3	81	|
+L	ab_17_3	82	|t:|<NORMALIZED>
+L	ab_17_3	83	|move|p1a: Suicune|Ice Beam|p2a: Ivysaur
+L	ab_17_3	84	|-supereffective|p2a: Ivysaur
+L	ab_17_3	85	|-damage|p2a: Ivysaur|105/254
+L	ab_17_3	86	|-status|p2a: Ivysaur|frz
+L	ab_17_3	87	|cant|p2a: Ivysaur|frz
+L	ab_17_3	88	|
+L	ab_17_3	89	|-weather|RainDance|[upkeep]
+L	ab_17_3	90	|-damage|p1a: Suicune|7/358|[from] Leech Seed|[of] p2a: Ivysaur
+L	ab_17_3	91	|-heal|p2a: Ivysaur|149/254 frz|[silent]
+L	ab_17_3	92	|upkeep
+L	ab_17_3	93	|turn|8
+L	ab_17_3	94	|
+L	ab_17_3	95	|t:|<NORMALIZED>
+L	ab_17_3	96	|switch|p2a: Geodude|Geodude, M|205/205
+L	ab_17_3	97	|move|p1a: Suicune|Rain Dance||[still]
+L	ab_17_3	98	|-fail|p1a: Suicune
+L	ab_17_3	99	|debug|move failed because it did nothing
+L	ab_17_3	100	|
+L	ab_17_3	101	|-weather|none
+L	ab_17_3	102	|-damage|p1a: Suicune|0 fnt|[from] Leech Seed|[of] p2a: Geodude
+L	ab_17_3	103	|faint|p1a: Suicune
+L	ab_17_3	104	|upkeep
+L	ab_17_3	105	|
+L	ab_17_3	106	|t:|<NORMALIZED>
+L	ab_17_3	107	|switch|p1a: Vileplume|Vileplume, M|311/311
+L	ab_17_3	108	|turn|9
+L	ab_17_3	109	|
+L	ab_17_3	110	|t:|<NORMALIZED>
+L	ab_17_3	111	|move|p1a: Vileplume|Rest|p1a: Vileplume
+L	ab_17_3	112	|-fail|p1a: Vileplume|heal
+L	ab_17_3	113	|move|p2a: Geodude|Mimic|p1a: Vileplume
+L	ab_17_3	114	|-activate|p2a: Geodude|move: Mimic|Rest
+L	ab_17_3	115	|
+L	ab_17_3	116	|upkeep
+L	ab_17_3	117	|turn|10
+L	ab_17_3	118	|
+L	ab_17_3	119	|t:|<NORMALIZED>
+L	ab_17_3	120	|move|p1a: Vileplume|Return|p2a: Geodude
+L	ab_17_3	121	|-resisted|p2a: Geodude
+L	ab_17_3	122	|-damage|p2a: Geodude|174/205
+L	ab_17_3	123	|move|p2a: Geodude|Return|p1a: Vileplume
+L	ab_17_3	124	|-damage|p1a: Vileplume|144/311
+L	ab_17_3	125	|
+L	ab_17_3	126	|upkeep
+L	ab_17_3	127	|turn|11
+L	ab_17_3	128	|
+L	ab_17_3	129	|t:|<NORMALIZED>
+L	ab_17_3	130	|move|p1a: Vileplume|Rest|p1a: Vileplume
+L	ab_17_3	131	|-status|p1a: Vileplume|slp|[from] move: Rest
+L	ab_17_3	132	|-heal|p1a: Vileplume|311/311 slp|[silent]
+L	ab_17_3	133	|move|p2a: Geodude|Return|p1a: Vileplume
+L	ab_17_3	134	|-damage|p1a: Vileplume|168/311 slp
+L	ab_17_3	135	|
+L	ab_17_3	136	|upkeep
+L	ab_17_3	137	|turn|12
+L	ab_17_3	138	|
+L	ab_17_3	139	|t:|<NORMALIZED>
+L	ab_17_3	140	|switch|p1a: Lunatone|Lunatone|292/292
+L	ab_17_3	141	|move|p2a: Geodude|Return|p1a: Lunatone
+L	ab_17_3	142	|-resisted|p1a: Lunatone
+L	ab_17_3	143	|-damage|p1a: Lunatone|205/292
+L	ab_17_3	144	|
+L	ab_17_3	145	|upkeep
+L	ab_17_3	146	|turn|13
+L	ab_17_3	147	|
+L	ab_17_3	148	|t:|<NORMALIZED>
+L	ab_17_3	149	|move|p1a: Lunatone|Double-Edge|p2a: Geodude
+L	ab_17_3	150	|-resisted|p2a: Geodude
+L	ab_17_3	151	|-damage|p2a: Geodude|137/205
+L	ab_17_3	152	|-damage|p1a: Lunatone|193/292|[from] Recoil|[of] p2a: Geodude
+L	ab_17_3	153	|move|p2a: Geodude|Return|p1a: Lunatone
+L	ab_17_3	154	|-resisted|p1a: Lunatone
+L	ab_17_3	155	|-damage|p1a: Lunatone|99/292
+L	ab_17_3	156	|
+L	ab_17_3	157	|upkeep
+L	ab_17_3	158	|turn|14
+L	ab_17_3	159	|
+L	ab_17_3	160	|t:|<NORMALIZED>
+L	ab_17_3	161	|switch|p1a: Vigoroth|Vigoroth, M|336/336
+L	ab_17_3	162	|move|p2a: Geodude|Return|p1a: Vigoroth
+L	ab_17_3	163	|-damage|p1a: Vigoroth|196/336
+L	ab_17_3	164	|
+L	ab_17_3	165	|upkeep
+L	ab_17_3	166	|turn|15
+L	ab_17_3	167	|
+L	ab_17_3	168	|t:|<NORMALIZED>
+L	ab_17_3	169	|move|p1a: Vigoroth|Fire Punch|p2a: Geodude
+L	ab_17_3	170	|-resisted|p2a: Geodude
+L	ab_17_3	171	|-damage|p2a: Geodude|97/205
+L	ab_17_3	172	|move|p2a: Geodude|Return|p1a: Vigoroth
+L	ab_17_3	173	|-damage|p1a: Vigoroth|40/336
+L	ab_17_3	174	|
+L	ab_17_3	175	|upkeep
+L	ab_17_3	176	|turn|16
+L	ab_17_3	177	|
+L	ab_17_3	178	|t:|<NORMALIZED>
+L	ab_17_3	179	|move|p1a: Vigoroth|Protect|p1a: Vigoroth
+L	ab_17_3	180	|-singleturn|p1a: Vigoroth|Protect
+L	ab_17_3	181	|move|p2a: Geodude|Return|p1a: Vigoroth
+L	ab_17_3	182	|-activate|p1a: Vigoroth|Protect
+L	ab_17_3	183	|
+L	ab_17_3	184	|upkeep
+L	ab_17_3	185	|turn|17
+L	ab_17_3	186	|
+L	ab_17_3	187	|t:|<NORMALIZED>
+L	ab_17_3	188	|move|p1a: Vigoroth|Fire Punch|p2a: Geodude
+L	ab_17_3	189	|-resisted|p2a: Geodude
+L	ab_17_3	190	|-damage|p2a: Geodude|54/205
+L	ab_17_3	191	|move|p2a: Geodude|Return|p1a: Vigoroth
+L	ab_17_3	192	|-damage|p1a: Vigoroth|0 fnt
+L	ab_17_3	193	|faint|p1a: Vigoroth
+L	ab_17_3	194	|
+L	ab_17_3	195	|t:|<NORMALIZED>
+L	ab_17_3	196	|switch|p1a: Vileplume|Vileplume, M|168/311 slp
+L	ab_17_3	197	|
+L	ab_17_3	198	|upkeep
+L	ab_17_3	199	|turn|18
+L	ab_17_3	200	|
+L	ab_17_3	201	|t:|<NORMALIZED>
+L	ab_17_3	202	|cant|p1a: Vileplume|slp
+L	ab_17_3	203	|move|p2a: Geodude|Return|p1a: Vileplume
+L	ab_17_3	204	|-damage|p1a: Vileplume|25/311 slp
+L	ab_17_3	205	|
+L	ab_17_3	206	|-enditem|p1a: Vileplume|Liechi Berry|[eat]
+L	ab_17_3	207	|-boost|p1a: Vileplume|atk|1|[from] item: Liechi Berry
+L	ab_17_3	208	|upkeep
+L	ab_17_3	209	|turn|19
+L	ab_17_3	210	|
+L	ab_17_3	211	|t:|<NORMALIZED>
+L	ab_17_3	212	|cant|p1a: Vileplume|slp
+L	ab_17_3	213	|move|p2a: Geodude|Return|p1a: Vileplume
+L	ab_17_3	214	|-damage|p1a: Vileplume|0 fnt
+L	ab_17_3	215	|faint|p1a: Vileplume
+L	ab_17_3	216	|
+L	ab_17_3	217	|t:|<NORMALIZED>
+L	ab_17_3	218	|switch|p1a: Nidoran-M|Nidoran-M, M|245/245
+L	ab_17_3	219	|
+L	ab_17_3	220	|upkeep
+L	ab_17_3	221	|turn|20
+L	ab_17_3	222	|
+L	ab_17_3	223	|t:|<NORMALIZED>
+L	ab_17_3	224	|move|p1a: Nidoran-M|Strength|p2a: Geodude
+L	ab_17_3	225	|-resisted|p2a: Geodude
+L	ab_17_3	226	|-damage|p2a: Geodude|34/205
+L	ab_17_3	227	|move|p2a: Geodude|Return|p1a: Nidoran-M
+L	ab_17_3	228	|-damage|p1a: Nidoran-M|61/245
+L	ab_17_3	229	|
+L	ab_17_3	230	|upkeep
+L	ab_17_3	231	|turn|21
+L	ab_17_3	232	|
+L	ab_17_3	233	|t:|<NORMALIZED>
+L	ab_17_3	234	|switch|p1a: Armaldo|Armaldo, M|263/300
+L	ab_17_3	235	|switch|p2a: Registeel|Registeel|320/328
+L	ab_17_3	236	|
+L	ab_17_3	237	|upkeep
+L	ab_17_3	238	|turn|22
+L	ab_17_3	239	|
+L	ab_17_3	240	|t:|<NORMALIZED>
+L	ab_17_3	241	|move|p2a: Registeel|Rock Smash|p1a: Armaldo
+L	ab_17_3	242	|-damage|p1a: Armaldo|250/300
+L	ab_17_3	243	|move|p1a: Armaldo|Iron Tail|p2a: Registeel
+L	ab_17_3	244	|-resisted|p2a: Registeel
+L	ab_17_3	245	|-damage|p2a: Registeel|294/328
+L	ab_17_3	246	|debug|move failed because it did nothing
+L	ab_17_3	247	|
+L	ab_17_3	248	|upkeep
+L	ab_17_3	249	|turn|23
+L	ab_17_3	250	|
+L	ab_17_3	251	|t:|<NORMALIZED>
+L	ab_17_3	252	|move|p2a: Registeel|Mega Kick|p1a: Armaldo
+L	ab_17_3	253	|-resisted|p1a: Armaldo
+L	ab_17_3	254	|-damage|p1a: Armaldo|214/300
+L	ab_17_3	255	|move|p1a: Armaldo|Substitute|p1a: Armaldo
+L	ab_17_3	256	|-start|p1a: Armaldo|Substitute
+L	ab_17_3	257	|-damage|p1a: Armaldo|139/300
+L	ab_17_3	258	|
+L	ab_17_3	259	|upkeep
+L	ab_17_3	260	|turn|24
+L	ab_17_3	261	|
+L	ab_17_3	262	|t:|<NORMALIZED>
+L	ab_17_3	263	|switch|p1a: Lunatone|Lunatone|99/292
+L	ab_17_3	264	|move|p2a: Registeel|Endure||[still]
+L	ab_17_3	265	|-fail|p2a: Registeel
+L	ab_17_3	266	|
+L	ab_17_3	267	|upkeep
+L	ab_17_3	268	|turn|25
+L	ab_17_3	269	|
+L	ab_17_3	270	|t:|<NORMALIZED>
+L	ab_17_3	271	|move|p1a: Lunatone|Frustration|p2a: Registeel
+L	ab_17_3	272	|-resisted|p2a: Registeel
+L	ab_17_3	273	|-damage|p2a: Registeel|293/328
+L	ab_17_3	274	|move|p2a: Registeel|Mega Kick|p1a: Lunatone
+L	ab_17_3	275	|-resisted|p1a: Lunatone
+L	ab_17_3	276	|-damage|p1a: Lunatone|27/292
+L	ab_17_3	277	|
+L	ab_17_3	278	|upkeep
+L	ab_17_3	279	|turn|26
+L	ab_17_3	280	|
+L	ab_17_3	281	|t:|<NORMALIZED>
+L	ab_17_3	282	|move|p1a: Lunatone|Double-Edge|p2a: Registeel
+L	ab_17_3	283	|-resisted|p2a: Registeel
+L	ab_17_3	284	|-damage|p2a: Registeel|270/328
+L	ab_17_3	285	|-damage|p1a: Lunatone|20/292|[from] Recoil|[of] p2a: Registeel
+L	ab_17_3	286	|move|p2a: Registeel|Mega Kick|p1a: Lunatone|[miss]
+L	ab_17_3	287	|-miss|p2a: Registeel|p1a: Lunatone
+L	ab_17_3	288	|
+L	ab_17_3	289	|upkeep
+L	ab_17_3	290	|turn|27
+L	ab_17_3	291	|
+L	ab_17_3	292	|t:|<NORMALIZED>
+L	ab_17_3	293	|move|p2a: Registeel|Endure|p2a: Registeel
+L	ab_17_3	294	|-singleturn|p2a: Registeel|move: Endure
+L	ab_17_3	295	|move|p1a: Lunatone|Double-Edge|p2a: Registeel
+L	ab_17_3	296	|-resisted|p2a: Registeel
+L	ab_17_3	297	|-damage|p2a: Registeel|247/328
+L	ab_17_3	298	|-damage|p1a: Lunatone|13/292|[from] Recoil|[of] p2a: Registeel
+L	ab_17_3	299	|
+L	ab_17_3	300	|upkeep
+L	ab_17_3	301	|turn|28
+L	ab_17_3	302	|
+L	ab_17_3	303	|t:|<NORMALIZED>
+L	ab_17_3	304	|move|p1a: Lunatone|Frustration|p2a: Registeel
+L	ab_17_3	305	|-resisted|p2a: Registeel
+L	ab_17_3	306	|-damage|p2a: Registeel|246/328
+L	ab_17_3	307	|move|p2a: Registeel|Mega Kick|p1a: Lunatone
+L	ab_17_3	308	|-resisted|p1a: Lunatone
+L	ab_17_3	309	|-damage|p1a: Lunatone|0 fnt
+L	ab_17_3	310	|faint|p1a: Lunatone
+L	ab_17_3	311	|
+L	ab_17_3	312	|t:|<NORMALIZED>
+L	ab_17_3	313	|switch|p1a: Armaldo|Armaldo, M|139/300
+L	ab_17_3	314	|
+L	ab_17_3	315	|upkeep
+L	ab_17_3	316	|turn|29
+L	ab_17_3	317	|
+L	ab_17_3	318	|t:|<NORMALIZED>
+L	ab_17_3	319	|switch|p2a: Magneton|Magneton|228/228
+L	ab_17_3	320	|move|p1a: Armaldo|Iron Tail|p2a: Magneton|[miss]
+L	ab_17_3	321	|-miss|p1a: Armaldo|p2a: Magneton
+L	ab_17_3	322	|
+L	ab_17_3	323	|upkeep
+L	ab_17_3	324	|turn|30
+L	ab_17_3	325	|
+L	ab_17_3	326	|t:|<NORMALIZED>
+L	ab_17_3	327	|move|p1a: Armaldo|Protect|p1a: Armaldo
+L	ab_17_3	328	|-singleturn|p1a: Armaldo|Protect
+L	ab_17_3	329	|move|p2a: Magneton|Thunderbolt|p1a: Armaldo
+L	ab_17_3	330	|-activate|p1a: Armaldo|Protect
+L	ab_17_3	331	|
+L	ab_17_3	332	|upkeep
+L	ab_17_3	333	|turn|31
+L	ab_17_3	334	|
+L	ab_17_3	335	|t:|<NORMALIZED>
+L	ab_17_3	336	|move|p2a: Magneton|Thunder Wave|p1a: Armaldo
+L	ab_17_3	337	|-status|p1a: Armaldo|par
+L	ab_17_3	338	|move|p1a: Armaldo|Toxic|p2a: Magneton
+L	ab_17_3	339	|debug|natural status immunity
+L	ab_17_3	340	|debug|immune to status
+L	ab_17_3	341	|-immune|p2a: Magneton
+L	ab_17_3	342	|debug|move failed because it did nothing
+L	ab_17_3	343	|
+L	ab_17_3	344	|upkeep
+L	ab_17_3	345	|turn|32
+L	ab_17_3	346	|
+L	ab_17_3	347	|t:|<NORMALIZED>
+L	ab_17_3	348	|move|p2a: Magneton|Thunder Wave|p1a: Armaldo
+L	ab_17_3	349	|-fail|p1a: Armaldo|par
+L	ab_17_3	350	|debug|move failed because it did nothing
+L	ab_17_3	351	|move|p1a: Armaldo|Iron Tail|p2a: Magneton
+L	ab_17_3	352	|-resisted|p2a: Magneton
+L	ab_17_3	353	|-damage|p2a: Magneton|203/228
+L	ab_17_3	354	|
+L	ab_17_3	355	|upkeep
+L	ab_17_3	356	|turn|33
+L	ab_17_3	357	|
+L	ab_17_3	358	|t:|<NORMALIZED>
+L	ab_17_3	359	|switch|p2a: Graveler|Graveler, M|245/245
+L	ab_17_3	360	|switch|p1a: Nidoran-M|Nidoran-M, M|61/245
+L	ab_17_3	361	|
+L	ab_17_3	362	|upkeep
+L	ab_17_3	363	|turn|34
+L	ab_17_3	364	|
+L	ab_17_3	365	|t:|<NORMALIZED>
+L	ab_17_3	366	|move|p1a: Nidoran-M|Strength|p2a: Graveler
+L	ab_17_3	367	|-resisted|p2a: Graveler
+L	ab_17_3	368	|-damage|p2a: Graveler|228/245
+L	ab_17_3	369	|move|p2a: Graveler|Seismic Toss|p1a: Nidoran-M
+L	ab_17_3	370	|-damage|p1a: Nidoran-M|0 fnt
+L	ab_17_3	371	|faint|p1a: Nidoran-M
+L	ab_17_3	372	|
+L	ab_17_3	373	|t:|<NORMALIZED>
+L	ab_17_3	374	|switch|p1a: Armaldo|Armaldo, M|139/300 par
+L	ab_17_3	375	|
+L	ab_17_3	376	|upkeep
+L	ab_17_3	377	|turn|35
+L	ab_17_3	378	|
+L	ab_17_3	379	|t:|<NORMALIZED>
+L	ab_17_3	380	|move|p1a: Armaldo|Protect|p1a: Armaldo
+L	ab_17_3	381	|-singleturn|p1a: Armaldo|Protect
+L	ab_17_3	382	|move|p2a: Graveler|Seismic Toss|p1a: Armaldo
+L	ab_17_3	383	|-activate|p1a: Armaldo|Protect
+L	ab_17_3	384	|
+L	ab_17_3	385	|upkeep
+L	ab_17_3	386	|turn|36
+L	ab_17_3	387	|
+L	ab_17_3	388	|t:|<NORMALIZED>
+L	ab_17_3	389	|move|p2a: Graveler|Mud-Slap|p1a: Armaldo
+L	ab_17_3	390	|-damage|p1a: Armaldo|115/300 par
+L	ab_17_3	391	|-unboost|p1a: Armaldo|accuracy|1
+L	ab_17_3	392	|move|p1a: Armaldo|Toxic|p2a: Graveler
+L	ab_17_3	393	|-status|p2a: Graveler|tox
+L	ab_17_3	394	|
+L	ab_17_3	395	|-damage|p2a: Graveler|213/245 tox|[from] psn
+L	ab_17_3	396	|upkeep
+L	ab_17_3	397	|turn|37
+L	ab_17_3	398	|
+L	ab_17_3	399	|t:|<NORMALIZED>
+L	ab_17_3	400	|move|p2a: Graveler|Facade|p1a: Armaldo
+L	ab_17_3	401	|-resisted|p1a: Armaldo
+L	ab_17_3	402	|-damage|p1a: Armaldo|63/300 par
+L	ab_17_3	403	|move|p1a: Armaldo|Iron Tail|p2a: Graveler
+L	ab_17_3	404	|-supereffective|p2a: Graveler
+L	ab_17_3	405	|-damage|p2a: Graveler|60/245 tox
+L	ab_17_3	406	|
+L	ab_17_3	407	|-damage|p2a: Graveler|30/245 tox|[from] psn
+L	ab_17_3	408	|upkeep
+L	ab_17_3	409	|turn|38
+L	ab_17_3	410	|
+L	ab_17_3	411	|t:|<NORMALIZED>
+L	ab_17_3	412	|move|p1a: Armaldo|Protect|p1a: Armaldo
+L	ab_17_3	413	|-singleturn|p1a: Armaldo|Protect
+L	ab_17_3	414	|move|p2a: Graveler|Seismic Toss|p1a: Armaldo
+L	ab_17_3	415	|-activate|p1a: Armaldo|Protect
+L	ab_17_3	416	|
+L	ab_17_3	417	|-damage|p2a: Graveler|0 fnt|[from] psn
+L	ab_17_3	418	|faint|p2a: Graveler
+L	ab_17_3	419	|upkeep
+L	ab_17_3	420	|
+L	ab_17_3	421	|t:|<NORMALIZED>
+L	ab_17_3	422	|switch|p2a: Magmar|Magmar, M|242/242
+L	ab_17_3	423	|turn|39
+L	ab_17_3	424	|
+L	ab_17_3	425	|t:|<NORMALIZED>
+L	ab_17_3	426	|move|p2a: Magmar|Sunny Day|p2a: Magmar
+L	ab_17_3	427	|-weather|SunnyDay
+L	ab_17_3	428	|move|p1a: Armaldo|Toxic|p2a: Magmar|[miss]
+L	ab_17_3	429	|-miss|p1a: Armaldo|p2a: Magmar
+L	ab_17_3	430	|
+L	ab_17_3	431	|-weather|SunnyDay|[upkeep]
+L	ab_17_3	432	|upkeep
+L	ab_17_3	433	|turn|40
+L	ab_17_3	434	|
+L	ab_17_3	435	|t:|<NORMALIZED>
+L	ab_17_3	436	|move|p2a: Magmar|Mimic|p1a: Armaldo
+L	ab_17_3	437	|-activate|p2a: Magmar|move: Mimic|Toxic
+L	ab_17_3	438	|cant|p1a: Armaldo|par
+L	ab_17_3	439	|
+L	ab_17_3	440	|-weather|SunnyDay|[upkeep]
+L	ab_17_3	441	|upkeep
+L	ab_17_3	442	|turn|41
+L	ab_17_3	443	|
+L	ab_17_3	444	|t:|<NORMALIZED>
+L	ab_17_3	445	|move|p2a: Magmar|Sunny Day||[still]
+L	ab_17_3	446	|-fail|p2a: Magmar
+L	ab_17_3	447	|debug|move failed because it did nothing
+L	ab_17_3	448	|move|p1a: Armaldo|Substitute|p1a: Armaldo
+L	ab_17_3	449	|-fail|p1a: Armaldo|move: Substitute|[weak]
+L	ab_17_3	450	|
+L	ab_17_3	451	|-weather|SunnyDay|[upkeep]
+L	ab_17_3	452	|upkeep
+L	ab_17_3	453	|turn|42
+L	ab_17_3	454	|
+L	ab_17_3	455	|t:|<NORMALIZED>
+L	ab_17_3	456	|move|p1a: Armaldo|Protect|p1a: Armaldo
+L	ab_17_3	457	|-singleturn|p1a: Armaldo|Protect
+L	ab_17_3	458	|move|p2a: Magmar|Iron Tail|p1a: Armaldo
+L	ab_17_3	459	|-activate|p1a: Armaldo|Protect
+L	ab_17_3	460	|
+L	ab_17_3	461	|-weather|SunnyDay|[upkeep]
+L	ab_17_3	462	|upkeep
+L	ab_17_3	463	|turn|43
+L	ab_17_3	464	|
+L	ab_17_3	465	|t:|<NORMALIZED>
+L	ab_17_3	466	|move|p2a: Magmar|Body Slam|p1a: Armaldo
+L	ab_17_3	467	|-resisted|p1a: Armaldo
+L	ab_17_3	468	|-damage|p1a: Armaldo|29/300 par
+L	ab_17_3	469	|move|p1a: Armaldo|Substitute|p1a: Armaldo
+L	ab_17_3	470	|-fail|p1a: Armaldo|move: Substitute|[weak]
+L	ab_17_3	471	|
+L	ab_17_3	472	|-weather|none
+L	ab_17_3	473	|upkeep
+L	ab_17_3	474	|turn|44
+L	ab_17_3	475	|
+L	ab_17_3	476	|t:|<NORMALIZED>
+L	ab_17_3	477	|move|p2a: Magmar|Body Slam|p1a: Armaldo
+L	ab_17_3	478	|-resisted|p1a: Armaldo
+L	ab_17_3	479	|-damage|p1a: Armaldo|0 fnt
+L	ab_17_3	480	|debug|move failed because it did nothing
+L	ab_17_3	481	|faint|p1a: Armaldo
+L	ab_17_3	482	|
+L	ab_17_3	483	|win|P2

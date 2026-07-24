@@ -533,7 +533,24 @@ impl crate::state::BattleState {
         // Partial-trap: no partial-trap move is modeled → nothing to clear (documented no-op).
     }
 
-    pub(crate) fn focus_band_damage(&mut self, side: usize, slot: usize, dmg: u16, is_move: bool, dex: &Dex) -> u16 {
+    /// `emit_survive_zero`: when a Focus-Band survive nets ZERO damage (the holder is ALREADY
+    /// at 1 HP → `hp - 1 == 0`), the sim STILL emits `|-damage|<mon>|1/<max>` after the
+    /// `-activate`, but the standard damaging-path caller's `realized > 0` emission gate SKIPS
+    /// it. Pass `true` at those `>0`-gated sites (main / fixed / futuremove-resolve — each of
+    /// which also runs `endure_clamp` first) so this fn emits the plain `-damage` itself; pass
+    /// `false` at the sites that emit `-damage` UNCONDITIONALLY (the confusion self-hit, whose
+    /// line carries `[from] confusion`, and the jump-kick crash) and at every `is_move=false`
+    /// caller (which never reaches the survive branch). Mirrors `endure_clamp`'s survive-at-1
+    /// self-emit (`gen3_omniscient_byte_fuzz_v1`, the Focus-Band-at-1 repro ab_9_9 dec469).
+    pub(crate) fn focus_band_damage(
+        &mut self,
+        side: usize,
+        slot: usize,
+        dmg: u16,
+        is_move: bool,
+        emit_survive_zero: bool,
+        dex: &Dex,
+    ) -> u16 {
         if dmg == 0 {
             return 0; // no Damage event for a 0-damage apply (no modeled path reaches this)
         }
@@ -558,6 +575,15 @@ impl crate::state::BattleState {
             if self.logging() {
                 let mon_ref = self.mon_ref(side, slot, dex);
                 self.log.activate(&mon_ref, "item: Focus Band", None);
+            }
+            // When the holder is ALREADY at 1 HP the survive nets 0 (stays at 1) — self-emit
+            // the `-damage|1/<max>` line the `>0`-gated caller would skip (apply_damage(0) is a
+            // no-op, so current HP == post-apply HP). For hp > 1 the caller emits it (hp-1 > 0),
+            // so this never double-emits.
+            if hp == 1 && emit_survive_zero && self.logging() {
+                let mon_ref = self.mon_ref(side, slot, dex);
+                let hp_status = self.hp_status(side, slot);
+                self.log.damage(&mon_ref, &hp_status, None);
             }
             return hp - 1; // hang on at 1 HP
         }

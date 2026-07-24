@@ -3532,7 +3532,9 @@ chunk — a repro dir's `battle.txt`), named by the form each guards
 `09_toxic_residual_from_psn.txt`, … through the gen3ou `18_freeze_clause_message_ou.txt` /
 `19_natural_cure_ou.txt` / `20_protect_activate_ou.txt`; 20 emission-form fixtures, both formats) PLUS the
 one TAGGED allowlist fixture `21_construction_mirror_ability_of.txt` (R1, see the allowlist section below),
-and the later run-numbered fixtures (`22`…`41`). **Two byte-fuzz finds from the master-seed 55667 round are
+and the later run-numbered fixtures (`22`…`46` — the `42`–`46` block is the ROUND 22 emission tail:
+Damp-blocks-Explosion / Substitute-Shedinja-maxhp1 / Trace-copies-Trace / Solar-Beam-sun-skip-miss /
+White-Herb-residual-after-cant). **Two byte-fuzz finds from the master-seed 55667 round are
 frozen here:** **`40_soundproof_damaging_immune.txt`** guards the DAMAGING Soundproof block
 (`gen3_ability_batch2_v1`, the `random`-mode find) — a DAMAGING `flags.sound` move (Hyper Voice) into a
 Soundproof holder emits `|move|…|Hyper Voice|<foe>` + `|-immune|<foe>|[from] ability: Soundproof` and draws
@@ -4208,6 +4210,125 @@ is NO construction offset): the port's dec-2 seedAfter was ONE draw short of the
   The AUTHORITATIVE `bridge_replay --ab` on the committed repro: the **A2 SEED ANCHOR now PASSES** (the dec-2
   `kind:"seed"` is GONE); the only residual is the pre-existing, documented, **allowlisted**
   `curse-nonghost-target-self-vs-normal` request-DISPLAY deferral (Swampert's non-Ghost Curse) — unrelated to R21.
+
+### ROUND 22 (FIX) — the `--mode random --protocol` EMISSION-form tail (Damp / Substitute / Trace / Solar Beam / White Herb)
+
+A 1-hour `--mode random --protocol --master-seed 100125` omniscient byte fuzz surfaced 86 divergences,
+35 of them `kind=protocol` (emission), clustering into a few byte forms. FIVE distinct EMISSION bugs
+were root-caused (each SIM-PROBE-confirmed via the golden `L` rows — the real Node sim's output — and
+`ab_replay --protocol` on the saved repros), FIXED byte-neutrally, and corpus-fixtured (revert-verified).
+All are OBSERVATION-ONLY — the full `cargo test` is green (558 tests, 0 fail, 0 warnings), the e2e golden
+md5 `3155eb796cb4bf453c6053d769ba98e5` is UNCHANGED, and every committed seed golden stays BYTE-IDENTICAL
+(none of these forms appeared in a committed golden, so the OLD wrong emission never diverged there):
+
+- **DAMP blocks Explosion/Self-Destruct — the MISSING `|move|…||[still]` announce** (`gen3_ability_batch2_v1`
+  emission gap; `turn.rs::run_move` Damp arm; the dominant cluster, 11 repros). gen-3 Damp cancels
+  Explosion/Self-Destruct at `runEvent('TryMove')`, but the sim ANNOUNCES the move first (`useMoveInner`
+  emits `|move|<user>|<Move>|<target>`) then Damp's `onAnyTryMove` retro-edits it to the `[still]`
+  did-nothing form (`attrLastMove('[still]')`) and adds the `|cant|`. So the golden is TWO lines
+  (`|move|p1a: Graveler|Self-Destruct||[still]` THEN `|cant|p2a: Poliwhirl|ability: Damp|Self-Destruct|[of]
+  p1a: Graveler`); the port's Damp arm returned early emitting ONLY the cant (the move announce sits AFTER
+  the Damp check). FIX: emit `move_used(user, move, None, still=true)` (the `[still]` empty-target form)
+  BEFORE the `cant_of_move`. Corpus `42_damp_blocks_explosion_move_still.txt` (revert → `kind=protocol` at
+  the `|move|…||[still]` line, PROVEN).
+- **SUBSTITUTE the Shedinja `maxhp === 1` clause** (`gen3_substitute_v1` gap; `turn.rs::run_status_move`
+  substitute arm; 9 repros). The sim's `onTryHit` (moves.js:18364) fails Substitute when `source.hp <=
+  source.maxhp / 4 || source.maxhp === 1` — the SECOND disjunct is the Shedinja clause (`floor(1/4) == 0`,
+  so `hp(1) <= 0` is false and the cost check MISSES it, yet the sim STILL fails `|-fail|<u>|move:
+  Substitute|[weak]`). The port's fail gate was `hp <= floor(maxhp/4)` only (a code comment even wrongly
+  called the clause "N/A here"), so a 1-HP-maxhp Shedinja CREATED the sub (`|-start|<u>|Substitute`). FIX:
+  add `|| mon.maxhp == 1` to the fail condition (the existing `!already_subbed` already emits `[weak]`).
+  Corpus `43_substitute_shedinja_maxhp1_weak_fail.txt`.
+- **TRACE-copies-TRACE mirror emission** (`gen3_berry_trace_shedskin_v1` emit gate; `turn.rs::helpers::
+  emit_ability_start_lines` trace arm; 2 repros). A Porygon2-vs-Porygon Trace mirror: BOTH leads trace each
+  other's Trace and the sim emits `|-ability|<mon>|Trace|Trace|[from] ability: Trace|[of] <foe>` for each.
+  The port's emit gate was `if cur != "trace"` (a proxy for "did the copy apply"), which wrongly SKIPPED the
+  line when the copied ability WAS Trace (`cur == "trace"` after copying Trace). FIX: gate on the actual
+  no-copy case — the FOE active is FAINTED/absent (mirroring `trace_on_start`'s early return) — so a Trace
+  mirror emits both lines. Corpus `44_trace_copies_trace_mirror.txt`.
+- **SUN-SKIP Solar Beam MISS — the `-anim` `[miss]` tag** (`gen3_move_coverage_batch4c_v1` emission gap;
+  `turn.rs::run_move` + `protocol.rs::attr_last_move_miss`; 2 repros). A charge move firing immediately (sun
+  skip) emits `[still]`+`-prepare`+`-anim` BEFORE the accuracy roll; on a MISS the sim's `attrLastMove('[miss]')`
+  appends `[miss]` to the LAST move-family line — the `|-anim|` (`|-anim|<u>|Solar Beam|<t>|[miss]`). The port
+  (a) skipped the retro-edit entirely when the announce was suppressed (sun skip), and (b) `attr_last_move_miss`
+  only matched `|move|` lines. FIX: `attr_last_move_miss` now matches `|move|` OR `|-anim|` (the sim's
+  `lastMoveLine` tracks the last `addMove`), and the sun-skip miss path calls it. Corpus
+  `45_solar_beam_sun_skip_miss_anim.txt`.
+- **WHITE HERB restore on a CANT — the `onAnyAfterMove`-fires-on-abort bug** (`gen3_white_herb_v1`;
+  `MoveResolution::aborted` + `turn.rs::driver.rs` gate; 1 repro). The sim's `AfterMove` event NEVER fires
+  for an `onBeforeMove`-aborted move (`runMove` runs `MoveAborted` and returns BEFORE `AfterMove`), so a
+  cant'd (asleep/para/…) White Herb holder whose Atk was Intimidate-dropped waits for the end-of-turn
+  `onResidual` (order 29), NOT the move tail. The port fired the `onAnyAfterMove` White Herb restore
+  UNCONDITIONALLY after `run_move` (even on a cant), emitting the `-enditem` one boundary early (golden
+  ab_154_12: the enditem sits at the residual `|` boundary, not after the cant). FIX: a new
+  `MoveResolution::aborted` flag (set at the single `on_before_move`-abort return; a Damp-block / immune /
+  fail move still reaches `AfterMove` → NOT aborted, returns via `done()`) gates the driver's
+  `white_herb_restore` on `!res.aborted`. Corpus `46_white_herb_residual_after_cant.txt`. DRAW-NEUTRAL (the
+  restore is draw-free; the residual White-Herb handler already existed → the boost still lands before the
+  next decision boundary, so seed + per-decision STATE are unchanged).
+
+**RE-MEASURE (same `--mode random --protocol --master-seed 100125 --battles 1000` command, HEAD vs fixed
+binary):** BEFORE (HEAD) = **16 diverged** (kinds seed=7, **protocol=5** [DAMP=2, SUBSTITUTE=1,
+SOLARBEAM_MISS=1, OTHER=1], state=3, firstmover=1); AFTER (fixed) = **12 diverged** (**protocol=1** — the
+4 in-scope protocol forms in the 1000-battle sample all cleared; the lone residual is `ab_9_9`, a
+survive-at-1 `-damage` STATE-class divergence, NOT an emission form). Per-repro on the original 1-hour
+divergence set: **24/35 protocol repros clear** (Damp 11/11, Substitute 9/9, Trace 2/2, Solar Beam 2/2) +
+the White-Herb-residual repro (25 total). REMAINING protocol (deeper, NOT clean emission): a Thief×White-Herb
+ordering (ab_40_5), a Mimic move-order divergence, a Perish-Song `-start perishN` emit-order swap, and the
+OTHER bucket (survive-at-1 Focus-Band / Wonder-Guard STATE divergences that surface as `-damage`-vs-`|move|`).
+
+### ROUND 23 (FIX) — the seed/state tail: Focus-Band survive-at-1 emit + MULTIHIT per-strike ctx + MIMIC×Choice-lock
+
+The `--mode random --protocol --master-seed 100125 --battles 1000` tail (10 diverged: 5 seed / 3 state /
+1 protocol / 1 firstmover) is root-caused; THREE engine fixes clear FIVE of the ten (the other five are the
+turn-0 CONSTRUCTION-window Quick-Claw deferral + two deep-diagnosed residuals). All OBSERVATION-NEUTRAL for
+the committed goldens (full `cargo test` green, e2e md5 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED, every
+seed golden byte-identical, the multihit byte gate `probe_batch7_isolated.js` 80/80 ok):
+
+- **FOCUS BAND survive-at-1 `-damage` EMISSION** (`gen3_focus_band_survive_zero_v1`, repro ab_9_9 dec469; the
+  Focus-Band analog of the round-22 Endure-at-1 emit fix). A Focus-Band hit into a holder ALREADY at 1 HP
+  survives with 0 net damage (stays at 1), but the sim STILL emits `|-damage|<mon>|1/<max>` after
+  `|-activate|item: Focus Band` — the `>0`-gated damaging-path callers skip it. `items.rs::focus_band_damage`
+  gained an `emit_survive_zero: bool` param and self-emits the plain `-damage` at `hp == 1` for the 4
+  `>0`-gated / `endure_clamp`-calling sites (main / fixed / fixed-callback / futuremove-resolve), NOT the
+  confusion self-hit (its line carries `[from] confusion`) / jump-kick crash (both emit UNCONDITIONALLY) /
+  the `is_move=false` sites (never survive). Emission-only. Fixture `byte_fuzz_corpus/47_focus_band_survive_at_one_hp.txt`.
+- **MULTIHIT per-strike ctx REBUILD** (`gen3_multihit_perstrike_ctx_v1`, repros ab_34_9 + ab_32_18). The sim
+  re-runs `getDamage` PER STRIKE, so a mid-multihit ATTACKER status gained from a CONTACT-PROC ability (Poison
+  Point / Static / Flame Body / Effect Spore) arms **Guts** (Atk ×1.5) / **Facade** / a pinch-berry threshold /
+  **Marvel Scale** (defender) on LATER strikes. `moves.rs::run_multihit` reused the pre-hit `ctx` (refreshing
+  only crit + defender types), so a Guts holder poisoned on strike 1 dealt no ×1.5 on strikes 2-5 (ab_34_9: a
+  GUTS Hariyama Arm-Thrusting a POISON-POINT Nidoran-M — sim strike 1 = 18, strikes 2-5 ≈ 28-30; the port dealt
+  ~18 each). Now it calls `build_damage_context` PER STRIKE (draw-free, seed-neutral; for an unchanged state /
+  strike 1 it reproduces the passed ctx exactly, so byte-identical everywhere except a genuine mid-multihit
+  change — no gen3 multihit move carries the Facade/Charge/Solar-Beam post-build bp_mods, all single-hit).
+  Fixture `byte_fuzz_corpus/48_multihit_guts_mid_sequence.txt`.
+- **MIMIC × CHOICE-LOCK self-overwrite** (`gen3_mimic_choice_lock_self_overwrite_v1`, repros ab_17_3 + ab_22_18;
+  the Choice-lock sibling of `gen3_mimic_disable_self_overwrite_v1`). A **Choice-Band** mon whose FIRST move is
+  Mimic gets Choice-locked to the Mimic slot; Mimic then overwrites THAT slot, so `hasMove('mimic')` is false
+  and the sim's `choicelock.onDisableMove` fires `removeVolatile('choicelock')` — the lock is DROPPED and the mon
+  uses any move next (re-locking to it). The port keys the lock by SLOT INDEX (`choice_locked_move: Some(mslot)`),
+  so it stayed stuck on the copied slot, rejecting every other move via `choice_is_legal` → the reject-and-
+  re-request gate pulled subsequent choices → a decision-stream desync (ab_17_3: a CB Geodude Mimics Rest, its
+  Return is then wrongly rejected → the port switches p2 where the sim moves). The Mimic success block in
+  `status_moves.rs` now clears `choice_locked_move` when the overwritten slot IS the locked slot, mirroring the
+  sim's `!hasMove` removal (confirmed vs the resolved gen3 `choicelock` condition dist). Draw-free / decision-
+  legality only. Fixture `byte_fuzz_corpus/49_mimic_overwrites_choice_locked_slot.txt`.
+
+**RE-MEASURE** (`--mode random --protocol --master-seed 100125 --battles 1000`): BEFORE = **10 diverged**
+(seed=5 / state=3 / protocol=1 / firstmover=1); AFTER = **5 diverged** (seed=3 / state=1 / firstmover=1) —
+the 5 cleared are ab_9_9 (protocol), ab_34_9 + ab_32_18 (state, multihit), ab_17_3 + ab_22_18 (seed, mimic).
+The 5 REMAINING are all deferred/deep, DIAGNOSED for a follow-up: **(a) three turn-0 CONSTRUCTION-window
+Quick-Claw first-mover artifacts** (ab_10_12 firstmover + ab_22_1 / ab_4_19 seed — a SLOW Quick-Claw holder
+[Sentret/Flareon/…] moves first on turn 1 because its turn-0 endTurn `randomChance(1,5)` HIT; the offline
+`ab_replay` replays from the POST-construction seed so it can't know — the project-wide deferral; the
+production bridge models construction); **(b) ab_3_17 (seed dec32)** a CONFUSION self-hit into a foe with a
+screen up — the sim's confusion self-hit `getDamage` draws a **ModifyDamagePhase1 tie-shuffle** (len=2 from the
+`source==target` double-gather of the foe's `onAnyModifyDamagePhase1` screen handler) that the port's
+`apply_confusion_self_hit` path omits (its ctx sets `reflect/light_screen=false` and never calls
+`modify_damage_phase1_shuffle`); **(c) ab_16_24 (state dec48)** an ACCUMULATED damage divergence — a ThickFat
+Spheal switches BACK in at dec48 already damaged (67 sim / 9 port), the +58 rooted in an earlier appearance,
+surfacing on the switch-in (needs the full damage-history trace).
 
 ## Data-driven mechanics (the class framework)
 

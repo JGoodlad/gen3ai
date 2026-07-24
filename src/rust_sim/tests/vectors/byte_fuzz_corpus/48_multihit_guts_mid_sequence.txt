@@ -1,0 +1,539 @@
+# ab_fuzz repro (real Showdown vs the Rust port), --mode random master_seed=100125.
+# Guards the MULTIHIT per-strike ctx REBUILD (gen3_multihit_perstrike_ctx_v1): the sim re-runs
+#   getDamage per strike, so a mid-multihit ATTACKER status from a CONTACT-PROC ability arms
+#   Guts (Atk x1.5) on later strikes. Repro ab_34_9: a GUTS Hariyama Arm-Thrusts a POISON-POINT
+#   Nidoran-M; Poison Point poisons Hariyama on strike 1 -> strikes 2-5 hit at x1.5. The port
+#   reused the pre-poison ctx (no Guts). Revert => kind=state (Nidoran-M under-damaged).
+# Format: SCEN/TEAM/FMT/INIT/DEC/END/L (as tests/vectors/e2e_fuzz_golden.txt).
+SCEN	ab_34_9
+TEAM	ab_34_9	p1	Hariyama||SitrusBerry|Guts|ArmThrust,Frustration,BulkUp,Earthquake|Hardy|108,20,172,108,88,12|M|8,4,11,17,14,23|||]Dratini||PolkadotBow|ShedSkin|Swift,IronTail,Twister,Substitute|Lax|152,196,84,,76,|M|16,1,11,9,7,2|||]Charmeleon||WikiBerry|Blaze|Swift,Strength,RockSlide,MetalClaw|Rash|148,156,,28,164,12|M|14,29,18,,28,29|||]Barboach||PolkadotBow|Oblivious|Spark,RockTomb,Earthquake,Surf|Impish|92,152,72,,180,12|M|14,23,26,16,6,1|||]Wailord||WhiteHerb|Oblivious|Waterfall,BodySlam,Endure,Mimic|Hasty|88,104,92,64,108,52|M|2,1,24,10,9,2|||]Machamp||DragonFang|Guts|BodySlam,DoubleEdge,MegaKick,ScaryFace|Gentle|84,12,140,160,64,48|M|29,15,8,1,15,22|||
+TEAM	ab_34_9	p2	Phanpy||OddIncense|Pickup|Tackle,IronTail,Mimic,TakeDown|Lonely|120,124,136,,128,|M|21,,21,3,,15|||]Octillery||Leftovers|SuctionCups|BulletSeed,WaterPulse,Psychic,Mimic|Brave|,196,36,48,128,100|M|0,0,11,5,17,24|||]Voltorb||SilkScarf|Soundproof|Frustration,Screech,Return,Taunt|Hardy|152,112,60,,184,|N|16,4,15,8,1,3|||]Nidoran-M||PolkadotBow|PoisonPoint|IronTail,SunnyDay,Thunder,TakeDown|Lax|124,48,76,112,,148|M|23,21,6,24,12,9|||]Snorlax||LeppaBerry|ThickFat|Covet,Lick,RockTomb,Counter|Quirky|60,156,16,96,136,24|M|9,,6,22,21,9|||]Omastar||QuickClaw|ShellArmor|WaterPulse,AncientPower,Blizzard,SpikeCannon|Docile|4,104,216,32,152,|M|13,,7,23,21,8|||
+FMT	ab_34_9	gen3customgame
+INIT	ab_34_9	8057,3103,12492,1510	1259052661
+DEC	ab_34_9	0	move	0	0	m0	s3	23328,14759,59823,14200	Hariyama	379	433	0	psn	0	0	0	0	0	0	6	Nidoran-M	123	256	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_34_9	1	move	0	0	m2	m1	39741,62679,6974,47387	Hariyama	325	433	0	psn	1	1	0	0	0	0	6	Nidoran-M	123	256	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_34_9	2	move	0	0	m3	m2	6384,25215,25389,37472	Hariyama	176	433	0	psn	1	1	0	0	0	0	6	Nidoran-M	0	256	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_9	3	switch	0	1	-	s1	64340,55349,1302,48803	Hariyama	152	433	0	psn	1	1	0	0	0	0	6	Octillery	260	260	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_34_9	4	move	0	0	m3	m0	15966,119,27920,52724	Hariyama	152	433	0	psn	1	1	0	0	0	0	6	Octillery	0	260	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_34_9	5	switch	0	1	-	s2	58865,59416,38827,29703	Hariyama	98	433	0	psn	1	1	0	0	0	0	6	Voltorb	244	244	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_34_9	6	move	0	0	s5	m1	3559,57714,61262,48545	Machamp	340	340	0	-	0	-2	0	0	0	0	6	Voltorb	244	244	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_34_9	7	move	0	0	m1	m0	55291,40664,62378,942	Machamp	270	340	0	-	0	-2	0	0	0	0	6	Voltorb	40	244	0	-	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_34_9	8	move	0	0	m0	s4	41975,5411,38542,50541	Machamp	270	340	0	-	0	-2	0	0	0	0	6	Snorlax	329	454	0	par	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_34_9	9	move	0	0	s2	m2	46437,6382,62829,9496	Charmeleon	0	277	1	fnt	0	0	0	0	0	0	5	Snorlax	329	454	0	par	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_34_9	10	switch	1	0	s3	-	47297,9144,24760,6459	Barboach	247	247	0	-	0	0	0	0	0	0	5	Snorlax	329	454	0	par	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_34_9	11	move	0	0	m0	m1	35972,38160,41191,28413	Barboach	215	247	0	-	0	0	0	0	0	0	5	Snorlax	311	454	0	par	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_34_9	12	move	0	0	m2	m1	45231,7126,61511,45308	Barboach	184	247	0	-	0	0	0	0	0	0	5	Snorlax	38	454	0	par	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_34_9	13	move	0	0	m0	m3	59912,3939,59687,42754	Barboach	184	247	0	-	0	0	0	0	0	0	5	Snorlax	21	454	0	par	0	0	0	0	0	0	4	p1	0	0	0	1	0
+DEC	ab_34_9	14	move	0	0	m3	m0	51112,21356,46364,21815	Barboach	184	247	0	-	0	0	0	0	0	0	5	Snorlax	0	454	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_34_9	15	switch	0	1	-	s3	6857,31292,9839,44150	Barboach	184	247	0	-	0	0	0	0	0	0	5	Phanpy	341	341	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_34_9	16	move	0	0	m0	m0	3951,26901,33459,34261	Barboach	144	247	0	-	0	0	0	0	0	0	5	Phanpy	341	341	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_34_9	17	move	0	0	m1	m1	25688,34340,41570,32052	Barboach	89	247	0	-	0	0	0	0	0	0	5	Phanpy	322	341	0	-	0	0	0	0	-1	0	3	p1	0	0	0	0	0
+DEC	ab_34_9	18	move	0	0	s1	m3	18154,5370,49088,54152	Dratini	149	246	0	-	0	0	0	0	0	0	5	Phanpy	298	341	0	-	0	0	0	0	-1	0	3	p1	0	0	0	0	0
+DEC	ab_34_9	19	move	0	0	m1	m1	26390,36251,35715,26862	Dratini	149	246	0	-	0	0	0	0	0	0	5	Phanpy	204	341	0	-	0	0	0	0	-1	0	3	p1	0	0	0	0	0
+DEC	ab_34_9	20	move	0	0	m3	m2	10347,64713,42152,25257	Dratini	88	246	0	-	0	0	0	0	0	0	5	Phanpy	204	341	0	-	0	0	0	0	-1	0	3	p1	0	0	0	0	1
+DEC	ab_34_9	21	move	0	0	m1	m2	47005,9895,42992,14084	Dratini	88	246	0	-	0	0	0	0	0	0	5	Phanpy	28	341	0	-	0	0	0	0	-1	0	3	p1	0	0	0	0	1
+DEC	ab_34_9	22	move	0	0	m2	m3	43078,9686,8539,4184	Dratini	88	246	0	-	0	0	0	0	0	0	5	Phanpy	0	341	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_9	23	switch	0	1	-	s5	32231,5231,30523,10619	Dratini	88	246	0	-	0	0	0	0	0	0	5	Omastar	264	264	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_34_9	24	move	0	0	m0	m1	31259,4678,18008,44864	Dratini	88	246	0	-	0	0	0	0	0	0	5	Omastar	248	264	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_34_9	25	move	0	0	m3	m0	579,50611,64079,32001	Dratini	12	246	0	-	0	0	0	0	0	4	5	Omastar	248	264	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_34_9	26	move	0	0	m2	m0	42736,25129,47664,14469	Dratini	0	246	1	fnt	0	0	0	0	0	0	4	Omastar	248	264	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_34_9	27	switch	1	0	s4	-	11646,444,60175,6204	Wailord	474	474	0	-	0	0	0	0	0	0	4	Omastar	248	264	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_34_9	28	move	0	0	s1	m0	42314,61902,56961,3600	Barboach	0	247	1	fnt	0	0	0	0	0	0	3	Omastar	248	264	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_9	29	switch	1	0	s2	-	46476,57206,64519,47891	Machamp	270	340	0	-	0	0	0	0	0	0	3	Omastar	248	264	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_34_9	30	move	0	0	m0	m2	26621,4609,29265,27626	Machamp	166	340	0	-	0	0	0	0	0	0	3	Omastar	221	264	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_9	31	move	0	0	m1	m2	2927,33,64083,37522	Machamp	42	340	0	-	0	0	0	0	0	0	3	Omastar	176	264	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_9	32	move	0	0	s1	m0	49326,22564,44722,61985	Wailord	402	474	0	-	0	0	0	0	0	0	3	Omastar	176	264	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_9	33	move	0	0	m2	m0	35720,242,47673,28815	Wailord	329	474	0	-	0	0	0	0	0	0	3	Omastar	176	264	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	1
+DEC	ab_34_9	34	move	0	0	m2	m2	56553,2132,26133,41453	Wailord	237	474	0	-	0	0	0	0	0	0	3	Omastar	176	264	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	1
+DEC	ab_34_9	35	move	0	0	m2	m2	1404,3081,64691,63931	Wailord	134	474	0	-	0	0	0	0	0	0	3	Omastar	176	264	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	1
+DEC	ab_34_9	36	move	0	0	m1	m0	28196,47604,46891,60210	Wailord	64	474	0	-	0	0	0	0	0	0	3	Omastar	153	264	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_34_9	37	move	0	0	m3	s4	36656,52665,19382,11133	Wailord	64	474	0	-	0	0	0	0	0	0	3	Voltorb	40	244	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	1
+DEC	ab_34_9	38	move	0	0	m3	m3	34518,30293,38619,13991	Wailord	64	474	0	-	0	0	0	0	0	0	3	Voltorb	40	244	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	1
+DEC	ab_34_9	39	move	0	0	m1	s4	36,16495,39939,4314	Wailord	64	474	0	-	0	0	0	0	0	0	3	Omastar	132	264	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_34_9	40	move	0	0	m2	m1	52722,41903,5453,16720	Wailord	1	474	0	-	0	0	0	0	0	0	3	Omastar	132	264	0	-	1	1	1	1	1	0	2	p1	0	0	0	0	1
+DEC	ab_34_9	41	move	0	0	s5	s4	20106,42932,18629,13139	Hariyama	44	433	0	psn	0	0	0	0	0	0	3	Voltorb	40	244	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_34_9	42	move	0	0	m1	m2	55864,23664,46540,60900	Hariyama	0	433	1	fnt	0	0	0	0	0	0	2	Voltorb	40	244	0	-	0	0	0	0	0	0	2	p2	0	0	0	1	0
+DEC	ab_34_9	43	switch	1	0	s1	-	61152,56749,5771,32183	Machamp	42	340	0	-	0	0	0	0	0	0	2	Voltorb	40	244	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_34_9	44	move	0	0	m1	s4	16720,58305,46560,35291	Machamp	27	340	0	-	0	0	0	0	0	0	2	Omastar	86	264	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_34_9	45	move	0	0	m3	s4	18483,48298,57173,4693	Machamp	27	340	0	-	0	0	0	0	0	0	2	Voltorb	40	244	0	-	0	0	0	0	-2	0	2	p2	0	0	0	0	0
+DEC	ab_34_9	46	move	0	0	m3	m0	4950,46953,26523,64544	Machamp	25	340	0	-	0	0	0	0	0	0	2	Voltorb	40	244	0	-	0	0	0	0	-2	0	2	p1	0	0	0	1	0
+DEC	ab_34_9	47	move	0	0	m2	m3	63071,43732,8612,45725	Machamp	25	340	0	-	0	0	0	0	0	0	2	Voltorb	0	244	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_34_9	48	switch	0	1	-	s4	45590,2430,34818,7092	Machamp	25	340	0	-	0	0	0	0	0	0	2	Omastar	86	264	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_34_9	49	move	0	0	m2	m3	40484,35304,16573,3279	Machamp	0	340	1	fnt	0	0	0	0	0	0	1	Omastar	42	264	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_34_9	50	switch	1	0	s5	-	32147,44164,25664,29550	Wailord	1	474	0	-	0	0	0	0	0	0	1	Omastar	42	264	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_34_9	51	move	0	0	m0	m0	5209,15369,4413,6003	Wailord	1	474	0	-	0	0	0	0	0	0	1	Omastar	0	264	1	-	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_34_9	1	p1
+L	ab_34_9	0	|t:|<NORMALIZED>
+L	ab_34_9	1	|gametype|singles
+L	ab_34_9	2	|player|p1|P1||
+L	ab_34_9	3	|player|p2|P2||
+L	ab_34_9	4	|gen|3
+L	ab_34_9	5	|tier|[Gen 3] Custom Game
+L	ab_34_9	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_34_9	7	|
+L	ab_34_9	8	|t:|<NORMALIZED>
+L	ab_34_9	9	|teamsize|p1|6
+L	ab_34_9	10	|teamsize|p2|6
+L	ab_34_9	11	|start
+L	ab_34_9	12	|switch|p1a: Hariyama|Hariyama, M|433/433
+L	ab_34_9	13	|switch|p2a: Phanpy|Phanpy, M|341/341
+L	ab_34_9	14	|turn|1
+L	ab_34_9	15	|
+L	ab_34_9	16	|t:|<NORMALIZED>
+L	ab_34_9	17	|switch|p2a: Nidoran-M|Nidoran-M, M|256/256
+L	ab_34_9	18	|move|p1a: Hariyama|Arm Thrust|p2a: Nidoran-M
+L	ab_34_9	19	|-resisted|p2a: Nidoran-M
+L	ab_34_9	20	|-damage|p2a: Nidoran-M|238/256
+L	ab_34_9	21	|-status|p1a: Hariyama|psn|[from] ability: Poison Point|[of] p2a: Nidoran-M
+L	ab_34_9	22	|-resisted|p2a: Nidoran-M
+L	ab_34_9	23	|-damage|p2a: Nidoran-M|210/256
+L	ab_34_9	24	|-resisted|p2a: Nidoran-M
+L	ab_34_9	25	|-damage|p2a: Nidoran-M|180/256
+L	ab_34_9	26	|-resisted|p2a: Nidoran-M
+L	ab_34_9	27	|-damage|p2a: Nidoran-M|151/256
+L	ab_34_9	28	|-resisted|p2a: Nidoran-M
+L	ab_34_9	29	|-damage|p2a: Nidoran-M|123/256
+L	ab_34_9	30	|-hitcount|p2a: Nidoran-M|5
+L	ab_34_9	31	|
+L	ab_34_9	32	|-damage|p1a: Hariyama|379/433 psn|[from] psn
+L	ab_34_9	33	|upkeep
+L	ab_34_9	34	|turn|2
+L	ab_34_9	35	|
+L	ab_34_9	36	|t:|<NORMALIZED>
+L	ab_34_9	37	|move|p2a: Nidoran-M|Sunny Day|p2a: Nidoran-M
+L	ab_34_9	38	|-weather|SunnyDay
+L	ab_34_9	39	|move|p1a: Hariyama|Bulk Up|p1a: Hariyama
+L	ab_34_9	40	|-boost|p1a: Hariyama|atk|1
+L	ab_34_9	41	|-boost|p1a: Hariyama|def|1
+L	ab_34_9	42	|
+L	ab_34_9	43	|-weather|SunnyDay|[upkeep]
+L	ab_34_9	44	|-damage|p1a: Hariyama|325/433 psn|[from] psn
+L	ab_34_9	45	|upkeep
+L	ab_34_9	46	|turn|3
+L	ab_34_9	47	|
+L	ab_34_9	48	|t:|<NORMALIZED>
+L	ab_34_9	49	|move|p2a: Nidoran-M|Thunder|p1a: Hariyama
+L	ab_34_9	50	|-crit|p1a: Hariyama
+L	ab_34_9	51	|-damage|p1a: Hariyama|176/433 psn
+L	ab_34_9	52	|debug|move failed because it did nothing
+L	ab_34_9	53	|move|p1a: Hariyama|Earthquake|p2a: Nidoran-M
+L	ab_34_9	54	|-supereffective|p2a: Nidoran-M
+L	ab_34_9	55	|-damage|p2a: Nidoran-M|0 fnt
+L	ab_34_9	56	|faint|p2a: Nidoran-M
+L	ab_34_9	57	|
+L	ab_34_9	58	|t:|<NORMALIZED>
+L	ab_34_9	59	|switch|p2a: Octillery|Octillery, M|260/260
+L	ab_34_9	60	|
+L	ab_34_9	61	|-weather|SunnyDay|[upkeep]
+L	ab_34_9	62	|-enditem|p1a: Hariyama|Sitrus Berry|[eat]
+L	ab_34_9	63	|-heal|p1a: Hariyama|206/433 psn|[from] item: Sitrus Berry
+L	ab_34_9	64	|-damage|p1a: Hariyama|152/433 psn|[from] psn
+L	ab_34_9	65	|upkeep
+L	ab_34_9	66	|turn|4
+L	ab_34_9	67	|
+L	ab_34_9	68	|t:|<NORMALIZED>
+L	ab_34_9	69	|move|p1a: Hariyama|Earthquake|p2a: Octillery
+L	ab_34_9	70	|-damage|p2a: Octillery|0 fnt
+L	ab_34_9	71	|faint|p2a: Octillery
+L	ab_34_9	72	|
+L	ab_34_9	73	|t:|<NORMALIZED>
+L	ab_34_9	74	|switch|p2a: Voltorb|Voltorb|244/244
+L	ab_34_9	75	|
+L	ab_34_9	76	|-weather|SunnyDay|[upkeep]
+L	ab_34_9	77	|-damage|p1a: Hariyama|98/433 psn|[from] psn
+L	ab_34_9	78	|upkeep
+L	ab_34_9	79	|turn|5
+L	ab_34_9	80	|
+L	ab_34_9	81	|t:|<NORMALIZED>
+L	ab_34_9	82	|switch|p1a: Machamp|Machamp, M|340/340
+L	ab_34_9	83	|move|p2a: Voltorb|Screech|p1a: Machamp
+L	ab_34_9	84	|-unboost|p1a: Machamp|def|2
+L	ab_34_9	85	|
+L	ab_34_9	86	|-weather|SunnyDay|[upkeep]
+L	ab_34_9	87	|upkeep
+L	ab_34_9	88	|turn|6
+L	ab_34_9	89	|
+L	ab_34_9	90	|t:|<NORMALIZED>
+L	ab_34_9	91	|move|p2a: Voltorb|Frustration|p1a: Machamp
+L	ab_34_9	92	|-damage|p1a: Machamp|338/340
+L	ab_34_9	93	|move|p1a: Machamp|Double-Edge|p2a: Voltorb
+L	ab_34_9	94	|-damage|p2a: Voltorb|40/244
+L	ab_34_9	95	|-damage|p1a: Machamp|270/340|[from] Recoil|[of] p2a: Voltorb
+L	ab_34_9	96	|
+L	ab_34_9	97	|-weather|none
+L	ab_34_9	98	|upkeep
+L	ab_34_9	99	|turn|7
+L	ab_34_9	100	|
+L	ab_34_9	101	|t:|<NORMALIZED>
+L	ab_34_9	102	|switch|p2a: Snorlax|Snorlax, M|454/454
+L	ab_34_9	103	|move|p1a: Machamp|Body Slam|p2a: Snorlax
+L	ab_34_9	104	|-damage|p2a: Snorlax|329/454
+L	ab_34_9	105	|-status|p2a: Snorlax|par
+L	ab_34_9	106	|
+L	ab_34_9	107	|upkeep
+L	ab_34_9	108	|turn|8
+L	ab_34_9	109	|
+L	ab_34_9	110	|t:|<NORMALIZED>
+L	ab_34_9	111	|switch|p1a: Charmeleon|Charmeleon, M|277/277
+L	ab_34_9	112	|move|p2a: Snorlax|Rock Tomb|p1a: Charmeleon
+L	ab_34_9	113	|-supereffective|p1a: Charmeleon
+L	ab_34_9	114	|-crit|p1a: Charmeleon
+L	ab_34_9	115	|-damage|p1a: Charmeleon|0 fnt
+L	ab_34_9	116	|faint|p1a: Charmeleon
+L	ab_34_9	117	|
+L	ab_34_9	118	|t:|<NORMALIZED>
+L	ab_34_9	119	|switch|p1a: Barboach|Barboach, M|247/247
+L	ab_34_9	120	|
+L	ab_34_9	121	|upkeep
+L	ab_34_9	122	|turn|9
+L	ab_34_9	123	|
+L	ab_34_9	124	|t:|<NORMALIZED>
+L	ab_34_9	125	|move|p1a: Barboach|Spark|p2a: Snorlax
+L	ab_34_9	126	|-damage|p2a: Snorlax|311/454 par
+L	ab_34_9	127	|move|p2a: Snorlax|Lick|p1a: Barboach
+L	ab_34_9	128	|-damage|p1a: Barboach|215/247
+L	ab_34_9	129	|
+L	ab_34_9	130	|upkeep
+L	ab_34_9	131	|turn|10
+L	ab_34_9	132	|
+L	ab_34_9	133	|t:|<NORMALIZED>
+L	ab_34_9	134	|move|p1a: Barboach|Earthquake|p2a: Snorlax
+L	ab_34_9	135	|-crit|p2a: Snorlax
+L	ab_34_9	136	|-damage|p2a: Snorlax|38/454 par
+L	ab_34_9	137	|move|p2a: Snorlax|Lick|p1a: Barboach
+L	ab_34_9	138	|-damage|p1a: Barboach|184/247
+L	ab_34_9	139	|
+L	ab_34_9	140	|upkeep
+L	ab_34_9	141	|turn|11
+L	ab_34_9	142	|
+L	ab_34_9	143	|t:|<NORMALIZED>
+L	ab_34_9	144	|debug|before turn callback: counter
+L	ab_34_9	145	|move|p1a: Barboach|Spark|p2a: Snorlax
+L	ab_34_9	146	|-damage|p2a: Snorlax|21/454 par
+L	ab_34_9	147	|move|p2a: Snorlax|Counter|p1a: Barboach
+L	ab_34_9	148	|
+L	ab_34_9	149	|upkeep
+L	ab_34_9	150	|turn|12
+L	ab_34_9	151	|
+L	ab_34_9	152	|t:|<NORMALIZED>
+L	ab_34_9	153	|move|p1a: Barboach|Surf|p2a: Snorlax
+L	ab_34_9	154	|-damage|p2a: Snorlax|0 fnt
+L	ab_34_9	155	|faint|p2a: Snorlax
+L	ab_34_9	156	|
+L	ab_34_9	157	|t:|<NORMALIZED>
+L	ab_34_9	158	|switch|p2a: Phanpy|Phanpy, M|341/341
+L	ab_34_9	159	|
+L	ab_34_9	160	|upkeep
+L	ab_34_9	161	|turn|13
+L	ab_34_9	162	|
+L	ab_34_9	163	|t:|<NORMALIZED>
+L	ab_34_9	164	|move|p1a: Barboach|Spark|p2a: Phanpy
+L	ab_34_9	165	|-immune|p2a: Phanpy
+L	ab_34_9	166	|move|p2a: Phanpy|Tackle|p1a: Barboach
+L	ab_34_9	167	|-damage|p1a: Barboach|144/247
+L	ab_34_9	168	|
+L	ab_34_9	169	|upkeep
+L	ab_34_9	170	|turn|14
+L	ab_34_9	171	|
+L	ab_34_9	172	|t:|<NORMALIZED>
+L	ab_34_9	173	|move|p1a: Barboach|Rock Tomb|p2a: Phanpy
+L	ab_34_9	174	|-resisted|p2a: Phanpy
+L	ab_34_9	175	|-damage|p2a: Phanpy|322/341
+L	ab_34_9	176	|-unboost|p2a: Phanpy|spe|1
+L	ab_34_9	177	|move|p2a: Phanpy|Iron Tail|p1a: Barboach
+L	ab_34_9	178	|-resisted|p1a: Barboach
+L	ab_34_9	179	|-damage|p1a: Barboach|89/247
+L	ab_34_9	180	|
+L	ab_34_9	181	|upkeep
+L	ab_34_9	182	|turn|15
+L	ab_34_9	183	|
+L	ab_34_9	184	|t:|<NORMALIZED>
+L	ab_34_9	185	|switch|p1a: Dratini|Dratini, M|246/246
+L	ab_34_9	186	|move|p2a: Phanpy|Take Down|p1a: Dratini
+L	ab_34_9	187	|-damage|p1a: Dratini|149/246
+L	ab_34_9	188	|-damage|p2a: Phanpy|298/341|[from] Recoil|[of] p1a: Dratini
+L	ab_34_9	189	|
+L	ab_34_9	190	|upkeep
+L	ab_34_9	191	|turn|16
+L	ab_34_9	192	|
+L	ab_34_9	193	|t:|<NORMALIZED>
+L	ab_34_9	194	|move|p1a: Dratini|Iron Tail|p2a: Phanpy
+L	ab_34_9	195	|-damage|p2a: Phanpy|204/341
+L	ab_34_9	196	|move|p2a: Phanpy|Iron Tail|p1a: Dratini|[miss]
+L	ab_34_9	197	|-miss|p2a: Phanpy|p1a: Dratini
+L	ab_34_9	198	|
+L	ab_34_9	199	|upkeep
+L	ab_34_9	200	|turn|17
+L	ab_34_9	201	|
+L	ab_34_9	202	|t:|<NORMALIZED>
+L	ab_34_9	203	|move|p1a: Dratini|Substitute|p1a: Dratini
+L	ab_34_9	204	|-start|p1a: Dratini|Substitute
+L	ab_34_9	205	|-damage|p1a: Dratini|88/246
+L	ab_34_9	206	|move|p2a: Phanpy|Mimic||[still]
+L	ab_34_9	207	|-fail|p2a: Phanpy
+L	ab_34_9	208	|debug|move failed because it did nothing
+L	ab_34_9	209	|
+L	ab_34_9	210	|upkeep
+L	ab_34_9	211	|turn|18
+L	ab_34_9	212	|
+L	ab_34_9	213	|t:|<NORMALIZED>
+L	ab_34_9	214	|move|p1a: Dratini|Iron Tail|p2a: Phanpy
+L	ab_34_9	215	|-crit|p2a: Phanpy
+L	ab_34_9	216	|-damage|p2a: Phanpy|28/341
+L	ab_34_9	217	|move|p2a: Phanpy|Mimic||[still]
+L	ab_34_9	218	|-fail|p2a: Phanpy
+L	ab_34_9	219	|debug|move failed because it did nothing
+L	ab_34_9	220	|
+L	ab_34_9	221	|upkeep
+L	ab_34_9	222	|turn|19
+L	ab_34_9	223	|
+L	ab_34_9	224	|t:|<NORMALIZED>
+L	ab_34_9	225	|move|p1a: Dratini|Twister|p2a: Phanpy
+L	ab_34_9	226	|-damage|p2a: Phanpy|0 fnt
+L	ab_34_9	227	|faint|p2a: Phanpy
+L	ab_34_9	228	|
+L	ab_34_9	229	|t:|<NORMALIZED>
+L	ab_34_9	230	|switch|p2a: Omastar|Omastar, M|264/264
+L	ab_34_9	231	|
+L	ab_34_9	232	|upkeep
+L	ab_34_9	233	|turn|20
+L	ab_34_9	234	|
+L	ab_34_9	235	|t:|<NORMALIZED>
+L	ab_34_9	236	|move|p2a: Omastar|Ancient Power|p1a: Dratini
+L	ab_34_9	237	|-end|p1a: Dratini|Substitute
+L	ab_34_9	238	|move|p1a: Dratini|Swift|p2a: Omastar
+L	ab_34_9	239	|-resisted|p2a: Omastar
+L	ab_34_9	240	|-damage|p2a: Omastar|248/264
+L	ab_34_9	241	|
+L	ab_34_9	242	|upkeep
+L	ab_34_9	243	|turn|21
+L	ab_34_9	244	|
+L	ab_34_9	245	|t:|<NORMALIZED>
+L	ab_34_9	246	|move|p2a: Omastar|Water Pulse|p1a: Dratini
+L	ab_34_9	247	|-resisted|p1a: Dratini
+L	ab_34_9	248	|-damage|p1a: Dratini|12/246
+L	ab_34_9	249	|-start|p1a: Dratini|confusion
+L	ab_34_9	250	|-activate|p1a: Dratini|confusion
+L	ab_34_9	251	|move|p1a: Dratini|Substitute|p1a: Dratini
+L	ab_34_9	252	|-fail|p1a: Dratini|move: Substitute|[weak]
+L	ab_34_9	253	|
+L	ab_34_9	254	|upkeep
+L	ab_34_9	255	|turn|22
+L	ab_34_9	256	|
+L	ab_34_9	257	|t:|<NORMALIZED>
+L	ab_34_9	258	|move|p2a: Omastar|Water Pulse|p1a: Dratini
+L	ab_34_9	259	|-resisted|p1a: Dratini
+L	ab_34_9	260	|-damage|p1a: Dratini|0 fnt
+L	ab_34_9	261	|faint|p1a: Dratini
+L	ab_34_9	262	|
+L	ab_34_9	263	|t:|<NORMALIZED>
+L	ab_34_9	264	|switch|p1a: Wailord|Wailord, M|474/474
+L	ab_34_9	265	|
+L	ab_34_9	266	|upkeep
+L	ab_34_9	267	|turn|23
+L	ab_34_9	268	|
+L	ab_34_9	269	|t:|<NORMALIZED>
+L	ab_34_9	270	|switch|p1a: Barboach|Barboach, M|89/247
+L	ab_34_9	271	|move|p2a: Omastar|Water Pulse|p1a: Barboach
+L	ab_34_9	272	|-damage|p1a: Barboach|0 fnt
+L	ab_34_9	273	|faint|p1a: Barboach
+L	ab_34_9	274	|
+L	ab_34_9	275	|t:|<NORMALIZED>
+L	ab_34_9	276	|switch|p1a: Machamp|Machamp, M|270/340
+L	ab_34_9	277	|
+L	ab_34_9	278	|upkeep
+L	ab_34_9	279	|turn|24
+L	ab_34_9	280	|
+L	ab_34_9	281	|t:|<NORMALIZED>
+L	ab_34_9	282	|move|p1a: Machamp|Body Slam|p2a: Omastar
+L	ab_34_9	283	|-resisted|p2a: Omastar
+L	ab_34_9	284	|-damage|p2a: Omastar|221/264
+L	ab_34_9	285	|move|p2a: Omastar|Blizzard|p1a: Machamp
+L	ab_34_9	286	|-damage|p1a: Machamp|166/340
+L	ab_34_9	287	|
+L	ab_34_9	288	|upkeep
+L	ab_34_9	289	|turn|25
+L	ab_34_9	290	|
+L	ab_34_9	291	|t:|<NORMALIZED>
+L	ab_34_9	292	|move|p1a: Machamp|Double-Edge|p2a: Omastar
+L	ab_34_9	293	|-resisted|p2a: Omastar
+L	ab_34_9	294	|-damage|p2a: Omastar|176/264
+L	ab_34_9	295	|-damage|p1a: Machamp|151/340|[from] Recoil|[of] p2a: Omastar
+L	ab_34_9	296	|move|p2a: Omastar|Blizzard|p1a: Machamp
+L	ab_34_9	297	|-damage|p1a: Machamp|42/340
+L	ab_34_9	298	|
+L	ab_34_9	299	|upkeep
+L	ab_34_9	300	|turn|26
+L	ab_34_9	301	|
+L	ab_34_9	302	|t:|<NORMALIZED>
+L	ab_34_9	303	|switch|p1a: Wailord|Wailord, M|474/474
+L	ab_34_9	304	|move|p2a: Omastar|Water Pulse|p1a: Wailord
+L	ab_34_9	305	|-resisted|p1a: Wailord
+L	ab_34_9	306	|-damage|p1a: Wailord|402/474
+L	ab_34_9	307	|
+L	ab_34_9	308	|upkeep
+L	ab_34_9	309	|turn|27
+L	ab_34_9	310	|
+L	ab_34_9	311	|t:|<NORMALIZED>
+L	ab_34_9	312	|move|p1a: Wailord|Endure|p1a: Wailord
+L	ab_34_9	313	|-singleturn|p1a: Wailord|move: Endure
+L	ab_34_9	314	|move|p2a: Omastar|Water Pulse|p1a: Wailord
+L	ab_34_9	315	|-resisted|p1a: Wailord
+L	ab_34_9	316	|-damage|p1a: Wailord|329/474
+L	ab_34_9	317	|
+L	ab_34_9	318	|upkeep
+L	ab_34_9	319	|turn|28
+L	ab_34_9	320	|
+L	ab_34_9	321	|t:|<NORMALIZED>
+L	ab_34_9	322	|move|p1a: Wailord|Endure||[still]
+L	ab_34_9	323	|debug|Success chance: 50%
+L	ab_34_9	324	|-fail|p1a: Wailord
+L	ab_34_9	325	|move|p2a: Omastar|Blizzard|p1a: Wailord
+L	ab_34_9	326	|-resisted|p1a: Wailord
+L	ab_34_9	327	|-damage|p1a: Wailord|237/474
+L	ab_34_9	328	|
+L	ab_34_9	329	|upkeep
+L	ab_34_9	330	|turn|29
+L	ab_34_9	331	|
+L	ab_34_9	332	|t:|<NORMALIZED>
+L	ab_34_9	333	|move|p1a: Wailord|Endure|p1a: Wailord
+L	ab_34_9	334	|-singleturn|p1a: Wailord|move: Endure
+L	ab_34_9	335	|move|p2a: Omastar|Blizzard|p1a: Wailord
+L	ab_34_9	336	|-resisted|p1a: Wailord
+L	ab_34_9	337	|-damage|p1a: Wailord|134/474
+L	ab_34_9	338	|
+L	ab_34_9	339	|upkeep
+L	ab_34_9	340	|turn|30
+L	ab_34_9	341	|
+L	ab_34_9	342	|t:|<NORMALIZED>
+L	ab_34_9	343	|move|p2a: Omastar|Water Pulse|p1a: Wailord
+L	ab_34_9	344	|-resisted|p1a: Wailord
+L	ab_34_9	345	|-damage|p1a: Wailord|64/474
+L	ab_34_9	346	|move|p1a: Wailord|Body Slam|p2a: Omastar
+L	ab_34_9	347	|-resisted|p2a: Omastar
+L	ab_34_9	348	|-damage|p2a: Omastar|153/264
+L	ab_34_9	349	|
+L	ab_34_9	350	|upkeep
+L	ab_34_9	351	|turn|31
+L	ab_34_9	352	|
+L	ab_34_9	353	|t:|<NORMALIZED>
+L	ab_34_9	354	|switch|p2a: Voltorb|Voltorb|40/244
+L	ab_34_9	355	|move|p1a: Wailord|Mimic||[still]
+L	ab_34_9	356	|-fail|p1a: Wailord
+L	ab_34_9	357	|debug|move failed because it did nothing
+L	ab_34_9	358	|
+L	ab_34_9	359	|upkeep
+L	ab_34_9	360	|turn|32
+L	ab_34_9	361	|
+L	ab_34_9	362	|t:|<NORMALIZED>
+L	ab_34_9	363	|move|p2a: Voltorb|Taunt|p1a: Wailord
+L	ab_34_9	364	|-start|p1a: Wailord|move: Taunt
+L	ab_34_9	365	|cant|p1a: Wailord|move: Taunt|Mimic
+L	ab_34_9	366	|
+L	ab_34_9	367	|upkeep
+L	ab_34_9	368	|turn|33
+L	ab_34_9	369	|
+L	ab_34_9	370	|t:|<NORMALIZED>
+L	ab_34_9	371	|switch|p2a: Omastar|Omastar, M|153/264
+L	ab_34_9	372	|move|p1a: Wailord|Body Slam|p2a: Omastar
+L	ab_34_9	373	|-resisted|p2a: Omastar
+L	ab_34_9	374	|-damage|p2a: Omastar|132/264
+L	ab_34_9	375	|
+L	ab_34_9	376	|-end|p1a: Wailord|move: Taunt|[silent]
+L	ab_34_9	377	|upkeep
+L	ab_34_9	378	|turn|34
+L	ab_34_9	379	|
+L	ab_34_9	380	|t:|<NORMALIZED>
+L	ab_34_9	381	|move|p1a: Wailord|Endure|p1a: Wailord
+L	ab_34_9	382	|-singleturn|p1a: Wailord|move: Endure
+L	ab_34_9	383	|move|p2a: Omastar|Ancient Power|p1a: Wailord
+L	ab_34_9	384	|-activate|p1a: Wailord|move: Endure
+L	ab_34_9	385	|-damage|p1a: Wailord|1/474
+L	ab_34_9	386	|-boost|p2a: Omastar|atk|1
+L	ab_34_9	387	|-boost|p2a: Omastar|def|1
+L	ab_34_9	388	|-boost|p2a: Omastar|spa|1
+L	ab_34_9	389	|-boost|p2a: Omastar|spd|1
+L	ab_34_9	390	|-boost|p2a: Omastar|spe|1
+L	ab_34_9	391	|
+L	ab_34_9	392	|upkeep
+L	ab_34_9	393	|turn|35
+L	ab_34_9	394	|
+L	ab_34_9	395	|t:|<NORMALIZED>
+L	ab_34_9	396	|switch|p2a: Voltorb|Voltorb|40/244
+L	ab_34_9	397	|switch|p1a: Hariyama|Hariyama, M|98/433 psn
+L	ab_34_9	398	|
+L	ab_34_9	399	|-damage|p1a: Hariyama|44/433 psn|[from] psn
+L	ab_34_9	400	|upkeep
+L	ab_34_9	401	|turn|36
+L	ab_34_9	402	|
+L	ab_34_9	403	|t:|<NORMALIZED>
+L	ab_34_9	404	|move|p2a: Voltorb|Return|p1a: Hariyama
+L	ab_34_9	405	|-damage|p1a: Hariyama|0 fnt
+L	ab_34_9	406	|faint|p1a: Hariyama
+L	ab_34_9	407	|
+L	ab_34_9	408	|t:|<NORMALIZED>
+L	ab_34_9	409	|switch|p1a: Machamp|Machamp, M|42/340
+L	ab_34_9	410	|
+L	ab_34_9	411	|upkeep
+L	ab_34_9	412	|turn|37
+L	ab_34_9	413	|
+L	ab_34_9	414	|t:|<NORMALIZED>
+L	ab_34_9	415	|switch|p2a: Omastar|Omastar, M|132/264
+L	ab_34_9	416	|move|p1a: Machamp|Double-Edge|p2a: Omastar
+L	ab_34_9	417	|-resisted|p2a: Omastar
+L	ab_34_9	418	|-damage|p2a: Omastar|86/264
+L	ab_34_9	419	|-damage|p1a: Machamp|27/340|[from] Recoil|[of] p2a: Omastar
+L	ab_34_9	420	|
+L	ab_34_9	421	|upkeep
+L	ab_34_9	422	|turn|38
+L	ab_34_9	423	|
+L	ab_34_9	424	|t:|<NORMALIZED>
+L	ab_34_9	425	|switch|p2a: Voltorb|Voltorb|40/244
+L	ab_34_9	426	|move|p1a: Machamp|Scary Face|p2a: Voltorb
+L	ab_34_9	427	|-unboost|p2a: Voltorb|spe|2
+L	ab_34_9	428	|
+L	ab_34_9	429	|upkeep
+L	ab_34_9	430	|turn|39
+L	ab_34_9	431	|
+L	ab_34_9	432	|t:|<NORMALIZED>
+L	ab_34_9	433	|move|p1a: Machamp|Scary Face|p2a: Voltorb|[miss]
+L	ab_34_9	434	|-miss|p1a: Machamp|p2a: Voltorb
+L	ab_34_9	435	|move|p2a: Voltorb|Frustration|p1a: Machamp
+L	ab_34_9	436	|-damage|p1a: Machamp|25/340
+L	ab_34_9	437	|
+L	ab_34_9	438	|upkeep
+L	ab_34_9	439	|turn|40
+L	ab_34_9	440	|
+L	ab_34_9	441	|t:|<NORMALIZED>
+L	ab_34_9	442	|move|p1a: Machamp|Mega Kick|p2a: Voltorb
+L	ab_34_9	443	|-damage|p2a: Voltorb|0 fnt
+L	ab_34_9	444	|faint|p2a: Voltorb
+L	ab_34_9	445	|
+L	ab_34_9	446	|t:|<NORMALIZED>
+L	ab_34_9	447	|switch|p2a: Omastar|Omastar, M|86/264
+L	ab_34_9	448	|
+L	ab_34_9	449	|upkeep
+L	ab_34_9	450	|turn|41
+L	ab_34_9	451	|
+L	ab_34_9	452	|t:|<NORMALIZED>
+L	ab_34_9	453	|move|p1a: Machamp|Mega Kick|p2a: Omastar
+L	ab_34_9	454	|-resisted|p2a: Omastar
+L	ab_34_9	455	|-damage|p2a: Omastar|42/264
+L	ab_34_9	456	|move|p2a: Omastar|Spike Cannon|p1a: Machamp
+L	ab_34_9	457	|-damage|p1a: Machamp|10/340
+L	ab_34_9	458	|-damage|p1a: Machamp|0 fnt
+L	ab_34_9	459	|-hitcount|p1a: Machamp|2
+L	ab_34_9	460	|faint|p1a: Machamp
+L	ab_34_9	461	|
+L	ab_34_9	462	|t:|<NORMALIZED>
+L	ab_34_9	463	|switch|p1a: Wailord|Wailord, M|1/474
+L	ab_34_9	464	|
+L	ab_34_9	465	|upkeep
+L	ab_34_9	466	|turn|42
+L	ab_34_9	467	|
+L	ab_34_9	468	|t:|<NORMALIZED>
+L	ab_34_9	469	|move|p1a: Wailord|Waterfall|p2a: Omastar
+L	ab_34_9	470	|-damage|p2a: Omastar|0 fnt
+L	ab_34_9	471	|faint|p2a: Omastar
+L	ab_34_9	472	|
+L	ab_34_9	473	|win|P1

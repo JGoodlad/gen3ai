@@ -1,0 +1,348 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# Guards the WHITE HERB restore timing on a CANT (gen3_white_herb_v1): a cant'd (asleep) holder
+#   whose Atk was Intimidate-dropped restores at the end-of-turn onResidual (order 29), NOT this
+#   move's tail — the sim's AfterMove never fires for an onBeforeMove-aborted move. The port
+#   fired the onAnyAfterMove restore after the cant, emitting the -enditem one boundary early.
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/FMT/INIT/DEC/END/L).
+SCEN	ab_154_12
+TEAM	ab_154_12	p1	Taillow||PechaBerry|Guts|Peck,RainDance,FeatherDance,QuickAttack|Impish|,40,52,220,56,140|M|25,20,30,13,20,|||]Xatu||DeepSeaTooth|EarlyBird|SolarBeam,AerialAce,SunnyDay,ThunderWave|Timid|124,,152,,116,116|M|4,15,10,25,,22|||]Hoppip||WhiteHerb|Chlorophyll|Frustration,SwordsDance,LeechSeed,Rest|Modest|92,,,60,152,160|M|7,19,5,6,6,13|||]Ledian||KingsRock|Swarm|Thief,Reflect,Toxic,Tackle|Jolly|48,,8,228,120,104|M|10,10,19,8,22,11|||]Carvanha||OddIncense|RoughSkin|IceBeam,Mimic,Facade,IcyWind|Calm|40,4,88,76,156,144|M|11,,12,14,27,23|||]Lunatone||SharpBeak|Levitate|RockThrow,DoubleEdge,Substitute,Explosion|Naive|56,48,116,20,196,8|N|9,15,18,3,26,14|||
+TEAM	ab_154_12	p2	Magneton||SpellTag|MagnetPull|ShockWave,Protect,Endure,Thunder|Hardy|108,56,28,44,152,120|N|15,3,6,,8,2|||]Tauros||RockIncense|Intimidate|TakeDown,SunnyDay,Thunderbolt,Strength|Impish|36,80,120,96,112,64|M|9,29,18,3,10,0|||]Marshtomp||SharpBeak|Torrent|SeismicToss,Endeavor,DynamicPunch,BodySlam|Docile|232,168,40,,48,20|M|13,21,,1,4,27|||]Metang||BrightPowder|ClearBody|Confusion,TakeDown,PsychUp,SludgeBomb|Serious|160,196,20,76,,56|N|14,14,18,29,,12|||]Seedot||AguavBerry|EarlyBird|TakeDown,Return,Frustration,Toxic|Sassy|140,64,136,4,,164|M|19,23,22,27,16,25|||]Grumpig||Magnet|OwnTempo|Thief,MegaPunch,Swift,DoubleEdge|Quirky|136,32,12,160,,168|M|26,23,,9,16,17|||
+FMT	ab_154_12	gen3customgame
+INIT	ab_154_12	32936,7083,12708,46491	1302198952
+DEC	ab_154_12	0	move	0	0	m3	m0	51468,8071,16474,16094	Taillow	0	215	1	fnt	0	0	0	0	0	0	5	Magneton	236	252	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_154_12	1	switch	1	0	s4	-	24717,65120,3960,14937	Carvanha	221	221	0	-	0	0	0	0	0	0	5	Magneton	236	252	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_154_12	2	move	0	0	m0	s1	53128,12997,28351,22644	Carvanha	221	221	0	-	-1	0	0	0	0	0	5	Tauros	209	278	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_154_12	3	move	0	0	m3	m0	18884,51768,19573,11809	Carvanha	0	221	1	fnt	0	0	0	0	0	0	4	Tauros	137	278	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_154_12	4	switch	1	0	s1	-	21830,36304,3832,31432	Xatu	275	275	0	-	0	0	0	0	0	0	4	Tauros	137	278	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_154_12	5	move	0	0	m2	m0	33042,22192,25252,16348	Xatu	143	275	0	-	0	0	0	0	0	0	4	Tauros	104	278	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_154_12	6	move	0	0	s3	s2	32298,15259,24612,35983	Ledian	242	242	0	-	0	0	0	0	0	0	4	Marshtomp	321	321	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_154_12	7	move	0	0	m0	s2	38215,4483,46002,6963	Ledian	242	242	0	-	-1	0	0	0	0	0	4	Tauros	75	278	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_154_12	8	move	0	0	m1	m3	37865,35686,38396,42903	Ledian	62	242	0	-	-1	0	0	0	0	0	4	Tauros	75	278	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_154_12	9	move	0	0	m3	s3	53925,32586,41298,1162	Ledian	62	242	0	-	-1	0	0	0	0	0	4	Metang	281	284	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_154_12	10	move	0	0	m2	m2	64456,20034,51577,32684	Ledian	62	242	0	-	-1	0	0	0	0	0	4	Metang	281	284	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_154_12	11	move	0	0	m0	m3	15257,34656,13586,10109	Ledian	0	242	1	fnt	0	0	0	0	0	0	3	Metang	255	284	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_154_12	12	switch	1	0	s2	-	48796,29908,30685,6164	Hoppip	210	210	0	-	0	0	0	0	0	0	3	Metang	255	284	0	-	-1	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_154_12	13	move	0	0	m0	m3	52107,18746,50642,11132	Hoppip	70	210	0	psn	0	0	0	0	0	0	3	Metang	254	284	0	-	-1	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_154_12	14	move	0	0	m3	m1	691,1314,58296,36691	Hoppip	99	210	0	slp	0	0	0	0	0	0	3	Metang	227	284	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_154_12	15	move	0	0	m1	m0	8258,45128,17721,45814	Hoppip	37	210	0	slp	0	0	0	0	0	0	3	Metang	227	284	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_154_12	16	move	0	0	m0	s3	16467,41648,56681,57297	Hoppip	37	210	0	slp	0	0	0	0	0	0	3	Tauros	75	278	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_154_12	17	move	0	0	m1	m1	59250,22283,20073,50488	Hoppip	37	210	0	-	2	0	0	0	0	0	3	Tauros	75	278	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_154_12	18	move	0	0	m2	m1	11394,40275,24082,298	Hoppip	71	210	0	-	2	0	0	0	0	0	3	Tauros	41	278	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_154_12	19	move	0	0	m1	m3	48856,8850,28319,55231	Hoppip	0	210	1	fnt	0	0	0	0	0	0	2	Tauros	41	278	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_154_12	20	switch	1	0	s3	-	43599,18871,43492,62494	Xatu	177	275	0	-	0	0	0	0	0	0	2	Tauros	7	278	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_154_12	21	move	0	0	m2	m3	60381,18314,64802,37731	Xatu	68	275	0	-	0	0	0	0	0	0	2	Tauros	0	278	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_154_12	22	switch	0	1	-	s3	22241,1148,11103,49106	Xatu	68	275	0	-	0	0	0	0	0	0	2	Metang	227	284	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_154_12	23	move	0	0	m1	m0	31327,32323,55963,14315	Xatu	45	275	0	-	0	0	0	0	0	0	2	Metang	205	284	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_154_12	24	move	0	0	m1	m3	49955,16131,30886,49961	Xatu	0	275	1	fnt	0	0	0	0	0	0	1	Metang	180	284	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_154_12	25	switch	1	0	s5	-	10873,41217,31361,36592	Lunatone	273	273	0	-	0	0	0	0	0	0	1	Metang	180	284	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_154_12	26	move	0	0	m2	m0	1591,57188,42369,64471	Lunatone	205	273	0	-	0	0	0	0	0	0	1	Metang	180	284	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_154_12	27	move	0	0	m1	m3	12448,62409,15745,5599	Lunatone	195	273	0	-	0	0	0	0	0	0	1	Metang	149	284	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_154_12	28	move	0	0	m2	m3	44760,61413,29016,30834	Lunatone	195	273	0	-	0	0	0	0	0	0	1	Metang	149	284	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_154_12	29	move	0	0	m3	m2	39129,57878,54611,38631	Lunatone	0	273	1	-	0	0	0	0	0	0	0	Metang	30	284	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	1
+END	ab_154_12	1	p2
+L	ab_154_12	0	|t:|<NORMALIZED>
+L	ab_154_12	1	|gametype|singles
+L	ab_154_12	2	|player|p1|P1||
+L	ab_154_12	3	|player|p2|P2||
+L	ab_154_12	4	|gen|3
+L	ab_154_12	5	|tier|[Gen 3] Custom Game
+L	ab_154_12	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_154_12	7	|
+L	ab_154_12	8	|t:|<NORMALIZED>
+L	ab_154_12	9	|teamsize|p1|6
+L	ab_154_12	10	|teamsize|p2|6
+L	ab_154_12	11	|start
+L	ab_154_12	12	|switch|p1a: Taillow|Taillow, M|215/215
+L	ab_154_12	13	|switch|p2a: Magneton|Magneton|252/252
+L	ab_154_12	14	|turn|1
+L	ab_154_12	15	|
+L	ab_154_12	16	|t:|<NORMALIZED>
+L	ab_154_12	17	|move|p1a: Taillow|Quick Attack|p2a: Magneton
+L	ab_154_12	18	|-resisted|p2a: Magneton
+L	ab_154_12	19	|-damage|p2a: Magneton|236/252
+L	ab_154_12	20	|move|p2a: Magneton|Shock Wave|p1a: Taillow
+L	ab_154_12	21	|-supereffective|p1a: Taillow
+L	ab_154_12	22	|-damage|p1a: Taillow|0 fnt
+L	ab_154_12	23	|faint|p1a: Taillow
+L	ab_154_12	24	|
+L	ab_154_12	25	|t:|<NORMALIZED>
+L	ab_154_12	26	|switch|p1a: Carvanha|Carvanha, M|221/221
+L	ab_154_12	27	|
+L	ab_154_12	28	|upkeep
+L	ab_154_12	29	|turn|2
+L	ab_154_12	30	|
+L	ab_154_12	31	|t:|<NORMALIZED>
+L	ab_154_12	32	|switch|p2a: Tauros|Tauros, M|278/278
+L	ab_154_12	33	|-ability|p2a: Tauros|Intimidate|boost
+L	ab_154_12	34	|-unboost|p1a: Carvanha|atk|1
+L	ab_154_12	35	|move|p1a: Carvanha|Ice Beam|p2a: Tauros
+L	ab_154_12	36	|-damage|p2a: Tauros|209/278
+L	ab_154_12	37	|
+L	ab_154_12	38	|upkeep
+L	ab_154_12	39	|turn|3
+L	ab_154_12	40	|
+L	ab_154_12	41	|t:|<NORMALIZED>
+L	ab_154_12	42	|move|p2a: Tauros|Take Down|p1a: Carvanha
+L	ab_154_12	43	|-damage|p1a: Carvanha|0 fnt
+L	ab_154_12	44	|-damage|p2a: Tauros|192/278|[from] ability: Rough Skin|[of] p1a: Carvanha
+L	ab_154_12	45	|-damage|p2a: Tauros|137/278|[from] Recoil|[of] p1a: Carvanha
+L	ab_154_12	46	|faint|p1a: Carvanha
+L	ab_154_12	47	|
+L	ab_154_12	48	|t:|<NORMALIZED>
+L	ab_154_12	49	|switch|p1a: Xatu|Xatu, M|275/275
+L	ab_154_12	50	|
+L	ab_154_12	51	|upkeep
+L	ab_154_12	52	|turn|4
+L	ab_154_12	53	|
+L	ab_154_12	54	|t:|<NORMALIZED>
+L	ab_154_12	55	|move|p1a: Xatu|Sunny Day|p1a: Xatu
+L	ab_154_12	56	|-weather|SunnyDay
+L	ab_154_12	57	|move|p2a: Tauros|Take Down|p1a: Xatu
+L	ab_154_12	58	|-damage|p1a: Xatu|143/275
+L	ab_154_12	59	|-damage|p2a: Tauros|104/278|[from] Recoil|[of] p1a: Xatu
+L	ab_154_12	60	|
+L	ab_154_12	61	|-weather|SunnyDay|[upkeep]
+L	ab_154_12	62	|upkeep
+L	ab_154_12	63	|turn|5
+L	ab_154_12	64	|
+L	ab_154_12	65	|t:|<NORMALIZED>
+L	ab_154_12	66	|switch|p1a: Ledian|Ledian, M|242/242
+L	ab_154_12	67	|switch|p2a: Marshtomp|Marshtomp, M|321/321
+L	ab_154_12	68	|
+L	ab_154_12	69	|-weather|SunnyDay|[upkeep]
+L	ab_154_12	70	|upkeep
+L	ab_154_12	71	|turn|6
+L	ab_154_12	72	|
+L	ab_154_12	73	|t:|<NORMALIZED>
+L	ab_154_12	74	|switch|p2a: Tauros|Tauros, M|104/278
+L	ab_154_12	75	|-ability|p2a: Tauros|Intimidate|boost
+L	ab_154_12	76	|-unboost|p1a: Ledian|atk|1
+L	ab_154_12	77	|move|p1a: Ledian|Thief|p2a: Tauros
+L	ab_154_12	78	|-damage|p2a: Tauros|75/278
+L	ab_154_12	79	|
+L	ab_154_12	80	|-weather|SunnyDay|[upkeep]
+L	ab_154_12	81	|upkeep
+L	ab_154_12	82	|turn|7
+L	ab_154_12	83	|
+L	ab_154_12	84	|t:|<NORMALIZED>
+L	ab_154_12	85	|move|p2a: Tauros|Strength|p1a: Ledian
+L	ab_154_12	86	|-damage|p1a: Ledian|62/242
+L	ab_154_12	87	|move|p1a: Ledian|Reflect|p1a: Ledian
+L	ab_154_12	88	|-sidestart|p1: P1|Reflect
+L	ab_154_12	89	|
+L	ab_154_12	90	|-weather|SunnyDay|[upkeep]
+L	ab_154_12	91	|upkeep
+L	ab_154_12	92	|turn|8
+L	ab_154_12	93	|
+L	ab_154_12	94	|t:|<NORMALIZED>
+L	ab_154_12	95	|switch|p2a: Metang|Metang|284/284
+L	ab_154_12	96	|move|p1a: Ledian|Tackle|p2a: Metang
+L	ab_154_12	97	|debug|brightpowder - decreasing accuracy
+L	ab_154_12	98	|-resisted|p2a: Metang
+L	ab_154_12	99	|-damage|p2a: Metang|281/284
+L	ab_154_12	100	|
+L	ab_154_12	101	|-weather|none
+L	ab_154_12	102	|upkeep
+L	ab_154_12	103	|turn|9
+L	ab_154_12	104	|
+L	ab_154_12	105	|t:|<NORMALIZED>
+L	ab_154_12	106	|move|p1a: Ledian|Toxic|p2a: Metang
+L	ab_154_12	107	|debug|brightpowder - decreasing accuracy
+L	ab_154_12	108	|debug|natural status immunity
+L	ab_154_12	109	|debug|immune to status
+L	ab_154_12	110	|-immune|p2a: Metang
+L	ab_154_12	111	|debug|move failed because it did nothing
+L	ab_154_12	112	|move|p2a: Metang|Psych Up|p1a: Ledian
+L	ab_154_12	113	|-copyboost|p2a: Metang|p1a: Ledian|[from] move: Psych Up
+L	ab_154_12	114	|
+L	ab_154_12	115	|upkeep
+L	ab_154_12	116	|turn|10
+L	ab_154_12	117	|
+L	ab_154_12	118	|t:|<NORMALIZED>
+L	ab_154_12	119	|move|p1a: Ledian|Thief|p2a: Metang
+L	ab_154_12	120	|debug|brightpowder - decreasing accuracy
+L	ab_154_12	121	|-damage|p2a: Metang|255/284
+L	ab_154_12	122	|move|p2a: Metang|Sludge Bomb|p1a: Ledian
+L	ab_154_12	123	|debug|Negating (sp)atk boost/penalty.
+L	ab_154_12	124	|-crit|p1a: Ledian
+L	ab_154_12	125	|-damage|p1a: Ledian|0 fnt
+L	ab_154_12	126	|debug|move failed because it did nothing
+L	ab_154_12	127	|faint|p1a: Ledian
+L	ab_154_12	128	|
+L	ab_154_12	129	|t:|<NORMALIZED>
+L	ab_154_12	130	|switch|p1a: Hoppip|Hoppip, M|210/210
+L	ab_154_12	131	|
+L	ab_154_12	132	|upkeep
+L	ab_154_12	133	|turn|11
+L	ab_154_12	134	|
+L	ab_154_12	135	|t:|<NORMALIZED>
+L	ab_154_12	136	|move|p1a: Hoppip|Frustration|p2a: Metang
+L	ab_154_12	137	|debug|brightpowder - decreasing accuracy
+L	ab_154_12	138	|-resisted|p2a: Metang
+L	ab_154_12	139	|-damage|p2a: Metang|254/284
+L	ab_154_12	140	|move|p2a: Metang|Sludge Bomb|p1a: Hoppip
+L	ab_154_12	141	|debug|Reflect weaken
+L	ab_154_12	142	|-supereffective|p1a: Hoppip
+L	ab_154_12	143	|-damage|p1a: Hoppip|96/210
+L	ab_154_12	144	|-status|p1a: Hoppip|psn
+L	ab_154_12	145	|
+L	ab_154_12	146	|-sideend|p1: P1|Reflect
+L	ab_154_12	147	|-damage|p1a: Hoppip|70/210 psn|[from] psn
+L	ab_154_12	148	|upkeep
+L	ab_154_12	149	|turn|12
+L	ab_154_12	150	|
+L	ab_154_12	151	|t:|<NORMALIZED>
+L	ab_154_12	152	|move|p1a: Hoppip|Rest|p1a: Hoppip
+L	ab_154_12	153	|-status|p1a: Hoppip|slp|[from] move: Rest
+L	ab_154_12	154	|-heal|p1a: Hoppip|210/210 slp|[silent]
+L	ab_154_12	155	|move|p2a: Metang|Take Down|p1a: Hoppip
+L	ab_154_12	156	|-damage|p1a: Hoppip|99/210 slp
+L	ab_154_12	157	|-damage|p2a: Metang|227/284|[from] Recoil|[of] p1a: Hoppip
+L	ab_154_12	158	|
+L	ab_154_12	159	|upkeep
+L	ab_154_12	160	|turn|13
+L	ab_154_12	161	|
+L	ab_154_12	162	|t:|<NORMALIZED>
+L	ab_154_12	163	|cant|p1a: Hoppip|slp
+L	ab_154_12	164	|move|p2a: Metang|Confusion|p1a: Hoppip
+L	ab_154_12	165	|-damage|p1a: Hoppip|37/210 slp
+L	ab_154_12	166	|
+L	ab_154_12	167	|upkeep
+L	ab_154_12	168	|turn|14
+L	ab_154_12	169	|
+L	ab_154_12	170	|t:|<NORMALIZED>
+L	ab_154_12	171	|switch|p2a: Tauros|Tauros, M|75/278
+L	ab_154_12	172	|-ability|p2a: Tauros|Intimidate|boost
+L	ab_154_12	173	|-unboost|p1a: Hoppip|atk|1
+L	ab_154_12	174	|cant|p1a: Hoppip|slp
+L	ab_154_12	175	|
+L	ab_154_12	176	|-enditem|p1a: Hoppip|White Herb
+L	ab_154_12	177	|-clearnegativeboost|p1a: Hoppip|[silent]
+L	ab_154_12	178	|upkeep
+L	ab_154_12	179	|turn|15
+L	ab_154_12	180	|
+L	ab_154_12	181	|t:|<NORMALIZED>
+L	ab_154_12	182	|move|p2a: Tauros|Sunny Day|p2a: Tauros
+L	ab_154_12	183	|-weather|SunnyDay
+L	ab_154_12	184	|-curestatus|p1a: Hoppip|slp|[msg]
+L	ab_154_12	185	|move|p1a: Hoppip|Swords Dance|p1a: Hoppip
+L	ab_154_12	186	|-boost|p1a: Hoppip|atk|2
+L	ab_154_12	187	|
+L	ab_154_12	188	|-weather|SunnyDay|[upkeep]
+L	ab_154_12	189	|upkeep
+L	ab_154_12	190	|turn|16
+L	ab_154_12	191	|
+L	ab_154_12	192	|t:|<NORMALIZED>
+L	ab_154_12	193	|move|p1a: Hoppip|Leech Seed|p2a: Tauros
+L	ab_154_12	194	|-start|p2a: Tauros|move: Leech Seed
+L	ab_154_12	195	|move|p2a: Tauros|Sunny Day||[still]
+L	ab_154_12	196	|-fail|p2a: Tauros
+L	ab_154_12	197	|debug|move failed because it did nothing
+L	ab_154_12	198	|
+L	ab_154_12	199	|-weather|SunnyDay|[upkeep]
+L	ab_154_12	200	|-damage|p2a: Tauros|41/278|[from] Leech Seed|[of] p1a: Hoppip
+L	ab_154_12	201	|-heal|p1a: Hoppip|71/210|[silent]
+L	ab_154_12	202	|upkeep
+L	ab_154_12	203	|turn|17
+L	ab_154_12	204	|
+L	ab_154_12	205	|t:|<NORMALIZED>
+L	ab_154_12	206	|move|p1a: Hoppip|Swords Dance|p1a: Hoppip
+L	ab_154_12	207	|-boost|p1a: Hoppip|atk|2
+L	ab_154_12	208	|move|p2a: Tauros|Strength|p1a: Hoppip
+L	ab_154_12	209	|-damage|p1a: Hoppip|0 fnt
+L	ab_154_12	210	|faint|p1a: Hoppip
+L	ab_154_12	211	|
+L	ab_154_12	212	|t:|<NORMALIZED>
+L	ab_154_12	213	|switch|p1a: Xatu|Xatu, M|143/275
+L	ab_154_12	214	|
+L	ab_154_12	215	|-weather|SunnyDay|[upkeep]
+L	ab_154_12	216	|-damage|p2a: Tauros|7/278|[from] Leech Seed|[of] p1a: Xatu
+L	ab_154_12	217	|-heal|p1a: Xatu|177/275|[silent]
+L	ab_154_12	218	|upkeep
+L	ab_154_12	219	|turn|18
+L	ab_154_12	220	|
+L	ab_154_12	221	|t:|<NORMALIZED>
+L	ab_154_12	222	|move|p1a: Xatu|Sunny Day||[still]
+L	ab_154_12	223	|-fail|p1a: Xatu
+L	ab_154_12	224	|debug|move failed because it did nothing
+L	ab_154_12	225	|move|p2a: Tauros|Strength|p1a: Xatu
+L	ab_154_12	226	|-damage|p1a: Xatu|61/275
+L	ab_154_12	227	|
+L	ab_154_12	228	|-weather|SunnyDay|[upkeep]
+L	ab_154_12	229	|-damage|p2a: Tauros|0 fnt|[from] Leech Seed|[of] p1a: Xatu
+L	ab_154_12	230	|-heal|p1a: Xatu|68/275|[silent]
+L	ab_154_12	231	|faint|p2a: Tauros
+L	ab_154_12	232	|upkeep
+L	ab_154_12	233	|
+L	ab_154_12	234	|t:|<NORMALIZED>
+L	ab_154_12	235	|switch|p2a: Metang|Metang|227/284
+L	ab_154_12	236	|turn|19
+L	ab_154_12	237	|
+L	ab_154_12	238	|t:|<NORMALIZED>
+L	ab_154_12	239	|move|p1a: Xatu|Aerial Ace|p2a: Metang
+L	ab_154_12	240	|-resisted|p2a: Metang
+L	ab_154_12	241	|-damage|p2a: Metang|205/284
+L	ab_154_12	242	|move|p2a: Metang|Confusion|p1a: Xatu
+L	ab_154_12	243	|-resisted|p1a: Xatu
+L	ab_154_12	244	|-damage|p1a: Xatu|45/275
+L	ab_154_12	245	|
+L	ab_154_12	246	|-weather|none
+L	ab_154_12	247	|upkeep
+L	ab_154_12	248	|turn|20
+L	ab_154_12	249	|
+L	ab_154_12	250	|t:|<NORMALIZED>
+L	ab_154_12	251	|move|p1a: Xatu|Aerial Ace|p2a: Metang
+L	ab_154_12	252	|-resisted|p2a: Metang
+L	ab_154_12	253	|-damage|p2a: Metang|180/284
+L	ab_154_12	254	|move|p2a: Metang|Sludge Bomb|p1a: Xatu
+L	ab_154_12	255	|-damage|p1a: Xatu|0 fnt
+L	ab_154_12	256	|faint|p1a: Xatu
+L	ab_154_12	257	|
+L	ab_154_12	258	|t:|<NORMALIZED>
+L	ab_154_12	259	|switch|p1a: Lunatone|Lunatone|273/273
+L	ab_154_12	260	|
+L	ab_154_12	261	|upkeep
+L	ab_154_12	262	|turn|21
+L	ab_154_12	263	|
+L	ab_154_12	264	|t:|<NORMALIZED>
+L	ab_154_12	265	|move|p1a: Lunatone|Substitute|p1a: Lunatone
+L	ab_154_12	266	|-start|p1a: Lunatone|Substitute
+L	ab_154_12	267	|-damage|p1a: Lunatone|205/273
+L	ab_154_12	268	|move|p2a: Metang|Confusion|p1a: Lunatone
+L	ab_154_12	269	|-resisted|p1a: Lunatone
+L	ab_154_12	270	|-activate|p1a: Lunatone|Substitute|[damage]
+L	ab_154_12	271	|
+L	ab_154_12	272	|upkeep
+L	ab_154_12	273	|turn|22
+L	ab_154_12	274	|
+L	ab_154_12	275	|t:|<NORMALIZED>
+L	ab_154_12	276	|move|p1a: Lunatone|Double-Edge|p2a: Metang
+L	ab_154_12	277	|debug|brightpowder - decreasing accuracy
+L	ab_154_12	278	|-resisted|p2a: Metang
+L	ab_154_12	279	|-damage|p2a: Metang|149/284
+L	ab_154_12	280	|-damage|p1a: Lunatone|195/273|[from] Recoil|[of] p2a: Metang
+L	ab_154_12	281	|move|p2a: Metang|Sludge Bomb|p1a: Lunatone
+L	ab_154_12	282	|-resisted|p1a: Lunatone
+L	ab_154_12	283	|-activate|p1a: Lunatone|Substitute|[damage]
+L	ab_154_12	284	|
+L	ab_154_12	285	|upkeep
+L	ab_154_12	286	|turn|23
+L	ab_154_12	287	|
+L	ab_154_12	288	|t:|<NORMALIZED>
+L	ab_154_12	289	|move|p1a: Lunatone|Substitute|p1a: Lunatone
+L	ab_154_12	290	|-fail|p1a: Lunatone|move: Substitute
+L	ab_154_12	291	|move|p2a: Metang|Sludge Bomb|p1a: Lunatone
+L	ab_154_12	292	|-resisted|p1a: Lunatone
+L	ab_154_12	293	|-end|p1a: Lunatone|Substitute
+L	ab_154_12	294	|
+L	ab_154_12	295	|upkeep
+L	ab_154_12	296	|turn|24
+L	ab_154_12	297	|
+L	ab_154_12	298	|t:|<NORMALIZED>
+L	ab_154_12	299	|move|p1a: Lunatone|Explosion|p2a: Metang
+L	ab_154_12	300	|debug|brightpowder - decreasing accuracy
+L	ab_154_12	301	|-resisted|p2a: Metang
+L	ab_154_12	302	|-damage|p2a: Metang|30/284
+L	ab_154_12	303	|faint|p1a: Lunatone
+L	ab_154_12	304	|
+L	ab_154_12	305	|win|P2

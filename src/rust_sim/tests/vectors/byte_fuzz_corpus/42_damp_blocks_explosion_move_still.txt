@@ -1,0 +1,246 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# Guards the DAMP-blocks-Explosion/Self-Destruct emission (gen3_ability_batch2_v1): the sim
+#   announces the move FIRST then Damp's onAnyTryMove retro-edits it to the [still] form, so
+#   the golden is TWO lines: |move|<user>|<Move>||[still] THEN
+#   |cant|<damp holder>|ability: Damp|<Move>|[of] <user>. The port used to emit ONLY the cant.
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/FMT/INIT/DEC/END/L).
+SCEN	ab_65_16
+TEAM	ab_65_16	p1	Wigglytuff||MetalPowder|CuteCharm|Blizzard,BodySlam,DoubleSlap,Substitute|Timid|104,72,32,136,,164|M|13,3,18,9,5,26|||]Crawdaunt||DragonFang|ShellArmor|RockSmash,Crunch,RainDance,HyperBeam|Jolly|172,92,112,116,,16|M|7,8,28,26,12,26|||]Ledian||WaveIncense|EarlyBird|ThunderPunch,Reflect,Protect,Rest|Relaxed|140,,152,4,68,144|M|3,27,13,16,,21|||]Rhydon||MiracleSeed|RockHead|FuryAttack,Megahorn,RockSmash,Toxic|Naive|56,28,164,160,12,32|M|8,5,17,25,6,17|||]Quagsire||RoseIncense|Damp|SludgeBomb,Mimic,Yawn,Slam|Careful|28,56,20,116,8,4|M|18,4,24,5,12,10|||]Poliwag||AspearBerry|Damp|Surf,Facade,HydroPump,IcyWind|Quiet|,204,28,104,156,16|M|0,3,15,9,30,20|||
+TEAM	ab_65_16	p2	Cloyster||LansatBerry|ShellArmor|IcyWind,Toxic,AuroraBeam,Blizzard|Relaxed|56,88,52,128,108,76|M|18,22,23,9,29,18|||]Magby||Stick|FlameBody|BrickBreak,DoubleEdge,Psychic,Counter|Gentle|84,20,216,44,24,120|M|17,19,28,2,15,28|||]Crawdaunt||Charcoal|ShellArmor|MudSlap,Return,Blizzard,Swift|Jolly|96,120,156,76,36,24|M|9,5,0,0,12,22|||]Elekid||Charcoal|Static|ThunderPunch,KarateChop,Rest,MegaPunch|Bashful|156,4,,188,40,120|M|21,29,20,0,1,7|||]Koffing||LumBerry|Levitate|Explosion,Substitute,Taunt,Rest|Relaxed|,108,72,96,140,92|M|0,10,20,20,16,13|||]Moltres||ChestoBerry|Pressure|DoubleEdge,AerialAce,Ember,Substitute|Docile|,196,144,32,124,12|N|2,24,25,16,3,24|||
+FMT	ab_65_16	gen3customgame
+INIT	ab_65_16	14316,1994,19086,62950	2150170996
+DEC	ab_65_16	0	move	0	0	m3	m0	37717,8485,39727,48133	Wigglytuff	322	429	0	-	0	0	0	0	0	0	6	Cloyster	242	242	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_65_16	1	move	0	0	m0	m1	52817,48076,22941,14995	Wigglytuff	296	429	0	tox	0	0	0	0	0	0	6	Cloyster	210	242	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_65_16	2	move	0	0	m3	m1	65272,56920,27469,38477	Wigglytuff	137	429	0	tox	0	0	0	0	0	0	6	Cloyster	210	242	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_65_16	3	move	0	0	m1	m2	21819,24222,37019,42751	Wigglytuff	59	429	0	tox	0	0	0	0	0	0	6	Cloyster	175	242	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_65_16	4	move	0	0	m3	m1	53602,40532,7874,59865	Wigglytuff	0	429	1	fnt	0	0	0	0	0	0	5	Cloyster	175	242	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_65_16	5	switch	1	0	s5	-	25441,41791,25377,608	Poliwag	190	190	0	-	0	0	0	0	0	0	5	Cloyster	175	242	0	par	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_65_16	6	move	0	0	m1	s5	40420,46469,8749,15860	Poliwag	190	190	0	-	0	0	0	0	0	0	5	Moltres	258	292	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_65_16	7	move	0	0	s3	m3	52683,53108,21459,41991	Rhydon	342	342	0	-	0	0	0	0	0	0	5	Moltres	185	292	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_65_16	8	move	0	0	s4	m3	60657,12672,50591,5254	Quagsire	325	325	0	-	0	0	0	0	0	0	5	Moltres	185	292	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_65_16	9	move	0	0	m2	m3	20610,53360,12687,28065	Quagsire	325	325	0	-	0	0	0	0	0	0	5	Moltres	185	292	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_65_16	10	move	0	0	m0	s4	53318,19036,29160,62812	Quagsire	325	325	0	-	0	0	0	0	0	0	5	Koffing	163	190	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_65_16	11	move	0	0	m3	m2	29874,52997,32320,32435	Quagsire	325	325	0	-	0	0	0	0	0	0	5	Koffing	118	190	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_65_16	12	move	0	0	m3	m0	30841,11698,36887,54039	Quagsire	325	325	0	-	0	0	0	0	0	0	5	Koffing	22	190	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_65_16	13	move	0	0	m1	m0	43483,22871,4901,13782	Quagsire	325	325	0	-	0	0	0	0	0	0	5	Koffing	22	190	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_65_16	14	move	0	0	m0	m0	8560,35919,20806,5642	Quagsire	325	325	0	-	0	0	0	0	0	0	5	Koffing	0	190	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_65_16	15	switch	0	1	-	s5	3328,47090,25822,43701	Quagsire	325	325	0	-	0	0	0	0	0	0	5	Cloyster	175	242	0	par	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_65_16	16	move	0	0	m0	m3	7593,12522,52881,7719	Quagsire	152	325	0	-	0	0	0	0	0	0	5	Cloyster	143	242	0	par	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_65_16	17	move	0	0	m0	m0	21366,53072,62484,33161	Quagsire	67	325	0	-	0	0	0	0	-1	0	5	Cloyster	111	242	0	par	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_65_16	18	move	0	0	s1	m0	40928,14370,975,13011	Crawdaunt	286	286	0	-	0	0	0	0	0	0	5	Cloyster	111	242	0	par	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_65_16	19	move	0	0	m1	m3	45506,48487,512,34103	Crawdaunt	286	286	0	-	0	0	0	0	0	0	5	Cloyster	0	242	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_65_16	20	switch	0	1	-	s4	54347,35743,59942,40054	Crawdaunt	286	286	0	-	0	0	0	0	0	0	5	Moltres	185	292	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_65_16	21	move	0	0	m3	m1	32039,45201,16822,55500	Crawdaunt	202	286	0	-	0	0	0	0	0	0	5	Moltres	57	292	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+END	ab_65_16	0	none
+L	ab_65_16	0	|t:|<NORMALIZED>
+L	ab_65_16	1	|gametype|singles
+L	ab_65_16	2	|player|p1|P1||
+L	ab_65_16	3	|player|p2|P2||
+L	ab_65_16	4	|gen|3
+L	ab_65_16	5	|tier|[Gen 3] Custom Game
+L	ab_65_16	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_65_16	7	|
+L	ab_65_16	8	|t:|<NORMALIZED>
+L	ab_65_16	9	|teamsize|p1|6
+L	ab_65_16	10	|teamsize|p2|6
+L	ab_65_16	11	|start
+L	ab_65_16	12	|switch|p1a: Wigglytuff|Wigglytuff, M|429/429
+L	ab_65_16	13	|switch|p2a: Cloyster|Cloyster, M|242/242
+L	ab_65_16	14	|turn|1
+L	ab_65_16	15	|
+L	ab_65_16	16	|t:|<NORMALIZED>
+L	ab_65_16	17	|move|p1a: Wigglytuff|Substitute|p1a: Wigglytuff
+L	ab_65_16	18	|-start|p1a: Wigglytuff|Substitute
+L	ab_65_16	19	|-damage|p1a: Wigglytuff|322/429
+L	ab_65_16	20	|move|p2a: Cloyster|Icy Wind|p1a: Wigglytuff
+L	ab_65_16	21	|-end|p1a: Wigglytuff|Substitute
+L	ab_65_16	22	|
+L	ab_65_16	23	|upkeep
+L	ab_65_16	24	|turn|2
+L	ab_65_16	25	|
+L	ab_65_16	26	|t:|<NORMALIZED>
+L	ab_65_16	27	|move|p1a: Wigglytuff|Blizzard|p2a: Cloyster
+L	ab_65_16	28	|-resisted|p2a: Cloyster
+L	ab_65_16	29	|-damage|p2a: Cloyster|210/242
+L	ab_65_16	30	|move|p2a: Cloyster|Toxic|p1a: Wigglytuff
+L	ab_65_16	31	|-status|p1a: Wigglytuff|tox
+L	ab_65_16	32	|
+L	ab_65_16	33	|-damage|p1a: Wigglytuff|296/429 tox|[from] psn
+L	ab_65_16	34	|upkeep
+L	ab_65_16	35	|turn|3
+L	ab_65_16	36	|
+L	ab_65_16	37	|t:|<NORMALIZED>
+L	ab_65_16	38	|move|p1a: Wigglytuff|Substitute|p1a: Wigglytuff
+L	ab_65_16	39	|-start|p1a: Wigglytuff|Substitute
+L	ab_65_16	40	|-damage|p1a: Wigglytuff|189/429 tox
+L	ab_65_16	41	|move|p2a: Cloyster|Toxic||[still]
+L	ab_65_16	42	|-fail|p2a: Cloyster
+L	ab_65_16	43	|debug|move failed because it did nothing
+L	ab_65_16	44	|
+L	ab_65_16	45	|-damage|p1a: Wigglytuff|137/429 tox|[from] psn
+L	ab_65_16	46	|upkeep
+L	ab_65_16	47	|turn|4
+L	ab_65_16	48	|
+L	ab_65_16	49	|t:|<NORMALIZED>
+L	ab_65_16	50	|move|p1a: Wigglytuff|Body Slam|p2a: Cloyster
+L	ab_65_16	51	|-damage|p2a: Cloyster|175/242
+L	ab_65_16	52	|-status|p2a: Cloyster|par
+L	ab_65_16	53	|move|p2a: Cloyster|Aurora Beam|p1a: Wigglytuff
+L	ab_65_16	54	|-end|p1a: Wigglytuff|Substitute
+L	ab_65_16	55	|
+L	ab_65_16	56	|-damage|p1a: Wigglytuff|59/429 tox|[from] psn
+L	ab_65_16	57	|upkeep
+L	ab_65_16	58	|turn|5
+L	ab_65_16	59	|
+L	ab_65_16	60	|t:|<NORMALIZED>
+L	ab_65_16	61	|move|p1a: Wigglytuff|Substitute|p1a: Wigglytuff
+L	ab_65_16	62	|-fail|p1a: Wigglytuff|move: Substitute|[weak]
+L	ab_65_16	63	|move|p2a: Cloyster|Toxic|p1a: Wigglytuff
+L	ab_65_16	64	|-fail|p1a: Wigglytuff|tox
+L	ab_65_16	65	|debug|move failed because it did nothing
+L	ab_65_16	66	|
+L	ab_65_16	67	|-damage|p1a: Wigglytuff|0 fnt|[from] psn
+L	ab_65_16	68	|faint|p1a: Wigglytuff
+L	ab_65_16	69	|upkeep
+L	ab_65_16	70	|
+L	ab_65_16	71	|t:|<NORMALIZED>
+L	ab_65_16	72	|switch|p1a: Poliwag|Poliwag, M|190/190
+L	ab_65_16	73	|turn|6
+L	ab_65_16	74	|
+L	ab_65_16	75	|t:|<NORMALIZED>
+L	ab_65_16	76	|switch|p2a: Moltres|Moltres|292/292
+L	ab_65_16	77	|-ability|p2a: Moltres|Pressure|[silent]
+L	ab_65_16	78	|move|p1a: Poliwag|Facade|p2a: Moltres
+L	ab_65_16	79	|-damage|p2a: Moltres|258/292
+L	ab_65_16	80	|
+L	ab_65_16	81	|upkeep
+L	ab_65_16	82	|turn|7
+L	ab_65_16	83	|
+L	ab_65_16	84	|t:|<NORMALIZED>
+L	ab_65_16	85	|switch|p1a: Rhydon|Rhydon, M|342/342
+L	ab_65_16	86	|move|p2a: Moltres|Substitute|p2a: Moltres
+L	ab_65_16	87	|-start|p2a: Moltres|Substitute
+L	ab_65_16	88	|-damage|p2a: Moltres|185/292
+L	ab_65_16	89	|
+L	ab_65_16	90	|upkeep
+L	ab_65_16	91	|turn|8
+L	ab_65_16	92	|
+L	ab_65_16	93	|t:|<NORMALIZED>
+L	ab_65_16	94	|switch|p1a: Quagsire|Quagsire, M|325/325
+L	ab_65_16	95	|move|p2a: Moltres|Substitute|p2a: Moltres
+L	ab_65_16	96	|-fail|p2a: Moltres|move: Substitute
+L	ab_65_16	97	|
+L	ab_65_16	98	|upkeep
+L	ab_65_16	99	|turn|9
+L	ab_65_16	100	|
+L	ab_65_16	101	|t:|<NORMALIZED>
+L	ab_65_16	102	|move|p2a: Moltres|Substitute|p2a: Moltres
+L	ab_65_16	103	|-fail|p2a: Moltres|move: Substitute
+L	ab_65_16	104	|move|p1a: Quagsire|Yawn||[still]
+L	ab_65_16	105	|-fail|p1a: Quagsire
+L	ab_65_16	106	|debug|move failed because it did nothing
+L	ab_65_16	107	|
+L	ab_65_16	108	|upkeep
+L	ab_65_16	109	|turn|10
+L	ab_65_16	110	|
+L	ab_65_16	111	|t:|<NORMALIZED>
+L	ab_65_16	112	|switch|p2a: Koffing|Koffing, M|190/190
+L	ab_65_16	113	|move|p1a: Quagsire|Sludge Bomb|p2a: Koffing
+L	ab_65_16	114	|-resisted|p2a: Koffing
+L	ab_65_16	115	|-damage|p2a: Koffing|163/190
+L	ab_65_16	116	|
+L	ab_65_16	117	|upkeep
+L	ab_65_16	118	|turn|11
+L	ab_65_16	119	|
+L	ab_65_16	120	|t:|<NORMALIZED>
+L	ab_65_16	121	|move|p2a: Koffing|Taunt|p1a: Quagsire
+L	ab_65_16	122	|-start|p1a: Quagsire|move: Taunt
+L	ab_65_16	123	|move|p1a: Quagsire|Slam|p2a: Koffing
+L	ab_65_16	124	|-damage|p2a: Koffing|118/190
+L	ab_65_16	125	|
+L	ab_65_16	126	|upkeep
+L	ab_65_16	127	|turn|12
+L	ab_65_16	128	|
+L	ab_65_16	129	|t:|<NORMALIZED>
+L	ab_65_16	130	|move|p2a: Koffing|Explosion||[still]
+L	ab_65_16	131	|cant|p1a: Quagsire|ability: Damp|Explosion|[of] p2a: Koffing
+L	ab_65_16	132	|move|p1a: Quagsire|Slam|p2a: Koffing
+L	ab_65_16	133	|-crit|p2a: Koffing
+L	ab_65_16	134	|-damage|p2a: Koffing|22/190
+L	ab_65_16	135	|
+L	ab_65_16	136	|-end|p1a: Quagsire|move: Taunt|[silent]
+L	ab_65_16	137	|upkeep
+L	ab_65_16	138	|turn|13
+L	ab_65_16	139	|
+L	ab_65_16	140	|t:|<NORMALIZED>
+L	ab_65_16	141	|move|p2a: Koffing|Explosion||[still]
+L	ab_65_16	142	|cant|p1a: Quagsire|ability: Damp|Explosion|[of] p2a: Koffing
+L	ab_65_16	143	|move|p1a: Quagsire|Mimic|p2a: Koffing
+L	ab_65_16	144	|-activate|p1a: Quagsire|move: Mimic|Explosion
+L	ab_65_16	145	|
+L	ab_65_16	146	|upkeep
+L	ab_65_16	147	|turn|14
+L	ab_65_16	148	|
+L	ab_65_16	149	|t:|<NORMALIZED>
+L	ab_65_16	150	|move|p2a: Koffing|Explosion||[still]
+L	ab_65_16	151	|cant|p1a: Quagsire|ability: Damp|Explosion|[of] p2a: Koffing
+L	ab_65_16	152	|move|p1a: Quagsire|Sludge Bomb|p2a: Koffing
+L	ab_65_16	153	|-resisted|p2a: Koffing
+L	ab_65_16	154	|-damage|p2a: Koffing|0 fnt
+L	ab_65_16	155	|debug|move failed because it did nothing
+L	ab_65_16	156	|faint|p2a: Koffing
+L	ab_65_16	157	|
+L	ab_65_16	158	|t:|<NORMALIZED>
+L	ab_65_16	159	|switch|p2a: Cloyster|Cloyster, M|175/242 par
+L	ab_65_16	160	|
+L	ab_65_16	161	|upkeep
+L	ab_65_16	162	|turn|15
+L	ab_65_16	163	|
+L	ab_65_16	164	|t:|<NORMALIZED>
+L	ab_65_16	165	|move|p1a: Quagsire|Sludge Bomb|p2a: Cloyster
+L	ab_65_16	166	|-damage|p2a: Cloyster|143/242 par
+L	ab_65_16	167	|debug|move failed because it did nothing
+L	ab_65_16	168	|move|p2a: Cloyster|Blizzard|p1a: Quagsire
+L	ab_65_16	169	|-damage|p1a: Quagsire|152/325
+L	ab_65_16	170	|
+L	ab_65_16	171	|upkeep
+L	ab_65_16	172	|turn|16
+L	ab_65_16	173	|
+L	ab_65_16	174	|t:|<NORMALIZED>
+L	ab_65_16	175	|move|p1a: Quagsire|Sludge Bomb|p2a: Cloyster
+L	ab_65_16	176	|-damage|p2a: Cloyster|111/242 par
+L	ab_65_16	177	|move|p2a: Cloyster|Icy Wind|p1a: Quagsire
+L	ab_65_16	178	|-damage|p1a: Quagsire|67/325
+L	ab_65_16	179	|-unboost|p1a: Quagsire|spe|1
+L	ab_65_16	180	|
+L	ab_65_16	181	|upkeep
+L	ab_65_16	182	|turn|17
+L	ab_65_16	183	|
+L	ab_65_16	184	|t:|<NORMALIZED>
+L	ab_65_16	185	|switch|p1a: Crawdaunt|Crawdaunt, M|286/286
+L	ab_65_16	186	|cant|p2a: Cloyster|par
+L	ab_65_16	187	|
+L	ab_65_16	188	|upkeep
+L	ab_65_16	189	|turn|18
+L	ab_65_16	190	|
+L	ab_65_16	191	|t:|<NORMALIZED>
+L	ab_65_16	192	|move|p1a: Crawdaunt|Crunch|p2a: Cloyster
+L	ab_65_16	193	|-damage|p2a: Cloyster|0 fnt
+L	ab_65_16	194	|faint|p2a: Cloyster
+L	ab_65_16	195	|
+L	ab_65_16	196	|t:|<NORMALIZED>
+L	ab_65_16	197	|switch|p2a: Moltres|Moltres|185/292
+L	ab_65_16	198	|-ability|p2a: Moltres|Pressure|[silent]
+L	ab_65_16	199	|
+L	ab_65_16	200	|upkeep
+L	ab_65_16	201	|turn|19
+L	ab_65_16	202	|
+L	ab_65_16	203	|t:|<NORMALIZED>
+L	ab_65_16	204	|move|p2a: Moltres|Aerial Ace|p1a: Crawdaunt
+L	ab_65_16	205	|-damage|p1a: Crawdaunt|202/286
+L	ab_65_16	206	|move|p1a: Crawdaunt|Hyper Beam|p2a: Moltres
+L	ab_65_16	207	|-damage|p2a: Moltres|57/292
+L	ab_65_16	208	|-mustrecharge|p1a: Crawdaunt
+L	ab_65_16	209	|
+L	ab_65_16	210	|upkeep
+L	ab_65_16	211	|turn|20

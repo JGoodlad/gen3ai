@@ -1266,7 +1266,7 @@ impl crate::state::BattleState {
         // FOCUS BAND: the Spikes chip is a Damage event into the entrant — the roll
         // draws (probe: the switch-in turn shows the extra random(10)), no survive
         // (effect Spikes, not a Move). `gen3_ability_batch4_v1`.
-        let dmg = self.focus_band_damage(side, slot, dmg, false, dex);
+        let dmg = self.focus_band_damage(side, slot, dmg, false, false, dex);
         // Apply (saturating at 0). The faint flag is set by the runAction tail's
         // process_faints (mirroring faintMessages), exactly like move damage.
         self.apply_damage(side, slot, dmg);

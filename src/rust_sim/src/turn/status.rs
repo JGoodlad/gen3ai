@@ -151,7 +151,7 @@ impl crate::state::BattleState {
             // `this.damage(source.baseMaxhp / 16, source, target)`). gen-3 `maxhp == baseMaxhp`.
             let recoil = (self.sides[atk_side].pokemon[atk_slot].maxhp / 16).max(1);
             let recoil = recoil.min(self.sides[atk_side].pokemon[atk_slot].hp);
-            let recoil = self.focus_band_damage(atk_side, atk_slot, recoil, false, dex);
+            let recoil = self.focus_band_damage(atk_side, atk_slot, recoil, false, false, dex);
             if recoil > 0 {
                 self.apply_damage(atk_side, atk_slot, recoil);
                 // [EMIT] `|-damage|<attacker>|<HP>|[from] ability: Rough Skin|[of] <holder>`.

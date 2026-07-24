@@ -704,15 +704,22 @@ impl crate::state::BattleState {
                 self.log.ability_silent(&mon, "Pressure");
             }
             "trace" => {
-                // Emit only if the copy actually applied (a fainted/absent foe → no copy).
-                let cur = to_id(&self.sides[side].pokemon[slot].ability);
-                if cur != "trace" {
+                // Emit iff the copy applied — which mirrors `trace_on_start`'s only
+                // no-copy case: a FAINTED/absent foe active (`foes()` excludes it → no
+                // target → no copy, no draw, no line). Do NOT gate on `cur != "trace"`:
+                // when the FOE's ability is ALSO Trace (a Porygon2-vs-Porygon Trace mirror)
+                // the copy DOES apply yet leaves `cur == "trace"`, and the sim STILL emits
+                // `|-ability|<mon>|Trace|Trace|[from] ability: Trace|[of] <foe>` (golden
+                // ab_112_13 lines 14-15 — BOTH leads trace each other's Trace).
+                let foe = 1 - side;
+                let foe_active = self.sides[foe].active;
+                if !self.sides[foe].pokemon[foe_active].fainted {
+                    let cur = to_id(&self.sides[side].pokemon[slot].ability);
                     let copied_display = dex
                         .ability(&cur)
                         .map(|a| a.name.clone())
                         .unwrap_or_else(|| self.sides[side].pokemon[slot].ability.clone());
-                    let foe = 1 - side;
-                    let foe_ref = self.mon_ref(foe, self.sides[foe].active, dex);
+                    let foe_ref = self.mon_ref(foe, foe_active, dex);
                     let mon = self.mon_ref(side, slot, dex);
                     self.log.ability_traced(&mon, &copied_display, &foe_ref);
                 }
