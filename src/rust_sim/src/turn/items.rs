@@ -460,16 +460,21 @@ impl crate::state::BattleState {
             .unwrap_or_else(|| item_id.clone());
         // Remove from the target.
         self.sides[target_side].pokemon[target_slot].item = String::new();
-        // CHOICE-LOCK RELEASE (`gen3_move_coverage_batch4_v1`, the e2e_126 fix): the Choice
-        // lock is enforced by the ITEM's `choiceband.onDisableMove` — with the Choice Band
-        // GONE (Thief steals it / Knock Off removes it), that handler no longer fires, so the
-        // mon can freely pick any move again. The port's `choice_locked_move` is a cached
-        // shadow of that item-gated lock, so clearing the item MUST release it (else the port
-        // keeps rejecting the now-legal move → a decision-stream desync). VERIFIED vs the sim:
-        // e2e_126 Skarmory Thiefs a Choice-Band Aerodactyl (both itemless → the steal fires),
-        // and the sim then offers Aerodactyl ALL its moves (RockSlide after Earthquake). A
-        // no-op for a non-Choice-item target (its lock is already None). DRAW-FREE.
-        self.sides[target_side].pokemon[target_slot].choice_locked_move = None;
+        // CHOICE-LOCK RELEASE (`gen3_move_coverage_batch4_v1` e2e_126, refined by
+        // `gen3_choicelock_lazy_release_v1`): with the Choice Band GONE (Thief steals it /
+        // Knock Off removes it) the mon can freely pick any move again — but the RELEASE is
+        // **LAZY**, not eager. The resolved gen3 `choicelock.onDisableMove` early-outs on
+        // `!pokemon.getItem().isChoice` and only THEN `removeVolatile('choicelock')`, so the
+        // VOLATILE survives the item's loss until the next endTurn `runEvent('DisableMove')`
+        // gathers it (still counting toward that event's handler-sort TIE-SHUFFLE) and it
+        // self-removes. Clearing it EAGERLY here dropped a handler one event early → a MISSING
+        // `random` one call before the Quick Claw on an encore+choicelock endTurn (the
+        // `rmrzcanyf_ab_71_14` `kind=seed` repro). SIM-PROBED
+        // (`harness/probe_rb_choicelock.js`): the Knock-Off turn's endTurn draws 6 vs the
+        // no-Band control's 5 (the shuffle STILL fires), and the NEXT turn drops to the
+        // control's count with the volatile gone. So the field is LEFT SET here — legality is
+        // gated live by `MonState::choice_lock_enforced` (which reads the CURRENT item) and the
+        // volatile is dropped in `disable_move_event_shuffle`.
         if is_steal {
             // The attacker GAINS the item (only reached when the attacker was itemless). Store
             // the SAME string form the target held (the raw set value, e.g. "Leftovers"), so

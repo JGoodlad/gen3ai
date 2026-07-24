@@ -1,0 +1,544 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=240724 run_id=rmrzcanyf chunk=34
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_34_22
+TEAM	ab_34_22	p1	Heracross||SalacBerry|Swarm|rockslide,reversal,endure,megahorn|Hardy|85,85,85,85,85,85|M|||77|]Suicune||Leftovers|Pressure|calmmind,sleeptalk,rest,surf|Hardy|85,,85,85,85,85|N|,0,,,,||74|]Houndoom||Leftovers|FlashFire|willowisp,crunch,fireblast,pursuit|Hardy|85,,85,85,85,85|M|,0,,,,||79|]Solrock||Leftovers|Levitate|earthquake,rockslide,protect,toxic|Hardy|85,85,85,85,85,85|N|||84|]Blaziken||SalacBerry|Blaze|reversal,endure,swordsdance,fireblast|Hardy|85,85,85,85,85,85|M|||81|]Lugia||Leftovers|Pressure|recover,thunderbolt,calmmind,icebeam|Hardy|85,,85,85,85,85|N|,0,,,,||70|
+TEAM	ab_34_22	p2	Lanturn||Leftovers|VoltAbsorb|rest,surf,thunderbolt,sleeptalk|Hardy|85,,85,85,85,85|M|,0,,,,||82|]Gardevoir||Leftovers|Trace|psychic,firepunch,calmmind,hypnosis|Hardy|85,,85,85,85,85|M|,0,,,,||79|]Cacturne||Leftovers|SandVeil|hiddenpowerdark,spikes,thunderpunch,needlearm|Hardy|85,,85,85,85,85|M|,3,,,,||96|]Scyther||LiechiBerry|Swarm|swordsdance,silverwind,aerialace,hiddenpowerground|Hardy|85,85,85,85,85,85|M|,,,30,30,||81|]Swellow||ChoiceBand|Guts|aerialace,hiddenpowerground,quickattack,doubleedge|Hardy|85,85,85,85,85,85|M|,,,30,30,||80|]Venomoth||Leftovers|ShieldDust|hiddenpowerfire,sleeppowder,psychic,sludgebomb|Hardy|85,85,85,85,85,85|M|,30,,30,,30||87|
+FMT	ab_34_22	gen3customgame
+INIT	ab_34_22	58943,10792,996,60009	2210622029
+DEC	ab_34_22	0	move	0	0	m1	s5	18991,10316,26487,57197	Heracross	250	250	0	-	0	0	0	0	0	0	6	Venomoth	264	264	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_34_22	1	move	0	0	m2	m3	39670,56952,17916,33595	Heracross	150	250	0	-	0	0	0	0	0	0	6	Venomoth	264	264	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_34_22	2	move	0	0	s5	m2	46496,18540,48826,15614	Lugia	256	264	0	-	0	0	0	0	0	0	6	Venomoth	264	264	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_34_22	3	move	0	0	s4	m2	13455,45222,7606,2301	Blaziken	101	262	0	-	0	0	0	0	0	0	6	Venomoth	264	264	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_34_22	4	move	0	0	m2	m3	33339,12796,5390,23745	Blaziken	0	262	1	fnt	0	0	0	0	0	0	5	Venomoth	264	264	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_34_22	5	switch	1	0	s2	-	57408,42339,62395,32744	Houndoom	248	248	0	-	0	0	0	0	0	0	5	Venomoth	264	264	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_34_22	6	move	0	0	m0	s3	23495,63994,36047,61530	Houndoom	248	248	0	-	0	0	0	0	0	0	5	Scyther	246	246	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_34_22	7	move	0	0	m1	m1	59349,61888,10893,44685	Houndoom	157	248	0	-	0	0	0	0	0	0	5	Scyther	158	246	0	-	0	0	0	-1	0	0	6	p2	0	0	0	0	0
+DEC	ab_34_22	8	move	0	0	m0	s1	42924,55339,30401,40566	Houndoom	172	248	0	-	0	0	0	0	0	0	5	Gardevoir	237	237	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_34_22	9	move	0	0	m0	m1	42462,64967,50854,21339	Houndoom	187	248	0	-	0	0	0	0	0	0	5	Gardevoir	237	237	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_34_22	10	move	0	0	m2	s2	1811,48958,12745,60735	Houndoom	187	248	0	-	0	0	0	0	0	0	5	Cacturne	0	290	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_22	11	switch	0	1	-	s5	36091,6053,50560,61342	Houndoom	202	248	0	-	0	0	0	0	0	0	5	Lanturn	339	339	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_34_22	12	move	0	0	s3	m0	17884,10764,8594,46617	Solrock	255	255	0	-	0	0	0	0	0	0	5	Lanturn	339	339	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_34_22	13	move	0	0	m1	m0	28654,1976,63132,25159	Solrock	255	255	0	-	0	0	0	0	0	0	5	Lanturn	339	339	0	slp	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_34_22	14	move	0	0	m0	m2	4383,26702,58526,50539	Solrock	255	255	0	-	0	0	0	0	0	0	5	Lanturn	167	339	0	slp	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_34_22	15	move	0	0	m3	m1	37578,54697,12901,8037	Solrock	255	255	0	-	0	0	0	0	0	0	5	Lanturn	188	339	0	slp	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_34_22	16	move	0	0	m2	s4	62698,7060,30620,3740	Solrock	255	255	0	-	0	0	0	0	0	0	5	Swellow	227	227	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_22	17	move	0	0	m3	m3	47019,29449,20799,53491	Solrock	183	255	0	-	0	0	0	0	0	0	5	Swellow	184	227	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_22	18	move	0	0	m3	s2	26705,34097,35263,30980	Solrock	198	255	0	-	0	0	0	0	0	0	5	Gardevoir	223	237	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_22	19	move	0	0	s4	s2	44936,34080,53136,33111	Lugia	264	264	0	-	0	0	0	0	0	0	5	Swellow	170	227	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_22	20	move	0	0	m1	m0	58873,22648,27828,7788	Lugia	173	264	0	-	0	0	0	0	0	0	5	Swellow	7	227	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_34_22	21	move	0	0	m2	m0	10035,34966,18521,53822	Lugia	78	264	0	-	0	0	1	1	0	0	5	Swellow	0	227	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_34_22	22	switch	0	1	-	s3	18934,52127,33995,48953	Lugia	78	264	0	-	0	0	1	1	0	0	5	Venomoth	264	264	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_34_22	23	move	0	0	m3	m3	49108,1301,2183,34621	Lugia	0	264	1	fnt	0	0	0	0	0	0	4	Venomoth	264	264	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_34_22	24	switch	1	0	s3	-	49769,9648,21417,40660	Houndoom	217	248	0	-	0	0	0	0	0	0	4	Venomoth	264	264	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_34_22	25	move	0	0	m2	m3	7143,9156,2019,37509	Houndoom	102	248	0	psn	0	0	0	0	0	0	4	Venomoth	0	264	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_34_22	26	switch	0	1	-	s2	17585,51419,49048,37999	Houndoom	86	248	0	psn	0	0	0	0	0	0	4	Gardevoir	223	237	0	tox	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_34_22	27	move	0	0	m2	m0	63432,36478,8569,28688	Houndoom	70	248	0	psn	0	0	0	0	0	0	4	Gardevoir	209	237	0	tox	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_34_22	28	move	0	0	m1	m0	47861,50870,60434,64438	Houndoom	54	248	0	psn	0	0	0	0	0	0	4	Gardevoir	30	237	0	tox	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_34_22	29	move	0	0	m2	m0	60973,65149,45649,12280	Houndoom	38	248	0	psn	0	0	0	0	0	0	4	Gardevoir	0	237	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_22	30	switch	0	1	-	s1	38484,24913,48290,17307	Houndoom	38	248	0	psn	0	0	0	0	0	0	4	Scyther	158	246	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_34_22	31	move	0	0	m2	m2	3780,17612,9973,17941	Houndoom	0	248	1	fnt	0	0	0	0	0	0	3	Scyther	158	246	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_34_22	32	switch	1	0	s5	-	8782,64755,26623,33292	Heracross	150	250	0	-	0	0	0	0	0	0	3	Scyther	158	246	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_34_22	33	move	0	0	s1	m0	15514,33861,25313,22911	Suicune	270	270	0	-	0	0	0	0	0	0	3	Scyther	158	246	0	-	2	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_22	34	move	0	0	s1	m0	49796,23376,41580,58590	Heracross	150	250	0	-	0	0	0	0	0	0	3	Scyther	158	246	0	-	4	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_22	35	move	0	0	m1	m0	1826,61619,28984,9362	Heracross	150	250	0	-	0	0	0	0	0	0	3	Scyther	147	246	0	-	6	0	0	0	0	0	2	p2	0	0	0	1	0
+DEC	ab_34_22	36	move	0	0	m0	m2	59989,37758,64452,44660	Heracross	0	250	1	fnt	0	0	0	0	0	0	2	Scyther	147	246	0	-	6	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_34_22	37	switch	1	0	s1	-	5523,53651,19271,34439	Suicune	270	270	0	-	0	0	0	0	0	0	2	Scyther	147	246	0	-	6	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_34_22	38	move	0	0	m1	m2	31734,49225,23108,28872	Suicune	62	270	0	-	0	0	0	0	0	0	2	Scyther	147	246	0	-	6	0	0	0	0	0	2	p2	0	0	0	1	0
+DEC	ab_34_22	39	move	0	0	s4	m2	66,39451,49673,62885	Solrock	74	255	0	-	0	0	0	0	0	0	2	Scyther	147	246	0	-	6	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_22	40	move	0	0	s4	s4	868,43723,13836,54748	Suicune	78	270	0	-	0	0	0	0	0	0	2	Lanturn	209	339	0	slp	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_34_22	41	move	0	0	s4	m0	42286,55855,44400,49198	Solrock	89	255	0	-	0	0	0	0	0	0	2	Lanturn	339	339	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_22	42	move	0	0	m3	m0	58850,18067,11543,12720	Solrock	104	255	0	-	0	0	0	0	0	0	2	Lanturn	339	339	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_22	43	move	0	0	m3	s4	31692,16074,58117,27362	Solrock	119	255	0	-	0	0	0	0	0	0	2	Scyther	132	246	0	tox	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_34_22	44	move	0	0	s4	m2	9937,11796,37670,5527	Suicune	34	270	0	-	0	0	0	0	0	0	2	Scyther	102	246	0	tox	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_34_22	45	move	0	0	m1	m2	9111,26277,22007,16561	Suicune	0	270	1	fnt	0	0	0	0	0	0	1	Scyther	102	246	0	tox	0	0	0	0	0	0	2	p2	0	0	0	1	0
+DEC	ab_34_22	46	switch	1	0	s4	-	21496,17438,44328,56728	Solrock	134	255	0	-	0	0	0	0	0	0	1	Scyther	57	246	0	tox	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_34_22	47	move	0	0	m2	m1	20949,46666,29790,2698	Solrock	149	255	0	-	0	0	0	0	0	0	1	Scyther	0	246	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_34_22	48	switch	0	1	-	s4	51010,46364,48810,41269	Solrock	149	255	0	-	0	0	0	0	0	0	1	Lanturn	339	339	0	slp	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_34_22	49	move	0	0	m0	m2	54642,40571,48884,41337	Solrock	164	255	0	-	0	0	0	0	0	0	1	Lanturn	182	339	0	slp	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_34_22	50	move	0	0	m1	m3	20605,14297,2608,50557	Solrock	164	255	0	-	0	0	0	0	0	0	1	Lanturn	0	339	1	slp	0	0	0	0	0	0	0	p1	0	0	0	1	0
+END	ab_34_22	1	p1
+L	ab_34_22	0	|t:|<NORMALIZED>
+L	ab_34_22	1	|gametype|singles
+L	ab_34_22	2	|player|p1|P1||
+L	ab_34_22	3	|player|p2|P2||
+L	ab_34_22	4	|gen|3
+L	ab_34_22	5	|tier|[Gen 3] Custom Game
+L	ab_34_22	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_34_22	7	|
+L	ab_34_22	8	|t:|<NORMALIZED>
+L	ab_34_22	9	|teamsize|p1|6
+L	ab_34_22	10	|teamsize|p2|6
+L	ab_34_22	11	|start
+L	ab_34_22	12	|switch|p1a: Heracross|Heracross, L77, M|250/250
+L	ab_34_22	13	|switch|p2a: Lanturn|Lanturn, L82, M|339/339
+L	ab_34_22	14	|turn|1
+L	ab_34_22	15	|
+L	ab_34_22	16	|t:|<NORMALIZED>
+L	ab_34_22	17	|switch|p2a: Venomoth|Venomoth, L87, M|264/264
+L	ab_34_22	18	|move|p1a: Heracross|Reversal|p2a: Venomoth
+L	ab_34_22	19	|debug|BP: 20
+L	ab_34_22	20	|-resisted|p2a: Venomoth
+L	ab_34_22	21	|-damage|p2a: Venomoth|258/264
+L	ab_34_22	22	|
+L	ab_34_22	23	|-heal|p2a: Venomoth|264/264|[from] item: Leftovers
+L	ab_34_22	24	|upkeep
+L	ab_34_22	25	|turn|2
+L	ab_34_22	26	|
+L	ab_34_22	27	|t:|<NORMALIZED>
+L	ab_34_22	28	|move|p1a: Heracross|Endure|p1a: Heracross
+L	ab_34_22	29	|-singleturn|p1a: Heracross|move: Endure
+L	ab_34_22	30	|move|p2a: Venomoth|Sludge Bomb|p1a: Heracross
+L	ab_34_22	31	|-damage|p1a: Heracross|150/250
+L	ab_34_22	32	|
+L	ab_34_22	33	|upkeep
+L	ab_34_22	34	|turn|3
+L	ab_34_22	35	|
+L	ab_34_22	36	|t:|<NORMALIZED>
+L	ab_34_22	37	|switch|p1a: Lugia|Lugia, L70|264/264
+L	ab_34_22	38	|-ability|p1a: Lugia|Pressure|[silent]
+L	ab_34_22	39	|move|p2a: Venomoth|Psychic|p1a: Lugia
+L	ab_34_22	40	|-resisted|p1a: Lugia
+L	ab_34_22	41	|-damage|p1a: Lugia|240/264
+L	ab_34_22	42	|
+L	ab_34_22	43	|-heal|p1a: Lugia|256/264|[from] item: Leftovers
+L	ab_34_22	44	|upkeep
+L	ab_34_22	45	|turn|4
+L	ab_34_22	46	|
+L	ab_34_22	47	|t:|<NORMALIZED>
+L	ab_34_22	48	|switch|p1a: Blaziken|Blaziken, L81, M|262/262
+L	ab_34_22	49	|move|p2a: Venomoth|Psychic|p1a: Blaziken
+L	ab_34_22	50	|-supereffective|p1a: Blaziken
+L	ab_34_22	51	|-damage|p1a: Blaziken|101/262
+L	ab_34_22	52	|
+L	ab_34_22	53	|upkeep
+L	ab_34_22	54	|turn|5
+L	ab_34_22	55	|
+L	ab_34_22	56	|t:|<NORMALIZED>
+L	ab_34_22	57	|move|p2a: Venomoth|Sludge Bomb|p1a: Blaziken
+L	ab_34_22	58	|-crit|p1a: Blaziken
+L	ab_34_22	59	|-damage|p1a: Blaziken|0 fnt
+L	ab_34_22	60	|faint|p1a: Blaziken
+L	ab_34_22	61	|
+L	ab_34_22	62	|t:|<NORMALIZED>
+L	ab_34_22	63	|switch|p1a: Houndoom|Houndoom, L79, M|248/248
+L	ab_34_22	64	|
+L	ab_34_22	65	|upkeep
+L	ab_34_22	66	|turn|6
+L	ab_34_22	67	|
+L	ab_34_22	68	|t:|<NORMALIZED>
+L	ab_34_22	69	|switch|p2a: Scyther|Scyther, L81, M|246/246
+L	ab_34_22	70	|move|p1a: Houndoom|Will-O-Wisp|p2a: Scyther|[miss]
+L	ab_34_22	71	|-miss|p1a: Houndoom|p2a: Scyther
+L	ab_34_22	72	|
+L	ab_34_22	73	|upkeep
+L	ab_34_22	74	|turn|7
+L	ab_34_22	75	|
+L	ab_34_22	76	|t:|<NORMALIZED>
+L	ab_34_22	77	|move|p2a: Scyther|Silver Wind|p1a: Houndoom
+L	ab_34_22	78	|-damage|p1a: Houndoom|142/248
+L	ab_34_22	79	|move|p1a: Houndoom|Crunch|p2a: Scyther
+L	ab_34_22	80	|-damage|p2a: Scyther|158/246
+L	ab_34_22	81	|-unboost|p2a: Scyther|spd|1
+L	ab_34_22	82	|
+L	ab_34_22	83	|-heal|p1a: Houndoom|157/248|[from] item: Leftovers
+L	ab_34_22	84	|upkeep
+L	ab_34_22	85	|turn|8
+L	ab_34_22	86	|
+L	ab_34_22	87	|t:|<NORMALIZED>
+L	ab_34_22	88	|switch|p2a: Gardevoir|Gardevoir, L79, M|237/237
+L	ab_34_22	89	|-ability|p2a: Gardevoir|Flash Fire|Trace|[from] ability: Trace|[of] p1a: Houndoom
+L	ab_34_22	90	|move|p1a: Houndoom|Will-O-Wisp|p2a: Gardevoir
+L	ab_34_22	91	|-start|p2a: Gardevoir|ability: Flash Fire
+L	ab_34_22	92	|
+L	ab_34_22	93	|-heal|p1a: Houndoom|172/248|[from] item: Leftovers
+L	ab_34_22	94	|upkeep
+L	ab_34_22	95	|turn|9
+L	ab_34_22	96	|
+L	ab_34_22	97	|t:|<NORMALIZED>
+L	ab_34_22	98	|move|p1a: Houndoom|Will-O-Wisp|p2a: Gardevoir
+L	ab_34_22	99	|-immune|p2a: Gardevoir|[from] ability: Flash Fire
+L	ab_34_22	100	|move|p2a: Gardevoir|Fire Punch|p1a: Houndoom
+L	ab_34_22	101	|-start|p1a: Houndoom|ability: Flash Fire
+L	ab_34_22	102	|
+L	ab_34_22	103	|-heal|p1a: Houndoom|187/248|[from] item: Leftovers
+L	ab_34_22	104	|upkeep
+L	ab_34_22	105	|turn|10
+L	ab_34_22	106	|
+L	ab_34_22	107	|t:|<NORMALIZED>
+L	ab_34_22	108	|-end|p2a: Gardevoir|ability: Flash Fire|[silent]
+L	ab_34_22	109	|switch|p2a: Cacturne|Cacturne, L96, M|290/290
+L	ab_34_22	110	|move|p1a: Houndoom|Fire Blast|p2a: Cacturne
+L	ab_34_22	111	|debug|Flash Fire boost
+L	ab_34_22	112	|-supereffective|p2a: Cacturne
+L	ab_34_22	113	|-damage|p2a: Cacturne|0 fnt
+L	ab_34_22	114	|debug|move failed because it did nothing
+L	ab_34_22	115	|faint|p2a: Cacturne
+L	ab_34_22	116	|
+L	ab_34_22	117	|t:|<NORMALIZED>
+L	ab_34_22	118	|switch|p2a: Lanturn|Lanturn, L82, M|339/339
+L	ab_34_22	119	|
+L	ab_34_22	120	|-heal|p1a: Houndoom|202/248|[from] item: Leftovers
+L	ab_34_22	121	|upkeep
+L	ab_34_22	122	|turn|11
+L	ab_34_22	123	|
+L	ab_34_22	124	|t:|<NORMALIZED>
+L	ab_34_22	125	|-end|p1a: Houndoom|ability: Flash Fire|[silent]
+L	ab_34_22	126	|switch|p1a: Solrock|Solrock, L84|255/255
+L	ab_34_22	127	|move|p2a: Lanturn|Rest|p2a: Lanturn
+L	ab_34_22	128	|-fail|p2a: Lanturn|heal
+L	ab_34_22	129	|
+L	ab_34_22	130	|upkeep
+L	ab_34_22	131	|turn|12
+L	ab_34_22	132	|
+L	ab_34_22	133	|t:|<NORMALIZED>
+L	ab_34_22	134	|move|p1a: Solrock|Rock Slide|p2a: Lanturn
+L	ab_34_22	135	|-damage|p2a: Lanturn|228/339
+L	ab_34_22	136	|move|p2a: Lanturn|Rest|p2a: Lanturn
+L	ab_34_22	137	|-status|p2a: Lanturn|slp|[from] move: Rest
+L	ab_34_22	138	|-heal|p2a: Lanturn|339/339 slp|[silent]
+L	ab_34_22	139	|
+L	ab_34_22	140	|upkeep
+L	ab_34_22	141	|turn|13
+L	ab_34_22	142	|
+L	ab_34_22	143	|t:|<NORMALIZED>
+L	ab_34_22	144	|move|p1a: Solrock|Earthquake|p2a: Lanturn
+L	ab_34_22	145	|-supereffective|p2a: Lanturn
+L	ab_34_22	146	|-damage|p2a: Lanturn|146/339 slp
+L	ab_34_22	147	|cant|p2a: Lanturn|slp
+L	ab_34_22	148	|
+L	ab_34_22	149	|-heal|p2a: Lanturn|167/339 slp|[from] item: Leftovers
+L	ab_34_22	150	|upkeep
+L	ab_34_22	151	|turn|14
+L	ab_34_22	152	|
+L	ab_34_22	153	|t:|<NORMALIZED>
+L	ab_34_22	154	|move|p1a: Solrock|Toxic||[still]
+L	ab_34_22	155	|-fail|p1a: Solrock
+L	ab_34_22	156	|debug|move failed because it did nothing
+L	ab_34_22	157	|cant|p2a: Lanturn|slp
+L	ab_34_22	158	|
+L	ab_34_22	159	|-heal|p2a: Lanturn|188/339 slp|[from] item: Leftovers
+L	ab_34_22	160	|upkeep
+L	ab_34_22	161	|turn|15
+L	ab_34_22	162	|
+L	ab_34_22	163	|t:|<NORMALIZED>
+L	ab_34_22	164	|switch|p2a: Swellow|Swellow, L80, M|227/227
+L	ab_34_22	165	|move|p1a: Solrock|Protect||[still]
+L	ab_34_22	166	|-fail|p1a: Solrock
+L	ab_34_22	167	|
+L	ab_34_22	168	|upkeep
+L	ab_34_22	169	|turn|16
+L	ab_34_22	170	|
+L	ab_34_22	171	|t:|<NORMALIZED>
+L	ab_34_22	172	|move|p2a: Swellow|Double-Edge|p1a: Solrock
+L	ab_34_22	173	|-resisted|p1a: Solrock
+L	ab_34_22	174	|-damage|p1a: Solrock|168/255
+L	ab_34_22	175	|-damage|p2a: Swellow|198/227|[from] Recoil|[of] p1a: Solrock
+L	ab_34_22	176	|move|p1a: Solrock|Toxic|p2a: Swellow
+L	ab_34_22	177	|-status|p2a: Swellow|tox
+L	ab_34_22	178	|
+L	ab_34_22	179	|-damage|p2a: Swellow|184/227 tox|[from] psn
+L	ab_34_22	180	|-heal|p1a: Solrock|183/255|[from] item: Leftovers
+L	ab_34_22	181	|upkeep
+L	ab_34_22	182	|turn|17
+L	ab_34_22	183	|
+L	ab_34_22	184	|t:|<NORMALIZED>
+L	ab_34_22	185	|switch|p2a: Gardevoir|Gardevoir, L79, M|237/237
+L	ab_34_22	186	|-ability|p2a: Gardevoir|Levitate|Trace|[from] ability: Trace|[of] p1a: Solrock
+L	ab_34_22	187	|move|p1a: Solrock|Toxic|p2a: Gardevoir
+L	ab_34_22	188	|-status|p2a: Gardevoir|tox
+L	ab_34_22	189	|
+L	ab_34_22	190	|-damage|p2a: Gardevoir|223/237 tox|[from] psn
+L	ab_34_22	191	|-heal|p1a: Solrock|198/255|[from] item: Leftovers
+L	ab_34_22	192	|upkeep
+L	ab_34_22	193	|turn|18
+L	ab_34_22	194	|
+L	ab_34_22	195	|t:|<NORMALIZED>
+L	ab_34_22	196	|switch|p2a: Swellow|Swellow, L80, M|184/227 tox
+L	ab_34_22	197	|switch|p1a: Lugia|Lugia, L70|256/264
+L	ab_34_22	198	|-ability|p1a: Lugia|Pressure|[silent]
+L	ab_34_22	199	|
+L	ab_34_22	200	|-damage|p2a: Swellow|170/227 tox|[from] psn
+L	ab_34_22	201	|-heal|p1a: Lugia|264/264|[from] item: Leftovers
+L	ab_34_22	202	|upkeep
+L	ab_34_22	203	|turn|19
+L	ab_34_22	204	|
+L	ab_34_22	205	|t:|<NORMALIZED>
+L	ab_34_22	206	|move|p2a: Swellow|Aerial Ace|p1a: Lugia
+L	ab_34_22	207	|-damage|p1a: Lugia|157/264
+L	ab_34_22	208	|move|p1a: Lugia|Thunderbolt|p2a: Swellow
+L	ab_34_22	209	|-supereffective|p2a: Swellow
+L	ab_34_22	210	|-damage|p2a: Swellow|35/227 tox
+L	ab_34_22	211	|
+L	ab_34_22	212	|-damage|p2a: Swellow|7/227 tox|[from] psn
+L	ab_34_22	213	|-heal|p1a: Lugia|173/264|[from] item: Leftovers
+L	ab_34_22	214	|upkeep
+L	ab_34_22	215	|turn|20
+L	ab_34_22	216	|
+L	ab_34_22	217	|t:|<NORMALIZED>
+L	ab_34_22	218	|move|p2a: Swellow|Aerial Ace|p1a: Lugia
+L	ab_34_22	219	|-damage|p1a: Lugia|62/264
+L	ab_34_22	220	|move|p1a: Lugia|Calm Mind|p1a: Lugia
+L	ab_34_22	221	|-boost|p1a: Lugia|spa|1
+L	ab_34_22	222	|-boost|p1a: Lugia|spd|1
+L	ab_34_22	223	|
+L	ab_34_22	224	|-damage|p2a: Swellow|0 fnt|[from] psn
+L	ab_34_22	225	|faint|p2a: Swellow
+L	ab_34_22	226	|-heal|p1a: Lugia|78/264|[from] item: Leftovers
+L	ab_34_22	227	|upkeep
+L	ab_34_22	228	|
+L	ab_34_22	229	|t:|<NORMALIZED>
+L	ab_34_22	230	|switch|p2a: Venomoth|Venomoth, L87, M|264/264
+L	ab_34_22	231	|turn|21
+L	ab_34_22	232	|
+L	ab_34_22	233	|t:|<NORMALIZED>
+L	ab_34_22	234	|move|p2a: Venomoth|Sludge Bomb|p1a: Lugia
+L	ab_34_22	235	|-crit|p1a: Lugia
+L	ab_34_22	236	|-damage|p1a: Lugia|0 fnt
+L	ab_34_22	237	|faint|p1a: Lugia
+L	ab_34_22	238	|
+L	ab_34_22	239	|t:|<NORMALIZED>
+L	ab_34_22	240	|switch|p1a: Houndoom|Houndoom, L79, M|202/248
+L	ab_34_22	241	|
+L	ab_34_22	242	|-heal|p1a: Houndoom|217/248|[from] item: Leftovers
+L	ab_34_22	243	|upkeep
+L	ab_34_22	244	|turn|22
+L	ab_34_22	245	|
+L	ab_34_22	246	|t:|<NORMALIZED>
+L	ab_34_22	247	|move|p2a: Venomoth|Sludge Bomb|p1a: Houndoom
+L	ab_34_22	248	|-damage|p1a: Houndoom|102/248
+L	ab_34_22	249	|-status|p1a: Houndoom|psn
+L	ab_34_22	250	|move|p1a: Houndoom|Fire Blast|p2a: Venomoth
+L	ab_34_22	251	|-supereffective|p2a: Venomoth
+L	ab_34_22	252	|-crit|p2a: Venomoth
+L	ab_34_22	253	|-damage|p2a: Venomoth|0 fnt
+L	ab_34_22	254	|debug|Shield Dust prevent secondary
+L	ab_34_22	255	|faint|p2a: Venomoth
+L	ab_34_22	256	|
+L	ab_34_22	257	|t:|<NORMALIZED>
+L	ab_34_22	258	|switch|p2a: Gardevoir|Gardevoir, L79, M|223/237 tox
+L	ab_34_22	259	|-ability|p2a: Gardevoir|Flash Fire|Trace|[from] ability: Trace|[of] p1a: Houndoom
+L	ab_34_22	260	|
+L	ab_34_22	261	|-heal|p1a: Houndoom|117/248 psn|[from] item: Leftovers
+L	ab_34_22	262	|-damage|p1a: Houndoom|86/248 psn|[from] psn
+L	ab_34_22	263	|-heal|p2a: Gardevoir|237/237 tox|[from] item: Leftovers
+L	ab_34_22	264	|-damage|p2a: Gardevoir|223/237 tox|[from] psn
+L	ab_34_22	265	|upkeep
+L	ab_34_22	266	|turn|23
+L	ab_34_22	267	|
+L	ab_34_22	268	|t:|<NORMALIZED>
+L	ab_34_22	269	|move|p1a: Houndoom|Fire Blast|p2a: Gardevoir
+L	ab_34_22	270	|-start|p2a: Gardevoir|ability: Flash Fire
+L	ab_34_22	271	|move|p2a: Gardevoir|Psychic|p1a: Houndoom
+L	ab_34_22	272	|-immune|p1a: Houndoom
+L	ab_34_22	273	|
+L	ab_34_22	274	|-heal|p1a: Houndoom|101/248 psn|[from] item: Leftovers
+L	ab_34_22	275	|-damage|p1a: Houndoom|70/248 psn|[from] psn
+L	ab_34_22	276	|-heal|p2a: Gardevoir|237/237 tox|[from] item: Leftovers
+L	ab_34_22	277	|-damage|p2a: Gardevoir|209/237 tox|[from] psn
+L	ab_34_22	278	|upkeep
+L	ab_34_22	279	|turn|24
+L	ab_34_22	280	|
+L	ab_34_22	281	|t:|<NORMALIZED>
+L	ab_34_22	282	|move|p1a: Houndoom|Crunch|p2a: Gardevoir
+L	ab_34_22	283	|-supereffective|p2a: Gardevoir
+L	ab_34_22	284	|-damage|p2a: Gardevoir|58/237 tox
+L	ab_34_22	285	|move|p2a: Gardevoir|Psychic|p1a: Houndoom
+L	ab_34_22	286	|-immune|p1a: Houndoom
+L	ab_34_22	287	|
+L	ab_34_22	288	|-heal|p1a: Houndoom|85/248 psn|[from] item: Leftovers
+L	ab_34_22	289	|-damage|p1a: Houndoom|54/248 psn|[from] psn
+L	ab_34_22	290	|-heal|p2a: Gardevoir|72/237 tox|[from] item: Leftovers
+L	ab_34_22	291	|-damage|p2a: Gardevoir|30/237 tox|[from] psn
+L	ab_34_22	292	|upkeep
+L	ab_34_22	293	|turn|25
+L	ab_34_22	294	|
+L	ab_34_22	295	|t:|<NORMALIZED>
+L	ab_34_22	296	|move|p1a: Houndoom|Fire Blast|p2a: Gardevoir|[miss]
+L	ab_34_22	297	|-miss|p1a: Houndoom|p2a: Gardevoir
+L	ab_34_22	298	|move|p2a: Gardevoir|Psychic|p1a: Houndoom
+L	ab_34_22	299	|-immune|p1a: Houndoom
+L	ab_34_22	300	|
+L	ab_34_22	301	|-heal|p1a: Houndoom|69/248 psn|[from] item: Leftovers
+L	ab_34_22	302	|-damage|p1a: Houndoom|38/248 psn|[from] psn
+L	ab_34_22	303	|-heal|p2a: Gardevoir|44/237 tox|[from] item: Leftovers
+L	ab_34_22	304	|-damage|p2a: Gardevoir|0 fnt|[from] psn
+L	ab_34_22	305	|faint|p2a: Gardevoir
+L	ab_34_22	306	|upkeep
+L	ab_34_22	307	|
+L	ab_34_22	308	|t:|<NORMALIZED>
+L	ab_34_22	309	|switch|p2a: Scyther|Scyther, L81, M|158/246
+L	ab_34_22	310	|turn|26
+L	ab_34_22	311	|
+L	ab_34_22	312	|t:|<NORMALIZED>
+L	ab_34_22	313	|move|p2a: Scyther|Aerial Ace|p1a: Houndoom
+L	ab_34_22	314	|-damage|p1a: Houndoom|0 fnt
+L	ab_34_22	315	|faint|p1a: Houndoom
+L	ab_34_22	316	|
+L	ab_34_22	317	|t:|<NORMALIZED>
+L	ab_34_22	318	|switch|p1a: Heracross|Heracross, L77, M|150/250
+L	ab_34_22	319	|
+L	ab_34_22	320	|upkeep
+L	ab_34_22	321	|turn|27
+L	ab_34_22	322	|
+L	ab_34_22	323	|t:|<NORMALIZED>
+L	ab_34_22	324	|switch|p1a: Suicune|Suicune, L74|270/270
+L	ab_34_22	325	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_34_22	326	|move|p2a: Scyther|Swords Dance|p2a: Scyther
+L	ab_34_22	327	|-boost|p2a: Scyther|atk|2
+L	ab_34_22	328	|
+L	ab_34_22	329	|upkeep
+L	ab_34_22	330	|turn|28
+L	ab_34_22	331	|
+L	ab_34_22	332	|t:|<NORMALIZED>
+L	ab_34_22	333	|switch|p1a: Heracross|Heracross, L77, M|150/250
+L	ab_34_22	334	|move|p2a: Scyther|Swords Dance|p2a: Scyther
+L	ab_34_22	335	|-boost|p2a: Scyther|atk|2
+L	ab_34_22	336	|
+L	ab_34_22	337	|upkeep
+L	ab_34_22	338	|turn|29
+L	ab_34_22	339	|
+L	ab_34_22	340	|t:|<NORMALIZED>
+L	ab_34_22	341	|move|p2a: Scyther|Swords Dance|p2a: Scyther
+L	ab_34_22	342	|-boost|p2a: Scyther|atk|2
+L	ab_34_22	343	|move|p1a: Heracross|Reversal|p2a: Scyther
+L	ab_34_22	344	|debug|BP: 40
+L	ab_34_22	345	|-resisted|p2a: Scyther
+L	ab_34_22	346	|-damage|p2a: Scyther|147/246
+L	ab_34_22	347	|
+L	ab_34_22	348	|upkeep
+L	ab_34_22	349	|turn|30
+L	ab_34_22	350	|
+L	ab_34_22	351	|t:|<NORMALIZED>
+L	ab_34_22	352	|move|p2a: Scyther|Aerial Ace|p1a: Heracross
+L	ab_34_22	353	|-supereffective|p1a: Heracross
+L	ab_34_22	354	|-damage|p1a: Heracross|0 fnt
+L	ab_34_22	355	|faint|p1a: Heracross
+L	ab_34_22	356	|
+L	ab_34_22	357	|t:|<NORMALIZED>
+L	ab_34_22	358	|switch|p1a: Suicune|Suicune, L74|270/270
+L	ab_34_22	359	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_34_22	360	|
+L	ab_34_22	361	|upkeep
+L	ab_34_22	362	|turn|31
+L	ab_34_22	363	|
+L	ab_34_22	364	|t:|<NORMALIZED>
+L	ab_34_22	365	|move|p2a: Scyther|Aerial Ace|p1a: Suicune
+L	ab_34_22	366	|-damage|p1a: Suicune|46/270
+L	ab_34_22	367	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_34_22	368	|
+L	ab_34_22	369	|-heal|p1a: Suicune|62/270|[from] item: Leftovers
+L	ab_34_22	370	|upkeep
+L	ab_34_22	371	|turn|32
+L	ab_34_22	372	|
+L	ab_34_22	373	|t:|<NORMALIZED>
+L	ab_34_22	374	|switch|p1a: Solrock|Solrock, L84|198/255
+L	ab_34_22	375	|move|p2a: Scyther|Aerial Ace|p1a: Solrock
+L	ab_34_22	376	|-resisted|p1a: Solrock
+L	ab_34_22	377	|-damage|p1a: Solrock|59/255
+L	ab_34_22	378	|
+L	ab_34_22	379	|-heal|p1a: Solrock|74/255|[from] item: Leftovers
+L	ab_34_22	380	|upkeep
+L	ab_34_22	381	|turn|33
+L	ab_34_22	382	|
+L	ab_34_22	383	|t:|<NORMALIZED>
+L	ab_34_22	384	|switch|p2a: Lanturn|Lanturn, L82, M|188/339 slp
+L	ab_34_22	385	|switch|p1a: Suicune|Suicune, L74|62/270
+L	ab_34_22	386	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_34_22	387	|
+L	ab_34_22	388	|-heal|p1a: Suicune|78/270|[from] item: Leftovers
+L	ab_34_22	389	|-heal|p2a: Lanturn|209/339 slp|[from] item: Leftovers
+L	ab_34_22	390	|upkeep
+L	ab_34_22	391	|turn|34
+L	ab_34_22	392	|
+L	ab_34_22	393	|t:|<NORMALIZED>
+L	ab_34_22	394	|switch|p1a: Solrock|Solrock, L84|74/255
+L	ab_34_22	395	|-curestatus|p2a: Lanturn|slp|[msg]
+L	ab_34_22	396	|move|p2a: Lanturn|Rest|p2a: Lanturn
+L	ab_34_22	397	|-status|p2a: Lanturn|slp|[from] move: Rest
+L	ab_34_22	398	|-heal|p2a: Lanturn|339/339 slp|[silent]
+L	ab_34_22	399	|
+L	ab_34_22	400	|-heal|p1a: Solrock|89/255|[from] item: Leftovers
+L	ab_34_22	401	|upkeep
+L	ab_34_22	402	|turn|35
+L	ab_34_22	403	|
+L	ab_34_22	404	|t:|<NORMALIZED>
+L	ab_34_22	405	|move|p1a: Solrock|Toxic||[still]
+L	ab_34_22	406	|-fail|p1a: Solrock
+L	ab_34_22	407	|debug|move failed because it did nothing
+L	ab_34_22	408	|cant|p2a: Lanturn|slp
+L	ab_34_22	409	|
+L	ab_34_22	410	|-heal|p1a: Solrock|104/255|[from] item: Leftovers
+L	ab_34_22	411	|upkeep
+L	ab_34_22	412	|turn|36
+L	ab_34_22	413	|
+L	ab_34_22	414	|t:|<NORMALIZED>
+L	ab_34_22	415	|switch|p2a: Scyther|Scyther, L81, M|147/246
+L	ab_34_22	416	|move|p1a: Solrock|Toxic|p2a: Scyther
+L	ab_34_22	417	|-status|p2a: Scyther|tox
+L	ab_34_22	418	|
+L	ab_34_22	419	|-damage|p2a: Scyther|132/246 tox|[from] psn
+L	ab_34_22	420	|-heal|p1a: Solrock|119/255|[from] item: Leftovers
+L	ab_34_22	421	|upkeep
+L	ab_34_22	422	|turn|37
+L	ab_34_22	423	|
+L	ab_34_22	424	|t:|<NORMALIZED>
+L	ab_34_22	425	|switch|p1a: Suicune|Suicune, L74|78/270
+L	ab_34_22	426	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_34_22	427	|move|p2a: Scyther|Aerial Ace|p1a: Suicune
+L	ab_34_22	428	|-damage|p1a: Suicune|18/270
+L	ab_34_22	429	|
+L	ab_34_22	430	|-damage|p2a: Scyther|102/246 tox|[from] psn
+L	ab_34_22	431	|-heal|p1a: Suicune|34/270|[from] item: Leftovers
+L	ab_34_22	432	|upkeep
+L	ab_34_22	433	|turn|38
+L	ab_34_22	434	|
+L	ab_34_22	435	|t:|<NORMALIZED>
+L	ab_34_22	436	|move|p2a: Scyther|Aerial Ace|p1a: Suicune
+L	ab_34_22	437	|-damage|p1a: Suicune|0 fnt
+L	ab_34_22	438	|faint|p1a: Suicune
+L	ab_34_22	439	|
+L	ab_34_22	440	|t:|<NORMALIZED>
+L	ab_34_22	441	|switch|p1a: Solrock|Solrock, L84|119/255
+L	ab_34_22	442	|
+L	ab_34_22	443	|-damage|p2a: Scyther|57/246 tox|[from] psn
+L	ab_34_22	444	|-heal|p1a: Solrock|134/255|[from] item: Leftovers
+L	ab_34_22	445	|upkeep
+L	ab_34_22	446	|turn|39
+L	ab_34_22	447	|
+L	ab_34_22	448	|t:|<NORMALIZED>
+L	ab_34_22	449	|move|p1a: Solrock|Protect|p1a: Solrock
+L	ab_34_22	450	|-singleturn|p1a: Solrock|Protect
+L	ab_34_22	451	|move|p2a: Scyther|Silver Wind|p1a: Solrock
+L	ab_34_22	452	|-activate|p1a: Solrock|Protect
+L	ab_34_22	453	|
+L	ab_34_22	454	|-enditem|p2a: Scyther|Liechi Berry|[eat]
+L	ab_34_22	455	|-boost|p2a: Scyther|atk|1|[from] item: Liechi Berry
+L	ab_34_22	456	|-damage|p2a: Scyther|0 fnt|[from] psn
+L	ab_34_22	457	|faint|p2a: Scyther
+L	ab_34_22	458	|-heal|p1a: Solrock|149/255|[from] item: Leftovers
+L	ab_34_22	459	|upkeep
+L	ab_34_22	460	|
+L	ab_34_22	461	|t:|<NORMALIZED>
+L	ab_34_22	462	|switch|p2a: Lanturn|Lanturn, L82, M|339/339 slp
+L	ab_34_22	463	|turn|40
+L	ab_34_22	464	|
+L	ab_34_22	465	|t:|<NORMALIZED>
+L	ab_34_22	466	|move|p1a: Solrock|Earthquake|p2a: Lanturn
+L	ab_34_22	467	|-supereffective|p2a: Lanturn
+L	ab_34_22	468	|-damage|p2a: Lanturn|161/339 slp
+L	ab_34_22	469	|cant|p2a: Lanturn|slp
+L	ab_34_22	470	|
+L	ab_34_22	471	|-heal|p1a: Solrock|164/255|[from] item: Leftovers
+L	ab_34_22	472	|-heal|p2a: Lanturn|182/339 slp|[from] item: Leftovers
+L	ab_34_22	473	|upkeep
+L	ab_34_22	474	|turn|41
+L	ab_34_22	475	|
+L	ab_34_22	476	|t:|<NORMALIZED>
+L	ab_34_22	477	|move|p1a: Solrock|Rock Slide|p2a: Lanturn
+L	ab_34_22	478	|-crit|p2a: Lanturn
+L	ab_34_22	479	|-damage|p2a: Lanturn|0 fnt
+L	ab_34_22	480	|faint|p2a: Lanturn
+L	ab_34_22	481	|
+L	ab_34_22	482	|win|P1

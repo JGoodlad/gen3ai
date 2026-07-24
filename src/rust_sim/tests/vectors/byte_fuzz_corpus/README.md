@@ -41,6 +41,13 @@ The fixtures are named by the form they guard, e.g.:
 | `39_white_herb_midbattle_residual_restore.txt` | White Herb restores a MID-BATTLE Intimidate-switch-in drop at the order-29 end-of-turn residual when the holder does not move (the ab_7_4 case) |
 | `40_soundproof_damaging_immune.txt` | a DAMAGING `flags.sound` move (Hyper Voice) into a Soundproof holder → `\|-immune\|…\|[from] ability: Soundproof` (accuracy-only draw, no crit/damage — `gen3_ability_batch2_v1`) |
 | `41_liechi_atcap_boost.txt` | a pinch-berry (Liechi) eaten at the +6 stat cap emits the delta-0 `\|-boost\|…\|<stat>\|0` line (NO `[from] item:` cause — the item sibling of Agility@+6 `spe\|0`; the ab_1_6 case) |
+| `58_leech_seed_into_a_protecting_grass_foe.txt` | **RANDBATS tail** — Leech Seed into a PROTECTING **Grass** foe emits `\|-activate\|<t>\|Protect`, NOT `\|-immune\|` (gen3 `tryMoveHit` reports `runEvent('TryHit')` BEFORE `naturalImmunity`) |
+| `59_white_herb_after_the_contact_proc.txt` | **RANDBATS tail** — White Herb's `onAnyAfterMove` restore emits AFTER the DamagingHit-phase proc: `-unboost` ×2 → `\|-status\|…\|[from] ability: Poison Point` → `\|-enditem\|…\|White Herb` |
+| `60_fire_thaw_before_the_static_proc.txt` | **RANDBATS tail** — inside `runEvent('DamagingHit')` the defender's `frz` STATUS handler is gathered before its ABILITY handler: `\|-curestatus\|<t>\|frz\|[msg]` precedes `\|-status\|<a>\|par\|[from] ability: Static` |
+| `61_wonder_guard_blocks_a_sun_skipped_solar_beam.txt` | **RANDBATS tail** — a SUN-SKIPPED Solar Beam into Shedinja still emits `\|-immune\|…\|[from] ability: Wonder Guard` (only the `\|move\|` announce is suppressed) |
+| `62_traced_flash_fire_absorbs_will_o_wisp.txt` | **RANDBATS tail** — a Will-O-Wisp absorbed by a (TRACED) Flash Fire emits `\|-start\|<t>\|ability: Flash Fire` on the first absorb / `\|-immune\|…\|[from] ability: Flash Fire` once armed (was a SILENT arm) |
+| `63_liquid_ooze_leech_double_faint_order.txt` | **RANDBATS tail** — the Liquid-Ooze leech reversal is an INSTAFAINT (`faintMessages(lastFirst=true)`): the reversal-KO'd SEEDER's `\|faint\|` precedes the leech-KO'd seeded mon's |
+| `64_choicelock_lazy_release_after_knock_off.txt` | **RANDBATS tail** (a `kind=seed` guard) — the `choicelock` volatile survives a Knock Off / Trick of the Choice item until the NEXT endTurn `DisableMove` event, so that event STILL counts it in the handler-sort tie-shuffle |
 
 ## Two fixture classes (the KNOWN-RESIDUAL allowlist gate)
 

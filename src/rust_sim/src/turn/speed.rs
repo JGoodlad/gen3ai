@@ -142,7 +142,7 @@ impl crate::state::BattleState {
     /// `probe_disable_full_lifecycle.js`): a taunt+disable mon draws one size-2 shuffle at
     /// endTurn; a taunt-only / disable-only mon draws none. This is the ONLY `DisableMove`-event
     /// draw (`singleEvent('DisableMove', …)` per moveslot is a no-sort/no-RNG `singleEvent`).
-    pub(crate) fn disable_move_event_shuffle(&mut self) {
+    pub(crate) fn disable_move_event_shuffle(&mut self, dex: &Dex) {
         // Per active mon in ARRAY order (p1 then p2), mirroring `for pokemon of getAllActive()`.
         // The sim's endTurn per-mon loop runs `runEvent('DisableMove')` THEN the TRAPPING
         // events (`runEvent('TrapPokemon')` + `runEvent('MaybeTrapPokemon')`,
@@ -181,6 +181,25 @@ impl crate::state::BattleState {
                     })
                     .collect();
                 speed_sort(&mut handlers, &mut self.prng);
+            }
+            // The `choicelock` handler's SELF-REMOVAL (`gen3_choicelock_lazy_release_v1`): the
+            // resolved gen3 `choicelock.onDisableMove` opens with
+            //     if (!pokemon.getItem().isChoice || !pokemon.hasMove(effectState.move))
+            //         { pokemon.removeVolatile('choicelock'); return; }
+            // — so a mon whose Choice item was Knocked Off / Thief'd / Trick'd away still
+            // GATHERS the handler for THIS event (it counted in `n` above) and only then drops
+            // the volatile. Doing it here (after the count) is what keeps the endTurn draw
+            // count bit-for-bit; the SIM PROBE `harness/probe_rb_choicelock.js` pins both
+            // halves (the Knock-Off turn's endTurn still draws the encore+choicelock shuffle;
+            // the next turn's does not). Draw-free.
+            let mon = &mut self.sides[side].pokemon[slot];
+            if mon.choice_locked_move.is_some()
+                && !dex
+                    .item(&crate::dex::to_id(&mon.item))
+                    .map(|i| i.choice)
+                    .unwrap_or(false)
+            {
+                mon.choice_locked_move = None;
             }
             // [gen3_trapping_v1] The TRAPPING runEvents for THIS mon (right after its
             // DisableMove event, mirroring the sim's per-mon endTurn loop).

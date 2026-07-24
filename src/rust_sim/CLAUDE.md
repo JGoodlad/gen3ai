@@ -4330,6 +4330,104 @@ screen up — the sim's confusion self-hit `getDamage` draws a **ModifyDamagePha
 Spheal switches BACK in at dec48 already damaged (67 sim / 9 port), the +58 rooted in an earlier appearance,
 surfacing on the switch-in (needs the full damage-history trace).
 
+### ROUND 24 (FIX) — the RANDBATS emission tail: 6 emission-ORDER bugs + the CHOICE-LOCK lazy release
+
+The `--mode randbats --protocol` arm (Showdown's OWN gen3 random-battle sets — the
+production-critical surface that gates random-battle RL training) left a 12-divergence tail over
+5000 battles (~0.24%). Every one is now FIXED, each SIM-PROBE-confirmed against the resolved
+`Dex.mod('gen3')` (probes `harness/probe_rb_tail.js` + `harness/probe_rb_choicelock.js`) and
+frozen as a revert-verified corpus fixture (`tests/vectors/byte_fuzz_corpus/58_*`…`64_*` — each
+proven a ONE-TO-ONE pin: reverting its own fix diverges EXACTLY its fixture and no other). All
+seven are OBSERVATION-ONLY or draw-count-restoring: the full `cargo test` is GREEN (562 tests,
+0 fail), the e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` is UNCHANGED, and every committed
+seed golden stays BYTE-IDENTICAL (no golden regenerated).
+
+- **CLUSTER 1 — LEECH SEED × PROTECT** (4 repros; `turn/status_moves.rs` leechseed arm). gen-3
+  `tryMoveHit` (mods/gen3/scripts.ts:307-388) COMPUTES `naturalImmunity` early but REPORTS it only
+  on the `accPass` branch AFTER `runEvent('TryHit')`:
+  `if (accPass) { hitResult = runEvent('TryHit'); if (!hitResult) return false; else if
+  (naturalImmunity) add('-immune'); }`. So a PROTECTED **Grass** target shows
+  `|-activate|<t>|Protect`, NOT `|-immune|` — Protect wins the TryHit event even though Leech
+  Seed's `onTryImmunity` already flagged the Grass immunity. The port's arm reported the Grass
+  `-immune` FIRST. FIX: the (acc_hit-gated) protect block moves AHEAD of the Grass immunity; on a
+  MISS naturalImmunity still wins (`-immune`, not `-miss`). SIM-PROBED (C1a/C1b/C1c): the
+  protected-Grass and protected-non-Grass turns share the SAME post-turn seed → EMISSION-ORDER
+  only. Fixture `58_leech_seed_into_a_protecting_grass_foe.txt`. This is the leechseed-arm sibling
+  of the general status path's earlier "Protect-before-immunity ORDER" fix.
+- **CLUSTER 2 — WHITE HERB vs the on-hit PROCS** (2 repros; `turn/residuals.rs::apply_self_drops` +
+  `turn/secondaries.rs::apply_secondary_boost`). gen3 White Herb's ONLY in-turn trigger is
+  `onAnyAfterMove`, which the sim runs at the END of `runMove` — AFTER the whole move body
+  (selfDrops → secondaries → onAfterHit → the DamagingHit-phase procs). The port restored INLINE at
+  the two boost sites, emitting `|-enditem|…|White Herb` one phase EARLY. SIM-PROBED (C2a/C2b): a
+  White-Herb Superpower into a POISON POINT / ROUGH SKIN holder emits `-unboost` ×2 → the PROC line
+  → `-enditem` → `-clearnegativeboost`. FIX: both inline restores REMOVED; the driver's
+  `QAction::Move` tail (`turn/driver.rs`, the existing `onAnyAfterMove` site) is now the SINGLE
+  in-turn restore point (the `onAnySwitchIn` + order-29 residual sites are unchanged). Fixture
+  `59_white_herb_after_the_contact_proc.txt`.
+- **CLUSTER 3 — the FIRE-MOVE THAW vs the CONTACT PROC** (2 repros; `turn/moves.rs`, both the
+  single-hit and `run_multihit` tails). `DamagingHit` is one of the FOUR events sorted by
+  `Battle.compareLeftToRightOrder` (battle.ts:789-790), NOT `speedSort` — and with no
+  `onDamagingHitOrder`/`Priority` on either effect every key ties, so the sort is STABLE and
+  preserves `findPokemonEventHandlers`'s GATHER order: **status → volatiles → ABILITY → item**
+  (battle.ts:1100-1123). So the defender's `frz` thaw runs BEFORE its Static / Rough Skin /
+  Effect Spore ability. The port had the ability first. SIM-PROBED (C3): Fire Punch into a FROZEN
+  Static holder emits `|-damage|…frz` → `|-curestatus|<t>|frz|[msg]` → `|-status|<a>|par|[from]
+  ability: Static|[of] <t>`. Emission-ORDER only (the thaw is draw-free and touches the DEFENDER's
+  status; the proc rolls + statuses the ATTACKER). Fixture `60_fire_thaw_before_the_static_proc.txt`.
+- **WONDER GUARD × a SUN-SKIPPED SOLAR BEAM** (`turn/moves.rs`). The WG (and the sibling Soundproof)
+  block wrapped BOTH its `|move|` announce AND its `|-immune|` line in
+  `if self.logging() && !suppress_announce`, so a sun-skipped Solar Beam (whose announce already
+  emitted in the `[still]`+`-prepare`+`-anim` form) SWALLOWED the `-immune` entirely. FIX: split the
+  guard so only the announce is suppressed — the same split the plain-immune / miss paths already
+  use. SIM-PROBED (S1a): `|move|…||[still]` → `|-prepare|` → `|-anim|` →
+  `|-immune|p1a: Shedinja|[from] ability: Wonder Guard`. Fixture
+  `61_wonder_guard_blocks_a_sun_skipped_solar_beam.txt`.
+- **FLASH FIRE absorbs WILL-O-WISP — SILENTLY** (`turn/status_moves.rs`). The resolved
+  `flashfire.onTryHit` ends with `if (!target.addVolatile('flashfire')) this.add('-immune', target,
+  '[from] ability: Flash Fire')`, so the absorb is NOT silent: a FIRST absorb's `addVolatile` fires
+  the condition's `onStart` → `|-start|<t>|ability: Flash Fire`; an ALREADY-ARMED holder →
+  `|-immune|<t>|[from] ability: Flash Fire` (the split the DAMAGING Fire path already emitted). The
+  port's `gen3_ff_wisp_absorb_v1` arm armed the volatile emitting NOTHING. SIM-PROBED (S2, a TRACED
+  Flash Fire Gardevoir). Fixture `62_traced_flash_fire_absorbs_will_o_wisp.txt`.
+- **LIQUID OOZE × LEECH SEED — the DOUBLE-FAINT ORDER** (`gen3_liquid_ooze_instafaint_v1`;
+  `turn/switch.rs::liquid_ooze_instafaint` + both reversal sites in `turn/residuals.rs`). gen-4's
+  liquidooze reverses the heal with **`this.damage(damage, null, null, null, true)` — instafaint
+  TRUE** (`data/mods/gen4/abilities.ts`), so `spreadDamage` runs `faintMessages(lastFirst = true)`
+  right there, and `lastFirst` UNSHIFTS the LAST-queued corpse to the FRONT (battle.ts:2555-2558).
+  The reversal-KO'd HEALER is therefore announced BEFORE the drain/leech-KO'd holder — the OPPOSITE
+  of plain enqueue order, which is all the port modeled. SIM-PROBED (S3): `|-damage|Swalot|0 fnt|
+  [from] Leech Seed` → `|-damage|Jumpluff|0 fnt|[from] ability: Liquid Ooze` → `|faint|Jumpluff` →
+  `|faint|Swalot`. The new helper rotates `faint_emit_queue` then drains it; wired at BOTH reversal
+  sites (leech residual + `apply_drain`), gated on the reversal actually zeroing the healer's HP
+  (the sim's `if (target.hp <= 0)` instafaint gate). Fixture
+  `63_liquid_ooze_leech_double_faint_order.txt`.
+- **THE CHOICE-LOCK LAZY RELEASE** (`gen3_choicelock_lazy_release_v1` — the round's only
+  `kind=seed` bug; `state.rs::choice_lock_enforced` + `turn/speed.rs::disable_move_event_shuffle` +
+  `turn/items.rs::apply_item_removal` + the Trick arm). The resolved gen3 `choicelock.onDisableMove`
+  opens with `if (!pokemon.getItem().isChoice || !pokemon.hasMove(effectState.move)) {
+  pokemon.removeVolatile('choicelock'); return; }` — so the VOLATILE **survives** a Knock Off /
+  Thief / Trick that removes the Choice item and is only dropped at the NEXT endTurn
+  `runEvent('DisableMove')`, where it is STILL GATHERED (counting toward that event's handler-sort
+  TIE-SHUFFLE) before self-removing. The port's e2e_126 fix cleared `choice_locked_move` EAGERLY at
+  the item removal, dropping a handler one event early → a MISSING `random` one call before the
+  Quick Claw on an encore+choicelock endTurn (repro `rmrzcanyf_ab_71_14`, whose desync then shifted
+  every later damage roll). FIX: split the VOLATILE (`choice_locked_move`, left set at item removal
+  / Trick) from the ENFORCED lock (`MonState::choice_lock_enforced`, a CURRENT-item read that
+  `move_usable` now uses — so legality still releases immediately, preserving e2e_126), and drop the
+  volatile inside `disable_move_event_shuffle` AFTER the handler count. SIM-PROBED
+  (`probe_rb_choicelock.js`): the Knock-Off turn's endTurn draws **6** vs the no-Band control's
+  **5** (the shuffle STILL fires) and the NEXT turn drops to the control's count with the volatile
+  gone. `hasMove(effectState.move)` stays modeled EAGERLY at its one breaking site (Mimic
+  overwriting its own locked slot, `gen3_mimic_choice_lock_self_overwrite_v1`) — an honest
+  approximation, observable only in a Mimic + Choice + second-disabling-volatile composition.
+  Fixture `64_choicelock_lazy_release_after_knock_off.txt` (a `kind=seed` guard).
+
+**RE-MEASURE** (`--mode randbats --protocol --battles 2500`, both seeds): master-seed **240724**
+BEFORE 7 diverged (protocol 6, seed 1) → **AFTER 0 diverged**; master-seed **606060** BEFORE 5
+diverged (protocol 5, + 2 allowlisted construction) → **AFTER 0 diverged** (the 2 allowlisted
+turn-0 construction residuals remain, unchanged). Probes kept: `harness/probe_rb_tail.js`,
+`harness/probe_rb_choicelock.js`.
+
 ## Data-driven mechanics (the class framework)
 
 **The strategic shift (Phase 1 landed 2026-07-03, `gen3_item_mechanics_v1`):** stop hand-modeling

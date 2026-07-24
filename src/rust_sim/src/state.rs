@@ -1030,10 +1030,40 @@ impl MonState {
         self.move_pp.get(k).copied().unwrap_or(0)
     }
 
+    /// The **ENFORCED** Choice lock (`gen3_choicelock_lazy_release_v1`): the `choicelock`
+    /// VOLATILE (`choice_locked_move`) narrowed by the handler's own early-out.
+    ///
+    /// The resolved gen3 `choicelock.onDisableMove` opens with
+    /// ```js
+    /// if (!pokemon.getItem().isChoice || !pokemon.hasMove(this.effectState.move)) {
+    ///     pokemon.removeVolatile('choicelock'); return;
+    /// }
+    /// ```
+    /// so the lock is enforced ONLY while the mon still HOLDS a Choice item — and the volatile
+    /// itself survives the item's loss until the next `runEvent('DisableMove')` gathers it and
+    /// it self-removes. Keeping the two apart matters for BOTH observables: legality reads the
+    /// ENFORCED lock (a Knock-Off'd / Trick'd mon may pick any move again — the e2e_126
+    /// behaviour), while the endTurn DisableMove tie-shuffle counts the VOLATILE (the missing
+    /// draw in `rmrzcanyf_ab_71_14`; SIM-PROBED by `harness/probe_rb_choicelock.js`, where the
+    /// Knock-Off turn's endTurn STILL draws the encore+choicelock shuffle and the NEXT turn's
+    /// does not).
+    ///
+    /// The `hasMove(effectState.move)` half is modeled EAGERLY at the one site that can break
+    /// it — Mimic overwriting its own locked slot (`gen3_mimic_choice_lock_self_overwrite_v1`,
+    /// `turn/status_moves.rs`) — so this reads only the item half.
+    pub fn choice_lock_enforced(&self, dex: &Dex) -> Option<usize> {
+        let locked = self.choice_locked_move?;
+        if dex.item(&crate::dex::to_id(&self.item)).map(|i| i.choice).unwrap_or(false) {
+            Some(locked)
+        } else {
+            None
+        }
+    }
+
     /// Whether move slot `k` is USABLE now — an in-range slot with >0 PP that is NOT disabled
     /// by any move-SELECTION restriction (`gen3_pp_tracking_v1` + `gen3_taunt_disable_v1`):
     ///   - the **Choice lock** (`choicelock.onDisableMove`): if the mon is choice-locked to slot
-    ///     `j` (`choice_locked_move == Some(j)`), only slot `j` is usable;
+    ///     `j` AND still holds the Choice item (`choice_lock_enforced`), only slot `j` is usable;
     ///   - **DISABLE** (`disable.onDisableMove`): the one recorded `disable` slot is un-usable;
     ///   - **TAUNT** (`taunt.onDisableMove`): EVERY Status-category slot is un-usable (needs the
     ///     dex to read the slot move's category).
@@ -1041,7 +1071,7 @@ impl MonState {
     /// slots are un-usable, the mon is forced to Struggle. The `dex` is read only for Taunt's
     /// per-slot category; the other gates are pure state.
     pub fn move_usable(&self, k: usize, dex: &Dex) -> bool {
-        if let Some(locked) = self.choice_locked_move {
+        if let Some(locked) = self.choice_lock_enforced(dex) {
             if k != locked {
                 return false; // a non-locked slot is disabled by the Choice lock
             }

@@ -1,0 +1,560 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=240724 run_id=rmrzcanyf chunk=4
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_4_0
+TEAM	ab_4_0	p1	Forretress||Leftovers|Sturdy|earthquake,toxic,spikes,hiddenpowersteel|Hardy|85,85,85,85,85,85|M|,,,,30,||81|]Volbeat||Leftovers|Swarm|thunderbolt,batonpass,tailglow,icepunch|Hardy|85,,85,85,85,85|M|,0,,,,||94|]Aipom||Leftovers|RunAway|substitute,return,thunderwave,batonpass|Hardy|85,85,85,85,85,85|M|||93|]Torkoal||Leftovers|WhiteSmoke|hiddenpowergrass,toxic,explosion,fireblast|Hardy|85,85,85,85,85,85|M|,30,,30,,||90|]Xatu||Leftovers|Synchronize|thunderwave,psychic,protect,wish|Hardy|85,,85,85,85,85|M|,0,,,,||84|]Nidoqueen||Leftovers|PoisonPoint|sludgebomb,substitute,icebeam,earthquake|Hardy|85,85,85,85,85,85|F|||82|
+TEAM	ab_4_0	p2	Farfetch’d||Stick|InnerFocus|batonpass,agility,return,swordsdance|Hardy|85,85,85,85,85,85|M|||99|]Cacturne||Leftovers|SandVeil|needlearm,hiddenpowerdark,thunderpunch,spikes|Hardy|85,,85,85,85,85|M|,3,,,,||96|]Umbreon||Leftovers|Synchronize|batonpass,protect,wish,toxic|Hardy|85,,85,85,85,85|M|,0,,,,||88|]Sandslash||Leftovers|SandVeil|rockslide,earthquake,toxic,hiddenpowerbug|Hardy|85,85,85,85,85,85|M|,30,30,,30,||85|]Entei||Leftovers|Pressure|flamethrower,toxic,rest,sleeptalk|Hardy|85,,85,85,85,85|N|,0,,,,||78|]Deoxys||WhiteHerb|Pressure|shadowball,psychoboost,icebeam,superpower|Hardy|85,85,85,85,85,85|N|||71|
+FMT	ab_4_0	gen3customgame
+INIT	ab_4_0	54702,35817,37052,59880	3323785444
+DEC	ab_4_0	0	move	0	0	s2	m1	28793,6651,31028,3915	Aipom	253	253	0	-	0	0	0	0	0	0	6	Farfetch’d	263	263	0	-	0	0	0	0	2	0	6	p1	0	0	0	0	0
+DEC	ab_4_0	1	move	0	0	s3	s4	37456,56458,48364,51802	Torkoal	272	272	0	-	0	0	0	0	0	0	6	Entei	307	307	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_0	2	move	0	0	s2	m2	60327,1328,49746,40517	Forretress	254	254	0	-	0	0	0	0	0	0	6	Entei	307	307	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_4_0	3	move	0	0	m1	m3	60070,39334,52469,18991	Forretress	254	254	0	-	0	0	0	0	0	0	6	Entei	288	307	0	tox	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_4_0	4	move	0	0	m1	m1	45874,19900,6976,9936	Forretress	254	254	0	-	0	0	0	0	0	0	6	Entei	269	307	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_0	5	move	0	0	m0	m2	806,33281,45139,53559	Forretress	254	254	0	-	0	0	0	0	0	0	6	Entei	190	307	0	slp	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_0	6	move	0	0	s3	m0	6085,51272,22703,39030	Aipom	253	253	0	-	0	0	0	0	0	0	6	Entei	209	307	0	slp	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_4_0	7	move	0	0	m1	m1	39070,60455,14704,36522	Aipom	253	253	0	-	0	0	0	0	0	0	6	Entei	123	307	0	slp	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_4_0	8	move	0	0	s2	s3	55216,52876,33933,57813	Torkoal	272	272	0	-	0	0	0	0	0	0	6	Sandslash	266	266	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_4_0	9	move	0	0	s1	m1	32094,26146,45782,6169	Volbeat	217	275	0	-	0	0	0	0	0	0	6	Sandslash	266	266	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_4_0	10	move	0	0	m2	m2	28370,49015,5330,25315	Volbeat	217	275	0	tox	0	0	2	0	0	0	6	Sandslash	266	266	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_4_0	11	move	0	0	m1	m1	28370,49015,5330,25315	Volbeat	217	275	0	tox	0	0	2	0	0	0	6	Sandslash	266	266	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_4_0	12	switch	1	0	s1	-	26319,29920,1295,21575	Torkoal	146	272	0	-	0	0	2	0	0	0	6	Sandslash	266	266	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_4_0	13	move	0	0	m1	m1	34623,57647,15109,40698	Torkoal	23	272	0	-	0	0	2	0	0	0	6	Sandslash	250	266	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_4_0	14	move	0	0	m2	m2	55263,43257,750,54510	Torkoal	0	272	1	fnt	0	0	0	0	0	0	5	Sandslash	0	266	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_4_0	15	switch	1	1	s3	s2	1629,65298,13013,65193	Forretress	254	254	0	-	0	0	0	0	0	0	5	Umbreon	310	310	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_4_0	16	move	0	0	m2	m3	57019,60148,46583,25331	Forretress	254	254	0	-	0	0	0	0	0	0	5	Umbreon	310	310	0	-	0	0	0	0	0	0	5	p2	0	1	0	0	0
+DEC	ab_4_0	17	move	0	0	m2	m2	33329,64078,26457,45986	Forretress	254	254	0	-	0	0	0	0	0	0	5	Umbreon	310	310	0	-	0	0	0	0	0	0	5	p2	0	2	0	0	0
+DEC	ab_4_0	18	move	0	0	m1	s1	3127,2155,58554,772	Forretress	254	254	0	-	0	0	0	0	0	0	5	Cacturne	272	290	0	tox	0	0	0	0	0	0	5	p2	0	2	0	0	0
+DEC	ab_4_0	19	move	0	0	s2	m2	4094,57518,49092,58747	Aipom	176	253	0	-	0	0	0	0	0	0	5	Cacturne	254	290	0	tox	0	0	0	0	0	0	5	p1	0	2	0	0	0
+DEC	ab_4_0	20	move	0	0	s1	m3	46602,52043,12800,64330	Volbeat	217	275	0	tox	0	0	0	0	0	0	5	Cacturne	218	290	0	tox	0	0	0	0	0	0	5	p1	1	2	0	0	0
+DEC	ab_4_0	21	move	0	0	m2	m2	11817,7204,20150,8505	Volbeat	126	275	0	tox	0	0	2	0	0	0	5	Cacturne	164	290	0	tox	0	0	0	0	0	0	5	p1	1	2	0	0	0
+DEC	ab_4_0	22	move	0	0	s5	m3	24311,37870,31320,15168	Nidoqueen	264	282	0	-	0	0	0	0	0	0	5	Cacturne	92	290	0	tox	0	0	0	0	0	0	5	p1	2	2	0	0	0
+DEC	ab_4_0	23	move	0	0	m3	m3	7565,34150,23391,51517	Nidoqueen	281	282	0	-	0	0	0	0	0	0	5	Cacturne	0	290	1	fnt	0	0	0	0	0	0	4	p1	3	2	0	0	0
+DEC	ab_4_0	24	switch	0	1	-	s4	40600,54493,35917,43220	Nidoqueen	281	282	0	-	0	0	0	0	0	0	5	Farfetch’d	263	263	0	-	0	0	0	0	0	0	4	none	3	2	0	0	0
+DEC	ab_4_0	25	move	0	0	s4	m1	14244,56442,63471,44647	Xatu	246	246	0	-	0	0	0	0	0	0	5	Farfetch’d	263	263	0	-	0	0	0	0	2	0	4	p1	3	2	0	0	0
+DEC	ab_4_0	26	move	0	0	m2	m1	18576,60231,790,39169	Xatu	246	246	0	-	0	0	0	0	0	0	5	Farfetch’d	263	263	0	-	0	0	0	0	4	0	4	p1	3	2	0	0	0
+DEC	ab_4_0	27	move	0	0	s1	m3	1450,23098,60153,34088	Aipom	128	253	0	-	0	0	0	0	0	0	5	Farfetch’d	263	263	0	-	2	0	0	0	4	0	4	p1	3	2	0	0	0
+DEC	ab_4_0	28	move	0	0	m1	s1	21480,3429,38384,25660	Aipom	143	253	0	-	0	0	0	0	0	0	5	Umbreon	194	310	0	-	0	0	0	0	0	0	4	p2	3	2	0	1	0
+DEC	ab_4_0	29	move	0	0	m2	m2	29108,51152,42543,32713	Aipom	158	253	0	par	0	0	0	0	0	0	5	Umbreon	213	310	0	par	0	0	0	0	0	0	4	p1	3	2	0	0	0
+DEC	ab_4_0	30	move	0	0	m3	s5	25929,41155,18117,39440	Aipom	158	253	0	par	0	0	0	0	0	0	5	Deoxys	157	188	0	-	0	0	0	0	0	0	4	p2	3	2	0	0	0
+DEC	ab_4_0	31	switch	1	0	s4	-	8291,45728,41470,63251	Nidoqueen	228	282	0	-	0	0	0	0	0	0	5	Deoxys	188	188	0	-	0	0	0	0	0	0	4	none	3	2	0	0	0
+DEC	ab_4_0	32	move	0	0	m2	m3	6181,15452,12426,51221	Nidoqueen	202	282	0	-	0	0	0	0	0	0	5	Deoxys	79	188	0	psn	0	0	0	0	0	0	4	p2	3	2	0	0	0
+DEC	ab_4_0	33	move	0	0	m2	m3	51157,19608,34715,47220	Nidoqueen	106	282	0	-	0	0	0	0	0	0	5	Deoxys	0	188	1	fnt	0	0	0	0	0	0	3	p2	3	2	0	0	0
+DEC	ab_4_0	34	switch	0	1	-	s3	2045,406,53624,30855	Nidoqueen	123	282	0	-	0	0	0	0	0	0	5	Entei	91	307	0	slp	0	0	0	0	0	0	3	none	3	2	0	0	0
+DEC	ab_4_0	35	move	0	0	m0	m3	23151,2689,13802,55354	Nidoqueen	140	282	0	-	0	0	0	0	0	0	5	Entei	23	307	0	-	0	0	0	0	0	0	3	p2	3	2	0	1	0
+DEC	ab_4_0	36	move	0	0	m3	m1	25076,27018,5140,64046	Nidoqueen	140	282	0	-	0	0	0	0	0	0	5	Entei	0	307	1	fnt	0	0	0	0	0	0	2	p2	3	2	0	0	0
+DEC	ab_4_0	37	switch	0	1	-	s5	39701,40061,26001,61673	Nidoqueen	157	282	0	-	0	0	0	0	0	0	5	Umbreon	181	310	0	par	0	0	0	0	0	0	2	none	3	2	0	0	0
+DEC	ab_4_0	38	move	0	0	m0	m3	7329,55009,14010,60502	Nidoqueen	174	282	0	-	0	0	0	0	0	0	5	Umbreon	140	310	0	par	0	0	0	0	0	0	2	p1	3	2	0	0	0
+DEC	ab_4_0	39	move	0	0	m3	m2	41854,13534,19799,9013	Nidoqueen	191	282	0	-	0	0	0	0	0	0	5	Umbreon	89	310	0	par	0	0	0	0	0	0	2	p1	3	2	0	0	0
+DEC	ab_4_0	40	move	0	0	m2	m0	54602,65489,9875,48768	Nidoqueen	191	282	0	-	0	0	0	0	0	0	5	Umbreon	51	310	0	par	0	0	0	0	0	0	2	p1	3	2	0	0	0
+DEC	ab_4_0	41	switch	0	1	-	s1	61749,58897,32483,18243	Nidoqueen	208	282	0	-	0	0	0	0	0	0	5	Farfetch’d	263	263	0	-	0	0	0	0	0	0	2	none	3	2	0	0	0
+DEC	ab_4_0	42	move	0	0	m2	m3	46564,48815,26990,31142	Nidoqueen	225	282	0	-	0	0	0	0	0	0	5	Farfetch’d	151	263	0	-	2	0	0	0	0	0	2	p2	3	2	0	0	0
+DEC	ab_4_0	43	move	0	0	m3	m2	17397,50425,5639,15578	Nidoqueen	0	282	1	fnt	0	0	0	0	0	0	4	Farfetch’d	151	263	0	psn	2	0	0	0	0	0	2	p2	3	2	0	1	0
+DEC	ab_4_0	44	switch	1	0	s2	-	35408,2800,12936,19141	Forretress	206	254	0	-	0	0	0	0	0	0	4	Farfetch’d	119	263	0	psn	2	0	0	0	0	0	2	none	3	2	0	0	0
+DEC	ab_4_0	45	move	0	0	m0	m2	25546,63524,15909,52560	Forretress	72	254	0	-	0	0	0	0	0	0	4	Farfetch’d	87	263	0	psn	2	0	0	0	0	0	2	p2	3	2	0	1	0
+DEC	ab_4_0	46	move	0	0	m0	m3	36137,34547,59594,62850	Forretress	87	254	0	-	0	0	0	0	0	0	4	Farfetch’d	55	263	0	psn	4	0	0	0	0	0	2	p2	3	2	0	0	0
+DEC	ab_4_0	47	move	0	0	m2	m0	36137,34547,59594,62850	Forretress	87	254	0	-	0	0	0	0	0	0	4	Farfetch’d	55	263	0	psn	4	0	0	0	0	0	2	p2	3	2	0	0	0
+DEC	ab_4_0	48	switch	0	1	-	s1	36137,34547,59594,62850	Forretress	87	254	0	-	0	0	0	0	0	0	4	Umbreon	0	310	1	fnt	0	0	0	0	0	0	1	none	3	2	0	0	0
+DEC	ab_4_0	49	switch	0	1	-	s1	11148,13625,1066,3341	Forretress	102	254	0	-	0	0	0	0	0	0	4	Farfetch’d	23	263	0	psn	0	0	0	0	0	0	1	none	3	2	0	0	0
+DEC	ab_4_0	50	move	0	0	m1	m0	26690,37505,64788,47588	Forretress	102	254	0	-	0	0	0	0	0	0	4	Farfetch’d	0	263	1	psn	0	0	0	0	0	0	0	p2	3	2	0	0	0
+END	ab_4_0	1	p1
+L	ab_4_0	0	|t:|<NORMALIZED>
+L	ab_4_0	1	|gametype|singles
+L	ab_4_0	2	|player|p1|P1||
+L	ab_4_0	3	|player|p2|P2||
+L	ab_4_0	4	|gen|3
+L	ab_4_0	5	|tier|[Gen 3] Custom Game
+L	ab_4_0	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_4_0	7	|
+L	ab_4_0	8	|t:|<NORMALIZED>
+L	ab_4_0	9	|teamsize|p1|6
+L	ab_4_0	10	|teamsize|p2|6
+L	ab_4_0	11	|start
+L	ab_4_0	12	|switch|p1a: Forretress|Forretress, L81, M|254/254
+L	ab_4_0	13	|switch|p2a: Farfetch’d|Farfetch’d, L99, M|263/263
+L	ab_4_0	14	|turn|1
+L	ab_4_0	15	|
+L	ab_4_0	16	|t:|<NORMALIZED>
+L	ab_4_0	17	|switch|p1a: Aipom|Aipom, L93, M|253/253
+L	ab_4_0	18	|move|p2a: Farfetch’d|Agility|p2a: Farfetch’d
+L	ab_4_0	19	|-boost|p2a: Farfetch’d|spe|2
+L	ab_4_0	20	|
+L	ab_4_0	21	|upkeep
+L	ab_4_0	22	|turn|2
+L	ab_4_0	23	|
+L	ab_4_0	24	|t:|<NORMALIZED>
+L	ab_4_0	25	|switch|p2a: Entei|Entei, L78|307/307
+L	ab_4_0	26	|-ability|p2a: Entei|Pressure|[silent]
+L	ab_4_0	27	|switch|p1a: Torkoal|Torkoal, L90, M|272/272
+L	ab_4_0	28	|
+L	ab_4_0	29	|upkeep
+L	ab_4_0	30	|turn|3
+L	ab_4_0	31	|
+L	ab_4_0	32	|t:|<NORMALIZED>
+L	ab_4_0	33	|switch|p1a: Forretress|Forretress, L81, M|254/254
+L	ab_4_0	34	|move|p2a: Entei|Rest|p2a: Entei
+L	ab_4_0	35	|-fail|p2a: Entei|heal
+L	ab_4_0	36	|
+L	ab_4_0	37	|upkeep
+L	ab_4_0	38	|turn|4
+L	ab_4_0	39	|
+L	ab_4_0	40	|t:|<NORMALIZED>
+L	ab_4_0	41	|move|p2a: Entei|Sleep Talk|p2a: Entei
+L	ab_4_0	42	|move|p1a: Forretress|Toxic|p2a: Entei
+L	ab_4_0	43	|-status|p2a: Entei|tox
+L	ab_4_0	44	|
+L	ab_4_0	45	|-damage|p2a: Entei|288/307 tox|[from] psn
+L	ab_4_0	46	|upkeep
+L	ab_4_0	47	|turn|5
+L	ab_4_0	48	|
+L	ab_4_0	49	|t:|<NORMALIZED>
+L	ab_4_0	50	|move|p2a: Entei|Toxic|p1a: Forretress|[miss]
+L	ab_4_0	51	|-miss|p2a: Entei|p1a: Forretress
+L	ab_4_0	52	|move|p1a: Forretress|Toxic|p2a: Entei|[miss]
+L	ab_4_0	53	|-miss|p1a: Forretress|p2a: Entei
+L	ab_4_0	54	|
+L	ab_4_0	55	|-heal|p2a: Entei|307/307 tox|[from] item: Leftovers
+L	ab_4_0	56	|-damage|p2a: Entei|269/307 tox|[from] psn
+L	ab_4_0	57	|upkeep
+L	ab_4_0	58	|turn|6
+L	ab_4_0	59	|
+L	ab_4_0	60	|t:|<NORMALIZED>
+L	ab_4_0	61	|move|p2a: Entei|Rest|p2a: Entei
+L	ab_4_0	62	|-status|p2a: Entei|slp|[from] move: Rest
+L	ab_4_0	63	|-heal|p2a: Entei|307/307 slp|[silent]
+L	ab_4_0	64	|move|p1a: Forretress|Earthquake|p2a: Entei
+L	ab_4_0	65	|-supereffective|p2a: Entei
+L	ab_4_0	66	|-damage|p2a: Entei|171/307 slp
+L	ab_4_0	67	|
+L	ab_4_0	68	|-heal|p2a: Entei|190/307 slp|[from] item: Leftovers
+L	ab_4_0	69	|upkeep
+L	ab_4_0	70	|turn|7
+L	ab_4_0	71	|
+L	ab_4_0	72	|t:|<NORMALIZED>
+L	ab_4_0	73	|switch|p1a: Aipom|Aipom, L93, M|253/253
+L	ab_4_0	74	|cant|p2a: Entei|slp
+L	ab_4_0	75	|
+L	ab_4_0	76	|-heal|p2a: Entei|209/307 slp|[from] item: Leftovers
+L	ab_4_0	77	|upkeep
+L	ab_4_0	78	|turn|8
+L	ab_4_0	79	|
+L	ab_4_0	80	|t:|<NORMALIZED>
+L	ab_4_0	81	|move|p1a: Aipom|Return|p2a: Entei
+L	ab_4_0	82	|-damage|p2a: Entei|104/307 slp
+L	ab_4_0	83	|cant|p2a: Entei|slp
+L	ab_4_0	84	|
+L	ab_4_0	85	|-heal|p2a: Entei|123/307 slp|[from] item: Leftovers
+L	ab_4_0	86	|upkeep
+L	ab_4_0	87	|turn|9
+L	ab_4_0	88	|
+L	ab_4_0	89	|t:|<NORMALIZED>
+L	ab_4_0	90	|switch|p1a: Torkoal|Torkoal, L90, M|272/272
+L	ab_4_0	91	|switch|p2a: Sandslash|Sandslash, L85, M|266/266
+L	ab_4_0	92	|
+L	ab_4_0	93	|upkeep
+L	ab_4_0	94	|turn|10
+L	ab_4_0	95	|
+L	ab_4_0	96	|t:|<NORMALIZED>
+L	ab_4_0	97	|switch|p1a: Volbeat|Volbeat, L94, M|275/275
+L	ab_4_0	98	|move|p2a: Sandslash|Earthquake|p1a: Volbeat
+L	ab_4_0	99	|-resisted|p1a: Volbeat
+L	ab_4_0	100	|-damage|p1a: Volbeat|200/275
+L	ab_4_0	101	|
+L	ab_4_0	102	|-heal|p1a: Volbeat|217/275|[from] item: Leftovers
+L	ab_4_0	103	|upkeep
+L	ab_4_0	104	|turn|11
+L	ab_4_0	105	|
+L	ab_4_0	106	|t:|<NORMALIZED>
+L	ab_4_0	107	|move|p1a: Volbeat|Tail Glow|p1a: Volbeat
+L	ab_4_0	108	|-boost|p1a: Volbeat|spa|2
+L	ab_4_0	109	|move|p2a: Sandslash|Toxic|p1a: Volbeat
+L	ab_4_0	110	|-status|p1a: Volbeat|tox
+L	ab_4_0	111	|
+L	ab_4_0	112	|-heal|p1a: Volbeat|234/275 tox|[from] item: Leftovers
+L	ab_4_0	113	|-damage|p1a: Volbeat|217/275 tox|[from] psn
+L	ab_4_0	114	|upkeep
+L	ab_4_0	115	|turn|12
+L	ab_4_0	116	|
+L	ab_4_0	117	|t:|<NORMALIZED>
+L	ab_4_0	118	|move|p1a: Volbeat|Baton Pass|p1a: Volbeat
+L	ab_4_0	119	|
+L	ab_4_0	120	|t:|<NORMALIZED>
+L	ab_4_0	121	|switch|p1a: Torkoal|Torkoal, L90, M|272/272|[from] Baton Pass
+L	ab_4_0	122	|move|p2a: Sandslash|Earthquake|p1a: Torkoal
+L	ab_4_0	123	|-supereffective|p1a: Torkoal
+L	ab_4_0	124	|-damage|p1a: Torkoal|129/272
+L	ab_4_0	125	|
+L	ab_4_0	126	|-heal|p1a: Torkoal|146/272|[from] item: Leftovers
+L	ab_4_0	127	|upkeep
+L	ab_4_0	128	|turn|13
+L	ab_4_0	129	|
+L	ab_4_0	130	|t:|<NORMALIZED>
+L	ab_4_0	131	|move|p2a: Sandslash|Earthquake|p1a: Torkoal
+L	ab_4_0	132	|-supereffective|p1a: Torkoal
+L	ab_4_0	133	|-damage|p1a: Torkoal|6/272
+L	ab_4_0	134	|move|p1a: Torkoal|Toxic|p2a: Sandslash
+L	ab_4_0	135	|-status|p2a: Sandslash|tox
+L	ab_4_0	136	|
+L	ab_4_0	137	|-damage|p2a: Sandslash|250/266 tox|[from] psn
+L	ab_4_0	138	|-heal|p1a: Torkoal|23/272|[from] item: Leftovers
+L	ab_4_0	139	|upkeep
+L	ab_4_0	140	|turn|14
+L	ab_4_0	141	|
+L	ab_4_0	142	|t:|<NORMALIZED>
+L	ab_4_0	143	|move|p2a: Sandslash|Toxic|p1a: Torkoal
+L	ab_4_0	144	|-status|p1a: Torkoal|tox
+L	ab_4_0	145	|move|p1a: Torkoal|Explosion|p2a: Sandslash
+L	ab_4_0	146	|-damage|p2a: Sandslash|0 fnt
+L	ab_4_0	147	|faint|p1a: Torkoal
+L	ab_4_0	148	|faint|p2a: Sandslash
+L	ab_4_0	149	|
+L	ab_4_0	150	|t:|<NORMALIZED>
+L	ab_4_0	151	|switch|p2a: Umbreon|Umbreon, L88, M|310/310
+L	ab_4_0	152	|switch|p1a: Forretress|Forretress, L81, M|254/254
+L	ab_4_0	153	|
+L	ab_4_0	154	|upkeep
+L	ab_4_0	155	|turn|15
+L	ab_4_0	156	|
+L	ab_4_0	157	|t:|<NORMALIZED>
+L	ab_4_0	158	|move|p2a: Umbreon|Toxic|p1a: Forretress
+L	ab_4_0	159	|debug|natural status immunity
+L	ab_4_0	160	|debug|immune to status
+L	ab_4_0	161	|-immune|p1a: Forretress
+L	ab_4_0	162	|debug|move failed because it did nothing
+L	ab_4_0	163	|move|p1a: Forretress|Spikes|p2a: Umbreon
+L	ab_4_0	164	|-sidestart|p2: P2|Spikes
+L	ab_4_0	165	|
+L	ab_4_0	166	|upkeep
+L	ab_4_0	167	|turn|16
+L	ab_4_0	168	|
+L	ab_4_0	169	|t:|<NORMALIZED>
+L	ab_4_0	170	|move|p2a: Umbreon|Wish|p2a: Umbreon
+L	ab_4_0	171	|move|p1a: Forretress|Spikes|p2a: Umbreon
+L	ab_4_0	172	|-sidestart|p2: P2|Spikes
+L	ab_4_0	173	|
+L	ab_4_0	174	|upkeep
+L	ab_4_0	175	|turn|17
+L	ab_4_0	176	|
+L	ab_4_0	177	|t:|<NORMALIZED>
+L	ab_4_0	178	|switch|p2a: Cacturne|Cacturne, L96, M|290/290
+L	ab_4_0	179	|-damage|p2a: Cacturne|242/290|[from] Spikes
+L	ab_4_0	180	|move|p1a: Forretress|Toxic|p2a: Cacturne
+L	ab_4_0	181	|-status|p2a: Cacturne|tox
+L	ab_4_0	182	|
+L	ab_4_0	183	|-heal|p2a: Cacturne|290/290 tox|[from] move: Wish|[wisher] Umbreon
+L	ab_4_0	184	|-damage|p2a: Cacturne|272/290 tox|[from] psn
+L	ab_4_0	185	|upkeep
+L	ab_4_0	186	|turn|18
+L	ab_4_0	187	|
+L	ab_4_0	188	|t:|<NORMALIZED>
+L	ab_4_0	189	|switch|p1a: Aipom|Aipom, L93, M|253/253
+L	ab_4_0	190	|move|p2a: Cacturne|Thunder Punch|p1a: Aipom
+L	ab_4_0	191	|-damage|p1a: Aipom|161/253
+L	ab_4_0	192	|
+L	ab_4_0	193	|-heal|p1a: Aipom|176/253|[from] item: Leftovers
+L	ab_4_0	194	|-heal|p2a: Cacturne|290/290 tox|[from] item: Leftovers
+L	ab_4_0	195	|-damage|p2a: Cacturne|254/290 tox|[from] psn
+L	ab_4_0	196	|upkeep
+L	ab_4_0	197	|turn|19
+L	ab_4_0	198	|
+L	ab_4_0	199	|t:|<NORMALIZED>
+L	ab_4_0	200	|switch|p1a: Volbeat|Volbeat, L94, M|217/275 tox
+L	ab_4_0	201	|move|p2a: Cacturne|Spikes|p1a: Volbeat
+L	ab_4_0	202	|-sidestart|p1: P1|Spikes
+L	ab_4_0	203	|
+L	ab_4_0	204	|-heal|p1a: Volbeat|234/275 tox|[from] item: Leftovers
+L	ab_4_0	205	|-damage|p1a: Volbeat|217/275 tox|[from] psn
+L	ab_4_0	206	|-heal|p2a: Cacturne|272/290 tox|[from] item: Leftovers
+L	ab_4_0	207	|-damage|p2a: Cacturne|218/290 tox|[from] psn
+L	ab_4_0	208	|upkeep
+L	ab_4_0	209	|turn|20
+L	ab_4_0	210	|
+L	ab_4_0	211	|t:|<NORMALIZED>
+L	ab_4_0	212	|move|p1a: Volbeat|Tail Glow|p1a: Volbeat
+L	ab_4_0	213	|-boost|p1a: Volbeat|spa|2
+L	ab_4_0	214	|move|p2a: Cacturne|Thunder Punch|p1a: Volbeat
+L	ab_4_0	215	|-damage|p1a: Volbeat|143/275 tox
+L	ab_4_0	216	|
+L	ab_4_0	217	|-heal|p1a: Volbeat|160/275 tox|[from] item: Leftovers
+L	ab_4_0	218	|-damage|p1a: Volbeat|126/275 tox|[from] psn
+L	ab_4_0	219	|-heal|p2a: Cacturne|236/290 tox|[from] item: Leftovers
+L	ab_4_0	220	|-damage|p2a: Cacturne|164/290 tox|[from] psn
+L	ab_4_0	221	|upkeep
+L	ab_4_0	222	|turn|21
+L	ab_4_0	223	|
+L	ab_4_0	224	|t:|<NORMALIZED>
+L	ab_4_0	225	|switch|p1a: Nidoqueen|Nidoqueen, L82, F|282/282
+L	ab_4_0	226	|-damage|p1a: Nidoqueen|247/282|[from] Spikes
+L	ab_4_0	227	|move|p2a: Cacturne|Spikes|p1a: Nidoqueen
+L	ab_4_0	228	|-sidestart|p1: P1|Spikes
+L	ab_4_0	229	|
+L	ab_4_0	230	|-heal|p1a: Nidoqueen|264/282|[from] item: Leftovers
+L	ab_4_0	231	|-heal|p2a: Cacturne|182/290 tox|[from] item: Leftovers
+L	ab_4_0	232	|-damage|p2a: Cacturne|92/290 tox|[from] psn
+L	ab_4_0	233	|upkeep
+L	ab_4_0	234	|turn|22
+L	ab_4_0	235	|
+L	ab_4_0	236	|t:|<NORMALIZED>
+L	ab_4_0	237	|move|p1a: Nidoqueen|Earthquake|p2a: Cacturne
+L	ab_4_0	238	|-resisted|p2a: Cacturne
+L	ab_4_0	239	|-damage|p2a: Cacturne|38/290 tox
+L	ab_4_0	240	|move|p2a: Cacturne|Spikes|p1a: Nidoqueen
+L	ab_4_0	241	|-sidestart|p1: P1|Spikes
+L	ab_4_0	242	|
+L	ab_4_0	243	|-heal|p1a: Nidoqueen|281/282|[from] item: Leftovers
+L	ab_4_0	244	|-heal|p2a: Cacturne|56/290 tox|[from] item: Leftovers
+L	ab_4_0	245	|-damage|p2a: Cacturne|0 fnt|[from] psn
+L	ab_4_0	246	|faint|p2a: Cacturne
+L	ab_4_0	247	|upkeep
+L	ab_4_0	248	|
+L	ab_4_0	249	|t:|<NORMALIZED>
+L	ab_4_0	250	|switch|p2a: Farfetch’d|Farfetch’d, L99, M|263/263
+L	ab_4_0	251	|turn|23
+L	ab_4_0	252	|
+L	ab_4_0	253	|t:|<NORMALIZED>
+L	ab_4_0	254	|switch|p1a: Xatu|Xatu, L84, M|246/246
+L	ab_4_0	255	|move|p2a: Farfetch’d|Agility|p2a: Farfetch’d
+L	ab_4_0	256	|-boost|p2a: Farfetch’d|spe|2
+L	ab_4_0	257	|
+L	ab_4_0	258	|upkeep
+L	ab_4_0	259	|turn|24
+L	ab_4_0	260	|
+L	ab_4_0	261	|t:|<NORMALIZED>
+L	ab_4_0	262	|move|p1a: Xatu|Protect|p1a: Xatu
+L	ab_4_0	263	|-singleturn|p1a: Xatu|Protect
+L	ab_4_0	264	|move|p2a: Farfetch’d|Agility|p2a: Farfetch’d
+L	ab_4_0	265	|-boost|p2a: Farfetch’d|spe|2
+L	ab_4_0	266	|
+L	ab_4_0	267	|upkeep
+L	ab_4_0	268	|turn|25
+L	ab_4_0	269	|
+L	ab_4_0	270	|t:|<NORMALIZED>
+L	ab_4_0	271	|switch|p1a: Aipom|Aipom, L93, M|176/253
+L	ab_4_0	272	|-damage|p1a: Aipom|113/253|[from] Spikes
+L	ab_4_0	273	|move|p2a: Farfetch’d|Swords Dance|p2a: Farfetch’d
+L	ab_4_0	274	|-boost|p2a: Farfetch’d|atk|2
+L	ab_4_0	275	|
+L	ab_4_0	276	|-heal|p1a: Aipom|128/253|[from] item: Leftovers
+L	ab_4_0	277	|upkeep
+L	ab_4_0	278	|turn|26
+L	ab_4_0	279	|
+L	ab_4_0	280	|t:|<NORMALIZED>
+L	ab_4_0	281	|switch|p2a: Umbreon|Umbreon, L88, M|310/310
+L	ab_4_0	282	|-damage|p2a: Umbreon|259/310|[from] Spikes
+L	ab_4_0	283	|move|p1a: Aipom|Return|p2a: Umbreon
+L	ab_4_0	284	|-damage|p2a: Umbreon|175/310
+L	ab_4_0	285	|
+L	ab_4_0	286	|-heal|p1a: Aipom|143/253|[from] item: Leftovers
+L	ab_4_0	287	|-heal|p2a: Umbreon|194/310|[from] item: Leftovers
+L	ab_4_0	288	|upkeep
+L	ab_4_0	289	|turn|27
+L	ab_4_0	290	|
+L	ab_4_0	291	|t:|<NORMALIZED>
+L	ab_4_0	292	|move|p1a: Aipom|Thunder Wave|p2a: Umbreon
+L	ab_4_0	293	|-status|p2a: Umbreon|par
+L	ab_4_0	294	|-status|p1a: Aipom|par|[from] ability: Synchronize|[of] p2a: Umbreon
+L	ab_4_0	295	|move|p2a: Umbreon|Wish|p2a: Umbreon
+L	ab_4_0	296	|
+L	ab_4_0	297	|-heal|p1a: Aipom|158/253 par|[from] item: Leftovers
+L	ab_4_0	298	|-heal|p2a: Umbreon|213/310 par|[from] item: Leftovers
+L	ab_4_0	299	|upkeep
+L	ab_4_0	300	|turn|28
+L	ab_4_0	301	|
+L	ab_4_0	302	|t:|<NORMALIZED>
+L	ab_4_0	303	|switch|p2a: Deoxys|Deoxys, L71|188/188
+L	ab_4_0	304	|-damage|p2a: Deoxys|157/188|[from] Spikes
+L	ab_4_0	305	|-ability|p2a: Deoxys|Pressure|[silent]
+L	ab_4_0	306	|move|p1a: Aipom|Baton Pass|p1a: Aipom
+L	ab_4_0	307	|
+L	ab_4_0	308	|t:|<NORMALIZED>
+L	ab_4_0	309	|switch|p1a: Nidoqueen|Nidoqueen, L82, F|281/282|[from] Baton Pass
+L	ab_4_0	310	|-damage|p1a: Nidoqueen|211/282|[from] Spikes
+L	ab_4_0	311	|
+L	ab_4_0	312	|-heal|p2a: Deoxys|188/188|[from] move: Wish|[wisher] Umbreon
+L	ab_4_0	313	|-heal|p1a: Nidoqueen|228/282|[from] item: Leftovers
+L	ab_4_0	314	|upkeep
+L	ab_4_0	315	|turn|29
+L	ab_4_0	316	|
+L	ab_4_0	317	|t:|<NORMALIZED>
+L	ab_4_0	318	|move|p2a: Deoxys|Superpower|p1a: Nidoqueen
+L	ab_4_0	319	|-resisted|p1a: Nidoqueen
+L	ab_4_0	320	|-damage|p1a: Nidoqueen|185/282
+L	ab_4_0	321	|-unboost|p2a: Deoxys|atk|1
+L	ab_4_0	322	|-unboost|p2a: Deoxys|def|1
+L	ab_4_0	323	|-status|p2a: Deoxys|psn|[from] ability: Poison Point|[of] p1a: Nidoqueen
+L	ab_4_0	324	|-enditem|p2a: Deoxys|White Herb
+L	ab_4_0	325	|-clearnegativeboost|p2a: Deoxys|[silent]
+L	ab_4_0	326	|move|p1a: Nidoqueen|Ice Beam|p2a: Deoxys
+L	ab_4_0	327	|-damage|p2a: Deoxys|102/188 psn
+L	ab_4_0	328	|
+L	ab_4_0	329	|-damage|p2a: Deoxys|79/188 psn|[from] psn
+L	ab_4_0	330	|-heal|p1a: Nidoqueen|202/282|[from] item: Leftovers
+L	ab_4_0	331	|upkeep
+L	ab_4_0	332	|turn|30
+L	ab_4_0	333	|
+L	ab_4_0	334	|t:|<NORMALIZED>
+L	ab_4_0	335	|move|p2a: Deoxys|Superpower|p1a: Nidoqueen
+L	ab_4_0	336	|-resisted|p1a: Nidoqueen
+L	ab_4_0	337	|-crit|p1a: Nidoqueen
+L	ab_4_0	338	|-damage|p1a: Nidoqueen|106/282
+L	ab_4_0	339	|-unboost|p2a: Deoxys|atk|1
+L	ab_4_0	340	|-unboost|p2a: Deoxys|def|1
+L	ab_4_0	341	|move|p1a: Nidoqueen|Ice Beam|p2a: Deoxys
+L	ab_4_0	342	|-damage|p2a: Deoxys|0 fnt
+L	ab_4_0	343	|faint|p2a: Deoxys
+L	ab_4_0	344	|
+L	ab_4_0	345	|t:|<NORMALIZED>
+L	ab_4_0	346	|switch|p2a: Entei|Entei, L78|123/307 slp
+L	ab_4_0	347	|-damage|p2a: Entei|72/307 slp|[from] Spikes
+L	ab_4_0	348	|-ability|p2a: Entei|Pressure|[silent]
+L	ab_4_0	349	|
+L	ab_4_0	350	|-heal|p2a: Entei|91/307 slp|[from] item: Leftovers
+L	ab_4_0	351	|-heal|p1a: Nidoqueen|123/282|[from] item: Leftovers
+L	ab_4_0	352	|upkeep
+L	ab_4_0	353	|turn|31
+L	ab_4_0	354	|
+L	ab_4_0	355	|t:|<NORMALIZED>
+L	ab_4_0	356	|-curestatus|p2a: Entei|slp|[msg]
+L	ab_4_0	357	|move|p2a: Entei|Sleep Talk|p2a: Entei
+L	ab_4_0	358	|move|p1a: Nidoqueen|Sludge Bomb|p2a: Entei
+L	ab_4_0	359	|-damage|p2a: Entei|4/307
+L	ab_4_0	360	|
+L	ab_4_0	361	|-heal|p2a: Entei|23/307|[from] item: Leftovers
+L	ab_4_0	362	|-heal|p1a: Nidoqueen|140/282|[from] item: Leftovers
+L	ab_4_0	363	|upkeep
+L	ab_4_0	364	|turn|32
+L	ab_4_0	365	|
+L	ab_4_0	366	|t:|<NORMALIZED>
+L	ab_4_0	367	|move|p2a: Entei|Toxic|p1a: Nidoqueen
+L	ab_4_0	368	|debug|natural status immunity
+L	ab_4_0	369	|debug|immune to status
+L	ab_4_0	370	|-immune|p1a: Nidoqueen
+L	ab_4_0	371	|debug|move failed because it did nothing
+L	ab_4_0	372	|move|p1a: Nidoqueen|Earthquake|p2a: Entei
+L	ab_4_0	373	|-supereffective|p2a: Entei
+L	ab_4_0	374	|-damage|p2a: Entei|0 fnt
+L	ab_4_0	375	|faint|p2a: Entei
+L	ab_4_0	376	|
+L	ab_4_0	377	|t:|<NORMALIZED>
+L	ab_4_0	378	|switch|p2a: Umbreon|Umbreon, L88, M|213/310 par
+L	ab_4_0	379	|-damage|p2a: Umbreon|162/310 par|[from] Spikes
+L	ab_4_0	380	|
+L	ab_4_0	381	|-heal|p1a: Nidoqueen|157/282|[from] item: Leftovers
+L	ab_4_0	382	|-heal|p2a: Umbreon|181/310 par|[from] item: Leftovers
+L	ab_4_0	383	|upkeep
+L	ab_4_0	384	|turn|33
+L	ab_4_0	385	|
+L	ab_4_0	386	|t:|<NORMALIZED>
+L	ab_4_0	387	|move|p1a: Nidoqueen|Sludge Bomb|p2a: Umbreon
+L	ab_4_0	388	|-damage|p2a: Umbreon|121/310 par
+L	ab_4_0	389	|move|p2a: Umbreon|Toxic|p1a: Nidoqueen
+L	ab_4_0	390	|debug|natural status immunity
+L	ab_4_0	391	|debug|immune to status
+L	ab_4_0	392	|-immune|p1a: Nidoqueen
+L	ab_4_0	393	|debug|move failed because it did nothing
+L	ab_4_0	394	|
+L	ab_4_0	395	|-heal|p1a: Nidoqueen|174/282|[from] item: Leftovers
+L	ab_4_0	396	|-heal|p2a: Umbreon|140/310 par|[from] item: Leftovers
+L	ab_4_0	397	|upkeep
+L	ab_4_0	398	|turn|34
+L	ab_4_0	399	|
+L	ab_4_0	400	|t:|<NORMALIZED>
+L	ab_4_0	401	|move|p1a: Nidoqueen|Earthquake|p2a: Umbreon
+L	ab_4_0	402	|-damage|p2a: Umbreon|70/310 par
+L	ab_4_0	403	|move|p2a: Umbreon|Wish|p2a: Umbreon
+L	ab_4_0	404	|
+L	ab_4_0	405	|-heal|p1a: Nidoqueen|191/282|[from] item: Leftovers
+L	ab_4_0	406	|-heal|p2a: Umbreon|89/310 par|[from] item: Leftovers
+L	ab_4_0	407	|upkeep
+L	ab_4_0	408	|turn|35
+L	ab_4_0	409	|
+L	ab_4_0	410	|t:|<NORMALIZED>
+L	ab_4_0	411	|move|p1a: Nidoqueen|Ice Beam|p2a: Umbreon
+L	ab_4_0	412	|-damage|p2a: Umbreon|51/310 par
+L	ab_4_0	413	|move|p2a: Umbreon|Baton Pass|p2a: Umbreon
+L	ab_4_0	414	|
+L	ab_4_0	415	|t:|<NORMALIZED>
+L	ab_4_0	416	|switch|p2a: Farfetch’d|Farfetch’d, L99, M|263/263|[from] Baton Pass
+L	ab_4_0	417	|
+L	ab_4_0	418	|-heal|p1a: Nidoqueen|208/282|[from] item: Leftovers
+L	ab_4_0	419	|upkeep
+L	ab_4_0	420	|turn|36
+L	ab_4_0	421	|
+L	ab_4_0	422	|t:|<NORMALIZED>
+L	ab_4_0	423	|move|p2a: Farfetch’d|Swords Dance|p2a: Farfetch’d
+L	ab_4_0	424	|-boost|p2a: Farfetch’d|atk|2
+L	ab_4_0	425	|move|p1a: Nidoqueen|Ice Beam|p2a: Farfetch’d
+L	ab_4_0	426	|-supereffective|p2a: Farfetch’d
+L	ab_4_0	427	|-damage|p2a: Farfetch’d|151/263
+L	ab_4_0	428	|
+L	ab_4_0	429	|-heal|p1a: Nidoqueen|225/282|[from] item: Leftovers
+L	ab_4_0	430	|upkeep
+L	ab_4_0	431	|turn|37
+L	ab_4_0	432	|
+L	ab_4_0	433	|t:|<NORMALIZED>
+L	ab_4_0	434	|move|p2a: Farfetch’d|Return|p1a: Nidoqueen
+L	ab_4_0	435	|-damage|p1a: Nidoqueen|0 fnt
+L	ab_4_0	436	|-status|p2a: Farfetch’d|psn|[from] ability: Poison Point|[of] p1a: Nidoqueen
+L	ab_4_0	437	|faint|p1a: Nidoqueen
+L	ab_4_0	438	|
+L	ab_4_0	439	|t:|<NORMALIZED>
+L	ab_4_0	440	|switch|p1a: Forretress|Forretress, L81, M|254/254
+L	ab_4_0	441	|-damage|p1a: Forretress|191/254|[from] Spikes
+L	ab_4_0	442	|
+L	ab_4_0	443	|-damage|p2a: Farfetch’d|119/263 psn|[from] psn
+L	ab_4_0	444	|-heal|p1a: Forretress|206/254|[from] item: Leftovers
+L	ab_4_0	445	|upkeep
+L	ab_4_0	446	|turn|38
+L	ab_4_0	447	|
+L	ab_4_0	448	|t:|<NORMALIZED>
+L	ab_4_0	449	|move|p2a: Farfetch’d|Return|p1a: Forretress
+L	ab_4_0	450	|-resisted|p1a: Forretress
+L	ab_4_0	451	|-crit|p1a: Forretress
+L	ab_4_0	452	|-damage|p1a: Forretress|57/254
+L	ab_4_0	453	|move|p1a: Forretress|Earthquake|p2a: Farfetch’d
+L	ab_4_0	454	|-immune|p2a: Farfetch’d
+L	ab_4_0	455	|
+L	ab_4_0	456	|-damage|p2a: Farfetch’d|87/263 psn|[from] psn
+L	ab_4_0	457	|-heal|p1a: Forretress|72/254|[from] item: Leftovers
+L	ab_4_0	458	|upkeep
+L	ab_4_0	459	|turn|39
+L	ab_4_0	460	|
+L	ab_4_0	461	|t:|<NORMALIZED>
+L	ab_4_0	462	|move|p2a: Farfetch’d|Swords Dance|p2a: Farfetch’d
+L	ab_4_0	463	|-boost|p2a: Farfetch’d|atk|2
+L	ab_4_0	464	|move|p1a: Forretress|Earthquake|p2a: Farfetch’d
+L	ab_4_0	465	|-immune|p2a: Farfetch’d
+L	ab_4_0	466	|
+L	ab_4_0	467	|-damage|p2a: Farfetch’d|55/263 psn|[from] psn
+L	ab_4_0	468	|-heal|p1a: Forretress|87/254|[from] item: Leftovers
+L	ab_4_0	469	|upkeep
+L	ab_4_0	470	|turn|40
+L	ab_4_0	471	|
+L	ab_4_0	472	|t:|<NORMALIZED>
+L	ab_4_0	473	|move|p2a: Farfetch’d|Baton Pass|p2a: Farfetch’d
+L	ab_4_0	474	|
+L	ab_4_0	475	|t:|<NORMALIZED>
+L	ab_4_0	476	|switch|p2a: Umbreon|Umbreon, L88, M|51/310 par|[from] Baton Pass
+L	ab_4_0	477	|-damage|p2a: Umbreon|0 fnt|[from] Spikes
+L	ab_4_0	478	|faint|p2a: Umbreon
+L	ab_4_0	479	|
+L	ab_4_0	480	|t:|<NORMALIZED>
+L	ab_4_0	481	|switch|p2a: Farfetch’d|Farfetch’d, L99, M|55/263 psn
+L	ab_4_0	482	|
+L	ab_4_0	483	|-damage|p2a: Farfetch’d|23/263 psn|[from] psn
+L	ab_4_0	484	|-heal|p1a: Forretress|102/254|[from] item: Leftovers
+L	ab_4_0	485	|upkeep
+L	ab_4_0	486	|turn|41
+L	ab_4_0	487	|
+L	ab_4_0	488	|t:|<NORMALIZED>
+L	ab_4_0	489	|move|p2a: Farfetch’d|Baton Pass||[still]
+L	ab_4_0	490	|-fail|p2a: Farfetch’d
+L	ab_4_0	491	|move|p1a: Forretress|Toxic||[still]
+L	ab_4_0	492	|-fail|p1a: Forretress
+L	ab_4_0	493	|debug|move failed because it did nothing
+L	ab_4_0	494	|
+L	ab_4_0	495	|-damage|p2a: Farfetch’d|0 fnt|[from] psn
+L	ab_4_0	496	|faint|p2a: Farfetch’d
+L	ab_4_0	497	|
+L	ab_4_0	498	|win|P1

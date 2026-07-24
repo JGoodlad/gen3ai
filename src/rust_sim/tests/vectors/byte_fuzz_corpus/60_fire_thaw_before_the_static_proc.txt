@@ -1,0 +1,655 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=240724 run_id=rmrzcanyf chunk=15
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_15_0
+TEAM	ab_15_0	p1	Illumise||Leftovers|Oblivious|thunderwave,seismictoss,moonlight,encore|Hardy|85,,85,85,85,85|F|,0,,,,||92|]Tyranitar||Leftovers|SandStream|icebeam,rockslide,crunch,pursuit|Hardy|85,85,85,85,85,85|M|||74|]Hariyama||Leftovers|Guts|rest,rockslide,sleeptalk,crosschop|Hardy|85,85,85,85,85,85|M|||83|]Electabuzz||Leftovers|Static|thunderbolt,focuspunch,icepunch,substitute|Hardy|85,85,85,85,85,85|M|||82|]Tauros||ChoiceBand|Intimidate|return,earthquake,hiddenpowerghost,doubleedge|Hardy|85,85,85,85,85,85|M|,,30,,30,||76|]Jirachi||Leftovers|SereneGrace|icepunch,psychic,calmmind,firepunch|Hardy|85,,85,85,85,85|N|,0,,,,||73|
+TEAM	ab_15_0	p2	Raticate||ChoiceBand|Guts|shadowball,hiddenpowerground,quickattack,doubleedge|Hardy|85,85,85,85,85,85|M|,,,30,30,||85|]Roselia||Leftovers|NaturalCure|synthesis,spikes,hiddenpowergrass,toxic|Hardy|85,,85,85,85,85|M|,2,,30,,||97|]Gligar||Leftovers|HyperCutter|earthquake,quickattack,swordsdance,hiddenpowerflying|Hardy|85,85,85,85,85,85|M|30,30,30,30,30,||83|]Blastoise||Leftovers|Torrent|sleeptalk,surf,toxic,rest|Hardy|85,,85,85,85,85|M|,0,,,,||82|]Pikachu||LightBall|Static|hiddenpowerice,surf,encore,thunderbolt|Hardy|85,,85,85,85,85|M|,2,30,,,||87|]Ledian||Leftovers|Swarm|batonpass,swordsdance,agility,silverwind|Hardy|85,85,85,85,85,85|M||||
+FMT	ab_15_0	gen3customgame
+INIT	ab_15_0	43323,18076,20642,63455	3660099078
+DEC	ab_15_0	0	move	0	0	m2	m2	12150,13101,35568,61827	Illumise	269	269	0	-	0	0	0	0	0	0	6	Raticate	232	232	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_15_0	1	move	0	0	m3	m2	9315,39128,28880,62888	Illumise	217	269	0	-	0	0	0	0	0	0	6	Raticate	232	232	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_15_0	2	move	0	0	m3	m2	50828,33408,53608,58382	Illumise	152	269	0	-	0	0	0	0	0	0	6	Raticate	232	232	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_15_0	3	move	0	0	m0	m2	55594,24124,64634,4900	Illumise	89	269	0	-	0	0	0	0	0	0	6	Raticate	232	232	0	par	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_15_0	4	move	0	0	s2	m2	21261,63116,3696,64054	Hariyama	375	375	0	-	0	0	0	0	0	0	6	Raticate	232	232	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_15_0	5	move	0	0	m1	m2	48946,25494,41415,4313	Hariyama	291	375	0	-	0	0	0	0	0	0	6	Raticate	152	232	0	par	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_15_0	6	move	0	0	m3	m2	13528,54796,46729,65245	Hariyama	291	375	0	-	0	0	0	0	0	0	6	Raticate	0	232	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_15_0	7	switch	0	1	-	s1	62016,560,4615,28916	Hariyama	314	375	0	-	0	0	0	0	0	0	6	Roselia	254	254	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_15_0	8	move	0	0	m3	m3	61458,4774,36832,39467	Hariyama	314	375	0	tox	0	0	0	0	0	0	6	Roselia	131	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_15_0	9	move	0	0	m0	m1	39461,22999,33399,13861	Hariyama	375	375	0	slp	0	0	0	0	0	0	6	Roselia	146	254	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_15_0	10	move	0	0	m2	m3	31527,59022,62106,52659	Hariyama	375	375	0	slp	0	0	0	0	0	0	6	Roselia	32	254	0	-	0	0	0	0	0	0	5	p2	1	0	0	1	0
+DEC	ab_15_0	11	move	0	0	m0	s3	3757,49116,45875,37218	Hariyama	375	375	0	slp	0	0	0	0	0	0	6	Blastoise	264	264	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_15_0	12	move	0	0	m0	m2	34164,5286,19188,47812	Hariyama	375	375	0	-	0	0	0	0	0	0	6	Blastoise	264	264	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_15_0	13	move	0	0	m0	m2	16700,37148,47064,45270	Hariyama	352	375	0	tox	0	0	0	0	0	0	6	Blastoise	264	264	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_15_0	14	move	0	0	m1	m3	53216,52172,42820,55320	Hariyama	329	375	0	tox	0	0	0	0	0	0	6	Blastoise	264	264	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_15_0	15	move	0	0	m0	m1	1147,24654,10990,50207	Hariyama	375	375	0	slp	0	0	0	0	0	0	6	Blastoise	264	264	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_15_0	16	move	0	0	s4	s3	43470,61520,10279,38398	Tauros	210	239	0	-	0	0	0	0	0	0	6	Roselia	47	254	0	-	-1	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_15_0	17	move	0	0	m3	s2	32600,37143,34511,946	Tauros	162	239	0	-	0	0	0	0	0	0	6	Gligar	113	243	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_15_0	18	move	0	0	m3	m1	17034,23783,42907,53480	Tauros	101	239	0	-	0	0	0	0	0	0	6	Gligar	0	243	1	fnt	0	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_15_0	19	switch	0	1	-	s5	25601,21764,6596,12875	Tauros	101	239	0	-	0	0	0	0	0	0	6	Ledian	272	272	0	-	0	0	0	0	0	0	4	none	1	0	0	0	0
+DEC	ab_15_0	20	move	0	0	s1	m3	28138,20329,39978,59726	Tyranitar	163	270	0	-	0	0	0	0	0	0	6	Ledian	272	272	0	-	0	0	0	0	0	0	4	p1	1	0	0	0	0
+DEC	ab_15_0	21	move	0	0	m1	m1	54379,35538,12469,11728	Tyranitar	179	270	0	-	0	0	0	0	0	0	6	Ledian	272	272	0	-	2	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_15_0	22	move	0	0	m2	s3	33433,3562,20432,25655	Tyranitar	195	270	0	-	0	0	0	0	0	0	6	Blastoise	204	264	0	-	0	0	0	-1	0	0	4	p2	1	0	0	0	0
+DEC	ab_15_0	23	move	0	0	m2	m2	41866,8536,877,52437	Tyranitar	195	270	0	tox	0	0	0	0	0	0	6	Blastoise	121	264	0	-	0	0	0	-1	0	0	4	p2	1	0	0	0	0
+DEC	ab_15_0	24	move	0	0	m2	m0	1272,56092,8935,51360	Tyranitar	179	270	0	tox	0	0	0	0	0	0	6	Blastoise	39	264	0	-	0	0	0	-2	0	0	4	p2	1	0	0	1	0
+DEC	ab_15_0	25	move	0	0	m2	m1	40661,41846,37938,40221	Tyranitar	0	270	1	fnt	0	0	0	0	0	0	5	Blastoise	39	264	0	-	0	0	0	-2	0	0	4	p2	1	0	0	0	0
+DEC	ab_15_0	26	switch	1	0	s4	-	64454,5683,5630,8244	Hariyama	329	375	0	slp	0	0	0	0	0	0	5	Blastoise	39	264	0	-	0	0	0	-2	0	0	4	none	1	0	0	0	0
+DEC	ab_15_0	27	move	0	0	m0	m1	32647,10991,60320,18056	Hariyama	158	375	0	slp	0	0	0	0	0	0	5	Blastoise	39	264	0	-	0	0	0	-2	0	0	4	p2	1	0	0	0	0
+DEC	ab_15_0	28	move	0	0	m1	m3	18354,34641,57354,60922	Hariyama	158	375	0	slp	0	0	0	0	0	0	5	Blastoise	264	264	0	slp	0	0	0	-2	0	0	4	p2	1	0	0	0	0
+DEC	ab_15_0	29	move	0	0	s2	m3	1298,37511,14247,19557	Illumise	56	269	0	-	0	0	0	0	0	0	5	Blastoise	264	264	0	slp	0	0	0	-2	0	0	4	p1	1	0	0	0	0
+DEC	ab_15_0	30	move	0	0	m1	m1	43723,842,62547,847	Illumise	56	269	0	-	0	0	0	0	0	0	5	Blastoise	172	264	0	slp	0	0	0	-2	0	0	4	p1	1	0	1	0	0
+DEC	ab_15_0	31	move	0	0	s5	m2	18163,31504,60560,31145	Jirachi	249	266	0	-	0	0	0	0	0	0	5	Blastoise	172	264	0	-	0	0	0	-2	0	0	4	p1	1	0	0	0	0
+DEC	ab_15_0	32	move	0	0	m0	s4	63244,36908,24826,1623	Jirachi	265	266	0	-	0	0	0	0	0	0	5	Pikachu	121	203	0	frz	0	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_15_0	33	move	0	0	m3	m3	64540,49327,58402,40812	Jirachi	266	266	0	par	0	0	0	0	0	0	5	Pikachu	41	203	0	-	0	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_15_0	34	move	0	0	m2	m2	35783,3775,24668,65492	Jirachi	266	266	0	par	0	0	0	0	0	0	5	Pikachu	0	203	1	fnt	0	0	0	0	0	0	3	p2	1	0	0	0	1
+DEC	ab_15_0	35	switch	0	1	-	s3	18633,9519,14476,359	Jirachi	266	266	0	par	0	0	0	0	0	0	5	Ledian	272	272	0	-	0	0	0	0	0	0	3	none	1	0	0	0	0
+DEC	ab_15_0	36	move	0	0	s5	m2	34511,2034,47604,19302	Illumise	23	269	0	-	0	0	0	0	0	0	5	Ledian	272	272	0	-	0	0	0	0	2	0	3	p1	1	0	0	0	0
+DEC	ab_15_0	37	move	0	0	s1	s4	37991,20226,12715,62465	Tauros	58	239	0	-	0	0	0	0	0	0	5	Blastoise	172	264	0	-	-1	0	0	0	0	0	3	p2	1	0	0	0	0
+DEC	ab_15_0	38	move	0	0	m0	m2	38752,922,54199,56124	Tauros	30	239	0	tox	0	0	0	0	0	0	5	Blastoise	37	264	0	-	-1	0	0	0	0	0	3	p1	1	0	0	1	0
+DEC	ab_15_0	39	move	0	0	m0	m0	5337,13128,46608,31433	Tauros	30	239	0	tox	0	0	0	0	0	0	5	Blastoise	0	264	1	fnt	0	0	0	0	0	0	2	p1	1	0	0	1	0
+DEC	ab_15_0	40	switch	0	1	-	s2	5337,13128,46608,31433	Tauros	0	239	1	fnt	0	0	0	0	0	0	4	Roselia	47	254	0	-	0	0	0	0	0	0	2	none	1	0	0	0	0
+DEC	ab_15_0	41	switch	1	0	s5	-	35634,42923,52699,41232	Jirachi	233	266	0	par	0	0	0	0	0	0	4	Roselia	47	254	0	-	0	0	0	0	0	0	2	none	1	0	0	0	0
+DEC	ab_15_0	42	move	0	0	m2	m1	45681,53267,4079,13122	Jirachi	249	266	0	par	0	0	1	1	0	0	4	Roselia	47	254	0	-	0	0	0	0	0	0	2	p2	2	0	0	0	0
+DEC	ab_15_0	43	move	0	0	m1	m3	32462,49094,35570,16632	Jirachi	249	266	0	par	0	0	1	1	0	0	4	Roselia	0	254	1	fnt	0	0	0	0	0	0	1	p2	2	0	0	0	0
+DEC	ab_15_0	44	switch	0	1	-	s4	30041,13200,56646,63643	Jirachi	265	266	0	par	0	0	1	1	0	0	4	Ledian	272	272	0	-	0	0	0	0	0	0	1	none	2	0	0	0	0
+DEC	ab_15_0	45	move	0	0	m2	m2	14764,65085,903,45845	Jirachi	266	266	0	par	0	0	1	1	0	0	4	Ledian	272	272	0	-	0	0	0	0	2	0	1	p2	2	0	0	0	0
+DEC	ab_15_0	46	move	0	0	m3	m0	39501,30314,47628,36387	Jirachi	266	266	0	par	0	0	1	1	0	0	4	Ledian	153	272	0	brn	0	0	0	0	2	0	1	p2	2	0	0	0	0
+DEC	ab_15_0	47	move	0	0	m2	m3	7278,35683,51079,59681	Jirachi	259	266	0	par	0	0	2	2	0	0	4	Ledian	119	272	0	brn	0	0	0	0	2	0	1	p2	2	0	0	0	0
+DEC	ab_15_0	48	move	0	0	m1	m0	14964,35034,61844,38620	Jirachi	259	266	0	par	0	0	2	2	0	0	4	Ledian	0	272	1	brn	0	0	0	0	0	0	0	p2	2	0	0	0	0
+END	ab_15_0	1	p1
+L	ab_15_0	0	|t:|<NORMALIZED>
+L	ab_15_0	1	|gametype|singles
+L	ab_15_0	2	|player|p1|P1||
+L	ab_15_0	3	|player|p2|P2||
+L	ab_15_0	4	|gen|3
+L	ab_15_0	5	|tier|[Gen 3] Custom Game
+L	ab_15_0	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_15_0	7	|
+L	ab_15_0	8	|t:|<NORMALIZED>
+L	ab_15_0	9	|teamsize|p1|6
+L	ab_15_0	10	|teamsize|p2|6
+L	ab_15_0	11	|start
+L	ab_15_0	12	|switch|p1a: Illumise|Illumise, L92, F|269/269
+L	ab_15_0	13	|switch|p2a: Raticate|Raticate, L85, M|232/232
+L	ab_15_0	14	|turn|1
+L	ab_15_0	15	|
+L	ab_15_0	16	|t:|<NORMALIZED>
+L	ab_15_0	17	|move|p2a: Raticate|Quick Attack|p1a: Illumise
+L	ab_15_0	18	|-damage|p1a: Illumise|194/269
+L	ab_15_0	19	|move|p1a: Illumise|Moonlight|p1a: Illumise
+L	ab_15_0	20	|-heal|p1a: Illumise|269/269
+L	ab_15_0	21	|
+L	ab_15_0	22	|upkeep
+L	ab_15_0	23	|turn|2
+L	ab_15_0	24	|
+L	ab_15_0	25	|t:|<NORMALIZED>
+L	ab_15_0	26	|move|p2a: Raticate|Quick Attack|p1a: Illumise
+L	ab_15_0	27	|-damage|p1a: Illumise|201/269
+L	ab_15_0	28	|move|p1a: Illumise|Encore|p2a: Raticate
+L	ab_15_0	29	|-start|p2a: Raticate|Encore
+L	ab_15_0	30	|
+L	ab_15_0	31	|-heal|p1a: Illumise|217/269|[from] item: Leftovers
+L	ab_15_0	32	|upkeep
+L	ab_15_0	33	|turn|3
+L	ab_15_0	34	|
+L	ab_15_0	35	|t:|<NORMALIZED>
+L	ab_15_0	36	|move|p2a: Raticate|Quick Attack|p1a: Illumise
+L	ab_15_0	37	|-damage|p1a: Illumise|136/269
+L	ab_15_0	38	|move|p1a: Illumise|Encore||[still]
+L	ab_15_0	39	|-fail|p1a: Illumise
+L	ab_15_0	40	|debug|move failed because it did nothing
+L	ab_15_0	41	|
+L	ab_15_0	42	|-heal|p1a: Illumise|152/269|[from] item: Leftovers
+L	ab_15_0	43	|upkeep
+L	ab_15_0	44	|turn|4
+L	ab_15_0	45	|
+L	ab_15_0	46	|t:|<NORMALIZED>
+L	ab_15_0	47	|move|p2a: Raticate|Quick Attack|p1a: Illumise
+L	ab_15_0	48	|-damage|p1a: Illumise|73/269
+L	ab_15_0	49	|move|p1a: Illumise|Thunder Wave|p2a: Raticate
+L	ab_15_0	50	|-status|p2a: Raticate|par
+L	ab_15_0	51	|
+L	ab_15_0	52	|-heal|p1a: Illumise|89/269|[from] item: Leftovers
+L	ab_15_0	53	|upkeep
+L	ab_15_0	54	|turn|5
+L	ab_15_0	55	|
+L	ab_15_0	56	|t:|<NORMALIZED>
+L	ab_15_0	57	|switch|p1a: Hariyama|Hariyama, L83, M|375/375
+L	ab_15_0	58	|cant|p2a: Raticate|par
+L	ab_15_0	59	|
+L	ab_15_0	60	|-end|p2a: Raticate|Encore
+L	ab_15_0	61	|upkeep
+L	ab_15_0	62	|turn|6
+L	ab_15_0	63	|
+L	ab_15_0	64	|t:|<NORMALIZED>
+L	ab_15_0	65	|move|p2a: Raticate|Quick Attack|p1a: Hariyama
+L	ab_15_0	66	|-damage|p1a: Hariyama|268/375
+L	ab_15_0	67	|move|p1a: Hariyama|Rock Slide|p2a: Raticate
+L	ab_15_0	68	|-damage|p2a: Raticate|152/232 par
+L	ab_15_0	69	|
+L	ab_15_0	70	|-heal|p1a: Hariyama|291/375|[from] item: Leftovers
+L	ab_15_0	71	|upkeep
+L	ab_15_0	72	|turn|7
+L	ab_15_0	73	|
+L	ab_15_0	74	|t:|<NORMALIZED>
+L	ab_15_0	75	|cant|p2a: Raticate|par
+L	ab_15_0	76	|move|p1a: Hariyama|Cross Chop|p2a: Raticate
+L	ab_15_0	77	|-supereffective|p2a: Raticate
+L	ab_15_0	78	|-damage|p2a: Raticate|0 fnt
+L	ab_15_0	79	|faint|p2a: Raticate
+L	ab_15_0	80	|
+L	ab_15_0	81	|t:|<NORMALIZED>
+L	ab_15_0	82	|switch|p2a: Roselia|Roselia, L97, M|254/254
+L	ab_15_0	83	|
+L	ab_15_0	84	|-heal|p1a: Hariyama|314/375|[from] item: Leftovers
+L	ab_15_0	85	|upkeep
+L	ab_15_0	86	|turn|8
+L	ab_15_0	87	|
+L	ab_15_0	88	|t:|<NORMALIZED>
+L	ab_15_0	89	|move|p2a: Roselia|Toxic|p1a: Hariyama
+L	ab_15_0	90	|-status|p1a: Hariyama|tox
+L	ab_15_0	91	|move|p1a: Hariyama|Cross Chop|p2a: Roselia
+L	ab_15_0	92	|-resisted|p2a: Roselia
+L	ab_15_0	93	|-damage|p2a: Roselia|116/254
+L	ab_15_0	94	|
+L	ab_15_0	95	|-heal|p2a: Roselia|131/254|[from] item: Leftovers
+L	ab_15_0	96	|-heal|p1a: Hariyama|337/375 tox|[from] item: Leftovers
+L	ab_15_0	97	|-damage|p1a: Hariyama|314/375 tox|[from] psn
+L	ab_15_0	98	|upkeep
+L	ab_15_0	99	|turn|9
+L	ab_15_0	100	|
+L	ab_15_0	101	|t:|<NORMALIZED>
+L	ab_15_0	102	|move|p2a: Roselia|Spikes|p1a: Hariyama
+L	ab_15_0	103	|-sidestart|p1: P1|Spikes
+L	ab_15_0	104	|move|p1a: Hariyama|Rest|p1a: Hariyama
+L	ab_15_0	105	|-status|p1a: Hariyama|slp|[from] move: Rest
+L	ab_15_0	106	|-heal|p1a: Hariyama|375/375 slp|[silent]
+L	ab_15_0	107	|
+L	ab_15_0	108	|-heal|p2a: Roselia|146/254|[from] item: Leftovers
+L	ab_15_0	109	|upkeep
+L	ab_15_0	110	|turn|10
+L	ab_15_0	111	|
+L	ab_15_0	112	|t:|<NORMALIZED>
+L	ab_15_0	113	|move|p2a: Roselia|Toxic||[still]
+L	ab_15_0	114	|-fail|p2a: Roselia
+L	ab_15_0	115	|debug|move failed because it did nothing
+L	ab_15_0	116	|cant|p1a: Hariyama|slp
+L	ab_15_0	117	|move|p1a: Hariyama|Sleep Talk|p1a: Hariyama
+L	ab_15_0	118	|move|p1a: Hariyama|Cross Chop|p2a: Roselia|[from] Sleep Talk
+L	ab_15_0	119	|-resisted|p2a: Roselia
+L	ab_15_0	120	|-damage|p2a: Roselia|17/254
+L	ab_15_0	121	|
+L	ab_15_0	122	|-heal|p2a: Roselia|32/254|[from] item: Leftovers
+L	ab_15_0	123	|upkeep
+L	ab_15_0	124	|turn|11
+L	ab_15_0	125	|
+L	ab_15_0	126	|t:|<NORMALIZED>
+L	ab_15_0	127	|switch|p2a: Blastoise|Blastoise, L82, M|264/264
+L	ab_15_0	128	|cant|p1a: Hariyama|slp
+L	ab_15_0	129	|
+L	ab_15_0	130	|upkeep
+L	ab_15_0	131	|turn|12
+L	ab_15_0	132	|
+L	ab_15_0	133	|t:|<NORMALIZED>
+L	ab_15_0	134	|move|p2a: Blastoise|Toxic||[still]
+L	ab_15_0	135	|-fail|p2a: Blastoise
+L	ab_15_0	136	|debug|move failed because it did nothing
+L	ab_15_0	137	|-curestatus|p1a: Hariyama|slp|[msg]
+L	ab_15_0	138	|move|p1a: Hariyama|Rest|p1a: Hariyama
+L	ab_15_0	139	|-fail|p1a: Hariyama|heal
+L	ab_15_0	140	|
+L	ab_15_0	141	|upkeep
+L	ab_15_0	142	|turn|13
+L	ab_15_0	143	|
+L	ab_15_0	144	|t:|<NORMALIZED>
+L	ab_15_0	145	|move|p2a: Blastoise|Toxic|p1a: Hariyama
+L	ab_15_0	146	|-status|p1a: Hariyama|tox
+L	ab_15_0	147	|move|p1a: Hariyama|Rest|p1a: Hariyama
+L	ab_15_0	148	|-fail|p1a: Hariyama|heal
+L	ab_15_0	149	|
+L	ab_15_0	150	|-damage|p1a: Hariyama|352/375 tox|[from] psn
+L	ab_15_0	151	|upkeep
+L	ab_15_0	152	|turn|14
+L	ab_15_0	153	|
+L	ab_15_0	154	|t:|<NORMALIZED>
+L	ab_15_0	155	|move|p2a: Blastoise|Rest|p2a: Blastoise
+L	ab_15_0	156	|-fail|p2a: Blastoise|heal
+L	ab_15_0	157	|move|p1a: Hariyama|Rock Slide|p2a: Blastoise|[miss]
+L	ab_15_0	158	|-miss|p1a: Hariyama|p2a: Blastoise
+L	ab_15_0	159	|
+L	ab_15_0	160	|-heal|p1a: Hariyama|375/375 tox|[from] item: Leftovers
+L	ab_15_0	161	|-damage|p1a: Hariyama|329/375 tox|[from] psn
+L	ab_15_0	162	|upkeep
+L	ab_15_0	163	|turn|15
+L	ab_15_0	164	|
+L	ab_15_0	165	|t:|<NORMALIZED>
+L	ab_15_0	166	|move|p2a: Blastoise|Surf|p1a: Hariyama
+L	ab_15_0	167	|-damage|p1a: Hariyama|209/375 tox
+L	ab_15_0	168	|move|p1a: Hariyama|Rest|p1a: Hariyama
+L	ab_15_0	169	|-status|p1a: Hariyama|slp|[from] move: Rest
+L	ab_15_0	170	|-heal|p1a: Hariyama|375/375 slp|[silent]
+L	ab_15_0	171	|
+L	ab_15_0	172	|upkeep
+L	ab_15_0	173	|turn|16
+L	ab_15_0	174	|
+L	ab_15_0	175	|t:|<NORMALIZED>
+L	ab_15_0	176	|switch|p2a: Roselia|Roselia, L97, M|32/254
+L	ab_15_0	177	|switch|p1a: Tauros|Tauros, L76, M|239/239
+L	ab_15_0	178	|-damage|p1a: Tauros|210/239|[from] Spikes
+L	ab_15_0	179	|-ability|p1a: Tauros|Intimidate|boost
+L	ab_15_0	180	|-unboost|p2a: Roselia|atk|1
+L	ab_15_0	181	|
+L	ab_15_0	182	|-heal|p2a: Roselia|47/254|[from] item: Leftovers
+L	ab_15_0	183	|upkeep
+L	ab_15_0	184	|turn|17
+L	ab_15_0	185	|
+L	ab_15_0	186	|t:|<NORMALIZED>
+L	ab_15_0	187	|switch|p2a: Gligar|Gligar, L83, M|243/243
+L	ab_15_0	188	|move|p1a: Tauros|Double-Edge|p2a: Gligar
+L	ab_15_0	189	|-damage|p2a: Gligar|98/243
+L	ab_15_0	190	|-damage|p1a: Tauros|162/239|[from] Recoil|[of] p2a: Gligar
+L	ab_15_0	191	|
+L	ab_15_0	192	|-heal|p2a: Gligar|113/243|[from] item: Leftovers
+L	ab_15_0	193	|upkeep
+L	ab_15_0	194	|turn|18
+L	ab_15_0	195	|
+L	ab_15_0	196	|t:|<NORMALIZED>
+L	ab_15_0	197	|move|p2a: Gligar|Quick Attack|p1a: Tauros
+L	ab_15_0	198	|-damage|p1a: Tauros|138/239
+L	ab_15_0	199	|move|p1a: Tauros|Double-Edge|p2a: Gligar
+L	ab_15_0	200	|-damage|p2a: Gligar|0 fnt
+L	ab_15_0	201	|-damage|p1a: Tauros|101/239|[from] Recoil|[of] p2a: Gligar
+L	ab_15_0	202	|faint|p2a: Gligar
+L	ab_15_0	203	|
+L	ab_15_0	204	|t:|<NORMALIZED>
+L	ab_15_0	205	|switch|p2a: Ledian|Ledian, M|272/272
+L	ab_15_0	206	|
+L	ab_15_0	207	|upkeep
+L	ab_15_0	208	|turn|19
+L	ab_15_0	209	|
+L	ab_15_0	210	|t:|<NORMALIZED>
+L	ab_15_0	211	|switch|p1a: Tyranitar|Tyranitar, L74, M|270/270
+L	ab_15_0	212	|-damage|p1a: Tyranitar|237/270|[from] Spikes
+L	ab_15_0	213	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_15_0	214	|move|p2a: Ledian|Silver Wind|p1a: Tyranitar
+L	ab_15_0	215	|-supereffective|p1a: Tyranitar
+L	ab_15_0	216	|-damage|p1a: Tyranitar|147/270
+L	ab_15_0	217	|
+L	ab_15_0	218	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	219	|-damage|p2a: Ledian|255/272|[from] Sandstorm
+L	ab_15_0	220	|debug|natural status immunity
+L	ab_15_0	221	|debug|weather immunity
+L	ab_15_0	222	|-heal|p2a: Ledian|272/272|[from] item: Leftovers
+L	ab_15_0	223	|-heal|p1a: Tyranitar|163/270|[from] item: Leftovers
+L	ab_15_0	224	|upkeep
+L	ab_15_0	225	|turn|20
+L	ab_15_0	226	|
+L	ab_15_0	227	|t:|<NORMALIZED>
+L	ab_15_0	228	|move|p2a: Ledian|Swords Dance|p2a: Ledian
+L	ab_15_0	229	|-boost|p2a: Ledian|atk|2
+L	ab_15_0	230	|move|p1a: Tyranitar|Rock Slide|p2a: Ledian|[miss]
+L	ab_15_0	231	|-miss|p1a: Tyranitar|p2a: Ledian
+L	ab_15_0	232	|
+L	ab_15_0	233	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	234	|-damage|p2a: Ledian|255/272|[from] Sandstorm
+L	ab_15_0	235	|debug|natural status immunity
+L	ab_15_0	236	|debug|weather immunity
+L	ab_15_0	237	|-heal|p2a: Ledian|272/272|[from] item: Leftovers
+L	ab_15_0	238	|-heal|p1a: Tyranitar|179/270|[from] item: Leftovers
+L	ab_15_0	239	|upkeep
+L	ab_15_0	240	|turn|21
+L	ab_15_0	241	|
+L	ab_15_0	242	|t:|<NORMALIZED>
+L	ab_15_0	243	|switch|p2a: Blastoise|Blastoise, L82, M|264/264
+L	ab_15_0	244	|move|p1a: Tyranitar|Crunch|p2a: Blastoise
+L	ab_15_0	245	|-damage|p2a: Blastoise|204/264
+L	ab_15_0	246	|-unboost|p2a: Blastoise|spd|1
+L	ab_15_0	247	|
+L	ab_15_0	248	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	249	|-damage|p2a: Blastoise|188/264|[from] Sandstorm
+L	ab_15_0	250	|debug|natural status immunity
+L	ab_15_0	251	|debug|weather immunity
+L	ab_15_0	252	|-heal|p2a: Blastoise|204/264|[from] item: Leftovers
+L	ab_15_0	253	|-heal|p1a: Tyranitar|195/270|[from] item: Leftovers
+L	ab_15_0	254	|upkeep
+L	ab_15_0	255	|turn|22
+L	ab_15_0	256	|
+L	ab_15_0	257	|t:|<NORMALIZED>
+L	ab_15_0	258	|move|p2a: Blastoise|Toxic|p1a: Tyranitar
+L	ab_15_0	259	|-status|p1a: Tyranitar|tox
+L	ab_15_0	260	|move|p1a: Tyranitar|Crunch|p2a: Blastoise
+L	ab_15_0	261	|-damage|p2a: Blastoise|121/264
+L	ab_15_0	262	|
+L	ab_15_0	263	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	264	|-damage|p2a: Blastoise|105/264|[from] Sandstorm
+L	ab_15_0	265	|debug|natural status immunity
+L	ab_15_0	266	|debug|weather immunity
+L	ab_15_0	267	|-heal|p2a: Blastoise|121/264|[from] item: Leftovers
+L	ab_15_0	268	|-heal|p1a: Tyranitar|211/270 tox|[from] item: Leftovers
+L	ab_15_0	269	|-damage|p1a: Tyranitar|195/270 tox|[from] psn
+L	ab_15_0	270	|upkeep
+L	ab_15_0	271	|turn|23
+L	ab_15_0	272	|
+L	ab_15_0	273	|t:|<NORMALIZED>
+L	ab_15_0	274	|move|p2a: Blastoise|Sleep Talk|p2a: Blastoise
+L	ab_15_0	275	|move|p1a: Tyranitar|Crunch|p2a: Blastoise
+L	ab_15_0	276	|-damage|p2a: Blastoise|39/264
+L	ab_15_0	277	|-unboost|p2a: Blastoise|spd|1
+L	ab_15_0	278	|
+L	ab_15_0	279	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	280	|-damage|p2a: Blastoise|23/264|[from] Sandstorm
+L	ab_15_0	281	|debug|natural status immunity
+L	ab_15_0	282	|debug|weather immunity
+L	ab_15_0	283	|-heal|p2a: Blastoise|39/264|[from] item: Leftovers
+L	ab_15_0	284	|-heal|p1a: Tyranitar|211/270 tox|[from] item: Leftovers
+L	ab_15_0	285	|-damage|p1a: Tyranitar|179/270 tox|[from] psn
+L	ab_15_0	286	|upkeep
+L	ab_15_0	287	|turn|24
+L	ab_15_0	288	|
+L	ab_15_0	289	|t:|<NORMALIZED>
+L	ab_15_0	290	|move|p2a: Blastoise|Surf|p1a: Tyranitar
+L	ab_15_0	291	|debug|Torrent boost
+L	ab_15_0	292	|-supereffective|p1a: Tyranitar
+L	ab_15_0	293	|-crit|p1a: Tyranitar
+L	ab_15_0	294	|-damage|p1a: Tyranitar|0 fnt
+L	ab_15_0	295	|faint|p1a: Tyranitar
+L	ab_15_0	296	|
+L	ab_15_0	297	|t:|<NORMALIZED>
+L	ab_15_0	298	|switch|p1a: Hariyama|Hariyama, L83, M|375/375 slp
+L	ab_15_0	299	|-damage|p1a: Hariyama|329/375 slp|[from] Spikes
+L	ab_15_0	300	|
+L	ab_15_0	301	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	302	|-damage|p2a: Blastoise|23/264|[from] Sandstorm
+L	ab_15_0	303	|-damage|p1a: Hariyama|306/375 slp|[from] Sandstorm
+L	ab_15_0	304	|-heal|p2a: Blastoise|39/264|[from] item: Leftovers
+L	ab_15_0	305	|-heal|p1a: Hariyama|329/375 slp|[from] item: Leftovers
+L	ab_15_0	306	|upkeep
+L	ab_15_0	307	|turn|25
+L	ab_15_0	308	|
+L	ab_15_0	309	|t:|<NORMALIZED>
+L	ab_15_0	310	|move|p2a: Blastoise|Surf|p1a: Hariyama
+L	ab_15_0	311	|debug|Torrent boost
+L	ab_15_0	312	|-damage|p1a: Hariyama|158/375 slp
+L	ab_15_0	313	|cant|p1a: Hariyama|slp
+L	ab_15_0	314	|
+L	ab_15_0	315	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	316	|-damage|p2a: Blastoise|23/264|[from] Sandstorm
+L	ab_15_0	317	|-damage|p1a: Hariyama|135/375 slp|[from] Sandstorm
+L	ab_15_0	318	|-heal|p2a: Blastoise|39/264|[from] item: Leftovers
+L	ab_15_0	319	|-heal|p1a: Hariyama|158/375 slp|[from] item: Leftovers
+L	ab_15_0	320	|upkeep
+L	ab_15_0	321	|turn|26
+L	ab_15_0	322	|
+L	ab_15_0	323	|t:|<NORMALIZED>
+L	ab_15_0	324	|move|p2a: Blastoise|Rest|p2a: Blastoise
+L	ab_15_0	325	|-status|p2a: Blastoise|slp|[from] move: Rest
+L	ab_15_0	326	|-heal|p2a: Blastoise|264/264 slp|[silent]
+L	ab_15_0	327	|cant|p1a: Hariyama|slp
+L	ab_15_0	328	|
+L	ab_15_0	329	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	330	|-damage|p2a: Blastoise|248/264 slp|[from] Sandstorm
+L	ab_15_0	331	|-damage|p1a: Hariyama|135/375 slp|[from] Sandstorm
+L	ab_15_0	332	|-heal|p2a: Blastoise|264/264 slp|[from] item: Leftovers
+L	ab_15_0	333	|-heal|p1a: Hariyama|158/375 slp|[from] item: Leftovers
+L	ab_15_0	334	|upkeep
+L	ab_15_0	335	|turn|27
+L	ab_15_0	336	|
+L	ab_15_0	337	|t:|<NORMALIZED>
+L	ab_15_0	338	|switch|p1a: Illumise|Illumise, L92, F|89/269
+L	ab_15_0	339	|-damage|p1a: Illumise|56/269|[from] Spikes
+L	ab_15_0	340	|cant|p2a: Blastoise|slp
+L	ab_15_0	341	|
+L	ab_15_0	342	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	343	|-damage|p1a: Illumise|40/269|[from] Sandstorm
+L	ab_15_0	344	|-damage|p2a: Blastoise|248/264 slp|[from] Sandstorm
+L	ab_15_0	345	|-heal|p1a: Illumise|56/269|[from] item: Leftovers
+L	ab_15_0	346	|-heal|p2a: Blastoise|264/264 slp|[from] item: Leftovers
+L	ab_15_0	347	|upkeep
+L	ab_15_0	348	|turn|28
+L	ab_15_0	349	|
+L	ab_15_0	350	|t:|<NORMALIZED>
+L	ab_15_0	351	|move|p1a: Illumise|Seismic Toss|p2a: Blastoise
+L	ab_15_0	352	|-damage|p2a: Blastoise|172/264 slp
+L	ab_15_0	353	|cant|p2a: Blastoise|slp
+L	ab_15_0	354	|
+L	ab_15_0	355	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	356	|-damage|p1a: Illumise|40/269|[from] Sandstorm
+L	ab_15_0	357	|-damage|p2a: Blastoise|156/264 slp|[from] Sandstorm
+L	ab_15_0	358	|-heal|p1a: Illumise|56/269|[from] item: Leftovers
+L	ab_15_0	359	|-heal|p2a: Blastoise|172/264 slp|[from] item: Leftovers
+L	ab_15_0	360	|upkeep
+L	ab_15_0	361	|turn|29
+L	ab_15_0	362	|
+L	ab_15_0	363	|t:|<NORMALIZED>
+L	ab_15_0	364	|switch|p1a: Jirachi|Jirachi, L73|266/266
+L	ab_15_0	365	|-damage|p1a: Jirachi|233/266|[from] Spikes
+L	ab_15_0	366	|-curestatus|p2a: Blastoise|slp|[msg]
+L	ab_15_0	367	|move|p2a: Blastoise|Toxic|p1a: Jirachi
+L	ab_15_0	368	|debug|natural status immunity
+L	ab_15_0	369	|debug|immune to status
+L	ab_15_0	370	|-immune|p1a: Jirachi
+L	ab_15_0	371	|debug|move failed because it did nothing
+L	ab_15_0	372	|
+L	ab_15_0	373	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	374	|debug|natural status immunity
+L	ab_15_0	375	|debug|weather immunity
+L	ab_15_0	376	|-damage|p2a: Blastoise|156/264|[from] Sandstorm
+L	ab_15_0	377	|-heal|p1a: Jirachi|249/266|[from] item: Leftovers
+L	ab_15_0	378	|-heal|p2a: Blastoise|172/264|[from] item: Leftovers
+L	ab_15_0	379	|upkeep
+L	ab_15_0	380	|turn|30
+L	ab_15_0	381	|
+L	ab_15_0	382	|t:|<NORMALIZED>
+L	ab_15_0	383	|switch|p2a: Pikachu|Pikachu, L87, M|203/203
+L	ab_15_0	384	|debug|doubling secondary chance
+L	ab_15_0	385	|move|p1a: Jirachi|Ice Punch|p2a: Pikachu
+L	ab_15_0	386	|-damage|p2a: Pikachu|133/203
+L	ab_15_0	387	|-status|p2a: Pikachu|frz
+L	ab_15_0	388	|
+L	ab_15_0	389	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	390	|-damage|p2a: Pikachu|121/203 frz|[from] Sandstorm
+L	ab_15_0	391	|debug|natural status immunity
+L	ab_15_0	392	|debug|weather immunity
+L	ab_15_0	393	|-heal|p1a: Jirachi|265/266|[from] item: Leftovers
+L	ab_15_0	394	|upkeep
+L	ab_15_0	395	|turn|31
+L	ab_15_0	396	|
+L	ab_15_0	397	|t:|<NORMALIZED>
+L	ab_15_0	398	|cant|p2a: Pikachu|frz
+L	ab_15_0	399	|debug|doubling secondary chance
+L	ab_15_0	400	|move|p1a: Jirachi|Fire Punch|p2a: Pikachu
+L	ab_15_0	401	|-damage|p2a: Pikachu|53/203 frz
+L	ab_15_0	402	|-curestatus|p2a: Pikachu|frz|[msg]
+L	ab_15_0	403	|-status|p1a: Jirachi|par|[from] ability: Static|[of] p2a: Pikachu
+L	ab_15_0	404	|
+L	ab_15_0	405	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	406	|-damage|p2a: Pikachu|41/203|[from] Sandstorm
+L	ab_15_0	407	|debug|natural status immunity
+L	ab_15_0	408	|debug|weather immunity
+L	ab_15_0	409	|-heal|p1a: Jirachi|266/266 par|[from] item: Leftovers
+L	ab_15_0	410	|upkeep
+L	ab_15_0	411	|turn|32
+L	ab_15_0	412	|
+L	ab_15_0	413	|t:|<NORMALIZED>
+L	ab_15_0	414	|move|p2a: Pikachu|Encore|p1a: Jirachi
+L	ab_15_0	415	|-start|p1a: Jirachi|Encore
+L	ab_15_0	416	|debug|doubling secondary chance
+L	ab_15_0	417	|move|p1a: Jirachi|Fire Punch|p2a: Pikachu
+L	ab_15_0	418	|-damage|p2a: Pikachu|0 fnt
+L	ab_15_0	419	|faint|p2a: Pikachu
+L	ab_15_0	420	|
+L	ab_15_0	421	|t:|<NORMALIZED>
+L	ab_15_0	422	|switch|p2a: Ledian|Ledian, M|272/272
+L	ab_15_0	423	|
+L	ab_15_0	424	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	425	|-damage|p2a: Ledian|255/272|[from] Sandstorm
+L	ab_15_0	426	|debug|natural status immunity
+L	ab_15_0	427	|debug|weather immunity
+L	ab_15_0	428	|-heal|p2a: Ledian|272/272|[from] item: Leftovers
+L	ab_15_0	429	|upkeep
+L	ab_15_0	430	|turn|33
+L	ab_15_0	431	|
+L	ab_15_0	432	|t:|<NORMALIZED>
+L	ab_15_0	433	|switch|p1a: Illumise|Illumise, L92, F|56/269
+L	ab_15_0	434	|-damage|p1a: Illumise|23/269|[from] Spikes
+L	ab_15_0	435	|move|p2a: Ledian|Agility|p2a: Ledian
+L	ab_15_0	436	|-boost|p2a: Ledian|spe|2
+L	ab_15_0	437	|
+L	ab_15_0	438	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	439	|-damage|p2a: Ledian|255/272|[from] Sandstorm
+L	ab_15_0	440	|-damage|p1a: Illumise|7/269|[from] Sandstorm
+L	ab_15_0	441	|-heal|p2a: Ledian|272/272|[from] item: Leftovers
+L	ab_15_0	442	|-heal|p1a: Illumise|23/269|[from] item: Leftovers
+L	ab_15_0	443	|upkeep
+L	ab_15_0	444	|turn|34
+L	ab_15_0	445	|
+L	ab_15_0	446	|t:|<NORMALIZED>
+L	ab_15_0	447	|switch|p2a: Blastoise|Blastoise, L82, M|172/264
+L	ab_15_0	448	|switch|p1a: Tauros|Tauros, L76, M|101/239
+L	ab_15_0	449	|-damage|p1a: Tauros|72/239|[from] Spikes
+L	ab_15_0	450	|-ability|p1a: Tauros|Intimidate|boost
+L	ab_15_0	451	|-unboost|p2a: Blastoise|atk|1
+L	ab_15_0	452	|
+L	ab_15_0	453	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	454	|-damage|p1a: Tauros|58/239|[from] Sandstorm
+L	ab_15_0	455	|-damage|p2a: Blastoise|156/264|[from] Sandstorm
+L	ab_15_0	456	|-heal|p2a: Blastoise|172/264|[from] item: Leftovers
+L	ab_15_0	457	|upkeep
+L	ab_15_0	458	|turn|35
+L	ab_15_0	459	|
+L	ab_15_0	460	|t:|<NORMALIZED>
+L	ab_15_0	461	|move|p1a: Tauros|Return|p2a: Blastoise
+L	ab_15_0	462	|-damage|p2a: Blastoise|37/264
+L	ab_15_0	463	|move|p2a: Blastoise|Toxic|p1a: Tauros
+L	ab_15_0	464	|-status|p1a: Tauros|tox
+L	ab_15_0	465	|
+L	ab_15_0	466	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	467	|-damage|p1a: Tauros|44/239 tox|[from] Sandstorm
+L	ab_15_0	468	|-damage|p2a: Blastoise|21/264|[from] Sandstorm
+L	ab_15_0	469	|-damage|p1a: Tauros|30/239 tox|[from] psn
+L	ab_15_0	470	|-heal|p2a: Blastoise|37/264|[from] item: Leftovers
+L	ab_15_0	471	|upkeep
+L	ab_15_0	472	|turn|36
+L	ab_15_0	473	|
+L	ab_15_0	474	|t:|<NORMALIZED>
+L	ab_15_0	475	|move|p1a: Tauros|Return|p2a: Blastoise
+L	ab_15_0	476	|-damage|p2a: Blastoise|0 fnt
+L	ab_15_0	477	|faint|p2a: Blastoise
+L	ab_15_0	478	|
+L	ab_15_0	479	|t:|<NORMALIZED>
+L	ab_15_0	480	|switch|p2a: Roselia|Roselia, L97, M|47/254
+L	ab_15_0	481	|
+L	ab_15_0	482	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	483	|-damage|p1a: Tauros|16/239 tox|[from] Sandstorm
+L	ab_15_0	484	|-damage|p2a: Roselia|32/254|[from] Sandstorm
+L	ab_15_0	485	|-damage|p1a: Tauros|0 fnt|[from] psn
+L	ab_15_0	486	|faint|p1a: Tauros
+L	ab_15_0	487	|-heal|p2a: Roselia|47/254|[from] item: Leftovers
+L	ab_15_0	488	|upkeep
+L	ab_15_0	489	|
+L	ab_15_0	490	|t:|<NORMALIZED>
+L	ab_15_0	491	|switch|p1a: Jirachi|Jirachi, L73|266/266 par
+L	ab_15_0	492	|-damage|p1a: Jirachi|233/266 par|[from] Spikes
+L	ab_15_0	493	|turn|37
+L	ab_15_0	494	|
+L	ab_15_0	495	|t:|<NORMALIZED>
+L	ab_15_0	496	|move|p2a: Roselia|Spikes|p1a: Jirachi
+L	ab_15_0	497	|-sidestart|p1: P1|Spikes
+L	ab_15_0	498	|move|p1a: Jirachi|Calm Mind|p1a: Jirachi
+L	ab_15_0	499	|-boost|p1a: Jirachi|spa|1
+L	ab_15_0	500	|-boost|p1a: Jirachi|spd|1
+L	ab_15_0	501	|
+L	ab_15_0	502	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	503	|-damage|p2a: Roselia|32/254|[from] Sandstorm
+L	ab_15_0	504	|debug|natural status immunity
+L	ab_15_0	505	|debug|weather immunity
+L	ab_15_0	506	|-heal|p2a: Roselia|47/254|[from] item: Leftovers
+L	ab_15_0	507	|-heal|p1a: Jirachi|249/266 par|[from] item: Leftovers
+L	ab_15_0	508	|upkeep
+L	ab_15_0	509	|turn|38
+L	ab_15_0	510	|
+L	ab_15_0	511	|t:|<NORMALIZED>
+L	ab_15_0	512	|move|p2a: Roselia|Toxic||[still]
+L	ab_15_0	513	|-fail|p2a: Roselia
+L	ab_15_0	514	|debug|move failed because it did nothing
+L	ab_15_0	515	|debug|doubling secondary chance
+L	ab_15_0	516	|move|p1a: Jirachi|Psychic|p2a: Roselia
+L	ab_15_0	517	|-supereffective|p2a: Roselia
+L	ab_15_0	518	|-damage|p2a: Roselia|0 fnt
+L	ab_15_0	519	|faint|p2a: Roselia
+L	ab_15_0	520	|
+L	ab_15_0	521	|t:|<NORMALIZED>
+L	ab_15_0	522	|switch|p2a: Ledian|Ledian, M|272/272
+L	ab_15_0	523	|
+L	ab_15_0	524	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	525	|-damage|p2a: Ledian|255/272|[from] Sandstorm
+L	ab_15_0	526	|debug|natural status immunity
+L	ab_15_0	527	|debug|weather immunity
+L	ab_15_0	528	|-heal|p2a: Ledian|272/272|[from] item: Leftovers
+L	ab_15_0	529	|-heal|p1a: Jirachi|265/266 par|[from] item: Leftovers
+L	ab_15_0	530	|upkeep
+L	ab_15_0	531	|turn|39
+L	ab_15_0	532	|
+L	ab_15_0	533	|t:|<NORMALIZED>
+L	ab_15_0	534	|move|p2a: Ledian|Agility|p2a: Ledian
+L	ab_15_0	535	|-boost|p2a: Ledian|spe|2
+L	ab_15_0	536	|cant|p1a: Jirachi|par
+L	ab_15_0	537	|
+L	ab_15_0	538	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	539	|-damage|p2a: Ledian|255/272|[from] Sandstorm
+L	ab_15_0	540	|debug|natural status immunity
+L	ab_15_0	541	|debug|weather immunity
+L	ab_15_0	542	|-heal|p2a: Ledian|272/272|[from] item: Leftovers
+L	ab_15_0	543	|-heal|p1a: Jirachi|266/266 par|[from] item: Leftovers
+L	ab_15_0	544	|upkeep
+L	ab_15_0	545	|turn|40
+L	ab_15_0	546	|
+L	ab_15_0	547	|t:|<NORMALIZED>
+L	ab_15_0	548	|move|p2a: Ledian|Baton Pass||[still]
+L	ab_15_0	549	|-fail|p2a: Ledian
+L	ab_15_0	550	|debug|doubling secondary chance
+L	ab_15_0	551	|move|p1a: Jirachi|Fire Punch|p2a: Ledian
+L	ab_15_0	552	|-supereffective|p2a: Ledian
+L	ab_15_0	553	|-damage|p2a: Ledian|187/272
+L	ab_15_0	554	|-status|p2a: Ledian|brn
+L	ab_15_0	555	|
+L	ab_15_0	556	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	557	|-damage|p2a: Ledian|170/272 brn|[from] Sandstorm
+L	ab_15_0	558	|debug|natural status immunity
+L	ab_15_0	559	|debug|weather immunity
+L	ab_15_0	560	|-heal|p2a: Ledian|187/272 brn|[from] item: Leftovers
+L	ab_15_0	561	|-damage|p2a: Ledian|153/272 brn|[from] brn
+L	ab_15_0	562	|upkeep
+L	ab_15_0	563	|turn|41
+L	ab_15_0	564	|
+L	ab_15_0	565	|t:|<NORMALIZED>
+L	ab_15_0	566	|move|p2a: Ledian|Silver Wind|p1a: Jirachi
+L	ab_15_0	567	|-damage|p1a: Jirachi|243/266 par
+L	ab_15_0	568	|move|p1a: Jirachi|Calm Mind|p1a: Jirachi
+L	ab_15_0	569	|-boost|p1a: Jirachi|spa|1
+L	ab_15_0	570	|-boost|p1a: Jirachi|spd|1
+L	ab_15_0	571	|
+L	ab_15_0	572	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	573	|-damage|p2a: Ledian|136/272 brn|[from] Sandstorm
+L	ab_15_0	574	|debug|natural status immunity
+L	ab_15_0	575	|debug|weather immunity
+L	ab_15_0	576	|-heal|p2a: Ledian|153/272 brn|[from] item: Leftovers
+L	ab_15_0	577	|-damage|p2a: Ledian|119/272 brn|[from] brn
+L	ab_15_0	578	|-heal|p1a: Jirachi|259/266 par|[from] item: Leftovers
+L	ab_15_0	579	|upkeep
+L	ab_15_0	580	|turn|42
+L	ab_15_0	581	|
+L	ab_15_0	582	|t:|<NORMALIZED>
+L	ab_15_0	583	|move|p2a: Ledian|Baton Pass||[still]
+L	ab_15_0	584	|-fail|p2a: Ledian
+L	ab_15_0	585	|debug|doubling secondary chance
+L	ab_15_0	586	|move|p1a: Jirachi|Psychic|p2a: Ledian
+L	ab_15_0	587	|-damage|p2a: Ledian|7/272 brn
+L	ab_15_0	588	|
+L	ab_15_0	589	|-weather|Sandstorm|[upkeep]
+L	ab_15_0	590	|-damage|p2a: Ledian|0 fnt|[from] Sandstorm
+L	ab_15_0	591	|debug|natural status immunity
+L	ab_15_0	592	|debug|weather immunity
+L	ab_15_0	593	|faint|p2a: Ledian
+L	ab_15_0	594	|
+L	ab_15_0	595	|win|P1

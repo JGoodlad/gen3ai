@@ -1,0 +1,655 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=240724 run_id=rmrzcanyf chunk=24
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_24_15
+TEAM	ab_24_15	p1	Shedinja||LumBerry|WonderGuard|silverwind,agility,hiddenpowerfighting,shadowball|Hardy|85,85,85,85,85,85|N|,,30,30,30,30|||]Dodrio||LiechiBerry|EarlyBird|flail,substitute,drillpeck,quickattack|Hardy|85,85,85,85,85,85|M|||78|]Mawile||Leftovers|Intimidate|substitute,brickbreak,swordsdance,hiddenpowersteel|Hardy|85,85,85,85,85,85|M|,,,,30,||96|]Raikou||Leftovers|Pressure|rest,sleeptalk,thunderbolt,hiddenpowerice|Hardy|85,,85,85,85,85|N|,2,30,,,||74|]Clefable||Leftovers|CuteCharm|fireblast,return,softboiled,thunderwave|Hardy|85,85,85,85,85,85|M|||85|]Heracross||SalacBerry|Swarm|endure,megahorn,reversal,rockslide|Hardy|85,85,85,85,85,85|M|||77|
+TEAM	ab_24_15	p2	Tangela||Leftovers|Chlorophyll|morningsun,sunnyday,hiddenpowerfire,solarbeam|Hardy|85,,85,85,85,85|M|,2,,30,,30||95|]Ho-Oh||Leftovers|Pressure|toxic,recover,sacredfire,earthquake|Hardy|85,85,85,85,85,85|N|||70|]Piloswine||Leftovers|Oblivious|icebeam,rest,sleeptalk,earthquake|Hardy|85,85,85,85,85,85|M|||87|]Typhlosion||PetayaBerry|Blaze|substitute,flamethrower,hiddenpowerice,thunderpunch|Hardy|81,,85,85,85,85|M|,2,30,,,||79|]Smeargle||Leftovers|OwnTempo|spikes,encore,spore,explosion|Hardy|85,85,85,85,85,85|M|||89|]Crawdaunt||Leftovers|HyperCutter|doubleedge,crunch,hiddenpowerelectric,surf|Hardy|85,85,85,85,85,85|M|,,,30,,||89|
+FMT	ab_24_15	gen3customgame
+INIT	ab_24_15	33641,57790,12071,13499	1699286693
+DEC	ab_24_15	0	move	0	0	m3	m0	64337,39505,60946,19582	Shedinja	1	1	0	-	0	0	0	0	0	0	6	Tangela	213	277	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_24_15	1	move	0	0	m1	m1	35205,36149,63424,14969	Shedinja	1	1	0	-	0	0	0	0	2	0	6	Tangela	230	277	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_24_15	2	move	0	0	m0	m0	43804,17524,14447,64276	Shedinja	1	1	0	-	0	0	0	0	2	0	6	Tangela	170	277	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_24_15	3	move	0	0	m1	m1	11815,59374,32574,24999	Shedinja	1	1	0	-	0	0	0	0	4	0	6	Tangela	187	277	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_24_15	4	move	0	0	m1	m0	54555,8954,46486,33958	Shedinja	1	1	0	-	0	0	0	0	6	0	6	Tangela	277	277	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_24_15	5	move	0	0	m0	m1	35006,47449,1736,12741	Shedinja	1	1	0	-	0	0	0	0	6	0	6	Tangela	169	277	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_24_15	6	move	0	0	m3	m1	27110,17721,29350,49232	Shedinja	1	1	0	-	0	0	0	0	6	0	6	Tangela	110	277	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_24_15	7	move	0	0	m1	m3	15721,35520,49355,61570	Shedinja	1	1	0	-	0	0	0	0	6	0	6	Tangela	127	277	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_24_15	8	move	0	0	m0	m1	52190,4659,49668,22225	Shedinja	1	1	0	-	0	0	0	0	6	0	6	Tangela	27	277	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_24_15	9	move	0	0	m1	m0	18256,49011,27145,47160	Shedinja	1	1	0	-	0	0	0	0	6	0	6	Tangela	228	277	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_24_15	10	move	0	0	s4	m1	3664,25179,45850,17627	Clefable	300	300	0	-	0	0	0	0	0	0	6	Tangela	245	277	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_24_15	11	move	0	0	m0	m1	38443,38356,51517,50879	Clefable	300	300	0	-	0	0	0	0	0	0	6	Tangela	0	277	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_24_15	12	switch	0	1	-	s3	5385,43913,30747,16158	Clefable	300	300	0	-	0	0	0	0	0	0	6	Typhlosion	252	252	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_24_15	13	move	0	0	s1	s5	61280,14008,22911,37785	Dodrio	222	222	0	-	0	0	0	0	0	0	6	Crawdaunt	257	257	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_24_15	14	move	0	0	m2	s2	6594,56163,2045,54685	Dodrio	222	222	0	-	0	0	0	0	0	0	6	Piloswine	153	316	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_24_15	15	move	0	0	m1	m1	33177,48152,34860,35783	Dodrio	167	222	0	-	0	0	0	0	0	0	6	Piloswine	316	316	0	slp	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_24_15	16	move	0	0	m1	m2	19552,4706,33517,62693	Dodrio	167	222	0	-	0	0	0	0	0	0	6	Piloswine	316	316	0	slp	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_24_15	17	move	0	0	s3	m2	30715,32780,41969,39465	Raikou	0	255	1	fnt	0	0	0	0	0	0	5	Piloswine	316	316	0	slp	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_24_15	18	switch	1	0	s5	-	33632,50826,32023,25072	Heracross	250	250	0	-	0	0	0	0	0	0	5	Piloswine	316	316	0	slp	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_24_15	19	move	0	0	m3	m2	23155,58650,30635,19159	Heracross	250	250	0	-	0	0	0	0	0	0	5	Piloswine	274	316	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_24_15	20	move	0	0	m2	s4	60868,2047,59426,50427	Heracross	250	250	0	-	0	0	0	0	0	0	5	Smeargle	180	243	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_24_15	21	move	0	0	m3	m0	42528,29347,28694,25022	Heracross	250	250	0	-	0	0	0	0	0	0	5	Smeargle	105	243	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_24_15	22	move	0	0	m2	m0	23288,22301,61646,37746	Heracross	250	250	0	-	0	0	0	0	0	0	5	Smeargle	44	243	0	-	0	0	0	0	0	0	5	p2	2	0	0	1	0
+DEC	ab_24_15	23	move	0	0	m2	s1	30306,53509,65014,12774	Heracross	250	250	0	-	0	0	0	0	0	0	5	Ho-Oh	264	264	0	-	0	0	0	0	0	0	5	p2	2	0	0	1	0
+DEC	ab_24_15	24	move	0	0	m0	m1	38034,13844,43836,20136	Heracross	250	250	0	-	0	0	0	0	0	0	5	Ho-Oh	264	264	0	-	0	0	0	0	0	0	5	p1	2	0	0	0	1
+DEC	ab_24_15	25	move	0	0	s3	m0	63244,47901,43453,61722	Dodrio	154	222	0	tox	0	0	0	0	0	0	5	Ho-Oh	264	264	0	-	0	0	0	0	0	0	5	p1	2	0	0	0	0
+DEC	ab_24_15	26	move	0	0	m0	m1	37863,54619,60371,17678	Dodrio	128	222	0	tox	0	0	0	0	0	0	5	Ho-Oh	264	264	0	-	0	0	0	0	0	0	5	p1	2	0	0	1	0
+DEC	ab_24_15	27	move	0	0	m1	s4	40014,51942,58839,23369	Dodrio	34	222	0	tox	0	0	0	0	0	0	5	Piloswine	293	316	0	-	0	0	0	0	0	0	5	p2	2	0	0	0	0
+DEC	ab_24_15	28	move	0	0	m2	m0	56090,47896,47108,15158	Dodrio	0	222	1	fnt	0	0	0	0	0	0	4	Piloswine	219	316	0	-	0	0	0	0	0	0	5	p1	2	0	0	0	0
+DEC	ab_24_15	29	switch	1	0	s3	-	10588,35489,17403,57617	Heracross	209	250	0	-	0	0	0	0	0	0	4	Piloswine	219	316	0	-	0	0	0	0	0	0	5	none	2	0	0	0	0
+DEC	ab_24_15	30	move	0	0	m3	s2	18469,39464,53003,40332	Heracross	209	250	0	-	0	0	0	0	0	0	4	Crawdaunt	221	257	0	-	0	0	0	0	0	0	5	p2	2	0	0	0	0
+DEC	ab_24_15	31	move	0	0	m3	m1	15888,6429,21394,12295	Heracross	162	250	0	-	0	0	0	0	0	0	4	Crawdaunt	182	257	0	-	0	0	0	0	0	0	5	p1	2	0	0	0	0
+DEC	ab_24_15	32	move	0	0	m1	m1	49092,52937,10094,58440	Heracross	162	250	0	-	0	0	0	0	0	0	4	Crawdaunt	0	257	1	fnt	0	0	0	0	0	0	4	p1	2	0	0	0	0
+DEC	ab_24_15	33	switch	0	1	-	s2	58597,16437,34057,14123	Heracross	162	250	0	-	0	0	0	0	0	0	4	Piloswine	238	316	0	-	0	0	0	0	0	0	4	none	2	0	0	0	0
+DEC	ab_24_15	34	move	0	0	m1	s5	49807,40286,26954,46095	Heracross	162	250	0	-	0	0	0	0	0	0	4	Typhlosion	176	252	0	-	0	0	0	0	0	0	4	p2	2	0	0	0	0
+DEC	ab_24_15	35	move	0	0	m1	m1	35466,41876,36880,51891	Heracross	0	250	1	fnt	0	0	0	0	0	0	3	Typhlosion	176	252	0	-	0	0	0	0	0	0	4	p2	2	0	0	0	0
+DEC	ab_24_15	36	switch	1	0	s1	-	43339,14925,57893,25186	Clefable	268	300	0	-	0	0	0	0	0	0	3	Typhlosion	176	252	0	-	0	0	0	0	0	0	4	none	2	0	0	0	0
+DEC	ab_24_15	37	move	0	0	m1	m0	8614,61095,38327,29142	Clefable	286	300	0	-	0	0	0	0	0	0	3	Typhlosion	113	252	0	-	0	0	0	0	0	0	4	p2	2	0	0	1	0
+DEC	ab_24_15	38	move	0	0	m0	m3	50216,1084,49752,47104	Clefable	257	300	0	-	0	0	0	0	0	0	3	Typhlosion	69	252	0	-	0	0	0	0	0	0	4	p2	2	0	0	0	0
+DEC	ab_24_15	39	move	0	0	m0	s1	21911,20946,5645,55700	Clefable	257	300	0	-	0	0	0	0	0	0	3	Smeargle	0	243	1	fnt	0	0	0	0	0	0	3	p2	2	0	0	0	0
+DEC	ab_24_15	40	switch	0	1	-	s5	25859,23359,32793,43559	Clefable	275	300	0	-	0	0	0	0	0	0	3	Piloswine	257	316	0	-	0	0	0	0	0	0	3	none	2	0	0	0	0
+DEC	ab_24_15	41	move	0	0	m3	m0	18707,31186,37118,56901	Clefable	219	300	0	-	0	0	0	0	0	0	3	Piloswine	276	316	0	-	0	0	0	0	0	0	3	p1	2	0	0	0	0
+DEC	ab_24_15	42	move	0	0	m1	s4	14396,54579,17701,44425	Clefable	237	300	0	-	0	0	0	0	0	0	3	Ho-Oh	176	264	0	-	0	0	0	0	0	0	3	p2	2	0	0	1	0
+DEC	ab_24_15	43	move	0	0	m1	m1	27428,27700,26279,45197	Clefable	255	300	0	-	0	0	0	0	0	0	3	Ho-Oh	183	264	0	-	0	0	0	0	0	0	3	p2	2	0	0	1	0
+DEC	ab_24_15	44	move	0	0	m3	m0	2344,770,31466,55414	Clefable	255	300	0	tox	0	0	0	0	0	0	3	Ho-Oh	199	264	0	par	0	0	0	0	0	0	3	p2	2	0	0	0	0
+DEC	ab_24_15	45	move	0	0	m3	m3	4715,53311,44812,58715	Clefable	237	300	0	tox	0	0	0	0	0	0	3	Ho-Oh	215	264	0	par	0	0	0	0	0	0	3	p1	2	0	0	0	0
+DEC	ab_24_15	46	move	0	0	m3	m1	46175,42064,12083,62668	Clefable	201	300	0	tox	0	0	0	0	0	0	3	Ho-Oh	264	264	0	par	0	0	0	0	0	0	3	p1	2	0	0	0	0
+DEC	ab_24_15	47	move	0	0	m2	m3	20831,6378,17248,41699	Clefable	175	300	0	tox	0	0	0	0	0	0	3	Ho-Oh	264	264	0	par	0	0	0	0	0	0	3	p1	2	0	0	0	0
+DEC	ab_24_15	48	move	0	0	m2	m1	210,22460,3165,21021	Clefable	210	300	0	tox	0	0	0	0	0	0	3	Ho-Oh	264	264	0	par	0	0	0	0	0	0	3	p1	2	0	0	0	0
+DEC	ab_24_15	49	move	0	0	m3	m3	2416,5700,32540,55147	Clefable	49	300	0	tox	0	0	0	0	0	0	3	Ho-Oh	264	264	0	par	0	0	0	0	0	0	3	p1	2	0	0	0	0
+DEC	ab_24_15	50	move	0	0	m1	m2	27190,53778,32885,41715	Clefable	0	300	1	fnt	0	0	0	0	0	0	2	Ho-Oh	164	264	0	par	0	0	0	0	0	0	3	p1	2	0	0	1	0
+DEC	ab_24_15	51	switch	1	0	s4	-	27190,53778,32885,41715	Shedinja	0	1	1	fnt	0	0	0	0	0	0	1	Ho-Oh	164	264	0	par	0	0	0	0	0	0	3	none	2	0	0	0	0
+DEC	ab_24_15	52	switch	1	0	s2	-	41771,9952,39784,62370	Mawile	225	251	0	-	0	0	0	0	0	0	1	Ho-Oh	180	264	0	par	-1	0	0	0	0	0	3	none	2	0	0	0	0
+DEC	ab_24_15	53	move	0	0	m2	m3	36772,56271,42215,17156	Mawile	240	251	0	-	2	0	0	0	0	0	1	Ho-Oh	196	264	0	par	-1	0	0	0	0	0	3	p1	2	0	0	0	0
+DEC	ab_24_15	54	move	0	0	m1	m2	64096,18517,8770,56671	Mawile	56	251	0	-	2	0	0	0	0	0	1	Ho-Oh	137	264	0	par	-1	0	0	0	0	0	3	p1	2	0	0	0	0
+DEC	ab_24_15	55	move	0	0	m0	m3	27451,52690,42457,32515	Mawile	0	251	1	-	0	0	0	0	0	0	0	Ho-Oh	137	264	0	par	-1	0	0	0	0	0	3	p1	2	0	0	0	0
+END	ab_24_15	1	p2
+L	ab_24_15	0	|t:|<NORMALIZED>
+L	ab_24_15	1	|gametype|singles
+L	ab_24_15	2	|player|p1|P1||
+L	ab_24_15	3	|player|p2|P2||
+L	ab_24_15	4	|gen|3
+L	ab_24_15	5	|tier|[Gen 3] Custom Game
+L	ab_24_15	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_24_15	7	|
+L	ab_24_15	8	|t:|<NORMALIZED>
+L	ab_24_15	9	|teamsize|p1|6
+L	ab_24_15	10	|teamsize|p2|6
+L	ab_24_15	11	|start
+L	ab_24_15	12	|switch|p1a: Shedinja|Shedinja|1/1
+L	ab_24_15	13	|switch|p2a: Tangela|Tangela, L95, M|277/277
+L	ab_24_15	14	|turn|1
+L	ab_24_15	15	|
+L	ab_24_15	16	|t:|<NORMALIZED>
+L	ab_24_15	17	|move|p2a: Tangela|Morning Sun|p2a: Tangela
+L	ab_24_15	18	|move|p1a: Shedinja|Shadow Ball|p2a: Tangela
+L	ab_24_15	19	|-damage|p2a: Tangela|196/277
+L	ab_24_15	20	|
+L	ab_24_15	21	|-heal|p2a: Tangela|213/277|[from] item: Leftovers
+L	ab_24_15	22	|upkeep
+L	ab_24_15	23	|turn|2
+L	ab_24_15	24	|
+L	ab_24_15	25	|t:|<NORMALIZED>
+L	ab_24_15	26	|move|p2a: Tangela|Sunny Day|p2a: Tangela
+L	ab_24_15	27	|-weather|SunnyDay
+L	ab_24_15	28	|move|p1a: Shedinja|Agility|p1a: Shedinja
+L	ab_24_15	29	|-boost|p1a: Shedinja|spe|2
+L	ab_24_15	30	|
+L	ab_24_15	31	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	32	|-heal|p2a: Tangela|230/277|[from] item: Leftovers
+L	ab_24_15	33	|upkeep
+L	ab_24_15	34	|turn|3
+L	ab_24_15	35	|
+L	ab_24_15	36	|t:|<NORMALIZED>
+L	ab_24_15	37	|move|p2a: Tangela|Morning Sun|p2a: Tangela
+L	ab_24_15	38	|-heal|p2a: Tangela|277/277
+L	ab_24_15	39	|move|p1a: Shedinja|Silver Wind|p2a: Tangela
+L	ab_24_15	40	|-supereffective|p2a: Tangela
+L	ab_24_15	41	|-damage|p2a: Tangela|153/277
+L	ab_24_15	42	|
+L	ab_24_15	43	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	44	|-heal|p2a: Tangela|170/277|[from] item: Leftovers
+L	ab_24_15	45	|upkeep
+L	ab_24_15	46	|turn|4
+L	ab_24_15	47	|
+L	ab_24_15	48	|t:|<NORMALIZED>
+L	ab_24_15	49	|move|p2a: Tangela|Sunny Day||[still]
+L	ab_24_15	50	|-fail|p2a: Tangela
+L	ab_24_15	51	|debug|move failed because it did nothing
+L	ab_24_15	52	|move|p1a: Shedinja|Agility|p1a: Shedinja
+L	ab_24_15	53	|-boost|p1a: Shedinja|spe|2
+L	ab_24_15	54	|
+L	ab_24_15	55	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	56	|-heal|p2a: Tangela|187/277|[from] item: Leftovers
+L	ab_24_15	57	|upkeep
+L	ab_24_15	58	|turn|5
+L	ab_24_15	59	|
+L	ab_24_15	60	|t:|<NORMALIZED>
+L	ab_24_15	61	|move|p1a: Shedinja|Agility|p1a: Shedinja
+L	ab_24_15	62	|-boost|p1a: Shedinja|spe|2
+L	ab_24_15	63	|move|p2a: Tangela|Morning Sun|p2a: Tangela
+L	ab_24_15	64	|-heal|p2a: Tangela|277/277
+L	ab_24_15	65	|
+L	ab_24_15	66	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	67	|upkeep
+L	ab_24_15	68	|turn|6
+L	ab_24_15	69	|
+L	ab_24_15	70	|t:|<NORMALIZED>
+L	ab_24_15	71	|move|p1a: Shedinja|Silver Wind|p2a: Tangela
+L	ab_24_15	72	|-supereffective|p2a: Tangela
+L	ab_24_15	73	|-damage|p2a: Tangela|152/277
+L	ab_24_15	74	|move|p2a: Tangela|Sunny Day||[still]
+L	ab_24_15	75	|-fail|p2a: Tangela
+L	ab_24_15	76	|debug|move failed because it did nothing
+L	ab_24_15	77	|
+L	ab_24_15	78	|-weather|none
+L	ab_24_15	79	|-heal|p2a: Tangela|169/277|[from] item: Leftovers
+L	ab_24_15	80	|upkeep
+L	ab_24_15	81	|turn|7
+L	ab_24_15	82	|
+L	ab_24_15	83	|t:|<NORMALIZED>
+L	ab_24_15	84	|move|p1a: Shedinja|Shadow Ball|p2a: Tangela
+L	ab_24_15	85	|-damage|p2a: Tangela|93/277
+L	ab_24_15	86	|move|p2a: Tangela|Sunny Day|p2a: Tangela
+L	ab_24_15	87	|-weather|SunnyDay
+L	ab_24_15	88	|
+L	ab_24_15	89	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	90	|-heal|p2a: Tangela|110/277|[from] item: Leftovers
+L	ab_24_15	91	|upkeep
+L	ab_24_15	92	|turn|8
+L	ab_24_15	93	|
+L	ab_24_15	94	|t:|<NORMALIZED>
+L	ab_24_15	95	|move|p1a: Shedinja|Agility|p1a: Shedinja
+L	ab_24_15	96	|-boost|p1a: Shedinja|spe|0
+L	ab_24_15	97	|debug|move failed because it did nothing
+L	ab_24_15	98	|move|p2a: Tangela|Solar Beam||[still]
+L	ab_24_15	99	|-prepare|p2a: Tangela|Solar Beam
+L	ab_24_15	100	|-anim|p2a: Tangela|Solar Beam|p1a: Shedinja
+L	ab_24_15	101	|debug|Wonder Guard immunity: solarbeam
+L	ab_24_15	102	|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+L	ab_24_15	103	|
+L	ab_24_15	104	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	105	|-heal|p2a: Tangela|127/277|[from] item: Leftovers
+L	ab_24_15	106	|upkeep
+L	ab_24_15	107	|turn|9
+L	ab_24_15	108	|
+L	ab_24_15	109	|t:|<NORMALIZED>
+L	ab_24_15	110	|move|p1a: Shedinja|Silver Wind|p2a: Tangela
+L	ab_24_15	111	|-supereffective|p2a: Tangela
+L	ab_24_15	112	|-damage|p2a: Tangela|10/277
+L	ab_24_15	113	|move|p2a: Tangela|Sunny Day||[still]
+L	ab_24_15	114	|-fail|p2a: Tangela
+L	ab_24_15	115	|debug|move failed because it did nothing
+L	ab_24_15	116	|
+L	ab_24_15	117	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	118	|-heal|p2a: Tangela|27/277|[from] item: Leftovers
+L	ab_24_15	119	|upkeep
+L	ab_24_15	120	|turn|10
+L	ab_24_15	121	|
+L	ab_24_15	122	|t:|<NORMALIZED>
+L	ab_24_15	123	|move|p1a: Shedinja|Agility|p1a: Shedinja
+L	ab_24_15	124	|-boost|p1a: Shedinja|spe|0
+L	ab_24_15	125	|debug|move failed because it did nothing
+L	ab_24_15	126	|move|p2a: Tangela|Morning Sun|p2a: Tangela
+L	ab_24_15	127	|-heal|p2a: Tangela|211/277
+L	ab_24_15	128	|
+L	ab_24_15	129	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	130	|-heal|p2a: Tangela|228/277|[from] item: Leftovers
+L	ab_24_15	131	|upkeep
+L	ab_24_15	132	|turn|11
+L	ab_24_15	133	|
+L	ab_24_15	134	|t:|<NORMALIZED>
+L	ab_24_15	135	|switch|p1a: Clefable|Clefable, L85, M|300/300
+L	ab_24_15	136	|move|p2a: Tangela|Sunny Day||[still]
+L	ab_24_15	137	|-fail|p2a: Tangela
+L	ab_24_15	138	|debug|move failed because it did nothing
+L	ab_24_15	139	|
+L	ab_24_15	140	|-weather|none
+L	ab_24_15	141	|-heal|p2a: Tangela|245/277|[from] item: Leftovers
+L	ab_24_15	142	|upkeep
+L	ab_24_15	143	|turn|12
+L	ab_24_15	144	|
+L	ab_24_15	145	|t:|<NORMALIZED>
+L	ab_24_15	146	|move|p2a: Tangela|Sunny Day|p2a: Tangela
+L	ab_24_15	147	|-weather|SunnyDay
+L	ab_24_15	148	|move|p1a: Clefable|Fire Blast|p2a: Tangela
+L	ab_24_15	149	|debug|Sunny Day fire boost
+L	ab_24_15	150	|-supereffective|p2a: Tangela
+L	ab_24_15	151	|-damage|p2a: Tangela|0 fnt
+L	ab_24_15	152	|faint|p2a: Tangela
+L	ab_24_15	153	|
+L	ab_24_15	154	|t:|<NORMALIZED>
+L	ab_24_15	155	|switch|p2a: Typhlosion|Typhlosion, L79, M|252/252
+L	ab_24_15	156	|
+L	ab_24_15	157	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	158	|upkeep
+L	ab_24_15	159	|turn|13
+L	ab_24_15	160	|
+L	ab_24_15	161	|t:|<NORMALIZED>
+L	ab_24_15	162	|switch|p2a: Crawdaunt|Crawdaunt, L89, M|257/257
+L	ab_24_15	163	|switch|p1a: Dodrio|Dodrio, L78, M|222/222
+L	ab_24_15	164	|
+L	ab_24_15	165	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	166	|upkeep
+L	ab_24_15	167	|turn|14
+L	ab_24_15	168	|
+L	ab_24_15	169	|t:|<NORMALIZED>
+L	ab_24_15	170	|switch|p2a: Piloswine|Piloswine, L87, M|316/316
+L	ab_24_15	171	|move|p1a: Dodrio|Drill Peck|p2a: Piloswine
+L	ab_24_15	172	|-crit|p2a: Piloswine
+L	ab_24_15	173	|-damage|p2a: Piloswine|134/316
+L	ab_24_15	174	|
+L	ab_24_15	175	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	176	|-heal|p2a: Piloswine|153/316|[from] item: Leftovers
+L	ab_24_15	177	|upkeep
+L	ab_24_15	178	|turn|15
+L	ab_24_15	179	|
+L	ab_24_15	180	|t:|<NORMALIZED>
+L	ab_24_15	181	|move|p1a: Dodrio|Substitute|p1a: Dodrio
+L	ab_24_15	182	|-start|p1a: Dodrio|Substitute
+L	ab_24_15	183	|-damage|p1a: Dodrio|167/222
+L	ab_24_15	184	|move|p2a: Piloswine|Rest|p2a: Piloswine
+L	ab_24_15	185	|-status|p2a: Piloswine|slp|[from] move: Rest
+L	ab_24_15	186	|-heal|p2a: Piloswine|316/316 slp|[silent]
+L	ab_24_15	187	|
+L	ab_24_15	188	|-weather|SunnyDay|[upkeep]
+L	ab_24_15	189	|upkeep
+L	ab_24_15	190	|turn|16
+L	ab_24_15	191	|
+L	ab_24_15	192	|t:|<NORMALIZED>
+L	ab_24_15	193	|move|p1a: Dodrio|Substitute|p1a: Dodrio
+L	ab_24_15	194	|-fail|p1a: Dodrio|move: Substitute
+L	ab_24_15	195	|cant|p2a: Piloswine|slp
+L	ab_24_15	196	|move|p2a: Piloswine|Sleep Talk|p2a: Piloswine
+L	ab_24_15	197	|move|p2a: Piloswine|Ice Beam|p1a: Dodrio|[from] Sleep Talk
+L	ab_24_15	198	|-supereffective|p1a: Dodrio
+L	ab_24_15	199	|-end|p1a: Dodrio|Substitute
+L	ab_24_15	200	|
+L	ab_24_15	201	|-weather|none
+L	ab_24_15	202	|upkeep
+L	ab_24_15	203	|turn|17
+L	ab_24_15	204	|
+L	ab_24_15	205	|t:|<NORMALIZED>
+L	ab_24_15	206	|switch|p1a: Raikou|Raikou, L74|255/255
+L	ab_24_15	207	|-ability|p1a: Raikou|Pressure|[silent]
+L	ab_24_15	208	|cant|p2a: Piloswine|slp
+L	ab_24_15	209	|move|p2a: Piloswine|Sleep Talk|p2a: Piloswine
+L	ab_24_15	210	|move|p2a: Piloswine|Earthquake|p1a: Raikou|[from] Sleep Talk
+L	ab_24_15	211	|-supereffective|p1a: Raikou
+L	ab_24_15	212	|-damage|p1a: Raikou|0 fnt
+L	ab_24_15	213	|faint|p1a: Raikou
+L	ab_24_15	214	|
+L	ab_24_15	215	|t:|<NORMALIZED>
+L	ab_24_15	216	|switch|p1a: Heracross|Heracross, L77, M|250/250
+L	ab_24_15	217	|
+L	ab_24_15	218	|upkeep
+L	ab_24_15	219	|turn|18
+L	ab_24_15	220	|
+L	ab_24_15	221	|t:|<NORMALIZED>
+L	ab_24_15	222	|move|p1a: Heracross|Rock Slide|p2a: Piloswine
+L	ab_24_15	223	|-damage|p2a: Piloswine|255/316 slp
+L	ab_24_15	224	|-curestatus|p2a: Piloswine|slp|[msg]
+L	ab_24_15	225	|move|p2a: Piloswine|Sleep Talk|p2a: Piloswine
+L	ab_24_15	226	|
+L	ab_24_15	227	|-heal|p2a: Piloswine|274/316|[from] item: Leftovers
+L	ab_24_15	228	|upkeep
+L	ab_24_15	229	|turn|19
+L	ab_24_15	230	|
+L	ab_24_15	231	|t:|<NORMALIZED>
+L	ab_24_15	232	|switch|p2a: Smeargle|Smeargle, L89, M|243/243
+L	ab_24_15	233	|move|p1a: Heracross|Reversal|p2a: Smeargle
+L	ab_24_15	234	|debug|BP: 20
+L	ab_24_15	235	|-supereffective|p2a: Smeargle
+L	ab_24_15	236	|-damage|p2a: Smeargle|165/243
+L	ab_24_15	237	|
+L	ab_24_15	238	|-heal|p2a: Smeargle|180/243|[from] item: Leftovers
+L	ab_24_15	239	|upkeep
+L	ab_24_15	240	|turn|20
+L	ab_24_15	241	|
+L	ab_24_15	242	|t:|<NORMALIZED>
+L	ab_24_15	243	|move|p2a: Smeargle|Spikes|p1a: Heracross
+L	ab_24_15	244	|-sidestart|p1: P1|Spikes
+L	ab_24_15	245	|move|p1a: Heracross|Rock Slide|p2a: Smeargle
+L	ab_24_15	246	|-damage|p2a: Smeargle|90/243
+L	ab_24_15	247	|
+L	ab_24_15	248	|-heal|p2a: Smeargle|105/243|[from] item: Leftovers
+L	ab_24_15	249	|upkeep
+L	ab_24_15	250	|turn|21
+L	ab_24_15	251	|
+L	ab_24_15	252	|t:|<NORMALIZED>
+L	ab_24_15	253	|move|p2a: Smeargle|Spikes|p1a: Heracross
+L	ab_24_15	254	|-sidestart|p1: P1|Spikes
+L	ab_24_15	255	|move|p1a: Heracross|Reversal|p2a: Smeargle
+L	ab_24_15	256	|debug|BP: 20
+L	ab_24_15	257	|-supereffective|p2a: Smeargle
+L	ab_24_15	258	|-damage|p2a: Smeargle|29/243
+L	ab_24_15	259	|
+L	ab_24_15	260	|-heal|p2a: Smeargle|44/243|[from] item: Leftovers
+L	ab_24_15	261	|upkeep
+L	ab_24_15	262	|turn|22
+L	ab_24_15	263	|
+L	ab_24_15	264	|t:|<NORMALIZED>
+L	ab_24_15	265	|switch|p2a: Ho-Oh|Ho-Oh, L70|264/264
+L	ab_24_15	266	|-ability|p2a: Ho-Oh|Pressure|[silent]
+L	ab_24_15	267	|move|p1a: Heracross|Reversal|p2a: Ho-Oh
+L	ab_24_15	268	|debug|BP: 20
+L	ab_24_15	269	|-resisted|p2a: Ho-Oh
+L	ab_24_15	270	|-damage|p2a: Ho-Oh|251/264
+L	ab_24_15	271	|
+L	ab_24_15	272	|-heal|p2a: Ho-Oh|264/264|[from] item: Leftovers
+L	ab_24_15	273	|upkeep
+L	ab_24_15	274	|turn|23
+L	ab_24_15	275	|
+L	ab_24_15	276	|t:|<NORMALIZED>
+L	ab_24_15	277	|move|p1a: Heracross|Endure|p1a: Heracross
+L	ab_24_15	278	|-singleturn|p1a: Heracross|move: Endure
+L	ab_24_15	279	|move|p2a: Ho-Oh|Recover||[still]
+L	ab_24_15	280	|-fail|p2a: Ho-Oh|heal
+L	ab_24_15	281	|debug|move failed because it did nothing
+L	ab_24_15	282	|
+L	ab_24_15	283	|upkeep
+L	ab_24_15	284	|turn|24
+L	ab_24_15	285	|
+L	ab_24_15	286	|t:|<NORMALIZED>
+L	ab_24_15	287	|switch|p1a: Dodrio|Dodrio, L78, M|167/222
+L	ab_24_15	288	|move|p2a: Ho-Oh|Toxic|p1a: Dodrio
+L	ab_24_15	289	|-status|p1a: Dodrio|tox
+L	ab_24_15	290	|
+L	ab_24_15	291	|-damage|p1a: Dodrio|154/222 tox|[from] psn
+L	ab_24_15	292	|upkeep
+L	ab_24_15	293	|turn|25
+L	ab_24_15	294	|
+L	ab_24_15	295	|t:|<NORMALIZED>
+L	ab_24_15	296	|move|p1a: Dodrio|Flail|p2a: Ho-Oh
+L	ab_24_15	297	|debug|BP: 20
+L	ab_24_15	298	|-damage|p2a: Ho-Oh|238/264
+L	ab_24_15	299	|move|p2a: Ho-Oh|Recover|p2a: Ho-Oh
+L	ab_24_15	300	|-heal|p2a: Ho-Oh|264/264
+L	ab_24_15	301	|
+L	ab_24_15	302	|-damage|p1a: Dodrio|128/222 tox|[from] psn
+L	ab_24_15	303	|upkeep
+L	ab_24_15	304	|turn|26
+L	ab_24_15	305	|
+L	ab_24_15	306	|t:|<NORMALIZED>
+L	ab_24_15	307	|switch|p2a: Piloswine|Piloswine, L87, M|274/316
+L	ab_24_15	308	|move|p1a: Dodrio|Substitute|p1a: Dodrio
+L	ab_24_15	309	|-start|p1a: Dodrio|Substitute
+L	ab_24_15	310	|-damage|p1a: Dodrio|73/222 tox
+L	ab_24_15	311	|
+L	ab_24_15	312	|-damage|p1a: Dodrio|34/222 tox|[from] psn
+L	ab_24_15	313	|-heal|p2a: Piloswine|293/316|[from] item: Leftovers
+L	ab_24_15	314	|upkeep
+L	ab_24_15	315	|turn|27
+L	ab_24_15	316	|
+L	ab_24_15	317	|t:|<NORMALIZED>
+L	ab_24_15	318	|move|p1a: Dodrio|Drill Peck|p2a: Piloswine
+L	ab_24_15	319	|-damage|p2a: Piloswine|200/316
+L	ab_24_15	320	|move|p2a: Piloswine|Ice Beam|p1a: Dodrio
+L	ab_24_15	321	|-supereffective|p1a: Dodrio
+L	ab_24_15	322	|-crit|p1a: Dodrio
+L	ab_24_15	323	|-end|p1a: Dodrio|Substitute
+L	ab_24_15	324	|
+L	ab_24_15	325	|-enditem|p1a: Dodrio|Liechi Berry|[eat]
+L	ab_24_15	326	|-boost|p1a: Dodrio|atk|1|[from] item: Liechi Berry
+L	ab_24_15	327	|-damage|p1a: Dodrio|0 fnt|[from] psn
+L	ab_24_15	328	|faint|p1a: Dodrio
+L	ab_24_15	329	|-heal|p2a: Piloswine|219/316|[from] item: Leftovers
+L	ab_24_15	330	|upkeep
+L	ab_24_15	331	|
+L	ab_24_15	332	|t:|<NORMALIZED>
+L	ab_24_15	333	|switch|p1a: Heracross|Heracross, L77, M|250/250
+L	ab_24_15	334	|-damage|p1a: Heracross|209/250|[from] Spikes
+L	ab_24_15	335	|turn|28
+L	ab_24_15	336	|
+L	ab_24_15	337	|t:|<NORMALIZED>
+L	ab_24_15	338	|switch|p2a: Crawdaunt|Crawdaunt, L89, M|257/257
+L	ab_24_15	339	|move|p1a: Heracross|Rock Slide|p2a: Crawdaunt
+L	ab_24_15	340	|-damage|p2a: Crawdaunt|205/257
+L	ab_24_15	341	|
+L	ab_24_15	342	|-heal|p2a: Crawdaunt|221/257|[from] item: Leftovers
+L	ab_24_15	343	|upkeep
+L	ab_24_15	344	|turn|29
+L	ab_24_15	345	|
+L	ab_24_15	346	|t:|<NORMALIZED>
+L	ab_24_15	347	|move|p1a: Heracross|Rock Slide|p2a: Crawdaunt
+L	ab_24_15	348	|-damage|p2a: Crawdaunt|166/257
+L	ab_24_15	349	|move|p2a: Crawdaunt|Crunch|p1a: Heracross
+L	ab_24_15	350	|-resisted|p1a: Heracross
+L	ab_24_15	351	|-damage|p1a: Heracross|162/250
+L	ab_24_15	352	|
+L	ab_24_15	353	|-heal|p2a: Crawdaunt|182/257|[from] item: Leftovers
+L	ab_24_15	354	|upkeep
+L	ab_24_15	355	|turn|30
+L	ab_24_15	356	|
+L	ab_24_15	357	|t:|<NORMALIZED>
+L	ab_24_15	358	|move|p1a: Heracross|Megahorn|p2a: Crawdaunt
+L	ab_24_15	359	|-supereffective|p2a: Crawdaunt
+L	ab_24_15	360	|-damage|p2a: Crawdaunt|0 fnt
+L	ab_24_15	361	|faint|p2a: Crawdaunt
+L	ab_24_15	362	|
+L	ab_24_15	363	|t:|<NORMALIZED>
+L	ab_24_15	364	|switch|p2a: Piloswine|Piloswine, L87, M|219/316
+L	ab_24_15	365	|
+L	ab_24_15	366	|-heal|p2a: Piloswine|238/316|[from] item: Leftovers
+L	ab_24_15	367	|upkeep
+L	ab_24_15	368	|turn|31
+L	ab_24_15	369	|
+L	ab_24_15	370	|t:|<NORMALIZED>
+L	ab_24_15	371	|switch|p2a: Typhlosion|Typhlosion, L79, M|252/252
+L	ab_24_15	372	|move|p1a: Heracross|Megahorn|p2a: Typhlosion
+L	ab_24_15	373	|-resisted|p2a: Typhlosion
+L	ab_24_15	374	|-damage|p2a: Typhlosion|176/252
+L	ab_24_15	375	|
+L	ab_24_15	376	|upkeep
+L	ab_24_15	377	|turn|32
+L	ab_24_15	378	|
+L	ab_24_15	379	|t:|<NORMALIZED>
+L	ab_24_15	380	|move|p2a: Typhlosion|Flamethrower|p1a: Heracross
+L	ab_24_15	381	|-supereffective|p1a: Heracross
+L	ab_24_15	382	|-damage|p1a: Heracross|0 fnt
+L	ab_24_15	383	|faint|p1a: Heracross
+L	ab_24_15	384	|
+L	ab_24_15	385	|t:|<NORMALIZED>
+L	ab_24_15	386	|switch|p1a: Clefable|Clefable, L85, M|300/300
+L	ab_24_15	387	|-damage|p1a: Clefable|250/300|[from] Spikes
+L	ab_24_15	388	|
+L	ab_24_15	389	|-heal|p1a: Clefable|268/300|[from] item: Leftovers
+L	ab_24_15	390	|upkeep
+L	ab_24_15	391	|turn|33
+L	ab_24_15	392	|
+L	ab_24_15	393	|t:|<NORMALIZED>
+L	ab_24_15	394	|move|p2a: Typhlosion|Substitute|p2a: Typhlosion
+L	ab_24_15	395	|-start|p2a: Typhlosion|Substitute
+L	ab_24_15	396	|-damage|p2a: Typhlosion|113/252
+L	ab_24_15	397	|move|p1a: Clefable|Return|p2a: Typhlosion
+L	ab_24_15	398	|-end|p2a: Typhlosion|Substitute
+L	ab_24_15	399	|
+L	ab_24_15	400	|-heal|p1a: Clefable|286/300|[from] item: Leftovers
+L	ab_24_15	401	|upkeep
+L	ab_24_15	402	|turn|34
+L	ab_24_15	403	|
+L	ab_24_15	404	|t:|<NORMALIZED>
+L	ab_24_15	405	|move|p2a: Typhlosion|Thunder Punch|p1a: Clefable
+L	ab_24_15	406	|-damage|p1a: Clefable|239/300
+L	ab_24_15	407	|move|p1a: Clefable|Fire Blast|p2a: Typhlosion
+L	ab_24_15	408	|-resisted|p2a: Typhlosion
+L	ab_24_15	409	|-damage|p2a: Typhlosion|69/252
+L	ab_24_15	410	|debug|natural status immunity
+L	ab_24_15	411	|debug|immune to status
+L	ab_24_15	412	|debug|move failed because it did nothing
+L	ab_24_15	413	|
+L	ab_24_15	414	|-heal|p1a: Clefable|257/300|[from] item: Leftovers
+L	ab_24_15	415	|upkeep
+L	ab_24_15	416	|turn|35
+L	ab_24_15	417	|
+L	ab_24_15	418	|t:|<NORMALIZED>
+L	ab_24_15	419	|switch|p2a: Smeargle|Smeargle, L89, M|44/243
+L	ab_24_15	420	|move|p1a: Clefable|Fire Blast|p2a: Smeargle
+L	ab_24_15	421	|-damage|p2a: Smeargle|0 fnt
+L	ab_24_15	422	|faint|p2a: Smeargle
+L	ab_24_15	423	|
+L	ab_24_15	424	|t:|<NORMALIZED>
+L	ab_24_15	425	|switch|p2a: Piloswine|Piloswine, L87, M|238/316
+L	ab_24_15	426	|
+L	ab_24_15	427	|-heal|p1a: Clefable|275/300|[from] item: Leftovers
+L	ab_24_15	428	|-heal|p2a: Piloswine|257/316|[from] item: Leftovers
+L	ab_24_15	429	|upkeep
+L	ab_24_15	430	|turn|36
+L	ab_24_15	431	|
+L	ab_24_15	432	|t:|<NORMALIZED>
+L	ab_24_15	433	|move|p1a: Clefable|Thunder Wave|p2a: Piloswine
+L	ab_24_15	434	|-immune|p2a: Piloswine
+L	ab_24_15	435	|move|p2a: Piloswine|Ice Beam|p1a: Clefable
+L	ab_24_15	436	|-damage|p1a: Clefable|201/300
+L	ab_24_15	437	|
+L	ab_24_15	438	|-heal|p1a: Clefable|219/300|[from] item: Leftovers
+L	ab_24_15	439	|-heal|p2a: Piloswine|276/316|[from] item: Leftovers
+L	ab_24_15	440	|upkeep
+L	ab_24_15	441	|turn|37
+L	ab_24_15	442	|
+L	ab_24_15	443	|t:|<NORMALIZED>
+L	ab_24_15	444	|switch|p2a: Ho-Oh|Ho-Oh, L70|264/264
+L	ab_24_15	445	|-ability|p2a: Ho-Oh|Pressure|[silent]
+L	ab_24_15	446	|move|p1a: Clefable|Return|p2a: Ho-Oh
+L	ab_24_15	447	|-damage|p2a: Ho-Oh|160/264
+L	ab_24_15	448	|
+L	ab_24_15	449	|-heal|p2a: Ho-Oh|176/264|[from] item: Leftovers
+L	ab_24_15	450	|-heal|p1a: Clefable|237/300|[from] item: Leftovers
+L	ab_24_15	451	|upkeep
+L	ab_24_15	452	|turn|38
+L	ab_24_15	453	|
+L	ab_24_15	454	|t:|<NORMALIZED>
+L	ab_24_15	455	|move|p2a: Ho-Oh|Recover|p2a: Ho-Oh
+L	ab_24_15	456	|-heal|p2a: Ho-Oh|264/264
+L	ab_24_15	457	|move|p1a: Clefable|Return|p2a: Ho-Oh
+L	ab_24_15	458	|-damage|p2a: Ho-Oh|167/264
+L	ab_24_15	459	|
+L	ab_24_15	460	|-heal|p2a: Ho-Oh|183/264|[from] item: Leftovers
+L	ab_24_15	461	|-heal|p1a: Clefable|255/300|[from] item: Leftovers
+L	ab_24_15	462	|upkeep
+L	ab_24_15	463	|turn|39
+L	ab_24_15	464	|
+L	ab_24_15	465	|t:|<NORMALIZED>
+L	ab_24_15	466	|move|p2a: Ho-Oh|Toxic|p1a: Clefable
+L	ab_24_15	467	|-status|p1a: Clefable|tox
+L	ab_24_15	468	|move|p1a: Clefable|Thunder Wave|p2a: Ho-Oh
+L	ab_24_15	469	|-status|p2a: Ho-Oh|par
+L	ab_24_15	470	|
+L	ab_24_15	471	|-heal|p1a: Clefable|273/300 tox|[from] item: Leftovers
+L	ab_24_15	472	|-damage|p1a: Clefable|255/300 tox|[from] psn
+L	ab_24_15	473	|-heal|p2a: Ho-Oh|199/264 par|[from] item: Leftovers
+L	ab_24_15	474	|upkeep
+L	ab_24_15	475	|turn|40
+L	ab_24_15	476	|
+L	ab_24_15	477	|t:|<NORMALIZED>
+L	ab_24_15	478	|move|p1a: Clefable|Thunder Wave|p2a: Ho-Oh
+L	ab_24_15	479	|-fail|p2a: Ho-Oh|par
+L	ab_24_15	480	|debug|move failed because it did nothing
+L	ab_24_15	481	|cant|p2a: Ho-Oh|par
+L	ab_24_15	482	|
+L	ab_24_15	483	|-heal|p1a: Clefable|273/300 tox|[from] item: Leftovers
+L	ab_24_15	484	|-damage|p1a: Clefable|237/300 tox|[from] psn
+L	ab_24_15	485	|-heal|p2a: Ho-Oh|215/264 par|[from] item: Leftovers
+L	ab_24_15	486	|upkeep
+L	ab_24_15	487	|turn|41
+L	ab_24_15	488	|
+L	ab_24_15	489	|t:|<NORMALIZED>
+L	ab_24_15	490	|move|p1a: Clefable|Thunder Wave|p2a: Ho-Oh
+L	ab_24_15	491	|-fail|p2a: Ho-Oh|par
+L	ab_24_15	492	|debug|move failed because it did nothing
+L	ab_24_15	493	|move|p2a: Ho-Oh|Recover|p2a: Ho-Oh
+L	ab_24_15	494	|-heal|p2a: Ho-Oh|264/264 par
+L	ab_24_15	495	|
+L	ab_24_15	496	|-heal|p1a: Clefable|255/300 tox|[from] item: Leftovers
+L	ab_24_15	497	|-damage|p1a: Clefable|201/300 tox|[from] psn
+L	ab_24_15	498	|upkeep
+L	ab_24_15	499	|turn|42
+L	ab_24_15	500	|
+L	ab_24_15	501	|t:|<NORMALIZED>
+L	ab_24_15	502	|move|p1a: Clefable|Soft-Boiled|p1a: Clefable
+L	ab_24_15	503	|-heal|p1a: Clefable|300/300 tox
+L	ab_24_15	504	|move|p2a: Ho-Oh|Earthquake|p1a: Clefable
+L	ab_24_15	505	|-damage|p1a: Clefable|229/300 tox
+L	ab_24_15	506	|
+L	ab_24_15	507	|-heal|p1a: Clefable|247/300 tox|[from] item: Leftovers
+L	ab_24_15	508	|-damage|p1a: Clefable|175/300 tox|[from] psn
+L	ab_24_15	509	|upkeep
+L	ab_24_15	510	|turn|43
+L	ab_24_15	511	|
+L	ab_24_15	512	|t:|<NORMALIZED>
+L	ab_24_15	513	|move|p1a: Clefable|Soft-Boiled|p1a: Clefable
+L	ab_24_15	514	|-heal|p1a: Clefable|300/300 tox
+L	ab_24_15	515	|cant|p2a: Ho-Oh|par
+L	ab_24_15	516	|
+L	ab_24_15	517	|-damage|p1a: Clefable|210/300 tox|[from] psn
+L	ab_24_15	518	|upkeep
+L	ab_24_15	519	|turn|44
+L	ab_24_15	520	|
+L	ab_24_15	521	|t:|<NORMALIZED>
+L	ab_24_15	522	|move|p1a: Clefable|Thunder Wave|p2a: Ho-Oh
+L	ab_24_15	523	|-fail|p2a: Ho-Oh|par
+L	ab_24_15	524	|debug|move failed because it did nothing
+L	ab_24_15	525	|move|p2a: Ho-Oh|Earthquake|p1a: Clefable
+L	ab_24_15	526	|-damage|p1a: Clefable|139/300 tox
+L	ab_24_15	527	|
+L	ab_24_15	528	|-heal|p1a: Clefable|157/300 tox|[from] item: Leftovers
+L	ab_24_15	529	|-damage|p1a: Clefable|49/300 tox|[from] psn
+L	ab_24_15	530	|upkeep
+L	ab_24_15	531	|turn|45
+L	ab_24_15	532	|
+L	ab_24_15	533	|t:|<NORMALIZED>
+L	ab_24_15	534	|move|p1a: Clefable|Return|p2a: Ho-Oh
+L	ab_24_15	535	|-damage|p2a: Ho-Oh|164/264 par
+L	ab_24_15	536	|move|p2a: Ho-Oh|Sacred Fire|p1a: Clefable
+L	ab_24_15	537	|-damage|p1a: Clefable|0 fnt
+L	ab_24_15	538	|debug|move failed because it did nothing
+L	ab_24_15	539	|faint|p1a: Clefable
+L	ab_24_15	540	|
+L	ab_24_15	541	|t:|<NORMALIZED>
+L	ab_24_15	542	|switch|p1a: Shedinja|Shedinja|1/1
+L	ab_24_15	543	|-damage|p1a: Shedinja|0 fnt|[from] Spikes
+L	ab_24_15	544	|faint|p1a: Shedinja
+L	ab_24_15	545	|
+L	ab_24_15	546	|t:|<NORMALIZED>
+L	ab_24_15	547	|switch|p1a: Mawile|Mawile, L96, M|251/251
+L	ab_24_15	548	|-damage|p1a: Mawile|210/251|[from] Spikes
+L	ab_24_15	549	|-ability|p1a: Mawile|Intimidate|boost
+L	ab_24_15	550	|-unboost|p2a: Ho-Oh|atk|1
+L	ab_24_15	551	|
+L	ab_24_15	552	|-heal|p1a: Mawile|225/251|[from] item: Leftovers
+L	ab_24_15	553	|-heal|p2a: Ho-Oh|180/264 par|[from] item: Leftovers
+L	ab_24_15	554	|upkeep
+L	ab_24_15	555	|turn|46
+L	ab_24_15	556	|
+L	ab_24_15	557	|t:|<NORMALIZED>
+L	ab_24_15	558	|move|p1a: Mawile|Swords Dance|p1a: Mawile
+L	ab_24_15	559	|-boost|p1a: Mawile|atk|2
+L	ab_24_15	560	|cant|p2a: Ho-Oh|par
+L	ab_24_15	561	|
+L	ab_24_15	562	|-heal|p1a: Mawile|240/251|[from] item: Leftovers
+L	ab_24_15	563	|-heal|p2a: Ho-Oh|196/264 par|[from] item: Leftovers
+L	ab_24_15	564	|upkeep
+L	ab_24_15	565	|turn|47
+L	ab_24_15	566	|
+L	ab_24_15	567	|t:|<NORMALIZED>
+L	ab_24_15	568	|move|p1a: Mawile|Brick Break|p2a: Ho-Oh
+L	ab_24_15	569	|-resisted|p2a: Ho-Oh
+L	ab_24_15	570	|-damage|p2a: Ho-Oh|121/264 par
+L	ab_24_15	571	|move|p2a: Ho-Oh|Sacred Fire|p1a: Mawile
+L	ab_24_15	572	|-supereffective|p1a: Mawile
+L	ab_24_15	573	|-damage|p1a: Mawile|41/251
+L	ab_24_15	574	|
+L	ab_24_15	575	|-heal|p1a: Mawile|56/251|[from] item: Leftovers
+L	ab_24_15	576	|-heal|p2a: Ho-Oh|137/264 par|[from] item: Leftovers
+L	ab_24_15	577	|upkeep
+L	ab_24_15	578	|turn|48
+L	ab_24_15	579	|
+L	ab_24_15	580	|t:|<NORMALIZED>
+L	ab_24_15	581	|move|p1a: Mawile|Substitute|p1a: Mawile
+L	ab_24_15	582	|-fail|p1a: Mawile|move: Substitute|[weak]
+L	ab_24_15	583	|move|p2a: Ho-Oh|Earthquake|p1a: Mawile
+L	ab_24_15	584	|-supereffective|p1a: Mawile
+L	ab_24_15	585	|-damage|p1a: Mawile|0 fnt
+L	ab_24_15	586	|faint|p1a: Mawile
+L	ab_24_15	587	|
+L	ab_24_15	588	|win|P2

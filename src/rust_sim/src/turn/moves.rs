@@ -786,12 +786,17 @@ impl crate::state::BattleState {
                 .unwrap_or(false)
         {
             // [EMIT] `|move|<user>|<Name>|<foe>` then `|-immune|<foe>|[from] ability: Soundproof`.
-            if self.logging() && !suppress_announce {
-                let user = self.mon_ref(side, slot, dex);
+            // The `-immune` line ALWAYS emits; only the `|move|` announce is skipped under
+            // `suppress_announce` (a SUN-SKIP Solar Beam already emitted its
+            // `[still]`+`-prepare`+`-anim` form) — the same split the immune / miss paths use.
+            if self.logging() {
                 let target = self.mon_ref(foe, foe_slot, dex);
-                self.log.move_used(&user, &move_name, Some(&target), false, false);
-                if announce_lockedmove {
-                    self.log.attr_last_move_from_lockedmove();
+                if !suppress_announce {
+                    let user = self.mon_ref(side, slot, dex);
+                    self.log.move_used(&user, &move_name, Some(&target), false, false);
+                    if announce_lockedmove {
+                        self.log.attr_last_move_from_lockedmove();
+                    }
                 }
                 self.log.immune_from_ability(&target, "Soundproof");
             }
@@ -840,12 +845,20 @@ impl crate::state::BattleState {
             if !connects {
                 // [EMIT] `|move|<user>|<Name>|<foe>` then `|-immune|<foe>|[from] ability: Wonder
                 // Guard`. Observation-only: draws nothing beyond the accuracy roll already drawn.
-                if self.logging() && !suppress_announce {
-                    let user = self.mon_ref(side, slot, dex);
+                // The `-immune` line ALWAYS emits; only the `|move|` announce is skipped under
+                // `suppress_announce` (a SUN-SKIP Solar Beam already emitted its
+                // `[still]`+`-prepare`+`-anim` form). SIM-PROBED (`harness/probe_rb_tail.js` S1a):
+                // a sun-skipped Solar Beam into Shedinja emits `|move|…||[still]` → `|-prepare|`
+                // → `|-anim|` → `|-immune|p1a: Shedinja|[from] ability: Wonder Guard`; the port
+                // used to swallow the `-immune` with the announce.
+                if self.logging() {
                     let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.move_used(&user, &move_name, Some(&target), false, false);
-                    if announce_lockedmove {
-                        self.log.attr_last_move_from_lockedmove();
+                    if !suppress_announce {
+                        let user = self.mon_ref(side, slot, dex);
+                        self.log.move_used(&user, &move_name, Some(&target), false, false);
+                        if announce_lockedmove {
+                            self.log.attr_last_move_from_lockedmove();
+                        }
                     }
                     self.log.immune_from_ability(&target, "Wonder Guard");
                 }
@@ -1473,18 +1486,18 @@ impl crate::state::BattleState {
         //     fires on the damaged/KO'd target). `dealt` is the damage dealt (mon or sub); the
         //     `!absorbed` gate excludes the sub case. The status lands on the ATTACKER (`side`/`slot`);
         //     Rough Skin deals recoil to the attacker. Struggle IS a contact move so it CAN proc.
-        //     (Placed AFTER the fire-thaw's SIBLING position is fine — both are draw-free-except-
-        //     this, on different mons; this is the only DamagingHit draw.) ---
-        if is_contact && !absorbed && dealt > 0 {
-            self.apply_contact_proc(side, slot, foe, foe_slot, dex);
-        }
-
-        // --- FIRE-MOVE THAW (gen3 frz.onDamagingHit, conditions.ts:45): a Fire
-        //     damaging move cures the DEFENDER's freeze — DRAW-FREE, runs via
-        //     runEvent('DamagingHit') AFTER secondaries (gen<5). Ice Beam (Ice) can't
-        //     thaw; a Fire move (e.g. Fire Blast) on a frozen target does. A sub ABSORBED
-        //     hit does NOT reach the mon's status, so a frozen-behind-a-sub mon is NOT
-        //     thawed (the thaw is `onDamagingHit` on the MON; the sub took the damage). ---
+        //
+        //     ORDER within `runEvent('DamagingHit')` — the FIRE-MOVE THAW (the defender's `frz`
+        //     STATUS handler) runs BEFORE this (the defender's ABILITY handler). `DamagingHit` is
+        //     one of the four events sorted by `compareLeftToRightOrder` (battle.ts:789-790), NOT
+        //     `speedSort`; with no `onDamagingHitOrder`/`Priority` on either effect every key ties,
+        //     so the sort is STABLE and preserves `findPokemonEventHandlers`'s GATHER order —
+        //     status → volatiles → ABILITY → item (battle.ts:1100-1123). SIM-PROBED
+        //     (`harness/probe_rb_tail.js` C3): Fire Punch into a FROZEN STATIC holder emits
+        //     `|-damage|…frz` → `|-curestatus|<t>|frz|[msg]` → `|-status|<a>|par|[from] ability:
+        //     Static|[of] <t>`. Emission-ORDER only: the thaw is draw-free and touches only the
+        //     DEFENDER's status while the proc rolls + statuses the ATTACKER, so the draw stream
+        //     is unchanged. ---
         if is_fire && !absorbed && self.sides[foe].pokemon[foe_slot].status == Some(Status::Freeze) {
             // The mon's HP BEFORE clearing (a fire move that KO'd the frozen mon leaves hp==0).
             let alive = self.sides[foe].pokemon[foe_slot].hp > 0;
@@ -1501,6 +1514,11 @@ impl crate::state::BattleState {
                 let t = self.mon_ref(foe, foe_slot, dex);
                 self.log.curestatus(&t, "frz", true);
             }
+        }
+
+        // The DEFENDER's ABILITY `onDamagingHit` — gathered AFTER its status handler above.
+        if is_contact && !absorbed && dealt > 0 {
+            self.apply_contact_proc(side, slot, foe, foe_slot, dex);
         }
 
         // --- COLOR CHANGE (`gen3_ability_batch4_v1`) — the DEFENDER's onDamagingHit
@@ -2039,14 +2057,12 @@ impl crate::state::BattleState {
                 }
             }
 
-            // Per-strike SECONDARY (Twineedle psn) → King's Rock → contact-proc / fire-thaw /
+            // Per-strike SECONDARY (Twineedle psn) → King's Rock → fire-thaw / contact-proc /
             // Color Change — the sim's `spreadMoveHit` per-hit tail (secondaries → onAfterHit →
-            // DamagingHit), each on its own mon.
+            // DamagingHit), each on its own mon. Inside DamagingHit the defender's `frz` STATUS
+            // handler is gathered BEFORE its ABILITY handler (see the single-hit note above).
             self.apply_secondaries(side, slot, foe, foe_slot, move_index, absorbed, dex);
             self.apply_kings_rock_secondary(side, slot, foe, foe_slot, move_id, absorbed, dex);
-            if is_contact && !absorbed && dealt > 0 {
-                self.apply_contact_proc(side, slot, foe, foe_slot, dex);
-            }
             if is_fire
                 && !absorbed
                 && self.sides[foe].pokemon[foe_slot].status == Some(Status::Freeze)
@@ -2057,6 +2073,9 @@ impl crate::state::BattleState {
                     let t = self.mon_ref(foe, foe_slot, dex);
                     self.log.curestatus(&t, "frz", true);
                 }
+            }
+            if is_contact && !absorbed && dealt > 0 {
+                self.apply_contact_proc(side, slot, foe, foe_slot, dex);
             }
             if !absorbed && dealt > 0 {
                 self.apply_color_change(foe, foe_slot, move_type, dex);

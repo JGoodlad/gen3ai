@@ -1561,6 +1561,11 @@ impl crate::state::BattleState {
                 let hp = self.hp_status(side, slot);
                 self.log.damage_of(&user, &hp, &Cause::Ability("Liquid Ooze".into()), &target);
             }
+            // INSTAFAINT (`gen3_liquid_ooze_instafaint_v1`) — the drain sibling of the
+            // Leech-Seed reversal: gen4's liquidooze calls `this.damage(…, instafaint = true)`,
+            // so a reversal that zeroes the DRAINER drains the faint queue right here with
+            // `lastFirst = true` (the drainer announced before the KO'd drain target).
+            self.liquid_ooze_instafaint(side, dex);
             return;
         }
         let healed = self.apply_heal(side, slot, heal);
@@ -1607,11 +1612,20 @@ impl crate::state::BattleState {
                 self.log.boost(&user, idx, delta);
             }
         }
-        // WHITE HERB (`gen3_white_herb_v1`, onAnyAfterMove): the USER's own self-drop
-        // (Overheat −2 SpA / Superpower −1 Atk/−1 Def / Psycho Boost / Curse-non-ghost's
-        // −Spe) is restored immediately + the item consumed. DRAW-FREE. (For Curse's mixed
-        // {+atk,+def,−spe}, only the −Spe is negative → only it is restored, keeping +atk/+def.)
-        self.white_herb_restore(side, slot, dex);
+        // NOTE: the WHITE HERB restore is DELIBERATELY **not** fired here. The resolved gen3
+        // White Herb has NO `onAfterBoost`/`onUpdate` trigger — its only in-turn hook is
+        // `onAnyAfterMove`, which the sim runs at the END of `runMove`, i.e. AFTER the whole
+        // move body (selfDrops → secondaries → onAfterHit → the DamagingHit-phase procs).
+        // SIM-PROBED (`harness/probe_rb_tail.js` C2a/C2b): a White-Herb Superpower into a
+        // POISON POINT / ROUGH SKIN holder emits
+        //     |-unboost|<user>|atk|1 → |-unboost|<user>|def|1
+        //     → |-status|<user>|psn|[from] ability: Poison Point|[of] <foe>   (the proc)
+        //     → |-enditem|<user>|White Herb → |-clearnegativeboost|<user>|[silent]
+        // so restoring inline here emitted the item lines one DamagingHit phase too early.
+        // The driver's `QAction::Move` tail (`turn/driver.rs`, the `onAnyAfterMove` site) is
+        // the single in-turn restore point; the switch-in (`onAnySwitchIn`) + the order-29
+        // residual keep their own sites. Emission-order only (the restore is draw-free and
+        // still lands before the next decision boundary).
     }
 
     /// FLASH FIRE activation (gen3 `flashfire.onTryHit`): a Fire-type move that LANDS on a
@@ -1982,6 +1996,11 @@ impl crate::state::BattleState {
                     let of = self.mon_ref(side, slot, dex);
                     self.log.damage_of(&seeder_ref, &hp, &Cause::Ability("Liquid Ooze".into()), &of);
                 }
+                // INSTAFAINT (`gen3_liquid_ooze_instafaint_v1`): gen4's liquidooze reverses via
+                // `this.damage(damage, null, null, null, true)` — instafaint TRUE — so a reversal
+                // that zeroes the seeder runs `faintMessages(lastFirst = true)` RIGHT HERE,
+                // announcing the seeder's `|faint|` BEFORE the already-queued seeded corpse's.
+                self.liquid_ooze_instafaint(seeder_side, dex);
             } else {
                 let healed = self.apply_heal(seeder_side, seeder_slot, dealt);
                 // [EMIT] `|-heal|<seeder-active>|<HP>|[silent]` — the drain's heal half

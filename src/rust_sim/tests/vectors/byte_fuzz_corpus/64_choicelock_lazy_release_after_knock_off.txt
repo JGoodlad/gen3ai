@@ -1,0 +1,612 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=240724 run_id=rmrzcanyf chunk=71
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_71_14
+TEAM	ab_71_14	p1	Aggron||Leftovers|RockHead|substitute,focuspunch,irontail,rockslide|Hardy|85,85,85,85,85,85|M|||85|]Cacturne||Leftovers|SandVeil|spikes,hiddenpowerdark,needlearm,thunderpunch|Hardy|85,,85,85,85,85|M|,3,,,,||96|]Tentacruel||Leftovers|ClearBody|icebeam,toxic,surf,sludgebomb|Hardy|85,85,85,85,85,85|M|||79|]Sableye||Leftovers|KeenEye|recover,seismictoss,toxic,knockoff|Hardy|85,,85,85,85,85|M|,0,,,,||91|]Illumise||Leftovers|Oblivious|encore,moonlight,toxic,seismictoss|Hardy|85,,85,85,85,85|F|,0,,,,||92|]Hariyama||Leftovers|Guts|hiddenpowerghost,crosschop,sleeptalk,rest|Hardy|85,85,85,85,85,85|M|,,30,,30,||83|
+TEAM	ab_71_14	p2	Quagsire||Leftovers|WaterAbsorb|surf,earthquake,rest,sleeptalk|Hardy|85,85,85,85,85,85|M|||84|]Aipom||ChoiceBand|RunAway|shadowball,return,brickbreak,batonpass|Hardy|85,85,85,85,85,85|M|||93|]Gorebyss||PetayaBerry|SwiftSwim|raindance,icebeam,surf,hiddenpowergrass|Hardy|85,,85,85,85,85|M|,2,,30,,||85|]Smeargle||Leftovers|OwnTempo|explosion,spikes,encore,spore|Hardy|85,85,85,85,85,85|M|||89|]Sudowoodo||Leftovers|RockHead|explosion,substitute,rockslide,focuspunch|Hardy|85,85,85,85,85,85|M|||92|]Dusclops||Leftovers|Pressure|sleeptalk,shadowball,rest,seismictoss|Hardy|85,85,85,85,85,85|M|||86|
+FMT	ab_71_14	gen3customgame
+INIT	ab_71_14	29886,53908,39630,9910	3313302410
+DEC	ab_71_14	0	move	0	0	m2	m3	41458,58070,30950,52501	Aggron	258	258	0	-	0	0	0	0	0	0	6	Quagsire	255	297	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_71_14	1	move	0	0	s3	m1	52296,2223,24808,53081	Sableye	144	239	0	-	0	0	0	0	0	0	6	Quagsire	273	297	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_71_14	2	move	0	0	s1	s5	40646,18178,2662,3552	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Dusclops	209	209	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_71_14	3	move	0	0	m2	m0	33374,17529,49559,5511	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Dusclops	155	209	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_71_14	4	move	0	0	m3	s3	62484,37582,3774,47418	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Smeargle	145	243	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_71_14	5	move	0	0	m2	m2	17512,60472,43448,10291	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Smeargle	45	243	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_71_14	6	move	0	0	m3	m2	53268,5698,33189,40278	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Smeargle	0	243	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_71_14	7	switch	0	1	-	s5	59566,36468,23818,47025	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Quagsire	291	297	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_71_14	8	move	0	0	m3	m2	54195,36873,64475,1418	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Quagsire	297	297	0	slp	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_71_14	9	move	0	0	m3	m2	44250,19795,37852,22700	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Quagsire	297	297	0	slp	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_71_14	10	move	0	0	m3	m2	54857,43510,12029,29310	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Quagsire	297	297	0	slp	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_71_14	11	move	0	0	m3	m1	61452,57992,30116,60541	Cacturne	248	290	0	-	0	0	0	0	0	0	6	Quagsire	297	297	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_71_14	12	move	0	0	m0	s2	2078,24163,57393,53524	Cacturne	266	290	0	-	0	0	0	0	0	0	6	Gorebyss	232	232	0	-	0	0	0	0	0	0	5	p2	0	1	0	0	0
+DEC	ab_71_14	13	move	0	0	m0	m0	52956,11991,17469,53159	Cacturne	284	290	0	-	0	0	0	0	0	0	6	Gorebyss	232	232	0	-	0	0	0	0	0	0	5	p1	0	2	0	0	0
+DEC	ab_71_14	14	move	0	0	m2	m0	1718,44242,54870,40410	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Gorebyss	19	232	0	-	0	0	1	0	0	0	5	p2	0	2	0	0	0
+DEC	ab_71_14	15	move	0	0	m2	m0	25810,23981,7304,42446	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Gorebyss	0	232	1	fnt	0	0	0	0	0	0	4	p2	0	2	0	0	0
+DEC	ab_71_14	16	switch	0	1	-	s4	15270,19334,54125,18185	Cacturne	290	290	0	-	0	0	0	0	0	0	6	Sudowoodo	249	278	0	-	0	0	0	0	0	0	4	none	0	2	0	0	0
+DEC	ab_71_14	17	move	0	0	s3	m2	21439,33689,4276,7251	Aggron	258	258	0	-	0	0	0	0	0	0	6	Sudowoodo	266	278	0	-	0	0	0	0	0	0	4	p1	0	2	0	0	0
+DEC	ab_71_14	18	move	0	0	m1	m3	32016,62710,52613,54967	Aggron	258	258	0	-	0	0	0	0	0	0	6	Sudowoodo	97	278	0	-	0	0	0	0	0	0	4	p1	0	2	0	0	0
+DEC	ab_71_14	19	move	0	0	m2	m3	29163,10867,3983,21211	Aggron	258	258	0	-	0	0	0	0	0	0	6	Sudowoodo	0	278	1	fnt	0	0	0	0	0	0	3	p1	0	2	0	0	0
+DEC	ab_71_14	20	switch	0	1	-	s3	32517,53247,32518,33322	Aggron	258	258	0	-	0	0	0	0	0	0	6	Dusclops	134	209	0	-	0	0	0	0	0	0	3	none	0	2	0	0	0
+DEC	ab_71_14	21	move	0	0	s2	m3	12750,3982,35901,40012	Tentacruel	186	256	0	-	0	0	0	0	0	0	6	Dusclops	147	209	0	-	0	0	0	0	0	0	3	p1	0	2	1	0	0
+DEC	ab_71_14	22	move	0	0	m3	m1	32737,20755,60124,63943	Tentacruel	103	256	0	-	0	0	0	0	0	0	6	Dusclops	137	209	0	-	0	0	0	0	0	0	3	p1	0	2	0	0	0
+DEC	ab_71_14	23	move	0	0	m3	m2	13508,33292,50529,21221	Tentacruel	119	256	0	-	0	0	0	0	0	0	6	Dusclops	209	209	0	slp	0	0	0	0	0	0	3	p1	0	2	0	0	0
+DEC	ab_71_14	24	move	0	0	s2	m1	21470,42149,54571,57372	Aggron	258	258	0	-	0	0	0	0	0	0	6	Dusclops	209	209	0	slp	0	0	0	0	0	0	3	p1	0	2	0	0	0
+DEC	ab_71_14	25	move	0	0	m1	m2	62754,52538,24346,45166	Aggron	258	258	0	-	0	0	0	0	0	0	6	Dusclops	209	209	0	slp	0	0	0	0	0	0	3	p2	0	2	0	0	0
+DEC	ab_71_14	26	move	0	0	m2	m0	32870,46628,58332,45357	Aggron	258	258	0	-	0	0	0	0	0	0	6	Dusclops	137	209	0	-	0	0	0	0	0	0	3	p1	0	2	0	1	0
+DEC	ab_71_14	27	move	0	0	m2	m1	31509,11583,20244,36844	Aggron	255	258	0	-	0	0	0	0	0	0	6	Dusclops	55	209	0	-	0	-1	0	0	0	0	3	p1	0	2	0	0	0
+DEC	ab_71_14	28	move	0	0	m2	m0	5942,9214,36869,60096	Aggron	255	258	0	-	0	0	0	0	0	0	6	Dusclops	0	209	1	fnt	0	0	0	0	0	0	2	p1	0	2	0	1	0
+DEC	ab_71_14	29	switch	0	1	-	s1	64803,47988,26716,64643	Aggron	258	258	0	-	0	0	0	0	0	0	6	Aipom	211	253	0	-	0	0	0	0	0	0	2	none	0	2	0	0	0
+DEC	ab_71_14	30	move	0	0	m2	m3	64803,47988,26716,64643	Aggron	258	258	0	-	0	0	0	0	0	0	6	Aipom	211	253	0	-	0	0	0	0	0	0	2	p2	0	2	0	0	0
+DEC	ab_71_14	31	switch	0	1	-	s2	21187,27528,48068,38886	Aggron	258	258	0	-	0	0	0	0	0	0	6	Quagsire	205	297	0	-	0	0	0	0	0	0	2	none	0	2	0	0	0
+DEC	ab_71_14	32	move	0	0	m3	m2	8315,56086,21824,1541	Aggron	258	258	0	-	0	0	0	0	0	0	6	Quagsire	179	297	0	-	0	0	0	0	0	0	2	p1	0	2	0	0	0
+DEC	ab_71_14	33	move	0	0	m1	m2	43851,23058,44592,27024	Aggron	258	258	0	-	0	0	0	0	0	0	6	Quagsire	194	297	0	slp	0	0	0	0	0	0	2	p2	0	2	0	0	0
+DEC	ab_71_14	34	move	0	0	s2	m3	45974,12887,47157,42946	Tentacruel	135	256	0	-	0	0	0	0	0	0	6	Quagsire	212	297	0	slp	0	0	0	0	0	0	2	p1	0	2	0	1	0
+DEC	ab_71_14	35	move	0	0	m2	m0	29481,46638,52360,4644	Tentacruel	151	256	0	-	0	0	0	0	0	0	6	Quagsire	297	297	0	slp	0	0	0	0	0	0	2	p1	0	2	0	0	0
+DEC	ab_71_14	36	move	0	0	m0	m3	46002,18512,58239,49947	Tentacruel	167	256	0	-	0	0	0	0	0	0	6	Quagsire	252	297	0	-	0	0	0	0	0	0	2	p1	0	2	0	1	0
+DEC	ab_71_14	37	move	0	0	s2	m2	28855,28520,13461,55701	Aggron	258	258	0	-	0	0	0	0	0	0	6	Quagsire	297	297	0	slp	0	0	0	0	0	0	2	p1	0	2	0	0	0
+DEC	ab_71_14	38	move	0	0	m1	m2	31953,16573,57748,5081	Aggron	258	258	0	-	0	0	0	0	0	0	6	Quagsire	190	297	0	slp	0	0	0	0	0	0	2	p2	0	2	0	0	0
+DEC	ab_71_14	39	move	0	0	m1	m2	36348,51865,60740,53725	Aggron	258	258	0	-	0	0	0	0	0	0	6	Quagsire	94	297	0	slp	0	0	0	0	0	0	2	p2	0	2	0	0	0
+DEC	ab_71_14	40	move	0	0	m3	m3	49059,65384,12502,23112	Aggron	258	258	0	-	0	0	0	0	0	0	6	Quagsire	63	297	0	-	0	0	0	0	0	0	2	p1	0	2	0	1	0
+DEC	ab_71_14	41	move	0	0	m2	m1	29810,44005,54305,35433	Aggron	0	258	1	fnt	0	0	0	0	0	0	5	Quagsire	1	297	0	-	0	0	0	0	0	0	2	p1	0	2	0	0	0
+DEC	ab_71_14	42	switch	1	0	s3	-	39037,25070,47443,27440	Cacturne	290	290	0	-	0	0	0	0	0	0	5	Quagsire	19	297	0	-	0	0	0	0	0	0	2	none	0	2	0	0	0
+DEC	ab_71_14	43	move	0	0	m2	m0	42494,58475,15639,14788	Cacturne	290	290	0	-	0	0	0	0	0	0	5	Quagsire	0	297	1	fnt	0	0	0	0	0	0	1	p1	0	2	0	0	0
+DEC	ab_71_14	44	switch	0	1	-	s2	10345,12373,52374,19735	Cacturne	290	290	0	-	0	0	0	0	0	0	5	Aipom	169	253	0	-	0	0	0	0	0	0	1	none	0	2	0	0	0
+DEC	ab_71_14	45	move	0	0	m0	m1	60702,18113,27052,9019	Cacturne	117	290	0	-	0	0	0	0	0	0	5	Aipom	169	253	0	-	0	0	0	0	0	0	1	p2	0	3	0	1	0
+DEC	ab_71_14	46	move	0	0	s2	m1	28549,44547,60867,34604	Tentacruel	0	256	1	fnt	0	0	0	0	0	0	4	Aipom	169	253	0	-	0	0	0	0	0	0	1	p1	0	3	0	1	0
+DEC	ab_71_14	47	switch	1	0	s4	-	24560,63365,46037,32543	Illumise	269	269	0	-	0	0	0	0	0	0	4	Aipom	169	253	0	-	0	0	0	0	0	0	1	none	0	3	0	0	0
+DEC	ab_71_14	48	move	0	0	m1	m1	21150,46587,44763,33987	Illumise	227	269	0	-	0	0	0	0	0	0	4	Aipom	169	253	0	-	0	0	0	0	0	0	1	p2	0	3	0	1	0
+DEC	ab_71_14	49	move	0	0	m0	m1	4663,25864,41850,40936	Illumise	57	269	0	-	0	0	0	0	0	0	4	Aipom	169	253	0	-	0	0	0	0	0	0	1	p2	0	3	0	1	1
+DEC	ab_71_14	50	move	0	0	m0	m1	26251,1462,61661,15429	Illumise	0	269	1	fnt	0	0	0	0	0	0	3	Aipom	169	253	0	-	0	0	0	0	0	0	1	p2	0	3	0	1	1
+DEC	ab_71_14	51	switch	1	0	s1	-	28163,20626,52371,14383	Sableye	158	239	0	-	0	0	0	0	0	0	3	Aipom	169	253	0	-	0	0	0	0	0	0	1	none	0	3	0	0	0
+DEC	ab_71_14	52	move	0	0	m3	m1	9630,42155,37744,20109	Sableye	172	239	0	-	0	0	0	0	0	0	3	Aipom	143	253	0	-	0	0	0	0	0	0	1	p2	0	3	0	1	0
+DEC	ab_71_14	53	move	0	0	m1	m1	9496,9493,53405,48758	Sableye	186	239	0	-	0	0	0	0	0	0	3	Aipom	52	253	0	-	0	0	0	0	0	0	1	p2	0	3	1	1	0
+DEC	ab_71_14	54	move	0	0	m3	m1	62031,63825,65364,65493	Sableye	200	239	0	-	0	0	0	0	0	0	3	Aipom	26	253	0	-	0	0	0	0	0	0	1	p2	0	3	0	1	0
+DEC	ab_71_14	55	move	0	0	m1	m1	29011,65368,30575,36159	Sableye	200	239	0	-	0	0	0	0	0	0	3	Aipom	0	253	1	-	0	0	0	0	0	0	0	p2	0	3	1	1	0
+END	ab_71_14	1	p1
+L	ab_71_14	0	|t:|<NORMALIZED>
+L	ab_71_14	1	|gametype|singles
+L	ab_71_14	2	|player|p1|P1||
+L	ab_71_14	3	|player|p2|P2||
+L	ab_71_14	4	|gen|3
+L	ab_71_14	5	|tier|[Gen 3] Custom Game
+L	ab_71_14	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_71_14	7	|
+L	ab_71_14	8	|t:|<NORMALIZED>
+L	ab_71_14	9	|teamsize|p1|6
+L	ab_71_14	10	|teamsize|p2|6
+L	ab_71_14	11	|start
+L	ab_71_14	12	|switch|p1a: Aggron|Aggron, L85, M|258/258
+L	ab_71_14	13	|switch|p2a: Quagsire|Quagsire, L84, M|297/297
+L	ab_71_14	14	|turn|1
+L	ab_71_14	15	|
+L	ab_71_14	16	|t:|<NORMALIZED>
+L	ab_71_14	17	|move|p1a: Aggron|Iron Tail|p2a: Quagsire
+L	ab_71_14	18	|-resisted|p2a: Quagsire
+L	ab_71_14	19	|-damage|p2a: Quagsire|237/297
+L	ab_71_14	20	|move|p2a: Quagsire|Sleep Talk|p2a: Quagsire
+L	ab_71_14	21	|
+L	ab_71_14	22	|-heal|p2a: Quagsire|255/297|[from] item: Leftovers
+L	ab_71_14	23	|upkeep
+L	ab_71_14	24	|turn|2
+L	ab_71_14	25	|
+L	ab_71_14	26	|t:|<NORMALIZED>
+L	ab_71_14	27	|switch|p1a: Sableye|Sableye, L91, M|239/239
+L	ab_71_14	28	|move|p2a: Quagsire|Earthquake|p1a: Sableye
+L	ab_71_14	29	|-damage|p1a: Sableye|130/239
+L	ab_71_14	30	|
+L	ab_71_14	31	|-heal|p1a: Sableye|144/239|[from] item: Leftovers
+L	ab_71_14	32	|-heal|p2a: Quagsire|273/297|[from] item: Leftovers
+L	ab_71_14	33	|upkeep
+L	ab_71_14	34	|turn|3
+L	ab_71_14	35	|
+L	ab_71_14	36	|t:|<NORMALIZED>
+L	ab_71_14	37	|switch|p1a: Cacturne|Cacturne, L96, M|290/290
+L	ab_71_14	38	|switch|p2a: Dusclops|Dusclops, L86, M|209/209
+L	ab_71_14	39	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_71_14	40	|
+L	ab_71_14	41	|upkeep
+L	ab_71_14	42	|turn|4
+L	ab_71_14	43	|
+L	ab_71_14	44	|t:|<NORMALIZED>
+L	ab_71_14	45	|move|p1a: Cacturne|Needle Arm|p2a: Dusclops
+L	ab_71_14	46	|-damage|p2a: Dusclops|142/209
+L	ab_71_14	47	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_71_14	48	|
+L	ab_71_14	49	|-heal|p2a: Dusclops|155/209|[from] item: Leftovers
+L	ab_71_14	50	|upkeep
+L	ab_71_14	51	|turn|5
+L	ab_71_14	52	|
+L	ab_71_14	53	|t:|<NORMALIZED>
+L	ab_71_14	54	|switch|p2a: Smeargle|Smeargle, L89, M|243/243
+L	ab_71_14	55	|move|p1a: Cacturne|Thunder Punch|p2a: Smeargle
+L	ab_71_14	56	|-damage|p2a: Smeargle|130/243
+L	ab_71_14	57	|
+L	ab_71_14	58	|-heal|p2a: Smeargle|145/243|[from] item: Leftovers
+L	ab_71_14	59	|upkeep
+L	ab_71_14	60	|turn|6
+L	ab_71_14	61	|
+L	ab_71_14	62	|t:|<NORMALIZED>
+L	ab_71_14	63	|move|p2a: Smeargle|Encore|p1a: Cacturne
+L	ab_71_14	64	|-start|p1a: Cacturne|Encore
+L	ab_71_14	65	|move|p1a: Cacturne|Thunder Punch|p2a: Smeargle
+L	ab_71_14	66	|-damage|p2a: Smeargle|30/243
+L	ab_71_14	67	|
+L	ab_71_14	68	|-heal|p2a: Smeargle|45/243|[from] item: Leftovers
+L	ab_71_14	69	|upkeep
+L	ab_71_14	70	|turn|7
+L	ab_71_14	71	|
+L	ab_71_14	72	|t:|<NORMALIZED>
+L	ab_71_14	73	|move|p2a: Smeargle|Encore||[still]
+L	ab_71_14	74	|-fail|p2a: Smeargle
+L	ab_71_14	75	|debug|move failed because it did nothing
+L	ab_71_14	76	|move|p1a: Cacturne|Thunder Punch|p2a: Smeargle
+L	ab_71_14	77	|-damage|p2a: Smeargle|0 fnt
+L	ab_71_14	78	|faint|p2a: Smeargle
+L	ab_71_14	79	|
+L	ab_71_14	80	|t:|<NORMALIZED>
+L	ab_71_14	81	|switch|p2a: Quagsire|Quagsire, L84, M|273/297
+L	ab_71_14	82	|
+L	ab_71_14	83	|-heal|p2a: Quagsire|291/297|[from] item: Leftovers
+L	ab_71_14	84	|upkeep
+L	ab_71_14	85	|turn|8
+L	ab_71_14	86	|
+L	ab_71_14	87	|t:|<NORMALIZED>
+L	ab_71_14	88	|move|p1a: Cacturne|Thunder Punch|p2a: Quagsire
+L	ab_71_14	89	|-immune|p2a: Quagsire
+L	ab_71_14	90	|move|p2a: Quagsire|Rest|p2a: Quagsire
+L	ab_71_14	91	|-status|p2a: Quagsire|slp|[from] move: Rest
+L	ab_71_14	92	|-heal|p2a: Quagsire|297/297 slp|[silent]
+L	ab_71_14	93	|
+L	ab_71_14	94	|upkeep
+L	ab_71_14	95	|turn|9
+L	ab_71_14	96	|
+L	ab_71_14	97	|t:|<NORMALIZED>
+L	ab_71_14	98	|move|p1a: Cacturne|Thunder Punch|p2a: Quagsire
+L	ab_71_14	99	|-immune|p2a: Quagsire
+L	ab_71_14	100	|cant|p2a: Quagsire|slp
+L	ab_71_14	101	|
+L	ab_71_14	102	|upkeep
+L	ab_71_14	103	|turn|10
+L	ab_71_14	104	|
+L	ab_71_14	105	|t:|<NORMALIZED>
+L	ab_71_14	106	|move|p1a: Cacturne|Thunder Punch|p2a: Quagsire
+L	ab_71_14	107	|-immune|p2a: Quagsire
+L	ab_71_14	108	|cant|p2a: Quagsire|slp
+L	ab_71_14	109	|
+L	ab_71_14	110	|upkeep
+L	ab_71_14	111	|turn|11
+L	ab_71_14	112	|
+L	ab_71_14	113	|t:|<NORMALIZED>
+L	ab_71_14	114	|move|p1a: Cacturne|Thunder Punch|p2a: Quagsire
+L	ab_71_14	115	|-immune|p2a: Quagsire
+L	ab_71_14	116	|-curestatus|p2a: Quagsire|slp|[msg]
+L	ab_71_14	117	|move|p2a: Quagsire|Earthquake|p1a: Cacturne
+L	ab_71_14	118	|-resisted|p1a: Cacturne
+L	ab_71_14	119	|-damage|p1a: Cacturne|230/290
+L	ab_71_14	120	|
+L	ab_71_14	121	|-heal|p1a: Cacturne|248/290|[from] item: Leftovers
+L	ab_71_14	122	|-end|p1a: Cacturne|Encore
+L	ab_71_14	123	|upkeep
+L	ab_71_14	124	|turn|12
+L	ab_71_14	125	|
+L	ab_71_14	126	|t:|<NORMALIZED>
+L	ab_71_14	127	|switch|p2a: Gorebyss|Gorebyss, L85, M|232/232
+L	ab_71_14	128	|move|p1a: Cacturne|Spikes|p2a: Gorebyss
+L	ab_71_14	129	|-sidestart|p2: P2|Spikes
+L	ab_71_14	130	|
+L	ab_71_14	131	|-heal|p1a: Cacturne|266/290|[from] item: Leftovers
+L	ab_71_14	132	|upkeep
+L	ab_71_14	133	|turn|13
+L	ab_71_14	134	|
+L	ab_71_14	135	|t:|<NORMALIZED>
+L	ab_71_14	136	|move|p1a: Cacturne|Spikes|p2a: Gorebyss
+L	ab_71_14	137	|-sidestart|p2: P2|Spikes
+L	ab_71_14	138	|move|p2a: Gorebyss|Rain Dance|p2a: Gorebyss
+L	ab_71_14	139	|-weather|RainDance
+L	ab_71_14	140	|
+L	ab_71_14	141	|-weather|RainDance|[upkeep]
+L	ab_71_14	142	|-heal|p1a: Cacturne|284/290|[from] item: Leftovers
+L	ab_71_14	143	|upkeep
+L	ab_71_14	144	|turn|14
+L	ab_71_14	145	|
+L	ab_71_14	146	|t:|<NORMALIZED>
+L	ab_71_14	147	|move|p2a: Gorebyss|Rain Dance||[still]
+L	ab_71_14	148	|-fail|p2a: Gorebyss
+L	ab_71_14	149	|debug|move failed because it did nothing
+L	ab_71_14	150	|move|p1a: Cacturne|Needle Arm|p2a: Gorebyss
+L	ab_71_14	151	|-supereffective|p2a: Gorebyss
+L	ab_71_14	152	|-damage|p2a: Gorebyss|19/232
+L	ab_71_14	153	|
+L	ab_71_14	154	|-weather|RainDance|[upkeep]
+L	ab_71_14	155	|-enditem|p2a: Gorebyss|Petaya Berry|[eat]
+L	ab_71_14	156	|-boost|p2a: Gorebyss|spa|1|[from] item: Petaya Berry
+L	ab_71_14	157	|-heal|p1a: Cacturne|290/290|[from] item: Leftovers
+L	ab_71_14	158	|upkeep
+L	ab_71_14	159	|turn|15
+L	ab_71_14	160	|
+L	ab_71_14	161	|t:|<NORMALIZED>
+L	ab_71_14	162	|move|p2a: Gorebyss|Rain Dance||[still]
+L	ab_71_14	163	|-fail|p2a: Gorebyss
+L	ab_71_14	164	|debug|move failed because it did nothing
+L	ab_71_14	165	|move|p1a: Cacturne|Needle Arm|p2a: Gorebyss
+L	ab_71_14	166	|-supereffective|p2a: Gorebyss
+L	ab_71_14	167	|-damage|p2a: Gorebyss|0 fnt
+L	ab_71_14	168	|faint|p2a: Gorebyss
+L	ab_71_14	169	|
+L	ab_71_14	170	|t:|<NORMALIZED>
+L	ab_71_14	171	|switch|p2a: Sudowoodo|Sudowoodo, L92, M|278/278
+L	ab_71_14	172	|-damage|p2a: Sudowoodo|232/278|[from] Spikes
+L	ab_71_14	173	|
+L	ab_71_14	174	|-weather|RainDance|[upkeep]
+L	ab_71_14	175	|-heal|p2a: Sudowoodo|249/278|[from] item: Leftovers
+L	ab_71_14	176	|upkeep
+L	ab_71_14	177	|turn|16
+L	ab_71_14	178	|
+L	ab_71_14	179	|t:|<NORMALIZED>
+L	ab_71_14	180	|switch|p1a: Aggron|Aggron, L85, M|258/258
+L	ab_71_14	181	|move|p2a: Sudowoodo|Rock Slide|p1a: Aggron|[miss]
+L	ab_71_14	182	|-miss|p2a: Sudowoodo|p1a: Aggron
+L	ab_71_14	183	|
+L	ab_71_14	184	|-weather|RainDance|[upkeep]
+L	ab_71_14	185	|-heal|p2a: Sudowoodo|266/278|[from] item: Leftovers
+L	ab_71_14	186	|upkeep
+L	ab_71_14	187	|turn|17
+L	ab_71_14	188	|
+L	ab_71_14	189	|t:|<NORMALIZED>
+L	ab_71_14	190	|debug|before turn callback: focuspunch
+L	ab_71_14	191	|-singleturn|p1a: Aggron|move: Focus Punch
+L	ab_71_14	192	|debug|before turn callback: focuspunch
+L	ab_71_14	193	|-singleturn|p2a: Sudowoodo|move: Focus Punch
+L	ab_71_14	194	|move|p1a: Aggron|Focus Punch|p2a: Sudowoodo
+L	ab_71_14	195	|-supereffective|p2a: Sudowoodo
+L	ab_71_14	196	|-damage|p2a: Sudowoodo|80/278
+L	ab_71_14	197	|move|p2a: Sudowoodo|Focus Punch||[still]
+L	ab_71_14	198	|cant|p2a: Sudowoodo|Focus Punch|Focus Punch
+L	ab_71_14	199	|
+L	ab_71_14	200	|-weather|none
+L	ab_71_14	201	|-heal|p2a: Sudowoodo|97/278|[from] item: Leftovers
+L	ab_71_14	202	|upkeep
+L	ab_71_14	203	|turn|18
+L	ab_71_14	204	|
+L	ab_71_14	205	|t:|<NORMALIZED>
+L	ab_71_14	206	|debug|before turn callback: focuspunch
+L	ab_71_14	207	|-singleturn|p2a: Sudowoodo|move: Focus Punch
+L	ab_71_14	208	|move|p1a: Aggron|Iron Tail|p2a: Sudowoodo
+L	ab_71_14	209	|-supereffective|p2a: Sudowoodo
+L	ab_71_14	210	|-damage|p2a: Sudowoodo|0 fnt
+L	ab_71_14	211	|faint|p2a: Sudowoodo
+L	ab_71_14	212	|
+L	ab_71_14	213	|t:|<NORMALIZED>
+L	ab_71_14	214	|switch|p2a: Dusclops|Dusclops, L86, M|155/209
+L	ab_71_14	215	|-damage|p2a: Dusclops|121/209|[from] Spikes
+L	ab_71_14	216	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_71_14	217	|
+L	ab_71_14	218	|-heal|p2a: Dusclops|134/209|[from] item: Leftovers
+L	ab_71_14	219	|upkeep
+L	ab_71_14	220	|turn|19
+L	ab_71_14	221	|
+L	ab_71_14	222	|t:|<NORMALIZED>
+L	ab_71_14	223	|switch|p1a: Tentacruel|Tentacruel, L79, M|256/256
+L	ab_71_14	224	|move|p2a: Dusclops|Seismic Toss|p1a: Tentacruel
+L	ab_71_14	225	|-damage|p1a: Tentacruel|170/256
+L	ab_71_14	226	|
+L	ab_71_14	227	|-heal|p1a: Tentacruel|186/256|[from] item: Leftovers
+L	ab_71_14	228	|-heal|p2a: Dusclops|147/209|[from] item: Leftovers
+L	ab_71_14	229	|upkeep
+L	ab_71_14	230	|turn|20
+L	ab_71_14	231	|
+L	ab_71_14	232	|t:|<NORMALIZED>
+L	ab_71_14	233	|move|p1a: Tentacruel|Sludge Bomb|p2a: Dusclops
+L	ab_71_14	234	|-resisted|p2a: Dusclops
+L	ab_71_14	235	|-damage|p2a: Dusclops|124/209
+L	ab_71_14	236	|move|p2a: Dusclops|Shadow Ball|p1a: Tentacruel
+L	ab_71_14	237	|-damage|p1a: Tentacruel|87/256
+L	ab_71_14	238	|
+L	ab_71_14	239	|-heal|p1a: Tentacruel|103/256|[from] item: Leftovers
+L	ab_71_14	240	|-heal|p2a: Dusclops|137/209|[from] item: Leftovers
+L	ab_71_14	241	|upkeep
+L	ab_71_14	242	|turn|21
+L	ab_71_14	243	|
+L	ab_71_14	244	|t:|<NORMALIZED>
+L	ab_71_14	245	|move|p1a: Tentacruel|Sludge Bomb|p2a: Dusclops
+L	ab_71_14	246	|-resisted|p2a: Dusclops
+L	ab_71_14	247	|-damage|p2a: Dusclops|114/209
+L	ab_71_14	248	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_71_14	249	|-status|p2a: Dusclops|slp|[from] move: Rest
+L	ab_71_14	250	|-heal|p2a: Dusclops|209/209 slp|[silent]
+L	ab_71_14	251	|
+L	ab_71_14	252	|-heal|p1a: Tentacruel|119/256|[from] item: Leftovers
+L	ab_71_14	253	|upkeep
+L	ab_71_14	254	|turn|22
+L	ab_71_14	255	|
+L	ab_71_14	256	|t:|<NORMALIZED>
+L	ab_71_14	257	|switch|p1a: Aggron|Aggron, L85, M|258/258
+L	ab_71_14	258	|cant|p2a: Dusclops|slp
+L	ab_71_14	259	|
+L	ab_71_14	260	|upkeep
+L	ab_71_14	261	|turn|23
+L	ab_71_14	262	|
+L	ab_71_14	263	|t:|<NORMALIZED>
+L	ab_71_14	264	|debug|before turn callback: focuspunch
+L	ab_71_14	265	|-singleturn|p1a: Aggron|move: Focus Punch
+L	ab_71_14	266	|cant|p2a: Dusclops|slp
+L	ab_71_14	267	|move|p1a: Aggron|Focus Punch|p2a: Dusclops
+L	ab_71_14	268	|-immune|p2a: Dusclops
+L	ab_71_14	269	|
+L	ab_71_14	270	|upkeep
+L	ab_71_14	271	|turn|24
+L	ab_71_14	272	|
+L	ab_71_14	273	|t:|<NORMALIZED>
+L	ab_71_14	274	|move|p1a: Aggron|Iron Tail|p2a: Dusclops
+L	ab_71_14	275	|-damage|p2a: Dusclops|124/209 slp
+L	ab_71_14	276	|-curestatus|p2a: Dusclops|slp|[msg]
+L	ab_71_14	277	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_71_14	278	|
+L	ab_71_14	279	|-heal|p2a: Dusclops|137/209|[from] item: Leftovers
+L	ab_71_14	280	|upkeep
+L	ab_71_14	281	|turn|25
+L	ab_71_14	282	|
+L	ab_71_14	283	|t:|<NORMALIZED>
+L	ab_71_14	284	|move|p1a: Aggron|Iron Tail|p2a: Dusclops
+L	ab_71_14	285	|-damage|p2a: Dusclops|42/209
+L	ab_71_14	286	|-unboost|p2a: Dusclops|def|1
+L	ab_71_14	287	|move|p2a: Dusclops|Shadow Ball|p1a: Aggron
+L	ab_71_14	288	|-resisted|p1a: Aggron
+L	ab_71_14	289	|-damage|p1a: Aggron|239/258
+L	ab_71_14	290	|
+L	ab_71_14	291	|-heal|p1a: Aggron|255/258|[from] item: Leftovers
+L	ab_71_14	292	|-heal|p2a: Dusclops|55/209|[from] item: Leftovers
+L	ab_71_14	293	|upkeep
+L	ab_71_14	294	|turn|26
+L	ab_71_14	295	|
+L	ab_71_14	296	|t:|<NORMALIZED>
+L	ab_71_14	297	|move|p1a: Aggron|Iron Tail|p2a: Dusclops
+L	ab_71_14	298	|-crit|p2a: Dusclops
+L	ab_71_14	299	|-damage|p2a: Dusclops|0 fnt
+L	ab_71_14	300	|faint|p2a: Dusclops
+L	ab_71_14	301	|
+L	ab_71_14	302	|t:|<NORMALIZED>
+L	ab_71_14	303	|switch|p2a: Aipom|Aipom, L93, M|253/253
+L	ab_71_14	304	|-damage|p2a: Aipom|211/253|[from] Spikes
+L	ab_71_14	305	|
+L	ab_71_14	306	|-heal|p1a: Aggron|258/258|[from] item: Leftovers
+L	ab_71_14	307	|upkeep
+L	ab_71_14	308	|turn|27
+L	ab_71_14	309	|
+L	ab_71_14	310	|t:|<NORMALIZED>
+L	ab_71_14	311	|move|p2a: Aipom|Baton Pass|p2a: Aipom
+L	ab_71_14	312	|
+L	ab_71_14	313	|t:|<NORMALIZED>
+L	ab_71_14	314	|switch|p2a: Quagsire|Quagsire, L84, M|297/297|[from] Baton Pass
+L	ab_71_14	315	|-damage|p2a: Quagsire|248/297|[from] Spikes
+L	ab_71_14	316	|move|p1a: Aggron|Iron Tail|p2a: Quagsire
+L	ab_71_14	317	|-resisted|p2a: Quagsire
+L	ab_71_14	318	|-damage|p2a: Quagsire|187/297
+L	ab_71_14	319	|
+L	ab_71_14	320	|-heal|p2a: Quagsire|205/297|[from] item: Leftovers
+L	ab_71_14	321	|upkeep
+L	ab_71_14	322	|turn|28
+L	ab_71_14	323	|
+L	ab_71_14	324	|t:|<NORMALIZED>
+L	ab_71_14	325	|move|p1a: Aggron|Rock Slide|p2a: Quagsire
+L	ab_71_14	326	|-resisted|p2a: Quagsire
+L	ab_71_14	327	|-damage|p2a: Quagsire|161/297
+L	ab_71_14	328	|cant|p2a: Quagsire|flinch
+L	ab_71_14	329	|
+L	ab_71_14	330	|-heal|p2a: Quagsire|179/297|[from] item: Leftovers
+L	ab_71_14	331	|upkeep
+L	ab_71_14	332	|turn|29
+L	ab_71_14	333	|
+L	ab_71_14	334	|t:|<NORMALIZED>
+L	ab_71_14	335	|debug|before turn callback: focuspunch
+L	ab_71_14	336	|-singleturn|p1a: Aggron|move: Focus Punch
+L	ab_71_14	337	|move|p2a: Quagsire|Rest|p2a: Quagsire
+L	ab_71_14	338	|-status|p2a: Quagsire|slp|[from] move: Rest
+L	ab_71_14	339	|-heal|p2a: Quagsire|297/297 slp|[silent]
+L	ab_71_14	340	|move|p1a: Aggron|Focus Punch|p2a: Quagsire
+L	ab_71_14	341	|-damage|p2a: Quagsire|176/297 slp
+L	ab_71_14	342	|
+L	ab_71_14	343	|-heal|p2a: Quagsire|194/297 slp|[from] item: Leftovers
+L	ab_71_14	344	|upkeep
+L	ab_71_14	345	|turn|30
+L	ab_71_14	346	|
+L	ab_71_14	347	|t:|<NORMALIZED>
+L	ab_71_14	348	|switch|p1a: Tentacruel|Tentacruel, L79, M|119/256
+L	ab_71_14	349	|cant|p2a: Quagsire|slp
+L	ab_71_14	350	|move|p2a: Quagsire|Sleep Talk|p2a: Quagsire
+L	ab_71_14	351	|move|p2a: Quagsire|Rest|p2a: Quagsire|[from] Sleep Talk
+L	ab_71_14	352	|
+L	ab_71_14	353	|-heal|p1a: Tentacruel|135/256|[from] item: Leftovers
+L	ab_71_14	354	|-heal|p2a: Quagsire|212/297 slp|[from] item: Leftovers
+L	ab_71_14	355	|upkeep
+L	ab_71_14	356	|turn|31
+L	ab_71_14	357	|
+L	ab_71_14	358	|t:|<NORMALIZED>
+L	ab_71_14	359	|move|p1a: Tentacruel|Surf|p2a: Quagsire
+L	ab_71_14	360	|-heal|p2a: Quagsire|286/297 slp|[from] ability: Water Absorb|[of] p1a: Tentacruel
+L	ab_71_14	361	|cant|p2a: Quagsire|slp
+L	ab_71_14	362	|
+L	ab_71_14	363	|-heal|p1a: Tentacruel|151/256|[from] item: Leftovers
+L	ab_71_14	364	|-heal|p2a: Quagsire|297/297 slp|[from] item: Leftovers
+L	ab_71_14	365	|upkeep
+L	ab_71_14	366	|turn|32
+L	ab_71_14	367	|
+L	ab_71_14	368	|t:|<NORMALIZED>
+L	ab_71_14	369	|move|p1a: Tentacruel|Ice Beam|p2a: Quagsire
+L	ab_71_14	370	|-damage|p2a: Quagsire|234/297 slp
+L	ab_71_14	371	|-curestatus|p2a: Quagsire|slp|[msg]
+L	ab_71_14	372	|move|p2a: Quagsire|Sleep Talk|p2a: Quagsire
+L	ab_71_14	373	|
+L	ab_71_14	374	|-heal|p1a: Tentacruel|167/256|[from] item: Leftovers
+L	ab_71_14	375	|-heal|p2a: Quagsire|252/297|[from] item: Leftovers
+L	ab_71_14	376	|upkeep
+L	ab_71_14	377	|turn|33
+L	ab_71_14	378	|
+L	ab_71_14	379	|t:|<NORMALIZED>
+L	ab_71_14	380	|switch|p1a: Aggron|Aggron, L85, M|258/258
+L	ab_71_14	381	|move|p2a: Quagsire|Rest|p2a: Quagsire
+L	ab_71_14	382	|-status|p2a: Quagsire|slp|[from] move: Rest
+L	ab_71_14	383	|-heal|p2a: Quagsire|297/297 slp|[silent]
+L	ab_71_14	384	|
+L	ab_71_14	385	|upkeep
+L	ab_71_14	386	|turn|34
+L	ab_71_14	387	|
+L	ab_71_14	388	|t:|<NORMALIZED>
+L	ab_71_14	389	|debug|before turn callback: focuspunch
+L	ab_71_14	390	|-singleturn|p1a: Aggron|move: Focus Punch
+L	ab_71_14	391	|cant|p2a: Quagsire|slp
+L	ab_71_14	392	|move|p1a: Aggron|Focus Punch|p2a: Quagsire
+L	ab_71_14	393	|-damage|p2a: Quagsire|172/297 slp
+L	ab_71_14	394	|
+L	ab_71_14	395	|-heal|p2a: Quagsire|190/297 slp|[from] item: Leftovers
+L	ab_71_14	396	|upkeep
+L	ab_71_14	397	|turn|35
+L	ab_71_14	398	|
+L	ab_71_14	399	|t:|<NORMALIZED>
+L	ab_71_14	400	|debug|before turn callback: focuspunch
+L	ab_71_14	401	|-singleturn|p1a: Aggron|move: Focus Punch
+L	ab_71_14	402	|cant|p2a: Quagsire|slp
+L	ab_71_14	403	|move|p1a: Aggron|Focus Punch|p2a: Quagsire
+L	ab_71_14	404	|-damage|p2a: Quagsire|76/297 slp
+L	ab_71_14	405	|
+L	ab_71_14	406	|-heal|p2a: Quagsire|94/297 slp|[from] item: Leftovers
+L	ab_71_14	407	|upkeep
+L	ab_71_14	408	|turn|36
+L	ab_71_14	409	|
+L	ab_71_14	410	|t:|<NORMALIZED>
+L	ab_71_14	411	|move|p1a: Aggron|Rock Slide|p2a: Quagsire
+L	ab_71_14	412	|-resisted|p2a: Quagsire
+L	ab_71_14	413	|-damage|p2a: Quagsire|45/297 slp
+L	ab_71_14	414	|-curestatus|p2a: Quagsire|slp|[msg]
+L	ab_71_14	415	|move|p2a: Quagsire|Sleep Talk|p2a: Quagsire
+L	ab_71_14	416	|
+L	ab_71_14	417	|-heal|p2a: Quagsire|63/297|[from] item: Leftovers
+L	ab_71_14	418	|upkeep
+L	ab_71_14	419	|turn|37
+L	ab_71_14	420	|
+L	ab_71_14	421	|t:|<NORMALIZED>
+L	ab_71_14	422	|move|p1a: Aggron|Iron Tail|p2a: Quagsire
+L	ab_71_14	423	|-resisted|p2a: Quagsire
+L	ab_71_14	424	|-damage|p2a: Quagsire|1/297
+L	ab_71_14	425	|move|p2a: Quagsire|Earthquake|p1a: Aggron
+L	ab_71_14	426	|-supereffective|p1a: Aggron
+L	ab_71_14	427	|-crit|p1a: Aggron
+L	ab_71_14	428	|-damage|p1a: Aggron|0 fnt
+L	ab_71_14	429	|faint|p1a: Aggron
+L	ab_71_14	430	|
+L	ab_71_14	431	|t:|<NORMALIZED>
+L	ab_71_14	432	|switch|p1a: Cacturne|Cacturne, L96, M|290/290
+L	ab_71_14	433	|
+L	ab_71_14	434	|-heal|p2a: Quagsire|19/297|[from] item: Leftovers
+L	ab_71_14	435	|upkeep
+L	ab_71_14	436	|turn|38
+L	ab_71_14	437	|
+L	ab_71_14	438	|t:|<NORMALIZED>
+L	ab_71_14	439	|move|p1a: Cacturne|Needle Arm|p2a: Quagsire
+L	ab_71_14	440	|-supereffective|p2a: Quagsire
+L	ab_71_14	441	|-damage|p2a: Quagsire|0 fnt
+L	ab_71_14	442	|faint|p2a: Quagsire
+L	ab_71_14	443	|
+L	ab_71_14	444	|t:|<NORMALIZED>
+L	ab_71_14	445	|switch|p2a: Aipom|Aipom, L93, M|211/253
+L	ab_71_14	446	|-damage|p2a: Aipom|169/253|[from] Spikes
+L	ab_71_14	447	|
+L	ab_71_14	448	|upkeep
+L	ab_71_14	449	|turn|39
+L	ab_71_14	450	|
+L	ab_71_14	451	|t:|<NORMALIZED>
+L	ab_71_14	452	|move|p2a: Aipom|Return|p1a: Cacturne
+L	ab_71_14	453	|-damage|p1a: Cacturne|99/290
+L	ab_71_14	454	|move|p1a: Cacturne|Spikes|p2a: Aipom
+L	ab_71_14	455	|-sidestart|p2: P2|Spikes
+L	ab_71_14	456	|
+L	ab_71_14	457	|-heal|p1a: Cacturne|117/290|[from] item: Leftovers
+L	ab_71_14	458	|upkeep
+L	ab_71_14	459	|turn|40
+L	ab_71_14	460	|
+L	ab_71_14	461	|t:|<NORMALIZED>
+L	ab_71_14	462	|switch|p1a: Tentacruel|Tentacruel, L79, M|167/256
+L	ab_71_14	463	|move|p2a: Aipom|Return|p1a: Tentacruel
+L	ab_71_14	464	|-damage|p1a: Tentacruel|0 fnt
+L	ab_71_14	465	|faint|p1a: Tentacruel
+L	ab_71_14	466	|
+L	ab_71_14	467	|t:|<NORMALIZED>
+L	ab_71_14	468	|switch|p1a: Illumise|Illumise, L92, F|269/269
+L	ab_71_14	469	|
+L	ab_71_14	470	|upkeep
+L	ab_71_14	471	|turn|41
+L	ab_71_14	472	|
+L	ab_71_14	473	|t:|<NORMALIZED>
+L	ab_71_14	474	|move|p2a: Aipom|Return|p1a: Illumise
+L	ab_71_14	475	|-damage|p1a: Illumise|77/269
+L	ab_71_14	476	|move|p1a: Illumise|Moonlight|p1a: Illumise
+L	ab_71_14	477	|-heal|p1a: Illumise|211/269
+L	ab_71_14	478	|
+L	ab_71_14	479	|-heal|p1a: Illumise|227/269|[from] item: Leftovers
+L	ab_71_14	480	|upkeep
+L	ab_71_14	481	|turn|42
+L	ab_71_14	482	|
+L	ab_71_14	483	|t:|<NORMALIZED>
+L	ab_71_14	484	|move|p2a: Aipom|Return|p1a: Illumise
+L	ab_71_14	485	|-damage|p1a: Illumise|41/269
+L	ab_71_14	486	|move|p1a: Illumise|Encore|p2a: Aipom
+L	ab_71_14	487	|-start|p2a: Aipom|Encore
+L	ab_71_14	488	|
+L	ab_71_14	489	|-heal|p1a: Illumise|57/269|[from] item: Leftovers
+L	ab_71_14	490	|upkeep
+L	ab_71_14	491	|turn|43
+L	ab_71_14	492	|
+L	ab_71_14	493	|t:|<NORMALIZED>
+L	ab_71_14	494	|move|p2a: Aipom|Return|p1a: Illumise
+L	ab_71_14	495	|-damage|p1a: Illumise|0 fnt
+L	ab_71_14	496	|faint|p1a: Illumise
+L	ab_71_14	497	|
+L	ab_71_14	498	|t:|<NORMALIZED>
+L	ab_71_14	499	|switch|p1a: Sableye|Sableye, L91, M|144/239
+L	ab_71_14	500	|
+L	ab_71_14	501	|-heal|p1a: Sableye|158/239|[from] item: Leftovers
+L	ab_71_14	502	|upkeep
+L	ab_71_14	503	|turn|44
+L	ab_71_14	504	|
+L	ab_71_14	505	|t:|<NORMALIZED>
+L	ab_71_14	506	|move|p2a: Aipom|Return|p1a: Sableye
+L	ab_71_14	507	|-immune|p1a: Sableye
+L	ab_71_14	508	|move|p1a: Sableye|Knock Off|p2a: Aipom
+L	ab_71_14	509	|-damage|p2a: Aipom|143/253
+L	ab_71_14	510	|-enditem|p2a: Aipom|Choice Band|[from] move: Knock Off|[of] p1a: Sableye
+L	ab_71_14	511	|-hint|In Gens 3-4, Knock Off only makes the target's item unusable; it cannot obtain a new item.
+L	ab_71_14	512	|
+L	ab_71_14	513	|-heal|p1a: Sableye|172/239|[from] item: Leftovers
+L	ab_71_14	514	|upkeep
+L	ab_71_14	515	|turn|45
+L	ab_71_14	516	|
+L	ab_71_14	517	|t:|<NORMALIZED>
+L	ab_71_14	518	|move|p2a: Aipom|Return|p1a: Sableye
+L	ab_71_14	519	|-immune|p1a: Sableye
+L	ab_71_14	520	|move|p1a: Sableye|Seismic Toss|p2a: Aipom
+L	ab_71_14	521	|-damage|p2a: Aipom|52/253
+L	ab_71_14	522	|
+L	ab_71_14	523	|-heal|p1a: Sableye|186/239|[from] item: Leftovers
+L	ab_71_14	524	|upkeep
+L	ab_71_14	525	|turn|46
+L	ab_71_14	526	|
+L	ab_71_14	527	|t:|<NORMALIZED>
+L	ab_71_14	528	|move|p2a: Aipom|Return|p1a: Sableye
+L	ab_71_14	529	|-immune|p1a: Sableye
+L	ab_71_14	530	|move|p1a: Sableye|Knock Off|p2a: Aipom
+L	ab_71_14	531	|-damage|p2a: Aipom|26/253
+L	ab_71_14	532	|
+L	ab_71_14	533	|-end|p2a: Aipom|Encore
+L	ab_71_14	534	|-heal|p1a: Sableye|200/239|[from] item: Leftovers
+L	ab_71_14	535	|upkeep
+L	ab_71_14	536	|turn|47
+L	ab_71_14	537	|
+L	ab_71_14	538	|t:|<NORMALIZED>
+L	ab_71_14	539	|move|p2a: Aipom|Return|p1a: Sableye
+L	ab_71_14	540	|-immune|p1a: Sableye
+L	ab_71_14	541	|move|p1a: Sableye|Seismic Toss|p2a: Aipom
+L	ab_71_14	542	|-damage|p2a: Aipom|0 fnt
+L	ab_71_14	543	|faint|p2a: Aipom
+L	ab_71_14	544	|
+L	ab_71_14	545	|win|P1

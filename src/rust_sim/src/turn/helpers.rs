@@ -171,7 +171,7 @@ impl crate::state::BattleState {
         // Choice-lock+disable mon draws one size-2 shuffle, `gen3_taunt_disable_v1`) — BEFORE
         // the Quick Claw. Draw-free for a mon with <2 move-disabling volatiles (the common case
         // in this no-switch single-turn path), so seed-neutral there.
-        self.disable_move_event_shuffle();
+        self.disable_move_event_shuffle(dex);
 
         // `activeTurns++` per active mon (`endTurn`, battle.ts:1762) — DRAW-FREE, AFTER the
         // DisableMove event + BEFORE the Quick Claw. Feeds NEXT turn's Speed Boost residual

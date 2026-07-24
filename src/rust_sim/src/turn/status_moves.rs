@@ -1496,14 +1496,17 @@ impl crate::state::BattleState {
         //          immunity/fail is reported only AFTER the accuracy roll). VERIFIED: a
         //          splash/splash baseline turn draws 1 (Quick Claw); a Leech-Seed turn —
         //          land, Grass-immune, OR already-seeded-fail — ALL draw 2 (accuracy + QC).
-        //       2. GRASS IMMUNITY (`onTryImmunity` → `!target.hasType('Grass')`) — a Grass
+        //       2. PROTECT BLOCK — a foe-targeting move into a `protected` mon is blocked at
+        //          the `runEvent('TryHit')` that runs after a PASSING accuracy roll
+        //          (`-activate Protect`, no volatile) — and TryHit is reported BEFORE the
+        //          `naturalImmunity` `-immune`, so a PROTECTED GRASS target shows Protect.
+        //       3. GRASS IMMUNITY (`onTryImmunity` → `!target.hasType('Grass')`) — a Grass
         //          target is IMMUNE: the accuracy roll is still drawn, then `-immune`, NO
-        //          volatile. DRAW-FREE past accuracy.
-        //       3. ALREADY-SEEDED — a 2nd Leech Seed on a seeded target FAILS (`addVolatile`
+        //          volatile (on a MISS too — naturalImmunity beats `-miss`). DRAW-FREE past
+        //          accuracy.
+        //       4. ALREADY-SEEDED — a 2nd Leech Seed on a seeded target FAILS (`addVolatile`
         //          returns false): the accuracy roll is drawn, then `-fail`/"did nothing",
         //          the existing volatile is UNCHANGED. DRAW-FREE past accuracy.
-        //       4. PROTECT BLOCK — a foe-targeting move into a `protected` mon is blocked at
-        //          TryHit after the accuracy roll (`-activate Protect`, no volatile).
         //       5. PLANT the `leechseed` volatile on the foe (DRAW-FREE — `addVolatile`'s
         //          `onStart` only adds `-start`, no PRNG), recording the SEEDER's side. The
         //          end-of-turn drain/heal is the `LeechSeed` residual (see `apply_leech_seed`).
@@ -1525,7 +1528,36 @@ impl crate::state::BattleState {
             } else {
                 self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex)
             };
-            // (2) GRASS IMMUNITY — resolved AFTER the accuracy draw (same draw count).
+            // (2) PROTECT BLOCK (foe-targeting) — the `runEvent('TryHit')` handler, which in
+            //     gen-3 `tryMoveHit` (mods/gen3/scripts.ts:368-379) runs on the `accPass`
+            //     branch BEFORE the `naturalImmunity` report:
+            //         if (accPass) { hitResult = runEvent('TryHit', …);
+            //                        if (!hitResult) { …; return false; }
+            //                        else if (naturalImmunity) { add('-immune'); return false; } }
+            //         else { if (naturalImmunity) add('-immune'); else add('-miss'); }
+            //     So a PROTECTED **GRASS** target shows `-activate Protect`, NOT `-immune` —
+            //     Protect wins the TryHit event even though the Grass `onTryImmunity` already
+            //     set `naturalImmunity` (it is only REPORTED after TryHit passes). SIM-PROBED
+            //     (`harness/probe_rb_tail.js` C1a/C1b/C1c): Leech Seed into a PROTECTING
+            //     Jumpluff (Grass/Flying) emits `|-activate|p2a: Jumpluff|Protect`, while the
+            //     un-protected control emits `|-immune|p2a: Jumpluff`; the two protected cases
+            //     (Grass vs non-Grass) share the SAME post-turn seed, so this is an EMISSION
+            //     ORDER fix only (the accuracy roll is the sole draw either way). The `acc_hit`
+            //     gate matters: on a MISS the sim takes the `else` branch, where
+            //     naturalImmunity STILL wins (`-immune`, no `-miss`) — handled below.
+            //     (This is the leechseed-arm sibling of the general status path's
+            //     "Protect-before-immunity ORDER" fix.) ---
+            if acc_hit && self.protect_blocks(foe, foe_slot, false) {
+                // [EMIT] `|-activate|<target>|Protect` (the standard block line — same
+                // form as every other protected foe-targeting status move).
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (3) GRASS IMMUNITY — resolved AFTER the accuracy draw (same draw count), and
+            //     reported after the TryHit handlers above (hit) or instead of `-miss` (miss).
             let target_is_grass = mon_types(&self.sides[foe].pokemon[foe_slot], dex)
                 .contains(&Type::Grass);
             if target_is_grass {
@@ -1548,16 +1580,6 @@ impl crate::state::BattleState {
                     self.log.miss(&user, Some(&target));
                 }
                 return MoveResolution::done(true, false, false);
-            }
-            // (4) PROTECT BLOCK (foe-targeting): blocked at TryHit after accuracy.
-            if self.protect_blocks(foe, foe_slot, false) {
-                // [EMIT] `|-activate|<target>|Protect` (the standard block line — same
-                // form as every other protected foe-targeting status move).
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.activate(&target, "Protect", None);
-                }
-                return MoveResolution::done(false, false, false);
             }
             // (4b) SUBSTITUTE BLOCK — a Leech Seed into a substituted foe is BLOCKED by the
             //      sub (the `volatileStatus` is a foe-targeting effect → the sub's
@@ -2352,10 +2374,13 @@ impl crate::state::BattleState {
             // The swap: the user GAINS the foe's item, the foe GAINS the user's item.
             self.sides[_side].pokemon[_slot].item = foe_item.clone();
             self.sides[foe].pokemon[foe_slot].item = user_item.clone();
-            // Release BOTH Choice locks (the lock-enforcing item changed on each side). A no-op
-            // for a non-Choice holder; the receiver re-acquires its lock on its NEXT move.
-            self.sides[_side].pokemon[_slot].choice_locked_move = None;
-            self.sides[foe].pokemon[foe_slot].choice_locked_move = None;
+            // Both Choice locks are released LAZILY (`gen3_choicelock_lazy_release_v1` — the
+            // `apply_item_removal` twin): the lock-enforcing item changed on each side, so
+            // `MonState::choice_lock_enforced` (a CURRENT-item read) stops enforcing it
+            // immediately, while the `choicelock` VOLATILE survives to the next endTurn
+            // `runEvent('DisableMove')` — where it is still GATHERED (counting toward that
+            // event's tie-shuffle) before self-removing. The receiver re-acquires its own lock
+            // on its NEXT move (`run_move`'s set-lock).
             if self.logging() {
                 let user = self.mon_ref(_side, _slot, dex);
                 let target = self.mon_ref(foe, foe_slot, dex);
@@ -2523,6 +2548,17 @@ impl crate::state::BattleState {
         //     NO activation, the type-immunity gate burns nothing either). The A/B fuzzer's
         //     willowisp STATE cluster: the port burned a traced-FF Porygon2 (maxhp/8 DoT
         //     desync) the sim absorbed. ---
+        //
+        //     [EMIT] the resolved `flashfire.onTryHit` ends in
+        //         if (!target.addVolatile('flashfire')) this.add('-immune', target, '[from] ability: Flash Fire');
+        //     so the ABSORB is NOT silent: a FIRST absorb adds the volatile → its `onStart`
+        //     emits `|-start|<target>|ability: Flash Fire`; an ALREADY-ARMED holder's
+        //     `addVolatile` returns false → `|-immune|<target>|[from] ability: Flash Fire`
+        //     (the same split the DAMAGING Fire-move path already emits). SIM-PROBED
+        //     (`harness/probe_rb_tail.js` S2, a TRACED Flash Fire Gardevoir): turn 1
+        //     `|move|…|Will-O-Wisp|…` → `|-start|p2a: Gardevoir|ability: Flash Fire`, turn 2
+        //     → `|-immune|p2a: Gardevoir|[from] ability: Flash Fire`. The port used to arm
+        //     the volatile SILENTLY. Emission-only (draw-free past the accuracy roll).
         {
             let fm = &self.sides[foe].pokemon[foe_slot];
             if move_type == Some(Type::Fire)
@@ -2530,7 +2566,16 @@ impl crate::state::BattleState {
                 && fm.status.is_none()
                 && !mon_types(fm, dex).contains(&Type::Fire)
             {
+                let already_armed = fm.flash_fire;
                 self.sides[foe].pokemon[foe_slot].flash_fire = true;
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    if already_armed {
+                        self.log.immune_from_ability(&target, "Flash Fire");
+                    } else {
+                        self.log.volatile_start(&target, "ability: Flash Fire");
+                    }
+                }
                 return MoveResolution::done(false, false, false);
             }
         }

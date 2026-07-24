@@ -351,11 +351,11 @@ impl crate::state::BattleState {
                 }
             }
         }
-        // WHITE HERB (`gen3_white_herb_v1`, onAnyAfterMove): a stat-DROP on a White Herb holder
-        // (a foe stat-drop MOVE — Growl / Screech / Charm — OR a damaging move's foe stat-drop
-        // secondary — Crunch's −SpD) is restored immediately + the item consumed. A self-RAISE
-        // (`want_self`) leaves no negative stage → no trigger (the no-op is data-driven inside
-        // `white_herb_restore`). DRAW-FREE.
-        self.white_herb_restore(t_side, t_slot, _dex);
+        // NOTE: the WHITE HERB restore is DELIBERATELY **not** fired here — see the twin note
+        // in `apply_self_drops` (`turn/residuals.rs`). gen3 White Herb's only in-turn trigger
+        // is `onAnyAfterMove`, which runs at the END of `runMove` — AFTER the move's
+        // DamagingHit-phase procs (Poison Point / Rough Skin), so an inline restore emitted
+        // `|-enditem|…|White Herb` one phase too early. The driver's `QAction::Move` tail is
+        // the single in-turn restore point.
     }
 }

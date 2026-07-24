@@ -314,6 +314,40 @@ impl crate::state::BattleState {
         any
     }
 
+    /// The sim's **`faintMessages(lastFirst = true)`** — the INSTAFAINT drain
+    /// (`spreadDamage(…, instafaint = true)`, battle.ts:2183-2187) that gen-4's LIQUID OOZE
+    /// triggers via `this.damage(damage, null, null, null, true)`
+    /// (`data/mods/gen4/abilities.ts::liquidooze.onSourceTryHeal` — gen3-inherited).
+    ///
+    /// `lastFirst` UNSHIFTS the LAST-queued corpse to the FRONT of `faintQueue`
+    /// (battle.ts:2555-2558) before draining it, so on a Liquid-Ooze DOUBLE faint the mon the
+    /// REVERSED heal just KO'd is announced BEFORE the one the drain/leech already KO'd —
+    /// the opposite of plain enqueue order. SIM-PROBED (`harness/probe_rb_tail.js` S3): a
+    /// Leech-Seed drain that KOs the seeded Liquid-Ooze holder AND whose reversed heal KOs the
+    /// seeder emits
+    /// ```text
+    /// |-damage|p2a: Swalot|0 fnt|[from] Leech Seed|[of] p1a: Jumpluff
+    /// |-damage|p1a: Jumpluff|0 fnt|[from] ability: Liquid Ooze|[of] p2a: Swalot
+    /// |faint|p1a: Jumpluff      <- the LAST-enqueued corpse first
+    /// |faint|p2a: Swalot
+    /// ```
+    /// Called ONLY when the reversal actually zeroed the healer's HP (the sim's
+    /// `if (target.hp <= 0)` instafaint gate). Draw-free itself (`process_faints` may still
+    /// fire a corpse's Cloud-Nine `onEnd` WeatherChange shuffle — exactly as `faintMessages`
+    /// does at this point in the sim).
+    pub(crate) fn liquid_ooze_instafaint(&mut self, healer_side: usize, dex: &Dex) {
+        let slot = self.sides[healer_side].active;
+        let m = &self.sides[healer_side].pokemon[slot];
+        if m.hp != 0 || m.fainted {
+            return;
+        }
+        // `lastFirst`: move the last queue entry to the front.
+        if let Some(last) = self.faint_emit_queue.pop() {
+            self.faint_emit_queue.insert(0, last);
+        }
+        self.process_faints(dex);
+    }
+
     /// gen-3 singles cancelAction-all (`faintMessages`, battle.ts:2606-2616): on ANY
     /// faint, `for (const pokemon of this.getAllActive()) this.queue.cancelAction(pokemon)`
     /// — "in gen 3, fainting skips all moves AND SWITCHES". `cancelAction(pokemon)`

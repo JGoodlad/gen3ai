@@ -368,10 +368,14 @@ impl crate::state::BattleState {
                     //     event (runMove's tail, AFTER the move body / in-tryMoveHit Update,
                     //     BEFORE the runAction-tail forceSwitch), a White Herb holder — EITHER
                     //     active, `onAnyAfterMove` — with any negative boost restores it + consumes
-                    //     the item, DRAW-FREE. This is the GENERAL post-move hook the sim uses; the
-                    //     self-drop (Overheat, `apply_self_drops`) + foe-secondary-drop (Crunch,
-                    //     `apply_secondary_boost`) sites already consume the item INSIDE run_move so
-                    //     this is a no-op for them (no double). It IS the site that restores an
+                    //     the item, DRAW-FREE. This is the sim's ONLY in-turn White-Herb hook and
+                    //     therefore the SINGLE in-turn restore site: the self-drop (Overheat /
+                    //     Superpower, `apply_self_drops`) + foe-secondary/stat-drop (Crunch /
+                    //     Charm, `apply_secondary_boost`) paths deliberately do NOT restore inline
+                    //     — the sim runs `AfterMove` at the END of `runMove`, i.e. AFTER the
+                    //     DamagingHit-phase procs (Poison Point / Rough Skin), so an inline restore
+                    //     emitted `|-enditem|…|White Herb` one phase too early (SIM-PROBED,
+                    //     `harness/probe_rb_tail.js` C2a/C2b). It IS the site that restores an
                     //     Intimidate-switch-in drop AFTER the holder's next move (ab_4_6): the
                     //     switch-in `onAnySwitchIn` fires before the entrant's Intimidate Start, so
                     //     the drop is only visible here. Mover's side first (the common holder).
@@ -558,7 +562,7 @@ impl crate::state::BattleState {
         //     tail), through the shared turn machinery. No residual is queued → `Done`.
         let _ = self.turn_loop(&mut queue, dex);
         // (5) endTurn: the DisableMove handler shuffle (no-op at turn 0) + Quick Claw.
-        self.disable_move_event_shuffle();
+        self.disable_move_event_shuffle(dex);
         self.quick_claw_roll = self.prng.random_chance(1, 5);
     }
 
@@ -842,7 +846,7 @@ impl FullBattleDriver {
             TurnLoopStop::Done => {
                 // endTurn: the `runEvent('DisableMove')` handler-sort shuffle fires BEFORE
                 // the unconditional Quick Claw roll (no faint pause).
-                bs.disable_move_event_shuffle();
+                bs.disable_move_event_shuffle(dex);
                 bs.bump_active_turns();
                 // PERSIST the endTurn Quick Claw roll — read NEXT turn by
                 // `effective_speed`/`update_speed` for the gen3 speed=65535 override.

@@ -1,0 +1,673 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=606060 run_id=rmrze41on chunk=32
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_32_9
+TEAM	ab_32_9	p1	Jumpluff||Leftovers|Chlorophyll|protect,leechseed,hiddenpowerflying,substitute|Hardy|85,85,85,85,85,85|M|30,30,30,30,30,||87|]Magcargo||Leftovers|FlameBody|protect,fireblast,hiddenpowergrass,toxic|Hardy|85,,85,85,85,85|M|,2,,30,,|||]Sandslash||Leftovers|SandVeil|rapidspin,toxic,earthquake,rockslide|Hardy|85,85,85,85,85,85|M|||85|]Venomoth||Leftovers|ShieldDust|hiddenpowerfire,sleeppowder,psychic,sludgebomb|Hardy|85,85,85,85,85,85|M|,30,,30,,30||87|]Lanturn||Leftovers|VoltAbsorb|rest,sleeptalk,thunderbolt,surf|Hardy|85,,85,85,85,85|M|,0,,,,||82|]Linoone||LumBerry|Pickup|hiddenpowerground,return,shadowball,bellydrum|Hardy|81,85,85,85,85,85|M|,,,30,30,||82|
+TEAM	ab_32_9	p2	Dodrio||ChoiceBand|EarlyBird|quickattack,return,hiddenpowerground,drillpeck|Hardy|85,85,85,85,85,85|M|,,,30,30,||78|]Swalot||Leftovers|LiquidOoze|icebeam,sludgebomb,shadowball,painsplit|Hardy|85,85,85,85,85,85|M|||87|]Noctowl||Leftovers|Insomnia|toxic,hiddenpowerfire,whirlwind,return|Hardy|85,85,85,85,85,85|M|,30,,30,,30||93|]Hitmonchan||Leftovers|KeenEye|hiddenpowerghost,bulkup,skyuppercut,machpunch|Hardy|85,85,85,85,85,85|M|,,30,,30,||87|]Muk||Leftovers|StickyHold|sludgebomb,toxic,hiddenpowerground,fireblast|Hardy|85,85,85,85,85,85|M|,,,30,30,||84|]Ninetales||Leftovers|FlashFire|substitute,toxic,hiddenpowergrass,fireblast|Hardy|85,,85,85,85,85|M|,2,,30,,||82|
+FMT	ab_32_9	gen3customgame
+INIT	ab_32_9	62775,22138,19715,42822	2245689894
+DEC	ab_32_9	0	move	0	0	s3	m1	593,5560,4125,53370	Venomoth	71	264	0	-	0	0	0	0	0	0	6	Dodrio	222	222	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_32_9	1	move	0	0	m1	m1	62417,23851,37451,27599	Venomoth	87	264	0	-	0	0	0	0	0	0	6	Dodrio	222	222	0	slp	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_32_9	2	move	0	0	m2	m1	4349,15626,37698,18564	Venomoth	0	264	1	fnt	0	0	0	0	0	0	5	Dodrio	132	222	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_32_9	3	switch	1	0	s2	-	21220,886,15799,57047	Sandslash	266	266	0	-	0	0	0	0	0	0	5	Dodrio	132	222	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_32_9	4	move	0	0	m2	m1	17479,30841,29457,52426	Sandslash	163	266	0	-	0	0	0	0	0	0	5	Dodrio	132	222	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_32_9	5	move	0	0	s1	m1	19610,28945,31374,53433	Magcargo	226	262	0	-	0	0	0	0	0	0	5	Dodrio	132	222	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_32_9	6	move	0	0	s4	m1	14194,14215,1944,32957	Lanturn	143	339	0	-	0	0	0	0	0	0	5	Dodrio	132	222	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_32_9	7	move	0	0	m0	m1	36870,2367,42623,38374	Lanturn	0	339	1	fnt	0	0	0	0	0	0	4	Dodrio	132	222	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_32_9	8	switch	1	0	s1	-	13338,7343,6398,55425	Sandslash	179	266	0	-	0	0	0	0	0	0	4	Dodrio	132	222	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_32_9	9	move	0	0	m1	s2	25784,47766,26991,58123	Sandslash	195	266	0	-	0	0	0	0	0	0	4	Noctowl	316	337	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_32_9	10	move	0	0	s4	m0	42037,29776,49420,56325	Magcargo	226	262	0	tox	0	0	0	0	0	0	4	Noctowl	295	337	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_32_9	11	move	0	0	m3	m3	58472,49576,31595,23187	Magcargo	183	262	0	tox	0	0	0	0	0	0	4	Noctowl	253	337	0	tox	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_32_9	12	move	0	0	m3	s3	1162,39448,51494,46669	Magcargo	151	262	0	tox	0	0	0	0	0	0	4	Hitmonchan	215	229	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_32_9	13	move	0	0	m0	m3	20932,52518,55596,40758	Magcargo	103	262	0	tox	0	0	0	0	0	0	4	Hitmonchan	201	229	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_32_9	14	move	0	0	m0	s5	54714,41021,45679,21777	Magcargo	39	262	0	tox	0	0	0	0	0	0	4	Ninetales	254	254	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_32_9	15	move	0	0	m1	m1	58910,38859,29466,2331	Magcargo	0	262	1	fnt	0	0	0	0	0	0	3	Ninetales	254	254	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_32_9	16	switch	1	0	s3	-	41196,9745,64520,43370	Jumpluff	271	271	0	-	0	0	0	0	0	0	3	Ninetales	254	254	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_32_9	17	move	0	0	m0	m1	25837,11441,51171,50943	Jumpluff	271	271	0	-	0	0	0	0	0	0	3	Ninetales	254	254	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_32_9	18	move	0	0	m3	m3	18014,39903,63214,40978	Jumpluff	220	271	0	-	0	0	0	0	0	0	3	Ninetales	254	254	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_32_9	19	move	0	0	s4	m1	23318,15707,31566,56820	Sandslash	195	266	0	tox	0	0	0	0	0	0	3	Ninetales	254	254	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_32_9	20	move	0	0	m3	s4	58020,61405,47389,35627	Sandslash	179	266	0	tox	0	0	0	0	0	0	3	Muk	266	314	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_32_9	21	move	0	0	m2	m1	63054,39150,23987,37806	Sandslash	147	266	0	tox	0	0	0	0	0	0	3	Muk	29	314	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_32_9	22	move	0	0	m1	m1	23909,33174,32382,40627	Sandslash	99	266	0	tox	0	0	0	0	0	0	3	Muk	48	314	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_32_9	23	move	0	0	m1	m1	45460,22180,57782,59332	Sandslash	35	266	0	tox	0	0	0	0	0	0	3	Muk	67	314	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_32_9	24	move	0	0	m2	m1	6024,42401,24053,33329	Sandslash	35	266	0	tox	0	0	0	0	0	0	3	Muk	0	314	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_32_9	25	switch	0	1	-	s4	6024,42401,24053,33329	Sandslash	0	266	1	fnt	0	0	0	0	0	0	2	Ninetales	254	254	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_32_9	26	switch	1	0	s4	-	61950,53482,45062,13592	Jumpluff	220	271	0	-	0	0	0	0	0	0	2	Ninetales	254	254	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_32_9	27	move	0	0	m0	m1	36635,44097,46627,51893	Jumpluff	236	271	0	-	0	0	0	0	0	0	2	Ninetales	254	254	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_32_9	28	move	0	0	m3	m0	28196,30029,60083,29996	Jumpluff	185	271	0	-	0	0	0	0	0	0	2	Ninetales	206	254	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_32_9	29	move	0	0	m1	s1	43472,38673,24337,6910	Jumpluff	162	271	0	-	0	0	0	0	0	0	2	Swalot	277	316	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_32_9	30	move	0	0	s5	m1	50268,13895,45740,16125	Linoone	104	261	0	-	0	0	0	0	0	0	2	Swalot	257	316	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_32_9	31	move	0	0	m2	s5	7019,7164,56443,60904	Linoone	104	261	0	-	0	0	0	0	0	0	2	Hitmonchan	158	229	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_32_9	32	move	0	0	m3	s1	27189,59250,63412,40495	Linoone	104	261	0	-	0	0	0	0	0	0	2	Ninetales	221	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_32_9	33	move	0	0	s5	m0	57979,63106,58482,43728	Jumpluff	178	271	0	-	0	0	0	0	0	0	2	Ninetales	173	254	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_32_9	34	move	0	0	m1	m0	14375,38873,56496,14082	Jumpluff	194	271	0	-	0	0	0	0	0	0	2	Ninetales	188	254	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_32_9	35	move	0	0	s5	m0	15037,13284,5566,40785	Linoone	104	261	0	-	0	0	0	0	0	0	2	Ninetales	203	254	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_32_9	36	move	0	0	m1	m0	47274,19204,5661,338	Linoone	104	261	0	-	0	0	0	0	0	0	2	Ninetales	155	254	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_32_9	37	move	0	0	m2	s1	47645,20869,44733,11115	Linoone	104	261	0	-	0	0	0	0	0	0	2	Hitmonchan	111	229	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_32_9	38	move	0	0	m1	m1	20495,26032,55873,58447	Linoone	104	261	0	-	0	0	0	0	0	0	2	Hitmonchan	9	229	0	tox	1	1	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_32_9	39	move	0	0	m3	m2	33721,58119,36892,3184	Linoone	0	261	1	fnt	0	0	0	0	0	0	1	Hitmonchan	9	229	0	tox	1	1	0	0	0	0	5	p1	0	0	0	0	1
+DEC	ab_32_9	40	switch	1	0	s5	-	33721,58119,36892,3184	Jumpluff	210	271	0	-	0	0	0	0	0	0	1	Hitmonchan	0	229	1	fnt	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_32_9	41	switch	0	1	-	s5	58664,7246,29935,30451	Jumpluff	210	271	0	-	0	0	0	0	0	0	1	Swalot	257	316	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_32_9	42	move	0	0	m0	m2	30645,63816,20730,18180	Jumpluff	226	271	0	-	0	0	0	0	0	0	1	Swalot	276	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_32_9	43	move	0	0	m3	m3	42244,2623,33793,51031	Jumpluff	175	271	0	-	0	0	0	0	0	0	1	Swalot	295	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	1
+DEC	ab_32_9	44	move	0	0	m3	m2	30418,62328,41420,24394	Jumpluff	191	271	0	-	0	0	0	0	0	0	1	Swalot	314	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_32_9	45	move	0	0	m1	m0	57618,59175,59023,48960	Jumpluff	168	271	0	-	0	0	0	0	0	0	1	Swalot	277	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_32_9	46	move	0	0	m3	m3	4883,46078,7926,21251	Jumpluff	78	271	0	-	0	0	0	0	0	0	1	Swalot	257	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	1
+DEC	ab_32_9	47	move	0	0	m3	m3	51557,9924,37590,63986	Jumpluff	55	271	0	-	0	0	0	0	0	0	1	Swalot	237	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	1
+DEC	ab_32_9	48	move	0	0	m1	m0	61563,53458,59412,35112	Jumpluff	32	271	0	-	0	0	0	0	0	0	1	Swalot	217	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_32_9	49	move	0	0	m1	m3	60942,13709,62306,1946	Jumpluff	101	271	0	-	0	0	0	0	0	0	1	Swalot	104	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	1
+DEC	ab_32_9	50	move	0	0	m1	m2	49773,50859,8660,7696	Jumpluff	27	271	0	-	0	0	0	-1	0	0	1	Swalot	84	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_32_9	51	move	0	0	m3	m3	49174,60522,28509,2835	Jumpluff	32	271	0	-	0	0	0	-1	0	0	1	Swalot	35	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	1
+DEC	ab_32_9	52	move	0	0	m0	m1	8950,40297,28525,32420	Jumpluff	9	271	0	-	0	0	0	-1	0	0	1	Swalot	15	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_32_9	53	move	0	0	m3	m3	8950,40297,28525,32420	Jumpluff	0	271	1	-	0	0	0	0	0	0	0	Swalot	0	316	1	-	0	0	0	0	0	0	3	p1	0	0	0	0	1
+END	ab_32_9	1	p2
+L	ab_32_9	0	|t:|<NORMALIZED>
+L	ab_32_9	1	|gametype|singles
+L	ab_32_9	2	|player|p1|P1||
+L	ab_32_9	3	|player|p2|P2||
+L	ab_32_9	4	|gen|3
+L	ab_32_9	5	|tier|[Gen 3] Custom Game
+L	ab_32_9	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_32_9	7	|
+L	ab_32_9	8	|t:|<NORMALIZED>
+L	ab_32_9	9	|teamsize|p1|6
+L	ab_32_9	10	|teamsize|p2|6
+L	ab_32_9	11	|start
+L	ab_32_9	12	|switch|p1a: Jumpluff|Jumpluff, L87, M|271/271
+L	ab_32_9	13	|switch|p2a: Dodrio|Dodrio, L78, M|222/222
+L	ab_32_9	14	|turn|1
+L	ab_32_9	15	|
+L	ab_32_9	16	|t:|<NORMALIZED>
+L	ab_32_9	17	|switch|p1a: Venomoth|Venomoth, L87, M|264/264
+L	ab_32_9	18	|move|p2a: Dodrio|Return|p1a: Venomoth
+L	ab_32_9	19	|-damage|p1a: Venomoth|55/264
+L	ab_32_9	20	|
+L	ab_32_9	21	|-heal|p1a: Venomoth|71/264|[from] item: Leftovers
+L	ab_32_9	22	|upkeep
+L	ab_32_9	23	|turn|2
+L	ab_32_9	24	|
+L	ab_32_9	25	|t:|<NORMALIZED>
+L	ab_32_9	26	|move|p1a: Venomoth|Sleep Powder|p2a: Dodrio
+L	ab_32_9	27	|-status|p2a: Dodrio|slp|[from] move: Sleep Powder
+L	ab_32_9	28	|cant|p2a: Dodrio|slp
+L	ab_32_9	29	|
+L	ab_32_9	30	|-heal|p1a: Venomoth|87/264|[from] item: Leftovers
+L	ab_32_9	31	|upkeep
+L	ab_32_9	32	|turn|3
+L	ab_32_9	33	|
+L	ab_32_9	34	|t:|<NORMALIZED>
+L	ab_32_9	35	|move|p1a: Venomoth|Psychic|p2a: Dodrio
+L	ab_32_9	36	|-damage|p2a: Dodrio|132/222 slp
+L	ab_32_9	37	|-curestatus|p2a: Dodrio|slp|[msg]
+L	ab_32_9	38	|move|p2a: Dodrio|Return|p1a: Venomoth
+L	ab_32_9	39	|-damage|p1a: Venomoth|0 fnt
+L	ab_32_9	40	|faint|p1a: Venomoth
+L	ab_32_9	41	|
+L	ab_32_9	42	|t:|<NORMALIZED>
+L	ab_32_9	43	|switch|p1a: Sandslash|Sandslash, L85, M|266/266
+L	ab_32_9	44	|
+L	ab_32_9	45	|upkeep
+L	ab_32_9	46	|turn|4
+L	ab_32_9	47	|
+L	ab_32_9	48	|t:|<NORMALIZED>
+L	ab_32_9	49	|move|p2a: Dodrio|Return|p1a: Sandslash
+L	ab_32_9	50	|-damage|p1a: Sandslash|147/266
+L	ab_32_9	51	|move|p1a: Sandslash|Earthquake|p2a: Dodrio
+L	ab_32_9	52	|-immune|p2a: Dodrio
+L	ab_32_9	53	|
+L	ab_32_9	54	|-heal|p1a: Sandslash|163/266|[from] item: Leftovers
+L	ab_32_9	55	|upkeep
+L	ab_32_9	56	|turn|5
+L	ab_32_9	57	|
+L	ab_32_9	58	|t:|<NORMALIZED>
+L	ab_32_9	59	|switch|p1a: Magcargo|Magcargo, M|262/262
+L	ab_32_9	60	|move|p2a: Dodrio|Return|p1a: Magcargo
+L	ab_32_9	61	|-resisted|p1a: Magcargo
+L	ab_32_9	62	|-damage|p1a: Magcargo|210/262
+L	ab_32_9	63	|
+L	ab_32_9	64	|-heal|p1a: Magcargo|226/262|[from] item: Leftovers
+L	ab_32_9	65	|upkeep
+L	ab_32_9	66	|turn|6
+L	ab_32_9	67	|
+L	ab_32_9	68	|t:|<NORMALIZED>
+L	ab_32_9	69	|switch|p1a: Lanturn|Lanturn, L82, M|339/339
+L	ab_32_9	70	|move|p2a: Dodrio|Return|p1a: Lanturn
+L	ab_32_9	71	|-damage|p1a: Lanturn|122/339
+L	ab_32_9	72	|
+L	ab_32_9	73	|-heal|p1a: Lanturn|143/339|[from] item: Leftovers
+L	ab_32_9	74	|upkeep
+L	ab_32_9	75	|turn|7
+L	ab_32_9	76	|
+L	ab_32_9	77	|t:|<NORMALIZED>
+L	ab_32_9	78	|move|p2a: Dodrio|Return|p1a: Lanturn
+L	ab_32_9	79	|-damage|p1a: Lanturn|0 fnt
+L	ab_32_9	80	|faint|p1a: Lanturn
+L	ab_32_9	81	|
+L	ab_32_9	82	|t:|<NORMALIZED>
+L	ab_32_9	83	|switch|p1a: Sandslash|Sandslash, L85, M|163/266
+L	ab_32_9	84	|
+L	ab_32_9	85	|-heal|p1a: Sandslash|179/266|[from] item: Leftovers
+L	ab_32_9	86	|upkeep
+L	ab_32_9	87	|turn|8
+L	ab_32_9	88	|
+L	ab_32_9	89	|t:|<NORMALIZED>
+L	ab_32_9	90	|switch|p2a: Noctowl|Noctowl, L93, M|337/337
+L	ab_32_9	91	|move|p1a: Sandslash|Toxic|p2a: Noctowl
+L	ab_32_9	92	|-status|p2a: Noctowl|tox
+L	ab_32_9	93	|
+L	ab_32_9	94	|-damage|p2a: Noctowl|316/337 tox|[from] psn
+L	ab_32_9	95	|-heal|p1a: Sandslash|195/266|[from] item: Leftovers
+L	ab_32_9	96	|upkeep
+L	ab_32_9	97	|turn|9
+L	ab_32_9	98	|
+L	ab_32_9	99	|t:|<NORMALIZED>
+L	ab_32_9	100	|switch|p1a: Magcargo|Magcargo, M|226/262
+L	ab_32_9	101	|move|p2a: Noctowl|Toxic|p1a: Magcargo
+L	ab_32_9	102	|-status|p1a: Magcargo|tox
+L	ab_32_9	103	|
+L	ab_32_9	104	|-heal|p2a: Noctowl|337/337 tox|[from] item: Leftovers
+L	ab_32_9	105	|-damage|p2a: Noctowl|295/337 tox|[from] psn
+L	ab_32_9	106	|-heal|p1a: Magcargo|242/262 tox|[from] item: Leftovers
+L	ab_32_9	107	|-damage|p1a: Magcargo|226/262 tox|[from] psn
+L	ab_32_9	108	|upkeep
+L	ab_32_9	109	|turn|10
+L	ab_32_9	110	|
+L	ab_32_9	111	|t:|<NORMALIZED>
+L	ab_32_9	112	|move|p2a: Noctowl|Return|p1a: Magcargo
+L	ab_32_9	113	|-resisted|p1a: Magcargo
+L	ab_32_9	114	|-damage|p1a: Magcargo|199/262 tox
+L	ab_32_9	115	|move|p1a: Magcargo|Toxic|p2a: Noctowl|[miss]
+L	ab_32_9	116	|-miss|p1a: Magcargo|p2a: Noctowl
+L	ab_32_9	117	|
+L	ab_32_9	118	|-heal|p2a: Noctowl|316/337 tox|[from] item: Leftovers
+L	ab_32_9	119	|-damage|p2a: Noctowl|253/337 tox|[from] psn
+L	ab_32_9	120	|-heal|p1a: Magcargo|215/262 tox|[from] item: Leftovers
+L	ab_32_9	121	|-damage|p1a: Magcargo|183/262 tox|[from] psn
+L	ab_32_9	122	|upkeep
+L	ab_32_9	123	|turn|11
+L	ab_32_9	124	|
+L	ab_32_9	125	|t:|<NORMALIZED>
+L	ab_32_9	126	|switch|p2a: Hitmonchan|Hitmonchan, L87, M|229/229
+L	ab_32_9	127	|move|p1a: Magcargo|Toxic|p2a: Hitmonchan
+L	ab_32_9	128	|-status|p2a: Hitmonchan|tox
+L	ab_32_9	129	|
+L	ab_32_9	130	|-damage|p2a: Hitmonchan|215/229 tox|[from] psn
+L	ab_32_9	131	|-heal|p1a: Magcargo|199/262 tox|[from] item: Leftovers
+L	ab_32_9	132	|-damage|p1a: Magcargo|151/262 tox|[from] psn
+L	ab_32_9	133	|upkeep
+L	ab_32_9	134	|turn|12
+L	ab_32_9	135	|
+L	ab_32_9	136	|t:|<NORMALIZED>
+L	ab_32_9	137	|move|p1a: Magcargo|Protect|p1a: Magcargo
+L	ab_32_9	138	|-singleturn|p1a: Magcargo|Protect
+L	ab_32_9	139	|move|p2a: Hitmonchan|Mach Punch|p1a: Magcargo
+L	ab_32_9	140	|-activate|p1a: Magcargo|Protect
+L	ab_32_9	141	|
+L	ab_32_9	142	|-heal|p2a: Hitmonchan|229/229 tox|[from] item: Leftovers
+L	ab_32_9	143	|-damage|p2a: Hitmonchan|201/229 tox|[from] psn
+L	ab_32_9	144	|-heal|p1a: Magcargo|167/262 tox|[from] item: Leftovers
+L	ab_32_9	145	|-damage|p1a: Magcargo|103/262 tox|[from] psn
+L	ab_32_9	146	|upkeep
+L	ab_32_9	147	|turn|13
+L	ab_32_9	148	|
+L	ab_32_9	149	|t:|<NORMALIZED>
+L	ab_32_9	150	|switch|p2a: Ninetales|Ninetales, L82, M|254/254
+L	ab_32_9	151	|move|p1a: Magcargo|Protect||[still]
+L	ab_32_9	152	|-fail|p1a: Magcargo
+L	ab_32_9	153	|
+L	ab_32_9	154	|-heal|p1a: Magcargo|119/262 tox|[from] item: Leftovers
+L	ab_32_9	155	|-damage|p1a: Magcargo|39/262 tox|[from] psn
+L	ab_32_9	156	|upkeep
+L	ab_32_9	157	|turn|14
+L	ab_32_9	158	|
+L	ab_32_9	159	|t:|<NORMALIZED>
+L	ab_32_9	160	|move|p2a: Ninetales|Toxic|p1a: Magcargo|[miss]
+L	ab_32_9	161	|-miss|p2a: Ninetales|p1a: Magcargo
+L	ab_32_9	162	|move|p1a: Magcargo|Fire Blast|p2a: Ninetales|[miss]
+L	ab_32_9	163	|-miss|p1a: Magcargo|p2a: Ninetales
+L	ab_32_9	164	|
+L	ab_32_9	165	|-heal|p1a: Magcargo|55/262 tox|[from] item: Leftovers
+L	ab_32_9	166	|-damage|p1a: Magcargo|0 fnt|[from] psn
+L	ab_32_9	167	|faint|p1a: Magcargo
+L	ab_32_9	168	|upkeep
+L	ab_32_9	169	|
+L	ab_32_9	170	|t:|<NORMALIZED>
+L	ab_32_9	171	|switch|p1a: Jumpluff|Jumpluff, L87, M|271/271
+L	ab_32_9	172	|turn|15
+L	ab_32_9	173	|
+L	ab_32_9	174	|t:|<NORMALIZED>
+L	ab_32_9	175	|move|p1a: Jumpluff|Protect|p1a: Jumpluff
+L	ab_32_9	176	|-singleturn|p1a: Jumpluff|Protect
+L	ab_32_9	177	|move|p2a: Ninetales|Toxic|p1a: Jumpluff
+L	ab_32_9	178	|-activate|p1a: Jumpluff|Protect
+L	ab_32_9	179	|
+L	ab_32_9	180	|upkeep
+L	ab_32_9	181	|turn|16
+L	ab_32_9	182	|
+L	ab_32_9	183	|t:|<NORMALIZED>
+L	ab_32_9	184	|move|p1a: Jumpluff|Substitute|p1a: Jumpluff
+L	ab_32_9	185	|-start|p1a: Jumpluff|Substitute
+L	ab_32_9	186	|-damage|p1a: Jumpluff|204/271
+L	ab_32_9	187	|move|p2a: Ninetales|Fire Blast|p1a: Jumpluff
+L	ab_32_9	188	|-supereffective|p1a: Jumpluff
+L	ab_32_9	189	|-end|p1a: Jumpluff|Substitute
+L	ab_32_9	190	|
+L	ab_32_9	191	|-heal|p1a: Jumpluff|220/271|[from] item: Leftovers
+L	ab_32_9	192	|upkeep
+L	ab_32_9	193	|turn|17
+L	ab_32_9	194	|
+L	ab_32_9	195	|t:|<NORMALIZED>
+L	ab_32_9	196	|switch|p1a: Sandslash|Sandslash, L85, M|195/266
+L	ab_32_9	197	|move|p2a: Ninetales|Toxic|p1a: Sandslash
+L	ab_32_9	198	|-status|p1a: Sandslash|tox
+L	ab_32_9	199	|
+L	ab_32_9	200	|-heal|p1a: Sandslash|211/266 tox|[from] item: Leftovers
+L	ab_32_9	201	|-damage|p1a: Sandslash|195/266 tox|[from] psn
+L	ab_32_9	202	|upkeep
+L	ab_32_9	203	|turn|18
+L	ab_32_9	204	|
+L	ab_32_9	205	|t:|<NORMALIZED>
+L	ab_32_9	206	|switch|p2a: Muk|Muk, L84, M|314/314
+L	ab_32_9	207	|move|p1a: Sandslash|Rock Slide|p2a: Muk
+L	ab_32_9	208	|-damage|p2a: Muk|247/314
+L	ab_32_9	209	|
+L	ab_32_9	210	|-heal|p1a: Sandslash|211/266 tox|[from] item: Leftovers
+L	ab_32_9	211	|-damage|p1a: Sandslash|179/266 tox|[from] psn
+L	ab_32_9	212	|-heal|p2a: Muk|266/314|[from] item: Leftovers
+L	ab_32_9	213	|upkeep
+L	ab_32_9	214	|turn|19
+L	ab_32_9	215	|
+L	ab_32_9	216	|t:|<NORMALIZED>
+L	ab_32_9	217	|move|p1a: Sandslash|Earthquake|p2a: Muk
+L	ab_32_9	218	|-supereffective|p2a: Muk
+L	ab_32_9	219	|-damage|p2a: Muk|10/314
+L	ab_32_9	220	|move|p2a: Muk|Toxic|p1a: Sandslash
+L	ab_32_9	221	|-fail|p1a: Sandslash|tox
+L	ab_32_9	222	|debug|move failed because it did nothing
+L	ab_32_9	223	|
+L	ab_32_9	224	|-heal|p1a: Sandslash|195/266 tox|[from] item: Leftovers
+L	ab_32_9	225	|-damage|p1a: Sandslash|147/266 tox|[from] psn
+L	ab_32_9	226	|-heal|p2a: Muk|29/314|[from] item: Leftovers
+L	ab_32_9	227	|upkeep
+L	ab_32_9	228	|turn|20
+L	ab_32_9	229	|
+L	ab_32_9	230	|t:|<NORMALIZED>
+L	ab_32_9	231	|move|p1a: Sandslash|Toxic|p2a: Muk
+L	ab_32_9	232	|debug|natural status immunity
+L	ab_32_9	233	|debug|immune to status
+L	ab_32_9	234	|-immune|p2a: Muk
+L	ab_32_9	235	|debug|move failed because it did nothing
+L	ab_32_9	236	|move|p2a: Muk|Toxic|p1a: Sandslash
+L	ab_32_9	237	|-fail|p1a: Sandslash|tox
+L	ab_32_9	238	|debug|move failed because it did nothing
+L	ab_32_9	239	|
+L	ab_32_9	240	|-heal|p1a: Sandslash|163/266 tox|[from] item: Leftovers
+L	ab_32_9	241	|-damage|p1a: Sandslash|99/266 tox|[from] psn
+L	ab_32_9	242	|-heal|p2a: Muk|48/314|[from] item: Leftovers
+L	ab_32_9	243	|upkeep
+L	ab_32_9	244	|turn|21
+L	ab_32_9	245	|
+L	ab_32_9	246	|t:|<NORMALIZED>
+L	ab_32_9	247	|move|p1a: Sandslash|Toxic|p2a: Muk
+L	ab_32_9	248	|debug|natural status immunity
+L	ab_32_9	249	|debug|immune to status
+L	ab_32_9	250	|-immune|p2a: Muk
+L	ab_32_9	251	|debug|move failed because it did nothing
+L	ab_32_9	252	|move|p2a: Muk|Toxic|p1a: Sandslash
+L	ab_32_9	253	|-fail|p1a: Sandslash|tox
+L	ab_32_9	254	|debug|move failed because it did nothing
+L	ab_32_9	255	|
+L	ab_32_9	256	|-heal|p1a: Sandslash|115/266 tox|[from] item: Leftovers
+L	ab_32_9	257	|-damage|p1a: Sandslash|35/266 tox|[from] psn
+L	ab_32_9	258	|-heal|p2a: Muk|67/314|[from] item: Leftovers
+L	ab_32_9	259	|upkeep
+L	ab_32_9	260	|turn|22
+L	ab_32_9	261	|
+L	ab_32_9	262	|t:|<NORMALIZED>
+L	ab_32_9	263	|move|p1a: Sandslash|Earthquake|p2a: Muk
+L	ab_32_9	264	|-supereffective|p2a: Muk
+L	ab_32_9	265	|-damage|p2a: Muk|0 fnt
+L	ab_32_9	266	|faint|p2a: Muk
+L	ab_32_9	267	|
+L	ab_32_9	268	|t:|<NORMALIZED>
+L	ab_32_9	269	|switch|p2a: Ninetales|Ninetales, L82, M|254/254
+L	ab_32_9	270	|
+L	ab_32_9	271	|-heal|p1a: Sandslash|51/266 tox|[from] item: Leftovers
+L	ab_32_9	272	|-damage|p1a: Sandslash|0 fnt|[from] psn
+L	ab_32_9	273	|faint|p1a: Sandslash
+L	ab_32_9	274	|upkeep
+L	ab_32_9	275	|
+L	ab_32_9	276	|t:|<NORMALIZED>
+L	ab_32_9	277	|switch|p1a: Jumpluff|Jumpluff, L87, M|220/271
+L	ab_32_9	278	|turn|23
+L	ab_32_9	279	|
+L	ab_32_9	280	|t:|<NORMALIZED>
+L	ab_32_9	281	|move|p1a: Jumpluff|Protect|p1a: Jumpluff
+L	ab_32_9	282	|-singleturn|p1a: Jumpluff|Protect
+L	ab_32_9	283	|move|p2a: Ninetales|Toxic|p1a: Jumpluff
+L	ab_32_9	284	|-activate|p1a: Jumpluff|Protect
+L	ab_32_9	285	|
+L	ab_32_9	286	|-heal|p1a: Jumpluff|236/271|[from] item: Leftovers
+L	ab_32_9	287	|upkeep
+L	ab_32_9	288	|turn|24
+L	ab_32_9	289	|
+L	ab_32_9	290	|t:|<NORMALIZED>
+L	ab_32_9	291	|move|p1a: Jumpluff|Substitute|p1a: Jumpluff
+L	ab_32_9	292	|-start|p1a: Jumpluff|Substitute
+L	ab_32_9	293	|-damage|p1a: Jumpluff|169/271
+L	ab_32_9	294	|move|p2a: Ninetales|Substitute|p2a: Ninetales
+L	ab_32_9	295	|-start|p2a: Ninetales|Substitute
+L	ab_32_9	296	|-damage|p2a: Ninetales|191/254
+L	ab_32_9	297	|
+L	ab_32_9	298	|-heal|p1a: Jumpluff|185/271|[from] item: Leftovers
+L	ab_32_9	299	|-heal|p2a: Ninetales|206/254|[from] item: Leftovers
+L	ab_32_9	300	|upkeep
+L	ab_32_9	301	|turn|25
+L	ab_32_9	302	|
+L	ab_32_9	303	|t:|<NORMALIZED>
+L	ab_32_9	304	|switch|p2a: Swalot|Swalot, L87, M|316/316
+L	ab_32_9	305	|move|p1a: Jumpluff|Leech Seed|p2a: Swalot
+L	ab_32_9	306	|-start|p2a: Swalot|move: Leech Seed
+L	ab_32_9	307	|
+L	ab_32_9	308	|-heal|p1a: Jumpluff|201/271|[from] item: Leftovers
+L	ab_32_9	309	|-damage|p2a: Swalot|277/316|[from] Leech Seed|[of] p1a: Jumpluff
+L	ab_32_9	310	|debug|Heal is occurring: p1a: Jumpluff <- p2a: Swalot :: leechseed
+L	ab_32_9	311	|-damage|p1a: Jumpluff|162/271|[from] ability: Liquid Ooze|[of] p2a: Swalot
+L	ab_32_9	312	|upkeep
+L	ab_32_9	313	|turn|26
+L	ab_32_9	314	|
+L	ab_32_9	315	|t:|<NORMALIZED>
+L	ab_32_9	316	|switch|p1a: Linoone|Linoone, L82, M|261/261
+L	ab_32_9	317	|move|p2a: Swalot|Sludge Bomb|p1a: Linoone
+L	ab_32_9	318	|-damage|p1a: Linoone|143/261
+L	ab_32_9	319	|
+L	ab_32_9	320	|-heal|p2a: Swalot|296/316|[from] item: Leftovers
+L	ab_32_9	321	|-damage|p2a: Swalot|257/316|[from] Leech Seed|[of] p1a: Linoone
+L	ab_32_9	322	|debug|Heal is occurring: p1a: Linoone <- p2a: Swalot :: leechseed
+L	ab_32_9	323	|-damage|p1a: Linoone|104/261|[from] ability: Liquid Ooze|[of] p2a: Swalot
+L	ab_32_9	324	|upkeep
+L	ab_32_9	325	|turn|27
+L	ab_32_9	326	|
+L	ab_32_9	327	|t:|<NORMALIZED>
+L	ab_32_9	328	|switch|p2a: Hitmonchan|Hitmonchan, L87, M|201/229 tox
+L	ab_32_9	329	|move|p1a: Linoone|Shadow Ball|p2a: Hitmonchan
+L	ab_32_9	330	|-damage|p2a: Hitmonchan|158/229 tox
+L	ab_32_9	331	|
+L	ab_32_9	332	|-heal|p2a: Hitmonchan|172/229 tox|[from] item: Leftovers
+L	ab_32_9	333	|-damage|p2a: Hitmonchan|158/229 tox|[from] psn
+L	ab_32_9	334	|upkeep
+L	ab_32_9	335	|turn|28
+L	ab_32_9	336	|
+L	ab_32_9	337	|t:|<NORMALIZED>
+L	ab_32_9	338	|switch|p2a: Ninetales|Ninetales, L82, M|206/254
+L	ab_32_9	339	|move|p1a: Linoone|Belly Drum||[still]
+L	ab_32_9	340	|-fail|p1a: Linoone
+L	ab_32_9	341	|debug|move failed because it did nothing
+L	ab_32_9	342	|
+L	ab_32_9	343	|-heal|p2a: Ninetales|221/254|[from] item: Leftovers
+L	ab_32_9	344	|upkeep
+L	ab_32_9	345	|turn|29
+L	ab_32_9	346	|
+L	ab_32_9	347	|t:|<NORMALIZED>
+L	ab_32_9	348	|switch|p1a: Jumpluff|Jumpluff, L87, M|162/271
+L	ab_32_9	349	|move|p2a: Ninetales|Substitute|p2a: Ninetales
+L	ab_32_9	350	|-start|p2a: Ninetales|Substitute
+L	ab_32_9	351	|-damage|p2a: Ninetales|158/254
+L	ab_32_9	352	|
+L	ab_32_9	353	|-heal|p1a: Jumpluff|178/271|[from] item: Leftovers
+L	ab_32_9	354	|-heal|p2a: Ninetales|173/254|[from] item: Leftovers
+L	ab_32_9	355	|upkeep
+L	ab_32_9	356	|turn|30
+L	ab_32_9	357	|
+L	ab_32_9	358	|t:|<NORMALIZED>
+L	ab_32_9	359	|move|p1a: Jumpluff|Leech Seed||[still]
+L	ab_32_9	360	|-fail|p1a: Jumpluff
+L	ab_32_9	361	|debug|move failed because it did nothing
+L	ab_32_9	362	|move|p2a: Ninetales|Substitute|p2a: Ninetales
+L	ab_32_9	363	|-fail|p2a: Ninetales|move: Substitute
+L	ab_32_9	364	|
+L	ab_32_9	365	|-heal|p1a: Jumpluff|194/271|[from] item: Leftovers
+L	ab_32_9	366	|-heal|p2a: Ninetales|188/254|[from] item: Leftovers
+L	ab_32_9	367	|upkeep
+L	ab_32_9	368	|turn|31
+L	ab_32_9	369	|
+L	ab_32_9	370	|t:|<NORMALIZED>
+L	ab_32_9	371	|switch|p1a: Linoone|Linoone, L82, M|104/261
+L	ab_32_9	372	|move|p2a: Ninetales|Substitute|p2a: Ninetales
+L	ab_32_9	373	|-fail|p2a: Ninetales|move: Substitute
+L	ab_32_9	374	|
+L	ab_32_9	375	|-heal|p2a: Ninetales|203/254|[from] item: Leftovers
+L	ab_32_9	376	|upkeep
+L	ab_32_9	377	|turn|32
+L	ab_32_9	378	|
+L	ab_32_9	379	|t:|<NORMALIZED>
+L	ab_32_9	380	|move|p1a: Linoone|Return|p2a: Ninetales
+L	ab_32_9	381	|-end|p2a: Ninetales|Substitute
+L	ab_32_9	382	|move|p2a: Ninetales|Substitute|p2a: Ninetales
+L	ab_32_9	383	|-start|p2a: Ninetales|Substitute
+L	ab_32_9	384	|-damage|p2a: Ninetales|140/254
+L	ab_32_9	385	|
+L	ab_32_9	386	|-heal|p2a: Ninetales|155/254|[from] item: Leftovers
+L	ab_32_9	387	|upkeep
+L	ab_32_9	388	|turn|33
+L	ab_32_9	389	|
+L	ab_32_9	390	|t:|<NORMALIZED>
+L	ab_32_9	391	|switch|p2a: Hitmonchan|Hitmonchan, L87, M|158/229 tox
+L	ab_32_9	392	|move|p1a: Linoone|Shadow Ball|p2a: Hitmonchan
+L	ab_32_9	393	|-damage|p2a: Hitmonchan|111/229 tox
+L	ab_32_9	394	|
+L	ab_32_9	395	|-heal|p2a: Hitmonchan|125/229 tox|[from] item: Leftovers
+L	ab_32_9	396	|-damage|p2a: Hitmonchan|111/229 tox|[from] psn
+L	ab_32_9	397	|upkeep
+L	ab_32_9	398	|turn|34
+L	ab_32_9	399	|
+L	ab_32_9	400	|t:|<NORMALIZED>
+L	ab_32_9	401	|move|p1a: Linoone|Return|p2a: Hitmonchan
+L	ab_32_9	402	|-damage|p2a: Hitmonchan|23/229 tox
+L	ab_32_9	403	|move|p2a: Hitmonchan|Bulk Up|p2a: Hitmonchan
+L	ab_32_9	404	|-boost|p2a: Hitmonchan|atk|1
+L	ab_32_9	405	|-boost|p2a: Hitmonchan|def|1
+L	ab_32_9	406	|
+L	ab_32_9	407	|-heal|p2a: Hitmonchan|37/229 tox|[from] item: Leftovers
+L	ab_32_9	408	|-damage|p2a: Hitmonchan|9/229 tox|[from] psn
+L	ab_32_9	409	|upkeep
+L	ab_32_9	410	|turn|35
+L	ab_32_9	411	|
+L	ab_32_9	412	|t:|<NORMALIZED>
+L	ab_32_9	413	|move|p1a: Linoone|Belly Drum||[still]
+L	ab_32_9	414	|-fail|p1a: Linoone
+L	ab_32_9	415	|debug|move failed because it did nothing
+L	ab_32_9	416	|move|p2a: Hitmonchan|Sky Uppercut|p1a: Linoone
+L	ab_32_9	417	|-supereffective|p1a: Linoone
+L	ab_32_9	418	|-damage|p1a: Linoone|0 fnt
+L	ab_32_9	419	|faint|p1a: Linoone
+L	ab_32_9	420	|
+L	ab_32_9	421	|t:|<NORMALIZED>
+L	ab_32_9	422	|switch|p1a: Jumpluff|Jumpluff, L87, M|194/271
+L	ab_32_9	423	|
+L	ab_32_9	424	|-heal|p1a: Jumpluff|210/271|[from] item: Leftovers
+L	ab_32_9	425	|-heal|p2a: Hitmonchan|23/229 tox|[from] item: Leftovers
+L	ab_32_9	426	|-damage|p2a: Hitmonchan|0 fnt|[from] psn
+L	ab_32_9	427	|faint|p2a: Hitmonchan
+L	ab_32_9	428	|upkeep
+L	ab_32_9	429	|
+L	ab_32_9	430	|t:|<NORMALIZED>
+L	ab_32_9	431	|switch|p2a: Swalot|Swalot, L87, M|257/316
+L	ab_32_9	432	|turn|36
+L	ab_32_9	433	|
+L	ab_32_9	434	|t:|<NORMALIZED>
+L	ab_32_9	435	|move|p1a: Jumpluff|Protect|p1a: Jumpluff
+L	ab_32_9	436	|-singleturn|p1a: Jumpluff|Protect
+L	ab_32_9	437	|move|p2a: Swalot|Shadow Ball|p1a: Jumpluff
+L	ab_32_9	438	|-activate|p1a: Jumpluff|Protect
+L	ab_32_9	439	|
+L	ab_32_9	440	|-heal|p1a: Jumpluff|226/271|[from] item: Leftovers
+L	ab_32_9	441	|-heal|p2a: Swalot|276/316|[from] item: Leftovers
+L	ab_32_9	442	|upkeep
+L	ab_32_9	443	|turn|37
+L	ab_32_9	444	|
+L	ab_32_9	445	|t:|<NORMALIZED>
+L	ab_32_9	446	|move|p1a: Jumpluff|Substitute|p1a: Jumpluff
+L	ab_32_9	447	|-start|p1a: Jumpluff|Substitute
+L	ab_32_9	448	|-damage|p1a: Jumpluff|159/271
+L	ab_32_9	449	|move|p2a: Swalot|Pain Split||[still]
+L	ab_32_9	450	|-fail|p2a: Swalot
+L	ab_32_9	451	|debug|move failed because it did nothing
+L	ab_32_9	452	|
+L	ab_32_9	453	|-heal|p1a: Jumpluff|175/271|[from] item: Leftovers
+L	ab_32_9	454	|-heal|p2a: Swalot|295/316|[from] item: Leftovers
+L	ab_32_9	455	|upkeep
+L	ab_32_9	456	|turn|38
+L	ab_32_9	457	|
+L	ab_32_9	458	|t:|<NORMALIZED>
+L	ab_32_9	459	|move|p1a: Jumpluff|Substitute|p1a: Jumpluff
+L	ab_32_9	460	|-fail|p1a: Jumpluff|move: Substitute
+L	ab_32_9	461	|move|p2a: Swalot|Shadow Ball|p1a: Jumpluff
+L	ab_32_9	462	|-activate|p1a: Jumpluff|Substitute|[damage]
+L	ab_32_9	463	|
+L	ab_32_9	464	|-heal|p1a: Jumpluff|191/271|[from] item: Leftovers
+L	ab_32_9	465	|-heal|p2a: Swalot|314/316|[from] item: Leftovers
+L	ab_32_9	466	|upkeep
+L	ab_32_9	467	|turn|39
+L	ab_32_9	468	|
+L	ab_32_9	469	|t:|<NORMALIZED>
+L	ab_32_9	470	|move|p1a: Jumpluff|Leech Seed|p2a: Swalot
+L	ab_32_9	471	|-start|p2a: Swalot|move: Leech Seed
+L	ab_32_9	472	|move|p2a: Swalot|Ice Beam|p1a: Jumpluff
+L	ab_32_9	473	|-supereffective|p1a: Jumpluff
+L	ab_32_9	474	|-end|p1a: Jumpluff|Substitute
+L	ab_32_9	475	|
+L	ab_32_9	476	|-heal|p1a: Jumpluff|207/271|[from] item: Leftovers
+L	ab_32_9	477	|-heal|p2a: Swalot|316/316|[from] item: Leftovers
+L	ab_32_9	478	|-damage|p2a: Swalot|277/316|[from] Leech Seed|[of] p1a: Jumpluff
+L	ab_32_9	479	|debug|Heal is occurring: p1a: Jumpluff <- p2a: Swalot :: leechseed
+L	ab_32_9	480	|-damage|p1a: Jumpluff|168/271|[from] ability: Liquid Ooze|[of] p2a: Swalot
+L	ab_32_9	481	|upkeep
+L	ab_32_9	482	|turn|40
+L	ab_32_9	483	|
+L	ab_32_9	484	|t:|<NORMALIZED>
+L	ab_32_9	485	|move|p1a: Jumpluff|Substitute|p1a: Jumpluff
+L	ab_32_9	486	|-start|p1a: Jumpluff|Substitute
+L	ab_32_9	487	|-damage|p1a: Jumpluff|101/271
+L	ab_32_9	488	|move|p2a: Swalot|Pain Split||[still]
+L	ab_32_9	489	|-fail|p2a: Swalot
+L	ab_32_9	490	|debug|move failed because it did nothing
+L	ab_32_9	491	|
+L	ab_32_9	492	|-heal|p1a: Jumpluff|117/271|[from] item: Leftovers
+L	ab_32_9	493	|-heal|p2a: Swalot|296/316|[from] item: Leftovers
+L	ab_32_9	494	|-damage|p2a: Swalot|257/316|[from] Leech Seed|[of] p1a: Jumpluff
+L	ab_32_9	495	|debug|Heal is occurring: p1a: Jumpluff <- p2a: Swalot :: leechseed
+L	ab_32_9	496	|-damage|p1a: Jumpluff|78/271|[from] ability: Liquid Ooze|[of] p2a: Swalot
+L	ab_32_9	497	|upkeep
+L	ab_32_9	498	|turn|41
+L	ab_32_9	499	|
+L	ab_32_9	500	|t:|<NORMALIZED>
+L	ab_32_9	501	|move|p1a: Jumpluff|Substitute|p1a: Jumpluff
+L	ab_32_9	502	|-fail|p1a: Jumpluff|move: Substitute
+L	ab_32_9	503	|move|p2a: Swalot|Pain Split||[still]
+L	ab_32_9	504	|-fail|p2a: Swalot
+L	ab_32_9	505	|debug|move failed because it did nothing
+L	ab_32_9	506	|
+L	ab_32_9	507	|-heal|p1a: Jumpluff|94/271|[from] item: Leftovers
+L	ab_32_9	508	|-heal|p2a: Swalot|276/316|[from] item: Leftovers
+L	ab_32_9	509	|-damage|p2a: Swalot|237/316|[from] Leech Seed|[of] p1a: Jumpluff
+L	ab_32_9	510	|debug|Heal is occurring: p1a: Jumpluff <- p2a: Swalot :: leechseed
+L	ab_32_9	511	|-damage|p1a: Jumpluff|55/271|[from] ability: Liquid Ooze|[of] p2a: Swalot
+L	ab_32_9	512	|upkeep
+L	ab_32_9	513	|turn|42
+L	ab_32_9	514	|
+L	ab_32_9	515	|t:|<NORMALIZED>
+L	ab_32_9	516	|move|p1a: Jumpluff|Leech Seed||[still]
+L	ab_32_9	517	|-fail|p1a: Jumpluff
+L	ab_32_9	518	|debug|move failed because it did nothing
+L	ab_32_9	519	|move|p2a: Swalot|Ice Beam|p1a: Jumpluff
+L	ab_32_9	520	|-supereffective|p1a: Jumpluff
+L	ab_32_9	521	|-end|p1a: Jumpluff|Substitute
+L	ab_32_9	522	|
+L	ab_32_9	523	|-heal|p1a: Jumpluff|71/271|[from] item: Leftovers
+L	ab_32_9	524	|-heal|p2a: Swalot|256/316|[from] item: Leftovers
+L	ab_32_9	525	|-damage|p2a: Swalot|217/316|[from] Leech Seed|[of] p1a: Jumpluff
+L	ab_32_9	526	|debug|Heal is occurring: p1a: Jumpluff <- p2a: Swalot :: leechseed
+L	ab_32_9	527	|-damage|p1a: Jumpluff|32/271|[from] ability: Liquid Ooze|[of] p2a: Swalot
+L	ab_32_9	528	|upkeep
+L	ab_32_9	529	|turn|43
+L	ab_32_9	530	|
+L	ab_32_9	531	|t:|<NORMALIZED>
+L	ab_32_9	532	|move|p1a: Jumpluff|Leech Seed||[still]
+L	ab_32_9	533	|-fail|p1a: Jumpluff
+L	ab_32_9	534	|debug|move failed because it did nothing
+L	ab_32_9	535	|move|p2a: Swalot|Pain Split|p1a: Jumpluff
+L	ab_32_9	536	|-sethp|p1a: Jumpluff|124/271|[from] move: Pain Split|[silent]
+L	ab_32_9	537	|-sethp|p2a: Swalot|124/316|[from] move: Pain Split
+L	ab_32_9	538	|
+L	ab_32_9	539	|-heal|p1a: Jumpluff|140/271|[from] item: Leftovers
+L	ab_32_9	540	|-heal|p2a: Swalot|143/316|[from] item: Leftovers
+L	ab_32_9	541	|-damage|p2a: Swalot|104/316|[from] Leech Seed|[of] p1a: Jumpluff
+L	ab_32_9	542	|debug|Heal is occurring: p1a: Jumpluff <- p2a: Swalot :: leechseed
+L	ab_32_9	543	|-damage|p1a: Jumpluff|101/271|[from] ability: Liquid Ooze|[of] p2a: Swalot
+L	ab_32_9	544	|upkeep
+L	ab_32_9	545	|turn|44
+L	ab_32_9	546	|
+L	ab_32_9	547	|t:|<NORMALIZED>
+L	ab_32_9	548	|move|p1a: Jumpluff|Leech Seed||[still]
+L	ab_32_9	549	|-fail|p1a: Jumpluff
+L	ab_32_9	550	|debug|move failed because it did nothing
+L	ab_32_9	551	|move|p2a: Swalot|Shadow Ball|p1a: Jumpluff
+L	ab_32_9	552	|-damage|p1a: Jumpluff|50/271
+L	ab_32_9	553	|-unboost|p1a: Jumpluff|spd|1
+L	ab_32_9	554	|
+L	ab_32_9	555	|-heal|p1a: Jumpluff|66/271|[from] item: Leftovers
+L	ab_32_9	556	|-heal|p2a: Swalot|123/316|[from] item: Leftovers
+L	ab_32_9	557	|-damage|p2a: Swalot|84/316|[from] Leech Seed|[of] p1a: Jumpluff
+L	ab_32_9	558	|debug|Heal is occurring: p1a: Jumpluff <- p2a: Swalot :: leechseed
+L	ab_32_9	559	|-damage|p1a: Jumpluff|27/271|[from] ability: Liquid Ooze|[of] p2a: Swalot
+L	ab_32_9	560	|upkeep
+L	ab_32_9	561	|turn|45
+L	ab_32_9	562	|
+L	ab_32_9	563	|t:|<NORMALIZED>
+L	ab_32_9	564	|move|p1a: Jumpluff|Substitute|p1a: Jumpluff
+L	ab_32_9	565	|-fail|p1a: Jumpluff|move: Substitute|[weak]
+L	ab_32_9	566	|move|p2a: Swalot|Pain Split|p1a: Jumpluff
+L	ab_32_9	567	|-sethp|p1a: Jumpluff|55/271|[from] move: Pain Split|[silent]
+L	ab_32_9	568	|-sethp|p2a: Swalot|55/316|[from] move: Pain Split
+L	ab_32_9	569	|
+L	ab_32_9	570	|-heal|p1a: Jumpluff|71/271|[from] item: Leftovers
+L	ab_32_9	571	|-heal|p2a: Swalot|74/316|[from] item: Leftovers
+L	ab_32_9	572	|-damage|p2a: Swalot|35/316|[from] Leech Seed|[of] p1a: Jumpluff
+L	ab_32_9	573	|debug|Heal is occurring: p1a: Jumpluff <- p2a: Swalot :: leechseed
+L	ab_32_9	574	|-damage|p1a: Jumpluff|32/271|[from] ability: Liquid Ooze|[of] p2a: Swalot
+L	ab_32_9	575	|upkeep
+L	ab_32_9	576	|turn|46
+L	ab_32_9	577	|
+L	ab_32_9	578	|t:|<NORMALIZED>
+L	ab_32_9	579	|move|p1a: Jumpluff|Protect|p1a: Jumpluff
+L	ab_32_9	580	|-singleturn|p1a: Jumpluff|Protect
+L	ab_32_9	581	|move|p2a: Swalot|Sludge Bomb|p1a: Jumpluff
+L	ab_32_9	582	|-activate|p1a: Jumpluff|Protect
+L	ab_32_9	583	|
+L	ab_32_9	584	|-heal|p1a: Jumpluff|48/271|[from] item: Leftovers
+L	ab_32_9	585	|-heal|p2a: Swalot|54/316|[from] item: Leftovers
+L	ab_32_9	586	|-damage|p2a: Swalot|15/316|[from] Leech Seed|[of] p1a: Jumpluff
+L	ab_32_9	587	|debug|Heal is occurring: p1a: Jumpluff <- p2a: Swalot :: leechseed
+L	ab_32_9	588	|-damage|p1a: Jumpluff|9/271|[from] ability: Liquid Ooze|[of] p2a: Swalot
+L	ab_32_9	589	|upkeep
+L	ab_32_9	590	|turn|47
+L	ab_32_9	591	|
+L	ab_32_9	592	|t:|<NORMALIZED>
+L	ab_32_9	593	|move|p1a: Jumpluff|Substitute|p1a: Jumpluff
+L	ab_32_9	594	|-fail|p1a: Jumpluff|move: Substitute|[weak]
+L	ab_32_9	595	|move|p2a: Swalot|Pain Split|p1a: Jumpluff
+L	ab_32_9	596	|-sethp|p1a: Jumpluff|12/271|[from] move: Pain Split|[silent]
+L	ab_32_9	597	|-sethp|p2a: Swalot|12/316|[from] move: Pain Split
+L	ab_32_9	598	|
+L	ab_32_9	599	|-heal|p1a: Jumpluff|28/271|[from] item: Leftovers
+L	ab_32_9	600	|-heal|p2a: Swalot|31/316|[from] item: Leftovers
+L	ab_32_9	601	|-damage|p2a: Swalot|0 fnt|[from] Leech Seed|[of] p1a: Jumpluff
+L	ab_32_9	602	|debug|Heal is occurring: p1a: Jumpluff <- p2a: Swalot :: leechseed
+L	ab_32_9	603	|-damage|p1a: Jumpluff|0 fnt|[from] ability: Liquid Ooze|[of] p2a: Swalot
+L	ab_32_9	604	|debug|instafaint: Swalot,Jumpluff
+L	ab_32_9	605	|faint|p1a: Jumpluff
+L	ab_32_9	606	|faint|p2a: Swalot
+L	ab_32_9	607	|
+L	ab_32_9	608	|win|P2

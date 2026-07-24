@@ -1,0 +1,1171 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=240724 run_id=rmrzcanyf chunk=38
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_38_0
+TEAM	ab_38_0	p1	Swellow||ChoiceBand|Guts|facade,doubleedge,hiddenpowerground,aerialace|Hardy|85,85,85,85,85,85|M|,,,30,30,||80|]Cacturne||Leftovers|SandVeil|substitute,focuspunch,hiddenpowerdark,leechseed|Hardy|85,85,85,85,85,85|M|||96|]Xatu||Leftovers|EarlyBird|psychic,calmmind,rest,hiddenpowerfire|Hardy|85,,85,85,85,85|M|,2,,30,,30||84|]Raichu||PetayaBerry|Static|thunderbolt,substitute,hiddenpowerice,surf|Hardy|69,,85,85,85,85|M|,2,30,,,||83|]Walrein||Leftovers|ThickFat|toxic,icebeam,encore,surf|Hardy|85,,85,85,85,85|M|,0,,,,||80|]Vigoroth||Leftovers|VitalSpirit|bulkup,earthquake,slackoff,return|Hardy|85,85,85,85,85,85|M|||84|
+TEAM	ab_38_0	p2	Dusclops||Leftovers|Pressure|sleeptalk,rest,shadowball,seismictoss|Hardy|85,85,85,85,85,85|M|||86|]Swalot||Leftovers|LiquidOoze|sludgebomb,shadowball,hiddenpowerground,encore|Hardy|85,85,85,85,85,85|M|,,,30,30,||87|]Ursaring||ChoiceBand|Guts|earthquake,focuspunch,return,hiddenpowerghost|Hardy|85,85,85,85,85,85|M|,,30,,30,||81|]Mawile||Leftovers|Intimidate|batonpass,hiddenpowersteel,brickbreak,swordsdance|Hardy|85,85,85,85,85,85|M|,,,,30,||96|]Jumpluff||Leftovers|Chlorophyll|protect,leechseed,substitute,hiddenpowerflying|Hardy|85,85,85,85,85,85|M|30,30,30,30,30,||87|]Claydol||Leftovers|Levitate|icebeam,explosion,rapidspin,earthquake|Hardy|85,85,85,85,85,85|N|||81|
+FMT	ab_38_0	gen3customgame
+INIT	ab_38_0	31399,30256,22042,21684	1883140782
+DEC	ab_38_0	0	move	0	0	m1	m3	27763,57973,41244,41313	Swellow	141	227	0	-	0	0	0	0	0	0	6	Dusclops	209	209	0	-	0	0	0	0	0	0	6	p1	0	0	1	0	0
+DEC	ab_38_0	1	move	0	0	s2	m1	29020,7619,14454,13064	Xatu	246	246	0	-	0	0	0	0	0	0	6	Dusclops	209	209	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	2	move	0	0	s5	m1	6277,6695,19792,2283	Vigoroth	272	272	0	-	0	0	0	0	0	0	6	Dusclops	209	209	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	3	move	0	0	s3	m1	39014,22667,47084,59002	Raichu	232	232	0	-	0	0	0	0	0	0	6	Dusclops	209	209	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	4	move	0	0	m1	s3	184,55653,7498,55013	Raichu	174	232	0	-	-1	0	0	0	0	0	6	Mawile	251	251	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_38_0	5	move	0	0	m0	m0	63220,16387,59668,23593	Raichu	174	232	0	-	-1	0	0	0	0	0	6	Mawile	129	251	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	6	switch	0	1	-	s1	8505,61155,43935,60400	Raichu	174	232	0	-	-1	0	0	0	0	0	6	Swalot	316	316	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_38_0	7	move	0	0	m0	m1	55675,9568,17190,63227	Raichu	174	232	0	-	-1	0	0	0	0	0	6	Swalot	237	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	8	move	0	0	m1	m0	40243,27901,58600,31678	Raichu	116	232	0	-	-1	0	0	0	0	0	6	Swalot	256	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	9	move	0	0	m1	m0	52643,48634,61674,61117	Raichu	58	232	0	-	-1	0	1	0	0	0	6	Swalot	275	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	10	move	0	0	m0	m1	57346,39921,62999,35333	Raichu	0	232	1	fnt	0	0	0	0	0	0	5	Swalot	143	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	11	switch	1	0	s3	-	16349,55040,37487,49084	Vigoroth	272	272	0	-	0	0	0	0	0	0	5	Swalot	162	316	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_38_0	12	move	0	0	m3	m1	27249,35195,9498,63635	Vigoroth	272	272	0	-	0	0	0	0	0	0	5	Swalot	83	316	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_38_0	13	move	0	0	m0	s1	39303,27658,58070,23490	Vigoroth	272	272	0	-	0	1	0	0	0	0	5	Mawile	144	251	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_38_0	14	move	0	0	m3	m2	9374,58300,63947,59163	Vigoroth	203	272	0	-	0	1	0	0	0	0	5	Mawile	119	251	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_38_0	15	move	0	0	s5	m3	62034,44022,25091,16234	Xatu	246	246	0	-	0	0	0	0	0	0	5	Mawile	134	251	0	-	2	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	16	move	0	0	s5	m3	15073,21073,56388,23957	Vigoroth	220	272	0	-	0	0	0	0	0	0	5	Mawile	149	251	0	-	4	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	17	move	0	0	m2	m0	15073,21073,56388,23957	Vigoroth	272	272	0	-	0	0	0	0	0	0	5	Mawile	149	251	0	-	4	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	18	switch	0	1	-	s1	60189,63822,59463,18316	Vigoroth	272	272	0	-	0	0	0	0	0	0	5	Swalot	102	316	0	-	4	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_38_0	19	move	0	0	m0	m1	51654,40470,51432,52830	Vigoroth	272	272	0	-	1	1	0	0	0	0	5	Swalot	121	316	0	-	4	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	20	move	0	0	m2	m3	58842,33214,14788,11427	Vigoroth	272	272	0	-	1	1	0	0	0	0	5	Swalot	140	316	0	-	4	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_38_0	21	move	0	0	s4	m1	62396,53678,44276,10886	Walrein	179	307	0	-	0	0	0	0	0	0	5	Swalot	159	316	0	-	4	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	22	move	0	0	m3	m1	30817,15711,56327,18862	Walrein	61	307	0	-	0	0	0	0	0	0	5	Swalot	92	316	0	-	4	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	23	move	0	0	m1	m1	36461,62650,36776,52182	Walrein	0	307	1	fnt	0	0	0	0	0	0	4	Swalot	1	316	0	-	4	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_38_0	24	switch	1	0	s2	-	37604,9605,56750,36913	Swellow	141	227	0	-	0	0	0	0	0	0	4	Swalot	20	316	0	-	4	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_38_0	25	move	0	0	m0	m3	55577,36052,15020,19466	Swellow	141	227	0	-	0	0	0	0	0	0	4	Swalot	0	316	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	1
+DEC	ab_38_0	26	switch	0	1	-	s2	11955,56285,42775,63669	Swellow	141	227	0	-	0	0	0	0	0	0	4	Ursaring	278	278	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_38_0	27	move	0	0	m0	m2	51394,60132,10741,10435	Swellow	0	227	1	fnt	0	0	0	0	0	0	3	Ursaring	162	278	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_38_0	28	switch	1	0	s1	-	46958,20302,8709,3762	Cacturne	290	290	0	-	0	0	0	0	0	0	3	Ursaring	162	278	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_38_0	29	move	0	0	s4	m2	35389,50931,28845,31014	Vigoroth	96	272	0	-	0	0	0	0	0	0	3	Ursaring	162	278	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_38_0	30	move	0	0	m1	m2	25717,11710,39946,26364	Vigoroth	0	272	1	fnt	0	0	0	0	0	0	2	Ursaring	90	278	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_38_0	31	switch	1	0	s4	-	10854,10972,16962,7215	Cacturne	290	290	0	-	0	0	0	0	0	0	2	Ursaring	90	278	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_38_0	32	move	0	0	s5	m2	18584,34464,22366,61651	Xatu	33	246	0	-	0	0	0	0	0	0	2	Ursaring	90	278	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_38_0	33	move	0	0	m0	m2	43445,51595,13888,25399	Xatu	33	246	0	-	0	0	0	0	0	0	2	Ursaring	0	278	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	1	0
+DEC	ab_38_0	34	switch	0	1	-	s4	61043,43845,50983,12918	Xatu	48	246	0	-	0	0	0	0	0	0	2	Jumpluff	271	271	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_38_0	35	move	0	0	m2	m2	64830,11921,40090,22712	Xatu	246	246	0	slp	0	0	0	0	0	0	2	Jumpluff	220	271	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_38_0	36	move	0	0	m0	m2	53969,39551,28558,5979	Xatu	246	246	0	slp	0	0	0	0	0	0	2	Jumpluff	236	271	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_38_0	37	move	0	0	m1	m0	51196,45009,56543,33749	Xatu	246	246	0	-	0	0	1	1	0	0	2	Jumpluff	252	271	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_38_0	38	move	0	0	m0	s3	23656,34267,37262,52128	Xatu	246	246	0	-	0	0	1	1	0	0	2	Dusclops	116	209	0	-	0	0	0	-1	0	0	4	p2	0	0	0	0	0
+DEC	ab_38_0	39	move	0	0	s5	m0	50222,49012,59861,38115	Cacturne	290	290	0	-	0	0	0	0	0	0	2	Dusclops	129	209	0	-	0	0	0	-1	0	0	4	p1	0	0	0	1	0
+DEC	ab_38_0	40	move	0	0	m3	m1	60341,9450,53746,62260	Cacturne	290	290	0	-	0	0	0	0	0	0	2	Dusclops	183	209	0	slp	0	0	0	-1	0	0	4	p1	0	0	0	0	0
+DEC	ab_38_0	41	move	0	0	s5	m2	16126,42690,28563,26183	Xatu	246	246	0	-	0	0	0	0	0	0	2	Dusclops	170	209	0	slp	0	0	0	-1	0	0	4	p1	0	0	0	0	0
+DEC	ab_38_0	42	move	0	0	m0	s5	54582,4622,44213,6394	Xatu	246	246	0	-	0	0	0	0	0	0	2	Claydol	203	230	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_38_0	43	move	0	0	m1	m2	25050,58602,8490,44782	Xatu	246	246	0	-	0	0	1	1	0	0	2	Claydol	217	230	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_38_0	44	move	0	0	m1	m3	43425,21332,46993,21104	Xatu	246	246	0	-	0	0	2	2	0	0	2	Claydol	230	230	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_38_0	45	move	0	0	m1	m3	56856,46492,39195,60834	Xatu	246	246	0	-	0	0	3	3	0	0	2	Claydol	230	230	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_38_0	46	move	0	0	m0	m0	10183,2638,1250,65269	Xatu	216	246	0	frz	0	0	3	3	0	0	2	Claydol	147	230	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_38_0	47	move	0	0	m0	m0	21957,58339,31981,28931	Xatu	185	246	0	frz	0	0	3	3	0	0	2	Claydol	161	230	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_38_0	48	move	0	0	m2	m3	12522,34713,15618,49255	Xatu	246	246	0	slp	0	0	3	3	0	0	2	Claydol	175	230	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_38_0	49	move	0	0	m0	m1	22778,9476,1169,36648	Xatu	0	246	1	fnt	0	0	0	0	0	0	1	Claydol	0	230	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_38_0	50	switch	1	1	s5	s3	16753,31791,32072,33163	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	268	271	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_38_0	51	move	0	0	m1	m0	29524,50451,16683,52796	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	271	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	52	move	0	0	m0	m2	37073,17241,7025,6255	Cacturne	236	290	0	-	0	0	0	0	0	0	1	Jumpluff	220	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	53	move	0	0	m0	m0	18778,25927,57293,33225	Cacturne	254	290	0	-	0	0	0	0	0	0	1	Jumpluff	236	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	54	move	0	0	m1	m1	20169,3705,63775,25764	Cacturne	272	290	0	-	0	0	0	0	0	0	1	Jumpluff	252	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	55	move	0	0	m3	m2	4943,29760,1220,36790	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	201	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	56	move	0	0	m3	m0	59243,47318,16422,1947	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	217	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	57	move	0	0	m0	s1	17856,35394,17014,37354	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Mawile	164	251	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	58	move	0	0	m1	s5	36683,50792,35194,46604	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	183	209	0	slp	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	59	move	0	0	m3	m2	57232,59484,59407,63710	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	170	209	0	slp	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_38_0	60	move	0	0	m0	m3	64420,7955,37250,61152	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	157	209	0	-	0	0	0	0	0	0	3	p1	0	0	1	0	0
+DEC	ab_38_0	61	move	0	0	m0	m1	21961,61571,53489,63634	Cacturne	262	290	0	-	0	0	0	0	0	0	1	Dusclops	183	209	0	slp	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_38_0	62	move	0	0	m3	s1	45382,57908,51997,25204	Cacturne	280	290	0	-	0	0	0	0	0	0	1	Jumpluff	233	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	63	move	0	0	m1	m1	8021,11758,46532,59819	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	158	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	64	move	0	0	m1	m2	43289,29176,56308,16015	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	107	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	65	move	0	0	m1	m2	53095,50048,50490,44339	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	56	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	66	move	0	0	m3	m1	58210,53439,22803,19524	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	72	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	67	move	0	0	m3	m0	40868,62307,24248,42161	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	88	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	68	move	0	0	m3	m1	62142,44517,60548,24202	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	104	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	69	move	0	0	m0	m0	23036,55276,56833,51628	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	120	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	70	move	0	0	m0	m0	51003,38478,50877,34169	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	136	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	71	move	0	0	m1	m2	922,11455,43475,27005	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	85	271	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_38_0	72	move	0	0	m1	m1	23853,50067,56330,46401	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Jumpluff	0	271	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_38_0	73	switch	0	1	-	s5	34451,41086,60454,60008	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Mawile	179	251	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_38_0	74	move	0	0	m1	m2	18661,256,47202,11982	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Mawile	0	251	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_38_0	75	switch	0	1	-	s1	40871,36777,31121,21513	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	196	209	0	slp	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_38_0	76	move	0	0	m3	m2	35249,14551,29584,8531	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	183	209	0	slp	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_38_0	77	move	0	0	m3	m0	65262,28811,41306,58340	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	170	209	0	slp	0	0	0	0	0	0	1	p1	0	0	0	1	0
+DEC	ab_38_0	78	move	0	0	m0	m3	61227,24573,18498,44278	Cacturne	262	290	0	-	0	0	0	0	0	0	1	Dusclops	157	209	0	-	0	0	0	0	0	0	1	p1	0	0	1	0	0
+DEC	ab_38_0	79	move	0	0	m3	m3	844,29134,8147,47067	Cacturne	220	290	0	-	0	0	0	0	0	0	1	Dusclops	144	209	0	-	0	0	0	0	0	0	1	p1	0	0	1	0	0
+DEC	ab_38_0	80	move	0	0	m0	m0	36291,55324,18191,23338	Cacturne	192	290	0	-	0	0	0	0	0	0	1	Dusclops	131	209	0	-	0	0	0	0	0	0	1	p1	0	0	0	1	0
+DEC	ab_38_0	81	move	0	0	m1	m1	38002,40640,44158,2495	Cacturne	236	290	0	-	0	0	0	0	0	0	1	Dusclops	183	209	0	slp	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_38_0	82	move	0	0	m0	m1	49636,12093,22864,44574	Cacturne	280	290	0	-	0	0	0	0	0	0	1	Dusclops	170	209	0	slp	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_38_0	83	move	0	0	m1	m0	18827,29411,32867,28359	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	157	209	0	slp	0	0	0	0	0	0	1	p2	0	0	0	1	0
+DEC	ab_38_0	84	move	0	0	m0	m3	23250,24213,18989,2657	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	144	209	0	-	0	0	0	0	0	0	1	p1	0	0	1	0	0
+DEC	ab_38_0	85	move	0	0	m1	m0	20410,33859,16866,2539	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	131	209	0	-	0	0	0	0	0	0	1	p2	0	0	0	1	0
+DEC	ab_38_0	86	move	0	0	m0	m1	52140,39019,49742,45029	Cacturne	262	290	0	-	0	0	0	0	0	0	1	Dusclops	183	209	0	slp	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_38_0	87	move	0	0	m0	m3	25562,3124,12438,37148	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	170	209	0	slp	0	0	0	0	0	0	1	p1	0	0	1	0	0
+DEC	ab_38_0	88	move	0	0	m1	m0	49031,38252,37951,28205	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	157	209	0	slp	0	0	0	0	0	0	1	p2	0	0	0	1	0
+DEC	ab_38_0	89	move	0	0	m0	m0	10824,50724,28254,11140	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	144	209	0	-	0	0	0	0	0	0	1	p1	0	0	0	1	0
+DEC	ab_38_0	90	move	0	0	m0	m0	118,16754,53555,28119	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	131	209	0	-	0	0	0	0	0	0	1	p1	0	0	0	1	0
+DEC	ab_38_0	91	move	0	0	m0	m2	31313,15898,7103,34762	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	118	209	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_38_0	92	move	0	0	m1	m0	17117,26224,63585,236	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	105	209	0	-	0	0	0	0	0	0	1	p2	0	0	0	1	0
+DEC	ab_38_0	93	move	0	0	m1	m3	49269,1639,23272,20670	Cacturne	248	290	0	-	0	0	0	0	0	0	1	Dusclops	92	209	0	-	0	0	0	0	0	0	1	p2	0	0	1	0	0
+DEC	ab_38_0	94	move	0	0	m1	m2	28809,25879,2384,26557	Cacturne	251	290	0	-	0	0	0	0	0	0	1	Dusclops	79	209	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_38_0	95	move	0	0	m1	m0	39373,51834,31908,35047	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	66	209	0	-	0	0	0	0	0	0	1	p2	0	0	0	1	0
+DEC	ab_38_0	96	move	0	0	m1	m0	60903,43306,7006,20353	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	53	209	0	-	0	0	0	0	0	0	1	p2	0	0	0	1	0
+DEC	ab_38_0	97	move	0	0	m1	m0	38622,61124,52882,49675	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	40	209	0	-	0	0	0	0	0	0	1	p2	0	0	0	1	0
+DEC	ab_38_0	98	move	0	0	m1	m1	60323,9581,35586,56508	Cacturne	290	290	0	-	0	0	0	0	0	0	1	Dusclops	183	209	0	slp	0	0	0	0	0	0	1	p2	0	0	0	0	0
+END	ab_38_0	0	none
+L	ab_38_0	0	|t:|<NORMALIZED>
+L	ab_38_0	1	|gametype|singles
+L	ab_38_0	2	|player|p1|P1||
+L	ab_38_0	3	|player|p2|P2||
+L	ab_38_0	4	|gen|3
+L	ab_38_0	5	|tier|[Gen 3] Custom Game
+L	ab_38_0	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_38_0	7	|
+L	ab_38_0	8	|t:|<NORMALIZED>
+L	ab_38_0	9	|teamsize|p1|6
+L	ab_38_0	10	|teamsize|p2|6
+L	ab_38_0	11	|start
+L	ab_38_0	12	|switch|p1a: Swellow|Swellow, L80, M|227/227
+L	ab_38_0	13	|switch|p2a: Dusclops|Dusclops, L86, M|209/209
+L	ab_38_0	14	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_38_0	15	|turn|1
+L	ab_38_0	16	|
+L	ab_38_0	17	|t:|<NORMALIZED>
+L	ab_38_0	18	|move|p1a: Swellow|Double-Edge|p2a: Dusclops
+L	ab_38_0	19	|-immune|p2a: Dusclops
+L	ab_38_0	20	|move|p2a: Dusclops|Seismic Toss|p1a: Swellow
+L	ab_38_0	21	|-damage|p1a: Swellow|141/227
+L	ab_38_0	22	|
+L	ab_38_0	23	|upkeep
+L	ab_38_0	24	|turn|2
+L	ab_38_0	25	|
+L	ab_38_0	26	|t:|<NORMALIZED>
+L	ab_38_0	27	|switch|p1a: Xatu|Xatu, L84, M|246/246
+L	ab_38_0	28	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_38_0	29	|-fail|p2a: Dusclops|heal
+L	ab_38_0	30	|
+L	ab_38_0	31	|upkeep
+L	ab_38_0	32	|turn|3
+L	ab_38_0	33	|
+L	ab_38_0	34	|t:|<NORMALIZED>
+L	ab_38_0	35	|switch|p1a: Vigoroth|Vigoroth, L84, M|272/272
+L	ab_38_0	36	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_38_0	37	|-fail|p2a: Dusclops|heal
+L	ab_38_0	38	|
+L	ab_38_0	39	|upkeep
+L	ab_38_0	40	|turn|4
+L	ab_38_0	41	|
+L	ab_38_0	42	|t:|<NORMALIZED>
+L	ab_38_0	43	|switch|p1a: Raichu|Raichu, L83, M|232/232
+L	ab_38_0	44	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_38_0	45	|-fail|p2a: Dusclops|heal
+L	ab_38_0	46	|
+L	ab_38_0	47	|upkeep
+L	ab_38_0	48	|turn|5
+L	ab_38_0	49	|
+L	ab_38_0	50	|t:|<NORMALIZED>
+L	ab_38_0	51	|switch|p2a: Mawile|Mawile, L96, M|251/251
+L	ab_38_0	52	|-ability|p2a: Mawile|Intimidate|boost
+L	ab_38_0	53	|-unboost|p1a: Raichu|atk|1
+L	ab_38_0	54	|move|p1a: Raichu|Substitute|p1a: Raichu
+L	ab_38_0	55	|-start|p1a: Raichu|Substitute
+L	ab_38_0	56	|-damage|p1a: Raichu|174/232
+L	ab_38_0	57	|
+L	ab_38_0	58	|upkeep
+L	ab_38_0	59	|turn|6
+L	ab_38_0	60	|
+L	ab_38_0	61	|t:|<NORMALIZED>
+L	ab_38_0	62	|move|p1a: Raichu|Thunderbolt|p2a: Mawile
+L	ab_38_0	63	|-damage|p2a: Mawile|129/251
+L	ab_38_0	64	|move|p2a: Mawile|Baton Pass|p2a: Mawile
+L	ab_38_0	65	|
+L	ab_38_0	66	|t:|<NORMALIZED>
+L	ab_38_0	67	|switch|p2a: Swalot|Swalot, L87, M|316/316|[from] Baton Pass
+L	ab_38_0	68	|
+L	ab_38_0	69	|upkeep
+L	ab_38_0	70	|turn|7
+L	ab_38_0	71	|
+L	ab_38_0	72	|t:|<NORMALIZED>
+L	ab_38_0	73	|move|p1a: Raichu|Thunderbolt|p2a: Swalot
+L	ab_38_0	74	|-damage|p2a: Swalot|218/316
+L	ab_38_0	75	|move|p2a: Swalot|Shadow Ball|p1a: Raichu
+L	ab_38_0	76	|-end|p1a: Raichu|Substitute
+L	ab_38_0	77	|
+L	ab_38_0	78	|-heal|p2a: Swalot|237/316|[from] item: Leftovers
+L	ab_38_0	79	|upkeep
+L	ab_38_0	80	|turn|8
+L	ab_38_0	81	|
+L	ab_38_0	82	|t:|<NORMALIZED>
+L	ab_38_0	83	|move|p1a: Raichu|Substitute|p1a: Raichu
+L	ab_38_0	84	|-start|p1a: Raichu|Substitute
+L	ab_38_0	85	|-damage|p1a: Raichu|116/232
+L	ab_38_0	86	|move|p2a: Swalot|Sludge Bomb|p1a: Raichu
+L	ab_38_0	87	|-end|p1a: Raichu|Substitute
+L	ab_38_0	88	|
+L	ab_38_0	89	|-heal|p2a: Swalot|256/316|[from] item: Leftovers
+L	ab_38_0	90	|upkeep
+L	ab_38_0	91	|turn|9
+L	ab_38_0	92	|
+L	ab_38_0	93	|t:|<NORMALIZED>
+L	ab_38_0	94	|move|p1a: Raichu|Substitute|p1a: Raichu
+L	ab_38_0	95	|-start|p1a: Raichu|Substitute
+L	ab_38_0	96	|-damage|p1a: Raichu|58/232
+L	ab_38_0	97	|move|p2a: Swalot|Sludge Bomb|p1a: Raichu
+L	ab_38_0	98	|-end|p1a: Raichu|Substitute
+L	ab_38_0	99	|
+L	ab_38_0	100	|-enditem|p1a: Raichu|Petaya Berry|[eat]
+L	ab_38_0	101	|-boost|p1a: Raichu|spa|1|[from] item: Petaya Berry
+L	ab_38_0	102	|-heal|p2a: Swalot|275/316|[from] item: Leftovers
+L	ab_38_0	103	|upkeep
+L	ab_38_0	104	|turn|10
+L	ab_38_0	105	|
+L	ab_38_0	106	|t:|<NORMALIZED>
+L	ab_38_0	107	|move|p1a: Raichu|Thunderbolt|p2a: Swalot
+L	ab_38_0	108	|-damage|p2a: Swalot|143/316
+L	ab_38_0	109	|move|p2a: Swalot|Shadow Ball|p1a: Raichu
+L	ab_38_0	110	|-damage|p1a: Raichu|0 fnt
+L	ab_38_0	111	|faint|p1a: Raichu
+L	ab_38_0	112	|
+L	ab_38_0	113	|t:|<NORMALIZED>
+L	ab_38_0	114	|switch|p1a: Vigoroth|Vigoroth, L84, M|272/272
+L	ab_38_0	115	|
+L	ab_38_0	116	|-heal|p2a: Swalot|162/316|[from] item: Leftovers
+L	ab_38_0	117	|upkeep
+L	ab_38_0	118	|turn|11
+L	ab_38_0	119	|
+L	ab_38_0	120	|t:|<NORMALIZED>
+L	ab_38_0	121	|move|p1a: Vigoroth|Return|p2a: Swalot
+L	ab_38_0	122	|-damage|p2a: Swalot|64/316
+L	ab_38_0	123	|move|p2a: Swalot|Shadow Ball|p1a: Vigoroth
+L	ab_38_0	124	|-immune|p1a: Vigoroth
+L	ab_38_0	125	|
+L	ab_38_0	126	|-heal|p2a: Swalot|83/316|[from] item: Leftovers
+L	ab_38_0	127	|upkeep
+L	ab_38_0	128	|turn|12
+L	ab_38_0	129	|
+L	ab_38_0	130	|t:|<NORMALIZED>
+L	ab_38_0	131	|switch|p2a: Mawile|Mawile, L96, M|129/251
+L	ab_38_0	132	|-ability|p2a: Mawile|Intimidate|boost
+L	ab_38_0	133	|-unboost|p1a: Vigoroth|atk|1
+L	ab_38_0	134	|move|p1a: Vigoroth|Bulk Up|p1a: Vigoroth
+L	ab_38_0	135	|-boost|p1a: Vigoroth|atk|1
+L	ab_38_0	136	|-boost|p1a: Vigoroth|def|1
+L	ab_38_0	137	|
+L	ab_38_0	138	|-heal|p2a: Mawile|144/251|[from] item: Leftovers
+L	ab_38_0	139	|upkeep
+L	ab_38_0	140	|turn|13
+L	ab_38_0	141	|
+L	ab_38_0	142	|t:|<NORMALIZED>
+L	ab_38_0	143	|move|p1a: Vigoroth|Return|p2a: Mawile
+L	ab_38_0	144	|-resisted|p2a: Mawile
+L	ab_38_0	145	|-damage|p2a: Mawile|104/251
+L	ab_38_0	146	|move|p2a: Mawile|Brick Break|p1a: Vigoroth
+L	ab_38_0	147	|-supereffective|p1a: Vigoroth
+L	ab_38_0	148	|-damage|p1a: Vigoroth|186/272
+L	ab_38_0	149	|
+L	ab_38_0	150	|-heal|p1a: Vigoroth|203/272|[from] item: Leftovers
+L	ab_38_0	151	|-heal|p2a: Mawile|119/251|[from] item: Leftovers
+L	ab_38_0	152	|upkeep
+L	ab_38_0	153	|turn|14
+L	ab_38_0	154	|
+L	ab_38_0	155	|t:|<NORMALIZED>
+L	ab_38_0	156	|switch|p1a: Xatu|Xatu, L84, M|246/246
+L	ab_38_0	157	|move|p2a: Mawile|Swords Dance|p2a: Mawile
+L	ab_38_0	158	|-boost|p2a: Mawile|atk|2
+L	ab_38_0	159	|
+L	ab_38_0	160	|-heal|p2a: Mawile|134/251|[from] item: Leftovers
+L	ab_38_0	161	|upkeep
+L	ab_38_0	162	|turn|15
+L	ab_38_0	163	|
+L	ab_38_0	164	|t:|<NORMALIZED>
+L	ab_38_0	165	|switch|p1a: Vigoroth|Vigoroth, L84, M|203/272
+L	ab_38_0	166	|move|p2a: Mawile|Swords Dance|p2a: Mawile
+L	ab_38_0	167	|-boost|p2a: Mawile|atk|2
+L	ab_38_0	168	|
+L	ab_38_0	169	|-heal|p1a: Vigoroth|220/272|[from] item: Leftovers
+L	ab_38_0	170	|-heal|p2a: Mawile|149/251|[from] item: Leftovers
+L	ab_38_0	171	|upkeep
+L	ab_38_0	172	|turn|16
+L	ab_38_0	173	|
+L	ab_38_0	174	|t:|<NORMALIZED>
+L	ab_38_0	175	|move|p1a: Vigoroth|Slack Off|p1a: Vigoroth
+L	ab_38_0	176	|-heal|p1a: Vigoroth|272/272
+L	ab_38_0	177	|move|p2a: Mawile|Baton Pass|p2a: Mawile
+L	ab_38_0	178	|
+L	ab_38_0	179	|t:|<NORMALIZED>
+L	ab_38_0	180	|switch|p2a: Swalot|Swalot, L87, M|83/316|[from] Baton Pass
+L	ab_38_0	181	|
+L	ab_38_0	182	|-heal|p2a: Swalot|102/316|[from] item: Leftovers
+L	ab_38_0	183	|upkeep
+L	ab_38_0	184	|turn|17
+L	ab_38_0	185	|
+L	ab_38_0	186	|t:|<NORMALIZED>
+L	ab_38_0	187	|move|p1a: Vigoroth|Bulk Up|p1a: Vigoroth
+L	ab_38_0	188	|-boost|p1a: Vigoroth|atk|1
+L	ab_38_0	189	|-boost|p1a: Vigoroth|def|1
+L	ab_38_0	190	|move|p2a: Swalot|Shadow Ball|p1a: Vigoroth
+L	ab_38_0	191	|-immune|p1a: Vigoroth
+L	ab_38_0	192	|
+L	ab_38_0	193	|-heal|p2a: Swalot|121/316|[from] item: Leftovers
+L	ab_38_0	194	|upkeep
+L	ab_38_0	195	|turn|18
+L	ab_38_0	196	|
+L	ab_38_0	197	|t:|<NORMALIZED>
+L	ab_38_0	198	|move|p1a: Vigoroth|Slack Off||[still]
+L	ab_38_0	199	|-fail|p1a: Vigoroth|heal
+L	ab_38_0	200	|debug|move failed because it did nothing
+L	ab_38_0	201	|move|p2a: Swalot|Encore|p1a: Vigoroth
+L	ab_38_0	202	|-start|p1a: Vigoroth|Encore
+L	ab_38_0	203	|
+L	ab_38_0	204	|-heal|p2a: Swalot|140/316|[from] item: Leftovers
+L	ab_38_0	205	|upkeep
+L	ab_38_0	206	|turn|19
+L	ab_38_0	207	|
+L	ab_38_0	208	|t:|<NORMALIZED>
+L	ab_38_0	209	|switch|p1a: Walrein|Walrein, L80, M|307/307
+L	ab_38_0	210	|move|p2a: Swalot|Shadow Ball|p1a: Walrein
+L	ab_38_0	211	|-damage|p1a: Walrein|160/307
+L	ab_38_0	212	|
+L	ab_38_0	213	|-heal|p1a: Walrein|179/307|[from] item: Leftovers
+L	ab_38_0	214	|-heal|p2a: Swalot|159/316|[from] item: Leftovers
+L	ab_38_0	215	|upkeep
+L	ab_38_0	216	|turn|20
+L	ab_38_0	217	|
+L	ab_38_0	218	|t:|<NORMALIZED>
+L	ab_38_0	219	|move|p1a: Walrein|Surf|p2a: Swalot
+L	ab_38_0	220	|-damage|p2a: Swalot|73/316
+L	ab_38_0	221	|move|p2a: Swalot|Shadow Ball|p1a: Walrein
+L	ab_38_0	222	|-damage|p1a: Walrein|42/307
+L	ab_38_0	223	|
+L	ab_38_0	224	|-heal|p1a: Walrein|61/307|[from] item: Leftovers
+L	ab_38_0	225	|-heal|p2a: Swalot|92/316|[from] item: Leftovers
+L	ab_38_0	226	|upkeep
+L	ab_38_0	227	|turn|21
+L	ab_38_0	228	|
+L	ab_38_0	229	|t:|<NORMALIZED>
+L	ab_38_0	230	|move|p1a: Walrein|Ice Beam|p2a: Swalot
+L	ab_38_0	231	|-damage|p2a: Swalot|1/316
+L	ab_38_0	232	|move|p2a: Swalot|Shadow Ball|p1a: Walrein
+L	ab_38_0	233	|-damage|p1a: Walrein|0 fnt
+L	ab_38_0	234	|faint|p1a: Walrein
+L	ab_38_0	235	|
+L	ab_38_0	236	|t:|<NORMALIZED>
+L	ab_38_0	237	|switch|p1a: Swellow|Swellow, L80, M|141/227
+L	ab_38_0	238	|
+L	ab_38_0	239	|-heal|p2a: Swalot|20/316|[from] item: Leftovers
+L	ab_38_0	240	|upkeep
+L	ab_38_0	241	|turn|22
+L	ab_38_0	242	|
+L	ab_38_0	243	|t:|<NORMALIZED>
+L	ab_38_0	244	|move|p1a: Swellow|Facade|p2a: Swalot
+L	ab_38_0	245	|-damage|p2a: Swalot|0 fnt
+L	ab_38_0	246	|faint|p2a: Swalot
+L	ab_38_0	247	|
+L	ab_38_0	248	|t:|<NORMALIZED>
+L	ab_38_0	249	|switch|p2a: Ursaring|Ursaring, L81, M|278/278
+L	ab_38_0	250	|
+L	ab_38_0	251	|upkeep
+L	ab_38_0	252	|turn|23
+L	ab_38_0	253	|
+L	ab_38_0	254	|t:|<NORMALIZED>
+L	ab_38_0	255	|move|p1a: Swellow|Facade|p2a: Ursaring
+L	ab_38_0	256	|-damage|p2a: Ursaring|162/278
+L	ab_38_0	257	|move|p2a: Ursaring|Return|p1a: Swellow
+L	ab_38_0	258	|-damage|p1a: Swellow|0 fnt
+L	ab_38_0	259	|faint|p1a: Swellow
+L	ab_38_0	260	|
+L	ab_38_0	261	|t:|<NORMALIZED>
+L	ab_38_0	262	|switch|p1a: Cacturne|Cacturne, L96, M|290/290
+L	ab_38_0	263	|
+L	ab_38_0	264	|upkeep
+L	ab_38_0	265	|turn|24
+L	ab_38_0	266	|
+L	ab_38_0	267	|t:|<NORMALIZED>
+L	ab_38_0	268	|switch|p1a: Vigoroth|Vigoroth, L84, M|272/272
+L	ab_38_0	269	|move|p2a: Ursaring|Return|p1a: Vigoroth
+L	ab_38_0	270	|-damage|p1a: Vigoroth|79/272
+L	ab_38_0	271	|
+L	ab_38_0	272	|-heal|p1a: Vigoroth|96/272|[from] item: Leftovers
+L	ab_38_0	273	|upkeep
+L	ab_38_0	274	|turn|25
+L	ab_38_0	275	|
+L	ab_38_0	276	|t:|<NORMALIZED>
+L	ab_38_0	277	|move|p1a: Vigoroth|Earthquake|p2a: Ursaring
+L	ab_38_0	278	|-damage|p2a: Ursaring|90/278
+L	ab_38_0	279	|move|p2a: Ursaring|Return|p1a: Vigoroth
+L	ab_38_0	280	|-damage|p1a: Vigoroth|0 fnt
+L	ab_38_0	281	|faint|p1a: Vigoroth
+L	ab_38_0	282	|
+L	ab_38_0	283	|t:|<NORMALIZED>
+L	ab_38_0	284	|switch|p1a: Cacturne|Cacturne, L96, M|290/290
+L	ab_38_0	285	|
+L	ab_38_0	286	|upkeep
+L	ab_38_0	287	|turn|26
+L	ab_38_0	288	|
+L	ab_38_0	289	|t:|<NORMALIZED>
+L	ab_38_0	290	|switch|p1a: Xatu|Xatu, L84, M|246/246
+L	ab_38_0	291	|move|p2a: Ursaring|Return|p1a: Xatu
+L	ab_38_0	292	|-damage|p1a: Xatu|18/246
+L	ab_38_0	293	|
+L	ab_38_0	294	|-heal|p1a: Xatu|33/246|[from] item: Leftovers
+L	ab_38_0	295	|upkeep
+L	ab_38_0	296	|turn|27
+L	ab_38_0	297	|
+L	ab_38_0	298	|t:|<NORMALIZED>
+L	ab_38_0	299	|move|p1a: Xatu|Psychic|p2a: Ursaring
+L	ab_38_0	300	|-damage|p2a: Ursaring|0 fnt
+L	ab_38_0	301	|faint|p2a: Ursaring
+L	ab_38_0	302	|
+L	ab_38_0	303	|t:|<NORMALIZED>
+L	ab_38_0	304	|switch|p2a: Jumpluff|Jumpluff, L87, M|271/271
+L	ab_38_0	305	|
+L	ab_38_0	306	|-heal|p1a: Xatu|48/246|[from] item: Leftovers
+L	ab_38_0	307	|upkeep
+L	ab_38_0	308	|turn|28
+L	ab_38_0	309	|
+L	ab_38_0	310	|t:|<NORMALIZED>
+L	ab_38_0	311	|move|p2a: Jumpluff|Substitute|p2a: Jumpluff
+L	ab_38_0	312	|-start|p2a: Jumpluff|Substitute
+L	ab_38_0	313	|-damage|p2a: Jumpluff|204/271
+L	ab_38_0	314	|move|p1a: Xatu|Rest|p1a: Xatu
+L	ab_38_0	315	|-status|p1a: Xatu|slp|[from] move: Rest
+L	ab_38_0	316	|-heal|p1a: Xatu|246/246 slp|[silent]
+L	ab_38_0	317	|
+L	ab_38_0	318	|-heal|p2a: Jumpluff|220/271|[from] item: Leftovers
+L	ab_38_0	319	|upkeep
+L	ab_38_0	320	|turn|29
+L	ab_38_0	321	|
+L	ab_38_0	322	|t:|<NORMALIZED>
+L	ab_38_0	323	|move|p2a: Jumpluff|Substitute|p2a: Jumpluff
+L	ab_38_0	324	|-fail|p2a: Jumpluff|move: Substitute
+L	ab_38_0	325	|cant|p1a: Xatu|slp
+L	ab_38_0	326	|
+L	ab_38_0	327	|-heal|p2a: Jumpluff|236/271|[from] item: Leftovers
+L	ab_38_0	328	|upkeep
+L	ab_38_0	329	|turn|30
+L	ab_38_0	330	|
+L	ab_38_0	331	|t:|<NORMALIZED>
+L	ab_38_0	332	|move|p2a: Jumpluff|Protect|p2a: Jumpluff
+L	ab_38_0	333	|-singleturn|p2a: Jumpluff|Protect
+L	ab_38_0	334	|-curestatus|p1a: Xatu|slp|[msg]
+L	ab_38_0	335	|move|p1a: Xatu|Calm Mind|p1a: Xatu
+L	ab_38_0	336	|-boost|p1a: Xatu|spa|1
+L	ab_38_0	337	|-boost|p1a: Xatu|spd|1
+L	ab_38_0	338	|
+L	ab_38_0	339	|-heal|p2a: Jumpluff|252/271|[from] item: Leftovers
+L	ab_38_0	340	|upkeep
+L	ab_38_0	341	|turn|31
+L	ab_38_0	342	|
+L	ab_38_0	343	|t:|<NORMALIZED>
+L	ab_38_0	344	|switch|p2a: Dusclops|Dusclops, L86, M|209/209
+L	ab_38_0	345	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_38_0	346	|move|p1a: Xatu|Psychic|p2a: Dusclops
+L	ab_38_0	347	|-damage|p2a: Dusclops|103/209
+L	ab_38_0	348	|-unboost|p2a: Dusclops|spd|1
+L	ab_38_0	349	|
+L	ab_38_0	350	|-heal|p2a: Dusclops|116/209|[from] item: Leftovers
+L	ab_38_0	351	|upkeep
+L	ab_38_0	352	|turn|32
+L	ab_38_0	353	|
+L	ab_38_0	354	|t:|<NORMALIZED>
+L	ab_38_0	355	|switch|p1a: Cacturne|Cacturne, L96, M|290/290
+L	ab_38_0	356	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	357	|
+L	ab_38_0	358	|-heal|p2a: Dusclops|129/209|[from] item: Leftovers
+L	ab_38_0	359	|upkeep
+L	ab_38_0	360	|turn|33
+L	ab_38_0	361	|
+L	ab_38_0	362	|t:|<NORMALIZED>
+L	ab_38_0	363	|move|p1a: Cacturne|Leech Seed|p2a: Dusclops
+L	ab_38_0	364	|-start|p2a: Dusclops|move: Leech Seed
+L	ab_38_0	365	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_38_0	366	|-status|p2a: Dusclops|slp|[from] move: Rest
+L	ab_38_0	367	|-heal|p2a: Dusclops|209/209 slp|[silent]
+L	ab_38_0	368	|
+L	ab_38_0	369	|-damage|p2a: Dusclops|183/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	370	|upkeep
+L	ab_38_0	371	|turn|34
+L	ab_38_0	372	|
+L	ab_38_0	373	|t:|<NORMALIZED>
+L	ab_38_0	374	|switch|p1a: Xatu|Xatu, L84, M|246/246
+L	ab_38_0	375	|cant|p2a: Dusclops|slp
+L	ab_38_0	376	|
+L	ab_38_0	377	|-heal|p2a: Dusclops|196/209 slp|[from] item: Leftovers
+L	ab_38_0	378	|-damage|p2a: Dusclops|170/209 slp|[from] Leech Seed|[of] p1a: Xatu
+L	ab_38_0	379	|upkeep
+L	ab_38_0	380	|turn|35
+L	ab_38_0	381	|
+L	ab_38_0	382	|t:|<NORMALIZED>
+L	ab_38_0	383	|switch|p2a: Claydol|Claydol, L81|230/230
+L	ab_38_0	384	|move|p1a: Xatu|Psychic|p2a: Claydol
+L	ab_38_0	385	|-resisted|p2a: Claydol
+L	ab_38_0	386	|-damage|p2a: Claydol|189/230
+L	ab_38_0	387	|
+L	ab_38_0	388	|-heal|p2a: Claydol|203/230|[from] item: Leftovers
+L	ab_38_0	389	|upkeep
+L	ab_38_0	390	|turn|36
+L	ab_38_0	391	|
+L	ab_38_0	392	|t:|<NORMALIZED>
+L	ab_38_0	393	|move|p1a: Xatu|Calm Mind|p1a: Xatu
+L	ab_38_0	394	|-boost|p1a: Xatu|spa|1
+L	ab_38_0	395	|-boost|p1a: Xatu|spd|1
+L	ab_38_0	396	|move|p2a: Claydol|Rapid Spin|p1a: Xatu
+L	ab_38_0	397	|-damage|p1a: Xatu|233/246
+L	ab_38_0	398	|
+L	ab_38_0	399	|-heal|p1a: Xatu|246/246|[from] item: Leftovers
+L	ab_38_0	400	|-heal|p2a: Claydol|217/230|[from] item: Leftovers
+L	ab_38_0	401	|upkeep
+L	ab_38_0	402	|turn|37
+L	ab_38_0	403	|
+L	ab_38_0	404	|t:|<NORMALIZED>
+L	ab_38_0	405	|move|p1a: Xatu|Calm Mind|p1a: Xatu
+L	ab_38_0	406	|-boost|p1a: Xatu|spa|1
+L	ab_38_0	407	|-boost|p1a: Xatu|spd|1
+L	ab_38_0	408	|move|p2a: Claydol|Earthquake|p1a: Xatu
+L	ab_38_0	409	|-immune|p1a: Xatu
+L	ab_38_0	410	|
+L	ab_38_0	411	|-heal|p2a: Claydol|230/230|[from] item: Leftovers
+L	ab_38_0	412	|upkeep
+L	ab_38_0	413	|turn|38
+L	ab_38_0	414	|
+L	ab_38_0	415	|t:|<NORMALIZED>
+L	ab_38_0	416	|move|p1a: Xatu|Calm Mind|p1a: Xatu
+L	ab_38_0	417	|-boost|p1a: Xatu|spa|1
+L	ab_38_0	418	|-boost|p1a: Xatu|spd|1
+L	ab_38_0	419	|move|p2a: Claydol|Earthquake|p1a: Xatu
+L	ab_38_0	420	|-immune|p1a: Xatu
+L	ab_38_0	421	|
+L	ab_38_0	422	|upkeep
+L	ab_38_0	423	|turn|39
+L	ab_38_0	424	|
+L	ab_38_0	425	|t:|<NORMALIZED>
+L	ab_38_0	426	|move|p1a: Xatu|Psychic|p2a: Claydol
+L	ab_38_0	427	|-resisted|p2a: Claydol
+L	ab_38_0	428	|-damage|p2a: Claydol|133/230
+L	ab_38_0	429	|move|p2a: Claydol|Ice Beam|p1a: Xatu
+L	ab_38_0	430	|-supereffective|p1a: Xatu
+L	ab_38_0	431	|-damage|p1a: Xatu|201/246
+L	ab_38_0	432	|-status|p1a: Xatu|frz
+L	ab_38_0	433	|
+L	ab_38_0	434	|-heal|p1a: Xatu|216/246 frz|[from] item: Leftovers
+L	ab_38_0	435	|-heal|p2a: Claydol|147/230|[from] item: Leftovers
+L	ab_38_0	436	|upkeep
+L	ab_38_0	437	|turn|40
+L	ab_38_0	438	|
+L	ab_38_0	439	|t:|<NORMALIZED>
+L	ab_38_0	440	|cant|p1a: Xatu|frz
+L	ab_38_0	441	|move|p2a: Claydol|Ice Beam|p1a: Xatu
+L	ab_38_0	442	|-supereffective|p1a: Xatu
+L	ab_38_0	443	|-damage|p1a: Xatu|170/246 frz
+L	ab_38_0	444	|
+L	ab_38_0	445	|-heal|p1a: Xatu|185/246 frz|[from] item: Leftovers
+L	ab_38_0	446	|-heal|p2a: Claydol|161/230|[from] item: Leftovers
+L	ab_38_0	447	|upkeep
+L	ab_38_0	448	|turn|41
+L	ab_38_0	449	|
+L	ab_38_0	450	|t:|<NORMALIZED>
+L	ab_38_0	451	|-curestatus|p1a: Xatu|frz|[msg]
+L	ab_38_0	452	|move|p1a: Xatu|Rest|p1a: Xatu
+L	ab_38_0	453	|-status|p1a: Xatu|slp|[from] move: Rest
+L	ab_38_0	454	|-heal|p1a: Xatu|246/246 slp|[silent]
+L	ab_38_0	455	|move|p2a: Claydol|Earthquake|p1a: Xatu
+L	ab_38_0	456	|-immune|p1a: Xatu
+L	ab_38_0	457	|
+L	ab_38_0	458	|-heal|p2a: Claydol|175/230|[from] item: Leftovers
+L	ab_38_0	459	|upkeep
+L	ab_38_0	460	|turn|42
+L	ab_38_0	461	|
+L	ab_38_0	462	|t:|<NORMALIZED>
+L	ab_38_0	463	|cant|p1a: Xatu|slp
+L	ab_38_0	464	|move|p2a: Claydol|Explosion|p1a: Xatu
+L	ab_38_0	465	|-damage|p1a: Xatu|0 fnt
+L	ab_38_0	466	|faint|p2a: Claydol
+L	ab_38_0	467	|faint|p1a: Xatu
+L	ab_38_0	468	|
+L	ab_38_0	469	|t:|<NORMALIZED>
+L	ab_38_0	470	|switch|p1a: Cacturne|Cacturne, L96, M|290/290
+L	ab_38_0	471	|switch|p2a: Jumpluff|Jumpluff, L87, M|252/271
+L	ab_38_0	472	|
+L	ab_38_0	473	|-heal|p2a: Jumpluff|268/271|[from] item: Leftovers
+L	ab_38_0	474	|upkeep
+L	ab_38_0	475	|turn|43
+L	ab_38_0	476	|
+L	ab_38_0	477	|t:|<NORMALIZED>
+L	ab_38_0	478	|debug|before turn callback: focuspunch
+L	ab_38_0	479	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	480	|move|p2a: Jumpluff|Protect|p2a: Jumpluff
+L	ab_38_0	481	|-singleturn|p2a: Jumpluff|Protect
+L	ab_38_0	482	|move|p1a: Cacturne|Focus Punch|p2a: Jumpluff
+L	ab_38_0	483	|-activate|p2a: Jumpluff|Protect
+L	ab_38_0	484	|
+L	ab_38_0	485	|-heal|p2a: Jumpluff|271/271|[from] item: Leftovers
+L	ab_38_0	486	|upkeep
+L	ab_38_0	487	|turn|44
+L	ab_38_0	488	|
+L	ab_38_0	489	|t:|<NORMALIZED>
+L	ab_38_0	490	|move|p2a: Jumpluff|Substitute|p2a: Jumpluff
+L	ab_38_0	491	|-start|p2a: Jumpluff|Substitute
+L	ab_38_0	492	|-damage|p2a: Jumpluff|204/271
+L	ab_38_0	493	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	494	|-start|p1a: Cacturne|Substitute
+L	ab_38_0	495	|-damage|p1a: Cacturne|218/290
+L	ab_38_0	496	|
+L	ab_38_0	497	|-heal|p2a: Jumpluff|220/271|[from] item: Leftovers
+L	ab_38_0	498	|-heal|p1a: Cacturne|236/290|[from] item: Leftovers
+L	ab_38_0	499	|upkeep
+L	ab_38_0	500	|turn|45
+L	ab_38_0	501	|
+L	ab_38_0	502	|t:|<NORMALIZED>
+L	ab_38_0	503	|move|p2a: Jumpluff|Protect|p2a: Jumpluff
+L	ab_38_0	504	|-singleturn|p2a: Jumpluff|Protect
+L	ab_38_0	505	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	506	|-fail|p1a: Cacturne|move: Substitute
+L	ab_38_0	507	|
+L	ab_38_0	508	|-heal|p2a: Jumpluff|236/271|[from] item: Leftovers
+L	ab_38_0	509	|-heal|p1a: Cacturne|254/290|[from] item: Leftovers
+L	ab_38_0	510	|upkeep
+L	ab_38_0	511	|turn|46
+L	ab_38_0	512	|
+L	ab_38_0	513	|t:|<NORMALIZED>
+L	ab_38_0	514	|debug|before turn callback: focuspunch
+L	ab_38_0	515	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	516	|move|p2a: Jumpluff|Leech Seed|p1a: Cacturne
+L	ab_38_0	517	|-immune|p1a: Cacturne
+L	ab_38_0	518	|move|p1a: Cacturne|Focus Punch|p2a: Jumpluff
+L	ab_38_0	519	|-resisted|p2a: Jumpluff
+L	ab_38_0	520	|-end|p2a: Jumpluff|Substitute
+L	ab_38_0	521	|
+L	ab_38_0	522	|-heal|p2a: Jumpluff|252/271|[from] item: Leftovers
+L	ab_38_0	523	|-heal|p1a: Cacturne|272/290|[from] item: Leftovers
+L	ab_38_0	524	|upkeep
+L	ab_38_0	525	|turn|47
+L	ab_38_0	526	|
+L	ab_38_0	527	|t:|<NORMALIZED>
+L	ab_38_0	528	|move|p2a: Jumpluff|Substitute|p2a: Jumpluff
+L	ab_38_0	529	|-start|p2a: Jumpluff|Substitute
+L	ab_38_0	530	|-damage|p2a: Jumpluff|185/271
+L	ab_38_0	531	|move|p1a: Cacturne|Leech Seed|p2a: Jumpluff
+L	ab_38_0	532	|-immune|p2a: Jumpluff
+L	ab_38_0	533	|
+L	ab_38_0	534	|-heal|p2a: Jumpluff|201/271|[from] item: Leftovers
+L	ab_38_0	535	|-heal|p1a: Cacturne|290/290|[from] item: Leftovers
+L	ab_38_0	536	|upkeep
+L	ab_38_0	537	|turn|48
+L	ab_38_0	538	|
+L	ab_38_0	539	|t:|<NORMALIZED>
+L	ab_38_0	540	|move|p2a: Jumpluff|Protect|p2a: Jumpluff
+L	ab_38_0	541	|-singleturn|p2a: Jumpluff|Protect
+L	ab_38_0	542	|move|p1a: Cacturne|Leech Seed|p2a: Jumpluff
+L	ab_38_0	543	|-activate|p2a: Jumpluff|Protect
+L	ab_38_0	544	|
+L	ab_38_0	545	|-heal|p2a: Jumpluff|217/271|[from] item: Leftovers
+L	ab_38_0	546	|upkeep
+L	ab_38_0	547	|turn|49
+L	ab_38_0	548	|
+L	ab_38_0	549	|t:|<NORMALIZED>
+L	ab_38_0	550	|switch|p2a: Mawile|Mawile, L96, M|149/251
+L	ab_38_0	551	|-hint|In Gen 3, Intimidate does not activate if every target has a Substitute.
+L	ab_38_0	552	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	553	|-fail|p1a: Cacturne|move: Substitute
+L	ab_38_0	554	|
+L	ab_38_0	555	|-heal|p2a: Mawile|164/251|[from] item: Leftovers
+L	ab_38_0	556	|upkeep
+L	ab_38_0	557	|turn|50
+L	ab_38_0	558	|
+L	ab_38_0	559	|t:|<NORMALIZED>
+L	ab_38_0	560	|debug|before turn callback: focuspunch
+L	ab_38_0	561	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	562	|switch|p2a: Dusclops|Dusclops, L86, M|170/209 slp
+L	ab_38_0	563	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_38_0	564	|move|p1a: Cacturne|Focus Punch|p2a: Dusclops
+L	ab_38_0	565	|-immune|p2a: Dusclops
+L	ab_38_0	566	|
+L	ab_38_0	567	|-heal|p2a: Dusclops|183/209 slp|[from] item: Leftovers
+L	ab_38_0	568	|upkeep
+L	ab_38_0	569	|turn|51
+L	ab_38_0	570	|
+L	ab_38_0	571	|t:|<NORMALIZED>
+L	ab_38_0	572	|move|p1a: Cacturne|Leech Seed|p2a: Dusclops
+L	ab_38_0	573	|-start|p2a: Dusclops|move: Leech Seed
+L	ab_38_0	574	|cant|p2a: Dusclops|slp
+L	ab_38_0	575	|
+L	ab_38_0	576	|-heal|p2a: Dusclops|196/209 slp|[from] item: Leftovers
+L	ab_38_0	577	|-damage|p2a: Dusclops|170/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	578	|upkeep
+L	ab_38_0	579	|turn|52
+L	ab_38_0	580	|
+L	ab_38_0	581	|t:|<NORMALIZED>
+L	ab_38_0	582	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	583	|-fail|p1a: Cacturne|move: Substitute
+L	ab_38_0	584	|-curestatus|p2a: Dusclops|slp|[msg]
+L	ab_38_0	585	|move|p2a: Dusclops|Seismic Toss|p1a: Cacturne
+L	ab_38_0	586	|-end|p1a: Cacturne|Substitute
+L	ab_38_0	587	|
+L	ab_38_0	588	|-heal|p2a: Dusclops|183/209|[from] item: Leftovers
+L	ab_38_0	589	|-damage|p2a: Dusclops|157/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	590	|upkeep
+L	ab_38_0	591	|turn|53
+L	ab_38_0	592	|
+L	ab_38_0	593	|t:|<NORMALIZED>
+L	ab_38_0	594	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	595	|-start|p1a: Cacturne|Substitute
+L	ab_38_0	596	|-damage|p1a: Cacturne|218/290
+L	ab_38_0	597	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_38_0	598	|-status|p2a: Dusclops|slp|[from] move: Rest
+L	ab_38_0	599	|-heal|p2a: Dusclops|209/209 slp|[silent]
+L	ab_38_0	600	|
+L	ab_38_0	601	|-heal|p1a: Cacturne|236/290|[from] item: Leftovers
+L	ab_38_0	602	|-damage|p2a: Dusclops|183/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	603	|-heal|p1a: Cacturne|262/290|[silent]
+L	ab_38_0	604	|upkeep
+L	ab_38_0	605	|turn|54
+L	ab_38_0	606	|
+L	ab_38_0	607	|t:|<NORMALIZED>
+L	ab_38_0	608	|switch|p2a: Jumpluff|Jumpluff, L87, M|217/271
+L	ab_38_0	609	|move|p1a: Cacturne|Leech Seed|p2a: Jumpluff
+L	ab_38_0	610	|-immune|p2a: Jumpluff
+L	ab_38_0	611	|
+L	ab_38_0	612	|-heal|p2a: Jumpluff|233/271|[from] item: Leftovers
+L	ab_38_0	613	|-heal|p1a: Cacturne|280/290|[from] item: Leftovers
+L	ab_38_0	614	|upkeep
+L	ab_38_0	615	|turn|55
+L	ab_38_0	616	|
+L	ab_38_0	617	|t:|<NORMALIZED>
+L	ab_38_0	618	|debug|before turn callback: focuspunch
+L	ab_38_0	619	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	620	|move|p2a: Jumpluff|Leech Seed|p1a: Cacturne
+L	ab_38_0	621	|-immune|p1a: Cacturne
+L	ab_38_0	622	|move|p1a: Cacturne|Focus Punch|p2a: Jumpluff
+L	ab_38_0	623	|-resisted|p2a: Jumpluff
+L	ab_38_0	624	|-damage|p2a: Jumpluff|142/271
+L	ab_38_0	625	|
+L	ab_38_0	626	|-heal|p2a: Jumpluff|158/271|[from] item: Leftovers
+L	ab_38_0	627	|-heal|p1a: Cacturne|290/290|[from] item: Leftovers
+L	ab_38_0	628	|upkeep
+L	ab_38_0	629	|turn|56
+L	ab_38_0	630	|
+L	ab_38_0	631	|t:|<NORMALIZED>
+L	ab_38_0	632	|debug|before turn callback: focuspunch
+L	ab_38_0	633	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	634	|move|p2a: Jumpluff|Substitute|p2a: Jumpluff
+L	ab_38_0	635	|-start|p2a: Jumpluff|Substitute
+L	ab_38_0	636	|-damage|p2a: Jumpluff|91/271
+L	ab_38_0	637	|move|p1a: Cacturne|Focus Punch|p2a: Jumpluff
+L	ab_38_0	638	|-resisted|p2a: Jumpluff
+L	ab_38_0	639	|-end|p2a: Jumpluff|Substitute
+L	ab_38_0	640	|
+L	ab_38_0	641	|-heal|p2a: Jumpluff|107/271|[from] item: Leftovers
+L	ab_38_0	642	|upkeep
+L	ab_38_0	643	|turn|57
+L	ab_38_0	644	|
+L	ab_38_0	645	|t:|<NORMALIZED>
+L	ab_38_0	646	|debug|before turn callback: focuspunch
+L	ab_38_0	647	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	648	|move|p2a: Jumpluff|Substitute|p2a: Jumpluff
+L	ab_38_0	649	|-start|p2a: Jumpluff|Substitute
+L	ab_38_0	650	|-damage|p2a: Jumpluff|40/271
+L	ab_38_0	651	|move|p1a: Cacturne|Focus Punch|p2a: Jumpluff
+L	ab_38_0	652	|-resisted|p2a: Jumpluff
+L	ab_38_0	653	|-end|p2a: Jumpluff|Substitute
+L	ab_38_0	654	|
+L	ab_38_0	655	|-heal|p2a: Jumpluff|56/271|[from] item: Leftovers
+L	ab_38_0	656	|upkeep
+L	ab_38_0	657	|turn|58
+L	ab_38_0	658	|
+L	ab_38_0	659	|t:|<NORMALIZED>
+L	ab_38_0	660	|move|p2a: Jumpluff|Leech Seed|p1a: Cacturne
+L	ab_38_0	661	|-immune|p1a: Cacturne
+L	ab_38_0	662	|move|p1a: Cacturne|Leech Seed|p2a: Jumpluff
+L	ab_38_0	663	|-immune|p2a: Jumpluff
+L	ab_38_0	664	|
+L	ab_38_0	665	|-heal|p2a: Jumpluff|72/271|[from] item: Leftovers
+L	ab_38_0	666	|upkeep
+L	ab_38_0	667	|turn|59
+L	ab_38_0	668	|
+L	ab_38_0	669	|t:|<NORMALIZED>
+L	ab_38_0	670	|move|p2a: Jumpluff|Protect|p2a: Jumpluff
+L	ab_38_0	671	|-singleturn|p2a: Jumpluff|Protect
+L	ab_38_0	672	|move|p1a: Cacturne|Leech Seed|p2a: Jumpluff
+L	ab_38_0	673	|-activate|p2a: Jumpluff|Protect
+L	ab_38_0	674	|
+L	ab_38_0	675	|-heal|p2a: Jumpluff|88/271|[from] item: Leftovers
+L	ab_38_0	676	|upkeep
+L	ab_38_0	677	|turn|60
+L	ab_38_0	678	|
+L	ab_38_0	679	|t:|<NORMALIZED>
+L	ab_38_0	680	|move|p2a: Jumpluff|Leech Seed|p1a: Cacturne
+L	ab_38_0	681	|-immune|p1a: Cacturne
+L	ab_38_0	682	|move|p1a: Cacturne|Leech Seed|p2a: Jumpluff
+L	ab_38_0	683	|-immune|p2a: Jumpluff
+L	ab_38_0	684	|
+L	ab_38_0	685	|-heal|p2a: Jumpluff|104/271|[from] item: Leftovers
+L	ab_38_0	686	|upkeep
+L	ab_38_0	687	|turn|61
+L	ab_38_0	688	|
+L	ab_38_0	689	|t:|<NORMALIZED>
+L	ab_38_0	690	|move|p2a: Jumpluff|Protect|p2a: Jumpluff
+L	ab_38_0	691	|-singleturn|p2a: Jumpluff|Protect
+L	ab_38_0	692	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	693	|-fail|p1a: Cacturne|move: Substitute
+L	ab_38_0	694	|
+L	ab_38_0	695	|-heal|p2a: Jumpluff|120/271|[from] item: Leftovers
+L	ab_38_0	696	|upkeep
+L	ab_38_0	697	|turn|62
+L	ab_38_0	698	|
+L	ab_38_0	699	|t:|<NORMALIZED>
+L	ab_38_0	700	|move|p2a: Jumpluff|Protect|p2a: Jumpluff
+L	ab_38_0	701	|debug|Success chance: 50%
+L	ab_38_0	702	|-singleturn|p2a: Jumpluff|Protect
+L	ab_38_0	703	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	704	|-fail|p1a: Cacturne|move: Substitute
+L	ab_38_0	705	|
+L	ab_38_0	706	|-heal|p2a: Jumpluff|136/271|[from] item: Leftovers
+L	ab_38_0	707	|upkeep
+L	ab_38_0	708	|turn|63
+L	ab_38_0	709	|
+L	ab_38_0	710	|t:|<NORMALIZED>
+L	ab_38_0	711	|debug|before turn callback: focuspunch
+L	ab_38_0	712	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	713	|move|p2a: Jumpluff|Substitute|p2a: Jumpluff
+L	ab_38_0	714	|-start|p2a: Jumpluff|Substitute
+L	ab_38_0	715	|-damage|p2a: Jumpluff|69/271
+L	ab_38_0	716	|move|p1a: Cacturne|Focus Punch|p2a: Jumpluff
+L	ab_38_0	717	|-resisted|p2a: Jumpluff
+L	ab_38_0	718	|-end|p2a: Jumpluff|Substitute
+L	ab_38_0	719	|
+L	ab_38_0	720	|-heal|p2a: Jumpluff|85/271|[from] item: Leftovers
+L	ab_38_0	721	|upkeep
+L	ab_38_0	722	|turn|64
+L	ab_38_0	723	|
+L	ab_38_0	724	|t:|<NORMALIZED>
+L	ab_38_0	725	|debug|before turn callback: focuspunch
+L	ab_38_0	726	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	727	|move|p2a: Jumpluff|Leech Seed|p1a: Cacturne
+L	ab_38_0	728	|-immune|p1a: Cacturne
+L	ab_38_0	729	|move|p1a: Cacturne|Focus Punch|p2a: Jumpluff
+L	ab_38_0	730	|-resisted|p2a: Jumpluff
+L	ab_38_0	731	|-damage|p2a: Jumpluff|0 fnt
+L	ab_38_0	732	|faint|p2a: Jumpluff
+L	ab_38_0	733	|
+L	ab_38_0	734	|t:|<NORMALIZED>
+L	ab_38_0	735	|switch|p2a: Mawile|Mawile, L96, M|164/251
+L	ab_38_0	736	|-hint|In Gen 3, Intimidate does not activate if every target has a Substitute.
+L	ab_38_0	737	|
+L	ab_38_0	738	|-heal|p2a: Mawile|179/251|[from] item: Leftovers
+L	ab_38_0	739	|upkeep
+L	ab_38_0	740	|turn|65
+L	ab_38_0	741	|
+L	ab_38_0	742	|t:|<NORMALIZED>
+L	ab_38_0	743	|debug|before turn callback: focuspunch
+L	ab_38_0	744	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	745	|move|p2a: Mawile|Brick Break|p1a: Cacturne
+L	ab_38_0	746	|-supereffective|p1a: Cacturne
+L	ab_38_0	747	|-end|p1a: Cacturne|Substitute
+L	ab_38_0	748	|move|p1a: Cacturne|Focus Punch|p2a: Mawile
+L	ab_38_0	749	|-supereffective|p2a: Mawile
+L	ab_38_0	750	|-damage|p2a: Mawile|0 fnt
+L	ab_38_0	751	|faint|p2a: Mawile
+L	ab_38_0	752	|
+L	ab_38_0	753	|t:|<NORMALIZED>
+L	ab_38_0	754	|switch|p2a: Dusclops|Dusclops, L86, M|183/209 slp
+L	ab_38_0	755	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_38_0	756	|
+L	ab_38_0	757	|-heal|p2a: Dusclops|196/209 slp|[from] item: Leftovers
+L	ab_38_0	758	|upkeep
+L	ab_38_0	759	|turn|66
+L	ab_38_0	760	|
+L	ab_38_0	761	|t:|<NORMALIZED>
+L	ab_38_0	762	|move|p1a: Cacturne|Leech Seed|p2a: Dusclops
+L	ab_38_0	763	|-start|p2a: Dusclops|move: Leech Seed
+L	ab_38_0	764	|cant|p2a: Dusclops|slp
+L	ab_38_0	765	|
+L	ab_38_0	766	|-heal|p2a: Dusclops|209/209 slp|[from] item: Leftovers
+L	ab_38_0	767	|-damage|p2a: Dusclops|183/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	768	|upkeep
+L	ab_38_0	769	|turn|67
+L	ab_38_0	770	|
+L	ab_38_0	771	|t:|<NORMALIZED>
+L	ab_38_0	772	|move|p1a: Cacturne|Leech Seed||[still]
+L	ab_38_0	773	|-fail|p1a: Cacturne
+L	ab_38_0	774	|debug|move failed because it did nothing
+L	ab_38_0	775	|cant|p2a: Dusclops|slp
+L	ab_38_0	776	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	777	|move|p2a: Dusclops|Rest|p2a: Dusclops|[from] Sleep Talk
+L	ab_38_0	778	|
+L	ab_38_0	779	|-heal|p2a: Dusclops|196/209 slp|[from] item: Leftovers
+L	ab_38_0	780	|-damage|p2a: Dusclops|170/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	781	|upkeep
+L	ab_38_0	782	|turn|68
+L	ab_38_0	783	|
+L	ab_38_0	784	|t:|<NORMALIZED>
+L	ab_38_0	785	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	786	|-start|p1a: Cacturne|Substitute
+L	ab_38_0	787	|-damage|p1a: Cacturne|218/290
+L	ab_38_0	788	|-curestatus|p2a: Dusclops|slp|[msg]
+L	ab_38_0	789	|move|p2a: Dusclops|Seismic Toss|p1a: Cacturne
+L	ab_38_0	790	|-end|p1a: Cacturne|Substitute
+L	ab_38_0	791	|
+L	ab_38_0	792	|-heal|p1a: Cacturne|236/290|[from] item: Leftovers
+L	ab_38_0	793	|-heal|p2a: Dusclops|183/209|[from] item: Leftovers
+L	ab_38_0	794	|-damage|p2a: Dusclops|157/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	795	|-heal|p1a: Cacturne|262/290|[silent]
+L	ab_38_0	796	|upkeep
+L	ab_38_0	797	|turn|69
+L	ab_38_0	798	|
+L	ab_38_0	799	|t:|<NORMALIZED>
+L	ab_38_0	800	|move|p1a: Cacturne|Leech Seed||[still]
+L	ab_38_0	801	|-fail|p1a: Cacturne
+L	ab_38_0	802	|debug|move failed because it did nothing
+L	ab_38_0	803	|move|p2a: Dusclops|Seismic Toss|p1a: Cacturne
+L	ab_38_0	804	|-damage|p1a: Cacturne|176/290
+L	ab_38_0	805	|
+L	ab_38_0	806	|-heal|p1a: Cacturne|194/290|[from] item: Leftovers
+L	ab_38_0	807	|-heal|p2a: Dusclops|170/209|[from] item: Leftovers
+L	ab_38_0	808	|-damage|p2a: Dusclops|144/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	809	|-heal|p1a: Cacturne|220/290|[silent]
+L	ab_38_0	810	|upkeep
+L	ab_38_0	811	|turn|70
+L	ab_38_0	812	|
+L	ab_38_0	813	|t:|<NORMALIZED>
+L	ab_38_0	814	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	815	|-start|p1a: Cacturne|Substitute
+L	ab_38_0	816	|-damage|p1a: Cacturne|148/290
+L	ab_38_0	817	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	818	|
+L	ab_38_0	819	|-heal|p1a: Cacturne|166/290|[from] item: Leftovers
+L	ab_38_0	820	|-heal|p2a: Dusclops|157/209|[from] item: Leftovers
+L	ab_38_0	821	|-damage|p2a: Dusclops|131/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	822	|-heal|p1a: Cacturne|192/290|[silent]
+L	ab_38_0	823	|upkeep
+L	ab_38_0	824	|turn|71
+L	ab_38_0	825	|
+L	ab_38_0	826	|t:|<NORMALIZED>
+L	ab_38_0	827	|debug|before turn callback: focuspunch
+L	ab_38_0	828	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	829	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_38_0	830	|-status|p2a: Dusclops|slp|[from] move: Rest
+L	ab_38_0	831	|-heal|p2a: Dusclops|209/209 slp|[silent]
+L	ab_38_0	832	|move|p1a: Cacturne|Focus Punch|p2a: Dusclops
+L	ab_38_0	833	|-immune|p2a: Dusclops
+L	ab_38_0	834	|
+L	ab_38_0	835	|-heal|p1a: Cacturne|210/290|[from] item: Leftovers
+L	ab_38_0	836	|-damage|p2a: Dusclops|183/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	837	|-heal|p1a: Cacturne|236/290|[silent]
+L	ab_38_0	838	|upkeep
+L	ab_38_0	839	|turn|72
+L	ab_38_0	840	|
+L	ab_38_0	841	|t:|<NORMALIZED>
+L	ab_38_0	842	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	843	|-fail|p1a: Cacturne|move: Substitute
+L	ab_38_0	844	|cant|p2a: Dusclops|slp
+L	ab_38_0	845	|
+L	ab_38_0	846	|-heal|p1a: Cacturne|254/290|[from] item: Leftovers
+L	ab_38_0	847	|-heal|p2a: Dusclops|196/209 slp|[from] item: Leftovers
+L	ab_38_0	848	|-damage|p2a: Dusclops|170/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	849	|-heal|p1a: Cacturne|280/290|[silent]
+L	ab_38_0	850	|upkeep
+L	ab_38_0	851	|turn|73
+L	ab_38_0	852	|
+L	ab_38_0	853	|t:|<NORMALIZED>
+L	ab_38_0	854	|debug|before turn callback: focuspunch
+L	ab_38_0	855	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	856	|cant|p2a: Dusclops|slp
+L	ab_38_0	857	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	858	|move|p2a: Dusclops|Shadow Ball|p1a: Cacturne|[from] Sleep Talk
+L	ab_38_0	859	|-resisted|p1a: Cacturne
+L	ab_38_0	860	|-activate|p1a: Cacturne|Substitute|[damage]
+L	ab_38_0	861	|move|p1a: Cacturne|Focus Punch|p2a: Dusclops
+L	ab_38_0	862	|-immune|p2a: Dusclops
+L	ab_38_0	863	|
+L	ab_38_0	864	|-heal|p1a: Cacturne|290/290|[from] item: Leftovers
+L	ab_38_0	865	|-heal|p2a: Dusclops|183/209 slp|[from] item: Leftovers
+L	ab_38_0	866	|-damage|p2a: Dusclops|157/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	867	|upkeep
+L	ab_38_0	868	|turn|74
+L	ab_38_0	869	|
+L	ab_38_0	870	|t:|<NORMALIZED>
+L	ab_38_0	871	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	872	|-fail|p1a: Cacturne|move: Substitute
+L	ab_38_0	873	|-curestatus|p2a: Dusclops|slp|[msg]
+L	ab_38_0	874	|move|p2a: Dusclops|Seismic Toss|p1a: Cacturne
+L	ab_38_0	875	|-end|p1a: Cacturne|Substitute
+L	ab_38_0	876	|
+L	ab_38_0	877	|-heal|p2a: Dusclops|170/209|[from] item: Leftovers
+L	ab_38_0	878	|-damage|p2a: Dusclops|144/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	879	|upkeep
+L	ab_38_0	880	|turn|75
+L	ab_38_0	881	|
+L	ab_38_0	882	|t:|<NORMALIZED>
+L	ab_38_0	883	|debug|before turn callback: focuspunch
+L	ab_38_0	884	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	885	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	886	|move|p1a: Cacturne|Focus Punch|p2a: Dusclops
+L	ab_38_0	887	|-immune|p2a: Dusclops
+L	ab_38_0	888	|
+L	ab_38_0	889	|-heal|p2a: Dusclops|157/209|[from] item: Leftovers
+L	ab_38_0	890	|-damage|p2a: Dusclops|131/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	891	|upkeep
+L	ab_38_0	892	|turn|76
+L	ab_38_0	893	|
+L	ab_38_0	894	|t:|<NORMALIZED>
+L	ab_38_0	895	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	896	|-start|p1a: Cacturne|Substitute
+L	ab_38_0	897	|-damage|p1a: Cacturne|218/290
+L	ab_38_0	898	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_38_0	899	|-status|p2a: Dusclops|slp|[from] move: Rest
+L	ab_38_0	900	|-heal|p2a: Dusclops|209/209 slp|[silent]
+L	ab_38_0	901	|
+L	ab_38_0	902	|-heal|p1a: Cacturne|236/290|[from] item: Leftovers
+L	ab_38_0	903	|-damage|p2a: Dusclops|183/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	904	|-heal|p1a: Cacturne|262/290|[silent]
+L	ab_38_0	905	|upkeep
+L	ab_38_0	906	|turn|77
+L	ab_38_0	907	|
+L	ab_38_0	908	|t:|<NORMALIZED>
+L	ab_38_0	909	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	910	|-fail|p1a: Cacturne|move: Substitute
+L	ab_38_0	911	|cant|p2a: Dusclops|slp
+L	ab_38_0	912	|
+L	ab_38_0	913	|-heal|p1a: Cacturne|280/290|[from] item: Leftovers
+L	ab_38_0	914	|-heal|p2a: Dusclops|196/209 slp|[from] item: Leftovers
+L	ab_38_0	915	|-damage|p2a: Dusclops|170/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	916	|-heal|p1a: Cacturne|290/290|[silent]
+L	ab_38_0	917	|upkeep
+L	ab_38_0	918	|turn|78
+L	ab_38_0	919	|
+L	ab_38_0	920	|t:|<NORMALIZED>
+L	ab_38_0	921	|debug|before turn callback: focuspunch
+L	ab_38_0	922	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	923	|cant|p2a: Dusclops|slp
+L	ab_38_0	924	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	925	|move|p2a: Dusclops|Shadow Ball|p1a: Cacturne|[from] Sleep Talk
+L	ab_38_0	926	|-resisted|p1a: Cacturne
+L	ab_38_0	927	|-activate|p1a: Cacturne|Substitute|[damage]
+L	ab_38_0	928	|move|p1a: Cacturne|Focus Punch|p2a: Dusclops
+L	ab_38_0	929	|-immune|p2a: Dusclops
+L	ab_38_0	930	|
+L	ab_38_0	931	|-heal|p2a: Dusclops|183/209 slp|[from] item: Leftovers
+L	ab_38_0	932	|-damage|p2a: Dusclops|157/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	933	|upkeep
+L	ab_38_0	934	|turn|79
+L	ab_38_0	935	|
+L	ab_38_0	936	|t:|<NORMALIZED>
+L	ab_38_0	937	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	938	|-fail|p1a: Cacturne|move: Substitute
+L	ab_38_0	939	|-curestatus|p2a: Dusclops|slp|[msg]
+L	ab_38_0	940	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	941	|
+L	ab_38_0	942	|-heal|p2a: Dusclops|170/209|[from] item: Leftovers
+L	ab_38_0	943	|-damage|p2a: Dusclops|144/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	944	|upkeep
+L	ab_38_0	945	|turn|80
+L	ab_38_0	946	|
+L	ab_38_0	947	|t:|<NORMALIZED>
+L	ab_38_0	948	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	949	|-fail|p1a: Cacturne|move: Substitute
+L	ab_38_0	950	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	951	|
+L	ab_38_0	952	|-heal|p2a: Dusclops|157/209|[from] item: Leftovers
+L	ab_38_0	953	|-damage|p2a: Dusclops|131/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	954	|upkeep
+L	ab_38_0	955	|turn|81
+L	ab_38_0	956	|
+L	ab_38_0	957	|t:|<NORMALIZED>
+L	ab_38_0	958	|move|p1a: Cacturne|Substitute|p1a: Cacturne
+L	ab_38_0	959	|-fail|p1a: Cacturne|move: Substitute
+L	ab_38_0	960	|move|p2a: Dusclops|Shadow Ball|p1a: Cacturne
+L	ab_38_0	961	|-resisted|p1a: Cacturne
+L	ab_38_0	962	|-end|p1a: Cacturne|Substitute
+L	ab_38_0	963	|
+L	ab_38_0	964	|-heal|p2a: Dusclops|144/209|[from] item: Leftovers
+L	ab_38_0	965	|-damage|p2a: Dusclops|118/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	966	|upkeep
+L	ab_38_0	967	|turn|82
+L	ab_38_0	968	|
+L	ab_38_0	969	|t:|<NORMALIZED>
+L	ab_38_0	970	|debug|before turn callback: focuspunch
+L	ab_38_0	971	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	972	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	973	|move|p1a: Cacturne|Focus Punch|p2a: Dusclops
+L	ab_38_0	974	|-immune|p2a: Dusclops
+L	ab_38_0	975	|
+L	ab_38_0	976	|-heal|p2a: Dusclops|131/209|[from] item: Leftovers
+L	ab_38_0	977	|-damage|p2a: Dusclops|105/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	978	|upkeep
+L	ab_38_0	979	|turn|83
+L	ab_38_0	980	|
+L	ab_38_0	981	|t:|<NORMALIZED>
+L	ab_38_0	982	|debug|before turn callback: focuspunch
+L	ab_38_0	983	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	984	|move|p2a: Dusclops|Seismic Toss|p1a: Cacturne
+L	ab_38_0	985	|-damage|p1a: Cacturne|204/290
+L	ab_38_0	986	|move|p1a: Cacturne|Focus Punch||[still]
+L	ab_38_0	987	|cant|p1a: Cacturne|Focus Punch|Focus Punch
+L	ab_38_0	988	|
+L	ab_38_0	989	|-heal|p1a: Cacturne|222/290|[from] item: Leftovers
+L	ab_38_0	990	|-heal|p2a: Dusclops|118/209|[from] item: Leftovers
+L	ab_38_0	991	|-damage|p2a: Dusclops|92/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	992	|-heal|p1a: Cacturne|248/290|[silent]
+L	ab_38_0	993	|upkeep
+L	ab_38_0	994	|turn|84
+L	ab_38_0	995	|
+L	ab_38_0	996	|t:|<NORMALIZED>
+L	ab_38_0	997	|debug|before turn callback: focuspunch
+L	ab_38_0	998	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	999	|move|p2a: Dusclops|Shadow Ball|p1a: Cacturne
+L	ab_38_0	1000	|-resisted|p1a: Cacturne
+L	ab_38_0	1001	|-damage|p1a: Cacturne|207/290
+L	ab_38_0	1002	|move|p1a: Cacturne|Focus Punch||[still]
+L	ab_38_0	1003	|cant|p1a: Cacturne|Focus Punch|Focus Punch
+L	ab_38_0	1004	|
+L	ab_38_0	1005	|-heal|p1a: Cacturne|225/290|[from] item: Leftovers
+L	ab_38_0	1006	|-heal|p2a: Dusclops|105/209|[from] item: Leftovers
+L	ab_38_0	1007	|-damage|p2a: Dusclops|79/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	1008	|-heal|p1a: Cacturne|251/290|[silent]
+L	ab_38_0	1009	|upkeep
+L	ab_38_0	1010	|turn|85
+L	ab_38_0	1011	|
+L	ab_38_0	1012	|t:|<NORMALIZED>
+L	ab_38_0	1013	|debug|before turn callback: focuspunch
+L	ab_38_0	1014	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	1015	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	1016	|move|p1a: Cacturne|Focus Punch|p2a: Dusclops
+L	ab_38_0	1017	|-immune|p2a: Dusclops
+L	ab_38_0	1018	|
+L	ab_38_0	1019	|-heal|p1a: Cacturne|269/290|[from] item: Leftovers
+L	ab_38_0	1020	|-heal|p2a: Dusclops|92/209|[from] item: Leftovers
+L	ab_38_0	1021	|-damage|p2a: Dusclops|66/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	1022	|-heal|p1a: Cacturne|290/290|[silent]
+L	ab_38_0	1023	|upkeep
+L	ab_38_0	1024	|turn|86
+L	ab_38_0	1025	|
+L	ab_38_0	1026	|t:|<NORMALIZED>
+L	ab_38_0	1027	|debug|before turn callback: focuspunch
+L	ab_38_0	1028	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	1029	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	1030	|move|p1a: Cacturne|Focus Punch|p2a: Dusclops
+L	ab_38_0	1031	|-immune|p2a: Dusclops
+L	ab_38_0	1032	|
+L	ab_38_0	1033	|-heal|p2a: Dusclops|79/209|[from] item: Leftovers
+L	ab_38_0	1034	|-damage|p2a: Dusclops|53/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	1035	|upkeep
+L	ab_38_0	1036	|turn|87
+L	ab_38_0	1037	|
+L	ab_38_0	1038	|t:|<NORMALIZED>
+L	ab_38_0	1039	|debug|before turn callback: focuspunch
+L	ab_38_0	1040	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	1041	|move|p2a: Dusclops|Sleep Talk|p2a: Dusclops
+L	ab_38_0	1042	|move|p1a: Cacturne|Focus Punch|p2a: Dusclops
+L	ab_38_0	1043	|-immune|p2a: Dusclops
+L	ab_38_0	1044	|
+L	ab_38_0	1045	|-heal|p2a: Dusclops|66/209|[from] item: Leftovers
+L	ab_38_0	1046	|-damage|p2a: Dusclops|40/209|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	1047	|upkeep
+L	ab_38_0	1048	|turn|88
+L	ab_38_0	1049	|
+L	ab_38_0	1050	|t:|<NORMALIZED>
+L	ab_38_0	1051	|debug|before turn callback: focuspunch
+L	ab_38_0	1052	|-singleturn|p1a: Cacturne|move: Focus Punch
+L	ab_38_0	1053	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_38_0	1054	|-status|p2a: Dusclops|slp|[from] move: Rest
+L	ab_38_0	1055	|-heal|p2a: Dusclops|209/209 slp|[silent]
+L	ab_38_0	1056	|move|p1a: Cacturne|Focus Punch|p2a: Dusclops
+L	ab_38_0	1057	|-immune|p2a: Dusclops
+L	ab_38_0	1058	|
+L	ab_38_0	1059	|-damage|p2a: Dusclops|183/209 slp|[from] Leech Seed|[of] p1a: Cacturne
+L	ab_38_0	1060	|upkeep
+L	ab_38_0	1061	|turn|89
