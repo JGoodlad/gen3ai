@@ -587,3 +587,38 @@ fn future_sight_resolving_against_a_fainted_slot_emits_the_hint() {
         raw.join("\n")
     );
 }
+
+/// A CHARGE-holding mon that SELF-DESTRUCTS (self-KOs) emits NO `|-end|<user>|Charge|[silent]`
+/// (`gen3_charge_selfko_no_end_v1`, byte-fuzz find ab_12_17 @ master-seed 200724). The sim's
+/// `Pokemon.removeVolatile` returns false for a 0-HP mon, so `charge.onAfterMove`'s
+/// `removeVolatile('charge')` is a no-op → NO `-end Charge` line (the faint's later silent
+/// clearVolatile drops it). The port used to emit a spurious `|-end|Charge|[silent]` BEFORE the
+/// `|faint|`. Ground truth `harness/probe_charge_selfko.js`.
+#[test]
+fn charge_selfko_emits_no_charge_end_line() {
+    // Turn 1: Electrode Charge (sets the volatile). Turn 2: Electrode Self-Destruct (self-KO into a
+    // bulky Snorlax that survives). Electrode holds a bench (Voltorb) so the self-KO forces a switch.
+    let electrode =
+        "Electrode|electrode||soundproof|charge,selfdestruct|Timid||M||||]Voltorb|voltorb||soundproof|spark,splash|Timid||M||||";
+    let snorlax = "Snorlax|snorlax||immunity|splash,rest|Careful|252,,,,252,|M||||";
+    let raw = run_logged(
+        electrode,
+        snorlax,
+        SD,
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+    );
+    assert!(
+        line_present(&raw, "|faint|p1a: Electrode"),
+        "Electrode self-KO'd via Self-Destruct; lines:\n{}",
+        raw.join("\n")
+    );
+    assert!(
+        !line_present(&raw, "|-end|p1a: Electrode|Charge|[silent]"),
+        "a self-KO'd Charge holder must NOT emit `-end Charge` (removeVolatile no-ops at 0 HP — a \
+         revert emits it); lines:\n{}",
+        raw.join("\n")
+    );
+}

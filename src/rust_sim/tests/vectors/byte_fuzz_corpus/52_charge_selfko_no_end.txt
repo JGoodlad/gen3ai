@@ -1,0 +1,366 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=200724 run_id=rmrz2gq3u chunk=12
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_12_17
+TEAM	ab_12_17	p1	Carvanha||CheriBerry|RoughSkin|DoubleEdge,ScaryFace,Endure,IceBeam|Relaxed|4,212,4,100,176,12|M|10,12,0,30,23,23|||]Rapidash||Leftovers|FlashFire|HyperBeam,Strength,Return,SunnyDay|Gentle|44,52,116,56,48,192|M|17,24,4,22,25,29|||]Shiftry||RawstBerry|Chlorophyll|BrickBreak,SolarBeam,Frustration,Endure|Hardy|160,136,48,16,148,|M|14,29,7,1,13,7|||]Delcatty||RoseIncense|CuteCharm|BodySlam,Swift,Substitute,DoubleSlap|Jolly|208,176,20,,88,16|M|4,,27,25,7,21|||]Snorlax||SalacBerry|Immunity|ShadowBall,ThunderPunch,SeismicToss,Toxic|Impish|36,76,,152,176,68|M|13,12,27,1,11,25|||]Azumarill||WikiBerry|HugePower|IcePunch,Protect,DoubleEdge,Tackle|Jolly|144,,168,60,40,96|M|22,27,16,8,20,8|||
+TEAM	ab_12_17	p2	Breloom||BlackBelt|EffectSpore|FocusPunch,DoubleEdge,Protect,BodySlam|Rash|76,124,104,180,24,|M|4,17,29,29,10,13|||]Clefairy||HardStone|CuteCharm|MegaKick,SoftBoiled,Psychic,IcePunch|Naive|32,24,8,208,212,24|M|7,9,3,20,5,|||]Ursaring||GanlonBerry|Guts|Counter,FurySwipes,Swift,Slash|Calm|160,,56,,120,172|M|13,22,3,10,11,24|||]Carvanha||SoulDew|RoughSkin|Waterfall,Return,WaterPulse,HydroPump|Quiet|208,88,36,84,88,4|M|8,16,11,12,16,13|||]Electrode||ApicotBerry|Static|Thunderbolt,SelfDestruct,Endure,Charge|Naive|12,68,100,148,120,60|N|30,28,16,19,3,22|||]Ninjask||Leftovers|SpeedBoost|LeechLife,BatonPass,Harden,HyperBeam|Relaxed|124,24,40,148,128,44|M|25,16,0,10,2,17|||
+FMT	ab_12_17	gen3customgame
+INIT	ab_12_17	43908,19847,40170,16949	380414769
+DEC	ab_12_17	0	move	0	0	m0	m2	28004,25364,21218,58494	Carvanha	211	211	0	-	0	0	0	0	0	0	6	Breloom	253	253	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_12_17	1	move	0	0	m0	s1	21655,28190,39729,18045	Carvanha	136	211	0	-	0	0	0	0	0	0	6	Clefairy	38	265	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_12_17	2	move	0	0	m3	s3	17385,11991,27499,2920	Carvanha	136	211	0	-	0	0	0	0	0	0	6	Carvanha	172	260	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_12_17	3	move	0	0	m3	m0	48973,19453,33961,38992	Carvanha	57	211	0	-	0	0	0	0	0	0	6	Carvanha	76	260	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_12_17	4	move	0	0	m0	m1	57815,31525,45158,35853	Carvanha	19	211	0	-	0	0	0	0	0	0	6	Carvanha	0	260	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_12_17	5	switch	0	1	-	s4	54102,10057,51689,54500	Carvanha	19	211	0	-	0	0	0	0	0	0	6	Electrode	263	263	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_12_17	6	move	0	0	m2	m0	64825,49139,28272,5162	Carvanha	1	211	0	-	0	0	0	0	0	0	6	Electrode	263	263	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	1
+DEC	ab_12_17	7	move	0	0	m0	m3	40609,63570,37055,55070	Carvanha	0	211	1	fnt	0	0	0	0	0	0	5	Electrode	142	263	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_12_17	8	switch	1	0	s4	-	235,13535,20423,35737	Snorlax	452	452	0	-	0	0	0	0	0	0	5	Electrode	142	263	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_12_17	9	move	0	0	m3	m3	14517,40868,9808,51811	Snorlax	452	452	0	-	0	0	0	0	0	0	5	Electrode	126	263	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_12_17	10	move	0	0	m0	m1	35288,34183,48039,17076	Snorlax	190	452	0	-	0	0	0	0	0	0	5	Electrode	0	263	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_12_17	11	switch	0	1	-	s5	22488,4276,20162,17351	Snorlax	190	452	0	-	0	0	0	0	0	0	5	Ninjask	288	288	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_12_17	12	move	0	0	m2	s2	42294,48629,2980,38753	Snorlax	190	452	0	-	0	0	0	0	0	0	5	Ursaring	243	343	0	-	0	0	0	0	0	0	4	p2	0	0	1	0	0
+DEC	ab_12_17	13	move	0	0	m2	m1	34493,28698,16905,35629	Snorlax	67	452	0	-	0	0	0	0	1	0	5	Ursaring	143	343	0	-	0	0	0	0	0	0	4	p2	0	0	1	0	0
+DEC	ab_12_17	14	move	0	0	m1	m3	43331,44435,11036,52374	Snorlax	0	452	1	fnt	0	0	0	0	0	0	4	Ursaring	143	343	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_12_17	15	switch	1	0	s2	-	19407,47721,19481,39921	Shiftry	344	344	0	-	0	0	0	0	0	0	4	Ursaring	143	343	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_12_17	16	move	0	0	m1	m2	58358,13313,2895,49354	Shiftry	209	344	0	-	0	0	0	0	0	0	4	Ursaring	143	343	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_12_17	17	move	0	0	m0	m0	42615,51512,49806,63934	Shiftry	209	344	0	-	0	0	0	0	0	0	4	Ursaring	21	343	0	-	0	1	0	0	0	0	4	p1	0	0	0	1	0
+DEC	ab_12_17	18	move	0	0	m2	m0	5618,37082,50057,17597	Shiftry	205	344	0	-	0	0	0	0	0	0	4	Ursaring	19	343	0	-	0	1	0	0	0	0	4	p1	0	0	0	1	0
+DEC	ab_12_17	19	move	0	0	s3	m0	45092,14405,14402,57940	Delcatty	306	306	0	-	0	0	0	0	0	0	4	Ursaring	19	343	0	-	0	1	0	0	0	0	4	p1	0	0	0	1	0
+DEC	ab_12_17	20	move	0	0	m0	s2	57004,16576,29071,50955	Delcatty	306	306	0	-	0	0	0	0	0	0	4	Ninjask	114	288	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_12_17	21	move	0	0	m3	m0	24252,182,2747,5156	Delcatty	274	306	0	-	0	0	0	0	0	0	4	Ninjask	84	288	0	-	0	0	0	0	1	0	4	p2	0	0	0	0	0
+DEC	ab_12_17	22	move	0	0	m1	m2	21429,65038,5650,55569	Delcatty	274	306	0	-	0	0	0	0	0	0	4	Ninjask	20	288	0	-	0	1	0	0	2	0	4	p2	0	0	0	0	0
+DEC	ab_12_17	23	move	0	0	m3	m3	45471,42079,54136,19550	Delcatty	123	306	0	-	0	0	0	0	0	0	4	Ninjask	0	288	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_12_17	24	switch	0	1	-	s2	38149,54673,36365,3545	Delcatty	123	306	0	-	0	0	0	0	0	0	4	Ursaring	19	343	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_12_17	25	move	0	0	m3	m0	46875,26182,60430,29347	Delcatty	123	306	0	-	0	0	0	0	0	0	4	Ursaring	19	343	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_12_17	26	move	0	0	m2	m0	14347,38495,50088,5138	Delcatty	47	306	0	-	0	0	0	0	0	0	4	Ursaring	19	343	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_12_17	27	move	0	0	m0	m2	9917,35238,34281,59526	Delcatty	47	306	0	-	0	0	0	0	0	0	4	Ursaring	0	343	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_12_17	28	switch	0	1	-	s3	11799,17080,59017,4513	Delcatty	47	306	0	-	0	0	0	0	0	0	4	Clefairy	38	265	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_12_17	29	move	0	0	m1	m1	20052,34656,20347,28459	Delcatty	47	306	0	-	0	0	0	0	0	0	4	Clefairy	0	265	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_12_17	30	switch	0	1	-	s1	45005,26565,39044,32186	Delcatty	47	306	0	-	0	0	0	0	0	0	4	Breloom	253	253	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_12_17	31	move	0	0	m1	m0	55115,45232,3017,27663	Delcatty	47	306	0	-	0	0	0	0	0	0	4	Breloom	181	253	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_12_17	32	move	0	0	m3	m1	2064,39602,31287,18732	Delcatty	47	306	0	-	0	0	0	0	0	0	4	Breloom	98	253	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_12_17	33	move	0	0	m0	m2	15898,54935,23935,14073	Delcatty	47	306	0	-	0	0	0	0	0	0	4	Breloom	98	253	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_12_17	34	move	0	0	m0	m0	57451,28978,57897,12692	Delcatty	47	306	0	-	0	0	0	0	0	0	4	Breloom	0	253	1	-	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_12_17	1	p1
+L	ab_12_17	0	|t:|<NORMALIZED>
+L	ab_12_17	1	|gametype|singles
+L	ab_12_17	2	|player|p1|P1||
+L	ab_12_17	3	|player|p2|P2||
+L	ab_12_17	4	|gen|3
+L	ab_12_17	5	|tier|[Gen 3] Custom Game
+L	ab_12_17	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_12_17	7	|
+L	ab_12_17	8	|t:|<NORMALIZED>
+L	ab_12_17	9	|teamsize|p1|6
+L	ab_12_17	10	|teamsize|p2|6
+L	ab_12_17	11	|start
+L	ab_12_17	12	|switch|p1a: Carvanha|Carvanha, M|211/211
+L	ab_12_17	13	|switch|p2a: Breloom|Breloom, M|253/253
+L	ab_12_17	14	|turn|1
+L	ab_12_17	15	|
+L	ab_12_17	16	|t:|<NORMALIZED>
+L	ab_12_17	17	|move|p2a: Breloom|Protect|p2a: Breloom
+L	ab_12_17	18	|-singleturn|p2a: Breloom|Protect
+L	ab_12_17	19	|move|p1a: Carvanha|Double-Edge|p2a: Breloom
+L	ab_12_17	20	|-activate|p2a: Breloom|Protect
+L	ab_12_17	21	|
+L	ab_12_17	22	|upkeep
+L	ab_12_17	23	|turn|2
+L	ab_12_17	24	|
+L	ab_12_17	25	|t:|<NORMALIZED>
+L	ab_12_17	26	|switch|p2a: Clefairy|Clefairy, M|265/265
+L	ab_12_17	27	|move|p1a: Carvanha|Double-Edge|p2a: Clefairy
+L	ab_12_17	28	|-damage|p2a: Clefairy|38/265
+L	ab_12_17	29	|-damage|p1a: Carvanha|136/211|[from] Recoil|[of] p2a: Clefairy
+L	ab_12_17	30	|
+L	ab_12_17	31	|upkeep
+L	ab_12_17	32	|turn|3
+L	ab_12_17	33	|
+L	ab_12_17	34	|t:|<NORMALIZED>
+L	ab_12_17	35	|switch|p2a: Carvanha|Carvanha, M|260/260
+L	ab_12_17	36	|move|p1a: Carvanha|Ice Beam|p2a: Carvanha
+L	ab_12_17	37	|-resisted|p2a: Carvanha
+L	ab_12_17	38	|-damage|p2a: Carvanha|172/260
+L	ab_12_17	39	|
+L	ab_12_17	40	|upkeep
+L	ab_12_17	41	|turn|4
+L	ab_12_17	42	|
+L	ab_12_17	43	|t:|<NORMALIZED>
+L	ab_12_17	44	|move|p1a: Carvanha|Ice Beam|p2a: Carvanha
+L	ab_12_17	45	|-resisted|p2a: Carvanha
+L	ab_12_17	46	|-damage|p2a: Carvanha|92/260
+L	ab_12_17	47	|move|p2a: Carvanha|Waterfall|p1a: Carvanha
+L	ab_12_17	48	|-resisted|p1a: Carvanha
+L	ab_12_17	49	|-damage|p1a: Carvanha|57/211
+L	ab_12_17	50	|-damage|p2a: Carvanha|76/260|[from] ability: Rough Skin|[of] p1a: Carvanha
+L	ab_12_17	51	|
+L	ab_12_17	52	|upkeep
+L	ab_12_17	53	|turn|5
+L	ab_12_17	54	|
+L	ab_12_17	55	|t:|<NORMALIZED>
+L	ab_12_17	56	|move|p1a: Carvanha|Double-Edge|p2a: Carvanha
+L	ab_12_17	57	|-damage|p2a: Carvanha|0 fnt
+L	ab_12_17	58	|-damage|p1a: Carvanha|44/211|[from] ability: Rough Skin|[of] p2a: Carvanha
+L	ab_12_17	59	|-damage|p1a: Carvanha|19/211|[from] Recoil|[of] p2a: Carvanha
+L	ab_12_17	60	|faint|p2a: Carvanha
+L	ab_12_17	61	|
+L	ab_12_17	62	|t:|<NORMALIZED>
+L	ab_12_17	63	|switch|p2a: Electrode|Electrode|263/263
+L	ab_12_17	64	|
+L	ab_12_17	65	|upkeep
+L	ab_12_17	66	|turn|6
+L	ab_12_17	67	|
+L	ab_12_17	68	|t:|<NORMALIZED>
+L	ab_12_17	69	|move|p1a: Carvanha|Endure|p1a: Carvanha
+L	ab_12_17	70	|-singleturn|p1a: Carvanha|move: Endure
+L	ab_12_17	71	|move|p2a: Electrode|Thunderbolt|p1a: Carvanha
+L	ab_12_17	72	|-supereffective|p1a: Carvanha
+L	ab_12_17	73	|-activate|p1a: Carvanha|move: Endure
+L	ab_12_17	74	|-damage|p1a: Carvanha|1/211
+L	ab_12_17	75	|
+L	ab_12_17	76	|upkeep
+L	ab_12_17	77	|turn|7
+L	ab_12_17	78	|
+L	ab_12_17	79	|t:|<NORMALIZED>
+L	ab_12_17	80	|move|p2a: Electrode|Charge|p2a: Electrode
+L	ab_12_17	81	|-start|p2a: Electrode|Charge
+L	ab_12_17	82	|move|p1a: Carvanha|Double-Edge|p2a: Electrode
+L	ab_12_17	83	|-damage|p2a: Electrode|142/263
+L	ab_12_17	84	|-damage|p1a: Carvanha|0 fnt|[from] Recoil|[of] p2a: Electrode
+L	ab_12_17	85	|faint|p1a: Carvanha
+L	ab_12_17	86	|
+L	ab_12_17	87	|t:|<NORMALIZED>
+L	ab_12_17	88	|switch|p1a: Snorlax|Snorlax, M|452/452
+L	ab_12_17	89	|
+L	ab_12_17	90	|upkeep
+L	ab_12_17	91	|turn|8
+L	ab_12_17	92	|
+L	ab_12_17	93	|t:|<NORMALIZED>
+L	ab_12_17	94	|move|p2a: Electrode|Charge|p2a: Electrode
+L	ab_12_17	95	|-start|p2a: Electrode|Charge
+L	ab_12_17	96	|move|p1a: Snorlax|Toxic|p2a: Electrode
+L	ab_12_17	97	|-status|p2a: Electrode|tox
+L	ab_12_17	98	|
+L	ab_12_17	99	|-damage|p2a: Electrode|126/263 tox|[from] psn
+L	ab_12_17	100	|upkeep
+L	ab_12_17	101	|turn|9
+L	ab_12_17	102	|
+L	ab_12_17	103	|t:|<NORMALIZED>
+L	ab_12_17	104	|move|p2a: Electrode|Self-Destruct|p1a: Snorlax
+L	ab_12_17	105	|-damage|p1a: Snorlax|190/452
+L	ab_12_17	106	|faint|p2a: Electrode
+L	ab_12_17	107	|
+L	ab_12_17	108	|t:|<NORMALIZED>
+L	ab_12_17	109	|switch|p2a: Ninjask|Ninjask, M|288/288
+L	ab_12_17	110	|
+L	ab_12_17	111	|upkeep
+L	ab_12_17	112	|turn|10
+L	ab_12_17	113	|
+L	ab_12_17	114	|t:|<NORMALIZED>
+L	ab_12_17	115	|switch|p2a: Ursaring|Ursaring, M|343/343
+L	ab_12_17	116	|move|p1a: Snorlax|Seismic Toss|p2a: Ursaring
+L	ab_12_17	117	|-damage|p2a: Ursaring|243/343
+L	ab_12_17	118	|
+L	ab_12_17	119	|upkeep
+L	ab_12_17	120	|turn|11
+L	ab_12_17	121	|
+L	ab_12_17	122	|t:|<NORMALIZED>
+L	ab_12_17	123	|move|p2a: Ursaring|Fury Swipes|p1a: Snorlax
+L	ab_12_17	124	|-damage|p1a: Snorlax|158/452
+L	ab_12_17	125	|-damage|p1a: Snorlax|125/452
+L	ab_12_17	126	|-damage|p1a: Snorlax|97/452
+L	ab_12_17	127	|-damage|p1a: Snorlax|67/452
+L	ab_12_17	128	|-hitcount|p1a: Snorlax|4
+L	ab_12_17	129	|move|p1a: Snorlax|Seismic Toss|p2a: Ursaring
+L	ab_12_17	130	|-damage|p2a: Ursaring|143/343
+L	ab_12_17	131	|
+L	ab_12_17	132	|-enditem|p1a: Snorlax|Salac Berry|[eat]
+L	ab_12_17	133	|-boost|p1a: Snorlax|spe|1|[from] item: Salac Berry
+L	ab_12_17	134	|upkeep
+L	ab_12_17	135	|turn|12
+L	ab_12_17	136	|
+L	ab_12_17	137	|t:|<NORMALIZED>
+L	ab_12_17	138	|move|p2a: Ursaring|Slash|p1a: Snorlax
+L	ab_12_17	139	|-damage|p1a: Snorlax|0 fnt
+L	ab_12_17	140	|faint|p1a: Snorlax
+L	ab_12_17	141	|
+L	ab_12_17	142	|t:|<NORMALIZED>
+L	ab_12_17	143	|switch|p1a: Shiftry|Shiftry, M|344/344
+L	ab_12_17	144	|
+L	ab_12_17	145	|upkeep
+L	ab_12_17	146	|turn|13
+L	ab_12_17	147	|
+L	ab_12_17	148	|t:|<NORMALIZED>
+L	ab_12_17	149	|move|p2a: Ursaring|Swift|p1a: Shiftry
+L	ab_12_17	150	|-damage|p1a: Shiftry|209/344
+L	ab_12_17	151	|move|p1a: Shiftry|Solar Beam||[still]
+L	ab_12_17	152	|-prepare|p1a: Shiftry|Solar Beam
+L	ab_12_17	153	|
+L	ab_12_17	154	|upkeep
+L	ab_12_17	155	|turn|14
+L	ab_12_17	156	|
+L	ab_12_17	157	|t:|<NORMALIZED>
+L	ab_12_17	158	|debug|before turn callback: counter
+L	ab_12_17	159	|move|p1a: Shiftry|Solar Beam|p2a: Ursaring|[from] lockedmove
+L	ab_12_17	160	|-damage|p2a: Ursaring|21/343
+L	ab_12_17	161	|move|p2a: Ursaring|Counter|p1a: Shiftry
+L	ab_12_17	162	|
+L	ab_12_17	163	|-enditem|p2a: Ursaring|Ganlon Berry|[eat]
+L	ab_12_17	164	|-boost|p2a: Ursaring|def|1|[from] item: Ganlon Berry
+L	ab_12_17	165	|upkeep
+L	ab_12_17	166	|turn|15
+L	ab_12_17	167	|
+L	ab_12_17	168	|t:|<NORMALIZED>
+L	ab_12_17	169	|debug|before turn callback: counter
+L	ab_12_17	170	|move|p1a: Shiftry|Frustration|p2a: Ursaring
+L	ab_12_17	171	|-damage|p2a: Ursaring|19/343
+L	ab_12_17	172	|move|p2a: Ursaring|Counter|p1a: Shiftry
+L	ab_12_17	173	|-damage|p1a: Shiftry|205/344
+L	ab_12_17	174	|
+L	ab_12_17	175	|upkeep
+L	ab_12_17	176	|turn|16
+L	ab_12_17	177	|
+L	ab_12_17	178	|t:|<NORMALIZED>
+L	ab_12_17	179	|debug|before turn callback: counter
+L	ab_12_17	180	|switch|p1a: Delcatty|Delcatty, M|306/306
+L	ab_12_17	181	|move|p2a: Ursaring|Counter|p1a: Delcatty
+L	ab_12_17	182	|
+L	ab_12_17	183	|upkeep
+L	ab_12_17	184	|turn|17
+L	ab_12_17	185	|
+L	ab_12_17	186	|t:|<NORMALIZED>
+L	ab_12_17	187	|switch|p2a: Ninjask|Ninjask, M|288/288
+L	ab_12_17	188	|move|p1a: Delcatty|Body Slam|p2a: Ninjask
+L	ab_12_17	189	|-damage|p2a: Ninjask|96/288
+L	ab_12_17	190	|
+L	ab_12_17	191	|-heal|p2a: Ninjask|114/288|[from] item: Leftovers
+L	ab_12_17	192	|upkeep
+L	ab_12_17	193	|turn|18
+L	ab_12_17	194	|
+L	ab_12_17	195	|t:|<NORMALIZED>
+L	ab_12_17	196	|move|p2a: Ninjask|Leech Life|p1a: Delcatty
+L	ab_12_17	197	|-damage|p1a: Delcatty|274/306
+L	ab_12_17	198	|-heal|p2a: Ninjask|130/288|[from] drain|[of] p1a: Delcatty
+L	ab_12_17	199	|move|p1a: Delcatty|Double Slap|p2a: Ninjask
+L	ab_12_17	200	|-damage|p2a: Ninjask|98/288
+L	ab_12_17	201	|-damage|p2a: Ninjask|66/288
+L	ab_12_17	202	|-hitcount|p2a: Ninjask|2
+L	ab_12_17	203	|
+L	ab_12_17	204	|-ability|p2a: Ninjask|Speed Boost|boost
+L	ab_12_17	205	|-boost|p2a: Ninjask|spe|1
+L	ab_12_17	206	|-heal|p2a: Ninjask|84/288|[from] item: Leftovers
+L	ab_12_17	207	|upkeep
+L	ab_12_17	208	|turn|19
+L	ab_12_17	209	|
+L	ab_12_17	210	|t:|<NORMALIZED>
+L	ab_12_17	211	|move|p2a: Ninjask|Harden|p2a: Ninjask
+L	ab_12_17	212	|-boost|p2a: Ninjask|def|1
+L	ab_12_17	213	|move|p1a: Delcatty|Swift|p2a: Ninjask
+L	ab_12_17	214	|-damage|p2a: Ninjask|2/288
+L	ab_12_17	215	|
+L	ab_12_17	216	|-ability|p2a: Ninjask|Speed Boost|boost
+L	ab_12_17	217	|-boost|p2a: Ninjask|spe|1
+L	ab_12_17	218	|-heal|p2a: Ninjask|20/288|[from] item: Leftovers
+L	ab_12_17	219	|upkeep
+L	ab_12_17	220	|turn|20
+L	ab_12_17	221	|
+L	ab_12_17	222	|t:|<NORMALIZED>
+L	ab_12_17	223	|move|p2a: Ninjask|Hyper Beam|p1a: Delcatty
+L	ab_12_17	224	|-damage|p1a: Delcatty|123/306
+L	ab_12_17	225	|-mustrecharge|p2a: Ninjask
+L	ab_12_17	226	|move|p1a: Delcatty|Double Slap|p2a: Ninjask
+L	ab_12_17	227	|-damage|p2a: Ninjask|0 fnt
+L	ab_12_17	228	|-hitcount|p2a: Ninjask|1
+L	ab_12_17	229	|faint|p2a: Ninjask
+L	ab_12_17	230	|
+L	ab_12_17	231	|t:|<NORMALIZED>
+L	ab_12_17	232	|switch|p2a: Ursaring|Ursaring, M|19/343
+L	ab_12_17	233	|
+L	ab_12_17	234	|upkeep
+L	ab_12_17	235	|turn|21
+L	ab_12_17	236	|
+L	ab_12_17	237	|t:|<NORMALIZED>
+L	ab_12_17	238	|debug|before turn callback: counter
+L	ab_12_17	239	|move|p1a: Delcatty|Double Slap|p2a: Ursaring|[miss]
+L	ab_12_17	240	|-miss|p1a: Delcatty|p2a: Ursaring
+L	ab_12_17	241	|move|p2a: Ursaring|Counter|p1a: Delcatty
+L	ab_12_17	242	|
+L	ab_12_17	243	|upkeep
+L	ab_12_17	244	|turn|22
+L	ab_12_17	245	|
+L	ab_12_17	246	|t:|<NORMALIZED>
+L	ab_12_17	247	|debug|before turn callback: counter
+L	ab_12_17	248	|move|p1a: Delcatty|Substitute|p1a: Delcatty
+L	ab_12_17	249	|-start|p1a: Delcatty|Substitute
+L	ab_12_17	250	|-damage|p1a: Delcatty|47/306
+L	ab_12_17	251	|move|p2a: Ursaring|Counter|p1a: Delcatty
+L	ab_12_17	252	|
+L	ab_12_17	253	|upkeep
+L	ab_12_17	254	|turn|23
+L	ab_12_17	255	|
+L	ab_12_17	256	|t:|<NORMALIZED>
+L	ab_12_17	257	|move|p1a: Delcatty|Body Slam|p2a: Ursaring
+L	ab_12_17	258	|-damage|p2a: Ursaring|0 fnt
+L	ab_12_17	259	|debug|move failed because it did nothing
+L	ab_12_17	260	|faint|p2a: Ursaring
+L	ab_12_17	261	|
+L	ab_12_17	262	|t:|<NORMALIZED>
+L	ab_12_17	263	|switch|p2a: Clefairy|Clefairy, M|38/265
+L	ab_12_17	264	|
+L	ab_12_17	265	|upkeep
+L	ab_12_17	266	|turn|24
+L	ab_12_17	267	|
+L	ab_12_17	268	|t:|<NORMALIZED>
+L	ab_12_17	269	|move|p1a: Delcatty|Swift|p2a: Clefairy
+L	ab_12_17	270	|-damage|p2a: Clefairy|0 fnt
+L	ab_12_17	271	|faint|p2a: Clefairy
+L	ab_12_17	272	|
+L	ab_12_17	273	|t:|<NORMALIZED>
+L	ab_12_17	274	|switch|p2a: Breloom|Breloom, M|253/253
+L	ab_12_17	275	|
+L	ab_12_17	276	|upkeep
+L	ab_12_17	277	|turn|25
+L	ab_12_17	278	|
+L	ab_12_17	279	|t:|<NORMALIZED>
+L	ab_12_17	280	|debug|before turn callback: focuspunch
+L	ab_12_17	281	|-singleturn|p2a: Breloom|move: Focus Punch
+L	ab_12_17	282	|move|p1a: Delcatty|Swift|p2a: Breloom
+L	ab_12_17	283	|-damage|p2a: Breloom|181/253
+L	ab_12_17	284	|move|p2a: Breloom|Focus Punch||[still]
+L	ab_12_17	285	|cant|p2a: Breloom|Focus Punch|Focus Punch
+L	ab_12_17	286	|
+L	ab_12_17	287	|upkeep
+L	ab_12_17	288	|turn|26
+L	ab_12_17	289	|
+L	ab_12_17	290	|t:|<NORMALIZED>
+L	ab_12_17	291	|move|p1a: Delcatty|Double Slap|p2a: Breloom
+L	ab_12_17	292	|-damage|p2a: Breloom|161/253
+L	ab_12_17	293	|-damage|p2a: Breloom|144/253
+L	ab_12_17	294	|-damage|p2a: Breloom|123/253
+L	ab_12_17	295	|-hitcount|p2a: Breloom|3
+L	ab_12_17	296	|move|p2a: Breloom|Double-Edge|p1a: Delcatty
+L	ab_12_17	297	|-end|p1a: Delcatty|Substitute
+L	ab_12_17	298	|-damage|p2a: Breloom|98/253|[from] Recoil|[of] p1a: Delcatty
+L	ab_12_17	299	|
+L	ab_12_17	300	|upkeep
+L	ab_12_17	301	|turn|27
+L	ab_12_17	302	|
+L	ab_12_17	303	|t:|<NORMALIZED>
+L	ab_12_17	304	|move|p2a: Breloom|Protect|p2a: Breloom
+L	ab_12_17	305	|-singleturn|p2a: Breloom|Protect
+L	ab_12_17	306	|move|p1a: Delcatty|Body Slam|p2a: Breloom
+L	ab_12_17	307	|-activate|p2a: Breloom|Protect
+L	ab_12_17	308	|
+L	ab_12_17	309	|upkeep
+L	ab_12_17	310	|turn|28
+L	ab_12_17	311	|
+L	ab_12_17	312	|t:|<NORMALIZED>
+L	ab_12_17	313	|debug|before turn callback: focuspunch
+L	ab_12_17	314	|-singleturn|p2a: Breloom|move: Focus Punch
+L	ab_12_17	315	|move|p1a: Delcatty|Body Slam|p2a: Breloom
+L	ab_12_17	316	|-damage|p2a: Breloom|0 fnt
+L	ab_12_17	317	|debug|move failed because it did nothing
+L	ab_12_17	318	|faint|p2a: Breloom
+L	ab_12_17	319	|
+L	ab_12_17	320	|win|P1

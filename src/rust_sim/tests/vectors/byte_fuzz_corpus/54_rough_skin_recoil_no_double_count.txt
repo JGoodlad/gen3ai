@@ -1,0 +1,606 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=400724 run_id=rmrz81mki chunk=47
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_47_23
+TEAM	ab_47_23	p1	Golbat||DeepSeaTooth|InnerFocus|Return,Thief,DoubleEdge,Frustration|Timid|112,4,104,60,196,32|M|27,26,13,12,10,0|||]Carvanha||PolkadotBow|RoughSkin|Frustration,Rest,Blizzard,ScaryFace|Mild|40,140,60,72,20,176|M|,4,,16,24,0|||]Blissey||RockIncense|NaturalCure|WaterPulse,DoubleEdge,RockTomb,DoubleSlap|Naughty|80,92,212,,,124|F|,8,8,19,21,6|||]Mankey||AguavBerry|VitalSpirit|MudSlap,Scratch,BodySlam,KarateChop|Sassy|40,100,160,44,144,20|M|11,24,8,4,12,19|||]Electabuzz||LaxIncense|Static|Frustration,Substitute,BrickBreak,QuickAttack|Relaxed|4,180,88,72,,164|M|27,3,5,5,20,16|||]Houndoom||ChoiceBand|FlashFire|Facade,DoubleEdge,Protect,Howl|Jolly|44,160,60,12,92,140|M|3,17,,2,30,29|||
+TEAM	ab_47_23	p2	Makuhita||ChestoBerry|Guts|Reversal,Tackle,BellyDrum,KnockOff|Hasty|20,12,128,156,24,168|M|24,13,18,5,16,25|||]Manectric||SilkScarf|Static|IronTail,Mimic,Thunderbolt,Toxic|Modest|36,36,180,64,112,56|M|6,28,29,25,0,13|||]Gloom||ThickClub|Chlorophyll|Absorb,Endure,BulletSeed,GigaDrain|Hardy|56,,76,116,16,244|M|10,23,12,24,20,5|||]Mr. Mime||OddIncense|Soundproof|BodySlam,Taunt,BatonPass,MagicalLeaf|Quiet|8,224,164,40,8,64|M|17,30,5,1,4,29|||]Baltoy||ChestoBerry|Levitate|Frustration,Psybeam,Explosion,Protect|Gentle|148,100,36,48,44,132|N|28,26,24,20,26,12|||]Dusclops||LansatBerry|Pressure|Strength,Substitute,ShadowBall,RockSmash|Naughty|68,220,96,60,40,16|M|15,16,9,11,18,19|||
+FMT	ab_47_23	gen3customgame
+INIT	ab_47_23	17658,41599,33626,1554	2128650111
+DEC	ab_47_23	0	move	0	0	m1	m2	30576,53337,43952,47750	Golbat	315	315	0	-	0	0	0	0	0	0	6	Makuhita	114	283	0	-	6	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_47_23	1	move	0	0	m0	m3	29049,15552,60560,14635	Golbat	315	315	0	-	0	0	0	0	0	0	6	Makuhita	0	283	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_47_23	2	switch	0	1	-	s5	40228,28093,14290,12218	Golbat	315	315	0	-	0	0	0	0	0	0	6	Dusclops	222	222	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_47_23	3	move	0	0	m1	m3	10238,40854,41043,60514	Golbat	311	315	0	-	0	0	0	0	0	0	6	Dusclops	183	222	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_47_23	4	move	0	0	m1	m1	42170,62588,44321,23510	Golbat	311	315	0	-	0	0	0	0	0	0	6	Dusclops	90	222	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_47_23	5	move	0	0	m3	m1	7495,19142,50760,51992	Golbat	311	315	0	-	0	0	0	0	0	0	6	Dusclops	90	222	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_47_23	6	move	0	0	m3	m0	11618,51244,49344,45855	Golbat	231	315	0	-	0	0	0	0	0	0	6	Dusclops	90	222	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_47_23	7	move	0	0	m1	s4	63960,4762,61083,30915	Golbat	231	315	0	-	0	0	0	0	0	0	6	Baltoy	155	255	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_47_23	8	move	0	0	m3	m0	59593,37751,39309,1000	Golbat	229	315	0	-	0	0	0	0	0	0	6	Baltoy	153	255	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_47_23	9	move	0	0	m0	m1	58474,22779,15663,208	Golbat	144	315	0	-	0	0	0	0	0	0	6	Baltoy	58	255	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_47_23	10	move	0	0	m2	m0	41732,64461,52925,8845	Golbat	125	315	0	-	0	0	0	0	0	0	6	Baltoy	0	255	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	1	0
+DEC	ab_47_23	11	switch	0	1	-	s1	3434,7734,13853,46436	Golbat	125	315	0	-	0	0	0	0	0	0	6	Manectric	265	265	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_47_23	12	move	0	0	m1	m1	46325,20313,9030,26459	Golbat	125	315	0	-	0	0	0	0	0	0	6	Manectric	229	265	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	1
+DEC	ab_47_23	13	move	0	0	s3	m0	36435,12253,56326,37790	Mankey	124	211	0	-	0	0	0	0	0	0	6	Manectric	229	265	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_47_23	14	move	0	0	m3	m0	25899,60618,63058,9697	Mankey	15	211	0	-	0	-1	0	0	0	0	6	Manectric	159	265	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_47_23	15	move	0	0	m2	m0	19291,56606,57541,4965	Mankey	0	211	1	fnt	0	0	0	0	0	0	5	Manectric	159	265	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_47_23	16	switch	1	0	s2	-	575,35555,18699,21148	Blissey	671	671	0	-	0	0	0	0	0	0	5	Manectric	159	265	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_47_23	17	move	0	0	m2	m0	53971,20937,56317,32162	Blissey	515	671	0	-	0	0	0	0	0	0	5	Manectric	159	265	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_47_23	18	move	0	0	s3	m3	24759,45695,14298,15620	Golbat	125	315	0	-	0	0	0	0	0	0	5	Manectric	159	265	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_47_23	19	move	0	0	m3	m3	38892,18820,55997,34122	Golbat	125	315	0	par	0	0	0	0	0	0	5	Manectric	157	265	0	-	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_47_23	20	move	0	0	m1	m0	50461,53944,15367,38208	Golbat	50	315	0	par	0	0	0	0	0	0	5	Manectric	157	265	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_47_23	21	move	0	0	m2	m1	31750,30414,17511,64317	Golbat	0	315	1	fnt	0	0	0	0	0	0	4	Manectric	141	265	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_47_23	22	switch	1	0	s4	-	41225,15587,15691,25300	Electabuzz	268	268	0	-	0	0	0	0	0	0	4	Manectric	141	265	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_47_23	23	move	0	0	m2	m3	23452,56801,61789,44442	Electabuzz	268	268	0	par	0	0	0	0	0	0	4	Manectric	79	265	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_47_23	24	move	0	0	m3	m3	50959,54291,2664,26735	Electabuzz	268	268	0	par	0	0	0	0	0	0	4	Manectric	79	265	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_47_23	25	move	0	0	m2	m0	6878,12035,53834,29712	Electabuzz	268	268	0	par	0	0	0	0	0	0	4	Manectric	79	265	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_47_23	26	move	0	0	m2	m3	20865,62802,43070,34705	Electabuzz	268	268	0	par	0	0	0	0	0	0	4	Manectric	14	265	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_47_23	27	move	0	0	s1	m0	17531,34352,8974,22427	Carvanha	241	241	0	-	0	0	0	0	0	0	4	Manectric	14	265	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_47_23	28	move	0	0	s1	m2	4635,53350,33454,35038	Electabuzz	121	268	0	par	0	0	0	0	0	0	4	Manectric	14	265	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_47_23	29	move	0	0	m1	m1	33550,31808,57139,3363	Electabuzz	54	268	0	par	0	0	0	0	0	0	4	Manectric	14	265	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_47_23	30	move	0	0	m1	m2	636,2192,22020,8225	Electabuzz	54	268	0	par	0	0	0	0	0	0	4	Manectric	14	265	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_47_23	31	move	0	0	s1	m1	22711,45737,12803,57914	Carvanha	16	241	0	-	0	0	0	0	0	0	4	Manectric	0	265	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_47_23	32	switch	0	1	-	s3	16413,51442,30549,59813	Carvanha	16	241	0	-	0	0	0	0	0	0	4	Mr. Mime	209	209	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_47_23	33	move	0	0	m3	m3	39269,57636,44291,36495	Carvanha	0	241	1	fnt	0	0	0	0	0	0	3	Mr. Mime	209	209	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_47_23	34	switch	1	0	s3	-	53411,37559,25537,25646	Blissey	515	671	0	-	0	0	0	0	0	0	3	Mr. Mime	209	209	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_47_23	35	move	0	0	m3	m1	18877,19643,53747,61066	Blissey	515	671	0	-	0	0	0	0	0	0	3	Mr. Mime	177	209	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_47_23	36	move	0	0	m0	s2	52879,60972,35508,21881	Blissey	515	671	0	-	0	0	0	0	0	0	3	Gloom	232	254	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_47_23	37	move	0	0	m2	m0	52849,52368,48061,12820	Blissey	492	671	0	-	0	0	0	0	0	0	3	Gloom	243	254	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_47_23	38	move	0	0	m1	m2	1617,37838,44352,42832	Blissey	439	671	0	-	0	0	0	0	0	0	3	Gloom	193	254	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_47_23	39	move	0	0	m1	m1	58924,54414,7168,56247	Blissey	423	671	0	-	0	0	0	0	0	0	3	Gloom	143	254	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	1
+DEC	ab_47_23	40	move	0	0	m3	m2	56488,65200,61261,41396	Blissey	399	671	0	-	0	0	0	0	0	0	3	Gloom	122	254	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_47_23	41	move	0	0	m1	s4	16003,4643,47783,25158	Blissey	399	671	0	-	0	0	0	0	0	0	3	Dusclops	90	222	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_47_23	42	move	0	0	m2	m0	22656,22801,58950,18798	Blissey	227	671	0	-	0	0	0	0	0	0	3	Dusclops	80	222	0	-	0	0	0	0	-1	0	3	p1	0	0	0	0	0
+DEC	ab_47_23	43	move	0	0	m2	s4	12114,56916,48561,51440	Blissey	227	671	0	-	0	0	0	0	0	0	3	Gloom	122	254	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_47_23	44	move	0	0	m0	m2	55015,45438,3149,37251	Blissey	170	671	0	-	0	0	0	0	0	0	3	Gloom	101	254	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_47_23	45	move	0	0	m3	s2	65026,54940,44446,1038	Blissey	170	671	0	-	0	0	0	0	0	0	3	Mr. Mime	138	209	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_47_23	46	move	0	0	m1	m3	46387,53532,28000,13092	Blissey	110	671	0	-	0	0	0	0	0	0	3	Mr. Mime	92	209	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_47_23	47	move	0	0	m1	m0	44789,28253,10464,35448	Blissey	0	671	1	fnt	0	0	0	0	0	0	2	Mr. Mime	92	209	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_47_23	48	switch	1	0	s5	-	60853,1927,46111,30747	Houndoom	274	274	0	-	0	0	0	0	0	0	2	Mr. Mime	92	209	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_47_23	49	move	0	0	s1	m0	3144,6366,5592,45918	Electabuzz	0	268	1	fnt	0	0	0	0	0	0	1	Mr. Mime	92	209	0	par	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_47_23	50	switch	1	0	s1	-	58173,31742,9780,45273	Houndoom	274	274	0	-	0	0	0	0	0	0	1	Mr. Mime	92	209	0	par	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_47_23	51	move	0	0	m0	s4	1688,11140,40714,40355	Houndoom	274	274	0	-	0	0	0	0	0	0	1	Dusclops	80	222	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_47_23	52	move	0	0	m0	m1	18988,28476,18525,40669	Houndoom	274	274	0	-	0	0	0	0	0	0	1	Dusclops	25	222	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_47_23	53	move	0	0	m0	m1	47353,32408,22327,25351	Houndoom	274	274	0	-	0	0	0	0	0	0	1	Dusclops	25	222	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_47_23	54	move	0	0	m0	m3	42504,53002,17910,54821	Houndoom	220	274	0	-	0	-1	0	0	0	0	1	Dusclops	25	222	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_47_23	55	move	0	0	m0	m0	6354,34562,26376,7216	Houndoom	79	274	0	-	0	-1	0	0	0	0	1	Dusclops	25	222	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_47_23	56	move	0	0	m0	m2	14463,14051,65053,53783	Houndoom	0	274	1	-	0	0	0	0	0	0	0	Dusclops	25	222	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+END	ab_47_23	1	p2
+L	ab_47_23	0	|t:|<NORMALIZED>
+L	ab_47_23	1	|gametype|singles
+L	ab_47_23	2	|player|p1|P1||
+L	ab_47_23	3	|player|p2|P2||
+L	ab_47_23	4	|gen|3
+L	ab_47_23	5	|tier|[Gen 3] Custom Game
+L	ab_47_23	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_47_23	7	|
+L	ab_47_23	8	|t:|<NORMALIZED>
+L	ab_47_23	9	|teamsize|p1|6
+L	ab_47_23	10	|teamsize|p2|6
+L	ab_47_23	11	|start
+L	ab_47_23	12	|switch|p1a: Golbat|Golbat, M|315/315
+L	ab_47_23	13	|switch|p2a: Makuhita|Makuhita, M|283/283
+L	ab_47_23	14	|turn|1
+L	ab_47_23	15	|
+L	ab_47_23	16	|t:|<NORMALIZED>
+L	ab_47_23	17	|move|p1a: Golbat|Thief|p2a: Makuhita
+L	ab_47_23	18	|-resisted|p2a: Makuhita
+L	ab_47_23	19	|-damage|p2a: Makuhita|255/283
+L	ab_47_23	20	|move|p2a: Makuhita|Belly Drum|p2a: Makuhita
+L	ab_47_23	21	|-damage|p2a: Makuhita|114/283
+L	ab_47_23	22	|-setboost|p2a: Makuhita|atk|6|[from] move: Belly Drum
+L	ab_47_23	23	|
+L	ab_47_23	24	|upkeep
+L	ab_47_23	25	|turn|2
+L	ab_47_23	26	|
+L	ab_47_23	27	|t:|<NORMALIZED>
+L	ab_47_23	28	|move|p1a: Golbat|Return|p2a: Makuhita
+L	ab_47_23	29	|-damage|p2a: Makuhita|0 fnt
+L	ab_47_23	30	|faint|p2a: Makuhita
+L	ab_47_23	31	|
+L	ab_47_23	32	|t:|<NORMALIZED>
+L	ab_47_23	33	|switch|p2a: Dusclops|Dusclops, M|222/222
+L	ab_47_23	34	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_47_23	35	|
+L	ab_47_23	36	|upkeep
+L	ab_47_23	37	|turn|3
+L	ab_47_23	38	|
+L	ab_47_23	39	|t:|<NORMALIZED>
+L	ab_47_23	40	|move|p1a: Golbat|Thief|p2a: Dusclops
+L	ab_47_23	41	|-supereffective|p2a: Dusclops
+L	ab_47_23	42	|-damage|p2a: Dusclops|183/222
+L	ab_47_23	43	|move|p2a: Dusclops|Rock Smash|p1a: Golbat
+L	ab_47_23	44	|-resisted|p1a: Golbat
+L	ab_47_23	45	|-damage|p1a: Golbat|311/315
+L	ab_47_23	46	|
+L	ab_47_23	47	|upkeep
+L	ab_47_23	48	|turn|4
+L	ab_47_23	49	|
+L	ab_47_23	50	|t:|<NORMALIZED>
+L	ab_47_23	51	|move|p1a: Golbat|Thief|p2a: Dusclops
+L	ab_47_23	52	|-supereffective|p2a: Dusclops
+L	ab_47_23	53	|-damage|p2a: Dusclops|145/222
+L	ab_47_23	54	|move|p2a: Dusclops|Substitute|p2a: Dusclops
+L	ab_47_23	55	|-start|p2a: Dusclops|Substitute
+L	ab_47_23	56	|-damage|p2a: Dusclops|90/222
+L	ab_47_23	57	|
+L	ab_47_23	58	|upkeep
+L	ab_47_23	59	|turn|5
+L	ab_47_23	60	|
+L	ab_47_23	61	|t:|<NORMALIZED>
+L	ab_47_23	62	|move|p1a: Golbat|Frustration|p2a: Dusclops
+L	ab_47_23	63	|-immune|p2a: Dusclops
+L	ab_47_23	64	|move|p2a: Dusclops|Substitute|p2a: Dusclops
+L	ab_47_23	65	|-fail|p2a: Dusclops|move: Substitute
+L	ab_47_23	66	|
+L	ab_47_23	67	|upkeep
+L	ab_47_23	68	|turn|6
+L	ab_47_23	69	|
+L	ab_47_23	70	|t:|<NORMALIZED>
+L	ab_47_23	71	|move|p1a: Golbat|Frustration|p2a: Dusclops
+L	ab_47_23	72	|-immune|p2a: Dusclops
+L	ab_47_23	73	|move|p2a: Dusclops|Strength|p1a: Golbat
+L	ab_47_23	74	|-damage|p1a: Golbat|231/315
+L	ab_47_23	75	|
+L	ab_47_23	76	|upkeep
+L	ab_47_23	77	|turn|7
+L	ab_47_23	78	|
+L	ab_47_23	79	|t:|<NORMALIZED>
+L	ab_47_23	80	|switch|p2a: Baltoy|Baltoy|255/255
+L	ab_47_23	81	|move|p1a: Golbat|Thief|p2a: Baltoy
+L	ab_47_23	82	|-supereffective|p2a: Baltoy
+L	ab_47_23	83	|-crit|p2a: Baltoy
+L	ab_47_23	84	|-damage|p2a: Baltoy|155/255
+L	ab_47_23	85	|
+L	ab_47_23	86	|upkeep
+L	ab_47_23	87	|turn|8
+L	ab_47_23	88	|
+L	ab_47_23	89	|t:|<NORMALIZED>
+L	ab_47_23	90	|move|p1a: Golbat|Frustration|p2a: Baltoy
+L	ab_47_23	91	|-damage|p2a: Baltoy|153/255
+L	ab_47_23	92	|move|p2a: Baltoy|Frustration|p1a: Golbat
+L	ab_47_23	93	|-damage|p1a: Golbat|229/315
+L	ab_47_23	94	|
+L	ab_47_23	95	|upkeep
+L	ab_47_23	96	|turn|9
+L	ab_47_23	97	|
+L	ab_47_23	98	|t:|<NORMALIZED>
+L	ab_47_23	99	|move|p1a: Golbat|Return|p2a: Baltoy
+L	ab_47_23	100	|-damage|p2a: Baltoy|58/255
+L	ab_47_23	101	|move|p2a: Baltoy|Psybeam|p1a: Golbat
+L	ab_47_23	102	|-supereffective|p1a: Golbat
+L	ab_47_23	103	|-damage|p1a: Golbat|144/315
+L	ab_47_23	104	|
+L	ab_47_23	105	|upkeep
+L	ab_47_23	106	|turn|10
+L	ab_47_23	107	|
+L	ab_47_23	108	|t:|<NORMALIZED>
+L	ab_47_23	109	|move|p1a: Golbat|Double-Edge|p2a: Baltoy
+L	ab_47_23	110	|-damage|p2a: Baltoy|0 fnt
+L	ab_47_23	111	|-damage|p1a: Golbat|125/315|[from] Recoil|[of] p2a: Baltoy
+L	ab_47_23	112	|faint|p2a: Baltoy
+L	ab_47_23	113	|
+L	ab_47_23	114	|t:|<NORMALIZED>
+L	ab_47_23	115	|switch|p2a: Manectric|Manectric, M|265/265
+L	ab_47_23	116	|
+L	ab_47_23	117	|upkeep
+L	ab_47_23	118	|turn|11
+L	ab_47_23	119	|
+L	ab_47_23	120	|t:|<NORMALIZED>
+L	ab_47_23	121	|move|p2a: Manectric|Mimic|p1a: Golbat
+L	ab_47_23	122	|-activate|p2a: Manectric|move: Mimic|Double-Edge
+L	ab_47_23	123	|move|p1a: Golbat|Thief|p2a: Manectric
+L	ab_47_23	124	|-damage|p2a: Manectric|229/265
+L	ab_47_23	125	|
+L	ab_47_23	126	|upkeep
+L	ab_47_23	127	|turn|12
+L	ab_47_23	128	|
+L	ab_47_23	129	|t:|<NORMALIZED>
+L	ab_47_23	130	|switch|p1a: Mankey|Mankey, M|211/211
+L	ab_47_23	131	|move|p2a: Manectric|Iron Tail|p1a: Mankey
+L	ab_47_23	132	|-damage|p1a: Mankey|98/211
+L	ab_47_23	133	|
+L	ab_47_23	134	|-enditem|p1a: Mankey|Aguav Berry|[eat]
+L	ab_47_23	135	|-heal|p1a: Mankey|124/211|[from] item: Aguav Berry
+L	ab_47_23	136	|upkeep
+L	ab_47_23	137	|turn|13
+L	ab_47_23	138	|
+L	ab_47_23	139	|t:|<NORMALIZED>
+L	ab_47_23	140	|move|p2a: Manectric|Iron Tail|p1a: Mankey
+L	ab_47_23	141	|-damage|p1a: Mankey|15/211
+L	ab_47_23	142	|-unboost|p1a: Mankey|def|1
+L	ab_47_23	143	|move|p1a: Mankey|Karate Chop|p2a: Manectric
+L	ab_47_23	144	|-damage|p2a: Manectric|159/265
+L	ab_47_23	145	|
+L	ab_47_23	146	|upkeep
+L	ab_47_23	147	|turn|14
+L	ab_47_23	148	|
+L	ab_47_23	149	|t:|<NORMALIZED>
+L	ab_47_23	150	|move|p2a: Manectric|Iron Tail|p1a: Mankey
+L	ab_47_23	151	|-damage|p1a: Mankey|0 fnt
+L	ab_47_23	152	|faint|p1a: Mankey
+L	ab_47_23	153	|
+L	ab_47_23	154	|t:|<NORMALIZED>
+L	ab_47_23	155	|switch|p1a: Blissey|Blissey, F|671/671
+L	ab_47_23	156	|
+L	ab_47_23	157	|upkeep
+L	ab_47_23	158	|turn|15
+L	ab_47_23	159	|
+L	ab_47_23	160	|t:|<NORMALIZED>
+L	ab_47_23	161	|move|p2a: Manectric|Iron Tail|p1a: Blissey
+L	ab_47_23	162	|-damage|p1a: Blissey|515/671
+L	ab_47_23	163	|move|p1a: Blissey|Rock Tomb|p2a: Manectric|[miss]
+L	ab_47_23	164	|-miss|p1a: Blissey|p2a: Manectric
+L	ab_47_23	165	|
+L	ab_47_23	166	|upkeep
+L	ab_47_23	167	|turn|16
+L	ab_47_23	168	|
+L	ab_47_23	169	|t:|<NORMALIZED>
+L	ab_47_23	170	|switch|p1a: Golbat|Golbat, M|125/315
+L	ab_47_23	171	|move|p2a: Manectric|Toxic|p1a: Golbat
+L	ab_47_23	172	|debug|natural status immunity
+L	ab_47_23	173	|debug|immune to status
+L	ab_47_23	174	|-immune|p1a: Golbat
+L	ab_47_23	175	|debug|move failed because it did nothing
+L	ab_47_23	176	|
+L	ab_47_23	177	|upkeep
+L	ab_47_23	178	|turn|17
+L	ab_47_23	179	|
+L	ab_47_23	180	|t:|<NORMALIZED>
+L	ab_47_23	181	|move|p2a: Manectric|Toxic|p1a: Golbat|[miss]
+L	ab_47_23	182	|-miss|p2a: Manectric|p1a: Golbat
+L	ab_47_23	183	|move|p1a: Golbat|Frustration|p2a: Manectric
+L	ab_47_23	184	|-damage|p2a: Manectric|157/265
+L	ab_47_23	185	|-status|p1a: Golbat|par|[from] ability: Static|[of] p2a: Manectric
+L	ab_47_23	186	|
+L	ab_47_23	187	|upkeep
+L	ab_47_23	188	|turn|18
+L	ab_47_23	189	|
+L	ab_47_23	190	|t:|<NORMALIZED>
+L	ab_47_23	191	|move|p2a: Manectric|Iron Tail|p1a: Golbat
+L	ab_47_23	192	|-damage|p1a: Golbat|50/315 par
+L	ab_47_23	193	|cant|p1a: Golbat|par
+L	ab_47_23	194	|
+L	ab_47_23	195	|upkeep
+L	ab_47_23	196	|turn|19
+L	ab_47_23	197	|
+L	ab_47_23	198	|t:|<NORMALIZED>
+L	ab_47_23	199	|move|p2a: Manectric|Double-Edge|p1a: Golbat
+L	ab_47_23	200	|-crit|p1a: Golbat
+L	ab_47_23	201	|-damage|p1a: Golbat|0 fnt
+L	ab_47_23	202	|-damage|p2a: Manectric|141/265|[from] Recoil|[of] p1a: Golbat
+L	ab_47_23	203	|faint|p1a: Golbat
+L	ab_47_23	204	|
+L	ab_47_23	205	|t:|<NORMALIZED>
+L	ab_47_23	206	|switch|p1a: Electabuzz|Electabuzz, M|268/268
+L	ab_47_23	207	|
+L	ab_47_23	208	|upkeep
+L	ab_47_23	209	|turn|20
+L	ab_47_23	210	|
+L	ab_47_23	211	|t:|<NORMALIZED>
+L	ab_47_23	212	|move|p1a: Electabuzz|Brick Break|p2a: Manectric
+L	ab_47_23	213	|-damage|p2a: Manectric|79/265
+L	ab_47_23	214	|-status|p1a: Electabuzz|par|[from] ability: Static|[of] p2a: Manectric
+L	ab_47_23	215	|move|p2a: Manectric|Toxic||[still]
+L	ab_47_23	216	|debug|lax incense - decreasing accuracy
+L	ab_47_23	217	|-fail|p2a: Manectric
+L	ab_47_23	218	|debug|move failed because it did nothing
+L	ab_47_23	219	|
+L	ab_47_23	220	|upkeep
+L	ab_47_23	221	|turn|21
+L	ab_47_23	222	|
+L	ab_47_23	223	|t:|<NORMALIZED>
+L	ab_47_23	224	|cant|p1a: Electabuzz|par
+L	ab_47_23	225	|move|p2a: Manectric|Toxic||[still]
+L	ab_47_23	226	|debug|lax incense - decreasing accuracy
+L	ab_47_23	227	|-fail|p2a: Manectric
+L	ab_47_23	228	|debug|move failed because it did nothing
+L	ab_47_23	229	|
+L	ab_47_23	230	|upkeep
+L	ab_47_23	231	|turn|22
+L	ab_47_23	232	|
+L	ab_47_23	233	|t:|<NORMALIZED>
+L	ab_47_23	234	|move|p2a: Manectric|Iron Tail|p1a: Electabuzz|[miss]
+L	ab_47_23	235	|debug|lax incense - decreasing accuracy
+L	ab_47_23	236	|-miss|p2a: Manectric|p1a: Electabuzz
+L	ab_47_23	237	|cant|p1a: Electabuzz|par
+L	ab_47_23	238	|
+L	ab_47_23	239	|upkeep
+L	ab_47_23	240	|turn|23
+L	ab_47_23	241	|
+L	ab_47_23	242	|t:|<NORMALIZED>
+L	ab_47_23	243	|move|p2a: Manectric|Toxic||[still]
+L	ab_47_23	244	|debug|lax incense - decreasing accuracy
+L	ab_47_23	245	|-fail|p2a: Manectric
+L	ab_47_23	246	|debug|move failed because it did nothing
+L	ab_47_23	247	|move|p1a: Electabuzz|Brick Break|p2a: Manectric
+L	ab_47_23	248	|-damage|p2a: Manectric|14/265
+L	ab_47_23	249	|
+L	ab_47_23	250	|upkeep
+L	ab_47_23	251	|turn|24
+L	ab_47_23	252	|
+L	ab_47_23	253	|t:|<NORMALIZED>
+L	ab_47_23	254	|switch|p1a: Carvanha|Carvanha, M|241/241
+L	ab_47_23	255	|move|p2a: Manectric|Iron Tail|p1a: Carvanha|[miss]
+L	ab_47_23	256	|-miss|p2a: Manectric|p1a: Carvanha
+L	ab_47_23	257	|
+L	ab_47_23	258	|upkeep
+L	ab_47_23	259	|turn|25
+L	ab_47_23	260	|
+L	ab_47_23	261	|t:|<NORMALIZED>
+L	ab_47_23	262	|switch|p1a: Electabuzz|Electabuzz, M|268/268 par
+L	ab_47_23	263	|move|p2a: Manectric|Thunderbolt|p1a: Electabuzz
+L	ab_47_23	264	|debug|lax incense - decreasing accuracy
+L	ab_47_23	265	|-resisted|p1a: Electabuzz
+L	ab_47_23	266	|-crit|p1a: Electabuzz
+L	ab_47_23	267	|-damage|p1a: Electabuzz|121/268 par
+L	ab_47_23	268	|
+L	ab_47_23	269	|upkeep
+L	ab_47_23	270	|turn|26
+L	ab_47_23	271	|
+L	ab_47_23	272	|t:|<NORMALIZED>
+L	ab_47_23	273	|move|p2a: Manectric|Double-Edge|p1a: Electabuzz|[miss]
+L	ab_47_23	274	|debug|lax incense - decreasing accuracy
+L	ab_47_23	275	|-miss|p2a: Manectric|p1a: Electabuzz
+L	ab_47_23	276	|move|p1a: Electabuzz|Substitute|p1a: Electabuzz
+L	ab_47_23	277	|-start|p1a: Electabuzz|Substitute
+L	ab_47_23	278	|-damage|p1a: Electabuzz|54/268 par
+L	ab_47_23	279	|
+L	ab_47_23	280	|upkeep
+L	ab_47_23	281	|turn|27
+L	ab_47_23	282	|
+L	ab_47_23	283	|t:|<NORMALIZED>
+L	ab_47_23	284	|move|p2a: Manectric|Thunderbolt|p1a: Electabuzz
+L	ab_47_23	285	|debug|lax incense - decreasing accuracy
+L	ab_47_23	286	|-resisted|p1a: Electabuzz
+L	ab_47_23	287	|-end|p1a: Electabuzz|Substitute
+L	ab_47_23	288	|move|p1a: Electabuzz|Substitute|p1a: Electabuzz
+L	ab_47_23	289	|-fail|p1a: Electabuzz|move: Substitute|[weak]
+L	ab_47_23	290	|
+L	ab_47_23	291	|upkeep
+L	ab_47_23	292	|turn|28
+L	ab_47_23	293	|
+L	ab_47_23	294	|t:|<NORMALIZED>
+L	ab_47_23	295	|switch|p1a: Carvanha|Carvanha, M|241/241
+L	ab_47_23	296	|move|p2a: Manectric|Double-Edge|p1a: Carvanha
+L	ab_47_23	297	|-damage|p1a: Carvanha|16/241
+L	ab_47_23	298	|-damage|p2a: Manectric|0 fnt|[from] ability: Rough Skin|[of] p1a: Carvanha
+L	ab_47_23	299	|faint|p2a: Manectric
+L	ab_47_23	300	|
+L	ab_47_23	301	|t:|<NORMALIZED>
+L	ab_47_23	302	|switch|p2a: Mr. Mime|Mr. Mime, M|209/209
+L	ab_47_23	303	|
+L	ab_47_23	304	|upkeep
+L	ab_47_23	305	|turn|29
+L	ab_47_23	306	|
+L	ab_47_23	307	|t:|<NORMALIZED>
+L	ab_47_23	308	|move|p2a: Mr. Mime|Magical Leaf|p1a: Carvanha
+L	ab_47_23	309	|-supereffective|p1a: Carvanha
+L	ab_47_23	310	|-crit|p1a: Carvanha
+L	ab_47_23	311	|-damage|p1a: Carvanha|0 fnt
+L	ab_47_23	312	|faint|p1a: Carvanha
+L	ab_47_23	313	|
+L	ab_47_23	314	|t:|<NORMALIZED>
+L	ab_47_23	315	|switch|p1a: Blissey|Blissey, F|515/671
+L	ab_47_23	316	|
+L	ab_47_23	317	|upkeep
+L	ab_47_23	318	|turn|30
+L	ab_47_23	319	|
+L	ab_47_23	320	|t:|<NORMALIZED>
+L	ab_47_23	321	|move|p2a: Mr. Mime|Taunt|p1a: Blissey
+L	ab_47_23	322	|-start|p1a: Blissey|move: Taunt
+L	ab_47_23	323	|move|p1a: Blissey|Double Slap|p2a: Mr. Mime
+L	ab_47_23	324	|-damage|p2a: Mr. Mime|201/209
+L	ab_47_23	325	|-damage|p2a: Mr. Mime|192/209
+L	ab_47_23	326	|-damage|p2a: Mr. Mime|185/209
+L	ab_47_23	327	|-damage|p2a: Mr. Mime|177/209
+L	ab_47_23	328	|-hitcount|p2a: Mr. Mime|4
+L	ab_47_23	329	|
+L	ab_47_23	330	|upkeep
+L	ab_47_23	331	|turn|31
+L	ab_47_23	332	|
+L	ab_47_23	333	|t:|<NORMALIZED>
+L	ab_47_23	334	|switch|p2a: Gloom|Gloom, M|254/254
+L	ab_47_23	335	|move|p1a: Blissey|Water Pulse|p2a: Gloom
+L	ab_47_23	336	|-resisted|p2a: Gloom
+L	ab_47_23	337	|-damage|p2a: Gloom|232/254
+L	ab_47_23	338	|
+L	ab_47_23	339	|-end|p1a: Blissey|move: Taunt|[silent]
+L	ab_47_23	340	|upkeep
+L	ab_47_23	341	|turn|32
+L	ab_47_23	342	|
+L	ab_47_23	343	|t:|<NORMALIZED>
+L	ab_47_23	344	|move|p1a: Blissey|Rock Tomb|p2a: Gloom|[miss]
+L	ab_47_23	345	|-miss|p1a: Blissey|p2a: Gloom
+L	ab_47_23	346	|move|p2a: Gloom|Absorb|p1a: Blissey
+L	ab_47_23	347	|-damage|p1a: Blissey|492/671
+L	ab_47_23	348	|-heal|p2a: Gloom|243/254|[from] drain|[of] p1a: Blissey
+L	ab_47_23	349	|
+L	ab_47_23	350	|upkeep
+L	ab_47_23	351	|turn|33
+L	ab_47_23	352	|
+L	ab_47_23	353	|t:|<NORMALIZED>
+L	ab_47_23	354	|move|p1a: Blissey|Double-Edge|p2a: Gloom
+L	ab_47_23	355	|-damage|p2a: Gloom|193/254
+L	ab_47_23	356	|-damage|p1a: Blissey|476/671|[from] Recoil|[of] p2a: Gloom
+L	ab_47_23	357	|move|p2a: Gloom|Bullet Seed|p1a: Blissey
+L	ab_47_23	358	|-damage|p1a: Blissey|464/671
+L	ab_47_23	359	|-damage|p1a: Blissey|451/671
+L	ab_47_23	360	|-damage|p1a: Blissey|439/671
+L	ab_47_23	361	|-hitcount|p1a: Blissey|3
+L	ab_47_23	362	|
+L	ab_47_23	363	|upkeep
+L	ab_47_23	364	|turn|34
+L	ab_47_23	365	|
+L	ab_47_23	366	|t:|<NORMALIZED>
+L	ab_47_23	367	|move|p2a: Gloom|Endure|p2a: Gloom
+L	ab_47_23	368	|-singleturn|p2a: Gloom|move: Endure
+L	ab_47_23	369	|move|p1a: Blissey|Double-Edge|p2a: Gloom
+L	ab_47_23	370	|-damage|p2a: Gloom|143/254
+L	ab_47_23	371	|-damage|p1a: Blissey|423/671|[from] Recoil|[of] p2a: Gloom
+L	ab_47_23	372	|
+L	ab_47_23	373	|upkeep
+L	ab_47_23	374	|turn|35
+L	ab_47_23	375	|
+L	ab_47_23	376	|t:|<NORMALIZED>
+L	ab_47_23	377	|move|p1a: Blissey|Double Slap|p2a: Gloom
+L	ab_47_23	378	|-damage|p2a: Gloom|136/254
+L	ab_47_23	379	|-damage|p2a: Gloom|129/254
+L	ab_47_23	380	|-damage|p2a: Gloom|122/254
+L	ab_47_23	381	|-hitcount|p2a: Gloom|3
+L	ab_47_23	382	|move|p2a: Gloom|Bullet Seed|p1a: Blissey
+L	ab_47_23	383	|-damage|p1a: Blissey|412/671
+L	ab_47_23	384	|-damage|p1a: Blissey|399/671
+L	ab_47_23	385	|-hitcount|p1a: Blissey|2
+L	ab_47_23	386	|
+L	ab_47_23	387	|upkeep
+L	ab_47_23	388	|turn|36
+L	ab_47_23	389	|
+L	ab_47_23	390	|t:|<NORMALIZED>
+L	ab_47_23	391	|switch|p2a: Dusclops|Dusclops, M|90/222
+L	ab_47_23	392	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_47_23	393	|move|p1a: Blissey|Double-Edge|p2a: Dusclops
+L	ab_47_23	394	|-immune|p2a: Dusclops
+L	ab_47_23	395	|
+L	ab_47_23	396	|upkeep
+L	ab_47_23	397	|turn|37
+L	ab_47_23	398	|
+L	ab_47_23	399	|t:|<NORMALIZED>
+L	ab_47_23	400	|move|p1a: Blissey|Rock Tomb|p2a: Dusclops
+L	ab_47_23	401	|-damage|p2a: Dusclops|80/222
+L	ab_47_23	402	|-unboost|p2a: Dusclops|spe|1
+L	ab_47_23	403	|move|p2a: Dusclops|Strength|p1a: Blissey
+L	ab_47_23	404	|-damage|p1a: Blissey|227/671
+L	ab_47_23	405	|
+L	ab_47_23	406	|upkeep
+L	ab_47_23	407	|turn|38
+L	ab_47_23	408	|
+L	ab_47_23	409	|t:|<NORMALIZED>
+L	ab_47_23	410	|switch|p2a: Gloom|Gloom, M|122/254
+L	ab_47_23	411	|move|p1a: Blissey|Rock Tomb|p2a: Gloom|[miss]
+L	ab_47_23	412	|-miss|p1a: Blissey|p2a: Gloom
+L	ab_47_23	413	|
+L	ab_47_23	414	|upkeep
+L	ab_47_23	415	|turn|39
+L	ab_47_23	416	|
+L	ab_47_23	417	|t:|<NORMALIZED>
+L	ab_47_23	418	|move|p1a: Blissey|Water Pulse|p2a: Gloom
+L	ab_47_23	419	|-resisted|p2a: Gloom
+L	ab_47_23	420	|-damage|p2a: Gloom|101/254
+L	ab_47_23	421	|move|p2a: Gloom|Bullet Seed|p1a: Blissey
+L	ab_47_23	422	|-damage|p1a: Blissey|216/671
+L	ab_47_23	423	|-damage|p1a: Blissey|205/671
+L	ab_47_23	424	|-damage|p1a: Blissey|194/671
+L	ab_47_23	425	|-damage|p1a: Blissey|182/671
+L	ab_47_23	426	|-damage|p1a: Blissey|170/671
+L	ab_47_23	427	|-hitcount|p1a: Blissey|5
+L	ab_47_23	428	|
+L	ab_47_23	429	|upkeep
+L	ab_47_23	430	|turn|40
+L	ab_47_23	431	|
+L	ab_47_23	432	|t:|<NORMALIZED>
+L	ab_47_23	433	|switch|p2a: Mr. Mime|Mr. Mime, M|177/209
+L	ab_47_23	434	|move|p1a: Blissey|Double Slap|p2a: Mr. Mime
+L	ab_47_23	435	|-damage|p2a: Mr. Mime|169/209
+L	ab_47_23	436	|-damage|p2a: Mr. Mime|160/209
+L	ab_47_23	437	|-damage|p2a: Mr. Mime|153/209
+L	ab_47_23	438	|-damage|p2a: Mr. Mime|145/209
+L	ab_47_23	439	|-damage|p2a: Mr. Mime|138/209
+L	ab_47_23	440	|-hitcount|p2a: Mr. Mime|5
+L	ab_47_23	441	|
+L	ab_47_23	442	|upkeep
+L	ab_47_23	443	|turn|41
+L	ab_47_23	444	|
+L	ab_47_23	445	|t:|<NORMALIZED>
+L	ab_47_23	446	|move|p2a: Mr. Mime|Magical Leaf|p1a: Blissey
+L	ab_47_23	447	|-damage|p1a: Blissey|125/671
+L	ab_47_23	448	|move|p1a: Blissey|Double-Edge|p2a: Mr. Mime
+L	ab_47_23	449	|-damage|p2a: Mr. Mime|92/209
+L	ab_47_23	450	|-damage|p1a: Blissey|110/671|[from] Recoil|[of] p2a: Mr. Mime
+L	ab_47_23	451	|
+L	ab_47_23	452	|upkeep
+L	ab_47_23	453	|turn|42
+L	ab_47_23	454	|
+L	ab_47_23	455	|t:|<NORMALIZED>
+L	ab_47_23	456	|move|p2a: Mr. Mime|Body Slam|p1a: Blissey
+L	ab_47_23	457	|-damage|p1a: Blissey|0 fnt
+L	ab_47_23	458	|faint|p1a: Blissey
+L	ab_47_23	459	|
+L	ab_47_23	460	|t:|<NORMALIZED>
+L	ab_47_23	461	|switch|p1a: Houndoom|Houndoom, M|274/274
+L	ab_47_23	462	|
+L	ab_47_23	463	|upkeep
+L	ab_47_23	464	|turn|43
+L	ab_47_23	465	|
+L	ab_47_23	466	|t:|<NORMALIZED>
+L	ab_47_23	467	|switch|p1a: Electabuzz|Electabuzz, M|54/268 par
+L	ab_47_23	468	|move|p2a: Mr. Mime|Body Slam|p1a: Electabuzz
+L	ab_47_23	469	|debug|lax incense - decreasing accuracy
+L	ab_47_23	470	|-damage|p1a: Electabuzz|0 fnt
+L	ab_47_23	471	|-status|p2a: Mr. Mime|par|[from] ability: Static|[of] p1a: Electabuzz
+L	ab_47_23	472	|faint|p1a: Electabuzz
+L	ab_47_23	473	|
+L	ab_47_23	474	|t:|<NORMALIZED>
+L	ab_47_23	475	|switch|p1a: Houndoom|Houndoom, M|274/274
+L	ab_47_23	476	|
+L	ab_47_23	477	|upkeep
+L	ab_47_23	478	|turn|44
+L	ab_47_23	479	|
+L	ab_47_23	480	|t:|<NORMALIZED>
+L	ab_47_23	481	|switch|p2a: Dusclops|Dusclops, M|80/222
+L	ab_47_23	482	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_47_23	483	|move|p1a: Houndoom|Facade|p2a: Dusclops
+L	ab_47_23	484	|-immune|p2a: Dusclops
+L	ab_47_23	485	|
+L	ab_47_23	486	|upkeep
+L	ab_47_23	487	|turn|45
+L	ab_47_23	488	|
+L	ab_47_23	489	|t:|<NORMALIZED>
+L	ab_47_23	490	|move|p1a: Houndoom|Facade|p2a: Dusclops
+L	ab_47_23	491	|-immune|p2a: Dusclops
+L	ab_47_23	492	|move|p2a: Dusclops|Substitute|p2a: Dusclops
+L	ab_47_23	493	|-start|p2a: Dusclops|Substitute
+L	ab_47_23	494	|-damage|p2a: Dusclops|25/222
+L	ab_47_23	495	|
+L	ab_47_23	496	|-enditem|p2a: Dusclops|Lansat Berry|[eat]
+L	ab_47_23	497	|-start|p2a: Dusclops|move: Focus Energy
+L	ab_47_23	498	|upkeep
+L	ab_47_23	499	|turn|46
+L	ab_47_23	500	|
+L	ab_47_23	501	|t:|<NORMALIZED>
+L	ab_47_23	502	|move|p1a: Houndoom|Facade|p2a: Dusclops
+L	ab_47_23	503	|-immune|p2a: Dusclops
+L	ab_47_23	504	|move|p2a: Dusclops|Substitute|p2a: Dusclops
+L	ab_47_23	505	|-fail|p2a: Dusclops|move: Substitute
+L	ab_47_23	506	|
+L	ab_47_23	507	|upkeep
+L	ab_47_23	508	|turn|47
+L	ab_47_23	509	|
+L	ab_47_23	510	|t:|<NORMALIZED>
+L	ab_47_23	511	|move|p1a: Houndoom|Facade|p2a: Dusclops
+L	ab_47_23	512	|-immune|p2a: Dusclops
+L	ab_47_23	513	|move|p2a: Dusclops|Rock Smash|p1a: Houndoom
+L	ab_47_23	514	|-supereffective|p1a: Houndoom
+L	ab_47_23	515	|-damage|p1a: Houndoom|220/274
+L	ab_47_23	516	|-unboost|p1a: Houndoom|def|1
+L	ab_47_23	517	|
+L	ab_47_23	518	|upkeep
+L	ab_47_23	519	|turn|48
+L	ab_47_23	520	|
+L	ab_47_23	521	|t:|<NORMALIZED>
+L	ab_47_23	522	|move|p1a: Houndoom|Facade|p2a: Dusclops
+L	ab_47_23	523	|-immune|p2a: Dusclops
+L	ab_47_23	524	|move|p2a: Dusclops|Strength|p1a: Houndoom
+L	ab_47_23	525	|-damage|p1a: Houndoom|79/274
+L	ab_47_23	526	|
+L	ab_47_23	527	|upkeep
+L	ab_47_23	528	|turn|49
+L	ab_47_23	529	|
+L	ab_47_23	530	|t:|<NORMALIZED>
+L	ab_47_23	531	|move|p1a: Houndoom|Facade|p2a: Dusclops
+L	ab_47_23	532	|-immune|p2a: Dusclops
+L	ab_47_23	533	|move|p2a: Dusclops|Shadow Ball|p1a: Houndoom
+L	ab_47_23	534	|-resisted|p1a: Houndoom
+L	ab_47_23	535	|-damage|p1a: Houndoom|0 fnt
+L	ab_47_23	536	|faint|p1a: Houndoom
+L	ab_47_23	537	|
+L	ab_47_23	538	|win|P2

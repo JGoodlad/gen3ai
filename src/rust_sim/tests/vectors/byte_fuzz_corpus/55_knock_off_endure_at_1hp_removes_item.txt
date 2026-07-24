@@ -1,0 +1,643 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=400724 run_id=rmrz81mki chunk=43
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_43_12
+TEAM	ab_43_12	p1	Shellder||Leftovers|ShellArmor|Return,Toxic,RainDance,IcyWind|Lonely|52,148,104,48,116,40|M|14,29,18,6,19,27|||]Hitmonchan||DeepSeaScale|KeenEye|ThunderPunch,Endure,BulkUp,SeismicToss|Careful|192,112,48,120,,36|M|8,8,11,8,11,4|||]Grumpig||Magnet|OwnTempo|ShockWave,SunnyDay,CalmMind,Splash|Impish|36,80,52,92,60,188|M|25,15,28,28,19,11|||]Gorebyss||MiracleSeed|SwiftSwim|Facade,BodySlam,IcyWind,RainDance|Modest|64,64,32,24,36,92|M|,17,,5,,|||]Ekans||WhiteHerb|ShedSkin|Thief,Strength,GigaDrain,Facade|Quiet|136,144,4,68,132,24|M|19,23,24,3,22,24|||]Geodude||StarfBerry|RockHead|RockSlide,DoubleEdge,BodySlam,Substitute|Hardy|112,152,92,44,,108|M|26,,28,,7,21|||
+TEAM	ab_43_12	p2	Banette||SharpBeak|Insomnia|KnockOff,Rest,Toxic,IcyWind|Lonely|80,80,116,156,,76|M|4,4,30,29,27,6|||]Nidorina||BrightPowder|PoisonPoint|Scratch,Return,PoisonSting,IceBeam|Quirky|52,16,172,80,188,|F|0,5,11,17,29,16|||]Suicune||KingsRock|Pressure|BubbleBeam,SunnyDay,MudSlap,Gust|Modest|144,88,8,,164,104|N|17,13,6,12,21,18|||]Houndoom||OddIncense|EarlyBird|SolarBeam,HyperBeam,DoubleEdge,Flamethrower|Naughty|104,,36,140,96,132|M|23,11,16,,28,29|||]Stantler||SeaIncense|Intimidate|BodySlam,Stomp,Swift,Protect|Relaxed|96,128,,200,36,48|M|30,24,,16,,26|||]Lombre||PolkadotBow|SwiftSwim|IcyWind,Toxic,HydroPump,Frustration|Sassy|,188,152,168,,|M|11,18,17,30,10,0|||
+FMT	ab_43_12	gen3customgame
+INIT	ab_43_12	26022,54256,44673,23216	66417550
+DEC	ab_43_12	0	move	0	0	m0	s4	17711,42534,18897,12612	Shellder	197	197	0	-	-1	0	0	0	0	0	6	Stantler	247	310	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_43_12	1	move	0	0	m1	m1	50932,63009,21922,61627	Shellder	121	197	0	-	-1	0	0	0	0	0	6	Stantler	247	310	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	2	move	0	0	m1	m3	59118,4432,63308,3756	Shellder	133	197	0	-	-1	0	0	0	0	0	6	Stantler	247	310	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	3	move	0	0	m3	m3	27314,48486,43202,65074	Shellder	145	197	0	-	-1	0	0	0	0	0	6	Stantler	220	310	0	-	0	0	0	0	-1	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	4	move	0	0	m1	s2	51611,22298,26264,50964	Shellder	157	197	0	-	-1	0	0	0	0	0	6	Suicune	341	363	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	5	move	0	0	m2	s2	21030,10080,7810,56743	Shellder	169	197	0	-	-2	0	0	0	0	0	6	Stantler	220	310	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	6	move	0	0	m2	m3	61777,11457,45720,58945	Shellder	181	197	0	-	-2	0	0	0	0	0	6	Stantler	220	310	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	7	move	0	0	m3	m1	45142,63568,18418,64124	Shellder	103	197	0	-	-2	0	0	0	0	0	6	Stantler	220	310	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	8	move	0	0	m3	m3	58841,56848,53982,25865	Shellder	115	197	0	-	-2	0	0	0	0	0	6	Stantler	220	310	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	9	move	0	0	m1	m1	42922,40319,55691,25783	Shellder	44	197	0	-	-2	0	0	0	0	0	6	Stantler	201	310	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	10	move	0	0	m1	m0	63609,56679,13576,219	Shellder	0	197	1	fnt	0	0	0	0	0	0	5	Stantler	201	310	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	11	switch	1	0	s2	-	63145,43028,40641,10282	Grumpig	304	304	0	-	0	0	0	0	0	0	5	Stantler	163	310	0	tox	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_43_12	12	move	0	0	m0	s5	21443,2278,9767,49855	Grumpig	304	304	0	-	0	0	0	0	0	0	5	Lombre	174	241	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	13	move	0	0	m0	m0	63279,65273,12218,46772	Grumpig	271	304	0	-	0	0	0	0	-1	0	5	Lombre	107	241	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_43_12	14	move	0	0	s5	m0	63782,7681,64420,29960	Geodude	0	244	1	fnt	0	0	0	0	0	0	4	Lombre	107	241	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_43_12	15	switch	1	0	s1	-	4221,44409,56802,4843	Hitmonchan	266	266	0	-	0	0	0	0	0	0	4	Lombre	107	241	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_43_12	16	move	0	0	m0	m3	26304,31675,28980,61043	Hitmonchan	264	266	0	-	0	0	0	0	0	0	4	Lombre	71	241	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_43_12	17	move	0	0	m0	s2	62518,3790,23505,8342	Hitmonchan	264	266	0	-	0	0	0	0	0	0	4	Suicune	279	363	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	18	move	0	0	m1	m0	52316,6437,59358,17900	Hitmonchan	204	266	0	-	0	0	0	0	0	0	4	Suicune	235	363	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_43_12	19	move	0	0	m0	m0	60025,14942,51971,41447	Hitmonchan	140	266	0	-	0	0	0	0	0	0	4	Suicune	125	363	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	20	move	0	0	m1	s3	39949,9364,60299,7654	Hitmonchan	140	266	0	-	0	0	0	0	0	0	4	Houndoom	309	309	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_43_12	21	move	0	0	m3	m2	16157,11225,30375,1029	Hitmonchan	33	266	0	-	0	0	0	0	0	0	4	Houndoom	174	309	0	-	0	0	0	0	0	0	6	p2	0	0	1	0	0
+DEC	ab_43_12	22	move	0	0	m0	m0	21390,42033,61977,16272	Hitmonchan	33	266	0	-	0	0	0	0	0	0	4	Houndoom	143	309	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	23	move	0	0	m1	m0	12152,22157,39502,39159	Hitmonchan	1	266	0	-	0	0	0	0	0	0	4	Houndoom	143	309	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_43_12	24	move	0	0	s5	m3	47879,9114,52057,45418	Grumpig	156	304	0	-	0	0	0	0	0	0	4	Houndoom	143	309	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_43_12	25	move	0	0	m3	m2	4894,18058,56076,8286	Grumpig	44	304	0	-	0	0	0	0	0	0	4	Houndoom	106	309	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	26	move	0	0	m0	s4	43310,60868,3347,30371	Grumpig	44	304	0	-	0	0	0	0	0	0	4	Banette	189	262	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	27	move	0	0	m0	s3	41892,59621,4725,42484	Grumpig	44	304	0	-	0	0	0	0	0	0	4	Suicune	29	363	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_43_12	28	move	0	0	m2	m1	41892,59621,4725,42484	Grumpig	44	304	0	-	0	0	1	1	0	0	4	Suicune	0	363	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_43_12	29	switch	0	1	-	s4	44069,37311,47116,44039	Grumpig	44	304	0	-	0	0	1	1	0	0	4	Houndoom	106	309	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_43_12	30	move	0	0	m1	m3	65432,3876,819,62251	Grumpig	0	304	1	fnt	0	0	0	0	0	0	3	Houndoom	106	309	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_43_12	31	switch	1	0	s3	-	32957,35044,56052,37306	Gorebyss	267	267	0	-	0	0	0	0	0	0	3	Houndoom	106	309	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_43_12	32	move	0	0	m0	s1	27554,35565,2909,43113	Gorebyss	234	267	0	psn	0	0	0	0	0	0	3	Nidorina	206	263	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_43_12	33	move	0	0	m0	m3	32600,42894,39918,32024	Gorebyss	172	267	0	psn	0	0	0	0	0	0	3	Nidorina	107	263	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_43_12	34	move	0	0	m3	s5	10647,44921,45527,53563	Gorebyss	139	267	0	psn	-1	0	0	0	0	0	3	Stantler	144	310	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_43_12	35	move	0	0	s5	s3	27939,55714,17889,48650	Hitmonchan	1	266	0	-	0	0	0	0	0	0	3	Banette	189	262	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_43_12	36	move	0	0	m1	m0	60688,55260,14115,56057	Hitmonchan	1	266	0	-	0	0	0	0	0	0	3	Banette	189	262	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	1
+DEC	ab_43_12	37	move	0	0	m0	s1	49647,52551,21726,42388	Hitmonchan	1	266	0	-	0	0	0	0	0	0	3	Houndoom	74	309	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_43_12	38	move	0	0	m3	m3	16177,60713,33090,13800	Hitmonchan	0	266	1	fnt	0	0	0	0	0	0	2	Houndoom	74	309	0	-	0	0	0	0	0	0	5	p2	0	0	1	0	0
+DEC	ab_43_12	39	switch	1	0	s4	-	26476,31649,51063,2891	Ekans	233	233	0	-	0	0	0	0	0	0	2	Houndoom	74	309	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_43_12	40	move	0	0	m2	m2	44953,4524,26711,62160	Ekans	68	233	0	-	0	0	0	0	0	0	2	Houndoom	3	309	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_43_12	41	move	0	0	m0	m0	7853,37929,45663,35981	Ekans	68	233	0	-	0	0	0	0	0	0	2	Houndoom	0	309	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_43_12	42	switch	0	1	-	s2	28068,63345,54763,34660	Ekans	68	233	0	-	0	0	0	0	0	0	2	Lombre	71	241	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_43_12	43	move	0	0	m0	m3	37256,26603,39794,32213	Ekans	65	233	0	-	0	0	0	0	0	0	2	Lombre	51	241	0	-	0	0	0	0	0	0	4	p1	0	0	0	1	0
+DEC	ab_43_12	44	move	0	0	m0	s1	13157,2682,24072,62489	Ekans	65	233	0	-	0	0	0	0	0	0	2	Banette	143	262	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_43_12	45	move	0	0	m2	m1	4105,45130,30886,11805	Ekans	83	233	0	-	0	0	0	0	0	0	2	Banette	106	262	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_43_12	46	move	0	0	m3	m3	26413,5821,49676,2502	Ekans	83	233	0	-	0	0	0	0	0	0	2	Banette	106	262	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_43_12	47	move	0	0	m0	m2	43839,21494,8973,48485	Ekans	83	233	0	-	0	0	0	0	0	0	2	Banette	60	262	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_43_12	48	move	0	0	s5	m1	44137,10749,63664,25756	Gorebyss	106	267	0	psn	0	0	0	0	0	0	2	Banette	60	262	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_43_12	49	move	0	0	s5	m0	14007,29977,61373,21616	Ekans	60	233	0	-	0	0	0	0	0	0	2	Banette	60	262	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_43_12	50	move	0	0	s5	m1	496,41604,30488,57075	Gorebyss	73	267	0	psn	0	0	0	0	0	0	2	Banette	60	262	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_43_12	51	move	0	0	s5	m2	32684,8823,45816,19373	Ekans	60	233	0	-	0	0	0	0	0	0	2	Banette	60	262	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_43_12	52	move	0	0	m2	m1	26435,61620,60561,21617	Ekans	78	233	0	-	0	0	0	0	0	0	2	Banette	23	262	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_43_12	53	move	0	0	m1	m3	64494,8826,14790,55647	Ekans	15	233	0	-	0	0	0	0	-1	0	2	Banette	23	262	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_43_12	54	move	0	0	m0	m1	15428,36980,3791,1856	Ekans	15	233	0	-	0	0	0	0	-1	0	2	Banette	0	262	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_43_12	55	switch	0	1	-	s3	24676,29870,54645,47875	Ekans	15	233	0	-	-1	0	0	0	-1	0	2	Stantler	125	310	0	tox	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_43_12	56	move	0	0	m1	m2	5401,27249,11198,58685	Ekans	0	233	1	fnt	0	0	0	0	0	0	1	Stantler	125	310	0	tox	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_43_12	57	switch	1	0	s5	-	29514,55822,27599,46292	Gorebyss	40	267	0	psn	0	0	0	0	0	0	1	Stantler	87	310	0	tox	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_43_12	58	move	0	0	m1	m3	51071,27069,18715,62721	Gorebyss	7	267	0	psn	0	0	0	0	0	0	1	Stantler	30	310	0	tox	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_43_12	59	move	0	0	m3	m2	4652,23297,35801,35723	Gorebyss	0	267	1	psn	0	0	0	0	0	0	0	Stantler	30	310	0	tox	0	0	0	0	0	0	3	p2	0	0	0	0	0
+END	ab_43_12	1	p2
+L	ab_43_12	0	|t:|<NORMALIZED>
+L	ab_43_12	1	|gametype|singles
+L	ab_43_12	2	|player|p1|P1||
+L	ab_43_12	3	|player|p2|P2||
+L	ab_43_12	4	|gen|3
+L	ab_43_12	5	|tier|[Gen 3] Custom Game
+L	ab_43_12	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_43_12	7	|
+L	ab_43_12	8	|t:|<NORMALIZED>
+L	ab_43_12	9	|teamsize|p1|6
+L	ab_43_12	10	|teamsize|p2|6
+L	ab_43_12	11	|start
+L	ab_43_12	12	|switch|p1a: Shellder|Shellder, M|197/197
+L	ab_43_12	13	|switch|p2a: Banette|Banette, M|262/262
+L	ab_43_12	14	|turn|1
+L	ab_43_12	15	|
+L	ab_43_12	16	|t:|<NORMALIZED>
+L	ab_43_12	17	|switch|p2a: Stantler|Stantler, M|310/310
+L	ab_43_12	18	|-ability|p2a: Stantler|Intimidate|boost
+L	ab_43_12	19	|-unboost|p1a: Shellder|atk|1
+L	ab_43_12	20	|move|p1a: Shellder|Return|p2a: Stantler
+L	ab_43_12	21	|-damage|p2a: Stantler|247/310
+L	ab_43_12	22	|
+L	ab_43_12	23	|upkeep
+L	ab_43_12	24	|turn|2
+L	ab_43_12	25	|
+L	ab_43_12	26	|t:|<NORMALIZED>
+L	ab_43_12	27	|move|p2a: Stantler|Stomp|p1a: Shellder
+L	ab_43_12	28	|-damage|p1a: Shellder|109/197
+L	ab_43_12	29	|cant|p1a: Shellder|flinch
+L	ab_43_12	30	|
+L	ab_43_12	31	|-heal|p1a: Shellder|121/197|[from] item: Leftovers
+L	ab_43_12	32	|upkeep
+L	ab_43_12	33	|turn|3
+L	ab_43_12	34	|
+L	ab_43_12	35	|t:|<NORMALIZED>
+L	ab_43_12	36	|move|p2a: Stantler|Protect|p2a: Stantler
+L	ab_43_12	37	|-singleturn|p2a: Stantler|Protect
+L	ab_43_12	38	|move|p1a: Shellder|Toxic|p2a: Stantler
+L	ab_43_12	39	|-activate|p2a: Stantler|Protect
+L	ab_43_12	40	|
+L	ab_43_12	41	|-heal|p1a: Shellder|133/197|[from] item: Leftovers
+L	ab_43_12	42	|upkeep
+L	ab_43_12	43	|turn|4
+L	ab_43_12	44	|
+L	ab_43_12	45	|t:|<NORMALIZED>
+L	ab_43_12	46	|move|p2a: Stantler|Protect||[still]
+L	ab_43_12	47	|debug|Success chance: 50%
+L	ab_43_12	48	|-fail|p2a: Stantler
+L	ab_43_12	49	|move|p1a: Shellder|Icy Wind|p2a: Stantler
+L	ab_43_12	50	|-damage|p2a: Stantler|220/310
+L	ab_43_12	51	|-unboost|p2a: Stantler|spe|1
+L	ab_43_12	52	|
+L	ab_43_12	53	|-heal|p1a: Shellder|145/197|[from] item: Leftovers
+L	ab_43_12	54	|upkeep
+L	ab_43_12	55	|turn|5
+L	ab_43_12	56	|
+L	ab_43_12	57	|t:|<NORMALIZED>
+L	ab_43_12	58	|switch|p2a: Suicune|Suicune|363/363
+L	ab_43_12	59	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_43_12	60	|move|p1a: Shellder|Toxic|p2a: Suicune
+L	ab_43_12	61	|-status|p2a: Suicune|tox
+L	ab_43_12	62	|
+L	ab_43_12	63	|-damage|p2a: Suicune|341/363 tox|[from] psn
+L	ab_43_12	64	|-heal|p1a: Shellder|157/197|[from] item: Leftovers
+L	ab_43_12	65	|upkeep
+L	ab_43_12	66	|turn|6
+L	ab_43_12	67	|
+L	ab_43_12	68	|t:|<NORMALIZED>
+L	ab_43_12	69	|switch|p2a: Stantler|Stantler, M|220/310
+L	ab_43_12	70	|-ability|p2a: Stantler|Intimidate|boost
+L	ab_43_12	71	|-unboost|p1a: Shellder|atk|1
+L	ab_43_12	72	|move|p1a: Shellder|Rain Dance|p1a: Shellder
+L	ab_43_12	73	|-weather|RainDance
+L	ab_43_12	74	|
+L	ab_43_12	75	|-weather|RainDance|[upkeep]
+L	ab_43_12	76	|-heal|p1a: Shellder|169/197|[from] item: Leftovers
+L	ab_43_12	77	|upkeep
+L	ab_43_12	78	|turn|7
+L	ab_43_12	79	|
+L	ab_43_12	80	|t:|<NORMALIZED>
+L	ab_43_12	81	|move|p2a: Stantler|Protect|p2a: Stantler
+L	ab_43_12	82	|-singleturn|p2a: Stantler|Protect
+L	ab_43_12	83	|move|p1a: Shellder|Rain Dance||[still]
+L	ab_43_12	84	|-fail|p1a: Shellder
+L	ab_43_12	85	|debug|move failed because it did nothing
+L	ab_43_12	86	|
+L	ab_43_12	87	|-weather|RainDance|[upkeep]
+L	ab_43_12	88	|-heal|p1a: Shellder|181/197|[from] item: Leftovers
+L	ab_43_12	89	|upkeep
+L	ab_43_12	90	|turn|8
+L	ab_43_12	91	|
+L	ab_43_12	92	|t:|<NORMALIZED>
+L	ab_43_12	93	|move|p2a: Stantler|Stomp|p1a: Shellder
+L	ab_43_12	94	|-damage|p1a: Shellder|91/197
+L	ab_43_12	95	|cant|p1a: Shellder|flinch
+L	ab_43_12	96	|
+L	ab_43_12	97	|-weather|RainDance|[upkeep]
+L	ab_43_12	98	|-heal|p1a: Shellder|103/197|[from] item: Leftovers
+L	ab_43_12	99	|upkeep
+L	ab_43_12	100	|turn|9
+L	ab_43_12	101	|
+L	ab_43_12	102	|t:|<NORMALIZED>
+L	ab_43_12	103	|move|p2a: Stantler|Protect|p2a: Stantler
+L	ab_43_12	104	|-singleturn|p2a: Stantler|Protect
+L	ab_43_12	105	|move|p1a: Shellder|Icy Wind|p2a: Stantler
+L	ab_43_12	106	|-activate|p2a: Stantler|Protect
+L	ab_43_12	107	|
+L	ab_43_12	108	|-weather|RainDance|[upkeep]
+L	ab_43_12	109	|-heal|p1a: Shellder|115/197|[from] item: Leftovers
+L	ab_43_12	110	|upkeep
+L	ab_43_12	111	|turn|10
+L	ab_43_12	112	|
+L	ab_43_12	113	|t:|<NORMALIZED>
+L	ab_43_12	114	|move|p2a: Stantler|Stomp|p1a: Shellder
+L	ab_43_12	115	|-damage|p1a: Shellder|32/197
+L	ab_43_12	116	|move|p1a: Shellder|Toxic|p2a: Stantler
+L	ab_43_12	117	|-status|p2a: Stantler|tox
+L	ab_43_12	118	|
+L	ab_43_12	119	|-weather|none
+L	ab_43_12	120	|-damage|p2a: Stantler|201/310 tox|[from] psn
+L	ab_43_12	121	|-heal|p1a: Shellder|44/197|[from] item: Leftovers
+L	ab_43_12	122	|upkeep
+L	ab_43_12	123	|turn|11
+L	ab_43_12	124	|
+L	ab_43_12	125	|t:|<NORMALIZED>
+L	ab_43_12	126	|move|p2a: Stantler|Body Slam|p1a: Shellder
+L	ab_43_12	127	|-damage|p1a: Shellder|0 fnt
+L	ab_43_12	128	|faint|p1a: Shellder
+L	ab_43_12	129	|
+L	ab_43_12	130	|t:|<NORMALIZED>
+L	ab_43_12	131	|switch|p1a: Grumpig|Grumpig, M|304/304
+L	ab_43_12	132	|
+L	ab_43_12	133	|-damage|p2a: Stantler|163/310 tox|[from] psn
+L	ab_43_12	134	|upkeep
+L	ab_43_12	135	|turn|12
+L	ab_43_12	136	|
+L	ab_43_12	137	|t:|<NORMALIZED>
+L	ab_43_12	138	|switch|p2a: Lombre|Lombre, M|241/241
+L	ab_43_12	139	|move|p1a: Grumpig|Shock Wave|p2a: Lombre
+L	ab_43_12	140	|-damage|p2a: Lombre|174/241
+L	ab_43_12	141	|
+L	ab_43_12	142	|upkeep
+L	ab_43_12	143	|turn|13
+L	ab_43_12	144	|
+L	ab_43_12	145	|t:|<NORMALIZED>
+L	ab_43_12	146	|move|p1a: Grumpig|Shock Wave|p2a: Lombre
+L	ab_43_12	147	|-damage|p2a: Lombre|107/241
+L	ab_43_12	148	|move|p2a: Lombre|Icy Wind|p1a: Grumpig
+L	ab_43_12	149	|-damage|p1a: Grumpig|271/304
+L	ab_43_12	150	|-unboost|p1a: Grumpig|spe|1
+L	ab_43_12	151	|
+L	ab_43_12	152	|upkeep
+L	ab_43_12	153	|turn|14
+L	ab_43_12	154	|
+L	ab_43_12	155	|t:|<NORMALIZED>
+L	ab_43_12	156	|switch|p1a: Geodude|Geodude, M|244/244
+L	ab_43_12	157	|move|p2a: Lombre|Icy Wind|p1a: Geodude
+L	ab_43_12	158	|-supereffective|p1a: Geodude
+L	ab_43_12	159	|-damage|p1a: Geodude|0 fnt
+L	ab_43_12	160	|faint|p1a: Geodude
+L	ab_43_12	161	|
+L	ab_43_12	162	|t:|<NORMALIZED>
+L	ab_43_12	163	|switch|p1a: Hitmonchan|Hitmonchan, M|266/266
+L	ab_43_12	164	|
+L	ab_43_12	165	|upkeep
+L	ab_43_12	166	|turn|15
+L	ab_43_12	167	|
+L	ab_43_12	168	|t:|<NORMALIZED>
+L	ab_43_12	169	|move|p1a: Hitmonchan|Thunder Punch|p2a: Lombre
+L	ab_43_12	170	|-damage|p2a: Lombre|71/241
+L	ab_43_12	171	|move|p2a: Lombre|Frustration|p1a: Hitmonchan
+L	ab_43_12	172	|-damage|p1a: Hitmonchan|264/266
+L	ab_43_12	173	|
+L	ab_43_12	174	|upkeep
+L	ab_43_12	175	|turn|16
+L	ab_43_12	176	|
+L	ab_43_12	177	|t:|<NORMALIZED>
+L	ab_43_12	178	|switch|p2a: Suicune|Suicune|341/363 tox
+L	ab_43_12	179	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_43_12	180	|move|p1a: Hitmonchan|Thunder Punch|p2a: Suicune
+L	ab_43_12	181	|-supereffective|p2a: Suicune
+L	ab_43_12	182	|-damage|p2a: Suicune|301/363 tox
+L	ab_43_12	183	|
+L	ab_43_12	184	|-damage|p2a: Suicune|279/363 tox|[from] psn
+L	ab_43_12	185	|upkeep
+L	ab_43_12	186	|turn|17
+L	ab_43_12	187	|
+L	ab_43_12	188	|t:|<NORMALIZED>
+L	ab_43_12	189	|move|p1a: Hitmonchan|Endure|p1a: Hitmonchan
+L	ab_43_12	190	|-singleturn|p1a: Hitmonchan|move: Endure
+L	ab_43_12	191	|move|p2a: Suicune|Bubble Beam|p1a: Hitmonchan
+L	ab_43_12	192	|-damage|p1a: Hitmonchan|204/266
+L	ab_43_12	193	|
+L	ab_43_12	194	|-damage|p2a: Suicune|235/363 tox|[from] psn
+L	ab_43_12	195	|upkeep
+L	ab_43_12	196	|turn|18
+L	ab_43_12	197	|
+L	ab_43_12	198	|t:|<NORMALIZED>
+L	ab_43_12	199	|move|p2a: Suicune|Bubble Beam|p1a: Hitmonchan
+L	ab_43_12	200	|-damage|p1a: Hitmonchan|140/266
+L	ab_43_12	201	|move|p1a: Hitmonchan|Thunder Punch|p2a: Suicune
+L	ab_43_12	202	|-supereffective|p2a: Suicune
+L	ab_43_12	203	|-damage|p2a: Suicune|191/363 tox
+L	ab_43_12	204	|
+L	ab_43_12	205	|-damage|p2a: Suicune|125/363 tox|[from] psn
+L	ab_43_12	206	|upkeep
+L	ab_43_12	207	|turn|19
+L	ab_43_12	208	|
+L	ab_43_12	209	|t:|<NORMALIZED>
+L	ab_43_12	210	|switch|p2a: Houndoom|Houndoom, M|309/309
+L	ab_43_12	211	|move|p1a: Hitmonchan|Endure||[still]
+L	ab_43_12	212	|-fail|p1a: Hitmonchan
+L	ab_43_12	213	|
+L	ab_43_12	214	|upkeep
+L	ab_43_12	215	|turn|20
+L	ab_43_12	216	|
+L	ab_43_12	217	|t:|<NORMALIZED>
+L	ab_43_12	218	|move|p2a: Houndoom|Double-Edge|p1a: Hitmonchan
+L	ab_43_12	219	|-damage|p1a: Hitmonchan|33/266
+L	ab_43_12	220	|-damage|p2a: Houndoom|274/309|[from] Recoil|[of] p1a: Hitmonchan
+L	ab_43_12	221	|move|p1a: Hitmonchan|Seismic Toss|p2a: Houndoom
+L	ab_43_12	222	|-damage|p2a: Houndoom|174/309
+L	ab_43_12	223	|
+L	ab_43_12	224	|upkeep
+L	ab_43_12	225	|turn|21
+L	ab_43_12	226	|
+L	ab_43_12	227	|t:|<NORMALIZED>
+L	ab_43_12	228	|move|p2a: Houndoom|Solar Beam||[still]
+L	ab_43_12	229	|-prepare|p2a: Houndoom|Solar Beam
+L	ab_43_12	230	|move|p1a: Hitmonchan|Thunder Punch|p2a: Houndoom
+L	ab_43_12	231	|-damage|p2a: Houndoom|143/309
+L	ab_43_12	232	|
+L	ab_43_12	233	|upkeep
+L	ab_43_12	234	|turn|22
+L	ab_43_12	235	|
+L	ab_43_12	236	|t:|<NORMALIZED>
+L	ab_43_12	237	|move|p1a: Hitmonchan|Endure|p1a: Hitmonchan
+L	ab_43_12	238	|-singleturn|p1a: Hitmonchan|move: Endure
+L	ab_43_12	239	|move|p2a: Houndoom|Solar Beam|p1a: Hitmonchan|[from] lockedmove
+L	ab_43_12	240	|-activate|p1a: Hitmonchan|move: Endure
+L	ab_43_12	241	|-damage|p1a: Hitmonchan|1/266
+L	ab_43_12	242	|
+L	ab_43_12	243	|upkeep
+L	ab_43_12	244	|turn|23
+L	ab_43_12	245	|
+L	ab_43_12	246	|t:|<NORMALIZED>
+L	ab_43_12	247	|switch|p1a: Grumpig|Grumpig, M|271/304
+L	ab_43_12	248	|move|p2a: Houndoom|Flamethrower|p1a: Grumpig
+L	ab_43_12	249	|-damage|p1a: Grumpig|156/304
+L	ab_43_12	250	|
+L	ab_43_12	251	|upkeep
+L	ab_43_12	252	|turn|24
+L	ab_43_12	253	|
+L	ab_43_12	254	|t:|<NORMALIZED>
+L	ab_43_12	255	|move|p2a: Houndoom|Double-Edge|p1a: Grumpig
+L	ab_43_12	256	|-damage|p1a: Grumpig|44/304
+L	ab_43_12	257	|-damage|p2a: Houndoom|106/309|[from] Recoil|[of] p1a: Grumpig
+L	ab_43_12	258	|move|p1a: Grumpig|Splash|p1a: Grumpig
+L	ab_43_12	259	|-nothing
+L	ab_43_12	260	|
+L	ab_43_12	261	|upkeep
+L	ab_43_12	262	|turn|25
+L	ab_43_12	263	|
+L	ab_43_12	264	|t:|<NORMALIZED>
+L	ab_43_12	265	|switch|p2a: Banette|Banette, M|262/262
+L	ab_43_12	266	|move|p1a: Grumpig|Shock Wave|p2a: Banette
+L	ab_43_12	267	|-damage|p2a: Banette|189/262
+L	ab_43_12	268	|
+L	ab_43_12	269	|upkeep
+L	ab_43_12	270	|turn|26
+L	ab_43_12	271	|
+L	ab_43_12	272	|t:|<NORMALIZED>
+L	ab_43_12	273	|switch|p2a: Suicune|Suicune|125/363 tox
+L	ab_43_12	274	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_43_12	275	|move|p1a: Grumpig|Shock Wave|p2a: Suicune
+L	ab_43_12	276	|-supereffective|p2a: Suicune
+L	ab_43_12	277	|-damage|p2a: Suicune|51/363 tox
+L	ab_43_12	278	|
+L	ab_43_12	279	|-damage|p2a: Suicune|29/363 tox|[from] psn
+L	ab_43_12	280	|upkeep
+L	ab_43_12	281	|turn|27
+L	ab_43_12	282	|
+L	ab_43_12	283	|t:|<NORMALIZED>
+L	ab_43_12	284	|move|p1a: Grumpig|Calm Mind|p1a: Grumpig
+L	ab_43_12	285	|-boost|p1a: Grumpig|spa|1
+L	ab_43_12	286	|-boost|p1a: Grumpig|spd|1
+L	ab_43_12	287	|move|p2a: Suicune|Sunny Day|p2a: Suicune
+L	ab_43_12	288	|-weather|SunnyDay
+L	ab_43_12	289	|
+L	ab_43_12	290	|-weather|SunnyDay|[upkeep]
+L	ab_43_12	291	|-damage|p2a: Suicune|0 fnt|[from] psn
+L	ab_43_12	292	|faint|p2a: Suicune
+L	ab_43_12	293	|upkeep
+L	ab_43_12	294	|
+L	ab_43_12	295	|t:|<NORMALIZED>
+L	ab_43_12	296	|switch|p2a: Houndoom|Houndoom, M|106/309
+L	ab_43_12	297	|turn|28
+L	ab_43_12	298	|
+L	ab_43_12	299	|t:|<NORMALIZED>
+L	ab_43_12	300	|move|p2a: Houndoom|Flamethrower|p1a: Grumpig
+L	ab_43_12	301	|debug|Sunny Day fire boost
+L	ab_43_12	302	|-damage|p1a: Grumpig|0 fnt
+L	ab_43_12	303	|faint|p1a: Grumpig
+L	ab_43_12	304	|
+L	ab_43_12	305	|t:|<NORMALIZED>
+L	ab_43_12	306	|switch|p1a: Gorebyss|Gorebyss, M|267/267
+L	ab_43_12	307	|
+L	ab_43_12	308	|-weather|SunnyDay|[upkeep]
+L	ab_43_12	309	|upkeep
+L	ab_43_12	310	|turn|29
+L	ab_43_12	311	|
+L	ab_43_12	312	|t:|<NORMALIZED>
+L	ab_43_12	313	|switch|p2a: Nidorina|Nidorina, F|263/263
+L	ab_43_12	314	|move|p1a: Gorebyss|Facade|p2a: Nidorina
+L	ab_43_12	315	|debug|brightpowder - decreasing accuracy
+L	ab_43_12	316	|-damage|p2a: Nidorina|206/263
+L	ab_43_12	317	|-status|p1a: Gorebyss|psn|[from] ability: Poison Point|[of] p2a: Nidorina
+L	ab_43_12	318	|
+L	ab_43_12	319	|-weather|SunnyDay|[upkeep]
+L	ab_43_12	320	|-damage|p1a: Gorebyss|234/267 psn|[from] psn
+L	ab_43_12	321	|upkeep
+L	ab_43_12	322	|turn|30
+L	ab_43_12	323	|
+L	ab_43_12	324	|t:|<NORMALIZED>
+L	ab_43_12	325	|move|p1a: Gorebyss|Facade|p2a: Nidorina
+L	ab_43_12	326	|debug|brightpowder - decreasing accuracy
+L	ab_43_12	327	|-damage|p2a: Nidorina|107/263
+L	ab_43_12	328	|move|p2a: Nidorina|Ice Beam|p1a: Gorebyss
+L	ab_43_12	329	|-resisted|p1a: Gorebyss
+L	ab_43_12	330	|-damage|p1a: Gorebyss|205/267 psn
+L	ab_43_12	331	|
+L	ab_43_12	332	|-weather|SunnyDay|[upkeep]
+L	ab_43_12	333	|-damage|p1a: Gorebyss|172/267 psn|[from] psn
+L	ab_43_12	334	|upkeep
+L	ab_43_12	335	|turn|31
+L	ab_43_12	336	|
+L	ab_43_12	337	|t:|<NORMALIZED>
+L	ab_43_12	338	|switch|p2a: Stantler|Stantler, M|163/310 tox
+L	ab_43_12	339	|-ability|p2a: Stantler|Intimidate|boost
+L	ab_43_12	340	|-unboost|p1a: Gorebyss|atk|1
+L	ab_43_12	341	|move|p1a: Gorebyss|Rain Dance|p1a: Gorebyss
+L	ab_43_12	342	|-weather|RainDance
+L	ab_43_12	343	|
+L	ab_43_12	344	|-weather|RainDance|[upkeep]
+L	ab_43_12	345	|-damage|p1a: Gorebyss|139/267 psn|[from] psn
+L	ab_43_12	346	|-damage|p2a: Stantler|144/310 tox|[from] psn
+L	ab_43_12	347	|upkeep
+L	ab_43_12	348	|turn|32
+L	ab_43_12	349	|
+L	ab_43_12	350	|t:|<NORMALIZED>
+L	ab_43_12	351	|switch|p1a: Hitmonchan|Hitmonchan, M|1/266
+L	ab_43_12	352	|switch|p2a: Banette|Banette, M|189/262
+L	ab_43_12	353	|
+L	ab_43_12	354	|-weather|RainDance|[upkeep]
+L	ab_43_12	355	|upkeep
+L	ab_43_12	356	|turn|33
+L	ab_43_12	357	|
+L	ab_43_12	358	|t:|<NORMALIZED>
+L	ab_43_12	359	|move|p1a: Hitmonchan|Endure|p1a: Hitmonchan
+L	ab_43_12	360	|-singleturn|p1a: Hitmonchan|move: Endure
+L	ab_43_12	361	|move|p2a: Banette|Knock Off|p1a: Hitmonchan
+L	ab_43_12	362	|-resisted|p1a: Hitmonchan
+L	ab_43_12	363	|-activate|p1a: Hitmonchan|move: Endure
+L	ab_43_12	364	|-damage|p1a: Hitmonchan|1/266
+L	ab_43_12	365	|-enditem|p1a: Hitmonchan|Deep Sea Scale|[from] move: Knock Off|[of] p2a: Banette
+L	ab_43_12	366	|-hint|In Gens 3-4, Knock Off only makes the target's item unusable; it cannot obtain a new item.
+L	ab_43_12	367	|
+L	ab_43_12	368	|-weather|RainDance|[upkeep]
+L	ab_43_12	369	|upkeep
+L	ab_43_12	370	|turn|34
+L	ab_43_12	371	|
+L	ab_43_12	372	|t:|<NORMALIZED>
+L	ab_43_12	373	|switch|p2a: Houndoom|Houndoom, M|106/309
+L	ab_43_12	374	|move|p1a: Hitmonchan|Thunder Punch|p2a: Houndoom
+L	ab_43_12	375	|-damage|p2a: Houndoom|74/309
+L	ab_43_12	376	|
+L	ab_43_12	377	|-weather|RainDance|[upkeep]
+L	ab_43_12	378	|upkeep
+L	ab_43_12	379	|turn|35
+L	ab_43_12	380	|
+L	ab_43_12	381	|t:|<NORMALIZED>
+L	ab_43_12	382	|move|p2a: Houndoom|Flamethrower|p1a: Hitmonchan
+L	ab_43_12	383	|debug|rain fire suppress
+L	ab_43_12	384	|-damage|p1a: Hitmonchan|0 fnt
+L	ab_43_12	385	|faint|p1a: Hitmonchan
+L	ab_43_12	386	|
+L	ab_43_12	387	|t:|<NORMALIZED>
+L	ab_43_12	388	|switch|p1a: Ekans|Ekans, M|233/233
+L	ab_43_12	389	|
+L	ab_43_12	390	|-weather|none
+L	ab_43_12	391	|upkeep
+L	ab_43_12	392	|turn|36
+L	ab_43_12	393	|
+L	ab_43_12	394	|t:|<NORMALIZED>
+L	ab_43_12	395	|move|p2a: Houndoom|Double-Edge|p1a: Ekans
+L	ab_43_12	396	|-damage|p1a: Ekans|61/233
+L	ab_43_12	397	|-damage|p2a: Houndoom|17/309|[from] Recoil|[of] p1a: Ekans
+L	ab_43_12	398	|move|p1a: Ekans|Giga Drain|p2a: Houndoom
+L	ab_43_12	399	|-resisted|p2a: Houndoom
+L	ab_43_12	400	|-damage|p2a: Houndoom|3/309
+L	ab_43_12	401	|-heal|p1a: Ekans|68/233|[from] drain|[of] p2a: Houndoom
+L	ab_43_12	402	|
+L	ab_43_12	403	|upkeep
+L	ab_43_12	404	|turn|37
+L	ab_43_12	405	|
+L	ab_43_12	406	|t:|<NORMALIZED>
+L	ab_43_12	407	|move|p2a: Houndoom|Solar Beam||[still]
+L	ab_43_12	408	|-prepare|p2a: Houndoom|Solar Beam
+L	ab_43_12	409	|move|p1a: Ekans|Thief|p2a: Houndoom
+L	ab_43_12	410	|-resisted|p2a: Houndoom
+L	ab_43_12	411	|-crit|p2a: Houndoom
+L	ab_43_12	412	|-damage|p2a: Houndoom|0 fnt
+L	ab_43_12	413	|faint|p2a: Houndoom
+L	ab_43_12	414	|
+L	ab_43_12	415	|t:|<NORMALIZED>
+L	ab_43_12	416	|switch|p2a: Lombre|Lombre, M|71/241
+L	ab_43_12	417	|
+L	ab_43_12	418	|upkeep
+L	ab_43_12	419	|turn|38
+L	ab_43_12	420	|
+L	ab_43_12	421	|t:|<NORMALIZED>
+L	ab_43_12	422	|move|p1a: Ekans|Thief|p2a: Lombre
+L	ab_43_12	423	|-damage|p2a: Lombre|51/241
+L	ab_43_12	424	|move|p2a: Lombre|Frustration|p1a: Ekans
+L	ab_43_12	425	|-damage|p1a: Ekans|65/233
+L	ab_43_12	426	|
+L	ab_43_12	427	|upkeep
+L	ab_43_12	428	|turn|39
+L	ab_43_12	429	|
+L	ab_43_12	430	|t:|<NORMALIZED>
+L	ab_43_12	431	|switch|p2a: Banette|Banette, M|189/262
+L	ab_43_12	432	|move|p1a: Ekans|Thief|p2a: Banette
+L	ab_43_12	433	|-supereffective|p2a: Banette
+L	ab_43_12	434	|-damage|p2a: Banette|143/262
+L	ab_43_12	435	|
+L	ab_43_12	436	|upkeep
+L	ab_43_12	437	|turn|40
+L	ab_43_12	438	|
+L	ab_43_12	439	|t:|<NORMALIZED>
+L	ab_43_12	440	|move|p2a: Banette|Rest|p2a: Banette
+L	ab_43_12	441	|-fail|p2a: Banette|[from] ability: Insomnia|[of] p2a: Banette
+L	ab_43_12	442	|move|p1a: Ekans|Giga Drain|p2a: Banette
+L	ab_43_12	443	|-damage|p2a: Banette|106/262
+L	ab_43_12	444	|-heal|p1a: Ekans|83/233|[from] drain|[of] p2a: Banette
+L	ab_43_12	445	|
+L	ab_43_12	446	|upkeep
+L	ab_43_12	447	|turn|41
+L	ab_43_12	448	|
+L	ab_43_12	449	|t:|<NORMALIZED>
+L	ab_43_12	450	|move|p2a: Banette|Icy Wind|p1a: Ekans|[miss]
+L	ab_43_12	451	|-miss|p2a: Banette|p1a: Ekans
+L	ab_43_12	452	|move|p1a: Ekans|Facade|p2a: Banette
+L	ab_43_12	453	|-immune|p2a: Banette
+L	ab_43_12	454	|
+L	ab_43_12	455	|upkeep
+L	ab_43_12	456	|turn|42
+L	ab_43_12	457	|
+L	ab_43_12	458	|t:|<NORMALIZED>
+L	ab_43_12	459	|move|p2a: Banette|Toxic|p1a: Ekans|[miss]
+L	ab_43_12	460	|-miss|p2a: Banette|p1a: Ekans
+L	ab_43_12	461	|move|p1a: Ekans|Thief|p2a: Banette
+L	ab_43_12	462	|-supereffective|p2a: Banette
+L	ab_43_12	463	|-damage|p2a: Banette|60/262
+L	ab_43_12	464	|
+L	ab_43_12	465	|upkeep
+L	ab_43_12	466	|turn|43
+L	ab_43_12	467	|
+L	ab_43_12	468	|t:|<NORMALIZED>
+L	ab_43_12	469	|switch|p1a: Gorebyss|Gorebyss, M|139/267 psn
+L	ab_43_12	470	|move|p2a: Banette|Rest|p2a: Banette
+L	ab_43_12	471	|-fail|p2a: Banette|[from] ability: Insomnia|[of] p2a: Banette
+L	ab_43_12	472	|
+L	ab_43_12	473	|-damage|p1a: Gorebyss|106/267 psn|[from] psn
+L	ab_43_12	474	|upkeep
+L	ab_43_12	475	|turn|44
+L	ab_43_12	476	|
+L	ab_43_12	477	|t:|<NORMALIZED>
+L	ab_43_12	478	|switch|p1a: Ekans|Ekans, M|83/233
+L	ab_43_12	479	|move|p2a: Banette|Knock Off|p1a: Ekans
+L	ab_43_12	480	|-damage|p1a: Ekans|60/233
+L	ab_43_12	481	|-enditem|p1a: Ekans|White Herb|[from] move: Knock Off|[of] p2a: Banette
+L	ab_43_12	482	|
+L	ab_43_12	483	|upkeep
+L	ab_43_12	484	|turn|45
+L	ab_43_12	485	|
+L	ab_43_12	486	|t:|<NORMALIZED>
+L	ab_43_12	487	|switch|p1a: Gorebyss|Gorebyss, M|106/267 psn
+L	ab_43_12	488	|move|p2a: Banette|Rest|p2a: Banette
+L	ab_43_12	489	|-fail|p2a: Banette|[from] ability: Insomnia|[of] p2a: Banette
+L	ab_43_12	490	|
+L	ab_43_12	491	|-damage|p1a: Gorebyss|73/267 psn|[from] psn
+L	ab_43_12	492	|upkeep
+L	ab_43_12	493	|turn|46
+L	ab_43_12	494	|
+L	ab_43_12	495	|t:|<NORMALIZED>
+L	ab_43_12	496	|switch|p1a: Ekans|Ekans, M|60/233
+L	ab_43_12	497	|move|p2a: Banette|Toxic|p1a: Ekans
+L	ab_43_12	498	|debug|natural status immunity
+L	ab_43_12	499	|debug|immune to status
+L	ab_43_12	500	|-immune|p1a: Ekans
+L	ab_43_12	501	|debug|move failed because it did nothing
+L	ab_43_12	502	|
+L	ab_43_12	503	|upkeep
+L	ab_43_12	504	|turn|47
+L	ab_43_12	505	|
+L	ab_43_12	506	|t:|<NORMALIZED>
+L	ab_43_12	507	|move|p2a: Banette|Rest|p2a: Banette
+L	ab_43_12	508	|-fail|p2a: Banette|[from] ability: Insomnia|[of] p2a: Banette
+L	ab_43_12	509	|move|p1a: Ekans|Giga Drain|p2a: Banette
+L	ab_43_12	510	|-damage|p2a: Banette|23/262
+L	ab_43_12	511	|-heal|p1a: Ekans|78/233|[from] drain|[of] p2a: Banette
+L	ab_43_12	512	|
+L	ab_43_12	513	|upkeep
+L	ab_43_12	514	|turn|48
+L	ab_43_12	515	|
+L	ab_43_12	516	|t:|<NORMALIZED>
+L	ab_43_12	517	|move|p2a: Banette|Icy Wind|p1a: Ekans
+L	ab_43_12	518	|-damage|p1a: Ekans|15/233
+L	ab_43_12	519	|-unboost|p1a: Ekans|spe|1
+L	ab_43_12	520	|move|p1a: Ekans|Strength|p2a: Banette
+L	ab_43_12	521	|-immune|p2a: Banette
+L	ab_43_12	522	|
+L	ab_43_12	523	|upkeep
+L	ab_43_12	524	|turn|49
+L	ab_43_12	525	|
+L	ab_43_12	526	|t:|<NORMALIZED>
+L	ab_43_12	527	|move|p2a: Banette|Rest|p2a: Banette
+L	ab_43_12	528	|-fail|p2a: Banette|[from] ability: Insomnia|[of] p2a: Banette
+L	ab_43_12	529	|move|p1a: Ekans|Thief|p2a: Banette
+L	ab_43_12	530	|-supereffective|p2a: Banette
+L	ab_43_12	531	|-damage|p2a: Banette|0 fnt
+L	ab_43_12	532	|faint|p2a: Banette
+L	ab_43_12	533	|
+L	ab_43_12	534	|t:|<NORMALIZED>
+L	ab_43_12	535	|switch|p2a: Stantler|Stantler, M|144/310 tox
+L	ab_43_12	536	|-ability|p2a: Stantler|Intimidate|boost
+L	ab_43_12	537	|-unboost|p1a: Ekans|atk|1
+L	ab_43_12	538	|
+L	ab_43_12	539	|-damage|p2a: Stantler|125/310 tox|[from] psn
+L	ab_43_12	540	|upkeep
+L	ab_43_12	541	|turn|50
+L	ab_43_12	542	|
+L	ab_43_12	543	|t:|<NORMALIZED>
+L	ab_43_12	544	|move|p2a: Stantler|Swift|p1a: Ekans
+L	ab_43_12	545	|-damage|p1a: Ekans|0 fnt
+L	ab_43_12	546	|faint|p1a: Ekans
+L	ab_43_12	547	|
+L	ab_43_12	548	|t:|<NORMALIZED>
+L	ab_43_12	549	|switch|p1a: Gorebyss|Gorebyss, M|73/267 psn
+L	ab_43_12	550	|
+L	ab_43_12	551	|-damage|p2a: Stantler|87/310 tox|[from] psn
+L	ab_43_12	552	|-damage|p1a: Gorebyss|40/267 psn|[from] psn
+L	ab_43_12	553	|upkeep
+L	ab_43_12	554	|turn|51
+L	ab_43_12	555	|
+L	ab_43_12	556	|t:|<NORMALIZED>
+L	ab_43_12	557	|move|p2a: Stantler|Protect|p2a: Stantler
+L	ab_43_12	558	|-singleturn|p2a: Stantler|Protect
+L	ab_43_12	559	|move|p1a: Gorebyss|Body Slam|p2a: Stantler
+L	ab_43_12	560	|-activate|p2a: Stantler|Protect
+L	ab_43_12	561	|
+L	ab_43_12	562	|-damage|p2a: Stantler|30/310 tox|[from] psn
+L	ab_43_12	563	|-damage|p1a: Gorebyss|7/267 psn|[from] psn
+L	ab_43_12	564	|upkeep
+L	ab_43_12	565	|turn|52
+L	ab_43_12	566	|
+L	ab_43_12	567	|t:|<NORMALIZED>
+L	ab_43_12	568	|move|p2a: Stantler|Swift|p1a: Gorebyss
+L	ab_43_12	569	|-damage|p1a: Gorebyss|0 fnt
+L	ab_43_12	570	|faint|p1a: Gorebyss
+L	ab_43_12	571	|
+L	ab_43_12	572	|win|P2

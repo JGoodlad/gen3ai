@@ -1436,7 +1436,21 @@ impl crate::state::BattleState {
         //     `onAfterSubDamage`, so it clears even behind a sub (`dealt > 0`, mon OR sub). ---
         if !struggle {
             match move_id.as_str() {
-                "knockoff" | "thief" | "covet" if !absorbed && dealt > 0 => {
+                // `onAfterHit` (item removal) fires via `singleEvent("AfterHit", …)` over
+                // `damagedTargets` (battle-actions.js:976-979), and `damagedTargets` includes any
+                // target the move dealt a NUMERIC damage to, INCLUDING 0 — an Endure / Focus-Band
+                // survive-at-1 clamps the realized damage to 0 but the mon is STILL a damaged target
+                // (`typeof damage[i] === "number"`; `Pokemon.damage(0)` returns 0). So the item
+                // removal fires on a DIRECT (non-sub) hit even when `dealt == 0`: gate on `!absorbed`
+                // (the mon took the hit), NOT `dealt > 0` — the old `dealt > 0` wrongly skipped the
+                // Knock Off when Endure clamped it to 0 net damage (repro rmrz81mki_ab_43_12: a 1-HP
+                // Hitmonchan Endures a Knock Off → the port kept its Deep Sea Scale while the sim
+                // knocked it off). DRAW-FREE. NOTE the sibling `DamagingHit` procs (contact-proc
+                // Static / Rough Skin) DIFFER — they fire via `runEvent("DamagingHit", …)`, which
+                // gates on the per-target damage relayVar, so they do NOT proc on a 0-dealt Endure
+                // hit (verified vs the sim: ab_34_19 dec51, Waterfall into an Enduring Static mon
+                // draws NO Static roll) and stay `dealt > 0`.
+                "knockoff" | "thief" | "covet" if !absorbed => {
                     self.apply_item_removal(side, slot, foe, foe_slot, &move_id, dex);
                 }
                 "rapidspin" if dealt > 0 => {
@@ -1511,7 +1525,11 @@ impl crate::state::BattleState {
         //     0 HP, unreachable here) applies none. Emitted as `|-damage|<user>|<HP>|[from]
         //     Recoil|[of] <target>`. Struggle deals damage only when it hit (this path is the
         //     landed-hit path), so recoil applies whenever the realized damage was >0. ---
-        if struggle && dealt > 0 {
+        // `hp > 0` gate: the gen3 `battle.damage`→`spreadDamage` `!target.hp` early-return
+        // (battle.js:1727) — a Struggle whose CONTACT hit fainted the user via Rough Skin
+        // (fired at the DamagingHit position ABOVE) skips its own recoil, emitting NOTHING (the
+        // same class as the batch-1 `apply_recoil` fix, repro rmrz81mki_ab_47_23).
+        if struggle && dealt > 0 && self.sides[side].pokemon[slot].hp > 0 {
             let user_hp_before = self.sides[side].pokemon[slot].hp;
             let recoil = (dealt / 4).max(1).min(user_hp_before);
             // FOCUS BAND: the recoil is a Damage event into the user (effect 'recoil',
@@ -1731,6 +1749,21 @@ impl crate::state::BattleState {
                 // — the probe ED8 Arm-Thrust class: each strike `-activate`s + survives at
                 // 1). DRAW-FREE.
                 let realized = self.endure_clamp(foe, foe_slot, realized, dex);
+                // FOCUS BAND per strike (`gen3_beatup_focus_band_v1`): the gen4-inherited
+                // `focusband.onDamage` puts `randomChance(1,10)` FIRST in its `&&`, so the roll
+                // draws on EVERY move-damage hit into a Focus Band holder (JS short-circuit), NOT
+                // only lethal ones — and a lethal strike that passes survives at 1 HP. A Beat Up
+                // STRIKE runs the full `spreadMoveHit` → `spreadDamage` → `runEvent('Damage')` →
+                // the Focus Band handler, exactly like the single-hit path (`run_move`) and the
+                // generic `[2,5]` multihit (`run_multihit`). `run_beat_up` used to apply the strike
+                // damage DIRECTLY (no `focus_band_damage`), so a Beat Up strike into a FB holder
+                // MISSED the draw → a one-fewer-draw desync (random-mode byte fuzz find ab_7_7 @
+                // master-seed 200724: Houndour's 1-strike Beat Up into a Focus-Band Geodude — the
+                // sim drew the FB `randomChance(1,10)`, the port didn't → the seed desynced). A
+                // sub-absorbed strike never reaches here (the `!absorbed` gate). `emit_survive_zero
+                // = true` mirrors the `realized > 0` `-damage` gate below (self-emits the 1/max
+                // line when a survive nets 0 at 1 HP).
+                let realized = self.focus_band_damage(foe, foe_slot, realized, true, true, dex);
                 self.apply_damage(foe, foe_slot, realized);
                 // DESTINY BOND trigger record (`gen3_move_coverage_batch6_v1`): a Beat Up
                 // strike is a FOE Move hit — a KO strike with the DB volatile up marks the
@@ -2858,6 +2891,24 @@ impl crate::state::BattleState {
             flash_fire: false,
         };
         let dmg = calc_damage(&ctx, dex);
+        // --- THE `runEvent('ModifyDamagePhase1')` HANDLER-SORT SHUFFLE (the confusion
+        //     self-hit sibling of the normal-move `modify_damage_phase1_shuffle`,
+        //     `gen3_confusion_self_hit_screen_shuffle_v1`) — gen-4 confusion (gen-3-inherited)
+        //     runs the FULL `getDamage(self,self,40)` → `modifyDamage` → `runEvent(
+        //     'ModifyDamagePhase1')`, which GATHERS the screens' `onAnyModifyDamagePhase1`
+        //     SIDE handlers exactly like a normal hit — once per side across BOTH sides (the
+        //     `onAny` prefix; `findEventHandlers`'s Side loop pushes them for every side). So
+        //     BOTH sides carrying a screen (or any ≥2 combo) TIE → a size-k Fisher-Yates
+        //     speed-sort shuffle draws `k-1`. The screen handlers' `target !== source` guard
+        //     makes them a DAMAGE no-op for a self-hit (no reduction — `ctx.reflect/light_screen`
+        //     stay false above), but the handlers still GATHER, so the shuffle DRAWS. The port
+        //     used to skip it entirely → a missing draw whenever ≥2 screens were up during a
+        //     confusion self-hit (random-mode byte fuzz find ab_3_17 @ master-seed 100125,
+        //     Tangela self-hits with Reflect on BOTH sides → `shuffle(len=2)`; sim-probe-confirmed
+        //     the draw sits AFTER the confusion `randomChance(1,2)`, BEFORE the `random(16)`).
+        //     `modify_damage_phase1_shuffle` counts every screen on both sides (once each) — the
+        //     same count the sim's gather produces — and draws nothing for 0/1. ---
+        self.modify_damage_phase1_shuffle();
         // ONE random(16) randomizer roll for the self-hit damage.
         let r = self.prng.random_below(16) as usize;
         let realized = dmg.rolls[r];

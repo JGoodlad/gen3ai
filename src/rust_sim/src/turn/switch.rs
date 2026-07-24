@@ -769,6 +769,15 @@ impl crate::state::BattleState {
             // The SUBSTITUTE volatile clears on switch-out (clearVolatile) — a sub does not
             // follow its owner off the field; the entrant comes in with no sub.
             m.substitute = None;
+            // The CURSE volatile clears on switch-out (`clearVolatile` sets `this.volatiles = {}`,
+            // pokemon.js — curse is an ordinary volatile, dropped like leech/sub). MISSING this
+            // left a cursed mon STILL cursed on the bench, so on re-entry the order-10/subOrder-8
+            // residual re-chipped it `floor(maxhp/4)` per turn where the sim had cleared it (the
+            // curse-cluster state divergences — repro rmrz8ngky_ab_40_3 / ab_0_14 / ab_26_0 /
+            // ab_40_14, ~maxhp/4-low with the seed matching). The Baton-Pass pass-set snapshot
+            // (above, pre-clearVolatile) already captured `m.curse` and re-applies it to the
+            // entrant post-swap (noCopy false), so this clear does not disturb Baton Pass.
+            m.curse = None;
             // The CHOICE-LOCK volatile clears on switch-out (`gen3_pp_tracking_v1`,
             // `choicelock` is `noCopy` + dropped by clearVolatile / re-set by
             // `choiceband.onStart`): a Choice-Band mon that pivots out is UNLOCKED, so it can
@@ -1180,6 +1189,21 @@ impl crate::state::BattleState {
                 self.sides[side].pokemon[slot].sleep_skipped = 0;
             }
         }
+        // (2b) runEvent('SwitchIn') ALSO fires `whiteherb.onAnySwitchIn` (priority −2, items.js:7681)
+        // for EVERY active White Herb holder — restoring a holder that ALREADY carries a negative
+        // boost + consuming the herb, at the SwitchIn step BEFORE the entrant's ability `Start`
+        // (mods/gen4/scripts.js:41-45). Draw-free; `white_herb_restore` is a no-op unless the holder
+        // has a pending negative stage, so the entrant (fresh, boosts cleared) never restores. The
+        // BEFORE-Start timing is exactly why an ENTRANT'S OWN Intimidate does NOT restore the foe at
+        // THIS switch-in (the drop is at Start, AFTER SwitchIn → the foe restores later via its
+        // onAnyAfterMove — the ab_4_6 case, unchanged). The PRE-EXISTING-drop case is the fix (repro
+        // rmrz81mki_ab_29_5: Nuzleaf's construction-Intimidate −1 Atk, un-restored because Nuzleaf
+        // switched in FASTER than the drop, is restored when Quilava switches in mid-turn-1 — BEFORE
+        // Nuzleaf's move, not at the fallback order-29 residual). Fires before the entrant's hp check
+        // (the sim's SwitchIn precedes `if (!pokemon.hp) return`), so a spikes-KO'd entrant still
+        // lets the foe's herb restore.
+        self.white_herb_restore(1 - side, self.sides[1 - side].active, dex);
+        self.white_herb_restore(side, slot, dex);
         // (3) If the entrant was KO'd by the hazard, its ability `Start` does NOT fire
         // (`if (!pokemon.hp) return false`). The faint flag + the forced replacement are
         // handled by the runAction tail (process_faints → check_fainted → the switch gate).

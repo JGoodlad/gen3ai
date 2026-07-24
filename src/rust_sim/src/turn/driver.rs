@@ -338,8 +338,19 @@ impl crate::state::BattleState {
                     //     `sleeptalk`, not the called move; the pursuit-interrupt strike
                     //     is a bare `useMove` (NO runMove → NO AfterMove → NOT consumed
                     //     there, faithful to the source). DRAW-FREE; the removal emits
-                    //     `|-end|<user>|Charge|[silent]` (`charge.onEnd`). ---
-                    if self.sides[side].pokemon[slot].charge {
+                    //     `|-end|<user>|Charge|[silent]` (`charge.onEnd`).
+                    //     A 0-HP user (a SELF-DESTRUCT / Explosion self-KO'd charger) does NOT
+                    //     consume/emit it: the sim's `Pokemon.removeVolatile` returns false for
+                    //     `!this.hp`, so `charge.onAfterMove`'s `removeVolatile('charge')` is a
+                    //     no-op → NO `|-end|Charge` line (the faint's later silent clearVolatile
+                    //     drops it). The port used to emit a spurious `|-end|Charge|[silent]`
+                    //     BEFORE the `|faint|` (`gen3_charge_selfko_no_end_v1`, random-mode byte
+                    //     fuzz find ab_12_17 @ master-seed 200724: a Charge-holding Electrode
+                    //     Self-Destructs; sim-probe-confirmed via `harness/probe_charge_selfko.js`).
+                    //     Gate on hp > 0 (the `removeVolatile` false-on-0-HP rule). ---
+                    if self.sides[side].pokemon[slot].charge
+                        && self.sides[side].pokemon[slot].hp > 0
+                    {
                         let executed_is_charge = !struggle
                             && self
                                 .move_at(side, slot, move_index, dex)

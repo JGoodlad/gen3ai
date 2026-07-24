@@ -7847,6 +7847,175 @@ fn double_screen_physical_hit_draws_the_modify_damage_phase1_shuffle() {
     );
 }
 
+/// The CONFUSION self-hit × ModifyDamagePhase1 SCREEN SHUFFLE
+/// (`gen3_confusion_self_hit_screen_shuffle_v1`, the random-mode byte-fuzz find ab_3_17 @
+/// master-seed 100125). gen-4 confusion (gen-3-inherited) runs the FULL `getDamage(self,self,40)`
+/// → `modifyDamage` → `runEvent('ModifyDamagePhase1')`, which GATHERS the screens'
+/// `onAnyModifyDamagePhase1` SIDE handlers exactly like a normal hit — once per side across BOTH
+/// sides. So ≥2 screens (here Reflect on p1 + Light Screen on p2) TIE → a size-2 Fisher-Yates
+/// speed-sort shuffle draws ONE `random(0,2)` DURING the self-hit, AFTER the confusion
+/// `randomChance(1,2)` and BEFORE the `random(16)` randomizer. WRONG (pre-fix):
+/// `apply_confusion_self_hit` never called `modify_damage_phase1_shuffle` → that draw was MISSING →
+/// the post-turn seed diverged whenever ≥2 screens were up during a confusion self-hit. Ground
+/// truth `harness/probe_confusion_screen_shuffle_rng.js` (C-2SCR / C-NONE, seed 2,2,2,2).
+#[test]
+fn confusion_self_hit_with_two_screens_draws_the_modify_damage_phase1_shuffle() {
+    let d = dex();
+    // A confused Snorlax (counter injected) Splashes (a draw-free move) but SELF-HITS on its
+    // confusion randomChance(1,2). Reflect on p1 + Light Screen on p2 → 2 tied ModifyDamagePhase1
+    // handlers gather at the self-hit → the shuffle. reflect(onSideResidualOrder 1)/lightscreen(2)
+    // DIFFER → NO residual tie, so the seed isolates ONLY the confusion self-hit shuffle. Blissey
+    // Splashes (draw-free). Seed = the probe's post-construction seedBefore for raw [2,2,2,2].
+    let snorlax = "Snorlax|||immunity|splash|Adamant|252,252,,,,|||||";
+    let blissey = "Blissey|||naturalcure|splash|Bold|252,,252,,,|||||";
+    let mut two =
+        Battle::start_with_switchins(&opts_cg(snorlax, blissey, "52170,17908,58343,8292"), &d)
+            .expect("start");
+    let st2 = two.state_mut().unwrap();
+    st2.sides[0].pokemon[0].confusion = Some(4); // matches the probe's injected confusion time=4
+    st2.sides[0].reflect = 5;
+    st2.sides[1].light_screen = 5;
+    let hp_before = st2.sides[0].pokemon[0].hp;
+    let out_two =
+        st2.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(out_two.decisions.len(), 1, "one move boundary");
+    assert!(
+        st2.sides[0].pokemon[0].hp < hp_before,
+        "the confusion self-hit fired (Snorlax HP dropped from {hp_before})"
+    );
+    // GROUND TRUTH (probe C-2SCR): draws = confusion randomChance(1,2) + the MDP1 shuffle + the
+    // self-hit random(16) + Quick Claw. Reverting the shuffle drops a draw → this seed diverges.
+    assert_eq!(
+        seed_str(&out_two.decisions[0].seed_after),
+        "10126,34169,19989,9144",
+        "the confusion self-hit with 2 screens draws the ModifyDamagePhase1 shuffle → the real \
+         Showdown seed"
+    );
+
+    // CONTROL: NO screens — the self-hit gathers 0 screen handlers → NO shuffle → one FEWER draw →
+    // a DIFFERENT seed (== the SUB3 no-screen confusion self-hit, the C-NONE ground truth).
+    let mut none =
+        Battle::start_with_switchins(&opts_cg(snorlax, blissey, "52170,17908,58343,8292"), &d)
+            .expect("start");
+    let stn = none.state_mut().unwrap();
+    stn.sides[0].pokemon[0].confusion = Some(4);
+    let out_none =
+        stn.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        seed_str(&out_none.decisions[0].seed_after),
+        "57951,31032,5281,7249",
+        "with NO screens, the confusion self-hit draws no ModifyDamagePhase1 shuffle → a different seed"
+    );
+    assert_ne!(
+        seed_str(&out_two.decisions[0].seed_after),
+        seed_str(&out_none.decisions[0].seed_after),
+        "the confusion self-hit shuffle draw MUST make the two seeds differ (the crux — reverting \
+         the shuffle would make them equal)"
+    );
+}
+
+/// The BEAT UP strike × FOCUS BAND draw (`gen3_beatup_focus_band_v1`, random-mode byte-fuzz find
+/// ab_7_7 @ master-seed 200724). gen-4's `focusband.onDamage` puts `randomChance(1,10)` FIRST in
+/// its `&&`, so a Focus Band holder draws the roll on EVERY move-damage hit (JS short-circuit),
+/// not only lethal ones. A Beat Up STRIKE runs the full `spreadMoveHit` → `spreadDamage` →
+/// `runEvent('Damage')` → the Focus Band handler, exactly like the single-hit path (`run_move`)
+/// and the generic `[2,5]` multihit (`run_multihit`). `run_beat_up` used to apply its strike
+/// damage DIRECTLY (no `focus_band_damage`), so a Beat Up strike into a FB holder MISSED the draw
+/// → a one-fewer-draw desync. Ground truth `harness/probe_beatup_focus_band_rng.js`.
+#[test]
+fn beat_up_strike_into_a_focus_band_holder_draws_the_focus_band_roll() {
+    let d = dex();
+    // p1 Houndour is a 1-MON team → Beat Up strikes exactly ONCE (only the active is healthy).
+    // p2 Snorlax (bulky) survives the typeless small-BP strike (non-lethal), so the FB roll draws
+    // but the survive branch is not taken. Both use move slot 0 (Beat Up / Splash — draw-free).
+    // Seed = the probe's seedBefore.
+    let houndour = "Houndour|||flashfire|beatup,splash|Adamant|,252,,,,|||||";
+    let snorlax_fb = "Snorlax||FocusBand|immunity|splash|Careful|252,,,,252,|||||";
+    let mut two =
+        Battle::start_with_switchins(&opts_cg(houndour, snorlax_fb, "53303,35262,36397,29520"), &d)
+            .expect("start");
+    let out = two
+        .state_mut()
+        .unwrap()
+        .run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // GROUND TRUTH (probe FB): draws = Beat Up whole-move acc + strike crit + strike random(16) +
+    // the Focus Band randomChance(1,10) + Quick Claw. Reverting the fix drops the FB draw → the
+    // seed collapses to the no-item control below.
+    assert_eq!(
+        seed_str(&out.decisions[0].seed_after),
+        "10162,51001,19049,38839",
+        "a Beat Up strike into a Focus Band holder draws the randomChance(1,10) → the real \
+         Showdown seed"
+    );
+
+    // CONTROL: no Focus Band → the strike's Damage event has no Focus Band handler → NO
+    // randomChance(1,10) → one FEWER draw → a DIFFERENT seed.
+    let snorlax_none = "Snorlax|||immunity|splash|Careful|252,,,,252,|||||";
+    let mut none =
+        Battle::start_with_switchins(&opts_cg(houndour, snorlax_none, "53303,35262,36397,29520"), &d)
+            .expect("start");
+    let out_n = none
+        .state_mut()
+        .unwrap()
+        .run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        seed_str(&out_n.decisions[0].seed_after),
+        "29814,3811,34909,65508",
+        "no Focus Band → no FB roll → a different seed"
+    );
+    assert_ne!(
+        seed_str(&out.decisions[0].seed_after),
+        seed_str(&out_n.decisions[0].seed_after),
+        "the Beat Up strike Focus Band draw MUST make the two seeds differ (the crux — reverting \
+         the fix would make them equal)"
+    );
+}
+
+/// ENDURE does NOT clamp a FUTURE-MOVE resolve (`gen3_futuremove_no_endure_v1`, the random-mode
+/// byte-fuzz find ab_19_1 @ master-seed 200724). endure's `duration: 1` means it is only active
+/// the turn it is used and EXPIRES at THAT turn's residual BEFORE the order-11 future-move resolve
+/// (the LAST residual handler), so the enduring mon takes the FULL stored damage and FAINTS — the
+/// sim emits NO `|-activate|move: Endure` (golden ab_19_1: an Enduring Vaporeon dies to a lethal
+/// Future Sight resolve). The port used to (CLASS-INFERRED, "not probe-verified") clamp the resolve
+/// with endure → the mon survived at 1 HP → a decision-stream divergence. STATE pin (endure_clamp is
+/// draw-free, so the seed is unchanged either way — the fainted-vs-survive-at-1 STATE is the crux).
+#[test]
+fn endure_does_not_clamp_a_future_move_resolve() {
+    let d = dex();
+    // p1 is a 1-MON Snorlax (so the KO ends the battle cleanly). It USES Endure this turn (move
+    // slot 0 — a first Endure always succeeds, draw-free) so the endure volatile is ACTIVE at the
+    // residual (injecting it pre-turn wouldn't work — the turn-top clear_flinch drops it). A pending
+    // Future Sight sits on p1's slot (targeting p1's active), resolving THIS turn's residual
+    // (duration 1 → 0) with LETHAL stored damage. p2 Blissey Splashes (a foe action, so Endure's
+    // willAct gate passes).
+    let snorlax = "Snorlax|||immunity|endure,splash|Careful|252,,,252,,|||||";
+    let blissey = "Blissey|||naturalcure|splash|Bold|252,,252,,,|||||";
+    let mut b =
+        Battle::start_with_switchins(&opts_cg(snorlax, blissey, "1,2,3,4"), &d).expect("start");
+    let st = b.state_mut().unwrap();
+    let src_uid = st.sides[1].pokemon[0].uid;
+    st.sides[0].future_move = Some(pokesim::state::FutureMove {
+        duration: 1,
+        damage: 9999, // lethal; apply_damage saturates the mon to 0
+        move_id: "futuresight".to_string(),
+        accuracy: 100, // resolve always hits (still draws its accuracy roll)
+        source_side: 1,
+        source_uid: src_uid,
+    });
+    let _out = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    // The future-move resolve KO's the enduring Snorlax — endure does NOT clamp it. Reverting the
+    // fix (re-adding `endure_clamp` to the future-move resolve) → endure clamps → Snorlax survives
+    // at 1 HP (hp == 1, not fainted).
+    assert_eq!(
+        st.sides[0].pokemon[0].hp, 0,
+        "the future-move resolve KO's the enduring mon — endure does NOT clamp a resolve"
+    );
+    assert!(
+        st.sides[0].pokemon[0].fainted,
+        "the enduring mon FAINTED from the future-move resolve"
+    );
+}
+
 /// Helper: set side `s`'s active mon major status (a STATE-only inject, no PRNG).
 fn st_set_status_b2(st: &mut pokesim::state::BattleState, s: usize, status: Status) {
     let active = st.sides[s].active;

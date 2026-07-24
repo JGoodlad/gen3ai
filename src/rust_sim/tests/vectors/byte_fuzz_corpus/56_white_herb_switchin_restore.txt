@@ -1,0 +1,573 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=400724 run_id=rmrz81mki chunk=29
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_29_5
+TEAM	ab_29_5	p1	Nuzleaf||WhiteHerb|EarlyBird|FeintAttack,SunnyDay,GigaDrain,BrickBreak|Naive|20,100,188,,20,180|M|23,15,14,18,21,16|||]Dusclops||CheriBerry|Pressure|SeismicToss,ShadowBall,ThunderPunch,WillOWisp|Serious|160,,164,132,24,28|M|13,18,11,26,24,21|||]Aipom||LansatBerry|Pickup|FocusPunch,Return,MegaPunch,Astonish|Hardy|212,100,8,20,124,44|M|2,22,29,30,13,25|||]Taillow||AspearBerry|Guts|WingAttack,Substitute,Protect,Return|Quirky|176,32,76,4,20,200|M|,16,16,7,12,27|||]Octillery||StarfBerry|SuctionCups|Return,FireBlast,Facade,IceBeam|Quiet|240,,44,32,,192|M|30,13,0,0,12,24|||]Parasect||MetalPowder|EffectSpore|Cut,Aromatherapy,BodySlam,Mimic|Jolly|128,,160,,136,84|M|5,30,4,3,30,21|||
+TEAM	ab_29_5	p2	Hitmontop||PechaBerry|Intimidate|Earthquake,Protect,BrickBreak,MegaKick|Adamant|112,80,,132,108,76|M|13,17,26,29,14,7|||]Parasect||LeppaBerry|EffectSpore|Frustration,Growth,LeechLife,SludgeBomb|Rash|40,196,,36,156,80|M|28,13,0,,26,3|||]Porygon||PinkBow|Trace|Frustration,Rest,SolarBeam,Substitute|Naive|92,84,184,148,,|N|24,14,18,7,24,1|||]Quilava||WikiBerry|Blaze|Swift,Toxic,AerialAce,Flamethrower|Bold|108,120,,,152,128|M|20,12,11,13,28,16|||]Umbreon||NeverMeltIce|Synchronize|HyperBeam,MeanLook,Mimic,SunnyDay|Sassy|100,12,92,,88,216|M|28,30,10,12,8,26|||]Chansey||SoulDew|SereneGrace|RockTomb,BodySlam,DoubleEdge,FocusPunch|Modest|184,80,56,100,4,84|F|28,26,14,29,13,5|||
+FMT	ab_29_5	gen3customgame
+INIT	ab_29_5	16617,51373,43671,38929	759559402
+DEC	ab_29_5	0	move	0	0	m0	s3	38188,13342,51914,49258	Nuzleaf	278	278	0	-	0	0	0	0	0	0	6	Quilava	222	273	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_29_5	1	move	0	0	m2	s1	20940,39,1570,16222	Nuzleaf	278	278	0	-	0	0	0	0	0	0	6	Parasect	256	268	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_29_5	2	move	0	0	m1	m1	56179,39279,8996,60633	Nuzleaf	278	278	0	-	0	0	0	0	0	0	6	Parasect	256	268	0	-	0	0	1	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_29_5	3	move	0	0	s1	m3	46804,4502,49926,31988	Dusclops	183	243	0	psn	0	0	0	0	0	0	6	Parasect	256	268	0	-	0	0	1	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_29_5	4	move	0	0	m1	s1	29866,53225,15112,38443	Dusclops	153	243	0	psn	0	0	0	0	0	0	6	Quilava	156	273	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_29_5	5	move	0	0	m2	m1	33769,19307,4922,9065	Dusclops	123	243	0	psn	0	0	0	0	0	0	6	Quilava	102	273	0	par	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_29_5	6	move	0	0	s4	m2	8520,41243,1171,34925	Octillery	306	350	0	-	0	0	0	0	0	0	6	Quilava	102	273	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_29_5	7	move	0	0	s4	m0	59818,25435,33255,60951	Dusclops	93	243	0	psn	0	0	0	0	0	0	6	Quilava	102	273	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_29_5	8	move	0	0	m0	m3	37745,54500,23168,23989	Dusclops	0	243	1	fnt	0	0	0	0	0	0	5	Quilava	2	273	0	par	0	0	0	0	0	0	6	p1	0	0	1	0	0
+DEC	ab_29_5	9	switch	1	0	s3	-	40450,4858,21220,29740	Taillow	265	265	0	-	0	0	0	0	0	0	5	Quilava	2	273	0	par	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_29_5	10	move	0	0	m0	m2	51913,54974,59963,38393	Taillow	265	265	0	-	0	0	0	0	0	0	5	Quilava	0	273	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_29_5	11	switch	0	1	-	s4	13855,52687,29370,2816	Taillow	265	265	0	-	0	0	0	0	0	0	5	Umbreon	353	353	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_29_5	12	move	0	0	s5	s5	37922,11768,8303,62915	Parasect	267	267	0	-	0	0	0	0	0	0	5	Chansey	684	684	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_29_5	13	move	0	0	m0	m0	52496,2195,5438,11851	Parasect	246	267	0	-	0	0	0	0	-1	0	5	Chansey	492	684	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_29_5	14	move	0	0	m3	m0	61145,43597,42520,38222	Parasect	226	267	0	-	0	0	0	0	-2	0	5	Chansey	492	684	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_29_5	15	move	0	0	m3	m1	57464,56702,47947,1115	Parasect	199	267	0	-	0	0	0	0	-2	0	5	Chansey	186	684	0	psn	0	0	0	0	-1	0	5	p2	0	0	0	0	0
+DEC	ab_29_5	16	move	0	0	m1	m3	35410,38871,30904,29854	Parasect	182	267	0	-	0	0	0	0	-2	0	5	Chansey	101	684	0	psn	0	0	0	0	-1	0	5	p1	0	0	0	0	0
+DEC	ab_29_5	17	move	0	0	m0	m0	51704,24033,10752,58183	Parasect	162	267	0	-	0	0	0	0	-3	0	5	Chansey	0	684	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_29_5	18	switch	0	1	-	s3	8516,18235,14098,18630	Parasect	162	267	0	-	-1	0	0	0	-3	0	5	Hitmontop	251	251	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_29_5	19	move	0	0	m3	m2	9906,13220,42691,21929	Parasect	113	267	0	-	-1	0	0	0	-3	0	5	Hitmontop	238	251	0	-	0	0	0	0	-1	0	4	p2	0	0	0	0	0
+DEC	ab_29_5	20	move	0	0	m3	m2	774,10885,32055,3928	Parasect	64	267	0	-	-1	0	0	0	-3	0	5	Hitmontop	225	251	0	-	0	0	0	0	-2	0	4	p2	0	0	0	0	0
+DEC	ab_29_5	21	move	0	0	s5	s5	33527,45919,27005,50299	Taillow	265	265	0	-	0	0	0	0	0	0	5	Umbreon	353	353	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_29_5	22	move	0	0	m3	m2	40988,23236,39473,35935	Taillow	265	265	0	-	0	0	0	0	0	0	5	Umbreon	289	353	0	-	0	0	0	0	0	0	4	p1	0	0	0	1	1
+DEC	ab_29_5	23	move	0	0	m1	m1	17564,6947,17514,55102	Taillow	199	265	0	-	0	0	0	0	0	0	5	Umbreon	289	353	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	1
+DEC	ab_29_5	24	move	0	0	m3	s1	14752,60089,25157,61501	Taillow	199	265	0	-	0	0	0	0	0	0	5	Parasect	152	268	0	-	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_29_5	25	move	0	0	m0	m0	32331,920,15936,20481	Taillow	199	265	0	-	0	0	0	0	0	0	5	Parasect	0	268	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_29_5	26	switch	0	1	-	s1	42009,54600,38493,47144	Taillow	199	265	0	-	0	0	0	0	0	0	5	Umbreon	289	353	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_29_5	27	move	0	0	s4	s2	50994,37281,37209,56986	Octillery	306	350	0	-	0	0	0	0	0	0	5	Porygon	287	287	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_29_5	28	move	0	0	m3	m1	23895,45848,52562,27920	Octillery	306	350	0	-	0	0	0	0	0	0	5	Porygon	287	287	0	slp	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_29_5	29	move	0	0	m0	m1	2063,2298,57916,56740	Octillery	306	350	0	-	0	0	0	0	0	0	5	Porygon	197	287	0	slp	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_29_5	30	move	0	0	m2	m1	63195,12831,38987,36088	Octillery	306	350	0	-	0	0	0	0	0	0	5	Porygon	136	287	0	slp	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_29_5	31	move	0	0	m2	m2	36037,22650,6230,3852	Octillery	306	350	0	-	0	0	0	0	0	0	5	Porygon	77	287	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_29_5	32	move	0	0	m2	m0	23141,46991,35674,39796	Octillery	52	350	0	-	2	0	0	0	0	0	5	Porygon	17	287	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_29_5	33	move	0	0	m2	m2	63734,24756,38590,17697	Octillery	52	350	0	-	2	0	0	0	0	0	5	Porygon	0	287	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_29_5	34	switch	0	1	-	s5	28783,24910,7197,36296	Octillery	52	350	0	-	1	0	0	0	0	0	5	Hitmontop	225	251	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_29_5	35	move	0	0	m3	s2	61297,11053,11342,7055	Octillery	52	350	0	-	1	0	0	0	0	0	5	Umbreon	234	353	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_29_5	36	move	0	0	s1	s2	38045,58294,23712,1326	Nuzleaf	278	278	0	-	0	0	0	0	0	0	5	Hitmontop	225	251	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_29_5	37	move	0	0	m0	m2	59568,13699,28196,25837	Nuzleaf	0	278	1	fnt	0	0	0	0	0	0	4	Hitmontop	205	251	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_29_5	38	switch	1	0	s4	-	1240,20703,44288,17732	Taillow	199	265	0	-	0	0	0	0	0	0	4	Hitmontop	205	251	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_29_5	39	move	0	0	m3	m1	47160,31670,57936,22961	Taillow	199	265	0	-	0	0	0	0	0	0	4	Hitmontop	205	251	0	-	0	0	0	0	0	0	2	p2	0	0	0	1	0
+DEC	ab_29_5	40	move	0	0	m0	m1	32489,56794,62284,10805	Taillow	199	265	0	-	0	0	0	0	0	0	4	Hitmontop	205	251	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_29_5	41	move	0	0	s2	m1	50382,60002,17212,41644	Aipom	275	275	0	-	0	0	0	0	0	0	4	Hitmontop	205	251	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_29_5	42	move	0	0	m0	m0	26431,47510,8336,20864	Aipom	145	275	0	-	0	0	0	0	0	0	4	Hitmontop	205	251	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_29_5	43	move	0	0	m0	m1	4085,24605,29022,11901	Aipom	145	275	0	-	0	0	0	0	0	0	4	Hitmontop	205	251	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_29_5	44	move	0	0	m3	m3	7727,53208,26450,61131	Aipom	145	275	0	-	0	0	0	0	0	0	4	Hitmontop	184	251	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_29_5	45	move	0	0	m1	m0	1187,2581,51596,10505	Aipom	0	275	1	fnt	0	0	0	0	0	0	3	Hitmontop	88	251	0	-	0	0	0	0	0	0	2	p1	0	0	0	1	0
+DEC	ab_29_5	46	switch	1	0	s1	-	35588,23334,29095,41040	Octillery	52	350	0	-	0	0	0	0	0	0	3	Hitmontop	88	251	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_29_5	47	move	0	0	m3	m1	43588,1833,31497,29709	Octillery	52	350	0	-	0	0	0	0	0	0	3	Hitmontop	88	251	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_29_5	48	move	0	0	m1	m1	17217,28311,52046,38968	Octillery	52	350	0	-	0	0	0	0	0	0	3	Hitmontop	0	251	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_29_5	49	switch	0	1	-	s2	10964,2854,3878,42203	Octillery	52	350	0	-	0	0	0	0	0	0	3	Umbreon	234	353	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_29_5	50	move	0	0	m0	m3	51240,54602,37956,9919	Octillery	52	350	0	-	0	0	0	0	0	0	3	Umbreon	162	353	0	-	0	0	0	0	0	0	1	p2	0	0	0	1	0
+DEC	ab_29_5	51	move	0	0	m0	m1	50217,59940,951,62051	Octillery	52	350	0	-	0	0	0	0	0	0	3	Umbreon	90	353	0	-	0	0	0	0	0	0	1	p2	0	0	0	1	1
+DEC	ab_29_5	52	move	0	0	m2	m2	20364,39038,26694,60359	Octillery	52	350	0	-	0	0	0	0	0	0	3	Umbreon	45	353	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	1
+DEC	ab_29_5	53	move	0	0	m0	m1	58819,47752,10451,18696	Octillery	52	350	0	-	0	0	0	0	0	0	3	Umbreon	0	353	1	-	0	0	0	0	0	0	0	p2	0	0	0	1	1
+END	ab_29_5	1	p1
+L	ab_29_5	0	|t:|<NORMALIZED>
+L	ab_29_5	1	|gametype|singles
+L	ab_29_5	2	|player|p1|P1||
+L	ab_29_5	3	|player|p2|P2||
+L	ab_29_5	4	|gen|3
+L	ab_29_5	5	|tier|[Gen 3] Custom Game
+L	ab_29_5	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_29_5	7	|
+L	ab_29_5	8	|t:|<NORMALIZED>
+L	ab_29_5	9	|teamsize|p1|6
+L	ab_29_5	10	|teamsize|p2|6
+L	ab_29_5	11	|start
+L	ab_29_5	12	|switch|p1a: Nuzleaf|Nuzleaf, M|278/278
+L	ab_29_5	13	|switch|p2a: Hitmontop|Hitmontop, M|251/251
+L	ab_29_5	14	|-ability|p2a: Hitmontop|Intimidate|boost
+L	ab_29_5	15	|-unboost|p1a: Nuzleaf|atk|1
+L	ab_29_5	16	|turn|1
+L	ab_29_5	17	|
+L	ab_29_5	18	|t:|<NORMALIZED>
+L	ab_29_5	19	|switch|p2a: Quilava|Quilava, M|273/273
+L	ab_29_5	20	|-enditem|p1a: Nuzleaf|White Herb
+L	ab_29_5	21	|-clearnegativeboost|p1a: Nuzleaf|[silent]
+L	ab_29_5	22	|move|p1a: Nuzleaf|Feint Attack|p2a: Quilava
+L	ab_29_5	23	|-damage|p2a: Quilava|222/273
+L	ab_29_5	24	|
+L	ab_29_5	25	|upkeep
+L	ab_29_5	26	|turn|2
+L	ab_29_5	27	|
+L	ab_29_5	28	|t:|<NORMALIZED>
+L	ab_29_5	29	|switch|p2a: Parasect|Parasect, M|268/268
+L	ab_29_5	30	|move|p1a: Nuzleaf|Giga Drain|p2a: Parasect
+L	ab_29_5	31	|-resisted|p2a: Parasect
+L	ab_29_5	32	|-damage|p2a: Parasect|256/268
+L	ab_29_5	33	|
+L	ab_29_5	34	|upkeep
+L	ab_29_5	35	|turn|3
+L	ab_29_5	36	|
+L	ab_29_5	37	|t:|<NORMALIZED>
+L	ab_29_5	38	|move|p1a: Nuzleaf|Sunny Day|p1a: Nuzleaf
+L	ab_29_5	39	|-weather|SunnyDay
+L	ab_29_5	40	|move|p2a: Parasect|Growth|p2a: Parasect
+L	ab_29_5	41	|-boost|p2a: Parasect|spa|1
+L	ab_29_5	42	|
+L	ab_29_5	43	|-weather|SunnyDay|[upkeep]
+L	ab_29_5	44	|upkeep
+L	ab_29_5	45	|turn|4
+L	ab_29_5	46	|
+L	ab_29_5	47	|t:|<NORMALIZED>
+L	ab_29_5	48	|switch|p1a: Dusclops|Dusclops, M|243/243
+L	ab_29_5	49	|-ability|p1a: Dusclops|Pressure|[silent]
+L	ab_29_5	50	|move|p2a: Parasect|Sludge Bomb|p1a: Dusclops
+L	ab_29_5	51	|-resisted|p1a: Dusclops
+L	ab_29_5	52	|-damage|p1a: Dusclops|213/243
+L	ab_29_5	53	|-status|p1a: Dusclops|psn
+L	ab_29_5	54	|
+L	ab_29_5	55	|-weather|SunnyDay|[upkeep]
+L	ab_29_5	56	|-damage|p1a: Dusclops|183/243 psn|[from] psn
+L	ab_29_5	57	|upkeep
+L	ab_29_5	58	|turn|5
+L	ab_29_5	59	|
+L	ab_29_5	60	|t:|<NORMALIZED>
+L	ab_29_5	61	|switch|p2a: Quilava|Quilava, M|222/273
+L	ab_29_5	62	|move|p1a: Dusclops|Shadow Ball|p2a: Quilava
+L	ab_29_5	63	|-damage|p2a: Quilava|122/273
+L	ab_29_5	64	|
+L	ab_29_5	65	|-weather|SunnyDay|[upkeep]
+L	ab_29_5	66	|-enditem|p2a: Quilava|Wiki Berry|[eat]
+L	ab_29_5	67	|-heal|p2a: Quilava|156/273|[from] item: Wiki Berry
+L	ab_29_5	68	|-damage|p1a: Dusclops|153/243 psn|[from] psn
+L	ab_29_5	69	|upkeep
+L	ab_29_5	70	|turn|6
+L	ab_29_5	71	|
+L	ab_29_5	72	|t:|<NORMALIZED>
+L	ab_29_5	73	|move|p2a: Quilava|Toxic||[still]
+L	ab_29_5	74	|-fail|p2a: Quilava
+L	ab_29_5	75	|debug|move failed because it did nothing
+L	ab_29_5	76	|move|p1a: Dusclops|Thunder Punch|p2a: Quilava
+L	ab_29_5	77	|-damage|p2a: Quilava|102/273
+L	ab_29_5	78	|-status|p2a: Quilava|par
+L	ab_29_5	79	|
+L	ab_29_5	80	|-weather|SunnyDay|[upkeep]
+L	ab_29_5	81	|-damage|p1a: Dusclops|123/243 psn|[from] psn
+L	ab_29_5	82	|upkeep
+L	ab_29_5	83	|turn|7
+L	ab_29_5	84	|
+L	ab_29_5	85	|t:|<NORMALIZED>
+L	ab_29_5	86	|switch|p1a: Octillery|Octillery, M|350/350
+L	ab_29_5	87	|move|p2a: Quilava|Aerial Ace|p1a: Octillery
+L	ab_29_5	88	|-damage|p1a: Octillery|306/350
+L	ab_29_5	89	|
+L	ab_29_5	90	|-weather|none
+L	ab_29_5	91	|upkeep
+L	ab_29_5	92	|turn|8
+L	ab_29_5	93	|
+L	ab_29_5	94	|t:|<NORMALIZED>
+L	ab_29_5	95	|switch|p1a: Dusclops|Dusclops, M|123/243 psn
+L	ab_29_5	96	|-ability|p1a: Dusclops|Pressure|[silent]
+L	ab_29_5	97	|cant|p2a: Quilava|par
+L	ab_29_5	98	|
+L	ab_29_5	99	|-damage|p1a: Dusclops|93/243 psn|[from] psn
+L	ab_29_5	100	|upkeep
+L	ab_29_5	101	|turn|9
+L	ab_29_5	102	|
+L	ab_29_5	103	|t:|<NORMALIZED>
+L	ab_29_5	104	|move|p1a: Dusclops|Seismic Toss|p2a: Quilava
+L	ab_29_5	105	|-damage|p2a: Quilava|2/273 par
+L	ab_29_5	106	|move|p2a: Quilava|Flamethrower|p1a: Dusclops
+L	ab_29_5	107	|debug|Blaze boost
+L	ab_29_5	108	|-crit|p1a: Dusclops
+L	ab_29_5	109	|-damage|p1a: Dusclops|0 fnt
+L	ab_29_5	110	|faint|p1a: Dusclops
+L	ab_29_5	111	|
+L	ab_29_5	112	|t:|<NORMALIZED>
+L	ab_29_5	113	|switch|p1a: Taillow|Taillow, M|265/265
+L	ab_29_5	114	|
+L	ab_29_5	115	|upkeep
+L	ab_29_5	116	|turn|10
+L	ab_29_5	117	|
+L	ab_29_5	118	|t:|<NORMALIZED>
+L	ab_29_5	119	|move|p1a: Taillow|Wing Attack|p2a: Quilava
+L	ab_29_5	120	|-damage|p2a: Quilava|0 fnt
+L	ab_29_5	121	|faint|p2a: Quilava
+L	ab_29_5	122	|
+L	ab_29_5	123	|t:|<NORMALIZED>
+L	ab_29_5	124	|switch|p2a: Umbreon|Umbreon, M|353/353
+L	ab_29_5	125	|
+L	ab_29_5	126	|upkeep
+L	ab_29_5	127	|turn|11
+L	ab_29_5	128	|
+L	ab_29_5	129	|t:|<NORMALIZED>
+L	ab_29_5	130	|switch|p1a: Parasect|Parasect, M|267/267
+L	ab_29_5	131	|switch|p2a: Chansey|Chansey, F|684/684
+L	ab_29_5	132	|
+L	ab_29_5	133	|upkeep
+L	ab_29_5	134	|turn|12
+L	ab_29_5	135	|
+L	ab_29_5	136	|t:|<NORMALIZED>
+L	ab_29_5	137	|debug|doubling secondary chance
+L	ab_29_5	138	|move|p2a: Chansey|Rock Tomb|p1a: Parasect
+L	ab_29_5	139	|-supereffective|p1a: Parasect
+L	ab_29_5	140	|-damage|p1a: Parasect|246/267
+L	ab_29_5	141	|-unboost|p1a: Parasect|spe|1
+L	ab_29_5	142	|move|p1a: Parasect|Cut|p2a: Chansey
+L	ab_29_5	143	|-damage|p2a: Chansey|492/684
+L	ab_29_5	144	|
+L	ab_29_5	145	|upkeep
+L	ab_29_5	146	|turn|13
+L	ab_29_5	147	|
+L	ab_29_5	148	|t:|<NORMALIZED>
+L	ab_29_5	149	|debug|doubling secondary chance
+L	ab_29_5	150	|move|p2a: Chansey|Rock Tomb|p1a: Parasect
+L	ab_29_5	151	|-supereffective|p1a: Parasect
+L	ab_29_5	152	|-damage|p1a: Parasect|226/267
+L	ab_29_5	153	|-unboost|p1a: Parasect|spe|1
+L	ab_29_5	154	|move|p1a: Parasect|Mimic|p2a: Chansey
+L	ab_29_5	155	|-activate|p1a: Parasect|move: Mimic|Rock Tomb
+L	ab_29_5	156	|
+L	ab_29_5	157	|upkeep
+L	ab_29_5	158	|turn|14
+L	ab_29_5	159	|
+L	ab_29_5	160	|t:|<NORMALIZED>
+L	ab_29_5	161	|debug|doubling secondary chance
+L	ab_29_5	162	|move|p2a: Chansey|Body Slam|p1a: Parasect
+L	ab_29_5	163	|-damage|p1a: Parasect|199/267
+L	ab_29_5	164	|-status|p2a: Chansey|psn|[from] ability: Effect Spore|[of] p1a: Parasect
+L	ab_29_5	165	|move|p1a: Parasect|Rock Tomb|p2a: Chansey
+L	ab_29_5	166	|-damage|p2a: Chansey|271/684 psn
+L	ab_29_5	167	|-unboost|p2a: Chansey|spe|1
+L	ab_29_5	168	|
+L	ab_29_5	169	|-damage|p2a: Chansey|186/684 psn|[from] psn
+L	ab_29_5	170	|upkeep
+L	ab_29_5	171	|turn|15
+L	ab_29_5	172	|
+L	ab_29_5	173	|t:|<NORMALIZED>
+L	ab_29_5	174	|debug|before turn callback: focuspunch
+L	ab_29_5	175	|-singleturn|p2a: Chansey|move: Focus Punch
+L	ab_29_5	176	|move|p1a: Parasect|Aromatherapy|p1a: Parasect
+L	ab_29_5	177	|-cureteam|p1a: Parasect|[from] move: Aromatherapy
+L	ab_29_5	178	|move|p2a: Chansey|Focus Punch|p1a: Parasect
+L	ab_29_5	179	|-resisted|p1a: Parasect
+L	ab_29_5	180	|-damage|p1a: Parasect|182/267
+L	ab_29_5	181	|
+L	ab_29_5	182	|-damage|p2a: Chansey|101/684 psn|[from] psn
+L	ab_29_5	183	|upkeep
+L	ab_29_5	184	|turn|16
+L	ab_29_5	185	|
+L	ab_29_5	186	|t:|<NORMALIZED>
+L	ab_29_5	187	|debug|doubling secondary chance
+L	ab_29_5	188	|move|p2a: Chansey|Rock Tomb|p1a: Parasect
+L	ab_29_5	189	|-supereffective|p1a: Parasect
+L	ab_29_5	190	|-damage|p1a: Parasect|162/267
+L	ab_29_5	191	|-unboost|p1a: Parasect|spe|1
+L	ab_29_5	192	|move|p1a: Parasect|Cut|p2a: Chansey
+L	ab_29_5	193	|-damage|p2a: Chansey|0 fnt
+L	ab_29_5	194	|faint|p2a: Chansey
+L	ab_29_5	195	|
+L	ab_29_5	196	|t:|<NORMALIZED>
+L	ab_29_5	197	|switch|p2a: Hitmontop|Hitmontop, M|251/251
+L	ab_29_5	198	|-ability|p2a: Hitmontop|Intimidate|boost
+L	ab_29_5	199	|-unboost|p1a: Parasect|atk|1
+L	ab_29_5	200	|
+L	ab_29_5	201	|upkeep
+L	ab_29_5	202	|turn|17
+L	ab_29_5	203	|
+L	ab_29_5	204	|t:|<NORMALIZED>
+L	ab_29_5	205	|move|p2a: Hitmontop|Brick Break|p1a: Parasect
+L	ab_29_5	206	|-resisted|p1a: Parasect
+L	ab_29_5	207	|-damage|p1a: Parasect|113/267
+L	ab_29_5	208	|move|p1a: Parasect|Rock Tomb|p2a: Hitmontop
+L	ab_29_5	209	|-resisted|p2a: Hitmontop
+L	ab_29_5	210	|-damage|p2a: Hitmontop|238/251
+L	ab_29_5	211	|-unboost|p2a: Hitmontop|spe|1
+L	ab_29_5	212	|
+L	ab_29_5	213	|upkeep
+L	ab_29_5	214	|turn|18
+L	ab_29_5	215	|
+L	ab_29_5	216	|t:|<NORMALIZED>
+L	ab_29_5	217	|move|p2a: Hitmontop|Brick Break|p1a: Parasect
+L	ab_29_5	218	|-resisted|p1a: Parasect
+L	ab_29_5	219	|-damage|p1a: Parasect|64/267
+L	ab_29_5	220	|move|p1a: Parasect|Rock Tomb|p2a: Hitmontop
+L	ab_29_5	221	|-resisted|p2a: Hitmontop
+L	ab_29_5	222	|-damage|p2a: Hitmontop|225/251
+L	ab_29_5	223	|-unboost|p2a: Hitmontop|spe|1
+L	ab_29_5	224	|
+L	ab_29_5	225	|upkeep
+L	ab_29_5	226	|turn|19
+L	ab_29_5	227	|
+L	ab_29_5	228	|t:|<NORMALIZED>
+L	ab_29_5	229	|switch|p2a: Umbreon|Umbreon, M|353/353
+L	ab_29_5	230	|switch|p1a: Taillow|Taillow, M|265/265
+L	ab_29_5	231	|
+L	ab_29_5	232	|upkeep
+L	ab_29_5	233	|turn|20
+L	ab_29_5	234	|
+L	ab_29_5	235	|t:|<NORMALIZED>
+L	ab_29_5	236	|move|p1a: Taillow|Return|p2a: Umbreon
+L	ab_29_5	237	|-damage|p2a: Umbreon|289/353
+L	ab_29_5	238	|move|p2a: Umbreon|Mimic|p1a: Taillow
+L	ab_29_5	239	|-activate|p2a: Umbreon|move: Mimic|Return
+L	ab_29_5	240	|
+L	ab_29_5	241	|upkeep
+L	ab_29_5	242	|turn|21
+L	ab_29_5	243	|
+L	ab_29_5	244	|t:|<NORMALIZED>
+L	ab_29_5	245	|move|p1a: Taillow|Substitute|p1a: Taillow
+L	ab_29_5	246	|-start|p1a: Taillow|Substitute
+L	ab_29_5	247	|-damage|p1a: Taillow|199/265
+L	ab_29_5	248	|move|p2a: Umbreon|Mean Look||[still]
+L	ab_29_5	249	|-fail|p2a: Umbreon
+L	ab_29_5	250	|debug|move failed because it did nothing
+L	ab_29_5	251	|
+L	ab_29_5	252	|upkeep
+L	ab_29_5	253	|turn|22
+L	ab_29_5	254	|
+L	ab_29_5	255	|t:|<NORMALIZED>
+L	ab_29_5	256	|switch|p2a: Parasect|Parasect, M|256/268
+L	ab_29_5	257	|move|p1a: Taillow|Return|p2a: Parasect
+L	ab_29_5	258	|-damage|p2a: Parasect|152/268
+L	ab_29_5	259	|
+L	ab_29_5	260	|upkeep
+L	ab_29_5	261	|turn|23
+L	ab_29_5	262	|
+L	ab_29_5	263	|t:|<NORMALIZED>
+L	ab_29_5	264	|move|p1a: Taillow|Wing Attack|p2a: Parasect
+L	ab_29_5	265	|-supereffective|p2a: Parasect
+L	ab_29_5	266	|-damage|p2a: Parasect|0 fnt
+L	ab_29_5	267	|faint|p2a: Parasect
+L	ab_29_5	268	|
+L	ab_29_5	269	|t:|<NORMALIZED>
+L	ab_29_5	270	|switch|p2a: Umbreon|Umbreon, M|289/353
+L	ab_29_5	271	|
+L	ab_29_5	272	|upkeep
+L	ab_29_5	273	|turn|24
+L	ab_29_5	274	|
+L	ab_29_5	275	|t:|<NORMALIZED>
+L	ab_29_5	276	|switch|p1a: Octillery|Octillery, M|306/350
+L	ab_29_5	277	|switch|p2a: Porygon|Porygon|287/287
+L	ab_29_5	278	|-ability|p2a: Porygon|Suction Cups|Trace|[from] ability: Trace|[of] p1a: Octillery
+L	ab_29_5	279	|
+L	ab_29_5	280	|upkeep
+L	ab_29_5	281	|turn|25
+L	ab_29_5	282	|
+L	ab_29_5	283	|t:|<NORMALIZED>
+L	ab_29_5	284	|move|p1a: Octillery|Ice Beam|p2a: Porygon
+L	ab_29_5	285	|-damage|p2a: Porygon|178/287
+L	ab_29_5	286	|move|p2a: Porygon|Rest|p2a: Porygon
+L	ab_29_5	287	|-status|p2a: Porygon|slp|[from] move: Rest
+L	ab_29_5	288	|-heal|p2a: Porygon|287/287 slp|[silent]
+L	ab_29_5	289	|
+L	ab_29_5	290	|upkeep
+L	ab_29_5	291	|turn|26
+L	ab_29_5	292	|
+L	ab_29_5	293	|t:|<NORMALIZED>
+L	ab_29_5	294	|move|p1a: Octillery|Return|p2a: Porygon
+L	ab_29_5	295	|-damage|p2a: Porygon|197/287 slp
+L	ab_29_5	296	|cant|p2a: Porygon|slp
+L	ab_29_5	297	|
+L	ab_29_5	298	|upkeep
+L	ab_29_5	299	|turn|27
+L	ab_29_5	300	|
+L	ab_29_5	301	|t:|<NORMALIZED>
+L	ab_29_5	302	|move|p1a: Octillery|Facade|p2a: Porygon
+L	ab_29_5	303	|-damage|p2a: Porygon|136/287 slp
+L	ab_29_5	304	|cant|p2a: Porygon|slp
+L	ab_29_5	305	|
+L	ab_29_5	306	|upkeep
+L	ab_29_5	307	|turn|28
+L	ab_29_5	308	|
+L	ab_29_5	309	|t:|<NORMALIZED>
+L	ab_29_5	310	|move|p1a: Octillery|Facade|p2a: Porygon
+L	ab_29_5	311	|-damage|p2a: Porygon|77/287 slp
+L	ab_29_5	312	|-curestatus|p2a: Porygon|slp|[msg]
+L	ab_29_5	313	|move|p2a: Porygon|Solar Beam||[still]
+L	ab_29_5	314	|-prepare|p2a: Porygon|Solar Beam
+L	ab_29_5	315	|
+L	ab_29_5	316	|upkeep
+L	ab_29_5	317	|turn|29
+L	ab_29_5	318	|
+L	ab_29_5	319	|t:|<NORMALIZED>
+L	ab_29_5	320	|move|p1a: Octillery|Facade|p2a: Porygon
+L	ab_29_5	321	|-damage|p2a: Porygon|17/287
+L	ab_29_5	322	|move|p2a: Porygon|Solar Beam|p1a: Octillery|[from] lockedmove
+L	ab_29_5	323	|-supereffective|p1a: Octillery
+L	ab_29_5	324	|-damage|p1a: Octillery|52/350
+L	ab_29_5	325	|
+L	ab_29_5	326	|-enditem|p1a: Octillery|Starf Berry|[eat]
+L	ab_29_5	327	|-boost|p1a: Octillery|atk|2|[from] item: Starf Berry
+L	ab_29_5	328	|upkeep
+L	ab_29_5	329	|turn|30
+L	ab_29_5	330	|
+L	ab_29_5	331	|t:|<NORMALIZED>
+L	ab_29_5	332	|move|p1a: Octillery|Facade|p2a: Porygon
+L	ab_29_5	333	|-damage|p2a: Porygon|0 fnt
+L	ab_29_5	334	|faint|p2a: Porygon
+L	ab_29_5	335	|
+L	ab_29_5	336	|t:|<NORMALIZED>
+L	ab_29_5	337	|switch|p2a: Hitmontop|Hitmontop, M|225/251
+L	ab_29_5	338	|-ability|p2a: Hitmontop|Intimidate|boost
+L	ab_29_5	339	|-unboost|p1a: Octillery|atk|1
+L	ab_29_5	340	|
+L	ab_29_5	341	|upkeep
+L	ab_29_5	342	|turn|31
+L	ab_29_5	343	|
+L	ab_29_5	344	|t:|<NORMALIZED>
+L	ab_29_5	345	|switch|p2a: Umbreon|Umbreon, M|289/353
+L	ab_29_5	346	|move|p1a: Octillery|Ice Beam|p2a: Umbreon
+L	ab_29_5	347	|-damage|p2a: Umbreon|234/353
+L	ab_29_5	348	|
+L	ab_29_5	349	|upkeep
+L	ab_29_5	350	|turn|32
+L	ab_29_5	351	|
+L	ab_29_5	352	|t:|<NORMALIZED>
+L	ab_29_5	353	|switch|p2a: Hitmontop|Hitmontop, M|225/251
+L	ab_29_5	354	|-ability|p2a: Hitmontop|Intimidate|boost
+L	ab_29_5	355	|-unboost|p1a: Octillery|atk|1
+L	ab_29_5	356	|switch|p1a: Nuzleaf|Nuzleaf, M|278/278
+L	ab_29_5	357	|
+L	ab_29_5	358	|upkeep
+L	ab_29_5	359	|turn|33
+L	ab_29_5	360	|
+L	ab_29_5	361	|t:|<NORMALIZED>
+L	ab_29_5	362	|move|p1a: Nuzleaf|Feint Attack|p2a: Hitmontop
+L	ab_29_5	363	|-resisted|p2a: Hitmontop
+L	ab_29_5	364	|-damage|p2a: Hitmontop|205/251
+L	ab_29_5	365	|move|p2a: Hitmontop|Brick Break|p1a: Nuzleaf
+L	ab_29_5	366	|-supereffective|p1a: Nuzleaf
+L	ab_29_5	367	|-damage|p1a: Nuzleaf|0 fnt
+L	ab_29_5	368	|faint|p1a: Nuzleaf
+L	ab_29_5	369	|
+L	ab_29_5	370	|t:|<NORMALIZED>
+L	ab_29_5	371	|switch|p1a: Taillow|Taillow, M|199/265
+L	ab_29_5	372	|
+L	ab_29_5	373	|upkeep
+L	ab_29_5	374	|turn|34
+L	ab_29_5	375	|
+L	ab_29_5	376	|t:|<NORMALIZED>
+L	ab_29_5	377	|move|p2a: Hitmontop|Protect|p2a: Hitmontop
+L	ab_29_5	378	|-singleturn|p2a: Hitmontop|Protect
+L	ab_29_5	379	|move|p1a: Taillow|Return|p2a: Hitmontop
+L	ab_29_5	380	|-activate|p2a: Hitmontop|Protect
+L	ab_29_5	381	|
+L	ab_29_5	382	|upkeep
+L	ab_29_5	383	|turn|35
+L	ab_29_5	384	|
+L	ab_29_5	385	|t:|<NORMALIZED>
+L	ab_29_5	386	|move|p2a: Hitmontop|Protect|p2a: Hitmontop
+L	ab_29_5	387	|debug|Success chance: 50%
+L	ab_29_5	388	|-singleturn|p2a: Hitmontop|Protect
+L	ab_29_5	389	|move|p1a: Taillow|Wing Attack|p2a: Hitmontop
+L	ab_29_5	390	|-activate|p2a: Hitmontop|Protect
+L	ab_29_5	391	|
+L	ab_29_5	392	|upkeep
+L	ab_29_5	393	|turn|36
+L	ab_29_5	394	|
+L	ab_29_5	395	|t:|<NORMALIZED>
+L	ab_29_5	396	|switch|p1a: Aipom|Aipom, M|275/275
+L	ab_29_5	397	|move|p2a: Hitmontop|Protect||[still]
+L	ab_29_5	398	|-fail|p2a: Hitmontop
+L	ab_29_5	399	|
+L	ab_29_5	400	|upkeep
+L	ab_29_5	401	|turn|37
+L	ab_29_5	402	|
+L	ab_29_5	403	|t:|<NORMALIZED>
+L	ab_29_5	404	|debug|before turn callback: focuspunch
+L	ab_29_5	405	|-singleturn|p1a: Aipom|move: Focus Punch
+L	ab_29_5	406	|move|p2a: Hitmontop|Earthquake|p1a: Aipom
+L	ab_29_5	407	|-damage|p1a: Aipom|145/275
+L	ab_29_5	408	|move|p1a: Aipom|Focus Punch||[still]
+L	ab_29_5	409	|cant|p1a: Aipom|Focus Punch|Focus Punch
+L	ab_29_5	410	|
+L	ab_29_5	411	|upkeep
+L	ab_29_5	412	|turn|38
+L	ab_29_5	413	|
+L	ab_29_5	414	|t:|<NORMALIZED>
+L	ab_29_5	415	|debug|before turn callback: focuspunch
+L	ab_29_5	416	|-singleturn|p1a: Aipom|move: Focus Punch
+L	ab_29_5	417	|move|p2a: Hitmontop|Protect|p2a: Hitmontop
+L	ab_29_5	418	|-singleturn|p2a: Hitmontop|Protect
+L	ab_29_5	419	|move|p1a: Aipom|Focus Punch|p2a: Hitmontop
+L	ab_29_5	420	|-activate|p2a: Hitmontop|Protect
+L	ab_29_5	421	|
+L	ab_29_5	422	|upkeep
+L	ab_29_5	423	|turn|39
+L	ab_29_5	424	|
+L	ab_29_5	425	|t:|<NORMALIZED>
+L	ab_29_5	426	|move|p1a: Aipom|Astonish|p2a: Hitmontop
+L	ab_29_5	427	|-damage|p2a: Hitmontop|184/251
+L	ab_29_5	428	|move|p2a: Hitmontop|Mega Kick|p1a: Aipom|[miss]
+L	ab_29_5	429	|-miss|p2a: Hitmontop|p1a: Aipom
+L	ab_29_5	430	|
+L	ab_29_5	431	|upkeep
+L	ab_29_5	432	|turn|40
+L	ab_29_5	433	|
+L	ab_29_5	434	|t:|<NORMALIZED>
+L	ab_29_5	435	|move|p1a: Aipom|Return|p2a: Hitmontop
+L	ab_29_5	436	|-damage|p2a: Hitmontop|88/251
+L	ab_29_5	437	|move|p2a: Hitmontop|Earthquake|p1a: Aipom
+L	ab_29_5	438	|-damage|p1a: Aipom|0 fnt
+L	ab_29_5	439	|faint|p1a: Aipom
+L	ab_29_5	440	|
+L	ab_29_5	441	|t:|<NORMALIZED>
+L	ab_29_5	442	|switch|p1a: Octillery|Octillery, M|52/350
+L	ab_29_5	443	|
+L	ab_29_5	444	|upkeep
+L	ab_29_5	445	|turn|41
+L	ab_29_5	446	|
+L	ab_29_5	447	|t:|<NORMALIZED>
+L	ab_29_5	448	|move|p2a: Hitmontop|Protect|p2a: Hitmontop
+L	ab_29_5	449	|-singleturn|p2a: Hitmontop|Protect
+L	ab_29_5	450	|move|p1a: Octillery|Ice Beam|p2a: Hitmontop
+L	ab_29_5	451	|-activate|p2a: Hitmontop|Protect
+L	ab_29_5	452	|
+L	ab_29_5	453	|upkeep
+L	ab_29_5	454	|turn|42
+L	ab_29_5	455	|
+L	ab_29_5	456	|t:|<NORMALIZED>
+L	ab_29_5	457	|move|p2a: Hitmontop|Protect||[still]
+L	ab_29_5	458	|debug|Success chance: 50%
+L	ab_29_5	459	|-fail|p2a: Hitmontop
+L	ab_29_5	460	|move|p1a: Octillery|Fire Blast|p2a: Hitmontop
+L	ab_29_5	461	|-damage|p2a: Hitmontop|0 fnt
+L	ab_29_5	462	|faint|p2a: Hitmontop
+L	ab_29_5	463	|
+L	ab_29_5	464	|t:|<NORMALIZED>
+L	ab_29_5	465	|switch|p2a: Umbreon|Umbreon, M|234/353
+L	ab_29_5	466	|
+L	ab_29_5	467	|upkeep
+L	ab_29_5	468	|turn|43
+L	ab_29_5	469	|
+L	ab_29_5	470	|t:|<NORMALIZED>
+L	ab_29_5	471	|move|p2a: Umbreon|Sunny Day|p2a: Umbreon
+L	ab_29_5	472	|-weather|SunnyDay
+L	ab_29_5	473	|move|p1a: Octillery|Return|p2a: Umbreon
+L	ab_29_5	474	|-damage|p2a: Umbreon|162/353
+L	ab_29_5	475	|
+L	ab_29_5	476	|-weather|SunnyDay|[upkeep]
+L	ab_29_5	477	|upkeep
+L	ab_29_5	478	|turn|44
+L	ab_29_5	479	|
+L	ab_29_5	480	|t:|<NORMALIZED>
+L	ab_29_5	481	|move|p2a: Umbreon|Mean Look|p1a: Octillery
+L	ab_29_5	482	|-activate|p1a: Octillery|trapped
+L	ab_29_5	483	|move|p1a: Octillery|Return|p2a: Umbreon
+L	ab_29_5	484	|-damage|p2a: Umbreon|90/353
+L	ab_29_5	485	|
+L	ab_29_5	486	|-weather|SunnyDay|[upkeep]
+L	ab_29_5	487	|upkeep
+L	ab_29_5	488	|turn|45
+L	ab_29_5	489	|
+L	ab_29_5	490	|t:|<NORMALIZED>
+L	ab_29_5	491	|move|p2a: Umbreon|Mimic|p1a: Octillery
+L	ab_29_5	492	|-activate|p2a: Umbreon|move: Mimic|Return
+L	ab_29_5	493	|move|p1a: Octillery|Facade|p2a: Umbreon
+L	ab_29_5	494	|-damage|p2a: Umbreon|45/353
+L	ab_29_5	495	|
+L	ab_29_5	496	|-weather|SunnyDay|[upkeep]
+L	ab_29_5	497	|upkeep
+L	ab_29_5	498	|turn|46
+L	ab_29_5	499	|
+L	ab_29_5	500	|t:|<NORMALIZED>
+L	ab_29_5	501	|move|p2a: Umbreon|Mean Look||[still]
+L	ab_29_5	502	|-fail|p2a: Umbreon
+L	ab_29_5	503	|debug|move failed because it did nothing
+L	ab_29_5	504	|move|p1a: Octillery|Return|p2a: Umbreon
+L	ab_29_5	505	|-damage|p2a: Umbreon|0 fnt
+L	ab_29_5	506	|faint|p2a: Umbreon
+L	ab_29_5	507	|
+L	ab_29_5	508	|win|P1

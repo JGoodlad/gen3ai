@@ -1,0 +1,470 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=200724 run_id=rmrz2gq3u chunk=19
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_19_1
+TEAM	ab_19_1	p1	Vaporeon||NeverMeltIce|WaterAbsorb|WaterPulse,BodySlam,Endure,IceBeam|Mild|124,,144,32,148,60|M|27,7,25,19,12,5|||]Raticate||SpellTag|Guts|BodySlam,Thunderbolt,Protect,ShockWave|Naughty|52,108,52,,212,84|M|19,11,1,17,20,6|||]Nuzleaf||OranBerry|Chlorophyll|ShadowBall,Growth,SolarBeam,Frustration|Gentle|88,176,204,40,,|M|7,25,22,20,18,24|||]Combusken||GanlonBerry|Blaze|RockSlide,Scratch,RockTomb,Counter|Jolly|76,192,140,100,,|M|17,20,0,11,30,11|||]Cradily||WhiteHerb|SuctionCups|SludgeBomb,Protect,BodySlam,Amnesia|Relaxed|8,84,12,48,124,52|M|8,20,26,16,26,7|||]Flygon||FigyBerry|Levitate|Swift,Return,Facade,SteelWing|Relaxed|164,120,4,100,,120|M|22,13,11,17,24,17|||
+TEAM	ab_19_1	p2	Gardevoir||Magnet|Trace|Frustration,SunnyDay,FutureSight,Toxic|Timid|152,,48,164,136,8|M|14,18,29,12,2,3|||]Exploud||NeverMeltIce|Soundproof|ThunderPunch,SolarBeam,MudSlap,Counter|Quiet|100,84,60,56,188,20|M|6,18,9,14,21,24|||]Phanpy||Leftovers|Pickup|RockTomb,Rest,DoubleEdge,IronTail|Hardy|128,96,8,12,132,132|M|29,2,6,4,12,6|||]Swinub||CheriBerry|Oblivious|DoubleEdge,Return,IcyWind,Frustration|Hasty|72,4,48,184,200,|M|27,19,28,30,14,16|||]Teddiursa||LightBall|Pickup|Counter,MudSlap,Slash,FocusPunch|Relaxed|216,64,68,48,4,108|M|2,3,21,14,30,3|||]Victreebel||Charcoal|Chlorophyll|BodySlam,SunnyDay,Thief,SludgeBomb|Gentle|76,,48,80,164,140|M|1,27,15,2,11,4|||
+FMT	ab_19_1	gen3customgame
+INIT	ab_19_1	14775,5789,17712,26707	3584758178
+DEC	ab_19_1	0	move	0	0	m2	s3	20505,41000,4697,12930	Vaporeon	428	428	0	-	0	0	0	0	0	0	6	Swinub	255	255	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_19_1	1	move	0	0	m1	s1	2902,971,16740,49361	Vaporeon	428	428	0	-	0	0	0	0	0	0	6	Exploud	287	349	0	par	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_19_1	2	move	0	0	m3	m0	38544,37762,9314,11363	Vaporeon	308	428	0	-	0	0	0	0	0	0	6	Exploud	181	349	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_19_1	3	move	0	0	s2	m1	28953,16817,42772,24477	Nuzleaf	279	279	0	-	0	0	0	0	0	0	6	Exploud	181	349	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_19_1	4	move	0	0	m0	m0	52627,22935,65524,45291	Nuzleaf	103	279	0	-	0	0	0	0	0	0	6	Exploud	181	349	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_19_1	5	move	0	0	s5	m3	30793,62888,20869,16101	Flygon	333	333	0	-	0	0	0	0	0	0	6	Exploud	181	349	0	par	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_19_1	6	move	0	0	m2	m2	19089,56561,745,52339	Flygon	333	333	0	-	0	0	0	0	0	0	6	Exploud	96	349	0	par	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_19_1	7	move	0	0	m0	m3	56493,28518,4989,22166	Flygon	169	333	0	-	0	0	0	0	0	0	6	Exploud	14	349	0	par	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_19_1	8	move	0	0	m1	m2	54245,61176,8401,40699	Flygon	169	333	0	-	0	0	0	0	0	0	6	Exploud	0	349	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_19_1	9	switch	0	1	-	s4	30345,26697,24011,43722	Flygon	169	333	0	-	0	0	0	0	0	0	6	Teddiursa	286	286	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_19_1	10	move	0	0	s3	m1	13213,45414,55460,1721	Combusken	228	266	0	-	0	0	0	0	0	0	6	Teddiursa	286	286	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_19_1	11	move	0	0	m3	m2	1687,1042,41132,64596	Combusken	133	266	0	-	0	0	0	0	0	0	6	Teddiursa	286	286	0	-	0	0	0	0	0	0	5	p2	0	0	0	1	0
+DEC	ab_19_1	12	move	0	0	m0	m0	56150,4022,8797,54246	Combusken	133	266	0	-	0	0	0	0	0	0	6	Teddiursa	286	286	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_19_1	13	move	0	0	m1	m2	37007,30626,5373,61957	Combusken	42	266	0	-	0	1	0	0	0	0	6	Teddiursa	286	286	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_19_1	14	move	0	0	m1	m3	40945,13022,29697,1353	Combusken	42	266	0	-	0	1	0	0	0	0	6	Teddiursa	236	286	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_19_1	15	move	0	0	m0	m0	52327,3868,11466,44580	Combusken	0	266	1	fnt	0	0	0	0	0	0	5	Teddiursa	138	286	0	-	0	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_19_1	16	switch	1	0	s2	-	49486,1356,5706,38647	Vaporeon	308	428	0	-	0	0	0	0	0	0	5	Teddiursa	138	286	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_19_1	17	move	0	0	m0	m2	29217,40240,1282,36635	Vaporeon	308	428	0	-	0	0	0	0	0	0	5	Teddiursa	0	286	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_19_1	18	switch	0	1	-	s5	61645,3256,42619,34666	Vaporeon	308	428	0	-	0	0	0	0	0	0	5	Victreebel	290	290	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_19_1	19	move	0	0	m3	m2	49973,27705,35387,48658	Vaporeon	279	428	0	-	0	0	0	0	0	0	5	Victreebel	42	290	0	frz	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_19_1	20	move	0	0	m1	m3	5193,14530,59768,929	Vaporeon	279	428	0	-	0	0	0	0	0	0	5	Victreebel	0	290	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_19_1	21	switch	0	1	-	s1	64192,37164,23512,13896	Vaporeon	279	428	0	-	0	0	0	0	0	0	5	Swinub	255	255	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_19_1	22	move	0	0	m1	m3	43165,21018,37157,50992	Vaporeon	276	428	0	-	0	0	0	0	0	0	5	Swinub	171	255	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_19_1	23	move	0	0	s1	m2	10386,65478,64419,55575	Raticate	203	252	0	-	0	0	0	0	-1	0	5	Swinub	171	255	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_19_1	24	move	0	0	m2	m2	2226,39020,16232,17176	Raticate	203	252	0	-	0	0	0	0	-1	0	5	Swinub	171	255	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_19_1	25	move	0	0	s4	m2	63013,57089,15277,35615	Cradily	225	292	0	-	0	0	0	0	0	0	5	Swinub	171	255	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_19_1	26	move	0	0	m1	m2	45041,42152,47817,18944	Cradily	225	292	0	-	0	0	0	0	0	0	5	Swinub	171	255	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_19_1	27	move	0	0	s1	m0	47293,19509,18153,19348	Vaporeon	203	428	0	-	0	0	0	0	0	0	5	Swinub	147	255	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_19_1	28	move	0	0	m1	m2	32628,54004,55696,17455	Vaporeon	184	428	0	-	0	0	0	0	-1	0	5	Swinub	55	255	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_19_1	29	move	0	0	m2	m1	4221,1934,2930,54530	Vaporeon	120	428	0	-	0	0	0	0	-1	0	5	Swinub	55	255	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	1
+DEC	ab_19_1	30	move	0	0	m0	m3	59376,58278,46044,48987	Vaporeon	118	428	0	-	0	0	0	0	-1	0	5	Swinub	0	255	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	1	0
+DEC	ab_19_1	31	switch	0	1	-	s2	41363,64176,47138,53418	Vaporeon	118	428	0	-	0	0	0	0	-1	0	5	Phanpy	351	351	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_19_1	32	move	0	0	m3	m0	23653,5632,35391,56349	Vaporeon	80	428	0	-	0	0	0	0	-2	0	5	Phanpy	32	351	0	frz	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_19_1	33	move	0	0	m1	m0	62130,2949,36529,29064	Vaporeon	80	428	0	-	0	0	0	0	-2	0	5	Phanpy	0	351	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_19_1	34	switch	0	1	-	s3	11831,12261,46723,24826	Vaporeon	80	428	0	-	0	0	0	0	-2	0	5	Gardevoir	298	298	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_19_1	35	move	0	0	m1	m1	21132,39396,62832,59561	Vaporeon	80	428	0	-	0	0	0	0	-2	0	5	Gardevoir	247	298	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_19_1	36	move	0	0	m2	m2	43064,57473,35081,13730	Vaporeon	80	428	0	-	0	0	0	0	-2	0	5	Gardevoir	247	298	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	1
+DEC	ab_19_1	37	move	0	0	m1	m2	54222,8454,40044,41585	Vaporeon	80	428	0	-	0	0	0	0	-2	0	5	Gardevoir	192	298	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_19_1	38	move	0	0	m2	m2	7548,24145,15253,65403	Vaporeon	0	428	1	fnt	0	0	0	0	0	0	4	Gardevoir	192	298	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	1
+DEC	ab_19_1	39	switch	1	0	s4	-	32532,11352,43114,15690	Raticate	203	252	0	-	0	0	0	0	0	0	4	Gardevoir	192	298	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_19_1	40	move	0	0	m3	m2	26785,42092,29262,44606	Raticate	203	252	0	-	0	0	0	0	0	0	4	Gardevoir	172	298	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_19_1	41	move	0	0	s5	m2	17642,41492,8226,35641	Nuzleaf	103	279	0	-	0	0	0	0	0	0	4	Gardevoir	172	298	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_19_1	42	move	0	0	m0	m3	12740,41719,28331,28262	Nuzleaf	86	279	0	tox	0	0	0	0	0	0	4	Gardevoir	23	298	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_19_1	43	move	0	0	m2	m0	63412,5791,9964,26010	Nuzleaf	50	279	0	tox	0	0	0	0	0	0	4	Gardevoir	23	298	0	-	0	0	0	0	0	0	1	p2	0	0	0	1	0
+DEC	ab_19_1	44	move	0	0	m0	m1	251,56027,2135,16495	Nuzleaf	50	279	0	tox	0	0	0	0	0	0	4	Gardevoir	0	298	1	-	0	0	0	0	0	0	0	p2	0	0	0	0	0
+END	ab_19_1	1	p1
+L	ab_19_1	0	|t:|<NORMALIZED>
+L	ab_19_1	1	|gametype|singles
+L	ab_19_1	2	|player|p1|P1||
+L	ab_19_1	3	|player|p2|P2||
+L	ab_19_1	4	|gen|3
+L	ab_19_1	5	|tier|[Gen 3] Custom Game
+L	ab_19_1	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_19_1	7	|
+L	ab_19_1	8	|t:|<NORMALIZED>
+L	ab_19_1	9	|teamsize|p1|6
+L	ab_19_1	10	|teamsize|p2|6
+L	ab_19_1	11	|start
+L	ab_19_1	12	|switch|p1a: Vaporeon|Vaporeon, M|428/428
+L	ab_19_1	13	|switch|p2a: Gardevoir|Gardevoir, M|298/298
+L	ab_19_1	14	|-ability|p2a: Gardevoir|Water Absorb|Trace|[from] ability: Trace|[of] p1a: Vaporeon
+L	ab_19_1	15	|turn|1
+L	ab_19_1	16	|
+L	ab_19_1	17	|t:|<NORMALIZED>
+L	ab_19_1	18	|switch|p2a: Swinub|Swinub, M|255/255
+L	ab_19_1	19	|move|p1a: Vaporeon|Endure||[still]
+L	ab_19_1	20	|-fail|p1a: Vaporeon
+L	ab_19_1	21	|
+L	ab_19_1	22	|upkeep
+L	ab_19_1	23	|turn|2
+L	ab_19_1	24	|
+L	ab_19_1	25	|t:|<NORMALIZED>
+L	ab_19_1	26	|switch|p2a: Exploud|Exploud, M|349/349
+L	ab_19_1	27	|move|p1a: Vaporeon|Body Slam|p2a: Exploud
+L	ab_19_1	28	|-damage|p2a: Exploud|287/349
+L	ab_19_1	29	|-status|p2a: Exploud|par
+L	ab_19_1	30	|
+L	ab_19_1	31	|upkeep
+L	ab_19_1	32	|turn|3
+L	ab_19_1	33	|
+L	ab_19_1	34	|t:|<NORMALIZED>
+L	ab_19_1	35	|move|p1a: Vaporeon|Ice Beam|p2a: Exploud
+L	ab_19_1	36	|-damage|p2a: Exploud|181/349 par
+L	ab_19_1	37	|move|p2a: Exploud|Thunder Punch|p1a: Vaporeon
+L	ab_19_1	38	|-supereffective|p1a: Vaporeon
+L	ab_19_1	39	|-damage|p1a: Vaporeon|308/428
+L	ab_19_1	40	|
+L	ab_19_1	41	|upkeep
+L	ab_19_1	42	|turn|4
+L	ab_19_1	43	|
+L	ab_19_1	44	|t:|<NORMALIZED>
+L	ab_19_1	45	|switch|p1a: Nuzleaf|Nuzleaf, M|279/279
+L	ab_19_1	46	|move|p2a: Exploud|Solar Beam||[still]
+L	ab_19_1	47	|-prepare|p2a: Exploud|Solar Beam
+L	ab_19_1	48	|
+L	ab_19_1	49	|upkeep
+L	ab_19_1	50	|turn|5
+L	ab_19_1	51	|
+L	ab_19_1	52	|t:|<NORMALIZED>
+L	ab_19_1	53	|move|p1a: Nuzleaf|Shadow Ball|p2a: Exploud
+L	ab_19_1	54	|-immune|p2a: Exploud
+L	ab_19_1	55	|move|p2a: Exploud|Solar Beam|p1a: Nuzleaf|[from] lockedmove
+L	ab_19_1	56	|-resisted|p1a: Nuzleaf
+L	ab_19_1	57	|-crit|p1a: Nuzleaf
+L	ab_19_1	58	|-damage|p1a: Nuzleaf|93/279
+L	ab_19_1	59	|
+L	ab_19_1	60	|-enditem|p1a: Nuzleaf|Oran Berry|[eat]
+L	ab_19_1	61	|-heal|p1a: Nuzleaf|103/279|[from] item: Oran Berry
+L	ab_19_1	62	|upkeep
+L	ab_19_1	63	|turn|6
+L	ab_19_1	64	|
+L	ab_19_1	65	|t:|<NORMALIZED>
+L	ab_19_1	66	|debug|before turn callback: counter
+L	ab_19_1	67	|switch|p1a: Flygon|Flygon, M|333/333
+L	ab_19_1	68	|move|p2a: Exploud|Counter|p1a: Flygon
+L	ab_19_1	69	|
+L	ab_19_1	70	|upkeep
+L	ab_19_1	71	|turn|7
+L	ab_19_1	72	|
+L	ab_19_1	73	|t:|<NORMALIZED>
+L	ab_19_1	74	|move|p1a: Flygon|Facade|p2a: Exploud
+L	ab_19_1	75	|-damage|p2a: Exploud|96/349 par
+L	ab_19_1	76	|move|p2a: Exploud|Mud-Slap|p1a: Flygon
+L	ab_19_1	77	|-immune|p1a: Flygon
+L	ab_19_1	78	|
+L	ab_19_1	79	|upkeep
+L	ab_19_1	80	|turn|8
+L	ab_19_1	81	|
+L	ab_19_1	82	|t:|<NORMALIZED>
+L	ab_19_1	83	|debug|before turn callback: counter
+L	ab_19_1	84	|move|p1a: Flygon|Swift|p2a: Exploud
+L	ab_19_1	85	|-damage|p2a: Exploud|14/349 par
+L	ab_19_1	86	|move|p2a: Exploud|Counter|p1a: Flygon
+L	ab_19_1	87	|-damage|p1a: Flygon|169/333
+L	ab_19_1	88	|
+L	ab_19_1	89	|upkeep
+L	ab_19_1	90	|turn|9
+L	ab_19_1	91	|
+L	ab_19_1	92	|t:|<NORMALIZED>
+L	ab_19_1	93	|move|p1a: Flygon|Return|p2a: Exploud
+L	ab_19_1	94	|-damage|p2a: Exploud|0 fnt
+L	ab_19_1	95	|faint|p2a: Exploud
+L	ab_19_1	96	|
+L	ab_19_1	97	|t:|<NORMALIZED>
+L	ab_19_1	98	|switch|p2a: Teddiursa|Teddiursa, M|286/286
+L	ab_19_1	99	|
+L	ab_19_1	100	|upkeep
+L	ab_19_1	101	|turn|10
+L	ab_19_1	102	|
+L	ab_19_1	103	|t:|<NORMALIZED>
+L	ab_19_1	104	|switch|p1a: Combusken|Combusken, M|266/266
+L	ab_19_1	105	|move|p2a: Teddiursa|Mud-Slap|p1a: Combusken
+L	ab_19_1	106	|-supereffective|p1a: Combusken
+L	ab_19_1	107	|-damage|p1a: Combusken|228/266
+L	ab_19_1	108	|-unboost|p1a: Combusken|accuracy|1
+L	ab_19_1	109	|
+L	ab_19_1	110	|upkeep
+L	ab_19_1	111	|turn|11
+L	ab_19_1	112	|
+L	ab_19_1	113	|t:|<NORMALIZED>
+L	ab_19_1	114	|debug|before turn callback: counter
+L	ab_19_1	115	|move|p2a: Teddiursa|Slash|p1a: Combusken
+L	ab_19_1	116	|-damage|p1a: Combusken|133/266
+L	ab_19_1	117	|move|p1a: Combusken|Counter|p2a: Teddiursa|[miss]
+L	ab_19_1	118	|-miss|p1a: Combusken|p2a: Teddiursa
+L	ab_19_1	119	|
+L	ab_19_1	120	|upkeep
+L	ab_19_1	121	|turn|12
+L	ab_19_1	122	|
+L	ab_19_1	123	|t:|<NORMALIZED>
+L	ab_19_1	124	|debug|before turn callback: counter
+L	ab_19_1	125	|move|p1a: Combusken|Rock Slide|p2a: Teddiursa|[miss]
+L	ab_19_1	126	|-miss|p1a: Combusken|p2a: Teddiursa
+L	ab_19_1	127	|move|p2a: Teddiursa|Counter|p1a: Combusken
+L	ab_19_1	128	|
+L	ab_19_1	129	|upkeep
+L	ab_19_1	130	|turn|13
+L	ab_19_1	131	|
+L	ab_19_1	132	|t:|<NORMALIZED>
+L	ab_19_1	133	|move|p1a: Combusken|Scratch|p2a: Teddiursa|[miss]
+L	ab_19_1	134	|-miss|p1a: Combusken|p2a: Teddiursa
+L	ab_19_1	135	|move|p2a: Teddiursa|Slash|p1a: Combusken
+L	ab_19_1	136	|-damage|p1a: Combusken|42/266
+L	ab_19_1	137	|
+L	ab_19_1	138	|-enditem|p1a: Combusken|Ganlon Berry|[eat]
+L	ab_19_1	139	|-boost|p1a: Combusken|def|1|[from] item: Ganlon Berry
+L	ab_19_1	140	|upkeep
+L	ab_19_1	141	|turn|14
+L	ab_19_1	142	|
+L	ab_19_1	143	|t:|<NORMALIZED>
+L	ab_19_1	144	|debug|before turn callback: focuspunch
+L	ab_19_1	145	|-singleturn|p2a: Teddiursa|move: Focus Punch
+L	ab_19_1	146	|move|p1a: Combusken|Scratch|p2a: Teddiursa
+L	ab_19_1	147	|-damage|p2a: Teddiursa|236/286
+L	ab_19_1	148	|move|p2a: Teddiursa|Focus Punch||[still]
+L	ab_19_1	149	|cant|p2a: Teddiursa|Focus Punch|Focus Punch
+L	ab_19_1	150	|
+L	ab_19_1	151	|upkeep
+L	ab_19_1	152	|turn|15
+L	ab_19_1	153	|
+L	ab_19_1	154	|t:|<NORMALIZED>
+L	ab_19_1	155	|debug|before turn callback: counter
+L	ab_19_1	156	|move|p1a: Combusken|Rock Slide|p2a: Teddiursa
+L	ab_19_1	157	|-damage|p2a: Teddiursa|138/286
+L	ab_19_1	158	|move|p2a: Teddiursa|Counter|p1a: Combusken
+L	ab_19_1	159	|-damage|p1a: Combusken|0 fnt
+L	ab_19_1	160	|faint|p1a: Combusken
+L	ab_19_1	161	|
+L	ab_19_1	162	|t:|<NORMALIZED>
+L	ab_19_1	163	|switch|p1a: Vaporeon|Vaporeon, M|308/428
+L	ab_19_1	164	|
+L	ab_19_1	165	|upkeep
+L	ab_19_1	166	|turn|16
+L	ab_19_1	167	|
+L	ab_19_1	168	|t:|<NORMALIZED>
+L	ab_19_1	169	|move|p1a: Vaporeon|Water Pulse|p2a: Teddiursa
+L	ab_19_1	170	|-damage|p2a: Teddiursa|0 fnt
+L	ab_19_1	171	|faint|p2a: Teddiursa
+L	ab_19_1	172	|
+L	ab_19_1	173	|t:|<NORMALIZED>
+L	ab_19_1	174	|switch|p2a: Victreebel|Victreebel, M|290/290
+L	ab_19_1	175	|
+L	ab_19_1	176	|upkeep
+L	ab_19_1	177	|turn|17
+L	ab_19_1	178	|
+L	ab_19_1	179	|t:|<NORMALIZED>
+L	ab_19_1	180	|move|p2a: Victreebel|Thief|p1a: Vaporeon
+L	ab_19_1	181	|-damage|p1a: Vaporeon|279/428
+L	ab_19_1	182	|move|p1a: Vaporeon|Ice Beam|p2a: Victreebel
+L	ab_19_1	183	|-supereffective|p2a: Victreebel
+L	ab_19_1	184	|-damage|p2a: Victreebel|42/290
+L	ab_19_1	185	|-status|p2a: Victreebel|frz
+L	ab_19_1	186	|
+L	ab_19_1	187	|upkeep
+L	ab_19_1	188	|turn|18
+L	ab_19_1	189	|
+L	ab_19_1	190	|t:|<NORMALIZED>
+L	ab_19_1	191	|cant|p2a: Victreebel|frz
+L	ab_19_1	192	|move|p1a: Vaporeon|Body Slam|p2a: Victreebel
+L	ab_19_1	193	|-damage|p2a: Victreebel|0 fnt
+L	ab_19_1	194	|debug|move failed because it did nothing
+L	ab_19_1	195	|faint|p2a: Victreebel
+L	ab_19_1	196	|
+L	ab_19_1	197	|t:|<NORMALIZED>
+L	ab_19_1	198	|switch|p2a: Swinub|Swinub, M|255/255
+L	ab_19_1	199	|
+L	ab_19_1	200	|upkeep
+L	ab_19_1	201	|turn|19
+L	ab_19_1	202	|
+L	ab_19_1	203	|t:|<NORMALIZED>
+L	ab_19_1	204	|move|p1a: Vaporeon|Body Slam|p2a: Swinub
+L	ab_19_1	205	|-damage|p2a: Swinub|171/255
+L	ab_19_1	206	|-status|p2a: Swinub|par
+L	ab_19_1	207	|-enditem|p2a: Swinub|Cheri Berry|[eat]
+L	ab_19_1	208	|-curestatus|p2a: Swinub|par|[msg]
+L	ab_19_1	209	|move|p2a: Swinub|Frustration|p1a: Vaporeon
+L	ab_19_1	210	|-damage|p1a: Vaporeon|276/428
+L	ab_19_1	211	|
+L	ab_19_1	212	|upkeep
+L	ab_19_1	213	|turn|20
+L	ab_19_1	214	|
+L	ab_19_1	215	|t:|<NORMALIZED>
+L	ab_19_1	216	|switch|p1a: Raticate|Raticate, M|252/252
+L	ab_19_1	217	|move|p2a: Swinub|Icy Wind|p1a: Raticate
+L	ab_19_1	218	|-damage|p1a: Raticate|203/252
+L	ab_19_1	219	|-unboost|p1a: Raticate|spe|1
+L	ab_19_1	220	|
+L	ab_19_1	221	|upkeep
+L	ab_19_1	222	|turn|21
+L	ab_19_1	223	|
+L	ab_19_1	224	|t:|<NORMALIZED>
+L	ab_19_1	225	|move|p1a: Raticate|Protect|p1a: Raticate
+L	ab_19_1	226	|-singleturn|p1a: Raticate|Protect
+L	ab_19_1	227	|move|p2a: Swinub|Icy Wind|p1a: Raticate
+L	ab_19_1	228	|-activate|p1a: Raticate|Protect
+L	ab_19_1	229	|
+L	ab_19_1	230	|upkeep
+L	ab_19_1	231	|turn|22
+L	ab_19_1	232	|
+L	ab_19_1	233	|t:|<NORMALIZED>
+L	ab_19_1	234	|switch|p1a: Cradily|Cradily, M|292/292
+L	ab_19_1	235	|move|p2a: Swinub|Icy Wind|p1a: Cradily
+L	ab_19_1	236	|-supereffective|p1a: Cradily
+L	ab_19_1	237	|-damage|p1a: Cradily|225/292
+L	ab_19_1	238	|-unboost|p1a: Cradily|spe|1
+L	ab_19_1	239	|-enditem|p1a: Cradily|White Herb
+L	ab_19_1	240	|-clearnegativeboost|p1a: Cradily|[silent]
+L	ab_19_1	241	|
+L	ab_19_1	242	|upkeep
+L	ab_19_1	243	|turn|23
+L	ab_19_1	244	|
+L	ab_19_1	245	|t:|<NORMALIZED>
+L	ab_19_1	246	|move|p1a: Cradily|Protect|p1a: Cradily
+L	ab_19_1	247	|-singleturn|p1a: Cradily|Protect
+L	ab_19_1	248	|move|p2a: Swinub|Icy Wind|p1a: Cradily
+L	ab_19_1	249	|-activate|p1a: Cradily|Protect
+L	ab_19_1	250	|
+L	ab_19_1	251	|upkeep
+L	ab_19_1	252	|turn|24
+L	ab_19_1	253	|
+L	ab_19_1	254	|t:|<NORMALIZED>
+L	ab_19_1	255	|switch|p1a: Vaporeon|Vaporeon, M|276/428
+L	ab_19_1	256	|move|p2a: Swinub|Double-Edge|p1a: Vaporeon
+L	ab_19_1	257	|-damage|p1a: Vaporeon|203/428
+L	ab_19_1	258	|-damage|p2a: Swinub|147/255|[from] Recoil|[of] p1a: Vaporeon
+L	ab_19_1	259	|
+L	ab_19_1	260	|upkeep
+L	ab_19_1	261	|turn|25
+L	ab_19_1	262	|
+L	ab_19_1	263	|t:|<NORMALIZED>
+L	ab_19_1	264	|move|p1a: Vaporeon|Body Slam|p2a: Swinub
+L	ab_19_1	265	|-damage|p2a: Swinub|55/255
+L	ab_19_1	266	|move|p2a: Swinub|Icy Wind|p1a: Vaporeon
+L	ab_19_1	267	|-resisted|p1a: Vaporeon
+L	ab_19_1	268	|-damage|p1a: Vaporeon|184/428
+L	ab_19_1	269	|-unboost|p1a: Vaporeon|spe|1
+L	ab_19_1	270	|
+L	ab_19_1	271	|upkeep
+L	ab_19_1	272	|turn|26
+L	ab_19_1	273	|
+L	ab_19_1	274	|t:|<NORMALIZED>
+L	ab_19_1	275	|move|p1a: Vaporeon|Endure|p1a: Vaporeon
+L	ab_19_1	276	|-singleturn|p1a: Vaporeon|move: Endure
+L	ab_19_1	277	|move|p2a: Swinub|Return|p1a: Vaporeon
+L	ab_19_1	278	|-damage|p1a: Vaporeon|120/428
+L	ab_19_1	279	|
+L	ab_19_1	280	|upkeep
+L	ab_19_1	281	|turn|27
+L	ab_19_1	282	|
+L	ab_19_1	283	|t:|<NORMALIZED>
+L	ab_19_1	284	|move|p2a: Swinub|Frustration|p1a: Vaporeon
+L	ab_19_1	285	|-damage|p1a: Vaporeon|118/428
+L	ab_19_1	286	|move|p1a: Vaporeon|Water Pulse|p2a: Swinub
+L	ab_19_1	287	|-supereffective|p2a: Swinub
+L	ab_19_1	288	|-damage|p2a: Swinub|0 fnt
+L	ab_19_1	289	|faint|p2a: Swinub
+L	ab_19_1	290	|
+L	ab_19_1	291	|t:|<NORMALIZED>
+L	ab_19_1	292	|switch|p2a: Phanpy|Phanpy, M|351/351
+L	ab_19_1	293	|
+L	ab_19_1	294	|upkeep
+L	ab_19_1	295	|turn|28
+L	ab_19_1	296	|
+L	ab_19_1	297	|t:|<NORMALIZED>
+L	ab_19_1	298	|move|p2a: Phanpy|Rock Tomb|p1a: Vaporeon
+L	ab_19_1	299	|-damage|p1a: Vaporeon|80/428
+L	ab_19_1	300	|-unboost|p1a: Vaporeon|spe|1
+L	ab_19_1	301	|move|p1a: Vaporeon|Ice Beam|p2a: Phanpy
+L	ab_19_1	302	|-supereffective|p2a: Phanpy
+L	ab_19_1	303	|-damage|p2a: Phanpy|11/351
+L	ab_19_1	304	|-status|p2a: Phanpy|frz
+L	ab_19_1	305	|
+L	ab_19_1	306	|-heal|p2a: Phanpy|32/351 frz|[from] item: Leftovers
+L	ab_19_1	307	|upkeep
+L	ab_19_1	308	|turn|29
+L	ab_19_1	309	|
+L	ab_19_1	310	|t:|<NORMALIZED>
+L	ab_19_1	311	|cant|p2a: Phanpy|frz
+L	ab_19_1	312	|move|p1a: Vaporeon|Body Slam|p2a: Phanpy
+L	ab_19_1	313	|-damage|p2a: Phanpy|0 fnt
+L	ab_19_1	314	|faint|p2a: Phanpy
+L	ab_19_1	315	|
+L	ab_19_1	316	|t:|<NORMALIZED>
+L	ab_19_1	317	|switch|p2a: Gardevoir|Gardevoir, M|298/298
+L	ab_19_1	318	|-ability|p2a: Gardevoir|Water Absorb|Trace|[from] ability: Trace|[of] p1a: Vaporeon
+L	ab_19_1	319	|
+L	ab_19_1	320	|upkeep
+L	ab_19_1	321	|turn|30
+L	ab_19_1	322	|
+L	ab_19_1	323	|t:|<NORMALIZED>
+L	ab_19_1	324	|move|p2a: Gardevoir|Sunny Day|p2a: Gardevoir
+L	ab_19_1	325	|-weather|SunnyDay
+L	ab_19_1	326	|move|p1a: Vaporeon|Body Slam|p2a: Gardevoir
+L	ab_19_1	327	|-damage|p2a: Gardevoir|247/298
+L	ab_19_1	328	|
+L	ab_19_1	329	|-weather|SunnyDay|[upkeep]
+L	ab_19_1	330	|upkeep
+L	ab_19_1	331	|turn|31
+L	ab_19_1	332	|
+L	ab_19_1	333	|t:|<NORMALIZED>
+L	ab_19_1	334	|move|p1a: Vaporeon|Endure|p1a: Vaporeon
+L	ab_19_1	335	|-singleturn|p1a: Vaporeon|move: Endure
+L	ab_19_1	336	|move|p2a: Gardevoir|Future Sight|p1a: Vaporeon
+L	ab_19_1	337	|-start|p2a: Gardevoir|Future Sight
+L	ab_19_1	338	|
+L	ab_19_1	339	|-weather|SunnyDay|[upkeep]
+L	ab_19_1	340	|upkeep
+L	ab_19_1	341	|turn|32
+L	ab_19_1	342	|
+L	ab_19_1	343	|t:|<NORMALIZED>
+L	ab_19_1	344	|move|p2a: Gardevoir|Future Sight|p1a: Vaporeon
+L	ab_19_1	345	|move|p1a: Vaporeon|Body Slam|p2a: Gardevoir
+L	ab_19_1	346	|-damage|p2a: Gardevoir|192/298
+L	ab_19_1	347	|
+L	ab_19_1	348	|-weather|SunnyDay|[upkeep]
+L	ab_19_1	349	|upkeep
+L	ab_19_1	350	|turn|33
+L	ab_19_1	351	|
+L	ab_19_1	352	|t:|<NORMALIZED>
+L	ab_19_1	353	|move|p1a: Vaporeon|Endure|p1a: Vaporeon
+L	ab_19_1	354	|-singleturn|p1a: Vaporeon|move: Endure
+L	ab_19_1	355	|move|p2a: Gardevoir|Future Sight|p1a: Vaporeon
+L	ab_19_1	356	|
+L	ab_19_1	357	|-weather|SunnyDay|[upkeep]
+L	ab_19_1	358	|-end|p1a: Vaporeon|move: Future Sight
+L	ab_19_1	359	|-damage|p1a: Vaporeon|0 fnt
+L	ab_19_1	360	|faint|p1a: Vaporeon
+L	ab_19_1	361	|upkeep
+L	ab_19_1	362	|
+L	ab_19_1	363	|t:|<NORMALIZED>
+L	ab_19_1	364	|switch|p1a: Raticate|Raticate, M|203/252
+L	ab_19_1	365	|turn|34
+L	ab_19_1	366	|
+L	ab_19_1	367	|t:|<NORMALIZED>
+L	ab_19_1	368	|move|p1a: Raticate|Shock Wave|p2a: Gardevoir
+L	ab_19_1	369	|-damage|p2a: Gardevoir|172/298
+L	ab_19_1	370	|move|p2a: Gardevoir|Future Sight|p1a: Raticate
+L	ab_19_1	371	|-start|p2a: Gardevoir|Future Sight
+L	ab_19_1	372	|
+L	ab_19_1	373	|-weather|none
+L	ab_19_1	374	|upkeep
+L	ab_19_1	375	|turn|35
+L	ab_19_1	376	|
+L	ab_19_1	377	|t:|<NORMALIZED>
+L	ab_19_1	378	|switch|p1a: Nuzleaf|Nuzleaf, M|103/279
+L	ab_19_1	379	|move|p2a: Gardevoir|Future Sight|p1a: Nuzleaf
+L	ab_19_1	380	|
+L	ab_19_1	381	|upkeep
+L	ab_19_1	382	|turn|36
+L	ab_19_1	383	|
+L	ab_19_1	384	|t:|<NORMALIZED>
+L	ab_19_1	385	|move|p2a: Gardevoir|Toxic|p1a: Nuzleaf
+L	ab_19_1	386	|-status|p1a: Nuzleaf|tox
+L	ab_19_1	387	|move|p1a: Nuzleaf|Shadow Ball|p2a: Gardevoir|[miss]
+L	ab_19_1	388	|-supereffective|p2a: Gardevoir
+L	ab_19_1	389	|-damage|p2a: Gardevoir|23/298
+L	ab_19_1	390	|
+L	ab_19_1	391	|-damage|p1a: Nuzleaf|86/279 tox|[from] psn
+L	ab_19_1	392	|-end|p1a: Nuzleaf|move: Future Sight
+L	ab_19_1	393	|-miss|p2a: Gardevoir|p1a: Nuzleaf
+L	ab_19_1	394	|upkeep
+L	ab_19_1	395	|turn|37
+L	ab_19_1	396	|
+L	ab_19_1	397	|t:|<NORMALIZED>
+L	ab_19_1	398	|move|p2a: Gardevoir|Frustration|p1a: Nuzleaf
+L	ab_19_1	399	|-damage|p1a: Nuzleaf|84/279 tox
+L	ab_19_1	400	|move|p1a: Nuzleaf|Solar Beam||[still]
+L	ab_19_1	401	|-prepare|p1a: Nuzleaf|Solar Beam
+L	ab_19_1	402	|
+L	ab_19_1	403	|-damage|p1a: Nuzleaf|50/279 tox|[from] psn
+L	ab_19_1	404	|upkeep
+L	ab_19_1	405	|turn|38
+L	ab_19_1	406	|
+L	ab_19_1	407	|t:|<NORMALIZED>
+L	ab_19_1	408	|move|p2a: Gardevoir|Sunny Day|p2a: Gardevoir
+L	ab_19_1	409	|-weather|SunnyDay
+L	ab_19_1	410	|move|p1a: Nuzleaf|Solar Beam|p2a: Gardevoir|[from] lockedmove
+L	ab_19_1	411	|-damage|p2a: Gardevoir|0 fnt
+L	ab_19_1	412	|faint|p2a: Gardevoir
+L	ab_19_1	413	|
+L	ab_19_1	414	|win|P1

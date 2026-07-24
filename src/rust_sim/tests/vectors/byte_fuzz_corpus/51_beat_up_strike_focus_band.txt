@@ -1,0 +1,227 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=200724 run_id=rmrz2gq3u chunk=7
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_7_7
+TEAM	ab_7_7	p1	Geodude||FocusBand|Sturdy|Earthquake,BrickBreak,SeismicToss,BodySlam|Quirky|156,64,88,200,,|M|19,13,22,18,18,28|||]Koffing||AspearBerry|Levitate|Psybeam,Toxic,WillOWisp,DestinyBond|Docile|32,160,48,80,,188|M|28,20,24,7,7,1|||]Scyther||MetalCoat|Swarm|WingAttack,SilverWind,Pursuit,RainDance|Calm|160,236,56,4,8,44|M|25,6,20,,13,26|||]Feraligatr||ScopeLens|Torrent|Return,RockSmash,Rest,FocusPunch|Quirky|80,,68,120,148,92|M|14,0,17,3,12,1|||]Kabuto||SilverPowder|BattleArmor|Facade,IcyWind,Toxic,Thief|Lax|108,,112,,116,172|M|13,19,11,,26,26|||]Dugtrio||SitrusBerry|ArenaTrap|HyperBeam,Rest,SludgeBomb,Scratch|Careful|56,136,88,204,,24|M|18,17,3,20,15,27|||
+TEAM	ab_7_7	p2	Houndour||WaveIncense|FlashFire|Counter,BeatUp,Reversal,Facade|Bashful|44,152,,144,160,8|M|14,25,8,21,24,1|||]Pinsir||IapapaBerry|HyperCutter|Flail,FuryAttack,Return,FocusPunch|Quirky|28,120,120,116,48,76|M|20,26,10,3,18,13|||]Jolteon||ApicotBerry|VoltAbsorb|ShockWave,Toxic,Thunder,Facade|Gentle|128,60,88,108,60,52|M|10,25,3,20,25,7|||]Totodile||MetalPowder|Torrent|SeismicToss,Waterfall,Bite,DoubleEdge|Impish|60,68,192,36,152,|M|5,2,14,21,13,6|||]Diglett||LaxIncense|SandVeil|RockSmash,SunnyDay,FurySwipes,AerialAce|Bashful|176,,80,152,,100|M|22,6,4,22,29,7|||]Cleffa||BrightPowder|CuteCharm|MegaPunch,Mimic,Reflect,DoubleEdge|Serious|168,28,60,136,44,72|M|30,7,21,9,17,7|||
+FMT	ab_7_7	gen3customgame
+INIT	ab_7_7	10439,7395,52663,42284	3770425218
+DEC	ab_7_7	0	move	0	0	s3	s2	11595,30471,34099,21791	Feraligatr	314	314	0	-	0	0	0	0	0	0	6	Jolteon	282	282	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_7_7	1	move	0	0	m3	m2	57544,23596,24055,64195	Feraligatr	0	314	1	fnt	0	0	0	0	0	0	5	Jolteon	282	282	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_7_7	2	switch	1	0	s3	-	59201,6987,59267,59570	Geodude	248	248	0	-	0	0	0	0	0	0	5	Jolteon	282	282	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_7_7	3	move	0	0	m1	s3	55514,3638,4994,45862	Geodude	248	248	0	-	0	0	0	0	0	0	5	Totodile	180	230	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_7_7	4	move	0	0	m3	m3	64305,24325,933,4489	Geodude	221	248	0	-	0	0	0	0	0	0	5	Totodile	42	230	0	par	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_7_7	5	move	0	0	m3	s4	41205,14115,15372,61284	Geodude	221	248	0	-	0	0	0	0	0	0	5	Diglett	35	196	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_7_7	6	move	0	0	m3	s1	4938,38701,59016,10587	Geodude	221	248	0	-	0	0	0	0	0	0	5	Pinsir	212	267	0	par	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_7_7	7	move	0	0	m2	m3	24281,41105,18936,43212	Geodude	221	248	0	-	0	0	0	0	0	0	5	Pinsir	145	267	0	par	0	0	0	0	0	0	6	p1	0	0	1	0	0
+DEC	ab_7_7	8	move	0	0	m2	m2	21396,42405,23421,30237	Geodude	172	248	0	-	0	0	0	0	0	0	5	Pinsir	45	267	0	par	0	0	0	0	0	0	6	p1	0	0	1	1	0
+DEC	ab_7_7	9	move	0	0	m2	m3	11010,40678,45990,48436	Geodude	172	248	0	-	0	0	0	0	0	0	5	Pinsir	0	267	1	fnt	0	0	0	0	0	0	5	p1	0	0	1	0	0
+DEC	ab_7_7	10	switch	0	1	-	s1	25231,18958,14492,6215	Geodude	172	248	0	-	0	0	0	0	0	0	5	Diglett	35	196	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_7_7	11	move	0	0	m1	m3	10674,42232,2020,1381	Geodude	161	248	0	-	0	0	0	0	0	0	5	Diglett	0	196	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_7_7	12	switch	0	1	-	s5	43900,13167,58818,52380	Geodude	161	248	0	-	0	0	0	0	0	0	5	Cleffa	282	282	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_7_7	13	move	0	0	m1	m1	45327,20143,4003,26355	Geodude	161	248	0	-	0	0	0	0	0	0	5	Cleffa	29	282	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	1
+DEC	ab_7_7	14	move	0	0	m2	m3	61054,17463,50413,37805	Geodude	161	248	0	-	0	0	0	0	0	0	5	Cleffa	0	282	1	fnt	0	0	0	0	0	0	3	p1	0	0	1	0	0
+DEC	ab_7_7	15	switch	0	1	-	s3	23631,37232,56228,30468	Geodude	161	248	0	-	0	0	0	0	0	0	5	Jolteon	282	282	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_7_7	16	move	0	0	m2	m0	39591,43577,32859,33558	Geodude	161	248	0	-	0	0	0	0	0	0	5	Jolteon	182	282	0	-	0	0	0	0	0	0	3	p2	0	0	1	0	0
+DEC	ab_7_7	17	move	0	0	m0	m2	13496,41519,12276,3914	Geodude	161	248	0	-	0	0	0	0	0	0	5	Jolteon	0	282	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_7_7	18	switch	0	1	-	s2	34351,47513,10917,16629	Geodude	161	248	0	-	0	0	0	0	0	0	5	Houndour	225	225	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_7_7	19	move	0	0	m1	m1	40330,64710,54648,43506	Geodude	155	248	0	-	0	0	0	0	0	0	5	Houndour	0	225	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_7_7	20	switch	0	1	-	s4	26284,21288,35154,11581	Geodude	155	248	0	-	0	0	0	0	0	0	5	Totodile	42	230	0	par	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_7_7	21	move	0	0	m3	m1	21907,5787,54602,48385	Geodude	155	248	0	-	0	0	0	0	0	0	5	Totodile	0	230	1	par	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_7_7	1	p1
+L	ab_7_7	0	|t:|<NORMALIZED>
+L	ab_7_7	1	|gametype|singles
+L	ab_7_7	2	|player|p1|P1||
+L	ab_7_7	3	|player|p2|P2||
+L	ab_7_7	4	|gen|3
+L	ab_7_7	5	|tier|[Gen 3] Custom Game
+L	ab_7_7	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_7_7	7	|
+L	ab_7_7	8	|t:|<NORMALIZED>
+L	ab_7_7	9	|teamsize|p1|6
+L	ab_7_7	10	|teamsize|p2|6
+L	ab_7_7	11	|start
+L	ab_7_7	12	|switch|p1a: Geodude|Geodude, M|248/248
+L	ab_7_7	13	|switch|p2a: Houndour|Houndour, M|225/225
+L	ab_7_7	14	|turn|1
+L	ab_7_7	15	|
+L	ab_7_7	16	|t:|<NORMALIZED>
+L	ab_7_7	17	|switch|p2a: Jolteon|Jolteon, M|282/282
+L	ab_7_7	18	|switch|p1a: Feraligatr|Feraligatr, M|314/314
+L	ab_7_7	19	|
+L	ab_7_7	20	|upkeep
+L	ab_7_7	21	|turn|2
+L	ab_7_7	22	|
+L	ab_7_7	23	|t:|<NORMALIZED>
+L	ab_7_7	24	|debug|before turn callback: focuspunch
+L	ab_7_7	25	|-singleturn|p1a: Feraligatr|move: Focus Punch
+L	ab_7_7	26	|move|p2a: Jolteon|Thunder|p1a: Feraligatr
+L	ab_7_7	27	|-supereffective|p1a: Feraligatr
+L	ab_7_7	28	|-damage|p1a: Feraligatr|0 fnt
+L	ab_7_7	29	|faint|p1a: Feraligatr
+L	ab_7_7	30	|
+L	ab_7_7	31	|t:|<NORMALIZED>
+L	ab_7_7	32	|switch|p1a: Geodude|Geodude, M|248/248
+L	ab_7_7	33	|
+L	ab_7_7	34	|upkeep
+L	ab_7_7	35	|turn|3
+L	ab_7_7	36	|
+L	ab_7_7	37	|t:|<NORMALIZED>
+L	ab_7_7	38	|switch|p2a: Totodile|Totodile, M|230/230
+L	ab_7_7	39	|move|p1a: Geodude|Brick Break|p2a: Totodile
+L	ab_7_7	40	|-damage|p2a: Totodile|180/230
+L	ab_7_7	41	|
+L	ab_7_7	42	|upkeep
+L	ab_7_7	43	|turn|4
+L	ab_7_7	44	|
+L	ab_7_7	45	|t:|<NORMALIZED>
+L	ab_7_7	46	|move|p2a: Totodile|Double-Edge|p1a: Geodude
+L	ab_7_7	47	|-resisted|p1a: Geodude
+L	ab_7_7	48	|-damage|p1a: Geodude|221/248
+L	ab_7_7	49	|-damage|p2a: Totodile|171/230|[from] Recoil|[of] p1a: Geodude
+L	ab_7_7	50	|move|p1a: Geodude|Body Slam|p2a: Totodile
+L	ab_7_7	51	|-crit|p2a: Totodile
+L	ab_7_7	52	|-damage|p2a: Totodile|42/230
+L	ab_7_7	53	|-status|p2a: Totodile|par
+L	ab_7_7	54	|
+L	ab_7_7	55	|upkeep
+L	ab_7_7	56	|turn|5
+L	ab_7_7	57	|
+L	ab_7_7	58	|t:|<NORMALIZED>
+L	ab_7_7	59	|switch|p2a: Diglett|Diglett, M|196/196
+L	ab_7_7	60	|move|p1a: Geodude|Body Slam|p2a: Diglett
+L	ab_7_7	61	|debug|lax incense - decreasing accuracy
+L	ab_7_7	62	|-damage|p2a: Diglett|35/196
+L	ab_7_7	63	|
+L	ab_7_7	64	|upkeep
+L	ab_7_7	65	|turn|6
+L	ab_7_7	66	|
+L	ab_7_7	67	|t:|<NORMALIZED>
+L	ab_7_7	68	|switch|p2a: Pinsir|Pinsir, M|267/267
+L	ab_7_7	69	|move|p1a: Geodude|Body Slam|p2a: Pinsir
+L	ab_7_7	70	|-damage|p2a: Pinsir|212/267
+L	ab_7_7	71	|-status|p2a: Pinsir|par
+L	ab_7_7	72	|
+L	ab_7_7	73	|upkeep
+L	ab_7_7	74	|turn|7
+L	ab_7_7	75	|
+L	ab_7_7	76	|t:|<NORMALIZED>
+L	ab_7_7	77	|debug|before turn callback: focuspunch
+L	ab_7_7	78	|-singleturn|p2a: Pinsir|move: Focus Punch
+L	ab_7_7	79	|move|p1a: Geodude|Seismic Toss|p2a: Pinsir
+L	ab_7_7	80	|-damage|p2a: Pinsir|112/267 par
+L	ab_7_7	81	|move|p2a: Pinsir|Focus Punch||[still]
+L	ab_7_7	82	|cant|p2a: Pinsir|Focus Punch|Focus Punch
+L	ab_7_7	83	|
+L	ab_7_7	84	|-enditem|p2a: Pinsir|Iapapa Berry|[eat]
+L	ab_7_7	85	|-heal|p2a: Pinsir|145/267 par|[from] item: Iapapa Berry
+L	ab_7_7	86	|upkeep
+L	ab_7_7	87	|turn|8
+L	ab_7_7	88	|
+L	ab_7_7	89	|t:|<NORMALIZED>
+L	ab_7_7	90	|move|p1a: Geodude|Seismic Toss|p2a: Pinsir
+L	ab_7_7	91	|-damage|p2a: Pinsir|45/267 par
+L	ab_7_7	92	|move|p2a: Pinsir|Return|p1a: Geodude
+L	ab_7_7	93	|-resisted|p1a: Geodude
+L	ab_7_7	94	|-damage|p1a: Geodude|172/248
+L	ab_7_7	95	|
+L	ab_7_7	96	|upkeep
+L	ab_7_7	97	|turn|9
+L	ab_7_7	98	|
+L	ab_7_7	99	|t:|<NORMALIZED>
+L	ab_7_7	100	|debug|before turn callback: focuspunch
+L	ab_7_7	101	|-singleturn|p2a: Pinsir|move: Focus Punch
+L	ab_7_7	102	|move|p1a: Geodude|Seismic Toss|p2a: Pinsir
+L	ab_7_7	103	|-damage|p2a: Pinsir|0 fnt
+L	ab_7_7	104	|faint|p2a: Pinsir
+L	ab_7_7	105	|
+L	ab_7_7	106	|t:|<NORMALIZED>
+L	ab_7_7	107	|switch|p2a: Diglett|Diglett, M|35/196
+L	ab_7_7	108	|
+L	ab_7_7	109	|upkeep
+L	ab_7_7	110	|turn|10
+L	ab_7_7	111	|
+L	ab_7_7	112	|t:|<NORMALIZED>
+L	ab_7_7	113	|move|p2a: Diglett|Aerial Ace|p1a: Geodude
+L	ab_7_7	114	|-resisted|p1a: Geodude
+L	ab_7_7	115	|-damage|p1a: Geodude|161/248
+L	ab_7_7	116	|move|p1a: Geodude|Brick Break|p2a: Diglett
+L	ab_7_7	117	|debug|lax incense - decreasing accuracy
+L	ab_7_7	118	|-damage|p2a: Diglett|0 fnt
+L	ab_7_7	119	|faint|p2a: Diglett
+L	ab_7_7	120	|
+L	ab_7_7	121	|t:|<NORMALIZED>
+L	ab_7_7	122	|switch|p2a: Cleffa|Cleffa, M|282/282
+L	ab_7_7	123	|
+L	ab_7_7	124	|upkeep
+L	ab_7_7	125	|turn|11
+L	ab_7_7	126	|
+L	ab_7_7	127	|t:|<NORMALIZED>
+L	ab_7_7	128	|move|p1a: Geodude|Brick Break|p2a: Cleffa
+L	ab_7_7	129	|debug|brightpowder - decreasing accuracy
+L	ab_7_7	130	|-supereffective|p2a: Cleffa
+L	ab_7_7	131	|-damage|p2a: Cleffa|29/282
+L	ab_7_7	132	|move|p2a: Cleffa|Mimic|p1a: Geodude
+L	ab_7_7	133	|-activate|p2a: Cleffa|move: Mimic|Brick Break
+L	ab_7_7	134	|
+L	ab_7_7	135	|upkeep
+L	ab_7_7	136	|turn|12
+L	ab_7_7	137	|
+L	ab_7_7	138	|t:|<NORMALIZED>
+L	ab_7_7	139	|move|p1a: Geodude|Seismic Toss|p2a: Cleffa
+L	ab_7_7	140	|debug|brightpowder - decreasing accuracy
+L	ab_7_7	141	|-damage|p2a: Cleffa|0 fnt
+L	ab_7_7	142	|faint|p2a: Cleffa
+L	ab_7_7	143	|
+L	ab_7_7	144	|t:|<NORMALIZED>
+L	ab_7_7	145	|switch|p2a: Jolteon|Jolteon, M|282/282
+L	ab_7_7	146	|
+L	ab_7_7	147	|upkeep
+L	ab_7_7	148	|turn|13
+L	ab_7_7	149	|
+L	ab_7_7	150	|t:|<NORMALIZED>
+L	ab_7_7	151	|move|p2a: Jolteon|Shock Wave|p1a: Geodude
+L	ab_7_7	152	|-immune|p1a: Geodude
+L	ab_7_7	153	|move|p1a: Geodude|Seismic Toss|p2a: Jolteon
+L	ab_7_7	154	|-damage|p2a: Jolteon|182/282
+L	ab_7_7	155	|
+L	ab_7_7	156	|upkeep
+L	ab_7_7	157	|turn|14
+L	ab_7_7	158	|
+L	ab_7_7	159	|t:|<NORMALIZED>
+L	ab_7_7	160	|move|p2a: Jolteon|Thunder|p1a: Geodude
+L	ab_7_7	161	|-immune|p1a: Geodude
+L	ab_7_7	162	|move|p1a: Geodude|Earthquake|p2a: Jolteon
+L	ab_7_7	163	|-supereffective|p2a: Jolteon
+L	ab_7_7	164	|-damage|p2a: Jolteon|0 fnt
+L	ab_7_7	165	|faint|p2a: Jolteon
+L	ab_7_7	166	|
+L	ab_7_7	167	|t:|<NORMALIZED>
+L	ab_7_7	168	|switch|p2a: Houndour|Houndour, M|225/225
+L	ab_7_7	169	|
+L	ab_7_7	170	|upkeep
+L	ab_7_7	171	|turn|15
+L	ab_7_7	172	|
+L	ab_7_7	173	|t:|<NORMALIZED>
+L	ab_7_7	174	|move|p2a: Houndour|Beat Up|p1a: Geodude
+L	ab_7_7	175	|-activate|p2a: Houndour|move: Beat Up|[of] Houndour
+L	ab_7_7	176	|-damage|p1a: Geodude|155/248
+L	ab_7_7	177	|-hitcount|p1a: Geodude|1
+L	ab_7_7	178	|move|p1a: Geodude|Brick Break|p2a: Houndour
+L	ab_7_7	179	|-supereffective|p2a: Houndour
+L	ab_7_7	180	|-damage|p2a: Houndour|0 fnt
+L	ab_7_7	181	|faint|p2a: Houndour
+L	ab_7_7	182	|
+L	ab_7_7	183	|t:|<NORMALIZED>
+L	ab_7_7	184	|switch|p2a: Totodile|Totodile, M|42/230 par
+L	ab_7_7	185	|
+L	ab_7_7	186	|upkeep
+L	ab_7_7	187	|turn|16
+L	ab_7_7	188	|
+L	ab_7_7	189	|t:|<NORMALIZED>
+L	ab_7_7	190	|move|p1a: Geodude|Body Slam|p2a: Totodile
+L	ab_7_7	191	|-damage|p2a: Totodile|0 fnt
+L	ab_7_7	192	|faint|p2a: Totodile
+L	ab_7_7	193	|
+L	ab_7_7	194	|win|P1

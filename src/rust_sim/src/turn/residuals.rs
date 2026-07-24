@@ -1465,6 +1465,17 @@ impl crate::state::BattleState {
         if recoil_fraction <= 0.0 || dealt == 0 {
             return;
         }
+        // gen3 `battle.damage`→`spreadDamage` early-returns 0 with NO `-damage` emit when the
+        // recoiling USER is ALREADY at 0 HP (`if (!target || !target.hp) { retVals=0; continue }`,
+        // battle.js:1727). A CONTACT recoil ability — Rough Skin — fires INSIDE moveHit's
+        // `runEvent('DamagingHit')` (BEFORE this batch-1 recoil at gen3 scripts.ts:460) and can
+        // faint the attacker to 0 HP (deferred faint, `hp == 0` but not yet `fainted`); the sim
+        // then SKIPS the move's own recoil entirely. The old code computed `recoil.min(hp==0)==0`
+        // → `apply_damage(0)` no-op but STILL emitted a spurious `|-damage|<user>|0 fnt|[from]
+        // Recoil`. (repro rmrz81mki_ab_47_23)
+        if self.sides[side].pokemon[slot].hp == 0 {
+            return;
+        }
         // ROCK HEAD negates recoil (the `onDamage` returns null for a `recoil` effect —
         // draw-free no-op). Read the CURRENT ability (Trace-aware).
         if to_id(&self.sides[side].pokemon[slot].ability) == "rockhead" {
@@ -1840,13 +1851,19 @@ impl crate::state::BattleState {
         let realized = fm.damage;
         let sub = self.absorb_into_sub(side, slot, realized);
         if sub == SubAbsorb::NoSub {
-            // ENDURE clamps the future-move resolve too (`gen3_move_coverage_batch6_v1`,
-            // CLASS-INFERRED: the resolve's Damage event runs the onDamage handlers —
-            // the Focus-Band-rolls-here precedent — and `endure.onDamage` gates only on
-            // `effect.effectType === 'Move'`, which the resolving move satisfies; an
-            // endure volatile is still up at the same turn's residual). No golden
-            // scenario composes them — disclosed, not probe-verified. DRAW-FREE.
-            let realized = self.endure_clamp(side, slot, realized, dex);
+            // ENDURE does NOT clamp the future-move resolve (`gen3_futuremove_no_endure_v1`,
+            // the random-mode byte-fuzz find ab_19_1 @ master-seed 200724 — CORRECTING the prior
+            // CLASS-INFERRED, "not probe-verified" guess that endure clamps it). endure's
+            // `duration: 1` means it is only active the turn it is used, and it EXPIRES at THAT
+            // turn's residual BEFORE the order-11 future-move resolve (the LAST residual handler),
+            // so its `onDamage` is no longer registered when the resolve deals its Move damage —
+            // the sim faints the target with NO `|-activate|move: Endure` line (golden ab_19_1:
+            // an Enduring Vaporeon takes a lethal Future Sight resolve → `0 fnt`). Since a
+            // future-move ALWAYS resolves at a residual (order 11) and endure is ALWAYS
+            // duration-1-same-turn, endure can NEVER protect a resolve — so no endure_clamp here
+            // (unlike the plain / fixed / per-multihit-strike Move-phase sites, where endure IS
+            // live). Focus Band still rolls (its `randomChance(1,10)` draws on any Damage event).
+            // DRAW-FREE (endure_clamp consumes no PRNG either way).
             let realized = self.focus_band_damage(side, slot, realized, true, true, dex);
             self.apply_damage(side, slot, realized);
             if realized > 0 && self.logging() {

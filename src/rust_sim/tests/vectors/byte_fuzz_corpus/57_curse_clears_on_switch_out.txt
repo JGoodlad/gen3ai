@@ -1,0 +1,282 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=515151 run_id=rmrz8ngky chunk=40
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_40_3
+TEAM	ab_40_3	p1	Shroomish||PinkBow|EffectSpore|Return,BulletSeed,LeechSeed,Growth|Lax|28,28,144,132,116,60|M|12,22,0,19,20,2|||]Taillow||ChestoBerry|Guts|AerialAce,Thief,Protect,Toxic|Naive|76,,92,16,176,148|M|29,7,9,,0,10|||]Steelix||PersimBerry|RockHead|Explosion,SelfDestruct,Strength,Protect|Mild|196,176,,104,28,4|M|15,15,4,10,0,28|||]Stantler||BrightPowder|Intimidate|Swift,Astonish,ShadowBall,RainDance|Calm|68,40,84,120,96,100|M|19,30,2,18,20,2|||]Ledyba||ChestoBerry|EarlyBird|Psybeam,Endure,Mimic,Refresh|Impish|76,148,76,132,8,68|M|30,20,26,8,4,4|||]Celebi||ScopeLens|NaturalCure|Swift,AerialAce,Reflect,BatonPass|Jolly|36,84,24,24,120,20|N|10,22,23,5,11,|||
+TEAM	ab_40_3	p2	Gastly||Stick|Levitate|Astonish,Curse,RainDance,MeanLook|Lonely|160,64,84,52,28,120|M|13,27,26,15,23,10|||]Clefairy||RockIncense|CuteCharm|ThunderPunch,WaterPulse,DoubleSlap,Facade|Bashful|,116,80,136,,176|M|28,26,16,17,1,28|||]Taillow||PersimBerry|Guts|QuickAttack,Return,Facade,Toxic|Bashful|136,52,120,100,,100|M|21,2,18,12,6,21|||]Politoed||ScopeLens|WaterAbsorb|HyperBeam,DoubleSlap,Waterfall,DynamicPunch|Adamant|172,32,8,172,84,40|M|28,25,14,30,11,16|||]Geodude||AguavBerry|RockHead|Frustration,FirePunch,DoubleEdge,RockThrow|Docile|152,100,52,136,8,60|M|18,6,19,15,13,7|||]Corsola||SalacBerry|NaturalCure|Return,MudSlap,SpikeCannon,Blizzard|Naive|16,172,80,72,,168|M|25,21,16,17,17,7|||
+FMT	ab_40_3	gen3customgame
+INIT	ab_40_3	50238,11343,30974,39640	1101593619
+DEC	ab_40_3	0	move	0	0	m1	m3	64783,23974,23158,65255	Shroomish	249	249	0	-	0	0	0	0	0	0	6	Gastly	168	223	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_40_3	1	move	0	0	m0	m1	4929,18190,29882,21889	Shroomish	187	249	0	-	0	0	0	0	0	0	6	Gastly	57	223	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_40_3	2	move	0	0	m1	m3	1926,24854,10244,10384	Shroomish	125	249	0	-	0	0	0	0	0	0	6	Gastly	33	223	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_40_3	3	move	0	0	m1	m2	64790,23037,30220,48667	Shroomish	63	249	0	-	0	0	0	0	0	0	6	Gastly	9	223	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_40_3	4	move	0	0	m0	m1	11715,8114,60113,40085	Shroomish	1	249	0	-	0	0	0	0	0	0	6	Gastly	9	223	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_40_3	5	move	0	0	m3	s4	11715,8114,60113,40085	Shroomish	0	249	1	fnt	0	0	0	0	0	0	5	Geodude	246	246	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_40_3	6	switch	1	0	s3	-	15318,51411,62904,8844	Stantler	292	292	0	-	0	0	0	0	0	0	5	Geodude	246	246	0	-	-1	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_40_3	7	move	0	0	m0	s2	7171,9602,9041,42713	Stantler	292	292	0	-	0	0	0	0	0	0	5	Taillow	117	245	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_40_3	8	move	0	0	s2	m1	22476,37844,47751,13533	Steelix	301	324	0	-	0	0	0	0	0	0	5	Taillow	117	245	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_40_3	9	move	0	0	m2	m0	3259,22963,31657,43	Steelix	294	324	0	-	0	0	0	0	0	0	5	Taillow	0	245	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_40_3	10	switch	0	1	-	s4	44939,34981,24599,45754	Steelix	294	324	0	-	0	0	0	0	0	0	5	Gastly	9	223	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_40_3	11	move	0	0	m3	m1	44939,34981,24599,45754	Steelix	294	324	0	-	0	0	0	0	0	0	5	Gastly	0	223	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_40_3	12	switch	0	1	-	s2	61418,39234,14036,22108	Steelix	213	324	0	-	0	0	0	0	0	0	5	Geodude	246	246	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_40_3	13	move	0	0	s5	m2	6259,16887,16219,43568	Celebi	254	329	0	-	0	0	0	0	0	0	5	Geodude	246	246	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_40_3	14	move	0	0	s5	m1	20807,25605,58942,30743	Steelix	114	324	0	-	0	0	0	0	0	0	5	Geodude	246	246	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_40_3	15	move	0	0	m2	m0	1892,56855,53902,63020	Steelix	113	324	0	-	0	0	0	0	0	0	5	Geodude	212	246	0	-	0	0	0	0	0	0	4	p1	0	0	0	1	0
+DEC	ab_40_3	16	move	0	0	m1	s1	58085,60847,7043,20473	Steelix	0	324	1	fnt	0	0	0	0	0	0	4	Clefairy	0	278	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_40_3	17	switch	1	1	s1	s3	2593,25184,23696,27904	Taillow	238	238	0	-	0	0	0	0	0	0	4	Politoed	361	361	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_40_3	18	move	0	0	m2	m0	8526,46318,45525,35837	Taillow	238	238	0	-	0	0	0	0	0	0	4	Politoed	361	361	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_40_3	19	move	0	0	m0	m3	60886,31850,23988,48965	Taillow	73	238	0	-	0	0	0	0	0	5	4	Politoed	257	361	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_40_3	20	move	0	0	s4	m2	27016,30668,63122,18254	Ledyba	0	239	1	fnt	0	0	0	0	0	0	3	Politoed	257	361	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_40_3	21	switch	1	0	s4	-	63185,58284,27431,32393	Taillow	73	238	0	-	0	0	0	0	0	0	3	Politoed	257	361	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_40_3	22	move	0	0	m3	m0	65101,57452,27286,29069	Taillow	0	238	1	fnt	0	0	0	0	0	0	2	Politoed	257	361	0	tox	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_40_3	23	switch	1	0	s5	-	57404,19830,10016,57444	Celebi	254	329	0	-	0	0	0	0	0	0	2	Politoed	235	361	0	tox	0	0	0	0	0	0	3	none	0	0	0	0	0
+END	ab_40_3	0	none
+L	ab_40_3	0	|t:|<NORMALIZED>
+L	ab_40_3	1	|gametype|singles
+L	ab_40_3	2	|player|p1|P1||
+L	ab_40_3	3	|player|p2|P2||
+L	ab_40_3	4	|gen|3
+L	ab_40_3	5	|tier|[Gen 3] Custom Game
+L	ab_40_3	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_40_3	7	|
+L	ab_40_3	8	|t:|<NORMALIZED>
+L	ab_40_3	9	|teamsize|p1|6
+L	ab_40_3	10	|teamsize|p2|6
+L	ab_40_3	11	|start
+L	ab_40_3	12	|switch|p1a: Shroomish|Shroomish, M|249/249
+L	ab_40_3	13	|switch|p2a: Gastly|Gastly, M|223/223
+L	ab_40_3	14	|turn|1
+L	ab_40_3	15	|
+L	ab_40_3	16	|t:|<NORMALIZED>
+L	ab_40_3	17	|move|p2a: Gastly|Mean Look|p1a: Shroomish
+L	ab_40_3	18	|-activate|p1a: Shroomish|trapped
+L	ab_40_3	19	|move|p1a: Shroomish|Bullet Seed|p2a: Gastly
+L	ab_40_3	20	|-resisted|p2a: Gastly
+L	ab_40_3	21	|-crit|p2a: Gastly
+L	ab_40_3	22	|-damage|p2a: Gastly|207/223
+L	ab_40_3	23	|-resisted|p2a: Gastly
+L	ab_40_3	24	|-damage|p2a: Gastly|199/223
+L	ab_40_3	25	|-resisted|p2a: Gastly
+L	ab_40_3	26	|-damage|p2a: Gastly|192/223
+L	ab_40_3	27	|-resisted|p2a: Gastly
+L	ab_40_3	28	|-crit|p2a: Gastly
+L	ab_40_3	29	|-damage|p2a: Gastly|177/223
+L	ab_40_3	30	|-resisted|p2a: Gastly
+L	ab_40_3	31	|-damage|p2a: Gastly|168/223
+L	ab_40_3	32	|-hitcount|p2a: Gastly|5
+L	ab_40_3	33	|
+L	ab_40_3	34	|upkeep
+L	ab_40_3	35	|turn|2
+L	ab_40_3	36	|
+L	ab_40_3	37	|t:|<NORMALIZED>
+L	ab_40_3	38	|move|p2a: Gastly|Curse|p1a: Shroomish
+L	ab_40_3	39	|-start|p1a: Shroomish|Curse|[of] p2a: Gastly
+L	ab_40_3	40	|-damage|p2a: Gastly|57/223
+L	ab_40_3	41	|move|p1a: Shroomish|Return|p2a: Gastly
+L	ab_40_3	42	|-immune|p2a: Gastly
+L	ab_40_3	43	|
+L	ab_40_3	44	|-damage|p1a: Shroomish|187/249|[from] Curse
+L	ab_40_3	45	|upkeep
+L	ab_40_3	46	|turn|3
+L	ab_40_3	47	|
+L	ab_40_3	48	|t:|<NORMALIZED>
+L	ab_40_3	49	|move|p2a: Gastly|Mean Look||[still]
+L	ab_40_3	50	|-fail|p2a: Gastly
+L	ab_40_3	51	|debug|move failed because it did nothing
+L	ab_40_3	52	|move|p1a: Shroomish|Bullet Seed|p2a: Gastly
+L	ab_40_3	53	|-resisted|p2a: Gastly
+L	ab_40_3	54	|-damage|p2a: Gastly|50/223
+L	ab_40_3	55	|-resisted|p2a: Gastly
+L	ab_40_3	56	|-damage|p2a: Gastly|42/223
+L	ab_40_3	57	|-resisted|p2a: Gastly
+L	ab_40_3	58	|-damage|p2a: Gastly|33/223
+L	ab_40_3	59	|-hitcount|p2a: Gastly|3
+L	ab_40_3	60	|
+L	ab_40_3	61	|-damage|p1a: Shroomish|125/249|[from] Curse
+L	ab_40_3	62	|upkeep
+L	ab_40_3	63	|turn|4
+L	ab_40_3	64	|
+L	ab_40_3	65	|t:|<NORMALIZED>
+L	ab_40_3	66	|move|p2a: Gastly|Rain Dance|p2a: Gastly
+L	ab_40_3	67	|-weather|RainDance
+L	ab_40_3	68	|move|p1a: Shroomish|Bullet Seed|p2a: Gastly
+L	ab_40_3	69	|-resisted|p2a: Gastly
+L	ab_40_3	70	|-damage|p2a: Gastly|25/223
+L	ab_40_3	71	|-resisted|p2a: Gastly
+L	ab_40_3	72	|-damage|p2a: Gastly|17/223
+L	ab_40_3	73	|-resisted|p2a: Gastly
+L	ab_40_3	74	|-damage|p2a: Gastly|9/223
+L	ab_40_3	75	|-hitcount|p2a: Gastly|3
+L	ab_40_3	76	|
+L	ab_40_3	77	|-weather|RainDance|[upkeep]
+L	ab_40_3	78	|-damage|p1a: Shroomish|63/249|[from] Curse
+L	ab_40_3	79	|upkeep
+L	ab_40_3	80	|turn|5
+L	ab_40_3	81	|
+L	ab_40_3	82	|t:|<NORMALIZED>
+L	ab_40_3	83	|move|p2a: Gastly|Curse||[still]
+L	ab_40_3	84	|-fail|p2a: Gastly
+L	ab_40_3	85	|move|p1a: Shroomish|Return|p2a: Gastly
+L	ab_40_3	86	|-immune|p2a: Gastly
+L	ab_40_3	87	|
+L	ab_40_3	88	|-weather|RainDance|[upkeep]
+L	ab_40_3	89	|-damage|p1a: Shroomish|1/249|[from] Curse
+L	ab_40_3	90	|upkeep
+L	ab_40_3	91	|turn|6
+L	ab_40_3	92	|
+L	ab_40_3	93	|t:|<NORMALIZED>
+L	ab_40_3	94	|switch|p2a: Geodude|Geodude, M|246/246
+L	ab_40_3	95	|move|p1a: Shroomish|Growth|p1a: Shroomish
+L	ab_40_3	96	|-boost|p1a: Shroomish|spa|1
+L	ab_40_3	97	|
+L	ab_40_3	98	|-weather|RainDance|[upkeep]
+L	ab_40_3	99	|-damage|p1a: Shroomish|0 fnt|[from] Curse
+L	ab_40_3	100	|faint|p1a: Shroomish
+L	ab_40_3	101	|upkeep
+L	ab_40_3	102	|
+L	ab_40_3	103	|t:|<NORMALIZED>
+L	ab_40_3	104	|switch|p1a: Stantler|Stantler, M|292/292
+L	ab_40_3	105	|-ability|p1a: Stantler|Intimidate|boost
+L	ab_40_3	106	|-unboost|p2a: Geodude|atk|1
+L	ab_40_3	107	|turn|7
+L	ab_40_3	108	|
+L	ab_40_3	109	|t:|<NORMALIZED>
+L	ab_40_3	110	|switch|p2a: Taillow|Taillow, M|245/245
+L	ab_40_3	111	|move|p1a: Stantler|Swift|p2a: Taillow
+L	ab_40_3	112	|-damage|p2a: Taillow|117/245
+L	ab_40_3	113	|
+L	ab_40_3	114	|-weather|RainDance|[upkeep]
+L	ab_40_3	115	|upkeep
+L	ab_40_3	116	|turn|8
+L	ab_40_3	117	|
+L	ab_40_3	118	|t:|<NORMALIZED>
+L	ab_40_3	119	|switch|p1a: Steelix|Steelix, M|324/324
+L	ab_40_3	120	|move|p2a: Taillow|Return|p1a: Steelix
+L	ab_40_3	121	|-resisted|p1a: Steelix
+L	ab_40_3	122	|-damage|p1a: Steelix|301/324
+L	ab_40_3	123	|
+L	ab_40_3	124	|-weather|none
+L	ab_40_3	125	|upkeep
+L	ab_40_3	126	|turn|9
+L	ab_40_3	127	|
+L	ab_40_3	128	|t:|<NORMALIZED>
+L	ab_40_3	129	|move|p2a: Taillow|Quick Attack|p1a: Steelix
+L	ab_40_3	130	|-resisted|p1a: Steelix
+L	ab_40_3	131	|-damage|p1a: Steelix|294/324
+L	ab_40_3	132	|move|p1a: Steelix|Strength|p2a: Taillow
+L	ab_40_3	133	|-damage|p2a: Taillow|0 fnt
+L	ab_40_3	134	|faint|p2a: Taillow
+L	ab_40_3	135	|
+L	ab_40_3	136	|t:|<NORMALIZED>
+L	ab_40_3	137	|switch|p2a: Gastly|Gastly, M|9/223
+L	ab_40_3	138	|
+L	ab_40_3	139	|upkeep
+L	ab_40_3	140	|turn|10
+L	ab_40_3	141	|
+L	ab_40_3	142	|t:|<NORMALIZED>
+L	ab_40_3	143	|move|p1a: Steelix|Protect|p1a: Steelix
+L	ab_40_3	144	|-singleturn|p1a: Steelix|Protect
+L	ab_40_3	145	|move|p2a: Gastly|Curse|p1a: Steelix
+L	ab_40_3	146	|-start|p1a: Steelix|Curse|[of] p2a: Gastly
+L	ab_40_3	147	|-damage|p2a: Gastly|0 fnt
+L	ab_40_3	148	|faint|p2a: Gastly
+L	ab_40_3	149	|
+L	ab_40_3	150	|t:|<NORMALIZED>
+L	ab_40_3	151	|switch|p2a: Geodude|Geodude, M|246/246
+L	ab_40_3	152	|
+L	ab_40_3	153	|-damage|p1a: Steelix|213/324|[from] Curse
+L	ab_40_3	154	|upkeep
+L	ab_40_3	155	|turn|11
+L	ab_40_3	156	|
+L	ab_40_3	157	|t:|<NORMALIZED>
+L	ab_40_3	158	|switch|p1a: Celebi|Celebi|329/329
+L	ab_40_3	159	|move|p2a: Geodude|Double-Edge|p1a: Celebi
+L	ab_40_3	160	|-damage|p1a: Celebi|254/329
+L	ab_40_3	161	|debug|damage event failed
+L	ab_40_3	162	|
+L	ab_40_3	163	|upkeep
+L	ab_40_3	164	|turn|12
+L	ab_40_3	165	|
+L	ab_40_3	166	|t:|<NORMALIZED>
+L	ab_40_3	167	|switch|p1a: Steelix|Steelix, M|213/324
+L	ab_40_3	168	|move|p2a: Geodude|Fire Punch|p1a: Steelix
+L	ab_40_3	169	|-supereffective|p1a: Steelix
+L	ab_40_3	170	|-damage|p1a: Steelix|114/324
+L	ab_40_3	171	|
+L	ab_40_3	172	|upkeep
+L	ab_40_3	173	|turn|13
+L	ab_40_3	174	|
+L	ab_40_3	175	|t:|<NORMALIZED>
+L	ab_40_3	176	|move|p1a: Steelix|Strength|p2a: Geodude
+L	ab_40_3	177	|-resisted|p2a: Geodude
+L	ab_40_3	178	|-damage|p2a: Geodude|212/246
+L	ab_40_3	179	|move|p2a: Geodude|Frustration|p1a: Steelix
+L	ab_40_3	180	|-resisted|p1a: Steelix
+L	ab_40_3	181	|-damage|p1a: Steelix|113/324
+L	ab_40_3	182	|
+L	ab_40_3	183	|upkeep
+L	ab_40_3	184	|turn|14
+L	ab_40_3	185	|
+L	ab_40_3	186	|t:|<NORMALIZED>
+L	ab_40_3	187	|switch|p2a: Clefairy|Clefairy, M|278/278
+L	ab_40_3	188	|move|p1a: Steelix|Self-Destruct|p2a: Clefairy
+L	ab_40_3	189	|-damage|p2a: Clefairy|0 fnt
+L	ab_40_3	190	|faint|p1a: Steelix
+L	ab_40_3	191	|faint|p2a: Clefairy
+L	ab_40_3	192	|
+L	ab_40_3	193	|t:|<NORMALIZED>
+L	ab_40_3	194	|switch|p2a: Politoed|Politoed, M|361/361
+L	ab_40_3	195	|switch|p1a: Taillow|Taillow, M|238/238
+L	ab_40_3	196	|
+L	ab_40_3	197	|upkeep
+L	ab_40_3	198	|turn|15
+L	ab_40_3	199	|
+L	ab_40_3	200	|t:|<NORMALIZED>
+L	ab_40_3	201	|move|p1a: Taillow|Protect|p1a: Taillow
+L	ab_40_3	202	|-singleturn|p1a: Taillow|Protect
+L	ab_40_3	203	|move|p2a: Politoed|Hyper Beam|p1a: Taillow
+L	ab_40_3	204	|-activate|p1a: Taillow|Protect
+L	ab_40_3	205	|
+L	ab_40_3	206	|upkeep
+L	ab_40_3	207	|turn|16
+L	ab_40_3	208	|
+L	ab_40_3	209	|t:|<NORMALIZED>
+L	ab_40_3	210	|move|p1a: Taillow|Aerial Ace|p2a: Politoed
+L	ab_40_3	211	|-crit|p2a: Politoed
+L	ab_40_3	212	|-damage|p2a: Politoed|257/361
+L	ab_40_3	213	|move|p2a: Politoed|Dynamic Punch|p1a: Taillow
+L	ab_40_3	214	|-damage|p1a: Taillow|73/238
+L	ab_40_3	215	|-start|p1a: Taillow|confusion
+L	ab_40_3	216	|
+L	ab_40_3	217	|upkeep
+L	ab_40_3	218	|turn|17
+L	ab_40_3	219	|
+L	ab_40_3	220	|t:|<NORMALIZED>
+L	ab_40_3	221	|switch|p1a: Ledyba|Ledyba, M|239/239
+L	ab_40_3	222	|move|p2a: Politoed|Waterfall|p1a: Ledyba
+L	ab_40_3	223	|-crit|p1a: Ledyba
+L	ab_40_3	224	|-damage|p1a: Ledyba|0 fnt
+L	ab_40_3	225	|faint|p1a: Ledyba
+L	ab_40_3	226	|
+L	ab_40_3	227	|t:|<NORMALIZED>
+L	ab_40_3	228	|switch|p1a: Taillow|Taillow, M|73/238
+L	ab_40_3	229	|
+L	ab_40_3	230	|upkeep
+L	ab_40_3	231	|turn|18
+L	ab_40_3	232	|
+L	ab_40_3	233	|t:|<NORMALIZED>
+L	ab_40_3	234	|move|p1a: Taillow|Toxic|p2a: Politoed
+L	ab_40_3	235	|-status|p2a: Politoed|tox
+L	ab_40_3	236	|move|p2a: Politoed|Hyper Beam|p1a: Taillow
+L	ab_40_3	237	|-crit|p1a: Taillow
+L	ab_40_3	238	|-damage|p1a: Taillow|0 fnt
+L	ab_40_3	239	|-mustrecharge|p2a: Politoed
+L	ab_40_3	240	|faint|p1a: Taillow
+L	ab_40_3	241	|
+L	ab_40_3	242	|t:|<NORMALIZED>
+L	ab_40_3	243	|switch|p1a: Celebi|Celebi|254/329
+L	ab_40_3	244	|
+L	ab_40_3	245	|-damage|p2a: Politoed|235/361 tox|[from] psn
+L	ab_40_3	246	|upkeep
+L	ab_40_3	247	|turn|19

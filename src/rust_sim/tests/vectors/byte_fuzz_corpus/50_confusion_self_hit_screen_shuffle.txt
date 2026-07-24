@@ -1,0 +1,443 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=100125 run_id=rmrz1jrmn chunk=3
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_3_17
+TEAM	ab_3_17	p1	Blaziken||HardStone|Blaze|Return,Toxic,Substitute,BrickBreak|Docile|180,32,,156,140,|M|22,15,28,29,29,13|||]Dunsparce||RockIncense|SereneGrace|Counter,Thunderbolt,CalmMind,Headbutt|Bold|48,,52,112,148,148|M|25,24,8,23,13,28|||]Nidoran-F||MiracleSeed|PoisonPoint|BeatUp,IronTail,TakeDown,SludgeBomb|Lax|24,132,16,52,136,148|F|21,22,24,17,5,22|||]Pineco||PechaBerry|Sturdy|Explosion,Return,Earthquake,RockSlide|Bold|,80,176,136,,116|M|0,14,7,10,2,9|||]Clamperl||OranBerry|ShellArmor|WaterPulse,IcyWind,IronDefense,Return|Timid|44,168,120,44,,132|M|17,9,10,14,12,3|||]Espeon||SoftSand|Synchronize|QuickAttack,Reflect,SunnyDay,Confusion|Docile|144,132,,88,120,24|M|14,10,30,7,12,9|||
+TEAM	ab_3_17	p2	Barboach||HardStone|Oblivious|RockTomb,Endure,IceBeam,Blizzard|Rash|132,20,88,84,48,136|M|3,10,6,6,30,6|||]Tangela||KingsRock|Chlorophyll|SolarBeam,RockSmash,Rest,Mimic|Bashful|,176,,,192,140|M|12,15,12,7,2,28|||]Furret||IapapaBerry|KeenEye|Scratch,Toxic,RainDance,SunnyDay|Serious|56,,48,76,188,140|M|29,19,24,26,28,22|||]Charmeleon||BlackBelt|Blaze|DoubleEdge,Overheat,BodySlam,Scratch|Rash|16,,152,112,128,100|M|21,8,16,7,9,13|||]Metang||SeaIncense|ClearBody|Frustration,RockTomb,Reflect,Psychic|Brave|124,160,,96,128,|N|16,22,,20,19,30|||]Snorunt||BlackBelt|InnerFocus|DoubleEdge,Rest,Crunch,RainDance|Lonely|24,100,88,80,68,148|M|,28,1,6,29,13|||
+FMT	ab_3_17	gen3customgame
+INIT	ab_3_17	59775,60181,21165,29790	744216336
+DEC	ab_3_17	0	move	0	0	m0	m1	22391,57522,48086,29661	Blaziken	337	337	0	-	0	0	0	0	0	0	6	Barboach	68	246	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	1
+DEC	ab_3_17	1	move	0	0	m3	m2	3830,5703,57026,4230	Blaziken	337	337	0	-	0	0	0	0	0	0	6	Barboach	0	246	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_3_17	2	switch	0	1	-	s2	9357,32181,47416,55713	Blaziken	337	337	0	-	0	0	0	0	0	0	6	Furret	323	323	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_3_17	3	move	0	0	m2	m1	47352,3094,57411,63275	Blaziken	232	337	0	tox	0	0	0	0	0	0	6	Furret	323	323	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_3_17	4	move	0	0	m3	m0	59081,45480,32632,30000	Blaziken	190	337	0	tox	0	0	0	0	0	0	6	Furret	98	323	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_3_17	5	move	0	0	m2	m1	16570,22414,37915,8802	Blaziken	127	337	0	tox	0	0	0	0	0	0	6	Furret	98	323	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_3_17	6	move	0	0	m3	m1	20730,15028,35281,12758	Blaziken	127	337	0	tox	0	0	0	0	0	0	6	Furret	0	323	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_17	7	switch	0	1	-	s3	30303,43047,63540,52785	Blaziken	43	337	0	tox	0	0	0	0	0	0	6	Charmeleon	251	251	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_3_17	8	move	0	0	m0	m0	30159,13054,23121,4383	Blaziken	0	337	1	fnt	0	0	0	0	0	0	5	Charmeleon	117	251	0	-	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_3_17	9	switch	1	0	s3	-	56327,32346,36900,63230	Pineco	210	210	0	-	0	0	0	0	0	0	5	Charmeleon	117	251	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_3_17	10	move	0	0	m2	m0	30419,38412,30125,39316	Pineco	154	210	0	-	0	0	0	0	0	0	5	Charmeleon	0	251	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_3_17	11	switch	0	1	-	s1	46980,17873,63456,27175	Pineco	154	210	0	-	0	0	0	0	0	0	5	Tangela	252	252	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_3_17	12	move	0	0	m3	m3	34794,42669,63761,32449	Pineco	154	210	0	-	0	0	0	0	0	0	5	Tangela	252	252	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	1
+DEC	ab_3_17	13	move	0	0	m0	s4	10526,7274,49489,51802	Pineco	0	210	1	fnt	0	0	0	0	0	0	4	Metang	144	277	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_3_17	14	switch	1	0	s2	-	5539,54703,35627,40517	Nidoran-F	247	247	0	-	0	0	0	0	0	0	4	Metang	144	277	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_3_17	15	move	0	0	m1	m0	23701,63033,35285,31588	Nidoran-F	242	247	0	-	0	0	0	0	0	0	4	Metang	119	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_3_17	16	move	0	0	s5	m3	33629,15991,48567,42331	Espeon	255	290	0	-	0	0	0	0	0	0	4	Metang	119	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_17	17	move	0	0	m3	m3	26992,1230,31693,7506	Espeon	218	290	0	-	0	0	0	0	0	0	4	Metang	99	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_17	18	move	0	0	m0	m0	16236,64421,41367,38763	Espeon	216	290	0	-	0	0	0	0	0	0	4	Metang	87	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_3_17	19	move	0	0	m2	m3	45704,58935,25731,54510	Espeon	183	290	0	-	0	0	0	0	0	0	4	Metang	87	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_17	20	move	0	0	m2	m1	30145,35013,13139,12205	Espeon	121	290	0	-	0	0	0	0	-1	0	4	Metang	87	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_17	21	move	0	0	m0	m3	7896,7578,26659,23797	Espeon	83	290	0	-	0	0	0	0	-1	0	4	Metang	76	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_17	22	move	0	0	m0	m3	55469,26997,62808,51517	Espeon	47	290	0	-	0	0	0	0	-1	0	4	Metang	51	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_17	23	move	0	0	m0	m3	11346,33176,2550,38021	Espeon	12	290	0	-	0	0	0	0	-1	0	4	Metang	40	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_17	24	move	0	0	m0	m0	40434,51177,5441,17474	Espeon	10	290	0	-	0	0	0	0	-1	0	4	Metang	28	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_3_17	25	move	0	0	m0	m0	31854,19213,9745,38299	Espeon	8	290	0	-	0	0	0	0	-1	0	4	Metang	17	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_3_17	26	move	0	0	m0	m2	58157,547,36943,35711	Espeon	8	290	0	-	0	0	0	0	-1	0	4	Metang	6	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_17	27	move	0	0	m2	m0	43950,29444,32996,35619	Espeon	6	290	0	-	0	0	0	0	-1	0	4	Metang	6	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_3_17	28	move	0	0	m2	m0	5391,18846,45577,30855	Espeon	4	290	0	-	0	0	0	0	-1	0	4	Metang	6	277	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_3_17	29	move	0	0	m1	s4	55688,41346,54693,3617	Espeon	4	290	0	-	0	0	0	0	-1	0	4	Tangela	252	252	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_3_17	30	move	0	0	m3	m3	51739,17750,55465,64046	Espeon	4	290	0	-	0	0	0	0	-1	0	4	Tangela	122	252	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	1
+DEC	ab_3_17	31	move	0	0	m3	m3	13959,4762,8623,60502	Espeon	4	290	0	-	0	0	0	0	-1	0	4	Tangela	2	252	0	-	0	0	0	0	0	5	3	p2	0	0	0	0	0
+DEC	ab_3_17	32	move	0	0	m1	m2	49095,12713,35938,46523	Espeon	4	290	0	-	0	0	0	0	-1	0	4	Tangela	0	252	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_17	33	switch	0	1	-	s4	12587,63379,40048,9013	Espeon	4	290	0	-	0	0	0	0	-1	0	4	Metang	6	277	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_3_17	34	move	0	0	s4	m2	64740,52389,43403,59807	Clamperl	208	208	0	-	0	0	0	0	0	0	4	Metang	6	277	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_17	35	move	0	0	m2	m3	50423,25505,27086,38706	Clamperl	95	208	0	-	0	2	0	-1	0	0	4	Metang	6	277	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_17	36	move	0	0	m3	m2	21926,27729,59586,45735	Clamperl	95	208	0	-	0	2	0	-1	0	0	4	Metang	0	277	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	1	0
+DEC	ab_3_17	37	switch	0	1	-	s5	65353,15221,23843,31142	Clamperl	95	208	0	-	0	2	0	-1	0	0	4	Snorunt	247	247	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_3_17	38	move	0	0	m0	m3	35933,36242,63841,19141	Clamperl	95	208	0	-	0	2	0	-1	0	0	4	Snorunt	127	247	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_3_17	39	move	0	0	m0	m0	14279,56872,36751,62850	Clamperl	54	208	0	-	0	2	0	-1	0	0	4	Snorunt	0	247	1	-	0	0	0	0	0	0	0	p2	0	0	0	0	0
+END	ab_3_17	1	p1
+L	ab_3_17	0	|t:|<NORMALIZED>
+L	ab_3_17	1	|gametype|singles
+L	ab_3_17	2	|player|p1|P1||
+L	ab_3_17	3	|player|p2|P2||
+L	ab_3_17	4	|gen|3
+L	ab_3_17	5	|tier|[Gen 3] Custom Game
+L	ab_3_17	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_3_17	7	|
+L	ab_3_17	8	|t:|<NORMALIZED>
+L	ab_3_17	9	|teamsize|p1|6
+L	ab_3_17	10	|teamsize|p2|6
+L	ab_3_17	11	|start
+L	ab_3_17	12	|switch|p1a: Blaziken|Blaziken, M|337/337
+L	ab_3_17	13	|switch|p2a: Barboach|Barboach, M|246/246
+L	ab_3_17	14	|turn|1
+L	ab_3_17	15	|
+L	ab_3_17	16	|t:|<NORMALIZED>
+L	ab_3_17	17	|move|p2a: Barboach|Endure|p2a: Barboach
+L	ab_3_17	18	|-singleturn|p2a: Barboach|move: Endure
+L	ab_3_17	19	|move|p1a: Blaziken|Return|p2a: Barboach
+L	ab_3_17	20	|-damage|p2a: Barboach|68/246
+L	ab_3_17	21	|
+L	ab_3_17	22	|upkeep
+L	ab_3_17	23	|turn|2
+L	ab_3_17	24	|
+L	ab_3_17	25	|t:|<NORMALIZED>
+L	ab_3_17	26	|move|p1a: Blaziken|Brick Break|p2a: Barboach
+L	ab_3_17	27	|-damage|p2a: Barboach|0 fnt
+L	ab_3_17	28	|faint|p2a: Barboach
+L	ab_3_17	29	|
+L	ab_3_17	30	|t:|<NORMALIZED>
+L	ab_3_17	31	|switch|p2a: Furret|Furret, M|323/323
+L	ab_3_17	32	|
+L	ab_3_17	33	|upkeep
+L	ab_3_17	34	|turn|3
+L	ab_3_17	35	|
+L	ab_3_17	36	|t:|<NORMALIZED>
+L	ab_3_17	37	|move|p2a: Furret|Toxic|p1a: Blaziken
+L	ab_3_17	38	|-status|p1a: Blaziken|tox
+L	ab_3_17	39	|move|p1a: Blaziken|Substitute|p1a: Blaziken
+L	ab_3_17	40	|-start|p1a: Blaziken|Substitute
+L	ab_3_17	41	|-damage|p1a: Blaziken|253/337 tox
+L	ab_3_17	42	|
+L	ab_3_17	43	|-damage|p1a: Blaziken|232/337 tox|[from] psn
+L	ab_3_17	44	|upkeep
+L	ab_3_17	45	|turn|4
+L	ab_3_17	46	|
+L	ab_3_17	47	|t:|<NORMALIZED>
+L	ab_3_17	48	|move|p2a: Furret|Scratch|p1a: Blaziken
+L	ab_3_17	49	|-activate|p1a: Blaziken|Substitute|[damage]
+L	ab_3_17	50	|move|p1a: Blaziken|Brick Break|p2a: Furret
+L	ab_3_17	51	|-supereffective|p2a: Furret
+L	ab_3_17	52	|-damage|p2a: Furret|58/323
+L	ab_3_17	53	|
+L	ab_3_17	54	|-enditem|p2a: Furret|Iapapa Berry|[eat]
+L	ab_3_17	55	|-heal|p2a: Furret|98/323|[from] item: Iapapa Berry
+L	ab_3_17	56	|-damage|p1a: Blaziken|190/337 tox|[from] psn
+L	ab_3_17	57	|upkeep
+L	ab_3_17	58	|turn|5
+L	ab_3_17	59	|
+L	ab_3_17	60	|t:|<NORMALIZED>
+L	ab_3_17	61	|move|p2a: Furret|Toxic||[still]
+L	ab_3_17	62	|-fail|p2a: Furret
+L	ab_3_17	63	|debug|move failed because it did nothing
+L	ab_3_17	64	|move|p1a: Blaziken|Substitute|p1a: Blaziken
+L	ab_3_17	65	|-fail|p1a: Blaziken|move: Substitute
+L	ab_3_17	66	|
+L	ab_3_17	67	|-damage|p1a: Blaziken|127/337 tox|[from] psn
+L	ab_3_17	68	|upkeep
+L	ab_3_17	69	|turn|6
+L	ab_3_17	70	|
+L	ab_3_17	71	|t:|<NORMALIZED>
+L	ab_3_17	72	|move|p2a: Furret|Toxic||[still]
+L	ab_3_17	73	|-fail|p2a: Furret
+L	ab_3_17	74	|debug|move failed because it did nothing
+L	ab_3_17	75	|move|p1a: Blaziken|Brick Break|p2a: Furret
+L	ab_3_17	76	|-supereffective|p2a: Furret
+L	ab_3_17	77	|-damage|p2a: Furret|0 fnt
+L	ab_3_17	78	|faint|p2a: Furret
+L	ab_3_17	79	|
+L	ab_3_17	80	|t:|<NORMALIZED>
+L	ab_3_17	81	|switch|p2a: Charmeleon|Charmeleon, M|251/251
+L	ab_3_17	82	|
+L	ab_3_17	83	|-damage|p1a: Blaziken|43/337 tox|[from] psn
+L	ab_3_17	84	|upkeep
+L	ab_3_17	85	|turn|7
+L	ab_3_17	86	|
+L	ab_3_17	87	|t:|<NORMALIZED>
+L	ab_3_17	88	|move|p2a: Charmeleon|Double-Edge|p1a: Blaziken
+L	ab_3_17	89	|-end|p1a: Blaziken|Substitute
+L	ab_3_17	90	|-damage|p2a: Charmeleon|240/251|[from] Recoil|[of] p1a: Blaziken
+L	ab_3_17	91	|move|p1a: Blaziken|Return|p2a: Charmeleon
+L	ab_3_17	92	|-damage|p2a: Charmeleon|117/251
+L	ab_3_17	93	|
+L	ab_3_17	94	|-damage|p1a: Blaziken|0 fnt|[from] psn
+L	ab_3_17	95	|faint|p1a: Blaziken
+L	ab_3_17	96	|upkeep
+L	ab_3_17	97	|
+L	ab_3_17	98	|t:|<NORMALIZED>
+L	ab_3_17	99	|switch|p1a: Pineco|Pineco, M|210/210
+L	ab_3_17	100	|turn|8
+L	ab_3_17	101	|
+L	ab_3_17	102	|t:|<NORMALIZED>
+L	ab_3_17	103	|move|p2a: Charmeleon|Double-Edge|p1a: Pineco
+L	ab_3_17	104	|-damage|p1a: Pineco|154/210
+L	ab_3_17	105	|-damage|p2a: Charmeleon|99/251|[from] Recoil|[of] p1a: Pineco
+L	ab_3_17	106	|move|p1a: Pineco|Earthquake|p2a: Charmeleon
+L	ab_3_17	107	|-supereffective|p2a: Charmeleon
+L	ab_3_17	108	|-damage|p2a: Charmeleon|0 fnt
+L	ab_3_17	109	|faint|p2a: Charmeleon
+L	ab_3_17	110	|
+L	ab_3_17	111	|t:|<NORMALIZED>
+L	ab_3_17	112	|switch|p2a: Tangela|Tangela, M|252/252
+L	ab_3_17	113	|
+L	ab_3_17	114	|upkeep
+L	ab_3_17	115	|turn|9
+L	ab_3_17	116	|
+L	ab_3_17	117	|t:|<NORMALIZED>
+L	ab_3_17	118	|move|p2a: Tangela|Mimic|p1a: Pineco
+L	ab_3_17	119	|-activate|p2a: Tangela|move: Mimic|Earthquake
+L	ab_3_17	120	|move|p1a: Pineco|Rock Slide|p2a: Tangela|[miss]
+L	ab_3_17	121	|-miss|p1a: Pineco|p2a: Tangela
+L	ab_3_17	122	|
+L	ab_3_17	123	|upkeep
+L	ab_3_17	124	|turn|10
+L	ab_3_17	125	|
+L	ab_3_17	126	|t:|<NORMALIZED>
+L	ab_3_17	127	|switch|p2a: Metang|Metang|277/277
+L	ab_3_17	128	|move|p1a: Pineco|Explosion|p2a: Metang
+L	ab_3_17	129	|-resisted|p2a: Metang
+L	ab_3_17	130	|-damage|p2a: Metang|144/277
+L	ab_3_17	131	|faint|p1a: Pineco
+L	ab_3_17	132	|
+L	ab_3_17	133	|t:|<NORMALIZED>
+L	ab_3_17	134	|switch|p1a: Nidoran-F|Nidoran-F, F|247/247
+L	ab_3_17	135	|
+L	ab_3_17	136	|upkeep
+L	ab_3_17	137	|turn|11
+L	ab_3_17	138	|
+L	ab_3_17	139	|t:|<NORMALIZED>
+L	ab_3_17	140	|move|p1a: Nidoran-F|Iron Tail|p2a: Metang
+L	ab_3_17	141	|-resisted|p2a: Metang
+L	ab_3_17	142	|-damage|p2a: Metang|119/277
+L	ab_3_17	143	|move|p2a: Metang|Frustration|p1a: Nidoran-F
+L	ab_3_17	144	|-crit|p1a: Nidoran-F
+L	ab_3_17	145	|-damage|p1a: Nidoran-F|242/247
+L	ab_3_17	146	|
+L	ab_3_17	147	|upkeep
+L	ab_3_17	148	|turn|12
+L	ab_3_17	149	|
+L	ab_3_17	150	|t:|<NORMALIZED>
+L	ab_3_17	151	|switch|p1a: Espeon|Espeon, M|290/290
+L	ab_3_17	152	|move|p2a: Metang|Psychic|p1a: Espeon
+L	ab_3_17	153	|-resisted|p1a: Espeon
+L	ab_3_17	154	|-damage|p1a: Espeon|255/290
+L	ab_3_17	155	|
+L	ab_3_17	156	|upkeep
+L	ab_3_17	157	|turn|13
+L	ab_3_17	158	|
+L	ab_3_17	159	|t:|<NORMALIZED>
+L	ab_3_17	160	|move|p1a: Espeon|Confusion|p2a: Metang
+L	ab_3_17	161	|-resisted|p2a: Metang
+L	ab_3_17	162	|-damage|p2a: Metang|99/277
+L	ab_3_17	163	|move|p2a: Metang|Psychic|p1a: Espeon
+L	ab_3_17	164	|-resisted|p1a: Espeon
+L	ab_3_17	165	|-damage|p1a: Espeon|218/290
+L	ab_3_17	166	|
+L	ab_3_17	167	|upkeep
+L	ab_3_17	168	|turn|14
+L	ab_3_17	169	|
+L	ab_3_17	170	|t:|<NORMALIZED>
+L	ab_3_17	171	|move|p1a: Espeon|Quick Attack|p2a: Metang
+L	ab_3_17	172	|-resisted|p2a: Metang
+L	ab_3_17	173	|-damage|p2a: Metang|87/277
+L	ab_3_17	174	|move|p2a: Metang|Frustration|p1a: Espeon
+L	ab_3_17	175	|-damage|p1a: Espeon|216/290
+L	ab_3_17	176	|
+L	ab_3_17	177	|upkeep
+L	ab_3_17	178	|turn|15
+L	ab_3_17	179	|
+L	ab_3_17	180	|t:|<NORMALIZED>
+L	ab_3_17	181	|move|p1a: Espeon|Sunny Day|p1a: Espeon
+L	ab_3_17	182	|-weather|SunnyDay
+L	ab_3_17	183	|move|p2a: Metang|Psychic|p1a: Espeon
+L	ab_3_17	184	|-resisted|p1a: Espeon
+L	ab_3_17	185	|-damage|p1a: Espeon|183/290
+L	ab_3_17	186	|
+L	ab_3_17	187	|-weather|SunnyDay|[upkeep]
+L	ab_3_17	188	|upkeep
+L	ab_3_17	189	|turn|16
+L	ab_3_17	190	|
+L	ab_3_17	191	|t:|<NORMALIZED>
+L	ab_3_17	192	|move|p1a: Espeon|Sunny Day||[still]
+L	ab_3_17	193	|-fail|p1a: Espeon
+L	ab_3_17	194	|debug|move failed because it did nothing
+L	ab_3_17	195	|move|p2a: Metang|Rock Tomb|p1a: Espeon
+L	ab_3_17	196	|-damage|p1a: Espeon|121/290
+L	ab_3_17	197	|-unboost|p1a: Espeon|spe|1
+L	ab_3_17	198	|
+L	ab_3_17	199	|-weather|SunnyDay|[upkeep]
+L	ab_3_17	200	|upkeep
+L	ab_3_17	201	|turn|17
+L	ab_3_17	202	|
+L	ab_3_17	203	|t:|<NORMALIZED>
+L	ab_3_17	204	|move|p1a: Espeon|Quick Attack|p2a: Metang
+L	ab_3_17	205	|-resisted|p2a: Metang
+L	ab_3_17	206	|-damage|p2a: Metang|76/277
+L	ab_3_17	207	|move|p2a: Metang|Psychic|p1a: Espeon
+L	ab_3_17	208	|-resisted|p1a: Espeon
+L	ab_3_17	209	|-damage|p1a: Espeon|83/290
+L	ab_3_17	210	|
+L	ab_3_17	211	|-weather|SunnyDay|[upkeep]
+L	ab_3_17	212	|upkeep
+L	ab_3_17	213	|turn|18
+L	ab_3_17	214	|
+L	ab_3_17	215	|t:|<NORMALIZED>
+L	ab_3_17	216	|move|p1a: Espeon|Quick Attack|p2a: Metang
+L	ab_3_17	217	|-resisted|p2a: Metang
+L	ab_3_17	218	|-crit|p2a: Metang
+L	ab_3_17	219	|-damage|p2a: Metang|51/277
+L	ab_3_17	220	|move|p2a: Metang|Psychic|p1a: Espeon
+L	ab_3_17	221	|-resisted|p1a: Espeon
+L	ab_3_17	222	|-damage|p1a: Espeon|47/290
+L	ab_3_17	223	|
+L	ab_3_17	224	|-weather|SunnyDay|[upkeep]
+L	ab_3_17	225	|upkeep
+L	ab_3_17	226	|turn|19
+L	ab_3_17	227	|
+L	ab_3_17	228	|t:|<NORMALIZED>
+L	ab_3_17	229	|move|p1a: Espeon|Quick Attack|p2a: Metang
+L	ab_3_17	230	|-resisted|p2a: Metang
+L	ab_3_17	231	|-damage|p2a: Metang|40/277
+L	ab_3_17	232	|move|p2a: Metang|Psychic|p1a: Espeon
+L	ab_3_17	233	|-resisted|p1a: Espeon
+L	ab_3_17	234	|-damage|p1a: Espeon|12/290
+L	ab_3_17	235	|
+L	ab_3_17	236	|-weather|none
+L	ab_3_17	237	|upkeep
+L	ab_3_17	238	|turn|20
+L	ab_3_17	239	|
+L	ab_3_17	240	|t:|<NORMALIZED>
+L	ab_3_17	241	|move|p1a: Espeon|Quick Attack|p2a: Metang
+L	ab_3_17	242	|-resisted|p2a: Metang
+L	ab_3_17	243	|-damage|p2a: Metang|28/277
+L	ab_3_17	244	|move|p2a: Metang|Frustration|p1a: Espeon
+L	ab_3_17	245	|-damage|p1a: Espeon|10/290
+L	ab_3_17	246	|
+L	ab_3_17	247	|upkeep
+L	ab_3_17	248	|turn|21
+L	ab_3_17	249	|
+L	ab_3_17	250	|t:|<NORMALIZED>
+L	ab_3_17	251	|move|p1a: Espeon|Quick Attack|p2a: Metang
+L	ab_3_17	252	|-resisted|p2a: Metang
+L	ab_3_17	253	|-damage|p2a: Metang|17/277
+L	ab_3_17	254	|move|p2a: Metang|Frustration|p1a: Espeon
+L	ab_3_17	255	|-damage|p1a: Espeon|8/290
+L	ab_3_17	256	|
+L	ab_3_17	257	|upkeep
+L	ab_3_17	258	|turn|22
+L	ab_3_17	259	|
+L	ab_3_17	260	|t:|<NORMALIZED>
+L	ab_3_17	261	|move|p1a: Espeon|Quick Attack|p2a: Metang
+L	ab_3_17	262	|-resisted|p2a: Metang
+L	ab_3_17	263	|-damage|p2a: Metang|6/277
+L	ab_3_17	264	|move|p2a: Metang|Reflect|p2a: Metang
+L	ab_3_17	265	|-sidestart|p2: P2|Reflect
+L	ab_3_17	266	|
+L	ab_3_17	267	|upkeep
+L	ab_3_17	268	|turn|23
+L	ab_3_17	269	|
+L	ab_3_17	270	|t:|<NORMALIZED>
+L	ab_3_17	271	|move|p1a: Espeon|Sunny Day|p1a: Espeon
+L	ab_3_17	272	|-weather|SunnyDay
+L	ab_3_17	273	|move|p2a: Metang|Frustration|p1a: Espeon
+L	ab_3_17	274	|-damage|p1a: Espeon|6/290
+L	ab_3_17	275	|
+L	ab_3_17	276	|-weather|SunnyDay|[upkeep]
+L	ab_3_17	277	|upkeep
+L	ab_3_17	278	|turn|24
+L	ab_3_17	279	|
+L	ab_3_17	280	|t:|<NORMALIZED>
+L	ab_3_17	281	|move|p1a: Espeon|Sunny Day||[still]
+L	ab_3_17	282	|-fail|p1a: Espeon
+L	ab_3_17	283	|debug|move failed because it did nothing
+L	ab_3_17	284	|move|p2a: Metang|Frustration|p1a: Espeon
+L	ab_3_17	285	|-damage|p1a: Espeon|4/290
+L	ab_3_17	286	|
+L	ab_3_17	287	|-weather|SunnyDay|[upkeep]
+L	ab_3_17	288	|upkeep
+L	ab_3_17	289	|turn|25
+L	ab_3_17	290	|
+L	ab_3_17	291	|t:|<NORMALIZED>
+L	ab_3_17	292	|switch|p2a: Tangela|Tangela, M|252/252
+L	ab_3_17	293	|move|p1a: Espeon|Reflect|p1a: Espeon
+L	ab_3_17	294	|-sidestart|p1: P1|Reflect
+L	ab_3_17	295	|
+L	ab_3_17	296	|-weather|SunnyDay|[upkeep]
+L	ab_3_17	297	|upkeep
+L	ab_3_17	298	|turn|26
+L	ab_3_17	299	|
+L	ab_3_17	300	|t:|<NORMALIZED>
+L	ab_3_17	301	|move|p2a: Tangela|Mimic|p1a: Espeon
+L	ab_3_17	302	|-activate|p2a: Tangela|move: Mimic|Reflect
+L	ab_3_17	303	|move|p1a: Espeon|Confusion|p2a: Tangela
+L	ab_3_17	304	|-damage|p2a: Tangela|122/252
+L	ab_3_17	305	|
+L	ab_3_17	306	|-sideend|p2: P2|Reflect
+L	ab_3_17	307	|-weather|SunnyDay|[upkeep]
+L	ab_3_17	308	|upkeep
+L	ab_3_17	309	|turn|27
+L	ab_3_17	310	|
+L	ab_3_17	311	|t:|<NORMALIZED>
+L	ab_3_17	312	|move|p2a: Tangela|Reflect|p2a: Tangela
+L	ab_3_17	313	|-sidestart|p2: P2|Reflect
+L	ab_3_17	314	|move|p1a: Espeon|Confusion|p2a: Tangela
+L	ab_3_17	315	|-damage|p2a: Tangela|2/252
+L	ab_3_17	316	|-start|p2a: Tangela|confusion
+L	ab_3_17	317	|
+L	ab_3_17	318	|-weather|none
+L	ab_3_17	319	|upkeep
+L	ab_3_17	320	|turn|28
+L	ab_3_17	321	|
+L	ab_3_17	322	|t:|<NORMALIZED>
+L	ab_3_17	323	|-activate|p2a: Tangela|confusion
+L	ab_3_17	324	|-damage|p2a: Tangela|0 fnt|[from] confusion
+L	ab_3_17	325	|faint|p2a: Tangela
+L	ab_3_17	326	|
+L	ab_3_17	327	|t:|<NORMALIZED>
+L	ab_3_17	328	|switch|p2a: Metang|Metang|6/277
+L	ab_3_17	329	|
+L	ab_3_17	330	|upkeep
+L	ab_3_17	331	|turn|29
+L	ab_3_17	332	|
+L	ab_3_17	333	|t:|<NORMALIZED>
+L	ab_3_17	334	|switch|p1a: Clamperl|Clamperl, M|208/208
+L	ab_3_17	335	|move|p2a: Metang|Reflect||[still]
+L	ab_3_17	336	|-fail|p2a: Metang
+L	ab_3_17	337	|debug|move failed because it did nothing
+L	ab_3_17	338	|
+L	ab_3_17	339	|-sideend|p1: P1|Reflect
+L	ab_3_17	340	|upkeep
+L	ab_3_17	341	|turn|30
+L	ab_3_17	342	|
+L	ab_3_17	343	|t:|<NORMALIZED>
+L	ab_3_17	344	|move|p2a: Metang|Psychic|p1a: Clamperl
+L	ab_3_17	345	|-damage|p1a: Clamperl|85/208
+L	ab_3_17	346	|-unboost|p1a: Clamperl|spd|1
+L	ab_3_17	347	|move|p1a: Clamperl|Iron Defense|p1a: Clamperl
+L	ab_3_17	348	|-boost|p1a: Clamperl|def|2
+L	ab_3_17	349	|
+L	ab_3_17	350	|-enditem|p1a: Clamperl|Oran Berry|[eat]
+L	ab_3_17	351	|-heal|p1a: Clamperl|95/208|[from] item: Oran Berry
+L	ab_3_17	352	|upkeep
+L	ab_3_17	353	|turn|31
+L	ab_3_17	354	|
+L	ab_3_17	355	|t:|<NORMALIZED>
+L	ab_3_17	356	|move|p2a: Metang|Reflect||[still]
+L	ab_3_17	357	|-fail|p2a: Metang
+L	ab_3_17	358	|debug|move failed because it did nothing
+L	ab_3_17	359	|move|p1a: Clamperl|Return|p2a: Metang
+L	ab_3_17	360	|debug|Reflect weaken
+L	ab_3_17	361	|-resisted|p2a: Metang
+L	ab_3_17	362	|-damage|p2a: Metang|0 fnt
+L	ab_3_17	363	|faint|p2a: Metang
+L	ab_3_17	364	|
+L	ab_3_17	365	|t:|<NORMALIZED>
+L	ab_3_17	366	|switch|p2a: Snorunt|Snorunt, M|247/247
+L	ab_3_17	367	|
+L	ab_3_17	368	|-sideend|p2: P2|Reflect
+L	ab_3_17	369	|upkeep
+L	ab_3_17	370	|turn|32
+L	ab_3_17	371	|
+L	ab_3_17	372	|t:|<NORMALIZED>
+L	ab_3_17	373	|move|p2a: Snorunt|Rain Dance|p2a: Snorunt
+L	ab_3_17	374	|-weather|RainDance
+L	ab_3_17	375	|move|p1a: Clamperl|Water Pulse|p2a: Snorunt
+L	ab_3_17	376	|debug|rain water boost
+L	ab_3_17	377	|-damage|p2a: Snorunt|127/247
+L	ab_3_17	378	|
+L	ab_3_17	379	|-weather|RainDance|[upkeep]
+L	ab_3_17	380	|upkeep
+L	ab_3_17	381	|turn|33
+L	ab_3_17	382	|
+L	ab_3_17	383	|t:|<NORMALIZED>
+L	ab_3_17	384	|move|p2a: Snorunt|Double-Edge|p1a: Clamperl
+L	ab_3_17	385	|-damage|p1a: Clamperl|54/208
+L	ab_3_17	386	|-damage|p2a: Snorunt|114/247|[from] Recoil|[of] p1a: Clamperl
+L	ab_3_17	387	|move|p1a: Clamperl|Water Pulse|p2a: Snorunt
+L	ab_3_17	388	|debug|rain water boost
+L	ab_3_17	389	|-damage|p2a: Snorunt|0 fnt
+L	ab_3_17	390	|faint|p2a: Snorunt
+L	ab_3_17	391	|
+L	ab_3_17	392	|win|P1
