@@ -254,8 +254,9 @@ Profiled: the bottleneck is **obs materialization** (~58%); the `serializeBattle
 
 **Honesty gate (mirrors every belief-head):** the search *learns* a better line ≠ it *helps* the
 policy. v1's success criterion is `td_resid_tail`/calibration improving on a fresh run A/B
-(`coef = 0` control), not "the search found corrections." And the hard ceiling stands
-(`project_positional_grind_decomposition`): ~⅔ of grind losses are team-draw / matchup-lost-from-turn-1
-— *uncoachable* by any per-turn correction. Expect this to attack the **thrown-late** losses (the
-fixable ⅓), not the matchup-lost ones — a few points, not a steep climb.
+(`coef = 0` control), not "the search found corrections." **RETRACTED (2026-07-24): the former
+"~⅔ of grind losses are uncoachable team-draw" ceiling is DEAD.** That attribution was CIRCULAR — our
+own policy/critic judged recoverability, so "uncoachable" only meant "uncoachable *at this strength*"
+— and a strong human beats our bot on the same teams. Treat those losses as HEADROOM, not a ceiling:
+there is no known per-turn-uncoachable floor to plan around.
 ```

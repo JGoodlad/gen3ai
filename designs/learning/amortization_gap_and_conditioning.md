@@ -620,6 +620,35 @@ teams) — so a targeted lift, not a transformation. This IS the Phase-2 exploit
 pairing: both halves are BUILT (exploiters exist, FiLM shipped v44); the never-run step is feeding
 FiLM the concentrated exploiter signal instead of the washed RL advantage.
 
+## The distinct-target mechanism CONFIRMED (2026-07-22, ai_v8_04 distillation run)
+
+Launched the 4-teacher distill-into-FiLM run (ai_v8_04, fork from ai_v8_03, --distill-coef 1.0,
+--distill-team-bias 0.4, the 4 exploiters as TEACHER:TEAM pairs). ~3M steps in, all gates move
+COHERENTLY (not a fork transient — a transient reverts; a dropping KL confirms real convergence):
+distill/kl 0.41→0.15 (converging), agree_rate 0.59→0.73+ (rising→1), **film/pi_team_std 0.29→0.43
+AND film/vf_dev 1.18→0.94** — the differential GROWS while the shared tilt SHRINKS, the dev:team_std
+ratio collapsing ~4:1→~2:1. This is the predicted mechanism made real: N DISTINCT teacher targets
+can't be fit by one shared modulation, so FiLM is FORCED to move capacity from the generic tilt into
+per-team routing. FIRST TIME team_std moved off ~0.25 in the whole program — RL never could (washing);
+distillation does (the exploiters already extracted the signal). Expected transient: self-play ELO
+dipped 2016→1980 (policy in flux + fresh pool). MECHANISM confirmed; PAYOFF pending — "team_std grew"
+≠ "per-team win rate improved" until the per-team eval is re-run at settle (~agree plateau), esp trap
+(the 0.40 deficit). learns≠helps still applies, though the mirror says the teacher targets are good.
+
+**PAYOFF CONFIRMED (2026-07-22, @275M, agreement settled ~0.75-0.79).** `tmp/distill_payoff_eval.py`
+(distilled trainee vs pre-distill baseline, each piloting the 4 teams vs the SAME fixed opponent,
+60g): **per-team piloting +0.129 mean, ALL 4 teams up** — TSS 0.60→0.73 (80% of the exploiter gap
+closed), stall 0.52→0.68 (63%), trap 0.47→0.60 (57% — the sub-even team now WINS), cmpass 0.45→0.53
+(56%). So the mechanism (team_std up) CONVERTED to play (~64% of the exploiter's piloting edge
+captured; the double-sided recipe's self-play half caps it below 100%). NOT learns≠helps — the whole
+program validated end-to-end: washing-limited barrier → exploiter has the signal → distill into
+head-FiLM → per-team win rate rises. **head-FiLM is SUFFICIENT** (the distilled signal converts to
+play at 56-80%), so PLACEMENT was NOT the limiter and trunk-FiLM stays PREMATURE — the barrier was
+always signal (washing), now fixed. CI caveat: per-team deltas ±0.17 at 60g (individually noisy), but
+4/4 positive + the +0.13 mean (~240g/condition) is solid. Self-play ELO dipped 2016→1985 (distribution
+shift + fresh pool — a confounded proxy during distillation; the per-team WIN RATE is the real read).
+NEXT: scale distillation to more archetypes (4 teams helps those 4; broad lift needs broad coverage).
+
 ## See also
 - [[objective_richness_and_representation]] — the simplicity bias / minimal-sufficient-statistic backbone (why the shared solution wins by default) + the distillation bits-ladder
 - `src/agents/model/CLAUDE.md` → dual-head value readout, the shared trunk (where the interference lives)

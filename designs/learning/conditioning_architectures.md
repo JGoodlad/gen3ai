@@ -272,6 +272,43 @@ Also ruled out: **weight decay is NOT suppressing FiLM** — AdamW at `wd=1e-5`,
 pathology (a noise-dominated, badly-conditioned, LR-starved parameter group) that inspecting weights
 would have missed — `‖γ‖` looked "alive" while the BEHAVIOUR it produced was 5–10× too weak.
 
+### 5b-addendum — three measurements that closed the diagnosis (2026-07-26)
+
+**(i) z's geometry is COMPOSITIONAL, and behaviour is ~orthogonal to it.** Correlating pairwise
+z-distance against pairwise BEHAVIOURAL distance over a 20-team cluster (behaviour vector = switch-mass,
+hard-switch rate, entropy, mean game length, win rate — the only dimensions COMPARABLE across teams,
+since per-move-slot probs are not: slot 6 is a different move on every team):
+
+> **Pearson r = +0.125, Spearman +0.118** (190 pairs; z-dist spanned 0.012–0.52, behaviour 0.66–7.35).
+
+Both axes have real range; the *alignment* is absent. So the generator is handed a latent whose metric
+is ~orthogonal to the one FiLM needs — which is WHY the required Jacobian is steep in a low-variance
+direction. The ill-conditioning is not incidental; it is what happens when the latent's geometry is the
+wrong one. (Probe: `tmp/z_vs_behavior_probe.py`.)
+
+**(ii) The behavioural gradient into the encoder is LARGE but NOISE-DOMINATED; the compositional one is
+SMALL but CONSISTENT.** Gradient norms on the ZArchEncoder's 21.7k params from one real minibatch:
+recon `1.09e-02` vs a policy-gradient surrogate `5.07e-01` — the behavioural path is **~46× larger**.
+BUT the surrogate used advantages drawn INDEPENDENTLY of the action, so `E[∇logπ·A] = 0` — it measured
+the policy gradient's per-minibatch **noise**, not its signal. Correct reading: a large noisy gradient
+cancels over steps while a small consistent one accumulates, so z ends up compositional. This agrees with
+`film/noise_scale` and with (i). **Consequence: rebalancing/removing the recon aux is DEAD — recon is not
+the blocker; the policy path's SNR is.** (Probe: `tmp/zarch_grad_ratio_probe.py`. The methodologically
+sound version decomposes signal vs noise across K minibatches — NOT yet run.)
+
+**(iii) DISTILLATION is the only intervention measured to raise FiLM's dynamic range.** Paired far-z
+ablation gap on the SAME teams/reference, pre- vs post-distillation:
+
+| | far-z gap | teams with no conditioning |
+|---|---|---|
+| pre-distill (ai_v8_04) | 0.0090 | 1/10 |
+| post-distill (ai_v8_14) | **0.0153 (+70%)** | **0/10** |
+| *what specialist play requires* | 0.048–0.136 | — |
+
+Corroborates the earlier `film/team_std` 0.25→0.49. Still **~3–9× short** of what is needed, so the
+conditioning path remains the bottleneck — but it is now a measurable dial, and dense per-team targets
+(which RL cannot supply) are the one thing known to move it.
+
 ## 6. How to tell if FiLM has saturated
 
 Ordered cheapest → most decisive.

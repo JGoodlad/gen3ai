@@ -233,9 +233,9 @@ A **~15-30× reduction per node** before depth compounds — and completed-Q mak
 The claim: **restricting the exploiter to a subset of teams makes search-distillation dramatically
 more compute-efficient**, for four compounding reasons.
 
-1. **Narrow slice = narrow state distribution.** Full Gen3 OU is enormous (team-draw variance
-   dominates losses — ~⅔ team-draw/matchup-lost-from-turn-1, *uncoachable*,
-   `project_positional_grind_decomposition`). Fix the teams ⇒ the reachable manifold collapses.
+1. **Narrow slice = narrow state distribution.** Full Gen3 OU is enormous. (The former
+   "~⅔ team-draw, uncoachable" claim is **RETRACTED** — it was model-judged, hence circular; see
+   `feedback_no_circular_unwinnable_claims`.) Fix the teams ⇒ the reachable manifold collapses.
 2. **Critic + beam only need LOCAL accuracy.** The critic doesn't have to be globally calibrated,
    only right on *this* matchup family — easier to reach, stays accurate ⇒ the beam's leaf values +
    confirm-rollouts are more trustworthy ⇒ **more searches pass the CI gate** (`teacher/yield` ↑) ⇒
@@ -315,9 +315,9 @@ frozen-snapshot workers, the 3-tier CI gate. **New wiring: one KL aux term + the
   full weight; treat deeper PV as soft/value-only (§9 edge cases).
 - **Teacher cost:** the beam + confirm-rollouts are the expense; the subset restriction is what makes
   it affordable. Budget (`--teacher-search-budget`), prioritize by `|ΔV|·P(reducible mistake)`.
-- **Hard ceiling still stands:** ~⅔ of grind losses are team-draw/matchup-lost-from-turn-1,
-  *uncoachable*. The subset partly dodges this (fixed teams = no within-slice team-draw variance) —
-  another reason it's the right lens — but expect to attack **thrown-late** losses, not matchup-lost.
+- **No known uncoachable ceiling (RETRACTED 2026-07-24):** the old "~⅔ of grind losses are
+  uncoachable team-draw" bound was CIRCULAR (our own policy judged it) and is dead. The subset lens is
+  still right — fixed teams shrink the state manifold — but do NOT budget around a matchup-lost floor.
 
 ### Shaky references to flag
 
@@ -370,4 +370,4 @@ equilibrium, and don't distill a beam that's worse than the policy.
   `project_better_line_search.md` (the beam + clone-and-branch server),
   `project_exploiter_league_tooling.md` (`--exploiter` / `--run-name` / fork-on-resume gotchas),
   `project_plateau_research_2026_06_25.md` (regime-change hope: Metamon, team diversity),
-  `project_positional_grind_decomposition.md` (the uncoachable team-draw ceiling).
+  `project_positional_grind_decomposition.md` (whose "uncoachable team-draw ceiling" is RETRACTED — see `feedback_no_circular_unwinnable_claims`).

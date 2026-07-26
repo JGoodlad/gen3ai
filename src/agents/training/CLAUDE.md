@@ -2013,8 +2013,8 @@ critic (which must predict V^π for GAE) toward it biases advantages. So the sig
 joint-ExIt A/B). **All training-only** (no `ARCH_SIGNATURE`/`MODEL_CONFIG_VERSION` bump; coefs
 `_resolve`-inherited on a flagless resume, operational knobs forwarded by the launcher). **Honesty
 gate:** the search *finding* a better line ≠ it *helping* — validate `eval/td_resid_tail` /
-calibration / ELO on a `coef=0` A/B; and ~⅔ of grind losses are matchup-lost-from-turn-1 (UNCOACHABLE
-per turn) — this attacks the thrown-late ⅓.
+calibration / ELO on a `coef=0` A/B. (The old "~⅔ of grind losses are matchup-lost / UNCOACHABLE"
+caveat is **RETRACTED** — model-judged recoverability is circular; treat those losses as headroom.)
 
 | Flag | default | role |
 |---|---|---|
