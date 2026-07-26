@@ -216,6 +216,62 @@ the other ~10M parameters do not pay the memory/compute bill for a batch they di
 
 ---
 
+## 5b. WHY conditioning under-performs in a tight cluster — an ILL-CONDITIONING story (measured 2026-07-25)
+
+The count sweep found N=10 works and N=20 stalls **in the same tight cluster**, and the ablation
+diagnostics explained why — but not the way we expected.
+
+**What we measured.** Ablating each team's `z` to a neutral value and reading the policy divergence:
+
+| ablation target | mean JS gap |
+|---|---|
+| in-cluster mean z | 0.0038 |
+| FAR-cluster z (cos 0.29 away) | **0.0105** |
+| *what per-team specialization actually requires* (specialist vs generalist) | **0.048 – 0.136** |
+
+So FiLM **works** (it responds to z-distance, 3× gap for a far z) but its **entire dynamic range is
+~5–13× too small** to express specialist-level play. It is UNDER-POWERED, not saturated — which is why
+the "capacity ceiling" framing was wrong and why LoRA/wider-z would have been the wrong fix.
+
+**Why the generator does not simply amplify.** Write `z_i = z̄ + ε_i` (shared cluster component + small
+within-cluster residual). Then `g(z_i) ≈ g(z̄) + J·ε_i`, so the per-team differential is `J·ε_i`. To make
+that large for small `ε`, the generator needs a large Jacobian along `ε` — but the gradient that grows
+`J` in that direction is **itself proportional to ε** (`∂L/∂J ∝ δ ⊗ ε`). *To learn a large amplification
+of a small signal you need gradient proportional to that small signal.* Generally: gradient descent
+converges along an input direction at a rate set by that direction's **variance**, so a low-variance
+input direction converges slowly — textbook ill-conditioning (the Hessian inherits the input
+covariance's condition number).
+
+**The exploiter is not "declining to use its range."** `z` comes from the SAME encoder regardless of run
+type; it faithfully reports that a tight cluster's teams ARE similar (generalist spans cos 0.29–1.0,
+an exploiter cluster only 0.82–1.0). The information is present but lives in a low-variance direction.
+The anti-collapse recon target compounds it: it is a **species multi-hot**, and a tight cluster *shares
+most of its species*, so the recon signal barely differs across members either.
+
+**The specific gap:** `z` is **LayerNorm'd** — normalized ACROSS DIMENSIONS within one sample. That does
+nothing to equalize variance **across teams**. We normalize the wrong axis for this problem.
+
+**What follows (ranked):**
+
+| fix | fixes conditioning | removes encoder-mediated interference | keeps generalization |
+|---|---|---|---|
+| standardize z ACROSS teams (BatchNorm-style / cluster-center + rescale) | ✅ | ❌ | ✅ |
+| per-team LUT embedding (exploiter-only; fixed known team set) | ✅ | ✅ | ❌ |
+| hybrid `z + Embedding[team_id]` (drop the embedding at distill time) | ✅ | ✅ | ✅ |
+| param-group LR boost on the FiLM generators (there is currently **no** separate group — they run at the 10M-param trunk's LR) | partial | ❌ | ✅ |
+
+The LUT's advantage is NOT expressivity — it is that a one-hot index is **perfectly conditioned** (every
+team an orthogonal unit-variance direction) and **interference-free** (row A's gradient moves only row A).
+Whitening buys the first, not the second. Prediction worth testing: **z-whitening alone may recover most
+of the N=20 drop-off**, and it is a much smaller change than any architecture work.
+
+Also ruled out: **weight decay is NOT suppressing FiLM** — AdamW at `wd=1e-5`, `lr=7e-5` shrinks by
+~7e-10/step, negligible.
+
+**The transferable lesson:** a function-space measurement (JS ablation gap) diagnosed a parameter-space
+pathology (a noise-dominated, badly-conditioned, LR-starved parameter group) that inspecting weights
+would have missed — `‖γ‖` looked "alive" while the BEHAVIOUR it produced was 5–10× too weak.
+
 ## 6. How to tell if FiLM has saturated
 
 Ordered cheapest → most decisive.

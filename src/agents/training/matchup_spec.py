@@ -220,9 +220,29 @@ class MatchupSpec:
             play = PlayMode(kind="stochastic",
                             temperature=float(getattr(args, "stable_opponent_temp", 1.0)))
 
+        # DISTILLATION: training biases `--distill-team-bias` of episodes onto the TEACHER teams, so
+        # eval must measure the trainee ON THOSE TEAMS — otherwise `win_rate_vs_ext_<teacher>` compares a
+        # random-pool trainee against a teacher piloting its own pinned teams, which mostly measures the
+        # teacher's TEAM ADVANTAGE, not whether the distillation transferred. (This is the same
+        # eval-pilots-what-training-pilots invariant the single-team pin already enforces; the distill
+        # path silently violated it — the eval read 0.36 while an offline per-team probe read 0.710.)
+        eval_trainee = None
+        _dp = getattr(args, "_distill_pairs", None)
+        if _dp:
+            _strs, _files = [], []
+            for _t, _teams in _dp:
+                for _f in _teams:
+                    with open(_f, "r", encoding="utf-8") as _fh:
+                        _strs.append(_fh.read())
+                    _files.append(_f)
+            if _strs:
+                eval_trainee = TeamSource(kind="pin_multi", pin_strs=tuple(_strs),
+                                          pin_files=tuple(_files))
+
         return cls(
             trainee_teams=trainee,
             opponent_teams=opponents,
+            eval_trainee_teams=eval_trainee,
             mix_kind=mix_kind,
             bot_weights=getattr(args, "bot_weights", None),
             exploiter_target=getattr(args, "exploiter", None),

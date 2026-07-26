@@ -2494,7 +2494,12 @@ async def main():
             print(f"\n[Exploiter] FATAL: {_e}")
             sys.stdout.flush()
             os._exit(int(TrainExitCode.FATAL_CONFIG))
-    _specialist_team_str = matchup.trainee_teams.pin_str   # → eval callbacks (trainee_team_str)
+    # → eval callbacks (trainee_team_str). Read from EVAL_trainee_teams (not trainee_teams) so the
+    # distillation path evals on the TAUGHT teams; a `pin_multi` source yields a LIST (eval samples
+    # among them, exactly as training does), a single pin yields the raw export, else None = pool.
+    _ets = matchup.eval_trainee_teams
+    _specialist_team_str = (list(_ets.pin_strs) if _ets.kind == "pin_multi" and _ets.pin_strs
+                            else _ets.pin_str)
     # Team-side PFSP threads ONLY into the TRAINEE builder (opponent teams aren't win-rate-sampled);
     # "off" (default) is byte-identical construction.
     trainee_teambuilder = matchup.trainee_teams.build(

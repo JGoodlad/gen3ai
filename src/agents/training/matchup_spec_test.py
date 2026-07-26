@@ -211,3 +211,33 @@ def test_tss_specialist_pin_is_a_sample_team():
     spec = MatchupSpec.from_args(_args(exploiter="models/x",
                                        trainee_team="data/teams/specialist/tss_starmie.txt"))
     validate_exploiter_trainee_is_sample(spec, sample)
+
+
+# ── DISTILLATION must eval on the TAUGHT teams (eval-pilots-what-training-pilots) ────────────────
+
+def _distill_args(pairs):
+    return _args(self_play=True, _distill_pairs=pairs)
+
+
+def test_distill_run_evals_the_trainee_on_the_TAUGHT_teams():
+    """The distill path biases --distill-team-bias of TRAINING onto the teacher teams, so eval must
+    measure the trainee ON THOSE TEAMS. Before this, eval used the full pool, so
+    win_rate_vs_ext_<teacher> compared a random-pool trainee against a teacher piloting its own pin —
+    mostly the teacher's TEAM ADVANTAGE, not whether the distillation transferred (the eval read 0.36
+    while an offline per-team probe of the same model read 0.710)."""
+    pairs = [("models/T1", ["data/teams/sample/9d5f845869e899ee.txt",
+                            "data/teams/sample/f7ba5702fe856292.txt"]),
+             ("models/T2", ["data/teams/sample/0972146213a667c9.txt"])]
+    spec = MatchupSpec.from_args(_distill_args(pairs))
+    ev = spec.eval_trainee_teams
+    assert ev.kind == "pin_multi"
+    assert len(ev.pin_strs) == 3                     # ALL teacher teams across ALL teachers
+    assert ev is not spec.trainee_teams              # eval source is distinct from the training source
+    # provenance records every taught team's fingerprint
+    assert len(spec.to_dict()["eval_trainee_teams"]["pin_shas"]) == 3
+
+
+def test_non_distill_eval_source_is_unchanged():
+    # no distillation -> eval_trainee_teams still defaults to trainee_teams (byte-identical behaviour)
+    spec = MatchupSpec.from_args(_args())
+    assert spec.eval_trainee_teams is spec.trainee_teams
