@@ -3562,7 +3562,14 @@ async def main():
             if args.zarch_lut != "off" and getattr(_fe_lut, "zarch_lut", "off") == "off":
                 _new = _fe_lut.attach_zarch_lut(args.zarch_lut, args._zarch_lut_rosters)
                 if _new:
-                    model.policy.optimizer.add_param_group({"params": _new})
+                    # APPEND to the EXISTING group, not a new one. A fresh build (every launcher
+                    # restart from here on) constructs the optimizer with ONE group holding all
+                    # params, so a second group would make the saved optimizer state unloadable
+                    # ("different number of parameter groups"). Appending also puts the new params
+                    # LAST — the documented-safe position (SB3 restores optimizer state BY POSITION;
+                    # the resume path's _validate_or_reset_optimizer_state remaps BY NAME, which
+                    # absorbs the fork-order vs fresh-order difference).
+                    model.policy.optimizer.param_groups[0]["params"].extend(_new)
                     # CRITICAL: the loaded model's `policy_kwargs` still say LUT-off (they came from
                     # the forked checkpoint), so every subsequent save would record a config that
                     # CANNOT rebuild what we just attached — SB3 reconstructs the extractor from the
