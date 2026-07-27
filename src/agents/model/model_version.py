@@ -330,7 +330,19 @@ from typing import Any, Dict, List
 #   no modules = baseline byte-for-byte (NO ARCH_SIGNATURE bump). `zarch_recon_coef` (species multi-hot
 #   reconstruction BCE — the anti-collapse anchor) + `zarch_vicreg_coef` (per-dim variance floor) are
 #   TRAINING-ONLY loss coefs (recorded for provenance + flagless-resume read-back, NOT version-locked).
-MODEL_CONFIG_VERSION = 45
+# v46: gen3_zarch_lut_v1 — the per-team LUT on top of z_arch. `zarch_lut` (off|add|only) adds an
+#   Embedding[n_teams+1, zarch_dim] (row 0 = unknown, ZERO-init; rows 1..N random-init so the per-team
+#   codes are LARGE and ~orthogonal from step 0) + a LayerNorm, and the team is resolved from the
+#   OBSERVATION by a sorted species(6) ⊕ moves(24) signature (agents.model.team_signature) — so NO
+#   env/eval/prober/frozen-opponent plumbing changes. `zarch_lut_teams` (int) is the table height, a
+#   weight-shape field (unconditional int compare, the zarch_dim pattern). It exists to test whether
+#   the measured multi-team exploiter ceiling (N=1/3/10 distil cleanly, N=20 stalls) is a
+#   conditioning-SIGNAL limit: the DeepSets z is COMPOSITIONAL, so z-similar teams sit at z̄ + a tiny
+#   ε and the FiLM generator's gradient is proportional to that residual (ill-conditioned); a free
+#   code removes exactly that limit. 'add' = LN(z_deepsets + code) keeps composition (an unmatched
+#   team hits the zero row ⇒ exactly the DeepSets z); 'only' = LN(code), the sharpest ablation.
+#   STRING + INT gated in check_compatible; OFF byte-for-byte (NO ARCH_SIGNATURE bump).
+MODEL_CONFIG_VERSION = 46
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1006,6 +1018,12 @@ class ModelVersion:
     # rank). Every distinct value is a weight-shape mismatch → unconditional int compare (the
     # value_dist_bins pattern). 0 when zarch_film == 'off'.
     zarch_dim: int = 0
+    # v46 STRUCTURAL toggle (gen3_zarch_lut_v1): the FREE per-team code layered on z_arch. 'off' = no
+    # modules (baseline byte-for-byte); 'add' = LN(z_deepsets + code); 'only' = LN(code).
+    zarch_lut: str = "off"
+    # v46 STRUCTURAL int: the LUT table height (n pinned teams; the Embedding is n+1 rows, row 0 =
+    # unknown). A weight-shape field → unconditional int compare, like zarch_dim.
+    zarch_lut_teams: int = 0
     # v44 TRAINING-ONLY loss coefs (like spread_belief_coef — recorded, NOT version-locked, inherited on
     # a flagless resume): the species multi-hot reconstruction BCE (the anti-collapse anchor) + the
     # VICReg per-dim variance floor on z across the batch.
@@ -1191,6 +1209,12 @@ class ModelVersion:
             ),
             zarch_dim=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("zarch_dim", 0)
+            ),
+            zarch_lut=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("zarch_lut", "off")
+            ),
+            zarch_lut_teams=len(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("zarch_lut_rosters") or []
             ),
             zarch_recon_coef=float(zarch_recon_coef),
             zarch_vicreg_coef=float(zarch_vicreg_coef),
@@ -1514,6 +1538,25 @@ class ModelVersion:
                 "The z_arch latent width is the FiLM generators' input dim — a different value is a "
                 "weight-shape change.\n"
                 "Resume with the matching --zarch-dim setting, or start a fresh training run."
+            )
+
+        # v46 per-team LUT (gen3_zarch_lut_v1): the MODE gates off↔add/only (the Embedding +
+        # LayerNorm + roster-table buffer, a state_dict change) AND add↔only (the forward the policy
+        # trained under); the TEAM COUNT is the Embedding's height (weight-shape).
+        if self.zarch_lut != saved.zarch_lut:
+            raise ModelVersionError(
+                f"zarch_lut mismatch: saved={saved.zarch_lut!r}, current={self.zarch_lut!r}.\n"
+                "The per-team LUT is fixed for a run's lifetime: adding/removing it changes the "
+                "state_dict, and add↔only changes the conditioning the policy trained under.\n"
+                "Resume with the matching --zarch-lut setting, or start a fresh training run."
+            )
+        if self.zarch_lut_teams != saved.zarch_lut_teams:
+            raise ModelVersionError(
+                f"zarch_lut_teams mismatch: saved={saved.zarch_lut_teams}, "
+                f"current={self.zarch_lut_teams}.\n"
+                "The LUT table height is the per-team embedding's row count — a different value is a "
+                "weight-shape change, AND it would re-key every learned per-team code.\n"
+                "Resume with the SAME --trainee-teams set, or start a fresh training run."
             )
 
         # v29 distributional VALUE head (like win_prob_mode): the MODE gates none↔head (the
@@ -2110,4 +2153,10 @@ def _migrate_config(data: dict) -> dict:
         # Resume-immutable (check_value_from_dist), excluded from check_compatible. No new module.
         data.setdefault("value_from_dist", False)
         data["config_version"] = 45
+    if version < 46:
+        # v46: gen3_zarch_lut_v1 — the free per-team LUT on z_arch (off/0). Old models had no
+        # per-team embedding, no roster table, and conditioned only on the compositional DeepSets z.
+        data.setdefault("zarch_lut", "off")
+        data.setdefault("zarch_lut_teams", 0)
+        data["config_version"] = 46
     return data

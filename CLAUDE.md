@@ -114,6 +114,9 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 # also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch,incoming_damage}_fuzz_test.py,
 #                                  poke_env_gaps/move_alignment_fuzz_test.py (per-move obs features ↔ legal.move_slots[k] ↔ action 6+k, forces Choice-lock/Disable),
 #                                  poke_env_gaps/belief_labels_fuzz_test.py (hidden-opp belief labels == actual opp team + no-leak),
+#                                  poke_env_gaps/team_signature_fuzz_test.py (the --zarch-lut team signature is
+#                                      CONSTANT within a battle AND matches the offline table — a drifting signature would
+#                                      re-condition the policy mid-game; a mismatched one silently makes the LUT a no-op),
 #                                  poke_env_gaps/damage_op_probe_fuzz_test.py (AUTHORITATIVE DamageOperator physics gate — CONSTRUCTED single-turn
 #                                      scenarios via the OMNISCIENT BattleStream `utils/bridge/damage_probe.js`: exact both-side HP + the sim's OWN
 #                                      stats, zero measurement confounds; one modifier per scenario [type/STAB/SE/resist/4×/immunity/Thick Fat/
@@ -1064,7 +1067,24 @@ heads always exist) and the frozen forward's ACTION selection is unchanged, so i
 self-play). NO `ARCH_SIGNATURE` bump; requires `--value-dist-mode shaping` (the head must be a live
 trunk-shaping critic). Threaded as a POLICY kwarg (`value_from_dist`, like `use_popart`) through both
 `policy_kwargs` sites + the resume enforce; `value_share` (grad-balance) now points at the CE term.
-Current `MODEL_CONFIG_VERSION` = **45**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+**v46 the PER-TEAM LUT** (`gen3_zarch_lut_v1`; `zarch_lut` / `--zarch-lut {off,add,only}`) — a FREE,
+unconstrained conditioning code per pinned `--trainee-teams` team, layered on the v44 z_arch. It tests
+ONE thing: the multi-team exploiter ceiling (N=1 0.84 / N=3 0.835 / N=10 0.825 all distil cleanly, but
+**N=20 stalls ~0.66**). The FiLM diagnosis is SNR/ill-conditioning, not capacity — the DeepSets z is
+COMPOSITIONAL, so z-similar teams sit at `z̄ + ε_i` with tiny ε and the generator's gradient is
+proportional to that residual; a **random-init** LUT makes the codes large and ~orthogonal from step 0,
+which is exactly the intervention that story predicts. If N=20 still stalls with a free code, the
+ceiling is NOT conditioning signal. `add` = `LN(z_deepsets + code)` (keeps composition — an UNMATCHED
+team hits the ZERO-init row 0 ⇒ z is exactly the DeepSets z); `only` = `LN(code)` (the sharpest
+ablation). The team is identified **from the OBSERVATION** (`agents.model.team_signature`: sorted
+species(6) ⊕ moves(24)) so **no env / eval / prober / frozen-opponent plumbing changes**; species alone
+is NOT enough (5 of the def-20 cluster's 20 teams share a roster — that would make the "per-team" code a
+per-PAIR code), and `build_roster_table` THROWS on a duplicate signature or a move-set mutator
+(Mimic/Transform/Sketch). The GIGO canary is **`zarch/lut_hit_frac`** (must be ~1.0 — a missed lookup
+falls through to row 0 and silently makes the experiment a no-op) + `zarch/lut_code_dist`. STRUCTURAL
+string + int (`zarch_lut_teams`, the Embedding height) gated in `check_compatible`; OFF byte-identical
+(NO `ARCH_SIGNATURE` bump); requires `--zarch-film heads` + `--trainee-teams`.
+Current `MODEL_CONFIG_VERSION` = **46**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

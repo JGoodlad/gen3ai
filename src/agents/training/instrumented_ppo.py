@@ -2163,6 +2163,27 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 _pr = self._zarch_participation_ratio(_z)
                 if _pr is not None:
                     self.logger.record("zarch/pr", _pr)
+                # +LUT (gen3_zarch_lut_v1, v46): the GIGO CANARY. The per-team code is keyed by a
+                # species⊕moves signature computed from the OBSERVATION, so a signature that fails to
+                # match sends the decision to row 0 (unconditioned) — silently turning the whole
+                # experiment into a no-op. On a --trainee-teams run this MUST sit at ~1.0; anything
+                # lower means the lookup is broken, not that the LUT "didn't help".
+                _lut_idx = getattr(_zfe, "last_zarch_lut_idx", None)
+                if _lut_idx is not None:
+                    self.logger.record("zarch/lut_hit_frac", float((_lut_idx > 0).float().mean()))
+                    self.logger.record("zarch/lut_teams_seen",
+                                       float(th.unique(_lut_idx[_lut_idx > 0]).numel()))
+                    # Per-team code SPREAD — the LUT's analogue of film/*_team_std: the mean pairwise
+                    # cosine DISTANCE between the learned rows. Random-init starts near 1.0
+                    # (~orthogonal, the intended large-ε geometry); collapsing toward 0 would mean the
+                    # codes merged and the conditioning went back to one shared direction.
+                    _W = _zfe.zarch_lut_emb.weight[1:]
+                    if _W.shape[0] > 1:
+                        _Wn = _W / (_W.norm(dim=1, keepdim=True) + 1e-8)
+                        _cos = _Wn @ _Wn.T
+                        _off = ~th.eye(_Wn.shape[0], dtype=th.bool, device=_Wn.device)
+                        self.logger.record("zarch/lut_code_dist",
+                                           float(1.0 - _cos[_off].mean().item()))
                 for _side, _gen in (("pi", _zfe.film_pi), ("vf", _zfe.film_vf)):
                     _P = _gen.out_features // 2
                     self.logger.record(f"film/{_side}_gamma_norm",

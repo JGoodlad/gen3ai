@@ -1807,6 +1807,16 @@ collapsed constant z (= no conditioning, back to the amortized baseline). Two au
   degenerates to a learned per-team bias — harmless, arch-compatible with multi-team runs).
 - **Versioning.** The coefs are TRAINING-ONLY (flagless-resume-inherited, defaults 1.0 / 0.1); the
   `zarch_film`/`zarch_dim` structure is version-checked (v44, `check_compatible`).
+- **Per-team LUT (v46, `--zarch-lut`).** Layers a FREE per-team code on z (model side:
+  `src/agents/model/CLAUDE.md` → Per-team LUT). It adds NO loss term — the recon/VICReg aux keeps
+  grading the COMPOSITIONAL encoder (pre-LUT), since reconstructing a roster from a free per-team code
+  is trivially satisfiable. What it adds here is the **GIGO canary `zarch/lut_hit_frac`**: the team is
+  identified by a signature computed from the OBSERVATION, so a lookup that misses falls through to
+  row 0 (unconditioned) and the experiment becomes a silent no-op that reads as "the LUT didn't help".
+  On a `--trainee-teams` run this MUST sit at ~1.0. Siblings `zarch/lut_teams_seen` (distinct teams per
+  minibatch) and `zarch/lut_code_dist` (mean pairwise cosine distance between the learned rows — ~1.0
+  at random init; collapsing toward 0 means the codes merged back into one shared direction, i.e. the
+  conditioning regressed to the geometry the LUT exists to break).
 - **Function-space steady state — the churn probe (`churn_probe.py`).** Weight metrics cannot decide
   whether the FiLM system has settled: Adam gives any small-but-consistent gradient constant-speed
   weight motion and PPO moves a clip-bounded amount per update forever, so `film/dev` can grow

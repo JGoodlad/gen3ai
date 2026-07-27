@@ -6,7 +6,8 @@ import pytest
 import torch as th
 
 from agents.model.policy import Gen3DualHeadMaskablePolicy
-from agents.model.model_version import ModelVersion, ModelVersionError, _migrate_config
+from agents.model.model_version import (
+    MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config)
 
 
 class _FakeHead:
@@ -54,7 +55,9 @@ def test_phase_b_falls_back_to_scalar_if_logits_missing():
 
 def test_value_from_dist_migrates_and_gates():
     d = _migrate_config({"config_version": 44})
-    assert d["config_version"] == 45 and d["value_from_dist"] is False
+    # The migration chain always advances to the LATEST version, not just to v45 — assert against
+    # MODEL_CONFIG_VERSION so a later bump doesn't false-fail this v45 default check.
+    assert d["config_version"] == MODEL_CONFIG_VERSION and d["value_from_dist"] is False
     assert "value_from_dist" in ModelVersion.__dataclass_fields__
 
 

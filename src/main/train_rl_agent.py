@@ -374,6 +374,8 @@ def _run_arch_toggles(args) -> dict:
         belief_grad_mode=args.belief_grad_mode,
         zarch_film=args.zarch_film,
         zarch_dim=args.zarch_dim,
+        zarch_lut=args.zarch_lut,
+        zarch_lut_rosters=getattr(args, "_zarch_lut_rosters", None),
     )
 
 
@@ -1114,6 +1116,22 @@ async def main():
                         help="z_arch latent width = the FiLM conditioning rank (default 32 when "
                              "--zarch-film is on; must be 0 when off). STRUCTURAL int (the generators' "
                              "in_features) — version-checked like --value-dist-bins.")
+    parser.add_argument("--zarch-lut", "--zarch_lut", dest="zarch_lut",
+                        choices=("off", "add", "only"), default=None,
+                        help="Per-team LUT on top of z_arch (gen3_zarch_lut_v1, v46) — a FREE, "
+                             "unconstrained code per pinned --trainee-teams team. The DeepSets z is "
+                             "COMPOSITIONAL, so z-similar teams sit at z-bar + a tiny residual and the "
+                             "FiLM generator's gradient is proportional to that residual "
+                             "(ill-conditioned); a random-init LUT makes the per-team codes large and "
+                             "~orthogonal from step 0. This is the test of whether the multi-team "
+                             "exploiter ceiling (N=1/3/10 distil cleanly, N=20 stalls) is a "
+                             "conditioning-SIGNAL limit. 'add' = LN(z_deepsets + code), keeping "
+                             "composition for unmatched teams (they hit the zero row => exactly the "
+                             "DeepSets z); 'only' = LN(code), the sharpest ablation. Requires "
+                             "--zarch-film heads + --trainee-teams. The team is resolved from the "
+                             "OBSERVATION (sorted species + moves), so eval / frozen opponents / the "
+                             "prober need no plumbing. STRUCTURAL + resume-IMMUTABLE (version-checked, "
+                             "fresh-only).")
     parser.add_argument("--zarch-recon-coef", "--zarch_recon_coef", dest="zarch_recon_coef",
                         type=float, default=None,
                         help="Loss weight for the z_arch species multi-hot reconstruction BCE — the "
@@ -1965,6 +1983,7 @@ async def main():
     _resolve("zarch_film", "off")              # v44 structural + resume-immutable (version-checked, fresh-only)
     from agents.model.features_extractor import ZARCH_DIM as _ZARCH_DIM_DEFAULT
     _resolve("zarch_dim", _ZARCH_DIM_DEFAULT if args.zarch_film != "off" else 0)  # v44 structural int
+    _resolve("zarch_lut", "off")               # v46 structural + resume-immutable (version-checked)
     _resolve("zarch_recon_coef", 1.0)          # training-only (inherited like spread_belief_coef)
     _resolve("zarch_vicreg_coef", 0.1)         # training-only (inherited like spread_belief_coef)
     # Phase B (v45): the dist head can only BE the critic if it's a live, trunk-shaping head.
@@ -1997,6 +2016,18 @@ async def main():
     if args.zarch_film == "off" and args.zarch_dim:
         parser.error("--zarch-dim requires --zarch-film heads (the latent only exists when FiLM is on; "
                      "it must be 0/unset when off).")
+    if args.zarch_lut != "off":
+        # The LUT conditions z, and z is consumed ONLY by the FiLM generators — without FiLM the code
+        # would be an unread parameter.
+        if args.zarch_film == "off":
+            parser.error("--zarch-lut requires --zarch-film heads (the per-team code only reaches the "
+                         "policy through the FiLM generators).")
+        # The LUT needs a KNOWN, FIXED team set to key on. A pool run has ~700 teams and no pin, so
+        # every lookup would miss (row 0) and the LUT would be dead weight.
+        if not args.trainee_teams:
+            parser.error("--zarch-lut requires --trainee-teams (the fixed set of pinned teams the LUT "
+                         "keys on). A single --trainee-team run has one constant z already; a full-pool "
+                         "run has no fixed team set to build a table from.")
     if args.film_grad_accum_steps > 1 and args.zarch_film == "off":
         parser.error("--film-grad-accum-steps > 1 requires --zarch-film heads (there is no FiLM "
                      "generator group to accumulate without the conditioning).")
@@ -2577,7 +2608,20 @@ async def main():
                 emit(f"   ⚠️ {_d}")
 
     mappings = load_mappings()
-    
+
+    # gen3_zarch_lut_v1 (v46): build the per-team LUT's roster table from the DECLARED matchup's
+    # pinned teams (the spec is the single source of what the trainee pilots — never re-derived from
+    # raw args). `build_roster_table` THROWS on a duplicate signature (two teams the LUT couldn't
+    # tell apart would share one code, silently making it a per-PAIR code) or a move-set mutator
+    # (Mimic/Transform/Sketch break the within-battle invariance the lookup relies on).
+    args._zarch_lut_rosters = None
+    if args.zarch_lut != "off":
+        from agents.model.team_signature import build_roster_table
+        args._zarch_lut_rosters = build_roster_table(matchup.trainee_teams.pin_strs, mappings)
+        emit(f"🎰 [ZARCH-LUT] mode={args.zarch_lut}: free per-team code for "
+             f"{len(args._zarch_lut_rosters)} pinned teams (row 0 = unmatched → "
+             f"{'the DeepSets z' if args.zarch_lut == 'add' else 'unconditioned'})")
+
     # Training heuristic opponents — ALL eight archetype bots (both v1 and v2 of each).
     # They play differently and the extra playstyle diversity is the point. Random is NOT
     # here (it's the eval-only "is the model broken" floor).
@@ -3447,6 +3491,8 @@ async def main():
         _load_extractor_kwargs["belief_grad_mode"] = args.belief_grad_mode                  # v41 (resume-immutable)
         _load_extractor_kwargs["zarch_film"] = args.zarch_film                              # v44 (version-checked)
         _load_extractor_kwargs["zarch_dim"] = args.zarch_dim                                # v44 (version-checked)
+        _load_extractor_kwargs["zarch_lut"] = args.zarch_lut                                # v46 (version-checked)
+        _load_extractor_kwargs["zarch_lut_rosters"] = getattr(args, "_zarch_lut_rosters", None)
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -3798,6 +3844,9 @@ async def main():
         # resume-immutable (mode + dim version-checked); the aux coefs are TRAINING hparams set below.
         extractor_kwargs["zarch_film"] = args.zarch_film
         extractor_kwargs["zarch_dim"] = args.zarch_dim
+        # gen3_zarch_lut_v1 (v46): the free per-team code + the roster table it keys on.
+        extractor_kwargs["zarch_lut"] = args.zarch_lut
+        extractor_kwargs["zarch_lut_rosters"] = getattr(args, "_zarch_lut_rosters", None)
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,

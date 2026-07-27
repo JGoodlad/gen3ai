@@ -10,6 +10,7 @@ import stable_baselines3
 from sb3_contrib import MaskablePPO
 
 from agents.model.model_version import ModelVersion, ModelVersionError
+from agents.model.team_signature import TEAM_SIGNATURE_DIM as _TEAM_SIG_DIM
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from utils.git import get_git_hash
 
@@ -681,6 +682,8 @@ def current_model_version(
     pubval_coef: float = 0.0,
     zarch_film: str = "off",
     zarch_dim: int = 0,
+    zarch_lut: str = "off",
+    zarch_lut_rosters=None,
     zarch_recon_coef: float = 0.0,
     zarch_vicreg_coef: float = 0.0,
     vf_coef: float = 0.5,
@@ -748,6 +751,8 @@ def current_model_version(
     ext_kwargs["pubval_mode"] = pubval_mode
     ext_kwargs["zarch_film"] = zarch_film
     ext_kwargs["zarch_dim"] = zarch_dim
+    ext_kwargs["zarch_lut"] = zarch_lut
+    ext_kwargs["zarch_lut_rosters"] = zarch_lut_rosters
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -801,6 +806,13 @@ def arch_toggles_from_model(model) -> dict:
         # worker's gate (a zarch-ON run's own pool/sentinel snapshots carry them).
         "zarch_film": str(getattr(fe, "zarch_film", "off")),
         "zarch_dim": int(getattr(fe, "zarch_dim", 0)),
+        # v46 per-team LUT (gen3_zarch_lut_v1): STRUCTURAL string + the table height. The ROSTERS
+        # themselves ride the persistent `zarch_lut_table` buffer in the state_dict, so a worker only
+        # needs the shape-relevant pair to reproduce the module before load_state_dict fills it.
+        "zarch_lut": str(getattr(fe, "zarch_lut", "off")),
+        "zarch_lut_rosters": (
+            [[0] * _TEAM_SIG_DIM for _ in range(int(getattr(fe, "zarch_lut_teams", 0)))]
+            if str(getattr(fe, "zarch_lut", "off")) != "off" else None),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),

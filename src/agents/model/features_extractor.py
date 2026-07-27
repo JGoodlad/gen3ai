@@ -3,7 +3,7 @@ from torch.utils.checkpoint import checkpoint
 import numpy as np
 from dataclasses import dataclass, replace
 from gymnasium import spaces
-from typing import Callable, Dict, Any, Optional, Tuple
+from typing import Callable, Dict, Any, Optional, Sequence, Tuple
 from agents.observation.constants import (
     TRACE_INTERVAL,
     TEAM_SIZE,
@@ -19,6 +19,7 @@ from agents.observation.constants import (
     INCOMING_DMG_DIM,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
+from agents.model.team_signature import TEAM_SIGNATURE_DIM, TEAM_SIGNATURE_MOVES
 from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY, SECONDARY_COLS as _SECONDARY_COLS
 from agents.observation.turn_delta_encoder import (
     TURN_DELTA_DIM,
@@ -3540,7 +3541,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  threat_prob_outspeed: bool = False, threat_status_refine: bool = False,
                  hp_type_belief_mode: str = "off", belief_grad_mode: str = "shaping",
                  pubval_mode: str = "none",
-                 zarch_film: str = "off", zarch_dim: int = 0):
+                 zarch_film: str = "off", zarch_dim: int = 0,
+                 zarch_lut: str = "off", zarch_lut_rosters: Optional[Sequence[Sequence[int]]] = None):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -4018,13 +4020,64 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.zarch_encoder = None
             self.film_pi = None
             self.film_vf = None
+
+        # gen3_zarch_lut_v1 (v46): the per-team LUT — a FREE, unconstrained code per pinned team,
+        # added to (or replacing) the DeepSets z. It exists to test ONE thing: is the measured
+        # multi-team exploiter ceiling (N=1/3/10 distil cleanly, N=20 stalls) a conditioning-SIGNAL
+        # limit or a capacity limit? The DeepSets z is COMPOSITIONAL, so z-similar teams sit at
+        # z̄ + tiny ε_i and the FiLM generator's gradient is proportional to that tiny residual —
+        # ill-conditioned. A random-init LUT makes the per-team codes LARGE and ~orthogonal by
+        # construction, which is exactly the intervention that ill-conditioning story predicts should
+        # help. If N=20 still stalls with a free code, the ceiling is NOT signal.
+        #   'off'  = no modules (byte-identical).
+        #   'add'  = z = LN(z_deepsets + code) — the practical form: composition generalizes to
+        #            UNSEEN teams (code row 0 = zeros ⇒ z is exactly the DeepSets z), the code is a
+        #            free per-team correction on top.
+        #   'only' = z = LN(code) — the sharpest ablation (identity only, no composition).
+        # The team is identified from the OBSERVATION (agents.model.team_signature: sorted
+        # species(6) ⊕ moves(24)), so nothing in env / eval / prober / frozen-opponent plumbing
+        # changes. The table is a PERSISTENT buffer, so the team↔row mapping travels with the
+        # checkpoint. STRUCTURAL toggle gated in check_compatible; NO ARCH_SIGNATURE bump.
+        if zarch_lut not in ("off", "add", "only"):
+            raise ValueError(f"zarch_lut must be off|add|only, got {zarch_lut!r}")
+        if zarch_lut != "off" and zarch_film == "off":
+            raise ValueError("zarch_lut requires --zarch-film heads (the LUT conditions z, and z is "
+                             "only consumed by the FiLM generators)")
+        rosters = [list(r) for r in (zarch_lut_rosters or [])]
+        if zarch_lut != "off" and not rosters:
+            raise ValueError("zarch_lut requires zarch_lut_rosters (the pinned teams' signatures)")
+        if zarch_lut == "off" and rosters:
+            raise ValueError("zarch_lut_rosters given but zarch_lut == 'off'")
+        self.zarch_lut = zarch_lut
+        self.zarch_lut_teams = len(rosters)
+        if zarch_lut != "off":
+            if any(len(r) != TEAM_SIGNATURE_DIM for r in rosters):
+                raise ValueError(
+                    f"every zarch_lut roster signature must be {TEAM_SIGNATURE_DIM} ints, got "
+                    f"{sorted({len(r) for r in rosters})}")
+            # PERSISTENT (the team↔row mapping is learned-state-adjacent: a reload with a different
+            # table would re-key every code, so it must ride the checkpoint).
+            self.register_buffer("zarch_lut_table", torch.tensor(rosters, dtype=torch.long))
+            # Row 0 = UNKNOWN team (zeros ⇒ 'add' degrades to exactly the DeepSets z); rows 1..N are
+            # random-init so the per-team codes are distinct and ~orthogonal from step 0 — the whole
+            # point (a zero-init LUT would reproduce the ill-conditioned starting geometry).
+            self.zarch_lut_emb = torch.nn.Embedding(self.zarch_lut_teams + 1, self.zarch_dim)
+            torch.nn.init.normal_(self.zarch_lut_emb.weight, mean=0.0, std=1.0)
+            with torch.no_grad():
+                self.zarch_lut_emb.weight[0].zero_()
+            self.zarch_lut_norm = torch.nn.LayerNorm(self.zarch_dim)
+        else:
+            self.zarch_lut_emb = None
+            self.zarch_lut_norm = None
         # Stashed each forward when on (else None): the live z [B, zarch_dim] (read by forward()'s
         # FiLM application + the aux loss + probes), the recon logits [B, max_species] + our-side
         # species ids [B, 6] (grad-gated — training epochs only; read ONLY by the recon BCE, so the
-        # public our-team composition never routes anywhere new in the forward).
+        # public our-team composition never routes anywhere new in the forward), and the resolved
+        # LUT row [B] (a side read for metrics/probes — 0 = unmatched team).
         self.last_zarch: Optional[torch.Tensor] = None
         self.last_zarch_recon_logits: Optional[torch.Tensor] = None
         self.last_zarch_species_ids: Optional[torch.Tensor] = None
+        self.last_zarch_lut_idx: Optional[torch.Tensor] = None
 
         self.role_token_size = ROLE_TOKEN_SIZE
 
@@ -4140,6 +4193,29 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             opp_species_ids=ctx.species_ids[:, TEAM_SIZE:],                  # [B, 6]
             opp_move_ids=ctx.all_move_ids[:, TEAM_SIZE:, :])                 # [B, 6, 4]
 
+    def _zarch_lut_index(self, ctx: ExtractorContext) -> torch.Tensor:
+        """Resolve OUR team to its LUT row [B] (long) from the observation. 0 = no match.
+
+        `gen3_zarch_lut_v1`. The signature is the same sorted species(6) ⊕ moves(24) that
+        `agents.model.team_signature` builds offline from each pinned team's Showdown export — so
+        the extractor identifies the team with ZERO env/eval plumbing. Both blocks are sorted, so
+        the match is invariant to team order and move-slot order; both are within-battle invariant
+        (species never changes; our own moveset never changes — move-set mutators are rejected at
+        table-build time), so a battle's row can never flip mid-game.
+
+        An UNMATCHED team (the generalist's pool, or a probe on some other team) resolves to row 0,
+        whose embedding is zero-init'd — so `add` degrades to exactly the DeepSets z rather than
+        conditioning on a wrong team's code. Cost is a [B, n_teams, 30] bool compare: negligible.
+        """
+        species = ctx.species_ids[:, :TEAM_SIZE].sort(dim=1).values                       # [B, 6]
+        moves = ctx.all_move_ids[:, :TEAM_SIZE, :].reshape(species.shape[0], -1)
+        moves = moves[:, :TEAM_SIGNATURE_MOVES].sort(dim=1).values                        # [B, 24]
+        sig = torch.cat([species, moves], dim=1)                                          # [B, 30]
+        match = (sig[:, None, :] == self.zarch_lut_table[None, :, :]).all(dim=-1)          # [B, N]
+        # +1 because row 0 is the unknown-team slot; `any()` keeps unmatched teams at 0.
+        return torch.where(match.any(dim=1), match.long().argmax(dim=1) + 1,
+                           torch.zeros(sig.shape[0], dtype=torch.long, device=sig.device))
+
     def forward_internal(self, obs):
         """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
         ctx = self.unpack(obs)
@@ -4160,11 +4236,23 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.last_zarch = None
         self.last_zarch_recon_logits = None
         self.last_zarch_species_ids = None
+        self.last_zarch_lut_idx = None
         if self.zarch_encoder is not None:
             self.last_zarch = self.zarch_encoder(ctx, self.embeddings)
             if torch.is_grad_enabled():
+                # The recon aux always supervises the COMPOSITIONAL code (pre-LUT): it is the
+                # anti-collapse anchor on the DeepSets encoder, and reconstructing a roster from a
+                # free per-team code would be trivially satisfiable (zero pressure).
                 self.last_zarch_recon_logits = self.zarch_encoder.recon_logits(self.last_zarch)
                 self.last_zarch_species_ids = ctx.species_ids[:, :TEAM_SIZE].detach()
+            # gen3_zarch_lut_v1: fold in the free per-team code. AFTER the recon read (above) so the
+            # recon/VICReg aux keeps grading the compositional encoder, not the LUT.
+            if self.zarch_lut != "off":
+                idx = self._zarch_lut_index(ctx)
+                self.last_zarch_lut_idx = idx
+                code = self.zarch_lut_emb(idx)
+                base = self.last_zarch if self.zarch_lut == "add" else torch.zeros_like(code)
+                self.last_zarch = self.zarch_lut_norm(base + code)
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
         # In-place hidden-opponent belief: replace the un-revealed opp slots with distinct learned
         # unknown-mon tokens BEFORE the transformer, so the body refines them and every readout

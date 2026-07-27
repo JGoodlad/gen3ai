@@ -949,6 +949,52 @@ threaded through `current_model_version` / `arch_toggles_from_model` / `_run_arc
 `extractor_kwargs` sites. Tests: `zarch_test.py` (identity-at-init forward == baseline, OFF-no-modules,
 team-static + permutation invariance, gradient isolation, the aux math, the v44 gate + migration).
 
+**Per-team LUT (v46, `gen3_zarch_lut_v1`, `zarch_lut` / `--zarch-lut {off,add,only}`).** A FREE,
+unconstrained conditioning code per pinned team, layered on the v44 z_arch. **What it tests:** the
+multi-team exploiter ceiling — N=1 (0.84) / N=3 (0.835) / N=10 (0.825) all distil cleanly but **N=20
+stalls (~0.66)**, and the FiLM diagnosis (`designs/learning/conditioning_architectures.md` §5b) is
+SNR/ill-conditioning, not capacity: the DeepSets z is COMPOSITIONAL, so z-similar teams sit at
+`z̄ + ε_i` with tiny ε, and `∂L/∂J ∝ δ ⊗ ε` means the generator's gradient is proportional to that
+tiny residual. A **random-init** LUT makes the per-team codes large and ~orthogonal from step 0 —
+exactly the intervention that story predicts should help. If N=20 still stalls with a free code, the
+ceiling is NOT conditioning signal.
+
+- **Modules** (`zarch_lut != off`): `zarch_lut_emb` = `Embedding(n_teams + 1, zarch_dim)` — **row 0 =
+  unknown, ZERO-init**; rows 1..N `normal(0, 1)` — plus `zarch_lut_norm` (LayerNorm) and the
+  PERSISTENT `zarch_lut_table [n_teams, 30]` buffer. Persistent because the team↔row mapping is
+  learned-state-adjacent: a reload against a different table would re-key every code.
+- **z fold** (in `forward_internal`, right after the recon read): `add` → `LN(z_deepsets + code)`
+  (the practical form — composition still generalizes, and an UNMATCHED team hits the zero row so z
+  is EXACTLY the DeepSets z); `only` → `LN(code)` (the sharpest ablation). The recon/VICReg aux keeps
+  grading the COMPOSITIONAL encoder (pre-LUT) — reconstructing a roster from a free per-team code is
+  trivially satisfiable, i.e. zero anti-collapse pressure.
+- **Team identity from the OBSERVATION** (`_zarch_lut_index` + `agents.model.team_signature`): sorted
+  species(6) ⊕ moves(24), so **no env / eval-worker / prober / frozen-opponent plumbing changes**.
+  Both blocks sorted ⇒ invariant to team and move-slot order; both invariant WITHIN a battle (species
+  never changes; our own moveset never changes). **Species alone is NOT enough** — measured on the
+  def-20 cluster, 5 of 20 teams share a species roster, which would silently make the "per-team" code
+  a per-PAIR code; species ⊕ moves is 20/20 unique. `build_roster_table` THROWS on a duplicate
+  signature or a move-set mutator (Mimic/Transform/Sketch would break within-battle invariance).
+- **The GIGO canary** is `zarch/lut_hit_frac` — a signature that fails to match falls through to row
+  0 (unconditioned), silently turning the experiment into a no-op that looks like "the LUT didn't
+  help". On a `--trainee-teams` run it MUST sit at ~1.0. Siblings: `zarch/lut_teams_seen`,
+  `zarch/lut_code_dist` (mean pairwise cosine distance between learned rows — ~1.0 at random init;
+  collapsing toward 0 = the codes merged back into one shared direction).
+- **Versioning:** `zarch_lut` (STRING) + `zarch_lut_teams` (unconditional INT — the Embedding height,
+  and a different count re-keys every code) gated in `check_compatible`; OFF byte-for-byte (NO
+  `ARCH_SIGNATURE` bump); `MODEL_CONFIG_VERSION` = **46**. Requires `--zarch-film heads` +
+  `--trainee-teams` (a fixed team set to key on; a full-pool run would miss every lookup). Threaded
+  through `current_model_version` / `arch_toggles_from_model` + both `extractor_kwargs` sites (the
+  opponent-load path passes a SHAPE-only placeholder table — the real rosters ride the persistent
+  buffer in the state_dict). Tests: `zarch_lut_test.py` (signature permutation-invariance +
+  same-roster separation + the duplicate/mutator/unknown-id guards; lookup + unknown→row-0; add-mode
+  unmatched == the DeepSets z, asserted by scrambling the learned rows; distinct codes at init;
+  only-mode ignores z; per-row gradient isolation; the extractor build guards, OFF byte-identity,
+  persistent table, and the v46 gate + migration) + the bridge fuzz
+  `poke_env_gaps/team_signature_fuzz_test.py` (the live signature is CONSTANT within a real battle
+  AND equals the offline table entry — verified over 1498 decisions on 5 teams incl. 3 that share a
+  species roster).
+
 **Damage re-attend (v31, `damage_reattend` / `--damage-reattend`, `gen3_damage_reattend_v1`).** Lets
 attention reason OVER the computed physics — today the `DamageOperator` block is concatenated POST-pool
 into pi/vf, so NO attention ever sees it (and per-candidate switch reasoning is pooled away). When on,
