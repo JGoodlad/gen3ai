@@ -39,6 +39,21 @@ verify a confirming measurement** (overturned 3-for-3 this session).
 | K7 | **Switch pathologies** | ❌ | UNDER-represented among crater mistakes (24% vs 28%); ~2 confirmed voluntary switch mistakes in 350 losses (254/291 craters were FORCED replacements). | `falsify-scan <run>` (switch crater base-rate) |
 | K8 | **No-op status-spam** (Spikes-at-cap loops) | ❌ | Real+learned, but no-progress clock already punishes it, critic prices the state as lost; ~74 dead turns in already-lost games. | `decision-table <run> --cat status` |
 
+## Programme-level (the exploiter → distill loop, ai_v8)
+
+The levers above are *behavioural* hypotheses about one policy. These are facts about the **training
+programme** — what the exploiter/distill flywheel can and cannot do. Same honesty bar.
+
+| # | Claim | Status | Mechanism / evidence | Re-verify |
+|---|---|---|---|---|
+| D1 | A multi-team exploiter can be **distilled into the generalist** and pay off | ✅ | ai_v8_14: 3 teachers / 23 teams → **ELO 1986±26 → 2055±29 (CIs disjoint)**, per-team piloting on the taught teams **0.438 → 0.710** (≈ the def-10 specialist's own 0.72), far-z FiLM range +70%, head-to-head 0.228→0.36. Bot-anchored ELO ⇒ not a self-play bubble. | `python -m main.elo <run>`; `tmp/pool10_perteam_eval.py` |
+| D2 | Distilled per-team skill **washes out** once the teachers are removed (⇒ O(N) scaffolding forever) | ❌ | ai_v8_15 arm A′ (no distill, no teachers, no team-PFSP, **frozen pool** ⇒ forgetting not obsolescence): 0.710 → 0.6875 → 0.645 → 0.6425 → **0.6475**. Decay early, decelerating, **STOPS** — 3 flat points / 9M steps. **Equilibrium ≈0.645 = ~76% of the gain retained, unaided** (floor 0.438). ⇒ **teachers can be RETIRED**; distillation is bootstrapping. Corollary: the plateau was **optimization difficulty**, not objective indifference. | `tmp/retention_probe.sh <run> 40` vs the FIXED ai_v8_04 ref |
+| D3 | Retention is a **leaky-bucket EQUILIBRIUM**, not binary keep-or-forget | ✅ | The D2 curve's shape *is* the evidence: decay stops where restoring force (∝ P(team)×value) balances erosion (interference + gradient-noise diffusion). Predicts arm B (`--team-pfsp onesided`, P(team) ~2–3× cap-bounded) **raises the level, does not zero the decay**. | arm B: does the plateau land above 0.645? |
+| D4 | The N=20 exploiter ceiling is **conditioning-signal starvation** (not capacity) | 🔬 OPEN | Count sweep N=1 0.84 / N=3 0.835 / N=10 0.825 / **N=20 stalls ~0.66**. FiLM works but under-powered (far-z range 0.0153 vs 0.048–0.136 needed); z is COMPOSITIONAL (z↔behaviour r=0.125); the limiter measured as SNR/ill-conditioning, not capacity. **Next test = per-team LUT** on the def-20 cluster. | `tmp/film_ablation_gap.py`, `tmp/z_vs_behavior_probe.py` |
+
+**Retired follow-ups (re-priced by D2):** arm B `--team-pfsp onesided` = *optional* (recover the last
+~24%), arm C teacher-as-opponent = lower priority, arm D always-on distillation = **not needed**.
+
 ## GO-TO-BUILD queue (the next FRESH run stacks these)
 
 Posture shift (owner, 2026-06-12): stop the kill-treadmill, start **committing**. No single big lever
@@ -77,5 +92,10 @@ python -m main.prober.query falsify-scan   <run> --outcome loss --max-battles 20
 Deep notes in agent memory: `project_floor_leak_critic_selfko`, `project_distributional_critic_verdict`,
 `project_incoming_damage_outcome`, `project_model_frontier_roadmap`. The prober (`src/main/prober/`) is
 the forensic engine; this folder is its conclusions.
+
+Programme-level (D1–D4): `project_multiteam_distill_payoff`, `project_distill_retention_ablation`,
+`project_exploiter_fork_vs_scratch`, `project_double_sided_recipe`. Reports:
+`designs/ai_v8/impl_step_retention_ablation.md`, `designs/ai_v8/exploiter_batch_strategy.md`,
+`designs/learning/conditioning_architectures.md` (§5b — the FiLM/SNR diagnosis behind D4).
 
 _Last updated: 2026-06-12._
