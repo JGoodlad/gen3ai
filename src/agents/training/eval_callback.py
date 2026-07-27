@@ -77,7 +77,7 @@ def _read_run_identity(model_dir: str) -> tuple:
 
 def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
                         snapshot: "str | None" = None,
-                        trainee_team_str: "str | None" = None,
+                        trainee_team_str: "str | list[str] | None" = None,
                         opponent_pins: "dict | None" = None) -> dict:
     """Write ``<model_dir>/eval_traces/step_<N>/eval_manifest.json`` — the per-cycle
     record of *exactly which model* produced this cycle's forensic traces.
@@ -96,7 +96,21 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
     """
     git_hash, arch_signature, config_version = _read_run_identity(model_dir)
     from agents.model.snapshot import _read_matchup_hash
-    _sha = lambda t: hashlib.sha1(t.encode()).hexdigest()[:10] if t else None
+    def _sha(t):
+        """Team fingerprint(s) — one sha for a single pin, a LIST for a multi-team pin.
+
+        A `pin_multi` trainee (`--trainee-teams`, the multi-team exploiter) carries a LIST of team
+        exports, not one string. This used to call `.encode()` on the list and crash the eval
+        callback — which, because eval fires mid-rollout, took the whole run down in a restart loop
+        (the multi-team def-20 arm, 2026-07-26). Emitting the per-team shas keeps the provenance
+        field MEANINGFUL for that case rather than collapsing the set to one opaque digest: each
+        entry joins the same `pin_sha` keyspace as `matchup_spec` and the archetype table.
+        """
+        if not t:
+            return None
+        if isinstance(t, (list, tuple)):
+            return [hashlib.sha1(x.encode()).hexdigest()[:10] for x in t if x]
+        return hashlib.sha1(t.encode()).hexdigest()[:10]
     d = os.path.join(model_dir, "eval_traces", f"step_{step}")
     os.makedirs(d, exist_ok=True)
     manifest = {
@@ -1052,7 +1066,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         keep_stalls: int = KEEP_STALLS_DEFAULT,
         keep_crashes: int = KEEP_CRASHES_DEFAULT,
         fixed_opponents: "list | None" = None,
-        trainee_team_str: "str | None" = None,
+        trainee_team_str: "str | list[str] | None" = None,
         verbose: int = 1,
     ):
         super().__init__(verbose)

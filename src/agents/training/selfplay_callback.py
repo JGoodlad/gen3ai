@@ -169,7 +169,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         pfsp_scale: float = 0.0,
         n_sentinels: int = 5,
         debug: bool = False,
-        trainee_team_str: "str | None" = None,
+        trainee_team_str: "str | list[str] | None" = None,
         snapshot_ladder_games: int = 100,
         verbose: int = 1,
     ):

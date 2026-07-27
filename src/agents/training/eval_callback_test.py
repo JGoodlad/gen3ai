@@ -827,3 +827,26 @@ def test_eval_games_override_flows_through_schedule():
         assert cb._schedule() == (EVAL_FREQ_STEPS, 200), cls.__name__
         cb._eval_games = EVAL_GAMES
         assert cb._schedule() == (EVAL_FREQ_STEPS, EVAL_GAMES), cls.__name__
+
+
+def test_eval_manifest_handles_a_multi_team_pin(tmp_path):
+    """A `pin_multi` trainee carries a LIST of team exports, not one string.
+
+    Regression: `write_eval_manifest` called `.encode()` on the list, raising inside the eval
+    callback — and because eval fires MID-ROLLOUT, that crashed the whole run into a restart loop
+    (2026-07-26, the multi-team def-20 exploiter). One sha per team keeps the field usable.
+    """
+    from agents.training.eval_callback import write_eval_manifest
+
+    a, b = "Salamence @ Leftovers\n", "Skarmory @ Leftovers\n"
+    m = write_eval_manifest(str(tmp_path), 42, opponents=["heuristic"], n_games=10,
+                            trainee_team_str=[a, b])
+    assert isinstance(m["trainee_team_sha"], list) and len(m["trainee_team_sha"]) == 2
+    assert all(len(s) == 10 for s in m["trainee_team_sha"])
+
+    # single pin still yields ONE sha (unchanged), and no pin still yields None
+    single = write_eval_manifest(str(tmp_path), 43, opponents=["heuristic"], n_games=10,
+                                 trainee_team_str=a)
+    assert single["trainee_team_sha"] == m["trainee_team_sha"][0]
+    assert write_eval_manifest(str(tmp_path), 44, opponents=["heuristic"], n_games=10,
+                               trainee_team_str=None)["trainee_team_sha"] is None
