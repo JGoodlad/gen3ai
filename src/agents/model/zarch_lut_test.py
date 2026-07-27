@@ -345,3 +345,69 @@ def test_attach_is_a_noop_when_off(ek_and_space):
     fe = _build(ek, space, lut="off")
     assert fe.attach_zarch_lut("off", []) == []
     assert fe.zarch_lut == "off"
+
+
+def test_zero_init_lut_leaves_the_forward_unperturbed(ek_and_space):
+    """`--zarch-lut-init-std 0` must leave the forward unperturbed at init.
+
+    The default (std>0) deliberately starts the codes large + ~orthogonal, which perturbs an
+    already-trained FiLM head — a forked arm pays a handicap before it can show a gain (measured
+    ~-0.04 at the fork on ai_v8_16). Zero-init removes that confound so the arm starts at parity and
+    any divergence is purely learned conditioning.
+
+    Compared on ONE model via the real FORK path (attach post-load). Comparing two separately-BUILT
+    extractors would be meaningless: constructing the LUT modules consumes different RNG, so every
+    other weight would differ too.
+
+    Not bit-exact by design: `add` routes z through `zarch_lut_norm`, so z = LN_lut(LN(z_deepsets)).
+    A LayerNorm over already-normalized input is identity up to its eps (~5e-6 relative), which is
+    why this asserts closeness rather than equality.
+    """
+    ek, space, total = ek_and_space
+    fe = _build(ek, space, lut="off")
+    obs = {"observation": torch.zeros(2, total), "action_mask": torch.ones(2, 11)}
+    with torch.no_grad():
+        before_pi, before_vf = fe(obs)
+        fe.attach_zarch_lut("add", _fake_rosters(20), init_std=0.0)
+        after_pi, after_vf = fe(obs)
+    assert float(fe.zarch_lut_emb.weight.abs().max()) == 0.0, "zero-init must leave EVERY row at 0"
+    torch.testing.assert_close(before_pi, after_pi, rtol=1e-4, atol=1e-5)
+    torch.testing.assert_close(before_vf, after_vf, rtol=1e-4, atol=1e-5)
+
+
+def test_random_init_lut_DOES_perturb_the_forward(ek_and_space):
+    """The complement: the default init is NOT free — it moves the forward from step 0.
+
+    This is the handicap arm 1 paid, and pinning it stops the zero-init test above from silently
+    becoming vacuous if the codes ever stopped reaching the head.
+    """
+    ek, space, total = ek_and_space
+    fe = _build(ek, space, lut="off")
+    # give the FiLM generators non-zero weights, as a TRAINED checkpoint has (they are zero-init,
+    # so on a fresh model no z change could ever reach the head)
+    with torch.no_grad():
+        torch.nn.init.normal_(fe.film_pi.weight, std=0.02)
+        torch.nn.init.normal_(fe.film_vf.weight, std=0.02)
+    obs = {"observation": torch.zeros(2, total), "action_mask": torch.ones(2, 11)}
+    # the roster table must CONTAIN the all-zero signature a zeros obs produces, else the lookup
+    # correctly falls through to row 0 (unknown -> zero code) and nothing could perturb anything.
+    rosters = [[0] * TEAM_SIGNATURE_DIM] + _fake_rosters(19)
+    with torch.no_grad():
+        before_pi, _ = fe(obs)
+        fe.attach_zarch_lut("add", rosters, init_std=1.0)
+        after_pi, _ = fe(obs)
+        assert fe.last_zarch_lut_idx.tolist() == [1, 1], "the obs must MATCH a roster for this test"
+    assert not torch.allclose(before_pi, after_pi, rtol=1e-4, atol=1e-5), \
+        "random-init codes should perturb a trained head — otherwise the handicap story is wrong"
+
+
+def test_attach_honours_zero_init(ek_and_space):
+    """The FORK path (attach post-load) must honour init_std too — that is the path arms use."""
+    ek, space, _ = ek_and_space
+    fe = _build(ek, space, lut="off")
+    fe.attach_zarch_lut("add", _fake_rosters(20), init_std=0.0)
+    assert float(fe.zarch_lut_emb.weight.abs().max()) == 0.0
+    fe2 = _build(ek, space, lut="off")
+    fe2.attach_zarch_lut("add", _fake_rosters(20), init_std=1.0)
+    assert float(fe2.zarch_lut_emb.weight[1:].abs().max()) > 0.0
+    assert float(fe2.zarch_lut_emb.weight[0].abs().max()) == 0.0   # row 0 stays the unknown slot

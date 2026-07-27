@@ -1132,6 +1132,19 @@ async def main():
                              "OBSERVATION (sorted species + moves), so eval / frozen opponents / the "
                              "prober need no plumbing. STRUCTURAL + resume-IMMUTABLE (version-checked, "
                              "fresh-only).")
+    parser.add_argument("--zarch-lut-init-std", "--zarch_lut_init_std", dest="zarch_lut_init_std",
+                        type=float, default=1.0,
+                        help="Init scale for the per-team LUT codes (default 1.0). >0 starts the codes "
+                             "LARGE and ~orthogonal — maximum conditioning signal from step 0, but it "
+                             "perturbs an already-TRAINED FiLM head, so a forked arm pays a small "
+                             "handicap it must recover (measured ~-0.04 at the fork on ai_v8_16). "
+                             "0 = IDENTITY-at-init: z is exactly the DeepSets z on step 0 and the codes "
+                             "grow from zero, removing that confound. Zero-init does NOT inherit the "
+                             "ill-conditioning the LUT exists to break — a code is a FREE per-team "
+                             "parameter, so its gradient is the full dL/dz on that team's samples, not "
+                             "something scaled by a tiny compositional residual. TRAINING-only and NOT "
+                             "version-gated (shapes are identical; a resume loads saved weights, so it "
+                             "only matters at the initial fork).")
     parser.add_argument("--zarch-recon-coef", "--zarch_recon_coef", dest="zarch_recon_coef",
                         type=float, default=None,
                         help="Loss weight for the z_arch species multi-hot reconstruction BCE — the "
@@ -3503,6 +3516,7 @@ async def main():
         _load_extractor_kwargs["zarch_dim"] = args.zarch_dim                                # v44 (version-checked)
         _load_extractor_kwargs["zarch_lut"] = args.zarch_lut                                # v46 (version-checked)
         _load_extractor_kwargs["zarch_lut_rosters"] = getattr(args, "_zarch_lut_rosters", None)
+        _load_extractor_kwargs["zarch_lut_init_std"] = args.zarch_lut_init_std
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -3560,7 +3574,8 @@ async def main():
             # reordered — SB3 restores optimizer state by POSITION). No-op when it already has it.
             _fe_lut = model.policy.features_extractor
             if args.zarch_lut != "off" and getattr(_fe_lut, "zarch_lut", "off") == "off":
-                _new = _fe_lut.attach_zarch_lut(args.zarch_lut, args._zarch_lut_rosters)
+                _new = _fe_lut.attach_zarch_lut(args.zarch_lut, args._zarch_lut_rosters,
+                                                init_std=args.zarch_lut_init_std)
                 if _new:
                     # APPEND to the EXISTING group, not a new one. A fresh build (every launcher
                     # restart from here on) constructs the optimizer with ONE group holding all
@@ -3579,6 +3594,8 @@ async def main():
                     model.policy_kwargs = _load_policy_kwargs
                     print(f"[ZArch-LUT] attached {len(args._zarch_lut_rosters)} per-team codes to the "
                           f"forked checkpoint ({sum(p.numel() for p in _new):,} new params, "
+                          f"init_std={args.zarch_lut_init_std:g}"
+                          f"{' = IDENTITY-at-init' if args.zarch_lut_init_std == 0 else ''}, "
                           "appended to the optimizer)")
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
@@ -3886,6 +3903,7 @@ async def main():
         # gen3_zarch_lut_v1 (v46): the free per-team code + the roster table it keys on.
         extractor_kwargs["zarch_lut"] = args.zarch_lut
         extractor_kwargs["zarch_lut_rosters"] = getattr(args, "_zarch_lut_rosters", None)
+        extractor_kwargs["zarch_lut_init_std"] = args.zarch_lut_init_std
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,

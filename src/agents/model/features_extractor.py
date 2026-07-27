@@ -3542,7 +3542,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  hp_type_belief_mode: str = "off", belief_grad_mode: str = "shaping",
                  pubval_mode: str = "none",
                  zarch_film: str = "off", zarch_dim: int = 0,
-                 zarch_lut: str = "off", zarch_lut_rosters: Optional[Sequence[Sequence[int]]] = None):
+                 zarch_lut: str = "off", zarch_lut_rosters: Optional[Sequence[Sequence[int]]] = None,
+                 zarch_lut_init_std: float = 1.0):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -4062,9 +4063,21 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             # random-init so the per-team codes are distinct and ~orthogonal from step 0 — the whole
             # point (a zero-init LUT would reproduce the ill-conditioned starting geometry).
             self.zarch_lut_emb = torch.nn.Embedding(self.zarch_lut_teams + 1, self.zarch_dim)
-            torch.nn.init.normal_(self.zarch_lut_emb.weight, mean=0.0, std=1.0)
+            # INIT SCALE is an experiment knob, not an architecture field (shapes are identical, and
+            # a resume loads saved weights, so it only ever matters at the initial fork — hence NOT
+            # version-gated). std>0 = the codes start large + ~orthogonal, which perturbs an already
+            # TRAINED FiLM head (arm 1 paid ~-0.04 at the fork and spent ~6M steps recovering).
+            # std=0 = identity-at-init: z is exactly the DeepSets z on step 0 and the codes GROW from
+            # zero. That does NOT inherit the ill-conditioning — a code is a FREE per-team parameter,
+            # so its gradient is the full dL/dz restricted to that team's samples, not something
+            # scaled by a tiny compositional residual.
+            self.zarch_lut_init_std = float(zarch_lut_init_std)
+            if self.zarch_lut_init_std > 0:
+                torch.nn.init.normal_(self.zarch_lut_emb.weight, mean=0.0, std=self.zarch_lut_init_std)
+            else:
+                torch.nn.init.zeros_(self.zarch_lut_emb.weight)
             with torch.no_grad():
-                self.zarch_lut_emb.weight[0].zero_()
+                self.zarch_lut_emb.weight[0].zero_()          # row 0 = unknown team, always zero
             self.zarch_lut_norm = torch.nn.LayerNorm(self.zarch_dim)
         else:
             self.zarch_lut_emb = None
@@ -4193,7 +4206,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             opp_species_ids=ctx.species_ids[:, TEAM_SIZE:],                  # [B, 6]
             opp_move_ids=ctx.all_move_ids[:, TEAM_SIZE:, :])                 # [B, 6, 4]
 
-    def attach_zarch_lut(self, mode: str, rosters: Sequence[Sequence[int]]):
+    def attach_zarch_lut(self, mode: str, rosters: Sequence[Sequence[int]], init_std: float = 1.0):
         """ATTACH the per-team LUT to an ALREADY-LOADED LUT-less extractor (the exploiter fork).
 
         `gen3_zarch_lut_v1`. An exploiter always WARM-FORKS from the generalist (measured: 0.84 @2M
@@ -4219,7 +4232,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.zarch_lut_teams = len(rosters)
         self.register_buffer("zarch_lut_table", torch.tensor(rosters, dtype=torch.long, device=device))
         self.zarch_lut_emb = torch.nn.Embedding(len(rosters) + 1, self.zarch_dim).to(device)
-        torch.nn.init.normal_(self.zarch_lut_emb.weight, mean=0.0, std=1.0)
+        self.zarch_lut_init_std = float(init_std)
+        if self.zarch_lut_init_std > 0:                       # see the __init__ note on init scale
+            torch.nn.init.normal_(self.zarch_lut_emb.weight, mean=0.0, std=self.zarch_lut_init_std)
+        else:
+            torch.nn.init.zeros_(self.zarch_lut_emb.weight)
         with torch.no_grad():
             self.zarch_lut_emb.weight[0].zero_()
         self.zarch_lut_norm = torch.nn.LayerNorm(self.zarch_dim).to(device)

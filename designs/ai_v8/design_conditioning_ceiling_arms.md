@@ -100,8 +100,24 @@ baseline are EXPECTED and are not evidence the LUT failed. This is why the gate 
 **plateau** and ignores the climb — but do not let the plateau rule hide a genuine early collapse:
 a REGRESSION verdict is a real branch of the gate.
 
-A zero-init LUT would avoid the dip, but it would also reproduce the exact ill-conditioned geometry
-(`z̄ + tiny ε`) the experiment exists to break — so the dip is the price of asking the question.
+**CORRECTION (2026-07-27).** An earlier version of this note claimed a zero-init LUT "would
+reproduce the exact ill-conditioned geometry". **That was wrong.** At init, yes, `z = LN(z_deepsets)`
+— the same compositional geometry. But the codes are FREE per-team parameters: `∂L/∂code_i` is the
+full `∂L/∂z` restricted to team `i`'s samples, *not* something scaled by a tiny compositional
+residual, and it flows from step 1 because the forked checkpoint's FiLM generators are already
+trained. So zero-init does **not** inherit the ill-conditioning — it merely *starts* neutral.
+
+That makes zero-init the better-controlled arm, and `--zarch-lut-init-std 0` now exists for it:
+identity at init (pinned by `zarch_lut_test.test_zero_init_lut_leaves_the_forward_unperturbed`, close
+up to the `zarch_lut_norm` LayerNorm eps), so the arm starts at parity and any divergence is purely
+learned conditioning. Arm 1's −0.040 fork handicap biased its measured effect **downward**, so a
+zero-init rerun of the arm-1 setup is the cleaner read of the same question. The init scale is
+TRAINING-only and deliberately NOT version-gated: module shapes are identical and a resume loads
+saved weights, so it only ever matters at the initial fork.
+
+Watch `zarch/lut_code_norm` (new) alongside `zarch/lut_code_dist` on a zero-init arm — normalizing
+all-zero rows would otherwise print `code_dist = 1.0` (maximum spread) for codes with no spread at
+all, which is exactly the moment we would be watching them grow.
 
 ## RESULT — arm 1 (def-20 + LUT), 2026-07-27
 

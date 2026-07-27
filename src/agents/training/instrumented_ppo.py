@@ -2178,7 +2178,12 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     # (~orthogonal, the intended large-ε geometry); collapsing toward 0 would mean the
                     # codes merged and the conditioning went back to one shared direction.
                     _W = _zfe.zarch_lut_emb.weight[1:]
-                    if _W.shape[0] > 1:
+                    # Guard the ZERO-INIT case: normalizing all-zero rows yields cos=0, which would
+                    # print code_dist=1.0 (MAXIMUM spread) for codes that have no spread at all —
+                    # an actively misleading reading at exactly the moment we would be watching them
+                    # grow. Report the raw norm alongside so "0 = not grown yet" is unambiguous.
+                    self.logger.record("zarch/lut_code_norm", float(_W.norm(dim=1).mean()))
+                    if _W.shape[0] > 1 and float(_W.norm(dim=1).mean()) > 1e-6:
                         _Wn = _W / (_W.norm(dim=1, keepdim=True) + 1e-8)
                         _cos = _Wn @ _Wn.T
                         _off = ~th.eye(_Wn.shape[0], dtype=th.bool, device=_Wn.device)
