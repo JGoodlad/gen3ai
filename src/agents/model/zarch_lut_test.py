@@ -312,3 +312,36 @@ def test_old_configs_migrate_to_lut_off():
     from agents.model.model_version import _migrate_config
     out = _migrate_config({"config_version": 45})
     assert out["zarch_lut"] == "off" and out["zarch_lut_teams"] == 0
+
+
+def test_attach_zarch_lut_builds_the_modules_on_a_lut_less_extractor(ek_and_space):
+    """The EXPLOITER FORK path: an exploiter always warm-forks from a LUT-less generalist, so the
+    LUT is attached POST-LOAD (SB3 rebuilds the extractor from the ZIP's saved policy_kwargs).
+
+    Mirrors `set_belief_grad_mode` / `set_value_from_dist`. The returned params are what the caller
+    hands the optimizer as a NEW group — appended, so existing params keep their positions (SB3
+    restores optimizer state BY POSITION).
+    """
+    ek, space, total = ek_and_space
+    fe = _build(ek, space, lut="off")
+    assert fe.zarch_lut == "off" and fe.zarch_lut_emb is None
+
+    new_params = fe.attach_zarch_lut("add", _fake_rosters(20))
+    assert fe.zarch_lut == "add" and fe.zarch_lut_teams == 20
+    assert fe.zarch_lut_emb.weight.shape == (21, ZDIM)
+    assert bool((fe.zarch_lut_emb.weight[0] == 0).all()), "row 0 (unknown) must be zero-init"
+    assert len(new_params) == 3          # embedding weight + LayerNorm weight/bias
+    assert "zarch_lut_table" in fe.state_dict()
+
+    # and it actually runs: an unmatched (zeros) obs resolves to row 0
+    obs = {"observation": torch.zeros(2, total), "action_mask": torch.ones(2, 11)}
+    with torch.no_grad():
+        fe(obs)
+    assert fe.last_zarch_lut_idx.tolist() == [0, 0]
+
+
+def test_attach_is_a_noop_when_off(ek_and_space):
+    ek, space, _ = ek_and_space
+    fe = _build(ek, space, lut="off")
+    assert fe.attach_zarch_lut("off", []) == []
+    assert fe.zarch_lut == "off"

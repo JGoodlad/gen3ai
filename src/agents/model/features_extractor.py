@@ -4193,6 +4193,38 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             opp_species_ids=ctx.species_ids[:, TEAM_SIZE:],                  # [B, 6]
             opp_move_ids=ctx.all_move_ids[:, TEAM_SIZE:, :])                 # [B, 6, 4]
 
+    def attach_zarch_lut(self, mode: str, rosters: Sequence[Sequence[int]]):
+        """ATTACH the per-team LUT to an ALREADY-LOADED LUT-less extractor (the exploiter fork).
+
+        `gen3_zarch_lut_v1`. An exploiter always WARM-FORKS from the generalist (measured: 0.84 @2M
+        forked vs ~0.65 @20M from scratch), and the generalist never carries a LUT — so "add the LUT"
+        is inherently a fork operation, not a fresh-run one. SB3 rebuilds the extractor from the ZIP's
+        saved policy_kwargs, so the loaded module has no LUT; this builds it in place, exactly like
+        `set_belief_grad_mode` / `set_value_from_dist` apply their post-load migrations.
+
+        Returns the NEW parameters so the caller can hand them to the optimizer as a fresh param
+        GROUP — appending rather than reordering, so the existing params keep their positions (SB3
+        restores optimizer state BY POSITION; see the resume-optimizer-realign note in
+        `src/agents/model/CLAUDE.md`).
+        """
+        if mode == "off":
+            return []
+        if self.zarch_film == "off":
+            raise ValueError("attach_zarch_lut requires zarch_film != 'off'")
+        rosters = [list(r) for r in rosters]
+        if any(len(r) != TEAM_SIGNATURE_DIM for r in rosters):
+            raise ValueError(f"every roster signature must be {TEAM_SIGNATURE_DIM} ints")
+        device = next(self.parameters()).device
+        self.zarch_lut = mode
+        self.zarch_lut_teams = len(rosters)
+        self.register_buffer("zarch_lut_table", torch.tensor(rosters, dtype=torch.long, device=device))
+        self.zarch_lut_emb = torch.nn.Embedding(len(rosters) + 1, self.zarch_dim).to(device)
+        torch.nn.init.normal_(self.zarch_lut_emb.weight, mean=0.0, std=1.0)
+        with torch.no_grad():
+            self.zarch_lut_emb.weight[0].zero_()
+        self.zarch_lut_norm = torch.nn.LayerNorm(self.zarch_dim).to(device)
+        return list(self.zarch_lut_emb.parameters()) + list(self.zarch_lut_norm.parameters())
+
     def _zarch_lut_index(self, ctx: ExtractorContext) -> torch.Tensor:
         """Resolve OUR team to its LUT row [B] (long) from the observation. 0 = no match.
 

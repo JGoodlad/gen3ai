@@ -2022,6 +2022,16 @@ async def main():
         if args.zarch_film == "off":
             parser.error("--zarch-lut requires --zarch-film heads (the per-team code only reaches the "
                          "policy through the FiLM generators).")
+        # EXPLOITER-ONLY (owner constraint). The LUT is a per-team MEMORY: it exists to test the
+        # multi-team exploiter ceiling, and an exploiter is thrown away after its behaviour is
+        # DISTILLED back (function-space policy KL, which needs no code). Letting a generalist carry
+        # per-team codes would bake team-specific memorization into the model we actually keep — and
+        # a generalist plays ~700 pool teams, so all but the pinned few would ride row 0 anyway.
+        if not args.exploiter:
+            parser.error("--zarch-lut requires --exploiter. The per-team LUT is an EXPLOITER-ONLY "
+                         "probe: its per-team codes must never enter the generalist we keep (the "
+                         "exploiter's skill returns via --distill-teacher, which transfers behaviour "
+                         "in function space and needs no code).")
         # The LUT needs a KNOWN, FIXED team set to key on. A pool run has ~700 teams and no pin, so
         # every lookup would miss (row 0) and the LUT would be dead weight.
         if not args.trainee_teams:
@@ -3531,6 +3541,9 @@ async def main():
                 allow_belief_grad_mode_change=args.allow_belief_grad_mode_change,  # intentional migration
                 enforce_value_from_dist=args.value_from_dist,  # FATAL if the Phase-B critic source drifts (v45)
                 allow_value_from_dist_change=args.allow_value_from_dist_change,
+                # gen3_zarch_lut_v1: an exploiter ALWAYS warm-forks from a LUT-less generalist, so
+                # "add the LUT" is inherently a fork. Only an ADD is permitted; a flip still FATALs.
+                allow_zarch_lut_add=(args.zarch_lut != "off"),
             )
             # gen3_belief_grad_mode_v1 MIGRATION FIX: SB3 reconstructs the extractor from the ZIP's
             # saved policy_kwargs, so the requested mode must be APPLIED to the live extractor
@@ -3541,6 +3554,18 @@ async def main():
             # is rebuilt from the ZIP's saved policy_kwargs (a pre-v45 checkpoint lacks value_from_dist),
             # so apply the requested source to the live policy post-load (no-op when unchanged).
             model.policy.set_value_from_dist(args.value_from_dist)
+            # gen3_zarch_lut_v1 (v46) FORK ATTACH: same migration class — SB3 rebuilt the extractor
+            # from the ZIP's saved (LUT-off) policy_kwargs, so the per-team LUT must be built onto the
+            # live extractor here. Its params go in a NEW optimizer group (appended, never reordered
+            # — SB3 restores optimizer state by POSITION). No-op when the checkpoint already has it.
+            _fe_lut = model.policy.features_extractor
+            if args.zarch_lut != "off" and getattr(_fe_lut, "zarch_lut", "off") == "off":
+                _new = _fe_lut.attach_zarch_lut(args.zarch_lut, args._zarch_lut_rosters)
+                if _new:
+                    model.policy.optimizer.add_param_group({"params": _new})
+                    print(f"[ZArch-LUT] attached {len(args._zarch_lut_rosters)} per-team codes to the "
+                          f"forked checkpoint ({sum(p.numel() for p in _new):,} new params, own "
+                          "optimizer group)")
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
             sys.stdout.flush()  # os._exit() skips buffer flushing — make sure the reason reaches the log

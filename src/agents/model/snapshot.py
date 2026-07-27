@@ -494,6 +494,7 @@ def load_model_snapshot(
     allow_belief_grad_mode_change: bool = False,
     enforce_value_from_dist: Optional[bool] = None,
     allow_value_from_dist_change: bool = False,
+    allow_zarch_lut_add: bool = False,
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
@@ -528,7 +529,23 @@ def load_model_snapshot(
     arch_validated = False
     if os.path.exists(config_path):
         saved_version = ModelVersion.from_json_file(config_path)
-        current_version.check_compatible(saved_version)
+        gate_version = current_version
+        if (allow_zarch_lut_add and saved_version.zarch_lut == "off"
+                and current_version.zarch_lut != "off"):
+            # gen3_zarch_lut_v1 EXPLOITER FORK: adding the per-team LUT to a LUT-less generalist
+            # checkpoint is the ONLY way this feature is ever used — an exploiter always warm-forks
+            # (0.84 @2M forked vs ~0.65 @20M from scratch), and no generalist carries a LUT. The
+            # loaded policy is rebuilt from the ZIP's saved (LUT-off) policy_kwargs, so the state_dict
+            # still matches exactly; the caller attaches the freshly-initialized LUT modules
+            # post-load (`attach_zarch_lut`), the belief_grad_mode/value_from_dist migration pattern.
+            # ONLY an ADD is allowed here — a mode flip or a removal still FATALs.
+            import dataclasses as _dc
+            gate_version = _dc.replace(current_version, zarch_lut="off", zarch_lut_teams=0)
+            print("[ModelVersion] NOTE: adding the per-team LUT (--zarch-lut "
+                  f"{current_version.zarch_lut}, {current_version.zarch_lut_teams} teams) to a "
+                  "LUT-less checkpoint — the LUT modules start freshly initialized, everything else "
+                  "warm-starts from the checkpoint.")
+        gate_version.check_compatible(saved_version)
         if enforce_vf_coef is not None:
             saved_version.check_vf_coef(enforce_vf_coef)
         if enforce_reward_config is not None:
