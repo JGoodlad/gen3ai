@@ -3563,6 +3563,13 @@ async def main():
                 _new = _fe_lut.attach_zarch_lut(args.zarch_lut, args._zarch_lut_rosters)
                 if _new:
                     model.policy.optimizer.add_param_group({"params": _new})
+                    # CRITICAL: the loaded model's `policy_kwargs` still say LUT-off (they came from
+                    # the forked checkpoint), so every subsequent save would record a config that
+                    # CANNOT rebuild what we just attached — SB3 reconstructs the extractor from the
+                    # saved policy_kwargs and would then hit unexpected state_dict keys. Point them at
+                    # the live (LUT-on) kwargs so checkpoints round-trip. Caught by the startup
+                    # `_run_roundtrip_test` (save -> reload -> forward), which is exactly why it runs.
+                    model.policy_kwargs = _load_policy_kwargs
                     print(f"[ZArch-LUT] attached {len(args._zarch_lut_rosters)} per-team codes to the "
                           f"forked checkpoint ({sum(p.numel() for p in _new):,} new params, own "
                           "optimizer group)")
