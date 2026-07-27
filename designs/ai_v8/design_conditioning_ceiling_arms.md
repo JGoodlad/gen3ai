@@ -85,6 +85,24 @@ Safety: one arm at a time; never re-runs a finished arm (idempotent across super
 SIGTERM so the child saves a checkpoint; a **3-launch attempt cap** per arm so a persistent bug
 parks the arm instead of looping forever; a hard deadline after which no NEW arm starts.
 
+## Honest caveat: `--zarch-lut add` is NOT identity-at-init
+
+Most toggles here are byte-identical when switched on. This one is not, and the interpretation
+depends on knowing that. The per-team codes are deliberately **random**-init (large and ~orthogonal
+from step 0 is the entire intervention), and the checkpoint's FiLM generators are already TRAINED —
+so a changed `z` perturbs the head output immediately. Only an UNMATCHED team is unperturbed, via
+the zero-init row 0.
+
+Consequence: **a LUT arm starts with a small self-inflicted handicap it must first recover.**
+Observed at the fork point: arm 1 opened at 0.455 vs the def-20 baseline's 0.495 (inside the ±0.069
+single-cycle noise, but in the direction the mechanism predicts). Early cycles at or slightly below
+baseline are EXPECTED and are not evidence the LUT failed. This is why the gate reads a pooled
+**plateau** and ignores the climb — but do not let the plateau rule hide a genuine early collapse:
+a REGRESSION verdict is a real branch of the gate.
+
+A zero-init LUT would avoid the dip, but it would also reproduce the exact ill-conditioned geometry
+(`z̄ + tiny ε`) the experiment exists to break — so the dip is the price of asking the question.
+
 ## Known trap (cost 4 crashes)
 
 `write_eval_manifest` called `.encode()` on `trainee_team_str`, which is a **list** for a `pin_multi`
