@@ -3556,8 +3556,8 @@ async def main():
             model.policy.set_value_from_dist(args.value_from_dist)
             # gen3_zarch_lut_v1 (v46) FORK ATTACH: same migration class — SB3 rebuilt the extractor
             # from the ZIP's saved (LUT-off) policy_kwargs, so the per-team LUT must be built onto the
-            # live extractor here. Its params go in a NEW optimizer group (appended, never reordered
-            # — SB3 restores optimizer state by POSITION). No-op when the checkpoint already has it.
+            # live extractor here. Its params are APPENDED to the existing optimizer group (never
+            # reordered — SB3 restores optimizer state by POSITION). No-op when it already has it.
             _fe_lut = model.policy.features_extractor
             if args.zarch_lut != "off" and getattr(_fe_lut, "zarch_lut", "off") == "off":
                 _new = _fe_lut.attach_zarch_lut(args.zarch_lut, args._zarch_lut_rosters)
@@ -3578,8 +3578,8 @@ async def main():
                     # `_run_roundtrip_test` (save -> reload -> forward), which is exactly why it runs.
                     model.policy_kwargs = _load_policy_kwargs
                     print(f"[ZArch-LUT] attached {len(args._zarch_lut_rosters)} per-team codes to the "
-                          f"forked checkpoint ({sum(p.numel() for p in _new):,} new params, own "
-                          "optimizer group)")
+                          f"forked checkpoint ({sum(p.numel() for p in _new):,} new params, "
+                          "appended to the optimizer)")
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
             sys.stdout.flush()  # os._exit() skips buffer flushing — make sure the reason reaches the log
