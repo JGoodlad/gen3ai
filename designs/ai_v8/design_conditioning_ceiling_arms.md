@@ -1,6 +1,6 @@
 # The N=20 conditioning-ceiling experiment — a 2×2 over LUT × team-diversity
 
-**Status: RUNNING (arm 1 live 2026-07-26). Supervised unattended by `tmp/experiment_supervisor.sh`.**
+**Status: ARM 1 ANSWERED (2026-07-27) — the LUT did NOT close the gap. Arm 2 (diversity) running.**
 
 ## The question
 
@@ -102,6 +102,53 @@ a REGRESSION verdict is a real branch of the gate.
 
 A zero-init LUT would avoid the dip, but it would also reproduce the exact ill-conditioned geometry
 (`z̄ + tiny ε`) the experiment exists to break — so the dip is the price of asking the question.
+
+## RESULT — arm 1 (def-20 + LUT), 2026-07-27
+
+| | plateau WR | 95% CI | n |
+|---|---|---|---|
+| baseline def-20, no LUT (`ai_v8_12`) | 0.6488 | ±0.0234 | 1600 |
+| **arm 1 def-20 + LUT (`ai_v8_16`)** | **0.6725** | ±0.0325 | 800 |
+| N=10 ceiling (`ai_v8_13`) | 0.7250 | ±0.0357 | 600 |
+
+Per-cycle: `+0M 0.455 · +2M 0.550 · +4M 0.655 · +6M 0.610 · +8M 0.655 · +10M 0.680 · +12M 0.675 · +14M 0.680`
+(the first four are the climb + the identity-at-init handicap; the gate pools from +7M).
+
+**LUT effect = +0.024, 95% CI [−0.016, +0.064] — NOT distinguishable from zero.** It recovers ~31%
+of the 0.076 count gap, but the CI on that fraction spans −21% to +84%. **DECISIVE POSITIVE is ruled
+out**: arm 1's CI upper (0.705) is below the 0.72 target.
+
+### What this kills
+
+A free, unconstrained per-team code is the **maximum conditioning signal this architecture can
+receive** — large, ~orthogonal codes from step 0 (`lut_code_dist` 1.0), every decision correctly
+addressed (`lut_hit_frac` 1.0, `lut_teams_seen` 20/20). The ill-conditioning story predicted that
+would clear the stall. It did not.
+
+⇒ **Do NOT climb to LoRA / MoE / higher-rank conditioning on this theory.** Those are more expensive
+ways to deliver the same signal that just failed to help. The `project_code_rank_ceiling` fix-order
+("stop clustering → per-team LUT → covariance term → search teacher") should be re-read: rung 2 is
+now spent, and rungs 3-4 inherit the same premise.
+
+### Honest limits of this result
+
+- **The gate could not resolve the residual.** The ±0.03 null band needed ~5,000 games (≈25 cycles,
+  ≈50M steps) to emit DECISIVE NULL, double the arm's cap — so the verdict token said INCONCLUSIVE
+  and the call was made on the *ruled-out* branch (CI upper < 0.72), which the design does support.
+  The +0.024 is genuinely unresolved: it is NOT established as zero, only as "too small to close the
+  gap". A follow-up wanting that distinction must budget ~25 cycles, not 4.
+- **One team set.** Arm 1 tested the LUT on the z-CLUSTERED def-20. Arm 3 (random-20 + LUT) asks
+  whether a free code helps when the codes are already well-spread — a different regime.
+- The arm ran 14M of its 25M cap; stopped early because the decisive branch had already resolved and
+  arm 2 was the better use of the box.
+
+### The implication that actually matters for the programme
+
+**You do not need N=20 to work.** N=10 distils cleanly (0.825) and the retention ablation (ledger
+**D2**) showed the skill STICKS without teachers (~76% retained at equilibrium). So two N=10
+exploiters cover the same 20 teams with a mechanism that is already proven end-to-end. The N=20
+question is about **efficiency (fewer exploiter runs), not capability** — which lowers its priority
+now that the cheap fix has failed.
 
 ## Known trap (cost 4 crashes)
 
