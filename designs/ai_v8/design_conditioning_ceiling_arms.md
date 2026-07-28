@@ -1,6 +1,7 @@
 # The N=20 conditioning-ceiling experiment — a 2×2 over LUT × team-diversity
 
-**Status: ARM 1 ANSWERED (2026-07-27) — the LUT did NOT close the gap. Arm 2 (diversity) running.**
+**Status: ARMS 1+2 ANSWERED (2026-07-27) — NEITHER the LUT nor team-diversity closed the gap.
+Arm 3 (within-team-set LUT isolation) running; arm 4 (zero-init) queued.**
 
 ## The question
 
@@ -84,6 +85,51 @@ eating the window). An arm stopped on the cap is recorded as CAPPED, **not** as 
 Safety: one arm at a time; never re-runs a finished arm (idempotent across supervisor restarts);
 SIGTERM so the child saves a checkpoint; a **3-launch attempt cap** per arm so a persistent bug
 parks the arm instead of looping forever; a hard deadline after which no NEW arm starts.
+
+## RESULT — arm 2 (random-20, no LUT), 2026-07-27
+
+The diversity control: same difficulty (win rate 0.548 vs the cluster's 0.547), **×1.52 the z code
+rank** (participation ratio 9.59 vs 6.30), LUT **off**.
+
+Per-cycle: `+0M .555 · +2M .600 · +4M .580 · +6M .545 · +8M .655 · +10M .560 · +12M .650 · +14M .625`
+
+| | plateau | 95% CI | n | vs the 0.7250 ceiling |
+|---|---|---|---|---|
+| baseline def-20, no LUT | 0.6488 | ±0.0234 | 1600 | −0.076 |
+| arm 1 def-20 + LUT | 0.6725 | ±0.0325 | 800 | −0.053 |
+| **arm 2 random-20, no LUT** | **0.6225** | ±0.0336 | 800 | **−0.103** |
+
+**Diversity effect = −0.026, 95% CI [−0.067, +0.015]** — not significant, and pointing the WRONG
+way. Verdict **GAP NOT CLOSED**.
+
+### What arms 1+2 together say
+
+Two INDEPENDENT routes to "more conditioning signal" — a free unconstrained per-team code, and
+genuinely well-spread compositional codes — and **neither moved the ceiling**. That is the core
+prediction of the ill-conditioning story, twice falsified.
+
+⇒ **The conditioning-signal theory is unsupported. Do NOT climb to LoRA/MoE on it.**
+
+### Three limits that must travel with this claim
+
+1. **Neither effect is SIGNIFICANT.** The honest statement is *"no route to more conditioning signal
+   produced a detectable gain"* — **not** *"conditioning provably does nothing."* The first says stop
+   investing here; the second is stronger than the data supports.
+2. **Both residuals are UNRESOLVED.** The ±0.03 null band needs ~5,000 games (≈25 cycles, ≈50M steps)
+   to emit a true DECISIVE NULL; an arm caps at ~2,400. `GAP NOT CLOSED` means *the arm's question is
+   answered, the effect SIZE is not*.
+3. **Arm 2 vs baseline is CROSS-team-set.** The match was on the generalist's self-play win rate =
+   team STRENGTH, which is not the same as how exploitable the frozen target is when piloting those
+   teams. So the −0.026 may be "these teams are harder to exploit with", not "diversity hurts".
+   **Arm 3 is what removes this** — random-20 +LUT vs arm 2 is a WITHIN-team-set comparison.
+
+### If arm 3 also lands ~0.62–0.65
+
+Then the ceiling is not a conditioning problem in any form reachable by this architecture, and the
+next hypothesis has to come from elsewhere: capacity, gradient interference between conflicting
+per-team strategies, or simply that 20 strategies exceed what one shared head can hold. Write it up
+as a kill rather than keep poking the same theory. Note the programme is NOT blocked either way —
+see the N=10 implication above.
 
 ## Honest caveat: `--zarch-lut add` is NOT identity-at-init
 
