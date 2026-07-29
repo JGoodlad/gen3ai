@@ -1,229 +1,176 @@
-# The N=20 conditioning-ceiling experiment — a 2×2 over LUT × team-diversity
+# The N=20 exploiter ceiling — a 5-arm factorial over COUNT × DIVERSITY × CONDITIONING
 
-**Status: ARMS 1+2 ANSWERED (2026-07-27) — NEITHER the LUT nor team-diversity closed the gap.
-Arm 3 (within-team-set LUT isolation) running; arm 4 (zero-init) queued.**
+**Status: COMPLETE (2026-07-26 → 07-28). All 5 arms settled.**
+
+## TL;DR
+
+The multi-team exploiter ceiling is a **TEAM-COUNT** problem, not a conditioning problem.
+
+| effect | estimate | 95% CI | |
+|---|---|---|---|
+| **COUNT** (20 → 10 teams) | **+0.077** | [+0.046, +0.108] | **significant** |
+| **CONDITIONING** (per-team LUT) | **+0.028** | [+0.001, +0.055] | *marginally* significant |
+| DIVERSITY (random vs z-clustered teams) | −0.022 | [−0.053, +0.008] | n.s. |
+| LUT INIT (zero vs random codes) | +0.004 | [−0.042, +0.050] | n.s. |
+
+Count alone accounts for essentially the whole 0.076 gap. Conditioning is real but **2.8× smaller**.
+And because zero-init and random-init codes produce the *same* result from *opposite* geometries,
+FiLM's small gain comes from a **shared modulation, not per-team specialisation** — so higher-rank
+conditioning (LoRA/MoE) would not help either. **Stop raising N; run N≤10 exploiters and distil.**
 
 ## The question
 
-The multi-team exploiter count sweep distils cleanly at N=1 (0.84), N=3 (0.835) and N=10 (0.825),
-then **stalls at N=20 (0.653)**. Ledger **D4**. Two rival explanations, both consistent with
-everything measured so far:
+The count sweep distils cleanly at N=1 (0.84), N=3 (0.835), N=10 (0.825), then **stalls at N=20**.
+Ledger **D4**. The standing explanation was **conditioning-signal starvation**: FiLM is LINEAR in z,
+so its per-team conditioning rank is capped by the rank of the z cloud; the DeepSets z is
+*compositional*, so z-similar teams sit at `z̄ + ε_i` with tiny ε and the generator's gradient
+`∂L/∂J ∝ δ ⊗ ε` is proportional to that residual (`designs/learning/conditioning_architectures.md`
+§5b). The rival explanation was a plain capacity/interference ceiling.
 
-- **Conditioning-SIGNAL starvation.** FiLM is LINEAR in z, so its per-team conditioning rank is
-  capped by the RANK of the z cloud. The DeepSets z is *compositional*, so z-similar teams sit at
-  `z̄ + ε_i` with tiny ε, and the generator's gradient `∂L/∂J ∝ δ ⊗ ε` is proportional to that tiny
-  residual — ill-conditioned. Under this story the machinery is fine and the *codes* are the problem.
-- **A real capacity/interference ceiling.** 20 conflicting strategies simply don't fit one shared
-  head, however they're addressed.
+Both make predictions about interventions that raise conditioning signal. Neither survived.
 
-They make opposite predictions, so the experiment is worth running.
+## Design
 
-## The design
-
-Every arm forks from the SAME checkpoint (`ai_v8_04`, ~277.2M), evals every 2M steps against the
-SAME target with n=200, and is otherwise **byte-identical** to the `ai_v8_12` baseline command
-(diff-verified: only the named field changes). So each arm moves exactly one variable.
+Every arm forks from the SAME checkpoint (`ai_v8_04`, ~277.2M), evals every 2M steps against the SAME
+frozen target at n=200/cycle, and is **byte-identical to the `ai_v8_12` baseline command except the
+named field** (diff-verified at launch). So each arm moves exactly one variable.
 
 | arm | run | teams | LUT | isolates |
 |---|---|---|---|---|
-| baseline | `ai_v8_12_defensive20_exploiter_0724` | def-20 (z-clustered) | ❌ | — (plateau **0.653**) |
-| 1 | `ai_v8_16_def20_lut_0726` | def-20 | ✅ | **the LUT effect** (teams held fixed) |
-| 2 | `ai_v8_17_rand20_nolut_0726` | random-20 | ❌ | **the diversity effect** (LUT held off) |
-| 3 | `ai_v8_18_rand20_lut_0726` | random-20 | ✅ | **do they compose?** |
+| baseline | `ai_v8_12` | def-20 (clustered) | ❌ | reference |
+| ref | `ai_v8_13` | def-10 (clustered) | ❌ | the N=10 reference |
+| 1 | `ai_v8_16` | def-20 | ✅ random-init | the LUT effect, teams fixed |
+| 2 | `ai_v8_17` | random-20 | ❌ | the diversity effect, LUT fixed |
+| 3 | `ai_v8_18` | random-20 | ✅ random-init | LUT within one team set (no team confound) |
+| 4 | `ai_v8_20` | **random-10** | ❌ | **COUNT at matched diversity** (nested subset of arm 2) |
+| 5 | `ai_v8_19` | def-20 | ✅ **zero-init** | arm 1 without its fork handicap |
 
-**Why arm 2 exists.** Arm 1 alone cannot separate *spacing* from *freedom*: a LUT both spreads the
-codes AND removes the constraint that a code be a function of the roster. Arm 2 widens spacing while
-keeping composition intact. If arm 2 alone clears the stall, spacing was the whole story.
+**The random team sets are win-rate matched** so difficulty is held fixed — the per-team win rate is
+confounded by team STRENGTH, and an easier random set would "win" for reasons unrelated to the
+hypothesis. random-20 mean WR **0.548** vs the cluster's **0.547**; z participation ratio **9.59 vs
+6.30** (×1.52 the code rank). random-10 is a **nested subset** of random-20 (mean WR 0.552), which
+makes arm 4 vs arm 2 a pure count comparison with zero team-identity confound.
 
-### The random-20 set (the diversity control)
+## Results
 
-Difficulty must be held fixed — the per-team win rate is confounded by team STRENGTH, so an easier
-random set would "win" for reasons unrelated to conditioning. Selected by
-`tmp/pick_random20_matched.py` from the 676 measured pool teams (`--team-pfsp measure` data, no new
-battles), sampled inside a ±0.05 win-rate band around the cluster's own mean, excluding cluster
-members:
+Plateau win-rate vs the frozen target, ≥4 pooled post-climb cycles each:
 
-| | def-20 | random-20 |
-|---|---|---|
-| mean win rate | 0.547 | **0.548** (Δ+0.001) |
-| z participation ratio | 6.30 / 32 dims | **9.59** (×1.52) |
-| mean pairwise cos-distance | 0.281 | **0.385** (×1.37) |
-| archetypes | stall 6, semi-stall 5 (11/16 defensive) | balance 10, offense 4, hyper-off 3, stall 2, semi 1 |
-
-Same difficulty, ~1.5× the code rank. Geometry measured by `tmp/z_spread_compare.py`.
-
-## The decision gate (`tmp/lut_verdict.py`)
-
-Reference trajectories, measured from `eval_results.jsonl`:
-
-```
-ai_v8_12  def-20 no LUT   .495 .57 .60 .69 .595 .635 .675 .65 .68 .66 .64 .655   -> plateau 0.653
-ai_v8_13  def-10 no LUT   .465 .605 .685 .705 .75 .705 .72                        -> plateau 0.72
-```
-
-The gate pools **≥4 post-climb cycles** (≥800 games → 95% CI ≈ ±0.033) and returns:
-
-| verdict | condition | meaning |
-|---|---|---|
-| **DECISIVE POSITIVE** | CI lower ≥ 0.72 | the count gap is CLOSED — conditioning signal was the limiter |
-| **PARTIAL** | CI lower > 0.683 | signal is part of the story, not all of it |
-| **DECISIVE NULL** | CI inside 0.653 ± 0.03 | a FREE code moved nothing ⇒ **the ceiling is not conditioning signal**. Do NOT climb to LoRA/MoE on this theory |
-| **REGRESSION** | CI upper < 0.623 | the added conditioning is hurting |
-
-**Why a pooled mean, not the best cycle.** At n=200 a single cycle carries ±0.069, and the baseline
-itself printed a 0.69 cycle while plateauing at 0.653. Reading a lucky cycle as a win is precisely
-how this experiment would fool us.
-
-## Unattended operation
-
-`tmp/experiment_supervisor.sh` (started detached; log `tmp/supervisor.log`, state
-`tmp/supervisor_state.txt`) runs the arms **one at a time** — the box is CPU-saturated, so two
-concurrent arms would just halve each other — and advances when the gate settles OR the arm passes a
-25M-step cap (the baseline plateaued by +7M and ran to +22M; a cap stops a non-converging arm from
-eating the window). An arm stopped on the cap is recorded as CAPPED, **not** as a verdict.
-
-Safety: one arm at a time; never re-runs a finished arm (idempotent across supervisor restarts);
-SIGTERM so the child saves a checkpoint; a **3-launch attempt cap** per arm so a persistent bug
-parks the arm instead of looping forever; a hard deadline after which no NEW arm starts.
-
-## RESULT — arm 2 (random-20, no LUT), 2026-07-27
-
-The diversity control: same difficulty (win rate 0.548 vs the cluster's 0.547), **×1.52 the z code
-rank** (participation ratio 9.59 vs 6.30), LUT **off**.
-
-Per-cycle: `+0M .555 · +2M .600 · +4M .580 · +6M .545 · +8M .655 · +10M .560 · +12M .650 · +14M .625`
-
-| | plateau | 95% CI | n | vs the 0.7250 ceiling |
+| run | arm | plateau | 95% CI | n |
 |---|---|---|---|---|
-| baseline def-20, no LUT | 0.6488 | ±0.0234 | 1600 | −0.076 |
-| arm 1 def-20 + LUT | 0.6725 | ±0.0325 | 800 | −0.053 |
-| **arm 2 random-20, no LUT** | **0.6225** | ±0.0336 | 800 | **−0.103** |
+| `ai_v8_13` | clustered-10 | **0.7250** | ±0.036 | 600 |
+| `ai_v8_20` | **random-10** | **0.7000** | ±0.032 | 800 |
+| `ai_v8_19` | def-20 +LUT (zero-init) | 0.6763 | ±0.032 | 800 |
+| `ai_v8_16` | def-20 +LUT (random-init) | 0.6725 | ±0.033 | 800 |
+| `ai_v8_18` | random-20 +LUT | 0.6550 | ±0.033 | 800 |
+| `ai_v8_12` | def-20 baseline | 0.6488 | ±0.023 | 1600 |
+| `ai_v8_17` | random-20 | 0.6225 | ±0.034 | 800 |
 
-**Diversity effect = −0.026, 95% CI [−0.067, +0.015]** — not significant, and pointing the WRONG
-way. Verdict **GAP NOT CLOSED**.
+### The count × diversity grid — no interaction
 
-### What arms 1+2 together say
-
-Two INDEPENDENT routes to "more conditioning signal" — a free unconstrained per-team code, and
-genuinely well-spread compositional codes — and **neither moved the ceiling**. That is the core
-prediction of the ill-conditioning story, twice falsified.
-
-⇒ **The conditioning-signal theory is unsupported. Do NOT climb to LoRA/MoE on it.**
-
-### Three limits that must travel with this claim
-
-1. **Neither effect is SIGNIFICANT.** The honest statement is *"no route to more conditioning signal
-   produced a detectable gain"* — **not** *"conditioning provably does nothing."* The first says stop
-   investing here; the second is stronger than the data supports.
-2. **Both residuals are UNRESOLVED.** The ±0.03 null band needs ~5,000 games (≈25 cycles, ≈50M steps)
-   to emit a true DECISIVE NULL; an arm caps at ~2,400. `GAP NOT CLOSED` means *the arm's question is
-   answered, the effect SIZE is not*.
-3. **Arm 2 vs baseline is CROSS-team-set.** The match was on the generalist's self-play win rate =
-   team STRENGTH, which is not the same as how exploitable the frozen target is when piloting those
-   teams. So the −0.026 may be "these teams are harder to exploit with", not "diversity hurts".
-   **Arm 3 is what removes this** — random-20 +LUT vs arm 2 is a WITHIN-team-set comparison.
-
-### If arm 3 also lands ~0.62–0.65
-
-Then the ceiling is not a conditioning problem in any form reachable by this architecture, and the
-next hypothesis has to come from elsewhere: capacity, gradient interference between conflicting
-per-team strategies, or simply that 20 strategies exceed what one shared head can hold. Write it up
-as a kill rather than keep poking the same theory. Note the programme is NOT blocked either way —
-see the N=10 implication above.
-
-## Honest caveat: `--zarch-lut add` is NOT identity-at-init
-
-Most toggles here are byte-identical when switched on. This one is not, and the interpretation
-depends on knowing that. The per-team codes are deliberately **random**-init (large and ~orthogonal
-from step 0 is the entire intervention), and the checkpoint's FiLM generators are already TRAINED —
-so a changed `z` perturbs the head output immediately. Only an UNMATCHED team is unperturbed, via
-the zero-init row 0.
-
-Consequence: **a LUT arm starts with a small self-inflicted handicap it must first recover.**
-Observed at the fork point: arm 1 opened at 0.455 vs the def-20 baseline's 0.495 (inside the ±0.069
-single-cycle noise, but in the direction the mechanism predicts). Early cycles at or slightly below
-baseline are EXPECTED and are not evidence the LUT failed. This is why the gate reads a pooled
-**plateau** and ignores the climb — but do not let the plateau rule hide a genuine early collapse:
-a REGRESSION verdict is a real branch of the gate.
-
-**CORRECTION (2026-07-27).** An earlier version of this note claimed a zero-init LUT "would
-reproduce the exact ill-conditioned geometry". **That was wrong.** At init, yes, `z = LN(z_deepsets)`
-— the same compositional geometry. But the codes are FREE per-team parameters: `∂L/∂code_i` is the
-full `∂L/∂z` restricted to team `i`'s samples, *not* something scaled by a tiny compositional
-residual, and it flows from step 1 because the forked checkpoint's FiLM generators are already
-trained. So zero-init does **not** inherit the ill-conditioning — it merely *starts* neutral.
-
-That makes zero-init the better-controlled arm, and `--zarch-lut-init-std 0` now exists for it:
-identity at init (pinned by `zarch_lut_test.test_zero_init_lut_leaves_the_forward_unperturbed`, close
-up to the `zarch_lut_norm` LayerNorm eps), so the arm starts at parity and any divergence is purely
-learned conditioning. Arm 1's −0.040 fork handicap biased its measured effect **downward**, so a
-zero-init rerun of the arm-1 setup is the cleaner read of the same question. The init scale is
-TRAINING-only and deliberately NOT version-gated: module shapes are identical and a resume loads
-saved weights, so it only ever matters at the initial fork.
-
-Watch `zarch/lut_code_norm` (new) alongside `zarch/lut_code_dist` on a zero-init arm — normalizing
-all-zero rows would otherwise print `code_dist = 1.0` (maximum spread) for codes with no spread at
-all, which is exactly the moment we would be watching them grow.
-
-## RESULT — arm 1 (def-20 + LUT), 2026-07-27
-
-| | plateau WR | 95% CI | n |
+| | clustered | random | diversity effect |
 |---|---|---|---|
-| baseline def-20, no LUT (`ai_v8_12`) | 0.6488 | ±0.0234 | 1600 |
-| **arm 1 def-20 + LUT (`ai_v8_16`)** | **0.6725** | ±0.0325 | 800 |
-| N=10 ceiling (`ai_v8_13`) | 0.7250 | ±0.0357 | 600 |
+| **N=10** | 0.7250 | 0.7000 | −0.025 n.s. |
+| **N=20** | 0.6488 | 0.6225 | −0.026 n.s. |
+| **count (20→10)** | **+0.076 SIG** | **+0.078 SIG** | |
 
-Per-cycle: `+0M 0.455 · +2M 0.550 · +4M 0.655 · +6M 0.610 · +8M 0.655 · +10M 0.680 · +12M 0.675 · +14M 0.680`
-(the first four are the climb + the identity-at-init handicap; the gate pools from +7M).
+The count benefit is nearly identical on clustered and random teams (+0.076 / +0.078); the diversity
+penalty is nearly identical at N=10 and N=20 (−0.025 / −0.026). The two effects simply **add**.
 
-**LUT effect = +0.024, 95% CI [−0.016, +0.064] — NOT distinguishable from zero.** It recovers ~31%
-of the 0.076 count gap, but the CI on that fraction spans −21% to +84%. **DECISIVE POSITIVE is ruled
-out**: arm 1's CI upper (0.705) is below the 0.72 target.
+### The mechanism (arm 5 — the most informative result)
 
-### What this kills
+Random-init codes are orthogonal by construction (`lut_code_dist` **1.0**, flat). Zero-init codes grow
+from a common origin and *converge* in direction (`code_dist` 0.24 → **0.146**, while `code_norm` grew
+0 → 0.32 — so they engaged, they just did not separate).
 
-A free, unconstrained per-team code is the **maximum conditioning signal this architecture can
-receive** — large, ~orthogonal codes from step 0 (`lut_code_dist` 1.0), every decision correctly
-addressed (`lut_hit_frac` 1.0, `lut_teams_seen` 20/20). The ill-conditioning story predicted that
-would clear the stall. It did not.
+**Opposite geometry, same outcome: 0.6725 vs 0.6763, difference +0.004 (n.s.).**
 
-⇒ **Do NOT climb to LoRA / MoE / higher-rank conditioning on this theory.** Those are more expensive
-ways to deliver the same signal that just failed to help. The `project_code_rank_ceiling` fix-order
-("stop clustering → per-team LUT → covariance term → search teacher") should be re-read: rung 2 is
-now spent, and rungs 3-4 inherit the same premise.
+⇒ FiLM extracts its ~+0.028 from a **SHARED modulation**, not per-team specialisation. This explains
+why every attempt to improve the *per-team* signal did nothing — the mechanism was never using that
+part. It also reproduces the "lazy mode" of `project_sampling_snr_analysis` (two-thirds of z's energy
+in one shared direction) from a clean zero start, where nothing forced it.
 
-### Honest limits of this result
+## Honest limits and corrections
 
-- **The gate could not resolve the residual.** The ±0.03 null band needed ~5,000 games (≈25 cycles,
-  ≈50M steps) to emit DECISIVE NULL, double the arm's cap — so the verdict token said INCONCLUSIVE
-  and the call was made on the *ruled-out* branch (CI upper < 0.72), which the design does support.
-  The +0.024 is genuinely unresolved: it is NOT established as zero, only as "too small to close the
-  gap". A follow-up wanting that distinction must budget ~25 cycles, not 4.
-- **One team set.** Arm 1 tested the LUT on the z-CLUSTERED def-20. Arm 3 (random-20 + LUT) asks
-  whether a free code helps when the codes are already well-spread — a different regime.
-- The arm ran 14M of its 25M cap; stopped early because the decisive branch had already resolved and
-  arm 2 was the better use of the box.
+**1. A mid-experiment correction on significance.** With the first two LUT estimates the conditioning
+effect read **not significant**; the fifth arm moved it to **marginally significant**. The honest claim
+is *"conditioning is a real but small lever"*, **not** *"conditioning does nothing"*.
 
-### The implication that actually matters for the programme
+**2. The first pooling was statistically invalid.** Two of the three LUT estimates share the `clust20`
+baseline, so naive inverse-variance pooling double-counted that comparator and overstated precision
+(gave [+0.003, +0.052]). Merging the two def-20 LUT arms into ONE condition — justified, since their
+difference is +0.004 n.s. — yields two genuinely independent comparisons and the honest interval
+**[+0.001, +0.055]**. It clears zero only barely; treat it as *small and probably real*, not established.
 
-**You do not need N=20 to work.** N=10 distils cleanly (0.825) and the retention ablation (ledger
-**D2**) showed the skill STICKS without teachers (~76% retained at equilibrium). So two N=10
-exploiters cover the same 20 teams with a mechanism that is already proven end-to-end. The N=20
-question is about **efficiency (fewer exploiter runs), not capability** — which lowers its priority
-now that the cheap fix has failed.
+**3. Effect SIZES are under-resolved by design.** The gate's ±0.03 null band needs ~5,000 games
+(≈25 cycles, ≈50M steps) to emit a true DECISIVE NULL; an arm caps near 2,400. `GAP NOT CLOSED` means
+*the arm's question is answered, the effect size is not*. Four arms returned it.
 
-## Known trap (cost 4 crashes)
+**4. Arm 1 carried a self-inflicted handicap.** `--zarch-lut add` with random-init codes is NOT
+identity-at-init — it perturbs an already-trained FiLM head, and arm 1 opened −0.040 below baseline and
+spent ~6M steps recovering. That biased its measured effect DOWNWARD. Arm 5 removed it (and found the
+initialisation does not matter at all).
 
-`write_eval_manifest` called `.encode()` on `trainee_team_str`, which is a **list** for a `pin_multi`
-trainee. Eval fires MID-ROLLOUT, so the `AttributeError` took the whole run down into a restart
-loop. It was a regression from the multi-team eval work (`eval_worker` was taught to accept a list;
-this consumer was not) and it fires only on the **first eval cycle** (~70 min in) — invisible to
-smoke tests. Fixed in `dd01bae` with a regression test. It would have hit every multi-team arm
-identically, LUT or not.
+**5. Nothing here measures whether the diversity cost COMPOUNDS** across successive distilled batches.
+That is the assumption the "many N≤10 exploiters" plan now rests on.
+
+## Implications
+
+1. **The N=20 ceiling is a COUNT problem.** Do NOT build LoRA/MoE on the conditioning theory — and note
+   the mechanism finding says higher-rank conditioning would not help anyway, because the benefit is not
+   coming from the per-team direction.
+2. **N=10 generalizes off the clustered set** (0.700 random vs 0.725 clustered, n.s.). This was the
+   untested assumption behind "two N=10 exploiters cover 20 teams" — every prior N=10 datapoint came
+   from a *clustered* set. The plan HOLDS, now with evidence.
+3. **Team diversity is a small consistent cost** (~−0.025) — credible from its consistency across two
+   independent comparisons, but never individually significant. Not a reason to cluster; not free.
+4. **Practical:** stop trying to raise N. Run **N≤10** exploiters and distil — proven end-to-end
+   (`project_multiteam_distill_payoff`) and the skill STICKS without teachers
+   (`project_distill_retention_ablation`, ~76% retained at equilibrium).
+5. **Open:** where the count cliff actually sits (N=5 / N=3 unmeasured on random sets).
+
+## Method notes (what made this readable)
+
+- **Verdicts are COMPUTED, never eyeballed** (`tmp/lut_verdict.py`): ≥4 pooled post-climb cycles, an
+  explicit CI, and one of DECISIVE POSITIVE / PARTIAL / DECISIVE NULL / GAP NOT CLOSED / REGRESSION.
+  Single cycles swung by up to **0.135** between adjacent evals; **three separate times** an early
+  "effect" evaporated on the next cycle. Any eyeballed read would have produced a false positive.
+- **One variable per arm, diff-verified against the baseline command at launch.**
+- **Difficulty matched before comparing team sets**, because per-team win rate tracks team strength.
+- **A GIGO canary per mechanism** — `zarch/lut_hit_frac` had to sit at 1.0 (a missed signature lookup
+  silently routes to the unknown row and makes the whole arm a no-op), and `zarch/lut_code_norm` had to
+  grow off zero on arm 5 (otherwise a null would mean "never engaged", not "did not help").
+
+## Reproduce
+
+```
+python tmp/lut_verdict.py models/ai_v8_1{2,3,6,7,8,9}_* models/ai_v8_20_*   # per-cycle + verdicts
+tmp/pick_random20_matched.py    # the win-rate-matched random set
+tmp/z_spread_compare.py         # z geometry (participation ratio, pairwise cos-distance)
+tmp/experiment_supervisor.sh    # the unattended arm sequencer; log tmp/supervisor.log
+```
+
+Raw data: `models/<run>/eval_results.jsonl` (one row per eval cycle, exact `counts`).
 
 ## See also
 
-- `designs/research_state/ledger.md` → D4 (this is the experiment that resolves it)
-- `designs/learning/conditioning_architectures.md` §5b — the FiLM/SNR diagnosis
-- `src/agents/model/CLAUDE.md` → Per-team LUT (v46) — the mechanism + the `zarch/lut_hit_frac` canary
-- Memory: `project_code_rank_ceiling`, `project_sampling_snr_analysis`
+- `designs/research_state/ledger.md` → **D4**
+- `src/agents/model/CLAUDE.md` → Per-team LUT (v46, `gen3_zarch_lut_v1`)
+- Memory: `project_count_dominates_conditioning`, `project_lut_conditioning_ceiling_result`,
+  `project_code_rank_ceiling` (superseded at N=20), `project_sampling_snr_analysis`
+
+## Appendix — infrastructure bugs this surfaced
+
+1. **Multi-team eval manifest crash.** `write_eval_manifest` called `.encode()` on `trainee_team_str`,
+   which is a LIST for a `pin_multi` trainee. Eval fires MID-ROLLOUT, so it took the whole run down
+   into a restart loop, and it only fires on the FIRST eval cycle (~70 min in) — invisible to smokes.
+   Would have hit every multi-team arm, LUT or not. Fixed `dd01bae`.
+2. **The supervisor died at both early handoffs — deterministically, not flakily.** `grep -c` PRINTS
+   the count AND exits 1 on no matches, so `$(grep -c … || echo 0)` captured `"0\n0"` and the following
+   `$((tries+1))` was an arithmetic syntax error that killed the launch. Signature: `TRY <arm>` written
+   to the state file with `STARTING` never logged. After the fix it completed three handoffs unattended.
+3. **A monitor that cried wolf.** The arm list was hardcoded; when the queue was reordered it reported
+   `NO ARM RUNNING` while an arm ran fine. Now derived from the supervisor's own `ARMS` array.
+4. **LUT fork plumbing.** Attaching the LUT to a forked checkpoint needed `policy_kwargs` repointed
+   (else every checkpoint written was unreloadable — caught by the startup roundtrip smoke) and the new
+   params APPENDED to the existing optimizer group (a second group cannot be reproduced by a fresh
+   build, breaking restarts).
