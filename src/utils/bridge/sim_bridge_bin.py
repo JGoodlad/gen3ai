@@ -134,6 +134,24 @@ def resolve_sim_bridge_bin() -> str:
         return _rust_bin_cache
 
 
+def resolve_and_publish_sim_bridge_bin() -> str:
+    """Resolve the Rust binary ONCE and publish it to the env for every child process.
+
+    The cache in ``resolve_sim_bridge_bin`` is per-PROCESS, but the bridge spawners run in
+    the ``SubprocVecEnv`` env workers and the eval-worker subprocesses — each a fresh
+    process with a cold cache. Without this, every one of them independently runs
+    ``cargo build`` on its first spawn (at ``--n-envs 64`` that is 64 builds contending on
+    cargo's target-dir lock, turning startup into a thundering herd).
+
+    Publishing the resolved path into ``POKESIM_SIM_BRIDGE_BIN`` — which
+    ``resolve_sim_bridge_bin`` honors FIRST, with no build — makes every inheriting child a
+    pure path lookup. Idempotent: if the var was already set, we re-publish the same value.
+    """
+    path = resolve_sim_bridge_bin()
+    os.environ[_ENV_OVERRIDE] = path
+    return path
+
+
 def _which_cargo() -> Optional[str]:
     """Find cargo on PATH, also probing the standard ~/.cargo/bin location."""
     from shutil import which

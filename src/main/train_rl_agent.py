@@ -2471,10 +2471,14 @@ async def main():
             # One-time startup warning naming the Rust bridge's honest deferrals (no __RECON__,
             # no resumeReseed) — resolve/build the binary NOW so a missing toolchain fails loudly
             # at startup, not deep inside the first env reset.
-            from utils.bridge.sim_bridge_bin import warn_rust_deferrals, resolve_sim_bridge_bin
+            from utils.bridge.sim_bridge_bin import (
+                warn_rust_deferrals, resolve_and_publish_sim_bridge_bin)
             warn_rust_deferrals(emit)
-            _rust_bin = resolve_sim_bridge_bin()
-            emit(f"🦀 [BRIDGE=rust] sim_bridge binary: {_rust_bin}")
+            # Build ONCE here and PUBLISH the path (POKESIM_SIM_BRIDGE_BIN) so every
+            # SubprocVecEnv env worker / eval-worker subprocess inherits a ready binary
+            # instead of racing its own `cargo build` on first spawn.
+            _rust_bin = resolve_and_publish_sim_bridge_bin()
+            emit(f"🦀 [BRIDGE=rust] sim_bridge binary (prebuilt, published to children): {_rust_bin}")
             # Reconstruction-dependent options need the Node bridge's __RECON__ / resumeReseed.
             # If any is enabled with rust, error clearly (they'd silently no-op otherwise).
             _recon_needed = []
