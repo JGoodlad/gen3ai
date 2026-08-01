@@ -23,7 +23,7 @@ trap 'stop=1; echo; echo "[sup] stopping — no restart"; kill "$child" 2>/dev/n
 recent=()   # crash timestamps, for the "give up if it won't stay up" guard
 while :; do
   echo "[sup] $(date '+%F %T') starting showdown on :$PORT"
-  NODE_ENV=production node --turbo-fast-api-calls --max-old-space-size=6144 \
+  NODE_ENV=production node --turbo-fast-api-calls --max-old-space-size=5120 \
       "$BIN" start --no-security "$PORT" &
   child=$!
   wait "$child"; code=$?
