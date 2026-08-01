@@ -1,0 +1,744 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=250724 run_id=rmrziey0i chunk=70
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_70_2
+TEAM	ab_70_2	p1	Corsola||Leftovers|NaturalCure|icebeam,toxic,recover,surf|Hardy|85,,85,85,85,85|M|,0,,,,||98|]Meganium||Leftovers|Overgrow|leechseed,synthesis,hiddenpowergrass,toxic|Hardy|85,,85,85,85,85|M|,2,,30,,||85|]Aerodactyl||LiechiBerry|Pressure|rockslide,substitute,hiddenpowerflying,earthquake|Hardy|81,85,85,85,85,85|M|30,30,30,30,30,||73|]Lugia||Leftovers|Pressure|earthquake,toxic,recover,psychic|Hardy|85,85,85,85,85,85|N|||70|]Machamp||Leftovers|Guts|rest,sleeptalk,crosschop,hiddenpowerghost|Hardy|85,85,85,85,85,85|M|,,30,,30,||82|]Jirachi||Leftovers|SereneGrace|calmmind,psychic,firepunch,icepunch|Hardy|85,,85,85,85,85|N|,0,,,,||73|
+TEAM	ab_70_2	p2	Sharpedo||PetayaBerry|RoughSkin|icebeam,substitute,crunch,hydropump|Hardy|77,,85,85,85,85|M|,0,,,,||85|]Slaking||ChoiceBand|Truant|earthquake,hyperbeam,shadowball,doubleedge|Hardy|85,85,85,85,85,85|M|||78|]Minun||Leftovers|Minus|thunderbolt,toxic,protect,wish|Hardy|85,,85,85,85,85|M|,0,,,,||89|]Roselia||Leftovers|NaturalCure|magicalleaf,hiddenpowerfire,synthesis,spikes|Hardy|85,,85,85,85,85|M|,2,,30,,30||97|]Starmie||Leftovers|NaturalCure|psychic,hydropump,recover,icebeam|Hardy|85,,85,85,85,85|N|,0,,,,||74|]Metagross||Leftovers|ClearBody|meteormash,earthquake,agility,explosion|Hardy|85,85,85,85,85,85|N|||73|
+FMT	ab_70_2	gen3customgame
+INIT	ab_70_2	4267,48347,43685,13496	2915512986
+DEC	ab_70_2	0	move	0	0	m2	s1	20448,8790,52626,58203	Corsola	266	266	0	-	0	0	0	0	0	0	6	Slaking	362	362	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_70_2	1	move	0	0	s1	m2	50070,51935,63928,49054	Meganium	197	275	0	-	0	0	0	0	0	0	6	Slaking	362	362	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_70_2	2	move	0	0	m0	m2	64378,17591,10314,10144	Meganium	259	275	0	-	0	0	0	0	0	0	6	Slaking	317	362	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_70_2	3	move	0	0	m0	m2	34950,24913,27056,13254	Meganium	228	275	0	-	0	0	0	-1	0	0	6	Slaking	272	362	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_70_2	4	move	0	0	s5	m2	57754,8052,61642,481	Jirachi	266	266	0	-	0	0	0	0	0	0	6	Slaking	227	362	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_70_2	5	move	0	0	m0	s3	49019,46357,5121,50568	Jirachi	266	266	0	-	0	0	1	1	0	0	6	Roselia	254	254	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_70_2	6	move	0	0	m0	m0	59682,56344,3799,12133	Jirachi	259	266	0	-	0	0	2	2	0	0	6	Roselia	254	254	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_70_2	7	move	0	0	m1	m2	22609,17901,1344,11433	Jirachi	259	266	0	-	0	0	2	2	0	0	6	Roselia	0	254	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_70_2	8	switch	0	1	-	s5	59352,1943,61181,44656	Jirachi	266	266	0	-	0	0	2	2	0	0	6	Metagross	237	237	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_70_2	9	move	0	0	m0	m0	57200,53920,6446,4439	Jirachi	223	266	0	-	0	0	3	3	0	0	6	Metagross	237	237	0	-	1	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_70_2	10	move	0	0	s4	m1	24822,31819,7018,9083	Machamp	180	282	0	-	0	0	0	0	0	0	6	Metagross	237	237	0	-	1	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_70_2	11	move	0	0	m2	m2	50616,8226,38701,64351	Machamp	197	282	0	-	0	0	0	0	0	0	6	Metagross	151	237	0	-	1	0	0	0	2	0	5	p2	0	0	0	0	0
+DEC	ab_70_2	12	move	0	0	m0	m0	27271,50006,2275,38717	Machamp	282	282	0	slp	0	0	0	0	0	0	6	Metagross	165	237	0	-	1	0	0	0	2	0	5	p2	0	0	0	0	0
+DEC	ab_70_2	13	move	0	0	m2	m3	28303,17598,17771,57958	Machamp	0	282	1	fnt	0	0	0	0	0	0	5	Metagross	0	237	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_70_2	14	switch	1	1	s3	s3	18779,4076,22697,34561	Lugia	264	264	0	-	0	0	0	0	0	0	5	Slaking	227	362	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_70_2	15	move	0	0	m1	m3	13409,53409,6435,59964	Lugia	65	264	0	-	0	0	0	0	0	0	5	Slaking	134	362	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_70_2	16	move	0	0	m2	m3	27194,23163,56144,9327	Lugia	213	264	0	-	0	0	0	0	0	0	5	Slaking	90	362	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_70_2	17	move	0	0	m3	m3	19284,47876,19772,49168	Lugia	0	264	1	fnt	0	0	0	0	0	0	4	Slaking	19	362	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_70_2	18	switch	1	0	s4	-	19284,47876,19772,49168	Jirachi	239	266	0	-	0	0	0	0	0	0	4	Slaking	0	362	1	fnt	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_70_2	19	switch	0	1	-	s2	18679,18951,64598,62739	Jirachi	239	266	0	-	0	0	0	0	0	0	4	Minun	252	252	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_70_2	20	move	0	0	m0	m1	11185,42614,53911,11469	Jirachi	255	266	0	-	0	0	1	1	0	0	4	Minun	252	252	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_70_2	21	move	0	0	m0	m2	3971,2981,62682,41847	Jirachi	266	266	0	-	0	0	2	2	0	0	4	Minun	252	252	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_70_2	22	move	0	0	m2	m0	33348,47237,31316,46302	Jirachi	77	266	0	-	0	0	2	2	0	0	4	Minun	183	252	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_70_2	23	move	0	0	m3	m3	20560,2988,57329,15965	Jirachi	93	266	0	-	0	0	2	2	0	0	4	Minun	117	252	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_70_2	24	move	0	0	m2	m3	10185,54942,35129,49352	Jirachi	109	266	0	-	0	0	2	2	0	0	4	Minun	143	252	0	brn	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_70_2	25	move	0	0	m1	m1	58702,56484,13149,19087	Jirachi	109	266	0	-	0	0	2	2	0	0	4	Minun	0	252	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	26	switch	0	1	-	s4	31179,48817,36548,36910	Jirachi	125	266	0	-	0	0	2	2	0	0	4	Starmie	211	211	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_70_2	27	move	0	0	m2	m0	30128,19443,22662,20657	Jirachi	132	266	0	-	0	0	2	2	0	0	4	Starmie	179	211	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	28	move	0	0	m3	m1	29787,65111,54257,45433	Jirachi	90	266	0	-	0	0	2	2	0	0	4	Starmie	143	211	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	29	move	0	0	m1	s1	32938,65312,11080,50499	Jirachi	106	266	0	-	0	0	2	2	0	0	4	Sharpedo	256	256	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	30	move	0	0	m3	m2	4841,1382,56151,13018	Jirachi	61	266	0	-	0	0	2	2	0	0	4	Sharpedo	192	256	0	frz	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	31	move	0	0	s5	m0	7812,29613,63376,4476	Meganium	245	275	0	-	0	0	0	0	0	0	4	Sharpedo	192	256	0	frz	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_70_2	32	move	0	0	s5	m0	28741,6666,49841,60110	Jirachi	77	266	0	-	0	0	0	0	0	0	4	Sharpedo	192	256	0	frz	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_70_2	33	move	0	0	m2	m2	45170,24368,57503,32740	Jirachi	77	266	0	-	0	0	0	0	0	0	4	Sharpedo	158	256	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	34	move	0	0	s5	m1	3816,26050,43457,6071	Meganium	262	275	0	-	0	0	0	0	0	0	4	Sharpedo	94	256	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_70_2	35	move	0	0	m0	m2	58619,64221,54121,64597	Meganium	126	275	0	-	0	0	0	0	0	0	4	Sharpedo	94	256	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	36	move	0	0	m1	m3	8167,13059,2217,35481	Meganium	221	275	0	-	0	0	0	0	0	0	4	Sharpedo	94	256	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	37	move	0	0	m3	m2	10840,9800,18101,64199	Meganium	91	275	0	-	0	0	0	0	0	0	4	Sharpedo	94	256	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	38	move	0	0	m1	m2	16322,23106,19345,51066	Meganium	162	275	0	-	0	0	0	-1	0	0	4	Sharpedo	94	256	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	39	move	0	0	m0	m2	19742,53438,26722,5360	Meganium	65	275	0	-	0	0	0	-1	0	0	4	Sharpedo	94	256	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	40	move	0	0	m1	m3	26644,22080,10959,55853	Meganium	0	275	1	fnt	0	0	0	0	0	0	3	Sharpedo	94	256	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_70_2	41	switch	1	0	s2	-	30702,48309,4900,51076	Aerodactyl	236	236	0	-	0	0	0	0	0	0	3	Sharpedo	94	256	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_70_2	42	move	0	0	m0	m1	31745,29916,40061,33787	Aerodactyl	236	236	0	-	0	0	0	0	0	0	3	Sharpedo	30	256	0	-	0	0	1	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_70_2	43	move	0	0	m0	m2	44971,59106,4158,36466	Aerodactyl	72	236	0	-	0	0	0	0	0	0	3	Sharpedo	30	256	0	-	0	0	1	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_70_2	44	move	0	0	m1	m1	48544,169,57389,54205	Aerodactyl	13	236	0	-	1	0	0	0	0	0	3	Sharpedo	30	256	0	-	0	0	1	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_70_2	45	move	0	0	m3	m1	12713,47207,59604,31974	Aerodactyl	13	236	0	-	1	0	0	0	0	0	3	Sharpedo	0	256	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_70_2	46	switch	0	1	-	s1	1388,34775,1308,64385	Aerodactyl	13	236	0	-	1	0	0	0	0	0	3	Starmie	156	211	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_70_2	47	move	0	0	m3	m2	59118,40123,42566,52997	Aerodactyl	13	236	0	-	1	0	0	0	0	0	3	Starmie	170	211	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_70_2	48	move	0	0	m1	m3	26099,27571,13803,59024	Aerodactyl	13	236	0	-	1	0	0	0	0	0	3	Starmie	183	211	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_70_2	49	move	0	0	m3	m1	30259,4331,48393,50742	Aerodactyl	0	236	1	fnt	0	0	0	0	0	0	2	Starmie	76	211	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_70_2	50	switch	1	0	s1	-	33904,42333,910,47121	Corsola	266	266	0	-	0	0	0	0	0	0	2	Starmie	89	211	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_70_2	51	move	0	0	m2	m0	39353,41736,52234,16524	Corsola	266	266	0	-	0	0	0	0	0	0	2	Starmie	102	211	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_70_2	52	move	0	0	m0	m1	64943,35254,21592,7412	Corsola	186	266	0	-	0	0	0	0	0	0	2	Starmie	78	211	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_70_2	53	move	0	0	s5	m0	2667,11083,59098,46635	Jirachi	55	266	0	-	0	0	0	0	0	0	2	Starmie	91	211	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_70_2	54	move	0	0	m0	m2	48614,32841,16154,32954	Jirachi	71	266	0	-	0	0	1	1	0	0	2	Starmie	209	211	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_70_2	55	move	0	0	m2	m2	14499,5174,64997,17257	Jirachi	87	266	0	-	0	0	1	1	0	0	2	Starmie	151	211	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_70_2	56	move	0	0	s5	m0	19991,65163,39170,26308	Corsola	133	266	0	-	0	0	0	0	0	0	2	Starmie	164	211	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_70_2	57	move	0	0	m1	m2	13287,57149,24091,31958	Corsola	149	266	0	-	0	0	0	0	0	0	2	Starmie	198	211	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_70_2	58	move	0	0	m3	m1	41013,15557,38224,8223	Corsola	77	266	0	-	0	0	0	0	0	0	2	Starmie	128	211	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_70_2	59	move	0	0	m3	m3	55333,7691,13496,39207	Corsola	69	266	0	-	0	0	0	0	0	0	2	Starmie	44	211	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_70_2	60	move	0	0	m1	m0	61875,38809,19840,20043	Corsola	0	266	1	fnt	0	0	0	0	0	0	1	Starmie	44	211	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_70_2	61	switch	1	0	s5	-	45256,46614,1464,42330	Jirachi	103	266	0	-	0	0	0	0	0	0	1	Starmie	5	211	0	tox	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_70_2	62	move	0	0	m0	m2	31286,51216,36851,1349	Jirachi	119	266	0	-	0	0	1	1	0	0	1	Starmie	58	211	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_70_2	63	move	0	0	m3	m0	44057,30280,16329,63373	Jirachi	107	266	0	-	0	0	1	1	0	0	1	Starmie	0	211	1	tox	0	0	0	0	0	0	0	p2	0	0	0	0	0
+END	ab_70_2	1	p1
+L	ab_70_2	0	|t:|<NORMALIZED>
+L	ab_70_2	1	|gametype|singles
+L	ab_70_2	2	|player|p1|P1||
+L	ab_70_2	3	|player|p2|P2||
+L	ab_70_2	4	|gen|3
+L	ab_70_2	5	|tier|[Gen 3] Custom Game
+L	ab_70_2	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_70_2	7	|
+L	ab_70_2	8	|t:|<NORMALIZED>
+L	ab_70_2	9	|teamsize|p1|6
+L	ab_70_2	10	|teamsize|p2|6
+L	ab_70_2	11	|start
+L	ab_70_2	12	|switch|p1a: Corsola|Corsola, L98, M|266/266
+L	ab_70_2	13	|switch|p2a: Sharpedo|Sharpedo, L85, M|256/256
+L	ab_70_2	14	|turn|1
+L	ab_70_2	15	|
+L	ab_70_2	16	|t:|<NORMALIZED>
+L	ab_70_2	17	|switch|p2a: Slaking|Slaking, L78, M|362/362
+L	ab_70_2	18	|move|p1a: Corsola|Recover||[still]
+L	ab_70_2	19	|-fail|p1a: Corsola|heal
+L	ab_70_2	20	|debug|move failed because it did nothing
+L	ab_70_2	21	|
+L	ab_70_2	22	|upkeep
+L	ab_70_2	23	|turn|2
+L	ab_70_2	24	|
+L	ab_70_2	25	|t:|<NORMALIZED>
+L	ab_70_2	26	|switch|p1a: Meganium|Meganium, L85, M|275/275
+L	ab_70_2	27	|move|p2a: Slaking|Shadow Ball|p1a: Meganium
+L	ab_70_2	28	|-damage|p1a: Meganium|180/275
+L	ab_70_2	29	|
+L	ab_70_2	30	|-heal|p1a: Meganium|197/275|[from] item: Leftovers
+L	ab_70_2	31	|upkeep
+L	ab_70_2	32	|turn|3
+L	ab_70_2	33	|
+L	ab_70_2	34	|t:|<NORMALIZED>
+L	ab_70_2	35	|cant|p2a: Slaking|ability: Truant
+L	ab_70_2	36	|move|p1a: Meganium|Leech Seed|p2a: Slaking
+L	ab_70_2	37	|-start|p2a: Slaking|move: Leech Seed
+L	ab_70_2	38	|
+L	ab_70_2	39	|-damage|p2a: Slaking|317/362|[from] Leech Seed|[of] p1a: Meganium
+L	ab_70_2	40	|-heal|p1a: Meganium|242/275|[silent]
+L	ab_70_2	41	|-heal|p1a: Meganium|259/275|[from] item: Leftovers
+L	ab_70_2	42	|upkeep
+L	ab_70_2	43	|turn|4
+L	ab_70_2	44	|
+L	ab_70_2	45	|t:|<NORMALIZED>
+L	ab_70_2	46	|move|p2a: Slaking|Shadow Ball|p1a: Meganium
+L	ab_70_2	47	|-damage|p1a: Meganium|166/275
+L	ab_70_2	48	|-unboost|p1a: Meganium|spd|1
+L	ab_70_2	49	|move|p1a: Meganium|Leech Seed||[still]
+L	ab_70_2	50	|-fail|p1a: Meganium
+L	ab_70_2	51	|debug|move failed because it did nothing
+L	ab_70_2	52	|
+L	ab_70_2	53	|-damage|p2a: Slaking|272/362|[from] Leech Seed|[of] p1a: Meganium
+L	ab_70_2	54	|-heal|p1a: Meganium|211/275|[silent]
+L	ab_70_2	55	|-heal|p1a: Meganium|228/275|[from] item: Leftovers
+L	ab_70_2	56	|upkeep
+L	ab_70_2	57	|turn|5
+L	ab_70_2	58	|
+L	ab_70_2	59	|t:|<NORMALIZED>
+L	ab_70_2	60	|switch|p1a: Jirachi|Jirachi, L73|266/266
+L	ab_70_2	61	|cant|p2a: Slaking|ability: Truant
+L	ab_70_2	62	|
+L	ab_70_2	63	|-damage|p2a: Slaking|227/362|[from] Leech Seed|[of] p1a: Jirachi
+L	ab_70_2	64	|upkeep
+L	ab_70_2	65	|turn|6
+L	ab_70_2	66	|
+L	ab_70_2	67	|t:|<NORMALIZED>
+L	ab_70_2	68	|switch|p2a: Roselia|Roselia, L97, M|254/254
+L	ab_70_2	69	|move|p1a: Jirachi|Calm Mind|p1a: Jirachi
+L	ab_70_2	70	|-boost|p1a: Jirachi|spa|1
+L	ab_70_2	71	|-boost|p1a: Jirachi|spd|1
+L	ab_70_2	72	|
+L	ab_70_2	73	|upkeep
+L	ab_70_2	74	|turn|7
+L	ab_70_2	75	|
+L	ab_70_2	76	|t:|<NORMALIZED>
+L	ab_70_2	77	|move|p1a: Jirachi|Calm Mind|p1a: Jirachi
+L	ab_70_2	78	|-boost|p1a: Jirachi|spa|1
+L	ab_70_2	79	|-boost|p1a: Jirachi|spd|1
+L	ab_70_2	80	|move|p2a: Roselia|Magical Leaf|p1a: Jirachi
+L	ab_70_2	81	|-resisted|p1a: Jirachi
+L	ab_70_2	82	|-damage|p1a: Jirachi|243/266
+L	ab_70_2	83	|
+L	ab_70_2	84	|-heal|p1a: Jirachi|259/266|[from] item: Leftovers
+L	ab_70_2	85	|upkeep
+L	ab_70_2	86	|turn|8
+L	ab_70_2	87	|
+L	ab_70_2	88	|t:|<NORMALIZED>
+L	ab_70_2	89	|debug|doubling secondary chance
+L	ab_70_2	90	|move|p1a: Jirachi|Psychic|p2a: Roselia
+L	ab_70_2	91	|-supereffective|p2a: Roselia
+L	ab_70_2	92	|-damage|p2a: Roselia|0 fnt
+L	ab_70_2	93	|faint|p2a: Roselia
+L	ab_70_2	94	|
+L	ab_70_2	95	|t:|<NORMALIZED>
+L	ab_70_2	96	|switch|p2a: Metagross|Metagross, L73|237/237
+L	ab_70_2	97	|
+L	ab_70_2	98	|-heal|p1a: Jirachi|266/266|[from] item: Leftovers
+L	ab_70_2	99	|upkeep
+L	ab_70_2	100	|turn|9
+L	ab_70_2	101	|
+L	ab_70_2	102	|t:|<NORMALIZED>
+L	ab_70_2	103	|move|p1a: Jirachi|Calm Mind|p1a: Jirachi
+L	ab_70_2	104	|-boost|p1a: Jirachi|spa|1
+L	ab_70_2	105	|-boost|p1a: Jirachi|spd|1
+L	ab_70_2	106	|move|p2a: Metagross|Meteor Mash|p1a: Jirachi
+L	ab_70_2	107	|-resisted|p1a: Jirachi
+L	ab_70_2	108	|-damage|p1a: Jirachi|207/266
+L	ab_70_2	109	|-boost|p2a: Metagross|atk|1
+L	ab_70_2	110	|
+L	ab_70_2	111	|-heal|p1a: Jirachi|223/266|[from] item: Leftovers
+L	ab_70_2	112	|upkeep
+L	ab_70_2	113	|turn|10
+L	ab_70_2	114	|
+L	ab_70_2	115	|t:|<NORMALIZED>
+L	ab_70_2	116	|switch|p1a: Machamp|Machamp, L82, M|282/282
+L	ab_70_2	117	|move|p2a: Metagross|Earthquake|p1a: Machamp
+L	ab_70_2	118	|-damage|p1a: Machamp|163/282
+L	ab_70_2	119	|
+L	ab_70_2	120	|-heal|p1a: Machamp|180/282|[from] item: Leftovers
+L	ab_70_2	121	|upkeep
+L	ab_70_2	122	|turn|11
+L	ab_70_2	123	|
+L	ab_70_2	124	|t:|<NORMALIZED>
+L	ab_70_2	125	|move|p2a: Metagross|Agility|p2a: Metagross
+L	ab_70_2	126	|-boost|p2a: Metagross|spe|2
+L	ab_70_2	127	|move|p1a: Machamp|Cross Chop|p2a: Metagross
+L	ab_70_2	128	|-damage|p2a: Metagross|137/237
+L	ab_70_2	129	|
+L	ab_70_2	130	|-heal|p2a: Metagross|151/237|[from] item: Leftovers
+L	ab_70_2	131	|-heal|p1a: Machamp|197/282|[from] item: Leftovers
+L	ab_70_2	132	|upkeep
+L	ab_70_2	133	|turn|12
+L	ab_70_2	134	|
+L	ab_70_2	135	|t:|<NORMALIZED>
+L	ab_70_2	136	|move|p2a: Metagross|Meteor Mash|p1a: Machamp
+L	ab_70_2	137	|-damage|p1a: Machamp|9/282
+L	ab_70_2	138	|move|p1a: Machamp|Rest|p1a: Machamp
+L	ab_70_2	139	|-status|p1a: Machamp|slp|[from] move: Rest
+L	ab_70_2	140	|-heal|p1a: Machamp|282/282 slp|[silent]
+L	ab_70_2	141	|
+L	ab_70_2	142	|-heal|p2a: Metagross|165/237|[from] item: Leftovers
+L	ab_70_2	143	|upkeep
+L	ab_70_2	144	|turn|13
+L	ab_70_2	145	|
+L	ab_70_2	146	|t:|<NORMALIZED>
+L	ab_70_2	147	|move|p2a: Metagross|Explosion|p1a: Machamp
+L	ab_70_2	148	|-damage|p1a: Machamp|0 fnt
+L	ab_70_2	149	|faint|p2a: Metagross
+L	ab_70_2	150	|faint|p1a: Machamp
+L	ab_70_2	151	|
+L	ab_70_2	152	|t:|<NORMALIZED>
+L	ab_70_2	153	|switch|p2a: Slaking|Slaking, L78, M|227/362
+L	ab_70_2	154	|switch|p1a: Lugia|Lugia, L70|264/264
+L	ab_70_2	155	|-ability|p1a: Lugia|Pressure|[silent]
+L	ab_70_2	156	|
+L	ab_70_2	157	|upkeep
+L	ab_70_2	158	|turn|14
+L	ab_70_2	159	|
+L	ab_70_2	160	|t:|<NORMALIZED>
+L	ab_70_2	161	|move|p2a: Slaking|Double-Edge|p1a: Lugia
+L	ab_70_2	162	|-damage|p1a: Lugia|49/264
+L	ab_70_2	163	|-damage|p2a: Slaking|156/362|[from] Recoil|[of] p1a: Lugia
+L	ab_70_2	164	|move|p1a: Lugia|Toxic|p2a: Slaking
+L	ab_70_2	165	|-status|p2a: Slaking|tox
+L	ab_70_2	166	|
+L	ab_70_2	167	|-damage|p2a: Slaking|134/362 tox|[from] psn
+L	ab_70_2	168	|-heal|p1a: Lugia|65/264|[from] item: Leftovers
+L	ab_70_2	169	|upkeep
+L	ab_70_2	170	|turn|15
+L	ab_70_2	171	|
+L	ab_70_2	172	|t:|<NORMALIZED>
+L	ab_70_2	173	|cant|p2a: Slaking|ability: Truant
+L	ab_70_2	174	|move|p1a: Lugia|Recover|p1a: Lugia
+L	ab_70_2	175	|-heal|p1a: Lugia|197/264
+L	ab_70_2	176	|
+L	ab_70_2	177	|-damage|p2a: Slaking|90/362 tox|[from] psn
+L	ab_70_2	178	|-heal|p1a: Lugia|213/264|[from] item: Leftovers
+L	ab_70_2	179	|upkeep
+L	ab_70_2	180	|turn|16
+L	ab_70_2	181	|
+L	ab_70_2	182	|t:|<NORMALIZED>
+L	ab_70_2	183	|move|p2a: Slaking|Double-Edge|p1a: Lugia
+L	ab_70_2	184	|-damage|p1a: Lugia|0 fnt
+L	ab_70_2	185	|-damage|p2a: Slaking|19/362 tox|[from] Recoil|[of] p1a: Lugia
+L	ab_70_2	186	|faint|p1a: Lugia
+L	ab_70_2	187	|
+L	ab_70_2	188	|t:|<NORMALIZED>
+L	ab_70_2	189	|switch|p1a: Jirachi|Jirachi, L73|223/266
+L	ab_70_2	190	|
+L	ab_70_2	191	|-damage|p2a: Slaking|0 fnt|[from] psn
+L	ab_70_2	192	|faint|p2a: Slaking
+L	ab_70_2	193	|-heal|p1a: Jirachi|239/266|[from] item: Leftovers
+L	ab_70_2	194	|upkeep
+L	ab_70_2	195	|
+L	ab_70_2	196	|t:|<NORMALIZED>
+L	ab_70_2	197	|switch|p2a: Minun|Minun, L89, M|252/252
+L	ab_70_2	198	|turn|17
+L	ab_70_2	199	|
+L	ab_70_2	200	|t:|<NORMALIZED>
+L	ab_70_2	201	|move|p2a: Minun|Toxic|p1a: Jirachi
+L	ab_70_2	202	|debug|natural status immunity
+L	ab_70_2	203	|debug|immune to status
+L	ab_70_2	204	|-immune|p1a: Jirachi
+L	ab_70_2	205	|debug|move failed because it did nothing
+L	ab_70_2	206	|move|p1a: Jirachi|Calm Mind|p1a: Jirachi
+L	ab_70_2	207	|-boost|p1a: Jirachi|spa|1
+L	ab_70_2	208	|-boost|p1a: Jirachi|spd|1
+L	ab_70_2	209	|
+L	ab_70_2	210	|-heal|p1a: Jirachi|255/266|[from] item: Leftovers
+L	ab_70_2	211	|upkeep
+L	ab_70_2	212	|turn|18
+L	ab_70_2	213	|
+L	ab_70_2	214	|t:|<NORMALIZED>
+L	ab_70_2	215	|move|p2a: Minun|Protect|p2a: Minun
+L	ab_70_2	216	|-singleturn|p2a: Minun|Protect
+L	ab_70_2	217	|move|p1a: Jirachi|Calm Mind|p1a: Jirachi
+L	ab_70_2	218	|-boost|p1a: Jirachi|spa|1
+L	ab_70_2	219	|-boost|p1a: Jirachi|spd|1
+L	ab_70_2	220	|
+L	ab_70_2	221	|-heal|p1a: Jirachi|266/266|[from] item: Leftovers
+L	ab_70_2	222	|upkeep
+L	ab_70_2	223	|turn|19
+L	ab_70_2	224	|
+L	ab_70_2	225	|t:|<NORMALIZED>
+L	ab_70_2	226	|move|p2a: Minun|Thunderbolt|p1a: Jirachi
+L	ab_70_2	227	|debug|Negating (sp)def boost/penalty.
+L	ab_70_2	228	|-crit|p1a: Jirachi
+L	ab_70_2	229	|-damage|p1a: Jirachi|61/266
+L	ab_70_2	230	|debug|doubling secondary chance
+L	ab_70_2	231	|move|p1a: Jirachi|Fire Punch|p2a: Minun
+L	ab_70_2	232	|-damage|p2a: Minun|168/252
+L	ab_70_2	233	|
+L	ab_70_2	234	|-heal|p2a: Minun|183/252|[from] item: Leftovers
+L	ab_70_2	235	|-heal|p1a: Jirachi|77/266|[from] item: Leftovers
+L	ab_70_2	236	|upkeep
+L	ab_70_2	237	|turn|20
+L	ab_70_2	238	|
+L	ab_70_2	239	|t:|<NORMALIZED>
+L	ab_70_2	240	|move|p2a: Minun|Wish|p2a: Minun
+L	ab_70_2	241	|debug|doubling secondary chance
+L	ab_70_2	242	|move|p1a: Jirachi|Ice Punch|p2a: Minun
+L	ab_70_2	243	|-damage|p2a: Minun|102/252
+L	ab_70_2	244	|
+L	ab_70_2	245	|-heal|p2a: Minun|117/252|[from] item: Leftovers
+L	ab_70_2	246	|-heal|p1a: Jirachi|93/266|[from] item: Leftovers
+L	ab_70_2	247	|upkeep
+L	ab_70_2	248	|turn|21
+L	ab_70_2	249	|
+L	ab_70_2	250	|t:|<NORMALIZED>
+L	ab_70_2	251	|move|p2a: Minun|Wish||[still]
+L	ab_70_2	252	|-fail|p2a: Minun
+L	ab_70_2	253	|debug|move failed because it did nothing
+L	ab_70_2	254	|debug|doubling secondary chance
+L	ab_70_2	255	|move|p1a: Jirachi|Fire Punch|p2a: Minun
+L	ab_70_2	256	|-damage|p2a: Minun|33/252
+L	ab_70_2	257	|-status|p2a: Minun|brn
+L	ab_70_2	258	|
+L	ab_70_2	259	|-heal|p2a: Minun|159/252 brn|[from] move: Wish|[wisher] Minun
+L	ab_70_2	260	|-heal|p2a: Minun|174/252 brn|[from] item: Leftovers
+L	ab_70_2	261	|-damage|p2a: Minun|143/252 brn|[from] brn
+L	ab_70_2	262	|-heal|p1a: Jirachi|109/266|[from] item: Leftovers
+L	ab_70_2	263	|upkeep
+L	ab_70_2	264	|turn|22
+L	ab_70_2	265	|
+L	ab_70_2	266	|t:|<NORMALIZED>
+L	ab_70_2	267	|move|p2a: Minun|Toxic|p1a: Jirachi|[miss]
+L	ab_70_2	268	|-miss|p2a: Minun|p1a: Jirachi
+L	ab_70_2	269	|debug|doubling secondary chance
+L	ab_70_2	270	|move|p1a: Jirachi|Psychic|p2a: Minun
+L	ab_70_2	271	|-damage|p2a: Minun|0 fnt
+L	ab_70_2	272	|faint|p2a: Minun
+L	ab_70_2	273	|
+L	ab_70_2	274	|t:|<NORMALIZED>
+L	ab_70_2	275	|switch|p2a: Starmie|Starmie, L74|211/211
+L	ab_70_2	276	|
+L	ab_70_2	277	|-heal|p1a: Jirachi|125/266|[from] item: Leftovers
+L	ab_70_2	278	|upkeep
+L	ab_70_2	279	|turn|23
+L	ab_70_2	280	|
+L	ab_70_2	281	|t:|<NORMALIZED>
+L	ab_70_2	282	|move|p2a: Starmie|Psychic|p1a: Jirachi
+L	ab_70_2	283	|-resisted|p1a: Jirachi
+L	ab_70_2	284	|-damage|p1a: Jirachi|116/266
+L	ab_70_2	285	|debug|doubling secondary chance
+L	ab_70_2	286	|move|p1a: Jirachi|Fire Punch|p2a: Starmie
+L	ab_70_2	287	|-resisted|p2a: Starmie
+L	ab_70_2	288	|-damage|p2a: Starmie|166/211
+L	ab_70_2	289	|
+L	ab_70_2	290	|-heal|p2a: Starmie|179/211|[from] item: Leftovers
+L	ab_70_2	291	|-heal|p1a: Jirachi|132/266|[from] item: Leftovers
+L	ab_70_2	292	|upkeep
+L	ab_70_2	293	|turn|24
+L	ab_70_2	294	|
+L	ab_70_2	295	|t:|<NORMALIZED>
+L	ab_70_2	296	|move|p2a: Starmie|Hydro Pump|p1a: Jirachi
+L	ab_70_2	297	|-damage|p1a: Jirachi|74/266
+L	ab_70_2	298	|debug|doubling secondary chance
+L	ab_70_2	299	|move|p1a: Jirachi|Ice Punch|p2a: Starmie
+L	ab_70_2	300	|-resisted|p2a: Starmie
+L	ab_70_2	301	|-damage|p2a: Starmie|130/211
+L	ab_70_2	302	|
+L	ab_70_2	303	|-heal|p2a: Starmie|143/211|[from] item: Leftovers
+L	ab_70_2	304	|-heal|p1a: Jirachi|90/266|[from] item: Leftovers
+L	ab_70_2	305	|upkeep
+L	ab_70_2	306	|turn|25
+L	ab_70_2	307	|
+L	ab_70_2	308	|t:|<NORMALIZED>
+L	ab_70_2	309	|switch|p2a: Sharpedo|Sharpedo, L85, M|256/256
+L	ab_70_2	310	|debug|doubling secondary chance
+L	ab_70_2	311	|move|p1a: Jirachi|Psychic|p2a: Sharpedo
+L	ab_70_2	312	|-immune|p2a: Sharpedo
+L	ab_70_2	313	|
+L	ab_70_2	314	|-heal|p1a: Jirachi|106/266|[from] item: Leftovers
+L	ab_70_2	315	|upkeep
+L	ab_70_2	316	|turn|26
+L	ab_70_2	317	|
+L	ab_70_2	318	|t:|<NORMALIZED>
+L	ab_70_2	319	|move|p2a: Sharpedo|Crunch|p1a: Jirachi
+L	ab_70_2	320	|-damage|p1a: Jirachi|61/266
+L	ab_70_2	321	|debug|doubling secondary chance
+L	ab_70_2	322	|move|p1a: Jirachi|Ice Punch|p2a: Sharpedo
+L	ab_70_2	323	|-resisted|p2a: Sharpedo
+L	ab_70_2	324	|-damage|p2a: Sharpedo|192/256
+L	ab_70_2	325	|-status|p2a: Sharpedo|frz
+L	ab_70_2	326	|-damage|p1a: Jirachi|45/266|[from] ability: Rough Skin|[of] p2a: Sharpedo
+L	ab_70_2	327	|
+L	ab_70_2	328	|-heal|p1a: Jirachi|61/266|[from] item: Leftovers
+L	ab_70_2	329	|upkeep
+L	ab_70_2	330	|turn|27
+L	ab_70_2	331	|
+L	ab_70_2	332	|t:|<NORMALIZED>
+L	ab_70_2	333	|switch|p1a: Meganium|Meganium, L85, M|228/275
+L	ab_70_2	334	|cant|p2a: Sharpedo|frz
+L	ab_70_2	335	|
+L	ab_70_2	336	|-heal|p1a: Meganium|245/275|[from] item: Leftovers
+L	ab_70_2	337	|upkeep
+L	ab_70_2	338	|turn|28
+L	ab_70_2	339	|
+L	ab_70_2	340	|t:|<NORMALIZED>
+L	ab_70_2	341	|switch|p1a: Jirachi|Jirachi, L73|61/266
+L	ab_70_2	342	|cant|p2a: Sharpedo|frz
+L	ab_70_2	343	|
+L	ab_70_2	344	|-heal|p1a: Jirachi|77/266|[from] item: Leftovers
+L	ab_70_2	345	|upkeep
+L	ab_70_2	346	|turn|29
+L	ab_70_2	347	|
+L	ab_70_2	348	|t:|<NORMALIZED>
+L	ab_70_2	349	|cant|p2a: Sharpedo|frz
+L	ab_70_2	350	|debug|doubling secondary chance
+L	ab_70_2	351	|move|p1a: Jirachi|Fire Punch|p2a: Sharpedo
+L	ab_70_2	352	|-resisted|p2a: Sharpedo
+L	ab_70_2	353	|-damage|p2a: Sharpedo|158/256 frz
+L	ab_70_2	354	|-damage|p1a: Jirachi|61/266|[from] ability: Rough Skin|[of] p2a: Sharpedo
+L	ab_70_2	355	|-curestatus|p2a: Sharpedo|frz|[msg]
+L	ab_70_2	356	|
+L	ab_70_2	357	|-heal|p1a: Jirachi|77/266|[from] item: Leftovers
+L	ab_70_2	358	|upkeep
+L	ab_70_2	359	|turn|30
+L	ab_70_2	360	|
+L	ab_70_2	361	|t:|<NORMALIZED>
+L	ab_70_2	362	|switch|p1a: Meganium|Meganium, L85, M|245/275
+L	ab_70_2	363	|move|p2a: Sharpedo|Substitute|p2a: Sharpedo
+L	ab_70_2	364	|-start|p2a: Sharpedo|Substitute
+L	ab_70_2	365	|-damage|p2a: Sharpedo|94/256
+L	ab_70_2	366	|
+L	ab_70_2	367	|-heal|p1a: Meganium|262/275|[from] item: Leftovers
+L	ab_70_2	368	|upkeep
+L	ab_70_2	369	|turn|31
+L	ab_70_2	370	|
+L	ab_70_2	371	|t:|<NORMALIZED>
+L	ab_70_2	372	|move|p2a: Sharpedo|Crunch|p1a: Meganium
+L	ab_70_2	373	|-crit|p1a: Meganium
+L	ab_70_2	374	|-damage|p1a: Meganium|109/275
+L	ab_70_2	375	|move|p1a: Meganium|Leech Seed||[still]
+L	ab_70_2	376	|-fail|p1a: Meganium
+L	ab_70_2	377	|debug|move failed because it did nothing
+L	ab_70_2	378	|
+L	ab_70_2	379	|-heal|p1a: Meganium|126/275|[from] item: Leftovers
+L	ab_70_2	380	|upkeep
+L	ab_70_2	381	|turn|32
+L	ab_70_2	382	|
+L	ab_70_2	383	|t:|<NORMALIZED>
+L	ab_70_2	384	|move|p2a: Sharpedo|Hydro Pump|p1a: Meganium
+L	ab_70_2	385	|-resisted|p1a: Meganium
+L	ab_70_2	386	|-damage|p1a: Meganium|67/275
+L	ab_70_2	387	|move|p1a: Meganium|Synthesis|p1a: Meganium
+L	ab_70_2	388	|-heal|p1a: Meganium|204/275
+L	ab_70_2	389	|
+L	ab_70_2	390	|-heal|p1a: Meganium|221/275|[from] item: Leftovers
+L	ab_70_2	391	|upkeep
+L	ab_70_2	392	|turn|33
+L	ab_70_2	393	|
+L	ab_70_2	394	|t:|<NORMALIZED>
+L	ab_70_2	395	|move|p2a: Sharpedo|Crunch|p1a: Meganium
+L	ab_70_2	396	|-crit|p1a: Meganium
+L	ab_70_2	397	|-damage|p1a: Meganium|74/275
+L	ab_70_2	398	|move|p1a: Meganium|Toxic||[still]
+L	ab_70_2	399	|-fail|p1a: Meganium
+L	ab_70_2	400	|debug|move failed because it did nothing
+L	ab_70_2	401	|
+L	ab_70_2	402	|-heal|p1a: Meganium|91/275|[from] item: Leftovers
+L	ab_70_2	403	|upkeep
+L	ab_70_2	404	|turn|34
+L	ab_70_2	405	|
+L	ab_70_2	406	|t:|<NORMALIZED>
+L	ab_70_2	407	|move|p2a: Sharpedo|Crunch|p1a: Meganium
+L	ab_70_2	408	|-damage|p1a: Meganium|8/275
+L	ab_70_2	409	|-unboost|p1a: Meganium|spd|1
+L	ab_70_2	410	|move|p1a: Meganium|Synthesis|p1a: Meganium
+L	ab_70_2	411	|-heal|p1a: Meganium|145/275
+L	ab_70_2	412	|
+L	ab_70_2	413	|-heal|p1a: Meganium|162/275|[from] item: Leftovers
+L	ab_70_2	414	|upkeep
+L	ab_70_2	415	|turn|35
+L	ab_70_2	416	|
+L	ab_70_2	417	|t:|<NORMALIZED>
+L	ab_70_2	418	|move|p2a: Sharpedo|Crunch|p1a: Meganium
+L	ab_70_2	419	|-damage|p1a: Meganium|48/275
+L	ab_70_2	420	|move|p1a: Meganium|Leech Seed|p2a: Sharpedo|[miss]
+L	ab_70_2	421	|-miss|p1a: Meganium|p2a: Sharpedo
+L	ab_70_2	422	|
+L	ab_70_2	423	|-heal|p1a: Meganium|65/275|[from] item: Leftovers
+L	ab_70_2	424	|upkeep
+L	ab_70_2	425	|turn|36
+L	ab_70_2	426	|
+L	ab_70_2	427	|t:|<NORMALIZED>
+L	ab_70_2	428	|move|p2a: Sharpedo|Hydro Pump|p1a: Meganium
+L	ab_70_2	429	|-resisted|p1a: Meganium
+L	ab_70_2	430	|-damage|p1a: Meganium|0 fnt
+L	ab_70_2	431	|faint|p1a: Meganium
+L	ab_70_2	432	|
+L	ab_70_2	433	|t:|<NORMALIZED>
+L	ab_70_2	434	|switch|p1a: Aerodactyl|Aerodactyl, L73, M|236/236
+L	ab_70_2	435	|-ability|p1a: Aerodactyl|Pressure|[silent]
+L	ab_70_2	436	|
+L	ab_70_2	437	|upkeep
+L	ab_70_2	438	|turn|37
+L	ab_70_2	439	|
+L	ab_70_2	440	|t:|<NORMALIZED>
+L	ab_70_2	441	|move|p1a: Aerodactyl|Rock Slide|p2a: Sharpedo
+L	ab_70_2	442	|-end|p2a: Sharpedo|Substitute
+L	ab_70_2	443	|move|p2a: Sharpedo|Substitute|p2a: Sharpedo
+L	ab_70_2	444	|-start|p2a: Sharpedo|Substitute
+L	ab_70_2	445	|-damage|p2a: Sharpedo|30/256
+L	ab_70_2	446	|
+L	ab_70_2	447	|-enditem|p2a: Sharpedo|Petaya Berry|[eat]
+L	ab_70_2	448	|-boost|p2a: Sharpedo|spa|1|[from] item: Petaya Berry
+L	ab_70_2	449	|upkeep
+L	ab_70_2	450	|turn|38
+L	ab_70_2	451	|
+L	ab_70_2	452	|t:|<NORMALIZED>
+L	ab_70_2	453	|move|p1a: Aerodactyl|Rock Slide|p2a: Sharpedo
+L	ab_70_2	454	|-end|p2a: Sharpedo|Substitute
+L	ab_70_2	455	|move|p2a: Sharpedo|Crunch|p1a: Aerodactyl
+L	ab_70_2	456	|-damage|p1a: Aerodactyl|72/236
+L	ab_70_2	457	|
+L	ab_70_2	458	|upkeep
+L	ab_70_2	459	|turn|39
+L	ab_70_2	460	|
+L	ab_70_2	461	|t:|<NORMALIZED>
+L	ab_70_2	462	|move|p1a: Aerodactyl|Substitute|p1a: Aerodactyl
+L	ab_70_2	463	|-start|p1a: Aerodactyl|Substitute
+L	ab_70_2	464	|-damage|p1a: Aerodactyl|13/236
+L	ab_70_2	465	|move|p2a: Sharpedo|Substitute|p2a: Sharpedo
+L	ab_70_2	466	|-fail|p2a: Sharpedo|move: Substitute|[weak]
+L	ab_70_2	467	|
+L	ab_70_2	468	|-enditem|p1a: Aerodactyl|Liechi Berry|[eat]
+L	ab_70_2	469	|-boost|p1a: Aerodactyl|atk|1|[from] item: Liechi Berry
+L	ab_70_2	470	|upkeep
+L	ab_70_2	471	|turn|40
+L	ab_70_2	472	|
+L	ab_70_2	473	|t:|<NORMALIZED>
+L	ab_70_2	474	|move|p1a: Aerodactyl|Earthquake|p2a: Sharpedo
+L	ab_70_2	475	|-damage|p2a: Sharpedo|0 fnt
+L	ab_70_2	476	|faint|p2a: Sharpedo
+L	ab_70_2	477	|
+L	ab_70_2	478	|t:|<NORMALIZED>
+L	ab_70_2	479	|switch|p2a: Starmie|Starmie, L74|143/211
+L	ab_70_2	480	|
+L	ab_70_2	481	|-heal|p2a: Starmie|156/211|[from] item: Leftovers
+L	ab_70_2	482	|upkeep
+L	ab_70_2	483	|turn|41
+L	ab_70_2	484	|
+L	ab_70_2	485	|t:|<NORMALIZED>
+L	ab_70_2	486	|move|p1a: Aerodactyl|Earthquake|p2a: Starmie
+L	ab_70_2	487	|-damage|p2a: Starmie|52/211
+L	ab_70_2	488	|move|p2a: Starmie|Recover|p2a: Starmie
+L	ab_70_2	489	|-heal|p2a: Starmie|157/211
+L	ab_70_2	490	|
+L	ab_70_2	491	|-heal|p2a: Starmie|170/211|[from] item: Leftovers
+L	ab_70_2	492	|upkeep
+L	ab_70_2	493	|turn|42
+L	ab_70_2	494	|
+L	ab_70_2	495	|t:|<NORMALIZED>
+L	ab_70_2	496	|move|p1a: Aerodactyl|Substitute|p1a: Aerodactyl
+L	ab_70_2	497	|-fail|p1a: Aerodactyl|move: Substitute
+L	ab_70_2	498	|move|p2a: Starmie|Ice Beam|p1a: Aerodactyl
+L	ab_70_2	499	|-supereffective|p1a: Aerodactyl
+L	ab_70_2	500	|-end|p1a: Aerodactyl|Substitute
+L	ab_70_2	501	|
+L	ab_70_2	502	|-heal|p2a: Starmie|183/211|[from] item: Leftovers
+L	ab_70_2	503	|upkeep
+L	ab_70_2	504	|turn|43
+L	ab_70_2	505	|
+L	ab_70_2	506	|t:|<NORMALIZED>
+L	ab_70_2	507	|move|p1a: Aerodactyl|Earthquake|p2a: Starmie
+L	ab_70_2	508	|-damage|p2a: Starmie|76/211
+L	ab_70_2	509	|move|p2a: Starmie|Hydro Pump|p1a: Aerodactyl
+L	ab_70_2	510	|-supereffective|p1a: Aerodactyl
+L	ab_70_2	511	|-damage|p1a: Aerodactyl|0 fnt
+L	ab_70_2	512	|faint|p1a: Aerodactyl
+L	ab_70_2	513	|
+L	ab_70_2	514	|t:|<NORMALIZED>
+L	ab_70_2	515	|switch|p1a: Corsola|Corsola, L98, M|266/266
+L	ab_70_2	516	|
+L	ab_70_2	517	|-heal|p2a: Starmie|89/211|[from] item: Leftovers
+L	ab_70_2	518	|upkeep
+L	ab_70_2	519	|turn|44
+L	ab_70_2	520	|
+L	ab_70_2	521	|t:|<NORMALIZED>
+L	ab_70_2	522	|move|p2a: Starmie|Psychic|p1a: Corsola
+L	ab_70_2	523	|-damage|p1a: Corsola|201/266
+L	ab_70_2	524	|move|p1a: Corsola|Recover|p1a: Corsola
+L	ab_70_2	525	|-heal|p1a: Corsola|266/266
+L	ab_70_2	526	|
+L	ab_70_2	527	|-heal|p2a: Starmie|102/211|[from] item: Leftovers
+L	ab_70_2	528	|upkeep
+L	ab_70_2	529	|turn|45
+L	ab_70_2	530	|
+L	ab_70_2	531	|t:|<NORMALIZED>
+L	ab_70_2	532	|move|p2a: Starmie|Hydro Pump|p1a: Corsola
+L	ab_70_2	533	|-damage|p1a: Corsola|170/266
+L	ab_70_2	534	|move|p1a: Corsola|Ice Beam|p2a: Starmie
+L	ab_70_2	535	|-resisted|p2a: Starmie
+L	ab_70_2	536	|-damage|p2a: Starmie|65/211
+L	ab_70_2	537	|
+L	ab_70_2	538	|-heal|p2a: Starmie|78/211|[from] item: Leftovers
+L	ab_70_2	539	|-heal|p1a: Corsola|186/266|[from] item: Leftovers
+L	ab_70_2	540	|upkeep
+L	ab_70_2	541	|turn|46
+L	ab_70_2	542	|
+L	ab_70_2	543	|t:|<NORMALIZED>
+L	ab_70_2	544	|switch|p1a: Jirachi|Jirachi, L73|77/266
+L	ab_70_2	545	|move|p2a: Starmie|Psychic|p1a: Jirachi
+L	ab_70_2	546	|-resisted|p1a: Jirachi
+L	ab_70_2	547	|-crit|p1a: Jirachi
+L	ab_70_2	548	|-damage|p1a: Jirachi|39/266
+L	ab_70_2	549	|
+L	ab_70_2	550	|-heal|p2a: Starmie|91/211|[from] item: Leftovers
+L	ab_70_2	551	|-heal|p1a: Jirachi|55/266|[from] item: Leftovers
+L	ab_70_2	552	|upkeep
+L	ab_70_2	553	|turn|47
+L	ab_70_2	554	|
+L	ab_70_2	555	|t:|<NORMALIZED>
+L	ab_70_2	556	|move|p2a: Starmie|Recover|p2a: Starmie
+L	ab_70_2	557	|-heal|p2a: Starmie|196/211
+L	ab_70_2	558	|move|p1a: Jirachi|Calm Mind|p1a: Jirachi
+L	ab_70_2	559	|-boost|p1a: Jirachi|spa|1
+L	ab_70_2	560	|-boost|p1a: Jirachi|spd|1
+L	ab_70_2	561	|
+L	ab_70_2	562	|-heal|p2a: Starmie|209/211|[from] item: Leftovers
+L	ab_70_2	563	|-heal|p1a: Jirachi|71/266|[from] item: Leftovers
+L	ab_70_2	564	|upkeep
+L	ab_70_2	565	|turn|48
+L	ab_70_2	566	|
+L	ab_70_2	567	|t:|<NORMALIZED>
+L	ab_70_2	568	|move|p2a: Starmie|Recover|p2a: Starmie
+L	ab_70_2	569	|-heal|p2a: Starmie|211/211
+L	ab_70_2	570	|debug|doubling secondary chance
+L	ab_70_2	571	|move|p1a: Jirachi|Fire Punch|p2a: Starmie
+L	ab_70_2	572	|-resisted|p2a: Starmie
+L	ab_70_2	573	|-crit|p2a: Starmie
+L	ab_70_2	574	|-damage|p2a: Starmie|138/211
+L	ab_70_2	575	|
+L	ab_70_2	576	|-heal|p2a: Starmie|151/211|[from] item: Leftovers
+L	ab_70_2	577	|-heal|p1a: Jirachi|87/266|[from] item: Leftovers
+L	ab_70_2	578	|upkeep
+L	ab_70_2	579	|turn|49
+L	ab_70_2	580	|
+L	ab_70_2	581	|t:|<NORMALIZED>
+L	ab_70_2	582	|switch|p1a: Corsola|Corsola, L98, M|186/266
+L	ab_70_2	583	|move|p2a: Starmie|Psychic|p1a: Corsola
+L	ab_70_2	584	|-damage|p1a: Corsola|117/266
+L	ab_70_2	585	|
+L	ab_70_2	586	|-heal|p2a: Starmie|164/211|[from] item: Leftovers
+L	ab_70_2	587	|-heal|p1a: Corsola|133/266|[from] item: Leftovers
+L	ab_70_2	588	|upkeep
+L	ab_70_2	589	|turn|50
+L	ab_70_2	590	|
+L	ab_70_2	591	|t:|<NORMALIZED>
+L	ab_70_2	592	|move|p2a: Starmie|Recover|p2a: Starmie
+L	ab_70_2	593	|-heal|p2a: Starmie|211/211
+L	ab_70_2	594	|move|p1a: Corsola|Toxic|p2a: Starmie
+L	ab_70_2	595	|-status|p2a: Starmie|tox
+L	ab_70_2	596	|
+L	ab_70_2	597	|-damage|p2a: Starmie|198/211 tox|[from] psn
+L	ab_70_2	598	|-heal|p1a: Corsola|149/266|[from] item: Leftovers
+L	ab_70_2	599	|upkeep
+L	ab_70_2	600	|turn|51
+L	ab_70_2	601	|
+L	ab_70_2	602	|t:|<NORMALIZED>
+L	ab_70_2	603	|move|p2a: Starmie|Hydro Pump|p1a: Corsola
+L	ab_70_2	604	|-damage|p1a: Corsola|61/266
+L	ab_70_2	605	|move|p1a: Corsola|Surf|p2a: Starmie
+L	ab_70_2	606	|-resisted|p2a: Starmie
+L	ab_70_2	607	|-damage|p2a: Starmie|141/211 tox
+L	ab_70_2	608	|
+L	ab_70_2	609	|-heal|p2a: Starmie|154/211 tox|[from] item: Leftovers
+L	ab_70_2	610	|-damage|p2a: Starmie|128/211 tox|[from] psn
+L	ab_70_2	611	|-heal|p1a: Corsola|77/266|[from] item: Leftovers
+L	ab_70_2	612	|upkeep
+L	ab_70_2	613	|turn|52
+L	ab_70_2	614	|
+L	ab_70_2	615	|t:|<NORMALIZED>
+L	ab_70_2	616	|move|p2a: Starmie|Ice Beam|p1a: Corsola
+L	ab_70_2	617	|-resisted|p1a: Corsola
+L	ab_70_2	618	|-damage|p1a: Corsola|53/266
+L	ab_70_2	619	|move|p1a: Corsola|Surf|p2a: Starmie
+L	ab_70_2	620	|-resisted|p2a: Starmie
+L	ab_70_2	621	|-damage|p2a: Starmie|70/211 tox
+L	ab_70_2	622	|
+L	ab_70_2	623	|-heal|p2a: Starmie|83/211 tox|[from] item: Leftovers
+L	ab_70_2	624	|-damage|p2a: Starmie|44/211 tox|[from] psn
+L	ab_70_2	625	|-heal|p1a: Corsola|69/266|[from] item: Leftovers
+L	ab_70_2	626	|upkeep
+L	ab_70_2	627	|turn|53
+L	ab_70_2	628	|
+L	ab_70_2	629	|t:|<NORMALIZED>
+L	ab_70_2	630	|move|p2a: Starmie|Psychic|p1a: Corsola
+L	ab_70_2	631	|-damage|p1a: Corsola|0 fnt
+L	ab_70_2	632	|faint|p1a: Corsola
+L	ab_70_2	633	|
+L	ab_70_2	634	|t:|<NORMALIZED>
+L	ab_70_2	635	|switch|p1a: Jirachi|Jirachi, L73|87/266
+L	ab_70_2	636	|
+L	ab_70_2	637	|-heal|p2a: Starmie|57/211 tox|[from] item: Leftovers
+L	ab_70_2	638	|-damage|p2a: Starmie|5/211 tox|[from] psn
+L	ab_70_2	639	|-heal|p1a: Jirachi|103/266|[from] item: Leftovers
+L	ab_70_2	640	|upkeep
+L	ab_70_2	641	|turn|54
+L	ab_70_2	642	|
+L	ab_70_2	643	|t:|<NORMALIZED>
+L	ab_70_2	644	|move|p2a: Starmie|Recover|p2a: Starmie
+L	ab_70_2	645	|-heal|p2a: Starmie|110/211 tox
+L	ab_70_2	646	|move|p1a: Jirachi|Calm Mind|p1a: Jirachi
+L	ab_70_2	647	|-boost|p1a: Jirachi|spa|1
+L	ab_70_2	648	|-boost|p1a: Jirachi|spd|1
+L	ab_70_2	649	|
+L	ab_70_2	650	|-heal|p2a: Starmie|123/211 tox|[from] item: Leftovers
+L	ab_70_2	651	|-damage|p2a: Starmie|58/211 tox|[from] psn
+L	ab_70_2	652	|-heal|p1a: Jirachi|119/266|[from] item: Leftovers
+L	ab_70_2	653	|upkeep
+L	ab_70_2	654	|turn|55
+L	ab_70_2	655	|
+L	ab_70_2	656	|t:|<NORMALIZED>
+L	ab_70_2	657	|move|p2a: Starmie|Psychic|p1a: Jirachi
+L	ab_70_2	658	|-resisted|p1a: Jirachi
+L	ab_70_2	659	|-damage|p1a: Jirachi|107/266
+L	ab_70_2	660	|debug|doubling secondary chance
+L	ab_70_2	661	|move|p1a: Jirachi|Ice Punch|p2a: Starmie
+L	ab_70_2	662	|-resisted|p2a: Starmie
+L	ab_70_2	663	|-damage|p2a: Starmie|20/211 tox
+L	ab_70_2	664	|
+L	ab_70_2	665	|-heal|p2a: Starmie|33/211 tox|[from] item: Leftovers
+L	ab_70_2	666	|-damage|p2a: Starmie|0 fnt|[from] psn
+L	ab_70_2	667	|faint|p2a: Starmie
+L	ab_70_2	668	|
+L	ab_70_2	669	|win|P1

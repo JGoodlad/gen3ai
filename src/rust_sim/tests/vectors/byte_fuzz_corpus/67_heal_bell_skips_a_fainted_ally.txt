@@ -1,0 +1,920 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=250724 run_id=rmrziey0i chunk=1126
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_1126_6
+TEAM	ab_1126_6	p1	Blissey||Leftovers|NaturalCure|toxic,seismictoss,wish,protect|Hardy|85,,85,85,85,85|F|,0,,,,||76|]Armaldo||ChoiceBand|BattleArmor|hiddenpowerbug,earthquake,doubleedge,rockslide|Hardy|85,85,85,85,85,85|M|,30,30,,30,||83|]Ampharos||Leftovers|Static|firepunch,hiddenpowerice,toxic,thunderbolt|Hardy|85,,85,85,85,85|M|,2,30,,,||82|]Chimecho||Leftovers|Levitate|hiddenpowerfire,psychic,healbell,calmmind|Hardy|85,,85,85,85,85|M|,2,,30,,30||89|]Blaziken||ChoiceBand|Blaze|rockslide,skyuppercut,fireblast,earthquake|Hardy|85,85,85,85,85,85|M|||81|]Stantler||Leftovers|Intimidate|return,thunderwave,hypnosis,earthquake|Hardy|85,85,85,85,85,85|M|||82|
+TEAM	ab_1126_6	p2	Kyogre||Leftovers|Drizzle|surf,rest,calmmind,sleeptalk|Hardy|85,,85,85,85,85|N|,0,,,,||67|]Shedinja||LumBerry|WonderGuard|hiddenpowerfighting,silverwind,toxic,shadowball|Hardy|85,85,85,85,85,85|N|,,30,30,30,30|||]Scizor||Leftovers|Swarm|batonpass,steelwing,swordsdance,silverwind|Hardy|85,85,85,85,85,85|M|||82|]Bellossom||Leftovers|Chlorophyll|hiddenpowerfire,magicalleaf,moonlight,stunspore|Hardy|85,,85,85,85,85|M|,2,,30,,30||94|]Farfetch’d||Stick|InnerFocus|swordsdance,batonpass,agility,return|Hardy|85,85,85,85,85,85|M|||99|]Murkrow||Leftovers|Insomnia|hiddenpowerground,pursuit,drillpeck,thunderwave|Hardy|85,85,85,85,85,85|M|,,,30,30,||90|
+FMT	ab_1126_6	gen3customgame
+INIT	ab_1126_6	256,19419,53942,60639	1795006658
+DEC	ab_1126_6	0	move	0	0	m0	m0	34945,45331,58294,7026	Blissey	432	513	0	-	0	0	0	0	0	0	6	Kyogre	230	245	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_1126_6	1	move	0	0	m2	s4	3962,18750,9165,29885	Blissey	464	513	0	-	0	0	0	0	0	0	6	Farfetch’d	263	263	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_1126_6	2	move	0	0	m1	m3	11981,7742,50226,5800	Blissey	404	513	0	-	0	0	0	0	0	0	6	Farfetch’d	187	263	0	-	0	0	0	0	0	0	6	p2	0	0	1	1	0
+DEC	ab_1126_6	3	move	0	0	m1	m1	11981,7742,50226,5800	Blissey	404	513	0	-	0	0	0	0	0	0	6	Farfetch’d	187	263	0	-	0	0	0	0	0	0	6	p2	0	0	1	0	0
+DEC	ab_1126_6	4	switch	0	1	-	s4	5544,19550,37340,31002	Blissey	436	513	0	-	0	0	0	0	0	0	6	Kyogre	154	245	0	tox	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_1126_6	5	move	0	0	m2	m2	60688,41662,53415,20485	Blissey	468	513	0	-	0	0	0	0	0	0	6	Kyogre	139	245	0	tox	0	0	1	1	0	0	6	p2	0	0	0	0	0
+DEC	ab_1126_6	6	move	0	0	m1	m3	8434,55895,47393,46575	Blissey	513	513	0	-	0	0	0	0	0	0	6	Kyogre	33	245	0	tox	0	0	1	1	0	0	6	p2	0	0	1	1	0
+DEC	ab_1126_6	7	move	0	0	m0	m2	42598,60326,57945,19726	Blissey	513	513	0	-	0	0	0	0	0	0	6	Kyogre	0	245	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_1126_6	8	switch	0	1	-	s2	61607,9586,6912,33609	Blissey	513	513	0	-	0	0	0	0	0	0	6	Scizor	249	249	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_1126_6	9	move	0	0	m3	s5	8979,14763,20635,31632	Blissey	513	513	0	-	0	0	0	0	0	0	6	Murkrow	254	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_1126_6	10	move	0	0	m1	m3	31828,5239,32950,1060	Blissey	513	513	0	par	0	0	0	0	0	0	6	Murkrow	193	254	0	-	0	0	0	0	0	0	5	p2	0	0	1	0	0
+DEC	ab_1126_6	11	move	0	0	m0	m3	12192,16619,3299,19320	Blissey	513	513	0	par	0	0	0	0	0	0	6	Murkrow	193	254	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_1126_6	12	move	0	0	m2	m3	63465,6170,36086,41877	Blissey	513	513	0	par	0	0	0	0	0	0	6	Murkrow	178	254	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_1126_6	13	move	0	0	m0	m3	41542,56048,7820,15833	Blissey	513	513	0	par	0	0	0	0	0	0	6	Murkrow	148	254	0	tox	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_1126_6	14	move	0	0	m3	s4	1032,50009,17166,8867	Blissey	513	513	0	par	0	0	0	0	0	0	6	Farfetch’d	187	263	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_1126_6	15	move	0	0	s2	m0	34852,52840,48056,33810	Ampharos	282	282	0	-	0	0	0	0	0	0	6	Farfetch’d	187	263	0	-	2	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1126_6	16	move	0	0	m3	m1	34852,52840,48056,33810	Ampharos	282	282	0	-	0	0	0	0	0	0	6	Farfetch’d	187	263	0	-	2	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_1126_6	17	switch	0	1	-	s1	16467,40844,14677,8692	Ampharos	282	282	0	-	0	0	0	0	0	0	6	Shedinja	1	1	0	-	2	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_1126_6	18	move	0	0	s5	s5	52811,23020,2964,38919	Stantler	254	254	0	-	0	0	0	0	0	0	6	Scizor	249	249	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1126_6	19	move	0	0	m3	m2	51447,46682,63477,7979	Stantler	254	254	0	-	0	0	0	0	0	0	6	Scizor	206	249	0	-	2	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1126_6	20	move	0	0	m0	m3	52555,27314,17287,45747	Stantler	60	254	0	-	0	0	0	0	0	0	6	Scizor	122	249	0	-	2	0	0	0	0	0	5	p1	0	0	0	1	0
+DEC	ab_1126_6	21	move	0	0	s4	m0	52555,27314,17287,45747	Blaziken	262	262	0	-	0	0	0	0	0	0	6	Scizor	122	249	0	-	2	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1126_6	22	switch	0	1	-	s4	16720,18480,43574,60002	Blaziken	262	262	0	-	0	0	0	0	0	0	6	Murkrow	148	254	0	tox	2	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_1126_6	23	move	0	0	s4	m3	16241,50215,53604,11204	Stantler	75	254	0	par	0	0	0	0	0	0	6	Murkrow	133	254	0	tox	1	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1126_6	24	move	0	0	s2	m1	16599,27102,46436,13873	Blissey	513	513	0	-	0	0	0	0	0	0	5	Murkrow	103	254	0	tox	1	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_1126_6	25	move	0	0	m3	m3	178,62523,2965,6666	Blissey	513	513	0	-	0	0	0	0	0	0	5	Murkrow	58	254	0	tox	1	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_1126_6	26	move	0	0	s5	m2	35796,4684,83,16126	Ampharos	221	282	0	-	0	0	0	0	0	0	5	Murkrow	0	254	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	27	switch	0	1	-	s4	31240,51512,36518,26361	Ampharos	221	282	0	-	0	0	0	0	0	0	5	Scizor	122	249	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1126_6	28	move	0	0	s3	m0	31240,51512,36518,26361	Chimecho	260	260	0	-	0	0	0	0	0	0	5	Scizor	122	249	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	29	switch	0	1	-	s5	45576,38114,12727,32768	Chimecho	260	260	0	-	0	0	0	0	0	0	5	Shedinja	1	1	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1126_6	30	move	0	0	m3	s1	37918,4061,20748,7875	Chimecho	260	260	0	-	0	0	1	1	0	0	5	Farfetch’d	187	263	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1126_6	31	move	0	0	m2	m1	37918,4061,20748,7875	Chimecho	260	260	0	-	0	0	1	1	0	0	5	Farfetch’d	187	263	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1126_6	32	switch	0	1	-	s5	19484,2798,37306,7346	Chimecho	260	260	0	-	0	0	1	1	0	0	5	Scizor	137	249	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1126_6	33	move	0	0	m2	m0	19484,2798,37306,7346	Chimecho	260	260	0	-	0	0	1	1	0	0	5	Scizor	137	249	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	34	switch	0	1	-	s5	3612,29831,63693,13053	Chimecho	260	260	0	-	0	0	1	1	0	0	5	Farfetch’d	187	263	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1126_6	35	move	0	0	s5	m0	23521,39355,6736,8596	Blissey	513	513	0	-	0	0	0	0	0	0	5	Farfetch’d	187	263	0	-	2	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	36	move	0	0	m1	m1	23521,39355,6736,8596	Blissey	513	513	0	-	0	0	0	0	0	0	5	Farfetch’d	187	263	0	-	2	0	0	0	0	0	4	p2	0	0	1	0	0
+DEC	ab_1126_6	37	switch	0	1	-	s1	24425,58836,43485,42790	Blissey	513	513	0	-	0	0	0	0	0	0	5	Shedinja	1	1	0	-	2	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1126_6	38	move	0	0	m2	s5	62085,14176,15638,59073	Blissey	513	513	0	-	0	0	0	0	0	0	5	Scizor	152	249	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1126_6	39	move	0	0	m3	m1	1346,27597,37530,37466	Blissey	513	513	0	-	0	0	0	0	0	0	5	Scizor	167	249	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	40	move	0	0	m2	m1	10061,62572,31974,54665	Blissey	248	513	0	-	0	0	0	0	0	0	5	Scizor	182	249	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1126_6	41	move	0	0	m0	s1	28350,29926,24940,26323	Blissey	513	513	0	-	0	0	0	0	0	0	5	Farfetch’d	171	263	0	tox	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1126_6	42	move	0	0	s5	m2	19514,61598,18103,6914	Chimecho	260	260	0	-	0	0	0	0	0	0	5	Farfetch’d	139	263	0	tox	0	0	0	0	2	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	43	move	0	0	s5	s1	19654,36474,30950,22669	Blissey	513	513	0	-	0	0	0	0	0	0	5	Scizor	197	249	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1126_6	44	move	0	0	m2	m3	58809,24835,12035,54968	Blissey	304	513	0	-	0	0	0	0	0	0	5	Scizor	212	249	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1126_6	45	move	0	0	m3	m2	60768,3873,62364,22186	Blissey	513	513	0	-	0	0	0	0	0	0	5	Scizor	227	249	0	-	2	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	46	move	0	0	s5	m3	43244,62934,50288,61854	Chimecho	0	260	1	fnt	0	0	0	0	0	0	4	Scizor	227	249	0	-	2	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	47	switch	1	0	s4	-	4316,3895,13653,32793	Blaziken	262	262	0	-	0	0	0	0	0	0	4	Scizor	242	249	0	-	2	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1126_6	48	move	0	0	m0	m0	13450,51422,47666,53556	Blaziken	262	262	0	-	0	0	0	0	0	0	4	Scizor	176	249	0	-	2	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	49	move	0	0	m0	m1	58824,1893,56879,26362	Blaziken	262	262	0	-	0	0	0	0	0	0	4	Scizor	116	249	0	-	2	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	50	move	0	0	m0	m2	33008,27297,18475,26281	Blaziken	262	262	0	-	0	0	0	0	0	0	4	Scizor	47	249	0	-	4	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	51	move	0	0	s1	m2	13754,60780,52693,36976	Armaldo	260	260	0	-	0	0	0	0	0	0	4	Scizor	62	249	0	-	6	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	52	move	0	0	s3	m2	8653,27658,45764,35571	Ampharos	238	282	0	-	0	0	0	0	0	0	4	Scizor	77	249	0	-	6	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	53	move	0	0	s5	m0	8653,27658,45764,35571	Blissey	513	513	0	-	0	0	0	0	0	0	4	Scizor	77	249	0	-	6	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	54	switch	0	1	-	s5	1559,60097,1714,31650	Blissey	513	513	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	6	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_1126_6	55	move	0	0	m1	m2	37508,53400,3277,39767	Blissey	513	513	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	6	0	0	0	0	0	4	p2	0	0	1	0	0
+DEC	ab_1126_6	56	move	0	0	m0	m3	58119,32744,1217,9304	Blissey	513	513	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	6	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1126_6	57	move	0	0	m2	m3	409,23407,41640,49994	Blissey	513	513	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	6	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1126_6	58	move	0	0	m3	m2	26825,54492,58926,17759	Blissey	513	513	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	6	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	59	move	0	0	m2	m3	50305,45148,13665,35129	Blissey	513	513	0	-	0	0	0	0	0	0	4	Shedinja	1	1	0	-	6	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1126_6	60	move	0	0	m2	m2	47399,64272,24606,26371	Blissey	481	513	0	tox	0	0	0	0	0	0	4	Shedinja	1	1	0	-	6	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_1126_6	61	move	0	0	m3	m2	40716,30201,56165,12500	Blissey	449	513	0	tox	0	0	0	0	0	0	4	Shedinja	1	1	0	-	6	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_1126_6	62	move	0	0	m1	m3	8243,36846,10205,257	Blissey	385	513	0	tox	0	0	0	0	0	0	4	Shedinja	1	1	0	-	6	0	0	0	0	0	4	p2	0	0	1	0	0
+DEC	ab_1126_6	63	move	0	0	m0	m2	44797,21695,34184,46987	Blissey	289	513	0	tox	0	0	0	0	0	0	4	Shedinja	0	1	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_1126_6	64	switch	0	1	-	s1	15168,9480,33309,27546	Blissey	289	513	0	tox	0	0	0	0	0	0	4	Farfetch’d	139	263	0	tox	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_1126_6	65	move	0	0	m0	m0	58036,62985,17470,60476	Blissey	161	513	0	tox	0	0	0	0	0	0	4	Farfetch’d	123	263	0	tox	2	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_1126_6	66	move	0	0	m0	m1	58036,62985,17470,60476	Blissey	161	513	0	tox	0	0	0	0	0	0	4	Farfetch’d	123	263	0	tox	2	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_1126_6	67	switch	0	1	-	s3	19886,5616,10420,6030	Blissey	1	513	0	tox	0	0	0	0	0	0	4	Bellossom	275	293	0	tox	2	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_1126_6	68	move	0	0	m3	s3	19886,5616,10420,6030	Blissey	0	513	1	fnt	0	0	0	0	0	0	3	Farfetch’d	107	263	0	tox	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_1126_6	69	switch	1	0	s3	-	16592,43370,64688,59337	Armaldo	260	260	0	-	0	0	0	0	0	0	3	Farfetch’d	107	263	0	tox	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_1126_6	70	move	0	0	m2	m0	28816,2842,23761,3138	Armaldo	225	260	0	-	0	0	0	0	0	0	3	Farfetch’d	0	263	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_1126_6	71	switch	0	1	-	s5	15479,58367,44029,50893	Armaldo	225	260	0	-	0	0	0	0	0	0	3	Scizor	92	249	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_1126_6	72	move	0	0	m2	m1	23256,59338,22960,45077	Armaldo	38	260	0	-	0	0	0	0	0	0	3	Scizor	32	249	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_1126_6	73	move	0	0	m2	m1	7963,36998,44434,33369	Armaldo	0	260	1	fnt	0	0	0	0	0	0	2	Scizor	32	249	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_1126_6	74	switch	1	0	s1	-	63052,26145,65316,44256	Blaziken	262	262	0	-	0	0	0	0	0	0	2	Scizor	47	249	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_1126_6	75	move	0	0	m2	m3	38955,50453,60495,16500	Blaziken	262	262	0	-	0	0	0	0	0	0	2	Scizor	0	249	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_1126_6	76	switch	0	1	-	s3	43051,52284,22549,8327	Blaziken	262	262	0	-	0	0	0	0	0	0	2	Bellossom	275	293	0	tox	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_1126_6	77	move	0	0	s5	m1	30080,39281,50585,58056	Ampharos	177	282	0	-	0	0	0	0	0	0	2	Bellossom	257	293	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_1126_6	78	move	0	0	m2	m1	17033,19921,16447,10204	Ampharos	125	282	0	-	0	0	0	0	0	0	2	Bellossom	221	293	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_1126_6	79	move	0	0	m0	m1	14896,28221,13996,26093	Ampharos	67	282	0	-	0	0	0	0	0	0	2	Bellossom	123	293	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_1126_6	80	move	0	0	s5	m2	1707,24480,39473,43588	Blaziken	262	262	0	-	0	0	0	0	0	0	2	Bellossom	124	293	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_1126_6	81	move	0	0	m2	m2	9715,34888,39977,56763	Blaziken	262	262	0	-	0	0	0	0	0	0	2	Bellossom	2	293	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_1126_6	82	move	0	0	m2	m2	52927,3719,36720,37279	Blaziken	262	262	0	-	0	0	0	0	0	0	2	Bellossom	0	293	1	tox	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_1126_6	1	p1
+L	ab_1126_6	0	|t:|<NORMALIZED>
+L	ab_1126_6	1	|gametype|singles
+L	ab_1126_6	2	|player|p1|P1||
+L	ab_1126_6	3	|player|p2|P2||
+L	ab_1126_6	4	|gen|3
+L	ab_1126_6	5	|tier|[Gen 3] Custom Game
+L	ab_1126_6	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_1126_6	7	|
+L	ab_1126_6	8	|t:|<NORMALIZED>
+L	ab_1126_6	9	|teamsize|p1|6
+L	ab_1126_6	10	|teamsize|p2|6
+L	ab_1126_6	11	|start
+L	ab_1126_6	12	|switch|p1a: Blissey|Blissey, L76, F|513/513
+L	ab_1126_6	13	|switch|p2a: Kyogre|Kyogre, L67|245/245
+L	ab_1126_6	14	|-weather|RainDance|[from] ability: Drizzle|[of] p2a: Kyogre
+L	ab_1126_6	15	|turn|1
+L	ab_1126_6	16	|
+L	ab_1126_6	17	|t:|<NORMALIZED>
+L	ab_1126_6	18	|move|p2a: Kyogre|Surf|p1a: Blissey
+L	ab_1126_6	19	|debug|rain water boost
+L	ab_1126_6	20	|-damage|p1a: Blissey|400/513
+L	ab_1126_6	21	|move|p1a: Blissey|Toxic|p2a: Kyogre
+L	ab_1126_6	22	|-status|p2a: Kyogre|tox
+L	ab_1126_6	23	|
+L	ab_1126_6	24	|-weather|RainDance|[upkeep]
+L	ab_1126_6	25	|-damage|p2a: Kyogre|230/245 tox|[from] psn
+L	ab_1126_6	26	|-heal|p1a: Blissey|432/513|[from] item: Leftovers
+L	ab_1126_6	27	|upkeep
+L	ab_1126_6	28	|turn|2
+L	ab_1126_6	29	|
+L	ab_1126_6	30	|t:|<NORMALIZED>
+L	ab_1126_6	31	|switch|p2a: Farfetch’d|Farfetch’d, L99, M|263/263
+L	ab_1126_6	32	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_1126_6	33	|
+L	ab_1126_6	34	|-weather|RainDance|[upkeep]
+L	ab_1126_6	35	|-heal|p1a: Blissey|464/513|[from] item: Leftovers
+L	ab_1126_6	36	|upkeep
+L	ab_1126_6	37	|turn|3
+L	ab_1126_6	38	|
+L	ab_1126_6	39	|t:|<NORMALIZED>
+L	ab_1126_6	40	|move|p2a: Farfetch’d|Return|p1a: Blissey
+L	ab_1126_6	41	|-damage|p1a: Blissey|116/513
+L	ab_1126_6	42	|move|p1a: Blissey|Seismic Toss|p2a: Farfetch’d
+L	ab_1126_6	43	|-damage|p2a: Farfetch’d|187/263
+L	ab_1126_6	44	|
+L	ab_1126_6	45	|-heal|p1a: Blissey|372/513|[from] move: Wish|[wisher] Blissey
+L	ab_1126_6	46	|-weather|RainDance|[upkeep]
+L	ab_1126_6	47	|-heal|p1a: Blissey|404/513|[from] item: Leftovers
+L	ab_1126_6	48	|upkeep
+L	ab_1126_6	49	|turn|4
+L	ab_1126_6	50	|
+L	ab_1126_6	51	|t:|<NORMALIZED>
+L	ab_1126_6	52	|move|p2a: Farfetch’d|Baton Pass|p2a: Farfetch’d
+L	ab_1126_6	53	|
+L	ab_1126_6	54	|t:|<NORMALIZED>
+L	ab_1126_6	55	|switch|p2a: Kyogre|Kyogre, L67|230/245 tox|[from] Baton Pass
+L	ab_1126_6	56	|move|p1a: Blissey|Seismic Toss|p2a: Kyogre
+L	ab_1126_6	57	|-damage|p2a: Kyogre|154/245 tox
+L	ab_1126_6	58	|
+L	ab_1126_6	59	|-weather|RainDance|[upkeep]
+L	ab_1126_6	60	|-heal|p2a: Kyogre|169/245 tox|[from] item: Leftovers
+L	ab_1126_6	61	|-damage|p2a: Kyogre|154/245 tox|[from] psn
+L	ab_1126_6	62	|-heal|p1a: Blissey|436/513|[from] item: Leftovers
+L	ab_1126_6	63	|upkeep
+L	ab_1126_6	64	|turn|5
+L	ab_1126_6	65	|
+L	ab_1126_6	66	|t:|<NORMALIZED>
+L	ab_1126_6	67	|move|p2a: Kyogre|Calm Mind|p2a: Kyogre
+L	ab_1126_6	68	|-boost|p2a: Kyogre|spa|1
+L	ab_1126_6	69	|-boost|p2a: Kyogre|spd|1
+L	ab_1126_6	70	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_1126_6	71	|
+L	ab_1126_6	72	|-weather|RainDance|[upkeep]
+L	ab_1126_6	73	|-heal|p2a: Kyogre|169/245 tox|[from] item: Leftovers
+L	ab_1126_6	74	|-damage|p2a: Kyogre|139/245 tox|[from] psn
+L	ab_1126_6	75	|-heal|p1a: Blissey|468/513|[from] item: Leftovers
+L	ab_1126_6	76	|upkeep
+L	ab_1126_6	77	|turn|6
+L	ab_1126_6	78	|
+L	ab_1126_6	79	|t:|<NORMALIZED>
+L	ab_1126_6	80	|move|p2a: Kyogre|Sleep Talk|p2a: Kyogre
+L	ab_1126_6	81	|move|p1a: Blissey|Seismic Toss|p2a: Kyogre
+L	ab_1126_6	82	|-damage|p2a: Kyogre|63/245 tox
+L	ab_1126_6	83	|
+L	ab_1126_6	84	|-heal|p1a: Blissey|513/513|[from] move: Wish|[wisher] Blissey
+L	ab_1126_6	85	|-weather|RainDance|[upkeep]
+L	ab_1126_6	86	|-heal|p2a: Kyogre|78/245 tox|[from] item: Leftovers
+L	ab_1126_6	87	|-damage|p2a: Kyogre|33/245 tox|[from] psn
+L	ab_1126_6	88	|upkeep
+L	ab_1126_6	89	|turn|7
+L	ab_1126_6	90	|
+L	ab_1126_6	91	|t:|<NORMALIZED>
+L	ab_1126_6	92	|move|p2a: Kyogre|Calm Mind|p2a: Kyogre
+L	ab_1126_6	93	|-boost|p2a: Kyogre|spa|1
+L	ab_1126_6	94	|-boost|p2a: Kyogre|spd|1
+L	ab_1126_6	95	|move|p1a: Blissey|Toxic|p2a: Kyogre
+L	ab_1126_6	96	|-fail|p2a: Kyogre|tox
+L	ab_1126_6	97	|debug|move failed because it did nothing
+L	ab_1126_6	98	|
+L	ab_1126_6	99	|-weather|RainDance|[upkeep]
+L	ab_1126_6	100	|-heal|p2a: Kyogre|48/245 tox|[from] item: Leftovers
+L	ab_1126_6	101	|-damage|p2a: Kyogre|0 fnt|[from] psn
+L	ab_1126_6	102	|faint|p2a: Kyogre
+L	ab_1126_6	103	|upkeep
+L	ab_1126_6	104	|
+L	ab_1126_6	105	|t:|<NORMALIZED>
+L	ab_1126_6	106	|switch|p2a: Scizor|Scizor, L82, M|249/249
+L	ab_1126_6	107	|turn|8
+L	ab_1126_6	108	|
+L	ab_1126_6	109	|t:|<NORMALIZED>
+L	ab_1126_6	110	|switch|p2a: Murkrow|Murkrow, L90, M|254/254
+L	ab_1126_6	111	|move|p1a: Blissey|Protect||[still]
+L	ab_1126_6	112	|-fail|p1a: Blissey
+L	ab_1126_6	113	|
+L	ab_1126_6	114	|-weather|RainDance|[upkeep]
+L	ab_1126_6	115	|upkeep
+L	ab_1126_6	116	|turn|9
+L	ab_1126_6	117	|
+L	ab_1126_6	118	|t:|<NORMALIZED>
+L	ab_1126_6	119	|move|p2a: Murkrow|Thunder Wave|p1a: Blissey
+L	ab_1126_6	120	|-status|p1a: Blissey|par
+L	ab_1126_6	121	|move|p1a: Blissey|Seismic Toss|p2a: Murkrow
+L	ab_1126_6	122	|-damage|p2a: Murkrow|178/254
+L	ab_1126_6	123	|
+L	ab_1126_6	124	|-weather|RainDance|[upkeep]
+L	ab_1126_6	125	|-heal|p2a: Murkrow|193/254|[from] item: Leftovers
+L	ab_1126_6	126	|upkeep
+L	ab_1126_6	127	|turn|10
+L	ab_1126_6	128	|
+L	ab_1126_6	129	|t:|<NORMALIZED>
+L	ab_1126_6	130	|move|p2a: Murkrow|Thunder Wave|p1a: Blissey
+L	ab_1126_6	131	|-fail|p1a: Blissey|par
+L	ab_1126_6	132	|debug|move failed because it did nothing
+L	ab_1126_6	133	|move|p1a: Blissey|Toxic|p2a: Murkrow
+L	ab_1126_6	134	|-status|p2a: Murkrow|tox
+L	ab_1126_6	135	|
+L	ab_1126_6	136	|-weather|RainDance|[upkeep]
+L	ab_1126_6	137	|-heal|p2a: Murkrow|208/254 tox|[from] item: Leftovers
+L	ab_1126_6	138	|-damage|p2a: Murkrow|193/254 tox|[from] psn
+L	ab_1126_6	139	|upkeep
+L	ab_1126_6	140	|turn|11
+L	ab_1126_6	141	|
+L	ab_1126_6	142	|t:|<NORMALIZED>
+L	ab_1126_6	143	|move|p2a: Murkrow|Thunder Wave|p1a: Blissey
+L	ab_1126_6	144	|-fail|p1a: Blissey|par
+L	ab_1126_6	145	|debug|move failed because it did nothing
+L	ab_1126_6	146	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_1126_6	147	|
+L	ab_1126_6	148	|-weather|RainDance|[upkeep]
+L	ab_1126_6	149	|-heal|p2a: Murkrow|208/254 tox|[from] item: Leftovers
+L	ab_1126_6	150	|-damage|p2a: Murkrow|178/254 tox|[from] psn
+L	ab_1126_6	151	|upkeep
+L	ab_1126_6	152	|turn|12
+L	ab_1126_6	153	|
+L	ab_1126_6	154	|t:|<NORMALIZED>
+L	ab_1126_6	155	|move|p2a: Murkrow|Thunder Wave|p1a: Blissey
+L	ab_1126_6	156	|-fail|p1a: Blissey|par
+L	ab_1126_6	157	|debug|move failed because it did nothing
+L	ab_1126_6	158	|move|p1a: Blissey|Toxic|p2a: Murkrow
+L	ab_1126_6	159	|-fail|p2a: Murkrow|tox
+L	ab_1126_6	160	|debug|move failed because it did nothing
+L	ab_1126_6	161	|
+L	ab_1126_6	162	|-weather|RainDance|[upkeep]
+L	ab_1126_6	163	|-heal|p2a: Murkrow|193/254 tox|[from] item: Leftovers
+L	ab_1126_6	164	|-damage|p2a: Murkrow|148/254 tox|[from] psn
+L	ab_1126_6	165	|upkeep
+L	ab_1126_6	166	|turn|13
+L	ab_1126_6	167	|
+L	ab_1126_6	168	|t:|<NORMALIZED>
+L	ab_1126_6	169	|switch|p2a: Farfetch’d|Farfetch’d, L99, M|187/263
+L	ab_1126_6	170	|move|p1a: Blissey|Protect||[still]
+L	ab_1126_6	171	|-fail|p1a: Blissey
+L	ab_1126_6	172	|
+L	ab_1126_6	173	|-weather|RainDance|[upkeep]
+L	ab_1126_6	174	|upkeep
+L	ab_1126_6	175	|turn|14
+L	ab_1126_6	176	|
+L	ab_1126_6	177	|t:|<NORMALIZED>
+L	ab_1126_6	178	|-curestatus|p1a: Blissey|par|[from] ability: Natural Cure|[silent]
+L	ab_1126_6	179	|switch|p1a: Ampharos|Ampharos, L82, M|282/282
+L	ab_1126_6	180	|move|p2a: Farfetch’d|Swords Dance|p2a: Farfetch’d
+L	ab_1126_6	181	|-boost|p2a: Farfetch’d|atk|2
+L	ab_1126_6	182	|
+L	ab_1126_6	183	|-weather|RainDance|[upkeep]
+L	ab_1126_6	184	|upkeep
+L	ab_1126_6	185	|turn|15
+L	ab_1126_6	186	|
+L	ab_1126_6	187	|t:|<NORMALIZED>
+L	ab_1126_6	188	|move|p2a: Farfetch’d|Baton Pass|p2a: Farfetch’d
+L	ab_1126_6	189	|
+L	ab_1126_6	190	|t:|<NORMALIZED>
+L	ab_1126_6	191	|switch|p2a: Shedinja|Shedinja|1/1|[from] Baton Pass
+L	ab_1126_6	192	|move|p1a: Ampharos|Thunderbolt|p2a: Shedinja
+L	ab_1126_6	193	|debug|Wonder Guard immunity: thunderbolt
+L	ab_1126_6	194	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_1126_6	195	|
+L	ab_1126_6	196	|-weather|RainDance|[upkeep]
+L	ab_1126_6	197	|upkeep
+L	ab_1126_6	198	|turn|16
+L	ab_1126_6	199	|
+L	ab_1126_6	200	|t:|<NORMALIZED>
+L	ab_1126_6	201	|switch|p1a: Stantler|Stantler, L82, M|254/254
+L	ab_1126_6	202	|-ability|p1a: Stantler|Intimidate|boost
+L	ab_1126_6	203	|-unboost|p2a: Shedinja|atk|1
+L	ab_1126_6	204	|switch|p2a: Scizor|Scizor, L82, M|249/249
+L	ab_1126_6	205	|
+L	ab_1126_6	206	|-weather|RainDance|[upkeep]
+L	ab_1126_6	207	|upkeep
+L	ab_1126_6	208	|turn|17
+L	ab_1126_6	209	|
+L	ab_1126_6	210	|t:|<NORMALIZED>
+L	ab_1126_6	211	|move|p1a: Stantler|Earthquake|p2a: Scizor
+L	ab_1126_6	212	|-damage|p2a: Scizor|191/249
+L	ab_1126_6	213	|move|p2a: Scizor|Swords Dance|p2a: Scizor
+L	ab_1126_6	214	|-boost|p2a: Scizor|atk|2
+L	ab_1126_6	215	|
+L	ab_1126_6	216	|-weather|RainDance|[upkeep]
+L	ab_1126_6	217	|-heal|p2a: Scizor|206/249|[from] item: Leftovers
+L	ab_1126_6	218	|upkeep
+L	ab_1126_6	219	|turn|18
+L	ab_1126_6	220	|
+L	ab_1126_6	221	|t:|<NORMALIZED>
+L	ab_1126_6	222	|move|p1a: Stantler|Return|p2a: Scizor
+L	ab_1126_6	223	|-resisted|p2a: Scizor
+L	ab_1126_6	224	|-crit|p2a: Scizor
+L	ab_1126_6	225	|-damage|p2a: Scizor|107/249
+L	ab_1126_6	226	|move|p2a: Scizor|Silver Wind|p1a: Stantler
+L	ab_1126_6	227	|-damage|p1a: Stantler|45/254
+L	ab_1126_6	228	|
+L	ab_1126_6	229	|-weather|RainDance|[upkeep]
+L	ab_1126_6	230	|-heal|p1a: Stantler|60/254|[from] item: Leftovers
+L	ab_1126_6	231	|-heal|p2a: Scizor|122/249|[from] item: Leftovers
+L	ab_1126_6	232	|upkeep
+L	ab_1126_6	233	|turn|19
+L	ab_1126_6	234	|
+L	ab_1126_6	235	|t:|<NORMALIZED>
+L	ab_1126_6	236	|switch|p1a: Blaziken|Blaziken, L81, M|262/262
+L	ab_1126_6	237	|move|p2a: Scizor|Baton Pass|p2a: Scizor
+L	ab_1126_6	238	|
+L	ab_1126_6	239	|t:|<NORMALIZED>
+L	ab_1126_6	240	|switch|p2a: Murkrow|Murkrow, L90, M|148/254 tox|[from] Baton Pass
+L	ab_1126_6	241	|
+L	ab_1126_6	242	|-weather|RainDance|[upkeep]
+L	ab_1126_6	243	|-heal|p2a: Murkrow|163/254 tox|[from] item: Leftovers
+L	ab_1126_6	244	|-damage|p2a: Murkrow|148/254 tox|[from] psn
+L	ab_1126_6	245	|upkeep
+L	ab_1126_6	246	|turn|20
+L	ab_1126_6	247	|
+L	ab_1126_6	248	|t:|<NORMALIZED>
+L	ab_1126_6	249	|switch|p1a: Stantler|Stantler, L82, M|60/254
+L	ab_1126_6	250	|-ability|p1a: Stantler|Intimidate|boost
+L	ab_1126_6	251	|-unboost|p2a: Murkrow|atk|1
+L	ab_1126_6	252	|move|p2a: Murkrow|Thunder Wave|p1a: Stantler
+L	ab_1126_6	253	|-status|p1a: Stantler|par
+L	ab_1126_6	254	|
+L	ab_1126_6	255	|-weather|RainDance|[upkeep]
+L	ab_1126_6	256	|-heal|p2a: Murkrow|163/254 tox|[from] item: Leftovers
+L	ab_1126_6	257	|-damage|p2a: Murkrow|133/254 tox|[from] psn
+L	ab_1126_6	258	|-heal|p1a: Stantler|75/254 par|[from] item: Leftovers
+L	ab_1126_6	259	|upkeep
+L	ab_1126_6	260	|turn|21
+L	ab_1126_6	261	|
+L	ab_1126_6	262	|t:|<NORMALIZED>
+L	ab_1126_6	263	|debug|before turn callback: pursuit
+L	ab_1126_6	264	|debug|Pursuit start
+L	ab_1126_6	265	|-activate|p1a: Stantler|move: Pursuit
+L	ab_1126_6	266	|move|p2a: Murkrow|Pursuit|p1a: Stantler|[from] Pursuit
+L	ab_1126_6	267	|debug|Pursuit damage boost
+L	ab_1126_6	268	|-damage|p1a: Stantler|0 fnt
+L	ab_1126_6	269	|-hint|Previously chosen switches continue in Gen 2-4 after a Pursuit target faints.
+L	ab_1126_6	270	|faint|p1a: Stantler
+L	ab_1126_6	271	|switch|p1a: Blissey|Blissey, L76, F|513/513
+L	ab_1126_6	272	|
+L	ab_1126_6	273	|-weather|RainDance|[upkeep]
+L	ab_1126_6	274	|-heal|p2a: Murkrow|148/254 tox|[from] item: Leftovers
+L	ab_1126_6	275	|-damage|p2a: Murkrow|103/254 tox|[from] psn
+L	ab_1126_6	276	|upkeep
+L	ab_1126_6	277	|turn|22
+L	ab_1126_6	278	|
+L	ab_1126_6	279	|t:|<NORMALIZED>
+L	ab_1126_6	280	|move|p1a: Blissey|Protect|p1a: Blissey
+L	ab_1126_6	281	|-singleturn|p1a: Blissey|Protect
+L	ab_1126_6	282	|move|p2a: Murkrow|Thunder Wave|p1a: Blissey
+L	ab_1126_6	283	|-activate|p1a: Blissey|Protect
+L	ab_1126_6	284	|
+L	ab_1126_6	285	|-weather|RainDance|[upkeep]
+L	ab_1126_6	286	|-heal|p2a: Murkrow|118/254 tox|[from] item: Leftovers
+L	ab_1126_6	287	|-damage|p2a: Murkrow|58/254 tox|[from] psn
+L	ab_1126_6	288	|upkeep
+L	ab_1126_6	289	|turn|23
+L	ab_1126_6	290	|
+L	ab_1126_6	291	|t:|<NORMALIZED>
+L	ab_1126_6	292	|switch|p1a: Ampharos|Ampharos, L82, M|282/282
+L	ab_1126_6	293	|move|p2a: Murkrow|Drill Peck|p1a: Ampharos
+L	ab_1126_6	294	|-resisted|p1a: Ampharos
+L	ab_1126_6	295	|-damage|p1a: Ampharos|204/282
+L	ab_1126_6	296	|
+L	ab_1126_6	297	|-weather|RainDance|[upkeep]
+L	ab_1126_6	298	|-heal|p2a: Murkrow|73/254 tox|[from] item: Leftovers
+L	ab_1126_6	299	|-damage|p2a: Murkrow|0 fnt|[from] psn
+L	ab_1126_6	300	|faint|p2a: Murkrow
+L	ab_1126_6	301	|-heal|p1a: Ampharos|221/282|[from] item: Leftovers
+L	ab_1126_6	302	|upkeep
+L	ab_1126_6	303	|
+L	ab_1126_6	304	|t:|<NORMALIZED>
+L	ab_1126_6	305	|switch|p2a: Scizor|Scizor, L82, M|122/249
+L	ab_1126_6	306	|turn|24
+L	ab_1126_6	307	|
+L	ab_1126_6	308	|t:|<NORMALIZED>
+L	ab_1126_6	309	|switch|p1a: Chimecho|Chimecho, L89, M|260/260
+L	ab_1126_6	310	|move|p2a: Scizor|Baton Pass|p2a: Scizor
+L	ab_1126_6	311	|
+L	ab_1126_6	312	|t:|<NORMALIZED>
+L	ab_1126_6	313	|switch|p2a: Shedinja|Shedinja|1/1|[from] Baton Pass
+L	ab_1126_6	314	|
+L	ab_1126_6	315	|-weather|RainDance|[upkeep]
+L	ab_1126_6	316	|upkeep
+L	ab_1126_6	317	|turn|25
+L	ab_1126_6	318	|
+L	ab_1126_6	319	|t:|<NORMALIZED>
+L	ab_1126_6	320	|switch|p2a: Farfetch’d|Farfetch’d, L99, M|187/263
+L	ab_1126_6	321	|move|p1a: Chimecho|Calm Mind|p1a: Chimecho
+L	ab_1126_6	322	|-boost|p1a: Chimecho|spa|1
+L	ab_1126_6	323	|-boost|p1a: Chimecho|spd|1
+L	ab_1126_6	324	|
+L	ab_1126_6	325	|-weather|RainDance|[upkeep]
+L	ab_1126_6	326	|upkeep
+L	ab_1126_6	327	|turn|26
+L	ab_1126_6	328	|
+L	ab_1126_6	329	|t:|<NORMALIZED>
+L	ab_1126_6	330	|move|p2a: Farfetch’d|Baton Pass|p2a: Farfetch’d
+L	ab_1126_6	331	|
+L	ab_1126_6	332	|t:|<NORMALIZED>
+L	ab_1126_6	333	|switch|p2a: Scizor|Scizor, L82, M|122/249|[from] Baton Pass
+L	ab_1126_6	334	|move|p1a: Chimecho|Heal Bell|p1a: Chimecho
+L	ab_1126_6	335	|-activate|p1a: Chimecho|move: Heal Bell
+L	ab_1126_6	336	|
+L	ab_1126_6	337	|-weather|RainDance|[upkeep]
+L	ab_1126_6	338	|-heal|p2a: Scizor|137/249|[from] item: Leftovers
+L	ab_1126_6	339	|upkeep
+L	ab_1126_6	340	|turn|27
+L	ab_1126_6	341	|
+L	ab_1126_6	342	|t:|<NORMALIZED>
+L	ab_1126_6	343	|move|p1a: Chimecho|Heal Bell|p1a: Chimecho
+L	ab_1126_6	344	|-activate|p1a: Chimecho|move: Heal Bell
+L	ab_1126_6	345	|move|p2a: Scizor|Baton Pass|p2a: Scizor
+L	ab_1126_6	346	|
+L	ab_1126_6	347	|t:|<NORMALIZED>
+L	ab_1126_6	348	|switch|p2a: Farfetch’d|Farfetch’d, L99, M|187/263|[from] Baton Pass
+L	ab_1126_6	349	|
+L	ab_1126_6	350	|-weather|RainDance|[upkeep]
+L	ab_1126_6	351	|upkeep
+L	ab_1126_6	352	|turn|28
+L	ab_1126_6	353	|
+L	ab_1126_6	354	|t:|<NORMALIZED>
+L	ab_1126_6	355	|switch|p1a: Blissey|Blissey, L76, F|513/513
+L	ab_1126_6	356	|move|p2a: Farfetch’d|Swords Dance|p2a: Farfetch’d
+L	ab_1126_6	357	|-boost|p2a: Farfetch’d|atk|2
+L	ab_1126_6	358	|
+L	ab_1126_6	359	|-weather|RainDance|[upkeep]
+L	ab_1126_6	360	|upkeep
+L	ab_1126_6	361	|turn|29
+L	ab_1126_6	362	|
+L	ab_1126_6	363	|t:|<NORMALIZED>
+L	ab_1126_6	364	|move|p2a: Farfetch’d|Baton Pass|p2a: Farfetch’d
+L	ab_1126_6	365	|
+L	ab_1126_6	366	|t:|<NORMALIZED>
+L	ab_1126_6	367	|switch|p2a: Shedinja|Shedinja|1/1|[from] Baton Pass
+L	ab_1126_6	368	|move|p1a: Blissey|Seismic Toss|p2a: Shedinja
+L	ab_1126_6	369	|debug|Wonder Guard immunity: seismictoss
+L	ab_1126_6	370	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_1126_6	371	|
+L	ab_1126_6	372	|-weather|RainDance|[upkeep]
+L	ab_1126_6	373	|upkeep
+L	ab_1126_6	374	|turn|30
+L	ab_1126_6	375	|
+L	ab_1126_6	376	|t:|<NORMALIZED>
+L	ab_1126_6	377	|switch|p2a: Scizor|Scizor, L82, M|137/249
+L	ab_1126_6	378	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_1126_6	379	|
+L	ab_1126_6	380	|-weather|RainDance|[upkeep]
+L	ab_1126_6	381	|-heal|p2a: Scizor|152/249|[from] item: Leftovers
+L	ab_1126_6	382	|upkeep
+L	ab_1126_6	383	|turn|31
+L	ab_1126_6	384	|
+L	ab_1126_6	385	|t:|<NORMALIZED>
+L	ab_1126_6	386	|move|p1a: Blissey|Protect|p1a: Blissey
+L	ab_1126_6	387	|-singleturn|p1a: Blissey|Protect
+L	ab_1126_6	388	|move|p2a: Scizor|Steel Wing|p1a: Blissey
+L	ab_1126_6	389	|-activate|p1a: Blissey|Protect
+L	ab_1126_6	390	|
+L	ab_1126_6	391	|-weather|RainDance|[upkeep]
+L	ab_1126_6	392	|-heal|p2a: Scizor|167/249|[from] item: Leftovers
+L	ab_1126_6	393	|upkeep
+L	ab_1126_6	394	|turn|32
+L	ab_1126_6	395	|
+L	ab_1126_6	396	|t:|<NORMALIZED>
+L	ab_1126_6	397	|move|p2a: Scizor|Steel Wing|p1a: Blissey
+L	ab_1126_6	398	|-damage|p1a: Blissey|216/513
+L	ab_1126_6	399	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_1126_6	400	|
+L	ab_1126_6	401	|-weather|RainDance|[upkeep]
+L	ab_1126_6	402	|-heal|p2a: Scizor|182/249|[from] item: Leftovers
+L	ab_1126_6	403	|-heal|p1a: Blissey|248/513|[from] item: Leftovers
+L	ab_1126_6	404	|upkeep
+L	ab_1126_6	405	|turn|33
+L	ab_1126_6	406	|
+L	ab_1126_6	407	|t:|<NORMALIZED>
+L	ab_1126_6	408	|switch|p2a: Farfetch’d|Farfetch’d, L99, M|187/263
+L	ab_1126_6	409	|move|p1a: Blissey|Toxic|p2a: Farfetch’d
+L	ab_1126_6	410	|-status|p2a: Farfetch’d|tox
+L	ab_1126_6	411	|
+L	ab_1126_6	412	|-heal|p1a: Blissey|504/513|[from] move: Wish|[wisher] Blissey
+L	ab_1126_6	413	|-weather|RainDance|[upkeep]
+L	ab_1126_6	414	|-damage|p2a: Farfetch’d|171/263 tox|[from] psn
+L	ab_1126_6	415	|-heal|p1a: Blissey|513/513|[from] item: Leftovers
+L	ab_1126_6	416	|upkeep
+L	ab_1126_6	417	|turn|34
+L	ab_1126_6	418	|
+L	ab_1126_6	419	|t:|<NORMALIZED>
+L	ab_1126_6	420	|switch|p1a: Chimecho|Chimecho, L89, M|260/260
+L	ab_1126_6	421	|move|p2a: Farfetch’d|Agility|p2a: Farfetch’d
+L	ab_1126_6	422	|-boost|p2a: Farfetch’d|spe|2
+L	ab_1126_6	423	|
+L	ab_1126_6	424	|-weather|RainDance|[upkeep]
+L	ab_1126_6	425	|-damage|p2a: Farfetch’d|139/263 tox|[from] psn
+L	ab_1126_6	426	|upkeep
+L	ab_1126_6	427	|turn|35
+L	ab_1126_6	428	|
+L	ab_1126_6	429	|t:|<NORMALIZED>
+L	ab_1126_6	430	|switch|p2a: Scizor|Scizor, L82, M|182/249
+L	ab_1126_6	431	|switch|p1a: Blissey|Blissey, L76, F|513/513
+L	ab_1126_6	432	|
+L	ab_1126_6	433	|-weather|RainDance|[upkeep]
+L	ab_1126_6	434	|-heal|p2a: Scizor|197/249|[from] item: Leftovers
+L	ab_1126_6	435	|upkeep
+L	ab_1126_6	436	|turn|36
+L	ab_1126_6	437	|
+L	ab_1126_6	438	|t:|<NORMALIZED>
+L	ab_1126_6	439	|move|p2a: Scizor|Silver Wind|p1a: Blissey
+L	ab_1126_6	440	|-damage|p1a: Blissey|272/513
+L	ab_1126_6	441	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_1126_6	442	|
+L	ab_1126_6	443	|-weather|RainDance|[upkeep]
+L	ab_1126_6	444	|-heal|p2a: Scizor|212/249|[from] item: Leftovers
+L	ab_1126_6	445	|-heal|p1a: Blissey|304/513|[from] item: Leftovers
+L	ab_1126_6	446	|upkeep
+L	ab_1126_6	447	|turn|37
+L	ab_1126_6	448	|
+L	ab_1126_6	449	|t:|<NORMALIZED>
+L	ab_1126_6	450	|move|p1a: Blissey|Protect|p1a: Blissey
+L	ab_1126_6	451	|-singleturn|p1a: Blissey|Protect
+L	ab_1126_6	452	|move|p2a: Scizor|Swords Dance|p2a: Scizor
+L	ab_1126_6	453	|-boost|p2a: Scizor|atk|2
+L	ab_1126_6	454	|
+L	ab_1126_6	455	|-heal|p1a: Blissey|513/513|[from] move: Wish|[wisher] Blissey
+L	ab_1126_6	456	|-weather|RainDance|[upkeep]
+L	ab_1126_6	457	|-heal|p2a: Scizor|227/249|[from] item: Leftovers
+L	ab_1126_6	458	|upkeep
+L	ab_1126_6	459	|turn|38
+L	ab_1126_6	460	|
+L	ab_1126_6	461	|t:|<NORMALIZED>
+L	ab_1126_6	462	|switch|p1a: Chimecho|Chimecho, L89, M|260/260
+L	ab_1126_6	463	|move|p2a: Scizor|Silver Wind|p1a: Chimecho
+L	ab_1126_6	464	|-supereffective|p1a: Chimecho
+L	ab_1126_6	465	|-crit|p1a: Chimecho
+L	ab_1126_6	466	|-damage|p1a: Chimecho|0 fnt
+L	ab_1126_6	467	|faint|p1a: Chimecho
+L	ab_1126_6	468	|
+L	ab_1126_6	469	|t:|<NORMALIZED>
+L	ab_1126_6	470	|switch|p1a: Blaziken|Blaziken, L81, M|262/262
+L	ab_1126_6	471	|
+L	ab_1126_6	472	|-weather|RainDance|[upkeep]
+L	ab_1126_6	473	|-heal|p2a: Scizor|242/249|[from] item: Leftovers
+L	ab_1126_6	474	|upkeep
+L	ab_1126_6	475	|turn|39
+L	ab_1126_6	476	|
+L	ab_1126_6	477	|t:|<NORMALIZED>
+L	ab_1126_6	478	|move|p1a: Blaziken|Rock Slide|p2a: Scizor
+L	ab_1126_6	479	|-damage|p2a: Scizor|161/249
+L	ab_1126_6	480	|cant|p2a: Scizor|flinch
+L	ab_1126_6	481	|
+L	ab_1126_6	482	|-weather|RainDance|[upkeep]
+L	ab_1126_6	483	|-heal|p2a: Scizor|176/249|[from] item: Leftovers
+L	ab_1126_6	484	|upkeep
+L	ab_1126_6	485	|turn|40
+L	ab_1126_6	486	|
+L	ab_1126_6	487	|t:|<NORMALIZED>
+L	ab_1126_6	488	|move|p1a: Blaziken|Rock Slide|p2a: Scizor
+L	ab_1126_6	489	|-damage|p2a: Scizor|101/249
+L	ab_1126_6	490	|move|p2a: Scizor|Steel Wing|p1a: Blaziken|[miss]
+L	ab_1126_6	491	|-miss|p2a: Scizor|p1a: Blaziken
+L	ab_1126_6	492	|
+L	ab_1126_6	493	|-weather|RainDance|[upkeep]
+L	ab_1126_6	494	|-heal|p2a: Scizor|116/249|[from] item: Leftovers
+L	ab_1126_6	495	|upkeep
+L	ab_1126_6	496	|turn|41
+L	ab_1126_6	497	|
+L	ab_1126_6	498	|t:|<NORMALIZED>
+L	ab_1126_6	499	|move|p1a: Blaziken|Rock Slide|p2a: Scizor
+L	ab_1126_6	500	|-damage|p2a: Scizor|32/249
+L	ab_1126_6	501	|move|p2a: Scizor|Swords Dance|p2a: Scizor
+L	ab_1126_6	502	|-boost|p2a: Scizor|atk|2
+L	ab_1126_6	503	|
+L	ab_1126_6	504	|-weather|RainDance|[upkeep]
+L	ab_1126_6	505	|-heal|p2a: Scizor|47/249|[from] item: Leftovers
+L	ab_1126_6	506	|upkeep
+L	ab_1126_6	507	|turn|42
+L	ab_1126_6	508	|
+L	ab_1126_6	509	|t:|<NORMALIZED>
+L	ab_1126_6	510	|switch|p1a: Armaldo|Armaldo, L83, M|260/260
+L	ab_1126_6	511	|move|p2a: Scizor|Swords Dance|p2a: Scizor
+L	ab_1126_6	512	|-boost|p2a: Scizor|atk|2
+L	ab_1126_6	513	|
+L	ab_1126_6	514	|-weather|RainDance|[upkeep]
+L	ab_1126_6	515	|-heal|p2a: Scizor|62/249|[from] item: Leftovers
+L	ab_1126_6	516	|upkeep
+L	ab_1126_6	517	|turn|43
+L	ab_1126_6	518	|
+L	ab_1126_6	519	|t:|<NORMALIZED>
+L	ab_1126_6	520	|switch|p1a: Ampharos|Ampharos, L82, M|221/282
+L	ab_1126_6	521	|move|p2a: Scizor|Swords Dance|p2a: Scizor
+L	ab_1126_6	522	|-boost|p2a: Scizor|atk|0
+L	ab_1126_6	523	|debug|move failed because it did nothing
+L	ab_1126_6	524	|
+L	ab_1126_6	525	|-weather|RainDance|[upkeep]
+L	ab_1126_6	526	|-heal|p2a: Scizor|77/249|[from] item: Leftovers
+L	ab_1126_6	527	|-heal|p1a: Ampharos|238/282|[from] item: Leftovers
+L	ab_1126_6	528	|upkeep
+L	ab_1126_6	529	|turn|44
+L	ab_1126_6	530	|
+L	ab_1126_6	531	|t:|<NORMALIZED>
+L	ab_1126_6	532	|switch|p1a: Blissey|Blissey, L76, F|513/513
+L	ab_1126_6	533	|move|p2a: Scizor|Baton Pass|p2a: Scizor
+L	ab_1126_6	534	|
+L	ab_1126_6	535	|t:|<NORMALIZED>
+L	ab_1126_6	536	|switch|p2a: Shedinja|Shedinja|1/1|[from] Baton Pass
+L	ab_1126_6	537	|
+L	ab_1126_6	538	|-weather|RainDance|[upkeep]
+L	ab_1126_6	539	|upkeep
+L	ab_1126_6	540	|turn|45
+L	ab_1126_6	541	|
+L	ab_1126_6	542	|t:|<NORMALIZED>
+L	ab_1126_6	543	|move|p2a: Shedinja|Toxic|p1a: Blissey|[miss]
+L	ab_1126_6	544	|-miss|p2a: Shedinja|p1a: Blissey
+L	ab_1126_6	545	|move|p1a: Blissey|Seismic Toss|p2a: Shedinja
+L	ab_1126_6	546	|debug|Wonder Guard immunity: seismictoss
+L	ab_1126_6	547	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_1126_6	548	|
+L	ab_1126_6	549	|-weather|RainDance|[upkeep]
+L	ab_1126_6	550	|upkeep
+L	ab_1126_6	551	|turn|46
+L	ab_1126_6	552	|
+L	ab_1126_6	553	|t:|<NORMALIZED>
+L	ab_1126_6	554	|move|p2a: Shedinja|Shadow Ball|p1a: Blissey
+L	ab_1126_6	555	|-immune|p1a: Blissey
+L	ab_1126_6	556	|move|p1a: Blissey|Toxic|p2a: Shedinja
+L	ab_1126_6	557	|-status|p2a: Shedinja|tox
+L	ab_1126_6	558	|-enditem|p2a: Shedinja|Lum Berry|[eat]
+L	ab_1126_6	559	|-curestatus|p2a: Shedinja|tox|[msg]
+L	ab_1126_6	560	|
+L	ab_1126_6	561	|-weather|RainDance|[upkeep]
+L	ab_1126_6	562	|upkeep
+L	ab_1126_6	563	|turn|47
+L	ab_1126_6	564	|
+L	ab_1126_6	565	|t:|<NORMALIZED>
+L	ab_1126_6	566	|move|p2a: Shedinja|Shadow Ball|p1a: Blissey
+L	ab_1126_6	567	|-immune|p1a: Blissey
+L	ab_1126_6	568	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_1126_6	569	|
+L	ab_1126_6	570	|-weather|RainDance|[upkeep]
+L	ab_1126_6	571	|upkeep
+L	ab_1126_6	572	|turn|48
+L	ab_1126_6	573	|
+L	ab_1126_6	574	|t:|<NORMALIZED>
+L	ab_1126_6	575	|move|p1a: Blissey|Protect|p1a: Blissey
+L	ab_1126_6	576	|-singleturn|p1a: Blissey|Protect
+L	ab_1126_6	577	|move|p2a: Shedinja|Toxic|p1a: Blissey
+L	ab_1126_6	578	|-activate|p1a: Blissey|Protect
+L	ab_1126_6	579	|
+L	ab_1126_6	580	|-weather|RainDance|[upkeep]
+L	ab_1126_6	581	|upkeep
+L	ab_1126_6	582	|turn|49
+L	ab_1126_6	583	|
+L	ab_1126_6	584	|t:|<NORMALIZED>
+L	ab_1126_6	585	|move|p2a: Shedinja|Shadow Ball|p1a: Blissey
+L	ab_1126_6	586	|-immune|p1a: Blissey
+L	ab_1126_6	587	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_1126_6	588	|
+L	ab_1126_6	589	|-weather|RainDance|[upkeep]
+L	ab_1126_6	590	|upkeep
+L	ab_1126_6	591	|turn|50
+L	ab_1126_6	592	|
+L	ab_1126_6	593	|t:|<NORMALIZED>
+L	ab_1126_6	594	|move|p2a: Shedinja|Toxic|p1a: Blissey
+L	ab_1126_6	595	|-status|p1a: Blissey|tox
+L	ab_1126_6	596	|move|p1a: Blissey|Wish||[still]
+L	ab_1126_6	597	|-fail|p1a: Blissey
+L	ab_1126_6	598	|debug|move failed because it did nothing
+L	ab_1126_6	599	|
+L	ab_1126_6	600	|-weather|RainDance|[upkeep]
+L	ab_1126_6	601	|-damage|p1a: Blissey|481/513 tox|[from] psn
+L	ab_1126_6	602	|upkeep
+L	ab_1126_6	603	|turn|51
+L	ab_1126_6	604	|
+L	ab_1126_6	605	|t:|<NORMALIZED>
+L	ab_1126_6	606	|move|p1a: Blissey|Protect|p1a: Blissey
+L	ab_1126_6	607	|-singleturn|p1a: Blissey|Protect
+L	ab_1126_6	608	|move|p2a: Shedinja|Toxic|p1a: Blissey
+L	ab_1126_6	609	|-activate|p1a: Blissey|Protect
+L	ab_1126_6	610	|
+L	ab_1126_6	611	|-weather|RainDance|[upkeep]
+L	ab_1126_6	612	|-heal|p1a: Blissey|513/513 tox|[from] item: Leftovers
+L	ab_1126_6	613	|-damage|p1a: Blissey|449/513 tox|[from] psn
+L	ab_1126_6	614	|upkeep
+L	ab_1126_6	615	|turn|52
+L	ab_1126_6	616	|
+L	ab_1126_6	617	|t:|<NORMALIZED>
+L	ab_1126_6	618	|move|p2a: Shedinja|Shadow Ball|p1a: Blissey
+L	ab_1126_6	619	|-immune|p1a: Blissey
+L	ab_1126_6	620	|move|p1a: Blissey|Seismic Toss|p2a: Shedinja
+L	ab_1126_6	621	|debug|Wonder Guard immunity: seismictoss
+L	ab_1126_6	622	|-immune|p2a: Shedinja|[from] ability: Wonder Guard
+L	ab_1126_6	623	|
+L	ab_1126_6	624	|-weather|RainDance|[upkeep]
+L	ab_1126_6	625	|-heal|p1a: Blissey|481/513 tox|[from] item: Leftovers
+L	ab_1126_6	626	|-damage|p1a: Blissey|385/513 tox|[from] psn
+L	ab_1126_6	627	|upkeep
+L	ab_1126_6	628	|turn|53
+L	ab_1126_6	629	|
+L	ab_1126_6	630	|t:|<NORMALIZED>
+L	ab_1126_6	631	|move|p2a: Shedinja|Toxic|p1a: Blissey
+L	ab_1126_6	632	|-fail|p1a: Blissey|tox
+L	ab_1126_6	633	|debug|move failed because it did nothing
+L	ab_1126_6	634	|move|p1a: Blissey|Toxic|p2a: Shedinja
+L	ab_1126_6	635	|-status|p2a: Shedinja|tox
+L	ab_1126_6	636	|
+L	ab_1126_6	637	|-weather|RainDance|[upkeep]
+L	ab_1126_6	638	|-damage|p2a: Shedinja|0 fnt|[from] psn
+L	ab_1126_6	639	|faint|p2a: Shedinja
+L	ab_1126_6	640	|-heal|p1a: Blissey|417/513 tox|[from] item: Leftovers
+L	ab_1126_6	641	|-damage|p1a: Blissey|289/513 tox|[from] psn
+L	ab_1126_6	642	|upkeep
+L	ab_1126_6	643	|
+L	ab_1126_6	644	|t:|<NORMALIZED>
+L	ab_1126_6	645	|switch|p2a: Farfetch’d|Farfetch’d, L99, M|139/263 tox
+L	ab_1126_6	646	|turn|54
+L	ab_1126_6	647	|
+L	ab_1126_6	648	|t:|<NORMALIZED>
+L	ab_1126_6	649	|move|p2a: Farfetch’d|Swords Dance|p2a: Farfetch’d
+L	ab_1126_6	650	|-boost|p2a: Farfetch’d|atk|2
+L	ab_1126_6	651	|move|p1a: Blissey|Toxic|p2a: Farfetch’d
+L	ab_1126_6	652	|-fail|p2a: Farfetch’d|tox
+L	ab_1126_6	653	|debug|move failed because it did nothing
+L	ab_1126_6	654	|
+L	ab_1126_6	655	|-weather|RainDance|[upkeep]
+L	ab_1126_6	656	|-damage|p2a: Farfetch’d|123/263 tox|[from] psn
+L	ab_1126_6	657	|-heal|p1a: Blissey|321/513 tox|[from] item: Leftovers
+L	ab_1126_6	658	|-damage|p1a: Blissey|161/513 tox|[from] psn
+L	ab_1126_6	659	|upkeep
+L	ab_1126_6	660	|turn|55
+L	ab_1126_6	661	|
+L	ab_1126_6	662	|t:|<NORMALIZED>
+L	ab_1126_6	663	|move|p2a: Farfetch’d|Baton Pass|p2a: Farfetch’d
+L	ab_1126_6	664	|
+L	ab_1126_6	665	|t:|<NORMALIZED>
+L	ab_1126_6	666	|switch|p2a: Bellossom|Bellossom, L94, M|293/293|[from] Baton Pass
+L	ab_1126_6	667	|move|p1a: Blissey|Toxic|p2a: Bellossom
+L	ab_1126_6	668	|-status|p2a: Bellossom|tox
+L	ab_1126_6	669	|
+L	ab_1126_6	670	|-weather|RainDance|[upkeep]
+L	ab_1126_6	671	|-damage|p2a: Bellossom|275/293 tox|[from] psn
+L	ab_1126_6	672	|-heal|p1a: Blissey|193/513 tox|[from] item: Leftovers
+L	ab_1126_6	673	|-damage|p1a: Blissey|1/513 tox|[from] psn
+L	ab_1126_6	674	|upkeep
+L	ab_1126_6	675	|turn|56
+L	ab_1126_6	676	|
+L	ab_1126_6	677	|t:|<NORMALIZED>
+L	ab_1126_6	678	|switch|p2a: Farfetch’d|Farfetch’d, L99, M|123/263 tox
+L	ab_1126_6	679	|move|p1a: Blissey|Protect||[still]
+L	ab_1126_6	680	|-fail|p1a: Blissey
+L	ab_1126_6	681	|
+L	ab_1126_6	682	|-weather|RainDance|[upkeep]
+L	ab_1126_6	683	|-damage|p2a: Farfetch’d|107/263 tox|[from] psn
+L	ab_1126_6	684	|-heal|p1a: Blissey|33/513 tox|[from] item: Leftovers
+L	ab_1126_6	685	|-damage|p1a: Blissey|0 fnt|[from] psn
+L	ab_1126_6	686	|faint|p1a: Blissey
+L	ab_1126_6	687	|upkeep
+L	ab_1126_6	688	|
+L	ab_1126_6	689	|t:|<NORMALIZED>
+L	ab_1126_6	690	|switch|p1a: Armaldo|Armaldo, L83, M|260/260
+L	ab_1126_6	691	|turn|57
+L	ab_1126_6	692	|
+L	ab_1126_6	693	|t:|<NORMALIZED>
+L	ab_1126_6	694	|move|p2a: Farfetch’d|Swords Dance|p2a: Farfetch’d
+L	ab_1126_6	695	|-boost|p2a: Farfetch’d|atk|2
+L	ab_1126_6	696	|move|p1a: Armaldo|Double-Edge|p2a: Farfetch’d
+L	ab_1126_6	697	|-damage|p2a: Farfetch’d|0 fnt
+L	ab_1126_6	698	|-damage|p1a: Armaldo|225/260|[from] Recoil|[of] p2a: Farfetch’d
+L	ab_1126_6	699	|faint|p2a: Farfetch’d
+L	ab_1126_6	700	|
+L	ab_1126_6	701	|t:|<NORMALIZED>
+L	ab_1126_6	702	|switch|p2a: Scizor|Scizor, L82, M|77/249
+L	ab_1126_6	703	|
+L	ab_1126_6	704	|-weather|RainDance|[upkeep]
+L	ab_1126_6	705	|-heal|p2a: Scizor|92/249|[from] item: Leftovers
+L	ab_1126_6	706	|upkeep
+L	ab_1126_6	707	|turn|58
+L	ab_1126_6	708	|
+L	ab_1126_6	709	|t:|<NORMALIZED>
+L	ab_1126_6	710	|move|p2a: Scizor|Steel Wing|p1a: Armaldo
+L	ab_1126_6	711	|-supereffective|p1a: Armaldo
+L	ab_1126_6	712	|-damage|p1a: Armaldo|63/260
+L	ab_1126_6	713	|move|p1a: Armaldo|Double-Edge|p2a: Scizor
+L	ab_1126_6	714	|-resisted|p2a: Scizor
+L	ab_1126_6	715	|-damage|p2a: Scizor|17/249
+L	ab_1126_6	716	|-damage|p1a: Armaldo|38/260|[from] Recoil|[of] p2a: Scizor
+L	ab_1126_6	717	|
+L	ab_1126_6	718	|-weather|RainDance|[upkeep]
+L	ab_1126_6	719	|-heal|p2a: Scizor|32/249|[from] item: Leftovers
+L	ab_1126_6	720	|upkeep
+L	ab_1126_6	721	|turn|59
+L	ab_1126_6	722	|
+L	ab_1126_6	723	|t:|<NORMALIZED>
+L	ab_1126_6	724	|move|p2a: Scizor|Steel Wing|p1a: Armaldo
+L	ab_1126_6	725	|-supereffective|p1a: Armaldo
+L	ab_1126_6	726	|-damage|p1a: Armaldo|0 fnt
+L	ab_1126_6	727	|faint|p1a: Armaldo
+L	ab_1126_6	728	|
+L	ab_1126_6	729	|t:|<NORMALIZED>
+L	ab_1126_6	730	|switch|p1a: Blaziken|Blaziken, L81, M|262/262
+L	ab_1126_6	731	|
+L	ab_1126_6	732	|-weather|RainDance|[upkeep]
+L	ab_1126_6	733	|-heal|p2a: Scizor|47/249|[from] item: Leftovers
+L	ab_1126_6	734	|upkeep
+L	ab_1126_6	735	|turn|60
+L	ab_1126_6	736	|
+L	ab_1126_6	737	|t:|<NORMALIZED>
+L	ab_1126_6	738	|move|p1a: Blaziken|Fire Blast|p2a: Scizor
+L	ab_1126_6	739	|debug|rain fire suppress
+L	ab_1126_6	740	|-supereffective|p2a: Scizor
+L	ab_1126_6	741	|-damage|p2a: Scizor|0 fnt
+L	ab_1126_6	742	|faint|p2a: Scizor
+L	ab_1126_6	743	|
+L	ab_1126_6	744	|t:|<NORMALIZED>
+L	ab_1126_6	745	|switch|p2a: Bellossom|Bellossom, L94, M|275/293 tox
+L	ab_1126_6	746	|
+L	ab_1126_6	747	|-weather|RainDance|[upkeep]
+L	ab_1126_6	748	|-heal|p2a: Bellossom|293/293 tox|[from] item: Leftovers
+L	ab_1126_6	749	|-damage|p2a: Bellossom|275/293 tox|[from] psn
+L	ab_1126_6	750	|upkeep
+L	ab_1126_6	751	|turn|61
+L	ab_1126_6	752	|
+L	ab_1126_6	753	|t:|<NORMALIZED>
+L	ab_1126_6	754	|switch|p1a: Ampharos|Ampharos, L82, M|238/282
+L	ab_1126_6	755	|move|p2a: Bellossom|Magical Leaf|p1a: Ampharos
+L	ab_1126_6	756	|-damage|p1a: Ampharos|160/282
+L	ab_1126_6	757	|
+L	ab_1126_6	758	|-weather|RainDance|[upkeep]
+L	ab_1126_6	759	|-heal|p2a: Bellossom|293/293 tox|[from] item: Leftovers
+L	ab_1126_6	760	|-damage|p2a: Bellossom|257/293 tox|[from] psn
+L	ab_1126_6	761	|-heal|p1a: Ampharos|177/282|[from] item: Leftovers
+L	ab_1126_6	762	|upkeep
+L	ab_1126_6	763	|turn|62
+L	ab_1126_6	764	|
+L	ab_1126_6	765	|t:|<NORMALIZED>
+L	ab_1126_6	766	|move|p2a: Bellossom|Magical Leaf|p1a: Ampharos
+L	ab_1126_6	767	|-damage|p1a: Ampharos|108/282
+L	ab_1126_6	768	|move|p1a: Ampharos|Toxic|p2a: Bellossom
+L	ab_1126_6	769	|-fail|p2a: Bellossom|tox
+L	ab_1126_6	770	|debug|move failed because it did nothing
+L	ab_1126_6	771	|
+L	ab_1126_6	772	|-weather|RainDance|[upkeep]
+L	ab_1126_6	773	|-heal|p2a: Bellossom|275/293 tox|[from] item: Leftovers
+L	ab_1126_6	774	|-damage|p2a: Bellossom|221/293 tox|[from] psn
+L	ab_1126_6	775	|-heal|p1a: Ampharos|125/282|[from] item: Leftovers
+L	ab_1126_6	776	|upkeep
+L	ab_1126_6	777	|turn|63
+L	ab_1126_6	778	|
+L	ab_1126_6	779	|t:|<NORMALIZED>
+L	ab_1126_6	780	|move|p2a: Bellossom|Magical Leaf|p1a: Ampharos
+L	ab_1126_6	781	|-damage|p1a: Ampharos|50/282
+L	ab_1126_6	782	|move|p1a: Ampharos|Fire Punch|p2a: Bellossom
+L	ab_1126_6	783	|debug|rain fire suppress
+L	ab_1126_6	784	|-supereffective|p2a: Bellossom
+L	ab_1126_6	785	|-damage|p2a: Bellossom|177/293 tox
+L	ab_1126_6	786	|
+L	ab_1126_6	787	|-weather|RainDance|[upkeep]
+L	ab_1126_6	788	|-heal|p2a: Bellossom|195/293 tox|[from] item: Leftovers
+L	ab_1126_6	789	|-damage|p2a: Bellossom|123/293 tox|[from] psn
+L	ab_1126_6	790	|-heal|p1a: Ampharos|67/282|[from] item: Leftovers
+L	ab_1126_6	791	|upkeep
+L	ab_1126_6	792	|turn|64
+L	ab_1126_6	793	|
+L	ab_1126_6	794	|t:|<NORMALIZED>
+L	ab_1126_6	795	|switch|p1a: Blaziken|Blaziken, L81, M|262/262
+L	ab_1126_6	796	|move|p2a: Bellossom|Moonlight|p2a: Bellossom
+L	ab_1126_6	797	|-heal|p2a: Bellossom|196/293 tox
+L	ab_1126_6	798	|
+L	ab_1126_6	799	|-weather|RainDance|[upkeep]
+L	ab_1126_6	800	|-heal|p2a: Bellossom|214/293 tox|[from] item: Leftovers
+L	ab_1126_6	801	|-damage|p2a: Bellossom|124/293 tox|[from] psn
+L	ab_1126_6	802	|upkeep
+L	ab_1126_6	803	|turn|65
+L	ab_1126_6	804	|
+L	ab_1126_6	805	|t:|<NORMALIZED>
+L	ab_1126_6	806	|move|p1a: Blaziken|Fire Blast|p2a: Bellossom
+L	ab_1126_6	807	|debug|rain fire suppress
+L	ab_1126_6	808	|-supereffective|p2a: Bellossom
+L	ab_1126_6	809	|-damage|p2a: Bellossom|19/293 tox
+L	ab_1126_6	810	|move|p2a: Bellossom|Moonlight|p2a: Bellossom
+L	ab_1126_6	811	|-heal|p2a: Bellossom|92/293 tox
+L	ab_1126_6	812	|
+L	ab_1126_6	813	|-weather|RainDance|[upkeep]
+L	ab_1126_6	814	|-heal|p2a: Bellossom|110/293 tox|[from] item: Leftovers
+L	ab_1126_6	815	|-damage|p2a: Bellossom|2/293 tox|[from] psn
+L	ab_1126_6	816	|upkeep
+L	ab_1126_6	817	|turn|66
+L	ab_1126_6	818	|
+L	ab_1126_6	819	|t:|<NORMALIZED>
+L	ab_1126_6	820	|move|p1a: Blaziken|Fire Blast|p2a: Bellossom
+L	ab_1126_6	821	|debug|rain fire suppress
+L	ab_1126_6	822	|-supereffective|p2a: Bellossom
+L	ab_1126_6	823	|-damage|p2a: Bellossom|0 fnt
+L	ab_1126_6	824	|faint|p2a: Bellossom
+L	ab_1126_6	825	|
+L	ab_1126_6	826	|win|P1

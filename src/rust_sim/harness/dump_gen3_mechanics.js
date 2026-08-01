@@ -506,6 +506,18 @@ function extractAbility(id, ab) {
       // Rough Skin: DRAW-FREE contact recoil (`this.damage(source.baseMaxhp / 16, ...)`).
       mech.contactRecoil = true;
     }
+    // The `onDamagingHitOrder` SORT KEY (`gen3_damaging_hit_order_v1`). `DamagingHit` is one
+    // of the four events sorted by `compareLeftToRightOrder` (battle.ts:421) = ASCENDING
+    // `order` (a MISSING order ⇒ 4294967296), then priority, then gather `index`. So an
+    // ordered handler runs BEFORE every un-ordered one — including the DEFENDER's `frz` thaw
+    // (conditions.ts, no order) — whereas the un-ordered abilities (Static / Poison Point /
+    // Flame Body / Effect Spore / Cute Charm / Color Change) fall back to the gather order
+    // (status → ability) and so run AFTER it. In the whole gen3 ability set (nums 1-76) the
+    // ONLY carrier is roughskin (order 1); aftermath / electromorphosis / innards-out /
+    // iron-barbs / wind-power are all later gens.
+    if (typeof inv.onDamagingHitOrder === 'number') {
+      mech.damagingHitOrder = inv.onDamagingHitOrder;
+    }
   }
   // Soundproof — an `onTryHit` immune to a `move.flags["sound"]` move.
   const thSrc = typeof inv.onTryHit === 'string' ? inv.onTryHit : '';
@@ -667,7 +679,7 @@ function checkAbilitiesJson(abilities) {
   const errors = [];
   const abilityKeys = ['dmgMod', 'accMod', 'statusImmune', 'critImmune', 'weatherSpeed', 'weatherNegate',
     'contactProc', 'contactRecoil', 'blocksSound', 'blocksExplosion', 'blocksPhazeDrag', 'synchronize', 'shedSkin', 'trace',
-    'contactAttract', 'wonderGuard'];
+    'contactAttract', 'wonderGuard', 'damagingHitOrder'];
   const byId = new Map(abilities.map((r) => [r.id, r]));
   for (const row of abilities) {
     const c = committed[row.id];

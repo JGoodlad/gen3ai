@@ -189,6 +189,18 @@ pub struct AbilityData {
     /// into the holder deals `baseMaxhp/16` recoil to the ATTACKER, DRAW-FREE. Read by
     /// `turn.rs::apply_contact_proc`.
     pub contact_recoil: bool,
+    /// The `onDamagingHitOrder` SORT KEY (`gen3_damaging_hit_order_v1`). `DamagingHit` is one of
+    /// the four events sorted by `compareLeftToRightOrder` (battle.ts:421) — ASCENDING `order`
+    /// (a MISSING order ⇒ `4294967296`), then priority, then the gather `index` — NOT `speedSort`.
+    /// So an ORDERED handler runs BEFORE every un-ordered one, including the DEFENDER's `frz`
+    /// FIRE-THAW (`conditions.ts`, no order); the un-ordered abilities (Static / Poison Point /
+    /// Flame Body / Effect Spore / Cute Charm / Color Change) instead fall back to the gather
+    /// order (status → volatiles → ABILITY → item) and run AFTER the thaw.
+    ///
+    /// In the whole gen3 ability set (nums 1-76) the ONLY carrier is **Rough Skin** (order 1);
+    /// aftermath / electromorphosis / innards-out / iron-barbs / wind-power are later gens. Read
+    /// by `turn/moves.rs`'s DamagingHit region, which runs the ordered handlers before the thaw.
+    pub damaging_hit_order: Option<u32>,
     /// BLOCK class — Soundproof (`gen3_ability_batch2_v1`). `true` ⇒ the holder is IMMUNE to a
     /// SOUND move (`move.flags.sound`), reporting `-immune` after the accuracy roll (the same
     /// draw model as a type-immune move). Read by `turn.rs`'s move-immunity path.
@@ -389,6 +401,10 @@ pub(super) fn parse(root: &Json) -> Result<HashMap<String, AbilityData>, String>
                 contact_proc,
                 contact_attract,
                 contact_recoil: v.bool_or("contactRecoil", false),
+                damaging_hit_order: v
+                    .get("damagingHitOrder")
+                    .and_then(crate::json::Json::as_f64)
+                    .map(|n| n as u32),
                 blocks_sound: v.bool_or("blocksSound", false),
                 blocks_explosion: v.bool_or("blocksExplosion", false),
                 blocks_phaze_drag: v.bool_or("blocksPhazeDrag", false),

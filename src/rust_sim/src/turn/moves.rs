@@ -5,6 +5,7 @@ use crate::dex::moves::MultiHit;
 use crate::dex::{to_id, Dex, DmgFold, MoveCategory, Type};
 use crate::protocol::Cause;
 use crate::state::{FutureMove, Status, TwoTurnMove, Weather};
+use super::status::DamagingHitPhase;
 use super::*;
 use super::helpers::*;
 
@@ -1487,17 +1488,29 @@ impl crate::state::BattleState {
         //     `!absorbed` gate excludes the sub case. The status lands on the ATTACKER (`side`/`slot`);
         //     Rough Skin deals recoil to the attacker. Struggle IS a contact move so it CAN proc.
         //
-        //     ORDER within `runEvent('DamagingHit')` — the FIRE-MOVE THAW (the defender's `frz`
-        //     STATUS handler) runs BEFORE this (the defender's ABILITY handler). `DamagingHit` is
-        //     one of the four events sorted by `compareLeftToRightOrder` (battle.ts:789-790), NOT
-        //     `speedSort`; with no `onDamagingHitOrder`/`Priority` on either effect every key ties,
-        //     so the sort is STABLE and preserves `findPokemonEventHandlers`'s GATHER order —
-        //     status → volatiles → ABILITY → item (battle.ts:1100-1123). SIM-PROBED
-        //     (`harness/probe_rb_tail.js` C3): Fire Punch into a FROZEN STATIC holder emits
-        //     `|-damage|…frz` → `|-curestatus|<t>|frz|[msg]` → `|-status|<a>|par|[from] ability:
-        //     Static|[of] <t>`. Emission-ORDER only: the thaw is draw-free and touches only the
-        //     DEFENDER's status while the proc rolls + statuses the ATTACKER, so the draw stream
-        //     is unchanged. ---
+        //     ORDER within `runEvent('DamagingHit')` — `DamagingHit` is one of the four events
+        //     sorted by `compareLeftToRightOrder` (battle.ts:421/789-790), NOT `speedSort`:
+        //     ASCENDING `order` (a MISSING order ⇒ 4294967296), then priority, then the gather
+        //     `index`. So the region runs in TWO phases around the defender's `frz` FIRE-THAW
+        //     (a STATUS handler carrying NO order):
+        //       (a) ORDERED handlers first — in gen3 the ONLY carrier is ROUGH SKIN
+        //           (`onDamagingHitOrder: 1`, abilities.ts:3894), so its recoil PRECEDES the thaw;
+        //       (b) the thaw (status, un-ordered — gathered before the ability by
+        //           `findPokemonEventHandlers`'s status → volatiles → ABILITY → item order,
+        //           battle.ts:1100-1123);
+        //       (c) the UN-ORDERED abilities (Static / Poison Point / Flame Body / Effect Spore /
+        //           Cute Charm), which therefore run AFTER the thaw.
+        //     SIM-PROBED both ways: Fire Punch into a FROZEN STATIC holder emits `|-damage|…frz`
+        //     → `|-curestatus|<t>|frz|[msg]` → `|-status|<a>|par|…Static` (`probe_rb_tail.js` C3),
+        //     while Fire Punch into a FROZEN ROUGH SKIN holder emits `|-damage|…frz` →
+        //     `|-damage|<a>|…|[from] ability: Rough Skin|[of] <t>` → `|-curestatus|<t>|frz|[msg]`
+        //     (the 24h-fuzz repros ab_70_2 / ab_2293_23). Round 24 modeled only (b)→(c) and so
+        //     put Rough Skin on the wrong side of the thaw. Emission-ORDER only: the thaw is
+        //     draw-free and touches only the DEFENDER's status while the procs roll + status the
+        //     ATTACKER, so the draw stream is unchanged. ---
+        if is_contact && !absorbed && dealt > 0 {
+            self.apply_contact_proc(side, slot, foe, foe_slot, DamagingHitPhase::Ordered, dex);
+        }
         if is_fire && !absorbed && self.sides[foe].pokemon[foe_slot].status == Some(Status::Freeze) {
             // The mon's HP BEFORE clearing (a fire move that KO'd the frozen mon leaves hp==0).
             let alive = self.sides[foe].pokemon[foe_slot].hp > 0;
@@ -1516,9 +1529,10 @@ impl crate::state::BattleState {
             }
         }
 
-        // The DEFENDER's ABILITY `onDamagingHit` — gathered AFTER its status handler above.
+        // The DEFENDER's UN-ORDERED ABILITY `onDamagingHit` — phase (c): gathered AFTER its
+        // status handler above (the ORDERED Rough Skin pass already ran, phase (a)).
         if is_contact && !absorbed && dealt > 0 {
-            self.apply_contact_proc(side, slot, foe, foe_slot, dex);
+            self.apply_contact_proc(side, slot, foe, foe_slot, DamagingHitPhase::Unordered, dex);
         }
 
         // --- COLOR CHANGE (`gen3_ability_batch4_v1`) — the DEFENDER's onDamagingHit
@@ -2059,10 +2073,14 @@ impl crate::state::BattleState {
 
             // Per-strike SECONDARY (Twineedle psn) → King's Rock → fire-thaw / contact-proc /
             // Color Change — the sim's `spreadMoveHit` per-hit tail (secondaries → onAfterHit →
-            // DamagingHit), each on its own mon. Inside DamagingHit the defender's `frz` STATUS
-            // handler is gathered BEFORE its ABILITY handler (see the single-hit note above).
+            // DamagingHit), each on its own mon. Inside DamagingHit the ORDERED handlers run
+            // first (Rough Skin, `onDamagingHitOrder: 1`), then the defender's un-ordered `frz`
+            // STATUS handler, then its un-ordered ABILITY handler (see the single-hit note above).
             self.apply_secondaries(side, slot, foe, foe_slot, move_index, absorbed, dex);
             self.apply_kings_rock_secondary(side, slot, foe, foe_slot, move_id, absorbed, dex);
+            if is_contact && !absorbed && dealt > 0 {
+                self.apply_contact_proc(side, slot, foe, foe_slot, DamagingHitPhase::Ordered, dex);
+            }
             if is_fire
                 && !absorbed
                 && self.sides[foe].pokemon[foe_slot].status == Some(Status::Freeze)
@@ -2075,7 +2093,7 @@ impl crate::state::BattleState {
                 }
             }
             if is_contact && !absorbed && dealt > 0 {
-                self.apply_contact_proc(side, slot, foe, foe_slot, dex);
+                self.apply_contact_proc(side, slot, foe, foe_slot, DamagingHitPhase::Unordered, dex);
             }
             if !absorbed && dealt > 0 {
                 self.apply_color_change(foe, foe_slot, move_type, dex);
@@ -2405,9 +2423,12 @@ impl crate::state::BattleState {
         //     nothing — a LATENT batch-5-era gap (fixed damage was only e2e-admitted
         //     in batch 5, and no ST-into-a-contact-proc-holder board was sampled until
         //     the batch-6 corpus reshuffle). Pin MC99. ---
+        //     PHASE: `All` — no fire-thaw precedes this tail (no modeled fixed-damage move is
+        //     Fire-typed), so there is no un-ordered handler for an ORDERED one to sort against
+        //     and the `gen3_damaging_hit_order_v1` split is moot here.
         let is_contact = dex.moves(move_id).map(|m| m.contact).unwrap_or(false);
         if is_contact && !absorbed && amount > 0 {
-            self.apply_contact_proc(side, slot, foe, foe_slot, dex);
+            self.apply_contact_proc(side, slot, foe, foe_slot, DamagingHitPhase::All, dex);
         }
         if !absorbed && amount > 0 {
             self.apply_color_change(foe, foe_slot, move_type, dex);

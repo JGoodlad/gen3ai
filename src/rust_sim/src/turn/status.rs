@@ -3,6 +3,32 @@ use crate::protocol::Cause;
 use crate::state::{Status, Weather};
 use super::helpers::*;
 
+/// Which pass of the `runEvent('DamagingHit')` region a `apply_contact_proc` call serves
+/// (`gen3_damaging_hit_order_v1`). `DamagingHit` is one of the four events sorted by
+/// `compareLeftToRightOrder` (battle.ts:421) — ASCENDING `order` (a MISSING order ⇒
+/// 4294967296), then priority, then the gather `index` — NOT `speedSort`. So the region has
+/// TWO observable phases relative to the DEFENDER's un-ordered `frz` FIRE-THAW:
+///
+///   * [`Ordered`](Self::Ordered)   — abilities carrying an `onDamagingHitOrder`. In gen3 the
+///     ONLY member is **Rough Skin** (order 1), which therefore runs BEFORE the thaw.
+///   * [`Unordered`](Self::Unordered) — everything else (Static / Poison Point / Flame Body /
+///     Effect Spore / Cute Charm), which falls back to the gather order (status → ability) and
+///     runs AFTER the thaw.
+///
+/// WRONG (pre-fix, the round-24 `gen3_fire_thaw_before_contact_proc` over-generalization): a
+/// FLAT "thaw before ability" rule, correct for Static but backwards for Rough Skin — the
+/// 24h-fuzz repros ab_70_2 / ab_2293_23 (Fire Punch into a FROZEN Rough Skin Sharpedo: the sim
+/// emits `-damage … Rough Skin` THEN `-curestatus frz [msg]`).
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum DamagingHitPhase {
+    /// Only handlers carrying an `onDamagingHitOrder` (gen3: Rough Skin).
+    Ordered,
+    /// Only handlers with NO order (the gather-order fallback).
+    Unordered,
+    /// Both, for a caller with no interleaved un-ordered handler to order against.
+    All,
+}
+
 impl crate::state::BattleState {
 
     /// The COUNTER / MIRROR COAT damage RECORDER (`gen3_move_coverage_batch5_v1` — the
@@ -99,12 +125,34 @@ impl crate::state::BattleState {
     ///   - **Rough Skin** (`contact_recoil`): DRAW-FREE — `baseMaxhp/16` recoil to the attacker
     ///     (`this.damage`, no PRNG). A recoil KO faints the attacker via the normal machinery.
     /// Nothing fires for a non-CONTACT_PROC / non-Rough-Skin holder (draw-free no-op).
-    pub(crate) fn apply_contact_proc(&mut self, atk_side: usize, atk_slot: usize, def_side: usize, def_slot: usize, dex: &Dex) {
+    pub(crate) fn apply_contact_proc(
+        &mut self,
+        atk_side: usize,
+        atk_slot: usize,
+        def_side: usize,
+        def_slot: usize,
+        phase: DamagingHitPhase,
+        dex: &Dex,
+    ) {
         let ability = to_id(&self.sides[def_side].pokemon[def_slot].ability);
-        let (contact_proc, contact_recoil, contact_attract) = match dex.ability(&ability) {
-            Some(a) => (a.contact_proc.clone(), a.contact_recoil, a.contact_attract),
-            None => (None, false, None),
+        let (contact_proc, contact_recoil, contact_attract, order) = match dex.ability(&ability) {
+            Some(a) => (a.contact_proc.clone(), a.contact_recoil, a.contact_attract, a.damaging_hit_order),
+            None => (None, false, None, None),
         };
+        // `DamagingHit` SORT PHASE (`gen3_damaging_hit_order_v1`) — the caller runs this region
+        // in TWO passes so an ORDERED handler precedes the un-ordered ones, mirroring
+        // `compareLeftToRightOrder` (ASCENDING order, missing ⇒ 4294967296). Rough Skin (order 1)
+        // therefore fires BEFORE the defender's un-ordered `frz` fire-thaw, while Static & co.
+        // fire AFTER it. `All` is for a caller with no interleaved un-ordered handler to order
+        // against (the fixed-damage tail — no fire-thaw precedes it), where the split is moot.
+        let matches_phase = match phase {
+            DamagingHitPhase::All => true,
+            DamagingHitPhase::Ordered => order.is_some(),
+            DamagingHitPhase::Unordered => order.is_none(),
+        };
+        if !matches_phase {
+            return;
+        }
         if let Some(cp) = contact_proc {
             // The `randomChance(num, den)` gate — DRAWN unconditionally on a contact-damaging hit.
             let passed = self.prng.random_chance(cp.chance.0, cp.chance.1);

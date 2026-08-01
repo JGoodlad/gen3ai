@@ -333,7 +333,8 @@
     "roughskin": {
         "name": "Rough Skin",
         "num": 24,
-        "contactRecoil": true
+        "contactRecoil": true,
+        "damagingHitOrder": 1
     },
     "runaway": {
         "name": "Run Away",

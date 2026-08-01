@@ -233,8 +233,13 @@ _GEN3_ABILITY_MECHANICS = {
     # HOLDER switches out; it sticks even when the attacker has a Substitute up.
     "cutecharm": {"contactAttract": {"chance": [1, 3]}},
     # CONTACT recoil (`gen3_ability_batch2_v1`) — Rough Skin: baseMaxhp/16 to the attacker on a
-    # contact hit, DRAW-FREE.
-    "roughskin": {"contactRecoil": True},
+    # contact hit, DRAW-FREE. It is ALSO the ONLY gen3 ability carrying an `onDamagingHitOrder`
+    # (`gen3_damaging_hit_order_v1`): `DamagingHit` is sorted by `compareLeftToRightOrder`
+    # (battle.ts:421) = ASCENDING order (a MISSING order ⇒ 4294967296), so Rough Skin's recoil
+    # runs BEFORE every un-ordered DamagingHit handler — notably the defender's `frz` FIRE-THAW —
+    # while the un-ordered contact procs (Static / Poison Point / Flame Body / Effect Spore) fall
+    # back to the gather order (status → ability) and run AFTER it.
+    "roughskin": {"contactRecoil": True, "damagingHitOrder": 1},
     # BLOCK abilities (`gen3_ability_batch2_v1`).
     "soundproof": {"blocksSound": True},   # onTryHit → -immune to a move.flags.sound move
     "damp": {"blocksExplosion": True},     # onAnyTryMove → cancels Explosion/Self-Destruct (no self-KO)

@@ -1,0 +1,731 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=250724 run_id=rmrziey0i chunk=69
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_69_3
+TEAM	ab_69_3	p1	Tangela||Leftovers|Chlorophyll|sleeppowder,morningsun,leechseed,hiddenpowergrass|Hardy|85,,85,85,85,85|M|,2,,30,,||95|]Miltank||Leftovers|ThickFat|earthquake,curse,bodyslam,milkdrink|Hardy|85,85,85,85,85,85|F|||77|]Lapras||Leftovers|WaterAbsorb|sleeptalk,rest,thunderbolt,icebeam|Hardy|85,,85,85,85,85|M|,0,,,,||78|]Mr. Mime||Leftovers|Soundproof|hypnosis,calmmind,psychic,thunderbolt|Hardy|85,,85,85,85,85|M|,0,,,,||83|]Noctowl||Leftovers|Insomnia|whirlwind,return,toxic,hypnosis|Hardy|85,85,85,85,85,85|M|||93|]Bellossom||Leftovers|Chlorophyll|hiddenpowerfire,moonlight,magicalleaf,leechseed|Hardy|85,,85,85,85,85|M|,2,,30,,30||94|
+TEAM	ab_69_3	p2	Octillery||Leftovers|SuctionCups|icebeam,hiddenpowergrass,thunderwave,surf|Hardy|85,,85,85,85,85|M|,2,,30,,||87|]Huntail||PetayaBerry|SwiftSwim|hiddenpowerelectric,surf,icebeam,raindance|Hardy|85,,85,85,85,85|M|,3,,30,,||89|]Togetic||Leftovers|SereneGrace|toxic,protect,wish,seismictoss|Hardy|85,,85,85,85,85|M|,0,,,,||97|]Slaking||ChoiceBand|Truant|return,hyperbeam,earthquake,shadowball|Hardy|85,85,85,85,85,85|M|||78|]Blaziken||Leftovers|Blaze|hiddenpowerice,fireblast,skyuppercut,rockslide|Hardy|85,85,85,85,85,85|M|,30,30,,,||81|]Magmar||PetayaBerry|FlameBody|hiddenpowerice,substitute,thunderpunch,fireblast|Hardy|73,,85,85,85,85|M|,2,30,,,||84|
+FMT	ab_69_3	gen3customgame
+INIT	ab_69_3	43440,1250,32240,586	3447663668
+DEC	ab_69_3	0	move	0	0	s2	m3	6392,18511,4627,22380	Lapras	331	331	0	-	0	0	0	0	0	0	6	Octillery	272	272	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_69_3	1	move	0	0	s1	m2	11661,37262,36490,9022	Miltank	273	273	0	par	0	0	0	0	0	0	6	Octillery	272	272	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_69_3	2	move	0	0	s5	s1	48058,30113,18484,46137	Bellossom	293	293	0	-	0	0	0	0	0	0	6	Huntail	243	243	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_69_3	3	move	0	0	m1	m2	43623,24137,56142,47060	Bellossom	201	293	0	-	0	0	0	0	0	0	6	Huntail	243	243	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_69_3	4	move	0	0	m3	m1	40520,57728,50963,51851	Bellossom	205	293	0	-	0	0	0	0	0	0	6	Huntail	213	243	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_69_3	5	move	0	0	m1	m1	11116,60472,34369,53615	Bellossom	293	293	0	-	0	0	0	0	0	0	6	Huntail	183	243	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_69_3	6	move	0	0	m2	m2	35544,42870,53415,33229	Bellossom	203	293	0	-	0	0	0	0	0	0	6	Huntail	0	243	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_69_3	7	switch	0	1	-	s4	51815,35777,65358,35236	Bellossom	203	293	0	-	0	0	0	0	0	0	6	Blaziken	262	262	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_69_3	8	move	0	0	m1	m3	2649,27492,19709,4251	Bellossom	115	293	0	-	0	0	0	0	0	0	6	Blaziken	262	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	9	move	0	0	m1	m1	33018,2804,14586,2837	Bellossom	279	293	0	-	0	0	0	0	0	0	6	Blaziken	262	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	10	move	0	0	m2	m3	8520,22718,52920,58770	Bellossom	241	293	0	-	0	0	0	0	0	0	6	Blaziken	235	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	11	move	0	0	m2	m2	32972,30172,24313,31176	Bellossom	173	293	0	-	0	0	0	0	0	0	6	Blaziken	204	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	12	move	0	0	m1	m2	52226,9115,5803,20188	Bellossom	249	293	0	-	0	0	0	0	0	0	6	Blaziken	220	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	13	move	0	0	m2	m2	35623,19745,3011,60386	Bellossom	170	293	0	-	0	0	0	0	0	0	6	Blaziken	194	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	14	move	0	0	m2	m2	54259,7511,2809,42648	Bellossom	95	293	0	-	0	0	0	0	0	0	6	Blaziken	164	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	15	move	0	0	m3	m3	16359,64808,34668,13471	Bellossom	63	293	0	-	0	0	0	0	0	0	6	Blaziken	180	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	16	move	0	0	m1	m2	64013,41148,8727,48512	Bellossom	0	293	1	fnt	0	0	0	0	0	0	5	Blaziken	180	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	17	switch	1	0	s5	-	45358,20112,22125,57923	Miltank	273	273	0	par	0	0	0	0	0	0	5	Blaziken	196	262	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_69_3	18	move	0	0	m2	m1	16265,25255,5619,19909	Miltank	208	273	0	par	0	0	0	0	0	0	5	Blaziken	129	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	19	move	0	0	m3	m2	33264,8618,38844,3152	Miltank	182	273	0	par	0	0	0	0	0	0	5	Blaziken	145	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	20	move	0	0	m2	m3	23141,50271,57974,13009	Miltank	199	273	0	par	0	0	0	0	0	0	5	Blaziken	73	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	21	move	0	0	m0	m1	15254,6470,29281,59434	Miltank	216	273	0	par	0	0	0	0	0	0	5	Blaziken	89	262	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_69_3	22	move	0	0	m2	m3	56485,54369,55090,29085	Miltank	162	273	0	par	0	0	0	0	0	0	5	Blaziken	0	262	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_69_3	23	switch	0	1	-	s2	17178,25348,15653,30388	Miltank	179	273	0	par	0	0	0	0	0	0	5	Togetic	264	264	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_69_3	24	move	0	0	s3	m0	55,37418,17071,61254	Mr. Mime	190	202	0	tox	0	0	0	0	0	0	5	Togetic	264	264	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_69_3	25	move	0	0	m0	m2	27204,46178,15715,53995	Mr. Mime	178	202	0	tox	0	0	0	0	0	0	5	Togetic	264	264	0	slp	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_69_3	26	move	0	0	m1	m1	24041,22537,36053,39034	Mr. Mime	154	202	0	tox	0	0	1	1	0	0	5	Togetic	264	264	0	slp	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_69_3	27	move	0	0	m1	m1	54942,22968,15457,54812	Mr. Mime	118	202	0	tox	0	0	2	2	0	0	5	Togetic	264	264	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_69_3	28	move	0	0	m3	m3	7524,48389,58686,44659	Mr. Mime	0	202	1	fnt	0	0	0	0	0	0	4	Togetic	58	264	0	-	0	0	0	0	0	0	4	p1	0	0	1	0	0
+DEC	ab_69_3	29	switch	1	0	s3	-	25281,46512,18017,64802	Miltank	179	273	0	par	0	0	0	0	0	0	4	Togetic	58	264	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_69_3	30	move	0	0	m3	m3	29699,7359,11672,34519	Miltank	235	273	0	par	0	0	0	0	0	0	4	Togetic	74	264	0	-	0	0	0	0	0	0	4	p2	0	0	1	0	0
+DEC	ab_69_3	31	move	0	0	m2	m3	34772,4979,25473,1516	Miltank	155	273	0	par	0	0	0	0	0	0	4	Togetic	34	264	0	par	0	0	0	0	0	0	4	p2	0	0	1	0	0
+DEC	ab_69_3	32	move	0	0	m2	m3	62826,12264,9488,43651	Miltank	155	273	0	par	0	0	0	0	0	0	4	Togetic	0	264	1	fnt	0	0	0	0	0	0	3	p1	0	0	1	0	0
+DEC	ab_69_3	33	switch	0	1	-	s5	50612,38015,30862,65394	Miltank	172	273	0	par	0	0	0	0	0	0	4	Magmar	244	244	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_69_3	34	move	0	0	m1	m1	63901,43715,29953,25063	Miltank	189	273	0	par	1	1	0	0	-1	0	4	Magmar	183	244	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_69_3	35	move	0	0	m2	s1	39283,29057,54402,50181	Miltank	206	273	0	par	1	1	0	0	-1	0	4	Octillery	185	272	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_69_3	36	move	0	0	m0	m2	21566,39641,26923,28942	Miltank	223	273	0	par	1	1	0	0	-1	0	4	Octillery	202	272	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_69_3	37	move	0	0	m3	m0	15154,3486,53338,18468	Miltank	273	273	0	par	1	1	0	0	-1	0	4	Octillery	219	272	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_69_3	38	move	0	0	m2	s3	20162,10921,36922,29034	Miltank	273	273	0	par	1	1	0	0	-1	0	4	Slaking	259	362	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_69_3	39	move	0	0	m2	m2	10701,22950,38058,20445	Miltank	197	273	0	par	1	1	0	0	-1	0	4	Slaking	49	362	0	par	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_69_3	40	move	0	0	m0	m2	60332,8550,63462,62881	Miltank	197	273	0	par	1	1	0	0	-1	0	4	Slaking	0	362	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_69_3	41	switch	0	1	-	s3	38148,53952,2847,45128	Miltank	214	273	0	par	1	1	0	0	-1	0	4	Octillery	236	272	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_69_3	42	move	0	0	m3	m0	21051,7773,34614,56238	Miltank	273	273	0	par	1	1	0	0	-1	0	4	Octillery	253	272	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_69_3	43	move	0	0	m3	m2	51324,30149,46233,50867	Miltank	273	273	0	par	1	1	0	0	-1	0	4	Octillery	270	272	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_69_3	44	move	0	0	m2	s1	37355,3181,49213,15640	Miltank	273	273	0	par	1	1	0	0	-1	0	4	Magmar	38	244	0	-	0	0	1	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_69_3	45	move	0	0	m1	m2	23203,10896,56947,39673	Miltank	182	273	0	par	2	2	0	0	-2	0	4	Magmar	38	244	0	-	0	0	1	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_69_3	46	move	0	0	m2	m1	37703,26306,36835,58919	Miltank	182	273	0	par	2	2	0	0	-2	0	4	Magmar	0	244	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_69_3	47	switch	0	1	-	s1	120,47226,31308,19238	Miltank	199	273	0	par	2	2	0	0	-2	0	4	Octillery	272	272	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_69_3	48	move	0	0	m2	m3	40491,42585,65471,2441	Miltank	72	273	0	par	2	2	0	0	-2	0	4	Octillery	148	272	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_69_3	49	move	0	0	s4	m3	13045,15844,29123,19597	Noctowl	262	337	0	-	0	0	0	0	0	0	4	Octillery	165	272	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_69_3	50	move	0	0	m3	m3	39419,13934,48871,55992	Noctowl	186	337	0	-	0	0	0	0	0	0	4	Octillery	182	272	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_69_3	51	move	0	0	m0	m3	61015,21628,59843,6975	Noctowl	105	337	0	-	0	0	0	0	0	0	4	Octillery	199	272	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_69_3	52	move	0	0	m3	m0	32507,18570,60118,3488	Noctowl	126	337	0	-	0	0	0	0	0	0	4	Octillery	216	272	0	slp	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_69_3	53	move	0	0	m3	m2	31008,38583,28533,51538	Noctowl	147	337	0	-	0	0	0	0	0	0	4	Octillery	233	272	0	slp	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_69_3	54	move	0	0	m0	m3	32390,20681,794,5428	Noctowl	168	337	0	-	0	0	0	0	0	0	4	Octillery	250	272	0	slp	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_69_3	55	move	0	0	m0	m2	9,58967,9928,51654	Noctowl	189	337	0	-	0	0	0	0	0	0	4	Octillery	267	272	0	slp	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_69_3	56	move	0	0	m1	m3	7187,21539,56639,35919	Noctowl	121	337	0	-	0	0	0	0	0	0	4	Octillery	191	272	0	-	0	0	0	0	0	0	1	p1	0	0	0	1	0
+DEC	ab_69_3	57	move	0	0	m2	m2	10971,21960,61028,5232	Noctowl	142	337	0	par	0	0	0	0	0	0	4	Octillery	191	272	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_69_3	58	move	0	0	m2	m3	37918,56367,26211,6934	Noctowl	64	337	0	par	0	0	0	0	0	0	4	Octillery	174	272	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_69_3	59	move	0	0	s2	m3	10695,23083,40562,10058	Tangela	211	277	0	-	0	0	0	0	0	0	4	Octillery	140	272	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_69_3	60	move	0	0	s1	m3	39323,26965,23241,46188	Lapras	331	331	0	-	0	0	0	0	0	0	4	Octillery	89	272	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_69_3	61	move	0	0	s4	m2	43245,14307,54715,63550	Miltank	89	273	0	par	0	0	0	0	0	0	4	Octillery	21	272	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_69_3	62	move	0	0	m1	m2	6620,18620,47119,31491	Miltank	89	273	0	par	1	1	0	0	-1	0	4	Octillery	0	272	1	tox	0	0	0	0	0	0	0	p2	0	0	0	0	0
+END	ab_69_3	1	p1
+L	ab_69_3	0	|t:|<NORMALIZED>
+L	ab_69_3	1	|gametype|singles
+L	ab_69_3	2	|player|p1|P1||
+L	ab_69_3	3	|player|p2|P2||
+L	ab_69_3	4	|gen|3
+L	ab_69_3	5	|tier|[Gen 3] Custom Game
+L	ab_69_3	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_69_3	7	|
+L	ab_69_3	8	|t:|<NORMALIZED>
+L	ab_69_3	9	|teamsize|p1|6
+L	ab_69_3	10	|teamsize|p2|6
+L	ab_69_3	11	|start
+L	ab_69_3	12	|switch|p1a: Tangela|Tangela, L95, M|277/277
+L	ab_69_3	13	|switch|p2a: Octillery|Octillery, L87, M|272/272
+L	ab_69_3	14	|turn|1
+L	ab_69_3	15	|
+L	ab_69_3	16	|t:|<NORMALIZED>
+L	ab_69_3	17	|switch|p1a: Lapras|Lapras, L78, M|331/331
+L	ab_69_3	18	|move|p2a: Octillery|Surf|p1a: Lapras
+L	ab_69_3	19	|-immune|p1a: Lapras|[from] ability: Water Absorb
+L	ab_69_3	20	|
+L	ab_69_3	21	|upkeep
+L	ab_69_3	22	|turn|2
+L	ab_69_3	23	|
+L	ab_69_3	24	|t:|<NORMALIZED>
+L	ab_69_3	25	|switch|p1a: Miltank|Miltank, L77, F|273/273
+L	ab_69_3	26	|move|p2a: Octillery|Thunder Wave|p1a: Miltank
+L	ab_69_3	27	|-status|p1a: Miltank|par
+L	ab_69_3	28	|
+L	ab_69_3	29	|upkeep
+L	ab_69_3	30	|turn|3
+L	ab_69_3	31	|
+L	ab_69_3	32	|t:|<NORMALIZED>
+L	ab_69_3	33	|switch|p2a: Huntail|Huntail, L89, M|243/243
+L	ab_69_3	34	|switch|p1a: Bellossom|Bellossom, L94, M|293/293
+L	ab_69_3	35	|
+L	ab_69_3	36	|upkeep
+L	ab_69_3	37	|turn|4
+L	ab_69_3	38	|
+L	ab_69_3	39	|t:|<NORMALIZED>
+L	ab_69_3	40	|move|p1a: Bellossom|Moonlight|p1a: Bellossom
+L	ab_69_3	41	|move|p2a: Huntail|Ice Beam|p1a: Bellossom
+L	ab_69_3	42	|-supereffective|p1a: Bellossom
+L	ab_69_3	43	|-damage|p1a: Bellossom|183/293
+L	ab_69_3	44	|
+L	ab_69_3	45	|-heal|p1a: Bellossom|201/293|[from] item: Leftovers
+L	ab_69_3	46	|upkeep
+L	ab_69_3	47	|turn|5
+L	ab_69_3	48	|
+L	ab_69_3	49	|t:|<NORMALIZED>
+L	ab_69_3	50	|move|p1a: Bellossom|Leech Seed|p2a: Huntail
+L	ab_69_3	51	|-start|p2a: Huntail|move: Leech Seed
+L	ab_69_3	52	|move|p2a: Huntail|Surf|p1a: Bellossom
+L	ab_69_3	53	|-resisted|p1a: Bellossom
+L	ab_69_3	54	|-damage|p1a: Bellossom|157/293
+L	ab_69_3	55	|
+L	ab_69_3	56	|-heal|p1a: Bellossom|175/293|[from] item: Leftovers
+L	ab_69_3	57	|-damage|p2a: Huntail|213/243|[from] Leech Seed|[of] p1a: Bellossom
+L	ab_69_3	58	|-heal|p1a: Bellossom|205/293|[silent]
+L	ab_69_3	59	|upkeep
+L	ab_69_3	60	|turn|6
+L	ab_69_3	61	|
+L	ab_69_3	62	|t:|<NORMALIZED>
+L	ab_69_3	63	|move|p1a: Bellossom|Moonlight|p1a: Bellossom
+L	ab_69_3	64	|-heal|p1a: Bellossom|293/293
+L	ab_69_3	65	|move|p2a: Huntail|Surf|p1a: Bellossom
+L	ab_69_3	66	|-resisted|p1a: Bellossom
+L	ab_69_3	67	|-damage|p1a: Bellossom|251/293
+L	ab_69_3	68	|
+L	ab_69_3	69	|-heal|p1a: Bellossom|269/293|[from] item: Leftovers
+L	ab_69_3	70	|-damage|p2a: Huntail|183/243|[from] Leech Seed|[of] p1a: Bellossom
+L	ab_69_3	71	|-heal|p1a: Bellossom|293/293|[silent]
+L	ab_69_3	72	|upkeep
+L	ab_69_3	73	|turn|7
+L	ab_69_3	74	|
+L	ab_69_3	75	|t:|<NORMALIZED>
+L	ab_69_3	76	|move|p1a: Bellossom|Magical Leaf|p2a: Huntail
+L	ab_69_3	77	|-supereffective|p2a: Huntail
+L	ab_69_3	78	|-damage|p2a: Huntail|11/243
+L	ab_69_3	79	|move|p2a: Huntail|Ice Beam|p1a: Bellossom
+L	ab_69_3	80	|-supereffective|p1a: Bellossom
+L	ab_69_3	81	|-damage|p1a: Bellossom|174/293
+L	ab_69_3	82	|
+L	ab_69_3	83	|-heal|p1a: Bellossom|192/293|[from] item: Leftovers
+L	ab_69_3	84	|-enditem|p2a: Huntail|Petaya Berry|[eat]
+L	ab_69_3	85	|-boost|p2a: Huntail|spa|1|[from] item: Petaya Berry
+L	ab_69_3	86	|-damage|p2a: Huntail|0 fnt|[from] Leech Seed|[of] p1a: Bellossom
+L	ab_69_3	87	|-heal|p1a: Bellossom|203/293|[silent]
+L	ab_69_3	88	|faint|p2a: Huntail
+L	ab_69_3	89	|upkeep
+L	ab_69_3	90	|
+L	ab_69_3	91	|t:|<NORMALIZED>
+L	ab_69_3	92	|switch|p2a: Blaziken|Blaziken, L81, M|262/262
+L	ab_69_3	93	|turn|8
+L	ab_69_3	94	|
+L	ab_69_3	95	|t:|<NORMALIZED>
+L	ab_69_3	96	|move|p2a: Blaziken|Rock Slide|p1a: Bellossom
+L	ab_69_3	97	|-crit|p1a: Bellossom
+L	ab_69_3	98	|-damage|p1a: Bellossom|97/293
+L	ab_69_3	99	|cant|p1a: Bellossom|flinch
+L	ab_69_3	100	|
+L	ab_69_3	101	|-heal|p1a: Bellossom|115/293|[from] item: Leftovers
+L	ab_69_3	102	|upkeep
+L	ab_69_3	103	|turn|9
+L	ab_69_3	104	|
+L	ab_69_3	105	|t:|<NORMALIZED>
+L	ab_69_3	106	|move|p2a: Blaziken|Fire Blast|p1a: Bellossom|[miss]
+L	ab_69_3	107	|-miss|p2a: Blaziken|p1a: Bellossom
+L	ab_69_3	108	|move|p1a: Bellossom|Moonlight|p1a: Bellossom
+L	ab_69_3	109	|-heal|p1a: Bellossom|261/293
+L	ab_69_3	110	|
+L	ab_69_3	111	|-heal|p1a: Bellossom|279/293|[from] item: Leftovers
+L	ab_69_3	112	|upkeep
+L	ab_69_3	113	|turn|10
+L	ab_69_3	114	|
+L	ab_69_3	115	|t:|<NORMALIZED>
+L	ab_69_3	116	|move|p2a: Blaziken|Rock Slide|p1a: Bellossom
+L	ab_69_3	117	|-damage|p1a: Bellossom|223/293
+L	ab_69_3	118	|move|p1a: Bellossom|Magical Leaf|p2a: Blaziken
+L	ab_69_3	119	|-resisted|p2a: Blaziken
+L	ab_69_3	120	|-damage|p2a: Blaziken|219/262
+L	ab_69_3	121	|
+L	ab_69_3	122	|-heal|p2a: Blaziken|235/262|[from] item: Leftovers
+L	ab_69_3	123	|-heal|p1a: Bellossom|241/293|[from] item: Leftovers
+L	ab_69_3	124	|upkeep
+L	ab_69_3	125	|turn|11
+L	ab_69_3	126	|
+L	ab_69_3	127	|t:|<NORMALIZED>
+L	ab_69_3	128	|move|p2a: Blaziken|Sky Uppercut|p1a: Bellossom
+L	ab_69_3	129	|-damage|p1a: Bellossom|155/293
+L	ab_69_3	130	|move|p1a: Bellossom|Magical Leaf|p2a: Blaziken
+L	ab_69_3	131	|-resisted|p2a: Blaziken
+L	ab_69_3	132	|-damage|p2a: Blaziken|188/262
+L	ab_69_3	133	|
+L	ab_69_3	134	|-heal|p2a: Blaziken|204/262|[from] item: Leftovers
+L	ab_69_3	135	|-heal|p1a: Bellossom|173/293|[from] item: Leftovers
+L	ab_69_3	136	|upkeep
+L	ab_69_3	137	|turn|12
+L	ab_69_3	138	|
+L	ab_69_3	139	|t:|<NORMALIZED>
+L	ab_69_3	140	|move|p2a: Blaziken|Sky Uppercut|p1a: Bellossom
+L	ab_69_3	141	|-damage|p1a: Bellossom|85/293
+L	ab_69_3	142	|move|p1a: Bellossom|Moonlight|p1a: Bellossom
+L	ab_69_3	143	|-heal|p1a: Bellossom|231/293
+L	ab_69_3	144	|
+L	ab_69_3	145	|-heal|p2a: Blaziken|220/262|[from] item: Leftovers
+L	ab_69_3	146	|-heal|p1a: Bellossom|249/293|[from] item: Leftovers
+L	ab_69_3	147	|upkeep
+L	ab_69_3	148	|turn|13
+L	ab_69_3	149	|
+L	ab_69_3	150	|t:|<NORMALIZED>
+L	ab_69_3	151	|move|p2a: Blaziken|Sky Uppercut|p1a: Bellossom
+L	ab_69_3	152	|-damage|p1a: Bellossom|152/293
+L	ab_69_3	153	|move|p1a: Bellossom|Magical Leaf|p2a: Blaziken
+L	ab_69_3	154	|-resisted|p2a: Blaziken
+L	ab_69_3	155	|-damage|p2a: Blaziken|178/262
+L	ab_69_3	156	|
+L	ab_69_3	157	|-heal|p2a: Blaziken|194/262|[from] item: Leftovers
+L	ab_69_3	158	|-heal|p1a: Bellossom|170/293|[from] item: Leftovers
+L	ab_69_3	159	|upkeep
+L	ab_69_3	160	|turn|14
+L	ab_69_3	161	|
+L	ab_69_3	162	|t:|<NORMALIZED>
+L	ab_69_3	163	|move|p2a: Blaziken|Sky Uppercut|p1a: Bellossom
+L	ab_69_3	164	|-damage|p1a: Bellossom|77/293
+L	ab_69_3	165	|move|p1a: Bellossom|Magical Leaf|p2a: Blaziken
+L	ab_69_3	166	|-resisted|p2a: Blaziken
+L	ab_69_3	167	|-damage|p2a: Blaziken|148/262
+L	ab_69_3	168	|
+L	ab_69_3	169	|-heal|p2a: Blaziken|164/262|[from] item: Leftovers
+L	ab_69_3	170	|-heal|p1a: Bellossom|95/293|[from] item: Leftovers
+L	ab_69_3	171	|upkeep
+L	ab_69_3	172	|turn|15
+L	ab_69_3	173	|
+L	ab_69_3	174	|t:|<NORMALIZED>
+L	ab_69_3	175	|move|p2a: Blaziken|Rock Slide|p1a: Bellossom
+L	ab_69_3	176	|-damage|p1a: Bellossom|45/293
+L	ab_69_3	177	|cant|p1a: Bellossom|flinch
+L	ab_69_3	178	|
+L	ab_69_3	179	|-heal|p2a: Blaziken|180/262|[from] item: Leftovers
+L	ab_69_3	180	|-heal|p1a: Bellossom|63/293|[from] item: Leftovers
+L	ab_69_3	181	|upkeep
+L	ab_69_3	182	|turn|16
+L	ab_69_3	183	|
+L	ab_69_3	184	|t:|<NORMALIZED>
+L	ab_69_3	185	|move|p2a: Blaziken|Sky Uppercut|p1a: Bellossom
+L	ab_69_3	186	|-damage|p1a: Bellossom|0 fnt
+L	ab_69_3	187	|faint|p1a: Bellossom
+L	ab_69_3	188	|
+L	ab_69_3	189	|t:|<NORMALIZED>
+L	ab_69_3	190	|switch|p1a: Miltank|Miltank, L77, F|273/273 par
+L	ab_69_3	191	|
+L	ab_69_3	192	|-heal|p2a: Blaziken|196/262|[from] item: Leftovers
+L	ab_69_3	193	|upkeep
+L	ab_69_3	194	|turn|17
+L	ab_69_3	195	|
+L	ab_69_3	196	|t:|<NORMALIZED>
+L	ab_69_3	197	|move|p2a: Blaziken|Fire Blast|p1a: Miltank
+L	ab_69_3	198	|-damage|p1a: Miltank|191/273 par
+L	ab_69_3	199	|move|p1a: Miltank|Body Slam|p2a: Blaziken
+L	ab_69_3	200	|-damage|p2a: Blaziken|113/262
+L	ab_69_3	201	|
+L	ab_69_3	202	|-heal|p2a: Blaziken|129/262|[from] item: Leftovers
+L	ab_69_3	203	|-heal|p1a: Miltank|208/273 par|[from] item: Leftovers
+L	ab_69_3	204	|upkeep
+L	ab_69_3	205	|turn|18
+L	ab_69_3	206	|
+L	ab_69_3	207	|t:|<NORMALIZED>
+L	ab_69_3	208	|move|p2a: Blaziken|Sky Uppercut|p1a: Miltank
+L	ab_69_3	209	|-supereffective|p1a: Miltank
+L	ab_69_3	210	|-damage|p1a: Miltank|29/273 par
+L	ab_69_3	211	|move|p1a: Miltank|Milk Drink|p1a: Miltank
+L	ab_69_3	212	|-heal|p1a: Miltank|165/273 par
+L	ab_69_3	213	|
+L	ab_69_3	214	|-heal|p2a: Blaziken|145/262|[from] item: Leftovers
+L	ab_69_3	215	|-heal|p1a: Miltank|182/273 par|[from] item: Leftovers
+L	ab_69_3	216	|upkeep
+L	ab_69_3	217	|turn|19
+L	ab_69_3	218	|
+L	ab_69_3	219	|t:|<NORMALIZED>
+L	ab_69_3	220	|move|p2a: Blaziken|Rock Slide|p1a: Miltank|[miss]
+L	ab_69_3	221	|-miss|p2a: Blaziken|p1a: Miltank
+L	ab_69_3	222	|move|p1a: Miltank|Body Slam|p2a: Blaziken
+L	ab_69_3	223	|-damage|p2a: Blaziken|57/262
+L	ab_69_3	224	|
+L	ab_69_3	225	|-heal|p2a: Blaziken|73/262|[from] item: Leftovers
+L	ab_69_3	226	|-heal|p1a: Miltank|199/273 par|[from] item: Leftovers
+L	ab_69_3	227	|upkeep
+L	ab_69_3	228	|turn|20
+L	ab_69_3	229	|
+L	ab_69_3	230	|t:|<NORMALIZED>
+L	ab_69_3	231	|move|p2a: Blaziken|Fire Blast|p1a: Miltank|[miss]
+L	ab_69_3	232	|-miss|p2a: Blaziken|p1a: Miltank
+L	ab_69_3	233	|cant|p1a: Miltank|par
+L	ab_69_3	234	|
+L	ab_69_3	235	|-heal|p2a: Blaziken|89/262|[from] item: Leftovers
+L	ab_69_3	236	|-heal|p1a: Miltank|216/273 par|[from] item: Leftovers
+L	ab_69_3	237	|upkeep
+L	ab_69_3	238	|turn|21
+L	ab_69_3	239	|
+L	ab_69_3	240	|t:|<NORMALIZED>
+L	ab_69_3	241	|move|p2a: Blaziken|Rock Slide|p1a: Miltank
+L	ab_69_3	242	|-damage|p1a: Miltank|162/273 par
+L	ab_69_3	243	|move|p1a: Miltank|Body Slam|p2a: Blaziken
+L	ab_69_3	244	|-crit|p2a: Blaziken
+L	ab_69_3	245	|-damage|p2a: Blaziken|0 fnt
+L	ab_69_3	246	|faint|p2a: Blaziken
+L	ab_69_3	247	|
+L	ab_69_3	248	|t:|<NORMALIZED>
+L	ab_69_3	249	|switch|p2a: Togetic|Togetic, L97, M|264/264
+L	ab_69_3	250	|
+L	ab_69_3	251	|-heal|p1a: Miltank|179/273 par|[from] item: Leftovers
+L	ab_69_3	252	|upkeep
+L	ab_69_3	253	|turn|22
+L	ab_69_3	254	|
+L	ab_69_3	255	|t:|<NORMALIZED>
+L	ab_69_3	256	|switch|p1a: Mr. Mime|Mr. Mime, L83, M|202/202
+L	ab_69_3	257	|move|p2a: Togetic|Toxic|p1a: Mr. Mime
+L	ab_69_3	258	|-status|p1a: Mr. Mime|tox
+L	ab_69_3	259	|
+L	ab_69_3	260	|-damage|p1a: Mr. Mime|190/202 tox|[from] psn
+L	ab_69_3	261	|upkeep
+L	ab_69_3	262	|turn|23
+L	ab_69_3	263	|
+L	ab_69_3	264	|t:|<NORMALIZED>
+L	ab_69_3	265	|move|p1a: Mr. Mime|Hypnosis|p2a: Togetic
+L	ab_69_3	266	|-status|p2a: Togetic|slp|[from] move: Hypnosis
+L	ab_69_3	267	|cant|p2a: Togetic|slp
+L	ab_69_3	268	|
+L	ab_69_3	269	|-heal|p1a: Mr. Mime|202/202 tox|[from] item: Leftovers
+L	ab_69_3	270	|-damage|p1a: Mr. Mime|178/202 tox|[from] psn
+L	ab_69_3	271	|upkeep
+L	ab_69_3	272	|turn|24
+L	ab_69_3	273	|
+L	ab_69_3	274	|t:|<NORMALIZED>
+L	ab_69_3	275	|cant|p2a: Togetic|slp
+L	ab_69_3	276	|move|p1a: Mr. Mime|Calm Mind|p1a: Mr. Mime
+L	ab_69_3	277	|-boost|p1a: Mr. Mime|spa|1
+L	ab_69_3	278	|-boost|p1a: Mr. Mime|spd|1
+L	ab_69_3	279	|
+L	ab_69_3	280	|-heal|p1a: Mr. Mime|190/202 tox|[from] item: Leftovers
+L	ab_69_3	281	|-damage|p1a: Mr. Mime|154/202 tox|[from] psn
+L	ab_69_3	282	|upkeep
+L	ab_69_3	283	|turn|25
+L	ab_69_3	284	|
+L	ab_69_3	285	|t:|<NORMALIZED>
+L	ab_69_3	286	|-curestatus|p2a: Togetic|slp|[msg]
+L	ab_69_3	287	|move|p2a: Togetic|Protect|p2a: Togetic
+L	ab_69_3	288	|-singleturn|p2a: Togetic|Protect
+L	ab_69_3	289	|move|p1a: Mr. Mime|Calm Mind|p1a: Mr. Mime
+L	ab_69_3	290	|-boost|p1a: Mr. Mime|spa|1
+L	ab_69_3	291	|-boost|p1a: Mr. Mime|spd|1
+L	ab_69_3	292	|
+L	ab_69_3	293	|-heal|p1a: Mr. Mime|166/202 tox|[from] item: Leftovers
+L	ab_69_3	294	|-damage|p1a: Mr. Mime|118/202 tox|[from] psn
+L	ab_69_3	295	|upkeep
+L	ab_69_3	296	|turn|26
+L	ab_69_3	297	|
+L	ab_69_3	298	|t:|<NORMALIZED>
+L	ab_69_3	299	|move|p1a: Mr. Mime|Thunderbolt|p2a: Togetic
+L	ab_69_3	300	|-supereffective|p2a: Togetic
+L	ab_69_3	301	|-damage|p2a: Togetic|42/264
+L	ab_69_3	302	|move|p2a: Togetic|Seismic Toss|p1a: Mr. Mime
+L	ab_69_3	303	|-damage|p1a: Mr. Mime|21/202 tox
+L	ab_69_3	304	|
+L	ab_69_3	305	|-heal|p1a: Mr. Mime|33/202 tox|[from] item: Leftovers
+L	ab_69_3	306	|-damage|p1a: Mr. Mime|0 fnt|[from] psn
+L	ab_69_3	307	|faint|p1a: Mr. Mime
+L	ab_69_3	308	|-heal|p2a: Togetic|58/264|[from] item: Leftovers
+L	ab_69_3	309	|upkeep
+L	ab_69_3	310	|
+L	ab_69_3	311	|t:|<NORMALIZED>
+L	ab_69_3	312	|switch|p1a: Miltank|Miltank, L77, F|179/273 par
+L	ab_69_3	313	|turn|27
+L	ab_69_3	314	|
+L	ab_69_3	315	|t:|<NORMALIZED>
+L	ab_69_3	316	|move|p2a: Togetic|Seismic Toss|p1a: Miltank
+L	ab_69_3	317	|-damage|p1a: Miltank|82/273 par
+L	ab_69_3	318	|move|p1a: Miltank|Milk Drink|p1a: Miltank
+L	ab_69_3	319	|-heal|p1a: Miltank|218/273 par
+L	ab_69_3	320	|
+L	ab_69_3	321	|-heal|p2a: Togetic|74/264|[from] item: Leftovers
+L	ab_69_3	322	|-heal|p1a: Miltank|235/273 par|[from] item: Leftovers
+L	ab_69_3	323	|upkeep
+L	ab_69_3	324	|turn|28
+L	ab_69_3	325	|
+L	ab_69_3	326	|t:|<NORMALIZED>
+L	ab_69_3	327	|move|p2a: Togetic|Seismic Toss|p1a: Miltank
+L	ab_69_3	328	|-damage|p1a: Miltank|138/273 par
+L	ab_69_3	329	|move|p1a: Miltank|Body Slam|p2a: Togetic
+L	ab_69_3	330	|-damage|p2a: Togetic|18/264
+L	ab_69_3	331	|-status|p2a: Togetic|par
+L	ab_69_3	332	|
+L	ab_69_3	333	|-heal|p1a: Miltank|155/273 par|[from] item: Leftovers
+L	ab_69_3	334	|-heal|p2a: Togetic|34/264 par|[from] item: Leftovers
+L	ab_69_3	335	|upkeep
+L	ab_69_3	336	|turn|29
+L	ab_69_3	337	|
+L	ab_69_3	338	|t:|<NORMALIZED>
+L	ab_69_3	339	|move|p1a: Miltank|Body Slam|p2a: Togetic
+L	ab_69_3	340	|-damage|p2a: Togetic|0 fnt
+L	ab_69_3	341	|faint|p2a: Togetic
+L	ab_69_3	342	|
+L	ab_69_3	343	|t:|<NORMALIZED>
+L	ab_69_3	344	|switch|p2a: Magmar|Magmar, L84, M|244/244
+L	ab_69_3	345	|
+L	ab_69_3	346	|-heal|p1a: Miltank|172/273 par|[from] item: Leftovers
+L	ab_69_3	347	|upkeep
+L	ab_69_3	348	|turn|30
+L	ab_69_3	349	|
+L	ab_69_3	350	|t:|<NORMALIZED>
+L	ab_69_3	351	|move|p2a: Magmar|Substitute|p2a: Magmar
+L	ab_69_3	352	|-start|p2a: Magmar|Substitute
+L	ab_69_3	353	|-damage|p2a: Magmar|183/244
+L	ab_69_3	354	|move|p1a: Miltank|Curse|p1a: Miltank
+L	ab_69_3	355	|-unboost|p1a: Miltank|spe|1
+L	ab_69_3	356	|-boost|p1a: Miltank|atk|1
+L	ab_69_3	357	|-boost|p1a: Miltank|def|1
+L	ab_69_3	358	|
+L	ab_69_3	359	|-heal|p1a: Miltank|189/273 par|[from] item: Leftovers
+L	ab_69_3	360	|upkeep
+L	ab_69_3	361	|turn|31
+L	ab_69_3	362	|
+L	ab_69_3	363	|t:|<NORMALIZED>
+L	ab_69_3	364	|switch|p2a: Octillery|Octillery, L87, M|272/272
+L	ab_69_3	365	|move|p1a: Miltank|Body Slam|p2a: Octillery
+L	ab_69_3	366	|-damage|p2a: Octillery|168/272
+L	ab_69_3	367	|
+L	ab_69_3	368	|-heal|p2a: Octillery|185/272|[from] item: Leftovers
+L	ab_69_3	369	|-heal|p1a: Miltank|206/273 par|[from] item: Leftovers
+L	ab_69_3	370	|upkeep
+L	ab_69_3	371	|turn|32
+L	ab_69_3	372	|
+L	ab_69_3	373	|t:|<NORMALIZED>
+L	ab_69_3	374	|move|p2a: Octillery|Thunder Wave|p1a: Miltank
+L	ab_69_3	375	|-fail|p1a: Miltank|par
+L	ab_69_3	376	|debug|move failed because it did nothing
+L	ab_69_3	377	|cant|p1a: Miltank|par
+L	ab_69_3	378	|
+L	ab_69_3	379	|-heal|p2a: Octillery|202/272|[from] item: Leftovers
+L	ab_69_3	380	|-heal|p1a: Miltank|223/273 par|[from] item: Leftovers
+L	ab_69_3	381	|upkeep
+L	ab_69_3	382	|turn|33
+L	ab_69_3	383	|
+L	ab_69_3	384	|t:|<NORMALIZED>
+L	ab_69_3	385	|move|p2a: Octillery|Ice Beam|p1a: Miltank
+L	ab_69_3	386	|-damage|p1a: Miltank|175/273 par
+L	ab_69_3	387	|move|p1a: Miltank|Milk Drink|p1a: Miltank
+L	ab_69_3	388	|-heal|p1a: Miltank|273/273 par
+L	ab_69_3	389	|
+L	ab_69_3	390	|-heal|p2a: Octillery|219/272|[from] item: Leftovers
+L	ab_69_3	391	|upkeep
+L	ab_69_3	392	|turn|34
+L	ab_69_3	393	|
+L	ab_69_3	394	|t:|<NORMALIZED>
+L	ab_69_3	395	|switch|p2a: Slaking|Slaking, L78, M|362/362
+L	ab_69_3	396	|move|p1a: Miltank|Body Slam|p2a: Slaking
+L	ab_69_3	397	|-damage|p2a: Slaking|259/362
+L	ab_69_3	398	|
+L	ab_69_3	399	|upkeep
+L	ab_69_3	400	|turn|35
+L	ab_69_3	401	|
+L	ab_69_3	402	|t:|<NORMALIZED>
+L	ab_69_3	403	|move|p2a: Slaking|Earthquake|p1a: Miltank
+L	ab_69_3	404	|-damage|p1a: Miltank|180/273 par
+L	ab_69_3	405	|move|p1a: Miltank|Body Slam|p2a: Slaking
+L	ab_69_3	406	|-crit|p2a: Slaking
+L	ab_69_3	407	|-damage|p2a: Slaking|49/362
+L	ab_69_3	408	|-status|p2a: Slaking|par
+L	ab_69_3	409	|
+L	ab_69_3	410	|-heal|p1a: Miltank|197/273 par|[from] item: Leftovers
+L	ab_69_3	411	|upkeep
+L	ab_69_3	412	|turn|36
+L	ab_69_3	413	|
+L	ab_69_3	414	|t:|<NORMALIZED>
+L	ab_69_3	415	|cant|p2a: Slaking|ability: Truant
+L	ab_69_3	416	|move|p1a: Miltank|Earthquake|p2a: Slaking
+L	ab_69_3	417	|-damage|p2a: Slaking|0 fnt
+L	ab_69_3	418	|faint|p2a: Slaking
+L	ab_69_3	419	|
+L	ab_69_3	420	|t:|<NORMALIZED>
+L	ab_69_3	421	|switch|p2a: Octillery|Octillery, L87, M|219/272
+L	ab_69_3	422	|
+L	ab_69_3	423	|-heal|p2a: Octillery|236/272|[from] item: Leftovers
+L	ab_69_3	424	|-heal|p1a: Miltank|214/273 par|[from] item: Leftovers
+L	ab_69_3	425	|upkeep
+L	ab_69_3	426	|turn|37
+L	ab_69_3	427	|
+L	ab_69_3	428	|t:|<NORMALIZED>
+L	ab_69_3	429	|move|p2a: Octillery|Ice Beam|p1a: Miltank
+L	ab_69_3	430	|-damage|p1a: Miltank|166/273 par
+L	ab_69_3	431	|move|p1a: Miltank|Milk Drink|p1a: Miltank
+L	ab_69_3	432	|-heal|p1a: Miltank|273/273 par
+L	ab_69_3	433	|
+L	ab_69_3	434	|-heal|p2a: Octillery|253/272|[from] item: Leftovers
+L	ab_69_3	435	|upkeep
+L	ab_69_3	436	|turn|38
+L	ab_69_3	437	|
+L	ab_69_3	438	|t:|<NORMALIZED>
+L	ab_69_3	439	|move|p2a: Octillery|Thunder Wave|p1a: Miltank
+L	ab_69_3	440	|-fail|p1a: Miltank|par
+L	ab_69_3	441	|debug|move failed because it did nothing
+L	ab_69_3	442	|move|p1a: Miltank|Milk Drink||[still]
+L	ab_69_3	443	|-fail|p1a: Miltank|heal
+L	ab_69_3	444	|debug|move failed because it did nothing
+L	ab_69_3	445	|
+L	ab_69_3	446	|-heal|p2a: Octillery|270/272|[from] item: Leftovers
+L	ab_69_3	447	|upkeep
+L	ab_69_3	448	|turn|39
+L	ab_69_3	449	|
+L	ab_69_3	450	|t:|<NORMALIZED>
+L	ab_69_3	451	|switch|p2a: Magmar|Magmar, L84, M|183/244
+L	ab_69_3	452	|move|p1a: Miltank|Body Slam|p2a: Magmar
+L	ab_69_3	453	|-damage|p2a: Magmar|38/244
+L	ab_69_3	454	|
+L	ab_69_3	455	|-enditem|p2a: Magmar|Petaya Berry|[eat]
+L	ab_69_3	456	|-boost|p2a: Magmar|spa|1|[from] item: Petaya Berry
+L	ab_69_3	457	|upkeep
+L	ab_69_3	458	|turn|40
+L	ab_69_3	459	|
+L	ab_69_3	460	|t:|<NORMALIZED>
+L	ab_69_3	461	|move|p2a: Magmar|Thunder Punch|p1a: Miltank
+L	ab_69_3	462	|-damage|p1a: Miltank|165/273 par
+L	ab_69_3	463	|move|p1a: Miltank|Curse|p1a: Miltank
+L	ab_69_3	464	|-unboost|p1a: Miltank|spe|1
+L	ab_69_3	465	|-boost|p1a: Miltank|atk|1
+L	ab_69_3	466	|-boost|p1a: Miltank|def|1
+L	ab_69_3	467	|
+L	ab_69_3	468	|-heal|p1a: Miltank|182/273 par|[from] item: Leftovers
+L	ab_69_3	469	|upkeep
+L	ab_69_3	470	|turn|41
+L	ab_69_3	471	|
+L	ab_69_3	472	|t:|<NORMALIZED>
+L	ab_69_3	473	|move|p2a: Magmar|Substitute|p2a: Magmar
+L	ab_69_3	474	|-fail|p2a: Magmar|move: Substitute|[weak]
+L	ab_69_3	475	|move|p1a: Miltank|Body Slam|p2a: Magmar
+L	ab_69_3	476	|-damage|p2a: Magmar|0 fnt
+L	ab_69_3	477	|faint|p2a: Magmar
+L	ab_69_3	478	|
+L	ab_69_3	479	|t:|<NORMALIZED>
+L	ab_69_3	480	|switch|p2a: Octillery|Octillery, L87, M|270/272
+L	ab_69_3	481	|
+L	ab_69_3	482	|-heal|p2a: Octillery|272/272|[from] item: Leftovers
+L	ab_69_3	483	|-heal|p1a: Miltank|199/273 par|[from] item: Leftovers
+L	ab_69_3	484	|upkeep
+L	ab_69_3	485	|turn|42
+L	ab_69_3	486	|
+L	ab_69_3	487	|t:|<NORMALIZED>
+L	ab_69_3	488	|move|p2a: Octillery|Surf|p1a: Miltank
+L	ab_69_3	489	|-damage|p1a: Miltank|55/273 par
+L	ab_69_3	490	|move|p1a: Miltank|Body Slam|p2a: Octillery
+L	ab_69_3	491	|-damage|p2a: Octillery|131/272
+L	ab_69_3	492	|
+L	ab_69_3	493	|-heal|p2a: Octillery|148/272|[from] item: Leftovers
+L	ab_69_3	494	|-heal|p1a: Miltank|72/273 par|[from] item: Leftovers
+L	ab_69_3	495	|upkeep
+L	ab_69_3	496	|turn|43
+L	ab_69_3	497	|
+L	ab_69_3	498	|t:|<NORMALIZED>
+L	ab_69_3	499	|switch|p1a: Noctowl|Noctowl, L93, M|337/337
+L	ab_69_3	500	|move|p2a: Octillery|Surf|p1a: Noctowl
+L	ab_69_3	501	|-damage|p1a: Noctowl|241/337
+L	ab_69_3	502	|
+L	ab_69_3	503	|-heal|p1a: Noctowl|262/337|[from] item: Leftovers
+L	ab_69_3	504	|-heal|p2a: Octillery|165/272|[from] item: Leftovers
+L	ab_69_3	505	|upkeep
+L	ab_69_3	506	|turn|44
+L	ab_69_3	507	|
+L	ab_69_3	508	|t:|<NORMALIZED>
+L	ab_69_3	509	|move|p1a: Noctowl|Hypnosis|p2a: Octillery|[miss]
+L	ab_69_3	510	|-miss|p1a: Noctowl|p2a: Octillery
+L	ab_69_3	511	|move|p2a: Octillery|Surf|p1a: Noctowl
+L	ab_69_3	512	|-damage|p1a: Noctowl|165/337
+L	ab_69_3	513	|
+L	ab_69_3	514	|-heal|p1a: Noctowl|186/337|[from] item: Leftovers
+L	ab_69_3	515	|-heal|p2a: Octillery|182/272|[from] item: Leftovers
+L	ab_69_3	516	|upkeep
+L	ab_69_3	517	|turn|45
+L	ab_69_3	518	|
+L	ab_69_3	519	|t:|<NORMALIZED>
+L	ab_69_3	520	|move|p2a: Octillery|Surf|p1a: Noctowl
+L	ab_69_3	521	|-damage|p1a: Noctowl|84/337
+L	ab_69_3	522	|move|p1a: Noctowl|Whirlwind||[still]
+L	ab_69_3	523	|-fail|p1a: Noctowl
+L	ab_69_3	524	|debug|move failed because it did nothing
+L	ab_69_3	525	|
+L	ab_69_3	526	|-heal|p1a: Noctowl|105/337|[from] item: Leftovers
+L	ab_69_3	527	|-heal|p2a: Octillery|199/272|[from] item: Leftovers
+L	ab_69_3	528	|upkeep
+L	ab_69_3	529	|turn|46
+L	ab_69_3	530	|
+L	ab_69_3	531	|t:|<NORMALIZED>
+L	ab_69_3	532	|move|p1a: Noctowl|Hypnosis|p2a: Octillery
+L	ab_69_3	533	|-status|p2a: Octillery|slp|[from] move: Hypnosis
+L	ab_69_3	534	|cant|p2a: Octillery|slp
+L	ab_69_3	535	|
+L	ab_69_3	536	|-heal|p1a: Noctowl|126/337|[from] item: Leftovers
+L	ab_69_3	537	|-heal|p2a: Octillery|216/272 slp|[from] item: Leftovers
+L	ab_69_3	538	|upkeep
+L	ab_69_3	539	|turn|47
+L	ab_69_3	540	|
+L	ab_69_3	541	|t:|<NORMALIZED>
+L	ab_69_3	542	|move|p1a: Noctowl|Hypnosis|p2a: Octillery|[miss]
+L	ab_69_3	543	|-miss|p1a: Noctowl|p2a: Octillery
+L	ab_69_3	544	|cant|p2a: Octillery|slp
+L	ab_69_3	545	|
+L	ab_69_3	546	|-heal|p1a: Noctowl|147/337|[from] item: Leftovers
+L	ab_69_3	547	|-heal|p2a: Octillery|233/272 slp|[from] item: Leftovers
+L	ab_69_3	548	|upkeep
+L	ab_69_3	549	|turn|48
+L	ab_69_3	550	|
+L	ab_69_3	551	|t:|<NORMALIZED>
+L	ab_69_3	552	|cant|p2a: Octillery|slp
+L	ab_69_3	553	|move|p1a: Noctowl|Whirlwind||[still]
+L	ab_69_3	554	|-fail|p1a: Noctowl
+L	ab_69_3	555	|debug|move failed because it did nothing
+L	ab_69_3	556	|
+L	ab_69_3	557	|-heal|p1a: Noctowl|168/337|[from] item: Leftovers
+L	ab_69_3	558	|-heal|p2a: Octillery|250/272 slp|[from] item: Leftovers
+L	ab_69_3	559	|upkeep
+L	ab_69_3	560	|turn|49
+L	ab_69_3	561	|
+L	ab_69_3	562	|t:|<NORMALIZED>
+L	ab_69_3	563	|cant|p2a: Octillery|slp
+L	ab_69_3	564	|move|p1a: Noctowl|Whirlwind||[still]
+L	ab_69_3	565	|-fail|p1a: Noctowl
+L	ab_69_3	566	|debug|move failed because it did nothing
+L	ab_69_3	567	|
+L	ab_69_3	568	|-heal|p1a: Noctowl|189/337|[from] item: Leftovers
+L	ab_69_3	569	|-heal|p2a: Octillery|267/272 slp|[from] item: Leftovers
+L	ab_69_3	570	|upkeep
+L	ab_69_3	571	|turn|50
+L	ab_69_3	572	|
+L	ab_69_3	573	|t:|<NORMALIZED>
+L	ab_69_3	574	|move|p1a: Noctowl|Return|p2a: Octillery
+L	ab_69_3	575	|-damage|p2a: Octillery|174/272 slp
+L	ab_69_3	576	|-curestatus|p2a: Octillery|slp|[msg]
+L	ab_69_3	577	|move|p2a: Octillery|Surf|p1a: Noctowl
+L	ab_69_3	578	|-damage|p1a: Noctowl|100/337
+L	ab_69_3	579	|
+L	ab_69_3	580	|-heal|p1a: Noctowl|121/337|[from] item: Leftovers
+L	ab_69_3	581	|-heal|p2a: Octillery|191/272|[from] item: Leftovers
+L	ab_69_3	582	|upkeep
+L	ab_69_3	583	|turn|51
+L	ab_69_3	584	|
+L	ab_69_3	585	|t:|<NORMALIZED>
+L	ab_69_3	586	|move|p1a: Noctowl|Toxic|p2a: Octillery
+L	ab_69_3	587	|-status|p2a: Octillery|tox
+L	ab_69_3	588	|move|p2a: Octillery|Thunder Wave|p1a: Noctowl
+L	ab_69_3	589	|-status|p1a: Noctowl|par
+L	ab_69_3	590	|
+L	ab_69_3	591	|-heal|p2a: Octillery|208/272 tox|[from] item: Leftovers
+L	ab_69_3	592	|-damage|p2a: Octillery|191/272 tox|[from] psn
+L	ab_69_3	593	|-heal|p1a: Noctowl|142/337 par|[from] item: Leftovers
+L	ab_69_3	594	|upkeep
+L	ab_69_3	595	|turn|52
+L	ab_69_3	596	|
+L	ab_69_3	597	|t:|<NORMALIZED>
+L	ab_69_3	598	|move|p2a: Octillery|Surf|p1a: Noctowl
+L	ab_69_3	599	|-damage|p1a: Noctowl|43/337 par
+L	ab_69_3	600	|move|p1a: Noctowl|Toxic|p2a: Octillery
+L	ab_69_3	601	|-fail|p2a: Octillery|tox
+L	ab_69_3	602	|debug|move failed because it did nothing
+L	ab_69_3	603	|
+L	ab_69_3	604	|-heal|p2a: Octillery|208/272 tox|[from] item: Leftovers
+L	ab_69_3	605	|-damage|p2a: Octillery|174/272 tox|[from] psn
+L	ab_69_3	606	|-heal|p1a: Noctowl|64/337 par|[from] item: Leftovers
+L	ab_69_3	607	|upkeep
+L	ab_69_3	608	|turn|53
+L	ab_69_3	609	|
+L	ab_69_3	610	|t:|<NORMALIZED>
+L	ab_69_3	611	|switch|p1a: Tangela|Tangela, L95, M|277/277
+L	ab_69_3	612	|move|p2a: Octillery|Surf|p1a: Tangela
+L	ab_69_3	613	|-resisted|p1a: Tangela
+L	ab_69_3	614	|-damage|p1a: Tangela|194/277
+L	ab_69_3	615	|
+L	ab_69_3	616	|-heal|p1a: Tangela|211/277|[from] item: Leftovers
+L	ab_69_3	617	|-heal|p2a: Octillery|191/272 tox|[from] item: Leftovers
+L	ab_69_3	618	|-damage|p2a: Octillery|140/272 tox|[from] psn
+L	ab_69_3	619	|upkeep
+L	ab_69_3	620	|turn|54
+L	ab_69_3	621	|
+L	ab_69_3	622	|t:|<NORMALIZED>
+L	ab_69_3	623	|switch|p1a: Lapras|Lapras, L78, M|331/331
+L	ab_69_3	624	|move|p2a: Octillery|Surf|p1a: Lapras
+L	ab_69_3	625	|-immune|p1a: Lapras|[from] ability: Water Absorb
+L	ab_69_3	626	|
+L	ab_69_3	627	|-heal|p2a: Octillery|157/272 tox|[from] item: Leftovers
+L	ab_69_3	628	|-damage|p2a: Octillery|89/272 tox|[from] psn
+L	ab_69_3	629	|upkeep
+L	ab_69_3	630	|turn|55
+L	ab_69_3	631	|
+L	ab_69_3	632	|t:|<NORMALIZED>
+L	ab_69_3	633	|switch|p1a: Miltank|Miltank, L77, F|72/273 par
+L	ab_69_3	634	|move|p2a: Octillery|Thunder Wave|p1a: Miltank
+L	ab_69_3	635	|-fail|p1a: Miltank|par
+L	ab_69_3	636	|debug|move failed because it did nothing
+L	ab_69_3	637	|
+L	ab_69_3	638	|-heal|p2a: Octillery|106/272 tox|[from] item: Leftovers
+L	ab_69_3	639	|-damage|p2a: Octillery|21/272 tox|[from] psn
+L	ab_69_3	640	|-heal|p1a: Miltank|89/273 par|[from] item: Leftovers
+L	ab_69_3	641	|upkeep
+L	ab_69_3	642	|turn|56
+L	ab_69_3	643	|
+L	ab_69_3	644	|t:|<NORMALIZED>
+L	ab_69_3	645	|move|p2a: Octillery|Thunder Wave|p1a: Miltank
+L	ab_69_3	646	|-fail|p1a: Miltank|par
+L	ab_69_3	647	|debug|move failed because it did nothing
+L	ab_69_3	648	|move|p1a: Miltank|Curse|p1a: Miltank
+L	ab_69_3	649	|-unboost|p1a: Miltank|spe|1
+L	ab_69_3	650	|-boost|p1a: Miltank|atk|1
+L	ab_69_3	651	|-boost|p1a: Miltank|def|1
+L	ab_69_3	652	|
+L	ab_69_3	653	|-heal|p2a: Octillery|38/272 tox|[from] item: Leftovers
+L	ab_69_3	654	|-damage|p2a: Octillery|0 fnt|[from] psn
+L	ab_69_3	655	|faint|p2a: Octillery
+L	ab_69_3	656	|
+L	ab_69_3	657	|win|P1

@@ -4369,11 +4369,15 @@ seed golden stays BYTE-IDENTICAL (no golden regenerated).
   `Battle.compareLeftToRightOrder` (battle.ts:789-790), NOT `speedSort` — and with no
   `onDamagingHitOrder`/`Priority` on either effect every key ties, so the sort is STABLE and
   preserves `findPokemonEventHandlers`'s GATHER order: **status → volatiles → ABILITY → item**
-  (battle.ts:1100-1123). So the defender's `frz` thaw runs BEFORE its Static / Rough Skin /
-  Effect Spore ability. The port had the ability first. SIM-PROBED (C3): Fire Punch into a FROZEN
-  Static holder emits `|-damage|…frz` → `|-curestatus|<t>|frz|[msg]` → `|-status|<a>|par|[from]
-  ability: Static|[of] <t>`. Emission-ORDER only (the thaw is draw-free and touches the DEFENDER's
-  status; the proc rolls + statuses the ATTACKER). Fixture `60_fire_thaw_before_the_static_proc.txt`.
+  (battle.ts:1100-1123). So the defender's `frz` thaw runs BEFORE its Static / Poison Point /
+  Flame Body / Effect Spore ability. The port had the ability first. SIM-PROBED (C3): Fire Punch
+  into a FROZEN Static holder emits `|-damage|…frz` → `|-curestatus|<t>|frz|[msg]` →
+  `|-status|<a>|par|[from] ability: Static|[of] <t>`. Emission-ORDER only (the thaw is draw-free
+  and touches the DEFENDER's status; the proc rolls + statuses the ATTACKER). Fixture
+  `60_fire_thaw_before_the_static_proc.txt`. ⚠️ **NARROWED by round 25 (`gen3_damaging_hit_order_v1`,
+  below): this "thaw before ability" rule holds only for the UN-ORDERED abilities. ROUGH SKIN
+  carries `onDamagingHitOrder: 1` and therefore runs BEFORE the thaw** — the round-24 fix
+  over-generalized from the Static probe to every ability.
 - **WONDER GUARD × a SUN-SKIPPED SOLAR BEAM** (`turn/moves.rs`). The WG (and the sibling Soundproof)
   block wrapped BOTH its `|move|` announce AND its `|-immune|` line in
   `if self.logging() && !suppress_announce`, so a sun-skipped Solar Beam (whose announce already
@@ -4427,6 +4431,68 @@ BEFORE 7 diverged (protocol 6, seed 1) → **AFTER 0 diverged**; master-seed **6
 diverged (protocol 5, + 2 allowlisted construction) → **AFTER 0 diverged** (the 2 allowlisted
 turn-0 construction residuals remain, unchanged). Probes kept: `harness/probe_rb_tail.js`,
 `harness/probe_rb_choicelock.js`.
+
+### ROUND 25 (FIX) — the 24h-fuzz-v2 triage: phaze-no-bench, the DamagingHit ORDER key, Heal-Bell-on-a-corpse
+
+The **24h randbats byte-fuzz v2** (`fuzz24h_v2`, master-seed 250724, 70,267 battles / 4.39M decisions,
+**22 non-allowlisted divergences = 0.031%**, ~1 per 3,200 battles, 0 panics, 24 correctly-allowlisted
+turn-0 construction artifacts) left its 22 repros untriaged. They CLUSTER into 5 protocol groups + a
+diffuse seed group; THREE clusters (**10 of the 22**) are fixed here, each SIM-ORACLE-verified and frozen
+as a revert-verified corpus fixture. All three are OBSERVATION-ONLY / emission-form: the full suite is
+GREEN (**562 tests, 0 fail**), the e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` is UNCHANGED, every
+committed seed golden stays BYTE-IDENTICAL, and `dump_gen3_mechanics.js --check` passes (132 items + 76
+abilities match the resolved dist).
+
+- **A — PHAZE: `canSwitch` PRECEDES the DragOut gate** (`gen3_phaze_canswitch_before_dragout_v1`,
+  `turn/status_moves.rs` phaze arm; **6 repros** — ab_69_3 / ab_1258_19 / ab_1266_19 / ab_1720_21 /
+  ab_1726_8 / ab_2059_7, the single biggest cluster). Showdown gates the whole force-switch on
+  `canSwitch(target.side)` FIRST, in TWO places that BOTH precede `runEvent('DragOut')`: `moveHit`
+  (battle-actions.ts:1281 — `hitResult = !!canSwitch(...)` folds into `didSomething`, and the
+  `didSomething === false` tail emits `-fail` + `attrLastMove('[still]')`) and `forceSwitch()`'s own guard
+  (:1378). So a phaze into a foe on its **LAST MON** fails with the did-nothing `[still]` announce + a bare
+  `|-fail|<caster>` and **Suction Cups NEVER ACTIVATES**. WRONG (pre-fix): the port ran the Suction-Cups
+  check first and emitted `|-activate|<holder>|ability: Suction Cups` — in EVERY repro a Whirlwind into a
+  Cradily/Octillery down to its last mon (verified from the DEC rows' remaining-count column). The old code
+  comment asserted the opposite ("this is BEFORE `canSwitch` matters") and was simply wrong. DRAW-NEUTRAL
+  (both paths draw only the already-taken accuracy roll; no `sample` either way). Fixture
+  `65_phaze_no_bench_beats_suction_cups.txt`.
+- **D — the `onDamagingHitOrder` SORT KEY** (`gen3_damaging_hit_order_v1`; data + `dex/abilities.rs` +
+  `turn/{status,moves}.rs`; **2 repros** — ab_70_2 / ab_2293_23). A **ROUND-24 OVER-GENERALIZATION**:
+  `DamagingHit` sorts by `compareLeftToRightOrder` (battle.ts:421) = ASCENDING `order` (a MISSING order ⇒
+  4294967296), then priority, then the gather `index` — and **roughskin is the ONLY gen3 ability carrying
+  `onDamagingHitOrder: 1`** (abilities.ts:3894; aftermath / electromorphosis / innards-out / iron-barbs /
+  wind-power are later gens). So Rough Skin runs BEFORE the un-ordered `frz` FIRE-THAW, while Static &
+  co. run AFTER it (the gather order). Round 24 modeled only the un-ordered case and so put Rough Skin on
+  the wrong side. SIM-VERIFIED both ways (the golden: `|-damage|…frz` → `|-damage|<a>|…|[from] ability:
+  Rough Skin|[of] <t>` → `|-curestatus|<t>|frz|[msg]`). Wired **DATA-DRIVEN**, not hard-coded: a new
+  `damagingHitOrder` field derived from the resolved dist by `dump_gen3_mechanics.js` (+ its `--check`
+  drift gate + the extractor's `_GEN3_ABILITY_MECHANICS`) → `AbilityData::damaging_hit_order`, consumed by
+  a new **`DamagingHitPhase::{Ordered, Unordered, All}`** that splits the DamagingHit region into TWO
+  passes around the thaw (`All` at the fixed-damage tail, where no fire-thaw precedes it so the split is
+  moot). Fixture `66_rough_skin_order_precedes_the_fire_thaw.txt`.
+- **C — HEAL BELL / AROMATHERAPY skip a FAINTED ally** (`gen3_heal_bell_skips_fainted_v1`,
+  `turn/status_moves.rs` team-cure loop; **2 repros** — ab_1126_6 / ab_789_7). gen3 inherits gen4's
+  `healbell` (`data/mods/gen4/moves.ts:598`), whose `ally.cureStatus(true)` early-returns at
+  `if (!this.hp || !this.status) return false;` (pokemon.ts:1676) — so a CORPSE is neither cured nor
+  emitted. WRONG (pre-fix): the port cured a corpse's retained major status, emitting a phantom
+  `|-curestatus|pN: <mon>|<tok>|[silent]`. In BOTH repros a **Pursuit KO'd the statused ally moments
+  earlier** (Stantler `par` / Rapidash `psn`). Keyed on `hp == 0`, NOT the `fainted` FLAG, to mirror
+  `!this.hp` exactly through the deferred-faint window. Fixture `67_heal_bell_skips_a_fainted_ally.txt`.
+  (A first-pass hypothesis that this was a hidden BENCH-STATE divergence was REFUTED by the golden's
+  `|faint|` line — the bench state was correct; only the corpse-cure guard was missing.)
+
+**REVERT-VERIFIED ONE-TO-ONE:** with all three fixes reverted in place, each fixture diverges on its OWN
+line — 65 on `|move|p1a: Noctowl|Whirlwind|p2a: Octillery`, 66 on `|-curestatus|p2a: Sharpedo|frz|[msg]`,
+67 on `|-curestatus|p1: Stantler|par|[silent]` — and all three replay `ok` with the fixes in (sources
+restored + md5-verified identical afterward).
+
+**STILL OPEN — 12 of the 22** (repros in `harness/ab_fuzz_out/fuzz24h_v2/divergences/`, standalone-
+replayable): **B** Spider Web `[still]`+`-fail` vs `-activate trapped` ×3 (ab_1271_13 / ab_387_12 /
+ab_943_5 — ⚠️ these SURVIVED the A fix, so the "shared no-bench root" hypothesis is REFUTED; needs its own
+probe); **E** the Attract `-end [silent]` order when BOTH sides switch the same turn ×1 (ab_400_21, a
+sibling of `gen3_attract_end_order_v1`); and **8 diffuse SEED (draw-count) repros** at dec 0/4/8/9/30/42/
+51/83 — check the two early ones against the turn-0 construction artifact first, then root-cause with
+`probe_repro_simtrace.js` + an env-gated per-draw backtrace in `prng::next`.
 
 ## Data-driven mechanics (the class framework)
 

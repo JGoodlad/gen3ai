@@ -1213,19 +1213,53 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            // (2c) SUCTION CUPS (`gen3_ability_batch2_v1`, `suctioncups.onDragOut`) — a phaze
-            //      into a Suction Cups holder does NOT drag it. In the sim, `forceSwitch`
-            //      (battle-actions.ts:1166) runs `runEvent('DragOut')` INSIDE the move body: if
-            //      it returns falsy (Suction Cups' `onDragOut` returns `null`), `forceSwitchFlag`
-            //      is NOT set → the runAction tail's `if (forceSwitchFlag)` is false → **no
-            //      `dragIn` → NO `sample` draw** (the accuracy roll already drew — that's all).
-            //      Since `onDragOut` returns `null` (not `false`), the `hitResult === false`
-            //      `-fail` branch does NOT fire — only the ability's own `-activate Suction Cups`.
-            //      VERIFIED vs the sim (`harness/probe_block_abilities_rng.js`: a Roar into a
-            //      Suction Cups mon draws its accuracy then `-activate`, drawing NO sample; the
-            //      mon stays active). Note this is BEFORE `canSwitch` matters (the DragOut gate is
-            //      independent of whether the foe has a bench — but we only reach here on a
-            //      non-Protect-blocked, non-Soundproof phaze). ---
+            // (2c) `canSwitch(foe.side)` — THE GATE THAT PRECEDES EVERYTHING BELOW
+            //      (`gen3_phaze_canswitch_before_dragout_v1`). The sim checks the foe's bench
+            //      FIRST, in TWO places, and BOTH precede `runEvent('DragOut')`:
+            //        * `moveHit` (battle-actions.ts:1281) — `hitResult = !!canSwitch(target.side)`
+            //          folds into `didSomething`; a 0 makes the whole move do nothing, and the
+            //          `didSomething === false` tail emits `-fail` + `attrLastMove('[still]')`;
+            //        * `forceSwitch()` (battle-actions.ts:1378) — its guard is
+            //          `target.hp > 0 && source.hp > 0 && this.battle.canSwitch(target.side)`,
+            //          so with no living bench the body (hence `runEvent('DragOut')`) NEVER RUNS.
+            //      ⇒ a phaze into a foe on its LAST MON fails with the did-nothing `[still]`
+            //      announce + a bare `|-fail|<caster>` and **Suction Cups NEVER ACTIVATES**
+            //      (`gen3_omniscient_byte_fuzz_v1` FORMS 1+2 Roar-no-bench:
+            //      `|move|p1a: Zapdos|Roar||[still]`, `|-fail|p1a: Zapdos`).
+            //      WRONG (pre-fix): the port ran the Suction-Cups check FIRST and emitted
+            //      `|-activate|<holder>|ability: Suction Cups` where the sim emits `[still]` +
+            //      `-fail` — 6 of the 22 24h-randbats-fuzz divergences (ab_69_3 / ab_1258_19 /
+            //      ab_1266_19 / ab_1720_21 / ab_1726_8 / ab_2059_7), in EVERY case a Whirlwind
+            //      into a Cradily/Octillery down to its last mon. The old comment here asserted
+            //      the opposite ("this is BEFORE `canSwitch` matters") — it was simply wrong.
+            //      DRAW-NEUTRAL: both paths draw only the accuracy roll already taken (no
+            //      `sample` either way), so this is an EMISSION-form fix.
+            //      If the foe DOES have an eligible (non-active, non-fainted) bench mon we fall
+            //      through to the DragOut gate below and then signal the pending drag (consumed
+            //      at the runAction tail — the `sample` draw + the swap + the runSwitch).
+            let eligible = self.eligible_switch_ins(foe);
+            if eligible.is_empty() {
+                // [EMIT] the did-nothing `[still]` announce form + a bare `|-fail|<caster>`.
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let caster = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&caster, None, false);
+                }
+                return MoveResolution {
+                    missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false,
+                };
+            }
+            // (2d) SUCTION CUPS (`gen3_ability_batch2_v1`, `suctioncups.onDragOut`) — reached
+            //      ONLY once the foe HAS a bench (2c above). A phaze into a Suction Cups holder
+            //      does NOT drag it: `forceSwitch` (battle-actions.ts:1378) runs
+            //      `runEvent('DragOut')` INSIDE the move body: it returns falsy (Suction Cups'
+            //      `onDragOut` returns `null`), so `forceSwitchFlag` is NOT set → the runAction
+            //      tail's `if (forceSwitchFlag)` is false → **no `dragIn` → NO `sample` draw**
+            //      (the accuracy roll already drew — that's all). Since `onDragOut` returns
+            //      `null` (not `false`), the `hitResult === false` `-fail` branch does NOT fire —
+            //      only the ability's own `-activate Suction Cups`. VERIFIED vs the sim
+            //      (`harness/probe_block_abilities_rng.js`: a Roar into a Suction Cups mon draws
+            //      its accuracy then `-activate`, drawing NO sample; the mon stays active). ---
             if dex.ability(&to_id(&self.sides[foe].pokemon[foe_slot].ability)).map(|a| a.blocks_phaze_drag).unwrap_or(false) {
                 // [EMIT] `|-activate|<holder>|ability: Suction Cups` — the drag blocked. No drag,
                 // no `sample`, no `-fail`. The holder stays active.
@@ -1235,23 +1269,13 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            // (3) `canSwitch(foe.side)`: the foe has an eligible (non-active, non-fainted)
-            //     bench mon. If so, signal the pending drag (consumed at the runAction
-            //     tail — the `sample` draw + the swap + the runSwitch); else the phaze
-            //     FAILS draw-free (the accuracy roll already drew — that's all).
-            let eligible = self.eligible_switch_ins(foe);
-            let force = if eligible.is_empty() { None } else { Some(foe) };
-            // [EMIT] a phaze with NO eligible foe bench mon FAILS → the did-nothing `[still]`
-            // announce form + a bare `|-fail|<caster>` (`gen3_omniscient_byte_fuzz_v1` FORMS
-            // 1+2 Roar-no-bench: `|move|p1a: Zapdos|Roar||[still]`, `|-fail|p1a: Zapdos`). The
-            // `|drag|` line for a SUCCESS is emitted later at the runAction tail (Phase 1's
-            // `drag_in`).
-            if force.is_none() && self.logging() {
-                self.log.attr_last_move_still();
-                let caster = self.mon_ref(_side, _slot, dex);
-                self.log.fail(&caster, None, false);
-            }
-            return MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: force, aborted: false };
+            // (3) The foe has an eligible bench mon (2c) and was not DragOut-blocked (2d) →
+            //     signal the pending drag. The `|drag|` line is emitted later at the runAction
+            //     tail (Phase 1's `drag_in`), which also draws the `sample`. The no-bench FAIL
+            //     is handled at (2c) above — it must precede the DragOut gate.
+            return MoveResolution {
+                missed: false, crit: false, landed: false, force_switch_foe: Some(foe), aborted: false,
+            };
         }
 
         // --- TAUNT (`taunt` — a foe-targeting `volatileStatus:'taunt'` Status move, type Dark,
@@ -1921,6 +1945,20 @@ impl crate::state::BattleState {
                         let ally = self.mon_ref(_side, i, dex);
                         self.log.immune_from_ability(&ally, "Soundproof");
                     }
+                    continue;
+                }
+                // A FAINTED ally is SKIPPED — neither cured nor emitted. The sim's
+                // `cureStatus` opens `if (!this.hp || !this.status) return false;`
+                // (pokemon.ts:1676), so gen4's `ally.cureStatus(true)` no-ops on a corpse
+                // (which ALSO carries `status = 'fnt'` from `checkFainted`, never a major
+                // status). Keyed on `hp == 0`, not the `fainted` FLAG, to mirror `!this.hp`
+                // exactly — a mon zeroed but not yet flagged (the deferred-faint window
+                // between `apply_damage` and `process_faints`) is skipped by the sim too.
+                // WRONG (pre-fix): the port cured a corpse's retained major status, emitting
+                // a phantom `|-curestatus|pN: <mon>|<tok>|[silent]` the sim never sends
+                // (`gen3_heal_bell_skips_fainted_v1`; the 24h-fuzz repros ab_1126_6 /
+                // ab_789_7 — in BOTH, a Pursuit KO'd the statused ally moments earlier).
+                if self.sides[_side].pokemon[i].hp == 0 {
                     continue;
                 }
                 if self.sides[_side].pokemon[i].status.is_none() {
