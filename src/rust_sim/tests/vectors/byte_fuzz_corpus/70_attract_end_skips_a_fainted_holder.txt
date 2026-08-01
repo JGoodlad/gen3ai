@@ -1,0 +1,862 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=250724 run_id=rmrziey0i chunk=400
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_400_21
+TEAM	ab_400_21	p1	Blissey||Leftovers|NaturalCure|wish,protect,seismictoss,toxic|Hardy|85,,85,85,85,85|F|,0,,,,||76|]Altaria||Leftovers|NaturalCure|fireblast,hiddenpowerflying,earthquake,dragondance|Hardy|85,85,85,85,85,85|M|30,30,30,30,30,||85|]Beautifly||Leftovers|Swarm|psychic,morningsun,toxic,hiddenpowerfire|Hardy|85,,85,85,85,85|M|,2,,30,,30|||]Poliwrath||Leftovers|WaterAbsorb|substitute,focuspunch,toxic,hydropump|Hardy|85,85,85,85,85,85|M|||85|]Wailord||Leftovers|WaterVeil|rest,sleeptalk,toxic,surf|Hardy|85,,85,85,85,85|M|,0,,,,||87|]Regirock||Leftovers|ClearBody|rockslide,explosion,toxic,earthquake|Hardy|85,85,85,85,85,85|N|||80|
+TEAM	ab_400_21	p2	Hitmonlee||SalacBerry|Limber|substitute,rockslide,reversal,hiddenpowerghost|Hardy|85,85,85,85,85,85|M|,,30,,30,||84|]Vaporeon||Leftovers|WaterAbsorb|protect,wish,icebeam,surf|Hardy|85,,85,85,85,85|M|,0,,,,||79|]Cloyster||Leftovers|ShellArmor|surf,toxic,spikes,explosion|Hardy|85,85,85,85,85,85|M|||82|]Chimecho||Leftovers|Levitate|toxic,healbell,psychic,hiddenpowerfire|Hardy|85,,85,85,85,85|M|,2,,30,,30||89|]Delcatty||Leftovers|CuteCharm|doubleedge,wish,protect,toxic|Hardy|85,85,85,85,85,85|M|||96|]Latios||SoulDew|Levitate|refresh,dragonclaw,calmmind,recover|Hardy|85,,85,85,85,85|M|,0,,,,||66|
+FMT	ab_400_21	gen3customgame
+INIT	ab_400_21	51996,9565,43647,38478	377236601
+DEC	ab_400_21	0	move	0	0	m2	m1	42821,6000,1710,26468	Blissey	353	513	0	-	0	0	0	0	0	0	6	Hitmonlee	145	221	0	-	0	0	0	0	0	0	6	p2	0	0	1	0	0
+DEC	ab_400_21	1	move	0	0	m1	s5	4609,2972,64517,60727	Blissey	385	513	0	-	0	0	0	0	0	0	6	Latios	215	215	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_400_21	2	move	0	0	m0	m1	51505,37104,6943,347	Blissey	339	513	0	-	0	0	0	0	0	0	6	Latios	215	215	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_400_21	3	move	0	0	m2	m3	49953,23650,21535,56789	Blissey	513	513	0	-	0	0	0	0	0	0	6	Latios	139	215	0	-	0	0	0	0	0	0	6	p2	0	0	1	0	0
+DEC	ab_400_21	4	move	0	0	m0	m3	63748,64590,11075,8396	Blissey	513	513	0	-	0	0	0	0	0	0	6	Latios	215	215	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_400_21	5	move	0	0	m0	m2	45259,38181,62403,47935	Blissey	513	513	0	-	0	0	0	0	0	0	6	Latios	215	215	0	-	0	0	1	1	0	0	6	p2	0	0	0	0	0
+DEC	ab_400_21	6	move	0	0	m1	m0	40129,51494,58784,21529	Blissey	513	513	0	-	0	0	0	0	0	0	6	Latios	215	215	0	-	0	0	1	1	0	0	6	p1	0	0	0	0	0
+DEC	ab_400_21	7	move	0	0	m3	m0	18659,40197,12155,16099	Blissey	513	513	0	-	0	0	0	0	0	0	6	Latios	202	215	0	tox	0	0	1	1	0	0	6	p2	0	0	0	0	0
+DEC	ab_400_21	8	move	0	0	m0	m3	51150,5354,11426,59730	Blissey	513	513	0	-	0	0	0	0	0	0	6	Latios	189	215	0	tox	0	0	1	1	0	0	6	p2	0	0	0	0	0
+DEC	ab_400_21	9	move	0	0	m3	s4	42253,36931,13178,13620	Blissey	513	513	0	-	0	0	0	0	0	0	6	Delcatty	272	290	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_400_21	10	move	0	0	m3	m3	19001,63519,15382,53217	Blissey	481	513	0	tox	0	0	0	0	0	0	6	Delcatty	254	290	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_400_21	11	move	0	0	m2	m2	53991,58892,1730,60154	Blissey	449	513	0	tox	0	0	0	0	0	0	6	Delcatty	218	290	0	tox	0	0	0	0	0	0	6	p2	0	0	1	0	0
+DEC	ab_400_21	12	move	0	0	m3	m1	34248,639,61439,17564	Blissey	385	513	0	tox	0	0	0	0	0	0	6	Delcatty	164	290	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_400_21	13	move	0	0	m3	m2	35521,28709,55001,15017	Blissey	289	513	0	tox	0	0	0	0	0	0	6	Delcatty	200	290	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_400_21	14	move	0	0	m1	m1	30659,24132,17137,16115	Blissey	161	513	0	tox	0	0	0	0	0	0	6	Delcatty	110	290	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_400_21	15	move	0	0	m1	m3	9721,54690,64183,3927	Blissey	1	513	0	tox	0	0	0	0	0	0	6	Delcatty	147	290	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_400_21	16	move	0	0	m2	m3	10330,22218,36905,18520	Blissey	0	513	1	fnt	0	0	0	0	0	0	5	Delcatty	0	290	1	fnt	0	0	0	0	0	0	5	p2	0	0	1	0	0
+DEC	ab_400_21	17	switch	1	1	s2	s2	14659,21359,4751,16763	Beautifly	282	282	0	-	0	0	0	0	0	0	5	Cloyster	216	216	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_400_21	18	move	0	0	m1	m0	62626,63859,40813,14687	Beautifly	195	282	0	-	0	0	0	0	0	0	5	Cloyster	216	216	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_400_21	19	move	0	0	m0	m0	55759,54707,22884,51815	Beautifly	103	282	0	-	0	0	0	0	0	0	5	Cloyster	86	216	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_400_21	20	move	0	0	m2	m3	20747,38300,41645,60299	Beautifly	0	282	1	fnt	0	0	0	0	0	0	4	Cloyster	0	216	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_400_21	21	switch	1	1	s4	s1	27863,4818,22174,61338	Wailord	438	438	0	-	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_400_21	22	move	0	0	m3	m3	48905,37655,52196,48073	Wailord	396	438	0	-	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_400_21	23	move	0	0	m1	m0	22299,6941,20698,54035	Wailord	423	438	0	-	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_400_21	24	move	0	0	m0	m0	64418,40676,57356,41335	Wailord	438	438	0	slp	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_400_21	25	move	0	0	m2	m0	7728,24613,52397,17912	Wailord	438	438	0	slp	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_400_21	26	move	0	0	m1	m0	25167,44003,38336,50197	Wailord	438	438	0	slp	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	4	p2	0	0	0	1	0
+DEC	ab_400_21	27	move	0	0	m0	m2	41887,51672,39386,20704	Wailord	415	438	0	-	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_400_21	28	move	0	0	m3	s5	10086,6771,6034,42100	Wailord	438	438	0	-	0	0	0	0	0	0	4	Hitmonlee	57	221	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_400_21	29	move	0	0	m3	m2	38525,23640,7036,9274	Wailord	279	438	0	-	0	0	0	0	0	0	4	Hitmonlee	0	221	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	1	0
+DEC	ab_400_21	30	switch	0	1	-	s5	60791,32263,48409,62373	Wailord	306	438	0	-	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_400_21	31	move	0	0	m0	m0	12179,6877,60425,34350	Wailord	438	438	0	slp	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_400_21	32	move	0	0	m2	m2	24304,49217,16272,63981	Wailord	415	438	0	slp	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_400_21	33	move	0	0	m1	m1	11754,20310,48537,63574	Wailord	438	438	0	slp	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_400_21	34	move	0	0	m1	m1	18536,34968,17957,40625	Wailord	438	438	0	-	0	0	0	0	0	0	4	Vaporeon	335	335	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_400_21	35	move	0	0	m2	m1	17535,49977,22064,4539	Wailord	438	438	0	-	0	0	0	0	0	0	4	Vaporeon	315	335	0	tox	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_400_21	36	move	0	0	m1	s3	3758,57169,6839,45194	Wailord	438	438	0	-	0	0	0	0	0	0	4	Chimecho	260	260	0	-	0	0	0	0	0	0	3	p2	0	0	0	1	0
+DEC	ab_400_21	37	move	0	0	m0	s3	52161,20541,58335,7989	Wailord	438	438	0	-	0	0	0	0	0	0	4	Vaporeon	315	335	0	tox	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_400_21	38	move	0	0	m0	m1	11578,14986,34132,19372	Wailord	438	438	0	-	0	0	0	0	0	0	4	Vaporeon	295	335	0	tox	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_400_21	39	move	0	0	m3	m2	43699,10526,17186,25394	Wailord	412	438	0	-	0	0	0	0	0	0	4	Vaporeon	275	335	0	tox	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_400_21	40	move	0	0	m1	m0	25405,49118,59674,25620	Wailord	438	438	0	-	0	0	0	0	0	0	4	Vaporeon	215	335	0	tox	0	0	0	0	0	0	3	p2	0	0	0	1	0
+DEC	ab_400_21	41	move	0	0	m1	m3	25034,39245,26211,3176	Wailord	392	438	0	-	0	0	0	0	0	0	4	Vaporeon	135	335	0	tox	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_400_21	42	move	0	0	m0	m0	7281,35506,45913,18117	Wailord	438	438	0	slp	0	0	0	0	0	0	4	Vaporeon	35	335	0	tox	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_400_21	43	move	0	0	m2	m1	7281,35506,45913,18117	Wailord	438	438	0	slp	0	0	0	0	0	0	4	Vaporeon	0	335	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_400_21	44	switch	0	1	-	s3	19183,52864,38049,63356	Wailord	438	438	0	slp	0	0	0	0	0	0	4	Chimecho	260	260	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_400_21	45	move	0	0	m3	m0	21745,5536,42051,57550	Wailord	438	438	0	slp	0	0	0	0	0	0	4	Chimecho	260	260	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_400_21	46	move	0	0	s1	m0	60236,30692,43830,31056	Altaria	249	265	0	tox	0	0	0	0	0	0	4	Chimecho	260	260	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_400_21	47	move	0	0	m3	m1	25772,41746,50368,19283	Altaria	233	265	0	tox	1	0	0	0	1	0	4	Chimecho	260	260	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_400_21	48	move	0	0	m2	m1	62817,58814,17799,35085	Altaria	201	265	0	tox	1	0	0	0	1	0	4	Chimecho	260	260	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_400_21	49	move	0	0	m3	m0	2602,12314,52933,5559	Altaria	153	265	0	tox	2	0	0	0	2	0	4	Chimecho	260	260	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_400_21	50	move	0	0	m3	m0	6927,58286,59174,31697	Altaria	89	265	0	tox	3	0	0	0	3	0	4	Chimecho	260	260	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_400_21	51	move	0	0	m3	m0	6173,53972,34672,41435	Altaria	9	265	0	tox	4	0	0	0	4	0	4	Chimecho	260	260	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_400_21	52	move	0	0	m0	s4	17513,25711,39472,21439	Altaria	0	265	1	fnt	0	0	0	0	0	0	3	Latios	143	215	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_400_21	53	switch	1	0	s1	-	30623,45965,36929,57374	Wailord	438	438	0	slp	0	0	0	0	0	0	3	Latios	143	215	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_400_21	54	move	0	0	m3	m0	13899,9635,14245,60370	Wailord	438	438	0	-	0	0	0	0	0	0	3	Latios	106	215	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_400_21	55	move	0	0	m2	m1	29299,43761,32258,33889	Wailord	301	438	0	-	0	0	0	0	0	0	3	Latios	106	215	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_400_21	56	move	0	0	m1	m3	28440,5349,39587,49672	Wailord	328	438	0	-	0	0	0	0	0	0	3	Latios	213	215	0	-	0	0	0	0	0	0	2	p2	0	0	0	1	0
+DEC	ab_400_21	57	move	0	0	m1	m0	44777,21461,21456,29675	Wailord	355	438	0	-	0	0	0	0	0	0	3	Latios	213	215	0	-	0	0	0	0	0	0	2	p2	0	0	0	1	0
+DEC	ab_400_21	58	move	0	0	m2	m0	64874,27458,15440,35301	Wailord	382	438	0	-	0	0	0	0	0	0	3	Latios	200	215	0	tox	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_400_21	59	move	0	0	m2	m3	25279,8319,30949,42191	Wailord	409	438	0	-	0	0	0	0	0	0	3	Latios	189	215	0	tox	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_400_21	60	move	0	0	s5	m1	55026,28872,55756,12147	Regirock	175	259	0	-	0	0	0	0	0	0	3	Latios	150	215	0	tox	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_400_21	61	move	0	0	m1	m2	22884,22638,58956,60804	Regirock	0	259	1	fnt	0	0	0	0	0	0	2	Latios	0	215	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_400_21	62	switch	1	1	s5	s4	26315,24162,13879,63447	Wailord	436	438	0	-	0	0	0	0	0	0	2	Chimecho	260	260	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_400_21	63	move	0	0	m3	m1	59522,61288,13574,41467	Wailord	438	438	0	-	0	0	0	0	0	0	2	Chimecho	173	260	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_400_21	64	move	0	0	m2	m2	21672,10163,42811,57785	Wailord	318	438	0	-	0	0	0	0	0	0	2	Chimecho	173	260	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_400_21	65	move	0	0	m0	m0	23192,36615,45848,42098	Wailord	438	438	0	slp	0	0	0	0	0	0	2	Chimecho	157	260	0	tox	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_400_21	66	move	0	0	s3	m2	473,36455,48366,51585	Poliwrath	102	292	0	-	0	0	0	0	0	0	2	Chimecho	125	260	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_400_21	67	move	0	0	m1	m1	51877,10722,44359,48389	Poliwrath	120	292	0	-	0	0	0	0	0	0	2	Chimecho	57	260	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_400_21	68	move	0	0	m2	m0	38110,52601,11579,9742	Poliwrath	120	292	0	tox	0	0	0	0	0	0	2	Chimecho	57	260	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_400_21	69	move	0	0	m0	m2	65100,33881,25850,30541	Poliwrath	29	292	0	tox	0	0	0	0	0	0	2	Chimecho	41	260	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_400_21	70	move	0	0	m0	m0	27935,23517,40938,58660	Poliwrath	0	292	1	fnt	0	0	0	0	0	0	1	Chimecho	9	260	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_400_21	71	switch	1	0	s3	-	21126,17488,16495,18935	Wailord	438	438	0	slp	0	0	0	0	0	0	1	Chimecho	9	260	0	tox	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_400_21	72	move	0	0	m1	m0	792,37920,31165,13930	Wailord	438	438	0	slp	0	0	0	0	0	0	1	Chimecho	0	260	1	tox	0	0	0	0	0	0	0	p2	0	0	0	1	0
+END	ab_400_21	1	p1
+L	ab_400_21	0	|t:|<NORMALIZED>
+L	ab_400_21	1	|gametype|singles
+L	ab_400_21	2	|player|p1|P1||
+L	ab_400_21	3	|player|p2|P2||
+L	ab_400_21	4	|gen|3
+L	ab_400_21	5	|tier|[Gen 3] Custom Game
+L	ab_400_21	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_400_21	7	|
+L	ab_400_21	8	|t:|<NORMALIZED>
+L	ab_400_21	9	|teamsize|p1|6
+L	ab_400_21	10	|teamsize|p2|6
+L	ab_400_21	11	|start
+L	ab_400_21	12	|switch|p1a: Blissey|Blissey, L76, F|513/513
+L	ab_400_21	13	|switch|p2a: Hitmonlee|Hitmonlee, L84, M|221/221
+L	ab_400_21	14	|turn|1
+L	ab_400_21	15	|
+L	ab_400_21	16	|t:|<NORMALIZED>
+L	ab_400_21	17	|move|p2a: Hitmonlee|Rock Slide|p1a: Blissey
+L	ab_400_21	18	|-damage|p1a: Blissey|321/513
+L	ab_400_21	19	|move|p1a: Blissey|Seismic Toss|p2a: Hitmonlee
+L	ab_400_21	20	|-damage|p2a: Hitmonlee|145/221
+L	ab_400_21	21	|
+L	ab_400_21	22	|-heal|p1a: Blissey|353/513|[from] item: Leftovers
+L	ab_400_21	23	|upkeep
+L	ab_400_21	24	|turn|2
+L	ab_400_21	25	|
+L	ab_400_21	26	|t:|<NORMALIZED>
+L	ab_400_21	27	|switch|p2a: Latios|Latios, L66, M|215/215
+L	ab_400_21	28	|move|p1a: Blissey|Protect||[still]
+L	ab_400_21	29	|-fail|p1a: Blissey
+L	ab_400_21	30	|
+L	ab_400_21	31	|-heal|p1a: Blissey|385/513|[from] item: Leftovers
+L	ab_400_21	32	|upkeep
+L	ab_400_21	33	|turn|3
+L	ab_400_21	34	|
+L	ab_400_21	35	|t:|<NORMALIZED>
+L	ab_400_21	36	|move|p2a: Latios|Dragon Claw|p1a: Blissey
+L	ab_400_21	37	|-damage|p1a: Blissey|307/513
+L	ab_400_21	38	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_400_21	39	|
+L	ab_400_21	40	|-heal|p1a: Blissey|339/513|[from] item: Leftovers
+L	ab_400_21	41	|upkeep
+L	ab_400_21	42	|turn|4
+L	ab_400_21	43	|
+L	ab_400_21	44	|t:|<NORMALIZED>
+L	ab_400_21	45	|move|p2a: Latios|Recover||[still]
+L	ab_400_21	46	|-fail|p2a: Latios|heal
+L	ab_400_21	47	|debug|move failed because it did nothing
+L	ab_400_21	48	|move|p1a: Blissey|Seismic Toss|p2a: Latios
+L	ab_400_21	49	|-damage|p2a: Latios|139/215
+L	ab_400_21	50	|
+L	ab_400_21	51	|-heal|p1a: Blissey|513/513|[from] move: Wish|[wisher] Blissey
+L	ab_400_21	52	|upkeep
+L	ab_400_21	53	|turn|5
+L	ab_400_21	54	|
+L	ab_400_21	55	|t:|<NORMALIZED>
+L	ab_400_21	56	|move|p2a: Latios|Recover|p2a: Latios
+L	ab_400_21	57	|-heal|p2a: Latios|215/215
+L	ab_400_21	58	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_400_21	59	|
+L	ab_400_21	60	|upkeep
+L	ab_400_21	61	|turn|6
+L	ab_400_21	62	|
+L	ab_400_21	63	|t:|<NORMALIZED>
+L	ab_400_21	64	|move|p2a: Latios|Calm Mind|p2a: Latios
+L	ab_400_21	65	|-boost|p2a: Latios|spa|1
+L	ab_400_21	66	|-boost|p2a: Latios|spd|1
+L	ab_400_21	67	|move|p1a: Blissey|Wish||[still]
+L	ab_400_21	68	|-fail|p1a: Blissey
+L	ab_400_21	69	|debug|move failed because it did nothing
+L	ab_400_21	70	|
+L	ab_400_21	71	|upkeep
+L	ab_400_21	72	|turn|7
+L	ab_400_21	73	|
+L	ab_400_21	74	|t:|<NORMALIZED>
+L	ab_400_21	75	|move|p1a: Blissey|Protect|p1a: Blissey
+L	ab_400_21	76	|-singleturn|p1a: Blissey|Protect
+L	ab_400_21	77	|move|p2a: Latios|Refresh||[still]
+L	ab_400_21	78	|-fail|p2a: Latios
+L	ab_400_21	79	|debug|move failed because it did nothing
+L	ab_400_21	80	|
+L	ab_400_21	81	|upkeep
+L	ab_400_21	82	|turn|8
+L	ab_400_21	83	|
+L	ab_400_21	84	|t:|<NORMALIZED>
+L	ab_400_21	85	|move|p2a: Latios|Refresh||[still]
+L	ab_400_21	86	|-fail|p2a: Latios
+L	ab_400_21	87	|debug|move failed because it did nothing
+L	ab_400_21	88	|move|p1a: Blissey|Toxic|p2a: Latios
+L	ab_400_21	89	|-status|p2a: Latios|tox
+L	ab_400_21	90	|
+L	ab_400_21	91	|-damage|p2a: Latios|202/215 tox|[from] psn
+L	ab_400_21	92	|upkeep
+L	ab_400_21	93	|turn|9
+L	ab_400_21	94	|
+L	ab_400_21	95	|t:|<NORMALIZED>
+L	ab_400_21	96	|move|p2a: Latios|Recover|p2a: Latios
+L	ab_400_21	97	|-heal|p2a: Latios|215/215 tox
+L	ab_400_21	98	|move|p1a: Blissey|Wish|p1a: Blissey
+L	ab_400_21	99	|
+L	ab_400_21	100	|-damage|p2a: Latios|189/215 tox|[from] psn
+L	ab_400_21	101	|upkeep
+L	ab_400_21	102	|turn|10
+L	ab_400_21	103	|
+L	ab_400_21	104	|t:|<NORMALIZED>
+L	ab_400_21	105	|switch|p2a: Delcatty|Delcatty, L96, M|290/290
+L	ab_400_21	106	|move|p1a: Blissey|Toxic|p2a: Delcatty
+L	ab_400_21	107	|-status|p2a: Delcatty|tox
+L	ab_400_21	108	|
+L	ab_400_21	109	|-damage|p2a: Delcatty|272/290 tox|[from] psn
+L	ab_400_21	110	|upkeep
+L	ab_400_21	111	|turn|11
+L	ab_400_21	112	|
+L	ab_400_21	113	|t:|<NORMALIZED>
+L	ab_400_21	114	|move|p2a: Delcatty|Toxic|p1a: Blissey
+L	ab_400_21	115	|-status|p1a: Blissey|tox
+L	ab_400_21	116	|move|p1a: Blissey|Toxic|p2a: Delcatty
+L	ab_400_21	117	|-fail|p2a: Delcatty|tox
+L	ab_400_21	118	|debug|move failed because it did nothing
+L	ab_400_21	119	|
+L	ab_400_21	120	|-heal|p2a: Delcatty|290/290 tox|[from] item: Leftovers
+L	ab_400_21	121	|-damage|p2a: Delcatty|254/290 tox|[from] psn
+L	ab_400_21	122	|-damage|p1a: Blissey|481/513 tox|[from] psn
+L	ab_400_21	123	|upkeep
+L	ab_400_21	124	|turn|12
+L	ab_400_21	125	|
+L	ab_400_21	126	|t:|<NORMALIZED>
+L	ab_400_21	127	|move|p2a: Delcatty|Protect|p2a: Delcatty
+L	ab_400_21	128	|-singleturn|p2a: Delcatty|Protect
+L	ab_400_21	129	|move|p1a: Blissey|Seismic Toss|p2a: Delcatty
+L	ab_400_21	130	|-activate|p2a: Delcatty|Protect
+L	ab_400_21	131	|
+L	ab_400_21	132	|-heal|p2a: Delcatty|272/290 tox|[from] item: Leftovers
+L	ab_400_21	133	|-damage|p2a: Delcatty|218/290 tox|[from] psn
+L	ab_400_21	134	|-heal|p1a: Blissey|513/513 tox|[from] item: Leftovers
+L	ab_400_21	135	|-damage|p1a: Blissey|449/513 tox|[from] psn
+L	ab_400_21	136	|upkeep
+L	ab_400_21	137	|turn|13
+L	ab_400_21	138	|
+L	ab_400_21	139	|t:|<NORMALIZED>
+L	ab_400_21	140	|move|p2a: Delcatty|Wish|p2a: Delcatty
+L	ab_400_21	141	|move|p1a: Blissey|Toxic|p2a: Delcatty
+L	ab_400_21	142	|-fail|p2a: Delcatty|tox
+L	ab_400_21	143	|debug|move failed because it did nothing
+L	ab_400_21	144	|
+L	ab_400_21	145	|-heal|p2a: Delcatty|236/290 tox|[from] item: Leftovers
+L	ab_400_21	146	|-damage|p2a: Delcatty|164/290 tox|[from] psn
+L	ab_400_21	147	|-heal|p1a: Blissey|481/513 tox|[from] item: Leftovers
+L	ab_400_21	148	|-damage|p1a: Blissey|385/513 tox|[from] psn
+L	ab_400_21	149	|upkeep
+L	ab_400_21	150	|turn|14
+L	ab_400_21	151	|
+L	ab_400_21	152	|t:|<NORMALIZED>
+L	ab_400_21	153	|move|p2a: Delcatty|Protect|p2a: Delcatty
+L	ab_400_21	154	|-singleturn|p2a: Delcatty|Protect
+L	ab_400_21	155	|move|p1a: Blissey|Toxic|p2a: Delcatty
+L	ab_400_21	156	|-activate|p2a: Delcatty|Protect
+L	ab_400_21	157	|
+L	ab_400_21	158	|-heal|p2a: Delcatty|290/290 tox|[from] move: Wish|[wisher] Delcatty
+L	ab_400_21	159	|-damage|p2a: Delcatty|200/290 tox|[from] psn
+L	ab_400_21	160	|-heal|p1a: Blissey|417/513 tox|[from] item: Leftovers
+L	ab_400_21	161	|-damage|p1a: Blissey|289/513 tox|[from] psn
+L	ab_400_21	162	|upkeep
+L	ab_400_21	163	|turn|15
+L	ab_400_21	164	|
+L	ab_400_21	165	|t:|<NORMALIZED>
+L	ab_400_21	166	|move|p1a: Blissey|Protect|p1a: Blissey
+L	ab_400_21	167	|-singleturn|p1a: Blissey|Protect
+L	ab_400_21	168	|move|p2a: Delcatty|Wish|p2a: Delcatty
+L	ab_400_21	169	|
+L	ab_400_21	170	|-heal|p2a: Delcatty|218/290 tox|[from] item: Leftovers
+L	ab_400_21	171	|-damage|p2a: Delcatty|110/290 tox|[from] psn
+L	ab_400_21	172	|-heal|p1a: Blissey|321/513 tox|[from] item: Leftovers
+L	ab_400_21	173	|-damage|p1a: Blissey|161/513 tox|[from] psn
+L	ab_400_21	174	|upkeep
+L	ab_400_21	175	|turn|16
+L	ab_400_21	176	|
+L	ab_400_21	177	|t:|<NORMALIZED>
+L	ab_400_21	178	|move|p1a: Blissey|Protect|p1a: Blissey
+L	ab_400_21	179	|debug|Success chance: 50%
+L	ab_400_21	180	|-singleturn|p1a: Blissey|Protect
+L	ab_400_21	181	|move|p2a: Delcatty|Toxic|p1a: Blissey
+L	ab_400_21	182	|-activate|p1a: Blissey|Protect
+L	ab_400_21	183	|
+L	ab_400_21	184	|-heal|p2a: Delcatty|255/290 tox|[from] move: Wish|[wisher] Delcatty
+L	ab_400_21	185	|-heal|p2a: Delcatty|273/290 tox|[from] item: Leftovers
+L	ab_400_21	186	|-damage|p2a: Delcatty|147/290 tox|[from] psn
+L	ab_400_21	187	|-heal|p1a: Blissey|193/513 tox|[from] item: Leftovers
+L	ab_400_21	188	|-damage|p1a: Blissey|1/513 tox|[from] psn
+L	ab_400_21	189	|upkeep
+L	ab_400_21	190	|turn|17
+L	ab_400_21	191	|
+L	ab_400_21	192	|t:|<NORMALIZED>
+L	ab_400_21	193	|move|p2a: Delcatty|Toxic|p1a: Blissey
+L	ab_400_21	194	|-fail|p1a: Blissey|tox
+L	ab_400_21	195	|debug|move failed because it did nothing
+L	ab_400_21	196	|move|p1a: Blissey|Seismic Toss|p2a: Delcatty
+L	ab_400_21	197	|-damage|p2a: Delcatty|71/290 tox
+L	ab_400_21	198	|-start|p1a: Blissey|Attract|[from] ability: Cute Charm|[of] p2a: Delcatty
+L	ab_400_21	199	|
+L	ab_400_21	200	|-heal|p2a: Delcatty|89/290 tox|[from] item: Leftovers
+L	ab_400_21	201	|-damage|p2a: Delcatty|0 fnt|[from] psn
+L	ab_400_21	202	|faint|p2a: Delcatty
+L	ab_400_21	203	|-heal|p1a: Blissey|33/513 tox|[from] item: Leftovers
+L	ab_400_21	204	|-damage|p1a: Blissey|0 fnt|[from] psn
+L	ab_400_21	205	|faint|p1a: Blissey
+L	ab_400_21	206	|upkeep
+L	ab_400_21	207	|
+L	ab_400_21	208	|t:|<NORMALIZED>
+L	ab_400_21	209	|switch|p2a: Cloyster|Cloyster, L82, M|216/216
+L	ab_400_21	210	|switch|p1a: Beautifly|Beautifly, M|282/282
+L	ab_400_21	211	|turn|18
+L	ab_400_21	212	|
+L	ab_400_21	213	|t:|<NORMALIZED>
+L	ab_400_21	214	|move|p1a: Beautifly|Morning Sun|p1a: Beautifly
+L	ab_400_21	215	|move|p2a: Cloyster|Surf|p1a: Beautifly
+L	ab_400_21	216	|-damage|p1a: Beautifly|178/282
+L	ab_400_21	217	|
+L	ab_400_21	218	|-heal|p1a: Beautifly|195/282|[from] item: Leftovers
+L	ab_400_21	219	|upkeep
+L	ab_400_21	220	|turn|19
+L	ab_400_21	221	|
+L	ab_400_21	222	|t:|<NORMALIZED>
+L	ab_400_21	223	|move|p1a: Beautifly|Psychic|p2a: Cloyster
+L	ab_400_21	224	|-damage|p2a: Cloyster|73/216
+L	ab_400_21	225	|move|p2a: Cloyster|Surf|p1a: Beautifly
+L	ab_400_21	226	|-damage|p1a: Beautifly|86/282
+L	ab_400_21	227	|
+L	ab_400_21	228	|-heal|p1a: Beautifly|103/282|[from] item: Leftovers
+L	ab_400_21	229	|-heal|p2a: Cloyster|86/216|[from] item: Leftovers
+L	ab_400_21	230	|upkeep
+L	ab_400_21	231	|turn|20
+L	ab_400_21	232	|
+L	ab_400_21	233	|t:|<NORMALIZED>
+L	ab_400_21	234	|move|p1a: Beautifly|Toxic|p2a: Cloyster
+L	ab_400_21	235	|-status|p2a: Cloyster|tox
+L	ab_400_21	236	|move|p2a: Cloyster|Explosion|p1a: Beautifly
+L	ab_400_21	237	|-damage|p1a: Beautifly|0 fnt
+L	ab_400_21	238	|faint|p2a: Cloyster
+L	ab_400_21	239	|faint|p1a: Beautifly
+L	ab_400_21	240	|
+L	ab_400_21	241	|t:|<NORMALIZED>
+L	ab_400_21	242	|switch|p1a: Wailord|Wailord, L87, M|438/438
+L	ab_400_21	243	|switch|p2a: Vaporeon|Vaporeon, L79, M|335/335
+L	ab_400_21	244	|
+L	ab_400_21	245	|upkeep
+L	ab_400_21	246	|turn|21
+L	ab_400_21	247	|
+L	ab_400_21	248	|t:|<NORMALIZED>
+L	ab_400_21	249	|move|p1a: Wailord|Surf|p2a: Vaporeon
+L	ab_400_21	250	|-immune|p2a: Vaporeon|[from] ability: Water Absorb
+L	ab_400_21	251	|move|p2a: Vaporeon|Surf|p1a: Wailord
+L	ab_400_21	252	|-resisted|p1a: Wailord
+L	ab_400_21	253	|-damage|p1a: Wailord|369/438
+L	ab_400_21	254	|
+L	ab_400_21	255	|-heal|p1a: Wailord|396/438|[from] item: Leftovers
+L	ab_400_21	256	|upkeep
+L	ab_400_21	257	|turn|22
+L	ab_400_21	258	|
+L	ab_400_21	259	|t:|<NORMALIZED>
+L	ab_400_21	260	|move|p2a: Vaporeon|Protect|p2a: Vaporeon
+L	ab_400_21	261	|-singleturn|p2a: Vaporeon|Protect
+L	ab_400_21	262	|move|p1a: Wailord|Sleep Talk|p1a: Wailord
+L	ab_400_21	263	|
+L	ab_400_21	264	|-heal|p1a: Wailord|423/438|[from] item: Leftovers
+L	ab_400_21	265	|upkeep
+L	ab_400_21	266	|turn|23
+L	ab_400_21	267	|
+L	ab_400_21	268	|t:|<NORMALIZED>
+L	ab_400_21	269	|move|p2a: Vaporeon|Protect|p2a: Vaporeon
+L	ab_400_21	270	|debug|Success chance: 50%
+L	ab_400_21	271	|-singleturn|p2a: Vaporeon|Protect
+L	ab_400_21	272	|move|p1a: Wailord|Rest|p1a: Wailord
+L	ab_400_21	273	|-status|p1a: Wailord|slp|[from] move: Rest
+L	ab_400_21	274	|-heal|p1a: Wailord|438/438 slp|[silent]
+L	ab_400_21	275	|
+L	ab_400_21	276	|upkeep
+L	ab_400_21	277	|turn|24
+L	ab_400_21	278	|
+L	ab_400_21	279	|t:|<NORMALIZED>
+L	ab_400_21	280	|move|p2a: Vaporeon|Protect|p2a: Vaporeon
+L	ab_400_21	281	|debug|Success chance: 25%
+L	ab_400_21	282	|-singleturn|p2a: Vaporeon|Protect
+L	ab_400_21	283	|cant|p1a: Wailord|slp
+L	ab_400_21	284	|
+L	ab_400_21	285	|upkeep
+L	ab_400_21	286	|turn|25
+L	ab_400_21	287	|
+L	ab_400_21	288	|t:|<NORMALIZED>
+L	ab_400_21	289	|move|p2a: Vaporeon|Protect||[still]
+L	ab_400_21	290	|debug|Success chance: 13%
+L	ab_400_21	291	|-fail|p2a: Vaporeon
+L	ab_400_21	292	|cant|p1a: Wailord|slp
+L	ab_400_21	293	|move|p1a: Wailord|Sleep Talk|p1a: Wailord
+L	ab_400_21	294	|move|p1a: Wailord|Rest|p1a: Wailord|[from] Sleep Talk
+L	ab_400_21	295	|
+L	ab_400_21	296	|upkeep
+L	ab_400_21	297	|turn|26
+L	ab_400_21	298	|
+L	ab_400_21	299	|t:|<NORMALIZED>
+L	ab_400_21	300	|-curestatus|p1a: Wailord|slp|[msg]
+L	ab_400_21	301	|move|p1a: Wailord|Rest|p1a: Wailord
+L	ab_400_21	302	|-fail|p1a: Wailord|heal
+L	ab_400_21	303	|move|p2a: Vaporeon|Ice Beam|p1a: Wailord
+L	ab_400_21	304	|-resisted|p1a: Wailord
+L	ab_400_21	305	|-damage|p1a: Wailord|388/438
+L	ab_400_21	306	|
+L	ab_400_21	307	|-heal|p1a: Wailord|415/438|[from] item: Leftovers
+L	ab_400_21	308	|upkeep
+L	ab_400_21	309	|turn|27
+L	ab_400_21	310	|
+L	ab_400_21	311	|t:|<NORMALIZED>
+L	ab_400_21	312	|switch|p2a: Hitmonlee|Hitmonlee, L84, M|145/221
+L	ab_400_21	313	|move|p1a: Wailord|Surf|p2a: Hitmonlee
+L	ab_400_21	314	|-damage|p2a: Hitmonlee|57/221
+L	ab_400_21	315	|
+L	ab_400_21	316	|-heal|p1a: Wailord|438/438|[from] item: Leftovers
+L	ab_400_21	317	|upkeep
+L	ab_400_21	318	|turn|28
+L	ab_400_21	319	|
+L	ab_400_21	320	|t:|<NORMALIZED>
+L	ab_400_21	321	|move|p2a: Hitmonlee|Reversal|p1a: Wailord
+L	ab_400_21	322	|debug|BP: 80
+L	ab_400_21	323	|-damage|p1a: Wailord|279/438
+L	ab_400_21	324	|move|p1a: Wailord|Surf|p2a: Hitmonlee
+L	ab_400_21	325	|-damage|p2a: Hitmonlee|0 fnt
+L	ab_400_21	326	|faint|p2a: Hitmonlee
+L	ab_400_21	327	|
+L	ab_400_21	328	|t:|<NORMALIZED>
+L	ab_400_21	329	|switch|p2a: Vaporeon|Vaporeon, L79, M|335/335
+L	ab_400_21	330	|
+L	ab_400_21	331	|-heal|p1a: Wailord|306/438|[from] item: Leftovers
+L	ab_400_21	332	|upkeep
+L	ab_400_21	333	|turn|29
+L	ab_400_21	334	|
+L	ab_400_21	335	|t:|<NORMALIZED>
+L	ab_400_21	336	|move|p2a: Vaporeon|Protect|p2a: Vaporeon
+L	ab_400_21	337	|-singleturn|p2a: Vaporeon|Protect
+L	ab_400_21	338	|move|p1a: Wailord|Rest|p1a: Wailord
+L	ab_400_21	339	|-status|p1a: Wailord|slp|[from] move: Rest
+L	ab_400_21	340	|-heal|p1a: Wailord|438/438 slp|[silent]
+L	ab_400_21	341	|
+L	ab_400_21	342	|upkeep
+L	ab_400_21	343	|turn|30
+L	ab_400_21	344	|
+L	ab_400_21	345	|t:|<NORMALIZED>
+L	ab_400_21	346	|cant|p1a: Wailord|slp
+L	ab_400_21	347	|move|p2a: Vaporeon|Ice Beam|p1a: Wailord
+L	ab_400_21	348	|-resisted|p1a: Wailord
+L	ab_400_21	349	|-damage|p1a: Wailord|388/438 slp
+L	ab_400_21	350	|
+L	ab_400_21	351	|-heal|p1a: Wailord|415/438 slp|[from] item: Leftovers
+L	ab_400_21	352	|upkeep
+L	ab_400_21	353	|turn|31
+L	ab_400_21	354	|
+L	ab_400_21	355	|t:|<NORMALIZED>
+L	ab_400_21	356	|cant|p1a: Wailord|slp
+L	ab_400_21	357	|move|p1a: Wailord|Sleep Talk|p1a: Wailord
+L	ab_400_21	358	|move|p1a: Wailord|Surf|p2a: Vaporeon|[from] Sleep Talk
+L	ab_400_21	359	|-immune|p2a: Vaporeon|[from] ability: Water Absorb
+L	ab_400_21	360	|move|p2a: Vaporeon|Wish|p2a: Vaporeon
+L	ab_400_21	361	|
+L	ab_400_21	362	|-heal|p1a: Wailord|438/438 slp|[from] item: Leftovers
+L	ab_400_21	363	|upkeep
+L	ab_400_21	364	|turn|32
+L	ab_400_21	365	|
+L	ab_400_21	366	|t:|<NORMALIZED>
+L	ab_400_21	367	|-curestatus|p1a: Wailord|slp|[msg]
+L	ab_400_21	368	|move|p1a: Wailord|Sleep Talk|p1a: Wailord
+L	ab_400_21	369	|move|p2a: Vaporeon|Wish||[still]
+L	ab_400_21	370	|-fail|p2a: Vaporeon
+L	ab_400_21	371	|debug|move failed because it did nothing
+L	ab_400_21	372	|
+L	ab_400_21	373	|upkeep
+L	ab_400_21	374	|turn|33
+L	ab_400_21	375	|
+L	ab_400_21	376	|t:|<NORMALIZED>
+L	ab_400_21	377	|move|p1a: Wailord|Toxic|p2a: Vaporeon
+L	ab_400_21	378	|-status|p2a: Vaporeon|tox
+L	ab_400_21	379	|move|p2a: Vaporeon|Wish|p2a: Vaporeon
+L	ab_400_21	380	|
+L	ab_400_21	381	|-damage|p2a: Vaporeon|315/335 tox|[from] psn
+L	ab_400_21	382	|upkeep
+L	ab_400_21	383	|turn|34
+L	ab_400_21	384	|
+L	ab_400_21	385	|t:|<NORMALIZED>
+L	ab_400_21	386	|switch|p2a: Chimecho|Chimecho, L89, M|260/260
+L	ab_400_21	387	|move|p1a: Wailord|Sleep Talk|p1a: Wailord
+L	ab_400_21	388	|
+L	ab_400_21	389	|upkeep
+L	ab_400_21	390	|turn|35
+L	ab_400_21	391	|
+L	ab_400_21	392	|t:|<NORMALIZED>
+L	ab_400_21	393	|switch|p2a: Vaporeon|Vaporeon, L79, M|315/335 tox
+L	ab_400_21	394	|move|p1a: Wailord|Rest|p1a: Wailord
+L	ab_400_21	395	|-fail|p1a: Wailord|heal
+L	ab_400_21	396	|
+L	ab_400_21	397	|-heal|p2a: Vaporeon|335/335 tox|[from] item: Leftovers
+L	ab_400_21	398	|-damage|p2a: Vaporeon|315/335 tox|[from] psn
+L	ab_400_21	399	|upkeep
+L	ab_400_21	400	|turn|36
+L	ab_400_21	401	|
+L	ab_400_21	402	|t:|<NORMALIZED>
+L	ab_400_21	403	|move|p1a: Wailord|Rest|p1a: Wailord
+L	ab_400_21	404	|-fail|p1a: Wailord|heal
+L	ab_400_21	405	|move|p2a: Vaporeon|Wish|p2a: Vaporeon
+L	ab_400_21	406	|
+L	ab_400_21	407	|-heal|p2a: Vaporeon|335/335 tox|[from] item: Leftovers
+L	ab_400_21	408	|-damage|p2a: Vaporeon|295/335 tox|[from] psn
+L	ab_400_21	409	|upkeep
+L	ab_400_21	410	|turn|37
+L	ab_400_21	411	|
+L	ab_400_21	412	|t:|<NORMALIZED>
+L	ab_400_21	413	|move|p1a: Wailord|Surf|p2a: Vaporeon
+L	ab_400_21	414	|-heal|p2a: Vaporeon|335/335 tox|[from] ability: Water Absorb|[of] p1a: Wailord
+L	ab_400_21	415	|move|p2a: Vaporeon|Ice Beam|p1a: Wailord
+L	ab_400_21	416	|-resisted|p1a: Wailord
+L	ab_400_21	417	|-damage|p1a: Wailord|385/438
+L	ab_400_21	418	|
+L	ab_400_21	419	|-heal|p1a: Wailord|412/438|[from] item: Leftovers
+L	ab_400_21	420	|-damage|p2a: Vaporeon|275/335 tox|[from] psn
+L	ab_400_21	421	|upkeep
+L	ab_400_21	422	|turn|38
+L	ab_400_21	423	|
+L	ab_400_21	424	|t:|<NORMALIZED>
+L	ab_400_21	425	|move|p2a: Vaporeon|Protect|p2a: Vaporeon
+L	ab_400_21	426	|-singleturn|p2a: Vaporeon|Protect
+L	ab_400_21	427	|move|p1a: Wailord|Sleep Talk|p1a: Wailord
+L	ab_400_21	428	|
+L	ab_400_21	429	|-heal|p1a: Wailord|438/438|[from] item: Leftovers
+L	ab_400_21	430	|-heal|p2a: Vaporeon|295/335 tox|[from] item: Leftovers
+L	ab_400_21	431	|-damage|p2a: Vaporeon|215/335 tox|[from] psn
+L	ab_400_21	432	|upkeep
+L	ab_400_21	433	|turn|39
+L	ab_400_21	434	|
+L	ab_400_21	435	|t:|<NORMALIZED>
+L	ab_400_21	436	|move|p1a: Wailord|Sleep Talk|p1a: Wailord
+L	ab_400_21	437	|move|p2a: Vaporeon|Surf|p1a: Wailord
+L	ab_400_21	438	|-resisted|p1a: Wailord
+L	ab_400_21	439	|-damage|p1a: Wailord|365/438
+L	ab_400_21	440	|
+L	ab_400_21	441	|-heal|p1a: Wailord|392/438|[from] item: Leftovers
+L	ab_400_21	442	|-heal|p2a: Vaporeon|235/335 tox|[from] item: Leftovers
+L	ab_400_21	443	|-damage|p2a: Vaporeon|135/335 tox|[from] psn
+L	ab_400_21	444	|upkeep
+L	ab_400_21	445	|turn|40
+L	ab_400_21	446	|
+L	ab_400_21	447	|t:|<NORMALIZED>
+L	ab_400_21	448	|move|p2a: Vaporeon|Protect|p2a: Vaporeon
+L	ab_400_21	449	|-singleturn|p2a: Vaporeon|Protect
+L	ab_400_21	450	|move|p1a: Wailord|Rest|p1a: Wailord
+L	ab_400_21	451	|-status|p1a: Wailord|slp|[from] move: Rest
+L	ab_400_21	452	|-heal|p1a: Wailord|438/438 slp|[silent]
+L	ab_400_21	453	|
+L	ab_400_21	454	|-heal|p2a: Vaporeon|155/335 tox|[from] item: Leftovers
+L	ab_400_21	455	|-damage|p2a: Vaporeon|35/335 tox|[from] psn
+L	ab_400_21	456	|upkeep
+L	ab_400_21	457	|turn|41
+L	ab_400_21	458	|
+L	ab_400_21	459	|t:|<NORMALIZED>
+L	ab_400_21	460	|cant|p1a: Wailord|slp
+L	ab_400_21	461	|move|p2a: Vaporeon|Wish|p2a: Vaporeon
+L	ab_400_21	462	|
+L	ab_400_21	463	|-heal|p2a: Vaporeon|55/335 tox|[from] item: Leftovers
+L	ab_400_21	464	|-damage|p2a: Vaporeon|0 fnt|[from] psn
+L	ab_400_21	465	|faint|p2a: Vaporeon
+L	ab_400_21	466	|upkeep
+L	ab_400_21	467	|
+L	ab_400_21	468	|t:|<NORMALIZED>
+L	ab_400_21	469	|switch|p2a: Chimecho|Chimecho, L89, M|260/260
+L	ab_400_21	470	|turn|42
+L	ab_400_21	471	|
+L	ab_400_21	472	|t:|<NORMALIZED>
+L	ab_400_21	473	|move|p2a: Chimecho|Toxic||[still]
+L	ab_400_21	474	|-fail|p2a: Chimecho
+L	ab_400_21	475	|debug|move failed because it did nothing
+L	ab_400_21	476	|cant|p1a: Wailord|slp
+L	ab_400_21	477	|
+L	ab_400_21	478	|upkeep
+L	ab_400_21	479	|turn|43
+L	ab_400_21	480	|
+L	ab_400_21	481	|t:|<NORMALIZED>
+L	ab_400_21	482	|switch|p1a: Altaria|Altaria, L85, M|265/265
+L	ab_400_21	483	|move|p2a: Chimecho|Toxic|p1a: Altaria
+L	ab_400_21	484	|-status|p1a: Altaria|tox
+L	ab_400_21	485	|
+L	ab_400_21	486	|-damage|p1a: Altaria|249/265 tox|[from] psn
+L	ab_400_21	487	|upkeep
+L	ab_400_21	488	|turn|44
+L	ab_400_21	489	|
+L	ab_400_21	490	|t:|<NORMALIZED>
+L	ab_400_21	491	|move|p1a: Altaria|Dragon Dance|p1a: Altaria
+L	ab_400_21	492	|-boost|p1a: Altaria|atk|1
+L	ab_400_21	493	|-boost|p1a: Altaria|spe|1
+L	ab_400_21	494	|move|p2a: Chimecho|Heal Bell|p2a: Chimecho
+L	ab_400_21	495	|-activate|p2a: Chimecho|move: Heal Bell
+L	ab_400_21	496	|-curestatus|p2: Latios|tox|[silent]
+L	ab_400_21	497	|
+L	ab_400_21	498	|-heal|p1a: Altaria|265/265 tox|[from] item: Leftovers
+L	ab_400_21	499	|-damage|p1a: Altaria|233/265 tox|[from] psn
+L	ab_400_21	500	|upkeep
+L	ab_400_21	501	|turn|45
+L	ab_400_21	502	|
+L	ab_400_21	503	|t:|<NORMALIZED>
+L	ab_400_21	504	|move|p1a: Altaria|Earthquake|p2a: Chimecho
+L	ab_400_21	505	|-immune|p2a: Chimecho
+L	ab_400_21	506	|move|p2a: Chimecho|Heal Bell|p2a: Chimecho
+L	ab_400_21	507	|-activate|p2a: Chimecho|move: Heal Bell
+L	ab_400_21	508	|
+L	ab_400_21	509	|-heal|p1a: Altaria|249/265 tox|[from] item: Leftovers
+L	ab_400_21	510	|-damage|p1a: Altaria|201/265 tox|[from] psn
+L	ab_400_21	511	|upkeep
+L	ab_400_21	512	|turn|46
+L	ab_400_21	513	|
+L	ab_400_21	514	|t:|<NORMALIZED>
+L	ab_400_21	515	|move|p1a: Altaria|Dragon Dance|p1a: Altaria
+L	ab_400_21	516	|-boost|p1a: Altaria|atk|1
+L	ab_400_21	517	|-boost|p1a: Altaria|spe|1
+L	ab_400_21	518	|move|p2a: Chimecho|Toxic|p1a: Altaria
+L	ab_400_21	519	|-fail|p1a: Altaria|tox
+L	ab_400_21	520	|debug|move failed because it did nothing
+L	ab_400_21	521	|
+L	ab_400_21	522	|-heal|p1a: Altaria|217/265 tox|[from] item: Leftovers
+L	ab_400_21	523	|-damage|p1a: Altaria|153/265 tox|[from] psn
+L	ab_400_21	524	|upkeep
+L	ab_400_21	525	|turn|47
+L	ab_400_21	526	|
+L	ab_400_21	527	|t:|<NORMALIZED>
+L	ab_400_21	528	|move|p1a: Altaria|Dragon Dance|p1a: Altaria
+L	ab_400_21	529	|-boost|p1a: Altaria|atk|1
+L	ab_400_21	530	|-boost|p1a: Altaria|spe|1
+L	ab_400_21	531	|move|p2a: Chimecho|Toxic|p1a: Altaria
+L	ab_400_21	532	|-fail|p1a: Altaria|tox
+L	ab_400_21	533	|debug|move failed because it did nothing
+L	ab_400_21	534	|
+L	ab_400_21	535	|-heal|p1a: Altaria|169/265 tox|[from] item: Leftovers
+L	ab_400_21	536	|-damage|p1a: Altaria|89/265 tox|[from] psn
+L	ab_400_21	537	|upkeep
+L	ab_400_21	538	|turn|48
+L	ab_400_21	539	|
+L	ab_400_21	540	|t:|<NORMALIZED>
+L	ab_400_21	541	|move|p1a: Altaria|Dragon Dance|p1a: Altaria
+L	ab_400_21	542	|-boost|p1a: Altaria|atk|1
+L	ab_400_21	543	|-boost|p1a: Altaria|spe|1
+L	ab_400_21	544	|move|p2a: Chimecho|Toxic|p1a: Altaria
+L	ab_400_21	545	|-fail|p1a: Altaria|tox
+L	ab_400_21	546	|debug|move failed because it did nothing
+L	ab_400_21	547	|
+L	ab_400_21	548	|-heal|p1a: Altaria|105/265 tox|[from] item: Leftovers
+L	ab_400_21	549	|-damage|p1a: Altaria|9/265 tox|[from] psn
+L	ab_400_21	550	|upkeep
+L	ab_400_21	551	|turn|49
+L	ab_400_21	552	|
+L	ab_400_21	553	|t:|<NORMALIZED>
+L	ab_400_21	554	|switch|p2a: Latios|Latios, L66, M|189/215
+L	ab_400_21	555	|move|p1a: Altaria|Fire Blast|p2a: Latios
+L	ab_400_21	556	|-resisted|p2a: Latios
+L	ab_400_21	557	|-crit|p2a: Latios
+L	ab_400_21	558	|-damage|p2a: Latios|143/215
+L	ab_400_21	559	|
+L	ab_400_21	560	|-heal|p1a: Altaria|25/265 tox|[from] item: Leftovers
+L	ab_400_21	561	|-damage|p1a: Altaria|0 fnt|[from] psn
+L	ab_400_21	562	|faint|p1a: Altaria
+L	ab_400_21	563	|upkeep
+L	ab_400_21	564	|
+L	ab_400_21	565	|t:|<NORMALIZED>
+L	ab_400_21	566	|switch|p1a: Wailord|Wailord, L87, M|438/438 slp
+L	ab_400_21	567	|turn|50
+L	ab_400_21	568	|
+L	ab_400_21	569	|t:|<NORMALIZED>
+L	ab_400_21	570	|move|p2a: Latios|Refresh||[still]
+L	ab_400_21	571	|-fail|p2a: Latios
+L	ab_400_21	572	|debug|move failed because it did nothing
+L	ab_400_21	573	|-curestatus|p1a: Wailord|slp|[msg]
+L	ab_400_21	574	|move|p1a: Wailord|Surf|p2a: Latios
+L	ab_400_21	575	|-resisted|p2a: Latios
+L	ab_400_21	576	|-damage|p2a: Latios|106/215
+L	ab_400_21	577	|
+L	ab_400_21	578	|upkeep
+L	ab_400_21	579	|turn|51
+L	ab_400_21	580	|
+L	ab_400_21	581	|t:|<NORMALIZED>
+L	ab_400_21	582	|move|p2a: Latios|Dragon Claw|p1a: Wailord
+L	ab_400_21	583	|-damage|p1a: Wailord|274/438
+L	ab_400_21	584	|move|p1a: Wailord|Toxic|p2a: Latios|[miss]
+L	ab_400_21	585	|-miss|p1a: Wailord|p2a: Latios
+L	ab_400_21	586	|
+L	ab_400_21	587	|-heal|p1a: Wailord|301/438|[from] item: Leftovers
+L	ab_400_21	588	|upkeep
+L	ab_400_21	589	|turn|52
+L	ab_400_21	590	|
+L	ab_400_21	591	|t:|<NORMALIZED>
+L	ab_400_21	592	|move|p2a: Latios|Recover|p2a: Latios
+L	ab_400_21	593	|-heal|p2a: Latios|213/215
+L	ab_400_21	594	|move|p1a: Wailord|Sleep Talk|p1a: Wailord
+L	ab_400_21	595	|
+L	ab_400_21	596	|-heal|p1a: Wailord|328/438|[from] item: Leftovers
+L	ab_400_21	597	|upkeep
+L	ab_400_21	598	|turn|53
+L	ab_400_21	599	|
+L	ab_400_21	600	|t:|<NORMALIZED>
+L	ab_400_21	601	|move|p2a: Latios|Refresh||[still]
+L	ab_400_21	602	|-fail|p2a: Latios
+L	ab_400_21	603	|debug|move failed because it did nothing
+L	ab_400_21	604	|move|p1a: Wailord|Sleep Talk|p1a: Wailord
+L	ab_400_21	605	|
+L	ab_400_21	606	|-heal|p1a: Wailord|355/438|[from] item: Leftovers
+L	ab_400_21	607	|upkeep
+L	ab_400_21	608	|turn|54
+L	ab_400_21	609	|
+L	ab_400_21	610	|t:|<NORMALIZED>
+L	ab_400_21	611	|move|p2a: Latios|Refresh||[still]
+L	ab_400_21	612	|-fail|p2a: Latios
+L	ab_400_21	613	|debug|move failed because it did nothing
+L	ab_400_21	614	|move|p1a: Wailord|Toxic|p2a: Latios
+L	ab_400_21	615	|-status|p2a: Latios|tox
+L	ab_400_21	616	|
+L	ab_400_21	617	|-damage|p2a: Latios|200/215 tox|[from] psn
+L	ab_400_21	618	|-heal|p1a: Wailord|382/438|[from] item: Leftovers
+L	ab_400_21	619	|upkeep
+L	ab_400_21	620	|turn|55
+L	ab_400_21	621	|
+L	ab_400_21	622	|t:|<NORMALIZED>
+L	ab_400_21	623	|move|p2a: Latios|Recover|p2a: Latios
+L	ab_400_21	624	|-heal|p2a: Latios|215/215 tox
+L	ab_400_21	625	|move|p1a: Wailord|Toxic|p2a: Latios|[miss]
+L	ab_400_21	626	|-miss|p1a: Wailord|p2a: Latios
+L	ab_400_21	627	|
+L	ab_400_21	628	|-damage|p2a: Latios|189/215 tox|[from] psn
+L	ab_400_21	629	|-heal|p1a: Wailord|409/438|[from] item: Leftovers
+L	ab_400_21	630	|upkeep
+L	ab_400_21	631	|turn|56
+L	ab_400_21	632	|
+L	ab_400_21	633	|t:|<NORMALIZED>
+L	ab_400_21	634	|switch|p1a: Regirock|Regirock, L80|259/259
+L	ab_400_21	635	|move|p2a: Latios|Dragon Claw|p1a: Regirock
+L	ab_400_21	636	|-damage|p1a: Regirock|159/259
+L	ab_400_21	637	|
+L	ab_400_21	638	|-damage|p2a: Latios|150/215 tox|[from] psn
+L	ab_400_21	639	|-heal|p1a: Regirock|175/259|[from] item: Leftovers
+L	ab_400_21	640	|upkeep
+L	ab_400_21	641	|turn|57
+L	ab_400_21	642	|
+L	ab_400_21	643	|t:|<NORMALIZED>
+L	ab_400_21	644	|move|p2a: Latios|Calm Mind|p2a: Latios
+L	ab_400_21	645	|-boost|p2a: Latios|spa|1
+L	ab_400_21	646	|-boost|p2a: Latios|spd|1
+L	ab_400_21	647	|move|p1a: Regirock|Explosion|p2a: Latios
+L	ab_400_21	648	|-damage|p2a: Latios|0 fnt
+L	ab_400_21	649	|faint|p1a: Regirock
+L	ab_400_21	650	|faint|p2a: Latios
+L	ab_400_21	651	|
+L	ab_400_21	652	|t:|<NORMALIZED>
+L	ab_400_21	653	|switch|p2a: Chimecho|Chimecho, L89, M|260/260
+L	ab_400_21	654	|switch|p1a: Wailord|Wailord, L87, M|409/438
+L	ab_400_21	655	|
+L	ab_400_21	656	|-heal|p1a: Wailord|436/438|[from] item: Leftovers
+L	ab_400_21	657	|upkeep
+L	ab_400_21	658	|turn|58
+L	ab_400_21	659	|
+L	ab_400_21	660	|t:|<NORMALIZED>
+L	ab_400_21	661	|move|p2a: Chimecho|Heal Bell|p2a: Chimecho
+L	ab_400_21	662	|-activate|p2a: Chimecho|move: Heal Bell
+L	ab_400_21	663	|move|p1a: Wailord|Surf|p2a: Chimecho
+L	ab_400_21	664	|-damage|p2a: Chimecho|157/260
+L	ab_400_21	665	|
+L	ab_400_21	666	|-heal|p2a: Chimecho|173/260|[from] item: Leftovers
+L	ab_400_21	667	|-heal|p1a: Wailord|438/438|[from] item: Leftovers
+L	ab_400_21	668	|upkeep
+L	ab_400_21	669	|turn|59
+L	ab_400_21	670	|
+L	ab_400_21	671	|t:|<NORMALIZED>
+L	ab_400_21	672	|move|p2a: Chimecho|Psychic|p1a: Wailord
+L	ab_400_21	673	|-damage|p1a: Wailord|291/438
+L	ab_400_21	674	|move|p1a: Wailord|Toxic|p2a: Chimecho
+L	ab_400_21	675	|-status|p2a: Chimecho|tox
+L	ab_400_21	676	|
+L	ab_400_21	677	|-heal|p2a: Chimecho|189/260 tox|[from] item: Leftovers
+L	ab_400_21	678	|-damage|p2a: Chimecho|173/260 tox|[from] psn
+L	ab_400_21	679	|-heal|p1a: Wailord|318/438|[from] item: Leftovers
+L	ab_400_21	680	|upkeep
+L	ab_400_21	681	|turn|60
+L	ab_400_21	682	|
+L	ab_400_21	683	|t:|<NORMALIZED>
+L	ab_400_21	684	|move|p2a: Chimecho|Toxic|p1a: Wailord
+L	ab_400_21	685	|-status|p1a: Wailord|tox
+L	ab_400_21	686	|move|p1a: Wailord|Rest|p1a: Wailord
+L	ab_400_21	687	|-status|p1a: Wailord|slp|[from] move: Rest
+L	ab_400_21	688	|-heal|p1a: Wailord|438/438 slp|[silent]
+L	ab_400_21	689	|
+L	ab_400_21	690	|-heal|p2a: Chimecho|189/260 tox|[from] item: Leftovers
+L	ab_400_21	691	|-damage|p2a: Chimecho|157/260 tox|[from] psn
+L	ab_400_21	692	|upkeep
+L	ab_400_21	693	|turn|61
+L	ab_400_21	694	|
+L	ab_400_21	695	|t:|<NORMALIZED>
+L	ab_400_21	696	|switch|p1a: Poliwrath|Poliwrath, L85, M|292/292
+L	ab_400_21	697	|move|p2a: Chimecho|Psychic|p1a: Poliwrath
+L	ab_400_21	698	|-supereffective|p1a: Poliwrath
+L	ab_400_21	699	|-damage|p1a: Poliwrath|84/292
+L	ab_400_21	700	|
+L	ab_400_21	701	|-heal|p1a: Poliwrath|102/292|[from] item: Leftovers
+L	ab_400_21	702	|-heal|p2a: Chimecho|173/260 tox|[from] item: Leftovers
+L	ab_400_21	703	|-damage|p2a: Chimecho|125/260 tox|[from] psn
+L	ab_400_21	704	|upkeep
+L	ab_400_21	705	|turn|62
+L	ab_400_21	706	|
+L	ab_400_21	707	|t:|<NORMALIZED>
+L	ab_400_21	708	|debug|before turn callback: focuspunch
+L	ab_400_21	709	|-singleturn|p1a: Poliwrath|move: Focus Punch
+L	ab_400_21	710	|move|p2a: Chimecho|Heal Bell|p2a: Chimecho
+L	ab_400_21	711	|-activate|p2a: Chimecho|move: Heal Bell
+L	ab_400_21	712	|-curestatus|p2a: Chimecho|tox|[silent]
+L	ab_400_21	713	|move|p1a: Poliwrath|Focus Punch|p2a: Chimecho
+L	ab_400_21	714	|-resisted|p2a: Chimecho
+L	ab_400_21	715	|-damage|p2a: Chimecho|41/260
+L	ab_400_21	716	|
+L	ab_400_21	717	|-heal|p1a: Poliwrath|120/292|[from] item: Leftovers
+L	ab_400_21	718	|-heal|p2a: Chimecho|57/260|[from] item: Leftovers
+L	ab_400_21	719	|upkeep
+L	ab_400_21	720	|turn|63
+L	ab_400_21	721	|
+L	ab_400_21	722	|t:|<NORMALIZED>
+L	ab_400_21	723	|move|p1a: Poliwrath|Toxic|p2a: Chimecho
+L	ab_400_21	724	|-status|p2a: Chimecho|tox
+L	ab_400_21	725	|move|p2a: Chimecho|Toxic|p1a: Poliwrath
+L	ab_400_21	726	|-status|p1a: Poliwrath|tox
+L	ab_400_21	727	|
+L	ab_400_21	728	|-heal|p1a: Poliwrath|138/292 tox|[from] item: Leftovers
+L	ab_400_21	729	|-damage|p1a: Poliwrath|120/292 tox|[from] psn
+L	ab_400_21	730	|-heal|p2a: Chimecho|73/260 tox|[from] item: Leftovers
+L	ab_400_21	731	|-damage|p2a: Chimecho|57/260 tox|[from] psn
+L	ab_400_21	732	|upkeep
+L	ab_400_21	733	|turn|64
+L	ab_400_21	734	|
+L	ab_400_21	735	|t:|<NORMALIZED>
+L	ab_400_21	736	|move|p1a: Poliwrath|Substitute|p1a: Poliwrath
+L	ab_400_21	737	|-start|p1a: Poliwrath|Substitute
+L	ab_400_21	738	|-damage|p1a: Poliwrath|47/292 tox
+L	ab_400_21	739	|move|p2a: Chimecho|Psychic|p1a: Poliwrath
+L	ab_400_21	740	|-supereffective|p1a: Poliwrath
+L	ab_400_21	741	|-end|p1a: Poliwrath|Substitute
+L	ab_400_21	742	|
+L	ab_400_21	743	|-heal|p1a: Poliwrath|65/292 tox|[from] item: Leftovers
+L	ab_400_21	744	|-damage|p1a: Poliwrath|29/292 tox|[from] psn
+L	ab_400_21	745	|-heal|p2a: Chimecho|73/260 tox|[from] item: Leftovers
+L	ab_400_21	746	|-damage|p2a: Chimecho|41/260 tox|[from] psn
+L	ab_400_21	747	|upkeep
+L	ab_400_21	748	|turn|65
+L	ab_400_21	749	|
+L	ab_400_21	750	|t:|<NORMALIZED>
+L	ab_400_21	751	|move|p1a: Poliwrath|Substitute|p1a: Poliwrath
+L	ab_400_21	752	|-fail|p1a: Poliwrath|move: Substitute|[weak]
+L	ab_400_21	753	|move|p2a: Chimecho|Toxic|p1a: Poliwrath
+L	ab_400_21	754	|-fail|p1a: Poliwrath|tox
+L	ab_400_21	755	|debug|move failed because it did nothing
+L	ab_400_21	756	|
+L	ab_400_21	757	|-heal|p1a: Poliwrath|47/292 tox|[from] item: Leftovers
+L	ab_400_21	758	|-damage|p1a: Poliwrath|0 fnt|[from] psn
+L	ab_400_21	759	|faint|p1a: Poliwrath
+L	ab_400_21	760	|-heal|p2a: Chimecho|57/260 tox|[from] item: Leftovers
+L	ab_400_21	761	|-damage|p2a: Chimecho|9/260 tox|[from] psn
+L	ab_400_21	762	|upkeep
+L	ab_400_21	763	|
+L	ab_400_21	764	|t:|<NORMALIZED>
+L	ab_400_21	765	|switch|p1a: Wailord|Wailord, L87, M|438/438 slp
+L	ab_400_21	766	|turn|66
+L	ab_400_21	767	|
+L	ab_400_21	768	|t:|<NORMALIZED>
+L	ab_400_21	769	|move|p2a: Chimecho|Toxic||[still]
+L	ab_400_21	770	|-fail|p2a: Chimecho
+L	ab_400_21	771	|debug|move failed because it did nothing
+L	ab_400_21	772	|cant|p1a: Wailord|slp
+L	ab_400_21	773	|move|p1a: Wailord|Sleep Talk|p1a: Wailord
+L	ab_400_21	774	|move|p1a: Wailord|Surf|p2a: Chimecho|[from] Sleep Talk
+L	ab_400_21	775	|-damage|p2a: Chimecho|0 fnt
+L	ab_400_21	776	|faint|p2a: Chimecho
+L	ab_400_21	777	|
+L	ab_400_21	778	|win|P1

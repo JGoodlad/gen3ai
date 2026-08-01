@@ -4494,6 +4494,92 @@ sibling of `gen3_attract_end_order_v1`); and **8 diffuse SEED (draw-count) repro
 51/83 — check the two early ones against the turn-0 construction artifact first, then root-cause with
 `probe_repro_simtrace.js` + an env-gated per-draw backtrace in `prng::next`.
 
+### ROUND 26 (FIX) — the 24h-fuzz-v2 tail: Baton-Pass trap link, Yawn fail-precedence, Attract-on-a-corpse + the SEED-CLUSTER REFRAME
+
+Closes the remaining PROTOCOL-class divergences from BOTH the `fuzz24h_v2` (250724) and `fuzz_r25_randbats`
+(310725) runs, and — the headline — establishes that the **remaining `kind=seed` divergences are NOT engine
+draw bugs**. All three engine fixes are emission/legality-only: full suite **562/0**, e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` UNCHANGED, every committed seed golden byte-identical, fixtures 68/69/70
+each revert-verified ONE-TO-ONE (reverting each diverges its OWN fixture on its OWN line).
+
+- **B — the TRAP LINK SURVIVES A BATON PASS** (`gen3_trap_link_survives_baton_pass_v1`,
+  `turn/switch.rs`; 4 repros — fuzz24h_v2 ab_1271_13 / ab_387_12 / ab_943_5 + fuzz_r25 ab_533_11). A repeat
+  Spider Web / Mean Look must FAIL as already-trapped (`|move|…||[still]` + `|-fail|<user>`, + the sim's own
+  `|debug|move failed because it did nothing`) where the port re-applied it and emitted
+  `|-activate|<target>|trapped`. PROBE-SETTLED by the NEW `harness/probe_spiderweb_link_lifetime.js` —
+  **⚠️ TWO source-read hypotheses died first** (that Baton Pass RE-POINTS the link; then that the link ALWAYS
+  breaks), so this is another entry in the "the sim is the only oracle" ledger:
+    * trapper NORMAL-switches out → target `trapped` true → **FALSE** (breaks)
+    * trapper **BATON-PASSES** out → target `trapped` true → **TRUE** (SURVIVES)
+    * the TRAPPED mon itself leaves (incl. a phaze drag) → breaks (its own `clearVolatile`)
+  MECHANISM: the severing is a side effect of the DEPARTING mon's `clearVolatile()` (pokemon.ts:1527-1531 →
+  `removeLinkedVolatiles`, which kills the other end of the symmetric link set up at pokemon.ts:2015-2025).
+  A Baton Pass takes the `copyVolatileFrom` path instead and never runs it — and since BOTH `trapped` and
+  `trapper` are `noCopy: true` (conditions.ts:208-221) the entrant does NOT inherit `trapper`, leaving the
+  target trapped with a DANGLING link. The old code comment asserted the trap "ENDS the moment the TRAPPER
+  leaves the field ANY way (voluntary switch / Baton Pass / phaze drag)" — wrong on the middle case. FIX:
+  gate the source-left clear on `!bp`. (The FAINT path in `process_faints` is unaffected — a fainted trapper
+  runs the real clearVolatile, so it still severs.) Fixture `68_trap_link_survives_a_baton_pass.txt`.
+  Cleared 3 of 4; **ab_1271_13 advanced past its (masking) protocol bug to a `species` divergence at dec152**
+  — a separate, previously-hidden issue, not a regression (trapping_test's 8346 trapped assertions + T1-T5
+  and batch6's 6479 trapped rows all stay green).
+- **F — YAWN: SUBSTITUTE OUTRANKS THE SLEEP-IMMUNE ABILITY** (`gen3_yawn_sub_before_immune_v1`,
+  `turn/status_moves.rs`; the NEW cluster the fuzz_r25 run surfaced, repro ab_707_4). A target carrying BOTH
+  a Substitute and Vital Spirit: the sim reports the SUBSTITUTE block (`[still]` + `-fail` on the USER), the
+  port reported the ABILITY immunity (`-immune` on the TARGET). PROBE-SETTLED by the NEW
+  `harness/probe_yawn_fail_precedence.js` (a source read predicts the OPPOSITE — yawn's own `onTryHit`
+  [`target.status || !target.runStatusImmunity('slp')`] runs at `runEvent('TryHit')` while the sub blocks at
+  the LATER `onTryPrimaryHit`): sub-only → `[still]`+`-fail`; immune-only → `-immune|[from] ability`;
+  **sub + immune → `[still]`+`-fail`**. ROOT CAUSE: `yawn_subbed` gated on `!yawn_immune`, so a sleep-immune
+  target EXCLUDED the substitute case — flipping BOTH the branch AND, via `yawn_still`, the ANNOUNCE form.
+  Corrected order: **Protect > already-statused > SUBSTITUTE > sleep-immune > ADD**. Fixture
+  `69_yawn_substitute_outranks_sleep_immunity.txt`.
+- **E — the ATTRACT source-left clear SKIPS A CORPSE** (`gen3_attract_end_skips_a_corpse_v1`,
+  `turn/switch.rs`; repro ab_400_21). On a DOUBLE faint (both actives die to residual poison in the same
+  end-of-turn) the port fired the clear against an ALREADY-FAINTED holder, emitting a phantom
+  `|-end|<corpse>|Attract|[silent]` between the two replacement `|switch|` lines; the sim's corpse already
+  ran `clearVolatile()` at faint (silently) so it emits NOTHING. Guarded on `hp > 0`. Fixture
+  `70_attract_end_skips_a_fainted_holder.txt`.
+
+**⚠️ THE RECURRING BUG CLASS — "does this effect fire on a CORPSE?"** E is the same shape as round 25's
+Heal-Bell fix (`gen3_heal_bell_skips_fainted_v1`), which is the same shape as the pre-existing fire-thaw and
+Focus-Band alive-guards. Showdown's own guards are `if (!this.hp …)` early-outs scattered across
+`cureStatus`/`heal`/`damage`; the port re-implements each site by hand, so the guard is easy to omit. **A
+sweep of every emit site that reads a mon OTHER than the current actor is the cheapest way to pre-empt the
+next one.**
+
+**NEW PERMANENT DIAGNOSTIC — `POKESIM_PRNG_TRACE=1`** (`gen3_prng_trace_env_v1`, `prng/mod.rs`). `Prng::next`
+logs one stderr line per draw (`[prng] #<n> -> <value> seed_before=<seed>`) — the PORT-side half of the
+draw-divergence workflow whose SIM-side half is `harness/probe_repro_simtrace.js` (which prints the sim's
+draws WITH call sites). Line the two up by index to find the exact draw where a `kind=seed` repro desyncs
+instead of guessing at the mechanism. Made PERMANENT because three separate rounds hand-patched this same
+hook into `next()` and then removed it. COST WHEN OFF: one relaxed atomic load of a `OnceLock<bool>` — the
+env var is read exactly ONCE per process, never per draw, so the bridge/training hot path is unaffected
+(verified: full suite byte-identical, no `[prng]` output by default).
+
+**🎯 THE SEED-CLUSTER REFRAME (the round's most important finding).** The 13 still-open repros (12 `seed` +
+1 `species`) were characterized by diffing the PORT's full raw draw stream against the SIM's (the new trace
+× the sim probe). RESULT — **12 of 13 have ZERO port-only draws**: the port's draw stream is a byte-exact
+PREFIX of the sim's, and for **ab_618_7 (412 vs 412) and ab_262_11 (228 vs 228) the streams are IDENTICAL
+end-to-end** while `ab_replay` still reports `kind=seed`. The lone exception, ab_239_13, has ONE extra draw
+at the very end and is the `dropped=forced-unmodeled-move:struggle` non-ended prefix battle.
+⇒ **The port's RNG consumption is CORRECT on the entire remaining queue.** These are **DRAW-FREE
+decision-stream desyncs**: the port segments decision boundaries differently from the recorder, so its
+per-decision seed CHECKPOINT lands at a different draw index (verified on ab_262_11: both the `expected` and
+the `got` seed occur EXACTLY ONCE in the port's own stream — same stream, different checkpoint), and it
+consumes the fixed recorded choice list at a different rate, running out before the battle ends (hence
+`POKESIM_PROTOCOL_ONLY=1` on these shows the bytes CLEAN with only the final `winner` differing).
+**HONEST LIMIT — the draw evidence does NOT distinguish two live hypotheses:** (a) pure HARNESS boundary
+segmentation in the offline `ab_replay` path, or (b) a genuine DRAW-FREE legality bug (the port rejecting a
+decision the sim accepts, via the reject-and-re-request gate). Both fit every observation. Distinguishing
+them needs a per-decision ACCEPTED/REJECTED comparison, not more draw tracing.
+**NEXT STEP (well-scoped, with a precedent):** this is the OMNISCIENT-path analogue of the BRIDGE's round-20
+A2 fix (`gen3_perside_seed_anchor_subsequence_v1`), which solved exactly this for `bridge_replay` by aligning
+the sim's decision-seed list as a SUBSEQUENCE of the port's boundary-seed list. Port that treatment to
+`ab_replay.rs` — but hold it to the SAME gate-integrity bar (round 20 shipped 9 `a2_anchor_tests` plus an
+injected-extra-draw proof that a genuine desync is still caught), because a sloppy anchor here would make
+the omniscient byte gate VACUOUS, which is far worse than the artifact it removes.
+
 ## Data-driven mechanics (the class framework)
 
 **The strategic shift (Phase 1 landed 2026-07-03, `gen3_item_mechanics_v1`):** stop hand-modeling

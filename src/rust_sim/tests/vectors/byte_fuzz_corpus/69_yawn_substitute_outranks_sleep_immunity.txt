@@ -1,0 +1,1125 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=310725 run_id=rms9nh02e chunk=707
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_707_4
+TEAM	ab_707_4	p1	Primeape||LiechiBerry|VitalSpirit|bulkup,reversal,substitute,hiddenpowerghost|Hardy|85,85,85,85,85,85|M|,,30,,30,||84|]Rayquaza||ChoiceBand|AirLock|rockslide,extremespeed,hiddenpowerflying,earthquake|Hardy|85,85,85,85,85,85|N|30,30,30,30,30,||70|]Ursaring||ChoiceBand|Guts|return,earthquake,facade,hiddenpowerghost|Hardy|85,85,85,85,85,85|M|,,30,,30,||81|]Magneton||Leftovers|MagnetPull|hiddenpowerice,protect,toxic,thunderbolt|Hardy|85,,85,85,85,85|N|,2,30,,,||85|]Kabutops||SalacBerry|BattleArmor|rockslide,brickbreak,surf,swordsdance|Hardy|85,85,85,85,85,85|M|||84|]Suicune||Leftovers|Pressure|calmmind,rest,surf,sleeptalk|Hardy|85,,85,85,85,85|N|,0,,,,||74|
+TEAM	ab_707_4	p2	Raikou||Leftovers|Pressure|thunderbolt,hiddenpowerice,rest,sleeptalk|Hardy|85,,85,85,85,85|N|,2,30,,,||74|]Camerupt||Leftovers|MagmaArmor|fireblast,earthquake,rockslide,toxic|Hardy|85,85,85,85,85,85|M|||89|]Swalot||Leftovers|LiquidOoze|sludgebomb,hiddenpowerground,yawn,painsplit|Hardy|85,85,85,85,85,85|M|,,,30,30,||87|]Dewgong||Leftovers|ThickFat|surf,protect,icebeam,toxic|Hardy|85,,85,85,85,85|M|,0,,,,||87|]Grumpig||Leftovers|ThickFat|calmmind,substitute,psychic,firepunch|Hardy|85,,85,85,85,85|M|,0,,,,||83|]Murkrow||Leftovers|Insomnia|pursuit,thunderwave,hiddenpowerground,drillpeck|Hardy|85,85,85,85,85,85|M|,,,30,30,||90|
+FMT	ab_707_4	gen3customgame
+INIT	ab_707_4	40371,4723,18574,56963	111930451
+DEC	ab_707_4	0	move	0	0	m1	m2	56686,22534,49188,21991	Primeape	246	246	0	-	0	0	0	0	0	0	6	Raikou	241	255	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_707_4	1	move	0	0	s2	m2	26339,25510,27840,5249	Ursaring	278	278	0	-	0	0	0	0	0	0	6	Raikou	255	255	0	slp	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_707_4	2	move	0	0	m1	m2	18066,64494,32238,57626	Ursaring	278	278	0	-	0	0	0	0	0	0	6	Raikou	0	255	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_707_4	3	switch	0	1	-	s5	14302,11325,42386,22533	Ursaring	278	278	0	-	0	0	0	0	0	0	6	Murkrow	254	254	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_707_4	4	move	0	0	m1	m0	39434,23893,4363,9104	Ursaring	224	278	0	-	0	0	0	0	0	0	6	Murkrow	254	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_707_4	5	move	0	0	m1	m0	55688,38585,3738,19703	Ursaring	174	278	0	-	0	0	0	0	0	0	6	Murkrow	254	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_707_4	6	move	0	0	m1	m3	33962,42244,54547,30058	Ursaring	75	278	0	-	0	0	0	0	0	0	6	Murkrow	254	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_707_4	7	move	0	0	m1	m3	37622,22943,17158,58111	Ursaring	0	278	1	fnt	0	0	0	0	0	0	5	Murkrow	254	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_707_4	8	switch	1	0	s4	-	20073,22338,59985,42078	Kabutops	238	238	0	-	0	0	0	0	0	0	5	Murkrow	254	254	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_707_4	9	move	0	0	m2	m3	40695,19952,56003,24583	Kabutops	196	238	0	-	0	0	0	0	0	0	5	Murkrow	149	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_707_4	10	move	0	0	m3	m1	17998,38764,12457,21576	Kabutops	196	238	0	par	0	0	0	0	0	0	5	Murkrow	164	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_707_4	11	move	0	0	m3	m1	39395,18333,47975,64293	Kabutops	196	238	0	par	2	0	0	0	0	0	5	Murkrow	179	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_707_4	12	move	0	0	m3	m3	50987,51833,24137,9520	Kabutops	158	238	0	par	2	0	0	0	0	0	5	Murkrow	194	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_707_4	13	move	0	0	m2	m3	11079,44323,22997,57624	Kabutops	119	238	0	par	2	0	0	0	0	0	5	Murkrow	99	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_707_4	14	move	0	0	s1	m0	19545,51703,23972,18101	Rayquaza	262	262	0	-	0	0	0	0	0	0	5	Murkrow	114	254	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_707_4	15	move	0	0	m1	m1	61939,33107,20977,9982	Rayquaza	262	262	0	-	0	0	0	0	0	0	5	Murkrow	0	254	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_707_4	16	switch	0	1	-	s1	26304,58106,39706,61177	Rayquaza	262	262	0	-	0	0	0	0	0	0	5	Camerupt	269	269	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_707_4	17	move	0	0	s3	m2	28054,57021,30855,18836	Magneton	210	224	0	-	0	0	0	0	0	0	5	Camerupt	269	269	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_707_4	18	move	0	0	m2	m3	46564,11603,7714,28353	Magneton	224	224	0	-	0	0	0	0	0	0	5	Camerupt	253	269	0	tox	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_707_4	19	move	0	0	m1	m0	27142,62196,62980,64090	Magneton	224	224	0	-	0	0	0	0	0	0	5	Camerupt	237	269	0	tox	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_707_4	20	move	0	0	m1	m0	33066,1009,45150,14926	Magneton	224	224	0	-	0	0	0	0	0	0	5	Camerupt	205	269	0	tox	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_707_4	21	move	0	0	m3	m0	49882,45041,39632,24717	Magneton	0	224	1	fnt	0	0	0	0	0	0	4	Camerupt	205	269	0	tox	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_707_4	22	switch	1	0	s5	-	18293,33082,47075,11108	Suicune	270	270	0	-	0	0	0	0	0	0	4	Camerupt	157	269	0	tox	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_707_4	23	move	0	0	m2	m0	926,28712,29276,56145	Suicune	270	270	0	-	0	0	0	0	0	0	4	Camerupt	0	269	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	24	switch	0	1	-	s3	45937,46125,64350,32440	Suicune	270	270	0	-	0	0	0	0	0	0	4	Dewgong	298	298	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_707_4	25	move	0	0	m3	s2	56044,21836,54599,5467	Suicune	270	270	0	-	0	0	0	0	0	0	4	Swalot	316	316	0	-	0	0	0	0	0	0	3	p2	0	0	0	1	0
+DEC	ab_707_4	26	move	0	0	m1	m2	48099,27982,10524,48810	Suicune	270	270	0	-	0	0	0	0	0	0	4	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	27	move	0	0	m2	m3	33600,33811,25830,2073	Suicune	269	270	0	slp	0	0	0	0	0	0	4	Swalot	272	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	1
+DEC	ab_707_4	28	move	0	0	m0	s4	44282,3895,44524,12704	Suicune	270	270	0	slp	0	0	0	0	0	0	4	Grumpig	268	268	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	29	move	0	0	m1	m1	1235,42895,57412,53987	Suicune	270	270	0	-	0	0	0	0	0	0	4	Grumpig	217	268	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	30	move	0	0	m2	m0	62765,15542,58298,50247	Suicune	270	270	0	-	0	0	0	0	0	0	4	Grumpig	233	268	0	-	0	0	1	1	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	31	move	0	0	m3	s4	17939,54771,7633,3526	Suicune	270	270	0	-	0	0	0	0	0	0	4	Swalot	291	316	0	-	0	0	0	0	0	0	3	p2	0	0	0	1	0
+DEC	ab_707_4	32	move	0	0	m3	m2	40337,30596,35946,993	Suicune	270	270	0	-	0	0	0	0	0	0	4	Swalot	310	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_707_4	33	move	0	0	m1	m2	50555,61880,44907,1899	Suicune	270	270	0	slp	0	0	0	0	0	0	4	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	34	move	0	0	m1	s4	33369,11522,54341,52986	Suicune	270	270	0	slp	0	0	0	0	0	0	4	Grumpig	249	268	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	35	move	0	0	m0	m1	12738,60819,15435,4453	Suicune	270	270	0	-	0	0	1	1	0	0	4	Grumpig	198	268	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	36	move	0	0	m1	m2	57935,29443,35053,54003	Suicune	270	270	0	slp	0	0	1	1	0	0	4	Grumpig	214	268	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	37	move	0	0	m2	m3	47980,38975,10898,24342	Suicune	270	270	0	slp	0	0	1	1	0	0	4	Grumpig	230	268	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	38	move	0	0	m1	s2	53746,16000,610,59505	Suicune	270	270	0	slp	0	0	1	1	0	0	4	Dewgong	298	298	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	39	move	0	0	m1	m0	18078,9650,32700,6252	Suicune	270	270	0	slp	0	0	1	1	0	0	4	Dewgong	298	298	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	40	move	0	0	s1	s4	64494,34006,18786,3423	Kabutops	16	238	0	par	0	0	0	0	1	0	4	Swalot	316	316	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	41	move	0	0	s1	m0	27195,35542,52866,17906	Suicune	215	270	0	slp	0	0	0	0	0	0	4	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	42	move	0	0	m3	m0	50954,54107,2901,13608	Suicune	156	270	0	slp	0	0	0	0	0	0	4	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_707_4	43	move	0	0	s1	m0	48495,31001,61297,5180	Kabutops	0	238	1	fnt	0	0	0	0	0	0	3	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	44	switch	1	0	s2	-	17340,30891,55611,46703	Primeape	246	246	0	-	0	0	0	0	0	0	3	Swalot	316	316	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_707_4	45	move	0	0	m2	m2	35852,62321,31327,65422	Primeape	185	246	0	-	0	0	0	0	0	0	3	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	46	move	0	0	m0	m3	36240,35768,36011,28617	Primeape	185	246	0	-	1	1	0	0	0	0	3	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	1
+DEC	ab_707_4	47	move	0	0	m2	m0	43671,9268,56441,60068	Primeape	185	246	0	-	1	1	0	0	0	0	3	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	48	move	0	0	m1	s4	53281,43591,32153,51704	Primeape	185	246	0	-	1	1	0	0	0	0	3	Dewgong	246	298	0	-	0	0	0	0	0	0	3	p2	0	0	0	1	0
+DEC	ab_707_4	49	move	0	0	m0	m1	38548,65275,36154,51178	Primeape	185	246	0	-	2	2	0	0	0	0	3	Dewgong	264	298	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	50	move	0	0	s3	m1	39647,52759,23737,47125	Rayquaza	262	262	0	-	0	0	0	0	0	0	3	Dewgong	282	298	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	51	move	0	0	m1	m0	55141,32158,33437,28306	Rayquaza	213	262	0	-	0	0	0	0	0	0	3	Dewgong	211	298	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	52	move	0	0	m1	m1	9188,33235,63283,59527	Rayquaza	213	262	0	-	0	0	0	0	0	0	3	Dewgong	229	298	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	53	move	0	0	m1	m2	47556,23008,16189,20444	Rayquaza	0	262	1	fnt	0	0	0	0	0	0	2	Dewgong	142	298	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	54	switch	1	0	s3	-	2957,1402,49687,56463	Primeape	185	246	0	-	0	0	0	0	0	0	2	Dewgong	160	298	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_707_4	55	move	0	0	m1	m2	55447,40769,63253,63383	Primeape	91	246	0	-	0	0	0	0	0	0	2	Dewgong	129	298	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_707_4	56	move	0	0	s1	m3	42571,25521,6831,53937	Suicune	172	270	0	slp	0	0	0	0	0	0	2	Dewgong	147	298	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	57	move	0	0	m3	m0	52493,15345,19630,36780	Suicune	152	270	0	slp	0	0	0	0	0	0	2	Dewgong	165	298	0	-	0	0	0	0	0	0	3	p2	0	0	0	1	0
+DEC	ab_707_4	58	move	0	0	m1	m2	63607,17990,4205,46915	Suicune	128	270	0	slp	0	0	0	0	0	0	2	Dewgong	183	298	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	59	move	0	0	m0	s4	47701,41774,31063,50994	Suicune	144	270	0	-	0	0	1	1	0	0	2	Swalot	316	316	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	60	move	0	0	s1	m2	38285,22127,25535,63357	Primeape	91	246	0	-	0	0	0	0	0	0	2	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	61	move	0	0	m0	m0	9191,43057,37588,36968	Primeape	21	246	0	-	2	1	0	0	0	0	2	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	62	move	0	0	m2	m2	27322,1254,33315,16331	Primeape	21	246	0	-	2	1	0	0	0	0	2	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	63	move	0	0	m2	m2	12683,7309,38847,27866	Primeape	21	246	0	-	2	1	0	0	0	0	2	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	64	move	0	0	m2	m2	60830,16956,16867,15045	Primeape	21	246	0	-	2	1	0	0	0	0	2	Swalot	316	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	65	move	0	0	m0	m3	53403,12739,20643,15228	Primeape	168	246	0	-	3	2	0	0	0	0	2	Swalot	187	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	1
+DEC	ab_707_4	66	move	0	0	s1	m0	5378,30824,32814,57171	Suicune	83	270	0	-	0	0	0	0	0	0	2	Swalot	206	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	67	move	0	0	m1	m2	64816,38613,62934,64781	Suicune	270	270	0	slp	0	0	0	0	0	0	2	Swalot	225	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	68	move	0	0	m1	m3	46884,21437,29375,27108	Suicune	263	270	0	slp	0	0	0	0	0	0	2	Swalot	266	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	1
+DEC	ab_707_4	69	move	0	0	m2	s2	22303,58114,51858,27063	Suicune	270	270	0	slp	0	0	0	0	0	0	2	Grumpig	246	268	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	70	move	0	0	m1	s2	4012,28495,24190,17142	Suicune	270	270	0	-	0	0	0	0	0	0	2	Swalot	285	316	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	71	move	0	0	m1	s2	13918,15011,30342,45009	Suicune	270	270	0	-	0	0	0	0	0	0	2	Grumpig	262	268	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	72	move	0	0	s1	m1	45689,34107,53783,54584	Primeape	168	246	0	-	0	0	0	0	0	0	2	Grumpig	211	268	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	73	move	0	0	m1	m1	28924,29145,30888,21324	Primeape	168	246	0	-	0	0	0	0	0	0	2	Grumpig	227	268	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+DEC	ab_707_4	74	move	0	0	m1	m0	25986,64898,29139,14368	Primeape	168	246	0	-	0	0	0	0	0	0	2	Grumpig	243	268	0	-	0	0	1	1	0	0	3	p1	0	0	0	1	0
+DEC	ab_707_4	75	move	0	0	m0	m1	40893,36980,64100,58211	Primeape	168	246	0	-	1	1	0	0	0	0	2	Grumpig	259	268	0	-	0	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	76	move	0	0	m2	m3	29534,13456,5604,59462	Primeape	107	246	0	-	1	1	0	0	0	0	2	Grumpig	268	268	0	-	0	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	77	move	0	0	s1	m0	23286,43374,1453,47201	Suicune	270	270	0	-	0	0	0	0	0	0	2	Grumpig	268	268	0	-	0	0	2	2	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	78	move	0	0	m0	m2	54112,29276,42250,55068	Suicune	118	270	0	-	0	0	1	1	0	0	2	Grumpig	268	268	0	-	0	0	2	2	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	79	move	0	0	m1	m2	45671,27268,18705,17954	Suicune	270	270	0	slp	0	0	1	1	0	0	2	Grumpig	268	268	0	-	0	0	2	2	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	80	move	0	0	m3	m0	65078,39247,44295,45444	Suicune	270	270	0	slp	0	0	2	2	0	0	2	Grumpig	268	268	0	-	0	0	3	3	0	0	3	p2	0	0	0	1	0
+DEC	ab_707_4	81	move	0	0	m2	m1	48270,53045,60619,19415	Suicune	270	270	0	slp	0	0	2	2	0	0	2	Grumpig	268	268	0	-	0	0	3	3	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	82	move	0	0	m0	m3	8123,29842,21002,48586	Suicune	255	270	0	-	0	0	3	3	0	0	2	Grumpig	268	268	0	-	0	0	3	3	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	83	move	0	0	m3	m1	37805,41136,34426,39285	Suicune	270	270	0	-	0	0	3	3	0	0	2	Grumpig	268	268	0	-	0	0	3	3	0	0	3	p2	0	0	0	1	0
+DEC	ab_707_4	84	move	0	0	s1	m2	22008,32755,39919,38329	Primeape	0	246	1	fnt	0	0	0	0	0	0	1	Grumpig	268	268	0	-	0	0	3	3	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	85	switch	1	0	s1	-	30047,46403,57563,45504	Suicune	270	270	0	-	0	0	0	0	0	0	1	Grumpig	268	268	0	-	0	0	3	3	0	0	3	none	0	0	0	0	0
+DEC	ab_707_4	86	move	0	0	m1	m3	27638,1667,58540,22246	Suicune	270	270	0	slp	0	0	0	0	0	0	1	Grumpig	268	268	0	-	0	0	3	3	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	87	move	0	0	m3	m0	27826,44486,10758,43944	Suicune	270	270	0	slp	0	0	1	1	0	0	1	Grumpig	268	268	0	-	0	0	4	4	0	0	3	p2	0	0	0	1	0
+DEC	ab_707_4	88	move	0	0	m3	m3	55327,36638,14669,51726	Suicune	241	270	0	slp	0	0	2	2	0	0	1	Grumpig	268	268	0	-	0	0	4	4	0	0	3	p2	0	0	0	1	0
+DEC	ab_707_4	89	move	0	0	m1	m2	13326,43456,44531,43300	Suicune	270	270	0	slp	0	0	2	2	0	0	1	Grumpig	268	268	0	-	0	0	4	4	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	90	move	0	0	m0	m3	21310,12583,37638,9755	Suicune	251	270	0	slp	0	0	2	2	0	0	1	Grumpig	268	268	0	-	0	0	4	4	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	91	move	0	0	m2	s2	27224,57648,47797,6762	Suicune	267	270	0	slp	0	0	2	2	0	0	1	Swalot	304	316	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_707_4	92	move	0	0	m2	m2	3808,26330,61354,63838	Suicune	270	270	0	-	0	0	2	2	0	0	1	Swalot	183	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	93	move	0	0	m0	m0	26193,52096,48783,34548	Suicune	204	270	0	slp	0	0	3	3	0	0	1	Swalot	202	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	94	move	0	0	m1	m2	10717,44261,40619,28935	Suicune	220	270	0	slp	0	0	3	3	0	0	1	Swalot	221	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	95	move	0	0	m3	m3	64577,39753,10003,47802	Suicune	138	270	0	slp	0	0	3	3	0	0	1	Swalot	141	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	1
+DEC	ab_707_4	96	move	0	0	m2	m0	52314,25776,65017,1385	Suicune	83	270	0	slp	0	0	3	3	0	0	1	Swalot	160	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	97	move	0	0	m0	m0	1953,16824,43499,20676	Suicune	28	270	0	slp	0	0	3	3	0	0	1	Swalot	179	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_707_4	98	move	0	0	m3	m0	57775,43470,27118,3608	Suicune	0	270	1	-	0	0	0	0	0	0	0	Swalot	179	316	0	-	0	0	0	0	0	0	3	p1	0	0	0	1	0
+END	ab_707_4	1	p2
+L	ab_707_4	0	|t:|<NORMALIZED>
+L	ab_707_4	1	|gametype|singles
+L	ab_707_4	2	|player|p1|P1||
+L	ab_707_4	3	|player|p2|P2||
+L	ab_707_4	4	|gen|3
+L	ab_707_4	5	|tier|[Gen 3] Custom Game
+L	ab_707_4	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_707_4	7	|
+L	ab_707_4	8	|t:|<NORMALIZED>
+L	ab_707_4	9	|teamsize|p1|6
+L	ab_707_4	10	|teamsize|p2|6
+L	ab_707_4	11	|start
+L	ab_707_4	12	|switch|p1a: Primeape|Primeape, L84, M|246/246
+L	ab_707_4	13	|switch|p2a: Raikou|Raikou, L74|255/255
+L	ab_707_4	14	|-ability|p2a: Raikou|Pressure|[silent]
+L	ab_707_4	15	|turn|1
+L	ab_707_4	16	|
+L	ab_707_4	17	|t:|<NORMALIZED>
+L	ab_707_4	18	|move|p2a: Raikou|Rest|p2a: Raikou
+L	ab_707_4	19	|-fail|p2a: Raikou|heal
+L	ab_707_4	20	|move|p1a: Primeape|Reversal|p2a: Raikou
+L	ab_707_4	21	|debug|BP: 20
+L	ab_707_4	22	|-damage|p2a: Raikou|226/255
+L	ab_707_4	23	|
+L	ab_707_4	24	|-heal|p2a: Raikou|241/255|[from] item: Leftovers
+L	ab_707_4	25	|upkeep
+L	ab_707_4	26	|turn|2
+L	ab_707_4	27	|
+L	ab_707_4	28	|t:|<NORMALIZED>
+L	ab_707_4	29	|switch|p1a: Ursaring|Ursaring, L81, M|278/278
+L	ab_707_4	30	|move|p2a: Raikou|Rest|p2a: Raikou
+L	ab_707_4	31	|-status|p2a: Raikou|slp|[from] move: Rest
+L	ab_707_4	32	|-heal|p2a: Raikou|255/255 slp|[silent]
+L	ab_707_4	33	|
+L	ab_707_4	34	|upkeep
+L	ab_707_4	35	|turn|3
+L	ab_707_4	36	|
+L	ab_707_4	37	|t:|<NORMALIZED>
+L	ab_707_4	38	|cant|p2a: Raikou|slp
+L	ab_707_4	39	|move|p1a: Ursaring|Earthquake|p2a: Raikou
+L	ab_707_4	40	|-supereffective|p2a: Raikou
+L	ab_707_4	41	|-damage|p2a: Raikou|0 fnt
+L	ab_707_4	42	|faint|p2a: Raikou
+L	ab_707_4	43	|
+L	ab_707_4	44	|t:|<NORMALIZED>
+L	ab_707_4	45	|switch|p2a: Murkrow|Murkrow, L90, M|254/254
+L	ab_707_4	46	|
+L	ab_707_4	47	|upkeep
+L	ab_707_4	48	|turn|4
+L	ab_707_4	49	|
+L	ab_707_4	50	|t:|<NORMALIZED>
+L	ab_707_4	51	|debug|before turn callback: pursuit
+L	ab_707_4	52	|move|p2a: Murkrow|Pursuit|p1a: Ursaring
+L	ab_707_4	53	|-damage|p1a: Ursaring|224/278
+L	ab_707_4	54	|move|p1a: Ursaring|Earthquake|p2a: Murkrow
+L	ab_707_4	55	|-immune|p2a: Murkrow
+L	ab_707_4	56	|
+L	ab_707_4	57	|upkeep
+L	ab_707_4	58	|turn|5
+L	ab_707_4	59	|
+L	ab_707_4	60	|t:|<NORMALIZED>
+L	ab_707_4	61	|debug|before turn callback: pursuit
+L	ab_707_4	62	|move|p2a: Murkrow|Pursuit|p1a: Ursaring
+L	ab_707_4	63	|-damage|p1a: Ursaring|174/278
+L	ab_707_4	64	|move|p1a: Ursaring|Earthquake|p2a: Murkrow
+L	ab_707_4	65	|-immune|p2a: Murkrow
+L	ab_707_4	66	|
+L	ab_707_4	67	|upkeep
+L	ab_707_4	68	|turn|6
+L	ab_707_4	69	|
+L	ab_707_4	70	|t:|<NORMALIZED>
+L	ab_707_4	71	|move|p2a: Murkrow|Drill Peck|p1a: Ursaring
+L	ab_707_4	72	|-damage|p1a: Ursaring|75/278
+L	ab_707_4	73	|move|p1a: Ursaring|Earthquake|p2a: Murkrow
+L	ab_707_4	74	|-immune|p2a: Murkrow
+L	ab_707_4	75	|
+L	ab_707_4	76	|upkeep
+L	ab_707_4	77	|turn|7
+L	ab_707_4	78	|
+L	ab_707_4	79	|t:|<NORMALIZED>
+L	ab_707_4	80	|move|p2a: Murkrow|Drill Peck|p1a: Ursaring
+L	ab_707_4	81	|-damage|p1a: Ursaring|0 fnt
+L	ab_707_4	82	|faint|p1a: Ursaring
+L	ab_707_4	83	|
+L	ab_707_4	84	|t:|<NORMALIZED>
+L	ab_707_4	85	|switch|p1a: Kabutops|Kabutops, L84, M|238/238
+L	ab_707_4	86	|
+L	ab_707_4	87	|upkeep
+L	ab_707_4	88	|turn|8
+L	ab_707_4	89	|
+L	ab_707_4	90	|t:|<NORMALIZED>
+L	ab_707_4	91	|move|p2a: Murkrow|Drill Peck|p1a: Kabutops
+L	ab_707_4	92	|-resisted|p1a: Kabutops
+L	ab_707_4	93	|-damage|p1a: Kabutops|196/238
+L	ab_707_4	94	|move|p1a: Kabutops|Surf|p2a: Murkrow
+L	ab_707_4	95	|-damage|p2a: Murkrow|134/254
+L	ab_707_4	96	|
+L	ab_707_4	97	|-heal|p2a: Murkrow|149/254|[from] item: Leftovers
+L	ab_707_4	98	|upkeep
+L	ab_707_4	99	|turn|9
+L	ab_707_4	100	|
+L	ab_707_4	101	|t:|<NORMALIZED>
+L	ab_707_4	102	|move|p2a: Murkrow|Thunder Wave|p1a: Kabutops
+L	ab_707_4	103	|-status|p1a: Kabutops|par
+L	ab_707_4	104	|cant|p1a: Kabutops|par
+L	ab_707_4	105	|
+L	ab_707_4	106	|-heal|p2a: Murkrow|164/254|[from] item: Leftovers
+L	ab_707_4	107	|upkeep
+L	ab_707_4	108	|turn|10
+L	ab_707_4	109	|
+L	ab_707_4	110	|t:|<NORMALIZED>
+L	ab_707_4	111	|move|p2a: Murkrow|Thunder Wave|p1a: Kabutops
+L	ab_707_4	112	|-fail|p1a: Kabutops|par
+L	ab_707_4	113	|debug|move failed because it did nothing
+L	ab_707_4	114	|move|p1a: Kabutops|Swords Dance|p1a: Kabutops
+L	ab_707_4	115	|-boost|p1a: Kabutops|atk|2
+L	ab_707_4	116	|
+L	ab_707_4	117	|-heal|p2a: Murkrow|179/254|[from] item: Leftovers
+L	ab_707_4	118	|upkeep
+L	ab_707_4	119	|turn|11
+L	ab_707_4	120	|
+L	ab_707_4	121	|t:|<NORMALIZED>
+L	ab_707_4	122	|move|p2a: Murkrow|Drill Peck|p1a: Kabutops
+L	ab_707_4	123	|-resisted|p1a: Kabutops
+L	ab_707_4	124	|-damage|p1a: Kabutops|158/238 par
+L	ab_707_4	125	|cant|p1a: Kabutops|par
+L	ab_707_4	126	|
+L	ab_707_4	127	|-heal|p2a: Murkrow|194/254|[from] item: Leftovers
+L	ab_707_4	128	|upkeep
+L	ab_707_4	129	|turn|12
+L	ab_707_4	130	|
+L	ab_707_4	131	|t:|<NORMALIZED>
+L	ab_707_4	132	|move|p2a: Murkrow|Drill Peck|p1a: Kabutops
+L	ab_707_4	133	|-resisted|p1a: Kabutops
+L	ab_707_4	134	|-damage|p1a: Kabutops|119/238 par
+L	ab_707_4	135	|move|p1a: Kabutops|Surf|p2a: Murkrow
+L	ab_707_4	136	|-damage|p2a: Murkrow|84/254
+L	ab_707_4	137	|
+L	ab_707_4	138	|-heal|p2a: Murkrow|99/254|[from] item: Leftovers
+L	ab_707_4	139	|upkeep
+L	ab_707_4	140	|turn|13
+L	ab_707_4	141	|
+L	ab_707_4	142	|t:|<NORMALIZED>
+L	ab_707_4	143	|debug|before turn callback: pursuit
+L	ab_707_4	144	|debug|Pursuit start
+L	ab_707_4	145	|-activate|p1a: Kabutops|move: Pursuit
+L	ab_707_4	146	|move|p2a: Murkrow|Pursuit|p1a: Kabutops|[from] Pursuit
+L	ab_707_4	147	|debug|Pursuit damage boost
+L	ab_707_4	148	|-damage|p1a: Kabutops|16/238 par
+L	ab_707_4	149	|switch|p1a: Rayquaza|Rayquaza, L70|262/262
+L	ab_707_4	150	|
+L	ab_707_4	151	|-heal|p2a: Murkrow|114/254|[from] item: Leftovers
+L	ab_707_4	152	|upkeep
+L	ab_707_4	153	|turn|14
+L	ab_707_4	154	|
+L	ab_707_4	155	|t:|<NORMALIZED>
+L	ab_707_4	156	|move|p1a: Rayquaza|Extreme Speed|p2a: Murkrow
+L	ab_707_4	157	|-damage|p2a: Murkrow|0 fnt
+L	ab_707_4	158	|faint|p2a: Murkrow
+L	ab_707_4	159	|
+L	ab_707_4	160	|t:|<NORMALIZED>
+L	ab_707_4	161	|switch|p2a: Camerupt|Camerupt, L89, M|269/269
+L	ab_707_4	162	|
+L	ab_707_4	163	|upkeep
+L	ab_707_4	164	|turn|15
+L	ab_707_4	165	|
+L	ab_707_4	166	|t:|<NORMALIZED>
+L	ab_707_4	167	|switch|p1a: Magneton|Magneton, L85|224/224
+L	ab_707_4	168	|move|p2a: Camerupt|Rock Slide|p1a: Magneton
+L	ab_707_4	169	|-resisted|p1a: Magneton
+L	ab_707_4	170	|-damage|p1a: Magneton|196/224
+L	ab_707_4	171	|
+L	ab_707_4	172	|-heal|p1a: Magneton|210/224|[from] item: Leftovers
+L	ab_707_4	173	|upkeep
+L	ab_707_4	174	|turn|16
+L	ab_707_4	175	|
+L	ab_707_4	176	|t:|<NORMALIZED>
+L	ab_707_4	177	|move|p1a: Magneton|Toxic|p2a: Camerupt
+L	ab_707_4	178	|-status|p2a: Camerupt|tox
+L	ab_707_4	179	|move|p2a: Camerupt|Toxic|p1a: Magneton
+L	ab_707_4	180	|debug|natural status immunity
+L	ab_707_4	181	|debug|immune to status
+L	ab_707_4	182	|-immune|p1a: Magneton
+L	ab_707_4	183	|debug|move failed because it did nothing
+L	ab_707_4	184	|
+L	ab_707_4	185	|-heal|p1a: Magneton|224/224|[from] item: Leftovers
+L	ab_707_4	186	|-damage|p2a: Camerupt|253/269 tox|[from] psn
+L	ab_707_4	187	|upkeep
+L	ab_707_4	188	|turn|17
+L	ab_707_4	189	|
+L	ab_707_4	190	|t:|<NORMALIZED>
+L	ab_707_4	191	|move|p1a: Magneton|Protect|p1a: Magneton
+L	ab_707_4	192	|-singleturn|p1a: Magneton|Protect
+L	ab_707_4	193	|move|p2a: Camerupt|Fire Blast|p1a: Magneton|[miss]
+L	ab_707_4	194	|-miss|p2a: Camerupt|p1a: Magneton
+L	ab_707_4	195	|
+L	ab_707_4	196	|-heal|p2a: Camerupt|269/269 tox|[from] item: Leftovers
+L	ab_707_4	197	|-damage|p2a: Camerupt|237/269 tox|[from] psn
+L	ab_707_4	198	|upkeep
+L	ab_707_4	199	|turn|18
+L	ab_707_4	200	|
+L	ab_707_4	201	|t:|<NORMALIZED>
+L	ab_707_4	202	|move|p1a: Magneton|Protect|p1a: Magneton
+L	ab_707_4	203	|debug|Success chance: 50%
+L	ab_707_4	204	|-singleturn|p1a: Magneton|Protect
+L	ab_707_4	205	|move|p2a: Camerupt|Fire Blast|p1a: Magneton
+L	ab_707_4	206	|-activate|p1a: Magneton|Protect
+L	ab_707_4	207	|
+L	ab_707_4	208	|-heal|p2a: Camerupt|253/269 tox|[from] item: Leftovers
+L	ab_707_4	209	|-damage|p2a: Camerupt|205/269 tox|[from] psn
+L	ab_707_4	210	|upkeep
+L	ab_707_4	211	|turn|19
+L	ab_707_4	212	|
+L	ab_707_4	213	|t:|<NORMALIZED>
+L	ab_707_4	214	|move|p1a: Magneton|Thunderbolt|p2a: Camerupt
+L	ab_707_4	215	|-immune|p2a: Camerupt
+L	ab_707_4	216	|move|p2a: Camerupt|Fire Blast|p1a: Magneton
+L	ab_707_4	217	|-supereffective|p1a: Magneton
+L	ab_707_4	218	|-damage|p1a: Magneton|0 fnt
+L	ab_707_4	219	|faint|p1a: Magneton
+L	ab_707_4	220	|
+L	ab_707_4	221	|t:|<NORMALIZED>
+L	ab_707_4	222	|switch|p1a: Suicune|Suicune, L74|270/270
+L	ab_707_4	223	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_707_4	224	|
+L	ab_707_4	225	|-heal|p2a: Camerupt|221/269 tox|[from] item: Leftovers
+L	ab_707_4	226	|-damage|p2a: Camerupt|157/269 tox|[from] psn
+L	ab_707_4	227	|upkeep
+L	ab_707_4	228	|turn|20
+L	ab_707_4	229	|
+L	ab_707_4	230	|t:|<NORMALIZED>
+L	ab_707_4	231	|move|p1a: Suicune|Surf|p2a: Camerupt
+L	ab_707_4	232	|-supereffective|p2a: Camerupt
+L	ab_707_4	233	|-crit|p2a: Camerupt
+L	ab_707_4	234	|-damage|p2a: Camerupt|0 fnt
+L	ab_707_4	235	|faint|p2a: Camerupt
+L	ab_707_4	236	|
+L	ab_707_4	237	|t:|<NORMALIZED>
+L	ab_707_4	238	|switch|p2a: Dewgong|Dewgong, L87, M|298/298
+L	ab_707_4	239	|
+L	ab_707_4	240	|upkeep
+L	ab_707_4	241	|turn|21
+L	ab_707_4	242	|
+L	ab_707_4	243	|t:|<NORMALIZED>
+L	ab_707_4	244	|switch|p2a: Swalot|Swalot, L87, M|316/316
+L	ab_707_4	245	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_707_4	246	|
+L	ab_707_4	247	|upkeep
+L	ab_707_4	248	|turn|22
+L	ab_707_4	249	|
+L	ab_707_4	250	|t:|<NORMALIZED>
+L	ab_707_4	251	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_707_4	252	|-fail|p1a: Suicune|heal
+L	ab_707_4	253	|move|p2a: Swalot|Yawn|p1a: Suicune
+L	ab_707_4	254	|-start|p1a: Suicune|move: Yawn|[of] p2a: Swalot
+L	ab_707_4	255	|
+L	ab_707_4	256	|upkeep
+L	ab_707_4	257	|turn|23
+L	ab_707_4	258	|
+L	ab_707_4	259	|t:|<NORMALIZED>
+L	ab_707_4	260	|move|p1a: Suicune|Surf|p2a: Swalot
+L	ab_707_4	261	|-damage|p2a: Swalot|237/316
+L	ab_707_4	262	|move|p2a: Swalot|Pain Split|p1a: Suicune
+L	ab_707_4	263	|-sethp|p1a: Suicune|253/270|[from] move: Pain Split|[silent]
+L	ab_707_4	264	|-sethp|p2a: Swalot|253/316|[from] move: Pain Split
+L	ab_707_4	265	|
+L	ab_707_4	266	|-heal|p1a: Suicune|269/270|[from] item: Leftovers
+L	ab_707_4	267	|-end|p1a: Suicune|move: Yawn|[silent]
+L	ab_707_4	268	|-status|p1a: Suicune|slp
+L	ab_707_4	269	|-heal|p2a: Swalot|272/316|[from] item: Leftovers
+L	ab_707_4	270	|upkeep
+L	ab_707_4	271	|turn|24
+L	ab_707_4	272	|
+L	ab_707_4	273	|t:|<NORMALIZED>
+L	ab_707_4	274	|switch|p2a: Grumpig|Grumpig, L83, M|268/268
+L	ab_707_4	275	|cant|p1a: Suicune|slp
+L	ab_707_4	276	|
+L	ab_707_4	277	|-heal|p1a: Suicune|270/270 slp|[from] item: Leftovers
+L	ab_707_4	278	|upkeep
+L	ab_707_4	279	|turn|25
+L	ab_707_4	280	|
+L	ab_707_4	281	|t:|<NORMALIZED>
+L	ab_707_4	282	|move|p2a: Grumpig|Substitute|p2a: Grumpig
+L	ab_707_4	283	|-start|p2a: Grumpig|Substitute
+L	ab_707_4	284	|-damage|p2a: Grumpig|201/268
+L	ab_707_4	285	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_707_4	286	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_707_4	287	|-fail|p1a: Suicune|heal
+L	ab_707_4	288	|
+L	ab_707_4	289	|-heal|p2a: Grumpig|217/268|[from] item: Leftovers
+L	ab_707_4	290	|upkeep
+L	ab_707_4	291	|turn|26
+L	ab_707_4	292	|
+L	ab_707_4	293	|t:|<NORMALIZED>
+L	ab_707_4	294	|move|p2a: Grumpig|Calm Mind|p2a: Grumpig
+L	ab_707_4	295	|-boost|p2a: Grumpig|spa|1
+L	ab_707_4	296	|-boost|p2a: Grumpig|spd|1
+L	ab_707_4	297	|move|p1a: Suicune|Surf|p2a: Grumpig
+L	ab_707_4	298	|-activate|p2a: Grumpig|Substitute|[damage]
+L	ab_707_4	299	|
+L	ab_707_4	300	|-heal|p2a: Grumpig|233/268|[from] item: Leftovers
+L	ab_707_4	301	|upkeep
+L	ab_707_4	302	|turn|27
+L	ab_707_4	303	|
+L	ab_707_4	304	|t:|<NORMALIZED>
+L	ab_707_4	305	|switch|p2a: Swalot|Swalot, L87, M|272/316
+L	ab_707_4	306	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_707_4	307	|
+L	ab_707_4	308	|-heal|p2a: Swalot|291/316|[from] item: Leftovers
+L	ab_707_4	309	|upkeep
+L	ab_707_4	310	|turn|28
+L	ab_707_4	311	|
+L	ab_707_4	312	|t:|<NORMALIZED>
+L	ab_707_4	313	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_707_4	314	|move|p2a: Swalot|Yawn|p1a: Suicune
+L	ab_707_4	315	|-start|p1a: Suicune|move: Yawn|[of] p2a: Swalot
+L	ab_707_4	316	|
+L	ab_707_4	317	|-heal|p2a: Swalot|310/316|[from] item: Leftovers
+L	ab_707_4	318	|upkeep
+L	ab_707_4	319	|turn|29
+L	ab_707_4	320	|
+L	ab_707_4	321	|t:|<NORMALIZED>
+L	ab_707_4	322	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_707_4	323	|-fail|p1a: Suicune|heal
+L	ab_707_4	324	|move|p2a: Swalot|Yawn||[still]
+L	ab_707_4	325	|-fail|p2a: Swalot
+L	ab_707_4	326	|debug|move failed because it did nothing
+L	ab_707_4	327	|
+L	ab_707_4	328	|-end|p1a: Suicune|move: Yawn|[silent]
+L	ab_707_4	329	|-status|p1a: Suicune|slp
+L	ab_707_4	330	|-heal|p2a: Swalot|316/316|[from] item: Leftovers
+L	ab_707_4	331	|upkeep
+L	ab_707_4	332	|turn|30
+L	ab_707_4	333	|
+L	ab_707_4	334	|t:|<NORMALIZED>
+L	ab_707_4	335	|switch|p2a: Grumpig|Grumpig, L83, M|233/268
+L	ab_707_4	336	|cant|p1a: Suicune|slp
+L	ab_707_4	337	|
+L	ab_707_4	338	|-heal|p2a: Grumpig|249/268|[from] item: Leftovers
+L	ab_707_4	339	|upkeep
+L	ab_707_4	340	|turn|31
+L	ab_707_4	341	|
+L	ab_707_4	342	|t:|<NORMALIZED>
+L	ab_707_4	343	|move|p2a: Grumpig|Substitute|p2a: Grumpig
+L	ab_707_4	344	|-start|p2a: Grumpig|Substitute
+L	ab_707_4	345	|-damage|p2a: Grumpig|182/268
+L	ab_707_4	346	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_707_4	347	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_707_4	348	|-boost|p1a: Suicune|spa|1
+L	ab_707_4	349	|-boost|p1a: Suicune|spd|1
+L	ab_707_4	350	|
+L	ab_707_4	351	|-heal|p2a: Grumpig|198/268|[from] item: Leftovers
+L	ab_707_4	352	|upkeep
+L	ab_707_4	353	|turn|32
+L	ab_707_4	354	|
+L	ab_707_4	355	|t:|<NORMALIZED>
+L	ab_707_4	356	|move|p2a: Grumpig|Psychic|p1a: Suicune
+L	ab_707_4	357	|-damage|p1a: Suicune|218/270
+L	ab_707_4	358	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_707_4	359	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_707_4	360	|-heal|p1a: Suicune|270/270 slp|[silent]
+L	ab_707_4	361	|
+L	ab_707_4	362	|-heal|p2a: Grumpig|214/268|[from] item: Leftovers
+L	ab_707_4	363	|upkeep
+L	ab_707_4	364	|turn|33
+L	ab_707_4	365	|
+L	ab_707_4	366	|t:|<NORMALIZED>
+L	ab_707_4	367	|move|p2a: Grumpig|Fire Punch|p1a: Suicune
+L	ab_707_4	368	|-resisted|p1a: Suicune
+L	ab_707_4	369	|-damage|p1a: Suicune|254/270 slp
+L	ab_707_4	370	|cant|p1a: Suicune|slp
+L	ab_707_4	371	|
+L	ab_707_4	372	|-heal|p2a: Grumpig|230/268|[from] item: Leftovers
+L	ab_707_4	373	|-heal|p1a: Suicune|270/270 slp|[from] item: Leftovers
+L	ab_707_4	374	|upkeep
+L	ab_707_4	375	|turn|34
+L	ab_707_4	376	|
+L	ab_707_4	377	|t:|<NORMALIZED>
+L	ab_707_4	378	|switch|p2a: Dewgong|Dewgong, L87, M|298/298
+L	ab_707_4	379	|cant|p1a: Suicune|slp
+L	ab_707_4	380	|
+L	ab_707_4	381	|upkeep
+L	ab_707_4	382	|turn|35
+L	ab_707_4	383	|
+L	ab_707_4	384	|t:|<NORMALIZED>
+L	ab_707_4	385	|move|p2a: Dewgong|Surf|p1a: Suicune
+L	ab_707_4	386	|-resisted|p1a: Suicune
+L	ab_707_4	387	|-damage|p1a: Suicune|246/270 slp
+L	ab_707_4	388	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_707_4	389	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_707_4	390	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_707_4	391	|-heal|p1a: Suicune|270/270 slp|[silent]
+L	ab_707_4	392	|
+L	ab_707_4	393	|upkeep
+L	ab_707_4	394	|turn|36
+L	ab_707_4	395	|
+L	ab_707_4	396	|t:|<NORMALIZED>
+L	ab_707_4	397	|switch|p2a: Swalot|Swalot, L87, M|316/316
+L	ab_707_4	398	|switch|p1a: Kabutops|Kabutops, L84, M|16/238 par
+L	ab_707_4	399	|
+L	ab_707_4	400	|-enditem|p1a: Kabutops|Salac Berry|[eat]
+L	ab_707_4	401	|-boost|p1a: Kabutops|spe|1|[from] item: Salac Berry
+L	ab_707_4	402	|upkeep
+L	ab_707_4	403	|turn|37
+L	ab_707_4	404	|
+L	ab_707_4	405	|t:|<NORMALIZED>
+L	ab_707_4	406	|switch|p1a: Suicune|Suicune, L74|270/270 slp
+L	ab_707_4	407	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_707_4	408	|move|p2a: Swalot|Sludge Bomb|p1a: Suicune
+L	ab_707_4	409	|-damage|p1a: Suicune|199/270 slp
+L	ab_707_4	410	|
+L	ab_707_4	411	|-heal|p1a: Suicune|215/270 slp|[from] item: Leftovers
+L	ab_707_4	412	|upkeep
+L	ab_707_4	413	|turn|38
+L	ab_707_4	414	|
+L	ab_707_4	415	|t:|<NORMALIZED>
+L	ab_707_4	416	|cant|p1a: Suicune|slp
+L	ab_707_4	417	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_707_4	418	|move|p1a: Suicune|Rest|p1a: Suicune|[from] Sleep Talk
+L	ab_707_4	419	|move|p2a: Swalot|Sludge Bomb|p1a: Suicune
+L	ab_707_4	420	|-damage|p1a: Suicune|140/270 slp
+L	ab_707_4	421	|
+L	ab_707_4	422	|-heal|p1a: Suicune|156/270 slp|[from] item: Leftovers
+L	ab_707_4	423	|upkeep
+L	ab_707_4	424	|turn|39
+L	ab_707_4	425	|
+L	ab_707_4	426	|t:|<NORMALIZED>
+L	ab_707_4	427	|switch|p1a: Kabutops|Kabutops, L84, M|16/238 par
+L	ab_707_4	428	|move|p2a: Swalot|Sludge Bomb|p1a: Kabutops
+L	ab_707_4	429	|-resisted|p1a: Kabutops
+L	ab_707_4	430	|-damage|p1a: Kabutops|0 fnt
+L	ab_707_4	431	|faint|p1a: Kabutops
+L	ab_707_4	432	|
+L	ab_707_4	433	|t:|<NORMALIZED>
+L	ab_707_4	434	|switch|p1a: Primeape|Primeape, L84, M|246/246
+L	ab_707_4	435	|
+L	ab_707_4	436	|upkeep
+L	ab_707_4	437	|turn|40
+L	ab_707_4	438	|
+L	ab_707_4	439	|t:|<NORMALIZED>
+L	ab_707_4	440	|move|p1a: Primeape|Substitute|p1a: Primeape
+L	ab_707_4	441	|-start|p1a: Primeape|Substitute
+L	ab_707_4	442	|-damage|p1a: Primeape|185/246
+L	ab_707_4	443	|move|p2a: Swalot|Yawn||[still]
+L	ab_707_4	444	|-fail|p2a: Swalot
+L	ab_707_4	445	|debug|move failed because it did nothing
+L	ab_707_4	446	|
+L	ab_707_4	447	|upkeep
+L	ab_707_4	448	|turn|41
+L	ab_707_4	449	|
+L	ab_707_4	450	|t:|<NORMALIZED>
+L	ab_707_4	451	|move|p1a: Primeape|Bulk Up|p1a: Primeape
+L	ab_707_4	452	|-boost|p1a: Primeape|atk|1
+L	ab_707_4	453	|-boost|p1a: Primeape|def|1
+L	ab_707_4	454	|move|p2a: Swalot|Pain Split||[still]
+L	ab_707_4	455	|-fail|p2a: Swalot
+L	ab_707_4	456	|debug|move failed because it did nothing
+L	ab_707_4	457	|
+L	ab_707_4	458	|upkeep
+L	ab_707_4	459	|turn|42
+L	ab_707_4	460	|
+L	ab_707_4	461	|t:|<NORMALIZED>
+L	ab_707_4	462	|move|p1a: Primeape|Substitute|p1a: Primeape
+L	ab_707_4	463	|-fail|p1a: Primeape|move: Substitute
+L	ab_707_4	464	|move|p2a: Swalot|Sludge Bomb|p1a: Primeape
+L	ab_707_4	465	|-end|p1a: Primeape|Substitute
+L	ab_707_4	466	|
+L	ab_707_4	467	|upkeep
+L	ab_707_4	468	|turn|43
+L	ab_707_4	469	|
+L	ab_707_4	470	|t:|<NORMALIZED>
+L	ab_707_4	471	|switch|p2a: Dewgong|Dewgong, L87, M|298/298
+L	ab_707_4	472	|move|p1a: Primeape|Reversal|p2a: Dewgong
+L	ab_707_4	473	|debug|BP: 20
+L	ab_707_4	474	|-supereffective|p2a: Dewgong
+L	ab_707_4	475	|-damage|p2a: Dewgong|228/298
+L	ab_707_4	476	|
+L	ab_707_4	477	|-heal|p2a: Dewgong|246/298|[from] item: Leftovers
+L	ab_707_4	478	|upkeep
+L	ab_707_4	479	|turn|44
+L	ab_707_4	480	|
+L	ab_707_4	481	|t:|<NORMALIZED>
+L	ab_707_4	482	|move|p2a: Dewgong|Protect|p2a: Dewgong
+L	ab_707_4	483	|-singleturn|p2a: Dewgong|Protect
+L	ab_707_4	484	|move|p1a: Primeape|Bulk Up|p1a: Primeape
+L	ab_707_4	485	|-boost|p1a: Primeape|atk|1
+L	ab_707_4	486	|-boost|p1a: Primeape|def|1
+L	ab_707_4	487	|
+L	ab_707_4	488	|-heal|p2a: Dewgong|264/298|[from] item: Leftovers
+L	ab_707_4	489	|upkeep
+L	ab_707_4	490	|turn|45
+L	ab_707_4	491	|
+L	ab_707_4	492	|t:|<NORMALIZED>
+L	ab_707_4	493	|switch|p1a: Rayquaza|Rayquaza, L70|262/262
+L	ab_707_4	494	|move|p2a: Dewgong|Protect||[still]
+L	ab_707_4	495	|-fail|p2a: Dewgong
+L	ab_707_4	496	|
+L	ab_707_4	497	|-heal|p2a: Dewgong|282/298|[from] item: Leftovers
+L	ab_707_4	498	|upkeep
+L	ab_707_4	499	|turn|46
+L	ab_707_4	500	|
+L	ab_707_4	501	|t:|<NORMALIZED>
+L	ab_707_4	502	|move|p1a: Rayquaza|Extreme Speed|p2a: Dewgong
+L	ab_707_4	503	|-damage|p2a: Dewgong|193/298
+L	ab_707_4	504	|move|p2a: Dewgong|Surf|p1a: Rayquaza
+L	ab_707_4	505	|-resisted|p1a: Rayquaza
+L	ab_707_4	506	|-damage|p1a: Rayquaza|213/262
+L	ab_707_4	507	|
+L	ab_707_4	508	|-heal|p2a: Dewgong|211/298|[from] item: Leftovers
+L	ab_707_4	509	|upkeep
+L	ab_707_4	510	|turn|47
+L	ab_707_4	511	|
+L	ab_707_4	512	|t:|<NORMALIZED>
+L	ab_707_4	513	|move|p2a: Dewgong|Protect|p2a: Dewgong
+L	ab_707_4	514	|-singleturn|p2a: Dewgong|Protect
+L	ab_707_4	515	|move|p1a: Rayquaza|Extreme Speed|p2a: Dewgong
+L	ab_707_4	516	|-activate|p2a: Dewgong|Protect
+L	ab_707_4	517	|
+L	ab_707_4	518	|-heal|p2a: Dewgong|229/298|[from] item: Leftovers
+L	ab_707_4	519	|upkeep
+L	ab_707_4	520	|turn|48
+L	ab_707_4	521	|
+L	ab_707_4	522	|t:|<NORMALIZED>
+L	ab_707_4	523	|move|p1a: Rayquaza|Extreme Speed|p2a: Dewgong
+L	ab_707_4	524	|-damage|p2a: Dewgong|142/298
+L	ab_707_4	525	|move|p2a: Dewgong|Ice Beam|p1a: Rayquaza
+L	ab_707_4	526	|-supereffective|p1a: Rayquaza
+L	ab_707_4	527	|-damage|p1a: Rayquaza|0 fnt
+L	ab_707_4	528	|faint|p1a: Rayquaza
+L	ab_707_4	529	|
+L	ab_707_4	530	|t:|<NORMALIZED>
+L	ab_707_4	531	|switch|p1a: Primeape|Primeape, L84, M|185/246
+L	ab_707_4	532	|
+L	ab_707_4	533	|-heal|p2a: Dewgong|160/298|[from] item: Leftovers
+L	ab_707_4	534	|upkeep
+L	ab_707_4	535	|turn|49
+L	ab_707_4	536	|
+L	ab_707_4	537	|t:|<NORMALIZED>
+L	ab_707_4	538	|move|p1a: Primeape|Reversal|p2a: Dewgong
+L	ab_707_4	539	|debug|BP: 20
+L	ab_707_4	540	|-supereffective|p2a: Dewgong
+L	ab_707_4	541	|-damage|p2a: Dewgong|111/298
+L	ab_707_4	542	|move|p2a: Dewgong|Ice Beam|p1a: Primeape
+L	ab_707_4	543	|-damage|p1a: Primeape|91/246
+L	ab_707_4	544	|
+L	ab_707_4	545	|-heal|p2a: Dewgong|129/298|[from] item: Leftovers
+L	ab_707_4	546	|upkeep
+L	ab_707_4	547	|turn|50
+L	ab_707_4	548	|
+L	ab_707_4	549	|t:|<NORMALIZED>
+L	ab_707_4	550	|switch|p1a: Suicune|Suicune, L74|156/270 slp
+L	ab_707_4	551	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_707_4	552	|move|p2a: Dewgong|Toxic||[still]
+L	ab_707_4	553	|-fail|p2a: Dewgong
+L	ab_707_4	554	|debug|move failed because it did nothing
+L	ab_707_4	555	|
+L	ab_707_4	556	|-heal|p2a: Dewgong|147/298|[from] item: Leftovers
+L	ab_707_4	557	|-heal|p1a: Suicune|172/270 slp|[from] item: Leftovers
+L	ab_707_4	558	|upkeep
+L	ab_707_4	559	|turn|51
+L	ab_707_4	560	|
+L	ab_707_4	561	|t:|<NORMALIZED>
+L	ab_707_4	562	|move|p2a: Dewgong|Surf|p1a: Suicune
+L	ab_707_4	563	|-resisted|p1a: Suicune
+L	ab_707_4	564	|-damage|p1a: Suicune|136/270 slp
+L	ab_707_4	565	|cant|p1a: Suicune|slp
+L	ab_707_4	566	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_707_4	567	|move|p1a: Suicune|Rest|p1a: Suicune|[from] Sleep Talk
+L	ab_707_4	568	|
+L	ab_707_4	569	|-heal|p2a: Dewgong|165/298|[from] item: Leftovers
+L	ab_707_4	570	|-heal|p1a: Suicune|152/270 slp|[from] item: Leftovers
+L	ab_707_4	571	|upkeep
+L	ab_707_4	572	|turn|52
+L	ab_707_4	573	|
+L	ab_707_4	574	|t:|<NORMALIZED>
+L	ab_707_4	575	|move|p2a: Dewgong|Ice Beam|p1a: Suicune
+L	ab_707_4	576	|-resisted|p1a: Suicune
+L	ab_707_4	577	|-damage|p1a: Suicune|112/270 slp
+L	ab_707_4	578	|cant|p1a: Suicune|slp
+L	ab_707_4	579	|
+L	ab_707_4	580	|-heal|p2a: Dewgong|183/298|[from] item: Leftovers
+L	ab_707_4	581	|-heal|p1a: Suicune|128/270 slp|[from] item: Leftovers
+L	ab_707_4	582	|upkeep
+L	ab_707_4	583	|turn|53
+L	ab_707_4	584	|
+L	ab_707_4	585	|t:|<NORMALIZED>
+L	ab_707_4	586	|switch|p2a: Swalot|Swalot, L87, M|316/316
+L	ab_707_4	587	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_707_4	588	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_707_4	589	|-boost|p1a: Suicune|spa|1
+L	ab_707_4	590	|-boost|p1a: Suicune|spd|1
+L	ab_707_4	591	|
+L	ab_707_4	592	|-heal|p1a: Suicune|144/270|[from] item: Leftovers
+L	ab_707_4	593	|upkeep
+L	ab_707_4	594	|turn|54
+L	ab_707_4	595	|
+L	ab_707_4	596	|t:|<NORMALIZED>
+L	ab_707_4	597	|switch|p1a: Primeape|Primeape, L84, M|91/246
+L	ab_707_4	598	|move|p2a: Swalot|Yawn|p1a: Primeape
+L	ab_707_4	599	|-immune|p1a: Primeape|[from] ability: Vital Spirit
+L	ab_707_4	600	|debug|add volatile [yawn] interrupted
+L	ab_707_4	601	|debug|move failed because it did nothing
+L	ab_707_4	602	|
+L	ab_707_4	603	|upkeep
+L	ab_707_4	604	|turn|55
+L	ab_707_4	605	|
+L	ab_707_4	606	|t:|<NORMALIZED>
+L	ab_707_4	607	|move|p1a: Primeape|Bulk Up|p1a: Primeape
+L	ab_707_4	608	|-boost|p1a: Primeape|atk|1
+L	ab_707_4	609	|-boost|p1a: Primeape|def|1
+L	ab_707_4	610	|move|p2a: Swalot|Sludge Bomb|p1a: Primeape
+L	ab_707_4	611	|-damage|p1a: Primeape|21/246
+L	ab_707_4	612	|
+L	ab_707_4	613	|-enditem|p1a: Primeape|Liechi Berry|[eat]
+L	ab_707_4	614	|-boost|p1a: Primeape|atk|1|[from] item: Liechi Berry
+L	ab_707_4	615	|upkeep
+L	ab_707_4	616	|turn|56
+L	ab_707_4	617	|
+L	ab_707_4	618	|t:|<NORMALIZED>
+L	ab_707_4	619	|move|p1a: Primeape|Substitute|p1a: Primeape
+L	ab_707_4	620	|-fail|p1a: Primeape|move: Substitute|[weak]
+L	ab_707_4	621	|move|p2a: Swalot|Yawn|p1a: Primeape
+L	ab_707_4	622	|-immune|p1a: Primeape|[from] ability: Vital Spirit
+L	ab_707_4	623	|debug|add volatile [yawn] interrupted
+L	ab_707_4	624	|debug|move failed because it did nothing
+L	ab_707_4	625	|
+L	ab_707_4	626	|upkeep
+L	ab_707_4	627	|turn|57
+L	ab_707_4	628	|
+L	ab_707_4	629	|t:|<NORMALIZED>
+L	ab_707_4	630	|move|p1a: Primeape|Substitute|p1a: Primeape
+L	ab_707_4	631	|-fail|p1a: Primeape|move: Substitute|[weak]
+L	ab_707_4	632	|move|p2a: Swalot|Yawn|p1a: Primeape
+L	ab_707_4	633	|-immune|p1a: Primeape|[from] ability: Vital Spirit
+L	ab_707_4	634	|debug|add volatile [yawn] interrupted
+L	ab_707_4	635	|debug|move failed because it did nothing
+L	ab_707_4	636	|
+L	ab_707_4	637	|upkeep
+L	ab_707_4	638	|turn|58
+L	ab_707_4	639	|
+L	ab_707_4	640	|t:|<NORMALIZED>
+L	ab_707_4	641	|move|p1a: Primeape|Substitute|p1a: Primeape
+L	ab_707_4	642	|-fail|p1a: Primeape|move: Substitute|[weak]
+L	ab_707_4	643	|move|p2a: Swalot|Yawn|p1a: Primeape
+L	ab_707_4	644	|-immune|p1a: Primeape|[from] ability: Vital Spirit
+L	ab_707_4	645	|debug|add volatile [yawn] interrupted
+L	ab_707_4	646	|debug|move failed because it did nothing
+L	ab_707_4	647	|
+L	ab_707_4	648	|upkeep
+L	ab_707_4	649	|turn|59
+L	ab_707_4	650	|
+L	ab_707_4	651	|t:|<NORMALIZED>
+L	ab_707_4	652	|move|p1a: Primeape|Bulk Up|p1a: Primeape
+L	ab_707_4	653	|-boost|p1a: Primeape|atk|1
+L	ab_707_4	654	|-boost|p1a: Primeape|def|1
+L	ab_707_4	655	|move|p2a: Swalot|Pain Split|p1a: Primeape
+L	ab_707_4	656	|-sethp|p1a: Primeape|168/246|[from] move: Pain Split|[silent]
+L	ab_707_4	657	|-sethp|p2a: Swalot|168/316|[from] move: Pain Split
+L	ab_707_4	658	|
+L	ab_707_4	659	|-heal|p2a: Swalot|187/316|[from] item: Leftovers
+L	ab_707_4	660	|upkeep
+L	ab_707_4	661	|turn|60
+L	ab_707_4	662	|
+L	ab_707_4	663	|t:|<NORMALIZED>
+L	ab_707_4	664	|switch|p1a: Suicune|Suicune, L74|144/270
+L	ab_707_4	665	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_707_4	666	|move|p2a: Swalot|Sludge Bomb|p1a: Suicune
+L	ab_707_4	667	|-damage|p1a: Suicune|67/270
+L	ab_707_4	668	|
+L	ab_707_4	669	|-heal|p1a: Suicune|83/270|[from] item: Leftovers
+L	ab_707_4	670	|-heal|p2a: Swalot|206/316|[from] item: Leftovers
+L	ab_707_4	671	|upkeep
+L	ab_707_4	672	|turn|61
+L	ab_707_4	673	|
+L	ab_707_4	674	|t:|<NORMALIZED>
+L	ab_707_4	675	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_707_4	676	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_707_4	677	|-heal|p1a: Suicune|270/270 slp|[silent]
+L	ab_707_4	678	|move|p2a: Swalot|Yawn||[still]
+L	ab_707_4	679	|-fail|p2a: Swalot
+L	ab_707_4	680	|
+L	ab_707_4	681	|-heal|p2a: Swalot|225/316|[from] item: Leftovers
+L	ab_707_4	682	|upkeep
+L	ab_707_4	683	|turn|62
+L	ab_707_4	684	|
+L	ab_707_4	685	|t:|<NORMALIZED>
+L	ab_707_4	686	|cant|p1a: Suicune|slp
+L	ab_707_4	687	|move|p2a: Swalot|Pain Split|p1a: Suicune
+L	ab_707_4	688	|-sethp|p1a: Suicune|247/270 slp|[from] move: Pain Split|[silent]
+L	ab_707_4	689	|-sethp|p2a: Swalot|247/316|[from] move: Pain Split
+L	ab_707_4	690	|
+L	ab_707_4	691	|-heal|p1a: Suicune|263/270 slp|[from] item: Leftovers
+L	ab_707_4	692	|-heal|p2a: Swalot|266/316|[from] item: Leftovers
+L	ab_707_4	693	|upkeep
+L	ab_707_4	694	|turn|63
+L	ab_707_4	695	|
+L	ab_707_4	696	|t:|<NORMALIZED>
+L	ab_707_4	697	|switch|p2a: Grumpig|Grumpig, L83, M|230/268
+L	ab_707_4	698	|cant|p1a: Suicune|slp
+L	ab_707_4	699	|
+L	ab_707_4	700	|-heal|p2a: Grumpig|246/268|[from] item: Leftovers
+L	ab_707_4	701	|-heal|p1a: Suicune|270/270 slp|[from] item: Leftovers
+L	ab_707_4	702	|upkeep
+L	ab_707_4	703	|turn|64
+L	ab_707_4	704	|
+L	ab_707_4	705	|t:|<NORMALIZED>
+L	ab_707_4	706	|switch|p2a: Swalot|Swalot, L87, M|266/316
+L	ab_707_4	707	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_707_4	708	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_707_4	709	|-fail|p1a: Suicune|heal
+L	ab_707_4	710	|
+L	ab_707_4	711	|-heal|p2a: Swalot|285/316|[from] item: Leftovers
+L	ab_707_4	712	|upkeep
+L	ab_707_4	713	|turn|65
+L	ab_707_4	714	|
+L	ab_707_4	715	|t:|<NORMALIZED>
+L	ab_707_4	716	|switch|p2a: Grumpig|Grumpig, L83, M|246/268
+L	ab_707_4	717	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_707_4	718	|-fail|p1a: Suicune|heal
+L	ab_707_4	719	|
+L	ab_707_4	720	|-heal|p2a: Grumpig|262/268|[from] item: Leftovers
+L	ab_707_4	721	|upkeep
+L	ab_707_4	722	|turn|66
+L	ab_707_4	723	|
+L	ab_707_4	724	|t:|<NORMALIZED>
+L	ab_707_4	725	|switch|p1a: Primeape|Primeape, L84, M|168/246
+L	ab_707_4	726	|move|p2a: Grumpig|Substitute|p2a: Grumpig
+L	ab_707_4	727	|-start|p2a: Grumpig|Substitute
+L	ab_707_4	728	|-damage|p2a: Grumpig|195/268
+L	ab_707_4	729	|
+L	ab_707_4	730	|-heal|p2a: Grumpig|211/268|[from] item: Leftovers
+L	ab_707_4	731	|upkeep
+L	ab_707_4	732	|turn|67
+L	ab_707_4	733	|
+L	ab_707_4	734	|t:|<NORMALIZED>
+L	ab_707_4	735	|move|p1a: Primeape|Reversal|p2a: Grumpig
+L	ab_707_4	736	|debug|BP: 40
+L	ab_707_4	737	|-resisted|p2a: Grumpig
+L	ab_707_4	738	|-activate|p2a: Grumpig|Substitute|[damage]
+L	ab_707_4	739	|move|p2a: Grumpig|Substitute|p2a: Grumpig
+L	ab_707_4	740	|-fail|p2a: Grumpig|move: Substitute
+L	ab_707_4	741	|
+L	ab_707_4	742	|-heal|p2a: Grumpig|227/268|[from] item: Leftovers
+L	ab_707_4	743	|upkeep
+L	ab_707_4	744	|turn|68
+L	ab_707_4	745	|
+L	ab_707_4	746	|t:|<NORMALIZED>
+L	ab_707_4	747	|move|p1a: Primeape|Reversal|p2a: Grumpig
+L	ab_707_4	748	|debug|BP: 40
+L	ab_707_4	749	|-resisted|p2a: Grumpig
+L	ab_707_4	750	|-activate|p2a: Grumpig|Substitute|[damage]
+L	ab_707_4	751	|move|p2a: Grumpig|Calm Mind|p2a: Grumpig
+L	ab_707_4	752	|-boost|p2a: Grumpig|spa|1
+L	ab_707_4	753	|-boost|p2a: Grumpig|spd|1
+L	ab_707_4	754	|
+L	ab_707_4	755	|-heal|p2a: Grumpig|243/268|[from] item: Leftovers
+L	ab_707_4	756	|upkeep
+L	ab_707_4	757	|turn|69
+L	ab_707_4	758	|
+L	ab_707_4	759	|t:|<NORMALIZED>
+L	ab_707_4	760	|move|p1a: Primeape|Bulk Up|p1a: Primeape
+L	ab_707_4	761	|-boost|p1a: Primeape|atk|1
+L	ab_707_4	762	|-boost|p1a: Primeape|def|1
+L	ab_707_4	763	|move|p2a: Grumpig|Substitute|p2a: Grumpig
+L	ab_707_4	764	|-fail|p2a: Grumpig|move: Substitute
+L	ab_707_4	765	|
+L	ab_707_4	766	|-heal|p2a: Grumpig|259/268|[from] item: Leftovers
+L	ab_707_4	767	|upkeep
+L	ab_707_4	768	|turn|70
+L	ab_707_4	769	|
+L	ab_707_4	770	|t:|<NORMALIZED>
+L	ab_707_4	771	|move|p1a: Primeape|Substitute|p1a: Primeape
+L	ab_707_4	772	|-start|p1a: Primeape|Substitute
+L	ab_707_4	773	|-damage|p1a: Primeape|107/246
+L	ab_707_4	774	|move|p2a: Grumpig|Fire Punch|p1a: Primeape
+L	ab_707_4	775	|-end|p1a: Primeape|Substitute
+L	ab_707_4	776	|
+L	ab_707_4	777	|-heal|p2a: Grumpig|268/268|[from] item: Leftovers
+L	ab_707_4	778	|upkeep
+L	ab_707_4	779	|turn|71
+L	ab_707_4	780	|
+L	ab_707_4	781	|t:|<NORMALIZED>
+L	ab_707_4	782	|switch|p1a: Suicune|Suicune, L74|270/270
+L	ab_707_4	783	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_707_4	784	|move|p2a: Grumpig|Calm Mind|p2a: Grumpig
+L	ab_707_4	785	|-boost|p2a: Grumpig|spa|1
+L	ab_707_4	786	|-boost|p2a: Grumpig|spd|1
+L	ab_707_4	787	|
+L	ab_707_4	788	|upkeep
+L	ab_707_4	789	|turn|72
+L	ab_707_4	790	|
+L	ab_707_4	791	|t:|<NORMALIZED>
+L	ab_707_4	792	|move|p2a: Grumpig|Psychic|p1a: Suicune
+L	ab_707_4	793	|-damage|p1a: Suicune|102/270
+L	ab_707_4	794	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_707_4	795	|-boost|p1a: Suicune|spa|1
+L	ab_707_4	796	|-boost|p1a: Suicune|spd|1
+L	ab_707_4	797	|
+L	ab_707_4	798	|-heal|p1a: Suicune|118/270|[from] item: Leftovers
+L	ab_707_4	799	|upkeep
+L	ab_707_4	800	|turn|73
+L	ab_707_4	801	|
+L	ab_707_4	802	|t:|<NORMALIZED>
+L	ab_707_4	803	|move|p2a: Grumpig|Psychic|p1a: Suicune
+L	ab_707_4	804	|-damage|p1a: Suicune|9/270
+L	ab_707_4	805	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_707_4	806	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_707_4	807	|-heal|p1a: Suicune|270/270 slp|[silent]
+L	ab_707_4	808	|
+L	ab_707_4	809	|upkeep
+L	ab_707_4	810	|turn|74
+L	ab_707_4	811	|
+L	ab_707_4	812	|t:|<NORMALIZED>
+L	ab_707_4	813	|move|p2a: Grumpig|Calm Mind|p2a: Grumpig
+L	ab_707_4	814	|-boost|p2a: Grumpig|spa|1
+L	ab_707_4	815	|-boost|p2a: Grumpig|spd|1
+L	ab_707_4	816	|cant|p1a: Suicune|slp
+L	ab_707_4	817	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_707_4	818	|move|p1a: Suicune|Calm Mind|p1a: Suicune|[from] Sleep Talk
+L	ab_707_4	819	|-boost|p1a: Suicune|spa|1
+L	ab_707_4	820	|-boost|p1a: Suicune|spd|1
+L	ab_707_4	821	|
+L	ab_707_4	822	|upkeep
+L	ab_707_4	823	|turn|75
+L	ab_707_4	824	|
+L	ab_707_4	825	|t:|<NORMALIZED>
+L	ab_707_4	826	|move|p2a: Grumpig|Substitute|p2a: Grumpig
+L	ab_707_4	827	|-fail|p2a: Grumpig|move: Substitute
+L	ab_707_4	828	|cant|p1a: Suicune|slp
+L	ab_707_4	829	|
+L	ab_707_4	830	|upkeep
+L	ab_707_4	831	|turn|76
+L	ab_707_4	832	|
+L	ab_707_4	833	|t:|<NORMALIZED>
+L	ab_707_4	834	|move|p2a: Grumpig|Fire Punch|p1a: Suicune
+L	ab_707_4	835	|-resisted|p1a: Suicune
+L	ab_707_4	836	|-damage|p1a: Suicune|239/270 slp
+L	ab_707_4	837	|debug|move failed because it did nothing
+L	ab_707_4	838	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_707_4	839	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_707_4	840	|-boost|p1a: Suicune|spa|1
+L	ab_707_4	841	|-boost|p1a: Suicune|spd|1
+L	ab_707_4	842	|
+L	ab_707_4	843	|-heal|p1a: Suicune|255/270|[from] item: Leftovers
+L	ab_707_4	844	|upkeep
+L	ab_707_4	845	|turn|77
+L	ab_707_4	846	|
+L	ab_707_4	847	|t:|<NORMALIZED>
+L	ab_707_4	848	|move|p2a: Grumpig|Substitute|p2a: Grumpig
+L	ab_707_4	849	|-fail|p2a: Grumpig|move: Substitute
+L	ab_707_4	850	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_707_4	851	|
+L	ab_707_4	852	|-heal|p1a: Suicune|270/270|[from] item: Leftovers
+L	ab_707_4	853	|upkeep
+L	ab_707_4	854	|turn|78
+L	ab_707_4	855	|
+L	ab_707_4	856	|t:|<NORMALIZED>
+L	ab_707_4	857	|switch|p1a: Primeape|Primeape, L84, M|107/246
+L	ab_707_4	858	|move|p2a: Grumpig|Psychic|p1a: Primeape
+L	ab_707_4	859	|-supereffective|p1a: Primeape
+L	ab_707_4	860	|-damage|p1a: Primeape|0 fnt
+L	ab_707_4	861	|faint|p1a: Primeape
+L	ab_707_4	862	|
+L	ab_707_4	863	|t:|<NORMALIZED>
+L	ab_707_4	864	|switch|p1a: Suicune|Suicune, L74|270/270
+L	ab_707_4	865	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_707_4	866	|
+L	ab_707_4	867	|upkeep
+L	ab_707_4	868	|turn|79
+L	ab_707_4	869	|
+L	ab_707_4	870	|t:|<NORMALIZED>
+L	ab_707_4	871	|move|p2a: Grumpig|Fire Punch|p1a: Suicune
+L	ab_707_4	872	|-resisted|p1a: Suicune
+L	ab_707_4	873	|-damage|p1a: Suicune|213/270
+L	ab_707_4	874	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_707_4	875	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_707_4	876	|-heal|p1a: Suicune|270/270 slp|[silent]
+L	ab_707_4	877	|
+L	ab_707_4	878	|upkeep
+L	ab_707_4	879	|turn|80
+L	ab_707_4	880	|
+L	ab_707_4	881	|t:|<NORMALIZED>
+L	ab_707_4	882	|move|p2a: Grumpig|Calm Mind|p2a: Grumpig
+L	ab_707_4	883	|-boost|p2a: Grumpig|spa|1
+L	ab_707_4	884	|-boost|p2a: Grumpig|spd|1
+L	ab_707_4	885	|cant|p1a: Suicune|slp
+L	ab_707_4	886	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_707_4	887	|move|p1a: Suicune|Calm Mind|p1a: Suicune|[from] Sleep Talk
+L	ab_707_4	888	|-boost|p1a: Suicune|spa|1
+L	ab_707_4	889	|-boost|p1a: Suicune|spd|1
+L	ab_707_4	890	|
+L	ab_707_4	891	|upkeep
+L	ab_707_4	892	|turn|81
+L	ab_707_4	893	|
+L	ab_707_4	894	|t:|<NORMALIZED>
+L	ab_707_4	895	|move|p2a: Grumpig|Fire Punch|p1a: Suicune
+L	ab_707_4	896	|-resisted|p1a: Suicune
+L	ab_707_4	897	|-damage|p1a: Suicune|225/270 slp
+L	ab_707_4	898	|cant|p1a: Suicune|slp
+L	ab_707_4	899	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_707_4	900	|move|p1a: Suicune|Calm Mind|p1a: Suicune|[from] Sleep Talk
+L	ab_707_4	901	|-boost|p1a: Suicune|spa|1
+L	ab_707_4	902	|-boost|p1a: Suicune|spd|1
+L	ab_707_4	903	|
+L	ab_707_4	904	|-heal|p1a: Suicune|241/270 slp|[from] item: Leftovers
+L	ab_707_4	905	|upkeep
+L	ab_707_4	906	|turn|82
+L	ab_707_4	907	|
+L	ab_707_4	908	|t:|<NORMALIZED>
+L	ab_707_4	909	|move|p2a: Grumpig|Psychic|p1a: Suicune
+L	ab_707_4	910	|-damage|p1a: Suicune|126/270 slp
+L	ab_707_4	911	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_707_4	912	|move|p1a: Suicune|Rest|p1a: Suicune
+L	ab_707_4	913	|-status|p1a: Suicune|slp|[from] move: Rest
+L	ab_707_4	914	|-heal|p1a: Suicune|270/270 slp|[silent]
+L	ab_707_4	915	|
+L	ab_707_4	916	|upkeep
+L	ab_707_4	917	|turn|83
+L	ab_707_4	918	|
+L	ab_707_4	919	|t:|<NORMALIZED>
+L	ab_707_4	920	|move|p2a: Grumpig|Fire Punch|p1a: Suicune
+L	ab_707_4	921	|-resisted|p1a: Suicune
+L	ab_707_4	922	|-damage|p1a: Suicune|235/270 slp
+L	ab_707_4	923	|cant|p1a: Suicune|slp
+L	ab_707_4	924	|
+L	ab_707_4	925	|-heal|p1a: Suicune|251/270 slp|[from] item: Leftovers
+L	ab_707_4	926	|upkeep
+L	ab_707_4	927	|turn|84
+L	ab_707_4	928	|
+L	ab_707_4	929	|t:|<NORMALIZED>
+L	ab_707_4	930	|switch|p2a: Swalot|Swalot, L87, M|285/316
+L	ab_707_4	931	|cant|p1a: Suicune|slp
+L	ab_707_4	932	|
+L	ab_707_4	933	|-heal|p1a: Suicune|267/270 slp|[from] item: Leftovers
+L	ab_707_4	934	|-heal|p2a: Swalot|304/316|[from] item: Leftovers
+L	ab_707_4	935	|upkeep
+L	ab_707_4	936	|turn|85
+L	ab_707_4	937	|
+L	ab_707_4	938	|t:|<NORMALIZED>
+L	ab_707_4	939	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_707_4	940	|move|p1a: Suicune|Surf|p2a: Swalot
+L	ab_707_4	941	|-damage|p2a: Swalot|164/316
+L	ab_707_4	942	|move|p2a: Swalot|Yawn|p1a: Suicune
+L	ab_707_4	943	|-start|p1a: Suicune|move: Yawn|[of] p2a: Swalot
+L	ab_707_4	944	|
+L	ab_707_4	945	|-heal|p1a: Suicune|270/270|[from] item: Leftovers
+L	ab_707_4	946	|-heal|p2a: Swalot|183/316|[from] item: Leftovers
+L	ab_707_4	947	|upkeep
+L	ab_707_4	948	|turn|86
+L	ab_707_4	949	|
+L	ab_707_4	950	|t:|<NORMALIZED>
+L	ab_707_4	951	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_707_4	952	|-boost|p1a: Suicune|spa|1
+L	ab_707_4	953	|-boost|p1a: Suicune|spd|1
+L	ab_707_4	954	|move|p2a: Swalot|Sludge Bomb|p1a: Suicune
+L	ab_707_4	955	|-damage|p1a: Suicune|188/270
+L	ab_707_4	956	|
+L	ab_707_4	957	|-heal|p1a: Suicune|204/270|[from] item: Leftovers
+L	ab_707_4	958	|-end|p1a: Suicune|move: Yawn|[silent]
+L	ab_707_4	959	|-status|p1a: Suicune|slp
+L	ab_707_4	960	|-heal|p2a: Swalot|202/316|[from] item: Leftovers
+L	ab_707_4	961	|upkeep
+L	ab_707_4	962	|turn|87
+L	ab_707_4	963	|
+L	ab_707_4	964	|t:|<NORMALIZED>
+L	ab_707_4	965	|cant|p1a: Suicune|slp
+L	ab_707_4	966	|move|p2a: Swalot|Yawn||[still]
+L	ab_707_4	967	|-fail|p2a: Swalot
+L	ab_707_4	968	|
+L	ab_707_4	969	|-heal|p1a: Suicune|220/270 slp|[from] item: Leftovers
+L	ab_707_4	970	|-heal|p2a: Swalot|221/316|[from] item: Leftovers
+L	ab_707_4	971	|upkeep
+L	ab_707_4	972	|turn|88
+L	ab_707_4	973	|
+L	ab_707_4	974	|t:|<NORMALIZED>
+L	ab_707_4	975	|cant|p1a: Suicune|slp
+L	ab_707_4	976	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_707_4	977	|move|p1a: Suicune|Surf|p2a: Swalot|[from] Sleep Talk
+L	ab_707_4	978	|-damage|p2a: Swalot|24/316
+L	ab_707_4	979	|move|p2a: Swalot|Pain Split|p1a: Suicune
+L	ab_707_4	980	|-sethp|p1a: Suicune|122/270 slp|[from] move: Pain Split|[silent]
+L	ab_707_4	981	|-sethp|p2a: Swalot|122/316|[from] move: Pain Split
+L	ab_707_4	982	|
+L	ab_707_4	983	|-heal|p1a: Suicune|138/270 slp|[from] item: Leftovers
+L	ab_707_4	984	|-heal|p2a: Swalot|141/316|[from] item: Leftovers
+L	ab_707_4	985	|upkeep
+L	ab_707_4	986	|turn|89
+L	ab_707_4	987	|
+L	ab_707_4	988	|t:|<NORMALIZED>
+L	ab_707_4	989	|cant|p1a: Suicune|slp
+L	ab_707_4	990	|move|p2a: Swalot|Sludge Bomb|p1a: Suicune
+L	ab_707_4	991	|-damage|p1a: Suicune|67/270 slp
+L	ab_707_4	992	|
+L	ab_707_4	993	|-heal|p1a: Suicune|83/270 slp|[from] item: Leftovers
+L	ab_707_4	994	|-heal|p2a: Swalot|160/316|[from] item: Leftovers
+L	ab_707_4	995	|upkeep
+L	ab_707_4	996	|turn|90
+L	ab_707_4	997	|
+L	ab_707_4	998	|t:|<NORMALIZED>
+L	ab_707_4	999	|cant|p1a: Suicune|slp
+L	ab_707_4	1000	|move|p2a: Swalot|Sludge Bomb|p1a: Suicune
+L	ab_707_4	1001	|-damage|p1a: Suicune|12/270 slp
+L	ab_707_4	1002	|
+L	ab_707_4	1003	|-heal|p1a: Suicune|28/270 slp|[from] item: Leftovers
+L	ab_707_4	1004	|-heal|p2a: Swalot|179/316|[from] item: Leftovers
+L	ab_707_4	1005	|upkeep
+L	ab_707_4	1006	|turn|91
+L	ab_707_4	1007	|
+L	ab_707_4	1008	|t:|<NORMALIZED>
+L	ab_707_4	1009	|-curestatus|p1a: Suicune|slp|[msg]
+L	ab_707_4	1010	|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+L	ab_707_4	1011	|move|p2a: Swalot|Sludge Bomb|p1a: Suicune
+L	ab_707_4	1012	|-damage|p1a: Suicune|0 fnt
+L	ab_707_4	1013	|faint|p1a: Suicune
+L	ab_707_4	1014	|
+L	ab_707_4	1015	|win|P2

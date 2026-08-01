@@ -111,29 +111,42 @@ impl crate::state::BattleState {
         //     agree. The sim's gen-3 `yawn.onTryHit(target)` fails if `target.status ||
         //     !target.runStatusImmunity('slp')`; a Protect (`protect: 1`) blocks it at TryHit
         //     BEFORE that; a Substitute (no `bypasssub`) blocks it at `onTryPrimaryHit` AFTER.
-        //     TryHit priority order: Protect > already-statused > sleep-immune > substitute > add.
-        //     `yawn_protect`/`yawn_statused`/`yawn_immune`/`yawn_subbed` are mutually exclusive by
-        //     construction (each gates on the prior being false); `yawn_still` = the two cases whose
-        //     announce is the `[still]` did-nothing form (already-statused OR substituted; Protect
-        //     + sleep-immune keep the normal target announce). VERIFIED bit-for-bit vs the
-        //     omniscient sim (`harness/probe_batch89_haze_trick_yawn.js` + `probe_yawn_edges`). ---
+        //     TryHit priority order: Protect > already-statused > **SUBSTITUTE** > sleep-immune >
+        //     add (`gen3_yawn_sub_before_immune_v1`). `yawn_protect`/`yawn_statused`/`yawn_subbed`/
+        //     `yawn_immune` are mutually exclusive by construction (each gates on the prior being
+        //     false); `yawn_still` = the two cases whose announce is the `[still]` did-nothing form
+        //     (already-statused OR substituted; Protect + sleep-immune keep the normal target
+        //     announce).
+        //
+        //     ⚠️ SUBSTITUTE OUTRANKS THE SLEEP-IMMUNE ABILITY — PROBE-SETTLED
+        //     (`harness/probe_yawn_fail_precedence.js`, the sim is the oracle; a source read
+        //     predicts the OPPOSITE, since yawn's own `onTryHit` [`target.status ||
+        //     !target.runStatusImmunity('slp')`] runs at `runEvent('TryHit')` while the sub blocks
+        //     at the LATER `onTryPrimaryHit`). The probe matrix: sub-only → `[still]`+`-fail`;
+        //     immune-only → `-immune|<t>|[from] ability: <A>` (normal announce); **sub + immune →
+        //     `[still]`+`-fail`** (the SUB form wins).
+        //     WRONG (pre-fix): `yawn_subbed` gated on `!yawn_immune`, so a sleep-immune target
+        //     EXCLUDED the substitute case — which flipped BOTH the branch (`-immune` instead of
+        //     `-fail`) AND, via `yawn_still`, the ANNOUNCE (the normal target form instead of
+        //     `[still]`). The fuzz_r25 repro `rms9nh02e_ab_707_4`: a Primeape (Vital Spirit) that
+        //     had just Substituted. ---
         let yawn_protect = move_id == "yawn" && self.protect_blocks(foe, foe_slot, false);
         let yawn_statused = move_id == "yawn"
             && !yawn_protect
             && self.sides[foe].pokemon[foe_slot].status.is_some();
+        let yawn_subbed = move_id == "yawn"
+            && !yawn_protect
+            && !yawn_statused
+            && self.sides[foe].pokemon[foe_slot].substitute.is_some();
         let yawn_immune = move_id == "yawn"
             && !yawn_protect
             && !yawn_statused
+            && !yawn_subbed
             && dex
                 .ability(&to_id(&self.sides[foe].pokemon[foe_slot].ability))
                 .and_then(|a| a.status_immune.as_ref())
                 .map(|si| si.blocks("slp"))
                 .unwrap_or(false);
-        let yawn_subbed = move_id == "yawn"
-            && !yawn_protect
-            && !yawn_statused
-            && !yawn_immune
-            && self.sides[foe].pokemon[foe_slot].substitute.is_some();
         let yawn_still = yawn_statused || yawn_subbed;
         if self.logging() {
             let user = self.mon_ref(_side, _slot, dex);
@@ -2251,9 +2264,22 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            // (3) onTryHit: the target is SLEEP-IMMUNE (Insomnia / Vital Spirit — their `onImmunity`
+            // (3) A SUBSTITUTE (no `bypasssub`) blocks the volatile → `[still]` + `-fail|<user>`,
+            //     no volatile. Like (2), the announce ALREADY carried `[still]` via `yawn_still`
+            //     up-front — emit only the `|-fail|<user>` (no double `[still]`).
+            //     THIS OUTRANKS THE SLEEP-IMMUNE ABILITY BELOW (`gen3_yawn_sub_before_immune_v1`,
+            //     probe-settled — see the disposition block at the top of this fn).
+            if yawn_subbed {
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (4) onTryHit: the target is SLEEP-IMMUNE (Insomnia / Vital Spirit — their `onImmunity`
             //     blocks `runStatusImmunity('slp')`) → `|-immune|<target>|[from] ability: <A>`, no
-            //     volatile (the announce used the NORMAL target form). DRAW-FREE.
+            //     volatile (the announce used the NORMAL target form). DRAW-FREE. Reached only when
+            //     the target is NOT substituted (3).
             if yawn_immune {
                 if self.logging() {
                     let ability = to_id(&self.sides[foe].pokemon[foe_slot].ability);
@@ -2263,16 +2289,6 @@ impl crate::state::BattleState {
                         .unwrap_or_else(|| ability.clone());
                     let target = self.mon_ref(foe, foe_slot, dex);
                     self.log.immune_from_ability(&target, &display);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            // (4) onTryPrimaryHit: a SUBSTITUTE (no `bypasssub`) blocks the volatile → `[still]` +
-            //     `-fail|<user>`, no volatile. Like (2), the announce ALREADY carried `[still]` via
-            //     `yawn_still` up-front — emit only the `|-fail|<user>` (no double `[still]`).
-            if yawn_subbed {
-                if self.logging() {
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.fail(&user, None, false);
                 }
                 return MoveResolution::done(false, false, false);
             }

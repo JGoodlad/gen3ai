@@ -1,0 +1,508 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=randbats master_seed=250724 run_id=rmrziey0i chunk=387
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_387_12
+TEAM	ab_387_12	p1	Zapdos||Leftovers|Pressure|rest,hiddenpowerice,sleeptalk,thunderbolt|Hardy|85,,85,85,85,85|N|,2,30,,,||74|]Smeargle||Leftovers|OwnTempo|encore,spore,spikes,explosion|Hardy|85,85,85,85,85,85|M|||89|]Ariados||Leftovers|Swarm|sludgebomb,signalbeam,spiderweb,batonpass|Hardy|85,85,85,85,85,85|M|||98|]Golem||Leftovers|RockHead|toxic,earthquake,rockslide,explosion|Hardy|85,85,85,85,85,85|M|||84|]Celebi||Leftovers|NaturalCure|recover,calmmind,hiddenpowerfire,psychic|Hardy|85,,85,85,85,85|N|,2,,30,,30||74|]Shedinja||LumBerry|WonderGuard|shadowball,toxic,hiddenpowerfighting,batonpass|Hardy|85,85,85,85,85,85|N|,,30,30,30,30|||
+TEAM	ab_387_12	p2	Feraligatr||SalacBerry|Torrent|earthquake,rockslide,hydropump,swordsdance|Hardy|85,85,85,85,85,85|M|||83|]Azumarill||Leftovers|HugePower|hydropump,return,sleeptalk,rest|Hardy|85,85,85,85,85,85|M|||87|]Xatu||Leftovers|Synchronize|protect,wish,psychic,hiddenpowerfire|Hardy|85,,85,85,85,85|M|,2,,30,,30||84|]Aggron||Leftovers|RockHead|irontail,toxic,rockslide,earthquake|Hardy|85,85,85,85,85,85|M|||85|]Dragonite||ChoiceBand|InnerFocus|hiddenpowerflying,earthquake,fireblast,brickbreak|Hardy|85,85,85,85,85,85|M|30,30,30,30,30,||75|]Torkoal||Leftovers|WhiteSmoke|hiddenpowergrass,toxic,explosion,fireblast|Hardy|85,85,85,85,85,85|M|,30,,30,,||90|
+FMT	ab_387_12	gen3customgame
+INIT	ab_387_12	49557,31608,4266,6835	243683053
+DEC	ab_387_12	0	move	0	0	m3	m1	52057,61857,8215,8714	Zapdos	148	255	0	-	0	0	0	0	0	0	6	Feraligatr	69	277	0	-	0	0	0	0	1	0	6	p1	0	0	0	0	0
+DEC	ab_387_12	1	move	0	0	m0	m2	27631,13365,62620,41247	Zapdos	0	255	1	fnt	0	0	0	0	0	0	5	Feraligatr	69	277	0	-	0	0	0	0	1	0	6	p2	0	0	0	0	0
+DEC	ab_387_12	2	switch	1	0	s1	-	64491,41901,53252,50942	Smeargle	243	243	0	-	0	0	0	0	0	0	5	Feraligatr	69	277	0	-	0	0	0	0	1	0	6	none	0	0	0	0	0
+DEC	ab_387_12	3	move	0	0	m1	m2	55842,5270,37444,34499	Smeargle	0	243	1	fnt	0	0	0	0	0	0	4	Feraligatr	69	277	0	-	0	0	0	0	1	0	6	p2	0	0	0	0	0
+DEC	ab_387_12	4	switch	1	0	s3	-	30342,43095,21667,9394	Golem	272	272	0	-	0	0	0	0	0	0	4	Feraligatr	69	277	0	-	0	0	0	0	1	0	6	none	0	0	0	0	0
+DEC	ab_387_12	5	move	0	0	m1	m0	53978,1674,15703,14824	Golem	160	272	0	-	0	0	0	0	0	0	4	Feraligatr	0	277	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_387_12	6	switch	0	1	-	s2	7367,55734,22245,40779	Golem	177	272	0	-	0	0	0	0	0	0	4	Xatu	246	246	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_387_12	7	move	0	0	m2	m1	33543,45141,59465,55886	Golem	194	272	0	-	0	0	0	0	0	0	4	Xatu	69	246	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_387_12	8	move	0	0	m0	m1	47009,37184,42272,30416	Golem	211	272	0	-	0	0	0	0	0	0	4	Xatu	207	246	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_387_12	9	move	0	0	m0	m2	9288,58206,53510,26742	Golem	109	272	0	-	0	0	0	0	0	0	4	Xatu	222	246	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_387_12	10	move	0	0	m1	m2	48509,29327,38522,24234	Golem	0	272	1	fnt	0	0	0	0	0	0	3	Xatu	222	246	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_387_12	11	switch	1	0	s4	-	46675,28296,10684,61909	Celebi	270	270	0	-	0	0	0	0	0	0	3	Xatu	237	246	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_387_12	12	move	0	0	m1	m0	18032,27637,9213,44863	Celebi	270	270	0	-	0	0	1	1	0	0	3	Xatu	246	246	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_387_12	13	move	0	0	m3	m2	28224,36414,3392,44486	Celebi	252	270	0	-	0	0	1	1	0	0	3	Xatu	194	246	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_387_12	14	move	0	0	s2	m1	8144,2757,8212,9185	Ariados	296	296	0	-	0	0	0	0	0	0	3	Xatu	209	246	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_387_12	15	move	0	0	m1	s3	29443,14911,38053,33698	Ariados	296	296	0	-	0	0	0	0	0	0	3	Aggron	258	258	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_387_12	16	move	0	0	m0	s3	14297,40461,3818,30075	Ariados	296	296	0	-	0	0	0	0	0	0	3	Xatu	50	246	0	psn	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_387_12	17	move	0	0	m1	m0	18635,37492,32488,47212	Ariados	296	296	0	-	0	0	0	0	0	0	3	Xatu	35	246	0	psn	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_387_12	18	move	0	0	m1	m2	40020,17844,53484,63700	Ariados	85	296	0	-	0	0	0	0	0	0	3	Xatu	0	246	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_387_12	19	switch	0	1	-	s1	39964,15165,31898,15975	Ariados	103	296	0	-	0	0	0	0	0	0	3	Azumarill	316	316	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_387_12	20	move	0	0	m0	m0	2390,57011,12398,54895	Ariados	31	296	0	-	0	0	0	0	0	0	3	Azumarill	217	316	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_387_12	21	move	0	0	m2	m3	9339,46870,53793,36809	Ariados	49	296	0	-	0	0	0	0	0	0	3	Azumarill	316	316	0	slp	0	0	0	0	0	0	4	p2	0	0	0	0	1
+DEC	ab_387_12	22	move	0	0	m3	m0	9339,46870,53793,36809	Ariados	49	296	0	-	0	0	0	0	0	0	3	Azumarill	316	316	0	slp	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_387_12	23	switch	1	0	s5	-	52856,14165,38869,59920	Shedinja	1	1	0	-	0	0	0	0	0	0	3	Azumarill	316	316	0	slp	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_387_12	24	move	0	0	m3	m3	52856,14165,38869,59920	Shedinja	1	1	0	-	0	0	0	0	0	0	3	Azumarill	316	316	0	slp	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_387_12	25	switch	1	0	s5	-	48492,4334,34878,34579	Ariados	67	296	0	-	0	0	0	0	0	0	3	Azumarill	316	316	0	slp	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_387_12	26	move	0	0	m2	m3	45629,2869,60576,5186	Ariados	85	296	0	-	0	0	0	0	0	0	3	Azumarill	316	316	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	1
+DEC	ab_387_12	27	move	0	0	m1	m0	15301,23160,18365,5495	Ariados	0	296	1	fnt	0	0	0	0	0	0	2	Azumarill	316	316	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_387_12	28	switch	1	0	s2	-	65021,57349,18557,50614	Celebi	268	270	0	-	0	0	0	0	0	0	2	Azumarill	316	316	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_387_12	29	move	0	0	m0	m1	1895,24383,41976,26602	Celebi	183	270	0	-	0	0	0	0	0	0	2	Azumarill	316	316	0	-	0	0	0	0	0	0	4	p1	0	0	0	1	0
+DEC	ab_387_12	30	move	0	0	m3	m2	63134,39818,41737,10841	Celebi	199	270	0	-	0	0	0	0	0	0	2	Azumarill	262	316	0	-	0	0	0	-1	0	0	4	p1	0	0	0	1	0
+DEC	ab_387_12	31	move	0	0	m1	m0	5389,47217,20089,32861	Celebi	188	270	0	-	0	0	1	1	0	0	2	Azumarill	281	316	0	-	0	0	0	-1	0	0	4	p1	0	0	0	0	0
+DEC	ab_387_12	32	move	0	0	m0	m1	41563,57186,43416,7713	Celebi	196	270	0	-	0	0	1	1	0	0	2	Azumarill	300	316	0	-	0	0	0	-1	0	0	4	p1	0	0	0	1	0
+DEC	ab_387_12	33	move	0	0	m1	m0	5841,53756,16105,34731	Celebi	212	270	0	-	0	0	2	2	0	0	2	Azumarill	316	316	0	-	0	0	0	-1	0	0	4	p1	0	0	0	0	0
+DEC	ab_387_12	34	move	0	0	m3	m0	6783,54074,21953,35635	Celebi	206	270	0	-	0	0	2	2	0	0	2	Azumarill	106	316	0	-	0	0	0	-1	0	0	4	p1	0	0	0	0	0
+DEC	ab_387_12	35	move	0	0	m0	m2	35767,10507,47973,54498	Celebi	270	270	0	-	0	0	2	2	0	0	2	Azumarill	125	316	0	-	0	0	0	-1	0	0	4	p1	0	0	0	1	0
+DEC	ab_387_12	36	move	0	0	m0	m2	47119,16812,39022,36333	Celebi	270	270	0	-	0	0	2	2	0	0	2	Azumarill	144	316	0	-	0	0	0	-1	0	0	4	p1	0	0	0	1	0
+DEC	ab_387_12	37	move	0	0	m3	m3	12559,37070,32369,62129	Celebi	270	270	0	-	0	0	2	2	0	0	2	Azumarill	0	316	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_387_12	38	switch	0	1	-	s5	15923,1400,11475,6040	Celebi	270	270	0	-	0	0	2	2	0	0	2	Torkoal	272	272	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_387_12	39	move	0	0	m1	m2	40409,21718,46,13109	Celebi	0	270	1	fnt	0	0	0	0	0	0	1	Torkoal	0	272	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_387_12	40	switch	1	1	s5	s3	12882,30797,36411,12204	Shedinja	1	1	0	-	0	0	0	0	0	0	1	Aggron	258	258	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_387_12	41	move	0	0	m1	m3	11733,25858,1459,4985	Shedinja	1	1	0	-	0	0	0	0	0	0	1	Aggron	258	258	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_387_12	42	move	0	0	m1	s4	28504,47245,6166,55107	Shedinja	1	1	0	-	0	0	0	0	0	0	1	Dragonite	243	259	0	tox	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_387_12	43	move	0	0	m3	m1	54395,35962,13116,6013	Shedinja	1	1	0	-	0	0	0	0	0	0	1	Dragonite	211	259	0	tox	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_387_12	44	move	0	0	m0	m1	43502,63626,17480,24523	Shedinja	1	1	0	-	0	0	0	0	0	0	1	Dragonite	34	259	0	tox	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_387_12	45	move	0	0	m0	m1	25670,45443,52806,9422	Shedinja	1	1	0	-	0	0	0	0	0	0	1	Dragonite	0	259	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_387_12	46	switch	0	1	-	s4	52988,11547,54567,25097	Shedinja	1	1	0	-	0	0	0	0	0	0	1	Aggron	258	258	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_387_12	47	move	0	0	m3	m2	54546,15489,19467,7437	Shedinja	0	1	1	-	0	0	0	0	0	0	0	Aggron	258	258	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+END	ab_387_12	1	p2
+L	ab_387_12	0	|t:|<NORMALIZED>
+L	ab_387_12	1	|gametype|singles
+L	ab_387_12	2	|player|p1|P1||
+L	ab_387_12	3	|player|p2|P2||
+L	ab_387_12	4	|gen|3
+L	ab_387_12	5	|tier|[Gen 3] Custom Game
+L	ab_387_12	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_387_12	7	|
+L	ab_387_12	8	|t:|<NORMALIZED>
+L	ab_387_12	9	|teamsize|p1|6
+L	ab_387_12	10	|teamsize|p2|6
+L	ab_387_12	11	|start
+L	ab_387_12	12	|switch|p1a: Zapdos|Zapdos, L74|255/255
+L	ab_387_12	13	|switch|p2a: Feraligatr|Feraligatr, L83, M|277/277
+L	ab_387_12	14	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_387_12	15	|turn|1
+L	ab_387_12	16	|
+L	ab_387_12	17	|t:|<NORMALIZED>
+L	ab_387_12	18	|move|p1a: Zapdos|Thunderbolt|p2a: Feraligatr
+L	ab_387_12	19	|-supereffective|p2a: Feraligatr
+L	ab_387_12	20	|-damage|p2a: Feraligatr|69/277
+L	ab_387_12	21	|move|p2a: Feraligatr|Rock Slide|p1a: Zapdos
+L	ab_387_12	22	|-supereffective|p1a: Zapdos
+L	ab_387_12	23	|-damage|p1a: Zapdos|133/255
+L	ab_387_12	24	|
+L	ab_387_12	25	|-heal|p1a: Zapdos|148/255|[from] item: Leftovers
+L	ab_387_12	26	|-enditem|p2a: Feraligatr|Salac Berry|[eat]
+L	ab_387_12	27	|-boost|p2a: Feraligatr|spe|1|[from] item: Salac Berry
+L	ab_387_12	28	|upkeep
+L	ab_387_12	29	|turn|2
+L	ab_387_12	30	|
+L	ab_387_12	31	|t:|<NORMALIZED>
+L	ab_387_12	32	|move|p2a: Feraligatr|Hydro Pump|p1a: Zapdos
+L	ab_387_12	33	|debug|Torrent boost
+L	ab_387_12	34	|-damage|p1a: Zapdos|0 fnt
+L	ab_387_12	35	|faint|p1a: Zapdos
+L	ab_387_12	36	|
+L	ab_387_12	37	|t:|<NORMALIZED>
+L	ab_387_12	38	|switch|p1a: Smeargle|Smeargle, L89, M|243/243
+L	ab_387_12	39	|
+L	ab_387_12	40	|upkeep
+L	ab_387_12	41	|turn|3
+L	ab_387_12	42	|
+L	ab_387_12	43	|t:|<NORMALIZED>
+L	ab_387_12	44	|move|p2a: Feraligatr|Hydro Pump|p1a: Smeargle
+L	ab_387_12	45	|debug|Torrent boost
+L	ab_387_12	46	|-crit|p1a: Smeargle
+L	ab_387_12	47	|-damage|p1a: Smeargle|0 fnt
+L	ab_387_12	48	|faint|p1a: Smeargle
+L	ab_387_12	49	|
+L	ab_387_12	50	|t:|<NORMALIZED>
+L	ab_387_12	51	|switch|p1a: Golem|Golem, L84, M|272/272
+L	ab_387_12	52	|
+L	ab_387_12	53	|upkeep
+L	ab_387_12	54	|turn|4
+L	ab_387_12	55	|
+L	ab_387_12	56	|t:|<NORMALIZED>
+L	ab_387_12	57	|move|p2a: Feraligatr|Earthquake|p1a: Golem
+L	ab_387_12	58	|-supereffective|p1a: Golem
+L	ab_387_12	59	|-damage|p1a: Golem|160/272
+L	ab_387_12	60	|move|p1a: Golem|Earthquake|p2a: Feraligatr
+L	ab_387_12	61	|-damage|p2a: Feraligatr|0 fnt
+L	ab_387_12	62	|faint|p2a: Feraligatr
+L	ab_387_12	63	|
+L	ab_387_12	64	|t:|<NORMALIZED>
+L	ab_387_12	65	|switch|p2a: Xatu|Xatu, L84, M|246/246
+L	ab_387_12	66	|
+L	ab_387_12	67	|-heal|p1a: Golem|177/272|[from] item: Leftovers
+L	ab_387_12	68	|upkeep
+L	ab_387_12	69	|turn|5
+L	ab_387_12	70	|
+L	ab_387_12	71	|t:|<NORMALIZED>
+L	ab_387_12	72	|move|p2a: Xatu|Wish|p2a: Xatu
+L	ab_387_12	73	|move|p1a: Golem|Rock Slide|p2a: Xatu
+L	ab_387_12	74	|-supereffective|p2a: Xatu
+L	ab_387_12	75	|-damage|p2a: Xatu|54/246
+L	ab_387_12	76	|
+L	ab_387_12	77	|-heal|p2a: Xatu|69/246|[from] item: Leftovers
+L	ab_387_12	78	|-heal|p1a: Golem|194/272|[from] item: Leftovers
+L	ab_387_12	79	|upkeep
+L	ab_387_12	80	|turn|6
+L	ab_387_12	81	|
+L	ab_387_12	82	|t:|<NORMALIZED>
+L	ab_387_12	83	|move|p2a: Xatu|Wish||[still]
+L	ab_387_12	84	|-fail|p2a: Xatu
+L	ab_387_12	85	|debug|move failed because it did nothing
+L	ab_387_12	86	|move|p1a: Golem|Toxic|p2a: Xatu|[miss]
+L	ab_387_12	87	|-miss|p1a: Golem|p2a: Xatu
+L	ab_387_12	88	|
+L	ab_387_12	89	|-heal|p2a: Xatu|192/246|[from] move: Wish|[wisher] Xatu
+L	ab_387_12	90	|-heal|p2a: Xatu|207/246|[from] item: Leftovers
+L	ab_387_12	91	|-heal|p1a: Golem|211/272|[from] item: Leftovers
+L	ab_387_12	92	|upkeep
+L	ab_387_12	93	|turn|7
+L	ab_387_12	94	|
+L	ab_387_12	95	|t:|<NORMALIZED>
+L	ab_387_12	96	|move|p2a: Xatu|Psychic|p1a: Golem
+L	ab_387_12	97	|-damage|p1a: Golem|92/272
+L	ab_387_12	98	|move|p1a: Golem|Toxic|p2a: Xatu|[miss]
+L	ab_387_12	99	|-miss|p1a: Golem|p2a: Xatu
+L	ab_387_12	100	|
+L	ab_387_12	101	|-heal|p2a: Xatu|222/246|[from] item: Leftovers
+L	ab_387_12	102	|-heal|p1a: Golem|109/272|[from] item: Leftovers
+L	ab_387_12	103	|upkeep
+L	ab_387_12	104	|turn|8
+L	ab_387_12	105	|
+L	ab_387_12	106	|t:|<NORMALIZED>
+L	ab_387_12	107	|move|p2a: Xatu|Psychic|p1a: Golem
+L	ab_387_12	108	|-damage|p1a: Golem|0 fnt
+L	ab_387_12	109	|faint|p1a: Golem
+L	ab_387_12	110	|
+L	ab_387_12	111	|t:|<NORMALIZED>
+L	ab_387_12	112	|switch|p1a: Celebi|Celebi, L74|270/270
+L	ab_387_12	113	|
+L	ab_387_12	114	|-heal|p2a: Xatu|237/246|[from] item: Leftovers
+L	ab_387_12	115	|upkeep
+L	ab_387_12	116	|turn|9
+L	ab_387_12	117	|
+L	ab_387_12	118	|t:|<NORMALIZED>
+L	ab_387_12	119	|move|p2a: Xatu|Protect|p2a: Xatu
+L	ab_387_12	120	|-singleturn|p2a: Xatu|Protect
+L	ab_387_12	121	|move|p1a: Celebi|Calm Mind|p1a: Celebi
+L	ab_387_12	122	|-boost|p1a: Celebi|spa|1
+L	ab_387_12	123	|-boost|p1a: Celebi|spd|1
+L	ab_387_12	124	|
+L	ab_387_12	125	|-heal|p2a: Xatu|246/246|[from] item: Leftovers
+L	ab_387_12	126	|upkeep
+L	ab_387_12	127	|turn|10
+L	ab_387_12	128	|
+L	ab_387_12	129	|t:|<NORMALIZED>
+L	ab_387_12	130	|move|p2a: Xatu|Psychic|p1a: Celebi
+L	ab_387_12	131	|-resisted|p1a: Celebi
+L	ab_387_12	132	|-damage|p1a: Celebi|236/270
+L	ab_387_12	133	|move|p1a: Celebi|Psychic|p2a: Xatu
+L	ab_387_12	134	|-resisted|p2a: Xatu
+L	ab_387_12	135	|-damage|p2a: Xatu|179/246
+L	ab_387_12	136	|
+L	ab_387_12	137	|-heal|p2a: Xatu|194/246|[from] item: Leftovers
+L	ab_387_12	138	|-heal|p1a: Celebi|252/270|[from] item: Leftovers
+L	ab_387_12	139	|upkeep
+L	ab_387_12	140	|turn|11
+L	ab_387_12	141	|
+L	ab_387_12	142	|t:|<NORMALIZED>
+L	ab_387_12	143	|switch|p1a: Ariados|Ariados, L98, M|296/296
+L	ab_387_12	144	|move|p2a: Xatu|Wish|p2a: Xatu
+L	ab_387_12	145	|
+L	ab_387_12	146	|-heal|p2a: Xatu|209/246|[from] item: Leftovers
+L	ab_387_12	147	|upkeep
+L	ab_387_12	148	|turn|12
+L	ab_387_12	149	|
+L	ab_387_12	150	|t:|<NORMALIZED>
+L	ab_387_12	151	|switch|p2a: Aggron|Aggron, L85, M|258/258
+L	ab_387_12	152	|move|p1a: Ariados|Signal Beam|p2a: Aggron
+L	ab_387_12	153	|-resisted|p2a: Aggron
+L	ab_387_12	154	|-damage|p2a: Aggron|227/258
+L	ab_387_12	155	|
+L	ab_387_12	156	|-heal|p2a: Aggron|258/258|[from] move: Wish|[wisher] Xatu
+L	ab_387_12	157	|upkeep
+L	ab_387_12	158	|turn|13
+L	ab_387_12	159	|
+L	ab_387_12	160	|t:|<NORMALIZED>
+L	ab_387_12	161	|switch|p2a: Xatu|Xatu, L84, M|209/246
+L	ab_387_12	162	|move|p1a: Ariados|Sludge Bomb|p2a: Xatu
+L	ab_387_12	163	|-damage|p2a: Xatu|65/246
+L	ab_387_12	164	|-status|p2a: Xatu|psn
+L	ab_387_12	165	|debug|natural status immunity
+L	ab_387_12	166	|debug|immune to status
+L	ab_387_12	167	|
+L	ab_387_12	168	|-heal|p2a: Xatu|80/246 psn|[from] item: Leftovers
+L	ab_387_12	169	|-damage|p2a: Xatu|50/246 psn|[from] psn
+L	ab_387_12	170	|upkeep
+L	ab_387_12	171	|turn|14
+L	ab_387_12	172	|
+L	ab_387_12	173	|t:|<NORMALIZED>
+L	ab_387_12	174	|move|p2a: Xatu|Protect|p2a: Xatu
+L	ab_387_12	175	|-singleturn|p2a: Xatu|Protect
+L	ab_387_12	176	|move|p1a: Ariados|Signal Beam|p2a: Xatu
+L	ab_387_12	177	|-activate|p2a: Xatu|Protect
+L	ab_387_12	178	|
+L	ab_387_12	179	|-heal|p2a: Xatu|65/246 psn|[from] item: Leftovers
+L	ab_387_12	180	|-damage|p2a: Xatu|35/246 psn|[from] psn
+L	ab_387_12	181	|upkeep
+L	ab_387_12	182	|turn|15
+L	ab_387_12	183	|
+L	ab_387_12	184	|t:|<NORMALIZED>
+L	ab_387_12	185	|move|p2a: Xatu|Psychic|p1a: Ariados
+L	ab_387_12	186	|-supereffective|p1a: Ariados
+L	ab_387_12	187	|-damage|p1a: Ariados|85/296
+L	ab_387_12	188	|move|p1a: Ariados|Signal Beam|p2a: Xatu
+L	ab_387_12	189	|debug|Swarm boost
+L	ab_387_12	190	|-damage|p2a: Xatu|0 fnt
+L	ab_387_12	191	|faint|p2a: Xatu
+L	ab_387_12	192	|
+L	ab_387_12	193	|t:|<NORMALIZED>
+L	ab_387_12	194	|switch|p2a: Azumarill|Azumarill, L87, M|316/316
+L	ab_387_12	195	|
+L	ab_387_12	196	|-heal|p1a: Ariados|103/296|[from] item: Leftovers
+L	ab_387_12	197	|upkeep
+L	ab_387_12	198	|turn|16
+L	ab_387_12	199	|
+L	ab_387_12	200	|t:|<NORMALIZED>
+L	ab_387_12	201	|move|p2a: Azumarill|Hydro Pump|p1a: Ariados
+L	ab_387_12	202	|-damage|p1a: Ariados|13/296
+L	ab_387_12	203	|move|p1a: Ariados|Sludge Bomb|p2a: Azumarill
+L	ab_387_12	204	|-damage|p2a: Azumarill|198/316
+L	ab_387_12	205	|
+L	ab_387_12	206	|-heal|p2a: Azumarill|217/316|[from] item: Leftovers
+L	ab_387_12	207	|-heal|p1a: Ariados|31/296|[from] item: Leftovers
+L	ab_387_12	208	|upkeep
+L	ab_387_12	209	|turn|17
+L	ab_387_12	210	|
+L	ab_387_12	211	|t:|<NORMALIZED>
+L	ab_387_12	212	|move|p2a: Azumarill|Rest|p2a: Azumarill
+L	ab_387_12	213	|-status|p2a: Azumarill|slp|[from] move: Rest
+L	ab_387_12	214	|-heal|p2a: Azumarill|316/316 slp|[silent]
+L	ab_387_12	215	|move|p1a: Ariados|Spider Web|p2a: Azumarill
+L	ab_387_12	216	|-activate|p2a: Azumarill|trapped
+L	ab_387_12	217	|
+L	ab_387_12	218	|-heal|p1a: Ariados|49/296|[from] item: Leftovers
+L	ab_387_12	219	|upkeep
+L	ab_387_12	220	|turn|18
+L	ab_387_12	221	|
+L	ab_387_12	222	|t:|<NORMALIZED>
+L	ab_387_12	223	|cant|p2a: Azumarill|slp
+L	ab_387_12	224	|move|p1a: Ariados|Baton Pass|p1a: Ariados
+L	ab_387_12	225	|
+L	ab_387_12	226	|t:|<NORMALIZED>
+L	ab_387_12	227	|switch|p1a: Shedinja|Shedinja|1/1|[from] Baton Pass
+L	ab_387_12	228	|
+L	ab_387_12	229	|upkeep
+L	ab_387_12	230	|turn|19
+L	ab_387_12	231	|
+L	ab_387_12	232	|t:|<NORMALIZED>
+L	ab_387_12	233	|cant|p2a: Azumarill|slp
+L	ab_387_12	234	|move|p1a: Shedinja|Baton Pass|p1a: Shedinja
+L	ab_387_12	235	|
+L	ab_387_12	236	|t:|<NORMALIZED>
+L	ab_387_12	237	|switch|p1a: Ariados|Ariados, L98, M|49/296|[from] Baton Pass
+L	ab_387_12	238	|
+L	ab_387_12	239	|-heal|p1a: Ariados|67/296|[from] item: Leftovers
+L	ab_387_12	240	|upkeep
+L	ab_387_12	241	|turn|20
+L	ab_387_12	242	|
+L	ab_387_12	243	|t:|<NORMALIZED>
+L	ab_387_12	244	|-curestatus|p2a: Azumarill|slp|[msg]
+L	ab_387_12	245	|move|p2a: Azumarill|Rest|p2a: Azumarill
+L	ab_387_12	246	|-fail|p2a: Azumarill|heal
+L	ab_387_12	247	|move|p1a: Ariados|Spider Web||[still]
+L	ab_387_12	248	|-fail|p1a: Ariados
+L	ab_387_12	249	|debug|move failed because it did nothing
+L	ab_387_12	250	|
+L	ab_387_12	251	|-heal|p1a: Ariados|85/296|[from] item: Leftovers
+L	ab_387_12	252	|upkeep
+L	ab_387_12	253	|turn|21
+L	ab_387_12	254	|
+L	ab_387_12	255	|t:|<NORMALIZED>
+L	ab_387_12	256	|move|p2a: Azumarill|Hydro Pump|p1a: Ariados
+L	ab_387_12	257	|-damage|p1a: Ariados|0 fnt
+L	ab_387_12	258	|faint|p1a: Ariados
+L	ab_387_12	259	|
+L	ab_387_12	260	|t:|<NORMALIZED>
+L	ab_387_12	261	|switch|p1a: Celebi|Celebi, L74|252/270
+L	ab_387_12	262	|
+L	ab_387_12	263	|-heal|p1a: Celebi|268/270|[from] item: Leftovers
+L	ab_387_12	264	|upkeep
+L	ab_387_12	265	|turn|22
+L	ab_387_12	266	|
+L	ab_387_12	267	|t:|<NORMALIZED>
+L	ab_387_12	268	|move|p1a: Celebi|Recover|p1a: Celebi
+L	ab_387_12	269	|-heal|p1a: Celebi|270/270
+L	ab_387_12	270	|move|p2a: Azumarill|Return|p1a: Celebi
+L	ab_387_12	271	|-damage|p1a: Celebi|167/270
+L	ab_387_12	272	|
+L	ab_387_12	273	|-heal|p1a: Celebi|183/270|[from] item: Leftovers
+L	ab_387_12	274	|upkeep
+L	ab_387_12	275	|turn|23
+L	ab_387_12	276	|
+L	ab_387_12	277	|t:|<NORMALIZED>
+L	ab_387_12	278	|move|p1a: Celebi|Psychic|p2a: Azumarill
+L	ab_387_12	279	|-damage|p2a: Azumarill|243/316
+L	ab_387_12	280	|-unboost|p2a: Azumarill|spd|1
+L	ab_387_12	281	|move|p2a: Azumarill|Sleep Talk|p2a: Azumarill
+L	ab_387_12	282	|
+L	ab_387_12	283	|-heal|p1a: Celebi|199/270|[from] item: Leftovers
+L	ab_387_12	284	|-heal|p2a: Azumarill|262/316|[from] item: Leftovers
+L	ab_387_12	285	|upkeep
+L	ab_387_12	286	|turn|24
+L	ab_387_12	287	|
+L	ab_387_12	288	|t:|<NORMALIZED>
+L	ab_387_12	289	|move|p1a: Celebi|Calm Mind|p1a: Celebi
+L	ab_387_12	290	|-boost|p1a: Celebi|spa|1
+L	ab_387_12	291	|-boost|p1a: Celebi|spd|1
+L	ab_387_12	292	|move|p2a: Azumarill|Hydro Pump|p1a: Celebi
+L	ab_387_12	293	|-resisted|p1a: Celebi
+L	ab_387_12	294	|-damage|p1a: Celebi|172/270
+L	ab_387_12	295	|
+L	ab_387_12	296	|-heal|p1a: Celebi|188/270|[from] item: Leftovers
+L	ab_387_12	297	|-heal|p2a: Azumarill|281/316|[from] item: Leftovers
+L	ab_387_12	298	|upkeep
+L	ab_387_12	299	|turn|25
+L	ab_387_12	300	|
+L	ab_387_12	301	|t:|<NORMALIZED>
+L	ab_387_12	302	|move|p1a: Celebi|Recover|p1a: Celebi
+L	ab_387_12	303	|-heal|p1a: Celebi|270/270
+L	ab_387_12	304	|move|p2a: Azumarill|Return|p1a: Celebi
+L	ab_387_12	305	|-damage|p1a: Celebi|180/270
+L	ab_387_12	306	|
+L	ab_387_12	307	|-heal|p1a: Celebi|196/270|[from] item: Leftovers
+L	ab_387_12	308	|-heal|p2a: Azumarill|300/316|[from] item: Leftovers
+L	ab_387_12	309	|upkeep
+L	ab_387_12	310	|turn|26
+L	ab_387_12	311	|
+L	ab_387_12	312	|t:|<NORMALIZED>
+L	ab_387_12	313	|move|p1a: Celebi|Calm Mind|p1a: Celebi
+L	ab_387_12	314	|-boost|p1a: Celebi|spa|1
+L	ab_387_12	315	|-boost|p1a: Celebi|spd|1
+L	ab_387_12	316	|move|p2a: Azumarill|Hydro Pump|p1a: Celebi|[miss]
+L	ab_387_12	317	|-miss|p2a: Azumarill|p1a: Celebi
+L	ab_387_12	318	|
+L	ab_387_12	319	|-heal|p1a: Celebi|212/270|[from] item: Leftovers
+L	ab_387_12	320	|-heal|p2a: Azumarill|316/316|[from] item: Leftovers
+L	ab_387_12	321	|upkeep
+L	ab_387_12	322	|turn|27
+L	ab_387_12	323	|
+L	ab_387_12	324	|t:|<NORMALIZED>
+L	ab_387_12	325	|move|p1a: Celebi|Psychic|p2a: Azumarill
+L	ab_387_12	326	|-damage|p2a: Azumarill|87/316
+L	ab_387_12	327	|move|p2a: Azumarill|Hydro Pump|p1a: Celebi
+L	ab_387_12	328	|-resisted|p1a: Celebi
+L	ab_387_12	329	|-damage|p1a: Celebi|190/270
+L	ab_387_12	330	|
+L	ab_387_12	331	|-heal|p1a: Celebi|206/270|[from] item: Leftovers
+L	ab_387_12	332	|-heal|p2a: Azumarill|106/316|[from] item: Leftovers
+L	ab_387_12	333	|upkeep
+L	ab_387_12	334	|turn|28
+L	ab_387_12	335	|
+L	ab_387_12	336	|t:|<NORMALIZED>
+L	ab_387_12	337	|move|p1a: Celebi|Recover|p1a: Celebi
+L	ab_387_12	338	|-heal|p1a: Celebi|270/270
+L	ab_387_12	339	|move|p2a: Azumarill|Sleep Talk|p2a: Azumarill
+L	ab_387_12	340	|
+L	ab_387_12	341	|-heal|p2a: Azumarill|125/316|[from] item: Leftovers
+L	ab_387_12	342	|upkeep
+L	ab_387_12	343	|turn|29
+L	ab_387_12	344	|
+L	ab_387_12	345	|t:|<NORMALIZED>
+L	ab_387_12	346	|move|p1a: Celebi|Recover||[still]
+L	ab_387_12	347	|-fail|p1a: Celebi|heal
+L	ab_387_12	348	|debug|move failed because it did nothing
+L	ab_387_12	349	|move|p2a: Azumarill|Sleep Talk|p2a: Azumarill
+L	ab_387_12	350	|
+L	ab_387_12	351	|-heal|p2a: Azumarill|144/316|[from] item: Leftovers
+L	ab_387_12	352	|upkeep
+L	ab_387_12	353	|turn|30
+L	ab_387_12	354	|
+L	ab_387_12	355	|t:|<NORMALIZED>
+L	ab_387_12	356	|move|p1a: Celebi|Psychic|p2a: Azumarill
+L	ab_387_12	357	|-damage|p2a: Azumarill|0 fnt
+L	ab_387_12	358	|faint|p2a: Azumarill
+L	ab_387_12	359	|
+L	ab_387_12	360	|t:|<NORMALIZED>
+L	ab_387_12	361	|switch|p2a: Torkoal|Torkoal, L90, M|272/272
+L	ab_387_12	362	|
+L	ab_387_12	363	|upkeep
+L	ab_387_12	364	|turn|31
+L	ab_387_12	365	|
+L	ab_387_12	366	|t:|<NORMALIZED>
+L	ab_387_12	367	|move|p1a: Celebi|Calm Mind|p1a: Celebi
+L	ab_387_12	368	|-boost|p1a: Celebi|spa|1
+L	ab_387_12	369	|-boost|p1a: Celebi|spd|1
+L	ab_387_12	370	|move|p2a: Torkoal|Explosion|p1a: Celebi
+L	ab_387_12	371	|-damage|p1a: Celebi|0 fnt
+L	ab_387_12	372	|faint|p2a: Torkoal
+L	ab_387_12	373	|faint|p1a: Celebi
+L	ab_387_12	374	|
+L	ab_387_12	375	|t:|<NORMALIZED>
+L	ab_387_12	376	|switch|p1a: Shedinja|Shedinja|1/1
+L	ab_387_12	377	|switch|p2a: Aggron|Aggron, L85, M|258/258
+L	ab_387_12	378	|
+L	ab_387_12	379	|upkeep
+L	ab_387_12	380	|turn|32
+L	ab_387_12	381	|
+L	ab_387_12	382	|t:|<NORMALIZED>
+L	ab_387_12	383	|move|p1a: Shedinja|Toxic|p2a: Aggron
+L	ab_387_12	384	|debug|natural status immunity
+L	ab_387_12	385	|debug|immune to status
+L	ab_387_12	386	|-immune|p2a: Aggron
+L	ab_387_12	387	|debug|move failed because it did nothing
+L	ab_387_12	388	|move|p2a: Aggron|Earthquake|p1a: Shedinja
+L	ab_387_12	389	|debug|Wonder Guard immunity: earthquake
+L	ab_387_12	390	|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+L	ab_387_12	391	|
+L	ab_387_12	392	|upkeep
+L	ab_387_12	393	|turn|33
+L	ab_387_12	394	|
+L	ab_387_12	395	|t:|<NORMALIZED>
+L	ab_387_12	396	|switch|p2a: Dragonite|Dragonite, L75, M|259/259
+L	ab_387_12	397	|move|p1a: Shedinja|Toxic|p2a: Dragonite
+L	ab_387_12	398	|-status|p2a: Dragonite|tox
+L	ab_387_12	399	|
+L	ab_387_12	400	|-damage|p2a: Dragonite|243/259 tox|[from] psn
+L	ab_387_12	401	|upkeep
+L	ab_387_12	402	|turn|34
+L	ab_387_12	403	|
+L	ab_387_12	404	|t:|<NORMALIZED>
+L	ab_387_12	405	|move|p2a: Dragonite|Earthquake|p1a: Shedinja
+L	ab_387_12	406	|debug|Wonder Guard immunity: earthquake
+L	ab_387_12	407	|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+L	ab_387_12	408	|move|p1a: Shedinja|Baton Pass||[still]
+L	ab_387_12	409	|-fail|p1a: Shedinja
+L	ab_387_12	410	|
+L	ab_387_12	411	|-damage|p2a: Dragonite|211/259 tox|[from] psn
+L	ab_387_12	412	|upkeep
+L	ab_387_12	413	|turn|35
+L	ab_387_12	414	|
+L	ab_387_12	415	|t:|<NORMALIZED>
+L	ab_387_12	416	|move|p2a: Dragonite|Earthquake|p1a: Shedinja
+L	ab_387_12	417	|debug|Wonder Guard immunity: earthquake
+L	ab_387_12	418	|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+L	ab_387_12	419	|move|p1a: Shedinja|Shadow Ball|p2a: Dragonite
+L	ab_387_12	420	|-damage|p2a: Dragonite|82/259 tox
+L	ab_387_12	421	|
+L	ab_387_12	422	|-damage|p2a: Dragonite|34/259 tox|[from] psn
+L	ab_387_12	423	|upkeep
+L	ab_387_12	424	|turn|36
+L	ab_387_12	425	|
+L	ab_387_12	426	|t:|<NORMALIZED>
+L	ab_387_12	427	|move|p2a: Dragonite|Earthquake|p1a: Shedinja
+L	ab_387_12	428	|debug|Wonder Guard immunity: earthquake
+L	ab_387_12	429	|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+L	ab_387_12	430	|move|p1a: Shedinja|Shadow Ball|p2a: Dragonite
+L	ab_387_12	431	|-damage|p2a: Dragonite|0 fnt
+L	ab_387_12	432	|faint|p2a: Dragonite
+L	ab_387_12	433	|
+L	ab_387_12	434	|t:|<NORMALIZED>
+L	ab_387_12	435	|switch|p2a: Aggron|Aggron, L85, M|258/258
+L	ab_387_12	436	|
+L	ab_387_12	437	|upkeep
+L	ab_387_12	438	|turn|37
+L	ab_387_12	439	|
+L	ab_387_12	440	|t:|<NORMALIZED>
+L	ab_387_12	441	|move|p1a: Shedinja|Baton Pass||[still]
+L	ab_387_12	442	|-fail|p1a: Shedinja
+L	ab_387_12	443	|move|p2a: Aggron|Rock Slide|p1a: Shedinja
+L	ab_387_12	444	|debug|Wonder Guard immunity: rockslide
+L	ab_387_12	445	|-supereffective|p1a: Shedinja
+L	ab_387_12	446	|-damage|p1a: Shedinja|0 fnt
+L	ab_387_12	447	|faint|p1a: Shedinja
+L	ab_387_12	448	|
+L	ab_387_12	449	|win|P2

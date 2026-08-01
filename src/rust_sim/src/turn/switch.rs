@@ -943,14 +943,36 @@ impl crate::state::BattleState {
             }
         }
         // --- TRAP-LINK source-left clear (`gen3_move_coverage_batch6_v1`, the linked
-        //     `trapped`/`trapper` pair — probed T1/T4/T9 + T3b): the trap ENDS the
-        //     moment the TRAPPER leaves the field ANY way (voluntary switch / Baton
-        //     Pass / phaze drag; the FAINT path mirrors this in `process_faints`). When
-        //     the DEPARTING mon's uid is the foe active's `trapped_by` link, remove the
-        //     volatile — the freed mon's very next request drops `trapped:true`.
-        //     DRAW-FREE (no protocol line — the `trapped` condition has no onEnd). The
-        //     attract source-left clear below is the same mechanism class. ---
-        {
+        //     `trapped`/`trapper` pair — probed T1/T4/T9 + T3b): when the TRAPPER leaves
+        //     the field, the foe's `trapped` volatile normally ends — the freed mon's very
+        //     next request drops `trapped:true`. DRAW-FREE (no protocol line — the
+        //     `trapped` condition has no onEnd). The attract source-left clear below is the
+        //     same mechanism class.
+        //
+        //     ⚠️ **EXCEPT ON A BATON PASS** (`gen3_trap_link_survives_baton_pass_v1`). The
+        //     severing is a side effect of the DEPARTING mon's `clearVolatile()`
+        //     (pokemon.ts:1527-1531), which walks its volatiles and, for any carrying a
+        //     `linkedStatus`, calls `removeLinkedVolatiles` — killing the OTHER end. A
+        //     Baton Pass does NOT take that path (the outgoing mon's volatiles are handed
+        //     to `copyVolatileFrom` instead), so the foe's `trapped` SURVIVES — even though
+        //     `trapper` is `noCopy: true` (conditions.ts:218-221) and so is NOT passed to
+        //     the entrant, leaving the target trapped with a dangling link. That asymmetry
+        //     is a genuine Showdown quirk, PROBE-SETTLED (`probe_spiderweb_link_lifetime.js`,
+        //     the sim is the oracle — two source-read hypotheses died here first):
+        //       * trapper NORMAL-switches out  → target `trapped` true → **FALSE** (breaks)
+        //       * trapper BATON-PASSES out     → target `trapped` true → **TRUE**  (survives)
+        //       * the TRAPPED mon itself leaves (incl. a phaze drag) → breaks (its own clear)
+        //     WRONG (pre-fix): the port cleared on EVERY departure — the old comment here
+        //     asserted the trap "ENDS the moment the TRAPPER leaves the field ANY way
+        //     (voluntary switch / Baton Pass / phaze drag)". So after a trapper Baton-Passed
+        //     out (and back), the port re-applied Spider Web / Mean Look and emitted
+        //     `|-activate|<target>|trapped` where the sim emits the did-nothing
+        //     `|move|…||[still]` + `|-fail|<user>` (+ its own `|debug|move failed because it
+        //     did nothing`) — the 24h-fuzz CLUSTER B, 4 repros: fuzz24h_v2 ab_1271_13 /
+        //     ab_387_12 / ab_943_5 and fuzz_r25 ab_533_11.
+        //     (The FAINT path in `process_faints` is unaffected: a fainted trapper runs the
+        //     real clearVolatile, so it still severs.) ---
+        if !bp {
             let departing_uid = self.sides[side].pokemon[self.sides[side].active].uid;
             let foe = 1 - side;
             let foe_active = self.sides[foe].active;
@@ -967,11 +989,22 @@ impl crate::state::BattleState {
         // while `side`'s active is still the departing source); the CLEAR + `-end` run AFTER the
         // `|switch|` emit below. (`side`'s switch does not change the FOE active, so the captured
         // foe_active stays valid.)
+        // ⚠️ The attracted holder must still be ALIVE (`gen3_attract_end_skips_a_corpse_v1`). A
+        // FAINTED mon already ran `clearVolatile()` at faint, which drops `attract` SILENTLY, so
+        // by the time the source is replaced there is nothing left to end and the sim emits
+        // NOTHING. WRONG (pre-fix): on a DOUBLE faint the port emitted a phantom
+        // `|-end|<corpse>|Attract|[silent]` between the two replacement `|switch|` lines — the
+        // 24h-fuzz repro ab_400_21 (Blissey is Cute-Charm-attracted by Delcatty; BOTH then faint
+        // to residual poison in the same end-of-turn, and Delcatty's replacement fires this clear
+        // against the already-fainted Blissey). Keyed on `hp == 0`, not the `fainted` FLAG, to
+        // match the corpse-guard convention used by the Heal Bell team-cure
+        // (`gen3_heal_bell_skips_fainted_v1`) — both mirror Showdown's `!this.hp` early-outs.
         let attract_clear_foe: Option<usize> = {
             let departing_uid = self.sides[side].pokemon[self.sides[side].active].uid;
             let foe = 1 - side;
             let foe_active = self.sides[foe].active;
-            (self.sides[foe].pokemon[foe_active].attract == Some((side, departing_uid)))
+            (self.sides[foe].pokemon[foe_active].hp > 0
+                && self.sides[foe].pokemon[foe_active].attract == Some((side, departing_uid)))
                 .then_some(foe_active)
         };
         // SWAP the team-array entries (the entrant → active position, outgoing →

@@ -29,6 +29,19 @@ pub type PrngSeed = String;
 
 const TWO32: f64 = 4_294_967_296.0; // 2^32
 
+/// `POKESIM_PRNG_TRACE=1` → [`Prng::next`] logs every draw to stderr. Read ONCE per
+/// process (a `OnceLock`), so the per-draw cost when off is a single relaxed load.
+static TRACE_ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+/// Monotonic draw counter for the trace (process-global, matching the sim probe's
+/// per-battle numbering when one battle is replayed per process — which is how
+/// `ab_replay <repro-dir>` runs).
+static TRACE_DRAW_N: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
+
+#[inline]
+fn trace_enabled() -> bool {
+    *TRACE_ON.get_or_init(|| std::env::var("POKESIM_PRNG_TRACE").map(|v| v == "1").unwrap_or(false))
+}
+
 /// Shared low-level RNG interface (`interface RNG` in prng.ts).
 pub(crate) trait RngCore {
     /// A raw 32-bit random number (`next()`).
@@ -74,7 +87,31 @@ impl Prng {
     }
 
     /// Raw 32-bit draw (`rng.next()`).
+    ///
+    /// When `POKESIM_PRNG_TRACE=1` this also prints ONE stderr line per draw:
+    /// `[prng] #<n> -> <value> seed_before=<seed>`. That is the port-side half of the
+    /// draw-divergence workflow whose sim-side half is
+    /// `harness/probe_repro_simtrace.js` (which prints the sim's draws WITH call
+    /// sites) — line up the two by draw index to find the exact draw where a
+    /// `kind=seed` repro desyncs, instead of guessing at the mechanism.
+    ///
+    /// Made PERMANENT (`gen3_prng_trace_env_v1`) because three separate rounds have
+    /// hand-patched this same hook into `next()` and then removed it. COST WHEN OFF:
+    /// one relaxed atomic load of a `OnceLock<bool>` — the env var is read exactly
+    /// once per process, never per draw, so the bridge/training hot path is unaffected.
     pub fn next(&mut self) -> u32 {
+        if trace_enabled() {
+            let before = self.get_seed();
+            let v = self.next_raw();
+            let n = TRACE_DRAW_N.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+            eprintln!("[prng] #{n} -> {v} seed_before={before}");
+            return v;
+        }
+        self.next_raw()
+    }
+
+    #[inline]
+    fn next_raw(&mut self) -> u32 {
         match &mut self.backend {
             Backend::Sodium(r) => r.next_u32(),
             Backend::Gen5(r) => r.next_u32(),
