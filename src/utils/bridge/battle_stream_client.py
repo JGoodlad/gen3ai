@@ -35,6 +35,8 @@ from poke_env.ps_client.account_configuration import AccountConfiguration
 from poke_env.ps_client.ps_client import PSClient
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
+from utils.bridge import bridge_trace
+
 _CHOOSE_PREFIX = "/choose "
 _TEAM_PREFIX = "/team "
 
@@ -107,8 +109,29 @@ class BattleStreamClient(PSClient):
         await self._write_raw(room, f"CHOOSE {self._side} {choice}")
 
     async def _write_raw(self, room: str, command: str) -> None:
+        """Write one command to the room's bridge child, tolerating a child that is already gone.
+
+        A write can legitimately race the child's death: at teardown the session SIGKILLs the
+        child, and any ``|request|`` the reader had already buffered still flows into poke-env,
+        which answers it here. Raising then produces an "Unhandled exception in _handle_message"
+        traceback per env — pure noise that also MASKS real errors in the same log.
+
+        Dropping the write is safe because it is never how a crash is detected: the reader latches
+        stdout EOF into ``BridgeSession._child_crashed`` (and a dispatch failure into
+        ``_child_error``), and the next battle start raises loudly on either. So this stays quiet
+        about a dead child and leaves the diagnosis to the latch that has the real reason.
+        """
         proc = self._procs.get(room)
         if proc is None or proc.stdin is None:
             return
-        proc.stdin.write((command + "\n").encode())
-        await proc.stdin.drain()
+        # The child already exited, or its transport is closing — nothing can consume this.
+        if getattr(proc, "returncode", None) is not None or proc.stdin.is_closing():
+            return
+        try:
+            bridge_trace.out(command)
+            proc.stdin.write((command + "\n").encode())
+            await proc.stdin.drain()
+        except (BrokenPipeError, ConnectionResetError):
+            # The child died between the liveness check and the drain (the same race
+            # ``_teardown`` already swallows for its own END write).
+            return

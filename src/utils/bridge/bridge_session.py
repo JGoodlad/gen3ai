@@ -57,6 +57,7 @@ from typing import Dict, List, Optional
 
 from poke_env.player.player import Player
 
+from utils.bridge import bridge_trace
 from utils.bridge.battle_stream_client import BattleStreamClient
 from utils.bridge.sim_bridge_bin import bridge_spawn_argv
 
@@ -154,6 +155,15 @@ class BridgeSession:
         # Latched by the reader when the child's stdout hits EOF (the child exited) — distinguishes
         # a real crash from an intentional recycle/close cancel, robust to returncode-reap timing.
         self._child_crashed = False
+        # Latched by the reader when DISPATCH itself fails — an ``__ERR__`` frame, or a malformed
+        # line. The child usually survives such a frame (both bridges report-and-continue), so
+        # ``_child_crashed`` alone would stay False while the reader task is dead: no further frame
+        # is ever consumed and the next ``reset()`` waits forever. Latching the reason here turns
+        # that silent hang into the loud crash the no-in-place-recovery rule wants.
+        self._child_error: Optional[str] = None
+        # Set synchronously by ``close()`` so ``_dispatch`` stops feeding poke-env before the
+        # child is killed — otherwise a buffered request gets answered into a dead pipe.
+        self._closing = False
         # _EnvPlayer was built with loop=env._loop; the queues it created live there, so the
         # clients/reader/choice-writes must all run on the same loop.
         self.loop = agent1.ps_client.loop
@@ -283,6 +293,7 @@ class BridgeSession:
         Used on the first battle AND on a clean recycle. The reader captures its OWN event so a
         recycled child's old reader can't spuriously set the new child's event."""
         self._child_crashed = False
+        self._child_error = None
         self._proc = await self._spawn_child()
         self._battle_ended = asyncio.Event()
         self._stderr_buf = []
@@ -319,6 +330,14 @@ class BridgeSession:
                     f"{self._BATTLE_END_TIMEOUT}s) — crashing (no in-place recovery)"
                 )
             self._last_end_wait_s = time.perf_counter() - _t0
+            # A dispatch failure retires the reader while the child stays alive, so check it
+            # BEFORE the liveness test — otherwise the real reason (the __ERR__ text) is lost
+            # behind a generic "exited unexpectedly".
+            if self._child_error is not None:
+                raise RuntimeError(
+                    "bridge child reported an error mid-run — crashing (no in-place recovery): "
+                    f"{self._child_error}"
+                )
             # A child that exited unexpectedly means lost / inconsistent battle state. We do NOT
             # recover in place: resuming risks feeding PPO a corrupted transition, so we CRASH and
             # let the launcher restart from the last checkpoint (the project's crash-over-corruption
@@ -375,7 +394,13 @@ class BridgeSession:
                 if text == "__END__":
                     ended_event.set()
                     continue
-                self._dispatch(text)
+                try:
+                    self._dispatch(text)
+                except Exception as e:
+                    # An ``__ERR__`` frame (or a malformed line) must not silently retire the
+                    # reader — latch it so the next battle's start raises with the reason.
+                    self._child_error = f"{type(e).__name__}: {e}"
+                    break
         finally:
             # Unblock any reset() waiting on this child's end — so a crash surfaces as the explicit
             # raise in _start_persistent_battle, not a 180s wait timeout. (Set _child_crashed FIRST,
@@ -388,6 +413,11 @@ class BridgeSession:
         module docstring. The per-battle lock inside ``_handle_message`` keeps same-battle
         handling ordered, and the two clients are independent, so one side's blocked
         ``_choose_move`` cannot stall reads of the other side's request."""
+        if self._closing:
+            # Teardown in progress: the child is being killed, so feeding this frame would only
+            # make poke-env answer into a dead pipe. Drop it (no state depends on a post-close
+            # frame — the env is going away).
+            return
         if text.startswith("__ERR__"):
             msg = base64.b64decode(text[len("__ERR__ ") :]).decode("utf-8")
             raise RuntimeError(f"local_sim_bridge error: {msg}")
@@ -402,6 +432,7 @@ class BridgeSession:
             return
         side, b64 = text.split(" ", 1)
         chunk = base64.b64decode(b64).decode("utf-8")
+        bridge_trace.inbound(side, chunk)
         client = self.c1 if side == "p1" else self.c2
         framed = self._frame(self._tag, side, chunk)
         asyncio.ensure_future(client.feed(framed))
@@ -453,12 +484,18 @@ class BridgeSession:
         thread — ``proc.kill()`` (which pokes the loop's transport) is not safe to call from here
         and can silently no-op, leaking the Node child. Kill by PID with ``os.kill`` instead: a
         plain OS syscall, thread-agnostic, and SIGKILL needs no reaping handshake."""
+        # Stop DISPATCHING first. Task cancellation is asynchronous (it only schedules on the
+        # loop), so between the kill and the reader actually stopping it can still feed a buffered
+        # ``|request|`` to poke-env, which answers it by writing to the child we just killed —
+        # the "Unhandled exception in _handle_message / ConnectionResetError" teardown noise.
+        # This flag is set SYNCHRONOUSLY, so `_dispatch` goes quiet before the child dies.
+        self._closing = True
+        for task in (self._reader, self._stderr_task):
+            if task is not None and not task.done():
+                self.loop.call_soon_threadsafe(task.cancel)
         proc = self._proc
         if proc is not None and proc.returncode is None:
             try:
                 os.kill(proc.pid, signal.SIGKILL)
             except (ProcessLookupError, OSError):  # pragma: no cover
                 pass
-        for task in (self._reader, self._stderr_task):
-            if task is not None and not task.done():
-                self.loop.call_soon_threadsafe(task.cancel)

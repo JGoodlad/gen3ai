@@ -157,6 +157,12 @@ fn handle_line(
         }
         "CHOOSE" => {
             handle_choose(sess, rest, dex)?;
+            // A FATAL session condition (today: a NAME-form choice that resolves against
+            // nothing) must become a LOUD `__ERR__`, never an endless re-request spin —
+            // `gen3_bridge_unresolvable_choice_failloud_v1`.
+            if let Some(msg) = sess.bridge.as_ref().and_then(|b| b.fatal()) {
+                return Err(msg.to_string());
+            }
             flush_new_chunks(sess, out)?;
             Ok(LineResult::Continue)
         }
@@ -253,19 +259,34 @@ fn handle_choose(sess: &mut Session, rest: &str, dex: &Dex) -> Result<(), String
     Ok(())
 }
 
-/// `FORCELOSE <side>` — the poke-env `/forfeit` path. The port has no `>forcelose`
-/// engine hook (`run_full_battle` plays a scripted battle to its natural end), so this
-/// bridge treats a forfeit as an immediate battle end: it flushes whatever chunks the
-/// accumulated stream produced so far, then emits `__END__` (+ persistent reset). This
-/// keeps the Python side (which only needs the battle to TERMINATE on a forfeit) working
-/// — the forfeiting side simply gets no further protocol.
-fn handle_forcelose(sess: &mut Session, _side: &str, out: &mut impl Write) -> Result<(), String> {
+/// `FORCELOSE <side>` — the poke-env `/forfeit` path. The Node bridge writes `>forcelose
+/// <side>` into the sim, which runs a real `win(otherSide)`: BOTH players receive the
+/// deciding `|` + `|win|<name>` batch, and only then do the streams close. So this must
+/// emit that win batch too, via [`BridgeSession::forfeit`], BEFORE `__END__`.
+///
+/// Emitting a bare `__END__` (what this used to do) is what made the Rust bridge HANG the
+/// trainer: poke-env's `Battle` never sees `|win|`, so `battle.finished` stays False and the
+/// env's next `reset()` waits forever on a result that can never arrive. The training seam
+/// forfeits whenever `reset()` lands mid-battle, so every episode boundary could wedge.
+fn handle_forcelose(sess: &mut Session, side: &str, out: &mut impl Write) -> Result<(), String> {
     if sess.bridge.is_none() || sess.ended {
         return Ok(());
     }
-    // Flush any pending chunks the session already produced, then terminate.
+    let side_idx = match side {
+        "p1" => 0,
+        "p2" => 1,
+        other => return Err(format!("FORCELOSE: bad side {other:?}")),
+    };
+    // Run the forfeit through the live session so the win lines land in its chunk stream,
+    // then flush everything past the cursor (the pending batch AND the win batch). The
+    // forfeit marks the session ended, so the flush emits `__END__` on its own — exactly like
+    // a natural end reached through CHOOSE. Calling `end_battle` again here would emit a
+    // SECOND `__END__`, because a persistent `end_battle` resets the `ended` guard for the
+    // next battle.
+    if let Some(bridge) = sess.bridge.as_mut() {
+        bridge.forfeit(side_idx);
+    }
     flush_new_chunks(sess, out)?;
-    end_battle(sess, out);
     Ok(())
 }
 

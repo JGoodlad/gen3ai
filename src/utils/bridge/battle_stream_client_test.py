@@ -19,19 +19,30 @@ def _run(coro):
 
 
 class _FakeStdin:
-    def __init__(self):
+    """Models the `StreamWriter` surface `_write_raw` uses (incl. `is_closing`)."""
+
+    def __init__(self, closing=False, raise_on_drain=None):
         self.writes = []
+        self._closing = closing
+        self._raise_on_drain = raise_on_drain
 
     def write(self, data: bytes):
         self.writes.append(data)
 
+    def is_closing(self):
+        return self._closing
+
     async def drain(self):
+        if self._raise_on_drain is not None:
+            raise self._raise_on_drain
         return None
 
 
 class _FakeProc:
-    def __init__(self):
-        self.stdin = _FakeStdin()
+    def __init__(self, returncode=None, stdin=None):
+        self.stdin = _FakeStdin() if stdin is None else stdin
+        # asyncio subprocesses expose `returncode is None` while alive.
+        self.returncode = returncode
 
 
 async def _noop_battle_message(_split_messages):
@@ -75,6 +86,38 @@ def test_choose_routes_to_bridge():
     client._procs[tag] = proc
     _run(client.send_message("/choose move 1", tag))
     assert proc.stdin.writes == [b"CHOOSE p1 move 1\n"]
+
+
+def test_write_to_an_exited_child_is_dropped_not_raised():
+    """A choice answered after the child exited must NOT raise into poke-env's handler.
+
+    The teardown race: `close()` kills the child, but a `|request|` the reader already buffered
+    still reaches poke-env, which answers it here. Pre-fix that produced one "Unhandled exception
+    in _handle_message / ConnectionResetError" traceback per env — noise that also masks real
+    errors. A crash is still surfaced loudly, but by `BridgeSession`'s EOF latch, not by this write.
+    """
+    client = _make_client(side="p1")
+    proc = _FakeProc(returncode=0)  # child already exited
+    tag = "battle-gen3ou-9"
+    client._procs[tag] = proc
+    _run(client.send_message("/choose move 1", tag))
+    assert proc.stdin.writes == [], "a write to an exited child must be dropped"
+
+    # Same for a transport that is closing but has not reaped yet.
+    closing = _FakeProc(stdin=_FakeStdin(closing=True))
+    client._procs[tag] = closing
+    _run(client.send_message("/choose move 1", tag))
+    assert closing.stdin.writes == []
+
+
+def test_write_that_races_the_childs_death_swallows_connection_reset():
+    """The child can die BETWEEN the liveness check and the drain — that must not raise either."""
+    client = _make_client(side="p1")
+    proc = _FakeProc(stdin=_FakeStdin(raise_on_drain=ConnectionResetError("Connection lost")))
+    tag = "battle-gen3ou-10"
+    client._procs[tag] = proc
+    _run(client.send_message("/choose move 1", tag))  # must not raise
+    assert proc.stdin.writes == [b"CHOOSE p1 move 1\n"], "the write was attempted, then swallowed"
 
 
 def test_choose_switch_routes_with_side():

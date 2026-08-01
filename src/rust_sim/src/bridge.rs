@@ -177,15 +177,38 @@ pub fn resolve_choice(state: &BattleState, side: usize, choice: &WireChoice) -> 
                 .map(Choice::Move)
         }
         WireChoice::SwitchSpecies(name) => {
+            // Match the NICKNAME first, then the species (`gen3_bridge_switch_nickname_v1`).
+            //
+            // poke-env keys every mon by its ON-FIELD IDENT — `p1a: <nickname>` — and serializes a
+            // switch as `switch <that name>`. For a nicknamed mon that name is NOT the species:
+            // the gen3ou pool ships localized teams like `Airmure (Skarmory)`, so poke-env sends
+            // `switch Airmure`. Matching only `species_id` left that unresolvable, and an
+            // unresolvable choice never commits the boundary — the bridge re-requests, poke-env
+            // re-sends the same name, and the battle makes no progress while the env's `step()`
+            // waits on a message that never comes (a 120s silent stall that killed the whole
+            // training run). This is the CHOICE-RESOLUTION half of `gen3_nickname_ident_v1`,
+            // whose emission half already renders the nickname in every ident.
+            //
+            // Nickname takes precedence: a mon nicknamed after a DIFFERENT species (a legal,
+            // deliberately confusing team) must resolve to the mon actually called that, exactly
+            // as Showdown's `side.chooseSwitch` does (it matches `pokemon.name` first).
             let want = crate::dex::to_id(name);
             let s = &state.sides[side];
-            s.pokemon.iter().enumerate().find_map(|(i, m)| {
-                if i != s.active && !m.fainted && crate::dex::to_id(&m.species_id) == want {
-                    Some(Choice::Switch(i))
-                } else {
-                    None
-                }
-            })
+            let eligible = |i: usize, m: &crate::state::MonState| i != s.active && !m.fainted;
+            s.pokemon
+                .iter()
+                .enumerate()
+                .find_map(|(i, m)| {
+                    (eligible(i, m) && !m.set.name.is_empty()
+                        && crate::dex::to_id(&m.set.name) == want)
+                        .then_some(Choice::Switch(i))
+                })
+                .or_else(|| {
+                    s.pokemon.iter().enumerate().find_map(|(i, m)| {
+                        (eligible(i, m) && crate::dex::to_id(&m.species_id) == want)
+                            .then_some(Choice::Switch(i))
+                    })
+                })
         }
     }
 }
@@ -1143,7 +1166,28 @@ pub struct BridgeSession {
     ended: bool,
     /// An upstream-desync graceful stop (the R20 `!need[s]` case) — no further advance.
     stopped: bool,
+    /// A FATAL, non-recoverable condition the live bridge must report as `__ERR__` rather than
+    /// silently spin on (`gen3_bridge_unresolvable_choice_failloud_v1`). Today: a NAME-form wire
+    /// choice that resolves against nothing, or a boundary that keeps rejecting.
+    fatal: Option<String>,
+    /// Consecutive REJECTS at the CURRENT boundary (reset whenever a decision commits). A reject
+    /// re-issues the same request; if the client re-sends a choice that is rejected the same way,
+    /// nothing advances — see `REJECT_STREAK_CAP`.
+    reject_streak: u32,
 }
+
+/// How many consecutive rejects at ONE boundary before the bridge calls it a no-progress LOOP.
+///
+/// A reject leaves the boundary OPEN and re-issues the request — correct when the client then
+/// picks something else. But an RL policy is DETERMINISTIC given the same request, so if its
+/// action mask disagrees with the port about legality (e.g. the port thinks the active mon is
+/// TRAPPED and the mask does not) it re-sends the SAME switch forever. Measured in a live run:
+/// one child spinning at 46 MB/s of re-requests while its env's `step()` never returned, wedging
+/// the whole vec-env. Real Showdown has the same reject protocol; only the deterministic client
+/// makes it non-terminating, so the BRIDGE must bound it. A handful of rejects is legitimate
+/// (trapped-then-move is a normal two-exchange round), so the cap is generous — it exists to turn
+/// an unbounded spin into a diagnosable error, not to police ordinary rejects.
+const REJECT_STREAK_CAP: u32 = 8;
 
 impl BridgeSession {
     /// Build a session: construct the live battle, emit + chunk the framing, and advance
@@ -1196,6 +1240,8 @@ impl BridgeSession {
             cmd_buf: std::collections::VecDeque::new(),
             ended: false,
             stopped: false,
+            fatal: None,
+            reject_streak: 0,
         };
         sess.advance(dex);
         Ok(sess)
@@ -1215,6 +1261,43 @@ impl BridgeSession {
         self.advance(dex);
     }
 
+    /// Forfeit `side` — the poke-env `/forfeit` → `FORCELOSE <side>` path.
+    ///
+    /// The Node bridge writes `>forcelose <side>` INTO the sim, so Showdown runs a real
+    /// `win(otherSide)`: BOTH players receive the deciding `|` + `|win|<name>` batch before the
+    /// streams close. Emitting only `__END__` (what this used to do) leaves poke-env's `Battle`
+    /// with `finished == False` forever — the env's next `reset()` then waits on a battle result
+    /// that can never arrive, which is a HANG, not an error. The training seam forfeits whenever
+    /// `reset()` lands mid-battle, so that hang is reachable on any episode boundary.
+    ///
+    /// Mirrors the natural-end path exactly (`turn::driver`'s `TurnLoopStop::Ended` arm writes the
+    /// same `separator()` + `win()` pair into the battle log, and `advance` flushes the delta as
+    /// ONE chunk per side) so the wire bytes are byte-for-byte what a real win produces.
+    pub fn forfeit(&mut self, side: usize) {
+        if self.ended {
+            return;
+        }
+        let winner = 1 - side;
+        {
+            let bs = self.battle.state_mut().expect("state");
+            if bs.logging() {
+                bs.log.separator();
+                let name = bs.sides[winner].name.clone();
+                bs.log.win(&name);
+            }
+        }
+        // Flush every log line past the cursor (the win pair, plus any residual the open boundary
+        // had not flushed yet) as ONE chunk per side — the natural-end emission.
+        let (delta, new_len) = {
+            let bs = self.battle.state().expect("state");
+            let lines = bs.log.lines();
+            (lines[self.prev_log_len..].to_vec(), lines.len())
+        };
+        emit_log_batch_chunk(&mut self.chunks, &delta, self.report_percent);
+        self.prev_log_len = new_len;
+        self.ended = true;
+    }
+
     /// All per-side chunks emitted so far (the `sim_bridge` cursor reads `[emitted..]`).
     pub fn chunks(&self) -> &BridgeChunks {
         &self.chunks
@@ -1223,6 +1306,11 @@ impl BridgeSession {
     /// The battle reached game-end.
     pub fn is_ended(&self) -> bool {
         self.ended
+    }
+
+    /// A FATAL condition the caller must surface as `__ERR__` (never spin on). See `fatal`.
+    pub fn fatal(&self) -> Option<&str> {
+        self.fatal.as_deref()
     }
 
     /// The A2 seed-anchor list (parity with the genesis core).
@@ -1312,10 +1400,67 @@ impl BridgeSession {
                     // the recorded game did not have here). Stop gracefully (R20) so the seed
                     // anchor classifies it, instead of crashing.
                     self.stopped = true;
+                    // ...but for the LIVE bridge, "stop gracefully" means EMIT NOTHING, EVER —
+                    // the child keeps accepting CHOOSE lines and never answers, so poke-env waits
+                    // on a battle message that can never arrive and the env's `step()` hangs until
+                    // its 120s watchdog kills the whole run. Record it as FATAL so `sim_bridge`
+                    // reports `__ERR__` (`gen3_bridge_stopped_failloud_v1`). The OFFLINE replay
+                    // harnesses read `stopped`/the streams and ignore `fatal`, so their
+                    // graceful-classification behaviour is unchanged.
+                    let kinds = self.boundary.as_ref().expect("boundary").kinds;
+                    self.fatal = Some(format!(
+                        "upstream desync: CHOOSE for p{} but this boundary does not request it \
+                         (kinds p1={:?} p2={:?}, needs p1={} p2={}). The bridge would go silent \
+                         forever, so this fails loud.",
+                        s + 1,
+                        kinds[0],
+                        kinds[1],
+                        self.boundary.as_ref().expect("boundary").need[0],
+                        self.boundary.as_ref().expect("boundary").need[1],
+                    ));
                     return;
                 }
                 // Resolve the wire token (numeric slot OR a NAME) against THIS boundary's
                 // state, exactly like Showdown's `side.chooseMove`/`chooseSwitch`.
+                //
+                // `gen3_bridge_unresolvable_choice_failloud_v1` — a NAME form that resolves
+                // against NOTHING is FATAL, not a reject. The out-of-range fallback below makes
+                // `choice_is_legal` reject the choice, which leaves the boundary open and
+                // re-issues the SAME request; poke-env then re-sends the SAME unmappable name,
+                // forever — an unbounded bridge↔Python spin that pins a core and floods stdout
+                // (measured: 46 MB/s from one child) while the env's `step()` never returns.
+                // The Struggle wedge was ONE instance of this class; rather than wait for the
+                // next one, report it. A NUMERIC out-of-range choice is DIFFERENT: it is a
+                // legitimate, tested reject-and-re-request (the forced-replacement resume gate
+                // and the 0-PP gate both rely on it), and poke-env re-picks from a fresh request,
+                // so it cannot spin — that path is untouched.
+                if matches!(cmd.choice, WireChoice::MoveName(_) | WireChoice::SwitchSpecies(_)) {
+                    let unresolvable = {
+                        let bs = self.battle.state().expect("state");
+                        resolve_choice(bs, s, &cmd.choice).is_none()
+                    };
+                    if unresolvable {
+                        let bs = self.battle.state().expect("state");
+                        let mon = &bs.sides[s].pokemon[bs.sides[s].active];
+                        self.fatal = Some(format!(
+                            "unresolvable choice for p{}: {:?} — active {} has moves {:?}; bench {:?}. \
+                             Re-requesting would loop forever, so this fails loud.",
+                            s + 1,
+                            cmd.choice,
+                            mon.species_id,
+                            mon.set.moves,
+                            bs.sides[s]
+                                .pokemon
+                                .iter()
+                                .enumerate()
+                                .filter(|(i, m)| *i != bs.sides[s].active && !m.fainted)
+                                .map(|(_, m)| m.species_id.clone())
+                                .collect::<Vec<_>>(),
+                        ));
+                        self.stopped = true;
+                        return;
+                    }
+                }
                 let resolved = {
                     let bs = self.battle.state().expect("state");
                     resolve_choice(bs, s, &cmd.choice).unwrap_or_else(|| match cmd.choice {
@@ -1339,6 +1484,28 @@ impl BridgeSession {
                     (reject, firm)
                 };
                 if reject {
+                    // Bound the reject↔re-request exchange: a deterministic client re-sends the
+                    // same rejected choice forever (`REJECT_STREAK_CAP`).
+                    self.reject_streak += 1;
+                    if self.reject_streak > REJECT_STREAK_CAP {
+                        let bs = self.battle.state().expect("state");
+                        let mon = &bs.sides[s].pokemon[bs.sides[s].active];
+                        self.fatal = Some(format!(
+                            "no-progress reject loop on p{}: {} consecutive rejects of {:?} at one \
+                             boundary (active {}, trapped={}, firm={}, move_locked={}). The client \
+                             keeps re-sending a choice this boundary rejects, so nothing can \
+                             advance — failing loud instead of spinning.",
+                            s + 1,
+                            self.reject_streak,
+                            cmd.choice,
+                            mon.species_id,
+                            bs.is_trapped(s, dex),
+                            firm,
+                            mon.move_locked(),
+                        ));
+                        self.stopped = true;
+                        return;
+                    }
                     if firm {
                         self.chunks.push_chunk(
                             s,
@@ -1359,6 +1526,8 @@ impl BridgeSession {
                     }
                     continue; // side s still needs a choice
                 }
+                // A choice was ACCEPTED — the boundary is making progress, so the streak resets.
+                self.reject_streak = 0;
                 let bp = self.boundary.as_mut().expect("boundary");
                 bp.got[s] = Some(resolved);
                 bp.need[s] = false;
@@ -1808,6 +1977,134 @@ mod tests {
             "Struggle must have EXECUTED (its gen-3 recoil `[from] Recoil` line must appear), \
              not merely been announced"
         );
+    }
+
+    /// `gen3_bridge_switch_nickname_v1` — `switch <NICKNAME>` must resolve.
+    ///
+    /// poke-env keys mons by their on-field ident (`p1a: <nickname>`) and serializes a switch as
+    /// `switch <that name>`. The gen3ou pool ships localized teams — `Airmure (Skarmory)` — so it
+    /// really does send `switch Airmure`. Matching only `species_id` made that unresolvable, and
+    /// an unresolvable choice never commits the boundary: the battle stopped progressing and the
+    /// env's `step()` hung until its 120s watchdog killed the run. This is the choice-resolution
+    /// half of `gen3_nickname_ident_v1` (whose emission half was already fixed).
+    #[test]
+    fn switch_by_nickname_resolves_like_showdown_chooseswitch() {
+        let dex = Dex::for_gen(3);
+        // p1's bench mon is NICKNAMED (the packed form is `NICK|species|...`).
+        let p1 = "Rattata||||splash|Serious||M||||]Airmure|skarmory||keeneye|spikes|Impish||M||||";
+        let p2 = "Rattata||||splash|Serious||F||||";
+        let opts = bridge_opts("gen3customgame", "44317,42357,9927,48760".to_string(), p1, p2);
+        let sess = BridgeSession::new(&opts, &dex).expect("session");
+        let st = sess.battle.state().expect("state");
+
+        assert_eq!(
+            resolve_choice(st, 0, &WireChoice::SwitchSpecies("Airmure".to_string())),
+            Some(Choice::Switch(1)),
+            "the NICKNAME is what poke-env sends — pre-fix this returned None, the boundary never \
+             committed, and the battle silently stopped progressing"
+        );
+        // The SPECIES form must keep working (poke-env sends it for un-nicknamed mons).
+        assert_eq!(
+            resolve_choice(st, 0, &WireChoice::SwitchSpecies("Skarmory".to_string())),
+            Some(Choice::Switch(1)),
+            "the species form must still resolve"
+        );
+        // A name matching nothing is still unresolvable (the fail-loud guard's input).
+        assert_eq!(
+            resolve_choice(st, 0, &WireChoice::SwitchSpecies("Blissey".to_string())),
+            None,
+            "an unknown name must stay unresolvable so the fail-loud guard reports it"
+        );
+    }
+
+    /// `gen3_bridge_unresolvable_choice_failloud_v1` — an unmappable NAME choice must FAIL LOUD,
+    /// not spin.
+    ///
+    /// The out-of-range fallback makes `choice_is_legal` reject the choice, leaving the boundary
+    /// OPEN and re-issuing the SAME request. For a NUMERIC slot that is a legitimate, tested
+    /// reject (poke-env re-picks). For a NAME form it is a GUARANTEED infinite loop: poke-env
+    /// re-sends the same unmappable name against the same state, forever. Measured in a live
+    /// training run: one bridge child emitting 46 MB/s of re-requests while the env's `step()`
+    /// never returned, wedging the whole vec-env. The Struggle wedge was one instance of this
+    /// class; this makes the CLASS loud instead of waiting for the next member.
+    #[test]
+    fn an_unresolvable_name_choice_is_fatal_not_an_endless_re_request() {
+        let dex = Dex::for_gen(3);
+        let p1 = "Rattata||||splash|Serious||M||||";
+        let p2 = "Rattata||||splash|Serious||F||||";
+        let opts = bridge_opts("gen3customgame", "44317,42357,9927,48760".to_string(), p1, p2);
+        let mut sess = BridgeSession::new(&opts, &dex).expect("session");
+        assert!(sess.fatal().is_none(), "a fresh session is not fatal");
+
+        // A move the active mon does not have (and which is not Struggle / a locked pseudo-move).
+        sess.feed_cmd(
+            Cmd { side: 0, choice: WireChoice::MoveName("thunderbolt".to_string()) },
+            &dex,
+        );
+        let msg = sess.fatal().expect(
+            "an unmappable NAME choice must be FATAL — pre-fix it fell through to the \
+             out-of-range reject and the bridge re-requested forever",
+        );
+        assert!(
+            msg.contains("unresolvable choice") && msg.contains("thunderbolt"),
+            "the error must name the offending wire token so the cause is diagnosable: {msg}"
+        );
+
+        // A NUMERIC out-of-range choice keeps the LEGITIMATE reject-and-re-request path (the
+        // forced-replacement resume + 0-PP gates depend on it) — it must NOT become fatal.
+        let mut ok = BridgeSession::new(&opts, &dex).expect("session");
+        ok.feed_cmd(Cmd { side: 0, choice: WireChoice::Move(9) }, &dex);
+        assert!(
+            ok.fatal().is_none(),
+            "a numeric out-of-range slot is a normal reject, not a fatal condition"
+        );
+    }
+
+    /// `gen3_bridge_forfeit_win_v1` — a FORFEIT must emit the deciding `|win|` to BOTH sides.
+    ///
+    /// The Node bridge writes `>forcelose <side>` into the sim, so Showdown runs a real
+    /// `win(otherSide)` and both players receive `|` + `|win|<name>` before the streams close.
+    /// The Rust bridge used to emit a bare `__END__` with NO win line, which left poke-env's
+    /// `Battle.finished` False forever: the training seam forfeits whenever `reset()` lands
+    /// mid-battle, so the env's next `reset()` waited on a result that could never arrive — a
+    /// silent HANG that wedged every multi-episode run (`bridge_session_fuzz_test.py --impl rust`
+    /// stalled on its first forfeit-reset).
+    ///
+    /// Pins the OBSERVABLE bytes, not just the ended flag: p1 forfeits, so BOTH sides must see
+    /// `|win|` naming p2's player. Reverting `BridgeSession::forfeit` (or the `sim_bridge`
+    /// FORCELOSE wiring) drops the win lines and fails here.
+    #[test]
+    fn a_forfeit_emits_the_win_line_to_both_sides_not_a_bare_end() {
+        let dex = Dex::for_gen(3);
+        let p1 = "Rattata||||splash|Serious||M||||";
+        let p2 = "Rattata||||splash|Serious||F||||";
+        let opts = bridge_opts("gen3customgame", "44317,42357,9927,48760".to_string(), p1, p2);
+        let mut sess = BridgeSession::new(&opts, &dex).expect("session");
+        // Play one ordinary turn so the forfeit lands MID-battle (the reset()-mid-episode shape),
+        // not on a fresh board.
+        sess.feed_cmd(Cmd { side: 0, choice: WireChoice::Move(0) }, &dex);
+        sess.feed_cmd(Cmd { side: 1, choice: WireChoice::Move(0) }, &dex);
+        assert!(!sess.is_ended(), "setup: a Splash mirror must still be live");
+
+        sess.forfeit(0); // p1 forfeits → p2 wins
+        assert!(sess.is_ended(), "a forfeit must END the session");
+
+        // The win batch must reach BOTH sides — poke-env marks a battle finished per side.
+        for side in 0..2 {
+            let lines: Vec<String> = sess
+                .chunks()
+                .side_chunks(side)
+                .flat_map(|c| c.lines.iter().cloned())
+                .collect();
+            assert!(
+                lines.iter().any(|l| l == "|win|P2"),
+                "side p{} must receive `|win|P2` on a p1 forfeit — pre-fix the bridge emitted a \
+                 bare __END__ with no win line, so poke-env never marked the battle finished and \
+                 the next reset() hung. got: {:?}",
+                side + 1,
+                lines
+            );
+        }
     }
 
     /// `gen3_bridge_struggle_resolve_v1` — the SHORT forced-Struggle trigger (the named case):

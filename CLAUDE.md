@@ -330,6 +330,20 @@ construction window in the bridge, so a seeded rust battle is byte-for-byte with
 `src/utils/bridge/README.md`. Transport parity (poke-env sends move-ids/species names, e.g.
 `move hiddenpowerice`) is guarded by `src/utils/bridge/bridge_impl_parity_test.py`.
 
+**`rust` is FASTER than node, and its child is ~25× smaller** (`bridge_impl_throughput_benchmark.py`,
+a same-invocation A/B of N parallel env workers on an idle 16-core box): at 8 workers **1.18×**
+(1852 → 2182 steps/s), at the production `--n-envs 48` **1.41×** (1942 → 2729 steps/s), with the
+bridge child at **9 MB RSS vs node's ~224 MB** — so the children cost ~0.4 GB under rust vs ~10.7 GB
+under node at `n_envs=48`. (An older note recording node 798 vs rust 427 fps at 8 envs was measured
+on a CPU-saturated box and is superseded.) **`gen3_bridge_forfeit_win_v1` (2026-07-31) was the
+blocker that made rust unusable for training**: `FORCELOSE` emitted a bare `__END__` with no `|win|`
+line, so poke-env never marked the battle finished and the next `reset()` hung forever. Since the
+training seam forfeits whenever `reset()` lands mid-battle, every episode boundary could wedge —
+the multi-env soaks logged finished episodes yet completed ZERO PPO iterations. Fixed in
+`BridgeSession::forfeit`; the durable gate is `bridge_session_fuzz_test.py --impl rust` (its
+every-9th-episode forfeit-reset is the reproducer, and `--impl` exists because that fuzz previously
+only ever tested node — the coverage hole that let this ship).
+
 It reuses the *entire* obs/reward/mask/wrapper stack unchanged:
 
 - **Training** — `attach_bridge_transport` (`src/utils/bridge/bridge_session.py`) swaps the two

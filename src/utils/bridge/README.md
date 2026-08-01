@@ -76,9 +76,34 @@ node) if cargo/crate/binary is unavailable.
   the diff harness skipped speed ties; both are gone.) Gated by
   `src/rust_sim/tests/turn0_construction_test.rs` + `harness/gen_sim_bridge_diff.js`.
 
+**Forfeit parity (`gen3_bridge_forfeit_win_v1`) — was the training-wedge bug.** A `FORCELOSE
+<side>` must end the battle the way Node does: Node writes `>forcelose` INTO the sim, so Showdown
+runs a real `win(otherSide)` and BOTH players receive `|` + `|win|<name>` before `__END__`. The
+Rust bridge used to emit a bare `__END__` with no win line, which left poke-env's `Battle.finished`
+False forever — the env's next `reset()` then waited on a result that could never arrive. Because
+the training seam forfeits whenever `reset()` lands mid-battle, *every* episode boundary could
+wedge, which is what stalled the multi-env `--use-bridge=rust` runs (they logged episodes but
+never completed a single PPO iteration). Fixed by `BridgeSession::forfeit`; pinned by
+`src/rust_sim/src/bridge.rs::a_forfeit_emits_the_win_line_to_both_sides_not_a_bare_end` and gated
+end-to-end by `bridge_session_fuzz_test.py --impl rust` (whose every-9th-episode forfeit-reset is
+the reproducer).
+
 The move-name/switch-species transport parity (poke-env serializes choices by move-id + species
 name, e.g. `move hiddenpowerice` / `switch Salamence` — not slot numbers) is exercised by
 `bridge_impl_parity_test.py` (rust integration smoke + rust-vs-node win-rate parity at `seed=None`).
+
+**Throughput (`bridge_impl_throughput_benchmark.py`, 16-core box, idle):** rust is FASTER than
+node at every scale measured, and its child is an order of magnitude smaller:
+
+| workers | node | rust | rust/node | node RSS/child | rust RSS/child |
+|---|---|---|---|---|---|
+| 8  | 1852 steps/s | 2182 steps/s | **1.18×** | 225 MB | 9 MB |
+| 48 (production `--n-envs`) | 1942 steps/s | 2729 steps/s | **1.41×** | 223 MB | 9 MB |
+
+The ~25× smaller child is the bigger operational win: at `--n-envs 48` the bridge children cost
+~10.7 GB under node vs ~0.4 GB under rust. (An older note recording node 798 vs rust 427 fps at 8
+envs was taken on a CPU-saturated box and is superseded — trust the ratio from a same-invocation
+A/B on an idle machine.)
 
 ### Single-turn damage oracle (`damage_probe.js`) — exact ground truth, no poke-env
 

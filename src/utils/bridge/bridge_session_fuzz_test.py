@@ -25,6 +25,12 @@ in-process bridge, **no server** — never touches the :8001 training server.
     python src/utils/bridge/bridge_session_fuzz_test.py 30m --workers 64   # 64 concurrent children
     python src/utils/bridge/bridge_session_fuzz_test.py 500 --spawn        # spawn-per-battle mode
     python src/utils/bridge/bridge_session_fuzz_test.py 30m --slow-ms 3000 # report episodes > 3s
+    python src/utils/bridge/bridge_session_fuzz_test.py 2000 --impl rust   # the Rust sim_bridge
+    python src/utils/bridge/bridge_session_fuzz_test.py 30m --impl rust --workers 48
+
+``--impl`` picks the bridge child binary (``node`` default, ``rust`` for the pokesim
+``sim_bridge``). Both must pass: this is the ONLY gate on the persistent-child reuse and
+forfeit-reset paths, which the protocol-level diff harness (spawn-per-battle) never exercises.
 """
 
 from __future__ import annotations
@@ -57,13 +63,13 @@ def _teams():
     return loader.get_sample_teams() or loader.get_all_teams()
 
 
-def _build(teams, idx: int, persistent: bool):
+def _build(teams, idx: int, persistent: bool, impl: str = "node"):
     env = Gen3Env(
         load_mappings(), battle_format="gen3ou", team=Gen3Teambuilder(teams),
         account_configuration1=AccountConfiguration(f"Fuzz{idx}", None),
         start_listening=False,
     )
-    attach_bridge_transport(env, battle_format="gen3ou", persistent=persistent)
+    attach_bridge_transport(env, battle_format="gen3ou", persistent=persistent, impl=impl)
     opponent = RandomPlayer(
         battle_format="gen3ou", team=Gen3Teambuilder(teams),
         account_configuration=AccountConfiguration(f"FuzzOpp{idx}", None),
@@ -169,11 +175,11 @@ def _fmt_slow(idx_prefix, ep, stats):
             f"{stats['slowest_step_ms']:.0f}ms @ {stats['slowest_step_idx']} | turns {stats['turns']}")
 
 
-def _run_single(idx, mode, budget, persistent, slow_ms, seed, prefix=""):
+def _run_single(idx, mode, budget, persistent, slow_ms, seed, prefix="", impl="node"):
     """One env's soak loop. Returns a summary dict; raises on any invariant failure."""
     teams = _teams()
     rng = np.random.default_rng(seed)
-    w = _build(teams, idx=idx, persistent=persistent)
+    w = _build(teams, idx=idx, persistent=persistent, impl=impl)
     expected_dim = w.env.observation_encoder.dimension
 
     start = time.perf_counter()
@@ -236,10 +242,10 @@ def _run_single(idx, mode, budget, persistent, slow_ms, seed, prefix=""):
     }
 
 
-def _worker_entry(idx, mode, budget, persistent, slow_ms, seed):
+def _worker_entry(idx, mode, budget, persistent, slow_ms, seed, impl="node"):
     prefix = f"[w{idx:02d}] "
     try:
-        s = _run_single(idx, mode, budget, persistent, slow_ms, seed, prefix=prefix)
+        s = _run_single(idx, mode, budget, persistent, slow_ms, seed, prefix=prefix, impl=impl)
         sl = s["slowest"]
         print(f"{prefix}✅ {s['episodes']} eps ({s['finished']} fin, {s['early']} early), "
               f"slowest_ep {sl.get('total_ms', 0):.0f}ms (end_wait {sl.get('end_wait_ms', 0):.0f}ms, "
@@ -260,14 +266,20 @@ def main():
     workers = 1
     if "--workers" in sys.argv:
         workers = int(sys.argv[sys.argv.index("--workers") + 1])
+    # The bridge child binary under test. This fuzz only ever exercised `node`, which is exactly
+    # how the Rust bridge reached a training run with its persistent-child / forfeit-reset path
+    # ungated — `--impl rust` closes that hole.
+    impl = "node"
+    if "--impl" in sys.argv:
+        impl = sys.argv[sys.argv.index("--impl") + 1]
     mode, budget = _parse_budget(sys.argv[1:])
-    label = "persistent" if persistent else "spawn-per-battle"
+    label = f"persistent, {impl}" if persistent else f"spawn-per-battle, {impl}"
     desc = f"{budget/60:.0f} min" if mode == "time" else f"{int(budget)} episodes"
 
     if workers <= 1:
         print(f"[fuzz] bridge env ({label}) — {desc}, 1 env, slow>{slow_ms:.0f}ms", flush=True)
         try:
-            s = _run_single(1, mode, budget, persistent, slow_ms, seed=0)
+            s = _run_single(1, mode, budget, persistent, slow_ms, seed=0, impl=impl)
         except Exception as e:
             print(f"\n❌ FUZZ FAILED: {type(e).__name__}: {e}", flush=True)
             raise
@@ -287,7 +299,7 @@ def main():
     procs = []
     for i in range(workers):
         p = ctx.Process(target=_worker_entry,
-                        args=(i, mode, budget, persistent, slow_ms, i + 1))
+                        args=(i, mode, budget, persistent, slow_ms, i + 1, impl))
         p.start()
         procs.append(p)
         # Stagger starts so N simultaneous spawn-imports (torch/agents/...) don't thundering-herd.
