@@ -1282,13 +1282,19 @@ class MoveBelief(torch.nn.Module):
             logits = logits + self.move_prior_logits[opp_species_ids]            # posterior = prior ⊕ delta
             if opp_move_ids is not None:
                 # REVEALED moves are certain → pin to a high logit (sigmoid ≈ 1). id 0 = unknown sentinel.
-                revealed = torch.zeros_like(logits, dtype=torch.bool)            # [B, 6, M]
+                # BRANCHLESS + SYNC-FREE: the old form did `if bool(valid.any())` then `valid.nonzero()`
+                # — TWO host syncs per call, and `move_logits` runs once per refine round + once in
+                # `forward` (3×/forward in the production config), stalling the pipeline on the critical
+                # path. `scatter_` writes the same mask with no host round-trip. Exactly equivalent: a
+                # VALID slot scatters True at its id (always ≥1, since `id > 0` is the validity test); an
+                # INVALID slot scatters False at the clamped index 0, which no valid slot can occupy — so
+                # the two never collide and the resulting mask is identical, including the all-invalid
+                # case (an all-False `revealed` makes the `where` a no-op, exactly like the old skip).
                 valid = opp_move_ids > 0                                         # [B, 6, 4]
-                if bool(valid.any()):
-                    bb, ss, _ = valid.nonzero(as_tuple=True)
-                    ids = opp_move_ids[valid].clamp(0, logits.shape[-1] - 1)     # defensive index clamp
-                    revealed[bb, ss, ids] = True
-                    logits = torch.where(revealed, logits.new_full((), _REVEAL_LOGIT), logits)
+                ids = opp_move_ids.clamp(0, logits.shape[-1] - 1)                # defensive index clamp
+                revealed = torch.zeros_like(logits, dtype=torch.bool)            # [B, 6, M]
+                revealed.scatter_(-1, ids, valid)
+                logits = torch.where(revealed, _REVEAL_LOGIT, logits)
         return logits
 
     def forward(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor,
@@ -1771,6 +1777,24 @@ class DamageOperator(torch.nn.Module):
         # status-landing's ability-immunity fold (non-persistent — pure constant).
         self.register_buffer("_SEC_CAT_IDX", torch.tensor(_SECONDARY_TO_STATUS_CAT, dtype=torch.long),
                              persistent=False)
+        # PADDED SPARSE INDEX for the two opp-active belief×flag maxes in `forward` (`p_effect` / `p_sec`).
+        # Both are `max_m (w_m · table_mk)` over ALL ~400 candidate moves, but the tables are extremely
+        # sparse (≤21 of 400 nonzero rows per effect column, ≤19 per secondary column), so the dense form
+        # materialised a [B,400,6] / [B,400,10] tensor to produce 6 / 10 numbers. Gathering only the
+        # nonzero rows is EXACT — `w ≥ 0` (sigmoid) and `MOVE_ACCURACY ≥ 0`, so every dropped term is a
+        # product with table value 0, which can never be the max unless the column is entirely zero, and
+        # the pad lane (a zeroed value slot) reproduces exactly that 0. Same op count, ~19× less traffic.
+        for _name, _table in (("EFF", self.MOVE_EFFECT_FLAGS), ("SEC", self.MOVE_SECONDARY)):
+            _cols = _table.shape[1]
+            _width = max(1, int((_table > 0).sum(dim=0).max().item()))
+            _idx = torch.zeros(_cols, _width, dtype=torch.long)
+            _val = torch.zeros(_cols, _width, dtype=_table.dtype)
+            for _k in range(_cols):
+                _rows = (_table[:, _k] > 0).nonzero(as_tuple=True)[0]
+                _idx[_k, :_rows.numel()] = _rows
+                _val[_k, :_rows.numel()] = _table[_rows, _k]
+            self.register_buffer(f"_{_name}_IDX", _idx, persistent=False)      # [cols, width]
+            self.register_buffer(f"_{_name}_VAL", _val, persistent=False)      # [cols, width] (0 = pad)
         # OUTGOING direction (our active → opp active, per-move action-aligned): off by default. When on,
         # the op ALSO emits the _DMG_OUTGOING block (widens out_dim → both projections auto-size).
         self.outgoing = outgoing
@@ -1968,7 +1992,10 @@ class DamageOperator(torch.nn.Module):
         damage as a fraction of MAX HP (gen3 crit ignores screens → ×2 the PRE-screen damage; clamped,
         "damage IF it lands"), and the accuracy-discounted P(KO this turn) vs CURRENT HP (``acc·P(KO|hit)``,
         the exact realized KO probability — accuracy and the roll are independent events)."""
-        dmg = dmg_ns * screen                                            # post-screen max-roll
+        # `screen=None` means "no screen multiplier" — skips a full-tensor multiply by an all-ones
+        # tensor (the coarse refine path allocated one every round). `x * 1.0 == x` exactly in IEEE-754
+        # for every finite value, so the two forms are bit-identical.
+        dmg = dmg_ns if screen is None else dmg_ns * screen               # post-screen max-roll
         inv = 1.0 / (maxhp + eps)
         high = (dmg * inv).clamp(max=_DMG_CHIP_CAP)
         low = (_DMG_ROLL_MIN * dmg * inv).clamp(max=_DMG_CHIP_CAP)
@@ -2043,23 +2070,38 @@ class DamageOperator(torch.nn.Module):
         damage IF it lands), and the **accuracy-discounted** modal no-crit P(KO) vs CURRENT HP
         (``acc · P(KO|hit)`` — so an inaccurate move reads a lower KO-this-turn risk). Pure /
         differentiable (no learned params) — the shared physics every direction reuses."""
-        eff = self.CHART[t1d][..., mty_all] * self.CHART[t2d][..., mty_all]                     # [B,n,C]
+        # EFFECTIVENESS is folded in TYPE space (19 wide) BEFORE the candidate gather. The chart and
+        # ability multipliers are per (defender, TYPE), so gathering each to the ~400-wide candidate
+        # axis and multiplying THERE redid the same arithmetic C/19 ≈ 21× over. Multiplying the three
+        # [B,n,19] tables first and gathering ONCE is BIT-IDENTICAL (same three factors, same
+        # association order; a gather is exact) and drops 2 of 3 full-width gathers + 2 [B,n,C] muls.
         # Defender ABILITY immunity/resist (Levitate 0× Ground, Flash Fire 0× Fire, Thick Fat 0.5×
-        # Fire/Ice): gathered by the defender's ability and folded into the effectiveness product.
-        amul = self.ABILITY_DAMAGE_MULT[ability1]                                               # [B,n,19]
-        eff = eff * amul[..., mty_all]                                                          # [B,n,C]
-        A = phys_all * atk[:, None] + (1.0 - phys_all) * spa[:, None]                           # [B,C]
-        D = phys_all[None, None, :] * def_stat[:, :, None] \
-            + (1.0 - phys_all)[None, None, :] * spd_stat[:, :, None]                            # [B,n,C]
+        # Fire/Ice) rides the same fold.
+        eff19 = self.CHART[t1d] * self.CHART[t2d] * self.ABILITY_DAMAGE_MULT[ability1]           # [B,n,19]
+        eff = eff19[..., mty_all]                                                               # [B,n,C]
+        # ATTACK / DEFENCE selection by category. `phys·x + (1−phys)·y` over the candidate axis is a
+        # GATHER wearing a multiply's clothes — `phys_all` is exactly 0/1, so the blend only ever
+        # returns one of two values (and `1·x + 0·y == x` exactly in IEEE-754 for finite stats).
+        # Indexing a 2-wide stack instead is value-identical AND moves the DIVISION off the candidate
+        # axis: the reciprocal is taken on [B,n,2] and gathered, rather than ~400 divides per
+        # (batch, defender). The reciprocal-then-multiply is the one FP-ordering change here.
+        pidx = (phys_all > 0.5).long()                                                          # [C] 1=phys
+        A = torch.stack((spa, atk), dim=-1)[:, pidx]                                            # [B,C]
+        inv_d = (1.0 / (torch.stack((spd_stat, def_stat), dim=-1) + eps))[..., pidx]            # [B,n,C]
         is_stab = ((mty_all[None, :] == at1[:, None]) | (mty_all[None, :] == at2[:, None])).float()  # [B,C]
         stab = 1.0 + 0.5 * is_stab                                                              # [B,C]
-        core = 42.0 * bp_all[None, None, :] * A[:, None, :] / (D + eps) / 50.0 + 2.0            # [B,n,C]
-        dmg_ns = core * stab[:, None, :] * eff * 0.925                                          # [B,n,C] pre-screen
-        dmg_ns = dmg_ns * (bp_all > 0).float()[None, None, :]            # kill the +2 floor on BP-0 moves
-        dmg_ns = dmg_ns * weather_mult[:, None, :]      # gen3_unified_op_physics_v1: rain/sun BP modifier [B,1,C]
         # DEFENDER-side screens: Reflect halves physical incoming, Light Screen halves special.
         # gen3 CRIT IGNORES screens, so the crit roll below uses the pre-screen damage (dmg_ns).
         screen = 1.0 - 0.5 * (reflect * phys_all[None, :] + light_screen * (1.0 - phys_all[None, :]))
+        # Every remaining per-candidate factor (STAB, the BP-0 gate, weather, the 0.925 constant) is
+        # per (batch, candidate) — folding them into the [B,n,C] tensor ONE AT A TIME cost four
+        # full-width multiplies where one does. Combine on the cheap [B,C] axis, apply once. The `/50`
+        # and the 42 likewise fold into a [B,C] numerator, removing a second full-width division.
+        bp_gate = (bp_all > 0).float()                                  # [C]; reused by the CB tail
+        pre = stab * bp_gate[None, :] * weather_mult * 0.925            # [B,C] (weather: rain/sun BP)
+        eff_pre = eff * pre[:, None, :]                                 # [B,n,C] shared by both cores
+        core = ((42.0 / 50.0) * bp_all * A)[:, None, :] * inv_d + 2.0   # [B,n,C]
+        dmg_ns = core * eff_pre                                         # [B,n,C] pre-screen
         # Final 3 rolls + accuracy-folded P(KO) via the shared formula (DRY — same as the outgoing block).
         high, low, crit, ko = self._rolls(dmg_ns, screen[:, None, :], maxhp[:, :, None], cur_hp[:, :, None],
                                           acc_all[None, None, :], eps)
@@ -2072,14 +2114,13 @@ class DamageOperator(torch.nn.Module):
         # consistent with the outgoing block which scales our_atk). Special candidates unchanged. Only `high_cb`
         # / `ko_cb` are used (the op aggregates the PHYSICAL channel); the fixed-damage override below is
         # applied to them too (fixed damage is CB-independent → reads identically).
-        A_cb = A + 0.5 * phys_all * atk[:, None]                                        # [B,C] physical Atk ×1.5
+        A_cb = torch.stack((spa, atk + 0.5 * atk), dim=-1)[:, pidx]                     # [B,C] physical Atk ×1.5
         # Only `high_cb` + `ko_cb` are aggregated (the special channel is CB-invariant), so compute them
         # INLINE rather than via _rolls — skips the unused low/crit rolls (~2×[B,n,C] of activations the
         # grad-checkpoint backward recompute would otherwise double; matters at batch 16384). `dmg_cb` folds
         # the defender screen in (post-screen), matching _rolls' high/ko exactly.
-        dmg_cb = (42.0 * bp_all[None, None, :] * A_cb[:, None, :] / (D + eps) / 50.0 + 2.0) \
-            * stab[:, None, :] * eff * 0.925 * (bp_all > 0).float()[None, None, :] \
-            * weather_mult[:, None, :] * screen[:, None, :]                             # [B,n,C] post-screen
+        dmg_cb = (((42.0 / 50.0) * bp_all * A_cb)[:, None, :] * inv_d + 2.0) \
+            * eff_pre * screen[:, None, :]                              # [B,n,C] post-screen (reuses eff_pre)
         inv_cb = 1.0 / (maxhp[:, :, None] + eps)
         high_cb = (dmg_cb * inv_cb).clamp(max=_DMG_CHIP_CAP)
         ko_cb = acc_all[None, None, :] * torch.clamp(
@@ -2703,8 +2744,23 @@ class DamageOperator(torch.nn.Module):
         return torch.cat([header.reshape(B, K * _DMG_IMX_HEADER),
                           cell.reshape(B, TEAM_SIZE * K * _DMG_IMX_CELL)], dim=1)
 
+    def refine_candidates(self, ctx: 'ExtractorContext',
+                          move_belief_logits: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """The SHARED candidate selection for the between-layers refine kernels → `(topk_idx, w_topk)`.
+
+        `discrete_incoming` and `discrete_incoming_status` are called from the same refine round with the
+        SAME `move_belief_logits` object, so each was independently rebuilding an identical `[B, n_moves]`
+        sigmoid + typed-HP scatter and an identical top-K — 4 redundant candidate builds and 2 redundant
+        top-Ks per forward in the production config. Hoisting it here lets the caller compute once and
+        pass the result to both (they still fall back to computing it when called standalone)."""
+        w_all = self._opp_candidate_weights(ctx, move_belief_logits)                     # [B, n_moves]
+        K = min(_DMG_REFINE_K, w_all.shape[1])
+        topk_idx = w_all.detach().topk(K, dim=-1).indices                                # [B,K] (DETACHED)
+        return topk_idx, w_all.gather(-1, topk_idx)                                      # → belief gradient
+
     def discrete_incoming(self, ctx: 'ExtractorContext',
-                          move_belief_logits: torch.Tensor) -> torch.Tensor:
+                          move_belief_logits: torch.Tensor,
+                          cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> torch.Tensor:
         """gen3_iterative_damage_v1: a LEAN per-our-mon incoming-threat summary for the ITERATIVE refinement
         (recomputed BETWEEN transformer layers, fed `move_belief_logits` re-read from the MID-transformer opp
         tokens). For the opp active's top-`_DMG_REFINE_K` most-believed candidate moves (the ~50×-cheaper
@@ -2747,16 +2803,15 @@ class DamageOperator(torch.nn.Module):
         # --- Belief at the opp active → w [B, n_moves] (same source as forward; the lean refine passes no
         # learned posterior → the prior FLOOR resolves the typed-HP belief, scattered onto 355-370; the bare
         # 237 is masked — gen3_opp_hp_typed_candidates_v1) ---
-        w_all = self._opp_candidate_weights(ctx, move_belief_logits)                     # [B, n_moves]
         # --- Candidate axis attributes: C = n_moves (the typed HP 355-370 carry real BP/type; no append) ---
         bp_all = self.MOVE_BP                                                            # [n_moves]
         mty_all = self.MOVE_TYPE_IDX                                                     # [n_moves]
         phys_all = self.MOVE_PHYS                                                        # [n_moves]
         acc_all = self.MOVE_ACCURACY                                                     # [n_moves]
-        # --- SELECT the top-K most-believed candidates (selection DETACHED; gathered values differentiable) ---
-        K = min(_DMG_REFINE_K, w_all.shape[1])
-        topk_idx = w_all.detach().topk(K, dim=-1).indices                                # [B,K]
-        w_topk = w_all.gather(-1, topk_idx)                                              # [B,K] → belief grad
+        # --- SELECT the top-K most-believed candidates (selection DETACHED; gathered values differentiable).
+        # Reused from the caller when the sibling status kernel already built it (`refine_candidates`). ---
+        topk_idx, w_topk = cand if cand is not None else self.refine_candidates(ctx, move_belief_logits)
+        K = topk_idx.shape[1]
         bp_k = bp_all[topk_idx]                                                          # [B,K]
         mty_k = mty_all[topk_idx]                                                        # [B,K] (long, TypeEncoder)
         phys_k = phys_all[topk_idx]                                                      # [B,K]
@@ -2883,8 +2938,9 @@ class DamageOperator(torch.nn.Module):
         core = 42.0 * bp[:, None, :] * A[:, None, :] / (D + eps) / 50.0 + 2.0     # [B,6,4]
         dmg_ns = core * stab[:, None, :] * eff * 0.925                            # [B,6,4]
         dmg_ns = dmg_ns * (bp > 0).float()[:, None, :]                            # kill the +2 floor on BP-0
-        screen = torch.ones(B, 1, 4, device=device)                              # coarse: no screens
-        high, _low, _crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, :, None],
+        # coarse: no screens ⇒ pass None instead of allocating a [B,1,4] all-ones tensor and multiplying
+        # the whole damage tensor by 1.0 (bit-identical; see `_rolls`).
+        high, _low, _crit, ko = self._rolls(dmg_ns, None, opp_maxhp[:, :, None],
                                             opp_cur_hp[:, :, None], acc[:, None, :], eps)  # each [B,6,4]
         # --- per (defender, channel) best-over-our-moves of the usable rolls ---
         um = usable[:, None, :]                                                   # [B,1,4]
@@ -2902,7 +2958,8 @@ class DamageOperator(torch.nn.Module):
         return feats * alive_gate[:, :, None] * gate[:, None, None]               # gates
 
     def discrete_incoming_status(self, ctx: 'ExtractorContext',
-                                 move_belief_logits: torch.Tensor) -> torch.Tensor:
+                                 move_belief_logits: torch.Tensor,
+                                 cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> torch.Tensor:
         """gen3_status_trunk_v1 (INCOMING): per OUR mon, the belief-weighted `[P(major status lands),
         P(immobilizing status lands = para/frz/slp)]` from the opp active's top-`_DMG_REFINE_K` believed
         DEDICATED status moves (Thunder Wave / Toxic / Will-O-Wisp / Spore / Leech Seed). The "will I get
@@ -2919,10 +2976,9 @@ class DamageOperator(torch.nn.Module):
         # candidate selection — the SAME detached top-K over the move belief as discrete_incoming. C =
         # n_moves: the typed HP nums 355-370 are ordinary candidates (the belief scattered onto them, bare
         # 237 masked) and carry NO status (all-zero in these buffers, verified) — gen3_opp_hp_typed_candidates_v1.
-        w_all = self._opp_candidate_weights(ctx, move_belief_logits)                      # [B, n_moves]
-        K = min(_DMG_REFINE_K, w_all.shape[1])
-        topk_idx = w_all.detach().topk(K, dim=-1).indices                                 # [B,K]
-        w_topk = w_all.gather(-1, topk_idx)                                               # [B,K] → belief grad
+        # Shared with `discrete_incoming` for the same round when the caller passes it (`refine_candidates`).
+        topk_idx, w_topk = cand if cand is not None else self.refine_candidates(ctx, move_belief_logits)
+        K = topk_idx.shape[1]
         inflicts = self.MOVE_INFLICTS_STATUS[topk_idx]                                    # [B,K]
         acc = self.MOVE_ACCURACY[topk_idx]                                                # [B,K]
         sidx = self.MOVE_STATUS_CAT[topk_idx]                                             # [B,K]
@@ -3121,10 +3177,17 @@ class DamageOperator(torch.nn.Module):
         wb = w_all[:, None, :]                                           # [B,1,C] (belief, broadcast over defenders)
         phys_mask = phys_all[None, None, :]
         spec_mask = 1.0 - phys_mask
-        phys_low, spec_low = self._chan_max(wb * low_frac, phys_mask), self._chan_max(wb * low_frac, spec_mask)
-        phys_high, spec_high = self._chan_max(wb * high_frac, phys_mask), self._chan_max(wb * high_frac, spec_mask)
-        phys_crit, spec_crit = self._chan_max(wb * crit_frac, phys_mask), self._chan_max(wb * crit_frac, spec_mask)
-        phys_pko, spec_pko = self._chan_max(wb * ko_ramp, phys_mask), self._chan_max(wb * ko_ramp, spec_mask)
+        # Hoist the belief-weighted rolls ONCE. Each `wb * <roll>` was previously computed TWICE (once
+        # per channel on its own line) and `wb * high_frac` a THIRD time below as `wf` — 5 redundant
+        # [B,6,C] multiplies per forward. Keeping the per-channel MASKED tensors additionally lets
+        # `_chan_acc` reuse the exact tensor its channel max was taken from. Same operands, same order,
+        # same masks ⇒ bit-identical.
+        wl, wh, wc, wk = wb * low_frac, wb * high_frac, wb * crit_frac, wb * ko_ramp   # [B,6,C] each
+        wh_p, wh_s = wh * phys_mask, wh * spec_mask
+        phys_low, spec_low = (wl * phys_mask).amax(dim=-1), (wl * spec_mask).amax(dim=-1)
+        phys_high, spec_high = wh_p.amax(dim=-1), wh_s.amax(dim=-1)
+        phys_crit, spec_crit = (wc * phys_mask).amax(dim=-1), (wc * spec_mask).amax(dim=-1)
+        phys_pko, spec_pko = (wk * phys_mask).amax(dim=-1), (wk * spec_mask).amax(dim=-1)
         # gen3_unified_choice_band_v1: the CB-CONDITIONAL physical tail — the PHYSICAL-channel high-roll +
         # P(OHKO) computed with the opp Atk ×1.5. Same hard-max aggregation over the believed candidates;
         # special channel is CB-invariant so only the physical max is exposed (paired with p_cb below).
@@ -3135,20 +3198,21 @@ class DamageOperator(torch.nn.Module):
         # so {pko, accuracy} parameterize that threat's full outcome distribution. provenance is the dominant
         # move's belief weight (1.0 ≈ a REVEALED/pinned move, <1.0 = a usage-prior GUESS). argmax detached;
         # the gathered (acc fixed-buffer / belief weight) values carry the right gradient.
-        wf = wb * high_frac                                                                      # [B,6,C]
         acc_exp = acc_all[None, None, :].expand(B, TEAM_SIZE, -1)                                # [B,6,C]
 
-        def _chan_acc(channel_mask):
-            wfc = wf * channel_mask                                                              # off-channel→0
+        # `wfc` is the SAME masked tensor whose amax already produced this channel's `phys_high`/
+        # `spec_high` above, so both are passed in rather than recomputed (the old form rebuilt the
+        # product AND re-ran the amax per channel).
+        def _chan_acc(wfc, chan_max):
             dom = wfc.argmax(dim=-1, keepdim=True)                                               # [B,6,1]
             acc = torch.gather(acc_exp, -1, dom).squeeze(-1)                                     # [B,6]
-            return torch.where(wfc.amax(dim=-1) > eps, acc, torch.zeros_like(acc))               # 0 if no threat
-        phys_acc = _chan_acc(phys_mask)
-        spec_acc = _chan_acc(spec_mask)
+            return torch.where(chan_max > eps, acc, torch.zeros_like(acc))                       # 0 if no threat
+        phys_acc = _chan_acc(wh_p, phys_high)
+        spec_acc = _chan_acc(wh_s, spec_high)
 
-        dom_idx = wf.argmax(dim=-1, keepdim=True)                                                # [B,6,1] (overall)
+        dom_idx = wh.argmax(dim=-1, keepdim=True)                                                # [B,6,1] (overall)
         provenance = torch.gather(w_all[:, None, :].expand(-1, TEAM_SIZE, -1), -1, dom_idx).squeeze(-1)
-        provenance = torch.where(wf.amax(dim=-1) > eps, provenance, torch.zeros_like(provenance))
+        provenance = torch.where(wh.amax(dim=-1) > eps, provenance, torch.zeros_like(provenance))
         # P(outspeed): our mon's REAL speed vs the opp active's fast-tail speed (252/+nat) — a per-mon
         # point estimate (paralysis/boosts not modelled in v1). Logistic over the stat difference.
         our_spe = (2.0 * d_base[..., 5] + iv[..., 5] + ev[..., 5] / 4.0 + 5.0) * nat[..., 4]     # [B,6]
@@ -3178,8 +3242,11 @@ class DamageOperator(torch.nn.Module):
         # max the chip/pko channels use. (A full-axis noisy-OR over ~400 moves saturated to ~1 from the floor
         # alone — the candidate-count dilution `_chan_max` exists to avoid.) [recovery, status, phaze, boost,
         # hazard, protect]; over the num moves only (HP is damaging → flags 0).
-        w_eff = w[:, :, None] * self.MOVE_EFFECT_FLAGS[None, :, :]       # [B, M, K]
-        p_effect = w_eff.amax(dim=1) * has_opp[:, None]                 # [B, K], gated
+        # SPARSE form (see the _EFF_IDX/_EFF_VAL buffers): the dense `w[:,:,None] * FLAGS[None]` built a
+        # [B, 400, 6] tensor to reduce to [B,6]. Only ≤21 of 400 moves carry any effect flag, so gather
+        # those rows instead — exact (w ≥ 0, flags ∈ {0,1}, pad lanes contribute 0).
+        w_eff = w[:, self._EFF_IDX] * self._EFF_VAL[None, :, :]          # [B, K, width]
+        p_effect = w_eff.amax(dim=-1) * has_opp[:, None]                # [B, K], gated
 
         # gen3_unified_move_system_v1: per-STATUS secondary threat from the opp active's DAMAGING moves
         # (Body Slam para, Rock Slide flinch, Ice Beam freeze — the axis the binary `status` flag missed).
@@ -3188,9 +3255,12 @@ class DamageOperator(torch.nn.Module):
         # Cannon's 100% para × 50% acc → 0.5). NO speed coupling — flinch's move-first dependence is left
         # to attention (owner decision). Order == damage_tables.SECONDARY_COLS. (Defender Shield Dust is a
         # rare v2 follow-up — the effect block is opp-active-level, not per-defender.)
-        w_sec = (w * self.MOVE_ACCURACY[None, :])[:, :, None] * self.MOVE_SECONDARY[None, :, :]  # [B,M,10]
+        # SPARSE form, as for p_effect above: [B,400,10] → [B,10,width≤19]. `w·acc` is formed first (the
+        # same product the dense line made), then only the rows with a nonzero chance are gathered.
+        w_acc = w * self.MOVE_ACCURACY[None, :]                                                  # [B, M]
+        w_sec = w_acc[:, self._SEC_IDX] * self._SEC_VAL[None, :, :]                              # [B,10,width]
         opp_serene = self.ABILITY_SECONDARY_MULT[ctx.ability1_ids[ar, opp_act]]                  # [B]
-        p_sec = (w_sec.amax(dim=1) * opp_serene[:, None]).clamp(max=1.0) * has_opp[:, None]      # [B,10]
+        p_sec = (w_sec.amax(dim=-1) * opp_serene[:, None]).clamp(max=1.0) * has_opp[:, None]     # [B,10]
 
         # gen3_unified_choice_band_v1: P(opp active holds Choice Band), collapsed to 0/1 once its item is
         # revealed (item_id==CB → 1; any OTHER revealed item → 0; unrevealed id==0 → the species usage prior).
@@ -4338,14 +4408,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 opp_tokens = tokens[:, TEAM_SIZE:2 * TEAM_SIZE, :]            # current (mid-transformer) opp
                 logits = self.move_belief.move_logits(opp_tokens, _opp_species_ids, _opp_move_ids)  # [B,6,M]
                 # --- INCOMING residuals onto OUR tokens: damage (always) + status (v37, if on) ---
-                inc = self.damage_op.discrete_incoming(ctx, logits)          # [B,6,4] lean per-our-mon threat
+                # ONE candidate build per round, shared by the damage + status kernels (both select the
+                # SAME detached top-K over the SAME `logits`; they used to rebuild it independently).
+                cand = self.damage_op.refine_candidates(ctx, logits)
+                inc = self.damage_op.discrete_incoming(ctx, logits, cand)    # [B,6,4] lean per-our-mon threat
                 if self.last_refine_rounds is not None:                      # prober-only capture (axis A)
                     self.last_refine_rounds.append((layer_idx, logits.detach(), inc.detach()))
                 refined_our = tokens[:, 0:TEAM_SIZE, :] + self.refine_proj(inc)   # residual (0 at init)
                 if self.status_in_proj is not None:
                     # gen3_status_trunk_v1: "will I get statused" — one belief read feeds damage + status.
                     refined_our = refined_our + self.status_in_proj(
-                        self.damage_op.discrete_incoming_status(ctx, logits))
+                        self.damage_op.discrete_incoming_status(ctx, logits, cand))
                 # --- OUTGOING residuals onto OPP tokens: damage (#1/#2, if on) + status (v37, if on) ---
                 refined_opp = opp_tokens
                 if self.outgoing_proj is not None:
