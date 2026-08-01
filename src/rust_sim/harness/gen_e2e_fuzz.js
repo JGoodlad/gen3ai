@@ -1027,6 +1027,17 @@ const NOOP_ABILITIES = new Set([
 // team outright. `castform` is the only holder; keyed by species too as belt-and-suspenders.
 const REJECT_ABILITIES = new Set(['forecast']);
 const REJECT_SPECIES = new Set(['castform']);
+// The MOVE analogue (`gen3_transform_failloud_v1`): TRANSFORM is DEFERRED / UNMODELED and
+// now FAIL-LOUD in `MonState::from_set`, so a team CARRYING it must never reach the port —
+// even though `isModeledMove` already prevents the PICKER from choosing it. That distinction
+// is exactly how this escaped: the offline fuzzers never picked Transform, but the LIVE
+// bridge path (`gen_sim_bridge_diff.js`) drives choices off the sim's own request, so a
+// randbats Ditto whose only move IS Transform reached it — node emitted
+// `|-transform|p1a: Ditto|p2a: Kyogre` while the rust bridge emitted nothing (repro
+// `soak_randbats/divergences/sbd_msapcesj_b22`). Keyed by MOVE, not species: gen3 Ditto is
+// the usual carrier but Mew/Smeargle can learn it. NOTE this cannot shift the e2e golden —
+// ZERO of the 722 `data/teams/` pool teams carry Transform (or Ditto), verified by grep.
+const REJECT_MOVES = new Set(['transform']);
 function abilityAllowed(id) {
   const a = toId(id);
   if (REJECT_ABILITIES.has(a)) return false; // deferred / fail-loud → never admitted
@@ -1119,6 +1130,9 @@ function teamFilterClean(packed) {
   for (const set of team) {
     const sid = toId(set.species || set.name);
     if (REJECT_SPECIES.has(sid)) return { ok: false, why: `ability:forecast` };
+    for (const mv of (set.moves || [])) {
+      if (REJECT_MOVES.has(toId(mv))) return { ok: false, why: `move:${toId(mv)}` };
+    }
     if (!abilityAllowed(set.ability)) return { ok: false, why: `ability:${toId(set.ability)}` };
     if (!itemAllowed(set.item)) return { ok: false, why: `item:${toId(set.item)}` };
   }
@@ -1768,7 +1782,7 @@ module.exports = {
   runBattle, emitBattle, winTok, encodeChoice,
   isModeledMove, isHiddenPower,
   abilityAllowed, itemAllowed, teamFilterClean, loadTeams, classifyTeamsGaps,
-  MODELED_ABILITIES, NOOP_ABILITIES, REJECT_ABILITIES, REJECT_SPECIES, MODELED_ITEMS,
+  MODELED_ABILITIES, NOOP_ABILITIES, REJECT_ABILITIES, REJECT_SPECIES, REJECT_MOVES, MODELED_ITEMS,
   MODELED_STATUS_MOVES, MODELED_SETUP_MOVES, MODELED_RECOVERY_MOVES,
   MODELED_PROTECT_MOVES, MODELED_HAZARD_MOVES, MODELED_PHAZE_MOVES,
   MODELED_LEECH_MOVES, MODELED_FIXED_DAMAGE_MOVES, MODELED_SUBSTITUTE_MOVES,

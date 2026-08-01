@@ -65,7 +65,7 @@ const e2e = require('./gen_e2e_fuzz.js');
 const {
   runBattle, emitBattle, isModeledMove, abilityAllowed, itemAllowed,
   teamFilterClean, loadTeams, mulberry32, randInt, seedFrom, toId, dex3,
-  REJECT_ABILITIES, REJECT_SPECIES,
+  REJECT_ABILITIES, REJECT_SPECIES, REJECT_MOVES,
 } = e2e;
 
 const PS = path.resolve(__dirname, '../../../deps/pokemon-showdown');
@@ -155,6 +155,14 @@ function adaptRandbatsTeam(team) {
     // path below): the reject wins even for a hand-hacked non-Forecast Castform, and
     // even if `forecast` were ever mistakenly added to a modeled/no-op set. Tallies
     // as `ability:forecast` in `drop_reasons`.
+    // TRANSFORM (`gen3_transform_failloud_v1`) is DEFERRED / UNMODELED and now FAIL-LOUD at
+    // construction, so a carrier team must be rejection-sampled here rather than reaching the
+    // port — the same treatment Forecast gets. It is NOT ability-substitutable (the move IS the
+    // set), so the whole team is rejected; tallied separately in `drop_reasons` so the rate is
+    // visible. gen3 randbats Ditto is the usual carrier.
+    for (const mv of (set.moves || [])) {
+      if (REJECT_MOVES.has(toId(mv))) return { reject: `move:${toId(mv)}` };
+    }
     if (REJECT_ABILITIES.has(toId(set.ability)) || REJECT_SPECIES.has(sid)) {
       return { reject: `ability:forecast` };
     }

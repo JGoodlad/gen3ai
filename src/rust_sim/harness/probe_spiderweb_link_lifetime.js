@@ -151,4 +151,22 @@ async function run(label, plan) {
     { p1: 'move roar', p2: 'move splash' },
     { p1: 'move spiderweb', p2: 'move splash' },
   ]);
+
+  // E — THE ORPHANED-LINK QUESTION (the `sbd_msapcesj_b35` shape). After the trapper BATON
+  // PASSES out, `trapper` is `noCopy` so the ENTRANT does NOT inherit it — the target is left
+  // trapped with a DANGLING link (case C). What happens when that ENTRANT then switches out
+  // NORMALLY? Two readings:
+  //   (i)  nothing — the entrant holds no `trapper`, so its clearVolatile severs nothing and
+  //        the target stays trapped FOREVER (until it faints);
+  //   (ii) the target's own `trapped` is reaped some other way and the trap ENDS.
+  // The repro says the SIM reports the target as NOT trapped several switches after the BP,
+  // while the port still says `"trapped":true` — so (ii) is what the sim does, and the port's
+  // model (i) is wrong. This case pins WHICH switch ends it, which is what the fix must key on.
+  await run('E trapper BATON-PASSES, then the ENTRANT normal-switches out', [
+    { p1: 'move spiderweb', p2: 'move splash' },   // trap Azumarill
+    { p1: 'move batonpass', p2: 'move splash' },   // Ariados BP...
+    { p1: 'switch 2' },                            // ...to Smeargle (entrant, no `trapper`)
+    { p1: 'switch 3', p2: 'move splash' },         // Smeargle NORMAL-switches to Sudowoodo
+    { p1: 'move splash', p2: 'move splash' },
+  ]);
 })();

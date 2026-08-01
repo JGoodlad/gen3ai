@@ -972,12 +972,39 @@ impl crate::state::BattleState {
         //     ab_387_12 / ab_943_5 and fuzz_r25 ab_533_11.
         //     (The FAINT path in `process_faints` is unaffected: a fainted trapper runs the
         //     real clearVolatile, so it still severs.) ---
-        if !bp {
+        //     ⚠️⚠️ **CORRECTION (`gen3_trap_link_baton_pass_transfers_v1`) — the `!bp` SKIP above
+        //     was HALF-RIGHT and is superseded by the RE-POINT below.** Skipping the clear keeps
+        //     the trap alive across the Baton Pass (correct) but never hands the "who severs it"
+        //     role to anyone, so the port's trap then persisted FOREVER — the foe could never
+        //     switch again and its every later request carried a spurious `"trapped":true`. That
+        //     is externally visible (poke-env would stop offering switches to the policy) and
+        //     DRAW-FREE, so no seed/omniscient gate can see it; the external-consistency gate
+        //     `gen_sim_bridge_diff.js` caught it (repro
+        //     `sim_bridge_diff_out/soak_randbats/divergences/sbd_msapcesj_b35` — an Ariados that
+        //     Spider-Webs then Baton-Passes; node drops `trapped`, the port keeps it).
+        //
+        //     PROBE-SETTLED (`probe_spiderweb_link_lifetime.js` case E, the sim is the oracle):
+        //       spiderweb            → target trapped        true
+        //       trapper BATON-PASSES → trap SURVIVES         true   (case C)
+        //       the ENTRANT then NORMAL-switches out → trap BREAKS  **false**
+        //     ⇒ a Baton Pass does not CANCEL the severing, it DEFERS it to the entrant. So the
+        //     link's source end must FOLLOW the pass. The port models the link as the target's
+        //     `trapped_by: Option<uid>` pointing at the TRAPPER, so "following the pass" is a
+        //     RE-POINT to the ENTRANT's uid — after which the ordinary `!bp` clear below fires
+        //     naturally on the entrant's own next switch-out, with no extra state.
+        //     (The entrant is still at the `target` index here — the array swap happens below.)
+        {
             let departing_uid = self.sides[side].pokemon[self.sides[side].active].uid;
             let foe = 1 - side;
             let foe_active = self.sides[foe].active;
             if self.sides[foe].pokemon[foe_active].trapped_by == Some(departing_uid) {
-                self.sides[foe].pokemon[foe_active].trapped_by = None;
+                if bp {
+                    // BATON PASS — hand the trapper role to the entrant (pre-swap index).
+                    let entrant_uid = self.sides[side].pokemon[target].uid;
+                    self.sides[foe].pokemon[foe_active].trapped_by = Some(entrant_uid);
+                } else {
+                    self.sides[foe].pokemon[foe_active].trapped_by = None;
+                }
             }
         }
         // ATTRACT source-left clear (`attract.onUpdate`, `gen3_ability_batch4_v1`): when the

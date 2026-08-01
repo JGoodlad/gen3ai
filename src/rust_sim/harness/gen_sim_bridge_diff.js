@@ -34,8 +34,30 @@
 //        [--trap-prob P]                          (default 0.5)
 //        [--out DIR]                              (default harness/sim_bridge_diff_out/)
 //        [--verbose]
+//        [--selftest]                             (allowlist gate-integrity assertions, then exit)
 //
-// Exit 0 = all battles byte-identical (per-side); 1 = a divergence (repro saved).
+// THE GREEN GATE (`gen3_simbridge_diff_allowlist_v1`). Exit 0 = no NON-allowlisted
+// divergence; 1 = a real divergence (repro saved under `<out>/divergences/`). A documented
+// request-DISPLAY residual is counted SEPARATELY, filed under `<out>/allowlisted/`, and does
+// NOT fail the run — without this the gate is unusable (a 10-battle randbats smoke reported
+// 8/10 "diverged", ALL of them the same `return102` alias). The allowlist RECONCILES then
+// compares the FULL lines, so any residual byte difference still FAILS; `--selftest` pins
+// that property (10 cases, incl. the load-bearing negatives: a different move, an alias PLUS
+// a pp difference, and a LEVEL/GENDER *value* divergence).
+//
+// ⚠️ WHY THIS HARNESS IS THE STRONGEST GATE WE HAVE — it is the EXTERNAL-CONSISTENCY test.
+// `ab_replay` replays a FIXED recorded decision list, so it must assume both engines segment
+// decisions identically; when they don't it reports a `kind=seed` artifact and cannot tell
+// segmentation from a real legality bug. This harness DISCOVERS boundaries live (it reads a
+// request, then chooses), so that artifact CANNOT occur by construction, and a genuine extra
+// request shows up as an unambiguous request-frame mismatch. It also compares what poke-env
+// ACTUALLY consumes — the per-side stream AND the `|request|` JSON (requests are per-side
+// frames, so the byte diff covers them) — rather than the omniscient log poke-env never sees.
+//
+// THROUGHPUT: ~600 battles/hr with `--persistent`, ~80/hr without (each battle otherwise
+// respawns a Node child that reloads the whole Showdown dist). ~96% of wall time is the
+// per-write quiescence settle, not CPU (`user` ≈ 2s per 60s wall) — so ALWAYS use
+// `--persistent` for a soak, and the settle is the lever if more speed is needed.
 
 'use strict';
 
@@ -76,6 +98,7 @@ function parseFlags(argv) {
     else if (a === '--out') f.out = path.resolve(next());
     else if (a === '--verbose') f.verbose = true;
     else if (a === '--extra-trappers') f.extraTrappers = true; // Magnet Pull + Shadow Tag (seed-gap)
+    else if (a === '--selftest') f.selftest = true;   // allowlist gate-integrity assertions
     else { console.error(`unknown flag ${a}`); process.exit(2); }
   }
   if (!['trapping', 'randbats', 'random', 'pool'].includes(f.mode)) {
@@ -398,6 +421,113 @@ function classify(exp, got) {
   return 'perside';
 }
 
+// ── KNOWN-RESIDUAL ALLOWLIST (`gen3_simbridge_diff_allowlist_v1`) ───────────────
+// The GREEN-GATE discipline this harness was missing: a documented request-DISPLAY
+// residual is counted SEPARATELY (and its repro filed under `allowlisted/`) instead of
+// failing the run, while ANY un-cataloged byte difference still fails. Without this the
+// gate is unusable — a 10-battle randbats smoke reported 8/10 "diverged", ALL of them the
+// same `return102` alias.
+//
+// The keys mirror `src/bin/bridge_replay.rs::classify_known_perside_residual` EXACTLY, so
+// the two harnesses agree on what is benign (they gate the same `|request|` serializer):
+//
+//   * `return102-numeric-alias` — Showdown renders the numeric-BP alias INCONSISTENTLY
+//     (roster `return102`, active `id` bare `return`, active display `Return 102` WITH a
+//     space); the port normalizes to the bare form. poke-env resolves both to the same move.
+//   * `curse-nonghost-target-self-vs-normal` — a non-Ghost Curse's runtime-effective target
+//     is `self` (`nonGhostTarget`) while the static dex says `normal`.
+//   * `gender-level-details-construction-draw` — a `, L<n>` / `, <gender>` suffix in a
+//     `details` field (inactive on pinned-gender L100 pools; kept for randbats/random).
+//
+// SAFETY (the load-bearing property, same as bridge_replay): this RECONCILES then compares
+// the FULL lines — the pair is allowlisted ONLY IF the two are byte-EQUAL after applying the
+// documented transforms. A co-occurring pair is allowed as a UNION, but ANY residual
+// difference leaves them unequal → returns null → the divergence FAILS the gate. So this can
+// never swallow a real bug that merely happens to share a line with a known form.
+const ALLOWLIST_TRANSFORMS = [
+  // Collapse every alias form to the bare token, in BOTH directions, so the inconsistent
+  // sim rendering (roster vs active id vs display) normalizes the same way on both sides.
+  { key: 'return102-numeric-alias', apply: (s) => s
+      .replace(/return102/g, 'return').replace(/frustration102/g, 'frustration')
+      .replace(/"Return 102"/g, '"Return"').replace(/"Frustration 102"/g, '"Frustration"') },
+  // The non-Ghost Curse target.
+  { key: 'curse-nonghost-target-self-vs-normal', apply: (s) => s
+      .replace(/("id":"curse","pp":\d+,"maxpp":\d+,"target":)"normal"/g, '$1"self"') },
+  // NOTE — the `gender-level-details-construction-draw` key from bridge_replay is
+  // DELIBERATELY NOT PORTED as a blanket strip. Removing a `, L<n>` / `, <gender>` suffix
+  // from BOTH sides would reconcile a genuine VALUE divergence (node `L84` vs rust `L83`,
+  // or M vs F) into a false pass — the exact way an allowlist turns a gate VACUOUS. The
+  // other two keys are safe because they map an ALIAS to a CANONICAL form: a real value
+  // difference (`return` vs `tackle`) still fails to reconcile. If a genuine
+  // presence-vs-absence details residual ever shows up here, implement it PAIRWISE (strip
+  // only from the side that HAS the suffix when the other LACKS it) — never symmetrically.
+];
+
+// Returns the matching reason key(s) joined by '+', or null if the pair is NOT fully
+// reconciled by the documented transforms (⇒ a genuine divergence).
+function classifyKnownResidual(exp, got) {
+  if (exp === got) return null;                       // not a divergence at all
+  if (!exp.startsWith('|request|') || !got.startsWith('|request|')) return null;
+  const used = [];
+  let a = exp, b = got;
+  for (const t of ALLOWLIST_TRANSFORMS) {
+    const a2 = t.apply(a), b2 = t.apply(b);
+    if (a2 !== a || b2 !== b) used.push(t.key);
+    a = a2; b = b2;
+  }
+  // FULL reconciliation required — any residual byte difference fails the gate.
+  return a === b && used.length ? used.join('+') : null;
+}
+
+// ── ALLOWLIST GATE-INTEGRITY SELF-TEST (`node gen_sim_bridge_diff.js --selftest`) ──
+// The project standard for any allowlist: PROVE it cannot swallow a real bug (the rust
+// side ships `a1_allowlist_tests` / `perside_construction_mirror_flip_tests` for exactly
+// this). Every NEGATIVE case below is load-bearing — it asserts a genuine difference is
+// still REPORTED. Run it after touching ALLOWLIST_TRANSFORMS.
+function selftest() {
+  const REQ = (moves, extra = '') =>
+    `|request|{"active":[{"moves":${JSON.stringify(moves)}}]${extra},"side":{"name":"P1"}}`;
+  let fail = 0;
+  const check = (label, got, want) => {
+    const ok = want === null ? got === null : got === want;
+    if (!ok) { fail++; console.error(`  FAIL ${label}: got ${JSON.stringify(got)} want ${JSON.stringify(want)}`); }
+    else console.error(`  ok   ${label}`);
+  };
+
+  // POSITIVE — the documented alias, in each of the three renderings the sim uses.
+  check('roster alias reconciles',
+    classifyKnownResidual(REQ(['return102']), REQ(['return'])), 'return102-numeric-alias');
+  check('display alias reconciles',
+    classifyKnownResidual(REQ([{ move: 'Return 102', id: 'return' }]), REQ([{ move: 'Return', id: 'return' }])),
+    'return102-numeric-alias');
+  check('frustration alias reconciles',
+    classifyKnownResidual(REQ(['frustration102']), REQ(['frustration'])), 'return102-numeric-alias');
+
+  // NEGATIVE — a genuine difference must NOT be allowlisted.
+  check('a DIFFERENT move is not allowlisted',
+    classifyKnownResidual(REQ(['return102']), REQ(['tackle'])), null);
+  check('an alias PLUS a residual pp difference is not allowlisted',
+    classifyKnownResidual(REQ([{ move: 'Return 102', id: 'return', pp: 32 }]),
+                          REQ([{ move: 'Return', id: 'return', pp: 31 }])), null);
+  // The one that killed the symmetric details strip: a LEVEL/GENDER VALUE divergence.
+  check('a LEVEL value difference is not allowlisted',
+    classifyKnownResidual(REQ(['return102'], ',"details":"Ninetales, L84, M"'),
+                          REQ(['return'], ',"details":"Ninetales, L83, M"')), null);
+  check('a GENDER value difference is not allowlisted',
+    classifyKnownResidual(REQ(['return102'], ',"details":"Ninetales, L84, M"'),
+                          REQ(['return'], ',"details":"Ninetales, L84, F"')), null);
+  check('a missing move is not allowlisted',
+    classifyKnownResidual(REQ(['return102', 'surf']), REQ(['return'])), null);
+  // Non-request lines and equal lines are never allowlisted.
+  check('a non-request line is never allowlisted',
+    classifyKnownResidual('|-damage|p1a: X|100/200', '|-damage|p1a: X|99/200'), null);
+  check('identical lines yield null',
+    classifyKnownResidual(REQ(['return']), REQ(['return'])), null);
+
+  console.error(fail ? `\n[selftest] ${fail} FAILURE(S)` : '\n[selftest] all allowlist gate-integrity cases pass');
+  process.exit(fail ? 1 : 0);
+}
+
 // ── The trapping team provider (inlined from bridge_ab_fuzz.js) ─────────────────
 // CORE = ARENA TRAP only. Its `onFoe` trap handler adds ZERO PRNG draws (1 handler per
 // event → no tie-shuffle), so the sim's turn-0 CONSTRUCTION window is just the Quick Claw
@@ -512,6 +642,7 @@ function buildPairProvider(flags, teamRng, genStats) {
 
 // ── Main ────────────────────────────────────────────────────────────────────────
 async function main() {
+  if (parseFlags(process.argv).selftest) return selftest();
   const flags = parseFlags(process.argv);
   const runId = `sbd_${Date.now().toString(36)}`;
   fs.mkdirSync(path.join(flags.out, 'divergences'), { recursive: true });
@@ -540,7 +671,8 @@ async function main() {
   const genStats = { setsTotal: 0, setsAdjusted: 0, naturesNormalized: 0, teamsKept: 0, teamsRejected: 0, genErrors: 0, rejectReasons: new Map() };
   const pairProvider = buildPairProvider(flags, teamRng, genStats);
 
-  const cov = { battles: 0, ok: 0, diverged: 0, err: 0, ended: 0, trapped: 0, forceSwitch: 0, persistentBattles: 0, kinds: new Map() };
+  const cov = { battles: 0, ok: 0, diverged: 0, err: 0, ended: 0, trapped: 0, forceSwitch: 0, persistentBattles: 0, kinds: new Map(),
+    allowlisted: 0, allowReasons: new Map(), startedAt: Date.now(), elapsedMs: 0 };
 
   // Persistent mode: ONE child pair reused across ALL battles (the multi-battle-per-child path).
   let sharedNode = null, sharedRust = null;
@@ -607,32 +739,52 @@ async function main() {
     if (!div) {
       cov.ok++;
     } else {
-      cov.diverged++;
-      cov.kinds.set(div.kind, (cov.kinds.get(div.kind) || 0) + 1);
-      const dir = saveRepro(flags, runId, bi, pair, startJson, result, div, chooseSeed);
-      console.error(`[DIVERGED] battle ${bi} side=${div.side} chunk=${div.chunk} line=${div.line} kind=${div.kind}\n` +
-        `  expected: ${JSON.stringify(div.expected)}\n  got:      ${JSON.stringify(div.got)}\n  detail: ${div.detail || ''}\n  repro → ${dir}`);
+      // GREEN GATE: a documented request-DISPLAY residual is counted separately (repro filed
+      // under `allowlisted/`) and does NOT fail the run; anything un-cataloged still does.
+      const reason = classifyKnownResidual(div.expected, div.got);
+      if (reason) {
+        cov.allowlisted++;
+        cov.allowReasons.set(reason, (cov.allowReasons.get(reason) || 0) + 1);
+        saveRepro(flags, runId, bi, pair, startJson, result, div, chooseSeed, 'allowlisted');
+      } else {
+        cov.diverged++;
+        cov.kinds.set(div.kind, (cov.kinds.get(div.kind) || 0) + 1);
+        const dir = saveRepro(flags, runId, bi, pair, startJson, result, div, chooseSeed);
+        console.error(`[DIVERGED] battle ${bi} side=${div.side} chunk=${div.chunk} line=${div.line} kind=${div.kind}\n` +
+          `  expected: ${JSON.stringify(div.expected)}\n  got:      ${JSON.stringify(div.got)}\n  detail: ${div.detail || ''}\n  repro → ${dir}`);
+      }
     }
 
     if (!flags.persistent) { node.kill(); rust.kill(); }
   }
   if (flags.persistent) { sharedNode.kill(); sharedRust.kill(); }
 
+  cov.elapsedMs = Date.now() - cov.startedAt;
   const kindsStr = [...cov.kinds.entries()].map(([k, c]) => `${k}=${c}`).join(',') || '-';
+  const allowObj = Object.fromEntries(cov.allowReasons);
   console.error('\n[sim_bridge_diff] SUMMARY');
   console.error(JSON.stringify({
     run_id: runId, mode: flags.mode, format: flags.format, master_seed: flags.masterSeed,
     battles: cov.battles, ok: cov.ok, diverged: cov.diverged, errored: cov.err,
+    allowlisted: cov.allowlisted, allowlisted_by_reason: allowObj,
     skipped_lead_speed_tie: cov.skipped || 0,
     ended_battles: cov.ended, trapped_true_frames: cov.trapped, switch_cmds: cov.forceSwitch,
     persistent_battles: cov.persistentBattles, divergence_kinds: kindsStr,
+    battles_per_hour: cov.elapsedMs ? Math.round(cov.battles / (cov.elapsedMs / 3.6e6)) : null,
   }, null, 2));
+  if (cov.diverged > 0) {
+    console.error(`[sim_bridge_diff] GREEN-GATE FAIL: ${cov.diverged} NON-allowlisted divergence(s)` +
+      ` (allowlisted=${cov.allowlisted} by reason ${JSON.stringify(allowObj)})`);
+  }
 
+  // Exit non-zero ONLY on a NON-allowlisted divergence (the ab_fuzz green-gate convention).
   process.exit(cov.diverged > 0 ? 1 : 0);
 }
 
-function saveRepro(flags, runId, bi, pair, startJson, result, div, chooseSeed) {
-  const dir = path.join(flags.out, 'divergences', `${runId}_b${bi}`);
+function saveRepro(flags, runId, bi, pair, startJson, result, div, chooseSeed, bucket) {
+  // `bucket` selects `divergences/` (a real find) or `allowlisted/` (a documented
+  // request-DISPLAY residual, kept for audit + as a corpus-fixture source).
+  const dir = path.join(flags.out, bucket || 'divergences', `${runId}_b${bi}`);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'summary.json'), JSON.stringify({
     run_id: runId, battle_index: bi, mode: flags.mode, format: flags.format, master_seed: flags.masterSeed,

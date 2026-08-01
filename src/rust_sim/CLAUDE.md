@@ -4520,6 +4520,9 @@ each revert-verified ONE-TO-ONE (reverting each diverges its OWN fixture on its 
   leaves the field ANY way (voluntary switch / Baton Pass / phaze drag)" — wrong on the middle case. FIX:
   gate the source-left clear on `!bp`. (The FAINT path in `process_faints` is unaffected — a fainted trapper
   runs the real clearVolatile, so it still severs.) Fixture `68_trap_link_survives_a_baton_pass.txt`.
+  ⚠️ **SUPERSEDED by `gen3_trap_link_baton_pass_transfers_v1` (round 27 below): the `!bp` SKIP was only
+  HALF-RIGHT** — it keeps the trap alive across the pass but hands the severing role to NOBODY, so the trap
+  then persisted FOREVER. The fix is a RE-POINT to the entrant, not a skip.
   Cleared 3 of 4; **ab_1271_13 advanced past its (masking) protocol bug to a `species` divergence at dec152**
   — a separate, previously-hidden issue, not a regression (trapping_test's 8346 trapped assertions + T1-T5
   and batch6's 6479 trapped rows all stay green).
@@ -4579,6 +4582,114 @@ the sim's decision-seed list as a SUBSEQUENCE of the port's boundary-seed list. 
 `ab_replay.rs` — but hold it to the SAME gate-integrity bar (round 20 shipped 9 `a2_anchor_tests` plus an
 injected-extra-draw proof that a genuine desync is still caught), because a sloppy anchor here would make
 the omniscient byte gate VACUOUS, which is far worse than the artifact it removes.
+
+### ROUND 27 (FIX) — the first findings from the EXTERNAL-CONSISTENCY gate
+
+Both found by `gen_sim_bridge_diff.js` within ~35 battles of it becoming usable, and **neither was
+reachable by any existing gate** — the offline fuzzers' pickers filter these paths out, and both bugs are
+DRAW-FREE so the seed/omniscient diffs are blind to them. Suite **567 passed / 0 failed**, e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` UNCHANGED, corpus fixture 68 still clean.
+
+- **TRANSFORM is now FAIL-LOUD** (`gen3_transform_failloud_v1`; `state.rs` + the fuzz filters; repro
+  `sim_bridge_diff_out/soak_randbats/divergences/sbd_msapcesj_b22`). Node emits
+  `|-transform|p1a: Ditto|p2a: Kyogre`; the port emitted NOTHING — Transform is unmodeled and was NOT
+  guarded, so `run_status_move` fell through and a Ditto SILENTLY no-op'd while the sim rewrote the user's
+  species/types/stats/moves wholesale. Worst-case for `--use-bridge=rust`: not a crash but WRONG
+  OBSERVATIONS fed to the policy for the rest of the battle. Mirrors the Forecast guard — panic in
+  `MonState::from_set`, keyed on the **MOVE** (species-agnostic: Ditto is the usual carrier but
+  Mew/Smeargle learn it, and a Ditto WITHOUT it is harmless) — plus upstream rejection so carrier teams are
+  rejection-sampled rather than panicking: a new `REJECT_MOVES` in `gen_e2e_fuzz.js::teamFilterClean` and in
+  `ab_fuzz.js`'s randbats adapter. VERIFIED ZERO of the 722 `data/teams/` pool teams carry Transform (or
+  Ditto) ⇒ the e2e golden CANNOT shift. Transform itself stays UNIMPLEMENTED (a large state-overlay job).
+  Pins: `transform_fails_loud_at_construction` (revert-verified — removing the guard gives "test did not
+  panic as expected") + the negative control `a_ditto_without_transform_builds_fine`, which exists so a
+  future over-broad SPECIES-keyed guard can't pass the first test while wrongly rejecting legal teams.
+  **WHY IT SURVIVED EVERY OTHER GATE:** `isModeledMove` stops the offline PICKERS from ever choosing
+  Transform, but the live bridge drives choices off the sim's OWN request — so a randbats Ditto reached it.
+
+- **THE TRAP LINK TRANSFERS ON A BATON PASS** (`gen3_trap_link_baton_pass_transfers_v1`;
+  `turn/switch.rs`; repro `sbd_msapcesj_b35`) — **a CORRECTION to round 26's own fix, already shipped in
+  `887b205`.** Round 26 established that the trap SURVIVES the trapper's Baton Pass and implemented that as
+  "skip the clear when `bp`". That keeps the trap alive (correct) but hands the severing role to NOBODY, so
+  the port's trap persisted FOREVER: the foe could never switch again and every later `|request|` carried a
+  spurious `"trapped":true`. That is EXTERNALLY VISIBLE (poke-env stops offering switches to the policy)
+  and DRAW-FREE.
+  PROBE-SETTLED (`probe_spiderweb_link_lifetime.js` **case E**, added for this):
+    spiderweb → trapped **true**; trapper BATON-PASSES → **survives true**; **the ENTRANT then
+    NORMAL-switches out → BREAKS false**.
+  ⇒ a Baton Pass does not CANCEL the severing, it **DEFERS** it to the entrant. Since the port models the
+  link as the target's `trapped_by: Option<uid>` pointing at the trapper, "following the pass" is a
+  **RE-POINT to the ENTRANT's uid** (pre-swap `target` index) — after which the ordinary non-BP clear fires
+  naturally on the entrant's own next switch-out, with no extra state.
+  **LESSON (recorded because it cost a shipped half-fix): when a probe shows behaviour X SURVIVES event A,
+  ALSO probe what ENDS it later. "Survives A" and "is cancelled by A" are not the only two options** — I
+  stopped at "it survives" and shipped a model in which it never ends.
+
+**⚠️ OPEN — THE SOAK WEDGED (not yet diagnosed).** The 1200-battle randbats soak stopped advancing at
+~battle 58: the driver process stayed alive but IDLE (1:59 elapsed / 2:33 CPU, load 0.17), both child
+bridges alive, no new repros for ~2h. `drainQuiescent`'s `maxMs` caps a SINGLE drain, not the outer loop,
+so a child that never emits a `|request|` frame parks the run forever. A bridge that can DEADLOCK is more
+serious than either bug above — `--use-bridge=rust` training would hang the same way — so this needs a real
+diagnosis, not a restart. (The project memory already records a session that mis-read CPU starvation as a
+wedge; this one is the opposite — genuinely idle, so starvation is ruled out.)
+
+### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
+
+`gen3_simbridge_diff_allowlist_v1`. **This is the strongest correctness gate in the project**, because
+it is the only one that compares what poke-env ACTUALLY consumes, at the boundary poke-env sits on.
+
+**Why it outranks the byte/seed gates.** `ab_fuzz`/`ab_replay` diff the OMNISCIENT log — which poke-env
+never sees — and replay a FIXED recorded decision list, so they must ASSUME both engines segment
+decisions identically. When they don't, you get a `kind=seed` artifact that cannot be distinguished from
+a real legality bug (the round-26 finding: 12 of 13 open repros have ZERO wrong draws). This harness
+instead spawns BOTH real bridges, feeds identical stdin, and **discovers boundaries live** (read a
+request → choose → compare). The segmentation artifact CANNOT occur by construction, and a genuine extra
+request is an unambiguous request-frame mismatch. It also covers the `|request|` JSON — a genuinely
+separate observable with its own bug history (PA2's Spikes-under-Pressure PP was INVISIBLE to the
+omniscient fuzzer and only diverged in the request's `pp` field).
+
+**THE LAYERING PRINCIPLE.** per-side + request = the CONTRACT (the correctness requirement); the
+omniscient log = a LOCALIZER (engine bug vs fold/serializer bug); the PRNG seed = a LEADING INDICATOR
+(catches divergence before it is observable). **An outer-layer mismatch is ALWAYS a bug; an inner-layer
+mismatch with a clean outer layer is NOT necessarily one** (the turn-0 construction residuals are exactly
+that). Inner layers buy detection SPEED and LOCALIZATION, not correctness.
+
+**What landed:**
+- **The GREEN GATE + allowlist.** Previously any known-benign residual failed the run — a 10-battle
+  randbats smoke reported **8/10 "diverged", ALL the same `return102` alias**, making the gate unusable.
+  Now a documented request-DISPLAY residual is counted separately, filed under `<out>/allowlisted/`, and
+  does not fail; exit is non-zero ONLY on a non-allowlisted divergence (the `ab_fuzz` convention). Keys
+  mirror `bridge_replay.rs::classify_known_perside_residual`.
+- **SAFETY: reconcile-then-compare.** The allowlist applies the documented transforms and requires the
+  FULL lines to be byte-EQUAL after; ANY residual difference → not allowlisted → the gate FAILS. A
+  co-occurring pair is allowed as a UNION.
+- **⚠️ THE `gender-level-details` KEY IS DELIBERATELY NOT PORTED.** A blanket symmetric strip of
+  `, L<n>` / `, <gender>` reconciles a genuine VALUE divergence (node `L84` vs rust `L83`, or M vs F)
+  into a FALSE PASS — the exact way an allowlist turns a gate VACUOUS. It was written, caught by its own
+  self-test, and REMOVED; the run then still went green under `return102-numeric-alias` alone, proving it
+  was never needed. If a real presence-vs-absence residual appears, implement it PAIRWISE (strip only
+  from the side that HAS the suffix) — never symmetrically. The other two keys are safe because they map
+  an ALIAS to a CANONICAL form, so a real value difference still fails to reconcile.
+- **`--selftest`** — 10 gate-integrity assertions, the negatives load-bearing (a different move; an alias
+  PLUS a residual pp difference; a LEVEL value difference; a GENDER value difference; a missing move; a
+  non-request line; identical lines). Run after ANY change to `ALLOWLIST_TRANSFORMS`.
+- **Throughput measured: ~600 battles/hr with `--persistent`, ~80/hr without** (each battle otherwise
+  respawns a Node child that reloads the whole Showdown dist). **~96% of wall time is the per-write
+  quiescence settle, not CPU** (`user` ≈ 2.3s per 59s wall) — so `--persistent` is mandatory for a soak,
+  and the 40 ms settle is the remaining lever (still ~5x slower than `ab_fuzz`'s ~3000/hr).
+
+**HONEST SCOPE (unchanged):** cross-side p1/p2 interleaving is not asserted (a Node scheduler artifact
+the Python demux does not depend on); `__RECON__` / `resumeReseed` are excluded (real rust deferrals, so
+reconstruction + search paths still require node); unmodeled moves fail loud, so "clean" is always
+relative to the modeled universe.
+
+**THE NEXT STEP THIS UNBLOCKS.** Running it at scale settles whether the round-26 `kind=seed` repros are
+(a) offline-harness segmentation or (b) a draw-free legality bug — the question gating the `ab_replay`
+subsequence anchor. A clean soak supports (a) and makes the anchor safe; request mismatches mean (b), and
+the anchor would have HIDDEN them. **A further strengthening worth considering: parse both streams with
+the real `src/poke_env` fork and diff the resulting battle STATE.** That is external consistency at the
+OBSERVER's abstraction rather than the byte level — it would dissolve the `return102` class entirely
+(poke-env resolves both forms) instead of allowlisting it on an assumption that is currently untested.
 
 ## Data-driven mechanics (the class framework)
 

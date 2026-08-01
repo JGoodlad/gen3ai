@@ -12868,6 +12868,40 @@ fn forecast_castform_fails_loud_at_construction() {
     let _ = Battle::start_with_switchins(&opts_cg(castform, foe, "1,2,3,4"), &d);
 }
 
+/// `gen3_transform_failloud_v1` — a mon CARRYING **Transform** fail-louds at construction, the
+/// MOVE analogue of the Forecast guard above. WRONG (pre-guard): the port built the mon and
+/// `run_status_move` silently did NOTHING for Transform, while the sim emits
+/// `|-transform|<user>|<target>` and rewrites the user's species/types/stats/moves wholesale —
+/// so a `--use-bridge=rust` run kept feeding the policy WRONG OBSERVATIONS for the rest of the
+/// battle instead of crashing. FOUND BY the external-consistency gate `gen_sim_bridge_diff.js`
+/// (repro `sim_bridge_diff_out/soak_randbats/divergences/sbd_msapcesj_b22`, a randbats Ditto),
+/// which reaches the LIVE bridge path the offline fuzzers' pickers had filtered Transform out
+/// of — the reason this survived every existing gate.
+#[test]
+#[should_panic(expected = "transform is unmodeled")]
+fn transform_fails_loud_at_construction() {
+    let d = dex();
+    // Keyed on the MOVE, not the species — gen3 Ditto is the usual carrier but Mew/Smeargle
+    // can learn Transform, and a Ditto WITHOUT it is harmless. Any foe suffices; the panic
+    // fires at construction, before a turn runs.
+    let ditto = "Ditto|||limber|transform|Hardy|252,,,,,|||||";
+    let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
+    let _ = Battle::start_with_switchins(&opts_cg(ditto, foe, "1,2,3,4"), &d);
+}
+
+/// The GUARD'S NEGATIVE CONTROL — a mon that merely COULD learn Transform but does not carry
+/// it must build FINE. Without this, a future over-broad guard (e.g. keyed on the SPECIES
+/// `ditto`) would pass `transform_fails_loud_at_construction` while wrongly rejecting legal
+/// teams, and nothing would catch it.
+#[test]
+fn a_ditto_without_transform_builds_fine() {
+    let d = dex();
+    let ditto = "Ditto|||limber|tackle|Hardy|252,,,,,|||||";
+    let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
+    let b = Battle::start_with_switchins(&opts_cg(ditto, foe, "1,2,3,4"), &d);
+    assert!(b.is_ok(), "a Ditto with no Transform must construct normally");
+}
+
 // ── Draw-count / first-mover tail fixes (rmry3vbgm / rmry3ytkn A/B round) ──────────────
 //
 // Ground truth: `harness/probe_dc_batch_regression_rng.js` (raw seed 13,27,41,55, aligned to

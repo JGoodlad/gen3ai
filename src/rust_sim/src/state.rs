@@ -928,6 +928,34 @@ impl MonState {
                  GIGO guard; reject the team upstream"
             );
         }
+        // FAIL-LOUD GIGO guard: TRANSFORM is DEFERRED / UNMODELED (`gen3_transform_failloud_v1`).
+        // The SAME reasoning as Forecast above, and found the same way — by a differential
+        // fuzzer, not by review. `transform` copies the target's species/types/stats/moves/
+        // ability as a state OVERLAY (reverted on switch-out) and is the largest remaining
+        // batch-8/9 state job; the port models NONE of it, so `run_status_move` would fall
+        // through and the move would SILENTLY do nothing while the sim emits
+        // `|-transform|<user>|<target>` and rewrites the user wholesale. That is the worst
+        // failure mode for `--use-bridge=rust`: not a crash but WRONG OBSERVATIONS fed to the
+        // policy for the rest of the battle.
+        //
+        // Keyed on the MOVE appearing in the set (the analogue of Forecast's ability check):
+        // it catches ACTIVE and BENCH mons alike at construction, before any turn runs, and it
+        // is species-agnostic (gen3 Ditto is the usual carrier, but Mew/Smeargle can learn it).
+        // Checking the move rather than the species is what makes it GIGO-proof — a Ditto that
+        // somehow lacks Transform is harmless, a non-Ditto that has it is not.
+        //
+        // The byte-fuzz team generators/adapters REJECT Transform upstream (`gen_e2e_fuzz.js`
+        // `isModeledMove` / `ab_fuzz.js`'s randbats adapter), so this panic never fires on the
+        // modeled path — it only trips a GIGO team. FOUND BY: the external-consistency gate
+        // `gen_sim_bridge_diff.js` (repro `soak_randbats/divergences/sbd_msapcesj_b22` — node
+        // emitted `|-transform|p1a: Ditto|p2a: Kyogre`, the rust bridge emitted nothing), which
+        // reaches the LIVE bridge path the offline fuzzers' pickers had filtered Transform out of.
+        if set.moves.iter().any(|m| crate::dex::to_id(m) == "transform") {
+            panic!(
+                "MonState::from_set(slot {position}): transform is unmodeled — \
+                 GIGO guard; reject the team upstream"
+            );
+        }
         let hp_bp = hidden_power_bp(&set.ivs); // read before `set` is moved into the struct
         let set_gender = set.gender; // read before `set` is moved into the struct
         Ok(MonState {
