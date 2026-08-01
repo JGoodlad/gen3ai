@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **2992-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
+This directory builds the **2889-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
 It runs once per agent decision across every training env, so it sits directly on the
 training-throughput (FPS) critical path. Two independent things can regress here, and they
 have **different** gates:
@@ -70,13 +70,12 @@ Judge by these load-independent metrics, in priority order:
 
 1. **Total function calls per encode** = `<N function calls>` line ÷ `--reps`. This is the
    single best regression detector — it does not move with machine load. Baseline ≈
-   **~6.85k calls/encode** (≈2,740,801 / 400, post `gen3_incoming_damage_v1` — was 6.36k before the
-   incoming-damage belief block; that feature is a justified +7.7%, the new reference). The
-   `gen3_incoming_damage_v2` belief recalibration (crit term + wider candidate set: revealed-HP
-   typed expansion, Return/Frustration, the 0.12→0.05 floor + 4→6 cap) added a further justified
-   **~6.6%** on top (measured same-session before/after on the seed-0 battle) — so expect ≈7.3k on
-   this reference machine; always judge by a same-session before/after, not the absolute. A jump of
-   **>10%** above this is a regression — investigate.
+   **~6.44k calls/encode** — the post-`gen3_cpu_damage_deleted_v1` (v48) reference, measured
+   same-session before/after at `--turn 25 --reps 300` on the seed-0 battle (7,396 → 6,444, −12.9%,
+   from deleting the incoming-damage / move-effect / active-move-scalar producers). History for
+   context: ~6.36k pre-`gen3_incoming_damage_v1`, ~6.85k after it, ~7.4k after the `v2` belief
+   recalibration (crit term + the wider candidate set). Always judge by a same-session before/after,
+   not the absolute. A jump of **>10%** above this is a regression — investigate.
 2. **cProfile `tottime` top-of-list structure.** A *new* function climbing into the top ~10,
    or a known hot function's **call count** ballooning, means you added work to a hot loop.
 3. **Component ratios** (`state_encoder.encode` vs cached turn-history vs `live_view`) and the
@@ -227,7 +226,23 @@ emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mo
 permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
 Light Screen / Safeguard / Mist × both sides).
 
-**Reactive block (414 dims, layout in `reactive.py`):** 19 scalar dims (incl. 2 `gen3_wish_wired_v1`
+> **`gen3_cpu_damage_deleted_v1` (v48) — READ THIS FIRST for the reactive block.** The 51-dim
+> incoming-damage / OHKO block, the 44-dim move-effect block and the 8 active-move scalars
+> (power ×4 + multiplier ×4) were **DELETED** from the observation (reactive 414 → 311, obs
+> 2992 → 2889). They were previously only MASKED from the model by `--unified-obs`; all three have
+> live GPU homes (the `DamageOperator` incoming/outgoing blocks off the LEARNED move belief, the
+> `MoveLatentEncoder` latent, the v27/v37 status-landing), so the masks — and the
+> `--mask-incoming-damage-obs` / `--mask-active-move-scalars-obs` / `--mask-move-effects-obs` /
+> `--unified-obs` flags — are gone with them. **`incoming_damage.py` itself STAYS**: the reward PBRS
+> (`reward_manager.py`) and the prober import its math core; only the obs write was removed, and its
+> fuzz test now targets `encode_block` directly. Measured refund: **7,396 → 6,444 calls/encode
+> (−12.9%)**, `state_encoder.encode` 0.456 → 0.363 ms. The surviving reactive block is
+> **11 scalars + 288 matchups + 12 active-req-moves = 311**, and the 11 scalars are re-indexed
+> (each shifted DOWN by 8: fainted ×2, active_status, forced_struggle, trapped, maybe_trapped,
+> turns_since_progress, protect_odds ×2, wish_floating ×2). The prose below still describes the
+> pre-deletion layout for the blocks that survive — treat this note as authoritative on what exists.
+
+**Reactive block (was 414 dims, now 311 — layout in `reactive.py`):** 19 scalar dims (incl. 2 `gen3_wish_wired_v1`
 `wish_floating` scalars at `vec[17]`/`vec[18]`, our/opp side — the pending-Wish heal, `WISH_HEAL_FRACTION`
 ≈0.5 when a wish cast last turn resolves this turn, else 0; see `sleep_belief.py`-style `wish_belief.py`),
 then the 44-dim **move-effect block** (`gen3_move_effects_v1` + `gen3_status_cure_moves_v1`), then

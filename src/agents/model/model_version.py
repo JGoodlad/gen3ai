@@ -342,7 +342,17 @@ from typing import Any, Dict, List
 #   code removes exactly that limit. 'add' = LN(z_deepsets + code) keeps composition (an unmatched
 #   team hits the zero row ⇒ exactly the DeepSets z); 'only' = LN(code), the sharpest ablation.
 #   STRING + INT gated in check_compatible; OFF byte-for-byte (NO ARCH_SIGNATURE bump).
-MODEL_CONFIG_VERSION = 46
+# v47: added `move_belief_single_compute` (gen3_belief_single_compute_v1) — compute the move belief
+#   EXACTLY ONCE per forward (pre-attention) and FREEZE it. Under prefuse the belief is predicted +
+#   reinjected before the transformer, but the between-layers refine callback then RE-READ move_logits
+#   off the reinjected tokens: the belief was computed twice and the physics consumed a different
+#   posterior than the one attention was handed. ON, the refine kernels reuse the stashed
+#   pre-transformer logits ⇒ belief ONCE → physics ONCE → N attention layers that CANNOT revise it
+#   (the frozen-belief arm of the iterative-refinement A/B; also one fewer head pass per forward).
+#   FORWARD-BEHAVIOR toggle like move_belief_prefuse (same MoveBelief params → state_dict identical;
+#   only which posterior the refine kernels read differs), gated in check_compatible (bool); OFF
+#   byte-for-byte (NO ARCH_SIGNATURE bump). Requires move_belief_prefuse.
+MODEL_CONFIG_VERSION = 48
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -844,11 +854,15 @@ class ModelVersion:
     # MoveBelief module, same params → state_dict identical; only the call timing differs, so it is gated
     # in check_compatible. Requires move_belief_mode != off. OFF = byte-for-byte (NO ARCH_SIGNATURE bump).
     move_belief_prefuse: bool = False
+    # v47 FORWARD-BEHAVIOR toggle (gen3_belief_single_compute_v1): the refine callback reuses the
+    # PRE-transformer move-belief posterior instead of re-reading the head between layers, so the
+    # belief is computed once per forward and attention cannot revise it. Same MoveBelief params →
+    # state_dict identical; only which posterior the refine kernels consume differs, so it is gated in
+    # check_compatible. Requires move_belief_prefuse. OFF = byte-for-byte (NO ARCH_SIGNATURE bump).
+    move_belief_single_compute: bool = False
     # v21 FORWARD-BEHAVIOR toggle (NOT weight-shape, like attend_unrevealed_opponents): the
     # unified-architecture ablation. ON zeros the incoming-damage / OHKO obs block out of the model's
     # view (the block stays in the obs; the reward still reads it). State_dict identical; the forward
-    # differs (a zeroed obs slice), so it is gated in check_compatible. OFF = baseline byte-for-byte.
-    mask_incoming_damage_obs: bool = False
     # v22 STRUCTURAL toggle (weight-shape via the WinProbHead params): the tri-state auxiliary
     # win-probability head. 'none' = no module (baseline byte-for-byte). 'read_only'/'shaping' build a
     # WinProbHead (a side readout off value_pooled — NOT in pi/vf, so projection dims are unchanged; the
@@ -897,10 +911,6 @@ class ModelVersion:
     # v25 TRAINING-ONLY coefficient (NOT version-locked): the speed-supervision weight (masked BCE of the
     # believed P(outspeed) toward observed move order). Recorded for provenance + flagless-resume read-back.
     spread_belief_coef: float = 0.0
-    # v25 FORWARD-BEHAVIOR toggles (like mask_incoming_damage_obs): zero a now-GPU-subsumed obs region from
-    # the model's view (reward/PBRS untouched). The master --unified-obs flips all three masks on.
-    mask_active_move_scalars_obs: bool = False
-    mask_move_effects_obs: bool = False
     # v29 STRUCTURAL toggle (weight-shape via the ValueDistHead params, like win_prob_mode): the
     # distributional VALUE readout — an interpretability side head off value_pooled emitting per-atom
     # return-distribution logits. 'none' = no module (baseline byte-for-byte, NOT in pi/vf so projection
@@ -1137,20 +1147,14 @@ class ModelVersion:
             spread_belief_nature_marginalize=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("spread_belief_nature_marginalize", False)
             ),
-            mask_active_move_scalars_obs=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("mask_active_move_scalars_obs", False)
-            ),
-            mask_move_effects_obs=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("mask_move_effects_obs", False)
-            ),
             move_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_prior_fusion", False)
             ),
             move_belief_prefuse=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_belief_prefuse", False)
             ),
-            mask_incoming_damage_obs=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("mask_incoming_damage_obs", False)
+            move_belief_single_compute=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_belief_single_compute", False)
             ),
             win_prob_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("win_prob_mode", "none")
@@ -1439,14 +1443,6 @@ class ModelVersion:
 
         # v25 FORWARD-BEHAVIOR toggles (like mask_incoming_damage_obs): each zeros a now-subsumed obs region
         # from the model's view → a different forward the policy/value trained under (state_dict identical).
-        for _name in ("mask_active_move_scalars_obs", "mask_move_effects_obs"):
-            if getattr(self, _name) != getattr(saved, _name):
-                raise ModelVersionError(
-                    f"{_name} mismatch: saved={getattr(saved, _name)}, current={getattr(self, _name)}.\n"
-                    "This obs-ablation flag (part of --unified-obs) changes the forward the model trained "
-                    "under, so it cannot be flipped on a resume.\n"
-                    "Resume with the matching --unified-obs setting, or start a fresh training run."
-                )
 
         # Forward-behavior toggle (no weight-shape change, like move_prior_fusion): the learnset + rarity
         # gate produces a different move prior → a different belief the policy/value/op trained under.
@@ -1483,15 +1479,18 @@ class ModelVersion:
                 "Resume with the matching --move-belief-prefuse setting, or start a fresh training run."
             )
 
-        # Forward-behavior toggle (no weight-shape change): ablating the incoming-damage obs block
-        # changes the input the policy/value trained on, so a resume flip would feed a different forward.
-        if self.mask_incoming_damage_obs != saved.mask_incoming_damage_obs:
+        # Forward-behavior toggle (no weight-shape change, like move_belief_prefuse): freezing the
+        # belief means the refine kernels consume the PRE-attention posterior rather than a re-read of
+        # the being-enriched tokens, so the physics the policy/value/op trained under differs. Same
+        # MoveBelief params → state_dict identical, so this is a train/eval-consistency gate.
+        if self.move_belief_single_compute != saved.move_belief_single_compute:
             raise ModelVersionError(
-                f"mask_incoming_damage_obs mismatch: saved={saved.mask_incoming_damage_obs}, "
-                f"current={self.mask_incoming_damage_obs}.\n"
-                "Zeroing the incoming-damage obs block out of the model's view changes the forward the "
-                "policy trained under, so it cannot be toggled on a resumed model.\n"
-                "Resume with the matching --mask-incoming-damage-obs setting, or start a fresh training run."
+                f"move_belief_single_compute mismatch: saved={saved.move_belief_single_compute}, "
+                f"current={self.move_belief_single_compute}.\n"
+                "Freezing the move belief (reusing the pre-transformer posterior in the refine loop) vs "
+                "re-reading it between layers changes the forward the policy trained under, so it cannot "
+                "be toggled on a resumed model.\n"
+                "Resume with the matching --move-belief-single-compute setting, or start a fresh run."
             )
 
         # Structural + resume-IMMUTABLE toggle — gated as a STRING so BOTH 'none'↔head (a state_dict
@@ -1983,7 +1982,6 @@ def _migrate_config(data: dict) -> dict:
         data["config_version"] = 20
     if version < 21:
         # v21: added the incoming-damage-obs ablation toggle (off). Old models always saw the obs block.
-        data.setdefault("mask_incoming_damage_obs", False)
         data["config_version"] = 21
     if version < 22:
         # v22: added the tri-state win-probability head (off) + its training-only loss coef (1.0).
@@ -2008,8 +2006,6 @@ def _migrate_config(data: dict) -> dict:
         # disable-redundant obs masks (off). Old models had no spread belief and saw every obs region.
         data.setdefault("spread_belief", False)
         data.setdefault("spread_belief_coef", 0.0)
-        data.setdefault("mask_active_move_scalars_obs", False)
-        data.setdefault("mask_move_effects_obs", False)
         data["config_version"] = 25
     if version < 26:
         # v26: gen3_unified_op_physics_v1 — op physics parity (boosts/burn/weather/para/fixed-damage),
@@ -2159,4 +2155,22 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("zarch_lut", "off")
         data.setdefault("zarch_lut_teams", 0)
         data["config_version"] = 46
+    if version < 47:
+        # v47: gen3_belief_single_compute_v1 — the frozen pre-attention move belief (off). Old models
+        # re-read move_logits inside the between-layers refine callback, so the belief was recomputed
+        # per round. FORWARD-BEHAVIOR toggle (no weight-shape change; gated in check_compatible).
+        # OFF = baseline byte-for-byte.
+        data.setdefault("move_belief_single_compute", False)
+        data["config_version"] = 47
+    if version < 48:
+        # v48: gen3_cpu_damage_deleted_v1 — the three `--unified-obs` ablation FIELDS are removed
+        # along with the obs blocks they masked (incoming-damage 51, move-effects 44, active-move
+        # scalars 8). `from_json_file` does `cls(**data)`, so a stale key would raise TypeError —
+        # POP rather than setdefault. Any such checkpoint is already rejected by the obs-dim
+        # weight-field check (2992 -> 2889); this just makes the failure the CLEAR arch error
+        # instead of a constructor crash.
+        for _dead in ("mask_incoming_damage_obs", "mask_active_move_scalars_obs",
+                      "mask_move_effects_obs"):
+            data.pop(_dead, None)
+        data["config_version"] = 48
     return data

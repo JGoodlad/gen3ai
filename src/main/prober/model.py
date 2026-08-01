@@ -29,13 +29,16 @@ class ObsOffsets:
     guard so a silent layout shift is caught loudly.
     """
 
-    mm_off: int            # active-move type multipliers (4 dims) vs current opp
     om_off: int            # our_matchups block (144 dims): our moves' eff vs their mons
     tm_off: int            # their_matchups block (144 dims): their moves' eff vs OUR mons (incoming threat)
     active_block_dim: int  # our active-pokemon block span [0:active_block_dim)
     turn_history_offset: int
     turn_history_dim: int  # n_history_turns * turn_delta_dim
     turn_delta_dim: int = 0  # one TurnDelta slot's width — slices turn_history into per-turn saliency
+    # gen3_cpu_damage_deleted_v1: the 4 active-move type-multiplier scalars were DELETED from the obs
+    # (the DamageOperator's outgoing per-move block carries real damage instead). 0 = absent, and every
+    # consumer no-ops — kept as a field so old archived traces still decode.
+    mm_off: int = 0
     # incoming-damage / OHKO belief block (incoming_damage_v1): per-our-slot P(KO)/expected-chip/
     # P(outspeed) + opp recovery scalars — the calibrated DAMAGE belief (vs ThreatView's raw
     # type-effectiveness). Defaults keep the synthetic-test ObsOffsets construction valid; a real
@@ -60,7 +63,7 @@ class ObsOffsets:
         rl = lay["reactive_layout"]
         inc = rl.get("incoming_damage", {})
         return cls(
-            mm_off=C.OFFSET_REACTIVE + rl["move_multiplier"]["offset"],
+            mm_off=(C.OFFSET_REACTIVE + rl["move_multiplier"]["offset"]) if "move_multiplier" in rl else 0,
             om_off=C.OFFSET_REACTIVE + rl["our_matchups"]["offset"],
             tm_off=C.OFFSET_REACTIVE + rl["their_matchups"]["offset"],
             active_block_dim=99,  # the launcher CLI's "our active pokemon block(99)"

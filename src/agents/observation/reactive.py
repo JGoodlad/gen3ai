@@ -4,8 +4,6 @@ from poke_env.battle.abstract_battle import AbstractBattle
 from .constants import (
     REACTIVE_DIM, TEAM_SIZE,
     REACTIVE_SCALAR_DIM, REACTIVE_MATCHUP_OFFSET,
-    MOVE_EFFECTS_DIM, MOVE_EFFECT_FEATURES,
-    INCOMING_DMG_DIM, INCOMING_DMG_OFFSET, INCOMING_PER_MON, INCOMING_RECOVERY_DIM,
     ACTIVE_REQ_MOVES_OFFSET, ACTIVE_REQ_MOVES_PER, ACTIVE_REQ_MOVES_DIM,
 )
 from .types import TypeEncoder
@@ -14,7 +12,6 @@ from agents import gen3_data
 from agents.gen3_mechanics import (
     effective_multiplier_by_types, status_land_estimate, protect_success_probability,
 )
-from agents.observation.incoming_damage_encoder import encode_block as encode_incoming_block
 from agents.observation.wish_belief import build_wish_pending, wish_floating_value
 from agents.battle.battle_event import OURS, OPP
 from typing import Any, Dict, List, Optional
@@ -181,17 +178,15 @@ class ReactiveEncoder(ObservationEncoder):
     - Forced Struggle flag (1)
     - Trapped flag (1)        — server-authoritative `legal.trapped` (cannot switch)
     - Maybe-trapped flag (1)  — server-authoritative `legal.maybe_trapped` (opponent MIGHT trap)
-    - turns_since_progress (1) — gen3_markovian_progress_v1: the log-saturated no-progress clock (vec[14])
+    - turns_since_progress (1) — gen3_markovian_progress_v1: the log-saturated no-progress clock (vec[6])
     - Protect-success odds (2) — gen3_protect_odds_v1: P(Protect/Detect/Endure succeeds NOW) for our
-      active (vec[15]) and the opp active (vec[16]) — gen3 floored doubling (100/50/25/12.5, 1/8 floor)
+      active (vec[7]) and the opp active (vec[8]) — gen3 floored doubling (100/50/25/12.5, 1/8 floor)
       from each mon's LiveView protect_counter; the only obs signal for the stall counter.
-    - Move-effect flags (36)  — gen3_move_effects_v1: 4 request-order move slots × 9 flags
       [is_boost, is_heal, is_protect, is_phaze, is_hazard, inflicts_status,
       status_will_land, pp_fraction, status_will_land_known] so the policy head can tell a
       setup move from a heal from a wasted status (otherwise indistinguishable: base power 0 +
       neutral multiplier). status_will_land is a prior-weighted probability; the trailing
       *_known bit flags confirmed-vs-prior, mirroring the ability block's `known` flag.
-    - Incoming-damage / OHKO belief (51) — gen3_incoming_crit_split_v1 (offsets via INCOMING_DMG_OFFSET)
     - Matchup Matrix: Our moves vs Their mons (144)
     - Matchup Matrix: Their moves vs Our mons (144)
     - Active request-move id/type/legality (12) — gen3_op_move_align_v1: OUR active's 4 moves in
@@ -236,7 +231,7 @@ class ReactiveEncoder(ObservationEncoder):
 
         legal: optional :class:`~agents.battle.live_view.LegalActions` snapshot for this
         decision (server-authoritative legality, same surface the mask is built from). Its
-        ``trapped`` / ``maybe_trapped`` flags become two obs bits (vec[12], vec[13]). ``None``
+        ``trapped`` / ``maybe_trapped`` flags become two obs bits (vec[4], vec[5]). ``None``
         (unit-test / plain-Battle path, or a caller that hasn't threaded it) leaves both at 0.
 
         **Active-move slot order + why the effectiveness core stays on the raw battle.** The
@@ -278,23 +273,14 @@ class ReactiveEncoder(ObservationEncoder):
 
         # 1. Active Moves (Power and Multiplier) — see the docstring: kept on the raw battle
         # so own Hidden Power retains its typed id and the hot loop stays enum-keyed.
-        moves_base_power = np.zeros(4)
-        moves_dmg_multiplier = np.full(4, _NEUTRAL_MULT)
-        # gen3_move_effects_v1: per-move EFFECT flags, request-order (slot i ↔ action 6+i),
-        # so the policy head can tell a setup move from a heal from a wasted status. Static
-        # flags come from the data facade (MoveData); status_will_land and Curse's
-        # type-conditional setup are resolved LIVE here.
-        move_effects = np.zeros((4, MOVE_EFFECT_FEATURES), dtype=np.float32)
-        # gen3_op_move_align_v1: per REQUEST slot (action 6+k) — move NUM + resolved TYPE-id + current
-        # choosability — for the DamageOperator's OUTGOING per-move blocks (so their output aligns with
-        # the action order, not the per-mon block's sorted-by-id order). Filled in the same request-order
-        # loop below; stays zeros (→ op gates the slot off via bp=0 / legal=0) on forced Struggle / empty
-        # / unresolved slots.
+        # gen3_cpu_damage_deleted_v1: the per-move base-power / type-multiplier scalars and the
+        # 44-dim move-effect block used to be built here. Both are now GPU-side (the op's OUTGOING
+        # per-move block + the move latent), so the CPU no longer computes them at all.
         active_req_move_ids = np.zeros(ACTIVE_REQ_MOVES_PER, dtype=np.float32)
         active_req_move_type_ids = np.zeros(ACTIVE_REQ_MOVES_PER, dtype=np.float32)
         active_req_move_legal = np.zeros(ACTIVE_REQ_MOVES_PER, dtype=np.float32)
 
-        # Skip Struggle — it has a dedicated action (10) and a dedicated flag (vec[11]).
+        # Skip Struggle — it has a dedicated action (10) and a dedicated flag (vec[3]).
         # Filling the move slots with Struggle's stats would create a confusing alias
         # between slot 0 (action 6) and the Struggle action (10).
         # Forced Struggle (all PP gone). Prefer the server-authoritative `legal.struggle` when the
@@ -324,47 +310,7 @@ class ReactiveEncoder(ObservationEncoder):
                     break
                 if move is None:
                     continue  # empty / unresolved request slot → neutral defaults (masked anyway)
-                moves_base_power[i] = move.base_power / 200.0
-                if opp is not None:
-                    mult = _expected_multiplier(
-                        move, active, opp, hp_tracker, self._ability_priors,
-                    )
-                    moves_dmg_multiplier[i] = mult / 4.0
-
-                eff = move_effects[i]
                 md = gen3_data.moves.get(move.id)
-                if md is not None:
-                    eff[0] = 1.0 if (md.is_boost or (move.id == "curse" and not user_is_ghost)) else 0.0
-                    eff[1] = 1.0 if md.is_heal else 0.0
-                    eff[2] = 1.0 if md.is_protect else 0.0
-                    eff[3] = 1.0 if md.is_phaze else 0.0
-                    eff[4] = 1.0 if md.is_hazard else 0.0
-                    if md.status_inflicted is not None:
-                        eff[5] = 1.0  # inflicts_status (it IS a status move)
-                        if opp is not None:
-                            # status_will_land (6): prior-weighted probability in [0,1] — priors
-                            # first (Smogon ability distribution for an unrevealed opp), then
-                            # collapses to 0/1 once the ability is revealed. Same ability-
-                            # distribution source the matchup cells use (`_resolve_ability_
-                            # distribution`). status_will_land_known (8): the prior-vs-confirmed
-                            # flag, routed with the SAME predicate as the per-mon ability block's
-                            # `known` bit (revealed ability OR a type-certain hard block) so the
-                            # model can tell a confirmed outcome from a Smogon-prior estimate —
-                            # parity with how abilities are routed.
-                            ability_dist = _resolve_ability_distribution(opp, self._ability_priors)
-                            eff[6], known = status_land_estimate(
-                                move.id, md.status_inflicted, opp, ability_dist
-                            )
-                            eff[8] = 1.0 if known else 0.0
-                    # gen3_status_cure_moves_v1: static curated cure facts — Refresh clears the
-                    # user's status; Heal Bell / Aromatherapy clear the whole party's. The head
-                    # reads these against the per-mon status one-hots to value the cure (the head
-                    # previously routed its own status onto Recover/switch, never the cure move).
-                    eff[9] = 1.0 if md.cures_self_status else 0.0
-                    eff[10] = 1.0 if md.cures_team_status else 0.0
-                # pp_fraction: this move's own remaining PP (depletion → Struggle awareness).
-                max_pp = getattr(move, "max_pp", 0) or 0
-                eff[7] = (move.current_pp / max_pp) if max_pp else 0.0
 
                 # gen3_op_move_align_v1: request-order move NUM + resolved TYPE-id for the op's OUTGOING
                 # blocks. NUM mirrors moves.py (HP → 237 regardless of type, so the op's HP branch fires);
@@ -388,9 +334,6 @@ class ReactiveEncoder(ObservationEncoder):
                     else (1.0 if legal is None else 0.0)
                 )
 
-        vec[0:4] = moves_base_power
-        vec[4:8] = moves_dmg_multiplier
-        vec[REACTIVE_SCALAR_DIM:REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM] = move_effects.reshape(-1)
         # gen3_op_move_align_v1: request-order active-move id/type/legality block (sits AFTER the
         # matchups; consumed only by the DamageOperator's outgoing methods via ObsUnpack, never the
         # raw-scalar path). Layout: [ids ×4, type_ids ×4, legal ×4].
@@ -407,8 +350,8 @@ class ReactiveEncoder(ObservationEncoder):
         else:
             fainted_mon_team = len([mon for mon in battle.team.values() if mon.fainted]) / 6.0
             fainted_mon_opponent = len([mon for mon in battle.opponent_team.values() if mon.fainted]) / 6.0
-        vec[8] = fainted_mon_team
-        vec[9] = fainted_mon_opponent
+        vec[0] = fainted_mon_team
+        vec[1] = fainted_mon_opponent
 
         # 3. Status — active mon currently has a status condition (HP and Spikes removed —
         # available in per-Pokémon vector and global env). Read through the LiveView's active
@@ -416,12 +359,12 @@ class ReactiveEncoder(ObservationEncoder):
         # truthiness is identical.
         if live is not None:
             active_live = live.ours.active
-            vec[10] = 1.0 if (active_live is not None and active_live.status) else 0.0
+            vec[2] = 1.0 if (active_live is not None and active_live.status) else 0.0
         else:
-            vec[10] = 1.0 if battle.active_pokemon and battle.active_pokemon.status else 0.0
+            vec[2] = 1.0 if battle.active_pokemon and battle.active_pokemon.status else 0.0
 
         # 4. Forced Struggle
-        vec[11] = 1.0 if is_forced_struggle else 0.0
+        vec[3] = 1.0 if is_forced_struggle else 0.0
 
         # 4b. Trapping signals (gen3_trapping_signals_v1) — server-authoritative legality.
         # trapped: confirmed cannot switch (Mean Look / Arena Trap / Magnet Pull revealed) —
@@ -429,18 +372,18 @@ class ReactiveEncoder(ObservationEncoder):
         # be trapping us (switches still legal in the mask) — the highest-value bit, the only
         # signal here the model has no other way to see.
         if legal is not None:
-            vec[12] = 1.0 if legal.trapped else 0.0
-            vec[13] = 1.0 if legal.maybe_trapped else 0.0
+            vec[4] = 1.0 if legal.trapped else 0.0
+            vec[5] = 1.0 if legal.maybe_trapped else 0.0
 
-        # 4d. turns_since_progress (gen3_markovian_progress_v1, vec[14]) — the log-saturated
+        # 4d. turns_since_progress (gen3_markovian_progress_v1, vec[6]) — the log-saturated
         # no-progress clock (design §5.1). Sourced from the EpisodeTracker-owned ProgressClock
         # (NOT LiveView — it is cross-turn state), threaded in like the HP tracker; None on the
         # plain-Battle / unit-test path leaves it 0. The reward's no_progress_tax keys on the SAME
         # clock instance, so obs and reward share one value.
         if progress_clock is not None:
-            vec[14] = float(progress_clock.value())
+            vec[6] = float(progress_clock.value())
 
-        # 4e. Protect-success odds (gen3_protect_odds_v1, vec[15] our active / vec[16] opp active).
+        # 4e. Protect-success odds (gen3_protect_odds_v1, vec[7] our active / vec[8] opp active).
         # P(a Protect/Detect/Endure succeeds NOW) from each active mon's consecutive-stall counter,
         # read through the LiveView read-model (NOT raw poke-env). Showdown gen3 = floored doubling
         # (100/50/25/12.5, 1/8 floor); the gen3 mechanic lives in protect_success_probability(). This
@@ -452,19 +395,19 @@ class ReactiveEncoder(ObservationEncoder):
             our_active = live.ours.active
             opp_active = live.opp.active
             if our_active is not None:
-                vec[15] = protect_success_probability(our_active.protect_counter)
+                vec[7] = protect_success_probability(our_active.protect_counter)
             if opp_active is not None:
-                vec[16] = protect_success_probability(opp_active.protect_counter)
+                vec[8] = protect_success_probability(opp_active.protect_counter)
 
-        # 4f. Wish "floating heal" (gen3_wish_wired_v1, vec[17] our side / vec[18] opp). P(KO)-style
+        # 4f. Wish "floating heal" (gen3_wish_wired_v1, vec[9] our side / vec[10] opp). P(KO)-style
         # belief reconstructed from OUR event log (poke-env doesn't track pending Wish): a gen3 Wish cast
         # last turn heals the slot mon ~50% of its max HP at the END of this turn (slot-keyed, so it
         # survives faint/phaze/switch). The value is the flat WISH_HEAL_FRACTION (≈recipient maxhp/2 — no
         # max-HP read, GIGO-proof) when pending, else 0.0. Folded from `battle` (a Gen3Battle); on the
         # mock / non-Gen3Battle path `battle.events` is absent → both stay 0.0.
         wish_pending = build_wish_pending(battle)
-        vec[17] = wish_floating_value(wish_pending[OURS])
-        vec[18] = wish_floating_value(wish_pending[OPP])
+        vec[9] = wish_floating_value(wish_pending[OURS])
+        vec[10] = wish_floating_value(wish_pending[OPP])
 
         # --- Matchup Matrices (raw battle — see the docstring's three reasons) ---
         our_team = self.get_team_list(battle, is_opponent=False)
@@ -482,13 +425,6 @@ class ReactiveEncoder(ObservationEncoder):
             _defender_terms(m, self._ability_priors) if m is not None else None
             for m in their_team
         ]
-
-        # 4c. Incoming-damage / OHKO belief block (incoming_damage_v2) — per our mon, the
-        # opponent active's KO/chip/outspeed threat under the hidden-set belief. Sits before the
-        # matchups so the extractor routes it through non_matchup_rest to both heads. Sourced from
-        # the LiveView read-model; the HP tracker is threaded for the revealed-HP typed expansion.
-        vec[INCOMING_DMG_OFFSET:INCOMING_DMG_OFFSET + INCOMING_DMG_DIM] = \
-            encode_incoming_block(live, hp_tracker=hp_tracker)
 
         # 5. Our moves vs Their mons (144 dims), starting at REACTIVE_MATCHUP_OFFSET (after the
         # 17 scalars + 36 move-effects + the 51-dim incoming-damage block).
@@ -525,35 +461,24 @@ class ReactiveEncoder(ObservationEncoder):
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
-        mo = REACTIVE_MATCHUP_OFFSET  # 104 = 17 scalars + 36 move-effects + 51 incoming-damage
+        mo = REACTIVE_MATCHUP_OFFSET  # 11 — the scalars are now the only thing before the matchups
         return {
-            "move_power": {"offset": 0, "dim": 4},
-            "move_multiplier": {"offset": 4, "dim": 4},
-            "fainted": {"offset": 8, "dim": 2},
-            "active_status": {"offset": 10, "dim": 1},
-            "forced_struggle": {"offset": 11, "dim": 1},
-            "trapped": {"offset": 12, "dim": 1},
-            "maybe_trapped": {"offset": 13, "dim": 1},
-            "turns_since_progress": {"offset": 14, "dim": 1},  # gen3_markovian_progress_v1
+            # gen3_cpu_damage_deleted_v1: move_power / move_multiplier (the 8 active-move scalars),
+            # the 44-dim move_effects block and the 51-dim incoming_damage block are GONE — the
+            # DamageOperator computes all three GPU-side from the LEARNED belief. Scalars below are
+            # the post-deletion indices (each shifted down by 8).
+            "fainted": {"offset": 0, "dim": 2},
+            "active_status": {"offset": 2, "dim": 1},
+            "forced_struggle": {"offset": 3, "dim": 1},
+            "trapped": {"offset": 4, "dim": 1},
+            "maybe_trapped": {"offset": 5, "dim": 1},
+            "turns_since_progress": {"offset": 6, "dim": 1},  # gen3_markovian_progress_v1
             # gen3_protect_odds_v1: P(Protect/Detect/Endure succeeds NOW), our active then opp active.
-            "protect_odds_our": {"offset": 15, "dim": 1},
-            "protect_odds_opp": {"offset": 16, "dim": 1},
-            # gen3_wish_wired_v1: pending-Wish "floating heal" — one dim per side. WISH_HEAL_FRACTION
-            # (≈0.5, the gen3 recipient maxhp/2 heal) when a wish cast last turn resolves end of THIS
-            # turn (slot-keyed, reconstructed from the event log), else 0.0. See wish_belief.py.
-            "wish_floating_our": {"offset": 17, "dim": 1},
-            "wish_floating_opp": {"offset": 18, "dim": 1},
-            # gen3_move_effects_v1 / gen3_status_cure_moves_v1: 4 move slots ×
-            # MOVE_EFFECT_FEATURES (11), slot-major, request order. Per slot: [is_boost, is_heal,
-            # is_protect, is_phaze, is_hazard, inflicts_status, status_will_land, pp_fraction,
-            # status_will_land_known, cures_self_status, cures_team_status].
-            "move_effects": {"offset": REACTIVE_SCALAR_DIM, "dim": MOVE_EFFECTS_DIM,
-                             "per_slot": MOVE_EFFECT_FEATURES},
-            # incoming_damage (gen3_incoming_crit_split): per-mon [phys_expdmg, spec_expdmg,
-            # phys_pko_nocrit, spec_pko_nocrit, phys_crit_delta, spec_crit_delta, p_outspeed,
-            # threat_revealed] × TEAM_SIZE, then [recovery_rate, cures_status, recovery_known].
-            "incoming_damage": {"offset": INCOMING_DMG_OFFSET, "dim": INCOMING_DMG_DIM,
-                                "per_mon": INCOMING_PER_MON, "recovery": INCOMING_RECOVERY_DIM},
+            "protect_odds_our": {"offset": 7, "dim": 1},
+            "protect_odds_opp": {"offset": 8, "dim": 1},
+            # gen3_wish_wired_v1: pending-Wish "floating heal" — one dim per side.
+            "wish_floating_our": {"offset": 9, "dim": 1},
+            "wish_floating_opp": {"offset": 10, "dim": 1},
             "our_matchups": {"offset": mo, "dim": 144},
             "their_matchups": {"offset": mo + 144, "dim": 144},
             # gen3_op_move_align_v1: request-order active-move id/type/legality (after the matchups).
@@ -568,29 +493,15 @@ class ReactiveEncoder(ObservationEncoder):
         our_m = vector[mo:mo + 144].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
         their_m = vector[mo + 144:mo + 288].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
 
-        # gen3_move_effects_v1 / gen3_status_cure_moves_v1: decode the 4×11 per-move effect
-        # block (slot-major).
-        eff = vector[REACTIVE_SCALAR_DIM:REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM].reshape(4, MOVE_EFFECT_FEATURES)
-        eff_names = ["boost", "heal", "protect", "phaze", "hazard", "status",
-                     "status_lands", "pp", "status_known", "cures_self", "cures_team"]
-        # status_lands (6) and pp (7) are continuous in [0,1]; the rest are bits.
-        move_effects = [
-            {eff_names[f]: (round(float(eff[s, f]), 2) if f in (6, 7) else bool(eff[s, f]))
-             for f in range(MOVE_EFFECT_FEATURES)}
-            for s in range(4)
-        ]
-
         return {
-            "fainted_our": int(vector[8] * 6),
-            "fainted_opp": int(vector[9] * 6),
-            "active_move_mults": [f"{m*4.0:.1f}x" for m in vector[4:8].tolist()],
-            "struggle": bool(vector[11]),
-            "trapped": bool(vector[12]),
-            "maybe_trapped": bool(vector[13]),
-            "turns_since_progress": round(float(vector[14]), 3),
-            "protect_odds_our": round(float(vector[15]), 3),
-            "protect_odds_opp": round(float(vector[16]), 3),
-            "move_effects": move_effects,
+            "fainted_our": int(vector[0] * 6),
+            "fainted_opp": int(vector[1] * 6),
+            "struggle": bool(vector[3]),
+            "trapped": bool(vector[4]),
+            "maybe_trapped": bool(vector[5]),
+            "turns_since_progress": round(float(vector[6]), 3),
+            "protect_odds_our": round(float(vector[7]), 3),
+            "protect_odds_opp": round(float(vector[8]), 3),
             "our_vs_their": our_m, # Full matrix for deeper trace
             "their_vs_our": their_m
         }

@@ -347,7 +347,8 @@ async def test_select_battle_populates_panels(tmp_path):
         assert app.query_one("#matchups-table", DataTable).row_count == 4
         # chosen is a move → 4-point sweep
         assert app.query_one("#sweep-table", DataTable).row_count == 4
-        assert app.query_one("#saliency-table", DataTable).row_count == 5  # +their_matchups block
+        # gen3_cpu_damage_deleted_v1: the "active move_multipliers(4)" saliency row is gone with its obs block.
+        assert app.query_one("#saliency-table", DataTable).row_count == 4  # +their_matchups block
         # MOVES is still a DataTable: 5 moves (4 + struggle).
         assert app.query_one("#summary-moves", DataTable).row_count == 5
         # SWITCHES / OPP / Team are now custom-rendered Static panels (so movesets can span).
@@ -592,7 +593,8 @@ async def test_matchups_panel_shows_incoming_threat(tmp_path):
         threat = str(app.query_one("#matchups-threat", Static).render())
         assert "incoming" in threat and "4.00" in threat   # decoded worst incoming hit
         # their_matchups is now its own saliency row
-        assert app.query_one("#saliency-table", DataTable).row_count == 5
+        # gen3_cpu_damage_deleted_v1: the "active move_multipliers(4)" saliency row is gone with its obs block.
+        assert app.query_one("#saliency-table", DataTable).row_count == 4
 
 
 # A synthetic layout WITH the incoming-damage belief block + a model exposing value_grad,

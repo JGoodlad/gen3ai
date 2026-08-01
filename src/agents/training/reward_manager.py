@@ -17,10 +17,11 @@ from agents.gen3_mechanics import (
 )
 from agents.enums import PokemonType as _PokemonType
 from agents.observation.incoming_damage_encoder import encode_block as _encode_incoming_block
-from agents.observation.constants import (
-    TEAM_SIZE as _TEAM_SIZE,
-    INCOMING_PER_MON as _INCOMING_PER_MON,
-)
+from agents.observation.constants import TEAM_SIZE as _TEAM_SIZE
+# gen3_cpu_damage_deleted_v1: the incoming-damage block is no longer part of the OBSERVATION, so
+# constants.py no longer re-exports its stride. The PBRS builds the block itself from the LiveView
+# (`encode_block`) and reads it here, so it imports the stride from the module that OWNS the layout.
+from agents.observation.incoming_damage import PER_MON as _INCOMING_PER_MON
 # Named per-mon field offsets — the single source of truth for the incoming-damage block layout
 # (incoming_damage.py). Read fields by NAME so a future field insert can't silently desync this
 # PBRS read the way a hardcoded `block[base + 4]` once read phys_crit_delta as p_outspeed.

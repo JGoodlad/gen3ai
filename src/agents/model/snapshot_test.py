@@ -918,41 +918,6 @@ def test_migrate_pre_v32_adds_move_belief_prefuse_default(version):
     assert result["move_belief_prefuse"] is False
     ModelVersion(**result)
 
-
-# --- mask_incoming_damage_obs: a forward-behavior bool toggle (the unified ablation, v21) -----------
-
-
-def test_check_compatible_rejects_mask_incoming_damage_obs_mismatch(version):
-    on = dataclasses.replace(version, mask_incoming_damage_obs=True)
-    with pytest.raises(ModelVersionError) as exc_info:
-        version.check_compatible(on)
-    assert "mask_incoming_damage_obs" in str(exc_info.value)
-
-
-def test_check_compatible_accepts_matching_mask_incoming_damage_obs(version):
-    version.check_compatible(dataclasses.replace(version))
-    on = dataclasses.replace(version, mask_incoming_damage_obs=True)
-    on.check_compatible(dataclasses.replace(on))
-
-
-def test_mask_incoming_damage_obs_read_from_features_extractor_kwargs(layout):
-    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"mask_incoming_damage_obs": True}}
-    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
-    assert v.mask_incoming_damage_obs is True and v.config_version == MODEL_CONFIG_VERSION
-    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
-    assert v_default.mask_incoming_damage_obs is False
-
-
-def test_migrate_pre_v21_adds_mask_incoming_damage_obs_default(version):
-    data = json.loads(version.to_json())
-    data.pop("mask_incoming_damage_obs", None)
-    data["config_version"] = 20
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["mask_incoming_damage_obs"] is False
-    ModelVersion(**result)
-
-
 def test_check_compatible_rejects_value_active_readout_mismatch(version):
     """① value_active_readout widens the value projection → a weight-shape change check_compatible
     must reject (like use_popart)."""
@@ -2060,8 +2025,8 @@ def test_arch_toggles_from_model_extracts_flags():
                                move_belief_mode="revealed", opp_belief_latent=True,
                                damage_op_enabled=True, damage_outgoing=True, move_candidate_floor=0.3,
                                move_latent=True, move_prior_fusion=True,
-                               move_belief_prefuse=True,
-                               mask_incoming_damage_obs=True, win_prob_mode="read_only",
+                               move_belief_prefuse=True, move_belief_single_compute=True,
+                               win_prob_mode="read_only",
                                damage_topk_k=5, damage_refine_rounds=2, damage_matrices_outgoing=True,
                                damage_matrices_incoming=True, damage_matrices_outgoing_all=True)
     model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe, popart=object()))
@@ -2072,9 +2037,10 @@ def test_arch_toggles_from_model_extracts_flags():
     # v23/v24 keys (these were the threading gaps): every one must round-trip.
     assert t["damage_op"] is True and t["damage_outgoing"] is True
     assert t["move_candidate_floor"] == 0.3 and t["move_latent"] is True
-    assert t["move_prior_fusion"] is True and t["mask_incoming_damage_obs"] is True
-    # v32: the PRE-transformer move-belief reinjection toggle (a prefuse-ON run must gate its sentinels).
-    assert t["move_belief_prefuse"] is True
+    assert t["move_prior_fusion"] is True
+    # v32/v47: the PRE-transformer move-belief reinjection + the frozen single-compute belief (a run
+    # with either ON must gate its sentinels). gen3_cpu_damage_deleted_v1 removed mask_incoming_damage_obs.
+    assert t["move_belief_prefuse"] is True and t["move_belief_single_compute"] is True
     assert t["win_prob_mode"] == "read_only"
     # v30: the discrete top-K incoming block's K (a topk-ON self-play run must gate its sentinels with it).
     assert t["damage_topk_k"] == 5

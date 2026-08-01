@@ -20,7 +20,7 @@ from agents.model.features_extractor import (
 )
 from agents.model import damage_tables as dt
 from agents.observation.constants import (
-    POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM, OFFSET_REACTIVE, INCOMING_DMG_OFFSET, INCOMING_DMG_DIM,
+    POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM, OFFSET_REACTIVE,
 )
 from agents.observation.types import TypeEncoder
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
@@ -208,27 +208,6 @@ def test_revealed_no_moves_uses_species_prior():
     permon = out[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     phys_high = permon[0, 0, 1].item()                            # Drill Peck is physical (high-roll magnitude)
     assert phys_high > 0.05, f"species prior gave no threat with zero revealed moves: {phys_high}"
-
-
-# --------------------------------------------------------------------------- ablation toggle
-def test_ablation_zeros_incoming_block_from_model():
-    obs_space = gym.spaces.Box(0.0, 1.0, shape=(_layout["total_dim"],), dtype=np.float32)
-    plain = Gen3FeaturesExtractor(obs_space, layout=_layout, mappings=_mappings)
-    masked = Gen3FeaturesExtractor(obs_space, layout=_layout, mappings=_mappings,
-                                   mask_incoming_damage_obs=True)
-    abs_off = OFFSET_REACTIVE + INCOMING_DMG_OFFSET
-    obs = torch.zeros(2, _layout["total_dim"]); obs[:, abs_off:abs_off + INCOMING_DMG_DIM] = 1.0
-    cp = plain.unpack({"observation": obs})
-    cm = masked.unpack({"observation": obs})
-    assert cp.non_matchup_rest[:, -INCOMING_DMG_DIM:].abs().sum() > 0     # plain sees it
-    assert cm.non_matchup_rest[:, -INCOMING_DMG_DIM:].abs().sum() == 0    # masked does not
-    assert torch.allclose(cm.non_matchup_rest[:, :-INCOMING_DMG_DIM],
-                          cp.non_matchup_rest[:, :-INCOMING_DMG_DIM])     # surgical
-    assert obs[:, abs_off:abs_off + INCOMING_DMG_DIM].sum() == 2 * INCOMING_DMG_DIM  # obs not mutated
-    assert set(plain.state_dict()) == set(masked.state_dict())           # no weight-shape change
-
-
-# --------------------------------------------------------------------------- defender ability immunity
 def test_defender_ability_immunity():
     """A Levitate defender reads ~0 incoming Ground (the believed Earthquake is nullified); an identical
     defender without Levitate reads a real Ground threat. Our abilities are revealed → known, not believed."""

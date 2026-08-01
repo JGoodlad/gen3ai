@@ -45,8 +45,14 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
+# gen3_cpu_damage_deleted_v1: the block is no longer part of the OBSERVATION, so its dims come from
+# the module that owns them. This test targets `encode_block` (the REWARD PBRS's source) directly,
+# so it keeps its full value after the obs deletion.
+from agents.observation.incoming_damage import (
+    PER_MON as INCOMING_PER_MON, RECOVERY as INCOMING_RECOVERY_DIM,
+)
 from agents.observation.constants import (
-    INCOMING_DMG_DIM, INCOMING_PER_MON, INCOMING_RECOVERY_DIM, TEAM_SIZE,
+    TEAM_SIZE,
 )
 from agents.observation.incoming_damage_encoder import encode_block
 from agents.observation.incoming_damage import IDX_OUTSPEED, IDX_PHYS_PKO, IDX_SPEC_PKO
@@ -115,9 +121,9 @@ class IncomingDmgFuzzPlayer(Player):
         s.n_blocks += 1
 
         # invariant 2 — width + finiteness
-        if block.shape[0] != INCOMING_DMG_DIM:
+        if block.shape[0] != (TEAM_SIZE * INCOMING_PER_MON + INCOMING_RECOVERY_DIM):
             s.shape_fail += 1
-            s.record({"check": "wrong_width", "got": int(block.shape[0]), "want": INCOMING_DMG_DIM})
+            s.record({"check": "wrong_width", "got": int(block.shape[0]), "want": (TEAM_SIZE * INCOMING_PER_MON + INCOMING_RECOVERY_DIM)})
             return
         if not np.all(np.isfinite(block)):
             s.finite_fail += 1

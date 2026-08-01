@@ -799,17 +799,19 @@ cross-battle generalization of a single battle's `notable.biggest_value_drops`.)
 
 ## Obs-offset dependence (regression-guarded)
 
-The engine reads five semantic obs regions by offset: the active-move type
-multipliers (`OFFSET_REACTIVE + move_multiplier`, currently dim 1458), the
-`our_matchups` block (`+ our_matchups`, currently 1568), the **`their_matchups`**
-block (`+ their_matchups`, currently 1712 — the raw-effectiveness decode + saliency),
-the **`incoming_damage`** block (`+ incoming_damage`, currently 1517, dim 51 — the
-P(KO)/chip belief decode + critic/policy saliency; per-mon active flag read via
-`pokemon_full_dim`), and the turn-history span — all resolved at runtime from
+**`gen3_cpu_damage_deleted_v1` (v48):** two of these regions no longer EXIST in the obs — the
+active-move type multipliers and the `incoming_damage` block were deleted (the DamageOperator
+computes both GPU-side from the learned belief). `ObsOffsets.mm_off` / `incoming_off` / `incoming_dim`
+now resolve to **0 = absent**, and every consumer no-ops on 0 (the saliency block list drops the
+"active move_multipliers(4)" row, `_active_move_mults` returns zeros, the intervention sweep skips
+its write). The fields are KEPT so archived pre-v48 traces still decode. The engine now reads three
+live regions: the `our_matchups` block (`OFFSET_REACTIVE + our_matchups`, currently 1465), the
+**`their_matchups`** block (currently 1609 — the raw-effectiveness decode + saliency), and the
+turn-history span — all resolved at runtime from
 `Gen3ObservationEncoder.get_layout()`. **If the obs layout changes, these move
 automatically** (e.g. `gen3_move_effects_v1` inserted a block before `our_matchups`,
-shifting it; `gen3_incoming_damage_v1` inserted the 33-dim belief block at reactive
-offset 50), and `engine_test.py` pins the resolved values
+shifting it; `gen3_cpu_damage_deleted_v1` REMOVED three of them, moving the matchups
+1568 → 1465), and `engine_test.py` pins the resolved values
 (`test_offsets_resolve_matches_layout`) so a silent shift fails loudly. (Mirror note
 in `src/agents/observation/CLAUDE.md`.)
 

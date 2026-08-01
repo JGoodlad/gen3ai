@@ -1033,6 +1033,41 @@ so it's a **FORWARD-BEHAVIOR toggle** like `move_prior_fusion` (gated in `check_
 compare; OFF byte-for-byte; **NO `ARCH_SIGNATURE` bump**). Requires `move_belief_mode != off` (there must be
 a head to reinject). Current `MODEL_CONFIG_VERSION` = **32**.
 
+**Frozen pre-attention move belief (v47, `move_belief_single_compute` /
+`--move-belief-single-compute`, `gen3_belief_single_compute_v1`).** Computes the move belief **exactly
+once** per forward and freezes it. Prefuse (v32) moved the *reinjection* before the transformer, but the
+`gen3_iterative_damage_v1` refine callback still **re-read** `MoveBelief.move_logits` off the current
+(reinjected → attention-enriched) opp tokens on every round — so in the production config the belief was
+computed **3×** (prefuse + `damage_refine_rounds`=2 re-reads), and the refine physics consumed a
+different posterior than the one attention was handed. When on, `refine_cb` reuses the stashed
+`last_move_belief_logits` instead:
+
+> belief ONCE (pre-attention) → physics ONCE → N attention layers that **cannot** revise it.
+
+Paired with `--damage-refine-rounds 1` the callback fires only before layer 0 (on pre-attention role
+tokens), so both transformer layers reason over frozen physics — the `next_run_plan.md` item-3
+"prefuse-style, ONE pre-layer-1 injection, no between-layer recompute" arm. The stash is **live, not
+detached**: the op's damage gradient still reaches the same belief computation the reinjection used (one
+posterior, one gradient path — do NOT `.detach()` it, that would silently sever the physics→belief
+training signal the op exists to provide). Also strictly cheaper — one fewer belief head pass per
+forward.
+
+**Cold-start inertness is structural, and pinned by
+`belief_single_compute_test.test_identity_at_init_forward_equals_per_round`:** under
+`--move-prior-fusion` `move_head` is ZERO-init (the posterior IS the Smogon prior ⇒ token-independent,
+so re-reading it off enriched tokens returns the same values), and `refine_proj` is ZERO-init (the
+injection is multiplied by 0). Both must train away from zero before frozen-vs-per-round can differ at
+all — so enabling the flag is risk-free at step 0. If that test ever fails, one of those zero-inits
+changed and the guarantee is gone.
+
+Same `MoveBelief` module/params → state_dict identical, projection widths unchanged, so it is a
+**FORWARD-BEHAVIOR toggle** like `move_belief_prefuse` (gated in `check_compatible` with a bool compare;
+OFF byte-for-byte; **NO `ARCH_SIGNATURE` bump**). **Requires `move_belief_prefuse`** — without it the
+only belief is computed POST-transformer, so the refine callback has nothing to reuse and the flag would
+be a silent no-op; enforced at both the CLI (`parser.error`) and the extractor (`ValueError`). Threaded
+through `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles` + both
+`extractor_kwargs` sites. Current `MODEL_CONFIG_VERSION` = **47**.
+
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 
 ## PopArt value-target normalization (`popart.py`, `--use-popart`)

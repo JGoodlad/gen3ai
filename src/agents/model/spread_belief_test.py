@@ -92,27 +92,6 @@ def test_op_signature_back_compat_none():
     b = op(ctx, lg, None)                 # explicit None
     assert torch.equal(a, b)
 
-
-# ------------------------------------------------------------------- the --unified-obs masks
-def test_masks_zero_only_their_region():
-    """Each obs-ablation mask zeros its region of the model's view and nothing else; OFF leaves the obs
-    untouched. We compare the unpacked non_matchup_rest with/without each mask."""
-    torch.manual_seed(0)
-    x = {"observation": torch.rand(2, _layout["total_dim"])}
-    base = _model().unpack(x).non_matchup_rest
-    # incoming-damage mask
-    inc = _model(mask_incoming_damage_obs=True).unpack(x).non_matchup_rest
-    # move-effects mask
-    eff = _model(mask_move_effects_obs=True).unpack(x).non_matchup_rest
-    assert not torch.equal(base, inc) and not torch.equal(base, eff)
-    # the two masks zero DISJOINT regions (their difference-from-base supports don't overlap)
-    inc_changed = (base != inc).any(0)
-    eff_changed = (base != eff).any(0)
-    assert not (inc_changed & eff_changed).any()
-    # a masked region is all-zero in the masked view
-    assert (eff[:, eff_changed] == 0).all()
-
-
 # ============================ gen3_nature_ev_belief_v1 (v40): nature/EV generative head ============================
 from agents.model.features_extractor import _EV_DELTA_SCALE, _DMG_IDX_PHYS_PKO
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO as _PPO

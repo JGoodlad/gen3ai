@@ -673,9 +673,7 @@ def current_model_version(
     spread_belief_coef: float = 0.0,
     move_prior_fusion: bool = False,
     move_belief_prefuse: bool = False,
-    mask_incoming_damage_obs: bool = False,
-    mask_active_move_scalars_obs: bool = False,
-    mask_move_effects_obs: bool = False,
+    move_belief_single_compute: bool = False,
     win_prob_mode: str = "none",
     win_prob_coef: float = 1.0,
     value_dist_mode: str = "none",
@@ -746,9 +744,7 @@ def current_model_version(
     ext_kwargs["spread_belief_nature_marginalize"] = spread_belief_nature_marginalize
     ext_kwargs["move_prior_fusion"] = move_prior_fusion
     ext_kwargs["move_belief_prefuse"] = move_belief_prefuse
-    ext_kwargs["mask_incoming_damage_obs"] = mask_incoming_damage_obs
-    ext_kwargs["mask_active_move_scalars_obs"] = mask_active_move_scalars_obs
-    ext_kwargs["mask_move_effects_obs"] = mask_move_effects_obs
+    ext_kwargs["move_belief_single_compute"] = move_belief_single_compute
     ext_kwargs["win_prob_mode"] = win_prob_mode
     ext_kwargs["value_dist_mode"] = value_dist_mode
     ext_kwargs["value_dist_bins"] = value_dist_bins
@@ -811,9 +807,7 @@ def arch_toggles_from_model(model) -> dict:
         "spread_belief_nature_marginalize": bool(getattr(fe, "spread_belief_nature_marginalize", False)),
         "move_prior_fusion": bool(getattr(fe, "move_prior_fusion", False)),
         "move_belief_prefuse": bool(getattr(fe, "move_belief_prefuse", False)),
-        "mask_incoming_damage_obs": bool(getattr(fe, "mask_incoming_damage_obs", False)),
-        "mask_active_move_scalars_obs": bool(getattr(fe, "mask_active_move_scalars_obs", False)),
-        "mask_move_effects_obs": bool(getattr(fe, "mask_move_effects_obs", False)),
+        "move_belief_single_compute": bool(getattr(fe, "move_belief_single_compute", False)),
         "win_prob_mode": str(getattr(fe, "win_prob_mode", "none")),
         # v43 pubval aux head (gen3_pubval_aux_v1): STRUCTURAL string like win_prob_mode, gated in
         # check_compatible, so it must reach the worker's gate (a pubval-ON run's own snapshots carry it).

@@ -15,8 +15,6 @@ from agents.observation.constants import (
     POKEMON_SPREAD_DIM,
     POKEMON_CONDITION_OFFSET,
     POKEMON_SLEEP_BELIEF_OFFSET,
-    INCOMING_DMG_OFFSET,
-    INCOMING_DMG_DIM,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.model.team_signature import TEAM_SIGNATURE_DIM, TEAM_SIGNATURE_MOVES
@@ -293,9 +291,7 @@ class ObsUnpack(torch.nn.Module):
     (`ExtractorContext`). This is the bulk of the gather/slice plumbing; isolating it
     makes the rest of the pipeline read at the tensor level."""
 
-    def __init__(self, layout: Dict[str, Any], attend_unrevealed_opponents: bool = False,
-                 mask_incoming_damage_obs: bool = False,
-                 mask_active_move_scalars_obs: bool = False, mask_move_effects_obs: bool = False):
+    def __init__(self, layout: Dict[str, Any], attend_unrevealed_opponents: bool = False):
         super().__init__()
         self.layout = layout
         # When True, UNREVEALED opp slots (species_known==0, hp filled as 0 — Gen 3 has no
@@ -303,18 +299,10 @@ class ObsUnpack(torch.nn.Module):
         # ATTENDABLE in the transformer instead of being key-masked identically to fainted
         # mons. Lets the body reason about the still-hidden enemy team. Off = baseline.
         self.attend_unrevealed_opponents = attend_unrevealed_opponents
-        # When True, ZERO the 51-dim incoming-damage / OHKO belief block out of the obs the MODEL reads
-        # (ablation-by-zeroing — the block STAYS in the obs vector at a fixed dim, and the reward PBRS
-        # still reads it from `live_view`). Use with the unified DamageOperator to A/B whether the
-        # learned belief→damage op replaces the CPU usage-prior collapse — without deleting any code.
-        self.mask_incoming_damage_obs = mask_incoming_damage_obs
-        # gen3_unified_spread_belief_v1 (the --unified-obs disable-redundant flag): two more obs regions the
-        # unified GPU path now subsumes, zeroed from the MODEL's view (block stays in the obs; reward PBRS
-        # untouched). mask_active_move_scalars_obs zeros the active-move power+multiplier scalars (8 dims,
-        # subsumed by the op's OUTGOING per-move damage — so it requires damage_outgoing); mask_move_effects
-        # zeros the 44-dim move-effect block (subsumed by MOVE_ATTR/the move latent + the op effect axes).
-        self.mask_active_move_scalars_obs = mask_active_move_scalars_obs
-        self.mask_move_effects_obs = mask_move_effects_obs
+        # gen3_cpu_damage_deleted_v1: the three `--unified-obs` ablation masks are GONE along with
+        # the blocks they hid. They existed to A/B whether the GPU DamageOperator subsumed the CPU
+        # incoming-damage / move-effect / active-move-scalar regions; that A/B is settled and the
+        # producers are deleted, so there is nothing left to mask.
 
     def forward(self, obs: Dict[str, torch.Tensor]) -> ExtractorContext:
         layout = self.layout
@@ -425,25 +413,6 @@ class ObsUnpack(torch.nn.Module):
         our_ctx_raw = remaining_part[:, 0 : active_ctx_dim]
         opp_ctx_raw = remaining_part[:, active_ctx_dim : 2 * active_ctx_dim]
         non_matchup_rest = remaining_part[:, 2 * active_ctx_dim : reactive_start + matchup_offset]
-        # --unified-obs disable-redundant masks: zero each now-GPU-subsumed obs region from the MODEL's view.
-        # Clone ONCE if any mask is set (non_matchup_rest is a view of the obs — never mutate the shared
-        # input). Offsets are derived from named reactive_layout entries (never hardcoded). The reward PBRS
-        # reads these from live_view, so it is unaffected.
-        if self.mask_incoming_damage_obs or self.mask_active_move_scalars_obs or self.mask_move_effects_obs:
-            non_matchup_rest = non_matchup_rest.clone()
-
-            def _zero_region(off: int, dim: int) -> None:
-                s = reactive_start + off - 2 * active_ctx_dim
-                non_matchup_rest[:, s:s + dim] = 0.0
-            if self.mask_incoming_damage_obs:                  # 51-dim incoming-damage belief → DamageOperator
-                _zero_region(INCOMING_DMG_OFFSET, INCOMING_DMG_DIM)
-            if self.mask_active_move_scalars_obs:              # active-move power(4)+multiplier(4) → op outgoing
-                _mp = reactive_layout['move_power']; _mm = reactive_layout['move_multiplier']
-                _zero_region(_mp['offset'], _mp['dim'] + _mm['dim'])
-            if self.mask_move_effects_obs:                     # 44-dim move-effect block → MOVE_ATTR/move latent
-                _me = reactive_layout['move_effects']
-                _zero_region(_me['offset'], _me['dim'])
-
         return ExtractorContext(
             batch_size=batch_size, device=x.device,
             pokemon_part=pokemon_part,
@@ -3596,15 +3565,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  value_active_readout: bool = False, opp_belief_slots: bool = False,
                  move_belief_mode: str = "off", opp_belief_latent: bool = False,
                  damage_op: bool = False, move_prior_fusion: bool = False,
-                 mask_incoming_damage_obs: bool = False, win_prob_mode: str = "none",
+                 win_prob_mode: str = "none",
                  damage_outgoing: bool = False, move_candidate_floor: float = 0.0,
                  move_latent: bool = False, spread_belief: bool = False, spread_belief_nature: bool = False,
                  spread_belief_nature_marginalize: bool = False,
-                 mask_active_move_scalars_obs: bool = False, mask_move_effects_obs: bool = False,
                  value_dist_mode: str = "none", value_dist_bins: int = 0,
                  value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0,
                  damage_topk_k: int = 0, damage_reattend: bool = False,
-                 move_belief_prefuse: bool = False, damage_refine_rounds: int = 0,
+                 move_belief_prefuse: bool = False, move_belief_single_compute: bool = False,
+                 damage_refine_rounds: int = 0,
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  damage_matrices_outgoing_all: bool = False,
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
@@ -3621,13 +3590,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Behavioral toggle (no weight-shape change): unmask the opponent's still-hidden
         # party so the transformer attends to it. Version-checked, not in ARCH_SIGNATURE.
         self.attend_unrevealed_opponents = attend_unrevealed_opponents
-        # Ablation toggle (no weight-shape change): zero the incoming-damage obs block out of the model's
-        # view (the unified DamageOperator replaces it; the reward still uses it). Version-checked.
-        self.mask_incoming_damage_obs = mask_incoming_damage_obs
-        # gen3_unified_spread_belief_v1: the other two --unified-obs disable-redundant masks (stored on the
-        # root for arch_toggles_from_model threading; passed to ObsUnpack below).
-        self.mask_active_move_scalars_obs = mask_active_move_scalars_obs
-        self.mask_move_effects_obs = mask_move_effects_obs
+        # gen3_cpu_damage_deleted_v1: the three --unified-obs ablation masks are gone with their blocks.
         # Hidden-opponent belief: opp_belief_cls_k = number of learned belief query tokens.
         # 0 = OFF (no module, baseline arch — reproduces it byte-for-byte, so no ARCH_SIGNATURE bump);
         # k>0 builds HiddenOppBeliefPool(k) and widens both projection inputs by k*D_MODEL (a
@@ -3661,10 +3624,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         # Phase modules (constructed before the dummy forward below).
         self.embeddings = Embeddings(layout)
-        self.unpack = ObsUnpack(layout, attend_unrevealed_opponents=attend_unrevealed_opponents,
-                                mask_incoming_damage_obs=mask_incoming_damage_obs,
-                                mask_active_move_scalars_obs=mask_active_move_scalars_obs,
-                                mask_move_effects_obs=mask_move_effects_obs)
+        self.unpack = ObsUnpack(layout, attend_unrevealed_opponents=attend_unrevealed_opponents)
         self.pokemon_encoder = PokemonEncoder(layout, move_latent=move_latent)
         self.team_transformer = TeamTransformer(layout)
         self.cls_pool = CLSPool(layout)
@@ -3748,6 +3708,28 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "move_belief_prefuse=True requires move_belief_mode != off — there is no move-belief head "
                 "to reinject before the transformer. Set --move-belief-mode revealed (or both/unrevealed), "
                 "or disable --move-belief-prefuse."
+            )
+        # move_belief_single_compute (gen3_belief_single_compute_v1): compute the move belief EXACTLY
+        # ONCE per forward — pre-attention — and freeze it. Under prefuse the belief is already
+        # predicted + reinjected before the transformer, but the between-layers refine callback then
+        # RE-READ `move_logits` off the (reinjected) opp tokens, so the belief was computed twice and
+        # the physics consumed a different posterior than the one attention was given. When on, the
+        # refine kernels reuse the stashed pre-transformer logits, so:
+        #   belief ONCE (pre-attention) → physics ONCE → N attention layers that CANNOT change it.
+        # This is the "frozen belief" arm of the iterative-refinement A/B (next_run_plan item 3: the
+        # per-round recompute only pays if the belief sharpens through layers — measured near-zero
+        # under detached). It is also strictly cheaper: one fewer move-belief head pass per forward.
+        # FORWARD-BEHAVIOR only (no new params, state_dict identical, projection widths unchanged, NO
+        # ARCH_SIGNATURE bump; OFF byte-for-byte) → gated in check_compatible like move_belief_prefuse.
+        # Requires move_belief_prefuse: without it the only belief is computed POST-transformer, so
+        # there is nothing stashed for the refine callback to reuse.
+        self.move_belief_single_compute = move_belief_single_compute
+        if move_belief_single_compute and not move_belief_prefuse:
+            raise ValueError(
+                "move_belief_single_compute=True requires move_belief_prefuse=True — without prefuse "
+                "the move belief is computed AFTER the transformer, so the between-layers refine "
+                "callback has no pre-attention belief to reuse. Set --move-belief-prefuse, or disable "
+                "--move-belief-single-compute."
             )
         self.move_belief = (
             MoveBelief(layout['max_moves'], layout['move_embedding_dim'],
@@ -4406,7 +4388,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 if layer_idx >= self.damage_refine_rounds:
                     return tokens
                 opp_tokens = tokens[:, TEAM_SIZE:2 * TEAM_SIZE, :]            # current (mid-transformer) opp
-                logits = self.move_belief.move_logits(opp_tokens, _opp_species_ids, _opp_move_ids)  # [B,6,M]
+                # gen3_belief_single_compute_v1: FROZEN belief — reuse the pre-transformer posterior
+                # instead of re-reading the head off the (being-enriched) tokens, so the belief is
+                # computed once per forward and attention cannot revise it. The stash is live (not
+                # detached), so the physics gradient still reaches the SAME belief computation the
+                # reinjection used — one posterior, one gradient path. Default: re-read per round
+                # (physics-in-the-loop), byte-for-byte unchanged.
+                if self.move_belief_single_compute and self.last_move_belief_logits is not None:
+                    logits = self.last_move_belief_logits                     # [B,6,M] pre-attention
+                else:
+                    logits = self.move_belief.move_logits(opp_tokens, _opp_species_ids, _opp_move_ids)  # [B,6,M]
                 # --- INCOMING residuals onto OUR tokens: damage (always) + status (v37, if on) ---
                 # ONE candidate build per round, shared by the damage + status kernels (both select the
                 # SAME detached top-K over the SAME `logits`; they used to rebuild it independently).

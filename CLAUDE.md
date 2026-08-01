@@ -603,7 +603,7 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 
 ## Observation Vector
 
-The full observation is a **2992-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **2889-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset |
 |---|---|---|
@@ -611,10 +611,24 @@ The full observation is a **2992-dim float32 vector** (`Gen3ObservationEncoder.d
 | Opp team (6 × 110) | 660 | 660 |
 | Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1320 |
 | Global env | 18 | 1436 |
-| Reactive + move-effects + **incoming-damage** + **turns_since_progress** + **protect-odds** + matchups + **active-req-moves** | 414 | 1454 |
-| Prev-turn action mask | 11 | 1868 |
-| Turn history (`N_HISTORY_TURNS` × 159) | 1113 | 1879 |
-| **Total** | **2992** | |
+| Reactive scalars (11) + matchups (288) + **active-req-moves** (12) | 311 | 1454 |
+| Prev-turn action mask | 11 | 1765 |
+| Turn history (`N_HISTORY_TURNS` × 159) | 1113 | 1776 |
+| **Total** | **2889** | |
+
+**`gen3_cpu_damage_deleted_v1` (v48) — the `--unified-obs` DELETE step.** Three CPU obs regions that
+`--unified-obs` previously only **masked** from the model are now removed from the encoder entirely
+(reactive 414 → 311, obs 2992 → 2889): the **51-dim incoming-damage / OHKO belief**, the **44-dim
+action-aligned move-effect block**, and the **8 active-move scalars** (base-power ×4 + type-multiplier
+×4). All three had live GPU homes (the `DamageOperator`'s incoming/outgoing blocks from the LEARNED
+move belief, the `MoveLatentEncoder` move latent, the v27/v37 status-landing), so the masks existed
+only to A/B the replacement — that A/B is settled and the producers are gone. The three
+`--mask-*-obs` flags and `--unified-obs` are deleted with them. **This is a pure CPU refund on the
+dominant rollout cost centre:** obs build was ~73% of per-decision controllable CPU, and the measured
+benchmark moved **7,396 → 6,444 calls/encode (−12.9%)** with `state_encoder.encode` 0.456 → 0.363 ms
+(−20%). `agents.observation.incoming_damage` (the math core) **stays** — the reward PBRS and the
+prober both import it; only the obs WRITE is removed. Retrain-class: the obs-dim weight-field check
+auto-rejects every pre-v48 checkpoint (no `ARCH_SIGNATURE` bump needed).
 
 **The full per-block layout** — the 110-dim per-Pokémon slot (incl. a 3-dim
 `gen3_sleep_wake_belief_v1` block: `sleep_is_deterministic` [Rest], computed `p_wake`, and
@@ -1098,7 +1112,38 @@ per-PAIR code), and `build_roster_table` THROWS on a duplicate signature or a mo
 falls through to row 0 and silently makes the experiment a no-op) + `zarch/lut_code_dist`. STRUCTURAL
 string + int (`zarch_lut_teams`, the Embedding height) gated in `check_compatible`; OFF byte-identical
 (NO `ARCH_SIGNATURE` bump); requires `--zarch-film heads` + `--trainee-teams`.
-Current `MODEL_CONFIG_VERSION` = **46**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+**v47 the FROZEN pre-attention move belief** (`gen3_belief_single_compute_v1`;
+`move_belief_single_compute` / `--move-belief-single-compute`) — compute the move belief **exactly
+once** per forward and freeze it. Under `--move-belief-prefuse` the belief is predicted + reinjected
+BEFORE the transformer, but the between-layers refine callback then **re-read** `move_logits` off the
+(reinjected, then attention-enriched) opp tokens — so the belief was computed **3× in the production
+config** (prefuse + one per `--damage-refine-rounds` round) and the physics consumed a *different*
+posterior than the one attention was handed. ON, the refine kernels reuse the stashed pre-transformer
+logits, giving the intended pipeline: **belief ONCE (pre-attention) → physics ONCE → N attention
+layers that CANNOT revise it.** With `--damage-refine-rounds 1` the callback fires only before layer 0
+(on pre-attention role tokens), so both transformer layers then reason over frozen physics — the
+`next_run_plan` item-3 "prefuse-style, no between-layer recompute" arm, and the shape the owner
+specified. The stash is **live, not detached**, so the op's damage gradient still reaches the same
+belief computation the reinjection used (one posterior, one gradient path). Also strictly cheaper: one
+fewer move-belief head pass per forward. **Cold-start inert by construction** (pinned by a test): under
+`--move-prior-fusion` `MoveBelief.move_head` is ZERO-init (posterior == the Smogon prior ⇒
+token-independent) AND `refine_proj` is ZERO-init (injection ×0), so frozen and per-round are
+byte-identical at step 0 and can only diverge as those paths learn. FORWARD-BEHAVIOR toggle like
+`move_belief_prefuse` (same `MoveBelief` params → state_dict identical, projection widths unchanged);
+gated in `check_compatible` (bool); OFF byte-identical (NO `ARCH_SIGNATURE` bump); requires
+`--move-belief-prefuse` (without it the only belief is POST-transformer, so there is nothing to reuse —
+enforced at the CLI and the extractor). Threaded through `current_model_version` /
+`arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs` sites. Tests:
+`belief_single_compute_test.py`.
+**v48 the CPU-DAMAGE DELETION** (`gen3_cpu_damage_deleted_v1`) — the delete step of the
+`--unified-obs` deprecation playbook: the 51-dim incoming-damage block, the 44-dim move-effect block
+and the 8 active-move scalars are removed from the OBSERVATION (reactive 414 → 311, obs 2992 → 2889),
+along with the three `mask_*_obs` `ModelVersion` fields and the `--unified-obs` / `--mask-*-obs` CLI
+flags. See the observation-vector section above for the rationale and the measured CPU refund.
+`_migrate_config` **POPs** the three dead keys (`from_json_file` does `cls(**data)`, so a stale key
+would raise `TypeError` rather than the clear arch error). Retrain-class, caught by the existing
+obs-dim weight-field check — NO `ARCH_SIGNATURE` bump.
+Current `MODEL_CONFIG_VERSION` = **48**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

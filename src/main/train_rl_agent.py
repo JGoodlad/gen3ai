@@ -352,9 +352,7 @@ def _run_arch_toggles(args) -> dict:
         spread_belief_nature_marginalize=args.spread_belief_nature_marginalize,
         move_prior_fusion=args.move_prior_fusion,
         move_belief_prefuse=args.move_belief_prefuse,
-        mask_incoming_damage_obs=args.mask_incoming_damage_obs,
-        mask_active_move_scalars_obs=args.mask_active_move_scalars_obs,
-        mask_move_effects_obs=args.mask_move_effects_obs,
+        move_belief_single_compute=args.move_belief_single_compute,
         win_prob_mode=args.win_prob_mode,
         pubval_mode=args.pubval_mode,
         value_dist_mode=args.value_dist_mode,
@@ -1054,14 +1052,15 @@ async def main():
                              "being grafted onto the already-refined tokens). Same MoveBelief module/params — "
                              "only the call timing differs. Forward-behavior toggle (no weight-shape change; "
                              "version-checked, fresh-only). REQUIRES --move-belief-mode != off. Off by default.")
-    parser.add_argument("--mask-incoming-damage-obs", "--mask_incoming_damage_obs",
-                        dest="mask_incoming_damage_obs", action=BoolFlag, default=None,
-                        help="Unified-architecture ABLATION: zero the 51-dim incoming-damage / OHKO obs "
-                             "block out of the MODEL's view (the block stays in the obs at a fixed dim; "
-                             "the reward PBRS still reads the belief from live_view). Use WITH --damage-op "
-                             "to A/B whether the learned belief→damage op replaces the CPU usage-prior "
-                             "collapse — no code deleted, fully reversible. Forward-behavior toggle "
-                             "(no weight-shape change; version-checked, fresh-only). Off by default.")
+    parser.add_argument("--move-belief-single-compute", "--move_belief_single_compute",
+                        dest="move_belief_single_compute", action=BoolFlag, default=None,
+                        help="FREEZE the move belief: compute it EXACTLY ONCE per forward "
+                             "(pre-attention, at the prefuse reinjection) and have the refine "
+                             "kernels REUSE that posterior instead of re-reading the head "
+                             "between layers. belief ONCE -> physics ONCE -> N attention layers "
+                             "that cannot revise it; also one fewer head pass per forward. "
+                             "Forward-behavior (version-checked, fresh-only). REQUIRES "
+                             "--move-belief-prefuse. Off by default.")
     parser.add_argument("--win-prob-mode", "--win_prob_mode", dest="win_prob_mode",
                         choices=("none", "read_only", "shaping"), default=None,
                         help="Auxiliary WIN-PROBABILITY head: a calibrated P(win|state) readout off the "
@@ -1502,25 +1501,6 @@ async def main():
                              "bit-identical; only the training gradient differs. RESUME-IMMUTABLE (like --vf-coef, "
                              "version-checked on resume only — a frozen opponent's forward is unaffected). The "
                              "win-aligned heads (--win-prob-mode / --value-dist-mode) keep their own read_only.")
-    parser.add_argument("--unified-obs", "--unified_obs", dest="unified_obs",
-                        action=BoolFlag, default=False,
-                        help="DISABLE the redundant CPU obs blocks the unified GPU path now subsumes (ONE "
-                             "master switch): zeros the incoming-damage block (→ --damage-op), the "
-                             "active-move power/multiplier scalars (→ the op's outgoing block, so requires "
-                             "--unified-damage both), and the 44-dim move-effect block (→ MOVE_ATTR/the move "
-                             "latent + the op effect axes). Each region stays in the obs vector (dim "
-                             "unchanged); the reward PBRS still reads them. Pair with --unified-moves both + "
-                             "--spread-belief to run pure-unified. Granular --mask-*-obs flags underneath.")
-    parser.add_argument("--mask-active-move-scalars-obs", "--mask_active_move_scalars_obs",
-                        dest="mask_active_move_scalars_obs", action=BoolFlag, default=None,
-                        help="Granular: zero the active-move power+multiplier scalars from the model's view "
-                             "(subsumed by the op's outgoing block; requires --damage-outgoing). Part of "
-                             "--unified-obs.")
-    parser.add_argument("--mask-move-effects-obs", "--mask_move_effects_obs",
-                        dest="mask_move_effects_obs", action=BoolFlag, default=None,
-                        help="Granular: zero the 44-dim move-effect block from the model's view (subsumed "
-                             "by MOVE_ATTR/the move latent + the op effect axes; pair with --move-latent + "
-                             "--damage-op). Part of --unified-obs.")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--grad-checkpointing", "--grad_checkpointing", dest="grad_checkpointing",
                         action=BoolFlag, default=False,
@@ -1887,15 +1867,6 @@ async def main():
             from agents.model.features_extractor import _DMG_TOPK_DEFAULT_K
             args.damage_topk_k = _DMG_TOPK_DEFAULT_K
 
-    # --unified-obs is the master DISABLE-redundant switch: flip on the three obs-ablation masks (each only
-    # where the GPU path subsumes it — active-move scalars need the outgoing op). v25.
-    if getattr(args, "unified_obs", False):
-        if args.mask_incoming_damage_obs is None:
-            args.mask_incoming_damage_obs = True
-        if args.mask_active_move_scalars_obs is None:
-            args.mask_active_move_scalars_obs = True
-        if args.mask_move_effects_obs is None:
-            args.mask_move_effects_obs = True
 
     # --unified-damage desugars into the component flags BEFORE _resolve (so they aren't None-filled from a
     # saved version). When not 'off' it forces damage_op + prior fusion + (for 'both') the outgoing block,
@@ -1957,11 +1928,9 @@ async def main():
     _resolve("spread_belief_nature", False)    # v40 structural (version-checked, fresh-only)
     _resolve("spread_belief_nature_marginalize", False)  # v40 forward-behavior (version-checked, fresh-only)
     _resolve("spread_belief_coef", 0.0)        # training-only (inherited like move_belief_coef)
-    _resolve("mask_active_move_scalars_obs", False)  # v25 forward-behavior (version-checked, fresh-only)
-    _resolve("mask_move_effects_obs", False)         # v25 forward-behavior (version-checked, fresh-only)
     _resolve("move_prior_fusion", False)       # v20 forward-behavior (version-checked, fresh-only)
     _resolve("move_belief_prefuse", False)     # v32 forward-behavior (version-checked, fresh-only)
-    _resolve("mask_incoming_damage_obs", False)  # v21 forward-behavior (version-checked, fresh-only)
+    _resolve("move_belief_single_compute", False)  # v47 forward-behavior (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
     _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)
     _resolve("pubval_mode", "none")            # v43 structural + resume-immutable (version-checked)
@@ -2262,6 +2231,13 @@ async def main():
             "moves the move-belief reinjection before the transformer. Set --move-belief-mode revealed, "
             "or drop --move-belief-prefuse."
         )
+    if args.move_belief_single_compute and not args.move_belief_prefuse:
+        parser.error(
+            "--move-belief-single-compute requires --move-belief-prefuse: without prefuse the "
+            "move belief is computed AFTER the transformer, so there is no pre-attention "
+            "posterior for the refine loop to reuse. Add --move-belief-prefuse, or drop "
+            "--move-belief-single-compute."
+        )
     if args.damage_outgoing and not args.damage_op:
         # The outgoing per-move block is emitted by the DamageOperator → the op must exist.
         parser.error(
@@ -2413,48 +2389,6 @@ async def main():
             "--hp-type-belief-coef requires --hp-type-belief learned (it supervises the learned HP-type "
             "head). Set --hp-type-belief learned, or set --hp-type-belief-coef 0."
         )
-    if args.mask_active_move_scalars_obs and not args.damage_outgoing:
-        # Zeroing the active-move power/multiplier scalars only makes sense once the op's OUTGOING block
-        # replaces them; without it the model loses the per-move signal with no substitute.
-        parser.error(
-            "--mask-active-move-scalars-obs requires --damage-outgoing (--unified-damage both): the op's "
-            "outgoing per-move damage is what replaces the zeroed obs scalars. Add --unified-damage both, "
-            "or drop --mask-active-move-scalars-obs / --unified-obs."
-        )
-    if args.mask_incoming_damage_obs and not args.damage_op:
-        # The 51-dim incoming-damage/OHKO block is subsumed by the differentiable DamageOperator's incoming
-        # rolls; masking it without the op leaves the model with NO incoming-damage signal at all.
-        parser.error(
-            "--mask-incoming-damage-obs requires --damage-op (--unified-damage): the op's incoming damage "
-            "block is what replaces the zeroed obs block. Add --unified-damage, or drop "
-            "--mask-incoming-damage-obs / --unified-obs."
-        )
-    if args.mask_move_effects_obs and not args.move_latent:
-        # The 44-dim per-OUR-move effect block's STRUCTURAL identity (is_boost/heal/protect/phaze/hazard,
-        # cures_self/team, per-status secondary chances) is carried into the model only via the move
-        # latent's MOVE_ATTR; masking it without --move-latent erases that signal with no substitute.
-        parser.error(
-            "--mask-move-effects-obs requires --move-latent (--unified-moves): the move latent's MOVE_ATTR "
-            "is what carries the per-move effect identity once the obs block is zeroed. Add --unified-moves, "
-            "or drop --mask-move-effects-obs / --unified-obs."
-        )
-    if args.mask_move_effects_obs and not args.damage_outgoing:
-        # The block also carried `status_will_land`; its GPU replacement is the op's OUTGOING status-landing
-        # block (gen3_unified_status_landing_v1), which only exists with the outgoing direction. Without it
-        # the model would lose the "will my Toxic/WoW/Spore/Leech Seed land" signal entirely.
-        parser.error(
-            "--mask-move-effects-obs requires --damage-outgoing (--unified-damage both / --unified-moves "
-            "both): the op's outgoing status-landing block is what replaces the zeroed `status_will_land`. "
-            "Add --unified-damage both, or drop --mask-move-effects-obs / --unified-obs."
-        )
-    if args.mask_move_effects_obs:
-        # With --move-latent + --damage-outgoing the structural identity (MOVE_ATTR) AND status_will_land
-        # (the op status-landing block, incl. Sleep Clause + Leech Seed + Substitute) are GPU-replaced. The
-        # remaining UNCOVERED residual: the recovery MAGNITUDE / Rest-cure detail (the op effect block carries
-        # a single recovery scalar), Yawn (delayed sleep), and a Leech-Seed-already-seeded target. Note it.
-        print("[NOTE] --mask-move-effects-obs: status_will_land is now GPU-replaced (op status-landing block, "
-              "incl. Sleep Clause + Leech Seed + Substitute). Residual uncovered: recovery magnitude/Rest-cure, "
-              "Yawn, Leech-Seed-already-seeded.")
     log_level = LogLevel[args.log_level.upper()]
 
     # One server config, built from --showdown-port and threaded to every Showdown client
@@ -3490,10 +3424,9 @@ async def main():
         _load_extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
         # Move-belief pre-fuse (reinject before the transformer) — version-checked (fresh-only). v32.
         _load_extractor_kwargs["move_belief_prefuse"] = args.move_belief_prefuse
+        # v47: frozen pre-attention move belief (refine reuses the prefuse posterior).
+        _load_extractor_kwargs["move_belief_single_compute"] = args.move_belief_single_compute
         # Incoming-damage-obs ablation — version-checked vs the saved config (fresh-only).
-        _load_extractor_kwargs["mask_incoming_damage_obs"] = args.mask_incoming_damage_obs
-        _load_extractor_kwargs["mask_active_move_scalars_obs"] = args.mask_active_move_scalars_obs  # v25
-        _load_extractor_kwargs["mask_move_effects_obs"] = args.mask_move_effects_obs                # v25
         # Win-probability head mode — version-checked vs the saved config (resume-IMMUTABLE; any change
         # FATALs, same machinery as move_belief_mode).
         _load_extractor_kwargs["win_prob_mode"] = args.win_prob_mode
@@ -3861,9 +3794,6 @@ async def main():
         # marginalization (forward-behavior). Both version-checked, fresh-only; OFF byte-identical.
         extractor_kwargs["spread_belief_nature"] = args.spread_belief_nature
         extractor_kwargs["spread_belief_nature_marginalize"] = args.spread_belief_nature_marginalize
-        # --unified-obs disable-redundant masks (forward-behavior): zero a now-subsumed obs region. v25.
-        extractor_kwargs["mask_active_move_scalars_obs"] = args.mask_active_move_scalars_obs
-        extractor_kwargs["mask_move_effects_obs"] = args.mask_move_effects_obs
         # Unified move belief (forward-behavior): fuse the Smogon move prior into the belief head. Requires
         # move_belief_mode != off (validated above). No weight-shape change (non-persistent prior buffer).
         extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
@@ -3871,9 +3801,10 @@ async def main():
         # believed moves co-refine through attention. Requires move_belief_mode != off (validated above).
         # No weight-shape change (same MoveBelief module/params, different call timing). v32.
         extractor_kwargs["move_belief_prefuse"] = args.move_belief_prefuse
+        # gen3_belief_single_compute_v1: belief ONCE pre-attention, then frozen. Requires prefuse. v47.
+        extractor_kwargs["move_belief_single_compute"] = args.move_belief_single_compute
         # Unified-architecture ablation (forward-behavior): zero the incoming-damage obs block from the
         # model's view. No weight-shape change. Independent A/B knob (typically paired with --damage-op).
-        extractor_kwargs["mask_incoming_damage_obs"] = args.mask_incoming_damage_obs
         # Win-probability head (none|read_only|shaping; structural + resume-immutable). 'none' = no module
         # (baseline byte-for-byte). The coef is a TRAINING hparam set on the model below; the MODE is the
         # version-checked arch toggle.

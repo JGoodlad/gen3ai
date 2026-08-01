@@ -13,7 +13,7 @@ from agents.training.reward_manager import (
     EXPLOSION_BLOCK_BONUS, FINISHING_BLOW_BONUS,
     PBRS_RISK_WEIGHT, SWITCH_RISK_THRESHOLD,
 )
-from agents.observation.constants import INCOMING_PER_MON
+from agents.observation.incoming_damage import PER_MON as INCOMING_PER_MON
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta
 from poke_env.battle.abstract_battle import DamagingMoveEvent

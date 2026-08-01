@@ -342,27 +342,6 @@ def test_fainted_count_reaches_network():
     set_region(variant, off, [0.5])
     assert_reaches_network(model, base, variant, "reactive our fainted-count")
 
-
-def test_active_move_power_reaches_network():
-    # move_power = 4 active-move base powers; touch slot 0.
-    model, layout, _ = feature_model()
-    base = obs_zero(layout)
-    variant = base.clone()
-    off = _reactive_offset(layout, "move_power")
-    set_region(variant, off, [0.5])
-    assert_reaches_network(model, base, variant, "reactive active-move-power dim")
-
-
-def test_active_move_multiplier_reaches_network():
-    # move_multiplier = 4 active-move effectiveness multipliers; touch slot 0.
-    model, layout, _ = feature_model()
-    base = obs_zero(layout)
-    variant = base.clone()
-    off = _reactive_offset(layout, "move_multiplier")
-    set_region(variant, off, [0.5])
-    assert_reaches_network(model, base, variant, "reactive active-move-multiplier dim")
-
-
 def test_trapped_bit_reaches_network():
     # gen3_trapping_signals_v1: `trapped` scalar. High-value — must reach the net.
     model, layout, _ = feature_model()

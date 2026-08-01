@@ -81,9 +81,14 @@ WEATHER_ONEHOT_DIM = 5
 GLOBAL_ENV_DIM = WEATHER_ONEHOT_DIM + 2 + 2 + 1 + 8  # = 18
 
 MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
-# 19 scalar reactive dims lead the block: move power(4) + multiplier(4) +
+# 11 scalar reactive dims lead the block:
 # fainted(2) + active_status(1) + forced_struggle(1) + trapped(1) + maybe_trapped(1) +
 # turns_since_progress(1) + protect_odds ×2 (our active, opp active) + wish_floating ×2 (our, opp).
+# Indices below are the CURRENT ones (post gen3_cpu_damage_deleted_v1, which removed the 8
+# active-move scalars that used to occupy vec[0:8] and shifted everything down by 8):
+#   vec[0]=fainted_ours vec[1]=fainted_opp vec[2]=active_status vec[3]=forced_struggle
+#   vec[4]=trapped vec[5]=maybe_trapped vec[6]=turns_since_progress
+#   vec[7]/vec[8]=protect_odds (our/opp)  vec[9]/vec[10]=wish_floating (our/opp)
 # trapped/maybe_trapped are the gen3_trapping_signals_v1 additions; turns_since_progress (vec[14],
 # gen3_markovian_progress_v1) is the log-saturated no-progress clock (design §5.1) — an
 # EpisodeTracker-owned cross-turn counter (NOT LiveView), threaded into encode() like the HP tracker, so
@@ -97,46 +102,37 @@ MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
 # recipient-maxhp/2 heal) when a Wish cast last turn will heal the slot mon at the END of this turn
 # (slot-keyed, reconstructed from the event log since poke-env doesn't track it), else 0.0. See
 # observation/wish_belief.py.**
-REACTIVE_SCALAR_DIM = 19
+# gen3_cpu_damage_deleted_v1: the 8 ACTIVE-MOVE SCALARS (4 base-power + 4 type-multiplier) that used
+# to head this block are GONE. They were the primitive CPU damage signal, fully subsumed by the
+# DamageOperator's OUTGOING per-move block (`--damage-outgoing`, request-ordered so slot k ↔ action
+# 6+k, with the real gen3 physics rather than bp/200 and mult/4). `--unified-obs` had merely MASKED
+# them from the model while the CPU still computed them every decision; this deletes the producer.
+# Scalar indices therefore shift down by 8 (the old vec[8] fainted-count is now vec[0]).
+REACTIVE_SCALAR_DIM = 11
 
-# gen3_move_effects_v1 / gen3_status_cure_moves_v1: action-aligned per-move EFFECT flags. For
-# each of the 4 request-order move slots (so feature slot k lines up with action logit 6+k), 11
-# features: is_boost, is_heal, is_protect, is_phaze, is_hazard, inflicts_status,
-# status_will_land, pp_fraction, status_will_land_known, cures_self_status, cures_team_status.
-# Status / utility moves are otherwise indistinguishable at the policy head (base power 0 + neutral
-# type multiplier for all of them), so the model could not tell a setup move from a heal from a
-# wasted Toxic — nor that a move CLEARS status. status_will_land is a prior-weighted probability;
-# status_will_land_known is the prior-vs-confirmed flag (routed with the SAME predicate as the
-# per-mon ability block's `known` bit — see reactive.py). cures_self_status (Refresh) /
-# cures_team_status (Heal Bell, Aromatherapy) are static curated facts (gen3_status_cure_moves_v1)
-# the head reads alongside the per-mon status one-hots to value a cure (a verified gap: the head
-# routed its own status onto Recover/switch but never onto the cure move). These sit AFTER the 15
-# scalars and BEFORE the matchups, so the extractor picks them up in `non_matchup_rest`
-# automatically (the matchup offset is read from the layout, never hardcoded).
-MOVE_EFFECT_FEATURES = 11
-MOVE_EFFECTS_DIM = 4 * MOVE_EFFECT_FEATURES                       # 44 (N_MOVE_SLOTS=4 × 11)
+# gen3_cpu_damage_deleted_v1: the 44-dim action-aligned MOVE-EFFECT block (4 slots x 11 flags:
+# is_boost/is_heal/is_protect/is_phaze/is_hazard/inflicts_status/status_will_land/pp_fraction/
+# status_will_land_known/cures_self_status/cures_team_status) is GONE. GPU homes, all live:
+#   * the static per-move mechanics  -> MoveLatentEncoder's MOVE_ATTR latent (--move-latent, v24)
+#   * board-conditional status_will_land -> DamageOperator._status_landing (--damage-outgoing, v27)
+#     and, in-trunk, discrete_{in,out}going_status (--threat-status-refine, v37)
+#   * pp_fraction -> the per-mon move slot (unchanged)
+# `--unified-obs` had merely MASKED this from the model while the CPU rebuilt all 44 dims per
+# decision; this deletes the producer. Honest residual: the Rest-cure coarsening noted in the v37
+# deprecation audit.
 
 NUM_POKEMON = 12
 TEAM_SIZE = 6
 
-# incoming_damage (gen3_incoming_crit_split): per-our-mon incoming-KO BELIEF (opp active → our
-# active + 5 bench). Per mon INCOMING_PER_MON features [phys_expdmg_frac, spec_expdmg_frac,
-# phys_pko_nocrit, spec_pko_nocrit, phys_crit_delta, spec_crit_delta, p_outspeed, threat_revealed],
-# then INCOMING_RECOVERY_DIM opp-active scalars [recovery_rate, cures_status(P rest),
-# recovery_known]. P(KO) is the modal no-crit line; the crit risk is the DELTA (crit-inclusive −
-# no-crit ∈ [0, _CRIT_P]) — a decorrelated "crit tax" feature, not the near-redundant absolute crit
-# line. Plus a provenance scalar (revealed move vs usage-prior guess). PER_MON / RECOVERY are owned by incoming_damage.py
-# (the math core that emits the block) and imported here so the layout and the encoder can never
-# disagree — same pattern as VOLATILE_DIM above. Sits AFTER move-effects and BEFORE the matchups, so
-# the feature extractor picks the whole block up in `non_matchup_rest` (→ both heads + global token)
-# automatically — the matchup offset is read from get_layout(), never hardcoded.
-from agents.observation.incoming_damage import (
-    PER_MON as INCOMING_PER_MON, RECOVERY as INCOMING_RECOVERY_DIM,
-)
-INCOMING_DMG_DIM = TEAM_SIZE * INCOMING_PER_MON + INCOMING_RECOVERY_DIM  # 51
-INCOMING_DMG_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM             # 63 (within the reactive block)
+# gen3_cpu_damage_deleted_v1: the 51-dim per-our-mon INCOMING-DAMAGE / OHKO belief block is GONE
+# from the observation. The GPU DamageOperator computes the same physics from the LEARNED move
+# belief (rather than this block's FIXED usage prior) and feeds both heads -- that was the whole
+# point of --damage-op. `--unified-obs` had merely MASKED it while the CPU still ran the ~6
+# per-channel threat computations every decision.
+# NOTE: `agents.observation.incoming_damage` (the math core) STAYS -- the reward PBRS
+# (reward_manager.py) and the prober both import it. Only the obs WRITE is removed.
 
-REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM  # 114
+REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM                            # 11
 
 # gen3_op_move_align_v1: the OUR-ACTIVE mon's 4 moves in REQUEST-slot order (so slot k ↔ action
 # logit 6+k) — [move_num ×4, resolved_type_id ×4, legal_now ×4]. The DamageOperator's OUTGOING
@@ -153,10 +149,9 @@ REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_
 # enters the raw-scalar projection path). Retrain-class (obs dim grows; ARCH gen3_op_move_align_v1).
 ACTIVE_REQ_MOVES_PER = 4                                                 # request slots (== N_MOVE_SLOTS)
 ACTIVE_REQ_MOVES_DIM = 3 * ACTIVE_REQ_MOVES_PER                          # 12 = ids(4) + type_ids(4) + legal(4)
-ACTIVE_REQ_MOVES_OFFSET = REACTIVE_MATCHUP_OFFSET + MATCHUP_DIM          # 402 — after the two matchup matrices
+ACTIVE_REQ_MOVES_OFFSET = REACTIVE_MATCHUP_OFFSET + MATCHUP_DIM          # 299 — after the two matchup matrices
 
-REACTIVE_DIM = (REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM
-                + MATCHUP_DIM + ACTIVE_REQ_MOVES_DIM)                    # 414
+REACTIVE_DIM = REACTIVE_SCALAR_DIM + MATCHUP_DIM + ACTIVE_REQ_MOVES_DIM  # 311
 
 # Top-level Offsets — all derived from the named constants (only the constants are load-bearing;
 # these comments are the post-gen3_markovian_progress_v1 values: base dim = 1790, full obs = 3391).

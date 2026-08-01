@@ -1634,7 +1634,9 @@ def _display_hp(move_id: str, our_species: str, hp_map: "dict | None") -> str:
 
 def _matchups(obs: np.ndarray, labels: list, off, our_species: str = "",
               hp_map: "dict | None" = None) -> MatchupView:
-    mults = tuple(float(x) * 4.0 for x in obs[off.mm_off:off.mm_off + 4])
+    # gen3_cpu_damage_deleted_v1: mm_off==0 ⇒ the block is absent from this obs layout.
+    mults = (tuple(float(x) * 4.0 for x in obs[off.mm_off:off.mm_off + 4])
+             if off.mm_off > 0 else (0.0, 0.0, 0.0, 0.0))
     raw = tuple(labels[MOVE_START:MOVE_END])  # the 4 move actions, request order
     # Show OUR Hidden Power typed (hiddenpower(grass)); the multiplier IS already typed in the obs.
     move_labels = tuple(_display_hp(lbl, our_species, hp_map) for lbl in raw)
@@ -1660,7 +1662,8 @@ def _intervention_sweep(model, obs: np.ndarray, mask: np.ndarray, labels: list,
     rows = []
     for mult in _SWEEP_MULTIPLIERS:
         o = obs.copy()
-        o[off.mm_off + slot] = mult / 4.0
+        if off.mm_off > 0:                      # no-op when the block was deleted from the obs
+            o[off.mm_off + slot] = mult / 4.0
         p, _ = model.action_dist(o, mask)
         rows.append(InterventionRow(
             multiplier=mult,
@@ -1679,7 +1682,7 @@ def _saliency_from_grad(g: np.ndarray, off) -> Saliency:
         return SaliencyBlock(name=name, mean_abs=float(seg.mean()), total_abs=float(seg.sum()))
 
     blocks = [
-        block("active move_multipliers(4)", off.mm_off, off.mm_off + 4),
+
         block("our_matchups(144)", off.om_off, off.om_off + 144),
         block("their_matchups(144)", off.tm_off, off.tm_off + 144),  # raw incoming type-effectiveness
     ]
