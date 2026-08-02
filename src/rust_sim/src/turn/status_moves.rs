@@ -699,6 +699,7 @@ impl crate::state::BattleState {
                 }
                 if self.sides[s].pokemon[a].perish.is_none() {
                     self.sides[s].pokemon[a].perish = Some(4);
+                    self.sides[s].pokemon[a].perish_turn = self.turn;
                     any_result = true;
                     newly = true;
                     // [EMIT] `|-start|<mon>|perish3|[silent]` (the apply's silent form;
@@ -2963,6 +2964,7 @@ impl crate::state::BattleState {
             }
         }
 
+        let turn_now = self.turn;
         let mon = &mut self.sides[side].pokemon[slot];
         if success {
             // (3) Protect goes up; (re)add the stall volatile (onStart 2 / onRestart *2,
@@ -2982,6 +2984,7 @@ impl crate::state::BattleState {
                 (counter * 2).min(PROTECT_COUNTER_MAX) // onRestart *= 2, capped
             };
             mon.stall_duration = STALL_DURATION; // duration: 2 (reset on every success)
+            mon.noorder_vol_turn = turn_now;
         } else {
             // (4) Stall roll FAILED: NO protection this turn — but the gen3 (resolved gen5-
             //     base) `stall` `onStallMove` does NOT delete the volatile on failure (unlike

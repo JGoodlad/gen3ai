@@ -464,17 +464,12 @@ impl crate::state::BattleState {
             let deduct = if pressure_extra { 2 } else { 1 };
             self.sides[side].pokemon[slot].deduct_pp(move_index, deduct);
 
-            // --- CHOICE LOCK (`gen3_pp_tracking_v1`, `choiceband.onModifyMove` →
-            //     `addVolatile('choicelock')`): a Choice-item mon (gen-3: only Choice Band)
-            //     LOCKS to the FIRST slot it uses; every other slot becomes disabled. Set it
-            //     HERE (when the move actually runs, after PP is deducted — matching Showdown's
-            //     onModifyMove timing). Idempotent: re-using the locked move keeps the lock.
-            //     This is what forces Struggle once the locked move's PP hits 0 while other
-            //     slots still have PP (the CB-Tyranitar exhausting Crunch → Struggle). Cleared
-            //     on switch-out (`execute_switch`). ---
-            if to_id(&self.sides[side].pokemon[slot].item) == "choiceband" {
-                self.sides[side].pokemon[slot].choice_locked_move = Some(move_index);
-            }
+            // --- CHOICE LOCK: NOT set here. `gen3_choicelock_after_move_v1` moved it to the
+            //     AfterMove site in `turn/driver.rs` (the sim adds the `choicelock` volatile from
+            //     `choiceband.onAfterMove`, i.e. AFTER the move body — see the comment there).
+            //     Setting it at PP-deduct time read the item ONE PHASE TOO EARLY and so missed
+            //     every move that CHANGES the user's own item while resolving (Thief / Covet /
+            //     Trick). ---
         }
 
         // --- LAST-USED MOVE (`gen3_taunt_disable_v1`, `pokemon.moveUsed` at battle-actions.ts:260,

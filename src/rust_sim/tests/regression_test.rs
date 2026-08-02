@@ -13024,3 +13024,82 @@ fn yawn_recast_into_a_pending_yawn_does_not_reset_the_duration() {
     assert_eq!(seed_str(&o.decisions[1].seed_after), "25367,53124,63953,41400",
         "YW1: the resolve's random(2,6) draws at dec1 — exact post-turn seed");
 }
+
+/// PV1 (`gen3_perish_volatile_insertion_turn_v1`) — a mon PERISHED on an EARLIER turn than it
+/// PROTECTS gathers its `perish` residual handler BEFORE its NO_ORDER `stall` handler, because
+/// Showdown walks `pokemon.volatiles` in INSERTION order. `speed_sort` is a NON-STABLE selection
+/// sort, so that pre-sort order is handed to the tie-group Fisher-Yates shuffle and decides the
+/// emitted `-start|<mon>|perish<n>` order (and the faint order that follows).
+///
+/// WRONG (pre-fix): the port pushed perish at a FIXED position AFTER the NO_ORDER duration block,
+/// which reversed the tied perish pair and emitted `perish0` for p1 first where the sim emits p2
+/// first — the live external-consistency finding `soak3/divergences/sbd_msb1zfxs_b134` (Misdreavus
+/// Perish-Songs on turn 16, Protects on turn 18, perish0 lands turn 19 with the `stall` volatile
+/// still live). A fixed position CANNOT serve both real boards: the SAME-TURN mirror
+/// (`rmrr03rmc_ab_453_2`, byte-fuzz corpus fixture 32) has Protect at priority 3 inserting `stall`
+/// FIRST, so there perish must gather LAST. Comparing INSERTION TURNS separates them.
+///
+/// Ground truth: the real sim on this exact board (raw seed [7,11,13,17]; the port is seeded at
+/// the POST-CONSTRUCTION seed below, which is the convention every golden uses — seeding the port
+/// with the RAW seed instead silently replays the sim's construction draws as move-phase draws).
+/// DRAW-FREE: the tie-group size and draw count are unchanged; only the pre-shuffle permutation
+/// moves — so the whole seed suite + the e2e golden md5 are untouched.
+#[test]
+fn perish_gathered_before_a_later_protect_matches_the_sim_tick_order() {
+    let d = dex();
+    // A speed-TIED Aipom mirror (both 227) so every residual tie group actually shuffles, both
+    // holding Leftovers so a SECOND tie group exists — it is the Leftovers group's selection-sort
+    // swaps that reorder the still-unsorted perish pair.
+    let p1 = "Aipom||Leftovers|RunAway|perishsong,protect,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Aipom||Leftovers|RunAway|splash,return|Hardy|85,85,85,85,85,85|M||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "37635,3740,64462,10380"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    // t1 Perish Song (perish inserted turn 1) · t2 idle · t3 PROTECT (stall inserted turn 3, so
+    // it is still live at t4's residual) · t4 idle → the perish0 tick with BOTH volatiles present.
+    let (_out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+
+    // GUARD: the Protect must actually have gone up, or there is no `stall` volatile and this pin
+    // proves nothing about gather order.
+    assert!(
+        raw.iter().any(|l| l.starts_with("|-singleturn|p1a: Aipom|Protect")),
+        "the Protect must succeed (it is what inserts the `stall` volatile); lines:\n{}",
+        raw.join("\n")
+    );
+
+    // The non-silent perish ticks + the faints, in emission order.
+    let marks: Vec<&str> = raw
+        .iter()
+        .filter(|l| {
+            (l.contains("|perish") && !l.ends_with("|[silent]")) || l.starts_with("|faint|")
+        })
+        .map(|l| l.as_str())
+        .collect();
+    let expected = vec![
+        "|-start|p1a: Aipom|perish3",
+        "|-start|p2a: Aipom|perish3",
+        "|-start|p2a: Aipom|perish2",
+        "|-start|p1a: Aipom|perish2",
+        "|-start|p1a: Aipom|perish1",
+        "|-start|p2a: Aipom|perish1",
+        "|-start|p2a: Aipom|perish0",
+        "|-start|p1a: Aipom|perish0",
+        "|faint|p2a: Aipom",
+        "|faint|p1a: Aipom",
+    ];
+    assert_eq!(
+        marks, expected,
+        "perish tick + faint order must match the real sim; reverting the insertion-turn gather \
+         flips the perish0 pair (and the faints) to p1-first. got:\n{}",
+        marks.join("\n")
+    );
+}

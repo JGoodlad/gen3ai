@@ -306,6 +306,41 @@ impl crate::state::BattleState {
                 });
             }
 
+            // --- PERISH, gathered EARLY (`gen3_perish_volatile_insertion_turn_v1`).
+            //     Showdown gathers a mon's volatile handlers in `pokemon.volatiles` INSERTION
+            //     order, and `speed_sort` is a NON-STABLE selection sort whose swaps hand the
+            //     tie-group Fisher-Yates shuffle whatever pre-sort order it finds — so the
+            //     relative order of this mon's `perish` and its NO_ORDER duration volatiles is
+            //     LOAD-BEARING for the emitted `-start|<mon>|perish<n>` order (and the faint
+            //     order that follows it).
+            //
+            //     A single FIXED position cannot serve both real boards:
+            //       * SAME-TURN perish-after-protect (`rmrr03rmc_ab_453_2`, corpus fixture 32):
+            //         Protect is priority 3, so it moves FIRST and its `stall` volatile is
+            //         inserted BEFORE `perish` → perish must gather AFTER the NO_ORDER block.
+            //       * CROSS-TURN perish-then-protect (soak3 `sbd_msb1zfxs_b134`): Perish Song
+            //         lands on turn 16 and the mon Protects on turn 18, so `perish` is inserted
+            //         FIRST and must gather BEFORE the NO_ORDER block. The port's fixed position
+            //         got this backwards, reversing the tied perish pair and emitting
+            //         `|-start|p1a: Misdreavus|perish0` where the sim emits p2a first.
+            //     Comparing the INSERTION TURNS separates them exactly: an earlier perish turn
+            //     gathers first; equal turns keep the same-turn ordering above (within a turn the
+            //     higher-priority Protect always inserts first). DRAW-FREE — the tie-group SIZE
+            //     and draw COUNT are unchanged; only the pre-shuffle PERMUTATION moves. ---
+            let perish_gathers_early = mon.perish.is_some()
+                && mon.noorder_vol_turn != 0
+                && mon.perish_turn < mon.noorder_vol_turn;
+            if perish_gathers_early {
+            handlers.push(EventHandler {
+                    order: PERISH_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::Perish { side, slot },
+                });
+            }
+
             // --- DURATION-ONLY VOLATILE handlers (`protect` / `stall`) — gathered AFTER
             //     the status DoT but BEFORE the item (the status→volatiles→ability→item
             //     order of `findPokemonEventHandlers`). They have NO `onResidual` callback;
@@ -554,7 +589,7 @@ impl crate::state::BattleState {
             //     `perish` inserted BEFORE `protect`; that distinct (unreproduced) board is
             //     not modeled by this fixed position — a full per-volatile insertion-sequence
             //     stamp would be the general fix. Emission-only + draw-free + state-free. ---
-            if mon.perish.is_some() {
+            if mon.perish.is_some() && !perish_gathers_early {
                 handlers.push(EventHandler {
                     order: PERISH_RESIDUAL_ORDER,
                     priority: 0,

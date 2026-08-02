@@ -503,45 +503,21 @@ fn active_move_display(mv: &str, dex: &Dex, hp_bp: u8) -> (String, String) {
 /// where the sim substitutes Struggle (handled by the caller) rather than marking
 /// every slot disabled.
 ///
-/// THE LAZY CHOICE LOCK (`gen3_choice_lock_request_disabled_v1`, the `bab_3_24`
-/// per-side request find): Showdown applies the Choice lock at REQUEST-BUILD via
-/// `choicelock.onDisableMove` — `if (pokemon.getItem().isChoice &&
-/// pokemon.hasMove(effectState.move)) disable every moveSlot != effectState.move`
-/// — a CURRENT-item + `lastMove` read. So a mon that GAINED a Choice item mid-turn
-/// (Skarmory Thief'ing a Choice Band while itemless) still locks to its last-used
-/// slot even though the engine `choice_locked_move` was never set (`run_move` only
-/// records it when the mon uses a move WHILE already holding the Choice item). We
-/// fold that lazy lock here (bridge/request-layer only — NOT `move_usable`, whose
-/// engine-wide legality must not change): a mon HOLDING a Choice item with a
-/// `last_move` it still knows disables every OTHER slot, in addition to the engine
-/// lock. (A mon that used its Choice move WHILE holding the item already has
-/// `choice_locked_move` set → `move_usable` covers it; this only adds the
-/// gained-mid-turn case.)
+/// THE CHOICE LOCK is NOT re-derived here (`gen3_choicelock_after_move_v1`). It rides
+/// `move_usable` → `choice_lock_enforced`, i.e. the engine's `choice_locked_move`
+/// VOLATILE narrowed by the current-item gate — a faithful model of the sim's
+/// `choicelock`, which `choiceband.onAfterMove` adds at the END of runMove.
+///
+/// This used to fold a LAZY lock of its own (`gen3_choice_lock_request_disabled_v1`, the
+/// `bab_3_24` find): "holds a Choice item ∧ has a `last_move` ⇒ disable every other slot".
+/// That was a WORKAROUND for the engine setting `choice_locked_move` one phase too early
+/// (at PP-deduct, so a Thief that STOLE a Band never locked). It over-locked the mirror
+/// case — a mon TRICKED a Band by a slower foe AFTER it had already moved holds a Choice
+/// item and has a `last_move`, yet the sim adds NO volatile and keeps all four moves
+/// selectable (soak3 `sbd_msb1zfxs_b97`). Fixing the engine's TIMING covers both, so the
+/// workaround is gone; see the AfterMove comment in `turn/driver.rs`.
 fn move_disabled(mon: &MonState, k: usize, dex: &Dex) -> bool {
-    if !mon.move_usable(k, dex) {
-        return true;
-    }
-    // Lazy choice lock: a CURRENT Choice item + a still-known last_move slot locks
-    // every other slot at request-build (mirroring `choicelock.onDisableMove`).
-    if dex
-        .item(&crate::dex::to_id(&mon.item))
-        .map(|i| i.choice)
-        .unwrap_or(false)
-    {
-        if let Some(locked) = mon.last_move {
-            // `hasMove(effectState.move)` — the locked slot must still hold a move.
-            // Disable every slot whose move id differs from the locked slot's.
-            if locked < mon.set.moves.len() {
-                let locked_id = crate::dex::to_id(&mon.set.moves[locked]);
-                if let Some(this_id) = mon.set.moves.get(k).map(|m| crate::dex::to_id(m)) {
-                    if this_id != locked_id {
-                        return true;
-                    }
-                }
-            }
-        }
-    }
-    false
+    !mon.move_usable(k, dex)
 }
 
 /// The `condition` string (`getHealth().secret`): `0 fnt` / `x/y` / `x/y <status>`.

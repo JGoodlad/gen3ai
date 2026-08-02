@@ -389,6 +389,69 @@ impl crate::state::BattleState {
                         self.white_herb_restore(side, self.sides[side].active, dex);
                         self.white_herb_restore(wh_foe, self.sides[wh_foe].active, dex);
                     }
+                    // --- CHOICE LOCK (`gen3_choicelock_after_move_v1`,
+                    //     `choiceband.onAfterMove(pokemon) { pokemon.addVolatile('choicelock'); }`):
+                    //     the lock is a VOLATILE added at the AfterMove event — the END of runMove,
+                    //     AFTER the move body — gated on the user HOLDING a Choice item AT THAT
+                    //     MOMENT. The volatile's `onStart` keys on `pokemon.lastMove.id`, so it
+                    //     records the EXECUTED move (our `last_move`), which is why an encore-
+                    //     overridden / Sleep-Talk turn locks to the OUTER move the port already
+                    //     stores there. A Struggle leaves `last_move` None → `onStart` returns
+                    //     false → no volatile (the sim's `hasMove('struggle')` release, same net).
+                    //
+                    //     WHY THE TIMING IS LOAD-BEARING (it is the whole bug): the port used to
+                    //     set this at PP-deduct time, BEFORE the move body, so it read the item one
+                    //     phase too early and disagreed with the sim on every move that changes the
+                    //     user's OWN item while resolving:
+                    //       * THIEF / COVET steal a Band → the sim holds it at AfterMove → LOCKED;
+                    //         the port saw the pre-move itemless slot → NOT locked. Round 6
+                    //         (`gen3_choice_lock_request_disabled_v1`) patched around this by
+                    //         SYNTHESIZING a lock in the request fold from "holds Choice ∧ has a
+                    //         lastMove" — which then OVER-locked the opposite case:
+                    //       * TRICKED a Band by a SLOWER foe AFTER moving (soak3 `sbd_msb1zfxs_b97`,
+                    //         Piloswine spe 157 > Kecleon 137): the mon holds a Band and has a
+                    //         lastMove, but never MOVED while holding it, so the sim adds NO
+                    //         volatile and leaves all four moves selectable. The port hid three
+                    //         legal moves from the policy — externally visible to poke-env and
+                    //         DRAW-FREE, so only the external-consistency gate could see it.
+                    //     Fixing the TIMING makes both fall out, so the round-6 request-fold
+                    //     workaround is deleted (`bridge.rs::move_disabled`). SIM-PROBED all four
+                    //     directions by `harness/probe_choicelock_acquired_item.js`.
+                    //
+                    //     Gated on `!res.aborted` (AfterMove never fires for an onBeforeMove-
+                    //     aborted move — the White Herb rule above) and on `hp > 0` (`addVolatile`
+                    //     returns false for a 0-HP mon, the `charge.onAfterMove` precedent, so a
+                    //     Self-Destruct user never locks). The pursuit-interrupt strike is a bare
+                    //     `useMove` with NO runMove → NO AfterMove → it does not lock here; it
+                    //     keeps its own explicit set-site in `turn/switch.rs`. ---
+                    //     MIMIC SELF-OVERWRITE (`gen3_mimic_choice_lock_self_overwrite_v1`, round
+                    //     23): skipped when the move just overwrote its OWN slot. The sim DOES add
+                    //     the volatile here (keyed 'mimic') and then RELEASES it at the very next
+                    //     `runEvent('DisableMove')`, whose `hasMove(effectState.move)` is now false
+                    //     — so both engines end the turn unlocked. Not adding it is observationally
+                    //     EQUIVALENT rather than merely convenient: the only way to tell the two
+                    //     apart is the endTurn handler-sort tie-shuffle, which needs a SECOND
+                    //     DisableMove handler on the mon at that same endTurn, and on a Mimic turn
+                    //     none can exist — a Choice-item mon can only use Mimic as its FIRST move
+                    //     (anything earlier locks it), so it has no `lastMove` yet and neither
+                    //     Disable nor Encore can be on it, while Taunt CANTS Mimic outright so it
+                    //     never resolves. The handler is necessarily alone and draws nothing either
+                    //     way. SIM-PROBED (cases A + D of
+                    //     `harness/probe_choicelock_mimic_release.js`); pinned by corpus fixture
+                    //     `49_mimic_overwrites_choice_locked_slot.txt`, which regressed to
+                    //     `kind=seed` when this relocation first landed without the guard. ---
+                    if !res.aborted && self.sides[side].pokemon[slot].hp > 0 {
+                        let m = &self.sides[side].pokemon[slot];
+                        let holds_choice = dex
+                            .item(&crate::dex::to_id(&m.item))
+                            .map(|i| i.choice)
+                            .unwrap_or(false);
+                        if let (true, false, Some(lm)) =
+                            (holds_choice, m.last_move_was_self_overwrite, m.last_move)
+                        {
+                            self.sides[side].pokemon[slot].choice_locked_move = Some(lm);
+                        }
+                    }
                     // --- forceSwitchFlag consumption (battle.ts:2348-2353): at the END of
                     //     the move's runAction (AFTER the move body / any in-tryMoveHit
                     //     Update, BEFORE faintMessages), a SUCCESSFUL phaze (Roar /

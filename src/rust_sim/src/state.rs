@@ -307,6 +307,15 @@ pub struct MonState {
     /// move runs out of PP even though other slots still have PP (the CB-Tyranitar that
     /// exhausts Crunch → Struggle). Struggle itself does NOT set the lock (it is not a slot).
     pub choice_locked_move: Option<usize>,
+    /// The TURN on which the `perish` volatile was inserted, and the turn on which this mon
+    /// last gained a NO_ORDER **duration** volatile (`stall`, from a successful Protect/Detect).
+    /// `gen3_perish_volatile_insertion_turn_v1`: Showdown gathers a mon's residual handlers in
+    /// `pokemon.volatiles` INSERTION order, so the relative order of `perish` and `stall`
+    /// depends on which was added first — and that order is load-bearing, because `speed_sort`
+    /// is a NON-STABLE selection sort whose swaps hand the tie-group shuffle whatever pre-sort
+    /// order it finds. 0 = absent. See `turn/residuals.rs`'s perish gather.
+    pub perish_turn: u32,
+    pub noorder_vol_turn: u32,
     /// The **FLASH FIRE** activation volatile (`flashfire`, planted by ABSORBING a Fire-type
     /// move): `true` once this mon's Flash Fire ability has absorbed a Fire move — thereafter
     /// its OWN Fire-type moves deal **×1.5** damage. `false` = not activated (the
@@ -1012,6 +1021,8 @@ impl MonState {
             move_pp,
             move_maxpp,
             choice_locked_move: None,
+            perish_turn: 0,
+            noorder_vol_turn: 0,
             flash_fire: false,
             truant_turn: false,
             gender: set_gender,

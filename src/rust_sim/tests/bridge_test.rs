@@ -606,3 +606,155 @@ fn timing_bridge_incremental_linear_vs_genesis_quadratic() {
         "incremental per-step grew super-linearly: first-decile {first_decile}us vs last-decile {last_decile}us"
     );
 }
+
+// ===========================================================================
+// THE CHOICE LOCK vs an ACQUIRED Choice item (`gen3_choicelock_after_move_v1`).
+//
+// The lock is the sim's `choicelock` VOLATILE, which `choiceband.onAfterMove` adds at the
+// END of runMove — gated on the user HOLDING a Choice item AT THAT MOMENT:
+//     choiceband.onAfterMove(pokemon) { pokemon.addVolatile('choicelock'); }
+//     choicelock.onStart(pokemon)     { effectState.move = pokemon.lastMove.id; }
+// The port used to set its `choice_locked_move` at PP-deduct time instead — one phase too
+// early — which disagreed with the sim on every move that changes the user's OWN item while
+// resolving. That produced a two-sided bug history, and these three pins hold BOTH sides
+// down at once so a future narrowing cannot fix one by re-breaking the other:
+//
+//   * TL1 (the b97 bug): TRICKED a Band by a SLOWER foe AFTER moving → the sim adds NO
+//     volatile, so all four moves stay selectable. The port hid three legal moves from
+//     poke-env. DRAW-FREE and request-only, so only the external-consistency gate saw it.
+//   * TL2 (the control): the same mon then MOVES while holding the Band → NOW it locks.
+//   * TL3 (round 6's case): a THIEF that STEALS a Band holds it by AfterMove → LOCKED.
+//     Round 6 (`gen3_choice_lock_request_disabled_v1`) got this by SYNTHESIZING a lock in
+//     the request fold from "holds Choice ∧ has a lastMove", which is what over-locked TL1.
+//
+// SIM-PROBED in all four directions by `harness/probe_choicelock_acquired_item.js`.
+//
+// The b97 board is reproduced verbatim, because its speeds are what make the isolation
+// possible at all: at the flat 85-EV randbats spread Piloswine (base spe 50) OUTSPEEDS
+// Kecleon (base spe 40), so the subject moves FIRST holding Leftovers and the Band lands
+// AFTER — a mon holding a Choice item that has NOT MOVED SINCE ACQUIRING IT. Every pin
+// first asserts the item actually swapped: a Trick that silently fails (Trick carries
+// `protect: 1`, so a Protect BLOCKS it) would leave the assertions vacuously true, which
+// is exactly how an earlier hand-probe of this bug tested nothing at all.
+// ===========================================================================
+
+/// The subject: Piloswine, 4 distinct moves so a lock is unambiguous. `item` is caller-set.
+fn choicelock_subject(item: &str) -> String {
+    format!("Piloswine||{item}|oblivious|toxic,protect,earthquake,icebeam|Hardy|85,85,85,85,85,85|M||||")
+}
+/// The foe: the b97 Kecleon — SLOWER than the subject, holding the Band it Tricks away.
+const CHOICELOCK_FOE: &str =
+    "Kecleon||choiceband|colorchange|trick,return,brickbreak,shadowball|Hardy|85,85,85,85,85,85|M||||";
+
+/// The LAST `|request|` on p1, with its four `disabled` flags in slot order.
+fn p1_last_request_flags(streams: &pokesim::bridge::BridgeStreams) -> (String, Vec<bool>) {
+    let req = streams
+        .p1
+        .iter()
+        .filter(|l| l.starts_with("|request|") && l.contains("\"active\""))
+        .next_back()
+        .unwrap_or_else(|| panic!("no p1 move |request|; p1 lines:\n{}", streams.p1.join("\n")))
+        .clone();
+    // The `active` block precedes the `side` block, so slicing at `"side"` keeps only the
+    // ACTIVE mon's four slots (the roster repeats move ids without `disabled`).
+    let active = &req[..req.find("\"side\"").unwrap_or(req.len())];
+    let flags: Vec<bool> = active.match_indices("\"disabled\":").map(|(i, _)| {
+        active[i + "\"disabled\":".len()..].starts_with("true")
+    }).collect();
+    assert_eq!(flags.len(), 4, "expected 4 move slots in the active request; got:\n{req}");
+    (req, flags)
+}
+
+/// TL1 — the b97 bug. A mon TRICKED a Choice Band by a SLOWER foe, AFTER it had already
+/// moved, is NOT choice-locked: it holds the Band but never MOVED while holding it, so the
+/// sim's `choiceband.onAfterMove` never ran for it and no `choicelock` volatile exists.
+/// WRONG (pre-fix): the request fold synthesized a lock from "holds Choice ∧ has lastMove"
+/// and disabled Toxic / Earthquake / Ice Beam — three legal moves hidden from the policy.
+#[test]
+fn tricked_a_choice_band_after_moving_does_not_lock_the_request() {
+    let dex = Dex::for_gen(3);
+    let opts = bridge_opts(
+        "gen3customgame",
+        "7,11,13,17".to_string(),
+        &choicelock_subject("leftovers"),
+        CHOICELOCK_FOE,
+    );
+    let mk = |side: usize, tok: &str| Cmd { side, choice: parse_choice(tok).unwrap() };
+    // T1: p1 Toxic (NOT Protect — a Protect would block the Trick), p2 Trick. p1 is faster,
+    // so it moves holding Leftovers and the Band arrives afterwards.
+    let cmds = vec![mk(0, "move 1"), mk(1, "move 1")];
+    let streams = run_full_battle_bridge(&opts, &cmds, &dex).expect("bridge replay");
+    let (req, flags) = p1_last_request_flags(&streams);
+
+    // GUARD: the Trick must actually have landed, or this pin proves nothing.
+    assert!(
+        req.contains("\"item\":\"choiceband\""),
+        "the Trick did not land — p1 must HOLD the Choice Band for this pin to mean anything:\n{req}"
+    );
+    assert!(
+        flags.iter().all(|d| !d),
+        "a mon TRICKED a Choice Band AFTER moving has no `choicelock` volatile, so ALL four \
+         moves stay selectable (b97: node reports Toxic `disabled:false`). got disabled={flags:?}\n{req}"
+    );
+}
+
+/// TL2 — the control for TL1: once that same mon MOVES while holding the Band, the volatile
+/// IS added at AfterMove and every OTHER slot locks. Without this, TL1 would also pass on an
+/// engine that had simply stopped locking altogether.
+#[test]
+fn moving_while_holding_a_tricked_choice_band_does_lock_the_request() {
+    let dex = Dex::for_gen(3);
+    let opts = bridge_opts(
+        "gen3customgame",
+        "7,11,13,17".to_string(),
+        &choicelock_subject("leftovers"),
+        CHOICELOCK_FOE,
+    );
+    let mk = |side: usize, tok: &str| Cmd { side, choice: parse_choice(tok).unwrap() };
+    // T1 as TL1; T2 p1 Earthquake — its first move WHILE holding the Band.
+    let cmds = vec![
+        mk(0, "move 1"),
+        mk(1, "move 1"),
+        mk(0, "move 3"),
+        mk(1, "move 2"),
+    ];
+    let streams = run_full_battle_bridge(&opts, &cmds, &dex).expect("bridge replay");
+    let (req, flags) = p1_last_request_flags(&streams);
+    assert!(req.contains("\"item\":\"choiceband\""), "p1 must hold the Band:\n{req}");
+    // Slot order is toxic, protect, earthquake, icebeam → only slot 2 (Earthquake) is free.
+    assert_eq!(
+        flags,
+        vec![true, true, false, true],
+        "after MOVING with the Band the mon locks to Earthquake (slot 2) and every other slot \
+         is disabled; got {flags:?}\n{req}"
+    );
+}
+
+/// TL3 — round 6's case, held down so the TL1 narrowing cannot re-break it. A mon that STEALS
+/// a Choice Band with Thief HOLDS it by the time `AfterMove` runs, so the sim DOES add the
+/// volatile and locks it to Thief. WRONG (pre-fix engine): the lock was set at PP-deduct time,
+/// when the mon was still itemless, so it never locked — the under-lock that round 6 patched
+/// around in the request fold, and that this timing fix cures at the source.
+#[test]
+fn thief_that_steals_a_choice_band_locks_the_request() {
+    let dex = Dex::for_gen(3);
+    // p1 is ITEMLESS and leads with Thief; p2 holds the Band and merely Returns.
+    let p1 = "Piloswine|||oblivious|thief,protect,earthquake,icebeam|Hardy|85,85,85,85,85,85|M||||";
+    let opts = bridge_opts("gen3customgame", "7,11,13,17".to_string(), p1, CHOICELOCK_FOE);
+    let mk = |side: usize, tok: &str| Cmd { side, choice: parse_choice(tok).unwrap() };
+    let cmds = vec![mk(0, "move 1"), mk(1, "move 2")];
+    let streams = run_full_battle_bridge(&opts, &cmds, &dex).expect("bridge replay");
+    let (req, flags) = p1_last_request_flags(&streams);
+
+    // GUARD: the steal must have happened, else the lock assertion is vacuous.
+    assert!(
+        req.contains("\"item\":\"choiceband\""),
+        "Thief did not steal the Band — p1 must HOLD it for this pin to mean anything:\n{req}"
+    );
+    assert_eq!(
+        flags,
+        vec![false, true, true, true],
+        "a Thief that STEALS a Choice Band holds it at AfterMove, so the sim locks it to Thief \
+         (slot 0) and disables the rest; got {flags:?}\n{req}"
+    );
+}

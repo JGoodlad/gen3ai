@@ -96,6 +96,7 @@ function parseFlags(argv) {
     else if (a === '--persistent') f.persistent = true;
     else if (a === '--trap-prob') f.trapProb = Number(next());
     else if (a === '--out') f.out = path.resolve(next());
+    else if (a === '--repro') f.repro = path.resolve(next()); // replay ONE saved repro dir
     else if (a === '--verbose') f.verbose = true;
     else if (a === '--extra-trappers') f.extraTrappers = true; // Magnet Pull + Shadow Tag (seed-gap)
     else if (a === '--selftest') f.selftest = true;   // allowlist gate-integrity assertions
@@ -696,10 +697,95 @@ function buildPairProvider(flags, teamRng, genStats) {
   return () => ({ p1: pinGendersAndLevel(single().packed), p2: pinGendersAndLevel(single().packed) });
 }
 
+// ── Replay a SAVED repro deterministically (`--repro <dir>`) ────────────────────
+// The differ discovers boundaries LIVE off node's request frames, which is exactly what makes
+// it immune to the decision-segmentation artifact that dogs the offline `ab_replay` path. The
+// cost was that a saved divergence could only be re-checked by re-running the whole sweep to
+// the same battle index. This replays ONE saved repro's recorded `start_json` + `cmds` through
+// BOTH real bridges — the SAME entry points production uses (node `local_sim_bridge.js`; rust
+// `sim_bridge` -> `BridgeSession::new_construct_turn0`, which runs the real turn-0 window from
+// the RAW seed) — so the seeding convention is correct BY CONSTRUCTION.
+//
+// That last point is not academic. A hand-built repro seeded with the RAW seed while the sim
+// spends its first draws on turn-0 construction will silently replay those construction draws
+// as its own move-phase draws and MANUFACTURE a divergence that does not exist. Replaying the
+// recorded input through the real bridge removes that whole class of self-inflicted error.
+async function replayRepro(dir) {
+  const summary = JSON.parse(fs.readFileSync(path.join(dir, 'summary.json'), 'utf8'));
+  console.error(`[repro] ${path.basename(dir)} battle=${summary.battle_index} format=${summary.format} cmds=${summary.cmds.length}`);
+  if (summary.first_divergence) {
+    const d = summary.first_divergence;
+    console.error(`[repro] RECORDED: side=${d.side} chunk=${d.chunk} line=${d.line} kind=${d.kind}`);
+  }
+  buildRust();
+  const node = new BridgeChild('node', [NODE_BRIDGE]);
+  const rust = new BridgeChild(RUST_BRIDGE, []);
+  const nodeSide = { p1: [], p2: [] }, rustSide = { p1: [], p2: [] };
+  try {
+    node.write('START ' + summary.start_json);
+    rust.write('START ' + summary.start_json);
+    collect(await drainQuiescent(node), nodeSide);
+    collect(await drainQuiescent(rust), rustSide);
+    // Feed in BOUNDARY groups, not one cmd at a time. A two-sided move boundary only flushes
+    // once BOTH sides have answered, so draining after the first half waits the full quiescence
+    // timeout for output that cannot arrive (147 cmds x one stalled drain each is a ~1h hang —
+    // observed). The recorder wrote both sides of a boundary consecutively, so pair a cmd with
+    // the next one when it is for the OTHER side; a lone cmd (forced switch) stays a group of 1.
+    let fed = 0;
+    for (let i = 0; i < summary.cmds.length; ) {
+      if (nodeSide._ended || rustSide._ended) break;
+      const group = [summary.cmds[i]];
+      if (i + 1 < summary.cmds.length && summary.cmds[i + 1][0] !== summary.cmds[i][0]) {
+        group.push(summary.cmds[i + 1]);
+      }
+      for (const [side, choice] of group) {
+        node.write(`CHOOSE ${side} ${choice}`);
+        rust.write(`CHOOSE ${side} ${choice}`);
+      }
+      collect(await drainQuiescent(node), nodeSide);
+      collect(await drainQuiescent(rust), rustSide);
+      i += group.length; fed += group.length;
+    }
+    let div = diffPerSide(nodeSide, rustSide);
+    // Apply the SAME known-residual allowlist the main path uses, or this replay reports a
+    // documented request-DISPLAY artifact (e.g. `return102-numeric-alias`) as a real divergence.
+    // Reconcile-then-compare: any residual byte difference still fails.
+    let allowed = null;
+    if (div) {
+      allowed = classifyKnownResidual(div.expected, div.got);
+      if (allowed) console.error(`[repro] first diff is ALLOWLISTED (${allowed}) — scanning past it is not supported here; treat as clean for this line.`);
+    }
+    console.error(`[repro] fed ${fed}/${summary.cmds.length} cmds; ended node=${!!nodeSide._ended} rust=${!!rustSide._ended}`);
+    if (!div) console.error('[repro] NO DIVERGENCE — this repro replays byte-clean.');
+    else if (allowed) console.error(`[repro] ALLOWLISTED-ONLY (${allowed}) — no unexplained divergence.`);
+    else {
+      console.error(`[repro] DIVERGED side=${div.side} chunk=${div.chunk} line=${div.line} kind=${div.kind}`);
+      // Show the DIFFERING REGION, not a fixed prefix: these lines are often long |request|
+      // JSON whose first 200 chars are identical, which makes a head-slice useless.
+      const ea = String(div.expected), ga = String(div.got);
+      let k = 0; while (k < ea.length && k < ga.length && ea[k] === ga[k]) k++;
+      const lo = Math.max(0, k - 110);
+      console.error(`  first differing char: ${k} (lenA=${ea.length} lenB=${ga.length})`);
+      console.error(`  expected: ...${ea.slice(lo, k + 110)}`);
+      console.error(`  got:      ...${ga.slice(lo, k + 110)}`);
+    }
+  } finally { node.kill(); rust.kill(); }
+}
+
+// Build the Rust bridge into the isolated target dir (shared by main + --repro).
+function buildRust() {
+  const { spawnSync } = require('child_process');
+  const env = { ...process.env, PATH: `${process.env.HOME}/.cargo/bin:${process.env.PATH}`, CARGO_TARGET_DIR: SIMBRIDGE_TARGET };
+  const r = spawnSync('cargo', ['build', '--release', '--bin', 'sim_bridge'], { cwd: CRATE, env, stdio: 'inherit' });
+  if (r.status !== 0) { console.error('[sim_bridge_diff] cargo build failed'); process.exit(1); }
+  if (!fs.existsSync(RUST_BRIDGE)) { console.error(`[sim_bridge_diff] rust binary missing: ${RUST_BRIDGE}`); process.exit(1); }
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────────
 async function main() {
   if (parseFlags(process.argv).selftest) return selftest();
   const flags = parseFlags(process.argv);
+  if (flags.repro) return replayRepro(flags.repro);
   const runId = `sbd_${Date.now().toString(36)}`;
   fs.mkdirSync(path.join(flags.out, 'divergences'), { recursive: true });
 

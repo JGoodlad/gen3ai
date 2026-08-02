@@ -4700,6 +4700,152 @@ serious than either bug above — `--use-bridge=rust` training would hang the sa
 diagnosis, not a restart. (The project memory already records a session that mis-read CPU starvation as a
 wedge; this one is the opposite — genuinely idle, so starvation is ruled out.)
 
+### ROUND 28 (FIX) — the CHOICE LOCK is an AfterMove VOLATILE, not a "holds Choice + lastMove" read
+
+`gen3_choicelock_after_move_v1`. The external-consistency soak's single largest class — **5 of its 9
+non-allowlisted divergences** (`sbd_msb1zfxs_b97` / `b780` / `b1185` / `b1851` / `b1854`, all
+`kind=request`) — was ONE bug with a two-sided history, and fixing the TIMING dissolved both sides.
+
+**The sim's rule, in two lines** (resolved `Dex.mod('gen3')`):
+```js
+choiceband.onAfterMove(pokemon) { pokemon.addVolatile('choicelock'); }
+choicelock.onStart(pokemon)     { if (!pokemon.lastMove) return false;
+                                  this.effectState.move = pokemon.lastMove.id; }
+```
+The lock is a VOLATILE added at the **AfterMove** event — the END of `runMove`, AFTER the move body —
+gated on the user HOLDING a Choice item AT THAT MOMENT, and keyed to the EXECUTED move. The port set
+its `choice_locked_move` at PP-DEDUCT time instead: one phase too early, so it read the item BEFORE
+the move could change it. That disagreed with the sim on every move that alters the user's OWN item
+while resolving, in BOTH directions:
+
+* **UNDER-lock — THIEF / COVET.** A mon that STEALS a Choice Band holds it by AfterMove, so the sim
+  locks; the port saw the pre-move itemless slot and did not. Round 6
+  (`gen3_choice_lock_request_disabled_v1`, `bab_3_24`) patched around this in the REQUEST FOLD, by
+  SYNTHESIZING a lock from "holds a Choice item ∧ has a `last_move`".
+* **OVER-lock — the round-6 workaround's mirror.** A mon TRICKED a Band by a SLOWER foe AFTER it had
+  already moved holds a Choice item and has a `last_move`, but never MOVED while holding it — so the
+  sim adds NO volatile and leaves all four moves selectable. The port hid three legal moves from the
+  policy. DRAW-FREE and request-only, so no seed / omniscient-byte gate could see it; only the
+  external-consistency gate could.
+
+**THE ISOLATION** (why this sat open through two rounds): separating the rules needs a mon that HOLDS
+a Choice item but has NOT MOVED SINCE ACQUIRING IT, and two earlier hand-probes failed to build one —
+a faster Trickster lands the Band BEFORE the subject moves (locking under both rules), and a subject
+that Protects BLOCKS the Trick outright (`protect: 1`), leaving the probe silently testing nothing.
+The b97 board supplies it: at the flat 85-EV randbats spread **Piloswine (base spe 50) OUTSPEEDS
+Kecleon (base spe 40)**, so the subject moves FIRST holding Leftovers and the Band arrives AFTER.
+SIM-PROBED in all four directions by `harness/probe_choicelock_acquired_item.js`.
+
+**THE FIX** (3 sites): the set-site MOVES to the AfterMove point in `turn/driver.rs` (the same
+`QAction::Move` tail that already models `onAnyAfterMove` for White Herb), gated on `!res.aborted`
+(AfterMove never fires for an `onBeforeMove`-aborted move — INDEPENDENTLY probe-confirmed, case A)
+and `hp > 0` (`addVolatile` is false for a 0-HP mon, the `charge.onAfterMove` precedent), keyed on
+`last_move` (the executed move, matching `onStart`); the old PP-deduct set-site in `turn/moves.rs` is
+REMOVED; and the round-6 synthesis in `bridge.rs::move_disabled` is DELETED — it reduces to
+`!mon.move_usable(k, dex)`, so the request now reads the ENGINE's volatile via `choice_lock_enforced`
+instead of re-deriving a second, disagreeing rule at the bridge layer.
+
+**THE ASLEEP-MON PATTERN** the soak surfaced is the same bug seen from the other end: b1851 (Quagsire
+`slp`) and b1854 (Registeel `slp`) are Choice-Band RestTalkers whose every move is `onBeforeMove`-
+ABORTED by sleep, so the sim adds no volatile while the port's fold kept synthesizing one from a
+stale `last_move` — which is exactly what the `!res.aborted` gate now prevents.
+
+**MIMIC (`gen3_mimic_choice_lock_self_overwrite_v1`, round 23) is preserved explicitly.** Relocating
+the set-site landed it AFTER Mimic's onHit, so round 23's eager `hasMove` clear was silently undone
+and corpus fixture `49_mimic_overwrites_choice_locked_slot.txt` regressed to `kind=seed`. The sim DOES
+add the volatile there (keyed `'mimic'`) and RELEASES it at the very next `runEvent('DisableMove')`,
+whose `hasMove('mimic')` is now false. Not adding it is **observationally EQUIVALENT, not merely
+convenient**: the only discriminator is that endTurn's handler-sort tie-shuffle, which needs a SECOND
+DisableMove handler on the mon at that same endTurn — and on a Mimic turn none can exist, because a
+Choice-item mon can only use Mimic as its FIRST move (anything earlier locks it) so it has no
+`lastMove` yet and neither Disable nor Encore can be on it, while Taunt CANTS Mimic so it never
+resolves. The handler is necessarily ALONE and draws nothing either way. SIM-PROBED by
+`harness/probe_choicelock_mimic_release.js` (case D: Mimic resolves, slot 0 rewritten, volatile
+already released; case A: a cant'd move adds none).
+
+**Pins** (`tests/bridge_test.rs`, all three REVERT-VERIFIED with the right specificity — TL1 fails
+ONLY under the restored round-6 fold, TL2/TL3 fail ONLY with the AfterMove set-site disabled):
+**TL1** `tricked_a_choice_band_after_moving_does_not_lock_the_request` (the b97 bug),
+**TL2** `moving_while_holding_a_tricked_choice_band_does_lock_the_request` (the control, so TL1 can't
+be satisfied by an engine that stopped locking at all), **TL3**
+`thief_that_steals_a_choice_band_locks_the_request` (round 6's case, so the narrowing can't re-break
+it). Each first asserts the item ACTUALLY swapped — a silently-blocked Trick would make the rest
+vacuously true, which is precisely how the earlier hand-probe tested nothing.
+
+OBSERVATION-NEUTRAL for every committed golden: full suite **572 passed / 0 failed / 0 warnings**, e2e
+golden md5 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED, every seed golden byte-identical (no board in
+any golden pairs a Choice item with a mid-move item change).
+
+### ROUND 29 (FIX) — the PERISH gather is an INSERTION-ORDER question, not a fixed position
+
+`gen3_perish_volatile_insertion_turn_v1`. The last non-allowlisted finding of the 2000-battle
+external-consistency soak (`sbd_msb1zfxs_b134`, `kind=perside`): at a mutual perish-out node emits
+`|-start|p2a: Aipom|perish0` then p1a and faints in that order, while the port emitted p1a first in
+both. perish3/2/1 and the two Leftovers `-heal` lines on the SAME turn all MATCHED.
+
+**THE MECHANISM.** Both actives are speed-TIED (227), so every residual tie group is permuted by a
+Fisher-Yates draw. Showdown gathers a mon's residual handlers in `pokemon.volatiles` **INSERTION**
+order (`findPokemonEventHandlers` iterates the volatiles object), and `speed_sort` is a **NON-STABLE
+selection sort** whose per-round swaps hand the tie-group shuffle whatever pre-sort order they leave
+behind. So the relative gather order of a mon's `perish` and its NO_ORDER `stall` volatile decides
+the emitted tick order — and the faint order that follows it.
+
+**WHY A FIXED POSITION CANNOT WORK.** Two REAL boards demand opposite orders:
+  * **SAME-TURN** perish-after-protect (`rmrr03rmc_ab_453_2`, byte-fuzz corpus fixture
+    `32_perish_start_volatile_insertion_order.txt`): Protect is priority 3, so it moves FIRST and its
+    `stall` volatile is inserted BEFORE `perish` ⇒ perish must gather LAST. This is what the previous
+    fixed position (perish pushed after the NO_ORDER duration block) was chosen to reproduce.
+  * **CROSS-TURN** perish-then-protect (b134): Perish Song lands turn 16, the mon Protects turn 18,
+    and perish0 falls on turn 19 with the `stall` (duration 2) still live ⇒ `perish` was inserted
+    FIRST and must gather FIRST. The fixed position had this exactly backwards.
+The old gather site already flagged this as an HONEST LIMITATION ("a mon perished on an EARLIER turn
+than it Protects would have `perish` inserted BEFORE `protect`; that distinct (unreproduced) board is
+not modeled by this fixed position — a full per-volatile insertion-sequence stamp would be the general
+fix"). b134 IS that board; it is no longer unreproduced.
+
+**THE FIX** — the insertion-sequence stamp, narrowed to the pair that is proven to conflict. Two
+`MonState` fields record the TURN each side of the conflict was inserted: `perish_turn` (stamped where
+Perish Song applies the volatile) and `noorder_vol_turn` (stamped on a SUCCESSFUL Protect/Detect, which
+is what creates `stall`). `turn/residuals.rs` then gathers perish EARLY — before the NO_ORDER duration
+block — iff `perish_turn < noorder_vol_turn`, and keeps the existing late position otherwise. Equal
+turns keep the same-turn ordering, which is correct because within a turn the higher-priority Protect
+always inserts first. DRAW-FREE: the tie-group SIZE and draw COUNT are unchanged — only the pre-shuffle
+PERMUTATION moves — so every seed golden and the e2e md5 `3155eb796cb4bf453c6053d769ba98e5` are
+UNCHANGED (full suite 573 passed / 0 failed / 0 warnings).
+
+**Pin** (revert-verified — it FAILS under the old fixed position):
+`regression_test.rs::perish_gathered_before_a_later_protect_matches_the_sim_tick_order` — a speed-tied
+Aipom mirror, both Leftovers (the SECOND tie group is required: it is the Leftovers group's swaps that
+reorder the still-unsorted perish pair), Perish Song turn 1 / Protect turn 3 / perish0 turn 4 with the
+`stall` still live. It asserts the sim's exact 10-line tick+faint sequence and GUARDS that the Protect
+actually succeeded, so it cannot pass vacuously. Ground truth is the real sim on that board; the port is
+seeded at the POST-CONSTRUCTION seed (see the methodology note below). Corpus fixture 32 — the mirror
+board — still passes, so both boards are satisfied for the first time.
+
+**METHODOLOGY NOTE (this cost three iterations, record it).** A hand-built repro seeded with the RAW
+`>start` seed while the sim spends its first draws on the turn-0 construction window will silently
+replay those construction draws as its own move-phase draws and MANUFACTURE a divergence that does not
+exist. On the b134 board node's construction is 5 draws, and the port's `start_with_switchins` is
+draw-free — so the port must be seeded at the sim's POST-CONSTRUCTION `prng.getSeed()`. Seeded
+correctly, a constructed board that "reproduced" the bug matched node exactly (25 draws vs 25,
+byte-identical emission). Two further self-inflicted errors in the same vein: a board whose damaging
+move was type-IMMUNE (Return into a Ghost) so nothing was ever exercised, and a probe with only ONE tie
+group (no Leftovers) where nothing perturbs the perish pair and the fixed position is accidentally
+correct. **Every constructed repro needs a guard that it actually exercises the mechanic.**
+
+**THE TOOL that settled it** — `gen_sim_bridge_diff.js --repro <divergences/sbd_xxx_bNN>` replays ONE
+saved repro's recorded `start_json` + `cmds` through BOTH real bridges, at the SAME entry points
+production uses (node `local_sim_bridge.js`; rust `sim_bridge` → `BridgeSession::new_construct_turn0`
+from the RAW seed), so the seeding convention is right BY CONSTRUCTION and the whole class of error
+above is impossible. It reproduces b134 in ~1 minute where the alternative was re-running a 2000-battle
+sweep to the same index. Three details are load-bearing: it feeds cmds in BOUNDARY GROUPS (a
+two-sided move boundary only flushes once both sides answer, so draining after the first half waits the
+full quiescence timeout — 147 cmds × one stalled drain each is a ~1h hang, observed); it applies the
+SAME `classifyKnownResidual` allowlist as the main path (without it the documented
+`return102-numeric-alias` request-DISPLAY artifact reads as a real divergence); and it prints the
+DIFFERING REGION rather than a fixed 200-char prefix (these are long `|request|` JSON lines whose heads
+are identical). The differ's `--selftest` and normal mode are unaffected.
+
 ### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
 
 `gen3_simbridge_diff_allowlist_v1`. **This is the strongest correctness gate in the project**, because
