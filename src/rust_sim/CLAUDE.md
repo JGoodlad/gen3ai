@@ -4625,7 +4625,41 @@ DRAW-FREE so the seed/omniscient diffs are blind to them. Suite **567 passed / 0
   ALSO probe what ENDS it later. "Survives A" and "is cancelled by A" are not the only two options** — I
   stopped at "it survives" and shipped a model in which it never ends.
 
-**⚠️ OPEN — THE SOAK WEDGED (not yet diagnosed).** The 1200-battle randbats soak stopped advancing at
+**✅ THE SOAK "WEDGE" — DIAGNOSED + FIXED (it was the HARNESS, not the engine).** Three harness
+defects compounded into what looked like a deadlock, and diagnosing it cost more than the two engine
+bugs it was hiding:
+  1. **`drainQuiescent` timed out SILENTLY** — on `maxMs` it returned what it had and let the loop
+     continue. With `SAFETY = 600` decisions/battle, one boundary that never emits a `|request|`
+     frame costs 30 s × 600 = **~5 HOURS on a single battle**. Now it flags `timedOut` and the
+     battle ABORTS with the side + decision index (`gen3_simbridge_drain_timeout_v1`).
+  2. **Battle errors printed only under `--verbose`** — which is exactly why the stall looked like an
+     unexplained hang. They now ALWAYS print, with the last commands sent and the tail of what each
+     side emitted, so a stall is self-diagnosing without a re-run.
+  3. **Persistent mode ABORTED the whole run on one battle error** (`gen3_simbridge_error_recovery_v1`)
+     — the actual reason the 1200-battle soak stopped at battle **59**. The children genuinely are
+     unrecoverable mid-battle, but the fix is to REPLACE them (exactly as the pre-existing `skip` path
+     already did), not to end the run. That one `break` threw away the other 1141 battles.
+  4. **THE ACTUAL ROOT CAUSE — `pickModeledLegalReq` checked `disabled` but NOT `pp`**
+     (`gen3_simbridge_picker_pp_v1`), and its no-modeled-move fallback was a blind `return 'move 1'`
+     that ignored both flags. Isolating the captured stall against the node bridge ALONE
+     (`/tmp/replay_stall.js` over the new error repro) showed the exact escalation:
+       `cmd[223] p1 move 1` → `|error|[Unavailable choice] Can't move: Jumpluff's Protect is disabled`
+                              **+ a re-request** (so the harness recovers)
+       `cmd[225] p1 move 1` → `|error|[Invalid choice] …`  ← **NO re-request**
+       `cmd[226] p2 move 2` → nothing, forever.
+     Showdown ESCALATES a repeated bad choice from `[Unavailable choice]` (re-requests) to
+     `[Invalid choice]` (does not), so once the picker re-picked the same disabled/0-PP move the
+     harness waited on a `|request|` that would never arrive. The picker now skips `pp <= 0` and
+     prefers ANY usable slot over the blind `move 1`.
+**⚠️ AND `gen3customgame` HAS NO TURN CAP.** Its ruleset is
+`['HP Percentage Mod','Cancel Mod','Max Team Size = 24','Max Move Count = 24','Max Level = 9999','Default
+Level = 100']` — no `endlessbattleclause` (a gen6+ rule; `sim/battle.ts:1851` early-returns without it) and
+no max-turn tie. So a stalled battle NEVER self-terminates and the harness had 600 decisions of runway to
+keep re-picking the illegal move. Any long-running harness on this format needs its OWN budget.
+**THE PORT WAS INNOCENT THROUGHOUT** — all four defects were in the harness. VERIFIED: seed 777 previously
+died at battle 8; it now runs all 20 with **0 errors** and `ended_battles: 20`.
+
+**HISTORICAL NOTE (superseded, kept for the reasoning):** The 1200-battle randbats soak stopped advancing at
 ~battle 58: the driver process stayed alive but IDLE (1:59 elapsed / 2:33 CPU, load 0.17), both child
 bridges alive, no new repros for ~2h. `drainQuiescent`'s `maxMs` caps a SINGLE drain, not the outer loop,
 so a child that never emits a `|request|` frame parks the run forever. A bridge that can DEADLOCK is more

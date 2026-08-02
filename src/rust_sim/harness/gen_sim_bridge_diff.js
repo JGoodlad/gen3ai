@@ -196,10 +196,41 @@ async function drainQuiescent(child, opts = {}) {
       if (quietSince === null) quietSince = Date.now();
       if (Date.now() - quietSince >= settleMs) break;
     }
-    if (Date.now() - start > maxMs) break;
+    if (Date.now() - start > maxMs) { events.timedOut = true; break; }
     await sleep(pollMs);
   }
   return events;
+}
+
+// A drain that hit its `maxMs` cap without the terminal signal means a child stopped
+// talking mid-battle. Treat it as a HARD ERROR, not a shrug (`gen3_simbridge_drain_timeout_v1`).
+//
+// WHY THIS MATTERS — it cost a whole soak. `drainQuiescent` used to time out SILENTLY, return
+// whatever it had, and let the loop continue; `diffOneBattle` allows SAFETY=600 iterations. So a
+// single boundary that never emits a `|request|` frame burns 30 s and the battle keeps trying —
+// up to 600 x 30 s = ~5 HOURS on ONE battle. The 1200-battle randbats soak parked on battle 59
+// for 2 h looking exactly like a deadlock: driver alive at ~2% CPU (the 5 ms poll), both child
+// bridges idle in `ep_poll`/`unix_stream_data_wait` having said everything they were going to.
+// Diagnosing that cost more than the bugs the soak found. A stalled child is now reported
+// immediately, with the side and phase, so it becomes a FINDING instead of an invisible hang.
+function assertDrained(events, node, rust, where, ctx) {
+  if (!events || !events.timedOut) return null;
+  // Dump the CONTEXT a stall needs to be diagnosed without a re-run: the last commands we
+  // wrote and the tail of what each side last emitted. Without this the error names the
+  // decision but not the SHAPE, and you have to reproduce to learn anything.
+  const tail = (perSide, n) => {
+    if (!perSide) return '(none)';
+    const flat = [];
+    for (const side of ['p1', 'p2']) for (const ch of (perSide[side] || [])) flat.push(...ch);
+    return flat.slice(-n).join(' ¦ ') || '(none)';
+  };
+  const lastCmds = ctx && ctx.cmds ? ctx.cmds.slice(-6).map((c) => c.join(' ')).join(' ¦ ') : '(none)';
+  return `drain timeout after 30s at ${where} — a child stopped emitting (no |request| frame).\n`
+    + `    last cmds: ${lastCmds}\n`
+    + `    node tail: ${tail(ctx && ctx.nodeSide, 6)}\n`
+    + `    rust tail: ${tail(ctx && ctx.rustSide, 6)}\n`
+    + `    node stderr: ${(node.stderr || '').slice(-200) || '(none)'} | `
+    + `rust stderr: ${(rust.stderr || '').slice(-200) || '(none)'}`;
 }
 
 // ── One battle: drive BOTH children off the Node bridge's request frames ────────
@@ -215,8 +246,14 @@ async function diffOneBattle(node, rust, startJson, chooseSeed, trapProb, verbos
   // Feed START to both. START flushes the framing + the initial request(s) → drain-to-request.
   node.write('START ' + startJson);
   rust.write('START ' + startJson);
-  collect(await drainQuiescent(node), nodeSide);
-  collect(await drainQuiescent(rust), rustSide);
+  {
+    const en = await drainQuiescent(node); collect(en, nodeSide);
+    const er = await drainQuiescent(rust); collect(er, rustSide);
+    const ctx = { cmds, nodeSide, rustSide };
+    const stall = assertDrained(en, node, rust, 'START (node)', ctx)
+               || assertDrained(er, node, rust, 'START (rust)', ctx);
+    if (stall) return { err: stall, cmds, nodeSide, rustSide };
+  }
 
   // A SPEED-TIED lead matchup is now VALIDATED (was skipped). The sim's turn-0 CONSTRUCTION
   // window — the `start` action's insertChoice tie-break + the eachEvent('Update'/'WeatherChange')
@@ -277,8 +314,14 @@ async function diffOneBattle(node, rust, startJson, chooseSeed, trapProb, verbos
       break; // no move/switch boundary → battle ended (an __END__ was drained)
     }
     // The completing write flushed the turn/switch batch + the next request(s) → drain both.
-    collect(await drainQuiescent(node), nodeSide);
-    collect(await drainQuiescent(rust), rustSide);
+    {
+      const en = await drainQuiescent(node); collect(en, nodeSide);
+      const er = await drainQuiescent(rust); collect(er, rustSide);
+      const ctx = { cmds, nodeSide, rustSide };
+      const stall = assertDrained(en, node, rust, `decision ${safety} (node)`, ctx)
+                 || assertDrained(er, node, rust, `decision ${safety} (rust)`, ctx);
+      if (stall) return { err: stall, cmds, nodeSide, rustSide };
+    }
     if (nodeSide._ended || rustSide._ended) { ended = true; break; }
   }
   if (safety >= SAFETY) return { err: 'battle did not advance to end (safety cap)', cmds };
@@ -359,14 +402,27 @@ function benchFromReq(req) {
 function pickModeledLegalReq(req, rng, isTrapped) {
   const moves = (req.active && req.active[0] && req.active[0].moves) || [];
   const modeledSlots = [];
+  const legalSlots = [];   // legal but not necessarily MODELED — the safe last resort
   for (let k = 0; k < moves.length; k++) {
+    // A slot is UNUSABLE if the sim marked it `disabled` OR it is out of PP. Checking only
+    // `disabled` was the bug that killed a 1200-battle soak (`gen3_simbridge_picker_pp_v1`):
+    // Showdown escalates a repeat bad choice from `[Unavailable choice]` (which RE-REQUESTS,
+    // so the harness recovers) to `[Invalid choice]` (which does NOT), after which the drain
+    // waits forever for a `|request|` that will never come. gen3customgame has NO turn cap and
+    // NO endless-battle clause, so nothing ends the battle either — the run just parks.
     if (moves[k].disabled) continue;
+    if (moves[k].pp !== undefined && moves[k].pp <= 0) continue;
+    legalSlots.push(k);
     const id = toId(moves[k].id || moves[k].move);
     if (id === 'struggle' || isModeledMove(id)) modeledSlots.push(k);
   }
   const benchSlots = isTrapped ? [] : benchFromReq(req);
   if (modeledSlots.length === 0) {
     if (benchSlots.length > 0) return `switch ${benchSlots[randInt(rng, benchSlots.length)] + 1}`;
+    // Prefer ANY usable slot over the old blind `move 1`, which happily re-picked a disabled /
+    // 0-PP move forever. If literally nothing is usable the sim will substitute Struggle, and
+    // `move 1` is then the correct thing to send.
+    if (legalSlots.length > 0) return `move ${legalSlots[randInt(rng, legalSlots.length)] + 1}`;
     return 'move 1';
   }
   if (benchSlots.length > 0 && rng() < 1 / 6) {
@@ -719,10 +775,37 @@ async function main() {
 
     if (result.err) {
       cov.err++;
-      if (flags.verbose) console.error(`[battle ${bi}] error: ${result.err}`);
+      // ALWAYS print — a battle error is rare and load-bearing (a stalled child, a fail-loud
+      // panic in either bridge). Hiding it behind --verbose is what made the wedged soak look
+      // like an unexplained hang instead of a reportable finding.
+      console.error(`[ERROR] battle ${bi}: ${result.err}`);
+      // SAVE A REPRO for an error too (`gen3_simbridge_error_repro_v1`). Previously only
+      // divergences and allowlisted residuals were filed, so a STALL — the thing that killed a
+      // whole soak — left nothing to analyse and could only be studied by re-running the seed
+      // and hoping. An error is the case that MOST needs a repro.
+      try {
+        const dir = saveRepro(flags, runId, bi, pair, startJson,
+          { nodeSide: result.nodeSide || {}, rustSide: result.rustSide || {}, cmds: result.cmds || [] },
+          { side: '-', chunk: -1, line: -1, kind: 'error', expected: '', got: '', detail: result.err },
+          chooseSeed, 'errors');
+        console.error(`  repro → ${dir}`);
+      } catch (e) { console.error(`  (repro save failed: ${e && e.message})`); }
+      // RECOVER, don't abort (`gen3_simbridge_error_recovery_v1`). The children ARE
+      // unrecoverable mid-battle — but the fix is to REPLACE them, exactly as the `skip` path
+      // above already does, not to end the run.
+      //
+      // WHY: this one line cost the entire 1200-battle soak. It stopped at battle **59** — not
+      // because anything was wrong with the port, but because ONE battle errored and persistent
+      // mode `break`s. The battle in question was a 106-turn ENDLESS STALL (p2 down to a single
+      // full-HP Leftovers Tropius spamming Swords Dance, its damaging moves at 0 PP) — an
+      // artifact of RANDOM play, not a parity finding, and exactly the kind of battle a long
+      // fuzz run will keep producing. Aborting on it threw away the other 1141 battles.
       if (!flags.persistent) { node.kill(); rust.kill(); }
-      // On error in persistent mode we cannot cleanly reset the child mid-battle; abort persistent.
-      if (flags.persistent) { console.error('[sim_bridge_diff] persistent battle errored — cannot recover child state'); break; }
+      else {
+        sharedNode.kill(); sharedRust.kill();
+        sharedNode = new BridgeChild('node', [NODE_BRIDGE]);
+        sharedRust = new BridgeChild(RUST_BRIDGE, []);
+      }
       continue;
     }
 
