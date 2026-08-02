@@ -214,20 +214,49 @@ Worst-case recovery: ~100 seconds from network drop to tunnel restored.
 
 TensorBoard is exposed publicly via Cloudflare Tunnel at **https://tensorboard.g5d.io**.
 
-Make sure TensorBoard is running on the desktop first:
-```bash
-tensorboard --logdir models/   # recursively finds every models/*/tb/ (runs + _goldens)
-```
+**Both halves run as systemd user services** — the origin (TensorBoard on `:6006`) and the
+tunnel (`cloudflared`). Neither should ever be started by hand; see the outage note below
+for why.
 
-The tunnel daemon runs as a systemd user service and starts automatically on login:
 ```bash
-systemctl --user status cloudflared-tensorboard
+# the origin — serves models/ on localhost:6006
+systemctl --user status  tensorboard
+systemctl --user restart tensorboard
+journalctl --user -u tensorboard -f
+
+# the tunnel — tensorboard.g5d.io -> localhost:6006
+systemctl --user status  cloudflared-tensorboard
 systemctl --user restart cloudflared-tensorboard
 journalctl --user -u cloudflared-tensorboard -f
 ```
 
+Units: `~/.config/systemd/user/{tensorboard,cloudflared-tensorboard}.service`
+(a reference copy of the TensorBoard unit is versioned at
+`scripts/workstation/tensorboard.service`)  
 Config: `~/.cloudflared/config.yml`  
 Credentials: `~/.cloudflared/9ebabecb-fbdb-476a-925b-7329596cb38f.json`
+
+`--logdir models/` recursively finds every `models/*/tb/` (runs + `_goldens`).
+
+### Why the origin is a service (Jul 29 2026 outage)
+
+A machine-wide OOM (`global_oom`, triggered by a `python3` process) swept the user session
+at ~01:01 and killed both halves. `cloudflared` is an enabled unit, so systemd restarted it
+10s later — but TensorBoard had been launched by hand under `nohup`/tmux, so **nothing
+brought it back**. The tunnel then forwarded traffic to a dead port for three days, serving
+`Unable to reach the origin service ... connection refused` while looking healthy from the
+outside.
+
+Two guards now:
+- `Restart=always` on `tensorboard.service` — it self-heals from an OOM kill or a crash.
+- `MemoryMax=6G` — TensorBoard can never be the process that pushes the box into a *global*
+  OOM. If it exceeds the cap its own cgroup OOMs and it restarts, instead of the whole user
+  session getting swept.
+
+**Diagnosing a repeat:** if the site errors, check the origin first — `ss -ltn | grep 6006`.
+A live tunnel with a dead origin is the signature failure, and `systemctl --user status
+tensorboard` will show it. Note `Linger=no` for this user, so both units still stop on a
+full logout; run `loginctl enable-linger goodlad` if you want them to survive that.
 
 ### SSH port-forward (alternative, no cloudflared required)
 

@@ -1,0 +1,30 @@
+# Reference copy of ~/.config/systemd/user/tensorboard.service
+#
+# The origin behind https://tensorboard.g5d.io (the cloudflared tunnel forwards
+# to localhost:6006). See the "TensorBoard remote access" section of
+# GCP_INFRASTRUCTURE.md for the Jul 29 2026 OOM outage this hardens against.
+#
+# Install:
+#   cp scripts/workstation/tensorboard.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now tensorboard.service
+
+[Unit]
+Description=TensorBoard — models/ (origin for tensorboard.g5d.io)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/home/goodlad/dev/gen3ai
+ExecStart=/home/goodlad/miniconda3/bin/tensorboard --logdir models/ --port 6006
+Restart=always
+RestartSec=10
+Environment=HOME=/home/goodlad
+# Cap the origin so TensorBoard can never be the process that pushes the box
+# into a global OOM (the Jul 29 2026 outage). If it exceeds this its own cgroup
+# OOMs and Restart=always brings it straight back, instead of the whole user
+# session getting swept.
+MemoryMax=6G
+
+[Install]
+WantedBy=default.target
