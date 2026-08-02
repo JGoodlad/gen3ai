@@ -1677,3 +1677,65 @@ def test_choice_band_incoming_special_channel_excluded():
     # below the special threat (CB boosts Atk, not the believed Surf).
     assert dec["choice_band"]["phys_high_cb"][0] < 0.01
     assert dec["choice_band"]["phys_high_cb"][0] < dec["incoming"][0]["spec"]["high"]
+
+
+# ============================ gen3_topk_candidates_v1 (v49): candidate-axis cap ============================
+def test_candidate_k_zero_is_bit_identical_and_k16_changes_values():
+    """`damage_candidate_k` caps the op's INCOMING candidate sweep at the K most-believed opponent
+    moves, with NO tail bound — the truncated mass is dropped. k=0 must reproduce the full sweep
+    EXACTLY (it is the default, so any drift here silently changes every existing config)."""
+    import inspect
+    import gymnasium as gym
+    import numpy as np
+    import torch
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+
+    mp = load_mappings()
+    lay = Gen3ObservationEncoder(mp).get_layout()
+    space = gym.spaces.Box(0.0, 1.0, shape=(lay["total_dim"],), dtype=np.float32)
+    sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
+    base = dict(attend_unrevealed_opponents=True, move_belief_mode="revealed", move_prior_fusion=True,
+                move_latent=True, damage_op=True, damage_outgoing=True)
+
+    def build(k):
+        torch.manual_seed(0)
+        kw = {**base, "damage_candidate_k": k}
+        return Gen3FeaturesExtractor(space, layout=lay, mappings=mp,
+                                     **{a: b for a, b in kw.items() if a in sig}).eval()
+
+    full, k16 = build(0), build(16)
+    k16.load_state_dict(full.state_dict())          # identical weights => any delta is the cap
+    obs = {"observation": torch.rand(4, lay["total_dim"], generator=torch.Generator().manual_seed(7))}
+    with torch.no_grad():
+        pi_a, vf_a = full(obs)
+        pi_b, vf_b = k16(obs)
+    # k=0 vs a SECOND k=0 build: byte-identical (the default path is untouched by the feature).
+    again = build(0)
+    again.load_state_dict(full.state_dict())
+    with torch.no_grad():
+        pi_c, vf_c = again(obs)
+    assert torch.equal(pi_a, pi_c) and torch.equal(vf_a, vf_c), "k=0 is not reproducible"
+    # k=16 genuinely truncates => the damage block must move (else the cap is a silent no-op).
+    assert not torch.equal(pi_a, pi_b), "damage_candidate_k=16 did not change the forward"
+    assert torch.isfinite(pi_b).all() and torch.isfinite(vf_b).all()
+
+
+def test_candidate_k_version_gate_and_migration():
+    import pytest as _pytest
+    from agents.model.model_version import (
+        MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config)
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    lay = Gen3ObservationEncoder(load_mappings()).get_layout()
+
+    def mv(k):
+        return ModelVersion.from_layout_and_policy_kwargs(
+            lay, {"features_extractor_kwargs": {"damage_candidate_k": k}})
+
+    assert MODEL_CONFIG_VERSION >= 49
+    for a, b in ((16, 0), (0, 16), (16, 8)):
+        with _pytest.raises(ModelVersionError, match="damage_candidate_k"):
+            mv(a).check_compatible(mv(b))
+    mv(16).check_compatible(mv(16))
+    migrated = _migrate_config({"config_version": 48})
+    assert migrated["damage_candidate_k"] == 0 and migrated["config_version"] >= 49

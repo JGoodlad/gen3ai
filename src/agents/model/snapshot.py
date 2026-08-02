@@ -674,6 +674,8 @@ def current_model_version(
     move_prior_fusion: bool = False,
     move_belief_prefuse: bool = False,
     move_belief_single_compute: bool = False,
+    damage_candidate_k: int = 0,
+    pointer_head: bool = False,
     win_prob_mode: str = "none",
     win_prob_coef: float = 1.0,
     value_dist_mode: str = "none",
@@ -745,6 +747,8 @@ def current_model_version(
     ext_kwargs["move_prior_fusion"] = move_prior_fusion
     ext_kwargs["move_belief_prefuse"] = move_belief_prefuse
     ext_kwargs["move_belief_single_compute"] = move_belief_single_compute
+    ext_kwargs["damage_candidate_k"] = damage_candidate_k
+    ext_kwargs["pointer_head"] = pointer_head
     ext_kwargs["win_prob_mode"] = win_prob_mode
     ext_kwargs["value_dist_mode"] = value_dist_mode
     ext_kwargs["value_dist_bins"] = value_dist_bins
@@ -808,6 +812,8 @@ def arch_toggles_from_model(model) -> dict:
         "move_prior_fusion": bool(getattr(fe, "move_prior_fusion", False)),
         "move_belief_prefuse": bool(getattr(fe, "move_belief_prefuse", False)),
         "move_belief_single_compute": bool(getattr(fe, "move_belief_single_compute", False)),
+        "damage_candidate_k": int(getattr(fe, "damage_candidate_k", 0)),
+        "pointer_head": bool(getattr(fe, "pointer_head_enabled", False)),
         "win_prob_mode": str(getattr(fe, "win_prob_mode", "none")),
         # v43 pubval aux head (gen3_pubval_aux_v1): STRUCTURAL string like win_prob_mode, gated in
         # check_compatible, so it must reach the worker's gate (a pubval-ON run's own snapshots carry it).

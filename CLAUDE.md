@@ -555,6 +555,9 @@ the `server_port_threading_test.py` regression guard — is documented in
 src/
   agents/
     model/           # Gen3FeaturesExtractor (PyTorch feature extractor) — has CLAUDE.md
+                     #   arch_constants.py — the weight-shape dims (single source of truth)
+                     #   damage_op.py      — DamageOperator + decode_damage_block (split out 2026-08-01;
+                     #                       re-exported by features_extractor, so old imports still work)
     gen3_data/       # The data facade: concept modules (moves/species/items/abilities/natures/
                      #   type_chart/priors) over data/ — single interface, poke-env-free — has CLAUDE.md
     observation/     # Observation encoders (state_encoder, pokemon, moves, etc.) — has CLAUDE.md
@@ -1143,7 +1146,39 @@ flags. See the observation-vector section above for the rationale and the measur
 `_migrate_config` **POPs** the three dead keys (`from_json_file` does `cls(**data)`, so a stale key
 would raise `TypeError` rather than the clear arch error). Retrain-class, caught by the existing
 obs-dim weight-field check — NO `ARCH_SIGNATURE` bump.
-Current `MODEL_CONFIG_VERSION` = **48**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+**v49 the CANDIDATE-AXIS CAP + the POINTER ACTION HEAD.**
+**`damage_candidate_k` / `--damage-candidate-k K`** (`gen3_topk_candidates_v1`) — the op priced ALL
+~400 move-nums per defender even though the opponent runs four moves; the belief already says which
+candidates matter. This caps the INCOMING candidate axis at the K most-believed (per batch row,
+selection DETACHED, gathered weights still differentiable so the belief gradient rides the survivors),
+with **NO tail bound** — the truncated mass is DROPPED, so a rare-but-lethal candidate below rank K is
+simply not priced (the on-policy probe measured top-16 owning 94.2% of channels with misses BIMODAL,
+which is why the plan called the tail mandatory; this flag is the explicit trade). `_damage_rolls`'
+per-candidate args became `[B,C]` (one call site). Measured: **+11.4% forward / +63.5% op at B=256**
+(learner) but only **+0.3% at B=1** — the CPU/PFSP opponent is DISPATCH-bound (~14.3k aten calls at
+~0.44 µs), not tensor-size bound, so this is a learner lever, not an eval-latency one.
+FORWARD-BEHAVIOR (no new params), unconditional int gate; 0 byte-identical; requires `--damage-op`.
+**`pointer_head` / `--pointer-head`** (`gen3_pointer_head_v1`) — score each action FROM THE TOKEN OF
+THE ENTITY IT SELECTS: move logit *k* from the move at **REQUEST slot k**, switch logit *j* from
+our-team token *j*. Fixes two measured defects structurally rather than by guard: **F2** (switch
+logits are read from a permutation-INVARIANT pool, so a bench mon's token never reaches its own logit)
+and the **ordering bug class** (`agents/action/ordering_integrity.py` exists solely because the
+extractor reads moves SORTED-BY-ID while actions use REQUEST order — the head permutes by move-num
+IDENTITY, making a misaligned logit unrepresentable). The per-move tokens already existed inside
+`PokemonEncoder` (post move-self-attention, `[B,12,4,32]`) and were merely flattened away; the head
+stashes them instead. It ADDS a **zero-init delta** to the flat head's logits (identity-at-init,
+warm-starts from any checkpoint, clean A/B) — a guarantee that only actually holds because of the
+**M1** fix below. The policy adds it in `_get_action_dist_from_latent`, the single point all three
+logit sites funnel through. STRUCTURAL bool gate; OFF byte-identical. Replacing the flat head outright
+is the follow-up. NO `ARCH_SIGNATURE` bump (both OFF reproduce v48 exactly).
+**M1 — SB3 was destroying every zero-init in the extractor (FIXED 2026-08-01).** `ActorCriticPolicy._build()`
+orthogonally re-inits EVERY `nn.Linear` in the feature extractor (`ortho_init` defaults True, nothing
+overrode it), so **13** Linears documented as zero-init were random from step 0 in every real run —
+`refine_proj`/`outgoing_proj`/`status_*_proj`/`film_pi`/`film_vf`, plus the belief heads whose
+zero-init is what makes the **cold-start posterior equal the Smogon prior**. Guarded by
+`Gen3FeaturesExtractor.restore_identity_init()`. **This puts a standing caveat on the K10 and D4
+result families** — see `designs/research_state/ledger.md` → M1 and the model leaf.
+Current `MODEL_CONFIG_VERSION` = **49**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

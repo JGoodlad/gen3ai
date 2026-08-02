@@ -353,6 +353,8 @@ def _run_arch_toggles(args) -> dict:
         move_prior_fusion=args.move_prior_fusion,
         move_belief_prefuse=args.move_belief_prefuse,
         move_belief_single_compute=args.move_belief_single_compute,
+        damage_candidate_k=args.damage_candidate_k,
+        pointer_head=args.pointer_head,
         win_prob_mode=args.win_prob_mode,
         pubval_mode=args.pubval_mode,
         value_dist_mode=args.value_dist_mode,
@@ -1061,6 +1063,26 @@ async def main():
                              "that cannot revise it; also one fewer head pass per forward. "
                              "Forward-behavior (version-checked, fresh-only). REQUIRES "
                              "--move-belief-prefuse. Off by default.")
+    parser.add_argument("--damage-candidate-k", "--damage_candidate_k", dest="damage_candidate_k",
+                        type=int, default=None,
+                        help="Cap the DamageOperator's INCOMING candidate sweep at the K most-believed "
+                             "opponent moves (0 = the full ~400-wide sweep, byte-identical). NO tail "
+                             "bound - the truncated mass is DROPPED, so a rare-but-lethal candidate "
+                             "below rank K is simply not priced (the on-policy probe measured top-16 "
+                             "owning 94.2%% of channels, with misses BIMODAL). Payoff is learner-side: "
+                             "measured +11.4%% forward / +63.5%% op at B=256, but only +0.3%% at B=1 "
+                             "(the CPU opponent is dispatch-bound, not tensor-size bound). "
+                             "Forward-behavior (version-checked, fresh-only). REQUIRES --damage-op.")
+    parser.add_argument("--pointer-head", "--pointer_head", dest="pointer_head",
+                        action=BoolFlag, default=None,
+                        help="Score each action FROM THE TOKEN OF THE ENTITY IT SELECTS: move logit k "
+                             "from the move at REQUEST slot k (permuted by move-num identity, which "
+                             "makes the ordering_integrity.py sorted-vs-request bug class "
+                             "unrepresentable), switch logit j from our-team token j (fixes F2: switch "
+                             "logits are otherwise read from a permutation-INVARIANT pool, so a bench "
+                             "mon's own token never reaches its own logit). Adds a ZERO-INIT delta to "
+                             "the flat head's logits => identity-at-init, warm-starts from any "
+                             "checkpoint. Structural (version-checked, fresh-only). Off by default.")
     parser.add_argument("--win-prob-mode", "--win_prob_mode", dest="win_prob_mode",
                         choices=("none", "read_only", "shaping"), default=None,
                         help="Auxiliary WIN-PROBABILITY head: a calibrated P(win|state) readout off the "
@@ -1931,6 +1953,8 @@ async def main():
     _resolve("move_prior_fusion", False)       # v20 forward-behavior (version-checked, fresh-only)
     _resolve("move_belief_prefuse", False)     # v32 forward-behavior (version-checked, fresh-only)
     _resolve("move_belief_single_compute", False)  # v47 forward-behavior (version-checked, fresh-only)
+    _resolve("damage_candidate_k", 0)          # v49 forward-behavior (version-checked, fresh-only)
+    _resolve("pointer_head", False)            # v49 structural (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
     _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)
     _resolve("pubval_mode", "none")            # v43 structural + resume-immutable (version-checked)
@@ -2231,6 +2255,17 @@ async def main():
             "moves the move-belief reinjection before the transformer. Set --move-belief-mode revealed, "
             "or drop --move-belief-prefuse."
         )
+    if args.damage_candidate_k and not args.damage_op:
+        # FAIL LOUD at the CLI (not at extractor build, which happens only after the run has already
+        # tried to stand up a server): the cap narrows the DamageOperator's candidate axis, which
+        # only exists when the op is built.
+        parser.error(
+            "--damage-candidate-k requires --damage-op (it caps the damage operator's incoming "
+            "candidate sweep, which only exists when the op is built). Add --damage-op / "
+            "--unified-damage, or drop --damage-candidate-k."
+        )
+    if args.damage_candidate_k and args.damage_candidate_k < 0:
+        parser.error("--damage-candidate-k must be >= 0 (0 = the full candidate sweep).")
     if args.move_belief_single_compute and not args.move_belief_prefuse:
         parser.error(
             "--move-belief-single-compute requires --move-belief-prefuse: without prefuse the "
@@ -3426,6 +3461,8 @@ async def main():
         _load_extractor_kwargs["move_belief_prefuse"] = args.move_belief_prefuse
         # v47: frozen pre-attention move belief (refine reuses the prefuse posterior).
         _load_extractor_kwargs["move_belief_single_compute"] = args.move_belief_single_compute
+        _load_extractor_kwargs["damage_candidate_k"] = args.damage_candidate_k      # v49
+        _load_extractor_kwargs["pointer_head"] = args.pointer_head                  # v49
         # Incoming-damage-obs ablation — version-checked vs the saved config (fresh-only).
         # Win-probability head mode — version-checked vs the saved config (resume-IMMUTABLE; any change
         # FATALs, same machinery as move_belief_mode).
@@ -3803,6 +3840,9 @@ async def main():
         extractor_kwargs["move_belief_prefuse"] = args.move_belief_prefuse
         # gen3_belief_single_compute_v1: belief ONCE pre-attention, then frozen. Requires prefuse. v47.
         extractor_kwargs["move_belief_single_compute"] = args.move_belief_single_compute
+        # gen3_topk_candidates_v1 / gen3_pointer_head_v1 (v49). Both OFF byte-identical.
+        extractor_kwargs["damage_candidate_k"] = args.damage_candidate_k
+        extractor_kwargs["pointer_head"] = args.pointer_head
         # Unified-architecture ablation (forward-behavior): zero the incoming-damage obs block from the
         # model's view. No weight-shape change. Independent A/B knob (typically paired with --damage-op).
         # Win-probability head (none|read_only|shaping; structural + resume-immutable). 'none' = no module

@@ -2,7 +2,10 @@
 
 ## Architecture constants — single source of truth
 
-All network dims are defined as module-level constants at the top of `features_extractor.py`:
+All network dims are defined as module-level constants in **`arch_constants.py`** (relocated there
+2026-08-01 so `damage_op.py` can read them without importing the extractor — that would be circular).
+`features_extractor.py` **re-exports the whole block unchanged**, so it remains the documented import
+surface and `from agents.model.features_extractor import D_MODEL` still resolves:
 
 ```python
 ROLE_TOKEN_SIZE = 128
@@ -14,7 +17,7 @@ ROLE_ENCODER_HIDDEN = [256, 128]
 ACTIVE_CTX_HIDDEN = [64, 32]
 ```
 
-**Change them here and nowhere else.** The phase modules' `__init__` read from these constants; `ModelVersion` imports them so `model_config.json` always reflects the live values. Do not hardcode these numbers anywhere else in the codebase.
+**Change them in `arch_constants.py` and nowhere else.** The phase modules' `__init__` read from these constants; `ModelVersion` imports them so `model_config.json` always reflects the live values. Do not hardcode these numbers anywhere else in the codebase.
 
 Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `state_encoder.get_layout()` and flow through `features_extractor_kwargs` — same principle, different file.
 
@@ -128,6 +131,26 @@ Rules to preserve:
 - **`ExtractorContext`** (frozen-by-convention dataclass) is the inter-phase contract: `ObsUnpack` produces it, downstream phases read from it. Add a field here rather than widening a phase's positional signature. Cross-phase values (active-slot indices, fainted masks, `hp_probs`) are computed once in `ObsUnpack` and carried on the context.
 - **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py` (current: `gen3_opp_hp_typed_candidates_v1` — the DamageOperator now treats the opponent's Hidden Power as the 16 ORDINARY typed move-nums 355-370 [`C = n_moves`, no synthetic appended-16] with the bare 237 masked as the presence token; a forward-math change to the op [out_dim unchanged → not shape-caught] so it bumps the signature. The literal source of truth is `ARCH_SIGNATURE` in `model_version.py`; check it there, not this prose). Pure decompositions still change state_dict keys, so old checkpoints must fail loudly. Re-sourcing or re-meaning an obs block (e.g. own IV/EV/nature going from constant fallbacks to real values via the poke-env `backfill_teambuilder_spread` fix; the event-sourced TurnDelta fold + status/item transition history; routing the trapping signals — `trapped`/`maybe_trapped`/`attempted_switch_rejected` — into the obs; the action-aligned per-move effect block — `gen3_move_effects_v1`; the per-our-mon incoming-damage / OHKO belief block — `gen3_incoming_damage_v1`; **re-calibrating that belief's VALUES** — `gen3_incoming_damage_v2`, which added a gen3 crit term + raised the offensive-stat tail to de-timid P(KO), and widened the candidate set [revealed-HP typed expansion, Return/Frustration pricing, broader prior floor/cap] so the killing move isn't silently absent; same 33 dims, values only; or adding the `turns_since_progress` no-progress-clock scalar at `vec[14]` — `gen3_markovian_progress_v1`, obs dim 3390 → 3391; or **re-ordering** the per-move features (base power vec[0:4], type multiplier vec[4:8], the move-effect block) from `battle.available_moves` order to request-slot order so feature slot k aligns with action logit 6+k — `gen3_move_slot_align_v1`, same 3409 dims, VALUES only on the disabled-move / <4-move / no-opp-active cases, byte-identical otherwise; or adding the two **protect-success-odds** reactive scalars at `vec[15]`/`vec[16]` — `gen3_protect_odds_v1`, P(Protect succeeds NOW) per active mon from `LivePokemon.protect_counter`, obs dim 3409 → 3411; or adding the two static per-move status-cure bits — `cures_self_status` (Refresh) + `cures_team_status` (Heal Bell / Aromatherapy) — to the move-effect block so the head can connect a cure move to the per-mon status one-hots, `gen3_status_cure_moves_v1`, `MOVE_EFFECT_FEATURES` 9 → 11, obs dim 3411 → 3419; or adding the 3-dim per-mon SLEEP WAKE belief block — `sleep_is_deterministic` [Rest] + a COMPUTED `p_wake` (the verified gen3 sleep-RNG tables, opp time∈{2,3,4,5} / Rest time=3 / Early Bird halves, marginalising the opp Early-Bird prior) + `sleep_counter_reliable` — so the head reads the wake odds + Rest source poke-env can't expose instead of learning the sleep RNG, `gen3_sleep_wake_belief_v1`, `POKEMON_VECTOR_DIM` 106 → 109, obs dim 3419 → 3455; or RESERVING two reactive scalars at `vec[17]`/`vec[18]` for a pending-Wish "floating heal" signal (`gen3_wish_reserve_v1`, `REACTIVE_SCALAR_DIM` 17 → 19, obs dim 3455 → 3457) then WIRING them — the gen3 Wish (gen4-inherited) heals the slot mon's `maxhp/2` at the end of the turn after cast, slot-keyed, so the per-side scalar is the flat `WISH_HEAL_FRACTION` (≈0.5, GIGO-proof) when a wish cast last turn resolves this turn, reconstructed from the event log since poke-env doesn't track it, `gen3_wish_wired_v1`, a VALUES-only change, fuzz-calibrated vs the real sim; or **re-meaning the `turns_since_progress` no-progress-clock scalar** at `vec[14]` so a REST-LOOP — our active Rested earlier this episode, woke, and re-Rested without Sleep Talk — is classified a NO_OP stall instead of a free defensive heal (it now ADVANCES the clock + charges `no_progress_tax`; Sleep-Talk mons and winning residual rest-stalls stay exempt — and, folded into the SAME signature with NO separate bump (owner decision), a WASTED Refresh (`cures_self_status` used with `our_status_cured is None`) is likewise a NO_OP charged BEFORE the progress check, so it is taxed even when a winning Leech/Toxic residual would otherwise launder the turn into "progress"), `gen3_rest_loop_stall_v1`, a VALUES-only change in `progress_clock.py`, same obs dim 3457; or adding the request-ordered **active-req-moves** block — OUR active mon's 4 moves in `legal.move_slots` order `[move_num ×4, resolved_type_id ×4, legal_now ×4]` after the matchups, so the DamageOperator's OUTGOING per-move methods (`_outgoing_block`/`_status_landing`/`_outgoing_matrix`) read request order instead of the per-mon block's sorted-by-id order and their per-move output aligns with action logit 6+k — `gen3_op_move_align_v1`, `REACTIVE_DIM` 402 → 414, obs dim 3457 → 3469, a SHAPE change; or giving each TYPED Hidden Power its OWN distinct move num — `gen3_typed_hidden_power_ids_v1`, a VALUES-only change [same obs dim 3469, no weight-shape change: 355-370 are previously-unused move-embedding rows, max_moves=400]: OUR-side HP carries a distinct num (355-370) + real type in the obs/per-num tables so the extractor's `is_hp_slot == 237` no longer matches it [normal typed-move path; our outgoing HP priced right] and the history folds the distinct num, while the OPPONENT's HP stays bare 237 with ALL its belief machinery [the HP tracker, the hp_probs blend, the op's 237→16-candidate expansion, the move-belief PRIOR+LABELS via `damage_tables._belief_num` + `gen3_env._move_num`] folded to 237 — the known/unknown boundary; supersedes the `gen3_own_hp_typed_history_v1` hp_probs one-hot [reverted]) is likewise retrain-class even when individual dims are unchanged.
 - Per-phase unit tests live in `phase_modules_test.py` — `CLSPool` (incl. the `value_cls` pool) and `ProjectionAssembler` (which returns `(pi_combined, vf_combined)`) are tested on a hand-built `ExtractorContext` (`_dummy_ctx`) without a full forward pass. Prefer adding precise phase-level tests there.
+
+## File layout (`gen3_damage_op_split_v1`, 2026-08-01)
+
+`features_extractor.py` was ~4,700 lines, of which `DamageOperator` alone was **1,689 (39%)**. Split
+into three, a **pure relocation** — same classes, same constants, same forward math:
+
+| file | holds |
+|---|---|
+| `arch_constants.py` (37) | the architecture constants — the single source of truth for weight-shape dims |
+| `damage_op.py` (2,102) | `DamageOperator` + its `_DMG_*` constants + `decode_damage_block` |
+| `features_extractor.py` (2,922) | everything else; **re-exports all 89 moved names** |
+
+No import cycle: `DamageOperator` touches the extractor only through `ctx: 'ExtractorContext'`, which
+is a **string** forward-reference and so costs no runtime import. The re-export means every historical
+path (`from agents.model.features_extractor import DamageOperator / decode_damage_block / _DMG_* /
+_SB_ATK`) still resolves — the prober, `model_version`, `snapshot` and the tests all rely on that.
+
+**The gate for a refactor claiming to change nothing is proof, not review:** byte-identity on pi/vf +
+the raw op block (`tmp/damage_op_equiv_probe.py`), unchanged `state_dict` keys, the constructed-scenario
+physics oracle (`damage_op_probe_fuzz_test.py`, 22/22), and the full suite. All four held.
 
 ## ⚠️ Identity-at-init is NOT free — SB3 clobbers it (`gen3_identity_init_guard_v1`)
 
