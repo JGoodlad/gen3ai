@@ -185,9 +185,12 @@ def test_marg_ko_reproduces_at_certain_neutral_nature():
     torch.manual_seed(0)
     high = torch.rand(B, n, C) * 1.2
     maxhp = torch.rand(B, n) * 300 + 200; cur = maxhp * torch.rand(B, n)
-    acc = torch.ones(C); phys = (torch.arange(C) % 2).float(); fixed = torch.zeros(C)
+    # gen3_topk_candidates_v1: the per-candidate args are PER-BATCH-ROW [B,C] (the candidate
+    # set is each row's own top-K of the move belief), so broadcast these to [B,C].
+    acc = torch.ones(B, C); phys = (torch.arange(C) % 2).float().expand(B, -1)
+    fixed = torch.zeros(B, C)
     dmg = high * maxhp[:, :, None]
-    ko = acc[None, None, :] * torch.clamp((dmg - cur[:, :, None]) / (0.15 * dmg + eps), 0, 1)
+    ko = acc[:, None, :] * torch.clamp((dmg - cur[:, :, None]) / (0.15 * dmg + eps), 0, 1)
     nat = torch.zeros(B, 25); nat[:, 8] = 1.0                                # hardy = all-neutral
     out = op._nature_marg_ko(ko, high, maxhp, cur, acc, phys, fixed, nat, eps)
     assert torch.allclose(out, ko, atol=1e-5)
@@ -199,8 +202,8 @@ def test_marg_ko_shifts_under_nature_uncertainty():
     op = _op_nat()
     eps = 1e-6
     maxhp = torch.tensor([[300.]]); cur = torch.tensor([[150.]]); high = torch.tensor([[[0.5]]])  # dmg==cur
-    acc = torch.ones(1); phys = torch.ones(1); fixed = torch.zeros(1)
-    ko = acc[None, None, :] * torch.clamp((high * maxhp[:, :, None] - cur[:, :, None])
+    acc = torch.ones(1, 1); phys = torch.ones(1, 1); fixed = torch.zeros(1, 1)   # [B,C]
+    ko = acc[:, None, :] * torch.clamp((high * maxhp[:, :, None] - cur[:, :, None])
                                           / (0.15 * high * maxhp[:, :, None] + eps), 0, 1)
     assert float(ko) == 0.0                                                  # mean-field: exactly on the edge
     nat = torch.zeros(1, 25); nat[:, 0] = 0.5; nat[:, 15] = 0.5              # adamant(atk+) / modest(atk-)
@@ -213,12 +216,14 @@ def test_marg_ko_fixed_damage_is_invariant():
     B, n, C, eps = 2, 6, 4, 1e-6
     high = torch.rand(B, n, C) * 0.8 + 0.3
     maxhp = torch.full((B, n), 300.); cur = torch.full((B, n), 150.)
-    acc = torch.ones(C); phys = torch.ones(C); fixed = torch.tensor([1., 0., 1., 0.])  # cols 0,2 fixed
+    acc = torch.ones(B, C); phys = torch.ones(B, C)                                # [B,C]
+    fixed = torch.tensor([1., 0., 1., 0.]).expand(B, -1)                          # cols 0,2 fixed
     dmg = high * maxhp[:, :, None]
-    ko = acc[None, None, :] * torch.clamp((dmg - cur[:, :, None]) / (0.15 * dmg + eps), 0, 1)
+    ko = acc[:, None, :] * torch.clamp((dmg - cur[:, :, None]) / (0.15 * dmg + eps), 0, 1)
     nat = torch.zeros(B, 25); nat[:, 0] = 0.5; nat[:, 15] = 0.5
     out = op._nature_marg_ko(ko, high, maxhp, cur, acc, phys, fixed, nat, eps)
-    assert torch.equal(out[:, :, fixed.bool()], ko[:, :, fixed.bool()])     # fixed-damage cols untouched
+    fcols = fixed[0].bool()
+    assert torch.equal(out[:, :, fcols], ko[:, :, fcols])                  # fixed-damage cols untouched
 
 
 def test_op_forward_marginalize_shifts_pko():

@@ -499,6 +499,12 @@ class PokemonEncoder(torch.nn.Module):
 
     def __init__(self, layout: Dict[str, Any], move_latent: bool = False):
         super().__init__()
+        # gen3_pointer_head_v1: when True, `forward` stashes the per-(mon, move-slot) tokens for the
+        # pointer action head. Off by default and set by the root extractor, so the baseline build
+        # allocates nothing and the stash stays None. (Set AFTER super().__init__() — nn.Module's
+        # __setattr__ needs its internal dicts to exist before any attribute assignment.)
+        self.stash_move_tokens = False
+        self.last_move_tokens: Optional[torch.Tensor] = None
         self.layout = layout
         _msl = layout['pokemon']['moves']['layout']['slot_layout']
         _rem1 = _msl['type']['offset'] - _msl['power']['offset']                                  # power+secondary+recoil = 3
@@ -712,6 +718,18 @@ class PokemonEncoder(torch.nn.Module):
         mv_in = processed_moves.reshape(batch_size * n_poke, num_moves, MOVE_NET_HIDDEN[1])
         mv_delta, _ = self.move_self_attn(mv_in, mv_in, mv_in)
         mv_out = self.move_self_norm(mv_in + mv_delta)
+        # gen3_pointer_head_v1: STASH the per-move tokens BEFORE they are flattened into the mon
+        # vector below. They are exactly what a pointer action head needs — one addressable vector
+        # per (mon, move slot), already contextualised by the within-mon move self-attention above —
+        # and the flatten on the next line is the only reason they were never reachable. Read-only
+        # side stash (never fed forward), so it cannot change the baseline forward; `None` when the
+        # pointer head is off. NOTE the slot axis is SORTED-BY-ID order (MovesEncoder.get_sorted_moves),
+        # NOT action/request order — the consumer MUST permute (see `_pointer_move_tokens`), which is
+        # the whole `ordering_integrity.py` bug class this head exists to make unrepresentable.
+        self.last_move_tokens = (
+            mv_out.reshape(batch_size, n_poke, num_moves, MOVE_NET_HIDDEN[1])
+            if self.stash_move_tokens else None
+        )
         processed_moves = mv_out.reshape(batch_size, n_poke, -1)
 
         pokemon_enriched = torch.cat([
@@ -1653,6 +1671,92 @@ _DMG_STATUS_REFINE = 2
 _IMMOBILIZE_STATUS_CATS = (1, 3, 4)   # MOVE_STATUS_CAT values for paralysis / freeze / sleep (action-denying)
 
 
+def _request_order_move_tokens(move_tokens_all, ctx):
+    """gen3_pointer_head_v1: permute OUR ACTIVE mon's per-move tokens from the extractor's
+    SORTED-BY-ID slot order into ACTION/REQUEST order, by MOVE-NUM IDENTITY (never by position).
+
+    This is the single place the `ordering_integrity.py` bug class is dissolved: the extractor reads
+    moves via `MovesEncoder.get_sorted_moves` (sorted by dex num) while action logit `6+k` refers to
+    `legal.move_slots[k]` (request order). Both id sources are dex NUMs — `all_move_ids` indexes
+    MOVE_BP, and `our_active_req_move_ids` is written as `float(md.num)` in reactive.py — so they are
+    directly comparable.
+
+    Returns `(tokens_req [B,4,D], valid [B,4])`. A request slot that matches no sorted slot (an empty
+    slot, forced Struggle, or a mon with <4 moves) gets a ZEROED token and `valid=0`, so the head
+    contributes exactly 0 there rather than scoring a garbage vector.
+    """
+    ar = torch.arange(ctx.batch_size, device=ctx.device)
+    sorted_ids = ctx.all_move_ids[ar, ctx.our_active_idx]                 # [B,4] dex nums, SORTED order
+    req_ids = ctx.our_active_req_move_ids.long()                          # [B,4] dex nums, REQUEST order
+    match = (sorted_ids[:, None, :] == req_ids[:, :, None]) & (req_ids[:, :, None] > 0)  # [B,4req,4sorted]
+    valid = match.any(-1)                                                 # [B,4] did this slot resolve?
+    perm = match.float().argmax(-1)                                       # [B,4] request slot -> sorted slot
+    active_tokens = move_tokens_all[ar, ctx.our_active_idx]               # [B,4,D] sorted order
+    tokens_req = active_tokens.gather(1, perm[:, :, None].expand(-1, -1, active_tokens.shape[-1]))
+    return tokens_req * valid[:, :, None].float(), valid.float()
+
+
+class PointerActionHead(torch.nn.Module):
+    """gen3_pointer_head_v1: score each action FROM THE TOKEN OF THE ENTITY IT SELECTS.
+
+    WHY. Today all 11 action logits come from one `Linear` over a pooled vector. Two consequences,
+    both measured:
+      * **F2** — the switch logits are read from a PERMUTATION-INVARIANT CLS pool, so a bench mon's
+        own learned token can never reach its own switch logit. Everything the model knows about
+        "Skarmory specifically" has to survive being averaged with the other five mons first.
+      * **The ordering bug class** — the extractor reads a mon's moves in SORTED-BY-ID order while
+        the action space uses REQUEST order, so `action_mask[6+k]` and move-token *k* refer to
+        different moves whenever the moveset isn't alphabetical. `agents/action/ordering_integrity.py`
+        exists solely to permute one into the other and to fail loudly when it can't; its docstring
+        notes the mismatch is silent when every move is legal and wrong exactly on
+        disabled/zero-PP/Taunt/Disable/Choice-locked turns.
+
+    This head makes both structural instead of defended: move logit *k* is computed from the token of
+    the move at REQUEST slot *k* (permuted here, once, by move-num identity — not by position), and
+    switch logit *j* from our-team token *j*. A misaligned logit becomes unrepresentable rather than
+    guarded.
+
+    ADDITIVE + ZERO-INIT, on purpose. The output is a DELTA added to the existing flat head's logits,
+    and the three scoring `Linear`s are zero-initialised, so at step 0 the delta is EXACTLY 0 and the
+    policy is byte-identical to the flat-head baseline. That (a) warm-starts from any existing
+    checkpoint with no distillation, (b) makes ON-vs-OFF a clean A/B that can only diverge as the
+    pointer path learns, and (c) follows the house identity-at-init convention (`refine_proj`, FiLM,
+    `MoveBelief.reinject`). Replacing the flat head outright is the follow-up once this pays.
+
+    Output layout is the action space (`agents/action/constants.py`): `[switch x6, move x4, struggle]`
+    = SWITCH_START..SWITCH_END, MOVE_START..MOVE_END, STRUGGLE.
+    """
+
+    def __init__(self, move_token_dim: int, d_model: int, ctx_dim: int, hidden: int = 64):
+        super().__init__()
+        self.ctx_proj = torch.nn.Linear(ctx_dim, hidden)
+        self.move_proj = torch.nn.Linear(move_token_dim, hidden)
+        self.switch_proj = torch.nn.Linear(d_model, hidden)
+        # The three SCORERS are zero-init => delta == 0 at init (exactly, weight AND bias).
+        self.move_score = torch.nn.Linear(hidden, 1)
+        self.switch_score = torch.nn.Linear(hidden, 1)
+        self.struggle_score = torch.nn.Linear(hidden, 1)
+        for lin in (self.move_score, self.switch_score, self.struggle_score):
+            torch.nn.init.zeros_(lin.weight)
+            torch.nn.init.zeros_(lin.bias)
+
+    def forward(self, ctx_vec: torch.Tensor, move_tokens_req: torch.Tensor,
+                move_valid: torch.Tensor, team_tokens: torch.Tensor) -> torch.Tensor:
+        """`ctx_vec` [B,ctx_dim] (the decision context — our active mon's refined token);
+        `move_tokens_req` [B,4,move_token_dim] in REQUEST order; `move_valid` [B,4] (1.0 where the
+        request slot resolved to a real move); `team_tokens` [B,6,d_model]. Returns [B,11]."""
+        c = self.ctx_proj(ctx_vec)                                            # [B,H]
+        m = torch.tanh(self.move_proj(move_tokens_req) + c[:, None, :])       # [B,4,H]
+        s = torch.tanh(self.switch_proj(team_tokens) + c[:, None, :])         # [B,6,H]
+        # An unresolved request slot (forced Struggle / <4 moves) contributes exactly 0, never a
+        # score computed from a zero token — the action mask already forbids it, but a nonzero logit
+        # there would still perturb the softmax normaliser over the LEGAL actions.
+        move_logits = self.move_score(m).squeeze(-1) * move_valid             # [B,4]
+        switch_logits = self.switch_score(s).squeeze(-1)                      # [B,6]
+        struggle_logit = self.struggle_score(torch.tanh(c))                   # [B,1]
+        return torch.cat([switch_logits, move_logits, struggle_logit], dim=-1)  # [B,11]
+
+
 class DamageOperator(torch.nn.Module):
     """Fixed, differentiable gen3 damage calculator run in the GPU forward pass, fed by the
     move-belief head's PREDICTED moves — the "compute the physics, learn the belief" op
@@ -1711,8 +1815,13 @@ class DamageOperator(torch.nn.Module):
     def __init__(self, layout: Dict[str, Any], outgoing: bool = False, topk_k: int = 0,
                  matrices_outgoing: bool = False, matrices_incoming: bool = False,
                  matrices_outgoing_all: bool = False,
-                 prob_outspeed: bool = False, hp_type_fix: bool = False):
+                 prob_outspeed: bool = False, hp_type_fix: bool = False,
+                 candidate_k: int = 0):
         super().__init__()
+        # gen3_topk_candidates_v1: cap the incoming candidate sweep at the K most-believed opponent
+        # moves (0 = the full ~400-wide sweep, byte-identical). No tail-risk bound — the truncated
+        # mass is simply dropped, which is the tradeoff under test.
+        self.damage_candidate_k = int(candidate_k)
         # gen3_bidir_threat_trunk_v1 (#3): use a SOFT P(our_spe > opp_spe) over the believed speed mean±std
         # (SPECIES_SPREAD_PRIOR) instead of the hard point-estimate comparison. Forward-behavior toggle (no
         # new params; values only). Stored for the forward / _outgoing_block p_outspeed computation.
@@ -1989,13 +2098,14 @@ class DamageOperator(torch.nn.Module):
         sharpens the nature head. Fixed-damage candidates are nature-INVARIANT → kept at `ko_ramp` untouched.
 
         Shapes: `ko_ramp`/`high_frac` [B,n_def,C]; `maxhp`/`cur_hp` [B,n_def]; `acc_all`/`phys_all`/`fixed_all`
-        [C]; `nat_probs` [B,25] (softmax over natures at the opp active). Returns marginalised ko [B,n_def,C]."""
+        **[B,C]** (per-batch-row since gen3_topk_candidates_v1 — the candidate set is this row's top-K);
+        `nat_probs` [B,25] (softmax over natures at the opp active). Returns marginalised ko [B,n_def,C]."""
         is_boost = (self.NATURE_MULT == 1.1).float()                          # [25,5]
         is_reduce = (self.NATURE_MULT == 0.9).float()
         pboost = nat_probs @ is_boost                                         # [B,5] P(stat boosted) per stat
         preduce = nat_probs @ is_reduce                                       # [B,5] P(stat reduced)
         e_mult = (1.0 + 0.1 * pboost - 0.1 * preduce).clamp(min=eps)          # [B,5] E[nature mult] (head's)
-        is_phys_c = phys_all[None, :]                                         # [1,C]
+        is_phys_c = phys_all                                                  # [B,C]
 
         def _stat(t):                                                        # [B,5] → [B,C] atk if phys else spa
             return t[:, _SB_ATK:_SB_ATK + 1] * is_phys_c + t[:, _SB_SPA:_SB_SPA + 1] * (1.0 - is_phys_c)
@@ -2003,7 +2113,7 @@ class DamageOperator(torch.nn.Module):
         pn = (1.0 - pb - pr).clamp(min=0.0)                                   # P(neither)
         dmg = (high_frac * maxhp[:, :, None]).clamp(min=eps)                  # [B,n,C] reconstructed believed dmg
         cur = cur_hp[:, :, None]                                              # [B,n,1]
-        acc = acc_all[None, None, :]                                          # [1,1,C]
+        acc = acc_all[:, None, :]                                             # [B,1,C]
 
         def _ramp(r):                                                        # r [B,C] offense ratio vs believed
             d = dmg * r[:, None, :]
@@ -2016,7 +2126,7 @@ class DamageOperator(torch.nn.Module):
         ko_marg = (pr[:, None, :] * _ramp(0.9 / em)
                    + pn[:, None, :] * _ramp(1.0 / em)
                    + pb[:, None, :] * _ramp(1.1 / em))                        # [B,n,C]
-        keep = (fixed_all > 0).float()[None, None, :]                        # fixed-damage → nature-invariant
+        keep = (fixed_all > 0).float()[:, None, :]                           # fixed-damage → nature-invariant
         return keep * ko_ramp + (1.0 - keep) * ko_marg
 
     def _damage_rolls(self, atk: torch.Tensor, spa: torch.Tensor, at1: torch.Tensor, at2: torch.Tensor,
@@ -2046,34 +2156,41 @@ class DamageOperator(torch.nn.Module):
         # association order; a gather is exact) and drops 2 of 3 full-width gathers + 2 [B,n,C] muls.
         # Defender ABILITY immunity/resist (Levitate 0× Ground, Flash Fire 0× Fire, Thick Fat 0.5×
         # Fire/Ice) rides the same fold.
+        # gen3_topk_candidates_v1: the per-candidate args are [B,C] (PER-BATCH-ROW), because the
+        # candidate set is now the top-K of THIS row's move belief — different battles in a batch have
+        # different opponents, so a batch-shared candidate list would be wrong. Every per-candidate
+        # index therefore gathers instead of broadcasting. (Single call site, so the contract change
+        # is local.)
+        n_def = t1d.shape[1]
         eff19 = self.CHART[t1d] * self.CHART[t2d] * self.ABILITY_DAMAGE_MULT[ability1]           # [B,n,19]
-        eff = eff19[..., mty_all]                                                               # [B,n,C]
+        eff = eff19.gather(2, mty_all[:, None, :].expand(-1, n_def, -1))                        # [B,n,C]
         # ATTACK / DEFENCE selection by category. `phys·x + (1−phys)·y` over the candidate axis is a
         # GATHER wearing a multiply's clothes — `phys_all` is exactly 0/1, so the blend only ever
         # returns one of two values (and `1·x + 0·y == x` exactly in IEEE-754 for finite stats).
         # Indexing a 2-wide stack instead is value-identical AND moves the DIVISION off the candidate
         # axis: the reciprocal is taken on [B,n,2] and gathered, rather than ~400 divides per
         # (batch, defender). The reciprocal-then-multiply is the one FP-ordering change here.
-        pidx = (phys_all > 0.5).long()                                                          # [C] 1=phys
-        A = torch.stack((spa, atk), dim=-1)[:, pidx]                                            # [B,C]
-        inv_d = (1.0 / (torch.stack((spd_stat, def_stat), dim=-1) + eps))[..., pidx]            # [B,n,C]
-        is_stab = ((mty_all[None, :] == at1[:, None]) | (mty_all[None, :] == at2[:, None])).float()  # [B,C]
+        pidx = (phys_all > 0.5).long()                                                          # [B,C] 1=phys
+        A = torch.stack((spa, atk), dim=-1).gather(1, pidx)                                     # [B,C]
+        inv_d = (1.0 / (torch.stack((spd_stat, def_stat), dim=-1) + eps)) \
+            .gather(2, pidx[:, None, :].expand(-1, n_def, -1))                                  # [B,n,C]
+        is_stab = ((mty_all == at1[:, None]) | (mty_all == at2[:, None])).float()               # [B,C]
         stab = 1.0 + 0.5 * is_stab                                                              # [B,C]
         # DEFENDER-side screens: Reflect halves physical incoming, Light Screen halves special.
         # gen3 CRIT IGNORES screens, so the crit roll below uses the pre-screen damage (dmg_ns).
-        screen = 1.0 - 0.5 * (reflect * phys_all[None, :] + light_screen * (1.0 - phys_all[None, :]))
+        screen = 1.0 - 0.5 * (reflect * phys_all + light_screen * (1.0 - phys_all))            # [B,C]
         # Every remaining per-candidate factor (STAB, the BP-0 gate, weather, the 0.925 constant) is
         # per (batch, candidate) — folding them into the [B,n,C] tensor ONE AT A TIME cost four
         # full-width multiplies where one does. Combine on the cheap [B,C] axis, apply once. The `/50`
         # and the 42 likewise fold into a [B,C] numerator, removing a second full-width division.
-        bp_gate = (bp_all > 0).float()                                  # [C]; reused by the CB tail
-        pre = stab * bp_gate[None, :] * weather_mult * 0.925            # [B,C] (weather: rain/sun BP)
+        bp_gate = (bp_all > 0).float()                                  # [B,C]; reused by the CB tail
+        pre = stab * bp_gate * weather_mult * 0.925                     # [B,C] (weather: rain/sun BP)
         eff_pre = eff * pre[:, None, :]                                 # [B,n,C] shared by both cores
         core = ((42.0 / 50.0) * bp_all * A)[:, None, :] * inv_d + 2.0   # [B,n,C]
         dmg_ns = core * eff_pre                                         # [B,n,C] pre-screen
         # Final 3 rolls + accuracy-folded P(KO) via the shared formula (DRY — same as the outgoing block).
         high, low, crit, ko = self._rolls(dmg_ns, screen[:, None, :], maxhp[:, :, None], cur_hp[:, :, None],
-                                          acc_all[None, None, :], eps)
+                                          acc_all[:, None, :], eps)
         # gen3_unified_op_physics_v1: FIXED-damage moves (Seismic Toss / Night Shade = 100, Dragon Rage 40,
         # Sonic Boom 20) ignore Atk/Def/roll/crit but RESPECT type/ability immunity. Override the rolls with
         # the constant fraction (all three rolls equal — no variance), gated to 0 where `eff<=0` (Fighting
@@ -2083,7 +2200,7 @@ class DamageOperator(torch.nn.Module):
         # consistent with the outgoing block which scales our_atk). Special candidates unchanged. Only `high_cb`
         # / `ko_cb` are used (the op aggregates the PHYSICAL channel); the fixed-damage override below is
         # applied to them too (fixed damage is CB-independent → reads identically).
-        A_cb = torch.stack((spa, atk + 0.5 * atk), dim=-1)[:, pidx]                     # [B,C] physical Atk ×1.5
+        A_cb = torch.stack((spa, atk + 0.5 * atk), dim=-1).gather(1, pidx)              # [B,C] physical Atk ×1.5
         # Only `high_cb` + `ko_cb` are aggregated (the special channel is CB-invariant), so compute them
         # INLINE rather than via _rolls — skips the unused low/crit rolls (~2×[B,n,C] of activations the
         # grad-checkpoint backward recompute would otherwise double; matters at batch 16384). `dmg_cb` folds
@@ -2092,12 +2209,12 @@ class DamageOperator(torch.nn.Module):
             * eff_pre * screen[:, None, :]                              # [B,n,C] post-screen (reuses eff_pre)
         inv_cb = 1.0 / (maxhp[:, :, None] + eps)
         high_cb = (dmg_cb * inv_cb).clamp(max=_DMG_CHIP_CAP)
-        ko_cb = acc_all[None, None, :] * torch.clamp(
+        ko_cb = acc_all[:, None, :] * torch.clamp(
             (dmg_cb - cur_hp[:, :, None]) / (0.15 * dmg_cb + eps), 0.0, 1.0)
-        is_fixed = (fixed_all > 0)[None, None, :]                                      # [1,1,C]
+        is_fixed = (fixed_all > 0)[:, None, :]                                         # [B,1,C]
         not_immune = (eff > 0).float()                                                # [B,n,C] type+ability gate
-        fixed_frac = (fixed_all[None, None, :] / (maxhp[:, :, None] + eps)) * not_immune
-        fixed_ko = acc_all[None, None, :] * (fixed_all[None, None, :] >= cur_hp[:, :, None]).float() * not_immune
+        fixed_frac = (fixed_all[:, None, :] / (maxhp[:, :, None] + eps)) * not_immune
+        fixed_ko = acc_all[:, None, :] * (fixed_all[:, None, :] >= cur_hp[:, :, None]).float() * not_immune
         high = torch.where(is_fixed, fixed_frac, high)
         low = torch.where(is_fixed, fixed_frac, low)
         crit = torch.where(is_fixed, fixed_frac, crit)
@@ -2608,7 +2725,7 @@ class DamageOperator(torch.nn.Module):
     def _topk_block(self, ctx: 'ExtractorContext', w_all: torch.Tensor, high_frac: torch.Tensor,
                     ko_ramp: torch.Tensor, acc_all: torch.Tensor, phys_all: torch.Tensor,
                     move_latent_all: torch.Tensor, has_opp: torch.Tensor,
-                    defender_alive: torch.Tensor) -> torch.Tensor:
+                    defender_alive: torch.Tensor, cand_nums: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_unified_topk_incoming_v1: the DISCRETE top-K incoming block. Selects the opp active's K
         most-believed CANDIDATE moves (over `w_all` [B,C], indices DETACHED) and surfaces each individually:
           • opp-property (shared across defenders): the move LATENT (gathered from `move_latent_all` [C,32]
@@ -2628,17 +2745,22 @@ class DamageOperator(torch.nn.Module):
         # --- select the K most-believed candidates (selection DETACHED; gathered values differentiable) ---
         topk_idx = w_all.detach().topk(K, dim=-1).indices                          # [B,K]
         w_topk = w_all.gather(-1, topk_idx)                                        # [B,K] → belief gradient
-        self.last_topk_idx = topk_idx.detach()                                     # prober: exact move names
+        # gen3_topk_candidates_v1: `topk_idx` indexes the (possibly TRUNCATED) candidate axis, so any
+        # gather into the FULL move space — the latent table, the effect/secondary buffers, the type
+        # ids, the status-landing physics and the prober's stash — must go through `cand_nums` to get
+        # the REAL move-num. None ⇒ no truncation ⇒ the reduced index IS the move-num.
+        real_idx = topk_idx if cand_nums is None else cand_nums.gather(-1, topk_idx)   # [B,K] move-nums
+        self.last_topk_idx = real_idx.detach()                                     # prober: exact move names
         self.last_topk_w = w_topk.detach()
         # --- opp-property: latent (→ MoveLatentEncoder gradient) + belief + accuracy + is_phys ---
-        latent_topk = move_latent_all[topk_idx]                                    # [B,K,32] differentiable
-        acc_topk = acc_all[topk_idx]                                               # [B,K] (buffer, no grad)
-        phys_topk = phys_all[topk_idx]                                             # [B,K] (buffer, no grad)
+        latent_topk = move_latent_all[real_idx]                                    # [B,K,32] differentiable
+        acc_topk = acc_all.gather(-1, topk_idx)                                    # [B,K] (buffer, no grad)
+        phys_topk = phys_all.gather(-1, topk_idx)                                  # [B,K] (buffer, no grad)
         # --- per (defender, move) damage: gather the RAW physics rolls (w-INDEPENDENT → decorrelated) ---
         idxd = topk_idx[:, None, :].expand(B, TEAM_SIZE, K)                        # [B,6,K]
         high_topk = high_frac.gather(-1, idxd)                                     # [B,6,K] (0 if dmg-immune)
         pko_topk = ko_ramp.gather(-1, idxd)                                        # [B,6,K]
-        status_topk = self._incoming_status_lands(ctx, topk_idx, high_topk)        # [B,6,K] (0 if status-immune)
+        status_topk = self._incoming_status_lands(ctx, real_idx, high_topk)        # [B,6,K] (0 if status-immune)
         # --- meaningful-K gate: a gen3 mon has exactly 4 moves, so once all 4 are revealed the moveset is
         # closed → zero the 5th+ slot (nothing left to reason about); <4 revealed → all K slots live. ---
         opp_act = TEAM_SIZE + ctx.opp_active_local
@@ -2659,7 +2781,7 @@ class DamageOperator(torch.nn.Module):
                          high_frac: torch.Tensor, crit_frac: torch.Tensor, ko_ramp: torch.Tensor,
                          acc_all: torch.Tensor, phys_all: torch.Tensor, move_latent_all: torch.Tensor,
                          has_opp: torch.Tensor, defender_alive: torch.Tensor,
-                         matrix_k: int) -> torch.Tensor:
+                         matrix_k: int, cand_nums: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_per_move_matrices_v1: the INCOMING per-move DAMAGE MATRIX — the ENRICHED top-K block (replaces
         it). For the opp active's top-`matrix_k` most-believed candidates (selection DETACHED): a per-move
         HEADER [latent(32), belief w (→ sharpens the belief), accuracy, is_phys, EXPLICIT effect bits (6,
@@ -2675,16 +2797,21 @@ class DamageOperator(torch.nn.Module):
         ar = torch.arange(B, device=device)
         topk_idx = w_all.detach().topk(K, dim=-1).indices                          # [B,K] (detached selection)
         w_topk = w_all.gather(-1, topk_idx)                                        # [B,K] → belief gradient
-        self.last_topk_idx = topk_idx.detach()                                     # prober: exact move names
+        # gen3_topk_candidates_v1: `topk_idx` indexes the (possibly TRUNCATED) candidate axis, so any
+        # gather into the FULL move space — the latent table, the effect/secondary buffers, the type
+        # ids, the status-landing physics and the prober's stash — must go through `cand_nums` to get
+        # the REAL move-num. None ⇒ no truncation ⇒ the reduced index IS the move-num.
+        real_idx = topk_idx if cand_nums is None else cand_nums.gather(-1, topk_idx)   # [B,K] move-nums
+        self.last_topk_idx = real_idx.detach()                                     # prober: exact move names
         self.last_topk_w = w_topk.detach()
         # --- per-move header: latent (→ MoveLatentEncoder grad) + belief + accuracy + is_phys + effect + secondary ---
-        latent_topk = move_latent_all[topk_idx]                                    # [B,K,32] differentiable
-        acc_topk = acc_all[topk_idx]                                               # [B,K]
-        phys_topk = phys_all[topk_idx]                                             # [B,K]
+        latent_topk = move_latent_all[real_idx]                                    # [B,K,32] differentiable
+        acc_topk = acc_all.gather(-1, topk_idx)                                    # [B,K]
+        phys_topk = phys_all.gather(-1, topk_idx)                                  # [B,K]
         # HP at the typed nums 355-370 carries no effect/secondary (all-zero in these buffers, verified);
         # C = n_moves (gen3_opp_hp_typed_candidates_v1 — the typed HP are ordinary move-num candidates).
-        eff_flags = self.MOVE_EFFECT_FLAGS[topk_idx]                               # [B,K,6]
-        sec = self.MOVE_SECONDARY[topk_idx]                                        # [B,K,10]
+        eff_flags = self.MOVE_EFFECT_FLAGS[real_idx]                               # [B,K,6]
+        sec = self.MOVE_SECONDARY[real_idx]                                        # [B,K,10]
         # --- per-(defender, move) cell: gather the RAW physics rolls (w-INDEPENDENT) + type_mult + status ---
         idxd = topk_idx[:, None, :].expand(B, TEAM_SIZE, K)                        # [B,6,K]
         low_topk = low_frac.gather(-1, idxd)                                       # [B,6,K]
@@ -2692,13 +2819,13 @@ class DamageOperator(torch.nn.Module):
         crit_topk = crit_frac.gather(-1, idxd)
         pko_topk = ko_ramp.gather(-1, idxd)
         # type_mult @ OUR defenders' types/ability for the top-K move types (the immune/resist pivot read)
-        mty_topk = self.MOVE_TYPE_IDX[topk_idx]                                    # [B,K]
+        mty_topk = self.MOVE_TYPE_IDX[real_idx]                                    # [B,K]
         idx2 = mty_topk[:, None, :].expand(B, TEAM_SIZE, K)                         # [B,6,K]
         t1d = ctx.type1_ids[:, :TEAM_SIZE]; t2d = ctx.type2_ids[:, :TEAM_SIZE]
         amul = self.ABILITY_DAMAGE_MULT[ctx.ability1_ids[:, :TEAM_SIZE]]            # [B,6,T]
         type_mult = (torch.gather(self.CHART[t1d], 2, idx2) * torch.gather(self.CHART[t2d], 2, idx2)
                      * torch.gather(amul, 2, idx2))                                 # [B,6,K]
-        status_topk = self._incoming_status_lands(ctx, topk_idx, high_topk)        # [B,6,K]
+        status_topk = self._incoming_status_lands(ctx, real_idx, high_topk)        # [B,6,K]
         # --- meaningful-K gate (== _topk_block): once all 4 opp moves revealed, the 5th+ slot is closed ---
         opp_act = TEAM_SIZE + ctx.opp_active_local
         n_revealed = (ctx.all_move_ids[ar, opp_act] > 0).sum(-1)                   # [B]
@@ -3119,6 +3246,33 @@ class DamageOperator(torch.nn.Module):
         # (learned posterior ⊕ prior floor, narrowed) scattered onto the real typed nums 355-370.
         w_all = self._opp_candidate_weights(ctx, move_belief_logits, hp_type_belief)            # [B, n_moves]
 
+        # gen3_topk_candidates_v1: TRUNCATE the candidate axis to the top-K of the MOVE BELIEF, no
+        # tail bound. The op used to price ALL ~400 move-nums per defender even though the opponent
+        # runs four moves — the belief already says which candidates matter, so the sweep spent ~96%
+        # of its work on candidates whose weight makes them irrelevant to every `max` downstream.
+        # Selection is per-batch-row (each battle has its own opponent) and DETACHED; the gathered
+        # WEIGHTS stay differentiable, so the belief gradient still rides the surviving candidates.
+        # `cand_nums` maps reduced index -> real move-num, so the top-K / matrix blocks and the
+        # prober's `last_topk_idx` keep reporting REAL moves. k=0 keeps the full sweep (byte-identical).
+        cand_nums = None
+        if self.damage_candidate_k > 0 and self.damage_candidate_k < w_all.shape[-1]:
+            cand_nums = w_all.detach().topk(self.damage_candidate_k, dim=-1).indices          # [B,K]
+            w_all = w_all.gather(-1, cand_nums)                                              # [B,K] differentiable
+            bp_all = bp_all[cand_nums]                                                       # [B,K]
+            mty_all = mty_all[cand_nums]
+            phys_all = phys_all[cand_nums]
+            acc_all = acc_all[cand_nums]
+            fixed_all = fixed_all[cand_nums]
+            weather_mult = weather_mult.gather(-1, cand_nums)                                # [B,K]
+        else:
+            # No truncation: broadcast the 1-D buffers to the [B,C] contract `_damage_rolls` now takes.
+            _B1 = w_all.shape[0]
+            bp_all = bp_all.expand(_B1, -1) if bp_all.dim() == 1 else bp_all
+            mty_all = mty_all.expand(_B1, -1) if mty_all.dim() == 1 else mty_all
+            phys_all = phys_all.expand(_B1, -1) if phys_all.dim() == 1 else phys_all
+            acc_all = acc_all.expand(_B1, -1) if acc_all.dim() == 1 else acc_all
+            fixed_all = fixed_all.expand(_B1, -1) if fixed_all.dim() == 1 else fixed_all
+
         # --- gen3 damage per (defender, candidate), all differentiable in w (the shared physics
         # kernel — incoming roles: attacker = opp active, defenders = our 6, OUR-side screens) ---
         our_reflect = ctx.screen_feature[:, 0:1]                                                # [B,1]
@@ -3144,7 +3298,7 @@ class DamageOperator(torch.nn.Module):
         # soft-max over ~400 moves). low/high/crit are monotone in damage → the same dominant move; pko is
         # its KO probability. Each feature is `max_c w_c · value_c` on the channel.
         wb = w_all[:, None, :]                                           # [B,1,C] (belief, broadcast over defenders)
-        phys_mask = phys_all[None, None, :]
+        phys_mask = phys_all[:, None, :]                                 # [B,1,C]
         spec_mask = 1.0 - phys_mask
         # Hoist the belief-weighted rolls ONCE. Each `wb * <roll>` was previously computed TWICE (once
         # per channel on its own line) and `wb * high_frac` a THIRD time below as `wf` — 5 redundant
@@ -3167,7 +3321,7 @@ class DamageOperator(torch.nn.Module):
         # so {pko, accuracy} parameterize that threat's full outcome distribution. provenance is the dominant
         # move's belief weight (1.0 ≈ a REVEALED/pinned move, <1.0 = a usage-prior GUESS). argmax detached;
         # the gathered (acc fixed-buffer / belief weight) values carry the right gradient.
-        acc_exp = acc_all[None, None, :].expand(B, TEAM_SIZE, -1)                                # [B,6,C]
+        acc_exp = acc_all[:, None, :].expand(-1, TEAM_SIZE, -1)                                  # [B,6,C]
 
         # `wfc` is the SAME masked tensor whose amax already produced this channel's `phys_high`/
         # `spec_high` above, so both are passed in rather than recomputed (the old form rebuilt the
@@ -3263,7 +3417,7 @@ class DamageOperator(torch.nn.Module):
                                  "the extractor must build it (requires --move-latent).")
             block = torch.cat([block, self._topk_block(
                 ctx, w_all, high_frac, ko_ramp, acc_all, phys_all, move_latent_all,
-                has_opp, defender_alive)], dim=1)  # [B, out_dim]
+                has_opp, defender_alive, cand_nums=cand_nums)], dim=1)  # [B, out_dim]
         # gen3_per_move_matrices_v1: the OUTGOING per-move DAMAGE MATRIX (our 4 moves × opp active+revealed
         # bench). Appended LAST so the existing incoming/outgoing/topk offsets are untouched.
         if self.matrices_outgoing:
@@ -3277,7 +3431,7 @@ class DamageOperator(torch.nn.Module):
                                  "the extractor must build it (requires --move-latent).")
             block = torch.cat([block, self._incoming_matrix(
                 ctx, w_all, low_frac, high_frac, crit_frac, ko_ramp, acc_all, phys_all, move_latent_all,
-                has_opp, defender_alive, self.matrices_incoming_k)], dim=1)  # [B, out_dim]
+                has_opp, defender_alive, self.matrices_incoming_k, cand_nums=cand_nums)], dim=1)  # [B, out_dim]
         # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active — the
         # switch-in offense read). Appended LAST so every existing offset is untouched.
         if self.matrices_outgoing_all:
@@ -3573,7 +3727,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0,
                  damage_topk_k: int = 0, damage_reattend: bool = False,
                  move_belief_prefuse: bool = False, move_belief_single_compute: bool = False,
-                 damage_refine_rounds: int = 0,
+                 damage_candidate_k: int = 0, damage_refine_rounds: int = 0,
+                 pointer_head: bool = False,
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  damage_matrices_outgoing_all: bool = False,
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
@@ -3625,7 +3780,18 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Phase modules (constructed before the dummy forward below).
         self.embeddings = Embeddings(layout)
         self.unpack = ObsUnpack(layout, attend_unrevealed_opponents=attend_unrevealed_opponents)
+        # gen3_pointer_head_v1: score each action from the token of the entity it selects (see
+        # PointerActionHead). Adds a zero-init DELTA to the flat head's logits, so ON is byte-identical
+        # at step 0 and warm-starts from any checkpoint. Set BEFORE PokemonEncoder is built — the
+        # encoder reads it to arm its per-move stash. STRUCTURAL (adds params) -> version-gated.
+        self.pointer_head_enabled = bool(pointer_head)
+        self.last_pointer_delta: Optional[torch.Tensor] = None
         self.pokemon_encoder = PokemonEncoder(layout, move_latent=move_latent)
+        # gen3_pointer_head_v1: arm the per-move stash only when the head will consume it.
+        self.pokemon_encoder.stash_move_tokens = self.pointer_head_enabled
+        self.pointer_head = (PointerActionHead(move_token_dim=MOVE_NET_HIDDEN[1], d_model=D_MODEL,
+                                               ctx_dim=D_MODEL)
+                             if self.pointer_head_enabled else None)
         self.team_transformer = TeamTransformer(layout)
         self.cls_pool = CLSPool(layout)
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
@@ -3849,6 +4015,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "(our 6 mons' moves → opp active) is emitted by the DamageOperator. Enable --damage-op "
                 "(--unified-damage), or drop --damage-matrices-outgoing-all."
             )
+        # gen3_topk_candidates_v1: the incoming candidate-sweep cap (0 = full ~400-wide sweep).
+        self.damage_candidate_k = int(damage_candidate_k)
+        if self.damage_candidate_k and not damage_op:
+            raise ValueError("damage_candidate_k>0 requires damage_op=True — it caps the DamageOperator's "
+                             "incoming candidate sweep, which only exists when the op is built.")
         # The incoming matrix REUSES damage_topk_k as its K (one knob tunes both lean & rich) and REPLACES the
         # lean top-K block — so they never coexist (the op suppresses the lean block when matrices_incoming).
         self.damage_op = (DamageOperator(layout, outgoing=damage_outgoing, topk_k=self.damage_topk_k,
@@ -3856,7 +4027,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                                          matrices_incoming=self.damage_matrices_incoming,
                                          matrices_outgoing_all=self.damage_matrices_outgoing_all,
                                          prob_outspeed=threat_prob_outspeed,
-                                         hp_type_fix=(self.hp_type_belief_mode != "off"))
+                                         hp_type_fix=(self.hp_type_belief_mode != "off"),
+                                         candidate_k=self.damage_candidate_k)
                           if damage_op else None)
         self.threat_prob_outspeed = bool(threat_prob_outspeed)
         # damage_reattend (gen3_damage_reattend_v1): let attention reason OVER the computed physics. The op's
@@ -4180,6 +4352,51 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self._debugger: Optional[ObservationDebugger] = ObservationDebugger(mappings)
         else:
             self._debugger = None
+
+        # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
+        # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so
+        # every module is built and every deliberate zero-init has already been applied.
+        self._identity_init_zeroed: Tuple[str, ...] = tuple(
+            name for name, mod in self.named_modules()
+            if isinstance(mod, torch.nn.Linear) and not bool(mod.weight.any())
+        )
+
+    def restore_identity_init(self) -> int:
+        """Re-zero every Linear this extractor deliberately zero-initialised. Returns the count.
+
+        WHY THIS EXISTS. SB3's `ActorCriticPolicy._build()` runs
+        ``self.features_extractor.apply(partial(self.init_weights, gain=sqrt(2)))``
+        (stable_baselines3/common/policies.py:617-631), and `init_weights` ORTHOGONALLY
+        re-initialises EVERY `nn.Linear` it finds. `ortho_init` defaults True and nothing here
+        overrides it — so every deliberate zero-init inside the extractor was silently destroyed the
+        moment the policy was built, in every real training run.
+
+        That silently falsified a documented invariant for six shipped features — `refine_proj`
+        (v31/v33), `outgoing_proj` (v36), `status_in_proj`/`status_out_proj` (v37) and `film_pi`/
+        `film_vf` (v44) all claim "zero-init ⇒ identity-at-init ⇒ ON starts byte-identical" — and,
+        more insidiously, the belief heads' cold-start contract: `MoveBelief.move_head`,
+        `SpreadBelief.{stat,nature,ev}_head` and `HPTypeBelief.type_head` are zero-init precisely so
+        the cold-start posterior EQUALS the Smogon prior. Clobbered, they start at prior ⊕ noise.
+
+        It went unnoticed because every unit test builds the module or a bare extractor DIRECTLY,
+        where the zero-init survives; only SB3-wrapped construction destroys it.
+
+        The set is captured by OBSERVATION at the end of `__init__` (any Linear whose weight is
+        all-zero once construction finishes was zero-init'd on purpose) rather than by a hand-kept
+        list, so a future zero-init module is protected automatically — the failure mode that
+        produced this bug cannot recur by omission. Biases are not tracked: SB3's `init_weights`
+        already zeroes every bias.
+        """
+        by_name = dict(self.named_modules())
+        n = 0
+        for name in self._identity_init_zeroed:
+            mod = by_name.get(name)
+            if isinstance(mod, torch.nn.Linear):
+                torch.nn.init.zeros_(mod.weight)
+                if mod.bias is not None:
+                    torch.nn.init.zeros_(mod.bias)
+                n += 1
+        return n
 
     def set_belief_grad_mode(self, mode: str) -> None:
         """Apply a belief-grad-mode at RUNTIME (the --allow-belief-grad-mode-change migration path).
@@ -4558,6 +4775,25 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx
         )
+        # gen3_pointer_head_v1: the per-action logit DELTA, scored from the token of the entity each
+        # action selects — move logit k from the move at REQUEST slot k, switch logit j from our-team
+        # token j (post-transformer, so it carries the board context the CLS pool would have averaged
+        # away). Stashed for `Gen3DualHeadMaskablePolicy._get_action_dist_from_latent`, which ADDS it
+        # to the flat head's logits; the scorers are zero-init so this is exactly 0 at step 0.
+        # Context = our active mon's refined token (the "whose decision is this" vector).
+        self.last_pointer_delta = None
+        if self.pointer_head is not None:
+            _mt = self.pokemon_encoder.last_move_tokens
+            if _mt is None:
+                raise RuntimeError(
+                    "pointer_head is on but PokemonEncoder.last_move_tokens is None — the per-move "
+                    "stash was not armed. `stash_move_tokens` must be set on the encoder at build "
+                    "time (see Gen3FeaturesExtractor.__init__)."
+                )
+            _tok_req, _valid = _request_order_move_tokens(_mt, ctx)
+            self.last_pointer_delta = self.pointer_head(
+                our_active_refined, _tok_req, _valid, our_team_out
+            )
         # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
         # 128-dim FitNets HINT layer). Consumed ONLY by the FitNets value-feature distillation
         # (`instrumented_ppo._value_feat_distill`): both student and teacher forwards leave it here, so the

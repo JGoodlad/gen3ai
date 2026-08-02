@@ -389,9 +389,11 @@ def test_three_roll_relationship():
     t1d = t2d = torch.zeros(B, n, dtype=torch.long)
     ability1 = torch.zeros(B, n, dtype=torch.long)
     reflect = light = torch.zeros(B, 1)
-    bp, mty, phys = torch.tensor([100.0]), torch.tensor([5], dtype=torch.long), torch.tensor([1.0])
-    acc = torch.tensor([1.0])                                    # 100%-accurate → pko undiscounted
-    fixed = torch.zeros(1)                                       # not a fixed-damage move
+    # gen3_topk_candidates_v1: the per-candidate args are PER-BATCH-ROW [B,C] — the candidate set is
+    # each row's own top-K of the move belief, so a shared 1-D buffer no longer describes it.
+    bp = torch.tensor([[100.0]]); mty = torch.tensor([[5]], dtype=torch.long); phys = torch.tensor([[1.0]])
+    acc = torch.tensor([[1.0]])                                  # 100%-accurate → pko undiscounted
+    fixed = torch.zeros(1, 1)                                    # not a fixed-damage move
     weather = torch.ones(B, 1)                                   # no weather
     high, low, crit, pko, _hcb, _kcb = op._damage_rolls(atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp,
                                             t1d, t2d, ability1, reflect, light, bp, mty, phys, acc, fixed, weather)

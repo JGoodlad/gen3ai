@@ -55,6 +55,18 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         # ModelVersion gate. Requires value_dist_mode == "shaping" (the head must be a live critic).
         self._value_from_dist = bool(value_from_dist)
 
+        # gen3_identity_init_guard_v1: SB3's `_build()` just ran
+        # `features_extractor.apply(init_weights, gain=sqrt(2))`, which orthogonally re-initialises
+        # EVERY nn.Linear in the extractor — silently destroying every deliberate zero-init inside it
+        # (refine_proj, outgoing_proj, status_{in,out}_proj, film_pi/vf, and the belief heads whose
+        # zero-init is what makes their cold-start posterior EQUAL the prior). Restore them here, now
+        # that the policy is fully built. See Gen3FeaturesExtractor.restore_identity_init.
+        for _fe in {id(m): m for m in (getattr(self, "features_extractor", None),
+                                       getattr(self, "pi_features_extractor", None),
+                                       getattr(self, "vf_features_extractor", None)) if m is not None}.values():
+            if hasattr(_fe, "restore_identity_init"):
+                _fe.restore_identity_init()
+
     def set_value_from_dist(self, on: bool) -> None:
         """Apply value_from_dist at RUNTIME (the --value-from-dist migration path). SB3's load
         reconstructs the policy from the ZIP's SAVED policy_kwargs, so a first Phase-B resume (from a
@@ -85,6 +97,28 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
             if head is not None and logits is not None:
                 return self._denorm(head.mean(logits))
         return self._denorm(self.value_net(latent_vf))
+
+    def _get_action_dist_from_latent(self, latent_pi: th.Tensor):
+        """gen3_pointer_head_v1: add the pointer head's per-action DELTA to the flat head's logits.
+
+        All three logit sites (`forward`, `evaluate_actions`, `get_distribution`) funnel through this
+        method, and each calls `extract_features` immediately before — so the extractor's stash is
+        always fresh for THIS batch. That makes this the one correct interception point; adding the
+        delta in any single caller would silently skip the other two (e.g. PPO's epoch recompute in
+        `evaluate_actions` would then disagree with the rollout's `forward`, corrupting the ratio).
+
+        The delta is a plain additive term on the logits, computed deterministically from the same
+        observation, so log-prob / entropy / the PPO ratio are all unaffected in form — and because
+        the head's scorers are zero-init, the delta is EXACTLY 0 until it trains, making an ON run
+        byte-identical to the flat-head baseline at step 0.
+        """
+        dist = super()._get_action_dist_from_latent(latent_pi)
+        delta = getattr(self.features_extractor, "last_pointer_delta", None)
+        if delta is None:
+            return dist
+        # sb3's MaskableCategoricalDistribution holds the logits on `dist.distribution.logits`;
+        # rebuild through the public API so masking/log_prob/entropy all see the combined logits.
+        return dist.proba_distribution(action_logits=dist.distribution.logits + delta)
 
     def forward(
         self,

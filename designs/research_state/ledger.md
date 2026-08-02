@@ -38,6 +38,7 @@ verify a confirming measurement** (overturned 3-for-3 this session).
 | K6 | **Stall/utility misuse** (Protect/Leech/status-on-dying) | ❌ | Reward-punished, NO critic over-value (dV~0), falsifier never craters on the dying-mon turn (lost earlier). | `decision-table <run> --cat stall` |
 | K7 | **Switch pathologies** | ❌ | UNDER-represented among crater mistakes (24% vs 28%); ~2 confirmed voluntary switch mistakes in 350 losses (254/291 craters were FORCED replacements). | `falsify-scan <run>` (switch crater base-rate) |
 | K8 | **No-op status-spam** (Spikes-at-cap loops) | ❌ | Real+learned, but no-progress clock already punishes it, critic prices the state as lost; ~74 dead turns in already-lost games. | `decision-table <run> --cat status` |
+| **M1** | **MEASUREMENT CONFOUND — every zero-init inside the feature extractor was destroyed at policy build** | ✅🛠 **FIXED 2026-08-01** | SB3 `ActorCriticPolicy._build()` runs `features_extractor.apply(init_weights, gain=√2)` (`stable_baselines3/common/policies.py:617-631`), which ORTHOGONALLY re-initialises **every `nn.Linear` in the extractor**. `ortho_init` defaults True; nothing in this repo overrode it. So **13 Linears** documented as zero-init were random from step 0 in EVERY real run: `refine_proj` (v31/v33), `outgoing_proj` (v36), `status_in/out_proj` (v37), `film_pi`/`film_vf` (v44) — all documented "zero-init ⇒ identity-at-init ⇒ ON starts byte-identical" — and the belief heads `MoveBelief.move_head` / `SpreadBelief.*` / `HPTypeBelief.type_head`, whose zero-init is what makes the **cold-start posterior EQUAL the Smogon prior**. Measured before fix: max\|W\| 0.19–0.47 on every one. **Invisible to every test** because they all build the module or a bare extractor DIRECTLY, where the zero-init survives — only SB3-wrapped construction destroys it. Fix: `Gen3FeaturesExtractor.restore_identity_init()` called from `Gen3DualHeadMaskablePolicy.__init__`; the protected set is captured BY OBSERVATION at the end of `__init__` (not a hand-kept list) so a future zero-init module is covered automatically. | build a real `MaskablePPO` policy, assert every name in `fe._identity_init_zeroed` still has `max\|W\|==0` |
 
 ## Programme-level (the exploiter → distill loop, ai_v8)
 
@@ -98,4 +99,26 @@ Programme-level (D1–D4): `project_multiteam_distill_payoff`, `project_distill_
 `designs/ai_v8/impl_step_retention_ablation.md`, `designs/ai_v8/exploiter_batch_strategy.md`,
 `designs/learning/conditioning_architectures.md` (§5b — the FiLM/SNR diagnosis behind D4).
 
-_Last updated: 2026-06-12._
+## ⚠️ Standing caveat on the identity-at-init experiments (M1, 2026-08-01)
+
+Until 2026-08-01 **no `zero-init ⇒ identity-at-init` claim in this codebase was true in a real run**
+(M1). Two families of result were produced on top of that:
+
+* **K10 "physics into the trunk is null, 3-for-3."** `refine_proj` / `outgoing_proj` /
+  `status_{in,out}_proj` were the injection paths, and none of them started at identity — each began
+  as a random orthogonal projection onto the token stream. The nulls may still be right, but "we
+  eased physics in from zero and it did nothing" is **not** what was actually run.
+* **D4 / the conditioning line (N=20 ceiling, both LUT arms).** v44 FiLM is documented as
+  identity-at-init; in fact `film_pi`/`film_vf` injected random modulation from step 0.
+
+**This does NOT invalidate those conclusions** — the arms were internally controlled and the confound
+applied to both sides of each A/B. It does mean the mechanism stories ("started at identity and never
+moved", "the generator's gradient is proportional to a tiny residual") were reasoning about a model
+that did not exist. Any RE-RUN of a K10- or D4-family experiment post-fix is measuring something
+different from the original and must not be compared across the boundary.
+
+Also affected, and worth a thought before the next belief experiment: the belief heads' cold-start no
+longer equals the Smogon prior in any historical run, so "cold-start == prior" baselines in the
+v20/v25/v38/v40 notes describe the intended design, not the executed one.
+
+_Last updated: 2026-08-01._
