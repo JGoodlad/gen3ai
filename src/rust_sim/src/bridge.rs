@@ -1290,6 +1290,32 @@ impl BridgeSession {
     }
 
     /// The A2 seed-anchor list (parity with the genesis core).
+    /// The battle's CURRENT turn — the gate for the counterfactual `resumeReseed`
+    /// (`gen3_bridge_resume_reseed_v1`). 0 before the battle is built.
+    pub fn turn(&self) -> u32 {
+        self.battle.state().map(|st| st.turn).unwrap_or(0)
+    }
+
+    /// Swap the live battle's PRNG mid-battle (`gen3_bridge_resume_reseed_v1`) — the Rust
+    /// equivalent of the node bridge's `rawStream.battle.prng = new PRNG(seed)`.
+    ///
+    /// This is the counterfactual Monte-Carlo hook: `local_battle_runner` re-runs a recorded
+    /// battle with `{"resumeReseed": {turn, seed}}` so the PREFIX keeps its recorded dice and
+    /// only the post-divergence resolution draws from a fresh stream — which is what makes a
+    /// re-rolled win-probability an estimate of THAT board rather than a different game.
+    /// Applied at the START of the divergence turn, BEFORE that turn's choices commit, exactly
+    /// once (the caller owns the once-ness, mirroring the node bridge's `reseeded` latch).
+    ///
+    /// Note this is deliberately NOT `Battle::reseed` (still `todo!()`, alongside
+    /// `serialize`/`deserialize` for the clone-and-branch search path): the incremental
+    /// session owns a live `BattleState` whose `prng` is a plain field, so the bridge's
+    /// counterfactual need does not have to wait on the full snapshot surface.
+    pub fn reseed(&mut self, seed: &str) {
+        if let Some(st) = self.battle.state_mut() {
+            st.prng = crate::prng::Prng::new(seed);
+        }
+    }
+
     pub fn request_seeds(&self) -> &[PrngSeed] {
         &self.request_seeds
     }

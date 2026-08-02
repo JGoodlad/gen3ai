@@ -18,8 +18,9 @@ argv list the spawners exec, and — for ``rust`` — the binary-resolution + bu
   failure raises a CLEAR, actionable error naming the fix — we NEVER silently fall back to
   Node (a rust run that quietly became a node run would corrupt an A/B).
 
-Deferral note: the Rust binary emits **no ``__RECON__``** (no byte-identical ``input_log``)
-and ignores **``resumeReseed``** (needs ``Battle::reseed``, still ``todo!()``). Both serve the
+Deferral note: **both** ``__RECON__`` (``gen3_bridge_recon_record_v1``) and ``resumeReseed``
+(``gen3_bridge_resume_reseed_v1``) are now supported. The record's ``>start``/``>player`` lines are
+exact; its committed-choice lines are replay-equivalent rather than byte-identical. Formerly this
 forensic-reconstruction / search-teacher / falsify layers only, NOT core training/eval —
 ``local_battle_runner``'s ``_offer_recon`` degrades gracefully when the frame is absent. The
 CLI warns once at startup when ``rust`` is selected (see ``train_rl_agent``); callers that need
@@ -181,12 +182,12 @@ def bridge_spawn_argv(impl: str) -> List[str]:
 def rust_deferral_warning() -> str:
     """The one-time startup warning naming the Rust bridge's honest deferrals."""
     return (
-        "⚠️  [BRIDGE=rust] The Rust sim bridge emits NO __RECON__ (no forensic "
-        "reconstruction record) and IGNORES resumeReseed (no counterfactual re-roll). "
-        "Core training + eval are unaffected, but the forensic-reconstruction, "
-        "search-teacher, and falsify/counterfactual paths require --use-bridge=node. "
-        "Also: a seeded speed-tie-lead construction may differ from node (seed=None "
-        "training is unaffected)."
+        "ℹ️  [BRIDGE=rust] __RECON__ and resumeReseed are both SUPPORTED "
+        "(gen3_bridge_recon_record_v1 / gen3_bridge_resume_reseed_v1), so the forensic "
+        "reconstruction and counterfactual Monte-Carlo paths work on rust. Honest scope: the "
+        "record's >start/>player lines are exact (the only part any consumer reads), while its "
+        "COMMITTED-CHOICE lines are rendered from the engine's own script — replay-equivalent, "
+        "not guaranteed byte-identical to the sim's inputLog normalization."
     )
 
 

@@ -319,9 +319,10 @@ behavior). `--use-bridge=rust` swaps the child binary for the std-only pokesim
 (cached; a clear error, never a silent node fall-back, if cargo/crate/binary is missing).
 
 **`rust` deferrals + coverage limit (honest, warned at startup):** the Rust bridge emits **no
-`__RECON__`** (no byte-identical `input_log`) and **ignores `resumeReseed`** (`Battle::reseed` is
-`todo!()`), so the forensic-reconstruction / search-teacher / falsify / counterfactual paths
-require `--use-bridge=node` — `train_rl_agent` emits a one-time startup warning and errors if
+`__RECON__`** (no byte-identical `input_log`), so the forensic-reconstruction / search-teacher
+paths require `--use-bridge=node`. **`resumeReseed` IS supported** as of
+`gen3_bridge_resume_reseed_v1`, so the falsify / counterfactual Monte-Carlo re-roll now works on
+rust — `train_rl_agent` emits a one-time startup warning and errors if
 `--search-teacher`/`--teacher-persistent` is combined with `rust`. The pokesim port also models a
 large-but-INCOMPLETE gen3 move set and **fail-louds** on an unmodeled move, so `rust` is only safe
 for a run whose teams stay in the modeled universe. (The former **seeded speed-tied-lead** /

@@ -46,14 +46,16 @@
 //!   `_offer_recon` swallows any capture failure and the demux simply never sees the
 //!   frame, so no `__RECON__` is a no-op for the core path (only the forensic
 //!   reconstruction sibling is affected). We do NOT fake `__RECON__` content parity.
-//! - **`resumeReseed`** (`{turn, seed}` — swap the battle's PRNG at the start of a
-//!   divergence turn for the counterfactual Monte-Carlo re-roll) needs a mid-battle
-//!   `Battle::reseed`, which the driver has no hook for yet (and `Battle::reseed` is still
-//!   `todo!()` — the incremental session's paused live `Battle` is a clean plain-data
-//!   struct, so a future `serialize`/`reseed` is a mechanical add). It is IGNORED with a
-//!   one-line stderr note; a
-//!   `START` that carries it runs the ordinary battle under its base seed. Again this
-//!   serves the search layer only, never core training/eval.
+//! - **`resumeReseed`** (`{turn, seed}` — swap the battle's PRNG at the start of a divergence
+//!   turn for the counterfactual Monte-Carlo re-roll) is **SUPPORTED** as of
+//!   `gen3_bridge_resume_reseed_v1`, via `BridgeSession::{turn, reseed}` (the incremental
+//!   session owns a live `BattleState` whose `prng` is a plain field, so the bridge's need did
+//!   not have to wait on the full `Battle::serialize`/`deserialize` snapshot surface, which
+//!   stays `todo!()` for the clone-and-branch search path). Applied at the START of the
+//!   divergence turn, BEFORE its choices commit, ONCE — mirroring the node bridge — so the
+//!   recorded prefix keeps its dice and only the post-divergence resolution re-rolls. A
+//!   malformed spec is a hard error, not a silent fall-back to the base seed — a counterfactual
+//!   that quietly answers the WRONG question is worse than one that fails.
 
 use std::io::{self, BufRead, Write};
 
@@ -117,12 +119,40 @@ struct Session {
     emitted: usize,
     /// Whether the current battle has already emitted `__END__` (guard).
     ended: bool,
+    /// Counterfactual Monte-Carlo re-roll (`gen3_bridge_resume_reseed_v1`): the
+    /// `{turn, seed}` from START, and the once-latch that mirrors the node bridge's
+    /// `reseeded`. Cleared per battle.
+    resume_reseed: Option<(u32, String)>,
+    reseeded: bool,
+    /// The reconstruction record's inputs (`gen3_bridge_recon_record_v1`), captured at
+    /// START and as CHOOSE lines arrive. Cleared per battle by `reset`.
+    recon: Recon,
+}
+
+/// The `__RECON__` record's raw materials. See `emit_recon`.
+#[derive(Default)]
+struct Recon {
+    format_id: String,
+    /// The RESOLVED `>start` seed, comma-joined (`"1,2,3,4"`), or empty when the caller
+    /// supplied none (training's default — nothing to reconstruct against).
+    seed: String,
+    /// The two `>player` payloads exactly as received, so the record round-trips.
+    p1_json: String,
+    p2_json: String,
+    /// Every CHOOSE the child processed, in order — INCLUDING attempts the engine
+    /// refused. Protocol-faithful (`commands`).
+    cmds: Vec<(String, String)>,
+    /// Whether this battle already emitted its record (once per battle).
+    emitted: bool,
 }
 
 impl Session {
     fn new() -> Self {
         Session {
             persistent: false,
+            resume_reseed: None,
+            reseeded: false,
+            recon: Recon::default(),
             bridge: None,
             emitted: 0,
             ended: false,
@@ -135,6 +165,8 @@ impl Session {
         self.bridge = None;
         self.emitted = 0;
         self.ended = false;
+        // A persistent child must NOT leak one battle's record into the next.
+        self.recon = Recon::default();
     }
 }
 
@@ -183,13 +215,29 @@ fn handle_start(sess: &mut Session, json: &str, dex: &Dex) -> Result<(), String>
     if v.get("persistent").and_then(|p| p.as_bool()).unwrap_or(false) {
         sess.persistent = true;
     }
-    if v.get("resumeReseed").map(|r| !r.is_null()).unwrap_or(false) {
-        // DEFERRED — the driver has no mid-battle reseed hook yet (`Battle::reseed` is
-        // `todo!()`; see the module docs). Note it once; run under the base seed.
-        eprintln!(
-            "[sim_bridge] resumeReseed is not supported (search-layer only) — ignoring; \
-             running under the base seed"
-        );
+    // --- resumeReseed (`gen3_bridge_resume_reseed_v1`) — the counterfactual Monte-Carlo
+    //     re-roll, now SUPPORTED (it used to be parsed, warned about, and ignored). `{turn,
+    //     seed}`: at the START of `turn`, BEFORE that turn's choices commit, the live battle's
+    //     PRNG is swapped for a fresh one — so the recorded PREFIX keeps its original dice and
+    //     only the post-divergence resolution re-rolls. Applied in `handle_choose`; both the
+    //     spec and the latch reset per battle so a PERSISTENT child re-arms on the next START
+    //     (and, just as important, does NOT inherit a previous battle's reseed). ---
+    sess.resume_reseed = None;
+    sess.reseeded = false;
+    if let Some(rr) = v.get("resumeReseed").filter(|r| !r.is_null()) {
+        let turn = rr.get("turn").and_then(|t| t.as_f64()).map(|t| t as u32);
+        let seed = rr.get("seed").and_then(|s| s.as_array()).map(|a| {
+            a.iter()
+                .map(|x| format!("{}", x.as_f64().unwrap_or(0.0) as u64))
+                .collect::<Vec<_>>()
+                .join(",")
+        });
+        match (turn, seed) {
+            (Some(t), Some(sd)) => sess.resume_reseed = Some((t, sd)),
+            // FAIL-LOUD on a malformed spec rather than silently running under the base seed:
+            // a counterfactual that quietly answers the WRONG question is worse than an error.
+            _ => return Err("START: resumeReseed needs both `turn` and `seed`".to_string()),
+        }
     }
     let format_id = v
         .str_at("formatid")
@@ -214,6 +262,25 @@ fn handle_start(sess: &mut Session, json: &str, dex: &Dex) -> Result<(), String>
     // A new battle: reset the per-battle state (persistent keeps `persistent`), then build
     // the live incremental engine (advances to + emits the first request boundary).
     sess.reset();
+    // Capture the record's materials (`gen3_bridge_recon_record_v1`). The `>player` payloads
+    // are re-serialized from the parsed values rather than sliced out of the raw START JSON,
+    // so the record is well-formed regardless of the caller's spacing/key order.
+    sess.recon = Recon {
+        format_id: format_id.clone(),
+        seed: seed.clone().unwrap_or_default(),
+        p1_json: format!(
+            "{{\"name\":{},\"team\":{}}}",
+            json_quote(&p1.name),
+            json_quote(&p1.team.0)
+        ),
+        p2_json: format!(
+            "{{\"name\":{},\"team\":{}}}",
+            json_quote(&p2.name),
+            json_quote(&p2.team.0)
+        ),
+        cmds: Vec::new(),
+        emitted: false,
+    };
     let opts = BattleOptions { format_id, seed, p1, p2 };
     sess.bridge = Some(BridgeSession::new_construct_turn0(&opts, dex)?);
     Ok(())
@@ -252,6 +319,29 @@ fn handle_choose(sess: &mut Session, rest: &str, dex: &Dex) -> Result<(), String
     };
     let choice = parse_choice(choice_tok)
         .ok_or_else(|| format!("CHOOSE: unsupported choice {choice_tok:?}"))?;
+    // `commands` is PROTOCOL-faithful: every CHOOSE this child processed, in order,
+    // INCLUDING attempts the engine refused (a refused maybe-trapped probe never commits, so
+    // it is absent from `input_log`, but its `|error|` + re-request round IS part of the
+    // per-side stream the agent saw).
+    sess.recon
+        .cmds
+        .push((side_tok.to_string(), choice_tok.to_string()));
+    // --- resumeReseed (`gen3_bridge_resume_reseed_v1`) — mirrors the node bridge exactly:
+    //     swap the PRNG at the START of the divergence turn (the battle's `turn` has already
+    //     advanced to it once the prior turn resolved), BEFORE this turn's choices commit, and
+    //     ONCE. That split is the whole point of the counterfactual: the recorded PREFIX keeps
+    //     its original dice and only the post-divergence resolution draws from the fresh
+    //     stream, so a re-rolled win-% estimates THAT board rather than a different game. ---
+    if let Some((turn, seed)) = sess.resume_reseed.clone() {
+        if !sess.reseeded {
+            if let Some(b) = sess.bridge.as_mut() {
+                if b.turn() == turn {
+                    b.reseed(&seed);
+                    sess.reseeded = true;
+                }
+            }
+        }
+    }
     sess.bridge
         .as_mut()
         .expect("bridge present")
@@ -319,11 +409,97 @@ fn flush_new_chunks(sess: &mut Session, out: &mut impl Write) -> Result<(), Stri
 /// next `START` rebuilds a fresh battle; otherwise the process would exit — but this
 /// binary keeps its loop alive and simply refuses further work until the next START/END
 /// (the Python non-persistent path sends `END` right after `__END__`).
+
+/// Minimal JSON string escaping for the record (the crate is std-only; the payloads here are
+/// player names and packed teams, so only the mandatory escapes can occur).
+fn json_quote(v: &str) -> String {
+    let mut out = String::with_capacity(v.len() + 2);
+    out.push('"');
+    for c in v.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}
+
+/// Emit `__RECON__ <base64(json)>` — the battle's reconstruction record
+/// (`gen3_bridge_recon_record_v1`), once per battle, just before `__END__`.
+///
+/// `{v, format_id, prng_seed, input_log, commands}`, mirroring the node bridge:
+///   * `input_log` — `>start` with the RESOLVED seed, both `>player` lines, then the
+///     COMMITTED choices. STATE-faithful: replaying it rebuilds the battle.
+///   * `commands`  — every CHOOSE processed, refusals included. PROTOCOL-faithful.
+///
+/// HONEST SCOPE. The `>start`/`>player` lines are exact, and they are the only part any
+/// consumer currently reads (`ReconstructionRecord.start_options()` / `.players()`; the
+/// replay path drives `commands`). The COMMITTED-CHOICE lines are rendered from the
+/// engine's own committed `script`, so they are replay-EQUIVALENT rather than guaranteed
+/// byte-identical to the sim's `inputLog` normalization for exotic wire spellings (e.g. a
+/// forced `move struggle`). That distinction is deliberate: the module's rule is that we do
+/// NOT fake `__RECON__` content parity, so this claims semantic faithfulness only.
+///
+/// A record is skipped entirely when there is no resolved seed (the training default): a
+/// record that cannot be replayed deterministically would be worse than none.
+fn emit_recon(sess: &mut Session, out: &mut impl Write) {
+    if sess.recon.emitted || sess.recon.seed.is_empty() {
+        return;
+    }
+    sess.recon.emitted = true;
+    let r = &sess.recon;
+    let seed_arr = format!("[{}]", r.seed);
+    let mut log: Vec<String> = vec![
+        format!("{{\"formatid\":\"{}\",\"seed\":{}}}", r.format_id, seed_arr),
+    ];
+    // `>start {...}` / `>player pN {...}`
+    let mut input_log: Vec<String> = Vec::new();
+    input_log.push(format!(">start {}", log.pop().unwrap()));
+    input_log.push(format!(">player p1 {}", r.p1_json));
+    input_log.push(format!(">player p2 {}", r.p2_json));
+    // The COMMITTED choices, from the engine's own script.
+    if let Some(b) = sess.bridge.as_ref() {
+        for dec in b.script() {
+            for (side, ch) in [(1usize, dec.p1), (2usize, dec.p2)] {
+                if let Some(c) = ch {
+                    let tok = match c {
+                        pokesim::turn::Choice::Move(k) => format!("move {}", k + 1),
+                        pokesim::turn::Choice::Switch(n) => format!("switch {}", n + 1),
+                    };
+                    input_log.push(format!(">p{side} {tok}"));
+                }
+            }
+        }
+    }
+    let il = input_log.iter().map(|l| json_quote(l)).collect::<Vec<_>>().join(",");
+    let cmds = r
+        .cmds
+        .iter()
+        .map(|(s, c)| format!("[{},{}]", json_quote(s), json_quote(c)))
+        .collect::<Vec<_>>()
+        .join(",");
+    let json = format!(
+        "{{\"v\":1,\"format_id\":{},\"prng_seed\":{},\"input_log\":[{}],\"commands\":[{}]}}",
+        json_quote(&r.format_id),
+        json_quote(&r.seed),
+        il,
+        cmds
+    );
+    writeln!(out, "__RECON__ {}", base64_encode(json.as_bytes())).ok();
+}
+
 fn end_battle(sess: &mut Session, out: &mut impl Write) {
     if sess.ended {
         return;
     }
     sess.ended = true;
+    emit_recon(sess, out);
     writeln!(out, "__END__").ok();
     out.flush().ok();
     if sess.persistent {

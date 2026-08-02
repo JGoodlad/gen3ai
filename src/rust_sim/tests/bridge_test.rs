@@ -758,3 +758,92 @@ fn thief_that_steals_a_choice_band_locks_the_request() {
          (slot 0) and disables the rest; got {flags:?}\n{req}"
     );
 }
+
+// ===========================================================================
+// resumeReseed — the counterfactual Monte-Carlo re-roll (`gen3_bridge_resume_reseed_v1`).
+//
+// `local_battle_runner` re-runs a RECORDED battle with `{"resumeReseed": {turn, seed}}` so the
+// prefix keeps its original dice and only the post-divergence resolution draws from a fresh
+// stream — that split is what makes a re-rolled win-% an estimate of THAT board rather than of a
+// different game. The Rust bridge used to parse the field, warn, and IGNORE it, which silently
+// answered the wrong question; `BridgeSession::{turn, reseed}` now implement it (the node
+// bridge's `rawStream.battle.prng = new PRNG(seed)`, applied at the START of the divergence turn
+// before its choices commit, once).
+//
+// The pin asserts the DEFINING property directly — identical prefix, divergent suffix — rather
+// than a seed constant, so it stays meaningful independent of any draw-count change.
+// ===========================================================================
+
+/// Drive a scripted battle, optionally swapping the PRNG at the start of `reseed_at`.
+/// Returns p1's per-side lines.
+fn run_with_optional_reseed(
+    reseed_at: Option<(u32, &str)>,
+    dex: &Dex,
+) -> Vec<String> {
+    // A speed-tied Aipom mirror trading Return: every turn draws crit + damage, so a fresh PRNG
+    // shows up immediately in the damage numbers.
+    let p1 = "Aipom||Leftovers|RunAway|return,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Aipom||Leftovers|RunAway|return,splash|Hardy|85,85,85,85,85,85|M||||";
+    let opts = bridge_opts("gen3customgame", "7,11,13,17".to_string(), p1, p2);
+    let mut sess = BridgeSession::new_construct_turn0(&opts, dex).expect("session");
+    let mk = |side: usize, tok: &str| Cmd { side, choice: parse_choice(tok).unwrap() };
+    let mut done = false;
+    for _ in 0..8 {
+        if done {
+            break;
+        }
+        // Apply the reseed at the START of the divergence turn, before its choices commit —
+        // exactly where the node bridge applies it.
+        if let Some((t, seed)) = reseed_at {
+            if sess.turn() == t {
+                sess.reseed(seed);
+            }
+        }
+        sess.feed_cmd(mk(0, "move 1"), dex);
+        sess.feed_cmd(mk(1, "move 1"), dex);
+        done = sess.is_ended();
+    }
+    sess.chunks()
+        .chunks
+        .iter()
+        .filter(|c| c.side == 0)
+        .flat_map(|c| c.lines.iter().cloned())
+        .collect()
+}
+
+/// RR1 — a `resumeReseed` at turn T leaves every line BEFORE turn T byte-identical and changes
+/// the battle AFTER it. WRONG (pre-fix): the field was ignored, so the re-rolled run was
+/// byte-identical to the base run end-to-end and every counterfactual sample was the same game.
+#[test]
+fn resume_reseed_keeps_the_prefix_and_rerolls_the_suffix() {
+    let dex = Dex::for_gen(3);
+    let base = run_with_optional_reseed(None, &dex);
+    let rerolled = run_with_optional_reseed(Some((2, "999,888,777,666")), &dex);
+
+    // GUARD: the battle must actually reach turn 3 and draw damage, or the pin is vacuous.
+    assert!(
+        base.iter().any(|l| l.starts_with("|turn|2")),
+        "the board must reach turn 2; p1 lines:\n{}",
+        base.join("\n")
+    );
+    assert!(
+        base.iter().any(|l| l.starts_with("|-damage|")),
+        "the board must deal damage (the re-roll is only visible in the dice)"
+    );
+
+    // The PREFIX — everything up to the `|turn|3` marker — must be untouched by the reseed.
+    let cut = |v: &[String]| -> Vec<String> {
+        v.iter().take_while(|l| !l.starts_with("|turn|2")).cloned().collect()
+    };
+    assert_eq!(
+        cut(&base),
+        cut(&rerolled),
+        "a resumeReseed at turn 2 must NOT disturb the recorded prefix"
+    );
+    // The SUFFIX must differ — otherwise the reseed did nothing.
+    assert_ne!(
+        base, rerolled,
+        "a resumeReseed at turn 2 MUST change the battle after turn 2 (pre-fix it was ignored, \
+         so the re-rolled run was byte-identical end-to-end)"
+    );
+}
