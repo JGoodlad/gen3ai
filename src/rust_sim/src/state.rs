@@ -950,9 +950,34 @@ impl MonState {
         // `gen_sim_bridge_diff.js` (repro `soak_randbats/divergences/sbd_msapcesj_b22` — node
         // emitted `|-transform|p1a: Ditto|p2a: Kyogre`, the rust bridge emitted nothing), which
         // reaches the LIVE bridge path the offline fuzzers' pickers had filtered Transform out of.
-        if set.moves.iter().any(|m| crate::dex::to_id(m) == "transform") {
+        // The set is `UNMODELED_FAILLOUD_MOVES` (`gen3_unmodeled_move_failloud_v1`, generalising
+        // the Transform guard). Each is a move the engine does NOT model at all, so without this
+        // the port would run it as a no-op / a plain damaging hit and DESYNC SILENTLY.
+        //   * `transform`      — the state OVERLAY (species/types/stats/moves/ability), reverted
+        //     on switch-out. Repro `sim_bridge_diff_out/soak_randbats/.../sbd_msapcesj_b22`: node
+        //     emitted `|-transform|p1a: Ditto|p2a: Kyogre`, the port emitted nothing.
+        //   * the WRAP FAMILY (`wrap`/`bind`/`firespin`/`clamp`/`whirlpool`/`sandtomb`) — a
+        //     partial-trap: ONE `random(3,7)` duration draw at cast, 2-5 turns of maxhp/16 chip,
+        //     and a FIRM trap that blocks switching. The port runs them as PLAIN damaging moves,
+        //     so it loses a DRAW, the chip, AND the switch-legality — a triple desync. Repro
+        //     `soak3/divergences/sbd_msb1zfxs_b237`: node emitted
+        //     `|-activate|p1a: Snorlax|move: Wrap|[of] p2a: Shuckle`, the port emitted nothing.
+        // Both were found by the LIVE bridge gate, which drives choices off the sim's own request
+        // and so reaches moves the offline fuzzers' pickers filter out. Keyed on the MOVE and
+        // checked at construction, so ACTIVE and BENCH mons alike trip it before any turn runs.
+        // ZERO of the 722 `data/teams/` pool teams carry ANY of these ⇒ the e2e golden is safe.
+        // Modelling them is batch-8/9 work; until then a loud crash beats a silent mismodel.
+        const UNMODELED_FAILLOUD_MOVES: [&str; 7] = [
+            "transform", "wrap", "bind", "firespin", "clamp", "whirlpool", "sandtomb",
+        ];
+        if let Some(bad) = set
+            .moves
+            .iter()
+            .map(|m| crate::dex::to_id(m))
+            .find(|id| UNMODELED_FAILLOUD_MOVES.contains(&id.as_str()))
+        {
             panic!(
-                "MonState::from_set(slot {position}): transform is unmodeled — \
+                "MonState::from_set(slot {position}): {bad} is unmodeled — \
                  GIGO guard; reject the team upstream"
             );
         }

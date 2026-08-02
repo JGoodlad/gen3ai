@@ -1037,7 +1037,11 @@ const REJECT_SPECIES = new Set(['castform']);
 // `soak_randbats/divergences/sbd_msapcesj_b22`). Keyed by MOVE, not species: gen3 Ditto is
 // the usual carrier but Mew/Smeargle can learn it. NOTE this cannot shift the e2e golden —
 // ZERO of the 722 `data/teams/` pool teams carry Transform (or Ditto), verified by grep.
-const REJECT_MOVES = new Set(['transform']);
+// Kept in LOCKSTEP with `state.rs::UNMODELED_FAILLOUD_MOVES` — every move the engine
+// fail-louds on must be rejected here, or the fuzzers panic instead of skipping the team.
+// The wrap family (partial-trap) joined Transform after the live bridge gate caught
+// `|-activate|…|move: Wrap|` emitted by node and nothing by the port (soak3 b237).
+const REJECT_MOVES = new Set(['transform', 'wrap', 'bind', 'firespin', 'clamp', 'whirlpool', 'sandtomb']);
 function abilityAllowed(id) {
   const a = toId(id);
   if (REJECT_ABILITIES.has(a)) return false; // deferred / fail-loud → never admitted

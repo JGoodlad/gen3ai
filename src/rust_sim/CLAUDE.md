@@ -4590,6 +4590,17 @@ reachable by any existing gate** — the offline fuzzers' pickers filter these p
 DRAW-FREE so the seed/omniscient diffs are blind to them. Suite **567 passed / 0 failed**, e2e golden md5
 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED, corpus fixture 68 still clean.
 
+- **THE WRAP FAMILY is now FAIL-LOUD too** (`gen3_unmodeled_move_failloud_v1`, generalising the
+  Transform guard below; repro `soak3/divergences/sbd_msb1zfxs_b237`). Node emitted
+  `|-activate|p1a: Snorlax|move: Wrap|[of] p2a: Shuckle`; the port emitted nothing.
+  `wrap`/`bind`/`firespin`/`clamp`/`whirlpool`/`sandtomb` have ZERO engine references — the port ran
+  them as PLAIN damaging moves, which loses THREE things at once: the `random(3,7)` duration **draw**,
+  the 2-5 turns of maxhp/16 chip, and the FIRM trap that blocks switching. Worse than a no-op, because
+  the missing draw shifts the whole downstream RNG stream. Now a construction-time panic via the shared
+  `UNMODELED_FAILLOUD_MOVES` list, mirrored by `REJECT_MOVES` upstream so the fuzzers skip carrier teams
+  instead of panicking. ZERO of the 722 pool teams carry any of them ⇒ the e2e golden is safe. Pins
+  `wrap_family_fails_loud_at_construction` + the negative control `a_non_trapping_move_still_builds_fine`
+  (against a future over-broad substring match on the id). Modelling the family is still batch-8 work.
 - **TRANSFORM is now FAIL-LOUD** (`gen3_transform_failloud_v1`; `state.rs` + the fuzz filters; repro
   `sim_bridge_diff_out/soak_randbats/divergences/sbd_msapcesj_b22`). Node emits
   `|-transform|p1a: Ditto|p2a: Kyogre`; the port emitted NOTHING — Transform is unmodeled and was NOT
@@ -4658,6 +4669,28 @@ no max-turn tie. So a stalled battle NEVER self-terminates and the harness had 6
 keep re-picking the illegal move. Any long-running harness on this format needs its OWN budget.
 **THE PORT WAS INNOCENT THROUGHOUT** — all four defects were in the harness. VERIFIED: seed 777 previously
 died at battle 8; it now runs all 20 with **0 errors** and `ended_battles: 20`.
+
+**⚠️ TWO OPEN FINDINGS from soak3 — DIAGNOSED but deliberately NOT fixed.** Each needs a probe that
+actually reproduces the case; a speculative fix risks regressing a prior round.
+  * **`sbd_msb1zfxs_b97` — the CHOICE LOCK on an ACQUIRED item.** A Piloswine whose PACKED item is
+    Leftovers but whose roster shows `choiceband` (it was Tricked one): node reports Toxic
+    `disabled:false`; the port reports Toxic/Earthquake/Ice-Beam ALL disabled — LOCKED to its
+    pre-existing lastMove (Protect). Externally visible (poke-env would hide three legal moves from the
+    policy) and DRAW-FREE, so only this gate can see it. `probe_choicelock_gained_item.js` CONFIRMS the
+    positive direction (held a Band, then moved ⇒ `choicelock` volatile ⇒ other slots disabled), so the
+    sim keys on the VOLATILE — "moved WHILE HOLDING the item" — not on "holds a Choice item ∧ has a
+    lastMove", which is what the port's lazy `bridge.rs::move_disabled` fold appears to use.
+    ⚠️ NOT PROVEN: the probe could NOT isolate the acquired-then-didn't-move case (Protect BLOCKS Trick,
+    and the Trickster outspeeds, so the Band always lands before the subject moves).
+    ⚠️ CAUTION: this code was changed twice for the OPPOSITE symptom — round 6 added the lazy fold
+    because the port UNDER-locked (a Skarmory that Thief'd a Band) and round 24 split the volatile from
+    the enforced lock — so narrowing it needs a probe that hits the case, not a source read.
+  * **`sbd_msb1zfxs_b134` — PERISH-0 double-faint ORDER.** At the mutual perish-out node emits
+    `-start|p2a: Aipom|perish0` then p1a, and faints Aipom then Misdreavus; the port does p1a FIRST in
+    BOTH. The perish3/2/1 ticks match EXACTLY in both engines (both p2a-first), so only the FINAL,
+    duration-ENDING tick reorders — pointing at the duration-end `continue` path (batch 6's "the perish
+    onEnd faint is ENQUEUED but the per-handler `faintMessages` is SKIPPED") rather than the residual
+    speed-sort. Same class as round 5's D4 faint-vs-upkeep ordering, which needed its own probe.
 
 **HISTORICAL NOTE (superseded, kept for the reasoning):** The 1200-battle randbats soak stopped advancing at
 ~battle 58: the driver process stayed alive but IDLE (1:59 elapsed / 2:33 CPU, load 0.17), both child

@@ -12877,6 +12877,30 @@ fn forecast_castform_fails_loud_at_construction() {
 /// (repro `sim_bridge_diff_out/soak_randbats/divergences/sbd_msapcesj_b22`, a randbats Ditto),
 /// which reaches the LIVE bridge path the offline fuzzers' pickers had filtered Transform out
 /// of — the reason this survived every existing gate.
+/// The WRAP-FAMILY half of `gen3_unmodeled_move_failloud_v1`. A partial-trap move is worse than
+/// a plain no-op when unmodeled: the port loses the `random(3,7)` duration DRAW, the maxhp/16
+/// chip, AND the firm switch-block — a triple desync. Repro `soak3/.../sbd_msb1zfxs_b237`: node
+/// emitted `|-activate|p1a: Snorlax|move: Wrap|[of] p2a: Shuckle`, the port emitted nothing.
+#[test]
+#[should_panic(expected = "wrap is unmodeled")]
+fn wrap_family_fails_loud_at_construction() {
+    let d = dex();
+    let snorlax = "Snorlax|||immunity|wrap|Hardy|252,,,,,|||||";
+    let foe = "Shuckle|||sturdy|toxic|Adamant|252,252,,,,|||||";
+    let _ = Battle::start_with_switchins(&opts_cg(snorlax, foe, "1,2,3,4"), &d);
+}
+
+/// Negative control for the wrap guard — a mon whose moves merely RESEMBLE the family (Bind is
+/// guarded, but e.g. Body Slam is not) must build fine. Guards against a future over-broad
+/// substring match on the id.
+#[test]
+fn a_non_trapping_move_still_builds_fine() {
+    let d = dex();
+    let snorlax = "Snorlax|||immunity|bodyslam|Hardy|252,,,,,|||||";
+    let foe = "Shuckle|||sturdy|toxic|Adamant|252,252,,,,|||||";
+    assert!(Battle::start_with_switchins(&opts_cg(snorlax, foe, "1,2,3,4"), &d).is_ok());
+}
+
 #[test]
 #[should_panic(expected = "transform is unmodeled")]
 fn transform_fails_loud_at_construction() {
