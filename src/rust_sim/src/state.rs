@@ -638,6 +638,20 @@ pub struct MonState {
     /// Cleared on switch-out (drag) + faint. `None` at construction.
     pub trapped_by: Option<usize>,
 
+    /// The **PARTIAL-TRAP** volatile (`gen3_partial_trap_v1` — Wrap / Bind / Fire Spin /
+    /// Clamp / Whirlpool / Sand Tomb): `Some(state)` while this mon holds the resolved
+    /// gen-3 `partiallytrapped` condition (base `data/conditions.ts` shadowed by the
+    /// **gen5** `onStart`/`onResidual` override [boundDivisor 16 — gen3 has no Binding
+    /// Band/Grip Claw] and the **gen4** `durationCallback` = `this.random(3, 7)` +
+    /// `onResidualOrder: 10, onResidualSubOrder: 9`). Applied POST-hit by the trapping
+    /// move (ONE `random(3,7)` draw — the family's only new draw), it chips
+    /// `floor(maxhp/16)` DRAW-FREE at every subsequent end-of-turn and makes the holder a
+    /// **FIRM** trap (`onTrapPokemon` → bare `tryTrap()` — the Shadow-Tag request shape).
+    /// Cleared on switch-out + faint + Rapid Spin; `noCopy` is FALSE → the volatile IS
+    /// Baton-Passed to the entrant (probe-verified, source unchanged). `None` at
+    /// construction.
+    pub partial_trap: Option<PartialTrap>,
+
     /// The **CHARGE** volatile (`gen3_move_coverage_batch6_v1`, no duration): `true`
     /// from the Charge cast until the user's NEXT move attempt OF ANY KIND
     /// (`charge.onAfterMove` + `onMoveAborted` remove it for any move != charge — an
@@ -728,6 +742,51 @@ pub struct MonState {
     /// the resolve reads that side's CURRENT active — the exact slot never affects a `slp` apply,
     /// only the side matters for the Sleep Clause self-exemption). `None` at construction.
     pub yawn: Option<(u8, usize)>,
+
+    /// The **TRANSFORM** copy overlay (`gen3_transform_v1`, `sim/pokemon.ts::transformInto`):
+    /// `Some(base)` while this mon is `pokemon.transformed`, holding everything the copy
+    /// OVERWROTE so `clearVolatile` can revert it on switch-out / faint. `None` at
+    /// construction (and for every mon that never transforms).
+    ///
+    /// The copy REPLACES, in place, `species_id` / `stats[1..=5]` / `types_override` /
+    /// `ability` / `boosts` / `set.moves` + `move_pp` + `move_maxpp` / `hidden_power_bp` /
+    /// `cached_speed`, so EVERY downstream reader (damage, speed, type chart, PP legality,
+    /// the request JSON's `moves[]`) sees the copied mon with no extra plumbing — the
+    /// [`MimicOverlay`] pattern, one level up. NOT copied (probe-verified): hp / maxhp
+    /// (the `storedStats` loop excludes hp), item, status, volatiles — and the subtle
+    /// trio the request surfaces: the mon's **ident name** (`pokemon.name` is fixed at
+    /// construction) plus the roster's `details` and `stats`, which read `this.details` /
+    /// `baseStoredStats`, NEITHER of which `transformInto` refreshes. Those three read
+    /// through this record's base fields (`bridge::details` / `serialize_mon` /
+    /// `helpers::display_name`).
+    pub transform: Option<TransformOverlay>,
+}
+
+/// The TRANSFORM copy-overlay restore record (`gen3_transform_v1`).
+/// See [`MonState::transform`].
+#[derive(Debug, Clone)]
+pub struct TransformOverlay {
+    /// The mon's OWN species id (`pokemon.baseSpecies` — what `clearVolatile`'s
+    /// `setSpecies(this.baseSpecies)` restores, and what the ident / request `details`
+    /// keep showing WHILE transformed).
+    pub base_species_id: String,
+    /// The mon's OWN in-battle stats (`baseStoredStats` + hp) — restored on revert, and
+    /// read WHILE transformed by the request roster's `stats` object (the sim serializes
+    /// `baseStoredStats`, which `setSpecies(…, isTransform=true)` deliberately does NOT
+    /// overwrite).
+    pub base_stats: [u16; 6],
+    /// The mon's OWN `types_override` (a Color Change in flight before the transform).
+    pub base_types_override: Option<Vec<crate::dex::Type>>,
+    /// The mon's OWN move ids. Captured AFTER any Mimic overlay, exactly like the sim's
+    /// `moveSlots` at transform time — the Mimic record is restored separately, AFTER
+    /// this one, so the pair together reproduces `baseMoveSlots`.
+    pub base_moves: Vec<String>,
+    /// The mon's OWN per-slot current PP (Transform's own use is already deducted).
+    pub base_move_pp: Vec<u16>,
+    /// The mon's OWN per-slot max PP.
+    pub base_move_maxpp: Vec<u16>,
+    /// The mon's OWN IV-derived Hidden Power BP (`baseHpPower`).
+    pub base_hidden_power_bp: u8,
 }
 
 /// The MIMIC moveslot-overlay restore record (`gen3_move_coverage_batch6_v1`).
@@ -754,6 +813,28 @@ pub struct Reactive {
     /// `damage`); `None` while no qualifying foe hit has landed this turn (the move's
     /// onTry then fails zero-draw). Each qualifying hit OVERWRITES it.
     pub damage: Option<u16>,
+}
+
+/// The **PARTIAL-TRAP** (`partiallytrapped`) volatile's state (`gen3_partial_trap_v1`).
+/// See [`MonState::partial_trap`]. The gen-3 resolved condition needs exactly three
+/// facts; `boundDivisor` is NOT stored because gen3 has neither Binding Band nor Grip
+/// Claw, so it is ALWAYS 16 (the gen5 `onStart` override's `else` arm).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PartialTrap {
+    /// The TRAPPER's stable `uid` — always a mon on the OPPOSITE side (gen-3 singles).
+    /// Every residual re-reads that side's CURRENT active and compares: the sim's
+    /// `onResidual` releases when `!source.isActive || source.hp <= 0 ||
+    /// !source.activeTurns`. NOT re-pointed by a Baton Pass (unlike the linked `trapped`
+    /// volatile): a trapper that BPs out is simply no longer active ⇒ the trap releases.
+    pub source_uid: usize,
+    /// The trapping move's DISPLAY name (`Wrap` / `Fire Spin` / `Sand Tomb` / …) — the
+    /// `-activate`/`-damage`/`-end` lines all render `this.effectState.sourceEffect`, so
+    /// the byte form is per-move.
+    pub move_name: String,
+    /// The `partiallytrapped` `duration` — the ONE `random(3, 7)` draw at cast. The
+    /// residual decrements FIRST and, at 0, fires the `onEnd` (a non-silent `-end`) INSTEAD
+    /// of the chip, so the number of CHIP turns is `duration − 1` (2–5).
+    pub duration: u8,
 }
 
 /// The Solar Beam charge state (`gen3_move_coverage_batch4c_v1` — the gen-3 `twoturnmove`
@@ -886,6 +967,32 @@ pub fn hidden_power_type(ivs: &[u8; 6]) -> &'static str {
     HP_TYPES[idx.min(15)]
 }
 
+/// Resolve a mon's stored move id to its **TYPED** Hidden Power id
+/// (`gen3_typed_hidden_power_ids_v1`): a BARE `hiddenpower` becomes `hiddenpower<type>`,
+/// preferring the packed `set.hpType` marker and falling back to the IV derivation
+/// (mirroring the sim constructor). Every other move id passes through `to_id`'d.
+///
+/// The SINGLE home for that resolution: the request roster (`bridge::side_move_id`) and
+/// the TRANSFORM copy (`gen3_transform_v1`) both need it, and they must agree — the copy
+/// resolves the TARGET's HP against the TARGET's own markers/IVs, because the sim copies
+/// `hpType`/`hpPower` for gen<5 and renders the copied slot as `Hidden Power <that type>`.
+/// Resolving at copy time is what keeps the transformed mon's request/`|move|` bytes right
+/// without threading the source mon into every later reader.
+pub fn typed_hp_move_id(mon: &MonState, mv: &str) -> String {
+    let id = crate::dex::to_id(mv);
+    if id == "hiddenpower" {
+        let ty = if !mon.set.hp_type.is_empty() {
+            crate::dex::to_id(&mon.set.hp_type)
+        } else {
+            hidden_power_type(&mon.set.ivs).to_string()
+        };
+        if !ty.is_empty() && ty != "normal" {
+            return format!("hiddenpower{ty}");
+        }
+    }
+    id
+}
+
 impl MonState {
     /// Build the construction-time state for one decoded set: compute its stats,
     /// set `hp == maxhp == stats[0]`, status empty, boosts 0, not fainted.
@@ -937,48 +1044,34 @@ impl MonState {
                  GIGO guard; reject the team upstream"
             );
         }
-        // FAIL-LOUD GIGO guard: TRANSFORM is DEFERRED / UNMODELED (`gen3_transform_failloud_v1`).
-        // The SAME reasoning as Forecast above, and found the same way — by a differential
-        // fuzzer, not by review. `transform` copies the target's species/types/stats/moves/
-        // ability as a state OVERLAY (reverted on switch-out) and is the largest remaining
-        // batch-8/9 state job; the port models NONE of it, so `run_status_move` would fall
-        // through and the move would SILENTLY do nothing while the sim emits
-        // `|-transform|<user>|<target>` and rewrites the user wholesale. That is the worst
-        // failure mode for `--use-bridge=rust`: not a crash but WRONG OBSERVATIONS fed to the
-        // policy for the rest of the battle.
+        // FAIL-LOUD GIGO guard for MOVES THE ENGINE DOES NOT MODEL AT ALL
+        // (`gen3_unmodeled_move_failloud_v1`). The SAME reasoning as Forecast above, and the
+        // same discovery route — a differential fuzzer, not review. Such a move would neither
+        // crash nor work: `run_status_move` would fall through and it would SILENTLY do
+        // nothing while the sim rewrote state and emitted lines. That is the worst failure
+        // mode for `--use-bridge=rust` — not a crash, but WRONG OBSERVATIONS fed to the policy
+        // for the rest of the battle. Keyed on the MOVE appearing in the set (never the
+        // species), so it catches ACTIVE and BENCH mons alike at construction, before any turn
+        // runs, and is GIGO-proof against an odd carrier.
         //
-        // Keyed on the MOVE appearing in the set (the analogue of Forecast's ability check):
-        // it catches ACTIVE and BENCH mons alike at construction, before any turn runs, and it
-        // is species-agnostic (gen3 Ditto is the usual carrier, but Mew/Smeargle can learn it).
-        // Checking the move rather than the species is what makes it GIGO-proof — a Ditto that
-        // somehow lacks Transform is harmless, a non-Ditto that has it is not.
+        // **THE SET IS NOW EMPTY — every move once deferred behind it is MODELED:**
+        //   * the WRAP FAMILY (`wrap`/`bind`/`firespin`/`clamp`/`whirlpool`/`sandtomb`) —
+        //     `gen3_partial_trap_v1`, ROUND 32 (repro `soak3/divergences/sbd_msb1zfxs_b237`:
+        //     node emitted `|-activate|p1a: Snorlax|move: Wrap|[of] p2a: Shuckle`, the port
+        //     emitted nothing).
+        //   * `transform` — `gen3_transform_v1`, ROUND 33: the copy OVERLAY (species / types /
+        //     stats−HP / ability / boosts / moveslots at 5 PP / hpType+hpPower), reverted on
+        //     switch-out + faint (repro `sim_bridge_diff_out/soak_randbats/.../sbd_msapcesj_b22`:
+        //     node emitted `|-transform|p1a: Ditto|p2a: Kyogre`, the port emitted nothing).
+        // BOTH were found by the LIVE bridge gate (`gen_sim_bridge_diff.js`), which drives
+        // choices off the sim's own request and so reaches moves the offline fuzzers' pickers
+        // filtered out — the coverage hole this guard class exists to make LOUD.
         //
-        // The byte-fuzz team generators/adapters REJECT Transform upstream (`gen_e2e_fuzz.js`
-        // `isModeledMove` / `ab_fuzz.js`'s randbats adapter), so this panic never fires on the
-        // modeled path — it only trips a GIGO team. FOUND BY: the external-consistency gate
-        // `gen_sim_bridge_diff.js` (repro `soak_randbats/divergences/sbd_msapcesj_b22` — node
-        // emitted `|-transform|p1a: Ditto|p2a: Kyogre`, the rust bridge emitted nothing), which
-        // reaches the LIVE bridge path the offline fuzzers' pickers had filtered Transform out of.
-        // The set is `UNMODELED_FAILLOUD_MOVES` (`gen3_unmodeled_move_failloud_v1`, generalising
-        // the Transform guard). Each is a move the engine does NOT model at all, so without this
-        // the port would run it as a no-op / a plain damaging hit and DESYNC SILENTLY.
-        //   * `transform`      — the state OVERLAY (species/types/stats/moves/ability), reverted
-        //     on switch-out. Repro `sim_bridge_diff_out/soak_randbats/.../sbd_msapcesj_b22`: node
-        //     emitted `|-transform|p1a: Ditto|p2a: Kyogre`, the port emitted nothing.
-        //   * the WRAP FAMILY (`wrap`/`bind`/`firespin`/`clamp`/`whirlpool`/`sandtomb`) — a
-        //     partial-trap: ONE `random(3,7)` duration draw at cast, 2-5 turns of maxhp/16 chip,
-        //     and a FIRM trap that blocks switching. The port runs them as PLAIN damaging moves,
-        //     so it loses a DRAW, the chip, AND the switch-legality — a triple desync. Repro
-        //     `soak3/divergences/sbd_msb1zfxs_b237`: node emitted
-        //     `|-activate|p1a: Snorlax|move: Wrap|[of] p2a: Shuckle`, the port emitted nothing.
-        // Both were found by the LIVE bridge gate, which drives choices off the sim's own request
-        // and so reaches moves the offline fuzzers' pickers filter out. Keyed on the MOVE and
-        // checked at construction, so ACTIVE and BENCH mons alike trip it before any turn runs.
-        // ZERO of the 722 `data/teams/` pool teams carry ANY of these ⇒ the e2e golden is safe.
-        // Modelling them is batch-8/9 work; until then a loud crash beats a silent mismodel.
-        const UNMODELED_FAILLOUD_MOVES: [&str; 7] = [
-            "transform", "wrap", "bind", "firespin", "clamp", "whirlpool", "sandtomb",
-        ];
+        // The mechanism is KEPT (empty) on purpose: it is the deferral seam for the next
+        // unmodeled mechanic, and `a_ditto_without_transform_builds_fine` /
+        // `transform_carriers_build_now_that_transform_is_modeled` are the negative controls
+        // that stop an over-broad guard from silently returning.
+        const UNMODELED_FAILLOUD_MOVES: [&str; 0] = [];
         if let Some(bad) = set
             .moves
             .iter()
@@ -1051,12 +1144,14 @@ impl MonState {
             endure: false,
             perish: None,
             trapped_by: None,
+            partial_trap: None,
             charge: false,
             mimic_overlay: None,
             snatch: false,
             sleep_from_rest: false,
             switchin_foe_uid: None,
             yawn: None,
+            transform: None,
         })
     }
 
@@ -1064,6 +1159,49 @@ impl MonState {
     /// switch-out / faint `baseMoveSlots` revert: `set.moves[slot]` back to `mimic`
     /// with Mimic's OWN remaining PP (captured at copy time) + max PP. A no-op when no
     /// overlay is up. DRAW-FREE (pure state).
+    /// Whether this mon is `pokemon.transformed` (`gen3_transform_v1`) — the guard the sim
+    /// reads for `mimic.onHit`'s `source.transformed` fail and `transformInto`'s
+    /// `pokemon.transformed && gen >= 2` target fail.
+    pub fn transformed(&self) -> bool {
+        self.transform.is_some()
+    }
+
+    /// Revert the TRANSFORM copy overlay (`gen3_transform_v1`) — the switch-out / faint
+    /// `clearVolatile` restore: `moveSlots = baseMoveSlots.slice()`, `transformed = false`,
+    /// `ability = baseAbility`, `hpType/hpPower = base*`, and `setSpecies(this.baseSpecies)`
+    /// (species + types + the five stored stats + the speed cache). Boosts are NOT restored
+    /// here — `clearVolatile` zeroes them unconditionally, which every caller already does.
+    ///
+    /// MUST run BEFORE [`Self::restore_mimic_overlay`]: this puts back the moveset AS IT WAS
+    /// AT TRANSFORM TIME (which still carries any Mimic copy), and the Mimic record then
+    /// puts Mimic back — together reproducing the sim's `baseMoveSlots`. A no-op when no
+    /// overlay is up. DRAW-FREE (pure state).
+    pub fn restore_transform_overlay(&mut self) {
+        if let Some(ov) = self.transform.take() {
+            self.species_id = ov.base_species_id;
+            // `setSpecies` restores all five non-HP stored stats; hp/maxhp were never copied.
+            self.stats[1] = ov.base_stats[1];
+            self.stats[2] = ov.base_stats[2];
+            self.stats[3] = ov.base_stats[3];
+            self.stats[4] = ov.base_stats[4];
+            self.stats[5] = ov.base_stats[5];
+            // `setSpecies` ends with `this.speed = this.storedStats.spe` — the RAW stat
+            // (no boosts / paralysis), exactly like the transform-time write.
+            self.cached_speed = ov.base_stats[5] as u32;
+            self.types_override = ov.base_types_override;
+            // `clearVolatile` restores `this.baseAbility`, NOT the live ability the copy
+            // overwrote — so a Trace-then-Transform reverts to the SET ability, matching the
+            // switch-out Trace revert (`gen3_berry_trace_shedskin_v1`) that already runs at the
+            // voluntary-switch site. Restoring the captured LIVE ability instead would undo that
+            // site's work (it runs FIRST) and re-install the traced ability on the bench.
+            self.ability = self.set.ability.clone();
+            self.set.moves = ov.base_moves;
+            self.move_pp = ov.base_move_pp;
+            self.move_maxpp = ov.base_move_maxpp;
+            self.hidden_power_bp = ov.base_hidden_power_bp;
+        }
+    }
+
     pub fn restore_mimic_overlay(&mut self) {
         if let Some(ov) = self.mimic_overlay.take() {
             if let Some(m) = self.set.moves.get_mut(ov.slot) {

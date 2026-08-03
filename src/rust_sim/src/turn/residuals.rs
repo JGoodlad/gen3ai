@@ -243,6 +243,28 @@ impl crate::state::BattleState {
                 });
             }
 
+            // --- The PARTIAL-TRAP volatile's residual handler (`gen3_partial_trap_v1`).
+            //     Order 10, subOrder 9 (the gen4-mod `partiallytrapped` override gen3
+            //     inherits) — so at order 10 it sorts AFTER Leftovers (4) / Leech Seed (5) /
+            //     status DoT (6) / Curse (8) and BEFORE Encore (14) / Taunt (15) / Yawn (19).
+            //     It is a VOLATILE, gathered in the volatiles group (after curse, before
+            //     encore — the port's insertion-order convention). subOrder 9 is UNIQUE among
+            //     the order-10 handlers, so its only tie is the OTHER mon's partial trap at
+            //     equal cached speed (a MUTUAL wrap → ONE extra tie-shuffle, probe I); the
+            //     intra-mon gather position is therefore unobservable except through the
+            //     selection sort's swaps. The apply does the duration tick, the trapper-gone
+            //     release and the maxhp/16 chip (see `ResidualAction::PartialTrap`). ---
+            if mon.partial_trap.is_some() {
+                handlers.push(EventHandler {
+                    order: STATUS_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: PARTIAL_TRAP_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::PartialTrap { side, slot },
+                });
+            }
+
             // --- The ENCORE volatile's residual handler (`gen3_move_coverage_batch6_v1`).
             //     Order 10, subOrder 14 (the resolved gen-3 `encore` condition — one below
             //     Taunt's 15). Duration decrement + the onResidual 0-PP early removal ride
@@ -1061,6 +1083,20 @@ impl crate::state::BattleState {
                         continue;
                     }
                     self.apply_curse(side, slot, dex);
+                }
+                // PARTIAL TRAP (`gen3_partial_trap_v1`, order 10 subOrder 9): the duration tick,
+                // the trapper-gone silent release, then the floor(maxhp/16) chip. The
+                // duration-END branch `continue`s (the D4 skip-faintMessages rule for a
+                // `duration-- == 0` handler); the other two branches FALL THROUGH so a chip KO
+                // drains through the per-handler faintMessages exactly like the sim's
+                // `singleEvent(onResidual) → faintMessages(true)`.
+                ResidualAction::PartialTrap { side, slot } => {
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    if self.apply_partial_trap(side, slot, dex) {
+                        continue; // duration-END → skip the per-handler faintMessages
+                    }
                 }
                 // WISH delayed heal (`gen3_move_coverage_batch3_v1`, order 7): decrement the
                 // pending duration; fire the heal at 0. DRAW-FREE apply.
@@ -1941,6 +1977,102 @@ impl crate::state::BattleState {
         self.each_event_shuffle();
         self.process_faints(dex);
         self.each_event_shuffle();
+    }
+
+    /// The **PARTIAL-TRAP** residual (`gen3_partial_trap_v1` — Wrap / Bind / Fire Spin /
+    /// Clamp / Whirlpool / Sand Tomb). Returns `true` iff this was the DURATION-END visit
+    /// (the caller then `continue`s, skipping the per-handler `faintMessages` exactly like
+    /// the sim's `fieldEvent('Residual')` `duration-- == 0 → end() → continue` branch).
+    ///
+    /// The resolved gen-3 condition is the base `partiallytrapped` with the **gen5**
+    /// `onStart`/`onResidual` and the **gen4** `durationCallback`/order override:
+    ///
+    /// ```text
+    /// onResidual(pokemon) {                                  // data/mods/gen5/conditions.ts
+    ///   const trapper = this.effectState.source;
+    ///   if (trapper && (!trapper.isActive || trapper.hp <= 0 || !trapper.activeTurns)) {
+    ///     delete pokemon.volatiles['partiallytrapped'];
+    ///     this.add('-end', pokemon, sourceEffect, '[partiallytrapped]', '[silent]');
+    ///     return;
+    ///   }
+    ///   this.damage(pokemon.baseMaxhp / this.effectState.boundDivisor);   // 16 in gen3
+    /// }
+    /// onEnd(pokemon) { this.add('-end', pokemon, sourceEffect, '[partiallytrapped]'); }
+    /// ```
+    ///
+    /// Behaviours (probe-settled — `harness/probe_ptrap_edges{,2}.js`):
+    ///   * **DURATION FIRST.** `fieldEvent` decrements before it calls `onResidual`, so a
+    ///     turn on which the duration expires AND the trapper leaves emits the NON-silent
+    ///     `onEnd` form (probe O) and takes no chip. Chip turns == `duration − 1` (2–5).
+    ///   * **THE TRAPPER-GONE TEST** is `!isActive || hp <= 0 || !activeTurns` — the port's
+    ///     equivalent is "the stored uid is no longer the foe side's live, non-freshly-
+    ///     switched-in active". A trapper that switched out (probe: RELEASE), fainted (probe
+    ///     D), was phazed, or Baton-Passed away all release identically + SILENTLY.
+    ///   * **THE CHIP** is `floor(maxhp/16)` (gen-3 `baseMaxhp == maxhp`), via the sim's
+    ///     `this.damage()` → `clampIntRange(_, 1)` so a sub-16-maxhp mon still takes 1. The
+    ///     holder's **Focus Band** `onDamage` DRAWS its roll (the gen-3 handler rolls
+    ///     `randomChance(1,10)` FIRST, before the `effectType === 'Move'` test) but can never
+    ///     survive — the same `is_move: false` shape as the Leech-Seed drain. A chip CAN KO
+    ///     (probe E: `|-damage|…|0 fnt|[from] move: Wrap|[partiallytrapped]` then `|faint|`).
+    fn apply_partial_trap(&mut self, side: usize, slot: usize, dex: &Dex) -> bool {
+        // (1) The DURATION tick — `handler.state.duration--; if (!duration) { end(); continue; }`.
+        let (expired, move_name, source_uid) = {
+            let mon = &mut self.sides[side].pokemon[slot];
+            match mon.partial_trap.as_mut() {
+                Some(pt) => {
+                    pt.duration = pt.duration.saturating_sub(1);
+                    (pt.duration == 0, pt.move_name.clone(), pt.source_uid)
+                }
+                None => return false, // gathered only when present; belt-and-braces
+            }
+        };
+        if expired {
+            self.sides[side].pokemon[slot].partial_trap = None;
+            // [EMIT] `|-end|<mon>|<Move>|[partiallytrapped]` — the `onEnd` (NON-silent). The
+            // effect token is the BARE move name (the condition passes the sourceEffect
+            // OBJECT, which stringifies to `name`), NOT `move: <Move>`.
+            if self.logging() {
+                let m = self.mon_ref(side, slot, dex);
+                self.log.partial_trap_end(&m, &move_name, false);
+            }
+            return true;
+        }
+
+        // (2) THE TRAPPER-GONE TEST. In gen-3 singles the trapper is always on the opposite
+        // side, so `isActive` reduces to "the stored uid is that side's current active"; the
+        // `!activeTurns` arm additionally releases when that mon only switched in THIS turn
+        // (unreachable on any board probed here, but it is the sim's condition).
+        let trapper_side = 1 - side;
+        let trapper_slot = self.sides[trapper_side].active;
+        let trapper = &self.sides[trapper_side].pokemon[trapper_slot];
+        let trapper_gone = trapper.uid != source_uid
+            || trapper.fainted
+            || trapper.hp == 0
+            || trapper.active_turns == 0;
+        if trapper_gone {
+            self.sides[side].pokemon[slot].partial_trap = None;
+            // [EMIT] `|-end|<mon>|<Move>|[partiallytrapped]|[silent]` — the onResidual release.
+            if self.logging() {
+                let m = self.mon_ref(side, slot, dex);
+                self.log.partial_trap_end(&m, &move_name, true);
+            }
+            return false; // NOT a duration-end → fall through to faintMessages
+        }
+
+        // (3) THE CHIP: `this.damage(baseMaxhp / 16)`.
+        let hp_before = self.sides[side].pokemon[slot].hp;
+        let chip = (self.sides[side].pokemon[slot].maxhp / 16).max(1);
+        // FOCUS BAND: the onDamage roll DRAWS on the chip (no survive — not a Move effect).
+        let chip = self.focus_band_damage(side, slot, chip, false, false, dex);
+        let dealt = chip.min(hp_before);
+        self.apply_damage(side, slot, chip);
+        // [EMIT] `|-damage|<mon>|<HP>|[from] move: <Move>|[partiallytrapped]`.
+        if self.logging() && dealt > 0 {
+            let m = self.mon_ref(side, slot, dex);
+            let hp = self.hp_status(side, slot);
+            self.log.damage_partially_trapped(&m, &hp, &move_name);
+        }
+        false
     }
 
     /// The **LEECH SEED** residual drain (`leechseed.onResidual`, gen-3 — verified

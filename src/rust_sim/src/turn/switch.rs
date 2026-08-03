@@ -50,6 +50,21 @@ impl crate::state::BattleState {
         if me.trapped_by.is_some() {
             return true;
         }
+        // The PARTIAL-TRAP volatile (`gen3_partial_trap_v1`, Wrap / Bind / Fire Spin / Clamp
+        // / Whirlpool / Sand Tomb): `partiallytrapped.onTrapPokemon` is
+        // `if (this.effectState.source?.isActive) pokemon.tryTrap()` — a bare `tryTrap()`,
+        // i.e. a FIRM `trapped: true` (probe M: the very FIRST post-cast `|request|` carries
+        // `"trapped":true`, and a `>p2 switch 2` is answered with `|error|[Invalid choice]
+        // Can't switch: The active Pokémon is trapped` and NO re-request — the Shadow-Tag
+        // shape). NO type/grounded gate. The `source?.isActive` guard is mirrored below: the
+        // residual releases a trap whose trapper left, but the flag must already read false
+        // in the window between the trapper leaving and that residual.
+        if let Some(pt) = me.partial_trap.as_ref() {
+            if !foe.fainted && foe.hp > 0 && foe.uid == pt.source_uid {
+                return true;
+            }
+        }
+
         match to_id(&foe.ability).as_str() {
             "arenatrap" => {
                 // Grounded-only: Flying-type / Levitate escape (the spikes grounded rule).
@@ -96,6 +111,15 @@ impl crate::state::BattleState {
             return true;
         }
         let foe = &self.sides[1 - side].pokemon[self.sides[1 - side].active];
+        // The PARTIAL-TRAP volatile is likewise a FIRM trap (`onTrapPokemon` → bare
+        // `tryTrap()`), probe M. The source-active gate is re-applied here rather than
+        // inherited from `is_trapped`: a mon can be trapped by an ABILITY while holding a
+        // partial trap whose trapper already left, and that combination is `maybeTrapped`.
+        if let Some(pt) = self.sides[side].pokemon[self.sides[side].active].partial_trap.as_ref() {
+            if !foe.fainted && foe.hp > 0 && foe.uid == pt.source_uid {
+                return true;
+            }
+        }
         to_id(&foe.ability) == "shadowtag"
     }
 
@@ -234,6 +258,10 @@ impl crate::state::BattleState {
                 // gather a residual duration handler on re-entry).
                 mon.snatch = false;
                 mon.trapped_by = None;
+                // PARTIAL TRAP (`gen3_partial_trap_v1`): `clearVolatile` drops the
+                // `partiallytrapped` volatile with the corpse — a fainted victim is no longer
+                // wrapped, and its replacement must not inherit the chip or the switch-block.
+                mon.partial_trap = None;
                 // YAWN (`gen3_yawn_v1`): drop the pending delayed-sleep volatile with the corpse
                 // (clearVolatile) — a fainted mon carries no pending Yawn, and its re-entry must
                 // not gather a stale residual duration handler (the `beat_up` stale-flag class).
@@ -241,6 +269,13 @@ impl crate::state::BattleState {
                 // The pending switch-in Intimidate target (`gen3_intimidate_forced_replacement_v1`,
                 // M3) — cleared with the corpse so a fainted mon carries no stale foe uid.
                 mon.switchin_foe_uid = None;
+                // TRANSFORM (`gen3_transform_v1`): `clearVolatile` reverts the copy on FAINT
+                // too — `transformed = false`, `moveSlots = baseMoveSlots.slice()`, `ability =
+                // baseAbility`, `setSpecies(baseSpecies)` (probe D: the corpse reads back as
+                // `ditto:false:transform/splash`). MUST run BEFORE the Mimic restore: this puts
+                // back the transform-time moveset (which still carries any Mimic copy) and the
+                // Mimic record then restores Mimic — together == the sim's `baseMoveSlots`.
+                mon.restore_transform_overlay();
                 mon.restore_mimic_overlay();
                 // DESTINY BOND (`gen3_move_coverage_batch6_v1`, `destinybond.onFaint`):
                 // consume the pending-KO record (set at the qualifying FOE-Move damage
@@ -734,6 +769,7 @@ impl crate::state::BattleState {
             Some((
                 m.boosts, m.substitute, m.leech_seed, m.confusion, m.curse, m.perish,
                 m.trapped_by, m.charge, m.protect_counter, m.stall_duration, m.pursuit,
+                m.partial_trap.clone(),
             ))
         } else {
             None
@@ -921,6 +957,11 @@ impl crate::state::BattleState {
             m.destiny_bond = false;
             m.destiny_bond_ko_by = None;
             m.trapped_by = None;
+            // PARTIAL TRAP (`gen3_partial_trap_v1`): the `partiallytrapped` volatile clears on
+            // switch-out (`clearVolatile`) — a victim PHAZED out (Roar/Whirlwind; probe K) is
+            // free and its entrant is untrapped. It is `noCopy`-FALSE though, so the BP
+            // snapshot above DOES pass it to a Baton-Pass entrant (probe J).
+            m.partial_trap = None;
             // YAWN (`gen3_yawn_v1`): the pending delayed-sleep volatile clears on switch-out
             // (`clearVolatile`) — a mon that pivots out before the Yawn resolves comes back with no
             // pending sleep (a fresh Yawn is needed); noCopy so it is never Baton-Passed.
@@ -929,6 +970,14 @@ impl crate::state::BattleState {
             // M3) — a transient consumed at run_switch; clear it on switch-out too so a corpse /
             // outgoing mon never carries a stale foe uid.
             m.switchin_foe_uid = None;
+            // TRANSFORM (`gen3_transform_v1`): the copy REVERTS on switch-out — the outgoing
+            // mon goes back to its own species / stats / types / ability / moveslots (with
+            // Transform's OWN remaining PP, since the base slot objects are shared with
+            // `baseMoveSlots` and the cast already decremented them: probe C's `req4` shows
+            // `Transform pp:15/16` on re-entry). `transformed` is a Pokemon PROPERTY, not a
+            // volatile, so Baton Pass does NOT carry it — the pass-set never mentions it and
+            // the entrant is its own species (probe H). MUST run BEFORE the Mimic restore.
+            m.restore_transform_overlay();
             m.restore_mimic_overlay();
         }
         // [EMIT] NATURAL CURE `-curestatus` (`gen3_omniscient_byte_fuzz_v1` FORM 4):
@@ -1066,7 +1115,7 @@ impl crate::state::BattleState {
         //     the pending marker. ---
         if let Some((
             boosts, sub, leech, conf, curse, perish, trapped_by, charge, protect_counter,
-            stall_duration, pursuit,
+            stall_duration, pursuit, partial_trap,
         )) = bp_snapshot.clone()
         {
             let m = &mut self.sides[side].pokemon[active];
@@ -1081,6 +1130,12 @@ impl crate::state::BattleState {
             m.perish = perish;
             m.trapped_by = trapped_by;
             m.charge = charge;
+            // PARTIAL TRAP (`gen3_partial_trap_v1`): `partiallytrapped` has NO `noCopy`, so
+            // `copyVolatileFrom` transfers it — the entrant inherits the SAME duration and the
+            // SAME source (NOT re-pointed, unlike the linked `trapped` volatile above), keeps
+            // being chipped (off ITS OWN maxhp) and is itself firm-trapped. Probe J: a wrapped
+            // Snorlax Baton-Passes to Blissey and the chip immediately switches to 651/16 = 40.
+            m.partial_trap = partial_trap;
             // The `stall` + `pursuit` noCopy-false volatiles (`gen3_batonpass_stall_pursuit_copy_v1`,
             // R21): the entrant inherits the stall counter (Protect success odds) + the pursuit
             // volatile, so BOTH register their NO_ORDER/subOrder-2 residual duration handlers on

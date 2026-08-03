@@ -1,0 +1,610 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=random master_seed=100125 run_id=rmsc7a22r chunk=10
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_10_12
+TEAM	ab_10_12	p1	Charizard||TwistedSpoon|Blaze|WingAttack,DoubleEdge,Rest,Slash|Naughty|,40,100,196,4,168|M|5,27,8,2,12,25|||]Surskit||LiechiBerry|SwiftSwim|WaterPulse,ShadowBall,Return,Rest|Adamant|80,,28,140,132,128|M|3,21,,29,6,12|||]Tyranitar||DeepSeaScale|SandStream|Surf,Substitute,Earthquake,SeismicToss|Modest|36,20,80,12,232,124|M|9,23,4,18,28,15|||]Linoone||PolkadotBow|Pickup|Return,IronTail,Surf,Rest|Naive|16,188,20,100,80,104|M|15,21,1,21,22,25|||]Arcanine||PolkadotBow|FlashFire|Ember,Thief,Mimic,BodySlam|Timid|108,,156,12,68,80|M|13,15,14,29,3,20|||]Mudkip||DeepSeaScale|Torrent|DoubleEdge,Mimic,WaterPulse,Endeavor|Hardy|120,28,48,160,152,|M|26,17,9,25,30,11|||
+TEAM	ab_10_12	p2	Dusclops||QuickClaw|Pressure|Thief,Disable,FirePunch,Taunt|Impish|,156,140,108,,104|M|28,24,13,6,25,4|||]Torkoal||LiechiBerry|WhiteSmoke|HeatWave,Flail,Flamethrower,Amnesia|Quiet|144,,80,76,68,140|M|7,2,7,19,9,7|||]Skarmory||CheriBerry|KeenEye|RockSlide,Toxic,Cut,Roar|Bashful|36,132,,16,112,212|M|19,12,13,24,18,22|||]Houndoom||MetalCoat|EarlyBird|Flamethrower,SunnyDay,Mimic,Rest|Naive|148,140,116,24,80,|M|29,24,18,2,26,21|||]Sableye||LaxIncense|KeenEye|FirePunch,Rest,KnockOff,SeismicToss|Quiet|120,152,,140,44,52|M|7,21,6,2,8,29|||]Charizard||DeepSeaTooth|Blaze|Counter,Toxic,Flamethrower,MegaPunch|Quirky|140,120,,128,120,|M|11,22,24,4,19,23|||
+FMT	ab_10_12	gen3customgame
+INIT	ab_10_12	11042,64856,3874,6258	1213372517	1
+DEC	ab_10_12	0	move	0	0	m3	m1	52176,979,64986,46823	Charizard	271	271	0	-	0	0	0	0	0	0	6	Dusclops	218	218	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_12	1	move	0	0	m1	m1	9033,13093,22659,15272	Charizard	271	271	0	-	0	0	0	0	0	0	6	Dusclops	218	218	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_12	2	move	0	0	s1	m1	49529,11888,37897,54810	Surskit	213	213	0	-	0	0	0	0	0	0	6	Dusclops	218	218	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_12	3	move	0	0	m0	m0	59786,20128,6309,14628	Surskit	181	213	0	-	0	0	0	0	0	0	6	Dusclops	177	218	0	-	0	0	0	0	0	3	6	p1	0	0	0	0	0
+DEC	ab_10_12	4	move	0	0	m2	m1	11910,52084,3942,63003	Surskit	181	213	0	-	0	0	0	0	0	0	6	Dusclops	177	218	0	-	0	0	0	0	0	2	6	p1	0	0	0	1	0
+DEC	ab_10_12	5	move	0	0	m3	m0	12886,56461,26011,40665	Surskit	213	213	0	slp	0	0	0	0	0	0	6	Dusclops	177	218	0	-	0	0	0	0	0	1	6	p2	0	0	0	0	0
+DEC	ab_10_12	6	move	0	0	m0	m0	38699,47393,19681,44253	Surskit	181	213	0	slp	0	0	0	0	0	0	6	Dusclops	177	218	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_12	7	move	0	0	m1	m2	45014,5941,31163,20808	Surskit	123	213	0	slp	0	0	0	0	0	0	6	Dusclops	177	218	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_12	8	move	0	0	m2	m1	64273,11070,21023,9253	Surskit	123	213	0	-	0	0	0	0	0	0	6	Dusclops	177	218	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_10_12	9	move	0	0	m1	m0	50217,38235,45610,39533	Surskit	90	213	0	-	0	0	0	0	0	0	6	Dusclops	143	218	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_12	10	move	0	0	m2	s5	54822,60637,24154,14129	Surskit	90	213	0	-	0	0	0	0	0	0	6	Charizard	270	312	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_10_12	11	move	0	0	m0	m2	61795,7125,50863,12213	Surskit	0	213	1	fnt	0	0	0	0	0	0	5	Charizard	270	312	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_12	12	switch	1	0	s4	-	57830,54014,52671,20012	Arcanine	330	330	0	-	0	0	0	0	0	0	5	Charizard	270	312	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_10_12	13	move	0	0	m1	m0	43819,56127,36139,17664	Arcanine	330	330	0	-	0	0	0	0	0	0	5	Charizard	239	312	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_10_12	14	move	0	0	m0	m0	3640,22409,59744,15143	Arcanine	330	330	0	-	0	0	0	0	0	0	5	Charizard	217	312	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_10_12	15	move	0	0	s5	m2	40319,16214,546,61274	Mudkip	151	266	0	brn	0	0	0	0	0	0	5	Charizard	217	312	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_12	16	move	0	0	m0	m0	37502,28264,51751,30345	Mudkip	18	266	0	brn	0	0	0	0	0	0	5	Charizard	174	312	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_10_12	17	move	0	0	s2	m1	22324,15984,26901,57299	Tyranitar	308	328	0	tox	0	0	0	0	0	0	5	Charizard	155	312	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_12	18	move	0	0	m3	m1	5391,37039,65528,14436	Tyranitar	268	328	0	tox	0	0	0	0	0	0	5	Charizard	36	312	0	-	0	0	0	0	0	0	6	p2	0	0	1	0	0
+DEC	ab_10_12	19	move	0	0	m1	m0	21067,34931,36350,25143	Tyranitar	126	328	0	tox	0	0	0	0	0	0	5	Charizard	17	312	0	-	0	0	0	0	0	0	6	p1	0	0	0	1	0
+DEC	ab_10_12	20	move	0	0	m2	m2	61589,4316,57219,29610	Tyranitar	46	328	0	tox	0	0	0	0	0	0	5	Charizard	0	312	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_12	21	switch	0	1	-	s4	26693,23607,27023,15061	Tyranitar	46	328	0	tox	0	0	0	0	0	0	5	Sableye	247	247	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_10_12	22	move	0	0	m3	m0	9676,55428,27211,52896	Tyranitar	0	328	1	fnt	0	0	0	0	0	0	4	Sableye	232	247	0	-	0	0	0	0	0	0	5	p1	0	0	1	0	0
+DEC	ab_10_12	23	switch	1	0	s5	-	37440,37246,43010,50147	Arcanine	330	330	0	-	0	0	0	0	0	0	4	Sableye	232	247	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_10_12	24	move	0	0	m1	m1	15116,55988,28762,53958	Arcanine	310	330	0	-	0	0	0	0	0	0	4	Sableye	232	247	0	slp	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	25	move	0	0	m0	m3	60150,26327,47537,14949	Arcanine	290	330	0	-	0	0	0	0	0	0	4	Sableye	139	247	0	slp	0	0	0	0	0	0	5	p1	0	0	1	0	0
+DEC	ab_10_12	26	move	0	0	m3	m1	39865,30412,65067,49487	Arcanine	270	330	0	-	0	0	0	0	0	0	4	Sableye	124	247	0	slp	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	27	move	0	0	s1	s3	39670,9424,20230,10734	Charizard	255	271	0	-	0	0	0	0	0	0	4	Houndoom	306	326	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	28	move	0	0	m2	m1	41608,238,33239,38256	Charizard	271	271	0	slp	0	0	0	0	0	0	4	Houndoom	306	326	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	29	move	0	0	s1	m0	39754,49415,28333,47266	Arcanine	270	330	0	-	0	0	0	0	0	0	4	Houndoom	306	326	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	30	move	0	0	m3	s2	29631,30110,42042,24945	Arcanine	270	330	0	-	0	0	0	0	0	0	4	Skarmory	214	268	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_12	31	move	0	0	m3	m1	311,53463,39265,36447	Arcanine	250	330	0	tox	0	0	0	0	0	0	4	Skarmory	187	268	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	32	move	0	0	m1	m0	60506,58513,58439,32615	Arcanine	105	330	0	tox	0	0	0	0	0	0	4	Skarmory	167	268	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	33	move	0	0	m2	m1	2180,33480,22679,49665	Arcanine	45	330	0	tox	0	0	0	0	0	0	4	Skarmory	167	268	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	1
+DEC	ab_10_12	34	move	0	0	m2	m0	20745,33539,31336,35017	Arcanine	0	330	1	fnt	0	0	0	0	0	0	3	Skarmory	121	268	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	35	switch	1	0	s1	-	13365,6590,50711,10000	Charizard	271	271	0	slp	0	0	0	0	0	0	3	Skarmory	121	268	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_10_12	36	move	0	0	m2	m3	1462,33888,43369,51522	Mudkip	0	266	1	fnt	0	0	0	0	0	0	2	Skarmory	121	268	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	37	switch	1	0	s3	-	50090,29858,52325,22477	Linoone	285	285	0	-	0	0	0	0	0	0	2	Skarmory	121	268	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_10_12	38	move	0	0	m1	m3	44168,39775,34788,31978	Charizard	271	271	0	slp	0	0	0	0	0	0	2	Skarmory	95	268	0	-	0	-1	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	39	move	0	0	s2	m2	14905,37133,26221,13278	Linoone	224	285	0	-	0	0	0	0	0	0	2	Skarmory	95	268	0	-	0	-1	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	40	move	0	0	s2	m2	38265,7315,18537,33682	Charizard	231	271	0	slp	0	0	0	0	0	0	2	Skarmory	95	268	0	-	0	-1	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	41	move	0	0	m1	s2	54247,50394,14894,43357	Charizard	231	271	0	slp	0	0	0	0	0	0	2	Houndoom	306	326	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_12	42	move	0	0	m3	m1	65492,35360,48756,46881	Charizard	231	271	0	-	0	0	0	0	0	0	2	Houndoom	226	326	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_12	43	move	0	0	m1	m2	24926,13983,46531,4261	Charizard	181	271	0	-	0	0	0	0	0	0	2	Houndoom	76	326	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	1
+DEC	ab_10_12	44	move	0	0	m3	m1	1390,6878,49871,20270	Charizard	181	271	0	-	0	0	0	0	0	0	2	Houndoom	0	326	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_10_12	45	switch	0	1	-	s2	8368,53340,24466,31209	Charizard	181	271	0	-	0	0	0	0	0	0	2	Skarmory	95	268	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_10_12	46	move	0	0	m2	m0	61272,5575,59307,39063	Charizard	19	271	0	slp	0	0	0	0	0	0	2	Skarmory	95	268	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_10_12	47	move	0	0	m3	m1	20955,39070,10854,19377	Charizard	19	271	0	slp	0	0	0	0	0	0	2	Skarmory	95	268	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_10_12	48	move	0	0	m3	m0	25113,12156,33590,64565	Charizard	0	271	1	fnt	0	0	0	0	0	0	1	Skarmory	95	268	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_10_12	49	switch	1	0	s2	-	38134,28456,29507,31916	Linoone	224	285	0	-	0	0	0	0	0	0	1	Skarmory	95	268	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_10_12	50	move	0	0	m1	m1	61138,43049,4725,23602	Linoone	207	285	0	tox	0	0	0	0	0	0	1	Skarmory	67	268	0	-	0	-1	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_10_12	51	move	0	0	m1	m2	2974,28768,24291,25050	Linoone	116	285	0	tox	0	0	0	0	0	0	1	Skarmory	28	268	0	-	0	-2	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_10_12	52	move	0	0	m2	s1	57258,35292,39793,10702	Linoone	65	285	0	tox	0	0	0	0	0	0	1	Torkoal	161	293	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_10_12	53	move	0	0	m0	m1	63620,65381,54314,30436	Linoone	0	285	1	tox	0	0	0	0	0	0	0	Torkoal	69	293	0	-	0	0	0	0	0	0	4	p1	0	0	0	1	0
+END	ab_10_12	1	p2
+L	ab_10_12	0	|t:|<NORMALIZED>
+L	ab_10_12	1	|gametype|singles
+L	ab_10_12	2	|player|p1|P1||
+L	ab_10_12	3	|player|p2|P2||
+L	ab_10_12	4	|gen|3
+L	ab_10_12	5	|tier|[Gen 3] Custom Game
+L	ab_10_12	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_10_12	7	|
+L	ab_10_12	8	|t:|<NORMALIZED>
+L	ab_10_12	9	|teamsize|p1|6
+L	ab_10_12	10	|teamsize|p2|6
+L	ab_10_12	11	|start
+L	ab_10_12	12	|switch|p1a: Charizard|Charizard, M|271/271
+L	ab_10_12	13	|switch|p2a: Dusclops|Dusclops, M|218/218
+L	ab_10_12	14	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_10_12	15	|turn|1
+L	ab_10_12	16	|
+L	ab_10_12	17	|t:|<NORMALIZED>
+L	ab_10_12	18	|move|p2a: Dusclops|Disable||[still]
+L	ab_10_12	19	|-fail|p2a: Dusclops
+L	ab_10_12	20	|move|p1a: Charizard|Slash|p2a: Dusclops
+L	ab_10_12	21	|-immune|p2a: Dusclops
+L	ab_10_12	22	|
+L	ab_10_12	23	|upkeep
+L	ab_10_12	24	|turn|2
+L	ab_10_12	25	|
+L	ab_10_12	26	|t:|<NORMALIZED>
+L	ab_10_12	27	|move|p1a: Charizard|Double-Edge|p2a: Dusclops
+L	ab_10_12	28	|-immune|p2a: Dusclops
+L	ab_10_12	29	|move|p2a: Dusclops|Disable|p1a: Charizard|[miss]
+L	ab_10_12	30	|-miss|p2a: Dusclops|p1a: Charizard
+L	ab_10_12	31	|
+L	ab_10_12	32	|upkeep
+L	ab_10_12	33	|turn|3
+L	ab_10_12	34	|
+L	ab_10_12	35	|t:|<NORMALIZED>
+L	ab_10_12	36	|switch|p1a: Surskit|Surskit, M|213/213
+L	ab_10_12	37	|move|p2a: Dusclops|Disable|p1a: Surskit|[miss]
+L	ab_10_12	38	|-miss|p2a: Dusclops|p1a: Surskit
+L	ab_10_12	39	|
+L	ab_10_12	40	|upkeep
+L	ab_10_12	41	|turn|4
+L	ab_10_12	42	|
+L	ab_10_12	43	|t:|<NORMALIZED>
+L	ab_10_12	44	|move|p1a: Surskit|Water Pulse|p2a: Dusclops
+L	ab_10_12	45	|-damage|p2a: Dusclops|177/218
+L	ab_10_12	46	|-start|p2a: Dusclops|confusion
+L	ab_10_12	47	|-activate|p2a: Dusclops|confusion
+L	ab_10_12	48	|move|p2a: Dusclops|Thief|p1a: Surskit
+L	ab_10_12	49	|-damage|p1a: Surskit|181/213
+L	ab_10_12	50	|
+L	ab_10_12	51	|upkeep
+L	ab_10_12	52	|turn|5
+L	ab_10_12	53	|
+L	ab_10_12	54	|t:|<NORMALIZED>
+L	ab_10_12	55	|move|p1a: Surskit|Return|p2a: Dusclops
+L	ab_10_12	56	|-immune|p2a: Dusclops
+L	ab_10_12	57	|-activate|p2a: Dusclops|confusion
+L	ab_10_12	58	|move|p2a: Dusclops|Disable|p1a: Surskit
+L	ab_10_12	59	|-start|p1a: Surskit|Disable|Return
+L	ab_10_12	60	|
+L	ab_10_12	61	|upkeep
+L	ab_10_12	62	|turn|6
+L	ab_10_12	63	|
+L	ab_10_12	64	|t:|<NORMALIZED>
+L	ab_10_12	65	|-activate|p2a: Dusclops|confusion
+L	ab_10_12	66	|move|p2a: Dusclops|Thief|p1a: Surskit
+L	ab_10_12	67	|-damage|p1a: Surskit|150/213
+L	ab_10_12	68	|move|p1a: Surskit|Rest|p1a: Surskit
+L	ab_10_12	69	|-status|p1a: Surskit|slp|[from] move: Rest
+L	ab_10_12	70	|-heal|p1a: Surskit|213/213 slp|[silent]
+L	ab_10_12	71	|
+L	ab_10_12	72	|upkeep
+L	ab_10_12	73	|turn|7
+L	ab_10_12	74	|
+L	ab_10_12	75	|t:|<NORMALIZED>
+L	ab_10_12	76	|-end|p2a: Dusclops|confusion
+L	ab_10_12	77	|move|p2a: Dusclops|Thief|p1a: Surskit
+L	ab_10_12	78	|-damage|p1a: Surskit|181/213 slp
+L	ab_10_12	79	|cant|p1a: Surskit|slp
+L	ab_10_12	80	|
+L	ab_10_12	81	|-end|p1a: Surskit|Disable
+L	ab_10_12	82	|upkeep
+L	ab_10_12	83	|turn|8
+L	ab_10_12	84	|
+L	ab_10_12	85	|t:|<NORMALIZED>
+L	ab_10_12	86	|cant|p1a: Surskit|slp
+L	ab_10_12	87	|move|p2a: Dusclops|Fire Punch|p1a: Surskit
+L	ab_10_12	88	|-damage|p1a: Surskit|123/213 slp
+L	ab_10_12	89	|
+L	ab_10_12	90	|upkeep
+L	ab_10_12	91	|turn|9
+L	ab_10_12	92	|
+L	ab_10_12	93	|t:|<NORMALIZED>
+L	ab_10_12	94	|-curestatus|p1a: Surskit|slp|[msg]
+L	ab_10_12	95	|move|p1a: Surskit|Return|p2a: Dusclops
+L	ab_10_12	96	|-immune|p2a: Dusclops
+L	ab_10_12	97	|move|p2a: Dusclops|Disable|p1a: Surskit|[miss]
+L	ab_10_12	98	|-miss|p2a: Dusclops|p1a: Surskit
+L	ab_10_12	99	|
+L	ab_10_12	100	|upkeep
+L	ab_10_12	101	|turn|10
+L	ab_10_12	102	|
+L	ab_10_12	103	|t:|<NORMALIZED>
+L	ab_10_12	104	|move|p1a: Surskit|Shadow Ball|p2a: Dusclops
+L	ab_10_12	105	|-supereffective|p2a: Dusclops
+L	ab_10_12	106	|-damage|p2a: Dusclops|143/218
+L	ab_10_12	107	|move|p2a: Dusclops|Thief|p1a: Surskit
+L	ab_10_12	108	|-damage|p1a: Surskit|90/213
+L	ab_10_12	109	|
+L	ab_10_12	110	|upkeep
+L	ab_10_12	111	|turn|11
+L	ab_10_12	112	|
+L	ab_10_12	113	|t:|<NORMALIZED>
+L	ab_10_12	114	|switch|p2a: Charizard|Charizard, M|312/312
+L	ab_10_12	115	|move|p1a: Surskit|Return|p2a: Charizard
+L	ab_10_12	116	|-damage|p2a: Charizard|270/312
+L	ab_10_12	117	|
+L	ab_10_12	118	|upkeep
+L	ab_10_12	119	|turn|12
+L	ab_10_12	120	|
+L	ab_10_12	121	|t:|<NORMALIZED>
+L	ab_10_12	122	|move|p2a: Charizard|Flamethrower|p1a: Surskit
+L	ab_10_12	123	|-damage|p1a: Surskit|0 fnt
+L	ab_10_12	124	|faint|p1a: Surskit
+L	ab_10_12	125	|
+L	ab_10_12	126	|t:|<NORMALIZED>
+L	ab_10_12	127	|switch|p1a: Arcanine|Arcanine, M|330/330
+L	ab_10_12	128	|
+L	ab_10_12	129	|upkeep
+L	ab_10_12	130	|turn|13
+L	ab_10_12	131	|
+L	ab_10_12	132	|t:|<NORMALIZED>
+L	ab_10_12	133	|debug|before turn callback: counter
+L	ab_10_12	134	|move|p1a: Arcanine|Thief|p2a: Charizard
+L	ab_10_12	135	|-damage|p2a: Charizard|239/312
+L	ab_10_12	136	|move|p2a: Charizard|Counter|p1a: Arcanine
+L	ab_10_12	137	|
+L	ab_10_12	138	|upkeep
+L	ab_10_12	139	|turn|14
+L	ab_10_12	140	|
+L	ab_10_12	141	|t:|<NORMALIZED>
+L	ab_10_12	142	|debug|before turn callback: counter
+L	ab_10_12	143	|move|p1a: Arcanine|Ember|p2a: Charizard
+L	ab_10_12	144	|-resisted|p2a: Charizard
+L	ab_10_12	145	|-damage|p2a: Charizard|217/312
+L	ab_10_12	146	|move|p2a: Charizard|Counter|p1a: Arcanine
+L	ab_10_12	147	|
+L	ab_10_12	148	|upkeep
+L	ab_10_12	149	|turn|15
+L	ab_10_12	150	|
+L	ab_10_12	151	|t:|<NORMALIZED>
+L	ab_10_12	152	|switch|p1a: Mudkip|Mudkip, M|266/266
+L	ab_10_12	153	|move|p2a: Charizard|Flamethrower|p1a: Mudkip
+L	ab_10_12	154	|-resisted|p1a: Mudkip
+L	ab_10_12	155	|-damage|p1a: Mudkip|184/266
+L	ab_10_12	156	|-status|p1a: Mudkip|brn
+L	ab_10_12	157	|
+L	ab_10_12	158	|-damage|p1a: Mudkip|151/266 brn|[from] brn
+L	ab_10_12	159	|upkeep
+L	ab_10_12	160	|turn|16
+L	ab_10_12	161	|
+L	ab_10_12	162	|t:|<NORMALIZED>
+L	ab_10_12	163	|debug|before turn callback: counter
+L	ab_10_12	164	|move|p1a: Mudkip|Double-Edge|p2a: Charizard
+L	ab_10_12	165	|-damage|p2a: Charizard|174/312
+L	ab_10_12	166	|-damage|p1a: Mudkip|137/266 brn|[from] Recoil|[of] p2a: Charizard
+L	ab_10_12	167	|move|p2a: Charizard|Counter|p1a: Mudkip
+L	ab_10_12	168	|-damage|p1a: Mudkip|51/266 brn
+L	ab_10_12	169	|
+L	ab_10_12	170	|-damage|p1a: Mudkip|18/266 brn|[from] brn
+L	ab_10_12	171	|upkeep
+L	ab_10_12	172	|turn|17
+L	ab_10_12	173	|
+L	ab_10_12	174	|t:|<NORMALIZED>
+L	ab_10_12	175	|switch|p1a: Tyranitar|Tyranitar, M|328/328
+L	ab_10_12	176	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_10_12	177	|move|p2a: Charizard|Toxic|p1a: Tyranitar
+L	ab_10_12	178	|-status|p1a: Tyranitar|tox
+L	ab_10_12	179	|
+L	ab_10_12	180	|-weather|Sandstorm|[upkeep]
+L	ab_10_12	181	|-damage|p2a: Charizard|155/312|[from] Sandstorm
+L	ab_10_12	182	|debug|natural status immunity
+L	ab_10_12	183	|debug|weather immunity
+L	ab_10_12	184	|-damage|p1a: Tyranitar|308/328 tox|[from] psn
+L	ab_10_12	185	|upkeep
+L	ab_10_12	186	|turn|18
+L	ab_10_12	187	|
+L	ab_10_12	188	|t:|<NORMALIZED>
+L	ab_10_12	189	|move|p2a: Charizard|Toxic|p1a: Tyranitar
+L	ab_10_12	190	|-fail|p1a: Tyranitar|tox
+L	ab_10_12	191	|debug|move failed because it did nothing
+L	ab_10_12	192	|move|p1a: Tyranitar|Seismic Toss|p2a: Charizard
+L	ab_10_12	193	|-damage|p2a: Charizard|55/312
+L	ab_10_12	194	|
+L	ab_10_12	195	|-weather|Sandstorm|[upkeep]
+L	ab_10_12	196	|-damage|p2a: Charizard|36/312|[from] Sandstorm
+L	ab_10_12	197	|debug|natural status immunity
+L	ab_10_12	198	|debug|weather immunity
+L	ab_10_12	199	|-damage|p1a: Tyranitar|268/328 tox|[from] psn
+L	ab_10_12	200	|upkeep
+L	ab_10_12	201	|turn|19
+L	ab_10_12	202	|
+L	ab_10_12	203	|t:|<NORMALIZED>
+L	ab_10_12	204	|debug|before turn callback: counter
+L	ab_10_12	205	|move|p1a: Tyranitar|Substitute|p1a: Tyranitar
+L	ab_10_12	206	|-start|p1a: Tyranitar|Substitute
+L	ab_10_12	207	|-damage|p1a: Tyranitar|186/328 tox
+L	ab_10_12	208	|move|p2a: Charizard|Counter|p1a: Tyranitar
+L	ab_10_12	209	|
+L	ab_10_12	210	|-weather|Sandstorm|[upkeep]
+L	ab_10_12	211	|-damage|p2a: Charizard|17/312|[from] Sandstorm
+L	ab_10_12	212	|debug|natural status immunity
+L	ab_10_12	213	|debug|weather immunity
+L	ab_10_12	214	|-damage|p1a: Tyranitar|126/328 tox|[from] psn
+L	ab_10_12	215	|upkeep
+L	ab_10_12	216	|turn|20
+L	ab_10_12	217	|
+L	ab_10_12	218	|t:|<NORMALIZED>
+L	ab_10_12	219	|move|p2a: Charizard|Flamethrower|p1a: Tyranitar
+L	ab_10_12	220	|debug|Blaze boost
+L	ab_10_12	221	|-resisted|p1a: Tyranitar
+L	ab_10_12	222	|-activate|p1a: Tyranitar|Substitute|[damage]
+L	ab_10_12	223	|move|p1a: Tyranitar|Earthquake|p2a: Charizard
+L	ab_10_12	224	|-immune|p2a: Charizard
+L	ab_10_12	225	|
+L	ab_10_12	226	|-weather|Sandstorm|[upkeep]
+L	ab_10_12	227	|-damage|p2a: Charizard|0 fnt|[from] Sandstorm
+L	ab_10_12	228	|debug|natural status immunity
+L	ab_10_12	229	|debug|weather immunity
+L	ab_10_12	230	|faint|p2a: Charizard
+L	ab_10_12	231	|-damage|p1a: Tyranitar|46/328 tox|[from] psn
+L	ab_10_12	232	|upkeep
+L	ab_10_12	233	|
+L	ab_10_12	234	|t:|<NORMALIZED>
+L	ab_10_12	235	|switch|p2a: Sableye|Sableye, M|247/247
+L	ab_10_12	236	|turn|21
+L	ab_10_12	237	|
+L	ab_10_12	238	|t:|<NORMALIZED>
+L	ab_10_12	239	|move|p1a: Tyranitar|Seismic Toss|p2a: Sableye
+L	ab_10_12	240	|debug|lax incense - decreasing accuracy
+L	ab_10_12	241	|-immune|p2a: Sableye
+L	ab_10_12	242	|move|p2a: Sableye|Fire Punch|p1a: Tyranitar
+L	ab_10_12	243	|-resisted|p1a: Tyranitar
+L	ab_10_12	244	|-end|p1a: Tyranitar|Substitute
+L	ab_10_12	245	|
+L	ab_10_12	246	|-weather|Sandstorm|[upkeep]
+L	ab_10_12	247	|debug|natural status immunity
+L	ab_10_12	248	|debug|weather immunity
+L	ab_10_12	249	|-damage|p2a: Sableye|232/247|[from] Sandstorm
+L	ab_10_12	250	|-damage|p1a: Tyranitar|0 fnt|[from] psn
+L	ab_10_12	251	|faint|p1a: Tyranitar
+L	ab_10_12	252	|upkeep
+L	ab_10_12	253	|
+L	ab_10_12	254	|t:|<NORMALIZED>
+L	ab_10_12	255	|switch|p1a: Arcanine|Arcanine, M|330/330
+L	ab_10_12	256	|turn|22
+L	ab_10_12	257	|
+L	ab_10_12	258	|t:|<NORMALIZED>
+L	ab_10_12	259	|move|p1a: Arcanine|Thief|p2a: Sableye
+L	ab_10_12	260	|debug|lax incense - decreasing accuracy
+L	ab_10_12	261	|-damage|p2a: Sableye|183/247
+L	ab_10_12	262	|move|p2a: Sableye|Rest|p2a: Sableye
+L	ab_10_12	263	|-status|p2a: Sableye|slp|[from] move: Rest
+L	ab_10_12	264	|-heal|p2a: Sableye|247/247 slp|[silent]
+L	ab_10_12	265	|
+L	ab_10_12	266	|-weather|Sandstorm|[upkeep]
+L	ab_10_12	267	|-damage|p1a: Arcanine|310/330|[from] Sandstorm
+L	ab_10_12	268	|-damage|p2a: Sableye|232/247 slp|[from] Sandstorm
+L	ab_10_12	269	|upkeep
+L	ab_10_12	270	|turn|23
+L	ab_10_12	271	|
+L	ab_10_12	272	|t:|<NORMALIZED>
+L	ab_10_12	273	|move|p1a: Arcanine|Ember|p2a: Sableye
+L	ab_10_12	274	|debug|lax incense - decreasing accuracy
+L	ab_10_12	275	|-damage|p2a: Sableye|154/247 slp
+L	ab_10_12	276	|cant|p2a: Sableye|slp
+L	ab_10_12	277	|
+L	ab_10_12	278	|-weather|Sandstorm|[upkeep]
+L	ab_10_12	279	|-damage|p1a: Arcanine|290/330|[from] Sandstorm
+L	ab_10_12	280	|-damage|p2a: Sableye|139/247 slp|[from] Sandstorm
+L	ab_10_12	281	|upkeep
+L	ab_10_12	282	|turn|24
+L	ab_10_12	283	|
+L	ab_10_12	284	|t:|<NORMALIZED>
+L	ab_10_12	285	|move|p1a: Arcanine|Body Slam|p2a: Sableye
+L	ab_10_12	286	|debug|lax incense - decreasing accuracy
+L	ab_10_12	287	|-immune|p2a: Sableye
+L	ab_10_12	288	|cant|p2a: Sableye|slp
+L	ab_10_12	289	|
+L	ab_10_12	290	|-weather|Sandstorm|[upkeep]
+L	ab_10_12	291	|-damage|p1a: Arcanine|270/330|[from] Sandstorm
+L	ab_10_12	292	|-damage|p2a: Sableye|124/247 slp|[from] Sandstorm
+L	ab_10_12	293	|upkeep
+L	ab_10_12	294	|turn|25
+L	ab_10_12	295	|
+L	ab_10_12	296	|t:|<NORMALIZED>
+L	ab_10_12	297	|switch|p1a: Charizard|Charizard, M|271/271
+L	ab_10_12	298	|switch|p2a: Houndoom|Houndoom, M|326/326
+L	ab_10_12	299	|
+L	ab_10_12	300	|-weather|Sandstorm|[upkeep]
+L	ab_10_12	301	|-damage|p1a: Charizard|255/271|[from] Sandstorm
+L	ab_10_12	302	|-damage|p2a: Houndoom|306/326|[from] Sandstorm
+L	ab_10_12	303	|upkeep
+L	ab_10_12	304	|turn|26
+L	ab_10_12	305	|
+L	ab_10_12	306	|t:|<NORMALIZED>
+L	ab_10_12	307	|move|p1a: Charizard|Rest|p1a: Charizard
+L	ab_10_12	308	|-status|p1a: Charizard|slp|[from] move: Rest
+L	ab_10_12	309	|-heal|p1a: Charizard|271/271 slp|[silent]
+L	ab_10_12	310	|move|p2a: Houndoom|Sunny Day|p2a: Houndoom
+L	ab_10_12	311	|-weather|SunnyDay
+L	ab_10_12	312	|
+L	ab_10_12	313	|-weather|SunnyDay|[upkeep]
+L	ab_10_12	314	|upkeep
+L	ab_10_12	315	|turn|27
+L	ab_10_12	316	|
+L	ab_10_12	317	|t:|<NORMALIZED>
+L	ab_10_12	318	|switch|p1a: Arcanine|Arcanine, M|270/330
+L	ab_10_12	319	|move|p2a: Houndoom|Flamethrower|p1a: Arcanine
+L	ab_10_12	320	|-start|p1a: Arcanine|ability: Flash Fire
+L	ab_10_12	321	|
+L	ab_10_12	322	|-weather|SunnyDay|[upkeep]
+L	ab_10_12	323	|upkeep
+L	ab_10_12	324	|turn|28
+L	ab_10_12	325	|
+L	ab_10_12	326	|t:|<NORMALIZED>
+L	ab_10_12	327	|switch|p2a: Skarmory|Skarmory, M|268/268
+L	ab_10_12	328	|move|p1a: Arcanine|Body Slam|p2a: Skarmory
+L	ab_10_12	329	|-resisted|p2a: Skarmory
+L	ab_10_12	330	|-crit|p2a: Skarmory
+L	ab_10_12	331	|-damage|p2a: Skarmory|214/268
+L	ab_10_12	332	|
+L	ab_10_12	333	|-weather|SunnyDay|[upkeep]
+L	ab_10_12	334	|upkeep
+L	ab_10_12	335	|turn|29
+L	ab_10_12	336	|
+L	ab_10_12	337	|t:|<NORMALIZED>
+L	ab_10_12	338	|move|p1a: Arcanine|Body Slam|p2a: Skarmory
+L	ab_10_12	339	|-resisted|p2a: Skarmory
+L	ab_10_12	340	|-damage|p2a: Skarmory|187/268
+L	ab_10_12	341	|move|p2a: Skarmory|Toxic|p1a: Arcanine
+L	ab_10_12	342	|-status|p1a: Arcanine|tox
+L	ab_10_12	343	|
+L	ab_10_12	344	|-weather|SunnyDay|[upkeep]
+L	ab_10_12	345	|-damage|p1a: Arcanine|250/330 tox|[from] psn
+L	ab_10_12	346	|upkeep
+L	ab_10_12	347	|turn|30
+L	ab_10_12	348	|
+L	ab_10_12	349	|t:|<NORMALIZED>
+L	ab_10_12	350	|move|p1a: Arcanine|Thief|p2a: Skarmory
+L	ab_10_12	351	|-resisted|p2a: Skarmory
+L	ab_10_12	352	|-damage|p2a: Skarmory|167/268
+L	ab_10_12	353	|move|p2a: Skarmory|Rock Slide|p1a: Arcanine
+L	ab_10_12	354	|-supereffective|p1a: Arcanine
+L	ab_10_12	355	|-damage|p1a: Arcanine|145/330 tox
+L	ab_10_12	356	|
+L	ab_10_12	357	|-weather|none
+L	ab_10_12	358	|-damage|p1a: Arcanine|105/330 tox|[from] psn
+L	ab_10_12	359	|upkeep
+L	ab_10_12	360	|turn|31
+L	ab_10_12	361	|
+L	ab_10_12	362	|t:|<NORMALIZED>
+L	ab_10_12	363	|move|p1a: Arcanine|Mimic|p2a: Skarmory
+L	ab_10_12	364	|-activate|p1a: Arcanine|move: Mimic|Rock Slide
+L	ab_10_12	365	|move|p2a: Skarmory|Toxic|p1a: Arcanine
+L	ab_10_12	366	|-fail|p1a: Arcanine|tox
+L	ab_10_12	367	|debug|move failed because it did nothing
+L	ab_10_12	368	|
+L	ab_10_12	369	|-damage|p1a: Arcanine|45/330 tox|[from] psn
+L	ab_10_12	370	|upkeep
+L	ab_10_12	371	|turn|32
+L	ab_10_12	372	|
+L	ab_10_12	373	|t:|<NORMALIZED>
+L	ab_10_12	374	|move|p1a: Arcanine|Rock Slide|p2a: Skarmory
+L	ab_10_12	375	|-damage|p2a: Skarmory|121/268
+L	ab_10_12	376	|move|p2a: Skarmory|Rock Slide|p1a: Arcanine
+L	ab_10_12	377	|-supereffective|p1a: Arcanine
+L	ab_10_12	378	|-damage|p1a: Arcanine|0 fnt
+L	ab_10_12	379	|faint|p1a: Arcanine
+L	ab_10_12	380	|
+L	ab_10_12	381	|t:|<NORMALIZED>
+L	ab_10_12	382	|switch|p1a: Charizard|Charizard, M|271/271 slp
+L	ab_10_12	383	|
+L	ab_10_12	384	|upkeep
+L	ab_10_12	385	|turn|33
+L	ab_10_12	386	|
+L	ab_10_12	387	|t:|<NORMALIZED>
+L	ab_10_12	388	|cant|p1a: Charizard|slp
+L	ab_10_12	389	|move|p2a: Skarmory|Roar|p1a: Charizard
+L	ab_10_12	390	|drag|p1a: Mudkip|Mudkip, M|18/266 brn
+L	ab_10_12	391	|
+L	ab_10_12	392	|-damage|p1a: Mudkip|0 fnt|[from] brn
+L	ab_10_12	393	|faint|p1a: Mudkip
+L	ab_10_12	394	|upkeep
+L	ab_10_12	395	|
+L	ab_10_12	396	|t:|<NORMALIZED>
+L	ab_10_12	397	|switch|p1a: Linoone|Linoone, M|285/285
+L	ab_10_12	398	|turn|34
+L	ab_10_12	399	|
+L	ab_10_12	400	|t:|<NORMALIZED>
+L	ab_10_12	401	|move|p1a: Linoone|Iron Tail|p2a: Skarmory
+L	ab_10_12	402	|-resisted|p2a: Skarmory
+L	ab_10_12	403	|-damage|p2a: Skarmory|95/268
+L	ab_10_12	404	|-unboost|p2a: Skarmory|def|1
+L	ab_10_12	405	|move|p2a: Skarmory|Roar|p1a: Linoone
+L	ab_10_12	406	|drag|p1a: Charizard|Charizard, M|271/271 slp
+L	ab_10_12	407	|
+L	ab_10_12	408	|upkeep
+L	ab_10_12	409	|turn|35
+L	ab_10_12	410	|
+L	ab_10_12	411	|t:|<NORMALIZED>
+L	ab_10_12	412	|switch|p1a: Linoone|Linoone, M|285/285
+L	ab_10_12	413	|move|p2a: Skarmory|Cut|p1a: Linoone
+L	ab_10_12	414	|-damage|p1a: Linoone|224/285
+L	ab_10_12	415	|
+L	ab_10_12	416	|upkeep
+L	ab_10_12	417	|turn|36
+L	ab_10_12	418	|
+L	ab_10_12	419	|t:|<NORMALIZED>
+L	ab_10_12	420	|switch|p1a: Charizard|Charizard, M|271/271 slp
+L	ab_10_12	421	|move|p2a: Skarmory|Cut|p1a: Charizard
+L	ab_10_12	422	|-damage|p1a: Charizard|231/271 slp
+L	ab_10_12	423	|
+L	ab_10_12	424	|upkeep
+L	ab_10_12	425	|turn|37
+L	ab_10_12	426	|
+L	ab_10_12	427	|t:|<NORMALIZED>
+L	ab_10_12	428	|switch|p2a: Houndoom|Houndoom, M|306/326
+L	ab_10_12	429	|cant|p1a: Charizard|slp
+L	ab_10_12	430	|
+L	ab_10_12	431	|upkeep
+L	ab_10_12	432	|turn|38
+L	ab_10_12	433	|
+L	ab_10_12	434	|t:|<NORMALIZED>
+L	ab_10_12	435	|-curestatus|p1a: Charizard|slp|[msg]
+L	ab_10_12	436	|move|p1a: Charizard|Slash|p2a: Houndoom
+L	ab_10_12	437	|-damage|p2a: Houndoom|226/326
+L	ab_10_12	438	|move|p2a: Houndoom|Sunny Day|p2a: Houndoom
+L	ab_10_12	439	|-weather|SunnyDay
+L	ab_10_12	440	|
+L	ab_10_12	441	|-weather|SunnyDay|[upkeep]
+L	ab_10_12	442	|upkeep
+L	ab_10_12	443	|turn|39
+L	ab_10_12	444	|
+L	ab_10_12	445	|t:|<NORMALIZED>
+L	ab_10_12	446	|move|p1a: Charizard|Double-Edge|p2a: Houndoom
+L	ab_10_12	447	|-damage|p2a: Houndoom|76/326
+L	ab_10_12	448	|-damage|p1a: Charizard|181/271|[from] Recoil|[of] p2a: Houndoom
+L	ab_10_12	449	|move|p2a: Houndoom|Mimic|p1a: Charizard
+L	ab_10_12	450	|-activate|p2a: Houndoom|move: Mimic|Double-Edge
+L	ab_10_12	451	|
+L	ab_10_12	452	|-weather|SunnyDay|[upkeep]
+L	ab_10_12	453	|upkeep
+L	ab_10_12	454	|turn|40
+L	ab_10_12	455	|
+L	ab_10_12	456	|t:|<NORMALIZED>
+L	ab_10_12	457	|move|p1a: Charizard|Slash|p2a: Houndoom
+L	ab_10_12	458	|-damage|p2a: Houndoom|0 fnt
+L	ab_10_12	459	|faint|p2a: Houndoom
+L	ab_10_12	460	|
+L	ab_10_12	461	|t:|<NORMALIZED>
+L	ab_10_12	462	|switch|p2a: Skarmory|Skarmory, M|95/268
+L	ab_10_12	463	|
+L	ab_10_12	464	|-weather|SunnyDay|[upkeep]
+L	ab_10_12	465	|upkeep
+L	ab_10_12	466	|turn|41
+L	ab_10_12	467	|
+L	ab_10_12	468	|t:|<NORMALIZED>
+L	ab_10_12	469	|move|p1a: Charizard|Rest|p1a: Charizard
+L	ab_10_12	470	|-status|p1a: Charizard|slp|[from] move: Rest
+L	ab_10_12	471	|-heal|p1a: Charizard|271/271 slp|[silent]
+L	ab_10_12	472	|move|p2a: Skarmory|Rock Slide|p1a: Charizard
+L	ab_10_12	473	|-supereffective|p1a: Charizard
+L	ab_10_12	474	|-damage|p1a: Charizard|19/271 slp
+L	ab_10_12	475	|
+L	ab_10_12	476	|-weather|SunnyDay|[upkeep]
+L	ab_10_12	477	|upkeep
+L	ab_10_12	478	|turn|42
+L	ab_10_12	479	|
+L	ab_10_12	480	|t:|<NORMALIZED>
+L	ab_10_12	481	|cant|p1a: Charizard|slp
+L	ab_10_12	482	|move|p2a: Skarmory|Toxic||[still]
+L	ab_10_12	483	|-fail|p2a: Skarmory
+L	ab_10_12	484	|debug|move failed because it did nothing
+L	ab_10_12	485	|
+L	ab_10_12	486	|-weather|none
+L	ab_10_12	487	|upkeep
+L	ab_10_12	488	|turn|43
+L	ab_10_12	489	|
+L	ab_10_12	490	|t:|<NORMALIZED>
+L	ab_10_12	491	|cant|p1a: Charizard|slp
+L	ab_10_12	492	|move|p2a: Skarmory|Rock Slide|p1a: Charizard
+L	ab_10_12	493	|-supereffective|p1a: Charizard
+L	ab_10_12	494	|-damage|p1a: Charizard|0 fnt
+L	ab_10_12	495	|faint|p1a: Charizard
+L	ab_10_12	496	|
+L	ab_10_12	497	|t:|<NORMALIZED>
+L	ab_10_12	498	|switch|p1a: Linoone|Linoone, M|224/285
+L	ab_10_12	499	|
+L	ab_10_12	500	|upkeep
+L	ab_10_12	501	|turn|44
+L	ab_10_12	502	|
+L	ab_10_12	503	|t:|<NORMALIZED>
+L	ab_10_12	504	|move|p1a: Linoone|Iron Tail|p2a: Skarmory
+L	ab_10_12	505	|-resisted|p2a: Skarmory
+L	ab_10_12	506	|-damage|p2a: Skarmory|67/268
+L	ab_10_12	507	|-unboost|p2a: Skarmory|def|1
+L	ab_10_12	508	|move|p2a: Skarmory|Toxic|p1a: Linoone
+L	ab_10_12	509	|-status|p1a: Linoone|tox
+L	ab_10_12	510	|
+L	ab_10_12	511	|-damage|p1a: Linoone|207/285 tox|[from] psn
+L	ab_10_12	512	|upkeep
+L	ab_10_12	513	|turn|45
+L	ab_10_12	514	|
+L	ab_10_12	515	|t:|<NORMALIZED>
+L	ab_10_12	516	|move|p1a: Linoone|Iron Tail|p2a: Skarmory
+L	ab_10_12	517	|-resisted|p2a: Skarmory
+L	ab_10_12	518	|-damage|p2a: Skarmory|28/268
+L	ab_10_12	519	|-unboost|p2a: Skarmory|def|1
+L	ab_10_12	520	|move|p2a: Skarmory|Cut|p1a: Linoone
+L	ab_10_12	521	|-damage|p1a: Linoone|150/285 tox
+L	ab_10_12	522	|
+L	ab_10_12	523	|-damage|p1a: Linoone|116/285 tox|[from] psn
+L	ab_10_12	524	|upkeep
+L	ab_10_12	525	|turn|46
+L	ab_10_12	526	|
+L	ab_10_12	527	|t:|<NORMALIZED>
+L	ab_10_12	528	|switch|p2a: Torkoal|Torkoal, M|293/293
+L	ab_10_12	529	|move|p1a: Linoone|Surf|p2a: Torkoal
+L	ab_10_12	530	|-supereffective|p2a: Torkoal
+L	ab_10_12	531	|-damage|p2a: Torkoal|161/293
+L	ab_10_12	532	|
+L	ab_10_12	533	|-damage|p1a: Linoone|65/285 tox|[from] psn
+L	ab_10_12	534	|upkeep
+L	ab_10_12	535	|turn|47
+L	ab_10_12	536	|
+L	ab_10_12	537	|t:|<NORMALIZED>
+L	ab_10_12	538	|move|p1a: Linoone|Return|p2a: Torkoal
+L	ab_10_12	539	|-damage|p2a: Torkoal|69/293
+L	ab_10_12	540	|move|p2a: Torkoal|Flail|p1a: Linoone
+L	ab_10_12	541	|debug|BP: 80
+L	ab_10_12	542	|-damage|p1a: Linoone|0 fnt
+L	ab_10_12	543	|faint|p1a: Linoone
+L	ab_10_12	544	|
+L	ab_10_12	545	|win|P2

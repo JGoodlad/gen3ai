@@ -19,6 +19,12 @@ Two fixture classes:
     request moves (the lazy choice lock at request-build).
   - `14_snatch_pressure_pp_cg.txt` (bab_4_16) → the B5 fix: a Snatch steal of a Pressure
     victim's move deducts 2 Snatch PP (the DeductPP Pressure extra).
+  - `20_mimic_slot_request_omits_target_cg.txt` (bab_11_17, `--mode random`) →
+    `gen3_mimic_request_no_target_v1`: a MIMIC-acquired active slot carries **no `target`
+    key at all** (gen3 inherits gen4's Mimic, whose replacement move-slot literal —
+    `data/mods/gen4/moves.ts:868` — omits the `target` the base `data/moves.ts` mimic sets,
+    so `getMoveRequestData` reads `undefined` and `JSON.stringify` drops the key). The
+    mon's other three slots keep theirs, so a blanket omission fails this fixture too.
 - **`# ALLOWLIST <reason>` tagged** (`10_*`, `11_*`, `15_*`, `16_*`) — a battle that MUST
   diverge with EXACTLY the tagged `allowlisted` reason:
   - `10_allowlist_curse_target.txt` → `curse-nonghost-target-self-vs-normal`

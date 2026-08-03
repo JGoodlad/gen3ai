@@ -140,6 +140,13 @@ const ENGINE_CONDITIONS = [
   // Standalone conditions (the moves' `volatileStatus: 'trapped'` refers to the global
   // condition, not an `m.condition` sub-object), so enumerated explicitly.
   'trapped', 'trapper',
+  // The PARTIAL-TRAP volatile (`gen3_partial_trap_v1`, MonState::partial_trap — Wrap /
+  // Bind / Fire Spin / Clamp / Whirlpool / Sand Tomb). A standalone condition (the moves'
+  // `volatileStatus: 'partiallytrapped'` refers to the global condition, not an
+  // `m.condition` sub-object), so it must be enumerated explicitly — that is precisely why
+  // its gen4 `durationCallback`/order override and gen5 `onStart`/`onResidual` override
+  // need a fingerprint row here.
+  'partiallytrapped',
   // format clauses (BattleState::sleep_clause — gen3ou carries BOTH clauses)
   'sleepclausemod', 'freezeclausemod',
 ];

@@ -226,49 +226,89 @@ impl crate::state::BattleState {
     /// probe-verified) and no Illusion (`knownType` always true), so `MaybeTrapPokemon`
     /// ALWAYS runs after `TrapPokemon` (battle.ts:1725 gate passes).
     ///
-    /// With >= 2 handlers the sort ties iff the holders' cached `pokemon.speed` are equal
-    /// (abilities share order/priority/subOrder; `effectOrder` is only resolved for
-    /// SwitchIn/RedirectTarget callbacks) → ONE Fisher-Yates draw per tied event. The
-    /// MAGNETON MIRROR (both actives Magnet Pull, equal speeds) therefore draws
-    /// **4 per endTurn** (2 events × 2 mons, 1 each — probed 11 vs the Sturdy-control's
-    /// 7 draws/turn, seed-verified); the DUGTRIO MIRROR (Arena Trap is `onFoe`-only → 1
-    /// handler per event) draws ZERO (probed byte-identical seeds to a Sand Veil control).
+    /// With >= 2 handlers the sort ties iff the holders' cached `pokemon.speed` AND their
+    /// `subOrder` are equal (`effectOrder` is only resolved for SwitchIn/RedirectTarget
+    /// callbacks) → ONE Fisher-Yates draw per tied GROUP per event. `subOrder` is the
+    /// `effectTypeOrder` table at `sim/battle.ts:957`: **Condition 2, Ability 7** — so a
+    /// Condition handler NEVER ties an Ability handler. The MAGNETON MIRROR (both actives
+    /// Magnet Pull, equal speeds) therefore draws **4 per endTurn** (2 events × 2 mons, 1
+    /// each — probed 11 vs the Sturdy-control's 7 draws/turn, seed-verified); the DUGTRIO
+    /// MIRROR (Arena Trap is `onFoe`-only → 1 handler per event) draws ZERO (probed
+    /// byte-identical seeds to a Sand Veil control).
+    ///
+    /// **THE CONDITION HANDLERS** (`gen3_partial_trap_v1`, found by the ROUND-32 byte fuzz —
+    /// repro `rmsde6xp4_ab_10_9`, an Onix that Blocks and then Sand Tombs the same
+    /// Wartortle). TWO gen-3 volatiles carry `onTrapPokemon`: the trap-MOVE `trapped`
+    /// (Mean Look / Spider Web / Block — `MonState::trapped_by`) and `partiallytrapped`
+    /// (the wrap family — `MonState::partial_trap`). Alone, each adds ONE handler at
+    /// subOrder 2 that can never tie an Ability's 7, which is why the pre-round-32 model
+    /// (abilities only) was correct while only ONE of them could exist. Held TOGETHER on the
+    /// same mon they are two handlers with the SAME speed AND the SAME subOrder ⇒ a TIE ⇒
+    /// **ONE extra `random(0,2)` per endTurn, for as long as both are live**.
+    /// PROBE-MEASURED (`harness/probe_ptrap_trapevent.js`, idle-turn draws vs a clean
+    /// control): block-only **+0**, sandtomb-only **+0**, BOTH live **+1**,
+    /// arena-trap-only **+0**. Exactly ONE, not two, because **only `TrapPokemon` gathers
+    /// them** — neither condition carries an `onMaybeTrapPokemon`, so the MaybeTrapPokemon
+    /// event still sees only the ability handlers. Hence the two events are built from
+    /// DIFFERENT handler lists below.
     fn trap_event_shuffles(&mut self, side: usize) {
         let foe_side = 1 - side;
         let me = &self.sides[side].pokemon[self.sides[side].active];
         let foe = &self.sides[foe_side].pokemon[self.sides[foe_side].active];
-        // Handler speeds for ONE trap event on `me` (same matrix for both events).
-        let mut speeds: Vec<f64> = Vec::with_capacity(2);
+        // The ABILITY handlers (subOrder 7) — present on BOTH trap events.
+        let mut abilities: Vec<f64> = Vec::with_capacity(2);
         // alliesAndSelf: own onAny* — gen-3 Magnet Pull only.
         if to_id(&me.ability) == "magnetpull" {
-            speeds.push(me.cached_speed as f64);
+            abilities.push(me.cached_speed as f64);
         }
         // foes(): onFoe* (Arena Trap) + onAny* (Magnet Pull) — `foes()` filters fainted.
         if !foe.fainted {
             let foe_ability = to_id(&foe.ability);
             if foe_ability == "arenatrap" || foe_ability == "magnetpull" {
-                speeds.push(foe.cached_speed as f64);
+                abilities.push(foe.cached_speed as f64);
             }
         }
-        if speeds.len() < 2 {
-            return; // 0/1 handlers → no sort tie possible → draw-free (the common case)
+        // The CONDITION handlers (subOrder 2) — the TARGET mon's OWN volatiles, and ONLY on
+        // the `TrapPokemon` event (neither carries `onMaybeTrapPokemon`).
+        let mut conditions: Vec<f64> = Vec::with_capacity(2);
+        if me.trapped_by.is_some() {
+            conditions.push(me.cached_speed as f64);
         }
-        // TrapPokemon then MaybeTrapPokemon — each a speed_sort over the same handlers.
-        for _ in 0..2 {
-            let mut handlers: Vec<EventHandler<usize>> = speeds
+        if me.partial_trap.is_some() {
+            conditions.push(me.cached_speed as f64);
+        }
+
+        const ABILITY_SUBORDER: i32 = 7;
+        const CONDITION_SUBORDER: i32 = 2;
+        let sort = |st: &mut Self, list: &[(f64, i32)]| {
+            if list.len() < 2 {
+                return; // 0/1 handlers → no sort tie possible → draw-free (the common case)
+            }
+            let mut handlers: Vec<EventHandler<usize>> = list
                 .iter()
                 .enumerate()
-                .map(|(i, &speed)| EventHandler {
+                .map(|(i, &(speed, sub_order))| EventHandler {
                     order: NO_ORDER,
                     priority: 0,
                     speed,
-                    sub_order: 0,
+                    sub_order,
                     effect_order: 0,
                     handler: i,
                 })
                 .collect();
-            speed_sort(&mut handlers, &mut self.prng);
-        }
+            speed_sort(&mut handlers, &mut st.prng);
+        };
+
+        // (1) TrapPokemon — conditions (the target's own volatiles, gathered by
+        //     `findPokemonEventHandlers` before the allies/foes sweep) THEN abilities.
+        let mut trap_list: Vec<(f64, i32)> =
+            conditions.iter().map(|&s| (s, CONDITION_SUBORDER)).collect();
+        trap_list.extend(abilities.iter().map(|&s| (s, ABILITY_SUBORDER)));
+        sort(self, &trap_list);
+        // (2) MaybeTrapPokemon — abilities only.
+        let maybe_list: Vec<(f64, i32)> =
+            abilities.iter().map(|&s| (s, ABILITY_SUBORDER)).collect();
+        sort(self, &maybe_list);
     }
 
     /// `updateSpeed()` (`battle.js:241` / `pokemon.js:283`): refresh BOTH actives'

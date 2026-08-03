@@ -537,6 +537,22 @@ add([mv('meanlook', 'onHit'), mv('spiderweb', 'onHit'), mv('block', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the trap-move arm: protect block → substitute block ([still]+-fail) → already-trapped fail → the linked trapped_by = Some(trapper uid); ZERO draws every branch (MC90/MC91)'));
 add([cond('trapped', 'onStart'), cond('trapped', 'onTrapPokemon'), cond('trapped', 'noCopy'), cond('trapper', 'noCopy')],
   IMPL('turn.rs::is_trapped', 'the FIRM trap (trap_is_firm true — the Shadow-Tag request shape); noCopy FALSE → the Baton Pass snapshot PASSES trapped_by (the link re-points, MC91); the link ends when the trapper leaves ANY way (execute_switch source-left clear + the process_faints corpse clear)'));
+// PARTIAL TRAP (`gen3_partial_trap_v1`) — the wrap family + the resolved `partiallytrapped`
+// condition (base `data/conditions.ts` shadowed by the gen5 onStart/onResidual and the gen4
+// durationCallback/order overrides). Probe-settled: probe_batch89_trap.js + probe_ptrap_edges{,2}.js.
+add([mv('wrap', 'volatileStatus'), mv('bind', 'volatileStatus'), mv('firespin', 'volatileStatus'),
+     mv('clamp', 'volatileStatus'), mv('whirlpool', 'volatileStatus'), mv('sandtomb', 'volatileStatus')],
+  IMPL('turn.rs::is_partial_trap_move', 'the post-hit partial-trap arm in run_move: gated on !absorbed (a Substitute intercepts before runMoveEffects — no volatile, NO duration draw) + a LIVE target (addVolatile early-returns on hp 0) + no trap already present (addVolatile returns false, no -fail); sets MonState::partial_trap and emits |-activate|<t>|move: <M>|[of] <u> after the -damage'));
+add([cond('partiallytrapped', 'durationCallback'), cond('partiallytrapped', 'duration')],
+  IMPL('turn.rs::run_move', 'THE family\'s ONE new draw: the gen4 override random(3,7) (uniform over {3,4,5,6}; the gripclaw arm is dead in gen3) stored as PartialTrap::duration. The base `duration: 5` is fully shadowed by the callback, so it never reaches the engine'));
+add([cond('partiallytrapped', 'onStart')],
+  IMPL('turn.rs::run_move', 'the gen5-override onStart: |-activate|<victim>|move: <Move>|[of] <trapper>. Its boundDivisor branch is CONSTANT 16 in gen3 (no Binding Band / Grip Claw), so the divisor is not stored'));
+add([cond('partiallytrapped', 'onResidual'), cond('partiallytrapped', 'onResidualOrder'),
+     cond('partiallytrapped', 'onResidualSubOrder'), cond('partiallytrapped', 'onEnd')],
+  IMPL('turn.rs::apply_partial_trap', 'the order-10 subOrder-9 residual: duration-- FIRST (at 0 the onEnd fires |-end|<m>|<Move>|[partiallytrapped] with the DURATION-END `continue` and NO chip — this WINS over the trapper-gone branch, probe O), else the trapper-gone release (|-end|…|[silent], no chip) else the floor(maxhp/16) chip |-damage|…|[from] move: <Move>|[partiallytrapped] (Focus Band draws its onDamage roll, never survives)'));
+add([cond('partiallytrapped', 'onTrapPokemon')],
+  IMPL('turn.rs::is_trapped', 'the FIRM trap (bare tryTrap() → trapped:true on the FIRST request, a rejected switch is [Invalid choice] with NO re-request — probe M); the `source?.isActive` guard is mirrored by re-reading the foe active\'s uid, and the gmax arm is gen8-only (dead in gen3)'));
+
 add([mv('bellydrum', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the bellydrum arm: the FLOAT hp<=maxhp/2 gate as integer-exact 2*hp<=maxhp (262/524 fails, 263 succeeds — MC92) + atk>=6 + maxhp==1 fails; directDamage(floor(maxhp/2)) then the SET to +6 (-setboost)'));
 add([mv('charge', 'volatileStatus'), cond('charge', 'onStart'), cond('charge', 'onRestart')],
@@ -549,6 +565,9 @@ add([mv('memento', 'boosts'), mv('memento', 'selfdestruct')],
   IMPL('turn.rs::run_status_move', 'the memento arm: protect/sub block (NO faint — ifHit); the −2/−2 drops via apply_secondary_boost (Clear-Body gated; the user faints even when blocked/floored) then the self-faint through the deferred-faint protocol (gen3 faint-cancels-all + no QC → the ZERO-draw landed turn, MC94)'));
 add([mv('mimic', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the mimic arm: sub / no-lastMove / failmimic (data-driven MoveData::fail_mimic) / already-known fails ([still]+-fail, draw-free); the copy overlays the slot {pp: min(5, base), maxpp: calculatePP(copied,3)} via MonState::mimic_overlay; restore_mimic_overlay reverts on switch-out/faint (MC95)'));
+// TRANSFORM (gen3_transform_v1, ROUND 33) — the copy-overlay move.
+add([mv('transform', 'onHit')],
+  IMPL('turn.rs::run_status_move', 'the transform arm (pokemon.transformInto): fainted / already-transformed target fails ([still]+-fail, draw-free — the USER being transformed does NOT block, that guard is gen5+); the copy overwrites species/types/5 non-HP stats/ability/all 7 boosts/moveslots {pp: min(5, base), maxpp: calculatePP(copied, ppUps[i] || 0) — the 1-move randbats Ditto gets NO pp-ups on slots 1-3}/hpType+hpPower via MonState::transform, sets cached_speed to the HYBRID spreadModify(TARGET base, OWN set).spe that setSpecies leaves behind, re-keys the slot-keyed choicelock/disable/lastMove references, and emits |-transform|U|T; restore_transform_overlay reverts on switch-out/faint (TF1-TF7)'));
 add([mv('painsplit', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the painsplit arm: protect/sub block; avg = floor((u+t)/2), EACH side clamped at its OWN maxhp (MC96); -sethp target [silent] then user'));
 add([mv('psychup', 'onHit')],
@@ -570,6 +589,7 @@ add([mv('bellydrum', 'ignoreImmunity'), mv('bellydrum', 'neverMiss'),
      mv('memento', 'ignoreImmunity'), mv('memento', 'neverMiss'),
      mv('mimic', 'ignoreImmunity'), mv('mimic', 'neverMiss'),
      mv('painsplit', 'ignoreImmunity'), mv('painsplit', 'neverMiss'),
+     mv('transform', 'ignoreImmunity'), mv('transform', 'neverMiss'),
      mv('perishsong', 'ignoreImmunity'), mv('perishsong', 'neverMiss'),
      mv('psychup', 'ignoreImmunity'), mv('psychup', 'neverMiss'),
      mv('spiderweb', 'ignoreImmunity'), mv('spiderweb', 'neverMiss')],

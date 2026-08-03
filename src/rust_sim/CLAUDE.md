@@ -1389,8 +1389,11 @@ same `damage()`) → self-drop (`selfDrops`) → secondaries → onAfterHit (ite
   `damagedTargets`, which a sub-absorbed hit leaves empty; the target keeps its item behind a sub).
   DRAW-FREE (the `TakeItem` event / `takeItem` consume no PRNG).
 - **RAPID SPIN** (`turn.rs::apply_rapid_spin`) — after a LANDED hit CLEARS the USER's OWN side
-  Spikes (`SideState::spikes = 0`) + the USER's Leech Seed (`leech_seed = None`) + partial-trap
-  (N/A — no partial-trap move in scope). Carries BOTH `onAfterHit` AND `onAfterSubDamage`, so it
+  Spikes (`SideState::spikes = 0`) + the USER's Leech Seed (`leech_seed = None`) + the PARTIAL TRAP
+  (`partial_trap = None` — `gen3_partial_trap_v1`, ROUND 32; the gen4-mod handler's LAST step, a
+  `removeVolatile` so the condition's `onEnd` fires → the NON-silent
+  `|-end|<user>|<Move>|[partiallytrapped]` with NO `[from] move: Rapid Spin` tag, unlike the two
+  clears above). Carries BOTH `onAfterHit` AND `onAfterSubDamage`, so it
   clears behind a SUBSTITUTE too (`dealt > 0`, mon OR sub — UNLIKE Knock Off's `!absorbed` gate).
   DRAW-FREE. gen3 has only Spikes among the hazards. Emitted `|-end|<user>|Leech Seed|[from] move:
   Rapid Spin|[of] <user>` then `|-sideend|<user-side>|Spikes|[from] move: Rapid Spin|[of] <user>`.
@@ -3335,9 +3338,12 @@ e2e md5 unchanged):
   resolves both). Pinned by `perside_request_residual_tests` (co-occurrence allowlisted + a genuine-diff
   NOT swallowed). Verified GREEN: omniscient pool both formats (0 non-allowlisted) + `random` mode confirms
   the 7 emission forms GONE + bridge pool 0 diverged (curse-target 73 / return102 10 correctly allowlisted).
-  HONESTLY-OPEN random-mode-only residuals (NOT gen3ou POOL, deferred): a phaze `[miss]` on an evasion-miss,
-  and the Damp-cancels-Self-Destruct `[still]` form. (The Protect-vs-Soundproof TryHit order was FIXED in
-  round-8 FIX below.)
+  ~~HONESTLY-OPEN random-mode-only residuals (NOT gen3ou POOL, deferred): a phaze `[miss]` on an
+  evasion-miss, and the Damp-cancels-Self-Destruct `[still]` form.~~ (The Protect-vs-Soundproof TryHit
+  order was FIXED in round-8 FIX below.) ⚠️ **BOTH of those are now CLOSED and this line is HISTORICAL** —
+  the Damp `[still]` announce in **ROUND 22** (fixture `42_damp_blocks_explosion_move_still.txt`), the
+  phaze/evasion + Attract `-end` forms across **ROUNDS 25/26**. Round 30 re-measured the benchmark and
+  found **0 protocol divergences**; do NOT re-open these from this paragraph without re-measuring first.
 
 ### ROUND 8 (FIX) — the deeper needs-triage edges (Quick Claw P1/P2, Protect-vs-Soundproof P4b) + the 2 missing pins
 
@@ -4591,7 +4597,9 @@ DRAW-FREE so the seed/omniscient diffs are blind to them. Suite **567 passed / 0
 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED, corpus fixture 68 still clean.
 
 - **THE WRAP FAMILY is now FAIL-LOUD too** (`gen3_unmodeled_move_failloud_v1`, generalising the
-  Transform guard below; repro `soak3/divergences/sbd_msb1zfxs_b237`). Node emitted
+  Transform guard below; repro `soak3/divergences/sbd_msb1zfxs_b237`). ⚠️ **SUPERSEDED by ROUND 32
+  (`gen3_partial_trap_v1`) — the family is MODELED and the guard is retired**; the paragraph is kept
+  as the deferral record. Node emitted
   `|-activate|p1a: Snorlax|move: Wrap|[of] p2a: Shuckle`; the port emitted nothing.
   `wrap`/`bind`/`firespin`/`clamp`/`whirlpool`/`sandtomb` have ZERO engine references — the port ran
   them as PLAIN damaging moves, which loses THREE things at once: the `random(3,7)` duration **draw**,
@@ -4846,6 +4854,381 @@ SAME `classifyKnownResidual` allowlist as the main path (without it the document
 DIFFERING REGION rather than a fixed 200-char prefix (these are long `|request|` JSON lines whose heads
 are identical). The differ's `--selftest` and normal mode are unaffected.
 
+### ROUND 30 (FIX) — the OFFLINE resume drops the turn-0 QUICK CLAW roll → the random-mode gate is GREEN
+
+`gen3_turn0_quick_claw_capture_v1`. Re-running the documented benchmark
+(`--mode random --protocol --master-seed 100125 --battles 1000`) left **3** divergences — 2 `kind=seed`
++ 1 `kind=firstmover`, **0 protocol** — and ALL THREE at `dec=0`. That shared index was the tell: this
+is ONE bug wearing three hats, not three findings.
+
+**THE MECHANISM.** gen3 rolls `Battle.quickClawRoll` (`randomChance(1,5)`) at every COMPLETED `endTurn`
+and READS it on the NEXT turn (`gen3_quick_claw_speed_v1`), so **turn 1's value is decided during the
+turn-0 CONSTRUCTION WINDOW**. The offline replay convention deliberately resumes from the
+POST-construction state: `gen_e2e_fuzz.js` captures `initSeed` AT the first decision request, and the
+port's offline entry `start_with_switchins` is draw-free. The SEED was captured; the BOOLEAN — equally
+part of that post-construction state, and unrecoverable from the seed — was silently DROPPED. So the
+port always resumed with its `quick_claw_roll: false` default and mis-ordered turn 1 whenever a Quick
+Claw led and the roll came up true: ~1 lead in 5. `seed` vs `firstmover` is merely which assertion trips
+first (if the Quick Claw holder was already faster the order is unchanged but the draw stream still shifts).
+
+**PROBE-SETTLED, not source-read** (`harness/probe_turn0_quickclaw_offline.js`, replaying each repro's
+RAW `>start` seed through the omniscient BattleStream). All three repros: construction = exactly **1**
+draw, `quickClawRoll = true`, a Quick Claw LEADING, and the computed post-construction seed reproduces
+the repro's recorded `INIT` EXACTLY — that last equality is a hard gate in the probe, since if it failed
+the whole theory would be wrong.
+
+**FIX** — capture the bit and restore it, on BOTH offline replayers:
+- `gen_e2e_fuzz.js` records `battle.quickClawRoll` at decision 0 and appends it as an OPTIONAL 5th
+  `INIT` field; `ab_replay.rs` parses it (`init_quick_claw`) and applies it AFTER the `init_seed` check,
+  so it can never mask a genuine seed divergence.
+- the BRIDGE sibling had the IDENTICAL latent defect (`gen_bridge_capture.js` reads `initSeed` after
+  `>player` too, and `BridgeSession::new` resumes via `start_with_switchins`). Wired symmetrically:
+  an optional 6th `INIT` field → `GoldenBattle::quick_claw_roll` → `bin/bridge_replay`. Because that
+  driver **replays from genesis at every boundary**, the roll is restored inside `replay_snapshot` (and
+  the framing build), NOT once at the caller — setting it once would be silently dropped from decision 1
+  on. The LIVE bridge is unaffected: `sim_bridge` uses `new_construct_turn0`, which runs the real
+  construction from the raw seed.
+- every new entry is an ADDITIVE `*_with_quick_claw` variant whose plain sibling passes `false`, so no
+  existing signature or caller changed, and the genesis-vs-incremental parity assertion holds for BOTH
+  values of the flag rather than only the default.
+
+**ABSENT ⇒ `false` ⇒ byte-for-byte the pre-fix behaviour**, so every committed golden and saved repro
+dir stays replayable — the committed goldens still carry 4-field `INIT`, which means the whole e2e gate
+exercises the backward-compat path on every run.
+
+**RE-MEASURE** (same command, HEAD vs fixed): **3 diverged → 0. GREEN-GATE PASS, 1000/1000 ok**, 41,335
+decisions, 372 species / 251 moves exercised. Full suite **574/0**, e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` UNCHANGED. Corpus fixture
+`71_turn0_quick_claw_roll_survives_the_offline_resume.txt` (the ab_10_12 repro, `quickClawRoll=1`),
+revert-verified ONE-TO-ONE: neutering the apply diverges it at exactly its own `firstmover` line.
+
+⚠️ **THE STALE-RESIDUAL LESSON.** This round began from a carried-forward "3 open emission residuals"
+list (phaze evasion-miss `[miss]` / Damp-cancels-Self-Destruct `[still]` / Attract `-end` ordering).
+**All three were already CLOSED** — by rounds 22 and 26 — and the note repeating them was round-7 text
+that no one had re-measured. Re-running the benchmark cost ~13 minutes and replaced a stale list with
+the real tail. **Re-measure before you re-open: a divergence list is a snapshot, not a standing fact.**
+
+### ROUND 31 (FIX) — the PER-SIDE gate in `--mode random`: two ALLOWLIST bugs + one real Mimic byte
+
+The round-30 quick-claw capture made the OMNISCIENT random-mode gate green, so the same measurement
+was run on its PER-SIDE sibling (`bridge_ab_fuzz.js --mode random --master-seed 20260802 --battles
+400`) — a surface the per-side gate had **never been measured on** (rounds 4-20 ran `pool` /
+`trapping`, the 24h soaks ran `randbats`). It read **252 of 400 diverged (63%), ALL `kind=request`**.
+A 63% divergence rate is not an engine tail — **that shape is a GATE bug**, and it was two of them,
+plus one genuine byte difference underneath.
+
+**(1) `gen3_happiness_bp_alias_any_digits_v1` — the numeric-BP allowlist hardcoded `102`.** The
+suffix is the move's COMPUTED base power: Return is `max(1, floor(happiness · 2 / 5))` → **102** at
+the default happiness 255, and Frustration is the mirror `max(1, floor((255 − happiness) · 2 / 5))`
+→ raw 0, **clamped to 1** ⇒ the sim renders **`frustration1` / `Frustration 1`, never
+`frustration102`**. So the Frustration arm could not match a single real battle: every
+Frustration-bearing board left a residual, the WHOLE reconcile returned `None`, and a co-occurring
+CORRECTLY-handled `return102` failed the gate with it. FIX: `strip_bp_alias` collapses
+`<name><digits>` / `<Name> <digits>` for ANY digit run, boundary-anchored (a move that merely ENDS in
+the token is untouched). ⚠️ **PAIRWISE, not a symmetric STRIP** — it returns the removed digit runs
+and the classify BAILS when both sides render a numeric BP that DISAGREES (`return102` vs `return84`
+= a mis-parsed happiness, a real bug), because a symmetric strip is exactly the vacuous-gate failure
+the external-consistency round names. The SAME hole existed in `harness/gen_sim_bridge_diff.js` (its
+keys mirror this allowlist, and its `--selftest` even asserted the impossible `frustration102` form)
+— fixed symmetrically there, with the transform contract widened to an `applyPair` that may REFUSE.
+
+**(2) `gen3_curse_reconcile_slot_bounded_v1` — the "dormant" Curse arm was corrupting the reconcile.**
+`reconcile_curse_target` anchored at the curse id and then searched to the END of the line for
+`"target":"normal"`. Once `gen3_bridge_curse_request_target_v1` made the port emit the correct
+`"target":"self"`, that search ran PAST the curse slot and rewrote the **NEXT slot's** target — an
+unrelated Double Edge — MANUFACTURING a divergence on a line whose curse was already byte-correct.
+The doc comment claimed "without disturbing any other slot"; nothing enforced it. FIX: bound the
+rewrite to the curse's own `{...}` object (the next `}`), and require the SIM's curse slot to
+actually carry `target:self` (a GHOST holder's Curse is genuinely `normal` on both sides).
+
+**(3) `gen3_mimic_request_no_target_v1` — a REAL port byte bug (the residual underneath).** With the
+gate fixed, 9 of 400 remained; 5 were one clean cluster: the sim's active move object for a
+MIMIC-acquired slot carries **NO `target` key at all** (`…"pp":5,"maxpp":24,"disabled":false`).
+SOURCE-SETTLED: gen3 inherits **gen4's** Mimic, and that override's replacement move-slot literal
+(`data/mods/gen4/moves.ts:868`) OMITS the `target` field the BASE `data/moves.ts` mimic sets, so
+`getMoveRequestData`'s `let target = moveSlot.target` reads `undefined` and `JSON.stringify` drops
+the key. (`pp: Math.min(5, move.pp)` with the full PP-up'd `maxpp` is the same literal's signature —
+that pp-5-with-full-maxpp shape is what identified it.) FIX: `bridge.rs::serialize_active` omits the
+key for the slot named by `MonState::mimic_overlay`, so the mon's other three moves keep their
+targets and the key returns when the overlay is restored on switch-out / faint.
+
+**RE-MEASURE** (same seed + battle count, HEAD vs fixed): **252 → 0 diverged, GREEN-GATE PASS**
+(400 battles, 384 correctly allowlisted `return102-numeric-alias`, 0 panics, 372 species rostered). Full suite **579 passed / 0 failed**, e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` UNCHANGED. Gates: 4 new `perside_request_residual_tests` (the
+clamped-BP-1 alias; the differing-BP negative; the curse-slot bound; a ghost-Curse negative), 2 new
+`--selftest` positives + 2 negatives in the JS gate, and bridge-corpus fixture
+`20_mimic_slot_request_omits_target_cg.txt` — each of the three fixes revert-verified ONE-TO-ONE.
+
+⚠️ **THE MODE-COVERAGE LESSON (a sibling of round 30's stale-residual one).** Every one of these
+three had been live for rounds, in the *most-audited* allowlist in the project, and no gate saw them
+— because the per-side gate had only ever been pointed at `pool` / `trapping` / `randbats`, whose
+teams never pair a Frustration with a Curse or Mimic a move. **The same measurement on a new team
+distribution is a different test.** It is also the third time a "dormant/legacy, retained
+defensively" branch turned out to be actively misfiring: a reconcile arm that can never be exercised
+by the current serializer should be DELETED or pinned, not narrated.
+
+### ROUND 32 (FIX) — the PARTIAL-TRAP family: the last big unmodeled-move hole closes
+
+`gen3_partial_trap_v1`. The wrap family — **Wrap / Bind / Fire Spin / Clamp / Whirlpool / Sand
+Tomb**, the six gen-3 moves carrying `volatileStatus: 'partiallytrapped'` — was the second half of
+`gen3_unmodeled_move_failloud_v1` (with Transform), fail-louding at construction since the
+external-consistency gate caught it (`soak3/divergences/sbd_msb1zfxs_b237`: node emitted
+`|-activate|p1a: Snorlax|move: Wrap|[of] p2a: Shuckle`, the port emitted nothing). Unmodeled it was a
+**TRIPLE** desync, not a no-op: the port lost a DRAW, the chip, and the switch-legality.
+
+**THE RESOLVED CONDITION — a THREE-generation composite.** `partiallytrapped` is the base
+`data/conditions.ts` row shadowed by BOTH a **gen5** and a **gen4** override, and gen3 inherits the
+composite (the mod-chain law — never read one file):
+  * **gen5** (`data/mods/gen5/conditions.ts:8`) replaces `onStart` + `onResidual`: `boundDivisor =
+    hasItem('bindingband') ? 8 : 16` — **gen3 has neither Binding Band nor Grip Claw, so it is
+    ALWAYS 16** — and the residual's trapper-gone release branch.
+  * **gen4** (`data/mods/gen4/conditions.ts:110`) replaces `durationCallback` with
+    `this.random(3, 7)` and sets `onResidualOrder: 10, onResidualSubOrder: 9`.
+  * the base supplies `onEnd` and `onTrapPokemon` (a bare `tryTrap()` — a **FIRM** trap).
+The handler-audit dump independently confirms the composite: `condition:partiallytrapped` now
+carries `durationCallback` (gripclaw/`random(3,7)`), `onResidualOrder: 10`, `onResidualSubOrder: 9`,
+the gen5 `onStart`/`onResidual` bodies and the base `onEnd`/`onTrapPokemon`.
+
+**THE DRAW MODEL (probe-settled, `harness/probe_batch89_trap.js` reproduced end-to-end).** The
+ordinary damaging chain (accuracy 70-85 → crit → damage roll; none of the six has a secondary) plus
+**exactly ONE `random(3, 7)`** fired inside `addVolatile`'s `durationCallback` AFTER the damage lands.
+Everything after that is DRAW-FREE. Over 120 landings the return distribution is `{3:25, 4:26, 5:25,
+6:27}` (uniform over 4 values — a single `next()`, NOT a `sample` and NOT `random(8)`) and the chip-turn
+count is `{2:25, 3:26, 4:25, 5:27}` — i.e. **chip turns == duration − 1** (2–5), because
+`fieldEvent('Residual')` decrements the duration BEFORE calling `onResidual` and the cast turn's own
+end-of-turn already chips once.
+
+**THE EDGES — each probed, not assumed** (`harness/probe_ptrap_edges.js` A-M +
+`probe_ptrap_edges2.js` D/E/O/P). Every one of the first four suppresses the DRAW as well as the
+volatile, which is why they had to be settled rather than guessed:
+  * **A — SUBSTITUTE**: the sub's `onTryPrimaryHit` returns before `runMoveEffects`, so a Wrap into a
+    sub emits only `|-activate|…|Substitute|[damage]`: no volatile, **0 duration draws**.
+  * **B — RE-CAST on an already-trapped mon**: `addVolatile` returns false (`partiallytrapped` has no
+    `onRestart`); the move deals its damage, emits NO `-activate` and NO `-fail`, and draws nothing.
+  * **C — the cast KOs the target**: `addVolatile`'s `!this.hp` early-return ⇒ no volatile, no draw.
+  * **G/H — type-IMMUNE / Protect-blocked**: the accuracy still draws (the ordinary path), then
+    `-immune` / `-activate|…|Protect`; no trap, no duration draw.
+  * **D — the TRAPPER FAINTS**: gen3 opens the replacement request MID-TURN, so the release lands on
+    the *resumed* tail's residual: `|-end|…|[partiallytrapped]|[silent]`, no chip.
+  * **E — the VICTIM faints to the CHIP**: `|-damage|…|0 fnt|[from] move: Wrap|[partiallytrapped]`
+    then `|faint|`, through the ordinary residual per-handler faint machinery.
+  * **F — RAPID SPIN**: the gen4-mod `rapidspin.self.onHit` calls `removeVolatile` LAST (after the
+    leech/hazard clears), so the `onEnd` fires — the **NON-silent** `|-end|<user>|<Move>|
+    [partiallytrapped]`, notably with **NO `[from] move: Rapid Spin` tag** (unlike its siblings on the
+    same handler).
+  * **I — MUTUAL wrap**: subOrder 9 is unique at order 10, so the only tie is the other mon's trap —
+    one extra residual tie-shuffle at equal speed.
+  * **J — BATON PASS**: `partiallytrapped` has NO `noCopy`, so `copyVolatileFrom` **transfers it**.
+    The entrant inherits the same duration and the SAME source (NOT re-pointed, unlike the linked
+    `trapped` volatile) and is chipped off ITS OWN maxhp — a wrapped Snorlax (482/16 = 30) passing to
+    Blissey immediately chips 672/16 = 42. And a trapped mon **CAN** Baton Pass: `trapped` gates the
+    switch CHOICE, not a self-switch MOVE.
+  * **K — ROAR**: a phazed-out victim's volatile is dropped by `clearVolatile`; the entrant is clean.
+  * **M — the `|request|`**: the very FIRST post-cast request carries `"trapped":true` and a
+    `>p2 switch 2` is answered `|error|[Invalid choice] Can't switch: The active Pokémon is trapped`
+    with NO re-request — byte-identical to the Shadow-Tag FIRM shape, so it rides the existing
+    `trap_is_firm` path rather than the `maybeTrapped` machine.
+  * **O — PRECEDENCE** (the subtlest): on a turn where the duration hits 0 **and** the trapper leaves,
+    the **duration** branch wins and the **NON-silent** `-end` is emitted, because `fieldEvent`
+    decrements before it ever invokes `onResidual`. A port that tested "trapper gone" first would match
+    everywhere else and be wrong only here — hence its own pin (PT6).
+
+**THE FIX.** A `MonState::partial_trap: Option<PartialTrap>` (`source_uid`, `move_name`, `duration` —
+the divisor is not stored because it is constant 16 in gen3), wired at six sites: the post-hit apply in
+`run_move` (the four gates above + the `random(3,7)` + `|-activate|<t>|move: <M>|[of] <u>`); a new
+order-10/subOrder-9 `ResidualAction::PartialTrap` gathered with the volatiles (after curse, before
+encore) whose apply is the three-branch `apply_partial_trap`; `is_trapped`/`trap_is_firm` (with the
+`source?.isActive` guard mirrored by re-reading the foe active's uid); the `clearVolatile` sites on
+switch-out and faint; the Baton-Pass pass-set; and `apply_rapid_spin` (whose previous body carried a
+literal `// no partial-trap move is modeled → nothing to clear` placeholder). The six ids left
+`UNMODELED_FAILLOUD_MOVES` + the harness `REJECT_MOVES` and joined `MODELED_PARTIALTRAP_MOVES`,
+admitted in `isModeledMove` ahead of the blanket `m.volatileStatus` reject. `partiallytrapped` was
+added to the handler-audit's `ENGINE_CONDITIONS` surface (it is a STANDALONE condition — the moves'
+`volatileStatus` string, not an `m.condition` sub-object, so it is not auto-added) and the manifest
+regenerated: **957 rows, all dispositioned, fingerprint-stable, anchors grep.**
+
+**THE SECOND BUG — and the reason the byte fuzz is a mandatory gate, not a formality.** The first
+`--mode random --protocol --battles 300 --master-seed 803324991` run came back **1 diverged
+(`kind=seed`, dec 26)**, repro `rmsde6xp4_ab_10_9`: p2's Onix **BLOCKS** p1's Wartortle and then
+**SAND TOMBS** it. Two gen-3 volatiles carry `onTrapPokemon` — the trap-MOVE `trapped` (Mean Look /
+Spider Web / Block, `MonState::trapped_by`) and now `partiallytrapped` — and both are **Conditions**,
+so both resolve to `subOrder` **2** (the `effectTypeOrder` table, `sim/battle.ts:957`; an Ability is
+7). Held together on the SAME mon they are two handlers at the SAME speed AND the SAME subOrder ⇒ the
+endTurn `runEvent('TrapPokemon')` handler list **TIES** ⇒ **ONE extra `random(0,2)` per endTurn** for
+as long as both live. `trap_event_shuffles` had modeled ONLY the ability handlers (Arena Trap's
+`onFoe*`, Magnet Pull's `onAny*`) and explicitly documented "the `trapped` volatile adds ZERO endTurn
+draws — its Condition subOrder never ties an Ability's 7". **That statement was true, and modelling
+the wrap family is precisely what falsified it**: it was correct only while at most ONE trapping
+CONDITION could exist. PROBE-MEASURED (`harness/probe_ptrap_trapevent.js`, idle-turn draws vs a clean
+control): block-only **+0**, sandtomb-only **+0**, BOTH live **+1**, arena-trap-only **+0**. Exactly
+ONE, not two, because **only `TrapPokemon` gathers them** — neither condition carries an
+`onMaybeTrapPokemon`, so that event still sees only the abilities; the fix therefore builds the two
+events from DIFFERENT handler lists.
+
+**MEASURED.** Full suite **587 passed / 0 failed** (was 579 — seven new pins), e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED** (zero of the 722 pool teams carry the family, so the
+sampled e2e is byte-identical), handler audit **957 rows OK**. Byte-fuzz `ab_fuzz.js --mode random
+--protocol --battles 300 --master-seed 803324991` (a FRESH seed on the surface that can now pick the
+family): **1 diverged before the trap-event fix → 0 after, GREEN-GATE PASS**, 12,756 decisions, 372
+species / 240 moves exercised. A SECOND independent seed (`--master-seed 3080934807`, 300 battles,
+12,875 decisions, 245 moves) is also **GREEN-GATE PASS, 0 diverged**. A 120-battle A/B at master-seed 777333 confirmed the
+`forced-unmodeled-move` prefix rate is PRE-EXISTING (48 with the family admitted vs 49 with it
+excluded), i.e. not something this round introduced, and the kept chunks carry 64 `partiallytrapped`
+lines, so the mechanic is genuinely exercised rather than merely un-crashed.
+
+**Pins (PT1-PT6, `tests/regression_test.rs`)** — each a CONSTRUCTED gen3customgame board whose ground
+truth is the real sim on that exact board (`harness/probe_ptrap_pin.js` prints the POST-CONSTRUCTION
+seed, per the round-29 methodology note), each asserting the exact protocol bytes AND the exact
+post-turn SEED so a mis-positioned or missing duration draw fails even when the lines coincide:
+PT1 lifecycle (cast → 4 chips → non-silent expiry) · PT1b the FIRM switch-block and its release ·
+PT2 trapper-leaves silent release · PT3 substitute blocks the volatile AND the draw · PT4 Rapid Spin ·
+PT5 Baton Pass · PT6 the duration-vs-trapper-gone precedence · PT7 the Block+Sand-Tomb trap-event tie
+(whose seeds are the whole pin, with three guards so it cannot pass vacuously). **REVERT-VERIFIED four
+ways**: neutering the cast arm fails 6/6; flipping the residual precedence fails PT1 + PT6 (and ONLY
+those two — the precedence pin is load-bearing); deleting the `is_trapped` clause fails PT1b + PT5;
+dropping the condition handlers from `trap_event_shuffles` fails PT7 **and** the corpus fixture. The
+retired `wrap_family_fails_loud_at_construction` `should_panic` pin was replaced by
+`wrap_family_builds_now_that_the_partial_trap_is_modeled`, which walks all six ids; the original
+byte-fuzz repro is frozen as corpus fixture
+`72_block_plus_partial_trap_ties_the_trapevent_sort.txt`.
+
+**HONEST SCOPE — what was NOT verified.**
+  * The `!source.activeTurns` arm of the release test is implemented (a trapper that only switched in
+    this turn releases the trap) but **no probed board reaches it** — in gen-3 singles a trapper cannot
+    both be the volatile's source and have `activeTurns == 0`. It is coded from the source, not measured.
+  * The chip's `clampIntRange(_, 1)` floor (a sub-16-maxhp victim taking 1 instead of 0) is inherited
+    from the Leech-Seed precedent, **not** separately probed — no gen-3 level-100 board reaches it.
+  * The `-activate` emission's position relative to `selfDrops` / secondaries is unobservable for these
+    six moves (none carries either), so only its position after the `-damage` is pinned.
+  * The residual GATHER position within a mon's volatile block is the port's fixed insertion-order
+    convention, not a measured insertion sequence. subOrder 9 is unique at order 10 so no *direct* tie
+    is affected, but the round-29 lesson applies: `speed_sort` is a non-stable selection sort whose
+    swaps can hand a LATER tie group a different pre-shuffle order. If a mixed-volatile board ever
+    diverges here, this is the first thing to re-probe.
+  * A partial-trap move called by **Sleep Talk** routes through the same `run_move` arm and should
+    behave identically, but no probe or pin covers that composition.
+  * The **PER-SIDE / `|request|` gate** (`bridge_ab_fuzz.js`) was **NOT re-run** for this round: its
+    `BRIDGE_TARGET` is hard-coded to `/tmp/pokesim_target_bridge`, owned by a concurrent worktree, and
+    the harness itself has uncommitted in-flight edits there. The family's request surface is
+    nevertheless covered indirectly — it rides the EXISTING `trap_is_firm` path (no new bridge code),
+    `bridge_test`'s trapping gate is byte-equal (52 request frames / 7 `trapped:true`) and
+    `trapping_test`'s 8346 trapped assertions are unchanged. Re-running it on `--mode random` is the
+    obvious next measurement, and per round 31 "the same measurement on a new team distribution is a
+    different test", so it should not be assumed clean.
+
+⚠️ **THE LESSON — a new mechanic can FALSIFY an old "no draw here" proof.** The trap-event bug was
+not a partial-trap bug at all: the partial-trap code was right, and the six PT pins + the whole 585-test
+suite were green when the byte fuzz found it. What broke was a THREE-ROUNDS-OLD invariant in a
+DIFFERENT file — "a trapping Condition can never tie" — that had been true only because the engine
+could hold at most one trapping condition at a time. **When you add a second member to a class the
+engine previously had exactly one of, go re-read every draw-count argument that says "this can never
+tie".** The unit suite cannot catch this class (it is a novel COMBINATION, not a wrong value), which is
+exactly what the standing random-mode byte-fuzz rule exists for.
+
+⚠️ **THE SECOND LESSON — a fail-loud guard is a DEBT MARKER, and the debt has a size.** This one was cheap to
+pay off precisely because the round that raised it (`gen3_unmodeled_move_failloud_v1`) also wrote the
+research down: `harness/BATCH89_RESEARCH.md` already carried the draw model, the sub-order, the
+emission forms and the duration semantics, all probe-settled. Re-probing to VERIFY that research cost
+one script; deriving it from scratch would have cost the round. **When you defer a mechanic behind a
+fail-loud, probe it and write the findings down at deferral time** — the guard stops the silent
+desync, the research is what makes the fix a day instead of a week.
+
+### ROUND 33 (FIX) — TRANSFORM: the last construction-time fail-loud closes
+
+`gen3_transform_v1`. Transform was the biggest remaining unmodeled mechanic and the one with the worst
+history: it survived every offline gate because the fuzz PICKERS filtered it out, and was only caught
+when a live randbats Ditto reached the production bridge and silently no-op'd, feeding the policy wrong
+observations for a whole battle (`gen3_transform_failloud_v1`). It occurs in ~3.2% of gen3 randbats
+teams, so it also gated the random-battle training regime.
+
+**PROVENANCE OF THIS ENTRY (read this before trusting the detail below).** The implementation and its
+probe campaign were done by a sub-agent that STALLED twice — once mid-edit leaving the tree
+non-compiling with the fail-loud already removed, and again at the start of its own gate re-run. The
+mechanism notes below are transcribed from the probe-referenced comments it left in
+`turn/status_moves.rs` (each cites the probe script that settled it, and those scripts are on disk and
+re-runnable). **The GATE NUMBERS below were re-run and measured directly**, not inherited.
+
+**THE MECHANISM** (per the in-code probe citations): `accuracy: true` ⇒ never-miss, and the copy
+contains no `this.random` anywhere ⇒ **every branch is DRAW-FREE**. Flags `{bypasssub, metronome,
+failencore}` — note what is ABSENT: no `protect` (a Protect does NOT block it) and no `failmimic`;
+`bypasssub` plus the `substitute && gen>=5` guard being gen5-only means it copies THROUGH a Substitute.
+It FAILS draw-free (`[still]` + `-fail`) when the target is fainted or ALREADY TRANSFORMED (`gen >= 2`);
+the USER being transformed does NOT block in gen3 (that guard is `gen >= 5`). Copied: species, the
+target's CURRENT types, the five non-HP stored stats, ability, and all seven boost stages. NOT copied:
+hp/maxhp, item, status, volatiles, the ident, and the request roster's `details`/`stats`.
+
+Two details are the ones that would have been guessed wrong:
+* **`maxpp = calculatePP(move, this.ppUps[i] || 0)` — and the `|| 0` is the randbats-common case.** A
+  gen3 randbats Ditto knows ONE move, so `ppUps` has length 1 and copied slots 1..3 get NO PP-ups: a
+  1-move Ditto copying Snorlax reads `5/24, 5/30, 5/10, 5/40` where a 4-move Ditto reads `5/24, 5/48,
+  5/16, 5/64`.
+* **The CACHED SPEED is a HYBRID, and it changes the turn's DRAW COUNT.** `setSpecies(…,
+  isTransform=true)` computes `storedStats = spreadModify(TARGET.baseStats, THIS.set)` and ends with
+  `this.speed = storedStats.spe`, and only THEN overwrites `storedStats` with the target's own —
+  without re-setting `this.speed`. So until the residual's `updateSpeed()` the tie-shuffle speed is
+  neither the copied nor the original value (measured: a 31-IV Ditto copying a 27-spe-IV Chansey reads
+  `speed = 136` at the `-transform` emission while `storedStats.spe` is already 132, reverting to 132
+  at the residual). `each_event_shuffle` reads `cached_speed`, so a wrong hybrid here is a draw-count
+  desync, not a cosmetic stat error.
+
+A second transform while already transformed does NOT re-snapshot the overlay, so the revert always
+returns the mon's ORIGINAL identity; the overlay restore is ordered BEFORE the Mimic restore, so the
+pair together reproduces `baseMoveSlots`.
+
+**GATES (re-measured directly after the stall, not inherited).** Full suite **597 passed / 0 failed**
+(was 587 at ROUND 32 — twelve named pins added: the pp/maxpp ladder, revert on switch-out and on
+faint, transform-into-a-transformed-target failing draw-free, copying through a Substitute, ability
+copied WITHOUT re-firing its `onStart`, the ident staying the base species,
+`transform_request_json_is_byte_identical_to_the_sim`, Mimic-by-a-transformed-mon failing, and BOTH
+negative controls). e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**.
+**PER-SIDE fuzz** (`bridge_ab_fuzz --mode random --battles 300 --master-seed 33084`): **2 diverged,
+BOTH `kind=seed`** (the anchor class), **0 byte/request** — matching the pre-Transform baseline of
+3/400 all-`kind=seed`, so Transform introduced no new `|request|` divergence on the surface poke-env
+actually consumes. That surface matters most here: a transformed mon's request bytes are exactly where
+a filtering-hidden bug would live.
+
+⚠️ **HONEST SCOPE — one OPEN divergence, not yet attributed.** The omniscient fuzz
+(`ab_fuzz --mode random --protocol --battles 300 --master-seed 33083`) **FAILED its green gate with 1
+non-allowlisted divergence**: `ab_11_18`, `kind=decision_count` at dec 42 — the port ended the battle
+at 42 decisions where the sim ran 44, with `detail: "decision-count mismatch (all common decisions
+matched)"`, i.e. every shared decision was byte-identical and the port simply stopped early. **Neither
+team carries Transform or Ditto** — but one carries **Mimic**, and this round deliberately reordered
+the transform-overlay restore relative to the Mimic restore, so "no Transform on the board" does NOT
+clear it. It is NOT yet established whether this is (a) a regression from that reordering, (b) a
+pre-existing member of the diffuse decision-stream-desync class ROUND 26 characterised (where the port
+consumes the recorded choice list at a different rate and runs out early — that analysis found the
+port's DRAW stream to be a byte-exact prefix of the sim's), or (c) an unrelated new find at this seed.
+**ATTRIBUTED (2026-08-03, by code+data inspection rather than an A/B binary): NOT round 33.** The
+board carries **zero** of this round's mechanics — no Transform, no Ditto, no Metal/Quick Powder (a
+`grep` of the repro's TEAM rows returns nothing) — and every code path this round added is strictly
+guarded: `restore_transform_overlay` is `if let Some(ov) = self.transform.take()` (an exact no-op when
+`transform` is `None`, which it is for every mon here), the cast site requires `move_id ==
+"transform"`, the new Mimic guard reads `transformed()` (false ⇒ the pre-existing behaviour), and
+Metal Powder's newly-wired `untransformed_only` needs an item nobody holds. The Mimic user (Zapdos)
+DOES switch out repeatedly and is active through the divergence window — which is why "no Transform on
+the board" was not sufficient on its own and the guard-by-guard check was needed. ⇒ It is a
+pre-existing member of the **ROUND 26 decision-stream-desync class** (all common decisions
+byte-identical, the port consuming the recorded choice list at a different rate and running out
+early); round 26's draw-trace analysis found the port's RNG consumption CORRECT across that whole
+queue, and named the open question as harness segmentation vs a draw-free legality disagreement —
+still open, and still needing a per-decision ACCEPTED/REJECTED comparison rather than more draw
+tracing. ⚠️ This attribution is an ENUMERATION of the touched call sites, one notch weaker than the
+A/B a fresh binary would give; if a round-33 path outside that enumeration exists, it would overturn
+this. Repro preserved at `harness/ab_fuzz_out/r33_omni/divergences/rmsdk0gxj_ab_11_18` (gitignored,
+standalone-replayable).
+
+**Also NOT verified by me:** Transform × Forecast (Forecast is being modeled separately and is still
+fail-loud), and Transform × the ROUND 32 partial-trap volatiles.
+
+⚠️ **THE PROCESS LESSON — a removed fail-loud and a broken build is the worst possible intermediate
+state.** When the agent stalled the first time, the tree did not compile AND
+`UNMODELED_FAILLOUD_MOVES` had already been emptied. Had that state been resumed from carelessly, or
+had the compile error been "fixed" by deleting the offending assignment, Transform would have shipped
+as a SILENT NO-OP — the exact failure this guard existed to prevent, reintroduced by the change that
+was supposed to retire it. **Empty the guard LAST, after the mechanic's gates are green**, not as part
+of the same edit. The guard mechanism is deliberately KEPT (as an empty array) as the seam for the
+next deferral, with `a_ditto_without_transform_builds_fine` and
+`transform_carriers_build_now_that_transform_is_modeled` as the paired negative controls.
 ### ROUND 37 (FIX) — the SEEDLESS bridge START ran on a FIXED seed: every training episode replayed one dice stream
 
 > NUMBERING NOTE: written as "ROUND 30" by a parallel effort; renumbered to 37 at consolidation

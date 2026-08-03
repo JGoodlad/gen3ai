@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
-48 conditions (engine state space + attached), 256 modeled moves
-→ **943 (effect, hook) rows**.
+49 conditions (engine state space + attached), 263 modeled moves
+→ **960 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 878 |
+| implemented | 895 |
 | noop_justified | 36 |
 | unreachable_justified | 29 |
 
@@ -344,7 +344,7 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (215 rows: implemented=188, noop_justified=9, unreachable_justified=18)
+## condition (223 rows: implemented=196, noop_justified=9, unreachable_justified=18)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -467,6 +467,14 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | par | onModifySpe | implemented | `turn.rs::effective_speed` |
 | par | onModifySpePriority | implemented | `turn.rs::effective_speed` |
 | par | onStart | implemented | `turn.rs::try_set_status` |
+| partiallytrapped | duration | implemented | `turn.rs::run_move` |
+| partiallytrapped | durationCallback | implemented | `turn.rs::run_move` |
+| partiallytrapped | onEnd | implemented | `turn.rs::apply_partial_trap` |
+| partiallytrapped | onResidual | implemented | `turn.rs::apply_partial_trap` |
+| partiallytrapped | onResidualOrder | implemented | `turn.rs::apply_partial_trap` |
+| partiallytrapped | onResidualSubOrder | implemented | `turn.rs::apply_partial_trap` |
+| partiallytrapped | onStart | implemented | `turn.rs::run_move` |
+| partiallytrapped | onTrapPokemon | implemented | `turn.rs::is_trapped` |
 | perishsong | duration | implemented | `turn.rs::run_status_move` |
 | perishsong | onEnd | implemented | `turn.rs::run_residuals` |
 | perishsong | onResidual | implemented | `turn.rs::run_residuals` |
@@ -564,7 +572,7 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (410 rows: implemented=406, noop_justified=2, unreachable_justified=2)
+## move (419 rows: implemented=415, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -602,6 +610,7 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | bellydrum | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | bellydrum | neverMiss | implemented | `turn.rs::run_status_move` |
 | bellydrum | onHit | implemented | `turn.rs::run_status_move` |
+| bind | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
 | bite | secondaries | implemented | `turn.rs::apply_secondaries` |
 | blazekick | critRatio | implemented | `turn.rs::CRIT_MULT` |
 | blazekick | secondaries | implemented | `turn.rs::apply_secondaries` |
@@ -628,6 +637,7 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | charge | volatileStatus | implemented | `turn.rs::run_status_move` |
 | charm | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | charm | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| clamp | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
 | cometpunch | multihit | implemented | `turn.rs::run_multihit` |
 | confusion | secondaries | implemented | `turn.rs::apply_secondaries` |
 | constrict | secondaries | implemented | `turn.rs::apply_secondaries` |
@@ -698,6 +708,7 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | feintattack | neverMiss | implemented | `turn.rs::never_miss` |
 | fireblast | secondaries | implemented | `turn.rs::apply_secondaries` |
 | firepunch | secondaries | implemented | `turn.rs::apply_secondaries` |
+| firespin | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
 | flamethrower | secondaries | implemented | `turn.rs::apply_secondaries` |
 | flamewheel | secondaries | implemented | `turn.rs::apply_secondaries` |
 | focuspunch | onTry | implemented | `turn.rs::run_move` |
@@ -855,6 +866,7 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | rocktomb | secondaries | implemented | `turn.rs::apply_secondaries` |
 | rollingkick | secondaries | implemented | `turn.rs::apply_secondaries` |
 | sacredfire | secondaries | implemented | `turn.rs::apply_secondaries` |
+| sandtomb | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
 | scaryface | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | scaryface | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | screech | boosts | implemented | `turn.rs::stat_drop_boosts` |
@@ -951,6 +963,9 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | tickle | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | toxic | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | toxic | status | implemented | `turn.rs::modeled_status_move` |
+| transform | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| transform | neverMiss | implemented | `turn.rs::run_status_move` |
+| transform | onHit | implemented | `turn.rs::run_status_move` |
 | triattack | secondaries | implemented | `turn.rs::apply_secondaries` |
 | trick | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | trick | onHit | implemented | `turn.rs::run_status_move` |
@@ -962,6 +977,7 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | vitalthrow | priority | implemented | `turn.rs::move_priority` |
 | volttackle | recoil | implemented | `turn.rs::apply_recoil` |
 | waterpulse | secondaries | implemented | `turn.rs::apply_secondaries` |
+| whirlpool | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
 | whirlwind | forceSwitch | implemented | `turn.rs::drag_in` |
 | whirlwind | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | whirlwind | priority | implemented | `turn.rs::move_priority` |
@@ -973,6 +989,7 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | withdraw | boosts | implemented | `turn.rs::self_boost_spec` |
 | withdraw | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | withdraw | neverMiss | implemented | `turn.rs::never_miss` |
+| wrap | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
 | yawn | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | yawn | neverMiss | implemented | `turn.rs::never_miss` |
 | yawn | onTryHit | implemented | `turn.rs::run_status_move` |

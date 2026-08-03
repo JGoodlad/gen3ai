@@ -60,7 +60,7 @@ post-hit side-effect — are now MODELED bit-for-bit + e2e-admitted:
 | **C_DRAIN** | Absorb / Mega Drain / Giga Drain / Leech Life (`drain:[1,2]`) | USER heals the fraction of the damage dealt (floor non-sub / ceil behind a sub); heal-at-full fails. DRAW-FREE. Liquid Ooze reverses → fail-loud (excluded). Dream Eater's sleep-gate unmodeled → excluded. | `turn.rs::apply_drain` |
 | **C_SELFDROP** | Overheat (self −2 SpA) / Superpower (self −1 Atk/−1 Def) | the drop applies (±6 clamp) AND gen3 `selfDrops` **DRAWS ONE `random(100)`** (the `secondaryRoll`, unconditional — `self.chance === undefined`). **NOT draw-free** — the reason the port's Overheat/Superpower were never seed-verified. | `turn.rs::apply_self_drops` + the extractor's `selfDrops` field |
 | **C_ITEM_REMOVAL** | Knock Off (removes; gen3 no dmg boost) / Thief / Covet (steal iff attacker itemless) | `onAfterHit` — fires ONLY when the MON was damaged (NOT behind a sub). Sticky Hold blocks; Mail does NOT block these three. DRAW-FREE. | `turn.rs::apply_item_removal` |
-| **C_RAPIDSPIN** | Rapid Spin | `onAfterHit` + `onAfterSubDamage` clear the USER's own Spikes + Leech Seed (+ partial-trap, N/A) — so it clears behind a sub too. DRAW-FREE. | `turn.rs::apply_rapid_spin` |
+| **C_RAPIDSPIN** | Rapid Spin | `onAfterHit` + `onAfterSubDamage` clear the USER's own Spikes + Leech Seed + the PARTIAL TRAP (`gen3_partial_trap_v1`, ROUND 32 — a `removeVolatile`, so the NON-silent `-end` fires) — so it clears behind a sub too. DRAW-FREE. | `turn.rs::apply_rapid_spin` |
 
 **Validation:** the class-sweep golden `harness/gen_movecoverage_batch1_golden.js` →
 `tests/movecoverage_batch1_test.rs` (13 scenarios × 80 seeds = 1040 game-end battles, 10428

@@ -535,7 +535,20 @@ impl crate::state::BattleState {
                 self.log.sideend_from_move(&side_ref, "Spikes", "Rapid Spin", &user);
             }
         }
-        // Partial-trap: no partial-trap move is modeled → nothing to clear (documented no-op).
+        // --- PARTIAL TRAP (`gen3_partial_trap_v1`): the gen4-mod Rapid Spin's `self.onHit`
+        //     ends with `if (pokemon.volatiles['partiallytrapped'])
+        //     pokemon.removeVolatile('partiallytrapped');` — LAST, after the leech-seed and
+        //     side-condition clears. `removeVolatile` (not a silent delete) fires the
+        //     condition's `onEnd`, so the NON-silent `|-end|<user>|<Move>|[partiallytrapped]`
+        //     form is emitted — note it carries NO `[from] move: Rapid Spin` tag, unlike the
+        //     leech/spikes clears above (probe F: `|move|…Rapid Spin` → `|-damage|<foe>|…` →
+        //     `|-end|p2a: Starmie|Wrap|[partiallytrapped]`). DRAW-FREE. ---
+        if let Some(pt) = self.sides[side].pokemon[slot].partial_trap.take() {
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                self.log.partial_trap_end(&user, &pt.move_name, false);
+            }
+        }
     }
 
     /// `emit_survive_zero`: when a Focus-Band survive nets ZERO damage (the holder is ALREADY

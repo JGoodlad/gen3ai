@@ -909,7 +909,14 @@ impl crate::state::BattleState {
                 return MoveResolution::done(false, false, false);
             }
             let fail = {
-                if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
+                // `source.transformed` (gen4 `mimic.onHit`'s FIRST clause, `gen3_transform_v1`):
+                // a TRANSFORMED mimicker fails draw-free. Reachable now that Transform is
+                // modeled — a Ditto that copied a Mimic-carrier holds a `virtual` Mimic slot
+                // and using it FAILS (probe `probe_transform_speed.js`, the m-d1/m-d2 boards:
+                // `|move|p1a: Ditto|Mimic||[still]` + `|-fail|p1a: Ditto`, PP still deducted).
+                if self.sides[_side].pokemon[_slot].transformed() {
+                    true
+                } else if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
                     true
                 } else {
                     match self.sides[foe].pokemon[foe_slot].last_move {
@@ -1015,6 +1022,222 @@ impl crate::state::BattleState {
             if self.logging() {
                 let user = self.mon_ref(_side, _slot, dex);
                 self.log.activate(&user, "move: Mimic", Some(&copied_name));
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- TRANSFORM (`gen3_transform_v1`, `sim/pokemon.ts::transformInto`) — copy the
+        //     TARGET wholesale for this field stay. `accuracy: true` → never-miss, and the
+        //     copy contains NO `this.random` anywhere, so **every branch is DRAW-FREE**
+        //     (probe `probe_batch89_transform.js`: a Transform turn and a Splash-control turn
+        //     consume the same draws once the speed model below is right).
+        //
+        //     FLAGS `{bypasssub, metronome, failencore}` — note what is ABSENT: no `protect`
+        //     (a Protect does NOT block it — probe `probe_transform_speed.js` p-d0) and no
+        //     `failmimic`. `bypasssub` + the `substitute && gen>=5` guard being gen5-only means
+        //     it copies THROUGH a Substitute (probe F1). Status category ⇒ `ignoreImmunity` ⇒
+        //     a GHOST target is copied fine (probe G).
+        //
+        //     FAILS (`|move|<user>|Transform||[still]` + `|-fail|<user>`, draw-free): the
+        //     target is FAINTED, or the target is ALREADY TRANSFORMED (`pokemon.transformed &&
+        //     gen >= 2` — the Ditto mirror, probe F2). The USER being transformed does NOT
+        //     block in gen3 (`this.transformed && gen >= 5`).
+        //
+        //     WHAT IS COPIED (probe-verified against live `battle` state reads):
+        //       * species (so weight / Metal-Powder-class species gates / the AB-fuzz
+        //         `active_species` all follow), types (the target's CURRENT types — a Color
+        //         Change override included), the five NON-HP stored stats, ability, and ALL
+        //         SEVEN boost stages as they stand NOW.
+        //       * the moveslots: `pp = min(5, move.pp)` and `maxpp = calculatePP(move,
+        //         this.ppUps[i] || 0)`. **The `|| 0` is a real trap and the randbats-common
+        //         case**: gen3 randbats Ditto knows ONE move, so `ppUps` has length 1 and the
+        //         copied slots 1..3 get NO PP-ups — probe B measured a 1-move Ditto copying
+        //         Snorlax as `bodyslam 5/24, swordsdance 5/30, rest 5/10, splash 5/40` vs a
+        //         4-move Ditto's `5/24, 5/48, 5/16, 5/64`.
+        //       * `hpType`/`hpPower` for gen<5, so a copied Hidden Power renders as the
+        //         TARGET's type/BP. The port stores HP as a TYPED move id, so the copy
+        //         resolves the target's HP through [`crate::state::typed_hp_move_id`] and
+        //         copies `hidden_power_bp`.
+        //     NOT copied: hp/maxhp (the `storedStats` loop excludes hp), item, status,
+        //     volatiles, the ident name, and the request roster's `details`/`stats`.
+        //
+        //     ⚠️ THE ONE SUBTLE VALUE — the CACHED SPEED. `transformInto` calls
+        //     `setSpecies(target, effect, isTransform=true)`, which computes `storedStats =
+        //     spreadModify(TARGET.baseStats, THIS.set)` and ends with `this.speed =
+        //     storedStats.spe`; only AFTER that does it overwrite `storedStats` with the
+        //     TARGET's own — WITHOUT re-setting `this.speed`. So until the residual's
+        //     `updateSpeed()` the tie-shuffle speed is a HYBRID (target base stats, the
+        //     TRANSFORMER's EVs/IVs/nature/level), neither the copied nor the original value.
+        //     DIRECTLY MEASURED (`probe_transform_speed2.js`: a 31-IV Ditto copying a 27-spe-IV
+        //     Chansey reads `speed = 136` at the `-transform` emission while `storedStats.spe`
+        //     is already 132, and reverts to 132 at the residual). Modeled by recomputing the
+        //     hybrid through the ordinary stats path. It matters because `each_event_shuffle`
+        //     reads `cached_speed`, so getting it wrong changes the turn's DRAW COUNT.
+        //
+        //     A SECOND transform while already transformed does NOT re-snapshot the overlay
+        //     (the sim's `baseMoveSlots`/`baseSpecies` are untouched by a transform), so the
+        //     revert always goes back to the mon's ORIGINAL identity. ---
+        if move_id == "transform" {
+            debug_assert!(never_miss, "transform expected gen-3 accuracy true (never-miss)");
+            let target_fainted = self.sides[foe].pokemon[foe_slot].fainted
+                || self.sides[foe].pokemon[foe_slot].hp == 0;
+            if target_fainted || self.sides[foe].pokemon[foe_slot].transformed() {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // --- Read everything off the TARGET first (immutable borrow ends here). ---
+            let (t_species, t_stats, t_types, t_ability, t_boosts, t_moves, t_hp_bp) = {
+                let t = &self.sides[foe].pokemon[foe_slot];
+                (
+                    t.species_id.clone(),
+                    t.stats,
+                    t.types_override.clone(),
+                    t.ability.clone(),
+                    t.boosts,
+                    // Resolve a bare `hiddenpower` against the TARGET's markers/IVs — the sim
+                    // copies `hpType`, and the port encodes the type IN the move id.
+                    t.set
+                        .moves
+                        .iter()
+                        .map(|m| crate::state::typed_hp_move_id(t, m))
+                        .collect::<Vec<_>>(),
+                    t.hidden_power_bp,
+                )
+            };
+            // `ppUps[i]` comes from the USER's ORIGINAL (construction) moveslots, which a
+            // Mimic overlay does not resize and an EARLIER transform snapshot preserves.
+            let own_base_moves: Vec<String> = match &self.sides[_side].pokemon[_slot].transform {
+                Some(ov) => ov.base_moves.clone(),
+                None => self.sides[_side].pokemon[_slot].set.moves.clone(),
+            };
+            let pp_ups = |i: usize| -> u16 {
+                own_base_moves
+                    .get(i)
+                    .and_then(|mv| dex.moves(mv))
+                    .map(|m| if m.no_pp_boosts { 0 } else { 3 })
+                    .unwrap_or(0) // `this.ppUps[i] || 0` — no base slot i ⇒ NO pp ups
+            };
+            let mut copied_pp = Vec::with_capacity(t_moves.len());
+            let mut copied_maxpp = Vec::with_capacity(t_moves.len());
+            for (i, mid) in t_moves.iter().enumerate() {
+                let (base_pp, no_boost) = dex
+                    .moves(mid)
+                    .map(|m| (m.pp, m.no_pp_boosts))
+                    .unwrap_or((0, true));
+                copied_pp.push(base_pp.min(5));
+                // `calculatePP(move, ppUps)`: `noPPBoosts ? pp : pp * (5 + ppUps) / 5`.
+                copied_maxpp.push(if no_boost { base_pp } else { base_pp * (5 + pp_ups(i)) / 5 });
+            }
+            // The HYBRID speed cache (see the block comment): `spreadModify(TARGET.baseStats,
+            // OWN set)` — the user's own set re-costed onto the target's base stats.
+            let hybrid_spe = {
+                let mut probe_set = self.sides[_side].pokemon[_slot].set.clone();
+                probe_set.species = t_species.clone();
+                crate::stats::compute_stats(&probe_set, dex)
+                    .map(|s| s[5] as u32)
+                    // Crash-don't-drop is overkill here (the species came from the dex), but a
+                    // failure must not silently install a wrong tie-shuffle speed.
+                    .unwrap_or_else(|e| panic!("transform hybrid speed: {e}"))
+            };
+            // The two MOVE-IDENTITY-keyed slot references, captured as IDS **before** the
+            // moveset is overwritten (re-pointed after the copy, below).
+            let (locked_id, disabled_id) = {
+                let u = &self.sides[_side].pokemon[_slot];
+                let by_slot = |k: usize| u.set.moves.get(k).map(|m| crate::dex::to_id(m));
+                (
+                    u.choice_locked_move.and_then(by_slot),
+                    u.disable.and_then(|(k, _)| by_slot(k)),
+                )
+            };
+            // --- Apply. ---
+            {
+                let u = &mut self.sides[_side].pokemon[_slot];
+                if u.transform.is_none() {
+                    u.transform = Some(crate::state::TransformOverlay {
+                        base_species_id: u.species_id.clone(),
+                        base_stats: u.stats,
+                        base_types_override: u.types_override.clone(),
+                        // NO `base_ability` field on purpose: `clearVolatile` restores
+                        // `this.baseAbility`, NOT the live ability the copy overwrote.
+                        // `baseAbility` is written ONLY at construction and by `formeChange`
+                        // (`sim/pokemon.ts:421` / `:1490`) — `setAbility` never touches it — so a
+                        // Trace does not move it and the revert target is unconditionally the SET
+                        // ability. See `MonState::restore_transform_overlay`.
+                        base_moves: u.set.moves.clone(),
+                        base_move_pp: u.move_pp.clone(),
+                        base_move_maxpp: u.move_maxpp.clone(),
+                        base_hidden_power_bp: u.hidden_power_bp,
+                    });
+                }
+                u.species_id = t_species;
+                u.stats[1] = t_stats[1];
+                u.stats[2] = t_stats[2];
+                u.stats[3] = t_stats[3];
+                u.stats[4] = t_stats[4];
+                u.stats[5] = t_stats[5];
+                u.cached_speed = hybrid_spe;
+                u.types_override = t_types;
+                u.ability = t_ability;
+                u.boosts = t_boosts;
+                u.set.moves = t_moves;
+                u.move_pp = copied_pp;
+                u.move_maxpp = copied_maxpp;
+                u.hidden_power_bp = t_hp_bp;
+            }
+            // --- Re-key the three MOVE-IDENTITY-keyed pieces of state the port stores by
+            //     SLOT while the sim stores by move ID. The whole moveset just changed under
+            //     them, so a slot index that used to mean "Thunderbolt" now means something
+            //     else. Mirrors `gen3_mimic_choice_lock_self_overwrite_v1` /
+            //     `gen3_mimic_disable_self_overwrite_v1`, one slot-set wider. ---
+            let find_slot = |st: &Self, id: &str| -> Option<usize> {
+                let m = &st.sides[_side].pokemon[_slot];
+                (0..m.set.moves.len())
+                    .find(|&k| crate::dex::to_id(&m.set.moves[k]) == id)
+            };
+            // (a) CHOICE LOCK — `choicelock.onDisableMove` self-removes on
+            //     `!pokemon.hasMove(effectState.move)`. The locked move id was captured before
+            //     the overwrite; re-point it, or drop the lock when the move is gone.
+            if self.sides[_side].pokemon[_slot].choice_locked_move.is_some() {
+                let re = locked_id.as_deref().and_then(|id| find_slot(self, id));
+                self.sides[_side].pokemon[_slot].choice_locked_move = re;
+            }
+            // (b) DISABLE — the sim's `disable` volatile keys on the move ID and merely stops
+            //     matching when that move is gone (the volatile itself SURVIVES, keeps ticking
+            //     its residual duration handler and still emits `|-end|…|Disable`). So point
+            //     the slot at the sentinel `usize::MAX`, which matches no slot, rather than
+            //     clearing the volatile (that would drop a residual handler and change draws).
+            if let Some((k, turns)) = self.sides[_side].pokemon[_slot].disable {
+                let new_k = disabled_id
+                    .as_deref()
+                    .and_then(|id| find_slot(self, id))
+                    .unwrap_or(usize::MAX);
+                let _ = k;
+                self.sides[_side].pokemon[_slot].disable = Some((new_k, turns));
+            }
+            // (c) `lastMove` — the move just USED (`transform`) is normally NOT in the copied
+            //     moveset, so a FOE's Disable must FAIL (the gen4 `disable.onStart` moveSlots
+            //     scan returns false). If the copy DOES contain it (a Ditto/Mew mirror),
+            //     re-point the slot instead.
+            match find_slot(self, "transform") {
+                Some(k) => {
+                    let u = &mut self.sides[_side].pokemon[_slot];
+                    u.last_move = Some(k);
+                    u.last_move_was_self_overwrite = false;
+                }
+                None => {
+                    self.sides[_side].pokemon[_slot].last_move_was_self_overwrite = true;
+                }
+            }
+            // [EMIT] `|-transform|<user>|<target>` (no `[from]` — a plain Transform passes no
+            // `effect` to `transformInto`).
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.transform(&user, &target);
             }
             return MoveResolution::done(false, false, false);
         }

@@ -1365,6 +1365,55 @@ impl crate::state::BattleState {
             }
         }
 
+        // --- PARTIAL TRAP (`gen3_partial_trap_v1` — Wrap / Bind / Fire Spin / Clamp /
+        //     Whirlpool / Sand Tomb, `moveData.volatileStatus = 'partiallytrapped'`): applied
+        //     in `runMoveEffects`, i.e. AFTER the `-damage` line and BEFORE selfDrops /
+        //     secondaries (none of the six carries either, so the position is only observable
+        //     against the `-damage`). This is the family's ONE new draw: the gen4-mod
+        //     `durationCallback` fires `this.random(3, 7)` INSIDE `addVolatile`.
+        //
+        //     THE FOUR GATES (each probe-settled — `harness/probe_ptrap_edges.js`), all of
+        //     which suppress the DRAW as well as the volatile:
+        //       * `!absorbed` — a SUBSTITUTE intercepts at `onTryPrimaryHit` and returns before
+        //         `runMoveEffects`, so a Wrap into a sub emits only `|-activate|…|Substitute|
+        //         [damage]`: NO volatile, ZERO duration draws (probe A).
+        //       * the target is ALIVE — `addVolatile` early-returns on `!this.hp` (the
+        //         `affectsFainted` gate), so a cast that KOs draws nothing (probe C).
+        //       * the target is NOT ALREADY partially trapped — `addVolatile` returns false on
+        //         a present volatile (`partiallytrapped` has NO `onRestart`), and there is no
+        //         `-fail` line: the re-cast just deals its damage (probe B).
+        //       * a MISS / type-IMMUNE / Protect-blocked cast returned long before this point
+        //         (probes G/H).
+        //     A mutual wrap and a Baton-Passed trap both fall out of the state below without
+        //     special-casing. ---
+        if super::helpers::is_partial_trap_move(&move_id)
+            && !absorbed
+            && self.sides[foe].pokemon[foe_slot].hp > 0
+            && self.sides[foe].pokemon[foe_slot].partial_trap.is_none()
+        {
+            // THE ONE NEW DRAW: gen4's `partiallytrapped.durationCallback` → `this.random(3, 7)`
+            // (uniform over {3,4,5,6}; gen3 has no Grip Claw so the `return 6` arm is dead).
+            // Probe-measured over 120 landings: {3:25, 4:26, 5:25, 6:27} and chip turns
+            // {2:25, 3:26, 4:25, 5:27} == duration − 1.
+            let duration = self.prng.random_range(3, 7) as u8;
+            let source_uid = self.sides[side].pokemon[slot].uid;
+            self.sides[foe].pokemon[foe_slot].partial_trap = Some(crate::state::PartialTrap {
+                source_uid,
+                move_name: move_name.clone(),
+                duration,
+            });
+            // [EMIT] `|-activate|<target>|move: <Move>|[of] <user>` — the gen5-override
+            // `onStart` (`this.add('-activate', pokemon, 'move: ' + sourceEffect, '[of] ' +
+            // source)`), immediately after the `-damage`. Observation-only.
+            if self.logging() {
+                let target = self.mon_ref(foe, foe_slot, dex);
+                let user = self.mon_ref(side, slot, dex);
+                let effect = format!("move: {move_name}");
+                let of = format!("[of] {user}");
+                self.log.activate(&target, &effect, Some(&of));
+            }
+        }
+
         // [EMIT] PAY DAY's `|-fieldactivate|move: Pay Day` — the coin-scatter onHit
         // marker (display-only; the handler-audit `move:payday:onHit` row). Emitted
         // AFTER the `-damage` line, on a landed DIRECT hit (Phase 3, byte-verified vs
@@ -2882,6 +2931,7 @@ impl crate::state::BattleState {
             &mon.item,
             &ability,
             &mon.species_id,
+            mon.transformed(),
             None,
             MoveCategory::Physical,
             self_statused,
@@ -2891,6 +2941,7 @@ impl crate::state::BattleState {
             &mon.item,
             &ability,
             &mon.species_id,
+            mon.transformed(),
             MoveCategory::Physical,
             self_statused,
             dex,
@@ -3060,6 +3111,7 @@ impl crate::state::BattleState {
             &atk_mon.item,
             &atk_ability,
             &atk_mon.species_id,
+            atk_mon.transformed(),
             move_type,
             category,
             attacker_statused,
@@ -3110,6 +3162,7 @@ impl crate::state::BattleState {
             &def_mon.item,
             &def_ability_id,
             &def_mon.species_id,
+            def_mon.transformed(),
             category,
             defender_statused,
             dex,

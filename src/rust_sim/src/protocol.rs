@@ -870,6 +870,27 @@ impl ProtocolBuilder {
     pub fn volatile_end(&mut self, mon: &MonRef, effect: &str) {
         self.push_raw(format!("|-end|{mon}|{effect}"));
     }
+    /// `|-damage|<mon>|<HP>|[from] move: <Move>|[partiallytrapped]` — the PARTIAL-TRAP
+    /// residual chip (`gen3_partial_trap_v1`). The sim renders this in `spreadDamage`'s
+    /// `case 'partiallytrapped'` arm off `volatiles.partiallytrapped.sourceEffect.fullname`
+    /// (`sim/battle.ts:2140`), so the cause is the MOVE's fullname and a bare
+    /// `[partiallytrapped]` tag trails it. Probe-verified for all six carriers
+    /// (`harness/probe_ptrap_edges.js` section L).
+    pub fn damage_partially_trapped(&mut self, mon: &MonRef, hp: &HpStatus, move_name: &str) {
+        self.push_raw(format!("|-damage|{mon}|{hp}|[from] move: {move_name}|[partiallytrapped]"));
+    }
+    /// `|-end|<mon>|<Move>|[partiallytrapped][|[silent]]` — the PARTIAL-TRAP release
+    /// (`gen3_partial_trap_v1`). NOTE the effect token is the BARE move name (`Wrap`), not
+    /// `move: Wrap` — the condition passes the sourceEffect OBJECT, which stringifies to
+    /// its `name`. `silent` selects the `onResidual` trapper-gone branch (`[silent]`) over
+    /// the `onEnd` natural expiry (no tag).
+    pub fn partial_trap_end(&mut self, mon: &MonRef, move_name: &str, silent: bool) {
+        if silent {
+            self.push_raw(format!("|-end|{mon}|{move_name}|[partiallytrapped]|[silent]"));
+        } else {
+            self.push_raw(format!("|-end|{mon}|{move_name}|[partiallytrapped]"));
+        }
+    }
     /// `|-end|<mon>|<Effect>|[silent]` — a volatile ends silently (the Attract
     /// onUpdate removal when its source leaves the field, `gen3_ability_batch4_v1`).
     pub fn volatile_end_silent(&mut self, mon: &MonRef, effect: &str) {
@@ -882,6 +903,16 @@ impl ProtocolBuilder {
             Some(d) => self.push_raw(format!("|-activate|{mon}|{effect}|{d}")),
             None => self.push_raw(format!("|-activate|{mon}|{effect}")),
         }
+    }
+    /// `|-transform|<user>|<target>` — the TRANSFORM copy landed (`gen3_transform_v1`,
+    /// `pokemon.transformInto`'s `this.battle.add('-transform', this, pokemon)`). A plain
+    /// Transform passes no `effect`, so gen3 never emits the `|[from] <effect>` variant
+    /// (Transform is `failencore` + not Sleep-Talk-reachable in the modeled set). The two
+    /// idents are the mons' `toString()` forms — for a TRANSFORMED user that is still its
+    /// ORIGINAL name (`pokemon.name` is fixed at construction), which is why
+    /// `helpers::display_name` reads through the transform overlay. Draw-free.
+    pub fn transform(&mut self, user: &MonRef, target: &MonRef) {
+        self.push_raw(format!("|-transform|{user}|{target}"));
     }
     /// `|-singleturn|<mon>|<Effect>` — a one-turn effect announced (Protect).
     pub fn singleturn(&mut self, mon: &MonRef, effect: &str) {

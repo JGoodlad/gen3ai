@@ -501,12 +501,44 @@ function classify(exp, got) {
 // documented transforms. A co-occurring pair is allowed as a UNION, but ANY residual
 // difference leaves them unequal → returns null → the divergence FAILS the gate. So this can
 // never swallow a real bug that merely happens to share a line with a known form.
+// Collapse a happiness-scaled move's numeric-BP alias to its bare token, for ANY base power
+// (`gen3_happiness_bp_alias_any_digits_v1`), recording every removed digit run so the caller
+// can compare them PAIRWISE. Anchored at a non-alphanumeric boundary, so a longer move whose
+// name merely CONTAINS the token is never truncated; digits are the ONLY thing removed.
+function stripBpAlias(s, bps) {
+  const take = (name, d) => { (bps[name] = bps[name] || []).push(d); };
+  return s
+    .replace(/(^|[^A-Za-z0-9])(return|frustration)(\d+)/g,
+      (_m, pre, name, d) => { take(name, d); return pre + name; })
+    .replace(/(^|[^A-Za-z0-9])(Return|Frustration) (\d+)/g,
+      (_m, pre, name, d) => { take(name.toLowerCase(), d); return pre + name; });
+}
+
 const ALLOWLIST_TRANSFORMS = [
   // Collapse every alias form to the bare token, in BOTH directions, so the inconsistent
   // sim rendering (roster vs active id vs display) normalizes the same way on both sides.
-  { key: 'return102-numeric-alias', apply: (s) => s
-      .replace(/return102/g, 'return').replace(/frustration102/g, 'frustration')
-      .replace(/"Return 102"/g, '"Return"').replace(/"Frustration 102"/g, '"Frustration"') },
+  //
+  // ⚠️ The numeric suffix is the move's COMPUTED BASE POWER, so it VARIES: Return is
+  // `max(1, floor(happiness * 2 / 5))` and Frustration the mirror, so at the DEFAULT
+  // happiness 255 the pair renders `return102` and — the raw product being 0, clamped to 1 —
+  // **`frustration1`, never `frustration102`**. Hardcoding `102` on both (as this did) means
+  // the Frustration arm can never match a real battle: the pair fails to reconcile, and a
+  // co-occurring correctly-handled `return102` FAILS THE GATE with it. Measured on the rust
+  // sibling: 14 of 25 `--mode random` battles, all Frustration boards.
+  //
+  // PAIRWISE, per this file's own rule below: the deferral is presence-vs-ABSENCE of the
+  // suffix, so if BOTH sides render a numeric BP and the values DISAGREE (a mis-parsed
+  // happiness) that is a real divergence and the whole reconcile refuses (`null`).
+  { key: 'return102-numeric-alias', applyPair: (a, b) => {
+      const ab = {}; const bb = {};
+      const a2 = stripBpAlias(a, ab); const b2 = stripBpAlias(b, bb);
+      const uniq = (v) => [...new Set(v || [])].sort().join(',');
+      for (const name of ['return', 'frustration']) {
+        const ua = uniq(ab[name]); const ub = uniq(bb[name]);
+        if (ua && ub && ua !== ub) return null;   // a BASE-POWER divergence, not a display form
+      }
+      return [a2, b2];
+    } },
   // The non-Ghost Curse target.
   { key: 'curse-nonghost-target-self-vs-normal', apply: (s) => s
       .replace(/("id":"curse","pp":\d+,"maxpp":\d+,"target":)"normal"/g, '$1"self"') },
@@ -528,7 +560,16 @@ function classifyKnownResidual(exp, got) {
   const used = [];
   let a = exp, b = got;
   for (const t of ALLOWLIST_TRANSFORMS) {
-    const a2 = t.apply(a), b2 = t.apply(b);
+    let a2, b2;
+    if (t.applyPair) {
+      // A PAIRWISE transform may REFUSE (null) — it inspected both sides and found a genuine
+      // value difference hiding under the alias form. Refusing fails the whole gate, by design.
+      const pair = t.applyPair(a, b);
+      if (pair === null) return null;
+      [a2, b2] = pair;
+    } else {
+      a2 = t.apply(a); b2 = t.apply(b);
+    }
     if (a2 !== a || b2 !== b) used.push(t.key);
     a = a2; b = b2;
   }
@@ -559,8 +600,23 @@ function selftest() {
     'return102-numeric-alias');
   check('frustration alias reconciles',
     classifyKnownResidual(REQ(['frustration102']), REQ(['frustration'])), 'return102-numeric-alias');
+  // `gen3_happiness_bp_alias_any_digits_v1` — the REAL rendering at the default happiness 255
+  // (BP clamped to 1). The pre-fix hardcoded `102` could not match this, so every Frustration
+  // board read as a divergence and dragged its co-occurring `return102` down with it.
+  check('frustration alias at the clamped BP of 1 reconciles',
+    classifyKnownResidual(REQ(['frustration1']), REQ(['frustration'])), 'return102-numeric-alias');
+  check('a non-default happiness BP reconciles',
+    classifyKnownResidual(REQ([{ move: 'Return 84', id: 'return' }]),
+                          REQ([{ move: 'Return', id: 'return' }])), 'return102-numeric-alias');
 
   // NEGATIVE — a genuine difference must NOT be allowlisted.
+  // The PAIRWISE guard: both sides numeric but DISAGREEING is a base-power divergence (a
+  // mis-parsed happiness), not a display form — collapsing both would be a false pass.
+  check('a differing numeric BASE POWER on both sides is not allowlisted',
+    classifyKnownResidual(REQ(['return102']), REQ(['return84'])), null);
+  check('a differing frustration BASE POWER on both sides is not allowlisted',
+    classifyKnownResidual(REQ([{ move: 'Frustration 1', id: 'frustration' }]),
+                          REQ([{ move: 'Frustration 102', id: 'frustration' }])), null);
   check('a DIFFERENT move is not allowlisted',
     classifyKnownResidual(REQ(['return102']), REQ(['tackle'])), null);
   check('an alias PLUS a residual pp difference is not allowlisted',

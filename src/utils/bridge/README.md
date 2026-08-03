@@ -55,18 +55,49 @@ runs `cargo build --release --bin sim_bridge` in `src/rust_sim` and caches the r
 `target/release/sim_bridge`; it raises a clear, actionable error (never a silent fall-back to
 node) if cargo/crate/binary is unavailable.
 
-**Honest scope of `rust` — two deferrals + a coverage limit:**
-- **No `__RECON__`** (the port has no byte-identical `input_log`) and **no `resumeReseed`** (needs
-  `Battle::reseed`, still `todo!()`). Both serve the forensic-reconstruction / search-teacher /
-  falsify / counterfactual layers, NOT core training/eval — `local_battle_runner`'s `_offer_recon`
-  degrades gracefully when the frame is absent. A `rust` run therefore emits **no per-trace
-  `*_reconstruction.json`** sibling. `train_rl_agent` emits a one-time startup warning naming these,
-  and errors if a reconstruction-dependent option (`--search-teacher` / `--teacher-persistent`) is
-  combined with `--use-bridge=rust`.
-- **Move coverage.** The pokesim port models a large-but-INCOMPLETE gen3 move/ability set and
-  **fail-louds** (`__ERR__ … is not modeled`) on anything outside it rather than silently desync.
-  Real `gen3ou` sample teams routinely carry an unmodeled move (Aromatherapy, Wish, …), so
-  `--use-bridge=rust` is only safe for a run whose teams stay inside the port's modeled universe.
+**Honest scope of `rust` (re-audited 2026-08-03) — what works, and the four real gaps.**
+`__RECON__` (`gen3_bridge_recon_record_v1`) and `resumeReseed` (`gen3_bridge_resume_reseed_v1`) BOTH
+shipped in `2b826d4`; the older "no `__RECON__` / no `resumeReseed`" text here was stale. A
+**seeded** rust battle passes the whole forensic stack — `reconstruction_fuzz_test`,
+`reroll_many_parity_fuzz_test` and `search_clone_parity_fuzz_test` all PASS on rust-recorded
+records, with the Node replay/clone drivers reproducing the rust-recorded winner, turn and next obs
+bit-for-bit (a cross-impl parity result worth more than the fuzzes' nominal subject). The record's
+`>start`/`>player` lines are exact — the only part `replay_kernels.js` reads; its committed-choice
+`input_log` lines are re-rendered from the engine's own script (`>p1 move 1` slot form vs Node's
+`>p1 move icebeam`), replay-equivalent but not byte-identical, and consumed by nothing.
+
+Still broken:
+- **The SEEDLESS path emits nothing and is not random.** `sim_bridge.rs::emit_recon` early-returns
+  on an empty seed, and a `None` seed builds from the FIXED `DEFAULT_CONSTRUCT_SEED = "0,0,0,0"`
+  (`state.rs`) instead of minting a random one. `bridge_session.py` and `eval_worker` →
+  `run_local_battles` both pass no seed ⇒ a `rust` run emits **no per-trace
+  `*_reconstruction.json`** (the prober's `falsify` / `better-line` / `replay-counterfactual` go
+  dark — `_offer_recon` degrades silently) **and every training episode shares one dice stream**.
+  Every gate that exercises `__RECON__` (`sim_bridge_bin_test`, `gen_sim_bridge_diff.js`) is
+  inherently seeded, which is the coverage hole that let this ship.
+- **A STRING `seed` is silently dropped.** `handle_start` parses only `[a,b,c,d]`; `"1,2,3,4"` and
+  `"sodium,<hex>"` fall through to `0,0,0,0` (measured: byte-identical to unseeded). Node honors
+  string and array identically. A node record's resolved seed IS a `"sodium,…"` string, so
+  `replay_counterfactual` on rust would silently replay a different battle.
+- **`resumeReseed` accepts only the array form**, while its one production producer
+  (`prober.falsifier.fresh_seeds`) emits the `"a,b,c,d"` string Node's `new PRNG()` requires — so
+  the counterfactual Monte-Carlo hard-errors on rust (`START: resumeReseed needs both turn and seed`).
+- **No rust clone-and-branch search** (`Battle::serialize`/`deserialize` are `todo!()`), and
+  `teacher/generate.py` hard-codes the node child. So `train_rl_agent`'s error on
+  `--search-teacher` / `--teacher-persistent` + `rust` remains correct — for these reasons.
+
+**Coverage (MEASURED).** The port fail-louds (`__ERR__ … is not modeled` → `RuntimeError` → env
+crash → launcher restart; the child itself survives via `catch_unwind`) rather than desync. On the
+**training pool this is a non-issue**: 719/719 `data/teams/` teams construct and 1500 random-play
+rust battles produced **zero** coverage errors. On `gen3randombattle` **14.0% of teams / 27.0% of
+battles** fail, and the leading causes are **not moves** — Deoxys/Unown formes are missing rows in
+`data/pokemon/gen3_species.json` (5.96% of teams, an extractor gap) and `forecast`/Castform (3.1%);
+`transform` is the only remaining construction-time move guard. Arbitrary ladder `gen3ou` is ~5% of
+battles (INFERRED from Smogon usage). Counter-hazard: unmodeled **items** (`shellbell`,
+`berryjuice`, `mentalherb`) and ~15 unreferenced moves (`fakeout`, `rollout`, the lock-in family)
+have NO fail-loud and run as silent no-ops / generic hits. (An earlier note here named
+*Aromatherapy* and *Wish* as unmodeled examples — both are in fact MODELED; the pool carries
+nothing unmodeled at all.)
 - **Turn-0 construction — MODELED (`gen3_turn0_construction_v1`).** The bridge builds via
   `BridgeSession::new_construct_turn0`, which runs the sim's full turn-0 construction window from the
   RAW `>start` seed — the per-mon gender `sample(['M','F'])` + the speed-tie insertChoice/eachEvent

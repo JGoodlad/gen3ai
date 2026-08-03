@@ -12877,22 +12877,27 @@ fn forecast_castform_fails_loud_at_construction() {
 /// (repro `sim_bridge_diff_out/soak_randbats/divergences/sbd_msapcesj_b22`, a randbats Ditto),
 /// which reaches the LIVE bridge path the offline fuzzers' pickers had filtered Transform out
 /// of — the reason this survived every existing gate.
-/// The WRAP-FAMILY half of `gen3_unmodeled_move_failloud_v1`. A partial-trap move is worse than
-/// a plain no-op when unmodeled: the port loses the `random(3,7)` duration DRAW, the maxhp/16
-/// chip, AND the firm switch-block — a triple desync. Repro `soak3/.../sbd_msb1zfxs_b237`: node
-/// emitted `|-activate|p1a: Snorlax|move: Wrap|[of] p2a: Shuckle`, the port emitted nothing.
+/// The WRAP-FAMILY half of `gen3_unmodeled_move_failloud_v1` was RETIRED in ROUND 32
+/// (`gen3_partial_trap_v1`) — the family is now MODELED bit-for-bit, so a wrap-carrying team must
+/// BUILD, not panic. (It used to be `#[should_panic(expected = "wrap is unmodeled")]`; the repro
+/// that motivated the guard was `soak3/.../sbd_msb1zfxs_b237`, where node emitted
+/// `|-activate|p1a: Snorlax|move: Wrap|[of] p2a: Shuckle` and the port emitted nothing.) The
+/// LIVE behaviour is pinned by the PT1-PT5 pins below; this one only guards the un-gating.
 #[test]
-#[should_panic(expected = "wrap is unmodeled")]
-fn wrap_family_fails_loud_at_construction() {
+fn wrap_family_builds_now_that_the_partial_trap_is_modeled() {
     let d = dex();
-    let snorlax = "Snorlax|||immunity|wrap|Hardy|252,,,,,|||||";
-    let foe = "Shuckle|||sturdy|toxic|Adamant|252,252,,,,|||||";
-    let _ = Battle::start_with_switchins(&opts_cg(snorlax, foe, "1,2,3,4"), &d);
+    for mv in ["wrap", "bind", "firespin", "clamp", "whirlpool", "sandtomb"] {
+        let user = format!("Snorlax|||immunity|{mv}|Hardy|252,,,,,|||||");
+        let foe = "Shuckle|||sturdy|toxic|Adamant|252,252,,,,|||||";
+        assert!(
+            Battle::start_with_switchins(&opts_cg(&user, foe, "1,2,3,4"), &d).is_ok(),
+            "{mv} must build — the partial-trap family is modeled"
+        );
+    }
 }
 
-/// Negative control for the wrap guard — a mon whose moves merely RESEMBLE the family (Bind is
-/// guarded, but e.g. Body Slam is not) must build fine. Guards against a future over-broad
-/// substring match on the id.
+/// Negative control for the (now Transform-only) fail-loud guard — a mon whose moves merely
+/// RESEMBLE the family must build fine. Guards against a future over-broad substring match.
 #[test]
 fn a_non_trapping_move_still_builds_fine() {
     let d = dex();
@@ -12901,16 +12906,897 @@ fn a_non_trapping_move_still_builds_fine() {
     assert!(Battle::start_with_switchins(&opts_cg(snorlax, foe, "1,2,3,4"), &d).is_ok());
 }
 
+// ============================================================================
+// PARTIAL TRAP pins (PT1…PT5, `gen3_partial_trap_v1`) — the gen-3 wrap family
+// (Wrap / Bind / Fire Spin / Clamp / Whirlpool / Sand Tomb).
+//
+// Ground truth: the REAL sim on each exact board, captured by `harness/probe_ptrap_pin.js`
+// (which prints the POST-CONSTRUCTION seed each pin is seeded at — the round-29 methodology
+// note: `start_with_switchins` is draw-free while the sim spends its first draws on the turn-0
+// construction window, so seeding the port with the RAW seed would silently replay those as
+// move-phase draws). The MECHANICS were settled by `harness/probe_batch89_trap.js` (the
+// duration draw + the lifecycle) and `harness/probe_ptrap_edges{,2}.js` (the edges).
+//
+// THE DRAW MODEL: the ordinary damaging chain PLUS exactly ONE `random(3, 7)` at cast (the
+// gen4-mod `partiallytrapped.durationCallback` inside `addVolatile`). Everything after that is
+// DRAW-FREE. Each pin asserts the exact post-turn SEED as well as the protocol bytes, so a
+// mis-POSITIONED or MISSING duration draw fails even when the visible lines happen to match.
+// ============================================================================
+
+/// PT1 — the FULL LIFECYCLE. Wrap lands, the `random(3,7)` returns 5 → FOUR chip turns
+/// (`duration − 1`) of `floor(482/16) = 30` each, then the duration hits 0 and the `onEnd`
+/// emits the NON-silent `|-end|p2a: Snorlax|Wrap|[partiallytrapped]` with NO chip that turn.
+/// Also pins the FIRM switch-block (`trap_is_firm` — the `trapped:true` request shape) while
+/// the trap is live, and its release the moment the volatile ends.
+///
+/// WRONG (pre-fix): the port ran Wrap as a plain damaging move — it lost the duration DRAW (so
+/// every later seed diverged), the chip, AND the switch-legality: a triple desync.
 #[test]
-#[should_panic(expected = "transform is unmodeled")]
-fn transform_fails_loud_at_construction() {
+fn partial_trap_wrap_lifecycle_matches_the_sim() {
     let d = dex();
-    // Keyed on the MOVE, not the species — gen3 Ditto is the usual carrier but Mew/Smeargle
-    // can learn Transform, and a Ditto WITHOUT it is harmless. Any foe suffices; the panic
-    // fires at construction, before a turn runs.
-    let ditto = "Ditto|||limber|transform|Hardy|252,,,,,|||||";
+    let p1 = "Dragonite||Leftovers|InnerFocus|wrap,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Snorlax||Leftovers|Immunity|splash|Hardy|85,85,85,85,85,85|M||||]\
+              Blissey||Leftovers|NaturalCure|splash|Hardy|85,85,85,85,85,85|F||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Wrap cast (+ the random(3,7))
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // chip
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // chip
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // chip
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // duration 1 -> 0: the -end
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let marks: Vec<&str> = raw
+        .iter()
+        .filter(|l| l.contains("partiallytrapped") || l.contains("move: Wrap"))
+        .map(|l| l.as_str())
+        .collect();
+    assert_eq!(
+        marks,
+        vec![
+            "|-activate|p2a: Snorlax|move: Wrap|[of] p1a: Dragonite",
+            "|-damage|p2a: Snorlax|452/482|[from] move: Wrap|[partiallytrapped]",
+            "|-damage|p2a: Snorlax|452/482|[from] move: Wrap|[partiallytrapped]",
+            "|-damage|p2a: Snorlax|452/482|[from] move: Wrap|[partiallytrapped]",
+            "|-damage|p2a: Snorlax|452/482|[from] move: Wrap|[partiallytrapped]",
+            "|-end|p2a: Snorlax|Wrap|[partiallytrapped]",
+        ],
+        "PT1: the real sim's cast/-activate, FOUR chips (duration 5 - 1) and the NON-silent \
+         natural expiry, in order. got:\n{}",
+        raw.join("\n")
+    );
+    // The SEED gate — a missing / mis-positioned `random(3,7)` breaks these even if the lines
+    // coincidentally match (the chips are draw-free, so only the cast turn moves the stream).
+    for (i, want) in [
+        "58424,44781,32445,22157",
+        "8730,10456,11782,14692",
+        "23935,41153,16141,50999",
+        "60870,54810,59059,42614",
+        "4841,46532,32342,29009",
+    ]
+    .iter()
+    .enumerate()
+    {
+        assert_eq!(seed_str(&out.decisions[i].seed_after), *want, "PT1 dec{i} post-turn seed");
+    }
+}
+
+/// PT1b — the SWITCH-BLOCK half, on the same board: while the `partiallytrapped` volatile is
+/// live the victim is TRAPPED and the trap is FIRM (`trapped:true` on the very first request +
+/// an `[Invalid choice]` reject with NO re-request — the Shadow-Tag shape, probe M). It frees
+/// the instant the volatile ends. Pure STATE, no PRNG.
+#[test]
+fn partial_trap_firm_trap_blocks_the_victims_switch() {
+    let d = dex();
+    let p1 = "Dragonite||Leftovers|InnerFocus|wrap,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Snorlax||Leftovers|Immunity|splash|Hardy|85,85,85,85,85,85|M||||]\
+              Blissey||Leftovers|NaturalCure|splash|Hardy|85,85,85,85,85,85|F||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    assert!(!st.is_trapped(1, &d), "PT1b: untrapped before the cast");
+    let _ = st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert!(st.is_trapped(1, &d), "PT1b: the wrapped mon is TRAPPED");
+    assert!(st.trap_is_firm(1, &d), "PT1b: partiallytrapped is a FIRM trap (bare tryTrap())");
+    assert!(!st.is_trapped(0, &d), "PT1b: the TRAPPER is free to switch");
+    // Run it out: 3 more chips + the expiry turn; the trap must then be gone.
+    let _ = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert!(!st.is_trapped(1, &d), "PT1b: the expiry frees the victim");
+}
+
+/// PT2 — the TRAPPER LEAVES. The turn the wrapper switches out, the residual sees
+/// `!source.isActive` and takes the `onResidual` release branch: the volatile is deleted, a
+/// SILENT `|-end|…|[partiallytrapped]|[silent]` is emitted and there is NO chip that turn.
+#[test]
+fn partial_trap_releases_silently_when_the_trapper_leaves() {
+    let d = dex();
+    let p1 = "Dragonite||Leftovers|InnerFocus|wrap,splash|Hardy|85,85,85,85,85,85|M||||]\
+              Gengar||Leftovers|Levitate|splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Snorlax||Leftovers|Immunity|splash|Hardy|85,85,85,85,85,85|M||||]\
+              Blissey||Leftovers|NaturalCure|splash|Hardy|85,85,85,85,85,85|F||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),   // Wrap lands
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(0)), // the TRAPPER pivots out
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),   // nothing left to chip
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let marks: Vec<&str> = raw
+        .iter()
+        .filter(|l| l.contains("partiallytrapped") || l.contains("move: Wrap"))
+        .map(|l| l.as_str())
+        .collect();
+    assert_eq!(
+        marks,
+        vec![
+            "|-activate|p2a: Snorlax|move: Wrap|[of] p1a: Dragonite",
+            "|-damage|p2a: Snorlax|452/482|[from] move: Wrap|[partiallytrapped]",
+            "|-end|p2a: Snorlax|Wrap|[partiallytrapped]|[silent]",
+        ],
+        "PT2: the trapper-gone branch is SILENT and takes NO chip. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(!st.is_trapped(1, &d), "PT2: the victim is free once the trapper left");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "8730,10456,11782,14692",
+        "PT2: the release is DRAW-FREE (the real sim's post-turn seed)");
+}
+
+/// PT3 — a SUBSTITUTE eats the whole cast: the sub's `onTryPrimaryHit` returns before
+/// `runMoveEffects`, so there is NO volatile AND — the bit-for-bit crux — NO `random(3,7)`.
+/// The seed assertion is what makes this pin meaningful: a port that drew the duration and
+/// merely skipped the volatile would still print the right lines but desync every later turn.
+#[test]
+fn partial_trap_substitute_blocks_the_volatile_and_the_duration_draw() {
+    let d = dex();
+    let p1 = "Dragonite||Leftovers|InnerFocus|wrap,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Snorlax||Leftovers|Immunity|substitute,splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "42771,25880,27089,15090"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // p2 Substitute
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Wrap into the sub
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // ...and again
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert!(
+        !raw.iter().any(|l| l.contains("partiallytrapped")),
+        "PT3: a sub-absorbed Wrap applies NO partial trap. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(!st.is_trapped(1, &d), "PT3: the sub owner is not trapped");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "13438,47692,23971,41473",
+        "PT3: the sub-absorbed cast draws NO random(3,7) — the real sim's post-turn seed");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "50887,33032,2836,3461", "PT3 dec2 seed");
+}
+
+/// PT4 — RAPID SPIN by the victim clears the trap. The gen4-mod `rapidspin.self.onHit` calls
+/// `removeVolatile('partiallytrapped')` LAST (after the leech-seed / hazard clears), and because
+/// it is a `removeVolatile` the condition's `onEnd` fires — so the NON-silent
+/// `|-end|<user>|<Move>|[partiallytrapped]` is emitted, with NO `[from] move: Rapid Spin` tag
+/// (unlike the leech-seed and Spikes clears on the same handler). DRAW-FREE.
+#[test]
+fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
+    let d = dex();
+    let p1 = "Dragonite||Leftovers|InnerFocus|wrap,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Starmie||Leftovers|NaturalCure|rapidspin,splash|Hardy|85,85,85,85,85,85|N||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Wrap lands on Starmie
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Starmie SPINS
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let marks: Vec<&str> = raw
+        .iter()
+        .filter(|l| l.contains("partiallytrapped") || l.contains("move: Wrap"))
+        .map(|l| l.as_str())
+        .collect();
+    assert_eq!(
+        marks,
+        vec![
+            "|-activate|p2a: Starmie|move: Wrap|[of] p1a: Dragonite",
+            "|-damage|p2a: Starmie|263/282|[from] move: Wrap|[partiallytrapped]",
+            "|-end|p2a: Starmie|Wrap|[partiallytrapped]",
+        ],
+        "PT4: Rapid Spin ends the trap with the NON-silent form and no [from] tag. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(!st.is_trapped(1, &d), "PT4: the spin frees the victim");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "4841,46532,32342,29009",
+        "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
+}
+
+/// PT7 — the endTurn `TrapPokemon` HANDLER-SORT TIE (`gen3_partial_trap_v1`). The trap-MOVE
+/// `trapped` volatile (Block / Mean Look / Spider Web) and `partiallytrapped` BOTH carry an
+/// `onTrapPokemon`, and both are **Conditions** ⇒ `subOrder` 2 (`sim/battle.ts:957`). Held
+/// together on the SAME mon they have the same speed AND the same subOrder ⇒ the event's handler
+/// list TIES ⇒ **ONE extra `random(0,2)` per endTurn** for as long as both are live. Exactly one,
+/// not two: neither condition carries an `onMaybeTrapPokemon`, so the `MaybeTrapPokemon` event
+/// still sees only the ability handlers.
+///
+/// WRONG (pre-fix): `trap_event_shuffles` counted ONLY the ability handlers (Arena Trap / Magnet
+/// Pull) — correct while at most one trapping CONDITION could exist, which is exactly what
+/// modelling the wrap family changed. FOUND BY the round-32 byte fuzz (`ab_fuzz --mode random
+/// --protocol --master-seed 803324991`, repro `rmsde6xp4_ab_10_9`: an Onix that Blocks and then
+/// Sand Tombs the same Wartortle → `kind=seed` at dec 26, one draw short). Draw model
+/// probe-measured by `harness/probe_ptrap_trapevent.js`: block-only +0, sandtomb-only +0, BOTH
+/// +1, arena-trap-only +0. Also pinned end-to-end by byte-fuzz corpus fixture
+/// `72_block_plus_partial_trap_ties_the_trapevent_sort.txt` (the original repro).
+#[test]
+fn partial_trap_plus_block_ties_the_endturn_trap_event_sort() {
+    let d = dex();
+    let p1 = "Onix||BlackBelt|Sturdy|block,sandtomb,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Wartortle||Leftovers|Torrent|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Sand Tomb -> partiallytrapped
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Block -> ALSO `trapped`
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)), // idle: both live -> the tie
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)), // idle: still both live
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    // GUARDS: this pin is vacuous unless BOTH volatiles actually landed and are still live.
+    assert!(
+        raw.iter().any(|l| l.contains("|-activate|p2a: Wartortle|move: Sand Tomb")),
+        "PT7: the Sand Tomb must land. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(
+        raw.iter().any(|l| l == "|-activate|p2a: Wartortle|trapped"),
+        "PT7: the Block must land. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(
+        st.sides[1].pokemon[st.sides[1].active].partial_trap.is_some()
+            && st.sides[1].pokemon[st.sides[1].active].trapped_by.is_some(),
+        "PT7: BOTH trapping volatiles must still be live at the end (else no tie is exercised)"
+    );
+    // The SEED is the whole pin: dec1 onward each carry the extra tie-shuffle draw.
+    for (i, want) in [
+        "58424,44781,32445,22157", // Sand Tomb cast (the random(3,7)); only ONE condition yet
+        "23935,41153,16141,50999", // Block lands -> the endTurn TrapPokemon sort now TIES
+        "4841,46532,32342,29009",
+        "13170,34781,40173,15195",
+    ]
+    .iter()
+    .enumerate()
+    {
+        assert_eq!(seed_str(&out.decisions[i].seed_after), *want, "PT7 dec{i} post-turn seed");
+    }
+}
+
+/// PT6 — PRECEDENCE. On the SAME residual the duration hits 0 AND the trapper switches out.
+/// Showdown's `fieldEvent('Residual')` decrements `handler.state.duration` and calls the
+/// `end()` (→ `onEnd`) BEFORE it ever invokes `onResidual`, so the DURATION branch wins and the
+/// **NON-silent** `|-end|…|[partiallytrapped]` is emitted — not the trapper-gone `[silent]`
+/// form. Probe O settled this; a port that tested "trapper gone" first would emit `[silent]`
+/// here and match everywhere else, which is exactly why it needs its own pin.
+#[test]
+fn partial_trap_duration_expiry_beats_the_trapper_gone_release() {
+    let d = dex();
+    let p1 = "Dragonite||Leftovers|InnerFocus|wrap,splash|Hardy|85,85,85,85,85,85|M||||]\
+              Gengar||Leftovers|Levitate|splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Snorlax||Leftovers|Immunity|splash|Hardy|85,85,85,85,85,85|M||||]\
+              Blissey||Leftovers|NaturalCure|splash|Hardy|85,85,85,85,85,85|F||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "46121,4763,1072,30122"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),   // Wrap (random(3,7) == 3)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),   // the 2nd (last) chip
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(0)), // trapper leaves AND dur -> 0
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let marks: Vec<&str> = raw
+        .iter()
+        .filter(|l| l.contains("partiallytrapped") || l.contains("move: Wrap"))
+        .map(|l| l.as_str())
+        .collect();
+    assert_eq!(
+        marks,
+        vec![
+            "|-activate|p2a: Snorlax|move: Wrap|[of] p1a: Dragonite",
+            "|-damage|p2a: Snorlax|452/482|[from] move: Wrap|[partiallytrapped]",
+            "|-damage|p2a: Snorlax|452/482|[from] move: Wrap|[partiallytrapped]",
+            "|-end|p2a: Snorlax|Wrap|[partiallytrapped]",
+        ],
+        "PT6: the duration-END branch wins — the NON-silent form, NOT `|[silent]`. got:\n{}",
+        raw.join("\n")
+    );
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "36585,19230,53587,24035", "PT6 dec2 seed");
+}
+
+/// PT5 — BATON PASS carries the trap. `partiallytrapped` has NO `noCopy`, so
+/// `copyVolatileFrom` transfers it: the entrant inherits the SAME duration and the SAME source
+/// (NOT re-pointed, unlike the linked `trapped` volatile), is itself firm-trapped, and is
+/// chipped off ITS OWN maxhp — 672/16 = 42 for the Blissey here vs the passer's 482/16 = 30.
+/// A trapped mon CAN Baton Pass: `trapped` gates the switch CHOICE, not a self-switch MOVE.
+#[test]
+fn partial_trap_is_baton_passed_to_the_entrant() {
+    let d = dex();
+    let p1 = "Dragonite||Leftovers|InnerFocus|wrap,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Snorlax||Leftovers|Immunity|batonpass,splash|Hardy|85,85,85,85,85,85|M||||]\
+              Blissey||Leftovers|NaturalCure|splash|Hardy|85,85,85,85,85,85|F||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Wrap lands on Snorlax
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Snorlax Baton Passes
+            ScriptDecision::one(1, Choice::Switch(1)),              // Blissey in — inherits it
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let marks: Vec<&str> = raw
+        .iter()
+        .filter(|l| l.contains("partiallytrapped") || l.contains("move: Wrap"))
+        .map(|l| l.as_str())
+        .collect();
+    assert_eq!(
+        marks,
+        vec![
+            "|-activate|p2a: Snorlax|move: Wrap|[of] p1a: Dragonite",
+            "|-damage|p2a: Snorlax|452/482|[from] move: Wrap|[partiallytrapped]",
+            "|-damage|p2a: Blissey|630/672|[from] move: Wrap|[partiallytrapped]",
+            "|-damage|p2a: Blissey|630/672|[from] move: Wrap|[partiallytrapped]",
+        ],
+        "PT5: the passed trap keeps chipping — off the ENTRANT's own maxhp (672/16 = 42). \
+         got:\n{}",
+        raw.join("\n")
+    );
+    assert!(st.is_trapped(1, &d), "PT5: the entrant inherits the FIRM trap");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "8730,10456,11782,14692",
+        "PT5: the pass + the entrant's first chip are DRAW-FREE (the real sim's post-turn seed)");
+}
+
+// ── TRANSFORM (`gen3_transform_v1`, ROUND 33) ──────────────────────────────────────────
+//
+// Ground truth: `harness/probe_transform_pin.js` — each board driven through the real
+// omniscient gen3 sim on the SAME packed teams, printing the POST-CONSTRUCTION seed (the
+// round-29 methodology note) plus the per-decision lines AND post-turn seed. Transform is
+// DRAW-FREE, so the seeds are the load-bearing half of every pin: they are what fails if the
+// HYBRID speed cache (see `run_status_move`'s transform arm) is modeled as the copied or the
+// original speed, because `each_event_shuffle` ties on `cached_speed`.
+
+const TF_DITTO_1: &str = "Ditto||MetalPowder|Limber|transform|Hardy|85,85,85,85,85,85|N||||";
+const TF_DITTO_1_GENGAR: &str = "Ditto||MetalPowder|Limber|transform|Hardy|85,85,85,85,85,85|N||||]Gengar||Leftovers|Levitate|splash|Hardy|85,85,85,85,85,85|M||||";
+const TF_DITTO_MIRROR: &str = "Ditto||MetalPowder|Limber|transform,splash|Hardy|85,85,85,85,85,85|N||||";
+const TF_LAX_4: &str = "Snorlax||Leftovers|ThickFat|swordsdance,bodyslam,rest,splash|Adamant|252,252,,,,4|M|31,31,31,31,31,3|||";
+const TF_LAX_SD: &str = "Snorlax||Leftovers|ThickFat|swordsdance,bodyslam,splash|Hardy|85,85,85,85,85,85|M||||";
+const TF_LAX_SUB: &str = "Snorlax||Leftovers|ThickFat|substitute,splash|Hardy|85,85,85,85,85,85|M||||";
+const TF_LAX_BOOM: &str = "Snorlax||Leftovers|ThickFat|explosion,splash|Hardy|85,85,85,85,85,85|M||||]Blissey||Leftovers|NaturalCure|splash|Hardy|85,85,85,85,85,85|F||||";
+/// A Mimic carrier PLUS a second mon whose moves the carrier does NOT have — so a transformed
+/// Ditto (which copied the carrier's WHOLE moveset) does NOT already know the foe's `lastMove`.
+/// That isolation is the whole point: with a same-mon board the `already knows the move` fail
+/// masks the `source.transformed` fail and the pin passes even when the gate is deleted.
+const TF_BLISS_MIMIC_LAX: &str = "Blissey||Leftovers|NaturalCure|mimic,splash,softboiled,toxic|Hardy|85,85,85,85,85,85|F||||]Snorlax||Leftovers|ThickFat|curse,splash|Hardy|85,85,85,85,85,85|M||||";
+/// NICKNAME-LESS packed forms (`|Species|…` ⇒ `set.name` empty), so the protocol ident has to be
+/// derived from the mon's BASE species rather than the copied one.
+const TF_DITTO_NONICK: &str = "|Ditto|MetalPowder|Limber|transform|Hardy|85,85,85,85,85,85|N||||";
+const TF_LAX_NONICK: &str = "|Snorlax|Leftovers|ThickFat|bodyslam,splash|Hardy|85,85,85,85,85,85|M||||";
+/// An INTIMIDATE carrier — the TF9 board.
+const TF_GYARA: &str = "Gyarados||Leftovers|Intimidate|splash,bodyslam|Hardy|85,85,85,85,85,85|M||||";
+/// The post-construction seed shared by every board that leads Ditto vs a Snorlax/Blissey.
+const TF_SEED: &str = "42771,25880,27089,15090";
+
+/// Strip the battle FRAMING (banner / `|t:|` / `|switch|` / `|upkeep` / `|turn|` / blanks) so a
+/// pin asserts only the EFFECT lines, in order.
+fn tf_effect_lines(raw: &[String]) -> Vec<&str> {
+    raw.iter()
+        .map(|l| l.as_str())
+        .filter(|l| {
+            l.starts_with("|move|")
+                || l.starts_with("|-")
+                || l.starts_with("|faint|")
+                || l.starts_with("|cant|")
+        })
+        .collect()
+}
+
+/// TF1 — the FULL COPY, and the `ppUps[i] || 0` maxpp ladder that the gen3-randbats Ditto
+/// (ONE move: Transform) makes the COMMON case, not an edge. A 1-move Ditto copying
+/// Snorlax's `swordsdance,bodyslam,rest,splash` gets `5/48, 5/15, 5/10, 5/40`: only slot 0
+/// has a `ppUps` entry to read, so slots 1-3 get the RAW base PP as their max. (A 4-move
+/// transformer would get `5/48, 5/24, 5/16, 5/64` — probe B.) Also pins the copied species /
+/// stats / types / ability / the copied-Speed action order, and a copied move actually USED
+/// (Body Slam 5 → 4 PP, damage computed off the COPIED Atk 350 vs Snorlax's own bulk).
+#[test]
+fn transform_copies_the_target_with_the_ppups_maxpp_ladder() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(TF_DITTO_1, TF_LAX_4, TF_SEED), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Transform vs Swords Dance
+            ScriptDecision::both(Choice::Move(1), Choice::Move(3)), // the COPIED Body Slam
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert_eq!(
+        tf_effect_lines(&raw),
+        vec![
+            "|move|p1a: Ditto|Transform|p2a: Snorlax",
+            "|-transform|p1a: Ditto|p2a: Snorlax",
+            "|move|p2a: Snorlax|Swords Dance|p2a: Snorlax",
+            "|-boost|p2a: Snorlax|atk|2",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|move|p1a: Ditto|Body Slam|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|324/524",
+            "|-heal|p2a: Snorlax|356/524|[from] item: Leftovers",
+        ],
+        "TF1: got:\n{}",
+        raw.join("\n")
+    );
+    let u = &st.sides[0].pokemon[0];
+    assert_eq!(u.species_id, "snorlax", "TF1: the species is copied");
+    assert!(u.transformed(), "TF1: the transform overlay is up");
+    assert_eq!(u.ability, "Thick Fat", "TF1: the ability is copied");
+    assert_eq!(
+        (u.stats[1], u.stats[2], u.stats[3], u.stats[4], u.stats[5]),
+        (350, 166, 149, 256, 69),
+        "TF1: the five NON-HP stats are copied verbatim"
+    );
+    assert_eq!((u.hp, u.maxhp), (258, 258), "TF1: HP/maxHP are NOT copied (Ditto keeps its own)");
+    assert_eq!(
+        u.set.moves.iter().map(|m| pokesim::dex::to_id(m)).collect::<Vec<_>>(),
+        vec!["swordsdance", "bodyslam", "rest", "splash"],
+        "TF1: the moveset is copied"
+    );
+    assert_eq!(u.move_pp, vec![5, 4, 5, 5], "TF1: every copied slot starts at min(5, pp); Body Slam was used");
+    assert_eq!(
+        u.move_maxpp,
+        vec![48, 15, 10, 40],
+        "TF1: maxpp = calculatePP(move, ppUps[i] || 0) — the 1-move Ditto has ppUps=[3], so \
+         ONLY slot 0 is PP-upped (30*8/5=48); slots 1-3 take the raw base PP (15/10/40)"
+    );
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "6325,61109,20311,1492",
+        "TF1: the Transform turn is DRAW-FREE and its eachEvent tie-shuffles ride the HYBRID speed");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "7509,52024,24474,34576",
+        "TF1: the copied-move turn matches the real sim's post-turn seed");
+}
+
+/// TF2 — REVERT ON SWITCH-OUT (`clearVolatile`): the outgoing Ditto goes back to its own
+/// species/stats/ability/moveslots, and Transform's OWN remaining PP persists (15/16 — the
+/// sim's `moveSlots`/`baseMoveSlots` share slot objects, so the cast's decrement survives the
+/// revert). The re-entry `|switch|` must render `Ditto|258/258`, NOT the copied species.
+#[test]
+fn transform_reverts_on_switch_out_keeping_its_own_used_pp() {
+    let d = dex();
+    let mut battle = Battle::start_with_switchins(&opts_cg(TF_DITTO_1_GENGAR, TF_LAX_SD, TF_SEED), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(2)), // Transform vs Splash
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(2)), // pivot out → revert
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(2)), // and back in
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert!(
+        raw.iter().any(|l| l == "|switch|p1a: Ditto|Ditto|258/258"),
+        "TF2: the re-entry renders the mon's OWN species. got:\n{}",
+        raw.join("\n")
+    );
+    let u = &st.sides[0].pokemon[0];
+    assert_eq!(u.species_id, "ditto", "TF2: species reverted");
+    assert!(!u.transformed(), "TF2: the overlay is gone");
+    assert_eq!(u.ability, "Limber", "TF2: ability reverted");
+    assert_eq!(u.stats[5], 153, "TF2: the five stats reverted");
+    assert_eq!(u.cached_speed, 153, "TF2: `setSpecies(baseSpecies)` re-seeds the speed cache");
+    assert_eq!(
+        u.set.moves.iter().map(|m| pokesim::dex::to_id(m)).collect::<Vec<_>>(),
+        vec!["transform"],
+        "TF2: the moveslots revert to baseMoveSlots"
+    );
+    assert_eq!((u.move_pp.clone(), u.move_maxpp.clone()), (vec![15], vec![16]),
+        "TF2: Transform's OWN remaining PP persists across the revert (15/16)");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "64322,23189,17641,10394",
+        "TF2: the revert is DRAW-FREE (the real sim's post-turn seed)");
+}
+
+/// TF3 — the DITTO MIRROR: `transformInto`'s `pokemon.transformed && gen >= 2` guard makes the
+/// SECOND Transform fail draw-free (`|move|…|Transform||[still]` + `|-fail|`). The USER being
+/// transformed does NOT block (that guard is gen5+), which the second decision pins: the
+/// already-transformed p1 Ditto Transforms AGAIN into the (still untransformed) p2 Ditto and
+/// its copied Transform slot resets to 5/16.
+#[test]
+fn transform_into_an_already_transformed_target_fails_draw_free() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(TF_DITTO_MIRROR, TF_DITTO_MIRROR, "2775,52901,22889,24934"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert_eq!(
+        tf_effect_lines(&raw),
+        vec![
+            "|move|p1a: Ditto|Transform|p2a: Ditto",
+            "|-transform|p1a: Ditto|p2a: Ditto",
+            "|move|p2a: Ditto|Transform||[still]",
+            "|-fail|p2a: Ditto",
+            "|move|p1a: Ditto|Transform|p2a: Ditto",
+            "|-transform|p1a: Ditto|p2a: Ditto",
+            "|move|p2a: Ditto|Splash|p2a: Ditto",
+            "|-nothing",
+        ],
+        "TF3: got:\n{}",
+        raw.join("\n")
+    );
+    let u = &st.sides[0].pokemon[0];
+    assert!(u.transformed(), "TF3: the re-transform holds");
+    assert_eq!((u.move_pp.clone(), u.move_maxpp.clone()), (vec![5, 5], vec![16, 64]),
+        "TF3: the second copy re-fills the copied Transform slot to 5/16");
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "28052,44136,62443,55151",
+        "TF3: the mirror turn (one success + one fail) is DRAW-FREE");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "44763,13952,47559,22436", "TF3: turn 2 seed");
+}
+
+/// TF4 — a SUBSTITUTE does NOT block Transform. gen3 Transform carries `bypasssub` and the
+/// `pokemon.volatiles['substitute']` fail-guard in `transformInto` is gen5-ONLY, so the copy
+/// goes straight THROUGH the sub. (The same board also demonstrates the absent `protect` flag
+/// class: Transform's gen3 flags are `{bypasssub, metronome, failencore}` only.)
+#[test]
+fn transform_copies_through_a_substitute() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(TF_DITTO_MIRROR, TF_LAX_SUB, TF_SEED), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Splash vs Substitute
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Transform INTO the sub
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert!(
+        raw.iter().any(|l| l == "|-transform|p1a: Ditto|p2a: Snorlax"),
+        "TF4: the copy lands through the Substitute. got:\n{}",
+        raw.join("\n")
+    );
+    let u = &st.sides[0].pokemon[0];
+    assert_eq!(u.species_id, "snorlax");
+    assert_eq!(u.stats[5], 117, "TF4: the subbed target's stats are copied");
+    assert_eq!((u.move_pp.clone(), u.move_maxpp.clone()), (vec![5, 5], vec![16, 64]),
+        "TF4: a 2-move Ditto PP-ups BOTH copied slots (substitute 10*8/5=16, splash 40*8/5=64)");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "13438,47692,23971,41473",
+        "TF4: the through-a-sub copy is DRAW-FREE");
+}
+
+/// TF5 — REVERT ON FAINT: `faintMessages`'s `clearVolatile` reverts the copy too, so the
+/// corpse reads back as the original mon (species / `transformed=false` / its own moveslots).
+/// Without it a re-encoded corpse would report the copied species forever.
+#[test]
+fn transform_reverts_on_faint() {
+    let d = dex();
+    let mut battle = Battle::start_with_switchins(&opts_cg(TF_DITTO_1_GENGAR, TF_LAX_BOOM, TF_SEED), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Transform vs Splash
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // the COPIED Explosion
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert_eq!(
+        raw.iter().map(|l| l.as_str()).filter(|l| l.starts_with("|faint|") || l.starts_with("|move|p1a")).collect::<Vec<_>>(),
+        vec![
+            "|move|p1a: Ditto|Transform|p2a: Snorlax",
+            "|move|p1a: Ditto|Explosion|p2a: Snorlax",
+            "|faint|p1a: Ditto",
+            "|faint|p2a: Snorlax",
+        ],
+        "TF5: the self-KO'd copy still emits its ORIGINAL ident. got:\n{}",
+        raw.join("\n")
+    );
+    let u = &st.sides[0].pokemon[0];
+    assert!(u.fainted, "TF5: the copy self-KO'd");
+    assert!(!u.transformed(), "TF5: the corpse is reverted");
+    assert_eq!(u.species_id, "ditto", "TF5: the corpse reads back as Ditto");
+    assert_eq!(
+        u.set.moves.iter().map(|m| pokesim::dex::to_id(m)).collect::<Vec<_>>(),
+        vec!["transform"],
+        "TF5: the corpse's moveslots reverted"
+    );
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "28052,44136,62443,55151",
+        "TF5: the real sim's post-Explosion seed");
+}
+
+/// TF6 — MIMIC USED BY a transformed mon FAILS (`mimic.onHit`'s FIRST clause,
+/// `source.transformed`). A Ditto that copied a Mimic carrier holds a `virtual` Mimic slot;
+/// using it emits `[still]` + `-fail` and STILL deducts the PP. Only reachable now that
+/// Transform is modeled — the port's old comment called this gate unreachable.
+///
+/// The board deliberately makes the foe SWITCH to a mon whose Curse the copied moveset does
+/// NOT contain: on a same-mon board the transformed user always knows the foe's lastMove (it
+/// copied the whole set), so the `already knows the move` fail masks this one and the pin
+/// passes with the gate deleted. Revert-verified against that.
+#[test]
+fn mimic_used_by_a_transformed_mon_fails() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(TF_DITTO_1, TF_BLISS_MIMIC_LAX, TF_SEED), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),  // Transform vs Splash
+            ScriptDecision::both(Choice::Move(1), Choice::Switch(1)), // foe brings in Snorlax
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),  // Snorlax Curses (an unknown move)
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),  // the COPIED Mimic
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert_eq!(
+        raw.iter().map(|l| l.as_str()).filter(|l| l.starts_with("|move|p1a") || l.starts_with("|-fail|") || l.starts_with("|-transform|")).collect::<Vec<_>>(),
+        vec![
+            "|move|p1a: Ditto|Transform|p2a: Blissey",
+            "|-transform|p1a: Ditto|p2a: Blissey",
+            "|move|p1a: Ditto|Splash|p1a: Ditto",
+            "|move|p1a: Ditto|Splash|p1a: Ditto",
+            "|move|p1a: Ditto|Mimic||[still]",
+            "|-fail|p1a: Ditto",
+        ],
+        "TF6: got:\n{}",
+        raw.join("\n")
+    );
+    let u = &st.sides[0].pokemon[0];
+    assert!(u.mimic_overlay.is_none(), "TF6: the failed Mimic overlaid nothing");
+    assert_eq!(
+        u.set.moves.iter().map(|m| pokesim::dex::to_id(m)).collect::<Vec<_>>(),
+        vec!["mimic", "splash", "softboiled", "toxic"],
+        "TF6: the copied moveset is untouched — Curse was NOT mimicked"
+    );
+    assert_eq!(u.move_pp, vec![4, 3, 5, 5], "TF6: the failed Mimic still cost its PP");
+    assert_eq!(seed_str(&out.decisions[3].seed_after), "50887,33032,2836,3461",
+        "TF6: the failed Mimic turn matches the real sim's post-turn seed");
+}
+
+/// TF8 — the protocol IDENT of a NICKNAME-LESS transformed mon. `pokemon.name` is
+/// `set.name || set.species`, computed at CONSTRUCTION and never touched by `transformInto`,
+/// so EVERY line still reads `p1a: Ditto` after the copy. The port's `helpers::display_name`
+/// falls back to the species when there is no nickname, so it must read through the transform
+/// overlay — and only a packed team in the `|Species|…` form (empty `set.name`) exercises that
+/// path, which is why TF1-TF7 (all `Nickname||…` teams) cannot cover it.
+#[test]
+fn transform_ident_stays_the_base_species_without_a_nickname() {
+    let d = dex();
+    let mut battle = Battle::start_with_switchins(&opts_cg(TF_DITTO_NONICK, TF_LAX_NONICK, TF_SEED), &d)
+        .expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Transform vs Splash
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // the COPIED Body Slam
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert_eq!(
+        tf_effect_lines(&raw),
+        vec![
+            "|move|p1a: Ditto|Transform|p2a: Snorlax",
+            "|-transform|p1a: Ditto|p2a: Snorlax",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|move|p1a: Ditto|Body Slam|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|330/482",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|-heal|p2a: Snorlax|360/482|[from] item: Leftovers",
+        ],
+        "TF8: every ident stays `p1a: Ditto`. got:\n{}",
+        raw.join("\n")
+    );
+    assert_eq!(st.sides[0].pokemon[0].move_maxpp, vec![24, 40],
+        "TF8: the `ppUps[i] || 0` ladder again — a 1-move Ditto PP-ups slot 0 (Body Slam \
+         15*8/5=24) but NOT slot 1 (Splash keeps its raw 40)");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "52552,37552,17702,10562", "TF8: post-turn seed");
+}
+
+/// TF9 — the ABILITY (`gen3_transform_v1`). Three facts, all read straight off the resolved
+/// gen3 sim and probe-confirmed on this board:
+///   1. it IS copied — `transformInto` ends with `if (gen > 2) this.setAbility(pokemon.ability,
+///      …, isFromFormeChange = true, isTransform = true)`, so a Ditto that copies Gyarados
+///      HOLDS Intimidate;
+///   2. its `onStart` does **NOT** re-fire in gen3 — `setAbility`'s Start `singleEvent` is
+///      gated on `this.battle.gen > 3`, so the copy drops NO Atk (both sides' boosts stay 0);
+///   3. the revert target is `this.baseAbility`, **not** the live ability the copy overwrote
+///      — `clearVolatile` does `this.ability = this.baseAbility`, and `baseAbility` is written
+///      ONLY at construction and by `formeChange` (`sim/pokemon.ts:421`/`:1490`; `setAbility`
+///      never touches it, so not even a Trace moves it). That is why `TransformOverlay` carries
+///      NO `base_ability` field and `restore_transform_overlay` restores `set.ability`:
+///      capturing the live ability would fight the switch-out Trace revert
+///      (`gen3_berry_trace_shedskin_v1`), which runs FIRST at the same site.
+#[test]
+fn transform_copies_the_ability_without_refiring_its_on_start() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(TF_DITTO_1_GENGAR, TF_GYARA, TF_SEED), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Transform vs Splash
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(0)), // pivot out → revert
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(0)), // and back in
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    // (2) NOTHING ability-shaped AFTER the copy. Scoped to the post-`-transform` slice on
+    //     purpose: Gyarados's OWN lead Intimidate fires at construction (`|-ability|p2a:
+    //     Gyarados|Intimidate|boost` + `|-unboost|p1a: Ditto|atk|1`) and is correct — an
+    //     unscoped assertion would trip on it and prove nothing about the copy.
+    let after = raw
+        .iter()
+        .position(|l| l.starts_with("|-transform|"))
+        .expect("TF9: the copy must land");
+    assert!(
+        !raw[after + 1..].iter().any(|l| l.contains("Intimidate") || l.starts_with("|-unboost|")),
+        "TF9: gen3 gates setAbility's Start singleEvent on `gen > 3` — the COPY must fire \
+         NOTHING. got:\n{}",
+        raw[after + 1..].join("\n")
+    );
+    assert_eq!(
+        raw.iter().filter(|l| l.starts_with("|-unboost|")).count(),
+        1,
+        "TF9: exactly ONE Atk drop in the whole battle — Gyarados's own LEAD Intimidate. \
+         (The mon's live boosts are 0 by the end because the switch-out cleared them, so the \
+         COUNT has to be read off the log, not the state.) got:\n{}",
+        raw.join("\n")
+    );
+    assert_eq!(st.sides[1].pokemon[0].boosts, [0; 7], "TF9: the foe took NO Intimidate drop");
+    // (3) the revert target is the SET ability.
+    let u = &st.sides[0].pokemon[0];
+    assert!(!u.transformed(), "TF9: reverted");
+    assert_eq!(u.ability, "Limber", "TF9: clearVolatile restores baseAbility (the SET ability)");
+    assert_eq!(seed_str(&out.decisions[2].seed_after), "11285,63075,44232,12427",
+        "TF9: the whole copy+revert sequence is DRAW-FREE (the real sim's post-turn seed)");
+}
+
+/// TF9b — (1) the ability IS copied, asserted MID-transform (TF9 can only see the reverted
+/// value, so on its own it would pass even if the copy were skipped entirely).
+#[test]
+fn transform_copies_the_ability() {
+    let d = dex();
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(TF_DITTO_1_GENGAR, TF_GYARA, TF_SEED), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let _ = st.run_full_battle_logged(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    let u = &st.sides[0].pokemon[0];
+    assert!(u.transformed(), "TF9b: the copy landed");
+    assert_eq!(
+        pokesim::dex::to_id(&u.ability),
+        "intimidate",
+        "TF9b: `if (gen > 2) setAbility(target.ability)` — the ability IS copied"
+    );
+    assert_eq!(
+        pokesim::dex::to_id(&u.set.ability),
+        "limber",
+        "TF9b: …but `baseAbility` (the SET ability) is UNTOUCHED — the request's `baseAbility` \
+         field and the revert both read it"
+    );
+}
+
+/// TF7 — the REQUEST surface, byte-for-byte (`gen3_transform_v1`). This is where a
+/// filtering-hidden Transform bug would live: the offline pickers rejected Transform, so no
+/// gate ever built a transformed mon's `|request|` JSON — the exact class of hole that let the
+/// original silent no-op ship. The sim's `getSwitchRequestData` serializes `this.details` and
+/// `baseStoredStats`, NEITHER of which `transformInto` refreshes, so the roster entry keeps the
+/// OWNER's ident / details / stats while its `moves[]` (which read the live `moveSlots`) show
+/// the COPY. The `active[]` entries carry `pp:5`, the `ppUps[i] || 0` maxpp ladder AND a
+/// `target` key — unlike a MIMIC-acquired slot, whose gen4 literal omits `target`
+/// (`gen3_mimic_request_no_target_v1`); `transformInto`'s literal sets `target: moveSlot.target`,
+/// so blanket-applying the Mimic omission here would be wrong.
+///
+/// Ground truth: `harness/probe_transform_pin.js`'s TF7 block (the real `getPlayerStreams` p1
+/// frames on this exact board/seed).
+#[test]
+fn transform_request_json_is_byte_identical_to_the_sim() {
+    let d = dex();
+    let cmds = vec![
+        pokesim::bridge::Cmd { side: 0, choice: pokesim::bridge::parse_choice("move 1").unwrap() },
+        pokesim::bridge::Cmd { side: 1, choice: pokesim::bridge::parse_choice("move 4").unwrap() },
+    ];
+    let streams = pokesim::bridge::run_full_battle_bridge(
+        &opts_cg(TF_DITTO_1_GENGAR, TF_LAX_4, TF_SEED),
+        &cmds,
+        &d,
+    )
+    .expect("bridge run");
+    let reqs: Vec<&String> =
+        streams.p1.iter().filter(|l| l.starts_with("|request|")).collect();
+    assert!(reqs.len() >= 2, "TF7: expected the pre- and post-transform requests, got {}", reqs.len());
+    assert_eq!(
+        *reqs[1],
+        "|request|{\"active\":[{\"moves\":[\
+         {\"move\":\"Swords Dance\",\"id\":\"swordsdance\",\"pp\":5,\"maxpp\":48,\"target\":\"self\",\"disabled\":false},\
+         {\"move\":\"Body Slam\",\"id\":\"bodyslam\",\"pp\":5,\"maxpp\":15,\"target\":\"normal\",\"disabled\":false},\
+         {\"move\":\"Rest\",\"id\":\"rest\",\"pp\":5,\"maxpp\":10,\"target\":\"self\",\"disabled\":false},\
+         {\"move\":\"Splash\",\"id\":\"splash\",\"pp\":5,\"maxpp\":40,\"target\":\"self\",\"disabled\":false}]}],\
+         \"side\":{\"name\":\"P1\",\"id\":\"p1\",\"pokemon\":[\
+         {\"ident\":\"p1: Ditto\",\"details\":\"Ditto\",\"condition\":\"258/258\",\"active\":true,\
+         \"stats\":{\"atk\":153,\"def\":153,\"spa\":153,\"spd\":153,\"spe\":153},\
+         \"moves\":[\"swordsdance\",\"bodyslam\",\"rest\",\"splash\"],\"baseAbility\":\"limber\",\
+         \"item\":\"metalpowder\",\"pokeball\":\"pokeball\"},\
+         {\"ident\":\"p1: Gengar\",\"details\":\"Gengar, M\",\"condition\":\"282/282\",\"active\":false,\
+         \"stats\":{\"atk\":187,\"def\":177,\"spa\":317,\"spd\":207,\"spe\":277},\
+         \"moves\":[\"splash\"],\"baseAbility\":\"levitate\",\"item\":\"leftovers\",\"pokeball\":\"pokeball\"}]}}",
+        "TF7: the transformed mon's request must be byte-identical to the sim's"
+    );
+}
+
+/// The GUARD'S NEGATIVE CONTROL, half 2 (`gen3_transform_v1`) — Transform is MODELED now, so
+/// a Transform CARRIER must construct fine. Paired with `a_ditto_without_transform_builds_fine`
+/// below, this is what stops a future over-broad `UNMODELED_FAILLOUD_MOVES` entry (or a
+/// re-added species guard) from silently rejecting legal teams again.
+#[test]
+fn transform_carriers_build_now_that_transform_is_modeled() {
+    let d = dex();
     let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
-    let _ = Battle::start_with_switchins(&opts_cg(ditto, foe, "1,2,3,4"), &d);
+    for carrier in [
+        "Ditto|||limber|transform|Hardy|252,,,,,|||||",
+        "Mew|||synchronize|transform,psychic,softboiled,explosion|Hardy|252,,,,,|||||",
+    ] {
+        let b = Battle::start_with_switchins(&opts_cg(carrier, foe, "1,2,3,4"), &d);
+        assert!(b.is_ok(), "a Transform carrier must construct: {carrier}");
+    }
 }
 
 /// The GUARD'S NEGATIVE CONTROL — a mon that merely COULD learn Transform but does not carry

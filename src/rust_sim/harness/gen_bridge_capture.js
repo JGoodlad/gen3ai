@@ -111,7 +111,16 @@ async function runBattle(p1Packed, p2Packed, seed, chooseSeed) {
   // Let the framing + the first requests flush.
   for (let i = 0; i < 16; i++) await tick();
 
-  const rec = { initSeed: stream.battle.prng.getSeed(), chunks, cmds, ended: false, winner: null };
+  // `initSeed` is the POST-CONSTRUCTION seed (read after `>player`), so the Rust offline
+  // replay resumes draw-free and SKIPS the turn-0 `endTurn` where gen3 rolls turn 1's Quick
+  // Claw (`randomChance(1,5)`, read the next turn). That bit is unrecoverable from the seed,
+  // so capture it alongside — `gen3_turn0_quick_claw_capture_v1`, the sibling of the
+  // `ab_fuzz` INIT capture. (The LIVE bridge models the real construction and ignores this.)
+  const rec = {
+    initSeed: stream.battle.prng.getSeed(),
+    quickClawRoll: !!stream.battle.quickClawRoll,
+    chunks, cmds, ended: false, winner: null,
+  };
 
   // The request-driven loop. We DRIVE choices off the omniscient `battle` object (the
   // e2e legal-choice logic reads `battle.requestState`/`sides[i].activeRequest`); we
@@ -280,7 +289,9 @@ async function main() {
     out.push(`TEAM\t${id}\tp2\t${teams[ib].packed}`);
     // `prng.getSeed()` returns the comma-joined seed string (e.g. "1,2,3,4") — the same
     // form the Rust replay must feed to its `>start` seed; recorded verbatim.
-    out.push(['INIT', id, battleNo, rec.initSeed, FORMAT].join('\t'));
+    // The 6th field is the turn-0 `quickClawRoll`; `parse_bridge_golden` treats it as
+    // OPTIONAL (absent → false), so every pre-existing golden stays byte-replayable.
+    out.push(['INIT', id, battleNo, rec.initSeed, FORMAT, rec.quickClawRoll ? 1 : 0].join('\t'));
     rec.cmds.forEach((c, ci) => {
       out.push(['CMD', id, battleNo, ci, c[0], c[1]].join('\t'));
     });

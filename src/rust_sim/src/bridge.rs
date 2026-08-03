@@ -460,20 +460,10 @@ fn json_escape(s: &str) -> String {
 /// the sibling of this roster fix). Only the opponent HP hiding + the omniscient `|move|`
 /// bare-collapse (BF1) stay bare — gen 3 never reveals the opp HP type.
 fn side_move_id(mon: &MonState, mv: &str) -> String {
-    let id = crate::dex::to_id(mv);
-    if id == "hiddenpower" {
-        // Resolve the typed id, mirroring the sim constructor: prefer the packed
-        // `set.hpType` marker, else IV-derive.
-        let ty = if !mon.set.hp_type.is_empty() {
-            crate::dex::to_id(&mon.set.hp_type)
-        } else {
-            crate::state::hidden_power_type(&mon.set.ivs).to_string()
-        };
-        if !ty.is_empty() && ty != "normal" {
-            return format!("hiddenpower{ty}");
-        }
-    }
-    id
+    // Delegates to the ONE resolver (`gen3_transform_v1` moved it to `state.rs` so the
+    // Transform copy resolves the TARGET's HP with the same rule — the sim copies
+    // `hpType`/`hpPower` for gen<5, and the port encodes the type in the move id).
+    crate::state::typed_hp_move_id(mon, mv)
 }
 
 /// Split a crate move (a DISPLAY name from `set.moves`) into (bare id, display name)
@@ -558,9 +548,22 @@ fn display_name(mon: &MonState, dex: &Dex) -> String {
     if !mon.set.name.is_empty() {
         return mon.set.name.clone();
     }
-    dex.species(&mon.species_id)
-        .map(|s| s.name.clone())
-        .unwrap_or_else(|| mon.species_id.clone())
+    // TRANSFORM (`gen3_transform_v1`): `pokemon.name` is fixed at construction, so a
+    // transformed mon's ident stays its ORIGINAL species — read through the overlay.
+    let sid = base_species_id(mon);
+    dex.species(sid).map(|s| s.name.clone()).unwrap_or_else(|| sid.to_string())
+}
+
+/// The mon's OWN (pre-Transform) species id — `pokemon.baseSpecies`. Identical to
+/// `species_id` for an untransformed mon; the request/ident surfaces read THIS because
+/// `transformInto` never refreshes `pokemon.name` or `pokemon.details`
+/// (`gen3_transform_v1`, probe C: a Ditto copying Snorlax still serializes
+/// `"ident":"p1: Ditto","details":"Ditto"` while its `moves[]` show the copied set).
+fn base_species_id(mon: &MonState) -> &str {
+    match &mon.transform {
+        Some(ov) => &ov.base_species_id,
+        None => &mon.species_id,
+    }
 }
 
 /// The `details` string (`Pokemon.details`): `<Species>` + `, L<level>` iff level
@@ -574,10 +577,11 @@ fn display_name(mon: &MonState, dex: &Dex) -> String {
 /// details form (`gen3_shiny_details_v1`, byte-fuzz fixture 08) — the sim's
 /// request-JSON carries it too (`"details":"Blissey, F, shiny"`).
 fn details(mon: &MonState, dex: &Dex) -> String {
-    let species = dex
-        .species(&mon.species_id)
-        .map(|s| s.name.clone())
-        .unwrap_or_else(|| mon.species_id.clone());
+    // `Pokemon.details` is set in the CONSTRUCTOR and refreshed only by `formeChange` —
+    // `transformInto` calls `setSpecies` DIRECTLY and never touches it, so a transformed
+    // mon's request `details` still reads its own species (`gen3_transform_v1`, probe C).
+    let sid = base_species_id(mon);
+    let species = dex.species(sid).map(|s| s.name.clone()).unwrap_or_else(|| sid.to_string());
     let mut d = species;
     if mon.level != 100 {
         d.push_str(&format!(", L{}", mon.level));
@@ -600,9 +604,18 @@ fn serialize_mon(side: usize, mon: &MonState, active: bool, dex: &Dex) -> String
     let ident = json_escape(&mon_ident(side, mon, dex));
     let det = json_escape(&details(mon, dex));
     let cond = json_escape(&condition(mon));
+    // `getSwitchRequestData` serializes **`baseStoredStats`**, and
+    // `setSpecies(…, isTransform = true)` deliberately does NOT overwrite those — so a
+    // transformed mon's roster `stats` stay its OWN (`gen3_transform_v1`, probe C: a Ditto
+    // copying Snorlax still reports `132/132/132/132/132`). Its `moves[]` below DO change,
+    // because that field reads the live `moveSlots`.
+    let st = match &mon.transform {
+        Some(ov) => &ov.base_stats,
+        None => &mon.stats,
+    };
     let stats = format!(
         "{{\"atk\":{},\"def\":{},\"spa\":{},\"spd\":{},\"spe\":{}}}",
-        mon.stats[1], mon.stats[2], mon.stats[3], mon.stats[4], mon.stats[5]
+        st[1], st[2], st[3], st[4], st[5]
     );
     let moves = mon
         .set
@@ -727,15 +740,43 @@ fn serialize_active(
                     base_target
                 };
                 let disabled = move_disabled(mon, k, dex);
-                format!(
-                    "{{\"move\":\"{}\",\"id\":\"{}\",\"pp\":{},\"maxpp\":{},\"target\":\"{}\",\"disabled\":{}}}",
-                    json_escape(&name),
-                    json_escape(&id),
-                    pp,
-                    maxpp,
-                    json_escape(&target),
-                    disabled
-                )
+                // A MIMIC-ACQUIRED SLOT CARRIES **NO** `target` KEY AT ALL
+                // (`gen3_mimic_request_no_target_v1`). gen3 inherits gen4's Mimic, and that
+                // override's replacement move-slot literal (`data/mods/gen4/moves.ts:868`)
+                // OMITS the `target` field the BASE `data/moves.ts` mimic sets — so
+                // `getMoveRequestData`'s `let target = moveSlot.target` reads `undefined` and
+                // `JSON.stringify` DROPS the key entirely. Byte form (SIM-CONFIRMED on the
+                // fuzz repro): `…"pp":5,"maxpp":24,"disabled":false`. Keyed on the overlay's
+                // OWN slot, so the mon's other three moves keep their targets, and the key
+                // returns as soon as the overlay is restored on switch-out / faint.
+                // ...but NOT while TRANSFORMED (`gen3_transform_v1`): `transformInto`'s own
+                // moveslot literal DOES set `target: moveSlot.target` (unlike gen4 Mimic's,
+                // which omits it), so every copied slot carries its `target` key — probe C:
+                // `{"move":"Curse","id":"curse","pp":5,"maxpp":10,"target":"self",...}`. The
+                // Mimic record survives underneath the copy (it is restored after it), so this
+                // must be gated or a transformed Mimic-carrier would drop one slot's key.
+                let mimicked = mon.transform.is_none()
+                    && mon.mimic_overlay.as_ref().is_some_and(|ov| ov.slot == k);
+                if mimicked {
+                    format!(
+                        "{{\"move\":\"{}\",\"id\":\"{}\",\"pp\":{},\"maxpp\":{},\"disabled\":{}}}",
+                        json_escape(&name),
+                        json_escape(&id),
+                        pp,
+                        maxpp,
+                        disabled
+                    )
+                } else {
+                    format!(
+                        "{{\"move\":\"{}\",\"id\":\"{}\",\"pp\":{},\"maxpp\":{},\"target\":\"{}\",\"disabled\":{}}}",
+                        json_escape(&name),
+                        json_escape(&id),
+                        pp,
+                        maxpp,
+                        json_escape(&target),
+                        disabled
+                    )
+                }
             })
             .collect::<Vec<_>>()
             .join(",");
@@ -842,7 +883,21 @@ pub fn run_full_battle_bridge(
     cmds: &[Cmd],
     dex: &Dex,
 ) -> Result<BridgeStreams, String> {
-    Ok(run_full_battle_bridge_chunked(opts, cmds, dex)?.flatten())
+    run_full_battle_bridge_with_quick_claw(opts, cmds, false, dex)
+}
+
+/// [`run_full_battle_bridge`] with the turn-0 Quick Claw roll supplied
+/// (`gen3_turn0_quick_claw_capture_v1`); the plain entry passes `false`, so it stays
+/// byte-for-byte the pre-fix behaviour.
+pub fn run_full_battle_bridge_with_quick_claw(
+    opts: &BattleOptions,
+    cmds: &[Cmd],
+    quick_claw_roll: bool,
+    dex: &Dex,
+) -> Result<BridgeStreams, String> {
+    let (chunks, _ended, _script, _seeds) =
+        run_full_battle_bridge_core_with_quick_claw(opts, cmds, quick_claw_roll, dex)?;
+    Ok(chunks.flatten())
 }
 
 /// The CHUNK-aware sibling of [`run_full_battle_bridge`]: identical fold/request
@@ -905,6 +960,24 @@ pub fn run_full_battle_bridge_core(
     cmds: &[Cmd],
     dex: &Dex,
 ) -> Result<(BridgeChunks, bool, Vec<ScriptDecision>, Vec<PrngSeed>), String> {
+    run_full_battle_bridge_core_with_quick_claw(opts, cmds, false, dex)
+}
+
+/// [`run_full_battle_bridge_core`] with the turn-0 Quick Claw roll supplied
+/// (`gen3_turn0_quick_claw_capture_v1`).
+///
+/// The plain entry passes `false` — byte-for-byte the pre-fix behaviour, so every existing
+/// caller (including the LIVE `sim_bridge`, which models the real construction window via
+/// [`BridgeSession::new_construct_turn0`] and so never needs this) is unaffected. The OFFLINE
+/// bridge gate (`bin/bridge_replay`) passes the golden's captured `quick_claw_roll`, because
+/// its `opts.seed` is the POST-construction seed and the turn-0 `endTurn` roll it skips is
+/// otherwise unrecoverable — see [`GoldenBattle::quick_claw_roll`].
+pub fn run_full_battle_bridge_core_with_quick_claw(
+    opts: &BattleOptions,
+    cmds: &[Cmd],
+    quick_claw_roll: bool,
+    dex: &Dex,
+) -> Result<(BridgeChunks, bool, Vec<ScriptDecision>, Vec<PrngSeed>), String> {
     let mut chunks = BridgeChunks::default();
     let mut battle_ended = false;
     // Percent HP fold applies only in non-debug formats (gen3ou). A `debug:true`
@@ -917,6 +990,7 @@ pub fn run_full_battle_bridge_core(
     let raw_framing = {
         let mut b = Battle::start_with_switchins(opts, dex)?;
         let st = b.state_mut().ok_or("no state")?;
+        st.quick_claw_roll = quick_claw_roll;
         let (_outcome, lines) = st.run_full_battle_logged(&[], dex);
         lines
     };
@@ -948,7 +1022,7 @@ pub fn run_full_battle_bridge_core(
             return Err(format!("bridge driver exceeded boundary cap ({cap})"));
         }
         // Replay the accumulated script; snapshot the paused state + the full log.
-        let (ended, log, state_holder) = replay_snapshot(opts, &script, dex)?;
+        let (ended, log, state_holder) = replay_snapshot(opts, &script, quick_claw_roll, dex)?;
         let state = state_holder.state().ok_or("paused battle has no state")?;
 
         // [A2] Capture the makeRequest-boundary seed (post-Quick-Claw of the prior decision).
@@ -1173,7 +1247,21 @@ impl BridgeSession {
     /// convention the committed goldens capture. For the LIVE bridge (`sim_bridge`),
     /// which is fed poke-env's RAW `>start` seed, use [`new_construct_turn0`] instead.
     pub fn new(opts: &BattleOptions, dex: &Dex) -> Result<BridgeSession, String> {
-        Self::new_from_battle(Battle::start_with_switchins(opts, dex)?, opts, dex)
+        Self::new_with_quick_claw(opts, false, dex)
+    }
+
+    /// [`BridgeSession::new`] with the turn-0 Quick Claw roll supplied
+    /// (`gen3_turn0_quick_claw_capture_v1`) — the post-construction-seed convention skips the
+    /// turn-0 `endTurn` that decides turn 1's roll, and the seed alone cannot carry it. `new`
+    /// passes `false` (the pre-fix behaviour), so every existing caller is byte-unaffected.
+    pub fn new_with_quick_claw(
+        opts: &BattleOptions,
+        quick_claw_roll: bool,
+        dex: &Dex,
+    ) -> Result<BridgeSession, String> {
+        let mut battle = Battle::start_with_switchins(opts, dex)?;
+        battle.state_mut().ok_or("no state")?.quick_claw_roll = quick_claw_roll;
+        Self::new_from_battle(battle, opts, dex)
     }
 
     /// Build a session from a RAW `>start` seed, running the FULL turn-0 CONSTRUCTION
@@ -1577,7 +1665,20 @@ pub fn run_full_battle_bridge_incremental(
     cmds: &[Cmd],
     dex: &Dex,
 ) -> Result<(BridgeChunks, bool, Vec<ScriptDecision>, Vec<PrngSeed>), String> {
-    let mut sess = BridgeSession::new(opts, dex)?;
+    run_full_battle_bridge_incremental_with_quick_claw(opts, cmds, false, dex)
+}
+
+/// [`run_full_battle_bridge_incremental`] with the turn-0 Quick Claw roll supplied — the
+/// incremental half of `gen3_turn0_quick_claw_capture_v1`, kept in lockstep with
+/// [`run_full_battle_bridge_core_with_quick_claw`] so the genesis-vs-incremental parity
+/// assertion holds for BOTH values of the flag, not just the `false` default.
+pub fn run_full_battle_bridge_incremental_with_quick_claw(
+    opts: &BattleOptions,
+    cmds: &[Cmd],
+    quick_claw_roll: bool,
+    dex: &Dex,
+) -> Result<(BridgeChunks, bool, Vec<ScriptDecision>, Vec<PrngSeed>), String> {
+    let mut sess = BridgeSession::new_with_quick_claw(opts, quick_claw_roll, dex)?;
     sess.feed_cmds(cmds, dex);
     Ok((sess.chunks, sess.ended, sess.script, sess.request_seeds))
 }
@@ -1736,10 +1837,15 @@ fn boundary_kinds(_state: &BattleState, force: &[bool; 2], is_switch: bool) -> [
 fn replay_snapshot(
     opts: &BattleOptions,
     script: &[ScriptDecision],
+    quick_claw_roll: bool,
     dex: &Dex,
 ) -> Result<(bool, Vec<crate::protocol::ProtocolLine>, Battle), String> {
     let mut battle = Battle::start_with_switchins(opts, dex)?;
     let st = battle.state_mut().ok_or("no state")?;
+    // Restore the turn-0 Quick Claw roll on EVERY genesis replay
+    // (`gen3_turn0_quick_claw_capture_v1`) — this driver rebuilds from scratch at each
+    // boundary, so setting it once at the caller would be silently dropped from decision 1 on.
+    st.quick_claw_roll = quick_claw_roll;
     let (outcome, log) = st.run_full_battle_logged(script, dex);
     Ok((outcome.ended, log, battle))
 }
@@ -1768,6 +1874,22 @@ pub struct GoldenBattle {
     /// engine seed before the per-side byte diff. Empty for a golden without SEED rows
     /// (the anchor is then skipped — backward compatible with the pre-anchor grammar).
     pub seeds: Vec<String>,
+    /// The sim's `battle.quickClawRoll` at the FIRST request boundary — the optional 6th
+    /// `INIT` field (`gen3_turn0_quick_claw_capture_v1`), the SIBLING of `ab_replay`'s
+    /// 5th-field capture.
+    ///
+    /// This golden's `seed` is the PRE-FIRST-DECISION (post-construction) seed, so
+    /// [`BridgeSession::new`] resumes DRAW-FREE via `start_with_switchins` and skips the
+    /// turn-0 window where gen3 rolls turn 1's Quick Claw (`randomChance(1,5)` at the
+    /// completed `endTurn`, read the NEXT turn — `gen3_quick_claw_speed_v1`). Without this
+    /// the offline bridge gate mis-orders turn 1 whenever a Quick Claw leads and that roll
+    /// was true — the same defect the offline `ab_replay` path carried. (The LIVE bridge is
+    /// unaffected: `sim_bridge` uses [`BridgeSession::new_construct_turn0`], which runs the
+    /// real construction from the raw seed.)
+    ///
+    /// `false` when the field is absent = exactly the pre-fix behaviour, so every committed
+    /// bridge golden and saved repro replays byte-for-byte.
+    pub quick_claw_roll: bool,
 }
 
 /// Parse a bridge golden's TAB grammar into per-battle records. Grammar
@@ -1809,9 +1931,12 @@ pub fn parse_bridge_golden(text: &str) -> Result<Vec<GoldenBattle>, String> {
             "INIT" => {
                 ensure(&mut map, &mut order, f[1]);
                 let b = map.get_mut(f[1]).unwrap();
-                // f: INIT id bno "m,n,o,p" fmt
+                // f: INIT id bno "m,n,o,p" fmt [quickClawRoll:0|1]
                 b.seed = f[3].to_string();
                 b.format_id = f[4].to_string();
+                // OPTIONAL 6th field — absent in every pre-`gen3_turn0_quick_claw_capture_v1`
+                // golden, which must keep replaying identically.
+                b.quick_claw_roll = f.len() >= 6 && f[5] == "1";
             }
             "CMD" => {
                 ensure(&mut map, &mut order, f[1]);

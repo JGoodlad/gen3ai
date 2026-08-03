@@ -201,6 +201,7 @@ async function runScenario(scen) {
   for (let i = 0; i < 16; i++) await tick();
 
   const initSeed = stream.battle.prng.getSeed();
+  const quickClawRoll = !!stream.battle.quickClawRoll;
 
   // Drive the scripted plan. Each step writes ONE side's choice (including a rejected
   // switch, which the sim answers with an `|error|` + a re-request on that side —
@@ -217,7 +218,7 @@ async function runScenario(scen) {
   const winner = stream.battle.winner;
   for (let i = 0; i < 8; i++) await tick();
   try { streams.omniscient.destroy(); } catch (e) { /* teardown */ }
-  return { initSeed, chunks, cmds, ended, winner };
+  return { initSeed, quickClawRoll, chunks, cmds, ended, winner };
 }
 
 function winTok(rec) {
@@ -254,7 +255,10 @@ async function main() {
     out.push(`SCEN\t${id}`);
     out.push(`TEAM\t${id}\tp1\t${Teams.pack(scen.p1)}`);
     out.push(`TEAM\t${id}\tp2\t${Teams.pack(scen.p2)}`);
-    out.push(['INIT', id, battleNo, rec.initSeed, FORMAT].join('\t'));
+  // Turn-0 `quickClawRoll` (`gen3_turn0_quick_claw_capture_v1`): `initSeed` is the
+  // POST-construction seed, so the offline Rust replay skips the turn-0 endTurn that decides
+  // turn 1's Quick Claw. Optional 6th INIT field (absent -> false) so old goldens still replay.
+    out.push(['INIT', id, battleNo, rec.initSeed, FORMAT, rec.quickClawRoll ? 1 : 0].join('\t'));
     rec.cmds.forEach((c, ci) => out.push(['CMD', id, battleNo, ci, c[0], c[1]].join('\t')));
     for (const side of ['p1', 'p2']) {
       rec.chunks[side].forEach((chunk, chunkNo) => {

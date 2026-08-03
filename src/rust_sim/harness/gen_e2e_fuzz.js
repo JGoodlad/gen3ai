@@ -425,6 +425,22 @@ const YAWN_E2E_EXCLUDED = false;
 const MODELED_TRICK_MOVES = new Set(['trick']);
 const TRICK_E2E_EXCLUDED = false;
 
+// PARTIAL TRAP (`gen3_partial_trap_v1`) — the six DAMAGING moves whose gen-3 dex row carries
+// `volatileStatus: 'partiallytrapped'`: wrap(35)/bind(20)/firespin(83)/clamp(128)/whirlpool(250)/
+// sandtomb(328). Their draw model is the ORDINARY damaging chain (accuracy 70-85 → crit → damage
+// roll; none has a secondary) PLUS **ONE** `random(3, 7)` at cast — the gen4-mod
+// `partiallytrapped.durationCallback` fired inside `addVolatile`. The volatile then chips
+// `floor(maxhp/16)` DRAW-FREE at order 10 subOrder 9 for `duration − 1` turns and FIRM-traps the
+// victim. ADMITTED HERE (before the `m.volatileStatus` reject below, which would else drop all
+// six). Modeled bit-for-bit in `run_move`'s partial-trap arm + the residual `PartialTrap` handler
+// (`harness/probe_batch89_trap.js` + `probe_ptrap_edges{,2}.js`; the DEDICATED golden + the
+// PT1-PT* pins). They MAY have gen3ou team-carry, so admitting them can change the sampled e2e
+// golden — a plain regen reproduces the committed golden iff the sampled teams don't carry one.
+const MODELED_PARTIALTRAP_MOVES = new Set([
+  'wrap', 'bind', 'firespin', 'clamp', 'whirlpool', 'sandtomb',
+]);
+const PARTIALTRAP_E2E_EXCLUDED = false;
+
 // The MODELED gen-3 FIXED-DAMAGE moves (a `damage:` / `damageCallback` move that BYPASSES
 // getDamage — NO crit roll, NO 16-way damage roll) the port now executes bit-for-bit (the
 // fixed-damage layer): Seismic Toss / Night Shade (damage: 'level' → the USER's level),
@@ -686,6 +702,16 @@ function isModeledMove(id, allowHiddenPower = false) {
   // draws-then-discards one slp.onStart random(2,6)) — the port executes all three bit-
   // for-bit; every OTHER Status move (Wish/Heal Bell/phaze/hazard/Substitute/field/
   // Defense-Curl-volatile) stays excluded → the port FAIL-LOUDs.
+  // TRANSFORM (`gen3_transform_v1`, ROUND 33) — ADMITTED HERE, before the STATUS-move
+  // gate below (which allows only the enumerated standalone-status / setup / utility sets,
+  // and would else drop it). Transform is `accuracy: true` (never-miss ⇒ NO accuracy draw)
+  // and `transformInto` contains no `this.random` anywhere, so the whole move is DRAW-FREE
+  // in every branch — success, the already-transformed fail, and the fainted-target fail
+  // alike (probe `harness/probe_batch89_transform.js` vs a Splash control). Modeled in
+  // `run_status_move`'s transform arm + the `clearVolatile` reverts, pinned by TF1-TF7.
+  // Admitting it is what finally EXERCISES the mechanic in the byte fuzz — the whole point
+  // of the round, since the picker filter is what hid the original silent no-op.
+  if (id === 'transform') return true;
   if (m.category === 'Status') {
     // PHAZE (Roar / Whirlwind) is special-cased HERE — a category-Status `forceSwitch`
     // move, gated on PHAZE_E2E_EXCLUDED below. It is INCLUDED (flag = false) since the
@@ -770,6 +796,11 @@ function isModeledMove(id, allowHiddenPower = false) {
   // stays out.)
   if (m.self && m.self.volatileStatus) return false;
   if (m.self && m.self.boosts && !MODELED_SELFDROP_MOVES.has(id)) return false;
+  // PARTIAL TRAP (`gen3_partial_trap_v1`) — ADMITTED HERE, before the blanket `m.volatileStatus`
+  // reject below. All six are ordinary damaging moves (bp > 0, no secondary, no callback) plus the
+  // one `random(3,7)` duration draw; kept in lockstep with `is_partial_trap_move` in
+  // src/turn/helpers.rs.
+  if (!PARTIALTRAP_E2E_EXCLUDED && MODELED_PARTIALTRAP_MOVES.has(id)) return true;
   if (m.volatileStatus) return false; // a volatile MOVE (substitute etc.) — not damaging here
   // DRAW-ORDER / POWER callbacks the port does NOT model (each desyncs the LCG):
   //   * basePowerCallback — variable BP (Fury Cutter / Rollout / Ice Ball / Smelling
@@ -1027,21 +1058,21 @@ const NOOP_ABILITIES = new Set([
 // team outright. `castform` is the only holder; keyed by species too as belt-and-suspenders.
 const REJECT_ABILITIES = new Set(['forecast']);
 const REJECT_SPECIES = new Set(['castform']);
-// The MOVE analogue (`gen3_transform_failloud_v1`): TRANSFORM is DEFERRED / UNMODELED and
-// now FAIL-LOUD in `MonState::from_set`, so a team CARRYING it must never reach the port —
-// even though `isModeledMove` already prevents the PICKER from choosing it. That distinction
-// is exactly how this escaped: the offline fuzzers never picked Transform, but the LIVE
-// bridge path (`gen_sim_bridge_diff.js`) drives choices off the sim's own request, so a
-// randbats Ditto whose only move IS Transform reached it — node emitted
+// The MOVE analogue of REJECT_ABILITIES: a team CARRYING a move the ENGINE fail-louds on
+// must never reach the port, even though `isModeledMove` already keeps the PICKER off it.
+// That distinction is exactly how the Transform bug escaped: the offline fuzzers never PICKED
+// Transform, but the LIVE bridge path (`gen_sim_bridge_diff.js`) drives choices off the sim's
+// own request, so a randbats Ditto whose only move IS Transform reached it — node emitted
 // `|-transform|p1a: Ditto|p2a: Kyogre` while the rust bridge emitted nothing (repro
-// `soak_randbats/divergences/sbd_msapcesj_b22`). Keyed by MOVE, not species: gen3 Ditto is
-// the usual carrier but Mew/Smeargle can learn it. NOTE this cannot shift the e2e golden —
+// `soak_randbats/divergences/sbd_msapcesj_b22`).
+//
+// **THE SET IS NOW EMPTY.** Both former members are modeled bit-for-bit and have LEFT:
+// the wrap family in ROUND 32 (`gen3_partial_trap_v1`) and `transform` in ROUND 33
+// (`gen3_transform_v1`). Kept in LOCKSTEP with `state.rs::UNMODELED_FAILLOUD_MOVES` (also
+// now empty) — every move the engine fail-louds on must be rejected here, or the fuzzers
+// panic instead of skipping the team. NOTE that emptying it cannot shift the e2e golden:
 // ZERO of the 722 `data/teams/` pool teams carry Transform (or Ditto), verified by grep.
-// Kept in LOCKSTEP with `state.rs::UNMODELED_FAILLOUD_MOVES` — every move the engine
-// fail-louds on must be rejected here, or the fuzzers panic instead of skipping the team.
-// The wrap family (partial-trap) joined Transform after the live bridge gate caught
-// `|-activate|…|move: Wrap|` emitted by node and nothing by the port (soak3 b237).
-const REJECT_MOVES = new Set(['transform', 'wrap', 'bind', 'firespin', 'clamp', 'whirlpool', 'sandtomb']);
+const REJECT_MOVES = new Set([]);
 function abilityAllowed(id) {
   const a = toId(id);
   if (REJECT_ABILITIES.has(a)) return false; // deferred / fail-loud → never admitted
@@ -1445,7 +1476,18 @@ async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode, opts = {}) 
     if (reqState !== 'move' && reqState !== 'switch') { await tick(); continue; }
     const force = forceSwitchTable(battle);
     const seedBefore = battle.prng.getSeed();
-    if (decisionNo === 0) rec.initSeed = seedBefore;
+    if (decisionNo === 0) {
+      rec.initSeed = seedBefore;
+      // `gen3_turn0_quick_claw_capture_v1` — the offline replay convention resumes from the
+      // POST-CONSTRUCTION state (initSeed is captured HERE, at the first decision request,
+      // deliberately skipping the turn-0 construction window). `battle.quickClawRoll` is part
+      // of that state and was silently DROPPED: it is `randomChance(1,5)` rolled at every
+      // COMPLETED endTurn and READ on the NEXT turn (`gen3_quick_claw_speed_v1`), so turn 1's
+      // value is decided during construction. Without it the port resumes with its
+      // `quick_claw_roll: false` default and mis-orders turn 1 whenever a Quick Claw leads and
+      // the roll came up true — ~1 lead in 5. (Probe: `probe_turn0_quickclaw_offline.js`.)
+      rec.quickClawRoll = !!battle.quickClawRoll;
+    }
 
     let cp1 = null; let cp2 = null;
     let statusMoveThisDec = false;
@@ -1556,7 +1598,10 @@ function emitBattle(lines, id, p1Packed, p2Packed, rec, opts = {}) {
   // before INIT so ab_replay's parser (which only tracks a case AFTER INIT) ignores it on
   // the state path. `gen3_omniscient_byte_fuzz_v1`.
   if (opts.protocol) lines.push(`FMT\t${id}\t${rec.format || FORMAT}`);
-  lines.push(['INIT', id, rec.initSeed, rec.chooseSeed].join('\t'));
+  // The 5th field is the turn-0 `quickClawRoll` (`gen3_turn0_quick_claw_capture_v1`). It is
+  // APPENDED, and `ab_replay` treats it as OPTIONAL (absent → false), so every previously
+  // saved repro dir and every committed golden stays replayable byte-for-byte.
+  lines.push(['INIT', id, rec.initSeed, rec.chooseSeed, rec.quickClawRoll ? 1 : 0].join('\t'));
   rec.decisions.forEach((d, di) => {
     const sp = (s) => [s.species, s.hp, s.maxhp, s.fainted ? 1 : 0, s.status,
       s.boosts[0], s.boosts[1], s.boosts[2], s.boosts[3], s.boosts[4], s.confusion, s.left].join('\t');
@@ -1629,7 +1674,7 @@ async function main() {
   goldenLines.push(`# MASTER_SEED ${MASTER_SEED}  filter-clean-teams ${cleanIdx.length}/${teams.length}`);
   goldenLines.push('# SCEN <id>');
   goldenLines.push('# TEAM <id> <p1|p2> <packed>');
-  goldenLines.push('# INIT <id> <initSeed m,n,o,p> <chooseSeed>');
+  goldenLines.push('# INIT <id> <initSeed m,n,o,p> <chooseSeed> <turn0QuickClawRoll:0|1>');
   goldenLines.push('# DEC  <id> <di> <move|switch> <fP1> <fP2> <cP1> <cP2> <seedAfter> \\');
   goldenLines.push('#       p1(species hp max fnt status atk def spa spd spe conf left) p2(...) first_mover \\');
   goldenLines.push('#       p1Spikes p2Spikes fixedMove batch5Move batch6Move');
@@ -1792,6 +1837,7 @@ module.exports = {
   MODELED_LEECH_MOVES, MODELED_FIXED_DAMAGE_MOVES, MODELED_SUBSTITUTE_MOVES,
   MODELED_RESTRICTION_MOVES, MODELED_BATCH3_MOVES,
   MODELED_CURE_MOVES, MODELED_WEATHER_MOVES, MODELED_STATDROP_MOVES, MODELED_SCREEN_MOVES,
+  MODELED_PARTIALTRAP_MOVES,
   mulberry32, randInt, seedFrom, toId,
   FORMAT, dex3,
 };

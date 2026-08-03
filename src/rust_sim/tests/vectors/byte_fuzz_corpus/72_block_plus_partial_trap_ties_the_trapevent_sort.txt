@@ -1,0 +1,601 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# ROUND 32 (gen3_partial_trap_v1) — the endTurn TrapPokemon HANDLER-SORT tie.
+# p2's Onix BLOCKS p1's Wartortle (the `trapped` volatile) and then SAND TOMBs it
+# (`partiallytrapped`). Both are Conditions ⇒ subOrder 2 ⇒ SAME sort key at the same
+# speed ⇒ the TrapPokemon event's handler list TIES ⇒ ONE extra `random(0,2)` per
+# endTurn while BOTH are live. Pre-fix the port modeled only the ABILITY handlers, so
+# it drew one fewer and diverged at dec 26 (kind=seed, the Sand Tomb cast turn).
+# Probe: harness/probe_ptrap_trapevent.js. Pin: regression_test.rs::
+# partial_trap_plus_block_ties_the_endturn_trap_event_sort.
+# mode=random master_seed=803324991 run_id=rmsde6xp4 chunk=10
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_10_9
+TEAM	ab_10_9	p1	Groudon||TwistedSpoon|Drought|RockSmash,ScaryFace,ThunderWave,DragonClaw|Bashful|32,184,64,212,16,|N|20,5,22,8,27,6|||]Zubat||SpellTag|InnerFocus|Return,Gust,Toxic,AerialAce|Bold|152,100,56,44,32,124|M|5,21,19,20,21,|||]Wartortle||RawstBerry|Torrent|IcePunch,Bite,BrickBreak,Tackle|Docile|164,80,24,28,192,20|M|25,18,8,12,30,20|||]Teddiursa||MagoBerry|Pickup|FocusPunch,BrickBreak,FurySwipes,BodySlam|Quirky|4,208,96,,124,76|M|19,30,20,23,30,17|||]Noctowl||LumBerry|KeenEye|Swift,Thief,RainDance,MudSlap|Bashful|96,116,108,40,148,|M|20,7,3,26,7,26|||]Kabuto||SilverPowder|SwiftSwim|Blizzard,WaterPulse,KnockOff,Waterfall|Lax|120,40,84,96,40,128|M|13,20,22,29,7,8|||
+TEAM	ab_10_9	p2	Baltoy||LeppaBerry|Levitate|Psychic,Confusion,PsychUp,DoubleEdge|Timid|,148,,136,160,64|N|7,5,15,25,12,1|||]Grimer||StarfBerry|Stench|Flamethrower,Protect,ShadowPunch,Haze|Bashful|28,60,24,168,8,220|M|3,9,28,1,7,10|||]Kingdra||SoftSand|SwiftSwim|BodySlam,WaterGun,DragonDance,Surf|Rash|120,152,148,88,,|M|16,23,11,11,19,27|||]Skitty||PetayaBerry|CuteCharm|Thunderbolt,ShadowBall,Facade,Charm|Calm|92,48,132,64,52,120|M|3,26,25,18,3,19|||]Suicune||PersimBerry|Pressure|Facade,IceBeam,HydroPump,Mimic|Lax|40,216,144,8,12,88|N|24,4,4,4,9,2|||]Onix||BlackBelt|Sturdy|SandTomb,Protect,Block,Explosion|Serious|168,72,,76,,192|M|26,11,19,11,24,14|||
+FMT	ab_10_9	gen3customgame
+INIT	ab_10_9	59942,17280,20722,31398	3008473033	0
+DEC	ab_10_9	0	move	0	0	m1	m2	2429,38473,56270,47464	Groudon	338	338	0	-	0	0	0	0	0	0	6	Baltoy	197	197	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	1
+DEC	ab_10_9	1	move	0	0	s4	m1	22990,38281,54104,53167	Noctowl	316	354	0	-	0	0	0	0	0	0	6	Baltoy	197	197	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_9	2	move	0	0	m3	m3	48868,11322,44927,50818	Noctowl	242	354	0	-	0	0	0	0	0	0	6	Baltoy	173	197	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_9	3	move	0	0	m0	m1	42263,24019,17886,41691	Noctowl	207	354	0	-	0	0	0	0	0	0	6	Baltoy	95	197	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_9	4	move	0	0	s3	m3	37303,21179,33704,17599	Teddiursa	175	250	0	-	0	0	0	0	0	0	6	Baltoy	70	197	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_10_9	5	move	0	0	m0	m0	64962,38123,28785,45266	Teddiursa	107	250	0	-	0	0	0	0	0	0	6	Baltoy	70	197	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	6	move	0	0	s3	s4	53091,37534,41567,50077	Noctowl	207	354	0	-	0	0	0	0	0	0	6	Suicune	344	344	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	7	move	0	0	m3	m2	46347,43498,19608,8933	Noctowl	154	354	0	-	0	0	0	0	0	0	6	Suicune	336	344	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	8	move	0	0	m0	m0	21423,24565,22404,53363	Noctowl	69	354	0	-	0	0	0	0	0	0	6	Suicune	305	344	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	9	move	0	0	m2	m2	29259,62943,16528,35031	Noctowl	14	354	0	-	0	0	0	0	0	0	6	Suicune	305	344	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	10	move	0	0	m3	m0	48520,40753,15833,19416	Noctowl	0	354	1	fnt	0	0	0	0	0	0	5	Suicune	305	344	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	11	switch	1	0	s2	-	61873,47534,58208,8955	Wartortle	294	294	0	-	0	0	0	0	0	0	5	Suicune	305	344	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_10_9	12	move	0	0	m0	m0	53108,60428,10602,19587	Wartortle	226	294	0	-	0	0	0	0	0	0	5	Suicune	285	344	0	frz	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	13	move	0	0	m2	m0	65009,8539,34924,10214	Wartortle	226	294	0	-	0	0	0	0	0	0	5	Suicune	253	344	0	frz	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	14	move	0	0	m1	m0	10475,18586,49260,48060	Wartortle	226	294	0	-	0	0	0	0	0	0	5	Suicune	221	344	0	frz	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	15	move	0	0	m2	s1	4806,26051,59127,31120	Wartortle	226	294	0	-	0	0	0	0	0	0	5	Grimer	243	280	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	16	move	0	0	m1	s1	33953,1490,25131,23287	Wartortle	226	294	0	-	0	0	0	0	0	0	5	Suicune	191	344	0	frz	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	17	move	0	0	m3	m2	3433,11601,27839,39786	Wartortle	226	294	0	-	0	0	0	0	0	0	5	Suicune	174	344	0	frz	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	18	move	0	0	m2	m0	45887,41987,4001,21010	Wartortle	163	294	0	-	0	0	0	0	0	0	5	Suicune	140	344	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	19	move	0	0	m2	m3	21667,3968,6907,18054	Wartortle	163	294	0	-	0	0	0	0	0	0	5	Suicune	106	344	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_10_9	20	move	0	0	m3	m1	63905,47225,9334,58798	Wartortle	135	294	0	-	0	0	0	0	0	0	5	Suicune	89	344	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	21	move	0	0	s3	s5	19110,56346,46011,23145	Teddiursa	107	250	0	-	0	0	0	0	0	0	5	Onix	248	248	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	22	move	0	0	s3	s4	58438,50024,61778,31536	Wartortle	135	294	0	-	0	0	0	0	0	0	5	Baltoy	70	197	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_10_9	23	move	0	0	m1	m1	59187,56084,27077,18884	Wartortle	135	294	0	-	0	0	0	0	0	0	5	Baltoy	0	197	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_10_9	24	switch	0	1	-	s4	64293,384,978,40215	Wartortle	135	294	0	-	0	0	0	0	0	0	5	Onix	248	248	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_10_9	25	move	0	0	m2	m2	4725,9914,56899,29499	Wartortle	135	294	0	-	0	0	0	0	0	0	5	Onix	192	248	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	1
+DEC	ab_10_9	26	move	0	0	m1	m0	43437,28236,10441,30973	Wartortle	103	294	0	-	0	0	0	0	0	0	5	Onix	130	248	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_9	27	move	0	0	m1	m1	17194,58202,25418,52417	Wartortle	85	294	0	-	0	0	0	0	0	0	5	Onix	130	248	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_9	28	move	0	0	m2	s5	25521,1807,14620,3141	Wartortle	85	294	0	-	0	0	0	0	0	0	5	Suicune	18	344	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_10_9	29	move	0	0	m0	m3	44556,21972,64891,64393	Wartortle	85	294	0	-	0	0	0	0	0	0	5	Suicune	0	344	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	1
+DEC	ab_10_9	30	switch	0	1	-	s5	2085,46398,2156,11472	Wartortle	85	294	0	-	0	0	0	0	0	0	5	Onix	130	248	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_10_9	31	move	0	0	m3	m0	37880,29279,24648,5304	Wartortle	55	294	0	-	0	0	0	0	0	0	5	Onix	123	248	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_10_9	32	move	0	0	m0	m0	47059,32320,57929,56639	Wartortle	55	294	0	-	0	0	0	0	0	0	5	Onix	0	248	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_10_9	33	switch	0	1	-	s3	56108,24809,28522,40862	Wartortle	55	294	0	-	0	0	0	0	0	0	5	Skitty	236	236	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_10_9	34	move	0	0	m2	m0	47643,33254,57549,45906	Wartortle	0	294	1	fnt	0	0	0	0	0	0	4	Skitty	236	236	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_10_9	35	switch	1	0	s3	-	59707,261,17795,16413	Teddiursa	107	250	0	-	0	0	0	0	0	0	4	Skitty	236	236	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_10_9	36	move	0	0	s4	m3	2578,58684,60878,21063	Groudon	338	338	0	-	-2	0	0	0	0	0	4	Skitty	236	236	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_10_9	37	move	0	0	m0	s2	24467,11766,37158,29946	Groudon	338	338	0	-	-2	0	0	0	0	0	4	Kingdra	259	306	0	-	0	-1	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_10_9	38	move	0	0	m0	m3	31082,46889,57837,51618	Groudon	206	338	0	-	-2	0	0	0	0	0	4	Kingdra	240	306	0	-	0	-1	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_10_9	39	move	0	0	m1	m3	49304,52582,56080,50801	Groudon	68	338	0	-	-2	0	0	0	0	0	4	Kingdra	240	306	0	-	0	-1	0	0	-2	0	3	p2	0	0	0	0	0
+DEC	ab_10_9	40	move	0	0	m0	m3	8033,2441,2987,33342	Groudon	0	338	1	fnt	0	0	0	0	0	0	3	Kingdra	222	306	0	-	0	-1	0	0	-2	0	3	p1	0	0	0	0	0
+DEC	ab_10_9	41	switch	1	0	s4	-	26816,54121,6966,12089	Teddiursa	107	250	0	-	0	0	0	0	0	0	3	Kingdra	222	306	0	-	0	-1	0	0	-2	0	3	none	0	0	0	0	0
+DEC	ab_10_9	42	move	0	0	m2	m0	29998,62074,60873,645	Teddiursa	0	250	1	fnt	0	0	0	0	0	0	2	Kingdra	84	306	0	-	0	-1	0	0	-2	0	3	p1	0	0	0	0	0
+DEC	ab_10_9	43	switch	1	0	s1	-	64602,63176,36976,51772	Zubat	233	233	0	-	0	0	0	0	0	0	2	Kingdra	84	306	0	-	0	-1	0	0	-2	0	3	none	0	0	0	0	0
+DEC	ab_10_9	44	move	0	0	m3	m1	38793,63450,10829,23106	Zubat	179	233	0	-	0	0	0	0	0	0	2	Kingdra	33	306	0	-	0	-1	0	0	-2	0	3	p1	0	0	0	0	0
+DEC	ab_10_9	45	move	0	0	m1	m0	56568,19505,57187,887	Zubat	179	233	0	-	0	0	0	0	0	0	2	Kingdra	0	306	1	fnt	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_10_9	46	switch	0	1	-	s2	32561,40023,27474,43958	Zubat	179	233	0	-	0	0	0	0	0	0	2	Skitty	236	236	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_10_9	47	move	0	0	m0	m2	22001,2817,43814,38110	Zubat	97	233	0	-	0	0	0	0	0	0	2	Skitty	170	236	0	-	0	0	0	0	0	0	2	p1	0	0	0	1	0
+DEC	ab_10_9	48	move	0	0	m2	m1	56686,21615,7511,56948	Zubat	32	233	0	-	0	0	0	0	0	0	2	Skitty	156	236	0	tox	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_10_9	49	move	0	0	m0	m0	28352,43681,12330,1500	Zubat	0	233	1	fnt	0	0	0	0	0	0	1	Skitty	84	236	0	tox	0	0	0	0	0	0	2	p1	0	0	0	1	0
+DEC	ab_10_9	50	switch	1	0	s5	-	14704,25545,30433,43663	Kabuto	213	213	0	-	0	0	0	0	0	0	1	Skitty	56	236	0	tox	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_10_9	51	move	0	0	m1	m3	44411,1557,53769,22835	Kabuto	213	213	0	-	0	0	0	0	0	0	1	Skitty	0	236	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_10_9	52	switch	0	1	-	s1	51366,42500,54008,6882	Kabuto	213	213	0	-	0	0	0	0	0	0	1	Grimer	243	280	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_10_9	53	move	0	0	m3	m3	51819,57594,61571,41558	Kabuto	213	213	0	-	0	0	0	0	0	0	1	Grimer	172	280	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_10_9	54	move	0	0	m0	m0	56866,54002,56225,17536	Kabuto	179	213	0	-	0	0	0	0	0	0	1	Grimer	31	280	0	-	0	0	2	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_10_9	55	move	0	0	m1	m0	19708,47884,59834,40468	Kabuto	179	213	0	-	0	0	0	0	0	0	1	Grimer	0	280	1	-	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_10_9	1	p1
+L	ab_10_9	0	|t:|<NORMALIZED>
+L	ab_10_9	1	|gametype|singles
+L	ab_10_9	2	|player|p1|P1||
+L	ab_10_9	3	|player|p2|P2||
+L	ab_10_9	4	|gen|3
+L	ab_10_9	5	|tier|[Gen 3] Custom Game
+L	ab_10_9	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_10_9	7	|
+L	ab_10_9	8	|t:|<NORMALIZED>
+L	ab_10_9	9	|teamsize|p1|6
+L	ab_10_9	10	|teamsize|p2|6
+L	ab_10_9	11	|start
+L	ab_10_9	12	|switch|p1a: Groudon|Groudon|338/338
+L	ab_10_9	13	|switch|p2a: Baltoy|Baltoy|197/197
+L	ab_10_9	14	|-weather|SunnyDay|[from] ability: Drought|[of] p1a: Groudon
+L	ab_10_9	15	|turn|1
+L	ab_10_9	16	|
+L	ab_10_9	17	|t:|<NORMALIZED>
+L	ab_10_9	18	|move|p1a: Groudon|Scary Face|p2a: Baltoy
+L	ab_10_9	19	|-unboost|p2a: Baltoy|spe|2
+L	ab_10_9	20	|move|p2a: Baltoy|Psych Up|p1a: Groudon
+L	ab_10_9	21	|-copyboost|p2a: Baltoy|p1a: Groudon|[from] move: Psych Up
+L	ab_10_9	22	|
+L	ab_10_9	23	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	24	|upkeep
+L	ab_10_9	25	|turn|2
+L	ab_10_9	26	|
+L	ab_10_9	27	|t:|<NORMALIZED>
+L	ab_10_9	28	|switch|p1a: Noctowl|Noctowl, M|354/354
+L	ab_10_9	29	|move|p2a: Baltoy|Confusion|p1a: Noctowl
+L	ab_10_9	30	|-damage|p1a: Noctowl|316/354
+L	ab_10_9	31	|
+L	ab_10_9	32	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	33	|upkeep
+L	ab_10_9	34	|turn|3
+L	ab_10_9	35	|
+L	ab_10_9	36	|t:|<NORMALIZED>
+L	ab_10_9	37	|move|p1a: Noctowl|Mud-Slap|p2a: Baltoy
+L	ab_10_9	38	|-immune|p2a: Baltoy
+L	ab_10_9	39	|move|p2a: Baltoy|Double-Edge|p1a: Noctowl
+L	ab_10_9	40	|-damage|p1a: Noctowl|242/354
+L	ab_10_9	41	|-damage|p2a: Baltoy|173/197|[from] Recoil|[of] p1a: Noctowl
+L	ab_10_9	42	|
+L	ab_10_9	43	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	44	|upkeep
+L	ab_10_9	45	|turn|4
+L	ab_10_9	46	|
+L	ab_10_9	47	|t:|<NORMALIZED>
+L	ab_10_9	48	|move|p1a: Noctowl|Swift|p2a: Baltoy
+L	ab_10_9	49	|-damage|p2a: Baltoy|95/197
+L	ab_10_9	50	|move|p2a: Baltoy|Confusion|p1a: Noctowl
+L	ab_10_9	51	|-damage|p1a: Noctowl|207/354
+L	ab_10_9	52	|
+L	ab_10_9	53	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	54	|upkeep
+L	ab_10_9	55	|turn|5
+L	ab_10_9	56	|
+L	ab_10_9	57	|t:|<NORMALIZED>
+L	ab_10_9	58	|switch|p1a: Teddiursa|Teddiursa, M|250/250
+L	ab_10_9	59	|move|p2a: Baltoy|Double-Edge|p1a: Teddiursa
+L	ab_10_9	60	|-damage|p1a: Teddiursa|175/250
+L	ab_10_9	61	|-damage|p2a: Baltoy|70/197|[from] Recoil|[of] p1a: Teddiursa
+L	ab_10_9	62	|
+L	ab_10_9	63	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	64	|upkeep
+L	ab_10_9	65	|turn|6
+L	ab_10_9	66	|
+L	ab_10_9	67	|t:|<NORMALIZED>
+L	ab_10_9	68	|debug|before turn callback: focuspunch
+L	ab_10_9	69	|-singleturn|p1a: Teddiursa|move: Focus Punch
+L	ab_10_9	70	|move|p2a: Baltoy|Psychic|p1a: Teddiursa
+L	ab_10_9	71	|-damage|p1a: Teddiursa|76/250
+L	ab_10_9	72	|move|p1a: Teddiursa|Focus Punch||[still]
+L	ab_10_9	73	|cant|p1a: Teddiursa|Focus Punch|Focus Punch
+L	ab_10_9	74	|
+L	ab_10_9	75	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	76	|-enditem|p1a: Teddiursa|Mago Berry|[eat]
+L	ab_10_9	77	|-heal|p1a: Teddiursa|107/250|[from] item: Mago Berry
+L	ab_10_9	78	|upkeep
+L	ab_10_9	79	|turn|7
+L	ab_10_9	80	|
+L	ab_10_9	81	|t:|<NORMALIZED>
+L	ab_10_9	82	|switch|p2a: Suicune|Suicune|344/344
+L	ab_10_9	83	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_10_9	84	|switch|p1a: Noctowl|Noctowl, M|207/354
+L	ab_10_9	85	|
+L	ab_10_9	86	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	87	|upkeep
+L	ab_10_9	88	|turn|8
+L	ab_10_9	89	|
+L	ab_10_9	90	|t:|<NORMALIZED>
+L	ab_10_9	91	|move|p2a: Suicune|Hydro Pump|p1a: Noctowl
+L	ab_10_9	92	|debug|Sunny Day water suppress
+L	ab_10_9	93	|-damage|p1a: Noctowl|154/354
+L	ab_10_9	94	|move|p1a: Noctowl|Mud-Slap|p2a: Suicune
+L	ab_10_9	95	|-damage|p2a: Suicune|336/344
+L	ab_10_9	96	|-unboost|p2a: Suicune|accuracy|1
+L	ab_10_9	97	|
+L	ab_10_9	98	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	99	|upkeep
+L	ab_10_9	100	|turn|9
+L	ab_10_9	101	|
+L	ab_10_9	102	|t:|<NORMALIZED>
+L	ab_10_9	103	|move|p2a: Suicune|Facade|p1a: Noctowl
+L	ab_10_9	104	|-damage|p1a: Noctowl|69/354
+L	ab_10_9	105	|move|p1a: Noctowl|Swift|p2a: Suicune
+L	ab_10_9	106	|-damage|p2a: Suicune|305/344
+L	ab_10_9	107	|
+L	ab_10_9	108	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	109	|upkeep
+L	ab_10_9	110	|turn|10
+L	ab_10_9	111	|
+L	ab_10_9	112	|t:|<NORMALIZED>
+L	ab_10_9	113	|move|p2a: Suicune|Hydro Pump|p1a: Noctowl
+L	ab_10_9	114	|debug|Sunny Day water suppress
+L	ab_10_9	115	|-damage|p1a: Noctowl|14/354
+L	ab_10_9	116	|move|p1a: Noctowl|Rain Dance|p1a: Noctowl
+L	ab_10_9	117	|-weather|RainDance
+L	ab_10_9	118	|
+L	ab_10_9	119	|-weather|RainDance|[upkeep]
+L	ab_10_9	120	|upkeep
+L	ab_10_9	121	|turn|11
+L	ab_10_9	122	|
+L	ab_10_9	123	|t:|<NORMALIZED>
+L	ab_10_9	124	|move|p2a: Suicune|Facade|p1a: Noctowl
+L	ab_10_9	125	|-damage|p1a: Noctowl|0 fnt
+L	ab_10_9	126	|faint|p1a: Noctowl
+L	ab_10_9	127	|
+L	ab_10_9	128	|t:|<NORMALIZED>
+L	ab_10_9	129	|switch|p1a: Wartortle|Wartortle, M|294/294
+L	ab_10_9	130	|
+L	ab_10_9	131	|-weather|RainDance|[upkeep]
+L	ab_10_9	132	|upkeep
+L	ab_10_9	133	|turn|12
+L	ab_10_9	134	|
+L	ab_10_9	135	|t:|<NORMALIZED>
+L	ab_10_9	136	|move|p2a: Suicune|Facade|p1a: Wartortle
+L	ab_10_9	137	|-damage|p1a: Wartortle|226/294
+L	ab_10_9	138	|move|p1a: Wartortle|Ice Punch|p2a: Suicune
+L	ab_10_9	139	|-resisted|p2a: Suicune
+L	ab_10_9	140	|-damage|p2a: Suicune|285/344
+L	ab_10_9	141	|-status|p2a: Suicune|frz
+L	ab_10_9	142	|
+L	ab_10_9	143	|-weather|RainDance|[upkeep]
+L	ab_10_9	144	|upkeep
+L	ab_10_9	145	|turn|13
+L	ab_10_9	146	|
+L	ab_10_9	147	|t:|<NORMALIZED>
+L	ab_10_9	148	|cant|p2a: Suicune|frz
+L	ab_10_9	149	|move|p1a: Wartortle|Brick Break|p2a: Suicune
+L	ab_10_9	150	|-damage|p2a: Suicune|253/344 frz
+L	ab_10_9	151	|
+L	ab_10_9	152	|-weather|RainDance|[upkeep]
+L	ab_10_9	153	|upkeep
+L	ab_10_9	154	|turn|14
+L	ab_10_9	155	|
+L	ab_10_9	156	|t:|<NORMALIZED>
+L	ab_10_9	157	|cant|p2a: Suicune|frz
+L	ab_10_9	158	|move|p1a: Wartortle|Bite|p2a: Suicune
+L	ab_10_9	159	|-damage|p2a: Suicune|221/344 frz
+L	ab_10_9	160	|
+L	ab_10_9	161	|-weather|none
+L	ab_10_9	162	|upkeep
+L	ab_10_9	163	|turn|15
+L	ab_10_9	164	|
+L	ab_10_9	165	|t:|<NORMALIZED>
+L	ab_10_9	166	|switch|p2a: Grimer|Grimer, M|280/280
+L	ab_10_9	167	|move|p1a: Wartortle|Brick Break|p2a: Grimer
+L	ab_10_9	168	|-resisted|p2a: Grimer
+L	ab_10_9	169	|-damage|p2a: Grimer|243/280
+L	ab_10_9	170	|
+L	ab_10_9	171	|upkeep
+L	ab_10_9	172	|turn|16
+L	ab_10_9	173	|
+L	ab_10_9	174	|t:|<NORMALIZED>
+L	ab_10_9	175	|switch|p2a: Suicune|Suicune|221/344 frz
+L	ab_10_9	176	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_10_9	177	|move|p1a: Wartortle|Bite|p2a: Suicune
+L	ab_10_9	178	|-damage|p2a: Suicune|191/344 frz
+L	ab_10_9	179	|
+L	ab_10_9	180	|upkeep
+L	ab_10_9	181	|turn|17
+L	ab_10_9	182	|
+L	ab_10_9	183	|t:|<NORMALIZED>
+L	ab_10_9	184	|cant|p2a: Suicune|frz
+L	ab_10_9	185	|move|p1a: Wartortle|Tackle|p2a: Suicune
+L	ab_10_9	186	|-damage|p2a: Suicune|174/344 frz
+L	ab_10_9	187	|
+L	ab_10_9	188	|upkeep
+L	ab_10_9	189	|turn|18
+L	ab_10_9	190	|
+L	ab_10_9	191	|t:|<NORMALIZED>
+L	ab_10_9	192	|-curestatus|p2a: Suicune|frz|[msg]
+L	ab_10_9	193	|move|p2a: Suicune|Facade|p1a: Wartortle
+L	ab_10_9	194	|-damage|p1a: Wartortle|163/294
+L	ab_10_9	195	|move|p1a: Wartortle|Brick Break|p2a: Suicune
+L	ab_10_9	196	|-damage|p2a: Suicune|140/344
+L	ab_10_9	197	|
+L	ab_10_9	198	|upkeep
+L	ab_10_9	199	|turn|19
+L	ab_10_9	200	|
+L	ab_10_9	201	|t:|<NORMALIZED>
+L	ab_10_9	202	|move|p2a: Suicune|Mimic|p1a: Wartortle
+L	ab_10_9	203	|-activate|p2a: Suicune|move: Mimic|Brick Break
+L	ab_10_9	204	|move|p1a: Wartortle|Brick Break|p2a: Suicune
+L	ab_10_9	205	|-damage|p2a: Suicune|106/344
+L	ab_10_9	206	|
+L	ab_10_9	207	|upkeep
+L	ab_10_9	208	|turn|20
+L	ab_10_9	209	|
+L	ab_10_9	210	|t:|<NORMALIZED>
+L	ab_10_9	211	|move|p2a: Suicune|Ice Beam|p1a: Wartortle
+L	ab_10_9	212	|-resisted|p1a: Wartortle
+L	ab_10_9	213	|-damage|p1a: Wartortle|135/294
+L	ab_10_9	214	|move|p1a: Wartortle|Tackle|p2a: Suicune
+L	ab_10_9	215	|-damage|p2a: Suicune|89/344
+L	ab_10_9	216	|
+L	ab_10_9	217	|upkeep
+L	ab_10_9	218	|turn|21
+L	ab_10_9	219	|
+L	ab_10_9	220	|t:|<NORMALIZED>
+L	ab_10_9	221	|switch|p2a: Onix|Onix, M|248/248
+L	ab_10_9	222	|switch|p1a: Teddiursa|Teddiursa, M|107/250
+L	ab_10_9	223	|
+L	ab_10_9	224	|upkeep
+L	ab_10_9	225	|turn|22
+L	ab_10_9	226	|
+L	ab_10_9	227	|t:|<NORMALIZED>
+L	ab_10_9	228	|switch|p2a: Baltoy|Baltoy|70/197
+L	ab_10_9	229	|switch|p1a: Wartortle|Wartortle, M|135/294
+L	ab_10_9	230	|
+L	ab_10_9	231	|upkeep
+L	ab_10_9	232	|turn|23
+L	ab_10_9	233	|
+L	ab_10_9	234	|t:|<NORMALIZED>
+L	ab_10_9	235	|move|p1a: Wartortle|Bite|p2a: Baltoy
+L	ab_10_9	236	|-supereffective|p2a: Baltoy
+L	ab_10_9	237	|-damage|p2a: Baltoy|0 fnt
+L	ab_10_9	238	|faint|p2a: Baltoy
+L	ab_10_9	239	|
+L	ab_10_9	240	|t:|<NORMALIZED>
+L	ab_10_9	241	|switch|p2a: Onix|Onix, M|248/248
+L	ab_10_9	242	|
+L	ab_10_9	243	|upkeep
+L	ab_10_9	244	|turn|24
+L	ab_10_9	245	|
+L	ab_10_9	246	|t:|<NORMALIZED>
+L	ab_10_9	247	|move|p2a: Onix|Block|p1a: Wartortle
+L	ab_10_9	248	|-activate|p1a: Wartortle|trapped
+L	ab_10_9	249	|move|p1a: Wartortle|Brick Break|p2a: Onix
+L	ab_10_9	250	|-supereffective|p2a: Onix
+L	ab_10_9	251	|-damage|p2a: Onix|192/248
+L	ab_10_9	252	|
+L	ab_10_9	253	|upkeep
+L	ab_10_9	254	|turn|25
+L	ab_10_9	255	|
+L	ab_10_9	256	|t:|<NORMALIZED>
+L	ab_10_9	257	|move|p2a: Onix|Sand Tomb|p1a: Wartortle
+L	ab_10_9	258	|-damage|p1a: Wartortle|121/294
+L	ab_10_9	259	|-activate|p1a: Wartortle|move: Sand Tomb|[of] p2a: Onix
+L	ab_10_9	260	|move|p1a: Wartortle|Bite|p2a: Onix
+L	ab_10_9	261	|-damage|p2a: Onix|130/248
+L	ab_10_9	262	|
+L	ab_10_9	263	|-damage|p1a: Wartortle|103/294|[from] move: Sand Tomb|[partiallytrapped]
+L	ab_10_9	264	|upkeep
+L	ab_10_9	265	|turn|26
+L	ab_10_9	266	|
+L	ab_10_9	267	|t:|<NORMALIZED>
+L	ab_10_9	268	|move|p2a: Onix|Protect|p2a: Onix
+L	ab_10_9	269	|-singleturn|p2a: Onix|Protect
+L	ab_10_9	270	|move|p1a: Wartortle|Bite|p2a: Onix
+L	ab_10_9	271	|-activate|p2a: Onix|Protect
+L	ab_10_9	272	|
+L	ab_10_9	273	|-damage|p1a: Wartortle|85/294|[from] move: Sand Tomb|[partiallytrapped]
+L	ab_10_9	274	|upkeep
+L	ab_10_9	275	|turn|27
+L	ab_10_9	276	|
+L	ab_10_9	277	|t:|<NORMALIZED>
+L	ab_10_9	278	|switch|p2a: Suicune|Suicune|89/344
+L	ab_10_9	279	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_10_9	280	|move|p1a: Wartortle|Brick Break|p2a: Suicune
+L	ab_10_9	281	|-crit|p2a: Suicune
+L	ab_10_9	282	|-damage|p2a: Suicune|18/344
+L	ab_10_9	283	|
+L	ab_10_9	284	|-end|p1a: Wartortle|Sand Tomb|[partiallytrapped]|[silent]
+L	ab_10_9	285	|upkeep
+L	ab_10_9	286	|turn|28
+L	ab_10_9	287	|
+L	ab_10_9	288	|t:|<NORMALIZED>
+L	ab_10_9	289	|move|p2a: Suicune|Mimic|p1a: Wartortle
+L	ab_10_9	290	|-activate|p2a: Suicune|move: Mimic|Brick Break
+L	ab_10_9	291	|move|p1a: Wartortle|Ice Punch|p2a: Suicune
+L	ab_10_9	292	|-resisted|p2a: Suicune
+L	ab_10_9	293	|-damage|p2a: Suicune|0 fnt
+L	ab_10_9	294	|faint|p2a: Suicune
+L	ab_10_9	295	|
+L	ab_10_9	296	|t:|<NORMALIZED>
+L	ab_10_9	297	|switch|p2a: Onix|Onix, M|130/248
+L	ab_10_9	298	|
+L	ab_10_9	299	|upkeep
+L	ab_10_9	300	|turn|29
+L	ab_10_9	301	|
+L	ab_10_9	302	|t:|<NORMALIZED>
+L	ab_10_9	303	|move|p2a: Onix|Sand Tomb|p1a: Wartortle
+L	ab_10_9	304	|-damage|p1a: Wartortle|73/294
+L	ab_10_9	305	|-activate|p1a: Wartortle|move: Sand Tomb|[of] p2a: Onix
+L	ab_10_9	306	|move|p1a: Wartortle|Tackle|p2a: Onix
+L	ab_10_9	307	|-resisted|p2a: Onix
+L	ab_10_9	308	|-damage|p2a: Onix|123/248
+L	ab_10_9	309	|
+L	ab_10_9	310	|-damage|p1a: Wartortle|55/294|[from] move: Sand Tomb|[partiallytrapped]
+L	ab_10_9	311	|upkeep
+L	ab_10_9	312	|turn|30
+L	ab_10_9	313	|
+L	ab_10_9	314	|t:|<NORMALIZED>
+L	ab_10_9	315	|move|p2a: Onix|Sand Tomb|p1a: Wartortle|[miss]
+L	ab_10_9	316	|-miss|p2a: Onix|p1a: Wartortle
+L	ab_10_9	317	|move|p1a: Wartortle|Ice Punch|p2a: Onix
+L	ab_10_9	318	|-supereffective|p2a: Onix
+L	ab_10_9	319	|-damage|p2a: Onix|0 fnt
+L	ab_10_9	320	|faint|p2a: Onix
+L	ab_10_9	321	|
+L	ab_10_9	322	|t:|<NORMALIZED>
+L	ab_10_9	323	|switch|p2a: Skitty|Skitty, M|236/236
+L	ab_10_9	324	|
+L	ab_10_9	325	|-end|p1a: Wartortle|Sand Tomb|[partiallytrapped]|[silent]
+L	ab_10_9	326	|upkeep
+L	ab_10_9	327	|turn|31
+L	ab_10_9	328	|
+L	ab_10_9	329	|t:|<NORMALIZED>
+L	ab_10_9	330	|move|p2a: Skitty|Thunderbolt|p1a: Wartortle
+L	ab_10_9	331	|-supereffective|p1a: Wartortle
+L	ab_10_9	332	|-damage|p1a: Wartortle|0 fnt
+L	ab_10_9	333	|faint|p1a: Wartortle
+L	ab_10_9	334	|
+L	ab_10_9	335	|t:|<NORMALIZED>
+L	ab_10_9	336	|switch|p1a: Teddiursa|Teddiursa, M|107/250
+L	ab_10_9	337	|
+L	ab_10_9	338	|upkeep
+L	ab_10_9	339	|turn|32
+L	ab_10_9	340	|
+L	ab_10_9	341	|t:|<NORMALIZED>
+L	ab_10_9	342	|switch|p1a: Groudon|Groudon|338/338
+L	ab_10_9	343	|-weather|SunnyDay|[from] ability: Drought|[of] p1a: Groudon
+L	ab_10_9	344	|move|p2a: Skitty|Charm|p1a: Groudon
+L	ab_10_9	345	|-unboost|p1a: Groudon|atk|2
+L	ab_10_9	346	|
+L	ab_10_9	347	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	348	|upkeep
+L	ab_10_9	349	|turn|33
+L	ab_10_9	350	|
+L	ab_10_9	351	|t:|<NORMALIZED>
+L	ab_10_9	352	|switch|p2a: Kingdra|Kingdra, M|306/306
+L	ab_10_9	353	|move|p1a: Groudon|Rock Smash|p2a: Kingdra
+L	ab_10_9	354	|debug|Negating (sp)atk boost/penalty.
+L	ab_10_9	355	|-crit|p2a: Kingdra
+L	ab_10_9	356	|-damage|p2a: Kingdra|259/306
+L	ab_10_9	357	|-unboost|p2a: Kingdra|def|1
+L	ab_10_9	358	|
+L	ab_10_9	359	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	360	|upkeep
+L	ab_10_9	361	|turn|34
+L	ab_10_9	362	|
+L	ab_10_9	363	|t:|<NORMALIZED>
+L	ab_10_9	364	|move|p2a: Kingdra|Surf|p1a: Groudon
+L	ab_10_9	365	|debug|Sunny Day water suppress
+L	ab_10_9	366	|-supereffective|p1a: Groudon
+L	ab_10_9	367	|-damage|p1a: Groudon|206/338
+L	ab_10_9	368	|move|p1a: Groudon|Rock Smash|p2a: Kingdra
+L	ab_10_9	369	|-damage|p2a: Kingdra|240/306
+L	ab_10_9	370	|
+L	ab_10_9	371	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	372	|upkeep
+L	ab_10_9	373	|turn|35
+L	ab_10_9	374	|
+L	ab_10_9	375	|t:|<NORMALIZED>
+L	ab_10_9	376	|move|p2a: Kingdra|Surf|p1a: Groudon
+L	ab_10_9	377	|debug|Sunny Day water suppress
+L	ab_10_9	378	|-supereffective|p1a: Groudon
+L	ab_10_9	379	|-damage|p1a: Groudon|68/338
+L	ab_10_9	380	|move|p1a: Groudon|Scary Face|p2a: Kingdra
+L	ab_10_9	381	|-unboost|p2a: Kingdra|spe|2
+L	ab_10_9	382	|
+L	ab_10_9	383	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	384	|upkeep
+L	ab_10_9	385	|turn|36
+L	ab_10_9	386	|
+L	ab_10_9	387	|t:|<NORMALIZED>
+L	ab_10_9	388	|move|p1a: Groudon|Rock Smash|p2a: Kingdra
+L	ab_10_9	389	|-damage|p2a: Kingdra|222/306
+L	ab_10_9	390	|move|p2a: Kingdra|Surf|p1a: Groudon
+L	ab_10_9	391	|debug|Sunny Day water suppress
+L	ab_10_9	392	|-supereffective|p1a: Groudon
+L	ab_10_9	393	|-damage|p1a: Groudon|0 fnt
+L	ab_10_9	394	|faint|p1a: Groudon
+L	ab_10_9	395	|
+L	ab_10_9	396	|t:|<NORMALIZED>
+L	ab_10_9	397	|switch|p1a: Teddiursa|Teddiursa, M|107/250
+L	ab_10_9	398	|
+L	ab_10_9	399	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	400	|upkeep
+L	ab_10_9	401	|turn|37
+L	ab_10_9	402	|
+L	ab_10_9	403	|t:|<NORMALIZED>
+L	ab_10_9	404	|move|p1a: Teddiursa|Fury Swipes|p2a: Kingdra
+L	ab_10_9	405	|-damage|p2a: Kingdra|185/306
+L	ab_10_9	406	|-damage|p2a: Kingdra|150/306
+L	ab_10_9	407	|-crit|p2a: Kingdra
+L	ab_10_9	408	|-damage|p2a: Kingdra|84/306
+L	ab_10_9	409	|-hitcount|p2a: Kingdra|3
+L	ab_10_9	410	|move|p2a: Kingdra|Body Slam|p1a: Teddiursa
+L	ab_10_9	411	|-damage|p1a: Teddiursa|0 fnt
+L	ab_10_9	412	|faint|p1a: Teddiursa
+L	ab_10_9	413	|
+L	ab_10_9	414	|t:|<NORMALIZED>
+L	ab_10_9	415	|switch|p1a: Zubat|Zubat, M|233/233
+L	ab_10_9	416	|
+L	ab_10_9	417	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	418	|upkeep
+L	ab_10_9	419	|turn|38
+L	ab_10_9	420	|
+L	ab_10_9	421	|t:|<NORMALIZED>
+L	ab_10_9	422	|move|p1a: Zubat|Aerial Ace|p2a: Kingdra
+L	ab_10_9	423	|-damage|p2a: Kingdra|33/306
+L	ab_10_9	424	|move|p2a: Kingdra|Water Gun|p1a: Zubat
+L	ab_10_9	425	|debug|Sunny Day water suppress
+L	ab_10_9	426	|-damage|p1a: Zubat|179/233
+L	ab_10_9	427	|
+L	ab_10_9	428	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	429	|upkeep
+L	ab_10_9	430	|turn|39
+L	ab_10_9	431	|
+L	ab_10_9	432	|t:|<NORMALIZED>
+L	ab_10_9	433	|move|p1a: Zubat|Gust|p2a: Kingdra
+L	ab_10_9	434	|-damage|p2a: Kingdra|0 fnt
+L	ab_10_9	435	|faint|p2a: Kingdra
+L	ab_10_9	436	|
+L	ab_10_9	437	|t:|<NORMALIZED>
+L	ab_10_9	438	|switch|p2a: Skitty|Skitty, M|236/236
+L	ab_10_9	439	|
+L	ab_10_9	440	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	441	|upkeep
+L	ab_10_9	442	|turn|40
+L	ab_10_9	443	|
+L	ab_10_9	444	|t:|<NORMALIZED>
+L	ab_10_9	445	|move|p1a: Zubat|Return|p2a: Skitty
+L	ab_10_9	446	|-damage|p2a: Skitty|170/236
+L	ab_10_9	447	|move|p2a: Skitty|Facade|p1a: Zubat
+L	ab_10_9	448	|-damage|p1a: Zubat|97/233
+L	ab_10_9	449	|
+L	ab_10_9	450	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	451	|upkeep
+L	ab_10_9	452	|turn|41
+L	ab_10_9	453	|
+L	ab_10_9	454	|t:|<NORMALIZED>
+L	ab_10_9	455	|move|p1a: Zubat|Toxic|p2a: Skitty
+L	ab_10_9	456	|-status|p2a: Skitty|tox
+L	ab_10_9	457	|move|p2a: Skitty|Shadow Ball|p1a: Zubat
+L	ab_10_9	458	|-damage|p1a: Zubat|32/233
+L	ab_10_9	459	|
+L	ab_10_9	460	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	461	|-damage|p2a: Skitty|156/236 tox|[from] psn
+L	ab_10_9	462	|upkeep
+L	ab_10_9	463	|turn|42
+L	ab_10_9	464	|
+L	ab_10_9	465	|t:|<NORMALIZED>
+L	ab_10_9	466	|move|p1a: Zubat|Return|p2a: Skitty
+L	ab_10_9	467	|-damage|p2a: Skitty|84/236 tox
+L	ab_10_9	468	|debug|incompatible gender
+L	ab_10_9	469	|move|p2a: Skitty|Thunderbolt|p1a: Zubat
+L	ab_10_9	470	|-supereffective|p1a: Zubat
+L	ab_10_9	471	|-damage|p1a: Zubat|0 fnt
+L	ab_10_9	472	|faint|p1a: Zubat
+L	ab_10_9	473	|
+L	ab_10_9	474	|t:|<NORMALIZED>
+L	ab_10_9	475	|switch|p1a: Kabuto|Kabuto, M|213/213
+L	ab_10_9	476	|
+L	ab_10_9	477	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	478	|-damage|p2a: Skitty|56/236 tox|[from] psn
+L	ab_10_9	479	|upkeep
+L	ab_10_9	480	|turn|43
+L	ab_10_9	481	|
+L	ab_10_9	482	|t:|<NORMALIZED>
+L	ab_10_9	483	|move|p1a: Kabuto|Water Pulse|p2a: Skitty
+L	ab_10_9	484	|debug|Sunny Day water suppress
+L	ab_10_9	485	|-damage|p2a: Skitty|0 fnt
+L	ab_10_9	486	|faint|p2a: Skitty
+L	ab_10_9	487	|
+L	ab_10_9	488	|t:|<NORMALIZED>
+L	ab_10_9	489	|switch|p2a: Grimer|Grimer, M|243/280
+L	ab_10_9	490	|
+L	ab_10_9	491	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	492	|upkeep
+L	ab_10_9	493	|turn|44
+L	ab_10_9	494	|
+L	ab_10_9	495	|t:|<NORMALIZED>
+L	ab_10_9	496	|move|p1a: Kabuto|Waterfall|p2a: Grimer
+L	ab_10_9	497	|debug|Sunny Day water suppress
+L	ab_10_9	498	|-damage|p2a: Grimer|172/280
+L	ab_10_9	499	|move|p2a: Grimer|Haze|p2a: Grimer
+L	ab_10_9	500	|-clearallboost
+L	ab_10_9	501	|
+L	ab_10_9	502	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	503	|upkeep
+L	ab_10_9	504	|turn|45
+L	ab_10_9	505	|
+L	ab_10_9	506	|t:|<NORMALIZED>
+L	ab_10_9	507	|move|p1a: Kabuto|Blizzard|p2a: Grimer
+L	ab_10_9	508	|-damage|p2a: Grimer|31/280
+L	ab_10_9	509	|move|p2a: Grimer|Flamethrower|p1a: Kabuto
+L	ab_10_9	510	|debug|Sunny Day fire boost
+L	ab_10_9	511	|-resisted|p1a: Kabuto
+L	ab_10_9	512	|-damage|p1a: Kabuto|179/213
+L	ab_10_9	513	|
+L	ab_10_9	514	|-weather|SunnyDay|[upkeep]
+L	ab_10_9	515	|-enditem|p2a: Grimer|Starf Berry|[eat]
+L	ab_10_9	516	|-boost|p2a: Grimer|spa|2|[from] item: Starf Berry
+L	ab_10_9	517	|upkeep
+L	ab_10_9	518	|turn|46
+L	ab_10_9	519	|
+L	ab_10_9	520	|t:|<NORMALIZED>
+L	ab_10_9	521	|move|p1a: Kabuto|Water Pulse|p2a: Grimer
+L	ab_10_9	522	|debug|Sunny Day water suppress
+L	ab_10_9	523	|-damage|p2a: Grimer|0 fnt
+L	ab_10_9	524	|faint|p2a: Grimer
+L	ab_10_9	525	|
+L	ab_10_9	526	|win|P1

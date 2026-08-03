@@ -88,6 +88,19 @@ struct CaseExpect {
     id: String,
     teams: [String; 2],
     init_seed: String,
+    /// The sim's `battle.quickClawRoll` as it stood at the FIRST decision request
+    /// (`gen3_turn0_quick_claw_capture_v1`, the optional 5th `INIT` field).
+    ///
+    /// The offline replay convention resumes from the POST-CONSTRUCTION state: `init_seed` is
+    /// captured at that same point, deliberately skipping the turn-0 construction window that
+    /// [`BattleState::start_with_turn0_construction`] models for the bridge. This boolean is
+    /// the OTHER half of that state — gen3 rolls it (`randomChance(1,5)`) at every completed
+    /// `endTurn` and reads it on the NEXT turn (`gen3_quick_claw_speed_v1`), so turn 1's value
+    /// is decided during construction and is unrecoverable from the seed alone.
+    ///
+    /// `false` when the field is absent, which is exactly the pre-fix behaviour — so every
+    /// previously saved repro dir and every committed golden replays byte-for-byte.
+    init_quick_claw: bool,
     decisions: Vec<DecExpect>,
     ended: bool,
     winner: WinTok,
@@ -262,8 +275,11 @@ fn parse_chunk(data: &str) -> Vec<Result<CaseExpect, (String, String)>> {
             }
             "INIT" => {
                 flush!();
-                if f.len() != 4 {
-                    out.push(Err(("?".to_string(), format!("INIT needs 4 fields (line {ln})"))));
+                // 4 = the pre-`gen3_turn0_quick_claw_capture_v1` format (saved repro dirs and
+                // committed goldens stay replayable); 5 = the current format, whose trailing
+                // field is the turn-0 `quickClawRoll`.
+                if f.len() != 4 && f.len() != 5 {
+                    out.push(Err(("?".to_string(), format!("INIT needs 4 or 5 fields, got {} (line {ln})", f.len()))));
                     continue;
                 }
                 let id = f[1].to_string();
@@ -278,6 +294,7 @@ fn parse_chunk(data: &str) -> Vec<Result<CaseExpect, (String, String)>> {
                             id,
                             teams: t,
                             init_seed: f[2].to_string(),
+                            init_quick_claw: f.len() == 5 && f[4] == "1",
                             decisions: Vec::new(),
                             ended: false,
                             winner: WinTok::None,
@@ -685,6 +702,15 @@ fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
             "constructed PRNG seed != sim's pre-first-decision seed".to_string(),
             0,
         );
+    }
+
+    // Restore the OTHER half of the post-construction state the seed alone cannot carry
+    // (`gen3_turn0_quick_claw_capture_v1`). `start_with_switchins` is draw-free and defaults
+    // `quick_claw_roll: false`, but the sim rolled turn 1's value during the turn-0 endTurn we
+    // skip — so without this a Quick Claw lead is mis-ordered whenever that roll was true.
+    // Applied AFTER the init_seed check above, so it can never mask a genuine seed divergence.
+    if let Some(st) = battle.state_mut() {
+        st.quick_claw_roll = case.init_quick_claw;
     }
 
     // Whether the two LEADS have EQUAL raw (unboosted, construction-time) Speed — a

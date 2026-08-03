@@ -59,7 +59,12 @@ const { Teams } = require(path.join(PS, 'dist/sim'));
 const ROOT = path.resolve(__dirname, '../../..');
 const CRATE = path.resolve(__dirname, '..');
 // ISOLATED target dir — never rebuild the shared target/ (the live ab_replay fuzzer).
-const BRIDGE_TARGET = '/tmp/pokesim_target_bridge';
+// OVERRIDABLE via `POKESIM_BRIDGE_TARGET` (`gen3_transform_v1`, ROUND 33): the hard-coded
+// path is a SHARED /tmp dir, so a second worktree running this concurrently would rebuild it
+// from ITS source — which is exactly why ROUND 32 had to SKIP this gate and record the miss
+// as honest scope. An env override lets each worktree run the per-side gate in its own dir;
+// the default is unchanged, so existing invocations are byte-identical.
+const BRIDGE_TARGET = process.env.POKESIM_BRIDGE_TARGET || '/tmp/pokesim_target_bridge';
 const REPLAYER = path.join(BRIDGE_TARGET, 'release/bridge_replay');
 
 function tick() { return new Promise((r) => setTimeout(r, 0)); }
@@ -196,7 +201,9 @@ async function runBridgeBattle(p1Packed, p2Packed, seed, chooseSeed, format, tra
   for (let i = 0; i < 16; i++) await tick();
 
   const rec = {
-    initSeed: stream.battle.prng.getSeed(), chunks, cmds, ended: false, winner: null,
+    initSeed: stream.battle.prng.getSeed(),
+    quickClawRoll: !!stream.battle.quickClawRoll,
+    chunks, cmds, ended: false, winner: null,
     // SEED ANCHOR: the omniscient PRNG seed AFTER each RESOLVED decision boundary (one per
     // committed decision, in order) — the independent post-decision seed assertion the Rust
     // `bridge_replay --ab` checks against `run_full_battle`'s per-decision engine seed BEFORE
@@ -330,7 +337,10 @@ function emitBridgeBattle(lines, id, battleNo, p1Packed, p2Packed, format, rec) 
   lines.push(`SCEN\t${id}`);
   lines.push(`TEAM\t${id}\tp1\t${p1Packed}`);
   lines.push(`TEAM\t${id}\tp2\t${p2Packed}`);
-  lines.push(['INIT', id, battleNo, rec.initSeed, format].join('\t'));
+  // Turn-0 `quickClawRoll` (`gen3_turn0_quick_claw_capture_v1`): `initSeed` is the
+  // POST-construction seed, so the offline Rust replay skips the turn-0 endTurn that decides
+  // turn 1's Quick Claw. Optional 6th INIT field (absent -> false) so old goldens still replay.
+  lines.push(['INIT', id, battleNo, rec.initSeed, format, rec.quickClawRoll ? 1 : 0].join('\t'));
   rec.cmds.forEach((c, ci) => lines.push(['CMD', id, battleNo, ci, c[0], c[1]].join('\t')));
   // SEED ANCHOR rows — one per RESOLVED decision boundary, in order.
   (rec.seeds || []).forEach((s, di) => lines.push(['SEED', id, battleNo, di, s].join('\t')));
@@ -365,7 +375,7 @@ function chunkHeader(flags, runId, chunkIdx) {
     '# bridge_ab_fuzz chunk — REQUEST / PER-SIDE A/B fuzzer (real Node getPlayerStreams vs the Rust port).',
     `# mode=${flags.mode} format=${flags.format} master_seed=${flags.masterSeed} run_id=${runId} chunk=${chunkIdx}`,
     '# Format identical to tests/vectors/bridge_trapping_golden.txt (SCEN/TEAM/INIT/CMD/CHUNK/END).',
-    '# Replay: /tmp/pokesim_target_bridge/release/bridge_replay <this-file>',
+    `# Replay: ${REPLAYER} <this-file>`,
   ];
 }
 
@@ -387,7 +397,7 @@ function saveRepro(outDir, runId, flags, meta, verdict, chunkIdx, subdir) {
       got: verdict.got === undefined ? null : verdict.got,
       detail: verdict.detail === undefined ? null : verdict.detail,
     },
-    replay_cmd: `/tmp/pokesim_target_bridge/release/bridge_replay ${path.join(dir, 'battle.txt')}`,
+    replay_cmd: `${REPLAYER} ${path.join(dir, 'battle.txt')}`,
   };
   fs.writeFileSync(path.join(dir, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
   return dir;

@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 76,
    "items": 63,
-   "conditions": 48,
-   "moves": 256,
-   "rows": 943
+   "conditions": 49,
+   "moves": 263,
+   "rows": 960
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -1483,6 +1483,54 @@
    "fp": "fn:6d079a78:onStart(target, source, sourceEffect) { if (sourceEffect && sourceEffect.effectType === \"Ability\") { this.add(\"-status\",",
    "anchor": "turn.rs::try_set_status",
    "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
+  },
+  "condition:partiallytrapped:duration": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "turn.rs::run_move",
+   "reason": "THE family's ONE new draw: the gen4 override random(3,7) (uniform over {3,4,5,6}; the gripclaw arm is dead in gen3) stored as PartialTrap::duration. The base `duration: 5` is fully shadowed by the callback, so it never reaches the engine"
+  },
+  "condition:partiallytrapped:durationCallback": {
+   "disposition": "implemented",
+   "fp": "fn:1f5e2307:durationCallback(target, source) { if (source.hasItem(\"gripclaw\")) return 6; return this.random(3, 7); }",
+   "anchor": "turn.rs::run_move",
+   "reason": "THE family's ONE new draw: the gen4 override random(3,7) (uniform over {3,4,5,6}; the gripclaw arm is dead in gen3) stored as PartialTrap::duration. The base `duration: 5` is fully shadowed by the callback, so it never reaches the engine"
+  },
+  "condition:partiallytrapped:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:79f41f71:onEnd(pokemon) { this.add(\"-end\", pokemon, this.effectState.sourceEffect, \"[partiallytrapped]\"); }",
+   "anchor": "turn.rs::apply_partial_trap",
+   "reason": "the order-10 subOrder-9 residual: duration-- FIRST (at 0 the onEnd fires |-end|<m>|<Move>|[partiallytrapped] with the DURATION-END `continue` and NO chip — this WINS over the trapper-gone branch, probe O), else the trapper-gone release (|-end|…|[silent], no chip) else the floor(maxhp/16) chip |-damage|…|[from] move: <Move>|[partiallytrapped] (Focus Band draws its onDamage roll, never survives)"
+  },
+  "condition:partiallytrapped:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:5e727d61:onResidual(pokemon) { const trapper = this.effectState.source; if (trapper && (!trapper.isActive || trapper.hp <= 0 || !",
+   "anchor": "turn.rs::apply_partial_trap",
+   "reason": "the order-10 subOrder-9 residual: duration-- FIRST (at 0 the onEnd fires |-end|<m>|<Move>|[partiallytrapped] with the DURATION-END `continue` and NO chip — this WINS over the trapper-gone branch, probe O), else the trapper-gone release (|-end|…|[silent], no chip) else the floor(maxhp/16) chip |-damage|…|[from] move: <Move>|[partiallytrapped] (Focus Band draws its onDamage roll, never survives)"
+  },
+  "condition:partiallytrapped:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn.rs::apply_partial_trap",
+   "reason": "the order-10 subOrder-9 residual: duration-- FIRST (at 0 the onEnd fires |-end|<m>|<Move>|[partiallytrapped] with the DURATION-END `continue` and NO chip — this WINS over the trapper-gone branch, probe O), else the trapper-gone release (|-end|…|[silent], no chip) else the floor(maxhp/16) chip |-damage|…|[from] move: <Move>|[partiallytrapped] (Focus Band draws its onDamage roll, never survives)"
+  },
+  "condition:partiallytrapped:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:9",
+   "anchor": "turn.rs::apply_partial_trap",
+   "reason": "the order-10 subOrder-9 residual: duration-- FIRST (at 0 the onEnd fires |-end|<m>|<Move>|[partiallytrapped] with the DURATION-END `continue` and NO chip — this WINS over the trapper-gone branch, probe O), else the trapper-gone release (|-end|…|[silent], no chip) else the floor(maxhp/16) chip |-damage|…|[from] move: <Move>|[partiallytrapped] (Focus Band draws its onDamage roll, never survives)"
+  },
+  "condition:partiallytrapped:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:855bf9c2:onStart(pokemon, source) { this.add(\"-activate\", pokemon, \"move: \" + this.effectState.sourceEffect, `[of] ${source}`); t",
+   "anchor": "turn.rs::run_move",
+   "reason": "the gen5-override onStart: |-activate|<victim>|move: <Move>|[of] <trapper>. Its boundDivisor branch is CONSTANT 16 in gen3 (no Binding Band / Grip Claw), so the divisor is not stored"
+  },
+  "condition:partiallytrapped:onTrapPokemon": {
+   "disposition": "implemented",
+   "fp": "fn:230df16c:onTrapPokemon(pokemon) { const gmaxEffect = [\"gmaxcentiferno\", \"gmaxsandblast\"].includes(this.effectState.sourceEffect.i",
+   "anchor": "turn.rs::is_trapped",
+   "reason": "the FIRM trap (bare tryTrap() → trapped:true on the FIRST request, a rejected switch is [Invalid choice] with NO re-request — probe M); the `source?.isActive` guard is mirrored by re-reading the foe active's uid, and the gmax arm is gen8-only (dead in gen3)"
   },
   "condition:perishsong:duration": {
    "disposition": "implemented",
@@ -3358,6 +3406,12 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the bellydrum arm: the FLOAT hp<=maxhp/2 gate as integer-exact 2*hp<=maxhp (262/524 fails, 263 succeeds — MC92) + atk>=6 + maxhp==1 fails; directDamage(floor(maxhp/2)) then the SET to +6 (-setboost)"
   },
+  "move:bind:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"partiallytrapped\"",
+   "anchor": "turn.rs::is_partial_trap_move",
+   "reason": "the post-hit partial-trap arm in run_move: gated on !absorbed (a Substitute intercepts before runMoveEffects — no volatile, NO duration draw) + a LIVE target (addVolatile early-returns on hp 0) + no trap already present (addVolatile returns false, no -fail); sets MonState::partial_trap and emits |-activate|<t>|move: <M>|[of] <u> after the -damage"
+  },
   "move:bite:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
@@ -3512,6 +3566,12 @@
    "fp": "val:true",
    "anchor": "turn.rs::run_status_move",
    "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:clamp:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"partiallytrapped\"",
+   "anchor": "turn.rs::is_partial_trap_move",
+   "reason": "the post-hit partial-trap arm in run_move: gated on !absorbed (a Substitute intercepts before runMoveEffects — no volatile, NO duration draw) + a LIVE target (addVolatile early-returns on hp 0) + no trap already present (addVolatile returns false, no -fail); sets MonState::partial_trap and emits |-activate|<t>|move: <M>|[of] <u> after the -damage"
   },
   "move:cometpunch:multihit": {
    "disposition": "implemented",
@@ -3931,6 +3991,12 @@
    "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:firespin:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"partiallytrapped\"",
+   "anchor": "turn.rs::is_partial_trap_move",
+   "reason": "the post-hit partial-trap arm in run_move: gated on !absorbed (a Substitute intercepts before runMoveEffects — no volatile, NO duration draw) + a LIVE target (addVolatile early-returns on hp 0) + no trap already present (addVolatile returns false, no -fail); sets MonState::partial_trap and emits |-activate|<t>|move: <M>|[of] <u> after the -damage"
   },
   "move:flamethrower:secondaries": {
    "disposition": "implemented",
@@ -4871,6 +4937,12 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:sandtomb:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"partiallytrapped\"",
+   "anchor": "turn.rs::is_partial_trap_move",
+   "reason": "the post-hit partial-trap arm in run_move: gated on !absorbed (a Substitute intercepts before runMoveEffects — no volatile, NO duration draw) + a LIVE target (addVolatile early-returns on hp 0) + no trap already present (addVolatile returns false, no -fail); sets MonState::partial_trap and emits |-activate|<t>|move: <M>|[of] <u> after the -damage"
+  },
   "move:scaryface:boosts": {
    "disposition": "implemented",
    "fp": "val:{\"spe\":-2}",
@@ -5446,6 +5518,24 @@
    "anchor": "turn.rs::modeled_status_move",
    "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
   },
+  "move:transform:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:transform:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "never-miss (accuracy true — NO accuracy draw; encore is the one acc-100 batch-6 move and draws) + the Status-default ignoreImmunity (painsplit works on a Ghost — probed)"
+  },
+  "move:transform:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:bf2d6106:onHit(target, pokemon) { if (!pokemon.transformInto(target)) { return false; } }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the transform arm (pokemon.transformInto): fainted / already-transformed target fails ([still]+-fail, draw-free — the USER being transformed does NOT block, that guard is gen5+); the copy overwrites species/types/5 non-HP stats/ability/all 7 boosts/moveslots {pp: min(5, base), maxpp: calculatePP(copied, ppUps[i] || 0) — the 1-move randbats Ditto gets NO pp-ups on slots 1-3}/hpType+hpPower via MonState::transform, sets cached_speed to the HYBRID spreadModify(TARGET base, OWN set).spe that setSpecies leaves behind, re-keys the slot-keyed choicelock/disable/lastMove references, and emits |-transform|U|T; restore_transform_overlay reverts on switch-out/faint (TF1-TF7)"
+  },
   "move:triattack:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":20}]",
@@ -5512,6 +5602,12 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:whirlpool:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"partiallytrapped\"",
+   "anchor": "turn.rs::is_partial_trap_move",
+   "reason": "the post-hit partial-trap arm in run_move: gated on !absorbed (a Substitute intercepts before runMoveEffects — no volatile, NO duration draw) + a LIVE target (addVolatile early-returns on hp 0) + no trap already present (addVolatile returns false, no -fail); sets MonState::partial_trap and emits |-activate|<t>|move: <M>|[of] <u> after the -damage"
+  },
   "move:whirlwind:forceSwitch": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -5577,6 +5673,12 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:wrap:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"partiallytrapped\"",
+   "anchor": "turn.rs::is_partial_trap_move",
+   "reason": "the post-hit partial-trap arm in run_move: gated on !absorbed (a Substitute intercepts before runMoveEffects — no volatile, NO duration draw) + a LIVE target (addVolatile early-returns on hp 0) + no trap already present (addVolatile returns false, no -fail); sets MonState::partial_trap and emits |-activate|<t>|move: <M>|[of] <u> after the -damage"
   },
   "move:yawn:ignoreImmunity": {
    "disposition": "implemented",

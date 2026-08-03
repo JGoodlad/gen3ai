@@ -255,6 +255,14 @@ const WISH_DURATION: u8 = 2;
 /// with the VOLATILES (after leech, before the item / the NO_ORDER duration volatiles),
 /// mirroring `findPokemonEventHandlers`'s status→volatiles→item order.
 const CURSE_RESIDUAL_SUBORDER: i32 = 8;
+/// The **PARTIAL-TRAP** volatile's `onResidualSubOrder` **9** (`gen3_partial_trap_v1` — the
+/// gen4-mod `partiallytrapped` override `onResidualOrder: 10, onResidualSubOrder: 9`,
+/// SOURCE-read at `data/mods/gen4/conditions.ts:110` and confirmed by the probe traces).
+/// So at order 10 the ladder is ability sub 3 → Leftovers sub 4 → leech sub 5 → status DoT
+/// sub 6 → curse sub 8 → **PARTIAL TRAP sub 9** → encore sub 14 → taunt sub 15 → yawn sub
+/// 19. Unique among the order-10 handlers ⇒ the ONLY tie it can take is the OTHER mon's
+/// partial trap at equal cached speed (a MUTUAL wrap).
+const PARTIAL_TRAP_SUBORDER: i32 = 9;
 /// The **ENCORE** volatile's residual sort key (`gen3_move_coverage_batch6_v1` — the
 /// resolved gen-3 `encore` condition's `onResidualOrder: 10, onResidualSubOrder: 14`,
 /// ONE below Taunt's 15). At order 10 it sorts AFTER Leftovers(4)/leech(5)/DoT(6)/
@@ -483,6 +491,26 @@ enum ResidualAction {
     /// volatiles (after leech, before Taunt). The `source_side` is stored for parity with
     /// leech but the chip has no source-heal (unlike leech).
     Curse { side: usize, slot: usize },
+    /// The **PARTIAL-TRAP** residual (`gen3_partial_trap_v1`, order 10 subOrder **9** — the
+    /// gen4-mod `partiallytrapped.onResidualOrder/SubOrder`), so at order 10 it sorts after
+    /// Leftovers (4) / Leech Seed (5) / status DoT (6) / Curse (8) and before Encore (14) /
+    /// Taunt (15) / Yawn (19). The handler is a DURATION handler with a REAL `onResidual`,
+    /// so `fieldEvent('Residual')` runs it in three branches (all DRAW-FREE except the
+    /// holder's Focus Band `onDamage` roll on the chip):
+    ///   1. `duration-- == 0` → the `onEnd` fires: `|-end|<mon>|<Move>|[partiallytrapped]`
+    ///      (NON-silent) and NO chip. This branch WINS over branch 2 — probe O confirmed a
+    ///      turn on which the duration expires AND the trapper leaves emits the NON-silent
+    ///      form — because `fieldEvent` decrements before it ever calls `onResidual`.
+    ///   2. the TRAPPER is gone (`!source.isActive || source.hp <= 0 || !source.activeTurns`)
+    ///      → delete the volatile + `|-end|<mon>|<Move>|[partiallytrapped]|[silent]`, NO chip.
+    ///   3. otherwise chip `floor(baseMaxhp/16)` (gen3 has no Binding Band / Grip Claw ⇒ the
+    ///      boundDivisor is always 16), emitting `|-damage|<mon>|<HP>|[from] move: <Move>|
+    ///      [partiallytrapped]`. The chip CAN KO (probe E) via the ordinary residual
+    ///      per-handler faint machinery.
+    /// Its ONLY residual tie is the OTHER mon's partial trap at equal speed (subOrder 9 is
+    /// unique among the order-10 handlers) — a MUTUAL wrap, which draws one extra
+    /// tie-shuffle (probe I).
+    PartialTrap { side: usize, slot: usize },
     /// The **WISH** slot condition's delayed heal (`gen3_move_coverage_batch3_v1`, order 7 —
     /// BEFORE the sand chip + all order-10 handlers): decrement the side's `wish_pending`
     /// duration; on reaching 0, if the slot's active mon is not fainted, heal `floor(maxhp/2)`

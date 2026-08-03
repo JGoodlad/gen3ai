@@ -366,8 +366,22 @@ impl crate::state::BattleState {
     /// 7th — the localized/nicknamed-team crash. NOTE: the SPECIES (for `|switch|`
     /// details, `Zapdos`) comes from [`species_name`], NOT this.
     pub(crate) fn display_name(&self, side: usize, slot: usize, dex: &Dex) -> String {
-        let nick = &self.sides[side].pokemon[slot].set.name;
-        if nick.is_empty() { self.species_name(side, slot, dex) } else { nick.clone() }
+        let mon = &self.sides[side].pokemon[slot];
+        let nick = &mon.set.name;
+        if !nick.is_empty() {
+            return nick.clone();
+        }
+        // TRANSFORM (`gen3_transform_v1`): `pokemon.name` is `set.name || set.species`, fixed
+        // at CONSTRUCTION — `transformInto` never touches it, so EVERY protocol ident of a
+        // transformed mon still reads its ORIGINAL species (probe: `|-transform|p1a: Ditto|
+        // p2a: Snorlax`, then `|move|p1a: Ditto|Body Slam|…` — never `p1a: Snorlax`). Read
+        // through the overlay rather than the live (copied) `species_id`.
+        if let Some(ov) = &mon.transform {
+            return dex
+                .species(&ov.base_species_id)
+                .map_or_else(|| ov.base_species_id.clone(), |s| s.name.clone());
+        }
+        self.species_name(side, slot, dex)
     }
 
     /// The SPECIES display name of `side`'s `slot` mon (e.g. `Zapdos`), for the
@@ -1444,9 +1458,21 @@ pub(crate) fn mon_types(mon: &crate::state::MonState, dex: &Dex) -> Vec<Type> {
 
 /// The holder-species gate for a SPECIES_STAT item (`ItemData.stat_mods.only_species`
 /// — Thick Club Cubone/Marowak, Light Ball Pikachu, DeepSea* Clamperl, Metal Powder
-/// Ditto, Soul Dew Lati@s). Empty ⇒ unconditional (Choice Band). `untransformed_only`
-/// (Metal Powder) is always satisfied — the port has no Transform.
-fn species_gate_passes(mods: &crate::dex::StatMods, species_id: &str) -> bool {
+/// Ditto, Soul Dew Lati@s). Empty ⇒ unconditional (Choice Band).
+///
+/// `untransformed_only` (Metal Powder's `!pokemon.transformed`) is now WIRED
+/// (`gen3_transform_v1`). It is only *independently* load-bearing on the DITTO MIRROR — any
+/// other transform already moves `species_id` off `ditto` and fails the `only_species` gate —
+/// but that board is reachable (both sides roll Ditto; one copies the other while holding
+/// Metal Powder) and the Def ×2 is a damage-visible difference.
+fn species_gate_passes(
+    mods: &crate::dex::StatMods,
+    species_id: &str,
+    holder_transformed: bool,
+) -> bool {
+    if mods.untransformed_only && holder_transformed {
+        return false;
+    }
     mods.only_species.is_empty() || {
         let sid = to_id(species_id);
         mods.only_species.iter().any(|s| *s == sid)
@@ -1501,6 +1527,9 @@ pub(crate) fn resolve_atk_stat_mods(
     item: &str,
     ability: &str,
     species_id: &str,
+    // `pokemon.transformed` for the ITEM HOLDER (the attacker) — Metal Powder's
+    // `untransformedOnly` gate (`gen3_transform_v1`).
+    holder_transformed: bool,
     move_type: Option<Type>,
     category: MoveCategory,
     attacker_statused: bool,
@@ -1509,7 +1538,7 @@ pub(crate) fn resolve_atk_stat_mods(
     let mut mods = Vec::new();
     if let Some(it) = dex.item(item) {
         if let Some(sm) = &it.stat_mods {
-            if species_gate_passes(sm, species_id) {
+            if species_gate_passes(sm, species_id, holder_transformed) {
                 let ratio = match category {
                     MoveCategory::Physical => sm.atk,
                     MoveCategory::Special => sm.spa,
@@ -1552,6 +1581,9 @@ pub(crate) fn resolve_def_stat_mods(
     item: &str,
     ability: &str,
     species_id: &str,
+    // `pokemon.transformed` for the ITEM HOLDER (the defender) — Metal Powder's
+    // `untransformedOnly` gate (`gen3_transform_v1`).
+    holder_transformed: bool,
     category: MoveCategory,
     defender_statused: bool,
     dex: &Dex,
@@ -1559,7 +1591,7 @@ pub(crate) fn resolve_def_stat_mods(
     let mut mods = Vec::new();
     if let Some(it) = dex.item(item) {
         if let Some(sm) = &it.stat_mods {
-            if species_gate_passes(sm, species_id) {
+            if species_gate_passes(sm, species_id, holder_transformed) {
                 let ratio = match category {
                     MoveCategory::Physical => sm.def,
                     MoveCategory::Special => sm.spd,
@@ -1667,4 +1699,26 @@ pub(crate) fn resolve_defender_ability(
     let thick_fat =
         ability_id == "thickfat" && (move_type == Some(Type::Ice) || move_type == Some(Type::Fire));
     (immune, thick_fat)
+}
+
+/// The gen-3 **PARTIAL-TRAP** move family (`gen3_partial_trap_v1`) — the six moves whose
+/// resolved gen-3 dex row carries `volatileStatus: 'partiallytrapped'`:
+///
+/// | move | num | type | cat | BP | acc |
+/// |---|---|---|---|---|---|
+/// | wrap | 35 | Normal | Physical (contact) | 15 | 85 |
+/// | bind | 20 | Normal | Physical (contact) | 15 | 75 |
+/// | firespin | 83 | Fire | Special | 15 | 70 |
+/// | clamp | 128 | Water | Special (contact) | 35 | 75 |
+/// | whirlpool | 250 | Water | Special | 15 | 70 |
+/// | sandtomb | 328 | Ground | Physical | 15 | 70 |
+///
+/// HAND-LISTED rather than data-driven because `gen3_moves.json` (the shared RL data
+/// facade) carries no `volatileStatus` column, and widening it is a retrain-class change
+/// to the observation pipeline for a fact with exactly six carriers. The set is pinned by
+/// `partial_trap_family_is_exactly_the_six_volatilestatus_carriers` (dex-derived: every
+/// member must exist with the BP/accuracy above) and by the harness's
+/// `MODELED_PARTIALTRAP_MOVES` mirror in `gen_e2e_fuzz.js`.
+pub(crate) fn is_partial_trap_move(move_id: &str) -> bool {
+    matches!(move_id, "wrap" | "bind" | "firespin" | "clamp" | "whirlpool" | "sandtomb")
 }

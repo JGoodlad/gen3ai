@@ -20,7 +20,8 @@
 use std::process::ExitCode;
 
 use pokesim::bridge::{
-    bridge_opts, parse_bridge_golden, run_full_battle_bridge, run_full_battle_bridge_core,
+    bridge_opts, parse_bridge_golden, run_full_battle_bridge_core_with_quick_claw,
+    run_full_battle_bridge_with_quick_claw,
     GoldenBattle,
 };
 use pokesim::dex::Dex;
@@ -97,7 +98,7 @@ fn main() -> ExitCode {
     for b in &selected {
         let opts = bridge_opts(&b.format_id, b.seed.clone(), &b.p1_team, &b.p2_team);
         let streams = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            run_full_battle_bridge(&opts, &b.cmds, &dex)
+            run_full_battle_bridge_with_quick_claw(&opts, &b.cmds, b.quick_claw_roll, &dex)
         })) {
             Ok(Ok(s)) => s,
             Ok(Err(e)) => {
@@ -284,7 +285,7 @@ fn ab_verdict(b: &GoldenBattle, dex: &Dex) -> String {
     // Build BOTH the per-side chunks AND the ScriptDecision list (the seed anchor
     // replays the latter through `run_full_battle`).
     let core = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        run_full_battle_bridge_core(&opts, &b.cmds, dex)
+        run_full_battle_bridge_core_with_quick_claw(&opts, &b.cmds, b.quick_claw_roll, dex)
     }));
     let (chunks, _ended, _script, request_seeds) = match core {
         Ok(Ok(s)) => s,
@@ -434,7 +435,7 @@ fn classify_known_perside_residual(expected: &str, got: &str) -> Option<&'static
         cur = next;
         curse = true;
     }
-    // return102 / frustration102 numeric-BP moveid alias. THE SIM RENDERS IT INCONSISTENTLY
+    // return<BP> / frustration<BP> numeric-BP moveid alias. THE SIM RENDERS IT INCONSISTENTLY
     // (SIM-PROBED): the `side.pokemon[].moves[]` ROSTER carries the numeric `return102`, but the
     // `active[].moves[].id` is the BARE `return` and the `.move` DISPLAY is `Return 102` (a SPACE) —
     // so a single-direction `replace("return","return102")` OVER-CORRECTS the active id AND misses
@@ -444,14 +445,42 @@ fn classify_known_perside_residual(expected: &str, got: &str) -> Option<&'static
     // the numeric BP is a display alias, `gen3_perside_request_byte_fuzz_v1`). Anchored on the
     // numeric/spaced tokens, so a non-alias move is never touched.
     {
-        let norm = |s: &str| {
-            s.replace("Return 102", "Return")
-                .replace("return102", "return")
-                .replace("Frustration 102", "Frustration")
-                .replace("frustration102", "frustration")
-        };
-        let cn = norm(&cur);
-        let en = norm(&exp);
+        // ⚠️ The numeric suffix is the move's COMPUTED BASE POWER, so it VARIES
+        // (`gen3_happiness_bp_alias_any_digits_v1`). Return's BP is `max(1, floor(happiness *
+        // 2 / 5))` and Frustration's is the mirror `max(1, floor((255 - happiness) * 2 / 5))`,
+        // so at the DEFAULT happiness 255 the pair renders `return102` and — because the raw
+        // product is 0 and the sim clamps to 1 — **`frustration1`, never `frustration102`**.
+        // This used to hardcode `102` on both, which meant the Frustration arm could not match
+        // any real battle: every battle carrying a Frustration left a residual, the WHOLE
+        // reconcile returned None, and the co-occurring (correctly handled) `return102` escaped
+        // with it. Measured on a 25-battle `--mode random` bridge fuzz: 14 diverged / 5
+        // allowlisted, where the 14 are exactly the Frustration-bearing boards.
+        //
+        // ⚠️ PAIRWISE, not a symmetric STRIP. Collapsing the digits on BOTH sides
+        // unconditionally would reconcile a genuine VALUE divergence (sim `return102` vs port
+        // `return84` — a mis-parsed happiness) into a FALSE PASS: exactly the vacuous-gate
+        // failure the round-27 external-consistency work names ("an alias→canonical transform
+        // is safe; a symmetric STRIP is not — if a presence-vs-absence residual appears, do it
+        // PAIRWISE"). The DEFERRAL is presence-vs-ABSENCE of the numeric suffix, so the digits
+        // themselves are compared first: if BOTH sides render a numeric BP for the same move
+        // and the values DISAGREE, this is a real bug and the reconcile bails.
+        let (cn, c_ret) = strip_bp_alias(&cur, "return", "Return");
+        let (cn, c_fru) = strip_bp_alias(&cn, "frustration", "Frustration");
+        let (en, e_ret) = strip_bp_alias(&exp, "return", "Return");
+        let (en, e_fru) = strip_bp_alias(&en, "frustration", "Frustration");
+        for (got_bps, exp_bps) in [(&c_ret, &e_ret), (&c_fru, &e_fru)] {
+            let uniq = |v: &Vec<String>| {
+                let mut u = v.clone();
+                u.sort();
+                u.dedup();
+                u
+            };
+            let (g, e) = (uniq(got_bps), uniq(exp_bps));
+            // Both sides numeric AND disagreeing = a BASE-POWER divergence, not a display form.
+            if !g.is_empty() && !e.is_empty() && g != e {
+                return None;
+            }
+        }
         if cn != cur || en != exp {
             alias = true;
         }
@@ -788,18 +817,81 @@ fn line_is_mirror_ident_flip(
     Some(any_flip)
 }
 
+/// Collapse a happiness-scaled move's numeric-BP alias to its bare form, for ANY base power
+/// (`gen3_happiness_bp_alias_any_digits_v1`): `return102` → `return`, `Return 102` → `Return`,
+/// `frustration1` → `frustration`, `Frustration 84` → `Frustration`.
+///
+/// `bare` is the lowercase move id (roster / active `id` form) and `display` its Title-Case
+/// name, whose alias carries a SPACE before the number. Both are stripped only when followed by
+/// ≥1 ASCII digits AND preceded by a NON-alphanumeric byte — in the request JSON that guard is
+/// always a `"`, `,` or space, so a longer move whose name merely ENDS in these letters can
+/// never be truncated, and a genuinely different move id is never touched. Digits are the ONLY
+/// thing removed, so the gate stays non-vacuous: `return102` vs `tackle` still differs.
+///
+/// Returns the stripped string AND every removed digit run, in order — the caller compares
+/// those PAIRWISE so a real base-power divergence cannot be stripped into a false pass.
+fn strip_bp_alias(s: &str, bare: &str, display: &str) -> (String, Vec<String>) {
+    let mut out = String::with_capacity(s.len());
+    let mut bps: Vec<String> = Vec::new();
+    let b = s.as_bytes();
+    let mut i = 0usize;
+    while i < b.len() {
+        // The token must start at a boundary (start-of-string or a non-alphanumeric byte).
+        let at_boundary = i == 0 || !b[i - 1].is_ascii_alphanumeric();
+        let mut matched = false;
+        if at_boundary {
+            for (name, sep) in [(bare, ""), (display, " ")] {
+                let head = format!("{name}{sep}");
+                if s[i..].starts_with(&head) {
+                    let after = i + head.len();
+                    let digits = b[after..].iter().take_while(|c| c.is_ascii_digit()).count();
+                    if digits > 0 {
+                        out.push_str(name); // keep the name, DROP the separator+digits
+                        bps.push(s[after..after + digits].to_string());
+                        i = after + digits;
+                        matched = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if !matched {
+            // Copy one whole UTF-8 char (the payload is JSON, but never assume ASCII).
+            let ch = s[i..].chars().next().expect("in-bounds char");
+            out.push(ch);
+            i += ch.len_utf8();
+        }
+    }
+    (out, bps)
+}
+
 /// Reconcile the Curse move-slot's `"target":"normal"` (port) toward `"target":"self"` (sim),
 /// single-occurrence anchored at the curse id, IFF that leaves the strings closer without
 /// disturbing any other slot. Returns the reconciled `got` when the curse slot's target was the
 /// diverging field, else None.
+///
+/// ⚠️ SLOT-BOUNDED (`gen3_curse_reconcile_slot_bounded_v1`). The rewrite must stay inside the
+/// curse's OWN `{...}` move object. It used to search from the curse id to the END of the line,
+/// so once `gen3_bridge_curse_request_target_v1` made the port emit the correct `"target":"self"`
+/// for a non-Ghost Curse, the search ran PAST the curse slot and rewrote the NEXT slot's
+/// `"target":"normal"` — an unrelated Double Edge — MANUFACTURING a divergence on a line whose
+/// curse was already byte-correct. That killed the whole reconcile (a co-occurring, correctly
+/// handled `return102`/`frustration1` alias failed the gate with it): 4 of 400 `--mode random`
+/// bridge battles. The doc line above ("without disturbing any other slot") was the intent; the
+/// bound is what makes it true.
 fn reconcile_curse_target(got: &str, expected: &str) -> Option<String> {
     if !expected.contains("\"id\":\"curse\"") || !got.contains("\"id\":\"curse\"") {
         return None;
     }
     let anchor = got.find("\"id\":\"curse\"")?;
-    let rel = got[anchor..].find("\"target\":\"normal\"").map(|r| anchor + r)?;
-    // Only reconcile if the sim's curse slot actually carries `target:self` there.
-    if !expected.contains("\"id\":\"curse\",\"pp\"") {
+    // The request's move slots are `{...},{...}` objects, so the next `}` closes THIS one.
+    let slot_end = anchor + got[anchor..].find('}').unwrap_or(got.len() - anchor);
+    let rel = got[anchor..slot_end].find("\"target\":\"normal\"").map(|r| anchor + r)?;
+    // Only reconcile if the SIM's curse slot actually carries `target:self` — a GHOST holder's
+    // Curse genuinely targets `normal` on BOTH sides, and rewriting that would invent a diff.
+    let exp_anchor = expected.find("\"id\":\"curse\",\"pp\"")?;
+    let exp_end = exp_anchor + expected[exp_anchor..].find('}').unwrap_or(expected.len() - exp_anchor);
+    if !expected[exp_anchor..exp_end].contains("\"target\":\"self\"") {
         return None;
     }
     let mut out = String::with_capacity(got.len() + 1);
@@ -1463,5 +1555,100 @@ mod perside_request_residual_tests {
             {\"move\":\"Return\",\"id\":\"return\",\"target\":\"normal\",\"disabled\":true}]}],\
             \"side\":{\"pokemon\":[{\"moves\":[\"return\"]}]}}";
         assert_eq!(classify_known_perside_residual(expected, got), None);
+    }
+
+    // `gen3_happiness_bp_alias_any_digits_v1` — the numeric suffix is the move's COMPUTED base
+    // power, so it is NOT always `102`. At the default happiness 255 Frustration's raw BP is 0
+    // and the sim clamps to 1, rendering `frustration1` / `Frustration 1`. The pre-fix arm
+    // hardcoded `102` on BOTH moves, so a Frustration board could never reconcile: it left a
+    // residual, the WHOLE classify returned None, and a co-occurring (correctly handled)
+    // `return102` escaped with it — 14 of 25 `--mode random` bridge battles.
+    // REVERT-VERIFIED: restoring the hardcoded `.replace("frustration102", ...)` fails this.
+    #[test]
+    fn frustration_bp_alias_at_the_clamped_bp_of_one_is_allowlisted() {
+        let expected = "|request|{\"active\":[{\"moves\":[\
+            {\"move\":\"Frustration 1\",\"id\":\"frustration\",\"target\":\"normal\",\"disabled\":false}]}],\
+            \"side\":{\"pokemon\":[{\"moves\":[\"frustration1\",\"screech\"]}]}}";
+        let got = "|request|{\"active\":[{\"moves\":[\
+            {\"move\":\"Frustration\",\"id\":\"frustration\",\"target\":\"normal\",\"disabled\":false}]}],\
+            \"side\":{\"pokemon\":[{\"moves\":[\"frustration\",\"screech\"]}]}}";
+        assert_eq!(
+            classify_known_perside_residual(expected, got),
+            Some("return102-numeric-alias")
+        );
+    }
+
+    // GATE INTEGRITY (the load-bearing negative). The deferral is presence-vs-ABSENCE of the
+    // numeric suffix; the digits are the move's BASE POWER. If BOTH sides render a number and
+    // the values DISAGREE, that is a real divergence (a mis-parsed happiness) and collapsing
+    // both to the bare token would be the "symmetric strip → false pass" failure round 27
+    // names. Must NOT be allowlisted.
+    #[test]
+    fn a_differing_numeric_base_power_on_both_sides_is_not_allowlisted() {
+        let expected = "|request|{\"active\":[{\"moves\":[\
+            {\"move\":\"Return 102\",\"id\":\"return\",\"target\":\"normal\",\"disabled\":false}]}],\
+            \"side\":{\"pokemon\":[{\"moves\":[\"return102\"]}]}}";
+        // The port computed a DIFFERENT base power (happiness parsed wrong) — a real bug.
+        let got = "|request|{\"active\":[{\"moves\":[\
+            {\"move\":\"Return 84\",\"id\":\"return\",\"target\":\"normal\",\"disabled\":false}]}],\
+            \"side\":{\"pokemon\":[{\"moves\":[\"return84\"]}]}}";
+        assert_eq!(classify_known_perside_residual(expected, got), None);
+    }
+
+    // `gen3_curse_reconcile_slot_bounded_v1` — the bab_3_24 shape. The port's Curse slot is
+    // ALREADY correct (`target:self`, per `gen3_bridge_curse_request_target_v1`), and the ONLY
+    // real difference is the frustration alias. The unbounded search used to run past the curse
+    // slot and rewrite the NEXT slot's `"target":"normal"` (Double Edge), inventing a residual
+    // that failed the whole classify. REVERT-VERIFIED: dropping the `slot_end` bound fails this.
+    #[test]
+    fn a_correct_curse_slot_does_not_rewrite_a_later_move_target() {
+        let expected = "|request|{\"active\":[{\"moves\":[\
+            {\"move\":\"Curse\",\"id\":\"curse\",\"pp\":16,\"maxpp\":16,\"target\":\"self\",\"disabled\":false},\
+            {\"move\":\"Double-Edge\",\"id\":\"doubleedge\",\"pp\":24,\"maxpp\":24,\"target\":\"normal\",\"disabled\":false}]}],\
+            \"side\":{\"pokemon\":[{\"moves\":[\"frustration1\",\"curse\",\"doubleedge\"]}]}}";
+        let got = "|request|{\"active\":[{\"moves\":[\
+            {\"move\":\"Curse\",\"id\":\"curse\",\"pp\":16,\"maxpp\":16,\"target\":\"self\",\"disabled\":false},\
+            {\"move\":\"Double-Edge\",\"id\":\"doubleedge\",\"pp\":24,\"maxpp\":24,\"target\":\"normal\",\"disabled\":false}]}],\
+            \"side\":{\"pokemon\":[{\"moves\":[\"frustration\",\"curse\",\"doubleedge\"]}]}}";
+        assert_eq!(
+            classify_known_perside_residual(expected, got),
+            Some("return102-numeric-alias")
+        );
+    }
+
+    // GATE INTEGRITY: a GHOST holder's Curse genuinely targets `normal` on BOTH sides, so the
+    // reconcile must not fire — and a real diff elsewhere must still be reported.
+    #[test]
+    fn a_ghost_curse_target_normal_is_not_rewritten() {
+        let expected = "|request|{\"active\":[{\"moves\":[\
+            {\"move\":\"Curse\",\"id\":\"curse\",\"pp\":16,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false}]}],\
+            \"side\":{\"pokemon\":[{\"moves\":[\"curse\",\"shadowball\"]}]}}";
+        // The port drops a bench move — a REAL bug that must not be masked by a curse rewrite.
+        let got = "|request|{\"active\":[{\"moves\":[\
+            {\"move\":\"Curse\",\"id\":\"curse\",\"pp\":16,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false}]}],\
+            \"side\":{\"pokemon\":[{\"moves\":[\"curse\"]}]}}";
+        assert_eq!(classify_known_perside_residual(expected, got), None);
+    }
+
+    // The stripper removes ONLY a digit run that follows the move token at a byte boundary, so
+    // a different move is never truncated into a match and the reconcile stays non-vacuous.
+    #[test]
+    fn the_bp_alias_strip_only_touches_the_alias_token() {
+        assert_eq!(
+            strip_bp_alias("\"moves\":[\"return102\",\"returnx\",\"doubleedge\"]", "return", "Return"),
+            (
+                "\"moves\":[\"return\",\"returnx\",\"doubleedge\"]".to_string(),
+                vec!["102".to_string()]
+            )
+        );
+        // A move that merely ENDS in the token is not at a boundary → untouched, no digits.
+        assert_eq!(
+            strip_bp_alias("\"noreturn102\"", "return", "Return"),
+            ("\"noreturn102\"".to_string(), Vec::<String>::new())
+        );
+        // A genuinely different move still differs after the strip (the gate stays live).
+        let (a, _) = strip_bp_alias("\"return102\"", "return", "Return");
+        let (b, _) = strip_bp_alias("\"tackle\"", "return", "Return");
+        assert_ne!(a, b);
     }
 }
