@@ -716,8 +716,13 @@ def maybe_compile_extractor(model, enabled: bool, label: str = "opponent",
             raise CompileExtractorError(msg) from e
         return False
 
-    if not revalidate:                                # already proven in this process — just keep it
+    if not revalidate:
+        # Already proven in this process — keep it without re-timing. STILL LOG IT: a silent success
+        # is indistinguishable from "never ran" in a run log, and that is not hypothetical — the
+        # eval-worker opponent compile looked missing for exactly this reason until it was verified
+        # by instrumenting the call. Coverage you cannot see is coverage you will doubt.
         fe.forward = _eager_fallback_on_error(compiled, original, label)
+        print(f"[CompileExtractor] {label}: ON (reused this process's validated compile)", flush=True)
         return True
 
     speedup = eager_ms / comp_ms if comp_ms > 0 else 0.0

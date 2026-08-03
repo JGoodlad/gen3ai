@@ -14,7 +14,7 @@ well-formed and exact:
 Run directly (no pytest collection — no ``test_*`` functions), like the other fuzz suites::
 
     export PYTHONPATH=$PYTHONPATH:src
-    python src/agents/training/eval_sharding_fuzz_test.py [n_games] [shard_games] [--compile]
+    python src/agents/training/eval_sharding_fuzz_test.py [n_games] [shard_games] [--compile] [--neural-opponent]
 
 Skips with a clear message if no checkpoint is available (it needs real weights to play).
 """
@@ -23,6 +23,21 @@ import sys
 import glob
 import json
 import tempfile
+
+
+def _arch_toggles_from_config(config_path: str) -> dict:
+    """The arch toggles the eval callbacks thread into a worker, read back off a run's saved
+    ``model_config.json`` — so the worker's version gate matches the checkpoint it is loading."""
+    import inspect
+
+    from agents.model.snapshot import current_model_version
+
+    if not os.path.exists(config_path):
+        return {}
+    with open(config_path) as f:
+        saved = json.load(f)
+    accepted = set(inspect.signature(current_model_version).parameters)
+    return {k: v for k, v in saved.items() if k in accepted}
 
 
 def _find_checkpoint() -> str | None:
@@ -37,18 +52,28 @@ def _find_checkpoint() -> str | None:
     return None
 
 
-def main(n_games: int = 8, shard_games: int = 3, compile_extractor: bool = False) -> int:
+def main(n_games: int = 8, shard_games: int = 3, compile_extractor: bool = False,
+         neural_opponent: bool = False) -> int:
     ckpt = _find_checkpoint()
     if not ckpt:
         print("SKIP eval_sharding_fuzz: no checkpoint found under models/ (needs real weights).")
         return 0
     print(f"checkpoint: {ckpt}")
 
-    from agents.training.eval_sharding import EvalItem, ShardedEvalPool, BOT
+    from agents.training.eval_sharding import EvalItem, ShardedEvalPool, BOT, FIXED
     import main.eval_worker as ew
 
     # Two fast scripted bots, each split into ceil(n_games/shard_games) shard units.
     items = [EvalItem("heuristic2", BOT, n_games), EvalItem("aggressive_v2", BOT, n_games)]
+    if neural_opponent:
+        # A FIXED (frozen NEURAL) opponent — the only kind that exercises the worker's
+        # `_get_opponent_model` -> `maybe_compile_extractor(label="eval-opp:...")` path. Bots are
+        # scripted, so a bots-only plan silently leaves that half of the compile wiring uncovered.
+        # It reuses the trainee's own checkpoint: `load_foreign_opponent` gates on `arch_signature`
+        # only, so a self-matchup is a valid FIXED opponent and needs no second run.
+        cfg_path = os.path.join(os.path.dirname(ckpt), "model_config.json")
+        items.append(EvalItem("selffixed", FIXED, n_games, path=ckpt,
+                              config_path=cfg_path if os.path.exists(cfg_path) else None))
     pool = ShardedEvalPool(items, shard_games=shard_games, step=0)
     n_shards_expected = pool.n_units
     print(f"{len(items)} opponents x {n_games} games, shard_games={shard_games} "
@@ -67,6 +92,11 @@ def main(n_games: int = 8, shard_games: int = 3, compile_extractor: bool = False
             # assertions below apply unchanged — that is the point of running the fuzz both ways.
             "compile_extractor": compile_extractor,
         }
+        if neural_opponent:
+            # A FIXED item makes the worker build a current-code ModelVersion to gate the load, so
+            # the arch toggles must reach it exactly as the real callbacks thread them.
+            cfg["arch_toggles"] = _arch_toggles_from_config(
+                os.path.join(os.path.dirname(ckpt), "model_config.json"))
         # Worker 0 drains the whole pool (the real loop: claim → play via bridge → publish).
         ew._run(cfg)
         # Worker 1 over the same claim dir: every unit already claimed → it plays nothing.
@@ -101,4 +131,5 @@ if __name__ == "__main__":
     sg = int(sys.argv[2]) if len(sys.argv) > 2 else 3
     # `--compile` runs the SAME assertions with the worker's extractors torch.compiled — the compile
     # is value-preserving, so any divergence in the pooled result is a real bug.
-    sys.exit(main(n, sg, compile_extractor="--compile" in sys.argv))
+    sys.exit(main(n, sg, compile_extractor="--compile" in sys.argv,
+                  neural_opponent="--neural-opponent" in sys.argv))

@@ -1396,11 +1396,27 @@ inference-only), and the prober backprops through this same extractor for gradie
 | prober (`session._load`) | the no-grad replay / rollout models | `--compile` (off by default) |
 | `play.py` | nothing — it runs `RandomPlayer` vs `RandomPlayer`, no neural model | n/a |
 
-Eval workers are fresh `Popen` processes, so they cannot inherit the trainer forkserver's compile —
-but they do hit the shared on-disk Inductor cache the trainer already warmed, and one worker plays
-hundreds of games, so the compile repays many times over.
+Eval workers are fresh `Popen` processes, so they hit the shared on-disk Inductor cache the trainer
+already warmed rather than inheriting anything; one worker plays hundreds of games, so the compile
+repays many times over.
 
-**Validation is paid once per process** (`_COMPILE_VALIDATED`). The eager-vs-compiled timing answers
+**Verified end to end**, not just wired: `python src/agents/training/eval_sharding_fuzz_test.py 4 2
+--compile --neural-opponent` drives the REAL `eval_worker._run` over the bridge and logs
+`eval-trainee: ON — 3.33 -> 0.67 ms (5.0x)` and `eval-opp:final_model.zip: ON`, with every exactness
+assertion unchanged (units played + pooled exactly, full coverage, claim-exactly-once across two
+workers) — the compile is value-preserving, which is why running the same fuzz both ways is the test.
+
+⚠️ **`--debug-eval` does NOT exercise this.** Its final win-rate eval runs IN-PROCESS; it never
+spawns an `eval_worker`, so it shows zero compile lines and proves nothing about this path.
+⚠️ **A bots-only plan does not exercise the OPPONENT half.** Scripted bots have no extractor, so
+`_get_opponent_model` never runs — `--neural-opponent` adds a FIXED (frozen neural) opponent, which
+is the only kind that reaches it. That gap is why the opponent path went unverified at first, and
+`src/main/eval_worker_compile_test.py` now pins the wiring in the fast unit suite.
+
+**Validation is paid once per process** (`_COMPILE_VALIDATED`), and the reuse path STILL LOGS
+(`ON (reused this process's validated compile)`) — it used to return silently, which made the eval
+opponent's compile look like it had never run and cost a round of doubt. A success you cannot see in
+the log is a success you will not trust. The eager-vs-compiled timing answers
 "does this extractor's code object compile to something faster?", and `torch.compile` keys on exactly
 that code object — so a second model in the same process cannot get a different answer. Consumers that
 load models in a LOOP (the search-teacher worker rebuilds its opponent every iteration) would

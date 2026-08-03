@@ -183,6 +183,18 @@ def test_validation_is_paid_once_per_process(monkeypatch):
     )
 
 
+def test_the_reuse_path_still_logs(monkeypatch, capsys):
+    """A silent success is indistinguishable from 'never ran' in a run log. That bit us for real:
+    the eval-worker OPPONENT compile appeared to be missing, and only instrumenting the call proved
+    it had fired — because the reuse path returned without printing."""
+    monkeypatch.setattr(S, "_COMPILE_VALIDATED", True)      # pretend an earlier model validated
+    fe = _FE(cost_ms=2.0)
+    monkeypatch.setattr(torch, "compile", _fast_compile(fe))
+    assert S.maybe_compile_extractor(_model(fe), True, label="eval-opp:x.zip") is True
+    out = capsys.readouterr().out
+    assert "eval-opp:x.zip" in out and "ON" in out, out
+
+
 def test_grad_enabled_calls_route_to_eager(monkeypatch):
     """The compiled artifact is INFERENCE-only: under grad, dynamo hands the graph to AOTAutograd,
     which must lower the BACKWARD too, and Inductor's CPU backward codegen fails on this model's
