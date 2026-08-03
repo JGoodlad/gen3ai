@@ -648,6 +648,60 @@
         ],
         "weighthg": 8
     },
+    "castformrainy": {
+        "baseStats": {
+            "atk": 70,
+            "def": 70,
+            "hp": 70,
+            "spa": 70,
+            "spd": 70,
+            "spe": 70
+        },
+        "name": "Castform-Rainy",
+        "num": 351,
+        "types": [
+            "WATER"
+        ],
+        "weighthg": 8,
+        "baseSpecies": "castform",
+        "battleOnly": "castform"
+    },
+    "castformsnowy": {
+        "baseStats": {
+            "atk": 70,
+            "def": 70,
+            "hp": 70,
+            "spa": 70,
+            "spd": 70,
+            "spe": 70
+        },
+        "name": "Castform-Snowy",
+        "num": 351,
+        "types": [
+            "ICE"
+        ],
+        "weighthg": 8,
+        "baseSpecies": "castform",
+        "battleOnly": "castform"
+    },
+    "castformsunny": {
+        "baseStats": {
+            "atk": 70,
+            "def": 70,
+            "hp": 70,
+            "spa": 70,
+            "spd": 70,
+            "spe": 70
+        },
+        "name": "Castform-Sunny",
+        "num": 351,
+        "types": [
+            "FIRE"
+        ],
+        "weighthg": 8,
+        "baseSpecies": "castform",
+        "battleOnly": "castform"
+    },
     "caterpie": {
         "baseStats": {
             "atk": 30,
@@ -1094,6 +1148,60 @@
         ],
         "weighthg": 608,
         "gender": "N"
+    },
+    "deoxysattack": {
+        "baseStats": {
+            "atk": 180,
+            "def": 20,
+            "hp": 50,
+            "spa": 180,
+            "spd": 20,
+            "spe": 150
+        },
+        "name": "Deoxys-Attack",
+        "num": 386,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 608,
+        "gender": "N",
+        "baseSpecies": "deoxys"
+    },
+    "deoxysdefense": {
+        "baseStats": {
+            "atk": 70,
+            "def": 160,
+            "hp": 50,
+            "spa": 70,
+            "spd": 160,
+            "spe": 90
+        },
+        "name": "Deoxys-Defense",
+        "num": 386,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 608,
+        "gender": "N",
+        "baseSpecies": "deoxys"
+    },
+    "deoxysspeed": {
+        "baseStats": {
+            "atk": 95,
+            "def": 90,
+            "hp": 50,
+            "spa": 95,
+            "spd": 90,
+            "spe": 180
+        },
+        "name": "Deoxys-Speed",
+        "num": 386,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 608,
+        "gender": "N",
+        "baseSpecies": "deoxys"
     },
     "dewgong": {
         "baseStats": {
@@ -5857,6 +5965,492 @@
         ],
         "weighthg": 50,
         "gender": "N"
+    },
+    "unownb": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-B",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownc": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-C",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownd": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-D",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unowne": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-E",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownexclamation": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-Exclamation",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownf": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-F",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unowng": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-G",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownh": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-H",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unowni": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-I",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownj": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-J",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownk": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-K",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownl": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-L",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownm": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-M",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownn": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-N",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unowno": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-O",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownp": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-P",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownq": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-Q",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownquestion": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-Question",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownr": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-R",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unowns": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-S",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownt": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-T",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownu": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-U",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownv": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-V",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownw": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-W",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownx": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-X",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unowny": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-Y",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
+    },
+    "unownz": {
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        },
+        "name": "Unown-Z",
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ],
+        "weighthg": 50,
+        "gender": "N",
+        "baseSpecies": "unown"
     },
     "ursaring": {
         "baseStats": {

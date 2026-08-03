@@ -29,10 +29,16 @@ def _num_to_species_id() -> Dict[int, str]:
     (the same ``gen3_species.json`` source that produced the belief labels' ``species_to_num``)."""
     global _num_to_id_cache
     if _num_to_id_cache is None:
+        # BASE FORMS ONLY (`gen3_species_formes_v1`): an alternate forme (Deoxys-Speed,
+        # Unown-B, Castform-Sunny) SHARES its base's national-dex num, so a plain
+        # comprehension over `raw()` would be last-write-wins and decode num 386 as
+        # "deoxysspeed". The obs species channel is the num, so the base id is the only
+        # honest decode.
+        raw = _species.raw()
         _num_to_id_cache = {
-            int(v["num"]): sid
-            for sid, v in _species.raw().items()
-            if v.get("num")
+            int(raw[sid]["num"]): sid
+            for sid in _species.base_form_ids()
+            if raw[sid].get("num")
         }
     return _num_to_id_cache
 

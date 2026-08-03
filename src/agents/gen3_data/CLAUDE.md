@@ -21,7 +21,8 @@ from agents import gen3_data
 gen3_data.moves.get(move_id)            # MoveData(num, base_power, type, category, accuracy,
                                         #   priority, drain_fraction, recoil_fraction,
                                         #   secondary_effects + .secondary_chance(col), …)  # v24
-gen3_data.species.get(species_id)       # SpeciesData(num, base_stats, types)
+gen3_data.species.get(species_id)       # SpeciesData(num, base_stats, types, base_species, battle_only)
+gen3_data.species.base_form_ids()       # BASE forms only — one id per national-dex num
 gen3_data.items.get(item_id)            # ItemData(num, name)
 gen3_data.abilities.get(ability_id)     # AbilityData(num, name)
 gen3_data.natures.get(nature_name)      # NatureData(multipliers); .multipliers() for the dict form
@@ -37,6 +38,32 @@ from `priors.moves` (how OFTEN a legal move is run). The move-belief prior uses 
 candidate moves (`damage_tables.build_move_prior_logits(..., learnset_gate=True)`); its tolerance
 contract is that an unknown species yields `None`/`True` ("no constraint", never "no moves"), so the
 gate can never wrongly prune.
+
+## Species FORMES — `raw()` vs `base_form_ids()` (`gen3_species_formes_v1`)
+
+`gen3_species.json` carries **419** rows: the 386 base forms **plus 33 gen-3 alternate/cosmetic
+FORMES** — Deoxys-Attack/-Defense/-Speed (their own base stats), the 27 Unown letters (cosmetic
+clones of Unown), and Castform-Sunny/-Rainy/-Snowy (`battle_only`, retyped). They are there because
+a battle genuinely fields them: without the rows the `src/rust_sim` port could not construct **6.6%
+of gen3 random-battle teams** (`unknown species "Deoxys-Speed"`), and the obs `SpeciesEncoder` would
+raise on the same species.
+
+**A forme SHARES its base's national-dex `num`** — and `num` is what the obs species channel and
+every model buffer (`table[species.num] = …` in `agents/model/damage_tables.py`) are keyed by. So a
+forme is *observationally* its base, and:
+
+| use | iterate |
+|---|---|
+| id → facts (`get`, encoding a mon, the port's stat calc) | `raw()` / `get()` — formes included |
+| anything indexed by `species.num` (GPU buffers, num→id decode) | **`base_form_ids()`** |
+
+Iterating `raw()` into a num-indexed table is last-write-wins: it would put Deoxys-Speed's
+95/90/95/90/180 on num 386 and Castform-Sunny's FIRE on num 351 — a plausible-but-false value no
+shape check catches. `SpeciesData.base_species` (the base id, `None` for a base form) is the flag;
+`base_form_ids()` is the bijection onto the nums. Guards: `species_test.py`
+(coverage + the num bijection), `damage_tables_test.py` (the tables hold the BASE forme),
+`src/rust_sim/tests/species_formes_test.rs` (a packed forme team constructs), and the producer-side
+oracle gate `node src/rust_sim/harness/dump_gen3_mechanics.js --check`.
 
 ## Concept-module discipline (per submodule)
 

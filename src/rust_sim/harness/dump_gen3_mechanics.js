@@ -22,7 +22,10 @@
 //                                             tools/pokemon_data_extractor/sync.py
 //   node dump_gen3_mechanics.js --check    -> verifies data/pokemon/gen3_items.json's mechanics
 //                                             fields (typeBoost/statMods/onlySpecies/choice/
-//                                             isBerry) EXACTLY match the resolved dist — the
+//                                             isBerry) + gen3_abilities.json's + the FULL
+//                                             gen3_species.json universe (base forms + the gen-3
+//                                             alternate/cosmetic FORMES, gen3_species_formes_v1)
+//                                             EXACTLY match the resolved dist — the
 //                                             extractor-drift gate (exit 1 on any drift)
 //
 // (Needs the submodule dist/ + node_modules symlinks; see root CLAUDE.md.)
@@ -704,6 +707,95 @@ function checkAbilitiesJson(abilities) {
 }
 
 // ---------------------------------------------------------------------------
+// --check (SPECIES COVERAGE, gen3_species_formes_v1): the committed
+// data/pokemon/gen3_species.json must contain EXACTLY the gen-3 species universe
+// the RESOLVED `Dex.mod('gen3')` has — every BASE form plus every gen-3-legal
+// ALTERNATE forme (Deoxys-Attack/Defense/Speed, Castform-Sunny/Rainy/Snowy) plus
+// every COSMETIC forme (the 27 Unown letters, which have no Pokedex entry of their
+// own and are synthesized from the base).
+//
+// WHY this gate exists: the extractor used to drop EVERY non-base forme
+// (`baseSpecies != id`) because poke-env's static pokedex is not gen-filtered by
+// forme — it carries 135 formes with a gen-3 `num` (Megas / Gmax / Alolan /
+// Galarian / Hisuian / Paldean / Pikachu cosmetics / Totems), all post-gen-3. That
+// blanket filter also dropped the SIX real gen-3 formes + the Unown letters, so the
+// port could not construct 6.6% of gen3 random-battle TEAMS (~14% of battles): the
+// single largest non-pool coverage gap, and a DATA gap, not an engine one.
+//
+// The gen-3 legality predicate is the mod-chain-resolved one — `exists &&
+// !isNonstandard && gen <= 3` (the gen3 mod marks every later forme
+// `isNonstandard: 'Future'`); the static pokedex's own `gen` field is present on
+// only 31 of 140 forme entries and cannot be used. Hence the curated
+// `_GEN_ALT_FORMES` table in sync.py, gated here.
+// ---------------------------------------------------------------------------
+const SPECIES_JSON = path.join(REPO, 'data/pokemon/gen3_species.json');
+const GEN3_MAX_SPECIES_NUM = 386;
+
+function gen3SpeciesUniverse() {
+  const universe = new Map();   // id -> the expected committed row
+  const add = (id, s, baseId) => {
+    const row = {
+      baseStats: {
+        atk: s.baseStats.atk, def: s.baseStats.def, hp: s.baseStats.hp,
+        spa: s.baseStats.spa, spd: s.baseStats.spd, spe: s.baseStats.spe,
+      },
+      name: s.name,
+      num: s.num,
+      types: s.types.map((t) => t.toUpperCase()),
+    };
+    if (s.maxHP) row.maxHP = s.maxHP;
+    if (s.weightkg !== undefined) row.weighthg = Math.round(s.weightkg * 10);
+    if (s.gender) row.gender = s.gender;
+    if (baseId) {
+      row.baseSpecies = baseId;
+      if (s.battleOnly) row.battleOnly = toId(s.battleOnly);
+    }
+    universe.set(id, row);
+  };
+  for (const id of Object.keys(Dex.data.Pokedex)) {
+    const s = d3.species.get(id);
+    if (!s || !s.exists || s.isNonstandard) continue;
+    if (s.gen > 3) continue;
+    if (!(s.num > 0 && s.num <= GEN3_MAX_SPECIES_NUM)) continue;
+    const baseId = toId(s.baseSpecies) === id ? null : toId(s.baseSpecies);
+    add(id, s, baseId);
+    // COSMETIC formes carry no Pokedex entry — synthesize them off the base, exactly
+    // as `dex-species.ts` does (a clone with only name/forme/baseSpecies changed).
+    if (!baseId) {
+      for (const formeName of s.cosmeticFormes || []) {
+        const fid = toId(formeName);
+        if (universe.has(fid)) continue;
+        const f = d3.species.get(fid);
+        add(fid, f, id);
+      }
+    }
+  }
+  return universe;
+}
+
+function checkSpeciesJson() {
+  const committed = JSON.parse(fs.readFileSync(SPECIES_JSON, 'utf8'));
+  const universe = gen3SpeciesUniverse();
+  const errors = [];
+  for (const [id, want] of universe) {
+    const got = committed[id];
+    if (!got) {
+      errors.push(`${id}: MISSING from gen3_species.json (a gen-3 species the data layer cannot describe)`);
+      continue;
+    }
+    for (const k of ['num', 'name', 'baseStats', 'types', 'maxHP', 'weighthg', 'gender', 'baseSpecies', 'battleOnly']) {
+      if (JSON.stringify(want[k]) !== JSON.stringify(got[k])) {
+        errors.push(`${id}.${k}: committed ${JSON.stringify(got[k])} != resolved ${JSON.stringify(want[k])}`);
+      }
+    }
+  }
+  for (const id of Object.keys(committed)) {
+    if (!universe.has(id)) errors.push(`${id}: committed but NOT in the resolved gen-3 species universe`);
+  }
+  return errors;
+}
+
+// ---------------------------------------------------------------------------
 // The markdown class map.
 // ---------------------------------------------------------------------------
 function writeMd(items, abilities) {
@@ -714,8 +806,9 @@ function writeMd(items, abilities) {
   lines.push('(the whole mod chain applied — never raw data files; see the mod-chain law).');
   lines.push('Regenerate: `node src/rust_sim/harness/dump_gen3_mechanics.js`.');
   lines.push('Drift gate: `node src/rust_sim/harness/dump_gen3_mechanics.js --check` (verifies the');
-  lines.push('committed `data/pokemon/gen3_items.json` / `gen3_abilities.json` mechanics fields');
-  lines.push('against the resolved dist — run it whenever either regenerates).');
+  lines.push('committed `data/pokemon/gen3_items.json` / `gen3_abilities.json` mechanics fields —');
+  lines.push('and the full `gen3_species.json` universe incl. the gen-3 FORMES — against the');
+  lines.push('resolved dist; run it whenever any of them regenerates).');
   lines.push('');
   lines.push('Universe: every item with `num>0 && gen<=3` in the resolved gen3 dex, PLUS the 4');
   lines.push('gen4-named incenses the sim still applies under gen3 formats (odd/rock/rose/wave —');
@@ -816,12 +909,15 @@ function main() {
     return;
   }
   if (process.argv.includes('--check')) {
-    const errors = [...checkItemsJson(items), ...checkAbilitiesJson(abilities)];
+    const speciesErrors = checkSpeciesJson();
+    const errors = [...checkItemsJson(items), ...checkAbilitiesJson(abilities), ...speciesErrors];
     if (errors.length) {
       console.error(`MECHANICS DRIFT (${errors.length}):\n  ` + errors.join('\n  '));
       process.exit(1);
     }
-    console.error(`mechanics check OK: ${items.length} items + ${abilities.length} abilities match the resolved dist`);
+    const nSpecies = Object.keys(JSON.parse(fs.readFileSync(SPECIES_JSON, 'utf8'))).length;
+    console.error(`mechanics check OK: ${items.length} items + ${abilities.length} abilities + `
+      + `${nSpecies} species match the resolved dist`);
     return;
   }
 

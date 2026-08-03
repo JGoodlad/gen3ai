@@ -169,7 +169,12 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     # KEY, not positional order, into our [hp, atk, def, spa, spd, spe] layout.
     stat_order = ("hp", "atk", "def", "spa", "spd", "spe")
     base_stats = torch.zeros(n_species, 6, dtype=torch.float32)
-    for sid in gen3_data.species.raw():
+    # BASE FORMS ONLY (`gen3_species_formes_v1`) — every table here is `table[species.num]`,
+    # and an alternate forme SHARES its base's num (Deoxys-Speed / Unown-B / Castform-Sunny),
+    # so iterating `raw()` would be last-write-wins and let a forme silently redefine the
+    # base's stats/types at that num. The obs species channel is num-keyed too, so a forme is
+    # observationally its base — the base's facts are the correct occupant of the row.
+    for sid in gen3_data.species.base_form_ids():
         sd = gen3_data.species.get(sid)
         num = sd.num
         if not (0 <= num < n_species):
@@ -356,7 +361,7 @@ def build_opp_spread_prior(n_species: int) -> torch.Tensor:
     Registered as a NON-persistent buffer (pure data-derived, recomputable). Mirrors `priors.gen3_stat`
     (the same L100/IV31 formula the op uses for our revealed mons)."""
     prior = torch.zeros(n_species, N_SPREAD_STATS, 2, dtype=torch.float32)
-    for sid in gen3_data.species.raw():
+    for sid in gen3_data.species.base_form_ids():
         sd = gen3_data.species.get(sid)
         snum = sd.num
         if not (0 <= snum < n_species):
@@ -422,7 +427,7 @@ def build_species_nature_prior(n_species: int) -> torch.Tensor:
     logged. A species with no usage data (and the unknown species 0) gets uniform log(1/25). Non-persistent."""
     logprior = torch.full((n_species, N_NATURES), 1.0 / N_NATURES, dtype=torch.float32).log()
     nat_raw = gen3_data.natures.raw()
-    for sid in gen3_data.species.raw():
+    for sid in gen3_data.species.base_form_ids():
         snum = gen3_data.species.get(sid).num
         if not (0 <= snum < n_species):
             continue
@@ -446,7 +451,7 @@ def build_species_ev_prior(n_species: int) -> torch.Tensor:
     base; the head adds a learned delta). From the Smogon spreads' EV lists. No data → 0 EV (neutral). The
     head clamps the posterior EV to [0,252]. Non-persistent (data-derived)."""
     ev = torch.zeros(n_species, N_SPREAD_STATS, dtype=torch.float32)
-    for sid in gen3_data.species.raw():
+    for sid in gen3_data.species.base_form_ids():
         snum = gen3_data.species.get(sid).num
         if not (0 <= snum < n_species):
             continue
@@ -465,7 +470,7 @@ def build_species_base_stats(n_species: int) -> torch.Tensor:
     """``[n_species, 5]`` the per-species BASE stat for {atk,def,spa,spd,spe} (NOT HP) — the SpreadBelief head
     needs it to compute the gen3 derived stat ``(2·base + 31 + EV/4 + 5)·mult``. Non-persistent."""
     base = torch.zeros(n_species, N_SPREAD_STATS, dtype=torch.float32)
-    for sid in gen3_data.species.raw():
+    for sid in gen3_data.species.base_form_ids():
         sd = gen3_data.species.get(sid)
         if not (0 <= sd.num < n_species):
             continue
@@ -527,7 +532,7 @@ def build_hp_type_prior(n_species: int) -> torch.Tensor:
     prior = torch.full((n_species, n_hp), 1.0 / n_hp, dtype=torch.float32)
     raw = gen3_data.priors.hidden_power_raw()
     names = [t.name.lower() for t in HIDDEN_POWER_TYPE_ORDER]
-    for sid in gen3_data.species.raw():
+    for sid in gen3_data.species.base_form_ids():
         sd = gen3_data.species.get(sid)
         if not (0 <= sd.num < n_species):
             continue
@@ -551,7 +556,7 @@ def build_species_types(n_species: int) -> torch.Tensor:
     ``SpeciesData.types``; a mono-type species (and the unknown species num 0) gets idx 0 in slot 2,
     matching the obs mono-type convention (idx 0 = neutral in the chart). Non-persistent buffer."""
     types = torch.zeros(n_species, 2, dtype=torch.long)
-    for sid in gen3_data.species.raw():
+    for sid in gen3_data.species.base_form_ids():
         sd = gen3_data.species.get(sid)
         if not (0 <= sd.num < n_species):
             continue
@@ -582,7 +587,7 @@ def build_species_exp_mult(n_species: int, chart: torch.Tensor, ability_damage_m
     reduction = 1.0 - ability_damage_mult                  # [n_abilities, N_TYPE_IDX]; 0 for neutral abilities
     n_abilities = ability_damage_mult.shape[0]
     exp_ability = torch.ones(n_species, N_TYPE_IDX, dtype=torch.float32)
-    for sid in gen3_data.species.raw():
+    for sid in gen3_data.species.base_form_ids():
         sd = gen3_data.species.get(sid)
         snum = sd.num
         if not (0 <= snum < n_species):
@@ -612,7 +617,7 @@ def build_species_cb_prior(n_species: int) -> torch.Tensor:
     unrevealed opponent's CB belief (collapsed to 0/1 once the held/consumed item is revealed). Non-persistent
     buffer (recomputable from data/, zero params). A species with no usage data reads 0.0."""
     prior = torch.zeros(n_species, dtype=torch.float32)
-    for sid in gen3_data.species.raw():
+    for sid in gen3_data.species.base_form_ids():
         snum = gen3_data.species.get(sid).num
         if 0 <= snum < n_species:
             prior[snum] = float((gen3_data.priors.items(sid) or {}).get("choiceband", 0.0))
@@ -712,7 +717,7 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
     # Marginalize the per-species Smogon ability prior over the same ABILITY_STATUS_IMMUNITY rule → the
     # P(this species' ability blocks status c) used when the opp ability is UNREVEALED (priors-then-confirm).
     species_block = torch.zeros(n_species, N_STATUS_CAT, dtype=torch.float32)
-    for sid in gen3_data.species.raw():
+    for sid in gen3_data.species.base_form_ids():
         sd = gen3_data.species.get(sid)
         snum = sd.num
         if not (0 <= snum < n_species):
@@ -827,7 +832,7 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
     if not learnset_gate:
         # LEGACY (default): flat `floor` everywhere + accumulate usage. Byte-identical to the original.
         prob = torch.zeros(n_species, n_moves, dtype=torch.float64)
-        for sid in gen3_data.species.raw():
+        for sid in gen3_data.species.base_form_ids():
             sd = gen3_data.species.get(sid)
             snum = sd.num
             if not (0 <= snum < n_species):
@@ -843,7 +848,7 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
 
     # LEGALITY-ONLY gate: illegal → eps (impossible); legal-observed → TRUE usage; legal-unobserved → floor.
     prob = torch.full((n_species, n_moves), eps, dtype=torch.float64)   # default = impossible
-    for sid in gen3_data.species.raw():
+    for sid in gen3_data.species.base_form_ids():
         sd = gen3_data.species.get(sid)
         snum = sd.num
         if not (0 <= snum < n_species):

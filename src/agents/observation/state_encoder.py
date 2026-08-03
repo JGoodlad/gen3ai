@@ -56,6 +56,12 @@ def load_mappings():
         rev = {}
         for name, data in mappings[category].items():
             if isinstance(data, dict) and "num" in data:
+                # gen3_species_formes_v1: an alternate/cosmetic FORME (Deoxys-Speed,
+                # Unown-B, Castform-Sunny) shares its BASE's national-dex num, and the obs
+                # species channel IS that num — so a forme can never be the decode of a
+                # num. Skip forme rows outright rather than relying on "base sorts first".
+                if data.get("baseSpecies"):
+                    continue
                 num = data["num"]
                 # Hidden Power (gen3_typed_hidden_power_ids_v1): the OPPONENT's bare HP keeps num 237 →
                 # decode it as the bare "hiddenpower" (its type is unknowable); OUR typed HP have

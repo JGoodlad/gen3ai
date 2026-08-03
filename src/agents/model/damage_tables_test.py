@@ -80,3 +80,39 @@ def test_gated_default_cell_is_eps():
     # An out-of-prior / impossible cell defaults to logit(eps), not the legacy logit(floor).
     gated = build_move_prior_logits(_N_SPECIES, _N_MOVES, learnset_gate=True)
     assert gated.min().item() == pytest.approx(_LOGIT_EPS, abs=1e-4)
+
+
+# --- gen3_species_formes_v1: the num-indexed tables must stay BASE-FORM ---------------------- #
+#
+# Every buffer here is `table[species.num] = …`, and an alternate FORME shares its base's
+# national-dex num (Deoxys-Speed / Unown-B / Castform-Sunny all landed in the species data
+# once the port needed to construct gen3 randbats teams). Iterating `species.raw()` would be
+# last-write-wins, so a forme would silently redefine the base's stats/types at that num —
+# a plausible-but-false number fed to the model, invisible to any shape check. Every builder
+# therefore iterates `species.base_form_ids()`; these pin that.
+
+def test_base_stats_table_holds_the_BASE_forme():
+    from agents.model.damage_tables import build_species_base_stats, SPREAD_STAT_COLS
+    base = build_species_base_stats(_N_SPECIES)
+    deoxys = gen3_data.species.get("deoxys")
+    row = [float(deoxys.base_stats[s]) for s in SPREAD_STAT_COLS]
+    assert base[deoxys.num].tolist() == row            # NOT Deoxys-Speed's 95/90/95/90/180
+    assert base[deoxys.num][SPREAD_STAT_COLS.index("spe")].item() == 150.0
+
+
+def test_species_type_table_holds_the_BASE_forme():
+    from agents.model.damage_tables import build_species_types, _T2I
+    types = build_species_types(_N_SPECIES)
+    castform = gen3_data.species.get("castform")
+    # NORMAL (the base), not Castform-Sunny's FIRE / -Rainy's WATER / -Snowy's ICE.
+    assert types[castform.num].tolist() == [_T2I["NORMAL"], 0]
+
+
+def test_move_prior_does_not_double_count_formes():
+    # The prior accumulator is `prob[snum, bnum] += usage`; iterating formes would multiply a
+    # species' usage mass by its forme count. Castform has 3 formes AND real Smogon usage, so
+    # its cell is the direct probe: it must equal the SINGLE base usage, not 4x it.
+    logits = build_move_prior_logits(_N_SPECIES, _N_MOVES)
+    snum, mnum = _num("castform", "raindance")
+    want = gen3_data.priors.moves("castform")["raindance"]
+    assert torch.sigmoid(logits[snum, mnum]).item() == pytest.approx(want, abs=1e-4)

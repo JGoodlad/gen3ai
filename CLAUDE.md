@@ -1287,7 +1287,14 @@ normalizes each file into `data/pokemon/`; the runtime reaches all of it through
 Reference data (deterministic) under `data/pokemon/`, all regenerable via
 `tools/pokemon_data_extractor/sync.py`:
 - `gen3_species.json` — species id → `{num, baseStats, name, types}` (`types` UPPERCASED to the TypeEncoder
-  axis — `gen3_bidir_threat_trunk_v1`, for the op's expected-latent read; the obs still reads revealed types live)
+  axis — `gen3_bidir_threat_trunk_v1`, for the op's expected-latent read; the obs still reads revealed types live).
+  **419 rows** = the 386 base forms + the 33 gen-3 ALTERNATE/COSMETIC FORMES (`gen3_species_formes_v1`:
+  Deoxys-Attack/-Defense/-Speed with their own base stats, the 27 Unown letters, Castform's 3 weather
+  formes), each carrying `baseSpecies`. Formes were missing before and cost the `src/rust_sim` port
+  **6.6% of gen3 random-battle teams / ~14% of battles** at construction. A forme SHARES its base's
+  `num`, and the obs species channel + every `table[species.num]` model buffer are num-keyed — so
+  num-indexed consumers MUST iterate `gen3_data.species.base_form_ids()` (see
+  `src/agents/gen3_data/CLAUDE.md`)
 - `gen3_moves.json` — move id → `{num, basePower, type, accuracy, never_miss, hasSecondary, hasRecoil,
   priority, secondaryEffects {col: percent}, drainFraction, recoilFraction, …}` (the structured
   secondary/priority/drain fields are `gen3_unified_move_system_v1` — GPU-side only, NOT in the obs vector).

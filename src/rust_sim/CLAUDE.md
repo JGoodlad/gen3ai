@@ -5618,6 +5618,70 @@ setting OFF and assert the *distributional* property (these two runs must DIFFER
 exact value — and the existing statistical gate is not enough on its own: `bridge_impl_parity_test`
 already ran at `seed=None`, but it only compared aggregate WIN RATES, which a frozen dice stream
 happily reproduces.
+### ROUND 38 (FIX) — the biggest randbats gap was a DATA gap: the missing gen-3 FORME rows
+
+`gen3_species_formes_v1`. The largest non-pool coverage gap was **not an engine gap**: gen3
+random-battle teams simply FAILED TO CONSTRUCT, and the dominant cause was a missing row in
+`data/pokemon/gen3_species.json`. `MonState::from_set` fail-louded with `compute_stats: unknown
+species "Deoxys-Speed"` / `"Unown N"` — the port was right, the DATA was incomplete.
+
+**MEASURED (6000 `Teams.generate('gen3randombattle')` teams, per-team first cause the port reports;
+the derived per-battle rate is `1-(1-p)²` since a battle needs both teams):**
+
+| cause | before | after |
+|---|---|---|
+| missing species row | **6.62%** | **0.00%** |
+| `transform` unmodeled (fail-loud) | 3.12% | 3.17% |
+| wrap-family unmodeled (fail-loud) | 2.80% | 2.93% |
+| Forecast/Castform unmodeled (fail-loud) | 2.62% | 2.77% |
+| **teams failing** | **15.15%** | **8.87%** |
+| **battles failing** | **28.00%** | **16.95%** |
+
+So the missing rows were **44% of all construction failures** — a single data fix that removed
+~40% of the randbats team-rejection rate. (Sampling noise moves the three engine causes by ±0.2pp;
+they are UNCHANGED and remain out of scope — Forecast and Transform are real, deferred engine jobs.)
+
+**ROOT CAUSE (acquisition layer).** `tools/pokemon_data_extractor/sync.py::build_species` dropped
+EVERY non-base forme (`baseSpecies != id`). That filter was **protecting something real**: poke-env's
+static `gen3pokedex.json` is not gen-filtered by forme and carries **135 formes with a gen-3 `num`**
+(Megas / Gmax / Alolan / Galarian / Hisuian / Paldean / Pikachu cosmetics / Totems), all post-gen-3;
+a `num` ceiling cannot exclude them, and the file's own `gen` field exists on only 31 of 140 forme
+entries. So the fix is not "keep formes" but "keep the gen-3 ones", and the ORACLE is the
+mod-chain-resolved `Dex.mod('gen3')` (`exists && !isNonstandard && gen <= 3` — the gen3 mod marks
+every later forme `isNonstandard: 'Future'`). That probe returns EXACTLY six: **Deoxys-Attack /
+-Defense / -Speed** (team-legal, each with its OWN base stats) and **Castform-Sunny / -Rainy /
+-Snowy** (battleOnly, same stats, retyped) — now a curated `_GEN_ALT_FORMES` table (the
+`_GEN3_ITEM_MECHANICS` precedent). The **27 Unown letters** are `cosmeticFormes`: they have NO
+pokedex entry at all, and `dex-species.ts` synthesizes each as a CLONE of the base with only
+name/forme/baseSpecies changed — so the extractor clones them the same way (data-derived, no
+curation). `data/pokemon/gen3_species.json` goes 386 → **419 rows**; `gen3_learnset.json` is
+UNCHANGED (a forme has no learnset of its own — poke-env ships `deoxysattack` with an EMPTY movepool,
+and an empty legality set would make the move-belief gate prune every candidate).
+
+**THE TRAP THIS OPENED (why the base-only filter looked load-bearing).** A forme SHARES its base's
+national-dex `num`, and `num` is what the RL obs species channel AND every model buffer
+(`table[species.num] = …` in `agents/model/damage_tables.py`) are keyed by. Iterating the species
+dict is last-write-wins, so the new rows would have silently rewritten `BASE_STATS[386]` to
+Deoxys-**Speed**'s 95/90/95/90/180 and `SPECIES_TYPE[351]` from NORMAL to Castform-**Sunny**'s FIRE —
+a plausible-but-false number no shape check would catch. Fixed by making the facade expose
+`gen3_data.species.base_form_ids()` and pointing all 12 num-indexed builders (+ `belief_decode`'s
+num→id map + the obs reverse map) at it. **VERIFIED value-neutral:** all 49 species-num-indexed
+tensors are bit-identical before/after, every one of the 386 pre-existing rows is byte-identical
+(the diff is 33 pure insertions), and the obs mappings + reverse map are unchanged.
+
+**GATES.** Producer: `node src/rust_sim/harness/dump_gen3_mechanics.js --check` gained a SPECIES
+section — the committed file must EXACTLY equal the resolved gen-3 species universe (ids + num +
+baseStats + types + gender + weighthg + baseSpecies + battleOnly); revert-verified (it reports both a
+missing row and a wrong stat). Consumer: `tests/species_formes_test.rs` (the forme rows exist, carry
+the right stats, and a packed `Deoxys-Speed` / `Unown-B` team CONSTRUCTS with the forme's stats) +
+`agents/gen3_data/species_test.py` (coverage + the base-form/num bijection) +
+`agents/model/damage_tables_test.py` (the num-indexed tables hold the BASE forme). Full suite green;
+the e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` is UNCHANGED (a data ADDITION touches no
+existing team's construction); `tests/vectors/dex_golden.txt` regenerated (+33 SPECIES lines, purely
+additive).
+
+**RESIDUAL randbats coverage (out of scope here, both real engine gaps):** Forecast (Castform) and
+Transform stay fail-loud, plus the wrap family — together ~8.9% of teams / ~17% of battles.
 
 ### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
 

@@ -23,6 +23,16 @@ class SpeciesData:
     name: str
     base_stats: Dict[str, int]   # keyed by atk/def/hp/spa/spd/spe
     types: Tuple[str, ...] = ()  # STAB/defensive types, UPPERCASED onto the TypeEncoder axis (1-2 entries)
+    # gen3_species_formes_v1: the BASE species id for an ALTERNATE forme (Deoxys-Speed ->
+    # "deoxys", Unown-B -> "unown"), else ``None`` for a base form. A forme SHARES its
+    # base's national-dex ``num`` — and ``num`` is what the obs species channel and every
+    # num-indexed GPU table are keyed by — so a forme is observationally its base. Any
+    # ``table[sd.num] = …`` consumer MUST iterate :func:`base_form_ids` instead of
+    # :func:`raw`, or the last forme row written silently shadows the base's stats/types.
+    base_species: Optional[str] = None
+    # An in-battle-only forme (Castform-Sunny/Rainy/Snowy under Forecast): describable, but
+    # never selectable in a team.
+    battle_only: bool = False
 
 
 def _build(raw: Dict[str, dict]) -> Dict[str, SpeciesData]:
@@ -35,12 +45,17 @@ def _build(raw: Dict[str, dict]) -> Dict[str, SpeciesData]:
             name=v.get("name", sid),
             base_stats={k: int(bs[k]) for k in _STAT_KEYS if k in bs},
             types=tuple(str(t).upper() for t in v.get("types", ())),
+            base_species=v.get("baseSpecies"),
+            battle_only=bool(v.get("battleOnly")),
         )
     return dex
 
 
 raw = _base.singleton(lambda: _base.load_json("gen3_species.json"))
 _dex = _base.singleton(lambda: _build(raw()))
+_base_forms = _base.singleton(
+    lambda: tuple(sid for sid, sd in _dex().items() if sd.base_species is None)
+)
 
 
 def get(species_id: Optional[str]) -> Optional[SpeciesData]:
@@ -48,6 +63,19 @@ def get(species_id: Optional[str]) -> Optional[SpeciesData]:
     if species_id is None:
         return None
     return _dex().get(species_id)
+
+
+def base_form_ids() -> Tuple[str, ...]:
+    """The BASE-form species ids only — one entry per national-dex ``num``.
+
+    The iteration order every ``table[species.num] = …`` builder must use
+    (`gen3_species_formes_v1`). ``raw()`` also contains alternate/cosmetic FORMES
+    (Deoxys-Attack, the Unown letters, Castform's weather formes), which share their base's
+    ``num``; iterating ``raw()`` into a num-indexed table is last-write-wins, so a forme
+    would silently overwrite the base's stats/types at that num. Formes are still in
+    ``raw()``/``get()`` — a battle genuinely fields them and the port must compute their
+    stats — they just must not claim the shared num in a lookup table."""
+    return _base_forms()
 
 
 def species_data(species_id: str) -> SpeciesData:

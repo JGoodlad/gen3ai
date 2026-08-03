@@ -862,14 +862,101 @@ _GEN_MAX_SPECIES_NUM = {
     1: 151, 2: 251, 3: 386, 4: 493, 5: 649, 6: 721, 7: 809, 8: 905, 9: 1025,
 }
 
+# --- gen3_species_formes_v1: the gen-N-legal ALTERNATE FORMES --------------------------- #
+# poke-env's static `gen{N}pokedex.json` is NOT gen-filtered by forme: it carries every
+# alternate forme of every species, incl. 135 with a gen-3 `num` (Megas, Gmax, Alolan/
+# Galarian/Hisuian/Paldean regionals, Pikachu cosmetics, Totems). Those are all post-gen-3,
+# so the builder used to drop EVERY non-base forme (`baseSpecies != id`) — which also
+# dropped the gen-3-legal ones and left the data layer unable to describe a species gen 3
+# genuinely has. Measured cost: gen3 RANDOM-BATTLE teams failed to construct in the
+# `src/rust_sim` port for a MISSING SPECIES ROW at 7.4% of teams (Deoxys-Attack/Defense/
+# Speed 4.8%, the Unown letters 2.6%), i.e. ~14% of battles.
+#
+# The ORACLE for "does gen 3 have this forme" is the RESOLVED `Dex.mod('gen3')`
+# (`exists && !isNonstandard && gen <= 3`) — the MOD-CHAIN LAW, never a raw .ts file or a
+# `num` heuristic: the gen3 mod marks every later forme `isNonstandard: 'Future'`, and the
+# static pokedex's own `gen` field is present on only 31 of 140 formes (unusable). That
+# probe yields EXACTLY six non-cosmetic gen-3 formes, curated here (the
+# `_GEN3_ITEM_MECHANICS` precedent — a node-derived curated table, drift-gated by
+# `node src/rust_sim/harness/dump_gen3_mechanics.js --check`).
+_GEN_ALT_FORMES = {
+    3: (
+        # Castform's weather formes — battleOnly (Forecast swaps them in-battle), so they
+        # can never appear in a packed team; carried anyway so the data layer can DESCRIBE
+        # them (their TYPES are the whole mechanic) and marked `battleOnly` so a consumer
+        # can tell. Forecast itself is unmodeled/fail-loud in the port today.
+        "castformrainy", "castformsnowy", "castformsunny",
+        # Deoxys' formes — team-legal, and each has its OWN base stats (Attack 180/20/180/20,
+        # Defense 70/160/70/160, Speed 95/90/95/90/180). Getting these wrong would be worse
+        # than the missing row, so they come verbatim from the pokedex entry, not by hand.
+        "deoxysattack", "deoxysdefense", "deoxysspeed",
+    ),
+}
+
+
+def _species_entry(mon, num):
+    """One species row: base stats + name + num + types (+ the only-when-present extras)."""
+    bs = mon.get("baseStats", {})
+    entry = {
+        "baseStats": {k: bs[k] for k in ("atk", "def", "hp", "spa", "spd", "spe")},
+        "name": mon.get("name"),
+        "num": num,
+        # gen3_data.species.SpeciesData.types — the species' STAB/defensive types, UPPERCASED to the
+        # TypeEncoder.TYPE_TO_IDX axis (the same axis gen3_type_chart.json + the obs type ids ride). Used
+        # by the DamageOperator's expected-LATENT-defender read (marginalize a believed species' types
+        # through the chart for an UNREVEALED opp mon) — the obs still reads revealed types live.
+        "types": [t.upper() for t in mon.get("types", [])],
+    }
+    # Showdown's pokedex carries a FIXED max-HP override for a handful of species
+    # (Gen 3: only Shedinja, maxHP 1). Pokemon.setSpecies overwrites the computed
+    # HP stat with this. Carry it through ONLY when present, so normal species stay
+    # unchanged; the obs facade ignores the key (it reads base stats), while a
+    # stat-computing consumer (e.g. the rust_sim port) applies it.
+    if "maxHP" in mon:
+        entry["maxHP"] = mon["maxHP"]
+    # gen3_move_coverage_batch5_v1: the species WEIGHT in HECTOGRAMS (the unit
+    # Showdown's `getWeight()`/Low Kick compare on: `weighthg = round(weightkg * 10)`,
+    # dex-species.ts). Carried for the src/rust_sim port's Low Kick BP ladder
+    # (>=2000hg -> 120 ... else 20); gen3 has NO ModifyWeight handler, so the species
+    # weighthg IS the live weight. Obs-neutral additive like maxHP (the obs facade
+    # ignores the key; it reads base stats only).
+    if "weightkg" in mon:
+        entry["weighthg"] = int(round(float(mon["weightkg"]) * 10))
+    # gen3_turn0_construction_v1: the species' FIXED gender (Showdown pokedex
+    # `gender`): "N" (genderless — Magnemite/Ditto/Metagross), "M"/"F" (a
+    # fixed-gender species — Nidoran-M/F, Tauros, the Lati twins). ABSENT for a
+    # normal RATIO'd species (Snorlax etc., which carry `genderRatio` instead).
+    # Carried ONLY when present, obs-neutral (the facade ignores it, like maxHP/
+    # weighthg). Consumed by the `src/rust_sim` port's turn-0 CONSTRUCTION window:
+    # `Pokemon` sets `gender = set.gender || species.gender || sample(['M','F'])`
+    # (pokemon.ts) — so a mon whose packed set OMITS the gender AND whose species
+    # has no fixed gender draws ONE construction-time `sample(['M','F'])`; the
+    # `species.gender` present here is used (no draw). The bridge models this from
+    # the RAW `>start` seed for full node byte-parity on gendered teams.
+    if "gender" in mon:
+        entry["gender"] = mon["gender"]
+    return entry
+
 
 def build_species(gen):
     """Build the gen-N species map (num + base stats) from the poke-env pokedex.
 
-    Only base forms are kept (one entry per species id); alternate forms (Megas,
-    Deoxys-Attack, etc.) share the base num and are skipped, mirroring how the
-    observation encoder keys species by their base id. Sorted by id so the file is
-    stable across regenerations."""
+    Every BASE form in the gen-N num range, PLUS the gen-N-legal ALTERNATE FORMES
+    (`gen3_species_formes_v1`): the curated `_GEN_ALT_FORMES` entries (Deoxys-Attack/
+    Defense/Speed + Castform's three weather formes for gen 3) and every COSMETIC forme
+    a kept base species declares (`cosmeticFormes` — the 27 Unown letters; Showdown's
+    `dex-species.ts` builds a cosmetic forme as a CLONE of its base with only name/forme/
+    baseSpecies changed, so the row is a verbatim clone here too). Post-gen-N formes
+    (Megas / Gmax / regionals / Pikachu cosmetics) are still dropped — see
+    `_GEN_ALT_FORMES` for the oracle and why a `num` filter can't do this.
+
+    Every alternate-forme row carries `baseSpecies` (the base id). **That field is the
+    load-bearing safety contract:** a forme SHARES its base's national-dex `num`, and the
+    obs species channel + every num-indexed GPU table are keyed by `num` — so a forme is
+    observationally its base, and a num-indexed consumer MUST iterate base forms only
+    (`gen3_data.species.base_form_ids()`) or the last forme row written would silently
+    shadow the base's stats/types. Sorted by id so the file is stable across
+    regenerations."""
     pokedex_path = _static("pokedex", f"gen{gen}pokedex.json")
     if not os.path.exists(pokedex_path):
         raise FileNotFoundError(f"Pokedex file not found: {pokedex_path}")
@@ -878,56 +965,45 @@ def build_species(gen):
         dex = json.load(f)
 
     max_num = _GEN_MAX_SPECIES_NUM.get(gen, 100000)
+    alt_formes = set(_GEN_ALT_FORMES.get(gen, ()))
     species_map = {}
     for mon_id, mon in dex.items():
         num = mon.get("num", 0)
         if num <= 0 or num > max_num:  # CAP (<=0) or a later-gen species
             continue
-        # Skip non-base forms (Megas etc.); they share the base num/base stats key.
         base_species = mon.get("baseSpecies", mon_id)
-        if to_id_str(base_species) != mon_id:
+        is_base = to_id_str(base_species) == mon_id
+        # A non-base forme is kept only if the resolved gen-N dex has it (curated above);
+        # everything else (Megas, Gmax, Alolan/Galarian/Hisuian/Paldean, Totems, …) is a
+        # later-gen forme riding a gen-N `num` and is dropped.
+        if not is_base and mon_id not in alt_formes:
             continue
 
-        bs = mon.get("baseStats", {})
-        entry = {
-            "baseStats": {k: bs[k] for k in ("atk", "def", "hp", "spa", "spd", "spe")},
-            "name": mon.get("name"),
-            "num": num,
-            # gen3_data.species.SpeciesData.types — the species' STAB/defensive types, UPPERCASED to the
-            # TypeEncoder.TYPE_TO_IDX axis (the same axis gen3_type_chart.json + the obs type ids ride). Used
-            # by the DamageOperator's expected-LATENT-defender read (marginalize a believed species' types
-            # through the chart for an UNREVEALED opp mon) — the obs still reads revealed types live.
-            "types": [t.upper() for t in mon.get("types", [])],
-        }
-        # Showdown's pokedex carries a FIXED max-HP override for a handful of species
-        # (Gen 3: only Shedinja, maxHP 1). Pokemon.setSpecies overwrites the computed
-        # HP stat with this. Carry it through ONLY when present, so normal species stay
-        # unchanged; the obs facade ignores the key (it reads base stats), while a
-        # stat-computing consumer (e.g. the rust_sim port) applies it.
-        if "maxHP" in mon:
-            entry["maxHP"] = mon["maxHP"]
-        # gen3_move_coverage_batch5_v1: the species WEIGHT in HECTOGRAMS (the unit
-        # Showdown's `getWeight()`/Low Kick compare on: `weighthg = round(weightkg * 10)`,
-        # dex-species.ts). Carried for the src/rust_sim port's Low Kick BP ladder
-        # (>=2000hg -> 120 ... else 20); gen3 has NO ModifyWeight handler, so the species
-        # weighthg IS the live weight. Obs-neutral additive like maxHP (the obs facade
-        # ignores the key; it reads base stats only).
-        if "weightkg" in mon:
-            entry["weighthg"] = int(round(float(mon["weightkg"]) * 10))
-        # gen3_turn0_construction_v1: the species' FIXED gender (Showdown pokedex
-        # `gender`): "N" (genderless — Magnemite/Ditto/Metagross), "M"/"F" (a
-        # fixed-gender species — Nidoran-M/F, Tauros, the Lati twins). ABSENT for a
-        # normal RATIO'd species (Snorlax etc., which carry `genderRatio` instead).
-        # Carried ONLY when present, obs-neutral (the facade ignores it, like maxHP/
-        # weighthg). Consumed by the `src/rust_sim` port's turn-0 CONSTRUCTION window:
-        # `Pokemon` sets `gender = set.gender || species.gender || sample(['M','F'])`
-        # (pokemon.ts) — so a mon whose packed set OMITS the gender AND whose species
-        # has no fixed gender draws ONE construction-time `sample(['M','F'])`; the
-        # `species.gender` present here is used (no draw). The bridge models this from
-        # the RAW `>start` seed for full node byte-parity on gendered teams.
-        if "gender" in mon:
-            entry["gender"] = mon["gender"]
+        entry = _species_entry(mon, num)
+        if not is_base:
+            entry["baseSpecies"] = to_id_str(base_species)
+            # battleOnly (Castform-Sunny/Rainy/Snowy): an in-battle-only forme, never
+            # selectable in a team. Carried so a coverage guard can exempt it.
+            if "battleOnly" in mon:
+                entry["battleOnly"] = to_id_str(mon["battleOnly"])
         species_map[mon_id] = entry
+
+        # COSMETIC formes (`cosmeticFormes`, gen 3: the 27 Unown letters) have NO pokedex
+        # entry of their own — Showdown synthesizes them from the base. A packed team
+        # writes "Unown-B", so the id `unownb` must resolve or the port can't construct
+        # the set. Clone the base row verbatim (identical num/baseStats/types/gender by
+        # construction — verified against the resolved gen3 dex) and override the display
+        # name with the forme's, exactly like `dex-species.ts` does.
+        for forme_name in mon.get("cosmeticFormes", []) or []:
+            forme_id = to_id_str(forme_name)
+            if forme_id in species_map:
+                continue
+            forme_entry = dict(entry)
+            forme_entry["baseStats"] = dict(entry["baseStats"])
+            forme_entry["types"] = list(entry["types"])
+            forme_entry["name"] = forme_name
+            forme_entry["baseSpecies"] = mon_id
+            species_map[forme_id] = forme_entry
 
     return {sid: species_map[sid] for sid in sorted(species_map)}
 
@@ -1250,7 +1326,13 @@ def build_learnset(gen):
         raw = json.load(f)
 
     gen_prefix = str(gen)
-    legal_species = set(build_species(gen))   # gen-N pokedex ids (base forms only)
+    # BASE FORMS ONLY (`gen3_species_formes_v1`): `build_species` also emits gen-N
+    # alternate/cosmetic formes, but a forme has no learnset of its own (Showdown resolves
+    # a learnset through `baseSpecies`) — poke-env's static file carries `deoxysattack`
+    # with an EMPTY movepool, and an empty legality set would make the move-belief gate
+    # prune EVERY candidate move (the facade's contract is "unknown -> no constraint",
+    # never "no moves"). Filtering here keeps the committed learnset byte-identical.
+    legal_species = {sid for sid, e in build_species(gen).items() if "baseSpecies" not in e}
     legal_moves = set(build_moves(gen))       # gen-N movedex ids (no later-gen leak)
     out = {}
     for species_id, entry in raw.items():

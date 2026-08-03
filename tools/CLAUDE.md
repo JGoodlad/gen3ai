@@ -39,6 +39,35 @@ Notes that bite:
   data once used spritenum; switching to the true num was the `gen3_item_num_fix_v1` retrain.)
 - Gen filtering uses per-gen `num` ceilings (`_GEN_MAX_*`) so post-gen-3 abilities/species/items
   are excluded.
+- **`build_species`** emits every BASE form **plus the gen-N-legal ALTERNATE FORMES**
+  (`gen3_species_formes_v1`): for gen 3 the curated `_GEN_ALT_FORMES` entries — **Deoxys-Attack /
+  -Defense / -Speed** (team-legal, each with its OWN base stats) and **Castform-Sunny / -Rainy /
+  -Snowy** (`battleOnly`, same stats, retyped) — plus every **cosmetic** forme a kept base declares
+  (`cosmeticFormes`: the **27 Unown letters**, which have NO pokedex entry and are synthesized by
+  Showdown's `dex-species.ts` as a CLONE of the base with only name/forme/baseSpecies changed, so
+  the extractor clones them identically). 386 → **419 rows**. The builder previously dropped EVERY
+  non-base forme, which **cost the `src/rust_sim` port 6.6% of gen3 random-battle TEAMS / ~14% of
+  battles** (`MonState::from_set`: `unknown species "Deoxys-Speed"`) — the single largest
+  team-construction failure cause, and a DATA gap, not an engine one.
+  **Why the blanket filter existed, and why a `num` rule can't replace it:** poke-env's static
+  `gen{N}pokedex.json` is NOT gen-filtered by forme — it carries **135 formes with a gen-3 `num`**
+  (Megas / Gmax / Alolan / Galarian / Hisuian / Paldean / Pikachu cosmetics / Totems), all
+  post-gen-3, and its own `gen` field is present on only 31 of 140 forme entries. The ORACLE is
+  therefore the MOD-CHAIN-resolved `Dex.mod('gen3')` (`exists && !isNonstandard && gen <= 3`; the
+  gen3 mod marks every later forme `isNonstandard: 'Future'`), which returns exactly the six above —
+  hence a curated table, the `_GEN3_ITEM_MECHANICS` precedent, **drift-gated by
+  `node src/rust_sim/harness/dump_gen3_mechanics.js --check`** (its SPECIES section asserts the
+  committed file equals the resolved gen-3 universe field-for-field).
+  Every forme row carries **`baseSpecies`** (+ `battleOnly` when applicable), and that field is the
+  **load-bearing safety contract**: a forme SHARES its base's national-dex `num`, and `num` is what
+  the obs species channel and every `table[species.num]` model buffer are keyed by — so a
+  num-indexed consumer MUST iterate `gen3_data.species.base_form_ids()`, or the last forme row
+  written silently redefines the base (Deoxys-Speed's stats landing on num 386, Castform-Sunny's
+  FIRE on num 351). Adding the rows was proven value-neutral: 33 pure insertions, all 386
+  pre-existing rows byte-identical, all 49 species-num-indexed tensors bit-identical.
+  `build_learnset` filters to base forms for the same reason (a forme has no learnset of its own —
+  poke-env ships `deoxysattack` with an EMPTY movepool, and an empty legality set would make the
+  move-belief gate prune every candidate), so `gen3_learnset.json` is unchanged.
 - **`build_items`** ALSO carries the **`gen3_item_mechanics_v1` structured mechanics fields**
   (only-when-present, obs-neutral like `critRatio` — the obs encodes items by per-id `num`
   lookup, so both new FIELDS and the 4 new ENTRIES change no existing value): `typeBoost
