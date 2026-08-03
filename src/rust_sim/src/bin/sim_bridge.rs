@@ -15,7 +15,16 @@
 //! - `p1 <base64(chunk)>` / `p2 <base64(chunk)>`  one protocol chunk that side saw
 //! - `__END__`  battle over, both side streams closed (persistent → reset for the next START)
 //! - `__ERR__ <base64(msg)>`  fatal error
-//! - `__RECON__ <base64(json)>`  the reconstruction record — **DEFERRED** (see below)
+//! - `__RECON__ <base64(json)>`  the reconstruction record, once per battle, just before
+//!   `__END__` (see [`emit_recon`] for the honest scope of its `input_log`)
+//!
+//! # Seeds (`gen3_bridge_seed_forms_v1` / `gen3_bridge_seedless_fixed_seed_v1`)
+//!
+//! `seed` and `resumeReseed.seed` accept EVERY form `new PRNG()` does — `[m,n,o,p]`,
+//! `"m,n,o,p"`, `"gen5,<hex16>"`, `"sodium,<hex>"` — via the one [`parse_seed_field`]
+//! parser. A seed that is PRESENT but unusable is a LOUD `__ERR__`, never a fall-back.
+//! NO seed at all MINTS a fresh `sodium,<hex>` ([`pokesim::prng::Prng::generate_seed`]),
+//! exactly like the sim's own `PRNG` constructor.
 //!
 //! Base64 per chunk because protocol text contains `\n`, `|`, and arbitrary JSON in
 //! `|request|` — one stdout line == exactly one side-tagged chunk, so the Python side
@@ -36,16 +45,16 @@
 //! bit-for-bit parity test vs the genesis-replay reference core in `tests/bridge_test.rs`,
 //! and by `harness/gen_sim_bridge_diff.js` at the chunk/stdout level vs the real Node bridge).
 //!
-//! # DEFERRED — honest scope
+//! # SUPPORTED — honest scope
 //!
 //! - **`__RECON__`** (the reconstruction record: `{v, format_id, prng_seed, input_log,
-//!   commands}`) serves the search / counterfactual layer, NOT core training/eval. The
-//!   Node version dumps the sim's internal `battle.inputLog`; the port has no
-//!   byte-identical `input_log` (a separate concern). So this binary emits **NO
-//!   `__RECON__`**. The Python side degrades gracefully — `local_battle_runner.py`'s
-//!   `_offer_recon` swallows any capture failure and the demux simply never sees the
-//!   frame, so no `__RECON__` is a no-op for the core path (only the forensic
-//!   reconstruction sibling is affected). We do NOT fake `__RECON__` content parity.
+//!   commands}`) serves the search / counterfactual layer. It IS emitted, once per battle,
+//!   as of `gen3_bridge_recon_record_v1` — and, since `gen3_bridge_seedless_fixed_seed_v1`,
+//!   on a SEEDLESS battle too (the resolved seed is the minted one). The Node version dumps
+//!   the sim's internal `battle.inputLog`; the port renders the COMMITTED-choice lines from
+//!   its own script, so `input_log` is replay-EQUIVALENT rather than guaranteed
+//!   byte-identical for exotic wire spellings. We do NOT fake `__RECON__` content parity —
+//!   see [`emit_recon`].
 //! - **`resumeReseed`** (`{turn, seed}` — swap the battle's PRNG at the start of a divergence
 //!   turn for the counterfactual Monte-Carlo re-roll) is **SUPPORTED** as of
 //!   `gen3_bridge_resume_reseed_v1`, via `BridgeSession::{turn, reseed}` (the incremental
@@ -63,6 +72,7 @@ use pokesim::battle::{BattleOptions, PackedTeam, PlayerOptions};
 use pokesim::bridge::{parse_choice, BridgeSession, Cmd};
 use pokesim::dex::Dex;
 use pokesim::json::Json;
+use pokesim::prng::{normalize_seed, Prng};
 
 fn main() {
     let dex = Dex::for_gen(3);
@@ -133,8 +143,10 @@ struct Session {
 #[derive(Default)]
 struct Recon {
     format_id: String,
-    /// The RESOLVED `>start` seed, comma-joined (`"1,2,3,4"`), or empty when the caller
-    /// supplied none (training's default — nothing to reconstruct against).
+    /// The RESOLVED `>start` seed as a `Prng::new`-acceptable string — the caller's
+    /// (`"1,2,3,4"` / `"gen5,…"` / `"sodium,…"`, an array form comma-joined) or, when the
+    /// caller supplied none, the one this process MINTED. Never empty
+    /// (`gen3_bridge_seedless_fixed_seed_v1`), so every battle has a replayable record.
     seed: String,
     /// The two `>player` payloads exactly as received, so the record round-trips.
     p1_json: String,
@@ -226,12 +238,10 @@ fn handle_start(sess: &mut Session, json: &str, dex: &Dex) -> Result<(), String>
     sess.reseeded = false;
     if let Some(rr) = v.get("resumeReseed").filter(|r| !r.is_null()) {
         let turn = rr.get("turn").and_then(|t| t.as_f64()).map(|t| t as u32);
-        let seed = rr.get("seed").and_then(|s| s.as_array()).map(|a| {
-            a.iter()
-                .map(|x| format!("{}", x.as_f64().unwrap_or(0.0) as u64))
-                .collect::<Vec<_>>()
-                .join(",")
-        });
+        // EVERY form `new PRNG()` accepts — the sole producer
+        // (`main.prober.falsifier.fresh_seeds`) emits the `"a,b,c,d"` STRING form, which an
+        // array-only parse rejected outright (`gen3_bridge_seed_forms_v1`).
+        let seed = parse_seed_field(rr.get("seed"), "resumeReseed.seed")?;
         match (turn, seed) {
             (Some(t), Some(sd)) => sess.resume_reseed = Some((t, sd)),
             // FAIL-LOUD on a malformed spec rather than silently running under the base seed:
@@ -248,14 +258,18 @@ fn handle_start(sess: &mut Session, json: &str, dex: &Dex) -> Result<(), String>
     // via `BridgeSession::new_construct_turn0` below), so the port reproduces the sim's
     // gender samples + speed-tie shuffles + Quick Claw from the raw seed bit-for-bit
     // (the old pure `advance_seed_for_construction` seed hack modeled ONLY the Quick
-    // Claw → it desynced a speed-TIED lead or an unspecified-gender mon). `None` seed →
-    // the port picks its default (no reference).
-    let seed = v.get("seed").and_then(|s| s.as_array()).map(|a| {
-        a.iter()
-            .map(|x| format!("{}", x.as_f64().unwrap_or(0.0) as u64))
-            .collect::<Vec<_>>()
-            .join(",")
-    });
+    // Claw → it desynced a speed-TIED lead or an unspecified-gender mon).
+    //
+    // NO seed → MINT one (`gen3_bridge_seedless_fixed_seed_v1`), exactly like Showdown's
+    // `PRNG` constructor (`if (!seed) seed = PRNG.generateSeed()`). This used to fall
+    // through to the engine's `DEFAULT_CONSTRUCT_SEED` ("0,0,0,0"), so EVERY seedless
+    // battle — i.e. every training episode and every eval game, since neither
+    // `bridge_session` nor `run_local_battles` passes a seed — replayed ONE dice stream,
+    // identically across every parallel env worker. Resolving it HERE (rather than letting
+    // the engine default) also means the record always has a real `prng_seed`, so
+    // `__RECON__` is emitted for a seedless battle too.
+    let seed = parse_seed_field(v.get("seed"), "seed")?.unwrap_or_else(Prng::generate_seed);
+    let seed = Some(seed);
     let p1 = parse_player(&v, "p1")?;
     let p2 = parse_player(&v, "p2")?;
 
@@ -284,6 +298,46 @@ fn handle_start(sess: &mut Session, json: &str, dex: &Dex) -> Result<(), String>
     let opts = BattleOptions { format_id, seed, p1, p2 };
     sess.bridge = Some(BridgeSession::new_construct_turn0(&opts, dex)?);
     Ok(())
+}
+
+/// Parse a START seed field into a [`Prng::new`]-acceptable seed string
+/// (`gen3_bridge_seed_forms_v1`). The ONE seed parser for both `seed` and
+/// `resumeReseed.seed`.
+///
+/// Accepts every form the Node bridge does, because `local_sim_bridge.js` hands
+/// `msg.seed` to the sim verbatim and `new PRNG(seed)` takes:
+///   * `[m,n,o,p]` — a JSON array (`PRNG`: `if (Array.isArray(seed)) seed = seed.join(",")`);
+///   * `"m,n,o,p"` / `"gen5,<hex16>"` / `"sodium,<hex>"` — a string (`setSeed`'s three cases).
+/// Absent / `null` → `Ok(None)` (the caller decides: mint for `seed`, error for
+/// `resumeReseed`).
+///
+/// FAILS LOUD on a seed that is PRESENT but unusable — a number, a bool, a non-numeric
+/// array element, an unrecognized string. That is the whole point: the pre-fix parser
+/// read only the array form and silently `None`d everything else, so a string seed ran a
+/// DIFFERENT battle than the caller asked for and nothing said so. A wrong input that is
+/// silently accepted is worse than a crash.
+fn parse_seed_field(field: Option<&Json>, what: &str) -> Result<Option<String>, String> {
+    let Some(j) = field.filter(|s| !s.is_null()) else {
+        return Ok(None);
+    };
+    let raw = if let Some(a) = j.as_array() {
+        let mut parts = Vec::with_capacity(a.len());
+        for x in a {
+            let n = x
+                .as_f64()
+                .ok_or_else(|| format!("START: `{what}` array holds a non-numeric element"))?;
+            parts.push(format!("{}", n as u64));
+        }
+        parts.join(",")
+    } else if let Some(s) = j.as_str() {
+        normalize_seed(s)
+    } else {
+        return Err(format!(
+            "START: `{what}` must be a seed string or a number array, got {j:?}"
+        ));
+    };
+    Prng::validate_seed(&raw).map_err(|e| format!("START: `{what}` — {e}"))?;
+    Ok(Some(raw))
 }
 
 fn parse_player(v: &Json, key: &str) -> Result<PlayerOptions, String> {
@@ -446,21 +500,27 @@ fn json_quote(v: &str) -> String {
 /// forced `move struggle`). That distinction is deliberate: the module's rule is that we do
 /// NOT fake `__RECON__` content parity, so this claims semantic faithfulness only.
 ///
-/// A record is skipped entirely when there is no resolved seed (the training default): a
-/// record that cannot be replayed deterministically would be worse than none.
+/// The `seed.is_empty()` skip below is now UNREACHABLE by construction — `handle_start`
+/// always resolves a seed (the caller's, or a minted one) — and is kept only as a
+/// belt-and-braces guard against a record that could not be replayed. Before
+/// `gen3_bridge_seedless_fixed_seed_v1` it fired on EVERY seedless battle, which is why a
+/// rust eval wrote no `*_reconstruction.json` and the prober's forensic commands went dark.
 fn emit_recon(sess: &mut Session, out: &mut impl Write) {
     if sess.recon.emitted || sess.recon.seed.is_empty() {
         return;
     }
     sess.recon.emitted = true;
     let r = &sess.recon;
-    let seed_arr = format!("[{}]", r.seed);
-    let mut log: Vec<String> = vec![
-        format!("{{\"formatid\":\"{}\",\"seed\":{}}}", r.format_id, seed_arr),
-    ];
-    // `>start {...}` / `>player pN {...}`
-    let mut input_log: Vec<String> = Vec::new();
-    input_log.push(format!(">start {}", log.pop().unwrap()));
+    // The seed is a JSON STRING here, mirroring the sim's own `inputLog[0]`
+    // (`JSON.stringify({formatid, seed: this.prngSeed})`, where `prngSeed` is
+    // `PRNG.startingSeed` — a string, since the constructor `join(",")`s an array form).
+    // It must NOT be rendered as a bare `[...]` array: a minted `sodium,<hex>` seed is not
+    // a number list, so the array spelling produced INVALID JSON on the seedless path.
+    let mut input_log: Vec<String> = vec![format!(
+        ">start {{\"formatid\":\"{}\",\"seed\":{}}}",
+        r.format_id,
+        json_quote(&r.seed)
+    )];
     input_log.push(format!(">player p1 {}", r.p1_json));
     input_log.push(format!(">player p2 {}", r.p2_json));
     // The COMMITTED choices, from the engine's own script.

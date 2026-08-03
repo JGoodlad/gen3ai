@@ -221,6 +221,94 @@ def test_rust_node_bridge_parity():
     run(n_battles=12)
 
 
+# --- SEED handling parity (gen3_bridge_seedless_fixed_seed_v1 / gen3_bridge_seed_forms_v1) ---
+#
+# The four seed defects all shipped because every gate on this path — including check 2 above,
+# which deliberately runs at seed=None but only compares WIN RATES — passed an array seed or
+# looked at aggregates. These pin the two things the aggregates cannot see: that a SEEDLESS rust
+# battle is a NEW battle each time, and that every seed SPELLING means the same battle on both
+# impls (so a node-recorded battle replayed on rust is the same battle).
+
+def _fixed_pair(team: str):
+    """Two RandomPlayers on ONE fixed team — with `random.seed` pinned per battle, the whole
+    trajectory is a function of the sim's dice alone, so a protocol digest isolates the seed.
+
+    The usernames are CONSTANT on purpose: they are echoed in the `|player|` protocol lines,
+    so a per-impl tag would make every digest differ for a reason that has nothing to do with
+    the seed."""
+    from poke_env.player import RandomPlayer
+    return (
+        RandomPlayer(battle_format=BATTLE_FORMAT, team=team, start_listening=False,
+                     account_configuration=AccountConfiguration("SeedParA", "password")),
+        RandomPlayer(battle_format=BATTLE_FORMAT, team=team, start_listening=False,
+                     account_configuration=AccountConfiguration("SeedParB", "password")),
+    )
+
+
+def _battle_digest(impl: str, seed, team: str, py_seed: int = 7):
+    """Play ONE battle and return (protocol digest, had_recon). The digest strips `|t:|`
+    wall-clock stamps (emission-time, in poke-env's MESSAGES_TO_IGNORE — invisible to state)."""
+    import hashlib
+    import random
+    from utils.bridge.reconstruction import pop_record
+    random.seed(py_seed)
+    p1, p2 = _fixed_pair(team)
+    sink: list = []
+    asyncio.run(run_local_battles(p1, p2, 1, battle_format=BATTLE_FORMAT, seed=seed,
+                                  chunk_sink=sink, impl=impl))
+    body = "\n".join(
+        f"{side}|" + "\n".join(l for l in chunk.split("\n") if not l.startswith("|t:|"))
+        for side, chunk in sink
+    )
+    battle = next(iter(p1._battles.values()))
+    # Anti-vacuity: a digest over an empty/aborted stream would make every comparison below
+    # pass for the wrong reason.
+    assert battle.finished and battle.turn >= 5 and len(sink) >= 20, (
+        f"{impl}/seed={seed!r}: degenerate battle (finished={battle.finished}, "
+        f"turn={battle.turn}, chunks={len(sink)}) — the digest would be meaningless")
+    return hashlib.sha256(body.encode()).hexdigest(), pop_record(battle.battle_tag) is not None
+
+
+@pytest.mark.integration
+def test_seedless_rust_battles_are_distinct_and_recorded():
+    """B1/B2: a seedless START must MINT a seed (not reuse a constant), and therefore still
+    emit `__RECON__`. Pre-fix, three seedless rust battles hashed IDENTICALLY and none carried
+    a record — i.e. every training episode and eval game replayed one dice stream."""
+    if not _prebuilt_rust_available():
+        pytest.skip("no pre-built rust sim_bridge binary")
+    team = TeamLoader().get_all_teams()[0]
+    seen = set()
+    for i in range(3):
+        digest, had_recon = _battle_digest("rust", None, team, py_seed=7)
+        assert had_recon, "a seedless rust battle emitted no __RECON__ (forensics go dark)"
+        seen.add(digest)
+    assert len(seen) == 3, (
+        f"{len(seen)} distinct battles out of 3 SEEDLESS rust battles — the child is replaying "
+        f"one fixed dice stream (gen3_bridge_seedless_fixed_seed_v1)")
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("seed", [
+    [1, 2, 3, 4],            # the JSON array form (the only one the old parser read)
+    "1,2,3,4",               # the STRING form `new PRNG()` requires for a re-roll
+    "gen5,0001000200030004",  # the same seed, hex-packed
+    "sodium,deadbeef",       # the ChaCha20 backend (Showdown's default)
+])
+def test_seed_forms_reproduce_the_same_battle_on_rust_and_node(seed):
+    """B3: every seed spelling the Node bridge accepts must run the SAME battle on rust.
+    Pre-fix, the two STRING forms were silently dropped by rust's array-only parser and ran a
+    different battle than the caller asked for — so replaying a node-recorded battle on rust
+    quietly answered a different question."""
+    if not _prebuilt_rust_available():
+        pytest.skip("no pre-built rust sim_bridge binary")
+    team = TeamLoader().get_all_teams()[0]
+    node_digest, _ = _battle_digest("node", seed, team)
+    rust_digest, _ = _battle_digest("rust", seed, team)
+    assert node_digest == rust_digest, (
+        f"seed {seed!r}: rust ran a DIFFERENT battle than node "
+        f"({rust_digest[:16]} vs {node_digest[:16]})")
+
+
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 60
     run(n)

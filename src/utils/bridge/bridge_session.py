@@ -59,6 +59,7 @@ from poke_env.player.player import Player
 
 from utils.bridge import bridge_trace
 from utils.bridge.battle_stream_client import BattleStreamClient
+from utils.bridge.seed_spec import validate_seed_spec
 from utils.bridge.sim_bridge_bin import bridge_spawn_argv
 
 _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
@@ -139,6 +140,12 @@ class BridgeSession:
         self.a1 = agent1
         self.a2 = agent2
         self.fmt = battle_format
+        # PRODUCER-SIDE guard (gen3_bridge_seed_forms_v1) — throw on a seed the child could
+        # not parse, rather than have it silently dropped and the episode run on some OTHER
+        # dice stream. Training passes `None` on purpose: the child mints a fresh seed per
+        # episode (so the N env workers get INDEPENDENT dice) and records it in __RECON__.
+        # See utils.bridge.seed_spec for why pre-seeding a run buys no reproducibility.
+        validate_seed_spec(seed)
         self.seed = seed
         self._persistent = persistent
         # Which sim-bridge child to spawn: "node" (default) or "rust". Resolved to an argv

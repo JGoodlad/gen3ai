@@ -780,8 +780,11 @@ async def main():
                              "'off' (default) = websocket. 'node' = the Node local_sim_bridge.js "
                              "(current bridge behavior). 'rust' = the byte-compatible src/rust_sim "
                              "sim_bridge binary (built via cargo; override with POKESIM_SIM_BRIDGE_BIN). "
-                             "NOTE: 'rust' emits no __RECON__ and ignores resumeReseed, so the "
-                             "forensic-reconstruction / search-teacher / falsify paths require 'node'.")
+                             "NOTE: 'rust' now emits __RECON__ (gen3_bridge_recon_record_v1, on a "
+                             "seedless battle too) and supports resumeReseed "
+                             "(gen3_bridge_resume_reseed_v1); its input_log is replay-EQUIVALENT "
+                             "rather than the sim's byte-identical one, so the search-TEACHER path "
+                             "still requires 'node'. 'rust' also fail-louds on an unmodeled move.")
     parser.add_argument("--use-showdown-bridge", action=BoolFlag, default=None,
                         help="DEPRECATED alias for --use-bridge=node (kept for the launcher + "
                              "existing scripts). Enables the in-process Node BattleStream bridge for "
@@ -2509,9 +2512,10 @@ async def main():
         emit(f"🌉 Transport: in-process BattleStream bridge [{args.bridge_impl}] for BOTH training "
              "and eval (no Showdown server needed — --showdown-port ignored)")
         if args.bridge_impl == "rust":
-            # One-time startup warning naming the Rust bridge's honest deferrals (no __RECON__,
-            # no resumeReseed) — resolve/build the binary NOW so a missing toolchain fails loudly
-            # at startup, not deep inside the first env reset.
+            # One-time startup warning naming the Rust bridge's honest remaining scope limits
+            # (an `input_log` that is replay-EQUIVALENT rather than the sim's byte-identical one;
+            # an INCOMPLETE modeled move set that fail-louds) — resolve/build the binary NOW so a
+            # missing toolchain fails loudly at startup, not deep inside the first env reset.
             from utils.bridge.sim_bridge_bin import (
                 warn_rust_deferrals, resolve_and_publish_sim_bridge_bin)
             warn_rust_deferrals(emit)
@@ -2520,8 +2524,9 @@ async def main():
             # instead of racing its own `cargo build` on first spawn.
             _rust_bin = resolve_and_publish_sim_bridge_bin()
             emit(f"🦀 [BRIDGE=rust] sim_bridge binary (prebuilt, published to children): {_rust_bin}")
-            # Reconstruction-dependent options need the Node bridge's __RECON__ / resumeReseed.
-            # If any is enabled with rust, error clearly (they'd silently no-op otherwise).
+            # The search-TEACHER needs the sim's own byte-identical `input_log`, which the port
+            # does not reproduce (its record is replay-equivalent). Error clearly rather than let
+            # it silently answer a slightly different question.
             _recon_needed = []
             if getattr(args, "search_teacher", False):
                 _recon_needed.append("--search-teacher")
@@ -2530,9 +2535,10 @@ async def main():
             if _recon_needed:
                 parser.error(
                     f"--use-bridge=rust is incompatible with {', '.join(_recon_needed)}: the "
-                    "search-teacher path relies on the Node bridge's __RECON__ reconstruction "
-                    "record / resumeReseed, which the Rust binary does not emit. Use "
-                    "--use-bridge=node for reconstruction-dependent runs.")
+                    "search-teacher path relies on the sim's OWN byte-identical `input_log`, "
+                    "which the Rust record does not reproduce (it is replay-EQUIVALENT — the "
+                    "committed-choice lines are rendered from the port's script). Use "
+                    "--use-bridge=node for search-teacher runs.")
     else:
         emit(f"🔌 Showdown server: {server_config.websocket_url}")
 

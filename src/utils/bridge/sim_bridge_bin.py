@@ -18,13 +18,14 @@ argv list the spawners exec, and — for ``rust`` — the binary-resolution + bu
   failure raises a CLEAR, actionable error naming the fix — we NEVER silently fall back to
   Node (a rust run that quietly became a node run would corrupt an A/B).
 
-Deferral note: **both** ``__RECON__`` (``gen3_bridge_recon_record_v1``) and ``resumeReseed``
-(``gen3_bridge_resume_reseed_v1``) are now supported. The record's ``>start``/``>player`` lines are
-exact; its committed-choice lines are replay-equivalent rather than byte-identical. Formerly this
-forensic-reconstruction / search-teacher / falsify layers only, NOT core training/eval —
-``local_battle_runner``'s ``_offer_recon`` degrades gracefully when the frame is absent. The
-CLI warns once at startup when ``rust`` is selected (see ``train_rl_agent``); callers that need
-reconstruction must use ``node``.
+Scope note: **both** ``__RECON__`` (``gen3_bridge_recon_record_v1``) and ``resumeReseed``
+(``gen3_bridge_resume_reseed_v1``) are supported, including on a SEEDLESS ``START`` — the
+production case — since ``gen3_bridge_seedless_fixed_seed_v1`` made the child MINT and report a
+real seed instead of silently reusing a constant (before that fix a rust eval wrote no
+``*_reconstruction.json`` at all). The record's ``>start``/``>player`` lines are exact; its
+committed-choice lines are replay-EQUIVALENT rather than byte-identical to the sim's own
+``inputLog``, so the search TEACHER still needs ``--use-bridge=node``. The CLI warns once at
+startup when ``rust`` is selected (see ``train_rl_agent``).
 """
 
 from __future__ import annotations

@@ -32,6 +32,7 @@ from poke_env.player.player import Player
 from poke_env.teambuilder.teambuilder import Teambuilder
 
 from utils.bridge.battle_stream_client import BattleStreamClient
+from utils.bridge.seed_spec import validate_seed_spec
 from utils.bridge.sim_bridge_bin import bridge_spawn_argv
 from utils.bridge import reconstruction
 
@@ -115,6 +116,14 @@ class _LocalBattleRunner:
         self.p1 = player1
         self.p2 = player2
         self.fmt = battle_format
+        # PRODUCER-SIDE guard (gen3_bridge_seed_forms_v1): a seed the child can't parse used
+        # to be dropped silently, running some OTHER dice stream under a "seeded" label.
+        # Throw here, at the caller, instead. `None` (the default) is legitimate — the child
+        # mints a fresh seed and reports it in __RECON__ (see utils.bridge.seed_spec).
+        validate_seed_spec(seed)
+        if start_extra and isinstance(start_extra.get("resumeReseed"), dict):
+            validate_seed_spec(start_extra["resumeReseed"].get("seed"),
+                               what="resumeReseed.seed")
         self.seed = seed
         self.start_extra = start_extra
         self.chunk_sink = chunk_sink

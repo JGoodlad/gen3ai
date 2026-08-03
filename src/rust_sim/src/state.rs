@@ -35,7 +35,7 @@
 //! `SideState::active = 0`.
 
 use crate::dex::Dex;
-use crate::prng::{Prng, PrngSeed};
+use crate::prng::{normalize_seed, Prng, PrngSeed};
 use crate::stats::compute_stats;
 use crate::team::{unpack, PokemonSet};
 
@@ -1559,28 +1559,18 @@ impl BattleState {
     }
 }
 
-/// A construction-time default seed used only when no seed is supplied. Pure
-/// construction draws no dice, so the specific value never affects this step;
-/// it just keeps [`BattleState::start`] total. (The gen5 decimal backend.)
+/// A construction-time default seed for an `opts.seed == None` construct — a
+/// TEST/HARNESS convenience only.
+///
+/// `BattleState::start` itself draws no dice, but the turn-0 construction window
+/// ([`crate::bridge::BridgeSession::new_construct_turn0`]) and every later turn DO, so a
+/// `None` seed here means "this whole battle runs on `0,0,0,0`". That is fine for an
+/// in-crate test that wants a fixed board and FATAL for a production caller: it makes
+/// every seedless battle replay ONE dice stream
+/// (`gen3_bridge_seedless_fixed_seed_v1`). The bridge binary therefore never passes
+/// `None` — it mints a fresh [`Prng::generate_seed`] exactly like Showdown's `PRNG`
+/// constructor does, so the resolved seed is real AND recordable.
 const DEFAULT_CONSTRUCT_SEED: &str = "0,0,0,0";
-
-/// Normalize a `>start` seed into a [`Prng::new`]-acceptable string. Accepts:
-/// - a bracketed JSON array `[1,2,3,4]` (the form `>start {"seed":[..]}` carries)
-///   → `1,2,3,4`;
-/// - any already-valid seed string (`sodium,…`, `gen5,…`, `1,2,3,4`) → verbatim.
-fn normalize_seed(s: &str) -> String {
-    let t = s.trim();
-    if let Some(inner) = t.strip_prefix('[').and_then(|x| x.strip_suffix(']')) {
-        // `[1, 2, 3, 4]` → `1,2,3,4`
-        inner
-            .split(',')
-            .map(str::trim)
-            .collect::<Vec<_>>()
-            .join(",")
-    } else {
-        t.to_string()
-    }
-}
 
 /// Whether the format `format_id` carries the **Sleep Clause Mod** (a sleep move that
 /// would inflict a 2nd foe sleep FAILS). Ladder tiers include it via the `Standard`

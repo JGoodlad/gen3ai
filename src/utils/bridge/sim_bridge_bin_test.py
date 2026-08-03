@@ -46,12 +46,16 @@ def test_unknown_impl_rejected():
     assert VALID_IMPLS == ("node", "rust")
 
 
-def test_deferral_warning_names_recon_as_deferred_and_reseed_as_supported():
-    """`resumeReseed` shipped (gen3_bridge_resume_reseed_v1); `__RECON__` has not.
+def test_deferral_warning_names_recon_and_reseed_as_supported():
+    """Both `__RECON__` (gen3_bridge_recon_record_v1) and `resumeReseed`
+    (gen3_bridge_resume_reseed_v1) SHIPPED — and, since
+    ``gen3_bridge_seedless_fixed_seed_v1``, the record is emitted on a SEEDLESS battle too
+    (the child mints + reports a real seed), which is the production case.
 
     The warning must keep naming BOTH so an operator can tell which paths still need
-    ``--use-bridge=node`` — but it must no longer claim the reseed is ignored, which would
-    send someone to the node bridge for a counterfactual that now works on rust.
+    ``--use-bridge=node`` — but it must not claim either is deferred/ignored, which would
+    send someone to the node bridge for forensics that now work on rust. What DOES remain
+    node-only is the search TEACHER, which needs the sim's byte-identical ``input_log``.
     """
     msg = rust_deferral_warning()
     assert "__RECON__" in msg
@@ -106,8 +110,14 @@ def test_rust_bridge_emits_a_parseable_recon_record(tmp_path):
     raw = json.loads(base64.b64decode(frames[0][len("__RECON__ ") :]).decode())
     record = ReconstructionRecord.from_dict(raw)
 
-    # The two parts every consumer actually reads.
-    assert record.start_options()["seed"] == [7, 11, 13, 17]
+    # The two parts every consumer actually reads. The seed is the STRING form, matching the
+    # sim's own `inputLog[0]` (`JSON.stringify({formatid, seed: battle.prngSeed})`, where
+    # `prngSeed` is `PRNG.startingSeed` — the constructor `join(",")`s an array). The rust
+    # record used to render a bare `[7,11,13,17]` array here, an unnoticed node/rust record
+    # divergence; `gen3_bridge_seedless_fixed_seed_v1` had to fix it because a MINTED
+    # `sodium,<hex>` seed is not a number list and the array spelling was invalid JSON.
+    assert record.start_options()["seed"] == "7,11,13,17"
+    assert record.prng_seed == "7,11,13,17"
     assert record.start_options()["formatid"] == "gen3customgame"
     assert record.username("p1") == "P1"
     assert record.packed_team("p1") == team

@@ -29,6 +29,25 @@ pub type PrngSeed = String;
 
 const TWO32: f64 = 4_294_967_296.0; // 2^32
 
+/// Normalize a `>start` seed into a [`Prng::new`]-acceptable string. Accepts:
+/// - a bracketed JSON array `[1,2,3,4]` (the form `>start {"seed":[..]}` carries)
+///   → `1,2,3,4`;
+/// - any already-valid seed string (`sodium,…`, `gen5,…`, `1,2,3,4`) → trimmed verbatim.
+///
+/// Lives here (not in `state`) so the bridge's START parser and `BattleState::start`
+/// share ONE definition of the accepted spelling — the whole
+/// `gen3_bridge_seedless_fixed_seed_v1` bug class was two parsers disagreeing about
+/// which forms exist.
+pub fn normalize_seed(s: &str) -> String {
+    let t = s.trim();
+    if let Some(inner) = t.strip_prefix('[').and_then(|x| x.strip_suffix(']')) {
+        // `[1, 2, 3, 4]` → `1,2,3,4`
+        inner.split(',').map(str::trim).collect::<Vec<_>>().join(",")
+    } else {
+        t.to_string()
+    }
+}
+
 /// `POKESIM_PRNG_TRACE=1` → [`Prng::next`] logs every draw to stderr. Read ONCE per
 /// process (a `OnceLock`), so the per-draw cost when off is a single relaxed load.
 static TRACE_ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
@@ -63,27 +82,99 @@ pub struct Prng {
 impl Prng {
     /// Build a PRNG for a seed string, dispatching on prefix like `setSeed`.
     ///
-    /// Panics on an unrecognized seed (matching prng.ts, which throws).
+    /// Panics on an unrecognized seed (matching prng.ts, which throws). Callers that
+    /// hold a seed from OUTSIDE the process (the bridge's `START` JSON) should use
+    /// [`Prng::validate_seed`] first and report a clean error instead — a seed that is
+    /// present but unusable must never fall back to some other stream.
     pub fn new(seed: &str) -> Self {
+        match Self::try_new(seed) {
+            Ok(p) => p,
+            Err(e) => panic!("{e}"),
+        }
+    }
+
+    /// The fallible form of [`Prng::new`] — the SINGLE definition of "an acceptable seed".
+    /// Mirrors `PRNG.setSeed`'s three accepted forms and its `throw` on anything else.
+    pub fn try_new(seed: &str) -> Result<Self, String> {
         let backend = if let Some(hex) = seed.strip_prefix("sodium,") {
+            if hex.is_empty() || !hex.bytes().all(|c| c.is_ascii_hexdigit()) {
+                return Err(format!("Unrecognized RNG seed {seed}"));
+            }
             Backend::Sodium(SodiumRng::from_hex(hex))
         } else if let Some(rest) = seed.strip_prefix("gen5,") {
             // four big-endian 16-bit words as 4-hex-digit groups
-            let word = |a: usize, b: usize| {
-                u16::from_str_radix(&rest[a..b], 16).expect("gen5 hex seed word")
-            };
+            if rest.len() < 16 || !rest.bytes().take(16).all(|c| c.is_ascii_hexdigit()) {
+                return Err(format!("Unrecognized RNG seed {seed}"));
+            }
+            let word = |a: usize, b: usize| u16::from_str_radix(&rest[a..b], 16).unwrap();
             Backend::Gen5(Gen5Rng::new([word(0, 4), word(4, 8), word(8, 12), word(12, 16)]))
-        } else if seed.as_bytes().first().map_or(false, |c| c.is_ascii_digit()) {
+        } else if seed.as_bytes().first().is_some_and(|c| c.is_ascii_digit()) {
             let parts: Vec<u16> = seed
                 .split(',')
-                .map(|p| p.parse().expect("gen5 decimal seed word"))
-                .collect();
-            assert_eq!(parts.len(), 4, "gen5 seed needs exactly 4 words");
+                .map(|p| p.trim().parse::<u16>().map_err(|_| format!("Unrecognized RNG seed {seed}")))
+                .collect::<Result<_, _>>()?;
+            if parts.len() != 4 {
+                return Err(format!("gen5 seed needs exactly 4 words: {seed}"));
+            }
             Backend::Gen5(Gen5Rng::new([parts[0], parts[1], parts[2], parts[3]]))
         } else {
-            panic!("Unrecognized RNG seed {seed}");
+            return Err(format!("Unrecognized RNG seed {seed}"));
         };
-        Prng { backend }
+        Ok(Prng { backend })
+    }
+
+    /// `Ok(())` iff `seed` is a form [`Prng::new`] accepts. The consumer-side throwing
+    /// guard for any seed that crossed a process boundary.
+    pub fn validate_seed(seed: &str) -> Result<(), String> {
+        Self::try_new(seed).map(|_| ())
+    }
+
+    /// `PRNG.generateSeed()` — a FRESH random seed in the sim's own default form,
+    /// `sodium,<32 hex>` (128 bits, right-padded to the 256-bit ChaCha20 key by
+    /// [`SodiumRng::from_hex`], exactly like `SodiumRNG.setSeed`'s `padEnd(64,"0")`).
+    ///
+    /// This is what Showdown does when `>start` carries no `seed` (`PRNG`'s constructor:
+    /// `if (!seed) seed = PRNG.generateSeed()`), so a seedless battle is a NEW battle.
+    /// The port must mint too: a constant fallback makes every seedless battle replay ONE
+    /// dice stream, which is exactly the `gen3_bridge_seedless_fixed_seed_v1` bug.
+    ///
+    /// Entropy comes from `/dev/urandom`; if that cannot be read (a sandbox with no
+    /// `/dev`), it degrades to a time ⊕ pid ⊕ address mix — still per-call distinct,
+    /// which is the property that matters here. NOT called anywhere on the deterministic
+    /// battle path: only when a caller supplied no seed at all.
+    pub fn generate_seed() -> PrngSeed {
+        let mut bytes = [0u8; 16];
+        let ok = std::fs::File::open("/dev/urandom")
+            .and_then(|mut f| {
+                use std::io::Read;
+                f.read_exact(&mut bytes)
+            })
+            .is_ok();
+        if !ok {
+            // Fallback mix: nanosecond clock ⊕ pid ⊕ a stack address (ASLR).
+            let nanos = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos() as u64)
+                .unwrap_or(0);
+            let pid = std::process::id() as u64;
+            let addr = &bytes as *const _ as u64;
+            let mut x = nanos ^ (pid << 32) ^ addr;
+            for chunk in bytes.chunks_mut(8) {
+                // SplitMix64 — a decent avalanche over a weak seed.
+                x = x.wrapping_add(0x9E37_79B9_7F4A_7C15);
+                let mut z = x;
+                z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+                z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+                z ^= z >> 31;
+                chunk.copy_from_slice(&z.to_be_bytes()[..chunk.len()]);
+            }
+        }
+        let mut s = String::with_capacity(7 + 32);
+        s.push_str("sodium,");
+        for b in bytes {
+            s.push_str(&format!("{b:02x}"));
+        }
+        s
     }
 
     /// Raw 32-bit draw (`rng.next()`).
@@ -186,6 +277,47 @@ mod tests {
             p.get_seed(),
             "sodium,cc282df82625252cb0e7fdc7463d75852267f0a45737f921948d0798debda58b"
         );
+    }
+
+    /// `gen3_bridge_seed_forms_v1` — `validate_seed` must accept exactly the set
+    /// `PRNG.setSeed` accepts, and reject everything else WITHOUT panicking (the bridge
+    /// turns the `Err` into a clean `__ERR__` naming the offending field).
+    #[test]
+    fn validate_seed_matches_showdown_accept_set() {
+        for good in [
+            "1,2,3,4",
+            "0,0,0,0",
+            "65535,65535,65535,65535",
+            "gen5,0001000200030004",
+            "sodium,deadbeef",
+            "sodium,cc282df82625252cb0e7fdc7463d75852267f0a45737f921948d0798debda58b",
+        ] {
+            assert!(Prng::validate_seed(good).is_ok(), "rejected a valid seed: {good}");
+        }
+        for bad in [
+            "", "not-a-seed", "1,2,3", "1,2,3,4,5", "1,2,x,4", "99999,1,1,1",
+            "gen5,zz", "gen5,", "sodium,", "sodium,xyz", "[1,2,3,4]",
+        ] {
+            assert!(Prng::validate_seed(bad).is_err(), "accepted an invalid seed: {bad:?}");
+        }
+        // The bracketed array spelling is normalized FIRST, then validated.
+        assert!(Prng::validate_seed(&normalize_seed("[1, 2, 3, 4]")).is_ok());
+    }
+
+    /// `gen3_bridge_seedless_fixed_seed_v1` — a minted seed must be FRESH per call and
+    /// in the sim's own default `sodium,<32 hex>` form, not some constant.
+    #[test]
+    fn generate_seed_is_fresh_and_well_formed() {
+        let a = Prng::generate_seed();
+        let b = Prng::generate_seed();
+        assert_ne!(a, b, "generate_seed returned the same seed twice");
+        for s in [&a, &b] {
+            assert!(s.starts_with("sodium,"), "not the sim's default form: {s}");
+            assert_eq!(s.len(), "sodium,".len() + 32, "expected 128 bits of hex: {s}");
+            assert!(Prng::validate_seed(s).is_ok(), "minted an unusable seed: {s}");
+        }
+        // ...and it actually seeds a distinct stream.
+        assert_ne!(Prng::new(&a).next(), Prng::new(&b).next());
     }
 
     #[test]

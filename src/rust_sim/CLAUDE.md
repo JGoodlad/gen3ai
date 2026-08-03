@@ -4846,6 +4846,132 @@ SAME `classifyKnownResidual` allowlist as the main path (without it the document
 DIFFERING REGION rather than a fixed 200-char prefix (these are long `|request|` JSON lines whose heads
 are identical). The differ's `--selftest` and normal mode are unaffected.
 
+### ROUND 37 (FIX) — the SEEDLESS bridge START ran on a FIXED seed: every training episode replayed one dice stream
+
+> NUMBERING NOTE: written as "ROUND 30" by a parallel effort; renumbered to 37 at consolidation
+> because three concurrent worktrees each claimed 30. Rounds 30-33 are the byte-parity/coverage
+> series, 34 the turn-0 mirror fix, 35 Forecast (reserved), 36 the soak-deadlock diagnosis.
+
+`gen3_bridge_seedless_fixed_seed_v1` + `gen3_bridge_seed_forms_v1`. Four defects, all in
+`bin/sim_bridge.rs`'s START seed handling, all shipped together for **one** reason: every existing
+gate on this path passes an explicit `[m,n,o,p]` **array** seed, so the two spellings PRODUCTION
+actually uses — **no seed at all** (`bridge_session` / `run_local_battles` never pass one) and the
+**string** form (`prober.falsifier.fresh_seeds`) — had literally never been executed.
+
+**THE MECHANISM.** `handle_start` parsed `seed` with `v.get("seed").and_then(|s| s.as_array())`, i.e.
+the ARRAY form only, mapping everything else to `None`. Downstream, `BattleState::start` turns a
+`None` seed into `DEFAULT_CONSTRUCT_SEED` = `"0,0,0,0"` — a constant whose doc-comment justification
+("pure construction draws no dice, so the value never affects this step") stopped being true the day
+`gen3_turn0_construction_v1` made the bridge run the turn-0 construction window and every later turn
+off that same PRNG. Showdown does the opposite: `PRNG`'s constructor is `if (!seed) seed =
+PRNG.generateSeed()`, so a seedless `>start` is a NEW battle. Four consequences:
+
+* **B1 (critical).** Two unseeded rust battles are byte-identical. On `--use-bridge=rust` **every
+  training episode and every eval game runs the same dice stream, in every parallel env worker.**
+* **B2.** `emit_recon` early-returns on an empty resolved seed, so a seedless battle emitted **no
+  `__RECON__`** → a rust eval wrote no `*_reconstruction.json` and the prober's forensic commands
+  (`falsify`, `better-line`, `replay-counterfactual`) went dark. Not an independent bug — a symptom.
+* **B3 (GIGO).** A **string** seed (`"1,2,3,4"`, `"sodium,…"`, `"gen5,…"`) — all of which node
+  accepts, since `local_sim_bridge.js` hands `msg.seed` to `new PRNG()` verbatim — was **silently
+  dropped**, so it ran the `0,0,0,0` battle. Replaying a node-recorded battle on rust quietly
+  answered a different question.
+* **B4.** `resumeReseed.seed` was array-only too, but its ONLY producer (`fresh_seeds`) emits the
+  `"a,b,c,d"` **string** that node's `new PRNG()` *requires* — so rust hard-errored
+  `START: resumeReseed needs both turn and seed` on every counterfactual re-roll.
+
+**EVIDENCE (measured before the fix, all re-verified from scratch, not taken from the audit).**
+Same fixed team + `random.seed(7)` on both sides, `|t:|` stamps stripped, one battle per row:
+
+| impl | seed spec | protocol hash | turns | `__RECON__` |
+|---|---|---|---|---|
+| rust | *(none)* ×3 | `2dce4057658fdd6d` **×3** | 179 ×3 | **no** |
+| node | *(none)* ×3 | `e3c0f7ef…` / `a18e4273…` / `edf3443e…` | 44 / 196 / 101 | yes |
+| rust | `[1,2,3,4]` | `985ae5e083eaaf4c` | 54 | yes |
+| rust | `"1,2,3,4"` | `2dce4057658fdd6d` ⟵ *= the unseeded battle* | 179 | **no** |
+| rust | `"sodium,deadbeef"` | `2dce4057658fdd6d` ⟵ *= the unseeded battle* | 179 | **no** |
+
+And end-to-end on the REAL training seam (`attach_bridge_transport`, persistent child, fixed team
+both sides, a fully deterministic policy on both sides so the sim's dice are the ONLY variable):
+**rust = 4 episodes → 1 distinct** (turn 71, reward −85.595, identical obs digest, four times);
+**node = 4 episodes → 4 distinct**. That is the severity claim, confirmed on the production path.
+
+**THE FIX** — accept every form the sim accepts; MINT when there is none; fail loud when there is one
+that cannot be parsed. One parser (`parse_seed_field`) now serves both `seed` and
+`resumeReseed.seed`; the seed vocabulary itself moved into `prng` so there is a single definition:
+* `Prng::try_new` / `Prng::validate_seed` — the fallible twin of `Prng::new`, mirroring
+  `PRNG.setSeed`'s three string cases and its `throw` on anything else (`new` is now
+  `try_new(..).unwrap_or_else(panic)`, so nothing else changes);
+* `Prng::generate_seed()` — `sodium,<32 hex>` from `/dev/urandom` (SplitMix64 over time⊕pid⊕ASLR if
+  `/dev` is unreadable), the same form and width as `SodiumRNG.generateSeed`. Called ONLY when the
+  caller supplied no seed — never on the deterministic battle path;
+* `normalize_seed` moved `state.rs` → `prng` (the bracketed `[1,2,3,4]` spelling), so the bridge's
+  parser and `BattleState::start` cannot disagree about which spellings exist — two parsers
+  disagreeing IS this bug class;
+* `DEFAULT_CONSTRUCT_SEED` stays, but is re-documented as a TEST/HARNESS convenience and is now
+  unreachable from the bridge (which always resolves a seed before constructing);
+* `emit_recon`'s `>start` line now renders the seed as a JSON **string**, matching the sim's own
+  `inputLog[0]` (`JSON.stringify({formatid, seed: battle.prngSeed})` — `prngSeed` is
+  `PRNG.startingSeed`, a string). This was forced by the mint (a `sodium,<hex>` seed inside `[...]`
+  is invalid JSON) and incidentally closed an unnoticed node/rust record divergence: node wrote
+  `"7,11,13,17"` where rust wrote `[7,11,13,17]`. Verified equal both ways after the fix.
+
+**DELIBERATE STRICTNESS (two spellings node would technically take, and we reject).** `"sodium,"`
+with an EMPTY hex payload (node pads it to 64 zeros — i.e. a constant, the exact failure mode being
+fixed) and a decimal seed with ≠4 words (node's `Gen5RNG` spreads whatever arity it is handed). Both
+are producer bugs with no legitimate caller, so they `__ERR__` rather than quietly become some other
+stream. Everything a real producer emits is accepted.
+
+**PRODUCER-SIDE half.** The project's rule for a GIGO class is a throwing guard at BOTH ends, so
+`utils/bridge/seed_spec.py::validate_seed_spec` is the mirror: it defines the same four accepted
+spellings and throws `ValueError` naming the caller and the field, wired into `_LocalBattleRunner`
+and `BridgeSession.__init__` (which also validates `start_extra["resumeReseed"]["seed"]`).
+
+**SHOULD PYTHON PASS AN EXPLICIT SEED? NO — deliberately.** A training run's reproducibility does
+not live in the sim seed: policy sampling, the teambuilder draw, PFSP opponent selection and the
+async-rollout interleave all sit outside it, so a caller-supplied seed buys no replay while a
+*shared* one across N env workers would CORRELATE their dice — strictly worse than N independent
+streams, and a milder version of the bug just fixed. The reproducibility that is actually wanted is
+per-battle forensic replay, and that comes from RESOLVE-AND-RECORD: the child mints, then reports the
+resolved seed in `__RECON__` (which is exactly what B2's fix restores). So training/eval keep
+`seed=None`; the guard exists for the callers that DO pass one.
+
+**MEASUREMENTS after the fix.** Three unseeded rust battles → 3 distinct hashes, all with
+`__RECON__`. All four seed spellings now produce a **byte-identical battle on rust and node**
+(`[1,2,3,4]` = `"1,2,3,4"` = `985ae5e083eaaf4c` on both; `"sodium,deadbeef"` = `f0e5153976162c38` on
+both). Training seam: 4 episodes → 4 distinct. `fresh_seeds`' string form drives a
+Python→rust `resumeReseed` to completion, node and rust agreeing at turn 83.
+Gates: `cargo test` 584 passed / 0 failed with the e2e golden md5 **`3155eb796cb4bf453c6053d769ba98e5`
+UNCHANGED** (the mint is only reachable from the bridge binary, and every engine test seeds
+explicitly); `bridge_session_fuzz_test 30 --impl rust` OK; `reconstruction` / `search_clone_parity` /
+`counterfactual` fuzzes pass unforced; `train_rl_agent --debug --steps 3000 --use-bridge=rust`
+completes; python unit suite 3827 passed.
+
+**Pins** (all revert-verified — 7/8 rust + 4/5 python FAIL under the old parser):
+`tests/sim_bridge_seed_test.rs` drives the REAL binary over its REAL protocol (the
+`bridge_corpus_test` `CARGO_BIN_EXE_` pattern, because the bug was in the binary's START parser, not
+the engine) — two seedless battles must DIFFER, the minted seed must not be `0,0,0,0`, a seedless
+battle must emit `__RECON__`, array/string/`gen5,hex` must be the same battle, a sodium seed must be
+honoured *and* differ from unseeded, and six unusable seeds plus three unusable `resumeReseed.seed`
+forms must `__ERR__`. Its team is six Water-Gun Snorlax on purpose: dice every turn, but nothing
+faints inside 12 turns, so a blind mutual `move 1` script never hits a force-switch boundary. Plus
+`prng::tests::{validate_seed_matches_showdown_accept_set, generate_seed_is_fresh_and_well_formed}`,
+`utils/bridge/seed_spec_test.py`, and two cross-impl gates in `bridge_impl_parity_test.py`
+(`test_seedless_rust_battles_are_distinct_and_recorded`,
+`test_seed_forms_reproduce_the_same_battle_on_rust_and_node`, the latter parametrized over all four
+spellings, both with an anti-vacuity assert on turn/chunk counts).
+
+**THE LESSON — the coverage hole, stated precisely.** Every gate that touched this code path was
+SEEDED, because seeding is what makes a test deterministic. So the *production* configuration —
+seedless — was the one configuration nothing ever ran. This is the same shape as
+`gen3_bridge_forfeit_win_v1`, which shipped because `bridge_session_fuzz_test` only ever tested
+`node`: in both cases the gate was strong, and simply pointed away from what production does. The
+generalization: **a determinism-oriented test suite systematically under-tests the nondeterministic
+default.** When a knob has a "make it reproducible" setting, at least one gate must run with that
+setting OFF and assert the *distributional* property (these two runs must DIFFER) rather than an
+exact value — and the existing statistical gate is not enough on its own: `bridge_impl_parity_test`
+already ran at `seed=None`, but it only compared aggregate WIN RATES, which a frozen dice stream
+happily reproduces.
+
 ### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
 
 `gen3_simbridge_diff_allowlist_v1`. **This is the strongest correctness gate in the project**, because
