@@ -1,6 +1,22 @@
 import multiprocessing
+import os as _os
 import traceback
 import functools
+
+# ── BLAS THREAD PINNING — must run BEFORE torch is imported anywhere ──────────────────────────
+# Each SubprocVecEnv worker runs a full CPU opponent forward; with the library default (one thread
+# per core) N workers spawn N×cores competing threads. Measured on a 16-core box, 8 neural-opponent
+# envs run DIRECTLY (no launcher): load average 110 and **6 fps**, vs 231 fps with these pinned — a
+# ~38× cliff that dwarfs every other measured throughput lever.
+#
+# `launcher/child.py` already exports these for production, so runs under the launcher were never
+# affected — but `python src/main/train_rl_agent.py …` is a DOCUMENTED entry point (root CLAUDE.md
+# "Training — run directly") and had no such protection. Setting them here covers both paths; workers
+# inherit them through `spawn`. `setdefault` so an explicit override still wins, and the env-worker
+# `_init` pins `torch.set_num_threads(1)` independently in case one does.
+for _v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
+    _os.environ.setdefault(_v, "1")
+
 try:
     multiprocessing.set_start_method('spawn', force=True)
 except RuntimeError:
@@ -32,6 +48,7 @@ from stable_baselines3.common.monitor import Monitor
 from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.policy import Gen3DualHeadMaskablePolicy
 from agents.model.model_version import ModelVersion, ModelVersionError
+from agents.model.extractor_arch import build_extractor_arch_kwargs
 from agents.model.snapshot import save_model_snapshot, load_model_snapshot, read_checkpoint_metadata, record_checkpoint
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.inference.player import RLPlayer
@@ -355,6 +372,7 @@ def _run_arch_toggles(args) -> dict:
         move_belief_single_compute=args.move_belief_single_compute,
         damage_candidate_k=args.damage_candidate_k,
         pointer_head=args.pointer_head,
+        damage_op_prefuse=args.damage_op_prefuse,
         win_prob_mode=args.win_prob_mode,
         pubval_mode=args.pubval_mode,
         value_dist_mode=args.value_dist_mode,
@@ -1063,6 +1081,39 @@ async def main():
                              "that cannot revise it; also one fewer head pass per forward. "
                              "Forward-behavior (version-checked, fresh-only). REQUIRES "
                              "--move-belief-prefuse. Off by default.")
+    parser.add_argument("--compile-extractor", "--compile_extractor", dest="compile_extractor",
+                        action="store_true", default=False,
+                        help="torch.compile each SELF-PLAY OPPONENT's feature extractor in the env "
+                             "workers (CPU, B=1 — the measured 68%% of rollout worker time). Measured "
+                             "5.3x on the real get_distribution path; value-preserving to ~1e-6 with "
+                             "0/16 argmax flips. RUNTIME PERF KNOB: not versioned, not in "
+                             "check_compatible, NOT inherited on resume — re-pass it each launch. "
+                             "Hides CUDA in the (CPU) workers first, because compiling in a "
+                             "CUDA-visible process costs ~252 MiB of card per worker. The compile "
+                             "itself happens ONCE in the forkserver and every env worker inherits it "
+                             "by fork (measured 9.6s once + 0.12s per worker).")
+    parser.add_argument("--compile-extractor-strict", "--compile_extractor_strict",
+                        dest="compile_extractor_strict", action="store_true", default=False,
+                        help="Turn a failed or ineffective opponent compile into a HARD ERROR instead "
+                             "of a warning. Without --compile-extractor this does nothing. Falling "
+                             "back to eager is a ~6.5x regression on the opponent forward that is "
+                             "otherwise invisible (the run just produces fewer steps/hour forever), so "
+                             "use this when you would rather fail at startup than discover it in the "
+                             "FPS graph a day later.")
+    parser.add_argument("--damage-op-prefuse", "--damage_op_prefuse", dest="damage_op_prefuse",
+                        action=BoolFlag, default=None,
+                        help="UNIFY the damage computation: run the spread + HP-type beliefs and the FULL "
+                             "DamageOperator ONCE, BEFORE the transformer, inject the per-our-mon incoming "
+                             "rows onto our tokens via a zero-init prefuse_proj, and concatenate the SAME "
+                             "full block to both heads. Replaces the two-computation shape (a LEAN op "
+                             "recomputed inside the between-layers refine loop + the FULL op after the "
+                             "transformer): at B=1 on CPU - the PFSP frozen-opponent regime on the rollout "
+                             "critical path - those two are ~75%% of a dispatch-bound 6.45 ms forward, vs "
+                             "0.27 ms for the attention layers. The head concat (the policy's largest "
+                             "measured dependency) is preserved at full width, but is computed from an "
+                             "UN-REFINED belief. STRUCTURAL (version-checked, fresh-only). REQUIRES "
+                             "--damage-op + --move-belief-prefuse; MUTUALLY EXCLUSIVE with "
+                             "--damage-refine-rounds > 0. Off by default.")
     parser.add_argument("--damage-candidate-k", "--damage_candidate_k", dest="damage_candidate_k",
                         type=int, default=None,
                         help="Cap the DamageOperator's INCOMING candidate sweep at the K most-believed "
@@ -1955,6 +2006,7 @@ async def main():
     _resolve("move_belief_single_compute", False)  # v47 forward-behavior (version-checked, fresh-only)
     _resolve("damage_candidate_k", 0)          # v49 forward-behavior (version-checked, fresh-only)
     _resolve("pointer_head", False)            # v49 structural (version-checked, fresh-only)
+    _resolve("damage_op_prefuse", False)       # v50 structural (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
     _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)
     _resolve("pubval_mode", "none")            # v43 structural + resume-immutable (version-checked)
@@ -2272,6 +2324,25 @@ async def main():
             "move belief is computed AFTER the transformer, so there is no pre-attention "
             "posterior for the refine loop to reuse. Add --move-belief-prefuse, or drop "
             "--move-belief-single-compute."
+        )
+    if args.damage_op_prefuse and not args.damage_op:
+        parser.error(
+            "--damage-op-prefuse requires --damage-op: there is no operator to run before the "
+            "transformer. Use --unified-damage / --unified-moves, or add --damage-op."
+        )
+    if args.damage_op_prefuse and not args.move_belief_prefuse:
+        parser.error(
+            "--damage-op-prefuse requires --move-belief-prefuse: the op consumes the move belief, so "
+            "the belief must itself be computed BEFORE the transformer. Add --move-belief-prefuse, or "
+            "drop --damage-op-prefuse."
+        )
+    if args.damage_op_prefuse and args.damage_refine_rounds and args.damage_refine_rounds > 0:
+        parser.error(
+            "--damage-op-prefuse is mutually exclusive with --damage-refine-rounds > 0: the prefuse IS "
+            "the unified single computation the between-layers refine loop is being replaced by, so "
+            "running both restores the double cost it exists to remove. Set --damage-refine-rounds 0 "
+            "(and drop --threat-refine-outgoing / --threat-status-refine, which ride that loop), or "
+            "drop --damage-op-prefuse."
         )
     if args.damage_outgoing and not args.damage_op:
         # The outgoing per-move block is emitted by the DamageOperator → the op must exist.
@@ -2788,6 +2859,13 @@ async def main():
                                    exploiter_entry=None):
         def _init():
             try:
+                # Defensive per-worker pin (the module-level env vars are the primary guard, but they
+                # are `setdefault` — an explicit OMP_NUM_THREADS=8 for the learner must not turn every
+                # worker's B=1 opponent forward into an N-thread contender). Mirrors
+                # snapshot_ladder.py's pin for the same reason: B=1 CPU inference gets nothing from
+                # intra-op parallelism, and the parallelism that matters is ACROSS workers.
+                import torch as _torch
+                _torch.set_num_threads(1)
                 ts = datetime.now().strftime('%H%M%S')
                 env_username = f"RLAgent{idx}{ts}"
 
@@ -2861,6 +2939,9 @@ async def main():
                         device=opponent_device,
                         pfsp_scale=getattr(args, "pfsp_scale", 0.0),
                         pool_spread=getattr(args, "pool_spread", False),
+                        compile_extractor=args.compile_extractor,
+                        compile_hide_cuda=True,       # spawned env worker — never take a CUDA context
+                        compile_strict=args.compile_extractor_strict,
                     )
                     # model=None placeholder — the wrapper swaps in a sampled snapshot before
                     # ever using it. Stochastic + temperature so the learner trains against the
@@ -2881,12 +2962,18 @@ async def main():
                 # mastered (pushed via set_stable_mastered) → floor peer of the bots.
                 stable_players, stable_labels, stable_teams = [], [], []
                 if self_play and stable_opponents:
-                    from agents.model.snapshot import load_foreign_opponent
+                    from agents.model.snapshot import (load_foreign_opponent,
+                                                        maybe_compile_extractor)
                     from utils.teambuilder import Gen3Teambuilder as _G3TB
                     for e in stable_opponents:
                         opp_model, _ = load_foreign_opponent(
                             e.zip_path, current_version=opponent_version,
                             device=opponent_device, config_path=e.config_path)
+                        # hide_cuda=True: this runs in a spawned env worker, where a CUDA context
+                        # would cost ~252 MiB of card per worker (the June 48× OOM).
+                        maybe_compile_extractor(opp_model, args.compile_extractor,
+                                                label=f"stable:{e.label}", hide_cuda=True,
+                                                strict=args.compile_extractor_strict)
                         # Fold-back: a specialist opponent pilots ITS OWN pinned team (entry
                         # team_str from its run's metadata); the wrapper switches agent2._team to
                         # this builder on the episodes it plays. None = pool pilot (generalist).
@@ -2909,11 +2996,15 @@ async def main():
                 exploiter_player = None
                 exploiter_team = None
                 if exploiter_entry is not None:
-                    from agents.model.snapshot import load_foreign_opponent
+                    from agents.model.snapshot import (load_foreign_opponent,
+                                                        maybe_compile_extractor)
                     from utils.teambuilder import Gen3Teambuilder as _G3TB
                     _ex_model, _ = load_foreign_opponent(
                         exploiter_entry.zip_path, current_version=opponent_version,
                         device=opponent_device, config_path=exploiter_entry.config_path)
+                    maybe_compile_extractor(_ex_model, args.compile_extractor,
+                                            label="exploiter-target", hide_cuda=True,
+                                            strict=args.compile_extractor_strict)
                     # Fold-back: an exploiter-of-a-specialist faces the target ON ITS OWN pinned team.
                     exploiter_team = (_G3TB(list(exploiter_entry.team_strs))
                                       if exploiter_entry.team_strs else None)
@@ -3003,6 +3094,17 @@ async def main():
 
     emit(f"⚙️ Initializing {n_envs} envs ({EnvClass.__name__})"
          + (" — non-barrier async rollout" if _async_rollout else ""))
+
+    # --compile-extractor: make the compile a ONE-TIME cost. SB3's SubprocVecEnv uses the FORKSERVER
+    # start method, so every env worker is forked from one long-lived process; pre-loading the
+    # compile module there means the graph is traced ONCE and all N workers inherit it copy-on-write
+    # (measured: 9.6 s once + 0.12 s per worker, vs ~30 s EACH with only the on-disk cache). This
+    # MUST run before the first worker is created, because the preload list is baked into the
+    # forkserver when it launches. Uses the same arch table as the model build below, so the traced
+    # graph matches the one the workers will actually run — a mismatch is merely slow, not wrong.
+    if args.compile_extractor and not args.debug:
+        from agents.model.compile_preload import install_forkserver_preload
+        install_forkserver_preload(build_extractor_arch_kwargs(args), enabled=True)
 
     _shutdown_event = threading.Event()
 
@@ -3431,66 +3533,13 @@ async def main():
 
         # Build the current-code version for compatibility check
         _load_encoder = Gen3ObservationEncoder(mappings)
-        _load_extractor_kwargs = _load_encoder.get_features_extractor_kwargs()
-        # Behavioral mask toggle — version-checked vs the saved model_config.json. The resumed
-        # policy is rebuilt from the zip's own kwargs, so this only feeds current_version: a
-        # resume with a different value FATALs rather than silently ignoring the flag.
-        _load_extractor_kwargs["attend_unrevealed_opponents"] = args.attend_unrevealed_opponents
-        _load_extractor_kwargs["opp_belief_cls_k"] = args.opp_belief_cls_k
-        # Belief-slots arch toggle — version-checked vs the saved config (a resume that flips the
-        # belief head on/off FATALs, same machinery as opp_belief_cls_k). coef>0 is the enable signal.
-        _load_extractor_kwargs["opp_belief_slots"] = (args.opp_belief_aux_coef > 0.0)
-        _load_extractor_kwargs["value_active_readout"] = args.value_active_readout
-        # Move-belief mode — version-checked vs the saved config (fresh-only; a resume that changes it
-        # FATALs, same machinery as opp_belief_slots).
-        _load_extractor_kwargs["move_belief_mode"] = args.move_belief_mode
-        # Latent-belief arch toggle — version-checked vs the saved config (fresh-only). coef>0 enables.
-        _load_extractor_kwargs["opp_belief_latent"] = (args.opp_belief_latent_coef > 0.0)
-        # Damage-operator toggle — version-checked vs the saved config (fresh-only).
-        _load_extractor_kwargs["damage_op"] = args.damage_op
-        _load_extractor_kwargs["damage_reattend"] = args.damage_reattend       # v31 (version-checked)
-        _load_extractor_kwargs["damage_outgoing"] = args.damage_outgoing       # v23 (version-checked)
-        _load_extractor_kwargs["move_candidate_floor"] = args.move_candidate_floor  # v23 (version-checked)
-        _load_extractor_kwargs["move_latent"] = args.move_latent               # v24 (version-checked)
-        _load_extractor_kwargs["spread_belief"] = args.spread_belief           # v25 (version-checked)
-        _load_extractor_kwargs["spread_belief_nature"] = args.spread_belief_nature  # v40 (version-checked)
-        _load_extractor_kwargs["spread_belief_nature_marginalize"] = args.spread_belief_nature_marginalize  # v40
-        # Move-prior fusion — version-checked vs the saved config (fresh-only).
-        _load_extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
-        # Move-belief pre-fuse (reinject before the transformer) — version-checked (fresh-only). v32.
-        _load_extractor_kwargs["move_belief_prefuse"] = args.move_belief_prefuse
-        # v47: frozen pre-attention move belief (refine reuses the prefuse posterior).
-        _load_extractor_kwargs["move_belief_single_compute"] = args.move_belief_single_compute
-        _load_extractor_kwargs["damage_candidate_k"] = args.damage_candidate_k      # v49
-        _load_extractor_kwargs["pointer_head"] = args.pointer_head                  # v49
-        # Incoming-damage-obs ablation — version-checked vs the saved config (fresh-only).
-        # Win-probability head mode — version-checked vs the saved config (resume-IMMUTABLE; any change
-        # FATALs, same machinery as move_belief_mode).
-        _load_extractor_kwargs["win_prob_mode"] = args.win_prob_mode
-        _load_extractor_kwargs["pubval_mode"] = args.pubval_mode
-        # Distributional value head (v29) — mode + atom count version-checked in check_compatible; the
-        # support (vmin/vmax) is resume-immutable, enforced below via enforce_value_dist.
-        _load_extractor_kwargs["value_dist_mode"] = args.value_dist_mode
-        _load_extractor_kwargs["value_dist_bins"] = args.value_dist_bins
-        _load_extractor_kwargs["value_dist_vmin"] = args.value_dist_vmin
-        _load_extractor_kwargs["value_dist_vmax"] = args.value_dist_vmax
-        # Discrete top-K incoming block (v30) — K version-checked in check_compatible (scales projections).
-        _load_extractor_kwargs["damage_topk_k"] = args.damage_topk_k
-        _load_extractor_kwargs["damage_refine_rounds"] = args.damage_refine_rounds   # v31 (version-checked)
-        _load_extractor_kwargs["damage_matrices_outgoing"] = args.damage_matrices_outgoing  # v32 (version-checked)
-        _load_extractor_kwargs["damage_matrices_incoming"] = args.damage_matrices_incoming  # v33 (version-checked)
-        _load_extractor_kwargs["damage_matrices_outgoing_all"] = args.damage_matrices_outgoing_all  # v39 (version-checked)
-        _load_extractor_kwargs["threat_refine_outgoing"] = args.threat_refine_outgoing      # v36 (version-checked)
-        _load_extractor_kwargs["threat_unrevealed_outgoing"] = args.threat_unrevealed_outgoing  # v36
-        _load_extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed          # v36 (version-checked)
-        _load_extractor_kwargs["threat_status_refine"] = args.threat_status_refine          # v37 (version-checked)
-        _load_extractor_kwargs["hp_type_belief_mode"] = args.hp_type_belief_mode            # v38 (version-checked)
-        _load_extractor_kwargs["belief_grad_mode"] = args.belief_grad_mode                  # v41 (resume-immutable)
-        _load_extractor_kwargs["zarch_film"] = args.zarch_film                              # v44 (version-checked)
-        _load_extractor_kwargs["zarch_dim"] = args.zarch_dim                                # v44 (version-checked)
-        _load_extractor_kwargs["zarch_lut"] = args.zarch_lut                                # v46 (version-checked)
-        _load_extractor_kwargs["zarch_lut_rosters"] = getattr(args, "_zarch_lut_rosters", None)
-        _load_extractor_kwargs["zarch_lut_init_std"] = args.zarch_lut_init_std
+        # ONE source of truth for every version-checked arch toggle
+        # (agents.model.extractor_arch.build_extractor_arch_kwargs). The fresh-run path below
+        # builds the SAME dict from the SAME table, so a new v51 toggle cannot land on one
+        # path and not the other — which would make a resume version-check an arch it did not
+        # build.
+        _load_extractor_kwargs = build_extractor_arch_kwargs(
+            args, base=_load_encoder.get_features_extractor_kwargs())
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -3786,99 +3835,12 @@ async def main():
         # model_dir and unique_id are now pre-defined earlier in main()
         
         # Initialize a dummy encoder to get the handoff kwargs
+        # Initialize a dummy encoder to get the layout handoff kwargs, then layer every
+        # version-checked arch toggle on top via the SHARED table (agents.model.extractor_arch)
+        # that the resume path above also uses.
         temp_encoder = Gen3ObservationEncoder(mappings)
-        extractor_kwargs = temp_encoder.get_features_extractor_kwargs()
-        extractor_kwargs["log_level"] = log_level
-        # Unmask the opponent's still-hidden party (default off). SB3 forwards this to
-        # Gen3FeaturesExtractor; from_layout_and_policy_kwargs records it in model_config.json.
-        extractor_kwargs["attend_unrevealed_opponents"] = args.attend_unrevealed_opponents
-        # Hidden-opponent belief (k=0 = off; k>0 requires the unmask flag, validated above). SB3 forwards
-        # this to Gen3FeaturesExtractor; from_layout_and_policy_kwargs records it in model_config.json.
-        extractor_kwargs["opp_belief_cls_k"] = args.opp_belief_cls_k
-        # In-place hidden-opponent BELIEF AUX (weight-shape): coef>0 builds the BeliefHead + learned
-        # unknown-mon slot tokens (auto-forces attend_unrevealed_opponents above). The coef itself is a
-        # TRAINING hparam set on the model below; this bool is the version-checked arch toggle.
-        extractor_kwargs["opp_belief_slots"] = (args.opp_belief_aux_coef > 0.0)
-        # Value-head active readout (default off): routes our_active_refined into the value projection.
-        extractor_kwargs["value_active_readout"] = args.value_active_readout
-        # Move-belief reinjection (off|revealed|unrevealed|both; weight-shape). != off builds the MoveBelief
-        # head + auto-forces attend_unrevealed_opponents above. The coef is a TRAINING hparam set below;
-        # the MODE is the version-checked arch toggle.
-        extractor_kwargs["move_belief_mode"] = args.move_belief_mode
-        # Latent-belief escalation (weight-shape): coef>0 builds the BeliefHead latent predictor. The
-        # coef is a TRAINING hparam set below; this bool is the version-checked arch toggle.
-        extractor_kwargs["opp_belief_latent"] = (args.opp_belief_latent_coef > 0.0)
-        # Differentiable damage operator (weight-shape): widens both projection heads with the
-        # believed-move incoming-damage block. Requires move_belief_mode revealed|both (validated above).
-        extractor_kwargs["damage_op"] = args.damage_op
-        # Damage re-attend (structural; adds a damage→token projection + encoder layer, re-derives the
-        # pools). Requires damage_op (validated above). Projection widths unchanged. v31.
-        extractor_kwargs["damage_reattend"] = args.damage_reattend
-        # Outgoing per-move direction (weight-shape): our active → opp active, action-aligned. Requires
-        # damage_op (validated above). v23.
-        extractor_kwargs["damage_outgoing"] = args.damage_outgoing
-        # Learnset + rarity-cap move-prior gate (forward-behavior): 0.0 = legacy floor; >0 prunes illegal /
-        # sub-floor moves. Requires move_prior_fusion (validated above). No weight-shape change. v23.
-        extractor_kwargs["move_candidate_floor"] = args.move_candidate_floor
-        # MoveLatentEncoder (weight-shape): the context-free mechanics-grounded move latent concatenated
-        # into the move network. The latent-grading coef is a TRAINING hparam set below; this bool is the
-        # version-checked arch toggle. v24 (gen3_unified_move_system_v1).
-        extractor_kwargs["move_latent"] = args.move_latent
-        # SpreadBelief (weight-shape): predict+reinject the opp's hidden spread; the op consumes it. The coef
-        # is a TRAINING hparam set below; this bool is the version-checked arch toggle. v25.
-        extractor_kwargs["spread_belief"] = args.spread_belief
-        # gen3_nature_ev_belief_v1 (v40): the NATURE/EV generative head (structural) + the op-side nature
-        # marginalization (forward-behavior). Both version-checked, fresh-only; OFF byte-identical.
-        extractor_kwargs["spread_belief_nature"] = args.spread_belief_nature
-        extractor_kwargs["spread_belief_nature_marginalize"] = args.spread_belief_nature_marginalize
-        # Unified move belief (forward-behavior): fuse the Smogon move prior into the belief head. Requires
-        # move_belief_mode != off (validated above). No weight-shape change (non-persistent prior buffer).
-        extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
-        # Move-belief pre-fuse (forward-behavior): reinject the move belief BEFORE the transformer so the
-        # believed moves co-refine through attention. Requires move_belief_mode != off (validated above).
-        # No weight-shape change (same MoveBelief module/params, different call timing). v32.
-        extractor_kwargs["move_belief_prefuse"] = args.move_belief_prefuse
-        # gen3_belief_single_compute_v1: belief ONCE pre-attention, then frozen. Requires prefuse. v47.
-        extractor_kwargs["move_belief_single_compute"] = args.move_belief_single_compute
-        # gen3_topk_candidates_v1 / gen3_pointer_head_v1 (v49). Both OFF byte-identical.
-        extractor_kwargs["damage_candidate_k"] = args.damage_candidate_k
-        extractor_kwargs["pointer_head"] = args.pointer_head
-        # Unified-architecture ablation (forward-behavior): zero the incoming-damage obs block from the
-        # model's view. No weight-shape change. Independent A/B knob (typically paired with --damage-op).
-        # Win-probability head (none|read_only|shaping; structural + resume-immutable). 'none' = no module
-        # (baseline byte-for-byte). The coef is a TRAINING hparam set on the model below; the MODE is the
-        # version-checked arch toggle.
-        extractor_kwargs["win_prob_mode"] = args.win_prob_mode
-        extractor_kwargs["pubval_mode"] = args.pubval_mode
-        # Distributional VALUE head (v29; none|read_only|shaping + atom count + support). Interpretability
-        # side readout off value_pooled — never in pi/vf. 'none' = no module (baseline byte-for-byte). Mode
-        # + bins are version-checked (check_compatible); the support is resume-immutable (check_value_dist).
-        extractor_kwargs["value_dist_mode"] = args.value_dist_mode
-        extractor_kwargs["value_dist_bins"] = args.value_dist_bins
-        extractor_kwargs["value_dist_vmin"] = args.value_dist_vmin
-        extractor_kwargs["value_dist_vmax"] = args.value_dist_vmax
-        # gen3_unified_topk_incoming_v1 (v30): the DISCRETE top-K incoming block's K (0 = off). STRUCTURAL
-        # (scales both projections; version-checked). Requires --damage-op + --move-latent (validated above).
-        extractor_kwargs["damage_topk_k"] = args.damage_topk_k
-        extractor_kwargs["damage_refine_rounds"] = args.damage_refine_rounds
-        extractor_kwargs["damage_matrices_outgoing"] = args.damage_matrices_outgoing
-        extractor_kwargs["damage_matrices_incoming"] = args.damage_matrices_incoming
-        extractor_kwargs["damage_matrices_outgoing_all"] = args.damage_matrices_outgoing_all
-        extractor_kwargs["threat_refine_outgoing"] = args.threat_refine_outgoing
-        extractor_kwargs["threat_unrevealed_outgoing"] = args.threat_unrevealed_outgoing
-        extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed
-        extractor_kwargs["threat_status_refine"] = args.threat_status_refine
-        extractor_kwargs["hp_type_belief_mode"] = args.hp_type_belief_mode
-        extractor_kwargs["belief_grad_mode"] = args.belief_grad_mode
-        # gen3_zarch_film_v1 (v44): team-archetype latent + head FiLM. 'off' = no modules (baseline
-        # byte-for-byte); 'heads' = identity-at-init conditioning on both root heads. STRUCTURAL +
-        # resume-immutable (mode + dim version-checked); the aux coefs are TRAINING hparams set below.
-        extractor_kwargs["zarch_film"] = args.zarch_film
-        extractor_kwargs["zarch_dim"] = args.zarch_dim
-        # gen3_zarch_lut_v1 (v46): the free per-team code + the roster table it keys on.
-        extractor_kwargs["zarch_lut"] = args.zarch_lut
-        extractor_kwargs["zarch_lut_rosters"] = getattr(args, "_zarch_lut_rosters", None)
-        extractor_kwargs["zarch_lut_init_std"] = args.zarch_lut_init_std
+        extractor_kwargs = build_extractor_arch_kwargs(
+            args, base=temp_encoder.get_features_extractor_kwargs(), log_level=log_level)
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,

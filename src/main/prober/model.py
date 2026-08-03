@@ -414,6 +414,7 @@ class ProbeModel:
         prior_fusion = bool(getattr(ex, "move_prior_fusion", False))    # MoveBelief Smogon-prior posterior
         move_prefuse = bool(getattr(ex, "move_belief_prefuse", False))  # MoveBelief reinjected PRE-transformer
         dmg_out = bool(getattr(ex, "damage_outgoing", False))           # DamageOperator outgoing direction
+        op_prefuse = bool(getattr(ex, "damage_op_prefuse", False))      # v50: beliefs + op run PRE-transformer
         # (name, active, optional, stage, role, attn) — TRUE forward order (forward_internal). `attn`
         # flags the ATTENTION layers (self-/cross-attention) so the prober can mark where the network
         # attends. Order: Embeddings → ObsUnpack → PokemonEncoder[+MoveLatent] → [BeliefSlots] →
@@ -436,7 +437,8 @@ class ProbeModel:
              f"predict + reinject opp moves ({mb})" + (" + prior-fusion" if prior_fusion else "")
              + (" · PRE-transformer" if move_prefuse else ""), False),
             ("SpreadBelief", on("spread_belief"), True, "trunk",
-             "predict + reinject opp hidden stat-spread → DamageOperator (v25)", False),
+             "predict + reinject opp hidden stat-spread → DamageOperator (v25)"
+             + (" · PRE-transformer" if op_prefuse else ""), False),
             ("CLSPool", True, False, "fork",
              "CLS queries CROSS-ATTEND the team tokens → our/their/value pools — FORKS → π · V", True),
             ("WinProbHead", wp != "none", True, "side", f"P(win) readout off value_pooled ({wp})", False),
@@ -445,7 +447,8 @@ class ProbeModel:
             ("HiddenOppBeliefPool", on("hidden_opp_belief"), True, "shared",
              "k belief queries CROSS-ATTEND the 12 tokens → both heads", True),
             ("DamageOperator", on("damage_op"), True, "shared",
-             "differentiable gen3 damage: incoming P(KO)" + (" + outgoing per-move" if dmg_out else "") + " → both heads",
+             "differentiable gen3 damage: incoming P(KO)" + (" + outgoing per-move" if dmg_out else "")
+             + " → both heads" + (" · PRE-transformer, once (v50)" if op_prefuse else ""),
              False),
             ("ProjectionAssembler", True, False, "shared",
              "→ (pi_combined, vf_combined): pools + ctx + belief + damage", False),

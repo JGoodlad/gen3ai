@@ -366,7 +366,20 @@ from typing import Any, Dict, List
 #   actually holds because of the M1 fix (SB3 was clobbering every zero-init; see the model leaf).
 #   STRUCTURAL (adds params) -> bool compare in check_compatible; OFF byte-identical.
 #   NO ARCH_SIGNATURE bump: both OFF reproduce the v48 forward exactly.
-MODEL_CONFIG_VERSION = 49
+# v50: added `damage_op_prefuse` (gen3_damage_op_prefuse_v1) — ONE damage computation per forward,
+#   PRE-attention. The op ran TWICE: a LEAN `discrete_*` recompute inside the between-layers refine
+#   loop (×`damage_refine_rounds`) plus the FULL 835-dim block after the transformer. At B=1 on CPU —
+#   the PFSP frozen-opponent regime that sits on the rollout critical path — the two together are ~75%
+#   of a dispatch-bound 6.45 ms forward (the attention layers themselves are 0.27 ms). ON, the spread +
+#   HP-type beliefs and the FULL op all run on the PRE-transformer role tokens, the per-OUR-mon incoming
+#   rows are injected onto our tokens via a zero-init `prefuse_proj` (the refine_proj convention), and
+#   the SAME full block is concatenated to both heads — so the P1 head-concat dependency is preserved at
+#   full width, just sourced from a pre-attention belief. Mutually exclusive with damage_refine_rounds>0
+#   (the loop is what it replaces); requires damage_op + move_belief_prefuse. The justification is CPU
+#   cost; the "attention reasons over full-fidelity physics" story is secondary and, per K9/K10/K10a,
+#   unlikely to pay on its own. STRUCTURAL (adds prefuse_proj) → bool compare in check_compatible; OFF
+#   byte-identical (NO ARCH_SIGNATURE bump).
+MODEL_CONFIG_VERSION = 50
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -880,6 +893,11 @@ class ModelVersion:
     damage_candidate_k: int = 0
     # v49 STRUCTURAL (gen3_pointer_head_v1): the pointer action head (adds PointerActionHead params).
     pointer_head: bool = False
+    # v50 STRUCTURAL (gen3_damage_op_prefuse_v1): run the beliefs + the FULL DamageOperator ONCE,
+    # PRE-transformer, injecting the per-our-mon incoming rows onto our tokens via a zero-init
+    # `prefuse_proj` (a new param → state_dict change) instead of recomputing a lean op between layers.
+    # The head concat is unchanged in width; only the belief it is computed from is pre- vs post-attention.
+    damage_op_prefuse: bool = False
     # v21 FORWARD-BEHAVIOR toggle (NOT weight-shape, like attend_unrevealed_opponents): the
     # unified-architecture ablation. ON zeros the incoming-damage / OHKO obs block out of the model's
     # view (the block stays in the obs; the reward still reads it). State_dict identical; the forward
@@ -1181,6 +1199,9 @@ class ModelVersion:
             ),
             pointer_head=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("pointer_head", False)
+            ),
+            damage_op_prefuse=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_op_prefuse", False)
             ),
             win_prob_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("win_prob_mode", "none")
@@ -1539,6 +1560,19 @@ class ModelVersion:
                 "The pointer action head adds parameters (PointerActionHead), so the weights are not "
                 "interchangeable.\n"
                 "Load with the matching --pointer-head, or start a fresh training run."
+            )
+
+        # v50 gen3_damage_op_prefuse_v1 — STRUCTURAL: `prefuse_proj` is a saved parameter, so a mismatch
+        # is a state_dict mismatch on EVERY load (eval / pool / distill included), not just a resume. It
+        # ALSO changes the forward: the beliefs + op read pre- rather than post-attention tokens.
+        if self.damage_op_prefuse != saved.damage_op_prefuse:
+            raise ModelVersionError(
+                f"damage_op_prefuse mismatch: saved={saved.damage_op_prefuse}, "
+                f"current={self.damage_op_prefuse}.\n"
+                "Running the DamageOperator once PRE-attention adds a projection (prefuse_proj) and feeds "
+                "both heads a block computed from an un-refined belief, so the weights are not "
+                "interchangeable.\n"
+                "Load with the matching --damage-op-prefuse, or start a fresh training run."
             )
 
         # Structural + resume-IMMUTABLE toggle — gated as a STRING so BOTH 'none'↔head (a state_dict
@@ -2226,4 +2260,9 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("damage_candidate_k", 0)
         data.setdefault("pointer_head", False)
         data["config_version"] = 49
+    if version < 50:
+        # v50: the pre-attention unified damage op — OFF on any older model (they ran the op twice:
+        # the lean between-layers recompute + the full post-transformer block).
+        data.setdefault("damage_op_prefuse", False)
+        data["config_version"] = 50
     return data

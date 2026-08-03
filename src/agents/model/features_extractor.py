@@ -1071,6 +1071,26 @@ class BeliefHead(torch.nn.Module):
         read = tokens.detach() if getattr(self, "detach_read", False) else tokens
         return self.species_head(self.norm(read))
 
+    def species_posterior(self, tokens: torch.Tensor) -> torch.Tensor:
+        """tokens [B,6,D] → P(species) [B,6,n_species], the v36 expected-latent defender's input.
+
+        ⚠️ THE SPELLING IS LOAD-BEARING — do not "simplify" this back to `torch.softmax`.
+
+        This one op was the ONLY thing in the whole extractor that Inductor could not codegen, and
+        therefore the ONLY reason `--compile-extractor` ever set
+        `torch._dynamo.config.suppress_errors`. `torch.softmax` lowers to a `[B,6,n_species]`
+        numerator buffer plus a `[B,6,1]` denominator, and the CPU scheduler then trips
+        `AssertionError: buf<N>` trying to fuse the division. Reproduced by
+        `tmp/inductor_crash_repro.py`; `tmp/softmax_variant_probe.py` shows `.contiguous()`,
+        `.clone()`, a 2-D reshape and a hand-rolled `exp / sum` ALL still fail — only the
+        `log_softmax().exp()` factoring lowers to a shape Inductor accepts.
+
+        Mathematically identical (`exp(log_softmax(x)) == softmax(x)`, and it goes through the same
+        max-subtraction for stability); measured max|Δ| vs eager 5.1e-07, the same order as the
+        compile's own float-reassociation noise. Pinned by `inductor_compile_test.py`, which fails
+        loudly if a future edit reintroduces the uncompilable form."""
+        return torch.log_softmax(self.species_logits(tokens), dim=-1).exp()
+
     def forward(self, their_team_out: torch.Tensor) -> Dict[str, torch.Tensor]:
         """their_team_out [B, 6, D] → {"species": [B,6,n_species], "moves": [B,6,n_moves],
         ["latent": [B,6,latent_dim]]}. The latent key is present only when the predictor is built."""
@@ -1781,6 +1801,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  damage_topk_k: int = 0, damage_reattend: bool = False,
                  move_belief_prefuse: bool = False, move_belief_single_compute: bool = False,
                  damage_candidate_k: int = 0, damage_refine_rounds: int = 0,
+                 damage_op_prefuse: bool = False,
                  pointer_head: bool = False,
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  damage_matrices_outgoing_all: bool = False,
@@ -2197,6 +2218,52 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if _p is not None:
                 torch.nn.init.zeros_(_p.weight)   # identity-at-init (same rationale as refine_proj/outgoing_proj)
                 torch.nn.init.zeros_(_p.bias)
+        # gen3_damage_op_prefuse_v1 (v50): ONE damage computation per forward, PRE-attention. Today the op
+        # runs TWICE — a LEAN `discrete_*` recompute inside the between-layers refine loop (2 rounds in the
+        # production config) plus the FULL 835-dim block after the transformer — and at B=1 on CPU (the PFSP
+        # frozen-opponent regime, which sits on the rollout critical path) the two together are ~75% of a
+        # dispatch-bound 6.45 ms forward, against 0.27 ms for the attention layers themselves. ON: the
+        # spread/HP-type beliefs + the FULL op run on the PRE-transformer role tokens, the per-OUR-mon
+        # incoming rows are injected onto our tokens via the zero-init `prefuse_proj` (the refine_proj
+        # convention — identity-at-init), and the SAME block is concatenated to both heads. The refine loop
+        # is then redundant, so the two are mutually exclusive.
+        #
+        # HONEST POSTURE: the justification is the CPU cost. The architectural story ("attention now reasons
+        # over full-fidelity physics") is SECONDARY and, on this codebase's evidence, unlikely to pay —
+        # physics-into-the-trunk measured NULL 3-for-3 (ledger K9/K10) and the lean kernel was already a good
+        # proxy for the full op (K10a). What must be PRESERVED is the head concat, which ledger P1 measured as
+        # the policy's largest single dependency; ON keeps it at full width, only sourced from a pre-attention
+        # belief. STRUCTURAL (adds `prefuse_proj`) → gated in check_compatible; OFF byte-for-byte.
+        self.damage_op_prefuse = bool(damage_op_prefuse)
+        if self.damage_op_prefuse and not damage_op:
+            raise ValueError(
+                "damage_op_prefuse=True requires damage_op=True — there is no operator to run before the "
+                "transformer. Enable --damage-op (--unified-damage), or drop --damage-op-prefuse."
+            )
+        if self.damage_op_prefuse and not move_belief_prefuse:
+            raise ValueError(
+                "damage_op_prefuse=True requires move_belief_prefuse=True — the op consumes the move "
+                "belief, so the belief must itself be computed BEFORE the transformer. Set "
+                "--move-belief-prefuse, or drop --damage-op-prefuse."
+            )
+        if self.damage_op_prefuse and self.damage_refine_rounds > 0:
+            raise ValueError(
+                f"damage_op_prefuse=True is mutually exclusive with damage_refine_rounds>0 (got "
+                f"{self.damage_refine_rounds}) — the prefuse IS the unified single computation the "
+                "between-layers refine loop is being replaced by; running both would restore the double "
+                "cost it exists to remove. Set --damage-refine-rounds 0 (which also requires dropping "
+                "--threat-refine-outgoing / --threat-status-refine), or drop --damage-op-prefuse."
+            )
+        # Zero-init → the injected residual is EXACTLY 0 at init, so ON starts from the same trunk the
+        # baseline transformer sees (identity-at-init; the gradient still flows because the damage feats are
+        # non-zero). Richer than the refine loop's lean 4-feature injection: this carries the FULL per-mon
+        # incoming row. NOTE the v36/v37 OUTGOING + STATUS trunk residuals are NOT reproduced here — they
+        # rode the refine loop and measured null (K10); re-adding them would need their own projections.
+        self.prefuse_proj = (torch.nn.Linear(_DMG_PER_MON, D_MODEL)
+                             if self.damage_op_prefuse else None)
+        if self.prefuse_proj is not None:
+            torch.nn.init.zeros_(self.prefuse_proj.weight)
+            torch.nn.init.zeros_(self.prefuse_proj.bias)
         # Stored on the root so arch_toggles_from_model can thread it to the eval/self-play workers
         # (the move-prior gate is a version-checked forward-behavior toggle).
         self.move_candidate_floor = move_candidate_floor
@@ -2414,6 +2481,21 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if isinstance(mod, torch.nn.Linear) and not bool(mod.weight.any())
         )
 
+    def disable_observation_debugger(self) -> bool:
+        """Detach the `ObservationDebugger`. Returns True if one was attached.
+
+        The debugger runs NUMPY assertions inside `forward`. That is fine eagerly, but `torch.compile`
+        cannot trace it — dynamo dies building a guard over a numpy bool ("TypeError: 'numpy.bool'
+        object cannot be interpreted as an integer"). It is a LEARNER-side diagnostic and a frozen
+        opponent has no use for it, so the compile path drops it.
+
+        This is a METHOD rather than the caller reaching in and setting `fe._debugger = None`, so the
+        ownership stays here: if the debugger ever gains teardown state, this is the one place that
+        has to learn about it."""
+        had = self._debugger is not None
+        self._debugger = None
+        return had
+
     def restore_identity_init(self) -> int:
         """Re-zero every Linear this extractor deliberately zero-initialised. Returns the count.
 
@@ -2528,6 +2610,98 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             opp_species_ids=ctx.species_ids[:, TEAM_SIZE:],                  # [B, 6]
             opp_move_ids=ctx.all_move_ids[:, TEAM_SIZE:, :])                 # [B, 6, 4]
 
+    def _spread_hp_damage(self, opp_tokens, ctx):
+        """The spread + HP-type belief legs and the FULL DamageOperator, in ONE place.
+
+        `opp_tokens` [B, 6, D] → `(enriched_opp_tokens, damage_block | None)`. Called from exactly two
+        sites, which differ ONLY in WHEN they run:
+          * POST-transformer (default) — the historical site: the beliefs read attention-REFINED opp
+            tokens, so the 835-dim head block prices physics from a sharpened belief.
+          * PRE-transformer (`damage_op_prefuse`, gen3_damage_op_prefuse_v1) — the beliefs read the raw
+            role tokens, the op runs ONCE, and its output both seeds the trunk (see `prefuse_proj`) and
+            feeds the heads. One op call per forward instead of two (the between-layers refine loop's
+            lean recompute + this full one).
+        Every stash (`last_spread_belief`, `last_hp_type_logits`, `last_move_latent_table`,
+        `last_damage_block`) is written here, so the aux losses and the prober read the same tensors
+        either way.
+        """
+        # gen3_unified_spread_belief_v1: predict + reinject the opp's hidden SPREAD (revealed slots), and
+        # stash the believed stats [B,6,5] for the DamageOperator (consumed at the opp active slot, replacing
+        # its hand-coded spread constants) + the speed-supervision loss. Enriches the opp tokens before the
+        # CLS pools, like MoveBelief. Hidden slots aren't enriched (their species num 0 → flat prior) and the
+        # op only reads the (revealed) active slot.
+        if self.spread_belief is not None:
+            (opp_tokens, self.last_spread_belief,
+             self.last_spread_nature_logits, self.last_spread_ev) = self.spread_belief(
+                opp_tokens, ~ctx.opp_believed_mask, ctx.species_ids[:, TEAM_SIZE:])
+        else:
+            self.last_spread_belief = None
+            self.last_spread_nature_logits = None
+            self.last_spread_ev = None
+        # gen3_opp_hp_type_belief_v1: the learned opp-HP-TYPE posterior (mode 'learned'). The HPTypeBelief
+        # head reads the opp tokens → per-slot 16-way HP-type distribution (Smogon prior ⊕ learned
+        # delta); the op consumes it at the active slot (its damage gradient sharpens the head) + the aux CE
+        # supervises last_hp_type_logits. 'prior'/'off' → no head → the op uses its own prior floor / the
+        # legacy obs hp_probs. Stashed for the loss + prober; never concatenated into pi/vf (leak-safe).
+        self.last_hp_type_logits = None
+        hp_type_post = None
+        if self.hp_type_belief_head is not None:
+            self.last_hp_type_logits, hp_type_post = self.hp_type_belief_head(
+                opp_tokens, ctx.species_ids[:, TEAM_SIZE:])
+            # gen3_opp_hp_type_belief_v2: REINJECT the presence-gated believed HP type into the opp tokens so
+            # the CLS pools + both heads reason over it (not only the op's damage block). Presence = the move
+            # belief's P(HP present) per opp slot (the "presence bit", ≈1 once `hiddenpower` is revealed);
+            # gates the signal to ≈0 when HP is unlikely. Revealed slots only (~opp_believed_mask). The op
+            # still consumes the (un-reinjected) posterior below — multiple un-ruled-out types stay distinct.
+            _presence = torch.sigmoid(self.last_move_belief_logits[:, :, HIDDEN_POWER_MOVE_NUM])  # [B,6]
+            opp_tokens = self.hp_type_belief_head.reinject(
+                opp_tokens, hp_type_post, _presence,
+                (~ctx.opp_believed_mask).float(), self.embeddings)
+        # gen3_unified_move_system_v1: the context-free move-latent table — the Stage-3 latent grading aux
+        # TARGET (training only; is_grad_enabled-gated, rollout pays nothing) AND
+        # (gen3_unified_topk_incoming_v1) the op's top-K candidate latents. The latter must be present in
+        # rollout too (the op output feeds both heads), so when topk is on the table is built EVERY forward.
+        # One `latent_table()` call, reused for both.
+        self.last_move_latent_table = None
+        move_latent_all = None
+        # The op's candidate latent table is needed in rollout (not just is_grad_enabled) when EITHER the top-K
+        # block OR the incoming per-move matrix is on — both gather the per-move latent into the op output.
+        need_topk_latent = self.damage_op is not None and (
+            self.damage_op.topk_k > 0 or self.damage_op.matrices_incoming)
+        if self.move_latent and (torch.is_grad_enabled() or need_topk_latent):
+            enc = self.pokemon_encoder.move_latent_encoder
+            latent_table = enc.latent_table(self.embeddings)                     # [n_moves, MOVE_LATENT_DIM]
+            if torch.is_grad_enabled():
+                self.last_move_latent_table = latent_table                       # grading aux target
+            if need_topk_latent:
+                # gen3_opp_hp_typed_candidates_v1: the op's candidate axis is C = n_moves — the typed HPs are
+                # the real move-nums 355-370, whose latents already carry their type (move_emb[355-370] ⊕ the
+                # type emb ⊕ MOVE_ATTR), so a selected HP-Ice candidate gets the genuine typed-move latent. No
+                # synthetic append (the old `hp_latent_block` workaround for the 237 collision is obsolete).
+                move_latent_all = latent_table                                   # [n_moves, MOVE_LATENT_DIM]
+        # Differentiable damage op (flag-guarded; None when off): fed the move belief's PREDICTED moves for
+        # the opp active. Forward-only, leak-free; its gradient flows back into the move/spread belief heads
+        # via last_move_belief_logits / last_spread_belief.
+        damage_block = None
+        if self.damage_op is not None:
+            # gen3_nature_ev_belief_v1: pass the nature posterior to the op ONLY when marginalization is on (the
+            # op then marginalises P(KO) over the nature distribution; None → mean-field, byte-identical).
+            spread_nat = self.last_spread_nature_logits if self.spread_belief_nature_marginalize else None
+            # Optional gradient-checkpointing (same gate as the transformer): the op materialises several
+            # [B,6,~416] activations → recompute in backward for ~GBs of VRAM. Bit-exact (no dropout/RNG);
+            # a no-op under inference. ctx is a non-tensor arg (use_reentrant=False); the belief tensors carry
+            # the grad. move_latent_all (built above) is the op's top-K identity source (None unless topk on).
+            if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
+                damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
+                                          self.last_spread_belief, move_latent_all, hp_type_post, spread_nat,
+                                          use_reentrant=False)
+            else:
+                damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief,
+                                              move_latent_all, hp_type_post, spread_nat)
+        # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
+        self.last_damage_block = damage_block
+        return opp_tokens, damage_block
+
     def attach_zarch_lut(self, mode: str, rosters: Sequence[Sequence[int]], init_std: float = 1.0):
         """ATTACH the per-team LUT to an ALREADY-LOADED LUT-less extractor (the exploiter fork).
 
@@ -2641,6 +2815,21 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             opp_role, self.last_move_belief_logits = self._apply_move_belief(
                 role_tokens[:, TEAM_SIZE:], ctx)
             role_tokens = torch.cat([role_tokens[:, :TEAM_SIZE], opp_role], dim=1)
+        # gen3_damage_op_prefuse_v1: run the WHOLE physics stack ONCE, here, PRE-attention. The spread +
+        # HP-type beliefs read the raw opp role tokens (the move belief already did, via prefuse), the FULL
+        # DamageOperator runs on that belief, and its per-OUR-mon INCOMING rows are injected onto our role
+        # tokens through the zero-init `prefuse_proj` — so attention reasons over the physics, then the SAME
+        # block is concatenated to both heads below. This replaces the two-computation shape it supersedes
+        # (a LEAN op inside the between-layers refine loop + the FULL op after the transformer); the two are
+        # mutually exclusive (enforced in __init__). Off ⇒ prefused_damage stays None and the group runs at
+        # its historical POST-transformer site, byte-for-byte.
+        prefused_damage = None
+        if self.damage_op_prefuse:
+            opp_role, prefused_damage = self._spread_hp_damage(role_tokens[:, TEAM_SIZE:], ctx)
+            inc = prefused_damage[:, :TEAM_SIZE * _DMG_PER_MON].reshape(
+                ctx.batch_size, TEAM_SIZE, _DMG_PER_MON)                      # per-OUR-mon incoming rows
+            role_tokens = torch.cat(
+                [role_tokens[:, :TEAM_SIZE] + self.prefuse_proj(inc), opp_role], dim=1)  # residual (0 at init)
         # gen3_iterative_damage_v1: when refinement is on, recompute the lean discrete incoming damage from
         # the CURRENT (being-enriched) opp tokens BEFORE each of the first N transformer layers and inject it
         # as a residual onto our-mon token positions. The belief is re-read each round (move_belief.move_logits
@@ -2688,8 +2877,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     # unrevealed columns are priced by the expected-latent defender; else revealed-gated.
                     species_probs = None
                     if self.threat_unrevealed_outgoing and self.belief_head is not None:
-                        species_probs = torch.softmax(
-                            self.belief_head.species_logits(opp_tokens), dim=-1)        # [B,6,n_species]
+                        species_probs = self.belief_head.species_posterior(opp_tokens)  # [B,6,n_species]
                     refined_opp = refined_opp + self.outgoing_proj(
                         self.damage_op.discrete_outgoing(ctx, species_probs))           # residual (0 at init)
                 if self.status_out_proj is not None:
@@ -2727,84 +2915,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # already set last_move_belief_logits — left at None when move_belief is off).
         if self.move_belief is not None and not self.move_belief_prefuse:
             their_team_out, self.last_move_belief_logits = self._apply_move_belief(their_team_out, ctx)
-        # gen3_unified_spread_belief_v1: predict + reinject the opp's hidden SPREAD (revealed slots), and
-        # stash the believed stats [B,6,5] for the DamageOperator (consumed at the opp active slot, replacing
-        # its hand-coded spread constants) + the speed-supervision loss. Enriches the opp tokens before the
-        # CLS pools, like MoveBelief. Hidden slots aren't enriched (their species num 0 → flat prior) and the
-        # op only reads the (revealed) active slot.
-        if self.spread_belief is not None:
-            (their_team_out, self.last_spread_belief,
-             self.last_spread_nature_logits, self.last_spread_ev) = self.spread_belief(
-                their_team_out, ~ctx.opp_believed_mask, ctx.species_ids[:, TEAM_SIZE:])
+        # The spread + HP-type belief legs and the FULL damage op. By DEFAULT they run HERE, on the
+        # attention-refined opp tokens (the op is placed BEFORE the CLS pools so the optional damage
+        # re-attend can enrich the team tokens and the pools are derived ONCE, on the final tokens —
+        # keeping EVERY downstream consumer on the same state). Under `damage_op_prefuse` the whole
+        # group already ran PRE-transformer and `prefused_damage` holds its block.
+        if self.damage_op_prefuse:
+            damage_block = prefused_damage
         else:
-            self.last_spread_belief = None
-            self.last_spread_nature_logits = None
-            self.last_spread_ev = None
-        # gen3_opp_hp_type_belief_v1: the learned opp-HP-TYPE posterior (mode 'learned'). The HPTypeBelief
-        # head reads the refined opp tokens → per-slot 16-way HP-type distribution (Smogon prior ⊕ learned
-        # delta); the op consumes it at the active slot (its damage gradient sharpens the head) + the aux CE
-        # supervises last_hp_type_logits. 'prior'/'off' → no head → the op uses its own prior floor / the
-        # legacy obs hp_probs. Stashed for the loss + prober; never concatenated into pi/vf (leak-safe).
-        self.last_hp_type_logits = None
-        hp_type_post = None
-        if self.hp_type_belief_head is not None:
-            self.last_hp_type_logits, hp_type_post = self.hp_type_belief_head(
-                their_team_out, ctx.species_ids[:, TEAM_SIZE:])
-            # gen3_opp_hp_type_belief_v2: REINJECT the presence-gated believed HP type into the opp tokens so
-            # the CLS pools + both heads reason over it (not only the op's damage block). Presence = the move
-            # belief's P(HP present) per opp slot (the "presence bit", ≈1 once `hiddenpower` is revealed);
-            # gates the signal to ≈0 when HP is unlikely. Revealed slots only (~opp_believed_mask). The op
-            # still consumes the (un-reinjected) posterior below — multiple un-ruled-out types stay distinct.
-            _presence = torch.sigmoid(self.last_move_belief_logits[:, :, HIDDEN_POWER_MOVE_NUM])  # [B,6]
-            their_team_out = self.hp_type_belief_head.reinject(
-                their_team_out, hp_type_post, _presence,
-                (~ctx.opp_believed_mask).float(), self.embeddings)
-        # gen3_unified_move_system_v1: the context-free move-latent table — the Stage-3 latent grading aux
-        # TARGET (training only; is_grad_enabled-gated, rollout pays nothing) AND
-        # (gen3_unified_topk_incoming_v1) the op's top-K candidate latents. The latter must be present in
-        # rollout too (the op output feeds both heads), so when topk is on the table is built EVERY forward.
-        # One `latent_table()` call, reused for both.
-        self.last_move_latent_table = None
-        move_latent_all = None
-        # The op's candidate latent table is needed in rollout (not just is_grad_enabled) when EITHER the top-K
-        # block OR the incoming per-move matrix is on — both gather the per-move latent into the op output.
-        need_topk_latent = self.damage_op is not None and (
-            self.damage_op.topk_k > 0 or self.damage_op.matrices_incoming)
-        if self.move_latent and (torch.is_grad_enabled() or need_topk_latent):
-            enc = self.pokemon_encoder.move_latent_encoder
-            latent_table = enc.latent_table(self.embeddings)                     # [n_moves, MOVE_LATENT_DIM]
-            if torch.is_grad_enabled():
-                self.last_move_latent_table = latent_table                       # grading aux target
-            if need_topk_latent:
-                # gen3_opp_hp_typed_candidates_v1: the op's candidate axis is C = n_moves — the typed HPs are
-                # the real move-nums 355-370, whose latents already carry their type (move_emb[355-370] ⊕ the
-                # type emb ⊕ MOVE_ATTR), so a selected HP-Ice candidate gets the genuine typed-move latent. No
-                # synthetic append (the old `hp_latent_block` workaround for the 237 collision is obsolete).
-                move_latent_all = latent_table                                   # [n_moves, MOVE_LATENT_DIM]
-        # Differentiable damage op (flag-guarded; None when off): fed the move belief's PREDICTED moves for
-        # the opp active (set above). Forward-only, leak-free; its gradient flows back into the move/spread
-        # belief heads via last_move_belief_logits / last_spread_belief. Run BEFORE the CLS pools so the
-        # (optional) damage re-attend can enrich the team tokens and the pools are derived ONCE, on the final
-        # tokens — keeping EVERY downstream consumer (the pools, the win/value-dist side readouts, the
-        # hidden-opp belief, the assembler) on the same (possibly re-attended) state.
-        damage_block = None
-        if self.damage_op is not None:
-            # gen3_nature_ev_belief_v1: pass the nature posterior to the op ONLY when marginalization is on (the
-            # op then marginalises P(KO) over the nature distribution; None → mean-field, byte-identical).
-            spread_nat = self.last_spread_nature_logits if self.spread_belief_nature_marginalize else None
-            # Optional gradient-checkpointing (same gate as the transformer): the op materialises several
-            # [B,6,~416] activations → recompute in backward for ~GBs of VRAM. Bit-exact (no dropout/RNG);
-            # a no-op under inference. ctx is a non-tensor arg (use_reentrant=False); the belief tensors carry
-            # the grad. move_latent_all (built above) is the op's top-K identity source (None unless topk on).
-            if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
-                damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
-                                          self.last_spread_belief, move_latent_all, hp_type_post, spread_nat,
-                                          use_reentrant=False)
-            else:
-                damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief,
-                                              move_latent_all, hp_type_post, spread_nat)
-        # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
-        self.last_damage_block = damage_block
+            their_team_out, damage_block = self._spread_hp_damage(their_team_out, ctx)
         # damage_reattend (gen3_damage_reattend_v1): let attention reason OVER the computed physics. The op's
         # per-OUR-mon INCOMING rows are projected (small-init residual) onto the 6 our-team tokens, then ONE
         # more encoder layer re-attends the 12 team tokens (our↔opp) so each of our mons' representation is

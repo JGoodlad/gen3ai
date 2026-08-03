@@ -15,7 +15,7 @@ from pathlib import Path
 
 from sb3_contrib import MaskablePPO
 
-from agents.model.snapshot import load_model_snapshot
+from agents.model.snapshot import load_model_snapshot, maybe_compile_extractor
 from agents.model.model_version import ModelVersion
 from main.launcher.ipc import emit
 
@@ -108,10 +108,28 @@ class SnapshotPool:
         lru_cache_size: int = 3,
         pfsp_scale: float = 0.0,
         pool_spread: bool = False,
+        compile_extractor: bool = False,
+        compile_hide_cuda: bool = True,
+        compile_strict: bool = False,
     ):
         self.pool_dir = Path(pool_dir)
         self._current_version = current_version
         self._device = device
+        # Runtime PERF knob (never versioned, never in check_compatible): torch.compile each loaded
+        # opponent's feature extractor. The env-worker opponent forward is the measured 68% of rollout
+        # worker time, and it runs on CPU at B=1 where the graph is dispatch-bound — see
+        # agents.model.snapshot.maybe_compile_extractor for the measurements.
+        #
+        # `compile_hide_cuda` defaults True because every compiling construction of this pool is in an
+        # env worker, where a per-worker CUDA context is the ~252 MiB × N OOM. It is a PARAMETER and
+        # not an assumption so that a main-process caller (a future batched opponent server, say) can
+        # say so and keep its GPU.
+        self._compile_extractor = bool(compile_extractor)
+        self._compile_hide_cuda = bool(compile_hide_cuda)
+        # --compile-extractor-strict: turn a failed/ineffective compile into a hard error instead of
+        # a silent ~6.5x-slower opponent forward. Off by default (a perf knob must not kill a run),
+        # on for anyone who would rather find out at startup than in the FPS graph a day later.
+        self._compile_strict = bool(compile_strict)
         self.max_snapshots = max_snapshots
         self.recency_weight = recency_weight
         # PFSP (prioritized fictitious self-play): when > 0, blend a per-entry HARDNESS factor
@@ -271,6 +289,10 @@ class SnapshotPool:
                 current_version=self._current_version,
                 device=self._device,
             )
+            maybe_compile_extractor(loaded, self._compile_extractor,
+                                    label=f"pool:{entry.path.name}",
+                                    hide_cuda=self._compile_hide_cuda,
+                                    strict=self._compile_strict)
             self._model_cache[key] = loaded
         return self._model_cache[key]
 

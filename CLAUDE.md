@@ -384,6 +384,29 @@ Default stays websocket (opt-in): the end-to-end training-FPS gain at scale is o
 is operational — no server — not throughput). See `src/utils/bridge/README.md` and
 `designs/ai_v5/design_local_sim_bridge_transport.md`.
 
+### Compiled CPU opponents (`--compile-extractor`, opt-in)
+
+`torch.compile`s each frozen self-play OPPONENT's feature extractor in the env workers — the measured
+**68% of rollout-worker time**, run on CPU at B=1 where the graph is dispatch-bound. A **runtime perf
+knob**: never versioned, never in `check_compatible`, NOT inherited on resume — re-pass it each launch
+like `--grad-checkpointing`.
+
+**Measured: B=1 CPU forward 6.371 → 0.976 ms (6.53×)** on the literal production arch (1 graph, 0
+graph breaks, max|Δ| vs eager 5.07e-07), and **+31% marginal training FPS at `--n-envs 48`** (498 →
+653, disjoint ranges) — the first throughput lever here the `SubprocVecEnv` barrier does NOT absorb.
+(That FPS A/B predates the `species_posterior` fix, so it was measured on a partially-compiled 3.6×
+graph; the end-to-end number at 6.53× is not yet re-measured.)
+
+The compile is a **one-time cost**: SB3's `SubprocVecEnv` uses the **forkserver** start method, so
+`agents.model.compile_preload` traces the graph ONCE in the forkserver (~7-10 s) and every worker
+inherits it copy-on-write — **0.12 s per worker**, vs ~30 s each with only the on-disk Inductor cache.
+Failure is loud on stderr + the launcher event stream, and `--compile-extractor-strict` promotes it to
+a hard error (falling back to eager is an invisible ~6.5× regression). "The model still compiles" is a
+**default-on test** (`species_posterior_compiles_test.py`; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out).
+
+Full detail — the four guards, the Inductor crash root-caused to one op, and the startup-cost table —
+is in `src/agents/training/CLAUDE.md` → Compiled CPU opponents.
+
 ### Non-barrier async rollout (`--async-rollout`, opt-in)
 
 Stock `SubprocVecEnv.step()` is a **barrier** — each step waits for the *slowest* of N env workers,
@@ -674,7 +697,10 @@ phase `nn.Module`s chained by a thin orchestrator:
 
 **`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `TeamTransformer` → `[BeliefHead?]` →
 `[MoveBelief?]` → `CLSPool` → `[DamageOperator?]` → `ProjectionAssembler`**, then **two** root projection
-heads (policy + value), each `pre_proj_norm` → `projection` → `ReLU`. The bracketed phases are
+heads (policy + value), each `pre_proj_norm` → `projection` → `ReLU`. Under `--damage-op-prefuse` (v50)
+the `[MoveBelief?] → [SpreadBelief?] → [HPTypeBelief?] → [DamageOperator?]` group moves **before**
+`TeamTransformer` and runs exactly once, injecting its per-our-mon incoming rows onto our role tokens
+via a zero-init `prefuse_proj`; the same block still feeds both heads. The bracketed phases are
 flag-gated (with all off the chain is the byte-for-byte baseline): `BeliefSlots`/`BeliefHead` under the
 hidden-opponent **belief aux** (`--opp-belief-aux-coef>0`) — `BeliefSlots` fills the un-revealed
 opponent team slots with distinct learned unknown-mon tokens (refined in-lineup by the transformer so
@@ -1172,6 +1198,34 @@ warm-starts from any checkpoint, clean A/B) — a guarantee that only actually h
 **M1** fix below. The policy adds it in `_get_action_dist_from_latent`, the single point all three
 logit sites funnel through. STRUCTURAL bool gate; OFF byte-identical. Replacing the flat head outright
 is the follow-up. NO `ARCH_SIGNATURE` bump (both OFF reproduce v48 exactly).
+**v50 the PRE-ATTENTION UNIFIED DAMAGE OPERATOR** (`gen3_damage_op_prefuse_v1`; `damage_op_prefuse` /
+`--damage-op-prefuse`) — ONE damage computation per forward instead of two. Today the op runs **twice**:
+a LEAN `discrete_*` recompute inside the between-layers refine loop (×`--damage-refine-rounds`, 2 in the
+production config) **plus** the FULL 835-dim block after the transformer. ON, the spread + HP-type
+beliefs and the FULL op all run on the **PRE-transformer role tokens**, the per-OUR-mon incoming rows are
+injected onto our tokens through a **zero-init `prefuse_proj`** (the `refine_proj` convention →
+identity-at-init), and the **SAME full block is concatenated to both heads** — so the ledger-P1 head
+dependency is preserved at full width, only its inputs move from refined to un-refined. **The
+justification is CPU cost, not architecture:** at B=1 on CPU — the PFSP frozen-opponent regime, which
+sits on the rollout critical path — the forward is 6.45 ms / 14,337 aten calls (~0.44 µs each, so
+DISPATCH-bound), the op is ~75% of it (2.454 ms post-transformer + ~2.4 ms refine loop) and the attention
+layers are 0.27 ms (4%); measured `--damage-refine-rounds` 2→1 = +14.0%, 2→0 = +28.2%. The
+"attention now reasons over full-fidelity physics" story is **secondary and unsupported** — physics-into-
+the-trunk measured NULL 3-for-3 (**K9/K10**) and the lean kernel was already a 91.8%-agreement proxy for
+the full op (**K10a**). Two properties bound the risk, both test-pinned: the op **requires
+`--move-belief-prefuse`**, so the move belief — its dominant input — is **bit-identical** in both shapes
+and only the spread + HP-type posteriors are re-sourced; and at **cold start the block is bit-identical**
+(every belief head is zero-init ⇒ token-independent posteriors), so the divergence is created by
+TRAINING, not by the reordering. STRUCTURAL (adds `prefuse_proj`) → bool compare in `check_compatible`;
+OFF byte-identical (NO `ARCH_SIGNATURE` bump); **mutually exclusive with `--damage-refine-rounds > 0`**
+(the loop is what it replaces — and that also drops the v36/v37 outgoing/status trunk residuals, which
+ride that loop and are NOT reproduced). Threaded through `current_model_version` /
+`arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs` sites. **Measured:**
+`tmp/pfsp_opponent_sweep.py` B=1 **6.452 → 4.617 ms (+28.2%, −4,126 aten calls)** — the same as
+`--damage-refine-rounds 0` alone (4.620 ms), so the CPU win IS the loop deletion and the prefuse rides
+along ~free; `tmp/damage_prefuse_kl.py` on 3000 real states puts the head-block re-sourcing at block
+cosine **0.988** and masked KL **3.0% of the zero-block ceiling** (2.9% argmax flips) on a short-trained
+snapshot — a floor, not a verdict.
 **M1 — SB3 was destroying every zero-init in the extractor (FIXED 2026-08-01).** `ActorCriticPolicy._build()`
 orthogonally re-inits EVERY `nn.Linear` in the feature extractor (`ortho_init` defaults True, nothing
 overrode it), so **13** Linears documented as zero-init were random from step 0 in every real run —
@@ -1179,7 +1233,7 @@ overrode it), so **13** Linears documented as zero-init were random from step 0 
 zero-init is what makes the **cold-start posterior equal the Smogon prior**. Guarded by
 `Gen3FeaturesExtractor.restore_identity_init()`. **This puts a standing caveat on the K10 and D4
 result families** — see `designs/research_state/ledger.md` → M1 and the model leaf.
-Current `MODEL_CONFIG_VERSION` = **49**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+Current `MODEL_CONFIG_VERSION` = **50**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

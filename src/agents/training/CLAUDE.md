@@ -1239,6 +1239,130 @@ FPS with half the envs (≈half the env/bridge RAM). Off by default (stock `Subp
 under `--debug`. Caveat: benchmarked with heuristic opponents — re-bench under `--self-play` for the
 production-regime number. Full design + benchmark table: `designs/ai_v5/design_async_rollout.md`.
 
+## Compiled CPU opponents (`--compile-extractor`) + BLAS thread pinning
+
+**`--compile-extractor`** `torch.compile`s each frozen OPPONENT's feature extractor in the env workers
+(pool / stable / exploiter loads, via `agents.model.snapshot.maybe_compile_extractor`). It is a
+**runtime PERF knob** — never versioned, never in `check_compatible`, NOT inherited on resume; re-pass
+it each launch, like `--grad-checkpointing`.
+
+**Why it works now when it didn't in June.** The 2026-06-30 attempt compiled only
+`DamageOperator.forward` inside `policy.get_distribution` and measured **0.70× (slower)** — dynamo
+overhead around a graph still running ~10k eager dispatches. Compiling the WHOLE extractor gives one
+fused graph: `torch._dynamo.explain` reports **0 graph breaks / 1 graph**, and B=1 CPU
+`get_distribution` goes **4.84 → 0.91 ms (5.3×)** on a real checkpoint, logits within 9.5e-7 of eager
+with **0/16 argmax flips**.
+
+**`suppress_errors` is GONE — the crash it hid was ONE op (2026-08-03).** The helper used to set
+`torch._dynamo.config.suppress_errors = True` globally, because `--threat-unrevealed-outgoing` (v36 #2)
+crashed the Inductor CPU backend (`AssertionError: buf307`). That made the LITERAL production config
+compile only PARTIALLY — dynamo falling back to eager per FRAME for the failing region, measured
+6.48 → 1.78 ms = 3.6× — and made every OTHER backend failure in the process silent too.
+`tmp/inductor_crash_repro.py` narrowed it to a single op: the softmax over species logits in the v36
+expected-latent-defender read, which lowers to a `[B,6,n_species]` numerator + a `[B,6,1]` denominator
+that the CPU scheduler asserts on while fusing. `BeliefHead.species_posterior` now spells the identical
+math as `log_softmax(...).exp()`, which lowers cleanly. **The literal production arch now compiles
+WHOLE with suppression OFF: 6.371 → 0.976 ms = 6.53×**, 1 graph / 0 breaks, max|Δ| vs eager 5.07e-07 —
+nearly double the per-forward win, and backend failures are loud again. `tmp/softmax_variant_probe.py`
+records that `.contiguous()`, `.clone()`, a 2-D reshape and a hand-rolled `exp / sum` **all still
+FAIL**, so the spelling is load-bearing; it is pinned by `species_posterior_compiles_test.py` (opt-in
+via `GEN3AI_COMPILE_TESTS=1`, a real ~20 s compile — verified to FAIL if the old spelling returns).
+
+**Measured end-to-end (the number that decides it):** at the production `--n-envs 48` shape with
+`--async-rollout --grad-checkpointing --self-play --self-play-use-cpu` against a seeded pool, marginal
+FPS **498 → 653 = +31.0%**, 6 samples per arm, **ranges disjoint** (off max 512 < on min 614). It is
+the first throughput lever here that the `SubprocVecEnv` barrier does NOT absorb — the win is *larger*
+at 48 envs than at 8 (+26.6%). Adversarial checks: the compiled path is the real `pool:snapshot_*`
+opponent, and `ep_len_mean` is unchanged (47.4 vs 45.9), so it is not an artifact of shorter battles.
+
+Three properties make it cheap: the compile is keyed on the CODE OBJECT (a second extractor instance
+in the same process compiles in **0.00 s**, so pool promotions are free), parameters are graph INPUTS
+(a different checkpoint's `load_state_dict` does NOT recompile), and a shared
+`TORCHINDUCTOR_CACHE_DIR` turns each worker's cold codegen into a cache hit.
+
+Four guards, each protecting against a failure that actually happened while building it:
+- **CUDA-context OOM.** Compiling even a CPU model in a CUDA-visible process initialises CUDA and takes
+  ~252 MiB of card; ×48 workers is the June OOM. The helper sets `CUDA_VISIBLE_DEVICES=""` — but only
+  when the caller passes **`hide_cuda=True`**. That used to be INFERRED from
+  `torch.cuda.is_initialized()` as a proxy for "am I an env worker", which was correct only by accident
+  of the call sites: the first main-process caller would have silently blinded the learner's GPU. It is
+  now the caller's explicit declaration (all three training sites are env workers → `True`), and a
+  caller that declares `hide_cuda=True` in a process that already holds a context is REFUSED rather
+  than quietly compiled. Verified live: 48 compiled workers, exactly ONE context (the learner).
+- **A compile that LOSES.** June measured 0.70× (dynamo overhead > fusion win on a fragmented graph),
+  so the helper **times eager vs compiled at load and REVERTS** below a 1.05× floor. This used to be
+  load-bearing because `suppress_errors` made a failed compile silent; with suppression gone a failure
+  raises and is caught, and this is now a second line of defence against a merely-fragmented graph.
+- **A LATE failure.** `torch.compile` guards on input properties, so an unseen shape can trigger a
+  fresh trace at CALL time, long after load. `_eager_fallback_on_error` wraps the compiled callable so
+  that degrades THIS opponent to eager (and says so) instead of killing a 3-hour run. This is the
+  scoped replacement for global `suppress_errors`: same never-crash property, one model, and loud.
+- **Resume safety.** It patches the BOUND `fe.forward`, never the module — `torch.compile(module)`
+  would prefix every state_dict key with `_orig_mod.`. It also calls
+  `Gen3FeaturesExtractor.disable_observation_debugger()` (a method, not a reach-in assignment to
+  `fe._debugger`), because the debugger's numpy asserts inside `forward` make dynamo die creating a
+  guard.
+
+**Per-worker startup cost, measured (`tmp/compile_spawn_cost.py`, 16 workers, 16-core box).** Wall
+clock until all workers are ready: **private cache per worker 163.4 s / cold shared cache 59.6 s /
+warm shared cache 30.1 s.** So `TORCHINDUCTOR_CACHE_DIR` is not a nicety — without it the startup cost
+nearly triples. The residual ~30 s is dynamo tracing + guard construction, which the on-disk cache
+cannot remove, and it is paid once per launcher restart (every 3 h).
+
+**Compile ONCE in the forkserver — `agents.model.compile_preload` (BUILT).** `torch.compile` returns
+a live Python object, so it cannot be pickled into a worker; only the on-disk cache crosses a `spawn`
+boundary. But SB3's `SubprocVecEnv` does **not** use spawn — it calls `mp.get_context("forkserver")`
+explicitly (ignoring our process-wide `set_start_method('spawn', force=True)`), and a forkserver child
+inherits the forkserver's memory copy-on-write, dynamo's traced-graph and guard state included. So
+`train_rl_agent` calls `install_forkserver_preload(...)` **before creating the vec env** (the preload
+list is baked in when the forkserver launches), and the graph is traced once for the whole run.
+
+**Measured end to end** (`tmp/preload_integration_probe.py`, 6 workers, each building its OWN
+extractor instance with DIFFERENT weights and calling the real `maybe_compile_extractor`):
+
+| | one-time | per worker |
+|---|---|---|
+| no preload, warm on-disk cache | — | ~30 s **each** (O(N)) |
+| **forkserver preload** | **9.6 s once** | **0.12 s** |
+
+All workers kept the compile at 6.1–6.6×, steady forward 1.05 ms. The 0.12 s is dominated by the
+helper's OWN eager-vs-compiled timing benchmark (~15 eager forwards at 6.8 ms); the compile lookup
+itself is ~0.02 s, because dynamo caches on the CODE OBJECT and the worker inherited that cache.
+
+**The arch must match.** The preload builds its extractor from
+`build_extractor_arch_kwargs(args)` — the same table the real model uses — serialised through
+`GEN3AI_COMPILE_PRELOAD_ARCH`. If it ever diverged, the workers' guards would miss and they would
+re-trace: **slow, never wrong**. A preload that fails to import is ignored by CPython's forkserver, so
+the worst case degrades to per-worker compiles.
+
+**Failure is LOUD (`--compile-extractor-strict`).** Falling back to eager is a ~6.5× regression on the
+opponent forward that is otherwise invisible — the run just produces fewer steps/hour forever and
+looks healthy. Every failure path (`DISABLED`, `REVERTED`, mid-run `FELL BACK`, mis-declared
+`hide_cuda`) goes through `_compile_warn`: stderr **and** the launcher event stream, so it surfaces in
+the TUI. `--compile-extractor-strict` promotes all of them to a `CompileExtractorError` for anyone who
+would rather fail at startup than find it in the FPS graph a day later.
+
+**Caught at CODE time.** `species_posterior_compiles_test.py` compiles the literal production arch with
+suppression OFF and asserts 1 graph / 0 breaks + value equality. It runs **by default** (~10 s on a
+warm cache; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out), so "the model stopped compiling" fails the suite
+instead of silently costing throughput.
+
+**BLAS thread pinning (not optional).** Each worker runs a full CPU opponent forward; at the library
+default of one thread per core, N workers spawn N×cores competing threads. Measured on a 16-core box
+with 8 neural-opponent envs: **6 fps at load average 110, vs 231 fps pinned** — a ~38× cliff.
+`launcher/child.py` has always exported `OMP_NUM_THREADS=1`/`MKL_NUM_THREADS=1`, so production under
+the launcher was never affected, but `python src/main/train_rl_agent.py …` (a documented entry point)
+had no protection. `train_rl_agent` now sets them at import (`setdefault`, before torch is imported —
+BLAS reads them at init), and each env worker additionally pins `torch.set_num_threads(1)` so an
+explicit learner-side override can't silently un-pin the workers. Pinned by
+`src/main/thread_pinning_test.py`; the compile guards by `src/agents/model/compile_extractor_test.py`
+(incl. a regression that the global `suppress_errors` never comes back) and the uncompilable-op
+regression by `src/agents/model/species_posterior_compiles_test.py`.
+
+`tmp/production_cmd.py` reconstructs a runnable command from any run's `metadata.json` `cli_args`,
+diffing against the live parser's defaults and REPORTING (never silently dropping) flags the tree no
+longer has — that is how the production shape above was recovered.
+
 ## Gradient-balance + value-scale diagnostics (`grad_balance.py`)
 
 The dual-head extractor shares ONE transformer trunk between the policy and value heads

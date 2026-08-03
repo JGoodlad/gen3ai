@@ -27,9 +27,11 @@ Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `st
 
 `forward_internal` is decomposed into phase `nn.Module`s, chained by a thin orchestrator:
 
-`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `[MoveBelief? (prefuse)]` → `TeamTransformer` →
-`[BeliefHead?]` → `[MoveBelief? (default, post)]` → `CLSPool` → `[DamageOperator?]` →
-`[damage_reattend? → re-attend + RE-POOL]` → `ProjectionAssembler`, then **two** root heads
+`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `[MoveBelief? (prefuse)]` →
+`[SpreadBelief+HPTypeBelief+DamageOperator? (damage_op_prefuse, v50)]` → `TeamTransformer` →
+`[BeliefHead?]` → `[MoveBelief? (default, post)]` → `[SpreadBelief+HPTypeBelief+DamageOperator?
+(default, post)]` → `CLSPool` → `[damage_reattend? → re-attend + RE-POOL]` → `ProjectionAssembler`,
+then **two** root heads
 (`pre_proj_norm`/`projection` for policy, `value_pre_norm`/`value_projection` for value), each → `ReLU`.
 
 `BeliefSlots`/`BeliefHead` are built only when `opp_belief_slots` (`--opp-belief-aux-coef>0`),
@@ -151,6 +153,29 @@ _SB_ATK`) still resolves — the prober, `model_version`, `snapshot` and the tes
 **The gate for a refactor claiming to change nothing is proof, not review:** byte-identity on pi/vf +
 the raw op block (`tmp/damage_op_equiv_probe.py`), unchanged `state_dict` keys, the constructed-scenario
 physics oracle (`damage_op_probe_fuzz_test.py`, 22/22), and the full suite. All four held.
+
+## ⚠️ One op's SPELLING is load-bearing for `torch.compile` (`gen3_species_posterior_spelling_v1`)
+
+`BeliefHead.species_posterior` computes `P(species)` for the v36 expected-latent defender
+(`--threat-unrevealed-outgoing`). It is written as **`log_softmax(...).exp()`, not
+`torch.softmax(...)`, and that is deliberate** — do not "simplify" it.
+
+`torch.softmax` over the last dim of the `[B,6,n_species]` logits lowers to a numerator buffer plus a
+`[B,6,1]` denominator, and the Inductor **CPU** scheduler then trips `AssertionError: buf<N>` trying to
+fuse the division. That single op was the reason `--compile-extractor` used to set
+`torch._dynamo.config.suppress_errors = True`, which in turn meant the production config compiled only
+partially (3.6× instead of 6.53×) and every other backend failure in the process went silent.
+
+`tmp/softmax_variant_probe.py` measured the alternatives: `.contiguous()`, `.clone()`, a 2-D
+reshape and a hand-rolled `exp / sum` **all still fail**; only the `log_softmax().exp()` factoring
+lowers cleanly. It is mathematically identical and keeps the same max-subtraction stability (measured
+max|Δ| vs eager 5.07e-07). Guarded by `species_posterior_compiles_test.py` — the fast tests pin the
+math, and `GEN3AI_COMPILE_TESTS=1` runs a real compile of the literal production arch with
+suppression OFF (verified to fail if the old spelling returns). Repro: `tmp/inductor_crash_repro.py`.
+
+**The general lesson:** a backend that "can't compile our model" was one op, not a property of the
+architecture. Before reaching for a global suppression flag, bisect to the op — see
+`src/agents/training/CLAUDE.md` → Compiled CPU opponents.
 
 ## ⚠️ Identity-at-init is NOT free — SB3 clobbers it (`gen3_identity_init_guard_v1`)
 
@@ -1118,6 +1143,63 @@ only belief is computed POST-transformer, so the refine callback has nothing to 
 be a silent no-op; enforced at both the CLI (`parser.error`) and the extractor (`ValueError`). Threaded
 through `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles` + both
 `extractor_kwargs` sites. Current `MODEL_CONFIG_VERSION` = **47**.
+
+**Pre-attention unified damage operator (v50, `damage_op_prefuse` / `--damage-op-prefuse`,
+`gen3_damage_op_prefuse_v1`).** ONE damage computation per forward instead of two. v47 made the
+*belief* single-compute; the *physics* was still computed twice — a LEAN `discrete_*` recompute inside
+the between-layers refine loop (× `damage_refine_rounds`) **plus** the FULL 835-dim block after the
+transformer. When on, `_spread_hp_damage` (the shared helper holding `SpreadBelief` + `HPTypeBelief` +
+the move-latent table + the full `DamageOperator`) runs on the **PRE-transformer opp role tokens**, the
+per-OUR-mon incoming rows `[B,6,_DMG_PER_MON]` are added to our role tokens through the zero-init
+`prefuse_proj`, and the same block is concatenated into both projection heads:
+
+> beliefs ONCE (pre-attention) → physics ONCE → attention over that physics → heads read that same block
+
+**The case is CPU cost.** At B=1 on CPU — the PFSP frozen-opponent forward, once per decision per env,
+on the rollout critical path — the forward is 6.45 ms across 14,337 aten calls (~0.44 µs each ⇒
+DISPATCH-bound, so the lever is the NUMBER of ops issued). The op is ~75% of that (2.454 ms
+post-transformer + ~2.4 ms refine loop); the attention layers themselves are 0.266 ms (4%). Measured
+`--damage-refine-rounds` 2→1 = **+14.0%**, 2→0 = **+28.2%**. **The architectural story is secondary and
+this codebase's evidence is against it** — physics-into-the-trunk measured NULL 3-for-3 (ledger K9/K10:
+`--damage-reattend`, the refine/threat channels, `--pubval-mode`), and K10a showed the lean kernel was
+already a good proxy (91.8% argmax agreement on damage) so "fresher/fuller physics into attention" is a
+difference of FORM, not content. Do not sell this as a strength lever.
+
+**What it risks, and what bounds it.** Ledger P1 measured the op's HEAD CONCAT as the policy's largest
+single dependency (zeroing the block = masked KL 0.9385 all / 0.4948 moves), so the block must keep
+reaching the heads at full width — it does; only its INPUTS move from refined to un-refined tokens. Two
+properties bound that shift, both pinned in `damage_op_prefuse_test.py`:
+1. the toggle **requires `move_belief_prefuse`**, so the move belief — the op's dominant input — is
+   computed pre-transformer in BOTH shapes and is **bit-identical**; the only re-sourced inputs are the
+   **spread** and **HP-type** posteriors;
+2. at **cold start the damage block is bit-identical** pre vs post, because every belief head is
+   zero-init ⇒ its posterior is token-INDEPENDENT (move == Smogon prior, spread == usage prior, HP type
+   == Smogon prior). The divergence is created by TRAINING, not by the reordering.
+`tmp/damage_prefuse_kl.py` measures the trained-weights shift (block relative-L2 + masked KL) against
+the zero-block ceiling re-measured in the same tree. **Measured (3000 real bridge decision states, the
+500k-step `tmp/prefuse_probe_train.sh` snapshot, same weights, injection zeroed):** block cosine
+**0.988** (relative L2 mean 0.054 / median 0.009), masked KL(post‖pre) **0.0005** vs a re-measured
+zero-block ceiling of **0.0182** ⇒ the re-sourcing is **3.0% of the "delete the block" ceiling**, with
+**2.9%** of argmax actions flipping. Read it as a FLOOR: the snapshot is short-trained (its absolute
+ceiling 0.0182 is far below P1's 0.9385 on a fully-trained model — the ratio is the comparable number,
+not the levels), belief heads further from zero diverge more, and a fresh run trains UNDER the
+pre-attention shape rather than being swapped into it. **CPU win, same benchmark as the motivation**
+(`tmp/pfsp_opponent_sweep.py`, B=1, 1 thread, min of 200, idle box): **6.452 → 4.617 ms = +28.2%**,
+−4,126 aten calls. Note that `--damage-refine-rounds 0` alone measures 4.620 ms — i.e. **the CPU win IS
+the refine-loop deletion**; what the prefuse adds on top is ~free (one zero-init Linear over 6 tokens)
+and buys back a pre-attention physics path the bare deletion would lose.
+
+STRUCTURAL — `prefuse_proj` is a saved parameter — so it is gated in `check_compatible` with a bool
+compare (a mismatch is a state_dict mismatch on EVERY load, eval/pool/distill included); OFF is
+byte-for-byte (**NO `ARCH_SIGNATURE` bump**). Requires `damage_op` + `move_belief_prefuse`, and is
+**mutually exclusive with `damage_refine_rounds > 0`** (the loop is what it replaces; running both would
+restore the double cost). Consequence to know: the v36/v37 OUTGOING + STATUS trunk residuals ride that
+loop and are therefore NOT reproduced here — they are K10-null channels, and re-adding them would need
+their own projections. `move_belief_single_compute` becomes redundant (with no refine loop the belief is
+computed once by construction) but is harmless. Threaded through `current_model_version` /
+`arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs` sites. Tests:
+`damage_op_prefuse_test.py` (incl. identity-at-init on a REAL `MaskablePPO`-built policy — ledger M1).
+Current `MODEL_CONFIG_VERSION` = **50**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 
