@@ -1353,9 +1353,19 @@ the forkserver is not one. TWO independent sources of threads:
 Reviving it requires removing poke-env from the model layer's import graph (the feature extractor has
 no business importing a battle client), then re-checking `threading.active_count() == 1` in the
 forkserver AFTER the compile. `compile_prewarm.extractor_import_is_fork_safe()` encodes that
-precondition and `compile_prewarm_test.py` asserts it currently FAILS — the test is written to fail
-loudly with instructions if the situation ever improves, so the 250x-cheaper path is rediscovered by
-a test rather than forgotten.
+precondition and `compile_prewarm_test.py` asserts it currently FAILS — written to fail loudly with
+instructions if the situation ever improves, so the faster path is rediscovered by a test rather than
+forgotten.
+
+**But do NOT do it for throughput.** Per-worker compile would drop ~23 s -> 0.12 s, yet the
+decision-relevant number is wall clock to all-workers-ready, where the preload still pays its own
+one-time compile: **30.1 s -> 20.4 s (~1.5x)** at 16 workers, and maybe ~75 s -> ~25 s at 48. That is
+~50 s per launcher restart = **~0.5% of a 3 h window**, against a ~12-file refactor. The
+`agents.observation.*` modules import `AbstractBattle` purely for TYPE ANNOTATIONS in 11 places
+(`TYPE_CHECKING` would do), with a handful of genuine runtime uses (`to_id_str`, `SideCondition`,
+`Teambuilder`, `Pokemon`) needing vendoring or a lazy import — and note `poke_env/__init__.py`
+imports `poke_env.player`, so ANY `from poke_env.x import y` starts the loop thread. Worth doing as
+an ARCHITECTURE cleanup (the model layer should not import a battle client), not as a perf lever.
 
 **Failure is LOUD (`--compile-extractor-strict`).** Falling back to eager is a ~6.5× regression on the
 opponent forward that is otherwise invisible — the run just produces fewer steps/hour forever and

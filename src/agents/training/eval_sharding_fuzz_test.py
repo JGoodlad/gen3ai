@@ -14,7 +14,7 @@ well-formed and exact:
 Run directly (no pytest collection — no ``test_*`` functions), like the other fuzz suites::
 
     export PYTHONPATH=$PYTHONPATH:src
-    python src/agents/training/eval_sharding_fuzz_test.py [n_games] [shard_games]
+    python src/agents/training/eval_sharding_fuzz_test.py [n_games] [shard_games] [--compile]
 
 Skips with a clear message if no checkpoint is available (it needs real weights to play).
 """
@@ -37,7 +37,7 @@ def _find_checkpoint() -> str | None:
     return None
 
 
-def main(n_games: int = 8, shard_games: int = 3) -> int:
+def main(n_games: int = 8, shard_games: int = 3, compile_extractor: bool = False) -> int:
     ckpt = _find_checkpoint()
     if not ckpt:
         print("SKIP eval_sharding_fuzz: no checkpoint found under models/ (needs real weights).")
@@ -62,6 +62,10 @@ def main(n_games: int = 8, shard_games: int = 3) -> int:
             "snapshot": ckpt, "port": None, "use_showdown_bridge": True,
             "model_dir": None, "step": 0, "claim_dir": claim_dir, "result_dir": run_dir,
             "concurrency": 1, "device": "cpu", "cycle_tag": "fz", "worker_id": 0, "gamma": 0.99,
+            # --compile-extractor coverage: the worker torch.compiles the frozen TRAINEE (which plays
+            # every eval game) and each cached opponent. Value-preserving, so the SAME exactness
+            # assertions below apply unchanged — that is the point of running the fuzz both ways.
+            "compile_extractor": compile_extractor,
         }
         # Worker 0 drains the whole pool (the real loop: claim → play via bridge → publish).
         ew._run(cfg)
@@ -95,4 +99,6 @@ def main(n_games: int = 8, shard_games: int = 3) -> int:
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 8
     sg = int(sys.argv[2]) if len(sys.argv) > 2 else 3
-    sys.exit(main(n, sg))
+    # `--compile` runs the SAME assertions with the worker's extractors torch.compiled — the compile
+    # is value-preserving, so any divergence in the pooled result is a real bug.
+    sys.exit(main(n, sg, compile_extractor="--compile" in sys.argv))
