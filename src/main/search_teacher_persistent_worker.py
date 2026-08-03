@@ -64,6 +64,7 @@ def _publish_shard(output_dir, wid, seq, corrections):
 
 def run(cfg_path: str) -> None:
     from sb3_contrib import MaskablePPO
+    from agents.model.snapshot import maybe_compile_extractor
     from poke_env.ps_client import AccountConfiguration
     from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
     from agents.observation.state_encoder import load_mappings
@@ -109,6 +110,8 @@ def run(cfg_path: str) -> None:
     seq = 0
     read_fails = 0
     timeout = float(cfg.get("timeout", 300.0))
+    # Follows the run's --compile-extractor; this worker is pure frozen-model inference.
+    compile_extractor = bool(cfg.get("compile_extractor", False))
     recycle_every = int(cfg.get("recycle_every", 2000))   # Node V8-heap backstop (launcher 3h owns the rest)
     ss = SearchSession(timeout=timeout)
     try:
@@ -135,6 +138,11 @@ def run(cfg_path: str) -> None:
                           file=sys.stderr, flush=True)
                     time.sleep(1.0); continue
                 _silence(model)
+                # Frozen trainee, CPU, B=1 — the same shape as a training opponent, and this worker
+                # does nothing BUT forwards. Compile is gated on the run's --compile-extractor,
+                # threaded through the control file so the worker follows the parent's setting.
+                maybe_compile_extractor(model, compile_extractor, label=f"searchteacher{wid}:trainee",
+                                        hide_cuda=True)
                 trainee = build_eval_players(
                     model, ["t"], ttb, mappings, LocalhostServerConfiguration, 1, f"TG{wid}",
                     start_listening=False, gamma=gamma, reward_fn_factory=rfac)["t"]
@@ -153,6 +161,11 @@ def run(cfg_path: str) -> None:
                     if not os.path.exists(spec["path"]):
                         seq += 1; continue
                     om = MaskablePPO.load(spec["path"], env=None, device="cpu"); _silence(om)
+                    # Loaded EVERY iteration, so this leans on two properties: torch.compile keys on
+                    # the code object (so it is ~free after the first), and the helper's timing
+                    # validation is paid once per process.
+                    maybe_compile_extractor(om, compile_extractor,
+                                            label=f"searchteacher{wid}:opp", hide_cuda=True)
                     opp = RLPlayer(model=om, team=otb, battle_format="gen3ou",
                                    server_configuration=LocalhostServerConfiguration, mappings=mappings,
                                    account_configuration=AccountConfiguration(f"TGo{wid}", "pw"),

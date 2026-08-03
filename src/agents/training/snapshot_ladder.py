@@ -183,13 +183,18 @@ def fit_ladder(run_dir: str, base: float | None = None) -> dict:
 
 # ── playing a frozen pair (bridge, no server) ───────────────────────────────────────────────
 def _play_pair(run_dir, step_a, step_b, n_games, mappings, cv, all_teams, sample_teams,
-               concurrency, impl):
-    """Round-robin one frozen pair on the bridge; return (wins_a, games_finished)."""
+               concurrency, impl, compile_extractor=True):
+    """Round-robin one frozen pair on the bridge; return (wins_a, games_finished).
+
+    ``compile_extractor`` defaults ON here, unlike training where it is an explicit flag: this is an
+    OFFLINE tool, nothing is racing it for CPU, both players are frozen no-grad models, and the
+    one-time compile is repaid within the first rung of a 100-game ladder. The helper self-validates
+    and reverts if the compile does not actually pay, so the default cannot make this slower."""
     import torch
     torch.set_num_threads(1)  # defensive: B=1 CPU inference; the parallelism is across shards
     from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
     from agents.inference.player import RLPlayer
-    from agents.model.snapshot import load_foreign_opponent
+    from agents.model.snapshot import load_foreign_opponent, maybe_compile_extractor
     from utils.teambuilder import Gen3Teambuilder
     from utils.bridge.local_battle_runner import run_local_battles
 
@@ -203,6 +208,10 @@ def _play_pair(run_dir, step_a, step_b, n_games, mappings, cv, all_teams, sample
     def _player(step, tag):
         model, _ = load_foreign_opponent(_snapshot_zip(run_dir, step), current_version=cv,
                                          device="cpu", config_path=cfg)
+        # Pure frozen CPU inference over many games — exactly the shape --compile-extractor targets.
+        # On by default here (unlike training) because this is an offline analysis tool: nothing is
+        # racing it, and the ~10-20s compile is repaid within the first ladder rung.
+        maybe_compile_extractor(model, compile_extractor, label=f"ladder:{step}", hide_cuda=True)
         return RLPlayer(
             model=model, team=Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1),
             battle_format="gen3ou", server_configuration=LocalhostServerConfiguration,

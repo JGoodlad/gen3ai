@@ -49,6 +49,7 @@ from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.policy import Gen3DualHeadMaskablePolicy
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.extractor_arch import build_extractor_arch_kwargs
+from agents.model.compile_prewarm import prewarm_extractor_compile
 from agents.model.snapshot import save_model_snapshot, load_model_snapshot, read_checkpoint_metadata, record_checkpoint
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.inference.player import RLPlayer
@@ -3095,16 +3096,22 @@ async def main():
     emit(f"⚙️ Initializing {n_envs} envs ({EnvClass.__name__})"
          + (" — non-barrier async rollout" if _async_rollout else ""))
 
-    # --compile-extractor: make the compile a ONE-TIME cost. SB3's SubprocVecEnv uses the FORKSERVER
-    # start method, so every env worker is forked from one long-lived process; pre-loading the
-    # compile module there means the graph is traced ONCE and all N workers inherit it copy-on-write
-    # (measured: 9.6 s once + 0.12 s per worker, vs ~30 s EACH with only the on-disk cache). This
-    # MUST run before the first worker is created, because the preload list is baked into the
-    # forkserver when it launches. Uses the same arch table as the model build below, so the traced
-    # graph matches the one the workers will actually run — a mismatch is merely slow, not wrong.
+    # --compile-extractor: warm the SHARED on-disk Inductor cache in THIS process before any env
+    # worker exists, so the workers all hit it warm instead of racing on a cold one (measured
+    # 59.6 s -> 30.1 s wall for 16 workers). Uses the same arch table as the model build below, so
+    # the cached codegen is for the graph the workers will actually run.
+    #
+    # An earlier attempt went further — `set_forkserver_preload` on a module that compiles at
+    # import, so the graph is traced ONCE and every worker inherits it by fork (0.12 s per worker).
+    # It is NOT viable and must not be retried without fixing the cause: forking is only safe from a
+    # SINGLE-THREADED process, and the forkserver ends up with at least two extra threads —
+    # Inductor's 16-way parallel-codegen pool (which survives the compile) and poke-env's global
+    # asyncio loop thread, started at import by `agents.model.features_extractor`'s transitive
+    # poke-env dependency. A 48-env run with that preload forked 2 workers instead of 48 and hung
+    # forever, parent blocked in `unix_stream_data_wait`, box at 0.2 load. Guarded by
+    # `compile_prewarm_test.py`.
     if args.compile_extractor and not args.debug:
-        from agents.model.compile_preload import install_forkserver_preload
-        install_forkserver_preload(build_extractor_arch_kwargs(args), enabled=True)
+        prewarm_extractor_compile(build_extractor_arch_kwargs(args), mappings)
 
     _shutdown_event = threading.Event()
 
@@ -3412,6 +3419,7 @@ async def main():
             server_config=server_config,
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
+            compile_extractor=args.compile_extractor,
             bridge_impl=args.bridge_impl,
             best_model_save_path=os.path.join(model_dir, "best_model"),
             promote_threshold=_promote_threshold,
@@ -3472,6 +3480,7 @@ async def main():
             eval_shard_games=args.eval_shard_games,
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
+            compile_extractor=args.compile_extractor,
             bridge_impl=args.bridge_impl,
             resume_eval_metadata=_resume_meta,
             keep_eval_snapshots=args.keep_eval_snapshots,

@@ -1309,31 +1309,40 @@ warm shared cache 30.1 s.** So `TORCHINDUCTOR_CACHE_DIR` is not a nicety — wit
 nearly triples. The residual ~30 s is dynamo tracing + guard construction, which the on-disk cache
 cannot remove, and it is paid once per launcher restart (every 3 h).
 
-**Compile ONCE in the forkserver — `agents.model.compile_preload` (BUILT).** `torch.compile` returns
-a live Python object, so it cannot be pickled into a worker; only the on-disk cache crosses a `spawn`
-boundary. But SB3's `SubprocVecEnv` does **not** use spawn — it calls `mp.get_context("forkserver")`
-explicitly (ignoring our process-wide `set_start_method('spawn', force=True)`), and a forkserver child
-inherits the forkserver's memory copy-on-write, dynamo's traced-graph and guard state included. So
-`train_rl_agent` calls `install_forkserver_preload(...)` **before creating the vec env** (the preload
-list is baked in when the forkserver launches), and the graph is traced once for the whole run.
+**Warm the Inductor cache in the parent — `agents.model.compile_prewarm` (BUILT).** Each env worker
+compiles its own frozen opponent. `train_rl_agent` calls `prewarm_extractor_compile(...)` before the
+vec env exists, so the workers hit a WARM shared on-disk cache instead of racing on a cold one:
+**59.6 s -> 30.1 s** wall for 16 workers (`tmp/compile_spawn_cost.py`; a private cache per worker is
+163.4 s, so `TORCHINDUCTOR_CACHE_DIR` is load-bearing). It builds the extractor from
+`build_extractor_arch_kwargs(args)` — the same table the real model uses — so the cached codegen is
+keyed to the graph the workers actually run; weights are graph INPUTS, not baked constants, so a
+fresh random extractor warms the cache for every opponent checkpoint.
 
-**Measured end to end** (`tmp/preload_integration_probe.py`, 6 workers, each building its OWN
-extractor instance with DIFFERENT weights and calling the real `maybe_compile_extractor`):
+**⚠️ THE FORKSERVER PRELOAD DOES NOT WORK — and its failure mode is a HANG.** SB3's `SubprocVecEnv`
+uses `mp.get_context("forkserver")`, and a forkserver child inherits memory copy-on-write, so
+`set_forkserver_preload` on a module that compiles at import would hand every worker a ready-made
+graph (a standalone probe measured **0.12 s per worker**, vs ~30 s). It was built, wired, and **it
+wedged a real 48-env run**: the forkserver logged a successful compile, the trainer then forked **2
+workers instead of 48** and hung indefinitely — parent blocked in `unix_stream_data_wait` on the
+forkserver socket, workers idle in `anon_pipe_read`, whole box at **0.2 load average**, no error and
+no traceback. (Textbook `IDLE cpu = DEADLOCK`.)
 
-| | one-time | per worker |
-|---|---|---|
-| no preload, warm on-disk cache | — | ~30 s **each** (O(N)) |
-| **forkserver preload** | **9.6 s once** | **0.12 s** |
+Root cause: `fork()` gives the child only the calling thread but copies every MUTEX, including ones
+held by threads that no longer exist — so forking is safe only from a SINGLE-THREADED process, and
+the forkserver is not one. TWO independent sources of threads:
+1. Inductor's parallel-codegen pool (`compile_threads` = **16** here) survives the compile. This one
+   is fixable — `torch._inductor.async_compile.shutdown_compile_workers()` clears it.
+2. **poke-env's global asyncio loop thread** (`poke_env.concurrency.__run_loop`) is started at
+   IMPORT time, and `agents.model.features_extractor` transitively imports **37 poke-env modules**.
+   Merely importing the extractor makes the process multi-threaded, and nothing the preload does
+   from the outside can undo that.
 
-All workers kept the compile at 6.1–6.6×, steady forward 1.05 ms. The 0.12 s is dominated by the
-helper's OWN eager-vs-compiled timing benchmark (~15 eager forwards at 6.8 ms); the compile lookup
-itself is ~0.02 s, because dynamo caches on the CODE OBJECT and the worker inherited that cache.
-
-**The arch must match.** The preload builds its extractor from
-`build_extractor_arch_kwargs(args)` — the same table the real model uses — serialised through
-`GEN3AI_COMPILE_PRELOAD_ARCH`. If it ever diverged, the workers' guards would miss and they would
-re-trace: **slow, never wrong**. A preload that fails to import is ignored by CPython's forkserver, so
-the worst case degrades to per-worker compiles.
+Reviving it requires removing poke-env from the model layer's import graph (the feature extractor has
+no business importing a battle client), then re-checking `threading.active_count() == 1` in the
+forkserver AFTER the compile. `compile_prewarm.extractor_import_is_fork_safe()` encodes that
+precondition and `compile_prewarm_test.py` asserts it currently FAILS — the test is written to fail
+loudly with instructions if the situation ever improves, so the 250x-cheaper path is rediscovered by
+a test rather than forgotten.
 
 **Failure is LOUD (`--compile-extractor-strict`).** Falling back to eager is a ~6.5× regression on the
 opponent forward that is otherwise invisible — the run just produces fewer steps/hour forever and
@@ -1346,6 +1355,38 @@ would rather fail at startup than find it in the FPS graph a day later.
 suppression OFF and asserts 1 graph / 0 breaks + value equality. It runs **by default** (~10 s on a
 warm cache; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out), so "the model stopped compiling" fails the suite
 instead of silently costing throughput.
+
+### Every non-training model can use it
+
+`maybe_compile_extractor` is safe to apply to ANY frozen model, because the wrapper routes
+**grad-enabled calls to eager**. That matters: the compiled artifact is inference-only (under
+`requires_grad` dynamo hands the graph to AOTAutograd, whose CPU backward codegen fails on this
+model's scatter/`index_add` — the documented reason the June `--compile-damage-op` integration was
+inference-only), and the prober backprops through this same extractor for gradient saliency.
+
+| consumer | what is compiled | gate |
+|---|---|---|
+| training env workers | pool / stable / exploiter opponents | `--compile-extractor` (+ forkserver preload) |
+| `eval_worker` | **the trainee** (plays every eval game) + sentinel + fixed opponents | `compile_extractor` cfg key, threaded from both eval callbacks |
+| `search_teacher_persistent_worker` | trainee (per re-freeze) + opponent (per iteration) | `compile_extractor` cfg key |
+| `snapshot_ladder` | both frozen ladder players | **default ON** — offline tool, nothing races it |
+| prober (`session._load`) | the no-grad replay / rollout models | `--compile` (off by default) |
+| `play.py` | nothing — it runs `RandomPlayer` vs `RandomPlayer`, no neural model | n/a |
+
+Eval workers are fresh `Popen` processes, so they cannot inherit the trainer forkserver's compile —
+but they do hit the shared on-disk Inductor cache the trainer already warmed, and one worker plays
+hundreds of games, so the compile repays many times over.
+
+**Validation is paid once per process** (`_COMPILE_VALIDATED`). The eager-vs-compiled timing answers
+"does this extractor's code object compile to something faster?", and `torch.compile` keys on exactly
+that code object — so a second model in the same process cannot get a different answer. Consumers that
+load models in a LOOP (the search-teacher worker rebuilds its opponent every iteration) would
+otherwise re-pay ~15 eager forwards each time. Deliberately process-local: a fresh process
+re-validates, since that is where a cold cache or a failing backend would actually show up.
+
+The prober flag is OFF by default because a one-off `summary`/`list` never amortizes a ~10-20 s
+compile; turn it on for the search-shaped commands (`better-line`, `falsify`, `falsify-scan`,
+`replay-counterfactual`, `lookahead`), which do thousands of no-grad rollout forwards.
 
 **BLAS thread pinning (not optional).** Each worker runs a full CPU opponent forward; at the library
 default of one thread per core, N workers spawn N×cores competing threads. Measured on a 16-core box

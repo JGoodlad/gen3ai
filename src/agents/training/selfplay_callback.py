@@ -142,6 +142,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         server_config=LocalhostServerConfiguration,
         showdown_port: int | None = None,
         use_showdown_bridge: bool = False,
+        compile_extractor: bool = False,
         bridge_impl: str = "node",
         best_model_save_path: str | None = None,
         promote_threshold: float = 0.65,
@@ -210,6 +211,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         self._showdown_port = showdown_port
         # Bridge eval: workers play in-process via run_local_battles (no server connection).
         self._use_showdown_bridge = use_showdown_bridge
+        self._compile_extractor = compile_extractor
         # Which bridge child the workers spawn when use_showdown_bridge: "node" | "rust".
         self._bridge_impl = bridge_impl
         self.best_model_save_path = best_model_save_path
@@ -390,6 +392,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             "snapshot": snapshot_zip,
             "port": self._showdown_port,
             "use_showdown_bridge": self._use_showdown_bridge,
+            "compile_extractor": self._compile_extractor,
             "bridge_impl": self._bridge_impl,
             "model_dir": self._model_dir,
             "step": step,

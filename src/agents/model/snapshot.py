@@ -603,6 +603,15 @@ _MIN_COMPILE_SPEEDUP = 1.05
 _TIMING_REPS = 12
 _TIMING_WARMUP = 3
 
+# Set once a compile has been MEASURED to pay off in this process. The validation answers "does this
+# extractor's code object compile to something faster?", and `torch.compile` keys on exactly that
+# code object — so the answer cannot differ for a second model in the same process. Consumers that
+# load models in a LOOP (the search-teacher worker rebuilds its opponent every iteration; an eval
+# worker walks several opponents) would otherwise re-pay ~15 eager forwards each time for an answer
+# they already have. Deliberately process-local: a fresh process re-validates, because that is where
+# a genuinely different outcome (a cold cache, a failing backend) could show up.
+_COMPILE_VALIDATED = False
+
 
 def _compile_warn(msg: str) -> None:
     """Report a compile problem LOUDLY.
@@ -687,16 +696,18 @@ def maybe_compile_extractor(model, enabled: bool, label: str = "opponent",
     if hasattr(fe, "disable_observation_debugger"):
         fe.disable_observation_debugger()             # numpy asserts inside forward; dynamo can't trace
 
+    global _COMPILE_VALIDATED
+    revalidate = not _COMPILE_VALIDATED
     original = fe.forward
     warmup = _compile_warmup_obs(fe)
     try:
-        eager_ms = _time_forward(fe.forward, warmup)
+        eager_ms = _time_forward(fe.forward, warmup) if revalidate else 0.0
         compiled = torch.compile(fe.forward)
         # Force the compile HERE, inside the try — `torch.compile` is lazy, so without this the real
         # compilation happens on the first live decision, far outside this handler.
         with torch.no_grad():
             compiled(warmup)
-        comp_ms = _time_forward(compiled, warmup)
+        comp_ms = _time_forward(compiled, warmup) if revalidate else 0.0
     except Exception as e:                            # by default never take a run down for a perf knob
         fe.forward = original
         msg = f"{label}: DISABLED — {type(e).__name__}: {str(e)[:200]}"
@@ -704,6 +715,10 @@ def maybe_compile_extractor(model, enabled: bool, label: str = "opponent",
         if strict:
             raise CompileExtractorError(msg) from e
         return False
+
+    if not revalidate:                                # already proven in this process — just keep it
+        fe.forward = _eager_fallback_on_error(compiled, original, label)
+        return True
 
     speedup = eager_ms / comp_ms if comp_ms > 0 else 0.0
     if speedup < _MIN_COMPILE_SPEEDUP:
@@ -720,31 +735,44 @@ def maybe_compile_extractor(model, enabled: bool, label: str = "opponent",
         return False
 
     fe.forward = _eager_fallback_on_error(compiled, original, label)
+    _COMPILE_VALIDATED = True
     print(f"[CompileExtractor] {label}: ON — {eager_ms:.2f} -> {comp_ms:.2f} ms "
           f"({speedup:.1f}x, cache {cache_dir})", flush=True)
     return True
 
 
 def _eager_fallback_on_error(compiled, original, label: str):
-    """Wrap the compiled callable so a LATE failure degrades this model to eager instead of killing
-    the run.
+    """Wrap the compiled callable so it degrades to eager instead of killing the caller.
 
-    `torch.compile` guards on input properties, so a shape/dtype it has not seen can trigger a fresh
-    trace at CALL time — long after the try/except above has returned. Opponent inference is always
-    B=1 so that should not happen, but "should not" is not a guarantee worth a crashed 3-hour run.
-    This is the targeted replacement for the old global `suppress_errors=True`: same
-    never-crash-the-run property, but scoped to ONE model, and it says so in the log instead of
-    silently running eager while claiming to be compiled."""
+    TWO things it guards:
+
+    1. A LATE compile failure. `torch.compile` guards on input properties, so a shape/dtype it has
+       not seen can trigger a fresh trace at CALL time — long after the load-time try/except
+       returned. Opponent inference is always B=1 so that should not happen, but "should not" is not
+       a guarantee worth a crashed 3-hour run. This is the targeted replacement for the old global
+       `suppress_errors=True`: same never-crash property, scoped to ONE model, and it SAYS so
+       instead of silently running eager while claiming to be compiled.
+
+    2. GRAD-ENABLED calls. The compiled artifact here is built for INFERENCE. Under `requires_grad`
+       dynamo hands the graph to AOTAutograd, which must also lower the BACKWARD — and Inductor's
+       CPU backward codegen fails on this model's scatter/`index_add` (the HP-type belief); that is
+       the documented reason the June `--compile-damage-op` integration was inference-only. Every
+       frozen-opponent consumer runs under `no_grad`, but the PROBER does not: gradient saliency
+       backprops through this same extractor. So route grad-enabled calls to eager. Value-identical
+       either way, and it keeps `maybe_compile_extractor` safe to apply to any non-training model
+       rather than only the ones we have audited for no_grad."""
+    import torch
+
     state = {"failed": False}
 
     def guarded(obs):
-        if state["failed"]:
+        if state["failed"] or torch.is_grad_enabled():
             return original(obs)
         try:
             return compiled(obs)
         except Exception as e:
             state["failed"] = True
-            _compile_warn(f"{label}: FELL BACK to eager mid-run (this opponent is now ~6x slower) — "
+            _compile_warn(f"{label}: FELL BACK to eager (this model is now ~6x slower) — "
                           f"{type(e).__name__}: {str(e)[:200]}")
             return original(obs)
 

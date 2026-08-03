@@ -149,6 +149,67 @@ def test_late_failure_falls_back_to_eager_instead_of_raising(monkeypatch):
     assert out.shape == (1, 8)
 
 
+def test_validation_is_paid_once_per_process(monkeypatch):
+    """Consumers that load models in a LOOP (the search-teacher worker rebuilds its opponent every
+    iteration) must not re-pay ~15 eager forwards for an answer that cannot have changed —
+    `torch.compile` keys on the code object, so the second model in a process has the same answer."""
+    monkeypatch.setattr(S, "_COMPILE_VALIDATED", False)
+    calls = {"n": 0}
+    fe1 = _FE(cost_ms=2.0)
+
+    def counting_compile(_fn):
+        calls["n"] += 1
+        return lambda obs: fe1.lin(obs["observation"])
+
+    monkeypatch.setattr(torch, "compile", counting_compile)
+    assert S.maybe_compile_extractor(_model(fe1), True, label="first") is True
+    assert S._COMPILE_VALIDATED is True
+
+    # A second model: still compiled, but the eager/compiled timing is skipped.
+    fe2 = _FE(cost_ms=2.0)
+    fe2_forwards = {"n": 0}
+    orig_forward = fe2.forward
+
+    def counted_forward(obs):
+        fe2_forwards["n"] += 1
+        return orig_forward(obs)
+
+    fe2.forward = counted_forward
+    monkeypatch.setattr(torch, "compile", lambda _fn: (lambda obs: fe1.lin(obs["observation"])))
+    assert S.maybe_compile_extractor(_model(fe2), True, label="second") is True
+    assert fe2_forwards["n"] == 0, (
+        f"the second compile re-ran {fe2_forwards['n']} eager timing forwards; validation should be "
+        f"once per process"
+    )
+
+
+def test_grad_enabled_calls_route_to_eager(monkeypatch):
+    """The compiled artifact is INFERENCE-only: under grad, dynamo hands the graph to AOTAutograd,
+    which must lower the BACKWARD too, and Inductor's CPU backward codegen fails on this model's
+    scatter/index_add. Frozen opponents always run under no_grad, but the PROBER backprops through
+    the same extractor for saliency — so grad-enabled calls must take the eager path."""
+    fe = _FE(cost_ms=2.0)
+    used = {"compiled": 0}
+
+    def counting(_fn):
+        def wrapper(obs):
+            used["compiled"] += 1
+            return fe.lin(obs["observation"])
+        return wrapper
+
+    monkeypatch.setattr(torch, "compile", counting)
+    assert S.maybe_compile_extractor(_model(fe), True, label="grad") is True
+    obs = {"observation": torch.zeros(1, 8)}
+    before = used["compiled"]
+    with torch.no_grad():
+        fe.forward(obs)
+    assert used["compiled"] == before + 1, "no_grad must use the compiled path"
+    with torch.enable_grad():
+        out = fe.forward(obs)
+    assert used["compiled"] == before + 1, "grad-enabled must NOT use the compiled path"
+    assert out.requires_grad, "the eager path must still build a graph for saliency"
+
+
 def test_hide_cuda_true_hides_the_device(monkeypatch):
     """The 48x CUDA-context OOM guard: an env worker must hide the GPU BEFORE inductor runs."""
     monkeypatch.setattr(torch.cuda, "is_initialized", lambda: False)

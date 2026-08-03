@@ -397,9 +397,11 @@ graph breaks, max|Δ| vs eager 5.07e-07), and **+31% marginal training FPS at `-
 (That FPS A/B predates the `species_posterior` fix, so it was measured on a partially-compiled 3.6×
 graph; the end-to-end number at 6.53× is not yet re-measured.)
 
-The compile is a **one-time cost**: SB3's `SubprocVecEnv` uses the **forkserver** start method, so
-`agents.model.compile_preload` traces the graph ONCE in the forkserver (~7-10 s) and every worker
-inherits it copy-on-write — **0.12 s per worker**, vs ~30 s each with only the on-disk Inductor cache.
+Startup: `agents.model.compile_prewarm` warms the shared on-disk Inductor cache in the trainer before
+any worker exists, halving worker startup (**59.6 s -> 30.1 s** wall for 16 workers). Going further —
+a `set_forkserver_preload` that compiles ONCE and lets workers inherit it (0.12 s each) — **was built
+and HUNG a 48-env run**; forking is only safe from a single-threaded process and the extractor import
+starts poke-env's global asyncio loop thread. See the training leaf before retrying it.
 Failure is loud on stderr + the launcher event stream, and `--compile-extractor-strict` promotes it to
 a hard error (falling back to eager is an invisible ~6.5× regression). "The model still compiles" is a
 **default-on test** (`species_posterior_compiles_test.py`; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out).

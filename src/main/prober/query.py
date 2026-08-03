@@ -98,6 +98,14 @@ def _build_parser() -> argparse.ArgumentParser:
                     "calibration).",
         epilog=_EXAMPLES, formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+    # Applies to the SEARCH-shaped commands (better-line / falsify / falsify-scan /
+    # replay-counterfactual / lookahead), which do thousands of no-grad B=1 CPU rollout forwards.
+    # Off by default because a one-off summary/list would never amortize the ~10-20s compile.
+    p.add_argument("--compile", dest="compile_extractor", action="store_true",
+                   help="torch.compile the replay/rollout models (~6.5x per forward, ~10-20s "
+                        "one-time). Worth it for better-line / falsify / falsify-scan / "
+                        "replay-counterfactual; pointless for summary/list.")
+
     sub = p.add_subparsers(dest="cmd", required=True)
 
     ps = sub.add_parser("summary", help="orient on a run: steps/opponents/win-loss/identity")
@@ -329,24 +337,27 @@ def _run(args) -> object:
             step=args.step, opponent=args.opponent, outcome=args.outcome,
             max_battles=args.max_battles)
     if args.cmd == "falsify":
-        return ProbeSession(args.battle).falsify(
+        return ProbeSession(args.battle, compile_extractor=args.compile_extractor).falsify(
             args.battle, invs=args.inv, worst=args.worst,
             n_seeds=args.seeds, n_alts=args.alts, followup=args.followup)
     if args.cmd == "lookahead":
-        return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier).lookahead(
+        return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier,
+                            compile_extractor=args.compile_extractor).lookahead(
             args.battle, inv=args.inv, worst=args.worst,
             n_seeds=args.seeds, followup=args.followup)
     if args.cmd == "better-line":
-        return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier).better_line(
+        return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier,
+                            compile_extractor=args.compile_extractor).better_line(
             args.battle, args.inv, depth=args.depth, beam=args.beam, top_k=args.top_k,
             followup=args.followup, interior_opponent=args.interior_opponent,
             opponent_ckpt=args.opponent_ckpt, confirm_rollouts=args.confirm_rollouts)
     if args.cmd == "replay-counterfactual":
-        return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier).replay_counterfactual(
+        return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier,
+                            compile_extractor=args.compile_extractor).replay_counterfactual(
             args.battle, args.inv, args.action, n_rollouts=args.rollouts,
             opponent_ckpt=args.opponent_ckpt, opponent_source=args.opponent_source, narrate=args.narrate)
     if args.cmd == "falsify-scan":
-        return ProbeSession(args.root).falsify_scan(
+        return ProbeSession(args.root, compile_extractor=args.compile_extractor).falsify_scan(
             outcome=args.outcome, opponent=args.opponent, step=args.step,
             limit=args.limit, worst=args.worst, n_seeds=args.seeds,
             n_alts=args.alts, followup=args.followup, concurrency=args.concurrency)

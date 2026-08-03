@@ -46,7 +46,8 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 from poke_env.ps_client.server_configuration import localhost_server_configuration
 
 from agents.inference.player import RLPlayer
-from agents.model.snapshot import current_model_version, load_model_snapshot, load_foreign_opponent
+from agents.model.snapshot import (current_model_version, load_model_snapshot,
+                                   load_foreign_opponent, maybe_compile_extractor)
 from agents.observation.state_encoder import load_mappings
 from agents.training.eval_callback import (
     BATTLE_FORMAT, build_eval_opponents, build_eval_players, episode_length_sum,
@@ -88,15 +89,24 @@ def _fixed_opponent_tb(item, opp_tb):
     return opp_tb
 
 
-def _get_opponent_model(cache: dict, path: str, loader):
+def _get_opponent_model(cache: dict, path: str, loader, compile_extractor: bool = False,
+                        device: str = "cpu"):
     """Return the opponent model for ``path``, loading it once per worker and caching it.
 
     Amortizes the ~27MB ``load_model_snapshot`` / ``load_foreign_opponent`` deserialize across all
     of an item's shards (and across shards of distinct items that share a path). Safe to cache: the
     snapshot at ``path`` is a frozen file, immutable for the cycle; the version check is part of the
-    first real load, so a cache hit can't smuggle in an incompatible model."""
+    first real load, so a cache hit can't smuggle in an incompatible model.
+
+    The compile rides this same cache, so it is paid at most once per distinct opponent — and since
+    `torch.compile` keys on the CODE OBJECT, only the FIRST opponent in a worker pays; later ones
+    hit the in-process dynamo cache in ~0s."""
     if path not in cache:
-        cache[path] = loader()
+        model = loader()
+        maybe_compile_extractor(model, compile_extractor,
+                                label=f"eval-opp:{os.path.basename(path)}",
+                                hide_cuda=str(device).startswith("cpu"))
+        cache[path] = model
     return cache[path]
 
 
@@ -111,7 +121,7 @@ async def _play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl
 def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, opp_tb,
                mappings, server_config, concurrency, device, model_dir, step, tag, wid,
                use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory,
-               bridge_impl="node") -> ShardResult:
+               bridge_impl="node", compile_extractor=False) -> ShardResult:
     """Play one shard unit and return its RAW (additive) result.
 
     A fresh trainee + opponent are built per unit so the measurement (win count, reward sum, δ
@@ -133,7 +143,8 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
         opp_model = _get_opponent_model(
             opp_model_cache, item.path,
             lambda: load_model_snapshot(item.path, env=None,
-                                        current_version=current_version, device=device))
+                                        current_version=current_version, device=device),
+            compile_extractor=compile_extractor, device=device)
         opponent = RLPlayer(
             model=opp_model, team=opp_tb, battle_format=BATTLE_FORMAT,
             server_configuration=server_config, mappings=mappings,
@@ -145,7 +156,8 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
         opp_model = _get_opponent_model(
             opp_model_cache, item.path,
             lambda: load_foreign_opponent(item.path, current_version=current_version,
-                                          device=device, config_path=item.config_path)[0])
+                                          device=device, config_path=item.config_path)[0],
+            compile_extractor=compile_extractor, device=device)
         fixed_tb = _fixed_opponent_tb(item, opp_tb)
         opponent = RLPlayer(
             model=opp_model, team=fixed_tb, battle_format=BATTLE_FORMAT,
@@ -215,6 +227,14 @@ def _run(cfg: dict) -> None:
 
     # Frozen trainee weights — inference only, so the base algorithm + env=None is enough.
     model = MaskablePPO.load(cfg["snapshot"], env=None, device=device)
+    # The trainee plays EVERY eval game, so it is the hottest forward in this process. Same frozen
+    # CPU B=1 shape as a training opponent => the same ~6.5x. Unlike an env worker this is a fresh
+    # `Popen`d process (not forked from the trainer's forkserver), so it cannot inherit a compiled
+    # graph — but it does hit the shared on-disk Inductor cache the trainer already warmed, and one
+    # worker plays hundreds of games, so the compile pays back many times over.
+    compile_extractor = bool(cfg.get("compile_extractor", False))
+    maybe_compile_extractor(model, compile_extractor, label="eval-trainee",
+                            hide_cuda=str(device).startswith("cpu"))
 
     # The trainee's reward factory — built from the RUN's model_config.json (the single source of
     # truth the version check already records), so eval MEASURES with the same reward the policy was
@@ -253,7 +273,8 @@ def _run(cfg: dict) -> None:
         res = _play_unit(
             unit, pool, model, opp_model_cache, current_version, trainee_tb, opp_tb,
             mappings, server_config, concurrency, device, model_dir, step, tag, wid,
-            use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory, bridge_impl)
+            use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory, bridge_impl,
+            compile_extractor)
         pool.publish(result_dir, res)
 
 

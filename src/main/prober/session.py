@@ -27,6 +27,8 @@ from dataclasses import asdict
 
 import numpy as np
 
+from agents.model.snapshot import maybe_compile_extractor
+
 from main.prober.discovery import (
     BattleTrace,
     ModelChoice,
@@ -363,7 +365,7 @@ _PROBE_TARGETS = {
 
 class ProbeSession:
     def __init__(self, root: str, ckpt_override: "str | None" = None, tier: str = "auto",
-                 model_loader=None) -> None:
+                 model_loader=None, compile_extractor: bool = False) -> None:
         self.tree = build_trace_tree(root)
         self.run_dir = self.tree.run_dir
         self._override = ckpt_override
@@ -372,6 +374,10 @@ class ProbeSession:
         self._models: dict = {}                 # checkpoint path → ProbeModel
         self._play_models: dict = {}            # checkpoint path → MaskablePPO (counterfactual replay players)
         self._cf_mappings = None                # lazily-loaded encoder mappings for the replay players
+        # torch.compile the no-grad replay models (see _load below). OFF by default: a one-off
+        # `summary`/`list` query would never amortize the compile. Worth it for the search-shaped
+        # commands — better-line, falsify, falsify-scan, replay-counterfactual, lookahead.
+        self._compile_extractor = bool(compile_extractor)
         self._summaries: "dict[str, dict]" = {}
         self._by_path = {b.summary_path: b for b in self.tree.all_battles()}
         self._by_short = {_short_id(b): b for b in self.tree.all_battles()}
@@ -790,6 +796,14 @@ class ProbeSession:
                 for mod in m.policy.modules():
                     if hasattr(mod, "_debugger"):
                         mod._debugger = None
+                # These models are used ONLY for no-grad rollouts (better-line's beam,
+                # replay-counterfactual's Monte-Carlo re-rolls, falsify's paired sweeps) — thousands
+                # of B=1 CPU forwards, the exact shape --compile-extractor targets. Gated on
+                # `compile_extractor` because a one-off `summary`/`list` query should not pay a
+                # ~10-20s compile it will never amortize. Grad-enabled calls (saliency) are routed
+                # to eager inside the helper, so this cannot break the gradient paths.
+                maybe_compile_extractor(m, self._compile_extractor,
+                                        label=f"prober:{os.path.basename(path)}", hide_cuda=True)
                 self._play_models[path] = m
             return m
 

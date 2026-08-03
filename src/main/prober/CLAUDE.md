@@ -858,6 +858,23 @@ The **Counterfactual** Collapsible (NOT a digit-toggled `_SECTIONS` entry — op
   analog of the trace's recorded distributional/win-prob arrays — a re-rolled successor has no saved row,
   so they re-read the head stash after a forward on s′, mirroring `belief`/`damage_op_view`).
 
+## `--compile` (search-shaped commands)
+
+`python -m main.prober.query --compile <cmd> …` `torch.compile`s the no-grad replay/rollout models
+that `session._load` builds (`ProbeSession(..., compile_extractor=True)`), for a measured **~6.5×** per
+B=1 CPU forward at a ~10-20 s one-time cost.
+
+**Off by default, and use it selectively.** A one-off `summary` / `list` / `analyze` does a handful of
+forwards and would never amortize the compile. It pays for the SEARCH-shaped commands, which do
+thousands: `better-line` (a CRN-anchored beam), `falsify` / `falsify-scan` (paired alternative-action
+sweeps × seeds), `replay-counterfactual` (Monte-Carlo re-rolls to a win/loss), `lookahead`.
+
+**Gradient saliency is unaffected.** `history-saliency` and the gradient paths backprop through this
+same extractor, and the compiled artifact is inference-only (AOTAutograd's CPU backward codegen fails
+on the model's scatter/`index_add`). `maybe_compile_extractor`'s wrapper routes any **grad-enabled**
+call to the eager forward, so `--compile` cannot change or break a saliency result — it simply does
+not apply there. Detail: `src/agents/training/CLAUDE.md` → Compiled CPU opponents.
+
 ## Gotchas
 
 - **Move-action labels are ALREADY in action-index order — do NOT re-sort them.** The recorded

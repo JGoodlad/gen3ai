@@ -1059,6 +1059,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         eval_games: int | None = None,
         showdown_port: int | None = None,
         use_showdown_bridge: bool = False,
+        compile_extractor: bool = False,
         bridge_impl: str = "node",
         resume_eval_metadata: str | None = None,
         keep_eval_snapshots: int = 10,
@@ -1093,6 +1094,9 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         self._showdown_port = showdown_port
         # Bridge eval: workers play in-process via run_local_battles (no server connection).
         self._use_showdown_bridge = use_showdown_bridge
+        # Runtime perf knob, threaded to the eval workers exactly like the bridge flag: they
+        # run the SAME frozen extractor on CPU at B=1, so they get the same ~6.5x.
+        self._compile_extractor = compile_extractor
         # Which bridge child the workers spawn when use_showdown_bridge: "node" | "rust".
         self._bridge_impl = bridge_impl
         # >0: persist the eval weight snapshot into eval_traces/step_<N>/snapshot.zip
@@ -1208,6 +1212,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
             "snapshot": snapshot_zip,
             "port": self._showdown_port,
             "use_showdown_bridge": self._use_showdown_bridge,
+            "compile_extractor": self._compile_extractor,
             "bridge_impl": self._bridge_impl,
             "model_dir": self._model_dir,
             "step": step,
