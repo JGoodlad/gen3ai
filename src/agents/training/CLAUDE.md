@@ -1268,7 +1268,20 @@ records that `.contiguous()`, `.clone()`, a 2-D reshape and a hand-rolled `exp /
 FAIL**, so the spelling is load-bearing; it is pinned by `species_posterior_compiles_test.py` (opt-in
 via `GEN3AI_COMPILE_TESTS=1`, a real ~20 s compile — verified to FAIL if the old spelling returns).
 
-**Measured end-to-end (the number that decides it):** at the production `--n-envs 48` shape with
+**Measured end-to-end on the LITERAL production arch (`tmp/literal_arch_ab.sh`, 2026-08-03):**
+marginal FPS **406.5 -> 541.8 = +33.3%** at `--n-envs 48`, 4 samples per arm, **ranges disjoint**
+(off max 417 < on min 512), 48/48 workers compiled, 0 reverts. This arm is the one the earlier A/B
+could not run: `--threat-unrevealed-outgoing` used to crash Inductor, so that measurement had to drop
+it plus the refine loop.
+
+**READ THE TWO NUMBERS TOGETHER — the per-forward win has SATURATED.** Fixing the softmax doubled the
+per-forward speedup (3.6x -> 6.53x), but end-to-end moved only 31.0% -> 33.3% (and those are
+different arches, so even that 2.3pt is generous). Amdahl: the opponent forward is no longer the
+rollout bottleneck. Whatever is left — obs build, protocol parse, bridge wait, the PPO update — now
+dominates, so further compiler work on this path is spent effort. The next throughput lever has to
+come from a different stage.
+
+**Prior measurement, reduced arch** at the production `--n-envs 48` shape with
 `--async-rollout --grad-checkpointing --self-play --self-play-use-cpu` against a seeded pool, marginal
 FPS **498 → 653 = +31.0%**, 6 samples per arm, **ranges disjoint** (off max 512 < on min 614). It is
 the first throughput lever here that the `SubprocVecEnv` barrier does NOT absorb — the win is *larger*

@@ -392,10 +392,11 @@ knob**: never versioned, never in `check_compatible`, NOT inherited on resume �
 like `--grad-checkpointing`.
 
 **Measured: B=1 CPU forward 6.371 → 0.976 ms (6.53×)** on the literal production arch (1 graph, 0
-graph breaks, max|Δ| vs eager 5.07e-07), and **+31% marginal training FPS at `--n-envs 48`** (498 →
-653, disjoint ranges) — the first throughput lever here the `SubprocVecEnv` barrier does NOT absorb.
-(That FPS A/B predates the `species_posterior` fix, so it was measured on a partially-compiled 3.6×
-graph; the end-to-end number at 6.53× is not yet re-measured.)
+graph breaks, max|Δ| vs eager 5.07e-07), and **+33.3% marginal training FPS at `--n-envs 48`**
+(406.5 → 541.8, disjoint ranges, 48/48 workers compiled) — the first throughput lever here the
+`SubprocVecEnv` barrier does NOT absorb. But the per-forward win has **saturated**: doubling it
+(3.6× → 6.53×) moved end-to-end only ~31% → ~33%, so the opponent forward is no longer the rollout
+bottleneck and further compiler work on this path is spent effort.
 
 Startup: `agents.model.compile_prewarm` warms the shared on-disk Inductor cache in the trainer before
 any worker exists, halving worker startup (**59.6 s -> 30.1 s** wall for 16 workers). Going further —
