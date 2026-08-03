@@ -75,7 +75,8 @@ const ROOT = path.resolve(__dirname, '../../..');
 const NODE_BRIDGE = path.join(ROOT, 'src/utils/bridge/local_sim_bridge.js');
 const CRATE = path.resolve(__dirname, '..');
 // ISOLATED target dir — never rebuild the shared target/ (the live ab_replay fuzzer).
-const SIMBRIDGE_TARGET = '/tmp/pokesim_target_simbridge';
+// (overridable so two concurrent investigations never share one target dir / build lock)
+const SIMBRIDGE_TARGET = process.env.POKESIM_SIMBRIDGE_TARGET || '/tmp/pokesim_target_simbridge';
 const RUST_BRIDGE = path.join(SIMBRIDGE_TARGET, 'release/sim_bridge');
 
 const { Teams } = require(path.join(ROOT, 'deps/pokemon-showdown/dist/sim'));
@@ -169,7 +170,7 @@ async function drainQuiescent(child, opts = {}) {
   const requireRequest = opts.requireRequest !== false; // default: wait for a request frame
   const pollMs = opts.pollMs || 5;      // queue poll granularity
   const settleMs = opts.settleMs || 40; // quiet window after a terminal signal
-  const maxMs = opts.maxMs || 30000;    // hard cap (a slow Node child flushes in ~0.5s)
+  const maxMs = opts.maxMs || Number(process.env.SBD_DRAIN_MAX_MS || 30000); // hard cap (a slow Node child flushes in ~0.5s)
   const events = [];
   let sawRequest = false;
   let sawTerminal = false;
@@ -200,8 +201,22 @@ async function drainQuiescent(child, opts = {}) {
     if (Date.now() - start > maxMs) { events.timedOut = true; break; }
     await sleep(pollMs);
   }
+  events.waitedMs = Date.now() - start;
+  // `silenceOk`: this call site treats "nothing arrived" as a legitimate ANSWER (the accepted
+  // switch probe), so its cap is not a stall and must not pollute the `drain_timeouts` canary.
+  // A child that genuinely died there still surfaces — the boundary is then incomplete and the
+  // NEXT (checked) drain reports it.
+  if (events.timedOut && !opts.silenceOk) {
+    DRAIN_TIMEOUTS.push({ tag: opts.tag || '?', requireRequest, events: events.length });
+    if (process.env.SBD_TRACE_DRAINS) {
+      console.error(`[drain-timeout] tag=${opts.tag || '?'} requireRequest=${requireRequest} events=${events.length}`);
+    }
+  }
   return events;
 }
+// Every drain that hit its cap this run, tagged by call site — so a stall shows up in the
+// SUMMARY even on the paths that (legitimately) do not abort the battle.
+const DRAIN_TIMEOUTS = [];
 
 // A drain that hit its `maxMs` cap without the terminal signal means a child stopped
 // talking mid-battle. Treat it as a HARD ERROR, not a shrug (`gen3_simbridge_drain_timeout_v1`).
@@ -234,6 +249,57 @@ function assertDrained(events, node, rust, where, ctx) {
     + `rust stderr: ${(rust.stderr || '').slice(-200) || '(none)'}`;
 }
 
+// ── THE SWITCH-PROBE CONTRACT (`gen3_simbridge_probe_accepted_v1`) ──────────────
+// The differ probes a `trapped`/`maybeTrapped` request with a switch to exercise the
+// maybeTrapped -> trapped machine, and USED to assume that probe is always REJECTED — it
+// drained with `requireRequest:false` (break on the first event) and then sent a SECOND,
+// "real" choice for the same side.
+//
+// That assumption is FALSE. `sim/pokemon.ts::getRequestData` emits `maybeTrapped` in TWO
+// distinct situations (it is set only when `trapped !== true`):
+//   (a) a HIDDEN trap — `tryTrap(true)` set `trapped = 'hidden'`; `Side.chooseSwitch`
+//       (`sim/side.ts:968`) REJECTS it -> `|error|` + a re-request.  <- the assumed case
+//   (b) a SPECULATIVE maybe — `battle.ts:1730` runs `FoeMaybeTrapPokemon` for every ability
+//       the foe's SPECIES could have (so cancelling can't leak whether it traps). The mon is
+//       NOT trapped, so the switch is ACCEPTED (`side.ts:981` only sets `cantUndo`) and the
+//       sim emits NOTHING.
+// PROBE-SETTLED by `probe_maybetrapped_probe_accepted.js`: a Sand Veil Dugtrio (species CAN
+// have Arena Trap) flags the foe `maybeTrapped:true` in **gen3ou** and the probe is accepted
+// silently; in **gen3customgame** the speculative loop is skipped (`battle.ts:1742`, no
+// `obtainableabilities`), which is why the default-format soaks never hit it.
+//
+// Two consequences, both fixed here:
+//   1. THE STALL — a drain waiting for output that will never come burned its FULL 30 s cap,
+//      up to `SAFETY`=600 times in one battle. Same shape as the drain-timeout bug ROUND 27
+//      fixed on the OTHER two call sites; this call site was left unchecked.
+//   2. THE CORRUPTION — the accepted switch is the side's COMMITTED choice, so the follow-up
+//      choice is refused (`[Invalid choice] ... sent more choices than unfainted Pokemon`, NO
+//      re-request) and `cmds` records a choice that never committed => the saved repro no
+//      longer replays the battle.
+// The discriminator is CONTENT, not timing: a rejected probe always answers with `|error|`.
+// `PROBE_MAX_MS` only bounds how long we wait to conclude "nothing is coming" — the sim
+// answers a refusal synchronously inside its `write()` (~1 ms; a few ms through the child's
+// pipe), so 750 ms is ~100x margin, and it is paid on EVERY accepted probe (the measured
+// regression gate spends ~7 of them per toy battle). A false "accepted" would leave the
+// boundary incomplete, which the NEXT drain reports as a stall with a repro — loud, not
+// silent — so the tight bound is safe.
+const PROBE_MAX_MS = Number(process.env.SBD_PROBE_MAX_MS || 750);
+function probeWasAccepted(events) {
+  for (const ev of events || []) {
+    if (ev.type === 'chunk' && ev.chunk.includes('|error|')) return false;
+  }
+  return true;
+}
+let probesAccepted = 0;
+
+// A whole-battle WALL-CLOCK budget (`gen3_simbridge_battle_budget_v1`) — the BELT-AND-BRACES
+// the ROUND-27 note asked for, on top of the root-caused fixes: `drainQuiescent`'s `maxMs`
+// caps a SINGLE drain, never the outer loop, so `SAFETY`=600 decisions x a capped drain is
+// still hours on ONE battle. This turns any residual no-progress shape into a REPORTED error
+// (with a repro) in minutes instead of an invisible park. It is deliberately NOT a substitute
+// for a diagnosis: every stall it catches still prints its side/phase and saves a repro.
+const BATTLE_BUDGET_MS = Number(process.env.SBD_BATTLE_BUDGET_MS || 300000);
+
 // ── One battle: drive BOTH children off the Node bridge's request frames ────────
 // Returns { nodePerSide, rustPerSide, cmds, ended, err } where *PerSide is
 // { p1: [chunkLines...], p2: [...] } (each chunk a normalized line array).
@@ -248,8 +314,8 @@ async function diffOneBattle(node, rust, startJson, chooseSeed, trapProb, verbos
   node.write('START ' + startJson);
   rust.write('START ' + startJson);
   {
-    const en = await drainQuiescent(node); collect(en, nodeSide);
-    const er = await drainQuiescent(rust); collect(er, rustSide);
+    const en = await drainQuiescent(node, { tag: 'start-node' }); collect(en, nodeSide);
+    const er = await drainQuiescent(rust, { tag: 'start-rust' }); collect(er, rustSide);
     const ctx = { cmds, nodeSide, rustSide };
     const stall = assertDrained(en, node, rust, 'START (node)', ctx)
                || assertDrained(er, node, rust, 'START (rust)', ctx);
@@ -268,9 +334,18 @@ async function diffOneBattle(node, rust, startJson, chooseSeed, trapProb, verbos
   const rng = mulberry32(chooseSeed);
   const SAFETY = 600;
   let safety = 0;
+  const deadline = Date.now() + BATTLE_BUDGET_MS;
   // Drive choices by reading the NODE bridge's LATEST per-side request frames.
   while (!ended && safety < SAFETY) {
     safety++;
+    if (Date.now() > deadline) {
+      return { err: `battle wall-clock budget exceeded (${BATTLE_BUDGET_MS} ms) at decision `
+        + `${safety} — no progress to an end (gen3_simbridge_battle_budget_v1)`,
+        cmds, nodeSide, rustSide };
+    }
+    // True when BOTH sides' choices were committed by an ACCEPTED switch probe, so the
+    // boundary already flushed during the probe drains and no further write is coming.
+    let probeCompletedBoundary = false;
     const reqs = latestRequests(nodeSide);
     const decideMove = reqs.p1 && reqs.p1.active && reqs.p2 && reqs.p2.active
       && !isWait(reqs.p1) && !isWait(reqs.p2);
@@ -296,28 +371,40 @@ async function diffOneBattle(node, rust, startJson, chooseSeed, trapProb, verbos
         const isTrapped = !!(req.active && req.active[0] && (req.active[0].trapped || req.active[0].maybeTrapped));
         const benchSlots = benchFromReq(req);
         if (isTrapped && benchSlots.length > 0 && rng() < trapProb) {
-          // A REJECTED switch probe: write it FIRST, then DRAIN (the |error| + re-request
-          // flush on THIS side) before the legal choice — mirroring the Python/Node settle.
+          // A switch probe against a `trapped`/`maybeTrapped` request. It is USUALLY rejected
+          // (the |error| + re-request flush on THIS side) — but NOT always; see
+          // `probeWasAccepted` (`gen3_simbridge_probe_accepted_v1`).
           const rejSlot = benchSlots[randInt(rng, benchSlots.length)];
           const rej = `switch ${rejSlot + 1}`;
           cmds.push([side, rej]);
           node.write(`CHOOSE ${side} ${rej}`);
           rust.write(`CHOOSE ${side} ${rej}`);
-          collect(await drainQuiescent(node, { requireRequest: false }), nodeSide);
-          collect(await drainQuiescent(rust, { requireRequest: false }), rustSide);
+          const pn = await drainQuiescent(node, { requireRequest: false, maxMs: PROBE_MAX_MS, silenceOk: true, tag: 'probe-node' });
+          const pr = await drainQuiescent(rust, { requireRequest: false, maxMs: PROBE_MAX_MS, silenceOk: true, tag: 'probe-rust' });
+          collect(pn, nodeSide); collect(pr, rustSide);
+          if (probeWasAccepted(pn)) {
+            // ACCEPTED — the switch IS this side's committed choice. Sending a second choice
+            // here is what the old code did: the sim refuses it with `[Invalid choice] ... sent
+            // more choices than unfainted Pokémon` (NO re-request), and `cmds` then records a
+            // choice that never committed, so the saved repro no longer replays the battle.
+            probesAccepted++;
+            continue;
+          }
         }
         const c = pickModeledLegalReq(req, rng, isTrapped);
         if (!c) return { err: `no legal choice for ${side}`, cmds };
         sides.push([side, c]);
       }
       writeBoundary(node, rust, sides, cmds);
+      probeCompletedBoundary = sides.length === 0;
     } else {
       break; // no move/switch boundary → battle ended (an __END__ was drained)
     }
     // The completing write flushed the turn/switch batch + the next request(s) → drain both.
     {
-      const en = await drainQuiescent(node); collect(en, nodeSide);
-      const er = await drainQuiescent(rust); collect(er, rustSide);
+      const requireRequest = !probeCompletedBoundary;
+      const en = await drainQuiescent(node, { tag: 'decision-node', requireRequest }); collect(en, nodeSide);
+      const er = await drainQuiescent(rust, { tag: 'decision-rust', requireRequest }); collect(er, rustSide);
       const ctx = { cmds, nodeSide, rustSide };
       const stall = assertDrained(en, node, rust, `decision ${safety} (node)`, ctx)
                  || assertDrained(er, node, rust, `decision ${safety} (rust)`, ctx);
@@ -636,6 +723,19 @@ function selftest() {
     classifyKnownResidual('|-damage|p1a: X|100/200', '|-damage|p1a: X|99/200'), null);
   check('identical lines yield null',
     classifyKnownResidual(REQ(['return']), REQ(['return'])), null);
+
+  // ── SWITCH-PROBE CONTRACT (`gen3_simbridge_probe_accepted_v1`) ──────────────────
+  // The discriminator must be CONTENT (an `|error|` came back), never "did anything at all
+  // arrive" — a probe that COMPLETES the boundary answers with the turn batch and no error,
+  // and that is an ACCEPTED probe, not a rejected one.
+  const chunk = (c) => [{ type: 'chunk', side: 'p1', chunk: c }];
+  check('silence means the probe was ACCEPTED', probeWasAccepted([]), true);
+  check('an |error| means the probe was REJECTED',
+    probeWasAccepted(chunk("|error|[Unavailable choice] Can't switch: The active Pokemon is trapped")), false);
+  check('the FIRM-trap |error| form is also REJECTED',
+    probeWasAccepted(chunk("|error|[Invalid choice] Can't switch: The active Pokemon is trapped")), false);
+  check('a turn batch with no error means ACCEPTED (the probe completed the boundary)',
+    probeWasAccepted(chunk('|move|p1a: Snorlax|Body Slam|p2a: Dugtrio\n|-damage|p2a: Dugtrio|10/100')), true);
 
   console.error(fail ? `\n[selftest] ${fail} FAILURE(S)` : '\n[selftest] all allowlist gate-integrity cases pass');
   process.exit(fail ? 1 : 0);
@@ -995,6 +1095,11 @@ async function main() {
     skipped_lead_speed_tie: cov.skipped || 0,
     ended_battles: cov.ended, trapped_true_frames: cov.trapped, switch_cmds: cov.forceSwitch,
     persistent_battles: cov.persistentBattles, divergence_kinds: kindsStr,
+    // Stall telemetry (`gen3_simbridge_probe_accepted_v1`): `drain_timeouts` must stay 0 —
+    // ANY non-zero value means a child went quiet somewhere, even on a path that recovers.
+    switch_probes_accepted: probesAccepted,
+    drain_timeouts: DRAIN_TIMEOUTS.length,
+    drain_timeouts_by_tag: DRAIN_TIMEOUTS.reduce((m, d) => { m[d.tag] = (m[d.tag] || 0) + 1; return m; }, {}),
     battles_per_hour: cov.elapsedMs ? Math.round(cov.battles / (cov.elapsedMs / 3.6e6)) : null,
   }, null, 2));
   if (cov.diverged > 0) {
@@ -1030,4 +1135,13 @@ function saveRepro(flags, runId, bi, pair, startJson, result, div, chooseSeed, b
   return dir;
 }
 
-main().catch((e) => { console.error(e && e.stack ? e.stack : String(e)); process.exit(1); });
+// Exported so the DETERMINISTIC regression gate (`probe_switch_probe_accepted.js`) can drive
+// `diffOneBattle` on a FIXED matchup instead of re-running a whole random sweep.
+module.exports = {
+  BridgeChild, diffOneBattle, drainQuiescent, probeWasAccepted, diffPerSide,
+  classifyKnownResidual, NODE_BRIDGE, RUST_BRIDGE, DRAIN_TIMEOUTS,
+};
+
+if (require.main === module) {
+  main().catch((e) => { console.error(e && e.stack ? e.stack : String(e)); process.exit(1); });
+}

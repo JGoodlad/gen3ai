@@ -495,40 +495,66 @@ impl crate::state::BattleState {
         }
         // The switch-in ability lines (Intimidate `-ability`/`-unboost`, weather-setter
         // `-weather` SET) — Phase 2. RECONSTRUCTED from the already-computed post-switch-in
-        // state (observation-only; `run_start_switchins` already applied the effects during
-        // construction, before logging was enabled). Emitted in the SAME faster-first lead
-        // order `run_start_switchins` fires them (a tie keeps side order), so the line order
-        // matches the sim (verified vs the golden: Salamence Intimidate before Tyranitar Sand
-        // Stream when Salamence is faster).
+        // state (observation-only; the construction already applied the effects, before logging
+        // was enabled). Emitted in the SAME order the leads' `runSwitch` actions actually fired:
+        // the RECORDED `turn0_switchin_order` on the `gen3_turn0_construction_v1` bridge path
+        // (whose speed-TIE order comes from a real `insertChoice` PRNG draw), else the draw-free
+        // `run_start_switchins` faster-first / tie-keeps-side-order model (verified vs the
+        // golden: Salamence Intimidate before Tyranitar Sand Stream when Salamence is faster).
         self.emit_switchin_ability_lines(dex);
         self.log.turn(1);
     }
 
-    /// Reconstruct + emit the leads' switch-in ability lines (Phase 2). Mirrors
-    /// [`crate::state::BattleState::run_start_switchins`]: order the two leads faster-Speed
-    /// first (a tie keeps side order), then per lead emit — for **Intimidate** an
+    /// Reconstruct + emit the leads' switch-in ability lines (Phase 2), in the order the two
+    /// leads' `runSwitch` actions ACTUALLY fired, then per lead emit — for **Intimidate** an
     /// `|-ability|<lead>|Intimidate|boost` + (if the foe's Atk drop was NOT blocked by
     /// Clear Body / White Smoke / Hyper Cutter) an `|-unboost|<foe>|atk|1`; for a
     /// **weather** ability (Sand Stream / Drizzle / Drought) whose resulting weather is
     /// STILL the current `field.weather` (the winning setter) an `|-weather|<Weather>|[from]
     /// ability: <AbilityName>|[of] <lead>` SET line. DRAW-FREE (a formatting read of state
     /// the construction already resolved).
+    ///
+    /// # Fire ORDER (`gen3_turn0_construction_mirror_order_v1`)
+    ///
+    /// The order comes from [`crate::state::BattleState::turn0_switchin_order`] when the battle
+    /// came through the `gen3_turn0_construction_v1` window — there the two `runSwitch` actions
+    /// are queued by the REAL `insertChoice`, whose raw-Speed TIE is broken by a PRNG
+    /// `random(firstIndex, lastIndex+1)` draw, so a tie resolves p2-FIRST half the time.
+    /// Re-deriving "faster first, tie = side order" here (the model of the DRAW-FREE
+    /// [`crate::state::BattleState::run_start_switchins`] path) emitted the Intimidate /
+    /// weather-setter block in the WRONG order on every p2-first tie — the Masquerain-mirror
+    /// divergence `sbd_msdd8698_b293`. The fallback keeps that model for the draw-free path,
+    /// whose STATE half orders the same way, so the committed goldens stay byte-identical.
     fn emit_switchin_ability_lines(&mut self, dex: &Dex) {
         if !self.logging() {
             return;
         }
-        // The two leads with raw Speed (stats[5]); faster first, tie = side order
-        // (mirrors `run_start_switchins`'s stable `sort_by(|a,b| b.spe.cmp(&a.spe))`).
-        let mut leads: Vec<(usize, usize, u16)> = (0..self.sides.len())
-            .map(|side| {
-                let slot = self.sides[side].active;
-                (side, slot, self.sides[side].pokemon[slot].stats[5])
-            })
-            .collect();
-        leads.sort_by(|a, b| b.2.cmp(&a.2));
+        let leads: Vec<(usize, usize, u16)> = match self.turn0_switchin_order.clone() {
+            // The construction window RESOLVED the order (a tie broken by its real draw).
+            Some(order) => order
+                .iter()
+                .map(|&side| {
+                    let slot = self.sides[side].active;
+                    (side, slot, self.sides[side].pokemon[slot].stats[5])
+                })
+                .collect(),
+            // The draw-free `start_with_switchins` path: faster raw Speed (stats[5]) first,
+            // tie = side order (mirrors `run_start_switchins`'s stable
+            // `sort_by(|a,b| b.spe.cmp(&a.spe))`).
+            None => {
+                let mut leads: Vec<(usize, usize, u16)> = (0..self.sides.len())
+                    .map(|side| {
+                        let slot = self.sides[side].active;
+                        (side, slot, self.sides[side].pokemon[slot].stats[5])
+                    })
+                    .collect();
+                leads.sort_by(|a, b| b.2.cmp(&a.2));
+                leads
+            }
+        };
 
-        // Simulate the sim's `Field.setWeather` emit decision in FIRE order (faster
-        // first). A weather ability emits its `-weather` SET line UNLESS the field
+        // Simulate the sim's `Field.setWeather` emit decision in FIRE order (the resolved
+        // order above). A weather ability emits its `-weather` SET line UNLESS the field
         // is ALREADY that (permanent) weather — in gen ≤ 5 `setWeather` returns false
         // (no line) when an Ability source re-sets the same weather at duration 0
         // (`gen3_omniscient_byte_fuzz_v1` FORM 7: two Sand-Stream leads emit ONE

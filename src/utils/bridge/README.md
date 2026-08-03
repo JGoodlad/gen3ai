@@ -104,7 +104,12 @@ nothing unmodeled at all.)
   shuffles (incl. Magnet Pull's `onAny` trap shuffles + a weather-setter's WeatherChange) + the Quick
   Claw — so a *seeded* rust battle is byte-for-byte with node even on a **speed-tied lead** or an
   **unspecified-gender** mon. (Formerly `advance_seed_for_construction` modeled only the Quick Claw and
-  the diff harness skipped speed ties; both are gone.) Gated by
+  the diff harness skipped speed ties; both are gone.) The bridge runs that window with logging OFF
+  and re-emits the leads' switch-in ability lines afterwards, so it also RECORDS the order the two
+  `runSwitch` actions resolved to (`gen3_turn0_construction_mirror_order_v1`) — at a raw-Speed TIE
+  that order is the `insertChoice` PRNG draw, p2-first half the time, and re-deriving it as
+  "faster-first, tie = side order" permuted the Intimidate / weather-setter block on a tied lead
+  (the seed and the board stayed correct; only the emitted lines were out of order). Gated by
   `src/rust_sim/tests/turn0_construction_test.rs` + `harness/gen_sim_bridge_diff.js`.
 
 **Forfeit parity (`gen3_bridge_forfeit_win_v1`) — was the training-wedge bug.** A `FORCELOSE
@@ -118,6 +123,24 @@ never completed a single PPO iteration). Fixed by `BridgeSession::forfeit`; pinn
 `src/rust_sim/src/bridge.rs::a_forfeit_emits_the_win_line_to_both_sides_not_a_bare_end` and gated
 end-to-end by `bridge_session_fuzz_test.py --impl rust` (whose every-9th-episode forfeit-reset is
 the reproducer).
+
+**Illegal-choice parity — the two impls fail DIFFERENTLY (know this before debugging a hang).**
+Showdown's `Side.emitChoiceError` (`sim/side.ts:510`) branches on whether the refusal actually
+CHANGED the request: `[Unavailable choice]` comes with a **re-request** (the client recovers),
+while `[Invalid choice]` comes with **nothing at all** — the client is expected to re-pick from the
+request it already holds. So a node child that goes quiet mid-battle is usually **not** wedged: it
+refused an illegal choice and is waiting for a legal one (`probe_illegal_choice_park.js` drives
+this deterministically: `move 4` on a 2-move mon → `[Invalid choice]`, 0 requests; a legal retry
+then resolves the turn immediately). Two consequences:
+- **node has NO bound on this.** A deterministic client whose action mask disagrees with Showdown
+  about legality re-sends the same refused choice forever and the env hangs with the child idle.
+- **rust does.** `BridgeSession`'s `REJECT_STREAK_CAP` (8 consecutive rejects at one boundary)
+  turns that spin into a loud `__ERR__`. Rust also does not validate the move INDEX against the
+  request, so an out-of-range `move N` is accepted and the turn advances where node refuses it —
+  benign in training (poke-env only sends choices drawn from the request) but it is why the two
+  children diverge on a malformed driver.
+**Diagnostic rule: an idle bridge child means "waiting for a legal choice", so look at the last
+choice the DRIVER sent, not at the child.** (Full diagnosis: `src/rust_sim/CLAUDE.md` → ROUND 30.)
 
 The move-name/switch-species transport parity (poke-env serializes choices by move-id + species
 name, e.g. `move hiddenpowerice` / `switch Salamence` — not slot numbers) is exercised by

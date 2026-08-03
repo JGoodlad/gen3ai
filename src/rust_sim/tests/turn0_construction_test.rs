@@ -23,9 +23,14 @@ fn dex() -> Dex {
 
 /// Construct from a RAW seed via the turn-0 window; return the live `Battle`.
 fn construct(p1: &str, p2: &str) -> Battle {
+    construct_seeded("[1,2,3,4]", p1, p2)
+}
+
+/// Same, at an explicit RAW `>start` seed (the bracketed-array form poke-env sends).
+fn construct_seeded(seed: &str, p1: &str, p2: &str) -> Battle {
     let opts = BattleOptions {
         format_id: "gen3customgame".to_string(),
-        seed: Some("[1,2,3,4]".to_string()), // the RAW `>start` bracketed-array form
+        seed: Some(seed.to_string()),
         p1: PlayerOptions { name: "P1".to_string(), team: PackedTeam(p1.to_string()) },
         p2: PlayerOptions { name: "P2".to_string(), team: PackedTeam(p2.to_string()) },
     };
@@ -119,4 +124,119 @@ fn gender_samples_only_ratiod_bench_mons_in_team_order() {
     // so its `|switch|` details show no suffix; `switch_details` renders 'N' the same).
     assert_eq!(gender(&b, 1, 1), Some('N'), "p2 bench Magneton genderless — no draw");
     assert!(weather(&b).is_none());
+}
+
+// ===========================================================================
+// The turn-0 MIRROR ORDER gate (`gen3_turn0_construction_mirror_order_v1`, ROUND 34).
+//
+// The construction window's PRNG model was already bit-for-bit (the four seed pins
+// above), but the bridge RE-EMITS the leads' switch-in ability lines afterwards from the
+// post-construction board, and that reconstruction re-derived the fire order as "faster
+// raw Speed first, a TIE keeps side order". At a raw-Speed tie the TRUE order is the
+// `insertChoice` `random(firstIndex, lastIndex+1)` draw the construction ALREADY made —
+// p2-FIRST half the time — so every p2-first tie emitted the Intimidate / weather-setter
+// block in the WRONG order while the seed + board stayed correct. That is the
+// `sbd_msdd8698_b293` Masquerain-mirror divergence the external-consistency gate
+// (`harness/gen_sim_bridge_diff.js`) caught: node `-ability|p2a` first, port `p1a` first.
+//
+// GROUND TRUTH from the real sim (`harness/probe_r34_mirror_order_groundtruth.js`):
+//   Masquerain mirror (Intimidate, spe 156 TIE) — seed [1,2,3,4] -> p2a,p1a
+//                                                 seed [3,2,3,4] -> p1a,p2a
+//   Masquerain (156) vs Tauros (256), both Intimidate, DISTINCT speed -> p2a,p1a
+//
+// BOTH tie cases are asserted on purpose: a test that only ever saw the p2-first board
+// would also pass on a hard-coded flip (and the PRE-FIX code passes the p1-first case),
+// so only the PAIR pins the draw as the discriminator.
+// ===========================================================================
+
+use pokesim::bridge::{bridge_opts, BridgeSession};
+
+const MASQ_INTIM_M: &str = "Masquerain|||Intimidate|splash|Serious||M||||";
+/// Same ability, EV-invested Speed (256) — strictly faster than Masquerain's 156, so the
+/// order is decided by Speed and NOT by the tie draw (the fallback model's control).
+const TAUROS_INTIM_FAST_M: &str = "Tauros|||Intimidate|splash|Serious|252,,,,,|M||||";
+
+/// The `p<N>a` idents of the emitted `|-ability|…|Intimidate|boost` lines, in emission
+/// order, from a battle built the way `sim_bridge` builds one (RAW `>start` seed →
+/// `new_construct_turn0` → framing chunks).
+fn intimidate_order(seed: &str, p1: &str, p2: &str) -> Vec<String> {
+    let dex = dex();
+    let opts = bridge_opts("gen3customgame", seed.to_string(), p1, p2);
+    let sess = BridgeSession::new_construct_turn0(&opts, &dex).expect("turn-0 bridge session");
+    sess.chunks()
+        .side_chunks(0)
+        .flat_map(|c| c.lines.iter())
+        .filter(|l| l.contains("|Intimidate|boost"))
+        .map(|l| l.split('|').nth(2).unwrap()[..3].to_string())
+        .collect()
+}
+
+/// The tie draw decides which lead's Intimidate is emitted FIRST — the port must emit the
+/// order its OWN construction queue resolved, not a side-order default.
+///
+/// WRONG (pre-fix): `emit_switchin_ability_lines` re-derived "faster first, tie = side
+/// order", so BOTH seeds emitted `p1a` first — the `[1,2,3,4]` case below FAILS against the
+/// pre-fix code with `["p1a", "p2a"]`.
+#[test]
+fn turn0_speed_tie_mirror_emits_the_intimidate_block_in_the_drawn_order() {
+    let p2_first = intimidate_order("[1,2,3,4]", MASQ_INTIM_M, MASQ_INTIM_M);
+    let p1_first = intimidate_order("[3,2,3,4]", MASQ_INTIM_M, MASQ_INTIM_M);
+    // Non-vacuity: the mechanic must actually fire (2 Intimidate lines) on BOTH seeds.
+    assert_eq!(p2_first.len(), 2, "seed [1,2,3,4] must emit BOTH mirror Intimidates");
+    assert_eq!(p1_first.len(), 2, "seed [3,2,3,4] must emit BOTH mirror Intimidates");
+
+    assert_eq!(p2_first, vec!["p2a", "p1a"], "seed [1,2,3,4]: the sim fires p2's runSwitch first");
+    assert_eq!(p1_first, vec!["p1a", "p2a"], "seed [3,2,3,4]: the sim fires p1's runSwitch first");
+    assert_ne!(p2_first, p1_first, "the two seeds MUST differ — otherwise the draw is being ignored");
+}
+
+/// The control: at DISTINCT speeds no tie draw happens and the order is pure Speed — the
+/// FASTER lead's Intimidate first, even when that is p2. Guards against "fixing" the tie
+/// case by simply inverting the side order.
+#[test]
+fn turn0_distinct_speed_emits_the_faster_lead_intimidate_first() {
+    let order = intimidate_order("[1,2,3,4]", MASQ_INTIM_M, TAUROS_INTIM_FAST_M);
+    assert_eq!(order.len(), 2, "both leads must emit an Intimidate line");
+    assert_eq!(order, vec!["p2a", "p1a"], "Tauros (256) outspeeds Masquerain (156) → p2 first");
+}
+
+const KYOGRE_DRIZZLE: &str = "Kyogre|||Drizzle|splash|Serious||N||||";
+const GROUDON_DROUGHT: &str = "Groudon|||Drought|splash|Serious||N||||";
+
+/// The EMISSION↔STATE consistency pin at a MIXED weather-setter tie (Kyogre Drizzle vs
+/// Groudon Drought, both spe 216). The LAST setter to fire wins the field, so the drawn
+/// order is visible in BOTH the `-weather` line order AND `field.weather` — they must
+/// AGREE. Sim ground truth (`harness/probe_r34_mirror_order_groundtruth.js`):
+///   seed [1,2,3,4] → Drought line, then Drizzle line, weather = Rain
+///   seed [3,2,3,4] → Drizzle line, then Drought line, weather = Sun
+///
+/// WRONG (pre-fix): the reconstruction ordered a tie by SIDE, so seed [1,2,3,4] emitted
+/// Drizzle-then-Drought while the board said Rain — a stream whose protocol and state
+/// contradicted each other.
+#[test]
+fn turn0_weather_setter_tie_emits_the_lines_in_the_order_the_board_agrees_with() {
+    let dex = dex();
+    for (seed, want_lines, want_weather) in [
+        ("[1,2,3,4]", ["Drought", "Drizzle"], pokesim::state::Weather::Rain),
+        ("[3,2,3,4]", ["Drizzle", "Drought"], pokesim::state::Weather::Sun),
+    ] {
+        let opts = bridge_opts("gen3customgame", seed.to_string(), KYOGRE_DRIZZLE, GROUDON_DROUGHT);
+        let sess = BridgeSession::new_construct_turn0(&opts, &dex).expect("turn-0 bridge session");
+        let got: Vec<String> = sess
+            .chunks()
+            .side_chunks(0)
+            .flat_map(|c| c.lines.iter())
+            .filter(|l| l.starts_with("|-weather|"))
+            .cloned()
+            .collect();
+        // Non-vacuity: BOTH setters must have emitted (a single line means the mechanic
+        // collapsed and the ordering is untested).
+        assert_eq!(got.len(), 2, "seed {seed}: expected 2 `-weather` lines, got {got:?}");
+        for (line, want) in got.iter().zip(want_lines) {
+            assert!(line.contains(want), "seed {seed}: expected `{want}` in `{line}`");
+        }
+        // …and the BOARD the same construction produced must agree with the last line.
+        let b = construct_seeded(seed, KYOGRE_DRIZZLE, GROUDON_DROUGHT);
+        assert_eq!(weather(&b), Some(want_weather), "seed {seed}: last setter wins the field");
+    }
 }

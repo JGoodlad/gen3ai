@@ -619,6 +619,20 @@ impl crate::state::BattleState {
         for side in 0..self.sides.len() {
             self.insert_runswitch(side, &mut queue, dex);
         }
+        // (2b) RECORD the RESOLVED dequeue order (`gen3_turn0_construction_mirror_order_v1`).
+        // The bridge re-emits the leads' switch-in ability lines AFTER this window, from the
+        // post-construction board, and must use the order the queue ACTUALLY resolved to — at a
+        // raw-Speed TIE that is the `insertChoice` PRNG draw made just above, NOT the draw-free
+        // "faster first, tie = side order" model. See `BattleState::turn0_switchin_order`.
+        self.turn0_switchin_order = Some(
+            queue
+                .iter()
+                .filter_map(|a| match a {
+                    QAction::RunSwitch { side } => Some(*side),
+                    _ => None,
+                })
+                .collect(),
+        );
         // (3) the `start` action's trailing gen<5 `eachEvent('Update')` tail.
         self.each_event_shuffle();
         // (4) the two runSwitch runActions (ability Start + WeatherChange + Update

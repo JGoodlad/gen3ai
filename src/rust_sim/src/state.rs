@@ -1495,6 +1495,29 @@ pub struct BattleState {
     /// e2e capstone COUNT explosion decisions (the mechanic is momentary — no persistent state
     /// like a substitute — so it can't be read off the post-turn board otherwise).
     pub pending_explosion_self_ko: bool,
+    /// The RESOLVED turn-0 `runSwitch` dequeue ORDER (side indices, first-to-run first) —
+    /// recorded by [`BattleState::run_turn0_construction`] from the queue `insert_runswitch`
+    /// actually built (`gen3_turn0_construction_mirror_order_v1`).
+    ///
+    /// **Why it must be RECORDED, not re-derived.** The bridge runs the construction window
+    /// with logging OFF and re-emits the leads' switch-in ability lines afterwards from the
+    /// post-construction board (`emit_switchin_ability_lines`). That reconstruction used to
+    /// re-derive the fire order as "faster raw Speed first, a TIE keeps side order" — the model
+    /// of the DRAW-FREE [`BattleState::run_start_switchins`] path. But under
+    /// `gen3_turn0_construction_v1` the construction runs the REAL `insertChoice`, whose
+    /// speed-TIE window is broken by a `random(firstIndex, lastIndex+1)` PRNG draw, so at a tie
+    /// the true order is p2-FIRST half the time. Re-deriving therefore emitted the Intimidate /
+    /// weather-setter block in the WRONG order on a speed-tied lead even though the PRNG stream
+    /// and the resulting BOARD were bit-for-bit correct — the divergence the external-consistency
+    /// gate caught as the Masquerain-mirror repro `sbd_msdd8698_b293` (node `-ability p2a` first,
+    /// the port `p1a` first, with all 5 turn-0 draws IDENTICAL).
+    ///
+    /// `None` on the draw-free [`BattleState::start_with_switchins`] path (the committed
+    /// goldens' POST-construction seed convention), where the emitter keeps the
+    /// side-order-on-tie fallback that path's STATE half also uses — so those goldens stay
+    /// byte-identical. Observation-only: written from an already-resolved queue, read only by
+    /// the emitter; consumes no PRNG and changes no board state.
+    pub turn0_switchin_order: Option<Vec<usize>>,
     /// Whether a PHAZE (Roar / Whirlwind) drag actually FIRED this turn (`drag_in` ran its
     /// `sample`), analogous to `pending_explosion_self_ko`. Read into the per-decision
     /// `DecisionRecord.phaze_drag` at the turn's boundary + cleared at the top of each turn — a
@@ -1608,6 +1631,7 @@ impl BattleState {
             sleep_clause: format_has_sleep_clause(&opts.format_id),
             format_id: opts.format_id.clone(),
             pending_explosion_self_ko: false,
+            turn0_switchin_order: None,
             pending_phaze_drag: false,
             log: crate::protocol::ProtocolBuilder::new(),
             faint_emit_queue: Vec::new(),
