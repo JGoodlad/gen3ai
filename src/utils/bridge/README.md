@@ -132,13 +132,37 @@ request it already holds. So a node child that goes quiet mid-battle is usually 
 refused an illegal choice and is waiting for a legal one (`probe_illegal_choice_park.js` drives
 this deterministically: `move 4` on a 2-move mon → `[Invalid choice]`, 0 requests; a legal retry
 then resolves the turn immediately). Two consequences:
-- **node has NO bound on this.** A deterministic client whose action mask disagrees with Showdown
-  about legality re-sends the same refused choice forever and the env hangs with the child idle.
-- **rust does.** `BridgeSession`'s `REJECT_STREAK_CAP` (8 consecutive rejects at one boundary)
-  turns that spin into a loud `__ERR__`. Rust also does not validate the move INDEX against the
-  request, so an out-of-range `move N` is accepted and the turn advances where node refuses it —
-  benign in training (poke-env only sends choices drawn from the request) but it is why the two
-  children diverge on a malformed driver.
+- **BOTH impls now bound it** (`gen3_node_bridge_reject_bound_v1`): `REJECT_STREAK_CAP = 8`
+  consecutive refusals at one boundary turns the spin into a loud `__ERR__` — rust in
+  `BridgeSession`, node in `local_sim_bridge.js`. The counter resets **only on a COMMITTED
+  decision** (node reads `battle.inputLog.length`, the one place an ACCEPTED choice lands);
+  resetting on a received re-request instead would make the cap unreachable, which is the
+  subtle way to get this wrong. The cap is generous on purpose — a handful of refusals is
+  legitimate (the maybe-trapped probe is a normal two-exchange round; the max streak measured
+  in normal play is **1**) — it exists to make an unbounded spin diagnosable, not to police
+  ordinary refusals. Gate: `node_reject_bound_integration_test.py` (4 tests: the wedge pin,
+  which HANGS pre-fix; an over-eager-cap guard; the reset-condition pin; and a cap-constant
+  lockstep check), revert-verified — disabling the bound leaves the wedge pin spinning out its
+  full 25 s budget with no `__ERR__` while the other three still pass.
+  **MEASURED not-a-regression** (the real risk of a bound like this is a FALSE trip, not a missed
+  one): `bridge_session_fuzz_test --impl node` 40 episodes clean; the bridge test package 91
+  passed / 6 skipped; the python unit suite 3900 passed; and a 100-battle node-vs-rust
+  `gen_sim_bridge_diff --mode randbats --persistent` soak came back **100/100 ended, 0
+  divergences, 0 drain timeouts** while carrying **128 `trapped:true` frames** — i.e. the
+  legitimate refusal round (the maybe-trapped probe) was exercised heavily and never tripped the
+  cap. The max streak seen in normal play remains 1.
+  **HONEST SCOPE — what the bound does and does NOT buy.** It converts an UNBOUNDED spin into a
+  BOUNDED, diagnosable failure; it does not make the failure instant. `BridgeSession` LATCHES the
+  `__ERR__` into `_child_error` and raises it at the next `reset()` (so the run dies with the
+  refusal text, the side, and the offending choice), but the IN-FLIGHT `step()` still waits out
+  poke-env's 120 s watchdog first — the pre-existing latched-error gap, unchanged by this work and
+  worth closing separately. `run_local_battles` (the eval driver) is stricter: it raises on the
+  `__ERR__` frame directly.
+- **The impls still differ on move-INDEX validation.** Rust does not validate the move index
+  against the request, so an out-of-range `move N` is accepted and the turn advances where node
+  refuses it — benign in training (poke-env only sends choices drawn from the request) but it is
+  why the two children diverge on a malformed driver, and why the node side is the one that could
+  spin.
 **Diagnostic rule: an idle bridge child means "waiting for a legal choice", so look at the last
 choice the DRIVER sent, not at the child.** (Full diagnosis: `src/rust_sim/CLAUDE.md` → ROUND 30.)
 

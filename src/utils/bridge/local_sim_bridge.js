@@ -71,6 +71,43 @@ let persistent = false;
 let resumeReseed = null;
 let reseeded = false;
 
+// ── Reject-streak bound (`gen3_node_bridge_reject_bound_v1`) ────────────────────────────
+// The mirror of the rust bridge's `REJECT_STREAK_CAP` (src/rust_sim/src/bridge.rs).
+//
+// A refused choice leaves the boundary OPEN — correct when the client then picks something
+// else. But an RL policy is DETERMINISTIC given the same request, so if its action mask
+// disagrees with the sim about legality it re-sends the SAME choice forever. Measured in a
+// live run on the rust bridge: one child spinning at 46 MB/s of re-requests while its env's
+// `step()` never returned, wedging the whole vec-env. The node bridge is the DEFAULT
+// in-process transport and had no such bound.
+//
+// Probed (2026-08-03), the sim side is worse than "re-request forever": `Side.emitChoiceError`
+// only re-emits a `|request|` when the refusal actually CHANGED the request (the
+// "[Unavailable choice]" maybe-trapped reveal). A plain "[Invalid choice]" emits the error and
+// NOTHING else — and poke-env answers `[Invalid choice]` by re-choosing immediately off the
+// stale request (`player.py` -> `_handle_battle_request(maybe_default_order=True)`), so a
+// deterministic client and the sim ping-pong with zero sim progress. Measured raw: 36 refusal
+// rounds in 3 ms, unbounded.
+//
+// Cap 8 is generous on purpose — a handful of refusals is legitimate (the maybe-trapped probe
+// is a normal two-exchange round) — it exists to turn an unbounded spin into a diagnosable
+// error, not to police ordinary refusals. Measured over the gates: the max streak reached in
+// normal play is 1.
+const REJECT_STREAK_CAP = 8;
+// Consecutive refusals per side since the last COMMITTED decision (see `noteOutboundChunk`).
+let rejectStreak = { p1: 0, p2: 0 };
+// The last choice each side sent — named in the fatal message so the loop is diagnosable.
+let lastChoiceSent = { p1: null, p2: null };
+// `battle.inputLog.length` at the last progress check — the committed-decision cursor.
+let lastCommitted = 0;
+// Set once a fatal condition is reported: stop relaying / accepting choices for this battle
+// (the rust bridge's `stopped`). The process stays alive; the parent raises on `__ERR__`.
+let stopped = false;
+
+// Both refusal shapes the sim can emit (Side.emitChoiceError's `[Invalid choice]` /
+// `[Unavailable choice]`). Multiline because a chunk may carry several protocol lines.
+const REFUSAL_RE = /^\|error\|\[(?:Invalid|Unavailable) choice\]/m;
+
 function out(line) {
   process.stdout.write(line + '\n');
 }
@@ -103,10 +140,50 @@ function emitRecon() {
   } catch (e) { /* never break the battle for the record */ }
 }
 
+// How many decisions the sim has COMMITTED. `Battle.commitChoices` is the only place a
+// per-side choice reaches `inputLog` (`>p1 move 1`), and it runs only once every side's
+// choice was ACCEPTED — so this is the node analogue of the rust bridge's "a choice was
+// accepted" reset. `>start` / `>player` / `>forcelose` also land here; any growth is
+// progress, which is exactly what we want.
+function committedCount() {
+  const b = rawStream && rawStream.battle;
+  return b && b.inputLog ? b.inputLog.length : 0;
+}
+
+// Bound the refusal↔re-choice exchange. Returns true if this chunk tripped the cap (the
+// caller must then NOT relay it — the `__ERR__` frame replaces it).
+function noteOutboundChunk(side, chunk) {
+  if (stopped) return true;
+  // PROGRESS first: the sim committed a decision, so whatever refusals preceded it were part
+  // of a boundary that DID advance. This is the ONLY reset — receiving a re-request must NOT
+  // reset, or the "[Unavailable choice]" + re-request shape would make the cap unreachable.
+  const n = committedCount();
+  if (n !== lastCommitted) {
+    lastCommitted = n;
+    rejectStreak.p1 = 0;
+    rejectStreak.p2 = 0;
+  }
+  if (!REFUSAL_RE.test(chunk)) return false;
+  rejectStreak[side] += 1;
+  if (process.env.GEN3_BRIDGE_REJECT_DEBUG) process.stderr.write(`REJSTREAK ${side} ${rejectStreak[side]}\n`);
+  if (rejectStreak[side] <= REJECT_STREAK_CAP) return false;
+  const refusal = chunk.split('\n').find((l) => REFUSAL_RE.test(l)) || chunk;
+  stopped = true;
+  fail(
+    `no-progress reject loop on ${side}: ${rejectStreak[side]} consecutive refusals with no ` +
+    `committed decision (turn ${(rawStream && rawStream.battle && rawStream.battle.turn) || '?'}). ` +
+    `Last choice sent: "${lastChoiceSent[side]}". Refusal: "${refusal}". The client keeps ` +
+    `re-sending a choice the sim refuses, so nothing can advance — failing loud instead of ` +
+    `spinning (see REJECT_STREAK_CAP).`
+  );
+  return true;
+}
+
 function pumpSide(side) {
   (async () => {
     try {
       for await (const chunk of streams[side]) {
+        if (noteOutboundChunk(side, chunk)) continue;
         emit(side, chunk);
       }
     } catch (e) {
@@ -141,6 +218,11 @@ function handleStart(json) {
   reconEmitted = false;
   resumeReseed = msg.resumeReseed || null;   // {turn, seed} | null
   reseeded = false;
+  // Fresh battle → fresh reject-streak state (persistent children reuse the process).
+  rejectStreak = { p1: 0, p2: 0 };
+  lastChoiceSent = { p1: null, p2: null };
+  lastCommitted = 0;
+  stopped = false;
   pumpSide('p1');
   pumpSide('p2');
 
@@ -165,7 +247,11 @@ function handleLine(line) {
       const s2 = rest.indexOf(' ');
       const side = s2 === -1 ? rest : rest.slice(0, s2);
       const choice = s2 === -1 ? '' : rest.slice(s2 + 1);
+      // A reported reject loop stops the session (the rust bridge's `stopped`): relaying
+      // further choices would only resume the spin the `__ERR__` just reported.
+      if (stopped) break;
       if (streams && streams[side]) {
+        lastChoiceSent[side] = choice;
         // Reseed at the START of the divergence turn (battle.turn has already advanced to it after
         // the prior turn resolved), BEFORE this turn's choices commit — so the prefix keeps the
         // recorded dice and only the post-divergence resolution draws from the fresh PRNG. Once.

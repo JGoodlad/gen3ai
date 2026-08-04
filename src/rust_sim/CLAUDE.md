@@ -5563,10 +5563,14 @@ into an unbounded wait; that is the whole bug class, and it lives in the driver.
 ACCEPTS `move 4` and advances the turn — it does not validate the move index against the request, so
 it cannot park here at all. Benign for training (poke-env only ever sends choices drawn from the
 request) and it is a DIVERGENCE the differ would catch on a stream that reached it, but it is the
-reason the two children fail differently: node parks, rust proceeds. Rust also bounds the OTHER
+reason the two children fail differently: node parks, rust proceeds. Both now bound the OTHER
 shape — `REJECT_STREAK_CAP` (8) turns a deterministic client re-sending a rejected choice into a loud
-`__ERR__`. **The node bridge has no such bound**, so a training run whose action mask disagrees with
-Showdown about legality can still hang on `--use-bridge=node`; that is a known, separate item.
+`__ERR__`. ⚠️ **This note used to end "the node bridge has no such bound … a known, separate item";
+that is now DONE** (`gen3_node_bridge_reject_bound_v1`): `local_sim_bridge.js` carries the mirror
+cap, resetting only on a COMMITTED decision (`battle.inputLog.length` — resetting on a received
+re-request would make the cap unreachable), gated by `node_reject_bound_integration_test.py` whose
+wedge pin HANGS pre-fix. So a training run whose action mask disagrees with Showdown about legality
+now fails LOUDLY on **both** transports instead of hanging on the default one.
 
 **4. THE ONE REAL RESIDUAL — the ACCEPTED switch probe** (`gen3_simbridge_probe_accepted_v1`,
 `gen_sim_bridge_diff.js`; probes `probe_maybetrapped_probe_accepted.js` +
