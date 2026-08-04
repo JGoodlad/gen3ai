@@ -340,6 +340,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         # full (mean,std) spread prior on the op too (SpreadBelief owns its own copy) — E[bulk] for an
         # unrevealed defender = P(species) @ means; the speed (mean,std) feeds the probabilistic outspeed.
         "SPECIES_SPREAD_PRIOR": build_opp_spread_prior(n_species),
+        **build_trap_tables(n_species, n_abilities),
         "MOVE_SECONDARY": move_secondary,
         "MOVE_PRIORITY": move_priority,
         "MOVE_DRAIN": move_drain,
@@ -753,6 +754,60 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
         "MOVE_STATUS_TYPE_IMMUNE": type_immune,
         "ABILITY_STATUS_BLOCK": ability_block,
         "SPECIES_STATUS_BLOCK_PRIOR": species_block,
+    }
+
+
+# gen3_edge_bias_trunk_v1 (T family): the three gen3 TRAP abilities. Resolution is FAIL-LOUD — a
+# rename/missing id would otherwise silently zero the whole family (the GIGO class).
+_TRAP_ABILITY_IDS = ("shadowtag", "arenatrap", "magnetpull")
+
+
+def build_trap_tables(n_species: int, n_abilities: int) -> Dict[str, torch.Tensor]:
+    """Trapping tables (T-family edges):
+
+      ABILITY_TRAP[n_abilities, 3]        1.0 at (ability, k) for shadowtag/arenatrap/magnetpull
+      ABILITY_IS_LEVITATE[n_abilities]    1.0 for levitate (the arena-trap grounded check)
+      SPECIES_TRAP_PRIOR[n_species, 4]    P(species runs [shadowtag, arenatrap, magnetpull, levitate])
+                                          — the Smogon ability-prior marginal (unrevealed-ability read)
+      TYPE_IS_STEEL / TYPE_IS_FLYING [N_TYPE_IDX]  victim-type masks (magnet-pull / grounded checks)
+    """
+    trap = torch.zeros(n_abilities, 3, dtype=torch.float32)
+    trap_nums = []
+    for k, aid in enumerate(_TRAP_ABILITY_IDS):
+        ad = gen3_data.abilities.get(aid)
+        if ad is None or not (0 <= ad.num < n_abilities):
+            raise ValueError(f"trap ability {aid!r} failed to resolve (got {ad}) — the T-family "
+                             "tables would be silently empty. Fix the id / regenerate gen3_abilities.")
+        trap[ad.num, k] = 1.0
+        trap_nums.append(ad.num)
+    lev = gen3_data.abilities.get("levitate")
+    if lev is None or not (0 <= lev.num < n_abilities):
+        raise ValueError("levitate failed to resolve — the arena-trap grounded check would be wrong.")
+    is_lev = torch.zeros(n_abilities, dtype=torch.float32)
+    is_lev[lev.num] = 1.0
+
+    prior = torch.zeros(n_species, 4, dtype=torch.float32)
+    for sid in gen3_data.species.base_form_ids():
+        sd = gen3_data.species.get(sid)
+        if not (0 <= sd.num < n_species):
+            continue
+        for aid, pv in (gen3_data.priors.ability(sid) or {}).items():
+            if aid in _TRAP_ABILITY_IDS:
+                prior[sd.num, _TRAP_ABILITY_IDS.index(aid)] += float(pv)
+            elif aid == "levitate":
+                prior[sd.num, 3] += float(pv)
+    prior = prior.clamp(max=1.0)
+
+    steel = torch.zeros(N_TYPE_IDX, dtype=torch.float32)
+    flying = torch.zeros(N_TYPE_IDX, dtype=torch.float32)
+    steel[_T2I["STEEL"]] = 1.0
+    flying[_T2I["FLYING"]] = 1.0
+    return {
+        "ABILITY_TRAP": trap,
+        "ABILITY_IS_LEVITATE": is_lev,
+        "SPECIES_TRAP_PRIOR": prior,
+        "TYPE_IS_STEEL": steel,
+        "TYPE_IS_FLYING": flying,
     }
 
 

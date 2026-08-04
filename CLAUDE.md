@@ -1461,7 +1461,7 @@ EDGES. The encoder stack is swapped for `BiasedEncoderLayer` (the spike-proven c
 attention takes an additive per-pair per-head float bias via SDPA's additive mask; the key-pad
 mask rides the same tensor as a -1e9 addend — stock-parity test-pinned) — an UNCONDITIONAL
 state_dict change (fused `in_proj` keys) carried by the `ARCH_SIGNATURE` bump. The delivered
-FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v}` (STRUCTURAL
+FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v,t}` (STRUCTURAL
 str in `check_compatible`; `"d"` is the FROZEN d1,d3 alias — new families are explicit-only, so a
 saved config never silently grows maps; growing the valid set is NOT a version bump, the string
 gate catches any mismatch): **D1** = our active's 4 moves × the opp's 6 mons (the v34
@@ -1482,11 +1482,15 @@ either side, the coarse-signal convention) at the (our-mon, opp-mon) block; **D4
 threat to every our mon (`pairwise_bench_incoming`: per opp mon j the top-K_bench=4 candidates
 from ITS OWN slot of the composed posterior — the belief gradient reaches the BENCH move heads for
 the first time — de-timid attacker, real-spread defenders; revealed+alive-gated; the opp ACTIVE
-column ZEROED, that quadrant is D3's) at the same mon↔mon block. Each family maps its
+column ZEROED, that quadrant is D3's) at the same mon↔mon block; **T** = the gen3-critical TRAPPING edge (`pairwise_trap`: P(cannot
+switch) BOTH directions — Shadow Tag / Arena Trap·grounded / Magnet Pull·Steel, our side exact,
+opp side revealed-exact else the Smogon `SPECIES_TRAP_PRIOR`, Levitate folded into grounded;
+fail-loud ability resolution) at the mon↔mon block — "my Dugtrio traps their weakened Blissey" is
+a plan-defining edge. Each family maps its
 cell through a ZERO-INIT `Linear(cell → 2·n_heads)` (one head-set per direction) ⇒ ON is
 bitwise-identical to OFF at init (test-pinned, all six). All seat blocks are contiguous index ranges ⇒
 delivery is slice assignment, compile-friendly (fullgraph-pinned). d1/s1 require
-`--damage-op --damage-outgoing`; d2/d4/v require `--damage-op`; d3/s3 require `--entity-topk-seats > 0`. **The op head-concat is
+`--damage-op --damage-outgoing`; d2/d4/v/t require `--damage-op`; d3/s3 require `--entity-topk-seats > 0`. **The op head-concat is
 NOT deleted** — per the deprecation playbook (and the K9/K10 trunk-null history) the edge home
 lands first; deletion waits on the per-family bias-ablation audit. Measured B=1 (threads=1):
 +0.63 ms for both families on a ~3.5 ms prefuse+seats forward (still under the v50 4.62 ms

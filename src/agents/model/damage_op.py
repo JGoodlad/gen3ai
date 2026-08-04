@@ -1592,6 +1592,57 @@ class DamageOperator(torch.nn.Module):
         ], dim=-1)                                                                     # [B,6i,6j,4]
         return cells * def_alive[:, :, None, None] * att_gate[:, None, :, None]
 
+    def pairwise_trap(self, ctx: 'ExtractorContext') -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (T): the mon↔mon TRAPPING edge — gen3-critical (Shadow Tag /
+        Arena Trap / Magnet Pull; the `trap_core` archetype exists for this). `[B, TEAM_SIZE(our i),
+        TEAM_SIZE(opp j), 2]` = `[P(our i traps opp j), P(opp j traps our i)]` per pair:
+        `p = p_shadowtag + p_arenatrap·grounded(victim) + p_magnetpull·steel(victim)` (a mon has ONE
+        ability → the events are disjoint; clamped ≤1). OUR trapper/victim abilities are KNOWN
+        (exact one-hots); the OPP side uses revealed-ability-exact else the Smogon species prior
+        (`SPECIES_TRAP_PRIOR`), and grounded folds the Levitate prior the same way. An UNREVEALED
+        opp VICTIM is gated to 0 in direction A (its types are unknown — the D4 convention);
+        both-alive-gated. "My Dugtrio traps their weakened Blissey" is a plan-defining edge."""
+        B, device = ctx.batch_size, ctx.device
+        our_ab = ctx.ability1_ids[:, :TEAM_SIZE]                                   # [B,6]
+        opp_ab = ctx.ability1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
+        opp_sp = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
+        revealed_j = (1.0 - ctx.opp_believed_mask.float())                         # [B,6] species known
+        ab_rev_j = (opp_ab > 0).float()                                            # [B,6] ability known
+        alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
+        alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()
+        both = alive_i[:, :, None] * alive_j[:, None, :]                           # [B,6i,6j]
+
+        def _victim(steel_t1, steel_t2, fly_t1, fly_t2, p_lev):
+            steel = (steel_t1 + steel_t2).clamp(max=1.0)
+            flying = (fly_t1 + fly_t2).clamp(max=1.0)
+            grounded = (1.0 - flying) * (1.0 - p_lev)
+            return steel, grounded
+
+        # victim = opp j (direction A): types from revealed species; levitate revealed-exact else prior
+        st_j, gr_j = _victim(self.TYPE_IS_STEEL[ctx.type1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]],
+                             self.TYPE_IS_STEEL[ctx.type2_ids[:, TEAM_SIZE:2 * TEAM_SIZE]],
+                             self.TYPE_IS_FLYING[ctx.type1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]],
+                             self.TYPE_IS_FLYING[ctx.type2_ids[:, TEAM_SIZE:2 * TEAM_SIZE]],
+                             ab_rev_j * self.ABILITY_IS_LEVITATE[opp_ab]
+                             + (1.0 - ab_rev_j) * self.SPECIES_TRAP_PRIOR[opp_sp, 3])
+        # victim = our i (direction B): everything exact
+        st_i, gr_i = _victim(self.TYPE_IS_STEEL[ctx.type1_ids[:, :TEAM_SIZE]],
+                             self.TYPE_IS_STEEL[ctx.type2_ids[:, :TEAM_SIZE]],
+                             self.TYPE_IS_FLYING[ctx.type1_ids[:, :TEAM_SIZE]],
+                             self.TYPE_IS_FLYING[ctx.type2_ids[:, :TEAM_SIZE]],
+                             self.ABILITY_IS_LEVITATE[our_ab])
+        # trapper probs [.., 3] = [shadowtag, arenatrap, magnetpull]
+        tr_i = self.ABILITY_TRAP[our_ab]                                           # [B,6,3] exact
+        tr_j = (ab_rev_j[:, :, None] * self.ABILITY_TRAP[opp_ab]
+                + (1.0 - ab_rev_j)[:, :, None] * revealed_j[:, :, None]
+                * self.SPECIES_TRAP_PRIOR[opp_sp, :3])                             # [B,6,3]
+        p_a = (tr_i[:, :, None, 0] + tr_i[:, :, None, 1] * gr_j[:, None, :]
+               + tr_i[:, :, None, 2] * st_j[:, None, :]).clamp(max=1.0)            # [B,6i,6j]
+        p_a = p_a * revealed_j[:, None, :]                                         # unknown victim → 0
+        p_b = (tr_j[:, None, :, 0] + tr_j[:, None, :, 1] * gr_i[:, :, None]
+               + tr_j[:, None, :, 2] * st_i[:, :, None]).clamp(max=1.0)            # [B,6i,6j]
+        return torch.stack([p_a * both, p_b * both], dim=-1)                       # [B,6,6,2]
+
     def pairwise_incoming(self, ctx: 'ExtractorContext',
                           move_belief_logits: torch.Tensor,
                           cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> torch.Tensor:

@@ -812,9 +812,10 @@ _EDGE_S1_CELL = 2   # [land, land·immob] per (our status move k, opp mon d)
 _EDGE_S3_CELL = 3   # [land, land·immob, w] per (their believed status move c, our mon i)
 _EDGE_V_CELL = 3    # [p_outspeed, both_alive, revealed_j] per (our mon i, opp mon j)
 _EDGE_D4_CELL = 4   # [phys_high, spec_high, phys_pko, spec_pko] per (our mon i, opp BENCH mon j)
+_EDGE_T_CELL = 2    # [P(i traps j), P(j traps i)] per (our mon i, opp mon j)
 _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
                   "d4": _EDGE_D4_CELL, "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL,
-                  "v": _EDGE_V_CELL}
+                  "v": _EDGE_V_CELL, "t": _EDGE_T_CELL}
 
 
 class EdgeBias(torch.nn.Module):
@@ -894,6 +895,9 @@ class EdgeBias(torch.nn.Module):
         if self.d4_map is not None and cells.get("d4") is not None:
             # D4 is the full mon↔mon block too (the active column arrives pre-zeroed by the kernel).
             self._write_block(bias, self.d4_map(cells["d4"]), our, opp)
+        if self.t_map is not None and cells.get("t") is not None:
+            # T is mon↔mon like V (both directions ride the cell's two channels + the two head-sets).
+            self._write_block(bias, self.t_map(cells["t"]), our, opp)
         if self.v_map is not None and cells.get("v") is not None:
             # V is the full mon↔mon block — both endpoint sets are static contiguous slices.
             self._write_block(bias, self.v_map(cells["v"]), our, opp)
@@ -2699,6 +2703,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "outgoing kernels — require --damage-op AND --damage-outgoing "
                     "(--unified-damage both / --unified-moves both)."
                 )
+            if "t" in fams and not damage_op:
+                raise ValueError(
+                    "edge_bias_families t prices mon↔mon trapping from the op's trap tables — "
+                    "requires --damage-op."
+                )
             if "v" in fams and not damage_op:
                 raise ValueError(
                     "edge_bias_families v prices mon↔mon P(outspeed) from the op's speed machinery — "
@@ -3442,6 +3451,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if "d4" in _fams:
                 _cells["d4"] = self.damage_op.pairwise_bench_incoming(
                     ctx, self.last_move_belief_logits)
+            if "t" in _fams:
+                _cells["t"] = self.damage_op.pairwise_trap(ctx)
             if "v" in _fams:
                 _cells["v"] = self.damage_op.pairwise_speed(ctx, _sb)
             if "s3" in _fams:
