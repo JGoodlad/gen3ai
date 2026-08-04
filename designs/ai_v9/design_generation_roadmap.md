@@ -75,7 +75,25 @@ of benchmarking with NO training and no real implementation. Run these before St
    infrastructure — a layer that breaks it is an invisible ~6.5× regression), plus
    eager-vs-compiled timing.
 
-Then, if both pass: the **minimal Stage-1 vertical slice** — our active's 4 move tokens (they
+**RESULTS (2026-08-03, `src/agents/model/entity_spike_benchmark.py`, threads=1, idle box) —
+BOTH PASS; the token budget is supported.**
+
+- **Spike 2 PASS:** SDPA-with-additive-float-mask matches the hand-rolled float64
+  softmax(logits+bias) reference at max|Δ| 1.2e-7; bias=0 reproduces bias=None EXACTLY; the
+  biased layer compiles `torch.compile(fullgraph=True)` with ZERO graph breaks (3.2 s) and
+  compiled matches eager at 9.5e-7. The Stage-2 delivery kernel is proven on our stack.
+- **Spike 1 PASS — growth is dramatically SUB-quadratic (dispatch-bound confirmed):** the
+  2-layer production-shape trunk WITH the bias map, B=1 CPU per forward: n=14 → 0.183 ms,
+  n=36 → 0.288 ms (1.57×; quadratic predicts 6.6×), n=50 → 0.374 ms (2.05× vs 12.8×),
+  n=64 → 0.453 ms (2.48× vs 20.9×). **Absolute verdict: the full ~50-seat entity trunk costs
+  +0.19 ms on a ~4.6 ms B=1 opponent forward (~4%)** — and Stage 2 deletes the ~2.4 ms op
+  flat-sweep, so the net is a large REFUND. Even the 64-seat ceiling is +0.27 ms. Honest
+  caveat: the B=256 proxy grows faster (3.5× at n=50 — tensor-size-bound at batch), but the
+  learner runs on GPU where this class of width is noise; the B=1 CPU path was the real risk
+  and it clears with margin. Bench-K sizing is therefore NOT compute-constrained in this
+  range — choose K on belief-quality grounds (inventory §7.3), not budget.
+
+Then, since both passed: the **minimal Stage-1 vertical slice** — our active's 4 move tokens (they
 already exist, request-ordered, via the v51 stash) + the opp active's top-K believed moves
 into the body with type embeddings, NO edges, short bridge training run. Gate: learning
 doesn't collapse, CPU holds at the benchmark's prediction, the pointer tests still pin
