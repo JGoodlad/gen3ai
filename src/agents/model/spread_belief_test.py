@@ -234,8 +234,8 @@ def test_op_forward_marginalize_shifts_pko():
     shifted = False
     for atk in (600., 900., 1100., 1200., 1300., 1400.):                     # the defender's OHKO threshold band
         sb = torch.full((1, TEAM_SIZE, 5), 150.); sb[:, 0, _SB_ATK] = atk
-        none = op(ctx, lg, sb, None, None, None)[:, :TEAM_SIZE * op.per_mon].reshape(1, TEAM_SIZE, op.per_mon)
-        marg = op(ctx, lg, sb, None, None, nat)[:, :TEAM_SIZE * op.per_mon].reshape(1, TEAM_SIZE, op.per_mon)
+        none = op(ctx, lg, sb, None, None)[:, :TEAM_SIZE * op.per_mon].reshape(1, TEAM_SIZE, op.per_mon)
+        marg = op(ctx, lg, sb, None, nat)[:, :TEAM_SIZE * op.per_mon].reshape(1, TEAM_SIZE, op.per_mon)
         if (none[0, 0, _DMG_IDX_PHYS_PKO] - marg[0, 0, _DMG_IDX_PHYS_PKO]).abs() > 1e-5:
             shifted = True
     assert shifted                                                          # the path is live + changes pko

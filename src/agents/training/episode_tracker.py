@@ -284,6 +284,24 @@ class EpisodeTracker:
         target = _wrap_hp_target(live, event)
         if target is None:
             return
+        # FEASIBILITY GUARD (default since gen3_typed_hp_belief_v1). Two different things can make an
+        # observation eliminate every candidate, and they deserve opposite responses:
+        #
+        #   * NO Hidden Power type could produce this effectiveness against this target. Then the
+        #     TARGET IDENTIFICATION is wrong (the classic case: a switch resolved on our side in the
+        #     same window, so the mon we resolved isn't the mon that was hit) — the observation is
+        #     junk about a mon that was never involved. DISCARD it: narrowing on it would zero
+        #     perfectly possible types, and raising would crash a run over a misattribution.
+        #   * Some type could have produced it, but none of THIS SPECIES' surviving candidates can.
+        #     That is a real contradiction — a tracker bug or a gap in the HP-type priors — and
+        #     `observe` still RAISES on it, with its full per-species observation-log dump.
+        #
+        # So the guard removes the crash for the misattribution class WITHOUT weakening the GIGO
+        # detector for the genuine one. Discards are counted rather than silent (see the tracker's
+        # `infeasible_observations`) — a rising count means the target resolution is drifting.
+        if not self._hidden_power_tracker.is_feasible(event.effectiveness, target):
+            self._hidden_power_tracker.note_infeasible()
+            return
         self._hidden_power_tracker.observe(
             event.user_species, event.effectiveness, target
         )

@@ -366,3 +366,60 @@ def test_multiple_observations_narrow_further():
     surviving_second = sum(p > 0 for p in probs_second)
     assert surviving_second < surviving_first
     assert surviving_second == 8
+
+
+# ---------------------------------------------------------------------------
+# Feasibility guard (default since gen3_typed_hp_belief_v1)
+# ---------------------------------------------------------------------------
+
+def test_infeasible_observation_is_discarded_not_narrowed():
+    """A REPORTED effectiveness that NO Hidden Power type could produce against the resolved target
+    means the TARGET IDENTIFICATION is wrong (e.g. a switch resolved in the same window), not that
+    the belief is wrong. `is_feasible` must catch it so the caller discards, because narrowing on a
+    mon that was never hit would zero perfectly possible types.
+
+    A pure-Water Suicune with no immunity ability is reachable at 0.5x / 1x / 2x but NOT at 0x: none
+    of the gen3 zero-multiplier pairs (Ground->Flying, Ghost->Normal, Fighting/Normal->Ghost,
+    Electric->Ground, Poison->Steel, Psychic->Dark) applies to a pure Water defender. (Skarmory would
+    be the WRONG example here — HP Ground hits its Flying half for 0x, so 0.0 IS feasible there.)"""
+    tracker = make_tracker()
+    suicune = MockMon("suicune", PokemonType.WATER, None, "pressure")
+    assert not tracker.is_feasible(0.0, suicune)
+    assert tracker.is_feasible(2.0, suicune)          # …while a reachable bucket stays feasible
+    # the guard's bookkeeping: discards are COUNTED, never silent
+    assert tracker.infeasible_observations == 0
+    tracker.note_infeasible()
+    assert tracker.infeasible_observations == 1
+    # …and nothing was narrowed by the discarded observation
+    assert not tracker.is_known("gengar")
+
+
+def test_feasible_but_contradictory_observation_still_raises():
+    """The deliberate ASYMMETRY: when the effectiveness IS achievable by some HP type but not by any
+    of THIS species' surviving candidates, that is a genuine contradiction — a tracker bug or a gap
+    in the HP-type priors — and it must stay LOUD rather than being swallowed by the guard."""
+    tracker = make_tracker({"gengar": {"ice": 1.0}})          # gengar's prior: ICE only
+    blissey = MockMon("blissey", PokemonType.NORMAL, None, "naturalcure")
+    # 2x vs Normal is feasible in general (Fighting does it), so the guard would NOT discard…
+    assert tracker.is_feasible(2.0, blissey)
+    # …but gengar's only candidate is Ice, which is 1x vs Normal → a real contradiction → raise.
+    with pytest.raises(ValueError, match="all candidates eliminated"):
+        tracker.observe("gengar", 2.0, blissey)
+
+
+def test_episode_tracker_guards_observe_by_default():
+    """The guard is wired at the PRODUCTION call site, not merely available: an infeasible
+    observation must not reach `observe` (which would raise and kill the run)."""
+    import inspect
+    from agents.training import episode_tracker
+    src = inspect.getsource(episode_tracker.EpisodeTracker._maybe_observe_hidden_power)
+    assert "is_feasible" in src, "the production path must guard observe() with is_feasible"
+    assert src.index("is_feasible") < src.index("_hidden_power_tracker.observe"), \
+        "is_feasible must be checked BEFORE observe"
+
+
+def test_reset_clears_the_infeasible_counter():
+    tracker = make_tracker()
+    tracker.note_infeasible()
+    tracker.reset()
+    assert tracker.infeasible_observations == 0

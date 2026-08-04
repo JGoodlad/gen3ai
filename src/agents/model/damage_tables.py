@@ -28,7 +28,8 @@ belief) and the proven torch port in the ai_v6 design.
 """
 from __future__ import annotations
 
-from typing import Dict
+from functools import lru_cache
+from typing import Dict, Tuple
 
 import torch
 
@@ -106,15 +107,31 @@ _PRIORITY_NORM = 6.0                          # gen3 priority spans ~ -6..+5 →
 
 
 def _belief_num(move_id: str, md) -> int:
-    """The move num the OPPONENT's move-belief PRIOR keys on. Gen 3 never reveals the opponent's
-    Hidden Power TYPE, so every HP the opponent could run is observed BARE — they all aggregate to
-    the typeless num ``237`` here, regardless of a typed variant's own distinct data num (355-370,
-    which exist only for OUR known-HP per-move tables + obs). This keeps the opp-HP belief mass on
-    237 so the operator's 237→16-typed-candidate expansion (weighted by ``hp_probs``) can read it;
-    without it, the typed-HP Smogon usage would scatter to 355-370 and the opp-HP belief at 237 would
-    collapse to the floor (the model would never anticipate the opponent's Hidden Power). Non-HP
-    moves pass through unchanged. See designs/ai_v6/design_typed_hidden_power_ids.md."""
+    """The move num the OPPONENT's move-belief PRIOR keys on. Every Hidden Power — bare or typed —
+    aggregates to the typeless num ``237``, which under `gen3_typed_hp_belief_v1` is the belief's
+    **PRESENCE channel**: ``prior[species, 237] = Σ_t usage(hiddenpower<t>) = P(species runs SOME HP)``.
+    That is exactly the quantity the presence×type factorisation needs, and it is well-defined for the
+    opponent (Gen 3 never reveals the HP type, so an opp HP is always observed bare and pins 237).
+
+    The per-TYPE half of the factorisation is `build_hp_type_prior` (the conditional
+    ``P(type | has HP)`` from the same Smogon data), and the two are multiplied back into the 16 typed
+    nums 355-370 by ``HPTypeBelief.compose_typed_hp`` — which reconstructs the typed usage exactly,
+    since ``P(has HP)·P(t | has HP) == usage(hiddenpower<t>)``. So no prior information is lost by
+    keying presence here; the typed prior CELLS at 355-370 are overwritten by that composition and are
+    never read. Non-HP moves pass through unchanged.
+
+    See designs/ai_v6/design_typed_hidden_power_ids.md."""
     return HIDDEN_POWER_NUM if move_id.startswith("hiddenpower") else md.num
+
+
+@lru_cache(maxsize=1)
+def _hp_typed_nums() -> Tuple[int, ...]:
+    """The 16 DISTINCT typed-Hidden-Power dex nums (355-370) in ``HIDDEN_POWER_TYPE_ORDER`` order —
+    the same axis as ``HP_TYPE_IDX`` / the obs ``hp_probs`` / ``belief_labels.HP_TYPE_NAMES``.
+    Data-derived (never hardcoded) so a num remap can't silently misalign the type axis; the throwing
+    GIGO guard in `build_damage_buffers` pins that alignment."""
+    return tuple(gen3_data.moves.get("hiddenpower" + t.name.lower()).num
+                 for t in HIDDEN_POWER_TYPE_ORDER)
 
 
 def _move_type_idx(md) -> int:
@@ -232,20 +249,18 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     )
     hp_is_phys = type_is_phys[hp_type_idx].clone()
 
-    # gen3_opp_hp_typed_candidates_v1: the DISTINCT dex nums of the 16 TYPED Hidden Powers (355-370,
-    # gen3_typed_hidden_power_ids_v1) in HIDDEN_POWER_TYPE_ORDER order — so the DamageOperator can treat the
-    # opponent's HP as 16 ORDINARY typed-move candidates (real BP/type at these nums, populated above)
-    # instead of a synthetic appended block. The op scatters the opp HP-type BELIEF onto these nums. The
-    # bare typeless num 237 (BP 0) is the PRESENCE token, never a damage candidate. `hp_cand_mask` zeros
-    # BOTH 237 and the 16 typed nums out of the raw move belief (the op writes the belief back into the
-    # typed nums). Derived from the data (NOT hardcoded) so a num remap can't silently misalign.
-    hp_typed_nums = torch.tensor(
-        [gen3_data.moves.get("hiddenpower" + t.name.lower()).num for t in HIDDEN_POWER_TYPE_ORDER],
-        dtype=torch.long,
-    )
+    # gen3_typed_hp_belief_v1: the DISTINCT dex nums of the 16 TYPED Hidden Powers (355-370,
+    # gen3_typed_hidden_power_ids_v1) in HIDDEN_POWER_TYPE_ORDER order. The opponent's Hidden Power is
+    # 16 ORDINARY typed-move candidates at these nums (real BP/type, populated above) — the model NEVER
+    # reasons over a typeless HP damage candidate. The composition now happens UPSTREAM, in
+    # `HPTypeBelief.compose_typed_hp`, so by the time the DamageOperator sees the move-belief posterior
+    # these cells already hold `P(HP present)·P(type)`; the op just consumes them like any other move.
+    # `hp_cand_mask` therefore zeros ONLY the bare typeless num 237 (BP 0) — the PRESENCE channel, which
+    # is a belief bookkeeping slot and never a damage candidate. (It used to zero the typed nums too,
+    # because the op did the scatter itself.) Derived from data, never hardcoded.
+    hp_typed_nums = torch.tensor(list(_hp_typed_nums()), dtype=torch.long)
     hp_cand_mask = torch.ones(n_moves, dtype=torch.float32)
-    hp_cand_mask[HIDDEN_POWER_NUM] = 0.0                 # bare typeless HP = the presence token (BP 0)
-    hp_cand_mask[hp_typed_nums] = 0.0                    # typed HP slots → the op writes the belief here
+    hp_cand_mask[HIDDEN_POWER_NUM] = 0.0                 # bare typeless HP = the presence channel (BP 0)
     # GIGO GUARD — fail LOUD if the data drifts, rather than scatter the HP-type belief onto the wrong move
     # or a 0-damage slot: each typed num MUST carry its HP_TYPE_ORDER type + BP 70, and the bare 237 BP 0.
     for j, t in enumerate(HIDDEN_POWER_TYPE_ORDER):
@@ -863,17 +878,29 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
                     bnum = _belief_num(move_id, md)      # any HP (learnset carries bare 'hiddenpower') → 237
                     if 0 <= bnum < n_moves:
                         prob[snum, bnum] = floor
-        # TRUE usage overrides the floor (an observed move is necessarily legal); HP variants sum into 237
-        # (the opp is observed bare — see _belief_num).
+                    # gen3_typed_hp_belief_v1 — TYPED-HP LEGALITY. `gen3_learnset.json` carries only the
+                    # bare `hiddenpower` (the type is an IV choice, not a learnset entry), so the 16 typed
+                    # nums 355-370 fell through to the `eps` "impossible" default for EVERY species — the
+                    # gate declared HP-Ice unlearnable by anything. Harmless only because the composition
+                    # overwrites those cells; wrong data in a tensor is exactly the GIGO shape we don't
+                    # leave lying around. A typed HP is legal iff the bare one is.
+                    if move_id == "hiddenpower":
+                        for tnum in _hp_typed_nums():
+                            if 0 <= tnum < n_moves:
+                                prob[snum, tnum] = floor
+        # TRUE usage overrides the floor (an observed move is necessarily legal). HP usage sums into the
+        # 237 PRESENCE channel (see `_belief_num`) AND is written per-type at 355-370, so the typed cells
+        # carry their own real rate and are independently meaningful under inspection.
         usage: Dict[int, float] = {}
         for move_id, p in gen3_data.priors.moves(sid).items():
             md = gen3_data.moves.get(move_id)
             if md is None:
                 continue
             bnum = _belief_num(move_id, md)
-            if not (0 <= bnum < n_moves):
-                continue
-            usage[bnum] = usage.get(bnum, 0.0) + float(p)
+            if 0 <= bnum < n_moves:
+                usage[bnum] = usage.get(bnum, 0.0) + float(p)
+            if move_id.startswith("hiddenpower") and 0 <= md.num < n_moves and md.num != bnum:
+                usage[md.num] = usage.get(md.num, 0.0) + float(p)   # the typed cell's own rate
         for num, u in usage.items():
             if u > float(prob[snum, num]):
                 prob[snum, num] = u                      # rare moves keep their real (small) rate

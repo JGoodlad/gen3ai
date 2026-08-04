@@ -821,21 +821,36 @@ The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
 `MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
-**`gen3_pointer_native_v1`** — the v51 pointer-native action head, the fresh-generation
-cross-era break; see the v51 entry below. Its predecessor `gen3_opp_hp_typed_candidates_v1`
-(current v38–v50) made Hidden Power **16 ordinary typed moves end-to-end, BOTH sides**.
-It builds on `gen3_typed_hidden_power_ids_v1` (the prior signature, which gave each TYPED HP its OWN distinct
-move num 355-370 with real BP/type in `gen3_moves.json` + the buffers — bare `hiddenpower`=237; a VALUES-only
-obs change, the typed nums are previously-unused rows in the `max_moves`=400 embedding) and extends it to the
-**OPPONENT side in the DamageOperator**: the op now treats the opp's HP as the 16 real typed candidates
-355-370 (the synthetic appended-16 expansion — the old workaround for the 237 collision — is REMOVED, `C =
-n_moves`), masking the bare 237 (BP 0) as the typeless presence token and scattering the per-type HP belief
-(mode off=obs / prior / learned — see the model leaf's v38 note) onto 355-370. A forward-math change to the op
-(out_dim/projection widths UNCHANGED → not shape-caught) → the `ARCH_SIGNATURE` bump forces a clean reload. The
-obs still keeps the OPPONENT's revealed HP typeless 237 (`damage_tables._belief_num` / `gen3_env._move_num` fold
-the opp move-belief PRESENCE label to 237 — Gen 3 never reveals the opp HP type → no leak; the TYPE is the
-model's belief, supervised by a privileged training-only label); OUR-side HP carries its distinct num + real
-type in the obs/history (`gen3_typed_hidden_power_ids_v1`). A data-derived `HP_TYPED_NUMS` + a throwing GIGO
+**`gen3_typed_hp_belief_v1`** — the v52 discrete typed-HP belief, stacking directly on
+`gen3_pointer_native_v1` (the v51 pointer-native action head, the fresh-generation cross-era break —
+the flat positional `action_net` is deleted and every action is scored from the token of the entity it
+selects; see the v51 entry below). Under it the model **only ever reasons over DISCRETE typed Hidden Power**. The
+presence×type composition `P(HP_t) = presence · P(type=t)` happens ONCE, in `HPTypeBelief.compose_typed_hp`,
+right beside the move-belief head; from that point on the posterior carries HP at its 16 real typed move-nums
+**355-370** and the bare typeless **237** is driven hard-off (a finite `-30` logit, not `-inf`, so the BCE sees
+~0 loss and no NaN). 237 survives only as the belief's internal PRESENCE channel, read immediately before it is
+masked. It supersedes `gen3_opp_hp_typed_candidates_v1`, which had made only the DamageOperator typed while the
+belief, its labels, its prior, the token reinjection and the latent grading still spoke in 237.
+**The invariant this buys is structural**: `Σ_t P(HP_t) == presence`, and presence is reveal-pinned, so once
+the opponent has been SEEN using Hidden Power the belief can be unsure WHICH type it is but can never conclude
+there is none — no penalty term, no coefficient. Two certain facts eliminate candidates first: **moveset
+exhaustion** (4 moves revealed, none of them HP ⇒ presence 0, derived from `opp_move_ids` alone) and
+**effectiveness narrowing** (the `HiddenPowerTracker`'s hard zeros in the obs `hp_probs` are certain physics, so
+the type belief is restricted to the survivors and renormalised — with a uniform-over-survivors fallback so an
+off-meta HP can never be renormalised back to "immune"). The **`--hp-type-belief` mode flag is DELETED**: its
+`off` state was a correctness bug behind a flag (a typeless BP-0 candidate, and a REVEALED HP priced as
+nonexistent because the obs `hp_probs` it sourced the type from is empty until HP actually fires), so the head is
+unconditional whenever there is a move belief — and it no longer requires `--damage-op`, since the composition
+lives in the belief. The op is now a plain consumer (no `hp_type_fix`, no `SPECIES_HP_PRIOR`, no
+`hp_type_belief` argument), which also closes a real divergence: `forward` used to get the learned posterior
+while `refine_candidates` did not, so the between-layers refine kernels priced HP off a different belief than the
+head block. The **move-belief LABELS are now the TRUE TYPED num** (`gen3_env._move_num` no longer folds to 237) —
+they used to supervise a dead channel while leaving the 16 typed ones as BCE negatives, i.e. actively training
+"this opponent has no Hidden Power of any type". Leak-safety is unchanged: the labels are training-only Dict keys
+(the same privileged fact `hp_type_label` already carried) and the OBSERVATION still shows the opponent's HP bare,
+so the model must still guess the type. **The one deliberate hold-out is the TURN-HISTORY opp-move slot**, which
+keeps num 237 — the history records what was OBSERVED, and the type genuinely was not. OUR-side HP carries its
+distinct num + real type in the obs/history throughout (`gen3_typed_hidden_power_ids_v1`). A data-derived `HP_TYPED_NUMS` + a throwing GIGO
 guard pin the 355-370 ↔ `HP_TYPE_ORDER` alignment. The prober decodes the op's typed-HP candidates via the
 NORMAL move-name path (`hiddenpower(ice)`) — no HP-special collapse. Design:
 `designs/ai_v6/design_typed_hidden_power_ids.md` + the model leaf's v38 note. It supersedes
@@ -1033,8 +1048,10 @@ Current `MODEL_CONFIG_VERSION` = **39** (the v38/v39 additions are the bolded en
 (and `design_per_move_damage_matrices.md` for v34/v35, `design_iterative_damage_refinement.md` for v33,
 `design_topk_incoming_moves.md` for v30, `design_distributional_value_critic.md` for v29,
 `design_unified_move_system.md` for v24, `design_unified_damage_system.md` for v23).
-**v38 UNIFIED typed-HP candidates + the opponent HIDDEN-POWER-TYPE belief** (`ARCH_SIGNATURE`
-`gen3_opp_hp_typed_candidates_v1`; `hp_type_belief_mode` / `--hp-type-belief {off,prior,learned}`) — fixes the
+**v38 UNIFIED typed-HP candidates + the opponent HIDDEN-POWER-TYPE belief** (SUPERSEDED by v52
+`gen3_typed_hp_belief_v1` — the `--hp-type-belief` mode flag and the op-side scatter described here are GONE;
+kept for the history of how the "immune" GIGO was first attacked) (`hp_type_belief_mode` /
+`--hp-type-belief {off,prior,learned}`) — fixed the
 DamageOperator rendering the opponent's Hidden Power as 0-damage/**"immune"** (a prober-surfaced GIGO) by
 making HP **16 ordinary typed moves end-to-end**, eliminating the HP special-casing that bred the prober
 ambiguity. Builds on main's `gen3_typed_hidden_power_ids_v1` (typed move-nums **355-370** with real BP 70 +
@@ -1296,7 +1313,35 @@ ortho-init ⇒ cold-start policy is uniform-over-legal. The v49 `pointer_head` f
 (`_migrate_config` POPs it); no gate exists because there is no off state — the cross-era break
 rides the **`ARCH_SIGNATURE` bump**, so every pre-v51 checkpoint fails loud (owner decision
 2026-08-03: no resume/warm-fork across the boundary; pools/opponents re-seed from the new lineage).
-Current `MODEL_CONFIG_VERSION` = **51**, `ARCH_SIGNATURE` = **`gen3_pointer_native_v1`**.
+**v52 the DISCRETE typed HIDDEN POWER, end to end** (`ARCH_SIGNATURE` `gen3_typed_hp_belief_v1`) — the model
+never reasons over a typeless Hidden Power again. See the `ARCH_SIGNATURE` paragraph above for the full
+description: the presence×type composition moves into `HPTypeBelief.compose_typed_hp` next to the move head, so
+the posterior EVERY consumer reads (damage op, top-K, move BCE, latent grading, token reinjection, prober)
+carries HP at the 16 real typed nums 355-370 with the bare 237 hard-off; `Σ_t P(HP_t) = presence` makes "a
+revealed HP must exist as some type" structural; moveset exhaustion and effectiveness narrowing eliminate
+impossible types; the `--hp-type-belief` mode flag is deleted (its `off` state was a correctness bug) and the
+head is unconditional under a move belief, no longer requiring `--damage-op`; the belief LABELS use the true
+typed num (they previously trained the typed channels toward zero); and the learnset gate stops marking all 16
+typed HPs unlearnable. `_migrate_config` **POPs** the dead `hp_type_belief_mode` key. Retrain-class — the
+forward math changed while the projection widths did not, so the `ARCH_SIGNATURE` bump is what catches it.
+Tests: `hp_type_belief_test.py` + the extended `poke_env_gaps/belief_labels_fuzz_test.py`.
+**v53 the HP-BELIEF FACTORISATION ABLATION** (`gen3_hp_belief_ablation_v1`; `hp_belief_mode` /
+`--hp-belief-mode {composed,flat}`) — measures what the v52 presence×type factorisation is actually WORTH.
+BOTH arms reason over the DISCRETE typed HP nums 355-370 and drive the bare BP-0 num 237 hard-off via the
+shared `mask_typeless_hp` helper — the typeless candidate is the "opp HP reads immune" bug, NOT the variable.
+`composed` (DEFAULT) is byte-for-byte v52: the `HPTypeBelief` head, the structural `Σ_t P(HP_t) = presence`
+(reveal-pinned) + moveset exhaustion + effectiveness narrowing. `flat` is the ABLATION: NO `HPTypeBelief`
+head — the multi-label move head predicts the 16 typed channels INDEPENDENTLY, each off its own real
+per-typed Smogon usage prior (the prior table already writes the typed cells' own rates beside the 237
+presence sum), i.e. Hidden Power is treated exactly like any other move — no factorisation, no reveal
+constraint, no narrowing. STRUCTURAL: `flat` drops a module (a state_dict change as well as a forward one),
+STRING-gated in `check_compatible` (the `win_prob_mode` pattern), fresh-only; `_migrate_config` defaults
+pre-v53 configs to `composed`. `--hp-belief-mode flat` AUTO-ZEROES `--hp-type-belief-coef` with a loud note
+(the ablation builds no head, so there is no posterior for the CE to supervise; the zarch single-team
+auto-zero precedent — the coef defaults to 0.05, so erroring would make the ablation flag fail out of the
+box). Default byte-identical → NO `ARCH_SIGNATURE` bump. Tests: `hp_type_belief_test.py` (both arms
+237-masked, the version gate, the invalid-mode raise, the migration default).
+Current `MODEL_CONFIG_VERSION` = **53**, `ARCH_SIGNATURE` = **`gen3_typed_hp_belief_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

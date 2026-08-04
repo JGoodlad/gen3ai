@@ -109,11 +109,17 @@ def _fake_ctx(op, *, attacker_num, attacker_t1, attacker_t2,
     )
 
 
-def _logits_hp_only(n_moves, B=1):
-    """Belief logits that put ~all mass on Hidden Power (num 237) and ~none elsewhere, so only the
-    typed-HP candidates contribute — isolates the HP-expansion path."""
+def _logits_hp_only(n_moves, type_probs=None, B=1):
+    """Belief logits in the COMPOSED shape the op now consumes (gen3_typed_hp_belief_v1): ~all mass on
+    Hidden Power, spread over the 16 TYPED nums 355-370 per `type_probs` (default uniform), with the bare
+    typeless 237 hard-off. That is exactly what `HPTypeBelief.compose_typed_hp` emits — the op does no HP
+    reasoning of its own any more, so a test that pinned mass on 237 would now (correctly) see nothing."""
     lg = torch.full((B, TEAM_SIZE, n_moves), -10.0)
-    lg[:, :, dt.HIDDEN_POWER_NUM] = 10.0
+    lg[:, :, dt.HIDDEN_POWER_NUM] = -30.0                        # the masked presence channel
+    probs = torch.full((16,), 1.0 / 16) if type_probs is None else torch.as_tensor(
+        type_probs, dtype=torch.float32)
+    nums = torch.tensor(list(dt._hp_typed_nums()), dtype=torch.long)
+    lg[:, :, nums] = torch.logit(probs.clamp(1e-9, 1 - 1e-6))
     return lg
 
 
@@ -169,8 +175,9 @@ def test_typed_hp_distinct_effectiveness():
     ice = [0.0] * 16; ice[_hp_slot("ICE")] = 1.0
     lg = _logits_hp_only(layout["max_moves"])
 
-    g = op(_fake_ctx(op, defenders=defenders, hp_probs_active=grass, **attacker), lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
-    i = op(_fake_ctx(op, defenders=defenders, hp_probs_active=ice, **attacker), lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+    ctx = _fake_ctx(op, defenders=defenders, hp_probs_active=[0.0] * 16, **attacker)
+    g = op(ctx, _logits_hp_only(layout["max_moves"], grass))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+    i = op(ctx, _logits_hp_only(layout["max_moves"], ice))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     # feature order per mon: [phys_low,high,crit,pko,acc, spec_low,high,crit,pko,acc, outspeed, prov].
     # HP Grass/Ice are SPECIAL → read the spec high-roll (index 6).
     grass_spec = g[0, 0, 6].item()
@@ -189,8 +196,8 @@ def test_typed_hp_channel_and_effectiveness_ranking():
         (126, _T2I["FIRE"], 0),                 # Magmar — ½× Grass (resists)
     ] + [(0, 0, 0)] * 4
     grass = [0.0] * 16; grass[_hp_slot("GRASS")] = 1.0
-    lg = _logits_hp_only(layout["max_moves"])
-    out = op(_fake_ctx(op, defenders=defenders, hp_probs_active=grass,
+    lg = _logits_hp_only(layout["max_moves"], grass)
+    out = op(_fake_ctx(op, defenders=defenders, hp_probs_active=[0.0] * 16,
                        attacker_num=248, attacker_t1=_T2I["NORMAL"], attacker_t2=0),
              lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     assert out[0, 0, 6].item() > out[0, 1, 6].item() > 0.0   # spec high-roll: Water/Ground > Fire

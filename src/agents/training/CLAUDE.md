@@ -1841,33 +1841,40 @@ against the *modal* opponent, not the real one. Off by default (`--spread-belief
   --unified-moves both --spread-belief --spread-belief-coef 0.1 --n-steps 64`) confirms the roundtrip + the
   loss runs + `belief/spread_*` metrics.
 
-## Opponent HP-type belief loss (`--hp-type-belief learned` / `--hp-type-belief-coef`)
+## Opponent HP-type belief loss (`--hp-type-belief-coef`)
 
-The training half of `gen3_opp_hp_type_belief_v1` (model side: `src/agents/model/CLAUDE.md` → opponent
-HP-type belief, v38). The DamageOperator's typed-HP candidates were priced "immune" because the opp's HP
-TYPE was unknown (the obs `hp_probs` is empty until HP fires); the `HPTypeBelief` head learns it, supervised
-here.
+The training half of `gen3_typed_hp_belief_v1` (model side: `src/agents/model/CLAUDE.md` → DISCRETE typed
+Hidden Power, v51). The opponent's Hidden Power is reasoned about ONLY as the 16 discrete typed moves; the
+`HPTypeBelief` head supplies the type half of `P(HP_t) = presence · P(type=t)`, and this CE is its direct
+supervision.
 - **Label (training-only, privileged).** `Gen3Env._hp_type_labels` reads agent2's OWN team for each
   REVEALED opp mon's true Hidden Power type (the typed move-id suffix → `belief_labels.build_hp_type_labels` /
   `hp_type_idx_from_move_id`, in the `HIDDEN_POWER_TYPE_ORDER` index space) and emits the `hp_type_label` [6]
   / `hp_type_mask` [6] Dict keys (mask=1 only at a revealed slot whose species runs HP). Gen 3 NEVER reveals
   the opp HP type, so this can't ride the obs vector — it is leak-safe (a separate Dict key, read ONLY by the
-  loss; the obs vector width is unchanged). Emitted when `--hp-type-belief learned` AND `--hp-type-belief-coef>0`.
+  loss; the obs vector width is unchanged). Emitted when there is a move belief AND `--hp-type-belief-coef>0`.
 - **Loss (`instrumented_ppo._hp_type_belief_loss`).** Reads the extractor's stashed `last_hp_type_logits`
-  [6,16] (the prior⊕delta posterior logits the op consumes) + the label keys; folds `hp_type_belief_coef ·
-  cross_entropy` over the masked (revealed-HP) slots. Gradient flows posterior → `hp_type_head` → opp tokens →
-  trunk (joins the per-head grad-balance probe as `grad/hp_type_*`); `aux_probe_terms["hp_type"]`.
-- **Metrics (`belief/hptype_*`).** `acc` (top-1 HP-type accuracy — should climb above the 1/16≈0.06 chance),
-  `loss`, `n_slots`. `hp_type_belief_coef` is **training-only** (inherited on a flagless resume, like
-  `spread_belief_coef`); the head/op-fix structure is gated by the version-checked `hp_type_belief_mode`.
-- **Tests.** Unit: `model/hp_type_belief_test.py` (the immune-bug-and-fix, bare-237 mask, effectiveness
-  narrowing, cold-start==prior, op-consumes-posterior grad flow, the tri-state module build + projection
-  parity, the CE loss masking, `build_hp_type_labels`, the 16-axis GIGO pin, the version gate). **Fuzz**
-  (real bridge battles): the extended `poke_env_gaps/belief_labels_fuzz_test.py` validates `hp_type_label` ==
-  each revealed HP-mon's true type, mask 0 on revealed-no-HP / believed / pad slots (no leak), and the OFF env
-  declaring no HP-type keys. End-to-end smoke (`--debug --damage-op --move-belief-mode revealed
-  --move-prior-fusion --hp-type-belief learned --hp-type-belief-coef 0.05 --n-steps 64`) confirms the
-  roundtrip + `belief/hptype_*` (acc 0.1→0.5 over the smoke).
+  [6,16] (the prior⊕delta posterior) + the label keys; folds `hp_type_belief_coef · cross_entropy` over the
+  masked (revealed-HP) slots. Gradient flows posterior → `hp_type_head` → opp tokens → trunk (joins the
+  per-head grad-balance probe as `grad/hp_type_*`); `aux_probe_terms["hp_type"]`.
+- **It is no longer the head's ONLY signal.** Since v51 the move-belief BCE labels use each Hidden Power's TRUE
+  TYPED num, so the multi-label BCE lands directly on the composed typed channels — which trains the type
+  posterior AND the presence channel jointly, through one gradient path. The damage operator's gradient rides
+  the same channels. So `--hp-type-belief-coef 0` no longer means "unsupervised": it means "no dedicated CE on
+  top". The default is **0.05**.
+- **Metrics (`belief/hptype_*`).** `acc` (top-1 HP-type accuracy — should climb well above the 1/16≈0.06
+  chance; a short bridge smoke reaches ~0.8 quickly since the head cold-starts at the Smogon prior), `loss`,
+  `n_slots`. `hp_type_belief_coef` is **training-only** (inherited on a flagless resume, like
+  `spread_belief_coef`). The old version-checked `hp_type_belief_mode` is DELETED — the head is unconditional
+  whenever there is a move belief, and it no longer requires `--damage-op`.
+- **Tests.** Unit: `model/hp_type_belief_test.py` (the Σ-typed-equals-presence constraint, both certain-fact
+  eliminations, the immune-bug regression, the op having no HP source of its own, the CE loss masking,
+  `build_hp_type_labels`, the 16-axis GIGO pin, the v51 migration). **Fuzz** (real bridge battles): the
+  extended `poke_env_gaps/belief_labels_fuzz_test.py` validates `hp_type_label` == each revealed HP-mon's true
+  type, the TYPED move labels == the real opponent movesets, mask 0 on revealed-no-HP / believed / pad slots
+  (no leak), and the OFF env declaring no HP-type keys. End-to-end smoke (`--debug --use-bridge=node
+  --unified-moves both --spread-belief --move-belief-prefuse --damage-op-prefuse --hp-type-belief-coef 0.05`)
+  confirms the roundtrip + `belief/hptype_*`.
 
 ## Win-probability head (`--win-prob-mode` / `--win-prob-coef`)
 

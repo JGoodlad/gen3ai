@@ -133,7 +133,7 @@ Rules to preserve:
 - **Each phase owns its layers** (`move_network` lives under `pokemon_encoder`, `our_cls` under `cls_pool`, etc.). State_dict keys are therefore phase-prefixed.
 - **`Embeddings` is the sole owner of the 5 embedding tables + `hp_type_idx_map`.** It is passed as a **forward argument** to `PokemonEncoder` and `TeamTransformer` — never stored as a child attribute on them — so the tables register exactly once. (The root exposes read-only `@property` forwarders like `model.type_embedding` for convenience; those add no state_dict keys.)
 - **`ExtractorContext`** (frozen-by-convention dataclass) is the inter-phase contract: `ObsUnpack` produces it, downstream phases read from it. Add a field here rather than widening a phase's positional signature. Cross-phase values (active-slot indices, fainted masks, `hp_probs`) are computed once in `ObsUnpack` and carried on the context.
-- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py` (current: `gen3_pointer_native_v1` — the fresh-generation pointer-native action head, v51: the flat `action_net` is deleted and the pointer head is THE head, a state_dict + forward change for every model with no off state, so the signature carries the cross-era break. Before it: `gen3_opp_hp_typed_candidates_v1` — the DamageOperator treats the opponent's Hidden Power as the 16 ORDINARY typed move-nums 355-370 [`C = n_moves`, no synthetic appended-16] with the bare 237 masked as the presence token. The literal source of truth is `ARCH_SIGNATURE` in `model_version.py`; check it there, not this prose). Pure decompositions still change state_dict keys, so old checkpoints must fail loudly. Re-sourcing or re-meaning an obs block (e.g. own IV/EV/nature going from constant fallbacks to real values via the poke-env `backfill_teambuilder_spread` fix; the event-sourced TurnDelta fold + status/item transition history; routing the trapping signals — `trapped`/`maybe_trapped`/`attempted_switch_rejected` — into the obs; the action-aligned per-move effect block — `gen3_move_effects_v1`; the per-our-mon incoming-damage / OHKO belief block — `gen3_incoming_damage_v1`; **re-calibrating that belief's VALUES** — `gen3_incoming_damage_v2`, which added a gen3 crit term + raised the offensive-stat tail to de-timid P(KO), and widened the candidate set [revealed-HP typed expansion, Return/Frustration pricing, broader prior floor/cap] so the killing move isn't silently absent; same 33 dims, values only; or adding the `turns_since_progress` no-progress-clock scalar at `vec[14]` — `gen3_markovian_progress_v1`, obs dim 3390 → 3391; or **re-ordering** the per-move features (base power vec[0:4], type multiplier vec[4:8], the move-effect block) from `battle.available_moves` order to request-slot order so feature slot k aligns with action logit 6+k — `gen3_move_slot_align_v1`, same 3409 dims, VALUES only on the disabled-move / <4-move / no-opp-active cases, byte-identical otherwise; or adding the two **protect-success-odds** reactive scalars at `vec[15]`/`vec[16]` — `gen3_protect_odds_v1`, P(Protect succeeds NOW) per active mon from `LivePokemon.protect_counter`, obs dim 3409 → 3411; or adding the two static per-move status-cure bits — `cures_self_status` (Refresh) + `cures_team_status` (Heal Bell / Aromatherapy) — to the move-effect block so the head can connect a cure move to the per-mon status one-hots, `gen3_status_cure_moves_v1`, `MOVE_EFFECT_FEATURES` 9 → 11, obs dim 3411 → 3419; or adding the 3-dim per-mon SLEEP WAKE belief block — `sleep_is_deterministic` [Rest] + a COMPUTED `p_wake` (the verified gen3 sleep-RNG tables, opp time∈{2,3,4,5} / Rest time=3 / Early Bird halves, marginalising the opp Early-Bird prior) + `sleep_counter_reliable` — so the head reads the wake odds + Rest source poke-env can't expose instead of learning the sleep RNG, `gen3_sleep_wake_belief_v1`, `POKEMON_VECTOR_DIM` 106 → 109, obs dim 3419 → 3455; or RESERVING two reactive scalars at `vec[17]`/`vec[18]` for a pending-Wish "floating heal" signal (`gen3_wish_reserve_v1`, `REACTIVE_SCALAR_DIM` 17 → 19, obs dim 3455 → 3457) then WIRING them — the gen3 Wish (gen4-inherited) heals the slot mon's `maxhp/2` at the end of the turn after cast, slot-keyed, so the per-side scalar is the flat `WISH_HEAL_FRACTION` (≈0.5, GIGO-proof) when a wish cast last turn resolves this turn, reconstructed from the event log since poke-env doesn't track it, `gen3_wish_wired_v1`, a VALUES-only change, fuzz-calibrated vs the real sim; or **re-meaning the `turns_since_progress` no-progress-clock scalar** at `vec[14]` so a REST-LOOP — our active Rested earlier this episode, woke, and re-Rested without Sleep Talk — is classified a NO_OP stall instead of a free defensive heal (it now ADVANCES the clock + charges `no_progress_tax`; Sleep-Talk mons and winning residual rest-stalls stay exempt — and, folded into the SAME signature with NO separate bump (owner decision), a WASTED Refresh (`cures_self_status` used with `our_status_cured is None`) is likewise a NO_OP charged BEFORE the progress check, so it is taxed even when a winning Leech/Toxic residual would otherwise launder the turn into "progress"), `gen3_rest_loop_stall_v1`, a VALUES-only change in `progress_clock.py`, same obs dim 3457; or adding the request-ordered **active-req-moves** block — OUR active mon's 4 moves in `legal.move_slots` order `[move_num ×4, resolved_type_id ×4, legal_now ×4]` after the matchups, so the DamageOperator's OUTGOING per-move methods (`_outgoing_block`/`_status_landing`/`_outgoing_matrix`) read request order instead of the per-mon block's sorted-by-id order and their per-move output aligns with action logit 6+k — `gen3_op_move_align_v1`, `REACTIVE_DIM` 402 → 414, obs dim 3457 → 3469, a SHAPE change; or giving each TYPED Hidden Power its OWN distinct move num — `gen3_typed_hidden_power_ids_v1`, a VALUES-only change [same obs dim 3469, no weight-shape change: 355-370 are previously-unused move-embedding rows, max_moves=400]: OUR-side HP carries a distinct num (355-370) + real type in the obs/per-num tables so the extractor's `is_hp_slot == 237` no longer matches it [normal typed-move path; our outgoing HP priced right] and the history folds the distinct num, while the OPPONENT's HP stays bare 237 with ALL its belief machinery [the HP tracker, the hp_probs blend, the op's 237→16-candidate expansion, the move-belief PRIOR+LABELS via `damage_tables._belief_num` + `gen3_env._move_num`] folded to 237 — the known/unknown boundary; supersedes the `gen3_own_hp_typed_history_v1` hp_probs one-hot [reverted]) is likewise retrain-class even when individual dims are unchanged.
+- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py` (current: `gen3_typed_hp_belief_v1`, stacking on `gen3_pointer_native_v1` — the v51 fresh-generation pointer-native action head, the cross-era break under which the flat `action_net` is deleted and every action is scored from its entity token — the opponent's Hidden Power is composed into the 16 ORDINARY typed move-nums 355-370 inside the BELIEF (`HPTypeBelief.compose_typed_hp`, beside the move head), with the bare 237 driven hard-off; every downstream consumer therefore reads a typed posterior and the op does no HP reasoning of its own. A forward-math change with unchanged out_dim/projection widths → not shape-caught, so it bumps the signature. The literal source of truth is `ARCH_SIGNATURE` in `model_version.py`; check it there, not this prose). Pure decompositions still change state_dict keys, so old checkpoints must fail loudly. Re-sourcing or re-meaning an obs block (e.g. own IV/EV/nature going from constant fallbacks to real values via the poke-env `backfill_teambuilder_spread` fix; the event-sourced TurnDelta fold + status/item transition history; routing the trapping signals — `trapped`/`maybe_trapped`/`attempted_switch_rejected` — into the obs; the action-aligned per-move effect block — `gen3_move_effects_v1`; the per-our-mon incoming-damage / OHKO belief block — `gen3_incoming_damage_v1`; **re-calibrating that belief's VALUES** — `gen3_incoming_damage_v2`, which added a gen3 crit term + raised the offensive-stat tail to de-timid P(KO), and widened the candidate set [revealed-HP typed expansion, Return/Frustration pricing, broader prior floor/cap] so the killing move isn't silently absent; same 33 dims, values only; or adding the `turns_since_progress` no-progress-clock scalar at `vec[14]` — `gen3_markovian_progress_v1`, obs dim 3390 → 3391; or **re-ordering** the per-move features (base power vec[0:4], type multiplier vec[4:8], the move-effect block) from `battle.available_moves` order to request-slot order so feature slot k aligns with action logit 6+k — `gen3_move_slot_align_v1`, same 3409 dims, VALUES only on the disabled-move / <4-move / no-opp-active cases, byte-identical otherwise; or adding the two **protect-success-odds** reactive scalars at `vec[15]`/`vec[16]` — `gen3_protect_odds_v1`, P(Protect succeeds NOW) per active mon from `LivePokemon.protect_counter`, obs dim 3409 → 3411; or adding the two static per-move status-cure bits — `cures_self_status` (Refresh) + `cures_team_status` (Heal Bell / Aromatherapy) — to the move-effect block so the head can connect a cure move to the per-mon status one-hots, `gen3_status_cure_moves_v1`, `MOVE_EFFECT_FEATURES` 9 → 11, obs dim 3411 → 3419; or adding the 3-dim per-mon SLEEP WAKE belief block — `sleep_is_deterministic` [Rest] + a COMPUTED `p_wake` (the verified gen3 sleep-RNG tables, opp time∈{2,3,4,5} / Rest time=3 / Early Bird halves, marginalising the opp Early-Bird prior) + `sleep_counter_reliable` — so the head reads the wake odds + Rest source poke-env can't expose instead of learning the sleep RNG, `gen3_sleep_wake_belief_v1`, `POKEMON_VECTOR_DIM` 106 → 109, obs dim 3419 → 3455; or RESERVING two reactive scalars at `vec[17]`/`vec[18]` for a pending-Wish "floating heal" signal (`gen3_wish_reserve_v1`, `REACTIVE_SCALAR_DIM` 17 → 19, obs dim 3455 → 3457) then WIRING them — the gen3 Wish (gen4-inherited) heals the slot mon's `maxhp/2` at the end of the turn after cast, slot-keyed, so the per-side scalar is the flat `WISH_HEAL_FRACTION` (≈0.5, GIGO-proof) when a wish cast last turn resolves this turn, reconstructed from the event log since poke-env doesn't track it, `gen3_wish_wired_v1`, a VALUES-only change, fuzz-calibrated vs the real sim; or **re-meaning the `turns_since_progress` no-progress-clock scalar** at `vec[14]` so a REST-LOOP — our active Rested earlier this episode, woke, and re-Rested without Sleep Talk — is classified a NO_OP stall instead of a free defensive heal (it now ADVANCES the clock + charges `no_progress_tax`; Sleep-Talk mons and winning residual rest-stalls stay exempt — and, folded into the SAME signature with NO separate bump (owner decision), a WASTED Refresh (`cures_self_status` used with `our_status_cured is None`) is likewise a NO_OP charged BEFORE the progress check, so it is taxed even when a winning Leech/Toxic residual would otherwise launder the turn into "progress"), `gen3_rest_loop_stall_v1`, a VALUES-only change in `progress_clock.py`, same obs dim 3457; or adding the request-ordered **active-req-moves** block — OUR active mon's 4 moves in `legal.move_slots` order `[move_num ×4, resolved_type_id ×4, legal_now ×4]` after the matchups, so the DamageOperator's OUTGOING per-move methods (`_outgoing_block`/`_status_landing`/`_outgoing_matrix`) read request order instead of the per-mon block's sorted-by-id order and their per-move output aligns with action logit 6+k — `gen3_op_move_align_v1`, `REACTIVE_DIM` 402 → 414, obs dim 3457 → 3469, a SHAPE change; or giving each TYPED Hidden Power its OWN distinct move num — `gen3_typed_hidden_power_ids_v1`, a VALUES-only change [same obs dim, no weight-shape change: 355-370 are previously-unused move-embedding rows, max_moves=400]: OUR-side HP carries a distinct num (355-370) + real type in the obs/per-num tables so the extractor's `is_hp_slot == 237` no longer matches it [normal typed-move path; our outgoing HP priced right] and the history folds the distinct num, while the OPPONENT's HP stays bare 237 in the OBSERVATION [Gen 3 never discloses the type — the known/unknown boundary]; the belief machinery that used to fold to 237 alongside it [the op's candidate expansion, the move-belief LABELS] was moved to the typed nums by v52 `gen3_typed_hp_belief_v1`, leaving only the PRESENCE prior at 237) is likewise retrain-class even when individual dims are unchanged.
 - Per-phase unit tests live in `phase_modules_test.py` — `CLSPool` (incl. the `value_cls` pool) and `ProjectionAssembler` (which returns `(pi_combined, vf_combined)`) are tested on a hand-built `ExtractorContext` (`_dummy_ctx`) without a full forward pass. Prefer adding precise phase-level tests there.
 
 ## File layout (`gen3_damage_op_split_v1`, 2026-08-01)
@@ -851,53 +851,99 @@ opp-recovery heads-only + Rest-cure coarsening). Tests: `bidir_threat_test.py` (
 both ways, immobilize⊆major, revealed-gating, identity-at-init, grad) + `bidir_threat_fuzz_test.py` (status
 invariants over real battles). Current `MODEL_CONFIG_VERSION` = **37**.
 
-**Opponent HP-type belief + UNIFIED typed-HP candidates (v38, `gen3_opp_hp_typed_candidates_v1` /
-`gen3_opp_hp_type_belief_v1`, `hp_type_belief_mode` / `--hp-type-belief {off,prior,learned}`).** Fixes the
-DamageOperator rendering the opponent's Hidden Power as 0-damage/**"immune"** (a prober-surfaced GIGO) by
-making HP **16 ORDINARY typed moves end-to-end** — eliminating the HP special-casing that bred the prober
-ambiguity ("model bug or observability bug?"). Builds on main's `gen3_typed_hidden_power_ids_v1` (the typed
-move-nums 355-370 with real BP 70 + type in the damage buffers; bare 237 = BP 0).
-- **The op uses the REAL typed nums 355-370 as candidates** — the candidate axis is now `C = n_moves` (the
-  synthetic appended-16 expansion, the old workaround for the 237 collision, is GONE — every `cat([MOVE_*,
-  HP_*])` collapsed to the buffer, value-preserving since `MOVE_*[355-370]` == the appended values, verified).
-  The bare typeless 237 (BP 0) is the **presence token, ALWAYS masked** from the damage candidates.
-- **`DamageOperator._opp_candidate_weights(ctx, move_belief_logits, hp_type_belief=None)`** (the SINGLE source
-  for all 3 candidate sites — `forward` + the lean `discrete_incoming`/`discrete_incoming_status` refine
-  kernels) masks 237 + the raw 355-370 (the non-persistent `HP_CAND_MASK` buffer) and **scatters
-  `P(HP present)·P(HP type)` onto 355-370** (`w.index_add(1, HP_TYPED_NUMS, …)`, autograd-safe). P(HP present)
-  = `sigmoid(belief[237])` (reveal-pinned). The type source: `off` (mode 'off') = the obs `hp_probs`
-  (effectiveness-narrowed, baseline); on (`prior`/`learned`) = the learned posterior ⊕ the Smogon
-  `SPECIES_HP_PRIOR` floor (`build_hp_type_prior`), NARROWED by `hp_probs` (its hard zeros are CERTAIN; an
-  off-meta-survivor fallback spreads uniform so it never re-immunes). Multiple un-ruled-out types stay live
-  (a distribution, not argmax) → the top-K surfaces hp-ice + hp-grass DISTINCTLY at their real nums (365/363).
-- **GIGO guard** (`build_damage_buffers`, throwing): `HP_TYPED_NUMS` is data-derived (the `hiddenpower<type>`
-  nums in HP_TYPE_ORDER order) and the builder asserts `MOVE_TYPE_IDX[355+j]==HP_TYPE_IDX[j]`, `MOVE_BP[237]==0`,
-  `MOVE_BP[typed]==70` — fail loud if the data drifts, never scatter the belief onto the wrong move.
-- **`learned`** ALSO builds **`HPTypeBelief`** (a phase module like SpreadBelief): per opp slot a 16-way
-  posterior `softmax(head_delta + log prior[species])` (zero-init head → cold-start == the Smogon prior),
-  stashed at `last_hp_type_logits` (fed to the op — its damage gradient sharpens it — + the CE aux). It ALSO
-  **reinjects** the presence-gated expected typed-HP embedding (`hp_soft_type(posterior)` × presence, small-init
-  `reinject_proj`) into the revealed opp tokens, so attention + both heads reason over the believed HP type
-  (not just the op's damage block). Label: training-only `hp_type_label`/`hp_type_mask` Dict keys from agent2's
-  typed move-id (`build_hp_type_labels`), CE `instrumented_ppo._hp_type_belief_loss` at `--hp-type-belief-coef`
-  (metrics `belief/hptype_*`). Leak-safe: the opp's OBS HP stays typeless 237 (no leak), the typed belief +
-  label are model-internal/privileged-training-only.
-- **Versioning:** the op forward-math changed (out_dim + projection widths UNCHANGED — C is internal — so NOT
-  shape-caught) → **`ARCH_SIGNATURE` bumped to `gen3_opp_hp_typed_candidates_v1`** so a pre-unification
-  `damage_op` checkpoint fails loud rather than silently computing the old HP candidates. `hp_type_belief_mode`
-  is a STRING toggle gated in `check_compatible` (off↔prior forward; prior↔learned state_dict); the obs VECTOR
-  dim is unchanged (the label is a separate Dict key). Requires `damage_op`; `hp_type_belief_coef` training-only.
-  Threaded through `current_model_version`/`arch_toggles_from_model`/`_run_arch_toggles` + both extractor sites.
-- **Prober:** the op's top-K candidates are real move-nums → `ProbeModel._topk_move_names` decodes them via the
-  NORMAL num→id path with the type preserved (`hiddenpower(ice)`), bare 237 → `hiddenpower` — no HP-special
-  index→type collapse (the old ambiguity is gone).
+**DISCRETE typed Hidden Power, end to end (v52, `gen3_typed_hp_belief_v1`).** The model never reasons over a
+typeless Hidden Power. Supersedes v38 `gen3_opp_hp_typed_candidates_v1` / `gen3_opp_hp_type_belief_v1`, which
+made only the DamageOperator typed while the belief, its labels, its prior, the token reinjection and the latent
+grading all still spoke in the typeless num 237.
 
-Tests: `hp_type_belief_test.py` (the immune-bug-and-fix, 237-always-masked + C=n_moves, narrowing + off-meta
-fallback, cold-start==prior, the two-distinct-typed-HPs top-K at real nums 363/365, grad flow, modes, CE, the
-GIGO/version gate, the v2 reinjection) + the extended `poke_env_gaps/belief_labels_fuzz_test.py` (HP-type label
-== agent2's real type + no-leak, live). `MODEL_CONFIG_VERSION` was **38** at v38; the current value is **40**
-(the v40 nature/EV note below); `ARCH_SIGNATURE` is now **`gen3_pointer_native_v1`** (v51, the
-pointer-native head — see that note; `gen3_opp_hp_typed_candidates_v1` was current v38–v50).
+- **One composition, upstream of every consumer.** `HPTypeBelief.compose_typed_hp(move_logits, posterior,
+  obs_hp_probs, opp_move_ids)` rewrites the raw move-belief posterior so HP exists ONLY at the 16 real typed
+  move-nums 355-370, each carrying `logit(presence · P(type))`, with the bare 237 set to
+  `_HP_PRESENCE_OFF_LOGIT` (−30: hard off but FINITE, so the multi-label BCE sees ~0 loss and no NaN). 237
+  survives only as the belief's internal PRESENCE channel, read immediately before it is masked. It runs inside
+  `_apply_move_belief`, between the move head's read and the reinjection — so `last_move_belief_logits`, the
+  tensor the damage op / top-K / BCE / latent grading / prober all read, is already typed, and the soft-embed
+  reinjection pulls on the REAL typed move-embedding rows instead of the typeless one (whose `MOVE_ATTR` /
+  latent rows are deliberately all-zero).
+- **The constraint is structural, not a penalty.** `Σ_t P(HP_t) == presence`, and `MoveBelief.move_logits` pins
+  presence to `_REVEAL_LOGIT` the moment `hiddenpower` is revealed — so a seen Hidden Power can never be
+  believed away. The belief can only be unsure ACROSS TYPES, which is the honest state.
+- **Two certain-fact eliminations** ("discard the ones that don't make sense"), both inside the composition:
+  **moveset exhaustion** (4 moves revealed and none is HP ⇒ presence 0; derived from `opp_move_ids` alone, so
+  it needs no plumbing and agrees by construction with `HiddenPowerTracker.mark_no_hp`) and **effectiveness
+  narrowing** (once HP has FIRED, the tracker's zeros in the obs `hp_probs` are CERTAIN physics → restrict the
+  type belief to the survivors and renormalise, with a uniform-over-survivors fallback so an off-meta HP is
+  never renormalised back to ~0, i.e. re-immuned).
+- **The head is UNCONDITIONAL** whenever `move_belief is not None` — there is no `off`. The v38 tri-state's
+  `off` was a correctness bug behind a flag: it left a typeless BP-0 candidate in the damage sweep AND sourced
+  the type from the obs `hp_probs`, which is all-zero until the opponent actually fires HP, so a REVEALED
+  Hidden Power was priced as nonexistent. It also no longer requires `damage_op`: the composition lives in the
+  belief, so the typed posterior reaches the token reinjection / BCE / prober even with no operator.
+  `--hp-type-belief-coef` (default 0.05) now controls only whether the privileged CE supervises the head on
+  top of the damage + BCE gradients it already gets.
+- **The op is a plain consumer.** `_opp_candidate_weights(ctx, move_belief_logits)` just masks the 237 presence
+  channel; `hp_type_fix`, `SPECIES_HP_PRIOR` and the `hp_type_belief` forward argument are GONE, and
+  `HP_CAND_MASK` no longer zeros the typed nums. This closes a real divergence: `forward` was passed the
+  learned posterior while `refine_candidates` was not, so the between-layers refine kernels priced HP off the
+  Smogon prior while the head block priced it off the learned belief.
+- **Labels use the TRUE TYPED num** (`gen3_env._move_num` no longer folds to 237). A 237-keyed label supervised
+  a dead channel while leaving the 16 typed ones as BCE NEGATIVES — the head was being trained toward "this
+  opponent has no Hidden Power of any type", fighting the composition. Leak-safety is unchanged: these are
+  training-only Dict keys carrying exactly the privileged fact `hp_type_label` already carried, and the
+  OBSERVATION still shows the opponent's HP bare, so the type must still be guessed.
+- **The PRIOR keeps its factorisation** and loses nothing: `damage_tables._belief_num` still sums typed usage
+  onto 237 (= `P(runs SOME HP)`) and `build_hp_type_prior` holds the conditional `P(type | has HP)`; their
+  product reconstructs each typed HP's own Smogon rate exactly (pinned by a test). The **learnset gate is
+  fixed**: `gen3_learnset.json` lists only the bare `hiddenpower` (the type is an IV choice), so the gate used
+  to drive all 16 typed nums to the `eps` IMPOSSIBLE floor for every species — harmless only because the
+  composition overwrote those cells, which is exactly the GIGO shape not to leave lying around.
+- **Deliberate hold-out: the TURN-HISTORY opp-move slot keeps 237.** The history records what was OBSERVED, and
+  the type genuinely was not; there is no sound way to type it after the fact.
+- **GIGO guard** (`build_damage_buffers`, throwing) is unchanged: `HP_TYPED_NUMS` is data-derived (via
+  `damage_tables._hp_typed_nums()`) and the builder asserts `MOVE_TYPE_IDX[355+j]==HP_TYPE_IDX[j]`,
+  `MOVE_BP[237]==0`, `MOVE_BP[typed]==70`.
+- **Versioning:** the forward math changed with out_dim + projection widths UNCHANGED, so nothing shape-based
+  catches it → **`ARCH_SIGNATURE` bumped to `gen3_typed_hp_belief_v1`**. `hp_type_belief_mode` is DELETED from
+  `ModelVersion` / `check_compatible` / `extractor_arch` / `snapshot`, and `_migrate_config` **POPs** it
+  (`from_json_file` does `cls(**data)`, so a stale key would raise a bare `TypeError` instead of the clear arch
+  error). `hp_type_belief_coef` stays training-only. Retrain-class.
+- **Prober:** unchanged and now unambiguous — the op's top-K candidates are real move-nums decoded via the
+  NORMAL num→id path with the type preserved (`hiddenpower(ice)`); the bare 237 is never selected.
+
+Tests: `hp_type_belief_test.py` (the Σ-typed-equals-presence constraint under adversarial posteriors, 237
+hard-off + non-HP channels untouched, both eliminations, the off-meta-survivor regression, the immune bug in
+the state that produced it, the op having no HP source + its two candidate sites agreeing, the two-distinct-
+typed-HPs top-K, the typed-row soft-embed, cold-start==prior, grad to BOTH factors, the unconditional head, the
+prior-factorisation and learnset-gate data pins, the v52 migration) + the extended
+`poke_env_gaps/belief_labels_fuzz_test.py` (typed labels == agent2's real movesets + HP types, no-leak, live).
+
+**The HP-belief factorisation ablation (v53, `gen3_hp_belief_ablation_v1`, `hp_belief_mode` /
+`--hp-belief-mode {composed,flat}`).** Measures what the v52 presence×type factorisation is actually WORTH
+against the null hypothesis "the multi-label move head can just learn 16 independent typed channels".
+
+- **What is NOT the variable:** BOTH arms reason over the discrete typed nums 355-370 and drive the bare BP-0
+  num 237 hard-off via the shared module-level helper `mask_typeless_hp` (both arms provably agree on it —
+  pinned by a test). The typeless candidate is the original "opp HP reads immune" bug, so leaving it live in
+  the `flat` arm would be re-introducing a correctness bug, not an ablation arm.
+- **`composed` (DEFAULT)** is byte-for-byte the v52 forward: `HPTypeBelief` + `compose_typed_hp` (the
+  structural `Σ_t P(HP_t) = presence`, reveal-pinned, + moveset exhaustion + effectiveness narrowing).
+- **`flat` (the ABLATION)** builds NO `HPTypeBelief`: `_compose_hp_typed` short-circuits to
+  `mask_typeless_hp(raw_move_logits)`, so the move head predicts the 16 typed channels INDEPENDENTLY — under
+  `--move-prior-fusion` each off its own real per-typed Smogon usage rate, which `build_move_prior` already
+  writes at 355-370 beside the 237 presence sum (no prior plumbing needed). No factorisation, no reveal
+  constraint, no tracker narrowing: a seen Hidden Power CAN be believed away here — that is the point.
+- **CLI ergonomics:** `--hp-belief-mode flat` AUTO-ZEROES `--hp-type-belief-coef` with a loud note (no head ⇒
+  no posterior for the CE to supervise; the `--zarch-recon-coef` single-team auto-zero precedent — the coef
+  defaults to 0.05, so erroring would make the ablation flag fail out of the box, while a silent no-op coef is
+  the failure that actually matters).
+- **Versioning:** STRUCTURAL — `flat` drops a module, so it is a state_dict change as well as a forward one;
+  STRING-gated in `check_compatible` (the `win_prob_mode` pattern), fresh-only; `_migrate_config` defaults
+  pre-v53 configs to `"composed"`; threaded through `extractor_arch` (v53 row) + `snapshot`. Default
+  byte-identical → NO `ARCH_SIGNATURE` bump.
+
+Tests: `hp_type_belief_test.py` (`flat` builds no head + masks 237 + leaves typed channels untouched, the
+shared-mask agreement, the version gate mismatch, the invalid-mode raise, the v52→v53 migration default).
+`MODEL_CONFIG_VERSION` = **52**, `ARCH_SIGNATURE` = **`gen3_typed_hp_belief_v1`**.
 
 **Nature/EV generative spread belief + op-side marginalization (v40, `gen3_nature_ev_belief_v1`,
 `spread_belief_nature` / `--spread-belief-nature` + `spread_belief_nature_marginalize` /
@@ -1246,7 +1292,8 @@ boundary; pools/opponents re-seed from the new lineage). `POINTER_HIDDEN` (64) l
 parity vs decode, uniform-at-init + funnel consistency + optimizer coverage + save→load logit
 identity on a REAL MaskablePPO policy — the M1 rule).
 
-Current `MODEL_CONFIG_VERSION` = **51**.
+Current `MODEL_CONFIG_VERSION` = **53** (v51 pointer-native head + v52 typed-HP belief + v53 HP-belief
+ablation — see the pointer-native and typed-HP sections).
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

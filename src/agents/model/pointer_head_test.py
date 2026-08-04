@@ -355,7 +355,10 @@ def test_save_load_roundtrip_preserves_the_logits(tmp_path):
 # ------------------------------------------------------- versioning
 def test_version_constants_and_migration():
     assert MODEL_CONFIG_VERSION >= 51
-    assert ARCH_SIGNATURE == "gen3_pointer_native_v1"
+    # The cross-era break rides the signature bump AT-OR-AFTER gen3_pointer_native_v1: later
+    # retrain-class bumps (v52 gen3_typed_hp_belief_v1) keep rejecting pre-generation checkpoints,
+    # so pin "not a pre-generation signature", not one literal value.
+    assert ARCH_SIGNATURE not in ("gen3_opp_hp_typed_candidates_v1", "gen3_typed_hidden_power_ids_v1")
     assert "pointer_head" not in {f.name for f in dataclasses.fields(ModelVersion)}
     migrated = _migrate_config({"config_version": 49, "pointer_head": True})
     assert "pointer_head" not in migrated and migrated["config_version"] >= 51

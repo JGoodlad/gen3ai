@@ -57,7 +57,6 @@ def test_builder_output_constructs_an_extractor(monkeypatch):
     for attr in EA.ARCH_ARG_KEYS.values():
         setattr(args, attr, False)
     args.move_belief_mode = "off"
-    args.hp_type_belief_mode = "off"
     args.belief_grad_mode = "shaping"
     args.win_prob_mode = "none"
     args.pubval_mode = "none"

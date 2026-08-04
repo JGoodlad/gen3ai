@@ -311,10 +311,10 @@ class DamageOperator(torch.nn.Module):
     dependence is left to attention). When `outgoing`, each of OUR 4 moves ALSO carries its secondary
     probabilities (`chance·acc × Serene Grace(us) × Shield Dust(opp)`) — "what status can this move cause,
     with what probability". Order == damage_tables.SECONDARY_COLS.
-    Hidden Power (all 17 variants collide on num=237 → unrepresentable on the num axis) is expanded
-    into 16 TYPED candidates (BP 70 = gen3 max), weighted `P(HP present)·P(type)` — presence from the
-    move belief (`w[237]`), type from the per-mon `hp_probs` obs block (the HP tracker's narrowed
-    distribution) — so HP Grass vs HP Ice get distinct type effectiveness.
+    Hidden Power needs NO special handling here (gen3_typed_hp_belief_v1): the move-belief posterior
+    arrives already composed into the 16 typed move-nums 355-370, each a real BP-70 typed row, so HP-Ice
+    and HP-Grass are priced as ordinary distinct moves with their own effectiveness. The only HP-aware
+    line left in the op is masking the bare 237 presence channel out of the candidate set.
 
     Stats: our defenders use their REAL spread (IVs/EVs/nature reconstructed from the obs spread block —
     they are revealed); the hidden-spread attacker uses a fixed de-timid offensive assumption (252 EV,
@@ -342,7 +342,7 @@ class DamageOperator(torch.nn.Module):
     def __init__(self, layout: Dict[str, Any], outgoing: bool = False, topk_k: int = 0,
                  matrices_outgoing: bool = False, matrices_incoming: bool = False,
                  matrices_outgoing_all: bool = False,
-                 prob_outspeed: bool = False, hp_type_fix: bool = False,
+                 prob_outspeed: bool = False,
                  candidate_k: int = 0):
         super().__init__()
         # gen3_topk_candidates_v1: cap the incoming candidate sweep at the K most-believed opponent
@@ -364,18 +364,12 @@ class DamageOperator(torch.nn.Module):
             self.register_buffer(name, tensor, persistent=False)
         self.hp_num = HIDDEN_POWER_NUM
         self.hp_bp = float(HIDDEN_POWER_BP)
-        # gen3_opp_hp_typed_candidates_v1: HP is 16 ORDINARY typed-move candidates (nums HP_TYPED_NUMS =
-        # 355-370, real BP/type in the buffers); the bare typeless 237 (BP 0) is the masked presence token.
-        # `_opp_candidate_weights` ALWAYS masks 237 + the raw typed nums (HP_CAND_MASK, from the buffers) and
-        # scatters the per-type HP belief onto 355-370. `hp_type_fix` selects the type-belief SOURCE: off
-        # (mode 'off') = the obs `hp_probs` (effectiveness-narrowed, the baseline); on (mode 'prior'/'learned')
-        # = the learned posterior ⊕ the Smogon SPECIES_HP_PRIOR floor, narrowed. (HP_TYPED_NUMS / HP_CAND_MASK
-        # are non-persistent buffers from build_damage_buffers; SPECIES_HP_PRIOR only the prior/learned modes.)
-        self.hp_type_fix = bool(hp_type_fix)
-        if self.hp_type_fix:
-            from agents.model.damage_tables import build_hp_type_prior
-            self.register_buffer("SPECIES_HP_PRIOR", build_hp_type_prior(layout['max_species']),
-                                 persistent=False)
+        # gen3_typed_hp_belief_v1: HP reaches the op as 16 ORDINARY typed-move candidates (nums
+        # HP_TYPED_NUMS = 355-370, real BP/type in the buffers) — the presence×type composition happens
+        # UPSTREAM in `HPTypeBelief.compose_typed_hp`, so the op holds no HP-type source of its own (the
+        # old `hp_type_fix` / `SPECIES_HP_PRIOR` pair is gone, along with the per-call-site divergence it
+        # allowed). `HP_CAND_MASK` (a non-persistent buffer) now zeros only the bare typeless 237, the
+        # BP-0 presence channel that is never a damage candidate.
         self.cb_item_num = CHOICE_BAND_ITEM_NUM            # gen3_unified_choice_band_v1: Choice Band item num
         self.cb_phys_mult = float(CHOICE_BAND_PHYS_MULT)   # ×1.5 physical Atk
         # gen3_unified_topk_incoming_v1: secondary-col → status-category map for the per-pivot incoming
@@ -510,48 +504,33 @@ class DamageOperator(torch.nn.Module):
         self.last_topk_idx: Optional[torch.Tensor] = None
         self.last_topk_w: Optional[torch.Tensor] = None
 
-    def _opp_candidate_weights(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
-                               hp_type_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def _opp_candidate_weights(self, ctx: 'ExtractorContext',
+                               move_belief_logits: torch.Tensor) -> torch.Tensor:
         """Build the opp-active candidate belief weights ``w`` [B, n_moves] — the SINGLE source for all op
         candidate sites (``forward`` + the lean ``discrete_incoming`` / ``discrete_incoming_status`` refine
-        kernels), so the HP handling can never diverge between them (the GIGO class).
+        kernels).
 
-        **gen3_opp_hp_typed_candidates_v1 — HP is 16 ORDINARY typed moves.** The opponent's Hidden Power is
-        the 16 distinct typed-move nums ``HP_TYPED_NUMS`` (355-370, real BP 70 + type in the damage buffers),
-        NOT a synthetic appended block. The bare typeless num 237 (BP 0) is the PRESENCE token — ALWAYS
-        masked out of the damage candidates (``HP_CAND_MASK`` zeros 237 + the raw 355-370). Onto the 16 typed
-        nums we scatter ``P(HP present)·P(HP type)``: P(HP present) = ``sigmoid(belief[237])`` (the
-        reveal-pinned presence — ≈1 once `hiddenpower` is revealed), P(HP type) per the source below. So the
-        op simulates HP-Ice / HP-Grass as distinct, real typed-move candidates the top-K can each surface +
-        weight by confidence; the obs keeps the opp HP typeless (237) → no leak.
+        **gen3_typed_hp_belief_v1 — HP arrives already typed.** The move-belief posterior this receives is
+        the COMPOSED one (`HPTypeBelief.compose_typed_hp`, run once per forward next to the move-belief
+        head): the 16 typed nums 355-370 already carry ``P(HP present)·P(HP type)`` and the bare typeless
+        237 has been driven to a hard-off logit. So the op does NO Hidden-Power reasoning of its own — it
+        prices HP-Ice and HP-Grass as the ordinary typed moves they are, off real BP/type rows, exactly
+        like Thunderbolt.
 
-        The type-belief SOURCE: ``hp_type_fix`` off (mode 'off') → the obs ``hp_probs`` (the effectiveness-
-        narrowed observation, the A/B baseline — HP fires only once observed). On (mode 'prior'/'learned') →
-        the learned posterior ``hp_type_belief`` (if passed) ELSE the Smogon ``SPECIES_HP_PRIOR`` floor, then
-        NARROWED by the obs ``hp_probs`` (its hard zeros are CERTAIN physics) when the opp has fired HP.
-        Multiple un-ruled-out types stay live (a distribution, not argmax)."""
+        This replaces the old in-op scatter (`w[237]` × a locally-sourced type distribution). That version
+        had two defects this removes structurally: the type SOURCE was chosen per call site — ``forward``
+        passed the learned posterior while ``refine_candidates`` did not, so the between-layers refine
+        kernels silently priced HP off the Smogon prior while the head block priced it off the learned
+        belief — and in the (then default) `off` mode the source was the obs ``hp_probs``, which is
+        all-zero until the opponent actually FIRES Hidden Power, so a REVEALED HP was priced as
+        nonexistent. There is now exactly one HP posterior per forward and every consumer reads it.
+
+        The mask keeps the bare 237 out of the candidate set (belt-and-braces: the composition already
+        drives it to ~0) since it is a belief bookkeeping channel with BP 0, never a real move."""
         B, device = ctx.batch_size, ctx.device
         ar = torch.arange(B, device=device)
-        opp_act = TEAM_SIZE + ctx.opp_active_local                                    # [B] global opp-active
-        w = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local])               # [B, n_moves]
-        w_hp = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local, self.hp_num])  # [B] P(HP present)
-        obs_hp = ctx.hp_probs[ar, opp_act]                                            # [B,16] effectiveness-narrowed
-        w = w * self.HP_CAND_MASK[None, :]                                            # zero bare-237 + raw typed-HP
-        if not self.hp_type_fix:
-            hp_type = obs_hp                                                          # obs-only baseline (mode off)
-        else:
-            base = (hp_type_belief[ar, ctx.opp_active_local] if hp_type_belief is not None
-                    else self.SPECIES_HP_PRIOR[ctx.species_ids[ar, opp_act]])         # learned ⊕ / prior floor
-            has_obs = obs_hp.sum(-1, keepdim=True) > 0                                 # HP fired ⇒ narrowed obs
-            surv = (obs_hp > 0).float()                                               # CERTAIN survivor mask
-            narrowed = base * surv                                                    # restrict the belief to survivors
-            # Off-meta fallback: if the belief puts ~no mass on the survivors, spread UNIFORM over them
-            # (never a ~0 vector — that would re-immune the HP). surv.sum() >= 1 whenever has_obs.
-            narrowed = torch.where(narrowed.sum(-1, keepdim=True) > 1e-6, narrowed, surv)
-            narrowed = narrowed / narrowed.sum(-1, keepdim=True).clamp_min(1e-6)
-            hp_type = torch.where(has_obs, narrowed, base)                            # [B,16]
-        typed = w_hp.unsqueeze(-1) * hp_type                                          # [B,16] presence × type
-        return w.index_add(1, self.HP_TYPED_NUMS, typed)                              # scatter onto the typed nums
+        w = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local])               # [B, n_moves] (typed)
+        return w * self.HP_CAND_MASK[None, :]                                         # zero the 237 presence channel
 
     def _chan_max(self, value: torch.Tensor, channel_mask: torch.Tensor) -> torch.Tensor:
         """Max over a channel's candidates = the most-threatening believed move (exactly
@@ -1755,7 +1734,6 @@ class DamageOperator(torch.nn.Module):
     def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
                 spread_belief: Optional[torch.Tensor] = None,
                 move_latent_all: Optional[torch.Tensor] = None,
-                hp_type_belief: Optional[torch.Tensor] = None,
                 spread_nature_logits: Optional[torch.Tensor] = None) -> torch.Tensor:
         B = ctx.batch_size
         device = ctx.device
@@ -1810,11 +1788,11 @@ class DamageOperator(torch.nn.Module):
 
         # Per-move belief over the real move-nums (UNMASKED — used by the believed-EFFECT block below; the
         # bare num-237 carries no effect flags, so it's not masked here). The damage CANDIDATE weights (with
-        # the bare-237 mask + typed-HP belief) come from `_opp_candidate_weights` after the attribute build.
+        # the bare-237 presence channel masked) come from `_opp_candidate_weights` after the attribute build.
         w = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local])   # [B, n_moves]
         # --- Candidate set: C = n_moves. The 16 typed Hidden Powers are ORDINARY move-num candidates
-        # (355-370, real BP 70 + type); the bare 237 (BP 0) is the masked presence token —
-        # gen3_opp_hp_typed_candidates_v1. ---
+        # (355-370, real BP 70 + type) already carrying P(present)·P(type) from the composed posterior;
+        # the bare 237 (BP 0) is the masked presence channel — gen3_typed_hp_belief_v1. ---
         bp_all = self.MOVE_BP                                                                   # [n_moves]
         mty_all = self.MOVE_TYPE_IDX                                                            # [n_moves]
         phys_all = self.MOVE_PHYS                                                               # [n_moves]
@@ -1826,9 +1804,9 @@ class DamageOperator(torch.nn.Module):
         # gen3_unified_op_physics_v1: per-candidate WEATHER BP modifier (rain/sun × Water/Fire), [B,n_moves].
         weather_mult = self._weather_mult(ctx.weather_feature, (mty_all == _WATER_TIDX).float()[None, :],
                                           (mty_all == _FIRE_TIDX).float()[None, :])             # [B,n_moves]
-        # gen3_opp_hp_typed_candidates_v1: the candidate belief weights — bare 237 masked, the typed-HP belief
-        # (learned posterior ⊕ prior floor, narrowed) scattered onto the real typed nums 355-370.
-        w_all = self._opp_candidate_weights(ctx, move_belief_logits, hp_type_belief)            # [B, n_moves]
+        # gen3_typed_hp_belief_v1: the candidate belief weights — the typed HPs already carry
+        # P(present)·P(type) from the composed posterior; only the bare-237 presence channel is masked.
+        w_all = self._opp_candidate_weights(ctx, move_belief_logits)                            # [B, n_moves]
 
         # gen3_topk_candidates_v1: TRUNCATE the candidate axis to the top-K of the MOVE BELIEF, no
         # tail bound. The op used to price ALL ~400 move-nums per defender even though the opponent

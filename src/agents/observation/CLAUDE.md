@@ -18,8 +18,8 @@ have **different** gates:
 > (and, for move-belief known/both, `known_moves`; for `--spread-belief-coef>0`, `belief_spread`/`_mask` —
 > and, under `--spread-belief-nature`, the inverted `belief_nature`/`belief_ev`(+masks) for the nature/EV
 > decomposition, `gen3_nature_ev_belief_v1`, deterministically inverted from agent2's `mon.stats` so no leak;
-> for `--hp-type-belief learned` + coef, `hp_type_label`/`hp_type_mask` — the opp Hidden-Power-type label,
-> `gen3_opp_hp_type_belief_v1`) Dict keys (see
+> for `--hp-type-belief-coef>0`, `hp_type_label`/`hp_type_mask` — the opp Hidden-Power-type label,
+> `gen3_typed_hp_belief_v1`) Dict keys (see
 > `src/agents/training/CLAUDE.md`). So it adds **zero** cost to the default obs build (benchmark
 > confirmed: `state_encoder.encode` unchanged, `belief_labels` absent from the profile). Changes to
 > `encode` itself still trip the gate below.

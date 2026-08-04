@@ -35,7 +35,7 @@ _ZERO_INIT_TOGGLES = dict(
     move_belief_mode="revealed", move_prior_fusion=True, move_latent=True,
     damage_op=True, damage_outgoing=True, damage_refine_rounds=2,
     threat_refine_outgoing=True, threat_status_refine=True,
-    spread_belief=True, hp_type_belief_mode="learned",
+    spread_belief=True,
     zarch_film="heads", zarch_dim=32,
 )
 

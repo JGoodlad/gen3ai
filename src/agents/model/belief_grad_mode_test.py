@@ -19,7 +19,7 @@ _mp = load_mappings()
 _layout = Gen3ObservationEncoder(_mp).get_layout()
 # A config with all four state-prediction belief heads live (move + spread + hp-type + the aux head).
 _CFG = dict(attend_unrevealed_opponents=True, opp_belief_slots=True, move_belief_mode="both",
-            spread_belief=True, damage_op=True, hp_type_belief_mode="learned")
+            spread_belief=True, damage_op=True)
 
 
 def _model(**kw):

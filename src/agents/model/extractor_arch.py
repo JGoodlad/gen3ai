@@ -54,7 +54,7 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "threat_unrevealed_outgoing": "threat_unrevealed_outgoing",             # v36
     "threat_prob_outspeed": "threat_prob_outspeed",                         # v36
     "threat_status_refine": "threat_status_refine",                         # v37
-    "hp_type_belief_mode": "hp_type_belief_mode",                           # v38
+    "hp_belief_mode": "hp_belief_mode",                                     # v53
     "belief_grad_mode": "belief_grad_mode",                                 # v41
     "zarch_film": "zarch_film",                                             # v44
     "zarch_dim": "zarch_dim",

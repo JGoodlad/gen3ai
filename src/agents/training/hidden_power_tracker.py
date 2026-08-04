@@ -74,6 +74,11 @@ class HiddenPowerTracker:
         # Species whose moveset has been fully revealed without Hidden Power —
         # we know definitively they cannot use HP this episode.
         self._ruled_out: set[str] = set()
+        # Count of observations DISCARDED by the caller's is_feasible() guard — i.e. no HP type at
+        # all could have produced the reported effectiveness against the resolved target, so the
+        # target identification was wrong. Counted rather than silent: this should sit at ~0, and a
+        # rising count is the signal that target resolution is drifting (no silent caps).
+        self._infeasible_observations: int = 0
         # Per-species observation log — kept so a ValueError dump can show
         # exactly which earlier observations narrowed the candidate set to nothing.
         self._obs_log: dict[str, list] = {}
@@ -150,15 +155,30 @@ class HiddenPowerTracker:
     def is_feasible(self, effectiveness: float, target_mon) -> bool:
         """Return True if at least one HP type produces this effectiveness against target_mon.
 
-        Use this guard before calling observe() to skip observations where the target
-        identification is suspect (e.g. a switch occurred on our side in the same turn).
-        If no HP type can possibly produce the observed effectiveness, the target is wrong
-        and the observation should be discarded rather than raising ValueError.
+        **Called by default before every observe()** (`EpisodeTracker._maybe_observe_hidden_power`,
+        gen3_typed_hp_belief_v1) to skip observations where the target identification is suspect
+        (e.g. a switch resolved on our side in the same window). If NO HP type can produce the
+        observed effectiveness, the target is wrong — the observation is junk about a mon that was
+        never hit, so it is discarded (and counted, see :attr:`infeasible_observations`) rather
+        than narrowing on it or raising.
+
+        Note the deliberate asymmetry with :meth:`observe`, which still RAISES when the observation
+        is feasible in general but eliminates every candidate for THIS species: that is a genuine
+        contradiction (tracker bug or a prior-data gap), not a misattribution, and it must stay loud.
         """
         return any(
             bucket_effectiveness(effective_multiplier(hp_type, target_mon)) == effectiveness
             for hp_type in HIDDEN_POWER_TYPE_ORDER
         )
+
+    def note_infeasible(self) -> None:
+        """Record that the caller's :meth:`is_feasible` guard discarded an observation."""
+        self._infeasible_observations += 1
+
+    @property
+    def infeasible_observations(self) -> int:
+        """How many observations the feasibility guard discarded this episode (expected ~0)."""
+        return self._infeasible_observations
 
     def get_probs(self, species: str) -> np.ndarray:
         """Return (16,) float32 candidate probability vector for species.
@@ -195,3 +215,4 @@ class HiddenPowerTracker:
         self._state.clear()
         self._ruled_out.clear()
         self._obs_log.clear()
+        self._infeasible_observations = 0

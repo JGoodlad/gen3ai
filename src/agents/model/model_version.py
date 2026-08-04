@@ -381,7 +381,19 @@ from typing import Any, Dict, List
 #   unrepresentable at the logits). The v49 `pointer_head` FIELD is removed (POPped in
 #   _migrate_config); no gate exists because there is no off state. Cross-era break carried by the
 #   ARCH_SIGNATURE bump (see gen3_pointer_native_v1 below).
-MODEL_CONFIG_VERSION = 51
+# v52: gen3_typed_hp_belief_v1 — the v38 tri-state `hp_type_belief_mode` FIELD is DELETED (POPped in
+#   _migrate_config): the HP-type head is UNCONDITIONAL under a move belief, the presence×type
+#   composition moved into `HPTypeBelief.compose_typed_hp` beside the move head, and every consumer
+#   reads a posterior that carries HP at the 16 real typed nums 355-370 with the bare 237 hard-off.
+#   Forward math changed with unchanged projection widths → the cross-era break rides the
+#   ARCH_SIGNATURE bump (see gen3_typed_hp_belief_v1 below). `hp_type_belief_coef` stays training-only.
+# v53: added `hp_belief_mode` (gen3_hp_belief_ablation_v1) — 'composed' (default, the v52 forward
+#   byte-for-byte: HPTypeBelief + the presence×type factorisation + the two certain-fact eliminations)
+#   vs 'flat' (the ABLATION: no HPTypeBelief head; the multi-label move head predicts the 16 typed
+#   channels INDEPENDENTLY off their own per-typed Smogon priors — both arms still mask the bare 237
+#   via the shared `mask_typeless_hp`). STRUCTURAL ('flat' drops a module) → STRING compare in
+#   check_compatible (the win_prob_mode pattern); default byte-identical (NO ARCH_SIGNATURE bump).
+MODEL_CONFIG_VERSION = 53
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -733,7 +745,18 @@ MODEL_CONFIG_VERSION = 51
 #     signature carries the cross-era break: every pre-generation checkpoint fails the family check loud.
 #     No old checkpoint is resumed/warm-forked across this boundary (owner decision, 2026-08-03); pools
 #     and opponents are re-seeded from the new lineage.
-ARCH_SIGNATURE = "gen3_pointer_native_v1"
+#   gen3_typed_hp_belief_v1 (config v52 — stacks on gen3_pointer_native_v1): the model never reasons
+#     over a typeless Hidden Power again. The presence×type composition `P(HP_t) = presence · P(type)`
+#     moves into `HPTypeBelief.compose_typed_hp`, right beside the move-belief head, so the posterior
+#     EVERY consumer reads (damage op, top-K, move BCE, latent grading, token reinjection, prober)
+#     carries HP at the 16 real typed nums 355-370 with the bare BP-0 num 237 driven hard-off (a finite
+#     -30 logit; 237 survives only as the internal PRESENCE channel). Supersedes the
+#     gen3_opp_hp_typed_candidates_v1 op-side scatter above: the v38 tri-state `hp_type_belief_mode` is
+#     DELETED (its 'off' state was a correctness bug — a revealed HP priced as nonexistent), the head is
+#     unconditional under a move belief, the belief LABELS use the true typed num, and the op is a plain
+#     consumer (no hp_type_fix / SPECIES_HP_PRIOR). Forward math changed with out_dim + projection
+#     widths UNCHANGED → nothing shape-based catches it, so the signature carries the break.
+ARCH_SIGNATURE = "gen3_typed_hp_belief_v1"
 
 
 class ModelVersionError(Exception):
@@ -1036,13 +1059,19 @@ class ModelVersion:
     # HP num-237 candidate out-ranked the 16 typed rows → the opp's Hidden Power read 0-damage/"immune").
     # 'prior' = the op masks the bare-237 + floors the typed-HP belief on the Smogon HP-type prior (a
     # FORWARD-behavior change, NO new params). 'learned' = ALSO build the HPTypeBelief head (prior ⊕ learned
-    # delta — a state_dict change), whose posterior the op consumes + the aux CE supervises. Gated in
-    # check_compatible with a STRING compare (off↔prior is a forward change; prior↔learned a state_dict
-    # change; both FATAL on a resume mismatch). OFF reproduces baseline byte-for-byte (NO ARCH_SIGNATURE
-    # bump; the op out_dim is unchanged either way). Requires damage_op.
-    hp_type_belief_mode: str = "off"
-    # v38 TRAINING-ONLY coefficient (like move_belief_coef, NOT version-locked): the HP-type CE aux weight.
-    # Recorded for provenance + flagless-resume read-back; only meaningful under mode 'learned'.
+    # gen3_typed_hp_belief_v1 (config v52): the v38 tri-state `hp_type_belief_mode` is GONE. The HP-type
+    # head is now unconditional whenever there is a move belief (its "off" state was a correctness bug —
+    # a typeless BP-0 candidate and a revealed HP priced as nonexistent — not an ablation), so there is
+    # nothing left to gate. `_migrate_config` POPs the dead key.
+    # gen3_hp_belief_ablation_v1 (config v53): HOW the 16 typed Hidden-Power channels are produced —
+    # 'composed' (default: the presence x type factorisation, with the reveal constraint + the
+    # moveset-exhaustion rule-out + effectiveness narrowing) or 'flat' (the ABLATION: the move head
+    # predicts them independently, i.e. HP is treated like any other move). STRUCTURAL — 'composed'
+    # builds HPTypeBelief and 'flat' does not, so it is a state_dict change as well as a forward one;
+    # gated in check_compatible with a STRING compare, like win_prob_mode.
+    hp_belief_mode: str = "composed"
+    # TRAINING-ONLY coefficient (like move_belief_coef, NOT version-locked): the HP-type CE aux weight.
+    # Recorded for provenance + flagless-resume read-back. Only meaningful under 'composed'.
     hp_type_belief_coef: float = 0.0
     # gen3_belief_grad_mode_v1 (config v41): 'detached' makes the state-prediction belief heads READ a
     # stop-grad trunk, so their gradient can't reshape it (the belief stays computed/reinjected/consumed).
@@ -1255,8 +1284,8 @@ class ModelVersion:
             threat_status_refine=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("threat_status_refine", False)
             ),
-            hp_type_belief_mode=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("hp_type_belief_mode", "off")
+            hp_belief_mode=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("hp_belief_mode", "composed")
             ),
             belief_grad_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("belief_grad_mode", "shaping")
@@ -1583,6 +1612,19 @@ class ModelVersion:
         # gradient flow mid-run is a silent training change the user chose to forbid) FATAL on a
         # mismatch. Like move_belief_mode it gates EVERY load; same-run pool/sentinel snapshots carry the
         # identical mode so they pass trivially. The training-only win_prob_coef is NOT checked.
+        # gen3_hp_belief_ablation_v1 (v53, like win_prob_mode): 'composed' builds HPTypeBelief and
+        # 'flat' does not (a state_dict change), and the two produce different typed-HP posteriors (a
+        # forward change). A STRING compare gates both. The training-only hp_type_belief_coef is NOT
+        # checked.
+        if self.hp_belief_mode != saved.hp_belief_mode:
+            raise ModelVersionError(
+                f"hp_belief_mode mismatch: saved={saved.hp_belief_mode!r}, "
+                f"current={self.hp_belief_mode!r}.\n"
+                "How the opponent's typed Hidden-Power belief is produced is fixed for a run's "
+                "lifetime: 'composed' adds the HPTypeBelief head and the presence x type "
+                "factorisation, 'flat' predicts the 16 typed channels independently.\n"
+                "Resume with the matching --hp-belief-mode, or start a fresh training run."
+            )
         if self.win_prob_mode != saved.win_prob_mode:
             raise ModelVersionError(
                 f"win_prob_mode mismatch: saved={saved.win_prob_mode!r}, current={self.win_prob_mode!r}.\n"
@@ -1749,19 +1791,6 @@ class ModelVersion:
                 "It adds the two zero-init status-landing projections (saved weights), so toggling it is "
                 "incompatible with a saved checkpoint. Resume with the matching --threat-status-refine, or "
                 "start a fresh run."
-            )
-        # gen3_opp_hp_type_belief_v1 (v38, like win_prob_mode): off↔prior is a FORWARD change (the op masks
-        # the bare-237 + reads the prior floor instead of obs hp_probs); prior↔learned is a STATE_DICT change
-        # (the HPTypeBelief head's params). A STRING compare gates all three transitions. The training-only
-        # hp_type_belief_coef is NOT checked.
-        if self.hp_type_belief_mode != saved.hp_type_belief_mode:
-            raise ModelVersionError(
-                f"hp_type_belief_mode mismatch: saved={saved.hp_type_belief_mode!r}, "
-                f"current={self.hp_type_belief_mode!r}.\n"
-                "The opp-HP-type belief is fixed for a run's lifetime: off↔prior changes the op's typed-HP "
-                "candidate build (a forward change), and prior↔learned adds/removes the HPTypeBelief head "
-                "(a state_dict change).\n"
-                "Resume with the matching --hp-type-belief setting, or start a fresh training run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -2183,8 +2212,7 @@ def _migrate_config(data: dict) -> dict:
         # v38: gen3_opp_hp_type_belief_v1 — the opp HIDDEN-POWER-TYPE belief + the typed-HP candidate fix.
         # The tri-state mode (off = legacy: bare-237 unmasked → opp HP reads "immune") + its training-only
         # CE coef. OFF reproduces the v37 forward byte-for-byte (NO ARCH_SIGNATURE bump).
-        data.setdefault("hp_type_belief_mode", "off")
-        data.setdefault("hp_type_belief_coef", 0.0)
+        data.setdefault("hp_type_belief_coef", 0.0)   # the v38 mode key is POPped by the v52 migration
         data["config_version"] = 38
     if version < 39:
         # v39: gen3_per_move_matrices_v1 — the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active).
@@ -2275,4 +2303,19 @@ def _migrate_config(data: dict) -> dict:
         # CLEAR arch error instead of a constructor crash.
         data.pop("pointer_head", None)
         data["config_version"] = 51
+    if version < 52:
+        # v52: gen3_typed_hp_belief_v1 — the opponent's Hidden Power is composed into the 16 typed
+        # move-nums inside the BELIEF, so the tri-state `hp_type_belief_mode` has nothing left to gate and
+        # is DELETED. POP it (not setdefault): `from_json_file` does `cls(**data)`, so a stale key would
+        # raise a bare TypeError instead of the clear arch error the ARCH_SIGNATURE bump gives. Every
+        # pre-v52 checkpoint is rejected by that bump anyway (the belief's forward math changed while the
+        # projection widths did not, so nothing shape-based would catch it).
+        data.pop("hp_type_belief_mode", None)
+        data["config_version"] = 52
+    if version < 53:
+        # v53: gen3_hp_belief_ablation_v1 — how the 16 typed HP channels are produced. 'composed' (the
+        # factorised default) reproduces the v52 forward exactly, so an existing v52 model migrates to
+        # it; 'flat' is the opt-in ablation.
+        data.setdefault("hp_belief_mode", "composed")
+        data["config_version"] = 53
     return data

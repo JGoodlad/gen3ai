@@ -184,12 +184,13 @@ def _check(obs, env, sp_num, mv_num, enc_dim, stats):
 def main(n_battles=40):
     mappings = load_mappings()
     sp_num = {sid: rec["num"] for sid, rec in mappings.get("species", {}).items() if "num" in rec}
-    # Mirror gen3_env._move_num EXACTLY (gen3_typed_hidden_power_ids_v1): the OPPONENT's move-belief
-    # labels fold every Hidden Power — bare or any typed variant — to the typeless num 237 (the opp is
-    # observed bare), NOT the typed variant's distinct data num (355-370, which are for OUR own-team
-    # obs). So the "real moveset" we validate the labels against must use the SAME convention.
-    mv_num = {mid: (HIDDEN_POWER_MOVE_NUM if mid.startswith("hiddenpower") else rec["num"])
-              for mid, rec in mappings.get("moves", {}).items() if "num" in rec}
+    # Mirror gen3_env._move_num EXACTLY (gen3_typed_hp_belief_v1): the OPPONENT's move-belief labels now
+    # use each Hidden Power's TRUE TYPED num (355-370), not the typeless 237 — the belief posterior is
+    # composed into the typed channels before anything reads it, so a 237-keyed label would supervise a
+    # dead channel while leaving the typed ones as negatives. The label is privileged training-only data
+    # (same class as `hp_type_label`); the OBSERVATION still shows the opponent's HP bare. So the "real
+    # moveset" we validate against is now the plain identity map.
+    mv_num = {mid: rec["num"] for mid, rec in mappings.get("moves", {}).items() if "num" in rec}
     _loader = TeamLoader()
     teams = _loader.get_sample_teams() or _loader.get_all_teams()
     rng = np.random.default_rng(0)

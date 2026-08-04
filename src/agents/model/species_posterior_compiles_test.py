@@ -69,7 +69,7 @@ _PRODUCTION_ARCH = dict(
     damage_matrices_incoming=True, damage_matrices_outgoing=True,
     damage_matrices_outgoing_all=True, damage_op=True, damage_outgoing=True,
     damage_reattend=False, damage_refine_rounds=2, damage_topk_k=5,
-    hp_type_belief_mode="learned", move_belief_mode="revealed", move_belief_prefuse=False,
+    move_belief_mode="revealed", move_belief_prefuse=False,
     move_candidate_floor=0.02, move_latent=True, move_prior_fusion=True,
     opp_belief_latent=True, opp_belief_slots=True, spread_belief=True,
     spread_belief_nature=True, spread_belief_nature_marginalize=True,

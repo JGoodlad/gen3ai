@@ -1204,6 +1204,26 @@ class ValueDistHead(torch.nn.Module):
 # Logit at which a REVEALED (certain) move is pinned under prior fusion: sigmoid(10) ≈ 0.99995 ≈ P 1.
 _REVEAL_LOGIT = 10.0
 
+# gen3_typed_hp_belief_v1: the logit the bare typeless Hidden Power (num 237) is driven to once the
+# typed composition has run — sigmoid(-30) ≈ 9.4e-14, i.e. hard off but FINITE, so the move-belief BCE
+# sees a ~0 loss with a ~0 gradient there instead of the NaN a true -inf would produce. 237 survives
+# only as the belief's internal PRESENCE channel (read BEFORE this is written); no consumer downstream
+# of the composition may treat it as a real move.
+_HP_PRESENCE_OFF_LOGIT = -30.0
+
+
+def mask_typeless_hp(move_logits: torch.Tensor) -> torch.Tensor:
+    """Drive the bare typeless Hidden Power channel (num 237) hard-off in a move posterior.
+
+    Shared by BOTH `--hp-belief-mode` arms, because it is not part of what the ablation varies: 237
+    carries **BP 0**, so it is not a move at all — leaving it live in the damage candidate set is the
+    original "the opponent's Hidden Power reads immune" bug. The ablation varies whether the 16 TYPED
+    channels are produced by a presence×type factorisation or predicted independently; both must agree
+    that the typeless token is never a candidate."""
+    out = move_logits.clone()
+    out[..., HIDDEN_POWER_MOVE_NUM] = _HP_PRESENCE_OFF_LOGIT
+    return out
+
 
 class MoveBelief(torch.nn.Module):
     """Predicts each opponent slot's full MOVESET and REINJECTS that prediction back into the slot
@@ -1293,18 +1313,32 @@ class MoveBelief(torch.nn.Module):
                 logits = torch.where(revealed, _REVEAL_LOGIT, logits)
         return logits
 
+    def reinject_moves(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor,
+                       move_embedding: torch.nn.Embedding,
+                       move_logits: torch.Tensor) -> torch.Tensor:
+        """Soft-embed a move posterior and residually enrich the opp tokens → [B,6,D].
+
+        Split out of `forward` (gen3_typed_hp_belief_v1) so the caller can interpose the typed-HP
+        composition between the head read and the reinjection. That ordering matters: the soft-embed is
+        `Σ_m P(m)·move_emb[m]`, so feeding it the RAW posterior would inject `P(HP)·move_emb[237]` — the
+        typeless HP row, which carries no type and whose `MOVE_ATTR`/latent row is deliberately all-zero.
+        Fed the COMPOSED posterior it instead injects `Σ_t P(HP_t)·move_emb[355+t]`, i.e. the believed
+        Hidden Power as a mixture over real typed moves. The enrichment is gated to the selected slots,
+        so unselected slots pass through unchanged."""
+        soft_emb = torch.sigmoid(move_logits) @ move_embedding.weight             # [B, 6, move_emb]
+        enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(soft_emb)
+        return self.norm(enriched)
+
     def forward(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor,
                 move_embedding: torch.nn.Embedding,
                 opp_species_ids: Optional[torch.Tensor] = None,
                 opp_move_ids: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         """opp_tokens [B,6,D], apply_mask [B,6] bool (which slots get the belief), move_embedding table
-        → (enriched_tokens [B,6,D], move_logits [B,6,M]). The enrichment is residual + gated to the
-        selected slots, so unselected slots pass through unchanged. The logits are the two-part POSTERIOR
-        (see `move_logits`)."""
+        → (enriched_tokens [B,6,D], move_logits [B,6,M]). Convenience wrapper over
+        `move_logits` + `reinject_moves` with NO typed-HP composition — the extractor drives the two
+        steps itself so it can compose in between. Kept for direct/unit use."""
         move_logits = self.move_logits(opp_tokens, opp_species_ids, opp_move_ids)  # [B, 6, M] posterior
-        soft_emb = torch.sigmoid(move_logits) @ move_embedding.weight             # [B, 6, move_emb]
-        enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(soft_emb)
-        return self.norm(enriched), move_logits
+        return self.reinject_moves(opp_tokens, apply_mask, move_embedding, move_logits), move_logits
 
 
 # gen3_nature_ev_belief_v1: the EV-delta head output is scaled by this before adding to the EV prior, so a
@@ -1418,6 +1452,11 @@ class HPTypeBelief(torch.nn.Module):
         super().__init__()
         self.norm = torch.nn.LayerNorm(D_MODEL)
         self.type_head = torch.nn.Linear(D_MODEL, n_hp)
+        # gen3_typed_hp_belief_v1: the 16 typed-HP dex nums (355-370) in HP_TYPE_ORDER order — the
+        # destination of the presence×type composition. Non-persistent (data-derived, recomputable).
+        from agents.model.damage_tables import _hp_typed_nums
+        self.register_buffer("HP_TYPED_NUMS",
+                             torch.tensor(list(_hp_typed_nums()), dtype=torch.long), persistent=False)
         torch.nn.init.zeros_(self.type_head.weight)        # cold-start delta = 0 → posterior == prior
         torch.nn.init.zeros_(self.type_head.bias)
         # gen3_opp_hp_type_belief_v2: the token reinjection of the presence-gated expected typed-HP embedding
@@ -1441,6 +1480,62 @@ class HPTypeBelief(torch.nn.Module):
         prior = self.hp_prior[opp_species_ids].clamp_min(1e-6)              # [B,6,16]
         logits = delta + torch.log(prior)                                  # posterior logit = prior ⊕ delta
         return logits, torch.softmax(logits, dim=-1)
+
+    def compose_typed_hp(self, move_logits: torch.Tensor, posterior: torch.Tensor,
+                         obs_hp_probs: torch.Tensor,
+                         opp_move_ids: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """**gen3_typed_hp_belief_v1 — the one place a typeless Hidden Power becomes typed.**
+
+        Rewrites the raw move-belief posterior [B,6,M] so that Hidden Power exists ONLY as the 16 real
+        typed moves, and returns `(typed_logits, presence)`:
+
+          * ``logits[..., 237]`` → `_HP_PRESENCE_OFF_LOGIT` (sigmoid ≈ 1e-13). The typeless num is a
+            belief bookkeeping channel, not a move; nothing downstream — the damage op, the top-K, the
+            BCE, the latent grading, the soft-embed reinjection, the prober — may see it as a candidate.
+          * ``logits[..., 355+t]`` → ``logit(presence · P(type = t))`` for each of the 16 types.
+
+        **The `Σ_t P(HP_t) = presence` identity is what makes the "a revealed HP must exist somewhere"
+        constraint STRUCTURAL rather than a penalty term.** `presence` is read from the raw 237 channel,
+        which `MoveBelief.move_logits` pins to `_REVEAL_LOGIT` the moment the opponent is seen using
+        `hiddenpower`; so on reveal the 16 typed weights sum to ≈1 and the belief cannot conclude "no
+        Hidden Power" no matter what the type head does. It can only be UNSURE ACROSS TYPES — which is
+        the honest state, since Gen 3 never discloses the type.
+
+        Two eliminations run first, both of them certain facts rather than learned preferences — the
+        "discard the ones that don't make sense" half:
+
+        1. **Rule-out by moveset exhaustion.** If all four of the opponent's moves are revealed and none
+           is Hidden Power, it has none: presence → 0. Derived from `opp_move_ids` alone, so it needs no
+           extra plumbing and agrees by construction with `HiddenPowerTracker.mark_no_hp`.
+        2. **Narrowing by observed effectiveness.** Once the opponent has FIRED Hidden Power, the
+           tracker's `obs_hp_probs` has hard-zeroed every type inconsistent with the observed
+           effectiveness bucket. Those zeros are CERTAIN physics (not a prior), so the believed type
+           distribution is restricted to the survivors and renormalised — the model is forced to spend
+           its probability mass only on types that could actually have produced the damage it saw. If
+           the belief puts ~no mass on the survivors (an off-meta HP), we fall back to uniform over the
+           survivors rather than a ~0 vector, which would silently re-immune the move.
+
+        Shapes: `move_logits` [B,6,M]; `posterior` [B,6,16]; `obs_hp_probs` [B,6,16] (OPP slots);
+        `opp_move_ids` [B,6,4]. Differentiable in both `presence` and `posterior`, so the damage
+        gradient and the move-belief BCE both sharpen the type head through the typed channels."""
+        presence = torch.sigmoid(move_logits[..., HIDDEN_POWER_MOVE_NUM])                   # [B,6]
+        # (1) moveset exhaustion — 4 revealed, none of them HP ⇒ certainly no Hidden Power.
+        n_revealed = (opp_move_ids > 0).sum(dim=-1)                                     # [B,6]
+        hp_seen = (opp_move_ids == HIDDEN_POWER_MOVE_NUM).any(dim=-1)                       # [B,6]
+        presence = presence * (~((n_revealed >= opp_move_ids.shape[-1]) & ~hp_seen)).float()
+        # (2) effectiveness narrowing — the tracker's zeros are certain, so restrict + renormalise.
+        has_obs = obs_hp_probs.sum(-1, keepdim=True) > 0                                # HP has fired
+        surv = (obs_hp_probs > 0).float()                                               # certain survivors
+        narrowed = posterior * surv
+        narrowed = torch.where(narrowed.sum(-1, keepdim=True) > 1e-6, narrowed, surv)   # off-meta fallback
+        narrowed = narrowed / narrowed.sum(-1, keepdim=True).clamp_min(1e-6)
+        hp_type = torch.where(has_obs, narrowed, posterior)                             # [B,6,16]
+
+        typed_p = (presence.unsqueeze(-1) * hp_type).clamp(1e-9, 1.0 - 1e-6)            # [B,6,16]
+        out = move_logits.clone()
+        out.index_copy_(-1, self.HP_TYPED_NUMS, torch.logit(typed_p))
+        out[..., HIDDEN_POWER_MOVE_NUM] = _HP_PRESENCE_OFF_LOGIT
+        return out, presence
 
     def reinject(self, opp_tokens: torch.Tensor, posterior: torch.Tensor, presence: torch.Tensor,
                  apply_mask: torch.Tensor, embeddings: 'Embeddings') -> torch.Tensor:
@@ -1814,7 +1909,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  damage_matrices_outgoing_all: bool = False,
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
                  threat_prob_outspeed: bool = False, threat_status_refine: bool = False,
-                 hp_type_belief_mode: str = "off", belief_grad_mode: str = "shaping",
+                 hp_belief_mode: str = "composed", belief_grad_mode: str = "shaping",
                  pubval_mode: str = "none",
                  zarch_film: str = "off", zarch_dim: int = 0,
                  zarch_lut: str = "off", zarch_lut_rosters: Optional[Sequence[Sequence[int]]] = None,
@@ -2006,28 +2101,34 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.last_spread_belief: Optional[torch.Tensor] = None
         self.last_spread_nature_logits: Optional[torch.Tensor] = None   # [B,6,25] (gen3_nature_ev_belief_v1)
         self.last_spread_ev: Optional[torch.Tensor] = None              # [B,6,5] believed EVs
-        # gen3_opp_hp_type_belief_v1: the typed-HP fix + the learned opp-HP-TYPE head ("force the model to
-        # guess which Hidden Power it is"). Tri-state:
-        #   'off'     — legacy (bare-237 unmasked, op reads the obs hp_probs) — byte-for-byte baseline.
-        #   'prior'   — the op MASKS the bare-237 + floors the typed-HP belief on the Smogon prior (a
-        #               forward-behavior change, NO new params) → the opp HP stops reading "immune".
-        #   'learned' — ALSO build the HPTypeBelief head (prior ⊕ learned delta); the op consumes its
-        #               posterior + the aux CE supervises it (a state_dict change → the head's params).
-        # The op-side fix (mask + prior floor) is on whenever mode != off; the head exists only under
-        # 'learned'. Requires damage_op (the typed-HP candidates it fixes live in the op).
-        self.hp_type_belief_mode = str(hp_type_belief_mode)
-        if self.hp_type_belief_mode not in ("off", "prior", "learned"):
+        # gen3_typed_hp_belief_v1 / gen3_hp_belief_ablation_v1: the opponent's Hidden Power is ALWAYS
+        # reasoned about as the 16 DISCRETE TYPED moves — the old typeless-BP-0 candidate is gone in both
+        # arms, because it was a correctness bug (a 0-damage "immune" reading of a revealed HP), not an
+        # ablation. What `hp_belief_mode` varies is HOW the 16 typed channels are produced:
+        #
+        #   'composed' (DEFAULT) — build `HPTypeBelief` and factor the belief as
+        #                          `P(HP_t) = presence · P(type=t)`. Buys the structural constraint
+        #                          (a revealed HP must exist as SOME type), the moveset-exhaustion
+        #                          rule-out, and the effectiveness narrowing.
+        #   'flat'     (ABLATION) — no head. The multi-label move head predicts the 16 typed channels
+        #                          INDEPENDENTLY, off their own real per-typed Smogon usage priors, and
+        #                          Hidden Power is treated exactly like any other move. No factorisation,
+        #                          no constraint, no narrowing.
+        #
+        # The head is prior-fused + zero-init, so under 'composed' its cold-start posterior IS the Smogon
+        # HP-type prior; `--hp-type-belief-coef` controls only whether the privileged CE supervises it on
+        # top of the damage + move-BCE gradients it already gets. Neither arm requires `damage_op`: the
+        # composition lives in the BELIEF, so the typed posterior reaches the token reinjection, the BCE,
+        # the latent grading and the prober even on a run with no damage operator at all.
+        self.hp_belief_mode = str(hp_belief_mode)
+        if self.hp_belief_mode not in ("composed", "flat"):
             raise ValueError(
-                f"hp_type_belief_mode must be one of off|prior|learned, got {hp_type_belief_mode!r}")
-        if self.hp_type_belief_mode != "off" and not damage_op:
-            raise ValueError(
-                "hp_type_belief != off requires damage_op=True — the typed-HP candidates it fixes are the "
-                "DamageOperator's. Enable --damage-op (--unified-damage), or set --hp-type-belief off."
-            )
+                f"hp_belief_mode must be one of composed|flat, got {hp_belief_mode!r}")
         self.hp_type_belief_head = (
             HPTypeBelief(layout['max_species'], layout['type_embedding_dim'])
-            if self.hp_type_belief_mode == "learned" else None)
+            if (self.move_belief is not None and self.hp_belief_mode == "composed") else None)
         self.last_hp_type_logits: Optional[torch.Tensor] = None
+        self._last_hp_type_post: Optional[torch.Tensor] = None
         # Differentiable damage operator (flag-guarded): consumes the move belief's PREDICTED moves for
         # the opp active and computes the believed-move incoming damage to each of our mons, fed to BOTH
         # heads. OFF reproduces the baseline arch byte-for-byte (no module, projection widths unchanged).
@@ -2103,7 +2204,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                                          matrices_incoming=self.damage_matrices_incoming,
                                          matrices_outgoing_all=self.damage_matrices_outgoing_all,
                                          prob_outspeed=threat_prob_outspeed,
-                                         hp_type_fix=(self.hp_type_belief_mode != "off"),
                                          candidate_k=self.damage_candidate_k)
                           if damage_op else None)
         self.threat_prob_outspeed = bool(threat_prob_outspeed)
@@ -2606,21 +2706,67 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             priv_role = self.pokemon_encoder(priv_ctx, self.embeddings)   # [B, 12, D]
         return priv_role[:, TEAM_SIZE:, :].detach()                       # [B, 6, D] opp half (targets)
 
+    def _typed_hp_posterior(self, opp_tokens, ctx, raw_move_logits):
+        """Compose the raw move posterior into the TYPED-Hidden-Power one → `(typed_logits, presence,
+        hp_type_posterior)` (gen3_typed_hp_belief_v1).
+
+        The HP-type head reads THE SAME `opp_tokens` the move head just read, at the same point in the
+        forward, so the two halves of `P(HP_t) = presence · P(t)` can never be sourced from differently
+        refined tokens. (Before this, the type head lived in `_spread_hp_damage` — which under
+        `--move-belief-prefuse` alone runs POST-transformer while the move head runs PRE-transformer, so
+        the factors came from two different states of the same slot.)
+
+        Under the **`flat` ABLATION** (`--hp-belief-mode flat`) there is no head: Hidden Power is just
+        16 more ordinary move channels that the multi-label move head predicts INDEPENDENTLY, off
+        their own real per-typed Smogon usage priors, with no factorisation, no reveal constraint and
+        no tracker narrowing. All that survives is masking the bare 237 — which is not a moderation of
+        the ablation but a necessity: 237 carries BP 0, so leaving it in the damage candidate set is
+        the original "opp HP reads immune" bug, not an arm of the experiment. See the class docstring
+        of `HPTypeBelief` for what the ablation is actually testing."""
+        if self.hp_type_belief_head is None:                  # flat ablation — HP is an ordinary move
+            return mask_typeless_hp(raw_move_logits), None, None, None
+        hp_logits, hp_post = self.hp_type_belief_head(opp_tokens, ctx.species_ids[:, TEAM_SIZE:])
+        typed, presence = self.hp_type_belief_head.compose_typed_hp(
+            raw_move_logits, hp_post,
+            ctx.hp_probs[:, TEAM_SIZE:],                     # [B,6,16] tracker narrowing (OPP slots)
+            ctx.all_move_ids[:, TEAM_SIZE:, :])              # [B,6,4] revealed ids (rule-out)
+        return typed, presence, hp_post, hp_logits
+
     def _apply_move_belief(self, opp_tokens, ctx):
         """Predict + reinject the opp moveset into the given opp tokens [B, 6, D] → (enriched, logits).
         Shared by the POST-transformer (default) and PRE-transformer (move_belief_prefuse) call sites —
         only the input tensor + timing differ. The mask selects the slots per move_belief_mode; the
-        species/move ids feed prior-fusion (Smogon prior + pin revealed moves certain)."""
+        species/move ids feed prior-fusion (Smogon prior + pin revealed moves certain).
+
+        gen3_typed_hp_belief_v1: the HP-type head + the typed composition run HERE, between the move
+        head's read and the reinjection, so the posterior that leaves this method — and therefore the
+        one every consumer reads (`last_move_belief_logits`) — is already typed. The reinjection then
+        soft-embeds REAL typed moves rather than the typeless 237 row."""
         if self.move_belief_mode == "revealed":
             mb_mask = ~ctx.opp_believed_mask                 # revealed-species slots
         elif self.move_belief_mode == "unrevealed":
             mb_mask = ctx.opp_believed_mask                  # hidden-species slots
         else:                                                # "both"
             mb_mask = torch.ones_like(ctx.opp_believed_mask)
-        return self.move_belief(
-            opp_tokens, mb_mask, self.embeddings.move_embedding,
-            opp_species_ids=ctx.species_ids[:, TEAM_SIZE:],                  # [B, 6]
-            opp_move_ids=ctx.all_move_ids[:, TEAM_SIZE:, :])                 # [B, 6, 4]
+        raw = self.move_belief.move_logits(
+            opp_tokens,
+            ctx.species_ids[:, TEAM_SIZE:],                                  # [B, 6]
+            ctx.all_move_ids[:, TEAM_SIZE:, :])                              # [B, 6, 4]
+        logits, presence, hp_post, self.last_hp_type_logits = self._typed_hp_posterior(
+            opp_tokens, ctx, raw)
+        self._last_hp_type_post = hp_post                     # for the between-layers refine recompose
+        enriched = self.move_belief.reinject_moves(
+            opp_tokens, mb_mask, self.embeddings.move_embedding, logits)
+        # gen3_opp_hp_type_belief_v2: ALSO reinject the presence-gated expected TYPE embedding. This is
+        # deliberately not redundant with the move soft-embed above: that one injects believed move
+        # IDENTITY (the 355-370 rows), this one injects the believed TYPE in the shared type-embedding
+        # space the mon's own types live in — so "this Zapdos threatens ICE" lands in the same geometry
+        # attention already uses for type matchups. Revealed slots only. (No head under `flat` — the
+        # typed move rows still ride the soft-embed above, which is the point of that ablation.)
+        if self.hp_type_belief_head is not None:
+            enriched = self.hp_type_belief_head.reinject(
+                enriched, hp_post, presence, (~ctx.opp_believed_mask).float(), self.embeddings)
+        return enriched, logits
 
     def _spread_hp_damage(self, opp_tokens, ctx):
         """The spread + HP-type belief legs and the FULL DamageOperator, in ONE place.
@@ -2650,25 +2796,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.last_spread_belief = None
             self.last_spread_nature_logits = None
             self.last_spread_ev = None
-        # gen3_opp_hp_type_belief_v1: the learned opp-HP-TYPE posterior (mode 'learned'). The HPTypeBelief
-        # head reads the opp tokens → per-slot 16-way HP-type distribution (Smogon prior ⊕ learned
-        # delta); the op consumes it at the active slot (its damage gradient sharpens the head) + the aux CE
-        # supervises last_hp_type_logits. 'prior'/'off' → no head → the op uses its own prior floor / the
-        # legacy obs hp_probs. Stashed for the loss + prober; never concatenated into pi/vf (leak-safe).
-        self.last_hp_type_logits = None
-        hp_type_post = None
-        if self.hp_type_belief_head is not None:
-            self.last_hp_type_logits, hp_type_post = self.hp_type_belief_head(
-                opp_tokens, ctx.species_ids[:, TEAM_SIZE:])
-            # gen3_opp_hp_type_belief_v2: REINJECT the presence-gated believed HP type into the opp tokens so
-            # the CLS pools + both heads reason over it (not only the op's damage block). Presence = the move
-            # belief's P(HP present) per opp slot (the "presence bit", ≈1 once `hiddenpower` is revealed);
-            # gates the signal to ≈0 when HP is unlikely. Revealed slots only (~opp_believed_mask). The op
-            # still consumes the (un-reinjected) posterior below — multiple un-ruled-out types stay distinct.
-            _presence = torch.sigmoid(self.last_move_belief_logits[:, :, HIDDEN_POWER_MOVE_NUM])  # [B,6]
-            opp_tokens = self.hp_type_belief_head.reinject(
-                opp_tokens, hp_type_post, _presence,
-                (~ctx.opp_believed_mask).float(), self.embeddings)
+        # gen3_typed_hp_belief_v1: the opp-HP-TYPE head + its typed composition + its token reinjection all
+        # moved UP into `_apply_move_belief`, where the move head reads the same tokens at the same time —
+        # so `last_move_belief_logits` is ALREADY typed by the time it reaches here and the op needs no
+        # HP-type argument. `last_hp_type_logits` (the aux-CE + prober stash) is written there too.
         # gen3_unified_move_system_v1: the context-free move-latent table — the Stage-3 latent grading aux
         # TARGET (training only; is_grad_enabled-gated, rollout pays nothing) AND
         # (gen3_unified_topk_incoming_v1) the op's top-K candidate latents. The latter must be present in
@@ -2705,11 +2836,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             # the grad. move_latent_all (built above) is the op's top-K identity source (None unless topk on).
             if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
                 damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
-                                          self.last_spread_belief, move_latent_all, hp_type_post, spread_nat,
+                                          self.last_spread_belief, move_latent_all, spread_nat,
                                           use_reentrant=False)
             else:
                 damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief,
-                                              move_latent_all, hp_type_post, spread_nat)
+                                              move_latent_all, spread_nat)
         # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
         self.last_damage_block = damage_block
         return opp_tokens, damage_block
@@ -2866,9 +2997,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 # reinjection used — one posterior, one gradient path. Default: re-read per round
                 # (physics-in-the-loop), byte-for-byte unchanged.
                 if self.move_belief_single_compute and self.last_move_belief_logits is not None:
-                    logits = self.last_move_belief_logits                     # [B,6,M] pre-attention
+                    logits = self.last_move_belief_logits                     # [B,6,M] pre-attention (typed)
                 else:
                     logits = self.move_belief.move_logits(opp_tokens, _opp_species_ids, _opp_move_ids)  # [B,6,M]
+                    # gen3_typed_hp_belief_v1: the re-read is RAW (237 live), so re-run the typed-HP
+                    # step before the physics touches it — otherwise this path would price Hidden Power
+                    # off a BP-0 typeless row while the head block priced it off real typed rows. Under
+                    # 'composed' the type head is re-read from the SAME mid-transformer tokens (matching
+                    # this mode's physics-in-the-loop intent; single-compute instead reuses the frozen
+                    # pre-attention posterior); under 'flat' this is just the 237 mask.
+                    logits, _, _, _ = self._typed_hp_posterior(opp_tokens, ctx, logits)
                 # --- INCOMING residuals onto OUR tokens: damage (always) + status (v37, if on) ---
                 # ONE candidate build per round, shared by the damage + status kernels (both select the
                 # SAME detached top-K over the SAME `logits`; they used to rebuild it independently).

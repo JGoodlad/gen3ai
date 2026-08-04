@@ -388,7 +388,7 @@ def _run_arch_toggles(args) -> dict:
         threat_unrevealed_outgoing=args.threat_unrevealed_outgoing,
         threat_prob_outspeed=args.threat_prob_outspeed,
         threat_status_refine=args.threat_status_refine,
-        hp_type_belief_mode=args.hp_type_belief_mode,
+        hp_belief_mode=args.hp_belief_mode,
         belief_grad_mode=args.belief_grad_mode,
         zarch_film=args.zarch_film,
         zarch_dim=args.zarch_dim,
@@ -1516,27 +1516,35 @@ async def main():
                              "(compute-then-blend over the top natures) instead of using E[nature_mult] — "
                              "restores the ×1.1/×0.9 asymmetry in the KO threshold. FORWARD-BEHAVIOR "
                              "(version-checked, fresh-only). REQUIRES --spread-belief-nature. Off by default.")
-    parser.add_argument("--hp-type-belief", "--hp_type_belief", dest="hp_type_belief_mode",
-                        choices=["off", "prior", "learned"], default=None,
-                        help="Opponent HIDDEN-POWER-TYPE belief + the typed-HP candidate FIX "
-                             "(gen3_opp_hp_type_belief_v1) — fixes the DamageOperator showing the opp's "
-                             "Hidden Power as 0-damage/'immune' (the bare typeless num-237 candidate out-ranked "
-                             "the 16 typed rows + the obs hp_probs is empty until HP fires). 'off' = legacy "
-                             "(the bug). 'prior' = mask the bare-237 + floor the typed-HP belief on the Smogon "
-                             "HP-type prior (forward-behavior change, NO new params). 'learned' = ALSO add the "
-                             "HPTypeBelief head (prior ⊕ learned delta), whose posterior the op consumes + the "
-                             "aux CE supervises — the 'force the model to guess which Hidden Power it is' head, "
-                             "so the top-K surfaces the 2-3 most-likely typed HPs with real damage. STRUCTURAL "
-                             "(version-checked, fresh-only); REQUIRES --damage-op. Off by default.")
+    parser.add_argument("--hp-belief-mode", "--hp_belief_mode", dest="hp_belief_mode",
+                        choices=["composed", "flat"], default=None,
+                        help="How the opponent's 16 TYPED Hidden-Power channels are produced "
+                             "(gen3_hp_belief_ablation_v1). BOTH arms reason over discrete TYPED HP "
+                             "(355-370) and mask the typeless BP-0 num 237 — that is not the variable, "
+                             "it is the 'opp HP reads immune' bug. "
+                             "'composed' (DEFAULT) factors the belief as P(HP_t) = presence x P(type), "
+                             "which makes 'a REVEALED Hidden Power must exist as SOME type' structural "
+                             "(Sum_t P(HP_t) = presence, reveal-pinned), and applies the two certain-fact "
+                             "eliminations: moveset exhaustion (4 moves seen, none is HP => ruled out) and "
+                             "effectiveness narrowing (the HiddenPowerTracker's hard zeros). "
+                             "'flat' is the ABLATION: no HPTypeBelief head — the multi-label move head "
+                             "predicts the 16 typed channels INDEPENDENTLY off their own real per-typed "
+                             "Smogon usage priors, i.e. Hidden Power is treated exactly like any other "
+                             "move, with no factorisation, no constraint and no narrowing. Use it to "
+                             "measure what the factorisation is worth. STRUCTURAL (version-checked, "
+                             "fresh-only).")
     parser.add_argument("--hp-type-belief-coef", "--hp_type_belief_coef", dest="hp_type_belief_coef",
                         type=float, default=None,
                         help="HP-type-belief SUPERVISION weight (gen3_opp_hp_type_belief_v1): coef * "
                              "cross_entropy(HPTypeBelief posterior, TRUE opp HP type) over the REVEALED opp "
                              "slots that run Hidden Power (privileged training-only label from agent2's team — "
-                             "Gen 3 never reveals the opp HP type). 0.0 = OFF (the head gets only the indirect "
-                             "op-damage gradient + sits at the Smogon prior). Only meaningful with "
-                             "--hp-type-belief learned. TRAINING-only (not version-locked); metrics ride "
-                             "belief/hptype_* (acc, n_slots). Suggested 0.05.")
+                             "Gen 3 never reveals the opp HP type). 0.0 = the head still runs and still gets "
+                             "the op's damage gradient + the move-belief BCE through its typed channels; it "
+                             "just has no direct CE, so it stays near the Smogon prior. gen3_typed_hp_belief_v1 "
+                             "removed the old --hp-type-belief mode flag: the head is UNCONDITIONAL whenever "
+                             "there is a move belief, because its 'off' state made the model reason over a "
+                             "typeless BP-0 Hidden Power and priced a REVEALED HP as nonexistent. "
+                             "TRAINING-only (not version-locked); metrics ride belief/hptype_* (acc, n_slots).")
     parser.add_argument("--value-from-dist", "--value_from_dist", dest="value_from_dist",
                         action=BoolFlag, default=None,
                         help="Phase B (gen3_dist_critic_v1): make the DISTRIBUTIONAL value head the critic "
@@ -2028,10 +2036,10 @@ async def main():
     _resolve("threat_unrevealed_outgoing", False)  # v36 forward-behavior (expected-latent; version-checked, fresh-only)
     _resolve("threat_prob_outspeed", False)      # v36 forward-behavior (prob outspeed; version-checked, fresh-only)
     _resolve("threat_status_refine", False)      # v37 structural (status→trunk; version-checked, fresh-only)
-    _resolve("hp_type_belief_mode", "off")     # v38 structural + resume-immutable (version-checked, fresh-only)
     _resolve("belief_grad_mode", "shaping")    # v41 resume-immutable training hparam (vf_coef class; flagless resume inherits)
     _resolve("value_from_dist", False)         # v45 Phase B: dist head is the critic (resume-immutable; flagless resume inherits)
-    _resolve("hp_type_belief_coef", 0.0)       # training-only (inherited like spread_belief_coef)
+    _resolve("hp_belief_mode", "composed")     # v53 STRUCTURAL (version-checked, fresh-only)
+    _resolve("hp_type_belief_coef", 0.05)      # training-only (inherited like spread_belief_coef)
     _resolve("zarch_film", "off")              # v44 structural + resume-immutable (version-checked, fresh-only)
     from agents.model.features_extractor import ZARCH_DIM as _ZARCH_DIM_DEFAULT
     _resolve("zarch_dim", _ZARCH_DIM_DEFAULT if args.zarch_film != "off" else 0)  # v44 structural int
@@ -2476,19 +2484,24 @@ async def main():
             "--spread-belief-nature-marginalize requires --spread-belief-nature (the op marginalises over the "
             "generative head's nature distribution). Enable --spread-belief-nature, or drop the flag."
         )
-    if args.hp_type_belief_mode != "off" and not args.damage_op:
-        # The typed-HP candidates the fix masks/floors live in the DamageOperator (also enforced at the
-        # extractor build — this is the friendlier CLI message).
+    if args.hp_type_belief_coef and args.move_belief_mode == "off":
+        # The CE supervises the HPTypeBelief head's posterior (last_hp_type_logits), and the head is built
+        # only alongside a move belief (it composes P(HP present) from the move posterior's 237 channel).
         parser.error(
-            "--hp-type-belief != off requires --damage-op (the typed-HP candidates it fixes are the "
-            "DamageOperator's). Add --damage-op (--unified-damage), or set --hp-type-belief off."
+            "--hp-type-belief-coef requires a move belief (--move-belief-mode != off / --unified-moves): "
+            "the HP-type head composes P(HP present) out of the move posterior. Enable the move belief, "
+            "or set --hp-type-belief-coef 0."
         )
-    if args.hp_type_belief_coef and args.hp_type_belief_mode != "learned":
-        # The CE supervises the HPTypeBelief head's posterior (last_hp_type_logits) → the head must exist.
-        parser.error(
-            "--hp-type-belief-coef requires --hp-type-belief learned (it supervises the learned HP-type "
-            "head). Set --hp-type-belief learned, or set --hp-type-belief-coef 0."
-        )
+    if args.hp_type_belief_coef and args.hp_belief_mode == "flat":
+        # The `flat` ablation builds NO HPTypeBelief head, so there is no posterior for the CE to
+        # supervise. AUTO-ZERO with a loud note rather than erroring (the --zarch-recon-coef
+        # single-team precedent above): --hp-type-belief-coef defaults to 0.05, so erroring would make
+        # `--hp-belief-mode flat` fail out of the box — a hostile flag to run an ablation with. The
+        # note keeps it from being a SILENT no-op, which is the failure that actually matters here.
+        print("[HPBelief] --hp-belief-mode flat: auto-zeroing --hp-type-belief-coef (the ablation "
+              "builds no HP-type head, so there is no posterior for the CE to supervise). The 16 "
+              "typed HP channels are still predicted + supervised by the move-belief BCE.")
+        args.hp_type_belief_coef = 0.0
     log_level = LogLevel[args.log_level.upper()]
 
     # One server config, built from --showdown-port and threaded to every Showdown client
@@ -2891,9 +2904,11 @@ async def main():
                     # true-spread label only when the loss will consume it (coef>0; the CLI guards that
                     # --spread-belief-coef requires --spread-belief, so the head is present to supervise).
                     emit_spread_labels=(args.spread_belief and args.spread_belief_coef > 0.0),
-                    # HP-TYPE-belief supervision (gen3_opp_hp_type_belief_v1): emit the privileged true-HP-
-                    # type label only under the learned head + a non-zero CE coef (the CLI guards both).
-                    emit_hp_type_labels=(args.hp_type_belief_mode == "learned" and args.hp_type_belief_coef > 0.0),
+                    # HP-TYPE-belief supervision (gen3_typed_hp_belief_v1): emit the privileged true-HP-type
+                    # label only when the CE will consume it (the head itself is unconditional under a move
+                    # belief; the CLI guards that the coef implies one).
+                    emit_hp_type_labels=(args.move_belief_mode != "off" and args.hp_belief_mode == "composed"
+                                         and args.hp_type_belief_coef > 0.0),
                     # DEFENSIVE-exploration flag (gen3_defensive_entropy_v1): emit only when the boost is on, so
                     # the state-conditioned entropy term in the PPO loss can read it. Off = no key, no cost.
                     emit_defensive_opportunity=(args.defensive_entropy_boost > 1.0),
@@ -3647,7 +3662,7 @@ async def main():
         model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision weight (training-only)
         model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
         model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
-        model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE weight (training-only; mode none = off)
+        model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE weight (training-only)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
         model.pubval_coef = args.pubval_coef  # pubval loss weight (training-only; resume-mutable)
@@ -3891,7 +3906,7 @@ async def main():
         model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision loss (0.0 = off)
         model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
         model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
-        model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE loss (0.0 = off; mode none = off)
+        model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE loss (0.0 = no direct CE)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss (0.0 = off)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
         model.pubval_coef = args.pubval_coef  # pubval head soft-BCE (mode none = off)

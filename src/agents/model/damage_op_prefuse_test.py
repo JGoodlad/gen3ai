@@ -40,7 +40,7 @@ _layout = Gen3ObservationEncoder(_mappings).get_layout()
 _BASE = dict(attend_unrevealed_opponents=True, opp_belief_slots=True,
              move_belief_mode="revealed", move_prior_fusion=True, move_belief_prefuse=True,
              move_latent=True, damage_op=True, damage_outgoing=True, damage_topk_k=5,
-             spread_belief=True, hp_type_belief_mode="learned")
+             spread_belief=True)
 # The shape it replaces: the same stack with the between-layers refine loop + its threat channels.
 _REFINE = dict(_BASE, damage_refine_rounds=2, threat_refine_outgoing=True, threat_status_refine=True)
 
@@ -53,6 +53,17 @@ def _make_model(**kw):
 def _obs(batch=4, seed=1234):
     g = torch.Generator().manual_seed(seed)
     return {"observation": torch.rand(batch, _layout["total_dim"], generator=g)}
+
+
+def _give_sentinel_a_spread_prior(*models):
+    """Random-float observations decode to the species-0 UNKNOWN sentinel, whose spread prior is
+    all-zero — and `believed = (mean + delta*std).clamp(min=1.0)` is then pinned at the clamp floor no
+    matter what the head predicts. Copy a real species' prior (Tyranitar) onto row 0 so the spread
+    head's output actually reaches the damage block; without this, a spread-head perturbation is
+    invisible and any test built on it passes vacuously."""
+    for m in models:
+        with torch.no_grad():
+            m.spread_belief.spread_prior[0] = m.spread_belief.spread_prior[248]
 
 
 # --------------------------------------------------------------------------- structure / guards
@@ -81,7 +92,7 @@ def test_head_concat_width_is_preserved():
 
 def test_requires_damage_op():
     kw = {k: v for k, v in _BASE.items() if k not in ("damage_op", "damage_outgoing",
-                                                     "damage_topk_k", "hp_type_belief_mode")}
+                                                     "damage_topk_k")}
     with pytest.raises(ValueError, match="damage_op_prefuse"):
         _make_model(**kw, damage_op=False, damage_op_prefuse=True)
 
@@ -204,29 +215,35 @@ def test_damage_block_is_identical_at_cold_start():
 def test_forward_differs_from_post_transformer_once_the_beliefs_train():
     """The flip side: it IS a real computational change — and this test also documents WHICH inputs
     actually move. The op requires `move_belief_prefuse`, so the move belief is pre-transformer in
-    BOTH arms and its posterior is bit-identical either way. The inputs the toggle re-sources are the
-    SPREAD and HP-TYPE posteriors (they read the opp tokens, which are role tokens under prefuse and
-    refined tokens otherwise). Perturb the HP-type head — with the typed-HP candidate channel opened
-    — and the block, hence the policy features, diverge."""
+    BOTH arms and its posterior is bit-identical either way.
+
+    gen3_typed_hp_belief_v1 NARROWED that further: the HP-type head moved next to the move head (both
+    now read the same tokens at the same point, so the two halves of `P(HP_t) = presence · P(t)` can
+    never come from differently-refined states), which makes the HP-type posterior bit-identical across
+    the toggle too. **The SPREAD posterior is now the only re-sourced input** — so perturb THAT head."""
     on, off = _shared_pair()
     g = torch.Generator().manual_seed(5)
+    _give_sentinel_a_spread_prior(on, off)
+    obs = _obs()
     with torch.no_grad():
-        # Open the typed-Hidden-Power candidate channel so the HP-type posterior can reach the damage
-        # block at all: a BIAS on the move head is token-INDEPENDENT, so P(HP present) is identical in
-        # both arms — it only makes the channel live.
-        for m in (on, off):
-            m.move_belief.move_head.bias[HIDDEN_POWER_MOVE_NUM] = 8.0
         # ONE perturbation tensor copied into BOTH models — drawing two samples would make the test
         # pass on the weight difference alone, proving nothing about the toggle. This head's READ is
         # what the toggle re-sources (role tokens vs refined tokens).
-        delta = torch.rand(on.hp_type_belief_head.type_head.weight.shape, generator=g) * 2.0 - 1.0
-        on.hp_type_belief_head.type_head.weight.copy_(delta)
-        off.hp_type_belief_head.type_head.weight.copy_(delta)
-        assert torch.equal(on.hp_type_belief_head.type_head.weight,
-                           off.hp_type_belief_head.type_head.weight)
+        # Scaled small on purpose: `believed = (mean + delta*std).clamp(min=1.0)`, so a large delta
+        # saturates BOTH arms onto the `clamp(min=1.0)` floor and the test would pass vacuously.
+        delta = (torch.rand(on.spread_belief.stat_head.weight.shape, generator=g) * 2.0 - 1.0) * 1e-4
+        on.spread_belief.stat_head.weight.copy_(delta)
+        off.spread_belief.stat_head.weight.copy_(delta)
+        assert torch.equal(on.spread_belief.stat_head.weight, off.spread_belief.stat_head.weight)
     with torch.no_grad():
-        pi_on, vf_on = on(_obs())
-        pi_off, vf_off = off(_obs())
+        pi_on, vf_on = on(obs)
+        pi_off, vf_off = off(obs)
+    # The move + HP-type posteriors are now bit-identical across the toggle (both pre-transformer);
+    # pin that, so a future change that re-splits them fails HERE rather than silently.
+    assert torch.equal(on.last_move_belief_logits, off.last_move_belief_logits)
+    assert torch.equal(on.last_hp_type_logits, off.last_hp_type_logits)
+    assert (on.last_spread_belief > 1.0).any(), "spread saturated on the clamp floor — vacuous"
+    assert not torch.allclose(on.last_spread_belief, off.last_spread_belief, atol=1e-6)
     assert not torch.allclose(on.last_damage_block, off.last_damage_block, atol=1e-6)
     assert not torch.allclose(pi_on, pi_off, atol=1e-6)
     assert torch.isfinite(pi_on).all() and torch.isfinite(vf_on).all()

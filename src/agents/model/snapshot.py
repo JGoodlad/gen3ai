@@ -911,8 +911,8 @@ def current_model_version(
     threat_unrevealed_outgoing: bool = False,
     threat_prob_outspeed: bool = False,
     threat_status_refine: bool = False,
-    hp_type_belief_mode: str = "off",
     hp_type_belief_coef: float = 0.0,
+    hp_belief_mode: str = "composed",
     belief_grad_mode: str = "shaping",
     pubval_mode: str = "none",
     pubval_coef: float = 0.0,
@@ -982,7 +982,7 @@ def current_model_version(
     ext_kwargs["threat_unrevealed_outgoing"] = threat_unrevealed_outgoing
     ext_kwargs["threat_prob_outspeed"] = threat_prob_outspeed
     ext_kwargs["threat_status_refine"] = threat_status_refine
-    ext_kwargs["hp_type_belief_mode"] = hp_type_belief_mode
+    ext_kwargs["hp_belief_mode"] = hp_belief_mode
     ext_kwargs["belief_grad_mode"] = belief_grad_mode
     ext_kwargs["pubval_mode"] = pubval_mode
     ext_kwargs["zarch_film"] = zarch_film
@@ -1079,9 +1079,9 @@ def arch_toggles_from_model(model) -> dict:
         "threat_prob_outspeed": bool(getattr(fe, "threat_prob_outspeed", False)),
         # gen3_status_trunk_v1 (v37): STRUCTURAL bool (adds status projections), gated → must reach the gate.
         "threat_status_refine": bool(getattr(fe, "threat_status_refine", False)),
-        # gen3_opp_hp_type_belief_v1 (v38): the tri-state mode — off↔prior a forward change, prior↔learned a
-        # state_dict change; STRING-gated in check_compatible, so it must reach the worker's gate.
-        "hp_type_belief_mode": str(getattr(fe, "hp_type_belief_mode", "off")),
+        # gen3_hp_belief_ablation_v1 (v53): 'composed' vs 'flat' changes both the state_dict (the
+        # HPTypeBelief head) and the forward, so it must reach the worker's check_compatible gate.
+        "hp_belief_mode": str(getattr(fe, "hp_belief_mode", "composed")),
         # gen3_belief_grad_mode_v1 (v41): the belief-trunk-gradient knob. detach() is value-preserving so a
         # frozen opponent's forward is identical regardless — it is NOT check_compatible-gated (resume-only).
         # Threaded for the trainee's recorded config + so a worker rebuilds the SAME forward (no-op either way).

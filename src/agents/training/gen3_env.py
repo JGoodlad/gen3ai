@@ -167,15 +167,21 @@ class Gen3Env(SinglesEnv):
         self._target_encode_cache = {}
         # Precompute id -> embedding-NUM maps once (keyed by gen3_data species/move id) for the labeller.
         self._species_num = {sid: rec["num"] for sid, rec in mappings.get("species", {}).items() if "num" in rec}
-        # The OPPONENT's move-belief labels: every Hidden Power maps to the typeless num 237. Gen 3 never
-        # reveals the opponent's HP type, so the belief predicts the OBSERVED (bare) form at 237 — NOT a
-        # typed variant's distinct data num (355-370, which exist only for OUR own-team obs where the type
-        # is known). Keeps belief LABEL ⊕ PRIOR ⊕ the op's 237-expansion all consistent on 237.
-        from agents.observation.moves import HIDDEN_POWER_MOVE_NUM as _HP_BELIEF_NUM
-        self._move_num = {
-            mid: (_HP_BELIEF_NUM if mid.startswith("hiddenpower") else rec["num"])
-            for mid, rec in mappings.get("moves", {}).items() if "num" in rec
-        }
+        # gen3_typed_hp_belief_v1 — the OPPONENT's move-belief labels use the TRUE TYPED Hidden Power num
+        # (355-370), not the typeless 237.
+        #
+        # This used to fold every HP onto 237 to match the OBSERVED (bare) form. But the belief posterior
+        # is now composed into the 16 typed channels before anything reads it, and 237 is driven hard-off
+        # — so a 237-keyed label supervised a channel nothing consumes while leaving the typed channels as
+        # NEGATIVES in the multi-label BCE. The head was being actively trained toward "this opponent has
+        # no Hidden Power of any type", fighting the very composition that is supposed to make HP real.
+        #
+        # Leak-safety is unchanged: these labels are TRAINING-ONLY Dict keys read by the loss and never by
+        # the forward, and the true HP type is exactly the privileged fact `hp_type_label` (v38) already
+        # supervises. Keying the move BCE on it merges those two supervisions into one signal on one
+        # posterior instead of two heads pulling at the same quantity through different channels. The
+        # OBSERVATION still shows the opponent's HP as bare 237 — the model must still guess the type.
+        self._move_num = {mid: rec["num"] for mid, rec in mappings.get("moves", {}).items() if "num" in rec}
         base_obs = {
             "observation": self.vector_space,
             "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8),
