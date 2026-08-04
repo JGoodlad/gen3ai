@@ -670,19 +670,12 @@ class _FakeModelMB(_FakeModel):
         inc = [{"phys": cold, "spec": hot, "p_outspeed": 0.5, "provenance": 0.6}]   # team slot 0 = our active
         inc += [{"phys": cold, "spec": cold, "p_outspeed": 0.4, "provenance": 0.3}]  # slot 1
         inc += [{"phys": cold, "spec": cold, "p_outspeed": 0.0, "provenance": 0.0} for _ in range(4)]
-        # gen3_unified_topk_incoming_v1: the discrete top-K block (K=2 here). icebeam OHKOs our active
-        # (magneton) but is SAFE on the skarmory pivot; thunderwave paras magneton (st100) but can't touch
-        # skarmory (immune → safe). Slots 2-5 carry no mon (our_slots below) → dropped from the matrix.
-        z = {"high": 0.0, "pko": 0.0, "status_lands": 0.0}
-        topk = {
-            "moves": [{"latent": [0.0] * 4, "belief": 0.62, "accuracy": 1.0, "is_phys": 0.0, "move": "icebeam"},
-                      {"latent": [0.0] * 4, "belief": 0.40, "accuracy": 1.0, "is_phys": 0.0, "move": "thunderwave"}],
-            "per_defender": [[{"high": 0.8, "pko": 0.9, "status_lands": 0.0}, {**z, "status_lands": 1.0}],  # magneton (active)
-                             [dict(z), dict(z)]]                                                            # skarmory (safe)
-                            + [[dict(z), dict(z)] for _ in range(4)]}
-        return {"incoming": inc, "effect": {}, "incoming_secondary": {},
+        # gen3_op_block_trim_v1: the opp-active `effect` / `incoming_secondary` collapses and the lean
+        # `incoming_topk` block are DELETED from the op output, so the decode this fake mimics no longer
+        # carries them. The discrete per-move read is `incoming_matrix` — see _FakeModelIMX below.
+        return {"incoming": inc,
                 "choice_band": {"phys_high_cb": [0.0] * 6, "phys_pko_cb": [0.0] * 6, "p_cb": 0.0},
-                "outgoing": None, "incoming_topk": topk}
+                "outgoing": None}
 
     def move_belief(self, obs, mask):
         from agents import gen3_data
@@ -724,34 +717,12 @@ async def test_matchups_shows_move_belief_and_op_incoming(tmp_path):
         assert "incoming worst (in)" in gpu and "magneton" in gpu   # per-our-mon op damage, labeled
 
 
-async def test_matchups_shows_topk_per_pivot(tmp_path):
-    """The DISCRETE top-K block (--damage-topk) renders (in the GPU-first `#threats-gpu` panel) the opp
-    active's likeliest moves INDIVIDUALLY with the FULL per-OUR-mon matrix: each move by its decoded NAME +
-    belief, then every of our mons' high→KO / status tag. An immune/no-threat pivot reads 'safe' (the
-    switch-in signal); a status move shows 'st'."""
-    run = _write_trace(tmp_path)
-    app = ProberApp(root=run, injected_model=_FakeModelMB())
-    async with app.run_test() as pilot:
-        await pilot.pause()
-        app._select_battle(app._tree_model.all_battles()[0])
-        await pilot.pause()
-        await app.workers.wait_for_complete()
-        await pilot.pause()
-        gpu = str(app.query_one("#threats-gpu", Static).render())
-        assert "opp likely (top-K)" in gpu                          # the discrete top-K block header
-        assert "icebeam" in gpu and "thunderwave" in gpu            # the two top-K moves, by decoded name
-        assert "magneton" in gpu and "skarmory" in gpu              # the per-pivot matrix lists OUR mons
-        assert "safe" in gpu                                        # skarmory is immune to both → safe pivot
-        assert "st100" in gpu                                       # thunderwave's status-lands on magneton (active)
-
-
 class _FakeModelIMX(_FakeModelMB):
     """Exposes the RICH incoming-damage MATRIX (--damage-matrices incoming) so the Threats panel renders the
     per-opp-move × per-OUR-mon full cell (low–high · crit · →KO · ×mult · st), not the lean top-K."""
 
     def damage_op_view(self, obs, mask):
         v = super().damage_op_view(obs, mask)
-        v["incoming_topk"] = None                       # the matrix REPLACES the lean top-K (never both)
         z = {"low": 0.0, "high": 0.0, "crit": 0.0, "pko": 0.0, "type_mult": 0.0, "status_lands": 0.0}
         # icebeam OHKOs magneton (the active), is SAFE on skarmory (immune); thunderwave paras magneton, safe on skarm.
         ice = {"low": 0.60, "high": 0.72, "crit": 1.4, "pko": 0.9, "type_mult": 2.0, "status_lands": 0.0}

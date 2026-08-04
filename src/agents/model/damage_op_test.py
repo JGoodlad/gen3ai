@@ -16,10 +16,10 @@ import torch
 import pytest
 
 from agents.model.features_extractor import (
-    Gen3FeaturesExtractor, DamageOperator, decode_damage_block, _DMG_PER_MON, _DMG_EFFECT,
-    _DMG_INCOMING_SEC, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_STATUS, _DMG_STATUS_N_MOVES,
+    Gen3FeaturesExtractor, DamageOperator, decode_damage_block, _DMG_PER_MON,
+    _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_STATUS, _DMG_STATUS_N_MOVES,
     _DMG_CB, _COND_SLP_IDX, _SUBSTITUTE_CTX_IDX, TEAM_SIZE,
-    _dmg_topk_dim, _DMG_TOPK_MOVE, _DMG_TOPK_DMG_PER, _DMG_TOPK_DEFAULT_K, MOVE_LATENT_DIM,
+    _DMG_TOPK_DEFAULT_K, MOVE_LATENT_DIM, _N_OUT_SECONDARY, _OUT_SEC_COLS,
     _DMG_REFINE_FEATS, _DMG_OMX, _DMG_OMX_CELL, _DMG_OUT_N_MOVES,
     _dmg_imx_dim, _DMG_IMX_CELL,
     _DMG_OAX, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MOVE,
@@ -230,7 +230,7 @@ def test_off_path_projection_dims_unchanged_by_damage_op():
     base, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed")
     on, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
     assert base.damage_op is None and on.damage_op is not None
-    grow = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC + _DMG_CB
+    grow = TEAM_SIZE * _DMG_PER_MON + _DMG_CB
     assert on.projection_input_dim - base.projection_input_dim == grow
     assert on.value_projection_input_dim - base.value_projection_input_dim == grow
 
@@ -315,7 +315,7 @@ def test_finite_on_zero_obs_and_block_is_zero():
         assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
         ctx = model.unpack({"observation": torch.zeros(3, layout["total_dim"])})
         block = model.damage_op(ctx, model.last_move_belief_logits)
-    assert block.shape == (3, TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC + _DMG_CB)
+    assert block.shape == (3, TEAM_SIZE * _DMG_PER_MON + _DMG_CB)
     assert (block == 0).all()
 
 
@@ -550,8 +550,8 @@ def test_op_is_leak_free_of_privileged_keys():
 def test_decode_damage_block_for_prober():
     """The prober decode exposes the full operator output from the PRE-gain stash: per-mon incoming
     in TEAM-SLOT order (incoming[i] = our team slot i; the active is whichever slot holds the active
-    flag, the bench slots are the safe-switch reads), the opp effect scalars, and the outgoing
-    per-move block. The single source of truth the TUI mirrors."""
+    flag, the bench slots are the safe-switch reads), the Choice-Band tail, and the outgoing per-move
+    block. The single source of truth the TUI mirrors."""
     from agents.model.features_extractor import decode_damage_block
     model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
                                 move_prior_fusion=True, damage_op=True, damage_outgoing=True)
@@ -561,7 +561,7 @@ def test_decode_damage_block_for_prober():
     view = decode_damage_block(model.damage_op.last_raw_block[0], outgoing=True)
     assert len(view["incoming"]) == TEAM_SIZE                       # our 6 team slots (team-slot order)
     assert set(view["incoming"][0]["phys"]) == {"low", "high", "crit", "pko", "acc"}
-    assert set(view["effect"]) == {"recovery", "status", "phaze", "boost", "hazard", "protect"}
+    assert set(view["choice_band"]) == {"phys_high_cb", "phys_pko_cb", "p_cb"}
     assert view["outgoing"] is not None and len(view["outgoing"]["moves"]) == 4
     assert set(view["outgoing"]["moves"][0]) == {"low", "high", "crit", "pko"}
     # an incoming-only model decodes outgoing → None.
@@ -619,26 +619,35 @@ def _topk_ctx(op, *, defenders, attacker_num=0, attacker_t1=0, attacker_t2=0,
 
 
 def test_topk_off_path_projection_dims_unchanged():
-    """damage_topk_k=0 == the baseline op; K>0 adds EXACTLY `_dmg_topk_dim(K)` to BOTH projection heads
-    (the structural-int byte-identity gate)."""
+    """damage_topk_k=0 == the baseline op; K>0 adds EXACTLY `_dmg_imx_dim(K)` to BOTH projection heads
+    (the structural-int byte-identity gate). gen3_op_block_trim_v1: K sizes the INCOMING MATRIX — the
+    lean top-K block it used to size is deleted."""
     common = dict(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True,
                   move_latent=True)
     base, _ = _make_model(**common)
-    on, _ = _make_model(**common, damage_topk_k=_DMG_TOPK_DEFAULT_K)
+    on, _ = _make_model(**common, damage_topk_k=_DMG_TOPK_DEFAULT_K, damage_matrices_incoming=True)
     assert base.damage_op.topk_k == 0 and on.damage_op.topk_k == _DMG_TOPK_DEFAULT_K
-    grow = _dmg_topk_dim(_DMG_TOPK_DEFAULT_K)
+    grow = _dmg_imx_dim(_DMG_TOPK_DEFAULT_K)
     assert on.projection_input_dim - base.projection_input_dim == grow
     assert on.value_projection_input_dim - base.value_projection_input_dim == grow
 
 
 def test_topk_dependency_guard():
-    """damage_topk_k>0 hard-requires damage_op (it extends it) AND move_latent (it gathers the move latent)."""
+    """damage_topk_k>0 hard-requires damage_op (it extends it), move_latent (it gathers the move latent),
+    AND — since gen3_op_block_trim_v1 deleted the lean block — damage_matrices_incoming, the only block
+    K now sizes. Without the last one K>0 would silently emit NOTHING, so it must FAIL LOUD."""
     with pytest.raises(ValueError, match="damage_op"):
         _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", move_latent=True,
                     damage_topk_k=4)                                       # no damage_op
     with pytest.raises(ValueError, match="move_latent"):
         _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True,
                     damage_topk_k=4)                                       # no move_latent
+    with pytest.raises(ValueError, match="damage_matrices_incoming"):
+        _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True,
+                    move_latent=True, damage_topk_k=4)                     # no incoming matrix
+    # ...and the op itself refuses the same combination (the extractor is not the only door in).
+    with pytest.raises(ValueError, match="matrices_incoming"):
+        DamageOperator(_make_layout(), topk_k=4)
 
 
 def test_topk_surfaces_distinct_special_threats():
@@ -650,18 +659,18 @@ def test_topk_surfaces_distinct_special_threats():
     # Defender = a pure WATER mon: Ice Beam reads ½× but Thunderbolt 2× → the two threats DIFFER per pivot.
     ctx = _topk_ctx(op, defenders=[(0, _T2I["WATER"], 0)] + [(0, 0, 0)] * 5)
     out = op(ctx, _logits_moves(layout["max_moves"], [ib, tb]), None, _synth_latent(layout))
-    dec = decode_damage_block(out[0].detach().numpy(), outgoing=False, topk_k=K)
+    dec = decode_damage_block(out[0].detach().numpy(), outgoing=False, matrices_incoming_k=K)
     idx = op.last_topk_idx[0].tolist()
     assert ib in idx[:2] and tb in idx[:2]                                 # both believed moves selected
     # distinct identities (the synthetic latent row == its candidate index).
-    lat0 = dec["incoming_topk"]["moves"][0]["latent"][0]
-    lat1 = dec["incoming_topk"]["moves"][1]["latent"][0]
+    lat0 = dec["incoming_matrix"]["moves"][0]["latent"][0]
+    lat1 = dec["incoming_matrix"]["moves"][1]["latent"][0]
     assert lat0 != lat1 and {int(round(lat0)), int(round(lat1))} == {ib, tb}
     # distinct per-defender damage on the WATER mon — Thunderbolt's slot reads higher than Ice Beam's
     # (2× vs ½×). Find each move's slot, compare the WATER defender (slot 0) high-rolls.
     s_ib, s_tb = idx.index(ib), idx.index(tb)
-    high_ib = dec["incoming_topk"]["per_defender"][0][s_ib]["high"]
-    high_tb = dec["incoming_topk"]["per_defender"][0][s_tb]["high"]
+    high_ib = dec["incoming_matrix"]["per_defender"][0][s_ib]["high"]
+    high_tb = dec["incoming_matrix"]["per_defender"][0][s_tb]["high"]
     assert high_tb > high_ib > 0.0, (high_ib, high_tb)                     # NOT a single collapsed max
 
 
@@ -675,10 +684,10 @@ def test_topk_pivot_safety_damage_immunity():
     # slot 0 = active (Electric, Ground-weak), slot 1 = a Flying pivot (immune to Ground).
     ctx = _topk_ctx(op, defenders=[(0, _T2I["ELECTRIC"], 0), (0, _T2I["FLYING"], 0)] + [(0, 0, 0)] * 4)
     out = op(ctx, _logits_moves(layout["max_moves"], [eq]), None, _synth_latent(layout))
-    dec = decode_damage_block(out[0].detach().numpy(), outgoing=False, topk_k=K)
+    dec = decode_damage_block(out[0].detach().numpy(), outgoing=False, matrices_incoming_k=K)
     s = op.last_topk_idx[0].tolist().index(eq)                             # Earthquake's top-K slot
-    active = dec["incoming_topk"]["per_defender"][0][s]                    # slot-0 defender (active)
-    flying = dec["incoming_topk"]["per_defender"][1][s]                    # slot-1 defender (Flying pivot)
+    active = dec["incoming_matrix"]["per_defender"][0][s]                    # slot-0 defender (active)
+    flying = dec["incoming_matrix"]["per_defender"][1][s]                    # slot-1 defender (Flying pivot)
     assert active["high"] > 0.3 and active["pko"] > 0.0                    # threatens the active
     assert flying["high"] == 0.0 and flying["pko"] == 0.0                  # the pivot is SAFE (immune)
 
@@ -692,10 +701,10 @@ def test_topk_pivot_safety_status_immunity():
     tw = _move_num("thunderwave")
     ctx = _topk_ctx(op, defenders=[(0, _T2I["NORMAL"], 0), (0, _T2I["GROUND"], 0)] + [(0, 0, 0)] * 4)
     out = op(ctx, _logits_moves(layout["max_moves"], [tw]), None, _synth_latent(layout))
-    dec = decode_damage_block(out[0].detach().numpy(), outgoing=False, topk_k=K)
+    dec = decode_damage_block(out[0].detach().numpy(), outgoing=False, matrices_incoming_k=K)
     s = op.last_topk_idx[0].tolist().index(tw)
-    normal = dec["incoming_topk"]["per_defender"][0][s]
-    ground = dec["incoming_topk"]["per_defender"][1][s]
+    normal = dec["incoming_matrix"]["per_defender"][0][s]
+    ground = dec["incoming_matrix"]["per_defender"][1][s]
     assert normal["status_lands"] > 0.5                                    # Thunder Wave paras the Normal mon
     assert ground["status_lands"] == 0.0                                   # Ground is IMMUNE (Electric status move)
     assert normal["high"] == 0.0 and ground["high"] == 0.0                 # it's a status move — no damage
@@ -712,14 +721,16 @@ def test_topk_meaningful_k_gate():
     lat = _synth_latent(layout)
     # all 4 revealed → the moveset is pinned → the 5th slot is dead.
     ctx_full = _topk_ctx(op, defenders=defenders, opp_revealed_nums=nums)
-    dec_full = decode_damage_block(op(ctx_full, lg, None, lat)[0].detach().numpy(), outgoing=False, topk_k=K)
-    m5 = dec_full["incoming_topk"]["moves"][4]
+    dec_full = decode_damage_block(op(ctx_full, lg, None, lat)[0].detach().numpy(), outgoing=False,
+                                    matrices_incoming_k=K)
+    m5 = dec_full["incoming_matrix"]["moves"][4]
     assert m5["belief"] == 0.0 and all(v == 0.0 for v in m5["latent"])     # opp-property 5th slot zeroed
-    assert all(dec_full["incoming_topk"]["per_defender"][d][4]["high"] == 0.0 for d in range(TEAM_SIZE))
+    assert all(dec_full["incoming_matrix"]["per_defender"][d][4]["high"] == 0.0 for d in range(TEAM_SIZE))
     # only 3 revealed → still guessing the 4th slot → the 5th candidate stays live.
     ctx_part = _topk_ctx(op, defenders=defenders, opp_revealed_nums=nums[:3])
-    dec_part = decode_damage_block(op(ctx_part, lg, None, lat)[0].detach().numpy(), outgoing=False, topk_k=K)
-    assert dec_part["incoming_topk"]["moves"][4]["belief"] > 0.0           # 5th slot live
+    dec_part = decode_damage_block(op(ctx_part, lg, None, lat)[0].detach().numpy(), outgoing=False,
+                                    matrices_incoming_k=K)
+    assert dec_part["incoming_matrix"]["moves"][4]["belief"] > 0.0           # 5th slot live
 
 
 def test_topk_typed_hp_latent_distinct():
@@ -727,7 +738,8 @@ def test_topk_typed_hp_latent_distinct():
     identities per type (HP-Rock ≠ HP-Ice) — built the same way the move network builds its per-slot HP
     latent (shared move emb ⊕ per-type type emb). The whole point of the typed expansion."""
     model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
-                                damage_op=True, move_latent=True, damage_topk_k=_DMG_TOPK_DEFAULT_K)
+                                damage_op=True, move_latent=True, damage_topk_k=_DMG_TOPK_DEFAULT_K,
+                                damage_matrices_incoming=True)
     enc = model.pokemon_encoder.move_latent_encoder
     hp = enc.hp_latent_block(model.embeddings, model.damage_op.HP_TYPE_IDX, model.damage_op.hp_num)
     assert hp.shape == (16, MOVE_LATENT_DIM)
@@ -758,7 +770,8 @@ def test_topk_leak_free():
     full model output is bit-identical whether or not the privileged label keys are in the obs dict."""
     model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
                                 move_prior_fusion=True, damage_op=True, damage_outgoing=True,
-                                move_latent=True, damage_topk_k=_DMG_TOPK_DEFAULT_K)
+                                move_latent=True, damage_topk_k=_DMG_TOPK_DEFAULT_K,
+                                damage_matrices_incoming=True)
     model.eval()
     torch.manual_seed(0)
     obs_t = torch.rand(4, layout["total_dim"])
@@ -775,26 +788,27 @@ def test_topk_leak_free():
 
 
 def test_topk_block_is_purely_additive():
-    """OFF-path byte-identity: turning topk ON appends a block at the END, so EVERY existing block
-    (incoming / outgoing / effect / CB / status) is byte-identical on/off — the on-op's leading
-    `op_off.out_dim` slice equals the off-op's full output (the out_gain prefix init is topk-independent)."""
+    """OFF-path byte-identity: turning the discrete move-space ON appends a block at the END, so EVERY
+    existing block (incoming / outgoing / CB / status) is byte-identical on/off — the on-op's leading
+    `op_off.out_dim` slice equals the off-op's full output (the out_gain prefix init is K-independent)."""
     K = 5
     layout = _make_layout()
     op_off = DamageOperator(layout, outgoing=True, topk_k=0)
-    op_on = DamageOperator(layout, outgoing=True, topk_k=K)
+    op_on = DamageOperator(layout, outgoing=True, topk_k=K, matrices_incoming=True)
     ib = _move_num("icebeam")
     ctx = _topk_ctx(op_on, defenders=[(0, _T2I["WATER"], 0)] + [(0, 0, 0)] * 5)
     lg = _logits_moves(layout["max_moves"], [ib])
-    out_off = op_off(ctx, lg, None, None)                       # topk off → no latent table needed
+    out_off = op_off(ctx, lg, None, None)                       # off → no latent table needed
     out_on = op_on(ctx, lg, None, _synth_latent(layout))
-    assert out_on.shape[1] - out_off.shape[1] == _dmg_topk_dim(K)
+    assert out_on.shape[1] - out_off.shape[1] == _dmg_imx_dim(K)
     assert torch.allclose(out_off, out_on[:, :op_off.out_dim], atol=1e-6)
 
 
 def _op_and_layout_topk(k):
-    """A bare DamageOperator (incoming-only) with the top-K block on — for the synthetic-ctx tests."""
+    """A bare DamageOperator (incoming-only) with the discrete incoming move-space on at K — for the
+    synthetic-ctx tests. Since gen3_op_block_trim_v1 that block IS the incoming matrix."""
     layout = _make_layout()
-    return DamageOperator(layout, topk_k=k), layout
+    return DamageOperator(layout, topk_k=k, matrices_incoming=True), layout
 
 
 # ------------------------------------------------- gen3_iterative_damage_v1: iterative damage refinement
@@ -1173,7 +1187,7 @@ def test_matrices_incoming_dependency_guards():
     with pytest.raises(ValueError, match="move_latent"):
         _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True,
                     damage_matrices_incoming=True)                       # no move_latent
-    # incoming + an explicit --damage-topk K is NOT a conflict — the matrix uses K and suppresses the lean block.
+    # incoming + an explicit --damage-topk K is NOT a conflict — K IS the matrix's width.
     m, _ = _make_model(**_imx_common(), damage_matrices_incoming=True, damage_topk_k=5)
     assert m.damage_op.matrices_incoming_k == 5
 
@@ -1186,11 +1200,10 @@ def test_matrices_incoming_k_is_tunable_via_topk():
     assert on4.damage_op.matrices_incoming_k == 4 and on6.damage_op.matrices_incoming_k == 6
     delta = _dmg_imx_dim(6) - _dmg_imx_dim(4)
     assert on6.projection_input_dim - on4.projection_input_dim == delta
-    # the lean top-K block is NOT also emitted (the matrix replaces it): on6's growth over a no-matrix model
-    # at the SAME topk_k=6 is the matrix MINUS the lean block it replaced.
-    lean6, _ = _make_model(**_imx_common(), damage_topk_k=6)             # lean top-K at K=6
-    assert (on6.projection_input_dim - lean6.projection_input_dim
-            == _dmg_imx_dim(6) - _dmg_topk_dim(6))
+    # gen3_op_block_trim_v1: the matrix is the ONLY block K sizes, so on6's whole growth over a K=0 model
+    # IS the matrix — there is no second (lean) block double-counting the same candidates.
+    off, _ = _make_model(**_imx_common())                               # no matrix, K=0
+    assert on6.projection_input_dim - off.projection_input_dim == _dmg_imx_dim(6)
 
 
 def test_incoming_matrix_cell_physics_and_immunity():
@@ -1260,7 +1273,7 @@ def test_incoming_matrix_shape_decode_leak_free():
 
 # ---------------------------------------------------- gen3_unified_move_system_v1: secondary effects
 _SEC_IDX = {c: i for i, c in enumerate(dt.SECONDARY_COLS)}
-_INC_SEC_BASE = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT          # incoming per-status secondary sub-block
+_OUT_SEC_IDX = {c: i for i, c in enumerate(_OUT_SEC_COLS)}      # into the 7 LIVE outgoing columns
 _OUT_SEC_BASE = _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE + 1        # outgoing per-move secondary (after p_outspeed)
 
 
@@ -1273,36 +1286,34 @@ def _believe_active(op, *names):
     return lg
 
 
-def test_incoming_secondary_status_serene_grace_and_accuracy_fold():
-    """The opp active's DAMAGING-move secondaries surface per-status: Body Slam → 30% para; Serene Grace
-    DOUBLES it to 60%; Zap Cannon's 100% para × 50% accuracy folds to 50% (accuracy-in-the-op, like pko)."""
+def test_outgoing_secondary_columns_exclude_the_structurally_dead_statuses():
+    """gen3_op_block_trim_v1: the OUTGOING per-move secondary block prices only what an OUR-side gen3
+    move can actually inflict. `slp` has NO damaging carrier in the whole move table, and `psn`/`tox`
+    are carried only by moves no pool team runs — 12 dims (4 moves x 3) of structural zero. The 7
+    surviving columns keep SECONDARY_COLS order so `_OUT_SEC_KEEP` stays a straight gather.
+
+    The DATA half of the claim is asserted here (not just the constant), so a future data refresh that
+    gives sleep a damaging carrier fails this test instead of silently dropping a live signal."""
     from agents import gen3_data
+    assert set(_OUT_SEC_COLS) == set(dt.SECONDARY_COLS) - {"slp", "psn", "tox"}
+    assert _N_OUT_SECONDARY == 7
+    assert list(_OUT_SEC_COLS) == [c for c in dt.SECONDARY_COLS if c in set(_OUT_SEC_COLS)]
+    # no gen3 DAMAGING move inflicts sleep as a secondary (the strongest of the three claims).
     op = DamageOperator(_make_layout())
-    ctx = _fake_ctx(op, attacker_num=242, attacker_t1=_T2I["NORMAL"], attacker_t2=0,
-                    defenders=[(260, _T2I["WATER"], _T2I["GROUND"])] + [(0, 0, 0)] * 5,
-                    hp_probs_active=[0.0] * 16)
-    par = _INC_SEC_BASE + _SEC_IDX["par"]
-    out = op(ctx, _believe_active(op, "bodyslam"))
-    assert abs(out[0, par].item() - 0.30) < 1e-4
-    ctx.ability1_ids[:, TEAM_SIZE] = gen3_data.abilities.get("serenegrace").num
-    out_sg = op(ctx, _believe_active(op, "bodyslam"))
-    assert abs(out_sg[0, par].item() - 0.60) < 1e-4                # Serene Grace ×2
-    ctx.ability1_ids[:, TEAM_SIZE] = 0
-    out_zc = op(ctx, _believe_active(op, "zapcannon"))
-    assert abs(out_zc[0, par].item() - 0.50) < 1e-4               # 100% × 50% acc folded
-    # flinch is exposed RAW (no speed coupling): Rock Slide 30% × 90% acc = 0.27, regardless of speed.
-    out_rs = op(ctx, _believe_active(op, "rockslide"))
-    assert abs(out_rs[0, _INC_SEC_BASE + _SEC_IDX["flinch"]].item() - 0.27) < 1e-4
+    slp_col = op.MOVE_SECONDARY[:, _SEC_IDX["slp"]]
+    assert float(slp_col.abs().sum()) == 0.0
+    # ...and the incoming side, which faces the OPPONENT (not restricted to our team pool), keeps all 10.
+    assert op.MOVE_SECONDARY.shape[1] == len(dt.SECONDARY_COLS)
 
 
 def test_outgoing_secondary_serene_grace_and_shield_dust():
     """Per OUR move: Thunderbolt → 10% para; OUR Serene Grace doubles to 20%; the OPP's Shield Dust
-    negates it to 0. Move 0's secondary lives at [_OUT_SEC_BASE : +N_SECONDARY]."""
+    negates it to 0. Move 0's secondary lives at [_OUT_SEC_BASE : +_N_OUT_SECONDARY]."""
     from agents import gen3_data
     layout = _make_layout()
     op = DamageOperator(layout, outgoing=True)
     tb = gen3_data.moves.get("thunderbolt").num
-    par = _OUT_SEC_BASE + _SEC_IDX["par"]
+    par = _OUT_SEC_BASE + _OUT_SEC_IDX["par"]
 
     def _out(our_ab=0, opp_ab=0):
         ctx = _fake_ctx_out(our_species=135, our_t1=_T2I["ELECTRIC"], our_t2=0,
@@ -1319,8 +1330,10 @@ def test_outgoing_secondary_serene_grace_and_shield_dust():
 
 
 def test_decode_includes_secondary_blocks():
-    """The prober decode exposes both new sub-blocks: per-status `incoming_secondary` + per-move
-    `outgoing.secondary` (keyed by SECONDARY_COLS)."""
+    """The prober decode exposes the per-move `outgoing.secondary` sub-block, keyed by the 7 LIVE
+    `_OUT_SEC_COLS`. gen3_op_block_trim_v1: the opp-active `effect` / `incoming_secondary` collapses are
+    GONE from the row (and so from the decode) — a stale reader must KeyError, not silently read the
+    Choice-Band bytes as an effect scalar."""
     from agents.model.features_extractor import decode_damage_block
     model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
                                 move_prior_fusion=True, damage_op=True, damage_outgoing=True)
@@ -1328,9 +1341,12 @@ def test_decode_includes_secondary_blocks():
     with torch.no_grad():
         model.forward({"observation": torch.rand(2, layout["total_dim"])})
     view = decode_damage_block(model.damage_op.last_raw_block[0], outgoing=True)
-    assert set(view["incoming_secondary"]) == set(dt.SECONDARY_COLS)
+    assert "effect" not in view and "incoming_secondary" not in view and "incoming_topk" not in view
     assert len(view["outgoing"]["secondary"]) == _DMG_OUT_N_MOVES
-    assert set(view["outgoing"]["secondary"][0]) == set(dt.SECONDARY_COLS)
+    assert set(view["outgoing"]["secondary"][0]) == set(_OUT_SEC_COLS)
+    # the CB tail sits immediately after the per-mon rows now (nothing between them).
+    raw = model.damage_op.last_raw_block[0]
+    assert view["choice_band"]["p_cb"] == float(raw[TEAM_SIZE * _DMG_PER_MON + 2 * TEAM_SIZE])
 
 
 def test_gen3_formula_matches_incoming_damage_kernel():

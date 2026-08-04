@@ -294,7 +294,7 @@ def test_topk_surfaces_two_distinct_typed_hps():
     at their real move-nums, each with its own typed latent + per-defender damage."""
     layout = _DT._make_layout()
     head = _head()
-    op = DamageOperator(layout, topk_k=5)
+    op = DamageOperator(layout, topk_k=5, matrices_incoming=True)
     defenders = [(0, _T2I["DRAGON"], _T2I["FLYING"]), (0, _T2I["WATER"], _T2I["GROUND"])] + [(0, 0, 0)] * 4
     ctx = _DT._topk_ctx(op, defenders=defenders, attacker_t1=_T2I["PSYCHIC"], hp_probs_active=[0.0] * 16)
     post = torch.zeros(1, TEAM_SIZE, 16)

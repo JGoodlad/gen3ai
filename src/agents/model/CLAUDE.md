@@ -133,7 +133,7 @@ Rules to preserve:
 - **Each phase owns its layers** (`move_network` lives under `pokemon_encoder`, `our_cls` under `cls_pool`, etc.). State_dict keys are therefore phase-prefixed.
 - **`Embeddings` is the sole owner of the 5 embedding tables + `hp_type_idx_map`.** It is passed as a **forward argument** to `PokemonEncoder` and `TeamTransformer` — never stored as a child attribute on them — so the tables register exactly once. (The root exposes read-only `@property` forwarders like `model.type_embedding` for convenience; those add no state_dict keys.)
 - **`ExtractorContext`** (frozen-by-convention dataclass) is the inter-phase contract: `ObsUnpack` produces it, downstream phases read from it. Add a field here rather than widening a phase's positional signature. Cross-phase values (active-slot indices, fainted masks, `hp_probs`) are computed once in `ObsUnpack` and carried on the context.
-- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py` (current: `gen3_entity_move_seats_v1` — v54, move tokens become attention SEATS in the trunk and the pointer head reads the REFINED E3 seats: an unconditional state_dict + forward change [token-type table 4 → 6, `move_seat_proj`, the head's wider `move_proj`], the v51 pattern; stacking on `gen3_typed_hp_belief_v1` (v52) and `gen3_pointer_native_v1` — the v51 fresh-generation pointer-native action head, the cross-era break under which the flat `action_net` is deleted and every action is scored from its entity token — the opponent's Hidden Power is composed into the 16 ORDINARY typed move-nums 355-370 inside the BELIEF (`HPTypeBelief.compose_typed_hp`, beside the move head), with the bare 237 driven hard-off; every downstream consumer therefore reads a typed posterior and the op does no HP reasoning of its own. A forward-math change with unchanged out_dim/projection widths → not shape-caught, so it bumps the signature. The literal source of truth is `ARCH_SIGNATURE` in `model_version.py`; check it there, not this prose). Pure decompositions still change state_dict keys, so old checkpoints must fail loudly. Re-sourcing or re-meaning an obs block (e.g. own IV/EV/nature going from constant fallbacks to real values via the poke-env `backfill_teambuilder_spread` fix; the event-sourced TurnDelta fold + status/item transition history; routing the trapping signals — `trapped`/`maybe_trapped`/`attempted_switch_rejected` — into the obs; the action-aligned per-move effect block — `gen3_move_effects_v1`; the per-our-mon incoming-damage / OHKO belief block — `gen3_incoming_damage_v1`; **re-calibrating that belief's VALUES** — `gen3_incoming_damage_v2`, which added a gen3 crit term + raised the offensive-stat tail to de-timid P(KO), and widened the candidate set [revealed-HP typed expansion, Return/Frustration pricing, broader prior floor/cap] so the killing move isn't silently absent; same 33 dims, values only; or adding the `turns_since_progress` no-progress-clock scalar at `vec[14]` — `gen3_markovian_progress_v1`, obs dim 3390 → 3391; or **re-ordering** the per-move features (base power vec[0:4], type multiplier vec[4:8], the move-effect block) from `battle.available_moves` order to request-slot order so feature slot k aligns with action logit 6+k — `gen3_move_slot_align_v1`, same 3409 dims, VALUES only on the disabled-move / <4-move / no-opp-active cases, byte-identical otherwise; or adding the two **protect-success-odds** reactive scalars at `vec[15]`/`vec[16]` — `gen3_protect_odds_v1`, P(Protect succeeds NOW) per active mon from `LivePokemon.protect_counter`, obs dim 3409 → 3411; or adding the two static per-move status-cure bits — `cures_self_status` (Refresh) + `cures_team_status` (Heal Bell / Aromatherapy) — to the move-effect block so the head can connect a cure move to the per-mon status one-hots, `gen3_status_cure_moves_v1`, `MOVE_EFFECT_FEATURES` 9 → 11, obs dim 3411 → 3419; or adding the 3-dim per-mon SLEEP WAKE belief block — `sleep_is_deterministic` [Rest] + a COMPUTED `p_wake` (the verified gen3 sleep-RNG tables, opp time∈{2,3,4,5} / Rest time=3 / Early Bird halves, marginalising the opp Early-Bird prior) + `sleep_counter_reliable` — so the head reads the wake odds + Rest source poke-env can't expose instead of learning the sleep RNG, `gen3_sleep_wake_belief_v1`, `POKEMON_VECTOR_DIM` 106 → 109, obs dim 3419 → 3455; or RESERVING two reactive scalars at `vec[17]`/`vec[18]` for a pending-Wish "floating heal" signal (`gen3_wish_reserve_v1`, `REACTIVE_SCALAR_DIM` 17 → 19, obs dim 3455 → 3457) then WIRING them — the gen3 Wish (gen4-inherited) heals the slot mon's `maxhp/2` at the end of the turn after cast, slot-keyed, so the per-side scalar is the flat `WISH_HEAL_FRACTION` (≈0.5, GIGO-proof) when a wish cast last turn resolves this turn, reconstructed from the event log since poke-env doesn't track it, `gen3_wish_wired_v1`, a VALUES-only change, fuzz-calibrated vs the real sim; or **re-meaning the `turns_since_progress` no-progress-clock scalar** at `vec[14]` so a REST-LOOP — our active Rested earlier this episode, woke, and re-Rested without Sleep Talk — is classified a NO_OP stall instead of a free defensive heal (it now ADVANCES the clock + charges `no_progress_tax`; Sleep-Talk mons and winning residual rest-stalls stay exempt — and, folded into the SAME signature with NO separate bump (owner decision), a WASTED Refresh (`cures_self_status` used with `our_status_cured is None`) is likewise a NO_OP charged BEFORE the progress check, so it is taxed even when a winning Leech/Toxic residual would otherwise launder the turn into "progress"), `gen3_rest_loop_stall_v1`, a VALUES-only change in `progress_clock.py`, same obs dim 3457; or adding the request-ordered **active-req-moves** block — OUR active mon's 4 moves in `legal.move_slots` order `[move_num ×4, resolved_type_id ×4, legal_now ×4]` after the matchups, so the DamageOperator's OUTGOING per-move methods (`_outgoing_block`/`_status_landing`/`_outgoing_matrix`) read request order instead of the per-mon block's sorted-by-id order and their per-move output aligns with action logit 6+k — `gen3_op_move_align_v1`, `REACTIVE_DIM` 402 → 414, obs dim 3457 → 3469, a SHAPE change; or giving each TYPED Hidden Power its OWN distinct move num — `gen3_typed_hidden_power_ids_v1`, a VALUES-only change [same obs dim, no weight-shape change: 355-370 are previously-unused move-embedding rows, max_moves=400]: OUR-side HP carries a distinct num (355-370) + real type in the obs/per-num tables so the extractor's `is_hp_slot == 237` no longer matches it [normal typed-move path; our outgoing HP priced right] and the history folds the distinct num, while the OPPONENT's HP stays bare 237 in the OBSERVATION [Gen 3 never discloses the type — the known/unknown boundary]; the belief machinery that used to fold to 237 alongside it [the op's candidate expansion, the move-belief LABELS] was moved to the typed nums by v52 `gen3_typed_hp_belief_v1`, leaving only the PRESENCE prior at 237) is likewise retrain-class even when individual dims are unchanged.
+- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py` (current: `gen3_op_block_trim_v1` — v55, the DamageOperator block trim: the op's three least-used output families [incoming secondary / incoming effect / the outgoing slp/psn/tox columns] plus the dead lean `_topk_block` are deleted, −28 dims off both projection heads; stacking on `gen3_entity_move_seats_v1` — v54, move tokens become attention SEATS in the trunk and the pointer head reads the REFINED E3 seats: an unconditional state_dict + forward change [token-type table 4 → 6, `move_seat_proj`, the head's wider `move_proj`], the v51 pattern; and on `gen3_typed_hp_belief_v1` (v52) and `gen3_pointer_native_v1` — the v51 fresh-generation pointer-native action head, the cross-era break under which the flat `action_net` is deleted and every action is scored from its entity token — the opponent's Hidden Power is composed into the 16 ORDINARY typed move-nums 355-370 inside the BELIEF (`HPTypeBelief.compose_typed_hp`, beside the move head), with the bare 237 driven hard-off; every downstream consumer therefore reads a typed posterior and the op does no HP reasoning of its own. A forward-math change with unchanged out_dim/projection widths → not shape-caught, so it bumps the signature. The literal source of truth is `ARCH_SIGNATURE` in `model_version.py`; check it there, not this prose). Pure decompositions still change state_dict keys, so old checkpoints must fail loudly. Re-sourcing or re-meaning an obs block (e.g. own IV/EV/nature going from constant fallbacks to real values via the poke-env `backfill_teambuilder_spread` fix; the event-sourced TurnDelta fold + status/item transition history; routing the trapping signals — `trapped`/`maybe_trapped`/`attempted_switch_rejected` — into the obs; the action-aligned per-move effect block — `gen3_move_effects_v1`; the per-our-mon incoming-damage / OHKO belief block — `gen3_incoming_damage_v1`; **re-calibrating that belief's VALUES** — `gen3_incoming_damage_v2`, which added a gen3 crit term + raised the offensive-stat tail to de-timid P(KO), and widened the candidate set [revealed-HP typed expansion, Return/Frustration pricing, broader prior floor/cap] so the killing move isn't silently absent; same 33 dims, values only; or adding the `turns_since_progress` no-progress-clock scalar at `vec[14]` — `gen3_markovian_progress_v1`, obs dim 3390 → 3391; or **re-ordering** the per-move features (base power vec[0:4], type multiplier vec[4:8], the move-effect block) from `battle.available_moves` order to request-slot order so feature slot k aligns with action logit 6+k — `gen3_move_slot_align_v1`, same 3409 dims, VALUES only on the disabled-move / <4-move / no-opp-active cases, byte-identical otherwise; or adding the two **protect-success-odds** reactive scalars at `vec[15]`/`vec[16]` — `gen3_protect_odds_v1`, P(Protect succeeds NOW) per active mon from `LivePokemon.protect_counter`, obs dim 3409 → 3411; or adding the two static per-move status-cure bits — `cures_self_status` (Refresh) + `cures_team_status` (Heal Bell / Aromatherapy) — to the move-effect block so the head can connect a cure move to the per-mon status one-hots, `gen3_status_cure_moves_v1`, `MOVE_EFFECT_FEATURES` 9 → 11, obs dim 3411 → 3419; or adding the 3-dim per-mon SLEEP WAKE belief block — `sleep_is_deterministic` [Rest] + a COMPUTED `p_wake` (the verified gen3 sleep-RNG tables, opp time∈{2,3,4,5} / Rest time=3 / Early Bird halves, marginalising the opp Early-Bird prior) + `sleep_counter_reliable` — so the head reads the wake odds + Rest source poke-env can't expose instead of learning the sleep RNG, `gen3_sleep_wake_belief_v1`, `POKEMON_VECTOR_DIM` 106 → 109, obs dim 3419 → 3455; or RESERVING two reactive scalars at `vec[17]`/`vec[18]` for a pending-Wish "floating heal" signal (`gen3_wish_reserve_v1`, `REACTIVE_SCALAR_DIM` 17 → 19, obs dim 3455 → 3457) then WIRING them — the gen3 Wish (gen4-inherited) heals the slot mon's `maxhp/2` at the end of the turn after cast, slot-keyed, so the per-side scalar is the flat `WISH_HEAL_FRACTION` (≈0.5, GIGO-proof) when a wish cast last turn resolves this turn, reconstructed from the event log since poke-env doesn't track it, `gen3_wish_wired_v1`, a VALUES-only change, fuzz-calibrated vs the real sim; or **re-meaning the `turns_since_progress` no-progress-clock scalar** at `vec[14]` so a REST-LOOP — our active Rested earlier this episode, woke, and re-Rested without Sleep Talk — is classified a NO_OP stall instead of a free defensive heal (it now ADVANCES the clock + charges `no_progress_tax`; Sleep-Talk mons and winning residual rest-stalls stay exempt — and, folded into the SAME signature with NO separate bump (owner decision), a WASTED Refresh (`cures_self_status` used with `our_status_cured is None`) is likewise a NO_OP charged BEFORE the progress check, so it is taxed even when a winning Leech/Toxic residual would otherwise launder the turn into "progress"), `gen3_rest_loop_stall_v1`, a VALUES-only change in `progress_clock.py`, same obs dim 3457; or adding the request-ordered **active-req-moves** block — OUR active mon's 4 moves in `legal.move_slots` order `[move_num ×4, resolved_type_id ×4, legal_now ×4]` after the matchups, so the DamageOperator's OUTGOING per-move methods (`_outgoing_block`/`_status_landing`/`_outgoing_matrix`) read request order instead of the per-mon block's sorted-by-id order and their per-move output aligns with action logit 6+k — `gen3_op_move_align_v1`, `REACTIVE_DIM` 402 → 414, obs dim 3457 → 3469, a SHAPE change; or giving each TYPED Hidden Power its OWN distinct move num — `gen3_typed_hidden_power_ids_v1`, a VALUES-only change [same obs dim, no weight-shape change: 355-370 are previously-unused move-embedding rows, max_moves=400]: OUR-side HP carries a distinct num (355-370) + real type in the obs/per-num tables so the extractor's `is_hp_slot == 237` no longer matches it [normal typed-move path; our outgoing HP priced right] and the history folds the distinct num, while the OPPONENT's HP stays bare 237 in the OBSERVATION [Gen 3 never discloses the type — the known/unknown boundary]; the belief machinery that used to fold to 237 alongside it [the op's candidate expansion, the move-belief LABELS] was moved to the typed nums by v52 `gen3_typed_hp_belief_v1`, leaving only the PRESENCE prior at 237) is likewise retrain-class even when individual dims are unchanged.
 - Per-phase unit tests live in `phase_modules_test.py` — `CLSPool` (incl. the `value_cls` pool) and `ProjectionAssembler` (which returns `(pi_combined, vf_combined)`) are tested on a hand-built `ExtractorContext` (`_dummy_ctx`) without a full forward pass. Prefer adding precise phase-level tests there.
 
 ## File layout (`gen3_damage_op_split_v1`, 2026-08-01)
@@ -560,7 +560,10 @@ training-only): the predicted move distribution's expected latent `softmax(ml) @
 by COSINE toward the true moveset's mean latent (stop-grad) + a VICReg floor — so near-moves grade as near
 (Rock Slide ≈ Hidden Power Rock), the soft complement to the per-ID BCE. Leak-safe: `last_move_latent_table`
 is a side stash (never in pi/vf, `is_grad_enabled`-gated so rollout skips it); the loss reads `known_moves`
-only. (3) **The DamageOperator effect block** gains per-status SECONDARY probabilities — incoming
+only. (3) **The DamageOperator effect block** gains per-status SECONDARY probabilities — ⚠️ the INCOMING
+half described next was DELETED at v55 (`gen3_op_block_trim_v1`: 0.1% of measured dependence, no defender
+axis — the per-move/per-defender form in `_incoming_matrix` replaces it), and the OUTGOING half now spans
+only the 7 columns an OUR-side gen3 move can inflict (`_OUT_SEC_COLS`) — incoming
 (`_DMG_INCOMING_SEC`=10, the opp active's damaging-move secondaries, `max_m(w·chance·acc)×Serene Grace(opp)`,
 NO speed coupling — flinch's move-first dependence is left to attention) + per-OUR-move outgoing
 (`_DMG_OUT_SEC`=40, `chance·acc × Serene Grace(us) × Shield Dust(opp)`). These are **intrinsic to `damage_op`**
@@ -684,7 +687,11 @@ Current `MODEL_CONFIG_VERSION` = **45**.
 **Discrete top-K incoming move-space (v30, `damage_topk_k` / `--damage-topk`, `gen3_unified_topk_incoming_v1`).**
 The `DamageOperator`'s incoming block collapses the opp active's whole moveset into the worst phys/spec
 hit per defender (`_chan_max`) — losing WHICH move it is + the per-pivot consequences, so the policy
-can't anticipate the discrete move or pick the immune/safe pivot. This adds a **discrete top-K block**
+can't anticipate the discrete move or pick the immune/safe pivot. ⚠️ **The LEAN block described in this
+section was DELETED at v55** (`gen3_op_block_trim_v1`) — v35's `_incoming_matrix` is its strict superset and
+had already suppressed it in every production config (measured 0 calls/forward), so `damage_topk_k` now
+sizes only that matrix. Read this section as the design rationale, not the live layout. This adds a
+**discrete top-K block**
 (behind `damage_topk_k`, an int; 0 = off; **default 5 when `--unified-moves`** auto-enables it — a gen3
 mon runs 4 moves, so the 5th is the surprise/uncertain candidate; "reason about the 4th/5th move").
 For the opp active's **K most-believed CANDIDATE moves** (`torch.topk` over `w_all` — real move-nums +
@@ -759,11 +766,11 @@ matrices_outgoing=True)` mirrors the layout (`outgoing_matrix`). Threaded throug
 INCOMING-matrix enrichment is the v35 sibling below.
 
 **Incoming per-move damage matrix (v35, `damage_matrices_incoming` / `--damage-matrices incoming`,
-`gen3_per_move_matrices_v1`).** The ENRICHED evolution of the v30 top-K block (`DamageOperator._incoming_matrix`,
-extending `_topk_block`) — it **REUSES `damage_topk_k` as its K** (one knob — `--damage-topk K`, try 4/5/6,
-default 5 — tunes both the lean top-K and the rich matrix) and **replaces the lean top-K block** at that K
-(the op suppresses the lean block when `matrices_incoming`, so they never coexist; the matrix's width is
-gated by the existing `damage_topk_k` int + the `damage_matrices_incoming` bool). Per opp-active top-K move:
+`gen3_per_move_matrices_v1`).** The ENRICHED evolution of the v30 top-K block
+(`DamageOperator._incoming_matrix`) — it **REUSES `damage_topk_k` as its K** (one knob — `--damage-topk K`,
+try 4/5/6, default 5). It originally SUPPRESSED the lean top-K at that K; since v55
+(`gen3_op_block_trim_v1`) the lean block is DELETED outright, so this is the ONLY block K sizes and
+`--damage-topk K` without `--damage-matrices incoming` RAISES rather than emitting nothing. Per opp-active top-K move:
 a richer **header** `[latent(32), belief, accuracy,
 is_phys, EXPLICIT effect bits(6: recovery/status/phaze/boost/hazard/protect), EXPLICIT secondary chances(10)]`
 + a richer per-(OUR mon, move) **cell** `[low, high, crit, pko, type_mult, status_lands]` (`_DMG_IMX_HEADER`=51,
@@ -943,15 +950,15 @@ against the null hypothesis "the multi-label move head can just learn 16 indepen
 
 Tests: `hp_type_belief_test.py` (`flat` builds no head + masks 237 + leaves typed channels untouched, the
 shared-mask agreement, the version gate mismatch, the invalid-mode raise, the v52→v53 migration default).
-`MODEL_CONFIG_VERSION` = **52**, `ARCH_SIGNATURE` = **`gen3_typed_hp_belief_v1`**.
+`MODEL_CONFIG_VERSION` = **53** at v53.
 Tests: `hp_type_belief_test.py` (the immune-bug-and-fix, 237-always-masked + C=n_moves, narrowing + off-meta
 fallback, cold-start==prior, the two-distinct-typed-HPs top-K at real nums 363/365, grad flow, modes, CE, the
 GIGO/version gate, the v2 reinjection) + the extended `poke_env_gaps/belief_labels_fuzz_test.py` (HP-type label
-== agent2's real type + no-leak, live). `MODEL_CONFIG_VERSION` was **38** at v38; the current value is **40**
-(the v40 nature/EV note below); `ARCH_SIGNATURE` is now **`gen3_entity_move_seats_v1`** (v54, the
-move-entity seats — before it `gen3_typed_hp_belief_v1` [v52, the typed-HP belief note above] and
-`gen3_pointer_native_v1` [v51, the pointer-native head — see that note];
-`gen3_opp_hp_typed_candidates_v1` was current v38–v50).
+== agent2's real type + no-leak, live). `MODEL_CONFIG_VERSION` was **38** at v38; the current value is **55**
+(the v55 op BLOCK TRIM note below); `ARCH_SIGNATURE` is now **`gen3_op_block_trim_v1`** (v55, the op block
+trim — before it `gen3_entity_move_seats_v1` [v54, the move-entity seats], `gen3_typed_hp_belief_v1`
+[v52, the typed-HP belief note above] and `gen3_pointer_native_v1` [v51, the pointer-native head — see that
+note]; `gen3_opp_hp_typed_candidates_v1` was current v38–v50).
 
 **Nature/EV generative spread belief + op-side marginalization (v40, `gen3_nature_ev_belief_v1`,
 `spread_belief_nature` / `--spread-belief-nature` + `spread_belief_nature_marginalize` /
@@ -1330,9 +1337,54 @@ pad ⇒ team tokens byte-identical to the no-extra forward), the op-candidate si
 requirement gate, and the gradient probe (NOTE: probe LayerNorm-output paths with a RANDOM cotangent —
 `.sum().backward()` lies in LN's backward null space and reads ~0 on a perfectly live path).
 
-Current `MODEL_CONFIG_VERSION` = **54** (v51 pointer-native head + v52 typed-HP belief + v53
-HP-belief ablation + v54 move-entity seats — see the pointer-native, typed-HP, and entity-seat
-sections).
+**The DamageOperator BLOCK TRIM (v55, `gen3_op_block_trim_v1`, NO flag).** The operator sheds its three
+least-used output families and one dead code path, acting on the ledger-**P1** per-block dependence
+ablation (4000 real eval states, exact producing snapshot, per-block zero → masked KL; ceiling = zeroing
+the whole op = 0.9385). It is a DELETION, not a toggle — there is no off state and no new
+`ModelVersion` field.
+
+- **Incoming per-STATUS SECONDARY (10 dims) — 0.1% of the ceiling, the most INERT channel in the op.**
+- **Incoming believed-EFFECT (6 dims) — 1.2%.**
+  Both were opp-active-level belief-weighted maxes with **no defender axis**, so they answered "can the
+  opponent flinch someone" without saying *whom*. v35's `_incoming_matrix` already carries the same facts
+  **per move** (`_DMG_IMX_HDR_EFFECT` / `_DMG_IMX_HDR_SEC`) and **per defender** (`status_lands`) — ledger
+  **P4** measured the un-collapsed form at KL 0.0005 against the collapse's 0.1446. Deleting them also
+  removes the whole UNMASKED-belief read `w = sigmoid(...)` from `forward` (with the `_EFF_*`/`_SEC_*`
+  sparse-gather buffers), leaving `_opp_candidate_weights`' `w_all` as the op's single belief read.
+- **Outgoing slp/psn/tox secondary columns (12 dims = 4 moves × 3) — STRUCTURAL ZEROS.** This block prices
+  OUR moves, and (measured, not asserted) gen3 has **no damaging move that inflicts sleep at all**, while
+  the psn/tox carriers appear on **1 / 0 of the 773 `data/teams/` teams**. `_OUT_SEC_COLS` /
+  `_OUT_SEC_KEEP` keep the surviving 7 in SECONDARY_COLS order so the gather stays a straight index.
+  The INCOMING side keeps all 10 — it faces the OPPONENT, who is not restricted to our team pool.
+- **`_topk_block` — the v30 LEAN top-K, measured at 0 CALLS PER FORWARD.** It is a strict subset of the
+  v35 incoming matrix (header ⊂ header, cell `[high, pko, status_lands]` ⊂ `[low, high, crit, pko,
+  type_mult, status_lands]`), and the matrix suppressed it at the same K — so in every production config
+  it was dead code sitting in the op's hottest file. `damage_topk_k` now means **"the incoming matrix's
+  K"** and nothing else: `K>0` without `damage_matrices_incoming` **raises** in BOTH the extractor and the
+  op (never a silent empty block), and the CLI auto-enables the matrix when `--damage-topk` was set with
+  no explicit `--damage-matrices` (the `--unified-moves` path, which auto-sets K=5).
+
+Net **−28 dims** off both projection heads (op `out_dim` 835 → 807 on the full toggle set; `incoming_dim`
+101 → 85). **This is a dims/complexity change, NOT a throughput one — say so.** Measured B=1 CPU forward
+on the production stack: 4.276 → 4.289 ms and 3534 → 3525 profiled calls/forward, i.e. **no change** (the
+deleted work is ~9 aten calls on a ~3.5k-call dispatch-bound forward, and the lean block already never
+ran). The honest residual: with `--damage-matrices incoming` OFF there is now no effect/secondary signal
+at all — that is the accepted trade at 1.3% of measured dependence.
+
+Versioning: the projection widths DO change, so a stale checkpoint would fail on a `load_state_dict` shape
+mismatch — the **`ARCH_SIGNATURE` bump to `gen3_op_block_trim_v1`** turns that into a clear arch error
+instead. `MODEL_CONFIG_VERSION` 55 is a stamp only (no field added or removed, no migration work).
+Tests: `damage_op_test.py` (the retargeted discrete-move-space family now reads `incoming_matrix`, the
+three-way `damage_topk_k` dependency guard incl. the op's own raise, the DATA claim that no gen3 damaging
+move inflicts sleep, and the decode's absent-key assertions) + the constructed-physics oracle
+`poke_env_gaps/damage_op_probe_fuzz_test.py` (22/22).
+
+**Orthogonal to v54's entity seats** — those add SEATS to the trunk, this trims the op's HEAD-CONCAT
+output — so the two compose; only the single shared `ARCH_SIGNATURE` string had to be sequenced.
+
+Current `MODEL_CONFIG_VERSION` = **55** (v51 pointer-native head + v52 typed-HP belief + v53 HP-belief
+ablation + v54 move-entity seats + v55 op block trim — see the pointer-native, typed-HP, entity-seat, and
+block-trim sections), `ARCH_SIGNATURE` = **`gen3_op_block_trim_v1`**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

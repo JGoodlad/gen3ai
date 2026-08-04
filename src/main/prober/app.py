@@ -1696,12 +1696,6 @@ class ProberApp(Gen3App):
                                    style=gradient_color(1.0 - c["pko"]) if (act or c["pko"] > 0.05) else "dim")
                 if not any_inc:
                     gpu.append("\n  n/a", style="dim")
-            # opp incoming SECONDARY threat (its damaging moves' para/flinch/freeze/burn, acc-folded × Serene Grace).
-            isec = dop.get("incoming_secondary") or {}
-            inc_shown = [f"{c} {p * 100:.0f}%" for c, p in isec.items() if p > 0.05]
-            if inc_shown:
-                gpu.append("\nopp 2ndary: ", style="dim")
-                gpu.append("  ·  ".join(inc_shown), style="yellow")
             # RICH incoming MATRIX (--damage-matrices incoming): the opp active's K most-believed CANDIDATE
             # moves INDIVIDUALLY, each with the FULL per-OUR-mon expected-value cell — low–high roll · crit ·
             # →KO · type-mult · status — so you can read WHICH move threatens what, not just the collapsed
@@ -1750,49 +1744,6 @@ class ProberApp(Gen3App):
                                        style=gradient_color(1.0 - max(pko, min(hi, 1.0))))
                         if st > 0.05:
                             gpu.append(f"  st {st * 100:.0f}%", style="yellow")
-            # DISCRETE top-K incoming move-space (--damage-topk, lean — only when the rich matrix is OFF): the
-            # opp active's K most-believed moves + per-OUR-mon high%→KO / st (anticipate the move → safe pivot).
-            itk = None if imx is not None else dop.get("incoming_topk")
-            if itk is not None and itk.get("moves") and itk.get("per_defender"):
-                labels = list(mb.our_labels) if mb is not None else []   # (slot, species, is_active)
-                pdef = itk["per_defender"]                               # [n_our][K] {high, pko, status_lands}
-                n_our = len(pdef)
-                our = [(labels[i][1] if i < len(labels) and labels[i][1] else (f"slot{i}" if not labels else None),
-                        labels[i][2] if i < len(labels) else False) for i in range(n_our)]
-                live = [i for i in range(n_our) if our[i][0]]
-
-                def _chan(mv, k):                                       # the move's damage channel (or status / —)
-                    if any(pdef[i][k]["high"] > 0.0 for i in range(n_our)):
-                        return "phys" if mv.get("is_phys", 0.0) > 0.5 else "spec"
-                    if any(pdef[i][k]["status_lands"] > 0.05 for i in range(n_our)):
-                        return "status"
-                    return "—"
-
-                def _pivot(pd):                                         # (text, style) for one mon vs one move
-                    hi, pko, st = pd["high"], pd["pko"], pd["status_lands"]
-                    if hi == 0.0 and st <= 0.05:
-                        return "safe", "green"                          # immune / no threat = the safe switch-in
-                    seg = (f"{hi * 100:.0f}%" + (f"→KO{pko * 100:.0f}" if pko > 0.05 else "")) if hi > 0.0 else ""
-                    if st > 0.05:
-                        seg = (seg + " " if seg else "") + f"st{st * 100:.0f}"
-                    return seg, gradient_color(1.0 - max(pko, st, min(hi, 1.0)))
-                shown_any = False
-                for k, mv in enumerate(itk["moves"]):
-                    if mv.get("belief", 0.0) <= 0.05:                   # a gated slot (fainted-only / closed-moveset 5th)
-                        continue
-                    if not shown_any:
-                        gpu.append("\nopp likely (top-K):  ", style="dim")
-                        gpu.append("per-OUR-mon high%→KO / st=status  (▶=active · safe=immune)", style="dim")
-                        shown_any = True
-                    gpu.append(f"\n  {mv.get('move') or '?'} {mv['belief'] * 100:.0f}%  ", style="bold yellow")
-                    gpu.append(f"{_chan(mv, k)} acc{mv.get('accuracy', 1.0) * 100:.0f}", style="dim")
-                    gpu.append("\n      ", style="dim")
-                    for j, i in enumerate(live):
-                        if j:
-                            gpu.append("  ·  ", style="dim")
-                        seg, col = _pivot(pdef[i][k])
-                        gpu.append(f"{'▶' if our[i][1] else ''}{our[i][0]} ", style=_MON_COLOR)
-                        gpu.append(seg, style=col)
             # gen3_unified_status_landing_v1: per-OUR-move OUTGOING status-landing (request-slot order, == action 6+k):
             # P(a dedicated status move lands on the opp active) + a known bit (type/ability/already-statused/Sleep-Clause
             # immunity folded). The GPU home for the masked move-effect block's `status_will_land`.

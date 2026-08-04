@@ -41,7 +41,7 @@ def test_damage_op_view_reads_op_submodule_stash():
     """REGRESSION: the DamageOperator stashes ``last_raw_block`` on the OP submodule, not the extractor.
     ``damage_op_view`` must read ``op.last_raw_block`` — reading ``extractor.last_raw_block`` (the old bug)
     always returned None and silently hid the ENTIRE op view (incoming + outgoing damage) in the prober."""
-    width = 6 * 12 + 6 + 10 + 13          # incoming + effect + incoming_secondary + choice_band (outgoing off)
+    width = 6 * 12 + 13                   # incoming per-mon + choice_band (outgoing off)
     row = (np.arange(width, dtype=np.float32) + 1.0) / width
     pm = ProbeModel(policy=_Pol(_Ext(_Op(row, outgoing=False))), offsets=_OFF)
     out = pm.damage_op_view(np.zeros(8, dtype=np.float32), np.ones(11, dtype=np.int8))

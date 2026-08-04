@@ -1401,23 +1401,25 @@ async def main():
                              "level (move belief + prior fusion + the GPU damage op, incl. its per-status "
                              "secondary/Serene-Grace effects; 'both' adds the outgoing direction) AND turns "
                              "on --move-latent + a default --move-belief-latent-coef 0.05 + the DISCRETE "
-                             "top-K incoming block (--damage-topk, default K=5). Compose the pieces by hand "
-                             "for finer control (e.g. --damage-topk 0 to A/B it off under --unified-moves).")
+                             "incoming move-space at K=5 (--damage-topk, which implies --damage-matrices "
+                             "incoming). Compose the pieces by hand for finer control (e.g. --damage-topk 0 "
+                             "to A/B the discrete move-space off under --unified-moves).")
     parser.add_argument("--damage-topk", "--damage_topk", dest="damage_topk_k",
                         type=int, default=None,
-                        help="DISCRETE top-K incoming move-space block (gen3_unified_topk_incoming_v1): K = "
-                             "the number of the opp ACTIVE's most-believed CANDIDATE moves surfaced "
-                             "INDIVIDUALLY (vs the worst-case max collapse that loses WHICH move it is). Per "
-                             "move: its move LATENT identity (gathered from the MoveLatentEncoder — "
-                             "differentiable → sharpens the latent) + belief weight (→ sharpens the move "
-                             "belief) + accuracy + is_phys, then per OUR mon [high-roll, P(KO), "
-                             "status_lands] — the discrete-move + per-pivot read (incl. damage-immunity AND "
-                             "status-immunity = 0, e.g. Thunder-Wave→Ground) that makes 'anticipate the move "
-                             "/ pick the safe switch' decidable. 0 = off. STRUCTURAL int (scales both "
-                             "projections; version-checked, fresh-only). REQUIRES --damage-op + --move-latent. "
-                             "AUTO-set to 5 by --unified-moves (the moveset is 4, so the 5th slot is the "
-                             "surprise/uncertain candidate); the 5th is zeroed once all 4 opp moves are "
-                             "revealed. Default off (set by --unified-moves, or pass explicitly).")
+                        help="K for the DISCRETE incoming move-space: the number of the opp ACTIVE's "
+                             "most-believed CANDIDATE moves the INCOMING per-move damage matrix surfaces "
+                             "INDIVIDUALLY (vs the worst-case max collapse that loses WHICH move it is) — "
+                             "per move its LATENT identity + belief + acc + is_phys + per-move effect/"
+                             "secondary bits, then per OUR mon [low, high, crit, P(KO), type_mult, "
+                             "status_lands], the read that makes 'anticipate the move / pick the safe "
+                             "switch' decidable (damage-immunity AND status-immunity both = 0, e.g. "
+                             "Thunder-Wave→Ground). 0 = off. STRUCTURAL int (scales both projections; "
+                             "version-checked, fresh-only). REQUIRES --damage-op + --move-latent, and "
+                             "IMPLIES --damage-matrices incoming (gen3_op_block_trim_v1 deleted the lean "
+                             "top-K block K used to select — the matrix is its strict superset, and the "
+                             "profiler measured the lean block at 0 calls/forward). AUTO-set to 5 by "
+                             "--unified-moves (the moveset is 4, so the 5th slot is the surprise candidate); "
+                             "the 5th is zeroed once all 4 opp moves are revealed. Default off.")
     parser.add_argument("--damage-refine-rounds", "--damage_refine_rounds", dest="damage_refine_rounds",
                         type=int, default=None,
                         help="ITERATIVE damage refinement (gen3_iterative_damage_v1): N = the number of "
@@ -2044,6 +2046,17 @@ async def main():
     _resolve("damage_matrices_outgoing", False)  # v32 structural (outgoing damage matrix; version-checked, fresh-only)
     _resolve("damage_matrices_incoming", False)  # v33 structural (incoming damage matrix; version-checked, fresh-only)
     _resolve("damage_matrices_outgoing_all", False)  # v39 structural (transposed outgoing matrix; version-checked, fresh-only)
+    # gen3_op_block_trim_v1: --damage-topk K now sizes the INCOMING MATRIX and nothing else — the v30 LEAN
+    # top-K block it used to select is DELETED (a strict subset of the matrix, which already suppressed it
+    # in every production config; the ledger-P1 cProfile measured it at 0 calls/forward). So K>0 implies the
+    # matrix. When the user gave no explicit --damage-matrices (the --unified-moves path, which auto-sets
+    # K=5) turn the incoming matrix ON rather than let K>0 mean "emit nothing"; an EXPLICIT
+    # --damage-matrices off/outgoing next to K>0 is a contradiction and errors below.
+    if args.damage_topk_k and args.damage_topk_k > 0 and not args.damage_matrices_incoming:
+        if getattr(args, "damage_matrices", None) is None:
+            args.damage_matrices_incoming = True
+            print("[Arch] --damage-topk implies the INCOMING per-move damage matrix (gen3_op_block_trim_v1: "
+                  f"the lean top-K block was deleted) — enabling it at K={args.damage_topk_k}.")
     _resolve("threat_refine_outgoing", False)    # v36 structural (outgoing→trunk; version-checked, fresh-only)
     _resolve("threat_unrevealed_outgoing", False)  # v36 forward-behavior (expected-latent; version-checked, fresh-only)
     _resolve("threat_prob_outspeed", False)      # v36 forward-behavior (prob outspeed; version-checked, fresh-only)
@@ -2393,16 +2406,24 @@ async def main():
             "Enable --move-prior-fusion (or --unified-damage), or drop --move-candidate-floor."
         )
     if args.damage_topk_k and args.damage_topk_k > 0 and not args.damage_op:
-        # gen3_unified_topk_incoming_v1: the top-K incoming block extends the DamageOperator.
+        # The discrete incoming move-space block extends the DamageOperator.
         parser.error(
-            "--damage-topk requires --damage-op (the top-K incoming block extends the damage operator). "
+            "--damage-topk requires --damage-op (the discrete incoming block extends the damage operator). "
             "Use --unified-damage / --unified-moves, or add --damage-op, or set --damage-topk 0."
         )
     if args.damage_topk_k and args.damage_topk_k > 0 and not args.move_latent:
-        # The block gathers each top-K move's identity LATENT from the MoveLatentEncoder.
+        # The block gathers each candidate move's identity LATENT from the MoveLatentEncoder.
         parser.error(
-            "--damage-topk requires --move-latent (the top-K block gathers each move's identity latent "
+            "--damage-topk requires --move-latent (the block gathers each move's identity latent "
             "from the MoveLatentEncoder). Use --unified-moves, or add --move-latent, or set --damage-topk 0."
+        )
+    if args.damage_topk_k and args.damage_topk_k > 0 and not args.damage_matrices_incoming:
+        # gen3_op_block_trim_v1: only reachable when --damage-matrices was passed EXPLICITLY as
+        # off/outgoing (the implicit case is auto-enabled above). K would size a block that isn't emitted.
+        parser.error(
+            f"--damage-topk {args.damage_topk_k} contradicts --damage-matrices {args.damage_matrices}: K is "
+            "the INCOMING matrix's width, and the lean top-K block it used to select was deleted "
+            "(gen3_op_block_trim_v1). Use --damage-matrices incoming/both, or set --damage-topk 0."
         )
     if args.damage_refine_rounds and args.damage_refine_rounds > 0 and not args.damage_op:
         # gen3_iterative_damage_v1: the refinement recomputes the DamageOperator's lean incoming damage

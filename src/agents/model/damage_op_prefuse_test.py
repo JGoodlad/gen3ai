@@ -40,7 +40,7 @@ _layout = Gen3ObservationEncoder(_mappings).get_layout()
 _BASE = dict(attend_unrevealed_opponents=True, opp_belief_slots=True,
              move_belief_mode="revealed", move_prior_fusion=True, move_belief_prefuse=True,
              move_latent=True, damage_op=True, damage_outgoing=True, damage_topk_k=5,
-             spread_belief=True)
+             damage_matrices_incoming=True, spread_belief=True)
 # The shape it replaces: the same stack with the between-layers refine loop + its threat channels.
 _REFINE = dict(_BASE, damage_refine_rounds=2, threat_refine_outgoing=True, threat_status_refine=True)
 
@@ -92,7 +92,7 @@ def test_head_concat_width_is_preserved():
 
 def test_requires_damage_op():
     kw = {k: v for k, v in _BASE.items() if k not in ("damage_op", "damage_outgoing",
-                                                     "damage_topk_k")}
+                                                     "damage_topk_k", "damage_matrices_incoming")}
     with pytest.raises(ValueError, match="damage_op_prefuse"):
         _make_model(**kw, damage_op=False, damage_op_prefuse=True)
 

@@ -276,8 +276,8 @@ from typing import Any, Dict, List
 #   makes the DamageOperator emit the ENRICHED top-K block: per opp-active move a header [latent, belief, acc,
 #   is_phys, EXPLICIT effect bits(6), secondary chances(10)] + per (OUR mon, move) cell [low,high,crit,pko,
 #   type_mult,status_lands] — the un-collapsed evolution of the v30 top-K + the deleted p_effect/p_sec maxes.
-#   REUSES damage_topk_k as its K (one knob, try 4/5/6) and REPLACES the lean top-K block at that K (never
-#   coexist); requires damage_op + move_latent.
+#   REUSES damage_topk_k as its K (one knob, try 4/5/6). Since gen3_op_block_trim_v1 deleted the lean top-K
+#   block it superseded, this is the ONLY block K sizes; requires damage_op + move_latent.
 #   STRUCTURAL toggle like damage_op (widens both projections via the op out_dim); gated in check_compatible
 #   (bool); OFF byte-for-byte (NO ARCH_SIGNATURE bump). Design: designs/ai_v6/design_per_move_damage_matrices.md.
 # v36: gen3_bidir_threat_trunk_v1 — the BIDIRECTIONAL in-trunk threat field. `threat_refine_outgoing` (bool)
@@ -403,7 +403,20 @@ from typing import Any, Dict, List
 #   `refine_candidates(k=K)` candidate definition (belief-weighted, typed-HP-scattered) gathered as
 #   `[latent ⊕ w ⊕ acc ⊕ is_phys]` per seat; adds `threat_seat_proj` (STRUCTURAL int, the
 #   `damage_topk_k` gating pattern; requires damage_op_prefuse + move_latent). NO edges yet (Stage 2).
-MODEL_CONFIG_VERSION = 54
+# v55: gen3_op_block_trim_v1 — NO new field; the DamageOperator's output SHRINKS by 28 dims and its
+#   `damage_topk_k` knob changes meaning, so the version marks the break (the ARCH_SIGNATURE bump below
+#   is what actually rejects an older checkpoint). Deleted, on the ledger-P1 per-block dependence
+#   ablation: the opp-active-level believed-EFFECT scalars (6 dims, 1.2% of the zero-whole-op ceiling),
+#   the opp-active per-STATUS incoming SECONDARY scalars (10 dims, 0.1% — the single most INERT channel
+#   in the operator), and the OUTGOING per-move slp/psn/tox secondary columns (12 dims = 4 moves × 3,
+#   structural zeros: gen3 has NO damaging move that inflicts sleep, and the psn/tox carriers appear on
+#   1 / 0 of the 773 pool teams). Also deleted: `_topk_block`, the v30 LEAN top-K block — a strict
+#   subset of the v35 `_incoming_matrix` that already suppressed it, which the same cProfile measured at
+#   **0 calls per forward** in the production build. `damage_topk_k` now means "the incoming matrix's
+#   K"; K>0 without `damage_matrices_incoming` is a hard error (never a silent empty block).
+#   INDEPENDENT of v54's entity seats — the two touch disjoint machinery (seats enter the TRUNK; this
+#   trims the op's HEAD-CONCAT output), so they compose and only the signature is shared.
+MODEL_CONFIG_VERSION = 55
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -775,7 +788,18 @@ MODEL_CONFIG_VERSION = 54
 #     exactly like the v51 bump. The within-generation knob is `entity_topk_seats` (E4 threat seats),
 #     gated in check_compatible. No pre-v54 checkpoint was ever trained (the generation's bumps all
 #     landed same-day), so nothing is stranded.
-ARCH_SIGNATURE = "gen3_entity_move_seats_v1"
+#   gen3_op_block_trim_v1 (config v55 — stacks on gen3_entity_move_seats_v1): the DamageOperator sheds
+#     its three least-used output families and one dead code path, on the ledger-P1 per-block dependence
+#     ablation. OUT: the opp-active believed-EFFECT scalars (6 dims, 1.2%), the opp-active per-STATUS
+#     incoming SECONDARY scalars (10 dims, 0.1% — INERT), the OUTGOING slp/psn/tox per-move secondary
+#     columns (12 dims, structural zeros on the whole team pool), and the v30 LEAN `_topk_block` (0
+#     calls/forward — a strict subset of the v35 incoming matrix, which suppressed it). Net −28 op dims
+#     off BOTH projection heads, and the unmasked-belief `w` read leaves the forward entirely. The
+#     projection widths DO change, so a stale checkpoint would fail on a state_dict shape mismatch —
+#     the signature bump is what turns that into a clear arch error instead. Orthogonal to v54's entity
+#     seats (trunk) — this trims the op's head-concat output — so the two compose; only the signature,
+#     which is one shared string, had to be sequenced.
+ARCH_SIGNATURE = "gen3_op_block_trim_v1"
 
 
 class ModelVersionError(Exception):
@@ -1052,8 +1076,8 @@ class ModelVersion:
     # v33 STRUCTURAL (gen3_per_move_matrices_v1): the INCOMING per-move DAMAGE MATRIX (enriched top-K —
     # per-move header + per-(our-mon, move) cell). Widens both projections via the op out_dim. OFF
     # byte-for-byte. Gated in check_compatible (bool, like damage_op). Requires damage_op + move_latent. It
-    # REUSES damage_topk_k as its K (the matrix's width is gated by the existing damage_topk_k int) and
-    # REPLACES the lean top-K block at that K (so they never coexist — one knob, lean vs rich).
+    # REUSES damage_topk_k as its K (the matrix's width is gated by the existing damage_topk_k int). Since
+    # gen3_op_block_trim_v1 deleted the lean top-K, this is the ONLY block that K sizes.
     damage_matrices_incoming: bool = False
     # v39 STRUCTURAL (gen3_per_move_matrices_v1): the TRANSPOSED outgoing matrix — our 6 MONS' 4 moves → the
     # opp ACTIVE (the switch-in offense read; the transpose of damage_matrices_outgoing). Widens both
@@ -1744,7 +1768,7 @@ class ModelVersion:
                 "change.\n"
                 "Resume with the matching --value-dist-bins setting, or start a fresh training run."
             )
-        # gen3_unified_topk_incoming_v1 (v30): the discrete top-K incoming block's K scales the
+        # gen3_unified_topk_incoming_v1 (v30): the discrete incoming move-space K scales the
         # DamageOperator out_dim → both projection in_features. Every distinct K (incl. 0↔N = adding/
         # removing the block) is a weight-shape change → a single unconditional int compare gates it
         # (like opp_belief_cls_k / value_dist_bins).
@@ -2233,7 +2257,7 @@ def _migrate_config(data: dict) -> dict:
     if version < 35:
         # v35: gen3_per_move_matrices_v1 — the INCOMING per-move DAMAGE MATRIX (enriched top-K). Bool toggle
         # like damage_matrices_outgoing; OFF byte-for-byte. Requires damage_op + move_latent; reuses
-        # damage_topk_k as its K and replaces the lean top-K block.
+        # damage_topk_k as its K (the lean top-K it replaced is gone — gen3_op_block_trim_v1).
         data.setdefault("damage_matrices_incoming", False)
         data["config_version"] = 35
     if version < 36:
@@ -2363,4 +2387,10 @@ def _migrate_config(data: dict) -> dict:
         # unconditional and carried by the ARCH_SIGNATURE, not a field).
         data.setdefault("entity_topk_seats", 0)
         data["config_version"] = 54
+    if version < 55:
+        # v55: gen3_op_block_trim_v1 — NO field added or removed; the op's OUTPUT shrinks by 28 dims
+        # (the opp-active effect + incoming-secondary collapses, the outgoing slp/psn/tox columns) and
+        # the deleted lean top-K block re-means `damage_topk_k`. Nothing to migrate: the ARCH_SIGNATURE
+        # bump rejects every pre-v55 checkpoint outright, so this is a version stamp only.
+        data["config_version"] = 55
     return data

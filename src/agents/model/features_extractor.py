@@ -1619,7 +1619,6 @@ from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     _DMG_IMX_HDR_SEC,
     _DMG_IMX_HDR_W,
     _DMG_IMX_HEADER,
-    _DMG_INCOMING_SEC,
     _DMG_N_CHANNELS,
     _DMG_OAX,
     _DMG_OAX_IDX_CRIT,
@@ -1641,6 +1640,9 @@ from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     _DMG_OUT_PER_MOVE,
     _DMG_OUT_REFINE,
     _DMG_OUT_SEC,
+    _N_OUT_SECONDARY,
+    _OUT_SEC_COLS,
+    _OUT_SEC_KEEP,
     _DMG_PARA_SPEED,
     _DMG_PER_MON,
     _DMG_REFINE_FEATS,
@@ -1652,17 +1654,6 @@ from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     _DMG_STATUS_N_MOVES,
     _DMG_STATUS_REFINE,
     _DMG_TOPK_DEFAULT_K,
-    _DMG_TOPK_DMG_PER,
-    _DMG_TOPK_IDX_ACC,
-    _DMG_TOPK_IDX_HIGH,
-    _DMG_TOPK_IDX_LATENT,
-    _DMG_TOPK_IDX_PHYS,
-    _DMG_TOPK_IDX_PKO,
-    _DMG_TOPK_IDX_STATUS,
-    _DMG_TOPK_IDX_W,
-    _DMG_TOPK_ID_DIM,
-    _DMG_TOPK_META,
-    _DMG_TOPK_MOVE,
     _FIRE_TIDX,
     _IMMOBILIZE_STATUS_CATS,
     _SB_ATK,
@@ -1675,7 +1666,6 @@ from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     _SUBSTITUTE_CTX_IDX,
     _WATER_TIDX,
     _dmg_imx_dim,
-    _dmg_topk_dim,
     decode_damage_block,
 )
 def _request_order_move_tokens(move_tokens_all, ctx):
@@ -2243,19 +2233,29 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "damage_outgoing=True requires damage_op=True — the outgoing per-move block is emitted by "
                 "the DamageOperator. Enable --damage-op (--unified-damage both), or drop the outgoing flag."
             )
-        # gen3_unified_topk_incoming_v1: the DISCRETE top-K incoming block (K = damage_topk_k; 0 = off).
-        # Requires the op (it extends it) AND --move-latent (the op gathers each top-K move's LATENT from
-        # the MoveLatentEncoder for identity, and the candidate latent table is built only when move_latent).
+        # The DISCRETE incoming move-space K (K = damage_topk_k; 0 = off) — how many of the opp active's
+        # most-believed candidate moves the INCOMING MATRIX surfaces individually. Requires the op (it
+        # extends it) AND --move-latent (the op gathers each move's LATENT from the MoveLatentEncoder for
+        # identity, and the candidate latent table is built only when move_latent).
         self.damage_topk_k = int(damage_topk_k)
         if self.damage_topk_k > 0 and not damage_op:
             raise ValueError(
-                "damage_topk_k>0 requires damage_op=True — the top-K incoming block extends the "
+                "damage_topk_k>0 requires damage_op=True — the discrete incoming block extends the "
                 "DamageOperator. Enable --damage-op (--unified-damage), or drop --damage-topk."
             )
         if self.damage_topk_k > 0 and not move_latent:
             raise ValueError(
-                "damage_topk_k>0 requires move_latent=True — the top-K block gathers each move's identity "
+                "damage_topk_k>0 requires move_latent=True — the block gathers each move's identity "
                 "LATENT from the MoveLatentEncoder. Enable --move-latent (--unified-moves), or drop --damage-topk."
+            )
+        # gen3_op_block_trim_v1: `damage_topk_k` no longer has a block of its own — the v30 LEAN top-K was
+        # deleted as a strict subset of the v35 incoming matrix (0 calls/forward in every config that ran
+        # the matrix). K is now purely the matrix's width, so K>0 without the matrix would emit NOTHING.
+        if self.damage_topk_k > 0 and not damage_matrices_incoming:
+            raise ValueError(
+                f"damage_topk_k={self.damage_topk_k} requires damage_matrices_incoming=True "
+                "(gen3_op_block_trim_v1) — the lean top-K block it used to select was deleted, and K is now "
+                "the INCOMING MATRIX's width. Pass --damage-matrices incoming (or both), or --damage-topk 0."
             )
         # gen3_per_move_matrices_v1: the OUTGOING per-move DAMAGE MATRIX (our 4 moves × opp active+revealed
         # bench). Requires damage_op (the op physics). Off byte-identical.
@@ -2265,8 +2265,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "damage_matrices_outgoing=True requires damage_op=True — the outgoing per-move damage matrix "
                 "is emitted by the DamageOperator. Enable --damage-op (--unified-damage), or drop --damage-matrices."
             )
-        # gen3_per_move_matrices_v1: the INCOMING per-move DAMAGE MATRIX (enriched top-K). Requires damage_op +
-        # move_latent (the latent gather); REUSES damage_topk_k as its K and replaces the lean top-K block.
+        # gen3_per_move_matrices_v1: the INCOMING per-move DAMAGE MATRIX. Requires damage_op + move_latent
+        # (the latent gather); its K is `damage_topk_k` (default 5).
         self.damage_matrices_incoming = bool(damage_matrices_incoming)
         if self.damage_matrices_incoming and not damage_op:
             raise ValueError(
@@ -2292,8 +2292,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         if self.damage_candidate_k and not damage_op:
             raise ValueError("damage_candidate_k>0 requires damage_op=True — it caps the DamageOperator's "
                              "incoming candidate sweep, which only exists when the op is built.")
-        # The incoming matrix REUSES damage_topk_k as its K (one knob tunes both lean & rich) and REPLACES the
-        # lean top-K block — so they never coexist (the op suppresses the lean block when matrices_incoming).
+        # The incoming matrix's K is damage_topk_k (the one "how many opp moves" knob).
         self.damage_op = (DamageOperator(layout, outgoing=damage_outgoing, topk_k=self.damage_topk_k,
                                          matrices_outgoing=self.damage_matrices_outgoing,
                                          matrices_incoming=self.damage_matrices_incoming,
@@ -2918,14 +2917,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # One `latent_table()` call, reused for both.
         self.last_move_latent_table = None
         move_latent_all = None
-        # The op's candidate latent table is needed in rollout (not just is_grad_enabled) when EITHER the top-K
-        # block OR the incoming per-move matrix is on — both gather the per-move latent into the op output —
-        # OR (gen3_entity_move_seats_v1) the E4 threat seats are on: they gather the per-candidate latent as
-        # the seat identity (and this method runs PRE-transformer under prefuse, which E4 requires — so the
-        # stash below is guaranteed to exist by seat-build time).
+        # The op's candidate latent table is needed in rollout (not just is_grad_enabled) when the incoming
+        # per-move matrix is on — it gathers the per-move latent into the op output (which feeds both heads)
+        # — OR (gen3_entity_move_seats_v1) the E4 threat seats are on: they gather the per-candidate latent
+        # as the seat identity (and this method runs PRE-transformer under prefuse, which E4 requires — so
+        # the stash below is guaranteed to exist by seat-build time). The old `topk_k > 0` disjunct went
+        # with the lean top-K block (gen3_op_block_trim_v1): K>0 now IMPLIES `matrices_incoming` (enforced
+        # in __init__ and in the op), so it can no longer select a block of its own.
         need_topk_latent = self.damage_op is not None and (
-            self.damage_op.topk_k > 0 or self.damage_op.matrices_incoming
-            or self.entity_topk_seats > 0)
+            self.damage_op.matrices_incoming or self.entity_topk_seats > 0)
         if self.move_latent and (torch.is_grad_enabled() or need_topk_latent):
             enc = self.pokemon_encoder.move_latent_encoder
             latent_table = enc.latent_table(self.embeddings)                     # [n_moves, MOVE_LATENT_DIM]

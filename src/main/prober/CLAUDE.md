@@ -253,7 +253,7 @@ checkpoint shows one "belief heads not enabled" note):
 
 The **Threats** section (`6`, was *Matchups*) is reordered **GPU-first** (`_render_matchups`, still the
 method name): the `🔷` DamageOperator physics (outgoing per-move · incoming worst-hit per defender · opp
-secondary · the discrete top-K move-space with per-pivot safe-switch) render PRIMARY into `#threats-gpu`;
+the discrete per-move incoming matrix with per-pivot safe-switch) render PRIMARY into `#threats-gpu`;
 the `📋` CPU obs decodes (the per-move type-multiplier table + the `their_matchups` effectiveness + the
 usage-prior `incoming P(KO)`) render below into `#matchups-table`/`#matchups-threat`, **dim** when the op is
 present (it subsumes them) and **full-styled** when there's no op (the demote only applies when the op is
@@ -549,19 +549,15 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
     our mon the incoming threat `[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance` in
     **TEAM-SLOT order** (`incoming[i]` = our team slot i; the op reads `ctx.species_ids[:, :TEAM_SIZE]`, so
     the active is whichever slot holds the active flag — NOT necessarily slot 0 — and the bench slots are
-    the safe-switch reads), the opp-active effect scalars, and (on `--unified-damage
+    the safe-switch reads), the `choice_band` tail, and (on `--unified-damage
     both`) our 4 moves' **outgoing** damage `[low,high,crit,pko]` (request-slot/action order — the
-    equal-effectiveness move tie-break). v24 (gen3_unified_move_system_v1) ADDS per-status SECONDARY
-    probabilities: `incoming_secondary` (the opp active's damaging-move para/flinch/freeze threat,
-    accuracy-folded + ×Serene Grace) and `outgoing.secondary` (per OUR move — "what status can it cause").
-    v30 (gen3_unified_topk_incoming_v1) ADDS `incoming_topk` (`None` unless the run trained `--damage-topk`):
-    the opp active's K most-believed CANDIDATE moves INDIVIDUALLY — `moves` (each with its exact decoded
-    `move` NAME — resolved from the op's stashed candidate indices, typed HP → `hiddenpower(type)` — plus
-    `belief`/`accuracy`/`is_phys`/`latent`) and `per_defender` (6 × K of `[high, pko, status_lands]`, the
-    discrete-move + per-pivot safe-switch read incl. damage-immunity AND status-immunity = 0). The app's
-    Matchups panel renders an **"opp likely (op):"** block — per move: name + belief, the read on OUR active
-    (▶), and the SAFEST bench pivot (min combined damage/status threat) — the literal "anticipate the move
-    → which mon switches in safe (immune)" read.
+    equal-effectiveness move tie-break) + `outgoing.secondary` (per OUR move — "what status can it cause",
+    keyed by the 7 live `_OUT_SEC_COLS`; `gen3_op_block_trim_v1` dropped slp/psn/tox, which no gen3 move an
+    OUR-side team runs can inflict). **v55 `gen3_op_block_trim_v1` REMOVED three keys** the decode used to
+    carry — the opp-active `effect` and `incoming_secondary` collapses (ledger P1: 1.2% / 0.1% of the op's
+    measured dependence, no defender axis) and the LEAN `incoming_topk` (0 calls/forward — the matrix
+    superseded it). A stale reader now KeyErrors instead of silently mis-reading the Choice-Band bytes. The
+    discrete per-move read is `incoming_matrix` (see the Gotcha below).
   - `move_belief` (model, via `ProbeModel.move_belief` → `engine.move_belief_view`, `MoveBeliefView`):
     the model's MOVE belief for each **REVEALED opponent mon** — `None` unless the checkpoint trained
     `--move-belief-mode != off`. Per revealed opp mon (gated on the `species_known` obs bit, so un-revealed
@@ -891,13 +887,14 @@ not apply there. Detail: `src/agents/training/CLAUDE.md` → Compiled CPU oppone
   exact-reproducing model with a scrambling `our_active_move_slots` must still AGREE with the recorded
   choice). The outgoing-damage panel renders a non-damaging move EXPLICITLY as `— (non-damaging)`.
 - **Per-move incoming threat = the `incoming_matrix` (`--damage-matrices incoming`).** `ProbeModel.damage_op_view`
-  threads `matrices_incoming_k` / `matrices_outgoing` into `decode_damage_block` and decodes with the correct
-  LEAN top-K (0 when the rich matrix is on — the matrix REPLACES it). The Threats panel renders the rich
+  threads `matrices_incoming_k` / `matrices_outgoing` into `decode_damage_block` (since
+  `gen3_op_block_trim_v1` there is no lean-top-K arm to disambiguate — `decode_damage_block` lost its
+  `topk_k` parameter entirely). The Threats panel renders the rich
   `incoming_matrix`: per opp candidate move (decoded name + belief + acc + phys/spec + notable effect/secondary)
   → per OUR mon the FULL cell `low–high · crit · →KO · ×type-mult · status` (immune ⇒ `safe`). This is the
   "which opp move threatens which of my mons, by how much" read. (A prior bug omitted the matrices-decode flags,
   so on a `--damage-matrices incoming` run the prober mis-read the absent lean top-K block — the garbage
-  `acc-580` render — and never decoded the matrix.)
+  `acc-580` render — and never decoded the matrix; deleting the lean block made that class unrepresentable.)
 - **The rest of the decoded op fields now render too** (display-only): the OUTGOING **status-landing** (`our
   status (land)` — per OUR move P(a dedicated status move lands on the opp) + ✓certain/?prior), the per-defender
   **`incoming extras`** (the op's belief-aware `p_outspeed` + `provenance`), the **`opp Choice Band`** belief

@@ -114,17 +114,17 @@ def test_permutation_is_identity_on_an_already_sorted_moveset():
 # ------------------------------------------------------- pointer_cells vs decode_damage_block (SoT)
 def test_pointer_cells_match_decode_damage_block_with_every_block_enabled():
     """The offset test: build the op with EVERY optional block between the outgoing block and the OAX
-    tail enabled (omx + imx; the lean top-K is suppressed by matrices_incoming), fill a random row, and
+    tail enabled (omx + imx), fill a random row, and
     require each pointer cell to equal the `decode_damage_block` field it claims to be. A future block
     appended before OAX (or a reordering) that shifts an offset fails here, not in a trained run."""
     op = DamageOperator(_layout, outgoing=True, topk_k=5, matrices_outgoing=True,
                         matrices_incoming=True, matrices_outgoing_all=True)
     row = torch.rand(2, op.out_dim, generator=torch.Generator().manual_seed(3))
     move_cells, switch_cells = op.pointer_cells(row)
-    assert tuple(move_cells.shape) == (2, 4, op.pointer_move_cell_dim) == (2, 4, 16)
+    assert tuple(move_cells.shape) == (2, 4, op.pointer_move_cell_dim) == (2, 4, 13)
     assert tuple(switch_cells.shape) == (2, 6, op.pointer_switch_cell_dim) == (2, 6, 15 + 18)
     for b in range(2):
-        d = decode_damage_block(row[b], outgoing=True, topk_k=0, matrices_outgoing=True,
+        d = decode_damage_block(row[b], outgoing=True, matrices_outgoing=True,
                                 matrices_incoming_k=op.matrices_incoming_k,
                                 matrices_outgoing_all=True)
         for k in range(4):
@@ -132,7 +132,7 @@ def test_pointer_cells_match_decode_damage_block_with_every_block_enabled():
             mv, st = d["outgoing"]["moves"][k], d["status_landing"][k]
             assert [float(x) for x in cell[:4]] == [mv["low"], mv["high"], mv["crit"], mv["pko"]]
             assert float(cell[4]) == st["p_land"] and float(cell[5]) == st["known"]
-            assert [float(x) for x in cell[6:16]] == list(d["outgoing"]["secondary"][k].values())
+            assert [float(x) for x in cell[6:13]] == list(d["outgoing"]["secondary"][k].values())
         for j in range(6):
             cell = switch_cells[b, j]
             inc = d["incoming"][j]
@@ -152,7 +152,7 @@ def test_pointer_cells_match_decode_damage_block_with_every_block_enabled():
 def test_pointer_cell_dims_track_the_toggle_set():
     assert DamageOperator(_layout).pointer_move_cell_dim == 0
     assert DamageOperator(_layout).pointer_switch_cell_dim == 15
-    assert DamageOperator(_layout, outgoing=True).pointer_move_cell_dim == 16
+    assert DamageOperator(_layout, outgoing=True).pointer_move_cell_dim == 13
     assert DamageOperator(_layout, matrices_outgoing_all=True).pointer_switch_cell_dim == 33
 
 
@@ -179,9 +179,9 @@ def test_extractor_stashes_op_cells_when_the_op_is_on():
     with torch.no_grad():
         fe(_obs(batch=2))
     _, _, _, mcells, scells = fe.last_pointer_inputs
-    assert tuple(mcells.shape) == (2, 4, 16)
+    assert tuple(mcells.shape) == (2, 4, 13)
     assert tuple(scells.shape) == (2, 6, 33)
-    assert fe.pointer_move_cell_dim == 16 and fe.pointer_switch_cell_dim == 33
+    assert fe.pointer_move_cell_dim == 13 and fe.pointer_switch_cell_dim == 33
 
 
 # ------------------------------------------------------- the REAL policy (the M1 rule)

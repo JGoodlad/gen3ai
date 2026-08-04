@@ -60,7 +60,7 @@ Each is OFF-byte-identical unless noted; only an obs-vector change bumps `ARCH_S
 | 27 | `gen3_unified_status_landing_v1` | op outgoing status-landing (Toxic/WoW/TWave/Spore/Leech Seed) |
 | 28 | `gen3_unified_choice_band_v1` | op prices Choice Band (×1.5 phys) + CB-conditional tail belief |
 | 29 | `value_dist_mode` | **distributional value** side head (interpretability; HL-Gauss aux) |
-| 30 | `damage_topk_k` (`--damage-topk`) | DISCRETE top-K incoming move-space (anticipate the move, pick the immune pivot) |
+| 30 | `damage_topk_k` (`--damage-topk`) | DISCRETE top-K incoming move-space (anticipate the move, pick the immune pivot) — the LEAN block deleted at v55; K now sizes only the v35 matrix |
 | 31 | `damage_reattend` / `damage_refine_rounds` | re-attend over computed physics / **iterative refine** (incoming → OUR tokens, between layers) |
 | 32 | `move_belief_prefuse` | move belief reinjected PRE-transformer (co-refines through attention) |
 | 33 | `damage_refine_rounds` | (the iterative-refine int; sequenced after the v31/v32 collision) |
@@ -68,6 +68,7 @@ Each is OFF-byte-identical unless noted; only an obs-vector change bumps `ARCH_S
 | 35 | `damage_matrices_incoming` | INCOMING per-move matrix (enriched top-K; reuses `--damage-topk` K) |
 | **36** | **`gen3_bidir_threat_trunk_v1`** | **bidirectional in-trunk threat** (outgoing→trunk, expected-latent defender, prob-outspeed) |
 | **37** | **`gen3_status_trunk_v1`** | **status-landing into the trunk** (both directions) — the last CPU-obs deprecation gap |
+| **55** | **`gen3_op_block_trim_v1`** | **op BLOCK TRIM** — delete the incoming secondary/effect collapses + the outgoing slp/psn/tox columns + the dead lean `_topk_block` (−28 dims) |
 
 (Older v1–v15: the ai_v3/ai_v4 obs-richness + reward + dual-head + strict-API era — see `designs/`
 version map.)
@@ -75,6 +76,34 @@ version map.)
 ---
 
 ## Log entries (newest first)
+
+### 2026-08-03 — v55 `gen3_op_block_trim_v1`: the DamageOperator sheds its least-used blocks
+**Acting on the ledger-P1 per-block dependence ablation** (4000 real eval states, exact producing snapshot,
+per-block zero → masked KL; ceiling 0.9385 = zeroing the whole op). P1's headline was that the op's HEAD
+CONCAT is the policy's largest single dependency — but the same measurement ranked the tail, and this
+deletes it. OUT of the op's output:
+- **incoming per-STATUS SECONDARY (10 dims) — 0.1%**, the most INERT channel in the operator.
+- **incoming believed-EFFECT (6 dims) — 1.2%.** Both are opp-active-level belief-weighted maxes with **no
+  defender axis** ("the opponent can flinch someone", not whom); v35's `_incoming_matrix` carries the same
+  facts per move AND per defender, which ledger **P4** measured at KL 0.0005 vs the collapse's 0.1446.
+  Deleting them also removes the unmasked-belief read `w = sigmoid(...)` from the forward entirely.
+- **outgoing slp/psn/tox secondary columns (12 dims)** — structural zeros, MEASURED not asserted: that
+  block prices OUR moves, gen3 has **no damaging move that inflicts sleep at all**, and the psn/tox
+  carriers appear on **1 / 0 of the 773 pool teams**. The INCOMING side keeps all 10 (it faces the
+  opponent, not our pool).
+- **`_topk_block`** — the v30 LEAN top-K, a strict subset of the v35 matrix that already suppressed it, and
+  which the same cProfile measured at **0 calls per forward**: dead code in the op's hottest file.
+  `damage_topk_k` now means "the incoming matrix's K"; `K>0` without the matrix RAISES (extractor + op),
+  and the CLI auto-enables the matrix on the `--unified-moves` path.
+
+**Net −28 dims** off both projection heads (`out_dim` 835 → 807, `incoming_dim` 101 → 85). **Honesty gate:
+this is a dims/complexity change, NOT a throughput one** — measured B=1 CPU forward 4.276 → 4.289 ms,
+3534 → 3525 calls/forward, i.e. nothing (≈9 aten calls on a dispatch-bound forward, and the lean block
+never ran). Honest residual: with `--damage-matrices incoming` OFF there is now no effect/secondary signal
+at all — the accepted trade at 1.3% of measured dependence. Verified: full unit+integration suite green,
+the constructed-physics oracle `damage_op_probe_fuzz_test.py` 22/22, and a bridge smoke on the production
+stack. `ARCH_SIGNATURE` bumped (the projection widths change, so a stale checkpoint gets a clear arch error
+rather than a `load_state_dict` shape error); `MODEL_CONFIG_VERSION` 55 is a stamp only.
 
 ### 2026-06-17 — Prober GPU-obs observability (tooling, NOT a model change; in worktree, not shipped)
 **A lens to SEE the model's world-model — not a new head.** As the architecture moved the belief/physics

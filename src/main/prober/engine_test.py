@@ -115,27 +115,29 @@ def test_damage_op_view_attached_when_model_exposes_it():
     # a model that exposes the op view → the engine attaches it (and it stays JSON-serializable).
     chan = {"low": 0.1, "high": 0.12, "crit": 0.24, "pko": 0.0, "acc": 1.0}
     view = {"incoming": [{"phys": chan, "spec": chan, "p_outspeed": 0.5, "provenance": 1.0}] * 6,
-            "effect": {k: 0.0 for k in ("recovery", "status", "phaze", "boost", "hazard", "protect")},
+            "choice_band": {"phys_high_cb": [0.0] * 6, "phys_pko_cb": [0.0] * 6, "p_cb": 0.0},
             "outgoing": {"moves": [{"low": 0.0, "high": 0.0, "crit": 0.0, "pko": 0.0}] * 4,
                          "p_outspeed": 0.5},
-            # gen3_unified_topk_incoming_v1: the discrete top-K block (K=2 here) — opp's likely moves with
-            # exact names + per-OUR-mon [high, pko, status_lands] (the safe-switch read).
-            "incoming_topk": {
+            # the discrete per-move incoming MATRIX (K=2 here) — opp's likely moves with exact names +
+            # per-OUR-mon [low, high, crit, pko, type_mult, status_lands] (the safe-switch read).
+            "incoming_matrix": {
                 "moves": [{"latent": [0.0] * 4, "belief": 0.6, "accuracy": 1.0, "is_phys": 0.0,
-                           "move": "icebeam"},
+                           "move": "icebeam", "effect": [0.0] * 6, "secondary": [0.0] * 10},
                           {"latent": [0.0] * 4, "belief": 0.4, "accuracy": 1.0, "is_phys": 0.0,
-                           "move": "thunderwave"}],
-                "per_defender": [[{"high": 0.8, "pko": 0.9, "status_lands": 0.0},
-                                  {"high": 0.0, "pko": 0.0, "status_lands": 1.0}]] * 6}}
+                           "move": "thunderwave", "effect": [0.0] * 6, "secondary": [0.0] * 10}],
+                "per_defender": [[{"low": 0.6, "high": 0.8, "crit": 1.4, "pko": 0.9, "type_mult": 2.0,
+                                   "status_lands": 0.0},
+                                  {"low": 0.0, "high": 0.0, "crit": 0.0, "pko": 0.0, "type_mult": 1.0,
+                                   "status_lands": 1.0}]] * 6}}
     model.damage_op_view = lambda obs, mask: view
     a = analyze_invocation(model, _summary(), _npz(), 0)
     assert a.damage_op is not None and len(a.damage_op["incoming"]) == 6        # incoming = our 6 team slots
     assert set(a.damage_op["outgoing"]["moves"][0]) == {"low", "high", "crit", "pko"}
-    # the discrete top-K block rides through (exact names + 6 × K per-defender pivot reads).
-    itk = a.damage_op["incoming_topk"]
+    # the discrete per-move matrix rides through (exact names + 6 × K per-defender pivot reads).
+    itk = a.damage_op["incoming_matrix"]
     assert [m["move"] for m in itk["moves"]] == ["icebeam", "thunderwave"]
     assert len(itk["per_defender"]) == 6 and len(itk["per_defender"][0]) == 2
-    assert set(itk["per_defender"][0][0]) == {"high", "pko", "status_lands"}
+    assert set(itk["per_defender"][0][0]) == {"low", "high", "crit", "pko", "type_mult", "status_lands"}
     asdict(a)   # rides the `analyze` CLI JSON output
 
 

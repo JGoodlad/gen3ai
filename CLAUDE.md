@@ -761,13 +761,16 @@ attention instead of being grafted on after);
 and `DamageOperator` (`--damage-op`) consumes that move belief's predicted moves to compute the believed-move
 incoming damage to each of our mons (a differentiable gen3 calc), appended to **both** projection heads —
 so the gradient sharpens the move belief toward real KO threats (`designs/ai_v6/design_differentiable_damage_op.md`);
-its effect block carries per-status SECONDARY probabilities (incoming opp threat + per-OUR-move outgoing,
-accuracy-folded, ×Serene Grace / Shield Dust — `gen3_unified_move_system_v1`). Under `--damage-topk K` it
-ALSO emits a **DISCRETE top-K incoming block** (`gen3_unified_topk_incoming_v1`): the opp active's K
-most-believed moves INDIVIDUALLY, each with its move LATENT identity (gathered from `MoveLatentEncoder`,
-typed-HP-aware) + belief + per-OUR-mon `[high, pko, status_lands]` — so the policy reasons in the discrete
-move space (anticipate the move, pick the damage-/status-immune safe pivot, e.g. Thunder-Wave→Ground=0)
-instead of only the collapsed worst-case. Inside `PokemonEncoder`, the
+its per-OUR-move OUTGOING block carries per-status SECONDARY probabilities (accuracy-folded, ×Serene Grace /
+Shield Dust — `gen3_unified_move_system_v1`; over the 7 columns an OUR-side gen3 move can actually inflict,
+`gen3_op_block_trim_v1`). Under `--damage-topk K` (which implies `--damage-matrices incoming`) it ALSO emits
+the **DISCRETE incoming move-space** — the v35 `_incoming_matrix`: the opp active's K most-believed moves
+INDIVIDUALLY, each with its move LATENT identity (gathered from `MoveLatentEncoder`, typed-HP-aware) +
+belief + per-move effect/secondary bits + per-OUR-mon `[low, high, crit, pko, type_mult, status_lands]` — so
+the policy reasons in the discrete move space (anticipate the move, pick the damage-/status-immune safe
+pivot, e.g. Thunder-Wave→Ground=0) instead of only the collapsed worst-case. (The v30 LEAN top-K block this
+supersedes, and the op's two opp-active-level effect/secondary COLLAPSES, are deleted at v55 — see
+`gen3_op_block_trim_v1` below.) Inside `PokemonEncoder`, the
 flag-gated `MoveLatentEncoder` (`--move-latent`) concatenates a context-free mechanics-grounded per-move
 latent into the move network; its latent table is the Stage-3 similarity-grading target
 (`--move-belief-latent-coef`, so Rock Slide ≈ Hidden Power Rock — `designs/ai_v6/design_unified_move_system.md`).
@@ -947,7 +950,8 @@ loss, **never in pi/vf** (projection dims unchanged → OFF byte-identical, no `
 bins gated in `check_compatible`, the support (vmin/vmax) resume-only. Phase-A foundation (head +
 versioning); the distributional aux loss + capture/prober/launcher are follow-ons.
 **v30 the DISCRETE top-K incoming move-space** (`gen3_unified_topk_incoming_v1`, `damage_topk_k` /
-`--damage-topk`) — the `DamageOperator`'s incoming block collapses the opp active's whole moveset into the
+`--damage-topk`; the LEAN block described here is SUPERSEDED by v35's `_incoming_matrix` and DELETED at
+v55 `gen3_op_block_trim_v1` — `damage_topk_k` now sizes only the matrix) — the `DamageOperator`'s incoming block collapses the opp active's whole moveset into the
 worst phys/spec hit per defender (`_chan_max`), hiding WHICH move it is + the per-pivot consequences. This
 adds a discrete block: for the opp active's **K most-believed CANDIDATE moves** (default K=5, auto-on under
 `--unified-moves`; a mon runs 4 moves so the 5th is the surprise candidate) it surfaces — per move — its
@@ -1008,7 +1012,8 @@ byte-identical (no `ARCH_SIGNATURE` bump); requires `--damage-op`; threaded thro
 extractor-kwargs sites.
 **v35 the INCOMING per-move DAMAGE MATRIX** (`gen3_per_move_matrices_v1`, `damage_matrices_incoming` /
 `--damage-matrices incoming`) — the ENRICHED evolution of the v30 top-K block (`_incoming_matrix`,
-REUSES `--damage-topk K` as its K — one knob, try 4/5/6 — and replaces the lean top-K block at that K).
+REUSES `--damage-topk K` as its K — one knob, try 4/5/6; since v55 deleted the lean top-K it superseded,
+this is the ONLY block K sizes).
 Per opp-active top-K move: a richer header `[latent, belief, acc,
 is_phys, EXPLICIT effect bits(6: recovery/status/phaze/boost/hazard/protect), EXPLICIT secondary chances(10)]`
 + a richer per-(OUR mon, move) cell `[low,high,crit,pko,type_mult,status_lands]`. The effect/secondary bits
@@ -1372,7 +1377,37 @@ K=5 = **+0.18 ms** on a ~3.1 ms prefuse-stack forward — on the spike's +0.19 m
 `entity_topk_seats` is a STRUCTURAL int gated in `check_compatible` (the `damage_topk_k` pattern).
 Tests: `entity_seats_test.py` (seat-layout stability, masked-seat bit-identity no-leak, the
 op-candidate single-source, the LayerNorm random-cotangent gradient probe).
-Current `MODEL_CONFIG_VERSION` = **54**, `ARCH_SIGNATURE` = **`gen3_entity_move_seats_v1`**.
+**v55 the DamageOperator BLOCK TRIM** (`ARCH_SIGNATURE` `gen3_op_block_trim_v1`, NO flag) — the op sheds its
+three least-used output families and one dead code path, acting on the ledger-**P1** per-block dependence
+ablation (4000 real eval states, per-block zero → masked KL, ceiling 0.9385 = zeroing the whole op). OUT: the
+opp-active per-STATUS **incoming SECONDARY** scalars (10 dims, **0.1%** of the ceiling — the most INERT
+channel in the operator), the opp-active believed-**EFFECT** scalars (6 dims, **1.2%**), and the **OUTGOING
+slp/psn/tox** per-move secondary columns (12 dims = 4 moves × 3). The first two are opp-active-level
+collapses with **no defender axis** — they say "the opponent can flinch someone" without saying whom — and
+v35's `_incoming_matrix` already carries the same facts PER MOVE (`_DMG_IMX_HDR_EFFECT`/`_DMG_IMX_HDR_SEC`)
+and PER DEFENDER (`status_lands`, ledger **P4**: KL 0.0005 vs the collapse's 0.1446); deleting them also
+removes the whole UNMASKED-belief read `w = sigmoid(...)` (and its `_EFF_*`/`_SEC_*` sparse buffers) from
+the forward, leaving `w_all` as the op's single belief read. The third is **structural zeros, MEASURED not
+asserted**: that block prices OUR moves, and gen3 has **no damaging move that inflicts sleep at all** while
+the psn/tox carriers appear on **1 / 0 of the 773 `data/teams/` teams** (the INCOMING side keeps all 10 — it
+faces the OPPONENT, who isn't restricted to our pool). ALSO deleted: **`_topk_block`**, the v30 LEAN top-K —
+a strict SUBSET of the v35 incoming matrix that the matrix already suppressed, which the same cProfile
+measured at **0 calls per forward** in the production build (dead code in the op's hottest file). So
+`damage_topk_k` now means "the incoming matrix's K" and nothing else: `K>0` without
+`damage_matrices_incoming` **raises** in both the extractor and the op (never a silent empty block), and the
+CLI auto-enables the matrix when `--damage-topk` was set with no explicit `--damage-matrices` (the
+`--unified-moves` path). Net **−28 dims** off both projection heads (op `out_dim` 835 → 807, `incoming_dim`
+101 → 85). **This is a dims/complexity change, NOT a throughput one:** measured B=1 CPU forward 4.276 →
+4.289 ms and 3534 → 3525 profiled calls/forward — i.e. no change, since the deleted work is ~9 aten calls
+on a dispatch-bound forward and the lean block already never ran. Honest residual: with `--damage-matrices
+incoming` OFF there is now no effect/secondary signal at all (the accepted trade at 1.3% of dependence).
+The projection widths DO change, so a stale checkpoint would fail on a `load_state_dict` shape mismatch —
+the `ARCH_SIGNATURE` bump turns that into a clear arch error instead; `MODEL_CONFIG_VERSION` 54 is a stamp
+only (no field added/removed). Tests: `damage_op_test.py` + the constructed-physics oracle
+`poke_env_gaps/damage_op_probe_fuzz_test.py` (22/22).
+Orthogonal to v54's entity seats (those enter the TRUNK; this trims the op's HEAD-CONCAT output), so the
+two compose — only the single shared `ARCH_SIGNATURE` string had to be sequenced.
+Current `MODEL_CONFIG_VERSION` = **55**, `ARCH_SIGNATURE` = **`gen3_op_block_trim_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

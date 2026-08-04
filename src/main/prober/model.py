@@ -511,15 +511,13 @@ class ProbeModel:
         """The unified DamageOperator's view for THIS obs: per-our-mon incoming threat
         ``[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance`` in TEAM-SLOT order (the active is
         whichever slot holds the active flag; the bench slots are the SAFE-SWITCH reads), the opp-active
-        effect scalars, and (on a ``--unified-damage both`` run) our 4 moves' OUTGOING damage. On a
-        ``--damage-topk`` run it ALSO carries `incoming_topk` — the opp active's K most-believed CANDIDATE
-        moves, each with its decoded move NAME (exact, from the op's stashed candidate indices — typed HP
-        rendered as ``hiddenpower(type)``), belief, and per-OUR-mon ``[high, pko, status_lands]`` (the
-        discrete-move + per-pivot safe-switch read). On a ``--damage-matrices incoming/outgoing`` run it
-        carries the RICHER `incoming_matrix` (per opp-move × per OUR-mon FULL cell `[low,high,crit,pko,
-        type_mult,status_lands]` + a per-move header of belief/acc/is_phys/effect/secondary) and/or
-        `outgoing_matrix` (our 4 moves × the opp's 6 mons). Runs ONE clean forward and decodes the operator's
-        PRE-gain physics stash; ``None`` when the checkpoint has no damage operator (``--damage-op`` off).
+        Choice-Band tail, and (on a ``--unified-damage both`` run) our 4 moves' OUTGOING damage. On a
+        ``--damage-matrices incoming/outgoing`` run it carries `incoming_matrix` (per opp-move × per OUR-mon
+        FULL cell `[low,high,crit,pko,type_mult,status_lands]` + a per-move header of belief/acc/is_phys/
+        effect/secondary, each move with its decoded NAME — exact, from the op's stashed candidate indices,
+        typed HP rendered as ``hiddenpower(type)``) and/or `outgoing_matrix` (our 4 moves × the opp's 6
+        mons). Runs ONE clean forward and decodes the operator's PRE-gain physics stash; ``None`` when the
+        checkpoint has no damage operator (``--damage-op`` off).
 
         NOTE: the stash lives on the **DamageOperator submodule** (`op.last_raw_block`, set inside its
         forward), NOT on the extractor — reading `extractor.last_raw_block` always returned None, silently
@@ -538,29 +536,25 @@ class ProbeModel:
         raw = getattr(op, "last_raw_block", None)            # the op stashes on ITSELF, not the extractor
         if raw is None:
             return None
-        # The LEAN top-K block is emitted ONLY when topk_k>0 AND the rich incoming matrix is OFF (the matrix
-        # REPLACES it — `DamageOperator._lean_topk`). On a `--damage-matrices incoming` run the lean block is
-        # absent from the row, so we must decode with topk_k=0 (else we'd read the matrix bytes as a lean
-        # block → garbage) and instead decode `incoming_matrix` at the op's `matrices_incoming_k`. Likewise
-        # pass `matrices_outgoing` for the outgoing matrix. (This was the cause of the nonsense "acc-580"
-        # top-K render on matrix runs — the decode flags weren't threaded.)
+        # The discrete incoming move-space is decoded at the op's `matrices_incoming_k` (the lean top-K
+        # block that used to share the `topk_k` knob was deleted — gen3_op_block_trim_v1). Likewise pass
+        # `matrices_outgoing` for the outgoing matrix. (Missing decode flags were the cause of the nonsense
+        # "acc-580" render on matrix runs.)
         matrices_in_k = int(getattr(op, "matrices_incoming_k", 0))
         matrices_out = bool(getattr(op, "matrices_outgoing", False))
-        lean_topk = int(getattr(op, "topk_k", 0)) if not getattr(op, "matrices_incoming", False) else 0
         view = decode_damage_block(
-            raw[0].detach().cpu().numpy(), outgoing=bool(op.outgoing), topk_k=lean_topk,
+            raw[0].detach().cpu().numpy(), outgoing=bool(op.outgoing),
             matrices_outgoing=matrices_out, matrices_incoming_k=matrices_in_k)
         # Resolve each candidate move to its EXACT name from the op's stashed indices (the op knows which
-        # candidate it picked — better than a nearest-latent decode). The SAME `last_topk_idx` keys both the
-        # lean top-K and the rich incoming matrix (set by `_topk_block` / `_incoming_matrix`).
+        # candidate it picked — better than a nearest-latent decode); `last_topk_idx` is set by
+        # `_incoming_matrix`.
         idx = getattr(op, "last_topk_idx", None)
         if idx is not None:
             names = self._topk_move_names(op, [int(c) for c in idx[0].detach().cpu().tolist()])
-            for block_key in ("incoming_topk", "incoming_matrix"):
-                blk = view.get(block_key)
-                if blk and blk.get("moves"):
-                    for k, mv in enumerate(blk["moves"]):
-                        mv["move"] = names[k] if k < len(names) else None
+            blk = view.get("incoming_matrix")
+            if blk and blk.get("moves"):
+                for k, mv in enumerate(blk["moves"]):
+                    mv["move"] = names[k] if k < len(names) else None
         # gen3_op_move_align_v1: the op's OUTGOING per-move blocks (outgoing / status_landing /
         # outgoing_matrix) now read the request-ordered obs slice (`ctx.our_active_req_move_*`), so they are
         # ACTION-ordered (action 6+k) — the prober labels them with `a.matchups.move_labels` (the recorded,

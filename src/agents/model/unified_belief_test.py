@@ -16,7 +16,7 @@ import pytest
 
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor, DamageOperator, MoveBelief,
-    _DMG_PER_MON, _DMG_EFFECT, _DMG_INCOMING_SEC, _DMG_CB, TEAM_SIZE,
+    _DMG_PER_MON, _DMG_CB, TEAM_SIZE,
 )
 from agents.model import damage_tables as dt
 from agents.observation.constants import (
@@ -32,9 +32,8 @@ _layout = Gen3ObservationEncoder(_mappings).get_layout()
 _M = _layout["max_moves"]
 _S = _layout["max_species"]
 _EMB = _layout["move_embedding_dim"]
-_OUT = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC + _DMG_CB
+_OUT = TEAM_SIZE * _DMG_PER_MON + _DMG_CB
 # Effect-scalar column order (== damage_tables.MOVE_EFFECT_COLS): recovery, status, phaze, boost, hazard, protect
-_EFF = {name: i for i, name in enumerate(dt.MOVE_EFFECT_COLS)}
 
 
 def _ctx(*, opp_species=0, opp_t1=0, opp_t2=0, defenders=None, opp_active=True,
@@ -117,32 +116,11 @@ def test_enriched_output_shape_and_bounds():
 
 
 # --------------------------------------------------------------------------- believed-status threat
-def test_effect_max_surfaces_believed_status():
-    """Believing the opp active has Toxic raises the STATUS effect scalar; Recover raises RECOVERY;
-    a pure-attacker belief leaves both near the floor — the status axis the damage-only block lacked.
-    (The effect scalar is `max_m w_m·flag`, NOT a full-axis noisy-OR — see the saturation test below.)"""
-    op = _op()
-    ctx = _ctx(opp_species=242, opp_t1=_T2I["NORMAL"], opp_t2=0)   # Blissey-ish
-    eff_toxic = op(ctx, _belief_logits(("toxic",)))[0, TEAM_SIZE * _DMG_PER_MON:]
-    eff_recover = op(ctx, _belief_logits(("recover",)))[0, TEAM_SIZE * _DMG_PER_MON:]
-    eff_attack = op(ctx, _belief_logits(("earthquake",)))[0, TEAM_SIZE * _DMG_PER_MON:]
-    assert eff_toxic[_EFF["status"]] > 0.9                 # believed Toxic → high status threat
-    assert eff_recover[_EFF["recovery"]] > 0.9             # believed Recover → high recovery threat
-    assert eff_attack[_EFF["status"]] < 0.2 and eff_attack[_EFF["recovery"]] < 0.2
-
-
-def test_effect_scalars_not_saturated_under_realistic_fusion_belief():
-    """REGRESSION for the review's M1: a full-axis noisy-OR saturated the effect scalars to ~1 from the
-    floor alone. With the max aggregation + the realistic prior-fusion belief, a PURE ATTACKER
-    (Aerodactyl — its prior moveset is almost all attacks) reads LOW status/recovery/boost threat."""
-    op = _op()
-    mb = MoveBelief(_M, _EMB, prior_fusion=True, n_species=_S)
-    # Aerodactyl (num 142, Rock/Flying), no revealed moves → belief = its move prior (attacking).
-    ctx = _ctx(opp_species=142, opp_t1=_T2I["ROCK"], opp_t2=_T2I["FLYING"])
-    out = _fused_then_op(op, mb, ctx, revealed_moves_active=())
-    eff = out[0, TEAM_SIZE * _DMG_PER_MON:]
-    for k in ("status", "recovery", "boost", "phaze"):
-        assert eff[_EFF[k]] < 0.5, f"{k} effect scalar saturated under fusion: {eff[_EFF[k]].item():.3f}"
+# gen3_op_block_trim_v1: the two tests that lived here — `test_effect_max_surfaces_believed_status` and
+# `test_effect_scalars_not_saturated_under_realistic_fusion_belief` — pinned the opp-active-level
+# believed-EFFECT scalars, which are DELETED (ledger P1: 1.2% of the whole-op dependence, no defender
+# axis). The same facts are now pinned PER MOVE on the incoming matrix's header — see
+# `damage_op_test.test_incoming_matrix_*`, which reads `_DMG_IMX_HDR_EFFECT`.
 
 
 def test_provenance_revealed_vs_guess():

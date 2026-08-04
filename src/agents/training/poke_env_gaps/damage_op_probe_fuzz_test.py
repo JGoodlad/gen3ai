@@ -314,10 +314,10 @@ def _topk_constructed_check() -> tuple:
     eq = _move_num("earthquake")
     ctx = _topk_ctx(op, defenders=[(0, _T2I["ELECTRIC"], 0), (0, _T2I["FLYING"], 0)] + [(0, 0, 0)] * 4)
     dec = decode_damage_block(op(ctx, _logits_moves(n_moves, [eq]), None, _synth_latent(layout))[0]
-                              .detach().numpy(), outgoing=False, topk_k=K)
+                              .detach().numpy(), outgoing=False, matrices_incoming_k=K)
     s = op.last_topk_idx[0].tolist().index(eq)
-    active = dec["incoming_topk"]["per_defender"][0][s]
-    flying = dec["incoming_topk"]["per_defender"][1][s]
+    active = dec["incoming_matrix"]["per_defender"][0][s]
+    flying = dec["incoming_matrix"]["per_defender"][1][s]
     _emit("topk_pivot_immunity", active["high"] > 0.3 and flying["high"] == 0.0 and flying["pko"] == 0.0,
           f"active_high={active['high']:.2f} flying_high={flying['high']:.2f} flying_pko={flying['pko']:.2f}")
     wc_high = dec["incoming"][0]["phys"]["high"]                         # the omniscient-validated worst-case
@@ -329,10 +329,10 @@ def _topk_constructed_check() -> tuple:
     tw = _move_num("thunderwave")
     ctx2 = _topk_ctx(op, defenders=[(0, _T2I["NORMAL"], 0), (0, _T2I["GROUND"], 0)] + [(0, 0, 0)] * 4)
     dec2 = decode_damage_block(op(ctx2, _logits_moves(n_moves, [tw]), None, _synth_latent(layout))[0]
-                               .detach().numpy(), outgoing=False, topk_k=K)
+                               .detach().numpy(), outgoing=False, matrices_incoming_k=K)
     s2 = op.last_topk_idx[0].tolist().index(tw)
-    normal = dec2["incoming_topk"]["per_defender"][0][s2]
-    ground = dec2["incoming_topk"]["per_defender"][1][s2]
+    normal = dec2["incoming_matrix"]["per_defender"][0][s2]
+    ground = dec2["incoming_matrix"]["per_defender"][1][s2]
     _emit("topk_status_immunity", normal["status_lands"] > 0.5 and ground["status_lands"] == 0.0
           and normal["high"] == 0.0, f"normal_st={normal['status_lands']:.2f} ground_st={ground['status_lands']:.2f}")
     return ok, fail
