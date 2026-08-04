@@ -1409,14 +1409,19 @@ async def main():
                              "latent table) and a move-belief mode that scores revealed slots. TRAINING-only "
                              "(not version-locked; inherited on a flagless resume). 0.0 = OFF.")
     parser.add_argument("--unified-moves", "--unified_moves", dest="unified_moves",
-                        choices=["off", "incoming", "both"], default="off",
+                        choices=["off", "incoming", "both"], default=None,
                         help="ONE knob for the WHOLE unified move system: sets --unified-damage to the same "
                              "level (move belief + prior fusion + the GPU damage op, incl. its per-status "
                              "secondary/Serene-Grace effects; 'both' adds the outgoing direction) AND turns "
                              "on --move-latent + a default --move-belief-latent-coef 0.05 + the DISCRETE "
                              "incoming move-space at K=5 (--damage-topk, which implies --damage-matrices "
-                             "incoming). Compose the pieces by hand for finer control (e.g. --damage-topk 0 "
-                             "to A/B the discrete move-space off under --unified-moves).")
+                             "incoming). DEFAULT: 'both' on a FRESH run (the unified system IS the model — "
+                             "without it the op has no belief to price and the policy loses the whole "
+                             "believed-move threat read); a RESUME (--model) inherits the checkpoint's saved "
+                             "component toggles verbatim, so old configs keep working. 'off' is DEPRECATED — "
+                             "it survives only as an explicit ablation baseline and warns at startup. Compose "
+                             "the pieces by hand for finer control (e.g. --damage-topk 0 to A/B the discrete "
+                             "move-space off under --unified-moves).")
     parser.add_argument("--damage-topk", "--damage_topk", dest="damage_topk_k",
                         type=int, default=None,
                         help="K for the DISCRETE incoming move-space: the number of the opp ACTIVE's "
@@ -1951,10 +1956,32 @@ async def main():
               "their OFF defaults and may FATAL at the version check; pass them explicitly if needed.")
     _popart_explicit = args.use_popart is not None
     _coef_explicit = args.opp_belief_aux_coef is not None
+    _hp_coef_explicit = args.hp_type_belief_coef is not None   # before _resolve fills the 0.05 default
 
     # --unified-moves is the umbrella over the WHOLE move system: it sets --unified-damage to the same
     # level (so the op/belief/outgoing desugar below runs) AND turns on the move latent + its grading.
     # Applied BEFORE the --unified-damage desugar so the level flows through. v24.
+    #
+    # DEFAULT-ON (2026-08-04, owner decision): the unified move system is the model — every production
+    # config since v24 runs it, and the off path is an ablation baseline, not a supported configuration.
+    # A None (flagless) invocation resolves to:
+    #   * FRESH run → 'both' (the full system), with a printed note;
+    #   * RESUME (--model) → NO desugar — the component toggles stay None and _resolve below inherits the
+    #     checkpoint's saved arch verbatim (the same flagless-resume contract every structural toggle
+    #     follows), so a resume can never be version-FATALed by a default. A launcher restart that
+    #     forwarded the original explicit flag is likewise unchanged.
+    # An EXPLICIT 'off' still works (fresh ablation baselines need it) but is DEPRECATED and warns.
+    if args.unified_moves is None:
+        if args.model:
+            args.unified_moves = "off"     # no desugar — inherit the saved component toggles via _resolve
+        else:
+            args.unified_moves = "both"
+            print("[Arch] --unified-moves defaults to 'both' (the unified move system is the model; "
+                  "pass --unified-moves off explicitly for the DEPRECATED ablation baseline).")
+    elif args.unified_moves == "off":
+        print("[Arch] DEPRECATED: --unified-moves off — the non-unified path is an ablation baseline "
+              "only (no move belief, no damage op, no discrete move-space). It keeps working, but new "
+              "features target the unified system.")
     if getattr(args, "unified_moves", "off") != "off":
         if getattr(args, "unified_damage", "off") == "off":
             args.unified_damage = args.unified_moves
@@ -2558,11 +2585,19 @@ async def main():
     if args.hp_type_belief_coef and args.move_belief_mode == "off":
         # The CE supervises the HPTypeBelief head's posterior (last_hp_type_logits), and the head is built
         # only alongside a move belief (it composes P(HP present) from the move posterior's 237 channel).
-        parser.error(
-            "--hp-type-belief-coef requires a move belief (--move-belief-mode != off / --unified-moves): "
-            "the HP-type head composes P(HP present) out of the move posterior. Enable the move belief, "
-            "or set --hp-type-belief-coef 0."
-        )
+        # EXPLICIT coef + no belief = a real contradiction → error. But the coef DEFAULTS to 0.05
+        # (_resolve), so on the DEPRECATED `--unified-moves off` ablation baseline the un-passed default
+        # would make the flag fail out of the box — the same shape as the `--hp-belief-mode flat` case
+        # below, resolved the same way: AUTO-ZERO with a loud note (the --zarch-recon-coef precedent).
+        if _hp_coef_explicit:
+            parser.error(
+                "--hp-type-belief-coef requires a move belief (--move-belief-mode != off / --unified-moves): "
+                "the HP-type head composes P(HP present) out of the move posterior. Enable the move belief, "
+                "or set --hp-type-belief-coef 0."
+            )
+        print("[HPBelief] no move belief (--unified-moves off): auto-zeroing the default "
+              "--hp-type-belief-coef (the HP-type head is built only alongside a move belief).")
+        args.hp_type_belief_coef = 0.0
     if args.hp_type_belief_coef and args.hp_belief_mode == "flat":
         # The `flat` ablation builds NO HPTypeBelief head, so there is no posterior for the CE to
         # supervise. AUTO-ZERO with a loud note rather than erroring (the --zarch-recon-coef

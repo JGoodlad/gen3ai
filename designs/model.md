@@ -77,6 +77,23 @@ version map.)
 
 ## Log entries (newest first)
 
+### 2026-08-04 — `--unified-moves` defaults to `both`; the off path is deprecated
+CLI-DEFAULT change only — no new fields, no version bump, no forward change to any existing config.
+A FRESH flagless run now desugars the full unified move system (`move_belief_mode revealed` +
+`move_prior_fusion` + `damage_op` + `damage_outgoing` + `move_latent` + latent grading 0.05 +
+`damage_topk 5` → the incoming matrix); a flagless RESUME (`--model`) skips the desugar entirely and
+inherits the checkpoint's saved component toggles via `_resolve` (the standard flagless-resume
+contract), so no resume can be version-FATALed by the new default. `--unified-moves off` survives as
+the explicit ablation baseline with a startup DEPRECATION warning. Rationale: every production config
+since v24 runs the unified system, and after the v55 trim the off path is strictly poorer (no move
+belief → no op → no per-move threat read at all). Fixes a latent breakage found while flipping: a
+flagless run on HEAD ERRORED out of the box (the v52 `--hp-type-belief-coef` default 0.05 hit the
+requires-a-move-belief guard) — the guard now auto-zeroes the un-passed default with a note on the
+off path (the `--hp-belief-mode flat` precedent) and still errors on an EXPLICIT coef contradiction.
+Verified all four paths live: fresh-flagless (unified, roundtrip PASSED), explicit-off (deprecation +
+auto-zero + PASSED), flagless resume of an off checkpoint (inherited, no FATAL), flagless resume of a
+unified checkpoint (inherited, PASSED).
+
 ### 2026-08-03 — v55 `gen3_op_block_trim_v1`: the DamageOperator sheds its least-used blocks
 **Acting on the ledger-P1 per-block dependence ablation** (4000 real eval states, exact producing snapshot,
 per-block zero → masked KL; ceiling 0.9385 = zeroing the whole op). P1's headline was that the op's HEAD

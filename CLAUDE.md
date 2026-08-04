@@ -915,7 +915,11 @@ active's damaging-move para/flinch/freeze, accuracy-folded, ×Serene Grace) + pe
 status can this move cause, with what probability", ×our Serene Grace, ×opp Shield Dust) — **intrinsic to
 `--damage-op`** (no separate flag; the secondary data is newly extracted into `gen3_moves.json`). The one
 umbrella knob is `--unified-moves {off,incoming,both}` (sets `--unified-damage` + `--move-latent` +
-`--move-belief-latent-coef 0.05`). `move_latent` OFF stays byte-identical (NO `ARCH_SIGNATURE` bump); a v23
+`--move-belief-latent-coef 0.05` + `--damage-topk 5` → the incoming matrix). **Since 2026-08-04 it
+DEFAULTS to `both` on a FRESH run** — the unified system is the model; a flagless RESUME inherits the
+checkpoint's saved component toggles verbatim (no desugar), and an explicit `off` is the DEPRECATED
+ablation baseline (warns at startup; auto-zeroes the default `--hp-type-belief-coef`, which needs a
+move belief). `move_latent` OFF stays byte-identical (NO `ARCH_SIGNATURE` bump); a v23
 `--damage-op` checkpoint won't load into v24 (the op's output dim grew). **v25 the SPREAD belief +
 disable-redundant master flag** (`gen3_unified_spread_belief_v1`) — `--spread-belief` (the THIRD belief
 leg: predicts the opp's hidden SPREAD = 5 derived stats per slot from a usage prior ⊕ a learned head,
