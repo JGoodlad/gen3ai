@@ -158,6 +158,7 @@ _COND_SLP_IDX = 3                                         # condition one-hot [N
 from agents.observation.gen3_effects import VOLATILE_SLOTS as _VOLATILE_SLOTS
 from agents.observation.constants import BOOSTS_DIM as _BOOSTS_DIM
 _SUBSTITUTE_CTX_IDX = _BOOSTS_DIM + list(_VOLATILE_SLOTS).index("substitute")
+_LEECH_SEED_CTX_SLOT = list(_VOLATILE_SLOTS).index("leechseed")   # gen3_edge_bias_trunk_v1 (G)
 
 # gen3_per_move_matrices_v1 (v32): the OUTGOING per-move DAMAGE MATRIX — our active's 4 moves × the opp's
 # 6 mons (active + REVEALED bench). The legacy `_outgoing_block` prices our moves vs the opp ACTIVE only;
@@ -1591,6 +1592,58 @@ class DamageOperator(torch.nn.Module):
             (wb * ko * pm).amax(dim=-1), (wb * ko * (1.0 - pm)).amax(dim=-1),
         ], dim=-1)                                                                     # [B,6i,6j,4]
         return cells * def_alive[:, :, None, None] * att_gate[:, None, :, None]
+
+    def pairwise_schedule(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, torch.Tensor]:
+        """gen3_edge_bias_trunk_v1 (G): the per-mon END-OF-TURN HP LEDGER — what a mon bleeds or
+        heals per turn while active, delivered at the (mon, GLOBAL seat) pair like X. → `(our_cells
+        [B,6,4], opp_cells [B,6,4])`, cell (signed maxhp fractions; heal +, chip −):
+
+          * leftovers  — +1/16 (our item exact; opp REVEALED item exact, unrevealed 0 — the
+            leftovers usage prior is a documented follow-up, the CB p_cb pattern)
+          * weather    — −1/16 sand (Rock/Ground/Steel immune) / hail (Ice immune), from the live
+            weather one-hot [NONE, SUN, RAIN, SAND, HAIL]
+          * status     — −1/8 burn/poison; Toxic charged FLAT −1/8 in v1 (the ramp needs the toxic
+            STAGE, an E2 follow-up — documented approximation)
+          * leech      — −1/8 for the mon CURRENTLY seeded (ACTIVES only, correctly: Leech Seed is
+            an active volatile and clears on switch; the drained credit side is deliberately NOT
+            cross-charged — cross-mon maxhp scaling is a GIGO trap, the head composes it)
+        Alive-gated; opp weather/status legs revealed-gated (unknown types/condition provenance)."""
+        B, device = ctx.batch_size, ctx.device
+        ar = torch.arange(B, device=device)
+        from agents.model.damage_tables import _T2I
+        LEFTOVERS_NUM = 234
+        sand = ctx.weather_feature[:, 3:4]                                        # [B,1]
+        hail = ctx.weather_feature[:, 4:5]
+
+        def _side(sl, ctx_raw, active_local, exact_side):
+            types1 = ctx.type1_ids[:, sl]
+            types2 = ctx.type2_ids[:, sl]
+            def _has(tname):
+                ti = _T2I[tname]
+                return ((types1 == ti) | (types2 == ti)).float()                  # [B,6]
+            sand_immune = (_has("ROCK") + _has("GROUND") + _has("STEEL")).clamp(max=1.0)
+            hail_immune = _has("ICE")
+            weather = -(1.0 / 16.0) * (sand * (1.0 - sand_immune) + hail * (1.0 - hail_immune))
+            items = ctx.item_ids[:, sl]
+            lefties = (items == LEFTOVERS_NUM).float() * (1.0 / 16.0)             # revealed-exact
+            cond = ctx.pokemon_part[:, sl,
+                                    POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7]
+            status = -(1.0 / 8.0) * (cond[..., _COND_BRN_IDX] + cond[..., 5] + cond[..., 6])
+            leech_active = ctx_raw[:, _BOOSTS_DIM + _LEECH_SEED_CTX_SLOT]         # [B] active volatile
+            leech = torch.zeros(B, TEAM_SIZE, device=device)
+            leech[ar, active_local] = -(1.0 / 8.0) * (leech_active > 0.5).float()
+            alive = (ctx.hp_and_active[:, sl, 0] > 0).float()
+            cells = torch.stack([lefties, weather.expand(-1, TEAM_SIZE) if weather.shape[1] == 1
+                                 else weather, status, leech], dim=-1)            # [B,6,4]
+            if not exact_side:
+                revealed = (1.0 - ctx.opp_believed_mask.float())[:, :, None]
+                cells = cells * revealed
+            return cells * alive[:, :, None]
+
+        our_cells = _side(slice(0, TEAM_SIZE), ctx.our_ctx_raw, ctx.our_active_idx, True)
+        opp_cells = _side(slice(TEAM_SIZE, 2 * TEAM_SIZE), ctx.opp_ctx_raw,
+                          ctx.opp_active_local, False)
+        return our_cells, opp_cells
 
     def pairwise_entry(self, ctx: 'ExtractorContext',
                        move_belief_logits: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:

@@ -108,10 +108,37 @@ def test_entry_edge_kernel_invariants():
     assert float(our_c.min()) >= 0.0
 
 
+def test_schedule_ledger_kernel_invariants():
+    """G family: forcing sand — a Rock mon takes no chip while a Water mon bleeds 1/16; a forced
+    Leftovers reads +1/16; leech lands only on the ACTIVE slot."""
+    fe = _make(**_T_TOGGLES).eval()
+    obs = _obs(seed=51)
+    with torch.no_grad():
+        fe(obs)
+    ctx = fe.unpack(obs)
+    from agents.model.damage_tables import _T2I
+    ctx.weather_feature[:, :] = 0.0
+    ctx.weather_feature[:, 3] = 1.0                          # sand up
+    ctx.type1_ids[:, 0] = _T2I["ROCK"]; ctx.type2_ids[:, 0] = _T2I["ROCK"]
+    ctx.type1_ids[:, 1] = _T2I["WATER"]; ctx.type2_ids[:, 1] = _T2I["WATER"]
+    ctx.item_ids[:, 2] = 234                                 # leftovers on our mon 2
+    with torch.no_grad():
+        our_c, opp_c = fe.damage_op.pairwise_schedule(ctx)
+    alive = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
+    assert float(our_c[:, 0, 1].abs().sum()) == 0.0, "Rock mon takes no sand chip"
+    exp_chip = -(1.0 / 16.0) * alive[:, 1]
+    assert torch.allclose(our_c[:, 1, 1], exp_chip, atol=1e-6), "Water mon bleeds 1/16 in sand"
+    assert torch.allclose(our_c[:, 2, 0], (1.0 / 16.0) * alive[:, 2], atol=1e-6)
+    # Leech lands only at the active slot (channel 3).
+    nonactive = torch.ones(2, TEAM_SIZE, dtype=torch.bool)
+    nonactive[torch.arange(2), ctx.our_active_idx] = False
+    assert float(our_c[:, :, 3][nonactive].abs().sum()) == 0.0
+
+
 def test_family_integration_and_gate():
     with pytest.raises(ValueError, match="edge_bias_families t"):
         _make(edge_bias_families="t")                       # no damage_op
-    fe = _make(**dict(_T_TOGGLES, edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x")).eval()
+    fe = _make(**dict(_T_TOGGLES, edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x,g")).eval()
     with torch.no_grad():
         pi, vf = fe(_obs(seed=35))
     assert torch.isfinite(pi).all() and torch.isfinite(vf).all()

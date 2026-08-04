@@ -1461,7 +1461,7 @@ EDGES. The encoder stack is swapped for `BiasedEncoderLayer` (the spike-proven c
 attention takes an additive per-pair per-head float bias via SDPA's additive mask; the key-pad
 mask rides the same tensor as a -1e9 addend — stock-parity test-pinned) — an UNCONDITIONAL
 state_dict change (fused `in_proj` keys) carried by the `ARCH_SIGNATURE` bump. The delivered
-FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v,t,x}` (STRUCTURAL
+FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v,t,x,g}` (STRUCTURAL
 str in `check_compatible`; `"d"` is the FROZEN d1,d3 alias — new families are explicit-only, so a
 saved config never silently grows maps; growing the valid set is NOT a version bump, the string
 gate catches any mismatch): **D1** = our active's 4 moves × the opp's 6 mons (the v34
@@ -1490,7 +1490,12 @@ a plan-defining edge; **X** = the ENTRY/EXIT edge (`pairwise_entry`: per mon, ge
 chip on its OWN side ×grounded [Flying/Levitate immune, opp Levitate prior-folded] + Pursuit
 exposure [belief-composed vs OUR mons, exact vs theirs] + Dark eff at the victim) at the
 (mon, GLOBAL seat) pairs — "switching is not free", board-composable through the global token;
-requires `--damage-op --damage-op-prefuse`. Each family maps its
+requires `--damage-op --damage-op-prefuse`; **G** = the per-mon END-OF-TURN HP LEDGER
+(`pairwise_schedule`: signed maxhp fractions — Leftovers +1/16 [revealed-exact], sand/hail chip
+−1/16 [Rock/Ground/Steel / Ice immune, live weather one-hot], burn/psn −1/8 + Toxic FLAT −1/8 in
+v1 [the ramp needs the toxic STAGE, an E2 follow-up], Leech −1/8 on the seeded ACTIVE only —
+correctly, it clears on switch) at the same (mon, GLOBAL seat) route as X; requires
+`--damage-op`. Each family maps its
 cell through a ZERO-INIT `Linear(cell → 2·n_heads)` (one head-set per direction) ⇒ ON is
 bitwise-identical to OFF at init (test-pinned, all six). All seat blocks are contiguous index ranges ⇒
 delivery is slice assignment, compile-friendly (fullgraph-pinned). d1/s1 require

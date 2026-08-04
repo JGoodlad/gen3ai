@@ -201,6 +201,8 @@ families off = kl 0.124 / 16.6% flips. This REPLICATES the ledger's P1 shape (ou
 policy's biggest op dependency) and rhymes with the K10 incoming-trunk nulls — on a fresh
 generation, via a different delivery route. Re-audit at end-of-run before any keep/cut decision
 (report: `<run>/edge_audit_9p6M.json`; the run predates t/x/E5, which need their own trained run).
+SLICE 8: **G** (the per-mon end-of-turn schedule ledger at the (mon, global) route — the
+inventory's §2.G, previously slated as E2/E7 attributes; edge delivery reuses X's mechanism).
 NOT yet: the C family (consequence deltas — the one remaining, biggest design lift),
 the op-concat deletion (deprecation playbook: home first — the per-family ablation audit runs on
 the gen-1 training run now underway). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the

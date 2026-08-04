@@ -1418,7 +1418,10 @@ abilities (`build_trap_tables`: fail-loud id resolution + `SPECIES_TRAP_PRIOR` i
 column for the grounded check; our side exact, opp trapper revealed-exact else prior, unrevealed
 opp victim → 0; requires damage_op) at the mon↔mon block; **X** `pairwise_entry` — entry/exit costs per mon (Spikes chip ×
 grounded, Pursuit exposure both directions, Dark eff), delivered at the (mon, GLOBAL seat)
-pairs (requires damage_op + damage_op_prefuse — the Pursuit belief must exist pre-trunk). Each family's map is a ZERO-INIT
+pairs (requires damage_op + damage_op_prefuse — the Pursuit belief must exist pre-trunk); **G**
+`pairwise_schedule` — the per-mon end-of-turn HP ledger (Leftovers / weather chip / status tick /
+active Leech, signed maxhp fractions; Toxic flat in v1 — the ramp is an E2 follow-up) at the same
+(mon, GLOBAL) route (requires damage_op). Each family's map is a ZERO-INIT
 `Linear(cell → 2·n_heads)` (one head-set per direction; auto-protected by `restore_identity_init`'s
 observation capture) ⇒ families ON is BITWISE-identical to OFF at init. Under non-prefuse configs
 D1 passes spread_belief=None (the pre-trunk read would be STALE — gated in forward_internal).
