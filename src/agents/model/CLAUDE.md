@@ -1409,7 +1409,11 @@ taken) — S1 `[land, land·immob]` at the E3 pairs (requires damage_op+outgoing
 `[land, land·immob, w]` at the E4 pairs (requires entity seats); **V** `pairwise_speed` — the
 full mon↔mon P(outspeed) block, cell `[p_outspeed, both_alive, revealed_j]` (real our spread vs
 believed/neutral opp spread; public para ×0.25 both sides; NO stage boosts in v1 — the
-coarse-signal convention; requires damage_op) at the static (our, opp) mon block. Each family's map is a ZERO-INIT
+coarse-signal convention; requires damage_op) at the static (our, opp) mon block; **D4** `pairwise_bench_incoming` — the missing
+"what does the bench threaten" quadrant, per opp mon j the top-K_bench=4 candidates from its own
+slot of the composed posterior, de-timid attacker + real-spread defenders + our screens,
+revealed/alive-gated, ACTIVE column zeroed (D3's quadrant; requires damage_op) at the same
+mon↔mon block. Each family's map is a ZERO-INIT
 `Linear(cell → 2·n_heads)` (one head-set per direction; auto-protected by `restore_identity_init`'s
 observation capture) ⇒ families ON is BITWISE-identical to OFF at init. Under non-prefuse configs
 D1 passes spread_belief=None (the pre-trunk read would be STALE — gated in forward_internal).

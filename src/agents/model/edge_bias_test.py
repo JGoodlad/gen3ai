@@ -26,7 +26,7 @@ import torch
 from agents.model.features_extractor import (
     BiasedEncoderLayer, D_MODEL, EdgeBias, Gen3FeaturesExtractor, TEAM_SIZE,
     TRANSFORMER_FFN_DIM, TRANSFORMER_N_HEADS, _EDGE_D1_CELL, _EDGE_D2_CELL, _EDGE_D3_CELL,
-    _EDGE_S1_CELL, _EDGE_S3_CELL, _EDGE_V_CELL, _KEY_PAD_NEG,
+    _EDGE_S1_CELL, _EDGE_D4_CELL, _EDGE_S3_CELL, _EDGE_V_CELL, _KEY_PAD_NEG,
 )
 from agents.model.model_version import (
     ARCH_SIGNATURE, MODEL_CONFIG_VERSION, ModelVersion, _migrate_config,
@@ -42,7 +42,7 @@ _EDGE_TOGGLES = dict(attend_unrevealed_opponents=True, move_belief_mode="both",
                      move_belief_prefuse=True, move_belief_single_compute=True,
                      damage_op=True, damage_outgoing=True, move_latent=True,
                      damage_op_prefuse=True, move_prior_fusion=True,
-                     entity_topk_seats=5, edge_bias_families="d1,d2,d3,s1,s3,v")
+                     entity_topk_seats=5, edge_bias_families="d1,d2,d3,d4,s1,s3,v")
 
 
 def _make(**kw):
@@ -104,9 +104,9 @@ def test_families_on_is_bitwise_identical_at_init():
 def test_probe_map_writes_exactly_the_documented_blocks():
     """All five families at once — every documented pair receives a bias, nothing leaks outside.
     D2 targets the batch-varying opp-ACTIVE column via the one-hot, so its block is per-batch."""
-    eb = EdgeBias("d1,d2,d3,s1,s3,v")
+    eb = EdgeBias("d1,d2,d3,d4,s1,s3,v")
     with torch.no_grad():                                                # make the maps visible
-        for fam in ("d1", "d2", "d3", "s1", "s3", "v"):
+        for fam in ("d1", "d2", "d3", "d4", "s1", "s3", "v"):
             getattr(eb, f"{fam}_map").bias.fill_(1.0)
     B, K, H = 2, 5, TRANSFORMER_N_HEADS
     base = 20                                                            # the v54 base seat count
@@ -119,6 +119,7 @@ def test_probe_map_writes_exactly_the_documented_blocks():
         "d3": torch.randn(B, K, TEAM_SIZE, _EDGE_D3_CELL),
         "s3": torch.randn(B, K, TEAM_SIZE, _EDGE_S3_CELL),
         "v": torch.randn(B, TEAM_SIZE, TEAM_SIZE, _EDGE_V_CELL),
+        "d4": torch.randn(B, TEAM_SIZE, TEAM_SIZE, _EDGE_D4_CELL),
     }
     opp_oh = torch.zeros(B, TEAM_SIZE)
     opp_oh[0, 2] = 1.0                                                   # batch 0: opp active slot 2
@@ -172,7 +173,7 @@ def test_biased_layer_compiles_fullgraph():
 def test_map_gradient_direct():
     """The maps are differentiable end-to-end at the module level: nonzero cells + a loss on the
     written bias yield weight gradient in EVERY enabled map (d bias / d W = cell ⊗ upstream)."""
-    eb = EdgeBias("d1,d2,d3,s1,s3,v")
+    eb = EdgeBias("d1,d2,d3,d4,s1,s3,v")
     B, K, H = 2, 5, TRANSFORMER_N_HEADS
     base, n = 20, 20 + 4 + 5
     bias = torch.zeros(B, H, n, n)
@@ -183,11 +184,12 @@ def test_map_gradient_direct():
         "d3": torch.randn(B, K, TEAM_SIZE, _EDGE_D3_CELL),
         "s3": torch.randn(B, K, TEAM_SIZE, _EDGE_S3_CELL),
         "v": torch.randn(B, TEAM_SIZE, TEAM_SIZE, _EDGE_V_CELL),
+        "d4": torch.randn(B, TEAM_SIZE, TEAM_SIZE, _EDGE_D4_CELL),
     }
     opp_oh = torch.zeros(B, TEAM_SIZE); opp_oh[:, 0] = 1.0
     out = eb(bias, base, cells, opp_oh)
     (out * torch.randn_like(out)).sum().backward()
-    for fam in ("d1", "d2", "d3", "s1", "s3", "v"):
+    for fam in ("d1", "d2", "d3", "d4", "s1", "s3", "v"):
         assert float(getattr(eb, f"{fam}_map").weight.grad.abs().sum()) > 0, fam
 
 
@@ -204,6 +206,25 @@ def test_gradient_reaches_the_d3_map_through_the_extractor():
     (pi * cot).sum().backward()
     g3 = fe.edge_bias.d3_map.weight.grad
     assert g3 is not None and float(g3.abs().sum()) > 0
+
+
+# ------------------------------------------------------- D4 kernel invariants
+def test_d4_zeroes_the_active_column_and_unrevealed_attackers():
+    """The D4 kernel's cells must be 0 for the opp ACTIVE's column (that quadrant is D3's job) and
+    for unrevealed attackers — checked on a real extractor forward's ctx."""
+    fe = _make(**_EDGE_TOGGLES).eval()
+    obs = _obs(batch=3, seed=13)
+    with torch.no_grad():
+        fe(obs)
+        ctx = fe.unpack(obs)
+        cells = fe.damage_op.pairwise_bench_incoming(ctx, fe.last_move_belief_logits)
+    assert cells.shape == (3, TEAM_SIZE, TEAM_SIZE, _EDGE_D4_CELL)
+    for b in range(3):
+        j = int(ctx.opp_active_local[b])
+        assert float(cells[b, :, j].abs().sum()) == 0.0, "opp ACTIVE column must be zeroed"
+        for jj in range(TEAM_SIZE):
+            if bool(ctx.opp_believed_mask[b, jj]):
+                assert float(cells[b, :, jj].abs().sum()) == 0.0, "unrevealed attacker must be zeroed"
 
 
 # ------------------------------------------------------- versioning

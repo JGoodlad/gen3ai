@@ -187,9 +187,13 @@ init. `--edge-bias-families {off,d,d1,d3}` is the per-family ablation surface th
 mechanism needs. SLICE 2 (same day): **D2** (our bench's offense vs the opp active, the v39 switch-in kernel,
 one-hot mon↔mon delivery) + **S1/S3** (the status-landing kernels' per-pair branches at the E3/E4
 pairs) landed behind the same gate. SLICE 3: **V** (the full mon↔mon P(outspeed) block —
-`pairwise_speed`, real-vs-believed spreads, public para, no stage boosts in v1) — six families
-total, each independently ablatable. NOT yet: D4 (needs the bench-K probe), C/T/X families, the
-op-concat deletion (deprecation playbook: home first). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the
+`pairwise_speed`, real-vs-believed spreads, public para, no stage boosts in v1) — SLICE 4: **D4** — the
+missing quadrant landed as EDGES (mon↔mon, per-opp-mon top-K_bench=4 candidates collapsed over
+moves), which SIDESTEPS the bench-K seat probe entirely (the probe question was about SEATS; the
+edge form needs no new seats). Seven families total, each independently ablatable. NOT yet: C/T/X
+families (need NEW physics tables, not factorings of validated kernels), the E5 tail-threat token,
+the op-concat deletion (deprecation playbook: home first — the per-family ablation audit runs on
+the gen-1 training run now underway). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the
 concat deletion is the eventual refund). Suite 3945 green; bridge smoke passes with edges on.
 Verdict remains gen-vs-gen ELO + the per-family bias ablation.
 

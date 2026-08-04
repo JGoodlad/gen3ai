@@ -811,8 +811,10 @@ _EDGE_D3_CELL = 5   # [high, pko, eff, is_phys, w] per (their believed move c, o
 _EDGE_S1_CELL = 2   # [land, land·immob] per (our status move k, opp mon d)
 _EDGE_S3_CELL = 3   # [land, land·immob, w] per (their believed status move c, our mon i)
 _EDGE_V_CELL = 3    # [p_outspeed, both_alive, revealed_j] per (our mon i, opp mon j)
+_EDGE_D4_CELL = 4   # [phys_high, spec_high, phys_pko, spec_pko] per (our mon i, opp BENCH mon j)
 _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
-                  "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL, "v": _EDGE_V_CELL}
+                  "d4": _EDGE_D4_CELL, "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL,
+                  "v": _EDGE_V_CELL}
 
 
 class EdgeBias(torch.nn.Module):
@@ -889,6 +891,9 @@ class EdgeBias(torch.nn.Module):
         if self.s3_map is not None and cells.get("s3") is not None:
             K = cells["s3"].shape[1]
             self._write_block(bias, self.s3_map(cells["s3"]), slice(e4, e4 + K), our)
+        if self.d4_map is not None and cells.get("d4") is not None:
+            # D4 is the full mon↔mon block too (the active column arrives pre-zeroed by the kernel).
+            self._write_block(bias, self.d4_map(cells["d4"]), our, opp)
         if self.v_map is not None and cells.get("v") is not None:
             # V is the full mon↔mon block — both endpoint sets are static contiguous slices.
             self._write_block(bias, self.v_map(cells["v"]), our, opp)
@@ -2657,6 +2662,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "edge_bias_families d2 prices every our-mon's offense vs the opp active via the "
                     "op's v39 switch-in kernel — requires --damage-op."
                 )
+            if "d4" in fams and not damage_op:
+                raise ValueError(
+                    "edge_bias_families d4 prices the opp BENCH's believed threats via the op's "
+                    "candidate machinery — requires --damage-op (and a move belief)."
+                )
             if ("d3" in fams or "s3" in fams) and self.entity_topk_seats <= 0:
                 raise ValueError(
                     "edge_bias_families d3/s3 bias rows are the E4 threat seats — require "
@@ -3382,6 +3392,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if "d3" in _fams:
                 _cells["d3"] = self.damage_op.pairwise_incoming(
                     ctx, self.last_move_belief_logits, self.entity_seats.last_cand)
+            if "d4" in _fams:
+                _cells["d4"] = self.damage_op.pairwise_bench_incoming(
+                    ctx, self.last_move_belief_logits)
             if "v" in _fams:
                 _cells["v"] = self.damage_op.pairwise_speed(ctx, _sb)
             if "s3" in _fams:

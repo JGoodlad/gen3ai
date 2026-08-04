@@ -1512,6 +1512,86 @@ class DamageOperator(torch.nn.Module):
         revealed_j = (1.0 - ctx.opp_believed_mask.float())[:, None, :].expand_as(both)     # [B,6,6]
         return torch.stack([p * both, both, revealed_j * both], dim=-1)                    # [B,6,6,3]
 
+    def pairwise_bench_incoming(self, ctx: 'ExtractorContext',
+                                move_belief_logits: torch.Tensor,
+                                k_bench: int = 4) -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (D4): the MISSING quadrant — every OPP mon's believed threat to every
+        OUR mon ("after I KO, what comes in and what does it threaten"). `[B, TEAM_SIZE(our i),
+        TEAM_SIZE(opp j), 4]` = `[phys_high, spec_high, phys_pko, spec_pko]` per (defender i,
+        attacker j): per opp mon j the top-`k_bench` most-believed candidates from ITS OWN slot of the
+        composed posterior (selection detached, weights differentiable — the belief gradient now reaches
+        the BENCH slots' move heads for the first time), the de-timid attacker recipe (the
+        `discrete_incoming` coarse-signal convention: no boosts/burn/weather — correct for a bench mon,
+        which switches in at neutral stages), our REAL-spread defenders + our-side screens. REVEALED- and
+        alive-gated per attacker; the opp ACTIVE's column is ZEROED (that quadrant is D3's job at full
+        candidate width — decorrelation, not duplication). Delivered at the (our-mon, opp-mon) block."""
+        B, device, eps = ctx.batch_size, ctx.device, 1e-6
+        ar = torch.arange(B, device=device)
+        # --- per-slot candidate selection (the _opp_candidate_weights math, per opp mon j) ---
+        w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]   # [B,6,M]
+        K = min(int(k_bench), w_all.shape[-1])
+        topk_idx = w_all.detach().topk(K, dim=-1).indices                              # [B,6,K] DETACHED
+        w_k = w_all.gather(-1, topk_idx)                                               # [B,6,K] diff'able
+        bp_k = self.MOVE_BP[topk_idx]                                                  # [B,6,K]
+        mty_k = self.MOVE_TYPE_IDX[topk_idx]
+        phys_k = self.MOVE_PHYS[topk_idx]
+        acc_k = self.MOVE_ACCURACY[topk_idx]
+        # --- attackers = the opp 6 (de-timid; revealed+alive-gated; active column zeroed) ---
+        opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+        a_base = self.BASE_STATS[ctx.species_ids[:, opp]]                              # [B,6,6]
+        off_const = 31.0 + 252.0 / 4.0 + 5.0
+        atk_j = (2.0 * a_base[..., 1] + off_const) * 1.1                               # [B,6]
+        spa_j = (2.0 * a_base[..., 3] + off_const) * 1.1
+        at1 = ctx.type1_ids[:, opp]
+        at2 = ctx.type2_ids[:, opp]
+        revealed_j = (1.0 - ctx.opp_believed_mask.float())                             # [B,6]
+        alive_j = (ctx.hp_and_active[:, opp, 0] > 0).float()
+        not_active_j = torch.ones(B, TEAM_SIZE, device=device)
+        not_active_j[ar, ctx.opp_active_local] = 0.0
+        att_gate = revealed_j * alive_j * not_active_j                                 # [B,6]
+        # --- defenders = our 6 (the _incoming_rolls real-spread recipe) ---
+        d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]
+        spread = ctx.pokemon_part[:, :TEAM_SIZE,
+                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        iv = spread[..., 0:6] * 31.0
+        ev = spread[..., 6:12] * 252.0
+        nat = spread[..., 13:18]
+        def_stat = (2.0 * d_base[..., 2] + iv[..., 2] + ev[..., 2] / 4.0 + 5.0) * nat[..., 1]  # [B,6]
+        spd_stat = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]
+        maxhp = 2.0 * d_base[..., 0] + iv[..., 0] + ev[..., 0] / 4.0 + 110.0
+        hp_frac = ctx.hp_and_active[:, :TEAM_SIZE, 0]
+        cur_hp = hp_frac * maxhp
+        def_alive = (hp_frac > 0).float()                                              # [B,6]
+        t1d = ctx.type1_ids[:, :TEAM_SIZE]
+        t2d = ctx.type2_ids[:, :TEAM_SIZE]
+        amul = self.ABILITY_DAMAGE_MULT[ctx.ability1_ids[:, :TEAM_SIZE]]               # [B,6,T]
+        # --- damage per (defender i, attacker j, candidate c) → [B,6,6,K] ---
+        idx = mty_k[:, None, :, :].expand(B, TEAM_SIZE, TEAM_SIZE, K)                  # [B,6i,6j,K]
+        eff = (torch.gather(self.CHART[t1d][:, :, None, :].expand(B, TEAM_SIZE, TEAM_SIZE, -1), 3, idx)
+               * torch.gather(self.CHART[t2d][:, :, None, :].expand(B, TEAM_SIZE, TEAM_SIZE, -1), 3, idx)
+               * torch.gather(amul[:, :, None, :].expand(B, TEAM_SIZE, TEAM_SIZE, -1), 3, idx))
+        A = phys_k * atk_j[:, :, None] + (1.0 - phys_k) * spa_j[:, :, None]            # [B,6j,K]
+        D = (phys_k[:, None, :, :] * def_stat[:, :, None, None]
+             + (1.0 - phys_k)[:, None, :, :] * spd_stat[:, :, None, None])             # [B,6i,6j,K]
+        is_stab = ((mty_k == at1[:, :, None]) | (mty_k == at2[:, :, None])).float()    # [B,6j,K]
+        stab = (1.0 + 0.5 * is_stab)[:, None, :, :]
+        core = 42.0 * bp_k[:, None, :, :] * A[:, None, :, :] / (D + eps) / 50.0 + 2.0
+        dmg_ns = core * stab * eff * 0.925
+        dmg_ns = dmg_ns * (bp_k > 0).float()[:, None, :, :]                            # kill the +2 floor
+        reflect, light_screen = ctx.screen_feature[:, 0:1], ctx.screen_feature[:, 2:3]  # [B,1] our side
+        screen = (1.0 - 0.5 * (reflect[:, :, None] * phys_k
+                               + light_screen[:, :, None] * (1.0 - phys_k)))           # [B,6j,K]
+        high, _low, _crit, ko = self._rolls(dmg_ns, screen[:, None, :, :],
+                                            maxhp[:, :, None, None], cur_hp[:, :, None, None],
+                                            acc_k[:, None, :, :], eps)                 # each [B,6i,6j,K]
+        wb = w_k[:, None, :, :]
+        pm = phys_k[:, None, :, :]
+        cells = torch.stack([
+            (wb * high * pm).amax(dim=-1), (wb * high * (1.0 - pm)).amax(dim=-1),
+            (wb * ko * pm).amax(dim=-1), (wb * ko * (1.0 - pm)).amax(dim=-1),
+        ], dim=-1)                                                                     # [B,6i,6j,4]
+        return cells * def_alive[:, :, None, None] * att_gate[:, None, :, None]
+
     def pairwise_incoming(self, ctx: 'ExtractorContext',
                           move_belief_logits: torch.Tensor,
                           cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> torch.Tensor:

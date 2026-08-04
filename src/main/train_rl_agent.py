@@ -2402,7 +2402,7 @@ async def main():
         )
     _ebf = args.edge_bias_families
     if _ebf and _ebf != "off":
-        _valid = {"d1", "d2", "d3", "s1", "s3", "v"}
+        _valid = {"d1", "d2", "d3", "d4", "s1", "s3", "v"}
         _fams = {"d1", "d3"} if _ebf == "d" else set(_ebf.split(","))
         if _fams - _valid:
             parser.error(f"--edge-bias-families: unknown families {sorted(_fams - _valid)} "
@@ -2410,8 +2410,8 @@ async def main():
         if (_fams & {"d1", "s1"}) and not (args.damage_op and args.damage_outgoing):
             parser.error("--edge-bias-families d1/s1 require --damage-op AND --damage-outgoing "
                          "(--unified-damage both / --unified-moves both).")
-        if (_fams & {"d2", "v"}) and not args.damage_op:
-            parser.error("--edge-bias-families d2/v require --damage-op (the op's kernels/buffers).")
+        if (_fams & {"d2", "d4", "v"}) and not args.damage_op:
+            parser.error("--edge-bias-families d2/d4/v require --damage-op (the op's kernels/buffers).")
         if (_fams & {"d3", "s3"}) and not (args.entity_topk_seats and args.entity_topk_seats > 0):
             parser.error("--edge-bias-families d3/s3 require --entity-topk-seats > 0 (the bias rows "
                          "ARE the E4 threat seats).")
