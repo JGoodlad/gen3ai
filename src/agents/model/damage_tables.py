@@ -757,6 +757,15 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
     }
 
 
+# gen3_edge_bias_trunk_v1 (X family): Pursuit — the switch-out punisher (doubled BP on the
+# switching mon). Resolved FAIL-LOUD at import like the trap ids.
+def _pursuit_num() -> int:
+    md = gen3_data.moves.get("pursuit")
+    if md is None or md.num <= 0:
+        raise ValueError("pursuit failed to resolve — the X-family exposure edge would be empty.")
+    return md.num
+
+
 # gen3_edge_bias_trunk_v1 (T family): the three gen3 TRAP abilities. Resolution is FAIL-LOUD — a
 # rename/missing id would otherwise silently zero the whole family (the GIGO class).
 _TRAP_ABILITY_IDS = ("shadowtag", "arenatrap", "magnetpull")

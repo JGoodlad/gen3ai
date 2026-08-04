@@ -1592,6 +1592,59 @@ class DamageOperator(torch.nn.Module):
         ], dim=-1)                                                                     # [B,6i,6j,4]
         return cells * def_alive[:, :, None, None] * att_gate[:, None, :, None]
 
+    def pairwise_entry(self, ctx: 'ExtractorContext',
+                       move_belief_logits: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """gen3_edge_bias_trunk_v1 (X): the ENTRY/EXIT edge — what switching a mon IN or OUT costs,
+        per mon, delivered at the (mon seat, GLOBAL seat) pair. → `(our_cells [B,6,4],
+        opp_cells [B,6,4])`, cell `[entry_chip, pursuit_p, pursuit_eff, grounded]`:
+
+          * entry_chip — gen3 Spikes on the mon's OWN entry side (1/2/3 layers → 1/8, 1/6, 1/4 of
+            maxhp), grounded-gated (Flying / Levitate immune; opp Levitate revealed-exact else the
+            SPECIES_TRAP_PRIOR levitate column — the T-family fold, reused).
+          * pursuit_p — P(the OTHER side carries Pursuit): vs OUR mons the belief-composed max over
+            alive opp slots (revealed rides pinned ≈1); vs OPP mons exact (our movesets are known).
+          * pursuit_eff — Dark effectiveness at the victim's types (decorrelated from p).
+        Victim-alive-gated; opp cells revealed-gated (unknown types). The "switching is not free"
+        facts, attention-composable with every mon token via the global seat."""
+        B, device = ctx.batch_size, ctx.device
+        from agents.model.damage_tables import _pursuit_num, _T2I
+        pur = _pursuit_num()
+        dark = _T2I["DARK"]
+        chip_table = torch.tensor([0.0, 1.0 / 8, 1.0 / 6, 1.0 / 4], device=device)
+        # --- grounded (the T-family recipe) ---
+        our_ab = ctx.ability1_ids[:, :TEAM_SIZE]
+        opp_ab = ctx.ability1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
+        opp_sp = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
+        ab_rev_j = (opp_ab > 0).float()
+        fly_i = (self.TYPE_IS_FLYING[ctx.type1_ids[:, :TEAM_SIZE]]
+                 + self.TYPE_IS_FLYING[ctx.type2_ids[:, :TEAM_SIZE]]).clamp(max=1.0)
+        fly_j = (self.TYPE_IS_FLYING[ctx.type1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]]
+                 + self.TYPE_IS_FLYING[ctx.type2_ids[:, TEAM_SIZE:2 * TEAM_SIZE]]).clamp(max=1.0)
+        gr_i = (1.0 - fly_i) * (1.0 - self.ABILITY_IS_LEVITATE[our_ab])
+        gr_j = (1.0 - fly_j) * (1.0 - (ab_rev_j * self.ABILITY_IS_LEVITATE[opp_ab]
+                                       + (1.0 - ab_rev_j) * self.SPECIES_TRAP_PRIOR[opp_sp, 3]))
+        # --- entry chip from each side's OWN hazards (spikes_feature = [our_side, opp_side] / 3) ---
+        layers = (ctx.spikes_feature * 3.0).round().long().clamp(0, 3)           # [B,2]
+        chip_our = chip_table[layers[:, 0]][:, None] * gr_i                       # [B,6]
+        chip_opp = chip_table[layers[:, 1]][:, None] * gr_j
+        # --- Pursuit exposure ---
+        alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
+        alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()
+        w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
+        p_pur_vs_us = (w_all[:, :, pur] * alive_j).amax(dim=-1, keepdim=True)     # [B,1]
+        we_have_pur = ((ctx.all_move_ids[:, :TEAM_SIZE] == pur).any(-1).float()
+                       * alive_i).amax(dim=-1, keepdim=True)                      # [B,1]
+        eff_i = self.CHART[ctx.type1_ids[:, :TEAM_SIZE]][..., dark]                 * self.CHART[ctx.type2_ids[:, :TEAM_SIZE]][..., dark]             # [B,6]
+        eff_j = self.CHART[ctx.type1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]][..., dark]                 * self.CHART[ctx.type2_ids[:, TEAM_SIZE:2 * TEAM_SIZE]][..., dark]
+        revealed_j = (1.0 - ctx.opp_believed_mask.float())
+        our_cells = torch.stack([
+            chip_our, p_pur_vs_us.expand(-1, TEAM_SIZE), eff_i.clamp(max=4.0) / 4.0, gr_i,
+        ], dim=-1) * alive_i[:, :, None]                                          # [B,6,4]
+        opp_cells = torch.stack([
+            chip_opp, we_have_pur.expand(-1, TEAM_SIZE), eff_j.clamp(max=4.0) / 4.0, gr_j,
+        ], dim=-1) * (alive_j * revealed_j)[:, :, None]                           # [B,6,4]
+        return our_cells, opp_cells
+
     def pairwise_trap(self, ctx: 'ExtractorContext') -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (T): the mon↔mon TRAPPING edge — gen3-critical (Shadow Tag /
         Arena Trap / Magnet Pull; the `trap_core` archetype exists for this). `[B, TEAM_SIZE(our i),

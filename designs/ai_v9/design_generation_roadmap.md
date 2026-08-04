@@ -192,8 +192,9 @@ missing quadrant landed as EDGES (mon↔mon, per-opp-mon top-K_bench=4 candidate
 moves), which SIDESTEPS the bench-K seat probe entirely (the probe question was about SEATS; the
 edge form needs no new seats). Seven families total, each independently ablatable. SLICE 5: **E5 tail-threat seats** landed (v57 — 6 per-opp-mon truncation-insurance tokens,
 no new token-type row so in-generation checkpoints stay loadable). SLICE 6: **T** (trapping —
-new `build_trap_tables` physics, fail-loud; both directions at the mon↔mon block). NOT yet: C/X
-families, the op-concat deletion (deprecation playbook: home first — the per-family ablation audit runs on
+new `build_trap_tables` physics, fail-loud; both directions at the mon↔mon block). SLICE 7: **X** (entry/exit — Spikes chip + Pursuit exposure at the (mon, global-seat)
+pairs). NOT yet: the C family (consequence deltas — the one remaining, biggest design lift),
+the op-concat deletion (deprecation playbook: home first — the per-family ablation audit runs on
 the gen-1 training run now underway). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the
 concat deletion is the eventual refund). Suite 3945 green; bridge smoke passes with edges on.
 Verdict remains gen-vs-gen ELO + the per-family bias ablation.

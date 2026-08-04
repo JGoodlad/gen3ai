@@ -83,10 +83,35 @@ def test_magnet_pull_only_traps_steel():
     assert float(cells[:, 1, :, 0][non_steel].abs().sum()) == 0.0
 
 
+def test_entry_edge_kernel_invariants():
+    """X family: a Flying victim takes NO spikes chip; forcing OUR mon to carry Pursuit drives the
+    opp-side exposure prob to 1; cells live in [0,1] (eff normalized)."""
+    fe = _make(**_T_TOGGLES).eval()
+    obs = _obs(seed=41)
+    with torch.no_grad():
+        fe(obs)
+    ctx = fe.unpack(obs)
+    from agents.model.damage_tables import _pursuit_num, _T2I
+    ctx.all_move_ids[:, 0, 0] = _pursuit_num()              # our mon 0 carries Pursuit
+    ctx.type1_ids[:, 1] = _T2I["FLYING"]                    # our mon 1 is Flying
+    ctx.type2_ids[:, 1] = _T2I["FLYING"]
+    with torch.no_grad():
+        our_c, opp_c = fe.damage_op.pairwise_entry(ctx, fe.last_move_belief_logits)
+    assert our_c.shape == (2, TEAM_SIZE, 4) and opp_c.shape == (2, TEAM_SIZE, 4)
+    assert float(our_c[:, 1, 0].abs().sum()) == 0.0, "Flying mon takes no spikes chip"
+    alive0 = (ctx.hp_and_active[:, 0, 0] > 0).float()
+    # Wherever our Pursuit carrier is alive, every revealed+alive opp cell reads exposure 1.0.
+    for b in range(2):
+        if alive0[b] > 0:
+            live = (opp_c[b, :, 1] > 0)
+            assert bool((opp_c[b, live, 1] == 1.0).all())
+    assert float(our_c.min()) >= 0.0
+
+
 def test_family_integration_and_gate():
     with pytest.raises(ValueError, match="edge_bias_families t"):
         _make(edge_bias_families="t")                       # no damage_op
-    fe = _make(**dict(_T_TOGGLES, edge_bias_families="d1,d2,d3,d4,s1,s3,v,t")).eval()
+    fe = _make(**dict(_T_TOGGLES, edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x")).eval()
     with torch.no_grad():
         pi, vf = fe(_obs(seed=35))
     assert torch.isfinite(pi).all() and torch.isfinite(vf).all()

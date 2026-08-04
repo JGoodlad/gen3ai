@@ -813,9 +813,10 @@ _EDGE_S3_CELL = 3   # [land, land·immob, w] per (their believed status move c, 
 _EDGE_V_CELL = 3    # [p_outspeed, both_alive, revealed_j] per (our mon i, opp mon j)
 _EDGE_D4_CELL = 4   # [phys_high, spec_high, phys_pko, spec_pko] per (our mon i, opp BENCH mon j)
 _EDGE_T_CELL = 2    # [P(i traps j), P(j traps i)] per (our mon i, opp mon j)
+_EDGE_X_CELL = 4    # [entry_chip, pursuit_p, pursuit_eff, grounded] per (mon, GLOBAL seat)
 _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
                   "d4": _EDGE_D4_CELL, "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL,
-                  "v": _EDGE_V_CELL, "t": _EDGE_T_CELL}
+                  "v": _EDGE_V_CELL, "t": _EDGE_T_CELL, "x": _EDGE_X_CELL}
 
 
 class EdgeBias(torch.nn.Module):
@@ -895,6 +896,13 @@ class EdgeBias(torch.nn.Module):
         if self.d4_map is not None and cells.get("d4") is not None:
             # D4 is the full mon↔mon block too (the active column arrives pre-zeroed by the kernel).
             self._write_block(bias, self.d4_map(cells["d4"]), our, opp)
+        if self.x_map is not None and cells.get("x") is not None:
+            # X connects each mon to the GLOBAL seat (index 2·TEAM_SIZE + N_HISTORY_TURNS): entry/
+            # exit costs are board-level facts, composable with every mon token through it.
+            g = 2 * TEAM_SIZE + N_HISTORY_TURNS
+            x_our, x_opp = cells["x"]
+            self._write_block(bias, self.x_map(x_our[:, :, None, :]), our, slice(g, g + 1))
+            self._write_block(bias, self.x_map(x_opp[:, :, None, :]), opp, slice(g, g + 1))
         if self.t_map is not None and cells.get("t") is not None:
             # T is mon↔mon like V (both directions ride the cell's two channels + the two head-sets).
             self._write_block(bias, self.t_map(cells["t"]), our, opp)
@@ -2703,6 +2711,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "outgoing kernels — require --damage-op AND --damage-outgoing "
                     "(--unified-damage both / --unified-moves both)."
                 )
+            if "x" in fams and not (damage_op and self.damage_op_prefuse):
+                raise ValueError(
+                    "edge_bias_families x reads the pre-transformer composed posterior (Pursuit "
+                    "belief) + the op's tables — requires --damage-op + --damage-op-prefuse."
+                )
             if "t" in fams and not damage_op:
                 raise ValueError(
                     "edge_bias_families t prices mon↔mon trapping from the op's trap tables — "
@@ -3451,6 +3464,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if "d4" in _fams:
                 _cells["d4"] = self.damage_op.pairwise_bench_incoming(
                     ctx, self.last_move_belief_logits)
+            if "x" in _fams:
+                _cells["x"] = self.damage_op.pairwise_entry(ctx, self.last_move_belief_logits)
             if "t" in _fams:
                 _cells["t"] = self.damage_op.pairwise_trap(ctx)
             if "v" in _fams:
