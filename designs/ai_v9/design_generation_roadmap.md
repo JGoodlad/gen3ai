@@ -193,7 +193,15 @@ moves), which SIDESTEPS the bench-K seat probe entirely (the probe question was 
 edge form needs no new seats). Seven families total, each independently ablatable. SLICE 5: **E5 tail-threat seats** landed (v57 — 6 per-opp-mon truncation-insurance tokens,
 no new token-type row so in-generation checkpoints stay loadable). SLICE 6: **T** (trapping —
 new `build_trap_tables` physics, fail-loud; both directions at the mon↔mon block). SLICE 7: **X** (entry/exit — Spikes chip + Pursuit exposure at the (mon, global-seat)
-pairs). NOT yet: the C family (consequence deltas — the one remaining, biggest design lift),
+pairs). **FIRST AUDIT READ (2026-08-04, gen-1 @9.6M of 40M, 2048 eval-trace states — PRELIMINARY,
+mid-training):** the OUTGOING damage families already dominate — d1 kl 0.059 / 8.2% flips, d2 kl
+0.057 / 10.3% flips / |dV| 1.62 (the critic's largest edge dependence) — while the incoming
+families are near-decorative so far (d3 0.0009, s3 0.00007; s1 0.002, v 0.002/3.1% flips); ALL
+families off = kl 0.124 / 16.6% flips. This REPLICATES the ledger's P1 shape (outgoing = the
+policy's biggest op dependency) and rhymes with the K10 incoming-trunk nulls — on a fresh
+generation, via a different delivery route. Re-audit at end-of-run before any keep/cut decision
+(report: `<run>/edge_audit_9p6M.json`; the run predates t/x/E5, which need their own trained run).
+NOT yet: the C family (consequence deltas — the one remaining, biggest design lift),
 the op-concat deletion (deprecation playbook: home first — the per-family ablation audit runs on
 the gen-1 training run now underway). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the
 concat deletion is the eventual refund). Suite 3945 green; bridge smoke passes with edges on.
