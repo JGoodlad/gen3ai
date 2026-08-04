@@ -352,13 +352,19 @@ result, since the offline replay/clone layer is Node either way. What is **actua
 → launcher restart; the child survives via `catch_unwind`) rather than desync. On the **training
 pool it is a non-issue**: 719/719 `data/teams/` teams construct, and 1500 random-play rust battles
 hit **zero** coverage errors (the only 4 failures were the 1000-turn runaway cap). On
-`gen3randombattle` **14.0% of teams / 27.0% of battles** fail, and the top offenders are **not
-moves** — Deoxys/Unown formes are simply **missing rows in `data/pokemon/gen3_species.json`** (a
-data-extractor gap, 5.96% of teams) and `forecast`/Castform (3.1%); `transform` is the only
-construction-time move left. Arbitrary ladder gen3ou is ~5% of battles (INFERRED from Smogon usage
-weights). Note the inverse hazard: unmodeled **items** (`shellbell`, `berryjuice`, `mentalherb`)
-and ~15 unreferenced moves (`fakeout`, `rollout`, lock-in moves, …) have **no** fail-loud and run
-as silent no-ops / generic hits — negligible in the pool, ~2.7% of ladder battles. (The former
+`gen3randombattle` the remaining construction failures are down to **Forecast/Castform alone
+(~2.6% of teams → ~5% of battles, measured over 3000 generated teams)**: the Deoxys/Unown forme
+DATA gap is fixed (`gen3_species_formes_v1`, ROUND 38), `transform` is modeled
+(`gen3_transform_v1`, ROUND 33) and the wrap family too (`gen3_partial_trap_v1`, ROUND 32).
+Arbitrary ladder gen3ou is ~5% of battles (INFERRED from Smogon usage weights). The old inverse
+hazard — unmodeled items/moves running as SILENT no-ops / generic hits — is **CLOSED by the
+ROUND 39/40 silent-no-op audits**: the 5 genuinely-effectful unmodeled items
+(`gen3_unmodeled_item_failloud_v1`) and the 16 silent-desync moves (`fakeout`, `rollout`, the
+lock-in family, `eruption`, … — `gen3_unmodeled_move_failloud_v2`; full-universe measurement:
+369 gen3-legal moves → 278 modeled, 74 runtime fail-louds, 16 ran unguarded) now FAIL LOUD at
+construction, and every gen3 ability is modeled, verified-no-op, or fail-loud (Forecast).
+Measured exposure of the guarded sets is ZERO on both surfaces (0 pool carriers; 0 in the entire
+curated randbats movepool) — latent-hazard guards, not active-bug fixes. (The former
 **seeded speed-tied-lead** / unspecified-gender divergence is FIXED —
 `gen3_turn0_construction_v1` models the turn-0 construction window, so a seeded rust battle is
 byte-for-byte with node.) See `src/utils/bridge/README.md`. Transport parity (poke-env sends

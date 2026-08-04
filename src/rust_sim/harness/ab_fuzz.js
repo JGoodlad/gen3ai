@@ -155,11 +155,15 @@ function adaptRandbatsTeam(team) {
     // path below): the reject wins even for a hand-hacked non-Forecast Castform, and
     // even if `forecast` were ever mistakenly added to a modeled/no-op set. Tallies
     // as `ability:forecast` in `drop_reasons`.
-    // The MOVE-keyed reject below reads `REJECT_MOVES`, which is **now EMPTY** — Transform
-    // (`gen3_transform_v1`, ROUND 33) and the wrap family (ROUND 32) were its last members and
-    // both are modeled bit-for-bit, so gen3-randbats **Ditto and Mew now reach the port** (they
-    // were rejection-sampled out before, which is exactly what hid the Transform no-op from
-    // every offline gate). The loop stays as the seam for the next deferral.
+    // The MOVE-keyed reject below reads `REJECT_MOVES` (shared with gen_e2e_fuzz.js — one
+    // source of truth). Its ORIGINAL members — Transform (`gen3_transform_v1`, ROUND 33) and
+    // the wrap family (ROUND 32) — are modeled bit-for-bit and LEFT, so gen3-randbats
+    // **Ditto and Mew reach the port** (they were rejection-sampled out before, which is
+    // exactly what hid the Transform no-op from every offline gate). The CURRENT members are
+    // the ROUND-40 move audit's 16 silent-desync moves (`gen3_unmodeled_move_failloud_v2`) —
+    // ZERO of which appear in the curated gen3randombattle movepool (measured exhaustively),
+    // so this reject never fires on randbats today; it exists so a future randbats data
+    // update cannot feed a guarded carrier to the construction panic.
     for (const mv of (set.moves || [])) {
       if (REJECT_MOVES.has(toId(mv))) return { reject: `move:${toId(mv)}` };
     }

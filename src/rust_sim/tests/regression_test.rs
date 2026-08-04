@@ -13847,6 +13847,51 @@ fn modeled_and_inert_items_still_build_fine() {
     }
 }
 
+/// `gen3_unmodeled_move_failloud_v2` — the ROUND-40 move audit's SIXTEEN silent-desync moves
+/// (unmodeled, yet the engine RAN them with no guard per the `scan_move_probe` sweep: flat BP
+/// on a variable-BP move, the lock-in family with no lock, missing first-turn / asleep-only /
+/// no-KO gates) must FAIL LOUD at construction rather than run silently wrong. Verified
+/// per-move (not once for the set) so a partial revert cannot pass. Exposure is ZERO on both
+/// fuzzed surfaces (0 pool carriers; 0 in the entire curated randbats movepool) — this is a
+/// LATENT-HAZARD guard, the moves sibling of `unmodeled_items_fail_loud_at_construction`.
+#[test]
+fn unmodeled_moves_fail_loud_at_construction() {
+    let d = dex();
+    let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
+    for mv in [
+        "dreameater", "eruption", "fakeout", "falseswipe", "furycutter", "iceball",
+        "outrage", "petaldance", "rage", "revenge", "rollout", "secretpower",
+        "smellingsalts", "thrash", "uproar", "weatherball",
+    ] {
+        let carrier = format!("Snorlax|||immunity|{mv},bodyslam|Adamant|252,252,,,,|||||");
+        let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            Battle::start_with_switchins(&opts_cg(&carrier, foe, "1,2,3,4"), &d)
+        }));
+        assert!(
+            caught.is_err(),
+            "move {mv} is UNMODELED-but-ran and must fail loud at construction, not desync silently"
+        );
+    }
+}
+
+/// The MOVE guard's NEGATIVE CONTROL — the MODELED near-neighbours of the guarded classes
+/// must still construct fine: `waterspout` (the modeled hp-scaled twin of the guarded
+/// `eruption`), `return`/`flail` (modeled variable-BP), `doubleedge` (modeled recoil),
+/// `sleeptalk` (engine-MODELED though the e2e picker rejects it carrier-conditionally — it
+/// must NOT be swept into the guard), and `hyperbeam` (modeled recharge). Without this, an
+/// over-broad guard (e.g. keyed on "has a basePowerCallback") would pass the test above
+/// while wrongly rejecting legal teams, and nothing would catch it.
+#[test]
+fn modeled_near_neighbour_moves_still_build_fine() {
+    let d = dex();
+    let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
+    for mv in ["waterspout", "return", "flail", "doubleedge", "sleeptalk", "hyperbeam"] {
+        let carrier = format!("Snorlax|||immunity|{mv},bodyslam|Adamant|252,252,,,,|||||");
+        let b = Battle::start_with_switchins(&opts_cg(&carrier, foe, "1,2,3,4"), &d);
+        assert!(b.is_ok(), "modeled move {mv} must construct normally");
+    }
+}
+
 // ── Draw-count / first-mover tail fixes (rmry3vbgm / rmry3ytkn A/B round) ──────────────
 //
 // Ground truth: `harness/probe_dc_batch_regression_rng.js` (raw seed 13,27,41,55, aligned to

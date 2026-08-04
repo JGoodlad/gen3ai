@@ -5738,7 +5738,85 @@ audit: `fakeout`, `rollout`, the lock-in family) and of ABILITIES is NOT done he
 same three-way classification (MODELED / deliberately-NO-OP / silently-unhandled) and the same
 exposure measurement before any id is added to a guard, for exactly the reason the item list is five
 and not thirty-two. None of the five items was MODELED; that remains open and is correctly
-prioritised low by the zero-exposure measurement.
+prioritised low by the zero-exposure measurement. **→ CLOSED by ROUND 40 below.**
+
+### ROUND 40 (FIX) — the MOVES + ABILITIES halves of the silent-no-op audit close the class
+
+`gen3_unmodeled_move_failloud_v2`. The ROUND-39 honest-scope items — the move and ability halves of
+the silent-no-op audit — done with the same method, and with a STRONGER oracle pair than the item
+round had: every classification below is the CROSS of the e2e lockstep predicate
+(`gen_e2e_fuzz.js::isModeledMove`, e2e-admission-gated) against the EMPIRICAL engine verdict
+(`scan_move_probe` — actually run each move through `Battle::start_with_switchins → run_full_battle`
+under `catch_unwind`), with **ZERO disagreements on the modeled set** (every one of the 278
+picker-modeled moves ran without a fail-loud — the lockstep cross-validation).
+
+**THE MOVE CENSUS (full gen3-legal universe, 369 moves — `exists && !isNonstandard && gen<=3`,
+`struggle` excluded as synthetic):** 278 MODELED · 91 unmodeled, of which **74 already FAIL LOUD at
+runtime** (the `run_status_move` / fixed-damage / charge / snore guards — honest crash, correctly NOT
+listed in any construction guard) and **16 RAN with no guard while outside the modeled universe** —
+the silent-desync class, each with a genuine gen-3 sub-mechanic the engine gets WRONG rather than
+no-ops:
+  * FLAT BP on a variable/derived-BP move: `eruption` (hp-scaled 150 — the un-modeled twin of the
+    modeled `waterspout`), `revenge` (×2 if damaged this turn), `smellingsalts` (×2 vs para + cures
+    it), `furycutter` (per-hit escalation), `weatherball` (weather type+BP change);
+  * the LOCK-IN family run as plain one-turn hits (no lock, no escalation, no end-of-lock
+    confusion): `outrage` / `petaldance` / `thrash`, `rollout` / `iceball` (+ the Defense Curl
+    doubling), `uproar` (+ the sleep-block), `rage`;
+  * a missing execution GATE: `fakeout` (first-turn-only — would spam every turn), `falseswipe`
+    (would KO instead of leaving 1 HP), `dreameater` (would hit AWAKE targets), `secretpower`
+    (the terrain-typed secondary).
+`sleeptalk` also reads as unmodeled-but-ran through the picker lens and is deliberately NOT
+guarded — it is engine-MODELED (batch 5); the picker rejects it only carrier-conditionally
+(`sleepTalkPoolModeled`), the one documented false-reject left.
+
+**EXPOSURE — ZERO on both surfaces, measured the item-audit way and then some:** 0 carriers of any
+of the 16 across all 773 `data/teams/` team files (the 719-team training pool's 108 distinct moves
+are ALL modeled — `scan_move_coverage.js` re-confirmed 722/722 clean), and 0 across the **ENTIRE
+curated `gen3randombattle` movepool, checked EXHAUSTIVELY** (220 species / 393 sets / 113 distinct
+movepool ids — stronger than the item audit's 3000-team sample, which was ALSO run and ALSO read 0).
+The 74 runtime-fail-loud moves are likewise absent from the whole randbats movepool; the pool's only
+fail-loud carriers are 3 single-team-blocks (`sandattack`/`confuseray`/`swagger`) sitting in the 51
+gen3ou-validate-fail files OUTSIDE the training pool — and those crash loud anyway. So, exactly like
+the items: a LATENT-HAZARD guard, not an active-bug fix.
+
+**THE FIX:** the 16 populate `state.rs::UNMODELED_FAILLOUD_MOVES` (the construction-time seam
+ROUNDs 32/33 emptied) with the full rationale block at the site, MIRRORED into
+`gen_e2e_fuzz.js::REJECT_MOVES` (the wrap-family pattern — shared by `ab_fuzz.js`'s randbats
+adapter, so a future randbats data update rejection-samples a carrier team instead of panicking).
+Pins: `unmodeled_moves_fail_loud_at_construction` (PER MOVE, revert-verified — emptying the guard
+fails it) + `modeled_near_neighbour_moves_still_build_fine` (the over-broad-guard control:
+`waterspout`/`return`/`flail`/`doubleedge`/`sleeptalk`/`hyperbeam` — the modeled near-neighbours of
+every guarded class must still construct).
+
+**THE ABILITY CENSUS closes with NO new guard needed:** all 76 gen3 abilities are covered —
+`MODELED_ABILITIES ∪ NOOP_ABILITIES` spans 75, and the ONE uncovered id is `forecast`, already
+triple-guarded (the `gen3_forecast_failloud_v1` construction panic + `REJECT_ABILITIES` +
+`REJECT_SPECIES` castform). Its exposure: 0 pool, **2.60% of randbats teams** (78/3000 — consistent
+with ROUND 38's 2.77%), which with formes fixed + transform/wrap modeled makes Forecast the SOLE
+remaining randbats construction blocker (~5% of battles). Caveat kept honest: NOOP membership is a
+separate verification concern (the Plus/Minus lesson — a "no-op" call was wrong once); this audit
+verifies COVERAGE, not each no-op proof.
+
+**Gates:** full suite green, **0 failures** (regression_test 316; +2 pins vs ROUND 39), e2e golden
+md5 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED (grep-verified: none of the 16 appears in ANY
+committed vector beyond the dex dump). OBSERVATION-NEUTRAL by construction — the guard fires only at
+construction of a carrier team, and no committed or fuzzed surface carries one.
+
+**TOOLING FOLLOW-UP (FIXED in the same round):** `scan_move_coverage.js`'s classifier was STALE for
+the newest engine batches (it would have called the 15 batch-7 multihit moves MISMODELED and
+haze/trick/yawn/wrap/transform UNMODELED — pool-invisible since the pool carries none). The mirrored
+sets are refreshed (batch-7 multihit / partial-trap / haze / yawn / trick / transform / volttackle /
+the 16-move construction guard / the bp0-status and triplekick fail-loud rules), and the tool gained
+**`SCAN_UNIVERSE=1`** — classify the ENTIRE gen3-legal universe and exit non-zero if ANY MISMODELED
+(silent-desync) move exists. Current census: **369 → 279 MODELED · 90 FAIL-LOUD · 0 MISMODELED**
+(reconciles with the audit: 279 = 278 picker-modeled + `sleeptalk`; 90 = 74 runtime + 16
+construction). The pool report is byte-identical after the refresh (108/108 MODELED, 722/722 clean).
+Run the invariant after admitting a move class or touching the guard.
+
+**⚠️ A NUMBERS CORRECTION for the audit that queued this round:** the interrupted session's note
+("215 moves need modelling; 83 outside the picker allowlist") does not survive the probe-validated
+measurement — the real census is 369 → 91 unmodeled → 74 fail-loud + 16 silent + 1 false-reject.
+Whatever universe produced 215 was not the gen3-legal one; the numbers above supersede it.
 
 ### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
 

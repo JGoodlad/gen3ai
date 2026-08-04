@@ -1092,7 +1092,7 @@ impl MonState {
         // species), so it catches ACTIVE and BENCH mons alike at construction, before any turn
         // runs, and is GIGO-proof against an odd carrier.
         //
-        // **THE SET IS NOW EMPTY — every move once deferred behind it is MODELED:**
+        // The moves once deferred behind this seam are MODELED:
         //   * the WRAP FAMILY (`wrap`/`bind`/`firespin`/`clamp`/`whirlpool`/`sandtomb`) —
         //     `gen3_partial_trap_v1`, ROUND 32 (repro `soak3/divergences/sbd_msb1zfxs_b237`:
         //     node emitted `|-activate|p1a: Snorlax|move: Wrap|[of] p2a: Shuckle`, the port
@@ -1105,11 +1105,57 @@ impl MonState {
         // choices off the sim's own request and so reaches moves the offline fuzzers' pickers
         // filtered out — the coverage hole this guard class exists to make LOUD.
         //
-        // The mechanism is KEPT (empty) on purpose: it is the deferral seam for the next
-        // unmodeled mechanic, and `a_ditto_without_transform_builds_fine` /
-        // `transform_carriers_build_now_that_transform_is_modeled` are the negative controls
-        // that stop an over-broad guard from silently returning.
-        const UNMODELED_FAILLOUD_MOVES: [&str; 0] = [];
+        // **THE CURRENT LIST — the ROUND 40 move-audit's SILENT-DESYNC class**
+        // (`gen3_unmodeled_move_failloud_v2`, the moves sibling of the item audit above,
+        // MEASURED the same way): crossing the full 369-move gen3-legal universe against
+        // BOTH oracles — `isModeledMove` (the e2e lockstep predicate) and the empirical
+        // `scan_move_probe` engine run (zero disagreements on the modeled set) — leaves 91
+        // unmodeled moves, of which 74 already FAIL LOUD at runtime (the run_status_move /
+        // fixed-damage / charge guards — honest crash, NOT listed here) and SIXTEEN RUN
+        // with no guard while being outside the modeled universe. Each of the 16 has a
+        // genuine gen-3 sub-mechanic the engine would silently get WRONG (not a no-op):
+        //   * variable/derived BP run at a FLAT wrong power: `eruption` (hp-scaled 150),
+        //     `revenge` (×2 if damaged this turn), `smellingsalts` (×2 vs para + cures it),
+        //     `furycutter` (escalates per consecutive hit), `weatherball` (type+BP change
+        //     under weather);
+        //   * the LOCK-IN family run as plain one-turn hits (no lock, no escalation, no
+        //     end-of-lock confusion): `outrage`/`petaldance`/`thrash`, `rollout`/`iceball`
+        //     (+ the Defense Curl doubling), `uproar` (+ the sleep-block), `rage`;
+        //   * a missing execution GATE: `fakeout` (first-turn-only onTry — would spam every
+        //     turn), `falseswipe` (would KO instead of leaving 1 HP), `dreameater` (the
+        //     asleep-only gate — would hit awake targets), `secretpower` (the terrain-typed
+        //     secondary).
+        // EXPOSURE IS ZERO ON BOTH SURFACES WE ACTUALLY USE (the item-audit measurement,
+        // repeated): 0 carriers across the 773 `data/teams/` team files (the 719-team
+        // training pool's 108 distinct moves are ALL modeled), and 0 across the ENTIRE
+        // curated gen3randombattle movepool (220 species / 393 sets / 113 distinct moves —
+        // exhaustive, not sampled). So this is a LATENT-HAZARD guard like the item one: the
+        // day one of these reaches the engine (a hand-built team, a format change, a new
+        // pool) it CRASHES at construction instead of lying to the policy. `sleeptalk` is
+        // deliberately NOT listed (engine-MODELED, batch 5 — the picker rejects it only as
+        // a carrier-conditional).
+        //
+        // The seam's negative controls: `a_ditto_without_transform_builds_fine` /
+        // `transform_carriers_build_now_that_transform_is_modeled` stop an over-broad guard
+        // from silently returning.
+        const UNMODELED_FAILLOUD_MOVES: [&str; 16] = [
+            "dreameater",
+            "eruption",
+            "fakeout",
+            "falseswipe",
+            "furycutter",
+            "iceball",
+            "outrage",
+            "petaldance",
+            "rage",
+            "revenge",
+            "rollout",
+            "secretpower",
+            "smellingsalts",
+            "thrash",
+            "uproar",
+            "weatherball",
+        ];
         if let Some(bad) = set
             .moves
             .iter()

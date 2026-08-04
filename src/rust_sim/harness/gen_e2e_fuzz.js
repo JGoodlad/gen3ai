@@ -1066,13 +1066,23 @@ const REJECT_SPECIES = new Set(['castform']);
 // `|-transform|p1a: Ditto|p2a: Kyogre` while the rust bridge emitted nothing (repro
 // `soak_randbats/divergences/sbd_msapcesj_b22`).
 //
-// **THE SET IS NOW EMPTY.** Both former members are modeled bit-for-bit and have LEFT:
-// the wrap family in ROUND 32 (`gen3_partial_trap_v1`) and `transform` in ROUND 33
-// (`gen3_transform_v1`). Kept in LOCKSTEP with `state.rs::UNMODELED_FAILLOUD_MOVES` (also
-// now empty) — every move the engine fail-louds on must be rejected here, or the fuzzers
-// panic instead of skipping the team. NOTE that emptying it cannot shift the e2e golden:
-// ZERO of the 722 `data/teams/` pool teams carry Transform (or Ditto), verified by grep.
-const REJECT_MOVES = new Set([]);
+// Both ORIGINAL members are modeled bit-for-bit and have LEFT: the wrap family in
+// ROUND 32 (`gen3_partial_trap_v1`) and `transform` in ROUND 33 (`gen3_transform_v1`).
+//
+// **THE CURRENT MEMBERS are the ROUND-40 move-audit's 16 SILENT-DESYNC moves**
+// (`gen3_unmodeled_move_failloud_v2` — see the rationale block on
+// `state.rs::UNMODELED_FAILLOUD_MOVES`, kept in LOCKSTEP with it): each RAN in the engine
+// with no guard while being outside the modeled universe (flat BP on a variable-BP move,
+// a lock-in family with no lock, a missing first-turn/asleep-only gate), so the engine now
+// fail-louds on them at CONSTRUCTION and every carrier team must be rejected here, or the
+// fuzzers panic instead of skipping the team. EXPOSURE IS ZERO on both fuzzed surfaces
+// (0 carriers in `data/teams/`; 0 in the ENTIRE curated gen3randombattle movepool —
+// 220 species / 393 sets, exhaustive), so populating this cannot shift the e2e golden.
+const REJECT_MOVES = new Set([
+  'dreameater', 'eruption', 'fakeout', 'falseswipe', 'furycutter', 'iceball',
+  'outrage', 'petaldance', 'rage', 'revenge', 'rollout', 'secretpower',
+  'smellingsalts', 'thrash', 'uproar', 'weatherball',
+]);
 function abilityAllowed(id) {
   const a = toId(id);
   if (REJECT_ABILITIES.has(a)) return false; // deferred / fail-loud → never admitted

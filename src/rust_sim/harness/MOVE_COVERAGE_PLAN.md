@@ -9,10 +9,18 @@ playing every `data/teams/` team. NODE/analysis-only; no engine code changed.
 # static map + team tallies + greedy set-cover (deterministic):
 node src/rust_sim/harness/scan_move_coverage.js            # human report
 SCAN_JSON=1 node src/rust_sim/harness/scan_move_coverage.js # machine JSON
+# ROUND-40 invariant check — classify the ENTIRE gen3-legal universe; exits non-zero if any
+# MISMODELED (silent-desync) move exists (run after admitting a move class / touching the
+# state.rs UNMODELED_FAILLOUD_MOVES guard):
+SCAN_UNIVERSE=1 node src/rust_sim/harness/scan_move_coverage.js
 # AUTHORITATIVE engine oracle (actually runs each move through the engine, catches fail-louds):
 CARGO_TARGET_DIR=/tmp/pokesim_target_scope cargo build --release --bin scan_move_probe
 printf 'wish\ndoubleedge\n...' | /tmp/pokesim_target_scope/release/scan_move_probe
 ```
+
+**Current universe census (ROUND 40, `gen3_unmodeled_move_failloud_v2`):** 369 gen3-legal moves →
+**279 MODELED · 90 FAIL-LOUD (74 runtime + 16 construction) · 0 MISMODELED** — the engine has NO
+silent-desync move left in the whole universe.
 
 ## Headline numbers
 

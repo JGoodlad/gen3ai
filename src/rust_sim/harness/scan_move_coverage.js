@@ -83,7 +83,7 @@ const MODELED_BATCH6 = new Set([
 // random(100)) post-hit effects on a DAMAGING move: recoil / drain / self-drop / item-removal
 // / rapid-spin. The engine now models these bit-for-bit (they RUN + apply the side-effect), so
 // they are MODELED, not the stale MISMODELED the pre-batch-1 scan reported.
-const MODELED_RECOIL = new Set(['doubleedge', 'takedown', 'submission']);
+const MODELED_RECOIL = new Set(['doubleedge', 'takedown', 'submission', 'volttackle']);
 const MODELED_DRAIN = new Set(['absorb', 'megadrain', 'gigadrain', 'leechlife']);
 const MODELED_SELFDROP = new Set(['overheat', 'superpower', 'psychoboost']);
 const MODELED_ITEM_REMOVAL = new Set(['knockoff', 'thief', 'covet']);
@@ -120,6 +120,26 @@ const MODELED_BATCH4 = new Set(['focuspunch', 'pursuit']);
 const MODELED_BATCH4B = new Set(['beatup', 'thunder', 'waterspout']);
 const MODELED_BATCH4C = new Set(['hyperbeam', 'solarbeam', 'doomdesire', 'futuresight']);
 const MODELED_VARBP = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick']);
+// MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the generic MULTI-STRIKE family
+// (`run_multihit`): the FIXED-2 trio + the variable [2,5] family. `triplekick` (the sole
+// `multiaccuracy` carrier) stays an ENGINE fail-loud and is deliberately NOT here.
+const MODELED_BATCH7_MULTIHIT = new Set([
+  'doublekick', 'twineedle', 'bonemerang',
+  'pinmissile', 'bulletseed', 'iciclespear', 'rockblast', 'barrage', 'cometpunch',
+  'doubleslap', 'spikecannon', 'armthrust', 'furyattack', 'furyswipes', 'bonerush',
+]);
+// ROUND 32 (`gen3_partial_trap_v1`) — the partial-trap family (foe `volatileStatus:
+// 'partiallytrapped'`), modeled bit-for-bit (the random(3,7) duration draw + chip + firm trap).
+const MODELED_PARTIALTRAP = new Set(['wrap', 'bind', 'firespin', 'clamp', 'whirlpool', 'sandtomb']);
+// ROUND 40 (`gen3_unmodeled_move_failloud_v2`) — the 16 silent-desync moves now FAIL LOUD at
+// CONSTRUCTION (`state.rs::UNMODELED_FAILLOUD_MOVES`, kept in LOCKSTEP + mirrored in
+// gen_e2e_fuzz.js::REJECT_MOVES). Checked FIRST in classifyDamaging: whatever sub-mechanic
+// bucket below would match, the engine panics before any of it can run.
+const FAILLOUD_CONSTRUCTION = new Set([
+  'dreameater', 'eruption', 'fakeout', 'falseswipe', 'furycutter', 'iceball',
+  'outrage', 'petaldance', 'rage', 'revenge', 'rollout', 'secretpower',
+  'smellingsalts', 'thrash', 'uproar', 'weatherball',
+]);
 // Typed Hidden Power — the engine models these end-to-end (16 typed nums 355-370 + bare).
 // The bare `hiddenpower` id in a packed team resolves to a TYPED variant per the mon's IVs;
 // the engine runs it as an ordinary damaging move. So HP is MODELED (contra isModeledMove).
@@ -136,6 +156,11 @@ function isHiddenPower(id) { return id === 'hiddenpower' || id.startsWith('hidde
 //                     silent desync. FLAG for a probe / a real fix.
 // This classification uses the RESOLVED gen3 dex move data.
 function classifyDamaging(m, id) {
+  // ROUND 40: the construction-time fail-loud wins over EVERY bucket below — the engine
+  // panics in MonState::from_set before the move could run at all.
+  if (FAILLOUD_CONSTRUCTION.has(id)) {
+    return { cov: 'UNMODELED', mech: 'construction fail-loud (round 40)' };
+  }
   // A move whose damage bypasses getDamage → fixed-damage routing.
   if (MODELED_FIXED_DAMAGE.has(id)) return { cov: 'MODELED', mech: 'fixed-damage' };
   if (DEFERRED_FIXED_DAMAGE.has(id)) return { cov: 'UNMODELED', mech: 'reactive-or-ohko-fixed' };
@@ -157,11 +182,23 @@ function classifyDamaging(m, id) {
   // guard PANICS → UNMODELED (honest fail-loud). A remaining variable-BP move with a
   // NON-ZERO placeholder bp reaches the damaging path and runs at the wrong flat BP →
   // MISMODELED (silent desync).
-  if (m.basePowerCallback && !(m.basePower > 0)) {
-    return { cov: 'UNMODELED', mech: 'variable-BP (bp0 → status fail-loud)' };
+  // BATCH 7: the generic multi-strike family is MODELED (`run_multihit`); `triplekick`
+  // (the sole multiaccuracy carrier, ALSO a basePowerCallback holder — checked BEFORE the
+  // variable-BP buckets) is an explicit engine fail-loud, NOT a silent run.
+  if (MODELED_BATCH7_MULTIHIT.has(id)) return { cov: 'MODELED', mech: 'multi-strike (batch 7)' };
+  if (id === 'triplekick') return { cov: 'UNMODELED', mech: 'multiaccuracy (fail-loud)' };
+  // ANY remaining bp-0 damaging move (basePowerCallback OR onModifyMove-derived BP —
+  // Magnitude / Present) fail-louds: the engine's gen-3 `derive_category` classifies bp 0 as
+  // Status → `run_status_move`'s guard PANICS (probe-verified for magnitude/present).
+  if (!(m.basePower > 0) && !m.damage && !m.damageCallback) {
+    return { cov: 'UNMODELED', mech: 'bp0 → status fail-loud' };
   }
   if (m.basePowerCallback) return { cov: 'MISMODELED', mech: 'variable-BP' };
   if (m.multihit) return { cov: 'MISMODELED', mech: 'multi-hit' };
+  // ROUND 32: the partial-trap family (foe volatileStatus) is MODELED; any OTHER damaging
+  // move carrying a foe volatileStatus would run with the volatile silently dropped.
+  if (MODELED_PARTIALTRAP.has(id)) return { cov: 'MODELED', mech: 'partial-trap (round 32)' };
+  if (m.volatileStatus) return { cov: 'MISMODELED', mech: `foe-volatile (${m.volatileStatus})` };
   // MOVE-COVERAGE BATCH 1 (`gen3_move_coverage_batch1_v1`): recoil / drain / self-drop /
   // item-removal / rapid-spin are now MODELED bit-for-bit (they RUN + apply the side-effect),
   // checked BEFORE the MISMODELED buckets below (a Dream Eater / Liquid Ooze member NOT in a
@@ -227,9 +264,15 @@ function classifyStatus(m, id) {
       : 'volatile-transfer Baton Pass (batch 3)';
     return { cov: 'MODELED', mech };
   }
-  // SNATCH (`gen3_snatch_v1`) — the LAST gen-3 status move, MODELED bit-for-bit (the
-  // interception + cast in run_status_move; the DEDICATED golden + MC100-MC104 pins).
+  // SNATCH (`gen3_snatch_v1`) — MODELED bit-for-bit (the interception + cast in
+  // run_status_move; the DEDICATED golden + MC100-MC104 pins).
   if (id === 'snatch') return { cov: 'MODELED', mech: 'status-steal Snatch (snatch)' };
+  // The BATCH 8/9 + later status singles — each MODELED bit-for-bit with its own golden:
+  if (id === 'haze') return { cov: 'MODELED', mech: 'boost-reset Haze (gen3_haze_v1)' };
+  if (id === 'yawn') return { cov: 'MODELED', mech: 'delayed-sleep Yawn (gen3_yawn_v1)' };
+  if (id === 'trick') return { cov: 'MODELED', mech: 'item-swap Trick (gen3_trick_v1)' };
+  // TRANSFORM (`gen3_transform_v1`, ROUND 33) — the copy overlay, category Status in gen3.
+  if (id === 'transform') return { cov: 'MODELED', mech: 'copy-overlay Transform (gen3_transform_v1)' };
   // Everything else is a fail-loud in run_status_move / run_protect. Bucket by mechanic.
   return { cov: 'UNMODELED', mech: statusMechanic(m, id) };
 }
@@ -297,6 +340,32 @@ function walk(d) {
     else if (e.name.endsWith('.txt')) out.push(p);
   }
   return out;
+}
+
+// ── SCAN_UNIVERSE=1 — classify the ENTIRE gen3-legal move universe, not just the pool.
+// The ROUND-40 INVARIANT: after `gen3_unmodeled_move_failloud_v2` the engine has NO
+// silent-desync move left in the whole universe — every move is MODELED or FAIL-LOUD, so
+// MISMODELED must be EMPTY. Exits non-zero if the invariant is broken (a checkable gate:
+// run it after admitting a new move class or touching the guard).
+if (process.env.SCAN_UNIVERSE) {
+  const buckets = { MODELED: [], MISMODELED: [], UNMODELED: [] };
+  for (const m of dex3.moves.all()) {
+    if (!m.exists || m.isNonstandard || m.gen > 3 || m.id === 'struggle') continue;
+    let cov, mech;
+    if (isHiddenPower(m.id)) { cov = 'MODELED'; mech = 'typed-hidden-power'; }
+    else if (m.category === 'Status') ({ cov, mech } = classifyStatus(m, m.id));
+    else ({ cov, mech } = classifyDamaging(m, m.id));
+    buckets[cov].push(`${m.id} (${mech})`);
+  }
+  const total = buckets.MODELED.length + buckets.MISMODELED.length + buckets.UNMODELED.length;
+  console.log(`=== FULL gen3-legal MOVE UNIVERSE (${total} moves) ===`);
+  console.log(`MODELED: ${buckets.MODELED.length}  UNMODELED (fail-loud): ${buckets.UNMODELED.length}  MISMODELED (silent desync): ${buckets.MISMODELED.length}`);
+  if (buckets.MISMODELED.length) {
+    console.log('MISMODELED — the round-40 no-silent-desync invariant is BROKEN:');
+    for (const r of buckets.MISMODELED) console.log('  ' + r);
+    process.exit(1);
+  }
+  process.exit(0);
 }
 
 const validator = new TeamValidator(VALIDATE_FORMAT);
