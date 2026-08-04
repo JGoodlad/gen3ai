@@ -132,9 +132,10 @@ def test_transformer_stack_shape():
     model, _ = _make_model()
     assert len(model.team_transformer.transformer_layers) == TRANSFORMER_N_LAYERS
     for layer in model.team_transformer.transformer_layers:
-        # nn.TransformerEncoderLayer exposes self_attn.embed_dim
-        assert layer.self_attn.embed_dim == D_MODEL
-        assert layer.self_attn.num_heads == TRANSFORMER_N_HEADS
+        # gen3_edge_bias_trunk_v1: the stack is the BiasedEncoderLayer clone — fused qkv in_proj
+        # (3·d_model) instead of nn.MultiheadAttention's self_attn.
+        assert layer.in_proj.out_features == 3 * D_MODEL
+        assert layer.n_heads == TRANSFORMER_N_HEADS
         # FFN expansion lives in linear1.out_features
         assert layer.linear1.out_features == TRANSFORMER_FFN_DIM
 

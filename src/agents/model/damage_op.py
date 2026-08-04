@@ -1343,21 +1343,18 @@ class DamageOperator(torch.nn.Module):
         topk_idx = w_all.detach().topk(K, dim=-1).indices                                # [B,K] (DETACHED)
         return topk_idx, w_all.gather(-1, topk_idx)                                      # → belief gradient
 
-    def discrete_incoming(self, ctx: 'ExtractorContext',
-                          move_belief_logits: torch.Tensor,
-                          cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> torch.Tensor:
-        """gen3_iterative_damage_v1: a LEAN per-our-mon incoming-threat summary for the ITERATIVE refinement
-        (recomputed BETWEEN transformer layers, fed `move_belief_logits` re-read from the MID-transformer opp
-        tokens). For the opp active's top-`_DMG_REFINE_K` most-believed candidate moves (the ~50×-cheaper
-        primitive — K≈8 vs the full ~416 axis), compute the believed worst-case incoming damage to each of
-        our 6 mons and reduce to `[B, TEAM_SIZE, _DMG_REFINE_FEATS]` = `[phys_high, spec_high, phys_pko,
-        spec_pko]` (the per-channel max-roll fraction + accuracy-folded P(KO), belief-weighted via the SAME
-        `_chan_max` hard-max the full op uses). Decorrelated: the damage physics is w-INDEPENDENT, the belief
-        weighting rides `w_topk` (the gradient sharpens `move_head` each round). v1 uses the LEGACY de-timid
-        attacker offense (NO spread belief / boost / burn / weather / fixed-damage — the coarse refinement
-        signal; the FINAL post-transformer op carries the full physics and is authoritative). Reuses the
-        shared `_rolls` formula + the op's physics buffers. Gated to 0 with no opp active / per fainted
-        defender (no `/0`)."""
+    def _incoming_rolls(self, ctx: 'ExtractorContext',
+                        move_belief_logits: torch.Tensor,
+                        cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None):
+        """The SHARED lean incoming physics (gen3_iterative_damage_v1 / gen3_edge_bias_trunk_v1): the opp
+        active's top-K believed candidate moves vs our 6 defenders, PRE-collapse. Factored out of
+        `discrete_incoming` verbatim so its refine consumer and the D3 edge-bias consumer
+        (`pairwise_incoming`) price the SAME physics from the SAME candidate selection — one body, no
+        drift. v1 semantics unchanged: LEGACY de-timid attacker offense (no spread belief / boost / burn /
+        weather / fixed-damage — the coarse signal; the full post-transformer op is authoritative).
+
+        → `(high [B,6,K], ko [B,6,K], eff [B,6,K], phys_k [B,K], w_topk [B,K],
+            defender_alive [B,6], has_opp [B])`."""
         B, device, eps = ctx.batch_size, ctx.device, 1e-6
         ar = torch.arange(B, device=device)
         opp_act = TEAM_SIZE + ctx.opp_active_local                                        # [B] global opp-active
@@ -1418,6 +1415,22 @@ class DamageOperator(torch.nn.Module):
         screen = 1.0 - 0.5 * (reflect * phys_k + light_screen * (1.0 - phys_k))           # [B,K]
         high, _low, _crit, ko = self._rolls(dmg_ns, screen[:, None, :], maxhp[:, :, None],
                                             cur_hp[:, :, None], acc_k[:, None, :], eps)     # each [B,6,K]
+        return high, ko, eff, phys_k, w_topk, defender_alive, has_opp
+
+    def discrete_incoming(self, ctx: 'ExtractorContext',
+                          move_belief_logits: torch.Tensor,
+                          cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> torch.Tensor:
+        """gen3_iterative_damage_v1: a LEAN per-our-mon incoming-threat summary for the ITERATIVE refinement
+        (recomputed BETWEEN transformer layers, fed `move_belief_logits` re-read from the MID-transformer opp
+        tokens). For the opp active's top-`_DMG_REFINE_K` most-believed candidate moves (the ~50×-cheaper
+        primitive — K≈8 vs the full ~416 axis), compute the believed worst-case incoming damage to each of
+        our 6 mons and reduce to `[B, TEAM_SIZE, _DMG_REFINE_FEATS]` = `[phys_high, spec_high, phys_pko,
+        spec_pko]` (the per-channel max-roll fraction + accuracy-folded P(KO), belief-weighted via the SAME
+        `_chan_max` hard-max the full op uses). Decorrelated: the damage physics is w-INDEPENDENT, the belief
+        weighting rides `w_topk` (the gradient sharpens `move_head` each round). Physics live in the shared
+        `_incoming_rolls`; this is the collapse. Gated to 0 with no opp active / per fainted defender."""
+        high, ko, _eff, phys_k, w_topk, defender_alive, has_opp = self._incoming_rolls(
+            ctx, move_belief_logits, cand)
         # --- per (defender, channel) HARD max of the belief-weighted roll/KO over the K candidates ---
         wb = w_topk[:, None, :]                                                           # [B,1,K]
         phys_mask = phys_k[:, None, :]                                                    # [B,1,K]
@@ -1428,6 +1441,41 @@ class DamageOperator(torch.nn.Module):
         spec_pko = (wb * ko * spec_mask).amax(dim=-1)
         feats = torch.stack([phys_high, spec_high, phys_pko, spec_pko], dim=-1)           # [B,6,_DMG_REFINE_FEATS]
         return feats * defender_alive[:, :, None] * has_opp[:, None, None]                # gates
+
+    def pairwise_outgoing(self, ctx: 'ExtractorContext',
+                          spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (D1): the per-(our move k, opp mon d) outgoing cells for the edge-bias
+        delivery — `[B, _DMG_OUT_N_MOVES, TEAM_SIZE, 6]` = `[low, high, crit, pko, type_mult, revealed]`.
+        A pure RESHAPE of `_outgoing_matrix`'s flat block (the validated v34 physics: request-ordered
+        moves == E3 seat order == action 6+k, revealed-gated defenders, CB/boost/burn attacker), so the
+        bias and the head concat can never disagree on a value."""
+        flat = self._outgoing_matrix(ctx, spread_belief)                                  # [B, _DMG_OMX]
+        n_cells = _DMG_OUT_N_MOVES * TEAM_SIZE * _DMG_OMX_CELL
+        cells = flat[:, :n_cells].reshape(-1, _DMG_OUT_N_MOVES, TEAM_SIZE, _DMG_OMX_CELL)
+        revealed = flat[:, n_cells:n_cells + TEAM_SIZE]                                   # [B,6]
+        rev = revealed[:, None, :, None].expand(-1, _DMG_OUT_N_MOVES, -1, 1)
+        return torch.cat([cells, rev], dim=-1)                                            # [B,4,6,6]
+
+    def pairwise_incoming(self, ctx: 'ExtractorContext',
+                          move_belief_logits: torch.Tensor,
+                          cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (D3): the UN-collapsed per-(candidate, defender) incoming cells for the
+        edge-bias delivery — `[B, K, TEAM_SIZE, 5]` = `[high, pko, eff, is_phys, w]` per (their believed
+        move c, our mon i). The same `_incoming_rolls` physics and the same detached candidate selection as
+        `discrete_incoming` (pass the SAME `cand` the E4 seats used so seat c and its bias row agree on
+        which move c IS); the collapse is simply not taken, so attention sees WHICH candidate threatens
+        WHICH defender instead of the worst-case max. Decorrelated: physics is w-independent, `w` rides as
+        its own channel (the belief gradient path). Gated to 0 with no opp active / per fainted defender."""
+        high, ko, eff, phys_k, w_topk, defender_alive, has_opp = self._incoming_rolls(
+            ctx, move_belief_logits, cand)
+        K = high.shape[-1]
+        cells = torch.stack([
+            high, ko, eff.clamp(max=4.0) / 4.0,
+            phys_k[:, None, :].expand_as(high),
+            w_topk[:, None, :].expand_as(high),
+        ], dim=-1)                                                                        # [B,6,K,5]
+        cells = cells * defender_alive[:, :, None, None] * has_opp[:, None, None, None]
+        return cells.permute(0, 2, 1, 3).contiguous()                                     # [B,K,6,5]
 
     def discrete_outgoing(self, ctx: 'ExtractorContext',
                           species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:

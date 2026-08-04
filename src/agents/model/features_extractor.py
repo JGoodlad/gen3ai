@@ -763,6 +763,119 @@ class PokemonEncoder(torch.nn.Module):
         return role_tokens.reshape(batch_size, n_poke, self.role_token_size)   # [B, 12, 128]
 
 
+class BiasedEncoderLayer(torch.nn.Module):
+    """gen3_edge_bias_trunk_v1 (v56, Stage 2 of the entity generation): a TransformerEncoderLayer
+    clone (post-LN, ReLU, dropout 0 — the literal production kwargs) whose self-attention takes an
+    ADDITIVE per-pair per-head float bias `[B, H, n, n]` via `F.scaled_dot_product_attention`'s
+    additive-mask path — exactly "logits += bias" pre-softmax. This is the delivery mechanism for
+    computed physics as attention EDGES (the spike `entity_spike_benchmark.py` proved the kernel:
+    matches a float64 softmax(logits+bias) reference at 1.2e-7 and compiles fullgraph with zero
+    graph breaks). The KEY-PADDING mask rides the same tensor as a large negative addend, so
+    bias=mask-only reproduces the stock masked layer's math (pinned by
+    `edge_bias_test.py::test_layer_matches_stock_transformer_layer`). State_dict keys differ from
+    `nn.TransformerEncoderLayer` (`in_proj.*` vs `self_attn.in_proj_*`) — part of the v55
+    unconditional break."""
+
+    def __init__(self, d_model: int = D_MODEL, n_heads: int = TRANSFORMER_N_HEADS,
+                 ffn_dim: int = TRANSFORMER_FFN_DIM):
+        super().__init__()
+        self.n_heads = n_heads
+        self.head_dim = d_model // n_heads
+        self.in_proj = torch.nn.Linear(d_model, 3 * d_model)
+        self.out_proj = torch.nn.Linear(d_model, d_model)
+        self.linear1 = torch.nn.Linear(d_model, ffn_dim)
+        self.linear2 = torch.nn.Linear(ffn_dim, d_model)
+        self.norm1 = torch.nn.LayerNorm(d_model)
+        self.norm2 = torch.nn.LayerNorm(d_model)
+
+    def forward(self, x: torch.Tensor, bias: Optional[torch.Tensor] = None) -> torch.Tensor:
+        B, n, d = x.shape
+        qkv = self.in_proj(x).reshape(B, n, 3, self.n_heads, self.head_dim)
+        q, k, v = (qkv[:, :, i].transpose(1, 2) for i in range(3))            # each [B,H,n,hd]
+        attn = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=bias)
+        x = self.norm1(x + self.out_proj(attn.transpose(1, 2).reshape(B, n, d)))
+        return self.norm2(x + self.linear2(torch.nn.functional.relu(self.linear1(x))))
+
+
+# The key-padding addend on the attention logits. Large-negative-finite rather than -inf: a -inf
+# row×col combination under compile/half precision breeds NaN; -1e9 underflows the softmax to
+# exactly 0 attention weight at these magnitudes, which is all masking needs.
+_KEY_PAD_NEG = -1e9
+
+# Edge-cell widths (the op owns the cell CONTENT — see DamageOperator.pairwise_{outgoing,incoming};
+# these mirror those methods' last dims and are pinned against them in edge_bias_test.py).
+_EDGE_D1_CELL = 6   # [low, high, crit, pko, type_mult, revealed] per (our move k, opp mon d)
+_EDGE_D3_CELL = 5   # [high, pko, eff, is_phys, w] per (their believed move c, our mon i)
+
+
+class EdgeBias(torch.nn.Module):
+    """gen3_edge_bias_trunk_v1 (v55): computed physics as per-pair per-head attention-logit BIASES.
+
+    Stage 2's first slice — the D (damage) family, both quadrants that already have validated
+    kernels AND both endpoints seated in the trunk (the v54 move seats made this possible):
+      * **D1 outgoing** — our active's move k → their mon d: `DamageOperator.pairwise_outgoing`
+        (the v34 `_outgoing_matrix` physics, request-ordered == E3 seat order), written at the
+        (E3 seat k, their-mon seat d) pair and its transpose.
+      * **D3 incoming** — their believed move c → our mon i: `DamageOperator.pairwise_incoming`
+        (the pre-collapse `_incoming_rolls` physics, the SAME detached candidate selection the E4
+        seats used — seat c and bias row c always name the same move), written at the
+        (E4 seat c, our-mon seat i) pair and its transpose.
+
+    Each family maps its cell through a ZERO-INIT `Linear(cell → 2·n_heads)` (one head-set per
+    direction, since "how much the move seat attends to the defender" and the reverse are
+    different questions) — so at init every bias is exactly 0 and the trunk is byte-identical to
+    the family-off forward (the `refine_proj` identity-at-init convention; auto-protected by
+    `restore_identity_init`'s observation capture). All seat blocks are CONTIGUOUS index ranges
+    (mons [0:6]/[6:12], E3 [20:24], E4 [24:24+K]), so delivery is plain slice assignment — no
+    scatter, compile-friendly.
+
+    The op head-concat is NOT deleted here: per the deprecation playbook (and the K9/K10 trunk-null
+    history) the edge home is built first; deletion waits on the per-family bias-ablation audit."""
+
+    def __init__(self, families: str):
+        super().__init__()
+        fams = set() if families in ("", "off") else set(families.split(","))
+        if families == "d":
+            fams = {"d1", "d3"}
+        unknown = fams - {"d1", "d3"}
+        if unknown:
+            raise ValueError(f"edge_bias_families: unknown families {sorted(unknown)} "
+                             "(valid: 'off', 'd', or a comma list of d1,d3)")
+        self.families = fams
+        self.d1_map = (torch.nn.Linear(_EDGE_D1_CELL, 2 * TRANSFORMER_N_HEADS)
+                       if "d1" in fams else None)
+        self.d3_map = (torch.nn.Linear(_EDGE_D3_CELL, 2 * TRANSFORMER_N_HEADS)
+                       if "d3" in fams else None)
+        for lin in (self.d1_map, self.d3_map):
+            if lin is not None:
+                torch.nn.init.zeros_(lin.weight)
+                torch.nn.init.zeros_(lin.bias)
+
+    def forward(self, bias: torch.Tensor, base_seats: int,
+                d1_cells: Optional[torch.Tensor], d3_cells: Optional[torch.Tensor]) -> torch.Tensor:
+        """Write the enabled families into `bias` [B, H, n, n] (already carrying the key-pad addend).
+        `base_seats` = the seat count BEFORE the extra block (E3 starts there). Returns `bias`."""
+        H = TRANSFORMER_N_HEADS
+        e3 = base_seats
+        if self.d1_map is not None and d1_cells is not None:
+            m = self.d1_map(d1_cells)                                          # [B,4,6,2H]
+            m = m.permute(0, 3, 1, 2)                                          # [B,2H,4,6]
+            bias[:, :, e3:e3 + 4, TEAM_SIZE:2 * TEAM_SIZE] = \
+                bias[:, :, e3:e3 + 4, TEAM_SIZE:2 * TEAM_SIZE] + m[:, :H]
+            bias[:, :, TEAM_SIZE:2 * TEAM_SIZE, e3:e3 + 4] = \
+                bias[:, :, TEAM_SIZE:2 * TEAM_SIZE, e3:e3 + 4] + m[:, H:].transpose(-1, -2)
+        if self.d3_map is not None and d3_cells is not None:
+            K = d3_cells.shape[1]
+            e4 = base_seats + 4
+            m = self.d3_map(d3_cells)                                          # [B,K,6,2H]
+            m = m.permute(0, 3, 1, 2)                                          # [B,2H,K,6]
+            bias[:, :, e4:e4 + K, 0:TEAM_SIZE] = \
+                bias[:, :, e4:e4 + K, 0:TEAM_SIZE] + m[:, :H]
+            bias[:, :, 0:TEAM_SIZE, e4:e4 + K] = \
+                bias[:, :, 0:TEAM_SIZE, e4:e4 + K] + m[:, H:].transpose(-1, -2)
+        return bias
+
+
 class TeamTransformer(torch.nn.Module):
     """Unified transformer over the entity seats: 6 our + 6 their team role tokens +
     N_HISTORY_TURNS history + 1 global, plus (gen3_entity_move_seats_v1) any `extra` entity
@@ -793,18 +906,14 @@ class TeamTransformer(torch.nn.Module):
         self._global_token_input_dim = 2 * active_ctx_dim + self._non_matchup_rest_dim
         self.global_proj = torch.nn.Linear(self._global_token_input_dim, D_MODEL)
 
-        self.transformer_layers = torch.nn.ModuleList([
-            torch.nn.TransformerEncoderLayer(
-                d_model=D_MODEL,
-                nhead=TRANSFORMER_N_HEADS,
-                dim_feedforward=TRANSFORMER_FFN_DIM,
-                dropout=0.0,
-                activation="relu",
-                batch_first=True,
-                norm_first=False,
-            )
-            for _ in range(TRANSFORMER_N_LAYERS)
-        ])
+        # gen3_edge_bias_trunk_v1 (v55): the encoder stack is the BIASED clone — same math, same
+        # shapes, but attention takes an additive per-pair per-head float bias (the edge-delivery
+        # mechanism). The key-padding mask rides the bias tensor as a -1e9 addend, so a mask-only
+        # bias reproduces the stock layer's masked attention exactly (test-pinned). Unconditional
+        # swap — state_dict keys change → the v55 ARCH_SIGNATURE bump carries it.
+        self.transformer_layers = torch.nn.ModuleList(
+            BiasedEncoderLayer() for _ in range(TRANSFORMER_N_LAYERS)
+        )
 
         self._our_token_slice = slice(0, TEAM_SIZE)
         self._their_token_slice = slice(TEAM_SIZE, 2 * TEAM_SIZE)
@@ -815,11 +924,16 @@ class TeamTransformer(torch.nn.Module):
                 embeddings: Embeddings,
                 between_layers: "Optional[Callable[[torch.Tensor, int], torch.Tensor]]" = None,
                 extra: "Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]" = None,
+                edge_bias_fn: "Optional[Callable[[torch.Tensor], torch.Tensor]]" = None,
                 ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
         """`extra` (gen3_entity_move_seats_v1): optional `(tokens [B,n,d_model], types [n] long,
         pad [B,n] bool)` — additional entity seats appended AFTER the global token, so every
         absolute slice (team/history/global, the refine callback's tail cat) is position-stable.
-        The third return is the refined extra seats (None when no extra)."""
+        The third return is the refined extra seats (None when no extra).
+
+        `edge_bias_fn` (gen3_edge_bias_trunk_v1): optional callable receiving the float attention
+        bias [B, H, n, n] ALREADY carrying the key-padding addend, returning it with the edge
+        families written in (see `EdgeBias`). The bias is built ONCE and shared by every layer."""
         batch_size = ctx.batch_size
         device = ctx.device
 
@@ -861,6 +975,16 @@ class TeamTransformer(torch.nn.Module):
             tokens = torch.cat([tokens, extra_tokens + self.token_type_emb(extra_types)], dim=1)
             key_padding_mask = torch.cat([key_padding_mask, extra_pad], dim=1)
 
+        # gen3_edge_bias_trunk_v1: ONE float attention bias [B,H,n,n] carries BOTH the key-padding
+        # mask (a -1e9 addend on masked KEYS — softmax weight underflows to exactly 0, matching the
+        # stock masked layer's math) AND, when `edge_bias_fn` is given, the computed edge families.
+        # Built once, shared by every layer (the edges are pre-attention facts, constant per forward).
+        n_tok = tokens.shape[1]
+        attn_bias = (key_padding_mask[:, None, None, :].float() * _KEY_PAD_NEG).expand(
+            batch_size, TRANSFORMER_N_HEADS, n_tok, n_tok).contiguous()
+        if edge_bias_fn is not None:
+            attn_bias = edge_bias_fn(attn_bias)
+
         # Gradient checkpointing only helps when a graph is being built for backward
         # (the PPO update); under inference's no_grad it would be pure overhead, so gate on
         # torch.is_grad_enabled(). use_reentrant=False is the correct variant here (handles
@@ -875,12 +999,12 @@ class TeamTransformer(torch.nn.Module):
                 tokens = between_layers(tokens, i)
             if use_ckpt:
                 tokens = checkpoint(
-                    lambda t, _layer=layer: _layer(t, src_key_padding_mask=key_padding_mask),
+                    lambda t, _layer=layer: _layer(t, bias=attn_bias),
                     tokens,
                     use_reentrant=False,
                 )
             else:
-                tokens = layer(tokens, src_key_padding_mask=key_padding_mask)
+                tokens = layer(tokens, bias=attn_bias)
 
         our_team_out   = tokens[:, self._our_token_slice, :]
         their_team_out = tokens[:, self._their_token_slice, :]
@@ -1723,6 +1847,9 @@ class EntityMoveSeats(torch.nn.Module):
     def __init__(self, topk_seats: int = 0):
         super().__init__()
         self.topk_seats = int(topk_seats)
+        # gen3_edge_bias_trunk_v1: the per-forward candidate selection (idx, w), stashed so the D3
+        # edge bias prices the SAME K moves the seats represent. None until the first E4 forward.
+        self.last_cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
         self.move_seat_proj = torch.nn.Linear(MOVE_NET_HIDDEN[1], D_MODEL)
         self.threat_seat_proj = (torch.nn.Linear(MOVE_LATENT_DIM + 3, D_MODEL)
                                  if self.topk_seats > 0 else None)
@@ -1750,6 +1877,9 @@ class EntityMoveSeats(torch.nn.Module):
                 "(guaranteed by the __init__ gate: damage_op_prefuse + move_latent)"
             )
             idx, w = damage_op.refine_candidates(ctx, move_belief_logits, k=self.topk_seats)  # [B,K]
+            # gen3_edge_bias_trunk_v1: stash the candidate selection so the D3 edge bias prices the
+            # SAME K moves the seats represent (seat c and bias row c must name the same move).
+            self.last_cand = (idx, w)
             has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1)            # [B] bool
             hdr = torch.cat([
                 latent_table[idx],                                            # [B,K,32] typed-HP-aware identity
@@ -1982,6 +2112,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  damage_candidate_k: int = 0, damage_refine_rounds: int = 0,
                  damage_op_prefuse: bool = False,
                  entity_topk_seats: int = 0,
+                 edge_bias_families: str = "off",
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  damage_matrices_outgoing_all: bool = False,
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
@@ -2048,6 +2179,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # stack (validated below after those flags are set).
         self.entity_topk_seats = int(entity_topk_seats)
         self.entity_seats = EntityMoveSeats(self.entity_topk_seats)
+        # gen3_edge_bias_trunk_v1 (v56, Stage 2): computed physics as per-pair per-head attention
+        # BIASES (see EdgeBias). "off" builds no module (no state_dict change beyond the layer swap);
+        # the maps are zero-init so an ON run is byte-identical to OFF at init. Requirement
+        # validation happens below once the source flags are set.
+        self.edge_bias_families = str(edge_bias_families or "off")
+        self.edge_bias = (EdgeBias(self.edge_bias_families)
+                          if self.edge_bias_families != "off" else None)
         self.team_transformer = TeamTransformer(layout)
         self.cls_pool = CLSPool(layout)
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
@@ -2470,6 +2608,21 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "weights and the move latent table. Enable --damage-op-prefuse + --move-latent "
                 "(--unified-moves), or set --entity-topk-seats 0 (E3-only)."
             )
+        # gen3_edge_bias_trunk_v1: per-family source requirements. d1 reads the op's outgoing-matrix
+        # kernel (our active's moves × opp mons); d3 reads the pre-collapse incoming kernel AT the E4
+        # seats' candidate selection, so its rows and the seats must exist together.
+        if self.edge_bias is not None:
+            if "d1" in self.edge_bias.families and not (damage_op and damage_outgoing):
+                raise ValueError(
+                    "edge_bias_families includes d1, which prices our moves vs the opp team via the "
+                    "op's outgoing kernel — requires --damage-op AND --damage-outgoing "
+                    "(--unified-damage both / --unified-moves both)."
+                )
+            if "d3" in self.edge_bias.families and self.entity_topk_seats <= 0:
+                raise ValueError(
+                    "edge_bias_families includes d3, whose bias rows are the E4 threat seats — "
+                    "requires --entity-topk-seats > 0 (which itself requires the prefuse stack)."
+                )
         # Stored on the root so arch_toggles_from_model can thread it to the eval/self-play workers
         # (the move-prior gate is a version-checked forward-behavior toggle).
         self.move_candidate_floor = move_candidate_floor
@@ -3168,9 +3321,28 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             _tok_req_raw, _move_valid, ctx, self.damage_op,
             self.last_move_belief_logits,
             getattr(self, "_entity_latent_table", None))
+        # gen3_edge_bias_trunk_v1 (v56, Stage 2): computed physics as attention EDGES. Cells are
+        # built HERE (pre-transformer — d1 from the validated outgoing-matrix kernel at the belief
+        # the prefuse stack already produced; d3 from the pre-collapse incoming kernel at the SAME
+        # candidate selection the E4 seats just stashed) and delivered to every layer as per-pair
+        # per-head additive logit biases via the closure. Zero-init maps ⇒ identity at init.
+        _edge_fn = None
+        if self.edge_bias is not None:
+            # Spread belief only when the PREFUSE stack computed it THIS forward (pre-trunk);
+            # non-prefuse configs would read last forward's stale value here — pass None (the
+            # kernel's legacy neutral-bulk constants) instead.
+            _sb = self.last_spread_belief if self.damage_op_prefuse else None
+            _d1c = (self.damage_op.pairwise_outgoing(ctx, _sb)
+                    if "d1" in self.edge_bias.families else None)
+            _d3c = (self.damage_op.pairwise_incoming(ctx, self.last_move_belief_logits,
+                                                     self.entity_seats.last_cand)
+                    if "d3" in self.edge_bias.families else None)
+            _base = self.team_transformer._total_tokens
+            _edge_fn = lambda bias: self.edge_bias(bias, _base, _d1c, _d3c)  # noqa: E731
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings, between_layers=refine_cb,
-            extra=(_seat_tokens, self.entity_seats.seat_types(ctx.device), _seat_pad))
+            extra=(_seat_tokens, self.entity_seats.seat_types(ctx.device), _seat_pad),
+            edge_bias_fn=_edge_fn)
         # Aux belief logits over the refined opp tokens — stashed for the PPO aux loss, NOT fed back
         # into the policy/value path (labels would leak). None when belief is off.
         self.last_belief_logits = (

@@ -416,7 +416,16 @@ from typing import Any, Dict, List
 #   K"; K>0 without `damage_matrices_incoming` is a hard error (never a silent empty block).
 #   INDEPENDENT of v54's entity seats — the two touch disjoint machinery (seats enter the TRUNK; this
 #   trims the op's HEAD-CONCAT output), so they compose and only the signature is shared.
-MODEL_CONFIG_VERSION = 55
+# v56: gen3_edge_bias_trunk_v1 — Stage 2 of the entity generation (physics as attention EDGES):
+#   the trunk's encoder stack becomes the BIASED clone (`BiasedEncoderLayer` — same math, but
+#   attention takes an additive per-pair per-head float bias; the key-pad mask rides the same
+#   tensor), an UNCONDITIONAL state_dict change (layer keys `in_proj.*` vs `self_attn.in_proj_*`)
+#   → the ARCH_SIGNATURE bump below carries it. `edge_bias_families` (str, "off" default) gates the
+#   FAMILIES delivered: "d"/"d1,d3" — D1 our-move→opp-mon cells (the v34 outgoing-matrix kernel) and
+#   D3 threat-seat→our-mon cells (the pre-collapse incoming kernel at the E4 candidate selection) —
+#   each through a ZERO-INIT Linear(cell → 2·n_heads) map (identity at init). The op head-concat is
+#   NOT deleted (deprecation playbook: home first, ablation audit before deletion).
+MODEL_CONFIG_VERSION = 56
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -799,7 +808,11 @@ MODEL_CONFIG_VERSION = 55
 #     the signature bump is what turns that into a clear arch error instead. Orthogonal to v54's entity
 #     seats (trunk) — this trims the op's head-concat output — so the two compose; only the signature,
 #     which is one shared string, had to be sequenced.
-ARCH_SIGNATURE = "gen3_op_block_trim_v1"
+#   gen3_edge_bias_trunk_v1 (config v56, Stage 2 of the entity generation): the encoder stack is
+#     the biased-attention clone — state_dict keys change for every model (no off state), so the
+#     signature carries the break like v51/v54/v55. The within-generation knob is `edge_bias_families`
+#     (which families are delivered; zero-init maps ⇒ ON starts identical to OFF).
+ARCH_SIGNATURE = "gen3_edge_bias_trunk_v1"
 
 
 class ModelVersionError(Exception):
@@ -983,6 +996,11 @@ class ModelVersion:
     # attention pass (forward); 0 = E3-only (our 4 move seats, which are UNCONDITIONAL — their break
     # rides the ARCH_SIGNATURE bump, not this field). Requires damage_op_prefuse + move_latent.
     entity_topk_seats: int = 0
+    # v56 STRUCTURAL str (gen3_edge_bias_trunk_v1): which edge families are delivered as attention
+    # biases ("off" | "d" | comma list of d1,d3). A family adds its zero-init map (state_dict) and
+    # its cells to every attention pass (forward). The layer swap itself is UNCONDITIONAL and rides
+    # the ARCH_SIGNATURE, not this field.
+    edge_bias_families: str = "off"
     # v21 FORWARD-BEHAVIOR toggle (NOT weight-shape, like attend_unrevealed_opponents): the
     # unified-architecture ablation. ON zeros the incoming-damage / OHKO obs block out of the model's
     # view (the block stays in the obs; the reward still reads it). State_dict identical; the forward
@@ -1293,6 +1311,9 @@ class ModelVersion:
             ),
             entity_topk_seats=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("entity_topk_seats", 0)
+            ),
+            edge_bias_families=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("edge_bias_families", "off")
             ),
             win_prob_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("win_prob_mode", "none")
@@ -1669,6 +1690,18 @@ class ModelVersion:
                 "The E4 threat-move seats add a projection (threat_seat_proj) and change every "
                 "attention pass's seat count, so the weights are not interchangeable.\n"
                 "Load with the matching --entity-topk-seats, or start a fresh training run."
+            )
+
+        # v56 gen3_edge_bias_trunk_v1 — STRUCTURAL str (the win_prob_mode pattern): a family adds its
+        # zero-init bias map (state_dict) and its cells to every attention pass (forward), so any
+        # mismatch — off<->on or a different family set — fails.
+        if self.edge_bias_families != saved.edge_bias_families:
+            raise ModelVersionError(
+                f"edge_bias_families mismatch: saved={saved.edge_bias_families!r}, "
+                f"current={self.edge_bias_families!r}.\n"
+                "The edge-bias families add per-family map parameters and change the attention "
+                "biases the model trained under, so the weights are not interchangeable.\n"
+                "Load with the matching --edge-bias-families, or start a fresh training run."
             )
 
         # Structural + resume-IMMUTABLE toggle — gated as a STRING so BOTH 'none'↔head (a state_dict
@@ -2393,4 +2426,9 @@ def _migrate_config(data: dict) -> dict:
         # the deleted lean top-K block re-means `damage_topk_k`. Nothing to migrate: the ARCH_SIGNATURE
         # bump rejects every pre-v55 checkpoint outright, so this is a version stamp only.
         data["config_version"] = 55
+    if version < 56:
+        # v56: gen3_edge_bias_trunk_v1 — edge families OFF on any older config (the layer swap is
+        # unconditional and carried by the ARCH_SIGNATURE, not a field).
+        data.setdefault("edge_bias_families", "off")
+        data["config_version"] = 56
     return data

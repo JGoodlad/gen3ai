@@ -178,6 +178,17 @@ The speculative core of the generation — concentrate the risk here, on purpose
   benchmark before/after; the obs-roundtrip fuzz (offline == live, bit-for-bit) ported to
   the new packer.
 
+**STAGE-2 FIRST SLICE STATUS (2026-08-04): BUILT — v55 `gen3_edge_bias_trunk_v1`.** The
+biased-attention trunk landed (spike-proven layer, stock-parity + fullgraph pinned) with the
+D-family both quadrants that have validated kernels AND both endpoints seated: D1 (E3 move seats →
+opp mons, the v34 outgoing-matrix kernel) + D3 (E4 threat seats → our mons, the pre-collapse
+incoming kernel at the seats' own candidate selection). Zero-init maps ⇒ ON bitwise-identical at
+init. `--edge-bias-families {off,d,d1,d3}` is the per-family ablation surface the §3 verdict
+mechanism needs. NOT yet: D2/D4 quadrants, S/C/V/T/X families, the op-concat deletion (deprecation
+playbook: home first). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the
+concat deletion is the eventual refund). Suite 3945 green; bridge smoke passes with edges on.
+Verdict remains gen-vs-gen ELO + the per-family bias ablation.
+
 ## 4. E9 decided: history follows the same sorting rule as everything else
 
 The 7×159 TurnDelta block has exactly the two defects v51 fixed for actions: it is

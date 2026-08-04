@@ -40,6 +40,7 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "damage_candidate_k": "damage_candidate_k",                             # v49
     "damage_op_prefuse": "damage_op_prefuse",                               # v50 (v51 pointer-native: no key — unconditional)
     "entity_topk_seats": "entity_topk_seats",                               # v54 (E3 unconditional; this is the E4 K)
+    "edge_bias_families": "edge_bias_families",                             # v56 (layer swap unconditional; this is the family set)
     "win_prob_mode": "win_prob_mode",                                       # v22
     "pubval_mode": "pubval_mode",                                           # v43
     "value_dist_mode": "value_dist_mode",                                   # v29

@@ -959,6 +959,11 @@ GIGO/version gate, the v2 reinjection) + the extended `poke_env_gaps/belief_labe
 trim — before it `gen3_entity_move_seats_v1` [v54, the move-entity seats], `gen3_typed_hp_belief_v1`
 [v52, the typed-HP belief note above] and `gen3_pointer_native_v1` [v51, the pointer-native head — see that
 note]; `gen3_opp_hp_typed_candidates_v1` was current v38–v50).
+== agent2's real type + no-leak, live). `MODEL_CONFIG_VERSION` was **38** at v38; the current value is **40**
+(the v40 nature/EV note below); `ARCH_SIGNATURE` is now **`gen3_edge_bias_trunk_v1`** (v55, the edge-bias trunk — before it `gen3_entity_move_seats_v1`, v54, the
+move-entity seats — before it `gen3_typed_hp_belief_v1` [v52, the typed-HP belief note above] and
+`gen3_pointer_native_v1` [v51, the pointer-native head — see that note];
+`gen3_opp_hp_typed_candidates_v1` was current v38–v50).
 
 **Nature/EV generative spread belief + op-side marginalization (v40, `gen3_nature_ev_belief_v1`,
 `spread_belief_nature` / `--spread-belief-nature` + `spread_belief_nature_marginalize` /
@@ -1382,9 +1387,34 @@ move inflicts sleep, and the decode's absent-key assertions) + the constructed-p
 **Orthogonal to v54's entity seats** — those add SEATS to the trunk, this trims the op's HEAD-CONCAT
 output — so the two compose; only the single shared `ARCH_SIGNATURE` string had to be sequenced.
 
-Current `MODEL_CONFIG_VERSION` = **55** (v51 pointer-native head + v52 typed-HP belief + v53 HP-belief
-ablation + v54 move-entity seats + v55 op block trim — see the pointer-native, typed-HP, entity-seat, and
-block-trim sections), `ARCH_SIGNATURE` = **`gen3_op_block_trim_v1`**.
+**Edge-bias trunk (v56, `gen3_edge_bias_trunk_v1` — Stage 2 of the entity generation).** The
+encoder stack becomes `BiasedEncoderLayer` (fused-qkv clone of the stock layer; attention takes an
+additive per-pair per-head float bias [B,H,n,n]; the key-padding mask rides the SAME tensor as a
+`_KEY_PAD_NEG` = -1e9 addend — stock-masked-layer parity pinned by
+`edge_bias_test.test_layer_matches_stock_transformer_layer`). `TeamTransformer.forward` builds the
+bias ONCE per forward (shared by every layer) and takes an `edge_bias_fn` closure; `EdgeBias`
+(`edge_bias_families` "off"|"d"|comma list) writes the families at CONTIGUOUS seat-block slices:
+**D1** `DamageOperator.pairwise_outgoing` (a reshape of the validated `_outgoing_matrix` — cell
+`[low,high,crit,pko,type_mult,revealed]`) at (E3 seat k, opp-mon seat d) + transpose; **D3**
+`DamageOperator.pairwise_incoming` (the pre-collapse `_incoming_rolls`, factored out of
+`discrete_incoming` so refine + edges share ONE physics body — cell `[high,pko,eff,is_phys,w]`) at
+(E4 seat c, our-mon seat i) + transpose, priced at the SAME detached candidate selection the E4
+seats stashed (`EntityMoveSeats.last_cand`). Each family's map is a ZERO-INIT
+`Linear(cell → 2·n_heads)` (one head-set per direction; auto-protected by `restore_identity_init`'s
+observation capture) ⇒ families ON is BITWISE-identical to OFF at init. Under non-prefuse configs
+D1 passes spread_belief=None (the pre-trunk read would be STALE — gated in forward_internal).
+The op head-concat is NOT deleted (deprecation playbook: home first; the per-family bias-ablation
+audit decides deletion). Versioning: the layer swap is UNCONDITIONAL (state_dict keys `in_proj.*`)
+→ the `ARCH_SIGNATURE` bump carries it; `edge_bias_families` is a STRUCTURAL str in
+`check_compatible` (the `win_prob_mode` pattern), `_migrate_config` v56 defaults "off". Measured
+B=1 (threads=1): both families = +0.63 ms on a ~3.5 ms prefuse+seats forward. Tests:
+`edge_bias_test.py` (stock parity, bitwise identity-at-init, placement-exactness, gates, fullgraph
+compile, gradient liveness — random-cotangent probes; D1's zero grad on random obs is CORRECT, its
+gates see no revealed opp).
+
+Current `MODEL_CONFIG_VERSION` = **56** (v51 pointer-native head + v52 typed-HP belief + v53
+HP-belief ablation + v54 move-entity seats + v55 op block trim + v56 edge-bias trunk — see those
+sections), `ARCH_SIGNATURE` = **`gen3_edge_bias_trunk_v1`**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

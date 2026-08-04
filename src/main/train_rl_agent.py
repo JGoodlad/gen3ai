@@ -374,6 +374,7 @@ def _run_arch_toggles(args) -> dict:
         damage_candidate_k=args.damage_candidate_k,
         damage_op_prefuse=args.damage_op_prefuse,
         entity_topk_seats=args.entity_topk_seats,
+        edge_bias_families=args.edge_bias_families,
         win_prob_mode=args.win_prob_mode,
         pubval_mode=args.pubval_mode,
         value_dist_mode=args.value_dist_mode,
@@ -1128,6 +1129,18 @@ async def main():
                              "are UNCONDITIONAL in this generation (the pointer head reads the REFINED "
                              "seats). STRUCTURAL int (version-checked, fresh-only). >0 REQUIRES "
                              "--damage-op-prefuse + --move-latent (--unified-moves).")
+    parser.add_argument("--edge-bias-families", "--edge_bias_families", dest="edge_bias_families",
+                        type=str, default=None,
+                        help="gen3_edge_bias_trunk_v1 (v56, Stage 2 of the entity generation): deliver "
+                             "computed physics as per-pair per-head additive ATTENTION BIASES. 'off' "
+                             "(default) | 'd' (= d1,d3) | a comma list. d1 = our active's moves x the "
+                             "opp's 6 mons (the outgoing-matrix kernel) at the (E3 seat, opp-mon seat) "
+                             "pairs — requires --damage-op + --damage-outgoing; d3 = the opp's top-K "
+                             "believed moves x our 6 mons (the pre-collapse incoming kernel, the SAME "
+                             "candidates as the E4 seats) at the (E4 seat, our-mon seat) pairs — "
+                             "requires --entity-topk-seats > 0. Zero-init maps: identity at init. "
+                             "STRUCTURAL (version-checked, fresh-only). The op head-concat stays "
+                             "(deprecation playbook: bias-ablation audit before deletion).")
     parser.add_argument("--damage-candidate-k", "--damage_candidate_k", dest="damage_candidate_k",
                         type=int, default=None,
                         help="Cap the DamageOperator's INCOMING candidate sweep at the K most-believed "
@@ -2023,6 +2036,7 @@ async def main():
     _resolve("damage_candidate_k", 0)          # v49 forward-behavior (version-checked, fresh-only)
     _resolve("damage_op_prefuse", False)       # v50 structural (version-checked, fresh-only)
     _resolve("entity_topk_seats", 0)           # v54 structural int (version-checked, fresh-only)
+    _resolve("edge_bias_families", "off")      # v56 structural str (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
     _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)
     _resolve("pubval_mode", "none")            # v43 structural + resume-immutable (version-checked)
@@ -2386,6 +2400,18 @@ async def main():
             "the E4 threat seats gather the op's pre-transformer candidate weights + move latents. "
             "Add those flags, or set --entity-topk-seats 0 (E3-only)."
         )
+    _ebf = args.edge_bias_families
+    if _ebf and _ebf != "off":
+        _fams = {"d1", "d3"} if _ebf == "d" else set(_ebf.split(","))
+        if _fams - {"d1", "d3"}:
+            parser.error(f"--edge-bias-families: unknown families {sorted(_fams - {'d1', 'd3'})} "
+                         "(valid: off, d, or a comma list of d1,d3)")
+        if "d1" in _fams and not (args.damage_op and args.damage_outgoing):
+            parser.error("--edge-bias-families d1 requires --damage-op AND --damage-outgoing "
+                         "(--unified-damage both / --unified-moves both).")
+        if "d3" in _fams and not (args.entity_topk_seats and args.entity_topk_seats > 0):
+            parser.error("--edge-bias-families d3 requires --entity-topk-seats > 0 (the bias rows "
+                         "ARE the E4 threat seats).")
     if args.damage_reattend and not args.damage_op:
         # The re-attend layer reads the operator's per-mon incoming-damage block → the op must exist.
         parser.error(

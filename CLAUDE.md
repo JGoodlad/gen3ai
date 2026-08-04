@@ -834,7 +834,7 @@ The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
 `MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
-**`gen3_entity_move_seats_v1`** — the v54 move-entity seats (Stage 1 of the entity generation; see the v54 entry below); before it **`gen3_typed_hp_belief_v1`** — the v52 discrete typed-HP belief, stacking directly on
+**`gen3_edge_bias_trunk_v1`** — the v56 edge-bias trunk (physics as attention edges; see the v56 entry below); before it `gen3_op_block_trim_v1` (the v55 op block trim) and **`gen3_entity_move_seats_v1`** — the v54 move-entity seats (Stage 1 of the entity generation; the v54 entry below), and before that **`gen3_typed_hp_belief_v1`** — the v52 discrete typed-HP belief, stacking directly on
 `gen3_pointer_native_v1` (the v51 pointer-native action head, the fresh-generation cross-era break —
 the flat positional `action_net` is deleted and every action is scored from the token of the entity it
 selects; see the v51 entry below). Under it the model **only ever reasons over DISCRETE typed Hidden Power**. The
@@ -1407,7 +1407,30 @@ only (no field added/removed). Tests: `damage_op_test.py` + the constructed-phys
 `poke_env_gaps/damage_op_probe_fuzz_test.py` (22/22).
 Orthogonal to v54's entity seats (those enter the TRUNK; this trims the op's HEAD-CONCAT output), so the
 two compose — only the single shared `ARCH_SIGNATURE` string had to be sequenced.
-Current `MODEL_CONFIG_VERSION` = **55**, `ARCH_SIGNATURE` = **`gen3_op_block_trim_v1`**.
+**v56 the EDGE-BIAS TRUNK** (`gen3_edge_bias_trunk_v1`, Stage 2 of the entity generation —
+`designs/ai_v9/design_generation_roadmap.md` §3 Stage 2) — computed physics becomes attention
+EDGES. The encoder stack is swapped for `BiasedEncoderLayer` (the spike-proven clone: same math,
+attention takes an additive per-pair per-head float bias via SDPA's additive mask; the key-pad
+mask rides the same tensor as a -1e9 addend — stock-parity test-pinned) — an UNCONDITIONAL
+state_dict change (fused `in_proj` keys) carried by the `ARCH_SIGNATURE` bump. The delivered
+FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d3}` (STRUCTURAL str in
+`check_compatible`): **D1** = our active's 4 moves × the opp's 6 mons (the v34 outgoing-matrix
+kernel, via `DamageOperator.pairwise_outgoing`) written at the (E3 seat, opp-mon seat) pairs +
+transpose; **D3** = the opp's top-K believed moves × our 6 mons (the pre-collapse
+`_incoming_rolls` kernel via `pairwise_incoming` — factored out of `discrete_incoming`, ONE
+physics body — at the SAME detached candidate selection the E4 seats stashed, so seat c and bias
+row c always name the same move) at the (E4 seat, our-mon seat) pairs + transpose. Each family
+maps its cell through a ZERO-INIT `Linear(cell → 2·n_heads)` (one head-set per direction) ⇒ ON
+is bitwise-identical to OFF at init (test-pinned). All seat blocks are contiguous index ranges ⇒
+delivery is slice assignment, compile-friendly (fullgraph-pinned). d1 requires
+`--damage-op --damage-outgoing`; d3 requires `--entity-topk-seats > 0`. **The op head-concat is
+NOT deleted** — per the deprecation playbook (and the K9/K10 trunk-null history) the edge home
+lands first; deletion waits on the per-family bias-ablation audit. Measured B=1 (threads=1):
++0.63 ms for both families on a ~3.5 ms prefuse+seats forward (still under the v50 4.62 ms
+anchor; the concat deletion is the eventual refund). Tests: `edge_bias_test.py` (stock-layer
+parity, ON==OFF bitwise at init, placement-only-at-documented-pairs, requirement gates,
+fullgraph compile, map-gradient liveness, the v55 gate/migration).
+Current `MODEL_CONFIG_VERSION` = **56**, `ARCH_SIGNATURE` = **`gen3_edge_bias_trunk_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 
