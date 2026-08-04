@@ -135,10 +135,32 @@ def test_schedule_ledger_kernel_invariants():
     assert float(our_c[:, :, 3][nonactive].abs().sum()) == 0.0
 
 
+def test_protect_consequence_kernel_invariants():
+    """C4: only request slots that ARE Protect/Detect/Endure carry cells; the ledger nets equal
+    the G-family actives' sums; p_success rides the obs scalar."""
+    fe = _make(**_T_TOGGLES).eval()
+    obs = _obs(seed=61)
+    with torch.no_grad():
+        fe(obs)
+    ctx = fe.unpack(obs)
+    ctx.our_active_req_move_ids[:, :] = 0.0
+    ctx.our_active_req_move_ids[:, 2] = 182.0               # slot 2 = Protect
+    po = torch.tensor([0.5, 1.0])
+    with torch.no_grad():
+        cells = fe.damage_op.pairwise_protect(ctx, po)
+        our_g, opp_g = fe.damage_op.pairwise_schedule(ctx)
+    assert cells.shape == (2, 4, 4)
+    non_prot = [0, 1, 3]
+    assert float(cells[:, non_prot].abs().sum()) == 0.0, "non-Protect slots must be zero"
+    assert torch.allclose(cells[:, 2, 1], po)
+    ar = torch.arange(2)
+    assert torch.allclose(cells[:, 2, 2], our_g[ar, ctx.our_active_idx].sum(-1), atol=1e-6)
+
+
 def test_family_integration_and_gate():
     with pytest.raises(ValueError, match="edge_bias_families t"):
         _make(edge_bias_families="t")                       # no damage_op
-    fe = _make(**dict(_T_TOGGLES, edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x,g")).eval()
+    fe = _make(**dict(_T_TOGGLES, edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x,g,c4")).eval()
     with torch.no_grad():
         pi, vf = fe(_obs(seed=35))
     assert torch.isfinite(pi).all() and torch.isfinite(vf).all()

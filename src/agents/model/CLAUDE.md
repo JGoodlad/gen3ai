@@ -1421,7 +1421,9 @@ grounded, Pursuit exposure both directions, Dark eff), delivered at the (mon, GL
 pairs (requires damage_op + damage_op_prefuse — the Pursuit belief must exist pre-trunk); **G**
 `pairwise_schedule` — the per-mon end-of-turn HP ledger (Leftovers / weather chip / status tick /
 active Leech, signed maxhp fractions; Toxic flat in v1 — the ramp is an E2 follow-up) at the same
-(mon, GLOBAL) route (requires damage_op). Each family's map is a ZERO-INIT
+(mon, GLOBAL) route (requires damage_op); **C4** `pairwise_protect` — the Protect-consequence
+edge at the (Protect E3 seat, GLOBAL) pair: [is_protect, p_success, the two actives' G-ledger
+nets] (requires damage_op). Each family's map is a ZERO-INIT
 `Linear(cell → 2·n_heads)` (one head-set per direction; auto-protected by `restore_identity_init`'s
 observation capture) ⇒ families ON is BITWISE-identical to OFF at init. Under non-prefuse configs
 D1 passes spread_belief=None (the pre-trunk read would be STALE — gated in forward_internal).

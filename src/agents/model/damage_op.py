@@ -1645,6 +1645,37 @@ class DamageOperator(torch.nn.Module):
                           ctx.opp_active_local, False)
         return our_cells, opp_cells
 
+    _PROTECT_NUMS = (182, 197, 203)   # protect / detect / endure (pinned by trap_edges_test)
+
+    def pairwise_protect(self, ctx: 'ExtractorContext',
+                         protect_odds_our: torch.Tensor) -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (C4): the PROTECT-CONSEQUENCE edge — "if I click Protect this
+        turn, what happens for free" — at the (E3 move seat k, GLOBAL seat) pair, gated to the
+        request slots that ARE Protect/Detect/Endure. `[B, 4, 4]` per request slot k:
+        `[is_protect_k, p_success, net_ours, net_theirs]` where p_success is the obs
+        floored-doubling protect odds (`gen3_protect_odds_v1`, the counter-derived scalar) and
+        net_* are the two ACTIVES' end-of-turn ledgers (the G-family `pairwise_schedule` sums —
+        Leftovers/weather/status/Leech) — the turn a successful Protect banks: their Toxic ramps,
+        our Leftovers ticks, and nothing else happens. The head composes p·net; channels stay
+        decorrelated (the provide-facts convention)."""
+        B, device = ctx.batch_size, ctx.device
+        ar = torch.arange(B, device=device)
+        move_ids = ctx.our_active_req_move_ids.long()                             # [B,4]
+        is_prot = torch.zeros_like(move_ids, dtype=torch.float32)
+        for n in self._PROTECT_NUMS:
+            is_prot = is_prot + (move_ids == n).float()
+        is_prot = is_prot.clamp(max=1.0)
+        our_g, opp_g = self.pairwise_schedule(ctx)                                # [B,6,4] each
+        net_ours = our_g[ar, ctx.our_active_idx].sum(-1, keepdim=True)            # [B,1]
+        net_theirs = opp_g[ar, ctx.opp_active_local].sum(-1, keepdim=True)
+        cells = torch.cat([
+            is_prot[:, :, None],
+            protect_odds_our[:, None, None].expand(B, 4, 1),
+            net_ours[:, None, :].expand(B, 4, 1),
+            net_theirs[:, None, :].expand(B, 4, 1),
+        ], dim=-1)                                                                # [B,4,4]
+        return cells * is_prot[:, :, None]                                        # non-Protect slots 0
+
     def pairwise_entry(self, ctx: 'ExtractorContext',
                        move_belief_logits: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """gen3_edge_bias_trunk_v1 (X): the ENTRY/EXIT edge — what switching a mon IN or OUT costs,

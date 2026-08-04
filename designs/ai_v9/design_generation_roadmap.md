@@ -203,7 +203,10 @@ generation, via a different delivery route. Re-audit at end-of-run before any ke
 (report: `<run>/edge_audit_9p6M.json`; the run predates t/x/E5, which need their own trained run).
 SLICE 8: **G** (the per-mon end-of-turn schedule ledger at the (mon, global) route — the
 inventory's §2.G, previously slated as E2/E7 attributes; edge delivery reuses X's mechanism).
-NOT yet: the C family (consequence deltas — the one remaining, biggest design lift),
+SLICE 9: **C4** — the first CONSEQUENCE edge (Protect: success odds × the banked G-ledger
+turn, at the (Protect E3 seat, global) pair; composes G). Remaining C pieces (C1 stat-move
+deltas / C2 status consequences / C3 recovery flips / C5 Baton Pass) stay open — each needs a
+re-run of the damage kernel under a hypothetical, the real design lift. NOT yet:
 the op-concat deletion (deprecation playbook: home first — the per-family ablation audit runs on
 the gen-1 training run now underway). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the
 concat deletion is the eventual refund). Suite 3945 green; bridge smoke passes with edges on.

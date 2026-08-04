@@ -815,10 +815,11 @@ _EDGE_D4_CELL = 4   # [phys_high, spec_high, phys_pko, spec_pko] per (our mon i,
 _EDGE_T_CELL = 2    # [P(i traps j), P(j traps i)] per (our mon i, opp mon j)
 _EDGE_X_CELL = 4    # [entry_chip, pursuit_p, pursuit_eff, grounded] per (mon, GLOBAL seat)
 _EDGE_G_CELL = 4    # [leftovers, weather_chip, status_tick, leech] per (mon, GLOBAL seat) — signed
+_EDGE_C4_CELL = 4   # [is_protect, p_success, net_ours, net_theirs] per (E3 seat, GLOBAL seat)
 _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
                   "d4": _EDGE_D4_CELL, "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL,
                   "v": _EDGE_V_CELL, "t": _EDGE_T_CELL, "x": _EDGE_X_CELL,
-                  "g": _EDGE_G_CELL}
+                  "g": _EDGE_G_CELL, "c4": _EDGE_C4_CELL}
 
 
 class EdgeBias(torch.nn.Module):
@@ -898,6 +899,11 @@ class EdgeBias(torch.nn.Module):
         if self.d4_map is not None and cells.get("d4") is not None:
             # D4 is the full mon↔mon block too (the active column arrives pre-zeroed by the kernel).
             self._write_block(bias, self.d4_map(cells["d4"]), our, opp)
+        if self.c4_map is not None and cells.get("c4") is not None:
+            # C4 connects the Protect-family E3 seats to the GLOBAL seat.
+            g = 2 * TEAM_SIZE + N_HISTORY_TURNS
+            self._write_block(bias, self.c4_map(cells["c4"][:, :, None, :]),
+                              slice(base_seats, base_seats + 4), slice(g, g + 1))
         if self.g_map is not None and cells.get("g") is not None:
             # G rides the same (mon, GLOBAL seat) route as X — schedule facts are board-level.
             g = 2 * TEAM_SIZE + N_HISTORY_TURNS
@@ -2719,6 +2725,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "outgoing kernels — require --damage-op AND --damage-outgoing "
                     "(--unified-damage both / --unified-moves both)."
                 )
+            if "c4" in fams and not damage_op:
+                raise ValueError(
+                    "edge_bias_families c4 composes the G-family ledger — requires --damage-op."
+                )
             if "g" in fams and not damage_op:
                 raise ValueError(
                     "edge_bias_families g reads the op's type tables for the weather-immunity "
@@ -3479,6 +3489,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     ctx, self.last_move_belief_logits)
             if "g" in _fams:
                 _cells["g"] = self.damage_op.pairwise_schedule(ctx)
+            if "c4" in _fams:
+                # gen3_protect_odds_v1: OUR protect-success scalar rides non_matchup_rest at
+                # GLOBAL_ENV_DIM + its reactive offset (7) — the schema names this block.
+                _po = ctx.non_matchup_rest[:, GLOBAL_ENV_DIM + 7]
+                _cells["c4"] = self.damage_op.pairwise_protect(ctx, _po)
             if "x" in _fams:
                 _cells["x"] = self.damage_op.pairwise_entry(ctx, self.last_move_belief_logits)
             if "t" in _fams:
