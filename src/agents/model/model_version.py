@@ -357,15 +357,8 @@ from typing import Any, Dict, List
 #   candidate axis at the K most-believed opponent moves, NO tail bound — the truncated mass is
 #   dropped. FORWARD-BEHAVIOR (no new params; the per-candidate args just get narrower), gated with an
 #   unconditional int compare like `damage_topk_k`; 0 is byte-identical.
-#   `pointer_head` (bool) scores each action FROM THE TOKEN OF THE ENTITY IT SELECTS — move logit k
-#   from the move at REQUEST slot k (permuted by move-num identity, which dissolves the
-#   `agents/action/ordering_integrity.py` sorted-vs-request bug class), switch logit j from our-team
-#   token j (the F2 bottleneck: switch logits are otherwise read from a permutation-INVARIANT pool, so
-#   a bench mon's token never reaches its own logit). It ADDS a zero-init delta to the flat head's
-#   logits, so ON is identity-at-init and warm-starts from any checkpoint — a guarantee that only
-#   actually holds because of the M1 fix (SB3 was clobbering every zero-init; see the model leaf).
-#   STRUCTURAL (adds params) -> bool compare in check_compatible; OFF byte-identical.
-#   NO ARCH_SIGNATURE bump: both OFF reproduce the v48 forward exactly.
+#   `pointer_head` (bool) was the DELTA pointer head — a zero-init additive term on the flat head's
+#   logits. REMOVED at v51: the pointer head became THE head (see below).
 # v50: added `damage_op_prefuse` (gen3_damage_op_prefuse_v1) — ONE damage computation per forward,
 #   PRE-attention. The op ran TWICE: a LEAN `discrete_*` recompute inside the between-layers refine
 #   loop (×`damage_refine_rounds`) plus the FULL 835-dim block after the transformer. At B=1 on CPU —
@@ -379,7 +372,16 @@ from typing import Any, Dict, List
 #   cost; the "attention reasons over full-fidelity physics" story is secondary and, per K9/K10/K10a,
 #   unlikely to pay on its own. STRUCTURAL (adds prefuse_proj) → bool compare in check_compatible; OFF
 #   byte-identical (NO ARCH_SIGNATURE bump).
-MODEL_CONFIG_VERSION = 50
+# v51: gen3_pointer_native_v1 — the FRESH-GENERATION pointer-native action head. The flat positional
+#   `action_net` is DELETED (replaced in Gen3DualHeadMaskablePolicy._build by a raising stub) and the
+#   `PointerNativeActionHead` is THE action head, unconditionally: move logit k from the REQUEST-slot-k
+#   move token ⊕ its op cells [low,high,crit,pko,p_land,known,sec×10], switch logit j from our-team
+#   token j ⊕ its incoming row + CB tail + OAX attacker row, struggle from the latent_pi context —
+#   position-EQUIVARIANT (one shared scorer per entity; the sorted-vs-request ordering bug class is
+#   unrepresentable at the logits). The v49 `pointer_head` FIELD is removed (POPped in
+#   _migrate_config); no gate exists because there is no off state. Cross-era break carried by the
+#   ARCH_SIGNATURE bump (see gen3_pointer_native_v1 below).
+MODEL_CONFIG_VERSION = 51
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -721,7 +723,17 @@ MODEL_CONFIG_VERSION = 50
 #     so it's not caught by shape checks) → bump ARCH_SIGNATURE so a pre-unification damage_op checkpoint
 #     fails loud rather than silently computing the old HP candidates. The HP-type belief + the (v2) token
 #     reinjection ride the existing `hp_type_belief_mode` (config v38).
-ARCH_SIGNATURE = "gen3_opp_hp_typed_candidates_v1"
+#   gen3_pointer_native_v1 (the FRESH-GENERATION reset, designs/ai_v9/design_pointer_action_head.md §0):
+#     the flat positional action head is DELETED — `Gen3DualHeadMaskablePolicy._build` replaces SB3's
+#     `action_net` Linear with a raising stub and the `PointerNativeActionHead` scores every action from
+#     the token of the entity it selects (move logit k ← the REQUEST-slot-k move token ⊕ its op cells;
+#     switch logit j ← our-team token j ⊕ its incoming/OAX cells; struggle ← the latent_pi context) —
+#     position-EQUIVARIANT by construction. The state_dict changes shape (no `action_net.*` Linear, new
+#     `pointer_head.*` keys) AND the forward changes for every model, unconditionally (no flag), so the
+#     signature carries the cross-era break: every pre-generation checkpoint fails the family check loud.
+#     No old checkpoint is resumed/warm-forked across this boundary (owner decision, 2026-08-03); pools
+#     and opponents are re-seeded from the new lineage.
+ARCH_SIGNATURE = "gen3_pointer_native_v1"
 
 
 class ModelVersionError(Exception):
@@ -891,8 +903,9 @@ class ModelVersion:
     # most-believed opponent moves (0 = full sweep, byte-identical). No tail bound — dropped mass is
     # dropped. No new params, so the state_dict is identical; only the forward's VALUES differ.
     damage_candidate_k: int = 0
-    # v49 STRUCTURAL (gen3_pointer_head_v1): the pointer action head (adds PointerActionHead params).
-    pointer_head: bool = False
+    # v51 (gen3_pointer_native_v1): the v49 `pointer_head` bool is GONE — the pointer head is THE
+    # action head, unconditionally (no flat action_net exists), so there is nothing to gate. The
+    # ARCH_SIGNATURE bump carries the cross-era break; _migrate_config POPs the dead key.
     # v50 STRUCTURAL (gen3_damage_op_prefuse_v1): run the beliefs + the FULL DamageOperator ONCE,
     # PRE-transformer, injecting the per-our-mon incoming rows onto our tokens via a zero-init
     # `prefuse_proj` (a new param → state_dict change) instead of recomputing a lean op between layers.
@@ -1196,9 +1209,6 @@ class ModelVersion:
             ),
             damage_candidate_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_candidate_k", 0)
-            ),
-            pointer_head=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("pointer_head", False)
             ),
             damage_op_prefuse=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_op_prefuse", False)
@@ -1552,15 +1562,8 @@ class ModelVersion:
                 "Load with the matching --damage-candidate-k, or start a fresh training run."
             )
 
-        # v49 gen3_pointer_head_v1 — STRUCTURAL: the head adds params, so a mismatch is a state_dict
-        # mismatch on EVERY load (eval / pool / distill included), not just a resume.
-        if self.pointer_head != saved.pointer_head:
-            raise ModelVersionError(
-                f"pointer_head mismatch: saved={saved.pointer_head}, current={self.pointer_head}.\n"
-                "The pointer action head adds parameters (PointerActionHead), so the weights are not "
-                "interchangeable.\n"
-                "Load with the matching --pointer-head, or start a fresh training run."
-            )
+        # v51 gen3_pointer_native_v1: the pointer head is unconditional (no gate) — a pre-generation
+        # checkpoint fails the ARCH_SIGNATURE family check above, which is the intended loud break.
 
         # v50 gen3_damage_op_prefuse_v1 — STRUCTURAL: `prefuse_proj` is a saved parameter, so a mismatch
         # is a state_dict mismatch on EVERY load (eval / pool / distill included), not just a resume. It
@@ -2256,13 +2259,20 @@ def _migrate_config(data: dict) -> dict:
             data.pop(_dead, None)
         data["config_version"] = 48
     if version < 49:
-        # v49: the op candidate cap + the pointer action head, both OFF on any older model.
+        # v49: the op candidate cap (the pointer_head bool it also added is deleted at v51 below).
         data.setdefault("damage_candidate_k", 0)
-        data.setdefault("pointer_head", False)
         data["config_version"] = 49
     if version < 50:
         # v50: the pre-attention unified damage op — OFF on any older model (they ran the op twice:
         # the lean between-layers recompute + the full post-transformer block).
         data.setdefault("damage_op_prefuse", False)
         data["config_version"] = 50
+    if version < 51:
+        # v51: gen3_pointer_native_v1 — the pointer head is THE action head, unconditionally, and the
+        # v49 `pointer_head` FIELD is removed. POP rather than setdefault (`from_json_file` does
+        # `cls(**data)`, so a stale key would raise TypeError — the v48 lesson): any pre-generation
+        # checkpoint is rejected by the ARCH_SIGNATURE family check, and this makes that failure the
+        # CLEAR arch error instead of a constructor crash.
+        data.pop("pointer_head", None)
+        data["config_version"] = 51
     return data

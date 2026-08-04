@@ -777,8 +777,15 @@ actor and critic read it through independent CLS pools and projection heads (the
 **value-dedicated CLS readout**, H4 / Option C). It must be paired with
 `Gen3DualHeadMaskablePolicy` (`src/agents/model/policy.py`), which unpacks the tuple and routes
 each half to its own `mlp_extractor` branch; stock SB3 policies assume a single-tensor extractor
-and won't work. Both projection input dims are auto-discovered via a dummy forward pass in
-`__init__`, so they stay correct as the architecture changes.
+and won't work. **The action head is POINTER-NATIVE (v51, `gen3_pointer_native_v1`, no flag):**
+the policy's `_build` deletes SB3's flat `action_net` (a raising stub takes its slot) and the
+`PointerNativeActionHead` scores each action from the token of the entity it selects — move logit
+k ← the REQUEST-slot-k move token ⊕ its op cells, switch logit j ← our-team token j ⊕ its
+incoming/OAX cells, struggle ← the context — with `latent_pi` (the policy tower's output, so the
+op block / beliefs / FiLM all condition it) as the shared context. Position-equivariant by
+construction; zero-init scorers ⇒ uniform-over-legal cold start. Both projection input dims are
+auto-discovered via a dummy forward pass in `__init__`, so they stay correct as the architecture
+changes.
 
 **The phase-by-phase data flow (the 7-phase contract, dims, and the `ExtractorContext` /
 `Embeddings` ownership rules) is documented in `src/agents/model/CLAUDE.md`.**
@@ -814,7 +821,9 @@ The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
 `MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
-`gen3_opp_hp_typed_candidates_v1` — Hidden Power is now **16 ordinary typed moves end-to-end, BOTH sides**.
+**`gen3_pointer_native_v1`** — the v51 pointer-native action head, the fresh-generation
+cross-era break; see the v51 entry below. Its predecessor `gen3_opp_hp_typed_candidates_v1`
+(current v38–v50) made Hidden Power **16 ordinary typed moves end-to-end, BOTH sides**.
 It builds on `gen3_typed_hidden_power_ids_v1` (the prior signature, which gave each TYPED HP its OWN distinct
 move num 355-370 with real BP/type in `gen3_moves.json` + the buffers — bare `hiddenpower`=237; a VALUES-only
 obs change, the typed nums are previously-unused rows in the `max_moves`=400 embedding) and extends it to the
@@ -932,9 +941,10 @@ attention reason OVER the computed physics (today the `DamageOperator` block is 
 attention sees). When on, after the op computes the damage, its per-OUR-mon INCOMING rows are projected
 (small-init, identity-at-init) onto the 6 our-team tokens, ONE more `TransformerEncoderLayer` re-attends the
 12 team tokens (our↔opp), and the CLS pools are derived ONCE on the re-attended tokens — so the pi/vf pools
-are **damage-AWARE board summaries** instead of damage-blind ones. It is a BOARD-level enrichment, **not**
-first-class per-candidate switch scoring (the bench tokens are re-pooled to one vector; that needs a
-per-bench pointer head, a follow-up). STRUCTURAL like `opp_belief_slots` (adds 3 modules; re-pooling keeps
+are **damage-AWARE board summaries** instead of damage-blind ones. It is a BOARD-level enrichment (the
+"needs a per-bench pointer head" follow-up it originally deferred landed at v51 — the pointer head reads
+the re-attended `our_team_out` per token, so a bench token now flows straight into its own switch
+logit). STRUCTURAL like `opp_belief_slots` (adds 3 modules; re-pooling keeps
 the pooled shapes ⇒ projection widths UNCHANGED; gated in `check_compatible`, OFF byte-identical, NO
 `ARCH_SIGNATURE` bump); requires `--damage-op`; threaded through `arch_toggles`; PopArt strongly recommended
 (soft-warns without it).
@@ -1233,8 +1243,9 @@ IDENTITY, making a misaligned logit unrepresentable). The per-move tokens alread
 stashes them instead. It ADDS a **zero-init delta** to the flat head's logits (identity-at-init,
 warm-starts from any checkpoint, clean A/B) — a guarantee that only actually holds because of the
 **M1** fix below. The policy adds it in `_get_action_dist_from_latent`, the single point all three
-logit sites funnel through. STRUCTURAL bool gate; OFF byte-identical. Replacing the flat head outright
-is the follow-up. NO `ARCH_SIGNATURE` bump (both OFF reproduce v48 exactly).
+logit sites funnel through. STRUCTURAL bool gate; OFF byte-identical. NO `ARCH_SIGNATURE` bump (both
+OFF reproduce v48 exactly). **SUPERSEDED at v51** — the delta head and its `pointer_head` flag/field
+are deleted; the pointer head became THE action head (see v51 below).
 **v50 the PRE-ATTENTION UNIFIED DAMAGE OPERATOR** (`gen3_damage_op_prefuse_v1`; `damage_op_prefuse` /
 `--damage-op-prefuse`) — ONE damage computation per forward instead of two. Today the op runs **twice**:
 a LEAN `discrete_*` recompute inside the between-layers refine loop (×`--damage-refine-rounds`, 2 in the
@@ -1270,7 +1281,22 @@ overrode it), so **13** Linears documented as zero-init were random from step 0 
 zero-init is what makes the **cold-start posterior equal the Smogon prior**. Guarded by
 `Gen3FeaturesExtractor.restore_identity_init()`. **This puts a standing caveat on the K10 and D4
 result families** — see `designs/research_state/ledger.md` → M1 and the model leaf.
-Current `MODEL_CONFIG_VERSION` = **50**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+**v51 the POINTER-NATIVE ACTION HEAD** (`gen3_pointer_native_v1`, NO flag — the fresh-generation
+reset, `designs/ai_v9/design_pointer_action_head.md` §0) — the flat positional `action_net` is
+DELETED (`Gen3DualHeadMaskablePolicy._build` swaps in a raising stub and rebuilds the optimizer) and
+the `PointerNativeActionHead` is THE action head: move logit *k* ← the REQUEST-slot-k move token ⊕
+its op cells `[low,high,crit,pko,p_land,known,sec×10]`, switch logit *j* ← our-team token *j* ⊕ its
+incoming row + CB tail (+ OAX attacker row under `--damage-matrices-outgoing-all`), struggle ← the
+context — with **`latent_pi`** as the shared context, so the op block / beliefs / FiLM condition
+every score. Position-EQUIVARIANT (one shared scorer per entity; the `ordering_integrity.py`
+sorted-vs-request bug class is unrepresentable at the logits). The op owns the cell layout
+(`DamageOperator.pointer_cells`, offsets pinned against `decode_damage_block`); widths are 0 when a
+source block is off (the Linear NARROWS, never zero-pads). Zero-init scorers built AFTER SB3's
+ortho-init ⇒ cold-start policy is uniform-over-legal. The v49 `pointer_head` field is REMOVED
+(`_migrate_config` POPs it); no gate exists because there is no off state — the cross-era break
+rides the **`ARCH_SIGNATURE` bump**, so every pre-v51 checkpoint fails loud (owner decision
+2026-08-03: no resume/warm-fork across the boundary; pools/opponents re-seed from the new lineage).
+Current `MODEL_CONFIG_VERSION` = **51**, `ARCH_SIGNATURE` = **`gen3_pointer_native_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

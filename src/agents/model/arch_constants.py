@@ -28,6 +28,9 @@ N_HISTORY_TURNS = 7               # number of consecutive TurnDeltas in the obse
 # (`zarch_film != off`); OFF builds no modules (byte-identical baseline).
 ZARCH_DIM = 32                    # default z_arch latent dim (= the FiLM conditioning rank)
 ZARCH_ATOM_HIDDEN = 64            # hidden width of the per-mon static-atom MLP
+# gen3_pointer_native_v1: the pointer action head's shared scorer hidden width (the ONLY action head —
+# no flat action_net exists in this generation; see Gen3DualHeadMaskablePolicy._build).
+POINTER_HIDDEN = 64               # hidden width of the pointer move/switch/struggle scorers
 
 # Unified transformer hyperparameters. d_model matches ROLE_TOKEN_SIZE so team
 # role tokens enter the transformer without a projection step.

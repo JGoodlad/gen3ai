@@ -23,7 +23,25 @@ import torch as th
 from sb3_contrib.common.maskable.distributions import MaskableDistribution
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 
+from agents.model.arch_constants import D_MODEL, MOVE_NET_HIDDEN
 from agents.model.popart import PopArtNormalizer
+
+
+class _NoFlatActionNet(th.nn.Module):
+    """gen3_pointer_native_v1: a RAISING stub in `action_net`'s slot.
+
+    The flat positional head does not exist in this generation — the pointer head (which needs the
+    extractor's per-entity stash, not just `latent_pi`) is built in `_build` and called explicitly in
+    `_get_action_dist_from_latent`. Any residual SB3 code path that calls `self.action_net(latent)`
+    would be silently running a policy we deleted; make that a loud error, never an `Identity`
+    fallback (which would emit `latent_pi` AS the logits — a garbage policy, not a crash)."""
+
+    def forward(self, *args, **kwargs):  # pragma: no cover - defensive
+        raise RuntimeError(
+            "The flat action_net was removed (gen3_pointer_native_v1) — action logits come from "
+            "Gen3DualHeadMaskablePolicy.pointer_head via _get_action_dist_from_latent. A code path "
+            "calling action_net directly is running the deleted flat policy."
+        )
 
 
 class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
@@ -32,8 +50,18 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     ``self.extract_features(obs)`` returns ``(pi_features, vf_features)`` because the
     shared-extractor path simply returns whatever the extractor returns. Each consumer
     below unpacks that tuple and feeds ``mlp_extractor.forward_actor`` / ``forward_critic``
-    the appropriate half. Everything else (action distribution, value net, masking) is
-    inherited unchanged.
+    the appropriate half. The value net and masking are inherited unchanged.
+
+    **Pointer-native action head (gen3_pointer_native_v1).** There is NO flat positional
+    action head in this generation: ``_build`` replaces SB3's ``action_net`` Linear with a
+    raising stub and builds ``self.pointer_head`` (:class:`PointerNativeActionHead`), which
+    scores each action from the token of the entity it selects — move logit k from the
+    REQUEST-slot-k move token ⊕ its op cells, switch logit j from our-team token j ⊕ its
+    incoming/OAX cells, struggle from the context — with ``latent_pi`` as the shared decision
+    context. ``_get_action_dist_from_latent`` builds the distribution from those logits
+    directly. Position-equivariant by construction: one shared scorer per entity, no logit
+    row ever learns "slot j" positionally, and the sorted-vs-request ordering bug class is
+    unrepresentable at the logits.
 
     **PopArt (opt-in via ``use_popart=True`` in ``policy_kwargs``).** When enabled, the value head
     (``value_net``) outputs *normalized* values and a :class:`~agents.model.popart.PopArtNormalizer`
@@ -44,6 +72,32 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     save/restore across checkpoints. ``use_popart`` is version-checked (``ModelVersion``) — it cannot
     be toggled on a resumed model.
     """
+
+    def _build(self, lr_schedule) -> None:
+        """gen3_pointer_native_v1: build SB3's stack, then REPLACE the flat action head.
+
+        `super()._build` creates `action_net = Linear(latent_dim_pi, 11)` (the flat positional head),
+        ortho-inits everything, and builds the optimizer. This generation has no flat head: swap in a
+        raising stub (see `_NoFlatActionNet`), build the `PointerNativeActionHead` sized from the
+        extractor's cell dims + `latent_dim_pi`, and REBUILD the optimizer — the one `super()` just
+        made holds the deleted Linear's params and not the pointer head's (dead params in a param
+        group would ride every checkpoint; missing ones would silently never train).
+
+        Ordering note: the head is created AFTER `super()._build`'s ortho-init `apply`, so its
+        zero-init scorers survive without the M1 guard — all logits are exactly 0 at step 0, i.e.
+        the cold-start policy is uniform-over-legal (the correct fresh-run init)."""
+        super()._build(lr_schedule)
+        from agents.model.features_extractor import PointerNativeActionHead  # local: avoid import cycle
+        fe = self.features_extractor
+        self.action_net = _NoFlatActionNet()
+        self.pointer_head = PointerNativeActionHead(
+            move_token_dim=MOVE_NET_HIDDEN[1], d_model=D_MODEL,
+            ctx_dim=self.mlp_extractor.latent_dim_pi,
+            move_cell_dim=fe.pointer_move_cell_dim,
+            switch_cell_dim=fe.pointer_switch_cell_dim,
+        )
+        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1),
+                                              **self.optimizer_kwargs)
 
     def __init__(self, *args, use_popart: bool = False, value_from_dist: bool = False, **kwargs):
         # super().__init__ builds value_net (SB3 _build); the normalizer wraps it afterwards.
@@ -99,26 +153,35 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         return self._denorm(self.value_net(latent_vf))
 
     def _get_action_dist_from_latent(self, latent_pi: th.Tensor):
-        """gen3_pointer_head_v1: add the pointer head's per-action DELTA to the flat head's logits.
+        """gen3_pointer_native_v1: the action logits ARE the pointer head's scores.
 
         All three logit sites (`forward`, `evaluate_actions`, `get_distribution`) funnel through this
-        method, and each calls `extract_features` immediately before — so the extractor's stash is
-        always fresh for THIS batch. That makes this the one correct interception point; adding the
-        delta in any single caller would silently skip the other two (e.g. PPO's epoch recompute in
-        `evaluate_actions` would then disagree with the rollout's `forward`, corrupting the ratio).
+        method, and each calls `extract_features` immediately before — so the extractor's
+        `last_pointer_inputs` stash is always fresh for THIS batch. That makes this the one correct
+        scoring point; computing logits in any single caller would silently skip the other two (e.g.
+        PPO's epoch recompute in `evaluate_actions` would then disagree with the rollout's `forward`,
+        corrupting the ratio).
 
-        The delta is a plain additive term on the logits, computed deterministically from the same
-        observation, so log-prob / entropy / the PPO ratio are all unaffected in form — and because
-        the head's scorers are zero-init, the delta is EXACTLY 0 until it trains, making an ON run
-        byte-identical to the flat-head baseline at step 0.
-        """
-        dist = super()._get_action_dist_from_latent(latent_pi)
-        delta = getattr(self.features_extractor, "last_pointer_delta", None)
-        if delta is None:
-            return dist
-        # sb3's MaskableCategoricalDistribution holds the logits on `dist.distribution.logits`;
-        # rebuild through the public API so masking/log_prob/entropy all see the combined logits.
-        return dist.proba_distribution(action_logits=dist.distribution.logits + delta)
+        `latent_pi` is the head's decision CONTEXT — the same policy-tower output the deleted flat
+        head consumed, so the op block / beliefs / FiLM all condition every pointer score. Masking is
+        applied by the callers on the returned distribution, downstream of these logits, exactly as
+        before."""
+        inputs = getattr(self.features_extractor, "last_pointer_inputs", None)
+        if inputs is None:
+            raise RuntimeError(
+                "last_pointer_inputs is None — _get_action_dist_from_latent was called without a "
+                "preceding extract_features on this policy's extractor (the pointer head has no "
+                "flat fallback)."
+            )
+        tok_req, valid, team_tokens, move_cells, switch_cells = inputs
+        if tok_req.shape[0] != latent_pi.shape[0]:
+            raise RuntimeError(
+                f"stale pointer stash: batch {tok_req.shape[0]} vs latent_pi {latent_pi.shape[0]} — "
+                "the extractor forward and this latent are from different batches."
+            )
+        logits = self.pointer_head(latent_pi, tok_req, valid, team_tokens, move_cells, switch_cells)
+        # Build through the public API so masking / log_prob / entropy all see these logits.
+        return self.action_dist.proba_distribution(action_logits=logits)
 
     def forward(
         self,

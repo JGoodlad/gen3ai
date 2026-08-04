@@ -177,6 +177,19 @@ _DMG_OAX_IDX_LOW, _DMG_OAX_IDX_HIGH, _DMG_OAX_IDX_CRIT, _DMG_OAX_IDX_PKO = 0, 1,
 _DMG_OAX_PER_MON = _DMG_OAX_N_MOVES * _DMG_OAX_PER_MOVE                # 16 (the cell block per attacker)
 _DMG_OAX = TEAM_SIZE * _DMG_OAX_PER_MON + 2 * TEAM_SIZE               # 6×16 + p_outspeed[6] + alive[6] = 108
 
+# gen3_pointer_native_v1: the per-ACTION cell widths `DamageOperator.pointer_cells` slices out of the flat
+# damage block for the pointer action head — the LOSSLESS per-action physics route (move cell k feeds move
+# logit 6+k, switch cell j feeds switch logit j; the flat concat delivers the same numbers only post-pool).
+# MOVE cell (request-slot k, only when `outgoing`): the `_outgoing_block` damage stack [low,high,crit,pko]
+# + the `_status_landing` pair [p_land, known] + the 10 per-move secondary chances = 16.
+_PTR_MOVE_CELL = _DMG_OUT_PER_MOVE + 2 + _N_SECONDARY                  # 4 + 2 + 10 = 16
+# SWITCH cell (defender/candidate mon j, always when the op is on): the per-mon incoming row (12) + its
+# CB-conditional pair [phys_high_cb_j, pko_cb_j] + the shared p_cb (broadcast — the head needs it NEXT TO
+# the CB tail it conditions) = 15; + the OAX attacker row (16 cells + p_outspeed_j + alive_j = 18) when
+# `matrices_outgoing_all` (the switch-in OFFENSE read).
+_PTR_SWITCH_CELL_IN = _DMG_PER_MON + _DMG_CB_PER_MON + 1               # 12 + 2 + 1 = 15
+_PTR_SWITCH_CELL_OAX = _DMG_OAX_PER_MON + 2                            # 16 + p_outspeed + alive = 18
+
 # gen3_per_move_matrices_v1 (v33): the INCOMING per-move DAMAGE MATRIX — the ENRICHED evolution of the v30
 # top-K block (it SUPERSEDES it; the two don't coexist). For the opp active's top-K most-believed moves: a
 # richer per-move HEADER [latent(32), belief, accuracy, is_phys, EXPLICIT effect bits (6: recovery/status/
@@ -1098,6 +1111,63 @@ class DamageOperator(torch.nn.Module):
         out = torch.cat([per_move.reshape(B, TEAM_SIZE * _DMG_OAX_N_MOVES * _DMG_OAX_PER_MOVE),
                          p_outspeed, alive], dim=1)                                     # [B, _DMG_OAX]
         return out * has_opp[:, None]                                                   # zeroed when no opp active
+
+    # ------------------------------------------------------------------ pointer-native action head cells
+    @property
+    def pointer_move_cell_dim(self) -> int:
+        """Per-request-slot cell width for the pointer MOVE scorer (0 when the outgoing direction is off —
+        the head's Linear in_features are fixed by the build-time toggle set, the op's own convention)."""
+        return _PTR_MOVE_CELL if self.outgoing else 0
+
+    @property
+    def pointer_switch_cell_dim(self) -> int:
+        """Per-candidate-mon cell width for the pointer SWITCH scorer."""
+        return _PTR_SWITCH_CELL_IN + (_PTR_SWITCH_CELL_OAX if self.matrices_outgoing_all else 0)
+
+    def pointer_cells(self, damage_block: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """gen3_pointer_native_v1: slice the flat damage block into PER-ACTION cells for the pointer head —
+        the op owns its layout, so the offsets live here (mirroring `decode_damage_block`, the SoT mirror)
+        and the consumer never hardcodes an index.
+
+        Returns ``(move_cells [B,4,pointer_move_cell_dim], switch_cells [B,6,pointer_switch_cell_dim])``:
+          * move cell k (REQUEST-slot order == action logit 6+k, the `gen3_op_move_align_v1` guarantee —
+            `_outgoing_block`/`_status_landing` read `ctx.our_active_req_move_ids`, the same id source the
+            pointer token permutation matches against): `[low, high, crit, pko, p_land, known, sec×10]`.
+          * switch cell j: the incoming per-defender row (12) + `[phys_high_cb_j, pko_cb_j, p_cb]` +
+            (when `matrices_outgoing_all`) the OAX attacker row `[cells×16, p_outspeed_j, alive_j]`.
+        Pure slicing of the SAME tensor the projection heads consume (post-gain), so the pointer path and
+        the flat concat can never disagree on a value."""
+        B = damage_block.shape[0]
+        # --- switch cells: incoming per-mon rows + the CB tail (+ the OAX attacker rows) ---
+        inc = damage_block[:, :TEAM_SIZE * _DMG_PER_MON].reshape(B, TEAM_SIZE, _DMG_PER_MON)
+        cb0 = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC
+        high_cb = damage_block[:, cb0:cb0 + TEAM_SIZE]                                   # [B,6]
+        pko_cb = damage_block[:, cb0 + TEAM_SIZE:cb0 + 2 * TEAM_SIZE]                    # [B,6]
+        p_cb = damage_block[:, cb0 + 2 * TEAM_SIZE:cb0 + 2 * TEAM_SIZE + 1]              # [B,1] shared
+        switch_parts = [inc, high_cb[:, :, None], pko_cb[:, :, None],
+                        p_cb[:, None, :].expand(B, TEAM_SIZE, 1)]
+        if self.matrices_outgoing_all:
+            oax0 = self.out_dim - _DMG_OAX                    # OAX is appended LAST (the v39 contract)
+            cells = damage_block[:, oax0:oax0 + TEAM_SIZE * _DMG_OAX_PER_MON].reshape(
+                B, TEAM_SIZE, _DMG_OAX_PER_MON)
+            posp0 = oax0 + TEAM_SIZE * _DMG_OAX_PER_MON
+            p_outspeed = damage_block[:, posp0:posp0 + TEAM_SIZE]                        # [B,6]
+            alive = damage_block[:, posp0 + TEAM_SIZE:posp0 + 2 * TEAM_SIZE]             # [B,6]
+            switch_parts += [cells, p_outspeed[:, :, None], alive[:, :, None]]
+        switch_cells = torch.cat(switch_parts, dim=2)                                    # [B,6,Cs]
+        # --- move cells: the outgoing damage stack + status landing + per-move secondaries ---
+        if not self.outgoing:
+            return damage_block.new_zeros(B, _DMG_OUT_N_MOVES, 0), switch_cells
+        ob = self.incoming_dim
+        per_move = damage_block[:, ob:ob + _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE].reshape(
+            B, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE)                                      # move-major [B,4,4]
+        sec0 = ob + _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE + 1                             # skip p_outspeed
+        sec = damage_block[:, sec0:sec0 + _DMG_OUT_SEC].reshape(B, _DMG_OUT_N_MOVES, _N_SECONDARY)
+        st0 = ob + _DMG_OUTGOING                                                         # the status block
+        p_land = damage_block[:, st0:st0 + _DMG_STATUS_N_MOVES]                          # [B,4]
+        known = damage_block[:, st0 + _DMG_STATUS_N_MOVES:st0 + 2 * _DMG_STATUS_N_MOVES]  # [B,4]
+        move_cells = torch.cat([per_move, p_land[:, :, None], known[:, :, None], sec], dim=2)
+        return move_cells, switch_cells                                                  # [B,4,16], [B,6,Cs]
 
     def _status_landing(self, ctx: 'ExtractorContext') -> torch.Tensor:
         """gen3_unified_status_landing_v1: per OUR move (REQUEST-slot order == action 6+k), P(a dedicated

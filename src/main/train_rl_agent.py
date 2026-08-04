@@ -372,7 +372,6 @@ def _run_arch_toggles(args) -> dict:
         move_belief_prefuse=args.move_belief_prefuse,
         move_belief_single_compute=args.move_belief_single_compute,
         damage_candidate_k=args.damage_candidate_k,
-        pointer_head=args.pointer_head,
         damage_op_prefuse=args.damage_op_prefuse,
         win_prob_mode=args.win_prob_mode,
         pubval_mode=args.pubval_mode,
@@ -1128,16 +1127,8 @@ async def main():
                              "measured +11.4%% forward / +63.5%% op at B=256, but only +0.3%% at B=1 "
                              "(the CPU opponent is dispatch-bound, not tensor-size bound). "
                              "Forward-behavior (version-checked, fresh-only). REQUIRES --damage-op.")
-    parser.add_argument("--pointer-head", "--pointer_head", dest="pointer_head",
-                        action=BoolFlag, default=None,
-                        help="Score each action FROM THE TOKEN OF THE ENTITY IT SELECTS: move logit k "
-                             "from the move at REQUEST slot k (permuted by move-num identity, which "
-                             "makes the ordering_integrity.py sorted-vs-request bug class "
-                             "unrepresentable), switch logit j from our-team token j (fixes F2: switch "
-                             "logits are otherwise read from a permutation-INVARIANT pool, so a bench "
-                             "mon's own token never reaches its own logit). Adds a ZERO-INIT delta to "
-                             "the flat head's logits => identity-at-init, warm-starts from any "
-                             "checkpoint. Structural (version-checked, fresh-only). Off by default.")
+    # gen3_pointer_native_v1: --pointer-head is GONE — the pointer head is THE action head,
+    # unconditionally (no flat action_net exists in this generation; see Gen3DualHeadMaskablePolicy).
     parser.add_argument("--win-prob-mode", "--win_prob_mode", dest="win_prob_mode",
                         choices=("none", "read_only", "shaping"), default=None,
                         help="Auxiliary WIN-PROBABILITY head: a calibrated P(win|state) readout off the "
@@ -2009,7 +2000,6 @@ async def main():
     _resolve("move_belief_prefuse", False)     # v32 forward-behavior (version-checked, fresh-only)
     _resolve("move_belief_single_compute", False)  # v47 forward-behavior (version-checked, fresh-only)
     _resolve("damage_candidate_k", 0)          # v49 forward-behavior (version-checked, fresh-only)
-    _resolve("pointer_head", False)            # v49 structural (version-checked, fresh-only)
     _resolve("damage_op_prefuse", False)       # v50 structural (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
     _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)

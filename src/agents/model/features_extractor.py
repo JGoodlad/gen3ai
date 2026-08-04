@@ -52,6 +52,7 @@ from agents.model.arch_constants import (  # noqa: F401  (re-export)
     N_HISTORY_TURNS,
     ZARCH_DIM,
     ZARCH_ATOM_HIDDEN,
+    POINTER_HIDDEN,
     D_MODEL,
     TRANSFORMER_N_LAYERS,
     TRANSFORMER_N_HEADS,
@@ -493,11 +494,9 @@ class PokemonEncoder(torch.nn.Module):
 
     def __init__(self, layout: Dict[str, Any], move_latent: bool = False):
         super().__init__()
-        # gen3_pointer_head_v1: when True, `forward` stashes the per-(mon, move-slot) tokens for the
-        # pointer action head. Off by default and set by the root extractor, so the baseline build
-        # allocates nothing and the stash stays None. (Set AFTER super().__init__() — nn.Module's
-        # __setattr__ needs its internal dicts to exist before any attribute assignment.)
-        self.stash_move_tokens = False
+        # gen3_pointer_native_v1: `forward` ALWAYS stashes the per-(mon, move-slot) tokens — they are
+        # the pointer action head's move-scorer input, and the pointer head is THE action head in this
+        # generation (no flat action_net exists to fall back to). Cost: one reshape per forward.
         self.last_move_tokens: Optional[torch.Tensor] = None
         self.layout = layout
         _msl = layout['pokemon']['moves']['layout']['slot_layout']
@@ -712,18 +711,14 @@ class PokemonEncoder(torch.nn.Module):
         mv_in = processed_moves.reshape(batch_size * n_poke, num_moves, MOVE_NET_HIDDEN[1])
         mv_delta, _ = self.move_self_attn(mv_in, mv_in, mv_in)
         mv_out = self.move_self_norm(mv_in + mv_delta)
-        # gen3_pointer_head_v1: STASH the per-move tokens BEFORE they are flattened into the mon
-        # vector below. They are exactly what a pointer action head needs — one addressable vector
-        # per (mon, move slot), already contextualised by the within-mon move self-attention above —
-        # and the flatten on the next line is the only reason they were never reachable. Read-only
-        # side stash (never fed forward), so it cannot change the baseline forward; `None` when the
-        # pointer head is off. NOTE the slot axis is SORTED-BY-ID order (MovesEncoder.get_sorted_moves),
-        # NOT action/request order — the consumer MUST permute (see `_pointer_move_tokens`), which is
-        # the whole `ordering_integrity.py` bug class this head exists to make unrepresentable.
-        self.last_move_tokens = (
-            mv_out.reshape(batch_size, n_poke, num_moves, MOVE_NET_HIDDEN[1])
-            if self.stash_move_tokens else None
-        )
+        # gen3_pointer_native_v1: STASH the per-move tokens BEFORE they are flattened into the mon
+        # vector below — one addressable vector per (mon, move slot), already contextualised by the
+        # within-mon move self-attention above; the flatten on the next line is the only reason they
+        # were never reachable. The pointer action head (the ONLY action head) scores move logit k from
+        # these. NOTE the slot axis is SORTED-BY-ID order (MovesEncoder.get_sorted_moves), NOT
+        # action/request order — the consumer MUST permute (see `_request_order_move_tokens`), which is
+        # the `ordering_integrity.py` bug class the pointer head makes unrepresentable at the logits.
+        self.last_move_tokens = mv_out.reshape(batch_size, n_poke, num_moves, MOVE_NET_HIDDEN[1])
         processed_moves = mv_out.reshape(batch_size, n_poke, -1)
 
         pokemon_enriched = torch.cat([
@@ -1573,7 +1568,7 @@ from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     decode_damage_block,
 )
 def _request_order_move_tokens(move_tokens_all, ctx):
-    """gen3_pointer_head_v1: permute OUR ACTIVE mon's per-move tokens from the extractor's
+    """gen3_pointer_native_v1: permute OUR ACTIVE mon's per-move tokens from the extractor's
     SORTED-BY-ID slot order into ACTION/REQUEST order, by MOVE-NUM IDENTITY (never by position).
 
     This is the single place the `ordering_integrity.py` bug class is dissolved: the extractor reads
@@ -1597,43 +1592,51 @@ def _request_order_move_tokens(move_tokens_all, ctx):
     return tokens_req * valid[:, :, None].float(), valid.float()
 
 
-class PointerActionHead(torch.nn.Module):
-    """gen3_pointer_head_v1: score each action FROM THE TOKEN OF THE ENTITY IT SELECTS.
+class PointerNativeActionHead(torch.nn.Module):
+    """gen3_pointer_native_v1: THE action head — score each action FROM THE TOKEN OF THE ENTITY IT
+    SELECTS. There is no flat positional head in this generation; these ARE the logits.
 
-    WHY. Today all 11 action logits come from one `Linear` over a pooled vector. Two consequences,
-    both measured:
-      * **F2** — the switch logits are read from a PERMUTATION-INVARIANT CLS pool, so a bench mon's
-        own learned token can never reach its own switch logit. Everything the model knows about
-        "Skarmory specifically" has to survive being averaged with the other five mons first.
-      * **The ordering bug class** — the extractor reads a mon's moves in SORTED-BY-ID order while
-        the action space uses REQUEST order, so `action_mask[6+k]` and move-token *k* refer to
-        different moves whenever the moveset isn't alphabetical. `agents/action/ordering_integrity.py`
-        exists solely to permute one into the other and to fail loudly when it can't; its docstring
-        notes the mismatch is silent when every move is legal and wrong exactly on
-        disabled/zero-PP/Taunt/Disable/Choice-locked turns.
+    WHY (the fresh-generation commitment — designs/ai_v9/design_pointer_action_head.md §0). A flat
+    `Linear(latent, 11)` is position-SENSITIVE: logit row j must independently rediscover what "team
+    slot j" means, and per-move physics reaches logit 6+k only by the projection LEARNING the
+    alignment. The pointer head is position-EQUIVARIANT: one shared scoring function per entity token
+    (permute the team ⇒ the logits permute with it), which dissolves two defect classes structurally:
+      * **F2** — switch logits read from a permutation-INVARIANT CLS pool, so a bench mon's own token
+        could never reach its own switch logit.
+      * **The ordering bug class** — the extractor reads moves SORTED-BY-ID while the action space
+        uses REQUEST order; the permutation now happens once, by move-num identity
+        (`_request_order_move_tokens`), so a misaligned logit is unrepresentable.
 
-    This head makes both structural instead of defended: move logit *k* is computed from the token of
-    the move at REQUEST slot *k* (permuted here, once, by move-num identity — not by position), and
-    switch logit *j* from our-team token *j*. A misaligned logit becomes unrepresentable rather than
-    guarded.
+    INPUTS (the information contract — each closes a measured deficit of the v49 delta form):
+      * `ctx_vec` = **latent_pi** (the policy tower's output) — the decision context. This is the
+        SAME vector the deleted flat head consumed, so everything it saw (the op block, the beliefs,
+        FiLM/z_arch modulation) conditions every pointer score (closes G4/G5).
+      * move k: its REQUEST-slot token ⊕ its own op cells `[low,high,crit,pko,p_land,known,sec×10]`
+        — the lossless per-action physics route (closes G2).
+      * switch j: our-team token j (post-transformer — board-aware) ⊕ its incoming row + CB tail
+        ⊕ its OAX attacker row — per-candidate defense AND offense (closes G3).
+    Cell widths are fixed by the build-time toggle set (`DamageOperator.pointer_*_cell_dim`; 0 when
+    the source block is off — a missing block narrows the Linear, never silently zero-pads).
 
-    ADDITIVE + ZERO-INIT, on purpose. The output is a DELTA added to the existing flat head's logits,
-    and the three scoring `Linear`s are zero-initialised, so at step 0 the delta is EXACTLY 0 and the
-    policy is byte-identical to the flat-head baseline. That (a) warm-starts from any existing
-    checkpoint with no distillation, (b) makes ON-vs-OFF a clean A/B that can only diverge as the
-    pointer path learns, and (c) follows the house identity-at-init convention (`refine_proj`, FiLM,
-    `MoveBelief.reinject`). Replacing the flat head outright is the follow-up once this pays.
+    OWNERSHIP. The module lives on the POLICY as `pointer_head` (`action_net` is a raising stub; built in
+    `Gen3DualHeadMaskablePolicy._build`, AFTER SB3's ortho-init apply — so the zero-init survives
+    without the M1 guard). The three scorers are zero-init ⇒ every logit is exactly 0 at step 0 ⇒
+    the cold-start policy is uniform-over-legal, the correct fresh-run init.
 
     Output layout is the action space (`agents/action/constants.py`): `[switch x6, move x4, struggle]`
     = SWITCH_START..SWITCH_END, MOVE_START..MOVE_END, STRUGGLE.
     """
 
-    def __init__(self, move_token_dim: int, d_model: int, ctx_dim: int, hidden: int = 64):
+    def __init__(self, move_token_dim: int, d_model: int, ctx_dim: int,
+                 move_cell_dim: int = 0, switch_cell_dim: int = 0, hidden: int = POINTER_HIDDEN):
         super().__init__()
+        self.move_cell_dim = int(move_cell_dim)
+        self.switch_cell_dim = int(switch_cell_dim)
         self.ctx_proj = torch.nn.Linear(ctx_dim, hidden)
-        self.move_proj = torch.nn.Linear(move_token_dim, hidden)
-        self.switch_proj = torch.nn.Linear(d_model, hidden)
-        # The three SCORERS are zero-init => delta == 0 at init (exactly, weight AND bias).
+        self.move_proj = torch.nn.Linear(move_token_dim + self.move_cell_dim, hidden)
+        self.switch_proj = torch.nn.Linear(d_model + self.switch_cell_dim, hidden)
+        # The three SCORERS are zero-init (weight AND bias) => all logits exactly 0 at init =>
+        # uniform-over-legal cold start.
         self.move_score = torch.nn.Linear(hidden, 1)
         self.switch_score = torch.nn.Linear(hidden, 1)
         self.struggle_score = torch.nn.Linear(hidden, 1)
@@ -1642,13 +1645,18 @@ class PointerActionHead(torch.nn.Module):
             torch.nn.init.zeros_(lin.bias)
 
     def forward(self, ctx_vec: torch.Tensor, move_tokens_req: torch.Tensor,
-                move_valid: torch.Tensor, team_tokens: torch.Tensor) -> torch.Tensor:
-        """`ctx_vec` [B,ctx_dim] (the decision context — our active mon's refined token);
-        `move_tokens_req` [B,4,move_token_dim] in REQUEST order; `move_valid` [B,4] (1.0 where the
-        request slot resolved to a real move); `team_tokens` [B,6,d_model]. Returns [B,11]."""
+                move_valid: torch.Tensor, team_tokens: torch.Tensor,
+                move_cells: torch.Tensor, switch_cells: torch.Tensor) -> torch.Tensor:
+        """`ctx_vec` [B,ctx_dim] = latent_pi; `move_tokens_req` [B,4,move_token_dim] in REQUEST
+        order; `move_valid` [B,4] (1.0 where the request slot resolved to a real move);
+        `team_tokens` [B,6,d_model]; `move_cells` [B,4,move_cell_dim] / `switch_cells`
+        [B,6,switch_cell_dim] (the op's per-action physics; width-0 when the op is off).
+        Returns the [B,11] action logits."""
         c = self.ctx_proj(ctx_vec)                                            # [B,H]
-        m = torch.tanh(self.move_proj(move_tokens_req) + c[:, None, :])       # [B,4,H]
-        s = torch.tanh(self.switch_proj(team_tokens) + c[:, None, :])         # [B,6,H]
+        m_in = torch.cat([move_tokens_req, move_cells], dim=-1)               # [B,4,tok+cell]
+        s_in = torch.cat([team_tokens, switch_cells], dim=-1)                 # [B,6,d_model+cell]
+        m = torch.tanh(self.move_proj(m_in) + c[:, None, :])                  # [B,4,H]
+        s = torch.tanh(self.switch_proj(s_in) + c[:, None, :])                # [B,6,H]
         # An unresolved request slot (forced Struggle / <4 moves) contributes exactly 0, never a
         # score computed from a zero token — the action mask already forbids it, but a nonzero logit
         # there would still perturb the softmax normaliser over the LEGAL actions.
@@ -1802,7 +1810,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  move_belief_prefuse: bool = False, move_belief_single_compute: bool = False,
                  damage_candidate_k: int = 0, damage_refine_rounds: int = 0,
                  damage_op_prefuse: bool = False,
-                 pointer_head: bool = False,
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  damage_matrices_outgoing_all: bool = False,
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
@@ -1854,18 +1861,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Phase modules (constructed before the dummy forward below).
         self.embeddings = Embeddings(layout)
         self.unpack = ObsUnpack(layout, attend_unrevealed_opponents=attend_unrevealed_opponents)
-        # gen3_pointer_head_v1: score each action from the token of the entity it selects (see
-        # PointerActionHead). Adds a zero-init DELTA to the flat head's logits, so ON is byte-identical
-        # at step 0 and warm-starts from any checkpoint. Set BEFORE PokemonEncoder is built — the
-        # encoder reads it to arm its per-move stash. STRUCTURAL (adds params) -> version-gated.
-        self.pointer_head_enabled = bool(pointer_head)
-        self.last_pointer_delta: Optional[torch.Tensor] = None
+        # gen3_pointer_native_v1: the pointer action head is THE action head (no flat action_net in this
+        # generation), but the MODULE lives on the POLICY (Gen3DualHeadMaskablePolicy._build — its ctx is
+        # latent_pi, which does not exist at extractor time). The extractor's side of the contract is the
+        # per-forward stash `last_pointer_inputs` (request-ordered move tokens + valid mask + our team
+        # tokens + the op's per-action cells), set unconditionally in forward_internal.
+        self.last_pointer_inputs: Optional[Tuple[torch.Tensor, ...]] = None
         self.pokemon_encoder = PokemonEncoder(layout, move_latent=move_latent)
-        # gen3_pointer_head_v1: arm the per-move stash only when the head will consume it.
-        self.pokemon_encoder.stash_move_tokens = self.pointer_head_enabled
-        self.pointer_head = (PointerActionHead(move_token_dim=MOVE_NET_HIDDEN[1], d_model=D_MODEL,
-                                               ctx_dim=D_MODEL)
-                             if self.pointer_head_enabled else None)
         self.team_transformer = TeamTransformer(layout)
         self.cls_pool = CLSPool(layout)
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
@@ -2569,6 +2571,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     @property
     def hp_type_idx_map(self): return self.embeddings.hp_type_idx_map
 
+    # gen3_pointer_native_v1: the pointer head's per-action cell widths — the policy sizes the head's
+    # Linears from these at build time (0 when the source op block is off, so a missing block narrows
+    # the Linear instead of silently feeding zeros at a learned weight).
+    @property
+    def pointer_move_cell_dim(self) -> int:
+        return self.damage_op.pointer_move_cell_dim if self.damage_op is not None else 0
+    @property
+    def pointer_switch_cell_dim(self) -> int:
+        return self.damage_op.pointer_switch_cell_dim if self.damage_op is not None else 0
+
     @staticmethod
     def _locate_active_slot(active_flags: torch.Tensor) -> torch.Tensor:
         """Back-compat shim — delegates to the module-level `locate_active_slot`."""
@@ -2928,11 +2940,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # per-OUR-mon INCOMING rows are projected (small-init residual) onto the 6 our-team tokens, then ONE
         # more encoder layer re-attends the 12 team tokens (our↔opp) so each of our mons' representation is
         # contextualised by ITS incoming damage + the opp threats — and the pools below become damage-AWARE
-        # board summaries instead of damage-blind ones. (This is a BOARD-level enrichment of the shared
-        # representation; it does NOT add first-class per-candidate switch SCORING — the re-attended bench
-        # tokens are pooled back into one our_pool and the stock action head reads a single pooled vector, so
-        # the per-bench signal to the switch logits is still the concatenated per-slot damage block. True
-        # per-candidate scoring would need a per-bench pointer head, a separate follow-up.) Identity-at-init
+        # board summaries instead of damage-blind ones. (BOARD-level enrichment; the per-CANDIDATE switch
+        # scoring is now first-class regardless — the pointer head reads the final our_team_out per token,
+        # so a re-attended bench token flows straight into its own switch logit. gen3_pointer_native_v1.)
+        # Identity-at-init
         # (the layer's output paths are zero-init'd in __init__) ⇒ ON starts ≈ the damage_op baseline; the
         # damage signal grows with training. No-op when off (modules None).
         if self.reattend_layer is not None and damage_block is not None:
@@ -2947,25 +2958,22 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx
         )
-        # gen3_pointer_head_v1: the per-action logit DELTA, scored from the token of the entity each
-        # action selects — move logit k from the move at REQUEST slot k, switch logit j from our-team
-        # token j (post-transformer, so it carries the board context the CLS pool would have averaged
-        # away). Stashed for `Gen3DualHeadMaskablePolicy._get_action_dist_from_latent`, which ADDS it
-        # to the flat head's logits; the scorers are zero-init so this is exactly 0 at step 0.
-        # Context = our active mon's refined token (the "whose decision is this" vector).
-        self.last_pointer_delta = None
-        if self.pointer_head is not None:
-            _mt = self.pokemon_encoder.last_move_tokens
-            if _mt is None:
-                raise RuntimeError(
-                    "pointer_head is on but PokemonEncoder.last_move_tokens is None — the per-move "
-                    "stash was not armed. `stash_move_tokens` must be set on the encoder at build "
-                    "time (see Gen3FeaturesExtractor.__init__)."
-                )
-            _tok_req, _valid = _request_order_move_tokens(_mt, ctx)
-            self.last_pointer_delta = self.pointer_head(
-                our_active_refined, _tok_req, _valid, our_team_out
-            )
+        # gen3_pointer_native_v1: stash the pointer action head's PER-ENTITY inputs for
+        # `Gen3DualHeadMaskablePolicy._get_action_dist_from_latent` — the head itself lives on the
+        # policy (its ctx is latent_pi, which doesn't exist here). Stashed AFTER the (possibly
+        # re-attended) final team tokens and the final damage block, so switch scorer j reads the same
+        # board-aware token every pool reads, and the op cells are the same numbers the projection
+        # heads consume. The move tokens are permuted SORTED-BY-ID → REQUEST order by move-num
+        # identity here, once (`_request_order_move_tokens` — the ordering bug class dissolves at this
+        # line). When the op is off the cell tensors are width-0 (the head's Linears are built
+        # correspondingly narrower — never silently zero-padded).
+        _tok_req, _valid = _request_order_move_tokens(self.pokemon_encoder.last_move_tokens, ctx)
+        if self.damage_op is not None and damage_block is not None:
+            _mcells, _scells = self.damage_op.pointer_cells(damage_block)
+        else:
+            _mcells = _tok_req.new_zeros(ctx.batch_size, _tok_req.shape[1], 0)
+            _scells = our_team_out.new_zeros(ctx.batch_size, TEAM_SIZE, 0)
+        self.last_pointer_inputs = (_tok_req, _valid, our_team_out, _mcells, _scells)
         # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
         # 128-dim FitNets HINT layer). Consumed ONLY by the FitNets value-feature distillation
         # (`instrumented_ppo._value_feat_distill`): both student and teacher forwards leave it here, so the

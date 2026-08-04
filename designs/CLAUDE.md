@@ -27,7 +27,7 @@ To orient yourself:
 |------|---------|-------|
 | **Active training run** | **ai_v8** | `ai_v8_03_zarch_control_0718` — the v44 zarch/FiLM epoch (cold-control fork from the ai_v8_01 init), full booster stack (team-block-64, accum-16, onesided team-PFSP, film-accum-4), full LR (anneal removed 07-20), ~232M steps, pool 8 snapshots, ELO band ~1990–2018. |
 | **Code on main** | **ai_v8 (v44)** | `MODEL_CONFIG_VERSION` 44 (`gen3_zarch_film_v1`), booster flags + NSR advisor + the `_film_grad_accumulator` save-exclusion fix (8903a1c). The next fresh-run pre-flight list is `designs/ai_v8/next_run_plan.md`. |
-| **ai_v9** | design-only | Entity-graph skeleton (`designs/ai_v9/design_entity_graph.md`) — no code. |
+| **ai_v9** | mostly design | Entity-graph skeleton (`designs/ai_v9/design_entity_graph.md`); first code toehold = the v49 delta pointer head (`gen3_pointer_head_v1`); its full-head follow-up is `design_pointer_action_head.md`. |
 
 ---
 
@@ -122,11 +122,15 @@ FiLM (v44 `gen3_zarch_film_v1` — the amortization-gap storage fix), the discov
 top-K=16+tail op candidates, refine=1, obs-skip, belief-grad decision). (The Rust simulator
 work originally sketched for this slot shipped as `src/rust_sim/` under its own docs.)
 
-### ai_v9 (design-only)
+### ai_v9 (mostly design)
 The entity-graph skeleton: entities/tokens (mons, moves, sides, global), computed physics as
 attention EDGE BIASES, pointer action heads, op head-concat deprecation. Full inventory:
-`design_entity_graph.md`. No implementation; the staged on-ramp (Form-A cross-attention) is an
-ai_v8 next-run experiment.
+`design_entity_graph.md`. First implementation toehold: the **v49 delta pointer head**
+(`gen3_pointer_head_v1` — a zero-init additive delta on the flat head's logits, move logit k
+from the request-slot-k move token, switch logit j from our-team token j).
+`design_pointer_action_head.md` researches making it the *working* head for mons + moves
+(physics-into-scorers enrich → context upgrade → replace the flat head outright). The staged
+on-ramp (Form-A cross-attention) remains an ai_v8 next-run experiment.
 
 ---
 

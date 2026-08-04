@@ -38,8 +38,7 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "move_belief_prefuse": "move_belief_prefuse",                           # v32
     "move_belief_single_compute": "move_belief_single_compute",             # v47
     "damage_candidate_k": "damage_candidate_k",                             # v49
-    "pointer_head": "pointer_head",                                         # v49
-    "damage_op_prefuse": "damage_op_prefuse",                               # v50
+    "damage_op_prefuse": "damage_op_prefuse",                               # v50 (v51 pointer-native: no key — unconditional)
     "win_prob_mode": "win_prob_mode",                                       # v22
     "pubval_mode": "pubval_mode",                                           # v43
     "value_dist_mode": "value_dist_mode",                                   # v29
