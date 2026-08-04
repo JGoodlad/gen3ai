@@ -6,17 +6,17 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 `cargo test` via `tests/handler_audit_test.rs`). It fails on: a NEW un-dispositioned
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
-Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
-49 conditions (engine state space + attached), 263 modeled moves
-→ **960 (effect, hook) rows**.
+Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
+49 conditions (engine state space + attached), 265 modeled moves
+→ **969 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 895 |
+| implemented | 916 |
 | noop_justified | 36 |
-| unreachable_justified | 29 |
+| unreachable_justified | 17 |
 
-## ability (131 rows: implemented=106, noop_justified=17, unreachable_justified=8)
+## ability (134 rows: implemented=109, noop_justified=17, unreachable_justified=8)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -45,6 +45,9 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | flamebody | onDamagingHit | implemented | `turn.rs::apply_contact_proc` |
 | flashfire | onEnd | implemented | `turn.rs::execute_switch` |
 | flashfire | onTryHit | implemented | `turn.rs::apply_flash_fire_activation` |
+| forecast | onStart | implemented | `forecast.rs::forecast_weather_change` |
+| forecast | onSwitchInPriority | implemented | `forecast.rs::forecast_weather_change` |
+| forecast | onWeatherChange | implemented | `forecast.rs::forecast_each_event` |
 | guts | onModifyAtk | implemented | `turn.rs::resolve_atk_stat_mods` |
 | guts | onModifyAtkPriority | implemented | `turn.rs::resolve_atk_stat_mods` |
 | hugepower | onModifyAtk | implemented | `turn.rs::resolve_atk_stat_mods` |
@@ -344,7 +347,7 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (223 rows: implemented=196, noop_justified=9, unreachable_justified=18)
+## condition (223 rows: implemented=208, noop_justified=9, unreachable_justified=6)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -434,9 +437,9 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | futuremove | onResidual | implemented | `turn.rs::apply_future_move` |
 | futuremove | onResidualOrder | implemented | `turn.rs::apply_future_move` |
 | futuremove | onStart | implemented | `state.rs::future_move` |
-| hail | duration | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
-| hail | durationCallback | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
-| hail | onFieldEnd | unreachable_justified | weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end |
+| hail | duration | implemented | `turn.rs::apply_weather_chip` |
+| hail | durationCallback | implemented | `turn.rs::apply_weather_chip` |
+| hail | onFieldEnd | implemented | `turn.rs::apply_weather_chip` |
 | hail | onFieldResidual | implemented | `turn.rs::run_residuals` |
 | hail | onFieldResidualOrder | implemented | `turn.rs::run_residuals` |
 | hail | onFieldStart | implemented | `event.rs::run_switch` |
@@ -489,9 +492,9 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | psn | onStart | implemented | `turn.rs::try_set_status` |
 | pursuit | duration | implemented | `state.rs::pursuit` |
 | pursuit | onBeforeSwitchOut | implemented | `turn.rs::execute_switch` |
-| raindance | duration | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
-| raindance | durationCallback | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
-| raindance | onFieldEnd | unreachable_justified | weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end |
+| raindance | duration | implemented | `turn.rs::apply_weather_chip` |
+| raindance | durationCallback | implemented | `turn.rs::apply_weather_chip` |
+| raindance | onFieldEnd | implemented | `turn.rs::apply_weather_chip` |
 | raindance | onFieldResidual | implemented | `turn.rs::run_residuals` |
 | raindance | onFieldResidualOrder | implemented | `turn.rs::run_residuals` |
 | raindance | onFieldStart | implemented | `event.rs::run_switch` |
@@ -502,9 +505,9 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | reflect | onSideEnd | implemented | `turn.rs::run_residuals` |
 | reflect | onSideResidualOrder | implemented | `turn.rs::run_residuals` |
 | reflect | onSideStart | implemented | `turn.rs::modeled_screen_move` |
-| sandstorm | duration | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
-| sandstorm | durationCallback | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
-| sandstorm | onFieldEnd | unreachable_justified | weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end |
+| sandstorm | duration | implemented | `turn.rs::apply_weather_chip` |
+| sandstorm | durationCallback | implemented | `turn.rs::apply_weather_chip` |
+| sandstorm | onFieldEnd | implemented | `turn.rs::apply_weather_chip` |
 | sandstorm | onFieldResidual | implemented | `turn.rs::run_residuals` |
 | sandstorm | onFieldResidualOrder | implemented | `turn.rs::run_residuals` |
 | sandstorm | onFieldStart | implemented | `event.rs::run_switch` |
@@ -532,9 +535,9 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | substitute | onStart | implemented | `turn.rs::run_status_move` |
 | substitute | onTryPrimaryHit | implemented | `turn.rs::absorb_into_sub` |
 | substitute | onTryPrimaryHitPriority | implemented | `turn.rs::absorb_into_sub` |
-| sunnyday | duration | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
-| sunnyday | durationCallback | unreachable_justified | a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4 |
-| sunnyday | onFieldEnd | unreachable_justified | weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end |
+| sunnyday | duration | implemented | `turn.rs::apply_weather_chip` |
+| sunnyday | durationCallback | implemented | `turn.rs::apply_weather_chip` |
+| sunnyday | onFieldEnd | implemented | `turn.rs::apply_weather_chip` |
 | sunnyday | onFieldResidual | implemented | `turn.rs::run_residuals` |
 | sunnyday | onFieldResidualOrder | implemented | `turn.rs::run_residuals` |
 | sunnyday | onFieldStart | implemented | `event.rs::run_switch` |
@@ -572,7 +575,7 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (419 rows: implemented=415, noop_justified=2, unreachable_justified=2)
+## move (425 rows: implemented=421, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -724,6 +727,9 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | growth | boosts | implemented | `turn.rs::self_boost_spec` |
 | growth | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | growth | neverMiss | implemented | `turn.rs::never_miss` |
+| hail | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| hail | neverMiss | implemented | `turn.rs::never_miss` |
+| hail | weather | implemented | `turn.rs::modeled_weather_set_move` |
 | harden | boosts | implemented | `turn.rs::self_boost_spec` |
 | harden | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | harden | neverMiss | implemented | `turn.rs::never_miss` |
@@ -866,6 +872,9 @@ Surface: 76 abilities (MODELED ∪ NOOP), 63 items,
 | rocktomb | secondaries | implemented | `turn.rs::apply_secondaries` |
 | rollingkick | secondaries | implemented | `turn.rs::apply_secondaries` |
 | sacredfire | secondaries | implemented | `turn.rs::apply_secondaries` |
+| sandstorm | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| sandstorm | neverMiss | implemented | `turn.rs::never_miss` |
+| sandstorm | weather | implemented | `turn.rs::modeled_weather_set_move` |
 | sandtomb | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
 | scaryface | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | scaryface | ignoreImmunity | implemented | `turn.rs::run_status_move` |

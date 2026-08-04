@@ -446,8 +446,25 @@ impl crate::state::BattleState {
     /// gate). The RAW `field.weather` still persists (for the upkeep/counter); only its
     /// EFFECTS (speed ×2, the chip, damage mods) are suppressed while a negater is up.
     pub(crate) fn effective_weather(&self, dex: &Dex) -> Option<crate::state::Weather> {
+        self.effective_weather_excluding(None, dex)
+    }
+
+    /// [`BattleState::effective_weather`] with one side's active EXCLUDED from the
+    /// suppression scan (`gen3_forecast_v1`) — the port of gen4 `cloudnine.onEnd`'s
+    /// `abilityState.ending = true`, which makes `suppressingWeather()` skip the
+    /// LEAVING/FAINTING negater before its `eachEvent('WeatherChange')` fires. Pass the
+    /// departing suppressor's side at the two WEATHER_NEGATE `onEnd` sites; `None`
+    /// everywhere else (== the plain scan).
+    pub(crate) fn effective_weather_excluding(
+        &self,
+        exclude_side: Option<usize>,
+        dex: &Dex,
+    ) -> Option<crate::state::Weather> {
         let w = self.field.weather?;
         for side in 0..2 {
+            if exclude_side == Some(side) {
+                continue;
+            }
             let slot = self.sides[side].active;
             let mon = &self.sides[side].pokemon[slot];
             if mon.fainted {

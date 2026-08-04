@@ -91,7 +91,8 @@ const MODELED_RAPIDSPIN = new Set(['rapidspin']);
 // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — the DRAW-friendly status-move
 // classes: status-cure / weather-set / stat-drop / screens.
 const MODELED_CURE = new Set(['refresh', 'healbell', 'aromatherapy']);
-const MODELED_WEATHER = new Set(['raindance', 'sunnyday']);
+// + hail / sandstorm (`gen3_forecast_v1`, ROUND 35 — the last two C_WEATHER_SET members).
+const MODELED_WEATHER = new Set(['raindance', 'sunnyday', 'hail', 'sandstorm']);
 const MODELED_STATDROP = new Set([
   'screech', 'charm', 'metalsound', 'featherdance', 'tickle', 'faketears', 'cottonspore', 'scaryface',
 ]);

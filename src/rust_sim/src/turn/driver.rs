@@ -494,7 +494,12 @@ impl crate::state::BattleState {
                     // forces another replacement.
                     let weather_changed = self.run_switch(side, dex);
                     if weather_changed {
-                        self.each_event_shuffle(); // eachEvent('WeatherChange') tie-shuffle
+                        // eachEvent('WeatherChange') tie-shuffle; the resolved order is the
+                        // FORECAST order (`gen3_forecast_v1` — probe O1b: `|switch|` →
+                        // `|-weather|…[from] ability: Drizzle` → `|-formechange|`).
+                        let order = self.each_event_shuffle();
+                        let eff = self.effective_weather(dex);
+                        self.forecast_each_event(&order, eff, dex);
                     }
                 }
                 QAction::Residual => {

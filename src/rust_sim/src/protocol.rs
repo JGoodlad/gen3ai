@@ -776,6 +776,19 @@ impl ProtocolBuilder {
             None => self.push_raw(format!("|-ability|{mon}|{ability}")),
         }
     }
+    /// `|-formechange|<mon>|<Species>|[msg]|[from] ability: Forecast` — the FORECAST
+    /// forme swap (`gen3_forecast_v1`, ROUND 35). `Pokemon.formeChange` is called by
+    /// `forecast.onWeatherChange` as `formeChange(forme, this.effect, /*isPermanent*/ false,
+    /// '0', '[msg]')`, and the `!isPermanent && source.effectType === 'Ability'` branch of
+    /// `sim/pokemon.ts::formeChange` emits exactly
+    /// `this.battle.add('-formechange', this, species.name, message, '[from] ability: Forecast')`
+    /// — so the FORME's display name (`Castform-Rainy`), then the literal `[msg]`, then the
+    /// `[from]` clause. The MON token is the mon's IDENT (its nickname / its BASE species
+    /// name), never the forme: `isPermanent` is false, so `Pokemon.details` / `Pokemon.name`
+    /// are NOT refreshed. Byte-probed (`harness/probe_r35_forecast_reporting.js` S1).
+    pub fn forme_change_forecast(&mut self, mon: &MonRef, species: &str) {
+        self.push_raw(format!("|-formechange|{mon}|{species}|[msg]|[from] ability: Forecast"));
+    }
     /// `|-ability|<mon>|<Ability>|[silent]` — the switch-in ability reveal Showdown
     /// adds via `addSplit` (Pressure; the omniscient stream carries the secret line).
     /// Phase 3 (`gen3_protocol_phase3_v1`), byte-verified vs the capture golden.

@@ -12842,30 +12842,421 @@ fn trick_into_a_substitute_fails_and_does_not_swap() {
 // ============================================================================
 // FORECAST fail-loud GIGO guard (Castform is DEFERRED / UNMODELED).
 //
-// Forecast swaps Castform's forme + TYPE under rain/sun/hail — an unmodeled
-// mechanic. Left unmodeled, the engine would SILENTLY treat `forecast` as a
-// no-op (no ability handler matches the id) and desync the moment weather
-// touched a Castform. `MonState::from_set` now PANICS at construction — better
-// a loud crash than a silent mismodel. The byte-fuzz team generators/adapters
-// REJECT every Forecast/Castform team upstream, so this never fires on the
-// modeled path (no committed golden team carries Castform).
+// Forecast swaps Castform's forme + TYPE under rain/sun/hail. It is MODELED now
+// (`gen3_forecast_v1`, ROUND 35) — the construction fail-loud that stood guard
+// while it was deferred is RETIRED, and the pin below is the guard's NEGATIVE
+// CONTROL (the transform-carriers pattern): a Castform team must CONSTRUCT and
+// forme correctly, so the guard cannot silently return.
 // ============================================================================
 
-/// A Castform (Forecast) mon in ANY slot fail-louds at construction. WRONG
-/// (pre-guard): the port built the mon and silently no-op'd the ability, then
-/// desynced under weather. The fix (`state::MonState::from_set`) panics with a
-/// clear GIGO message. This proves the guard would catch a Forecast team.
+/// The RETIRED Forecast guard's NEGATIVE CONTROL (`gen3_forecast_v1`): a Castform
+/// (Forecast) team constructs fine, and a Drought foe's start-window sun formes it
+/// `castformsunny` with the Fire type at `|turn|1` (probe
+/// `probe_r35_forecast_edges.js` E1 drought-foe: `|-weather|SunnyDay|[from] ability:
+/// Drought` → `|-formechange|p1a: Castform|Castform-Sunny|[msg]|[from] ability:
+/// Forecast`). WRONG (the old guard restored): construction panics.
 #[test]
-#[should_panic(expected = "forecast (Castform) is unmodeled")]
-fn forecast_castform_fails_loud_at_construction() {
+fn forecast_castform_builds_now_that_forecast_is_modeled() {
     let d = dex();
-    // gen3customgame accepts the packed ability verbatim; Castform's only real
-    // ability is Forecast anyway. Any moves suffice — the panic fires at
-    // construction, before a turn runs.
     let castform = "Castform|||forecast|tackle|Hardy|252,,,,,|||||";
-    let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
-    // The panic fires inside `BattleState::start` (via `MonState::from_set`).
-    let _ = Battle::start_with_switchins(&opts_cg(castform, foe, "1,2,3,4"), &d);
+    let foe = "Ninetales|||drought|flamethrower|Modest|252,,,,,|||||";
+    let b = Battle::start_with_switchins(&opts_cg(castform, foe, "1,2,3,4"), &d)
+        .expect("a Castform team must construct now that Forecast is modeled");
+    let st = b.state().unwrap();
+    let cf = &st.sides[0].pokemon[st.sides[0].active];
+    assert_eq!(cf.species_id, "castformsunny", "the start-window sun formes the lead Castform");
+    assert_eq!(cf.base_species_id, "castform", "baseSpecies stays the construction species");
+}
+
+// ── ROUND 35 (`gen3_forecast_v1`) — the hail/sandstorm weather-set moves + the expiry
+//    WeatherChange draw + the Forecast forme cycle. Ground truth
+//    `harness/probe_r35_pin_truth.js` (the real sim's post-construction initSeed +
+//    per-decision seedAfter on each board — the round-29 methodology). ──────────────────
+
+/// FC1 — the HAIL move on a speed-TIED Snorlax mirror (96 = 96): the 5-turn timed set
+/// (`|-weather|Hail`), the per-turn chip `max(1, 461/16) = 28` with the `[from] Hail`
+/// cause, the expiry `|-weather|none`, all at the sim's EXACT per-decision seeds — on a
+/// tied board every eachEvent shuffle draws, so ONE missing/mis-ordered draw anywhere in
+/// the weather-move machinery desyncs a seed. WRONG (pre-round-35): the `hail` move was a
+/// runtime fail-loud (`run_status_move` panic).
+#[test]
+fn hail_move_sets_chips_and_expires_on_a_tied_mirror() {
+    let d = dex();
+    let caster = "Snorlax|||immunity|hail,splash|Serious|,,,,,|||||";
+    let filler = "Snorlax|||immunity|splash,splash|Serious|,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(caster, filler, "38085,56695,39077,36349"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let script: Vec<ScriptDecision> = (0..6)
+        .map(|i| {
+            ScriptDecision::both(Choice::Move(if i == 0 { 0 } else { 1 }), Choice::Move(0))
+        })
+        .collect();
+    let (out, lines) = st.run_full_battle_logged(&script, &d);
+    assert_eq!(out.decisions.len(), 6, "six move boundaries");
+    let raw: Vec<&str> = lines.iter().map(|l| l.0.as_str()).collect();
+    assert!(raw.contains(&"|-weather|Hail"), "the hail SET line");
+    assert!(
+        raw.contains(&"|-damage|p2a: Snorlax|433/461|[from] Hail"),
+        "the first hail chip: 461 - 28 = 433, cause `[from] Hail`"
+    );
+    assert!(raw.contains(&"|-weather|none"), "the expiry line");
+    for (i, want) in [
+        "18621,25793,18448,35836",
+        "44192,15,54621,10852",
+        "11699,27371,61848,33740",
+        "54635,13711,14274,14388",
+        "12422,29923,60165,59292",
+        "9210,15857,42907,12973",
+    ]
+    .iter()
+    .enumerate()
+    {
+        assert_eq!(
+            seed_str(&out.decisions[i].seed_after),
+            *want,
+            "FC1 dec{} seed == the real Showdown ground truth",
+            i + 1
+        );
+    }
+}
+
+/// FC2 — **the T1 8-vs-7 fix** (`probe_r35_forecast_ties.js` T1, re-derived on a
+/// VERIFIED-tied board by `probe_r35_weather_moves.js`): a SUPPRESSED (Cloud Nine) hail's
+/// UPKEEP turns skip the eachEvent('Weather') draw (dec2-4 — the RM3 gate, unchanged), but
+/// its EXPIRY turn draws the `clearWeather` → `eachEvent('WeatherChange')` shuffle
+/// **UNCONDITIONALLY** (dec5). WRONG (pre-fix): the expiry branch kept the
+/// `Sun|Rain || effective` gate → drew NOTHING at a suppressed sand/hail expiry → the dec5
+/// seed (and every later one) desyncs. Suicune 206 vs Psyduck(spe-EV 240) 206 — the tie is
+/// what makes the shuffle draw at all. Revert-verified: restoring the old gate fails dec5.
+#[test]
+fn suppressed_hail_expiry_draws_the_unconditional_weatherchange_shuffle() {
+    let d = dex();
+    let suicune = "Suicune|||pressure|hail,splash|Serious|,,,,,|||||";
+    let psyduck = "Psyduck|||cloudnine|splash,splash|Serious|,,,,,240,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(suicune, psyduck, "55318,8071,46680,56242"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let script: Vec<ScriptDecision> = (0..6)
+        .map(|i| {
+            ScriptDecision::both(Choice::Move(if i == 0 { 0 } else { 1 }), Choice::Move(0))
+        })
+        .collect();
+    let (out, lines) = st.run_full_battle_logged(&script, &d);
+    assert_eq!(out.decisions.len(), 6, "six move boundaries");
+    let raw: Vec<&str> = lines.iter().map(|l| l.0.as_str()).collect();
+    assert!(
+        !raw.iter().any(|l| l.contains("[from] Hail")),
+        "a suppressed hail chips NOTHING (Cloud Nine)"
+    );
+    assert!(raw.contains(&"|-weather|Hail|[upkeep]"), "the upkeep line is UNCONDITIONAL");
+    for (i, want) in [
+        "60043,19557,54924,29018",
+        "13954,21730,61912,63955",
+        "55163,59650,16206,36280",
+        "10158,60209,34927,2841",
+        "16432,1625,37777,42721",
+        "64835,58268,46930,35822",
+    ]
+    .iter()
+    .enumerate()
+    {
+        assert_eq!(
+            seed_str(&out.decisions[i].seed_after),
+            *want,
+            "FC2 dec{} seed == the real Showdown ground truth (dec5 is the expiry \
+             WeatherChange draw the old gate missed)",
+            i + 1
+        );
+    }
+}
+
+/// FC3 — the FORECAST forme CYCLE on a Castform casting Rain Dance: formes
+/// `castformrainy` (type Water) at the set with the exact `|-formechange|` bytes, stays
+/// formed through the upkeep turns, REVERTS to base at the expiry (the second
+/// `-formechange`), all seed-exact. WRONG (pre-round-35): Castform was a construction
+/// fail-loud; and a wrong forme/type would desync any damage chart read while formed.
+#[test]
+fn forecast_formes_on_the_weather_set_and_reverts_at_the_expiry() {
+    let d = dex();
+    let castform = "Castform|||forecast|raindance,splash|Serious|,,,,,|||||";
+    let filler = "Snorlax|||immunity|splash,splash|Serious|,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(castform, filler, "57388,452,34593,29177"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let script: Vec<ScriptDecision> = (0..6)
+        .map(|i| {
+            ScriptDecision::both(Choice::Move(if i == 0 { 0 } else { 1 }), Choice::Move(0))
+        })
+        .collect();
+    let (out, lines) = st.run_full_battle_logged(&script, &d);
+    let raw: Vec<&str> = lines.iter().map(|l| l.0.as_str()).collect();
+    let forme_idx = raw
+        .iter()
+        .position(|l| {
+            *l == "|-formechange|p1a: Castform|Castform-Rainy|[msg]|[from] ability: Forecast"
+        })
+        .expect("the SET-turn formechange line, exact bytes");
+    let weather_idx = raw.iter().position(|l| *l == "|-weather|RainDance").unwrap();
+    assert!(weather_idx < forme_idx, "the -weather SET line precedes the -formechange");
+    assert!(
+        raw.contains(&"|-formechange|p1a: Castform|Castform|[msg]|[from] ability: Forecast"),
+        "the EXPIRY revert formechange line, exact bytes"
+    );
+    let cf = &st.sides[0].pokemon[0];
+    assert_eq!(cf.species_id, "castform", "reverted to base after the expiry");
+    assert_eq!(cf.base_species_id, "castform");
+    for (i, want) in [
+        "3932,55062,24613,55040",
+        "29587,16389,4131,29123",
+        "55318,8071,46680,56242",
+        "38085,56695,39077,36349",
+        "60833,51486,28767,2196",
+        "21177,35776,56648,13607",
+    ]
+    .iter()
+    .enumerate()
+    {
+        assert_eq!(
+            seed_str(&out.decisions[i].seed_after),
+            *want,
+            "FC3 dec{} seed == the real Showdown ground truth (the forme change is \
+             DRAW-FREE — a spurious draw here desyncs)",
+            i + 1
+        );
+    }
+}
+
+/// FC4 — the START-window forme is DRAW-FREE and seed-exact: a Castform lead vs a Drought
+/// lead formes `castformsunny` (type FIRE — the chart read while formed) at `|turn|1`, and
+/// the first two decisions land on the sim's exact seeds. Extends the negative control
+/// above with the seed + type assertions.
+#[test]
+fn forecast_start_window_forme_is_draw_free_and_typed() {
+    let d = dex();
+    let castform = "Castform|||forecast|splash,splash|Serious|,,,,,|||||";
+    let nine = "Ninetales|||drought|splash,splash|Serious|,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(castform, nine, "57388,452,34593,29177"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    {
+        let cf = &st.sides[0].pokemon[0];
+        assert_eq!(cf.species_id, "castformsunny", "formed by the start window");
+    }
+    let out = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    assert_eq!(seed_str(&out.decisions[0].seed_after), "3932,55062,24613,55040", "FC4 dec1");
+    assert_eq!(seed_str(&out.decisions[1].seed_after), "29587,16389,4131,29123", "FC4 dec2");
+}
+
+/// FC5 — the WEATHER_NEGATE `onEnd` site with the ENDING-NEGATER EXCLUSION: a Cloud Nine
+/// Psyduck VOLUNTARILY leaves while rain stands, and the Castform formes ON THAT
+/// WeatherChange — with the `-formechange` line emitted BEFORE the incoming `|switch|`
+/// (probe O1c t2; ground truth PT-E). The exclusion is the load-bearing bit: at the event
+/// the suppressor is STILL in its slot, so a plain `effective_weather` read would say
+/// "suppressed" and leave the Castform base — the sim's `abilityState.ending` semantics
+/// (`effective_weather_excluding`) is what formes it.
+#[test]
+fn cloud_nine_leaving_formes_the_castform_via_the_ending_exclusion() {
+    let d = dex();
+    let castform = "Castform|||forecast|raindance,splash|Serious|,,,,,|||||";
+    let p2 = "Psyduck|||cloudnine|splash,splash|Serious|,,,,,|||||]\
+              Blissey|||naturalcure|splash|Serious|,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(castform, p2, "57388,452,34593,29177"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Switch(1)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let raw: Vec<&str> = lines.iter().map(|l| l.0.as_str()).collect();
+    let forme_idx = raw
+        .iter()
+        .position(|l| {
+            *l == "|-formechange|p1a: Castform|Castform-Rainy|[msg]|[from] ability: Forecast"
+        })
+        .expect("the End-site formechange (the exclusion made the rain effective)");
+    let switch_idx = raw
+        .iter()
+        .position(|l| l.starts_with("|switch|p2a: Blissey"))
+        .expect("the incoming switch line");
+    assert!(
+        forme_idx < switch_idx,
+        "the formechange fires on the LEAVING suppressor's onEnd — BEFORE the |switch| \
+         (got forme@{forme_idx} switch@{switch_idx})"
+    );
+    assert_eq!(st.sides[0].pokemon[0].species_id, "castformrainy", "formed + stays formed");
+    for (i, want) in [
+        "3932,55062,24613,55040",
+        "29587,16389,4131,29123",
+        "55318,8071,46680,56242",
+    ]
+    .iter()
+    .enumerate()
+    {
+        assert_eq!(seed_str(&out.decisions[i].seed_after), *want, "FC5 dec{}", i + 1);
+    }
+}
+
+/// FC6 — the SILENT `clearVolatile` revert + the re-entry re-forme: a FORMED Castform
+/// pivots out (base `castform` on the bench, NO line), then re-enters under the standing
+/// rain and re-formes via its `onStart` (a SECOND `-formechange`, probe S2 t3; ground
+/// truth PT-F — whose turn-0 Quick Claw came up TRUE, so the pin restores that bit like
+/// `ab_replay`'s INIT `quickClawRoll` field, the round-30 lesson).
+#[test]
+fn formed_castform_reverts_on_switch_out_and_reformes_on_reentry() {
+    let d = dex();
+    let p1 = "Castform|||forecast|raindance,splash|Serious|,,,,,|||||]\
+              Rattata|||guts|splash|Serious|,,,,,|||||";
+    let snorlax = "Snorlax|||immunity|splash,splash|Serious|,,,,,|||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, snorlax, "3932,55062,24613,55040"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    st.quick_claw_roll = true; // PT-F: the sim's turn-0 endTurn Quick Claw HIT
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let raw: Vec<&str> = lines.iter().map(|l| l.0.as_str()).collect();
+    let formes: Vec<usize> = raw
+        .iter()
+        .enumerate()
+        .filter(|(_, l)| l.contains("-formechange"))
+        .map(|(i, _)| i)
+        .collect();
+    assert_eq!(formes.len(), 2, "exactly TWO formechanges: the set + the re-entry re-forme");
+    // The benched revert is SILENT: between the two formechanges sits the |switch| to
+    // Rattata but NO forme line, and the re-entry |switch| PRECEDES the second forme line.
+    let reentry_switch = raw
+        .iter()
+        .rposition(|l| l.starts_with("|switch|p1a: Castform"))
+        .expect("the re-entry switch line");
+    assert!(
+        reentry_switch < formes[1],
+        "|switch| then |-formechange| on re-entry (probe S2 t3 order)"
+    );
+    assert_eq!(st.sides[0].pokemon[st.sides[0].active].species_id, "castformrainy");
+    for (i, want) in [
+        "29587,16389,4131,29123",
+        "55318,8071,46680,56242",
+        "38085,56695,39077,36349",
+        "60833,51486,28767,2196",
+    ]
+    .iter()
+    .enumerate()
+    {
+        assert_eq!(seed_str(&out.decisions[i].seed_after), *want, "FC6 dec{}", i + 1);
+    }
+}
+
+/// FC8 — the DOUBLE-replacement Castform × Intimidate ordering (the round's disclosed
+/// honest-scope hole, now probed CLOSED — `probe_r35_double_replacement.js`): a mutual
+/// Explosion double-KO under standing rain replaces BOTH actives simultaneously. The sim's
+/// observable order is: both `|switch|` lines in ENTRANT-SPEED order (Salamence 236 before
+/// Castform 176 — in BOTH side orientations, so it is speed, not side), then each entrant's
+/// Start in that same order — the Intimidate block, THEN the `-formechange`. Each runSwitch
+/// fires its own singleEvent Start, so `forecast.onSwitchInPriority: -2` never reorders
+/// anything in gen-3 singles. Seed-exact through the whole boundary.
+#[test]
+fn double_replacement_castform_and_intimidate_order_by_entrant_speed() {
+    let d = dex();
+    let p1 = "Snorlax|||immunity|explosion,raindance|Adamant|,252,,,,|M||||]\
+              Castform|||forecast|icebeam,splash|Serious|,,,,,|M||||";
+    let p2 = "Abra|||innerfocus|splash,splash|Serious|,,,,,|M||||]\
+              Salamence|||intimidate|splash,splash|Serious|,,,,,|M||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "29814,3811,34909,65508"), &d)
+            .expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Rain Dance / Splash
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Explosion double-KO
+            ScriptDecision::both(Choice::Switch(1), Choice::Switch(1)), // double replacement
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let raw: Vec<&str> = lines.iter().map(|l| l.0.as_str()).collect();
+    let idx = |needle: &str| {
+        raw.iter()
+            .position(|l| l.starts_with(needle))
+            .unwrap_or_else(|| panic!("missing line starting {needle:?} in {raw:#?}"))
+    };
+    let sw_mence = idx("|switch|p2a: Salamence|Salamence, M|331/331");
+    let sw_cf = idx("|switch|p1a: Castform|Castform, M|281/281");
+    let intim = idx("|-ability|p2a: Salamence|Intimidate|boost");
+    let unboost = idx("|-unboost|p1a: Castform|atk|1");
+    let forme = idx("|-formechange|p1a: Castform|Castform-Rainy|[msg]|[from] ability: Forecast");
+    assert!(
+        sw_mence < sw_cf && sw_cf < intim && intim < unboost && unboost < forme,
+        "the sim's boundary shape: switches (speed order) then Starts (same order) — got \
+         mence@{sw_mence} cf@{sw_cf} intim@{intim} unboost@{unboost} forme@{forme}"
+    );
+    for (i, want) in [
+        "10162,51001,19049,38839",
+        "6877,19027,28905,2872",
+        "35400,13963,12705,987",
+        "20050,47592,16058,22314",
+    ]
+    .iter()
+    .enumerate()
+    {
+        assert_eq!(seed_str(&out.decisions[i].seed_after), *want, "FC8 dec{}", i + 1);
+    }
+}
+
+/// FC7 — the Castform MIRROR at a speed tie: the two `-formechange` lines emit in the
+/// WeatherChange SHUFFLE's permutation, not a fixed side walk — seed `[11,22,33,44]`
+/// (init `38085,…`) is p1-first, seed `[7,7,7,7]` (init `58176,…`) is p2-first, each at
+/// the sim's exact post-decision seed (ground truth PT-G + the flip mini-sweep).
+#[test]
+fn castform_mirror_forme_order_follows_the_weatherchange_shuffle() {
+    let d = dex();
+    let caster = "Castform|||forecast|raindance,splash|Serious|,,,,,|||||";
+    let sitter = "Castform|||forecast|splash,splash|Serious|,,,,,|||||";
+    for (init, want_first, want_seed) in [
+        ("38085,56695,39077,36349", "p1a", "18621,25793,18448,35836"),
+        ("58176,46786,32157,41308", "p2a", "41619,23581,3836,12055"),
+    ] {
+        let mut battle =
+            Battle::start_with_switchins(&opts_cg(caster, sitter, init), &d).expect("start");
+        let st = battle.state_mut().expect("state");
+        let (out, lines) = st.run_full_battle_logged(
+            &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+            &d,
+        );
+        let formes: Vec<&str> =
+            lines.iter().map(|l| l.0.as_str()).filter(|l| l.contains("-formechange")).collect();
+        assert_eq!(formes.len(), 2, "both mirror Castforms forme");
+        assert!(
+            formes[0].starts_with(&format!("|-formechange|{want_first}")),
+            "init {init}: the shuffle's permutation decides the order — expected \
+             {want_first} first, got {:?}",
+            formes
+        );
+        assert_eq!(seed_str(&out.decisions[0].seed_after), want_seed, "FC7 seed @ init {init}");
+    }
 }
 
 /// `gen3_transform_failloud_v1` — a mon CARRYING **Transform** fail-louds at construction, the

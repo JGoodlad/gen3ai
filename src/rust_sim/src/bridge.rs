@@ -554,16 +554,16 @@ fn display_name(mon: &MonState, dex: &Dex) -> String {
     dex.species(sid).map(|s| s.name.clone()).unwrap_or_else(|| sid.to_string())
 }
 
-/// The mon's OWN (pre-Transform) species id — `pokemon.baseSpecies`. Identical to
-/// `species_id` for an untransformed mon; the request/ident surfaces read THIS because
-/// `transformInto` never refreshes `pokemon.name` or `pokemon.details`
-/// (`gen3_transform_v1`, probe C: a Ditto copying Snorlax still serializes
-/// `"ident":"p1: Ditto","details":"Ditto"` while its `moves[]` show the copied set).
+/// The mon's CONSTRUCTION species id — `pokemon.baseSpecies`. The request/ident surfaces
+/// read THIS because neither `transformInto` (`gen3_transform_v1`, probe C: a Ditto copying
+/// Snorlax still serializes `"ident":"p1: Ditto","details":"Ditto"`) nor a non-permanent
+/// `formeChange` (`gen3_forecast_v1`, probe S1: a FORMED Castform's request details stay
+/// `"Castform, F"`) ever refreshes `pokemon.name` / `pokemon.details`. Reads the
+/// construction-fixed [`MonState::base_species_id`] — which also gets the FORMED-Castform-
+/// then-Transforms corner right (the overlay's stored species would be the FORME; the sim's
+/// `baseSpecies` is the construction species).
 fn base_species_id(mon: &MonState) -> &str {
-    match &mon.transform {
-        Some(ov) => &ov.base_species_id,
-        None => &mon.species_id,
-    }
+    &mon.base_species_id
 }
 
 /// The `details` string (`Pokemon.details`): `<Species>` + `, L<level>` iff level

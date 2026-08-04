@@ -352,19 +352,19 @@ result, since the offline replay/clone layer is Node either way. What is **actua
 → launcher restart; the child survives via `catch_unwind`) rather than desync. On the **training
 pool it is a non-issue**: 719/719 `data/teams/` teams construct, and 1500 random-play rust battles
 hit **zero** coverage errors (the only 4 failures were the 1000-turn runaway cap). On
-`gen3randombattle` the remaining construction failures are down to **Forecast/Castform alone
-(~2.6% of teams → ~5% of battles, measured over 3000 generated teams)**: the Deoxys/Unown forme
-DATA gap is fixed (`gen3_species_formes_v1`, ROUND 38), `transform` is modeled
-(`gen3_transform_v1`, ROUND 33) and the wrap family too (`gen3_partial_trap_v1`, ROUND 32).
-Arbitrary ladder gen3ou is ~5% of battles (INFERRED from Smogon usage weights). The old inverse
-hazard — unmodeled items/moves running as SILENT no-ops / generic hits — is **CLOSED by the
-ROUND 39/40 silent-no-op audits**: the 5 genuinely-effectful unmodeled items
-(`gen3_unmodeled_item_failloud_v1`) and the 16 silent-desync moves (`fakeout`, `rollout`, the
-lock-in family, `eruption`, … — `gen3_unmodeled_move_failloud_v2`; full-universe measurement:
-369 gen3-legal moves → 278 modeled, 74 runtime fail-louds, 16 ran unguarded) now FAIL LOUD at
-construction, and every gen3 ability is modeled, verified-no-op, or fail-loud (Forecast).
-Measured exposure of the guarded sets is ZERO on both surfaces (0 pool carriers; 0 in the entire
-curated randbats movepool) — latent-hazard guards, not active-bug fixes. (The former
+`gen3randombattle` **the construction blockers are CLOSED**: the Deoxys/Unown forme DATA gap is
+fixed (`gen3_species_formes_v1`, ROUND 38), `transform` is modeled (`gen3_transform_v1`, ROUND 33),
+the wrap family too (`gen3_partial_trap_v1`, ROUND 32), and **Forecast/Castform — the last blocker
+(~2.6% of teams) — is modeled (`gen3_forecast_v1`, ROUND 35, with the hail/sandstorm weather-set
+moves and the expiry-draw fix it flushed out)**. Arbitrary ladder gen3ou is ~5% of battles
+(INFERRED from Smogon usage weights). The old inverse hazard — unmodeled items/moves running as
+SILENT no-ops / generic hits — is CLOSED by the ROUND 39/40 silent-no-op audits: the 5
+genuinely-effectful unmodeled items (`gen3_unmodeled_item_failloud_v1`) and the 16 silent-desync
+moves (`fakeout`, `rollout`, the lock-in family, `eruption`, … —
+`gen3_unmodeled_move_failloud_v2`; full-universe census: 369 gen3-legal moves → 281 modeled, 88
+fail-loud, 0 silent) now FAIL LOUD at construction, and every gen3 ability is modeled or
+verified-no-op (none fail-loud). Measured exposure of the guarded sets is ZERO on both surfaces
+(0 pool carriers; 0 in the entire curated randbats movepool) — latent-hazard guards. (The former
 **seeded speed-tied-lead** / unspecified-gender divergence is FIXED —
 `gen3_turn0_construction_v1` models the turn-0 construction window, so a seeded rust battle is
 byte-for-byte with node.) See `src/utils/bridge/README.md`. Transport parity (poke-env sends

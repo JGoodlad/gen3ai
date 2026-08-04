@@ -2265,9 +2265,14 @@ impl crate::state::BattleState {
                 // The move-source onFieldStart line: `|-weather|<W>` (no upkeep, no ability).
                 self.log.weather(weather_display(new_weather), None, None, false);
             }
-            // The `eachEvent('WeatherChange')` draw (only on a speed tie). Return value
-            // unused — this is the DRAW, not an emit-order (matches `run_switch`'s use).
-            self.each_event_shuffle();
+            // The `eachEvent('WeatherChange')` draw (only on a speed tie). The resolved
+            // order is the FORECAST order (`gen3_forecast_v1`): the `-formechange` lands
+            // right after the `-weather` set line (probe O1 t1), and a tied
+            // Castform-vs-Castform mirror emits its two lines in the shuffle's permutation
+            // (probe O2 — the order flips with the seed).
+            let order = self.each_event_shuffle();
+            let eff = self.effective_weather(dex);
+            self.forecast_each_event(&order, eff, dex);
             return MoveResolution::done(false, false, false);
         }
 

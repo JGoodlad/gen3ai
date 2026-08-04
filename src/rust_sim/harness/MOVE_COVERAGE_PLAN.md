@@ -18,8 +18,9 @@ CARGO_TARGET_DIR=/tmp/pokesim_target_scope cargo build --release --bin scan_move
 printf 'wish\ndoubleedge\n...' | /tmp/pokesim_target_scope/release/scan_move_probe
 ```
 
-**Current universe census (ROUND 40, `gen3_unmodeled_move_failloud_v2`):** 369 gen3-legal moves →
-**279 MODELED · 90 FAIL-LOUD (74 runtime + 16 construction) · 0 MISMODELED** — the engine has NO
+**Current universe census (ROUND 40 `gen3_unmodeled_move_failloud_v2` + ROUND 35 `gen3_forecast_v1`,
+which moved hail/sandstorm from fail-loud to modeled):** 369 gen3-legal moves →
+**281 MODELED · 88 FAIL-LOUD (72 runtime + 16 construction) · 0 MISMODELED** — the engine has NO
 silent-desync move left in the whole universe.
 
 ## Headline numbers

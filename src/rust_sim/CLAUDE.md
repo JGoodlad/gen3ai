@@ -5373,6 +5373,157 @@ the exact vacuity failure ROUND 18's own review caught in a laxer draft. The sec
 narrower and sharper: **when you deliberately run a phase with logging off and re-emit afterwards,
 every ordering the phase RESOLVED is now a value you must carry, not re-derive.** The port had the
 right answer in a local variable and threw it away three lines later.
+
+### ROUND 35 (FIX) — FORECAST is MODELED: the LAST fail-loud ability closes, and it flushed out a real expiry-draw bug
+
+`gen3_forecast_v1`. Castform's Forecast — the mechanic that sat deferred for months and, after
+ROUND 38's forme rows, the SOLE remaining randbats construction blocker (~2.6% of teams / ~5% of
+battles) — is modeled bit-for-bit, along with the **hail + sandstorm weather-set MOVES** (the last
+two C_WEATHER_SET members, which Forecast needs for a reachable timed hail) and the **expiry-turn
+draw bug** the previous agent died on ("Critical finding in T1"). This round RESUMED a stalled
+partial (FORECAST_HANDOFF.md): the handler module + `base_species_id` + the `|-formechange|`
+emitter were inherited compiling-but-unwired; the wiring, the T1 re-derivation, the guard
+retirements and every gate are this round's work.
+
+**THE T1 LEAD, RE-DERIVED (not inherited).** The handoff's unverified claim — "a real pre-existing
+draw divergence" — is CONFIRMED and PINNED, with the mechanism the expiry-draw probe hypothesized:
+the sim's duration-end branch `continue`s PAST `onFieldResidual` and `Field.clearWeather` fires
+`eachEvent('WeatherChange')` **UNCONDITIONALLY** — suppressed or not — while the port's expiry
+branch kept the RM3 `Sun|Rain || effective` gate. `probe_r35_forecast_expiry_draw.js` shows the
+expiry turn carrying `each:WeatherChange` and NO `each:Weather` in all four {hail,rain} ×
+{suppressed,effective} scenarios; `probe_r35_weather_moves.js` re-derives the draw on a
+**VERIFIED-tied** board (the original probe's board was NOT tied — its EV math dropped the +5): a
+SUPPRESSED-hail expiry draws **8** where its upkeep turns draw **7**. The old gate drew 7 — the
+T1 8-vs-7. **LATENT until this round** (no timed sand/hail was reachable — the hail/sandstorm
+moves were runtime fail-louds), which is why no fuzzer ever caught it. Fixed in
+`apply_weather_chip`'s expiry branch: the shuffle is now UNCONDITIONAL (it IS the WeatherChange),
+and its resolved order feeds the Forecast revert. Pin FC2
+(`suppressed_hail_expiry_draws_the_unconditional_weatherchange_shuffle`), REVERT-VERIFIED — restoring
+the old gate fails exactly dec5.
+
+**THE HAIL / SANDSTORM MOVES** ride the batch-2 machinery unchanged (`modeled_weather_set_move`
+gains two arms): never-miss 5-turn timed set, fail-into-same `[still]`+`-fail`, `[upkeep]` +
+chip `[from] Hail`/`[from] Sandstorm` at `max(1, maxhp/16)` (the Ice / Rock-Ground-Steel
+immunities were already modeled for the ability weathers), expiry `-weather|none`. Probe-verified
+on tied boards (`probe_r35_weather_moves.js` — set/upkeep/expiry/fail/immunity/suppressed ×
+{hail,sandstorm}); pinned FC1 (`hail_move_sets_chips_and_expires_on_a_tied_mirror`, 6 decisions
+seed-exact on a tied mirror — every eachEvent tie-draw matched).
+
+**FORECAST itself** (`turn/forecast.rs` — the resolved gen-3 handler, every claim probe-cited):
+`effectiveWeather()`-keyed (sun→Sunny / rain→Rainy / hail→Snowy / **SAND AND NONE → base**, the
+default arm), DRAW-FREE, silent on a no-op transition, gated on the CONSTRUCTION species
+(`base_species_id`) + not-transformed + ability-still-forecast + active. Wired at EVERY
+WeatherChange site: the weather-set move arm (probe O1: `-weather` then `-formechange`), the
+mid-turn switch-in weather change (O1b), the TWO WEATHER_NEGATE `onEnd` sites — with the
+**ending-negater EXCLUSION** (`effective_weather_excluding`): gen4's `cloudnine.onEnd` sets
+`abilityState.ending = true` BEFORE the event, so the sim formes a Castform Rainy while the
+departing Psyduck is still in its slot (O1c t2 — the `-formechange` precedes the incoming
+`|switch|`); a plain effective-weather read would have left it base — pin FC5 — plus the expiry
+(the revert site), the entrant's own `onStart` (S2 t3: `|switch|` then `-formechange`), and the
+START window (state post-hoc in `start_with_switchins`; the bridge's real turn-0 construction
+rides the driver wiring; the framing `|-formechange|` is reconstructed in
+`emit_switchin_ability_lines` after the setter's `-weather` line, probe E1). The
+`clearVolatile` revert is SILENT `species_id = base_species_id` at switch-out + faint (S2 t2 /
+E8), AFTER the Transform-overlay restore. **Reporting**: the forme name appears on the wire in
+EXACTLY ONE place — the `|-formechange|` line; ident / `|switch|` details / request roster stay
+the BASE species (`display_name` + `bridge.rs::base_species_id` now read the construction-fixed
+`MonState::base_species_id`, which also fixes the FORMED-Castform-then-Transforms corner the old
+overlay fallback got wrong). A suppressor ENTERING fires nothing (a formed Castform stays formed
+— event-driven, never recomputed spontaneously); Transform freezes the forme (a Ditto copying a
+Rainy Castform keeps `castformrainy` forever, E7).
+
+**Pins FC1–FC7** (`tests/regression_test.rs`, ground truth `harness/probe_r35_pin_truth.js` —
+the real sim's post-construction initSeed + per-decision seedAfter, the round-29 methodology; ALL
+first-try seed-exact): FC1 the tied hail mirror · FC2 the T1 expiry draw (revert-verified) · FC3
+the forme cycle (set-forme → upkeep → expiry-revert, exact `-formechange` bytes, draw-free) · FC4
+the start-window forme (+ the Fire type) · FC5 the ending-negater exclusion · FC6 the silent
+bench revert + re-entry re-forme (whose board's turn-0 Quick Claw came up TRUE — the pin restores
+the bit, the round-30 lesson) · FC7 the mirror emission order following the WeatherChange
+shuffle's permutation (two seeds, both directions). Plus
+`forecast_castform_builds_now_that_forecast_is_modeled` — the retired guard's negative control.
+
+**GUARDS RETIRED LAST (the round-33 lesson, deliberately inverted in the working tree only after
+the module + wiring compiled):** the `state.rs` Forecast construction panic is REMOVED;
+`REJECT_ABILITIES` / `REJECT_SPECIES` are EMPTY (kept as the seam); `forecast` joined
+`MODELED_ABILITIES`, `hail`/`sandstorm` joined `MODELED_WEATHER_MOVES`; `ab_fuzz`'s randbats
+adapter no longer rejection-samples Castform teams — **gen3-randbats Castform now reaches the
+port**, closing the LAST construction blocker (randbats construction failures → ~0%). The
+handler audit grew to **969 rows** (forecast's onStart/onWeatherChange/onSwitchInPriority + the
+hail/sandstorm move declaratives; the stale "no weather move is modeled" UNREACH reasons on the
+weather-condition duration/onFieldEnd rows — wrong since batch 2 for rain/sun — are re-dispositioned
+IMPL).
+
+**Gates:** full suite **621 passed / 0 failed** with the e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` UNCHANGED (no pool team carries Castform/hail/sandstorm, so
+every committed golden is byte-identical — the one full-suite failure during the round was the
+handler audit itself demanding the 9 new rows, i.e. the gate doing its job); handler audit OK
+(969); and the live `gen_sim_bridge_diff.js --mode randbats --persistent --battles 120
+--master-seed 350801` soak with Castform ADMITTED (the first ever): **120/120 battles ended,
+0 divergences, 0 drain timeouts**, 87 allowlisted (ALL the pre-existing `return102-numeric-alias`
+request-display class), 657 battles/hr — with **9 Castform battles in the sample and 2 live
+`|-formechange|` firings, byte-equal node-vs-rust through the REAL production path** (raw-seed
+turn-0 construction → per-side streams → request JSON), the non-vacuity the pins alone can't give.
+
+**THE CLASS-SWEEP GOLDEN** (`harness/gen_forecast_golden.js` → `tests/forecast_test.rs`,
+`gen3_forecast_v1`): **7 scenarios × 40 seeds = 280 decisive game-end battles, 2836 per-decision
+STATE rows, 5672 FORME/species assertions, 2836 WEATHER(id+turns) assertions, 2836 SEED
+assertions, 398 `-formechange` rows, 280 wins** — byte-reproducible, PASSED FIRST TRY. Two things
+make it bite without new plumbing: the port's `DecisionRecord.active_species` reports the **LIVE**
+`species_id`, so the ordinary species column IS the forme (`castform` / `castformrainy` /
+`castformsunny` / `castformsnowy`); and the forme carries the **TYPE**, which drives the weather
+chip — so a missed Snowy forme surfaces as an **HP** divergence under hail, not merely a cosmetic
+one. Scenarios cover every wiring site: the weather-set MOVE (`fc_rain_cycle`), HAIL→Snowy with
+the ICE chip-immunity (`fc_hail_snowy`), **SAND→BASE — the default arm a "any weather → a forme"
+model gets wrong, asserted as ZERO formechanges** (`fc_sand_base`), the Drizzle switch-in
+(`fc_ability_in`), the pivot-out/back-in re-forme (`fc_pivot`), the Cloud-Nine-holder FAINT
+exclusion (`fc_suppressed` — the `process_faints` half; FC5 pins the voluntary-switch half), and
+the START window (`fc_start_window`). Coverage floors read the **PORT's own** species timeline
+(reached-the-forme AND reverted-afterwards), so a forme-but-never-revert model fails the floor
+rather than the diff.
+
+**PERTURBATION-PROVEN (3 injections, each restored byte-identical).** (1) SAND→a forme: caught,
+`[fc_sand_base] dec 0 FORME/species mismatch: got "castformsnowy" exp "castform"`. (2) the expiry
+revert deleted: caught, `[fc_rain_cycle] dec 4 … got "castformrainy" exp "castform"`. (3) **the
+SWITCH-OUT revert deleted: NOT caught by the golden — and that is a genuine, documented property,
+not a hole.** A benched mon's forme is invisible to a per-decision ACTIVE-state golden, and on
+re-entry the entrant's own `onStart` re-formes it to the same value, so the missing revert is
+**state-invisible end to end**; its ONLY observable is a SPURIOUS extra `|-formechange|` line on
+re-entry. That is exactly what pin **FC6** asserts (`exactly TWO formechanges`) — re-running
+injection (3) against FC6 FAILS it. ⇒ the state+seed golden and the protocol-line pin cover
+disjoint halves of this mechanic; **neither alone is sufficient, and a future refactor must keep
+both.**
+
+**HONEST SCOPE.** (a) ~~no dedicated golden sweep~~ — **DONE**, see above (40 seeds/scenario, not
+80: the mechanic is draw-free so extra seeds buy re-runs of the same code path, and the floors
+already realize every branch ≥10×). (b) ~~the `onSwitchInPriority: -2` double-replacement ordering~~ —
+**CLOSED**: `probe_r35_double_replacement.js` (a mutual-Explosion double-KO under rain, BOTH side
+orientations) shows the entrants' switches emit in ENTRANT-SPEED order and each runSwitch fires its
+own singleEvent Start in that same order — the `-2` never reorders anything observable in gen-3
+singles; the port reproduces the whole boundary byte-shape + seeds (pin FC8
+`double_replacement_castform_and_intimidate_order_by_entrant_speed`, first-try). (c) Weather Ball
+stays a ROUND-40 construction fail-loud — NOT
+needed for randbats (the curated Castform set is fireblast/icebeam/return/thunderbolt/thunderwave,
+zero weather moves, zero Weather Ball — measured). (d) **The e2e REGEN is provably unnecessary,
+MEASURED not assumed**: across all 773 `data/teams/` files there are **0 Castform carriers and 0
+hail/sandstorm MOVE carriers**, so admitting `forecast` + the two weather moves to the picker
+cannot change which teams are filter-clean nor which moves get picked — the committed golden md5
+`3155eb796cb4bf453c6053d769ba98e5` is unchanged and stays that way. (This also explains why the
+722/722 pool scan was already clean while hail/sandstorm were runtime fail-louds: nothing in the
+pool could reach them.) (e) `sandstorm`-the-move admission means a future SAND pool team could
+carry it; none does today.
+
+**MERGE RECONCILIATION WITH ROUND 40 — DONE, numbers RECOMPUTED FROM LIVE CODE.** Both rounds
+edit `scan_move_coverage.js`: ROUND 40 adds the `FAILLOUD_CONSTRUCTION` set + the
+`SCAN_UNIVERSE=1` invariant mode (and recorded a pre-merge census of 369 → 279 / 90 / 0), while
+this round adds `hail`/`sandstorm` to that tool's `MODELED_WEATHER`. Both edits are wanted; on
+the COMBINED tree the two weather moves cross from fail-loud to modeled, and re-running the
+invariant gives the CURRENT figure — **369 → 281 MODELED / 88 FAIL-LOUD (72 runtime + 16
+construction) / 0 MISMODELED**, pool report unchanged at 108/108 and 722/722. Every doc carrying
+the old 279/90 was updated at merge time rather than left standing, because a stale census is
+exactly the false-history class this project keeps paying for. Re-run
+`SCAN_UNIVERSE=1 node harness/scan_move_coverage.js` after any future move-class admission; the
+invariant (0 MISMODELED) held under both rounds separately and holds combined.
+
 ### ROUND 36 (DIAGNOSIS) — the soak "deadlock" is CLOSED: **no bridge deadlock exists**, and the one residual stall path was a THIRD unchecked drain
 
 Round 27's writeup left one item explicitly open: *"A bridge that can DEADLOCK is more serious than
@@ -5808,7 +5959,7 @@ haze/trick/yawn/wrap/transform UNMODELED — pool-invisible since the pool carri
 sets are refreshed (batch-7 multihit / partial-trap / haze / yawn / trick / transform / volttackle /
 the 16-move construction guard / the bp0-status and triplekick fail-loud rules), and the tool gained
 **`SCAN_UNIVERSE=1`** — classify the ENTIRE gen3-legal universe and exit non-zero if ANY MISMODELED
-(silent-desync) move exists. Current census: **369 → 279 MODELED · 90 FAIL-LOUD · 0 MISMODELED**
+(silent-desync) move exists. Current census: **369 → 281 MODELED · 88 FAIL-LOUD · 0 MISMODELED**
 (reconciles with the audit: 279 = 278 picker-modeled + `sleeptalk`; 90 = 74 runtime + 16
 construction). The pool report is byte-identical after the refresh (108/108 MODELED, 722/722 clean).
 Run the invariant after admitting a move class or touching the guard.
@@ -6117,23 +6268,17 @@ class, validated by one class-sweep golden.
      through the ONE `mon_types` choke point], and the PROC_ITEM pair **KING'S ROCK** [the appended
      trailing 10% flinch secondary over the execution-derived 130-move list] + **FOCUS BAND** [the
      onDamage `randomChance(1,10)` on EVERY Damage event into the holder; survive-at-1 on a lethal
-     MOVE hit] — see the batch-4 note below). **STILL DEFERRED (the ONE remaining member):
-     FORECAST** (a Castform forme+TYPE change under rain/sun/hail — 0 sample teams; the probes settled
-     the weather→forme map / revert-on-end / bench-revert / switch-in re-forme / draw-freeness
-     [`probe_forecast_rng.js`], but the forme-change REPORTING surface + the Cloud-Nine
-     effective-weather composition stay unprobed, so it is deferred honestly — the e2e filter keeps
-     every Castform-Forecast team off the modeled path). **FAIL-LOUD GIGO guard** (`gen3_forecast_failloud_v1`,
-     2026-07-23): an unmodeled ability would SILENTLY no-op in the engine (no handler matches `forecast`)
-     then desync the moment weather touched a Castform, so `state::MonState::from_set` now **PANICS** at
-     construction (`forecast (Castform) is unmodeled — GIGO guard; reject the team upstream`) — catching
-     ACTIVE and BENCH mons before any turn; pinned `forecast_castform_fails_loud_at_construction`
-     (`#[should_panic]`, regression_test.rs). The byte-fuzz filters REJECT every Forecast/Castform team
-     upstream — `gen_e2e_fuzz.js` `REJECT_ABILITIES`/`REJECT_SPECIES` (hard-deny in `abilityAllowed` +
-     `teamFilterClean`; consumed by the e2e generator + `--mode pool`/`random`) and `ab_fuzz.js`
-     `adaptRandbatsTeam` (Castform's only ability IS Forecast → the whole team is rejection-sampled,
-     tallied `ability:forecast` in `drop_reasons`, never ability-substituted) — so the panic never fires
-     on the modeled path (byte-neutral: the e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` is
-     unchanged, no committed team carries Castform).
+     MOVE hit] — see the batch-4 note below). **FORECAST — the LAST member — is DONE**
+     (`gen3_forecast_v1`, ROUND 35 above): the forme+TYPE swap at every WeatherChange site
+     (incl. the previously-missing UNCONDITIONAL expiry draw — the T1 8-vs-7 fix), the entrant
+     `onStart`, the start window, the silent `clearVolatile` revert, and the
+     reporting surfaces reading the construction `base_species_id` (the forme name appears on
+     the wire ONLY in the `|-formechange|` line). The old construction FAIL-LOUD
+     (`gen3_forecast_failloud_v1`) is RETIRED — pinned by its negative control
+     `forecast_castform_builds_now_that_forecast_is_modeled` — and
+     `REJECT_ABILITIES`/`REJECT_SPECIES` are EMPTY (kept as the seam for the next ability
+     deferral): gen3-randbats Castform teams now reach the port. The ability class census is
+     therefore COMPLETE: every gen-3 ability is modeled or verified-no-op, none fail-loud.
   - **STATUS_IMMUNE ability — DONE as a DATA-DRIVEN class** (`gen3_status_immune_v1`, 2026-07-06). The gen-3
     abilities that grant immunity to a specific MAJOR status: **Limber** (par) / **Insomnia** + **Vital
     Spirit** (slp) / **Immunity** (psn,tox) / **Water Veil** (brn) block via `onSetStatus`; **Magma Armor**

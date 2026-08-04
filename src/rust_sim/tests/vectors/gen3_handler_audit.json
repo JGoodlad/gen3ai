@@ -3,11 +3,11 @@
   "generator": "harness/dump_gen3_handlers.js",
   "gate": "node harness/dump_gen3_handlers.js --audit (cargo: tests/handler_audit_test.rs)",
   "surface": {
-   "abilities": 76,
+   "abilities": 77,
    "items": 63,
    "conditions": 49,
-   "moves": 263,
-   "rows": 960
+   "moves": 265,
+   "rows": 969
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -163,6 +163,24 @@
    "fp": "fn:c36eb706:onTryHit(target, source, move) { if (target !== source && move.type === \"Fire\") { if (move.id === \"willowisp\" && (target",
    "anchor": "turn.rs::apply_flash_fire_activation",
    "reason": "the acc_hit-gated flash_fire arm (gen3_flashfire_v1)"
+  },
+  "ability:forecast:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:70a95ffe:onStart(pokemon) { this.singleEvent(\"WeatherChange\", this.effect, this.effectState, pokemon); }",
+   "anchor": "forecast.rs::forecast_weather_change",
+   "reason": "the entrant singleEvent(WeatherChange) — run_switch fires it for the just-switched-in mon off the standing weather (probe S2 t3), and start_with_switchins applies the start-window equivalent post-hoc"
+  },
+  "ability:forecast:onSwitchInPriority": {
+   "disposition": "implemented",
+   "fp": "val:-2",
+   "anchor": "forecast.rs::forecast_weather_change",
+   "reason": "ordering metadata for the sibling onStart (the −2 switch-in slot); PROBED IRRELEVANT in gen-3 singles (probe_r35_double_replacement.js: a double replacement emits switches in ENTRANT-SPEED order and each runSwitch fires its own singleEvent Start — the −2 never reorders anything observable; pin FC8)"
+  },
+  "ability:forecast:onWeatherChange": {
+   "disposition": "implemented",
+   "fp": "fn:bd59bcec:onWeatherChange(pokemon) { if (pokemon.baseSpecies.baseSpecies !== \"Castform\" || pokemon.transformed) return; let forme ",
+   "anchor": "forecast.rs::forecast_each_event",
+   "reason": "the whole handler (gates + forme + type + |-formechange|) at every WeatherChange site: the weather-set move arm, the mid-turn switch-in weather change, the two WEATHER_NEGATE onEnd sites (with the ending-negater exclusion), and the previously-missing UNCONDITIONAL expiry WeatherChange (the T1 8-vs-7 fix)"
   },
   "ability:guts:onModifyAtk": {
    "disposition": "implemented",
@@ -1290,19 +1308,22 @@
    "reason": "FutureMove {duration:3, damage, move_id, accuracy, source_side/uid} — the slot-keyed pending strike (the Wish precedent)"
   },
   "condition:hail:duration": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "val:5",
-   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the weather_turns 5-turn countdown (a MOVE set; ability weather is permanent duration 0; the rock items are gen4)"
   },
   "condition:hail:durationCallback": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "fn:de12985a:durationCallback(source, effect) { if (source?.hasItem(\"icyrock\")) { return 8; } return 5; }",
-   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the weather_turns 5-turn countdown (a MOVE set; ability weather is permanent duration 0; the rock items are gen4)"
   },
   "condition:hail:onFieldEnd": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "fn:9dc7d496:onFieldEnd() { this.add(\"-weather\", \"none\"); }",
-   "reason": "weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the expiry branch: |-weather|none + the UNCONDITIONAL clearWeather eachEvent(WeatherChange) draw (the round-35 T1 fix)"
   },
   "condition:hail:onFieldResidual": {
    "disposition": "implemented",
@@ -1320,7 +1341,7 @@
    "disposition": "implemented",
    "fp": "fn:a2af3ee7:onFieldStart(field, source, effect) { if (effect?.effectType === \"Ability\") { if (this.gen <= 5) this.effectState.durati",
    "anchor": "event.rs::run_switch",
-   "reason": "the ability-sourced weather set (permanent) + |-weather| line"
+   "reason": "the weather set (+ |-weather| line) — ability-sourced permanent OR the modeled_weather_set_move 5-turn arm"
   },
   "condition:hail:onWeather": {
    "disposition": "implemented",
@@ -1616,19 +1637,22 @@
    "reason": "the interrupt: on a VOLUNTARY (is_voluntary) switch-out of the pursued mon, cancelMove the pursuer + run Pursuit at ×2 never-miss BEFORE the swap (gen3_move_coverage_batch4_v1); Baton Pass/drag/faint-replacement do NOT intercept"
   },
   "condition:raindance:duration": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "val:5",
-   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the weather_turns 5-turn countdown (a MOVE set; ability weather is permanent duration 0; the rock items are gen4)"
   },
   "condition:raindance:durationCallback": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "fn:6d9de025:durationCallback(source, effect) { if (source?.hasItem(\"damprock\")) { return 8; } return 5; }",
-   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the weather_turns 5-turn countdown (a MOVE set; ability weather is permanent duration 0; the rock items are gen4)"
   },
   "condition:raindance:onFieldEnd": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "fn:9dc7d496:onFieldEnd() { this.add(\"-weather\", \"none\"); }",
-   "reason": "weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the expiry branch: |-weather|none + the UNCONDITIONAL clearWeather eachEvent(WeatherChange) draw (the round-35 T1 fix)"
   },
   "condition:raindance:onFieldResidual": {
    "disposition": "implemented",
@@ -1646,7 +1670,7 @@
    "disposition": "implemented",
    "fp": "fn:2e98845f:onFieldStart(field, source, effect) { if (effect?.effectType === \"Ability\") { if (this.gen <= 5) this.effectState.durati",
    "anchor": "event.rs::run_switch",
-   "reason": "the ability-sourced weather set (permanent) + |-weather| line"
+   "reason": "the weather set (+ |-weather| line) — ability-sourced permanent OR the modeled_weather_set_move 5-turn arm"
   },
   "condition:raindance:onWeatherModifyDamage": {
    "disposition": "implemented",
@@ -1691,19 +1715,22 @@
    "reason": "the |-sidestart| line + the 5-turn counter set (the screen-set arm in run_status_move)"
   },
   "condition:sandstorm:duration": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "val:5",
-   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the weather_turns 5-turn countdown (a MOVE set; ability weather is permanent duration 0; the rock items are gen4)"
   },
   "condition:sandstorm:durationCallback": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "fn:44452f71:durationCallback(source, effect) { if (source?.hasItem(\"smoothrock\")) { return 8; } return 5; }",
-   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the weather_turns 5-turn countdown (a MOVE set; ability weather is permanent duration 0; the rock items are gen4)"
   },
   "condition:sandstorm:onFieldEnd": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "fn:9dc7d496:onFieldEnd() { this.add(\"-weather\", \"none\"); }",
-   "reason": "weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the expiry branch: |-weather|none + the UNCONDITIONAL clearWeather eachEvent(WeatherChange) draw (the round-35 T1 fix)"
   },
   "condition:sandstorm:onFieldResidual": {
    "disposition": "implemented",
@@ -1721,7 +1748,7 @@
    "disposition": "implemented",
    "fp": "fn:692d5e7b:onFieldStart(field, source, effect) { if (effect?.effectType === \"Ability\") { if (this.gen <= 5) this.effectState.durati",
    "anchor": "event.rs::run_switch",
-   "reason": "the ability-sourced weather set (permanent) + |-weather| line"
+   "reason": "the weather set (+ |-weather| line) — ability-sourced permanent OR the modeled_weather_set_move 5-turn arm"
   },
   "condition:sandstorm:onModifySpDPriority": {
    "disposition": "noop_justified",
@@ -1864,19 +1891,22 @@
    "reason": "the sub absorb / break / no-carry + blocked status/stat-drop — (order metadata of the sibling onTryPrimaryHit handler)"
   },
   "condition:sunnyday:duration": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "val:5",
-   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the weather_turns 5-turn countdown (a MOVE set; ability weather is permanent duration 0; the rock items are gen4)"
   },
   "condition:sunnyday:durationCallback": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "fn:2779616d:durationCallback(source, effect) { if (source?.hasItem(\"heatrock\")) { return 8; } return 5; }",
-   "reason": "a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the weather_turns 5-turn countdown (a MOVE set; ability weather is permanent duration 0; the rock items are gen4)"
   },
   "condition:sunnyday:onFieldEnd": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "fn:9dc7d496:onFieldEnd() { this.add(\"-weather\", \"none\"); }",
-   "reason": "weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end"
+   "anchor": "turn.rs::apply_weather_chip",
+   "reason": "the expiry branch: |-weather|none + the UNCONDITIONAL clearWeather eachEvent(WeatherChange) draw (the round-35 T1 fix)"
   },
   "condition:sunnyday:onFieldResidual": {
    "disposition": "implemented",
@@ -1894,7 +1924,7 @@
    "disposition": "implemented",
    "fp": "fn:c327f383:onFieldStart(battle, source, effect) { if (effect?.effectType === \"Ability\") { if (this.gen <= 5) this.effectState.durat",
    "anchor": "event.rs::run_switch",
-   "reason": "the ability-sourced weather set (permanent) + |-weather| line"
+   "reason": "the weather set (+ |-weather| line) — ability-sourced permanent OR the modeled_weather_set_move 5-turn arm"
   },
   "condition:sunnyday:onImmunity": {
    "disposition": "implemented",
@@ -4088,6 +4118,24 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:hail:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:hail:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:hail:weather": {
+   "disposition": "implemented",
+   "fp": "val:\"hail\"",
+   "anchor": "turn.rs::modeled_weather_set_move",
+   "reason": "the 5-turn timed weather-set arm (Rain Dance/Sunny Day; setWeather fails into the same weather, overwrites a different one)"
+  },
   "move:harden:boosts": {
    "disposition": "implemented",
    "fp": "val:{\"def\":1}",
@@ -4936,6 +4984,24 @@
    "fp": "val:[{\"chance\":50,\"status\":\"brn\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:sandstorm:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:sandstorm:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:sandstorm:weather": {
+   "disposition": "implemented",
+   "fp": "val:\"Sandstorm\"",
+   "anchor": "turn.rs::modeled_weather_set_move",
+   "reason": "the 5-turn timed weather-set arm (Rain Dance/Sunny Day; setWeather fails into the same weather, overwrites a different one)"
   },
   "move:sandtomb:volatileStatus": {
    "disposition": "implemented",

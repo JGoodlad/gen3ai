@@ -95,6 +95,7 @@ use crate::prng::PrngSeed;
 use crate::state::{Status, Weather, BOOST_LEN};
 
 mod driver;
+mod forecast;
 mod helpers;
 mod items;
 mod moves;

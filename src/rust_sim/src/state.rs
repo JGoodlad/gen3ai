@@ -100,7 +100,35 @@ pub struct MonState {
     pub set: PokemonSet,
     /// Resolved species id (normalized, e.g. `tyranitar`). Mirrors
     /// `pokemon.species.id` — NOT `pokemon.speciesid` (which is undefined).
+    /// **LIVE**: a Forecast forme change (`gen3_forecast_v1`) and a Transform copy
+    /// (`gen3_transform_v1`) both move this off the construction species; the
+    /// CONSTRUCTION identity is [`MonState::base_species_id`].
     pub species_id: String,
+    /// `pokemon.baseSpecies.id` (`gen3_forecast_v1`, ROUND 35) — the species the mon was
+    /// CONSTRUCTED with, fixed for the battle. In the sim `baseSpecies` is only rewritten by
+    /// a `formeChange(…, isPermanent = true)` (Mega / Primal / a Status forme — none of which
+    /// exist in gen 3), so for us it is a construction-time constant.
+    ///
+    /// Two things read it rather than [`MonState::species_id`]:
+    ///
+    /// 1. **`clearVolatile`'s `setSpecies(this.baseSpecies)`** (pokemon.ts:1560) — the
+    ///    switch-out / faint revert. A Rainy Castform that pivots out is `castform` on the
+    ///    bench (probe `probe_r35_forecast_reporting.js` S2/S3; a fainted one likewise —
+    ///    `probe_r35_forecast_edges.js` E8 water-t2), so its next `|switch|`/`|drag|`
+    ///    details are the BASE species and its `onStart` re-formes from scratch.
+    /// 2. **Every REPORTING surface** — the protocol IDENT (`p1a: Castform`), the
+    ///    `|switch|`/`|drag|` details, and the per-side `|request|` roster `details`. A
+    ///    non-permanent `formeChange` deliberately does NOT refresh `Pokemon.details` /
+    ///    `Pokemon.name`, so a FORMED Castform still reports `Castform, F` everywhere
+    ///    (probe S1/S2/S3 — the `|-formechange|` line is the ONLY place the forme name
+    ///    appears on the wire).
+    ///
+    /// Distinct from [`TransformOverlay::base_species_id`], which is the same value but
+    /// only exists WHILE a Transform is up. NOTE this is deliberately NOT derived from the
+    /// dex's `baseSpecies` field: gen 3 also ships the three **Deoxys** formes, which are
+    /// ORDINARY selectable species (`baseSpecies: "Deoxys"`, no `battleOnly`) whose
+    /// `details` must stay `Deoxys-Attack` — a dex-derived base would corrupt them.
+    pub base_species_id: String,
     /// Level (mirrors `pokemon.level`).
     pub level: u8,
     /// In-battle stats `[hp, atk, def, spa, spd, spe]` (= [`crate::stats`] order).
@@ -1029,21 +1057,12 @@ impl MonState {
         let move_pp = move_maxpp.clone();
         let item = set.item.clone();
         let ability = set.ability.clone();
-        // FAIL-LOUD GIGO guard: FORECAST (Castform) is DEFERRED / UNMODELED. Its
-        // `onWeatherChange` swaps Castform's forme + TYPE under rain/sun/hail — a mechanic
-        // the port does not model, so the engine would SILENTLY treat `forecast` as a no-op
-        // (no handler matches the id) and desync the moment weather touched a Castform. Better
-        // a loud crash than a silent mismodel: PANIC at construction (this catches ACTIVE and
-        // BENCH mons alike, before any turn runs). The byte-fuzz team generators/adapters
-        // REJECT every Forecast/Castform team upstream (`gen_e2e_fuzz.js` / `ab_fuzz.js`), so
-        // this panic never fires on the modeled path — it only trips a GIGO team. See
-        // `src/rust_sim/CLAUDE.md` (Forecast/deferred section).
-        if crate::dex::to_id(&ability) == "forecast" {
-            panic!(
-                "MonState::from_set(slot {position}): forecast (Castform) is unmodeled — \
-                 GIGO guard; reject the team upstream"
-            );
-        }
+        // FORECAST is MODELED (`gen3_forecast_v1`, ROUND 35) — the old fail-loud GIGO guard
+        // here is RETIRED: `turn/forecast.rs` models the forme + TYPE swap at every
+        // `eachEvent('WeatherChange')` site, the entrant `onStart`, the start window, and
+        // the `clearVolatile` revert; the hail/sandstorm MOVES are modeled weather-setters
+        // so every forme is reachable. `forecast_castform_builds_now_that_forecast_is_modeled`
+        // is the negative control that the guard stays retired.
         // FAIL-LOUD GIGO guard for HELD ITEMS THE ENGINE DOES NOT MODEL AT ALL
         // (`gen3_unmodeled_item_failloud_v1`). The item sibling of the ability guard above and
         // the move guard below, closing the last limb of the same class: an item the port has
@@ -1175,6 +1194,9 @@ impl MonState {
             item_knocked_off: false,
             ability,
             focus_energy: false,
+            // `pokemon.baseSpecies` — the construction species, never rewritten in gen 3
+            // (`gen3_forecast_v1`). Cloned BEFORE `species_id` is moved into the struct.
+            base_species_id: species_id.clone(),
             species_id,
             level,
             stats,
@@ -1740,6 +1762,17 @@ impl BattleState {
     pub fn start_with_switchins(opts: &BattleOptions, dex: &Dex) -> Result<BattleState, String> {
         let mut state = BattleState::start(opts, dex)?;
         state.run_start_switchins();
+        // FORECAST at the START window (`gen3_forecast_v1`): the sim's construction fires
+        // each Castform lead's `forecast.onStart` (off the standing weather at its own
+        // runSwitch) AND the weather-setter's `eachEvent('WeatherChange')` over both leads —
+        // both CONVERGE on "forme = f(final start weather)", so the DRAW-FREE path applies
+        // it post-hoc after all Starts (probe E1: a Castform lead vs a Drought lead is
+        // `castformsunny` at `|turn|1`; vs Sand Stream stays base — the default arm). STATE
+        // only here — the framing `|-formechange|` line is `emit_switchin_ability_lines`'.
+        let eff = state.effective_weather(dex);
+        for side in 0..2 {
+            state.forecast_weather_change(side, eff, dex);
+        }
         // WHITE HERB (`gen3_white_herb_v1`, `whiteherb.onAnySwitchIn` priority −2): a LEAD whose
         // Atk was dropped by the opposing lead's Intimidate restores it + consumes the item —
         // but ONLY when the holder's own switch-in fires AFTER that drop. White Herb's onAnySwitchIn

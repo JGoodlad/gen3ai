@@ -87,6 +87,18 @@ for (const id of ['airlock', 'cloudnine']) {
 }
 add([ab('speedboost', 'onResidual')], IMPL('turn.rs::run_residuals', 'ResidualAction::SpeedBoost at order 10 subOrder 3 (B4)'));
 add([ab('raindish', 'onResidual')], IMPL('turn.rs::run_residuals', 'ResidualAction::RainDish +maxhp/16 in effective rain (B4b)'));
+// FORECAST (`gen3_forecast_v1`, ROUND 35) — the Castform forme + TYPE swap.
+add([ab('forecast', 'onWeatherChange')], IMPL('forecast.rs::forecast_each_event',
+  'the whole handler (gates + forme + type + |-formechange|) at every WeatherChange site: the weather-set ' +
+  'move arm, the mid-turn switch-in weather change, the two WEATHER_NEGATE onEnd sites (with the ending-' +
+  'negater exclusion), and the previously-missing UNCONDITIONAL expiry WeatherChange (the T1 8-vs-7 fix)'));
+add([ab('forecast', 'onStart')], IMPL('forecast.rs::forecast_weather_change',
+  'the entrant singleEvent(WeatherChange) — run_switch fires it for the just-switched-in mon off the ' +
+  'standing weather (probe S2 t3), and start_with_switchins applies the start-window equivalent post-hoc'));
+add([ab('forecast', 'onSwitchInPriority')], IMPL('forecast.rs::forecast_weather_change',
+  'ordering metadata for the sibling onStart (the −2 switch-in slot); PROBED IRRELEVANT in gen-3 singles ' +
+  '(probe_r35_double_replacement.js: a double replacement emits switches in ENTRANT-SPEED order and each ' +
+  'runSwitch fires its own singleEvent Start — the −2 never reorders anything observable; pin FC8)'));
 
 // Batch-2 reactive classes.
 for (const id of ['static', 'poisonpoint', 'flamebody', 'effectspore']) {
@@ -238,12 +250,15 @@ add([cond('flashfire', 'onModifyAtkPriority'), cond('flashfire', 'onModifySpAPri
 add([cond('focusenergy', 'onStart')], IMPL('state.rs::focus_energy', 'the volatile arm (via a Lansat eat — the only gen3 route); the dragoncheer branch is gen9 cruft'));
 add([cond('focusenergy', 'onModifyCritRatio')], IMPL('turn.rs::CRIT_MULT', 'the +2 crit-ratio fold (clamped 0..5) into the crit denominator'));
 
-// Weathers. Ability-set weather is PERMANENT (duration 0); no weather MOVE is modeled.
+// Weathers. Ability-set weather is PERMANENT (duration 0); ALL FOUR weather MOVES are
+// modeled 5-turn timed setters (`gen3_move_coverage_batch2_v1` rain/sun +
+// `gen3_forecast_v1` hail/sandstorm) — the old "no weather move is modeled" reasons here
+// were stale since batch 2 for rain/sun.
 for (const id of ['sandstorm', 'raindance', 'sunnyday', 'hail']) {
   add([cond(id, 'duration'), cond(id, 'durationCallback')],
-    UNREACH('a 5-turn duration applies only to MOVE-set weather — no weather move is modeled; ability weather resolves duration 0 (permanent); the rock items are gen4'));
-  add([cond(id, 'onFieldStart')], IMPL('event.rs::run_switch', 'the ability-sourced weather set (permanent) + |-weather| line'));
-  add([cond(id, 'onFieldEnd')], UNREACH('weather never ENDS in the modeled universe — permanent ability weather, no clearing move; replacement re-sets without an end'));
+    IMPL('turn.rs::apply_weather_chip', 'the weather_turns 5-turn countdown (a MOVE set; ability weather is permanent duration 0; the rock items are gen4)'));
+  add([cond(id, 'onFieldStart')], IMPL('event.rs::run_switch', 'the weather set (+ |-weather| line) — ability-sourced permanent OR the modeled_weather_set_move 5-turn arm'));
+  add([cond(id, 'onFieldEnd')], IMPL('turn.rs::apply_weather_chip', 'the expiry branch: |-weather|none + the UNCONDITIONAL clearWeather eachEvent(WeatherChange) draw (the round-35 T1 fix)'));
 }
 add([cond('sandstorm', 'onFieldResidual'), cond('hail', 'onFieldResidual')],
   IMPL('turn.rs::run_residuals', 'the upkeep + effective-weather-GATED eachEvent(Weather) chip shuffle (a negater silences it)'));

@@ -1261,14 +1261,23 @@ impl crate::state::BattleState {
             if self.logging() {
                 self.log.weather("none", None, None, false);
             }
-            // The field residual STILL fires its eachEvent('Weather') shuffle on the expiry
-            // turn (probe: the expiry turn draws the same count as an upkeep turn). No chip
-            // (the weather is gone; even a would-be sand/hail chip is skipped — the shuffle
-            // is the whole residual). RM3: the shuffle is gated the same as the main path —
-            // sun/rain always run it, sand/hail only when effective (a negater suppresses it).
-            if matches!(weather, Weather::Sun | Weather::Rain) || effective {
-                self.each_event_shuffle();
-            }
+            // The EXPIRY draw is NOT the eachEvent('Weather') residual at all — the sim's
+            // duration-end branch `continue`s PAST `onFieldResidual` and `Field.clearWeather`
+            // fires `eachEvent('WeatherChange')` instead, **UNCONDITIONALLY** (suppressed or
+            // not): `probe_r35_forecast_expiry_draw.js` shows the expiry turn carrying
+            // `each:WeatherChange` and NO `each:Weather` in ALL FOUR {hail,rain} ×
+            // {suppressed,effective} scenarios, and `probe_r35_weather_moves.js` (a
+            // VERIFIED-TIED board) pins the draw: a SUPPRESSED-hail expiry draws 8 where its
+            // upkeep turns draw 7 — the old `Sun|Rain || effective` gate here missed that
+            // draw (the ROUND-35 T1 8-vs-7 divergence, LATENT until the hail/sandstorm MOVES
+            // became modeled since no timed sand/hail was previously reachable). For
+            // effective weather the count is unchanged (1 draw either way), so this fix is
+            // seed-visible ONLY on a suppressed sand/hail expiry at a speed tie. The resolved
+            // order is the `forecast_each_event` order (`gen3_forecast_v1`) — the expiry is a
+            // forme-REVERT site (hail ends → Castform-Snowy back to base).
+            let order = self.each_event_shuffle();
+            let eff = self.effective_weather(dex); // weather just cleared → None → base forme
+            self.forecast_each_event(&order, eff, dex);
             return;
         }
         if self.field.weather_turns > 1 {

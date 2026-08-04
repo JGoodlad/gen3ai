@@ -532,7 +532,11 @@ const MODELED_RESTRICTION_MOVES = new Set(['taunt', 'disable']);
 //     the DAMAGE calc reads it). A physical/special hit into a side with BOTH screens up draws
 //     the ModifyDamagePhase1 shuffle (the port models it). NEVER-MISS + draw-free set.
 const MODELED_CURE_MOVES = new Set(['refresh', 'healbell', 'aromatherapy']);
-const MODELED_WEATHER_MOVES = new Set(['raindance', 'sunnyday']);
+// + hail / sandstorm (`gen3_forecast_v1`, ROUND 35): the last two C_WEATHER_SET members,
+// modeled through the SAME batch-2 machinery (5-turn timed set / fail-into-same / upkeep /
+// expiry; the sand+hail chips + immunities were already modeled for the ability weathers).
+// Probe: `harness/probe_r35_weather_moves.js` (tied-board byte + draw parity).
+const MODELED_WEATHER_MOVES = new Set(['raindance', 'sunnyday', 'hail', 'sandstorm']);
 const MODELED_STATDROP_MOVES = new Set([
   'screech', 'charm', 'metalsound', 'featherdance', 'tickle', 'faketears', 'cottonspore', 'scaryface',
 ]);
@@ -1015,6 +1019,13 @@ const MODELED_ABILITIES = new Set([
   // WG1-WG4 pins are the proof; 0 sample teams carry Shedinja, so admitting it is byte-neutral on
   // the e2e sample (the committed golden md5 is unchanged — no filter-clean team gains Shedinja).
   'wonderguard',
+  // FORECAST (`gen3_forecast_v1`, ROUND 35) — Castform's forme + TYPE swap under the
+  // EFFECTIVE weather, now MODELED bit-for-bit (`turn/forecast.rs`: the WeatherChange sites
+  // incl. the previously-missing UNCONDITIONAL expiry draw, the entrant onStart, the start
+  // window, the silent clearVolatile revert; details/ident/request stay the BASE species).
+  // The LAST fail-loud ability — its admission clears REJECT_ABILITIES/REJECT_SPECIES.
+  // 0 pool teams carry Castform, so the committed e2e golden is untouched.
+  'forecast',
 ]);
 // Provably no-op in a damaging-move-only, no-PP, no-attract, no-sleep, no-OHKO,
 // no-recoil, no-drain fuzz.
@@ -1048,16 +1059,16 @@ const NOOP_ABILITIES = new Set([
   'lightningrod', 'stickyhold',
 ]);
 // FAIL-LOUD / DEFERRED abilities the ENGINE PANICS on (a GIGO guard) — the fuzz
-// must NEVER feed one to the port. **FORECAST** (Castform) is DEFERRED: its
-// `onWeatherChange` swaps Castform's forme + TYPE under rain/sun/hail, an unmodeled
-// mechanic (`state::MonState::from_set` panics `forecast (Castform) is unmodeled …`).
-// Castform's ONLY ability IS Forecast, so it can NEVER be ability-substituted — the
-// WHOLE team must be rejection-sampled / dropped. This set makes the reject EXPLICIT
-// + robust: `abilityAllowed` HARD-denies it even if it were ever mistakenly added to
-// a modeled/no-op set (the reject wins), and `adaptRandbatsTeam` (ab_fuzz) rejects the
-// team outright. `castform` is the only holder; keyed by species too as belt-and-suspenders.
-const REJECT_ABILITIES = new Set(['forecast']);
-const REJECT_SPECIES = new Set(['castform']);
+// must NEVER feed one to the port. **NOW EMPTY**: FORECAST — the last member — is
+// MODELED (`gen3_forecast_v1`, ROUND 35: the forme + TYPE swap at every WeatherChange
+// site, the entrant onStart, the start window, the clearVolatile revert; hail/sandstorm
+// modeled as weather-set moves so every forme is reachable), and `forecast` moved into
+// MODELED_ABILITIES / `castform` is admitted. The sets are KEPT (empty) as the seam for
+// the next ability deferral — `abilityAllowed` still hard-denies a member even if it
+// were ever mistakenly added to a modeled/no-op set (the reject wins), and
+// `adaptRandbatsTeam` (ab_fuzz) rejects a carrier team outright.
+const REJECT_ABILITIES = new Set([]);
+const REJECT_SPECIES = new Set([]);
 // The MOVE analogue of REJECT_ABILITIES: a team CARRYING a move the ENGINE fail-louds on
 // must never reach the port, even though `isModeledMove` already keeps the PICKER off it.
 // That distinction is exactly how the Transform bug escaped: the offline fuzzers never PICKED

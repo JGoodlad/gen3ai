@@ -371,17 +371,15 @@ impl crate::state::BattleState {
         if !nick.is_empty() {
             return nick.clone();
         }
-        // TRANSFORM (`gen3_transform_v1`): `pokemon.name` is `set.name || set.species`, fixed
-        // at CONSTRUCTION — `transformInto` never touches it, so EVERY protocol ident of a
-        // transformed mon still reads its ORIGINAL species (probe: `|-transform|p1a: Ditto|
-        // p2a: Snorlax`, then `|move|p1a: Ditto|Body Slam|…` — never `p1a: Snorlax`). Read
-        // through the overlay rather than the live (copied) `species_id`.
-        if let Some(ov) = &mon.transform {
-            return dex
-                .species(&ov.base_species_id)
-                .map_or_else(|| ov.base_species_id.clone(), |s| s.name.clone());
-        }
-        self.species_name(side, slot, dex)
+        // `pokemon.name` is `set.name || set.species`, fixed at CONSTRUCTION — neither
+        // `transformInto` (`gen3_transform_v1`: `|move|p1a: Ditto|Body Slam|…`, never
+        // `p1a: Snorlax`) nor a non-permanent Forecast `formeChange` (`gen3_forecast_v1`,
+        // probe S1: every ident of a FORMED Castform stays `p1a: Castform`) ever touches it.
+        // Read the construction-fixed [`crate::state::MonState::base_species_id`] — which
+        // also gets the FORMED-Castform-then-Transforms corner right (the overlay's stored
+        // species would be the FORME).
+        dex.species(&mon.base_species_id)
+            .map_or_else(|| mon.base_species_id.clone(), |s| s.name.clone())
     }
 
     /// The SPECIES display name of `side`'s `slot` mon (e.g. `Zapdos`), for the
@@ -586,6 +584,27 @@ impl crate::state::BattleState {
             // The framing/lead reconstruction: a battle-start foe is never below −1, so an
             // Intimidate clamp never bites → the applied delta is always −1 (`None`).
             self.emit_ability_start_lines(side, slot, weather_line, None, dex);
+        }
+        // FORECAST (`gen3_forecast_v1`): a lead Castform FORMED by the start window emits
+        // its `|-formechange|` INSIDE the framing, after the setter's `-weather` line and
+        // before `|turn|1` (probe E1: `|switch|…|switch|…|-weather|SunnyDay|[from] ability:
+        // Drought|…` → `|-formechange|p1a: Castform|Castform-Sunny|[msg]|[from] ability:
+        // Forecast`). At most ONE lead can be formed here (two Castform leads means no
+        // weather ability on the field), so a side walk needs no order model. The STATE was
+        // already applied by the start path (`start_with_switchins` post-hoc / the
+        // construction window's live wiring); this is the reconstruction's emit half.
+        for side in 0..2 {
+            let slot = self.sides[side].active;
+            let mon = &self.sides[side].pokemon[slot];
+            if to_id(&mon.base_species_id) == "castform" && mon.species_id != mon.base_species_id
+            {
+                let name = dex
+                    .species(&mon.species_id)
+                    .map(|s| s.name.clone())
+                    .unwrap_or_else(|| mon.species_id.clone());
+                let r = self.mon_ref(side, slot, dex);
+                self.log.forme_change_forecast(&r, &name);
+            }
         }
     }
 
@@ -1079,13 +1098,22 @@ pub(crate) fn modeled_status_move(move_id: &str) -> Option<&'static str> {
     })
 }
 
-/// The MODELED WEATHER-SET moves (`gen3_move_coverage_batch2_v1`) → the [`Weather`] they
-/// set for 5 turns. Rain Dance → Rain, Sunny Day → Sun. Sandstorm / Hail (the MOVES) are
-/// NOT modeled here (no gen3-OU team carries the moves; sand/hail come from Sand Stream).
+/// The MODELED WEATHER-SET moves → the [`Weather`] they set for 5 turns. Rain Dance →
+/// Rain, Sunny Day → Sun (`gen3_move_coverage_batch2_v1`); **Hail → Hail, Sandstorm →
+/// Sand (`gen3_forecast_v1`, ROUND 35** — Forecast needs a reachable TIMED hail for
+/// Castform-Snowy, and the class machinery is weather-generic). All four are never-miss,
+/// 5-turn timed (gen 3 has no Damp/Heat/Icy/Smooth Rock), share the set / fail-into-same /
+/// upkeep / expiry byte forms, and the hail/sand CHIP + Ice / Rock-Ground-Steel immunities
+/// were already modeled for the ability weathers — probe-verified on TIED boards by
+/// `harness/probe_r35_weather_moves.js` (set `|-weather|Hail` + WeatherChange draw; upkeep
+/// chip `[from] Hail` at max(1,maxhp/16); re-cast `[still]`+`-fail`; expiry `-weather|none`
+/// + the UNCONDITIONAL WeatherChange draw).
 pub(crate) fn modeled_weather_set_move(move_id: &str) -> Option<Weather> {
     match move_id {
         "raindance" => Some(Weather::Rain),
         "sunnyday" => Some(Weather::Sun),
+        "hail" => Some(Weather::Hail),
+        "sandstorm" => Some(Weather::Sand),
         _ => None,
     }
 }

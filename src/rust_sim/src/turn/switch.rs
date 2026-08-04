@@ -182,7 +182,12 @@ impl crate::state::BattleState {
                     && !m.fainted
                     && dex.ability(&to_id(&m.ability)).map(|a| a.weather_negate).unwrap_or(false)
                 {
-                    self.each_event_shuffle();
+                    // `gen3_forecast_v1`: the dying suppressor is `abilityState.ending` for
+                    // this WeatherChange, so the forecast reads the weather WITHOUT it — a
+                    // standing Castform formes to the now-unsuppressed weather.
+                    let order = self.each_event_shuffle();
+                    let eff = self.effective_weather_excluding(Some(side), dex);
+                    self.forecast_each_event(&order, eff, dex);
                 }
             }
             let mon = &mut self.sides[side].pokemon[slot];
@@ -277,6 +282,13 @@ impl crate::state::BattleState {
                 // Mimic record then restores Mimic — together == the sim's `baseMoveSlots`.
                 mon.restore_transform_overlay();
                 mon.restore_mimic_overlay();
+                // FORECAST forme revert on FAINT (`gen3_forecast_v1`): `clearVolatile`'s
+                // `setSpecies(this.baseSpecies)` — a KO'd Rainy Castform is base `castform`
+                // on the bench (probe E8 water-t2), types riding the species. AFTER the
+                // Transform restore (whose stored pre-transform species could itself be a
+                // forme). Unconditional: every non-Castform already has species_id ==
+                // base_species_id. SILENT (no line).
+                mon.species_id = mon.base_species_id.clone();
                 // DESTINY BOND (`gen3_move_coverage_batch6_v1`, `destinybond.onFaint`):
                 // consume the pending-KO record (set at the qualifying FOE-Move damage
                 // sites — never by a residual / sub-absorbed hit / futuremove) + drop
@@ -791,7 +803,12 @@ impl crate::state::BattleState {
             if !m.fainted
                 && dex.ability(&to_id(&m.ability)).map(|a| a.weather_negate).unwrap_or(false)
             {
-                self.each_event_shuffle();
+                // `gen3_forecast_v1`: the LEAVING suppressor is `abilityState.ending` for
+                // this WeatherChange — the forecast excludes it, so a standing Castform
+                // formes BEFORE the incoming `|switch|` line (probe O1c t2).
+                let order = self.each_event_shuffle();
+                let eff = self.effective_weather_excluding(Some(side), dex);
+                self.forecast_each_event(&order, eff, dex);
             }
         }
         // [EMIT] `|-end|<outgoing>|ability: Flash Fire|[silent]` — an ALIVE outgoing mon
@@ -979,6 +996,12 @@ impl crate::state::BattleState {
             // the entrant is its own species (probe H). MUST run BEFORE the Mimic restore.
             m.restore_transform_overlay();
             m.restore_mimic_overlay();
+            // FORECAST forme revert on SWITCH-OUT (`gen3_forecast_v1`): `clearVolatile`'s
+            // `setSpecies(this.baseSpecies)` — a Rainy Castform pivoting out is base
+            // `castform` on the bench (probe S2 t2), so its next `|switch|` details are the
+            // BASE species and its `onStart` re-formes from scratch. AFTER the Transform
+            // restore; unconditional (non-Castforms are already base). SILENT.
+            m.species_id = m.base_species_id.clone();
         }
         // [EMIT] NATURAL CURE `-curestatus` (`gen3_omniscient_byte_fuzz_v1` FORM 4):
         // `|-curestatus|<outgoing>|<status>|[from] ability: Natural Cure|[silent]`, emitted
@@ -1398,6 +1421,14 @@ impl crate::state::BattleState {
         // later switch of a DIFFERENT mon into this slot can't read a stale target
         // (`gen3_intimidate_forced_replacement_v1`, M3). Draw-free.
         self.sides[side].pokemon[slot].switchin_foe_uid = None;
+        // FORECAST's own `onStart` (`gen3_forecast_v1`): `singleEvent('WeatherChange')` on
+        // the ENTRANT alone — a Castform switching in under STANDING weather formes right
+        // here, its `|-formechange|` landing after the switch block (probe S2 t3:
+        // `|switch|p1a: Castform|Castform, F|…` → `|-formechange|…Castform-Rainy…`).
+        // One mon, no sort, DRAW-FREE; the helper's own gates make it a no-op for every
+        // non-Forecast entrant.
+        let eff = self.effective_weather(dex);
+        self.forecast_weather_change(side, eff, dex);
         weather_changed
     }
 
