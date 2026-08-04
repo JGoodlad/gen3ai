@@ -1,22 +1,25 @@
 """Bridge fuzz test for per-move obs ↔ action-space ALIGNMENT (gen3_move_slot_align_v1).
 
-The per-move reactive obs features (base power vec[0:4], type multiplier vec[4:8], the move-effect
-block) MUST be filled in request-slot order — feature slot k ↔ action logit 6+k — so the policy reads
-the correct move's features for each action it can take. poke-env's ``battle.available_moves`` DROPS
-disabled moves (Choice-lock / Disable / Taunt / 0-PP / Imprison), so the old
-``enumerate(battle.available_moves)`` fill shifted every later feature out of alignment with its action
-logit (and left the trailing slot at a phantom-4× default). The action mask / mapper index
-``legal.move_slots`` (request order, disabled kept), so this validates the obs against THAT axis.
+The per-move obs features MUST be filled in request-slot order — feature slot k ↔ action logit 6+k — so
+the policy reads the correct move's features for each action it can take. poke-env's
+``battle.available_moves`` DROPS disabled moves (Choice-lock / Disable / Taunt / 0-PP / Imprison), so the
+old ``enumerate(battle.available_moves)`` fill shifted every later feature out of alignment with its
+action logit. The action mask / mapper index ``legal.move_slots`` (request order, disabled kept), so this
+validates the obs against THAT axis.
+
+**Scope refreshed for `gen3_cpu_damage_deleted_v1` (v48).** This test used to assert two more invariants
+over the per-move base-power (`vec[0:4]`) and type-multiplier (`vec[4:8]`) scalars — including an empty
+trailing slot reading the neutral 0.25 default rather than a phantom 4×. **v48 DELETED those 8 scalars
+from the observation** (the DamageOperator computes both GPU-side from the learned move belief), so both
+checks were reading bytes that no longer exist and failed on every decision. They are removed, NOT
+weakened: the alignment property they witnessed is now carried end-to-end by check (2) below — the
+`active_req_moves` block IS the request-ordered source the op's OUTGOING methods read, and it validates
+disabled slots too (via `legal`), which the deleted base-power check could not.
 
 Per-decision invariants asserted against the live battle (a violation raises immediately):
-  1. For every request move slot k, the encoded base-power feature (obs[OFFSET_REACTIVE+k]) equals the
-     base power of the move at ``legal.move_slots[k]`` (resolved to its typed Move, /200) — i.e. the
-     feature describes the move that ACTION 6+k plays, even when an earlier slot is disabled.
-  2. The action mapper agrees: ``action_to_choice(6+k)`` resolves to request slot k (so obs slot k and
+  1. The action mapper agrees: ``action_to_choice(6+k)`` resolves to request slot k (so obs slot k and
      action 6+k are the same move).
-  3. An EMPTY trailing slot (mon with <4 moves) reads the NEUTRAL multiplier default (0.25 == 1×), NOT
-     the old np.ones → phantom 4× super-effective.
-  4. gen3_op_move_align_v1: the `active_req_moves` obs block (the DamageOperator's OUTGOING source) carries,
+  2. gen3_op_move_align_v1: the `active_req_moves` obs block (the DamageOperator's OUTGOING source) carries,
      per request slot k, the move at ``legal.move_slots[k]`` — its dex NUM (HP → 237) + resolved TYPE-id +
      current choosability — in REQUEST order, so the op's per-move output lands at action 6+k. This is the
      regression guard for the v23/v27/v34 outgoing misalignment: if the obs reverts to sorted-by-id (the
@@ -53,16 +56,12 @@ from agents.battle.live_view import LegalActions
 from agents.observation.constants import (
     OFFSET_REACTIVE, ACTIVE_REQ_MOVES_OFFSET, ACTIVE_REQ_MOVES_PER,
 )
-from agents.observation.reactive import _NEUTRAL_MULT
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.observation.types import TypeEncoder
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 from utils.bridge.local_battle_runner import run_local_battles
 
-# reactive block layout: vec[0:4] = move base power (/200), vec[4:8] = type multiplier (eff/4)
-_BP_OFF = OFFSET_REACTIVE + 0
-_MULT_OFF = OFFSET_REACTIVE + 4
 _TOL = 1e-4
 
 # gen3_op_move_align_v1: the request-order active-move id/type/legality block the DamageOperator's
@@ -99,10 +98,7 @@ class _Stats:
     decisions: int = 0
     move_slots_checked: int = 0
     disabled_slot_decisions: int = 0   # decisions with a DISABLED non-last slot (the trigger)
-    empty_slots_checked: int = 0
-    align_fail: int = 0
     mapper_fail: int = 0
-    default_fail: int = 0
     req_block_fail: int = 0            # gen3_op_move_align_v1: op's request-order id/type/legal block
     examples: List[dict] = field(default_factory=list)
 
@@ -112,7 +108,7 @@ class _Stats:
 
     @property
     def failures(self) -> int:
-        return self.align_fail + self.mapper_fail + self.default_fail + self.req_block_fail
+        return self.mapper_fail + self.req_block_fail
 
 
 class _AlignmentPlayer(Player):
@@ -146,20 +142,10 @@ class _AlignmentPlayer(Player):
                 continue
             s.move_slots_checked += 1
 
-            # (1) base-power alignment — the decisive witness
-            expected_bp = mv.base_power / 200.0
-            got_bp = float(vec[_BP_OFF + k])
-            if abs(got_bp - expected_bp) > _TOL:
-                s.align_fail += 1
-                s.record({"check": "base_power_misaligned", "turn": battle.turn, "slot": k,
-                          "move": lm.id, "disabled": lm.disabled,
-                          "got": got_bp, "expected": expected_bp,
-                          "request_ids": [m.id for m in legal.move_slots],
-                          "available_ids": [m.id for m in battle.available_moves]})
-
-            # (2) the mapper plays request slot k for action 6+k → obs slot k and the action agree.
+            # (1) the mapper plays request slot k for action 6+k → obs slot k and the action agree.
             # Only for SELECTABLE (non-disabled) slots — the mapper rightly refuses a disabled slot
-            # (it is masked off), but its obs features are still validated at slot k by check (1).
+            # (it is masked off); a disabled slot's obs features are validated at slot k by check (2),
+            # which asserts its `legal` flag is 0 there.
             if not lm.disabled:
                 choice = Gen3ActionMapper.action_to_choice(MOVE_START + k, legal)
                 if choice.move_slot != k:
@@ -167,7 +153,7 @@ class _AlignmentPlayer(Player):
                     s.record({"check": "mapper_slot_mismatch", "turn": battle.turn, "slot": k,
                               "mapped_slot": choice.move_slot})
 
-        # (4) gen3_op_move_align_v1 — the DamageOperator's OUTGOING source block. For every request
+        # (2) gen3_op_move_align_v1 — the DamageOperator's OUTGOING source block. For every request
         # slot k, the obs `active_req_moves` block must carry the move at legal.move_slots[k] (NUM +
         # resolved TYPE) and its CURRENT choosability — in REQUEST order, so the op's per-move output
         # lands at action 6+k. This is the regression guard for the v23/v27/v34 outgoing misalignment:
@@ -190,15 +176,6 @@ class _AlignmentPlayer(Player):
                           "got": (got_num, got_type, got_legal),
                           "expected": (exp_num, exp_type, exp_legal),
                           "request_ids": [m.id for m in legal.move_slots]})
-
-        # (3) empty trailing slots (mon with <4 moves) read the neutral default, not phantom 4×
-        for k in range(n, 4):
-            s.empty_slots_checked += 1
-            got = float(vec[_MULT_OFF + k])
-            if abs(got - _NEUTRAL_MULT) > _TOL:
-                s.default_fail += 1
-                s.record({"check": "empty_slot_not_neutral", "turn": battle.turn, "slot": k,
-                          "got": got, "expected": _NEUTRAL_MULT})
 
     def choose_move(self, battle):
         try:
@@ -234,10 +211,8 @@ async def run(n_battles: int) -> None:
     print("=" * 65)
     print(f"decisions validated        : {s.decisions}")
     print(f"move slots checked         : {s.move_slots_checked}")
-    print(f"empty slots checked        : {s.empty_slots_checked}")
     print(f"decisions w/ disabled slot : {s.disabled_slot_decisions}  (the alignment trigger)")
-    print(f"align / mapper / default / req-block fails: "
-          f"{s.align_fail} / {s.mapper_fail} / {s.default_fail} / {s.req_block_fail}")
+    print(f"mapper / req-block fails   : {s.mapper_fail} / {s.req_block_fail}")
     for ex in s.examples:
         print("   example:", ex)
     print("=" * 65)
