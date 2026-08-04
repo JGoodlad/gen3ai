@@ -25,7 +25,8 @@ import torch
 
 from agents.model.features_extractor import (
     BiasedEncoderLayer, D_MODEL, EdgeBias, Gen3FeaturesExtractor, TEAM_SIZE,
-    TRANSFORMER_FFN_DIM, TRANSFORMER_N_HEADS, _EDGE_D1_CELL, _EDGE_D3_CELL, _KEY_PAD_NEG,
+    TRANSFORMER_FFN_DIM, TRANSFORMER_N_HEADS, _EDGE_D1_CELL, _EDGE_D2_CELL, _EDGE_D3_CELL,
+    _EDGE_S1_CELL, _EDGE_S3_CELL, _KEY_PAD_NEG,
 )
 from agents.model.model_version import (
     ARCH_SIGNATURE, MODEL_CONFIG_VERSION, ModelVersion, _migrate_config,
@@ -41,7 +42,7 @@ _EDGE_TOGGLES = dict(attend_unrevealed_opponents=True, move_belief_mode="both",
                      move_belief_prefuse=True, move_belief_single_compute=True,
                      damage_op=True, damage_outgoing=True, move_latent=True,
                      damage_op_prefuse=True, move_prior_fusion=True,
-                     entity_topk_seats=5, edge_bias_families="d")
+                     entity_topk_seats=5, edge_bias_families="d1,d2,d3,s1,s3")
 
 
 def _make(**kw):
@@ -101,25 +102,38 @@ def test_families_on_is_bitwise_identical_at_init():
 
 # ------------------------------------------------------- placement
 def test_probe_map_writes_exactly_the_documented_blocks():
-    eb = EdgeBias("d")
+    """All five families at once — every documented pair receives a bias, nothing leaks outside.
+    D2 targets the batch-varying opp-ACTIVE column via the one-hot, so its block is per-batch."""
+    eb = EdgeBias("d1,d2,d3,s1,s3")
     with torch.no_grad():                                                # make the maps visible
-        eb.d1_map.bias.fill_(1.0)
-        eb.d3_map.bias.fill_(2.0)
+        for fam in ("d1", "d2", "d3", "s1", "s3"):
+            getattr(eb, f"{fam}_map").bias.fill_(1.0)
     B, K, H = 2, 5, TRANSFORMER_N_HEADS
     base = 20                                                            # the v54 base seat count
     n = base + 4 + K
     bias = torch.zeros(B, H, n, n)
-    d1 = torch.randn(B, 4, TEAM_SIZE, _EDGE_D1_CELL)
-    d3 = torch.randn(B, K, TEAM_SIZE, _EDGE_D3_CELL)
-    out = eb(bias, base, d1, d3)
+    cells = {
+        "d1": torch.randn(B, 4, TEAM_SIZE, _EDGE_D1_CELL),
+        "s1": torch.randn(B, 4, TEAM_SIZE, _EDGE_S1_CELL),
+        "d2": torch.randn(B, TEAM_SIZE, _EDGE_D2_CELL),
+        "d3": torch.randn(B, K, TEAM_SIZE, _EDGE_D3_CELL),
+        "s3": torch.randn(B, K, TEAM_SIZE, _EDGE_S3_CELL),
+    }
+    opp_oh = torch.zeros(B, TEAM_SIZE)
+    opp_oh[0, 2] = 1.0                                                   # batch 0: opp active slot 2
+    opp_oh[1, 4] = 1.0                                                   # batch 1: opp active slot 4
+    out = eb(bias, base, cells, opp_oh)
     e3, e4 = base, base + 4
-    mask = torch.zeros(n, n, dtype=torch.bool)
-    mask[e3:e3 + 4, TEAM_SIZE:2 * TEAM_SIZE] = True                      # D1 q=move, k=opp mon
-    mask[TEAM_SIZE:2 * TEAM_SIZE, e3:e3 + 4] = True                      # D1 transpose
-    mask[e4:e4 + K, 0:TEAM_SIZE] = True                                  # D3 q=threat, k=our mon
-    mask[0:TEAM_SIZE, e4:e4 + K] = True                                  # D3 transpose
-    assert bool((out[:, :, mask] != 0).all()), "every documented pair must receive a bias"
-    assert float(out[:, :, ~mask].abs().sum()) == 0.0, "no bias may leak outside the documented pairs"
+    for b, opp_slot in ((0, 2), (1, 4)):
+        mask = torch.zeros(n, n, dtype=torch.bool)
+        mask[e3:e3 + 4, TEAM_SIZE:2 * TEAM_SIZE] = True                  # D1+S1 q=move, k=opp mon
+        mask[TEAM_SIZE:2 * TEAM_SIZE, e3:e3 + 4] = True                  # transpose
+        mask[e4:e4 + K, 0:TEAM_SIZE] = True                              # D3+S3 q=threat, k=our mon
+        mask[0:TEAM_SIZE, e4:e4 + K] = True                              # transpose
+        mask[0:TEAM_SIZE, TEAM_SIZE + opp_slot] = True                   # D2 q=our mon, k=opp ACTIVE
+        mask[TEAM_SIZE + opp_slot, 0:TEAM_SIZE] = True                   # D2 transpose
+        assert bool((out[b, :, mask] != 0).all()), "every documented pair must receive a bias"
+        assert float(out[b, :, ~mask].abs().sum()) == 0.0, "no bias may leak outside the pairs"
 
 
 # ------------------------------------------------------- requirement gates
@@ -130,6 +144,14 @@ def test_family_requirement_gates():
         _make(**dict(_EDGE_TOGGLES, entity_topk_seats=0, edge_bias_families="d3"))
     with pytest.raises(ValueError, match="unknown"):
         EdgeBias("d1,bogus")
+    with pytest.raises(ValueError, match="d2"):
+        _make(edge_bias_families="d2")                                   # no damage_op
+    with pytest.raises(ValueError, match="d3/s3"):
+        _make(**dict(_EDGE_TOGGLES, entity_topk_seats=0, edge_bias_families="s3"))
+    # The frozen alias: "d" stays {d1,d3} even as new families exist (a saved "d" config must never
+    # silently grow maps under newer code).
+    eb = EdgeBias("d")
+    assert eb.families == {"d1", "d3"} and eb.d2_map is None and eb.s1_map is None
 
 
 # ------------------------------------------------------- compile
@@ -146,17 +168,23 @@ def test_biased_layer_compiles_fullgraph():
 # ------------------------------------------------------- gradient liveness
 def test_map_gradient_direct():
     """The maps are differentiable end-to-end at the module level: nonzero cells + a loss on the
-    written bias yield weight gradient in BOTH maps (d bias / d W = cell ⊗ upstream)."""
-    eb = EdgeBias("d")
+    written bias yield weight gradient in EVERY enabled map (d bias / d W = cell ⊗ upstream)."""
+    eb = EdgeBias("d1,d2,d3,s1,s3")
     B, K, H = 2, 5, TRANSFORMER_N_HEADS
     base, n = 20, 20 + 4 + 5
     bias = torch.zeros(B, H, n, n)
-    d1 = torch.randn(B, 4, TEAM_SIZE, _EDGE_D1_CELL)
-    d3 = torch.randn(B, K, TEAM_SIZE, _EDGE_D3_CELL)
-    out = eb(bias, base, d1, d3)
+    cells = {
+        "d1": torch.randn(B, 4, TEAM_SIZE, _EDGE_D1_CELL),
+        "s1": torch.randn(B, 4, TEAM_SIZE, _EDGE_S1_CELL),
+        "d2": torch.randn(B, TEAM_SIZE, _EDGE_D2_CELL),
+        "d3": torch.randn(B, K, TEAM_SIZE, _EDGE_D3_CELL),
+        "s3": torch.randn(B, K, TEAM_SIZE, _EDGE_S3_CELL),
+    }
+    opp_oh = torch.zeros(B, TEAM_SIZE); opp_oh[:, 0] = 1.0
+    out = eb(bias, base, cells, opp_oh)
     (out * torch.randn_like(out)).sum().backward()
-    assert float(eb.d1_map.weight.grad.abs().sum()) > 0
-    assert float(eb.d3_map.weight.grad.abs().sum()) > 0
+    for fam in ("d1", "d2", "d3", "s1", "s3"):
+        assert float(getattr(eb, f"{fam}_map").weight.grad.abs().sum()) > 0, fam
 
 
 def test_gradient_reaches_the_d3_map_through_the_extractor():

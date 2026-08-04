@@ -184,8 +184,11 @@ D-family both quadrants that have validated kernels AND both endpoints seated: D
 opp mons, the v34 outgoing-matrix kernel) + D3 (E4 threat seats → our mons, the pre-collapse
 incoming kernel at the seats' own candidate selection). Zero-init maps ⇒ ON bitwise-identical at
 init. `--edge-bias-families {off,d,d1,d3}` is the per-family ablation surface the §3 verdict
-mechanism needs. NOT yet: D2/D4 quadrants, S/C/V/T/X families, the op-concat deletion (deprecation
-playbook: home first). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the
+mechanism needs. SLICE 2 (same day): **D2** (our bench's offense vs the opp active, the v39 switch-in kernel,
+one-hot mon↔mon delivery) + **S1/S3** (the status-landing kernels' per-pair branches at the E3/E4
+pairs) landed behind the same gate — five families total, each independently ablatable. NOT yet:
+D4 (needs the bench-K probe), C/V/T/X families, the op-concat deletion (deprecation playbook:
+home first). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the
 concat deletion is the eventual refund). Suite 3945 green; bridge smoke passes with edges on.
 Verdict remains gen-vs-gen ELO + the per-family bias ablation.
 

@@ -2402,15 +2402,18 @@ async def main():
         )
     _ebf = args.edge_bias_families
     if _ebf and _ebf != "off":
+        _valid = {"d1", "d2", "d3", "s1", "s3"}
         _fams = {"d1", "d3"} if _ebf == "d" else set(_ebf.split(","))
-        if _fams - {"d1", "d3"}:
-            parser.error(f"--edge-bias-families: unknown families {sorted(_fams - {'d1', 'd3'})} "
-                         "(valid: off, d, or a comma list of d1,d3)")
-        if "d1" in _fams and not (args.damage_op and args.damage_outgoing):
-            parser.error("--edge-bias-families d1 requires --damage-op AND --damage-outgoing "
+        if _fams - _valid:
+            parser.error(f"--edge-bias-families: unknown families {sorted(_fams - _valid)} "
+                         f"(valid: off, d [= d1,d3 frozen], or a comma list of {sorted(_valid)})")
+        if (_fams & {"d1", "s1"}) and not (args.damage_op and args.damage_outgoing):
+            parser.error("--edge-bias-families d1/s1 require --damage-op AND --damage-outgoing "
                          "(--unified-damage both / --unified-moves both).")
-        if "d3" in _fams and not (args.entity_topk_seats and args.entity_topk_seats > 0):
-            parser.error("--edge-bias-families d3 requires --entity-topk-seats > 0 (the bias rows "
+        if "d2" in _fams and not args.damage_op:
+            parser.error("--edge-bias-families d2 requires --damage-op (the v39 switch-in kernel).")
+        if (_fams & {"d3", "s3"}) and not (args.entity_topk_seats and args.entity_topk_seats > 0):
+            parser.error("--edge-bias-families d3/s3 require --entity-topk-seats > 0 (the bias rows "
                          "ARE the E4 threat seats).")
     if args.damage_reattend and not args.damage_op:
         # The re-attend layer reads the operator's per-mon incoming-damage block → the op must exist.

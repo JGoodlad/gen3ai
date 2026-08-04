@@ -1456,6 +1456,22 @@ class DamageOperator(torch.nn.Module):
         rev = revealed[:, None, :, None].expand(-1, _DMG_OUT_N_MOVES, -1, 1)
         return torch.cat([cells, rev], dim=-1)                                            # [B,4,6,6]
 
+    def pairwise_bench_outgoing(self, ctx: 'ExtractorContext',
+                                spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (D2): per OUR mon, its best offense vs the OPP ACTIVE — the mon↔mon
+        edge cell `[best_high, best_pko, p_outspeed, alive]` `[B, TEAM_SIZE, 4]`, a move-collapsed
+        reshape of the validated v39 `_outgoing_attacker_matrix` (the switch-in-offense kernel: the
+        active row reproduces `_outgoing_block`; bench rows neutral-boost). Written at the
+        (our-mon seat i, opp-ACTIVE seat) pair — the "what would this switch-in DO" edge."""
+        flat = self._outgoing_attacker_matrix(ctx, spread_belief)                          # [B, _DMG_OAX]
+        n_cells = TEAM_SIZE * _DMG_OAX_PER_MON
+        cells = flat[:, :n_cells].reshape(-1, TEAM_SIZE, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MOVE)
+        p_outspeed = flat[:, n_cells:n_cells + TEAM_SIZE]                                  # [B,6]
+        alive = flat[:, n_cells + TEAM_SIZE:n_cells + 2 * TEAM_SIZE]                       # [B,6]
+        best_high = cells[..., _DMG_OAX_IDX_HIGH].amax(dim=-1)                             # [B,6]
+        best_pko = cells[..., _DMG_OAX_IDX_PKO].amax(dim=-1)                               # [B,6]
+        return torch.stack([best_high, best_pko, p_outspeed, alive], dim=-1)               # [B,6,4]
+
     def pairwise_incoming(self, ctx: 'ExtractorContext',
                           move_belief_logits: torch.Tensor,
                           cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> torch.Tensor:
@@ -1592,7 +1608,8 @@ class DamageOperator(torch.nn.Module):
 
     def discrete_incoming_status(self, ctx: 'ExtractorContext',
                                  move_belief_logits: torch.Tensor,
-                                 cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> torch.Tensor:
+                                 cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+                                 per_pair: bool = False) -> torch.Tensor:
         """gen3_status_trunk_v1 (INCOMING): per OUR mon, the belief-weighted `[P(major status lands),
         P(immobilizing status lands = para/frz/slp)]` from the opp active's top-`_DMG_REFINE_K` believed
         DEDICATED status moves (Thunder Wave / Toxic / Will-O-Wisp / Spore / Leech Seed). The "will I get
@@ -1634,13 +1651,24 @@ class DamageOperator(torch.nn.Module):
         land = (inflicts[:, None, :] * acc[:, None, :] * (1.0 - t_imm)
                 * (1.0 - abl_block) * (1.0 - already_block))                              # [B,6,K]
         is_immob = sum((sidx == c) for c in _IMMOBILIZE_STATUS_CATS).float().clamp(max=1.0)              # [B,K]
+        if per_pair:
+            # gen3_edge_bias_trunk_v1 (S3): the UN-collapsed per-(candidate, defender) status cells for
+            # the edge bias — [B, K, 6, 3] = [land, land·is_immob, w] per (their believed status move c,
+            # our mon i). Same physics, same candidate selection; the collapse is simply not taken.
+            # Decorrelated: land is w-independent, w rides as its own channel (the belief gradient path).
+            cells = torch.stack([
+                land, land * is_immob[:, None, :],
+                w_topk[:, None, :].expand_as(land),
+            ], dim=-1)                                                                    # [B,6,K,3]
+            cells = cells * defender_alive[:, :, None, None] * has_opp[:, None, None, None]
+            return cells.permute(0, 2, 1, 3).contiguous()                                 # [B,K,6,3]
         w_b = w_topk[:, None, :]
         p_major = (w_b * land).amax(dim=-1)                                               # [B,6]
         p_immob = (w_b * land * is_immob[:, None, :]).amax(dim=-1)                         # [B,6]
         feats = torch.stack([p_major, p_immob], dim=-1)                                   # [B,6,_DMG_STATUS_REFINE]
         return feats * defender_alive[:, :, None] * has_opp[:, None, None]
 
-    def discrete_outgoing_status(self, ctx: 'ExtractorContext') -> torch.Tensor:
+    def discrete_outgoing_status(self, ctx: 'ExtractorContext', per_pair: bool = False) -> torch.Tensor:
         """gen3_status_trunk_v1 (OUTGOING): per OPP mon (REVEALED-gated), the `[P(major status from OUR
         active's status moves lands), P(immobilizing status lands)]` — the in-trunk home for the masked
         move-effect block's `status_will_land`, extended over the opp's 6 mons (the active is ALWAYS
@@ -1700,6 +1728,14 @@ class DamageOperator(torch.nn.Module):
         sub_block = (has_sub[:, None] * is_active)[:, :, None]                             # [B,6,1]
         land = (inflicts[:, None, :] * acc[:, None, :] * (1.0 - t_imm) * (1.0 - ability_block)
                 * (1.0 - already_block) * (1.0 - sleep_block) * (1.0 - sub_block))         # [B,6,4]
+        if per_pair:
+            # gen3_edge_bias_trunk_v1 (S1): the UN-collapsed per-(our move, opp mon) status cells for
+            # the edge bias — [B, 4, 6, 2] = [land, land·is_immob] per (our status move k in REQUEST
+            # order == E3 seat k, opp mon d). Same physics + gates; the max over moves is not taken.
+            cells = torch.stack([land, land * is_immob[:, None, :]], dim=-1)               # [B,6,4,2]
+            cells = (cells * revealed_slot[:, :, None, None] * defender_alive[:, :, None, None]
+                     * gate[:, None, None, None])
+            return cells.permute(0, 2, 1, 3).contiguous()                                  # [B,4,6,2]
         p_major = land.amax(dim=-1)                                                        # [B,6]
         p_immob = (land * is_immob[:, None, :]).amax(dim=-1)                               # [B,6]
         feats = torch.stack([p_major, p_immob], dim=-1)                                    # [B,6,_DMG_STATUS_REFINE]

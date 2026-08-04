@@ -1393,13 +1393,20 @@ additive per-pair per-head float bias [B,H,n,n]; the key-padding mask rides the 
 `_KEY_PAD_NEG` = -1e9 addend — stock-masked-layer parity pinned by
 `edge_bias_test.test_layer_matches_stock_transformer_layer`). `TeamTransformer.forward` builds the
 bias ONCE per forward (shared by every layer) and takes an `edge_bias_fn` closure; `EdgeBias`
-(`edge_bias_families` "off"|"d"|comma list) writes the families at CONTIGUOUS seat-block slices:
+(`edge_bias_families` "off" | the FROZEN "d"=d1,d3 alias | an explicit comma list of
+d1,d2,d3,s1,s3 — growing the valid set is NOT a version bump, the string gate catches mismatches)
+writes the families at CONTIGUOUS seat-block slices (D2's opp-ACTIVE column is batch-varying →
+delivered via a one-hot outer product):
 **D1** `DamageOperator.pairwise_outgoing` (a reshape of the validated `_outgoing_matrix` — cell
-`[low,high,crit,pko,type_mult,revealed]`) at (E3 seat k, opp-mon seat d) + transpose; **D3**
-`DamageOperator.pairwise_incoming` (the pre-collapse `_incoming_rolls`, factored out of
-`discrete_incoming` so refine + edges share ONE physics body — cell `[high,pko,eff,is_phys,w]`) at
-(E4 seat c, our-mon seat i) + transpose, priced at the SAME detached candidate selection the E4
-seats stashed (`EntityMoveSeats.last_cand`). Each family's map is a ZERO-INIT
+`[low,high,crit,pko,type_mult,revealed]`) at (E3 seat k, opp-mon seat d) + transpose; **D2** `pairwise_bench_outgoing` (the v39
+`_outgoing_attacker_matrix` move-collapsed — cell `[best_high,best_pko,p_outspeed,alive]`) at
+(our-mon seat i, opp-ACTIVE seat); **D3** `DamageOperator.pairwise_incoming` (the pre-collapse
+`_incoming_rolls`, factored out of `discrete_incoming` so refine + edges share ONE physics body —
+cell `[high,pko,eff,is_phys,w]`) at (E4 seat c, our-mon seat i) + transpose, priced at the SAME
+detached candidate selection the E4 seats stashed (`EntityMoveSeats.last_cand`); **S1/S3** the
+v27/v37 status kernels' `per_pair=True` branches (same physics bodies, the category collapse not
+taken) — S1 `[land, land·immob]` at the E3 pairs (requires damage_op+outgoing), S3
+`[land, land·immob, w]` at the E4 pairs (requires entity seats). Each family's map is a ZERO-INIT
 `Linear(cell → 2·n_heads)` (one head-set per direction; auto-protected by `restore_identity_init`'s
 observation capture) ⇒ families ON is BITWISE-identical to OFF at init. Under non-prefuse configs
 D1 passes spread_belief=None (the pre-trunk read would be STALE — gated in forward_internal).

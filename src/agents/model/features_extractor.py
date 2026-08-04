@@ -802,10 +802,16 @@ class BiasedEncoderLayer(torch.nn.Module):
 # exactly 0 attention weight at these magnitudes, which is all masking needs.
 _KEY_PAD_NEG = -1e9
 
-# Edge-cell widths (the op owns the cell CONTENT — see DamageOperator.pairwise_{outgoing,incoming};
-# these mirror those methods' last dims and are pinned against them in edge_bias_test.py).
+# Edge-cell widths (the op owns the cell CONTENT — see DamageOperator.pairwise_{outgoing,incoming,
+# bench_outgoing} + the status kernels' per_pair branches; these mirror those methods' last dims and
+# are pinned against them in edge_bias_test.py).
 _EDGE_D1_CELL = 6   # [low, high, crit, pko, type_mult, revealed] per (our move k, opp mon d)
+_EDGE_D2_CELL = 4   # [best_high, best_pko, p_outspeed, alive] per (our mon i, opp ACTIVE)
 _EDGE_D3_CELL = 5   # [high, pko, eff, is_phys, w] per (their believed move c, our mon i)
+_EDGE_S1_CELL = 2   # [land, land·immob] per (our status move k, opp mon d)
+_EDGE_S3_CELL = 3   # [land, land·immob, w] per (their believed status move c, our mon i)
+_EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
+                  "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL}
 
 
 class EdgeBias(torch.nn.Module):
@@ -836,43 +842,61 @@ class EdgeBias(torch.nn.Module):
         super().__init__()
         fams = set() if families in ("", "off") else set(families.split(","))
         if families == "d":
-            fams = {"d1", "d3"}
-        unknown = fams - {"d1", "d3"}
+            fams = {"d1", "d3"}   # FROZEN alias (the first-slice pair) — new families are explicit-only,
+                                  # so a saved "d" config never silently grows maps under newer code.
+        unknown = fams - set(_EDGE_FAMILIES)
         if unknown:
             raise ValueError(f"edge_bias_families: unknown families {sorted(unknown)} "
-                             "(valid: 'off', 'd', or a comma list of d1,d3)")
+                             f"(valid: 'off', 'd' [= d1,d3], or a comma list of {sorted(_EDGE_FAMILIES)})")
         self.families = fams
-        self.d1_map = (torch.nn.Linear(_EDGE_D1_CELL, 2 * TRANSFORMER_N_HEADS)
-                       if "d1" in fams else None)
-        self.d3_map = (torch.nn.Linear(_EDGE_D3_CELL, 2 * TRANSFORMER_N_HEADS)
-                       if "d3" in fams else None)
-        for lin in (self.d1_map, self.d3_map):
-            if lin is not None:
+        # One zero-init Linear(cell -> 2·n_heads) per enabled family (a head-set per direction).
+        for fam, cell in _EDGE_FAMILIES.items():
+            lin = None
+            if fam in fams:
+                lin = torch.nn.Linear(cell, 2 * TRANSFORMER_N_HEADS)
                 torch.nn.init.zeros_(lin.weight)
                 torch.nn.init.zeros_(lin.bias)
+            setattr(self, f"{fam}_map", lin)
+
+    def _write_block(self, bias: torch.Tensor, m: torch.Tensor,
+                     rows: slice, cols: slice) -> None:
+        """Add a family's mapped cells at (rows, cols) + the transpose block. `m` [B, R, C, 2H] —
+        the first head-set biases row→col attention, the second the reverse direction."""
+        H = TRANSFORMER_N_HEADS
+        m = m.permute(0, 3, 1, 2)                                              # [B,2H,R,C]
+        bias[:, :, rows, cols] = bias[:, :, rows, cols] + m[:, :H]
+        bias[:, :, cols, rows] = bias[:, :, cols, rows] + m[:, H:].transpose(-1, -2)
 
     def forward(self, bias: torch.Tensor, base_seats: int,
-                d1_cells: Optional[torch.Tensor], d3_cells: Optional[torch.Tensor]) -> torch.Tensor:
+                cells: "Dict[str, torch.Tensor]",
+                opp_active_onehot: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Write the enabled families into `bias` [B, H, n, n] (already carrying the key-pad addend).
-        `base_seats` = the seat count BEFORE the extra block (E3 starts there). Returns `bias`."""
+        `base_seats` = the seat count BEFORE the extra block (E3 starts there); `cells` maps family →
+        its per-pair cell tensor (see _EDGE_FAMILIES); `opp_active_onehot` [B,6] locates the opp
+        active column for the mon↔mon D2 family. Returns `bias`."""
         H = TRANSFORMER_N_HEADS
-        e3 = base_seats
-        if self.d1_map is not None and d1_cells is not None:
-            m = self.d1_map(d1_cells)                                          # [B,4,6,2H]
-            m = m.permute(0, 3, 1, 2)                                          # [B,2H,4,6]
-            bias[:, :, e3:e3 + 4, TEAM_SIZE:2 * TEAM_SIZE] = \
-                bias[:, :, e3:e3 + 4, TEAM_SIZE:2 * TEAM_SIZE] + m[:, :H]
-            bias[:, :, TEAM_SIZE:2 * TEAM_SIZE, e3:e3 + 4] = \
-                bias[:, :, TEAM_SIZE:2 * TEAM_SIZE, e3:e3 + 4] + m[:, H:].transpose(-1, -2)
-        if self.d3_map is not None and d3_cells is not None:
-            K = d3_cells.shape[1]
-            e4 = base_seats + 4
-            m = self.d3_map(d3_cells)                                          # [B,K,6,2H]
-            m = m.permute(0, 3, 1, 2)                                          # [B,2H,K,6]
-            bias[:, :, e4:e4 + K, 0:TEAM_SIZE] = \
-                bias[:, :, e4:e4 + K, 0:TEAM_SIZE] + m[:, :H]
-            bias[:, :, 0:TEAM_SIZE, e4:e4 + K] = \
-                bias[:, :, 0:TEAM_SIZE, e4:e4 + K] + m[:, H:].transpose(-1, -2)
+        e3, e4 = base_seats, base_seats + 4
+        our = slice(0, TEAM_SIZE)
+        opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+        if self.d1_map is not None and cells.get("d1") is not None:
+            self._write_block(bias, self.d1_map(cells["d1"]), slice(e3, e3 + 4), opp)
+        if self.s1_map is not None and cells.get("s1") is not None:
+            self._write_block(bias, self.s1_map(cells["s1"]), slice(e3, e3 + 4), opp)
+        if self.d3_map is not None and cells.get("d3") is not None:
+            K = cells["d3"].shape[1]
+            self._write_block(bias, self.d3_map(cells["d3"]), slice(e4, e4 + K), our)
+        if self.s3_map is not None and cells.get("s3") is not None:
+            K = cells["s3"].shape[1]
+            self._write_block(bias, self.s3_map(cells["s3"]), slice(e4, e4 + K), our)
+        if self.d2_map is not None and cells.get("d2") is not None:
+            # D2 is mon↔mon with a BATCH-VARYING column (the opp ACTIVE slot) — deliver via the
+            # one-hot outer product instead of a static slice.
+            assert opp_active_onehot is not None
+            m = self.d2_map(cells["d2"])                                       # [B,6,2H]
+            m = m.permute(0, 2, 1)                                             # [B,2H,6]
+            oh = opp_active_onehot[:, None, None, :]                           # [B,1,1,6] broadcast
+            bias[:, :, our, opp] = bias[:, :, our, opp] + m[:, :H, :, None] * oh
+            bias[:, :, opp, our] = bias[:, :, opp, our] + (m[:, H:, :, None] * oh).transpose(-1, -2)
         return bias
 
 
@@ -2612,16 +2636,22 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # kernel (our active's moves × opp mons); d3 reads the pre-collapse incoming kernel AT the E4
         # seats' candidate selection, so its rows and the seats must exist together.
         if self.edge_bias is not None:
-            if "d1" in self.edge_bias.families and not (damage_op and damage_outgoing):
+            fams = self.edge_bias.families
+            if ("d1" in fams or "s1" in fams) and not (damage_op and damage_outgoing):
                 raise ValueError(
-                    "edge_bias_families includes d1, which prices our moves vs the opp team via the "
-                    "op's outgoing kernel — requires --damage-op AND --damage-outgoing "
+                    "edge_bias_families d1/s1 price our active's moves vs the opp team via the op's "
+                    "outgoing kernels — require --damage-op AND --damage-outgoing "
                     "(--unified-damage both / --unified-moves both)."
                 )
-            if "d3" in self.edge_bias.families and self.entity_topk_seats <= 0:
+            if "d2" in fams and not damage_op:
                 raise ValueError(
-                    "edge_bias_families includes d3, whose bias rows are the E4 threat seats — "
-                    "requires --entity-topk-seats > 0 (which itself requires the prefuse stack)."
+                    "edge_bias_families d2 prices every our-mon's offense vs the opp active via the "
+                    "op's v39 switch-in kernel — requires --damage-op."
+                )
+            if ("d3" in fams or "s3" in fams) and self.entity_topk_seats <= 0:
+                raise ValueError(
+                    "edge_bias_families d3/s3 bias rows are the E4 threat seats — require "
+                    "--entity-topk-seats > 0 (which itself requires the prefuse stack)."
                 )
         # Stored on the root so arch_toggles_from_model can thread it to the eval/self-play workers
         # (the move-prior gate is a version-checked forward-behavior toggle).
@@ -3328,17 +3358,30 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # per-head additive logit biases via the closure. Zero-init maps ⇒ identity at init.
         _edge_fn = None
         if self.edge_bias is not None:
+            _fams = self.edge_bias.families
             # Spread belief only when the PREFUSE stack computed it THIS forward (pre-trunk);
             # non-prefuse configs would read last forward's stale value here — pass None (the
             # kernel's legacy neutral-bulk constants) instead.
             _sb = self.last_spread_belief if self.damage_op_prefuse else None
-            _d1c = (self.damage_op.pairwise_outgoing(ctx, _sb)
-                    if "d1" in self.edge_bias.families else None)
-            _d3c = (self.damage_op.pairwise_incoming(ctx, self.last_move_belief_logits,
-                                                     self.entity_seats.last_cand)
-                    if "d3" in self.edge_bias.families else None)
+            _cells = {}
+            if "d1" in _fams:
+                _cells["d1"] = self.damage_op.pairwise_outgoing(ctx, _sb)
+            if "s1" in _fams:
+                _cells["s1"] = self.damage_op.discrete_outgoing_status(ctx, per_pair=True)
+            if "d2" in _fams:
+                _cells["d2"] = self.damage_op.pairwise_bench_outgoing(ctx, _sb)
+            if "d3" in _fams:
+                _cells["d3"] = self.damage_op.pairwise_incoming(
+                    ctx, self.last_move_belief_logits, self.entity_seats.last_cand)
+            if "s3" in _fams:
+                _cells["s3"] = self.damage_op.discrete_incoming_status(
+                    ctx, self.last_move_belief_logits, self.entity_seats.last_cand, per_pair=True)
+            _opp_oh = None
+            if "d2" in _fams:
+                _opp_oh = torch.zeros(ctx.batch_size, TEAM_SIZE, device=ctx.device)
+                _opp_oh[torch.arange(ctx.batch_size, device=ctx.device), ctx.opp_active_local] = 1.0
             _base = self.team_transformer._total_tokens
-            _edge_fn = lambda bias: self.edge_bias(bias, _base, _d1c, _d3c)  # noqa: E731
+            _edge_fn = lambda bias: self.edge_bias(bias, _base, _cells, _opp_oh)  # noqa: E731
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings, between_layers=refine_cb,
             extra=(_seat_tokens, self.entity_seats.seat_types(ctx.device), _seat_pad),

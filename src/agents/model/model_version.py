@@ -421,9 +421,13 @@ from typing import Any, Dict, List
 #   attention takes an additive per-pair per-head float bias; the key-pad mask rides the same
 #   tensor), an UNCONDITIONAL state_dict change (layer keys `in_proj.*` vs `self_attn.in_proj_*`)
 #   → the ARCH_SIGNATURE bump below carries it. `edge_bias_families` (str, "off" default) gates the
-#   FAMILIES delivered: "d"/"d1,d3" — D1 our-move→opp-mon cells (the v34 outgoing-matrix kernel) and
-#   D3 threat-seat→our-mon cells (the pre-collapse incoming kernel at the E4 candidate selection) —
-#   each through a ZERO-INIT Linear(cell → 2·n_heads) map (identity at init). The op head-concat is
+#   FAMILIES delivered — each through a ZERO-INIT Linear(cell → 2·n_heads) map (identity at init):
+#   D1 our-move→opp-mon (the v34 outgoing-matrix kernel), D2 our-mon→opp-ACTIVE (the v39 switch-in
+#   kernel, move-collapsed, one-hot column), D3 threat-seat→our-mon (the pre-collapse incoming
+#   kernel at the E4 candidate selection), S1 our-status-move→opp-mon + S3 threat-seat→our-mon
+#   (the v27/v37 status-landing kernels' per_pair branches). "d" is the FROZEN d1,d3 alias (a saved
+#   config never silently grows maps); new families are explicit comma-list only. Growing the VALID
+#   family set is not a version bump — the string gate catches any mismatch. The op head-concat is
 #   NOT deleted (deprecation playbook: home first, ablation audit before deletion).
 MODEL_CONFIG_VERSION = 56
 

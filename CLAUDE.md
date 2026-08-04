@@ -1413,17 +1413,24 @@ EDGES. The encoder stack is swapped for `BiasedEncoderLayer` (the spike-proven c
 attention takes an additive per-pair per-head float bias via SDPA's additive mask; the key-pad
 mask rides the same tensor as a -1e9 addend — stock-parity test-pinned) — an UNCONDITIONAL
 state_dict change (fused `in_proj` keys) carried by the `ARCH_SIGNATURE` bump. The delivered
-FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d3}` (STRUCTURAL str in
-`check_compatible`): **D1** = our active's 4 moves × the opp's 6 mons (the v34 outgoing-matrix
-kernel, via `DamageOperator.pairwise_outgoing`) written at the (E3 seat, opp-mon seat) pairs +
-transpose; **D3** = the opp's top-K believed moves × our 6 mons (the pre-collapse
-`_incoming_rolls` kernel via `pairwise_incoming` — factored out of `discrete_incoming`, ONE
-physics body — at the SAME detached candidate selection the E4 seats stashed, so seat c and bias
-row c always name the same move) at the (E4 seat, our-mon seat) pairs + transpose. Each family
-maps its cell through a ZERO-INIT `Linear(cell → 2·n_heads)` (one head-set per direction) ⇒ ON
-is bitwise-identical to OFF at init (test-pinned). All seat blocks are contiguous index ranges ⇒
-delivery is slice assignment, compile-friendly (fullgraph-pinned). d1 requires
-`--damage-op --damage-outgoing`; d3 requires `--entity-topk-seats > 0`. **The op head-concat is
+FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,s1,s3}` (STRUCTURAL
+str in `check_compatible`; `"d"` is the FROZEN d1,d3 alias — new families are explicit-only, so a
+saved config never silently grows maps; growing the valid set is NOT a version bump, the string
+gate catches any mismatch): **D1** = our active's 4 moves × the opp's 6 mons (the v34
+outgoing-matrix kernel via `DamageOperator.pairwise_outgoing`) at the (E3 seat, opp-mon seat)
+pairs + transpose; **D2** = every OUR mon's best offense vs the opp ACTIVE (the v39 switch-in
+kernel move-collapsed via `pairwise_bench_outgoing`, cell `[best_high,best_pko,p_outspeed,alive]`)
+at the (our-mon seat, opp-ACTIVE seat) pair via a one-hot column (batch-varying target); **D3** =
+the opp's top-K believed moves × our 6 mons (the pre-collapse `_incoming_rolls` kernel via
+`pairwise_incoming` — ONE physics body with the refine consumer — at the SAME detached candidate
+selection the E4 seats stashed) at the (E4 seat, our-mon seat) pairs + transpose; **S1/S3** = the
+v27/v37 status-landing kernels' NEW `per_pair` branches — our status moves × opp mons at the E3
+pairs, the opp's believed status candidates × our mons at the E4 pairs (cells `[land, land·immob
+(,w)]` — the un-collapsed "will THIS status move land on THIS mon"). Each family maps its cell
+through a ZERO-INIT `Linear(cell → 2·n_heads)` (one head-set per direction) ⇒ ON is
+bitwise-identical to OFF at init (test-pinned, all five). All seat blocks are contiguous index ranges ⇒
+delivery is slice assignment, compile-friendly (fullgraph-pinned). d1/s1 require
+`--damage-op --damage-outgoing`; d2 requires `--damage-op`; d3/s3 require `--entity-topk-seats > 0`. **The op head-concat is
 NOT deleted** — per the deprecation playbook (and the K9/K10 trunk-null history) the edge home
 lands first; deletion waits on the per-family bias-ablation audit. Measured B=1 (threads=1):
 +0.63 ms for both families on a ~3.5 ms prefuse+seats forward (still under the v50 4.62 ms
