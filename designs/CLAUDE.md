@@ -122,15 +122,20 @@ FiLM (v44 `gen3_zarch_film_v1` — the amortization-gap storage fix), the discov
 top-K=16+tail op candidates, refine=1, obs-skip, belief-grad decision). (The Rust simulator
 work originally sketched for this slot shipped as `src/rust_sim/` under its own docs.)
 
-### ai_v9 (mostly design)
-The entity-graph skeleton: entities/tokens (mons, moves, sides, global), computed physics as
-attention EDGE BIASES, pointer action heads, op head-concat deprecation. Full inventory:
-`design_entity_graph.md`. First implementation toehold: the **v49 delta pointer head**
-(`gen3_pointer_head_v1` — a zero-init additive delta on the flat head's logits, move logit k
-from the request-slot-k move token, switch logit j from our-team token j).
-`design_pointer_action_head.md` researches making it the *working* head for mons + moves
-(physics-into-scorers enrich → context upgrade → replace the flat head outright). The staged
-on-ramp (Form-A cross-attention) remains an ai_v8 next-run experiment.
+### ai_v9 (the ACTIVE fresh generation)
+The entity-graph generation. **The operative roadmap is `design_generation_roadmap.md`** —
+it aligns the fresh-generation reset (2026-08-03: no old checkpoints, fresh pools,
+position-equivariance first-class, adequacy judged generation-vs-generation by anchored
+ELO), the staged sequence (Stage 0 pointer-native head → Stage 1 move tokens E3/E4/E5 →
+Stage 2 physics as attention EDGE BIASES + op-concat deletion → Stage 3 declarative schema
++ obs re-home), and the E9 history decision (per-entity recency features → turn tokens →
+entity-linked event tokens; recurrence RULED OUT — the obs must stay a pure function of the
+event log for the forensic stack). **Stage 0 SHIPPED** (v51 `gen3_pointer_native_v1`,
+`f25e708`): the flat `action_net` is deleted; `design_pointer_action_head.md` §0 is its
+spec (the staged v49 delta-head sections below §0 are the superseded reasoning record). The
+entity/edge INVENTORY (E1–E9, D/S/C/V/T/X, the nothing-lost audit) stays in
+`design_entity_graph.md`. The ai_v8 `next_run_plan.md` staging predates the reset —
+generation-crossing items there are superseded; re-triage the rest individually.
 
 ---
 

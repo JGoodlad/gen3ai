@@ -1,8 +1,10 @@
 # ai_v9 — The Entity Graph: every entity and edge (research design, no code)
 
-**Status:** research/design only (2026-07-21, owner + assistant sessions). No implementation.
-The staged on-ramp (Form-A cross-attention, pointer-head prerequisite, op head-concat
-deprecation) lives in `designs/ai_v8/next_run_plan.md`; the concept vocabulary in
+**Status:** the INVENTORY for the active fresh generation (2026-07-21, owner + assistant
+sessions; re-scoped 2026-08-03). **The operative staged plan is
+`design_generation_roadmap.md`** (it supersedes the ai_v8 `next_run_plan.md` on-ramp for
+generation-crossing items and records the E9 history decision); Stage 0 — the pointer-native
+action head — is SHIPPED (v51 `gen3_pointer_native_v1`). The concept vocabulary is in
 `designs/learning/entity_tokens_biases_pointers.md`. This doc is the inventory: what the
 entities are, what the edges are, what each carries, and where every current obs signal
 re-homes so nothing is lost.
@@ -71,9 +73,13 @@ heads); a decision-context vector for the pointer head (§5). FiLM conditioning 
 the planned z_opp) stays a head-level modulation — team-level latents are side-token features
 if ever needed in-graph.
 
-### E9. History (OPEN — §7)
-Options: (a) keep the 7 TurnDelta slots as 7 global history tokens; (b) per-mon recency
+### E9. History (DECIDED direction — `design_generation_roadmap.md` §4)
+Options were: (a) keep the 7 TurnDelta slots as 7 global history tokens; (b) per-mon recency
 features on E1/E2 (last-seen move, damage taken last turn); (c) both, then ablate.
+Decision (2026-08-03): land (b) first (the sufficient-statistic view — most history belongs
+compiled into entity state), then a short window of (a)-style turn tokens for the sequential
+residue, with entity-LINKED event tokens as the audited end-state; recurrence RULED OUT (the
+obs must stay a pure function of the event log — the forensic-stack invariant).
 
 ---
 
@@ -183,7 +189,9 @@ deprecation playbook (build home → mask → A/B → delete) |
 1. E2 separate vs folded into E1 (addressability vs token count).
 2. Bench move tokens: full local bags (hierarchy) vs summarized (flat + biases first).
 3. Bench K for E4/D4 (probe suggests smaller than 16 suffices; measure).
-4. E9 history representation (tokens vs recency features vs both).
+4. ~~E9 history representation (tokens vs recency features vs both)~~ — DECIDED, see E9 +
+   `design_generation_roadmap.md` §4 (recency features → turn tokens → entity-linked event
+   tokens; no recurrence).
 5. Hierarchy timing: flat 12-token body + move tokens + biases may capture most value before
    local/global two-level attention is needed — sequence Form A → flat+biases → hierarchy.
 6. Compute budget: token count ~12 E1 (+12 E2?) + 4 E3 + K E4 + 2 E5-ish + 2 E6 + 1 E7 —
