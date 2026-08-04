@@ -1404,16 +1404,22 @@ class DamageOperator(torch.nn.Module):
                           cell.reshape(B, TEAM_SIZE * K * _DMG_IMX_CELL)], dim=1)
 
     def refine_candidates(self, ctx: 'ExtractorContext',
-                          move_belief_logits: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+                          move_belief_logits: torch.Tensor,
+                          k: Optional[int] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         """The SHARED candidate selection for the between-layers refine kernels → `(topk_idx, w_topk)`.
 
         `discrete_incoming` and `discrete_incoming_status` are called from the same refine round with the
         SAME `move_belief_logits` object, so each was independently rebuilding an identical `[B, n_moves]`
         sigmoid + typed-HP scatter and an identical top-K — 4 redundant candidate builds and 2 redundant
         top-Ks per forward in the production config. Hoisting it here lets the caller compute once and
-        pass the result to both (they still fall back to computing it when called standalone)."""
+        pass the result to both (they still fall back to computing it when called standalone).
+
+        `k` overrides the default `_DMG_REFINE_K` — the E4 entity-seat builder
+        (`gen3_entity_move_seats_v1`) reuses this selection at its own `entity_topk_seats` K, so the
+        seats and the refine kernels share ONE candidate definition (the index selection stays
+        DETACHED; the gathered weights stay differentiable so the belief gradient rides them)."""
         w_all = self._opp_candidate_weights(ctx, move_belief_logits)                     # [B, n_moves]
-        K = min(_DMG_REFINE_K, w_all.shape[1])
+        K = min(_DMG_REFINE_K if k is None else int(k), w_all.shape[1])
         topk_idx = w_all.detach().topk(K, dim=-1).indices                                # [B,K] (DETACHED)
         return topk_idx, w_all.gather(-1, topk_idx)                                      # → belief gradient
 

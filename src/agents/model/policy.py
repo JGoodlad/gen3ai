@@ -23,7 +23,7 @@ import torch as th
 from sb3_contrib.common.maskable.distributions import MaskableDistribution
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 
-from agents.model.arch_constants import D_MODEL, MOVE_NET_HIDDEN
+from agents.model.arch_constants import D_MODEL
 from agents.model.popart import PopArtNormalizer
 
 
@@ -91,7 +91,9 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         fe = self.features_extractor
         self.action_net = _NoFlatActionNet()
         self.pointer_head = PointerNativeActionHead(
-            move_token_dim=MOVE_NET_HIDDEN[1], d_model=D_MODEL,
+            # gen3_entity_move_seats_v1: move tokens are the REFINED E3 trunk seats (d_model-wide),
+            # not the raw 32-dim PokemonEncoder tokens — the extractor owns the width.
+            move_token_dim=fe.pointer_move_token_dim, d_model=D_MODEL,
             ctx_dim=self.mlp_extractor.latent_dim_pi,
             move_cell_dim=fe.pointer_move_cell_dim,
             switch_cell_dim=fe.pointer_switch_cell_dim,

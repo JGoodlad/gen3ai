@@ -373,6 +373,7 @@ def _run_arch_toggles(args) -> dict:
         move_belief_single_compute=args.move_belief_single_compute,
         damage_candidate_k=args.damage_candidate_k,
         damage_op_prefuse=args.damage_op_prefuse,
+        entity_topk_seats=args.entity_topk_seats,
         win_prob_mode=args.win_prob_mode,
         pubval_mode=args.pubval_mode,
         value_dist_mode=args.value_dist_mode,
@@ -1117,6 +1118,16 @@ async def main():
                              "UN-REFINED belief. STRUCTURAL (version-checked, fresh-only). REQUIRES "
                              "--damage-op + --move-belief-prefuse; MUTUALLY EXCLUSIVE with "
                              "--damage-refine-rounds > 0. Off by default.")
+    parser.add_argument("--entity-topk-seats", "--entity_topk_seats", dest="entity_topk_seats",
+                        type=int, default=None,
+                        help="gen3_entity_move_seats_v1 (v54, Stage 1 of the entity generation): the E4 "
+                             "THREAT-MOVE seat count — the opp active's top-K believed candidate moves "
+                             "enter the trunk as attention SEATS ([move latent ⊕ belief w ⊕ acc ⊕ "
+                             "is_phys] per seat; the op's refine_candidates definition, one source). "
+                             "0 (default) = E3-only: our active's 4 request-ordered move seats, which "
+                             "are UNCONDITIONAL in this generation (the pointer head reads the REFINED "
+                             "seats). STRUCTURAL int (version-checked, fresh-only). >0 REQUIRES "
+                             "--damage-op-prefuse + --move-latent (--unified-moves).")
     parser.add_argument("--damage-candidate-k", "--damage_candidate_k", dest="damage_candidate_k",
                         type=int, default=None,
                         help="Cap the DamageOperator's INCOMING candidate sweep at the K most-believed "
@@ -2009,6 +2020,7 @@ async def main():
     _resolve("move_belief_single_compute", False)  # v47 forward-behavior (version-checked, fresh-only)
     _resolve("damage_candidate_k", 0)          # v49 forward-behavior (version-checked, fresh-only)
     _resolve("damage_op_prefuse", False)       # v50 structural (version-checked, fresh-only)
+    _resolve("entity_topk_seats", 0)           # v54 structural int (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
     _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)
     _resolve("pubval_mode", "none")            # v43 structural + resume-immutable (version-checked)
@@ -2351,6 +2363,15 @@ async def main():
         parser.error(
             "--damage-outgoing requires --damage-op (the outgoing block is part of the damage operator). "
             "Use --unified-damage both, or add --damage-op."
+        )
+    if args.entity_topk_seats and args.entity_topk_seats > 0 and not (
+            args.damage_op_prefuse and args.move_latent):
+        # gen3_entity_move_seats_v1: the E4 seats gather the op's PRE-transformer candidate weights
+        # and the move latent table — both exist pre-attention only under the prefuse stack.
+        parser.error(
+            "--entity-topk-seats > 0 requires --damage-op-prefuse AND --move-latent (--unified-moves): "
+            "the E4 threat seats gather the op's pre-transformer candidate weights + move latents. "
+            "Add those flags, or set --entity-topk-seats 0 (E3-only)."
         )
     if args.damage_reattend and not args.damage_op:
         # The re-attend layer reads the operator's per-mon incoming-damage block → the op must exist.

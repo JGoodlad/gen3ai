@@ -789,9 +789,13 @@ the policy's `_build` deletes SB3's flat `action_net` (a raising stub takes its 
 k ← the REQUEST-slot-k move token ⊕ its op cells, switch logit j ← our-team token j ⊕ its
 incoming/OAX cells, struggle ← the context — with `latent_pi` (the policy tower's output, so the
 op block / beliefs / FiLM all condition it) as the shared context. Position-equivariant by
-construction; zero-init scorers ⇒ uniform-over-legal cold start. Both projection input dims are
-auto-discovered via a dummy forward pass in `__init__`, so they stay correct as the architecture
-changes.
+construction; zero-init scorers ⇒ uniform-over-legal cold start. **Since v52
+(`gen3_entity_move_seats_v1`) MOVES are also attention SEATS in the trunk** — E3 (our active's 4
+request-ordered move tokens, unconditional; the pointer head reads the REFINED seats) + E4 (the
+opp active's top-`entity_topk_seats` believed threat moves) append after the global token via
+`TeamTransformer`'s generic `extra` seat path (the v52 entry below). Both projection input dims
+are auto-discovered via a dummy forward pass in `__init__`, so they stay correct as the
+architecture changes.
 
 **The phase-by-phase data flow (the 7-phase contract, dims, and the `ExtractorContext` /
 `Embeddings` ownership rules) is documented in `src/agents/model/CLAUDE.md`.**
@@ -827,7 +831,7 @@ The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
 `MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
-**`gen3_typed_hp_belief_v1`** — the v52 discrete typed-HP belief, stacking directly on
+**`gen3_entity_move_seats_v1`** — the v54 move-entity seats (Stage 1 of the entity generation; see the v54 entry below); before it **`gen3_typed_hp_belief_v1`** — the v52 discrete typed-HP belief, stacking directly on
 `gen3_pointer_native_v1` (the v51 pointer-native action head, the fresh-generation cross-era break —
 the flat positional `action_net` is deleted and every action is scored from the token of the entity it
 selects; see the v51 entry below). Under it the model **only ever reasons over DISCRETE typed Hidden Power**. The
@@ -1347,7 +1351,28 @@ pre-v53 configs to `composed`. `--hp-belief-mode flat` AUTO-ZEROES `--hp-type-be
 auto-zero precedent — the coef defaults to 0.05, so erroring would make the ablation flag fail out of the
 box). Default byte-identical → NO `ARCH_SIGNATURE` bump. Tests: `hp_type_belief_test.py` (both arms
 237-masked, the version gate, the invalid-mode raise, the migration default).
-Current `MODEL_CONFIG_VERSION` = **53**, `ARCH_SIGNATURE` = **`gen3_typed_hp_belief_v1`**.
+**v54 the MOVE ENTITY SEATS** (`gen3_entity_move_seats_v1`, Stage 1 of the entity generation —
+`designs/ai_v9/design_generation_roadmap.md` §3) — MOVE tokens become first-class attention SEATS
+in the unified trunk, appended AFTER the global token so every existing absolute slice
+(team/history/global, the refine callback's tail cat) is position-stable. **E3** (unconditional):
+our active's 4 request-ordered move tokens — the SAME identity-permuted tokens the pointer head
+reads, permuted ONCE pre-transformer and projected 32 → d_model; **the pointer head now reads the
+REFINED E3 seats** (post-attention, d_model-wide — its move tokens are board-aware). **E4**
+(`entity_topk_seats` / `--entity-topk-seats K`, 0 = off): the opp active's top-K believed
+threat-move seats — the op's `refine_candidates(k=K)` candidate definition (belief-weighted,
+typed-HP-scattered, ONE source with the refine kernels), each seat `[move latent ⊕ belief w ⊕ acc
+⊕ is_phys]`; index selection detached, `w` differentiable (the belief gradient rides the seats);
+all K key-masked + zeroed when no opp active; requires `--damage-op-prefuse` + `--move-latent`. NO
+edges yet (Stage 2). The token-type table grows 4 → 6 (`TOKEN_TYPE_OUR_MOVE` /
+`TOKEN_TYPE_THEIR_THREAT`) and `TeamTransformer.forward` gains a generic `extra=(tokens, types,
+pad)` seat path (returns the refined extra seats as a third output). Measured B=1 (threads=1): E4
+K=5 = **+0.18 ms** on a ~3.1 ms prefuse-stack forward — on the spike's +0.19 ms prediction
+(dispatch-bound, not FLOP-bound). E3's break is UNCONDITIONAL (state_dict: the token-type table,
+`move_seat_proj`, the head's wider `move_proj`) → the `ARCH_SIGNATURE` bump carries it;
+`entity_topk_seats` is a STRUCTURAL int gated in `check_compatible` (the `damage_topk_k` pattern).
+Tests: `entity_seats_test.py` (seat-layout stability, masked-seat bit-identity no-leak, the
+op-candidate single-source, the LayerNorm random-cotangent gradient probe).
+Current `MODEL_CONFIG_VERSION` = **54**, `ARCH_SIGNATURE` = **`gen3_entity_move_seats_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

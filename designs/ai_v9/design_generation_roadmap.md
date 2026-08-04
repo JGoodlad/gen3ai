@@ -100,6 +100,17 @@ doesn't collapse, CPU holds at the benchmark's prediction, the pointer tests sti
 alignment. What NOT to do first: the schema module (Stage 3) — pure work, no feasibility
 risk, and building it early couples it to a token layout the spike may still change.
 
+**SLICE STATUS (2026-08-03): BUILT — v54 `gen3_entity_move_seats_v1` (renumbered from v52 over the concurrently-shipped typed-HP-belief v52/v53).** E3 (unconditional,
+request-ordered, pointer head reads the REFINED seats) + E4 (`--entity-topk-seats K`, the op's
+`refine_candidates(k=K)` single-source, requires the prefuse stack) via `TeamTransformer`'s
+generic `extra` seat path; token-type table 4 → 6. Gates hit: full unit suite 3916 green (incl.
+`entity_seats_test.py` — seat-position stability, masked-seat bit-identity no-leak, candidate
+single-source), bridge smokes pass on BOTH the E3-only default and the prefuse+E4 K=5 stack
+(round-trip serialization included), and B=1 CPU measured **+0.18 ms for E4 K=5** on a ~3.1 ms
+prefuse forward — on the spike's +0.19 ms prediction. The "learning doesn't collapse" leg of the
+gate is a SHORT REAL TRAINING RUN still to be scheduled (the debug smokes only prove the loop
+executes); run it before committing the first long v52 run.
+
 ## 3. The staged sequence
 
 Read each stage as: WHAT lands / what it DELETES / the RISK to bound / the GATE.

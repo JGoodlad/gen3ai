@@ -393,7 +393,17 @@ from typing import Any, Dict, List
 #   channels INDEPENDENTLY off their own per-typed Smogon priors — both arms still mask the bare 237
 #   via the shared `mask_typeless_hp`). STRUCTURAL ('flat' drops a module) → STRING compare in
 #   check_compatible (the win_prob_mode pattern); default byte-identical (NO ARCH_SIGNATURE bump).
-MODEL_CONFIG_VERSION = 53
+# v54: gen3_entity_move_seats_v1 — Stage 1 of the entity generation (the roadmap's move-tokens-into-
+#   the-body slice): MOVE tokens become first-class attention SEATS in the unified trunk, appended
+#   after the global token. E3 (unconditional): our active's 4 request-ordered move tokens, projected
+#   32 → d_model — the pointer head now reads the REFINED seats (post-attention, d_model-wide;
+#   `move_seat_proj` + the token-type table growing 4 → 6 + the head's wider `move_proj` are the
+#   unconditional state_dict changes → the `ARCH_SIGNATURE` bump below carries the break). E4
+#   (`entity_topk_seats` int, 0 = off): the opp active's top-K believed threat-move seats — the op's
+#   `refine_candidates(k=K)` candidate definition (belief-weighted, typed-HP-scattered) gathered as
+#   `[latent ⊕ w ⊕ acc ⊕ is_phys]` per seat; adds `threat_seat_proj` (STRUCTURAL int, the
+#   `damage_topk_k` gating pattern; requires damage_op_prefuse + move_latent). NO edges yet (Stage 2).
+MODEL_CONFIG_VERSION = 54
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -756,7 +766,16 @@ MODEL_CONFIG_VERSION = 53
 #     unconditional under a move belief, the belief LABELS use the true typed num, and the op is a plain
 #     consumer (no hp_type_fix / SPECIES_HP_PRIOR). Forward math changed with out_dim + projection
 #     widths UNCHANGED → nothing shape-based catches it, so the signature carries the break.
-ARCH_SIGNATURE = "gen3_typed_hp_belief_v1"
+#   gen3_entity_move_seats_v1 (config v54, Stage 1 of the entity generation — the roadmap's move-tokens
+#     slice; stacks on gen3_typed_hp_belief_v1): move tokens become first-class attention SEATS in the
+#     trunk, and the pointer head reads the REFINED E3 seats. UNCONDITIONAL state_dict changes for
+#     every model (the token-type embedding table grows 4 → 6, `entity_seats.move_seat_proj` is new,
+#     the pointer head's `move_proj` widens 32+cells → d_model+cells) plus an unconditional forward
+#     change (4+ new seats in every attention pass) — no off state, so the signature carries the break
+#     exactly like the v51 bump. The within-generation knob is `entity_topk_seats` (E4 threat seats),
+#     gated in check_compatible. No pre-v54 checkpoint was ever trained (the generation's bumps all
+#     landed same-day), so nothing is stranded.
+ARCH_SIGNATURE = "gen3_entity_move_seats_v1"
 
 
 class ModelVersionError(Exception):
@@ -934,6 +953,12 @@ class ModelVersion:
     # `prefuse_proj` (a new param → state_dict change) instead of recomputing a lean op between layers.
     # The head concat is unchanged in width; only the belief it is computed from is pre- vs post-attention.
     damage_op_prefuse: bool = False
+    # v54 STRUCTURAL int (gen3_entity_move_seats_v1, the damage_topk_k gating pattern): the E4
+    # threat-move SEAT count — the opp active's top-K believed candidate moves entering the trunk as
+    # attention seats. >0 adds `entity_seats.threat_seat_proj` (state_dict) and K seats to every
+    # attention pass (forward); 0 = E3-only (our 4 move seats, which are UNCONDITIONAL — their break
+    # rides the ARCH_SIGNATURE bump, not this field). Requires damage_op_prefuse + move_latent.
+    entity_topk_seats: int = 0
     # v21 FORWARD-BEHAVIOR toggle (NOT weight-shape, like attend_unrevealed_opponents): the
     # unified-architecture ablation. ON zeros the incoming-damage / OHKO obs block out of the model's
     # view (the block stays in the obs; the reward still reads it). State_dict identical; the forward
@@ -1241,6 +1266,9 @@ class ModelVersion:
             ),
             damage_op_prefuse=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_op_prefuse", False)
+            ),
+            entity_topk_seats=int(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("entity_topk_seats", 0)
             ),
             win_prob_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("win_prob_mode", "none")
@@ -1605,6 +1633,18 @@ class ModelVersion:
                 "both heads a block computed from an un-refined belief, so the weights are not "
                 "interchangeable.\n"
                 "Load with the matching --damage-op-prefuse, or start a fresh training run."
+            )
+
+        # v54 gen3_entity_move_seats_v1 — STRUCTURAL int (the damage_topk_k pattern): >0 adds
+        # `threat_seat_proj` (state_dict) and K threat seats to every attention pass (forward), so
+        # 0<->K and K<->M both fail. The unconditional E3 seats ride the ARCH_SIGNATURE, not this.
+        if self.entity_topk_seats != saved.entity_topk_seats:
+            raise ModelVersionError(
+                f"entity_topk_seats mismatch: saved={saved.entity_topk_seats}, "
+                f"current={self.entity_topk_seats}.\n"
+                "The E4 threat-move seats add a projection (threat_seat_proj) and change every "
+                "attention pass's seat count, so the weights are not interchangeable.\n"
+                "Load with the matching --entity-topk-seats, or start a fresh training run."
             )
 
         # Structural + resume-IMMUTABLE toggle — gated as a STRING so BOTH 'none'↔head (a state_dict
@@ -2318,4 +2358,9 @@ def _migrate_config(data: dict) -> dict:
         # it; 'flat' is the opt-in ablation.
         data.setdefault("hp_belief_mode", "composed")
         data["config_version"] = 53
+    if version < 54:
+        # v54: gen3_entity_move_seats_v1 — E4 threat seats OFF on any older config (E3 is
+        # unconditional and carried by the ARCH_SIGNATURE, not a field).
+        data.setdefault("entity_topk_seats", 0)
+        data["config_version"] = 54
     return data

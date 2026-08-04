@@ -332,9 +332,12 @@ def test_team_transformer_output_shapes():
     model, layout = _make_model()
     ctx = model.unpack({"observation": torch.rand(1, layout["total_dim"]) * 4.0})
     role = model.pokemon_encoder(ctx, model.embeddings)
-    our_out, their_out = model.team_transformer(role, ctx, model.embeddings)
+    # gen3_entity_move_seats_v1: the forward returns a third element — the refined extra entity
+    # seats (None when no `extra` is passed, as here).
+    our_out, their_out, extra_out = model.team_transformer(role, ctx, model.embeddings)
     assert our_out.shape == (1, TEAM_SIZE, D_MODEL)
     assert their_out.shape == (1, TEAM_SIZE, D_MODEL)
+    assert extra_out is None
 
 
 # ---------------------------------------------------------------------------

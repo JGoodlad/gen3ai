@@ -164,7 +164,10 @@ def test_extractor_always_stashes_pointer_inputs_baseline():
     with torch.no_grad():
         fe(_obs(batch=3))
     tok, valid, team, mcells, scells = fe.last_pointer_inputs
-    assert tuple(tok.shape) == (3, N_MOVE_SLOTS, MOVE_NET_HIDDEN[1])
+    # gen3_entity_move_seats_v1: the stash carries the REFINED E3 trunk seats (d_model-wide), no
+    # longer the raw 32-dim PokemonEncoder move tokens.
+    assert tuple(tok.shape) == (3, N_MOVE_SLOTS, D_MODEL)
+    assert fe.pointer_move_token_dim == D_MODEL
     assert tuple(valid.shape) == (3, N_MOVE_SLOTS)
     assert tuple(team.shape) == (3, 6, D_MODEL)
     assert tuple(mcells.shape) == (3, 4, 0) and tuple(scells.shape) == (3, 6, 0)
@@ -354,11 +357,13 @@ def test_save_load_roundtrip_preserves_the_logits(tmp_path):
 
 # ------------------------------------------------------- versioning
 def test_version_constants_and_migration():
-    assert MODEL_CONFIG_VERSION >= 51
+    assert MODEL_CONFIG_VERSION >= 54
     # The cross-era break rides the signature bump AT-OR-AFTER gen3_pointer_native_v1: later
-    # retrain-class bumps (v52 gen3_typed_hp_belief_v1) keep rejecting pre-generation checkpoints,
-    # so pin "not a pre-generation signature", not one literal value.
+    # retrain-class bumps (v52 gen3_typed_hp_belief_v1, v54 gen3_entity_move_seats_v1) keep rejecting
+    # pre-generation checkpoints, so pin "not a pre-generation signature", not one literal value.
     assert ARCH_SIGNATURE not in ("gen3_opp_hp_typed_candidates_v1", "gen3_typed_hidden_power_ids_v1")
     assert "pointer_head" not in {f.name for f in dataclasses.fields(ModelVersion)}
     migrated = _migrate_config({"config_version": 49, "pointer_head": True})
-    assert "pointer_head" not in migrated and migrated["config_version"] >= 51
+    assert "pointer_head" not in migrated and migrated["config_version"] >= 54
+    # v54: the E4 seat count defaults 0 on any older config.
+    assert migrated["entity_topk_seats"] == 0

@@ -895,6 +895,7 @@ def current_model_version(
     move_belief_single_compute: bool = False,
     damage_candidate_k: int = 0,
     damage_op_prefuse: bool = False,
+    entity_topk_seats: int = 0,
     win_prob_mode: str = "none",
     win_prob_coef: float = 1.0,
     value_dist_mode: str = "none",
@@ -968,6 +969,7 @@ def current_model_version(
     ext_kwargs["move_belief_single_compute"] = move_belief_single_compute
     ext_kwargs["damage_candidate_k"] = damage_candidate_k
     ext_kwargs["damage_op_prefuse"] = damage_op_prefuse
+    ext_kwargs["entity_topk_seats"] = entity_topk_seats
     ext_kwargs["win_prob_mode"] = win_prob_mode
     ext_kwargs["value_dist_mode"] = value_dist_mode
     ext_kwargs["value_dist_bins"] = value_dist_bins
@@ -1037,6 +1039,9 @@ def arch_toggles_from_model(model) -> dict:
         # v50 gen3_damage_op_prefuse_v1: STRUCTURAL bool gated in check_compatible (prefuse_proj is
         # a saved param), so it must reach the worker's gate.
         "damage_op_prefuse": bool(getattr(fe, "damage_op_prefuse", False)),
+        # v54 gen3_entity_move_seats_v1: STRUCTURAL int (threat_seat_proj + seat count), gated in
+        # check_compatible — must reach the worker's gate like damage_op_prefuse.
+        "entity_topk_seats": int(getattr(fe, "entity_topk_seats", 0)),
         "win_prob_mode": str(getattr(fe, "win_prob_mode", "none")),
         # v43 pubval aux head (gen3_pubval_aux_v1): STRUCTURAL string like win_prob_mode, gated in
         # check_compatible, so it must reach the worker's gate (a pubval-ON run's own snapshots carry it).

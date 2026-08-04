@@ -39,6 +39,7 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "move_belief_single_compute": "move_belief_single_compute",             # v47
     "damage_candidate_k": "damage_candidate_k",                             # v49
     "damage_op_prefuse": "damage_op_prefuse",                               # v50 (v51 pointer-native: no key — unconditional)
+    "entity_topk_seats": "entity_topk_seats",                               # v54 (E3 unconditional; this is the E4 K)
     "win_prob_mode": "win_prob_mode",                                       # v22
     "pubval_mode": "pubval_mode",                                           # v43
     "value_dist_mode": "value_dist_mode",                                   # v29

@@ -64,7 +64,10 @@ TOKEN_TYPE_OUR_TEAM = 0
 TOKEN_TYPE_THEIR_TEAM = 1
 TOKEN_TYPE_HISTORY = 2
 TOKEN_TYPE_GLOBAL = 3
-NUM_TOKEN_TYPES = 4
+# gen3_entity_move_seats_v1 (v54, Stage 1 of the entity generation): move ENTITY seats in the trunk.
+TOKEN_TYPE_OUR_MOVE = 4        # E3 — our active's 4 request-ordered move tokens
+TOKEN_TYPE_THEIR_THREAT = 5    # E4 — the opp active's top-K believed threat-move tokens
+NUM_TOKEN_TYPES = 6
 
 
 def locate_active_slot(active_flags: torch.Tensor) -> torch.Tensor:
@@ -761,9 +764,12 @@ class PokemonEncoder(torch.nn.Module):
 
 
 class TeamTransformer(torch.nn.Module):
-    """Unified transformer over 23 tokens (6 our + 6 their team role tokens + 10 history
-    + 1 global). Adds token-type and history-positional embeddings, applies the encoder
-    stack with a fainted/empty-history key-padding mask, returns the two team token blocks."""
+    """Unified transformer over the entity seats: 6 our + 6 their team role tokens +
+    N_HISTORY_TURNS history + 1 global, plus (gen3_entity_move_seats_v1) any `extra` entity
+    seats appended after the global token (E3 our-move + E4 threat-move seats today). Adds
+    token-type and history-positional embeddings, applies the encoder stack with a
+    fainted/empty-history/seat key-padding mask, returns the two team token blocks + the
+    refined extra seats."""
 
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
@@ -807,8 +813,13 @@ class TeamTransformer(torch.nn.Module):
 
     def forward(self, role_tokens: torch.Tensor, ctx: ExtractorContext,
                 embeddings: Embeddings,
-                between_layers: "Optional[Callable[[torch.Tensor, int], torch.Tensor]]" = None
-                ) -> Tuple[torch.Tensor, torch.Tensor]:
+                between_layers: "Optional[Callable[[torch.Tensor, int], torch.Tensor]]" = None,
+                extra: "Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]" = None,
+                ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
+        """`extra` (gen3_entity_move_seats_v1): optional `(tokens [B,n,d_model], types [n] long,
+        pad [B,n] bool)` — additional entity seats appended AFTER the global token, so every
+        absolute slice (team/history/global, the refine callback's tail cat) is position-stable.
+        The third return is the refined extra seats (None when no extra)."""
         batch_size = ctx.batch_size
         device = ctx.device
 
@@ -845,6 +856,10 @@ class TeamTransformer(torch.nn.Module):
             empty_history,
             global_pad,
         ], dim=1)
+        if extra is not None:
+            extra_tokens, extra_types, extra_pad = extra
+            tokens = torch.cat([tokens, extra_tokens + self.token_type_emb(extra_types)], dim=1)
+            key_padding_mask = torch.cat([key_padding_mask, extra_pad], dim=1)
 
         # Gradient checkpointing only helps when a graph is being built for backward
         # (the PPO update); under inference's no_grad it would be pure overhead, so gate on
@@ -869,7 +884,8 @@ class TeamTransformer(torch.nn.Module):
 
         our_team_out   = tokens[:, self._our_token_slice, :]
         their_team_out = tokens[:, self._their_token_slice, :]
-        return our_team_out, their_team_out
+        extra_out = tokens[:, self._total_tokens:, :] if extra is not None else None
+        return our_team_out, their_team_out, extra_out
 
 
 class CLSPool(torch.nn.Module):
@@ -1687,6 +1703,76 @@ def _request_order_move_tokens(move_tokens_all, ctx):
     return tokens_req * valid[:, :, None].float(), valid.float()
 
 
+class EntityMoveSeats(torch.nn.Module):
+    """gen3_entity_move_seats_v1 (v54) — Stage 1 of the entity generation: MOVE tokens become
+    first-class attention SEATS in the unified trunk (`design_generation_roadmap.md` §3 Stage 1).
+
+    Until now moves existed only INSIDE `PokemonEncoder` (flattened into the mon vector; v51 rescued
+    the active's 4 for the pointer head) — attention could never do "Rock Slide THE TOKEN threatens
+    Zapdos THE TOKEN". This module builds the two new seat families, appended AFTER the global token
+    so every existing absolute slice (team tokens, history, the refine callback's tail-preserving
+    cat) is untouched:
+
+      * **E3 — our active's 4 move seats** (unconditional): the SAME request-ordered, identity-
+        permuted tokens the pointer head reads (`_request_order_move_tokens` — one permutation,
+        shared), projected 32 → d_model. Seat k == action logit 6+k by construction. An unresolved
+        request slot (forced Struggle / <4 moves) is a zero token AND key-masked.
+      * **E4 — the opp active's top-K believed threat-move seats** (`topk_seats` > 0): candidates
+        from `DamageOperator.refine_candidates(k=K)` — the SAME belief-weighted, typed-HP-scattered,
+        learnset-gated candidate definition the refine/top-K kernels use (one source, no drift) —
+        each seat = `[move latent(32) ⊕ belief w ⊕ accuracy ⊕ is_phys]` projected to d_model.
+        Index selection detached, `w` differentiable → the belief gradient rides the seats. All K
+        seats key-masked when there is no opponent active.
+
+    The feasibility spike (`entity_spike_benchmark.py`) priced the seat growth at ~+0.19 ms B=1 for
+    the full ~50-seat layout — dispatch-bound, not FLOP-bound. NO edges yet (Stage 2); the seats
+    enter attention purely as content. Input projections are ordinary trainable Linears (NOT
+    zero-init — new-information inputs, the `history_proj`/`global_proj` convention, not the
+    residual-injection one)."""
+
+    def __init__(self, topk_seats: int = 0):
+        super().__init__()
+        self.topk_seats = int(topk_seats)
+        self.move_seat_proj = torch.nn.Linear(MOVE_NET_HIDDEN[1], D_MODEL)
+        self.threat_seat_proj = (torch.nn.Linear(MOVE_LATENT_DIM + 3, D_MODEL)
+                                 if self.topk_seats > 0 else None)
+
+    @property
+    def n_seats(self) -> int:
+        return 4 + self.topk_seats
+
+    def seat_types(self, device) -> torch.Tensor:
+        """Per-seat token-type ids [n_seats] for the transformer's type embedding."""
+        return torch.cat([
+            torch.full((4,), TOKEN_TYPE_OUR_MOVE, dtype=torch.long, device=device),
+            torch.full((self.topk_seats,), TOKEN_TYPE_THEIR_THREAT, dtype=torch.long, device=device),
+        ])
+
+    def forward(self, tok_req: torch.Tensor, move_valid: torch.Tensor, ctx: 'ExtractorContext',
+                damage_op, move_belief_logits: Optional[torch.Tensor],
+                latent_table: Optional[torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+        """→ `(seats [B, 4+K, d_model], pad [B, 4+K] bool)` (pad True = masked, the key-mask sense)."""
+        seats = [self.move_seat_proj(tok_req)]                                # [B,4,D] (invalid = zeros)
+        pads = [move_valid < 0.5]                                             # [B,4]
+        if self.topk_seats > 0:
+            assert move_belief_logits is not None and latent_table is not None, (
+                "E4 threat seats need the pre-transformer move-belief logits + the move latent table "
+                "(guaranteed by the __init__ gate: damage_op_prefuse + move_latent)"
+            )
+            idx, w = damage_op.refine_candidates(ctx, move_belief_logits, k=self.topk_seats)  # [B,K]
+            has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1)            # [B] bool
+            hdr = torch.cat([
+                latent_table[idx],                                            # [B,K,32] typed-HP-aware identity
+                w[:, :, None],                                                # belief weight (differentiable)
+                damage_op.MOVE_ACCURACY[idx][:, :, None],
+                damage_op.MOVE_PHYS[idx][:, :, None],
+            ], dim=2)
+            e4 = self.threat_seat_proj(hdr) * has_opp[:, None, None].float()  # zeroed when no opp active
+            seats.append(e4)
+            pads.append(~has_opp[:, None].expand(-1, self.topk_seats))
+        return torch.cat(seats, dim=1), torch.cat(pads, dim=1)
+
+
 class PointerNativeActionHead(torch.nn.Module):
     """gen3_pointer_native_v1: THE action head — score each action FROM THE TOKEN OF THE ENTITY IT
     SELECTS. There is no flat positional head in this generation; these ARE the logits.
@@ -1905,6 +1991,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  move_belief_prefuse: bool = False, move_belief_single_compute: bool = False,
                  damage_candidate_k: int = 0, damage_refine_rounds: int = 0,
                  damage_op_prefuse: bool = False,
+                 entity_topk_seats: int = 0,
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  damage_matrices_outgoing_all: bool = False,
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
@@ -1963,6 +2050,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # tokens + the op's per-action cells), set unconditionally in forward_internal.
         self.last_pointer_inputs: Optional[Tuple[torch.Tensor, ...]] = None
         self.pokemon_encoder = PokemonEncoder(layout, move_latent=move_latent)
+        # gen3_entity_move_seats_v1 (v54, Stage 1): move ENTITY seats in the trunk — E3 (our active's
+        # 4 request-ordered move tokens, unconditional) + E4 (the opp active's top-`entity_topk_seats`
+        # believed threat moves, opt-in). The pointer head then reads the REFINED E3 seats (post-
+        # attention, d_model-wide) instead of the raw 32-dim PokemonEncoder tokens. E4's gates: the
+        # candidate weights + latent table must exist PRE-transformer, which is exactly the prefuse
+        # stack (validated below after those flags are set).
+        self.entity_topk_seats = int(entity_topk_seats)
+        self.entity_seats = EntityMoveSeats(self.entity_topk_seats)
         self.team_transformer = TeamTransformer(layout)
         self.cls_pool = CLSPool(layout)
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
@@ -2366,6 +2461,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         if self.prefuse_proj is not None:
             torch.nn.init.zeros_(self.prefuse_proj.weight)
             torch.nn.init.zeros_(self.prefuse_proj.bias)
+        # gen3_entity_move_seats_v1: E4 threat seats need the belief-weighted candidate definition
+        # (`DamageOperator.refine_candidates`) + the move latent table, both PRE-transformer — i.e.
+        # the prefuse stack. E3 is unconditional and needs none of this.
+        if self.entity_topk_seats > 0 and not (self.damage_op_prefuse and move_latent):
+            raise ValueError(
+                f"entity_topk_seats={self.entity_topk_seats} requires damage_op_prefuse=True AND "
+                "move_latent=True — the E4 threat seats gather the op's pre-transformer candidate "
+                "weights and the move latent table. Enable --damage-op-prefuse + --move-latent "
+                "(--unified-moves), or set --entity-topk-seats 0 (E3-only)."
+            )
         # Stored on the root so arch_toggles_from_model can thread it to the eval/self-play workers
         # (the move-prior gate is a version-checked forward-behavior toggle).
         self.move_candidate_floor = move_candidate_floor
@@ -2675,6 +2780,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     # Linears from these at build time (0 when the source op block is off, so a missing block narrows
     # the Linear instead of silently feeding zeros at a learned weight).
     @property
+    def pointer_move_token_dim(self) -> int:
+        # gen3_entity_move_seats_v1: the head reads the REFINED E3 seats (d_model), no longer the raw
+        # 32-dim PokemonEncoder move tokens.
+        return D_MODEL
+
+    @property
     def pointer_move_cell_dim(self) -> int:
         return self.damage_op.pointer_move_cell_dim if self.damage_op is not None else 0
     @property
@@ -2808,9 +2919,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.last_move_latent_table = None
         move_latent_all = None
         # The op's candidate latent table is needed in rollout (not just is_grad_enabled) when EITHER the top-K
-        # block OR the incoming per-move matrix is on — both gather the per-move latent into the op output.
+        # block OR the incoming per-move matrix is on — both gather the per-move latent into the op output —
+        # OR (gen3_entity_move_seats_v1) the E4 threat seats are on: they gather the per-candidate latent as
+        # the seat identity (and this method runs PRE-transformer under prefuse, which E4 requires — so the
+        # stash below is guaranteed to exist by seat-build time).
         need_topk_latent = self.damage_op is not None and (
-            self.damage_op.topk_k > 0 or self.damage_op.matrices_incoming)
+            self.damage_op.topk_k > 0 or self.damage_op.matrices_incoming
+            or self.entity_topk_seats > 0)
         if self.move_latent and (torch.is_grad_enabled() or need_topk_latent):
             enc = self.pokemon_encoder.move_latent_encoder
             latent_table = enc.latent_table(self.embeddings)                     # [n_moves, MOVE_LATENT_DIM]
@@ -2822,6 +2937,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 # type emb ⊕ MOVE_ATTR), so a selected HP-Ice candidate gets the genuine typed-move latent. No
                 # synthetic append (the old `hp_latent_block` workaround for the 237 collision is obsolete).
                 move_latent_all = latent_table                                   # [n_moves, MOVE_LATENT_DIM]
+        # gen3_entity_move_seats_v1: LIVE stash for the E4 seat builder (same forward, read in
+        # forward_internal right after this returns; live, not detached — the latent gradient rides).
+        self._entity_latent_table = move_latent_all if self.entity_topk_seats > 0 else None
         # Differentiable damage op (flag-guarded; None when off): fed the move belief's PREDICTED moves for
         # the opp active. Forward-only, leak-free; its gradient flows back into the move/spread belief heads
         # via last_move_belief_logits / last_spread_belief.
@@ -3037,8 +3155,22 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 if self.outgoing_proj is not None or self.status_out_proj is not None:
                     return torch.cat([refined_our, refined_opp, tokens[:, 2 * TEAM_SIZE:, :]], dim=1)
                 return torch.cat([refined_our, tokens[:, TEAM_SIZE:, :]], dim=1)
-        our_team_out, their_team_out = self.team_transformer(
-            role_tokens, ctx, self.embeddings, between_layers=refine_cb)
+        # gen3_entity_move_seats_v1 (v54, Stage 1): build the move ENTITY seats and enter them into
+        # the trunk's attention. The E3 permutation (sorted-by-id → request order, by move-num
+        # identity) happens HERE, pre-transformer — one permutation, shared by the seats and the
+        # pointer head (which now reads the REFINED seats below). E4 gathers the op's pre-transformer
+        # candidate weights + latents (`_entity_latent_table`, stashed by `_spread_hp_damage` — the
+        # prefuse gate guarantees it ran). Seats append AFTER the global token, so every absolute
+        # slice above (team/history/global, the refine callback's tail cat) is position-stable.
+        _tok_req_raw, _move_valid = _request_order_move_tokens(
+            self.pokemon_encoder.last_move_tokens, ctx)
+        _seat_tokens, _seat_pad = self.entity_seats(
+            _tok_req_raw, _move_valid, ctx, self.damage_op,
+            self.last_move_belief_logits,
+            getattr(self, "_entity_latent_table", None))
+        our_team_out, their_team_out, _seat_out = self.team_transformer(
+            role_tokens, ctx, self.embeddings, between_layers=refine_cb,
+            extra=(_seat_tokens, self.entity_seats.seat_types(ctx.device), _seat_pad))
         # Aux belief logits over the refined opp tokens — stashed for the PPO aux loss, NOT fed back
         # into the policy/value path (labels would leak). None when belief is off.
         self.last_belief_logits = (
@@ -3096,22 +3228,25 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx
         )
-        # gen3_pointer_native_v1: stash the pointer action head's PER-ENTITY inputs for
-        # `Gen3DualHeadMaskablePolicy._get_action_dist_from_latent` — the head itself lives on the
-        # policy (its ctx is latent_pi, which doesn't exist here). Stashed AFTER the (possibly
-        # re-attended) final team tokens and the final damage block, so switch scorer j reads the same
-        # board-aware token every pool reads, and the op cells are the same numbers the projection
-        # heads consume. The move tokens are permuted SORTED-BY-ID → REQUEST order by move-num
-        # identity here, once (`_request_order_move_tokens` — the ordering bug class dissolves at this
-        # line). When the op is off the cell tensors are width-0 (the head's Linears are built
-        # correspondingly narrower — never silently zero-padded).
-        _tok_req, _valid = _request_order_move_tokens(self.pokemon_encoder.last_move_tokens, ctx)
+        # gen3_pointer_native_v1 / gen3_entity_move_seats_v1: stash the pointer action head's
+        # PER-ENTITY inputs for `Gen3DualHeadMaskablePolicy._get_action_dist_from_latent` — the head
+        # itself lives on the policy (its ctx is latent_pi, which doesn't exist here). Move logit k
+        # now reads the REFINED E3 seat k (post-attention, d_model-wide — the Stage-1 payoff: the
+        # token was refined IN the trunk alongside the board, not just inside PokemonEncoder). The
+        # request-order permutation happened ONCE, pre-transformer, at the seat build — order is
+        # seat-stable through attention, so seat k is still action logit 6+k; `_move_valid` gates
+        # unresolved slots to logit 0 exactly as before (their refined content is attention noise the
+        # head never scores). Switch scorer j reads the same (possibly re-attended) board-aware team
+        # token every pool reads; the op cells are the same post-gain numbers the projection heads
+        # consume (width-0 when the op is off — the head's Linears are built correspondingly
+        # narrower, never silently zero-padded).
+        _tok_req = _seat_out[:, :4, :]
         if self.damage_op is not None and damage_block is not None:
             _mcells, _scells = self.damage_op.pointer_cells(damage_block)
         else:
             _mcells = _tok_req.new_zeros(ctx.batch_size, _tok_req.shape[1], 0)
             _scells = our_team_out.new_zeros(ctx.batch_size, TEAM_SIZE, 0)
-        self.last_pointer_inputs = (_tok_req, _valid, our_team_out, _mcells, _scells)
+        self.last_pointer_inputs = (_tok_req, _move_valid, our_team_out, _mcells, _scells)
         # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
         # 128-dim FitNets HINT layer). Consumed ONLY by the FitNets value-feature distillation
         # (`instrumented_ppo._value_feat_distill`): both student and teacher forwards leave it here, so the
