@@ -88,3 +88,40 @@ def test_dispatch_routes_recon_to_single_slot_not_clients():
         assert session.last_recon == ("battle-gen3ou-recontest", "eyJ2IjogMX0=")
     finally:
         env.close()
+
+
+def test_child_error_wakes_a_blocked_queue_get_instead_of_hanging():
+    """A dead bridge child must WAKE an in-flight ``step()``/``reset()``, not let it sit out
+    poke-env's watchdog (`gen3_bridge_child_error_wakes_step_v1`).
+
+    Latching ``_child_error`` alone only makes the NEXT ``reset()`` raise; a ``step()`` already
+    parked in ``battle_queue.race_get`` waits for a request the now-dead reader can never
+    deliver. poke-env already solves this shape for a dropped websocket — ``listen`` sets
+    ``_disconnected`` and ``_AsyncQueue`` races its gets against it — so the bridge reuses that
+    signal.
+
+    THE LOAD-BEARING DETAIL this pins: the queues bind ``_disconnected`` at CONSTRUCTION, from
+    the ORIGINAL ps_client, and ``attach()`` then swaps in a ``BattleStreamClient`` with its own
+    fresh event. Signalling the NEW client's event would wake nothing. So we assert the events
+    the session signals are the ones the QUEUES actually race on — an implementation that
+    signalled the client instead passes a naive "is_set" check on the client and still hangs.
+    """
+    env = _bridge_env(5)
+    try:
+        session = env._bridge_session
+        q1, q2 = env.agent1.battle_queue, env.agent2.battle_queue
+        assert q1._disconnected is not None and q2._disconnected is not None
+        # The session must hold the QUEUES' events (identity, not just equality).
+        assert any(ev is q1._disconnected for ev in session._disconnect_events)
+        assert any(ev is q2._disconnected for ev in session._disconnect_events)
+        # ...and those must NOT be the swapped-in bridge client's own fresh event, which is what
+        # a plausible-but-wrong implementation would have signalled.
+        assert q1._disconnected is not session.c1._disconnected
+
+        assert not q1._disconnected.is_set() and not q2._disconnected.is_set()
+        session._signal_transport_dead()
+        assert q1._disconnected.is_set(), "a dead child must wake agent1's blocked get"
+        assert q2._disconnected.is_set(), "a dead child must wake agent2's blocked get"
+        session._signal_transport_dead()  # idempotent — a second fatal path must not throw
+    finally:
+        env.close()

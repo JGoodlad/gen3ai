@@ -151,13 +151,35 @@ then resolves the turn immediately). Two consequences:
   divergences, 0 drain timeouts** while carrying **128 `trapped:true` frames** — i.e. the
   legitimate refusal round (the maybe-trapped probe) was exercised heavily and never tripped the
   cap. The max streak seen in normal play remains 1.
-  **HONEST SCOPE — what the bound does and does NOT buy.** It converts an UNBOUNDED spin into a
-  BOUNDED, diagnosable failure; it does not make the failure instant. `BridgeSession` LATCHES the
-  `__ERR__` into `_child_error` and raises it at the next `reset()` (so the run dies with the
-  refusal text, the side, and the offending choice), but the IN-FLIGHT `step()` still waits out
-  poke-env's 120 s watchdog first — the pre-existing latched-error gap, unchanged by this work and
-  worth closing separately. `run_local_battles` (the eval driver) is stricter: it raises on the
-  `__ERR__` frame directly.
+  **SCOPE — the bound makes the failure BOUNDED; the wake below makes it IMMEDIATE.**
+  `BridgeSession` latches the `__ERR__` into `_child_error` and raises it at the next `reset()`
+  (so the run dies with the refusal text, the side, and the offending choice).
+  `run_local_battles` (the eval driver) is stricter still: it raises on the `__ERR__` frame
+  directly.
+
+**A dead child WAKES an in-flight `step()`** (`gen3_bridge_child_error_wakes_step_v1`) — the
+former "known gap", now closed. Latching alone only covered the NEXT `reset()`: a `step()` already
+parked in `battle_queue.race_get` waited for a request the now-dead reader could never deliver, so
+it sat out poke-env's watchdog first. The gap became materially more reachable once the reject
+bound above made `__ERR__` a real outcome on BOTH transports.
+
+It is closed by REUSING the mechanism poke-env already has rather than inventing a second one:
+`ps_client.listen` sets `_disconnected` on an unrequested websocket close, and
+`_AsyncQueue._get` / `race_get` race their gets against it, raising `ShowdownException` instead of
+hanging. A dead bridge child is the SAME event — "the transport can no longer deliver" — so the
+reader now fires that signal from its two fatal exits (child EOF, dispatch failure).
+
+**The load-bearing detail, and why the obvious implementation is wrong:** `_EnvPlayer` binds its
+queues to `ps_client._disconnected` at CONSTRUCTION, and `attach()` then REPLACES `ps_client` with
+a `BattleStreamClient` carrying its own fresh event. Signalling the NEW client's event wakes
+NOTHING — the queues still hold the ORIGINAL object. The session therefore captures the events off
+the QUEUES themselves.
+`bridge_session_test.py::test_child_error_wakes_a_blocked_queue_get_instead_of_hanging` pins that
+by IDENTITY and is revert-verified against the plausible-but-wrong client-signalling version,
+which it fails. Terminal by design and safe: the signal fires only on no-in-place-recovery paths,
+while a routine `_recycle_child` CANCELS the reader and so reaches neither — confirmed by
+`bridge_session_fuzz_test --impl {node,rust}`, 40 episodes each (including the every-9th-episode
+forfeit-reset), both clean.
 - **The impls still differ on move-INDEX validation.** Rust does not validate the move index
   against the request, so an out-of-range `move N` is accepted and the turn advances where node
   refuses it — benign in training (poke-env only sends choices drawn from the request) but it is

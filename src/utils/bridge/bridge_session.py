@@ -168,6 +168,32 @@ class BridgeSession:
         # is ever consumed and the next ``reset()`` waits forever. Latching the reason here turns
         # that silent hang into the loud crash the no-in-place-recovery rule wants.
         self._child_error: Optional[str] = None
+        # The DISCONNECT events the two agents' queues race their gets against
+        # (`gen3_bridge_child_error_wakes_step_v1`). Latching ``_child_error`` /
+        # ``_child_crashed`` alone only makes the NEXT ``reset()`` raise — an IN-FLIGHT
+        # ``step()`` is parked inside ``battle_queue.race_get`` waiting for a request the now-dead
+        # reader can never deliver, so it sat out poke-env's watchdog first (the documented
+        # latched-error gap; more reachable since `gen3_node_bridge_reject_bound_v1` made
+        # ``__ERR__`` a real outcome on BOTH transports).
+        #
+        # poke-env ALREADY solves this exact shape for a dropped websocket: ``ps_client.listen``
+        # sets ``_disconnected`` and ``_AsyncQueue._get``/``race_get`` race against it, raising
+        # ``ShowdownException`` instead of hanging. A dead bridge child is the same event —
+        # "the transport can no longer deliver" — so we REUSE that mechanism rather than invent a
+        # second one.
+        #
+        # THE SUBTLETY that makes this the right handle: ``_EnvPlayer.__init__`` binds the queues
+        # to ``self.ps_client._disconnected`` at CONSTRUCTION, and ``attach()`` then REPLACES
+        # ``ps_client`` with a ``BattleStreamClient`` carrying its own fresh (never-set) event. So
+        # setting the new client's event would wake nothing — the queues still reference the
+        # ORIGINAL object. Capture the events off the QUEUES themselves, which is what the waiter
+        # actually races. Terminal by design: we set these only on the fatal, no-in-place-recovery
+        # paths, where the run is crashing regardless.
+        self._disconnect_events = [
+            q._disconnected
+            for q in (agent1.battle_queue, agent2.battle_queue)
+            if getattr(q, "_disconnected", None) is not None
+        ]
         # Set synchronously by ``close()`` so ``_dispatch`` stops feeding poke-env before the
         # child is killed — otherwise a buffered request gets answered into a dead pipe.
         self._closing = False
@@ -396,6 +422,7 @@ class BridgeSession:
                     # stdout EOF = the child process exited. On a recycle/close we CANCEL this
                     # reader (raises at readline, skips here), so reaching this is a real crash.
                     self._child_crashed = True
+                    self._signal_transport_dead()
                     break
                 text = line.decode().rstrip("\n")
                 if text == "__END__":
@@ -407,12 +434,32 @@ class BridgeSession:
                     # An ``__ERR__`` frame (or a malformed line) must not silently retire the
                     # reader — latch it so the next battle's start raises with the reason.
                     self._child_error = f"{type(e).__name__}: {e}"
+                    self._signal_transport_dead()
                     break
         finally:
             # Unblock any reset() waiting on this child's end — so a crash surfaces as the explicit
             # raise in _start_persistent_battle, not a 180s wait timeout. (Set _child_crashed FIRST,
             # above, so the woken waiter sees it.)
             ended_event.set()
+
+    def _signal_transport_dead(self) -> None:
+        """Wake any IN-FLIGHT ``step()``/``reset()`` parked on a queue get, so a dead child fails
+        NOW instead of sitting out poke-env's watchdog (`gen3_bridge_child_error_wakes_step_v1`).
+
+        The exact analogue of ``ps_client.listen`` setting ``_disconnected`` on an unrequested
+        websocket close: the transport can no longer deliver, so a blocked get must raise rather
+        than wait for a message that is never coming. ``_AsyncQueue._get``/``race_get`` already
+        race against these events and raise ``ShowdownException`` — this only fires the signal.
+
+        Called ONLY from the two fatal reader exits (child EOF, dispatch failure), both of which
+        are already no-in-place-recovery conditions, so the terminal nature of the event (it is
+        never cleared) costs nothing: a clean ``_recycle_child`` CANCELS the reader instead of
+        reaching either path, so a routine recycle never trips it. Idempotent and loop-safe — the
+        reader runs on ``self.loop``, the same loop the waiters live on.
+        """
+        for ev in self._disconnect_events:
+            if not ev.is_set():
+                ev.set()
 
     # --- inbound dispatch (mirrors ps_client.listen) ----------------------------------
     def _dispatch(self, text: str) -> None:
