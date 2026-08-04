@@ -21,13 +21,13 @@ To orient yourself:
 - When in doubt, ask: "is this an implementation doc for new code, or a record of what
   a running experiment does?"
 
-**Current state as of 2026-07-21:**
+**Current state as of 2026-08-04:**
 
 | What | Version | Notes |
 |------|---------|-------|
-| **Active training run** | **ai_v8** | `ai_v8_03_zarch_control_0718` — the v44 zarch/FiLM epoch (cold-control fork from the ai_v8_01 init), full booster stack (team-block-64, accum-16, onesided team-PFSP, film-accum-4), full LR (anneal removed 07-20), ~232M steps, pool 8 snapshots, ELO band ~1990–2018. |
-| **Code on main** | **ai_v8 (v44)** | `MODEL_CONFIG_VERSION` 44 (`gen3_zarch_film_v1`), booster flags + NSR advisor + the `_film_grad_accumulator` save-exclusion fix (8903a1c). The next fresh-run pre-flight list is `designs/ai_v8/next_run_plan.md`. |
-| **ai_v9** | mostly design | Entity-graph skeleton (`designs/ai_v9/design_entity_graph.md`); first code toehold = the v49 delta pointer head (`gen3_pointer_head_v1`); its full-head follow-up is `design_pointer_action_head.md`. |
+| **Active training run** | **ai_v8** | `ai_v8_03_zarch_control_0718` — the v44 zarch/FiLM epoch (cold-control fork from the ai_v8_01 init), full booster stack (team-block-64, accum-16, onesided team-PFSP, film-accum-4), full LR (anneal removed 07-20), ~232M steps, pool 8 snapshots, ELO band ~1990–2018. **Pre-generation lineage** — it sits behind the ai_v9 signature wall and cannot load current code. |
+| **Code on main** | **ai_v9 (v56)** | `MODEL_CONFIG_VERSION` **56**, `ARCH_SIGNATURE` **`gen3_edge_bias_trunk_v1`**. The fresh generation's Stages 0–2 are in: v51 pointer-native head, v52/53 `gen3_typed_hp_belief_v1`, v54 `gen3_entity_move_seats_v1` (E3/E4 seats), v55 `gen3_op_block_trim_v1`, v56 edge-bias trunk (+ the D2/S1/S3 family slice). |
+| **ai_v9** | **Stages 0–2 SHIPPED** | Roadmap: `design_generation_roadmap.md` (the operative staged plan). Landed: pointer-native head → move entity seats → edge biases as attention. Still open: **E5 tail-threat token**, the op head-concat deletion (gated on the per-family bias-ablation audit), Stage 3 (declarative schema / flat-vector re-home), and E9 history. |
 
 ---
 
@@ -172,6 +172,25 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   reasons over uncertainty (distribution-param heads, distributional RL / `ValueDistHead`,
   attention-as-marginalization, why MSE bakes in mean-field, factoring the marginalization into
   the differentiable `DamageOperator`).
+- **`entity_tokens_biases_pointers.md`** — the ai_v9 concept vocabulary: what entity-based
+  (entity-centric / relational) modeling is and where it came from (CNN weight-sharing →
+  GNNs → Deep Sets → Transformers → AlphaStar/AlphaFold), why permutation equivariance beats a
+  flat positional vector (weight sharing, hypothesis-space reduction, whole bug classes made
+  *unrepresentable*) and what it costs, the **sorting rule** for where a fact lives
+  (token / edge / distribution summary / attention), how expected damage is delivered (the
+  `DamageOperator` as a *differentiable expert* whose gradient trains the move belief; the
+  shipped v51 `pointer_cells` route vs the Stage-2 edge-bias route), and how **history** is
+  represented once time stops being positional (recency-on-entity → turn tokens → entity-linked
+  event tokens; recurrence ruled out by the event-log-purity invariant).
+- **`shortcut_learning_and_feature_delivery.md`** — the input-side dual of
+  `objective_richness_and_representation.md`: whether feeding a computed feature straight to the
+  head makes the model "lazy," and when that is a plus. Gradient starvation (not "simplest
+  function"), the ~1-bit-per-game RL amplifier, **amortization vs. bottleneck** (sufficiency for
+  the decision is the whole variable), the **axis rule** ("never collapse an axis you must choose
+  along" — the v30→v39 progression), the four tests that discriminate laziness from genuine use
+  (ablation-KL / trunk linear probe / behavioural counterfactual / held-out), the measured P1
+  ablation surprise (the model **ignores** collapsed summaries when un-collapsed ones sit beside
+  them), and the reframe "make the lazy path the correct path" (= what v51's pointer head does).
 - **`on_policy_self_distillation.md`** — on-policy distillation (OPD) as the dense-signal training
   regime, why it's ~7-10× more step-efficient than PPO (a full target distribution per state vs ~1
   bit/game), our `better-line` beam as the policy-improvement teacher, upgrading the `search-teacher`

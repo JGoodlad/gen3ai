@@ -161,6 +161,9 @@ motivations compound: the same enrichment that keeps the representation full-ran
 the teacher per turn.
 
 ## See also
+- `designs/learning/shortcut_learning_and_feature_delivery.md` — **the input-side dual of this note**:
+  richer *targets* force richer reps; richer/easier *inputs* permit lazier ones (gradient starvation,
+  amortization-vs-bottleneck, the axis rule, the P1 ablation numbers)
 - `src/agents/model/CLAUDE.md` → distributional value head (v29, `ValueDistHead`, HL-Gauss `_value_dist_loss`)
 - `src/agents/training/CLAUDE.md` → Exploiter distillation (`--distill-value-coef` scalar vs `--distill-value-feat-coef` FitNets); Tail-weighted value loss; grad-balance rank notes
 - `designs/ai_v6/design_distributional_value_critic.md` (Phase A done / Phase B — the distributional critic)

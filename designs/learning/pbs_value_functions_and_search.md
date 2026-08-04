@@ -35,6 +35,131 @@ plan.** That is the whole project, viewed through the value function.
 
 ---
 
+## 0.5 Why our model doesn't reason in discrete space (amortization vs deliberation)
+
+*Added after an owner observation: "our model doesn't want to reason in discrete space — humans
+don't marginalize, they think about specific moves and simulate how it would go. It seems to use
+its capacity to make heuristics it likes." That observation arrives, from architecture intuition,
+at exactly where the L1–L4 falsification tree arrived from measurement. This section states the
+mechanism, because it is the motivation for everything below.*
+
+### Every gradient we give it is smooth
+
+It is not a preference the model developed — it is the only thing we have ever trained. Walk the
+pipeline looking for one term that rewards having simulated a **specific discrete line**: the move
+belief is a distribution; the `DamageOperator` **marginalizes** over candidates; the spread belief
+marginalizes over natures/EVs; `V(s)` is an expectation; PPO's advantage is an expectation. There
+is no such term anywhere. We built a sophisticated apparatus for computing expectations and then
+observe that the model reasons in expectations.
+
+### The formal shape: search is marginalization at depth
+
+| Regime | Procedure |
+|---|---|
+| **Mean-field** | collapse the belief → evaluate once |
+| **Marginalize** | branch over *worlds* → evaluate each → collapse the results |
+| **Search** | branch over *actions and worlds* → evaluate each → collapse → **recurse** |
+
+We do depth-0 marginalization well. "Simulating specific moves" is depth ≥ 1 with **discrete
+branching at the nodes**. Note this is not an argument against marginalizing — proper planning
+marginalizes at the **leaves**; the defect is marginalizing **early**, before branching.
+
+### The inversion worth carrying
+
+**Humans don't marginalize because they can't.** Nobody computes an expectation over ~400
+candidate movesets; a human picks the two or three most plausible and simulates those to a
+conclusion. That is **few-sample-deep** versus our **full-marginal-shallow**. As an *estimator*
+the human method is worse (high variance, biased by which lines came to mind). As a *decision
+procedure* it can be much better **in this game specifically, because the deciding quantities are
+thresholds** — KO/not, outspeed/not, status lands/not. Averaging is precisely the operation that
+destroys threshold structure (the Jensen argument of
+[[marginalization_and_uncertainty]], applied one level up): a discrete simulation preserves *"in
+this line I am dead"*; an expectation smears it into *"moderately threatened."* Under a fixed
+compute budget these are different points on a tradeoff, and the thresholded payoff structure
+argues for the human allocation.
+
+### Why a fixed-depth network structurally cannot do it
+
+Simulation is **sequential composition** — apply transition, re-evaluate, repeat — and a
+fixed-depth forward pass composes a bounded number of times, each step learned as its own slab of
+computation. An unbounded search does not amortize into a fixed forward pass in general
+(fixed-depth bounded-precision nets sit in a bounded complexity class; tree search does not).
+AlphaZero is the honest acknowledgment: **the network is the amortized part, MCTS is the
+deliberation, and the network is trained on the deliberation's output** (expert iteration). The
+network never learns to search — it learns to predict what searching *would have concluded*.
+**Without a search operator somewhere in the loop, nothing generates the deliberate answers to
+amortize**; the net can only compile the average of what its own shallow policy already did.
+
+### "It spends capacity on heuristics" — the correction
+
+The evidence says it is **not spending capacity on heuristics; it is declining to spend capacity
+at all.** `rank/trunk_pr` is **24 → 35 of 128 and rising**; eight offline probes concluded **"no
+obvious representational hole"**; the critic's rank ~3 is *appropriate* (one scalar out;
+`value_pooled` AUC 0.833 vs the policy's 384 dims at 0.835). The capacity is idle because
+heuristics already minimize the loss it is given — gradient starvation
+([[shortcut_learning_and_feature_delivery]]) one level up.
+
+**The RL-specific amplifier, and it is nastier than the supervised version:** the policy **shapes
+its own state distribution**. It can avoid entering positions its heuristic cannot evaluate, and
+then never receives the gradient that would expose the failure. A supervised learner is stuck with
+its dataset; a policy can quietly stop visiting its own counterexamples. That is a self-confirming
+loop and a plausible mechanism for a **flat** fixed point rather than a slow one
+([[project_plateau_research_2026_06_25]]).
+
+### The pattern across every null we have: information, never computation
+
+| Lever | Result | Varied |
+|---|---|---|
+| L1 obs / accumulation channels | ❌ all AUC ~0.5 | information |
+| L2 critic calibration | ❌ calibrated once the eval-quota confound was defeated | information |
+| L3 opponent-action ORACLE | ❌ VoI ~0.03 mon, p=0.53, zero win/loss skew | information |
+| K9/K10 physics into the trunk | ❌ null 3-for-3 | information *routing* |
+| pubval (v43) | ❌ | *target* |
+| belief heads | collapsed to chance in the best-ever run | information |
+
+**Every one varies what the model is TOLD. Not one varies how much it COMPUTES per decision.**
+And the closed tree's residual, L4, is named in our own record as *"genuine multi-turn play
+strength."*
+
+**Information nulls do not refute the computation lever.** A chess engine has *perfect
+information* and still gains on the order of 1000 Elo from search. "Knowing the reply" and "being
+able to roll out N plies" are unrelated quantities; the VoI oracle measured the first at ~0.03
+mon and is silent on the second. (The L3 memory flags this itself — "a one-turn re-roll can't
+fully exclude arbitrary-depth anticipation" — and guards it with the zero win/loss skew. That
+guard is real evidence against **one-ply** mattering, and no evidence about depth.)
+
+### The lever that fits the no-runtime-search constraint — already built, never run
+
+On-model search is owner-ruled-out. That rules out search **at inference**, not search **in the
+loop**: `better-line` (CRN-anchored beam over the critic, clone-and-branch search server),
+`--search-teacher` (ExIt/AWR), and `--opd-coef` (full-distribution on-policy distillation) all
+exist. Search runs at *training* time as a supervision oracle; the deployed model stays one
+forward pass. That is the AlphaZero split exactly, and it is **the named survivor in the closed
+L1–L4 tree** ("an offline search-teacher distilled into the net"). See
+[[on_policy_self_distillation]] for the bits-per-decision argument and the minimal first
+experiment. Note also that **v51 already delivers depth-0 discrete structure** — every action has
+its own seat and its own consequence cells; the gap is *depth*, not *discreteness*.
+
+### Honest counterweights (do not skip these)
+
+1. **~30% of losses are attributable LUCK.** High-variance stochastic games reward depth *less* —
+   variance swamps the depth advantage. Pokémon is not chess here, and the deliberation ceiling is
+   lower than the chess analogy implies.
+2. **~64% is UNATTRIBUTED = UNKNOWN**, and only **~6% is proven policy-reducible**. Reasoning
+   about deliberation headroom is reasoning into a measurement gap. (Never re-inflate this into a
+   "team-draw / unwinnable" claim — [[feedback_no_circular_unwinnable_claims]].)
+3. **Wang 2024 is the counter-counterweight** — Gen 4 PPO + MCTS, 78.6% → 90.8% vs Heuristic: the
+   closest direct evidence that lookahead pays *in Pokémon specifically*, and it is large.
+
+**The cheap decisive measurement, before committing to a search-teacher run:** tighten the
+`unattributed` bucket with `falsify-scan` + `calibration` (which splits it into
+`critic_overvalued` vs `lost_position`), then run `better-line` offline on the worst decisions and
+ask *"does depth-3 search find a materially better line here?"* Zero training cost, existing
+tooling. **No better line at our worst decisions ⇒ the discrete-reasoning thesis is falsified
+cheaply. Better lines ⇒ the teacher targets are already in hand.**
+
+---
+
 ## 1. The advantage-signal principle (the foundation)
 
 **The policy gradient.** Maximize `J(θ)=E_τ[Σ γ^t r_t]`. The score-function identity gives
