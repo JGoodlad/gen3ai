@@ -39,6 +39,7 @@ from poke_env.ps_client.server_configuration import (
 )
 from poke_env.teambuilder.teambuilder import Teambuilder
 from utils import race_trace  # debug ring buffer (GEN3_RACE_TRACE); no-op when off
+from utils.contention import describe_contention, scale_timeout
 
 ItemType = TypeVar("ItemType")
 ActionType = TypeVar("ActionType")
@@ -56,11 +57,31 @@ _DISCONNECTED_MSG = (
 # into a worker crash the launcher restarts from the last checkpoint. Generous (~100x a normal
 # step) so it never trips a live-but-loaded server; only a genuine stall reaches it.
 _RACE_GET_TIMEOUT_S = float(os.environ.get("GEN3_RACE_GET_TIMEOUT_S", "120"))
-_SILENT_STALL_MSG = (
-    f"Showdown sent no battle message and did not disconnect within {_RACE_GET_TIMEOUT_S:.0f}s "
-    "— silent battle stall (lost frame / wedged battle). Failing the step/reset loudly so the "
-    "process exits and the launcher restarts from the checkpoint instead of hanging forever."
-)
+
+
+def _race_get_timeout() -> float:
+    """The watchdog bound, stretched by measured CPU contention.
+
+    This runs INSIDE the training loop on a box that is busy by definition, and the cost of a
+    false fire is asymmetric: a genuine stall costs one launcher restart, but so does a
+    spurious one — except the spurious one repeats, and sends whoever reads the crash file
+    hunting a wedge that was never there. Scaling keeps the watchdog aimed at *silence*
+    rather than at *slowness*, which is the only thing it was ever meant to detect.
+
+    Read at CALL time so the factor tracks the load as it actually develops; the constant
+    (and its ``GEN3_RACE_GET_TIMEOUT_S`` override, which the force-switch deadlock fuzz sets
+    to 8s) stays the baseline that gets scaled.
+    """
+    return scale_timeout(_RACE_GET_TIMEOUT_S)
+
+
+def _silent_stall_msg(timeout_s: float) -> str:
+    return (
+        f"Showdown sent no battle message and did not disconnect within {timeout_s:.0f}s "
+        "— silent battle stall (lost frame / wedged battle). Failing the step/reset loudly so "
+        "the process exits and the launcher restarts from the checkpoint instead of hanging "
+        f"forever. {describe_contention()}"
+    )
 
 
 class _AsyncQueue(Generic[ItemType]):
@@ -118,10 +139,11 @@ class _AsyncQueue(Generic[ItemType]):
                 else None
             )
             extra = [disc_task] if disc_task is not None else []
+            _timeout_s = _race_get_timeout()
             done, pending = await asyncio.wait(
                 {get_task, *wait_tasks, *extra},
                 return_when=asyncio.FIRST_COMPLETED,
-                timeout=_RACE_GET_TIMEOUT_S,
+                timeout=_timeout_s,
             )
             # The get winning is unambiguous: a real battle was delivered.
             if get_task in done:
@@ -157,7 +179,7 @@ class _AsyncQueue(Generic[ItemType]):
             # instead of hanging the whole SubprocVecEnv forever. The race-trace dump (no-op
             # unless GEN3_RACE_TRACE=1) lands the wedged battle's interleaving in the crash file.
             if not done:
-                raise ShowdownException(_SILENT_STALL_MSG + race_trace.dump_recent())
+                raise ShowdownException(_silent_stall_msg(_timeout_s) + race_trace.dump_recent())
             return None  # a passed event fired and no battle is queued — caller's not-to-move path
 
         res = asyncio.run_coroutine_threadsafe(_race_get(), self._loop)

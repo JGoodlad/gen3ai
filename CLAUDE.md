@@ -83,6 +83,47 @@ Do **not** symlink the entire `deps/pokemon-showdown` directory — git treats t
 
 ## Running Tests
 
+### Running beside a live training run (`gen3_contention_robust_timeouts_v1`)
+
+**The box normally carries a production run**, so any wall-clock timeout measures the spare
+capacity as much as the code. This voided three separate investigations (the same tests passed in
+isolation and passed on the main checkout; the only difference was a load average of 35 on 16
+cores), and it produced one genuinely dangerous artifact: `bridge_impl_parity_test` counted a
+per-battle TIMEOUT as an "unmodeled move" SKIP, so a starved run reported 39/40 bogus skips as a
+**clean pass** that blamed the Rust port for the load average.
+
+The bounds are now **scaled by measured CPU contention** (`src/utils/contention.py`): the
+per-battle bridge timeout, the bridge-session battle-end timeout, and the poke-env `race_get`
+silent-stall watchdog all read `scale_timeout(...)` at CALL time, where the factor is
+`max(1, loadavg / len(sched_getaffinity))`, clamped to 12x. **On an idle box the factor is exactly
+1.0, so nothing changes** — this is a no-op until the box is actually busy.
+
+- **A timeout is never a semantic outcome.** It gets its own bucket, and a run whose timeouts
+  exceed 25% of attempted battles is declared INCONCLUSIVE rather than reported.
+- **Every timeout message self-diagnoses** (`describe_contention()`): it prints the load average
+  and the `ps -eo pcpu,pid,args --sort=-pcpu | head` command, so a starved failure ends the
+  investigation instead of starting one.
+- **`GEN3AI_TIMEOUT_SCALE=N`** forces the factor when you know the regime and don't want to wait
+  out the load average's one-minute lag.
+- Prefer `ProgressDeadline` (bound the IDLE gap) over a total-duration cap wherever incremental
+  progress is observable — contention stretches duration, but only a real wedge stops progress.
+  A total-duration cap conflates the two by construction. Keep the total as an opt-in
+  **livelock** backstop: `node_reject_bound_integration_test`'s pre-fix wedge emits `|error|`
+  frames *forever*, so an idle-only bound would never expire there.
+- **Benchmarks get the OPPOSITE treatment — warn, never stretch.** A benchmark's output IS the
+  measurement, so scaling its bounds just buys a confidently-reported wrong number. All five
+  (`obs_build`, `trainer_turn`, `bridge_impl_throughput`, `bridge_heap_growth`,
+  `bridge_vs_websocket_latency`) now call `warn_if_contended()` at entry and print a loud
+  "THE BOX IS BUSY" banner. This is a recorded failure, not a hypothetical: a node-vs-rust
+  throughput result (node 798 vs rust 427 fps) was measured on a saturated box and had to be
+  superseded — **with the conclusion reversed** — and nothing in its output said so.
+
+**Measured** (`tmp/contention_proof.py`, 40 CPU burners → load ~47 on 16 cores, factor ~3.7, same
+battles both arms): at a 2.0 s baseline, scaling OFF = **0 completed / 6 timed out**; scaling ON =
+**6 completed / 0 timed out**. At a 4.0 s baseline both arms completed — the scaling matters
+exactly when the bound sits within ~2x of the real battle duration, which is where a loaded box
+puts you.
+
 ### Test file naming conventions
 
 | Pattern | Requires | Marker |
@@ -145,7 +186,10 @@ the bottleneck:
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/obs_build_benchmark.py [--turn 25] [--reps 400] [--top 22] [--battles 200] [--seed 0]
 ```
 Absolute ms scale with machine load; the component **ratios** and the cProfile ranking are the
-load-stable signal — run on an otherwise-idle box for a clean baseline.
+load-stable signal — run on an otherwise-idle box for a clean baseline. **You no longer have to
+remember**: every benchmark calls `warn_if_contended()` at entry and prints a loud "THE BOX IS
+BUSY" banner with the load average when the box is not idle (see [Running beside a live training
+run](#running-beside-a-live-training-run-gen3_contention_robust_timeouts_v1)).
 
 **Every change under `src/agents/observation/` must run this benchmark before/after and
 confirm no meaningful regression** — that gate, the canonical baseline, and the

@@ -61,6 +61,7 @@ from utils.bridge import bridge_trace
 from utils.bridge.battle_stream_client import BattleStreamClient
 from utils.bridge.seed_spec import validate_seed_spec
 from utils.bridge.sim_bridge_bin import bridge_spawn_argv
+from utils.contention import describe_contention, scale_timeout
 
 _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
 
@@ -353,14 +354,17 @@ class BridgeSession:
             # new START would race the prior battle's still-closing streams. The reader also sets
             # the event in its finally if the child died, so this returns promptly either way.
             _t0 = time.perf_counter()
+            # Scaled by measured contention: this runs INSIDE training, so the box is busy by
+            # definition, and a false fire here crashes the run into a launcher restart. The
+            # bound must catch a child that never finishes, not one that finishes slowly.
+            _end_timeout = scale_timeout(self._BATTLE_END_TIMEOUT)
             try:
-                await asyncio.wait_for(
-                    self._battle_ended.wait(), timeout=self._BATTLE_END_TIMEOUT
-                )
+                await asyncio.wait_for(self._battle_ended.wait(), timeout=_end_timeout)
             except asyncio.TimeoutError:
                 raise RuntimeError(
                     "bridge child did not finish the previous battle (no __END__ within "
-                    f"{self._BATTLE_END_TIMEOUT}s) — crashing (no in-place recovery)"
+                    f"{_end_timeout:.0f}s) — crashing (no in-place recovery). "
+                    f"{describe_contention()}"
                 )
             self._last_end_wait_s = time.perf_counter() - _t0
             # A dispatch failure retires the reader while the child stays alive, so check it

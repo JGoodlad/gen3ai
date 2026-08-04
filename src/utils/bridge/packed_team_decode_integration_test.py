@@ -21,6 +21,8 @@ import subprocess
 
 import pytest
 
+from utils.contention import scale_timeout
+
 from utils.bridge.reconstruction import _STAT_ORDER, decode_packed_team
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
@@ -65,7 +67,7 @@ def test_every_pool_team_decodes_identically_in_python_and_sim():
     proc = subprocess.run(
         ["node", "-e", _NODE_UNPACK],
         input=json.dumps(packed_teams).encode(),
-        capture_output=True, timeout=120,
+        capture_output=True, timeout=scale_timeout(120),
     )
     assert proc.returncode == 0, proc.stderr.decode("utf-8", "replace")[-1500:]
     sim_teams = json.loads(proc.stdout.decode())

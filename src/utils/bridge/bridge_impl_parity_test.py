@@ -73,12 +73,21 @@ from utils.team_loader.loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 from utils.bridge import local_battle_runner
 from utils.bridge.local_battle_runner import run_local_battles
+from utils.contention import describe_contention
 
 BATTLE_FORMAT = "gen3ou"
 # Short per-battle timeout so an unmodeled-move HANG (some Rust fail-loud paths emit __ERR__ to
 # one side but never deliver the other side's request → the demux blocks) is skipped in seconds,
 # not the 180s production default. A healthy in-process bridge battle is < 2s.
+#
+# This is the BASELINE; `local_battle_runner` scales it by the measured CPU contention, so a
+# 20s bound stays ~10x headroom over a healthy battle whether the box is idle or carrying a
+# training run. Without that scaling, 20s is under two seconds of real work at 12x
+# oversubscription and the whole series times out.
 _PARITY_BATTLE_TIMEOUT = 20.0
+
+# Above this fraction of timed-out battles the surviving sample is not worth a verdict.
+_TIMEOUT_INCONCLUSIVE_FRAC = 0.25
 
 
 def _build_pair(all_teams, tag: str):
@@ -103,10 +112,15 @@ _UNMODELED_MARKER = "is not modeled"  # the pokesim fail-loud message for an unm
 def _play_series(impl: str, n_battles: int, all_teams, tag: str):
     """Play up to ``n_battles`` under ``impl`` at ``seed=None`` (fresh sim RNG per battle — the
     training regime), ONE AT A TIME so an unmodeled-move `__ERR__` (Rust engine fail-loud) skips
-    only that battle instead of aborting the run. Returns (p1_wins, finished, skipped_unmodeled,
-    transport_errors)."""
+    only that battle instead of aborting the run.
+
+    Returns (p1_wins, finished, skipped_unmodeled, transport_errors, timed_out).
+
+    ``timed_out`` is its OWN bucket, and that is the whole point (see the timeout handler
+    below): a timeout is a statement about the BOX, never about the port's move coverage.
+    """
     p1, p2 = _build_pair(all_teams, tag)
-    skipped = transport_err = 0
+    skipped = transport_err = timed_out = 0
     # Use a short per-battle timeout so an unmodeled-move hang skips fast (restored after).
     saved = local_battle_runner._PER_BATTLE_TIMEOUT
     local_battle_runner._PER_BATTLE_TIMEOUT = _PARITY_BATTLE_TIMEOUT
@@ -131,14 +145,42 @@ def _play_series(impl: str, n_battles: int, all_teams, tag: str):
                 transport_err += 1
                 continue
             except (asyncio.TimeoutError, TimeoutError):
-                # A per-battle timeout: some Rust unmodeled-move fail-loud paths emit __ERR__ to
-                # one side but never deliver the other's request → the demux hangs. Treat as an
-                # (unmodeled) skip, not a transport failure — the completed battles are the signal.
-                skipped += 1
+                # A per-battle timeout. Some Rust unmodeled-move fail-loud paths emit __ERR__ to
+                # one side but never deliver the other's request → the demux hangs, so a timeout
+                # CAN mean an unmodeled move.
+                #
+                # It can equally mean the box was busy. This used to be counted as `skipped`, and
+                # that conflation produced a genuinely dangerous artifact: beside a live training
+                # run, 39 of 40 battles timed out and the suite reported them as "skipped
+                # (unmodeled move)" — a clean-looking result that blamed the PORT for the load
+                # average, and left the win-rate parity check to draw its conclusion from the one
+                # surviving battle. A timeout is never a semantic outcome; it gets its own bucket
+                # so the caller can tell the two apart and say which happened.
+                timed_out += 1
                 continue
     finally:
         local_battle_runner._PER_BATTLE_TIMEOUT = saved
-    return p1.n_won_battles, p1.n_finished_battles, skipped, transport_err
+    return p1.n_won_battles, p1.n_finished_battles, skipped, transport_err, timed_out
+
+
+def _starvation_verdict(label: str, timed_out: int, attempted: int) -> None:
+    """Refuse to report a result computed from a starved sample — and name the cause.
+
+    Sized as a FRACTION of the attempted battles, not an absolute count: one timeout in 60 is
+    a plausible wedge worth noting, while a third of them is a statement about the machine.
+    """
+    if timed_out == 0 or attempted == 0:
+        return
+    frac = timed_out / attempted
+    print(f"[parity] ⚠️  {label}: {timed_out}/{attempted} battles TIMED OUT ({frac:.0%}). "
+          f"{describe_contention()}")
+    if frac >= _TIMEOUT_INCONCLUSIVE_FRAC:
+        raise AssertionError(
+            f"{label} INCONCLUSIVE: {timed_out}/{attempted} battles ({frac:.0%}) timed out, so "
+            f"the surviving sample is not representative and no parity claim can be made from "
+            f"it. This is a statement about the BOX, not about the port's move coverage — it "
+            f"used to be silently counted as an 'unmodeled move' skip, which turned a starved "
+            f"run into a clean-looking pass. {describe_contention()}")
 
 
 def run(n_battles: int = 60, tol: float = 0.20) -> None:
@@ -147,33 +189,42 @@ def run(n_battles: int = 60, tol: float = 0.20) -> None:
 
     # --- Check 1: rust integration smoke — battles finish, no TRANSPORT error ---
     print(f"[parity] rust integration smoke: up to {n_battles} battles …")
-    r_wins, r_fin, r_skip, r_terr = _play_series("rust", n_battles, all_teams, "Rs")
+    r_wins, r_fin, r_skip, r_terr, r_to = _play_series("rust", n_battles, all_teams, "Rs")
     print(f"[parity] rust: {r_fin} finished, {r_skip} skipped (unmodeled move), "
-          f"{r_terr} transport errors (p1-wins {r_wins})")
+          f"{r_to} timed out, {r_terr} transport errors (p1-wins {r_wins})")
     if r_terr > 0:
         raise AssertionError(
             f"rust bridge integration FAILED: {r_terr} TRANSPORT errors (a plumbing / framing / "
             f"lifecycle / parse bug — NOT an unmodeled-move skip).")
+    _starvation_verdict("rust smoke", r_to, n_battles)
     if r_fin == 0:
         raise AssertionError(
             f"rust bridge integration INCONCLUSIVE: 0/{n_battles} battles completed "
-            f"({r_skip} hit unmodeled moves). Point at a modeled-team pool to exercise it.")
+            f"({r_skip} hit unmodeled moves, {r_to} timed out). Point at a modeled-team pool to "
+            f"exercise it. {describe_contention()}")
     print(f"✅ [parity] rust smoke: {r_fin} battle(s) played to completion with no transport "
           f"error (the move-name/switch-species transport path works end-to-end).")
 
     # --- Check 2: statistical win-rate parity at seed=None (the training regime) ---
     print(f"[parity] win-rate parity: up to {n_battles} battles/impl at seed=None …")
-    n_wins, n_fin, n_skip, n_terr = _play_series("node", n_battles, all_teams, "Ns")
-    r2_wins, r2_fin, r2_skip, r2_terr = _play_series("rust", n_battles, all_teams, "Rp")
+    n_wins, n_fin, n_skip, n_terr, n_to = _play_series("node", n_battles, all_teams, "Ns")
+    r2_wins, r2_fin, r2_skip, r2_terr, r2_to = _play_series("rust", n_battles, all_teams, "Rp")
     if n_terr or r2_terr:
         raise AssertionError(
             f"transport error during parity (node {n_terr}, rust {r2_terr}) — investigate.")
+    # Before comparing win rates: a starved arm's surviving battles are a biased sample (the
+    # ones that happened to get scheduled), and comparing it against the other arm measures the
+    # scheduler. Refuse rather than report.
+    _starvation_verdict("node parity arm", n_to, n_battles)
+    _starvation_verdict("rust parity arm", r2_to, n_battles)
     if n_fin == 0 or r2_fin == 0:
         raise AssertionError("parity INCONCLUSIVE: no completed battles on one side.")
     node_wr = n_wins / n_fin
     rust_wr = r2_wins / r2_fin
-    print(f"[parity] node  p1 win-rate: {node_wr:.3f} ({n_wins}/{n_fin}, {n_skip} skipped)")
-    print(f"[parity] rust  p1 win-rate: {rust_wr:.3f} ({r2_wins}/{r2_fin}, {r2_skip} skipped)")
+    print(f"[parity] node  p1 win-rate: {node_wr:.3f} ({n_wins}/{n_fin}, {n_skip} skipped, "
+          f"{n_to} timed out)")
+    print(f"[parity] rust  p1 win-rate: {rust_wr:.3f} ({r2_wins}/{r2_fin}, {r2_skip} skipped, "
+          f"{r2_to} timed out)")
 
     # Tolerance: sampling noise on the completed binomials. Use max(tol, 2·pooled-SE) so a small
     # completed-N is judged on its actual variance — both play the SAME distribution, so a real
@@ -307,6 +358,73 @@ def test_seed_forms_reproduce_the_same_battle_on_rust_and_node(seed):
     assert node_digest == rust_digest, (
         f"seed {seed!r}: rust ran a DIFFERENT battle than node "
         f"({rust_digest[:16]} vs {node_digest[:16]})")
+
+
+# --- CONTENTION: a timeout is never a semantic outcome (gen3_contention_robust_timeouts_v1) ---
+#
+# These are pure (no bridge, no marker) so they run in the DEFAULT unit gate — the gate that
+# excludes the integration test they protect. That is deliberate: the starved-run artifact these
+# pin was invisible precisely because nothing cheap ever checked this file's classification.
+
+
+def test_timeouts_do_not_inflate_the_unmodeled_skip_count():
+    """The regression itself. `skipped` means 'the port cannot play this move'; a timeout means
+    'the box did not get around to it'. Conflating them let 39/40 starved battles be reported as
+    a move-coverage gap."""
+    import inspect
+    src = inspect.getsource(_play_series)
+    handler = src.split("except (asyncio.TimeoutError, TimeoutError):")[1]
+    assert "timed_out += 1" in handler
+    assert "skipped += 1" not in handler, (
+        "the timeout handler must not increment the unmodeled-move skip counter — that is the "
+        "conflation that made a CPU-starved run look like a clean pass")
+
+
+def test_starvation_verdict_is_silent_when_nothing_timed_out():
+    _starvation_verdict("arm", timed_out=0, attempted=60)  # must not raise
+
+
+def test_starvation_verdict_tolerates_an_isolated_timeout():
+    """One wedge in 60 is a real signal worth printing, not grounds to void the run."""
+    _starvation_verdict("arm", timed_out=1, attempted=60)  # must not raise
+
+
+def test_starvation_verdict_refuses_a_starved_sample():
+    """The 39/40 case must now REFUSE rather than report a parity verdict computed from the
+    single battle that happened to survive."""
+    with pytest.raises(AssertionError, match="INCONCLUSIVE") as ei:
+        _starvation_verdict("rust parity arm", timed_out=39, attempted=40)
+    msg = str(ei.value)
+    assert "about the BOX" in msg, "must name the cause, not leave the reader guessing"
+    assert "load average" in msg, "must carry the self-diagnosis"
+
+
+def test_starvation_threshold_is_a_fraction_not_a_count():
+    """Scaling with the attempted count is what keeps the rule meaningful at both n=12 (the
+    pytest entry) and n=60 (the script default)."""
+    _starvation_verdict("small run", timed_out=2, attempted=12)  # 17% — under the bar
+    with pytest.raises(AssertionError):
+        _starvation_verdict("small run", timed_out=4, attempted=12)  # 33% — over it
+
+
+def test_parity_battle_timeout_is_scaled_by_contention(monkeypatch):
+    """The bound this file installs must go through the contention scaler, or a 20s cap is
+    under two seconds of real work on a loaded box and the entire series times out."""
+    from utils import contention
+
+    saved = local_battle_runner._PER_BATTLE_TIMEOUT
+    try:
+        local_battle_runner._PER_BATTLE_TIMEOUT = _PARITY_BATTLE_TIMEOUT
+        monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "1")
+        contention._cached = None
+        assert local_battle_runner._per_battle_timeout() == pytest.approx(20.0)
+
+        monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "3")
+        contention._cached = None
+        assert local_battle_runner._per_battle_timeout() == pytest.approx(60.0)
+    finally:
+        local_battle_runner._PER_BATTLE_TIMEOUT = saved
+        contention._cached = None
 
 
 if __name__ == "__main__":

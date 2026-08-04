@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from utils.contention import scale_timeout
+
 from utils.bridge import sim_bridge_bin
 from utils.bridge.sim_bridge_bin import (
     SimBridgeBinaryError,
@@ -102,7 +104,7 @@ def test_rust_bridge_emits_a_parseable_recon_record(tmp_path):
         + ["END"]
     ) + "\n"
     proc = subprocess.run(
-        [str(binary)], input=stdin, capture_output=True, text=True, timeout=120
+        [str(binary)], input=stdin, capture_output=True, text=True, timeout=scale_timeout(120)
     )
     frames = [l for l in proc.stdout.splitlines() if l.startswith("__RECON__ ")]
     assert frames, f"no __RECON__ frame emitted; stderr={proc.stderr[:400]}"

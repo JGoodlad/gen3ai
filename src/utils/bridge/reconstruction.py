@@ -52,11 +52,14 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 import threading
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
+
+from utils.contention import describe_contention, scale_timeout
 
 _DRIVER_JS = str(Path(__file__).parent / "replay_driver.js")
 
@@ -85,9 +88,23 @@ def _sim_aliases() -> Dict[str, str]:
     global _ALIAS_CACHE
     if _ALIAS_CACHE is None:
         try:
+            # Contention-scaled (`gen3_contention_robust_timeouts_v1`): this spawns node beside
+            # whatever else the box is running, and the failure mode below is SILENT.
             proc = subprocess.run(["node", "-e", _ALIAS_DUMP_JS, _PS_PATH],
-                                  capture_output=True, timeout=30)
+                                  capture_output=True, timeout=scale_timeout(30))
             _ALIAS_CACHE = json.loads(proc.stdout.decode()) if proc.returncode == 0 else {}
+        except subprocess.TimeoutExpired:
+            # NOT the same as node being absent. The empty fallback is a legitimate answer for a
+            # pure-unit environment with no sim dist; it is a WRONG answer for a machine that
+            # merely ran out of CPU, because the result is cached for the whole process and every
+            # later decode silently leaves aliases unresolved — ids that then fail to join with
+            # the protocol/obs/summary, which all speak canonical ids. Same shape as the parity
+            # test counting a timeout as an "unmodeled move": a timeout is not a semantic
+            # outcome. Degrade the same way (callers have no failure path here) but SAY SO.
+            print(f"⚠️  [reconstruction] the sim alias dump TIMED OUT — decodes in this process "
+                  f"will leave aliases UNRESOLVED, which can mis-join ids downstream. This is a "
+                  f"starved box, not a missing sim. {describe_contention()}", file=sys.stderr)
+            _ALIAS_CACHE = {}
         except (OSError, ValueError, subprocess.SubprocessError):
             _ALIAS_CACHE = {}
     return _ALIAS_CACHE

@@ -153,4 +153,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # A benchmark on a busy box reports a confidently wrong number — say so up front.
+    from utils.contention import warn_if_contended
+    warn_if_contended("bridge-vs-websocket latency")
     main()

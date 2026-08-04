@@ -35,9 +35,26 @@ from utils.bridge.battle_stream_client import BattleStreamClient
 from utils.bridge.seed_spec import validate_seed_spec
 from utils.bridge.sim_bridge_bin import bridge_spawn_argv
 from utils.bridge import reconstruction
+from utils.contention import scale_timeout
 
 _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
 _PER_BATTLE_TIMEOUT = 180.0  # generous; a fast in-process battle is seconds
+
+
+def _per_battle_timeout() -> float:
+    """The per-battle bound, stretched to the CPU share actually available.
+
+    A total-duration cap on a bridge battle measures the box as much as the code: this box
+    normally carries a production training run, and at ~35 load on 16 cpus a healthy battle
+    takes ~2.2x longer for reasons that have nothing to do with the sim. Read through this
+    helper (never the bare constant) so the bound tracks contention — see
+    ``utils.contention``.
+
+    Read at CALL time, not import time, because a run that starts while a trainer is
+    spinning up would otherwise bake in the idle-box factor for its whole life. Callers that
+    override ``_PER_BATTLE_TIMEOUT`` (the parity test) still get their value scaled.
+    """
+    return scale_timeout(_PER_BATTLE_TIMEOUT)
 
 # Process-global, monotonically increasing battle number — mirrors how a real Showdown
 # server hands out a unique room id per battle. The tag MUST be unique across the whole
@@ -141,7 +158,7 @@ class _LocalBattleRunner:
         if concurrency <= 1:
             # Unchanged sequential path — what all the fuzz suites exercise.
             for i in range(n_battles):
-                await asyncio.wait_for(self._one_battle(i), timeout=_PER_BATTLE_TIMEOUT)
+                await asyncio.wait_for(self._one_battle(i), timeout=_per_battle_timeout())
             return
         # Bounded-concurrency path. A single ``start_lock`` serializes each battle's team→creation
         # critical section (released the instant both battle objects exist — see ``_one_battle``),
@@ -152,7 +169,7 @@ class _LocalBattleRunner:
         async def _guarded(i: int) -> None:
             async with sem:
                 await asyncio.wait_for(
-                    self._one_battle(i, start_lock), timeout=_PER_BATTLE_TIMEOUT
+                    self._one_battle(i, start_lock), timeout=_per_battle_timeout()
                 )
 
         await asyncio.gather(*(_guarded(i) for i in range(n_battles)))

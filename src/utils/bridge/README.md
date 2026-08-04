@@ -417,10 +417,45 @@ strings go back to the sim verbatim, so counterfactuals always run with the true
 - **Serverless**: No need to start or manage a Pokémon Showdown server process.
 - **No contention**: Each call/battle is fully isolated — no shared server lifecycle, no
   username collisions, no port. Multiple fuzz tests can run at once without fighting.
+  (This means no *lifecycle* contention. It does NOT mean no *CPU* contention — see
+  **Timeouts and a busy box** below.)
 - **Speed**: Local function calls beat websocket round-trips (the fuzz suite is *faster*
   on the bridge than on the server).
 - **Accuracy**: It uses the *exact* same Showdown code as the live server (same `deps/` files).
 - **Reproducible**: the battle bridge accepts a fixed PRNG seed.
+
+## Timeouts and a busy box (`gen3_contention_robust_timeouts_v1`)
+
+The bridge removes the *server*, not the *CPU*. This box normally carries a production training
+run, so every wall-clock bound here is partly a measurement of the load average — a healthy battle
+that takes ~2 s idle takes ~6 s beside a 48-env run, for reasons that have nothing to do with the
+sim.
+
+All three bounds on this path are therefore scaled by measured contention
+(`utils.contention.scale_timeout`, read at CALL time so the factor tracks load as it develops;
+factor = `max(1, loadavg/cpus)` clamped to 12x, so an **idle box is exactly 1.0 and nothing
+changes**):
+
+| bound | baseline | where |
+|---|---|---|
+| per-battle | `_PER_BATTLE_TIMEOUT` 180 s (parity test overrides to 20 s) | `local_battle_runner._per_battle_timeout()` |
+| previous battle's `__END__` before child reuse | `_BATTLE_END_TIMEOUT` 180 s | `bridge_session` |
+| silent-stall watchdog | `_RACE_GET_TIMEOUT_S` 120 s (`GEN3_RACE_GET_TIMEOUT_S`) | `poke_env.environment.env._race_get_timeout()` |
+
+Two rules this encodes, both learned the hard way:
+
+1. **A timeout is never a semantic outcome.** `bridge_impl_parity_test` used to fold a per-battle
+   timeout into its "unmodeled move" SKIP bucket; beside a live trainer that turned 39/40 starved
+   battles into a clean-looking pass that blamed the Rust port's move coverage for the box's load.
+   Timeouts now have their own counter, and >25% timed out is INCONCLUSIVE, not a verdict.
+2. **Bound the IDLE gap, not the total duration,** wherever progress is observable
+   (`contention.ProgressDeadline`). Contention stretches how long a battle takes; only a genuine
+   wedge stops the protocol lines arriving. A total-duration cap cannot tell those apart, so the
+   only way to stop it flaking is to raise it until it stops catching the real bug too.
+
+Every timeout raised on this path appends `describe_contention()` — the load average plus the
+`ps -eo pcpu,pid,args --sort=-pcpu | head` command — so a starved failure says so itself.
+`GEN3AI_TIMEOUT_SCALE=N` forces the factor when you already know the regime.
 
 ## Usage
 

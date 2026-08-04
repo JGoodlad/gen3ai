@@ -58,6 +58,12 @@ export PYTHONPATH=$PYTHONPATH:src
 diff /tmp/obs_before.txt /tmp/obs_after.txt
 ```
 
+**"the SAME machine load" is now checked for you** (`gen3_contention_robust_timeouts_v1`): the
+benchmark calls `warn_if_contended()` at entry and prints a loud "THE BOX IS BUSY" banner with the
+load average when the box is not idle. It still WARNS rather than refuses — a before/after pair run
+back-to-back under the *same* load is exactly the same-load A/B this gate asks for — but a banner on
+only one of the two runs means the comparison is void, so check both outputs before believing a diff.
+
 If you cannot easily get a "before" (the change is already applied), compare against the
 **canonical baseline pasted below** — but prefer a same-session before/after, because
 absolute timings are machine- and load-dependent.

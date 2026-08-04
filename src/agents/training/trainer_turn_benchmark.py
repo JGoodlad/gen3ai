@@ -327,6 +327,9 @@ def _parse_args(argv):
 
 
 if __name__ == "__main__":
+    # A benchmark on a busy box reports a confidently wrong number — say so up front.
+    from utils.contention import warn_if_contended
+    warn_if_contended("trainer-turn benchmark")
     args = _parse_args(sys.argv[1:])
     sys.exit(asyncio.run(
         main(args.target_decisions, args.battle_cap, args.warmup, args.seed)))

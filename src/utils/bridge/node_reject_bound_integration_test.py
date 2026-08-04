@@ -43,6 +43,8 @@ from pathlib import Path
 
 import pytest
 
+from utils.contention import ProgressDeadline
+
 pytestmark = pytest.mark.integration
 
 REPO = Path(__file__).resolve().parents[3]
@@ -60,6 +62,11 @@ P1_TEAM = "|snorlax||immunity|splash,bodyslam|Serious|252,252,,,,|N||||"
 P2_TEAM = "|snorlax||immunity|splash,bodyslam|Serious|252,252,,,,|N||||"
 
 BUDGET_S = 25.0  # generous: the wedge spins in milliseconds, so a hang blows straight past this
+
+# The longest plausible gap between two frames from a HEALTHY child. This is a property of the
+# protocol (turn resolution), not of how long the whole read should take, so it stays valid on a
+# loaded box in a way a total-duration budget does not. Contention-scaled at check time.
+_FRAME_IDLE_BUDGET_S = 5.0
 
 
 def _requires_showdown() -> None:
@@ -100,16 +107,32 @@ class Bridge:
         )
 
     def read_frames_until(self, pred, budget_s: float = BUDGET_S) -> list[str]:
-        """Read stdout frames until `pred(frame)` or the budget expires.
+        """Read stdout frames until `pred(frame)` or the child goes quiet.
 
         A HANG is the pre-fix failure mode, so the budget is enforced by the caller's
         timeout too — here it produces a readable assertion rather than a silent stall.
+
+        Bounded on the IDLE GAP, not total duration (`gen3_contention_robust_timeouts_v1`).
+        Every frame is a sign of life, and the thing this test exists to catch — a child that
+        stops emitting because the reject loop wedged — is *silence*. A total-duration cap
+        cannot tell that apart from a child that is merely being descheduled beside a live
+        training run, so beside one it starts reporting healthy runs as wedges. `budget_s` is
+        kept as the LIVELOCK backstop (a child that chatters forever without reaching `pred`
+        would otherwise reset the idle bound indefinitely) and is contention-scaled too.
+
+        Returns rather than raises on expiry: the negative cases here deliberately read until
+        the budget runs out and then assert on what did NOT arrive, so `expired()` is used
+        instead of `check()`.
         """
         assert self.proc.stdout is not None
         out: list[str] = []
-        deadline = time.monotonic() + budget_s
+        deadline = ProgressDeadline(
+            idle_budget_s=_FRAME_IDLE_BUDGET_S,
+            total_budget_s=budget_s,
+            what="bridge frame read",
+        )
         os.set_blocking(self.proc.stdout.fileno(), False)
-        while time.monotonic() < deadline:
+        while not deadline.expired():
             line = self.proc.stdout.readline()
             if not line:
                 if self.proc.poll() is not None:
@@ -118,6 +141,7 @@ class Bridge:
                 continue
             frame = line.rstrip("\n")
             out.append(frame)
+            deadline.progress()
             if pred(frame):
                 return out
         return out
