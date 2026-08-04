@@ -1044,6 +1044,44 @@ impl MonState {
                  GIGO guard; reject the team upstream"
             );
         }
+        // FAIL-LOUD GIGO guard for HELD ITEMS THE ENGINE DOES NOT MODEL AT ALL
+        // (`gen3_unmodeled_item_failloud_v1`). The item sibling of the ability guard above and
+        // the move guard below, closing the last limb of the same class: an item the port has
+        // no handler for neither crashes nor works — it SILENTLY does nothing while the sim
+        // applies it, so the policy is fed wrong observations for the rest of the battle.
+        //
+        // THE LIST IS NARROW AND MEASURED, because a blanket "unreferenced id" guard would be
+        // WRONG: most items the engine never mentions genuinely do nothing in a gen-3 battle.
+        // Resolving every id in `data/pokemon/gen3_items.json` through `Dex.mod('gen3')` and
+        // discarding the gen7+ universal no-ops (`onDrive`/`onMemory`/`onPlate`) plus
+        // `Fling`/`NaturalGift` leaves 98 of 132 items with a real battle handler, of which 32
+        // are unreferenced by this engine. Twenty-seven of those 32 are inert here — gen-2
+        // carry-overs (goldberry / mintberry / iceberry / bitterberry / burntberry /
+        // psncureberry / miracleberry / mysteryberry) and Pokéblock berries whose ONLY handler
+        // is `onEat`. The FIVE below are the ones with a genuine gen-3 battle effect:
+        //   * `shellbell`   — `onAfterMoveSecondarySelf`, drains 1/8 of the damage dealt
+        //   * `berryjuice`  — `onUpdate` + `onResidual`, restores 20 HP at <= 50%
+        //   * `mentalherb`  — `onUpdate`, cures attraction
+        //   * `machobrace`  — `onModifySpe`, HALVES Speed (so it is turn-ORDER and therefore
+        //                     DRAW relevant — a silent miss desyncs the speed-tie shuffle)
+        //   * `mail`        — `onTakeItem`, blocks item theft (Knock Off / Thief / Trick would
+        //                     otherwise wrongly take it)
+        //
+        // EXPOSURE IS ZERO ON BOTH SURFACES WE ACTUALLY USE: 0 hits across 4722 training-pool
+        // team-blocks in `data/teams/`, and 0 across 3000 generated `gen3randombattle` teams.
+        // So this is a LATENT-HAZARD guard, not a fix for an active bug — it exists so that the
+        // day one of these reaches the engine (a hand-built team, a format change, a new pool)
+        // it CRASHES instead of lying. An earlier audit's "~2.7% of ladder battles" figure was
+        // inferred from Smogon usage weights and does not describe either surface.
+        const UNMODELED_FAILLOUD_ITEMS: [&str; 5] =
+            ["shellbell", "berryjuice", "mentalherb", "machobrace", "mail"];
+        let item_id = crate::dex::to_id(&item);
+        if UNMODELED_FAILLOUD_ITEMS.contains(&item_id.as_str()) {
+            panic!(
+                "MonState::from_set(slot {position}): item {item_id} is unmodeled — \
+                 GIGO guard; reject the team upstream"
+            );
+        }
         // FAIL-LOUD GIGO guard for MOVES THE ENGINE DOES NOT MODEL AT ALL
         // (`gen3_unmodeled_move_failloud_v1`). The SAME reasoning as Forecast above, and the
         // same discovery route — a differential fuzzer, not review. Such a move would neither

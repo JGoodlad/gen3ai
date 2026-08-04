@@ -5683,6 +5683,63 @@ additive).
 **RESIDUAL randbats coverage (out of scope here, both real engine gaps):** Forecast (Castform) and
 Transform stay fail-loud, plus the wrap family — together ~8.9% of teams / ~17% of battles.
 
+### ROUND 39 (FIX) — the LAST limb of the silent-no-op class: unmodeled HELD ITEMS now fail loud
+
+`gen3_unmodeled_item_failloud_v1`. The port had a fail-loud guard for an unmodeled ABILITY
+(Forecast) and for unmodeled MOVES (the seam ROUNDs 32/33 emptied), but **none for ITEMS** — so
+an item the engine has no handler for would neither crash nor work. It would SILENTLY do nothing
+while the sim applied it, feeding the policy wrong observations for the rest of the battle. That
+is the exact failure mode that let Transform ship broken.
+
+**THE INVENTORY, MEASURED — and the reason the guard list is NARROW.** A blanket "unreferenced id"
+guard would be WRONG: most items this engine never mentions genuinely do nothing in a gen-3 battle.
+Resolving every id in `data/pokemon/gen3_items.json` through `Dex.mod('gen3')` and discarding the
+gen7+ universal no-ops (`onDrive`/`onMemory`/`onPlate` — they sit on EVERY item, and a first pass
+that failed to exclude them flagged Poké Balls and evolution stones) plus `Fling`/`NaturalGift`
+leaves **98 of 132 items with a real battle handler, of which 32 are unreferenced by this engine**.
+Twenty-seven of those 32 are inert here: gen-2 carry-overs (`goldberry` / `mintberry` / `iceberry` /
+`bitterberry` / `burntberry` / `psncureberry` / `miracleberry` / `mysteryberry`) and Pokéblock
+berries whose ONLY handler is `onEat`. The **FIVE** with a genuine gen-3 battle effect:
+
+| item | handler | effect |
+|---|---|---|
+| `shellbell` | `onAfterMoveSecondarySelf` | drains 1/8 of the damage dealt |
+| `berryjuice` | `onUpdate` + `onResidual` | restores 20 HP at <= 50% |
+| `mentalherb` | `onUpdate` | cures attraction |
+| `machobrace` | `onModifySpe` | HALVES Speed — turn-ORDER and therefore DRAW relevant |
+| `mail` | `onTakeItem` | blocks theft (Knock Off / Thief / Trick would wrongly take it) |
+
+`machobrace` is the one worth noting: a silent miss there is not a cosmetic stat error, it desyncs
+the speed-tie shuffle and so the draw stream.
+
+⚠️ **EXPOSURE IS ZERO ON BOTH SURFACES WE ACTUALLY USE — this is a LATENT-HAZARD guard, not a fix
+for an active bug.** 0 hits across **4722 training-pool team-blocks** in `data/teams/`, and 0 across
+**3000 generated `gen3randombattle` teams**. An earlier audit's "~2.7% of ladder battles" figure was
+INFERRED from Smogon usage weights (that audit labelled it as inferred) and does not describe either
+surface. The guard exists so that the day one of these reaches the engine — a hand-built team, a
+format change, a new pool — it CRASHES instead of lying.
+
+**The fuzz pickers needed NO change**, and that is worth recording: `itemAllowed(id)` is
+`MODELED_ITEMS.has(id)`, an ALLOWLIST, so every non-modeled item is already rejected upstream
+(`gen_e2e_fuzz.js::teamFilterClean`) or replaced with Leftovers (the `ab_fuzz.js` randbats adapter);
+all five verify `itemAllowed == false`. An allowlist is strictly stronger than the reject-list the
+ability/move guards pair with — the gap was only ever the ENGINE having no guard of its own.
+
+**Gates:** full suite **616 passed / 0 failed** (was 614; +2 pins), e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` UNCHANGED. `unmodeled_items_fail_loud_at_construction` asserts
+PER ITEM (not once for the set, so a partial revert cannot pass) and is REVERT-VERIFIED: emptying
+the list makes it fail while the negative control stays green. `modeled_and_inert_items_still_build_fine`
+is that negative control — `leftovers`/`choiceband`/`lumberry`/`brightpowder` (modeled), `pokeball`
+(standing in for the 27 inert ids the guard deliberately does NOT list) and the empty item must all
+still construct.
+
+**HONEST SCOPE.** This guards ITEMS only. The parallel audit of unreferenced MOVES (~15 named by the
+audit: `fakeout`, `rollout`, the lock-in family) and of ABILITIES is NOT done here — each needs the
+same three-way classification (MODELED / deliberately-NO-OP / silently-unhandled) and the same
+exposure measurement before any id is added to a guard, for exactly the reason the item list is five
+and not thirty-two. None of the five items was MODELED; that remains open and is correctly
+prioritised low by the zero-exposure measurement.
+
 ### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
 
 `gen3_simbridge_diff_allowlist_v1`. **This is the strongest correctness gate in the project**, because

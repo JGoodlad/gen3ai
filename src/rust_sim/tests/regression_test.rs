@@ -13812,6 +13812,41 @@ fn a_ditto_without_transform_builds_fine() {
     assert!(b.is_ok(), "a Ditto with no Transform must construct normally");
 }
 
+/// `gen3_unmodeled_item_failloud_v1` — each of the FIVE items with a genuine gen-3 battle
+/// effect the engine models NOTHING for must FAIL LOUD at construction rather than silently
+/// no-op. Verified per-item (not once for the set) so a partial revert cannot pass.
+#[test]
+fn unmodeled_items_fail_loud_at_construction() {
+    let d = dex();
+    let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
+    for item in ["shellbell", "berryjuice", "mentalherb", "machobrace", "mail"] {
+        let carrier = format!("Snorlax||{item}|immunity|bodyslam|Adamant|252,252,,,,|||||");
+        let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            Battle::start_with_switchins(&opts_cg(&carrier, foe, "1,2,3,4"), &d)
+        }));
+        assert!(
+            caught.is_err(),
+            "item {item} is UNMODELED and must fail loud at construction, not silently no-op"
+        );
+    }
+}
+
+/// The ITEM guard's NEGATIVE CONTROL — items the engine DOES model, and an item with no gen-3
+/// battle effect at all, must still construct fine. Without this, an over-broad item guard
+/// (e.g. one keyed on "unreferenced in the engine source") would pass the test above while
+/// wrongly rejecting legal teams, and nothing would catch it. `pokeball` stands in for the
+/// 27 inert ids the guard deliberately does NOT list.
+#[test]
+fn modeled_and_inert_items_still_build_fine() {
+    let d = dex();
+    let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
+    for item in ["leftovers", "choiceband", "lumberry", "brightpowder", "pokeball", ""] {
+        let carrier = format!("Snorlax||{item}|immunity|bodyslam|Adamant|252,252,,,,|||||");
+        let b = Battle::start_with_switchins(&opts_cg(&carrier, foe, "1,2,3,4"), &d);
+        assert!(b.is_ok(), "item {item:?} must construct normally");
+    }
+}
+
 // ── Draw-count / first-mover tail fixes (rmry3vbgm / rmry3ytkn A/B round) ──────────────
 //
 // Ground truth: `harness/probe_dc_batch_regression_rng.js` (raw seed 13,27,41,55, aligned to
