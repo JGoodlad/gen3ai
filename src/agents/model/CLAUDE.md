@@ -1426,9 +1426,19 @@ B=1 (threads=1): both families = +0.63 ms on a ~3.5 ms prefuse+seats forward. Te
 compile, gradient liveness — random-cotangent probes; D1's zero grad on random obs is CORRECT, its
 gates see no revealed opp).
 
-Current `MODEL_CONFIG_VERSION` = **56** (v51 pointer-native head + v52 typed-HP belief + v53
-HP-belief ablation + v54 move-entity seats + v55 op block trim + v56 edge-bias trunk — see those
-sections), `ARCH_SIGNATURE` = **`gen3_edge_bias_trunk_v1`**.
+**E5 tail-threat seats (v57, `gen3_entity_tail_seats_v1`, `entity_tail_seats`).** 6 per-opp-mon
+seats summarizing the beyond-top-K tail of that mon's composed posterior — `[p_tail, worst_phys,
+worst_spec, revealed]` → `tail_proj` + a learned `tail_marker` (NO new token-type row: the table
+growing 6 → 7 would break loading in-generation checkpoints into newer code; tail seats reuse
+`TOKEN_TYPE_THEIR_THREAT`). K = `entity_topk_seats` (one truncation definition with the E4 seats).
+Appended LAST so the pointer stash's E3 slice is untouched. STRUCTURAL bool (adds
+tail_proj/tail_marker + 6 seats); gated in `check_compatible`; OFF byte-identical; requires
+`damage_op_prefuse` + `entity_topk_seats > 0`. Tests: `entity_seats_test.py` (gate, seat count,
+stash stability, finiteness).
+
+Current `MODEL_CONFIG_VERSION` = **57** (v51 pointer-native head + v52 typed-HP belief + v53
+HP-belief ablation + v54 move-entity seats + v55 op block trim + v56 edge-bias trunk + v57 E5
+tail seats — see those sections), `ARCH_SIGNATURE` = **`gen3_edge_bias_trunk_v1`**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

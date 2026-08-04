@@ -897,6 +897,7 @@ def current_model_version(
     damage_op_prefuse: bool = False,
     entity_topk_seats: int = 0,
     edge_bias_families: str = "off",
+    entity_tail_seats: bool = False,
     win_prob_mode: str = "none",
     win_prob_coef: float = 1.0,
     value_dist_mode: str = "none",
@@ -972,6 +973,7 @@ def current_model_version(
     ext_kwargs["damage_op_prefuse"] = damage_op_prefuse
     ext_kwargs["entity_topk_seats"] = entity_topk_seats
     ext_kwargs["edge_bias_families"] = edge_bias_families
+    ext_kwargs["entity_tail_seats"] = entity_tail_seats
     ext_kwargs["win_prob_mode"] = win_prob_mode
     ext_kwargs["value_dist_mode"] = value_dist_mode
     ext_kwargs["value_dist_bins"] = value_dist_bins
@@ -1047,6 +1049,7 @@ def arch_toggles_from_model(model) -> dict:
         # v56 gen3_edge_bias_trunk_v1: STRUCTURAL str (per-family bias maps + attention biases),
         # gated in check_compatible — must reach the worker's gate.
         "edge_bias_families": str(getattr(fe, "edge_bias_families", "off")),
+        "entity_tail_seats": bool(getattr(fe, "entity_tail_seats", False)),
         "win_prob_mode": str(getattr(fe, "win_prob_mode", "none")),
         # v43 pubval aux head (gen3_pubval_aux_v1): STRUCTURAL string like win_prob_mode, gated in
         # check_compatible, so it must reach the worker's gate (a pubval-ON run's own snapshots carry it).

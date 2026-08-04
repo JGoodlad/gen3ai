@@ -162,6 +162,21 @@ def test_e4_seats_masked_when_no_opp_active():
     assert float(seats[:, 4:].abs().sum()) == 0.0, "E4 seat content must be zeroed with no opp active"
 
 
+def test_e5_tail_seats_shape_gate_and_pointer_stash():
+    """gen3_entity_tail_seats_v1: 6 tail seats append LAST (the pointer stash still reads the E3
+    block at [:, :4]); the gate requires the prefuse stack + E4; p_tail-derived seats are finite."""
+    with pytest.raises(ValueError, match="entity_tail_seats"):
+        _make(entity_tail_seats=True)
+    fe = _make(entity_tail_seats=True, entity_topk_seats=5, **_E4_TOGGLES).eval()
+    assert fe.entity_seats.n_seats == 4 + 5 + TEAM_SIZE
+    obs = _obs(batch=2, seed=21)
+    with torch.no_grad():
+        fe(obs)
+    tok, valid, _, _, _ = fe.last_pointer_inputs
+    assert tuple(tok.shape) == (2, 4, D_MODEL)          # E3 stash unaffected by the appended tail
+    assert torch.isfinite(tok).all()
+
+
 def test_e3_gradient_reaches_the_seat_projection():
     """The seat path must be differentiable end-to-end: a loss on the pointer stash's refined move
     tokens must produce gradient in the E3 seat projection + the trunk. Two probe subtleties, both

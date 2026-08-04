@@ -190,8 +190,9 @@ pairs) landed behind the same gate. SLICE 3: **V** (the full mon↔mon P(outspee
 `pairwise_speed`, real-vs-believed spreads, public para, no stage boosts in v1) — SLICE 4: **D4** — the
 missing quadrant landed as EDGES (mon↔mon, per-opp-mon top-K_bench=4 candidates collapsed over
 moves), which SIDESTEPS the bench-K seat probe entirely (the probe question was about SEATS; the
-edge form needs no new seats). Seven families total, each independently ablatable. NOT yet: C/T/X
-families (need NEW physics tables, not factorings of validated kernels), the E5 tail-threat token,
+edge form needs no new seats). Seven families total, each independently ablatable. SLICE 5: **E5 tail-threat seats** landed (v57 — 6 per-opp-mon truncation-insurance tokens,
+no new token-type row so in-generation checkpoints stay loadable). NOT yet: C/T/X
+families (need NEW physics tables, not factorings of validated kernels),
 the op-concat deletion (deprecation playbook: home first — the per-family ablation audit runs on
 the gen-1 training run now underway). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the
 concat deletion is the eventual refund). Suite 3945 green; bridge smoke passes with edges on.

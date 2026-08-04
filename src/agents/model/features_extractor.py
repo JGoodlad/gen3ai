@@ -1877,9 +1877,21 @@ class EntityMoveSeats(torch.nn.Module):
     zero-init — new-information inputs, the `history_proj`/`global_proj` convention, not the
     residual-injection one)."""
 
-    def __init__(self, topk_seats: int = 0):
+    def __init__(self, topk_seats: int = 0, tail_seats: bool = False):
         super().__init__()
         self.topk_seats = int(topk_seats)
+        # gen3_entity_tail_seats_v1 (E5): 6 per-opp-mon TAIL-THREAT seats — the truncation
+        # insurance. Every candidate consumer top-Ks (E4 seats, D3/D4 edges) and DROPS the tail;
+        # these seats carry [p_tail, worst_phys, worst_spec, revealed] of the beyond-rank-K belief
+        # mass per opp slot, so a rare-but-lethal candidate below rank K is at least SUMMARIZED
+        # (the bimodal-miss finding: truncation loses candidates entirely). Deliberately NO new
+        # token-type row (the table growing 6 → 7 would change EVERY model's state_dict and break
+        # loading in-generation checkpoints into newer code): tail seats reuse
+        # TOKEN_TYPE_THEIR_THREAT + a dedicated learned `tail_marker` added here.
+        self.tail_seats = bool(tail_seats)
+        self.tail_proj = torch.nn.Linear(4, D_MODEL) if self.tail_seats else None
+        self.tail_marker = (torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
+                            if self.tail_seats else None)
         # gen3_edge_bias_trunk_v1: the per-forward candidate selection (idx, w), stashed so the D3
         # edge bias prices the SAME K moves the seats represent. None until the first E4 forward.
         self.last_cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
@@ -1889,13 +1901,15 @@ class EntityMoveSeats(torch.nn.Module):
 
     @property
     def n_seats(self) -> int:
-        return 4 + self.topk_seats
+        return 4 + self.topk_seats + (TEAM_SIZE if self.tail_seats else 0)
 
     def seat_types(self, device) -> torch.Tensor:
-        """Per-seat token-type ids [n_seats] for the transformer's type embedding."""
+        """Per-seat token-type ids [n_seats] for the transformer's type embedding. Tail seats reuse
+        THEIR_THREAT (distinctness comes from `tail_marker` — see __init__)."""
+        n_threat = self.topk_seats + (TEAM_SIZE if self.tail_seats else 0)
         return torch.cat([
             torch.full((4,), TOKEN_TYPE_OUR_MOVE, dtype=torch.long, device=device),
-            torch.full((self.topk_seats,), TOKEN_TYPE_THEIR_THREAT, dtype=torch.long, device=device),
+            torch.full((n_threat,), TOKEN_TYPE_THEIR_THREAT, dtype=torch.long, device=device),
         ])
 
     def forward(self, tok_req: torch.Tensor, move_valid: torch.Tensor, ctx: 'ExtractorContext',
@@ -1923,6 +1937,28 @@ class EntityMoveSeats(torch.nn.Module):
             e4 = self.threat_seat_proj(hdr) * has_opp[:, None, None].float()  # zeroed when no opp active
             seats.append(e4)
             pads.append(~has_opp[:, None].expand(-1, self.topk_seats))
+        if self.tail_seats:
+            # E5: per opp mon j, the beyond-top-K tail of ITS OWN composed posterior. K = the same
+            # entity_topk_seats the E4 seats use (one truncation definition). worst_* are BOUND-ish
+            # scores (w · BP/150 · acc, split by category) — defender-independent by design (a
+            # token, not an edge); attention composes them with the mon tokens.
+            assert move_belief_logits is not None
+            w_all = torch.sigmoid(move_belief_logits) * damage_op.HP_CAND_MASK[None, None, :]  # [B,6,M]
+            K = max(self.topk_seats, 1)
+            topv = w_all.topk(K, dim=-1).values                                   # [B,6,K]
+            in_top = w_all >= topv[..., -1:].clamp(min=1e-9)                      # [B,6,M] (ties incl.)
+            tail_w = w_all * (~in_top).float()                                    # beyond-rank-K mass
+            p_tail = tail_w.sum(-1).clamp(max=1.0)                                # [B,6]
+            score = tail_w * (damage_op.MOVE_BP[None, None, :] / 150.0)                     * damage_op.MOVE_ACCURACY[None, None, :]
+            phys = damage_op.MOVE_PHYS[None, None, :]
+            worst_phys = (score * phys).amax(-1)                                  # [B,6]
+            worst_spec = (score * (1.0 - phys)).amax(-1)
+            revealed = 1.0 - ctx.opp_believed_mask.float()                        # [B,6]
+            has_opp_t = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1)
+            cells = torch.stack([p_tail, worst_phys, worst_spec, revealed], dim=-1)  # [B,6,4]
+            e5 = (self.tail_proj(cells) + self.tail_marker) * has_opp_t[:, None, None].float()
+            seats.append(e5)
+            pads.append(~has_opp_t[:, None].expand(-1, TEAM_SIZE))
         return torch.cat(seats, dim=1), torch.cat(pads, dim=1)
 
 
@@ -2145,6 +2181,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  damage_candidate_k: int = 0, damage_refine_rounds: int = 0,
                  damage_op_prefuse: bool = False,
                  entity_topk_seats: int = 0,
+                 entity_tail_seats: bool = False,
                  edge_bias_families: str = "off",
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  damage_matrices_outgoing_all: bool = False,
@@ -2211,7 +2248,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # candidate weights + latent table must exist PRE-transformer, which is exactly the prefuse
         # stack (validated below after those flags are set).
         self.entity_topk_seats = int(entity_topk_seats)
-        self.entity_seats = EntityMoveSeats(self.entity_topk_seats)
+        self.entity_tail_seats = bool(entity_tail_seats)
+        self.entity_seats = EntityMoveSeats(self.entity_topk_seats, self.entity_tail_seats)
         # gen3_edge_bias_trunk_v1 (v56, Stage 2): computed physics as per-pair per-head attention
         # BIASES (see EdgeBias). "off" builds no module (no state_dict change beyond the layer swap);
         # the maps are zero-init so an ON run is byte-identical to OFF at init. Requirement
@@ -2640,6 +2678,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "move_latent=True — the E4 threat seats gather the op's pre-transformer candidate "
                 "weights and the move latent table. Enable --damage-op-prefuse + --move-latent "
                 "(--unified-moves), or set --entity-topk-seats 0 (E3-only)."
+            )
+        # gen3_entity_tail_seats_v1 (E5): the tail summarizes the belief the OTHER consumers
+        # truncate — it needs the pre-transformer posterior + the op's move buffers, i.e. the same
+        # prefuse stack as E4.
+        if self.entity_tail_seats and not (self.damage_op_prefuse and self.entity_topk_seats > 0):
+            raise ValueError(
+                "entity_tail_seats requires damage_op_prefuse AND entity_topk_seats > 0 — the tail "
+                "is defined relative to the E4 seats' top-K truncation. Enable those, or drop "
+                "--entity-tail-seats."
             )
         # gen3_edge_bias_trunk_v1: per-family source requirements. d1 reads the op's outgoing-matrix
         # kernel (our active's moves × opp mons); d3 reads the pre-collapse incoming kernel AT the E4

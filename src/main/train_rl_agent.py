@@ -375,6 +375,7 @@ def _run_arch_toggles(args) -> dict:
         damage_op_prefuse=args.damage_op_prefuse,
         entity_topk_seats=args.entity_topk_seats,
         edge_bias_families=args.edge_bias_families,
+        entity_tail_seats=args.entity_tail_seats,
         win_prob_mode=args.win_prob_mode,
         pubval_mode=args.pubval_mode,
         value_dist_mode=args.value_dist_mode,
@@ -1129,6 +1130,13 @@ async def main():
                              "are UNCONDITIONAL in this generation (the pointer head reads the REFINED "
                              "seats). STRUCTURAL int (version-checked, fresh-only). >0 REQUIRES "
                              "--damage-op-prefuse + --move-latent (--unified-moves).")
+    parser.add_argument("--entity-tail-seats", "--entity_tail_seats", dest="entity_tail_seats",
+                        action=BoolFlag, default=None,
+                        help="gen3_entity_tail_seats_v1 (v57, E5): 6 per-opp-mon TAIL-THREAT seats — "
+                             "the truncation insurance summarizing the beyond-top-K belief mass every "
+                             "candidate consumer drops ([p_tail, worst_phys, worst_spec, revealed]). "
+                             "STRUCTURAL (version-checked, fresh-only). REQUIRES --damage-op-prefuse "
+                             "AND --entity-topk-seats > 0.")
     parser.add_argument("--edge-bias-families", "--edge_bias_families", dest="edge_bias_families",
                         type=str, default=None,
                         help="gen3_edge_bias_trunk_v1 (v56, Stage 2 of the entity generation): deliver "
@@ -2064,6 +2072,7 @@ async def main():
     _resolve("damage_op_prefuse", False)       # v50 structural (version-checked, fresh-only)
     _resolve("entity_topk_seats", 0)           # v54 structural int (version-checked, fresh-only)
     _resolve("edge_bias_families", "off")      # v56 structural str (version-checked, fresh-only)
+    _resolve("entity_tail_seats", False)       # v57 structural bool (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
     _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)
     _resolve("pubval_mode", "none")            # v43 structural + resume-immutable (version-checked)
@@ -2427,6 +2436,10 @@ async def main():
             "the E4 threat seats gather the op's pre-transformer candidate weights + move latents. "
             "Add those flags, or set --entity-topk-seats 0 (E3-only)."
         )
+    if args.entity_tail_seats and not (args.damage_op_prefuse
+                                       and args.entity_topk_seats and args.entity_topk_seats > 0):
+        parser.error("--entity-tail-seats requires --damage-op-prefuse AND --entity-topk-seats > 0 "
+                     "(the tail is defined relative to the E4 seats' truncation).")
     _ebf = args.edge_bias_families
     if _ebf and _ebf != "off":
         _valid = {"d1", "d2", "d3", "d4", "s1", "s3", "v"}

@@ -1449,7 +1449,19 @@ lands first; deletion waits on the per-family bias-ablation audit. Measured B=1 
 anchor; the concat deletion is the eventual refund). Tests: `edge_bias_test.py` (stock-layer
 parity, ON==OFF bitwise at init, placement-only-at-documented-pairs, requirement gates,
 fullgraph compile, map-gradient liveness, the v55 gate/migration).
-Current `MODEL_CONFIG_VERSION` = **56**, `ARCH_SIGNATURE` = **`gen3_edge_bias_trunk_v1`**.
+**v57 the E5 TAIL-THREAT SEATS** (`gen3_entity_tail_seats_v1`; `entity_tail_seats` /
+`--entity-tail-seats`) — the truncation INSURANCE: every candidate consumer top-Ks (the E4 seats,
+D3/D4 edges) and DROPS the tail (the bimodal-miss finding: truncation loses candidates entirely,
+never shaves them). 6 per-opp-mon seats carry `tail_proj([p_tail, worst_phys, worst_spec,
+revealed])` — the beyond-top-K belief mass of THAT mon's composed posterior, worst_* = bound-ish
+w·BP/150·acc split by category (defender-independent by design — a token, not an edge). NO new
+token-type row (deliberate: growing the table 6 → 7 would change EVERY model's state_dict and
+break loading in-generation checkpoints into newer code) — tail seats reuse
+`TOKEN_TYPE_THEIR_THREAT` + a learned `tail_marker`. Appended LAST (the pointer stash's E3 block
+is position-stable). STRUCTURAL bool in `check_compatible`; OFF byte-identical; requires
+`--damage-op-prefuse` + `--entity-topk-seats > 0` (the tail is defined relative to the E4
+truncation).
+Current `MODEL_CONFIG_VERSION` = **57**, `ARCH_SIGNATURE` = **`gen3_edge_bias_trunk_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

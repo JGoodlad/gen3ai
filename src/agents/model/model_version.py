@@ -429,7 +429,13 @@ from typing import Any, Dict, List
 #   config never silently grows maps); new families are explicit comma-list only. Growing the VALID
 #   family set is not a version bump — the string gate catches any mismatch. The op head-concat is
 #   NOT deleted (deprecation playbook: home first, ablation audit before deletion).
-MODEL_CONFIG_VERSION = 56
+# v57: added `entity_tail_seats` (gen3_entity_tail_seats_v1, E5) — 6 per-opp-mon TAIL-THREAT seats
+#   summarizing the beyond-top-K belief mass every candidate consumer truncates ([p_tail, worst_phys,
+#   worst_spec, revealed] → tail_proj + a learned tail_marker; NO new token-type row, deliberately —
+#   growing the type table would break loading in-generation checkpoints into newer code). STRUCTURAL
+#   bool (adds tail_proj + tail_marker + 6 seats per forward); OFF byte-identical; requires
+#   damage_op_prefuse + entity_topk_seats>0 (the tail is defined relative to the E4 truncation).
+MODEL_CONFIG_VERSION = 57
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1000,6 +1006,9 @@ class ModelVersion:
     # attention pass (forward); 0 = E3-only (our 4 move seats, which are UNCONDITIONAL — their break
     # rides the ARCH_SIGNATURE bump, not this field). Requires damage_op_prefuse + move_latent.
     entity_topk_seats: int = 0
+    # v57 STRUCTURAL bool (gen3_entity_tail_seats_v1, E5): the 6 tail-threat seats (adds
+    # tail_proj + tail_marker to the state_dict and 6 seats to every attention pass).
+    entity_tail_seats: bool = False
     # v56 STRUCTURAL str (gen3_edge_bias_trunk_v1): which edge families are delivered as attention
     # biases ("off" | "d" | comma list of d1,d3). A family adds its zero-init map (state_dict) and
     # its cells to every attention pass (forward). The layer swap itself is UNCONDITIONAL and rides
@@ -1318,6 +1327,9 @@ class ModelVersion:
             ),
             edge_bias_families=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("edge_bias_families", "off")
+            ),
+            entity_tail_seats=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("entity_tail_seats", False)
             ),
             win_prob_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("win_prob_mode", "none")
@@ -1706,6 +1718,17 @@ class ModelVersion:
                 "The edge-bias families add per-family map parameters and change the attention "
                 "biases the model trained under, so the weights are not interchangeable.\n"
                 "Load with the matching --edge-bias-families, or start a fresh training run."
+            )
+
+        # v57 gen3_entity_tail_seats_v1 — STRUCTURAL bool: adds tail_proj/tail_marker (state_dict)
+        # and 6 seats to every attention pass (forward).
+        if self.entity_tail_seats != saved.entity_tail_seats:
+            raise ModelVersionError(
+                f"entity_tail_seats mismatch: saved={saved.entity_tail_seats}, "
+                f"current={self.entity_tail_seats}.\n"
+                "The E5 tail-threat seats add parameters and change every attention pass's seat "
+                "count, so the weights are not interchangeable.\n"
+                "Load with the matching --entity-tail-seats, or start a fresh training run."
             )
 
         # Structural + resume-IMMUTABLE toggle — gated as a STRING so BOTH 'none'↔head (a state_dict
@@ -2435,4 +2458,8 @@ def _migrate_config(data: dict) -> dict:
         # unconditional and carried by the ARCH_SIGNATURE, not a field).
         data.setdefault("edge_bias_families", "off")
         data["config_version"] = 56
+    if version < 57:
+        # v57: gen3_entity_tail_seats_v1 — the E5 tail seats OFF on any older config.
+        data.setdefault("entity_tail_seats", False)
+        data["config_version"] = 57
     return data
