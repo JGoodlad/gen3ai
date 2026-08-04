@@ -810,8 +810,9 @@ _EDGE_D2_CELL = 4   # [best_high, best_pko, p_outspeed, alive] per (our mon i, o
 _EDGE_D3_CELL = 5   # [high, pko, eff, is_phys, w] per (their believed move c, our mon i)
 _EDGE_S1_CELL = 2   # [land, land·immob] per (our status move k, opp mon d)
 _EDGE_S3_CELL = 3   # [land, land·immob, w] per (their believed status move c, our mon i)
+_EDGE_V_CELL = 3    # [p_outspeed, both_alive, revealed_j] per (our mon i, opp mon j)
 _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
-                  "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL}
+                  "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL, "v": _EDGE_V_CELL}
 
 
 class EdgeBias(torch.nn.Module):
@@ -888,6 +889,9 @@ class EdgeBias(torch.nn.Module):
         if self.s3_map is not None and cells.get("s3") is not None:
             K = cells["s3"].shape[1]
             self._write_block(bias, self.s3_map(cells["s3"]), slice(e4, e4 + K), our)
+        if self.v_map is not None and cells.get("v") is not None:
+            # V is the full mon↔mon block — both endpoint sets are static contiguous slices.
+            self._write_block(bias, self.v_map(cells["v"]), our, opp)
         if self.d2_map is not None and cells.get("d2") is not None:
             # D2 is mon↔mon with a BATCH-VARYING column (the opp ACTIVE slot) — deliver via the
             # one-hot outer product instead of a static slice.
@@ -2643,6 +2647,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "outgoing kernels — require --damage-op AND --damage-outgoing "
                     "(--unified-damage both / --unified-moves both)."
                 )
+            if "v" in fams and not damage_op:
+                raise ValueError(
+                    "edge_bias_families v prices mon↔mon P(outspeed) from the op's speed machinery — "
+                    "requires --damage-op."
+                )
             if "d2" in fams and not damage_op:
                 raise ValueError(
                     "edge_bias_families d2 prices every our-mon's offense vs the opp active via the "
@@ -3373,6 +3382,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if "d3" in _fams:
                 _cells["d3"] = self.damage_op.pairwise_incoming(
                     ctx, self.last_move_belief_logits, self.entity_seats.last_cand)
+            if "v" in _fams:
+                _cells["v"] = self.damage_op.pairwise_speed(ctx, _sb)
             if "s3" in _fams:
                 _cells["s3"] = self.damage_op.discrete_incoming_status(
                     ctx, self.last_move_belief_logits, self.entity_seats.last_cand, per_pair=True)

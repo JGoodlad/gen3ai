@@ -1472,6 +1472,46 @@ class DamageOperator(torch.nn.Module):
         best_pko = cells[..., _DMG_OAX_IDX_PKO].amax(dim=-1)                               # [B,6]
         return torch.stack([best_high, best_pko, p_outspeed, alive], dim=-1)               # [B,6,4]
 
+    def pairwise_speed(self, ctx: 'ExtractorContext',
+                       spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (V): the full mon↔mon speed edge — P(our mon i outspeeds opp mon j)
+        for every (i, j) pair, `[B, TEAM_SIZE, TEAM_SIZE, 3]` = `[p_outspeed, both_alive, revealed_j]`.
+        v1 conventions (lean, mirroring `discrete_incoming`'s coarse-signal contract): NO stage boosts
+        either side (gen3 resets on switch — the active's live boost is the authoritative incoming
+        block's job), PARA folded per-mon ×0.25 from the PUBLIC condition one-hot BOTH sides. Our
+        speeds from the REAL spread reconstruction; opp speeds from the believed spread when given
+        (the prefuse SpreadBelief) else the neutral sentinel-free estimate; the uncertainty-aware
+        sigmoid (`prob_outspeed`) divides by the believed per-species speed STD. Unrevealed opp slots
+        carry the `revealed_j` channel so the head can discount the guess."""
+        B, device = ctx.batch_size, ctx.device
+        # --- our 6: real spread reconstruction (the _incoming_rolls defender recipe) ---
+        d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]                          # [B,6,6]
+        spread = ctx.pokemon_part[:, :TEAM_SIZE,
+                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        iv = spread[..., 0:6] * 31.0
+        ev = spread[..., 6:12] * 252.0
+        nat = spread[..., 13:18]
+        our_spe = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]   # [B,6]
+        our_para = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
+        our_spe = our_spe * (1.0 - 0.75 * our_para)                                       # gen3 para ×0.25
+        # --- opp 6: believed spread else the neutral sentinel-free estimate ---
+        opp_species = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                          # [B,6]
+        if spread_belief is not None:
+            opp_spe = spread_belief[..., _SB_SPE]                                          # [B,6]
+        else:
+            opp_base = self.BASE_STATS[opp_species]                                        # [B,6,6]
+            opp_spe = 2.0 * opp_base[..., 4] + 31.0 + 5.0                                  # neutral 0-EV
+        opp_para = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE,
+                                    POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
+        opp_spe = opp_spe * (1.0 - 0.75 * opp_para)                                        # [B,6]
+        opp_std = self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1]                       # [B,6]
+        p = self._p_outspeed(our_spe[:, :, None], opp_spe[:, None, :], opp_std[:, None, :])  # [B,6,6]
+        alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()                        # [B,6]
+        alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()           # [B,6]
+        both = alive_i[:, :, None] * alive_j[:, None, :]                                   # [B,6,6]
+        revealed_j = (1.0 - ctx.opp_believed_mask.float())[:, None, :].expand_as(both)     # [B,6,6]
+        return torch.stack([p * both, both, revealed_j * both], dim=-1)                    # [B,6,6,3]
+
     def pairwise_incoming(self, ctx: 'ExtractorContext',
                           move_belief_logits: torch.Tensor,
                           cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> torch.Tensor:
