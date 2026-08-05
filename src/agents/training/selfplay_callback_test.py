@@ -637,7 +637,10 @@ def test_watchdog_aborts_hung_selfplay_cycle(tmp_path, monkeypatch):
 
     cb._on_step()                                 # launch; procs hung (poll None)
     assert cb._pending is not None
-    cb._pending["launched_at"] = ec.time.monotonic() - (ec._EVAL_CYCLE_TIMEOUT_SEC + 1)
+    # Read the SCALED bound, not the raw constant: on a loaded box the effective
+    # timeout is larger, so `raw + 1` seconds ago is not yet overdue and this test
+    # would fail for the exact contention reason the helper exists to remove.
+    cb._pending["launched_at"] = ec.time.monotonic() - (ec.eval_cycle_timeout() + 1)
     cb.num_timesteps = 2_000_001
     cb._on_step()                                 # watchdog → kill + collect partial
 

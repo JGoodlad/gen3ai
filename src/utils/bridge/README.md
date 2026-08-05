@@ -55,7 +55,7 @@ runs `cargo build --release --bin sim_bridge` in `src/rust_sim` and caches the r
 `target/release/sim_bridge`; it raises a clear, actionable error (never a silent fall-back to
 node) if cargo/crate/binary is unavailable.
 
-**Honest scope of `rust` (re-audited 2026-08-03) — what works, and the four real gaps.**
+**Honest scope of `rust` (re-audited 2026-08-04) — what works, and the ONE real gap.**
 `__RECON__` (`gen3_bridge_recon_record_v1`) and `resumeReseed` (`gen3_bridge_resume_reseed_v1`) BOTH
 shipped in `2b826d4`; the older "no `__RECON__` / no `resumeReseed`" text here was stale. A
 **seeded** rust battle passes the whole forensic stack — `reconstruction_fuzz_test`,
@@ -66,38 +66,54 @@ bit-for-bit (a cross-impl parity result worth more than the fuzzes' nominal subj
 `input_log` lines are re-rendered from the engine's own script (`>p1 move 1` slot form vs Node's
 `>p1 move icebeam`), replay-equivalent but not byte-identical, and consumed by nothing.
 
-Still broken:
-- **The SEEDLESS path emits nothing and is not random.** `sim_bridge.rs::emit_recon` early-returns
-  on an empty seed, and a `None` seed builds from the FIXED `DEFAULT_CONSTRUCT_SEED = "0,0,0,0"`
-  (`state.rs`) instead of minting a random one. `bridge_session.py` and `eval_worker` →
-  `run_local_battles` both pass no seed ⇒ a `rust` run emits **no per-trace
-  `*_reconstruction.json`** (the prober's `falsify` / `better-line` / `replay-counterfactual` go
-  dark — `_offer_recon` degrades silently) **and every training episode shares one dice stream**.
-  Every gate that exercises `__RECON__` (`sim_bridge_bin_test`, `gen_sim_bridge_diff.js`) is
-  inherently seeded, which is the coverage hole that let this ship.
-- **A STRING `seed` is silently dropped.** `handle_start` parses only `[a,b,c,d]`; `"1,2,3,4"` and
-  `"sodium,<hex>"` fall through to `0,0,0,0` (measured: byte-identical to unseeded). Node honors
-  string and array identically. A node record's resolved seed IS a `"sodium,…"` string, so
-  `replay_counterfactual` on rust would silently replay a different battle.
-- **`resumeReseed` accepts only the array form**, while its one production producer
-  (`prober.falsifier.fresh_seeds`) emits the `"a,b,c,d"` string Node's `new PRNG()` requires — so
-  the counterfactual Monte-Carlo hard-errors on rust (`START: resumeReseed needs both turn and seed`).
-- **No rust clone-and-branch search** (`Battle::serialize`/`deserialize` are `todo!()`), and
-  `teacher/generate.py` hard-codes the node child. So `train_rl_agent`'s error on
-  `--search-teacher` / `--teacher-persistent` + `rust` remains correct — for these reasons.
+**⚠️ The three SEED gaps once listed here are FIXED** (`bc00d4d`,
+`gen3_bridge_seedless_fixed_seed_v1` + `gen3_bridge_seed_forms_v1`; re-verified against the live
+tree and the built binary 2026-08-04). Do not plan from the struck-through text:
+- ~~The SEEDLESS path emits nothing and is not random.~~ **FIXED.** A seedless `START` MINTS a fresh
+  `sodium,<hex>` (`Prng::generate_seed`) instead of falling through to `DEFAULT_CONSTRUCT_SEED`, and
+  emits `__RECON__` carrying that resolved seed. So a `rust` run DOES write per-trace
+  `*_reconstruction.json` (prober `falsify` / `better-line` / `replay-counterfactual` work) and every
+  training episode draws its own dice. Gate:
+  `bridge_impl_parity_test::test_seedless_rust_battles_are_distinct_and_recorded`.
+- ~~A STRING `seed` is silently dropped.~~ **FIXED.** One shared `parse_seed_field` accepts every
+  form Node accepts (`[a,b,c,d]`, `"m,n,o,p"`, `"gen5,<hex16>"`, `"sodium,<hex>"`); a
+  present-but-unparseable seed is a LOUD `__ERR__`, never a silent fall-through. Gate:
+  `test_seed_forms_reproduce_the_same_battle_on_rust_and_node`.
+- ~~`resumeReseed` accepts only the array form.~~ **FIXED** — same shared parser, so the
+  counterfactual Monte-Carlo works on rust.
+
+**THE COVERAGE-HOLE LESSON (the durable part).** Every gate on that path — `sim_bridge_bin_test`,
+`gen_sim_bridge_diff.js`, and the parity test's own win-rate check — was inherently SEEDED or
+compared only aggregates, so the **production SEEDLESS branch was never exercised**. A "default"
+branch that no test takes is untested however green the suite looks.
+
+Still genuinely deferred:
+- **No rust clone-and-branch search** (`Battle::serialize`/`deserialize` are `todo!()` in
+  `src/rust_sim/src/battle.rs`), and `teacher/generate.py` calls `run_local_battles` with no `impl`
+  (→ node). `train_rl_agent` hard-`parser.error`s on `--search-teacher` / `--teacher-persistent` +
+  `rust` — correct, but for the `input_log` reason above (replay-EQUIVALENT, not byte-identical),
+  not for any seed reason.
 
 **Coverage (MEASURED).** The port fail-louds (`__ERR__ … is not modeled` → `RuntimeError` → env
 crash → launcher restart; the child itself survives via `catch_unwind`) rather than desync. On the
 **training pool this is a non-issue**: 719/719 `data/teams/` teams construct and 1500 random-play
-rust battles produced **zero** coverage errors. On `gen3randombattle` **14.0% of teams / 27.0% of
-battles** fail, and the leading causes are **not moves** — Deoxys/Unown formes are missing rows in
-`data/pokemon/gen3_species.json` (5.96% of teams, an extractor gap) and `forecast`/Castform (3.1%);
-`transform` is the only remaining construction-time move guard. Arbitrary ladder `gen3ou` is ~5% of
-battles (INFERRED from Smogon usage). Counter-hazard: unmodeled **items** (`shellbell`,
-`berryjuice`, `mentalherb`) and ~15 unreferenced moves (`fakeout`, `rollout`, the lock-in family)
-have NO fail-loud and run as silent no-ops / generic hits. (An earlier note here named
-*Aromatherapy* and *Wish* as unmodeled examples — both are in fact MODELED; the pool carries
-nothing unmodeled at all.)
+rust battles produced **zero** coverage errors. **⚠️ The randbats figures once quoted here (14.0% of
+teams / 27.0% of battles) are STALE — every blocker they named is now CLOSED**, so do not plan from
+them: the Deoxys/Unown forme DATA gap is fixed (`gen3_species_formes_v1`, ROUND 38 — 419 species rows
+incl. the 33 gen-3 formes), `transform` is modeled (`gen3_transform_v1`, ROUND 33), the wrap family
+too (`gen3_partial_trap_v1`, ROUND 32), and **Forecast/Castform — the last construction blocker — is
+modeled** (`gen3_forecast_v1`, ROUND 35). Arbitrary ladder `gen3ou` remains ~5% of battles (INFERRED
+from Smogon usage weights, not measured).
+
+The old counter-hazard — unmodeled items/moves running as **silent no-ops** — is likewise CLOSED by
+the ROUND 39/40 silent-no-op audits: the 5 genuinely-effectful unmodeled items
+(`gen3_unmodeled_item_failloud_v1`) and the 16 silent-desync moves (`fakeout`, `rollout`, the lock-in
+family, …, `gen3_unmodeled_move_failloud_v2`) now FAIL LOUD at construction. Full-universe census,
+re-run 2026-08-04: **369 gen3-legal moves → 281 modeled, 88 fail-loud, 0 MISMODELED**, checkable via
+`SCAN_UNIVERSE=1 node src/rust_sim/harness/scan_move_coverage.js` (exits non-zero if any silent
+desync reappears). Measured exposure of the guarded sets is ZERO on both surfaces — they are
+latent-hazard guards, not live failures. (An earlier note here named *Aromatherapy* and *Wish* as
+unmodeled examples — both are in fact MODELED; the pool carries nothing unmodeled at all.)
 - **Turn-0 construction — MODELED (`gen3_turn0_construction_v1`).** The bridge builds via
   `BridgeSession::new_construct_turn0`, which runs the sim's full turn-0 construction window from the
   RAW `>start` seed — the per-mon gender `sample(['M','F'])` + the speed-tie insertChoice/eachEvent

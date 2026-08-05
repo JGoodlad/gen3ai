@@ -451,6 +451,21 @@ in the trainer). Behaviors:
   an eval can outlast its interval; cadence just goes sparser.
 - A worker crash is **logged-and-continued**, never fatal (its opponents are just missing
   for that cycle).
+- **The hung-cycle watchdog is CONTENTION-SCALED** (`eval_cycle_timeout()` =
+  `scale_timeout(_EVAL_CYCLE_TIMEOUT_SEC)`, 30 min baseline, shared by BOTH callbacks;
+  `gen3_contention_robust_timeouts_v1`). Eval is the path most exposed to load — it runs
+  concurrently with training *by design*, so it is contended 100% of the time, and the bullet
+  above already concedes "an eval can outlast its interval". Firing early does **not** merely
+  lose a cycle: `_abort_pending_cycle` kills the workers and collects **PARTIAL** results, which
+  feed `win_rate_vs_bots` (the curriculum ramp), `win_rate_vs_pool` (the promotion gate) and the
+  ELO fit — and the survivors are whichever shards got scheduled, not a random subsample. So a
+  merely-slow cycle must never be mistaken for a hung one. The partial-coverage warning no longer
+  asserts "worker crash mid-opponent" as the cause either (an overrun-kill produces an identical
+  shortfall); it states the fact and appends `describe_contention()` so the reader can tell which
+  happened. ⚠️ **Tests must read `eval_cycle_timeout()`, never the raw constant** — the two
+  hung-cycle tests built a past timestamp from `_EVAL_CYCLE_TIMEOUT_SEC` and so passed on an idle
+  box while failing on a loaded one; `GEN3AI_TIMEOUT_SCALE=6 pytest src/ -m "not integration and
+  not e2e"` is the check that catches that class.
 - **An operator can force an off-cadence eval** from the launcher's `f` button (confirm →
   SIGUSR2). The signal handler (`train_rl_agent._setup_signal_handlers`) only flags a
   process-global `request_forced_eval()`; whichever eval callback is active CONSUMES it on its

@@ -104,7 +104,19 @@ silent-stall watchdog all read `scale_timeout(...)` at CALL time, where the fact
   and the `ps -eo pcpu,pid,args --sort=-pcpu | head` command, so a starved failure ends the
   investigation instead of starting one.
 - **`GEN3AI_TIMEOUT_SCALE=N`** forces the factor when you know the regime and don't want to wait
-  out the load average's one-minute lag.
+  out the load average's one-minute lag. **Run the suite under `GEN3AI_TIMEOUT_SCALE=6` after
+  touching any of this** — it proves no test depends on a raw constant that the helper scales.
+  That check caught two real ones: the hung-eval-cycle tests built a past timestamp from
+  `_EVAL_CYCLE_TIMEOUT_SEC` directly, so they passed idle and failed loaded. (Both suites green:
+  3978 passed at factor 1 and at factor 6.)
+- **The eval cycle is the path MOST exposed to contention** — it deliberately runs concurrently
+  with training, so it is under load 100% of the time, and the 30-min `_EVAL_CYCLE_TIMEOUT_SEC`
+  hung-cycle bound now scales (`eval_cycle_timeout()`, shared by both callbacks). Firing early
+  does not merely lose a cycle: `_abort_pending_cycle` kills the workers and collects **partial**
+  results, which flow into `win_rate_vs_bots` (curriculum ramp), `win_rate_vs_pool` (promotion
+  gate) and the ELO fit — and a truncated sample is whichever shards got scheduled, not a random
+  subsample. The partial-coverage warning also no longer asserts "worker crash" as the cause,
+  since an overrun-kill produces an identical shortfall.
 - Prefer `ProgressDeadline` (bound the IDLE gap) over a total-duration cap wherever incremental
   progress is observable — contention stretches duration, but only a real wedge stops progress.
   A total-duration cap conflates the two by construction. Keep the total as an opt-in
@@ -371,30 +383,40 @@ successor obs equals the rust-recorded `states.npz` next obs **bit-for-bit**) al
 record is fed to the Node `replay_driver.js` / `search_driver.js` — a strong cross-impl parity
 result, since the offline replay/clone layer is Node either way. What is **actually** still broken:
 
-- **The SEEDLESS path — the one every production caller uses — produces nothing.**
-  `sim_bridge.rs::emit_recon` early-returns on an empty seed, and a `None` seed builds the battle
-  from the FIXED `DEFAULT_CONSTRUCT_SEED = "0,0,0,0"` (`state.rs`) instead of minting a random one
-  the way Showdown does. `bridge_session.py` (training) and `eval_worker` → `run_local_battles`
-  (eval) both pass **no seed**, so under `--use-bridge=rust`: (a) eval traces get **no
-  `*_reconstruction.json` sibling** → prober `falsify` / `better-line` / `replay-counterfactual`
-  are unavailable, and (b) **every training episode replays one dice stream**. Every existing gate
-  (`sim_bridge_bin_test`, `gen_sim_bridge_diff.js`) is inherently SEEDED, which is why this shipped.
-- **A STRING `seed` is SILENTLY IGNORED** — `handle_start` parses only the `[a,b,c,d]` array form,
-  so `"1,2,3,4"` / `"sodium,<hex>"` fall through to `0,0,0,0`. Node honors both identically. A rust
-  re-run of a **node**-recorded record (whose resolved seed is `"sodium,…"`) therefore silently
-  replays a *different battle* — the GIGO class, not a loud failure.
-- **`resumeReseed` accepts ONLY the array form**, but its one production producer
-  (`prober.falsifier.fresh_seeds`) emits the `"a,b,c,d"` STRING that Node's `new PRNG()` requires —
-  so the counterfactual Monte-Carlo **hard-errors** on rust today (`START: resumeReseed needs both
-  turn and seed`) despite the startup warning calling it supported.
-- **The clone-and-branch SEARCH server has no rust path** (`Battle::serialize`/`deserialize` are
-  `todo!()`) and `teacher/generate.py` calls `run_local_battles` with no `impl`, so
-  `train_rl_agent`'s error on `--search-teacher`/`--teacher-persistent` + `rust` is **still the
-  right verdict** — for those reasons, not the stale "no `__RECON__`" one.
+**⚠️ THE THREE SEED DEFECTS BELOW ARE FIXED — do not re-derive plans from them** (`bc00d4d`,
+`gen3_bridge_seedless_fixed_seed_v1` + `gen3_bridge_seed_forms_v1`; re-verified against the live
+tree + binary 2026-08-04). Kept as history because the *coverage-hole lesson* is the durable part.
+- ~~The SEEDLESS path produces nothing / replays one dice stream.~~ **FIXED.** A seedless `START`
+  now MINTS a fresh `sodium,<hex>` (`Prng::generate_seed`) instead of falling through to
+  `DEFAULT_CONSTRUCT_SEED = "0,0,0,0"`, and still emits `__RECON__` (the resolved seed is the
+  minted one). So eval traces DO get their `*_reconstruction.json` sibling and every training
+  episode draws its own dice. Gate: `bridge_impl_parity_test::
+  test_seedless_rust_battles_are_distinct_and_recorded` (three seedless battles must hash
+  DIFFERENTLY and each carry a `__RECON__`).
+- ~~A STRING `seed` is SILENTLY IGNORED.~~ **FIXED.** One `parse_seed_field` accepts every form
+  Node accepts — `[a,b,c,d]`, `"m,n,o,p"`, `"gen5,<hex16>"`, `"sodium,<hex>"` — and a
+  present-but-unparseable seed is a LOUD `__ERR__`, never a silent fall-through. Gate:
+  `test_seed_forms_reproduce_the_same_battle_on_rust_and_node` (parametrized over all forms).
+- ~~`resumeReseed` accepts ONLY the array form.~~ **FIXED** — same shared parser, so the
+  counterfactual Monte-Carlo works on rust.
+- **STILL TRUE — the clone-and-branch SEARCH server has no rust path**
+  (`Battle::serialize`/`deserialize` are `todo!()` in `src/rust_sim/src/battle.rs`) and
+  `teacher/generate.py` calls `run_local_battles` with no `impl` (→ node). `train_rl_agent`
+  hard-`parser.error`s on `--search-teacher` / `--teacher-persistent` + `rust`, for a DIFFERENT and
+  still-valid reason: those paths need the sim's OWN byte-identical `input_log`, and the rust
+  record's committed-choice lines are rendered from the engine's script — **replay-EQUIVALENT, not
+  byte-identical**. That is the one honest deferral the startup banner names.
+
+**THE DURABLE LESSON from the seed defects** (why they shipped at all): every gate on that path —
+`sim_bridge_bin_test`, `gen_sim_bridge_diff.js`, and the parity test's own check 2 — was inherently
+SEEDED or compared only aggregates, so the **production SEEDLESS branch was never exercised**. When
+a code path has a "default" branch nothing tests, that branch is untested no matter how green the
+suite looks.
 
 **Coverage (MEASURED, not asserted).** The port fail-louds (`__ERR__` → `RuntimeError` → env crash
 → launcher restart; the child survives via `catch_unwind`) rather than desync. On the **training
-pool it is a non-issue**: 719/719 `data/teams/` teams construct, and 1500 random-play rust battles
+pool it is a non-issue**: 719/719 `data/teams/` teams construct (719 = the LOADED/deduped count
+from 773 raw `.txt` files — both figures appear in this doc and mean different things), and 1500 random-play rust battles
 hit **zero** coverage errors (the only 4 failures were the 1000-turn runaway cap). On
 `gen3randombattle` **the construction blockers are CLOSED**: the Deoxys/Unown forme DATA gap is
 fixed (`gen3_species_formes_v1`, ROUND 38), `transform` is modeled (`gen3_transform_v1`, ROUND 33),
@@ -1106,7 +1128,8 @@ audit: every CPU-obs signal has a GPU home — damage→trunk/refine, status→t
 →per-mon slot, provenance/p_outspeed/crit→explicit op channels, per-move status_will_land+known→v27 heads;
 honest residuals = opp-recovery heads-only + Rest-cure coarsening). The dedicated `pbrs_roar`
 phaze-out-boosts PBRS is folded INTO `--all-shaping-pbrs` (no new flag/version, no `ARCH_SIGNATURE` bump).
-Current `MODEL_CONFIG_VERSION` = **39** (the v38/v39 additions are the bolded entries below). Full design:
+At this point in the history `MODEL_CONFIG_VERSION` was **39** (the v38/v39 additions are the bolded
+entries below); the CURRENT value is at the end of this section. Full design:
 `designs/ai_v6/design_bidirectional_threat_trunk.md` (+ `gen3ai/tmp/{model_v36_full,stacking_levels}.png`)
 (and `design_per_move_damage_matrices.md` for v34/v35, `design_iterative_damage_refinement.md` for v33,
 `design_topk_incoming_moves.md` for v30, `design_distributional_value_critic.md` for v29,

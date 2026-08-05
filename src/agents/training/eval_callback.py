@@ -18,6 +18,7 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 from agents.inference.player import RLPlayer
 from agents.model.snapshot import record_eval_results, arch_toggles_from_model
 from agents.training.fixed_opponent_pool import is_external
+from utils.contention import describe_contention, scale_timeout
 from agents.training.artifact_retention import (
     prune_run_artifacts, KEEP_STALLS_DEFAULT, KEEP_CRASHES_DEFAULT,
 )
@@ -185,6 +186,24 @@ _EVAL_SUBPROCESS_CONCURRENCY = 1
 # (the full roster — all bots + sentinels at EVAL_GAMES each — runs well under this) so it
 # never trips a slow-but-live eval; only a true hang reaches it.
 _EVAL_CYCLE_TIMEOUT_SEC = 1800.0
+
+
+def eval_cycle_timeout() -> float:
+    """The hung-cycle bound, scaled by measured CPU contention.
+
+    Eval is the path MOST exposed to contention in the whole system: it deliberately runs
+    concurrently with training (that is the point of the subprocess design), so it is under load
+    100% of the time — and the docs already note "on CPU an eval can outlast its interval".
+
+    The cost of firing early is not a lost cycle, it is BIASED NUMBERS: `_abort_pending_cycle`
+    kills the workers and collects PARTIAL results, which flow into `win_rate_vs_bots` (the
+    curriculum ramp), `win_rate_vs_pool` (the promotion gate) and the ELO fit. A truncated sample
+    is not a random subsample either — it is whichever shards happened to get scheduled. So a
+    merely-slow cycle must never be mistaken for a hung one.
+
+    Read at CALL time (both callbacks go through this), so the bound tracks load as it develops.
+    """
+    return scale_timeout(_EVAL_CYCLE_TIMEOUT_SEC)
 
 # Flat eval schedule — one cadence, one game count, applied uniformly to every bot
 # AND every self-play sentinel. No maturity tiers, no per-opponent caps: eval runs
@@ -434,7 +453,13 @@ def merge_eval_results(run_dir: str, names: list[str]) -> tuple[dict, list]:
     partial = {k: c for k, c in merged.get("coverage", {}).items() if c < 1.0}
     if partial:
         worst = ", ".join(f"{k} {c * 100:.0f}%" for k, c in sorted(partial.items(), key=lambda x: x[1]))
-        print(f"⚠️ [EVAL] partial shard coverage (worker crash mid-opponent): {worst}")
+        # Do NOT assert a cause here: a worker crash and a cycle killed for overrunning produce
+        # the identical shortfall, and naming only the crash sent readers hunting the wrong one
+        # (the same misattribution that let the parity test blame the Rust port for the load
+        # average). State the fact, then hand over the evidence that separates the two.
+        print(f"⚠️ [EVAL] partial shard coverage — these win-rates/ELO are measured over FEWER "
+              f"games (a worker crashed, or the cycle was killed for overrunning): {worst}. "
+              f"{describe_contention()}")
     return merged, missing
 
 
@@ -1150,7 +1175,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
             now = time.monotonic()
             if self._all_done(self._pending):
                 self._collect_pending()
-            elif now - self._pending.get("launched_at", now) > _EVAL_CYCLE_TIMEOUT_SEC:
+            elif now - self._pending.get("launched_at", now) > eval_cycle_timeout():
                 self._abort_pending_cycle()   # hung worker → don't wedge eval forever
         if self.num_timesteps == 0:
             return True
@@ -1248,8 +1273,8 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         pending = self._pending
         elapsed = time.monotonic() - pending["launched_at"]
         print(f"⚠️ [EVAL] step {pending['step']:,}: eval cycle hung "
-              f"({elapsed:.0f}s > {_EVAL_CYCLE_TIMEOUT_SEC:.0f}s) — killing workers, "
-              f"collecting partial results")
+              f"({elapsed:.0f}s > {eval_cycle_timeout():.0f}s) — killing workers, "
+              f"collecting partial results. {describe_contention()}")
         send_event(f"⚠️ Eval @ {pending['step']:,}: hung — killed after {elapsed:.0f}s, partial")
         kill_eval_workers(pending["procs"])
         self._collect_pending()

@@ -37,6 +37,7 @@ from poke_env.ps_client import LocalhostServerConfiguration
 from agents.model.snapshot import record_eval_results, arch_toggles_from_model
 from agents.training.eval_callback import (
     _EVAL_CYCLE_TIMEOUT_SEC,
+    eval_cycle_timeout,
     _EVAL_SUBPROCESS_CONCURRENCY,
     _ForcedEvalMixin,
     EVAL_FREQ_STEPS,
@@ -316,7 +317,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             now = time.monotonic()
             if self._all_done(self._pending):
                 self._collect_pending()
-            elif now - self._pending.get("launched_at", now) > _EVAL_CYCLE_TIMEOUT_SEC:
+            elif now - self._pending.get("launched_at", now) > eval_cycle_timeout():
                 self._abort_pending_cycle()   # hung worker → don't wedge eval forever
         if self.num_timesteps == 0:
             return True
@@ -437,7 +438,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         pending = self._pending
         elapsed = time.monotonic() - pending["launched_at"]
         print(f"⚠️ [SELFPLAY EVAL] step {pending['step']:,}: eval cycle hung "
-              f"({elapsed:.0f}s > {_EVAL_CYCLE_TIMEOUT_SEC:.0f}s) — killing workers, "
+              f"({elapsed:.0f}s > {eval_cycle_timeout():.0f}s) — killing workers, "
               f"collecting partial results")
         send_event(f"⚠️ Self-play eval @ {pending['step']:,}: hung — killed after "
                    f"{elapsed:.0f}s, partial")
