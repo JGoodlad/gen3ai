@@ -13,6 +13,13 @@ re-measured over a set of REAL decision states:
 A family whose numbers sit at ~0 after training is decorative (its map stayed ≈0 or attention
 ignores it); a large one is load-bearing. The ``all`` row ablates every family at once.
 
+Two additional OP-CONCAT arms answer the question the family rows can't — the roadmap's
+head-concat DELETION counterfactual: ``concat`` zeroes the op's damage block at the
+`ProjectionAssembler` ONLY (edges, the prefuse token injection and the pointer head's op cells
+all stay — exactly what deleting the concat would leave), and ``concat_cells`` additionally
+zeroes the pointer cells (the op fully absent from the heads — the modern P1 ceiling). A small
+``concat`` number on a TRAINED edge checkpoint is the redundancy evidence deletion needs.
+
 States come from eval-trace ``states.npz`` files (the arrays the run's eval recorder writes and
 the prober reads — pass one or more paths/globs). There is deliberately NO random-obs mode for
 real audits: random vectors are not on-distribution states and would understate every number.
@@ -117,6 +124,47 @@ def audit(policy, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 512) ->
     for f in fams:
         report[f] = _ablate([f])
     report["all"] = _ablate(fams)
+
+    # --- the op-concat arms (the DELETION counterfactual the family rows can't measure) ---
+    # The roadmap's op-concat deletion question is about REDUNDANCY: with the edges + prefuse
+    # injection + pointer cells all still live, how much does the policy still lean on the raw
+    # 807-dim block at the projection concat? `concat` zeroes damage_block at the
+    # ProjectionAssembler ONLY (exactly what deleting the concat would remove); `concat_cells`
+    # ALSO zeroes the pointer head's op cells (the op fully absent from the heads — the modern
+    # P1 ceiling). Neither touches the edge biases or the prefuse token injection.
+    if getattr(fe, "damage_op", None) is not None and fe.last_damage_block is not None:
+        pa = fe.assembler
+
+        def _zero_db_hook(_module, args):
+            if args and args[-1] is not None and args[-1] is fe.last_damage_block:
+                return args[:-1] + (torch.zeros_like(args[-1]),)
+            return args
+
+        def _measure_with(zero_cells: bool):
+            h = pa.register_forward_pre_hook(_zero_db_hook)
+            orig_cells = fe.damage_op.pointer_cells
+            if zero_cells:
+                fe.damage_op.pointer_cells = lambda db: tuple(
+                    torch.zeros_like(t) for t in orig_cells(db))
+            try:
+                p, v = _forward_all()
+            finally:
+                h.remove()
+                fe.damage_op.pointer_cells = orig_cells
+            kl = _masked_kl(base_p, p, masks_t)
+            return {
+                "kl_mean": float(kl.mean()),
+                "kl_p95": float(kl.quantile(0.95)),
+                "flip_rate": float((base_p.argmax(-1) != p.argmax(-1)).float().mean()),
+                "dv_mean": float((base_v - v).abs().mean()),
+            }
+
+        report["concat"] = _measure_with(zero_cells=False)
+        report["concat_cells"] = _measure_with(zero_cells=True)
+        # The hook is identity when removed — re-measuring base must reproduce it bitwise.
+        chk_p, chk_v = _forward_all()
+        assert torch.equal(chk_p, base_p) and torch.equal(chk_v, base_v), \
+            "op-arm restore failed — the hook/patch leaked into the baseline"  # noqa: S101
     return report
 
 

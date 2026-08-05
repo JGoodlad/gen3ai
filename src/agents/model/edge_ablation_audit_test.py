@@ -64,7 +64,23 @@ def test_zero_init_families_measure_exactly_zero():
     pol, obs, masks = _fixture()
     rep = audit(pol, obs, masks, batch=4)
     for fam, r in rep.items():
+        if fam in ("concat", "concat_cells"):
+            continue                                     # the op arms measure a LIVE block
         assert r["kl_mean"] == 0.0 and r["flip_rate"] == 0.0 and r["dv_mean"] == 0.0, fam
+
+
+def test_op_concat_arms_measure_a_live_block_and_restore():
+    """The op-concat arms: on an UNTRAINED net the damage block is real physics feeding random
+    projection weights, so zeroing it at the assembler must register (kl > 0) while the zero-init
+    edge families still read exactly 0 — and the audit's own bitwise-baseline assert guarantees
+    the hook/patch restore. concat_cells additionally zeroes the pointer cells, so it can only be
+    >= concat on the policy KL."""
+    pol, obs, masks = _fixture()
+    rep = audit(pol, obs, masks, batch=4)
+    assert "concat" in rep and "concat_cells" in rep
+    assert rep["concat"]["kl_mean"] > 0.0, "zeroing a live concat block must register"
+    assert rep["concat_cells"]["kl_mean"] >= rep["concat"]["kl_mean"] * 0.99
+    assert rep["d1"]["kl_mean"] == 0.0, "edge families stay isolated from the op arms"
 
 
 def test_randomized_family_is_isolated_and_restored():
