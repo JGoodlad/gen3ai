@@ -228,9 +228,15 @@ became LOAD-BEARING with training — d1 kl 0.059→**0.145** (13.6% flips), d2 
 but grew relatively (d3 0.0009→0.0021, s3 0.00007→0.0005; s1 0.0061; v 0.0096/5.0% flips,
 |dV| 0.53 — the value head reads speed). Same outgoing-dominant P1 shape, now amplified 2-3×.
 DECISIONS: all six families KEEP for gen-2 (and the five untrained ones ride along for their
-own trained audit); the op-concat deletion stays UNJUSTIFIED — this instrument measures the
-edges' importance, not concat-vs-edge redundancy; a concat-zeroing arm on the same states is
-the missing measurement. **GEN-2 LAUNCHED (2026-08-05, worktree `gen2-run-0805` @ ffa851e,
+own trained audit); and the op-concat deletion is now REFUTED BY MEASUREMENT, not deferred —
+the audit's new `concat` arm (zero the 807-dim block at the ProjectionAssembler only; edges +
+prefuse injection + pointer cells all stay = the exact deletion counterfactual) reads kl
+**0.482 / 35.5% flips / |dV| 7.45** on the same 4000 states — LARGER than the entire edge
+system off (0.330/26.9%/2.51), with the critic hit 3× harder than by all edges combined.
+`concat_cells` (op fully out of the heads) = 0.650/40.4%. The edges did NOT absorb the
+concat's role — they added on top of it (the P1 head-route-works history, extended: the edge
+route is real AND complementary). The concat stays for this generation; re-measure on gen-2's
+trained full-stack checkpoint (report: `<run>/edge_audit_40M_with_concat.json`). **GEN-2 LAUNCHED (2026-08-05, worktree `gen2-run-0805` @ ffa851e,
 run `run_20260805_060807`):** gen-1's exact config + all ELEVEN families
 (d1,d2,d3,d4,s1,s3,v,t,x,g,c4) + `--entity-tail-seats`, 40M steps, fresh lineage; judged
 gen-2-vs-gen-1 by anchored ELO.
