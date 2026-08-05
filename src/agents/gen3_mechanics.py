@@ -346,6 +346,15 @@ SETUP_MOVES: frozenset[str] = frozenset({
 BOOST_STATS: tuple[str, ...] = ("atk", "def", "spa", "spd", "spe", "accuracy", "evasion")
 BOOST_DIM: int = len(BOOST_STATS)  # 7
 
+# Gen3 Curse, the NON-GHOST branch: +1 Atk / +1 Def / −1 Spe (CurseLax / Curse-Registeel — a
+# gen3ou-defining setup move). Type-CONDITIONAL (a Ghost user's Curse is a different move
+# entirely: 50% max HP for a target curse), so it cannot live in a static per-move table — the
+# per-move `selfBoosts` data field deliberately excludes it (its pure-setup gates are the rust
+# engine's draw-free contract) and consumers resolve the branch from the USER'S live types at
+# runtime (the obs encoder's `is_boost` convention; the C1 consequence-edge kernel's
+# `CURSE_BOOSTS` buffer sources these stages). One source: this constant.
+CURSE_NON_GHOST_BOOSTS: dict[str, int] = {"atk": 1, "def": 1, "spe": -1}
+
 
 def boosts_array(mon) -> np.ndarray:
     """Return a (7,) int8 array of stat stages in BOOST_STATS order.

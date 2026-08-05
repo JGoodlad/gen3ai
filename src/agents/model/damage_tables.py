@@ -35,7 +35,8 @@ import torch
 
 from agents import gen3_data
 from agents.enums import MoveCategory, PokemonType
-from agents.gen3_mechanics import ABILITY_STATUS_IMMUNITY, STATUS_MOVE_IMMUNITY
+from agents.gen3_mechanics import (ABILITY_STATUS_IMMUNITY, CURSE_NON_GHOST_BOOSTS,
+                                   STATUS_MOVE_IMMUNITY)
 from agents.observation.types import TypeEncoder
 from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
 
@@ -626,6 +627,7 @@ def build_species_exp_mult(n_species: int, chart: torch.Tensor, ability_damage_m
 # philosophy as the crit-split, since OHKO is a nonlinear threshold a mean-field ×(1+0.5·p_cb) would blur).
 CHOICE_BAND_ITEM_NUM = int(gen3_data.items.get("choiceband").num)   # 220
 CHOICE_BAND_PHYS_MULT = 1.5
+CURSE_MOVE_NUM = int(gen3_data.moves.get("curse").num)              # 174 — the C1 runtime type branch
 
 
 def build_species_cb_prior(n_species: int) -> torch.Tensor:
@@ -848,7 +850,23 @@ def build_self_boost_tables(n_moves: int) -> Dict[str, torch.Tensor]:
     if sd is None or float(t[sd.num, 0]) != 2.0:
         raise ValueError("MOVE_SELF_BOOSTS: Swords Dance did not resolve to +2 atk — the setup "
                          "table is empty/misaligned. Regenerate gen3_moves.json (selfBoosts).")
-    return {"MOVE_SELF_BOOSTS": t}
+    # Curse, non-Ghost branch (owner-prioritized 2026-08-05 — CurseLax / Curse-Registeel are
+    # gen3ou-defining): type-CONDITIONAL, so it stays OUT of the per-move table (which is
+    # type-blind and doubles as the rust engine's draw-free contract) and rides its own [5]
+    # buffer + a Ghost-type mask; the C1 kernel resolves the branch from the user's live types.
+    curse = gen3_data.moves.get("curse")
+    if curse is None:
+        raise ValueError("curse failed to resolve — the C1 Curse branch would silently vanish.")
+    if float(t[curse.num].abs().sum()) != 0.0:
+        raise ValueError("MOVE_SELF_BOOSTS grew a Curse row — the type-blind table must NOT "
+                         "price Curse (a Ghost user's Curse is a different move); the runtime "
+                         "branch owns it.")
+    curse_boosts = torch.zeros(5, dtype=torch.float32)
+    for stat, stages in CURSE_NON_GHOST_BOOSTS.items():
+        curse_boosts[_SELF_BOOST_STAT_ORDER.index(stat)] = float(stages)
+    is_ghost = torch.zeros(N_TYPE_IDX, dtype=torch.float32)
+    is_ghost[_T2I["GHOST"]] = 1.0
+    return {"MOVE_SELF_BOOSTS": t, "CURSE_BOOSTS": curse_boosts, "TYPE_IS_GHOST": is_ghost}
 
 
 def build_move_type_idx(n_moves: int) -> torch.Tensor:

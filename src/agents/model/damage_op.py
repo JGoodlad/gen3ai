@@ -351,7 +351,7 @@ class DamageOperator(torch.nn.Module):
         self.prob_outspeed = bool(prob_outspeed)
         from agents.model.damage_tables import (
             build_damage_buffers, HIDDEN_POWER_NUM, HIDDEN_POWER_BP,
-            CHOICE_BAND_ITEM_NUM, CHOICE_BAND_PHYS_MULT,
+            CHOICE_BAND_ITEM_NUM, CHOICE_BAND_PHYS_MULT, CURSE_MOVE_NUM,
         )
         bufs = build_damage_buffers(layout['max_moves'], layout['max_species'], layout['max_abilities'])
         for name, tensor in bufs.items():
@@ -368,6 +368,7 @@ class DamageOperator(torch.nn.Module):
         # BP-0 presence channel that is never a damage candidate.
         self.cb_item_num = CHOICE_BAND_ITEM_NUM            # gen3_unified_choice_band_v1: Choice Band item num
         self.cb_phys_mult = float(CHOICE_BAND_PHYS_MULT)   # ×1.5 physical Atk
+        self.curse_num = CURSE_MOVE_NUM                    # C1: the runtime non-Ghost Curse branch
         # gen3_unified_topk_incoming_v1: secondary-col → status-category map for the per-pivot incoming
         # status-landing's ability-immunity fold (non-persistent — pure constant).
         self.register_buffer("_SEC_CAT_IDX", torch.tensor(_SECONDARY_TO_STATUS_CAT, dtype=torch.long),
@@ -1478,11 +1479,14 @@ class DamageOperator(torch.nn.Module):
         `[B, _DMG_OUT_N_MOVES, TEAM_SIZE, 4]` (`_EDGE_C1_CELL`) = `[is_boost, d_best_high,
         d_best_pko, d_outspeed]`:
 
-          * `is_boost` — slot k is a PURE setup move (`MOVE_SELF_BOOSTS`, gen3_setup_moves_v1:
-            the ~17 declarative `selfBoosts` moves — Swords Dance/Dragon Dance/Calm Mind/
-            Agility/…; Belly Drum, Curse, Defense Curl and the evasion moves are all-zero rows
-            by the same gates that keep them fail-loud in the rust engine, so their consequence
-            is simply unpriced, never wrong).
+          * `is_boost` — slot k is a priced setup move: the ~17 declarative `selfBoosts` moves
+            (`MOVE_SELF_BOOSTS`, gen3_setup_moves_v1 — Swords Dance/Dragon Dance/Calm Mind/
+            Agility/…) PLUS the runtime NON-GHOST Curse branch (`CURSE_BOOSTS` — type-
+            conditional, resolved from the user's live types; a Ghost user's Curse is a
+            different move and stays a zero row). Belly Drum (HP-cost callback: needs an
+            hp_cost cell channel + a fails-below-half gate + the C1b incoming-at-halved-HP
+            re-run — recorded TODO, niche) and Defense Curl / the evasion moves stay all-zero
+            rows, so their consequence is simply unpriced, never wrong.
           * `d_best_high` / `d_best_pko` — the change in our active's BEST (move-collapsed)
             max-roll damage / P(KO) vs opp mon j after slot k's stage deltas.
           * `d_outspeed` — the change in P(our active outspeeds opp mon j) after the spe delta
@@ -1499,6 +1503,18 @@ class DamageOperator(torch.nn.Module):
         ar = torch.arange(B, device=device)
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         deltas = self.MOVE_SELF_BOOSTS[ctx.our_active_req_move_ids]                  # [B,4,5]
+        # Curse, the NON-GHOST branch (+1 atk / +1 def / −1 spe — CurseLax / Curse-Registeel,
+        # owner-prioritized): type-CONDITIONAL, so it can't live in the type-blind per-move
+        # table; resolve from the USER'S live types here (the obs encoder's `is_boost`
+        # convention). A Ghost user's Curse (50% max HP for a target curse) stays an unpriced
+        # zero row. The −1 spe flows through d_outspeed NEGATIVE — "Curse makes you slower" is
+        # part of the priced consequence; the +1 def half waits on C1b (incoming direction).
+        _at1 = ctx.type1_ids[ar, ctx.our_active_idx]
+        _at2 = ctx.type2_ids[ar, ctx.our_active_idx]
+        _user_ghost = (self.TYPE_IS_GHOST[_at1] + self.TYPE_IS_GHOST[_at2]) > 0.0    # [B]
+        _curse_gate = ((ctx.our_active_req_move_ids == self.curse_num)
+                       & ~_user_ghost[:, None]).float()                              # [B,4]
+        deltas = deltas + _curse_gate[:, :, None] * self.CURSE_BOOSTS[None, None, :]
         is_boost = (deltas.abs().sum(-1) > 0).float()                                # [B,4]
         if base is None:
             base = self.pairwise_outgoing(ctx, spread_belief)                        # [B,4,6,6]

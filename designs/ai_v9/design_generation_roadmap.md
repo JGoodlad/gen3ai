@@ -214,7 +214,17 @@ composition pattern scaled to the damage kernel). The ~17 declarative pure-setup
 in the rust engine); defensive halves (Iron Defense/Amnesia vs INCOMING) = the declared C1b
 follow-up. +2.1 ms B=1 EAGER (4 extra kernel runs, dispatch-bound) — acceptable because the
 production PFSP path is COMPILED (fullgraph-pinned with all 12 families, numerics 5e-7) and c1
-is opt-in. Remaining C pieces (C2 status consequences / C3 recovery flips / C5 Baton Pass)
+is opt-in. **SLICE 10b (2026-08-05, owner-prioritized): the NON-GHOST CURSE branch is priced**
+— CurseLax/Curse-Registeel are gen3ou-defining, so the type-conditional move gets its runtime
+branch (`CURSE_BOOSTS` [+1 atk/+1 def/−1 spe] from `gen3_mechanics.CURSE_NON_GHOST_BOOSTS`,
+gated by the user's live types; −1 spe → NEGATIVE d_outspeed; Ghost user's Curse = zero row;
+the type-blind `MOVE_SELF_BOOSTS` table is guarded against ever growing a Curse row since it
+doubles as the rust engine's draw-free contract). **RECORDED TODO — Belly Drum (niche, owner-
+deferred 2026-08-05):** pricing it needs an `hp_cost` cell channel (cell 4 → 5, structural on
+the zero-init c1 map), a fails-below-half-HP gate on is_boost, and the C1b
+incoming-at-halved-HP re-run so the +6 atk is never shown as free; the delta-+12-clamps-to-max
+trick implements "maximize" in the existing kernel. Remaining C pieces (C1b defensive/incoming
+halves incl. Curse's +1 def / C2 status consequences / C3 recovery flips / C5 Baton Pass)
 stay open — same hypothetical-kernel pattern, now with a worked example. NOT yet:
 the op-concat deletion (deprecation playbook: home first — the per-family ablation audit runs on
 the gen-1 training run now underway). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the

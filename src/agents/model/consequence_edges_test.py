@@ -120,6 +120,33 @@ def test_agility_moves_only_the_speed_channel():
     assert float(d_spd.max()) > 0.0, "some gated matchup must gain outspeed probability"
 
 
+def test_curse_non_ghost_prices_atk_up_spe_down():
+    """CurseLax semantics: a non-Ghost user's Curse raises the best physical line AND reads a
+    NEGATIVE outspeed delta (−1 spe is part of the priced consequence)."""
+    fe = _make(**_C1_TOGGLES).eval()
+    ctx = _boost_ctx(fe, seed=81)
+    curse = gen3_data.moves.get("curse").num
+    ctx.our_active_req_move_ids[:, 1] = curse
+    from agents.model.damage_tables import _T2I
+    ghost = _T2I["GHOST"]
+    ctx.type1_ids[torch.arange(2), ctx.our_active_idx] = _T2I["NORMAL"]   # Snorlax-shaped user
+    ctx.type2_ids[torch.arange(2), ctx.our_active_idx] = _T2I["NORMAL"]
+    with torch.no_grad():
+        cells = fe.damage_op.pairwise_boost(ctx)
+        base = fe.damage_op.pairwise_outgoing(ctx)
+    assert bool((cells[:, 1, :, 0] > 0).any()), "non-Ghost Curse must fire is_boost"
+    live = base[..., 1].amax(dim=1) > 1e-6
+    assert bool((cells[:, 1, :, 1][live] > 0).all()), "+1 atk must raise the best physical line"
+    d_spd = cells[:, 1, :, 3]
+    assert float(d_spd.max()) <= 0.0, "-1 spe can never RAISE P(outspeed)"
+    assert float(d_spd.min()) < 0.0, "some gated matchup must LOSE outspeed probability"
+    # The GHOST branch: same slot, Ghost-typed user → the whole row must be unpriced.
+    ctx.type1_ids[torch.arange(2), ctx.our_active_idx] = ghost
+    with torch.no_grad():
+        cells_g = fe.damage_op.pairwise_boost(ctx)
+    assert float(cells_g[:, 1].abs().sum()) == 0.0, "a Ghost user's Curse stays a zero row"
+
+
 def test_c1_gate_and_integration():
     with pytest.raises(ValueError, match="edge_bias_families d1/s1/c1"):
         _make(**dict(_C1_TOGGLES, damage_outgoing=False))

@@ -1427,11 +1427,17 @@ nets] (requires damage_op); **C1** `pairwise_boost` — the first HYPOTHETICAL-W
 consequence: per (E3 setup-move seat k, opp mon j) the DELTA cells `[is_boost, d_best_high,
 d_best_pko, d_outspeed]` from RE-RUNNING the validated `_outgoing_matrix` kernel under slot k's
 post-boost stages (`boost_delta` threaded into the kernel's stage read — None byte-identical;
-`MOVE_SELF_BOOSTS` from `MoveData.self_boosts`, the ~17 declarative pure-setup moves — Belly
-Drum/Curse/Defense Curl are all-zero rows by the same gates that keep them fail-loud in the
-rust engine) + the `pairwise_speed` recipe at the active row WITH stage folding for the spe
-delta; defensive halves (Iron Defense/Amnesia read is_boost with ~0 deltas) are the declared
-C1b follow-up; 4 extra kernel runs ⇒ +2.1 ms B=1 EAGER, but the production PFSP path is
+`MOVE_SELF_BOOSTS` from `MoveData.self_boosts`, the ~17 declarative pure-setup moves, PLUS the
+runtime **non-Ghost Curse branch** — owner-prioritized, CurseLax/Curse-Registeel: `CURSE_BOOSTS`
+[+1 atk/+1 def/−1 spe] from `gen3_mechanics.CURSE_NON_GHOST_BOOSTS`, gated by the user's live
+types via `TYPE_IS_GHOST` since a type-conditional move can't live in the type-blind table [which
+doubles as the rust engine's draw-free contract — guarded against growing a Curse row]; the −1
+spe reads as a NEGATIVE d_outspeed; a Ghost user's Curse stays a zero row. Belly Drum = the
+recorded TODO [niche]: needs an hp_cost cell channel + a fails-below-half gate + the C1b
+incoming-at-halved-HP re-run; Defense Curl/evasion moves stay unpriced) + the `pairwise_speed`
+recipe at the active row WITH stage folding for the spe
+delta; defensive halves (Iron Defense/Amnesia/Curse's +1 def read is_boost with partial deltas)
+are the declared C1b follow-up; 4 extra kernel runs ⇒ +2.1 ms B=1 EAGER, but the production PFSP path is
 COMPILED where the dispatch fuses — c1 is opt-in and not in the gen-2 config (requires
 damage_op + damage_outgoing). Each family's map is a ZERO-INIT
 `Linear(cell → 2·n_heads)` (one head-set per direction; auto-protected by `restore_identity_init`'s

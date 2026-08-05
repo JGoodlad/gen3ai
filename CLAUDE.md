@@ -1526,9 +1526,13 @@ HYPOTHETICAL-WORLD damage consequence (`pairwise_boost`): per (E3 SETUP-move sea
 the DELTA cells `[is_boost, d_best_high, d_best_pko, d_outspeed]` from RE-RUNNING the validated
 outgoing-matrix kernel under slot k's post-boost stages (a `boost_delta` threaded into the
 kernel's stage read — None byte-identical; `MOVE_SELF_BOOSTS` = the ~17 declarative pure-setup
-moves via `MoveData.self_boosts` — Belly Drum/Curse/Defense Curl are all-zero rows by the same
-gates that keep them fail-loud in the rust engine) + the speed-recipe outspeed delta (stage
-folded BOTH worlds — here the stage IS the signal); defensive halves are the declared C1b
+moves via `MoveData.self_boosts` PLUS the runtime NON-GHOST CURSE branch [owner-prioritized:
++1 atk/+1 def/−1 spe from `gen3_mechanics.CURSE_NON_GHOST_BOOSTS`, resolved from the user's
+live types — the −1 spe reads as a NEGATIVE d_outspeed; a Ghost user's Curse stays a zero row];
+Belly Drum = the recorded TODO [niche: hp_cost channel + fails-below-half gate + the C1b
+incoming-at-halved-HP re-run]; Defense Curl/evasion stay unpriced) + the speed-recipe outspeed
+delta (stage folded BOTH worlds — here the stage IS the signal); defensive halves (incl.
+Curse's +1 def) are the declared C1b
 follow-up; +2.1 ms B=1 EAGER (4 extra kernel runs) but the production PFSP path is COMPILED
 where the dispatch fuses; requires `--damage-op --damage-outgoing`. Each family maps
 its
