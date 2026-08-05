@@ -1423,7 +1423,17 @@ pairs (requires damage_op + damage_op_prefuse — the Pursuit belief must exist 
 active Leech, signed maxhp fractions; Toxic flat in v1 — the ramp is an E2 follow-up) at the same
 (mon, GLOBAL) route (requires damage_op); **C4** `pairwise_protect` — the Protect-consequence
 edge at the (Protect E3 seat, GLOBAL) pair: [is_protect, p_success, the two actives' G-ledger
-nets] (requires damage_op). Each family's map is a ZERO-INIT
+nets] (requires damage_op); **C1** `pairwise_boost` — the first HYPOTHETICAL-WORLD damage
+consequence: per (E3 setup-move seat k, opp mon j) the DELTA cells `[is_boost, d_best_high,
+d_best_pko, d_outspeed]` from RE-RUNNING the validated `_outgoing_matrix` kernel under slot k's
+post-boost stages (`boost_delta` threaded into the kernel's stage read — None byte-identical;
+`MOVE_SELF_BOOSTS` from `MoveData.self_boosts`, the ~17 declarative pure-setup moves — Belly
+Drum/Curse/Defense Curl are all-zero rows by the same gates that keep them fail-loud in the
+rust engine) + the `pairwise_speed` recipe at the active row WITH stage folding for the spe
+delta; defensive halves (Iron Defense/Amnesia read is_boost with ~0 deltas) are the declared
+C1b follow-up; 4 extra kernel runs ⇒ +2.1 ms B=1 EAGER, but the production PFSP path is
+COMPILED where the dispatch fuses — c1 is opt-in and not in the gen-2 config (requires
+damage_op + damage_outgoing). Each family's map is a ZERO-INIT
 `Linear(cell → 2·n_heads)` (one head-set per direction; auto-protected by `restore_identity_init`'s
 observation capture) ⇒ families ON is BITWISE-identical to OFF at init. Under non-prefuse configs
 D1 passes spread_belief=None (the pre-trunk read would be STALE — gated in forward_internal).
@@ -1434,7 +1444,10 @@ audit decides deletion). Versioning: the layer swap is UNCONDITIONAL (state_dict
 B=1 (threads=1): both families = +0.63 ms on a ~3.5 ms prefuse+seats forward. Tests:
 `edge_bias_test.py` (stock parity, bitwise identity-at-init, placement-exactness, gates, fullgraph
 compile, gradient liveness — random-cotangent probes; D1's zero grad on random obs is CORRECT, its
-gates see no revealed opp).
+gates see no revealed opp) + `consequence_edges_test.py` (C1: the setup table rows incl. the
+deliberate Belly Drum/Curse exclusions, boost_delta=None byte-identity, SD raises the physical
+line / Agility moves ONLY the speed channel, non-setup slots exactly zero, the gate, 12-family
+integration + bitwise identity-at-init).
 
 **E5 tail-threat seats (v57, `gen3_entity_tail_seats_v1`, `entity_tail_seats`).** 6 per-opp-mon
 seats summarizing the beyond-top-K tail of that mon's composed posterior — `[p_tail, worst_phys,

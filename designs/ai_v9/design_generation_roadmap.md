@@ -204,13 +204,36 @@ generation, via a different delivery route. Re-audit at end-of-run before any ke
 SLICE 8: **G** (the per-mon end-of-turn schedule ledger at the (mon, global) route — the
 inventory's §2.G, previously slated as E2/E7 attributes; edge delivery reuses X's mechanism).
 SLICE 9: **C4** — the first CONSEQUENCE edge (Protect: success odds × the banked G-ledger
-turn, at the (Protect E3 seat, global) pair; composes G). Remaining C pieces (C1 stat-move
-deltas / C2 status consequences / C3 recovery flips / C5 Baton Pass) stay open — each needs a
-re-run of the damage kernel under a hypothetical, the real design lift. NOT yet:
+turn, at the (Protect E3 seat, global) pair; composes G). SLICE 10: **C1** — the first
+HYPOTHETICAL-WORLD damage consequence (`pairwise_boost`, 2026-08-05): post-setup-move DELTA
+cells `[is_boost, d_best_high, d_best_pko, d_outspeed]` at the (E3 setup seat, opp-mon) pairs,
+from RE-RUNNING the validated outgoing-matrix kernel under the `MOVE_SELF_BOOSTS` stage deltas
+(a `boost_delta` threaded into the kernel's stage read, None byte-identical — the C4-over-G
+composition pattern scaled to the damage kernel). The ~17 declarative pure-setup moves only
+(`MoveData.self_boosts`; Belly Drum/Curse unpriced by the same gates that keep them fail-loud
+in the rust engine); defensive halves (Iron Defense/Amnesia vs INCOMING) = the declared C1b
+follow-up. +2.1 ms B=1 EAGER (4 extra kernel runs, dispatch-bound) — acceptable because the
+production PFSP path is COMPILED (fullgraph-pinned with all 12 families, numerics 5e-7) and c1
+is opt-in. Remaining C pieces (C2 status consequences / C3 recovery flips / C5 Baton Pass)
+stay open — same hypothetical-kernel pattern, now with a worked example. NOT yet:
 the op-concat deletion (deprecation playbook: home first — the per-family ablation audit runs on
 the gen-1 training run now underway). B=1: +0.63 ms both families (~3.5 → 4.16 ms, under the v50 anchor; the
-concat deletion is the eventual refund). Suite 3945 green; bridge smoke passes with edges on.
+concat deletion is the eventual refund). Suite 3997 green; bridge smoke passes with edges on.
 Verdict remains gen-vs-gen ELO + the per-family bias ablation.
+**END-OF-RUN AUDIT READ (2026-08-05, gen-1 COMPLETE at 40M — Bots 90.9% / Pool 76.0% final;
+4000 states from the last two eval cycles, report `<run>/edge_audit_40M.json`):** the edges
+became LOAD-BEARING with training — d1 kl 0.059→**0.145** (13.6% flips), d2 0.057→**0.187**
+(19.1% flips, |dV| 1.66, still the critic's largest edge dependence), ALL-off 0.124→**0.330**
+(**26.9% flips**, |dV| 2.51). The incoming families stayed near-decorative in absolute terms
+but grew relatively (d3 0.0009→0.0021, s3 0.00007→0.0005; s1 0.0061; v 0.0096/5.0% flips,
+|dV| 0.53 — the value head reads speed). Same outgoing-dominant P1 shape, now amplified 2-3×.
+DECISIONS: all six families KEEP for gen-2 (and the five untrained ones ride along for their
+own trained audit); the op-concat deletion stays UNJUSTIFIED — this instrument measures the
+edges' importance, not concat-vs-edge redundancy; a concat-zeroing arm on the same states is
+the missing measurement. **GEN-2 LAUNCHED (2026-08-05, worktree `gen2-run-0805` @ ffa851e,
+run `run_20260805_060807`):** gen-1's exact config + all ELEVEN families
+(d1,d2,d3,d4,s1,s3,v,t,x,g,c4) + `--entity-tail-seats`, 40M steps, fresh lineage; judged
+gen-2-vs-gen-1 by anchored ELO.
 
 ## 4. E9 decided: history follows the same sorting rule as everything else
 

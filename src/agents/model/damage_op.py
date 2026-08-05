@@ -843,7 +843,8 @@ class DamageOperator(torch.nn.Module):
         return block * gate
 
     def _outgoing_matrix(self, ctx: 'ExtractorContext',
-                         spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+                         spread_belief: Optional[torch.Tensor] = None,
+                         boost_delta: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_per_move_matrices_v1: OUR active's 4 moves → the opp's 6 mons (active + REVEALED bench). The
         bench extension of `_outgoing_block` (which prices only the opp active): per (our move k, opp mon d)
         a `[low, high, crit, pko, type_mult]` cell so the policy prices a KO on a SWITCH-IN, plus a per-opp-mon
@@ -880,6 +881,12 @@ class DamageOperator(torch.nn.Module):
         our_atk = (2.0 * a_base[:, 1] + iv[:, 1] + ev[:, 1] / 4.0 + 5.0) * nat[:, 0]
         our_spa = (2.0 * a_base[:, 3] + iv[:, 3] + ev[:, 3] / 4.0 + 5.0) * nat[:, 2]
         o_b_atk, _odf, o_b_spa, _osd, _ose = self._boost_stages(ctx.our_ctx_raw)
+        if boost_delta is not None:
+            # gen3_edge_bias_trunk_v1 (C1): price the HYPOTHETICAL post-setup world — advance the
+            # offensive stages by the setup move's deltas (the _boost_mult clamp bounds ±6). None
+            # (every existing caller) is byte-identical to the pre-C1 kernel.
+            o_b_atk = o_b_atk + boost_delta[:, 0]
+            o_b_spa = o_b_spa + boost_delta[:, 2]
         our_burn = ctx.pokemon_part[ar, our_act, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]
         our_cb = (ctx.item_ids[ar, our_act] == self.cb_item_num).float()
         our_atk = our_atk * torch.where(our_cb > 0.5, our_atk.new_tensor(self.cb_phys_mult), our_atk.new_tensor(1.0))
@@ -1444,18 +1451,98 @@ class DamageOperator(torch.nn.Module):
         return feats * defender_alive[:, :, None] * has_opp[:, None, None]                # gates
 
     def pairwise_outgoing(self, ctx: 'ExtractorContext',
-                          spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+                          spread_belief: Optional[torch.Tensor] = None,
+                          boost_delta: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (D1): the per-(our move k, opp mon d) outgoing cells for the edge-bias
         delivery — `[B, _DMG_OUT_N_MOVES, TEAM_SIZE, 6]` = `[low, high, crit, pko, type_mult, revealed]`.
         A pure RESHAPE of `_outgoing_matrix`'s flat block (the validated v34 physics: request-ordered
         moves == E3 seat order == action 6+k, revealed-gated defenders, CB/boost/burn attacker), so the
-        bias and the head concat can never disagree on a value."""
-        flat = self._outgoing_matrix(ctx, spread_belief)                                  # [B, _DMG_OMX]
+        bias and the head concat can never disagree on a value. `boost_delta` [B,5] prices the C1
+        hypothetical post-setup world (None = the current world, byte-identical)."""
+        flat = self._outgoing_matrix(ctx, spread_belief, boost_delta)                     # [B, _DMG_OMX]
         n_cells = _DMG_OUT_N_MOVES * TEAM_SIZE * _DMG_OMX_CELL
         cells = flat[:, :n_cells].reshape(-1, _DMG_OUT_N_MOVES, TEAM_SIZE, _DMG_OMX_CELL)
         revealed = flat[:, n_cells:n_cells + TEAM_SIZE]                                   # [B,6]
         rev = revealed[:, None, :, None].expand(-1, _DMG_OUT_N_MOVES, -1, 1)
         return torch.cat([cells, rev], dim=-1)                                            # [B,4,6,6]
+
+    def pairwise_boost(self, ctx: 'ExtractorContext',
+                       spread_belief: Optional[torch.Tensor] = None,
+                       base: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (C1): the first DAMAGE-consequence edge — "what does clicking the
+        setup move at request slot k DO for me". Re-runs the validated `_outgoing_matrix` kernel
+        under the HYPOTHETICAL post-boost stat stages (the C4-over-G composition pattern scaled to
+        the damage kernel: one input changes, everything else — gates, CB, burn, screens, spread
+        belief — rides along, so the delta can never disagree with D1's pricing of either world)
+        and emits per-(E3 setup-move seat k, opp mon j) DELTA cells
+        `[B, _DMG_OUT_N_MOVES, TEAM_SIZE, 4]` (`_EDGE_C1_CELL`) = `[is_boost, d_best_high,
+        d_best_pko, d_outspeed]`:
+
+          * `is_boost` — slot k is a PURE setup move (`MOVE_SELF_BOOSTS`, gen3_setup_moves_v1:
+            the ~17 declarative `selfBoosts` moves — Swords Dance/Dragon Dance/Calm Mind/
+            Agility/…; Belly Drum, Curse, Defense Curl and the evasion moves are all-zero rows
+            by the same gates that keep them fail-loud in the rust engine, so their consequence
+            is simply unpriced, never wrong).
+          * `d_best_high` / `d_best_pko` — the change in our active's BEST (move-collapsed)
+            max-roll damage / P(KO) vs opp mon j after slot k's stage deltas.
+          * `d_outspeed` — the change in P(our active outspeeds opp mon j) after the spe delta
+            (the `pairwise_speed` recipe at the active row, WITH stage folding both worlds —
+            here the stage IS the signal, unlike V's no-boost coarse convention).
+
+        A pure-DEFENSIVE setup move (Iron Defense, Amnesia, the def/spd halves of Bulk Up /
+        Calm Mind) fires `is_boost` with ~0 deltas — the INCOMING-direction delta is the
+        declared C1b follow-up. `base` lets the caller hand over an already-computed
+        `pairwise_outgoing(ctx, spread_belief)` (the D1 cells) so the current world isn't
+        recomputed; the 4 hypothetical worlds are 4 kernel re-runs (correct-by-construction
+        beats reconstructing the affine/threshold physics from the base cells)."""
+        B, device = ctx.batch_size, ctx.device
+        ar = torch.arange(B, device=device)
+        opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+        deltas = self.MOVE_SELF_BOOSTS[ctx.our_active_req_move_ids]                  # [B,4,5]
+        is_boost = (deltas.abs().sum(-1) > 0).float()                                # [B,4]
+        if base is None:
+            base = self.pairwise_outgoing(ctx, spread_belief)                        # [B,4,6,6]
+        base_high = base[..., 1].amax(dim=1)                                         # [B,6]
+        base_pko = base[..., 3].amax(dim=1)                                          # [B,6]
+        # --- speed: our ACTIVE's real-spread spe (the pairwise_speed recipe) × its live stage ---
+        d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]                     # [B,6,6]
+        spread = ctx.pokemon_part[:, :TEAM_SIZE,
+                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        iv = spread[..., 0:6] * 31.0
+        ev = spread[..., 6:12] * 252.0
+        nat = spread[..., 13:18]
+        our_spe_all = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]
+        our_para = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
+        act_spe = (our_spe_all * (1.0 - 0.75 * our_para))[ar, ctx.our_active_idx]    # [B]
+        cur_spe_stage = self._boost_stages(ctx.our_ctx_raw)[4]                       # [B]
+        opp_species = ctx.species_ids[:, opp]
+        if spread_belief is not None:
+            opp_spe = spread_belief[..., _SB_SPE]
+        else:
+            opp_spe = 2.0 * self.BASE_STATS[opp_species][..., 4] + 31.0 + 5.0        # neutral 0-EV
+        opp_para = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
+        opp_spe = opp_spe * (1.0 - 0.75 * opp_para)                                  # [B,6]
+        opp_std = self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1]                 # [B,6]
+        p_base = self._p_outspeed((act_spe * self._boost_mult(cur_spe_stage))[:, None],
+                                  opp_spe, opp_std)                                  # [B,6]
+        revealed = (~ctx.opp_believed_mask).float()                                  # [B,6]
+        alive_j = (ctx.hp_and_active[:, opp, 0] > 0).float()
+        our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()
+        spd_gate = revealed * alive_j * our_alive[:, None]                           # [B,6]
+        # --- the 4 hypothetical worlds: slot k's deltas, everything else identical ---
+        rows = []
+        for k in range(_DMG_OUT_N_MOVES):
+            dk = deltas[:, k]                                                        # [B,5]
+            boosted = self.pairwise_outgoing(ctx, spread_belief, boost_delta=dk)     # [B,4,6,6]
+            d_high = boosted[..., 1].amax(dim=1) - base_high                         # [B,6]
+            d_pko = boosted[..., 3].amax(dim=1) - base_pko
+            p_k = self._p_outspeed(
+                (act_spe * self._boost_mult(cur_spe_stage + dk[:, 4]))[:, None], opp_spe, opp_std)
+            d_spd = (p_k - p_base) * spd_gate
+            ib = is_boost[:, k:k + 1].expand_as(d_high)
+            rows.append(torch.stack([ib, d_high, d_pko, d_spd], dim=-1))             # [B,6,_EDGE_C1_CELL]
+        cells = torch.stack(rows, dim=1)                                             # [B,4,6,_EDGE_C1_CELL]
+        return cells * is_boost[:, :, None, None]
 
     def pairwise_bench_outgoing(self, ctx: 'ExtractorContext',
                                 spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:

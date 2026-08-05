@@ -21,13 +21,13 @@ To orient yourself:
 - When in doubt, ask: "is this an implementation doc for new code, or a record of what
   a running experiment does?"
 
-**Current state as of 2026-08-04:**
+**Current state as of 2026-08-05:**
 
 | What | Version | Notes |
 |------|---------|-------|
-| **Active training run** | **ai_v8** | `ai_v8_03_zarch_control_0718` — the v44 zarch/FiLM epoch (cold-control fork from the ai_v8_01 init), full booster stack (team-block-64, accum-16, onesided team-PFSP, film-accum-4), full LR (anneal removed 07-20), ~232M steps, pool 8 snapshots, ELO band ~1990–2018. **Pre-generation lineage** — it sits behind the ai_v9 signature wall and cannot load current code. |
-| **Code on main** | **ai_v9 (v56)** | `MODEL_CONFIG_VERSION` **56**, `ARCH_SIGNATURE` **`gen3_edge_bias_trunk_v1`**. The fresh generation's Stages 0–2 are in: v51 pointer-native head, v52/53 `gen3_typed_hp_belief_v1`, v54 `gen3_entity_move_seats_v1` (E3/E4 seats), v55 `gen3_op_block_trim_v1`, v56 edge-bias trunk (+ the D2/S1/S3 family slice). |
-| **ai_v9** | **Stages 0–2 SHIPPED** | Roadmap: `design_generation_roadmap.md` (the operative staged plan). Landed: pointer-native head → move entity seats → edge biases as attention. Still open: **E5 tail-threat token**, the op head-concat deletion (gated on the per-family bias-ablation audit), Stage 3 (declarative schema / flat-vector re-home), and E9 history. |
+| **Active training run** | **ai_v9 gen-2** | `run_20260805_060807` (worktree `gen2-run-0805` @ ffa851e): the FULL entity stack — all 11 edge families (d1,d2,d3,d4,s1,s3,v,t,x,g,c4) + E5 tail seats, 40M steps, fresh lineage. **Gen-1 COMPLETE** (`run_20260804_090512`, 40M, Bots 90.9% / Pool 76.0% final; 6 launch families) — its end-of-run edge audit (`edge_audit_40M.json`) showed the edges became load-bearing (all-off = 26.9% action flips). Judged gen-2-vs-gen-1 by anchored ELO. The old ai_v8 lineage sits behind the ai_v9 signature wall. |
+| **Code on main** | **ai_v9 (v57)** | `MODEL_CONFIG_VERSION` **57**, `ARCH_SIGNATURE` **`gen3_edge_bias_trunk_v1`**. Stages 0–2 in: v51 pointer-native head, v52/53 typed-HP belief, v54 move-entity seats (E3/E4), v55 op block trim, v56 edge-bias trunk (now 12 families incl. the C1 post-boost consequence edge), v57 E5 tail seats. Stage-3 first half (the declarative obs schema view) shipped. |
+| **ai_v9** | **Stages 0–2 SHIPPED + Stage-3 half** | Roadmap: `design_generation_roadmap.md` (the operative staged plan, slice statuses current). Still open: the op head-concat deletion (needs a concat-zeroing audit arm — the family audit alone doesn't measure redundancy), C1b/C2/C3/C5 consequence edges, Stage-3 generator half + the entity re-home (retrain-class, owner go/no-go), and E9 history. |
 
 ---
 

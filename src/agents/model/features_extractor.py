@@ -816,10 +816,11 @@ _EDGE_T_CELL = 2    # [P(i traps j), P(j traps i)] per (our mon i, opp mon j)
 _EDGE_X_CELL = 4    # [entry_chip, pursuit_p, pursuit_eff, grounded] per (mon, GLOBAL seat)
 _EDGE_G_CELL = 4    # [leftovers, weather_chip, status_tick, leech] per (mon, GLOBAL seat) — signed
 _EDGE_C4_CELL = 4   # [is_protect, p_success, net_ours, net_theirs] per (E3 seat, GLOBAL seat)
+_EDGE_C1_CELL = 4   # [is_boost, d_best_high, d_best_pko, d_outspeed] per (E3 setup-move seat, opp mon)
 _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
                   "d4": _EDGE_D4_CELL, "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL,
                   "v": _EDGE_V_CELL, "t": _EDGE_T_CELL, "x": _EDGE_X_CELL,
-                  "g": _EDGE_G_CELL, "c4": _EDGE_C4_CELL}
+                  "g": _EDGE_G_CELL, "c4": _EDGE_C4_CELL, "c1": _EDGE_C1_CELL}
 
 
 class EdgeBias(torch.nn.Module):
@@ -890,6 +891,10 @@ class EdgeBias(torch.nn.Module):
             self._write_block(bias, self.d1_map(cells["d1"]), slice(e3, e3 + 4), opp)
         if self.s1_map is not None and cells.get("s1") is not None:
             self._write_block(bias, self.s1_map(cells["s1"]), slice(e3, e3 + 4), opp)
+        if self.c1_map is not None and cells.get("c1") is not None:
+            # C1 rides the same (E3 seat, opp-mon) route as D1/S1 — a setup-move seat's edge to
+            # mon j carries the post-boost CONSEQUENCE deltas instead of this-turn damage.
+            self._write_block(bias, self.c1_map(cells["c1"]), slice(e3, e3 + 4), opp)
         if self.d3_map is not None and cells.get("d3") is not None:
             K = cells["d3"].shape[1]
             self._write_block(bias, self.d3_map(cells["d3"]), slice(e4, e4 + K), our)
@@ -2719,9 +2724,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # seats' candidate selection, so its rows and the seats must exist together.
         if self.edge_bias is not None:
             fams = self.edge_bias.families
-            if ("d1" in fams or "s1" in fams) and not (damage_op and damage_outgoing):
+            if ("d1" in fams or "s1" in fams or "c1" in fams) and not (damage_op and damage_outgoing):
                 raise ValueError(
-                    "edge_bias_families d1/s1 price our active's moves vs the opp team via the op's "
+                    "edge_bias_families d1/s1/c1 price our active's moves vs the opp team via the op's "
                     "outgoing kernels — require --damage-op AND --damage-outgoing "
                     "(--unified-damage both / --unified-moves both)."
                 )
@@ -3477,6 +3482,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             _cells = {}
             if "d1" in _fams:
                 _cells["d1"] = self.damage_op.pairwise_outgoing(ctx, _sb)
+            if "c1" in _fams:
+                # C1 reuses D1's current-world cells as its delta base when both are on.
+                _cells["c1"] = self.damage_op.pairwise_boost(ctx, _sb, base=_cells.get("d1"))
             if "s1" in _fams:
                 _cells["s1"] = self.damage_op.discrete_outgoing_status(ctx, per_pair=True)
             if "d2" in _fams:

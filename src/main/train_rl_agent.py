@@ -1146,7 +1146,10 @@ async def main():
                              "pairs — requires --damage-op + --damage-outgoing; d3 = the opp's top-K "
                              "believed moves x our 6 mons (the pre-collapse incoming kernel, the SAME "
                              "candidates as the E4 seats) at the (E4 seat, our-mon seat) pairs — "
-                             "requires --entity-topk-seats > 0. Zero-init maps: identity at init. "
+                             "requires --entity-topk-seats > 0. c1 = the CONSEQUENCE edge: post-"
+                             "setup-move damage/outspeed DELTAS (SD/DD/CM/Agility hypothetical "
+                             "kernel re-runs) at the (E3 setup seat, opp-mon) pairs — requires "
+                             "--damage-op + --damage-outgoing. Zero-init maps: identity at init. "
                              "STRUCTURAL (version-checked, fresh-only). The op head-concat stays "
                              "(deprecation playbook: bias-ablation audit before deletion).")
     parser.add_argument("--damage-candidate-k", "--damage_candidate_k", dest="damage_candidate_k",
@@ -2442,13 +2445,13 @@ async def main():
                      "(the tail is defined relative to the E4 seats' truncation).")
     _ebf = args.edge_bias_families
     if _ebf and _ebf != "off":
-        _valid = {"d1", "d2", "d3", "d4", "s1", "s3", "v", "t", "x", "g", "c4"}
+        _valid = {"d1", "d2", "d3", "d4", "s1", "s3", "v", "t", "x", "g", "c4", "c1"}
         _fams = {"d1", "d3"} if _ebf == "d" else set(_ebf.split(","))
         if _fams - _valid:
             parser.error(f"--edge-bias-families: unknown families {sorted(_fams - _valid)} "
                          f"(valid: off, d [= d1,d3 frozen], or a comma list of {sorted(_valid)})")
-        if (_fams & {"d1", "s1"}) and not (args.damage_op and args.damage_outgoing):
-            parser.error("--edge-bias-families d1/s1 require --damage-op AND --damage-outgoing "
+        if (_fams & {"d1", "s1", "c1"}) and not (args.damage_op and args.damage_outgoing):
+            parser.error("--edge-bias-families d1/s1/c1 require --damage-op AND --damage-outgoing "
                          "(--unified-damage both / --unified-moves both).")
         if "x" in _fams and not (args.damage_op and args.damage_op_prefuse):
             parser.error("--edge-bias-families x requires --damage-op AND --damage-op-prefuse "

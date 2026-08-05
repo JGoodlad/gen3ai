@@ -341,6 +341,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         # unrevealed defender = P(species) @ means; the speed (mean,std) feeds the probabilistic outspeed.
         "SPECIES_SPREAD_PRIOR": build_opp_spread_prior(n_species),
         **build_trap_tables(n_species, n_abilities),
+        **build_self_boost_tables(n_moves),
         "MOVE_SECONDARY": move_secondary,
         "MOVE_PRIORITY": move_priority,
         "MOVE_DRAIN": move_drain,
@@ -818,6 +819,36 @@ def build_trap_tables(n_species: int, n_abilities: int) -> Dict[str, torch.Tenso
         "TYPE_IS_STEEL": steel,
         "TYPE_IS_FLYING": flying,
     }
+
+
+_SELF_BOOST_STAT_ORDER = ("atk", "def", "spa", "spd", "spe")   # == DamageOperator._boost_stages order
+
+
+def build_self_boost_tables(n_moves: int) -> Dict[str, torch.Tensor]:
+    """Self-boost table (the C1 consequence-edge kernel):
+
+      MOVE_SELF_BOOSTS[n_moves, 5]   the (atk,def,spa,spd,spe) stage deltas of the ~17 PURE setup
+                                     moves (`MoveData.self_boosts`, gen3_setup_moves_v1 — Swords
+                                     Dance +2 atk, Dragon Dance +1/+1, Calm Mind, Agility, …)
+
+    Rows are the DECLARATIVE pure-setup classification only: Belly Drum (HP-cost callback), Curse
+    (type-conditional, target normal), Defense Curl/Minimize (volatile / evasion) are all-zero —
+    the same gates that keep those moves fail-loud in the rust engine. The C1 kernel prices only
+    what this table asserts, so a zero row degrades to "no priced consequence", never a wrong one.
+    Fail-loud: the canonical carrier (Swords Dance = +2 atk) is asserted so a facade/extractor
+    regression can't silently empty the table."""
+    t = torch.zeros(n_moves, 5, dtype=torch.float32)
+    for mid in gen3_data.moves.raw():
+        md = gen3_data.moves.get(mid)
+        if md is None or not md.self_boosts or not (0 <= md.num < n_moves):
+            continue
+        for stat, stages in md.self_boosts:
+            t[md.num, _SELF_BOOST_STAT_ORDER.index(stat)] = float(stages)
+    sd = gen3_data.moves.get("swordsdance")
+    if sd is None or float(t[sd.num, 0]) != 2.0:
+        raise ValueError("MOVE_SELF_BOOSTS: Swords Dance did not resolve to +2 atk — the setup "
+                         "table is empty/misaligned. Regenerate gen3_moves.json (selfBoosts).")
+    return {"MOVE_SELF_BOOSTS": t}
 
 
 def build_move_type_idx(n_moves: int) -> torch.Tensor:

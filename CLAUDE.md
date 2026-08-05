@@ -1484,7 +1484,7 @@ EDGES. The encoder stack is swapped for `BiasedEncoderLayer` (the spike-proven c
 attention takes an additive per-pair per-head float bias via SDPA's additive mask; the key-pad
 mask rides the same tensor as a -1e9 addend — stock-parity test-pinned) — an UNCONDITIONAL
 state_dict change (fused `in_proj` keys) carried by the `ARCH_SIGNATURE` bump. The delivered
-FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v,t,x,g,c4}` (STRUCTURAL
+FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1}` (STRUCTURAL
 str in `check_compatible`; `"d"` is the FROZEN d1,d3 alias — new families are explicit-only, so a
 saved config never silently grows maps; growing the valid set is NOT a version bump, the string
 gate catches any mismatch): **D1** = our active's 4 moves × the opp's 6 mons (the v34
@@ -1521,11 +1521,20 @@ correctly, it clears on switch) at the same (mon, GLOBAL seat) route as X; requi
 `--damage-op`; **C4** = the first CONSEQUENCE edge (`pairwise_protect`): at the E3 seat of a
 Protect/Detect/Endure request slot, `[is_protect, p_success (the gen3_protect_odds_v1 obs
 scalar), net_ours, net_theirs]` — the two ACTIVES' G-ledger sums, i.e. the turn a successful
-Protect banks (their Toxic ramps, our Leftovers ticks); requires `--damage-op`. Each family maps
+Protect banks (their Toxic ramps, our Leftovers ticks); requires `--damage-op`; **C1** = the first
+HYPOTHETICAL-WORLD damage consequence (`pairwise_boost`): per (E3 SETUP-move seat k, opp mon j)
+the DELTA cells `[is_boost, d_best_high, d_best_pko, d_outspeed]` from RE-RUNNING the validated
+outgoing-matrix kernel under slot k's post-boost stages (a `boost_delta` threaded into the
+kernel's stage read — None byte-identical; `MOVE_SELF_BOOSTS` = the ~17 declarative pure-setup
+moves via `MoveData.self_boosts` — Belly Drum/Curse/Defense Curl are all-zero rows by the same
+gates that keep them fail-loud in the rust engine) + the speed-recipe outspeed delta (stage
+folded BOTH worlds — here the stage IS the signal); defensive halves are the declared C1b
+follow-up; +2.1 ms B=1 EAGER (4 extra kernel runs) but the production PFSP path is COMPILED
+where the dispatch fuses; requires `--damage-op --damage-outgoing`. Each family maps
 its
 cell through a ZERO-INIT `Linear(cell → 2·n_heads)` (one head-set per direction) ⇒ ON is
 bitwise-identical to OFF at init (test-pinned, all six). All seat blocks are contiguous index ranges ⇒
-delivery is slice assignment, compile-friendly (fullgraph-pinned). d1/s1 require
+delivery is slice assignment, compile-friendly (fullgraph-pinned). d1/s1/c1 require
 `--damage-op --damage-outgoing`; d2/d4/v/t require `--damage-op`; d3/s3 require `--entity-topk-seats > 0`. **The op head-concat is
 NOT deleted** — per the deprecation playbook (and the K9/K10 trunk-null history) the edge home
 lands first; deletion waits on the per-family bias-ablation audit. Measured B=1 (threads=1):

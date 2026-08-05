@@ -94,6 +94,13 @@ class MoveData:
     drain_fraction: float = 0.0
     recoil_fraction: float = 0.0
     secondary_effects: Tuple[Tuple[str, int], ...] = ()
+    # gen3_setup_moves_v1: the PRIMARY self-boost spec of a PURE setup move — a hashable
+    # (stat, stages) tuple over atk/def/spa/spd/spe (Swords Dance (('atk',2),), Dragon Dance
+    # (('atk',1),('spe',1)), …). Empty for every other move, INCLUDING boost moves excluded by
+    # the pure-setup gates (Belly Drum's HP-cost callback, Curse's type-conditional onHit,
+    # Defense Curl's volatile, the evasion moves) — see tools/pokemon_data_extractor/sync.py::
+    # _self_boosts. `is_boost` is the broader flag; this is the machine-usable stage map.
+    self_boosts: Tuple[Tuple[str, int], ...] = ()
 
     def secondary_chance(self, col: str) -> float:
         """Trigger probability (0..1) of secondary effect `col` (e.g. ``"par"``, ``"flinch"``),
@@ -139,6 +146,9 @@ def _build(raw: Dict[str, dict]) -> Dict[str, MoveData]:
             recoil_fraction=float(v.get("recoilFraction", 0.0) or 0.0),
             secondary_effects=tuple(
                 sorted((str(k), int(c)) for k, c in (v.get("secondaryEffects") or {}).items())
+            ),
+            self_boosts=tuple(
+                sorted((str(k), int(s)) for k, s in (v.get("selfBoosts") or {}).items())
             ),
         )
     return dex
