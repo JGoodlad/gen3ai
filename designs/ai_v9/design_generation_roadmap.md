@@ -251,6 +251,27 @@ run `run_20260805_060807`):** gen-1's exact config + all ELEVEN families
 (d1,d2,d3,d4,s1,s3,v,t,x,g,c4) + `--entity-tail-seats`, 40M steps, fresh lineage; judged
 gen-2-vs-gen-1 by anchored ELO.
 
+**GEN-2 COMPLETE + THE GENERATION VERDICT (2026-08-06).** Clean 40M finish (final eval Bots
+89.9% / Pool 78.4%; zero errors; ~547 fps — ~4% under gen-1's 563 despite 5 more families +
+tail seats). **Anchored ELO: gen-2 2130±31 vs gen-1 2108±31 at 40M, and ahead at EVERY matched
+tranche** (10M: 1914 vs 1891; 20M: 2004 vs 1981; 30M: 2067 vs 2052; 40M: +22) — consistent
+direction ×4, CIs overlapped; a DIRECT head-to-head (both finals, pool teams, in-process
+bridge; `tmp/gen2_vs_gen1_h2h.py`) reads 50.7% greedy (600 games) / 51.6% stochastic (1000)
+= **51.3% ± 1.25% pooled over 1600** — consistent with the ELO-predicted 53%, not
+independently significant. Read: THREE independent measurements all point the same
+small-positive way (4/4 ELO tranches, both H2H arms) — the full stack is ≥ gen-1,
+decisively NOT a regression at +5 families/tail-seats and ~zero throughput cost, but not a
+decisive strength win; the strength case for the edge system rests on the audit (the policy
+USES it — 31.5% flips) more than on the endpoint delta. **GEN-2's FULL-STACK AUDIT (edge_audit_40M.json, 4000 states,
+all 11 families TRAINED):** d2 is the dominant family (kl 0.312 / 23.8% flips / |dV| 2.18),
+then d1 (0.108/10.1%), v (0.012/6.3%, |dV| 0.76), d4 (0.004/2.1%, |dV| 0.49), t
+(0.0018/1.8%, |dV| 0.15), s1 (0.0096/1.9%); NEAR-DECORATIVE at 40M: d3, s3, x, g, and c4
+(≈0.00002 — the Protect-consequence edge never got used). All-off = 0.491/31.5% (bigger than
+gen-1's 0.330/26.9%). The concat arms REPLICATE on the full stack: concat 0.537/33.1%/|dV|
+7.44 — still larger than the whole edge system — so the concat stays, twice-measured.
+Family evidence for gen-3: keep d1/d2/v/d4/t/s1; d3/s3/x/g/c4 have not earned their
+compute (cheap, but candidates for a cut A/B or a delivery-route rethink).
+
 ## 4. E9 decided: history follows the same sorting rule as everything else
 
 The 7×159 TurnDelta block has exactly the two defects v51 fixed for actions: it is
