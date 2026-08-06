@@ -285,6 +285,18 @@ trained generations' V edge priced bulk as speed, so the audits' v rows (gen-1 5
 Fixed with named `_BS_*`/`_NAT_*` indices + a discriminating regression test
 (Aerodactyl-vs-Snorlax: P(outspeed)≈1 correct vs ≈0 buggy; Agility saturates to ~0 on an
 already-faster mon), PROVEN to fail on the pre-fix kernel.
+**SLICES 11-13 (2026-08-06): the C-piece sweep** — **C1b** `pairwise_boost_incoming` (the
+incoming setup halves: believed attackers vs OUR ACTIVE at current-vs-post-boost def/spd, 5
+worlds on one axis; Iron Defense/Amnesia channel-exact, Curse's +1 Def prices; c1 cell → 6
+wide), **C3** `pairwise_recovery` (the heal-vs-KO FLIP: damage once, the `_rolls` KO ramp
+re-evaluated at post-heal HP; `MOVE_HEAL_FRACTION` — Rest 1.0 sleep-unpriced, weather heals
+flat 0.5 v1, Wish excluded; family "c3"), **C2** `pairwise_status_consequence` (what LANDING
+does behind S1: para → Δoutspeed at spe×0.25, burn → worst-physical at Atk×0.5, brn/psn →
+flat −1/8 tick; deltas RAW/decorrelated from `land`; family "c2"). Shared kernels factored
+(`_setup_deltas` / `_believed_attackers` / `_active_defender`) so consequence families can
+never disagree on their common physics. REMAINING C: **C5 Baton Pass** (needs the RECEIVER
+axis — (BP seat, OUR mon) delivery, a new route) + the deferred approximations (Toxic ramp,
+Belly Drum, weather-heal fold, sleep-duration consequence).
 
 ## 4. E9 decided: history follows the same sorting rule as everything else
 
