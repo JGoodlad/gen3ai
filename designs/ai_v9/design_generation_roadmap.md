@@ -305,7 +305,7 @@ Smogon-prior-marginalised per mon; c2 cell 5 → 7). Obs-benchmark gate re-run f
 sleep_belief addition: 6,446 calls/encode == the canonical baseline (the new function is
 never called by encode). REMAINING C: **C5 Baton Pass** (needs the RECEIVER
 axis — (BP seat, OUR mon) delivery, a new route) + the deferred approximations (Belly Drum,
-weather-heal fold, Rest's sleep self-cost).
+weather-heal fold; Rest's self-sleep cost SHIPPED same day — c3 cell 3, exactly 2 turns / 1 EB).
 
 ## 4. E9 decided: history follows the same sorting rule as everything else
 
