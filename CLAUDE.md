@@ -1484,7 +1484,7 @@ EDGES. The encoder stack is swapped for `BiasedEncoderLayer` (the spike-proven c
 attention takes an additive per-pair per-head float bias via SDPA's additive mask; the key-pad
 mask rides the same tensor as a -1e9 addend — stock-parity test-pinned) — an UNCONDITIONAL
 state_dict change (fused `in_proj` keys) carried by the `ARCH_SIGNATURE` bump. The delivered
-FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2}` (STRUCTURAL
+FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5}` (STRUCTURAL
 str in `check_compatible`; `"d"` is the FROZEN d1,d3 alias — new families are explicit-only, so a
 saved config never silently grows maps; growing the valid set is NOT a version bump, the string
 gate catches any mismatch): **D1** = our active's 4 moves × the opp's 6 mons (the v34
@@ -1561,6 +1561,14 @@ suspended (−worst hit, ANY category) for E[free turns] from the VERIFIED sleep
 `sleep_belief.expected_free_turns`, one source with the wake belief; Leech Seed deliberately
 G/S1's fact); deltas RAW — decorrelated from `land`, the head composes consequence ×
 probability like pko × accuracy; requires `--damage-op --damage-outgoing`;
+**C5** = the BATON PASS receiver edge (`pairwise_baton`) — the FIRST family on the (E3 seat,
+OUR-mon) route: per (BP seat, our mon j) `[is_bp, d_best_high, d_best_pko, d_outspeed]` — the
+receiver's offense/outspeed vs the opp active INHERITING the active's current stages (the v39
+switch-in kernel re-run under `inherit_stages=True`) minus its neutral baseline; no stages ⇒
+all-zero (an unboosted BP is just a slow pivot); active column zeroed; requires `--damage-op`.
+C1 also prices **Belly Drum** now (the curated +12-clamps-to-maximize row + the half-max-HP
+`hp_cost` cell channel + the fails-below-half gate — c1 cell 7), and C3's weather heals fold
+LIVE weather (2/3 sun / 1/4 other / 1/2 clear — sand-era Synthesis is honestly weak).
 C1 is +2.1 ms B=1 EAGER (4 extra kernel runs) but the production PFSP path is COMPILED
 where the dispatch fuses. Each family maps
 its

@@ -632,6 +632,7 @@ CHOICE_BAND_PHYS_MULT = 1.5
 CURSE_MOVE_NUM = int(gen3_data.moves.get("curse").num)              # 174 — the C1 runtime type branch
 TOXIC_MOVE_NUM = int(gen3_data.moves.get("toxic").num)              # 92 — C2 tox-vs-psn (shared cat 5)
 REST_MOVE_NUM = int(gen3_data.moves.get("rest").num)                # 156 — C3's self-sleep cost channel
+BATON_PASS_MOVE_NUM = int(gen3_data.moves.get("batonpass").num)     # 226 — C5's receiver-axis edge
 
 
 def build_species_cb_prior(n_species: int) -> torch.Tensor:
@@ -870,7 +871,18 @@ def build_self_boost_tables(n_moves: int) -> Dict[str, torch.Tensor]:
         curse_boosts[_SELF_BOOST_STAT_ORDER.index(stat)] = float(stages)
     is_ghost = torch.zeros(N_TYPE_IDX, dtype=torch.float32)
     is_ghost[_T2I["GHOST"]] = 1.0
-    return {"MOVE_SELF_BOOSTS": t, "CURSE_BOOSTS": curse_boosts, "TYPE_IS_GHOST": is_ghost}
+    # Belly Drum (the recorded TODO, now priced — MODEL-side ONLY, the selfBoosts JSON field
+    # stays pure as the rust engine's draw-free contract): a +12 atk delta CLAMPS to the +6
+    # "maximize" exactly (`_boost_mult` clamps stages to ±6 from any start), paid for by the
+    # half-max-HP cost below + the fails-below-half gate in `_setup_deltas`.
+    bd = gen3_data.moves.get("bellydrum")
+    if bd is None or not (0 <= bd.num < n_moves):
+        raise ValueError("bellydrum failed to resolve — its curated C1 row would silently vanish.")
+    t[bd.num, 0] = 12.0
+    hp_cost = torch.zeros(n_moves, dtype=torch.float32)
+    hp_cost[bd.num] = 0.5
+    return {"MOVE_SELF_BOOSTS": t, "CURSE_BOOSTS": curse_boosts, "TYPE_IS_GHOST": is_ghost,
+            "MOVE_BOOST_HP_COST": hp_cost}
 
 
 def build_recovery_tables(n_moves: int) -> Dict[str, torch.Tensor]:
@@ -887,6 +899,8 @@ def build_recovery_tables(n_moves: int) -> Dict[str, torch.Tensor]:
     own that fact. Rows come from `MoveData.is_heal` (flags.heal), so a non-heal move is an
     all-zero row and simply unpriced. Fail-loud on the canonical carrier (Recover = 0.5)."""
     t = torch.zeros(n_moves, dtype=torch.float32)
+    wh = torch.zeros(n_moves, dtype=torch.float32)
+    _WEATHER_HEALS = ("moonlight", "morningsun", "synthesis")
     for mid in gen3_data.moves.raw():
         md = gen3_data.moves.get(mid)
         if md is None or not md.is_heal or not (0 <= md.num < n_moves):
@@ -894,11 +908,15 @@ def build_recovery_tables(n_moves: int) -> Dict[str, torch.Tensor]:
         if mid == "wish":
             continue
         t[md.num] = 1.0 if mid == "rest" else 0.5
+        if mid in _WEATHER_HEALS:
+            wh[md.num] = 1.0        # the C3 kernel folds LIVE weather: 2/3 sun, 1/4 other, 1/2 clear
     rec = gen3_data.moves.get("recover")
     if rec is None or float(t[rec.num]) != 0.5:
         raise ValueError("MOVE_HEAL_FRACTION: Recover did not resolve to 0.5 — the recovery "
                          "table is empty/misaligned. Regenerate gen3_moves.json (isHeal).")
-    return {"MOVE_HEAL_FRACTION": t}
+    if float(wh.sum()) != 3.0:
+        raise ValueError("MOVE_WEATHER_HEAL: the 3 gen3 weather heals did not all resolve.")
+    return {"MOVE_HEAL_FRACTION": t, "MOVE_WEATHER_HEAL": wh}
 
 
 def build_sleep_tables(n_species: int, n_abilities: int) -> Dict[str, torch.Tensor]:

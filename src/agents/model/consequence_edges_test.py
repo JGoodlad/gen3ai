@@ -69,8 +69,9 @@ def test_self_boost_table_rows():
     dd = gen3_data.moves.get("dragondance").num
     assert t[dd].tolist() == [1.0, 0.0, 0.0, 0.0, 1.0]
     assert t[_BODYSLAM].abs().sum() == 0.0, "a non-setup move must be an all-zero row"
-    # The pure-setup gates: Belly Drum / Curse are deliberately NOT rows (unpriced, never wrong).
-    assert t[gen3_data.moves.get("bellydrum").num].abs().sum() == 0.0
+    # Belly Drum is the CURATED model-side row: +12 clamps to the +6 maximize (paired with the
+    # MOVE_BOOST_HP_COST fail gate); Curse stays a zero row — the runtime type branch owns it.
+    assert t[gen3_data.moves.get("bellydrum").num].tolist() == [12.0, 0.0, 0.0, 0.0, 0.0]
     assert t[gen3_data.moves.get("curse").num].abs().sum() == 0.0
 
 
@@ -94,7 +95,7 @@ def test_swords_dance_raises_the_physical_line():
     ctx.our_active_req_move_ids[:, 1] = _SD
     with torch.no_grad():
         cells = fe.damage_op.pairwise_boost(ctx)
-    assert cells.shape == (2, 4, TEAM_SIZE, 4)   # the OUTGOING kernel half of _EDGE_C1_CELL (6)
+    assert cells.shape == (2, 4, TEAM_SIZE, 5)   # the OUTGOING kernel half of _EDGE_C1_CELL (7)
     # Non-setup slots (0, 2, 3) are exactly zero everywhere.
     assert float(cells[:, [0, 2, 3]].abs().sum()) == 0.0
     # The SD seat: is_boost == the shared gate, and the best-physical delta is positive wherever
@@ -392,17 +393,105 @@ def test_toxic_and_sleep_consequences():
         "the G ledger must charge the RAMPED next tick (3 ticks deep → −4/16)"
 
 
-def test_c1_gate_and_integration():
+def test_belly_drum_priced_with_cost_and_fail_gate():
+    """Belly Drum (the closed TODO): at full HP it maximizes Atk (+12 clamps to +6 — a HUGE
+    physical delta) and carries its half-max-HP price in the hp_cost channel; below half HP the
+    move FAILS and the whole row reads zero (never a free +6)."""
+    fe = _make(**_C1_TOGGLES).eval()
+    ctx = _boost_ctx(fe, seed=113)
+    ar = torch.arange(2)
+    ctx.hp_and_active[ar, ctx.our_active_idx, 0] = 1.0
+    ctx.our_active_req_move_ids[:, 1] = gen3_data.moves.get("bellydrum").num
+    with torch.no_grad():
+        cells = fe.damage_op.pairwise_boost(ctx)
+        base = fe.damage_op.pairwise_outgoing(ctx)
+    live = base[..., 1].amax(dim=1) > 1e-6
+    assert bool((cells[:, 1, :, 1][live] > 0).all()), "maximized Atk must raise the physical line"
+    assert float(cells[:, 1, :, 4][live].min()) == 0.5, "the half-max-HP price rides the cell"
+    sd_live = cells[:, 1, :, 1][live]
+    ctx.our_active_req_move_ids[:, 2] = _SD
+    with torch.no_grad():
+        both = fe.damage_op.pairwise_boost(ctx)
+    assert bool((both[:, 1, :, 1][live] > both[:, 2, :, 1][live]).all()), \
+        "+6 (maximize) must out-price +2 (Swords Dance) on the same board"
+    ctx.hp_and_active[ar, ctx.our_active_idx, 0] = 0.3
+    with torch.no_grad():
+        failed = fe.damage_op.pairwise_boost(ctx)
+    assert float(failed[:, 1].abs().sum()) == 0.0, "below half HP Belly Drum FAILS — row zero"
+
+
+def test_weather_heal_folds_live_weather():
+    """C3's weather heals read the LIVE weather: clear Synthesis == Recover (both 1/2 → both
+    flip the KO); under SAND the 1/4 heal does NOT reach the flip; under SUN the 2/3 heal
+    does."""
+    fe = _make(**_C1_TOGGLES).eval()
+    ctx = _c1b_ctx(fe, seed=117)
+    ar = torch.arange(2)
+    from agents.model.damage_tables import _T2I
+    ctx.species_ids[:, TEAM_SIZE] = gen3_data.species.get("swampert").num
+    ctx.type1_ids[:, TEAM_SIZE] = _T2I["GROUND"]              # pin STAB EQ (deterministic ~53%)
+    ctx.type2_ids[:, TEAM_SIZE] = _T2I["WATER"]
+    ctx.screen_feature[:, :] = 0.0
+    ctx.hp_and_active[ar, ctx.our_active_idx, 0] = 0.05       # deep enough that +1/4 can't escape
+    ctx.our_active_req_move_ids[:, :] = 0
+    ctx.our_active_req_move_ids[:, 1] = gen3_data.moves.get("recover").num
+    ctx.our_active_req_move_ids[:, 2] = gen3_data.moves.get("synthesis").num
+    logits = _constructed_logits(fe, ctx, gen3_data.moves.get("earthquake").num)
+    ctx.weather_feature[:, :] = 0.0                                  # clear
+    with torch.no_grad():
+        clear = fe.damage_op.pairwise_recovery(ctx, logits)
+    assert torch.allclose(clear[:, 2, :, 1], clear[:, 1, :, 1], atol=1e-6), \
+        "clear-skies Synthesis heals exactly like Recover"
+    ctx.weather_feature[:, 3] = 1.0                                  # sand
+    with torch.no_grad():
+        sand = fe.damage_op.pairwise_recovery(ctx, logits)
+    assert float(sand[:, 2, 0, 1].min()) > -0.1, "a 1/4 sand heal must NOT reach the KO flip"
+    assert float(sand[:, 1, 0, 1].max()) < -0.9, "Recover still flips regardless of weather"
+    ctx.weather_feature[:, :] = 0.0
+    ctx.weather_feature[:, 1] = 1.0                                  # sun
+    with torch.no_grad():
+        sun = fe.damage_op.pairwise_recovery(ctx, logits)
+    assert float(sun[:, 2, 0, 1].max()) < -0.9, "the 2/3 sun heal flips the KO"
+
+
+def test_baton_pass_receiver_deltas():
+    """C5: with NO stages up both worlds coincide (all deltas exactly 0 — an unboosted BP is
+    just a slow pivot); with +2 Atk on the active, a physical bench receiver's d_best_high goes
+    POSITIVE, the ACTIVE column stays zero (you pass to the bench), and non-BP slots are zero."""
+    fe = _make(**_C1_TOGGLES).eval()
+    ctx = _boost_ctx(fe, seed=121)
+    ar = torch.arange(2)
+    ctx.our_active_idx[:] = 0
+    ctx.hp_and_active[ar, 0, 0] = 1.0
+    ctx.our_active_req_move_ids[:, 1] = gen3_data.moves.get("batonpass").num
+    # bench mon 1: alive, with a known physical move (Body Slam) vs a revealed opp active
+    ctx.hp_and_active[:, 1, 0] = 1.0
+    ctx.all_move_ids[:, 1, 0] = _BODYSLAM
+    ctx.all_move_type_ids[:, 1, 0] = fe.damage_op.MOVE_TYPE_IDX[_BODYSLAM]
+    ctx.our_ctx_raw[:, 0:14] = 0.0                                   # no stages yet
+    with torch.no_grad():
+        flat = fe.damage_op.pairwise_baton(ctx)
+    assert flat.shape == (2, 4, TEAM_SIZE, 4)
+    assert float(flat[:, 1, :, 1:].abs().sum()) < 1e-5, "no stages ⇒ nothing to pass ⇒ zero deltas"
+    assert float(flat[:, [0, 2, 3]].abs().sum()) == 0.0, "non-BP slots must be zero"
+    ctx.our_ctx_raw[:, 0] = 2.0 / 6.0                                # +2 Atk on the active
+    with torch.no_grad():
+        cells = fe.damage_op.pairwise_baton(ctx)
+    assert float(cells[:, 1, 0, :].abs().sum()) == 0.0, "the ACTIVE column is zeroed"
+    assert float(cells[:, 1, 1, 1].min()) > 0.0, \
+        "a physical receiver inheriting +2 Atk must read a positive best-offense delta"
     with pytest.raises(ValueError, match="edge_bias_families d1/s1/c1"):
         _make(**dict(_C1_TOGGLES, damage_outgoing=False))
     fe = _make(**dict(_C1_TOGGLES,
-                      edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2")).eval()
+                      edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5")).eval()
     assert fe.edge_bias.c1_map is not None
     assert fe.edge_bias.c3_map is not None
     assert fe.edge_bias.c2_map is not None
+    assert fe.edge_bias.c5_map is not None
     assert fe.edge_bias.c1_map.weight.abs().sum() == 0.0, "zero-init map (identity at init)"
     assert fe.edge_bias.c3_map.weight.abs().sum() == 0.0
     assert fe.edge_bias.c2_map.weight.abs().sum() == 0.0
+    assert fe.edge_bias.c5_map.weight.abs().sum() == 0.0
     with torch.no_grad():
         pi, vf = fe(_obs(seed=75))
     assert torch.isfinite(pi).all() and torch.isfinite(vf).all()

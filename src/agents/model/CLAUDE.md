@@ -1450,8 +1450,11 @@ OUR ACTIVE as the lone defender (real spread + CURRENT def/spd stages) with the 
 (current + 4 slots) on a WORLD axis so the attacker side computes once, emitting
 `[d_in_high, d_in_pko]` (≤0 — Iron Defense shrinks the worst physical believed hit and ignores
 special, Amnesia the reverse, SD reads ~0 BY PHYSICS, Curse's +1 Def now prices); the cell is
-the 6-wide concat `[is_boost, d_high, d_pko, d_outspeed, d_in_high, d_in_pko]`
-(`_EDGE_C1_CELL` = 6), one `_setup_deltas` helper (table rows + the Curse branch) shared by
+the 7-wide concat `[is_boost, d_high, d_pko, d_outspeed, hp_cost, d_in_high, d_in_pko]`
+(`_EDGE_C1_CELL` = 7 — `hp_cost` carries Belly Drum's half-max-HP price: the curated
+model-side +12-clamps-to-maximize row [the selfBoosts JSON stays pure — the rust draw-free
+contract] + the fails-below-half gate in `_setup_deltas`, so a failing BD is a zero row and
+a working one is never a free +6), one `_setup_deltas` helper (table rows + the Curse branch) shared by
 both kernels so they can never disagree on what a setup slot does; **C3** (2026-08-06)
 `pairwise_recovery` — the heal-vs-KO FLIP at the same (E3 seat, opp-mon) route: the shared
 `_believed_attackers` block (factored out of C1b — one attacker recipe for C1b/C3) vs OUR
@@ -1477,7 +1480,15 @@ tables, per-mon Early-Bird-marginalised via `SPECIES_EARLYBIRD_PRIOR`/`ABILITY_I
 [revealed → exact 1.0]; Leech Seed deliberately excluded — G/S1's fact); deltas RAW
 (decorrelated from `land` — the head composes, the pko×accuracy convention); `land` rides
 the validated `discrete_outgoing_status(per_pair=True)` physics; family "c2", requires
-`damage_op` + `damage_outgoing`; **and the G ledger's Toxic leg now carries the RAMP** —
+`damage_op` + `damage_outgoing`; **C5** (2026-08-06) `pairwise_baton` — the Baton-Pass
+RECEIVER edge, the first family on the (E3 seat, OUR-mon) route: per (BP seat, our mon j)
+`[is_bp, d_best_high, d_best_pko, d_outspeed]` (`_EDGE_C5_CELL` = 4) — the v39 switch-in
+kernel re-run under the new `inherit_stages=True` (every attacker row gets the active's
+stages — the post-pass world is one flag away from the world D2 already prices) minus the
+neutral baseline; zero deltas with no stages up; active column zeroed; v1 residuals: volatile
+passing (Sub) unpriced, the receiver's incoming world a follow-up; family "c5", requires
+`damage_op`; C3's weather heals fold LIVE weather via `MOVE_WEATHER_HEAL` (2/3 sun / 1/4
+other / 1/2 clear); **and the G ledger's Toxic leg now carries the RAMP** —
 −(ticks+1)/16 from the public obs toxic counter (`POKEMON_COUNTER_OFFSET+1`, both sides;
 C4's banked-turn nets inherit it automatically); 4 extra kernel runs ⇒ +2.1 ms B=1 EAGER, but the production PFSP path is
 COMPILED where the dispatch fuses — c1 is opt-in and not in the gen-2 config (requires

@@ -816,18 +816,22 @@ _EDGE_T_CELL = 2    # [P(i traps j), P(j traps i)] per (our mon i, opp mon j)
 _EDGE_X_CELL = 4    # [entry_chip, pursuit_p, pursuit_eff, grounded] per (mon, GLOBAL seat)
 _EDGE_G_CELL = 4    # [leftovers, weather_chip, status_tick, leech] per (mon, GLOBAL seat) — signed
 _EDGE_C4_CELL = 4   # [is_protect, p_success, net_ours, net_theirs] per (E3 seat, GLOBAL seat)
-_EDGE_C1_CELL = 6   # [is_boost, d_best_high, d_best_pko, d_outspeed, d_in_high, d_in_pko] per
-                    # (E3 setup-move seat, opp mon) — outgoing (C1) ⊕ incoming (C1b) consequence deltas
+_EDGE_C1_CELL = 7   # [is_boost, d_best_high, d_best_pko, d_outspeed, hp_cost, d_in_high, d_in_pko]
+                    # per (E3 setup-move seat, opp mon) — outgoing (C1, incl. Belly Drum's
+                    # half-max-HP price) ⊕ incoming (C1b) consequence deltas
 _EDGE_C3_CELL = 3   # [is_recovery, d_in_pko, rest_sleep_turns] per (E3 recovery seat, opp mon) —
                     # the heal-vs-KO flip + Rest's DETERMINISTIC self-sleep cost (2 turns; 1 EB)
 _EDGE_C2_CELL = 7   # [is_status, land, d_their_outspeed, d_in_phys_high, d_sched, d_in_all_slp,
                     # e_slp_free_turns] per (E3 status seat, opp mon) — the post-landing
                     # consequence world behind S1 (incl. the sleep-tempo + true-toxic-tick facts)
+_EDGE_C5_CELL = 4   # [is_bp, d_best_high, d_best_pko, d_outspeed] per (E3 Baton-Pass seat, OUR
+                    # mon) — the receiver's offense inheriting the active's stages (the first
+                    # family on the (E3, our-mon) route)
 _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
                   "d4": _EDGE_D4_CELL, "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL,
                   "v": _EDGE_V_CELL, "t": _EDGE_T_CELL, "x": _EDGE_X_CELL,
                   "g": _EDGE_G_CELL, "c4": _EDGE_C4_CELL, "c1": _EDGE_C1_CELL,
-                  "c3": _EDGE_C3_CELL, "c2": _EDGE_C2_CELL}
+                  "c3": _EDGE_C3_CELL, "c2": _EDGE_C2_CELL, "c5": _EDGE_C5_CELL}
 
 
 class EdgeBias(torch.nn.Module):
@@ -908,6 +912,10 @@ class EdgeBias(torch.nn.Module):
         if self.c2_map is not None and cells.get("c2") is not None:
             # C2: a status seat's edge to mon j carries what LANDING would do (behind S1's land).
             self._write_block(bias, self.c2_map(cells["c2"]), slice(e3, e3 + 4), opp)
+        if self.c5_map is not None and cells.get("c5") is not None:
+            # C5: the Baton-Pass seat's edge to OUR mon j — the receiver axis (the first family
+            # on the (E3, our-mon) route; the transpose head-set answers "who wants the pass").
+            self._write_block(bias, self.c5_map(cells["c5"]), slice(e3, e3 + 4), our)
         if self.d3_map is not None and cells.get("d3") is not None:
             K = cells["d3"].shape[1]
             self._write_block(bias, self.d3_map(cells["d3"]), slice(e4, e4 + K), our)
@@ -2753,6 +2761,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "edge_bias_families c3 re-evaluates the believed-hit KO ramp at post-heal "
                     "HP — requires --damage-op (the belief + the op's tables)."
                 )
+            if "c5" in fams and not damage_op:
+                raise ValueError(
+                    "edge_bias_families c5 re-runs the switch-in offense kernel under inherited "
+                    "stages — requires --damage-op."
+                )
             if "g" in fams and not damage_op:
                 raise ValueError(
                     "edge_bias_families g reads the op's type tables for the weather-immunity "
@@ -3514,6 +3527,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if "c2" in _fams:
                 _cells["c2"] = self.damage_op.pairwise_status_consequence(
                     ctx, self.last_move_belief_logits, _sb)
+            if "c5" in _fams:
+                _cells["c5"] = self.damage_op.pairwise_baton(ctx, _sb)
             if "s1" in _fams:
                 _cells["s1"] = self.damage_op.discrete_outgoing_status(ctx, per_pair=True)
             if "d2" in _fams:

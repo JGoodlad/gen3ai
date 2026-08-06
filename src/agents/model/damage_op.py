@@ -362,7 +362,7 @@ class DamageOperator(torch.nn.Module):
         from agents.model.damage_tables import (
             build_damage_buffers, HIDDEN_POWER_NUM, HIDDEN_POWER_BP,
             CHOICE_BAND_ITEM_NUM, CHOICE_BAND_PHYS_MULT, CURSE_MOVE_NUM, TOXIC_MOVE_NUM,
-            REST_MOVE_NUM,
+            REST_MOVE_NUM, BATON_PASS_MOVE_NUM,
         )
         from agents.observation.sleep_belief import expected_free_turns
         bufs = build_damage_buffers(layout['max_moves'], layout['max_species'], layout['max_abilities'])
@@ -391,6 +391,7 @@ class DamageOperator(torch.nn.Module):
         self.rest_num = REST_MOVE_NUM
         self.rest_sleep_noeb = float(expected_free_turns(True, 0.0))     # 2.0 exactly
         self.rest_sleep_eb = float(expected_free_turns(True, 1.0))       # 1.0 exactly
+        self.baton_num = BATON_PASS_MOVE_NUM                             # C5's receiver-axis edge
         # gen3_unified_topk_incoming_v1: secondary-col → status-category map for the per-pivot incoming
         # status-landing's ability-immunity fold (non-persistent — pure constant).
         self.register_buffer("_SEC_CAT_IDX", torch.tensor(_SECONDARY_TO_STATUS_CAT, dtype=torch.long),
@@ -972,7 +973,8 @@ class DamageOperator(torch.nn.Module):
         return out * gate
 
     def _outgoing_attacker_matrix(self, ctx: 'ExtractorContext',
-                                  spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+                                  spread_belief: Optional[torch.Tensor] = None,
+                                  inherit_stages: bool = False) -> torch.Tensor:
         """gen3_per_move_matrices_v1 (v39): the TRANSPOSE of `_outgoing_matrix` — our 6 MONS' 4 moves → the opp
         ACTIVE. On a FORCED SWITCH our active is fainted, so `_outgoing_block`/`_outgoing_matrix` (which only
         price the current active attacker) ZERO and the policy picks switch-ins BLIND to offense; this prices
@@ -1016,11 +1018,18 @@ class DamageOperator(torch.nn.Module):
         our_spa = (2.0 * a_base[..., 3] + iv[..., 3] + ev[..., 3] / 4.0 + 5.0) * nat[..., 2]   # [B,6]
         our_spe = (2.0 * a_base[..., 5] + iv[..., 5] + ev[..., 5] / 4.0 + 5.0) * nat[..., 4]   # [B,6]
         # Boosts: the ACTIVE row carries our_ctx_raw's stages; bench rows neutral (mult 1.0) — gen3 resets on
-        # switch (mirrors _outgoing_matrix's defender-boost handling exactly).
+        # switch (mirrors _outgoing_matrix's defender-boost handling exactly). `inherit_stages`
+        # (C5 Baton Pass) is the HYPOTHETICAL post-pass world: EVERY row gets the active's stages
+        # (the receiver inherits them) — False is byte-identical to the pre-C5 kernel.
         o_b_atk, _odf, o_b_spa, _osd, o_b_spe = self._boost_stages(ctx.our_ctx_raw)   # active only, [B]
-        atk_boost = torch.ones(B, TEAM_SIZE, device=device); atk_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_atk)
-        spa_boost = torch.ones(B, TEAM_SIZE, device=device); spa_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_spa)
-        spe_boost = torch.ones(B, TEAM_SIZE, device=device); spe_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_spe)
+        if inherit_stages:
+            atk_boost = self._boost_mult(o_b_atk)[:, None].expand(B, TEAM_SIZE)
+            spa_boost = self._boost_mult(o_b_spa)[:, None].expand(B, TEAM_SIZE)
+            spe_boost = self._boost_mult(o_b_spe)[:, None].expand(B, TEAM_SIZE)
+        else:
+            atk_boost = torch.ones(B, TEAM_SIZE, device=device); atk_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_atk)
+            spa_boost = torch.ones(B, TEAM_SIZE, device=device); spa_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_spa)
+            spe_boost = torch.ones(B, TEAM_SIZE, device=device); spe_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_spe)
         # Burn / Choice Band compose PER MON (each mon's own KNOWN condition/item).
         our_burn = ctx.pokemon_part[:, our, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]   # [B,6]
         our_para = ctx.pokemon_part[:, our, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]   # [B,6]
@@ -1506,7 +1515,13 @@ class DamageOperator(torch.nn.Module):
         _curse_gate = ((ctx.our_active_req_move_ids == self.curse_num)
                        & ~_user_ghost[:, None]).float()                              # [B,4]
         deltas = deltas + _curse_gate[:, :, None] * self.CURSE_BOOSTS[None, None, :]
-        return deltas, (deltas.abs().sum(-1) > 0).float()
+        # Belly Drum's fail gate (the +12-clamps-to-max row): below half HP the move FAILS —
+        # the whole consequence row zeroes rather than showing a free +6.
+        hp_cost = self.MOVE_BOOST_HP_COST[ctx.our_active_req_move_ids]               # [B,4]
+        hp_frac = ctx.hp_and_active[ar, ctx.our_active_idx, 0]
+        usable = ((hp_cost <= 0) | (hp_frac[:, None] > hp_cost)).float()             # [B,4]
+        deltas = deltas * usable[:, :, None]
+        return deltas, (deltas.abs().sum(-1) > 0).float(), hp_cost * usable
 
     def pairwise_boost(self, ctx: 'ExtractorContext',
                        spread_belief: Optional[torch.Tensor] = None,
@@ -1543,7 +1558,7 @@ class DamageOperator(torch.nn.Module):
         B, device = ctx.batch_size, ctx.device
         ar = torch.arange(B, device=device)
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
-        deltas, is_boost = self._setup_deltas(ctx)                                   # [B,4,5], [B,4]
+        deltas, is_boost, hp_cost = self._setup_deltas(ctx)                          # [B,4,5], [B,4], [B,4]
         if base is None:
             base = self.pairwise_outgoing(ctx, spread_belief)                        # [B,4,6,6]
         base_high = base[..., 1].amax(dim=1)                                         # [B,6]
@@ -1585,8 +1600,9 @@ class DamageOperator(torch.nn.Module):
                 (act_spe * self._boost_mult(cur_spe_stage + dk[:, 4]))[:, None], opp_spe, opp_std)
             d_spd = (p_k - p_base) * spd_gate
             ib = is_boost[:, k:k + 1].expand_as(d_high)
-            rows.append(torch.stack([ib, d_high, d_pko, d_spd], dim=-1))             # [B,6,_EDGE_C1_CELL]
-        cells = torch.stack(rows, dim=1)                                             # [B,4,6,_EDGE_C1_CELL]
+            hc = hp_cost[:, k:k + 1].expand_as(d_high)         # Belly Drum's half-max-HP price
+            rows.append(torch.stack([ib, d_high, d_pko, d_spd, hc], dim=-1))         # [B,6,5]
+        cells = torch.stack(rows, dim=1)                                             # [B,4,6,5]
         return cells * is_boost[:, :, None, None]
 
     def _believed_attackers(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
@@ -1769,7 +1785,7 @@ class DamageOperator(torch.nn.Module):
         B, device, eps = ctx.batch_size, ctx.device, 1e-6
         ar = torch.arange(B, device=device)
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
-        deltas, is_boost = self._setup_deltas(ctx)                                   # [B,4,5], [B,4]
+        deltas, is_boost, hp_cost = self._setup_deltas(ctx)                          # [B,4,5], [B,4], [B,4]
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
          att_gate) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         # --- defender: OUR ACTIVE (real spread; CURRENT def/spd stages) ---
@@ -1843,6 +1859,14 @@ class DamageOperator(torch.nn.Module):
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         frac = self.MOVE_HEAL_FRACTION[ctx.our_active_req_move_ids]                  # [B,4]
         is_rec = (frac > 0).float()
+        # Weather heals fold LIVE weather (was a flat 0.5): gen3 Moonlight/Morning Sun/Synthesis
+        # heal 2/3 under sun, 1/4 under ANY other weather, 1/2 clear (weather one-hot
+        # [NONE, SUN, RAIN, SAND, HAIL]) — sun-stall Synthesis is a real heal, sand-era one isn't.
+        wh = self.MOVE_WEATHER_HEAL[ctx.our_active_req_move_ids]                     # [B,4]
+        sun = ctx.weather_feature[:, 1:2]
+        other_w = ctx.weather_feature[:, 2:5].sum(dim=-1, keepdim=True)
+        w_frac = (2.0 / 3.0) * sun + 0.25 * other_w + 0.5 * (1.0 - sun - other_w)    # [B,1]
+        frac = torch.where(wh > 0, w_frac.expand_as(frac), frac)
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
          att_gate) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         # --- defender: OUR ACTIVE (real spread; CURRENT stages — a heal changes no stage) ---
@@ -1896,13 +1920,14 @@ class DamageOperator(torch.nn.Module):
         return torch.stack([ib, d_pko, rest_ch], dim=-1) * gate[..., None]           # [B,4,6,3]
 
     def pairwise_bench_outgoing(self, ctx: 'ExtractorContext',
-                                spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+                                spread_belief: Optional[torch.Tensor] = None,
+                                inherit_stages: bool = False) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (D2): per OUR mon, its best offense vs the OPP ACTIVE — the mon↔mon
         edge cell `[best_high, best_pko, p_outspeed, alive]` `[B, TEAM_SIZE, 4]`, a move-collapsed
         reshape of the validated v39 `_outgoing_attacker_matrix` (the switch-in-offense kernel: the
         active row reproduces `_outgoing_block`; bench rows neutral-boost). Written at the
         (our-mon seat i, opp-ACTIVE seat) pair — the "what would this switch-in DO" edge."""
-        flat = self._outgoing_attacker_matrix(ctx, spread_belief)                          # [B, _DMG_OAX]
+        flat = self._outgoing_attacker_matrix(ctx, spread_belief, inherit_stages)         # [B, _DMG_OAX]
         n_cells = TEAM_SIZE * _DMG_OAX_PER_MON
         cells = flat[:, :n_cells].reshape(-1, TEAM_SIZE, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MOVE)
         p_outspeed = flat[:, n_cells:n_cells + TEAM_SIZE]                                  # [B,6]
@@ -1910,6 +1935,40 @@ class DamageOperator(torch.nn.Module):
         best_high = cells[..., _DMG_OAX_IDX_HIGH].amax(dim=-1)                             # [B,6]
         best_pko = cells[..., _DMG_OAX_IDX_PKO].amax(dim=-1)                               # [B,6]
         return torch.stack([best_high, best_pko, p_outspeed, alive], dim=-1)               # [B,6,4]
+
+    def pairwise_baton(self, ctx: 'ExtractorContext',
+                       spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (C5): the BATON PASS receiver edge — "who inherits my boosts
+        best". The FIRST family on the (E3 seat, OUR-mon) route: per (E3 Baton-Pass seat k, OUR
+        mon j) the DELTA cells `[is_bp, d_best_high, d_best_pko, d_outspeed]`
+        `[B, 4, TEAM_SIZE, 4]` — receiver j's best offense / P(KO) / P(outspeed) vs the opp
+        ACTIVE with the active's CURRENT stages INHERITED (the validated v39 switch-in kernel
+        re-run under `inherit_stages=True` — the hypothetical world is one flag away from the
+        world D2 already prices) minus its neutral-switch-in baseline. With no stages up, both
+        worlds coincide and every delta reads 0 (honest: an unboosted BP is just a slow pivot).
+        The ACTIVE column is ZEROED (you pass to the bench); receivers alive-gated. v1
+        residuals (documented): negative stages pass too (priced — the delta is signed);
+        Substitute/volatile passing is unpriced; the receiver's INCOMING world is C1b-shaped
+        follow-up territory."""
+        B, device = ctx.batch_size, ctx.device
+        ar = torch.arange(B, device=device)
+        is_bp = (ctx.our_active_req_move_ids == self.baton_num).float()              # [B,4]
+        base = self.pairwise_bench_outgoing(ctx, spread_belief)                      # [B,6,4]
+        passed = self.pairwise_bench_outgoing(ctx, spread_belief, inherit_stages=True)
+        d_high = passed[..., 0] - base[..., 0]                                       # [B,6]
+        d_pko = passed[..., 1] - base[..., 1]
+        d_spd = passed[..., 2] - base[..., 2]
+        alive = base[..., 3]
+        not_active = torch.ones(B, TEAM_SIZE, device=device)
+        not_active[ar, ctx.our_active_idx] = 0.0
+        our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()
+        gate = (is_bp[:, :, None] * (alive * not_active)[:, None, :]
+                * our_alive[:, None, None])                                          # [B,4,6]
+        ib = is_bp[:, :, None].expand(-1, -1, TEAM_SIZE)
+        cells = torch.stack([ib, d_high[:, None, :].expand(-1, 4, -1),
+                             d_pko[:, None, :].expand(-1, 4, -1),
+                             d_spd[:, None, :].expand(-1, 4, -1)], dim=-1)
+        return cells * gate[..., None]                                               # [B,4,6,4]
 
     def pairwise_speed(self, ctx: 'ExtractorContext',
                        spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:

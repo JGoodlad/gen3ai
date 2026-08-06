@@ -303,9 +303,19 @@ channels — `d_in_all` (their whole believed threat suspended, any category) +
 `sleep_belief.expected_free_turns`: 2.5 no-EB / exactly 1.0 revealed Early Bird,
 Smogon-prior-marginalised per mon; c2 cell 5 → 7). Obs-benchmark gate re-run for the
 sleep_belief addition: 6,446 calls/encode == the canonical baseline (the new function is
-never called by encode). REMAINING C: **C5 Baton Pass** (needs the RECEIVER
-axis — (BP seat, OUR mon) delivery, a new route) + the deferred approximations (Belly Drum,
-weather-heal fold; Rest's self-sleep cost SHIPPED same day — c3 cell 3, exactly 2 turns / 1 EB).
+never called by encode). **SLICE 15 (2026-08-06): THE C GAP IS CLOSED.** **C5 Baton Pass** ships the RECEIVER axis —
+`pairwise_baton` at the NEW (E3 BP seat, OUR-mon) route: the v39 switch-in kernel re-run under
+`inherit_stages=True` (the post-pass world is one flag away from D2's world) minus the neutral
+baseline, `[is_bp, d_best_high, d_best_pko, d_outspeed]`; zero with no stages up; active
+column zeroed. **Belly Drum** priced (curated +12-clamps-to-maximize model-side row — the
+selfBoosts JSON stays the rust draw-free contract — + the half-max-HP `hp_cost` channel, c1
+cell 7, + the fails-below-half gate). **Weather heals** fold LIVE weather (2/3 sun / 1/4
+other / 1/2 clear). Rest's self-sleep cost shipped earlier same day (c3 cell 3, exactly 2
+turns / 1 EB). Every consequence family in the inventory now has a shipped edge home:
+c1 (+BD/Curse), c2 (status incl. tox tick + sleep tempo), c3 (heal flip + Rest cost),
+c4 (Protect×ledger), c5 (Baton Pass). Residuals: volatile/Sub passing, the BP receiver's
+incoming world, Yawn. **GEN-2.5 GATE RUN launches on this tree** — 25M, gen-2's config +
+c1,c3,c2,c5 — the first TRAINED read of the whole consequence system.
 
 ## 4. E9 decided: history follows the same sorting rule as everything else
 
