@@ -288,11 +288,20 @@ def test_recovery_flips_the_ko_threshold():
     logits = _constructed_logits(fe, ctx, eq)
     with torch.no_grad():
         cells = fe.damage_op.pairwise_recovery(ctx, logits)
-    assert cells.shape == (2, 4, TEAM_SIZE, 2)
+    assert cells.shape == (2, 4, TEAM_SIZE, 3)
     assert float(cells[:, [0, 3]].abs().sum()) == 0.0, "non-heal + Wish slots must be zero"
     assert float(cells[:, 1, 0, 0].min()) == 1.0, "is_recovery must fire on Recover"
     assert float(cells[:, 1, 0, 1].max()) < -0.9, "Recover must FLIP the guaranteed KO to ~0"
     assert float(cells[:, 2, 0, 1].max()) < -0.9, "Rest (full heal) flips at least as hard"
+    # Rest's DETERMINISTIC self-sleep cost (owner-prioritized): exactly 2 turns / 1 with EB,
+    # exact because our own ability is KNOWN; Recover carries no sleep cost.
+    assert float(cells[:, 1, 0, 2].abs().max()) < 1e-6, "Recover has no self-sleep cost"
+    assert float(cells[:, 2, 0, 2].min()) == 2.0 / 4.0, "Rest costs exactly 2 turns (no EB)"
+    ctx.ability1_ids[ar, ctx.our_active_idx] = gen3_data.abilities.get("earlybird").num
+    with torch.no_grad():
+        eb_cells = fe.damage_op.pairwise_recovery(ctx, logits)
+    assert float(eb_cells[:, 2, 0, 2].max()) == 1.0 / 4.0, "Early Bird halves Rest to exactly 1"
+    ctx.ability1_ids[ar, ctx.our_active_idx] = 0
     ctx.hp_and_active[ar, ctx.our_active_idx, 0] = 1.0
     with torch.no_grad():
         full = fe.damage_op.pairwise_recovery(ctx, logits)

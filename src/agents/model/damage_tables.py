@@ -631,6 +631,7 @@ CHOICE_BAND_ITEM_NUM = int(gen3_data.items.get("choiceband").num)   # 220
 CHOICE_BAND_PHYS_MULT = 1.5
 CURSE_MOVE_NUM = int(gen3_data.moves.get("curse").num)              # 174 — the C1 runtime type branch
 TOXIC_MOVE_NUM = int(gen3_data.moves.get("toxic").num)              # 92 — C2 tox-vs-psn (shared cat 5)
+REST_MOVE_NUM = int(gen3_data.moves.get("rest").num)                # 156 — C3's self-sleep cost channel
 
 
 def build_species_cb_prior(n_species: int) -> torch.Tensor:

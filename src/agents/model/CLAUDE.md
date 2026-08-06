@@ -1457,9 +1457,13 @@ both kernels so they can never disagree on what a setup slot does; **C3** (2026-
 `_believed_attackers` block (factored out of C1b — one attacker recipe for C1b/C3) vs OUR
 ACTIVE, damage computed ONCE and only the `_rolls` KO ramp re-evaluated at the 5 post-heal-HP
 worlds (`build_recovery_tables`/`MOVE_HEAL_FRACTION` from `MoveData.is_heal`: 0.5 plain +
-flat-0.5 weather heals [v1 approx of 2/3-sun/1/4-other], 1.0 Rest [sleep unpriced v1], Wish
-excluded — delayed, the wish obs scalars own it), cell `[is_recovery, d_in_pko]`
-(`_EDGE_C3_CELL` = 2), family "c3", requires `damage_op`; **C2** (2026-08-06)
+flat-0.5 weather heals [v1 approx of 2/3-sun/1/4-other], 1.0 Rest, Wish
+excluded — delayed, the wish obs scalars own it), cell `[is_recovery, d_in_pko,
+rest_sleep_turns]` (`_EDGE_C3_CELL` = 3) — the third channel is **Rest's DETERMINISTIC
+self-sleep cost** (owner-prioritized 2026-08-06: exactly 2 lost turns / 1 with Early Bird,
+/4-normed; our OWN ability is KNOWN → `ABILITY_IS_EARLYBIRD` exact, never a prior; the same
+verified `expected_free_turns` tables as C2's opp-sleep channel, `REST_MOVE_NUM`-keyed, zero
+on non-Rest slots), family "c3", requires `damage_op`; **C2** (2026-08-06)
 `pairwise_status_consequence` — what LANDING our status move DOES, behind S1's land: cell
 `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched, d_in_all_slp, e_slp_free_turns]`
 (`_EDGE_C2_CELL` = 7) — para → Δ P(we outspeed) at their spe ×0.25 (the T-Wave fact), burn →

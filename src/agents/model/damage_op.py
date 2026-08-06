@@ -362,6 +362,7 @@ class DamageOperator(torch.nn.Module):
         from agents.model.damage_tables import (
             build_damage_buffers, HIDDEN_POWER_NUM, HIDDEN_POWER_BP,
             CHOICE_BAND_ITEM_NUM, CHOICE_BAND_PHYS_MULT, CURSE_MOVE_NUM, TOXIC_MOVE_NUM,
+            REST_MOVE_NUM,
         )
         from agents.observation.sleep_belief import expected_free_turns
         bufs = build_damage_buffers(layout['max_moves'], layout['max_species'], layout['max_abilities'])
@@ -385,6 +386,11 @@ class DamageOperator(torch.nn.Module):
         # (sleep_belief.expected_free_turns — one source), marginalised per-mon over P(Early Bird).
         self.sleep_free_noeb = float(expected_free_turns(False, 0.0))    # 2.5
         self.sleep_free_eb = float(expected_free_turns(False, 1.0))      # 1.0
+        # C3's Rest self-sleep cost (owner-prioritized): Rest sleep is DETERMINISTIC — time=3
+        # fixed → EXACTLY 2 lost turns (1 with Early Bird), and our own ability is KNOWN.
+        self.rest_num = REST_MOVE_NUM
+        self.rest_sleep_noeb = float(expected_free_turns(True, 0.0))     # 2.0 exactly
+        self.rest_sleep_eb = float(expected_free_turns(True, 1.0))       # 1.0 exactly
         # gen3_unified_topk_incoming_v1: secondary-col → status-category map for the per-pivot incoming
         # status-landing's ability-immunity fold (non-persistent — pure constant).
         self.register_buffer("_SEC_CAT_IDX", torch.tensor(_SECONDARY_TO_STATUS_CAT, dtype=torch.long),
@@ -1819,15 +1825,19 @@ class DamageOperator(torch.nn.Module):
                           k_cand: int = 4) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (C3): the RECOVERY-FLIP consequence — "after clicking slot
         k's heal, does their believed hit still KO me". Per (E3 recovery seat k, opp mon j) the
-        cells `[is_recovery, d_in_pko]` `[B, 4, TEAM_SIZE, 2]` (the delta ≤ 0, and it hits −w
-        exactly when healing crosses the threshold from "they KO me" to "they don't" — the
-        heal-vs-attack decision fact, the C1b machinery with the HYPOTHETICAL input moved from
-        the def/spd stages to the HP total). The shared believed-attacker block vs OUR ACTIVE;
-        the damage itself is computed ONCE (a heal changes no divisor) and only the validated
-        `_rolls` KO ramp is re-evaluated at the 5 worlds' post-heal HP
-        (`min(maxhp, cur + MOVE_HEAL_FRACTION·maxhp)`). Rest heals 1.0 with its SLEEP COST
-        deliberately unpriced (v1); the weather heals ride a flat 0.5 approximation; Wish is
-        excluded (delayed — the wish obs scalars own it). See `build_recovery_tables`."""
+        cells `[is_recovery, d_in_pko, rest_sleep_turns]` `[B, 4, TEAM_SIZE, 3]` (the delta ≤ 0,
+        and it hits −w exactly when healing crosses the threshold from "they KO me" to "they
+        don't" — the heal-vs-attack decision fact, the C1b machinery with the HYPOTHETICAL
+        input moved from the def/spd stages to the HP total). The shared believed-attacker
+        block vs OUR ACTIVE; the damage itself is computed ONCE (a heal changes no divisor) and
+        only the validated `_rolls` KO ramp is re-evaluated at the 5 worlds' post-heal HP
+        (`min(maxhp, cur + MOVE_HEAL_FRACTION·maxhp)`). **Rest's self-sleep COST is priced
+        (owner-prioritized 2026-08-06)**: `rest_sleep_turns` = the DETERMINISTIC lost turns —
+        EXACTLY 2 (1 with Early Bird; our own ability is KNOWN, so this is exact, never a
+        prior), /4-normed, from the same verified `sleep_belief.expected_free_turns` tables as
+        C2's opp-sleep channel; zero on every non-Rest slot. The weather heals ride a flat 0.5
+        approximation; Wish is excluded (delayed — the wish obs scalars own it). See
+        `build_recovery_tables`."""
         B, device, eps = ctx.batch_size, ctx.device, 1e-6
         ar = torch.arange(B, device=device)
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
@@ -1874,10 +1884,16 @@ class DamageOperator(torch.nn.Module):
                                        hp_w[:, :, None, None], acc_k[:, None], eps)  # [B,W,6,K]
         worst_pko = (w_k[:, None] * ko_w).amax(dim=-1)                               # [B,W,6]
         d_pko = worst_pko[:, 1:] - worst_pko[:, 0:1]                                 # [B,4,6]
+        # --- Rest's deterministic self-sleep cost (our OWN ability → exact, never a prior) ---
+        own_eb = self.ABILITY_IS_EARLYBIRD[ctx.ability1_ids[ar, ctx.our_active_idx]]  # [B]
+        rest_turns = (self.rest_sleep_noeb
+                      + (self.rest_sleep_eb - self.rest_sleep_noeb) * own_eb) / 4.0   # [B]
+        is_rest_slot = (ctx.our_active_req_move_ids == self.rest_num).float()         # [B,4]
+        rest_ch = (rest_turns[:, None] * is_rest_slot)[:, :, None].expand(-1, -1, TEAM_SIZE)
         gate = (is_rec[:, :, None] * att_gate[:, None, :]
                 * (hp_frac > 0).float()[:, None, None])
         ib = is_rec[:, :, None].expand(-1, -1, TEAM_SIZE)
-        return torch.stack([ib, d_pko], dim=-1) * gate[..., None]                    # [B,4,6,2]
+        return torch.stack([ib, d_pko, rest_ch], dim=-1) * gate[..., None]           # [B,4,6,3]
 
     def pairwise_bench_outgoing(self, ctx: 'ExtractorContext',
                                 spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:

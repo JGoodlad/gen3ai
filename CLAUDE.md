@@ -1541,11 +1541,14 @@ too (**C1b**, `pairwise_boost_incoming`: the opp mons' believed candidates vs OU
 current-vs-post-boost def/spd stages, 5 worlds on one world axis — Iron Defense/Amnesia/Bulk
 Up/CM and Curse's +1 Def price their damage-taken deltas; cell = the 6-wide
 `[is_boost, d_high, d_pko, d_outspeed, d_in_high, d_in_pko]`); **C3** = the RECOVERY-FLIP
-consequence (`pairwise_recovery`): per (E3 recovery seat, opp mon) `[is_recovery, d_in_pko]`
-— the believed-hit damage computed ONCE, the validated `_rolls` KO ramp re-evaluated at the
-post-heal HP worlds (`MOVE_HEAL_FRACTION`: 0.5 plain + weather heals [flat v1 approximation],
-1.0 Rest [sleep cost unpriced v1], Wish EXCLUDED — delayed, the wish obs scalars own it) —
-"does healing beat their KO", hitting −w exactly at the threshold flip; requires
+consequence (`pairwise_recovery`): per (E3 recovery seat, opp mon) `[is_recovery, d_in_pko,
+rest_sleep_turns]` — the believed-hit damage computed ONCE, the validated `_rolls` KO ramp
+re-evaluated at the post-heal HP worlds (`MOVE_HEAL_FRACTION`: 0.5 plain + weather heals
+[flat v1 approximation], 1.0 Rest, Wish EXCLUDED — delayed, the wish obs scalars own it) —
+"does healing beat their KO", hitting −w exactly at the threshold flip — **and Rest's
+DETERMINISTIC self-sleep cost is priced** (exactly 2 lost turns, 1 with Early Bird; our own
+ability is KNOWN so the channel is exact, never a prior — the same verified
+`expected_free_turns` tables as C2's opp-sleep channel); requires
 `--damage-op`; **C2** = the STATUS-consequence edge (`pairwise_status_consequence`): per (E3
 status seat, opp mon) `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched,
 d_in_all_slp, e_slp_free_turns]` — what LANDING would do behind S1's "will it land": T-Wave's

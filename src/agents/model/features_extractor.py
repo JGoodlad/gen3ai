@@ -818,7 +818,8 @@ _EDGE_G_CELL = 4    # [leftovers, weather_chip, status_tick, leech] per (mon, GL
 _EDGE_C4_CELL = 4   # [is_protect, p_success, net_ours, net_theirs] per (E3 seat, GLOBAL seat)
 _EDGE_C1_CELL = 6   # [is_boost, d_best_high, d_best_pko, d_outspeed, d_in_high, d_in_pko] per
                     # (E3 setup-move seat, opp mon) — outgoing (C1) ⊕ incoming (C1b) consequence deltas
-_EDGE_C3_CELL = 2   # [is_recovery, d_in_pko] per (E3 recovery seat, opp mon) — the heal-vs-KO flip
+_EDGE_C3_CELL = 3   # [is_recovery, d_in_pko, rest_sleep_turns] per (E3 recovery seat, opp mon) —
+                    # the heal-vs-KO flip + Rest's DETERMINISTIC self-sleep cost (2 turns; 1 EB)
 _EDGE_C2_CELL = 7   # [is_status, land, d_their_outspeed, d_in_phys_high, d_sched, d_in_all_slp,
                     # e_slp_free_turns] per (E3 status seat, opp mon) — the post-landing
                     # consequence world behind S1 (incl. the sleep-tempo + true-toxic-tick facts)
