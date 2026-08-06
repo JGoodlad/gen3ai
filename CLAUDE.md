@@ -1484,7 +1484,7 @@ EDGES. The encoder stack is swapped for `BiasedEncoderLayer` (the spike-proven c
 attention takes an additive per-pair per-head float bias via SDPA's additive mask; the key-pad
 mask rides the same tensor as a -1e9 addend — stock-parity test-pinned) — an UNCONDITIONAL
 state_dict change (fused `in_proj` keys) carried by the `ARCH_SIGNATURE` bump. The delivered
-FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1}` (STRUCTURAL
+FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3}` (STRUCTURAL
 str in `check_compatible`; `"d"` is the FROZEN d1,d3 alias — new families are explicit-only, so a
 saved config never silently grows maps; growing the valid set is NOT a version bump, the string
 gate catches any mismatch): **D1** = our active's 4 moves × the opp's 6 mons (the v34
@@ -1539,7 +1539,13 @@ delta (stage folded BOTH worlds — here the stage IS the signal); the INCOMING 
 too (**C1b**, `pairwise_boost_incoming`: the opp mons' believed candidates vs OUR ACTIVE at
 current-vs-post-boost def/spd stages, 5 worlds on one world axis — Iron Defense/Amnesia/Bulk
 Up/CM and Curse's +1 Def price their damage-taken deltas; cell = the 6-wide
-`[is_boost, d_high, d_pko, d_outspeed, d_in_high, d_in_pko]`); +2.1 ms B=1 EAGER (4 extra kernel runs) but the production PFSP path is COMPILED
+`[is_boost, d_high, d_pko, d_outspeed, d_in_high, d_in_pko]`); **C3** = the RECOVERY-FLIP
+consequence (`pairwise_recovery`): per (E3 recovery seat, opp mon) `[is_recovery, d_in_pko]`
+— the believed-hit damage computed ONCE, the validated `_rolls` KO ramp re-evaluated at the
+post-heal HP worlds (`MOVE_HEAL_FRACTION`: 0.5 plain + weather heals [flat v1 approximation],
+1.0 Rest [sleep cost unpriced v1], Wish EXCLUDED — delayed, the wish obs scalars own it) —
+"does healing beat their KO", hitting −w exactly at the threshold flip; requires
+`--damage-op`; +2.1 ms B=1 EAGER (4 extra kernel runs) but the production PFSP path is COMPILED
 where the dispatch fuses; requires `--damage-op --damage-outgoing`. Each family maps
 its
 cell through a ZERO-INIT `Linear(cell → 2·n_heads)` (one head-set per direction) ⇒ ON is

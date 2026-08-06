@@ -256,13 +256,55 @@ def test_incoming_deltas_respect_the_boosted_channel():
     assert float(vs_curse[:, 1, :, 0].max()) < -1e-4, "Curse's +1 Def half must price (C1b)"
 
 
+def test_recovery_table_rows():
+    from agents.model.damage_tables import build_recovery_tables
+    t = build_recovery_tables(_layout["max_moves"])["MOVE_HEAL_FRACTION"]
+    assert float(t[gen3_data.moves.get("recover").num]) == 0.5
+    assert float(t[gen3_data.moves.get("softboiled").num]) == 0.5
+    assert float(t[gen3_data.moves.get("rest").num]) == 1.0
+    assert float(t[gen3_data.moves.get("wish").num]) == 0.0, "Wish is delayed — excluded"
+    assert float(t[_BODYSLAM]) == 0.0
+
+
+def test_recovery_flips_the_ko_threshold():
+    """C3 semantics: Snorlax at 15% vs a believed Earthquake that deals ~50% — currently a
+    guaranteed KO; after Recover (65%) it is not. The delta must read ≈ −1 (the flip), Rest
+    must flip at least as hard, non-heal slots stay exactly zero, and at FULL HP every delta
+    is ~0 (healing changes nothing)."""
+    fe = _make(**_C1_TOGGLES).eval()
+    ctx = _c1b_ctx(fe, seed=99)
+    ar = torch.arange(2)
+    ctx.species_ids[:, TEAM_SIZE] = gen3_data.species.get("swampert").num   # STAB EQ attacker
+    ctx.screen_feature[:, :] = 0.0
+    ctx.hp_and_active[ar, ctx.our_active_idx, 0] = 0.15
+    ctx.our_active_req_move_ids[:, :] = 0
+    ctx.our_active_req_move_ids[:, 1] = gen3_data.moves.get("recover").num
+    ctx.our_active_req_move_ids[:, 2] = gen3_data.moves.get("rest").num
+    ctx.our_active_req_move_ids[:, 3] = gen3_data.moves.get("wish").num
+    eq = gen3_data.moves.get("earthquake").num
+    logits = _constructed_logits(fe, ctx, eq)
+    with torch.no_grad():
+        cells = fe.damage_op.pairwise_recovery(ctx, logits)
+    assert cells.shape == (2, 4, TEAM_SIZE, 2)
+    assert float(cells[:, [0, 3]].abs().sum()) == 0.0, "non-heal + Wish slots must be zero"
+    assert float(cells[:, 1, 0, 0].min()) == 1.0, "is_recovery must fire on Recover"
+    assert float(cells[:, 1, 0, 1].max()) < -0.9, "Recover must FLIP the guaranteed KO to ~0"
+    assert float(cells[:, 2, 0, 1].max()) < -0.9, "Rest (full heal) flips at least as hard"
+    ctx.hp_and_active[ar, ctx.our_active_idx, 0] = 1.0
+    with torch.no_grad():
+        full = fe.damage_op.pairwise_recovery(ctx, logits)
+    assert float(full[:, 1:3, :, 1].abs().max()) < 1e-6, "at full HP a heal changes nothing"
+
+
 def test_c1_gate_and_integration():
     with pytest.raises(ValueError, match="edge_bias_families d1/s1/c1"):
         _make(**dict(_C1_TOGGLES, damage_outgoing=False))
     fe = _make(**dict(_C1_TOGGLES,
-                      edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1")).eval()
+                      edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3")).eval()
     assert fe.edge_bias.c1_map is not None
+    assert fe.edge_bias.c3_map is not None
     assert fe.edge_bias.c1_map.weight.abs().sum() == 0.0, "zero-init map (identity at init)"
+    assert fe.edge_bias.c3_map.weight.abs().sum() == 0.0
     with torch.no_grad():
         pi, vf = fe(_obs(seed=75))
     assert torch.isfinite(pi).all() and torch.isfinite(vf).all()

@@ -818,10 +818,12 @@ _EDGE_G_CELL = 4    # [leftovers, weather_chip, status_tick, leech] per (mon, GL
 _EDGE_C4_CELL = 4   # [is_protect, p_success, net_ours, net_theirs] per (E3 seat, GLOBAL seat)
 _EDGE_C1_CELL = 6   # [is_boost, d_best_high, d_best_pko, d_outspeed, d_in_high, d_in_pko] per
                     # (E3 setup-move seat, opp mon) — outgoing (C1) ⊕ incoming (C1b) consequence deltas
+_EDGE_C3_CELL = 2   # [is_recovery, d_in_pko] per (E3 recovery seat, opp mon) — the heal-vs-KO flip
 _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
                   "d4": _EDGE_D4_CELL, "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL,
                   "v": _EDGE_V_CELL, "t": _EDGE_T_CELL, "x": _EDGE_X_CELL,
-                  "g": _EDGE_G_CELL, "c4": _EDGE_C4_CELL, "c1": _EDGE_C1_CELL}
+                  "g": _EDGE_G_CELL, "c4": _EDGE_C4_CELL, "c1": _EDGE_C1_CELL,
+                  "c3": _EDGE_C3_CELL}
 
 
 class EdgeBias(torch.nn.Module):
@@ -896,6 +898,9 @@ class EdgeBias(torch.nn.Module):
             # C1 rides the same (E3 seat, opp-mon) route as D1/S1 — a setup-move seat's edge to
             # mon j carries the post-boost CONSEQUENCE deltas instead of this-turn damage.
             self._write_block(bias, self.c1_map(cells["c1"]), slice(e3, e3 + 4), opp)
+        if self.c3_map is not None and cells.get("c3") is not None:
+            # C3: a recovery seat's edge to mon j carries the heal-vs-their-KO flip.
+            self._write_block(bias, self.c3_map(cells["c3"]), slice(e3, e3 + 4), opp)
         if self.d3_map is not None and cells.get("d3") is not None:
             K = cells["d3"].shape[1]
             self._write_block(bias, self.d3_map(cells["d3"]), slice(e4, e4 + K), our)
@@ -2735,6 +2740,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 raise ValueError(
                     "edge_bias_families c4 composes the G-family ledger — requires --damage-op."
                 )
+            if "c3" in fams and not damage_op:
+                raise ValueError(
+                    "edge_bias_families c3 re-evaluates the believed-hit KO ramp at post-heal "
+                    "HP — requires --damage-op (the belief + the op's tables)."
+                )
             if "g" in fams and not damage_op:
                 raise ValueError(
                     "edge_bias_families g reads the op's type tables for the weather-immunity "
@@ -3490,6 +3500,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     self.damage_op.pairwise_boost(ctx, _sb, base=_cells.get("d1")),
                     self.damage_op.pairwise_boost_incoming(ctx, self.last_move_belief_logits),
                 ], dim=-1)
+            if "c3" in _fams:
+                _cells["c3"] = self.damage_op.pairwise_recovery(
+                    ctx, self.last_move_belief_logits)
             if "s1" in _fams:
                 _cells["s1"] = self.damage_op.discrete_outgoing_status(ctx, per_pair=True)
             if "d2" in _fams:

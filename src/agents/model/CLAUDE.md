@@ -1452,7 +1452,14 @@ OUR ACTIVE as the lone defender (real spread + CURRENT def/spd stages) with the 
 special, Amnesia the reverse, SD reads ~0 BY PHYSICS, Curse's +1 Def now prices); the cell is
 the 6-wide concat `[is_boost, d_high, d_pko, d_outspeed, d_in_high, d_in_pko]`
 (`_EDGE_C1_CELL` = 6), one `_setup_deltas` helper (table rows + the Curse branch) shared by
-both kernels so they can never disagree on what a setup slot does; 4 extra kernel runs ⇒ +2.1 ms B=1 EAGER, but the production PFSP path is
+both kernels so they can never disagree on what a setup slot does; **C3** (2026-08-06)
+`pairwise_recovery` — the heal-vs-KO FLIP at the same (E3 seat, opp-mon) route: the shared
+`_believed_attackers` block (factored out of C1b — one attacker recipe for C1b/C3) vs OUR
+ACTIVE, damage computed ONCE and only the `_rolls` KO ramp re-evaluated at the 5 post-heal-HP
+worlds (`build_recovery_tables`/`MOVE_HEAL_FRACTION` from `MoveData.is_heal`: 0.5 plain +
+flat-0.5 weather heals [v1 approx of 2/3-sun/1/4-other], 1.0 Rest [sleep unpriced v1], Wish
+excluded — delayed, the wish obs scalars own it), cell `[is_recovery, d_in_pko]`
+(`_EDGE_C3_CELL` = 2), family "c3", requires `damage_op`; 4 extra kernel runs ⇒ +2.1 ms B=1 EAGER, but the production PFSP path is
 COMPILED where the dispatch fuses — c1 is opt-in and not in the gen-2 config (requires
 damage_op + damage_outgoing). Each family's map is a ZERO-INIT
 `Linear(cell → 2·n_heads)` (one head-set per direction; auto-protected by `restore_identity_init`'s

@@ -343,6 +343,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         "SPECIES_SPREAD_PRIOR": build_opp_spread_prior(n_species),
         **build_trap_tables(n_species, n_abilities),
         **build_self_boost_tables(n_moves),
+        **build_recovery_tables(n_moves),
         "MOVE_SECONDARY": move_secondary,
         "MOVE_PRIORITY": move_priority,
         "MOVE_DRAIN": move_drain,
@@ -867,6 +868,34 @@ def build_self_boost_tables(n_moves: int) -> Dict[str, torch.Tensor]:
     is_ghost = torch.zeros(N_TYPE_IDX, dtype=torch.float32)
     is_ghost[_T2I["GHOST"]] = 1.0
     return {"MOVE_SELF_BOOSTS": t, "CURSE_BOOSTS": curse_boosts, "TYPE_IS_GHOST": is_ghost}
+
+
+def build_recovery_tables(n_moves: int) -> Dict[str, torch.Tensor]:
+    """Recovery table (the C3 consequence-edge kernel):
+
+      MOVE_HEAL_FRACTION[n_moves]   the IMMEDIATE self-heal as a fraction of max HP — 0.5 for
+                                    the plain heals (Recover/Softboiled/Milk Drink/Slack Off)
+                                    AND the weather heals (Moonlight/Morning Sun/Synthesis — a
+                                    documented v1 FLAT approximation of gen3's 2/3-sun /
+                                    1/4-other-weather / 1/2-clear), 1.0 for Rest (its sleep
+                                    cost is deliberately unpriced in v1).
+
+    Wish is EXCLUDED — its heal is DELAYED and slot-keyed; the `gen3_wish_wired_v1` obs scalars
+    own that fact. Rows come from `MoveData.is_heal` (flags.heal), so a non-heal move is an
+    all-zero row and simply unpriced. Fail-loud on the canonical carrier (Recover = 0.5)."""
+    t = torch.zeros(n_moves, dtype=torch.float32)
+    for mid in gen3_data.moves.raw():
+        md = gen3_data.moves.get(mid)
+        if md is None or not md.is_heal or not (0 <= md.num < n_moves):
+            continue
+        if mid == "wish":
+            continue
+        t[md.num] = 1.0 if mid == "rest" else 0.5
+    rec = gen3_data.moves.get("recover")
+    if rec is None or float(t[rec.num]) != 0.5:
+        raise ValueError("MOVE_HEAL_FRACTION: Recover did not resolve to 0.5 — the recovery "
+                         "table is empty/misaligned. Regenerate gen3_moves.json (isHeal).")
+    return {"MOVE_HEAL_FRACTION": t}
 
 
 def build_move_type_idx(n_moves: int) -> torch.Tensor:

@@ -1574,6 +1574,29 @@ class DamageOperator(torch.nn.Module):
         cells = torch.stack(rows, dim=1)                                             # [B,4,6,_EDGE_C1_CELL]
         return cells * is_boost[:, :, None, None]
 
+    def _believed_attackers(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
+                            k_cand: int):
+        """Shared C1b/C3 attacker block (the D4 recipe with the ACTIVE column KEPT): per opp mon
+        j its top-`k_cand` most-believed candidates from ITS OWN slot of the composed posterior
+        (selection detached, weights differentiable), de-timid offense, revealed+alive gate.
+        → (w_k, bp_k, mty_k, phys_k, acc_k [B,6,K]; atk_j, spa_j, att_gate [B,6])."""
+        opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+        w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
+        K = min(int(k_cand), w_all.shape[-1])
+        topk_idx = w_all.detach().topk(K, dim=-1).indices                            # [B,6,K]
+        w_k = w_all.gather(-1, topk_idx)                                             # diff'able
+        bp_k = self.MOVE_BP[topk_idx]
+        mty_k = self.MOVE_TYPE_IDX[topk_idx]
+        phys_k = self.MOVE_PHYS[topk_idx]
+        acc_k = self.MOVE_ACCURACY[topk_idx]
+        a_base = self.BASE_STATS[ctx.species_ids[:, opp]]                            # [B,6,6]
+        off_const = 31.0 + 252.0 / 4.0 + 5.0
+        atk_j = (2.0 * a_base[..., _BS_ATK] + off_const) * 1.1                       # de-timid
+        spa_j = (2.0 * a_base[..., _BS_SPA] + off_const) * 1.1
+        att_gate = ((1.0 - ctx.opp_believed_mask.float())
+                    * (ctx.hp_and_active[:, opp, 0] > 0).float())                    # [B,6]
+        return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate
+
     def pairwise_boost_incoming(self, ctx: 'ExtractorContext',
                                 move_belief_logits: torch.Tensor,
                                 k_cand: int = 4) -> torch.Tensor:
@@ -1595,21 +1618,8 @@ class DamageOperator(torch.nn.Module):
         ar = torch.arange(B, device=device)
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         deltas, is_boost = self._setup_deltas(ctx)                                   # [B,4,5], [B,4]
-        # --- attackers (the D4 recipe; ACTIVE column KEPT) ---
-        w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
-        K = min(int(k_cand), w_all.shape[-1])
-        topk_idx = w_all.detach().topk(K, dim=-1).indices                            # [B,6,K]
-        w_k = w_all.gather(-1, topk_idx)                                             # diff'able
-        bp_k = self.MOVE_BP[topk_idx]
-        mty_k = self.MOVE_TYPE_IDX[topk_idx]
-        phys_k = self.MOVE_PHYS[topk_idx]
-        acc_k = self.MOVE_ACCURACY[topk_idx]
-        a_base = self.BASE_STATS[ctx.species_ids[:, opp]]                            # [B,6,6]
-        off_const = 31.0 + 252.0 / 4.0 + 5.0
-        atk_j = (2.0 * a_base[..., _BS_ATK] + off_const) * 1.1                       # de-timid
-        spa_j = (2.0 * a_base[..., _BS_SPA] + off_const) * 1.1
-        att_gate = ((1.0 - ctx.opp_believed_mask.float())
-                    * (ctx.hp_and_active[:, opp, 0] > 0).float())                    # [B,6]
+        (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
+         att_gate) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         # --- defender: OUR ACTIVE (real spread; CURRENT def/spd stages) ---
         d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
         spr = ctx.pokemon_part[ar, ctx.our_active_idx,
@@ -1657,6 +1667,71 @@ class DamageOperator(torch.nn.Module):
         our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()       # [B]
         gate = is_boost[:, :, None] * att_gate[:, None, :] * our_alive[:, None, None]
         return torch.stack([d_high, d_pko], dim=-1) * gate[..., None]                # [B,4,6,2]
+
+    def pairwise_recovery(self, ctx: 'ExtractorContext',
+                          move_belief_logits: torch.Tensor,
+                          k_cand: int = 4) -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (C3): the RECOVERY-FLIP consequence — "after clicking slot
+        k's heal, does their believed hit still KO me". Per (E3 recovery seat k, opp mon j) the
+        cells `[is_recovery, d_in_pko]` `[B, 4, TEAM_SIZE, 2]` (the delta ≤ 0, and it hits −w
+        exactly when healing crosses the threshold from "they KO me" to "they don't" — the
+        heal-vs-attack decision fact, the C1b machinery with the HYPOTHETICAL input moved from
+        the def/spd stages to the HP total). The shared believed-attacker block vs OUR ACTIVE;
+        the damage itself is computed ONCE (a heal changes no divisor) and only the validated
+        `_rolls` KO ramp is re-evaluated at the 5 worlds' post-heal HP
+        (`min(maxhp, cur + MOVE_HEAL_FRACTION·maxhp)`). Rest heals 1.0 with its SLEEP COST
+        deliberately unpriced (v1); the weather heals ride a flat 0.5 approximation; Wish is
+        excluded (delayed — the wish obs scalars own it). See `build_recovery_tables`."""
+        B, device, eps = ctx.batch_size, ctx.device, 1e-6
+        ar = torch.arange(B, device=device)
+        opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+        frac = self.MOVE_HEAL_FRACTION[ctx.our_active_req_move_ids]                  # [B,4]
+        is_rec = (frac > 0).float()
+        (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
+         att_gate) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+        # --- defender: OUR ACTIVE (real spread; CURRENT stages — a heal changes no stage) ---
+        d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
+        spr = ctx.pokemon_part[ar, ctx.our_active_idx,
+                               POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        iv = spr[:, 0:6] * 31.0; ev = spr[:, 6:12] * 252.0; nat = spr[:, 13:18]
+        def_stat = (2.0 * d_base[:, _BS_DEF] + iv[:, _BS_DEF] + ev[:, _BS_DEF] / 4.0
+                    + 5.0) * nat[:, _NAT_DEF]
+        spd_stat = (2.0 * d_base[:, _BS_SPD] + iv[:, _BS_SPD] + ev[:, _BS_SPD] / 4.0
+                    + 5.0) * nat[:, _NAT_SPD]
+        _ba, b_def, _bs2, b_spd, _be = self._boost_stages(ctx.our_ctx_raw)
+        def_c = def_stat * self._boost_mult(b_def)                                   # [B]
+        spd_c = spd_stat * self._boost_mult(b_spd)
+        maxhp = 2.0 * d_base[:, _BS_HP] + iv[:, _BS_HP] + ev[:, _BS_HP] / 4.0 + 110.0
+        hp_frac = ctx.hp_and_active[ar, ctx.our_active_idx, 0]
+        cur_hp = hp_frac * maxhp                                                     # [B]
+        zero = torch.zeros(B, 1, device=device)
+        hp_w = torch.minimum(maxhp[:, None],
+                             cur_hp[:, None] + torch.cat([zero, frac], dim=1) * maxhp[:, None])
+        # --- damage ONCE (world-independent), the KO ramp per world ---
+        at1 = ctx.type1_ids[ar, ctx.our_active_idx]
+        at2 = ctx.type2_ids[ar, ctx.our_active_idx]
+        amul = self.ABILITY_DAMAGE_MULT[ctx.ability1_ids[ar, ctx.our_active_idx]]
+        eff = (torch.gather(self.CHART[at1][:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k)
+               * torch.gather(self.CHART[at2][:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k)
+               * torch.gather(amul[:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k))  # [B,6,K]
+        A = phys_k * atk_j[:, :, None] + (1.0 - phys_k) * spa_j[:, :, None]
+        D = phys_k * def_c[:, None, None] + (1.0 - phys_k) * spd_c[:, None, None]    # [B,6,K]
+        is_stab = ((mty_k == ctx.type1_ids[:, opp][:, :, None])
+                   | (mty_k == ctx.type2_ids[:, opp][:, :, None])).float()
+        core = 42.0 * bp_k * A / (D + eps) / 50.0 + 2.0
+        dmg_ns = core * (1.0 + 0.5 * is_stab) * eff * 0.925 * (bp_k > 0).float()     # [B,6,K]
+        reflect, ls = ctx.screen_feature[:, 0:1], ctx.screen_feature[:, 2:3]
+        screen = (1.0 - 0.5 * (reflect[:, :, None] * phys_k
+                               + ls[:, :, None] * (1.0 - phys_k)))                   # [B,6,K]
+        _h, _l, _c, ko_w = self._rolls(dmg_ns[:, None], screen[:, None],
+                                       maxhp[:, None, None, None],
+                                       hp_w[:, :, None, None], acc_k[:, None], eps)  # [B,W,6,K]
+        worst_pko = (w_k[:, None] * ko_w).amax(dim=-1)                               # [B,W,6]
+        d_pko = worst_pko[:, 1:] - worst_pko[:, 0:1]                                 # [B,4,6]
+        gate = (is_rec[:, :, None] * att_gate[:, None, :]
+                * (hp_frac > 0).float()[:, None, None])
+        ib = is_rec[:, :, None].expand(-1, -1, TEAM_SIZE)
+        return torch.stack([ib, d_pko], dim=-1) * gate[..., None]                    # [B,4,6,2]
 
     def pairwise_bench_outgoing(self, ctx: 'ExtractorContext',
                                 spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
