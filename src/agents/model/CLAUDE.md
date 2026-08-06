@@ -1443,8 +1443,16 @@ spe reads as a NEGATIVE d_outspeed; a Ghost user's Curse stays a zero row. Belly
 recorded TODO [niche]: needs an hp_cost cell channel + a fails-below-half gate + the C1b
 incoming-at-halved-HP re-run; Defense Curl/evasion moves stay unpriced) + the `pairwise_speed`
 recipe at the active row WITH stage folding for the spe
-delta; defensive halves (Iron Defense/Amnesia/Curse's +1 def read is_boost with partial deltas)
-are the declared C1b follow-up; 4 extra kernel runs ⇒ +2.1 ms B=1 EAGER, but the production PFSP path is
+delta; **C1b (2026-08-06) completes the INCOMING halves** — `pairwise_boost_incoming` re-runs
+the D4-recipe attackers (per opp mon j its own slot's top-k believed candidates, de-timid,
+revealed+alive-gated, the ACTIVE column KEPT unlike D4 — it's who you boost in front of) vs
+OUR ACTIVE as the lone defender (real spread + CURRENT def/spd stages) with the 5 worlds
+(current + 4 slots) on a WORLD axis so the attacker side computes once, emitting
+`[d_in_high, d_in_pko]` (≤0 — Iron Defense shrinks the worst physical believed hit and ignores
+special, Amnesia the reverse, SD reads ~0 BY PHYSICS, Curse's +1 Def now prices); the cell is
+the 6-wide concat `[is_boost, d_high, d_pko, d_outspeed, d_in_high, d_in_pko]`
+(`_EDGE_C1_CELL` = 6), one `_setup_deltas` helper (table rows + the Curse branch) shared by
+both kernels so they can never disagree on what a setup slot does; 4 extra kernel runs ⇒ +2.1 ms B=1 EAGER, but the production PFSP path is
 COMPILED where the dispatch fuses — c1 is opt-in and not in the gen-2 config (requires
 damage_op + damage_outgoing). Each family's map is a ZERO-INIT
 `Linear(cell → 2·n_heads)` (one head-set per direction; auto-protected by `restore_identity_init`'s

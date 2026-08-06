@@ -94,7 +94,7 @@ def test_swords_dance_raises_the_physical_line():
     ctx.our_active_req_move_ids[:, 1] = _SD
     with torch.no_grad():
         cells = fe.damage_op.pairwise_boost(ctx)
-    assert cells.shape == (2, 4, TEAM_SIZE, _EDGE_C1_CELL)
+    assert cells.shape == (2, 4, TEAM_SIZE, 4)   # the OUTGOING kernel half of _EDGE_C1_CELL (6)
     # Non-setup slots (0, 2, 3) are exactly zero everywhere.
     assert float(cells[:, [0, 2, 3]].abs().sum()) == 0.0
     # The SD seat: is_boost == the shared gate, and the best-physical delta is positive wherever
@@ -196,6 +196,64 @@ def test_speed_reads_the_speed_stat_not_spd():
         cells = fe.damage_op.pairwise_boost(ctx)                   # C1 shares the recipe
     assert float(cells[:, 1, 0, 3].abs().max()) < 0.05, \
         "Agility on an already-faster mon must read a SATURATED ~0 outspeed delta"
+
+
+def _constructed_logits(fe, ctx, move_id):
+    """Belief logits making ONE move the near-certain candidate for every opp slot."""
+    M = fe.damage_op.MOVE_BP.shape[0]
+    logits = torch.full((ctx.batch_size, TEAM_SIZE, M), -30.0)
+    logits[:, :, move_id] = 10.0
+    return logits
+
+
+def _c1b_ctx(fe, seed):
+    """A gated C1b scenario: our active = a REAL-spread neutral Snorlax (a random-obs spread is
+    near-zero → the divisor is tiny and damage saturates the chip cap in EVERY world, cancelling
+    the delta), NORMAL-typed, neutral ability, alive; every opp revealed+alive."""
+    from agents.model.damage_tables import _T2I
+    from agents.observation.pokemon import POKEMON_SPREAD_OFFSET
+    ctx = _boost_ctx(fe, seed=seed)
+    ar = torch.arange(2)
+    ctx.species_ids[ar, ctx.our_active_idx] = gen3_data.species.get("snorlax").num
+    sp = POKEMON_SPREAD_OFFSET
+    act = ctx.our_active_idx
+    ctx.pokemon_part[ar, act, sp:sp + 18] = 0.0
+    ctx.pokemon_part[ar, act, sp:sp + 6] = 1.0              # IV 31
+    ctx.pokemon_part[ar, act, sp + 12] = 1.0                # spread_known
+    ctx.pokemon_part[ar, act, sp + 13:sp + 18] = 1.0        # neutral nature
+    ctx.type1_ids[ar, act] = _T2I["NORMAL"]
+    ctx.type2_ids[ar, act] = _T2I["NORMAL"]
+    ctx.ability1_ids[ar, act] = 0                           # neutral row (no Levitate surprises)
+    ctx.our_ctx_raw[:, 0:14] = 0.0                          # no live stat stages
+    ctx.hp_and_active[ar, act, 0] = 1.0
+    ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] = 1.0
+    return ctx
+
+
+def test_incoming_deltas_respect_the_boosted_channel():
+    """C1b channel physics: Iron Defense shrinks the worst PHYSICAL believed hit and ignores a
+    special one; Amnesia the exact reverse; Swords Dance reads ~0 BY PHYSICS (its hypothetical
+    world leaves def/spd unchanged); non-Ghost Curse's +1 Def half now prices."""
+    fe = _make(**_C1_TOGGLES).eval()
+    ctx = _c1b_ctx(fe, seed=95)
+    eq = gen3_data.moves.get("earthquake").num
+    surf = gen3_data.moves.get("surf").num
+    ctx.our_active_req_move_ids[:, 1] = gen3_data.moves.get("irondefense").num
+    ctx.our_active_req_move_ids[:, 2] = gen3_data.moves.get("amnesia").num
+    ctx.our_active_req_move_ids[:, 3] = _SD
+    with torch.no_grad():
+        vs_phys = fe.damage_op.pairwise_boost_incoming(ctx, _constructed_logits(fe, ctx, eq))
+        vs_spec = fe.damage_op.pairwise_boost_incoming(ctx, _constructed_logits(fe, ctx, surf))
+    assert vs_phys.shape == (2, 4, TEAM_SIZE, 2)
+    assert float(vs_phys[:, 1, :, 0].max()) < -1e-4, "Iron Defense must shrink the physical hit"
+    assert float(vs_phys[:, 2, :, 0].abs().max()) < 1e-6, "Amnesia ignores a physical hit"
+    assert float(vs_spec[:, 2, :, 0].max()) < -1e-4, "Amnesia must shrink the special hit"
+    assert float(vs_spec[:, 1, :, 0].abs().max()) < 1e-6, "Iron Defense ignores a special hit"
+    assert float(vs_phys[:, 3].abs().max()) < 1e-6, "SD's world leaves def/spd unchanged"
+    ctx.our_active_req_move_ids[:, 1] = gen3_data.moves.get("curse").num
+    with torch.no_grad():
+        vs_curse = fe.damage_op.pairwise_boost_incoming(ctx, _constructed_logits(fe, ctx, eq))
+    assert float(vs_curse[:, 1, :, 0].max()) < -1e-4, "Curse's +1 Def half must price (C1b)"
 
 
 def test_c1_gate_and_integration():

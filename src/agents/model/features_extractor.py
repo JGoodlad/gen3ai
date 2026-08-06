@@ -816,7 +816,8 @@ _EDGE_T_CELL = 2    # [P(i traps j), P(j traps i)] per (our mon i, opp mon j)
 _EDGE_X_CELL = 4    # [entry_chip, pursuit_p, pursuit_eff, grounded] per (mon, GLOBAL seat)
 _EDGE_G_CELL = 4    # [leftovers, weather_chip, status_tick, leech] per (mon, GLOBAL seat) — signed
 _EDGE_C4_CELL = 4   # [is_protect, p_success, net_ours, net_theirs] per (E3 seat, GLOBAL seat)
-_EDGE_C1_CELL = 4   # [is_boost, d_best_high, d_best_pko, d_outspeed] per (E3 setup-move seat, opp mon)
+_EDGE_C1_CELL = 6   # [is_boost, d_best_high, d_best_pko, d_outspeed, d_in_high, d_in_pko] per
+                    # (E3 setup-move seat, opp mon) — outgoing (C1) ⊕ incoming (C1b) consequence deltas
 _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
                   "d4": _EDGE_D4_CELL, "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL,
                   "v": _EDGE_V_CELL, "t": _EDGE_T_CELL, "x": _EDGE_X_CELL,
@@ -3483,8 +3484,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if "d1" in _fams:
                 _cells["d1"] = self.damage_op.pairwise_outgoing(ctx, _sb)
             if "c1" in _fams:
-                # C1 reuses D1's current-world cells as its delta base when both are on.
-                _cells["c1"] = self.damage_op.pairwise_boost(ctx, _sb, base=_cells.get("d1"))
+                # C1 (outgoing) reuses D1's current-world cells as its delta base when both are
+                # on; C1b (incoming) appends the defensive halves — one 6-wide consequence cell.
+                _cells["c1"] = torch.cat([
+                    self.damage_op.pairwise_boost(ctx, _sb, base=_cells.get("d1")),
+                    self.damage_op.pairwise_boost_incoming(ctx, self.last_move_belief_logits),
+                ], dim=-1)
             if "s1" in _fams:
                 _cells["s1"] = self.damage_op.discrete_outgoing_status(ctx, per_pair=True)
             if "d2" in _fams:

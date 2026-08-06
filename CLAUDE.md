@@ -1535,9 +1535,11 @@ moves via `MoveData.self_boosts` PLUS the runtime NON-GHOST CURSE branch [owner-
 live types — the −1 spe reads as a NEGATIVE d_outspeed; a Ghost user's Curse stays a zero row];
 Belly Drum = the recorded TODO [niche: hp_cost channel + fails-below-half gate + the C1b
 incoming-at-halved-HP re-run]; Defense Curl/evasion stay unpriced) + the speed-recipe outspeed
-delta (stage folded BOTH worlds — here the stage IS the signal); defensive halves (incl.
-Curse's +1 def) are the declared C1b
-follow-up; +2.1 ms B=1 EAGER (4 extra kernel runs) but the production PFSP path is COMPILED
+delta (stage folded BOTH worlds — here the stage IS the signal); the INCOMING halves are LIVE
+too (**C1b**, `pairwise_boost_incoming`: the opp mons' believed candidates vs OUR ACTIVE at
+current-vs-post-boost def/spd stages, 5 worlds on one world axis — Iron Defense/Amnesia/Bulk
+Up/CM and Curse's +1 Def price their damage-taken deltas; cell = the 6-wide
+`[is_boost, d_high, d_pko, d_outspeed, d_in_high, d_in_pko]`); +2.1 ms B=1 EAGER (4 extra kernel runs) but the production PFSP path is COMPILED
 where the dispatch fuses; requires `--damage-op --damage-outgoing`. Each family maps
 its
 cell through a ZERO-INIT `Linear(cell → 2·n_heads)` (one head-set per direction) ⇒ ON is

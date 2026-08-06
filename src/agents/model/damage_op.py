@@ -1474,6 +1474,25 @@ class DamageOperator(torch.nn.Module):
         rev = revealed[:, None, :, None].expand(-1, _DMG_OUT_N_MOVES, -1, 1)
         return torch.cat([cells, rev], dim=-1)                                            # [B,4,6,6]
 
+    def _setup_deltas(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, torch.Tensor]:
+        """Shared C1/C1b source of truth: per-request-slot setup stage deltas `[B,4,5]`
+        (atk,def,spa,spd,spe) + the `is_boost` mask `[B,4]`. Table rows (`MOVE_SELF_BOOSTS`,
+        the ~17 pure setup moves) PLUS the runtime NON-GHOST Curse branch (+1 atk/+1 def/−1 spe
+        — CurseLax/Curse-Registeel, owner-prioritized): type-CONDITIONAL, so it can't live in
+        the type-blind per-move table; resolved from the USER'S live types (the obs encoder's
+        `is_boost` convention). A Ghost user's Curse (50% max HP for a target curse) stays an
+        unpriced zero row. ONE helper so the outgoing and incoming kernels can never disagree
+        on what a setup slot does."""
+        ar = torch.arange(ctx.batch_size, device=ctx.device)
+        deltas = self.MOVE_SELF_BOOSTS[ctx.our_active_req_move_ids]                  # [B,4,5]
+        _at1 = ctx.type1_ids[ar, ctx.our_active_idx]
+        _at2 = ctx.type2_ids[ar, ctx.our_active_idx]
+        _user_ghost = (self.TYPE_IS_GHOST[_at1] + self.TYPE_IS_GHOST[_at2]) > 0.0    # [B]
+        _curse_gate = ((ctx.our_active_req_move_ids == self.curse_num)
+                       & ~_user_ghost[:, None]).float()                              # [B,4]
+        deltas = deltas + _curse_gate[:, :, None] * self.CURSE_BOOSTS[None, None, :]
+        return deltas, (deltas.abs().sum(-1) > 0).float()
+
     def pairwise_boost(self, ctx: 'ExtractorContext',
                        spread_belief: Optional[torch.Tensor] = None,
                        base: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -1509,20 +1528,7 @@ class DamageOperator(torch.nn.Module):
         B, device = ctx.batch_size, ctx.device
         ar = torch.arange(B, device=device)
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
-        deltas = self.MOVE_SELF_BOOSTS[ctx.our_active_req_move_ids]                  # [B,4,5]
-        # Curse, the NON-GHOST branch (+1 atk / +1 def / −1 spe — CurseLax / Curse-Registeel,
-        # owner-prioritized): type-CONDITIONAL, so it can't live in the type-blind per-move
-        # table; resolve from the USER'S live types here (the obs encoder's `is_boost`
-        # convention). A Ghost user's Curse (50% max HP for a target curse) stays an unpriced
-        # zero row. The −1 spe flows through d_outspeed NEGATIVE — "Curse makes you slower" is
-        # part of the priced consequence; the +1 def half waits on C1b (incoming direction).
-        _at1 = ctx.type1_ids[ar, ctx.our_active_idx]
-        _at2 = ctx.type2_ids[ar, ctx.our_active_idx]
-        _user_ghost = (self.TYPE_IS_GHOST[_at1] + self.TYPE_IS_GHOST[_at2]) > 0.0    # [B]
-        _curse_gate = ((ctx.our_active_req_move_ids == self.curse_num)
-                       & ~_user_ghost[:, None]).float()                              # [B,4]
-        deltas = deltas + _curse_gate[:, :, None] * self.CURSE_BOOSTS[None, None, :]
-        is_boost = (deltas.abs().sum(-1) > 0).float()                                # [B,4]
+        deltas, is_boost = self._setup_deltas(ctx)                                   # [B,4,5], [B,4]
         if base is None:
             base = self.pairwise_outgoing(ctx, spread_belief)                        # [B,4,6,6]
         base_high = base[..., 1].amax(dim=1)                                         # [B,6]
@@ -1567,6 +1573,90 @@ class DamageOperator(torch.nn.Module):
             rows.append(torch.stack([ib, d_high, d_pko, d_spd], dim=-1))             # [B,6,_EDGE_C1_CELL]
         cells = torch.stack(rows, dim=1)                                             # [B,4,6,_EDGE_C1_CELL]
         return cells * is_boost[:, :, None, None]
+
+    def pairwise_boost_incoming(self, ctx: 'ExtractorContext',
+                                move_belief_logits: torch.Tensor,
+                                k_cand: int = 4) -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (C1b): the INCOMING half of the setup consequence — "after
+        clicking slot k's boost, how much LESS does each of their mons hurt me". Per (E3 setup
+        seat k, opp mon j) the DELTA cells `[d_in_high, d_in_pko]` `[B, 4, TEAM_SIZE, 2]`
+        (post-boost − current, ≤ 0: a defensive boost SHRINKS the worst believed hit; an
+        offense-only setup move reads ~0 BY PHYSICS, not by gate). Completes Curse's +1 Def /
+        Bulk Up / Calm Mind / Amnesia / Iron Defense — the half the outgoing kernel can't see.
+
+        Attackers: the D4 recipe — per opp mon j its top-`k_cand` most-believed candidates from
+        ITS OWN slot of the composed posterior (selection detached, weights differentiable),
+        de-timid offense, revealed+alive-gated — but with the ACTIVE column KEPT (unlike D4):
+        the opp active is exactly who you boost in front of. Defender: OUR ACTIVE only — real
+        spread + CURRENT def/spd stages (the pairwise_boost speed convention: here the stage IS
+        the signal) + our screens/ability/types. The 5 worlds (current + 4 slots) ride a WORLD
+        axis so the attacker side is computed once and only the defensive divisor varies."""
+        B, device, eps = ctx.batch_size, ctx.device, 1e-6
+        ar = torch.arange(B, device=device)
+        opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+        deltas, is_boost = self._setup_deltas(ctx)                                   # [B,4,5], [B,4]
+        # --- attackers (the D4 recipe; ACTIVE column KEPT) ---
+        w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
+        K = min(int(k_cand), w_all.shape[-1])
+        topk_idx = w_all.detach().topk(K, dim=-1).indices                            # [B,6,K]
+        w_k = w_all.gather(-1, topk_idx)                                             # diff'able
+        bp_k = self.MOVE_BP[topk_idx]
+        mty_k = self.MOVE_TYPE_IDX[topk_idx]
+        phys_k = self.MOVE_PHYS[topk_idx]
+        acc_k = self.MOVE_ACCURACY[topk_idx]
+        a_base = self.BASE_STATS[ctx.species_ids[:, opp]]                            # [B,6,6]
+        off_const = 31.0 + 252.0 / 4.0 + 5.0
+        atk_j = (2.0 * a_base[..., _BS_ATK] + off_const) * 1.1                       # de-timid
+        spa_j = (2.0 * a_base[..., _BS_SPA] + off_const) * 1.1
+        att_gate = ((1.0 - ctx.opp_believed_mask.float())
+                    * (ctx.hp_and_active[:, opp, 0] > 0).float())                    # [B,6]
+        # --- defender: OUR ACTIVE (real spread; CURRENT def/spd stages) ---
+        d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
+        spr = ctx.pokemon_part[ar, ctx.our_active_idx,
+                               POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        iv = spr[:, 0:6] * 31.0; ev = spr[:, 6:12] * 252.0; nat = spr[:, 13:18]
+        def_stat = (2.0 * d_base[:, _BS_DEF] + iv[:, _BS_DEF] + ev[:, _BS_DEF] / 4.0
+                    + 5.0) * nat[:, _NAT_DEF]                                        # [B]
+        spd_stat = (2.0 * d_base[:, _BS_SPD] + iv[:, _BS_SPD] + ev[:, _BS_SPD] / 4.0
+                    + 5.0) * nat[:, _NAT_SPD]
+        maxhp = 2.0 * d_base[:, _BS_HP] + iv[:, _BS_HP] + ev[:, _BS_HP] / 4.0 + 110.0
+        cur_hp = ctx.hp_and_active[ar, ctx.our_active_idx, 0] * maxhp                # [B]
+        _ba, b_def, _bs, b_spd, _be = self._boost_stages(ctx.our_ctx_raw)            # current [B]
+        # --- 5 worlds: current + the 4 slots' def/spd hypotheticals → divisors [B,W] ---
+        zero = torch.zeros(B, 1, device=device)
+        def_w = def_stat[:, None] * self._boost_mult(b_def[:, None]
+                                                     + torch.cat([zero, deltas[..., 1]], dim=1))
+        spd_w = spd_stat[:, None] * self._boost_mult(b_spd[:, None]
+                                                     + torch.cat([zero, deltas[..., 3]], dim=1))
+        # --- damage per (world w, attacker j, candidate c) vs OUR ACTIVE → [B,W,6,K] ---
+        at1 = ctx.type1_ids[ar, ctx.our_active_idx]
+        at2 = ctx.type2_ids[ar, ctx.our_active_idx]
+        amul = self.ABILITY_DAMAGE_MULT[ctx.ability1_ids[ar, ctx.our_active_idx]]    # [B,T]
+        eff = (torch.gather(self.CHART[at1][:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k)
+               * torch.gather(self.CHART[at2][:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k)
+               * torch.gather(amul[:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k))  # [B,6,K]
+        A = phys_k * atk_j[:, :, None] + (1.0 - phys_k) * spa_j[:, :, None]          # [B,6,K]
+        D = (phys_k[:, None] * def_w[:, :, None, None]
+             + (1.0 - phys_k)[:, None] * spd_w[:, :, None, None])                    # [B,W,6,K]
+        is_stab = ((mty_k == ctx.type1_ids[:, opp][:, :, None])
+                   | (mty_k == ctx.type2_ids[:, opp][:, :, None])).float()           # [B,6,K]
+        core = 42.0 * bp_k[:, None] * A[:, None] / (D + eps) / 50.0 + 2.0            # [B,W,6,K]
+        dmg_ns = (core * ((1.0 + 0.5 * is_stab) * eff * 0.925)[:, None]
+                  * (bp_k > 0).float()[:, None])
+        reflect, ls = ctx.screen_feature[:, 0:1], ctx.screen_feature[:, 2:3]         # our side
+        screen = (1.0 - 0.5 * (reflect[:, :, None] * phys_k
+                               + ls[:, :, None] * (1.0 - phys_k)))                   # [B,6,K]
+        high, _low, _crit, ko = self._rolls(dmg_ns, screen[:, None],
+                                            maxhp[:, None, None, None],
+                                            cur_hp[:, None, None, None],
+                                            acc_k[:, None], eps)                     # [B,W,6,K]
+        worst_high = (w_k[:, None] * high).amax(dim=-1)                              # [B,W,6]
+        worst_pko = (w_k[:, None] * ko).amax(dim=-1)
+        d_high = worst_high[:, 1:] - worst_high[:, 0:1]                              # [B,4,6]
+        d_pko = worst_pko[:, 1:] - worst_pko[:, 0:1]
+        our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()       # [B]
+        gate = is_boost[:, :, None] * att_gate[:, None, :] * our_alive[:, None, None]
+        return torch.stack([d_high, d_pko], dim=-1) * gate[..., None]                # [B,4,6,2]
 
     def pairwise_bench_outgoing(self, ctx: 'ExtractorContext',
                                 spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
