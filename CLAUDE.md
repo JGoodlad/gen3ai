@@ -1519,10 +1519,11 @@ exposure [belief-composed vs OUR mons, exact vs theirs] + Dark eff at the victim
 (mon, GLOBAL seat) pairs — "switching is not free", board-composable through the global token;
 requires `--damage-op --damage-op-prefuse`; **G** = the per-mon END-OF-TURN HP LEDGER
 (`pairwise_schedule`: signed maxhp fractions — Leftovers +1/16 [revealed-exact], sand/hail chip
-−1/16 [Rock/Ground/Steel / Ice immune, live weather one-hot], burn/psn −1/8 + Toxic FLAT −1/8 in
-v1 [the ramp needs the toxic STAGE, an E2 follow-up], Leech −1/8 on the seeded ACTIVE only —
-correctly, it clears on switch) at the same (mon, GLOBAL seat) route as X; requires
-`--damage-op`; **C4** = the first CONSEQUENCE edge (`pairwise_protect`): at the E3 seat of a
+−1/16 [Rock/Ground/Steel / Ice immune, live weather one-hot], burn/psn −1/8 + **Toxic at its
+RAMPED next tick −(ticks+1)/16** from the PUBLIC obs toxic counter both sides
+[owner-prioritized 2026-08-06 — the old flat −1/8 under-priced late-stall Toxic 3-4×], Leech
+−1/8 on the seeded ACTIVE only — correctly, it clears on switch) at the same (mon, GLOBAL
+seat) route as X; requires `--damage-op`; **C4** = the first CONSEQUENCE edge (`pairwise_protect`): at the E3 seat of a
 Protect/Detect/Endure request slot, `[is_protect, p_success (the gen3_protect_odds_v1 obs
 scalar), net_ours, net_theirs]` — the two ACTIVES' G-ledger sums, i.e. the turn a successful
 Protect banks (their Toxic ramps, our Leftovers ticks); requires `--damage-op`; **C1** = the first
@@ -1546,12 +1547,17 @@ post-heal HP worlds (`MOVE_HEAL_FRACTION`: 0.5 plain + weather heals [flat v1 ap
 1.0 Rest [sleep cost unpriced v1], Wish EXCLUDED — delayed, the wish obs scalars own it) —
 "does healing beat their KO", hitting −w exactly at the threshold flip; requires
 `--damage-op`; **C2** = the STATUS-consequence edge (`pairwise_status_consequence`): per (E3
-status seat, opp mon) `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched]` — what
-LANDING would do behind S1's "will it land": T-Wave's para flips P(outspeed) toward us (their
-spe ×0.25), WoW halves their worst believed PHYSICAL hit, brn/psn add the flat −1/8 tick
-(Toxic RAMP = the documented G/E2 follow-up; Leech Seed deliberately G/S1's fact; sleep's
-consequence = S1's immob channel); deltas RAW — decorrelated from `land`, the head composes
-consequence × probability like pko × accuracy; requires `--damage-op --damage-outgoing`;
+status seat, opp mon) `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched,
+d_in_all_slp, e_slp_free_turns]` — what LANDING would do behind S1's "will it land": T-Wave's
+para flips P(outspeed) toward us (their spe ×0.25), WoW halves their worst believed PHYSICAL
+hit, brn/psn add the flat −1/8 tick while **TOXIC lands at its TRUE first tick −1/16**
+(split from plain psn by move num — they share immunity cat 5; the ramp thereafter = G's
+live counter fact), and **SLEEP's tempo consequence is priced** — their whole believed threat
+suspended (−worst hit, ANY category) for E[free turns] from the VERIFIED sleep hazard tables
+(2.5 no-EB / exactly 1.0 revealed Early Bird, Smogon-prior-marginalised per mon —
+`sleep_belief.expected_free_turns`, one source with the wake belief; Leech Seed deliberately
+G/S1's fact); deltas RAW — decorrelated from `land`, the head composes consequence ×
+probability like pko × accuracy; requires `--damage-op --damage-outgoing`;
 C1 is +2.1 ms B=1 EAGER (4 extra kernel runs) but the production PFSP path is COMPILED
 where the dispatch fuses. Each family maps
 its

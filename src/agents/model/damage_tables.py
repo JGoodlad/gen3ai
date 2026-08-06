@@ -344,6 +344,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         **build_trap_tables(n_species, n_abilities),
         **build_self_boost_tables(n_moves),
         **build_recovery_tables(n_moves),
+        **build_sleep_tables(n_species, n_abilities),
         "MOVE_SECONDARY": move_secondary,
         "MOVE_PRIORITY": move_priority,
         "MOVE_DRAIN": move_drain,
@@ -629,6 +630,7 @@ def build_species_exp_mult(n_species: int, chart: torch.Tensor, ability_damage_m
 CHOICE_BAND_ITEM_NUM = int(gen3_data.items.get("choiceband").num)   # 220
 CHOICE_BAND_PHYS_MULT = 1.5
 CURSE_MOVE_NUM = int(gen3_data.moves.get("curse").num)              # 174 — the C1 runtime type branch
+TOXIC_MOVE_NUM = int(gen3_data.moves.get("toxic").num)              # 92 — C2 tox-vs-psn (shared cat 5)
 
 
 def build_species_cb_prior(n_species: int) -> torch.Tensor:
@@ -896,6 +898,30 @@ def build_recovery_tables(n_moves: int) -> Dict[str, torch.Tensor]:
         raise ValueError("MOVE_HEAL_FRACTION: Recover did not resolve to 0.5 — the recovery "
                          "table is empty/misaligned. Regenerate gen3_moves.json (isHeal).")
     return {"MOVE_HEAL_FRACTION": t}
+
+
+def build_sleep_tables(n_species: int, n_abilities: int) -> Dict[str, torch.Tensor]:
+    """Sleep-consequence tables (the C2 sleep channels):
+
+      SPECIES_EARLYBIRD_PRIOR[n_species]   P(species runs Early Bird) — the Smogon ability-prior
+                                           marginal (the unrevealed-ability read; ~0 for most)
+      ABILITY_IS_EARLYBIRD[n_abilities]    1.0 at the earlybird row (revealed → exact)
+
+    Fail-loud on earlybird resolving (the trap-tables convention) — a silent miss would make the
+    EB marginalisation a no-op that always prices the full 2.5 free turns."""
+    eb = gen3_data.abilities.get("earlybird")
+    if eb is None or not (0 <= eb.num < n_abilities):
+        raise ValueError("earlybird failed to resolve — the sleep-consequence EB fold would be "
+                         "silently empty. Fix the id / regenerate gen3_abilities.")
+    is_eb = torch.zeros(n_abilities, dtype=torch.float32)
+    is_eb[eb.num] = 1.0
+    prior = torch.zeros(n_species, dtype=torch.float32)
+    for sid in gen3_data.species.base_form_ids():
+        sd = gen3_data.species.get(sid)
+        if not (0 <= sd.num < n_species):
+            continue
+        prior[sd.num] = float((gen3_data.priors.ability(sid) or {}).get("earlybird", 0.0))
+    return {"SPECIES_EARLYBIRD_PRIOR": prior.clamp(max=1.0), "ABILITY_IS_EARLYBIRD": is_eb}
 
 
 def build_move_type_idx(n_moves: int) -> torch.Tensor:

@@ -54,6 +54,26 @@ _EARLY_BIRD = "earlybird"
 _UNKNOWN_ABILITY = "unknownability"
 
 
+def expected_free_turns(is_rest: bool, p_earlybird: float) -> float:
+    """E[number of FULL turns a freshly-slept mon cannot act], derived FROM the verified hazard
+    tables above (never hand-asserted — the C2 sleep-consequence kernel's one source):
+    E = Σ_k P(free ≥ k) over the survival curve of the wake hazards at counters 0,1,2,….
+    Opp sleep no-EB = 2.5, with Early Bird = 1.0, Rest no-EB = 2.0 exactly; marginalised
+    linearly over ``p_earlybird`` (expectation of a mixture)."""
+    def _e(table: Tuple[float, ...]) -> float:
+        surv, e = 1.0, 0.0
+        for h in table:
+            surv *= (1.0 - h)
+            e += surv
+            if surv <= 0.0:
+                break
+        return e
+
+    if is_rest:
+        return (1.0 - p_earlybird) * _e(_REST_NOEB) + p_earlybird * _e(_REST_EB)
+    return (1.0 - p_earlybird) * _e(_OPP_NOEB) + p_earlybird * _e(_OPP_EB)
+
+
 def sleep_wake_probability(counter: int, is_rest: bool, p_earlybird: float) -> float:
     """P(the mon wakes & can act on its NEXT move attempt) given the observed poke-env sleep
     ``counter`` (cant-turns already seen, still asleep), whether the sleep is Rest-deterministic,

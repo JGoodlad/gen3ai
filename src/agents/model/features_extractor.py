@@ -819,8 +819,9 @@ _EDGE_C4_CELL = 4   # [is_protect, p_success, net_ours, net_theirs] per (E3 seat
 _EDGE_C1_CELL = 6   # [is_boost, d_best_high, d_best_pko, d_outspeed, d_in_high, d_in_pko] per
                     # (E3 setup-move seat, opp mon) — outgoing (C1) ⊕ incoming (C1b) consequence deltas
 _EDGE_C3_CELL = 2   # [is_recovery, d_in_pko] per (E3 recovery seat, opp mon) — the heal-vs-KO flip
-_EDGE_C2_CELL = 5   # [is_status, land, d_their_outspeed, d_in_phys_high, d_sched] per
-                    # (E3 status seat, opp mon) — the post-landing consequence world behind S1
+_EDGE_C2_CELL = 7   # [is_status, land, d_their_outspeed, d_in_phys_high, d_sched, d_in_all_slp,
+                    # e_slp_free_turns] per (E3 status seat, opp mon) — the post-landing
+                    # consequence world behind S1 (incl. the sleep-tempo + true-toxic-tick facts)
 _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
                   "d4": _EDGE_D4_CELL, "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL,
                   "v": _EDGE_V_CELL, "t": _EDGE_T_CELL, "x": _EDGE_X_CELL,

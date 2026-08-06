@@ -323,7 +323,7 @@ def test_status_consequence_channels():
     with torch.no_grad():
         cells = fe.damage_op.pairwise_status_consequence(
             ctx, _constructed_logits(fe, ctx, eq))
-    assert cells.shape == (2, 4, TEAM_SIZE, 5)
+    assert cells.shape == (2, 4, TEAM_SIZE, 7)
     assert float(cells[:, 0].abs().sum()) == 0.0, "a non-status slot must be zero"
     assert float(cells[:, 3].abs().sum()) == 0.0, "Leech Seed is the G/S1 fact, not a C2 row"
     # T-Wave: slow Snorlax vs Aerodactyl — para must flip P(outspeed) hard toward us.
@@ -334,8 +334,53 @@ def test_status_consequence_channels():
     assert float(cells[:, 2, 0, 3].max()) < -1e-4, "burn must shrink the worst physical hit"
     assert float(cells[:, 2, 0, 4].max()) == -0.125, "brn tick −1/8 (flat v1)"
     assert float(cells[:, 2, 0, 2].abs().max()) < 1e-6, "WoW has no para channel"
+    assert float(cells[:, 1:3, :, 5:].abs().max()) < 1e-6, "para/burn have no sleep channels"
     # The land channel rides the validated per-pair kernel (nonzero on the gated pair).
     assert float(cells[:, 1, 0, 1].min()) > 0.0
+
+
+def test_toxic_and_sleep_consequences():
+    """Owner-prioritized core mechanics: Toxic lands at its TRUE first tick −1/16 (not the flat
+    poison −1/8); Spore suspends the target's whole believed threat (d_in_all < 0, incl. a
+    SPECIAL attacker burn can't touch) for E[free turns] = 2.5/4 vs a no-Early-Bird species and
+    exactly 1.0/4 once Early Bird is revealed. And the G ledger now carries the RAMP: a mon 3
+    ticks deep into Toxic bleeds −4/16 next turn, not −2/16."""
+    fe = _make(**_C1_TOGGLES).eval()
+    ctx = _c1b_ctx(fe, seed=107)
+    ar = torch.arange(2)
+    ctx.species_ids[:, TEAM_SIZE] = gen3_data.species.get("swampert").num
+    ctx.screen_feature[:, :] = 0.0
+    from agents.model.damage_op import POKEMON_CONDITION_OFFSET, POKEMON_COUNTER_OFFSET
+    ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE,
+                     POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7] = 0.0
+    ctx.our_active_req_move_ids[:, :] = 0
+    ctx.our_active_req_move_ids[:, 1] = gen3_data.moves.get("toxic").num
+    ctx.our_active_req_move_ids[:, 2] = gen3_data.moves.get("spore").num
+    surf = gen3_data.moves.get("surf").num
+    with torch.no_grad():
+        cells = fe.damage_op.pairwise_status_consequence(
+            ctx, _constructed_logits(fe, ctx, surf))
+    assert float(cells[:, 1, 0, 4].max()) == -1.0 / 16.0, "Toxic lands at its TRUE first tick"
+    assert float(cells[:, 1, 0, 5].abs().max()) < 1e-6, "Toxic has no sleep channels"
+    assert float(cells[:, 2, 0, 5].max()) < -1e-4, \
+        "sleep suspends the whole threat — the SPECIAL surf too (burn couldn't touch it)"
+    assert abs(float(cells[0, 2, 0, 6]) - 2.5 / 4.0) < 0.05, \
+        "E[free turns] ≈ 2.5/4 for a no-EB species (Swampert)"
+    ctx.ability1_ids[:, TEAM_SIZE] = gen3_data.abilities.get("earlybird").num
+    with torch.no_grad():
+        cells_eb = fe.damage_op.pairwise_status_consequence(
+            ctx, _constructed_logits(fe, ctx, surf))
+    assert abs(float(cells_eb[0, 2, 0, 6]) - 1.0 / 4.0) < 1e-5, \
+        "revealed Early Bird collapses E[free turns] to exactly 1.0/4"
+    # --- the G-ledger Toxic RAMP (both worlds of the same fact) ---
+    ctx.pokemon_part[ar, 1, POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7] = 0.0
+    ctx.pokemon_part[ar, 1, POKEMON_CONDITION_OFFSET + 6] = 1.0        # our mon 1: TOX
+    ctx.pokemon_part[ar, 1, POKEMON_COUNTER_OFFSET + 1] = 3.0 / 8.0    # 3 ticks deep
+    ctx.hp_and_active[ar, 1, 0] = 1.0
+    with torch.no_grad():
+        our_g, _opp_g = fe.damage_op.pairwise_schedule(ctx)
+    assert abs(float(our_g[0, 1, 2]) - (-4.0 / 16.0)) < 1e-6, \
+        "the G ledger must charge the RAMPED next tick (3 ticks deep → −4/16)"
 
 
 def test_c1_gate_and_integration():

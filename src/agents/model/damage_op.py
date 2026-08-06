@@ -29,12 +29,14 @@ from agents.observation.constants import (
     POKEMON_SPREAD_OFFSET,
     POKEMON_SPREAD_DIM,
     POKEMON_CONDITION_OFFSET,
+    POKEMON_COUNTER_OFFSET,
     POKEMON_SLEEP_BELIEF_OFFSET,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.model.team_signature import TEAM_SIGNATURE_DIM, TEAM_SIGNATURE_MOVES
 from agents.model.damage_tables import (N_SECONDARY as _N_SECONDARY,
-                                        SECONDARY_COLS as _SECONDARY_COLS, LEECH_SEED_CAT)
+                                        SECONDARY_COLS as _SECONDARY_COLS, LEECH_SEED_CAT,
+                                        _SLP_CAT as _SLP_STATUS_CAT)
 from agents.observation.turn_delta_encoder import (
     TURN_DELTA_DIM,
     EFF_DIM,
@@ -359,8 +361,9 @@ class DamageOperator(torch.nn.Module):
         self.prob_outspeed = bool(prob_outspeed)
         from agents.model.damage_tables import (
             build_damage_buffers, HIDDEN_POWER_NUM, HIDDEN_POWER_BP,
-            CHOICE_BAND_ITEM_NUM, CHOICE_BAND_PHYS_MULT, CURSE_MOVE_NUM,
+            CHOICE_BAND_ITEM_NUM, CHOICE_BAND_PHYS_MULT, CURSE_MOVE_NUM, TOXIC_MOVE_NUM,
         )
+        from agents.observation.sleep_belief import expected_free_turns
         bufs = build_damage_buffers(layout['max_moves'], layout['max_species'], layout['max_abilities'])
         for name, tensor in bufs.items():
             # Non-persistent: deterministic physics from data/, not learned weights → keep them out of
@@ -377,6 +380,11 @@ class DamageOperator(torch.nn.Module):
         self.cb_item_num = CHOICE_BAND_ITEM_NUM            # gen3_unified_choice_band_v1: Choice Band item num
         self.cb_phys_mult = float(CHOICE_BAND_PHYS_MULT)   # ×1.5 physical Atk
         self.curse_num = CURSE_MOVE_NUM                    # C1: the runtime non-Ghost Curse branch
+        self.toxic_num = TOXIC_MOVE_NUM                    # C2: tox vs plain psn (they share cat 5)
+        # C2 sleep consequence: E[free turns] endpoints DERIVED from the verified hazard tables
+        # (sleep_belief.expected_free_turns — one source), marginalised per-mon over P(Early Bird).
+        self.sleep_free_noeb = float(expected_free_turns(False, 0.0))    # 2.5
+        self.sleep_free_eb = float(expected_free_turns(False, 1.0))      # 1.0
         # gen3_unified_topk_incoming_v1: secondary-col → status-category map for the per-pivot incoming
         # status-landing's ability-immunity fold (non-persistent — pure constant).
         self.register_buffer("_SEC_CAT_IDX", torch.tensor(_SECONDARY_TO_STATUS_CAT, dtype=torch.long),
@@ -1628,7 +1636,8 @@ class DamageOperator(torch.nn.Module):
                                     k_cand: int = 4) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (C2): what LANDING our status move DOES — the consequence
         world behind S1's "will it land". Per (E3 status-move seat k, opp mon j) the cells
-        `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched]` `[B, 4, TEAM_SIZE, 5]`:
+        `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched, d_in_all_slp,
+        e_slp_free_turns]` `[B, 4, TEAM_SIZE, 7]`:
 
           * `is_status` — slot k inflicts a MAJOR status (cats par/brn/frz/slp/psn — Leech Seed
             is deliberately NOT here: its tick is the G ledger's fact, its landing S1's).
@@ -1640,8 +1649,13 @@ class DamageOperator(torch.nn.Module):
             click it). Believed/neutral opp speed, named indices, current our-stage folded.
           * `d_in_phys_high` — BURN: Δ of mon j's worst believed PHYSICAL hit on our active
             with its Atk halved (≤ 0 — WoW as damage control; special candidates untouched).
-          * `d_sched` — the flat residual tick a brn/psn/tox landing adds (−1/8; the Toxic
-            RAMP needs the stage — the documented G/E2 follow-up; par/slp read 0).
+          * `d_sched` — the residual tick the landing adds: brn/psn −1/8 flat, TOXIC its TRUE
+            first tick −1/16 (the ramp thereafter is the G ledger's live fact via the public
+            toxic counter — owner-prioritized 2026-08-06; par/slp read 0).
+          * `d_in_all_slp` / `e_slp_free_turns` — SLEEP's consequence: their whole believed
+            threat suspended (−worst hit, any category) for E[free turns] from the VERIFIED
+            sleep hazard tables (`sleep_belief.expected_free_turns` — 2.5 no-EB / 1.0 Early
+            Bird, marginalised per mon over the revealed-exact/Smogon-prior P(EB); /4-normed).
 
         Deltas are RAW (not multiplied by `land`) — the decorrelated provide-the-facts form:
         the head composes consequence × probability itself, exactly like pko vs accuracy."""
@@ -1654,7 +1668,9 @@ class DamageOperator(torch.nn.Module):
         is_status = inflicts * ((sidx > 0) & (sidx != LEECH_SEED_CAT)).float()       # [B,4]
         is_par = (sidx == 1).float()
         is_brn = (sidx == 2).float()
-        is_dot = ((sidx == 2) | (sidx == 5)).float()                                 # brn/psn/tox
+        is_slp = (sidx == _SLP_STATUS_CAT).float()
+        is_tox = (ids == self.toxic_num).float()                                     # cat 5 splits here
+        is_psn = ((sidx == 5).float() - is_tox).clamp(min=0.0)                       # plain poison
         land = self.discrete_outgoing_status(ctx, per_pair=True)[..., 0]             # [B,4,6]
         # --- paralysis: their speed ×0.25 → Δ P(we outspeed) (the pairwise_speed recipe) ---
         d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]
@@ -1689,26 +1705,43 @@ class DamageOperator(torch.nn.Module):
         screen = (1.0 - 0.5 * (reflect[:, :, None] * phys_k
                                + ls[:, :, None] * (1.0 - phys_k)))                   # [B,6,K]
         phys_mask = phys_k * (bp_k > 0).float()
+        dmg_mask = (bp_k > 0).float()
 
-        def _worst_phys(atk_mult: float) -> torch.Tensor:
+        def _worst(atk_mult: float, mask: torch.Tensor) -> torch.Tensor:
             A = phys_k * atk_j[:, :, None] * atk_mult + (1.0 - phys_k) * spa_j[:, :, None]
             D = phys_k * def_c[:, None, None] + (1.0 - phys_k) * spd_c[:, None, None]
             core = 42.0 * bp_k * A / (D + eps) / 50.0 + 2.0
             dmg_ns = core * (1.0 + 0.5 * is_stab) * eff * 0.925 * (bp_k > 0).float()
             high, _l, _c, _k = self._rolls(dmg_ns, screen, maxhp[:, None, None],
                                            cur_hp[:, None, None], acc_k, eps)        # [B,6,K]
-            return (w_k * high * phys_mask).amax(dim=-1)                             # [B,6]
+            return (w_k * high * mask).amax(dim=-1)                                  # [B,6]
 
-        d_in_phys = ((_worst_phys(0.5) - _worst_phys(1.0))[:, None, :]
+        d_in_phys = ((_worst(0.5, phys_mask) - _worst(1.0, phys_mask))[:, None, :]
                      * is_brn[:, :, None])                                           # [B,4,6] ≤0
-        # --- the flat residual-tick consequence (Toxic ramp = the documented follow-up) ---
-        d_sched = (-1.0 / 8.0) * is_dot[:, :, None].expand(-1, -1, TEAM_SIZE)        # [B,4,6]
+        # --- the residual-tick consequence: brn/psn flat −1/8; TOXIC lands at its TRUE first
+        # tick −1/16 (the ramp thereafter is the G ledger's live fact once the counter exists —
+        # owner-prioritized 2026-08-06, was a flat −1/8 that over-priced turn 1 and hid the ramp) ---
+        d_sched = (-(1.0 / 8.0) * (is_brn + is_psn) - (1.0 / 16.0) * is_tox)
+        d_sched = d_sched[:, :, None].expand(-1, -1, TEAM_SIZE)                      # [B,4,6]
+        # --- SLEEP (owner-prioritized): the consequence of landing it — their whole believed
+        # threat SUSPENDED (d_in_all = −worst hit of ANY category) for an EXPECTED number of
+        # free turns from the VERIFIED hazard tables, Early-Bird-marginalised per mon (revealed
+        # ability → exact; else the Smogon prior). Both RAW, decorrelated from `land`. ---
+        opp_ability = ctx.ability1_ids[:, opp]                                       # [B,6]
+        eb_rev = self.ABILITY_IS_EARLYBIRD[opp_ability]
+        eb_pri = self.SPECIES_EARLYBIRD_PRIOR[ctx.species_ids[:, opp]]
+        p_eb = torch.where(opp_ability > 0, eb_rev, eb_pri)                          # [B,6]
+        e_free = (self.sleep_free_noeb
+                  + (self.sleep_free_eb - self.sleep_free_noeb) * p_eb) / 4.0        # [B,6] (/max 4)
+        e_slp_free = e_free[:, None, :] * is_slp[:, :, None]                         # [B,4,6]
+        d_in_all = (-_worst(1.0, dmg_mask))[:, None, :] * is_slp[:, :, None]         # [B,4,6] ≤0
         our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()
         row_gate = (is_status[:, :, None] * att_gate[:, None, :]
                     * our_alive[:, None, None])                                      # [B,4,6]
         ib = is_status[:, :, None].expand(-1, -1, TEAM_SIZE)
-        cells = torch.stack([ib, land, d_outspeed, d_in_phys, d_sched], dim=-1)
-        return cells * row_gate[..., None]                                           # [B,4,6,5]
+        cells = torch.stack([ib, land, d_outspeed, d_in_phys, d_sched,
+                             d_in_all, e_slp_free], dim=-1)
+        return cells * row_gate[..., None]                                           # [B,4,6,7]
 
     def pairwise_boost_incoming(self, ctx: 'ExtractorContext',
                                 move_belief_logits: torch.Tensor,
@@ -2021,7 +2054,13 @@ class DamageOperator(torch.nn.Module):
             lefties = (items == LEFTOVERS_NUM).float() * (1.0 / 16.0)             # revealed-exact
             cond = ctx.pokemon_part[:, sl,
                                     POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7]
-            status = -(1.0 / 8.0) * (cond[..., _COND_BRN_IDX] + cond[..., 5] + cond[..., 6])
+            # Burn/poison flat −1/8; TOXIC now carries its RAMP (owner-prioritized 2026-08-06):
+            # the obs toxic counter (min(ticks,8)/8, PUBLIC both sides) → the NEXT tick costs
+            # (ticks+1)/16 — a fresh Toxic reads −1/16, a 5-turn one −6/16. The old flat −1/8
+            # under-priced late-stall Toxic 3-4× (the CurseLax/stall war fact).
+            tox_ticks = ctx.pokemon_part[:, sl, POKEMON_COUNTER_OFFSET + 1] * 8.0    # [B,6]
+            status = (-(1.0 / 8.0) * (cond[..., _COND_BRN_IDX] + cond[..., 5])
+                      - cond[..., 6] * (tox_ticks + 1.0) / 16.0)
             leech_active = ctx_raw[:, _BOOSTS_DIM + _LEECH_SEED_CTX_SLOT]         # [B] active volatile
             leech = torch.zeros(B, TEAM_SIZE, device=device)
             leech[ar, active_local] = -(1.0 / 8.0) * (leech_active > 0.5).float()

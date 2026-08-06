@@ -294,9 +294,18 @@ flat 0.5 v1, Wish excluded; family "c3"), **C2** `pairwise_status_consequence` (
 does behind S1: para → Δoutspeed at spe×0.25, burn → worst-physical at Atk×0.5, brn/psn →
 flat −1/8 tick; deltas RAW/decorrelated from `land`; family "c2"). Shared kernels factored
 (`_setup_deltas` / `_believed_attackers` / `_active_defender`) so consequence families can
-never disagree on their common physics. REMAINING C: **C5 Baton Pass** (needs the RECEIVER
-axis — (BP seat, OUR mon) delivery, a new route) + the deferred approximations (Toxic ramp,
-Belly Drum, weather-heal fold, sleep-duration consequence).
+never disagree on their common physics. **SLICE 14 (2026-08-06, owner-prioritized — "toxic and sleep are core mechanics"):** the Toxic
+RAMP + the sleep-tempo consequence land. G's Toxic leg = −(ticks+1)/16 from the PUBLIC obs
+toxic counter both sides (C4's banked nets inherit it); C2 splits Toxic from plain psn by move
+num (shared immunity cat 5) and lands it at the TRUE first tick −1/16; C2 gains two SLEEP
+channels — `d_in_all` (their whole believed threat suspended, any category) +
+`e_slp_free_turns` (E[free turns] DERIVED from the verified hazard tables via
+`sleep_belief.expected_free_turns`: 2.5 no-EB / exactly 1.0 revealed Early Bird,
+Smogon-prior-marginalised per mon; c2 cell 5 → 7). Obs-benchmark gate re-run for the
+sleep_belief addition: 6,446 calls/encode == the canonical baseline (the new function is
+never called by encode). REMAINING C: **C5 Baton Pass** (needs the RECEIVER
+axis — (BP seat, OUR mon) delivery, a new route) + the deferred approximations (Belly Drum,
+weather-heal fold, Rest's sleep self-cost).
 
 ## 4. E9 decided: history follows the same sorting rule as everything else
 
