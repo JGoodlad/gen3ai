@@ -1459,7 +1459,16 @@ ACTIVE, damage computed ONCE and only the `_rolls` KO ramp re-evaluated at the 5
 worlds (`build_recovery_tables`/`MOVE_HEAL_FRACTION` from `MoveData.is_heal`: 0.5 plain +
 flat-0.5 weather heals [v1 approx of 2/3-sun/1/4-other], 1.0 Rest [sleep unpriced v1], Wish
 excluded — delayed, the wish obs scalars own it), cell `[is_recovery, d_in_pko]`
-(`_EDGE_C3_CELL` = 2), family "c3", requires `damage_op`; 4 extra kernel runs ⇒ +2.1 ms B=1 EAGER, but the production PFSP path is
+(`_EDGE_C3_CELL` = 2), family "c3", requires `damage_op`; **C2** (2026-08-06)
+`pairwise_status_consequence` — what LANDING our status move DOES, behind S1's land: cell
+`[is_status, land, d_their_outspeed, d_in_phys_high, d_sched]` (`_EDGE_C2_CELL` = 5) — para
+→ Δ P(we outspeed) at their spe ×0.25 (the T-Wave fact), burn → the worst believed PHYSICAL
+hit re-priced at Atk ×0.5 (the shared `_believed_attackers` + `_active_defender` blocks),
+brn/psn → the flat −1/8 tick (Toxic ramp = G/E2 follow-up; Leech Seed deliberately excluded
+— G/S1's fact; sleep's consequence = S1's immob channel, unpriced here); deltas RAW
+(decorrelated from `land` — the head composes, the pko×accuracy convention); `land` rides
+the validated `discrete_outgoing_status(per_pair=True)` physics; family "c2", requires
+`damage_op` + `damage_outgoing`; 4 extra kernel runs ⇒ +2.1 ms B=1 EAGER, but the production PFSP path is
 COMPILED where the dispatch fuses — c1 is opt-in and not in the gen-2 config (requires
 damage_op + damage_outgoing). Each family's map is a ZERO-INIT
 `Linear(cell → 2·n_heads)` (one head-set per direction; auto-protected by `restore_identity_init`'s

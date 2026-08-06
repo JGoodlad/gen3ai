@@ -33,7 +33,8 @@ from agents.observation.constants import (
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.model.team_signature import TEAM_SIGNATURE_DIM, TEAM_SIGNATURE_MOVES
-from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY, SECONDARY_COLS as _SECONDARY_COLS
+from agents.model.damage_tables import (N_SECONDARY as _N_SECONDARY,
+                                        SECONDARY_COLS as _SECONDARY_COLS, LEECH_SEED_CAT)
 from agents.observation.turn_delta_encoder import (
     TURN_DELTA_DIM,
     EFF_DIM,
@@ -1596,6 +1597,118 @@ class DamageOperator(torch.nn.Module):
         att_gate = ((1.0 - ctx.opp_believed_mask.float())
                     * (ctx.hp_and_active[:, opp, 0] > 0).float())                    # [B,6]
         return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate
+
+    def _active_defender(self, ctx: 'ExtractorContext'):
+        """Consequence-kernel defender block (C2; C1b/C3 keep inline variants — C1b needs the
+        UNFOLDED stats to fold per-world stages itself): OUR ACTIVE's real-spread stats with
+        its CURRENT def/spd stages folded (named indices — the v58 rule). → (def_c, spd_c,
+        maxhp, cur_hp [B]; at1, at2 [B] long; amul [B,T])."""
+        ar = torch.arange(ctx.batch_size, device=ctx.device)
+        d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
+        spr = ctx.pokemon_part[ar, ctx.our_active_idx,
+                               POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        iv = spr[:, 0:6] * 31.0; ev = spr[:, 6:12] * 252.0; nat = spr[:, 13:18]
+        def_stat = (2.0 * d_base[:, _BS_DEF] + iv[:, _BS_DEF] + ev[:, _BS_DEF] / 4.0
+                    + 5.0) * nat[:, _NAT_DEF]
+        spd_stat = (2.0 * d_base[:, _BS_SPD] + iv[:, _BS_SPD] + ev[:, _BS_SPD] / 4.0
+                    + 5.0) * nat[:, _NAT_SPD]
+        _ba, b_def, _bs2, b_spd, _be = self._boost_stages(ctx.our_ctx_raw)
+        def_c = def_stat * self._boost_mult(b_def)
+        spd_c = spd_stat * self._boost_mult(b_spd)
+        maxhp = 2.0 * d_base[:, _BS_HP] + iv[:, _BS_HP] + ev[:, _BS_HP] / 4.0 + 110.0
+        cur_hp = ctx.hp_and_active[ar, ctx.our_active_idx, 0] * maxhp
+        at1 = ctx.type1_ids[ar, ctx.our_active_idx]
+        at2 = ctx.type2_ids[ar, ctx.our_active_idx]
+        amul = self.ABILITY_DAMAGE_MULT[ctx.ability1_ids[ar, ctx.our_active_idx]]
+        return def_c, spd_c, maxhp, cur_hp, at1, at2, amul
+
+    def pairwise_status_consequence(self, ctx: 'ExtractorContext',
+                                    move_belief_logits: torch.Tensor,
+                                    spread_belief: Optional[torch.Tensor] = None,
+                                    k_cand: int = 4) -> torch.Tensor:
+        """gen3_edge_bias_trunk_v1 (C2): what LANDING our status move DOES — the consequence
+        world behind S1's "will it land". Per (E3 status-move seat k, opp mon j) the cells
+        `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched]` `[B, 4, TEAM_SIZE, 5]`:
+
+          * `is_status` — slot k inflicts a MAJOR status (cats par/brn/frz/slp/psn — Leech Seed
+            is deliberately NOT here: its tick is the G ledger's fact, its landing S1's).
+          * `land` — the validated v27/v37 per-pair landing probability (the same
+            `discrete_outgoing_status(per_pair=True)` physics S1 delivers; duplicated into the
+            cell so C2 is self-contained when S1 is off).
+          * `d_their_outspeed` — PARALYSIS: Δ P(our active outspeeds mon j) with j's speed
+            ×0.25 (≥ 0 — T-Wave makes the matchup faster for us; the true gen3ou reason to
+            click it). Believed/neutral opp speed, named indices, current our-stage folded.
+          * `d_in_phys_high` — BURN: Δ of mon j's worst believed PHYSICAL hit on our active
+            with its Atk halved (≤ 0 — WoW as damage control; special candidates untouched).
+          * `d_sched` — the flat residual tick a brn/psn/tox landing adds (−1/8; the Toxic
+            RAMP needs the stage — the documented G/E2 follow-up; par/slp read 0).
+
+        Deltas are RAW (not multiplied by `land`) — the decorrelated provide-the-facts form:
+        the head composes consequence × probability itself, exactly like pko vs accuracy."""
+        B, device, eps = ctx.batch_size, ctx.device, 1e-6
+        ar = torch.arange(B, device=device)
+        opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+        ids = ctx.our_active_req_move_ids
+        sidx = self.MOVE_STATUS_CAT[ids]                                             # [B,4]
+        inflicts = self.MOVE_INFLICTS_STATUS[ids]
+        is_status = inflicts * ((sidx > 0) & (sidx != LEECH_SEED_CAT)).float()       # [B,4]
+        is_par = (sidx == 1).float()
+        is_brn = (sidx == 2).float()
+        is_dot = ((sidx == 2) | (sidx == 5)).float()                                 # brn/psn/tox
+        land = self.discrete_outgoing_status(ctx, per_pair=True)[..., 0]             # [B,4,6]
+        # --- paralysis: their speed ×0.25 → Δ P(we outspeed) (the pairwise_speed recipe) ---
+        d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]
+        spread = ctx.pokemon_part[:, :TEAM_SIZE,
+                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        iv = spread[..., 0:6] * 31.0; ev = spread[..., 6:12] * 252.0; nat = spread[..., 13:18]
+        our_spe_all = (2.0 * d_base[..., _BS_SPE] + iv[..., _BS_SPE] + ev[..., _BS_SPE] / 4.0
+                       + 5.0) * nat[..., _NAT_SPE]
+        our_para = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
+        act_spe = (our_spe_all * (1.0 - 0.75 * our_para))[ar, ctx.our_active_idx]    # [B]
+        act_spe = act_spe * self._boost_mult(self._boost_stages(ctx.our_ctx_raw)[4])
+        opp_species = ctx.species_ids[:, opp]
+        if spread_belief is not None:
+            opp_spe = spread_belief[..., _SB_SPE]
+        else:
+            opp_spe = 2.0 * self.BASE_STATS[opp_species][..., _BS_SPE] + 31.0 + 5.0
+        opp_para = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
+        opp_std = self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1]                 # [B,6]
+        p_now = self._p_outspeed(act_spe[:, None], opp_spe * (1.0 - 0.75 * opp_para), opp_std)
+        p_par = self._p_outspeed(act_spe[:, None], opp_spe * 0.25, opp_std)          # [B,6]
+        d_outspeed = (p_par - p_now)[:, None, :] * is_par[:, :, None]                # [B,4,6]
+        # --- burn: mon j's worst believed PHYSICAL hit on our active, Atk halved ---
+        (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
+         att_gate) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+        def_c, spd_c, maxhp, cur_hp, at1, at2, amul = self._active_defender(ctx)
+        eff = (torch.gather(self.CHART[at1][:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k)
+               * torch.gather(self.CHART[at2][:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k)
+               * torch.gather(amul[:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k))  # [B,6,K]
+        is_stab = ((mty_k == ctx.type1_ids[:, opp][:, :, None])
+                   | (mty_k == ctx.type2_ids[:, opp][:, :, None])).float()
+        reflect, ls = ctx.screen_feature[:, 0:1], ctx.screen_feature[:, 2:3]
+        screen = (1.0 - 0.5 * (reflect[:, :, None] * phys_k
+                               + ls[:, :, None] * (1.0 - phys_k)))                   # [B,6,K]
+        phys_mask = phys_k * (bp_k > 0).float()
+
+        def _worst_phys(atk_mult: float) -> torch.Tensor:
+            A = phys_k * atk_j[:, :, None] * atk_mult + (1.0 - phys_k) * spa_j[:, :, None]
+            D = phys_k * def_c[:, None, None] + (1.0 - phys_k) * spd_c[:, None, None]
+            core = 42.0 * bp_k * A / (D + eps) / 50.0 + 2.0
+            dmg_ns = core * (1.0 + 0.5 * is_stab) * eff * 0.925 * (bp_k > 0).float()
+            high, _l, _c, _k = self._rolls(dmg_ns, screen, maxhp[:, None, None],
+                                           cur_hp[:, None, None], acc_k, eps)        # [B,6,K]
+            return (w_k * high * phys_mask).amax(dim=-1)                             # [B,6]
+
+        d_in_phys = ((_worst_phys(0.5) - _worst_phys(1.0))[:, None, :]
+                     * is_brn[:, :, None])                                           # [B,4,6] ≤0
+        # --- the flat residual-tick consequence (Toxic ramp = the documented follow-up) ---
+        d_sched = (-1.0 / 8.0) * is_dot[:, :, None].expand(-1, -1, TEAM_SIZE)        # [B,4,6]
+        our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()
+        row_gate = (is_status[:, :, None] * att_gate[:, None, :]
+                    * our_alive[:, None, None])                                      # [B,4,6]
+        ib = is_status[:, :, None].expand(-1, -1, TEAM_SIZE)
+        cells = torch.stack([ib, land, d_outspeed, d_in_phys, d_sched], dim=-1)
+        return cells * row_gate[..., None]                                           # [B,4,6,5]
 
     def pairwise_boost_incoming(self, ctx: 'ExtractorContext',
                                 move_belief_logits: torch.Tensor,

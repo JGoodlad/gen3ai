@@ -1484,7 +1484,7 @@ EDGES. The encoder stack is swapped for `BiasedEncoderLayer` (the spike-proven c
 attention takes an additive per-pair per-head float bias via SDPA's additive mask; the key-pad
 mask rides the same tensor as a -1e9 addend — stock-parity test-pinned) — an UNCONDITIONAL
 state_dict change (fused `in_proj` keys) carried by the `ARCH_SIGNATURE` bump. The delivered
-FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3}` (STRUCTURAL
+FAMILIES ride `edge_bias_families` / `--edge-bias-families {off,d,d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2}` (STRUCTURAL
 str in `check_compatible`; `"d"` is the FROZEN d1,d3 alias — new families are explicit-only, so a
 saved config never silently grows maps; growing the valid set is NOT a version bump, the string
 gate catches any mismatch): **D1** = our active's 4 moves × the opp's 6 mons (the v34
@@ -1545,8 +1545,15 @@ consequence (`pairwise_recovery`): per (E3 recovery seat, opp mon) `[is_recovery
 post-heal HP worlds (`MOVE_HEAL_FRACTION`: 0.5 plain + weather heals [flat v1 approximation],
 1.0 Rest [sleep cost unpriced v1], Wish EXCLUDED — delayed, the wish obs scalars own it) —
 "does healing beat their KO", hitting −w exactly at the threshold flip; requires
-`--damage-op`; +2.1 ms B=1 EAGER (4 extra kernel runs) but the production PFSP path is COMPILED
-where the dispatch fuses; requires `--damage-op --damage-outgoing`. Each family maps
+`--damage-op`; **C2** = the STATUS-consequence edge (`pairwise_status_consequence`): per (E3
+status seat, opp mon) `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched]` — what
+LANDING would do behind S1's "will it land": T-Wave's para flips P(outspeed) toward us (their
+spe ×0.25), WoW halves their worst believed PHYSICAL hit, brn/psn add the flat −1/8 tick
+(Toxic RAMP = the documented G/E2 follow-up; Leech Seed deliberately G/S1's fact; sleep's
+consequence = S1's immob channel); deltas RAW — decorrelated from `land`, the head composes
+consequence × probability like pko × accuracy; requires `--damage-op --damage-outgoing`;
+C1 is +2.1 ms B=1 EAGER (4 extra kernel runs) but the production PFSP path is COMPILED
+where the dispatch fuses. Each family maps
 its
 cell through a ZERO-INIT `Linear(cell → 2·n_heads)` (one head-set per direction) ⇒ ON is
 bitwise-identical to OFF at init (test-pinned, all six). All seat blocks are contiguous index ranges ⇒

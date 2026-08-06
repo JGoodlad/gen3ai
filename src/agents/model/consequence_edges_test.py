@@ -225,6 +225,9 @@ def _c1b_ctx(fe, seed):
     ctx.type2_ids[ar, act] = _T2I["NORMAL"]
     ctx.ability1_ids[ar, act] = 0                           # neutral row (no Levitate surprises)
     ctx.our_ctx_raw[:, 0:14] = 0.0                          # no live stat stages
+    from agents.model.damage_op import POKEMON_CONDITION_OFFSET
+    ctx.pokemon_part[ar, act,
+                     POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7] = 0.0  # statusless
     ctx.hp_and_active[ar, act, 0] = 1.0
     ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] = 1.0
     return ctx
@@ -296,15 +299,56 @@ def test_recovery_flips_the_ko_threshold():
     assert float(full[:, 1:3, :, 1].abs().max()) < 1e-6, "at full HP a heal changes nothing"
 
 
+def test_status_consequence_channels():
+    """C2 semantics: T-Wave on a slow Snorlax vs a fast revealed opponent flips
+    d_their_outspeed strongly POSITIVE (their para makes us effectively faster) and reads a
+    ZERO burn/tick channel; Will-O-Wisp halves the worst believed PHYSICAL hit (negative
+    d_in_phys) and adds the −1/8 tick; a non-status slot stays exactly zero; Leech Seed is
+    deliberately NOT a C2 row."""
+    fe = _make(**_C1_TOGGLES).eval()
+    ctx = _c1b_ctx(fe, seed=103)
+    ar = torch.arange(2)
+    ctx.species_ids[:, TEAM_SIZE] = gen3_data.species.get("aerodactyl").num   # fast attacker
+    ctx.screen_feature[:, :] = 0.0
+    from agents.model.damage_op import POKEMON_CONDITION_OFFSET
+    # Clear ONLY the opp condition block (pokemon_part shares storage with hp_and_active — a
+    # blanket zero would wipe the alive flags the fixture just forced).
+    ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE,
+                     POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7] = 0.0
+    ctx.our_active_req_move_ids[:, :] = 0
+    ctx.our_active_req_move_ids[:, 1] = gen3_data.moves.get("thunderwave").num
+    ctx.our_active_req_move_ids[:, 2] = gen3_data.moves.get("willowisp").num
+    ctx.our_active_req_move_ids[:, 3] = gen3_data.moves.get("leechseed").num
+    eq = gen3_data.moves.get("earthquake").num
+    with torch.no_grad():
+        cells = fe.damage_op.pairwise_status_consequence(
+            ctx, _constructed_logits(fe, ctx, eq))
+    assert cells.shape == (2, 4, TEAM_SIZE, 5)
+    assert float(cells[:, 0].abs().sum()) == 0.0, "a non-status slot must be zero"
+    assert float(cells[:, 3].abs().sum()) == 0.0, "Leech Seed is the G/S1 fact, not a C2 row"
+    # T-Wave: slow Snorlax vs Aerodactyl — para must flip P(outspeed) hard toward us.
+    assert float(cells[:, 1, 0, 2].min()) > 0.5, "para must flip the fast matchup toward us"
+    assert float(cells[:, 1, 0, 3].abs().max()) < 1e-6, "T-Wave has no burn channel"
+    assert float(cells[:, 1, 0, 4].abs().max()) < 1e-6, "para has no residual tick"
+    # WoW: the believed EQ (physical) hit must shrink; the tick reads −1/8.
+    assert float(cells[:, 2, 0, 3].max()) < -1e-4, "burn must shrink the worst physical hit"
+    assert float(cells[:, 2, 0, 4].max()) == -0.125, "brn tick −1/8 (flat v1)"
+    assert float(cells[:, 2, 0, 2].abs().max()) < 1e-6, "WoW has no para channel"
+    # The land channel rides the validated per-pair kernel (nonzero on the gated pair).
+    assert float(cells[:, 1, 0, 1].min()) > 0.0
+
+
 def test_c1_gate_and_integration():
     with pytest.raises(ValueError, match="edge_bias_families d1/s1/c1"):
         _make(**dict(_C1_TOGGLES, damage_outgoing=False))
     fe = _make(**dict(_C1_TOGGLES,
-                      edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3")).eval()
+                      edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2")).eval()
     assert fe.edge_bias.c1_map is not None
     assert fe.edge_bias.c3_map is not None
+    assert fe.edge_bias.c2_map is not None
     assert fe.edge_bias.c1_map.weight.abs().sum() == 0.0, "zero-init map (identity at init)"
     assert fe.edge_bias.c3_map.weight.abs().sum() == 0.0
+    assert fe.edge_bias.c2_map.weight.abs().sum() == 0.0
     with torch.no_grad():
         pi, vf = fe(_obs(seed=75))
     assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
