@@ -147,6 +147,57 @@ def test_curse_non_ghost_prices_atk_up_spe_down():
     assert float(cells_g[:, 1].abs().sum()) == 0.0, "a Ghost user's Curse stays a zero row"
 
 
+def _force_active_speed_scenario(fe, ctx):
+    """Our active = neutral-spread AERODACTYL (spe 130, SpD 75) at slot 0; opp slot 0 = revealed
+    alive SNORLAX (spe 30, SpD 110). The two stats separate HARD in both directions: correct
+    physics reads P(outspeed) ≈ 1; the SpD-as-speed bug read ≈ 0 (186 vs 256). No spread belief
+    → the neutral fallback (the arm where BOTH sides of the 2026-08-06 GIGO were wrong)."""
+    from agents.observation.pokemon import POKEMON_SPREAD_OFFSET
+    aero = gen3_data.species.get("aerodactyl")
+    lax = gen3_data.species.get("snorlax")
+    B = ctx.batch_size
+    ctx.our_active_idx[:] = 0
+    ctx.species_ids[:, 0] = aero.num
+    ctx.species_ids[:, TEAM_SIZE] = lax.num
+    sp = POKEMON_SPREAD_OFFSET
+    ctx.pokemon_part[:, 0, sp:sp + 18] = 0.0
+    ctx.pokemon_part[:, 0, sp:sp + 6] = 1.0          # IV 31
+    ctx.pokemon_part[:, 0, sp + 12] = 1.0            # spread_known
+    ctx.pokemon_part[:, 0, sp + 13:sp + 18] = 1.0    # neutral nature
+    from agents.model.damage_op import POKEMON_CONDITION_OFFSET
+    ctx.pokemon_part[:, 0, POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7] = 0.0
+    ctx.pokemon_part[:, TEAM_SIZE, POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7] = 0.0
+    ctx.hp_and_active[:, 0, 0] = 1.0
+    ctx.hp_and_active[:, TEAM_SIZE, 0] = 1.0
+    ctx.opp_believed_mask[:, 0] = False
+    ctx.our_ctx_raw[:, 0:14] = 0.0                   # no stat stages
+
+
+def test_speed_reads_the_speed_stat_not_spd():
+    """REGRESSION (the 2026-08-06 SpD-as-speed GIGO): pairwise_speed and pairwise_boost read
+    BASE_STATS/iv/ev index 4 (Special Defense) + nat[3] as "speed", so neutral Aerodactyl (spe
+    130) read SLOWER than Snorlax's fallback — both trained generations' V edge priced bulk as
+    speed. Correct physics: P(Aero outspeeds Lax) ≈ 1, and Agility's d_outspeed SATURATES to
+    ~0 (already faster). The buggy indices read ≈0 and a LARGE Agility gain — this test fails
+    hard if either kernel's index reverts."""
+    fe = _make(**_C1_TOGGLES).eval()
+    obs = _obs(seed=91)
+    with torch.no_grad():
+        fe(obs)
+    ctx = fe.unpack(obs)
+    _force_active_speed_scenario(fe, ctx)
+    with torch.no_grad():
+        v = fe.damage_op.pairwise_speed(ctx)                       # NO spread belief: fallback arm
+    assert float(v[:, 0, 0, 0].min()) > 0.9, \
+        "neutral Aerodactyl must read ~certain to outspeed Snorlax (the V kernel)"
+    ctx.our_active_req_move_ids[:, :] = 0
+    ctx.our_active_req_move_ids[:, 1] = _AGILITY
+    with torch.no_grad():
+        cells = fe.damage_op.pairwise_boost(ctx)                   # C1 shares the recipe
+    assert float(cells[:, 1, 0, 3].abs().max()) < 0.05, \
+        "Agility on an already-faster mon must read a SATURATED ~0 outspeed delta"
+
+
 def test_c1_gate_and_integration():
     with pytest.raises(ValueError, match="edge_bias_families d1/s1/c1"):
         _make(**dict(_C1_TOGGLES, damage_outgoing=False))

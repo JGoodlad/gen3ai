@@ -1409,7 +1409,14 @@ taken) — S1 `[land, land·immob]` at the E3 pairs (requires damage_op+outgoing
 `[land, land·immob, w]` at the E4 pairs (requires entity seats); **V** `pairwise_speed` — the
 full mon↔mon P(outspeed) block, cell `[p_outspeed, both_alive, revealed_j]` (real our spread vs
 believed/neutral opp spread; public para ×0.25 both sides; NO stage boosts in v1 — the
-coarse-signal convention; requires damage_op) at the static (our, opp) mon block; **D4** `pairwise_bench_incoming` — the missing
+coarse-signal convention; requires damage_op; ⚠️ **v58 GIGO fix 2026-08-06**: this kernel [+
+C1's outspeed] shipped reading stat index 4 = SPECIAL DEFENSE as "speed" — both trained
+generations' V edge priced bulk; the main op's index-5 p_outspeed paths were always correct.
+Fixed via the named `_BS_*`/`_NAT_*` stat indices [use those, never bare integers — two stat
+layouts coexist: base/iv/ev = hp,atk,def,spa,spd,spe vs nature = atk,def,spa,spd,spe] +
+`consequence_edges_test.test_speed_reads_the_speed_stat_not_spd`, proven to FAIL on the buggy
+kernel. Values-only → v58 is a version STAMP; pre-v58 checkpoints load but their v_map trained
+on the buggy feature) at the static (our, opp) mon block; **D4** `pairwise_bench_incoming` — the missing
 "what does the bench threaten" quadrant, per opp mon j the top-K_bench=4 candidates from its own
 slot of the composed posterior, de-timid attacker + real-spread defenders + our screens,
 revealed/alive-gated, ACTIVE column zeroed (D3's quadrant; requires damage_op) at the same

@@ -269,8 +269,22 @@ then d1 (0.108/10.1%), v (0.012/6.3%, |dV| 0.76), d4 (0.004/2.1%, |dV| 0.49), t
 (≈0.00002 — the Protect-consequence edge never got used). All-off = 0.491/31.5% (bigger than
 gen-1's 0.330/26.9%). The concat arms REPLICATE on the full stack: concat 0.537/33.1%/|dV|
 7.44 — still larger than the whole edge system — so the concat stays, twice-measured.
-Family evidence for gen-3: keep d1/d2/v/d4/t/s1; d3/s3/x/g/c4 have not earned their
-compute (cheap, but candidates for a cut A/B or a delivery-route rethink).
+Family evidence for gen-3: d1/d2/v/d4/t/s1 load-bearing; d3/s3/x/g/c4 near-decorative at
+40M. **OWNER DECISION (2026-08-06): KEEP ALL FAMILIES.** The decorative ones encode
+strategy-critical mechanics that a 40M self-play run may simply not have discovered yet —
+Protect×Toxic timing (c4/g), Explosion consequence play, entry/exit costs — and they are the
+substrate exploiters and长 longer runs need; cut A/Bs can come later. The migration to the
+FULL entity design continues: C1b incoming halves → remaining C pieces → Stage-3 generator +
+entity re-home → E9.
+**GIGO FOUND + FIXED while building C1b (2026-08-06, v58 stamp):** `pairwise_speed` (V) and
+`pairwise_boost`'s outspeed read stat index 4 — SPECIAL DEFENSE — as "speed" (bare-integer
+indexing across the two stat layouts; the main op's index-5 paths were always right). BOTH
+trained generations' V edge priced bulk as speed, so the audits' v rows (gen-1 5.0%, gen-2
+6.3% flips) measured the model exploiting a systematically WRONG feature — treat them as
+"the v ROUTE carries signal", not as validated speed physics; gen-3 trains on true physics.
+Fixed with named `_BS_*`/`_NAT_*` indices + a discriminating regression test
+(Aerodactyl-vs-Snorlax: P(outspeed)≈1 correct vs ≈0 buggy; Agility saturates to ~0 on an
+already-faster mon), PROVEN to fail on the pre-fix kernel.
 
 ## 4. E9 decided: history follows the same sorting rule as everything else
 

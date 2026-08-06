@@ -435,7 +435,12 @@ from typing import Any, Dict, List
 #   growing the type table would break loading in-generation checkpoints into newer code). STRUCTURAL
 #   bool (adds tail_proj + tail_marker + 6 seats per forward); OFF byte-identical; requires
 #   damage_op_prefuse + entity_topk_seats>0 (the tail is defined relative to the E4 truncation).
-MODEL_CONFIG_VERSION = 57
+# v58 is a STAMP (no field, no migration — the v26/v55 convention): the SpD-as-speed GIGO fix
+# in pairwise_speed/pairwise_boost (the V/C1 kernels read stat index 4 = Special Defense as
+# "speed"; both trained generations' V edge priced bulk). VALUES-only forward-math change: a
+# pre-v58 checkpoint still LOADS, but its v_map/c1_map trained against the buggy feature — its
+# V-edge inputs shift under fixed code (documented, accepted: gen-3 retrains under true physics).
+MODEL_CONFIG_VERSION = 58
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -2462,4 +2467,9 @@ def _migrate_config(data: dict) -> dict:
         # v57: gen3_entity_tail_seats_v1 — the E5 tail seats OFF on any older config.
         data.setdefault("entity_tail_seats", False)
         data["config_version"] = 57
+    if version < 58:
+        # v58: the SpD-as-speed GIGO fix (pairwise_speed / pairwise_boost read stat index 4 as
+        # "speed"). NO field — a values-only forward-math fix; the stamp records that a pre-v58
+        # checkpoint's v_map/c1_map trained against the buggy feature (the v55 stamp convention).
+        data["config_version"] = 58
     return data

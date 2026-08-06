@@ -1501,7 +1501,11 @@ pairs, the opp's believed status candidates × our mons at the E4 pairs (cells `
 SPEED edge (`pairwise_speed`: P(our i outspeeds opp j) for every pair, cell `[p_outspeed,
 both_alive, revealed_j]` — our real spread vs the believed/neutral opp spread, per-mon PUBLIC
 para ×0.25 both sides, the uncertainty-aware sigmoid under `prob_outspeed`; v1 = NO stage boosts
-either side, the coarse-signal convention) at the (our-mon, opp-mon) block; **D4** = the MISSING quadrant — every opp BENCH mon's believed
+either side, the coarse-signal convention. ⚠️ **v58 GIGO fix**: through gen-1 AND gen-2 this
+kernel [+ C1's outspeed] read stat index 4 — SPECIAL DEFENSE — as "speed" [the main op's index-5
+paths were always right]; fixed 2026-08-06 with named `_BS_*`/`_NAT_*` indices + the
+Aerodactyl-vs-Snorlax discriminating regression test; both trained gens' V-edge audit numbers
+measured the BUGGY feature) at the (our-mon, opp-mon) block; **D4** = the MISSING quadrant — every opp BENCH mon's believed
 threat to every our mon (`pairwise_bench_incoming`: per opp mon j the top-K_bench=4 candidates
 from ITS OWN slot of the composed posterior — the belief gradient reaches the BENCH move heads for
 the first time — de-timid attacker, real-spread defenders; revealed+alive-gated; the opp ACTIVE

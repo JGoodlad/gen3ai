@@ -98,6 +98,13 @@ _DMG_CB_PER_MON = 2                          # phys_high_cb, phys_pko_cb (physic
 _DMG_CB = _DMG_CB_PER_MON * TEAM_SIZE + 1    # + the shared p_cb scalar = 13
 _DMG_CRIT_P = 1.0 / 16.0   # gen3 base crit rate (×2 damage) — the crit roll is exposed as crit_frac
 _DMG_SPEED_SCALE = 15.0    # logistic scale for P(outspeed) over the speed-stat difference (~one stage)
+# NAMED stat indices — two DIFFERENT layouts coexist and a bare integer silently crosses them
+# (the 2026-08-06 GIGO: pairwise_speed/pairwise_boost read index 4 = SPD as "speed" — both
+# generations trained their V edge on Special Defense; the main op's index-5 paths were right).
+# BASE_STATS / the obs spread iv/ev blocks: [hp, atk, def, spa, spd, spe]; the obs NATURE
+# block ( _NATURE_STAT_ORDER ): [atk, def, spa, spd, spe]. Use these names, never integers.
+_BS_HP, _BS_ATK, _BS_DEF, _BS_SPA, _BS_SPD, _BS_SPE = 0, 1, 2, 3, 4, 5
+_NAT_ATK, _NAT_DEF, _NAT_SPA, _NAT_SPD, _NAT_SPE = 0, 1, 2, 3, 4
 _DMG_SPEED_STD_K = 1.702   # gen3_bidir_threat_trunk_v1 (#3): sigmoid≈normal-CDF, so the uncertainty-aware
 #                            P(outspeed) divides the speed gap by (believed speed std / 1.702)
 # gen3_unified_spread_belief_v1: indices into the SpreadBelief's [atk,def,spa,spd,spe] output (== the
@@ -1527,7 +1534,8 @@ class DamageOperator(torch.nn.Module):
         iv = spread[..., 0:6] * 31.0
         ev = spread[..., 6:12] * 252.0
         nat = spread[..., 13:18]
-        our_spe_all = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]
+        our_spe_all = (2.0 * d_base[..., _BS_SPE] + iv[..., _BS_SPE] + ev[..., _BS_SPE] / 4.0
+                       + 5.0) * nat[..., _NAT_SPE]     # FIXED 2026-08-06: was SpD (the V GIGO)
         our_para = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
         act_spe = (our_spe_all * (1.0 - 0.75 * our_para))[ar, ctx.our_active_idx]    # [B]
         cur_spe_stage = self._boost_stages(ctx.our_ctx_raw)[4]                       # [B]
@@ -1535,7 +1543,7 @@ class DamageOperator(torch.nn.Module):
         if spread_belief is not None:
             opp_spe = spread_belief[..., _SB_SPE]
         else:
-            opp_spe = 2.0 * self.BASE_STATS[opp_species][..., 4] + 31.0 + 5.0        # neutral 0-EV
+            opp_spe = 2.0 * self.BASE_STATS[opp_species][..., _BS_SPE] + 31.0 + 5.0  # neutral 0-EV
         opp_para = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
         opp_spe = opp_spe * (1.0 - 0.75 * opp_para)                                  # [B,6]
         opp_std = self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1]                 # [B,6]
@@ -1595,7 +1603,11 @@ class DamageOperator(torch.nn.Module):
         iv = spread[..., 0:6] * 31.0
         ev = spread[..., 6:12] * 252.0
         nat = spread[..., 13:18]
-        our_spe = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]   # [B,6]
+        # FIXED 2026-08-06 (the SpD-as-speed GIGO): these reads shipped as index 4 / nat[...,3]
+        # — Special Defense — so the V edge priced "outspeed" off bulk for both trained
+        # generations. Named indices now; guarded by the Aerodactyl-vs-Snorlax regression test.
+        our_spe = (2.0 * d_base[..., _BS_SPE] + iv[..., _BS_SPE] + ev[..., _BS_SPE] / 4.0
+                   + 5.0) * nat[..., _NAT_SPE]                                             # [B,6]
         our_para = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
         our_spe = our_spe * (1.0 - 0.75 * our_para)                                       # gen3 para ×0.25
         # --- opp 6: believed spread else the neutral sentinel-free estimate ---
@@ -1604,7 +1616,7 @@ class DamageOperator(torch.nn.Module):
             opp_spe = spread_belief[..., _SB_SPE]                                          # [B,6]
         else:
             opp_base = self.BASE_STATS[opp_species]                                        # [B,6,6]
-            opp_spe = 2.0 * opp_base[..., 4] + 31.0 + 5.0                                  # neutral 0-EV
+            opp_spe = 2.0 * opp_base[..., _BS_SPE] + 31.0 + 5.0                            # neutral 0-EV
         opp_para = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE,
                                     POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
         opp_spe = opp_spe * (1.0 - 0.75 * opp_para)                                        # [B,6]
