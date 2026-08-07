@@ -521,3 +521,16 @@ def test_consequence_topk_versioned_and_threaded():
     out = _migrate_config({"config_version": 58})
     assert out["consequence_topk"] == 4, "pre-v59 models trained at the hardcoded 4"
     assert out["config_version"] == MODEL_CONFIG_VERSION == 59
+
+
+def test_every_arch_toggle_is_a_current_model_version_param():
+    """The class of the gen-3 launch crash: a new toggle added to ARCH_ARG_KEYS (which
+    _run_arch_toggles forwards as **kwargs) but NOT to current_model_version's signature is
+    invisible to the unit suite and explodes at real-launch time. Pin the contract."""
+    import inspect
+
+    from agents.model.extractor_arch import ARCH_ARG_KEYS
+    from agents.model.snapshot import current_model_version
+    params = set(inspect.signature(current_model_version).parameters)
+    missing = {v for v in ARCH_ARG_KEYS.values() if v not in params}
+    assert not missing, f"ARCH_ARG_KEYS values missing from current_model_version: {missing}"

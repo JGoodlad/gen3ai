@@ -896,6 +896,7 @@ def current_model_version(
     damage_candidate_k: int = 0,
     damage_op_prefuse: bool = False,
     entity_topk_seats: int = 0,
+    consequence_topk: int = 6,
     edge_bias_families: str = "off",
     entity_tail_seats: bool = False,
     win_prob_mode: str = "none",
@@ -923,6 +924,7 @@ def current_model_version(
     zarch_dim: int = 0,
     zarch_lut: str = "off",
     zarch_lut_rosters=None,
+    zarch_lut_init_std: float = 1.0,
     zarch_recon_coef: float = 0.0,
     zarch_vicreg_coef: float = 0.0,
     vf_coef: float = 0.5,
@@ -972,6 +974,8 @@ def current_model_version(
     ext_kwargs["damage_candidate_k"] = damage_candidate_k
     ext_kwargs["damage_op_prefuse"] = damage_op_prefuse
     ext_kwargs["entity_topk_seats"] = entity_topk_seats
+    ext_kwargs["consequence_topk"] = consequence_topk
+    ext_kwargs["zarch_lut_init_std"] = zarch_lut_init_std
     ext_kwargs["edge_bias_families"] = edge_bias_families
     ext_kwargs["entity_tail_seats"] = entity_tail_seats
     ext_kwargs["win_prob_mode"] = win_prob_mode
@@ -1046,6 +1050,7 @@ def arch_toggles_from_model(model) -> dict:
         # v54 gen3_entity_move_seats_v1: STRUCTURAL int (threat_seat_proj + seat count), gated in
         # check_compatible — must reach the worker's gate like damage_op_prefuse.
         "entity_topk_seats": int(getattr(fe, "entity_topk_seats", 0)),
+        "consequence_topk": int(getattr(fe, "consequence_topk", 6)),
         # v56 gen3_edge_bias_trunk_v1: STRUCTURAL str (per-family bias maps + attention biases),
         # gated in check_compatible — must reach the worker's gate.
         "edge_bias_families": str(getattr(fe, "edge_bias_families", "off")),
