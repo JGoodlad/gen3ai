@@ -75,6 +75,67 @@ def _wrap_hp_target(live: "LiveView", event: DamagingMoveEvent) -> Optional[_HpT
     )
 
 
+class RecencyTracker:
+    """E9 step 1 (roadmap §3.9): per-(side, species) RECENCY counters — the first
+    history-attaches-to-entities increment. Three turn-denominated counters per mon:
+
+      * seen    — turns since last ON FIELD (reset by the live actives + SWITCH events)
+      * acted   — turns since it last EXECUTED a move (reset by MOVE events)
+      * was_hit — turns since it last TOOK damage (reset by DAMAGE events — the event's
+                  (side, actor_species) attribution names the mon AFFECTED)
+
+    Ticked by observed TURN-number deltas (a multi-decision turn ticks once, not per
+    decision); resets consume the SAME per-decision event window the TurnDelta fold reads,
+    so obs and history can never disagree about what happened. Both sides PUBLIC (every
+    reset derives from observed protocol events). ``values()`` returns the obs form:
+    log-saturated to [0, 1] over a 10-turn cap (the ``turns_since_progress`` convention);
+    a never-tracked mon reads 1.0 — maximum staleness, the honest default for a mon that
+    has not appeared this episode."""
+
+    _SAT = 10
+
+    def __init__(self):
+        self._last_turn: Optional[int] = None
+        self._seen: dict = {}
+        self._acted: dict = {}
+        self._hit: dict = {}
+
+    def update(self, turn: int, events, our_active: Optional[str],
+               opp_active: Optional[str]) -> None:
+        from agents.battle.battle_event import OURS, OPP, EventKind
+        if self._last_turn is None:
+            self._last_turn = turn
+        dt = max(0, int(turn) - self._last_turn)
+        self._last_turn = int(turn)
+        if dt:
+            for d in (self._seen, self._acted, self._hit):
+                for k in d:
+                    d[k] = min(d[k] + dt, self._SAT)
+        for e in events or []:
+            if not getattr(e, "actor_species", None) or getattr(e, "side", None) is None:
+                continue
+            key = (e.side, e.actor_species)
+            if e.kind is EventKind.MOVE:
+                self._acted[key] = 0
+                self._seen[key] = 0
+            elif e.kind is EventKind.SWITCH:
+                self._seen[key] = 0
+            elif e.kind is EventKind.DAMAGE:
+                self._hit[key] = 0
+        for side, sp in ((OURS, our_active), (OPP, opp_active)):
+            if sp:
+                self._seen[(side, sp)] = 0
+
+    def values(self, side: str, species: Optional[str]):
+        """→ (seen, acted, was_hit), each log-saturated to [0, 1]."""
+        import math
+        out = []
+        for d in (self._seen, self._acted, self._hit):
+            n = self._SAT if species is None else d.get((side, species), self._SAT)
+            out.append(math.log1p(min(n, self._SAT)) / math.log(11.0))
+        return tuple(out)
+
+
 class EpisodeTracker:
     """
     Tracks per-episode state needed to build observations and reward signals.
@@ -105,6 +166,8 @@ class EpisodeTracker:
         # Episode-scoped no-progress counter (design §5.1). Updated at record()/embed time so the
         # obs is fresh; read by BOTH the obs encoder (value()) and the reward (last_penalty).
         self._progress_clock = ProgressClock()
+        # E9 step 1 (roadmap §3.9): per-entity recency, fed by the same decision window.
+        self._recency = RecencyTracker()
         # Memoized turn-history: encoded TurnDelta vectors, oldest-left/newest-right.
         # A past turn's window is bounded and immutable (see prev_N_delta_vecs), so its
         # encoded vector never changes — we encode only the NEWEST delta each step and
@@ -123,6 +186,10 @@ class EpisodeTracker:
     @property
     def progress_clock(self) -> ProgressClock:
         return self._progress_clock
+
+    @property
+    def recency(self) -> RecencyTracker:
+        return self._recency
 
     @property
     def last_ctx(self) -> Optional[BattleContext]:
@@ -345,7 +412,18 @@ class EpisodeTracker:
         Single home for the 3-step protocol the env + inference players both need (no copy-paste).
         """
         delta = self.build_delta(battle=battle)
-        self._progress_clock.update(delta, battle.strict_view().live, legal)
+        live = battle.strict_view().live
+        self._progress_clock.update(delta, live, legal)
+        # E9 recency: the SAME per-decision window the newest TurnDelta slot folds
+        # ([cursors[-1], now)), plus the live actives for the seen reset.
+        if self._cursors and hasattr(battle, "events_since"):
+            _ev = battle.events_since(self._cursors[-1])
+        else:
+            _ev = []
+        self._recency.update(
+            live.turn, _ev,
+            live.ours.active.species if live.ours.active else None,
+            live.opp.active.species if live.opp.active else None)
         return delta
 
     def _encode_delta_slot(self, i: int, encoder, battle) -> np.ndarray:
