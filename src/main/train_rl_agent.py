@@ -374,6 +374,7 @@ def _run_arch_toggles(args) -> dict:
         damage_candidate_k=args.damage_candidate_k,
         damage_op_prefuse=args.damage_op_prefuse,
         entity_topk_seats=args.entity_topk_seats,
+        consequence_topk=args.consequence_topk,
         edge_bias_families=args.edge_bias_families,
         entity_tail_seats=args.entity_tail_seats,
         win_prob_mode=args.win_prob_mode,
@@ -1120,6 +1121,14 @@ async def main():
                              "UN-REFINED belief. STRUCTURAL (version-checked, fresh-only). REQUIRES "
                              "--damage-op + --move-belief-prefuse; MUTUALLY EXCLUSIVE with "
                              "--damage-refine-rounds > 0. Off by default.")
+    parser.add_argument("--consequence-topk", "--consequence_topk", dest="consequence_topk",
+                        type=int, default=None,
+                        help="v59: the CONSEQUENCE kernels' believed-candidate axis — C1b/C2/C3's "
+                             "k_cand + D4's k_bench in one knob (how many candidates the belief-"
+                             "weighted worst-case max covers per opp mon). Default 6 (4 real moves "
+                             "+ 2 surprise slots; pre-v59 models trained at 4). FORWARD-BEHAVIOR "
+                             "(no params) but version-checked — a frozen opponent's forward "
+                             "changes with it.")
     parser.add_argument("--entity-topk-seats", "--entity_topk_seats", dest="entity_topk_seats",
                         type=int, default=None,
                         help="gen3_entity_move_seats_v1 (v54, Stage 1 of the entity generation): the E4 "
@@ -2074,6 +2083,7 @@ async def main():
     _resolve("damage_candidate_k", 0)          # v49 forward-behavior (version-checked, fresh-only)
     _resolve("damage_op_prefuse", False)       # v50 structural (version-checked, fresh-only)
     _resolve("entity_topk_seats", 0)           # v54 structural int (version-checked, fresh-only)
+    _resolve("consequence_topk", 6)            # v59 forward-behavior int (version-checked)
     _resolve("edge_bias_families", "off")      # v56 structural str (version-checked, fresh-only)
     _resolve("entity_tail_seats", False)       # v57 structural bool (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)

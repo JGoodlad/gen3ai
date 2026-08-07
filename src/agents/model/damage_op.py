@@ -250,7 +250,8 @@ def _dmg_imx_dim(k: int) -> int:
 # per forward** in that build, i.e. dead code carried through the op's hottest file. `damage_topk_k > 0`
 # now means exactly "emit the incoming matrix at K"; the op REFUSES the combination that used to select
 # the lean block rather than silently emitting nothing.
-_DMG_TOPK_DEFAULT_K = 5         # default K when enabled (reason about the 4th/5th move = expert-level)
+_DMG_TOPK_DEFAULT_K = 6         # default K when enabled (owner 2026-08-06: K=6 everywhere — 4 real
+                                # moves + 2 surprise-candidate slots of truncation insurance)
 # Map the 6 MAJOR-status secondary columns (par,brn,frz,slp,psn,tox) → the ABILITY_STATUS_BLOCK / status
 # category axis (par→1, brn→2, frz→3, slp→4, psn→5, tox→5), for the per-pivot incoming status-landing's
 # ability-immunity fold (Limber blocks Body Slam's para, etc.). SECONDARY_COLS order, first 6 cols.
@@ -1655,7 +1656,7 @@ class DamageOperator(torch.nn.Module):
     def pairwise_status_consequence(self, ctx: 'ExtractorContext',
                                     move_belief_logits: torch.Tensor,
                                     spread_belief: Optional[torch.Tensor] = None,
-                                    k_cand: int = 4) -> torch.Tensor:
+                                    k_cand: int = 6) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (C2): what LANDING our status move DOES — the consequence
         world behind S1's "will it land". Per (E3 status-move seat k, opp mon j) the cells
         `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched, d_in_all_slp,
@@ -1767,7 +1768,7 @@ class DamageOperator(torch.nn.Module):
 
     def pairwise_boost_incoming(self, ctx: 'ExtractorContext',
                                 move_belief_logits: torch.Tensor,
-                                k_cand: int = 4) -> torch.Tensor:
+                                k_cand: int = 6) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (C1b): the INCOMING half of the setup consequence — "after
         clicking slot k's boost, how much LESS does each of their mons hurt me". Per (E3 setup
         seat k, opp mon j) the DELTA cells `[d_in_high, d_in_pko]` `[B, 4, TEAM_SIZE, 2]`
@@ -1838,7 +1839,7 @@ class DamageOperator(torch.nn.Module):
 
     def pairwise_recovery(self, ctx: 'ExtractorContext',
                           move_belief_logits: torch.Tensor,
-                          k_cand: int = 4) -> torch.Tensor:
+                          k_cand: int = 6) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (C3): the RECOVERY-FLIP consequence — "after clicking slot
         k's heal, does their believed hit still KO me". Per (E3 recovery seat k, opp mon j) the
         cells `[is_recovery, d_in_pko, rest_sleep_turns]` `[B, 4, TEAM_SIZE, 3]` (the delta ≤ 0,
@@ -2016,7 +2017,7 @@ class DamageOperator(torch.nn.Module):
 
     def pairwise_bench_incoming(self, ctx: 'ExtractorContext',
                                 move_belief_logits: torch.Tensor,
-                                k_bench: int = 4) -> torch.Tensor:
+                                k_bench: int = 6) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (D4): the MISSING quadrant — every OPP mon's believed threat to every
         OUR mon ("after I KO, what comes in and what does it threaten"). `[B, TEAM_SIZE(our i),
         TEAM_SIZE(opp j), 4]` = `[phys_high, spec_high, phys_pko, spec_pko]` per (defender i,

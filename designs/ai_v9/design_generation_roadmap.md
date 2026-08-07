@@ -315,7 +315,13 @@ turns / 1 EB). Every consequence family in the inventory now has a shipped edge 
 c1 (+BD/Curse), c2 (status incl. tox tick + sleep tempo), c3 (heal flip + Rest cost),
 c4 (Protect×ledger), c5 (Baton Pass). Residuals: volatile/Sub passing, the BP receiver's
 incoming world, Yawn. **GEN-2.5 GATE RUN launches on this tree** — 25M, gen-2's config +
-c1,c3,c2,c5 — the first TRAINED read of the whole consequence system.
+c1,c3,c2,c5 — the first TRAINED read of the whole consequence system. **K=6 EVERYWHERE
+(owner 2026-08-06, v59):** all candidate K's default to 6 for future runs — `--damage-topk`
+(the `--unified-moves` auto-K 5 → 6), `--entity-topk-seats` (pass 6 in future run commands),
+and the NEW `--consequence-topk` (one knob for C1b/C2/C3's k_cand + D4's k_bench, default 6,
+forward-behavior version-gated; pre-v59 checkpoints migrate to their trained 4). The
+IN-FLIGHT gen-2.5 run rides at 5/5/4/4 (owner: "let this one ride") — gen-3 is the first
+K=6 run.
 
 ## 4. E9 decided: history follows the same sorting rule as everything else
 

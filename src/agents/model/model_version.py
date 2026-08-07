@@ -440,7 +440,7 @@ from typing import Any, Dict, List
 # "speed"; both trained generations' V edge priced bulk). VALUES-only forward-math change: a
 # pre-v58 checkpoint still LOADS, but its v_map/c1_map trained against the buggy feature — its
 # V-edge inputs shift under fixed code (documented, accepted: gen-3 retrains under true physics).
-MODEL_CONFIG_VERSION = 58
+MODEL_CONFIG_VERSION = 59
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1011,6 +1011,11 @@ class ModelVersion:
     # attention pass (forward); 0 = E3-only (our 4 move seats, which are UNCONDITIONAL — their break
     # rides the ARCH_SIGNATURE bump, not this field). Requires damage_op_prefuse + move_latent.
     entity_topk_seats: int = 0
+    # consequence_topk (v59): the CONSEQUENCE kernels' believed-candidate axis (C1b/C2/C3's
+    # k_cand + D4's k_bench — one knob, the coverage of the belief-weighted worst-case max).
+    # FORWARD-BEHAVIOR int (no params — an internal reduction axis): gated in check_compatible
+    # because a frozen opponent's forward changes with it. Pre-v59 checkpoints trained at 4.
+    consequence_topk: int = 6
     # v57 STRUCTURAL bool (gen3_entity_tail_seats_v1, E5): the 6 tail-threat seats (adds
     # tail_proj + tail_marker to the state_dict and 6 seats to every attention pass).
     entity_tail_seats: bool = False
@@ -1326,6 +1331,9 @@ class ModelVersion:
             ),
             damage_op_prefuse=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_op_prefuse", False)
+            ),
+            consequence_topk=int(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("consequence_topk", 6)
             ),
             entity_topk_seats=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("entity_topk_seats", 0)
@@ -1704,6 +1712,13 @@ class ModelVersion:
         # v54 gen3_entity_move_seats_v1 — STRUCTURAL int (the damage_topk_k pattern): >0 adds
         # `threat_seat_proj` (state_dict) and K threat seats to every attention pass (forward), so
         # 0<->K and K<->M both fail. The unconditional E3 seats ride the ARCH_SIGNATURE, not this.
+        if self.consequence_topk != saved.consequence_topk:
+            raise ValueError(
+                f"consequence_topk mismatch: saved={saved.consequence_topk}, "
+                f"current={self.consequence_topk} — the consequence kernels' candidate axis is a "
+                "forward-behavior toggle (the worst-case max covers a different candidate set); "
+                "load with matching --consequence-topk."
+            )
         if self.entity_topk_seats != saved.entity_topk_seats:
             raise ModelVersionError(
                 f"entity_topk_seats mismatch: saved={saved.entity_topk_seats}, "
@@ -2472,4 +2487,8 @@ def _migrate_config(data: dict) -> dict:
         # "speed"). NO field — a values-only forward-math fix; the stamp records that a pre-v58
         # checkpoint's v_map/c1_map trained against the buggy feature (the v55 stamp convention).
         data["config_version"] = 58
+    if version < 59:
+        # v59: consequence_topk — pre-v59 models trained with the hardcoded k_cand/k_bench = 4.
+        data.setdefault("consequence_topk", 4)
+        data["config_version"] = 59
     return data

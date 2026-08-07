@@ -2233,6 +2233,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  damage_candidate_k: int = 0, damage_refine_rounds: int = 0,
                  damage_op_prefuse: bool = False,
                  entity_topk_seats: int = 0,
+                 consequence_topk: int = 6,
                  entity_tail_seats: bool = False,
                  edge_bias_families: str = "off",
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
@@ -2300,6 +2301,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # candidate weights + latent table must exist PRE-transformer, which is exactly the prefuse
         # stack (validated below after those flags are set).
         self.entity_topk_seats = int(entity_topk_seats)
+        self.consequence_topk = int(consequence_topk)   # v59: C1b/C2/C3 k_cand + D4 k_bench
         self.entity_tail_seats = bool(entity_tail_seats)
         self.entity_seats = EntityMoveSeats(self.entity_topk_seats, self.entity_tail_seats)
         # gen3_edge_bias_trunk_v1 (v56, Stage 2): computed physics as per-pair per-head attention
@@ -3519,14 +3521,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 # on; C1b (incoming) appends the defensive halves — one 6-wide consequence cell.
                 _cells["c1"] = torch.cat([
                     self.damage_op.pairwise_boost(ctx, _sb, base=_cells.get("d1")),
-                    self.damage_op.pairwise_boost_incoming(ctx, self.last_move_belief_logits),
+                    self.damage_op.pairwise_boost_incoming(
+                        ctx, self.last_move_belief_logits, k_cand=self.consequence_topk),
                 ], dim=-1)
             if "c3" in _fams:
                 _cells["c3"] = self.damage_op.pairwise_recovery(
-                    ctx, self.last_move_belief_logits)
+                    ctx, self.last_move_belief_logits, k_cand=self.consequence_topk)
             if "c2" in _fams:
                 _cells["c2"] = self.damage_op.pairwise_status_consequence(
-                    ctx, self.last_move_belief_logits, _sb)
+                    ctx, self.last_move_belief_logits, _sb, k_cand=self.consequence_topk)
             if "c5" in _fams:
                 _cells["c5"] = self.damage_op.pairwise_baton(ctx, _sb)
             if "s1" in _fams:
@@ -3538,7 +3541,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     ctx, self.last_move_belief_logits, self.entity_seats.last_cand)
             if "d4" in _fams:
                 _cells["d4"] = self.damage_op.pairwise_bench_incoming(
-                    ctx, self.last_move_belief_logits)
+                    ctx, self.last_move_belief_logits, k_bench=self.consequence_topk)
             if "g" in _fams:
                 _cells["g"] = self.damage_op.pairwise_schedule(ctx)
             if "c4" in _fams:

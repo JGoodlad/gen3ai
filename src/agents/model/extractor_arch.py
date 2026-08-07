@@ -39,7 +39,8 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "move_belief_single_compute": "move_belief_single_compute",             # v47
     "damage_candidate_k": "damage_candidate_k",                             # v49
     "damage_op_prefuse": "damage_op_prefuse",                               # v50 (v51 pointer-native: no key — unconditional)
-    "entity_topk_seats": "entity_topk_seats",                               # v54 (E3 unconditional; this is the E4 K)
+    "entity_topk_seats": "entity_topk_seats",
+    "consequence_topk": "consequence_topk",                                 # v59 (C1b/C2/C3 k_cand + D4 k_bench)                               # v54 (E3 unconditional; this is the E4 K)
     "edge_bias_families": "edge_bias_families",                             # v56 (layer swap unconditional; this is the family set)
     "entity_tail_seats": "entity_tail_seats",                               # v57 (the E5 tail-threat seats)
     "win_prob_mode": "win_prob_mode",                                       # v22
