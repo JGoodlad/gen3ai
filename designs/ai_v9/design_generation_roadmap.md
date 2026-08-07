@@ -338,6 +338,35 @@ is mid-curve, not a keep/cut verdict. The CONCAT arm replicates a THIRD time (31
 run on this exact stack** (all 16 families incl. c1-c5, --consequence-topk 6 --damage-topk 6
 --entity-topk-seats 6).
 
+## 3.9 E9 STEP 1 — per-entity RECENCY features (designed 2026-08-07, pre-gen-3)
+
+The first "history attaches to entities" increment, chosen as the gen-3 launch gate's final
+item (retrain-class ⇒ must land before the 24h run to pay off). THREE per-mon scalars appended
+to the per-Pokémon slot (POKEMON_VECTOR_DIM +3, both sides, log-saturated like
+`turns_since_progress` — `log(1+min(n,10))/log(11)`):
+
+  * `turns_since_seen`   — turns since the mon was last ON FIELD (0 while active; the staleness
+    of everything the slot asserts — a mon benched 20 turns ago may have been statused/damaged
+    on info the history frames have already rotated out of).
+  * `turns_since_acted`  — turns since it last EXECUTED a move (captures sleep/para/flinch
+    lockouts + long bench stints; distinct from seen — a Protect-stalling active is seen but
+    the belief about its moveset decays differently).
+  * `turns_since_was_hit` — turns since it last TOOK damage (the safety/pressure recency: a
+    wall that hasn't been hit in 8 turns is walling; composes with the G ledger).
+
+Source: the EVENT LOG via EpisodeTracker (the wish/progress-clock convention — cross-turn
+state owned by the tracker, threaded into encode(); NOT LiveView). Both sides PUBLIC (all
+three derive from observed protocol events — no leak). Fuzz gate: a poke_env_gaps fuzz
+asserting the encoded scalars == counters reconstructed from the raw protocol stream.
+Obs-gate: the mandatory benchmark before/after. Versioning: retrain-class obs-dim change
+(caught by the total_dim weight-field check, NO ARCH_SIGNATURE bump needed) — lands
+immediately before gen-3 launches so the reference run trains on it.
+
+WHY these three and not more: each is entity-invariant (a per-mon fact → token feature per
+the sorting rule), cheap (3 counters ticked per turn), and un-derivable from the 7 history
+frames (which cover only the last 7 turns positionally). The richer E9 acts — recency-weighted
+event embeddings, entity-linked event tokens — ride the Stage-3 re-home (post-gen-3).
+
 ## 4. E9 decided: history follows the same sorting rule as everything else
 
 The 7×159 TurnDelta block has exactly the two defects v51 fixed for actions: it is
