@@ -74,8 +74,12 @@ class Gen3Env(SinglesEnv):
             self.agent2._team = opponent_team
         self.observation_encoder = get_observation_encoder(mappings)
 
-        obs_dim = self.observation_encoder.dimension
-        self.vector_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
+        # Stage-3 generator adoption: the vector space is GENERATED from the declarative schema
+        # (one source for the obs shape — the schema's tiling proof ran against the same layout
+        # this encoder built, so a dim drift here is structurally impossible). Byte-identical to
+        # the old inline Box(-inf, inf, (dimension,), float32) — pinned by schema_test.
+        from agents.observation.schema import build_schema
+        self.vector_space = build_schema(self.observation_encoder.get_layout()).gym_space()
         self.action_space = spaces.Discrete(11)
         # Hidden-opponent belief AUX labels (TRAINING-ONLY): when on, the obs Dict carries two
         # PRIVILEGED int64 keys (the opponent's still-hidden mons) consumed ONLY by the PPO aux loss.
