@@ -21,6 +21,26 @@ def test_schema_tiles_the_live_encoder_exactly():
     assert sum(c.dim for c in r.children) == r.dim
 
 
+def test_generated_slices_and_space_match_the_live_encoder():
+    """The generator half: `slices()` must agree with every offset the live layout publishes
+    (the drift guard consumers rely on), and `gym_space()` must reproduce the env's vector
+    space exactly — one source for the obs dim."""
+    import numpy as np
+
+    sch = build_schema(_layout)
+    sl = sch.slices()
+    assert sl["turn_history"] == slice(_layout["turn_history_offset"], _enc.dimension)
+    assert sl["prev_action_mask"].start == _layout["base_dim"]
+    assert sl["reactive.our_matchups"].start == (
+        _layout["parts"]["reactive"]["start"] + _layout["reactive_layout"]["our_matchups"]["offset"])
+    # Every slice must sit inside the vector and child slices inside their parent.
+    for name, s in sl.items():
+        assert 0 <= s.start < s.stop <= sch.total_dim, name
+    space = sch.gym_space()
+    assert space.shape == (_enc.dimension,)
+    assert space.dtype == np.float32 and space.low[0] == -np.inf
+
+
 def test_validation_catches_gaps_and_overlaps():
     with pytest.raises(ValueError, match="gap or overlap"):
         ObsSchema(total_dim=10, blocks=[Block("a", 0, 4), Block("b", 5, 5)]).validate()

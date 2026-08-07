@@ -68,6 +68,26 @@ class ObsSchema:
                 return b
         raise KeyError(name)
 
+    # --- the GENERATOR half (Stage 3, second act): consumers DERIVE from the schema ------------
+    def slices(self) -> "Dict[str, slice]":
+        """name → `slice` for every top-level block AND every child (child keys are
+        `parent.child`, absolute offsets). The one mapping an unpacker should read instead of
+        hand-holding offsets — validated by construction (the tiling proof ran in build)."""
+        out: Dict[str, slice] = {}
+        for b in self.blocks:
+            out[b.name] = slice(b.offset, b.end)
+            for c in b.children:
+                out[f"{b.name}.{c.name}"] = slice(b.offset + c.offset, b.offset + c.end)
+        return out
+
+    def gym_space(self):
+        """The flat observation's gym `Box`, generated FROM the schema (the exact params
+        `Gen3Env.vector_space` uses today — one source for the shape, so an obs-dim change
+        can never desync the env's space from the encoder's vector)."""
+        import numpy as np
+        from gymnasium import spaces
+        return spaces.Box(low=-np.inf, high=np.inf, shape=(self.total_dim,), dtype=np.float32)
+
     def describe(self) -> str:
         lines = [f"{'block':<22} {'offset':>7} {'dim':>6}", "-" * 38]
         for b in self.blocks:
