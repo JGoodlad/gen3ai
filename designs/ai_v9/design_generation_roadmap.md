@@ -322,6 +322,21 @@ and the NEW `--consequence-topk` (one knob for C1b/C2/C3's k_cand + D4's k_bench
 forward-behavior version-gated; pre-v59 checkpoints migrate to their trained 4). The
 IN-FLIGHT gen-2.5 run rides at 5/5/4/4 (owner: "let this one ride") — gen-3 is the first
 K=6 run.
+**GEN-2.5 COMPLETE + VERDICT (2026-08-07, run_20260806_160611, clean 25M, zero errors).**
+**The consequence stack is the strongest gen-over-gen signal yet:** anchored ELO ahead of BOTH
+prior gens at EVERY matched tranche — 4M: 1788 (vs 1731/1732), 10M: 1927 (vs 1891/1914),
+20M: 2023 (vs 1981/2004), 24M: **2069±30 (vs 2008/2029 — +61/+40)** — with the early-training
+acceleration (+56 at 4M) the standout: consequence edges + true speed physics speed up
+LEARNING, not just the endpoint. **First trained audit of the consequence families
+(edge_audit_25M.json):** alive but small at 25M — c2 leads (1.0% flips, the status edge),
+c1 0.6%, c5 0.7%, c3 0.3%, c4 ~0 (still unused); d1/d2 remain the top families
+(6.1%/8.1%) and v holds (4.0%, |dV| 0.95). NOTE the audit-scale caveat: total edge
+dependence reads LOWER than gen-2@40M (all-off 14.3% vs 31.5% flips) while ELO reads
+HIGHER — dependence grows with training (gen-1 grew 3× from 9.6M→40M), so the 25M audit
+is mid-curve, not a keep/cut verdict. The CONCAT arm replicates a THIRD time (31.4% flips
+≫ all-edges-off) — deletion stays refuted. **GEN-3 RECOMMENDATION: the 40M K=6 reference
+run on this exact stack** (all 16 families incl. c1-c5, --consequence-topk 6 --damage-topk 6
+--entity-topk-seats 6).
 
 ## 4. E9 decided: history follows the same sorting rule as everything else
 
