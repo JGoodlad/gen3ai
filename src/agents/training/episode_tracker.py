@@ -416,14 +416,15 @@ class EpisodeTracker:
         self._progress_clock.update(delta, live, legal)
         # E9 recency: the SAME per-decision window the newest TurnDelta slot folds
         # ([cursors[-1], now)), plus the live actives for the seen reset.
-        if self._cursors and hasattr(battle, "events_since"):
-            _ev = battle.events_since(self._cursors[-1])
-        else:
-            _ev = []
-        self._recency.update(
-            live.turn, _ev,
-            live.ours.active.species if live.ours.active else None,
-            live.opp.active.species if live.opp.active else None)
+        if isinstance(live.turn, int):        # a mocked/partial battle (tests) skips recency
+            if self._cursors and hasattr(battle, "events_since"):
+                _ev = battle.events_since(self._cursors[-1])
+            else:
+                _ev = []
+            self._recency.update(
+                live.turn, _ev,
+                live.ours.active.species if live.ours.active else None,
+                live.opp.active.species if live.opp.active else None)
         return delta
 
     def _encode_delta_slot(self, i: int, encoder, battle) -> np.ndarray:
