@@ -184,6 +184,7 @@ class Gen3Player(Player):
         obs = self.observation_encoder.encode(
             battle, hp_tracker=tracker.hidden_power_tracker, legal=legal,
             progress_clock=tracker.progress_clock,
+            recency=tracker.recency,
         )
 
         prev_mask = tracker.prev_mask

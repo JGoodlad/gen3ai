@@ -142,7 +142,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
         return self.base_dimension + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
 
     def encode(self, battle: AbstractBattle, hp_tracker=None, legal=None,
-               progress_clock=None) -> np.ndarray:
+               progress_clock=None, recency=None) -> np.ndarray:
         """Encode the full base observation vector.
 
         hp_tracker: optional HiddenPowerTracker whose per-species probability
@@ -188,8 +188,11 @@ class Gen3ObservationEncoder(ObservationEncoder):
         for i in range(TEAM_SIZE):
             mon = our_team_list[i] if i < len(our_team_list) else None
             live_mon = live.ours.get(mon.species) if (live is not None and mon is not None) else None
+            rec = (recency.values("ours", mon.species)
+                   if (recency is not None and mon is not None) else None)
             mon_vec = self.pokemon_encoder.encode(
-                mon, battle, is_own=True, live_mon=live_mon, sleep_sources=sleep_sources
+                mon, battle, is_own=True, live_mon=live_mon, sleep_sources=sleep_sources,
+                recency_vals=rec,
             )
             is_active = 1.0 if (mon and mon.active) else 0.0
 
@@ -209,9 +212,11 @@ class Gen3ObservationEncoder(ObservationEncoder):
             else:
                 hp_probs = None
                 hp_known = False
+            rec = (recency.values("opp", mon.species)
+                   if (recency is not None and mon is not None) else None)
             mon_vec = self.pokemon_encoder.encode(
                 mon, battle, is_own=False, hp_probs=hp_probs, hp_known=hp_known,
-                live_mon=live_mon, sleep_sources=sleep_sources,
+                live_mon=live_mon, sleep_sources=sleep_sources, recency_vals=rec,
             )
             # Active flag through the LiveView slot (LivePokemon.active is set at fold time
             # from poke-env's opponent_active_pokemon accessor, so this is byte-identical to

@@ -306,6 +306,7 @@ class Gen3Env(SinglesEnv):
             obs = self.observation_encoder.encode(
                 battle, hp_tracker=self._tracker.hidden_power_tracker, legal=legal,
                 progress_clock=self._tracker.progress_clock,
+                recency=self._tracker.recency,
             )
             prev_mask = self._tracker.prev_mask
             history_vecs = self._tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder, battle=battle)

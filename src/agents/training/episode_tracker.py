@@ -76,26 +76,27 @@ def _wrap_hp_target(live: "LiveView", event: DamagingMoveEvent) -> Optional[_HpT
 
 
 class RecencyTracker:
-    """E9 step 1 (roadmap §3.9): per-(side, species) RECENCY counters — the first
-    history-attaches-to-entities increment. Three turn-denominated counters per mon:
+    """E9 step 1 (roadmap §3.9): per-(side, species) RECENCY — the first
+    history-attaches-to-entities increment. Three per-mon facts:
 
-      * seen    — turns since last ON FIELD (reset by the live actives + SWITCH events)
-      * acted   — turns since it last EXECUTED a move (reset by MOVE events)
-      * was_hit — turns since it last TOOK damage (reset by DAMAGE events — the event's
-                  (side, actor_species) attribution names the mon AFFECTED)
+      * seen    — last ON FIELD (the live actives + SWITCH events)
+      * acted   — last EXECUTED a move (MOVE events)
+      * was_hit — last TOOK damage (DAMAGE events — the event's (side, actor_species)
+                  attribution names the mon AFFECTED)
 
-    Ticked by observed TURN-number deltas (a multi-decision turn ticks once, not per
-    decision); resets consume the SAME per-decision event window the TurnDelta fold reads,
-    so obs and history can never disagree about what happened. Both sides PUBLIC (every
-    reset derives from observed protocol events). ``values()`` returns the obs form:
-    log-saturated to [0, 1] over a 10-turn cap (the ``turns_since_progress`` convention);
-    a never-tracked mon reads 1.0 — maximum staleness, the honest default for a mon that
-    has not appeared this episode."""
+    TURN-ANCHORED: we store each fact's latest EVENT TURN and the counter is simply
+    `cur_turn − event_turn` (an event from LAST turn reads 1 — "one turn ago"; the on-field
+    mon reads 0). Crucially the value is INVARIANT to which decision's window processed the
+    event (the earlier tick-then-reset form read differently across forced-switch turns —
+    caught by the recency fuzz). Events come from the SAME per-decision
+    window the TurnDelta fold reads; both sides PUBLIC. ``values()`` log-saturates over a
+    10-turn cap (the ``turns_since_progress`` convention); a never-tracked mon reads 1.0 —
+    max staleness, the honest default for a mon that has not appeared this episode."""
 
     _SAT = 10
 
     def __init__(self):
-        self._last_turn: Optional[int] = None
+        self._turn: int = 0
         self._seen: dict = {}
         self._acted: dict = {}
         self._hit: dict = {}
@@ -103,35 +104,31 @@ class RecencyTracker:
     def update(self, turn: int, events, our_active: Optional[str],
                opp_active: Optional[str]) -> None:
         from agents.battle.battle_event import OURS, OPP, EventKind
-        if self._last_turn is None:
-            self._last_turn = turn
-        dt = max(0, int(turn) - self._last_turn)
-        self._last_turn = int(turn)
-        if dt:
-            for d in (self._seen, self._acted, self._hit):
-                for k in d:
-                    d[k] = min(d[k] + dt, self._SAT)
+        self._turn = max(self._turn, int(turn))
         for e in events or []:
             if not getattr(e, "actor_species", None) or getattr(e, "side", None) is None:
                 continue
             key = (e.side, e.actor_species)
+            et = int(getattr(e, "turn", turn))
             if e.kind is EventKind.MOVE:
-                self._acted[key] = 0
-                self._seen[key] = 0
+                self._acted[key] = max(self._acted.get(key, et), et)
+                self._seen[key] = max(self._seen.get(key, et), et)
             elif e.kind is EventKind.SWITCH:
-                self._seen[key] = 0
+                self._seen[key] = max(self._seen.get(key, et), et)
             elif e.kind is EventKind.DAMAGE:
-                self._hit[key] = 0
+                self._hit[key] = max(self._hit.get(key, et), et)
         for side, sp in ((OURS, our_active), (OPP, opp_active)):
             if sp:
-                self._seen[(side, sp)] = 0
+                key = (side, sp)
+                self._seen[key] = max(self._seen.get(key, 0), self._turn)  # on field NOW → 0
 
     def values(self, side: str, species: Optional[str]):
         """→ (seen, acted, was_hit), each log-saturated to [0, 1]."""
         import math
         out = []
         for d in (self._seen, self._acted, self._hit):
-            n = self._SAT if species is None else d.get((side, species), self._SAT)
+            last = None if species is None else d.get((side, species))
+            n = self._SAT if last is None else max(0, self._turn - last)
             out.append(math.log1p(min(n, self._SAT)) / math.log(11.0))
         return tuple(out)
 

@@ -182,7 +182,15 @@ The root `CLAUDE.md` carries the summary block table (block → dims → offset,
 This is the detailed per-block layout. All offsets are computed from named constants — never
 hardcode indices.
 
-**Per-Pokémon slot (110 dims):** species ID + 6 base stats, item ID + known + consumed, 2 type
+**Per-Pokémon slot (113 dims, `gen3_entity_recency_v1`):** the 110 below + the 3-dim
+**recency block** at `POKEMON_RECENCY_OFFSET` (109) — [turns_since_seen, turns_since_acted,
+turns_since_was_hit], TURN-ANCHORED (`cur_turn − event_turn`, clamped; on-field mon reads 0;
+never-tracked reads 1.0 max staleness), log-saturated over a 10-turn cap, BOTH sides (public —
+every reset derives from observed protocol events), sourced from the EpisodeTracker-owned
+`RecencyTracker` (the same per-decision event window the TurnDelta fold reads) and threaded
+into `encode(recency=…)` like the progress clock. Fuzz gate:
+`poke_env_gaps/recency_fuzz_test.py` (encoded scalars == an independent full-log recount +
+decision-time active log, per mon per decision). Original 110:** species ID + 6 base stats, item ID + known + consumed, 2 type
 IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 11-dim move slots, HP fraction,
 species_known flag, sleep_counter_norm, toxic_counter_norm, **spread block (18 dims)**,
 **HP-candidate block (17 dims)**, **sleep-wake belief (3 dims)**, active flag. The item block is 3 dims:

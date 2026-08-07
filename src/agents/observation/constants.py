@@ -66,8 +66,16 @@ POKEMON_HP_BLOCK_DIM = 17      # 1 hp_revealed flag + 16 candidate-type probs
 # otherwise see (the [from] move clause, read from our event log). See observation/sleep_belief.py.
 POKEMON_SLEEP_BELIEF_OFFSET = 106  # 89 + 17 (HP block end)
 POKEMON_SLEEP_BELIEF_DIM = 3
-POKEMON_VECTOR_DIM = 109       # 71 + 18 (spread) + 17 (HP block) + 3 (sleep belief)
-POKEMON_FULL_DIM = 110         # 109 + 1 (active flag appended by state_encoder)
+# E9 step 1 (gen3_entity_recency_v1, roadmap §3.9): per-mon RECENCY — [turns_since_seen,
+# turns_since_acted, turns_since_was_hit], log-saturated over a 10-turn cap (the
+# turns_since_progress convention), BOTH sides (all three derive from observed protocol
+# events — public, no leak). Sourced from the EpisodeTracker-owned RecencyTracker (the same
+# per-decision event window the TurnDelta fold reads); a never-tracked mon reads 1.0 (max
+# staleness — the honest default for an unrevealed slot).
+POKEMON_RECENCY_OFFSET = 109   # 106 + 3 (sleep-belief end)
+POKEMON_RECENCY_DIM = 3
+POKEMON_VECTOR_DIM = 112       # 71 + 18 (spread) + 17 (HP block) + 3 (sleep) + 3 (recency)
+POKEMON_FULL_DIM = 113         # 112 + 1 (active flag appended by state_encoder)
 
 # Active context: boosts(14) + volatiles(VOLATILES_DIM)
 ACTIVE_CONTEXT_DIM = BOOSTS_DIM + VOLATILES_DIM

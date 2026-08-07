@@ -592,15 +592,15 @@ def test_offsets_resolve_matches_layout():
     # block were DELETED from the obs (all three had live GPU homes and were merely MASKED before).
     # So the matchups moved 1568 -> 1465 and the obs total 2992 -> 2889.
     assert off.mm_off == 0            # active-move multipliers: DELETED (0 = absent; consumers no-op)
-    assert off.om_off == 1465         # OFFSET_REACTIVE(1454) + matchup_offset(11 scalars)
-    assert off.tm_off == 1609         # om_off + our_matchups(144)
+    assert off.om_off == 1501         # OFFSET_REACTIVE(1490) + matchup_offset(11 scalars)
+    assert off.tm_off == 1645         # om_off + our_matchups(144)
     assert off.active_block_dim == 99
     assert off.incoming_off == 0      # incoming-damage block: DELETED from the obs (decoder no-ops)
     assert off.incoming_dim == 0
-    assert off.pokemon_full_dim == 110  # gen3_sleep_wake_belief_v1: 106 per-mon + 3 sleep belief + 1 active
+    assert off.pokemon_full_dim == 113  # gen3_entity_recency_v1: 109 + 3 recency + 1 active
     # gen3_wish_wired_v1: the two pending-Wish "floating heal" reactive scalars (our/opp side).
-    assert off.wish_our_off == 1463   # OFFSET_REACTIVE(1454) + wish_floating_our offset(9)
-    assert off.wish_opp_off == 1464   # OFFSET_REACTIVE(1454) + wish_floating_opp offset(10)
+    assert off.wish_our_off == 1499   # OFFSET_REACTIVE(1490) + wish_floating_our offset(9)
+    assert off.wish_opp_off == 1500   # OFFSET_REACTIVE(1490) + wish_floating_opp offset(10)
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     lay = Gen3ObservationEncoder(load_mappings()).get_layout()

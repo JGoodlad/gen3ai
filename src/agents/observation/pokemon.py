@@ -11,6 +11,7 @@ from .constants import (
     POKEMON_HP_OFFSET,
     POKEMON_SPECIES_KNOWN_OFFSET,
     POKEMON_COUNTER_OFFSET,
+    POKEMON_RECENCY_OFFSET,
     POKEMON_SPREAD_OFFSET,
     POKEMON_SPREAD_DIM,
     POKEMON_HP_REVEALED_OFFSET,
@@ -83,6 +84,7 @@ class PokemonEncoder(ObservationEncoder):
         hp_known: bool = False,
         live_mon=None,
         sleep_sources=None,
+        recency_vals=None,
     ) -> np.ndarray:
         """Encode a single Pokémon slot.
 
@@ -171,6 +173,14 @@ class PokemonEncoder(ObservationEncoder):
             vec[POKEMON_SLEEP_BELIEF_OFFSET]     = det
             vec[POKEMON_SLEEP_BELIEF_OFFSET + 1] = p_wake
             vec[POKEMON_SLEEP_BELIEF_OFFSET + 2] = reliable
+
+        # E9 step 1 (gen3_entity_recency_v1): per-mon recency [seen, acted, was_hit] — computed
+        # by the EpisodeTracker-owned RecencyTracker and threaded per mon by state_encoder
+        # (None = the standalone/test path → zeros, matching the other optional trackers).
+        if recency_vals is not None:
+            vec[POKEMON_RECENCY_OFFSET]     = recency_vals[0]
+            vec[POKEMON_RECENCY_OFFSET + 1] = recency_vals[1]
+            vec[POKEMON_RECENCY_OFFSET + 2] = recency_vals[2]
 
         # 10. Spread block (18 dims): IVs (6) + EVs (6) + spread_known (1) + nature (5)
         # Own team: actual values from the teambuilder. Opponent: all zeros + spread_known=0

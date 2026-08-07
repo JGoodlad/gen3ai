@@ -739,18 +739,21 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 
 ## Observation Vector
 
-The full observation is a **2889-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **2925-dim float32 vector** (`gen3_entity_recency_v1` — E9 step 1
+added a 3-dim per-mon RECENCY block [turns_since_seen/acted/was_hit, turn-anchored,
+log-saturated, both sides public, EpisodeTracker-sourced, fuzz-validated vs protocol truth];
+per-mon slot 110 → 113, obs 2889 → 2925; before it a **2889-dim vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset |
 |---|---|---|
-| Our team (6 × 110) | 660 | 0 |
-| Opp team (6 × 110) | 660 | 660 |
-| Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1320 |
-| Global env | 18 | 1436 |
-| Reactive scalars (11) + matchups (288) + **active-req-moves** (12) | 311 | 1454 |
-| Prev-turn action mask | 11 | 1765 |
-| Turn history (`N_HISTORY_TURNS` × 159) | 1113 | 1776 |
-| **Total** | **2889** | |
+| Our team (6 × 113) | 678 | 0 |
+| Opp team (6 × 113) | 678 | 678 |
+| Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1356 |
+| Global env | 18 | 1472 |
+| Reactive scalars (11) + matchups (288) + **active-req-moves** (12) | 311 | 1490 |
+| Prev-turn action mask | 11 | 1801 |
+| Turn history (`N_HISTORY_TURNS` × 159) | 1113 | 1812 |
+| **Total** | **2925** | |
 
 **`gen3_cpu_damage_deleted_v1` (v48) — the `--unified-obs` DELETE step.** Three CPU obs regions that
 `--unified-obs` previously only **masked** from the model are now removed from the encoder entirely
