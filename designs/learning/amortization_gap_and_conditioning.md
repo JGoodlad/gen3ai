@@ -18,6 +18,33 @@ expensive *and* doesn't scale (no generalization, plus interference) — conditi
 makes the per-team fix *spread* (to neighbors) and *stop colliding* (with the rest). See **Empirical
 evidence** below.
 
+> ### ⚠️ STATUS CORRECTION (2026-08): the storage theory was tested and did NOT carry
+>
+> Everything below about *what storage is* and *why a critic can't fix it* stands. What does **not**
+> stand is the inference that **conditioning was therefore the binding constraint** at the measured
+> N=20 exploiter ceiling. Three results, on orthogonal manipulations:
+>
+> - **A free, unconstrained per-team LUT did not close the N=20 gap** — +0.024, CI [−0.016, +0.064].
+>   A decisive positive is ruled out. This was the *sharpest possible* storage intervention: the codes
+>   are large and ~orthogonal from step 0, which is exactly what the ill-conditioning story predicted
+>   would help.
+> - **The z-geometry arm was a second, independent null** — random-20 (no LUT) 0.6230 vs z-clustered
+>   0.6488 at matched team strength. Crowding predicted *worse*; it came out (n.s.) *better*.
+> - **The 2×2 found COUNT dominates conditioning** — dropping N 20→10 was worth **+0.077 (significant)**
+>   while conditioning was **+0.027 (n.s.)**, with no interaction. Diversity cost a small consistent
+>   −0.025.
+>
+> Read together: **storage capacity is not what N=20 is short of.** The surviving direction is that
+> *20 distinct strategies exceed what one head can DISCOVER at that sample budget* — an optimization /
+> search problem, not a representation one. The **extraction** half of this note is the half that kept
+> paying (multi-team distillation: +69 anchored ELO, per-team piloting 0.438 → 0.710, ~76% retention
+> after the teachers are retired). See §"The storage theory did not survive contact" at the end for the
+> replacement hypothesis set and the diagnostic predictions that separate them.
+>
+> **The transferable lesson** (worth more than the result): we gated a lever on *"is this quantity
+> low?"* (code rank, gradient SNR, z-geometry) instead of *"does this quantity PREDICT performance?"*
+> Every measured quantity was indeed low. None of them was causal.
+
 ---
 
 ## What "amortization" means here
@@ -649,7 +676,116 @@ always signal (washing), now fixed. CI caveat: per-team deltas ±0.17 at 60g (in
 shift + fresh pool — a confounded proxy during distillation; the per-team WIN RATE is the real read).
 NEXT: scale distillation to more archetypes (4 teams helps those 4; broad lift needs broad coverage).
 
+## The storage theory did not survive contact — the replacement hypothesis set
+
+Read the STATUS CORRECTION banner at the top first. This section is what to do about it.
+
+### What died, and what is still standing
+
+| claim | status |
+|---|---|
+| the amortization gap is real; specialists beat the generalist on their team | **stands** (measured repeatedly) |
+| the gap splits into extraction and storage | **stands** — a useful decomposition |
+| a better critic cannot fix storage | **stands** (it is an argument, not a measurement) |
+| **extraction** is fixable by distillation | **stands, and it is the half that paid** — +69 anchored ELO, per-team piloting 0.438→0.710, ~76% retention with teachers retired |
+| **storage** is the binding constraint at N=20 | **REFUTED** — LUT null, z-geometry null, count ≫ conditioning |
+| more conditioning capacity (LoRA / MoE / trunk-FiLM) is the next rung | **do not build on this** — the ladder's premise is unsupported |
+
+The important structural point: **N=20 was never a capability question.** Two N=10 exploiters already
+work, and N=10 *generalises to random teams* (0.700 vs 0.725). So "make one head hold 20" is an
+**efficiency** question — how few runs to cover the pool — not "can this architecture represent it."
+That reframing alone kills most of the urgency.
+
+### Four candidate replacements, and what each predicts
+
+The surviving direction from the LUT arm was *"20 strategies exceed what one head can DISCOVER."*
+That is not one hypothesis, it is four, and they make different predictions:
+
+- **H1 — Discovery/sample budget.** Per-team experience is the constraint: at fixed steps, N=20 gives
+  each team half of what N=10 gives it, and RL's ~1 bit/game must find a distinct strategy per team.
+  *Predicts:* the gap closes with **steps per team**, so N=20 at 2× steps ≈ N=10 at 1×. Also predicts
+  warm-forking helps *more* at high N (it is a discovery shortcut), consistent with fork 0.84@2M vs
+  scratch ~0.65@20M.
+- **H2 — Matchup-count, not team-count.** What actually scales is (teams × opponent pool), so the
+  dilution may live on the opponent axis. *Predicts:* holding N=20 but **shrinking the opponent pool**
+  lifts the ceiling. Cheap, and to my knowledge never run.
+- **H3 — Signal density.** The binding limit is bits-per-decision, not steps: RL hands back ~1 bit per
+  game while a teacher hands back a full distribution per state. *Predicts:* dense per-state targets
+  (OPD / search-teacher) close much of the N=20 gap **with no architecture change at all** — the
+  decisive test, because H3 and H1 differ on whether *more of the same signal* suffices.
+- **H4 — Team-strength confound.** Some of the "N=20 stalls" is heterogeneous team quality, not
+  learning. *Predicts:* the effect shrinks under strength-matched team sets and per-team baselining.
+  (The team-PFSP win rate is already known to be confounded by team strength.)
+
+H3 is the one worth spending on first: it is the only one whose lever is already built and never run.
+
+### Five solution categories, ranked
+
+1. **Decompose instead of solving it (the measured default).** Run N≤10 exploiters and fold back by
+   distillation. This is the path with an actual ELO number attached, and the retention ablation says
+   the teachers can then be **retired** (equilibrium 0.645 vs a 0.438 floor) — so it composes rather
+   than requiring life support. If the goal is pool coverage, two N=10 runs beat one N=20 run today.
+2. **Attack signal density (H3).** On-policy self-distillation and the search-as-teacher loop turn ~1
+   bit/game into a full target distribution per state — the ~7–10× step-efficiency claim in
+   [[on_policy_self_distillation]]. Both are built and unshipped. This is the highest-information
+   experiment available: a clean positive both closes the practical gap *and* adjudicates H1 vs H3.
+3. **Sample allocation / curriculum (H1, H2).** Team-blocked episodes already exist; the unbuilt piece
+   is **non-uniform team sampling weighted by per-team deficit** (regret- or PFSP-weighted over teams
+   rather than uniform), plus the pool-shrink probe for H2. Cheap, and it directly targets the one
+   factor measured to dominate.
+4. **Let the architecture do it (see next section).** Re-measure the N curve on the fresh generation
+   with conditioning **off**. Free — it rides a run you are doing anyway.
+5. **Conditioning capacity (LoRA / MoE / trunk-FiLM) — PARKED.** Two independent nulls. Reopen only if
+   2 and 4 both fail, and only with a cheap pre-build probe plus an argument for why it is not a third
+   instance of the same null.
+
+### What the entity generation changes — what to actually expect different
+
+Every one of the conditioning nulls was measured on a **flat positional action head**. Three things
+about the fresh generation change the *size of the object* a per-team strategy has to be, and they
+are the reason the N sweep is worth re-running rather than assumed:
+
+1. **A per-team strategy is now a smaller, more shareable object.** Under the flat head, "this team
+   pivots rather than trades" had to be re-expressed across 11 positional logit rows and re-learned
+   per slot. Under the pointer head it is a function of **content** — one shared scorer, position-
+   equivariant. If part of the old N=20 stall was per-team strategies being *expensively encoded*
+   rather than *unrepresentable*, that cost just dropped, with no conditioning involved.
+2. **Archetypes differ along axes that are now separable channels.** A stall team and a hyper-offense
+   team differ in how they weigh the end-of-turn ledger (G) against immediate damage (D1). Those used
+   to be pooled scalars inside a flat block; they are now distinct edge families with their own maps.
+   A per-team difference may now be expressible as a **re-weighting of existing channels** rather than
+   as a different policy — a far smaller thing to learn.
+3. **Less per-team variance is "this team gets surprised differently."** Typed HP, the tail seats, and
+   the belief work remove a chunk of what previously looked like team-specific behaviour but was
+   actually team-specific *blind spots*.
+
+**Honest counterweight:** this is a mechanism story, not a measurement, and this project's record on
+mechanism stories that predict a lift is poor (K9/K10 nulled 3-for-3). Treat 1–3 as a *reason to
+re-measure*, not a reason to expect a lift. The prior should be that the curve looks similar.
+
+### Make the N sweep diagnostic, not descriptive
+
+Since you are re-running N ∈ {1, 4, 10, 20} anyway, a few cheap additions turn it from "where is the
+ceiling now" into "which hypothesis is alive":
+
+- **Add a steps-per-team axis, even coarsely.** One extra N=20 arm at 2× steps separates H1 from
+  everything else in a single run. If N=20@2× ≈ N=10@1×, it is budget, full stop.
+- **Run the whole sweep with conditioning OFF** (`--zarch-film off`). Conditioning was +0.027 n.s.;
+  carrying it adds a confound to the generation-vs-generation read for no measured benefit. Add it
+  back only if the curve says something needs it.
+- **Match team strength across the N sets**, or baseline every team by a fixed-opponent pilot rate.
+  Otherwise H4 contaminates the whole curve — and the real exploitation number is
+  `exploiter_wr − baseline_wr on the same teams`, never the raw win rate.
+- **Log per-team win rate, not just the mean.** The N=20 stall could be twenty teams each slightly
+  short, or fifteen fine and five failing. Those are different problems with different fixes, and the
+  mean cannot tell them apart.
+- **Pre-register the read.** Write down, before the run: what curve shape confirms H1, what shape
+  confirms H3, and what shape means "the entity generation changed nothing here." The failure mode
+  this program keeps hitting is fitting a story to a curve after seeing it.
+
 ## See also
+- [[on_policy_self_distillation]] — the dense-signal lever (H3): why a full target distribution per state is ~7–10× more step-efficient than PPO's ~1 bit/game, and the beam-as-teacher upgrade
+- [[entity_tokens_biases_pointers]] §6.7 — why equivariance and conditioning are two halves of one decision ("share where a symmetry is real, condition where it is false"), and where LoRA would attach if the ladder is ever reopened
 - [[objective_richness_and_representation]] — the simplicity bias / minimal-sufficient-statistic backbone (why the shared solution wins by default) + the distillation bits-ladder
 - `src/agents/model/CLAUDE.md` → dual-head value readout, the shared trunk (where the interference lives)
 - `src/agents/training/CLAUDE.md` → Exploiter distillation (extraction: policy KL + FitNets + scalar/value distill), grad-balance (per-head trunk-pull cosines — the interference instrument)

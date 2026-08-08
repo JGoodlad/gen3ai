@@ -26,7 +26,7 @@ To orient yourself:
 | What | Version | Notes |
 |------|---------|-------|
 | **Active training run** | **ai_v9 gen-2** | `run_20260805_060807` (worktree `gen2-run-0805` @ ffa851e): the FULL entity stack — all 11 edge families (d1,d2,d3,d4,s1,s3,v,t,x,g,c4) + E5 tail seats, 40M steps, fresh lineage. **Gen-1 COMPLETE** (`run_20260804_090512`, 40M, Bots 90.9% / Pool 76.0% final; 6 launch families) — its end-of-run edge audit (`edge_audit_40M.json`) showed the edges became load-bearing (all-off = 26.9% action flips). Judged gen-2-vs-gen-1 by anchored ELO. The old ai_v8 lineage sits behind the ai_v9 signature wall. |
-| **Code on main** | **ai_v9 (v57)** | `MODEL_CONFIG_VERSION` **57**, `ARCH_SIGNATURE` **`gen3_edge_bias_trunk_v1`**. Stages 0–2 in: v51 pointer-native head, v52/53 typed-HP belief, v54 move-entity seats (E3/E4), v55 op block trim, v56 edge-bias trunk (now 12 families incl. the C1 post-boost consequence edge), v57 E5 tail seats. Stage-3 first half (the declarative obs schema view) shipped. |
+| **Code on main** | **ai_v9 (v59)** | `MODEL_CONFIG_VERSION` **59**, `ARCH_SIGNATURE` **`gen3_edge_bias_trunk_v1`**. Stages 0–2 in: v51 pointer-native head, v52/53 typed-HP belief, v54 move-entity seats (E3/E4), v55 op block trim, v56 edge-bias trunk (now **15 families** — the launch 11 plus the C consequence sweep C1/C1b, C2, C3, C5), v57 E5 tail seats, v58 the SpD-as-speed GIGO fix, v59 K=6 everywhere. Stage-3 schema view + generator half shipped; **E9 step 1 landed** (`gen3_entity_recency_v1`, obs 2889 → 2925). |
 | **ai_v9** | **Stages 0–2 SHIPPED + Stage-3 half** | Roadmap: `design_generation_roadmap.md` (the operative staged plan, slice statuses current). Still open: the op head-concat deletion (needs a concat-zeroing audit arm — the family audit alone doesn't measure redundancy), C1b/C2/C3/C5 consequence edges, Stage-3 generator half + the entity re-home (retrain-class, owner go/no-go), and E9 history. |
 
 ---
@@ -181,7 +181,28 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   `DamageOperator` as a *differentiable expert* whose gradient trains the move belief; the
   shipped v51 `pointer_cells` route vs the Stage-2 edge-bias route), and how **history** is
   represented once time stops being positional (recency-on-entity → turn tokens → entity-linked
-  event tokens; recurrence ruled out by the event-log-purity invariant).
+  event tokens; recurrence ruled out by the event-log-purity invariant). **Part 6** covers the
+  ai_v9 **compositionality** result on the live v57 architecture: the sorting rule as a
+  composition *contract* (partition by arity+certainty → locality of change; the G→C4 worked
+  example; what each violation costs, with the measured P1/P4 and v34→v39 evidence), **routing
+  vs payload** (one concrete E4-seat / D3-bias forward pass, what a softmax weight structurally
+  cannot carry, the three delivery routes and the critic's dependence on the concat, the first
+  edge-family ablation audit — outgoing dominant, incoming near-decorative — plus three
+  falsifiable explanations), the **equivariance trade** (weight-sharing arithmetic, the bug
+  classes made unrepresentable, and the four costs paid), the **hypothetical-world trick** that
+  makes the remaining C family cheap (pure-function kernel; why the cell is a delta; where it
+  ceilings vs real search), **the head funnel** (35 seats → 3 pooled vectors for pi and ONE for vf;
+  the op concat as the only un-pooled route for both and the pointer head as a policy-only second
+  one; why that predicts D2's |ΔV|; the P3 counterweight against "widen the value pool"), **what
+  search would look like** (the CRN-anchored beam, C-deltas as a pruning layer before the expensive
+  clone, equivariant candidate generation, why no-recurrence is what makes cloning legal, and the
+  simultaneous-move correction that the object is an equilibrium not a best path), **entity
+  structure vs FiLM/LoRA** (input-symmetry vs parameter-context factorisation; "share where a
+  symmetry is real, condition where it is false"; edge-bias and FiLM as one hypernetwork shape at
+  different clock speeds; where LoRA would attach and the two measured nulls standing against it),
+  and a **quiz + answer sketches** on designing the next family. ASCII diagrams throughout (seat
+  layout, the eleven families as blocks in the from×to grid, the one concrete E4→D3→token→logit
+  link, the head funnel, the search tree).
 - **`shortcut_learning_and_feature_delivery.md`** — the input-side dual of
   `objective_richness_and_representation.md`: whether feeding a computed feature straight to the
   head makes the model "lazy," and when that is a plus. Gradient starvation (not "simplest
