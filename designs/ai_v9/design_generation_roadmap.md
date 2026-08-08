@@ -338,6 +338,26 @@ is mid-curve, not a keep/cut verdict. The CONCAT arm replicates a THIRD time (31
 run on this exact stack** (all 16 families incl. c1-c5, --consequence-topk 6 --damage-topk 6
 --entity-topk-seats 6).
 
+**THE CONCAT END-STATE DECISION RULE (recorded 2026-08-07, pre-gen-3-audit).** The concat's
+grip is partly STRUCTURAL, not gradient laziness: attention weights are softmax-normalized
+(relative), so edges can route "who attends to whom" but cannot transmit ABSOLUTE magnitudes
+("this hit is 53% of max HP"); the two entity-native channels that CAN are token CONTENT
+(the prefuse injection — today only the per-our-mon incoming rows via `prefuse_proj`) and the
+pointer head's per-action cells (already lossless per-logit). So gen-3's audit picks between
+TWO responses, neither of which is "wait longer":
+  * **Concat flips < the all-edges-off arm** on gen-3's trained checkpoint ⇒ the entity paths
+    absorbed the role ⇒ mask → A/B → DELETE (the playbook's original ending; the Stage-3 CPU
+    refund follows).
+  * **Concat holds ≥ all-edges-off (a FOURTH replication)** ⇒ that is a measurement that
+    magnitude still has no entity home of equal fidelity — the response is to WIDEN
+    token-content delivery (inject the full per-mon op rows onto BOTH sides' tokens, the
+    prefuse pattern generalized; audit which concat sub-blocks carry the residual via
+    per-block concat arms) and re-audit, i.e. make the lazy path BE the entity path (the v51
+    pointer-head reframe applied to the trunk). Deletion only after the re-homed form
+    matches the concat's measured contribution.
+The re-home (Stage 3) then removes the flat obs vector regardless of which branch fires —
+starvation has nothing left to feed on once every fact's ONLY delivery is entity-attached.
+
 ## 3.9 E9 STEP 1 — per-entity RECENCY features (designed 2026-08-07, pre-gen-3)
 
 The first "history attaches to entities" increment, chosen as the gen-3 launch gate's final
