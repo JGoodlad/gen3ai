@@ -1,0 +1,73 @@
+{
+  "provenance": {
+    "generation": "gen-1",
+    "run": "run_20260804_090512",
+    "checkpoint": "/home/goodlad/dev/gen3ai/.claude/worktrees/gen1-run-0804/models/run_20260804_090512/final_model.zip",
+    "step": 40000000,
+    "n_states": 4000,
+    "date": "2026-08-05",
+    "producer": "src/agents/model/edge_ablation_audit.py",
+    "note": "End of run, WITH the op head-concat arm \u2014 the measurement behind 'the concat did not starve the edges'.",
+    "_note_on_this_key": "`provenance` was ADDED when the file was co-located into version control (2026-08-08). Every other key is byte-for-byte the probe's own output."
+  },
+  "meta": {
+    "checkpoint": "/home/goodlad/dev/gen3ai/.claude/worktrees/gen1-run-0804/models/run_20260804_090512/final_model.zip",
+    "n_states": 4000
+  },
+  "families": {
+    "d1": {
+      "kl_mean": 0.1454203724861145,
+      "kl_p95": 0.8094765543937683,
+      "flip_rate": 0.13600000739097595,
+      "dv_mean": 0.28600311279296875
+    },
+    "d2": {
+      "kl_mean": 0.18679748475551605,
+      "kl_p95": 0.9647940993309021,
+      "flip_rate": 0.19075000286102295,
+      "dv_mean": 1.6602387428283691
+    },
+    "d3": {
+      "kl_mean": 0.002071875613182783,
+      "kl_p95": 0.008099643513560295,
+      "flip_rate": 0.020500000566244125,
+      "dv_mean": 0.10151585936546326
+    },
+    "s1": {
+      "kl_mean": 0.006096623372286558,
+      "kl_p95": 0.014932672493159771,
+      "flip_rate": 0.017750000581145287,
+      "dv_mean": 0.035481732338666916
+    },
+    "s3": {
+      "kl_mean": 0.000501775648444891,
+      "kl_p95": 0.0021840890403836966,
+      "flip_rate": 0.011500000022351742,
+      "dv_mean": 0.04807409644126892
+    },
+    "v": {
+      "kl_mean": 0.009555227123200893,
+      "kl_p95": 0.03725185617804527,
+      "flip_rate": 0.04975000023841858,
+      "dv_mean": 0.5331251621246338
+    },
+    "all": {
+      "kl_mean": 0.3300514221191406,
+      "kl_p95": 1.6129502058029175,
+      "flip_rate": 0.26875001192092896,
+      "dv_mean": 2.510554790496826
+    },
+    "concat": {
+      "kl_mean": 0.48173606395721436,
+      "kl_p95": 1.8733351230621338,
+      "flip_rate": 0.35499998927116394,
+      "dv_mean": 7.44755220413208
+    },
+    "concat_cells": {
+      "kl_mean": 0.6498233675956726,
+      "kl_p95": 2.5165047645568848,
+      "flip_rate": 0.4037500023841858,
+      "dv_mean": 7.44755220413208
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "provenance": {
+    "generation": "gen-3",
+    "run": "run_20260807_135637_gen3",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/run_20260807_135637_gen3/checkpoints/checkpoint_9600000_steps.zip",
+    "step": 9600000,
+    "n_states": 2000,
+    "date": "2026-08-07",
+    "producer": "tmp/oracle_belief_voi.py (worktree-local, not in the repo)",
+    "note": "Value-of-information of a PARTIAL look-ahead move-belief oracle (per battle, the union of every move each opp species is ever seen using, pinned early). Every number is a LOWER BOUND on true VoI: moves never used all game are absent from the oracle.",
+    "_note_on_this_key": "`provenance` was ADDED when the file was co-located into version control (2026-08-08). Every other key is byte-for-byte the probe's own output."
+  },
+  "meta": {
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/run_20260807_135637_gen3/checkpoints/checkpoint_9600000_steps.zip",
+    "n_states": 2000,
+    "n_battles": 55
+  },
+  "info_added": 0.19607293605804443,
+  "pko_abs_delta": 0.01506530400365591,
+  "policy_kl": 0.056518398225307465,
+  "policy_flips": 0.08550000190734863,
+  "dv": 0.7229185104370117,
+  "dependence": {
+    "in_permon": {
+      "flip_base": 0.07000000029802322,
+      "flip_oracle": 0.07450000196695328,
+      "kl_base": 0.015929875895380974,
+      "kl_oracle": 0.01686997525393963
+    },
+    "INCOMING_all": {
+      "flip_base": 0.07150000333786011,
+      "flip_oracle": 0.07450000196695328,
+      "kl_base": 0.017564071342349052,
+      "kl_oracle": 0.018871285021305084
+    },
+    "in_matrix": {
+      "flip_base": 0.3009999990463257,
+      "flip_oracle": 0.2955000102519989,
+      "kl_base": 0.31471627950668335,
+      "kl_oracle": 0.31840988993644714
+    }
+  }
+}

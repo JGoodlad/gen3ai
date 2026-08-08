@@ -90,6 +90,13 @@ python -m main.prober.query falsify-scan   <run> --outcome loss --max-battles 20
 
 ## Cross-refs
 
+- **[`measurements/`](measurements/)** — the raw audit outputs behind the numbers
+  quoted here and in `designs/ARCHITECTURE.md`. Each file carries its own checkpoint, step,
+  state count and date. **A measurement is scoped to the model AND config that produced it**:
+  the 2026-07-25 P1 per-block table was quoted as current for two weeks after the config it
+  measured stopped existing, and its headline is reversed by the gen-3 replacement.
+
+
 Deep notes in agent memory: `project_floor_leak_critic_selfko`, `project_distributional_critic_verdict`,
 `project_incoming_damage_outcome`, `project_model_frontier_roadmap`. The prober (`src/main/prober/`) is
 the forensic engine; this folder is its conclusions.

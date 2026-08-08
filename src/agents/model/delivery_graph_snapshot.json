@@ -1,0 +1,5131 @@
+{
+  "edges": [
+    {
+      "dst": "loss.hp_type_ce",
+      "label_key": "hp_type_label",
+      "note": "privileged label; never enters the forward",
+      "source_constant": "training-only obs Dict key",
+      "src": "hp_type_belief",
+      "type": "aux",
+      "width": null
+    },
+    {
+      "dst": "loss.move_latent_grading",
+      "label_key": "known_moves",
+      "note": "privileged label; never enters the forward",
+      "source_constant": "training-only obs Dict key",
+      "src": "move_belief",
+      "type": "aux",
+      "width": null
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "c4",
+      "note": "",
+      "source_constant": "_EDGE_C4_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "c4",
+      "note": "",
+      "source_constant": "_EDGE_C4_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "c4",
+      "note": "",
+      "source_constant": "_EDGE_C4_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "c4",
+      "note": "",
+      "source_constant": "_EDGE_C4_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c1",
+      "note": "",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c2",
+      "note": "",
+      "source_constant": "_EDGE_C2_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "c3",
+      "note": "",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d1",
+      "note": "",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "s1",
+      "note": "",
+      "source_constant": "_EDGE_S1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "c5",
+      "note": "",
+      "source_constant": "_EDGE_C5_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "d3",
+      "note": "",
+      "source_constant": "_EDGE_D3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "s3",
+      "note": "",
+      "source_constant": "_EDGE_S3_CELL",
+      "src": "E4_threat[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "opp_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "opp_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "opp_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "opp_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "opp_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "opp_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "opp_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "opp_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "opp_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "opp_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "opp_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "opp_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "g",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_G_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "global",
+      "family": "x",
+      "note": "written for our mons AND opp mons",
+      "source_constant": "_EDGE_X_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d2",
+      "note": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+      "source_constant": "_EDGE_D2_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "d4",
+      "note": "opp ACTIVE column pre-zeroed \u2014 that quadrant is d3's",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "t",
+      "note": "",
+      "source_constant": "_EDGE_T_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "v",
+      "note": "",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 3
+    },
+    {
+      "dst": "pointer.move_logit[0]",
+      "note": "[low, high, crit, pko, p_land, known, sec x7] for THIS request slot",
+      "source_constant": "_PTR_MOVE_CELL",
+      "src": "damage_op",
+      "type": "cell",
+      "width": 13
+    },
+    {
+      "dst": "pointer.move_logit[1]",
+      "note": "[low, high, crit, pko, p_land, known, sec x7] for THIS request slot",
+      "source_constant": "_PTR_MOVE_CELL",
+      "src": "damage_op",
+      "type": "cell",
+      "width": 13
+    },
+    {
+      "dst": "pointer.move_logit[2]",
+      "note": "[low, high, crit, pko, p_land, known, sec x7] for THIS request slot",
+      "source_constant": "_PTR_MOVE_CELL",
+      "src": "damage_op",
+      "type": "cell",
+      "width": 13
+    },
+    {
+      "dst": "pointer.move_logit[3]",
+      "note": "[low, high, crit, pko, p_land, known, sec x7] for THIS request slot",
+      "source_constant": "_PTR_MOVE_CELL",
+      "src": "damage_op",
+      "type": "cell",
+      "width": 13
+    },
+    {
+      "dst": "pointer.switch_logit[0]",
+      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "source_constant": "_PTR_SWITCH_CELL_IN",
+      "src": "damage_op",
+      "type": "cell",
+      "width": 15
+    },
+    {
+      "dst": "pointer.switch_logit[1]",
+      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "source_constant": "_PTR_SWITCH_CELL_IN",
+      "src": "damage_op",
+      "type": "cell",
+      "width": 15
+    },
+    {
+      "dst": "pointer.switch_logit[2]",
+      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "source_constant": "_PTR_SWITCH_CELL_IN",
+      "src": "damage_op",
+      "type": "cell",
+      "width": 15
+    },
+    {
+      "dst": "pointer.switch_logit[3]",
+      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "source_constant": "_PTR_SWITCH_CELL_IN",
+      "src": "damage_op",
+      "type": "cell",
+      "width": 15
+    },
+    {
+      "dst": "pointer.switch_logit[4]",
+      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "source_constant": "_PTR_SWITCH_CELL_IN",
+      "src": "damage_op",
+      "type": "cell",
+      "width": 15
+    },
+    {
+      "dst": "pointer.switch_logit[5]",
+      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "source_constant": "_PTR_SWITCH_CELL_IN",
+      "src": "damage_op",
+      "type": "cell",
+      "width": 15
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": false,
+      "source_constant": "2 * ACTIVE_CTX_HIDDEN[-1]",
+      "src": "active_context",
+      "type": "concat",
+      "via": "ProjectionAssembler.active_ctx_encoder",
+      "width": 64
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": false,
+      "source_constant": "2 * ACTIVE_CTX_HIDDEN[-1]",
+      "src": "active_context",
+      "type": "concat",
+      "via": "ProjectionAssembler.active_ctx_encoder",
+      "width": 64
+    },
+    {
+      "dst": "pi_projection",
+      "note": "the unpooled ABSOLUTE route \u2014 the only channel that can carry a magnitude to the heads",
+      "pooled": false,
+      "source_constant": "DamageOperator.out_dim",
+      "src": "damage_op",
+      "type": "concat",
+      "width": 660
+    },
+    {
+      "dst": "vf_projection",
+      "note": "the unpooled ABSOLUTE route \u2014 the only channel that can carry a magnitude to the heads",
+      "pooled": false,
+      "source_constant": "DamageOperator.out_dim",
+      "src": "damage_op",
+      "type": "concat",
+      "width": 660
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": false,
+      "source_constant": "GLOBAL_ENV_DIM + reactive matchup offset",
+      "src": "non_matchup_rest",
+      "type": "concat",
+      "width": 29
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": false,
+      "source_constant": "GLOBAL_ENV_DIM + reactive matchup offset",
+      "src": "non_matchup_rest",
+      "type": "concat",
+      "width": 29
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[0]",
+      "type": "concat",
+      "via": "CLSPool.their_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[0]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[1]",
+      "type": "concat",
+      "via": "CLSPool.their_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[1]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[2]",
+      "type": "concat",
+      "via": "CLSPool.their_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[2]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[3]",
+      "type": "concat",
+      "via": "CLSPool.their_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[3]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[4]",
+      "type": "concat",
+      "via": "CLSPool.their_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[4]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[5]",
+      "type": "concat",
+      "via": "CLSPool.their_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[5]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "note": "our active's refined token; vf does NOT read it unless value_active_readout",
+      "pooled": false,
+      "source_constant": "D_MODEL",
+      "src": "our_active_refined",
+      "type": "concat",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[0]",
+      "type": "concat",
+      "via": "CLSPool.our_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[0]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[1]",
+      "type": "concat",
+      "via": "CLSPool.our_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[1]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[2]",
+      "type": "concat",
+      "via": "CLSPool.our_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[2]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[3]",
+      "type": "concat",
+      "via": "CLSPool.our_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[3]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[4]",
+      "type": "concat",
+      "via": "CLSPool.our_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[4]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[5]",
+      "type": "concat",
+      "via": "CLSPool.our_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[5]",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
+    },
+    {
+      "dst": "pointer.move_logit[0]",
+      "note": "the REFINED seat, post-attention",
+      "source_constant": "pointer_move_token_dim",
+      "src": "E3_move[0]",
+      "type": "content",
+      "via": "PointerNativeActionHead.move_proj",
+      "width": 128
+    },
+    {
+      "dst": "pointer.move_logit[1]",
+      "note": "the REFINED seat, post-attention",
+      "source_constant": "pointer_move_token_dim",
+      "src": "E3_move[1]",
+      "type": "content",
+      "via": "PointerNativeActionHead.move_proj",
+      "width": 128
+    },
+    {
+      "dst": "pointer.move_logit[2]",
+      "note": "the REFINED seat, post-attention",
+      "source_constant": "pointer_move_token_dim",
+      "src": "E3_move[2]",
+      "type": "content",
+      "via": "PointerNativeActionHead.move_proj",
+      "width": 128
+    },
+    {
+      "dst": "pointer.move_logit[3]",
+      "note": "the REFINED seat, post-attention",
+      "source_constant": "pointer_move_token_dim",
+      "src": "E3_move[3]",
+      "type": "content",
+      "via": "PointerNativeActionHead.move_proj",
+      "width": 128
+    },
+    {
+      "dst": "E4_threat[0]",
+      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "source_constant": "MOVE_LATENT_DIM + 3",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.threat_seat_proj",
+      "width": 35
+    },
+    {
+      "dst": "E4_threat[1]",
+      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "source_constant": "MOVE_LATENT_DIM + 3",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.threat_seat_proj",
+      "width": 35
+    },
+    {
+      "dst": "E4_threat[2]",
+      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "source_constant": "MOVE_LATENT_DIM + 3",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.threat_seat_proj",
+      "width": 35
+    },
+    {
+      "dst": "E4_threat[3]",
+      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "source_constant": "MOVE_LATENT_DIM + 3",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.threat_seat_proj",
+      "width": 35
+    },
+    {
+      "dst": "E4_threat[4]",
+      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "source_constant": "MOVE_LATENT_DIM + 3",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.threat_seat_proj",
+      "width": 35
+    },
+    {
+      "dst": "E4_threat[5]",
+      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "source_constant": "MOVE_LATENT_DIM + 3",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.threat_seat_proj",
+      "width": 35
+    },
+    {
+      "dst": "E5_tail[0]",
+      "note": "[p_tail, worst_phys, worst_spec, revealed] \u2014 beyond-top-K mass",
+      "source_constant": "_EDGE_TAIL_CELL(4)",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.tail_proj",
+      "width": 4
+    },
+    {
+      "dst": "E5_tail[1]",
+      "note": "[p_tail, worst_phys, worst_spec, revealed] \u2014 beyond-top-K mass",
+      "source_constant": "_EDGE_TAIL_CELL(4)",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.tail_proj",
+      "width": 4
+    },
+    {
+      "dst": "E5_tail[2]",
+      "note": "[p_tail, worst_phys, worst_spec, revealed] \u2014 beyond-top-K mass",
+      "source_constant": "_EDGE_TAIL_CELL(4)",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.tail_proj",
+      "width": 4
+    },
+    {
+      "dst": "E5_tail[3]",
+      "note": "[p_tail, worst_phys, worst_spec, revealed] \u2014 beyond-top-K mass",
+      "source_constant": "_EDGE_TAIL_CELL(4)",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.tail_proj",
+      "width": 4
+    },
+    {
+      "dst": "E5_tail[4]",
+      "note": "[p_tail, worst_phys, worst_spec, revealed] \u2014 beyond-top-K mass",
+      "source_constant": "_EDGE_TAIL_CELL(4)",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.tail_proj",
+      "width": 4
+    },
+    {
+      "dst": "E5_tail[5]",
+      "note": "[p_tail, worst_phys, worst_spec, revealed] \u2014 beyond-top-K mass",
+      "source_constant": "_EDGE_TAIL_CELL(4)",
+      "src": "damage_op",
+      "type": "content",
+      "via": "EntityMoveSeats.tail_proj",
+      "width": 4
+    },
+    {
+      "dst": "our_mon[0]",
+      "note": "per-our-mon incoming row; the ONE absolute-magnitude route into the trunk",
+      "source_constant": "_DMG_PER_MON",
+      "src": "damage_op",
+      "type": "content",
+      "via": "prefuse_proj",
+      "width": 12,
+      "zero_init": true
+    },
+    {
+      "dst": "our_mon[1]",
+      "note": "per-our-mon incoming row; the ONE absolute-magnitude route into the trunk",
+      "source_constant": "_DMG_PER_MON",
+      "src": "damage_op",
+      "type": "content",
+      "via": "prefuse_proj",
+      "width": 12,
+      "zero_init": true
+    },
+    {
+      "dst": "our_mon[2]",
+      "note": "per-our-mon incoming row; the ONE absolute-magnitude route into the trunk",
+      "source_constant": "_DMG_PER_MON",
+      "src": "damage_op",
+      "type": "content",
+      "via": "prefuse_proj",
+      "width": 12,
+      "zero_init": true
+    },
+    {
+      "dst": "our_mon[3]",
+      "note": "per-our-mon incoming row; the ONE absolute-magnitude route into the trunk",
+      "source_constant": "_DMG_PER_MON",
+      "src": "damage_op",
+      "type": "content",
+      "via": "prefuse_proj",
+      "width": 12,
+      "zero_init": true
+    },
+    {
+      "dst": "our_mon[4]",
+      "note": "per-our-mon incoming row; the ONE absolute-magnitude route into the trunk",
+      "source_constant": "_DMG_PER_MON",
+      "src": "damage_op",
+      "type": "content",
+      "via": "prefuse_proj",
+      "width": 12,
+      "zero_init": true
+    },
+    {
+      "dst": "our_mon[5]",
+      "note": "per-our-mon incoming row; the ONE absolute-magnitude route into the trunk",
+      "source_constant": "_DMG_PER_MON",
+      "src": "damage_op",
+      "type": "content",
+      "via": "prefuse_proj",
+      "width": 12,
+      "zero_init": true
+    },
+    {
+      "dst": "opp_mon[0]",
+      "note": "presence-gated expected typed-HP embedding",
+      "source_constant": "D_MODEL",
+      "src": "hp_type_belief",
+      "type": "content",
+      "via": "HPTypeBelief.reinject_proj",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[1]",
+      "note": "presence-gated expected typed-HP embedding",
+      "source_constant": "D_MODEL",
+      "src": "hp_type_belief",
+      "type": "content",
+      "via": "HPTypeBelief.reinject_proj",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[2]",
+      "note": "presence-gated expected typed-HP embedding",
+      "source_constant": "D_MODEL",
+      "src": "hp_type_belief",
+      "type": "content",
+      "via": "HPTypeBelief.reinject_proj",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[3]",
+      "note": "presence-gated expected typed-HP embedding",
+      "source_constant": "D_MODEL",
+      "src": "hp_type_belief",
+      "type": "content",
+      "via": "HPTypeBelief.reinject_proj",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[4]",
+      "note": "presence-gated expected typed-HP embedding",
+      "source_constant": "D_MODEL",
+      "src": "hp_type_belief",
+      "type": "content",
+      "via": "HPTypeBelief.reinject_proj",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[5]",
+      "note": "presence-gated expected typed-HP embedding",
+      "source_constant": "D_MODEL",
+      "src": "hp_type_belief",
+      "type": "content",
+      "via": "HPTypeBelief.reinject_proj",
+      "width": 128
+    },
+    {
+      "dst": "damage_op",
+      "note": "the composed typed posterior; differentiable in w",
+      "source_constant": "layout['max_moves']",
+      "src": "move_belief",
+      "type": "content",
+      "width": 400
+    },
+    {
+      "dst": "opp_mon[0]",
+      "note": "soft-embedded believed moveset",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
+      "via": "MoveBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[1]",
+      "note": "soft-embedded believed moveset",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
+      "via": "MoveBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[2]",
+      "note": "soft-embedded believed moveset",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
+      "via": "MoveBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[3]",
+      "note": "soft-embedded believed moveset",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
+      "via": "MoveBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[4]",
+      "note": "soft-embedded believed moveset",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
+      "via": "MoveBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[5]",
+      "note": "soft-embedded believed moveset",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
+      "via": "MoveBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "pointer.switch_logit[0]",
+      "note": "the post-transformer team token",
+      "source_constant": "D_MODEL",
+      "src": "our_mon[0]",
+      "type": "content",
+      "via": "PointerNativeActionHead.switch_proj",
+      "width": 128
+    },
+    {
+      "dst": "pointer.switch_logit[1]",
+      "note": "the post-transformer team token",
+      "source_constant": "D_MODEL",
+      "src": "our_mon[1]",
+      "type": "content",
+      "via": "PointerNativeActionHead.switch_proj",
+      "width": 128
+    },
+    {
+      "dst": "pointer.switch_logit[2]",
+      "note": "the post-transformer team token",
+      "source_constant": "D_MODEL",
+      "src": "our_mon[2]",
+      "type": "content",
+      "via": "PointerNativeActionHead.switch_proj",
+      "width": 128
+    },
+    {
+      "dst": "pointer.switch_logit[3]",
+      "note": "the post-transformer team token",
+      "source_constant": "D_MODEL",
+      "src": "our_mon[3]",
+      "type": "content",
+      "via": "PointerNativeActionHead.switch_proj",
+      "width": 128
+    },
+    {
+      "dst": "pointer.switch_logit[4]",
+      "note": "the post-transformer team token",
+      "source_constant": "D_MODEL",
+      "src": "our_mon[4]",
+      "type": "content",
+      "via": "PointerNativeActionHead.switch_proj",
+      "width": 128
+    },
+    {
+      "dst": "pointer.switch_logit[5]",
+      "note": "the post-transformer team token",
+      "source_constant": "D_MODEL",
+      "src": "our_mon[5]",
+      "type": "content",
+      "via": "PointerNativeActionHead.switch_proj",
+      "width": 128
+    },
+    {
+      "dst": "pointer.move_logit[0]",
+      "note": "the shared decision context \u2014 everything in pi_projection conditions every pointer score",
+      "source_constant": "NET_ARCH[-1]",
+      "src": "pi_projection",
+      "type": "content",
+      "via": "PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+      "width": 512
+    },
+    {
+      "dst": "pointer.move_logit[1]",
+      "note": "the shared decision context \u2014 everything in pi_projection conditions every pointer score",
+      "source_constant": "NET_ARCH[-1]",
+      "src": "pi_projection",
+      "type": "content",
+      "via": "PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+      "width": 512
+    },
+    {
+      "dst": "pointer.move_logit[2]",
+      "note": "the shared decision context \u2014 everything in pi_projection conditions every pointer score",
+      "source_constant": "NET_ARCH[-1]",
+      "src": "pi_projection",
+      "type": "content",
+      "via": "PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+      "width": 512
+    },
+    {
+      "dst": "pointer.move_logit[3]",
+      "note": "the shared decision context \u2014 everything in pi_projection conditions every pointer score",
+      "source_constant": "NET_ARCH[-1]",
+      "src": "pi_projection",
+      "type": "content",
+      "via": "PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+      "width": 512
+    },
+    {
+      "dst": "pointer.struggle_logit",
+      "note": "the shared decision context \u2014 everything in pi_projection conditions every pointer score",
+      "source_constant": "NET_ARCH[-1]",
+      "src": "pi_projection",
+      "type": "content",
+      "via": "PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+      "width": 512
+    },
+    {
+      "dst": "pointer.switch_logit[0]",
+      "note": "the shared decision context \u2014 everything in pi_projection conditions every pointer score",
+      "source_constant": "NET_ARCH[-1]",
+      "src": "pi_projection",
+      "type": "content",
+      "via": "PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+      "width": 512
+    },
+    {
+      "dst": "pointer.switch_logit[1]",
+      "note": "the shared decision context \u2014 everything in pi_projection conditions every pointer score",
+      "source_constant": "NET_ARCH[-1]",
+      "src": "pi_projection",
+      "type": "content",
+      "via": "PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+      "width": 512
+    },
+    {
+      "dst": "pointer.switch_logit[2]",
+      "note": "the shared decision context \u2014 everything in pi_projection conditions every pointer score",
+      "source_constant": "NET_ARCH[-1]",
+      "src": "pi_projection",
+      "type": "content",
+      "via": "PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+      "width": 512
+    },
+    {
+      "dst": "pointer.switch_logit[3]",
+      "note": "the shared decision context \u2014 everything in pi_projection conditions every pointer score",
+      "source_constant": "NET_ARCH[-1]",
+      "src": "pi_projection",
+      "type": "content",
+      "via": "PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+      "width": 512
+    },
+    {
+      "dst": "pointer.switch_logit[4]",
+      "note": "the shared decision context \u2014 everything in pi_projection conditions every pointer score",
+      "source_constant": "NET_ARCH[-1]",
+      "src": "pi_projection",
+      "type": "content",
+      "via": "PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+      "width": 512
+    },
+    {
+      "dst": "pointer.switch_logit[5]",
+      "note": "the shared decision context \u2014 everything in pi_projection conditions every pointer score",
+      "source_constant": "NET_ARCH[-1]",
+      "src": "pi_projection",
+      "type": "content",
+      "via": "PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+      "width": 512
+    },
+    {
+      "dst": "E3_move[0]",
+      "note": "request-slot order \u2014 seat k IS action logit 6+k",
+      "source_constant": "MOVE_NET_HIDDEN[1]",
+      "src": "pokemon_encoder.move_tokens",
+      "type": "content",
+      "via": "EntityMoveSeats.move_seat_proj",
+      "width": 32
+    },
+    {
+      "dst": "E3_move[1]",
+      "note": "request-slot order \u2014 seat k IS action logit 6+k",
+      "source_constant": "MOVE_NET_HIDDEN[1]",
+      "src": "pokemon_encoder.move_tokens",
+      "type": "content",
+      "via": "EntityMoveSeats.move_seat_proj",
+      "width": 32
+    },
+    {
+      "dst": "E3_move[2]",
+      "note": "request-slot order \u2014 seat k IS action logit 6+k",
+      "source_constant": "MOVE_NET_HIDDEN[1]",
+      "src": "pokemon_encoder.move_tokens",
+      "type": "content",
+      "via": "EntityMoveSeats.move_seat_proj",
+      "width": 32
+    },
+    {
+      "dst": "E3_move[3]",
+      "note": "request-slot order \u2014 seat k IS action logit 6+k",
+      "source_constant": "MOVE_NET_HIDDEN[1]",
+      "src": "pokemon_encoder.move_tokens",
+      "type": "content",
+      "via": "EntityMoveSeats.move_seat_proj",
+      "width": 32
+    }
+  ],
+  "meta": {
+    "arch_signature": "gen3_edge_bias_trunk_v1",
+    "base_seats": 20,
+    "config": "production_config.json",
+    "config_version": 59,
+    "edge_bias_families": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "d1",
+      "d2",
+      "d3",
+      "d4",
+      "g",
+      "s1",
+      "s3",
+      "t",
+      "v",
+      "x"
+    ],
+    "edge_types": [
+      "bias",
+      "content",
+      "concat",
+      "cell",
+      "aux"
+    ],
+    "extra_seats": 16,
+    "n_tokens": 36,
+    "obs_dim": 2925,
+    "op_out_dim": 660,
+    "pi_projection_in": 1137,
+    "vf_projection_in": 881
+  },
+  "nodes": [
+    {
+      "id": "loss.hp_type_ce",
+      "kind": "aux_loss",
+      "label_key": "hp_type_label"
+    },
+    {
+      "id": "loss.move_latent_grading",
+      "kind": "aux_loss",
+      "label_key": "known_moves"
+    },
+    {
+      "id": "hp_type_belief",
+      "kind": "belief_head",
+      "out_dim": 16
+    },
+    {
+      "id": "move_belief",
+      "kind": "belief_head",
+      "out_dim": 400
+    },
+    {
+      "id": "pi_projection",
+      "in_features": 1137,
+      "kind": "head",
+      "out_features": 512
+    },
+    {
+      "id": "vf_projection",
+      "in_features": 881,
+      "kind": "head",
+      "out_features": 512
+    },
+    {
+      "id": "active_context",
+      "kind": "input"
+    },
+    {
+      "id": "non_matchup_rest",
+      "kind": "input"
+    },
+    {
+      "id": "our_active_refined",
+      "kind": "input"
+    },
+    {
+      "id": "pokemon_encoder.move_tokens",
+      "kind": "input"
+    },
+    {
+      "action_index": 6,
+      "id": "pointer.move_logit[0]",
+      "kind": "logit"
+    },
+    {
+      "action_index": 7,
+      "id": "pointer.move_logit[1]",
+      "kind": "logit"
+    },
+    {
+      "action_index": 8,
+      "id": "pointer.move_logit[2]",
+      "kind": "logit"
+    },
+    {
+      "action_index": 9,
+      "id": "pointer.move_logit[3]",
+      "kind": "logit"
+    },
+    {
+      "action_index": 10,
+      "id": "pointer.struggle_logit",
+      "kind": "logit"
+    },
+    {
+      "action_index": 0,
+      "id": "pointer.switch_logit[0]",
+      "kind": "logit"
+    },
+    {
+      "action_index": 1,
+      "id": "pointer.switch_logit[1]",
+      "kind": "logit"
+    },
+    {
+      "action_index": 2,
+      "id": "pointer.switch_logit[2]",
+      "kind": "logit"
+    },
+    {
+      "action_index": 3,
+      "id": "pointer.switch_logit[3]",
+      "kind": "logit"
+    },
+    {
+      "action_index": 4,
+      "id": "pointer.switch_logit[4]",
+      "kind": "logit"
+    },
+    {
+      "action_index": 5,
+      "id": "pointer.switch_logit[5]",
+      "kind": "logit"
+    },
+    {
+      "id": "damage_op",
+      "incoming_dim": 85,
+      "kind": "operator",
+      "out_dim": 660
+    },
+    {
+      "id": "E3_move[0]",
+      "index": 20,
+      "kind": "seat",
+      "token_type": "OUR_MOVE"
+    },
+    {
+      "id": "E3_move[1]",
+      "index": 21,
+      "kind": "seat",
+      "token_type": "OUR_MOVE"
+    },
+    {
+      "id": "E3_move[2]",
+      "index": 22,
+      "kind": "seat",
+      "token_type": "OUR_MOVE"
+    },
+    {
+      "id": "E3_move[3]",
+      "index": 23,
+      "kind": "seat",
+      "token_type": "OUR_MOVE"
+    },
+    {
+      "id": "E4_threat[0]",
+      "index": 24,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT"
+    },
+    {
+      "id": "E4_threat[1]",
+      "index": 25,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT"
+    },
+    {
+      "id": "E4_threat[2]",
+      "index": 26,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT"
+    },
+    {
+      "id": "E4_threat[3]",
+      "index": 27,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT"
+    },
+    {
+      "id": "E4_threat[4]",
+      "index": 28,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT"
+    },
+    {
+      "id": "E4_threat[5]",
+      "index": 29,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT"
+    },
+    {
+      "id": "E5_tail[0]",
+      "index": 30,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT+tail_marker"
+    },
+    {
+      "id": "E5_tail[1]",
+      "index": 31,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT+tail_marker"
+    },
+    {
+      "id": "E5_tail[2]",
+      "index": 32,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT+tail_marker"
+    },
+    {
+      "id": "E5_tail[3]",
+      "index": 33,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT+tail_marker"
+    },
+    {
+      "id": "E5_tail[4]",
+      "index": 34,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT+tail_marker"
+    },
+    {
+      "id": "E5_tail[5]",
+      "index": 35,
+      "kind": "seat",
+      "token_type": "THEIR_THREAT+tail_marker"
+    },
+    {
+      "id": "global",
+      "index": 19,
+      "kind": "seat",
+      "token_type": "GLOBAL"
+    },
+    {
+      "id": "history[0]",
+      "index": 12,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "history[1]",
+      "index": 13,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "history[2]",
+      "index": 14,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "history[3]",
+      "index": 15,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "history[4]",
+      "index": 16,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "history[5]",
+      "index": 17,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "history[6]",
+      "index": 18,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "opp_mon[0]",
+      "index": 6,
+      "kind": "seat",
+      "token_type": "THEIR_TEAM"
+    },
+    {
+      "id": "opp_mon[1]",
+      "index": 7,
+      "kind": "seat",
+      "token_type": "THEIR_TEAM"
+    },
+    {
+      "id": "opp_mon[2]",
+      "index": 8,
+      "kind": "seat",
+      "token_type": "THEIR_TEAM"
+    },
+    {
+      "id": "opp_mon[3]",
+      "index": 9,
+      "kind": "seat",
+      "token_type": "THEIR_TEAM"
+    },
+    {
+      "id": "opp_mon[4]",
+      "index": 10,
+      "kind": "seat",
+      "token_type": "THEIR_TEAM"
+    },
+    {
+      "id": "opp_mon[5]",
+      "index": 11,
+      "kind": "seat",
+      "token_type": "THEIR_TEAM"
+    },
+    {
+      "id": "our_mon[0]",
+      "index": 0,
+      "kind": "seat",
+      "token_type": "OUR_TEAM"
+    },
+    {
+      "id": "our_mon[1]",
+      "index": 1,
+      "kind": "seat",
+      "token_type": "OUR_TEAM"
+    },
+    {
+      "id": "our_mon[2]",
+      "index": 2,
+      "kind": "seat",
+      "token_type": "OUR_TEAM"
+    },
+    {
+      "id": "our_mon[3]",
+      "index": 3,
+      "kind": "seat",
+      "token_type": "OUR_TEAM"
+    },
+    {
+      "id": "our_mon[4]",
+      "index": 4,
+      "kind": "seat",
+      "token_type": "OUR_TEAM"
+    },
+    {
+      "id": "our_mon[5]",
+      "index": 5,
+      "kind": "seat",
+      "token_type": "OUR_TEAM"
+    }
+  ]
+}

@@ -268,7 +268,7 @@ from an MSE loss or a pre-collapsed input.
 ## See also
 
 - Root `CLAUDE.md` → Feature Extractor Architecture (the `DamageOperator`, belief heads,
-  `ValueDistHead`), and Model Versioning (v19/v21 damage op, v29 distributional value head,
+  `ValueDistHead`), and Model Versioning (v19/v21 damage op, distributional value head,
   v30 top-K incoming, v36 bidirectional threat / prob-outspeed).
 - `src/agents/model/CLAUDE.md` — the 7-phase extractor contract.
 - `designs/ai_v6/design_differentiable_damage_op.md`, `design_distributional_value_critic.md`,

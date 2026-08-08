@@ -1,5 +1,11 @@
 # Research State
 
+
+> **Measured numbers live in [`measurements/`](measurements/)** — the raw audit outputs, each
+> carrying its own checkpoint, step, state count and date. Cite a file there rather than
+> re-typing a percentage: that is what makes a stale number detectable by comparing dates
+> instead of by re-deriving the result.
+
 The **single source of truth for what we're trying, what we know, what we don't, and what's left
 to find.** Version-agnostic (it tracks the ongoing hunt, not one `ai_vN`). Maintained deliberately
 by agents — see the protocol below and the `feedback-research-state` memory.

@@ -1997,7 +1997,7 @@ default; pieces:
 
 ## z_arch aux — recon + VICReg (`--zarch-recon-coef` / `--zarch-vicreg-coef`)
 
-The training half of the v44 team-archetype latent + head FiLM (model side:
+The training half of the team-archetype latent + head FiLM (model side:
 `src/agents/model/CLAUDE.md` → Team-archetype latent + head FiLM; design rationale:
 `designs/learning/amortization_gap_and_conditioning.md`). The `ZArchEncoder` is trunk-DECOUPLED
 (detached embedding reads) and its z conditions both heads via zero-init FiLM — so WITHOUT an aux the

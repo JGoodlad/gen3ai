@@ -1,0 +1,103 @@
+{
+  "provenance": {
+    "generation": "gen-2",
+    "run": "run_20260805_060807",
+    "checkpoint": "/home/goodlad/dev/gen3ai/.claude/worktrees/gen2-run-0805/models/run_20260805_060807/final_model.zip",
+    "step": 40000000,
+    "n_states": 4000,
+    "date": "2026-08-06",
+    "producer": "src/agents/model/edge_ablation_audit.py",
+    "note": "11 families (adds d4,t,x,g,c4 + E5 seats). Its v family carries the SpD-as-speed GIGO bug (fixed 2026-08-06, after this run trained).",
+    "_note_on_this_key": "`provenance` was ADDED when the file was co-located into version control (2026-08-08). Every other key is byte-for-byte the probe's own output."
+  },
+  "meta": {
+    "checkpoint": "/home/goodlad/dev/gen3ai/.claude/worktrees/gen2-run-0805/models/run_20260805_060807/final_model.zip",
+    "n_states": 4000
+  },
+  "families": {
+    "c4": {
+      "kl_mean": 1.9748527847696096e-05,
+      "kl_p95": 8.683229680173099e-05,
+      "flip_rate": 0.0012499999720603228,
+      "dv_mean": 0.008431144058704376
+    },
+    "d1": {
+      "kl_mean": 0.10749971121549606,
+      "kl_p95": 0.5849000811576843,
+      "flip_rate": 0.10074999928474426,
+      "dv_mean": 0.21246513724327087
+    },
+    "d2": {
+      "kl_mean": 0.3123968839645386,
+      "kl_p95": 1.5099127292633057,
+      "flip_rate": 0.23774999380111694,
+      "dv_mean": 2.179243803024292
+    },
+    "d3": {
+      "kl_mean": 0.0007836595177650452,
+      "kl_p95": 0.0034453589469194412,
+      "flip_rate": 0.015250000171363354,
+      "dv_mean": 0.06118641048669815
+    },
+    "d4": {
+      "kl_mean": 0.0039621759206056595,
+      "kl_p95": 0.013933957554399967,
+      "flip_rate": 0.020500000566244125,
+      "dv_mean": 0.4909437298774719
+    },
+    "g": {
+      "kl_mean": 9.874498937278986e-05,
+      "kl_p95": 0.00039944134186953306,
+      "flip_rate": 0.004749999847263098,
+      "dv_mean": 0.05019574612379074
+    },
+    "s1": {
+      "kl_mean": 0.00956915132701397,
+      "kl_p95": 0.012629841454327106,
+      "flip_rate": 0.01899999938905239,
+      "dv_mean": 0.024494295939803123
+    },
+    "s3": {
+      "kl_mean": 0.00019247119780629873,
+      "kl_p95": 0.0007970829028636217,
+      "flip_rate": 0.00774999987334013,
+      "dv_mean": 0.031064243987202644
+    },
+    "t": {
+      "kl_mean": 0.001834010356105864,
+      "kl_p95": 0.004068959504365921,
+      "flip_rate": 0.017500000074505806,
+      "dv_mean": 0.1495412290096283
+    },
+    "v": {
+      "kl_mean": 0.012319381348788738,
+      "kl_p95": 0.053963277488946915,
+      "flip_rate": 0.0625,
+      "dv_mean": 0.7592604756355286
+    },
+    "x": {
+      "kl_mean": 0.00032468308927491307,
+      "kl_p95": 0.0011343058431521058,
+      "flip_rate": 0.010250000283122063,
+      "dv_mean": 0.10532526671886444
+    },
+    "all": {
+      "kl_mean": 0.49090176820755005,
+      "kl_p95": 2.334188461303711,
+      "flip_rate": 0.3149999976158142,
+      "dv_mean": 2.9316587448120117
+    },
+    "concat": {
+      "kl_mean": 0.5371462106704712,
+      "kl_p95": 2.5807204246520996,
+      "flip_rate": 0.3310000002384186,
+      "dv_mean": 7.443705081939697
+    },
+    "concat_cells": {
+      "kl_mean": 0.9630522727966309,
+      "kl_p95": 4.144457817077637,
+      "flip_rate": 0.4257499873638153,
+      "dv_mean": 7.443705081939697
+    }
+  }
+}

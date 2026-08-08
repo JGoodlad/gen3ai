@@ -553,7 +553,7 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
     both`) our 4 moves' **outgoing** damage `[low,high,crit,pko]` (request-slot/action order — the
     equal-effectiveness move tie-break) + `outgoing.secondary` (per OUR move — "what status can it cause",
     keyed by the 7 live `_OUT_SEC_COLS`; `gen3_op_block_trim_v1` dropped slp/psn/tox, which no gen3 move an
-    OUR-side team runs can inflict). **v55 `gen3_op_block_trim_v1` REMOVED three keys** the decode used to
+    OUR-side team runs can inflict). **`gen3_op_block_trim_v1` REMOVED three keys** the decode used to
     carry — the opp-active `effect` and `incoming_secondary` collapses (ledger P1: 1.2% / 0.1% of the op's
     measured dependence, no defender axis) and the LEAN `incoming_topk` (0 calls/forward — the matrix
     superseded it). A stale reader now KeyErrors instead of silently mis-reading the Choice-Band bytes. The

@@ -15,12 +15,27 @@ wins and this file is a bug — fix it in the same change.
 | Progress at time of writing | step 32,000,016 of 40,000,000; bots 0.911, anchored ELO 2094 (`metadata.json` → `latest_eval`, 2026-08-08) |
 
 Everything below was derived on **2026-08-08** by instantiating that config against the code, not
-by reading prose. Regenerate with `tmp/arch_ground_truth.py` (a probe, not a test).
+by reading prose. `designs/production_config.json` is a verbatim copy of that run's
+`model_config.json`, committed so this file is reproducible without reaching into `models/`.
+
+**The companion artifact is [`architecture_graph.dot`](architecture_graph.dot)** — a *generated*
+delivery digraph (seats and sinks as nodes; edges typed by what they physically carry: `bias` = a
+softmax-normalised RATIO, `content` = an absolute as token content, `concat` = an absolute at the
+head input, `cell` = an absolute per-action, `aux` = training-only and never in the forward). It is
+produced by `src/agents/model/delivery_graph.py` and pinned by `delivery_graph_test.py` against a
+committed JSON snapshot, so an architecture change that is not reflected in the graph fails a test
+rather than quietly rotting. Regenerate both artifacts in the same commit:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && python -m agents.model.delivery_graph \
+    --dot designs/architecture_graph.dot \
+    --json src/agents/model/delivery_graph_snapshot.json
+```
 
 **Conventions used in this file**
-- No version numbers in prose. Blocks and families are named structurally
-  (`outgoing_matrix`, not "v34's matrix"). Where a version tag is genuinely needed it appears in a
-  trailing parenthetical only.
+- No version numbers in prose. Blocks and families are named **structurally** — write
+  `outgoing_matrix (our moves × opp mons)`, never "the v34 matrix". Where a version tag is
+  genuinely needed it goes in a trailing parenthetical, never in the noun phrase.
 - Every measured number carries checkpoint / step / state-count / date inline.
 - A claim that could not be verified against code or the run config is marked **UNVERIFIED**.
 
@@ -283,6 +298,15 @@ permutes the logits, and a sorted-vs-request misalignment is unrepresentable at 
 Cold start: all three scorers are zero-init and built **after** SB3's ortho-init pass, so every
 logit is exactly 0 at step 0 ⇒ uniform-over-legal.
 
+**The pointer route is POLICY-ONLY.** `pointer_head` is reached solely through
+`_get_action_dist_from_latent(latent_pi)`; every value path is
+`forward_critic(vf_features) → _critic_value`, which never touches it. So the per-action `cell`
+channel exists for the actor and **not** for the critic — the critic's only route to the op's
+physics is the `concat` edge in §3.2. That asymmetry is measurable: zeroing the op head-concat
+moves the critic by |dV| **5.67** against **1.86** for the whole 15-family edge system
+(§5.4) — i.e. the concat is the critic's dominant physics dependency, and no amount of
+pointer-cell work re-homes it.
+
 ### 3.4 Side readouts
 
 None are built in this config (`win_prob_mode`, `pubval_mode`, `value_dist_mode` all `none`;
@@ -319,11 +343,40 @@ slp/psn/tox columns, and the lean top-K block. `damage_topk_k` now sizes the inc
 nothing else; `K > 0` without `damage_matrices_incoming` **raises** in both the extractor and the
 op.
 
-### 4.1 ⚠️ Per-block dependence measurements — read the config before quoting
+### 4.1 Per-block dependence — the current-config measurement
+
+Source: [`research_state/measurements/gen3_op_block_dependence_6k.json`](research_state/measurements/gen3_op_block_dependence_6k.json)
+— **this run's `checkpoint_9600000_steps.zip`, 6000 real eval states, 2026-08-07.** Method: zero
+each sub-block as a contiguous slice of the op's output **at the `ProjectionAssembler` concat only**
+(edges, the `prefuse_proj` injection and the pointer cells stay live) → masked KL against the
+policy's own distribution. It answers *what does the HEAD still lean on*, not *what does the model
+use*.
+
+| Sub-block | Width | KL | Argmax flips | Shuffle-control KL |
+|---|---|---|---|---|
+| `FULL_CONCAT` (ceiling) | 660 | 0.2444 | 23.6% | 0.1818 |
+| `incoming_matrix` | 522 | **0.2534** | **24.2%** | 0.1357 |
+| outgoing single-active | 45 | 0.0176 | 5.4% | **0.0254** |
+| incoming per-mon + CB | 85 | 0.0174 | 6.2% | 0.0158 |
+| incoming per-mon | 72 | 0.0160 | 6.0% | 0.0130 |
+| Choice-Band tail | 13 | 0.0013 | 1.4% | 0.0014 |
+| status landing | 8 | 0.0006 | 0.8% | 0.0010 |
+
+**Read the shuffle column first.** Shuffling a block across the batch preserves its marginal
+statistics and destroys its state-specific content. For the outgoing single-active block, the
+Choice-Band tail and status landing, the shuffle arm **meets or exceeds** the zero arm — at this n
+those blocks show no dependence the probe can separate from noise. The one clean signal is the
+`incoming_matrix`: zeroing it costs essentially the entire concat ceiling.
+
+Two caveats that bound this: it is **mid-training** (9.6M of 40M, and edge dependence grew ~3× with
+training in earlier generations), and it has not been re-run at end of run.
+
+### 4.2 ⚠️ The older P1 table is NOT current — do not quote it
 
 The frequently-cited per-block ablation table (`tmp/op_block_ablation_probe.py`, **2026-07-25**,
 4000 real eval states, per-block zero → masked KL, ceiling 0.9385 = zeroing the whole op) was
-measured on a **different model and a different config**. Two things make it non-transferable:
+measured on a **different model and a different config**, and §4.1 above supersedes it. Three things
+make it non-transferable:
 
 1. **It predates this generation entirely.** It was taken before the pointer-native action head
    existed, when the op block reached only a flat positional `action_net`. The current model routes
@@ -343,9 +396,14 @@ measured on a **different model and a different config**. Two things make it non
 | incoming effect (collapsed) | 1.2% | ❌ deleted from the code |
 | incoming secondary (collapsed) | 0.1% | ❌ deleted from the code |
 
-**There is no current-config equivalent of this table.** The nearest measurement is the per-family
-edge audit (§5.4), which is a different instrument (edges, not concat sub-blocks) and was taken on
-gen-1 mid-training. Producing a per-block concat ablation on the gen-3 snapshot is open work.
+3. **Its headline is reversed by §4.1.** That table says the OUTGOING families dominate; the
+   current-config measurement puts the outgoing single-active block at its own shuffle-control level
+   and the `incoming_matrix` at the whole ceiling. Both cannot be true of the same model. The
+   sub-block ordering is a fact about a model, not about the architecture.
+
+Its raw output is not in version control anywhere (only the derived table in
+`designs/learning/shortcut_learning_and_feature_delivery.md` survives), so it could not be archived
+under `research_state/measurements/`.
 
 ---
 
@@ -400,19 +458,48 @@ that can carry an absolute are **token content** (`prefuse_proj`) and **per-acti
 (§3.3). This is a capacity/conditioning argument, not an impossibility proof; the reasoning is in
 `designs/learning/shortcut_learning_and_feature_delivery.md`.
 
-### 5.4 Edge-family audit — provenance
+### 5.4 Edge-family audit — the current-config measurement
 
-The only per-family dependence numbers in the repo are **gen-1 @9.6M of 40M steps, 2048 eval-trace
-states, 2026-08-04, PRELIMINARY/mid-training** (`edge_audit_9p6M.json`, produced by
-`src/agents/model/edge_ablation_audit.py`): d1 KL 0.059 / 8.2% action flips; d2 KL 0.057 / 10.3%
-flips / |dV| 1.62; d3 0.0009; s3 0.00007; s1 0.002; v 0.002 / 3.1% flips; all families off = KL
-0.124 / 16.6% flips.
+Source: [`research_state/measurements/gen3_edge_family_audit_9p6M.json`](research_state/measurements/gen3_edge_family_audit_9p6M.json)
+— **this run's `checkpoint_9600000_steps.zip`, 6000 eval-trace states, 2026-08-07**, produced by
+`src/agents/model/edge_ablation_audit.py`. Each row zeroes one family's bias map and measures masked
+KL / argmax flips / |dV| against the unablated policy.
 
-**Do not read these as current.** That run had 6 families, not 15 (t, x, g, c1–c5, E5 and the K=6
-default all postdate it), it was 24% through training, and its `v` family was measured on the
-speed-stat GIGO bug (§8). A gen-1 end-of-run audit (`edge_audit_40M.json`, all-off = 26.9% flips)
-exists per `designs/CLAUDE.md`; **UNVERIFIED:** neither JSON is present in this worktree, so the
-per-family breakdown at 40M could not be checked, and no gen-3 audit has been run.
+| Family | KL | Argmax flips | \|dV\| |
+|---|---|---|---|
+| `d2` (bench offense → their active) | 0.0426 | 7.6% | 1.308 |
+| `d1` (our moves → their mons) | 0.0345 | 6.0% | 0.274 |
+| `v` (speed) | 0.0035 | 2.9% | 0.651 |
+| `d3` (their threats → our mons) | 0.0013 | 1.9% | 0.141 |
+| `d4` (their bench threats) | 0.0015 | 1.1% | 0.492 |
+| `s3` | 0.0003 | 0.9% | 0.063 |
+| `s1` | 0.0017 | 0.8% | 0.022 |
+| `t` (trapping) | 0.0003 | 0.7% | 0.121 |
+| `c1` (setup consequence) | 0.0002 | 0.4% | 0.015 |
+| `c2` (status consequence) | 0.0007 | 0.4% | 0.017 |
+| `x` (entry/exit) | 0.0000 | 0.3% | 0.036 |
+| `c3` (recovery) | 0.0002 | 0.2% | 0.018 |
+| `c5` (Baton Pass) | 0.0000 | 0.2% | 0.018 |
+| `g` (end-of-turn ledger) | 0.0000 | 0.1% | 0.016 |
+| `c4` (Protect) | 0.0000 | 0.1% | 0.001 |
+| **all families off** | 0.1011 | **13.9%** | 1.857 |
+| **op head-concat off** | 0.2444 | **23.6%** | 5.669 |
+| **concat + pointer cells off** | 0.6369 | **37.8%** | 5.669 |
+
+Two things to carry from this, both **mid-training (9.6M of 40M)** and provisional:
+
+- **The OUTGOING damage families dominate** (`d2`, `d1`), the same ordering gen-1 and gen-2 showed;
+  every consequence family (`c1`–`c5`) and the board-level `g`/`x` are at or below 0.4% flips so
+  far. Edge dependence grew ~3× with training in earlier generations, so a low number here is not
+  yet a verdict on a family.
+- **The concat is not starved by the edges, and vice versa.** Zeroing the head concat flips more
+  actions (23.6%) than zeroing the *entire* 15-family edge system (13.9%) — replicated in gen-1,
+  gen-2 and gen-2.5 (`research_state/measurements/README.md` has the cross-run table). That is the
+  expected result if the two carry different things: a bias is a softmax-normalised ratio, the
+  concat is an absolute.
+
+Earlier generations' audits are archived alongside for the cross-run comparison. **The gen-1 and
+gen-2 `v` rows were measured on the speed-stat GIGO bug** (§8) and describe the buggy feature.
 
 ---
 
@@ -534,8 +621,10 @@ Only the **trainee** `Gen3Env` emits any of these. Eval and self-play opponents 
 Two side-channel stashes are also never fed forward: `last_belief_target_latent` (computed only
 under `torch.is_grad_enabled()`) and `last_move_latent_table`. The pinned no-leak tests are
 `belief_slots_test.test_latent_target_is_no_leak`,
-`damage_op_test.test_op_is_leak_free_of_privileged_keys`, and the bridge fuzz
-`poke_env_gaps/belief_labels_fuzz_test.py`.
+`damage_op_test.test_op_is_leak_free_of_privileged_keys`, the bridge fuzz
+`poke_env_gaps/belief_labels_fuzz_test.py`, and — as a **graph invariant** —
+`delivery_graph_test.test_no_aux_edge_reaches_the_forward`, which asserts that no `aux` edge
+terminates at `pi_projection`, `vf_projection`, or any pointer logit.
 
 ---
 
@@ -590,6 +679,7 @@ not re-derive them.
 | How it got here — every version entry, verbatim | `designs/CHANGELOG.md` |
 | Which `ai_vN` folder is relevant | `designs/CLAUDE.md` |
 | Hypothesis status / what has been killed | `designs/research_state/ledger.md` |
+| **The raw audit outputs behind every measured number here** | `designs/research_state/measurements/` (+ its README for how to read one) |
 | Delivery-channel theory (edge vs content vs cell) | `designs/learning/shortcut_learning_and_feature_delivery.md` |
 | Event-sourced battle layer + read-models | `src/agents/battle/CLAUDE.md` |
 | Training loop, eval sharding, ELO | `src/agents/training/CLAUDE.md` |

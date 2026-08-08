@@ -1,0 +1,61 @@
+{
+  "provenance": {
+    "generation": "gen-1",
+    "run": "run_20260804_090512",
+    "checkpoint": "/home/goodlad/dev/gen3ai/.claude/worktrees/gen1-run-0804/models/run_20260804_090512/checkpoints/checkpoint_9600000_steps.zip",
+    "step": 9600000,
+    "n_states": 2048,
+    "date": "2026-08-04",
+    "producer": "src/agents/model/edge_ablation_audit.py",
+    "note": "6 launch families only (d1,d2,d3,s1,s3,v). Mid-training. The 'preliminary' read quoted in design_generation_roadmap.md. Its v family was measured on the SpD-as-speed GIGO bug.",
+    "_note_on_this_key": "`provenance` was ADDED when the file was co-located into version control (2026-08-08). Every other key is byte-for-byte the probe's own output."
+  },
+  "meta": {
+    "checkpoint": "/home/goodlad/dev/gen3ai/.claude/worktrees/gen1-run-0804/models/run_20260804_090512/checkpoints/checkpoint_9600000_steps.zip",
+    "n_states": 2048
+  },
+  "families": {
+    "d1": {
+      "kl_mean": 0.058524470776319504,
+      "kl_p95": 0.2884678840637207,
+      "flip_rate": 0.08203125,
+      "dv_mean": 0.27835744619369507
+    },
+    "d2": {
+      "kl_mean": 0.05737371742725372,
+      "kl_p95": 0.26975956559181213,
+      "flip_rate": 0.1025390625,
+      "dv_mean": 1.615654468536377
+    },
+    "d3": {
+      "kl_mean": 0.0008593440870754421,
+      "kl_p95": 0.0036354814656078815,
+      "flip_rate": 0.0126953125,
+      "dv_mean": 0.08005710691213608
+    },
+    "s1": {
+      "kl_mean": 0.0019979365170001984,
+      "kl_p95": 0.0022086482495069504,
+      "flip_rate": 0.0087890625,
+      "dv_mean": 0.017283707857131958
+    },
+    "s3": {
+      "kl_mean": 7.007545355008915e-05,
+      "kl_p95": 0.0002803224488161504,
+      "flip_rate": 0.00244140625,
+      "dv_mean": 0.024725060909986496
+    },
+    "v": {
+      "kl_mean": 0.0019629299640655518,
+      "kl_p95": 0.00818178616464138,
+      "flip_rate": 0.03076171875,
+      "dv_mean": 0.27500247955322266
+    },
+    "all": {
+      "kl_mean": 0.12369732558727264,
+      "kl_p95": 0.5426231026649475,
+      "flip_rate": 0.16552734375,
+      "dv_mean": 2.096877098083496
+    }
+  }
+}

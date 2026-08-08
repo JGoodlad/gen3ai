@@ -1,0 +1,506 @@
+"""GENERATED delivery digraph — who delivers what, to whom, through which physical channel.
+
+WHY THIS IS GENERATED. `designs/ai_v3/README.md` is the in-repo proof that hand-drawn architecture
+diagrams rot: it is a frozen historical artifact carrying a 1309-dim obs and attention paths that
+no longer exist, and it went stale because nothing forced it to change when the code did. This
+module builds the same picture by INSTANTIATING the extractor from a `model_config.json` and
+reading the live modules, so a diagram that disagrees with the code is a test failure
+(`delivery_graph_test.py`) rather than a document someone eventually notices is wrong.
+
+THE POINT IS THE EDGE TYPING, NOT THE MODULE CALL ORDER. A call graph would say "the op runs, then
+the transformer runs". That is not the question the architecture actually poses. The question is:
+when a computed physics fact reaches a decision, WHAT DOES IT PHYSICALLY CARRY? Attention weights
+are softmax-normalised, so an edge bias can only move *who attends to whom* — the number it writes
+into the residual stream is a RATIO within its row, never an absolute ("53% of max HP"). Only token
+content and per-action cells can carry an absolute. Two families delivering "the same fact" through
+different channels are therefore not substitutes, and a graph that does not distinguish them is
+lying about the architecture. The reasoning is in
+`designs/learning/shortcut_learning_and_feature_delivery.md`.
+
+    EDGE TYPE   CARRIES                                        CHANNEL
+    ---------   --------------------------------------------   --------------------------------
+    bias        a RATIO (softmax-normalised attention logit)   EdgeBias -> attention bias tensor
+    content     an ABSOLUTE, as token content                  seat construction / residual inject
+    concat      an ABSOLUTE, at the head input                 ProjectionAssembler concat
+    cell        an ABSOLUTE, PER-ACTION                        DamageOperator.pointer_cells
+    aux         nothing — training-only supervision            stashed logits -> PPO aux losses
+
+`aux` edges must NEVER terminate at `pi_projection`, `vf_projection`, or any pointer logit. That is
+leak-safety, and `delivery_graph_test.py` asserts it — turning a property that was previously an
+argument in prose into a test.
+
+Usage:
+    python -m agents.model.delivery_graph                        # print a summary
+    python -m agents.model.delivery_graph --dot designs/architecture_graph.dot
+    python -m agents.model.delivery_graph --json <path>
+    python -m agents.model.delivery_graph --config <a run's model_config.json>
+
+The default config is `designs/production_config.json`, a verbatim copy of the live gen-3 run's
+`model_config.json`. It is committed so the graph (and `designs/ARCHITECTURE.md`, derived the same
+way) is reproducible without reaching outside the repo into `models/`.
+"""
+from __future__ import annotations
+
+import argparse
+import inspect
+import json
+import os
+from typing import Any, Dict, List, Optional
+
+# Edge-type vocabulary. Extending this is a deliberate act: each entry is a claim about a distinct
+# PHYSICAL delivery channel, not a convenience label.
+EDGE_TYPES = ("bias", "content", "concat", "cell", "aux")
+
+# Sinks an `aux` edge may never reach (the leak-safety invariant).
+FORWARD_SINKS = ("pi_projection", "vf_projection")
+
+_DEFAULT_CONFIG = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))))),
+    "designs", "production_config.json",
+)
+
+
+# ----------------------------------------------------------------------------- graph construction
+def _node(nid: str, kind: str, **attrs) -> Dict[str, Any]:
+    return {"id": nid, "kind": kind, **attrs}
+
+
+def _edge(src: str, dst: str, etype: str, width: Optional[int], const: str,
+          **attrs) -> Dict[str, Any]:
+    assert etype in EDGE_TYPES, f"unknown edge type {etype!r}"
+    return {"src": src, "dst": dst, "type": etype, "width": width,
+            "source_constant": const, **attrs}
+
+
+def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
+    """Instantiate the extractor from `config_path` and read the delivery graph off the live modules.
+
+    Every width and every seat index below is READ, not assumed: the op's sub-block widths come from
+    its own constants, the seat indices from `TeamTransformer._total_tokens` + `EntityMoveSeats`,
+    the projection widths from the built `nn.Linear`s. A structural change therefore moves the graph.
+    """
+    import gymnasium as gym
+    import numpy as np
+
+    from agents.model import damage_op as dop
+    from agents.model import features_extractor as fx
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+
+    cfg = json.load(open(config_path))
+    mappings = load_mappings()
+    layout = Gen3ObservationEncoder(mappings).get_layout()
+    sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
+    kwargs = {k: v for k, v in cfg.items() if k in sig}
+    space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
+    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()
+    if hasattr(fe, "disable_observation_debugger"):
+        fe.disable_observation_debugger()
+
+    op = fe.damage_op
+    seats = fe.entity_seats
+    T = fx.TEAM_SIZE
+    D = fx.D_MODEL
+
+    nodes: List[Dict[str, Any]] = []
+    edges: List[Dict[str, Any]] = []
+
+    # --- SEATS -------------------------------------------------------------------------------
+    # Absolute seat indices are the load-bearing fact: everything after the global token is
+    # `base + offset`, which is what makes the base slices position-stable.
+    base = fe.team_transformer._total_tokens          # 2*TEAM_SIZE + N_HISTORY_TURNS + 1
+    for i in range(T):
+        nodes.append(_node(f"our_mon[{i}]", "seat", index=i, token_type="OUR_TEAM"))
+    for j in range(T):
+        nodes.append(_node(f"opp_mon[{j}]", "seat", index=T + j, token_type="THEIR_TEAM"))
+    for h in range(fx.N_HISTORY_TURNS):
+        nodes.append(_node(f"history[{h}]", "seat", index=2 * T + h, token_type="HISTORY"))
+    g_idx = 2 * T + fx.N_HISTORY_TURNS
+    nodes.append(_node("global", "seat", index=g_idx, token_type="GLOBAL"))
+
+    n_e3 = 4
+    for k in range(n_e3):
+        nodes.append(_node(f"E3_move[{k}]", "seat", index=base + k, token_type="OUR_MOVE"))
+    k_e4 = seats.topk_seats
+    for c in range(k_e4):
+        nodes.append(_node(f"E4_threat[{c}]", "seat", index=base + n_e3 + c,
+                           token_type="THEIR_THREAT"))
+    n_e5 = T if seats.tail_seats else 0
+    for t in range(n_e5):
+        nodes.append(_node(f"E5_tail[{t}]", "seat", index=base + n_e3 + k_e4 + t,
+                           token_type="THEIR_THREAT+tail_marker"))
+
+    # --- COMPUTE / SINK NODES ----------------------------------------------------------------
+    nodes.append(_node("damage_op", "operator", out_dim=op.out_dim,
+                       incoming_dim=op.incoming_dim))
+    if fe.move_belief is not None:
+        nodes.append(_node("move_belief", "belief_head",
+                           out_dim=fe.move_belief.move_head.out_features))
+    if fe.hp_type_belief_head is not None:
+        nodes.append(_node("hp_type_belief", "belief_head",
+                           out_dim=fe.hp_type_belief_head.type_head.out_features))
+    if fe.spread_belief is not None:
+        nodes.append(_node("spread_belief", "belief_head"))
+    if fe.belief_head is not None:
+        nodes.append(_node("species_belief", "belief_head"))
+
+    nodes.append(_node("pi_projection", "head",
+                       in_features=fe.projection.in_features,
+                       out_features=fe.projection.out_features))
+    nodes.append(_node("vf_projection", "head",
+                       in_features=fe.value_projection.in_features,
+                       out_features=fe.value_projection.out_features))
+    for k in range(n_e3):
+        nodes.append(_node(f"pointer.move_logit[{k}]", "logit", action_index=T + k))
+    for j in range(T):
+        nodes.append(_node(f"pointer.switch_logit[{j}]", "logit", action_index=j))
+    nodes.append(_node("pointer.struggle_logit", "logit", action_index=T + n_e3))
+
+    # --- BIAS EDGES: the edge families ---------------------------------------------------------
+    # Row/col groups come from EdgeBias.forward's placement; the cell width from _EDGE_FAMILIES.
+    # Every family writes its block AND the transpose (a separate head-set per direction).
+    _ROUTES = {
+        "d1": ("E3_move", "opp_mon"),
+        "s1": ("E3_move", "opp_mon"),
+        "c1": ("E3_move", "opp_mon"),
+        "c2": ("E3_move", "opp_mon"),
+        "c3": ("E3_move", "opp_mon"),
+        "c5": ("E3_move", "our_mon"),
+        "c4": ("E3_move", "global"),
+        "d3": ("E4_threat", "our_mon"),
+        "s3": ("E4_threat", "our_mon"),
+        "d2": ("our_mon", "opp_mon"),      # opp ACTIVE column only (one-hot delivery)
+        "d4": ("our_mon", "opp_mon"),      # opp active column pre-zeroed by the kernel
+        "v": ("our_mon", "opp_mon"),
+        "t": ("our_mon", "opp_mon"),
+        "x": ("mon", "global"),            # BOTH sides
+        "g": ("mon", "global"),            # BOTH sides
+    }
+    _NOTES = {
+        "d2": "opp ACTIVE column only (batch-varying, one-hot outer product)",
+        "d4": "opp ACTIVE column pre-zeroed — that quadrant is d3's",
+        "x": "written for our mons AND opp mons",
+        "g": "written for our mons AND opp mons",
+    }
+
+    def _members(group: str) -> List[str]:
+        if group == "our_mon":
+            return [f"our_mon[{i}]" for i in range(T)]
+        if group == "opp_mon":
+            return [f"opp_mon[{j}]" for j in range(T)]
+        if group == "mon":
+            return [f"our_mon[{i}]" for i in range(T)] + [f"opp_mon[{j}]" for j in range(T)]
+        if group == "E3_move":
+            return [f"E3_move[{k}]" for k in range(n_e3)]
+        if group == "E4_threat":
+            return [f"E4_threat[{c}]" for c in range(k_e4)]
+        if group == "global":
+            return ["global"]
+        raise KeyError(group)
+
+    fams = sorted(fe.edge_bias.families) if fe.edge_bias is not None else []
+    for fam in fams:
+        cell = fx._EDGE_FAMILIES[fam]
+        row_g, col_g = _ROUTES[fam]
+        for src in _members(row_g):
+            for dst in _members(col_g):
+                edges.append(_edge(src, dst, "bias", cell, f"_EDGE_{fam.upper()}_CELL",
+                                   family=fam, bidirectional=True,
+                                   note=_NOTES.get(fam, "")))
+
+    # --- CONTENT EDGES: what becomes / enters a token ------------------------------------------
+    # Seat construction. These projections are ordinary trainable Linears (new information), not
+    # the zero-init residual convention.
+    for k in range(n_e3):
+        edges.append(_edge("pokemon_encoder.move_tokens", f"E3_move[{k}]", "content",
+                           fx.MOVE_NET_HIDDEN[1], "MOVE_NET_HIDDEN[1]",
+                           via="EntityMoveSeats.move_seat_proj",
+                           note="request-slot order — seat k IS action logit 6+k"))
+    for c in range(k_e4):
+        edges.append(_edge("damage_op", f"E4_threat[{c}]", "content",
+                           fx.MOVE_LATENT_DIM + 3, "MOVE_LATENT_DIM + 3",
+                           via="EntityMoveSeats.threat_seat_proj",
+                           note="[latent, belief w, accuracy, is_phys]; idx detached, w differentiable"))
+    for t in range(n_e5):
+        edges.append(_edge("damage_op", f"E5_tail[{t}]", "content", 4, "_EDGE_TAIL_CELL(4)",
+                           via="EntityMoveSeats.tail_proj",
+                           note="[p_tail, worst_phys, worst_spec, revealed] — beyond-top-K mass"))
+
+    # Residual injections onto existing seats.
+    if fe.damage_op_prefuse:
+        for i in range(T):
+            edges.append(_edge("damage_op", f"our_mon[{i}]", "content", dop._DMG_PER_MON,
+                               "_DMG_PER_MON", via="prefuse_proj", zero_init=True,
+                               note="per-our-mon incoming row; the ONE absolute-magnitude route "
+                                    "into the trunk"))
+    if fe.move_belief is not None:
+        for j in range(T):
+            edges.append(_edge("move_belief", f"opp_mon[{j}]", "content", D,
+                               "D_MODEL", via="MoveBelief.reinject",
+                               note="soft-embedded believed moveset"))
+    if fe.hp_type_belief_head is not None:
+        for j in range(T):
+            edges.append(_edge("hp_type_belief", f"opp_mon[{j}]", "content", D,
+                               "D_MODEL", via="HPTypeBelief.reinject_proj",
+                               note="presence-gated expected typed-HP embedding"))
+    if fe.spread_belief is not None:
+        for j in range(T):
+            edges.append(_edge("spread_belief", f"opp_mon[{j}]", "content", D,
+                               "D_MODEL", via="SpreadBelief.reinject"))
+    if fe.refine_proj is not None:
+        for i in range(T):
+            edges.append(_edge("damage_op", f"our_mon[{i}]", "content", dop._DMG_REFINE_FEATS,
+                               "_DMG_REFINE_FEATS", via="refine_proj", zero_init=True,
+                               rounds=fe.damage_refine_rounds))
+    if fe.outgoing_proj is not None:
+        for j in range(T):
+            edges.append(_edge("damage_op", f"opp_mon[{j}]", "content", dop._DMG_OUT_REFINE,
+                               "_DMG_OUT_REFINE", via="outgoing_proj", zero_init=True))
+    if fe.status_in_proj is not None:
+        for i in range(T):
+            edges.append(_edge("damage_op", f"our_mon[{i}]", "content", dop._DMG_STATUS_REFINE,
+                               "_DMG_STATUS_REFINE", via="status_in_proj", zero_init=True))
+    if fe.status_out_proj is not None:
+        for j in range(T):
+            edges.append(_edge("damage_op", f"opp_mon[{j}]", "content", dop._DMG_STATUS_REFINE,
+                               "_DMG_STATUS_REFINE", via="status_out_proj", zero_init=True))
+
+    # The belief the op consumes (differentiable in w — this is the gradient path that trains the
+    # move belief in a config where its BCE coefficient is zero).
+    if fe.move_belief is not None:
+        edges.append(_edge("move_belief", "damage_op", "content",
+                           fe.move_belief.move_head.out_features, "layout['max_moves']",
+                           note="the composed typed posterior; differentiable in w"))
+
+    # Entity token -> its own logit (the pointer head's equivariant read).
+    for k in range(n_e3):
+        edges.append(_edge(f"E3_move[{k}]", f"pointer.move_logit[{k}]", "content",
+                           fe.pointer_move_token_dim, "pointer_move_token_dim",
+                           via="PointerNativeActionHead.move_proj",
+                           note="the REFINED seat, post-attention"))
+    for j in range(T):
+        edges.append(_edge(f"our_mon[{j}]", f"pointer.switch_logit[{j}]", "content", D,
+                           "D_MODEL", via="PointerNativeActionHead.switch_proj",
+                           note="the post-transformer team token"))
+    for dst in ([f"pointer.move_logit[{k}]" for k in range(n_e3)]
+                + [f"pointer.switch_logit[{j}]" for j in range(T)]
+                + ["pointer.struggle_logit"]):
+        edges.append(_edge("pi_projection", dst, "content", fx.NET_ARCH[-1], "NET_ARCH[-1]",
+                           via="PointerNativeActionHead.ctx_proj (latent_pi, via mlp_extractor)",
+                           note="the shared decision context — everything in pi_projection "
+                                "conditions every pointer score"))
+
+    # --- CONCAT EDGES: the head inputs ---------------------------------------------------------
+    # `pooled` distinguishes the attention-collapsed routes from the op block, which is the
+    # unpooled absolute one.
+    ac = fx.ACTIVE_CTX_HIDDEN[-1]
+    nmr = fe.team_transformer._non_matchup_rest_dim
+    for i in range(T):
+        edges.append(_edge(f"our_mon[{i}]", "pi_projection", "concat", D, "D_MODEL",
+                           via="CLSPool.our_cls", pooled=True))
+        edges.append(_edge(f"our_mon[{i}]", "vf_projection", "concat", D, "D_MODEL",
+                           via="CLSPool.value_cls", pooled=True))
+    for j in range(T):
+        edges.append(_edge(f"opp_mon[{j}]", "pi_projection", "concat", D, "D_MODEL",
+                           via="CLSPool.their_cls", pooled=True))
+        edges.append(_edge(f"opp_mon[{j}]", "vf_projection", "concat", D, "D_MODEL",
+                           via="CLSPool.value_cls", pooled=True))
+    edges.append(_edge("our_active_refined", "pi_projection", "concat", D, "D_MODEL",
+                       pooled=False,
+                       note="our active's refined token; vf does NOT read it unless "
+                            "value_active_readout"))
+    if fe.assembler.value_active_readout:
+        edges.append(_edge("our_active_refined", "vf_projection", "concat", D, "D_MODEL",
+                           pooled=False))
+    for head in FORWARD_SINKS:
+        edges.append(_edge("active_context", head, "concat", 2 * ac, "2 * ACTIVE_CTX_HIDDEN[-1]",
+                           via="ProjectionAssembler.active_ctx_encoder", pooled=False))
+        edges.append(_edge("non_matchup_rest", head, "concat", nmr,
+                           "GLOBAL_ENV_DIM + reactive matchup offset", pooled=False))
+        edges.append(_edge("damage_op", head, "concat", op.out_dim, "DamageOperator.out_dim",
+                           pooled=False,
+                           note="the unpooled ABSOLUTE route — the only channel that can carry "
+                                "a magnitude to the heads"))
+
+    # --- CELL EDGES: per-action physics --------------------------------------------------------
+    if op.pointer_move_cell_dim:
+        for k in range(n_e3):
+            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
+                               op.pointer_move_cell_dim, "_PTR_MOVE_CELL",
+                               note="[low, high, crit, pko, p_land, known, sec x"
+                                    f"{dop._N_OUT_SECONDARY}] for THIS request slot"))
+    if op.pointer_switch_cell_dim:
+        for j in range(T):
+            edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",
+                               op.pointer_switch_cell_dim,
+                               "_PTR_SWITCH_CELL_IN" + (" + _PTR_SWITCH_CELL_OAX"
+                                                        if op.matrices_outgoing_all else ""),
+                               note="incoming row + CB tail"
+                                    + (" + OAX attacker row" if op.matrices_outgoing_all
+                                       else " (NO offense read — matrices_outgoing_all is off)")))
+
+    # --- AUX EDGES: training-only supervision --------------------------------------------------
+    # These terminate at loss sinks and NOWHERE else. delivery_graph_test asserts it.
+    aux_specs = []
+    if fe.move_belief is not None and float(cfg.get("move_belief_coef", 0.0)) > 0:
+        aux_specs.append(("move_belief", "loss.move_belief_bce", "known_moves"))
+    if fe.move_belief is not None and float(cfg.get("move_belief_latent_coef", 0.0)) > 0:
+        aux_specs.append(("move_belief", "loss.move_latent_grading", "known_moves"))
+    if fe.hp_type_belief_head is not None and float(cfg.get("hp_type_belief_coef", 0.0)) > 0:
+        aux_specs.append(("hp_type_belief", "loss.hp_type_ce", "hp_type_label"))
+    if fe.belief_head is not None and float(cfg.get("opp_belief_aux_coef", 0.0)) > 0:
+        aux_specs.append(("species_belief", "loss.belief_aux", "belief_species/belief_moves"))
+    if fe.spread_belief is not None and float(cfg.get("spread_belief_coef", 0.0)) > 0:
+        aux_specs.append(("spread_belief", "loss.spread_belief", "belief_spread"))
+    for src, sink, label in aux_specs:
+        nodes.append(_node(sink, "aux_loss", label_key=label))
+        edges.append(_edge(src, sink, "aux", None, "training-only obs Dict key",
+                           label_key=label,
+                           note="privileged label; never enters the forward"))
+
+    # Input pseudo-nodes referenced above but not yet declared.
+    declared = {n["id"] for n in nodes}
+    for nid in sorted({e["src"] for e in edges} | {e["dst"] for e in edges}):
+        if nid not in declared:
+            nodes.append(_node(nid, "input"))
+
+    meta = {
+        "config": os.path.basename(config_path),
+        "arch_signature": cfg.get("arch_signature"),
+        "config_version": cfg.get("config_version"),
+        "obs_dim": layout["total_dim"],
+        "n_tokens": base + seats.n_seats,
+        "base_seats": base,
+        "extra_seats": seats.n_seats,
+        "edge_bias_families": sorted(fams),
+        "op_out_dim": op.out_dim,
+        "pi_projection_in": fe.projection.in_features,
+        "vf_projection_in": fe.value_projection.in_features,
+        "edge_types": list(EDGE_TYPES),
+    }
+    nodes.sort(key=lambda n: (n["kind"], n["id"]))
+    edges.sort(key=lambda e: (e["type"], e["src"], e["dst"], e.get("via") or ""))
+    return {"meta": meta, "nodes": nodes, "edges": edges}
+
+
+# ------------------------------------------------------------------------------------ DOT output
+_STYLE = {
+    "bias":    ('color="#b5453a"', "dashed", "RATIO"),
+    "content": ('color="#2f6f3e"', "solid", "ABS"),
+    "concat":  ('color="#31538f"', "solid", "ABS"),
+    "cell":    ('color="#7d5bab"', "bold", "ABS/action"),
+    "aux":     ('color="#8a8a8a"', "dotted", "train-only"),
+}
+_KIND_SHAPE = {
+    "seat": 'shape=box, style="rounded,filled", fillcolor="#eef3fa"',
+    "operator": 'shape=box3d, style=filled, fillcolor="#ffe9a8"',
+    "belief_head": 'shape=box, style=filled, fillcolor="#e6dcf3"',
+    "head": 'shape=box, style="filled,bold", fillcolor="#d7ead9"',
+    "logit": 'shape=ellipse, style=filled, fillcolor="#fce8e6"',
+    "aux_loss": 'shape=note, style=filled, fillcolor="#eeeeee"',
+    "input": 'shape=plaintext',
+}
+
+
+def to_dot(graph: Dict[str, Any], collapse: bool = True) -> str:
+    """Graphviz DOT. `collapse` groups indexed seats (our_mon[0..5] -> our_mon x6) so the picture
+    is readable; the JSON snapshot always carries the full per-index graph."""
+    import re
+
+    def norm(nid: str) -> str:
+        return re.sub(r"\[\d+\]", "", nid) if collapse else nid
+
+    m = graph["meta"]
+    out = [
+        "digraph gen3_delivery {",
+        "  // GENERATED by src/agents/model/delivery_graph.py — do not edit by hand.",
+        f"  // config={m['config']}  arch={m['arch_signature']}  v{m['config_version']}",
+        "  rankdir=LR; splines=spline; fontname=\"Helvetica\"; compound=true;",
+        "  node [fontname=\"Helvetica\", fontsize=10];",
+        "  edge [fontname=\"Helvetica\", fontsize=8];",
+        "",
+        "  labelloc=\"t\";",
+        f'  label=<<b>gen3 delivery graph</b><br/>{m["arch_signature"]} · config v{m["config_version"]}'
+        f' · obs {m["obs_dim"]} · {m["n_tokens"]} tokens · op out_dim {m["op_out_dim"]}<br/>'
+        '<font point-size="9">edge colour = what it PHYSICALLY carries: '
+        '<font color="#b5453a">bias=RATIO</font> · '
+        '<font color="#2f6f3e">content=ABS</font> · '
+        '<font color="#31538f">concat=ABS</font> · '
+        '<font color="#7d5bab">cell=ABS/action</font> · '
+        '<font color="#8a8a8a">aux=never in forward</font></font>>;',
+        "",
+    ]
+
+    counts: Dict[str, int] = {}
+    for n in graph["nodes"]:
+        counts[norm(n["id"])] = counts.get(norm(n["id"]), 0) + 1
+    seen = set()
+    for n in graph["nodes"]:
+        nid = norm(n["id"])
+        if nid in seen:
+            continue
+        seen.add(nid)
+        c = counts[nid]
+        label = nid + (f" ×{c}" if c > 1 else "")
+        if n["kind"] == "head":
+            label += f'\\n{n["in_features"]}→{n["out_features"]}'
+        elif n["kind"] == "operator":
+            label += f'\\nout_dim {n["out_dim"]}'
+        out.append(f'  "{nid}" [{_KIND_SHAPE[n["kind"]]}, label="{label}"];')
+    out.append("")
+
+    # Collapse parallel edges, keeping one representative label + a multiplicity.
+    agg: Dict[Any, Dict[str, Any]] = {}
+    for e in graph["edges"]:
+        key = (norm(e["src"]), norm(e["dst"]), e["type"], e.get("via"), e.get("family"))
+        rec = agg.setdefault(key, {"n": 0, "e": e})
+        rec["n"] += 1
+    for (src, dst, etype, via, family), rec in sorted(agg.items(), key=lambda kv: str(kv[0])):
+        e = rec["e"]
+        color, style, tag = _STYLE[etype]
+        bits = [family or etype]
+        if e["width"] is not None:
+            bits.append(f'w={e["width"]}')
+        if rec["n"] > 1:
+            bits.append(f'×{rec["n"]}')
+        lbl = " ".join(bits)
+        extra = ", dir=both" if e.get("bidirectional") else ""
+        out.append(f'  "{src}" -> "{dst}" [{color}, style={style}, label="{lbl}", '
+                   f'tooltip="{tag} · {e["source_constant"]}"{extra}];')
+    out.append("}")
+    return "\n".join(out) + "\n"
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    p.add_argument("--config", default=_DEFAULT_CONFIG,
+                   help="model_config.json to build from (default: designs/production_config.json)")
+    p.add_argument("--dot", help="write Graphviz DOT here")
+    p.add_argument("--json", dest="json_out", help="write the JSON snapshot here")
+    p.add_argument("--no-collapse", action="store_true",
+                   help="DOT: keep every indexed seat as its own node")
+    a = p.parse_args(argv)
+
+    g = build_graph(a.config)
+    if a.dot:
+        open(a.dot, "w").write(to_dot(g, collapse=not a.no_collapse))
+        print(f"wrote {a.dot}")
+    if a.json_out:
+        open(a.json_out, "w").write(json.dumps(g, indent=2, sort_keys=True) + "\n")
+        print(f"wrote {a.json_out}")
+    if not a.dot and not a.json_out:
+        m = g["meta"]
+        print(f"{m['arch_signature']} · config v{m['config_version']} · obs {m['obs_dim']} · "
+              f"{m['n_tokens']} tokens · op out_dim {m['op_out_dim']}")
+        print(f"{len(g['nodes'])} nodes, {len(g['edges'])} edges")
+        by_type: Dict[str, int] = {}
+        for e in g["edges"]:
+            by_type[e["type"]] = by_type.get(e["type"], 0) + 1
+        for t in EDGE_TYPES:
+            print(f"  {t:8s} {by_type.get(t, 0):5d}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

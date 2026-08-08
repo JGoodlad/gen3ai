@@ -38,7 +38,7 @@
   weight you paid compute for. **But** that only holds *because the un-collapsed blocks sit next
   to it* — a shortcut is attractive only when it's the best thing available.
 - **The reframe:** you cannot stop gradient descent being lazy, so **make the lazy path be the
-  correct path.** That is exactly what the v51 pointer head does.
+  correct path.** That is exactly what the pointer head does.
 - **The op head-concat did NOT starve the edges — and the edges did not absorb the concat.**
   Measured three times (gen-1 @40M, gen-2 @40M, gen-2.5 @25M): the concat arm flips *more*
   actions than turning the **entire** edge system off, while edge dependence still **grew ~3×**
@@ -136,29 +136,41 @@ This rule *is* the v30→v39 progression, each version un-collapsing an axis the
 
 ## Part 3 — What we actually measured (and the surprise)
 
+> ⚠️ **PROVENANCE — the table below is a HISTORICAL result, not the current model.** Measured
+> **2026-07-25** on a pre-pointer-head snapshot, in a config that included the `outgoing_matrix` and
+> `outgoing_attacker_matrix` blocks. **The current production config has neither**, and the head
+> route it measured (a flat positional `action_net`) no longer exists. The current-config
+> replacement is
+> [`designs/research_state/measurements/gen3_op_block_dependence_6k.json`](../research_state/measurements/gen3_op_block_dependence_6k.json)
+> (gen-3 @9.6M, 6000 states, 2026-08-07) — reported later in this file under *MEASURED 2026-08-07* —
+> and **it reverses this table's headline**: the incoming matrix carries essentially the whole
+> concat ceiling while the outgoing single-active block sits at its own shuffle control. Keep this
+> table for the *reasoning* it supports (collapsed aggregates were dead weight, which is why they
+> were deleted); do not quote its percentages as current. Its raw output was never committed.
+
 **P1 ablation probe** (`tmp/op_block_ablation_probe.py`, 2026-07-25; 4000 real eval states, exact
 producing snapshot, per-block zero → masked KL against the policy's own distribution; a SHUFFLE
 control exceeded zeroing everywhere, so the head reads state-specific content):
 
-| Block | % of the zero-whole-op ceiling |
-|---|---|
-| OUTGOING (per-action, un-collapsed) | **65.7%** (75% of the *moves* ceiling) |
-| v39 outgoing-attacker matrix | 21.4% |
-| v35 incoming matrix (per mon × move) | 15.4% |
-| incoming per-mon | 12.7% |
-| status-landing | 8.8% |
-| v34 outgoing matrix | 6.3% |
-| Choice-Band | 2.9% |
-| incoming **effect** (collapsed) | 1.2% |
-| incoming **secondary** (collapsed) | **0.1% — INERT** |
+| Block | % of the zero-whole-op ceiling | In the current production config? |
+|---|---|---|
+| OUTGOING (per-action, un-collapsed) | **65.7%** (75% of the *moves* ceiling) | yes |
+| outgoing-attacker matrix (our 6 mons → their active) | 21.4% | **no** |
+| incoming matrix (per mon × move) | 15.4% | yes |
+| incoming per-mon | 12.7% | yes |
+| status-landing | 8.8% | yes |
+| outgoing matrix (our moves → their 6 mons) | 6.3% | **no** |
+| Choice-Band | 2.9% | yes |
+| incoming **effect** (collapsed) | 1.2% | deleted from the code |
+| incoming **secondary** (collapsed) | **0.1% — INERT** | deleted from the code |
 
 **The feared failure mode did not occur.** The model did not lazily prefer the collapsed
 summary; it **ignored** it. Un-collapsed per-action blocks dominate; the collapsed aggregates are
-dead weight. **The audit's delete list was EXECUTED — v55 `gen3_op_block_trim_v1`:** incoming
+dead weight. **The audit's delete list was EXECUTED — `gen3_op_block_trim_v1`:** incoming
 per-status secondary (10 dims, 0.1%), incoming believed-effect (6 dims, 1.2%), the OUTGOING
 slp/psn/tox columns (12 dims — *structural zeros*, measured: gen3 has no damaging move that
 inflicts sleep, and the psn/tox carriers appear on 1 / 0 of the 773 pool teams), and the v30 lean
-`_topk_block` (a strict subset of v35's incoming matrix, measured at **0 calls per forward**).
+`_topk_block` (a strict subset of the incoming matrix, measured at **0 calls per forward**).
 Removing the two collapses also took the unmasked belief read out of forward entirely, leaving
 `w_all` as the op's single belief read. `damage_topk_k` now means "the incoming matrix's K", and
 K>0 without the matrix RAISES in both the extractor and the op — never a silent empty block.
@@ -183,7 +195,7 @@ opposite jobs:
 
 | | **Top-K as REPRESENTATION** | **Top-K as TRUNCATION** |
 |---|---|---|
-| Where | v30 `--damage-topk`, v35 incoming matrix, ai_v9 **E4** | v49 `--damage-candidate-k` |
+| Where | v30 `--damage-topk`, incoming matrix, ai_v9 **E4** | v49 `--damage-candidate-k` |
 | Does | surfaces the K most-believed moves *individually* instead of a max | **drops** candidates below rank K from the physics sweep |
 | Information | **un-collapses** the move axis — strictly more | **removes** mass — strictly less |
 | Verdict | unambiguously good (this *is* the axis rule) | a real trade; needs a floor |
@@ -212,7 +224,7 @@ it, cheapest first:
    *"bench-K sizing is NOT compute-constrained in this range — choose K on belief-quality
    grounds, not budget."*
 2. **Add the tail bound (E5) — STILL UNSHIPPED as of v56, and now the standing gap.** Stage 1
-   landed E3/E4 (v54 `gen3_entity_move_seats_v1`, `--entity-topk-seats K`) and Stage 2 landed the
+   landed E3/E4 (`gen3_entity_move_seats_v1`, `--entity-topk-seats K`) and Stage 2 landed the
    D3/S3 edge families priced at **the same detached top-K candidate selection** — so truncation
    is now load-bearing in *three* places (the op's candidate axis, the E4 seats, and the D3/S3
    edges) with no floor under any of them. The insurance is
@@ -283,7 +295,7 @@ You cannot stop gradient descent being lazy. So:
 
 > **Make the lazy path be the correct path.**
 
-That is what the **v51 pointer-native head** does, and it is worth stating in these terms. Under
+That is what the **pointer-native head** does, and it is worth stating in these terms. Under
 a flat `Linear(latent, 11)`, the correct route (get move *k*'s physics to logit 6+*k*) requires
 the projection to *learn an alignment* — the hard, starvable route — while the easy route is
 "infer something vague from the pooled context." The pointer head makes the aligned route a
@@ -631,7 +643,12 @@ dilutes it. And **switch RATE is a first-moment match that says nothing about pi
 the model now switches 31.4% vs strong humans' 28.0% (under-switching is RESOLVED), which leaves
 *which* pivot and *in what sequence* entirely unmeasured.
 
-### MEASURED 2026-08-07 (gen-3 @9.6M, `tmp/incoming_conditional_probe.py`, `tmp/oracle_belief_voi.py`)
+### MEASURED 2026-08-07 — gen-3 @9.6M
+
+Sources: [`gen3_op_block_dependence_6k.json`](../research_state/measurements/gen3_op_block_dependence_6k.json)
+and [`gen3_oracle_belief_voi.json`](../research_state/measurements/gen3_oracle_belief_voi.json)
+(both `run_20260807_135637_gen3` @ `checkpoint_9600000_steps.zip`; the probe scripts were
+one-offs in a gitignored `tmp/` and were never committed — see the measurements README).
 
 **FIRST — the premise itself is stale for this generation.** gen-2/gen-3 run the incoming matrix
 but **NOT** the v34/v39 outgoing matrices (op `out_dim` 660 = incoming 85 + outgoing/status 53 +
@@ -748,7 +765,7 @@ The practical discipline is three rules:
 - [[objective_richness_and_representation]] — the **output-side dual**: richer targets force
   richer representations (rank collapse, implicit under-parameterization, distributional targets)
 - [[entity_tokens_biases_pointers]] — the sorting rule (token / edge / distribution summary /
-  attention), the differentiable expert, the v51 pointer head
+  attention), the differentiable expert, the pointer head
 - [[marginalization_and_uncertainty]] — why the operator marginalizes rather than mean-fields
 - [[on_policy_self_distillation]] — the ~1-bit-per-game accounting and the dense-signal alternative
 - `designs/ai_v9/design_generation_roadmap.md` §3 — the **concat end-state decision rule** as

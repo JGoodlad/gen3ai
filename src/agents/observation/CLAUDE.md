@@ -1,6 +1,8 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **2889-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
+This directory builds the **2925-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
+the live value is `Gen3ObservationEncoder.dimension` — read it there, and see
+`designs/ARCHITECTURE.md` § Observation for the full block table).
 It runs once per agent decision across every training env, so it sits directly on the
 training-throughput (FPS) critical path. Two independent things can regress here, and they
 have **different** gates:
@@ -99,7 +101,7 @@ Captured with `--turn 25 --reps 400`. Paths shown repo-relative. Absolute ms omi
 headline on purpose (load-dependent); the **call counts and ordering are the contract**.
 
 ```
-PER-DECISION OBS BUILD BENCHMARK  (obs dim 3391, turn 25, history slots 10, opp mons w/ revealed moves 5/6)
+PER-DECISION OBS BUILD BENCHMARK  (obs dim <live>, turn 25, history slots N, opp mons w/ revealed moves 5/6)
 
   full per-decision obs build  :  ~0.5–1.2 ms   (LOAD-DEPENDENT — not a regression signal)
     state_encoder.encode       :  ~79% of build
@@ -178,11 +180,12 @@ example, is pinned byte-for-byte by the exhaustive parity test in
 
 ## Observation vector layout (per-block reference)
 
-The root `CLAUDE.md` carries the summary block table (block → dims → offset, total **3409**).
-This is the detailed per-block layout. All offsets are computed from named constants — never
-hardcode indices.
+`designs/ARCHITECTURE.md` § Observation carries the top-level block table (block → dims → offset)
+and the per-mon slot layout, derived from the live constants. **This** is the per-block detail:
+what each field MEANS and where it is sourced from. All offsets are computed from named constants
+— never hardcode indices.
 
-**Per-Pokémon slot (113 dims, `gen3_entity_recency_v1`):** the 110 below + the 3-dim
+**Per-Pokémon slot (113 dims):** the 110 below + the 3-dim
 **recency block** at `POKEMON_RECENCY_OFFSET` (109) — [turns_since_seen, turns_since_acted,
 turns_since_was_hit], TURN-ANCHORED (`cur_turn − event_turn`, clamped; on-field mon reads 0;
 never-tracked reads 1.0 max staleness), log-saturated over a 10-turn cap, BOTH sides (public —
@@ -235,172 +238,73 @@ gen3ou has no team preview, so `apply_teambuilder_team` never attaches the sprea
 matches the declared teambuilder team to the request-built team by species and fills in
 IVs/EVs/nature (spread only, never re-running `_update_from_teambuilder`). Without it this block
 emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mon.
+**Reactive block — 311 dims, layout in `reactive.py`.** `REACTIVE_SCALAR_DIM` (11) scalars, then
+the two 144-dim matchup matrices, then the 12-dim active-req-moves block. Offsets are
+`reactive_layout` entries — read them, never hardcode.
 
-**Global env (18 dims, layout in `global_env.py`):** weather block (7: one-hot + cause-aware
-permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
-Light Screen / Safeguard / Mist × both sides).
+| Field | Offset | Dims |
+|---|---|---|
+| `fainted` (ours, theirs) | 0 | 2 |
+| `active_status` | 2 | 1 |
+| `forced_struggle` | 3 | 1 |
+| `trapped` | 4 | 1 |
+| `maybe_trapped` | 5 | 1 |
+| `turns_since_progress` | 6 | 1 |
+| `protect_odds_our` / `protect_odds_opp` | 7 / 8 | 2 |
+| `wish_floating_our` / `wish_floating_opp` | 9 / 10 | 2 |
+| `our_matchups` | 11 | 144 |
+| `their_matchups` | 155 | 144 |
+| `active_req_moves` | 299 | 12 |
 
-> **`gen3_cpu_damage_deleted_v1` (v48) — READ THIS FIRST for the reactive block.** The 51-dim
-> incoming-damage / OHKO block, the 44-dim move-effect block and the 8 active-move scalars
-> (power ×4 + multiplier ×4) were **DELETED** from the observation (reactive 414 → 311, obs
-> 2992 → 2889). They were previously only MASKED from the model by `--unified-obs`; all three have
-> live GPU homes (the `DamageOperator` incoming/outgoing blocks off the LEARNED move belief, the
-> `MoveLatentEncoder` latent, the v27/v37 status-landing), so the masks — and the
-> `--mask-incoming-damage-obs` / `--mask-active-move-scalars-obs` / `--mask-move-effects-obs` /
-> `--unified-obs` flags — are gone with them. **`incoming_damage.py` itself STAYS**: the reward PBRS
-> (`reward_manager.py`) and the prober import its math core; only the obs write was removed, and its
-> fuzz test now targets `encode_block` directly. Measured refund: **7,396 → 6,444 calls/encode
-> (−12.9%)**, `state_encoder.encode` 0.456 → 0.363 ms. The surviving reactive block is
-> **11 scalars + 288 matchups + 12 active-req-moves = 311**, and the 11 scalars are re-indexed
-> (each shifted DOWN by 8: fainted ×2, active_status, forced_struggle, trapped, maybe_trapped,
-> turns_since_progress, protect_odds ×2, wish_floating ×2). The prose below still describes the
-> pre-deletion layout for the blocks that survive — treat this note as authoritative on what exists.
+The 11 scalars sit BEFORE the matchups, so the extractor picks them up in `non_matchup_rest`
+automatically (it reads the matchup offset from the layout). Sources, all server-authoritative or
+read-model:
 
-**Reactive block (was 414 dims, now 311 — layout in `reactive.py`):** 19 scalar dims (incl. 2 `gen3_wish_wired_v1`
-`wish_floating` scalars at `vec[17]`/`vec[18]`, our/opp side — the pending-Wish heal, `WISH_HEAL_FRACTION`
-≈0.5 when a wish cast last turn resolves this turn, else 0; see `sleep_belief.py`-style `wish_belief.py`),
-then the 44-dim **move-effect block** (`gen3_move_effects_v1` + `gen3_status_cure_moves_v1`), then
-the **51-dim incoming-damage / OHKO belief block** (`gen3_incoming_crit_split_v1`, at offset 63 — see
-below), then the two 144-dim matchup matrices (`our_matchups` at offset 114, `their_matchups` at 258),
-then the **12-dim active-req-moves block** (`gen3_op_move_align_v1`, at offset 402): OUR active mon's
-4 moves in **REQUEST order** (action 6+k) — `[move_num ×4, resolved_type_id ×4, legal_now ×4]`, sourced
-from `legal.move_slots` (same source as the action mask), so the model's DamageOperator OUTGOING per-move
-methods (`_outgoing_block`/`_status_landing`/`_outgoing_matrix`) read request order rather than the per-mon
-block's sorted-by-id order. These are embedding IDs (HP → num 237; typed-HP type resolved) consumed ONLY
-by the op via `ObsUnpack` (`ctx.our_active_req_move_{ids,type_ids,legal}`), so the block sits AFTER the
-matchups and is EXCLUDED from `non_matchup_rest` (the raw-scalar path that stops at the matchup offset).
-Scalars: active-move power ×4 (/200)
-+ active-move multiplier ×4 (/4), fainted counts ×2, active-status flag (1), `forced_struggle` (1),
-**(`gen3_move_slot_align_v1`: these per-move scalars — and the move-effect block below — are filled
-in REQUEST-slot order via `legal.move_slots` (action 6+i ↔ slot i, disabled moves KEPT, typed-HP
-resolved off the moveset) by `reactive._request_slot_moves`, NOT `battle.available_moves`, which
-drops disabled moves and used to shift every later feature off its action logit; an unwritten slot
-reads the neutral 0.25 (1×) default, never the old np.ones → phantom 4×.)**
-the two **gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — the
-**gen3_markovian_progress_v1** scalar `turns_since_progress` (1, `vec[14]`), and the **two
-gen3_protect_odds_v1 scalars** `protect_odds` (our active `vec[15]`, opp active `vec[16]`). All are
-sourced server-authoritatively / from the read-model: trapped/maybe_trapped from the per-decision
-`LegalActions` snapshot (`legal.trapped` / `legal.maybe_trapped`); `turns_since_progress` is the
-log-saturated no-progress clock (`log(1+min(n,10))/log(11)`), sourced from the **EpisodeTracker-owned
-`ProgressClock`** (NOT LiveView — it is cross-turn state), threaded into `encode()` like the HP
-tracker (the reward's `no_progress_tax` keys on the SAME clock instance — one value, obs==reward-key);
-`protect_odds` = `gen3_mechanics.protect_success_probability(mon.protect_counter)` read off each active
-mon's **`LivePokemon.protect_counter`** (the consecutive-successful-stall counter the LiveView surfaces)
-— P(a Protect/Detect/Endure succeeds NOW) under the gen3 floored-doubling stall rule (100/50/25/12.5,
-floor 1/8; Showdown gen3 inherits gen4→gen5, NOT the base `*3`). It is the model's ONLY view of the
-stall counter (poke-env doesn't enumerate the `stall` volatile, and turn-history saliency decays
-before a chain can be counted); public both sides (the opp's counter derives entirely from their
-revealed move stream → no leak); pinned by `protect_success_prob_fuzz_test.py` (encoded scalar ==
-the formula per the live counter, + the empirical % match). They sit BEFORE the
-matchups so the extractor picks them up in `non_matchup_rest` automatically (it reads the matchup
-offset from the layout). `trapped` is redundant with the mask but explicit; `maybe_trapped` is the
-high-value trap-risk bit; `turns_since_progress` lets the model state-condition on the anti-stall
-penalty it's about to be charged; `protect_odds` lets it price the declining success of a repeated
-Protect (it failing the more often it's used in a row).
+- `trapped` / `maybe_trapped` — the per-decision `LegalActions` snapshot. `trapped` is redundant
+  with the action mask but explicit; `maybe_trapped` is the high-value trap-risk bit.
+- `turns_since_progress` — the log-saturated no-progress clock (`log(1+min(n,10))/log(11)`), owned by
+  the **EpisodeTracker's `ProgressClock`** (NOT LiveView — it is cross-turn state) and threaded into
+  `encode()` like the HP tracker. The reward's `no_progress_tax` keys on the SAME clock instance, so
+  obs and reward-key are one value. Lets the model state-condition on the penalty it is about to be
+  charged.
+- `protect_odds` — `gen3_mechanics.protect_success_probability(mon.protect_counter)` off each active
+  mon's `LivePokemon.protect_counter`: P(a Protect/Detect/Endure succeeds NOW) under the gen3
+  floored-doubling stall rule (100/50/25/12.5, floor 1/8; Showdown gen3 inherits gen4→gen5, NOT the
+  base `*3`). This is the model's ONLY view of the stall counter — poke-env does not enumerate the
+  `stall` volatile, and turn-history saliency decays before a chain can be counted. Public both
+  sides (the opponent's counter derives entirely from their revealed move stream → no leak). Pinned
+  by `protect_success_prob_fuzz_test.py`.
+- `wish_floating` — the pending-Wish heal: a flat `WISH_HEAL_FRACTION` (≈0.5; gen3 Wish heals the
+  RECIPIENT's maxhp/2, so the fraction is constant and GIGO-proof) when a Wish cast last turn
+  resolves at the end of this turn, else 0. Slot-keyed, so it survives faint / Roar-phaze / switch.
+  poke-env tracks none of it → reconstructed from the event log (`wish_belief.py`).
 
-**Move-effect block (44 dims, `gen3_move_effects_v1` + `gen3_status_cure_moves_v1`):** 4 move slots in **REQUEST order** (so
-feature slot *k* lines up with action logit 6+*k* — enforced via `legal.move_slots` since
-`gen3_move_slot_align_v1`; pinned by `move_alignment_fuzz_test.py`) × 11 features each — `is_boost`, `is_heal`,
-`is_protect`, `is_phaze`, `is_hazard`, `inflicts_status`, `status_will_land`, `pp_fraction`,
-`status_will_land_known`, **`cures_self_status`**, **`cures_team_status`**. The
-only per-move signals that previously reached the policy head in action order were base power and
-the type multiplier, so for status/utility moves (power 0, neutral multiplier) every option looked
-identical at the head — the model could not tell a setup move from a heal from a wasted Toxic, nor
-that a move CLEARS status. **`gen3_status_cure_moves_v1`** added the last two bits: `cures_self_status`
-(Refresh — clears the user's own status) and `cures_team_status` (Heal Bell / Aromatherapy — clear
-the whole party's). They are **static curated facts** (the cure lives in an onHit callback, invisible
-declaratively → a curated override in the acquisition tool, like Belly Drum), read by the head against
-the per-mon status one-hots it already sees — a **prober-verified gap**: with no cure bit, the head
-conditioned its own status onto Recover/switch (intervention: removing a Toxic moved P(recover)/switch
-~11pp each) but onto Refresh only ~1.5pp, so it under-used the cure (~1.4% when badly poisoned) and let
-Toxic stack. `cures_team_status` is party-scoped on purpose so the model can value Heal Bell off the
-BENCH statuses, not just the active's. The
-static flags come from the `gen3_data.moves` facade (`MoveData.is_boost/is_heal/...`), derived in
-the acquisition tool from the field **Showdown** keys each mechanic on (`flags.heal`,
-`volatileStatus`, `forceSwitch`, `sideCondition`, primary `status`, declarative self-positive
-boosts) PLUS a curated callback override for **Belly Drum** (its +6 Atk lives in an `onHit`
-callback, invisible declaratively); **Memento** is correctly excluded (foe-target negative boosts
-+ self-faint). Resolved **live** in the encoder: **Curse**'s setup (only a self-boost for a
-non-Ghost user) and `status_will_land`. The latter is a **prior-weighted probability in [0,1]**
-(`gen3_mechanics.status_land_probability`), built the same "priors first, then confirmation"
-way the matchup cells handle abilities: it is 0 on a certain block (type immunity, already
-statused, Substitute — ability-independent), else `1 − P(ability blocks this status)` over the
-opponent's ability distribution (`_resolve_ability_distribution` — the Smogon prior for an
-unrevealed mon, collapsing to an exact 0/1 once the ability is revealed via `-immune [from]
-ability:`). So an unrevealed Snorlax reads ≈0.14 for Toxic (Immunity-dominated) instead of a naive
-1. The trailing **`status_will_land_known`** bit disambiguates prior from confirmed — the SAME
-routing the per-mon ability block uses for its `known` flag: 1 when the value rests on confirmed
-info (a type-certain hard block, or the opponent's ability is revealed via `_ability_revealed`,
-the exact predicate `AbilitiesEncoder` uses), 0 when it's still a Smogon-prior estimate a reveal
-could move. Without it the model couldn't tell a confirmed 0.0/1.0 from a prior one (a real
-discrepancy vs how abilities are routed; this closes it). Sits before the matchups → flows to BOTH
-the policy and value projection heads via
-`non_matchup_rest` (input widths auto-discovered). Garbage-in discipline: each static flag is
-sourced from Showdown's actual representation, never guessed from the move name — see
-`tools/pokemon_data_extractor/sync.py:build_moves`.
+**`active_req_moves` (12 dims):** OUR active mon's 4 moves in **REQUEST order** (slot *k* ↔ action
+logit 6+*k*) — `[move_num ×4, resolved_type_id ×4, legal_now ×4]`, sourced from `legal.move_slots`,
+the same source as the action mask. The `DamageOperator`'s OUTGOING per-move methods read THIS, so
+their per-move output aligns with the action order instead of the per-mon block's sorted-by-id
+order. `move_num` is the dex num (the opponent's HP stays bare 237; our own typed HP resolves);
+`legal_now` is the current-decision choosability. These are embedding IDs, not scalars, so the block
+sits AFTER the matchups and is EXCLUDED from `non_matchup_rest` — `ObsUnpack` slices it explicitly
+into `ctx.our_active_req_move_{ids,type_ids,legal}` and it never enters the raw-scalar path.
 
-**Incoming-damage / OHKO belief block (51 dims, `gen3_incoming_crit_split_v1`, at reactive offset 63,
-before the matchups → routed to both heads via `non_matchup_rest`):** the opponent active's threat to
-*us* as a calibrated belief, not a calc. (This block is the fixed *usage-prior* collapse; the model-side
-`DamageOperator` (`--damage-op`) computes the SAME kind of belief from the model's LEARNED move belief
-instead, and `--mask-incoming-damage-obs` can zero this block out of the MODEL's view to A/B that
-replacement — the block stays in the obs at its fixed dim, and the REWARD PBRS still reads it from
-`live_view`. See `src/agents/model/CLAUDE.md` → the damage-operator / unified-belief notes.) Per our 6 team mons (slot-aligned): `[phys_expdmg_frac,
-spec_expdmg_frac, phys_pko_nocrit, spec_pko_nocrit, phys_crit_delta, spec_crit_delta, p_outspeed,
-threat_revealed]` (8 × 6 = 48), then 3 opp-active recovery scalars
-`[recovery_rate, cures_status(P rest), recovery_known]`. **The per-mon field offsets are NAMED
-constants (`IDX_PHYS_EXP … IDX_THREAT_REVEALED`, `IDX_RECOVERY_*`) in `incoming_damage.py` — the
-single source of truth for this layout.** The producer assembles each slot FROM those names (with a
-`_PER_MON_FIELDS == PER_MON` import-time assert) and every single-field consumer reads by name
-(the reward PBRS `block[base + IDX_OUTSPEED]`, the fuzz test), so a future field insert can't
-silently desync a read — the failure mode that once made the reward PBRS read `phys_crit_delta` as
-`p_outspeed` (the crit-split pushed outspeed 4 → 6 but a hardcoded `block[base + 4]` stayed). Whole-
-slot reads (the prober decode) full-tuple-unpack, which fails loudly on a width change instead. **`gen3_incoming_crit_split_v1` (PER_MON 5→8,
-block 33→51, obs 3391→3409):** P(KO) is the modal `*_pko_nocrit` (the roll integration with NO crit —
-the outcome you plan around); the crit risk is exposed as the **DELTA** `*_crit_delta`
-(crit-inclusive − no-crit ∈ [0, `_CRIT_P`]) rather than the near-redundant absolute crit-inclusive line
-(which equals nocrit + a ≤6% tail and is buried after standardization). The delta is the explicit crit
-"tax" — a decorrelated feature a small net can read — so the policy/critic price the modal line without
-over-weighting uncontrollable crit RNG (the prober's representation probe flagged the damage SPREAD as
-under-encoded, and the plateau diagnosis showed RNG-driven critic craters; the prober reconstructs
-crit-inclusive = nocrit + delta to preserve the loss-taxonomy meaning). `threat_revealed` is the
-dominant KO threat's `p_in_set` provenance: **1.0 = a revealed move (we KNOW), <1.0 = a usage-prior
-GUESS, 0.0 = no candidate can KO** (read jointly with the pko channels) — the "how much are we guessing"
-signal (provide-the-fact, not bake-the-prior). P(KO)/expected-damage are the §6.1 belief —
-**max over `revealed ∪ usage-prior` candidate moves** of `P(move in set) · P(KO|move)`, routed by gen3
-**TYPE-category** (Bug/Rock/Ground/… physical, the rest special), using the gen3 damage formula with a
-**fixed-damage branch** (Seismic Toss/Night Shade/Dragon Rage/Sonic Boom carry constant damage despite
-the dex STATUS tag; respect type immunity — 0× vs Ghost), a **variable-power branch** (Return/Frustration
-read BP 0 in the dex → priced at 102), the gen3 **Explosion/Self-Destruct Def-halve**
-(gen≤4), Reflect/Light-Screen/Substitute/burn/weather modifiers, the opponent's offensive-stat tail
-(the **0.95 max-EV+ percentile**, `priors.stat_distribution`), and a closed-form roll→P(KO) **blended
-with a gen3 crit term** (`_CRIT_P`=1/16, ×2, screen-ignoring). `p_outspeed` is `P(our_spe > opp_spe)`
-over the opp Speed *distribution* (the
-hidden nature/EV) with observed boosts/paralysis. **v2 belief-VALUE recalibration** (same 33 dims, same
-obs dim — values only, so retrain-class not weight-shape): the v1 belief was too timid on the near-OHKO
-tail and silently zeroed missing coverage (run_20260606_204351: 17% of direct-hit deaths read
-P(KO)<0.25). v2 (1) de-timids P(KO) — the **crit term** + the **raised offensive tail (0.85→0.95)** lift
-the KO flag on near-OHKOs while expected-damage re-normalises to the MEAN (∝ `atk_mean`), so the chip
-belief is unchanged; and (2) widens the candidate set so the killing move isn't silently absent — a
-**revealed bare `hiddenpower`** (dex BP 0) expands into per-type candidates (~70 BP, typed from the **HP
-tracker**'s observation-narrowed distribution / Smogon HP prior — the tracker is threaded into
-`encode_block`), Return/Frustration are priced, and the prior **floor/cap widen (0.12→0.05, 4→6 per
-channel)** so a low-usage super-effective coverage move survives into the pool (the per-defender max over
-`p_in_set·P(KO)` is the real type-effectiveness gate, so extra low-usage candidates only ever surface a
-genuine SE threat — they can't inflate a neutral one). **Two modules, deep split:** the pure, poke-env-free
-math core (formula, roll→P(KO) + crit, P(outspeed), the `Candidate`/`Defender`/`AttackerThreat` beliefs,
-`compute_team_block`) is `incoming_damage.py`; the board→belief extraction is `incoming_damage_encoder.py`
-behind the single **`encode_block(live, hp_tracker)`** entry — it reads the current board **only through
-the `LiveView` read-model** (no raw poke-env battle; `LivePokemon` carries the EV-computed `stats` +
-integer `current_hp`/`max_hp` the belief needs), so the SAME `LiveView` built per decision feeds both the
-obs path here AND the reward-shaping path (`reward_manager.py` PBRS) — one strict-API source, no
-duplicate raw reads. Its only data reads are the per-species usage candidates + HP typing + offensive-stat
-distributions, `lru_cache`d so only the per-defender damage math (and the rare revealed-HP expansion) is
-per-decision. `reactive.py` passes `live` + the HP tracker; the reward PBRS passes `live` only (HP typing
-falls back to the Smogon prior). Priors: `gen3_{move,spread,item,hidden_power}_priors.json` via
-`gen3_data.priors`. Belief-not-calc → validated by calibration; the obs golden fixture pins the vector
-byte-for-byte (the LiveView migration is value-neutral — golden parity holds against the v2 fixture).
+**The per-mon move block stays sorted-by-id on purpose** — it feeds the role token, whose value is
+order-sensitive (the 4 move encodings are concatenated), so it cannot be reordered without changing
+the network. Both orders are therefore live at once; the pointer action head resolves this by
+permuting on move-num IDENTITY, which makes a misaligned logit unrepresentable.
 
+**Move-effect block and incoming-damage / OHKO belief block — BOTH DELETED from the observation.**
+Their long descriptions moved verbatim to `designs/CHANGELOG.md` §5. Where the signal lives now:
+
+| Deleted obs block | Dims | GPU home |
+|---|---|---|
+| action-aligned move-effect flags | 44 | static mechanics → the `MoveLatentEncoder` latent (`--move-latent`); board-conditional `status_will_land` → `DamageOperator._status_landing` (`--damage-outgoing`); `pp_fraction` → the per-mon move slot (unchanged) |
+| per-our-mon incoming-damage / OHKO belief | 51 | the `DamageOperator`'s incoming block, off the LEARNED move belief instead of this block's FIXED usage prior — that substitution was the whole point of `--damage-op` |
+| active-move scalars (base power ×4, type mult ×4) | 8 | the op's OUTGOING per-move block, request-ordered, with real gen3 physics rather than `bp/200` and `mult/4` |
+
+**`agents/observation/incoming_damage.py` STAYS** — the reward PBRS (`reward_manager.py`) and the
+prober import its math core, and its fuzz test now targets `encode_block` directly. Only the obs
+write was removed.
 > **Downstream reader:** the prober engine (`src/main/prober/engine.py`) reads
 > `OFFSET_REACTIVE + move_multiplier` (active-move type mults), `+ our_matchups`,
 > `+ their_matchups` (the incoming-threat decode + saliency block), and the

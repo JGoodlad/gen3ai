@@ -1,0 +1,211 @@
+{
+  "provenance": {
+    "generation": "gen-3",
+    "run": "run_20260807_135637_gen3",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/run_20260807_135637_gen3/checkpoints/checkpoint_9600000_steps.zip",
+    "step": 9600000,
+    "n_states": 1500,
+    "date": "2026-08-07",
+    "producer": "tmp/incoming_conditional_probe.py (worktree-local, not in the repo)",
+    "note": "Smaller-n first pass of the same probe (1500 states, 121 threat states). Kept as the sample-size sanity check on the 6k run; prefer the 6k file.",
+    "_note_on_this_key": "`provenance` was ADDED when the file was co-located into version control (2026-08-08). Every other key is byte-for-byte the probe's own output."
+  },
+  "meta": {
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/run_20260807_135637_gen3/checkpoints/checkpoint_9600000_steps.zip",
+    "n_states": 1500,
+    "n_threat": 121,
+    "pko": 0.5,
+    "safe": 0.35
+  },
+  "blocks": {
+    "in_permon": {
+      "width": 72,
+      "all": {
+        "n": 1500,
+        "kl_mean": 0.01656770519912243,
+        "flip_rate": 0.07400000095367432,
+        "dv_mean": 5.2482380867004395
+      },
+      "threat": {
+        "n": 121,
+        "kl_mean": 0.01703977957367897,
+        "flip_rate": 0.04958677664399147,
+        "dv_mean": 3.912656307220459
+      },
+      "shuf_all": {
+        "n": 1500,
+        "kl_mean": 0.015273639932274818,
+        "flip_rate": 0.059333331882953644,
+        "dv_mean": 1.9521400928497314
+      },
+      "shuf_threat": {
+        "n": 121,
+        "kl_mean": 0.019189855083823204,
+        "flip_rate": 0.057851240038871765,
+        "dv_mean": 1.7283519506454468
+      }
+    },
+    "in_cb": {
+      "width": 13,
+      "all": {
+        "n": 1500,
+        "kl_mean": 0.0012723003746941686,
+        "flip_rate": 0.015333333052694798,
+        "dv_mean": 0.3621385991573334
+      },
+      "threat": {
+        "n": 121,
+        "kl_mean": 0.0016038779867812991,
+        "flip_rate": 0.00826446246355772,
+        "dv_mean": 0.49634841084480286
+      },
+      "shuf_all": {
+        "n": 1500,
+        "kl_mean": 0.001391001744195819,
+        "flip_rate": 0.01066666655242443,
+        "dv_mean": 0.3385995626449585
+      },
+      "shuf_threat": {
+        "n": 121,
+        "kl_mean": 0.0017092415364459157,
+        "flip_rate": 0.00826446246355772,
+        "dv_mean": 0.40522468090057373
+      }
+    },
+    "out_active": {
+      "width": 45,
+      "all": {
+        "n": 1500,
+        "kl_mean": 0.021821176633238792,
+        "flip_rate": 0.06866666674613953,
+        "dv_mean": 1.4234161376953125
+      },
+      "threat": {
+        "n": 121,
+        "kl_mean": 0.018512343987822533,
+        "flip_rate": 0.057851240038871765,
+        "dv_mean": 1.275588870048523
+      },
+      "shuf_all": {
+        "n": 1500,
+        "kl_mean": 0.02732079103589058,
+        "flip_rate": 0.07266666740179062,
+        "dv_mean": 1.315558671951294
+      },
+      "shuf_threat": {
+        "n": 121,
+        "kl_mean": 0.029018983244895935,
+        "flip_rate": 0.06611569970846176,
+        "dv_mean": 0.9146901965141296
+      }
+    },
+    "out_status": {
+      "width": 8,
+      "all": {
+        "n": 1500,
+        "kl_mean": 0.0007975311018526554,
+        "flip_rate": 0.009333333000540733,
+        "dv_mean": 0.12360204756259918
+      },
+      "threat": {
+        "n": 121,
+        "kl_mean": 0.0005651735700666904,
+        "flip_rate": 0.0,
+        "dv_mean": 0.09597449004650116
+      },
+      "shuf_all": {
+        "n": 1500,
+        "kl_mean": 0.0011711549013853073,
+        "flip_rate": 0.01133333332836628,
+        "dv_mean": 0.1915348768234253
+      },
+      "shuf_threat": {
+        "n": 121,
+        "kl_mean": 0.000832580029964447,
+        "flip_rate": 0.00826446246355772,
+        "dv_mean": 0.14456427097320557
+      }
+    },
+    "in_matrix": {
+      "width": 522,
+      "all": {
+        "n": 1500,
+        "kl_mean": 0.3319547176361084,
+        "flip_rate": 0.3179999887943268,
+        "dv_mean": 6.644305229187012
+      },
+      "threat": {
+        "n": 121,
+        "kl_mean": 0.3060030937194824,
+        "flip_rate": 0.24793387949466705,
+        "dv_mean": 4.050880432128906
+      },
+      "shuf_all": {
+        "n": 1500,
+        "kl_mean": 0.179311603307724,
+        "flip_rate": 0.20200000703334808,
+        "dv_mean": 2.607631206512451
+      },
+      "shuf_threat": {
+        "n": 121,
+        "kl_mean": 0.20213095843791962,
+        "flip_rate": 0.19834710657596588,
+        "dv_mean": 2.074228286743164
+      }
+    },
+    "INCOMING_all": {
+      "width": 85,
+      "all": {
+        "n": 1500,
+        "kl_mean": 0.018242623656988144,
+        "flip_rate": 0.07333333045244217,
+        "dv_mean": 4.963440418243408
+      },
+      "threat": {
+        "n": 121,
+        "kl_mean": 0.018310703337192535,
+        "flip_rate": 0.057851240038871765,
+        "dv_mean": 3.6074600219726562
+      },
+      "shuf_all": {
+        "n": 1500,
+        "kl_mean": 0.017335420474410057,
+        "flip_rate": 0.06333333253860474,
+        "dv_mean": 1.9497631788253784
+      },
+      "shuf_threat": {
+        "n": 121,
+        "kl_mean": 0.019778629764914513,
+        "flip_rate": 0.057851240038871765,
+        "dv_mean": 1.6653674840927124
+      }
+    },
+    "FULL_CONCAT": {
+      "width": 660,
+      "all": {
+        "n": 1500,
+        "kl_mean": 0.29526931047439575,
+        "flip_rate": 0.30533334612846375,
+        "dv_mean": 8.404495239257812
+      },
+      "threat": {
+        "n": 121,
+        "kl_mean": 0.31526923179626465,
+        "flip_rate": 0.2975206673145294,
+        "dv_mean": 6.520610332489014
+      },
+      "shuf_all": {
+        "n": 1500,
+        "kl_mean": 0.2198907881975174,
+        "flip_rate": 0.2433333396911621,
+        "dv_mean": 3.9911348819732666
+      },
+      "shuf_threat": {
+        "n": 121,
+        "kl_mean": 0.2545553743839264,
+        "flip_rate": 0.20661157369613647,
+        "dv_mean": 3.237504005432129
+      }
+    }
+  }
+}

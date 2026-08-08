@@ -262,7 +262,7 @@ representation would have to re-derive it from evidence scattered across separat
    copying: the **op owns its own layout** (consumers never hardcode an offset; offsets are
    pinned against `decode_damage_block`), and the cells are a *pure slice of the same tensor*
    the projection heads consume, so the two routes cannot disagree on a value.
-2. **Bias the attention with it — SHIPPED (v56 `gen3_edge_bias_trunk_v1` + the D2/S1/S3 slice).**
+2. **Bias the attention with it — SHIPPED (`gen3_edge_bias_trunk_v1` + the D2/S1/S3 slice).**
    Small learned map: per-pair
    cell → per-head additive scalar (one head can attend by KO-range, another by expected chip),
    with the full cell available as edge features where marginals need it. Requires a custom MHA
@@ -434,7 +434,7 @@ This matters more than placement and is the cheapest thing to get right.
 ### What a POINTER TARGET is — and what pair tokens would and wouldn't be
 
 A pointer head (Vinyals 2015) does not score a fixed output vocabulary; it scores **elements of
-its own input set**, so the action space is *defined by* the tokens present. v51's
+its own input set**, so the action space is *defined by* the tokens present. The
 `PointerNativeActionHead` is exactly this: move logit *k* is read from the E3 seat of request
 slot *k*, switch logit *j* from our-team token *j*. A **pointer target** is a token whose
 representation *becomes* a logit.
@@ -460,8 +460,10 @@ be **aggregation substrate for the trunk**, not new pointer targets — and that
 same intervention family as physics-into-the-trunk, which measured NULL 3-for-3 (ledger K9/K10).
 
 **And the P1 dependence table says the axis promotion would buy is the WEAKER one.** The
-attacker axis reads far higher than the defender axis: v39's our-6-mons × their-active matrix at
-**21.4%** of the ablation ceiling against v34's our-4-moves × their-6-mons at **6.3%** — while
+attacker axis reads far higher than the defender axis: the our-6-mons × their-active matrix at
+**21.4%** of the ablation ceiling against the our-4-moves × their-6-mons at **6.3%** (both on the
+2026-07-25 P1 snapshot, whose config had BOTH matrices; the current production config has
+neither) — while
 the single-active per-action OUTGOING block dominates at 65.7%. The attacker axis is *already
 entity-native* (our 6 mon tokens exist), so the fact the policy demonstrably uses needs no new
 seats; the fact promotion would deliver measured near-inert. (Caveat: P1 predates the pointer
@@ -548,10 +550,10 @@ X edge). And switches resolve before moves, so our move lands on the incoming mo
 3. `X_switch(k) = Σ_b q_b · X(k → b)` from `pairwise_outgoing` `[B,4,6,6]` — already computed for
    the D1 edges.
 
-**⚠️ The unrevealed marginalisation is NOT optional here.** v34's outgoing matrix is
+**⚠️ The unrevealed marginalisation is NOT optional here.** The outgoing matrix is
 REVEALED-gated (unrevealed opp slots zeroed), so a revealed-gated `q_b` reads ≈0 early — exactly
 when switching is most frequent — and the model concludes "my move always lands on the active."
-That is the same GIGO class as the typeless-HP "immune" bug. The fix exists: v36's
+That is the same GIGO class as the typeless-HP "immune" bug. The fix exists: the
 expected-latent defender (`SPECIES_EXP_MULT` ⊕ `SPECIES_SPREAD_PRIOR` marginalised through the
 species belief) — but it rides `--threat-refine-outgoing`, hence `--damage-refine-rounds > 0`,
 which the prefuse config sets to 0, so **it is inert in gen-3**.
@@ -762,7 +764,7 @@ Those wait on the attention-usage audit, exactly as the edge families waited on 
 
 - **Already entity-based:** `PokemonEncoder` (one shared per-mon encoder over 12 slots) →
   `TeamTransformer` (12 mon tokens + 2 CLS pools, pi and vf) — textbook Deep Sets → attention.
-- **Stage 0 SHIPPED — v51 `gen3_pointer_native_v1`** (`f25e708`, 2026-08-03): the flat
+- **Stage 0 SHIPPED — `gen3_pointer_native_v1`** (`f25e708`, 2026-08-03): the flat
   `action_net` is **deleted** (a raising stub takes its slot; the optimizer is rebuilt) and
   `PointerNativeActionHead` IS the action head. Move logit *k* ← the REQUEST-slot-*k* move token
   ⊕ its op cells; switch logit *j* ← our-team token *j* ⊕ its incoming/CB/OAX cells; struggle ←
@@ -771,7 +773,7 @@ Those wait on the attention-usage audit, exactly as the edge families waited on 
   dissolved **F2** (switch logits read from a permutation-*invariant* CLS pool, so a bench mon's
   token could never reach its own logit — the information was destroyed by the pooling) and the
   ordering bug class. No flag, no off state: the cross-era break rides the `ARCH_SIGNATURE` bump.
-- **Stage 1 SHIPPED — v54 `gen3_entity_move_seats_v1`:** moves are attention citizens. **E3**
+- **Stage 1 SHIPPED — `gen3_entity_move_seats_v1`:** moves are attention citizens. **E3**
   (unconditional) — our active's 4 request-ordered move tokens, permuted ONCE pre-transformer by
   move-num identity and projected to `d_model`, enter the trunk as seats appended after the global
   token (existing absolute slices position-stable); **the pointer head now reads the REFINED E3
@@ -786,7 +788,7 @@ Those wait on the attention-usage audit, exactly as the edge families waited on 
   growing the token-type table (which would break loading in-generation checkpoints into newer code) and
   are appended LAST so the pointer stash's E3 slice is untouched. This is the truncation insurance the
   bimodal-miss finding in [[shortcut_learning_and_feature_delivery]] asked for.
-- **Stage 2 SHIPPED — v56 `gen3_edge_bias_trunk_v1`, now FIFTEEN families:** the encoder
+- **Stage 2 SHIPPED — `gen3_edge_bias_trunk_v1`, now FIFTEEN families:** the encoder
   stack is now `BiasedEncoderLayer` (the spike-proven clone taking an additive per-pair per-head
   float bias; the key-padding mask rides the same tensor as a −1e9 addend). `EdgeBias` delivers
   fifteen families behind `--edge-bias-families` — **D1** (our active's 4 moves × the opp's 6 mons,
@@ -1166,7 +1168,7 @@ flips / \|ΔV\| 2.18), then d1 (0.108/10.1%), v (0.012/6.3%), d4 (0.004/2.1%), s
 (0.0018/1.8%). **Near-decorative at 40M: d3, s3, x, g and c4** (c4 ≈ 0.00002 — the Protect edge
 never got used). All-off = **0.491 / 31.5%**.
 
-**Gen-3 @9.6M (all fifteen families, 6000 states — `tmp/edge_audit_gen3_9p6M.json`):** d2 7.63%
+**Gen-3 @9.6M (all fifteen families, 6000 states — `designs/research_state/measurements/gen3_edge_family_audit_9p6M.json`):** d2 7.63%
 flips, d1 6.05%, **v 2.90%** (the first read on TRUE speed physics, post-v58), d3 1.85%, d4 1.10%,
 s3 0.85%, s1 0.83%, t 0.65%, then c1 0.38% / c2 0.35% / x 0.33% / c3 0.25% / c5 0.23% / g 0.12% /
 c4 0.05%. All-off 13.9%; **concat 23.7% (a FOURTH replication) and `concat_cells` 37.8%**, with
@@ -1206,7 +1208,7 @@ switch cells, and see whether the joint effect vastly exceeds the sum of margina
 > policy as *shared context* via the flat concat, never per-action. See the WORKED EXAMPLE in Part 3
 > and `designs/ai_v9/design_conditional_opponent_cells.md` (OA1) for the fix.
 
-**E-b (dilution) — TESTED 2026-08-07, REFUTED.** `tmp/incoming_conditional_probe.py` on gen-3 @9.6M
+**E-b (dilution) — TESTED 2026-08-07, REFUTED.** `designs/research_state/measurements/gen3_op_block_dependence_6k.json` (probe: `tmp/incoming_conditional_probe.py`, uncommitted) on gen-3 @9.6M
 (6000 states) restricted the op-block ablation to THREAT states (slower ∧ active pko ≥ 0.5 ∧ legal
 switch ∧ a safe pivot ≤ 0.35 — 8.1% of states, mean pko 0.87). Shuffle-controlled threat/all flip
 ratios: `in_permon` **1.02×**, `INCOMING_all` **1.06×**, `out_active` 1.02×, `in_matrix` 0.76×.
@@ -1214,7 +1216,7 @@ Dependence in the states where incoming damage decides is the **same** as everyw
 no concentrated signal hiding under the average. The policy *is* behaviourally responsive there
 (switch mass 0.529 → 0.715, entropy 1.271 → 1.084), so this is not a "it never switches" artifact.
 
-**E-d (belief noise) — TESTED 2026-08-07, NOT SUPPORTED.** `tmp/oracle_belief_voi.py` feeds a
+**E-d (belief noise) — TESTED 2026-08-07, NOT SUPPORTED.** `designs/research_state/measurements/gen3_oracle_belief_voi.json` (probe: `tmp/oracle_belief_voi.py`, uncommitted) feeds a
 look-ahead oracle (per battle, the union of every move each opp species is ever seen using) through
 `MoveBelief.move_logits`' existing reveal-pinning path. On the 44% of states where the opp ACTIVE
 gains ≥1 move: policy KL 0.128, **19.3% argmax flips**, |ΔV| 1.62, active P(KO) 0.2575 → 0.2917. But
@@ -1450,7 +1452,7 @@ It is tempting to read point 3 as "the critic is starved — widen it." **That s
 already dead** (ledger P3). A representation probe measured `value_cls` effective rank at 3–4 versus
 the policy's 30–40 on the same body — but also measured `value_pooled` predicting the episode outcome
 at **AUC 0.833** against the policy's 384 dims at **0.835**. A critic emitting one scalar does not
-need thirty dimensions; rank ~3 is *appropriate*, not pathological, and v45's 51-bin distributional
+need thirty dimensions; rank ~3 is *appropriate*, not pathological, and the 51-bin distributional
 target correctly did not move it. "Widen or delete the value pool" is refuted.
 
 What is *not* refuted, and is a genuinely different claim: the critic has no **per-candidate** readout.

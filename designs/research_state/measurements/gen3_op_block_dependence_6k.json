@@ -1,0 +1,211 @@
+{
+  "provenance": {
+    "generation": "gen-3",
+    "run": "run_20260807_135637_gen3",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/run_20260807_135637_gen3/checkpoints/checkpoint_9600000_steps.zip",
+    "step": 9600000,
+    "n_states": 6000,
+    "date": "2026-08-07",
+    "producer": "tmp/incoming_conditional_probe.py (worktree-local, not in the repo)",
+    "note": "Per-op-sub-block zero -> masked KL at the ProjectionAssembler concat ONLY (edges, the prefuse token injection and the pointer cells stay live). Each block also reported over the THREAT subset (our active slower AND active P(KO)>=0.5 AND a legal switch AND a safe pivot with pko<=0.35) and against a batch-SHUFFLE control. THE current-config replacement for the 2026-07-25 P1 table.",
+    "_note_on_this_key": "`provenance` was ADDED when the file was co-located into version control (2026-08-08). Every other key is byte-for-byte the probe's own output."
+  },
+  "meta": {
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/run_20260807_135637_gen3/checkpoints/checkpoint_9600000_steps.zip",
+    "n_states": 6000,
+    "n_threat": 519,
+    "pko": 0.5,
+    "safe": 0.35
+  },
+  "blocks": {
+    "in_permon": {
+      "width": 72,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.016007812693715096,
+        "flip_rate": 0.05966666713356972,
+        "dv_mean": 4.497727394104004
+      },
+      "threat": {
+        "n": 519,
+        "kl_mean": 0.011637959629297256,
+        "flip_rate": 0.032755300402641296,
+        "dv_mean": 3.8961849212646484
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.012982803396880627,
+        "flip_rate": 0.04516666755080223,
+        "dv_mean": 1.460447072982788
+      },
+      "shuf_threat": {
+        "n": 519,
+        "kl_mean": 0.016774561256170273,
+        "flip_rate": 0.04624277353286743,
+        "dv_mean": 1.3981165885925293
+      }
+    },
+    "in_cb": {
+      "width": 13,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0013103384990245104,
+        "flip_rate": 0.014166667126119137,
+        "dv_mean": 0.3057464063167572
+      },
+      "threat": {
+        "n": 519,
+        "kl_mean": 0.0014401153894141316,
+        "flip_rate": 0.009633911773562431,
+        "dv_mean": 0.4740099310874939
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0013931776629760861,
+        "flip_rate": 0.01283333357423544,
+        "dv_mean": 0.33297842741012573
+      },
+      "shuf_threat": {
+        "n": 519,
+        "kl_mean": 0.0015792789636179805,
+        "flip_rate": 0.01541425846517086,
+        "dv_mean": 0.4550592005252838
+      }
+    },
+    "out_active": {
+      "width": 45,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.017604516819119453,
+        "flip_rate": 0.054499998688697815,
+        "dv_mean": 0.9785730242729187
+      },
+      "threat": {
+        "n": 519,
+        "kl_mean": 0.020294027402997017,
+        "flip_rate": 0.053949903696775436,
+        "dv_mean": 1.117989182472229
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.025350743904709816,
+        "flip_rate": 0.0625,
+        "dv_mean": 0.9156754016876221
+      },
+      "shuf_threat": {
+        "n": 519,
+        "kl_mean": 0.03597602993249893,
+        "flip_rate": 0.06358381360769272,
+        "dv_mean": 0.8808661699295044
+      }
+    },
+    "out_status": {
+      "width": 8,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0006138249300420284,
+        "flip_rate": 0.007833333685994148,
+        "dv_mean": 0.12041434645652771
+      },
+      "threat": {
+        "n": 519,
+        "kl_mean": 0.0004347040958236903,
+        "flip_rate": 0.0,
+        "dv_mean": 0.12233597785234451
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.001002880628220737,
+        "flip_rate": 0.009999999776482582,
+        "dv_mean": 0.1724672168493271
+      },
+      "shuf_threat": {
+        "n": 519,
+        "kl_mean": 0.000759463815484196,
+        "flip_rate": 0.003853564616292715,
+        "dv_mean": 0.19106543064117432
+      }
+    },
+    "in_matrix": {
+      "width": 522,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.2534431219100952,
+        "flip_rate": 0.24150000512599945,
+        "dv_mean": 5.1362714767456055
+      },
+      "threat": {
+        "n": 519,
+        "kl_mean": 0.2659050226211548,
+        "flip_rate": 0.20809248089790344,
+        "dv_mean": 3.8440585136413574
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.1357164978981018,
+        "flip_rate": 0.1626666635274887,
+        "dv_mean": 1.85186767578125
+      },
+      "shuf_threat": {
+        "n": 519,
+        "kl_mean": 0.1328522115945816,
+        "flip_rate": 0.12331406772136688,
+        "dv_mean": 1.8329761028289795
+      }
+    },
+    "INCOMING_all": {
+      "width": 85,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.017448782920837402,
+        "flip_rate": 0.06199999898672104,
+        "dv_mean": 4.326260089874268
+      },
+      "threat": {
+        "n": 519,
+        "kl_mean": 0.013153580948710442,
+        "flip_rate": 0.03660886362195015,
+        "dv_mean": 3.573805570602417
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.015813177451491356,
+        "flip_rate": 0.050999999046325684,
+        "dv_mean": 1.4992778301239014
+      },
+      "shuf_threat": {
+        "n": 519,
+        "kl_mean": 0.018861455842852592,
+        "flip_rate": 0.053949903696775436,
+        "dv_mean": 1.4715967178344727
+      }
+    },
+    "FULL_CONCAT": {
+      "width": 660,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.24436606466770172,
+        "flip_rate": 0.23649999499320984,
+        "dv_mean": 5.669068336486816
+      },
+      "threat": {
+        "n": 519,
+        "kl_mean": 0.27065813541412354,
+        "flip_rate": 0.23892100155353546,
+        "dv_mean": 5.172299861907959
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.18177062273025513,
+        "flip_rate": 0.18583333492279053,
+        "dv_mean": 2.8149778842926025
+      },
+      "shuf_threat": {
+        "n": 519,
+        "kl_mean": 0.20334458351135254,
+        "flip_rate": 0.15028901398181915,
+        "dv_mean": 2.8010571002960205
+      }
+    }
+  }
+}
