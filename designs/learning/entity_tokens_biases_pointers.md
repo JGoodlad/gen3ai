@@ -1204,7 +1204,7 @@ switch cells, and see whether the joint effect vastly exceeds the sum of margina
 > "worst case for this mon over all their moves", decorrelated from the move actually incoming. The
 > un-collapsed `(their move k, our mon j)` cell exists only in `_incoming_matrix`, which reaches the
 > policy as *shared context* via the flat concat, never per-action. See the WORKED EXAMPLE in Part 3
-> and `designs/ai_v9/design_conditional_opponent_cells.md` (C6) for the fix.
+> and `designs/ai_v9/design_conditional_opponent_cells.md` (OA1) for the fix.
 
 **E-b (dilution) — TESTED 2026-08-07, REFUTED.** `tmp/incoming_conditional_probe.py` on gen-3 @9.6M
 (6000 states) restricted the op-block ablation to THREAT states (slower ∧ active pko ≥ 0.5 ∧ legal
