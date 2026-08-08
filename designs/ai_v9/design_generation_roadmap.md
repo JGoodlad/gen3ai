@@ -358,6 +358,26 @@ TWO responses, neither of which is "wait longer":
 The re-home (Stage 3) then removes the flat obs vector regardless of which branch fires —
 starvation has nothing left to feed on once every fact's ONLY delivery is entity-attached.
 
+**OWNER AMENDMENT (2026-08-08) — the deletion PRECONDITION, corrected.** Sequencing
+accepted: the concat SURVIVES Stage 3 and dies LAST. Three corrections to the rule above:
+  1. **The pointer route is POLICY-ONLY.** OA1/OA2 are pointer cells; the pointer head never
+     reaches the critic — and the concat is the CRITIC's largest dependency (|dV| 5.67 vs
+     1.86 all-edges, 3× replicated). OA re-homes none of that; deleting after OA alone
+     strands the value head. The precondition is therefore TWO-ROUTE: **OA1 (policy) + PV or
+     token-content injection (critic), BOTH landed and audited.** PV is hereby PROMOTED out
+     of the optional tail (it was Phase-3-conditional in
+     `design_conditional_opponent_cells.md`; it is now a required component of the deletion
+     precondition — build still post-entity).
+  2. **OA1 is a soft CONTRACTION of in_matrix, not its re-home** — it drops the per-move
+     headers (latent / belief / effect / secondary). OA2 re-homes NOTHING currently in the
+     concat (new content from `pairwise_outgoing`). Do not count either as "the concat's
+     content now has an entity home" on its own.
+  3. **The acceptance clause (was missing):** deletion requires the concat arm to fall below
+     all-edges-off on **flips AND |dV|** — the |dV| clause is the critic guard.
+Localization: branch B's sub-block arm already ran at 9.6M — the residual is in_matrix
+(16.27 of 18.58 shuffle-controlled flips). The gen-3 40M verdict RE-RUNS it; on
+confirmation, "re-home in_matrix, BOTH directions (policy + critic)" is the settled target.
+
 ## 3.9 E9 STEP 1 — per-entity RECENCY features (designed 2026-08-07, pre-gen-3)
 
 The first "history attaches to entities" increment, chosen as the gen-3 launch gate's final
