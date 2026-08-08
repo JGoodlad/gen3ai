@@ -27,7 +27,7 @@ To orient yourself:
 |------|---------|-------|
 | **Active training run** | **ai_v9 gen-2** | `run_20260805_060807` (worktree `gen2-run-0805` @ ffa851e): the FULL entity stack — all 11 edge families (d1,d2,d3,d4,s1,s3,v,t,x,g,c4) + E5 tail seats, 40M steps, fresh lineage. **Gen-1 COMPLETE** (`run_20260804_090512`, 40M, Bots 90.9% / Pool 76.0% final; 6 launch families) — its end-of-run edge audit (`edge_audit_40M.json`) showed the edges became load-bearing (all-off = 26.9% action flips). Judged gen-2-vs-gen-1 by anchored ELO. The old ai_v8 lineage sits behind the ai_v9 signature wall. |
 | **Code on main** | **ai_v9 (v59)** | `MODEL_CONFIG_VERSION` **59**, `ARCH_SIGNATURE` **`gen3_edge_bias_trunk_v1`**. Stages 0–2 in: v51 pointer-native head, v52/53 typed-HP belief, v54 move-entity seats (E3/E4), v55 op block trim, v56 edge-bias trunk (now **15 families** — the launch 11 plus the C consequence sweep C1/C1b, C2, C3, C5), v57 E5 tail seats, v58 the SpD-as-speed GIGO fix, v59 K=6 everywhere. Stage-3 schema view + generator half shipped; **E9 step 1 landed** (`gen3_entity_recency_v1`, obs 2889 → 2925). |
-| **ai_v9** | **Stages 0–2 SHIPPED + Stage-3 half** | Roadmap: `design_generation_roadmap.md` (the operative staged plan, slice statuses current). Still open: the op head-concat deletion (needs a concat-zeroing audit arm — the family audit alone doesn't measure redundancy), C1b/C2/C3/C5 consequence edges, Stage-3 generator half + the entity re-home (retrain-class, owner go/no-go), and E9 history. |
+| **ai_v9** | **Stages 0–2 SHIPPED + Stage-3 half** | Roadmap: `design_generation_roadmap.md` (the operative staged plan, slice statuses current). Still open: the op head-concat deletion (needs a concat-zeroing audit arm — the family audit alone doesn't measure redundancy), C1b/C2/C3/C5 consequence edges, Stage-3 generator half + the entity re-home (retrain-class, owner go/no-go), and E9 history. **NEW forward design (not built): `design_conditional_opponent_cells.md`** — the magnitude rule for the entity world + the C6 conditional threat cell (defensive pivot) and C7 switch-branch move cell (punish the switch), with the unrevealed-marginalisation prerequisite and pre-registered gates. |
 
 ---
 
@@ -211,7 +211,13 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   along" — the v30→v39 progression), the four tests that discriminate laziness from genuine use
   (ablation-KL / trunk linear probe / behavioural counterfactual / held-out), the measured P1
   ablation surprise (the model **ignores** collapsed summaries when un-collapsed ones sit beside
-  them), and the reframe "make the lazy path the correct path" (= what v51's pointer head does).
+  them), the reframe "make the lazy path the correct path" (= what v51's pointer head does), and
+  **Part 6 — the concat end-state**: why the edges grew *without* absorbing the op head-concat
+  (paths compete only when they are substitutes), the structural argument that **softmax edge
+  biases carry ratios, not absolutes** (so magnitude needs token content or per-action cells),
+  the **pre-registered** delete-vs-re-home decision rule keyed to gen-3's audit, its four
+  confounds (value head / first-mover / mid-curve / perturbation-mismatched arms), and why
+  deleting the flat obs *dissolves* the starvation question rather than answering it.
 - **`on_policy_self_distillation.md`** — on-policy distillation (OPD) as the dense-signal training
   regime, why it's ~7-10× more step-efficient than PPO (a full target distribution per state vs ~1
   bit/game), our `better-line` beam as the policy-improvement teacher, upgrading the `search-teacher`

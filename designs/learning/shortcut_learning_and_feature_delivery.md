@@ -39,6 +39,20 @@
   to it* — a shortcut is attractive only when it's the best thing available.
 - **The reframe:** you cannot stop gradient descent being lazy, so **make the lazy path be the
   correct path.** That is exactly what the v51 pointer head does.
+- **The op head-concat did NOT starve the edges — and the edges did not absorb the concat.**
+  Measured three times (gen-1 @40M, gen-2 @40M, gen-2.5 @25M): the concat arm flips *more*
+  actions than turning the **entire** edge system off, while edge dependence still **grew ~3×**
+  with training. Paths compete only when they are **substitutes**; these two do different jobs.
+- **The structural reason (Part 6):** softmax attention weights are **normalized** — an edge
+  bias can move *who attends to whom*, but the number it writes into the residual stream is a
+  **ratio within its row**, not an absolute ("53% of max HP"). The two entity-native channels
+  that *can* carry an absolute are **token content** (the `prefuse_proj` injection) and
+  **per-action cells at the logits** (`pointer_cells`). Not an impossibility proof — a
+  **capacity + conditioning** argument.
+- **Pre-registered decision rule** (recorded 2026-08-07, before gen-3's audit): absorption ⇒
+  mask → A/B → delete; a fourth replication ⇒ **widen token-content delivery** and localize the
+  residual per sub-block, then re-audit. Explicitly banned: *"wait longer"* and *"delete
+  anyway."*
 - **Corollary — top-K is two things.** As *representation* (v30/v35/E4: surface the K
   most-believed moves individually) it un-collapses an axis and is free. As *truncation* (v49:
   drop candidates below rank K) it removes mass, and its error is a **cliff, not a slope**
@@ -305,6 +319,398 @@ result family and should be restated whenever those nulls are cited as evidence 
 
 ---
 
+## Part 6 — "Magnitude needs an entity home": the concat end-state
+
+This part is the live case, and it is the most instructive one in the note because **the feared
+mechanism did not fire** and the interesting question turned out to be structural rather than
+about laziness at all.
+
+### The setup
+
+Computed physics reaches the policy by **three** routes today:
+
+| Route | What it is | Bandwidth per forward |
+|---|---|---|
+| **Flat head-concat** | the op's ~807-dim block concatenated into *both* projection heads (`ProjectionAssembler`) | ~807 float dims, wired straight in, no bottleneck |
+| **Edge biases** (v56) | per-pair cells → zero-init `Linear(cell → 2·n_heads)` → additive attention-logit bias | **n_heads scalars per pair per direction**, then softmax-normalized |
+| **Pointer cells** (v51) | `DamageOperator.pointer_cells` concatenated onto the entity token that a logit selects | full cell, affine, per-logit — but read through one shared zero-init scorer |
+
+### What we measured (three times)
+
+The audit arm zeroes one route on ~4000 real eval states and reports masked KL / argmax-flip %
+/ |ΔV| against the model's own distribution.
+
+| Checkpoint | concat arm | ALL edges off |
+|---|---|---|
+| gen-1 @40M (6 families) | kl **0.482** / **35.5%** flips / **\|dV\| 7.45** | 0.330 / 26.9% / 2.51 |
+| gen-2 @40M (11 families) | kl **0.537** / **33.1%** / **\|dV\| 7.44** | 0.491 / 31.5% |
+| gen-2.5 @25M (15 families) | **31.4%** | 14.3% (mid-curve — 25M, not 40M) |
+
+Two facts have to be held **at the same time**:
+
+1. The edges are **real and growing** — gen-1's all-off dependence grew ~3× from 9.6M → 40M,
+   and gen-2's all-off (31.5%) is larger than gen-1's (26.9%) with more families.
+2. They **added on top of** the concat rather than replacing it. `concat_cells` (the op fully
+   out of the heads) reads 0.650 / 40.4% — the head route is still the single largest thing the
+   policy depends on.
+
+So: **no starvation.** The easy path did not prevent the hard path from developing.
+
+### Why not? (the general rule)
+
+Gradient starvation (Pezeshki 2021) is a statement about **substitutes**. Its mechanism needs
+two conditions:
+
+- the two features **explain the same residual** — they are correlated/redundant in what they
+  predict, so once one is fitted the other's gradient shrinks toward zero; and
+- the loss actually **approaches its floor**, so there is little residual gradient to compete
+  over.
+
+Our stack violates both.
+
+- **Different jobs.** The concat delivers *how much*; the edges deliver *who should look at
+  whom*. A routing improvement reduces error that the concat's magnitudes cannot reduce, so the
+  edge gradient never goes to zero.
+- **PPO's gradient does not decay like a supervised loss.** Advantages are recentered (and
+  normalized) per batch, and self-play is **non-stationary** — the opponent pool keeps moving,
+  so fresh error keeps arriving. Starvation's "the loss is already low" premise is much weaker
+  in on-policy RL than in supervised learning. (This is the *opposite* sign to the ~1-bit-per-game
+  argument in Part 1: RL is sample-starved but not *gradient*-saturated.)
+- **Zero-init ≠ starved-at-init.** A zero-init map has zero *output* but a **non-zero weight
+  gradient** (∂out/∂W = input × upstream grad). Identity-at-init buys a clean A/B without
+  costing the path its funding. (Standing caveat: until 2026-08-01 SB3 clobbered those inits —
+  [[project_sb3_ortho_init_clobber]], ledger **M1**.)
+
+> **Rule to carry:** two delivery paths compete when they are *substitutes* and complement when
+> they are *complements*. Before worrying about starvation, ask what function each path is
+> uniquely able to compute — if you cannot name a function only the hard path can express, you
+> have built a substitute and starvation is the right worry.
+
+### The structural argument — an edge bias cannot carry an absolute
+
+Softmax attention computes, for query *i*:
+
+&nbsp;&nbsp;&nbsp;&nbsp;`out_i = Σ_j α_ij · V_j`, with `α_ij = softmax_j( q_i·k_j/√d + b_ij )`
+
+The edge bias `b_ij` enters **only** through the logits, and the logits pass through a softmax.
+That has three consequences, in increasing importance:
+
+1. **The output is a convex combination of the values.** `α ≥ 0`, `Σ_j α_ij = 1`. So `out_i`
+   lives in the **convex hull of `{V_j}`**. No bias, however large, moves the output outside
+   that hull. If all the value vectors are equal, the bias is *exactly* a no-op.
+2. **The code is relative, not absolute.** `α_ij` depends on `b_ij` **and on every other `b_ik`
+   in the row** (the partition function). The same "53% of max HP" edge produces a different
+   `α` depending on what else is on the board. What survives softmax is a **ranking / ratio**;
+   what is destroyed is the **scale**.
+3. **It saturates, and it shares a channel.** Softmax is monotone but squashing: past a few
+   nats the bias stops changing `α`. And the same scalar channel is what content-based routing
+   (`q·k`) uses — magnitude and relevance are forced to share one number per head. Downstream,
+   the residual stream is LayerNormed, which further removes scale.
+
+Contrast the two channels that **can** carry an absolute:
+
+- **Token content (values).** Write the number into `V_j` — e.g. `prefuse_proj` injecting the
+  op's per-our-mon incoming rows onto our role tokens (v50). Now any query that attends to that
+  token receives the number **linearly**, and an MLP can compute a genuine **threshold**
+  ("is this ≥ my remaining HP?"). Thresholds are the operation that matters here — P(KO) is a
+  comparison of two absolutes — and a comparison is exactly what a normalized weight cannot do.
+- **Per-action cells at the logits.** `pointer_cells` concatenates the cell onto the selected
+  entity's token and scores it affinely. Lossless per-logit, zero interference with routing.
+
+**Is the argument airtight? No — and the honest version is more useful.** Attention *can*
+smuggle magnitude, and it is worth knowing how, because those routes are the ones a model would
+have to discover:
+
+- `α_ij` is itself a continuous scalar in (0,1), so if `V_j` contains a dedicated "one unit of
+  damage" direction, the residual picks up `α_ij` along it. A model **can** allocate a head
+  whose keys are near-constant so the bias row alone determines `α` — a "magnitude head." The
+  cost is a whole head, and the readout is still the **softmax-normalized** row, so the decoded
+  quantity is `damage_ij / Σ_k f(damage_ik)` — recoverable only up to that row-dependent
+  denominator, and only in the softmax's non-saturated regime.
+- Multiple heads/layers could in principle triangulate the denominator away. That is a
+  *learnable* but ill-conditioned function, competing for the same parameters as routing.
+
+So the correct claim is **not** "impossible" — it is a **capacity-and-conditioning** claim:
+*the edge channel carries ~n_heads normalized scalars per pair, in a relative code, on a
+saturating nonlinearity, in competition with routing; the concat carries ~807 unnormalized
+floats with no bottleneck.* Expecting the first to absorb the second is expecting a very
+inefficient encoding to win a race against a free one. **That framing is falsifiable**: if the
+residual concat dependence localizes to blocks the pointer cells already carry losslessly, the
+magnitude story is *wrong* and something else (see the confounds) is the cause.
+
+### The pre-registered decision rule
+
+Recorded in `designs/ai_v9/design_generation_roadmap.md` on 2026-08-07, **before** gen-3's
+end-of-run audit:
+
+- **Branch A — concat flips < the all-edges-off arm** ⇒ the entity paths absorbed the role ⇒
+  **mask → A/B → delete**, then the Stage-3 CPU refund.
+- **Branch B — concat holds ≥ all-edges-off (a fourth replication)** ⇒ read it as *magnitude
+  still has no entity home of equal fidelity* ⇒ **widen token-content delivery** (generalize
+  `prefuse_proj` to inject the full per-mon op rows onto **both** sides' tokens) **and** run
+  **per-sub-block concat ablations** to localize the residual; then re-audit. Delete only once
+  the re-homed form matches the concat's measured contribution.
+- **Explicitly not allowed:** *"wait longer"* or *"delete anyway."*
+
+**Why branch A is the right inference — and why it is still not enough to delete.** Ablation-KL
+is a **marginal** measure at **fixed weights**: "if I remove this input from the trained
+network, does behaviour change?" A collapse to below the all-edges arm demonstrates
+**redundancy** — the information is available elsewhere *to a network that was trained with the
+concat present*. It does **not** demonstrate that a network trained **without** it reaches the
+same policy. Hence the ordering `mask → A/B → delete`: the mask arm is cheap and reversible, the
+A/B is the actual test, deletion is the irreversible bookkeeping afterwards. (Test **(a)** in
+Part 4: KL = **use**, not value.)
+
+**Why branch B's response is right even though its *reading* might be wrong.** The measurement
+says only: *"we failed to demonstrate absorption."* The **action** — widen the channel that
+provably can carry absolutes, and localize the residual — is correct under several competing
+explanations, which is what makes it a good hedged response. The *causal story* is what needs
+testing, and the sub-block localization **is that test**, not merely targeting:
+
+- residual localizes to **per-mon incoming rows** ⇒ consistent with the magnitude story ⇒
+  widening `prefuse` is aimed correctly;
+- residual localizes to the **OUTGOING per-move blocks** ⇒ the magnitude story is **damaged**,
+  because `pointer_cells` already delivers exactly those numbers per-logit. Then the cause is
+  something else — plausibly that the pointer scorer is a *narrow shared affine read* while the
+  concat feeds the full projection MLP (a **capacity of the readout** problem, not a *delivery*
+  problem), which implies a different fix (widen the scorer / give it a small MLP), not a
+  trunk-injection one.
+
+### Four ways branch B's read could be wrong
+
+1. **The value head — and we already have evidence for this one.** The concat feeds **both**
+   projection heads; the pointer head serves only the policy, and the critic has *no* pointer
+   path at all. The audit shows the concat arm's **|dV| = 7.45 vs the whole edge system's 2.51**
+   — the critic is hit ~3× harder than by every edge combined. So a large part of what keeps the
+   concat alive may be the **value** objective, measured through a **policy** metric on a shared
+   trunk. *Distinguishing experiment (cheap, offline, decisive):* run the concat ablation
+   **per head** — zero it in the `pi` projection only, then the `vf` projection only — and
+   report flips and value error separately. If the policy-only arm is small, "magnitude has no
+   entity home" is really "the **critic** has no entity-native readout," and the fix is a
+   value-side pooled physics read, not a wider prefuse.
+2. **Optimization path-dependence (first-mover).** The concat is at full width from step 0;
+   every edge map is zero-init and has to grow. Whoever is available first can own the function
+   permanently without being structurally better. *Distinguishing experiment:* a run with the
+   concat **masked from step 0** (or annealed out on a schedule). If edges+pointer alone reach
+   comparable anchored ELO, the structural claim is refuted and it was a race, not a capacity
+   limit. This is the single most decisive experiment available, and it is a retrain.
+3. **Mid-training vs converged.** Dependence **grows with training** (gen-1: ~3× from 9.6M →
+   40M; gen-2.5's 14.3% all-off at 25M is explicitly mid-curve). A fixed-step comparison of two
+   arms that are both still moving is a **snapshot of a race**, not its limit. This is precisely
+   why *"wait longer"* is banned as a *response* — but it is a legitimate *caveat* on the read,
+   and the answer is to compare arms at matched tranches, not to defer the decision.
+4. **The two arms are not perturbation-matched.** Zeroing ~807 input dims to a Linear is a much
+   larger, much more off-manifold intervention than zeroing a set of small additive logit
+   biases — attention still runs in the second case. Comparing them is comparing two
+   differently-sized hammers. *Fixes, cheap:* (i) **mean-substitution** instead of zeroing
+   (replace with the dataset mean so the input stays on-manifold — standard interpretability
+   practice); (ii) the **shuffle control** the P1 probe already used (shuffle the block across
+   states: preserves marginals, destroys state-specificity); (iii) report a **both-off** arm so
+   the interaction term (redundancy vs necessity) is identified rather than assumed.
+
+A fifth, smaller one: with partially-redundant paths, *marginal* ablation systematically
+**understates** each path (each looks droppable alone). That biases toward deletion, not against
+it — so it does not threaten branch B, but it does mean branch A's threshold should not be read
+as a Shapley value.
+
+### One gap in the rule as written
+
+Branch A pre-registers the **sequence** (mask → A/B → delete) but not the **acceptance
+criterion** for the A/B. That leaves a forking path exactly where it matters. It should be a
+**non-inferiority margin fixed in advance** — e.g. *"delete only if anchored ELO at 40M is
+within −15 of the concat-on arm with a CI that excludes a −40 regression."* Without a number,
+"the A/B looked fine" is a post-hoc judgement of the same kind pre-registration exists to
+prevent.
+
+### Why pre-registration matters here specifically
+
+Generic reason: **researcher degrees of freedom**. An ablation study has many — which
+checkpoint, which state distribution, KL vs flips vs |ΔV|, which baseline arm you compare
+against, what counts as "large." Post-hoc, *any* result can be narrated into the conclusion you
+already preferred; that is the "garden of forking paths" (Gelman & Loken) and HARKing
+(hypothesizing after results are known). Writing the if/else down converts the analysis from
+**exploratory** to **confirmatory** — pre-registration does not forbid exploring, it forbids
+*relabelling* exploration as confirmation.
+
+Three ML-specific sharpenings:
+
+- **The two universal escape hatches.** Almost every ablation dispute ends in one of *"the run
+  wasn't long enough"* or *"the metric doesn't capture it, ship it anyway."* Both are
+  unfalsifiable and both are available *whatever the number is*. Naming and banning them in
+  advance is most of the value of this particular pre-registration.
+- **Pre-register the RESPONSE, not just the threshold.** A threshold alone still permits
+  "measurement says B, but let's do A because it's cleaner." Binding each branch to an action is
+  strictly stronger.
+- **Goodhart.** The moment an ablation number becomes the deletion criterion, it becomes
+  optimizable — e.g. training with concat dropout would *lower* the concat arm without the
+  entity paths becoming any better. Pre-registering also means pre-registering **that the
+  training recipe is held fixed** between the arms being compared.
+
+### The endgame — and why it *dissolves* rather than answers
+
+Stage 3 removes the flat observation vector entirely, so every fact's only delivery is
+entity-attached: the Part-5 reframe applied to the input ("make the lazy path **be** the entity
+path"). Note what that does epistemically:
+
+> Removing the shortcut does not tell you whether the entity path was as good. It removes the
+> **competition**, so the question stops being askable.
+
+That is genuinely valuable — starvation has nothing left to feed on, one delivery convention
+holds for every future fact, and the compute comes back. But the risks are real and worth
+stating plainly:
+
+- **You may lose capability and not be able to see it.** With no concat arm, there is no A/B —
+  a regression will be attributed to whatever shipped next. *Mitigation: keep a concat-on
+  control arm inside the same generation.*
+- **Removing a crutch does not teach walking.** "No shortcut" is not a mechanism for making the
+  entity path good; it can equally produce a strictly worse model that merely has a tidier
+  architecture.
+- **It is retrain-class and irreversible in practice.** Which makes the A/B expensive, which
+  makes skipping it tempting — the exact pressure pre-registration exists to resist.
+- **Path dependence cuts both ways.** Delete it and every subsequent result is measured on the
+  new stack; the counterfactual gets more expensive with every generation.
+
+The middle path worth taking seriously is **scheduled removal** rather than a cliff: anneal
+concat dropout upward across training. That applies *pressure* (Part 5, lever 3) instead of
+merely offering *availability*, keeps a measurable capability floor while the entity paths grow,
+and yields a **dose-response curve** — which is far more informative than a single on/off A/B.
+
+---
+
+## Part 7 — A case where delivery is NOT the cause: incoming vs outgoing
+
+Worked example of how to **rule out** the delivery hypothesis, because the instinct "it reads low
+because we hand it to the head" is the first thing this note makes you reach for — and here it is
+wrong.
+
+**The observation.** In human gen3ou, incoming damage drives the core pattern *defensive pivot →
+offensive pivot*. Our model prices incoming far below outgoing:
+
+- P1 concat blocks: OUTGOING per-action **65.7%** of the ceiling, v39 attacker matrix 21.4%,
+  v34 defender matrix 6.3% — against incoming matrix 15.4%, incoming per-mon 12.7%, CB 2.9%,
+  incoming effect 1.2%, incoming secondary 0.1%. Roughly **⅓ of dependence, ~64% of the op's
+  batch compute.**
+- gen-2 trained edge audit: d2 **23.8%** flips and d1 10.1% (both OUTGOING) against d4 2.1% and
+  d3 ≈ decorative (both INCOMING).
+
+**The decisive test — the asymmetry is INVARIANT to delivery form.** Incoming and outgoing sit in
+the *same* concat, and the concat's own blocks differ 3–5×. A property of the channel cannot
+explain a difference *within* the channel. Then the edges reproduce the same ordering in a
+completely different channel. Two independent delivery forms, same ranking ⇒ **the cause is the
+content, not the route.**
+
+> **General rule: to test "the delivery form caused it," find a second delivery form. If the
+> effect replicates across forms, the form isn't the cause.**
+
+**Four candidates that do survive, ranked by evidence:**
+
+1. **Information asymmetry (strongest).** Outgoing physics is EXACT — our moves, our stats.
+   Incoming is BELIEVED. And the measured failure lands exactly there: across healthy-mon
+   single-turn OHKO deaths the belief fired (pko ≥ 0.7) only ~10–20% while **under-reading
+   (pko < 0.3) ~53–61%**, because the killer had just switched in with an unrevealed moveset.
+   Down-weighting a channel that goes silent precisely when it matters is **correct Bayesian
+   behaviour**, not laziness.
+2. **Counterfactual credit assignment.** Offense produces a realized event (they faint; material
+   PBRS fires). Defense produces a **non-event** — the damage you didn't take. A return-based
+   estimator sees the first densely and the second only diffused into later returns. This is the
+   documented defensive/positional value blindness that motivated v43 `--pubval-mode`.
+3. **It is a TWO-PLY PLAN, i.e. the amortization gap.** *Defensive pivot → offensive pivot* pays
+   at ply 2; ply 1 alone looks bad (tempo surrendered, chip taken). A one-step amortized policy
+   scores each decision on its own expected value. More *information* about incoming damage
+   cannot manufacture a plan — see [[pbs_value_functions_and_search]] §0.5, and note that every
+   null in this family varied information while none varied computation per decision.
+4. **Self-confirming measurement.** Ablation dependence is measured on the policy's OWN state
+   distribution. An offense-leaning policy visits states where offense decides, so a feature that
+   would matter for a behaviour it doesn't exhibit reads inert. Dependence answers *"does this
+   change what I do here,"* not *"would this matter if I played differently."*
+
+**The premise may also be partly an aggregation artifact.** Conditioned on the threat being real
+(slower), switch-rate climbs monotonically **22% → 38%** with pko, while conditioned on faster it
+is correctly flat ~20%. So the policy *does* respond to incoming where it fires; the aggregate
+dilutes it. And **switch RATE is a first-moment match that says nothing about pivot quality** —
+the model now switches 31.4% vs strong humans' 28.0% (under-switching is RESOLVED), which leaves
+*which* pivot and *in what sequence* entirely unmeasured.
+
+### MEASURED 2026-08-07 (gen-3 @9.6M, `tmp/incoming_conditional_probe.py`, `tmp/oracle_belief_voi.py`)
+
+**FIRST — the premise itself is stale for this generation.** gen-2/gen-3 run the incoming matrix
+but **NOT** the v34/v39 outgoing matrices (op `out_dim` 660 = incoming 85 + outgoing/status 53 +
+`in_matrix` 522), so P1's "outgoing dominates" was measured on a block set this generation does
+not have. Width-fair (**shuffle** control: permute the slice across states — same width, same
+marginals, state-specificity destroyed), 6000 states:
+
+- `in_matrix` (incoming per-move, 522d) — **16.27%** flips
+- `out_active` (outgoing per-move, 45d) — 6.25%
+- `in_permon` (incoming per-mon, 72d) — 4.52% · `in_cb` 1.28% · `out_status` 1.00%
+- whole concat — 18.58%
+
+So **in the HEAD CONCAT, incoming DOMINATES** (~2.6× the outgoing block), while in the EDGES
+outgoing dominates (d2 23.8% / d1 10.1% vs d4 2.1% / d3 decorative). That division of labour is
+exactly what Part 6's channel argument predicts: **absolutes** ("does this kill me") ride the
+channel that carries absolutes; **relational ranking** ("which target, which move") rides the
+channel that carries ratios. Note also how much the zero-vs-shuffle gap matters — `in_matrix`
+reads 24.15% zeroed but 16.27% shuffled, i.e. **a third of the naive number was the mean shift
+from blanking 522 dims**, which is the perturbation-mismatch confound Part 6 names.
+
+**THE RELATIVE WEIGHT ON gen-3 @9.6M** (`edge_ablation_audit`, the SAME 6000 states). Against the
+`concat_cells` ceiling (the op fully out of the heads: kl 0.637 / 37.8% flips):
+
+- **op head-concat** kl 0.244 / **23.7%** flips / |dV| **5.67** → **38% of the KL ceiling**
+- **all 15 edge families** kl 0.101 / **13.9%** flips / |dV| 1.86 → **16%**
+- families, by flips: **d2 7.63% · d1 6.05%** · v 2.90% · d3 1.85% · d4 1.10% · s3 0.85% ·
+  s1 0.83% · t 0.65% · c1 0.38% · c2 0.35% · x 0.33% · c3 0.25% · c5 0.23% · g 0.12% · c4 0.05%
+  (d1+d2 alone are 76% of the summed edge KL; the individual rows sum well above the 13.9%
+  all-off arm, i.e. the families are **redundant**, and marginal ablation understates each)
+
+Split by DIRECTION, and the two channels disagree by construction:
+
+- inside the **concat** (shuffle-controlled flips): incoming 22.1 vs outgoing 7.3 ⇒ **~75%
+  incoming**
+- inside the **edges** (summed KL): outgoing ≈ 0.080 vs incoming ≈ 0.003 ⇒ **~92% outgoing**
+- composed (illustrative — marginal arms do NOT partition, and concat+edges overlap):
+  **≈50% outgoing / ≈48% incoming / ≈2% speed-board**, with each direction living in the channel
+  that suits it.
+
+The critic split replicates gen-1/gen-2: |dV| **5.67 concat vs 1.86 all-edges** (base V σ 14.9) —
+the value head leans on the concat ~3× harder than on every edge combined.
+
+**EXPERIMENT 1 — the dilution hypothesis is REFUTED.** Restricting to THREAT states (slower ∧
+active pko ≥ 0.5 ∧ legal switch ∧ a safe pivot ≤ 0.35 — 8.1% of states, mean pko 0.87) leaves
+shuffle-controlled dependence **unchanged**: threat/all flip ratios `in_permon` **1.02×**,
+`INCOMING_all` **1.06×**, `out_active` 1.02×, `in_matrix` 0.76×. There is no concentrated
+signal hiding under the average. The policy *is* behaviourally responsive in those states —
+switch mass **0.529 → 0.715**, entropy 1.271 → 1.084 — so the old inversion really is gone.
+
+**EXPERIMENT 2 — information is NOT the binding constraint.** A **look-ahead oracle** (per
+battle, the union of every move each opponent species is ever seen using, fed through
+`MoveBelief.move_logits`' existing reveal-pinning path) on the 44% of states where the OPP
+ACTIVE gains ≥1 move: policy KL **0.128**, **19.3% argmax flips**, |ΔV| 1.62 (base V σ 14.9),
+active P(KO) 0.2575 → **0.2917**. So the physics updates and the policy genuinely moves. But:
+
+- **switch mass 0.4817 → 0.5003 (+0.019)** — better incoming information flips a fifth of the
+  actions and shifts *pivoting* by under two points;
+- **head dependence on the incoming blocks does NOT rise** in the oracle world (`in_permon`
+  7.00% → 7.45%, `INCOMING_all` 7.15% → 7.45%, `in_matrix` 30.1% → **29.6%**).
+
+⇒ cause **1 (belief noise) is not supported as the reason incoming looks under-used**: making the
+belief more reliable does not make the head lean on it more, and does not make the policy more
+defensive. The weight shifts to **2 (counterfactual credit assignment)** and **3 (the two-ply
+plan)**.
+
+**Caveats, held honestly.** gen-3 @9.6M is EARLY (gen-1's dependence grew ~3× from 9.6M → 40M),
+so levels are mid-curve — but the conditional/oracle comparisons are *within* one checkpoint,
+which is what those two experiments need. The oracle is **partial** (moves never used all game
+are absent, +0.20 moves per revealed mon overall), so every VoI number is a **lower bound**. And
+ablation KL is still **use, not value**.
+
+**Still open — the third experiment.** `better-line --depth 2+`: does the search find
+pivot-then-threat lines the policy misses, and do they win? That measures the *plan* gap rather
+than the *information* gap — cause 3, whose lever is a teacher, not an obs block. The
+**win-rate** half of experiment 2 is also unrun: it needs the oracle threaded through live
+battles, a substantially bigger build than the offline probe.
+
+---
+
 ## Synthesis
 
 Feeding a computed feature straight to the head is a **plus** exactly when the feature is
@@ -323,6 +729,15 @@ The practical discipline is three rules:
 3. **Bias the simplicity bias.** Since the easiest route wins, spend the design effort making the
    structurally-correct route the easiest one, rather than trying to force the model up the hard
    one.
+4. **Ask what a channel can physically CARRY, not whether it is expressive in principle.** A
+   normalized channel (softmax weights) transmits ratios; absolutes need token content or a
+   logit-adjacent read. Two paths compete only if they are substitutes — name the function only
+   the hard path can compute, or accept that you built a substitute.
+5. **Pre-register the branch AND the response, with the escape hatches named.** For an ablation
+   that decides a deletion: fix the metric, the arms (perturbation-matched, with a
+   mean-substitution or shuffle control and a both-off interaction arm), the threshold, the
+   non-inferiority margin for the follow-up A/B, and an explicit ban on *"wait longer"* /
+   *"do it anyway."*
 
 ## See also
 - [[pbs_value_functions_and_search]] §0.5 — **the one-level-up version of this note**: why the
@@ -336,5 +751,7 @@ The practical discipline is three rules:
   attention), the differentiable expert, the v51 pointer head
 - [[marginalization_and_uncertainty]] — why the operator marginalizes rather than mean-fields
 - [[on_policy_self_distillation]] — the ~1-bit-per-game accounting and the dense-signal alternative
+- `designs/ai_v9/design_generation_roadmap.md` §3 — the **concat end-state decision rule** as
+  recorded pre-gen-3, plus the gen-1/gen-2/gen-2.5 edge-and-concat audit numbers Part 6 cites
 - `designs/research_state/ledger.md` → K9 / K10 / K10a / P1 / M1 — the primary result records
 - `src/main/prober/CLAUDE.md` — the `probe` representation-probe harness (test **b** above)

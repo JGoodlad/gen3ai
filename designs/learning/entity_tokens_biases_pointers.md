@@ -32,6 +32,11 @@
   attention is O(n²) in tokens, and *we measured that structure is not automatically a win* —
   physics-into-the-trunk was NULL 3-for-3 (ledger K9/K10) while the crude flat head-concat
   carried the policy's largest dependency (P1).
+- **Edges route; they do not transmit magnitude.** Softmax normalizes the row, so a bias moves
+  *who attends to whom* but delivers a **ratio**, not "53% of max HP". Absolutes need **token
+  content** (`prefuse_proj`) or **per-action cells** (`pointer_cells`) — which is why the flat
+  op head-concat is still the policy's largest dependency even as the edges grow
+  ([[shortcut_learning_and_feature_delivery]] Part 6).
 - **Expected damage lives on an EDGE**, because it is a property of the (move, defender, board)
   **triple** — an *activation* recomputed every forward, never a weight. The move token carries
   only invariants (BP/type/category/accuracy); randomness rides as a distribution summary
@@ -48,9 +53,13 @@
 - **Edges ROUTE; they never carry payload.** A softmax row is shift-invariant, so a bias can
   only express *contrast within a row* — never a level, never a magnitude past the point the
   row saturates. Magnitude reaches the decision through the **pointer cells** (exact, per-action)
-  and the critic through the **op concat**. That is why we run three routes, and why the first
-  real family audit (gen-1 @9.6M) reads **outgoing dominant, incoming near-decorative** — a
-  replication of the ledger's P1 shape, with three falsifiable explanations in §6.2.
+  and the critic through the **op concat**. That is why we run three routes, and why every
+  real family audit reads **outgoing dominant, incoming near-decorative IN THE EDGES** — a
+  replication of the ledger's P1 shape, with the explanations (two now tested) in §6.2. The
+  direction split **inverts by channel**: in the concat, INCOMING dominates (gen-3 @9.6M,
+  shuffle-controlled: `in_matrix` 16.27% vs `out_active` 6.25%), which is exactly what the
+  routing-vs-payload argument predicts — absolutes ride the payload route, ranking rides the
+  routing one.
 - **The heads are a severe funnel** (§6.5): 35 seats → three pooled 128-vectors for the policy and
   **one** for the critic. The op concat is the only un-pooled route for *both*; the pointer head is
   a second un-pooled route for the *policy only*. v51 made the policy entity-native and left the
@@ -266,6 +275,307 @@ representation would have to re-derive it from evidence scattered across separat
 3. **Make the model learn it.** We deliberately do not. (See `[[objective_richness_and_representation]]`
    and the provide-vs-learn principle: give the model raw KNOWN facts; don't make it
    rediscover arithmetic.)
+
+### What each route can physically CARRY — routing vs magnitude
+
+The three routes are not interchangeable, and the difference is not "how much capacity" but
+**what kind of quantity survives the channel**.
+
+Attention computes `out_i = Σ_j α_ij·V_j` with `α_ij = softmax_j(q_i·k_j/√d + b_ij)`. The edge
+bias enters **only** through the logits, and the softmax **normalizes the row**. Three
+consequences:
+
+1. the output lies in the **convex hull of the values** — if the values are equal, no bias
+   changes anything;
+2. `α_ij` depends on every other `b_ik` in the row, so what survives is a **ranking / ratio**,
+   not a scale — the same "53% of max HP" reads differently depending on what else is on the
+   board;
+3. the softmax **saturates**, and the bias shares its scalar channel with content routing
+   (`q·k`), so magnitude and relevance compete for one number per head.
+
+> **An edge bias can route attention; it cannot by itself deliver an ABSOLUTE magnitude into the
+> residual stream.** The two entity-native channels that can are **token content** (`prefuse_proj`
+> writing the op's per-mon rows onto role tokens — then an MLP can *threshold* it against HP,
+> which is what P(KO) actually is) and **per-action cells at the logits** (`pointer_cells`).
+
+This is a capacity/conditioning claim, not an impossibility proof — a model *can* dedicate a
+head with near-constant keys so the bias row alone drives `α`, and read magnitude back out of
+the attention weight; it just pays a head for a relative, saturating, ill-conditioned code.
+The practical consequence is the measured one: the v56 edge system is **load-bearing and
+growing**, yet zeroing the op's flat head-concat still flips **more** actions than turning
+**every** edge family off (gen-1 35.5% vs 26.9%; gen-2 33.1% vs 31.5%). The edges added a
+capability the concat never had; they did not replace the one it does have. The full treatment —
+the audit table, the pre-registered delete-vs-re-home decision rule, and the four confounds —
+is in [[shortcut_learning_and_feature_delivery]] Part 6.
+
+### How to actually DELIVER a magnitude (the three questions)
+
+If an edge bias can't carry "53% of max HP", what does? Delivering a number into an entity model
+is three separate decisions, and they are usually conflated:
+
+**1. WHERE does it live — which entity OWNS the number?**
+
+A token is *one* entity; damage is a property of a **(move, defender, board) triple**. So a
+per-pair number cannot be "put on a token" without a decision. The ladder, cheapest first:
+
+- **Collapse onto one endpoint.** Put the row on the defender ("worst incoming I face") or on
+  the move ("best damage I deal"). Cheap, and *fine for axes you are not choosing over* — but it
+  is exactly the axis-rule violation when you are. `prefuse_proj` is this: the op's per-our-mon
+  incoming row, collapsed over the attacker axis, added to our 6 role tokens.
+- **Promote the PAIR to a token.** If the pair axis matters, make the pair an entity — this is
+  AlphaFold's pair stack, and the same move E3/E4 already make for moves. Costs O(n²) seats.
+- **Edge bias.** Keeps the pair axis at zero token cost, but delivers a *ratio* (above).
+- **Per-action cell at the logit.** Lossless, but reaches only the score — the trunk never sees
+  it, so nothing else can reason over it.
+
+The reason to attach a number to the entity's own token rather than a free-floating "physics
+token" is **binding**: a free-floating number recreates the exact problem entity models exist to
+solve (which number goes with which mon).
+
+**What promotion actually COSTS (measured 2026-08-07, `entity_spike_benchmark.py`).** Production
+today is **n = 29** seats (12 team + 1 global + 4 E3 + 6 E4 + 6 E5 tail — `EntitySeats.n_seats`
+= `4 + topk_seats + TEAM_SIZE`). Promoting the pair cells that D1/D3 *already compute* adds:
+our-4-moves × their-6-mons = **+24** (n=53); their-K=6-moves × our-6-mons = **+36** (n=65); both
+= **+60** (n=89). Trunk-only, B=1, threads=1 (the PFSP env-worker regime):
+
+- n=29 → biased **0.411 ms** eager / 0.522 compiled
+- n=53 → **0.589** (+0.178) / 0.649 (**+0.127**)
+- n=65 → **0.689** (+0.278) / 0.775 (+0.253)
+- n=89 → **1.282** (+0.871) / 1.067 (**+0.545**)
+
+Growth is **far sub-quadratic** — 3.07× the tokens costs 3.12× eager / **2.04× compiled**, against
+a 9.4× quadratic prediction — because extra seats are *bigger tensors in the same graph*, not more
+dispatches. Against the ~4.6 ms full B=1 prefused forward that is **~+3%** for one direction and
+**~+12%** for both. Two things make the real cost lower than the seat count suggests: the
+**physics is already paid for** (`pairwise_outgoing` → `[B,4,6,6]`, `pairwise_incoming` →
+`[B,K,6,5]`, both computed for the D1/D3 edge families — promotion is a reshape plus one Linear),
+and **`--compile-extractor` widens the margin as n grows** (compiled scales 2.04× where eager
+scales 3.12×). *Caveat: the benchmark's B=256 CPU column is a poor learner proxy — the learner
+runs on CUDA, where an n=89 attention is trivially parallel.*
+
+**⚠️ WIDEN THE RIGHT SEAT — the per-mon row is the COLLAPSE of the block that matters.**
+`prefuse_proj` today injects `Linear(_DMG_PER_MON=12 → D_MODEL)` of the per-OUR-mon incoming row
+onto our 6 role tokens — i.e. exactly the `in_permon` content, which is the worst-case collapse
+over the opponent's move axis. Measured on gen-3 @9.6M (shuffle-controlled flips): that collapse
+is **4.52%** while the un-collapsed `in_matrix` it summarises is **16.27%** — the model uses the
+un-collapsed form **~3.6×** more. So "widen the per-mon injection" delivers more of the block the
+policy leans on LEAST, and *cannot* carry the dominant one without re-collapsing the very axis
+that makes it useful (the axis rule, [[shortcut_learning_and_feature_delivery]] Part 2).
+The version aimed at the measured target is to widen the **E4 threat-move seats** instead: the
+incoming matrix is indexed (opp believed move *k*, our mon *j*), and an E4 seat already *is*
+move *k* — so seat *k* carries its own 6-defender row (≈36 floats into `threat_seat_proj`, whose
+content is `MOVE_LATENT_DIM + 3` today). No collapse, no new seats. Residual defect: the 6
+per-defender cells inside a seat are ordered by our team slot, so that axis stays positional.
+
+**FOUR ways to keep an axis you cannot concatenate, and only one of them is bad.** When a fact is
+indexed by an axis (here: which of our 6 mons) and the seat is a fixed-width vector, the choice is:
+
+| Way | Equivariant? | Keeps identity? | Full expressiveness? | Cost |
+|---|---|---|---|---|
+| **Concatenate in slot order** | ✗ | ✓ | ✓ | free — but positional |
+| **Canonicalize** (sort by content; or index the ONE distinguished element — the ACTIVE) | ✓ | sort: ✗ · active: ✓ | ✓ | free; sorting is discontinuous at ties |
+| **Attend over it with PAIR VALUES** | ✓ | ✓ | rank-`n_heads` | one small cross-attention |
+| **Promote the pair to tokens** | ✓ | ✓ | ✓ | O(n²) seats |
+
+The third is the one worth knowing, because it dissolves the Part-3 "edges carry only ratios"
+limit **without** giving up equivariance. Shaw et al. 2018 (relative position representations)
+adds a per-pair term to the **values**, not just the logits:
+`out_j = Σ_k α_jk · (W_v · seat_k + W_p · cell_{k,j})`. Since `Σ_k α_jk = 1`, the second term is a
+**convex combination of the cells — an average of real HP-fractions, still an absolute**, unlike
+`α` itself. One shared `W_p` over every (k, j) ⇒ equivariant in both axes. The reduction it
+performs is a *learned, query-conditional* soft-max over the move axis rather than a fixed hard
+max, so it strictly dominates the `in_permon` collapse; what it gives up versus concatenation is
+that `n_heads` weighted means are a rank-`h` view of the 6 cells, not an arbitrary function of
+them — the standard "equivariance costs expressiveness" trade this note names in the TL;DR.
+And the cheapest order-free increment needs none of it: **the ACTIVE defender is a distinguished,
+content-addressed slot**, so one cell per E4 seat (`this believed move vs me, right now`) carries
+an absolute with no axis at all.
+
+**The near-free alternative to promotion: widen the seat you already have.** An E3 move seat can
+carry its whole 6-defender row **as content** (36 floats → the existing `move_seat_proj`), and an
+E4 threat seat its 6-our-mon row. That un-collapses nothing, costs **zero new seats** (so no n²
+growth at all), and puts the absolutes in the stream. What it does *not* buy is a pair that can be
+attended to individually or serve as a pointer target — which is the only thing real promotion
+adds. Try the widening first; promote only if the pair needs to be an attention target.
+
+**2. WHAT do you deliver — which TRANSFORM of the number?**
+
+This matters more than placement and is the cheapest thing to get right.
+
+- **Choose units so a comparison becomes a constant.** The op already reports damage as a
+  **fraction of the defender's max HP** (`_rolls` → `high_frac`/`low_frac`/`crit_frac`), which is
+  the right instinct: a shared denominator turns "compare two numbers" into "read one number."
+- **Precompute every nonlinearity of two numbers in the expert.** `pko = acc · P(KO | hit)`
+  compares damage to *current* HP inside the operator, so the network never has to locate two
+  scalars and threshold them. This is the single highest-value habit in the whole design.
+- **Probabilities SATURATE; margins don't.** `pko` is flat at ~0 across "barely survives" and
+  "survives comfortably" — but that difference is exactly what decides whether to switch. A
+  signed **margin** channel (`high_frac − hp_frac`: >0 means dead) carries the gradient the
+  probability throws away, and thresholds at a constant 0. *Proposal — not yet built.*
+- **Deliver a distribution, not a point.** `[low, high, crit, pko]` already does this
+  ([[marginalization_and_uncertainty]]).
+
+**3. HOW is it encoded and injected?**
+
+- **A raw float in one dim is the weakest form.** It is one coordinate out of `D_MODEL`, it must
+  survive LayerNorm (which rescales the whole residual, so an absolute becomes an absolute
+  *relative to the vector's norm* — far better than softmax's per-row normalization, but not
+  free), and an MLP has to carve a sharp threshold out of a single low-frequency coordinate.
+- **Resolution is a real, fixable problem.** Sinusoidal / random **Fourier features** of the
+  scalar (Tancik 2020) or **soft-binning** (the same trick as the `ValueDistHead`'s HL-Gauss
+  target, applied to an *input*) make a threshold one linear cut away instead of a
+  high-frequency function to be learned. **We do this nowhere on inputs today** — every physics
+  scalar enters as a raw float. *Untested here; cheap to try.*
+- **Inject additively through a zero-init Linear** (`prefuse_proj`'s pattern): identity-at-init,
+  clean A/B, and the number lands in a learned subspace instead of displacing existing geometry.
+  Multiplicative/FiLM injection is the alternative when the number should *scale* a token's
+  influence rather than add a fact to it.
+
+### What a POINTER TARGET is — and what pair tokens would and wouldn't be
+
+A pointer head (Vinyals 2015) does not score a fixed output vocabulary; it scores **elements of
+its own input set**, so the action space is *defined by* the tokens present. v51's
+`PointerNativeActionHead` is exactly this: move logit *k* is read from the E3 seat of request
+slot *k*, switch logit *j* from our-team token *j*. A **pointer target** is a token whose
+representation *becomes* a logit.
+
+Three nuances that decide when the pattern applies:
+
+- **The targets must be in bijection with the actions.** A token can only be a pointer target if
+  choosing it *is* an action. Our space is 4 moves + 6 switches + struggle, and those are exactly
+  the 11 targets.
+- **The scorer is SHARED across targets.** That sharing is where equivariance comes from — a
+  per-target scorer would just be the flat positional head again. Consequence: two targets with
+  identical content necessarily get identical logits (correct for genuinely symmetric options),
+  so **everything that distinguishes action *k* must be inside token *k***. That requirement is
+  precisely why `pointer_cells` exists.
+- **A target can be a SET of tokens**, pooled — but then the pooling is an extra learned step
+  between the tokens and the logit, and the binding (which tokens belong to action *k*) must be
+  structural.
+
+**So: would promoted (move × defender) pair tokens be pointer targets? No.** Gen-3 singles has no
+pair-shaped action — you choose Rock Slide; *they* choose who is in front of it. (Doubles/VGC,
+where you pick a target, is where the pair genuinely becomes a pointer action.) Pair tokens would
+be **aggregation substrate for the trunk**, not new pointer targets — and that places them in the
+same intervention family as physics-into-the-trunk, which measured NULL 3-for-3 (ledger K9/K10).
+
+**And the P1 dependence table says the axis promotion would buy is the WEAKER one.** The
+attacker axis reads far higher than the defender axis: v39's our-6-mons × their-active matrix at
+**21.4%** of the ablation ceiling against v34's our-4-moves × their-6-mons at **6.3%** — while
+the single-active per-action OUTGOING block dominates at 65.7%. The attacker axis is *already
+entity-native* (our 6 mon tokens exist), so the fact the policy demonstrably uses needs no new
+seats; the fact promotion would deliver measured near-inert. (Caveat: P1 predates the pointer
+head and the edges, and marginal ablation understates redundant blocks.)
+
+The pointer-native way to deliver a defender row is therefore **content-widening, not
+promotion**: put the row inside move token *k*, where the shared scorer already reads it. A pair
+token would need a pooling step to get back to a per-action quantity the head can use.
+
+One cost that is easy to miss: **attention dilution.** Every added seat is another competitor in
+every existing query's softmax. Adding 24–60 low-information seats spreads attention mass at
+`d_model=128` / 4 heads, and that is a real risk term with no line in the FLOP budget.
+
+### WORKED EXAMPLE — "Salamence is in, they'll Ice Beam, switch to Blissey"
+
+The core gen3ou defensive pivot, decomposed into what the architecture must actually compute:
+
+1. **Threat selection** — which move will they use? Approximately `argmax_k damage(k → our
+   CURRENT active)`, weighted by the moveset belief. Note this is a *policy* belief about the
+   opponent, not the moveset belief the `MoveBelief` head predicts.
+2. **Cross-evaluation** — that move's damage to each candidate switch-in *j*. **The twist that
+   makes this hard: the move is SELECTED by its relevance to the current active but EVALUATED
+   against a different mon.** Two different indices.
+3. **Ranking** over *j*.
+
+**Where each piece lives.** `_incoming_matrix` has everything — cell `(k, j)` is exactly step 2,
+and cell `(k, our_active)` is exactly step 1. But it reaches the policy only through the flat
+concat → `latent_pi`, i.e. as **shared context**, identical for every action. What reaches the
+switch LOGIT per-action is `pointer_cells`' switch cell = the **collapsed** incoming row
+(`max_k` per defender) + the CB tail. That collapse takes an INDEPENDENT max per defender, so it
+answers *"worst case for Blissey over all their moves"* — decorrelated from the move they are
+actually about to use. **The one number that answers the question is computed in the op and then
+thrown away before it reaches the logit.**
+
+**Is it representable anyway? Yes — the scorer is Bahdanau-style.**
+`switch_j = W · tanh(W_p·[token_j ⊕ cell_j] + W_c·latent_pi)`, `POINTER_HIDDEN` = 64. The `tanh`
+sits AFTER the sum, so `∂score_j/∂(per-action features) = sech²(·)` depends on the context — the
+shared context genuinely *can* re-rank candidates (a linear scorer could not: a shared additive
+term cancels in the argmax). So the competency is expressible. It is just expressible only by
+RE-DERIVING type effectiveness and bulk from `latent_pi × token_j` — relearning physics the op
+already computes exactly, at rank ≤ 64, from a sample-starved RL signal.
+
+**The minimal sufficient representation — the CONDITIONAL THREAT CELL.** Per switch candidate
+*j*, ~4 floats added to the pointer switch cell:
+
+&nbsp;&nbsp;`w_k = softmax_k( λ · damage(k → our_active) + log belief_k )`  (who they'll aim at us)
+&nbsp;&nbsp;`cell_j = Σ_k w_k · [high(k,j), pko(k,j), type_mult(k,j), status_lands(k,j)]`
+
+Every term already exists inside `_incoming_matrix`. It is **order-free** (k is chosen by content
+via a soft-argmax, j is the action's own entity — no positional axis anywhere),
+**magnitude-carrying** (an HP fraction read affinely at the logit), differentiable (no hard
+gather), and it is literally the human computation *"what's coming, and who takes it best."*
+A LEARNED temperature λ is the elegant part: λ→0 is the paranoid worst-case opponent, λ→∞ the
+greedy one, so the model discovers how rational to assume the opponent is instead of being told.
+
+**Honest residuals.** (a) It assumes the opponent aims at the current active — real players aim
+at the predicted switch-in, and λ only partly absorbs that. (b) It is still a soft reduction over
+k; the full joint at the logit needs the pair-value cross-attention or pair tokens above. (c) It
+covers only the DEFENSIVE half — and gen-3 runs `damage_matrices_outgoing_all: False`, so the
+switch cell carries **no offensive information about the switch-in at all**; "defensive pivot →
+offensive pivot" is missing its second half at the per-action path, not just its plan.
+
+### The MIRROR — "they'll switch out, so hit the switch-in"
+
+The same object, transposed. Incoming: soft-select THEIR move by its threat to OUR active,
+evaluate against OUR switch-in candidates. Outgoing: soft-select THEIR switch-in by how well it
+answers OUR threat, evaluate OUR moves against it. **One mechanism — marginalise over the
+opponent's action with a learned rationality temperature — applied on two axes.**
+
+**The mechanical fact that shapes the representation: gen-3 is SIMULTANEOUS-move.** They commit
+without seeing our move, so `P(they switch)` is **ONE scalar for the turn**, not a per-move
+quantity. What is per-move is the *consequence*: a KO move is wasted into a switch; Spikes /
+Toxic / setup are BETTER into a switch; Pursuit is the explicit punish (already modelled as the
+X edge). And switches resolve before moves, so our move lands on the incoming mon.
+
+**The switch belief, in three factors — all from kernels that already exist:**
+
+1. `p_switch ≈ σ(α · danger + β · bench_answer_quality − γ) · (1 − p_trapped)` where `danger` =
+   our best `pko` vs their active (the outgoing block) and `p_trapped` is the **T edge**
+   (`pairwise_trap`, Smogon-prior for unrevealed abilities). Dugtrio is why the trapping gate is
+   not optional in gen3ou.
+2. `q_b ∝ exp(−μ · E[damage(our threat move → b)] + ν · threat(b → our active)) · alive_b` — WHICH
+   mon comes in, the mirror of our own pivot choice.
+3. `X_switch(k) = Σ_b q_b · X(k → b)` from `pairwise_outgoing` `[B,4,6,6]` — already computed for
+   the D1 edges.
+
+**⚠️ The unrevealed marginalisation is NOT optional here.** v34's outgoing matrix is
+REVEALED-gated (unrevealed opp slots zeroed), so a revealed-gated `q_b` reads ≈0 early — exactly
+when switching is most frequent — and the model concludes "my move always lands on the active."
+That is the same GIGO class as the typeless-HP "immune" bug. The fix exists: v36's
+expected-latent defender (`SPECIES_EXP_MULT` ⊕ `SPECIES_SPREAD_PRIOR` marginalised through the
+species belief) — but it rides `--threat-refine-outgoing`, hence `--damage-refine-rounds > 0`,
+which the prefuse config sets to 0, so **it is inert in gen-3**.
+
+**The robust per-move form: keep the two branches DECORRELATED, do not pre-blend.** Per move *k*:
+`[X(k → their active) …, X_switch(k) …]` plus the one shared `p_switch` scalar — never
+`(1−p)·stay + p·switch` collapsed into one column. Three reasons: the head can learn its own
+effective `p_switch` rather than inheriting the op's guess; the *difference* between branches is
+the strategically meaningful quantity ("this move is only good if they stay"); and it is the
+convention the C2 status-consequence edge already follows (raw deltas decorrelated from `land`,
+so the head composes consequence × probability itself). A `pko(k → active) · p_switch` "wasted
+KO" channel is the natural fourth column.
+
+Order-freeness comes for free: `Σ_b q_b · X(k,b)` is a **convex combination over their bench** —
+permutation-invariant in *b*, magnitude-preserving (still an HP fraction), differentiable, and
+indexed per-move by *k*, which is the action's own entity. No positional axis, same as the
+incoming conditional cell.
+
+**What gen-3 is missing today.** The move cell in `pointer_cells` is
+`[low, high, crit, pko, p_land, known, sec×10]` — **vs their ACTIVE only**. The switch branch is
+not in the per-action path at all; it exists only as a D1 *edge* (ratios, revealed-gated, #2
+family at 6.05% flips). So "punish the switch" has no magnitude route to the move logit. Note
+also that this is why several edges read decorative: **the X (Pursuit) and T (trapping) edges are
+priced but nothing consumes them** — a switch-branch cell would give both a consumer.
 
 ### The deeper principle: the differentiable expert
 
@@ -856,6 +1166,14 @@ flips / \|ΔV\| 2.18), then d1 (0.108/10.1%), v (0.012/6.3%), d4 (0.004/2.1%), s
 (0.0018/1.8%). **Near-decorative at 40M: d3, s3, x, g and c4** (c4 ≈ 0.00002 — the Protect edge
 never got used). All-off = **0.491 / 31.5%**.
 
+**Gen-3 @9.6M (all fifteen families, 6000 states — `tmp/edge_audit_gen3_9p6M.json`):** d2 7.63%
+flips, d1 6.05%, **v 2.90%** (the first read on TRUE speed physics, post-v58), d3 1.85%, d4 1.10%,
+s3 0.85%, s1 0.83%, t 0.65%, then c1 0.38% / c2 0.35% / x 0.33% / c3 0.25% / c5 0.23% / g 0.12% /
+c4 0.05%. All-off 13.9%; **concat 23.7% (a FOURTH replication) and `concat_cells` 37.8%**, with
+|ΔV| **5.67 concat vs 1.86 all-edges**. Early-curve levels (gen-1 grew ~3× from 9.6M → 40M), but
+the SHAPE is the same, and the concat sub-block split is new: **incoming ≈75% of concat dependence
+against outgoing ≈92% of edge dependence.**
+
 Same outgoing-dominant shape as ledger P1, now on a third independent architecture. And d2 — a
 *bench-offense* family — carrying the largest \|ΔV\| is exactly what the route table predicts: the
 critic has no pointer head, so an edge is one of only two ways board physics reaches it.
@@ -875,14 +1193,36 @@ too and stayed near-decorative in absolute terms (d3 0.0009 → 0.0021). So imma
 **level** at 9.6M, not the **asymmetry**.
 
 **E-a (redundancy) — now the leading story, and the concat arm supports it.** Incoming physics has a
-lossless per-candidate route into exactly the logit it should drive (the pointer switch cells), and
-the concat arm shows the flat block is *still* carrying more than the entire edge system. The edges
-did not absorb it; they added on top. Marginal ablation of one redundant route under-reads by
-construction. *Test still open:* joint ablation — zero `d3_map` AND the op's incoming concat rows AND
-the pointer switch cells, and see whether the joint effect vastly exceeds the sum of marginals.
+per-candidate route into exactly the logit it should drive (the pointer switch cells), and the concat
+arm shows the flat block is *still* carrying more than the entire edge system. The edges did not
+absorb it; they added on top. Marginal ablation of one redundant route under-reads by construction.
+*Test still open:* joint ablation — zero `d3_map` AND the op's incoming concat rows AND the pointer
+switch cells, and see whether the joint effect vastly exceeds the sum of marginals.
 
-**E-b (dilution) — untested.** Stratify the audit by decision type (switch legal and in the top-2;
-high-entropy; forced-switch). Still cheap, still worth doing.
+> ⚠️ **Correction (2026-08-07): that per-candidate route is NOT lossless.** The pointer switch cell
+> carries the **collapsed** incoming row — an INDEPENDENT `max_k` per defender — so it answers
+> "worst case for this mon over all their moves", decorrelated from the move actually incoming. The
+> un-collapsed `(their move k, our mon j)` cell exists only in `_incoming_matrix`, which reaches the
+> policy as *shared context* via the flat concat, never per-action. See the WORKED EXAMPLE in Part 3
+> and `designs/ai_v9/design_conditional_opponent_cells.md` (C6) for the fix.
+
+**E-b (dilution) — TESTED 2026-08-07, REFUTED.** `tmp/incoming_conditional_probe.py` on gen-3 @9.6M
+(6000 states) restricted the op-block ablation to THREAT states (slower ∧ active pko ≥ 0.5 ∧ legal
+switch ∧ a safe pivot ≤ 0.35 — 8.1% of states, mean pko 0.87). Shuffle-controlled threat/all flip
+ratios: `in_permon` **1.02×**, `INCOMING_all` **1.06×**, `out_active` 1.02×, `in_matrix` 0.76×.
+Dependence in the states where incoming damage decides is the **same** as everywhere else — there is
+no concentrated signal hiding under the average. The policy *is* behaviourally responsive there
+(switch mass 0.529 → 0.715, entropy 1.271 → 1.084), so this is not a "it never switches" artifact.
+
+**E-d (belief noise) — TESTED 2026-08-07, NOT SUPPORTED.** `tmp/oracle_belief_voi.py` feeds a
+look-ahead oracle (per battle, the union of every move each opp species is ever seen using) through
+`MoveBelief.move_logits`' existing reveal-pinning path. On the 44% of states where the opp ACTIVE
+gains ≥1 move: policy KL 0.128, **19.3% argmax flips**, |ΔV| 1.62, active P(KO) 0.2575 → 0.2917. But
+**switch mass moves only 0.4817 → 0.5003**, and head dependence on the incoming blocks does **not**
+rise in the oracle world (`in_permon` 7.00% → 7.45%, `in_matrix` 30.1% → **29.6%**). A more reliable
+belief does not make the head lean on incoming physics more, nor the policy more defensive. Weight
+shifts to counterfactual credit assignment and the two-ply plan. (Oracle is PARTIAL — moves never
+used all game are absent — so the VoI numbers are lower bounds.)
 
 **A GIGO caveat on the `v` rows, found 2026-08-06 (v58).** `pairwise_speed` and `pairwise_boost`'s
 outspeed read **stat index 4 — Special Defense — as "speed"** (bare-integer indexing across two stat
