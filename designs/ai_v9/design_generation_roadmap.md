@@ -136,7 +136,7 @@ endpoints to be seats in attention).
   stash source, pinned by the existing pointer tests); bench-K for E4 sized by the top-K
   probe template (§8 of the inventory), not guessed.
 
-### Stage 2 — the op re-delivered as attention EDGES; the concat dies
+### Stage 2 — the op re-delivered as attention EDGES (⚠️ the concat SURVIVES — see §3.8)
 
 The speculative core of the generation — concentrate the risk here, on purpose.
 
@@ -147,9 +147,13 @@ The speculative core of the generation — concentrate the risk here, on purpose
   `TransformerEncoderLayer` takes no per-pair float bias). Adds **D4** — their BENCH's
   believed moves × our mons ("after I KO, what comes in and what does it threaten"), the
   missing quadrant, affordable only under top-K truncation.
-- **Deletes:** the op's head-concat blocks and the v33/v36/v37 between-layers trunk residuals
-  (the refine loop) — per the deprecation playbook: build the edge home → mask → A/B at the
-  generation gate → delete.
+- **Deletes:** the v33/v36/v37 between-layers trunk residuals (the refine loop) — per the
+  deprecation playbook: build the edge home → mask → A/B at the generation gate → delete.
+  ⚠️ **The op's head-concat is NO LONGER deleted here** (OWNER AMENDMENT 2026-08-08, §3.8): it
+  survives Stage 2 *and* Stage 3 and dies LAST, behind a two-route precondition. Four
+  replications have now measured the concat arm flipping MORE actions than the entire edge
+  system, so Stage 2's edges were never its substitute — they do a different job (ratio vs
+  absolute).
 - **Risk (state it honestly):** physics-into-the-TRUNK measured NULL 3-for-3 (ledger
   K9/K10), while the HEAD-concat route carried the policy's largest measured dependency (P1).
   Edge biases are a bet that those nulls were about delivery-as-residual-injection, not about
@@ -374,6 +378,26 @@ accepted: the concat SURVIVES Stage 3 and dies LAST. Three corrections to the ru
      content now has an entity home" on its own.
   3. **The acceptance clause (was missing):** deletion requires the concat arm to fall below
      all-edges-off on **flips AND |dV|** — the |dV| clause is the critic guard.
+**READING NOTE (added 2026-08-08, reconciliation pass).** Point 1 above states two things that are
+not the same claim — *"PV **or** token-content injection"* (an OR over implementations) and *"PV is
+a required component"*. **The OR is operative**: what the precondition requires is a **CRITIC
+ROUTE**, and there are exactly two admissible implementations of it —
+  * **PV** (pair-value attention, Shaw's value term) — equivariant in BOTH axes, no new seats, and
+    the only option that also buys **cross-pair reasoning**; costs a new unfused side module and a
+    rank-`h` reduction of the row.
+  * **generalized token-content injection** (the `prefuse_proj` pattern extended to inject the full
+    per-mon op rows onto BOTH sides' tokens) — cheaper (shipped mechanism, no new module) and keeps
+    the full row, but pays for that by leaving the within-seat axis POSITIONAL (the cells inside a
+    widened seat stay ordered by team slot), in the generation whose premise is that positions are
+    not identities.
+
+"PROMOTED" therefore means **out of the optional tail and onto the critical path as one of the two
+candidates** — not that PV specifically must be built. **This changes the coverage probe's job**
+(§2b.4 of `design_conditional_opponent_cells.md`): it no longer *vetoes* PV, it *chooses between the
+two routes* — cross-pair quantities decodable at good r² ⇒ token-content injection suffices;
+at chance ⇒ only PV/promotion buy what is missing. ⚠️ **Residual owner call:** if the intent was in
+fact "PV specifically, regardless of the probe," say so here and the OR above is struck.
+
 Localization: branch B's sub-block arm already ran at 9.6M — the residual is in_matrix
 (16.27 of 18.58 shuffle-controlled flips). The gen-3 40M verdict RE-RUNS it; on
 confirmation, "re-home in_matrix, BOTH directions (policy + critic)" is the settled target.
@@ -472,8 +496,10 @@ derivable from the event log per decision window.
 | 0 (SHIPPED, v51) | Pointer-native head; op-owned cell slicing | flat `action_net`, v49 delta machinery | tests (mechanical) + smoke |
 | spike (§2.5) | token-budget benchmark; biased-MHA proof; then the minimal Stage-1 slice | — | B=1/B=256 numbers vs budget; fullgraph compile; short-run training sanity |
 | 1 | E3/E4/E5 move tokens, per-type projections | — | B=1 CPU gate, pointer tests, probe-sized K |
-| 2 | D/S/C/V/T/X edge biases, D4, custom MHA | op head-concat, refine-loop residuals | gen-vs-gen ELO + per-family bias ablation |
+| 2 | D/S/C/V/T/X edge biases, D4, custom MHA | refine-loop residuals (**NOT** the op head-concat — §3.8) | gen-vs-gen ELO + per-family bias ablation |
 | 3 | declarative schema, obs re-home, history's MINIMAL port (7 opaque history tokens) | flat 2889 vector, OFFSET arithmetic, matchup/reactive blocks | schema-generated tests, obs benchmark (refund), roundtrip fuzz |
+| post-3 | **the two-route concat precondition** — OA1 (policy) + a CRITIC route (PV *or* generalized token-content injection); `design_conditional_opponent_cells.md` | — | coverage probe chooses the critic route; then the 40M re-audit |
+| last | op head-concat deletion (mask → A/B → delete), then the Stage-3 CPU refund | op head-concat (807 dims off both projections) | concat arm < all-edges-off on **flips AND `\|dV\|`** at 40M |
 | later | E9 proper: recency features → turn tokens → entity-linked event tokens iff usage audit pays | 7×159 TurnDelta frames | attention-usage audit |
 
 Each stage is retrain-class; the generation's checkpoints stay compatible WITHIN a stage via

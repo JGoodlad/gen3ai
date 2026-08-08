@@ -52,7 +52,11 @@
 - **Pre-registered decision rule** (recorded 2026-08-07, before gen-3's audit): absorption ⇒
   mask → A/B → delete; a fourth replication ⇒ **widen token-content delivery** and localize the
   residual per sub-block, then re-audit. Explicitly banned: *"wait longer"* and *"delete
-  anyway."*
+  anyway."* **Amended 2026-08-08:** the concat dies **last**, the precondition is **two-route**
+  (OA1 for the policy **+ PV/token-injection for the critic** — the pointer head never reaches the
+  value head, and the concat is the critic's largest dependency), and acceptance requires the
+  concat arm below all-edges-off on **flips AND `|dV|`**. Residual already localized to
+  **`in_matrix`**.
 - **Corollary — top-K is two things.** As *representation* (v30/v35/E4: surface the K
   most-believed moves individually) it un-collapses an axis and is free. As *truncation* (v49:
   drop candidates below rank K) it removes mass, and its error is a **cliff, not a slope**
@@ -463,6 +467,36 @@ end-of-run audit:
   **per-sub-block concat ablations** to localize the residual; then re-audit. Delete only once
   the re-homed form matches the concat's measured contribution.
 - **Explicitly not allowed:** *"wait longer"* or *"delete anyway."*
+
+**⚠️ OWNER AMENDMENT (2026-08-08) — the rule above is SUPERSEDED on three points.** Sequencing
+accepted: the concat survives Stage 3 and **dies last**. The corrections:
+
+1. **The precondition is TWO-ROUTE.** OA1/OA2 are *pointer cells*, and the pointer head never
+   reaches the critic — while the concat is the **critic's** largest dependency (`|dV|` 5.67 vs
+   1.86 all-edges, 3× replicated; gen-1 40M read 7.45 vs 2.51). Deleting after OA alone **strands
+   the value head**. Required: **OA1 (policy) + PV or token-content injection (critic), both landed
+   and audited.** This *promotes* PV out of the optional tail — it was conditional (build-order
+   item 7 of 8, gated by the coverage probe) in `design_conditional_opponent_cells.md`, whose list
+   was never edited to match. ⚠️ **Read the OR carefully:** what is required is the **critic
+   route**, with two admissible implementations — PV, or generalized **token-content injection**
+   (the prefuse pattern extended to both sides' tokens, branch B's original and cheaper response).
+   The amendment also calls PV itself "a required component," which is a stronger and different
+   claim; the two readings imply materially different work and the ambiguity is unresolved.
+2. **Neither OA cell is a re-home on its own.** OA1 is a soft **contraction** of `in_matrix` (it
+   drops the per-move headers — latent / belief / effect / secondary); OA2 re-homes *nothing*
+   currently in the concat (new content from `pairwise_outgoing`).
+3. **The acceptance clause (was missing):** deletion requires the concat arm to fall below
+   all-edges-off on **flips AND `|dV|`** — the `|dV|` clause is the critic guard, and it is exactly
+   the half that confound 1 below predicted would matter.
+
+**Localization is already done** (branch B's sub-block arm, 9.6M): the residual is **`in_matrix`**
+— 16.27 of 18.58 shuffle-controlled flips — not the per-mon rows (4.52%), not the CB tail, not
+status. So the settled target is not "re-home the concat" but **"re-home `in_matrix`, both
+directions."** The gen-3 **40M** verdict re-runs that localization; judging at 9.6M would decide
+against the edges on a mid-curve artifact (confound 3).
+
+**Standing count: four replications, concat never once lost** — gen-1 40M 35.5% vs 26.9%, gen-2 40M
+33.1% vs 31.5%, gen-2.5 25M 31.3% vs 14.3%, gen-3 9.6M 23.6% vs 13.9% (edges off).
 
 **Why branch A is the right inference — and why it is still not enough to delete.** Ablation-KL
 is a **marginal** measure at **fixed weights**: "if I remove this input from the trained

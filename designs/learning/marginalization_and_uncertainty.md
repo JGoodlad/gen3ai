@@ -25,6 +25,12 @@
 - Our highest-leverage move: **factor the known nonlinear marginalization out of the learned
   net and into a differentiable operator** (the `DamageOperator`). The net learns only the
   *epistemic belief*; the operator does the exact marginalization, gradients still flow.
+- **The primitive under all of it is the convex combination** (`Σ w_i x_i`, `w ≥ 0`, `Σw = 1`).
+  An expectation over a finite set *is* one; a convex *function* is *defined* by how it interacts
+  with one (that definition, generalized, is Jensen). On a feature vector it combines
+  coordinate-wise, so it preserves **units, range and scale** — which is why `ValueDistHead`'s mean
+  cannot escape `[v_min, v_max]`, and why an attention *value* carries a magnitude where an
+  attention *bias* cannot (§ *Convex combinations — the primitive under all of this*).
 
 ---
 
@@ -115,6 +121,82 @@ Summing a hidden variable out against its probability:
 predicted distribution — which is why the operator consumes the belief's *full* predicted
 move distribution and the *species posterior*, not an argmax, and why the gradient can sharpen
 those distributions toward real KO threats (the loss flows through every weighted term).
+
+### Convex combinations — the primitive under all of this
+
+Both halves of Jensen are the same object, and it is worth naming because it recurs everywhere in
+the stack. A **convex combination** of points is `Σ_i w_i·x_i` with `w_i ≥ 0` **and** `Σ_i w_i = 1`.
+Each constraint does work — drop one and you land elsewhere on the ladder:
+
+| combination | constraint | reaches |
+|---|---|---|
+| linear | none | the whole spanned subspace |
+| affine | `Σw = 1` | the infinite line/plane through the points |
+| conic | `w ≥ 0` | the cone they fan into |
+| **convex** | both | the **filled shape between them** — for 2 points, the *segment*, not the line |
+
+The name comes from the geometry: the set of *all* convex combinations of a set of points is its
+**convex hull** (the shrink-wrap), and a hull is a **convex set** (the segment between any two
+members stays inside). "Convex combination" = "a point in the hull."
+
+**It is the same word as convex *function* by definition, not coincidence.** `f` is convex iff
+`f(λa + (1−λ)b) ≤ λ·f(a) + (1−λ)·f(b)` — a convex combination on both sides, the function below
+the chord. Generalize from 2 points to a distribution and that inequality **is** Jensen. Hence the
+identity that makes this section and Part 2 the same subject:
+
+> **An expectation over a finite set IS a convex combination** — a probability distribution is
+> precisely a set of convex weights. Marginalization *is* convex combination; mean-field is
+> convex-combining the *inputs* first and applying `f` after, which is the wrong order.
+
+**Why it matters on a FEATURE (a vector, not a scalar).** A convex combination of vectors is a
+convex combination in **every coordinate independently**, so if dim 0 of every input means "damage
+as a fraction of max HP," dim 0 of the output still means that. Three consequences:
+
+1. **Range closure** — `min_i x_i ≤ Σ w_i x_i ≤ max_i x_i` per coordinate. An HP-fraction in
+   `[0,1]` stays in `[0,1]`, no renormalization. *This is not abstract*: `ValueDistHead`'s point
+   estimate `Σ_b p_b·z_b` is a convex combination of the atom locations and is therefore
+   **mathematically incapable** of leaving `[v_min, v_max]` — which is exactly why "widen vmax
+   before shaping" is the fix and not a loss-tuning problem
+   ([[project_value_dist_head_status]] in memory; the support is a hard clamp *by convexity*).
+2. **Degree-1 homogeneity** — `Σ w_i (c·x_i) = c·Σ w_i x_i`. Double the damages, double the output.
+   This is the formal content of "carries an absolute," and it is what the Shaw value term buys
+   over the key-side bias ([[entity_tokens_biases_pointers]] § *The output-slot ladder*).
+3. **`Σw = 1` decouples magnitude from cardinality** — sum-pooling conflates "six small threats"
+   with "one big threat"; averaging puts *how big* in the output and *how many / which* in the
+   weights. Two questions, two channels.
+
+**Why averaging these vectors is legal at all:** only if they share a coordinate system. What
+guarantees that is the **shared `W_p` / shared encoder** — one projection applied to every pair or
+entity puts all cells in one frame. So the same weight-sharing that buys permutation equivariance
+is what makes the pooled result semantically meaningful; they are one design decision, not two.
+(Lemma in the same family: **linear maps preserve convex combinations**, `W(Σ w x) = Σ w (Wx)`, so
+projecting-then-averaging equals averaging-then-projecting. Nonlinearities do not — Jensen again.)
+
+**The one-example version.** Two believed moves vs our Skarmory, `α = (0.3, 0.7)`, Ice Beam 22% /
+Fire Blast 78% of max HP ⇒ `0.3·22 + 0.7·78 = 61.2%` — between the inputs, still in HP-fraction
+units, thresholdable against current HP. Now add a uniform **+10%** to both: the value path moves
+61.2 → 71.2 (exact, linear, unsaturating); the bias path is **unchanged**, because
+`softmax(logits + c·1) = softmax(logits)` annihilates a uniform level exactly. (The bias is not
+*totally* scale-blind — doubling the cells sharpens `α` — but it reads scale only through relative
+differences within a row, and it saturates.)
+
+**Where they already sit in our stack** — all the same operation, with softmax's only job being to
+*manufacture convex weights* (a map from reals onto the probability simplex):
+
+| where | combination | weights |
+|---|---|---|
+| every `TeamTransformer` attention layer | `Σ_j α_ij·v_j` | softmax `α` |
+| the proposed Shaw value term (PV) | `Σ_k α_jk·W_p·cell_kj` | softmax `α` |
+| `DamageOperator` marginalization | `Σ_m P(move=m)·damage_m` | the belief posterior |
+| `ValueDistHead` point estimate | `Σ_b p_b·z_b` | the categorical over atoms |
+| GAE(λ), infinite-horizon form | `Σ_n (1−λ)λ^(n−1)·A^(n)` | exponentially decaying, sums to 1 |
+| PFSP opponent sampling | which snapshot to play | the PFSP distribution over the pool |
+
+**Where the guarantee ends (honest caveat).** Convexity holds **at the weighted sum**. The residual
+add and LayerNorm immediately after rescale the whole vector, so "still an HP-fraction" degrades to
+"an HP-fraction *relative to the vector's norm*." Far better than the bias path (which destroys a
+uniform level exactly), but it does not hand you an invariant scalar all the way to the head — the
+same caveat this note's Part 3 makes about raw floats entering through `prefuse_proj`.
 
 ### The three-way principle
 

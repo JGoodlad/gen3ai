@@ -37,6 +37,15 @@
   content** (`prefuse_proj`) or **per-action cells** (`pointer_cells`) — which is why the flat
   op head-concat is still the policy's largest dependency even as the edges grow
   ([[shortcut_learning_and_feature_delivery]] Part 6).
+- **We shipped half of Shaw et al. 2018.** Relative-position representations add the pair term to
+  the **keys** *and* the **values**; all fifteen of our edge families are key-side only. The key
+  path is scale-destroying (`softmax(logits + c·1) = softmax(logits)`); the value path is
+  scale-*preserving* (`Σα = 1` ⇒ homogeneous of degree 1). **The bias chooses the weighting, the
+  value carries the number** — and driving α from a *different* channel than the one averaged turns
+  a weighted mean into a **conditional expectation**, which is OA1 in closed form. The choice
+  between PMA / entity cross-attention / multi-query seeds / pair-token promotion is one dial —
+  *how many output slots* — where the seeds are the underused middle and the cost lands in a side
+  module rather than on the trunk (§ *The output-slot ladder*).
 - **Expected damage lives on an EDGE**, because it is a property of the (move, defender, board)
   **triple** — an *activation* recomputed every forward, never a weight. The move token carries
   only invariants (BP/type/category/accuracy); randomness rides as a distribution summary
@@ -64,6 +73,9 @@
   **one** for the critic. The op concat is the only un-pooled route for *both*; the pointer head is
   a second un-pooled route for the *policy only*. v51 made the policy entity-native and left the
   critic reading one microphone — which is exactly why D2 carries the largest measured `|ΔV|`.
+  The critic's deficiency is **conditionality, not bandwidth**: "widen the value pool" is refuted
+  (P3), but P3 tested *width*, never *multiplicity*, and the measured pathology is credit
+  assignment (the self-KO floor leak), which an episode-outcome AUC cannot see.
 - **Search is not what the edges do** (§6.6). C edges are a depth-1, opponent-static, pure-function
   calculator; search advances the world and takes a maximum. The entity work makes search cheaper to
   *aim* (equivariant candidate generation, C-deltas as a pruning layer before the expensive clone) —
@@ -397,6 +409,187 @@ E4 threat seat its 6-our-mon row. That un-collapses nothing, costs **zero new se
 growth at all), and puts the absolutes in the stream. What it does *not* buy is a pair that can be
 attended to individually or serve as a pointer target — which is the only thing real promotion
 adds. Try the widening first; promote only if the pair needs to be an attention target.
+
+#### The output-slot ladder — PMA, cross-attention, multi-query seeds, promotion
+
+Those options are not four mechanisms. They are **one mechanism at four settings of a single
+dial**, and the dial is:
+
+> **You can only preserve an axis you have output slots for.**
+
+There are K×6 = 36 incoming cells (`pairwise_incoming` → `[B, K, 6, 5]`, the d3 cells). Produce 6
+outputs and you have committed to a 6:1 reduction — arithmetic, not a flaw in attention.
+
+| | outputs | pair ops (K=6) | preserves | cost lands on |
+|---|---|---|---|---|
+| **(A) PMA** — k global seed queries (Set Transformer, Lee 2019) | k | k×K = 24 | a rank-k **board** summary, no per-mon binding | side module |
+| **(B) entity cross-attention** — one query per our-mon | 6 | 6×K = 36 | one weighted read per mon | side module |
+| **(C) multi-query seeds** — k seeds × 6 mons | 6k | 6k×K = **144** | k different reads per mon | side module |
+| **promotion** — pair → token | 36 | O(n²) | everything | **the whole trunk** |
+
+- **(A) does not solve magnitude delivery** — its output is not attached to any mon, so it cannot
+  tell the switch logit for mon *j* what mon *j* takes. It is useful for a *different* job: the
+  critic reads pooled vectors anyway and has exactly one un-pooled route, so a compact learned
+  board-threat summary is the shape the value head actually consumes. File under critic tooling.
+- **(B) already strictly dominates `in_permon`**, because `in_permon` is a *fixed hard max* over
+  the opponent's move axis and this is a *learned, query-conditional soft-max* over the same axis —
+  and α can **sharpen to approximate the hard max**, so the old behaviour is a limit case.
+  ⚠️ It is rank-`n_heads`, **not rank-1**: with `N_HEADS = 4` one query already yields 4 weighted
+  means. Heads and seeds both buy rank but in different currencies — heads are cheap rank from
+  *one* question (shared query, different projections); seeds are rank from *different* questions
+  (independent query content, a full `D_MODEL` each). So k=2 on top of h=4 is 8 means per mon.
+- **(C) is trivial in FLOPs** against a trunk already running n=29 × 4 heads × 2 layers. Each seed
+  learns a different question asked of every mon: *"the biggest hit I take"*, *"the most likely
+  hit"*, *"what status lands on me"*, *"what I take from the move they'll actually use"*. **That
+  last one is OA1**, learned rather than hand-computed (see the conditional-expectation identity
+  below).
+- **Promotion is affordable** — the raw count is not the argument against it (measured table
+  above: n 29→65 is +0.253 ms compiled on a ~4.6 ms B=1 forward, ≈ +5.5%).
+
+**Where the cost lands matters more than the count.** (C)'s cost is confined to a small side
+module: the trunk's *n* does not move, no existing query gains a competitor, every edge-family
+bias tensor keeps its shape. Promotion's cost lands on the whole trunk — *n* 29→65, `n²` bias
+tensors, and **every existing query now attends over 36 more keys**. That last item is
+**attention dilution** and it has no line in the FLOP budget: a softmax row is a fixed probability
+mass, so every established pattern must actively suppress 36 new competitors to keep what it had.
+Zero-init `W_p` buys identity on the *value* path, not on the *routing* path. Prefer the
+intervention whose failure mode is "the new module learned nothing" over the one whose failure
+mode is "the working trunk got worse."
+
+**Equivariance — all four are fine, and the seeds are the non-obvious one.** One shared `W_p` over
+every (k, j) pair in all of them ⇒ permuting mons or moves permutes the outputs. Seeds do not leak
+position either: **seed *s* is not "mon *s*" — it is a question, not a slot**, applied identically
+to every entity. There is no map from seed index to entity index, which is exactly what
+distinguishes a seed from a positional embedding. The test is the usual one: does relabeling the
+entities change any output? For seeds, no — the seed set is shared across the relabeling.
+
+**The failure mode to instrument: SEED COLLAPSE.** With k too large the seeds converge, all learn
+the same question, and you have paid for k reads and got one. This is not hypothetical — it is the
+measured `z_arch` pathology (≈2/3 of z's energy in ONE shared direction at 300M, both regularizers
+inactive, the VICReg **covariance term never wired**; see [[self_discovered_archetype_latent]] and
+[[latent_belief_metrics_and_collapse]]). Monitor both:
+
+| monitor | says | healthy |
+|---|---|---|
+| pairwise cosine similarity between the k seed **queries** | still asking different questions? | stays **low** |
+| per-dim variance of the k **outputs** per mon | do the reads actually differ on real inputs? | non-degenerate (the `zarch/std` analogue) |
+
+Both, not either: seeds can stay geometrically distinct while producing identical reads if the cell
+content does not discriminate them. If it collapses, the fix is the one already in the toolbox — a
+VICReg-style per-dim variance floor on the seed outputs, **with the covariance term actually
+wired** (the `z_arch` post-mortem is that the hinge alone went slack). **Start at k=2** — the
+cheapest thing strictly more than the heads already give — and raise only when *both* gates pass:
+the collapse monitor says the seeds stay distinct, **and** a probe says more rank is needed.
+Raising k against a collapsing monitor buys rank you are not receiving.
+
+#### Shaw et al. 2018 — and why we shipped only half of it
+
+*Self-Attention with Relative Position Representations* (Shaw, Uszkoreit, Vaswani, NAACL 2018)
+made the *relation* an explicit learned object and added it in **both** places:
+
+```
+keys:    e_ij = (x_i W_q)(x_j W_k + a^K_ij)ᵀ / √d      ← where to look
+values:  out_i = Σ_j α_ij ( x_j W_v + a^V_ij )         ← what comes back
+```
+
+- The **key** term modulates the *decision* — it changes α. Scale-destroying by construction:
+  `softmax(logits + c·1) = softmax(logits)`, so an absolute level applied uniformly across a row is
+  annihilated **exactly**, and only differences survive. That is the formal content of "edge biases
+  carry ratios, not absolutes."
+- The **value** term modulates the *content* — what is written into the residual stream given that
+  you attended. Scale-preserving by construction: `Σ_j α_ij = 1` makes the output **homogeneous of
+  degree 1 in v**, so doubling every damage doubles the output. A convex combination of
+  HP-fractions *is* an HP-fraction — and because it combines **coordinate-wise**, the units of
+  every channel survive it (the primitive, its range/scale/cardinality properties, and why the
+  *shared* `W_p` is what makes averaging semantically legal at all:
+  [[marginalization_and_uncertainty]] § *Convex combinations*).
+
+**All fifteen of our edge families are `a^K`. We have implemented exactly half of Shaw — and the
+half we skipped is the half that carries numbers.** The bias chooses the weighting; the value
+carries the number.
+
+*(Footnote worth knowing: later relative-position work — T5's scalar buckets, RoPE — dropped the
+value term and kept only the key term, which is why "relative position = a logit bias" is the folk
+memory. That is correct for **position**, which has no magnitude to carry. It is exactly wrong for
+**physics**, which does. Do not inherit the simplification; the reason it was safe does not apply.)*
+
+**How it carries the op's magnitude.** The physics is already paid for — `pairwise_incoming` is
+computed for the d3 family, so this is a reshape plus one Linear, not one new damage computation.
+Today d3 does `Linear(cell_width → 2·n_heads)` → logit bias → softmax → gone. The change is one
+line:
+
+```
+before:   out_j = Σ_k α_jk · (W_v · seat_k)
+after:    out_j = Σ_k α_jk · (W_v · seat_k  +  W_p · cell_kj)
+```
+
+`cell_kj[0]` is `high` — damage as a **fraction of the defender's max HP**, a shared denominator
+chosen so comparisons become constants. Mon *j*'s token now carries an absolute threat magnitude in
+units that mean the same thing on every mon.
+
+**The identity that makes OA1 fall out for free:** *drive α from a different channel than the one
+you are averaging, and a weighted mean becomes a **conditional expectation**.* Include
+`damage(k → our ACTIVE)` as a channel of every pair's cell; the key-side bias can then set `α_jk`
+from threat-to-the-active regardless of which mon is querying, while the value side averages
+`damage(k, j)`:
+
+```
+Σ_k α_jk · damage(k, j)   with α from "what they will actually aim at the active"
+                          = E[ damage to me | the move they are likely to use ]   ≡ OA1
+```
+
+So **OA1 is the closed-form special case of PV with the right cell design** — it hand-computes
+`w_k` with a learned `λ`; PV learns the whole weighting end-to-end from a channel you chose.
+
+**The expressiveness given up, honestly:** `n_heads` (or `n_heads × k`) weighted means is a rank-h
+view of the 6 cells, not an arbitrary function of them — concatenation gives arbitrary functions
+and is not equivariant. Three mitigations in order of cheapness: α can sharpen to approximate max;
+**precompute the nonlinearity in the expert and add it as a cell channel** (the `pko` habit — cell
+width is free relative to everything else here); raise k.
+
+**Two routes, not one — and why PV is required rather than optional.** OA1/OA2 serve the **policy**
+losslessly, because *the action space supplies the output slots* (6 switch logits = 6 exact cells,
+zero collapse) — but the pointer head is policy-only. The **critic** has exactly one un-pooled
+route (the op concat: `|dV|` **5.67** concat vs **1.86** all-edges-off), and PV writes into the
+trunk, which is what the value head reads. That is why the concat-deletion precondition is
+two-route. What PV/promotion buys beyond per-action magnitude is **cross-pair reasoning** — joint
+properties of the matrix (*"their Ice Beam threatens three of my mons"*, *"every switch-in I have
+loses to something"*) that live in no single cell. Gate it on the coverage probe **before**
+building (`python -m main.prober.query probe`): decodable at good r² ⇒ it already happens and PV
+buys little; at chance ⇒ that is the gap. Honest prior: physics-into-the-trunk measured NULL
+3-for-3 (K9/K10) — PV changes *what the channel can carry* rather than varying content through a
+channel that could not carry magnitude, but that is an argument, not evidence.
+
+**PV is NOT "the" way to deliver a magnitude — it owns one cell of a five-way table.** Three
+properties matter and no route has all of them for free:
+
+| route | equivariant? | fidelity | reaches the **trunk** (⇒ critic)? | seats |
+|---|---|---|---|---|
+| token content, **collapsed** (`prefuse_proj` today) | ✓ | lossy — **you must pick which axis dies** (= `in_permon`, 4.52% vs the 16.27% it summarises) | ✓ | 0 |
+| token content, **widened seat** (E4 seat *k* carries its 6-defender row) | ✗ **within-seat** — the 6 cells stay ordered by our team slot | full row | ✓ | 0 |
+| **per-action cells** (`pointer_cells`, OA1/OA2) | ✓ | **lossless** — the action space supplies the slots | ✗ **policy-only** | 0 |
+| **PV** (Shaw value term) | ✓ **both axes** | rank-*h*, but learned + query-conditional | ✓ | 0 |
+| **pair-token promotion** | ✓ | everything | ✓ | +36 + dilution |
+
+PV's unique cell is the *combination* — equivariant in both axes **and** trunk-reaching **and**
+seat-free — but every competitor beats it on one axis. Two consequences: **(i) for the POLICY, PV
+is the wrong tool** (OA1's cells are lossless where PV is a rank-*h* approximation of the same
+numbers — the OA1/PV division of labour is real, not redundancy); **(ii) PV's true competitor is
+generalized token-content injection**, which is cheaper (shipped mechanism, no new module) and pays
+for its fidelity by reintroducing a **positional axis inside the seat** — in the generation whose
+premise is that positions are not identities. So the live decision is not *"is PV the way"* but:
+
+> accept a **positional within-seat axis** to keep the full row (token content), or a **rank-*h*
+> learned reduction** to keep full equivariance (PV)?
+
+The coverage probe answers it cheaply, because **only PV/promotion buy cross-pair reasoning**: if
+the probe says the trunk already has it, token-content injection is the right critic route and PV
+is not needed at all.
+
+**Build note:** a separate small cross-attention module, **not** inside `BiasedEncoderLayer` —
+pair-values need α materialized, which breaks fused SDPA, and the compiled trunk is a measured
+6.5× lever. Keep the main layers fused; zero-init `W_p`; register it in `restore_identity_init()`.
+Full spec: `designs/ai_v9/design_conditional_opponent_cells.md` §2b.
 
 **2. WHAT do you deliver — which TRANSFORM of the number?**
 
@@ -1460,6 +1653,38 @@ What is *not* refuted, and is a genuinely different claim: the critic has no **p
 send in Zapdos*" from any entity's own token. That is the pointer-head question asked on the value
 side, and it remains open — flagged here as an open question with a real prior against the naive
 version, not as a plan.
+
+**P3 killed WIDTH; it did not test MULTIPLICITY.** `value_pooled` is *one learned query* over the 12
+mon tokens, so rank 3–4 is what **one question** extracts — which says nothing about what *k*
+different questions would extract. More dims on one query is measured-dead; more *queries* is the
+(A)-PMA rung of the output-slot ladder (§ *The output-slot ladder*), costs linear in k, adds no
+seats, and is untested. Its failure mode is exactly **seed collapse**, with the monitors given
+there — and that makes it diagnostic: if k seeds stay distinct *and* the value loss improves, you
+have directly measured that one query was the binding constraint, which P3's width arm could not.
+
+**And the critic's measured pathology is not outcome prediction at all.** AUC 0.833 says
+"who is winning" is answered well; the broken thing is **credit assignment** — the floor leak
+(the critic **over-values self-KO**; ~18% of games lost to bots a human beats 100% of the time,
+with the reward itself correct) and whatever `calibration` assigns to `critic_overvalued` rather
+than `lost_position`. An episode-outcome AUC cannot detect either. So the deficiency is
+**conditionality, not bandwidth**: every fact reaches the value head pre-averaged. Ranked routes:
+**PV *or* generalized token-content injection** (the two admissible critic routes — both write
+absolutes where `value_pooled` can read them; the amendment requires the *route*, not PV
+specifically), then **PMA seeds** (cheap, untested, self-diagnosing), then per-candidate reads.
+
+⚠️ **The naive per-candidate version is an action-dependent baseline — a known trap.** A `b(s,a)`
+baseline is biased without a correction term, and Tucker et al. 2018 (*The Mirage of
+Action-Dependent Baselines*) found the reported gains from the corrected versions largely failed to
+replicate, tracing to implementation differences rather than variance reduction. **The version that
+dodges it entirely: make per-candidate value an AUXILIARY head supervised on realized returns, not
+the PPO baseline.** The advantage estimator keeps the single `V(s)`; the aux head shapes the trunk
+through its gradient alone, buying the representational pressure ("this token must encode what it is
+worth to send this mon in") with zero effect on the estimator.
+
+**Gate all of it on shipped tooling first** — `python -m main.prober.query calibration <run>` (V(s)
+vs realized G(s), splitting `critic_overvalued` from `lost_position`) and `falsify-scan` (the crater
+bracket incl. `critic_headroom_upper_bound`). Diffuse `critic_overvalued` ⇒ the critic is not the
+binding constraint and every route above is premature.
 
 ### 6.6 What search looks like from here
 

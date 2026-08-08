@@ -3,6 +3,18 @@
 **Status:** forward design, not built. Written 2026-08-07 off the gen-3 @9.6M measurements below.
 **Owner decision needed:** none to start Part 0/1; Part 2 has a hard prerequisite (§4.1).
 
+> **⚠️ AMENDED 2026-08-08 — PV is no longer an optional tail item.** The owner amendment in
+> `design_generation_roadmap.md` §3.8 makes the op head-concat's deletion conditional on a
+> **TWO-ROUTE** precondition: **OA1 (policy) + a CRITIC route (this doc's PV *or* generalized
+> token-content injection), both landed and audited**, with acceptance requiring the concat arm
+> below all-edges-off on **flips AND `|dV|`**. Rationale: the pointer head is **policy-only**, and
+> the concat is the **critic's** largest dependency (`|dV|` 5.67 vs 1.86 all-edges, 3× replicated).
+> Two consequences for this doc: **(1)** §6's build order items 6–7 are rewritten — the coverage
+> probe now *chooses* the critic route rather than *vetoing* PV; **(2)** neither OA cell counts as
+> a re-home on its own (OA1 is a soft CONTRACTION of `in_matrix` — it drops the per-move latent /
+> belief / effect / secondary headers; OA2 re-homes nothing currently in the concat). Sequencing
+> unchanged and explicit: **build post-entity; the concat survives Stage 3 and dies last.**
+
 > **⚠️ NAMING — these are NOT edge families.** `OA1`/`OA2` are per-action **pointer cells**
 > (flag `--opp-action-cells`), delivered through `DamageOperator.pointer_cells` →
 > `PointerNativeActionHead`. They are unrelated to the shipped **C1–C5 consequence EDGE
@@ -21,9 +33,11 @@ Three deliverables, in order:
   * **OA1 (defensive)** — "they'll Ice Beam my Salamence; switch to the mon that eats Ice Beam."
   * **OA2 (offensive)** — "they'll switch out of my threat; click the move that beats the
     switch-in."
-* **Part 2b — PV** — pair-VALUE attention: the same magnitudes delivered into the TRUNK, which
-  is the only route that reaches the **critic** (which has no pointer head). OA1/OA2 solve the
-  policy; PV solves the critic and cross-pair reasoning.
+* **Part 2b — PV** — pair-VALUE attention: the same magnitudes delivered into the TRUNK, which is
+  what reaches the **critic** (which has no pointer head). OA1/OA2 solve the policy; PV solves the
+  critic **and is the only route that also buys cross-pair reasoning**. It is one of **two**
+  admissible critic routes — the other, generalized token-content injection, is cheaper but leaves
+  the within-seat axis positional (§6 item 7).
 
 ---
 
@@ -224,7 +238,7 @@ Pair-values require `α` explicitly, which breaks fused SDPA — and the compile
 measured 6.5× lever. Keep the main layers fused. Zero-init `W_p` ⇒ identity at init; register it
 in `restore_identity_init()` (M1).
 
-### 2b.4 Gate it BEFORE building — the coverage probe
+### 2b.4 The coverage probe — now a ROUTE CHOOSER, not a veto
 
 PV and promotion buy **cross-pair reasoning** (joint properties of the matrix: *"their Ice Beam
 threatens three of my mons"*, *"every switch-in I have loses to something"*, *"they have no
@@ -234,8 +248,16 @@ the output slots** (6 switch logits = 6 exact cells, zero collapse).
 So probe first, with the existing representation-probe harness (`python -m main.prober.query
 probe`, the one that found `damage_taken` r² 0.06 / `is_faster` AUC 0.94): linear-probe the
 trunk for the joint quantities above. **Decodable at good r² ⇒ cross-pair reasoning already
-happens and PV/promotion buys little. At chance ⇒ that is the gap, and PV (k=2–4 seeds) is the
-cheap way to close it before considering 36 seats.**
+happens ⇒ take the cheaper critic route, generalized TOKEN-CONTENT INJECTION (§6 item 7a). At
+chance ⇒ that is the gap, and only PV/promotion buy it ⇒ take PV (k=2–4 seeds, §6 item 7b) before
+considering 36 seats.**
+
+⚠️ **Post-amendment, this probe no longer answers "build PV or build nothing."** The 2026-08-08
+owner amendment makes a critic route REQUIRED by the concat-deletion precondition (the pointer head
+is policy-only; the concat is the critic's largest dependency). So the probe's remaining job is to
+choose **which** of the two admissible routes — and a "decodable" result is a decision to build 7a,
+not a decision to build nothing. The only outcome that leaves the critic unserved is skipping the
+precondition, which also means the concat does not get deleted.
 
 Honest prior: physics-into-the-trunk measured NULL 3-for-3 (K9/K10). PV is a genuinely different
 intervention — those varied *content* through a channel that could not carry magnitude, this
@@ -325,9 +347,24 @@ the concat and every level is mid-curve.
 3. **OA1** — no prerequisites.
 4. **unrevealed expected-latent onto the prefuse path** — §4.1.
 5. **OA2** — after 4.
-6. **coverage probe** (§2b.4) — offline, no training, decides whether 7 is worth building.
-7. **PV, k=2–4 seeds** — only if 6 says cross-pair reasoning is missing. Critic-gated.
-8. **pair-token promotion** — only if PV is insufficient. Promote the INCOMING block
+6. **coverage probe** (§2b.4) — offline, no training. ⚠️ **Its job CHANGED** under the 2026-08-08
+   owner amendment: it no longer decides *whether* to build a critic route (one is now REQUIRED by
+   the concat-deletion precondition), it decides **WHICH** — see 7.
+7. **THE CRITIC ROUTE — required, one of two implementations** (was: "PV, only if 6 says cross-pair
+   reasoning is missing. Critic-gated." — **superseded**; PV is promoted out of the optional tail
+   onto the critical path, build still post-entity):
+   * **7a. generalized token-content injection** — the `prefuse_proj` pattern extended to inject the
+     full per-mon op rows onto BOTH sides' tokens. Cheaper: shipped mechanism, no new module, keeps
+     the full row. Cost: the within-seat axis stays POSITIONAL (cells inside a widened seat remain
+     ordered by team slot). **Pick this if the probe says cross-pair reasoning is already there.**
+   * **7b. PV, k=2–4 seeds** — equivariant in both axes, no new seats, and the **only** option that
+     also buys cross-pair reasoning. Cost: a new unfused side module + a rank-`h` reduction, and
+     the seed-collapse monitors. **Pick this if the probe comes back at chance.**
+   Either satisfies the precondition's critic half; OA1 satisfies the policy half. Both must be
+   landed AND audited, and deletion additionally requires the concat arm below all-edges-off on
+   **flips AND `|dV|`** at 40M. See `design_generation_roadmap.md` §3.8 (owner amendment + reading
+   note).
+8. **pair-token promotion** — only if 7 is insufficient. Promote the INCOMING block
    (`in_matrix`, the measured-dominant head block); note the head funnel pools it anyway, so
    the buy is trunk-side joint reasoning, NOT magnitude delivery.
 

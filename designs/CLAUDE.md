@@ -32,7 +32,7 @@ To orient yourself:
 |------|---------|-------|
 | **Active training run** | **ai_v9 gen-3** | `run_20260807_135637_gen3` (started 2026-08-07 @ `e60a1e1`): the full entity stack at **all 15 edge families** (d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5) + E4 K=6 + E5 tail seats, 40M steps, fresh lineage. At 32.0M: bots 0.911, anchored ELO 2094. **Its `model_config.json` is what "the production configuration" means** — [`ARCHITECTURE.md`](ARCHITECTURE.md) is derived from it. Predecessors: gen-2 `run_20260805_060807` (11 families), gen-1 `run_20260804_090512` (COMPLETE, 40M, bots 90.9% / pool 76.0%, 6 launch families; its end-of-run `edge_audit_40M.json` showed all-edges-off = 26.9% action flips). The old ai_v8 lineage sits behind the ai_v9 signature wall. |
 | **Code on main** | **ai_v9 (v59)** | `MODEL_CONFIG_VERSION` **59**, `ARCH_SIGNATURE` **`gen3_edge_bias_trunk_v1`**. Stages 0–2 in: v51 pointer-native head, v52/53 typed-HP belief, v54 move-entity seats (E3/E4), v55 op block trim, v56 edge-bias trunk (now **15 families** — the launch 11 plus the C consequence sweep C1/C1b, C2, C3, C5), v57 E5 tail seats, v58 the SpD-as-speed GIGO fix, v59 K=6 everywhere. Stage-3 schema view + generator half shipped; **E9 step 1 landed** (`gen3_entity_recency_v1`, obs 2889 → 2925). |
-| **ai_v9** | **Stages 0–2 SHIPPED + Stage-3 half** | Roadmap: `design_generation_roadmap.md` (the operative staged plan, slice statuses current). Still open: the op head-concat deletion (needs a concat-zeroing audit arm — the family audit alone doesn't measure redundancy), C1b/C2/C3/C5 consequence edges, Stage-3 generator half + the entity re-home (retrain-class, owner go/no-go), and E9 history. **NEW forward design (not built): `design_conditional_opponent_cells.md`** — the magnitude rule for the entity world + the OA1 conditional threat cell (defensive pivot) and OA2 switch-branch move cell (punish the switch), plus PV pair-value attention (the critic's route, gated on a coverage probe), the unrevealed-marginalisation prerequisite and pre-registered gates. **OA1/OA2 are pointer CELLS, not edge families** — do not confuse them with the C1-C5 consequence edges. |
+| **ai_v9** | **Stages 0–2 SHIPPED + Stage-3 half** | Roadmap: `design_generation_roadmap.md` (the operative staged plan, slice statuses current). Still open: the op head-concat deletion (needs a concat-zeroing audit arm — the family audit alone doesn't measure redundancy), C1b/C2/C3/C5 consequence edges, Stage-3 generator half + the entity re-home (retrain-class, owner go/no-go), and E9 history. **NEW forward design (not built): `design_conditional_opponent_cells.md`** — the magnitude rule for the entity world + the OA1 conditional threat cell (defensive pivot) and OA2 switch-branch move cell (punish the switch), plus PV pair-value attention (a critic route), the unrevealed-marginalisation prerequisite and pre-registered gates. **Amended 2026-08-08:** the concat's deletion now needs a **TWO-ROUTE** precondition — OA1 (policy) + a CRITIC route (**PV *or* generalized token-content injection**), both landed and audited, accepted only if the concat arm falls below all-edges-off on **flips AND `|dV|`** at 40M. The concat therefore **survives Stage 2 and Stage 3 and dies last**, and the coverage probe now *chooses between* the two critic routes rather than vetoing PV. **OA1/OA2 are pointer CELLS, not edge families** — do not confuse them with the C1-C5 consequence edges. |
 
 ---
 
@@ -176,7 +176,11 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   the threshold/tail problem (P(KO), P(outspeed)), and how a neural net actually represents and
   reasons over uncertainty (distribution-param heads, distributional RL / `ValueDistHead`,
   attention-as-marginalization, why MSE bakes in mean-field, factoring the marginalization into
-  the differentiable `DamageOperator`).
+  the differentiable `DamageOperator`). Also owns the **convex-combination primitive** —
+  expectation *is* a convex combination, a convex *function* is defined by how it acts on one
+  (= Jensen), and on a feature vector it combines coordinate-wise so it preserves units, range
+  and scale (why `ValueDistHead`'s mean cannot leave `[v_min, v_max]`, and why an attention
+  *value* carries a magnitude where an attention *bias* cannot).
 - **`entity_tokens_biases_pointers.md`** — the ai_v9 concept vocabulary: what entity-based
   (entity-centric / relational) modeling is and where it came from (CNN weight-sharing →
   GNNs → Deep Sets → Transformers → AlphaStar/AlphaFold), why permutation equivariance beats a
@@ -184,7 +188,11 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   *unrepresentable*) and what it costs, the **sorting rule** for where a fact lives
   (token / edge / distribution summary / attention), how expected damage is delivered (the
   `DamageOperator` as a *differentiable expert* whose gradient trains the move belief; the
-  shipped v51 `pointer_cells` route vs the Stage-2 edge-bias route), and how **history** is
+  shipped v51 `pointer_cells` route vs the Stage-2 edge-bias route; **the output-slot ladder** —
+  PMA / entity cross-attention / multi-query seeds / pair-token promotion as one dial, why we
+  shipped only the key-side half of **Shaw et al. 2018** and what the value-side term buys, the
+  OA1-as-conditional-expectation identity, where each option's cost lands, and the **seed-collapse**
+  monitors), and how **history** is
   represented once time stops being positional (recency-on-entity → turn tokens → entity-linked
   event tokens; recurrence ruled out by the event-log-purity invariant). **Part 6** covers the
   ai_v9 **compositionality** result on the live v57 architecture: the sorting rule as a
