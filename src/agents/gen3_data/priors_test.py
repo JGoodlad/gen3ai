@@ -31,6 +31,17 @@ def test_move_priors_tyranitar():
     assert sum(p.values()) > 2.0                             # ~4 moves/set → sums well above 1
 
 
+def test_species_usage_gen3ou_shape():
+    # gen3_unrevealed_outgoing_prior_v1: raw Smogon usage weights keyed by normalized Showdown id.
+    u = priors.species_usage()
+    assert len(u) > 100                                       # the gen3ou stats cover ~200 species
+    assert all(w > 0.0 for w in u.values())
+    assert "porygon2" in u                                    # the one non-alpha name normalizes to an id
+    top = max(u, key=u.get)
+    assert top == "tyranitar"                                 # the #1 gen3ou mon anchors the distribution
+    assert u["tyranitar"] > u["snorlax"] > 0.0
+
+
 def test_item_priors_choiceband_signal():
     tt = priors.items("tyranitar")
     assert abs(sum(tt.values()) - 1.0) < 1e-6

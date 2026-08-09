@@ -18,6 +18,7 @@ hidden_power_raw = _base.singleton(lambda: _base.load_json("gen3_hidden_power_pr
 move_raw = _base.singleton(lambda: _base.load_json("gen3_move_priors.json"))
 item_raw = _base.singleton(lambda: _base.load_json("gen3_item_priors.json"))
 spread_raw = _base.singleton(lambda: _base.load_json("gen3_spread_priors.json"))
+smogon_stats_raw = _base.singleton(lambda: _base.load_json("gen3_smogon_stats.json"))
 
 _EV_INDEX = {"hp": 0, "atk": 1, "def": 2, "spa": 3, "spd": 4, "spe": 5}
 
@@ -49,6 +50,23 @@ def items(species: str) -> Dict[str, float]:
 def spreads(species: str) -> List[list]:
     """``[[nature, [hp,atk,def,spa,spd,spe], weight], ...]`` raw usage spreads (weights sum→1)."""
     return spread_raw().get(species, [])
+
+
+@functools.lru_cache(maxsize=1)
+def species_usage() -> Dict[str, float]:
+    """``{species_id: raw usage weight}`` — how often each species appears in gen3ou, from the
+    aggregated Smogon stats (``gen3_smogon_stats.json`` → per-species ``Raw count``, the same
+    weighted-sets denominator ``compute_priors._raw_count`` uses). Keys are normalized Showdown
+    ids (lowercase alnum, mirroring the acquisition layer's ``_to_id``). Weights are NOT
+    normalized — the consumer picks its own floor/normalization. A species absent from the
+    stats simply has no entry."""
+    out: Dict[str, float] = {}
+    for name, sp_data in smogon_stats_raw().get("data", {}).items():
+        sid = "".join(c for c in name.lower() if c.isalnum())
+        w = float(sp_data.get("Raw count") or sp_data.get("usage") or 0.0)
+        if sid and w > 0.0:
+            out[sid] = out.get(sid, 0.0) + w
+    return out
 
 
 def gen3_stat(base: int, ev: int, mult: float) -> int:

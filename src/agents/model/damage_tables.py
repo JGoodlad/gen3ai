@@ -357,6 +357,9 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         **build_status_landing(n_moves, n_species, n_abilities),
         # gen3_unified_choice_band_v1: P(CB | species) usage prior — the op's CB belief for an unrevealed opp.
         "SPECIES_CB_PRIOR": build_species_cb_prior(n_species),
+        # gen3_unrevealed_outgoing_prior_v1: P(species) usage prior — the expected-latent defender for the
+        # outgoing kernel's UNREVEALED columns (Species-Clause-filtered live in `unrevealed_species_probs`).
+        "SPECIES_USAGE_PRIOR": build_species_usage_prior(n_species),
         # gen3_nature_ev_belief_v1: the [25,5] nature multiplier table — the op marginalises the nonlinear
         # P(KO) over the believed nature distribution (--spread-belief-nature-marginalize) using these.
         "NATURE_MULT": build_nature_mult(),
@@ -633,6 +636,44 @@ CURSE_MOVE_NUM = int(gen3_data.moves.get("curse").num)              # 174 — th
 TOXIC_MOVE_NUM = int(gen3_data.moves.get("toxic").num)              # 92 — C2 tox-vs-psn (shared cat 5)
 REST_MOVE_NUM = int(gen3_data.moves.get("rest").num)                # 156 — C3's self-sleep cost channel
 BATON_PASS_MOVE_NUM = int(gen3_data.moves.get("batonpass").num)     # 226 — C5's receiver-axis edge
+
+
+# gen3_unrevealed_outgoing_prior_v1: the FLOOR a real species with no usage entry gets, applied on the
+# NORMALIZED usage scale (so it means "1-in-a-million teams", not "1e-6 raw sets" — the raw counts run to
+# millions and a raw-scale floor would be indistinguishable from the hard zero it exists to prevent).
+_USAGE_PRIOR_FLOOR = 1e-6
+
+
+def build_species_usage_prior(n_species: int) -> torch.Tensor:
+    """``[n_species]`` the normalized gen3ou species USAGE distribution over dex nums —
+    ``P(an unrevealed opp slot is species s)`` before Species-Clause filtering
+    (gen3_unrevealed_outgoing_prior_v1: the expected-latent defender for the OUTGOING kernel's
+    unrevealed columns, marginalized through ``SPECIES_EXP_MULT`` / ``SPECIES_SPREAD_PRIOR``).
+
+    Sourced from `gen3_data.priors.species_usage()` (the Smogon ``Raw count`` weights). The sentinel
+    species (num 0) gets EXACTLY 0; every real base form absent from the usage data gets the tiny
+    `_USAGE_PRIOR_FLOOR` (never a hard zero — in-battle Species-Clause renormalization must always
+    be able to fall back to *something*), then the whole vector is renormalized to sum 1. BASE forms
+    only (a forme shares its base's num — iterating `raw()` would double-write rows). Fail-loud on
+    the canonical carrier (Tyranitar, the #1 gen3ou mon) so a key-normalization drift can't silently
+    flatten the prior to the floor."""
+    usage = gen3_data.priors.species_usage()
+    total = sum(usage.values())
+    if total <= 0.0:
+        raise ValueError("build_species_usage_prior: no species usage data — "
+                         "gen3_smogon_stats.json empty/malformed?")
+    prior = torch.zeros(n_species, dtype=torch.float32)
+    for sid in gen3_data.species.base_form_ids():
+        sd = gen3_data.species.get(sid)
+        if not (0 < sd.num < n_species):                  # sentinel num 0 stays exactly 0
+            continue
+        prior[sd.num] = max(float(usage.get(sid, 0.0)) / total, _USAGE_PRIOR_FLOOR)
+    tt = gen3_data.species.get("tyranitar")
+    if tt is None or not (0 < tt.num < n_species) or float(prior[tt.num]) < 0.01:
+        raise ValueError(
+            "build_species_usage_prior: Tyranitar did not resolve to a dominant usage share — the "
+            "species-usage prior is empty/misaligned (id normalization drift?). GIGO guard.")
+    return prior / prior.sum()
 
 
 def build_species_cb_prior(n_species: int) -> torch.Tensor:

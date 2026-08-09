@@ -867,18 +867,42 @@ class DamageOperator(torch.nn.Module):
         block = torch.cat([per_move.reshape(B, -1), p_outspeed[:, None], sec.reshape(B, -1)], dim=1)  # [B, _DMG_OUTGOING]
         return block * gate
 
+    def unrevealed_species_probs(self, ctx: 'ExtractorContext',
+                                 species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """gen3_unrevealed_outgoing_prior_v1: ``[B, TEAM_SIZE, n_species]`` P(species) per OPP slot —
+        the gen3ou usage prior (`SPECIES_USAGE_PRIOR`) under SPECIES CLAUSE: every species already
+        REVEALED on the opponent's side this battle (`ctx.species_ids[opp]` where `~opp_believed_mask`)
+        is zeroed out, then the distribution renormalizes. Rows are meaningful only at UNREVEALED
+        slots (`ctx.opp_believed_mask`) — the expected-latent defender read; revealed slots' rows are
+        never consumed. `species_probs` (e.g. a learned belief posterior ``[B,6,n_species]``) overrides
+        the prior entirely (returned as-is) — the future-learned-belief seam."""
+        if species_probs is not None:
+            return species_probs
+        B, device = ctx.batch_size, ctx.device
+        n_species = self.SPECIES_USAGE_PRIOR.shape[0]
+        # Species Clause: scatter zeros at every revealed opp species num. Unrevealed slots contribute
+        # the sentinel column 0, whose prior mass is exactly 0 by construction — a harmless no-op.
+        revealed_num = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE] * (~ctx.opp_believed_mask).long()
+        keep = torch.ones(B, n_species, device=device).scatter(1, revealed_num, 0.0)
+        p = self.SPECIES_USAGE_PRIOR[None, :] * keep                                  # [B, n_species]
+        p = p / p.sum(dim=1, keepdim=True).clamp_min(1e-12)
+        return p[:, None, :].expand(B, TEAM_SIZE, n_species)
+
     def _outgoing_matrix(self, ctx: 'ExtractorContext',
                          spread_belief: Optional[torch.Tensor] = None,
-                         boost_delta: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """gen3_per_move_matrices_v1: OUR active's 4 moves → the opp's 6 mons (active + REVEALED bench). The
+                         boost_delta: Optional[torch.Tensor] = None,
+                         species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """gen3_per_move_matrices_v1: OUR active's 4 moves → the opp's 6 mons (active + bench). The
         bench extension of `_outgoing_block` (which prices only the opp active): per (our move k, opp mon d)
         a `[low, high, crit, pko, type_mult]` cell so the policy prices a KO on a SWITCH-IN, plus a per-opp-mon
-        `revealed` bit. REVEALED-gated — an UNREVEALED opp slot (Gen3 no team preview) is zeroed (its species/
-        types/bulk are unknown; belief-driven damage there is a TODO). Reuses the `_outgoing_block` physics
+        `revealed` bit. An UNREVEALED opp slot (Gen3 no team preview) is priced against the EXPECTED-LATENT
+        defender (gen3_unrevealed_outgoing_prior_v1 — the Species-Clause-filtered usage prior, or the
+        `species_probs` override): E[mult]/E[def/spd]/E[maxhp] marginals, forced-alive, P(KO) NULLED, the
+        `revealed` bit still 0. Reuses the `_outgoing_block` physics
         (attacker = our active with CB/boost/burn; OPP-side screens; per-defender bulk = SpreadBelief or the
         neutral 0-EV estimate; only the opp ACTIVE carries boosts — bench is reset), broadcast over the 6
         defenders. Output `[B, _DMG_OMX]` (grouped by move, action-aligned). Gated to 0 with no opp / fainted
-        or absent our active. Leak-safe (revealed species + our known moves only)."""
+        or absent our active. Leak-safe (revealed species + the fixed usage prior + our known moves only)."""
         B, device, eps = ctx.batch_size, ctx.device, 1e-6
         ar = torch.arange(B, device=device)
         our_act = ctx.our_active_idx
@@ -928,16 +952,34 @@ class DamageOperator(torch.nn.Module):
         else:
             opp_def = 2.0 * d_base[..., 2] + 31.0 + 5.0; opp_spd = 2.0 * d_base[..., 4] + 31.0 + 5.0
         opp_maxhp = 2.0 * d_base[..., 0] + 31.0 + 110.0                                 # [B,6]
+        # gen3_unrevealed_outgoing_prior_v1: UNREVEALED defender slots are priced against the
+        # EXPECTED-LATENT defender instead of zeroed (design_conditional_opponent_cells §4.1 — a
+        # revealed-gated read is misleading exactly when switching matters most, the typeless-HP-
+        # immune bug class). The v36 `discrete_outgoing` marginals, at the Species-Clause-filtered
+        # usage prior (or the `species_probs` override): E[mult] via SPECIES_EXP_MULT, E[def/spd]
+        # via the spread-prior means, E[maxhp] via E[base HP], forced-alive full-HP switch-in.
+        # P(KO) stays NULLED (owner rule: a full-HP switch-in is ~never OHKO'd) and the trailing
+        # `revealed` channel stays 0 — magnitudes change, epistemics don't. REVEALED slots pass
+        # through every `torch.where` untouched — byte-identical to the pre-fix kernel.
+        believed = ctx.opp_believed_mask                                                # [B,6] bool
+        sp_probs = self.unrevealed_species_probs(ctx, species_probs)                    # [B,6,S]
+        e_bulk = sp_probs @ self.SPECIES_SPREAD_PRIOR[..., 0]                           # [B,6,5] E[stat] means
+        e_maxhp = 2.0 * (sp_probs @ self.BASE_STATS[:, 0]) + 31.0 + 110.0               # [B,6] via E[base hp]
+        opp_def = torch.where(believed, e_bulk[..., _SB_DEF], opp_def)
+        opp_spd = torch.where(believed, e_bulk[..., _SB_SPD], opp_spd)
+        opp_maxhp = torch.where(believed, e_maxhp, opp_maxhp)
         _pa, p_b_def, _ps, p_b_spd, _pe = self._boost_stages(ctx.opp_ctx_raw)
         def_boost = torch.ones_like(opp_def); def_boost[ar, ctx.opp_active_local] = self._boost_mult(p_b_def)
         spd_boost = torch.ones_like(opp_spd); spd_boost[ar, ctx.opp_active_local] = self._boost_mult(p_b_spd)
         opp_def = opp_def * def_boost; opp_spd = opp_spd * spd_boost
         opp_hp_frac = ctx.hp_and_active[:, opp, 0]                                      # [B,6]
+        opp_hp_frac = torch.where(believed, torch.ones_like(opp_hp_frac), opp_hp_frac)  # hidden = full-HP switch-in
         opp_cur_hp = opp_hp_frac * opp_maxhp                                            # [B,6]
         t1d = ctx.type1_ids[:, opp]; t2d = ctx.type2_ids[:, opp]                        # [B,6]
         opp_ability = ctx.ability1_ids[:, opp]                                          # [B,6]
         revealed = (~ctx.opp_believed_mask).float()                                     # [B,6] species known
-        def_gate = revealed * (opp_hp_frac > 0).float()                                 # [B,6] real switchable target
+        def_gate = revealed * (opp_hp_frac > 0).float()                                 # [B,6] revealed live target
+        target_gate = def_gate + believed.float()                                       # [B,6] + hidden forced-alive
 
         # --- type effectiveness eff[B,4,6] = CHART[t1d]·CHART[t2d]·ability_mult, gathered by move type ---
         T = self.CHART.shape[-1]
@@ -947,6 +989,9 @@ class DamageOperator(torch.nn.Module):
             return torch.gather(t, 3, mty_e).squeeze(-1)
         eff = (_gather_type(self.CHART[t1d]) * _gather_type(self.CHART[t2d])
                * _gather_type(self.ABILITY_DAMAGE_MULT[opp_ability]))                    # [B,4,6]
+        # gen3_unrevealed_outgoing_prior_v1: E[mult] (type chart × expected ability immunity, one
+        # matmul with P(species)) replaces the sentinel-neutral chart read at unrevealed slots.
+        eff = torch.where(believed[:, None, :], _gather_type(sp_probs @ self.SPECIES_EXP_MULT), eff)
         # --- gen3 damage per (move, defender) → [B,4,6] (the _outgoing_block physics, broadcast over 6) ---
         D = phys[:, :, None] * opp_def[:, None, :] + (1.0 - phys)[:, :, None] * opp_spd[:, None, :]   # [B,4,6]
         is_stab = ((move_ty == at1[:, None]) | (move_ty == at2[:, None])).float()        # [B,4]
@@ -967,9 +1012,10 @@ class DamageOperator(torch.nn.Module):
         fixed_ko = acc[:, :, None] * (fixed >= opp_cur_hp[:, None, :]).float() * not_immune
         high = torch.where(is_fixed, fixed_frac, high); low = torch.where(is_fixed, fixed_frac, low)
         crit = torch.where(is_fixed, fixed_frac, crit); ko = torch.where(is_fixed, fixed_ko, ko)
+        ko = ko * revealed[:, None, :]        # gen3_unrevealed_outgoing_prior_v1: P(KO) NULLED at hidden slots
 
         cell = torch.stack([low, high, crit, ko, eff], dim=-1)                            # [B,4,6,_DMG_OMX_CELL]
-        cell = cell * (usable[:, :, None, None] * def_gate[:, None, :, None])             # gate move-legal × real target
+        cell = cell * (usable[:, :, None, None] * target_gate[:, None, :, None])          # gate move-legal × target
         out = torch.cat([cell.reshape(B, _DMG_OUT_N_MOVES * TEAM_SIZE * _DMG_OMX_CELL), def_gate], dim=1)  # [B,_DMG_OMX]
         return out * gate
 
@@ -1485,14 +1531,16 @@ class DamageOperator(torch.nn.Module):
 
     def pairwise_outgoing(self, ctx: 'ExtractorContext',
                           spread_belief: Optional[torch.Tensor] = None,
-                          boost_delta: Optional[torch.Tensor] = None) -> torch.Tensor:
+                          boost_delta: Optional[torch.Tensor] = None,
+                          species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (D1): the per-(our move k, opp mon d) outgoing cells for the edge-bias
         delivery — `[B, _DMG_OUT_N_MOVES, TEAM_SIZE, 6]` = `[low, high, crit, pko, type_mult, revealed]`.
         A pure RESHAPE of `_outgoing_matrix`'s flat block (the validated v34 physics: request-ordered
-        moves == E3 seat order == action 6+k, revealed-gated defenders, CB/boost/burn attacker), so the
-        bias and the head concat can never disagree on a value. `boost_delta` [B,5] prices the C1
-        hypothetical post-setup world (None = the current world, byte-identical)."""
-        flat = self._outgoing_matrix(ctx, spread_belief, boost_delta)                     # [B, _DMG_OMX]
+        moves == E3 seat order == action 6+k, CB/boost/burn attacker; unrevealed defenders priced by the
+        expected-latent read — gen3_unrevealed_outgoing_prior_v1, `species_probs` overrides the usage
+        prior), so the bias and the head concat can never disagree on a value. `boost_delta` [B,5] prices
+        the C1 hypothetical post-setup world (None = the current world, byte-identical)."""
+        flat = self._outgoing_matrix(ctx, spread_belief, boost_delta, species_probs)      # [B, _DMG_OMX]
         n_cells = _DMG_OUT_N_MOVES * TEAM_SIZE * _DMG_OMX_CELL
         cells = flat[:, :n_cells].reshape(-1, _DMG_OUT_N_MOVES, TEAM_SIZE, _DMG_OMX_CELL)
         revealed = flat[:, n_cells:n_cells + TEAM_SIZE]                                   # [B,6]
@@ -1560,8 +1608,11 @@ class DamageOperator(torch.nn.Module):
         ar = torch.arange(B, device=device)
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         deltas, is_boost, hp_cost = self._setup_deltas(ctx)                          # [B,4,5], [B,4], [B,4]
+        # gen3_unrevealed_outgoing_prior_v1: compute the Species-Clause marginal ONCE and hand it to
+        # every kernel re-run below (pure function of ctx — byte-identical, just not recomputed 5×).
+        sp_probs = self.unrevealed_species_probs(ctx)
         if base is None:
-            base = self.pairwise_outgoing(ctx, spread_belief)                        # [B,4,6,6]
+            base = self.pairwise_outgoing(ctx, spread_belief, species_probs=sp_probs)   # [B,4,6,6]
         base_high = base[..., 1].amax(dim=1)                                         # [B,6]
         base_pko = base[..., 3].amax(dim=1)                                          # [B,6]
         # --- speed: our ACTIVE's real-spread spe (the pairwise_speed recipe) × its live stage ---
@@ -1594,7 +1645,8 @@ class DamageOperator(torch.nn.Module):
         rows = []
         for k in range(_DMG_OUT_N_MOVES):
             dk = deltas[:, k]                                                        # [B,5]
-            boosted = self.pairwise_outgoing(ctx, spread_belief, boost_delta=dk)     # [B,4,6,6]
+            boosted = self.pairwise_outgoing(ctx, spread_belief, boost_delta=dk,
+                                             species_probs=sp_probs)                # [B,4,6,6]
             d_high = boosted[..., 1].amax(dim=1) - base_high                         # [B,6]
             d_pko = boosted[..., 3].amax(dim=1) - base_pko
             p_k = self._p_outspeed(

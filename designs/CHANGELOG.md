@@ -2287,3 +2287,22 @@ global-token and both projection routes remain); model-side only (obs unchanged,
 untouched); role_input_dim +58. No new version stamp — no v60 checkpoint exists yet, so the v60
 signature still carries the break. Pinned by `e2_ctx_injection_test.py` (active rows carry
 exactly their side's ctx, bench rows read zero).
+
+### v60 addendum 2 (2026-08-08, still pre-any-v60-checkpoint): the unrevealed-defender GIGO fix
+
+`gen3_unrevealed_outgoing_prior_v1` (design_conditional_opponent_cells.md §4.1, item 4 —
+owner-moved into gen-4): OUTGOING damage priced against UNREVEALED opponent slots read ZERO
+(v34's revealed gate) — misleading exactly when switching matters most, the typeless-HP-immune
+bug class. Now the shared `_outgoing_matrix` kernel (behind the D1 `pairwise_outgoing` cells,
+the OMX flat block, and every C1 hypothetical re-run) prices hidden slots against the v36
+EXPECTED-LATENT defender at a **Species-Clause-filtered gen3ou usage prior** (new
+`SPECIES_USAGE_PRIOR` table + `gen3_data.priors.species_usage()`; a learned posterior can
+override via the `species_probs` seam): E[mult] via `SPECIES_EXP_MULT`, E[def/spd] via the
+spread-prior means, E[maxhp] via E[base HP], forced-alive full-HP switch-in. P(KO) stays
+NULLED at hidden slots (a full-HP switch-in is ~never OHKO'd) and the `revealed` cell channel
+stays 0 — magnitudes change, epistemics don't. Revealed columns byte-identical (everything
+enters via `torch.where(believed, …)`). Unconditional in the v60 world (no flag — no v60
+checkpoint exists). B=1 CPU forward +~0.3 ms. Gates: `unrevealed_outgoing_prior_test.py`
+(prior marginal == direct recompute; Species-Clause zero-mass; revealed byte-identity;
+forced-alive; the §4.1 non-zero guard), `damage_op_probe_fuzz_test` 22/22 (revealed physics
+untouched), the fullgraph compile gate.

@@ -960,7 +960,9 @@ def test_matrices_outgoing_requires_damage_op():
 
 def test_outgoing_matrix_active_col_matches_single_active_and_gates_bench():
     """The matrix's opp-ACTIVE column == the validated single-active `_outgoing_block` (same physics); a
-    REVEALED but immune bench reads 0 damage with revealed=1; an UNREVEALED bench is fully zeroed + revealed=0."""
+    REVEALED but immune bench reads 0 damage with revealed=1; an UNREVEALED bench is priced by the
+    expected-latent defender (gen3_unrevealed_outgoing_prior_v1: non-zero magnitude, pko NULLED,
+    revealed=0)."""
     layout = _make_layout()
     op = DamageOperator(layout, outgoing=True, matrices_outgoing=True)
     eq = _move_num("earthquake")
@@ -979,8 +981,12 @@ def test_outgoing_matrix_active_col_matches_single_active_and_gates_bench():
     revealed = _omx_revealed(mtx)
     # revealed Flying bench (slot 1): immune → 0 damage, but revealed bit = 1
     assert _omx_cell(mtx, 0, 1)[1] == 0.0 and revealed[1] == 1.0
-    # unrevealed bench (slot 2): zeroed + revealed bit 0
-    assert _omx_cell(mtx, 0, 2)[1] == 0.0 and revealed[2] == 0.0
+    # unrevealed bench (slot 2): the expected-latent read (gen3_unrevealed_outgoing_prior_v1) — real
+    # expected magnitude (EQ into the usage-prior marginal defender), pko NULLED, revealed bit 0.
+    hidden = _omx_cell(mtx, 0, 2)
+    assert hidden[1] > 0.0, "unrevealed slot must be priced by the expected-latent defender"
+    assert hidden[3] == 0.0, "P(KO) must stay NULLED for an unrevealed (full-HP switch-in) slot"
+    assert revealed[2] == 0.0, "the revealed/certainty channel must stay 0 for an unrevealed slot"
 
 
 def test_outgoing_matrix_shape_finite_and_leak_free():
