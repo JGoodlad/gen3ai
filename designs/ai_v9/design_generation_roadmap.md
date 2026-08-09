@@ -414,6 +414,13 @@ call site; the critic route is k seed reads over `our_mon` (multiplicity, not wi
 scope), landing WITH the removal. The acceptance clause is UNCHANGED (concat arm <
 all-edges-off on flips AND `|dV|`), measured with stratified state sampling. Precondition
 before step 3+: the op_tensors §9.1 discriminating arms run on gen-4's final checkpoint.
+**The k-seed module ships WITH its TB collapse monitors** (owner, 2026-08-09):
+`agents/model/seed_diagnostics.py` is the contract — `seeds/query_cos` / `seeds/out_cos` /
+`seeds/out_effective_rank` (uncentered PR ≈ how many distinct readout directions) /
+`seeds/out_var`, logged once per `train()` like `popart/*` — with the pre-registered VICReg
+trigger (wire the variance+covariance floor iff query_cos sustains > 0.6 or effective rank
+sustains < k/2 after ~2M steps; the z_arch collapse read ~1.6 effective of 32). A seed module
+that lands without these monitors repeats the z_arch post-hoc-discovery failure.
 
 ## 3.9 E9 STEP 1 — per-entity RECENCY features (designed 2026-08-07, pre-gen-3)
 
