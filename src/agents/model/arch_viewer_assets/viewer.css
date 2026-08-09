@@ -1,0 +1,126 @@
+:root{--surface-1:#fcfcfb;--surface-2:#f2f2ef;--text-primary:#0b0b0b;--text-secondary:#52514e;
+ --text-muted:#77756f;--line:#d9d8d3;--absolute:#2a78d6;--ratio:#eb6834;--none:#1baf7a;
+ --unmeasured:#b8b6b0;--good:#1a7f4b;--bad:#c0392b;}
+html[data-theme=dark]{--surface-1:#1a1a19;--surface-2:#242423;--text-primary:#fff;
+ --text-secondary:#c3c2b7;--text-muted:#8e8d85;--line:#3a3a38;--absolute:#3987e5;--ratio:#d95926;
+ --none:#199e70;--unmeasured:#55544f;--good:#4ec98a;--bad:#e66767;}
+*{box-sizing:border-box}
+body{margin:0;font:13px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+ background:var(--surface-1);color:var(--text-primary);-webkit-text-size-adjust:100%;
+ height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+/* Controls opt out of the double-tap-to-zoom gesture, which otherwise costs every tap ~300ms
+   while Safari waits to see whether a second one is coming. */
+select,button{touch-action:manipulation}
+/* Without nowrap, `clear focus` and the leak badge wrap their own text inside a narrow flex
+   item and grow to 64px tall — and the tallest child sets the header height, so two little
+   buttons were costing 25px of graph on every screen. */
+header button,header .badge,header label{white-space:nowrap}
+header{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:10px 14px;flex:none;
+ border-bottom:1px solid var(--line);background:var(--surface-2)}
+h1{font-size:14px;margin:0;font-weight:650;letter-spacing:-.01em}
+.t-short{display:none}
+.sub{color:var(--text-muted);font-size:11.5px}
+.ctl{display:flex;gap:6px;align-items:center}
+label{color:var(--text-secondary);font-size:11.5px}
+select,button,input{font:inherit;font-size:12px;padding:4px 7px;border:1px solid var(--line);
+ border-radius:6px;background:var(--surface-1);color:var(--text-primary)}
+button{cursor:pointer}button:hover{background:var(--surface-2)}
+button[aria-pressed=true]{background:var(--text-primary);color:var(--surface-1);
+ border-color:var(--text-primary)}
+#wrap{display:flex;flex:1;min-height:0}
+#cy{flex:1;min-width:0}
+aside{width:352px;border-left:1px solid var(--line);overflow:auto;padding:12px 14px;
+ background:var(--surface-2)}
+aside h2{font-size:12.5px;margin:0 0 2px;letter-spacing:-.01em}
+aside .kind{color:var(--text-muted);font-size:11px;margin-bottom:10px}
+dl{margin:0 0 12px;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px}
+dt{color:var(--text-muted)}dd{margin:0;word-break:break-word}
+.sec{margin:14px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+ color:var(--text-muted);border-top:1px solid var(--line);padding-top:9px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:1px 7px;border-radius:99px;
+ border:1px solid var(--line);font-size:11px;margin:2px 3px 2px 0}
+.sw{width:9px;height:9px;border-radius:2px;flex:none}
+.elist{font-size:11.5px;max-height:238px;overflow:auto}
+.elist div{padding:2px 0;border-bottom:1px dotted var(--line);color:var(--text-secondary)}
+.elist .ghdr{border-bottom:none;padding:5px 0 1px}
+.elist div b{color:var(--text-primary);font-weight:550}
+.mut{color:var(--text-muted)}
+.aged{color:var(--ratio);font-weight:600}
+#prov code{font-size:11px}
+#legend{position:absolute;left:12px;bottom:12px;background:var(--surface-2);border:1px solid
+ var(--line);border-radius:8px;padding:9px 11px;font-size:11.5px;max-width:430px}
+#legend b{font-weight:650}
+#legend .row{display:flex;gap:8px;align-items:center;margin:3px 0}
+#legend svg{flex:none}
+.badge{padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.badge.ok{background:var(--good);color:#fff}.badge.no{background:var(--bad);color:#fff}
+#tip{position:absolute;pointer-events:none;background:var(--surface-1);border:1px solid var(--line);
+ border-radius:7px;padding:7px 9px;font-size:11.5px;max-width:330px;box-shadow:0 4px 14px #0002;
+ display:none;z-index:9}
+#tbl{display:none;flex:1;overflow:auto;padding:10px 14px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td .mut{white-space:normal}
+th{position:sticky;top:0;background:var(--surface-2);cursor:pointer;color:var(--text-secondary)}
+.famdef{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+.note{border:1px solid var(--line);border-left:3px solid var(--text-muted);border-radius:6px;
+ padding:7px 9px;font-size:11.5px;color:var(--text-secondary);margin:6px 0}
+.warn{background:color-mix(in srgb,var(--ratio) 15%,transparent);border:1px solid var(--ratio);border-radius:6px;padding:6px 9px;
+ font-size:11.5px;margin:8px 0}
+#err{padding:22px;font-size:13px;line-height:1.6}
+#lgt{display:none}
+
+#sheetbar{display:none;align-items:center;justify-content:space-between;gap:10px;
+ margin:-4px -4px 8px;padding-bottom:6px;border-bottom:1px solid var(--line);
+ position:sticky;top:-12px;background:var(--surface-2)}
+#sheetbar b{font-size:12px;color:var(--text-muted);font-weight:600}
+#sheetclose{font-size:15px;line-height:1;padding:6px 11px}
+/* ---------- phones -------------------------------------------------------------------------
+   Not a squeezed desktop. Three things change shape, because on a 390px screen the desktop
+   layout puts a 352px panel over a 38px graph:
+     * the controls become ONE horizontally-scrolling strip instead of six wrapped rows
+       (they cost 330px of an 844px screen — 39% — before anything was drawn),
+     * the side panel becomes a bottom sheet that appears on tap and dismisses,
+     * the graph re-lays out top-to-bottom (see layoutStacked) so the flow still reads
+       sources -> sinks, just down the screen.
+   Safe-area insets everywhere that touches an edge: this is a notched, home-indicator device. */
+/* Short-and-wide is a phone too. A landscape iPhone is 844x390: too wide to match a width
+   breakpoint, far too short to give 352px to a side panel. The CHROME keys on either condition;
+   the GRAPH layout keys on width alone (`NARROW`), because in landscape the column layout is
+   genuinely the better fit — stacked-and-wrapped is tall by design, and 390px of height is
+   exactly what it does not have. */
+@media (max-width:760px), (max-height:520px){
+  header{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:8px max(10px,env(safe-area-inset-right))
+   8px max(10px,env(safe-area-inset-left));scrollbar-width:none}
+  header::-webkit-scrollbar{display:none}
+  /* The full title is 165px of a 390px strip — a caption competing with the controls. */
+  h1{font-size:13px;white-space:nowrap}
+  .t-long{display:none}.t-short{display:inline}
+  header .ctl{flex:none}
+  header label{display:none}          /* the select's own value says what it is */
+  /* Kept, not dropped — but pushed to the END of the strip. In DOM order the meta string comes
+     before the controls, so left as-is it fills the one visible screenful and pushes every
+     control off to the right, behind a scroll nobody knows is there. The signature and snapshot
+     age are worth reading on a phone; they are not worth the only visible space. */
+  #hdr,#prov{flex:none;white-space:nowrap;order:99}
+  #leak{order:98}
+  /* 16px is not a style choice: below it, iOS zooms the whole page when a control takes focus
+     and never zooms back out. */
+  select,button,input{font-size:16px;padding:7px 9px}
+  #cy{width:100%}
+  aside{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:62dvh;z-index:20;
+   border-left:none;border-top:1px solid var(--line);border-radius:14px 14px 0 0;
+   transform:translateY(101%);transition:transform .22s ease;
+   padding-bottom:max(14px,env(safe-area-inset-bottom));box-shadow:0 -6px 24px #0006}
+  body.sheet aside{transform:translateY(0)}
+  #sheetbar{display:flex}
+  #legend{left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));
+   bottom:max(10px,env(safe-area-inset-bottom));max-width:none;z-index:15}
+  #legend:not(.on){display:none}
+  #lgt{display:inline-block}
+  #tbl{padding:8px 10px}
+  table{font-size:13px}
+}
+/* A touch device has no hover, so the edge tooltip can only ever flash and stick. Tapping an
+   edge opens the sheet with strictly more detail. */
+@media (hover:none){#tip{display:none!important}}

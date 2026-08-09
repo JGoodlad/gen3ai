@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gen3AI — delivery digraph</title>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<style>
+__CSS__
+</style></head><body>
+<header>
+  <h1><span class="t-long">Gen3AI delivery digraph</span><span class="t-short">Gen3AI</span></h1>
+  <span class="sub" id="hdr"></span>
+  <span class="ctl"><label for="ck">checkpoint</label><select id="ck"></select></span>
+  <span class="ctl"><label for="mt">metric</label><select id="mt">
+    <option value="flip_rate">argmax flips</option><option value="kl_mean">masked KL</option>
+    <option value="dv_mean">|ΔV| (critic)</option></select></span>
+  <span class="ctl"><label for="bf">bias family</label><select id="bf"></select></span>
+  <span class="ctl"><label for="fo">focus</label><select id="fo"></select>
+    <select id="dir"><option value="anc">→ what feeds it</option>
+      <option value="desc">what it feeds →</option><option value="both">both</option></select></span>
+  <button id="clr">clear focus</button>
+  <button id="tg" aria-pressed="false">table</button>
+  <button id="dk" aria-pressed="true">dark</button>
+  <button id="lgt" aria-pressed="false">legend</button>
+  <span id="leak"></span>
+  <span class="sub" id="prov"></span>
+</header>
+<div id="wrap"><div id="cy"></div><div id="tbl"></div>
+  <aside id="side"><div id="sheetbar"><b>details</b><button id="sheetclose" aria-label="close">close</button></div>
+  <div id="sidebody"></div></aside></div>
+<div id="legend"></div><div id="tip"></div>
+<script id="payload" type="application/json">__PAYLOAD__</script>
+<script>
+__JS__
+</script></body></html>

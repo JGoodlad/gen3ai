@@ -259,3 +259,70 @@ def test_desktop_keeps_the_side_panel_in_flow(page):
         pytest.skip("cytoscape could not be fetched from the CDN — no network")
     assert p["asidePos"] != "fixed", "the bottom-sheet layout leaked into the desktop breakpoint"
     assert abs(p["headerH"] + p["cyH"] - p["innerH"]) <= 1
+
+
+def test_serve_answers_every_route():
+    """`--serve` must actually serve — all three routes, not just the cheap one.
+
+    This exists because splitting the server out of the generator moved
+    `_snapshot_provenance` and left two routes calling it through the hot-reloaded GENERATOR
+    module, where it no longer was. `/healthz` does not touch it and kept returning 200, so the
+    endpoint looked healthy while `/` and `/graph.json` were both 500ing.
+
+    Byte-identical generated output — which the refactor did prove — says nothing about any of
+    this. The generator is a pure function; the server is a separate program that happens to call
+    it. Only opening the socket tests the socket.
+    """
+    import socket
+    import sys
+    import time
+    import urllib.error
+    import urllib.request
+
+    with socket.socket() as probe:                      # borrow a free port, then let it go
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+
+    env = dict(os.environ, PYTHONPATH=os.path.join(B._REPO, "src"))
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "agents.model.build_arch_viewer", "--serve",
+         "--port", str(port)],
+        cwd=B._REPO, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    try:
+        base, last = f"http://127.0.0.1:{port}", None
+        for _ in range(100):                            # wait for the socket, do not guess a sleep
+            if proc.poll() is not None:
+                pytest.fail(f"--serve exited early:\n{proc.stdout.read()[-800:]}")
+            try:
+                urllib.request.urlopen(base + "/healthz", timeout=1).read()
+                break
+            except Exception as exc:                    # noqa: BLE001 - not up yet
+                last = exc
+                time.sleep(0.1)
+        else:
+            pytest.fail(f"--serve never came up on {port}: {last}")
+
+        health = urllib.request.urlopen(base + "/healthz", timeout=10).read().decode()
+        assert health.startswith("ok "), health
+
+        page = urllib.request.urlopen(base + "/", timeout=20).read().decode()
+        assert page.lstrip().startswith("<!DOCTYPE html>")
+        assert "__PAYLOAD__" not in page
+
+        graph = json.loads(urllib.request.urlopen(base + "/graph.json", timeout=20).read())
+        assert graph["nodes"] and graph["edges"]
+        assert graph["graph_sha256"]
+        assert graph["snapshot_built"] is None or "days" in graph["snapshot_built"], (
+            "the served payload lost its provenance block")
+
+        try:
+            urllib.request.urlopen(base + "/nope", timeout=10)
+            pytest.fail("an unknown route must 404, not 200")
+        except urllib.error.HTTPError as exc:
+            assert exc.code == 404
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            proc.kill()

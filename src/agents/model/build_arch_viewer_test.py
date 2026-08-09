@@ -11,6 +11,8 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
+import subprocess
 
 import pytest
 
@@ -191,3 +193,37 @@ def test_concept_links_point_at_real_headings(payload):
         assert os.path.exists(path), e["concept_file"]
         with open(path) as fh:
             assert e["concept_heading"] in fh.read(), e["concept_heading"]
+
+
+def test_viewer_js_actually_parses():
+    """`node --check` on the JS asset — the gate the refactor made possible.
+
+    While the script lived inside a Python string literal there was no way to parse it short of
+    generating the HTML and cutting the block back out by hand, which is exactly what was done,
+    by hand, every time. As a file it is one subprocess. Skips when node is absent rather than
+    pretending to pass.
+    """
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node is not installed — cannot parse-check viewer.js")
+    path = os.path.join(B._ASSETS, "viewer.js")
+    proc = subprocess.run([node, "--check", path], capture_output=True, text=True, timeout=60)
+    assert proc.returncode == 0, f"viewer.js is not valid JavaScript:\n{proc.stderr}"
+
+
+def test_the_assets_are_what_the_page_is_built_from(rendered):
+    """The three assets must actually reach the page, with no placeholder left behind.
+
+    Guards the failure mode a template split introduces: a renamed placeholder silently drops a
+    whole stylesheet or script, and the page still looks structurally fine to every other test.
+    """
+    for placeholder in ("__CSS__", "__JS__", "__PAYLOAD__"):
+        assert placeholder not in rendered, f"{placeholder} was never substituted"
+    for name, probe in (("viewer.css", ":root{--surface-1"),
+                        ("viewer.js", "const D = JSON.parse")):
+        asset = B._asset(name)
+        assert probe in asset, f"{name} no longer contains its landmark {probe!r}"
+        assert probe in rendered, f"{name} did not reach the rendered page"
+    # the shell keeps its single network dependency, and `--vendor` still knows where to find it
+    tag, url = B._cdn()
+    assert tag in rendered and "cytoscape" in url
