@@ -406,7 +406,8 @@ def build_payload(graph: Dict[str, Any]) -> Dict[str, Any]:
 _HTML = r"""<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Gen3AI — delivery digraph</title>
 <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
 <style>
@@ -418,10 +419,19 @@ html[data-theme=dark]{--surface-1:#1a1a19;--surface-2:#242423;--text-primary:#ff
  --none:#199e70;--unmeasured:#55544f;--good:#4ec98a;--bad:#e66767;}
 *{box-sizing:border-box}
 body{margin:0;font:13px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
- background:var(--surface-1);color:var(--text-primary)}
-header{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:10px 14px;
+ background:var(--surface-1);color:var(--text-primary);-webkit-text-size-adjust:100%;
+ height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+/* Controls opt out of the double-tap-to-zoom gesture, which otherwise costs every tap ~300ms
+   while Safari waits to see whether a second one is coming. */
+select,button{touch-action:manipulation}
+/* Without nowrap, `clear focus` and the leak badge wrap their own text inside a narrow flex
+   item and grow to 64px tall — and the tallest child sets the header height, so two little
+   buttons were costing 25px of graph on every screen. */
+header button,header .badge,header label{white-space:nowrap}
+header{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:10px 14px;flex:none;
  border-bottom:1px solid var(--line);background:var(--surface-2)}
 h1{font-size:14px;margin:0;font-weight:650;letter-spacing:-.01em}
+.t-short{display:none}
 .sub{color:var(--text-muted);font-size:11.5px}
 .ctl{display:flex;gap:6px;align-items:center}
 label{color:var(--text-secondary);font-size:11.5px}
@@ -430,7 +440,7 @@ select,button,input{font:inherit;font-size:12px;padding:4px 7px;border:1px solid
 button{cursor:pointer}button:hover{background:var(--surface-2)}
 button[aria-pressed=true]{background:var(--text-primary);color:var(--surface-1);
  border-color:var(--text-primary)}
-#wrap{display:flex;height:calc(100vh - 52px)}
+#wrap{display:flex;flex:1;min-height:0}
 #cy{flex:1;min-width:0}
 aside{width:352px;border-left:1px solid var(--line);overflow:auto;padding:12px 14px;
  background:var(--surface-2)}
@@ -471,9 +481,65 @@ th{position:sticky;top:0;background:var(--surface-2);cursor:pointer;color:var(--
 .warn{background:color-mix(in srgb,var(--ratio) 15%,transparent);border:1px solid var(--ratio);border-radius:6px;padding:6px 9px;
  font-size:11.5px;margin:8px 0}
 #err{padding:22px;font-size:13px;line-height:1.6}
+#lgt{display:none}
+
+#sheetbar{display:none;align-items:center;justify-content:space-between;gap:10px;
+ margin:-4px -4px 8px;padding-bottom:6px;border-bottom:1px solid var(--line);
+ position:sticky;top:-12px;background:var(--surface-2)}
+#sheetbar b{font-size:12px;color:var(--text-muted);font-weight:600}
+#sheetclose{font-size:15px;line-height:1;padding:6px 11px}
+/* ---------- phones -------------------------------------------------------------------------
+   Not a squeezed desktop. Three things change shape, because on a 390px screen the desktop
+   layout puts a 352px panel over a 38px graph:
+     * the controls become ONE horizontally-scrolling strip instead of six wrapped rows
+       (they cost 330px of an 844px screen — 39% — before anything was drawn),
+     * the side panel becomes a bottom sheet that appears on tap and dismisses,
+     * the graph re-lays out top-to-bottom (see layoutStacked) so the flow still reads
+       sources -> sinks, just down the screen.
+   Safe-area insets everywhere that touches an edge: this is a notched, home-indicator device. */
+/* Short-and-wide is a phone too. A landscape iPhone is 844x390: too wide to match a width
+   breakpoint, far too short to give 352px to a side panel. The CHROME keys on either condition;
+   the GRAPH layout keys on width alone (`NARROW`), because in landscape the column layout is
+   genuinely the better fit — stacked-and-wrapped is tall by design, and 390px of height is
+   exactly what it does not have. */
+@media (max-width:760px), (max-height:520px){
+  header{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:8px max(10px,env(safe-area-inset-right))
+   8px max(10px,env(safe-area-inset-left));scrollbar-width:none}
+  header::-webkit-scrollbar{display:none}
+  /* The full title is 165px of a 390px strip — a caption competing with the controls. */
+  h1{font-size:13px;white-space:nowrap}
+  .t-long{display:none}.t-short{display:inline}
+  header .ctl{flex:none}
+  header label{display:none}          /* the select's own value says what it is */
+  /* Kept, not dropped — but pushed to the END of the strip. In DOM order the meta string comes
+     before the controls, so left as-is it fills the one visible screenful and pushes every
+     control off to the right, behind a scroll nobody knows is there. The signature and snapshot
+     age are worth reading on a phone; they are not worth the only visible space. */
+  #hdr,#prov{flex:none;white-space:nowrap;order:99}
+  #leak{order:98}
+  /* 16px is not a style choice: below it, iOS zooms the whole page when a control takes focus
+     and never zooms back out. */
+  select,button,input{font-size:16px;padding:7px 9px}
+  #cy{width:100%}
+  aside{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:62dvh;z-index:20;
+   border-left:none;border-top:1px solid var(--line);border-radius:14px 14px 0 0;
+   transform:translateY(101%);transition:transform .22s ease;
+   padding-bottom:max(14px,env(safe-area-inset-bottom));box-shadow:0 -6px 24px #0006}
+  body.sheet aside{transform:translateY(0)}
+  #sheetbar{display:flex}
+  #legend{left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));
+   bottom:max(10px,env(safe-area-inset-bottom));max-width:none;z-index:15}
+  #legend:not(.on){display:none}
+  #lgt{display:inline-block}
+  #tbl{padding:8px 10px}
+  table{font-size:13px}
+}
+/* A touch device has no hover, so the edge tooltip can only ever flash and stick. Tapping an
+   edge opens the sheet with strictly more detail. */
+@media (hover:none){#tip{display:none!important}}
 </style></head><body>
 <header>
-  <h1>Gen3AI delivery digraph</h1>
+  <h1><span class="t-long">Gen3AI delivery digraph</span><span class="t-short">Gen3AI</span></h1>
   <span class="sub" id="hdr"></span>
   <span class="ctl"><label for="ck">checkpoint</label><select id="ck"></select></span>
   <span class="ctl"><label for="mt">metric</label><select id="mt">
@@ -486,10 +552,13 @@ th{position:sticky;top:0;background:var(--surface-2);cursor:pointer;color:var(--
   <button id="clr">clear focus</button>
   <button id="tg" aria-pressed="false">table</button>
   <button id="dk" aria-pressed="true">dark</button>
+  <button id="lgt" aria-pressed="false">legend</button>
   <span id="leak"></span>
   <span class="sub" id="prov"></span>
 </header>
-<div id="wrap"><div id="cy"></div><div id="tbl"></div><aside id="side"></aside></div>
+<div id="wrap"><div id="cy"></div><div id="tbl"></div>
+  <aside id="side"><div id="sheetbar"><b>details</b><button id="sheetclose" aria-label="close">close</button></div>
+  <div id="sidebody"></div></aside></div>
 <div id="legend"></div><div id="tip"></div>
 <script id="payload" type="application/json">__PAYLOAD__</script>
 <script>
@@ -634,7 +703,8 @@ const ordKey = n => (n.kind === 'aux_loss' ? '9' : n.kind === 'belief_head' ? '5
   (n.kind === 'seat' ? String(SEAT_BANDS.flat().indexOf(seatGroup(n.id))).padStart(2, '0') : '') +
   n.id;
 BANDS.forEach(b => b.sort((a, c) => ordKey(a) < ordKey(c) ? -1 : 1));
-(() => {
+const NARROW = () => innerWidth < 760;
+function layoutColumns() {
   /* The three seat bands are ONE logical column (the 36-token sequence) split only because 36
      rows would not fit; they get a tight gap so they read as one block, and the stage boundaries
      around them get a wide one. */
@@ -658,8 +728,38 @@ BANDS.forEach(b => b.sort((a, c) => ordKey(a) < ordKey(c) ? -1 : 1));
     band.forEach((n, i) => cy.$id(n.id).position({x: x + w / 2, y: off + ys[i]}));
     x += w;
   });
-})();
-cy.fit(undefined, 24);
+}
+function layoutStacked() {
+  /* Phone shape: bands run TOP-TO-BOTTOM, so the flow still reads sources -> sinks — down the
+     screen instead of across it — and each band WRAPS into three columns.
+
+     Wrapping is the part that matters. A plain transpose sounds right and is worse: band 3 holds
+     16 seats, and 16 abreast is wider than the landscape layout it was meant to replace. Wrapped,
+     the drawing is roughly 360 x 840 instead of 1200 x 600, which on a 390px-wide screen takes
+     the fit-zoom from ~0.33 to ~0.83 — the difference between 3.6px labels and 9px ones. */
+  const COLS = 3, CELL_W = 126, ROW_GAP = 8, BAND_GAP = 26;
+  let y = 0;
+  BANDS.forEach(band => {
+    if (!band.length) return;
+    for (let i = 0; i < band.length; i += COLS) {
+      const row = band.slice(i, i + COLS);
+      const h = Math.max(...row.map(n => cy.$id(n.id).outerHeight()));
+      const xoff = -(row.length - 1) * CELL_W / 2;     // centre short rows under full ones
+      row.forEach((n, c) => cy.$id(n.id).position({x: xoff + c * CELL_W, y: y + h / 2}));
+      y += h + ROW_GAP;
+    }
+    y += BAND_GAP;
+  });
+}
+function layout() {
+  if (NARROW()) layoutStacked(); else layoutColumns();
+  cy.resize();                      // measure the container as it IS, not as it was at construction
+  cy.fit(undefined, NARROW() ? 12 : 24);
+}
+layout();
+/* One more fit after the first paint. On a phone the URL bar and the safe-area insets settle
+   after layout, and a fit computed against the pre-settle height clips the drawing. */
+addEventListener('load', () => { cy.resize(); cy.fit(undefined, NARROW() ? 12 : 24); });
 
 /* Which bias family is on show: 'all' (every family, faint, so the skeleton reads through 388
    overlapping edges), 'none' (hidden), or one family id at full strength. The family IS the unit
@@ -785,6 +885,12 @@ function familiesOn(id) {
       <div class="mut">${esc(famLabel(r.f))}</div></div>`).join('')}
     </div>`;
 }
+/* On a phone the panel is a bottom sheet, so it needs an explicit open and an explicit way out
+   — a fixed overlay with no dismiss is a trap. On desktop these are no-ops: the class does
+   nothing outside the media query, and the panel is always visible. */
+function openSheet() { document.body.classList.add('sheet'); }
+function closeSheet() { document.body.classList.remove('sheet'); }
+
 /* What the panel is currently showing, so a checkpoint or metric change re-renders it. Left
    static, the panel keeps displaying the numbers of a checkpoint you already navigated away
    from — stale figures beside a selector that says otherwise. */
@@ -795,7 +901,7 @@ function refreshPanel() {
 }
 function showNode(id) {
   const n = D.nodes.find(x => x.id === id); if (!n) return;
-  SEL = {kind: 'node', id};
+  SEL = {kind: 'node', id}; openSheet();
   const ins = D.edges.filter(e => e.dst === id), outs = D.edges.filter(e => e.src === id);
   /* One row per edge, and NO cap: the list scrolls. The previous `.slice(0, 14)` printed a
      "×15" chip above 14 rows, which is the exact shape of a silent truncation. */
@@ -805,7 +911,7 @@ function showNode(id) {
       style="background:var(${CLS_VAR[c]})"></span>${c} ×${k.length}</span></div>` +
       k.map(e => `<div>${esc(e.type)} ${e.src === id ? '→' : '←'}
         <b>${esc(e.src === id ? e.dst : e.src)}</b></div>`).join(''); }).join('');
-  $('#side').innerHTML = `<h2>${esc(id)}</h2><div class="kind">${esc(n.kind)}</div><dl>
+  $('#sidebody').innerHTML = `<h2>${esc(id)}</h2><div class="kind">${esc(n.kind)}</div><dl>
     ${row('token index', n.index)}${row('token type', n.token_type)}
     ${row('action index', n.action_index)}${row('out dim', n.out_dim)}
     ${row('in / out', n.in_features ? n.in_features + ' → ' + n.out_features : null)}
@@ -822,9 +928,9 @@ function showNode(id) {
 }
 function showEdge(id) {
   const e = D.edges.find(x => x.id === id); if (!e) return;
-  SEL = {kind: 'edge', id};
+  SEL = {kind: 'edge', id}; openSheet();
   const m = measure(e);
-  $('#side').innerHTML = `<h2>${esc(e.src)} → ${esc(e.dst)}</h2>
+  $('#sidebody').innerHTML = `<h2>${esc(e.src)} → ${esc(e.dst)}</h2>
     <div class="kind">${esc(e.type)} · carries ${esc(e.carries)}</div>
     <dl>${row('channel', esc(e.blurb))}${row('width', e.width)}
     ${row('family', e.family ? `<b>${esc(e.family)}</b> — ${esc(famLabel(e.family))}` : null)}
@@ -924,7 +1030,8 @@ function fromHash() {
 }
 
 $('#ck').innerHTML = D.overlays.map(o => `<option value="${o.id}">${o.generation || o.id} @ ` +
-  `${o.step ? (o.step / 1e6) + 'M' : '?'} · n=${o.n_states || '?'} · ${o.date || ''}</option>`).join('');
+  `${o.step ? (o.step / 1e6).toFixed(1) + 'M' : '?'} · n=${o.n_states || '?'} · ` +
+  `${o.date || ''}</option>`).join('');
 const FAMS = [...new Set(D.edges.filter(e => e.type === 'bias').map(e => e.family))].sort();
 const famCount = f => D.edges.filter(e => e.type === 'bias' && e.family === f).length;
 $('#bf').innerHTML = `<option value="all">all ${FAMS.length} families (faint)</option>` +
@@ -951,9 +1058,23 @@ $('#dk').onclick = e => { const on = e.target.getAttribute('aria-pressed') !== '
   e.target.setAttribute('aria-pressed', on);
   document.documentElement.dataset.theme = on ? 'dark' : 'light';
   applyTheme(); applyFocus(); legend(); hash(); };
+$('#sheetclose').onclick = closeSheet;
+$('#lgt').onclick = e => { const on = e.target.getAttribute('aria-pressed') !== 'true';
+  e.target.setAttribute('aria-pressed', on); $('#legend').classList.toggle('on', on); };
+/* Re-lay out when the viewport crosses the phone breakpoint — a rotation is exactly that, and a
+   graph laid out for one shape is unreadable in the other. Re-fit either way, since the canvas
+   size changed regardless. */
+let WAS_NARROW = NARROW(), rt = null;
+addEventListener('resize', () => {
+  clearTimeout(rt);
+  rt = setTimeout(() => {
+    if (NARROW() !== WAS_NARROW) { WAS_NARROW = NARROW(); layout(); }
+    else cy.fit(undefined, NARROW() ? 12 : 24);
+  }, 180);
+});
 cy.on('tap', 'node', ev => showNode(ev.target.id()));
 cy.on('tap', 'edge', ev => showEdge(ev.target.id()));
-cy.on('tap', ev => { if (ev.target === cy) $('#side').innerHTML =
+cy.on('tap', ev => { if (ev.target === cy) closeSheet(); if (ev.target === cy) $('#sidebody').innerHTML =
   '<div class="kind">Click a node or an edge. Use <b>focus</b> to isolate everything that feeds ' +
   'a sink — e.g. <code>vf_projection</code> answers “what does the critic see”.</div>'; });
 cy.on('mouseover', 'edge', ev => { const e = ev.target.data(), m = measure(e);
@@ -972,7 +1093,7 @@ header(); applyTheme(); legend(); applyFocus();   // applyTheme covers the `#dar
 /* A deep link restores the panel too, not just the dimming — otherwise a shared
    `#focus=vf_projection` lands on a filtered graph with an empty panel beside it. */
 if (FOCUS) showNode(FOCUS);
-else $('#side').innerHTML = '<div class="kind">Click any node — a token seat, the operator, a ' +
+else $('#sidebody').innerHTML = '<div class="kind">Click any node — a token seat, the operator, a ' +
   'head, a logit — for its channels, what it can deliver to, and the bias families acting on ' +
   'it. Use <b>focus</b> to isolate everything that feeds a sink: <code>vf_projection</code> ' +
   'answers “what does the critic see”.</div>';

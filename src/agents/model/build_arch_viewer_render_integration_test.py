@@ -23,6 +23,7 @@ verbatim in the script's own source, so a substring check reports every healthy 
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -52,6 +53,63 @@ def _chrome() -> str:
         if os.path.exists(path):
             return path
     pytest.skip("no chrome/chromium on PATH — cannot render the viewer")
+
+
+# A phone viewport, via an iframe. Headless chrome clamps its window to ~500px wide on Linux, so
+# `--window-size=390,844` silently renders a 500px page and crops the screenshot — which reads as
+# "the layout is broken" when it is the harness that is. An iframe gets the width it is told.
+_PHONE_HARNESS = """<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>html,body{{margin:0}}iframe{{width:{w}px;height:{h}px;border:0;display:block}}</style>
+</head><body><iframe id="f" src="{url}"></iframe><script>
+/* Report on the iframe's LOAD event, not on a timer.
+   A fixed delay reads `d.body` while the frame is still parsing and gets null. A fast poll loop
+   is worse: under --virtual-time-budget a setTimeout chain advances virtual time immediately, so
+   300 x 50ms burns the entire budget without ever yielding to the CDN fetch the frame is waiting
+   on — the harness then reports "not ready" for a page that is perfectly fine. */
+function report() {{
+  var out;
+  try {{
+    var d = document.getElementById('f').contentDocument, w = d.defaultView;
+    out = {{}};
+    for (var k in d.body.dataset) out[k] = d.body.dataset[k];
+    out.innerW = w.innerWidth; out.innerH = w.innerHeight;
+    out.headerH = d.querySelector('header').offsetHeight;
+    out.cyH = d.getElementById('cy').clientHeight;
+    out.ckFont = w.getComputedStyle(d.getElementById('ck')).fontSize;
+    out.sheetbar = w.getComputedStyle(d.getElementById('sheetbar')).display;
+    out.asidePos = w.getComputedStyle(d.querySelector('aside')).position;
+  }} catch (e) {{ out = {{err: String(e)}}; }}
+  document.body.dataset.probe = JSON.stringify(out);
+}}
+document.getElementById('f').addEventListener('load', function () {{ setTimeout(report, 600); }});
+setTimeout(function () {{                       // the frame never loaded at all
+  if (!document.body.dataset.probe) document.body.dataset.probe =
+    JSON.stringify({{err: 'iframe load event never fired'}});
+}}, 20000);
+</script></body></html>"""
+
+
+def _probe_at(binary: str, page, width: int, height: int) -> dict:
+    """Render the viewer at an exact viewport and read measurements back out of it."""
+    with tempfile.TemporaryDirectory() as d:
+        harness = os.path.join(d, "harness.html")
+        with open(harness, "w") as fh:
+            fh.write(_PHONE_HARNESS.format(w=width, h=height, url=f"file://{page}"))
+        proc = subprocess.run(
+            [binary, "--headless", "--no-sandbox", "--disable-gpu",
+             "--allow-file-access-from-files", "--virtual-time-budget=25000", "--dump-dom",
+             f"--window-size={max(width, 520)},{max(height, 560)}", f"file://{harness}"],
+            capture_output=True, text=True, timeout=180)
+    if proc.returncode != 0:
+        pytest.skip(f"headless chrome failed ({proc.returncode}): {proc.stderr[-300:]}")
+    m = re.search(r'data-probe="([^"]*)"', proc.stdout)
+    if not m:
+        pytest.skip("the harness never reported — cytoscape probably could not be fetched")
+    import html as _html
+    probe = json.loads(_html.unescape(m.group(1)))
+    if "err" in probe:                    # never let a broken harness read as a passing layout
+        pytest.fail(f"the phone harness failed at {width}x{height}: {probe['err']}")
+    return probe
 
 
 def _dump_dom(binary: str, url: str) -> str:
@@ -140,3 +198,64 @@ def test_vendored_copy_renders_with_no_network():
     assert data.get("cytoscape") != "missing", (
         "the inlined bundle did not define cytoscape — vendoring is broken, not offline")
     assert data.get("ready") == "1"
+
+
+def test_phone_viewport_fits_and_is_usable(page):
+    """The iPhone layout: nothing below the fold, no iOS zoom trap, and a way out of the sheet.
+
+    Three regressions this pins, all of which shipped at least once:
+
+    * `#wrap` was `calc(100vh - 52px)` — a hardcoded header height. The phone header is not 52px
+      (it measured 81px before the buttons were told not to wrap their own text), so the bottom
+      of the graph sat below the fold. Now the column is flexed and header + canvas must equal
+      the viewport exactly.
+    * The control font was 12px. Below 16px, iOS zooms the whole page when a `<select>` takes
+      focus and does not zoom back out, so one tap on the checkpoint picker left the page stuck.
+    * `#sheetbar` — the bottom sheet's only close affordance — was defined AFTER the media query
+      that shows it, so `display:none` won on equal specificity and the sheet had no way out.
+    """
+    binary = _chrome()
+    p = _probe_at(binary, page, 390, 844)
+    if p.get("cytoscape") == "missing":
+        pytest.skip("cytoscape could not be fetched from the CDN — no network")
+
+    assert p["innerW"] == 390, f"harness did not give a 390px viewport: {p['innerW']}"
+    assert p.get("ready") == "1"
+    assert p.get("positioned") == p.get("nodes"), "a node was left unplaced on the phone layout"
+
+    # +-1px: offsetHeight/clientHeight are integers over a fractional layout, so an exact
+    # equality fails on a sub-pixel header. One pixel is rounding; the bug this guards against
+    # was 35.
+    assert abs(p["headerH"] + p["cyH"] - p["innerH"]) <= 1, (
+        f"header {p['headerH']} + canvas {p['cyH']} != viewport {p['innerH']} — the graph runs "
+        "below the fold; the column must be flexed, not offset by a hardcoded header height")
+    assert p["headerH"] <= 64, f"header is {p['headerH']}px of a phone screen — too tall"
+    assert p["ckFont"] == "16px", (
+        f"controls are {p['ckFont']}; below 16px iOS zooms the page on focus and stays zoomed")
+    assert p["sheetbar"] == "flex", "the bottom sheet has no visible close bar"
+    assert p["asidePos"] == "fixed", "the side panel is still in flow — it would eat the canvas"
+
+
+def test_landscape_phone_keeps_the_compact_chrome(page):
+    """844x390 is a phone too, and too short to hand 352px to a side panel.
+
+    The breakpoint is width OR short height for exactly this case; a width-only rule leaves a
+    landscape iPhone with the desktop layout.
+    """
+    binary = _chrome()
+    p = _probe_at(binary, page, 844, 390)
+    if p.get("cytoscape") == "missing":
+        pytest.skip("cytoscape could not be fetched from the CDN — no network")
+    assert p["asidePos"] == "fixed", "landscape phone still uses the in-flow desktop panel"
+    assert p["ckFont"] == "16px"
+    assert abs(p["headerH"] + p["cyH"] - p["innerH"]) <= 1
+
+
+def test_desktop_keeps_the_side_panel_in_flow(page):
+    """The phone rules must not leak upward: on a desktop the panel is a column, not an overlay."""
+    binary = _chrome()
+    p = _probe_at(binary, page, 1280, 900)
+    if p.get("cytoscape") == "missing":
+        pytest.skip("cytoscape could not be fetched from the CDN — no network")
+    assert p["asidePos"] != "fixed", "the bottom-sheet layout leaked into the desktop breakpoint"
+    assert abs(p["headerH"] + p["cyH"] - p["innerH"]) <= 1
