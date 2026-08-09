@@ -2277,3 +2277,13 @@ d2 alone 16.3% flips at 40M). Obs **2925 → 2667**:
   (2667 dims, 991 decisions); obs-roundtrip fuzz bit-for-bit (627 decisions); trapping fuzz
   re-pointed to the per-mon bits (+ a bench-slots-stay-zero assertion); prober degrades
   gracefully (`om_off`/`tm_off` 0 = absent, ThreatView/saliency no-op).
+
+### v60 addendum (2026-08-08, same day, still pre-any-v60-checkpoint): E2 active-context injection
+
+The one §6 row the re-home commit left un-re-homed — "active context boosts + volatiles (116) →
+E2 of the two actives" — lands: each side's 58-dim ctx block is scattered onto its ACTIVE mon's
+role-encoder row (bench rows zero), so the entity owns its own boosts/volatiles. Additive (the
+global-token and both projection routes remain); model-side only (obs unchanged, fixture/fuzz
+untouched); role_input_dim +58. No new version stamp — no v60 checkpoint exists yet, so the v60
+signature still carries the break. Pinned by `e2_ctx_injection_test.py` (active rows carry
+exactly their side's ctx, bench rows read zero).

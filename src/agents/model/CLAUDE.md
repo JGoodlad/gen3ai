@@ -88,7 +88,11 @@ so they stay correct when the architecture changes with no manual update.
    prev-turn move validity — the CPU matchup ×6 / validity ×6 inputs are DELETED with their obs
    block, `gen3_entity_rehome_v1`), a
    **within-Pokémon move self-attention** (MHA 32-dim, 2 heads, + LayerNorm residual), then the
-   **role encoder** (Linear→ReLU→Linear, `ROLE_ENCODER_HIDDEN`) → 12 × 128 role tokens.
+   **role encoder** (Linear→ReLU→Linear, `ROLE_ENCODER_HIDDEN`) → 12 × 128 role tokens. The role
+   input carries the **E2 active-context injection** (gen3_entity_rehome_v1): each side's
+   boosts+volatiles block scattered onto its ACTIVE mon's row (bench rows zero) — the entity owns
+   its own ctx; the global-token/projection routes remain (additive). Pinned by
+   `e2_ctx_injection_test.py`.
 4. **`TeamTransformer`** — builds a 20-token sequence (6 our-team + 6 their-team role tokens +
    `N_HISTORY_TURNS`=7 history tokens + 1 global token), adds token-type and history-positional
    embeddings, and runs a `TRANSFORMER_N_LAYERS`-deep `nn.TransformerEncoderLayer` stack (d_model

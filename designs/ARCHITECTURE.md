@@ -168,7 +168,10 @@ Because `damage_op_prefuse` is on, the belief + physics stack runs **once, befor
    `our_active_req_move_{ids,type_ids,legal}`).
 2. **`PokemonEncoder`** — per-move network (`MOVE_NET_HIDDEN` `[96,32]`, with the `MoveLatentEncoder`
    latent concatenated in) → within-mon move self-attention → role encoder
-   (`ROLE_ENCODER_HIDDEN` `[256,128]`) → **12 × 128 role tokens**. Stashes
+   (`ROLE_ENCODER_HIDDEN` `[256,128]`) → **12 × 128 role tokens**. The role input carries the
+   E2 active-context injection: each side's 58-dim boosts+volatiles block scattered onto its
+   ACTIVE mon's row, bench rows zero (the §6-audited entity home; the global-token/projection
+   routes remain — additive delivery, pinned by `e2_ctx_injection_test.py`). Stashes
    `last_move_tokens` `[B,12,4,32]` (sorted-by-id) for the seats and the pointer head.
 3. **`MoveBelief`** (pre-fuse) — reads the opp **role** tokens, predicts each opp slot's moveset,
    fuses the Smogon log-odds prior, pins revealed moves, and reinjects the soft-embedded moveset

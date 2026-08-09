@@ -537,6 +537,11 @@ class PokemonEncoder(torch.nn.Module):
             + _gl['hazards']['dim']
             + _gl['screens']['dim']
         )
+        # gen3_entity_rehome_v1 (E2 injection): each ACTIVE mon's token carries its own side's
+        # boosts+volatiles block — the §6-audited entity home for the active context (bench slots
+        # read zeros; the block previously reached the model only through the global token and
+        # the two projections, which remain — this is additive delivery, not a re-route).
+        self._active_ctx_dim = layout['active_context_dim']
         role_input_dim = (
             layout['species_embedding_dim']
             + 6                                         # base stats
@@ -549,6 +554,7 @@ class PokemonEncoder(torch.nn.Module):
             + _condition_dim
             + MOVE_NET_HIDDEN[1] * self.num_moves       # processed moves
             + _hp_and_active_dim
+            + self._active_ctx_dim                      # E2: own side's active ctx (active slot only)
             + _global_ctx_dim                           # broadcasted global context
             + 1                                         # switch_validity
             + 1                                         # struggle_from_prev
@@ -725,8 +731,18 @@ class PokemonEncoder(torch.nn.Module):
 
         struggle_from_prev = ctx.struggle_mask.unsqueeze(1).expand(-1, n_poke, -1)
 
+        # gen3_entity_rehome_v1 (E2 injection): scatter each side's active-context block onto its
+        # ACTIVE mon's row — the entity owns its own boosts/volatiles (bench rows stay zero).
+        batch_idx = torch.arange(batch_size, device=ctx.device)
+        active_ctx_inject = torch.zeros(
+            batch_size, n_poke, self._active_ctx_dim,
+            device=ctx.device, dtype=pokemon_enriched.dtype)
+        active_ctx_inject[batch_idx, ctx.our_active_idx] = ctx.our_ctx_raw
+        active_ctx_inject[batch_idx, TEAM_SIZE + ctx.opp_active_local] = ctx.opp_ctx_raw
+
         pokemon_enriched_with_context = torch.cat([
-            pokemon_enriched, context_broadcasted, switch_validity, struggle_from_prev
+            pokemon_enriched, active_ctx_inject, context_broadcasted, switch_validity,
+            struggle_from_prev
         ], dim=2)
 
         role_tokens = self.role_encoder(
