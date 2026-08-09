@@ -43,6 +43,14 @@ implementations**, selected by `--use-bridge`:
 - **`node`** (`local_sim_bridge.js`) — the default bridge impl, a relay over the real Showdown
   `BattleStream`. Handles the full gen3 move/ability set and produces the `__RECON__`
   reconstruction record + honors `resumeReseed` (the forensic / search / counterfactual layers).
+  **Every exit path is drain-aware** (`gen3_bridge_flush_on_exit_v1`, `exitWhenDrained`): a bare
+  `process.exit()` after `out()` discards Node's un-drained async pipe writes, which TRUNCATED
+  large `__RECON__` lines whenever the reader drained slowly (224 `Incorrect padding` capture
+  failures in run_20260807_135637's final eval at `--eval-concurrency 100`; the persistent
+  training path never exits, so it never truncated — and the rust bridge was never affected,
+  its `LineWriter` blocks on the kernel pipe per line). Gate:
+  `bridge_flush_on_exit_integration_test.py` (deterministic — a 1 MB `__ERR__` payload with a
+  deliberately lazy reader; fails at ~48 KB on a pre-fix bridge).
 - **`rust`** — the std-only `src/rust_sim/src/bin/sim_bridge.rs` binary, a byte-for-byte
   protocol-compatible drop-in (validated at the chunk/stdout level by
   `src/rust_sim/harness/gen_sim_bridge_diff.js`). No Node needed for battle stepping.

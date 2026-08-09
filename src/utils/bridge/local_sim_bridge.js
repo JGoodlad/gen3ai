@@ -112,6 +112,20 @@ function out(line) {
   process.stdout.write(line + '\n');
 }
 
+// process.stdout.write() to a PIPE is ASYNCHRONOUS, and process.exit() discards whatever is
+// still queued in Node userspace — which TRUNCATED large `__RECON__` lines whenever the reader
+// was slow to drain (run_20260807_135637's final eval at --eval-concurrency 100: 224
+// "failed to capture reconstruction: Incorrect padding" errors, every one in the exit-right-
+// after-emit window; the persistent training path never exits, so it never truncated). A
+// zero-length write's callback fires only after every previously queued write has been handed
+// to the kernel pipe (write callbacks are FIFO), and data already IN the pipe survives child
+// exit — so exiting from that callback can never cut a line. Blocks (keeps the process alive)
+// until the reader drains the pipe, which is exactly the contract a framed protocol wants.
+function exitWhenDrained(code) {
+  process.exitCode = code;
+  process.stdout.write('', () => process.exit(code));
+}
+
 function emit(side, chunk) {
   out(side + ' ' + Buffer.from(chunk, 'utf8').toString('base64'));
 }
@@ -200,7 +214,7 @@ function pumpSide(side) {
           rawStream = null;
           endedSides = 0;
         } else {
-          process.exit(0);
+          exitWhenDrained(0);   // NEVER bare process.exit — __RECON__/__END__ may be undrained
         }
       }
     }
@@ -272,7 +286,7 @@ function handleLine(line) {
       }
       break;
     case 'END':
-      process.exit(0);
+      exitWhenDrained(0);
       break;
     default:
       fail(`unknown command: ${cmd}`);
@@ -294,8 +308,8 @@ process.stdin.on('data', (chunk) => {
     }
   }
 });
-process.stdin.on('end', () => process.exit(0));
+process.stdin.on('end', () => exitWhenDrained(0));
 process.on('uncaughtException', (e) => {
-  fail(e && e.stack ? e.stack : String(e));
-  process.exit(1);
+  fail(e && e.stack ? e.stack : String(e));   // the __ERR__ line is as truncatable as __RECON__
+  exitWhenDrained(1);
 });
