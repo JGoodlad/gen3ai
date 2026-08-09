@@ -1,0 +1,199 @@
+{
+ "provenance": {
+  "generation": "gen-4",
+  "run": "run_20260808_212910",
+  "checkpoint": "/home/goodlad/dev/gen3ai/.claude/worktrees/gen4-run-0808/models/run_20260808_212910/final_model.zip",
+  "step": 25000000,
+  "date": "2026-08-09",
+  "note": "gen-4 END-OF-RUN edge audit (25M run, final_model), FIRST with the stratified sampler (gen3_audit_state_sampler_v1 \u2014 coverage in meta.sampling). MILESTONE: all-edges-off (29.22% flips) EXCEEDS the concat arm (22.70%) for the first time in the lineage \u2014 the FLIPS half of the deletion acceptance clause is met by training alone; |dV| still concat-led (4.62 vs 2.44).",
+  "producer": "src/agents/model/edge_ablation_audit.py",
+  "sampling": {
+   "sampler": "stratified_round_robin_v1",
+   "seed": 0,
+   "n_states": 6000,
+   "n_files_read": 245,
+   "n_files_matched": 2476,
+   "per_step": {
+    "step_10000032": 500,
+    "step_12000000": 500,
+    "step_14000016": 500,
+    "step_16000032": 500,
+    "step_18000000": 500,
+    "step_20000016": 500,
+    "step_2000016": 500,
+    "step_22000032": 500,
+    "step_24000000": 500,
+    "step_4000032": 500,
+    "step_6000000": 500,
+    "step_8000016": 500
+   },
+   "per_opponent": {
+    "aggressive": 507,
+    "aggressive_v2": 455,
+    "heuristic": 526,
+    "heuristic2": 677,
+    "random": 1180,
+    "sentinel_0": 482,
+    "sentinel_1": 314,
+    "sentinel_2": 330,
+    "sentinel_3": 220,
+    "sentinel_4": 136,
+    "setup_sweep": 326,
+    "setup_sweep_v2": 189,
+    "staller": 249,
+    "staller_v2": 409
+   }
+  }
+ },
+ "meta": {
+  "checkpoint": "/home/goodlad/dev/gen3ai/.claude/worktrees/gen4-run-0808/models/run_20260808_212910/final_model.zip",
+  "n_states": 6000,
+  "sampling": {
+   "sampler": "stratified_round_robin_v1",
+   "seed": 0,
+   "n_states": 6000,
+   "n_files_read": 245,
+   "n_files_matched": 2476,
+   "per_step": {
+    "step_10000032": 500,
+    "step_12000000": 500,
+    "step_14000016": 500,
+    "step_16000032": 500,
+    "step_18000000": 500,
+    "step_20000016": 500,
+    "step_2000016": 500,
+    "step_22000032": 500,
+    "step_24000000": 500,
+    "step_4000032": 500,
+    "step_6000000": 500,
+    "step_8000016": 500
+   },
+   "per_opponent": {
+    "aggressive": 507,
+    "aggressive_v2": 455,
+    "heuristic": 526,
+    "heuristic2": 677,
+    "random": 1180,
+    "sentinel_0": 482,
+    "sentinel_1": 314,
+    "sentinel_2": 330,
+    "sentinel_3": 220,
+    "sentinel_4": 136,
+    "setup_sweep": 326,
+    "setup_sweep_v2": 189,
+    "staller": 249,
+    "staller_v2": 409
+   }
+  }
+ },
+ "families": {
+  "c1": {
+   "kl_mean": 0.001051249448210001,
+   "kl_p95": 0.0015780269168317318,
+   "flip_rate": 0.006500000134110451,
+   "dv_mean": 0.027704432606697083
+  },
+  "c2": {
+   "kl_mean": 0.006449389737099409,
+   "kl_p95": 0.007320035248994827,
+   "flip_rate": 0.012000000104308128,
+   "dv_mean": 0.030058955773711205
+  },
+  "c3": {
+   "kl_mean": 0.0002946683671325445,
+   "kl_p95": 0.0002517221437301487,
+   "flip_rate": 0.004999999888241291,
+   "dv_mean": 0.027007222175598145
+  },
+  "c4": {
+   "kl_mean": 1.3189753190090414e-05,
+   "kl_p95": 2.945294363598805e-05,
+   "flip_rate": 0.001500000013038516,
+   "dv_mean": 0.004023835528641939
+  },
+  "c5": {
+   "kl_mean": 3.020093026862014e-05,
+   "kl_p95": 0.00011255291610723361,
+   "flip_rate": 0.00283333333209157,
+   "dv_mean": 0.014087352901697159
+  },
+  "d1": {
+   "kl_mean": 0.13229379057884216,
+   "kl_p95": 0.7398567199707031,
+   "flip_rate": 0.12166666984558105,
+   "dv_mean": 0.3334822952747345
+  },
+  "d2": {
+   "kl_mean": 0.19958750903606415,
+   "kl_p95": 0.9242221713066101,
+   "flip_rate": 0.19249999523162842,
+   "dv_mean": 1.9370818138122559
+  },
+  "d3": {
+   "kl_mean": 0.00017426919657737017,
+   "kl_p95": 0.000712728826329112,
+   "flip_rate": 0.0063333334401249886,
+   "dv_mean": 0.03487256541848183
+  },
+  "d4": {
+   "kl_mean": 0.0033651876728981733,
+   "kl_p95": 0.015592208132147789,
+   "flip_rate": 0.02500000037252903,
+   "dv_mean": 0.4422869384288788
+  },
+  "g": {
+   "kl_mean": 6.468516949098557e-05,
+   "kl_p95": 0.00025129353161901236,
+   "flip_rate": 0.006166666746139526,
+   "dv_mean": 0.0452185682952404
+  },
+  "s1": {
+   "kl_mean": 0.009762254543602467,
+   "kl_p95": 0.01549280621111393,
+   "flip_rate": 0.015833333134651184,
+   "dv_mean": 0.02983858808875084
+  },
+  "s3": {
+   "kl_mean": 2.7287547709420323e-05,
+   "kl_p95": 0.00010252942593069747,
+   "flip_rate": 0.004000000189989805,
+   "dv_mean": 0.01382488664239645
+  },
+  "t": {
+   "kl_mean": 0.0010316267143934965,
+   "kl_p95": 0.0027558314613997936,
+   "flip_rate": 0.014833332970738411,
+   "dv_mean": 0.11826951056718826
+  },
+  "v": {
+   "kl_mean": 0.018413489684462547,
+   "kl_p95": 0.0766572430729866,
+   "flip_rate": 0.07183333486318588,
+   "dv_mean": 0.7594651579856873
+  },
+  "x": {
+   "kl_mean": 0.0002528927579987794,
+   "kl_p95": 0.0010220714611932635,
+   "flip_rate": 0.010499999858438969,
+   "dv_mean": 0.08533945679664612
+  },
+  "all": {
+   "kl_mean": 0.4664704501628876,
+   "kl_p95": 2.3647332191467285,
+   "flip_rate": 0.29216668009757996,
+   "dv_mean": 2.4399197101593018
+  },
+  "concat": {
+   "kl_mean": 0.20479100942611694,
+   "kl_p95": 0.8496699333190918,
+   "flip_rate": 0.22699999809265137,
+   "dv_mean": 4.617580890655518
+  },
+  "concat_cells": {
+   "kl_mean": 0.47739681601524353,
+   "kl_p95": 2.1032750606536865,
+   "flip_rate": 0.3191666603088379,
+   "dv_mean": 4.617580890655518
+  }
+ }
+}
