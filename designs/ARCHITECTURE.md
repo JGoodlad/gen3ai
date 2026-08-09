@@ -674,6 +674,7 @@ not re-derive them.
 
 | Question | File |
 |---|---|
+| **This document as a clickable digraph** — the 58 nodes / 487 edges above, hue-coded by what each channel physically carries, with a per-checkpoint measured-dependence overlay and a path filter (pick `vf_projection` to see exactly what the critic reads) | `designs/architecture_viewer.html`, opened with `file://`. **Generated — never hand-edit it**: rebuild with `python -m agents.model.build_arch_viewer`, and `--check` fails if the committed artifact has drifted from the graph. |
 | Obs-build performance gate (mandatory benchmark) + per-slot detail | `src/agents/observation/CLAUDE.md` |
 | Phase contract, `ExtractorContext`, versioning playbook | `src/agents/model/CLAUDE.md` |
 | How it got here — every version entry, verbatim | `designs/CHANGELOG.md` |

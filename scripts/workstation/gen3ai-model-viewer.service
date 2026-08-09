@@ -1,0 +1,55 @@
+# Reference copy of ~/.config/systemd/user/gen3ai-model-viewer.service
+#
+# The origin behind https://model.g5d.io (the cloudflared tunnel forwards to
+# localhost:6007). Serves the delivery digraph — designs/architecture_viewer.html
+# — RE-RENDERED FROM DISK on every request, so the endpoint is never a copy that
+# can drift from the checkout. See the "Model architecture viewer" section of
+# GCP_INFRASTRUCTURE.md.
+#
+# Install:
+#   cp scripts/workstation/gen3ai-model-viewer.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now gen3ai-model-viewer.service
+#
+# Requires the cloudflared ingress entry for model.g5d.io — see GCP_INFRASTRUCTURE.md.
+
+[Unit]
+Description=Gen3AI delivery digraph (origin for model.g5d.io)
+After=network-online.target
+Wants=network-online.target
+# NEVER give up. systemd's default start-rate limit (5 starts / 10s) puts a unit
+# into `failed` and STOPS restarting it — which is precisely the Jul 29 2026
+# TensorBoard shape: a dead origin behind a tunnel that still looks healthy from
+# the outside. 0 disables the limit, and the backoff below is what stops a
+# hard-failing binary from spinning.
+StartLimitIntervalSec=0
+
+[Service]
+WorkingDirectory=/home/goodlad/dev/gen3ai
+Environment=HOME=/home/goodlad
+Environment=PYTHONPATH=/home/goodlad/dev/gen3ai/src
+ExecStart=/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m agents.model.build_arch_viewer --serve --port 6007
+
+# Exponential backoff: 2s on the first crash, doubling over 6 steps to a 5 min
+# ceiling. A transient fault (a half-written file, a momentary disk error) is
+# back in seconds; a genuine breakage retries twelve times an hour instead of
+# thousands, so a broken checkout cannot become a busy-loop on a box that is
+# also training. The counter resets once the service stays up.
+Restart=always
+RestartSec=2
+RestartSteps=6
+RestartMaxDelaySec=5min
+
+# Same reasoning as tensorboard.service's cap, two orders of magnitude smaller:
+# this process holds a ~300 KB string and some JSON, never imports torch, and
+# renders in ~6 ms. If it ever reaches 512M something is wrong and its own
+# cgroup should OOM rather than the box's.
+MemoryMax=512M
+
+# The workstation's job is training; a viewer must never compete for it. At ~6 ms
+# per request this is noise either way, but a hammered endpoint stays noise.
+Nice=10
+CPUWeight=20
+
+[Install]
+WantedBy=default.target

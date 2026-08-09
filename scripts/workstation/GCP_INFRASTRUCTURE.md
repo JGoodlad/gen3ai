@@ -268,6 +268,75 @@ ssh -p 2222 -L 6006:localhost:6006 goodlad@workstation.g5d.io
 
 ---
 
+## Model architecture viewer
+
+The Gen3AI delivery digraph is exposed at **https://model.g5d.io**, same tunnel, same shape as
+TensorBoard: an origin service on `:6007` plus a `cloudflared` ingress entry.
+
+```bash
+systemctl --user status  gen3ai-model-viewer
+systemctl --user restart gen3ai-model-viewer
+journalctl --user -u gen3ai-model-viewer -f
+```
+
+Unit: `~/.config/systemd/user/gen3ai-model-viewer.service`
+(reference copy versioned at `scripts/workstation/gen3ai-model-viewer.service`)
+
+### It is not a file — it renders per request
+
+The origin runs `python -m agents.model.build_arch_viewer --serve`, which rebuilds the page from
+the checkout at `/home/goodlad/dev/gen3ai` on **every request** (~6 ms; it reads JSON and one
+source file and never imports torch). There is deliberately no deployed copy: a copy is a second
+artifact that goes stale the moment the first one moves, which is the exact rot the viewer exists
+to prevent.
+
+Every input is live, including the generator itself — `build_arch_viewer.py` is re-executed into a
+fresh module object when its mtime changes, so **pulling code needs no restart**. A file caught
+mid-save raises, the request 500s with the traceback, and the last good module keeps serving; it
+recovers on the next successful read.
+
+Responses carry an `ETag` with `Cache-Control: no-cache`, so a browser revalidates on every load
+(it can never show a stale architecture) but gets a 304 and zero bytes when nothing changed.
+
+### Restart behaviour
+
+`Restart=always` with **exponential backoff** — `RestartSec=2`, `RestartSteps=6`,
+`RestartMaxDelaySec=5min` — and `StartLimitIntervalSec=0`.
+
+That last line is the one that matters. systemd's default start-rate limit (5 starts in 10s) puts a
+unit into `failed` and **stops restarting it**, which reproduces the Jul 29 2026 TensorBoard
+failure exactly: a dead origin behind a tunnel that still looks healthy. With the limit disabled
+the unit always comes back, and the backoff is what keeps a genuinely broken checkout from
+busy-looping on a box that is also training (twelve retries an hour at the ceiling, not thousands).
+
+Measured on a probe unit: restart gaps grew 2.25s → 4.25s → 8.25s to the ceiling, and the unit
+stayed `activating` rather than `failed` after five consecutive failures.
+
+`MemoryMax=512M` for the same reason TensorBoard has a cap — this process should never be what
+pushes the box into a global OOM. `Nice=10` / `CPUWeight=20` keep it from competing with training.
+
+### Diagnosing
+
+Same signature failure as TensorBoard: check the origin first.
+
+```bash
+ss -ltn | grep 6007
+curl -s localhost:6007/healthz     # -> "ok 58 nodes 487 edges"
+```
+
+`/healthz` renders the real payload, so a 200 there means the checkout genuinely builds — not just
+that a socket is open. `/graph.json` returns the raw payload, which is a better thing to hand an AI
+than 300 KB of HTML.
+
+### Access control
+
+`model.g5d.io` is a public hostname on a public domain, and the page carries the full delivery
+digraph, the measured audit numbers and the contamination notes. Put **Cloudflare Access** in front
+of it unless that is intended to be world-readable. The origin binds to `127.0.0.1` only, so the
+tunnel is the sole path in.
+
+---
+
 ## Troubleshooting
 
 **SOCKS5 tunnel not working:**

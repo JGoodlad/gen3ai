@@ -268,7 +268,7 @@ representation would have to re-derive it from evidence scattered across separat
 
 1. **Concatenate at the readout — SHIPPED (v51).** `DamageOperator.pointer_cells` slices the
    flat damage block into per-action cells: move cell *k* → `[low, high, crit, pko, p_land,
-   known, sec×10]`; switch cell *j* → its incoming per-defender row + the Choice-Band
+   known, sec×7]`; switch cell *j* → its incoming per-defender row + the Choice-Band
    conditional tail + (under `--damage-matrices-outgoing-all`) its OAX attacker row. The
    pointer head concatenates those onto the entity token before scoring. Two properties worth
    copying: the **op owns its own layout** (consumers never hardcode an offset; offsets are
@@ -766,7 +766,7 @@ indexed per-move by *k*, which is the action's own entity. No positional axis, s
 incoming conditional cell.
 
 **What gen-3 is missing today.** The move cell in `pointer_cells` is
-`[low, high, crit, pko, p_land, known, sec×10]` — **vs their ACTIVE only**. The switch branch is
+`[low, high, crit, pko, p_land, known, sec×7]` — **vs their ACTIVE only**. The switch branch is
 not in the per-action path at all; it exists only as a D1 *edge* (ratios, revealed-gated, #2
 family at 6.05% flips). So "punish the switch" has no magnitude route to the move logit. Note
 also that this is why several edges read decorative: **the X (Pursuit) and T (trapping) edges are
@@ -1613,7 +1613,7 @@ That picture is the whole architecture's information economy, and it predicts th
           │                                                                │
           └──────────► POINTER HEAD ◄────────────────────────────────────── ┘
                        ctx = latent_pi
-                       + op move cells  [low,high,crit,pko,p_land,known,sec×10]
+                       + op move cells  [low,high,crit,pko,p_land,known,sec×7]
                        + op switch cells [incoming row ⊕ CB tail ⊕ OAX row]
                                 │
                           11 action logits

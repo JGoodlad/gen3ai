@@ -21,6 +21,37 @@ Run these in parallel:
 
 If the working tree is clean and nothing is staged, tell the user there's nothing to commit and stop.
 
+### 1b. Refresh generated artifacts BEFORE staging
+
+`designs/architecture_viewer.html` is a build artifact. It is derived from the delivery-graph
+snapshot, from `designs/research_state/measurements/*.json`, and from the `_EDGE_*_CELL` block in
+`features_extractor.py` — so it goes stale from an architecture change, from someone dropping in a
+new measurement file, or from an edge-cell edit.
+
+`build_arch_viewer_test.py` already fails when it is stale. That is not enough on its own: the test
+only fires if the suite runs, and this skill runs the suite **only after a rebase** (step 4b). On a
+clean push nothing checks it, so a stale viewer can land on main — which is precisely the rot the
+artifact exists to prevent (`designs/ai_v3/README.md` is still showing a 1309-dim obs).
+
+So run the gate every time. It is a pure re-render and string compare — **~30 ms**, no model load,
+no reason to ever skip it:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
+  -m agents.model.build_arch_viewer --check
+```
+
+If it reports `STALE`, regenerate and let the refreshed artifact ride along in this commit:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
+  -m agents.model.build_arch_viewer
+```
+
+**Never regenerate silently — say in your response that you did, and which input moved** (an
+architecture change vs. a new measurement file mean very different things, and a stale viewer is
+often the first visible sign that something upstream changed).
+
 ### 2. Get the commit message
 
 If the user provided a message as an argument to `/gen3ai-ship`, use it directly (skip to step 3).
