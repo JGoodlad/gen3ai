@@ -1,0 +1,211 @@
+{
+ "provenance": {
+  "generation": "gen-3",
+  "run": "run_20260807_135637_gen3",
+  "checkpoint": "/home/goodlad/dev/gen3ai/models/run_20260807_135637_gen3/final_model.zip",
+  "step": 40000032,
+  "n_states": 6000,
+  "date": "2026-08-08",
+  "producer": "tmp/incoming_conditional_probe.py",
+  "note": "The gen-3 40M sub-block localization (zero + shuffle arms, all-states + threat-conditioned). in_matrix dominance CONFIRMED at 40M: 18.32 of 22.37 shuffle-controlled flips (~82%; 9.6M read 16.27/18.58). Promoted from tmp/incoming_cond_gen3_40M_6k.json.",
+  "_note_on_this_key": "`provenance` was ADDED at promotion into version control (2026-08-08). Every other key is byte-for-byte the probe's own output."
+ },
+ "meta": {
+  "checkpoint": "/home/goodlad/dev/gen3ai/models/run_20260807_135637_gen3/final_model.zip",
+  "n_states": 6000,
+  "n_threat": 557,
+  "pko": 0.5,
+  "safe": 0.35
+ },
+ "blocks": {
+  "in_permon": {
+   "width": 72,
+   "all": {
+    "n": 6000,
+    "kl_mean": 0.058508727699518204,
+    "flip_rate": 0.11833333224058151,
+    "dv_mean": 4.508844375610352
+   },
+   "threat": {
+    "n": 557,
+    "kl_mean": 0.05336390435695648,
+    "flip_rate": 0.08976660668849945,
+    "dv_mean": 4.0272908210754395
+   },
+   "shuf_all": {
+    "n": 6000,
+    "kl_mean": 0.024552853778004646,
+    "flip_rate": 0.06599999964237213,
+    "dv_mean": 1.4836291074752808
+   },
+   "shuf_threat": {
+    "n": 557,
+    "kl_mean": 0.025959022343158722,
+    "flip_rate": 0.06642729043960571,
+    "dv_mean": 1.4510221481323242
+   }
+  },
+  "in_cb": {
+   "width": 13,
+   "all": {
+    "n": 6000,
+    "kl_mean": 0.0027769580483436584,
+    "flip_rate": 0.020500000566244125,
+    "dv_mean": 0.20053143799304962
+   },
+   "threat": {
+    "n": 557,
+    "kl_mean": 0.0032597261015325785,
+    "flip_rate": 0.025134649127721786,
+    "dv_mean": 0.2866622507572174
+   },
+   "shuf_all": {
+    "n": 6000,
+    "kl_mean": 0.002974213333800435,
+    "flip_rate": 0.02266666665673256,
+    "dv_mean": 0.253336638212204
+   },
+   "shuf_threat": {
+    "n": 557,
+    "kl_mean": 0.0032308511435985565,
+    "flip_rate": 0.023339318111538887,
+    "dv_mean": 0.2939070463180542
+   }
+  },
+  "out_active": {
+   "width": 45,
+   "all": {
+    "n": 6000,
+    "kl_mean": 0.03698445484042168,
+    "flip_rate": 0.07900000363588333,
+    "dv_mean": 0.7468279004096985
+   },
+   "threat": {
+    "n": 557,
+    "kl_mean": 0.052270062267780304,
+    "flip_rate": 0.07899461686611176,
+    "dv_mean": 0.8725312948226929
+   },
+   "shuf_all": {
+    "n": 6000,
+    "kl_mean": 0.0492628775537014,
+    "flip_rate": 0.09466666728258133,
+    "dv_mean": 0.6833391189575195
+   },
+   "shuf_threat": {
+    "n": 557,
+    "kl_mean": 0.07919397950172424,
+    "flip_rate": 0.0843806117773056,
+    "dv_mean": 0.7816365957260132
+   }
+  },
+  "out_status": {
+   "width": 8,
+   "all": {
+    "n": 6000,
+    "kl_mean": 0.0009476644918322563,
+    "flip_rate": 0.007166666444391012,
+    "dv_mean": 0.06877432018518448
+   },
+   "threat": {
+    "n": 557,
+    "kl_mean": 0.0006826245808042586,
+    "flip_rate": 0.0035906643606722355,
+    "dv_mean": 0.07654181867837906
+   },
+   "shuf_all": {
+    "n": 6000,
+    "kl_mean": 0.0015228624688461423,
+    "flip_rate": 0.010833333246409893,
+    "dv_mean": 0.10957130789756775
+   },
+   "shuf_threat": {
+    "n": 557,
+    "kl_mean": 0.0014034605119377375,
+    "flip_rate": 0.008976660668849945,
+    "dv_mean": 0.12008624523878098
+   }
+  },
+  "in_matrix": {
+   "width": 522,
+   "all": {
+    "n": 6000,
+    "kl_mean": 0.2506360411643982,
+    "flip_rate": 0.24899999797344208,
+    "dv_mean": 5.065968036651611
+   },
+   "threat": {
+    "n": 557,
+    "kl_mean": 0.28442978858947754,
+    "flip_rate": 0.25493717193603516,
+    "dv_mean": 4.946274757385254
+   },
+   "shuf_all": {
+    "n": 6000,
+    "kl_mean": 0.16025759279727936,
+    "flip_rate": 0.18316666781902313,
+    "dv_mean": 1.4465709924697876
+   },
+   "shuf_threat": {
+    "n": 557,
+    "kl_mean": 0.16733907163143158,
+    "flip_rate": 0.1759425550699234,
+    "dv_mean": 1.4914580583572388
+   }
+  },
+  "INCOMING_all": {
+   "width": 85,
+   "all": {
+    "n": 6000,
+    "kl_mean": 0.07173094153404236,
+    "flip_rate": 0.12433333694934845,
+    "dv_mean": 4.491174697875977
+   },
+   "threat": {
+    "n": 557,
+    "kl_mean": 0.07060585170984268,
+    "flip_rate": 0.10771992802619934,
+    "dv_mean": 3.8581809997558594
+   },
+   "shuf_all": {
+    "n": 6000,
+    "kl_mean": 0.030052443966269493,
+    "flip_rate": 0.07150000333786011,
+    "dv_mean": 1.5222734212875366
+   },
+   "shuf_threat": {
+    "n": 557,
+    "kl_mean": 0.032259583473205566,
+    "flip_rate": 0.07899461686611176,
+    "dv_mean": 1.49385666847229
+   }
+  },
+  "FULL_CONCAT": {
+   "width": 660,
+   "all": {
+    "n": 6000,
+    "kl_mean": 0.3212401568889618,
+    "flip_rate": 0.2745000123977661,
+    "dv_mean": 5.355281352996826
+   },
+   "threat": {
+    "n": 557,
+    "kl_mean": 0.36607927083969116,
+    "flip_rate": 0.28366246819496155,
+    "dv_mean": 6.840307712554932
+   },
+   "shuf_all": {
+    "n": 6000,
+    "kl_mean": 0.2442042976617813,
+    "flip_rate": 0.22366666793823242,
+    "dv_mean": 2.4416067600250244
+   },
+   "shuf_threat": {
+    "n": 557,
+    "kl_mean": 0.3255000412464142,
+    "flip_rate": 0.24775584042072296,
+    "dv_mean": 2.4379913806915283
+   }
+  }
+ }
+}
