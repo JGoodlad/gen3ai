@@ -64,3 +64,46 @@ def test_large_final_line_survives_child_exit():
         f"__ERR__ arrived but the payload is incomplete ({len(msg)} chars) — "
         f"the drain-aware exit regressed"
     )
+
+
+def test_reader_limit_admits_long_battle_recon_lines():
+    """Part 2 of the same bug: once the drain-aware exit delivers long lines COMPLETE, the
+    asyncio reader must accept them — the 64 KiB default readline limit turned a delivered
+    1000-turn-battle `__RECON__` line into `LimitOverrunError` → a crashed battle (the
+    intermittent `local_sim_bridge_integration_test` failures; training's 250-turn stall cap
+    kept its lines under the old limit, which is why only long-battle dice tripped it).
+
+    Deterministic: emit a 512 KiB single line through the SAME spawn shape the runner uses and
+    read it with `readline()`. Fails with the stock 64 KiB limit; passes under
+    `BRIDGE_STREAM_LIMIT`."""
+    import asyncio
+
+    from utils.bridge.local_battle_runner import BRIDGE_STREAM_LIMIT
+
+    payload_chars = 512 * 1024
+    script = f'process.stdout.write("__RECON__ " + "A".repeat({payload_chars}) + "\\n__END__\\n")'
+
+    async def read_one_line(limit):
+        proc = await asyncio.create_subprocess_exec(
+            "node", "-e", script,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+            limit=limit,
+        )
+        try:
+            line = await proc.stdout.readline()
+        finally:
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
+            await proc.wait()
+        return line
+
+    # The fixed limit admits the whole line.
+    line = asyncio.run(read_one_line(BRIDGE_STREAM_LIMIT))
+    assert line.decode().rstrip("\n") == "__RECON__ " + "A" * payload_chars
+
+    # And the stock default provably does NOT — the regression this test exists to pin.
+    with pytest.raises(ValueError):
+        asyncio.run(read_one_line(2 ** 16))

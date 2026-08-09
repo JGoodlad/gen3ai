@@ -258,11 +258,13 @@ class BridgeSession:
     async def _spawn_child(self) -> asyncio.subprocess.Process:
         # _spawn_argv is ["node", local_sim_bridge.js] or [<rust sim_bridge binary>] — both
         # speak the identical stdin/stdout protocol, so the framing/demux below is unchanged.
+        from utils.bridge.local_battle_runner import BRIDGE_STREAM_LIMIT
         return await asyncio.create_subprocess_exec(
             *self._spawn_argv,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            limit=BRIDGE_STREAM_LIMIT,   # long-battle __RECON__ lines exceed the 64 KiB default
         )
 
     async def _send_start(self, proc, *, persistent: bool) -> str:

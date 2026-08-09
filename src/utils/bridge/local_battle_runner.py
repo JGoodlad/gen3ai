@@ -69,6 +69,20 @@ def _per_battle_timeout() -> float:
 # raising ``ValueError: <side>'s team already has 6 pokemons: cannot add ...`` from
 # ``get_pokemon``. A global counter makes every tag unique, so each battle always gets a
 # fresh object (single-call behaviour is unchanged — tags were already unique within a call).
+# gen3_bridge_flush_on_exit_v1, part 2: the asyncio StreamReader's DEFAULT readline limit is
+# 64 KiB — and a `__RECON__` line for a LONG battle (the 1000-turn runaway cap; a full command
+# log + both packed teams, base64) exceeds it. Pre-drain-fix those lines were silently CUT by
+# the child's early exit, so the reader never saw one whole; the drain-aware exit delivers them
+# complete, and readline then raises LimitOverrunError -> ValueError -> the BATTLE crashes
+# (observed as intermittent local_sim_bridge_integration_test failures — long-battle dice).
+# 16 MiB is a ceiling, not an allocation: asyncio buffers lazily, and the largest observed
+# recon is ~2 orders of magnitude below it. Shared by the persistent training transport
+# (bridge_session imports it) so both readers accept whatever the drain-aware child delivers.
+# Training's 250-turn stall cap kept ITS recon lines under 64 KiB, which is why the persistent
+# path never tripped this — the bound was luck by cap, now it is explicit.
+BRIDGE_STREAM_LIMIT = 16 * 1024 * 1024
+
+
 _BATTLE_SEQ = itertools.count(1)
 
 
@@ -196,6 +210,7 @@ class _LocalBattleRunner:
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            limit=BRIDGE_STREAM_LIMIT,   # long-battle __RECON__ lines exceed the 64 KiB default
         )
         self.c1._procs[tag] = proc
         self.c2._procs[tag] = proc

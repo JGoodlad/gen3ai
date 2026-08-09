@@ -50,7 +50,11 @@ implementations**, selected by `--use-bridge`:
   training path never exits, so it never truncated — and the rust bridge was never affected,
   its `LineWriter` blocks on the kernel pipe per line). Gate:
   `bridge_flush_on_exit_integration_test.py` (deterministic — a 1 MB `__ERR__` payload with a
-  deliberately lazy reader; fails at ~48 KB on a pre-fix bridge).
+  deliberately lazy reader; fails at ~48 KB on a pre-fix bridge). **Part 2**: once long lines
+  arrive COMPLETE, the Python readers must accept them — both spawn sites pass
+  `limit=BRIDGE_STREAM_LIMIT` (16 MiB; asyncio's 64 KiB readline default turned a delivered
+  1000-turn-battle `__RECON__` line into `LimitOverrunError` → a crashed battle; training's
+  250-turn stall cap is why the persistent path never tripped it). Same test file pins both.
 - **`rust`** — the std-only `src/rust_sim/src/bin/sim_bridge.rs` binary, a byte-for-byte
   protocol-compatible drop-in (validated at the chunk/stdout level by
   `src/rust_sim/harness/gen_sim_bridge_diff.js`). No Node needed for battle stepping.
