@@ -472,6 +472,58 @@ def to_dot(graph: Dict[str, Any], collapse: bool = True) -> str:
     return "\n".join(out) + "\n"
 
 
+_SNAPSHOT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "delivery_graph_snapshot.json")
+
+
+def _check(graph: Dict[str, Any]) -> int:
+    """Compare the live build against the committed snapshot and say WHAT moved.
+
+    `delivery_graph_test.py` already fails on drift, but a test only runs when someone runs the
+    suite — and the snapshot sits UPSTREAM of the viewer, so a stale one makes every artifact
+    below it confidently wrong while `build_arch_viewer --check` still passes (it compares the
+    HTML against the snapshot, so both sides are stale together).
+
+    Prints the structural diff rather than just "STALE", because the snapshot is a TRIPWIRE: the
+    thing you need to see is *which* nodes and edges moved, so an unintended architecture change
+    is obvious rather than merely detected.
+    """
+    if not os.path.exists(_SNAPSHOT_PATH):
+        print(f"MISSING {_SNAPSHOT_PATH}")
+        return 1
+    with open(_SNAPSHOT_PATH) as fh:
+        old = json.load(fh)
+    want = json.dumps(graph, indent=2, sort_keys=True) + "\n"
+    with open(_SNAPSHOT_PATH) as fh:
+        if fh.read() == want:
+            print(f"OK {os.path.relpath(_SNAPSHOT_PATH)} matches the live code")
+            return 0
+
+    print(f"STALE {os.path.relpath(_SNAPSHOT_PATH)} — the live code no longer matches it.")
+    for key in sorted(set(graph["meta"]) | set(old.get("meta", {}))):
+        a, b = old.get("meta", {}).get(key), graph["meta"].get(key)
+        if a != b:
+            print(f"  meta  {key}: {a!r} -> {b!r}")
+    ekey = lambda e: (e["type"], e["src"], e["dst"], e.get("family") or "")   # noqa: E731
+    for label, a_set, b_set in (
+        ("node", {n["id"] for n in old.get("nodes", [])}, {n["id"] for n in graph["nodes"]}),
+        ("edge", {ekey(e) for e in old.get("edges", [])}, {ekey(e) for e in graph["edges"]}),
+    ):
+        for gone in sorted(a_set - b_set)[:12]:
+            print(f"  -{label}  {gone}")
+        for new in sorted(b_set - a_set)[:12]:
+            print(f"  +{label}  {new}")
+        dropped = max(len(a_set - b_set) - 12, 0) + max(len(b_set - a_set) - 12, 0)
+        if dropped:
+            print(f"  ... and {dropped} more {label} changes")
+    print("\nIf that is an INTENTIONAL architecture change, regenerate:")
+    print("  python -m agents.model.delivery_graph \\")
+    print("      --dot designs/architecture_graph.dot \\")
+    print("      --json src/agents/model/delivery_graph_snapshot.json")
+    print("  python -m agents.model.build_arch_viewer      # rebuilds FROM the fresh snapshot")
+    return 1
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--config", default=_DEFAULT_CONFIG,
@@ -480,9 +532,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--json", dest="json_out", help="write the JSON snapshot here")
     p.add_argument("--no-collapse", action="store_true",
                    help="DOT: keep every indexed seat as its own node")
+    p.add_argument("--check", action="store_true",
+                   help="exit 1 if the committed snapshot no longer matches the live code, and "
+                        "print WHAT changed structurally (drift gate)")
     a = p.parse_args(argv)
 
     g = build_graph(a.config)
+    if a.check:
+        return _check(g)
     if a.dot:
         open(a.dot, "w").write(to_dot(g, collapse=not a.no_collapse))
         print(f"wrote {a.dot}")

@@ -52,6 +52,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import hashlib
 import json
 import os
 import re
@@ -393,6 +394,12 @@ def build_payload(graph: Dict[str, Any]) -> Dict[str, Any]:
         "edge_blurb": EDGE_TYPE_BLURB,
         "families": _families(),
         "leak_safety": {"violations": violations, "ok": not violations},
+        # A content-derived identity for the architecture itself. Deterministic (so the committed
+        # artifact stays byte-stable) and enough to answer "am I looking at the same graph as
+        # last time" at a glance. Deliberately NOT a timestamp: git does not preserve mtimes, so
+        # an embedded date would make `--check` fail on any fresh clone.
+        "graph_sha256": hashlib.sha256(
+            json.dumps(graph, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:12],
     }
 
 
@@ -441,6 +448,8 @@ dt{color:var(--text-muted)}dd{margin:0;word-break:break-word}
 .elist .ghdr{border-bottom:none;padding:5px 0 1px}
 .elist div b{color:var(--text-primary);font-weight:550}
 .mut{color:var(--text-muted)}
+.aged{color:var(--ratio);font-weight:600}
+#prov code{font-size:11px}
 #legend{position:absolute;left:12px;bottom:12px;background:var(--surface-2);border:1px solid
  var(--line);border-radius:8px;padding:9px 11px;font-size:11.5px;max-width:430px}
 #legend b{font-weight:650}
@@ -478,6 +487,7 @@ th{position:sticky;top:0;background:var(--surface-2);cursor:pointer;color:var(--
   <button id="tg" aria-pressed="false">table</button>
   <button id="dk" aria-pressed="true">dark</button>
   <span id="leak"></span>
+  <span class="sub" id="prov"></span>
 </header>
 <div id="wrap"><div id="cy"></div><div id="tbl"></div><aside id="side"></aside></div>
 <div id="legend"></div><div id="tip"></div>
@@ -871,6 +881,19 @@ function header() {
     `${m.n_tokens} tokens · op ${m.op_out_dim} · ${D.nodes.length} nodes / ${D.edges.length} edges` +
     (BANDS[MISC_BAND].length ? ` · ⚠ ${BANDS[MISC_BAND].length} unplaced (` +
       BANDS[MISC_BAND].map(n => n.kind).join(', ') + ') — extend bandOf()' : '');
+  /* Provenance, so staleness is something you SEE rather than something you have to reason
+     about. The hash identifies the architecture (same hash = same graph as last time). The age
+     only appears when served, because a static file has no way to know it — and it is the
+     snapshot's age, NOT the page's: the page rebuilds per request, the graph underneath it does
+     not. 14 days is a nudge, not a rule. */
+  const prov = D.snapshot_built;
+  $('#prov').innerHTML = `graph <code>${esc(D.graph_sha256 || '?')}</code>` + (prov
+    ? ` · snapshot <span class="${prov.days >= 14 ? 'aged' : ''}">${prov.days}d old</span>` : '');
+  $('#prov').title = 'graph_sha256 identifies the architecture itself.\n' + (prov
+    ? `The delivery-graph snapshot was last rebuilt ${prov.iso} (${prov.source}).\n` +
+      'The page re-renders on every request; the snapshot under it only changes when someone ' +
+      'regenerates it after an architecture change.'
+    : 'Snapshot age is only shown when served — a file:// copy cannot know it.');
   const L = D.leak_safety;
   $('#leak').innerHTML = `<span class="badge ${L.ok ? 'ok' : 'no'}">leak-safety ` +
     `${L.ok ? 'PASS' : 'FAIL (' + L.violations.length + ')'}</span>`;
@@ -1001,6 +1024,42 @@ def vendor(html: str) -> str:
     return html.replace(_CDN_TAG, f"<script>{js}</script>")
 
 
+def _snapshot_provenance() -> Optional[Dict[str, Any]]:
+    """When was the snapshot last regenerated? Served pages only.
+
+    Not embedded in the committed artifact on purpose: git does not preserve mtimes, so a date
+    baked into the HTML would differ on every clone and break the byte-comparison `--check`
+    depends on. A live server, though, is sitting on a real checkout and can just look.
+
+    Prefers the snapshot's last COMMIT date over its mtime — mtime tells you when the file was
+    written (a `git pull` rewrites it), the commit date tells you when the architecture was
+    actually last rebuilt, which is the question being asked.
+    """
+    import datetime
+    import subprocess
+
+    iso, source = None, "mtime"
+    try:
+        out = subprocess.run(["git", "log", "-1", "--format=%cI", "--", _SNAPSHOT],
+                             cwd=_REPO, capture_output=True, text=True, timeout=5)
+        if out.returncode == 0 and out.stdout.strip():
+            iso, source = out.stdout.strip(), "git"
+    except Exception:                              # noqa: BLE001 - git absent / not a checkout
+        pass
+    if iso is None:
+        try:
+            iso = datetime.datetime.fromtimestamp(
+                os.path.getmtime(_SNAPSHOT)).astimezone().isoformat()
+        except OSError:
+            return None
+    try:
+        when = datetime.datetime.fromisoformat(iso)
+        days = (datetime.datetime.now(when.tzinfo) - when).days
+    except ValueError:
+        return None
+    return {"iso": iso, "days": days, "source": source}
+
+
 def _live_module(_state={}):
     """Hand back THIS module, reloaded whenever its source changes. No restart, ever.
 
@@ -1058,7 +1117,6 @@ def serve(port: int, host: str = "127.0.0.1") -> int:
       /graph.json  the raw payload — the better thing to hand an AI than 300 KB of HTML
       /healthz     "ok" plus the node/edge counts, for a probe
     """
-    import hashlib
     import http.server
     import traceback
 
@@ -1095,9 +1153,11 @@ def serve(port: int, host: str = "127.0.0.1") -> int:
                 mod = _live_module()
                 if route in ("/", "/index.html"):
                     payload = mod.build_payload(mod._load_graph(None))
+                    payload["snapshot_built"] = mod._snapshot_provenance()
                     self._body(mod.render(payload).encode(), "text/html; charset=utf-8")
                 elif route == "/graph.json":
                     payload = mod.build_payload(mod._load_graph(None))
+                    payload["snapshot_built"] = mod._snapshot_provenance()
                     self._body(json.dumps(payload, indent=1).encode(),
                                "application/json; charset=utf-8")
                 elif route == "/healthz":

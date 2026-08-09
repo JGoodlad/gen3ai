@@ -23,34 +23,56 @@ If the working tree is clean and nothing is staged, tell the user there's nothin
 
 ### 1b. Refresh generated artifacts BEFORE staging
 
-`designs/architecture_viewer.html` is a build artifact. It is derived from the delivery-graph
-snapshot, from `designs/research_state/measurements/*.json`, and from the `_EDGE_*_CELL` block in
-`features_extractor.py` — so it goes stale from an architecture change, from someone dropping in a
-new measurement file, or from an edge-cell edit.
+Three artifacts are DERIVED, and they form a chain — each is built from the one above it:
 
-`build_arch_viewer_test.py` already fails when it is stale. That is not enough on its own: the test
-only fires if the suite runs, and this skill runs the suite **only after a rebase** (step 4b). On a
-clean push nothing checks it, so a stale viewer can land on main — which is precisely the rot the
-artifact exists to prevent (`designs/ai_v3/README.md` is still showing a 1309-dim obs).
-
-So run the gate every time. It is a pure re-render and string compare — **~30 ms**, no model load,
-no reason to ever skip it:
-
-```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
-  -m agents.model.build_arch_viewer --check
+```
+live features_extractor.py / damage_op.py  +  designs/production_config.json
+  └─> src/agents/model/delivery_graph_snapshot.json   (+ designs/architecture_graph.dot)
+        └─> designs/architecture_viewer.html
 ```
 
-If it reports `STALE`, regenerate and let the refreshed artifact ride along in this commit:
+**Order matters.** Regenerating the viewer first would rebuild it from a stale snapshot and
+report success, because `build_arch_viewer --check` compares the HTML against the snapshot — if
+the snapshot is behind the code, both sides are stale together and the check passes. Always go
+top-down.
+
+Both gates are tests already (`delivery_graph_test.py`, `build_arch_viewer_test.py`), but a test
+only fires when the suite runs, and this skill runs the suite **only after a rebase** (step 4b).
+On a clean push nothing checks either one — so a stale snapshot, and every artifact below it, can
+land on main describing the *previous* architecture. That is the rot these artifacts exist to
+prevent (`designs/ai_v3/README.md` still shows a 1309-dim obs).
+
+Run both, every time — together about 1.5 s:
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
-  -m agents.model.build_arch_viewer
+export PYTHONPATH=$PYTHONPATH:src
+python -m agents.model.delivery_graph --check      # snapshot vs LIVE code
+python -m agents.model.build_arch_viewer --check   # viewer vs snapshot
 ```
 
-**Never regenerate silently — say in your response that you did, and which input moved** (an
-architecture change vs. a new measurement file mean very different things, and a stale viewer is
-often the first visible sign that something upstream changed).
+**If `delivery_graph --check` reports STALE**, it prints the structural diff — which nodes,
+edges and meta fields moved. **Read it before regenerating.** The snapshot is a tripwire: an
+architecture change you did not intend looks exactly like one you did, and this diff is the only
+place it surfaces. Then regenerate top-down and let both artifacts ride along in this commit:
+
+```bash
+python -m agents.model.delivery_graph \
+    --dot designs/architecture_graph.dot \
+    --json src/agents/model/delivery_graph_snapshot.json
+python -m agents.model.build_arch_viewer           # rebuilds FROM the fresh snapshot
+```
+
+If only `build_arch_viewer --check` is STALE, just regenerate the viewer.
+
+**Never regenerate silently.** Say in your response that you did, quote what moved, and name
+which input caused it — an architecture change, a new measurement file in
+`designs/research_state/measurements/`, and an edit to the generator mean very different things,
+and a stale artifact is often the first visible sign that something upstream moved.
+
+One hop above all this has no automated gate at all: `designs/production_config.json` is a manual
+copy of whichever run counts as "production". If a new run has taken over, that file — and
+therefore everything below it — is describing the old one. Nothing will tell you; it is a
+judgement, not a fact derivable from the tree.
 
 ### 2. Get the commit message
 
