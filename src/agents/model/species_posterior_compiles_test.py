@@ -60,32 +60,38 @@ def test_species_posterior_is_stable_for_large_logits():
     assert pytest.approx(1.0, abs=1e-5) == float(got.sum())
 
 
-# The LITERAL production arch (the ai_v8_03 shape). `threat_unrevealed_outgoing` is the flag that
-# used to crash Inductor, but it only crashes IN THIS COMPANY — it needs the belief stack that
-# produces species logits, so the guard has to build the whole thing. Filtered against the current
-# signature so an arch change drops stale keys instead of erroring.
-_PRODUCTION_ARCH = dict(
-    attend_unrevealed_opponents=True, belief_grad_mode="shaping",
-    damage_matrices_incoming=True, damage_matrices_outgoing=True,
-    damage_matrices_outgoing_all=True, damage_op=True, damage_outgoing=True,
-    damage_reattend=False, damage_refine_rounds=2, damage_topk_k=5,
-    move_belief_mode="revealed", move_belief_prefuse=False,
-    move_candidate_floor=0.02, move_latent=True, move_prior_fusion=True,
-    opp_belief_latent=True, opp_belief_slots=True, spread_belief=True,
-    spread_belief_nature=True, spread_belief_nature_marginalize=True,
-    threat_prob_outspeed=True, threat_refine_outgoing=True, threat_status_refine=True,
-    threat_unrevealed_outgoing=True, value_active_readout=True, value_dist_bins=51,
-    value_dist_mode="shaping", value_dist_vmax=12.0, value_dist_vmin=-12.0,
-    win_prob_mode="shaping", zarch_dim=32, zarch_film="heads",
-)
+# ⚠️ THE PRODUCTION ARCH IS LOADED, NEVER HAND-PINNED. This test used to carry a literal
+# `_PRODUCTION_ARCH = dict(...)` frozen at the ai_v8_03 shape (refine_rounds=2, no prefuse, no
+# edge families) — and it ROTTED silently: for three generations the default-on compile gate
+# faithfully compiled a DEAD graph while the real production graph drifted, which is exactly how
+# the gen-4 launch's CompilePrewarm failure (`gen3_unrevealed_outgoing_prior_v1`'s [B,6,S]
+# expand mis-vectorizing on Inductor CPU) shipped past a green suite. The kwargs now come from
+# `designs/production_config.json` — the SAME single source `delivery_graph`, the arch viewer
+# and the prewarm-era eval workers key on — filtered by the live constructor signature exactly
+# like `delivery_graph.build_graph` and `compile_prewarm` do. The `arch_signature` assertion
+# makes a stale config FAIL LOUD here instead of quietly testing yesterday's model.
+_PRODUCTION_CONFIG = os.path.join(os.path.dirname(__file__), "..", "..", "..",
+                                  "designs", "production_config.json")
 
 
 def _build_production_extractor():
+    import json
+
+    from agents.model.model_version import ARCH_SIGNATURE
+
+    with open(_PRODUCTION_CONFIG) as fh:
+        cfg = json.load(fh)
+    assert cfg.get("arch_signature") == ARCH_SIGNATURE, (
+        f"designs/production_config.json is STALE (arch_signature "
+        f"{cfg.get('arch_signature')!r} != live {ARCH_SIGNATURE!r}) — this compile gate would "
+        f"be testing a dead graph. Refresh the config from the production run's "
+        f"model_config.json (the _PRODUCTION_ARCH-dict rot class this assertion exists for)."
+    )
     mappings = load_mappings()
     layout = Gen3ObservationEncoder(mappings).get_layout()
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
-    kw = {a: b for a, b in _PRODUCTION_ARCH.items() if a in sig}
+    kw = {a: b for a, b in cfg.items() if a in sig}
     torch.manual_seed(0)
     return Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kw).eval(), layout
 

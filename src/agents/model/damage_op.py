@@ -885,8 +885,15 @@ class DamageOperator(torch.nn.Module):
         revealed_num = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE] * (~ctx.opp_believed_mask).long()
         keep = torch.ones(B, n_species, device=device).scatter(1, revealed_num, 0.0)
         p = self.SPECIES_USAGE_PRIOR[None, :] * keep                                  # [B, n_species]
-        p = p / p.sum(dim=1, keepdim=True).clamp_min(1e-12)
-        return p[:, None, :].expand(B, TEAM_SIZE, n_species)
+        # ⚠️ SHAPE is load-bearing for torch.compile (the gen3_species_posterior_spelling_v1
+        # precedent, this module's second instance): returning the marginal EXPANDED to
+        # [B, TEAM_SIZE, n_species] fused the normalize + expand into an Inductor CPU kernel
+        # that .store()d a SCALAR lane as if vectorized (`request for member 'store' in
+        # 'tmp6', which is of non-class type 'float'` — the gen-4 launch CompilePrewarm
+        # failure; respelling the div did NOT dodge it). The prior marginal is IDENTICAL for
+        # all six slots anyway, so it stays [B, n_species] and consumers broadcast the
+        # RESULTS (also 6× less matmul). A learned per-slot override keeps full rank.
+        return p / p.sum(dim=1, keepdim=True).clamp_min(1e-12)
 
     def _outgoing_matrix(self, ctx: 'ExtractorContext',
                          spread_belief: Optional[torch.Tensor] = None,
@@ -962,12 +969,19 @@ class DamageOperator(torch.nn.Module):
         # `revealed` channel stays 0 — magnitudes change, epistemics don't. REVEALED slots pass
         # through every `torch.where` untouched — byte-identical to the pre-fix kernel.
         believed = ctx.opp_believed_mask                                                # [B,6] bool
-        sp_probs = self.unrevealed_species_probs(ctx, species_probs)                    # [B,6,S]
-        e_bulk = sp_probs @ self.SPECIES_SPREAD_PRIOR[..., 0]                           # [B,6,5] E[stat] means
-        e_maxhp = 2.0 * (sp_probs @ self.BASE_STATS[:, 0]) + 31.0 + 110.0               # [B,6] via E[base hp]
-        opp_def = torch.where(believed, e_bulk[..., _SB_DEF], opp_def)
-        opp_spd = torch.where(believed, e_bulk[..., _SB_SPD], opp_spd)
-        opp_maxhp = torch.where(believed, e_maxhp, opp_maxhp)
+        sp_probs = self.unrevealed_species_probs(ctx, species_probs)                    # [B,S] | [B,6,S]
+        e_bulk = sp_probs @ self.SPECIES_SPREAD_PRIOR[..., 0]                           # [B,5] | [B,6,5]
+        e_maxhp = 2.0 * (sp_probs @ self.BASE_STATS[:, 0]) + 31.0 + 110.0               # [B] | [B,6]
+        if sp_probs.dim() == 2:
+            # Prior path: one marginal per battle — broadcast the RESULTS over the 6 slots
+            # (see unrevealed_species_probs: the [B,6,S] expand mis-vectorizes under Inductor).
+            e_def_u, e_spd_u, e_maxhp_u = (e_bulk[:, _SB_DEF, None], e_bulk[:, _SB_SPD, None],
+                                           e_maxhp[:, None])
+        else:
+            e_def_u, e_spd_u, e_maxhp_u = e_bulk[..., _SB_DEF], e_bulk[..., _SB_SPD], e_maxhp
+        opp_def = torch.where(believed, e_def_u, opp_def)
+        opp_spd = torch.where(believed, e_spd_u, opp_spd)
+        opp_maxhp = torch.where(believed, e_maxhp_u, opp_maxhp)
         _pa, p_b_def, _ps, p_b_spd, _pe = self._boost_stages(ctx.opp_ctx_raw)
         def_boost = torch.ones_like(opp_def); def_boost[ar, ctx.opp_active_local] = self._boost_mult(p_b_def)
         spd_boost = torch.ones_like(opp_spd); spd_boost[ar, ctx.opp_active_local] = self._boost_mult(p_b_spd)
@@ -991,7 +1005,12 @@ class DamageOperator(torch.nn.Module):
                * _gather_type(self.ABILITY_DAMAGE_MULT[opp_ability]))                    # [B,4,6]
         # gen3_unrevealed_outgoing_prior_v1: E[mult] (type chart × expected ability immunity, one
         # matmul with P(species)) replaces the sentinel-neutral chart read at unrevealed slots.
-        eff = torch.where(believed[:, None, :], _gather_type(sp_probs @ self.SPECIES_EXP_MULT), eff)
+        e_mult = sp_probs @ self.SPECIES_EXP_MULT                                        # [B,T] | [B,6,T]
+        if e_mult.dim() == 2:
+            eff_unrev = e_mult.gather(1, move_ty.long())[:, :, None]                     # [B,4,1] → bcast
+        else:
+            eff_unrev = _gather_type(e_mult)                                             # [B,4,6]
+        eff = torch.where(believed[:, None, :], eff_unrev, eff)
         # --- gen3 damage per (move, defender) → [B,4,6] (the _outgoing_block physics, broadcast over 6) ---
         D = phys[:, :, None] * opp_def[:, None, :] + (1.0 - phys)[:, :, None] * opp_spd[:, None, :]   # [B,4,6]
         is_stab = ((move_ty == at1[:, None]) | (move_ty == at2[:, None])).float()        # [B,4]

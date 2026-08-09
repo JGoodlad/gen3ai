@@ -120,17 +120,20 @@ def test_unrevealed_marginal_is_the_species_clause_prior():
     ctx = _ctx(fe)
     _pin_scenario(ctx)
     with torch.no_grad():
-        sp = fe.damage_op.unrevealed_species_probs(ctx)          # [B,6,S]
+        sp = fe.damage_op.unrevealed_species_probs(ctx)          # [B,S] — ONE marginal per battle
+    # The prior path returns [B, n_species]: the Species-Clause marginal is identical for all
+    # six slots, and the [B,6,S] expand mis-vectorized under Inductor (the compile-precedent
+    # note on the method) — consumers broadcast the RESULTS. A learned override keeps [B,6,S].
+    assert sp.dim() == 2
     expect = _direct_marginal(fe.damage_op)
-    for j in range(1, TEAM_SIZE):                                # the unrevealed rows
-        assert torch.allclose(sp[:, j], expect.expand(ctx.batch_size, -1), atol=1e-6)
+    assert torch.allclose(sp, expect.expand(ctx.batch_size, -1), atol=1e-6)
     # Species Clause: the revealed species carries ZERO mass; the marginal still sums to 1.
-    assert float(sp[:, 1:, _TTAR.num].abs().max()) == 0.0
-    assert torch.allclose(sp[:, 1:].sum(-1), torch.ones(ctx.batch_size, TEAM_SIZE - 1), atol=1e-5)
+    assert float(sp[:, _TTAR.num].abs().max()) == 0.0
+    assert torch.allclose(sp.sum(-1), torch.ones(ctx.batch_size), atol=1e-5)
     # The sentinel species (num 0) never carries mass.
     assert float(sp[..., 0].abs().max()) == 0.0
     # A dominant non-revealed species keeps real mass (the prior is not the flat floor).
-    assert float(sp[0, 1, _SNORLAX.num]) > 0.01
+    assert float(sp[0, _SNORLAX.num]) > 0.01
 
 
 def test_unrevealed_cell_matches_direct_table_recompute():
