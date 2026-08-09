@@ -102,6 +102,9 @@ def test_collect_states_recovers_masks_from_logits(tmp_path):
     logits = np.zeros((5, 11), dtype=np.float32)
     logits[:, 7:] = -1e9                                   # actions 7+ masked in the trace
     np.savez(tmp_path / "x_states.npz", obs=obs, logits=logits)
-    o, m = _collect_states([str(tmp_path / "*_states.npz")], max_states=10)
+    o, m, coverage = _collect_states([str(tmp_path / "*_states.npz")], max_states=10)
     assert o.shape == (5, _layout["total_dim"])
     assert m[:, :7].all() and not m[:, 7:].any()
+    # gen3_audit_state_sampler_v1: the stratified sampler's coverage rides the return so the
+    # report can prove its spread (full behavioural pins live in audit_states_test.py).
+    assert coverage["n_states"] == 5 and coverage["sampler"].startswith("stratified")

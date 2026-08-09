@@ -206,7 +206,13 @@ interpretation (a) below (the edges absorbed the pair-cell role) over interpreta
    evaluated on states drawn from a 10M-era policy's trajectories**. The committed 9.6M/40M
    probes share this helper and therefore this defect. It spans 8 opponent buckets
    (`sentinel_0/1/2`, `random`, `aggressive`, `aggressive_v2`, `heuristic`, `heuristic2`), so it
-   is a pool average, not one opponent. **Not yet re-run with stratified sampling.**
+   is a pool average, not one opponent. **FIXED 2026-08-09 (`gen3_audit_state_sampler_v1`,
+   `agents/model/audit_states.py`)**: both probes now sample one file per (step, opponent)
+   bucket per pass with per-step row quotas, seeded/deterministic, and write per-step /
+   per-opponent sampled counts into their provenance (verified on gen-4's tree: 125 states ×
+   12 step dirs, all 12 opponent buckets). The numbers ABOVE still carry the old defect —
+   they were not re-measured; every NEW measurement (the §9.1 arms, the step-3 acceptance
+   read) uses the fixed sampler.
 2. **Pooled means hide rare-but-decisive fields.** A mechanic live in ~3% of states that flips 15%
    of actions *within* them contributes **0.45%** to the pooled mean — inside the noise of these
    arms. `hdr_effect` at 2.28% pooled is fully consistent with `hazard` being decisive in every
@@ -513,8 +519,9 @@ python src/agents/model/op_block_split_audit.py \
     --max-states 6000 --out /tmp/split.json
 ```
 
-⚠️ As written this reproduces caveat §2.5.1 (all states from the first step directory). A
-stratified sampler is the first fix any follow-up measurement should make.
+⚠️ The command above originally reproduced caveat §2.5.1 (all states from the first step
+directory). Since 2026-08-09 the shared sampler (`agents/model/audit_states.py`) is stratified
+and deterministic, and the output's `provenance.sampling` block records exactly what was drawn.
 
 ## See also
 

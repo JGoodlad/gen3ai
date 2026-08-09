@@ -38,29 +38,20 @@ import numpy as np
 import torch
 
 
-def _collect_states(patterns, max_states: int) -> np.ndarray:
-    files = []
-    for p in patterns:
-        files.extend(sorted(glob.glob(p, recursive=True)))
-    if not files:
-        raise FileNotFoundError(f"no states.npz matched {patterns!r}")
-    obs, masks = [], []
-    for f in files:
-        z = np.load(f)
-        if "obs" not in z or "logits" not in z:
-            raise KeyError(f"{f}: expected 'obs' + 'logits' arrays (the eval-trace states format)")
-        obs.append(z["obs"])
-        # The captured logits are post-mask: illegal actions sit at a large negative. Recover the
-        # legal mask from them (finite threshold well above the -1e9 masking floor).
-        masks.append(z["logits"] > -1e8)
-        if sum(o.shape[0] for o in obs) >= max_states:
-            break
-    obs = np.concatenate(obs)[:max_states].astype(np.float32)
-    masks = np.concatenate(masks)[:max_states].astype(bool)
+def _collect_states(patterns, max_states: int, seed: int = 0):
+    # gen3_audit_state_sampler_v1: STRATIFIED, deterministic sampling (the shared
+    # `audit_states.collect_states` — two-level round-robin over step dirs × opponents +
+    # a seeded row subsample). The old sorted-glob + break-at-cap drew every state from ONE
+    # lexically-first step dir (step_10000032 < step_2000016) while labelling itself a pool
+    # average — design_op_tensors.md §2.5.1. Returns (obs, masks, coverage); callers write
+    # `coverage` into the report so a reader can VERIFY the spread instead of trusting it.
+    from agents.model.audit_states import collect_states
+
+    obs, masks, coverage = collect_states(patterns, max_states, seed=seed)
     if not masks.any(axis=1).all():
         raise ValueError("a state decoded to ZERO legal actions — the logits→mask recovery is wrong "
                          "for this trace format; inspect the npz")
-    return obs, masks
+    return obs, masks, coverage
 
 
 @torch.no_grad()
@@ -184,9 +175,10 @@ def main(argv=None) -> int:
     model, _ver = load_foreign_opponent(args.checkpoint,
                                         current_version=current_model_version(load_mappings()),
                                         device="cpu")
-    obs_np, masks_np = _collect_states(args.states, args.max_states)
+    obs_np, masks_np, coverage = _collect_states(args.states, args.max_states)
     report = audit(model.policy, obs_np, masks_np)
-    meta = {"checkpoint": args.checkpoint, "n_states": int(len(obs_np))}
+    meta = {"checkpoint": args.checkpoint, "n_states": int(len(obs_np)),
+            "sampling": coverage}   # per-step/per-opponent sampled counts — verify, don't trust
     out = {"meta": meta, "families": report}
     hdr = f"{'family':>8} {'kl_mean':>10} {'kl_p95':>10} {'flip%':>7} {'|dV|':>8}"
     print(hdr)

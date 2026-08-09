@@ -33,25 +33,13 @@ from agents.observation.constants import TEAM_SIZE
 from agents.action.constants import SWITCH_START, SWITCH_END, MOVE_START, MOVE_END
 
 
-def collect(patterns, max_states):
-    files = []
-    for p in patterns:
-        files.extend(sorted(glob.glob(p, recursive=True)))
-    obs, masks = [], []
-    n = 0
-    for f in files:
-        z = np.load(f)
-        if "obs" not in z or "logits" not in z:
-            continue
-        obs.append(z["obs"])
-        masks.append(z["logits"] > -1e8)
-        n += z["obs"].shape[0]
-        if n >= max_states:
-            break
-    if not obs:
-        raise FileNotFoundError(f"no usable states.npz matched {patterns!r}")
-    return (np.concatenate(obs)[:max_states].astype(np.float32),
-            np.concatenate(masks)[:max_states].astype(bool))
+def collect(patterns, max_states, seed=0):
+    # gen3_audit_state_sampler_v1: STRATIFIED, deterministic (shared `audit_states` sampler).
+    # The old sorted-glob + break-at-cap drew every state from ONE lexically-first step dir —
+    # the §2.5.1 defect this probe's own caveats documented against itself.
+    from agents.model.audit_states import collect_states
+
+    return collect_states(patterns, max_states, seed=seed)
 
 
 def arms(op):
@@ -132,7 +120,7 @@ def main():
     fe = policy.features_extractor
     op = fe.damage_op
     assert op is not None, "checkpoint has no damage op"
-    obs_np, masks_np = collect(a.states, a.max_states)
+    obs_np, masks_np, coverage = collect(a.states, a.max_states)
     N = len(obs_np)
     dev = next(policy.parameters()).device
 
@@ -256,7 +244,8 @@ def main():
         json.dump({"provenance": {"generation": a.generation, "step": a.step, "n_states": N,
                                   "date": None,
                                   "producer": "src/agents/model/op_block_split_audit.py",
-                                  "note": a.note},
+                                  "note": a.note,
+                                  "sampling": coverage},
                    "meta": {"checkpoint": a.checkpoint, "n_states": N,
                             "n_threat": int(threat.sum()), "pko": a.pko, "safe": a.safe,
                             "probe": "op_block_split_audit.py"},
