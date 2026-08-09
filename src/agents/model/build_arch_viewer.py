@@ -1101,7 +1101,12 @@ def serve(port: int, host: str = "127.0.0.1") -> int:
     torch, and renders in ~6 ms (measured). (`--config` does import `delivery_graph`, which is why
     the served build always uses the committed snapshot.)
 
-    EVERY input is live, including this file — see `_live_module`. Nothing here needs a restart.
+    The RENDERING path is fully live, including this file — see `_live_module`: the snapshot, the
+    measurements, the `_EDGE_*_CELL` block, the HTML template and `FAMILY_LABEL` all reach a
+    request with no restart. What does NOT hot-reload is the server itself: `serve` and `Handler`
+    are already-bound closures, so a change to the ROUTES or to what the handler injects needs
+    `systemctl --user restart gen3ai-model-viewer`. Measured, not assumed — an architecture change
+    reached the live endpoint untouched while a new handler-injected field did not.
 
     ETag + `Cache-Control: no-cache` rather than `no-store`: the browser revalidates on every load
     (so it can never show you a stale architecture) but gets a 304 and zero bytes back when nothing

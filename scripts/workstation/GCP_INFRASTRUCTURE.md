@@ -290,10 +290,15 @@ source file and never imports torch). There is deliberately no deployed copy: a 
 artifact that goes stale the moment the first one moves, which is the exact rot the viewer exists
 to prevent.
 
-Every input is live, including the generator itself — `build_arch_viewer.py` is re-executed into a
-fresh module object when its mtime changes, so **pulling code needs no restart**. A file caught
-mid-save raises, the request 500s with the traceback, and the last good module keeps serving; it
-recovers on the next successful read.
+The rendering path is fully live, including the generator itself — `build_arch_viewer.py` is
+re-executed into a fresh module object when its mtime changes, so **an architecture change reaches
+the endpoint with no restart** (verified: the v60 entity re-home appeared on `model.g5d.io` without
+the unit being touched). A file caught mid-save raises, the request 500s with the traceback, and
+the last good module keeps serving; it recovers on the next successful read.
+
+The one exception is the SERVER, not the content: `serve()` and its request handler are closures
+bound at startup, so a change to the routes — or to what the handler injects, like the snapshot-age
+field — does need `systemctl --user restart gen3ai-model-viewer`. Content changes never do.
 
 Responses carry an `ETag` with `Cache-Control: no-cache`, so a browser revalidates on every load
 (it can never show a stale architecture) but gets a 304 and zero bytes when nothing changed.
