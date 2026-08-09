@@ -2238,3 +2238,42 @@ falls back to the Smogon prior). Priors: `gen3_{move,spread,item,hidden_power}_p
 `gen3_data.priors`. Belief-not-calc → validated by calibration; the obs golden fixture pins the vector
 byte-for-byte (the LiveView migration is value-neutral — golden parity holds against the v2 fixture).
 
+
+---
+
+## 6. Post-split entries (append-only — newest last)
+
+### v60 — `gen3_entity_rehome_v1` (2026-08-08): Stage 3, the entity re-home
+
+The flat observation's DERIVED blocks are deleted and every raw fact re-homed to its audited
+entity home (`design_generation_roadmap.md` §3 Stage 3; executed after the gen-3 40M audit
+confirmed the D/V edge families as a trained, load-bearing superset of the matchup signal —
+d2 alone 16.3% flips at 40M). Obs **2925 → 2667**:
+
+* **DELETED**: the two 144-dim matchup matrices (`our_matchups`/`their_matchups` — pair
+  effectiveness is GPU-side: D1–D4/V edge cells carry `[low, high, crit, pko, type_mult,
+  revealed]` from real gen3 physics + the learned belief, vs these matrices' bare `type_mult/4`
+  off a fixed prior); `active_status` (byte-redundant with the active mon's condition one-hot);
+  `forced_struggle` (derivable — all-zero `active_req_moves` legal bits on a move-request, and
+  the action mask stays authoritative).
+* **RE-HOMED to the per-mon slot** (`POKEMON_FULL_DIM` 113 → 116): `protect_odds` (now EVERY
+  mon owns its stall state — a benched mon truthfully reads 1.0 since the counter resets on
+  switch; was 2 active-only scalars), `trapped`/`maybe_trapped` (on OUR ACTIVE's slot — the
+  trapped ENTITY; appended by state_encoder before the active flag, which stays LAST in the
+  slot because `hp_and_active[:, :, -1]` is a load-bearing convention). The C4 Protect edge
+  reads protect odds from the mon slot now (was `non_matchup_rest[GLOBAL_ENV_DIM+7]`).
+* **KEPT as the lean 17-dim board block**: `fainted ×2`, `turns_since_progress`, `wish ×2`
+  (E7/E6-class side/board facts) + the 12-dim request-order `active_req_moves`.
+* **Model side**: `move_feature_blocks` loses the matchup + matchup-validity inputs (the
+  per-cell validity block is deleted with them); `global_context` loses `forced_struggle`;
+  `non_matchup_rest` narrows 29 → 23 (`pi_projection` 1137 → 1131, `vf_projection` 881 → 875);
+  `ExtractorContext` drops `matchups_all`/`struggle_feature`.
+* **CPU refund**: the reactive matchup loop was ~35% of the obs build
+  (`effective_multiplier_by_types` was the #1 tottime line at 202 calls/encode) — deleted
+  outright, along with reactive.py's `_expected_multiplier` family.
+* Weight shapes AND obs meaning change together ⇒ `ARCH_SIGNATURE` `gen3_edge_bias_trunk_v1`
+  → `gen3_entity_rehome_v1`, `MODEL_CONFIG_VERSION` 60 (stamp — no migration is possible).
+  Fresh-lineage break: gen-4 is the first run of this world. Golden obs fixture regenerated
+  (2667 dims, 991 decisions); obs-roundtrip fuzz bit-for-bit (627 decisions); trapping fuzz
+  re-pointed to the per-mon bits (+ a bench-slots-stay-zero assertion); prober degrades
+  gracefully (`om_off`/`tm_off` 0 = absent, ThreatView/saliency no-op).

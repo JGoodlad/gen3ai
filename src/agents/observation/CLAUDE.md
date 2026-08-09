@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **2925-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
+This directory builds the **2667-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
 the live value is `Gen3ObservationEncoder.dimension` — read it there, and see
 `designs/ARCHITECTURE.md` § Observation for the full block table).
 It runs once per agent decision across every training env, so it sits directly on the
@@ -78,7 +78,12 @@ Judge by these load-independent metrics, in priority order:
 
 1. **Total function calls per encode** = `<N function calls>` line ÷ `--reps`. This is the
    single best regression detector — it does not move with machine load. Baseline ≈
-   **~6.44k calls/encode** — the post-`gen3_cpu_damage_deleted_v1` (v48) reference, measured
+   **~3.46k calls/encode** — the post-`gen3_entity_rehome_v1` (v60) reference: deleting the two
+   144-dim matchup matrices removed the whole `_expected_multiplier`/`_joint_expectation` loop
+   family (measured same-session before/after at `--turn 25 --reps 400`, seed-0 battle:
+   6,332 → 3,462 calls/encode, −45%; wall 0.373 → 0.246 ms, −34% — the Stage-3 refund,
+   confirmed in reverse). History: ~6.44k was the post-`gen3_cpu_damage_deleted_v1` (v48)
+   reference, measured
    same-session before/after at `--turn 25 --reps 300` on the seed-0 battle (7,396 → 6,444, −12.9%,
    from deleting the incoming-damage / move-effect / active-move-scalar producers). History for
    context: ~6.36k pre-`gen3_incoming_damage_v1`, ~6.85k after it, ~7.4k after the `v2` belief
@@ -99,6 +104,12 @@ fine. Anything larger needs justification (or a revert).
 
 Captured with `--turn 25 --reps 400`. Paths shown repo-relative. Absolute ms omitted from the
 headline on purpose (load-dependent); the **call counts and ordering are the contract**.
+
+> ⚠️ The pasted block below predates `gen3_entity_rehome_v1` (the matchup deletion): the
+> matchup-era hot list (`effective_multiplier_by_types`, `reactive.py:encode` at ~44% of encode,
+> `_joint_expectation`) no longer exists. Current headline: **~3.46k calls/encode**, encode
+> ≈ 0.25 ms idle-box, no matchup loop in the profile. The block is kept for the v48-era shape
+> until the next full re-baseline.
 
 ```
 PER-DECISION OBS BUILD BENCHMARK  (obs dim <live>, turn 25, history slots N, opp mons w/ revealed moves 5/6)
@@ -185,18 +196,29 @@ and the per-mon slot layout, derived from the live constants. **This** is the pe
 what each field MEANS and where it is sourced from. All offsets are computed from named constants
 — never hardcode indices.
 
-**Per-Pokémon slot (113 dims):** the 110 below + the 3-dim
-**recency block** at `POKEMON_RECENCY_OFFSET` (109) — [turns_since_seen, turns_since_acted,
+**Per-Pokémon slot (116 dims):** the 110 below + the 3-dim recency block + the 1-dim
+protect-odds field + the 2 appended trapping bits + the appended active flag.
+**Recency block** at `POKEMON_RECENCY_OFFSET` (109) — [turns_since_seen, turns_since_acted,
 turns_since_was_hit], TURN-ANCHORED (`cur_turn − event_turn`, clamped; on-field mon reads 0;
 never-tracked reads 1.0 max staleness), log-saturated over a 10-turn cap, BOTH sides (public —
 every reset derives from observed protocol events), sourced from the EpisodeTracker-owned
 `RecencyTracker` (the same per-decision event window the TurnDelta fold reads) and threaded
 into `encode(recency=…)` like the progress clock. Fuzz gate:
 `poke_env_gaps/recency_fuzz_test.py` (encoded scalars == an independent full-log recount +
-decision-time active log, per mon per decision). Original 110:** species ID + 6 base stats, item ID + known + consumed, 2 type
+decision-time active log, per mon per decision). **Protect-odds field** at
+`POKEMON_PROTECT_OFFSET` (112, gen3_entity_rehome_v1): P(a Protect/Detect/Endure by THIS mon
+succeeds now) under the gen3 floored-doubling stall rule (100/50/25/12.5, floor 1/8), from the
+LiveView `protect_counter` — EVERY mon owns its stall state (a benched mon truthfully reads 1.0;
+the counter resets on switch). Pinned by `protect_success_prob_fuzz_test.py`. **Appended tail**
+(state_encoder): `POKEMON_TRAPPED_OFFSET` (113) + `POKEMON_MAYBE_TRAPPED_OFFSET` (114) — the
+OUR-side LegalActions trapping bits, nonzero ONLY at our active slot (`maybe_trapped` is the
+high-value trap-risk bit; fuzz gate `action/trapping_signals_fuzz_test.py`, which also asserts
+bench slots stay zero) — then the ACTIVE flag at `POKEMON_ACTIVE_OFFSET` (115), deliberately
+LAST in the slot (the model's `hp_and_active[:, :, -1]` convention is load-bearing).
+Original 110: species ID + 6 base stats, item ID + known + consumed, 2 type
 IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 11-dim move slots, HP fraction,
 species_known flag, sleep_counter_norm, toxic_counter_norm, **spread block (18 dims)**,
-**HP-candidate block (17 dims)**, **sleep-wake belief (3 dims)**, active flag. The item block is 3 dims:
+**HP-candidate block (17 dims)**, **sleep-wake belief (3 dims)**. The item block is 3 dims:
 `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry
 activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so
 the model knows what was lost. `species_known = 1.0` for all populated slots (own team and
@@ -238,42 +260,30 @@ gen3ou has no team preview, so `apply_teambuilder_team` never attaches the sprea
 matches the declared teambuilder team to the request-built team by species and fills in
 IVs/EVs/nature (spread only, never re-running `_update_from_teambuilder`). Without it this block
 emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mon.
-**Reactive block — 311 dims, layout in `reactive.py`.** `REACTIVE_SCALAR_DIM` (11) scalars, then
-the two 144-dim matchup matrices, then the 12-dim active-req-moves block. Offsets are
-`reactive_layout` entries — read them, never hardcode.
+**Board (reactive) block — 17 dims, layout in `reactive.py`.** `REACTIVE_SCALAR_DIM` (5) raw
+board scalars, then the 12-dim active-req-moves block. Offsets are `reactive_layout` entries —
+read them, never hardcode. **gen3_entity_rehome_v1**: the two 144-dim matchup matrices are
+DELETED (pair effectiveness is GPU-side — the D/V edge families compute
+`[low, high, crit, pko, type_mult, revealed]` cells from real physics + the learned belief);
+`active_status` (redundant with the per-mon condition one-hot) and `forced_struggle` (derivable
+from the all-zero `active_req_moves` legal bits / the action mask) are deleted;
+protect/trapped/maybe_trapped moved to the per-mon slots (above).
 
 | Field | Offset | Dims |
 |---|---|---|
 | `fainted` (ours, theirs) | 0 | 2 |
-| `active_status` | 2 | 1 |
-| `forced_struggle` | 3 | 1 |
-| `trapped` | 4 | 1 |
-| `maybe_trapped` | 5 | 1 |
-| `turns_since_progress` | 6 | 1 |
-| `protect_odds_our` / `protect_odds_opp` | 7 / 8 | 2 |
-| `wish_floating_our` / `wish_floating_opp` | 9 / 10 | 2 |
-| `our_matchups` | 11 | 144 |
-| `their_matchups` | 155 | 144 |
-| `active_req_moves` | 299 | 12 |
+| `turns_since_progress` | 2 | 1 |
+| `wish_floating_our` / `wish_floating_opp` | 3 / 4 | 2 |
+| `active_req_moves` | 5 | 12 |
 
-The 11 scalars sit BEFORE the matchups, so the extractor picks them up in `non_matchup_rest`
-automatically (it reads the matchup offset from the layout). Sources, all server-authoritative or
-read-model:
+The 5 scalars sit BEFORE `active_req_moves`, so the extractor picks them up in
+`non_matchup_rest` automatically (it stops at the req-moves offset). Sources:
 
-- `trapped` / `maybe_trapped` — the per-decision `LegalActions` snapshot. `trapped` is redundant
-  with the action mask but explicit; `maybe_trapped` is the high-value trap-risk bit.
 - `turns_since_progress` — the log-saturated no-progress clock (`log(1+min(n,10))/log(11)`), owned by
   the **EpisodeTracker's `ProgressClock`** (NOT LiveView — it is cross-turn state) and threaded into
   `encode()` like the HP tracker. The reward's `no_progress_tax` keys on the SAME clock instance, so
   obs and reward-key are one value. Lets the model state-condition on the penalty it is about to be
   charged.
-- `protect_odds` — `gen3_mechanics.protect_success_probability(mon.protect_counter)` off each active
-  mon's `LivePokemon.protect_counter`: P(a Protect/Detect/Endure succeeds NOW) under the gen3
-  floored-doubling stall rule (100/50/25/12.5, floor 1/8; Showdown gen3 inherits gen4→gen5, NOT the
-  base `*3`). This is the model's ONLY view of the stall counter — poke-env does not enumerate the
-  `stall` volatile, and turn-history saliency decays before a chain can be counted. Public both
-  sides (the opponent's counter derives entirely from their revealed move stream → no leak). Pinned
-  by `protect_success_prob_fuzz_test.py`.
 - `wish_floating` — the pending-Wish heal: a flat `WISH_HEAL_FRACTION` (≈0.5; gen3 Wish heals the
   RECIPIENT's maxhp/2, so the fraction is constant and GIGO-proof) when a Wish cast last turn
   resolves at the end of this turn, else 0. Slot-keyed, so it survives faint / Roar-phaze / switch.
@@ -305,12 +315,11 @@ Their long descriptions moved verbatim to `designs/CHANGELOG.md` §5. Where the 
 **`agents/observation/incoming_damage.py` STAYS** — the reward PBRS (`reward_manager.py`) and the
 prober import its math core, and its fuzz test now targets `encode_block` directly. Only the obs
 write was removed.
-> **Downstream reader:** the prober engine (`src/main/prober/engine.py`) reads
-> `OFFSET_REACTIVE + move_multiplier` (active-move type mults), `+ our_matchups`,
-> `+ their_matchups` (the incoming-threat decode + saliency block), and the
-> turn-history span — resolved at runtime from `get_layout()`. If you move these
-> offsets, its pinned regression test (`prober/engine_test.py::
-> test_offsets_resolve_matches_layout`) will fail; update the pinned values there.
+> **Downstream reader:** the prober engine (`src/main/prober/engine.py`) resolves its obs
+> offsets at runtime from `get_layout()` (`ObsOffsets`), with `0 = absent` for deleted blocks
+> (`mm_off`, and since gen3_entity_rehome_v1 also `om_off`/`tm_off` — ThreatView/saliency
+> no-op). Its pinned regression test (`prober/engine_test.py::
+> test_offsets_resolve_matches_layout`) fails on any layout move; update the pins there.
 
 **TurnDelta slot (159 dims, layout in `turn_delta_encoder.py`):** all offsets computed from
 named `OFFSET_*` / `*_DIM` constants — never hardcode indices. TurnDelta is **folded from the

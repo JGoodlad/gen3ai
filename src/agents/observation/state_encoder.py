@@ -13,6 +13,9 @@ from .sleep_belief import build_sleep_sources
 from .constants import (
     POKEMON_VECTOR_DIM,
     POKEMON_FULL_DIM,
+    POKEMON_ACTIVE_OFFSET,
+    POKEMON_TRAPPED_OFFSET,
+    POKEMON_MAYBE_TRAPPED_OFFSET,
     TEAM_SIZE,
     OFFSET_OUR_TEAM,
     OFFSET_OPP_TEAM,
@@ -198,7 +201,15 @@ class Gen3ObservationEncoder(ObservationEncoder):
 
             start = OFFSET_OUR_TEAM + (i * POKEMON_FULL_DIM)
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
-            vec[start + POKEMON_VECTOR_DIM] = is_active
+            vec[start + POKEMON_ACTIVE_OFFSET] = is_active
+            # gen3_entity_rehome_v1: the OUR-side trapping bits ride the trapped ENTITY — the
+            # active mon's slot (server-authoritative LegalActions facts; bench slots stay 0).
+            # trapped: confirmed cannot switch (redundant with the mask but explicit);
+            # maybe_trapped: the opponent MIGHT be trapping us — the one signal the model has
+            # no other way to see.
+            if is_active > 0.5 and legal is not None:
+                vec[start + POKEMON_TRAPPED_OFFSET] = 1.0 if legal.trapped else 0.0
+                vec[start + POKEMON_MAYBE_TRAPPED_OFFSET] = 1.0 if legal.maybe_trapped else 0.0
 
         # 2. Opponent Team — HP block populated from the tracker when supplied.
         opponents = self.get_team_list(battle, is_opponent=True)
@@ -229,7 +240,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
 
             start = OFFSET_OPP_TEAM + (i * POKEMON_FULL_DIM)
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
-            vec[start + POKEMON_VECTOR_DIM] = is_active
+            vec[start + POKEMON_ACTIVE_OFFSET] = is_active
 
         # 3. Active Context + 4. Global Environment — sourced from the same LiveView
         # (current-board read-model folded from the event log).
@@ -339,7 +350,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
         for i in range(TEAM_SIZE):
             start = OFFSET_OUR_TEAM + (i * POKEMON_FULL_DIM)
             mon_vec = vector[start : start + POKEMON_VECTOR_DIM]
-            is_active = vector[start + POKEMON_VECTOR_DIM] > 0.5
+            is_active = vector[start + POKEMON_ACTIVE_OFFSET] > 0.5
             if np.any(mon_vec):
                 mon_desc = self.pokemon_encoder.describe_vector(mon_vec)
                 mon_desc["active"] = is_active
@@ -347,7 +358,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 
             start_opp = OFFSET_OPP_TEAM + (i * POKEMON_FULL_DIM)
             opp_vec = vector[start_opp : start_opp + POKEMON_VECTOR_DIM]
-            is_active_opp = vector[start_opp + POKEMON_VECTOR_DIM] > 0.5
+            is_active_opp = vector[start_opp + POKEMON_ACTIVE_OFFSET] > 0.5
             if np.any(opp_vec):
                 opp_desc = self.pokemon_encoder.describe_vector(opp_vec)
                 opp_desc["active"] = is_active_opp

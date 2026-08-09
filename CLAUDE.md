@@ -754,19 +754,21 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 [`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md) § Observation.** That file is derived from the
 code and the live run config; this summary is the orientation only.
 
-The observation is a flat **2925-dim float32 vector** (`Gen3ObservationEncoder.dimension`) plus an
-11-dim `action_mask`, delivered as a Dict obs.
+The observation is a flat **2667-dim float32 vector** (`Gen3ObservationEncoder.dimension`) plus an
+11-dim `action_mask`, delivered as a Dict obs. (`gen3_entity_rehome_v1`: the 288-dim matchup
+matrices and the derived reactive scalars are DELETED — pair physics is GPU-side in the D/V edge
+families; protect/trapped/maybe_trapped ride the per-mon slots.)
 
 | Block | Dims | Offset |
 |---|---|---|
-| Our team (6 × `POKEMON_FULL_DIM` 113) | 678 | 0 |
-| Opp team (6 × 113) | 678 | 678 |
-| Active context ×2 (boosts 14 + volatiles `VOLATILE_DIM` 44) | 116 | 1356 |
-| Global env (`GLOBAL_ENV_DIM`) | 18 | 1472 |
-| Reactive (11 scalars + 288 matchups + 12 active-req-moves) | 311 | 1490 |
-| Prev-turn action mask | 11 | 1801 |
-| Turn history (`N_HISTORY_TURNS` 7 × `TURN_DELTA_DIM` 159) | 1113 | 1812 |
-| **Total** | **2925** | |
+| Our team (6 × `POKEMON_FULL_DIM` 116) | 696 | 0 |
+| Opp team (6 × 116) | 696 | 696 |
+| Active context ×2 (boosts 14 + volatiles `VOLATILE_DIM` 44) | 116 | 1392 |
+| Global env (`GLOBAL_ENV_DIM`) | 18 | 1508 |
+| Board (5 raw scalars + 12 active-req-moves) | 17 | 1526 |
+| Prev-turn action mask | 11 | 1543 |
+| Turn history (`N_HISTORY_TURNS` 7 × `TURN_DELTA_DIM` 159) | 1113 | 1554 |
+| **Total** | **2667** | |
 
 Every offset is computed from named constants in `agents/observation/constants.py` — **never
 hardcode an index**; read `Gen3ObservationEncoder.get_layout()`.

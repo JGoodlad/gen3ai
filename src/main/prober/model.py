@@ -29,8 +29,8 @@ class ObsOffsets:
     guard so a silent layout shift is caught loudly.
     """
 
-    om_off: int            # our_matchups block (144 dims): our moves' eff vs their mons
-    tm_off: int            # their_matchups block (144 dims): their moves' eff vs OUR mons (incoming threat)
+    om_off: int            # our_matchups block (144 dims); 0 = absent (gen3_entity_rehome_v1 deleted it)
+    tm_off: int            # their_matchups block (144 dims); 0 = absent (gen3_entity_rehome_v1 deleted it)
     active_block_dim: int  # our active-pokemon block span [0:active_block_dim)
     turn_history_offset: int
     turn_history_dim: int  # n_history_turns * turn_delta_dim
@@ -64,8 +64,10 @@ class ObsOffsets:
         inc = rl.get("incoming_damage", {})
         return cls(
             mm_off=(C.OFFSET_REACTIVE + rl["move_multiplier"]["offset"]) if "move_multiplier" in rl else 0,
-            om_off=C.OFFSET_REACTIVE + rl["our_matchups"]["offset"],
-            tm_off=C.OFFSET_REACTIVE + rl["their_matchups"]["offset"],
+            # gen3_entity_rehome_v1: the matchup matrices are DELETED from the live layout —
+            # 0 = absent (the mm_off convention); every consumer no-ops / returns None.
+            om_off=(C.OFFSET_REACTIVE + rl["our_matchups"]["offset"]) if "our_matchups" in rl else 0,
+            tm_off=(C.OFFSET_REACTIVE + rl["their_matchups"]["offset"]) if "their_matchups" in rl else 0,
             active_block_dim=99,  # the launcher CLI's "our active pokemon block(99)"
             turn_history_offset=lay["turn_history_offset"],
             turn_history_dim=lay["n_history_turns"] * lay["turn_delta_dim"],

@@ -412,8 +412,13 @@ def test_belly_drum_priced_with_cost_and_fail_gate():
     ctx.our_active_req_move_ids[:, 2] = _SD
     with torch.no_grad():
         both = fe.damage_op.pairwise_boost(ctx)
-    assert bool((both[:, 1, :, 1][live] > both[:, 2, :, 1][live]).all()), \
-        "+6 (maximize) must out-price +2 (Swords Dance) on the same board"
+    # A defender the +2 line already KO-caps prices IDENTICALLY under +6 (the delta saturates
+    # at the cap), so strict dominance holds only OFF-cap: >= everywhere, > somewhere.
+    bd_line, sd_line = both[:, 1, :, 1][live], both[:, 2, :, 1][live]
+    assert bool((bd_line >= sd_line).all()), \
+        "+6 (maximize) must never price below +2 (Swords Dance) on the same board"
+    assert bool((bd_line > sd_line).any()), \
+        "+6 must strictly out-price +2 on at least one un-capped defender"
     ctx.hp_and_active[ar, ctx.our_active_idx, 0] = 0.3
     with torch.no_grad():
         failed = fe.damage_op.pairwise_boost(ctx)
@@ -520,7 +525,7 @@ def test_consequence_topk_versioned_and_threaded():
     assert fe4.consequence_topk == 4
     out = _migrate_config({"config_version": 58})
     assert out["consequence_topk"] == 4, "pre-v59 models trained at the hardcoded 4"
-    assert out["config_version"] == MODEL_CONFIG_VERSION == 59
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 60
 
 
 def test_every_arch_toggle_is_a_current_model_version_param():

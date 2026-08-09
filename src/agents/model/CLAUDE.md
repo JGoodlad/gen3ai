@@ -77,14 +77,16 @@ so they stay correct when the architecture changes with no manual update.
 1. **`Embeddings`** — shared tables: species (32), move (16), item (16), ability (16), type (16,
    shared for Pokémon types, move types, and TurnDelta move/type IDs). Owns the Hidden Power
    soft-type blend (`hp_soft_type`) and the per-slot TurnDelta embedder (`embed_delta_slot`).
-2. **`ObsUnpack`** (stateless) — peels the flat 3390-dim observation into the named tensors of
-   `ExtractorContext`: per-Pokémon block + categorical IDs, the global/reactive feature slices,
-   the matchup matrices, and (hoisted here) the active-slot indices + fainted key-masks used
-   downstream.
+2. **`ObsUnpack`** (stateless) — peels the flat observation (2667 dims under
+   `gen3_entity_rehome_v1`) into the named tensors of `ExtractorContext` via the declarative
+   schema's validated slice map (`build_schema(layout).slices()` — the tiling proof runs at
+   construction): per-Pokémon block + categorical IDs, the global/board feature slices, and
+   (hoisted here) the active-slot indices + fainted key-masks used downstream.
 3. **`PokemonEncoder`** — embeds + stitches the enriched per-Pokémon vector; runs the **shared
    move processor** (Linear→ReLU→Linear, `MOVE_NET_HIDDEN`) over every move slot (input:
-   move/type embeddings, remnants, known flag, battle context, per-move matchup ×6 +
-   matchup-validity ×6, HP-candidate distribution, and prev-turn move validity), a
+   move/type embeddings, remnants, known flag, battle context, HP-candidate distribution, and
+   prev-turn move validity — the CPU matchup ×6 / validity ×6 inputs are DELETED with their obs
+   block, `gen3_entity_rehome_v1`), a
    **within-Pokémon move self-attention** (MHA 32-dim, 2 heads, + LayerNorm residual), then the
    **role encoder** (Linear→ReLU→Linear, `ROLE_ENCODER_HIDDEN`) → 12 × 128 role tokens.
 4. **`TeamTransformer`** — builds a 20-token sequence (6 our-team + 6 their-team role tokens +

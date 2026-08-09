@@ -92,7 +92,8 @@ def test_move_and_team_alignment(monkeypatch):
     
     # 3. Encode
     vector = encoder.encode(battle)
-    assert _calls["n"] > 0, "patched effectiveness primitive was never called — patch missed"
+    assert _calls["n"] == 0, ("gen3_entity_rehome_v1: encode must NOT price matchups on the CPU "
+                              "anymore — a call here means the deleted matrix loop came back")
     
     # 4. Verify Move Embedding Order
     # Pokemon 0 (p1) moves start at OFFSET_OUR_TEAM + POKEMON_MOVES_OFFSET
@@ -108,22 +109,9 @@ def test_move_and_team_alignment(monkeypatch):
             assert move_name == expected_sorted_ids[i], f"Move slot {i} mismatch: {move_name} != {expected_sorted_ids[i]}"
             assert known_flag == 1.0, f"Move slot {i} should be known"
 
-    # 5. Verify Reactive Matrix Alignment (Our Moves vs Their Team)
-    # The matrix starts at OFFSET_REACTIVE + our_matchups offset (110 = 15 scalars +
-    # the 44-dim move-effects block + the 51-dim incoming-damage block). Derive it from
-    # the reactive layout so this stays correct if the scalar/effects prefix changes again.
-    # Shape is (TEAM_SIZE, 4, TEAM_SIZE) -> (Our Mon, Our Move, Their Mon)
-    from .reactive import ReactiveEncoder  # noqa: PLC0415
-    matrix_start = OFFSET_REACTIVE + ReactiveEncoder().get_layout()["our_matchups"]["offset"]
-    our_vs_their = vector[matrix_start : matrix_start + 144].reshape(TEAM_SIZE, 4, TEAM_SIZE)
-    
-    # Check p1's moves against opponent's first mon (o1)
-    # p1 is index 0 in our team. o1 is index 0 in their team.
-    for move_idx in range(4):
-        val = our_vs_their[0, move_idx, 0]
-        move_obj = p1_moves[expected_sorted_ids[move_idx]]
-        expected_mult = move_obj.type.damage_multiplier.return_value / 4.0
-        assert val == expected_mult, f"Matrix mismatch at move {move_idx} ({expected_sorted_ids[move_idx]}): {val} != {expected_mult}"
+    # gen3_entity_rehome_v1: the matchup matrices are DELETED from the obs — pair
+    # effectiveness is GPU-side (D/V edges; damage_op_probe_fuzz_test is the oracle),
+    # so there is no reactive-matrix alignment left to verify here.
 
     print("✅ Move and Team alignment verified!")
 

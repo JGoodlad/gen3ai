@@ -43,7 +43,7 @@ export PYTHONPATH=$PYTHONPATH:src && python -m agents.model.delivery_graph \
 
 ## 1. Observation
 
-One flat `float32` vector of **2925** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
+One flat `float32` vector of **2667** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
 Every number below comes from `agents/observation/constants.py` and
 `Gen3ObservationEncoder.get_layout()`. **Never hardcode an offset — read the layout.**
 
@@ -51,23 +51,32 @@ Every number below comes from `agents/observation/constants.py` and
 
 | Block | Start | End | Dims | Constant |
 |---|---|---|---|---|
-| Our team — 6 × per-mon slot | 0 | 678 | 678 | `OFFSET_OUR_TEAM`, `6 × POKEMON_FULL_DIM` |
-| Opp team — 6 × per-mon slot | 678 | 1356 | 678 | `OFFSET_OPP_TEAM` |
-| Active context ×2 (ours, theirs) | 1356 | 1472 | 116 | `OFFSET_CONTEXT`, `2 × ACTIVE_CONTEXT_DIM` (58) |
-| Global env | 1472 | 1490 | 18 | `OFFSET_GLOBAL`, `GLOBAL_ENV_DIM` |
-| Reactive | 1490 | 1801 | 311 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
-| *(= `base_dim`)* | | 1801 | | |
-| Prev-turn action mask | 1801 | 1812 | 11 | `ACTION_SPACE_SIZE` |
-| Turn history — 7 × TurnDelta | 1812 | 2925 | 1113 | `N_HISTORY_TURNS` (7) × `TURN_DELTA_DIM` (159) |
-| **Total** | | **2925** | | `Gen3ObservationEncoder.dimension` |
+| Our team — 6 × per-mon slot | 0 | 696 | 696 | `OFFSET_OUR_TEAM`, `6 × POKEMON_FULL_DIM` |
+| Opp team — 6 × per-mon slot | 696 | 1392 | 696 | `OFFSET_OPP_TEAM` |
+| Active context ×2 (ours, theirs) | 1392 | 1508 | 116 | `OFFSET_CONTEXT`, `2 × ACTIVE_CONTEXT_DIM` (58) |
+| Global env | 1508 | 1526 | 18 | `OFFSET_GLOBAL`, `GLOBAL_ENV_DIM` |
+| Board (reactive) | 1526 | 1543 | 17 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
+| *(= `base_dim`)* | | 1543 | | |
+| Prev-turn action mask | 1543 | 1554 | 11 | `ACTION_SPACE_SIZE` |
+| Turn history — 7 × TurnDelta | 1554 | 2667 | 1113 | `N_HISTORY_TURNS` (7) × `TURN_DELTA_DIM` (159) |
+| **Total** | | **2667** | | `Gen3ObservationEncoder.dimension` |
+
+`gen3_entity_rehome_v1` (Stage 3): the two 144-dim matchup matrices and 6 of the 11 reactive
+scalars are **deleted** — the D/V edge families compute a strict superset of the matchup signal
+GPU-side, `active_status` was byte-redundant with the per-mon condition one-hot, and
+`forced_struggle` is derivable (all-zero `active_req_moves` legal bits / the action mask).
+`protect_odds`, `trapped` and `maybe_trapped` moved **onto the per-mon slots** (the facts ride
+the entities they describe).
 
 > The `OFFSET_*` values in the comments inside `constants.py` (642 / 1284 / 1400 / 1418) are stale
 > arithmetic from an older per-mon width. The **expressions** are correct and are what runs; only
 > the trailing `# 642`-style comments are wrong. Listed in §8.
 
-### 1.2 Per-Pokémon slot — 113 dims (`POKEMON_FULL_DIM`)
+### 1.2 Per-Pokémon slot — 116 dims (`POKEMON_FULL_DIM`)
 
-`POKEMON_VECTOR_DIM` is 112; `state_encoder` appends 1 active flag → 113.
+`POKEMON_VECTOR_DIM` is 113; `state_encoder` appends the two OUR-side trapping bits and then the
+active flag → 116. The active flag stays the **last** dim of the slot on purpose — the model's
+`hp_and_active[:, :, -1]` convention is load-bearing (ObsUnpack / DamageOperator / entity seats).
 
 | Field | Offset | Dims | Constant |
 |---|---|---|---|
@@ -84,32 +93,27 @@ Every number below comes from `agents/observation/constants.py` and
 | Hidden-Power block (`hp_revealed`, 16 type probs) | 89 | 17 | `POKEMON_HP_BLOCK_OFFSET` |
 | sleep-wake belief | 106 | 3 | `POKEMON_SLEEP_BELIEF_OFFSET` |
 | recency `[since_seen, since_acted, since_hit]` | 109 | 3 | `POKEMON_RECENCY_OFFSET` |
-| active flag | 112 | 1 | appended by `state_encoder` |
+| protect-success odds | 112 | 1 | `POKEMON_PROTECT_OFFSET` |
+| trapped (our active only) | 113 | 1 | `POKEMON_TRAPPED_OFFSET`, appended by `state_encoder` |
+| maybe_trapped (our active only) | 114 | 1 | `POKEMON_MAYBE_TRAPPED_OFFSET`, appended |
+| active flag | 115 | 1 | `POKEMON_ACTIVE_OFFSET`, appended (LAST — load-bearing) |
 
 Move slot (11, `moves.py`): `[id, power/200, has_secondary, has_recoil, type_id, category, known,
 current_pp, max_pp, accuracy, never_miss]`.
 
-### 1.3 Reactive block — 311 dims
+### 1.3 Board (reactive) block — 17 dims
 
-**11 scalars, then the matchups, then the request-ordered active moves.** The 11 scalar indices are
-current; anything citing `vec[14]`–`vec[18]` is describing a layout deleted with the CPU damage
-blocks (see §8).
+**5 raw board scalars, then the request-ordered active moves.** Everything derived is gone
+(`gen3_entity_rehome_v1`): the matchup matrices live GPU-side as D/V edges, and the per-entity
+scalars moved to the mon slots (§1.2).
 
 | Field | Offset in reactive | Dims |
 |---|---|---|
 | `fainted` (ours, theirs) | 0 | 2 |
-| `active_status` | 2 | 1 |
-| `forced_struggle` | 3 | 1 |
-| `trapped` | 4 | 1 |
-| `maybe_trapped` | 5 | 1 |
-| `turns_since_progress` | 6 | 1 |
-| `protect_odds_our` | 7 | 1 |
-| `protect_odds_opp` | 8 | 1 |
-| `wish_floating_our` | 9 | 1 |
-| `wish_floating_opp` | 10 | 1 |
-| `our_matchups` | 11 | 144 |
-| `their_matchups` | 155 | 144 |
-| `active_req_moves` — `[move_num ×4, type_id ×4, legal_now ×4]` | 299 | 12 |
+| `turns_since_progress` | 2 | 1 |
+| `wish_floating_our` | 3 | 1 |
+| `wish_floating_opp` | 4 | 1 |
+| `active_req_moves` — `[move_num ×4, type_id ×4, legal_now ×4]` | 5 | 12 |
 
 `active_req_moves` is in **request-slot order** (slot *k* ↔ action logit 6+*k*) and is sliced
 straight into `ExtractorContext`; it never enters the raw-scalar projection path. The per-mon move
@@ -118,8 +122,8 @@ therefore order-sensitive. Both orders are live simultaneously — that is the r
 head permutes by move-num identity (§3).
 
 `non_matchup_rest` — the raw-scalar tail the global token and both projection heads read — is
-`GLOBAL_ENV_DIM (18) + the 11 reactive scalars = 29` dims. It stops at the matchup offset, so the
-matchups and `active_req_moves` are excluded from it by construction.
+`GLOBAL_ENV_DIM (18) + the 5 board scalars = 23` dims. It stops at the `active_req_moves` offset,
+so the embedding-ID block is excluded from it by construction.
 
 ### 1.4 Global env — 18 dims
 
@@ -159,8 +163,8 @@ Notably **absent** (their flags are off): `belief_slots`, `belief_head`, `spread
 
 Because `damage_op_prefuse` is on, the belief + physics stack runs **once, before attention**:
 
-1. **`ObsUnpack`** — slices the 2925-dim vector into `ExtractorContext` (~30 named tensors:
-   per-mon blocks, categorical ids, matchups, active-slot indices, fainted key-masks,
+1. **`ObsUnpack`** — slices the 2667-dim vector into `ExtractorContext` (~30 named tensors:
+   per-mon blocks, categorical ids, active-slot indices, fainted key-masks,
    `our_active_req_move_{ids,type_ids,legal}`).
 2. **`PokemonEncoder`** — per-move network (`MOVE_NET_HIDDEN` `[96,32]`, with the `MoveLatentEncoder`
    latent concatenated in) → within-mon move self-attention → role encoder
@@ -232,9 +236,9 @@ the table changes every model's state_dict).
 This section is the canonical answer to "what does head X read". Widths verified by forward pass,
 2026-08-08.
 
-### 3.1 `pi_projection` — 1137 → 512
+### 3.1 `pi_projection` — 1131 → 512
 
-`Linear(1137, 512)` after `pre_proj_norm` (LayerNorm), then ReLU. Input concat, in order:
+`Linear(1131, 512)` after `pre_proj_norm` (LayerNorm), then ReLU. Input concat, in order:
 
 | Part | Dims | Source |
 |---|---|---|
@@ -243,19 +247,19 @@ This section is the canonical answer to "what does head X read". Widths verified
 | `our_active_refined` | 128 | our active slot's refined token |
 | `active_ctx_enc` (ours) | 32 | `active_ctx_encoder` (shared with vf) |
 | `active_ctx_enc` (theirs) | 32 | " |
-| `non_matchup_rest` | 29 | global env 18 + reactive scalars 11 |
+| `non_matchup_rest` | 23 | global env 18 + board scalars 5 |
 | **damage block** | **660** | `DamageOperator` output, post-gain (§4) |
-| **total** | **1137** | |
+| **total** | **1131** | |
 
-### 3.2 `vf_projection` — 881 → 512
+### 3.2 `vf_projection` — 875 → 512
 
 | Part | Dims | Source |
 |---|---|---|
 | `value_pooled` | 128 | `CLSPool.value_cls` over **all 12** team tokens |
 | `active_ctx_enc` ×2 | 64 | shared with pi |
-| `non_matchup_rest` | 29 | |
+| `non_matchup_rest` | 23 | |
 | **damage block** | **660** | the **same** tensor pi reads |
-| **total** | **881** | |
+| **total** | **875** | |
 
 The value head does **not** read `our_active_refined` (`value_active_readout` is off), and does not
 read either team pool. Its only board summary is `value_pooled`.
@@ -639,7 +643,8 @@ not re-derive them.
    `vec[15]`/`vec[16]`, wish at `vec[17]`/`vec[18]`. Real: **311 dims, 11 scalars**, progress at
    offset **6**, protect at **7**/**8**, wish at **9**/**10**. The summary table 60 lines above it
    was correct — the table and the prose contradicted each other in the same section.
-2. **`src/agents/observation/CLAUDE.md` opens with "2889-dim"**; the live obs is **2925** (the
+2. **`src/agents/observation/CLAUDE.md` opens with "2889-dim"**; the live obs at audit time
+   was **2925** — since `gen3_entity_rehome_v1` it is **2667** (the
    per-mon recency block added 12 × 3). Its per-block reference section then describes the
    pre-deletion 414-dim reactive layout and the 51-dim incoming-damage / 44-dim move-effect blocks
    as if present. Its own inline banner says to treat the deletion note as authoritative — i.e. the
@@ -647,12 +652,14 @@ not re-derive them.
 3. **`src/agents/model/CLAUDE.md` states `ARCH_SIGNATURE` in three places with two different
    values** (`gen3_op_block_trim_v1` in the phase-structure rules, `gen3_edge_bias_trunk_v1`
    later) and states `MODEL_CONFIG_VERSION` as 31/32/37/38/40/41/43/44/45/46/47/53/55/57 in
-   different paragraphs. Live: **59** and `gen3_edge_bias_trunk_v1`. It also contains a duplicated,
+   different paragraphs. Live at audit time: **59** and `gen3_edge_bias_trunk_v1` (now **60** /
+   `gen3_entity_rehome_v1`). It also contains a duplicated,
    partly-conflicting pair of paragraphs (two "`MODEL_CONFIG_VERSION` was **38** at v38" endings).
-4. **Root `CLAUDE.md` claimed `MODEL_CONFIG_VERSION` = 57.** Live: **59** (58 = the speed-stat GIGO
-   stamp, 59 = `consequence_topk`). Neither v58 nor v59 was described anywhere in the root file.
+4. **Root `CLAUDE.md` claimed `MODEL_CONFIG_VERSION` = 57.** Live at audit time: **59** (58 = the
+   speed-stat GIGO stamp, 59 = `consequence_topk`; now 60 = the re-home stamp). Neither v58 nor
+   v59 was described anywhere in the root file.
 5. **`src/agents/model/CLAUDE.md` describes `ObsUnpack` as peeling "the flat 3390-dim
-   observation"** — three obs-layout generations out of date (live 2925).
+   observation"** — obs-layout generations out of date (live is now 2667).
 6. **`PointerNativeActionHead`'s docstring says the move cell is `[low,high,crit,pko,p_land,known,
    sec×10]`.** It is `sec×7` (`_PTR_MOVE_CELL` = 13, not 16) since the outgoing slp/psn/tox columns
    were dropped. `pointer_cells`' own docstring, 900 lines away, says 7 correctly.

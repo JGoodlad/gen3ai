@@ -57,8 +57,10 @@ from agents.battle.live_view import LegalActions
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper
 from agents.observation.state_encoder import load_mappings, get_observation_encoder
-from agents.observation.reactive import ReactiveEncoder
-from agents.observation.constants import OFFSET_REACTIVE
+from agents.observation.constants import (
+    OFFSET_OUR_TEAM, POKEMON_FULL_DIM, POKEMON_ACTIVE_OFFSET,
+    POKEMON_TRAPPED_OFFSET, POKEMON_MAYBE_TRAPPED_OFFSET, TEAM_SIZE,
+)
 from agents.observation.turn_delta_encoder import (
     TurnDeltaEncoder,
     TURN_DELTA_DIM,
@@ -70,10 +72,16 @@ from agents.training.episode_tracker import EpisodeTracker
 
 FMT = "gen3ou"
 
-# Absolute obs offsets of the two reactive trapping bits.
-_RL = ReactiveEncoder().get_layout()
-_TRAPPED_OBS_IDX = OFFSET_REACTIVE + _RL["trapped"]["offset"]
-_MAYBE_TRAPPED_OBS_IDX = OFFSET_REACTIVE + _RL["maybe_trapped"]["offset"]
+# gen3_entity_rehome_v1: the trapping bits ride OUR ACTIVE's mon slot — locate the active
+# slot from the obs itself (the active flag is the last dim of each slot), then read the two
+# per-mon bits beside it. Bench slots must stay zero (also asserted).
+def _our_trapping_bits(obs):
+    for i in range(TEAM_SIZE):
+        start = OFFSET_OUR_TEAM + i * POKEMON_FULL_DIM
+        if obs[start + POKEMON_ACTIVE_OFFSET] > 0.5:
+            return (float(obs[start + POKEMON_TRAPPED_OFFSET]),
+                    float(obs[start + POKEMON_MAYBE_TRAPPED_OFFSET]))
+    return None
 
 # P2: Dugtrio with Arena Trap up front, the trapper. Bench filler so the team is legal.
 TRAPPER_TEAM = """
@@ -277,8 +285,19 @@ class TrapFuzzPlayer(Player):
 
         # --- Signals 1 & 2: the reactive obs bits must mirror the legality flags. ---
         obs = self._enc.encode(battle, hp_tracker=tr.hidden_power_tracker, legal=legal)
-        trapped_bit = float(obs[_TRAPPED_OBS_IDX])
-        maybe_bit = float(obs[_MAYBE_TRAPPED_OBS_IDX])
+        bits = _our_trapping_bits(obs)
+        if bits is None:
+            self.violations.append(f"[{tag}] t{battle.turn}: no active slot found in obs")
+            return
+        trapped_bit, maybe_bit = bits
+        # Bench slots must never carry the bits (the fact rides the trapped ENTITY only).
+        for i in range(TEAM_SIZE):
+            start = OFFSET_OUR_TEAM + i * POKEMON_FULL_DIM
+            if obs[start + POKEMON_ACTIVE_OFFSET] <= 0.5 and (
+                    obs[start + POKEMON_TRAPPED_OFFSET] != 0.0
+                    or obs[start + POKEMON_MAYBE_TRAPPED_OFFSET] != 0.0):
+                self.violations.append(
+                    f"[{tag}] t{battle.turn}: bench slot {i} carries a trapping bit")
         if trapped_bit != float(legal.trapped):
             self.violations.append(
                 f"[{tag}] t{battle.turn}: trapped obs bit {trapped_bit} != legal.trapped {legal.trapped}"

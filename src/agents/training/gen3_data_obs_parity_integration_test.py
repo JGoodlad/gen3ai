@@ -28,6 +28,11 @@ decisions, the deleted runs being ``1454..1461`` (the 8 active-move scalars) and
 documented removal, starting at 1454, the documented start of the reactive block. The decision
 count was unchanged (991), so the trajectory did not branch differently either. ⇒ nothing beyond
 v48 had altered the obs, so the regen encodes only the intended deletion.
+
+Regen 2026-08-08 (`gen3_entity_rehome_v1`, v60): the Stage-3 entity re-home — matchup matrices +
+6 reactive scalars deleted, protect/trapped/maybe_trapped re-homed per-mon, obs 2925 -> 2667.
+ARCH_SIGNATURE bumped in the same commit; the obs-roundtrip fuzz (627 decisions, bit-for-bit) and
+the trapping/protect fuzz gates all passed on the new layout before this regen was taken.
 """
 import json
 import os

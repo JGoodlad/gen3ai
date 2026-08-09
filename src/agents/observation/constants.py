@@ -74,8 +74,23 @@ POKEMON_SLEEP_BELIEF_DIM = 3
 # staleness — the honest default for an unrevealed slot).
 POKEMON_RECENCY_OFFSET = 109   # 106 + 3 (sleep-belief end)
 POKEMON_RECENCY_DIM = 3
-POKEMON_VECTOR_DIM = 112       # 71 + 18 (spread) + 17 (HP block) + 3 (sleep) + 3 (recency)
-POKEMON_FULL_DIM = 113         # 112 + 1 (active flag appended by state_encoder)
+# gen3_entity_rehome_v1 (Stage 3): the PROTECT-SUCCESS odds moved from the deleted reactive
+# scalars (old vec[7]/vec[8], ACTIVES ONLY) onto every mon token — P(a Protect/Detect/Endure by
+# THIS mon succeeds now) from its LiveView protect_counter (gen3 floored doubling 100/50/25/12.5,
+# floor 1/8). A benched mon's counter is 0 → odds 1.0, which is TRUE (the stall counter resets on
+# switch) — the fact now rides the entity instead of a global slot.
+POKEMON_PROTECT_OFFSET = 112   # 109 + 3 (recency end)
+POKEMON_VECTOR_DIM = 113       # 71 + 18 (spread) + 17 (HP block) + 3 (sleep) + 3 (recency) + 1 (protect)
+# state_encoder appends per-slot: the two OUR-side trapping bits, then the active flag — active
+# stays the LAST dim of the slot ON PURPOSE (the model's `hp_and_active[:, :, -1]` convention is
+# load-bearing across ObsUnpack / DamageOperator / entity seats; a reorder here would silently
+# repoint every one of those reads). The trapping bits are gen3_entity_rehome_v1 — old reactive
+# vec[4]/vec[5], now on the trapped ENTITY: nonzero only at our ACTIVE slot; server-authoritative
+# LegalActions facts, so they stay obs bits rather than becoming a T-edge belief.
+POKEMON_TRAPPED_OFFSET = POKEMON_VECTOR_DIM               # 113 (our active only; 0 elsewhere)
+POKEMON_MAYBE_TRAPPED_OFFSET = POKEMON_VECTOR_DIM + 1     # 114 (our active only; 0 elsewhere)
+POKEMON_ACTIVE_OFFSET = POKEMON_VECTOR_DIM + 2            # 115 — LAST in the slot (see above)
+POKEMON_FULL_DIM = POKEMON_VECTOR_DIM + 3                 # 116 = 113 + trapped + maybe_trapped + active
 
 # Active context: boosts(14) + volatiles(VOLATILES_DIM)
 ACTIVE_CONTEXT_DIM = BOOSTS_DIM + VOLATILES_DIM
@@ -88,35 +103,26 @@ ACTIVE_CONTEXT_DIM = BOOSTS_DIM + VOLATILES_DIM
 WEATHER_ONEHOT_DIM = 5
 GLOBAL_ENV_DIM = WEATHER_ONEHOT_DIM + 2 + 2 + 1 + 8  # = 18
 
-MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
-# 11 scalar reactive dims lead the block:
-# fainted(2) + active_status(1) + forced_struggle(1) + trapped(1) + maybe_trapped(1) +
-# turns_since_progress(1) + protect_odds ×2 (our active, opp active) + wish_floating ×2 (our, opp).
-# Indices below are the CURRENT ones (post gen3_cpu_damage_deleted_v1, which removed the 8
-# active-move scalars that used to occupy vec[0:8] and shifted everything down by 8):
-#   vec[0]=fainted_ours vec[1]=fainted_opp vec[2]=active_status vec[3]=forced_struggle
-#   vec[4]=trapped vec[5]=maybe_trapped vec[6]=turns_since_progress
-#   vec[7]/vec[8]=protect_odds (our/opp)  vec[9]/vec[10]=wish_floating (our/opp)
-# trapped/maybe_trapped are the gen3_trapping_signals_v1 additions; turns_since_progress (vec[14],
-# gen3_markovian_progress_v1) is the log-saturated no-progress clock (design §5.1) — an
-# EpisodeTracker-owned cross-turn counter (NOT LiveView), threaded into encode() like the HP tracker, so
-# obs and the no-progress reward key on ONE value. protect_odds (vec[15]/vec[16], gen3_protect_odds_v1)
-# is P(a Protect/Detect/Endure succeeds NOW) for each active mon — the gen3 floored-doubling odds
-# (100/50/25/12.5, floor 1/8) the model can't otherwise see (the 'stall' counter isn't enumerated by
-# poke-env's volatiles, and history saliency decays before a chain can be counted). Sourced from the
-# LiveView's per-mon protect_counter; public for both sides (the opp's counter derives entirely from
-# their revealed move stream → no leak). **wish_floating (vec[17] our side, vec[18] opp side,
-# gen3_wish_wired_v1) is the pending-Wish "floating heal" signal — WISH_HEAL_FRACTION (≈0.5, the gen3
-# recipient-maxhp/2 heal) when a Wish cast last turn will heal the slot mon at the END of this turn
-# (slot-keyed, reconstructed from the event log since poke-env doesn't track it), else 0.0. See
-# observation/wish_belief.py.**
-# gen3_cpu_damage_deleted_v1: the 8 ACTIVE-MOVE SCALARS (4 base-power + 4 type-multiplier) that used
-# to head this block are GONE. They were the primitive CPU damage signal, fully subsumed by the
-# DamageOperator's OUTGOING per-move block (`--damage-outgoing`, request-ordered so slot k ↔ action
-# 6+k, with the real gen3 physics rather than bp/200 and mult/4). `--unified-obs` had merely MASKED
-# them from the model while the CPU still computed them every decision; this deletes the producer.
-# Scalar indices therefore shift down by 8 (the old vec[8] fainted-count is now vec[0]).
-REACTIVE_SCALAR_DIM = 11
+# gen3_entity_rehome_v1 (Stage 3, the re-home): the two 144-dim MATCHUP MATRICES ARE GONE from
+# the observation — the roadmap §3 Stage-3 delete, executed after the gen-3 40M audit confirmed
+# the D/V edge families as a trained, load-bearing SUPERSET (D-cells carry
+# [low, high, crit, pko, type_mult, revealed] per pair from real gen3 physics + the learned move
+# belief, vs these matrices' bare type_mult/4 from a fixed prior; gen-3 audit: d2 16.3% flips).
+# The ~35% of obs-build CPU they cost (the whole reactive matchup loop —
+# effective_multiplier_by_types was the #1 tottime line at 202 calls/encode) is the Stage-3
+# refund. The 11 reactive scalars are re-homed or deleted:
+#   * protect_odds ×2      → the PER-MON slot (POKEMON_PROTECT_OFFSET — every mon, not 2 actives)
+#   * trapped/maybe_trapped → the OUR-ACTIVE mon slot (POKEMON_TRAPPED_OFFSET / _MAYBE_)
+#   * active_status        → DELETED (byte-redundant with the active mon's condition one-hot)
+#   * forced_struggle      → DELETED (derivable: active_req_moves legal ×4 all-zero on a
+#                            move-request ⇔ struggle is the only move — and the action mask
+#                            carries the authoritative bit)
+#   * fainted ×2, turns_since_progress, wish_floating ×2 → the 5 BOARD scalars below (E7/E6-class
+#     side/board facts; wish is slot-keyed side state, the clock is EpisodeTracker cross-turn
+#     state — same sources and same one-value-with-reward contract as before):
+#   vec[0]=fainted_ours vec[1]=fainted_opp vec[2]=turns_since_progress
+#   vec[3]=wish_floating_our vec[4]=wish_floating_opp
+REACTIVE_SCALAR_DIM = 5
 
 # gen3_cpu_damage_deleted_v1: the 44-dim action-aligned MOVE-EFFECT block (4 slots x 11 flags:
 # is_boost/is_heal/is_protect/is_phaze/is_hazard/inflicts_status/status_will_land/pp_fraction/
@@ -140,7 +146,7 @@ TEAM_SIZE = 6
 # NOTE: `agents.observation.incoming_damage` (the math core) STAYS -- the reward PBRS
 # (reward_manager.py) and the prober both import it. Only the obs WRITE is removed.
 
-REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM                            # 11
+# gen3_entity_rehome_v1: REACTIVE_MATCHUP_OFFSET / MATCHUP_DIM are DELETED with the matrices.
 
 # gen3_op_move_align_v1: the OUR-ACTIVE mon's 4 moves in REQUEST-slot order (so slot k ↔ action
 # logit 6+k) — [move_num ×4, resolved_type_id ×4, legal_now ×4]. The DamageOperator's OUTGOING
@@ -157,9 +163,9 @@ REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM                            # 11
 # enters the raw-scalar projection path). Retrain-class (obs dim grows; ARCH gen3_op_move_align_v1).
 ACTIVE_REQ_MOVES_PER = 4                                                 # request slots (== N_MOVE_SLOTS)
 ACTIVE_REQ_MOVES_DIM = 3 * ACTIVE_REQ_MOVES_PER                          # 12 = ids(4) + type_ids(4) + legal(4)
-ACTIVE_REQ_MOVES_OFFSET = REACTIVE_MATCHUP_OFFSET + MATCHUP_DIM          # 299 — after the two matchup matrices
+ACTIVE_REQ_MOVES_OFFSET = REACTIVE_SCALAR_DIM                            # 5 — right after the board scalars
 
-REACTIVE_DIM = REACTIVE_SCALAR_DIM + MATCHUP_DIM + ACTIVE_REQ_MOVES_DIM  # 311
+REACTIVE_DIM = REACTIVE_SCALAR_DIM + ACTIVE_REQ_MOVES_DIM                # 17
 
 # Top-level Offsets — all derived from the named constants (only the constants are load-bearing;
 # these comments are the post-gen3_markovian_progress_v1 values: base dim = 1790, full obs = 3391).

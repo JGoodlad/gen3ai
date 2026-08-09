@@ -204,8 +204,8 @@ _GIGO_GENERATIONS = ("gen-1", "gen-2")
 # is worse than none, so anything unmapped stays null.
 DOC_SECTION = {
     "damage_op": "4. The `DamageOperator` output block",
-    "pi_projection": "3.1 `pi_projection` — 1137 → 512",
-    "vf_projection": "3.2 `vf_projection` — 881 → 512",
+    "pi_projection": "3.1 `pi_projection` — 1131 → 512",
+    "vf_projection": "3.2 `vf_projection` — 875 → 512",
     "move_belief": "2.1 Order of operations",
     "hp_type_belief": "2.1 Order of operations",
 }

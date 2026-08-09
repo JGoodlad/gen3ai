@@ -60,8 +60,8 @@ def test_model_full_embedding_forensics():
     obs[pk0_start + POKEMON_MOVES_OFFSET + m_slot_layout['current_pp']['offset']] = _cur_pp / MAX_PP
     obs[pk0_start + POKEMON_MOVES_OFFSET + m_slot_layout['max_pp']['offset']]     = _max_pp / MAX_PP
 
-    # --- Reactive Matrix ---
-    obs[OFFSET_REACTIVE + reactive_layout['our_matchups']['offset']] = 0.5
+    # gen3_entity_rehome_v1: the reactive matchup matrices are DELETED from the obs and the
+    # move network no longer has matchup/validity input columns.
 
     obs_tensor = torch.from_numpy(obs).unsqueeze(0)
     obs_dict = {"observation": obs_tensor}
@@ -83,7 +83,7 @@ def test_model_full_embedding_forensics():
                + gl.get('weather', {}).get('dim', 6)
                + rl.get('fainted', {}).get('dim', 2)
                + gl.get('hazards', {}).get('dim', 2))                      # 12
-    matchup_idx = known_idx + 1 + ctx_dim                                   # 51
+    hp_probs_idx = known_idx + 1 + ctx_dim   # gen3_entity_rehome_v1: HP-candidate block follows ctx
 
     # PP indices: current_pp and max_pp sit in the remnants block just before the known flag
     _rem1 = m_slot_layout['type']['offset'] - m_slot_layout['power']['offset']         # 3
@@ -93,7 +93,6 @@ def test_model_full_embedding_forensics():
 
     m0_features = move_in[0]
     assert m0_features[known_idx]      == 1.0,                           f"Move Known Flag mismatch at idx {known_idx}: {m0_features[known_idx]}"
-    assert m0_features[matchup_idx]    == 0.5,                           f"Matchup Matrix mismatch at idx {matchup_idx}: {m0_features[matchup_idx]}"
     assert float(m0_features[current_pp_idx]) == pytest.approx(_cur_pp / MAX_PP), f"current_pp mismatch at idx {current_pp_idx}: {m0_features[current_pp_idx]}"
     assert float(m0_features[max_pp_idx])     == pytest.approx(_max_pp / MAX_PP), f"max_pp mismatch at idx {max_pp_idx}: {m0_features[max_pp_idx]}"
     assert float(m0_features[current_pp_idx]) < float(m0_features[max_pp_idx]),   "current_pp should be less than max_pp for depleted move"
@@ -123,7 +122,7 @@ def test_model_full_embedding_forensics():
     assert p0_features[ability_known_role_idx] == 1.0, f"Ability Known Flag mismatch at idx {ability_known_role_idx}: {p0_features[ability_known_role_idx]}"
 
     print("✅ Full Model Forensic Audit PASSED!")
-    print(f"  - Move Path: Known (idx {known_idx}), Matchup (idx {matchup_idx}), cur_pp (idx {current_pp_idx}), max_pp (idx {max_pp_idx})")
+    print(f"  - Move Path: Known (idx {known_idx}), cur_pp (idx {current_pp_idx}), max_pp (idx {max_pp_idx})")
     print(f"  - Pokemon Path: Item Known (idx {item_known_role_idx}), Ability Known (idx {ability_known_role_idx})")
 
 if __name__ == "__main__":

@@ -1683,8 +1683,9 @@ def _saliency_from_grad(g: np.ndarray, off) -> Saliency:
 
     blocks = [
 
-        block("our_matchups(144)", off.om_off, off.om_off + 144),
-        block("their_matchups(144)", off.tm_off, off.tm_off + 144),  # raw incoming type-effectiveness
+        *((block("our_matchups(144)", off.om_off, off.om_off + 144),
+           block("their_matchups(144)", off.tm_off, off.tm_off + 144))
+          if off.om_off > 0 else ()),  # gen3_entity_rehome_v1: absent from re-homed layouts
     ]
     if off.incoming_dim > 0:  # incoming-damage / OHKO belief block (incoming_damage_v1)
         blocks.append(block(f"incoming_damage({off.incoming_dim})",
@@ -1733,6 +1734,8 @@ def _threats(obs: np.ndarray, off) -> "ThreatView | None":
 
     Returns None if the obs is too short to hold the block (tiny synthetic test obs) —
     so the engine never crashes on a malformed/old trace."""
+    if off.tm_off <= 0:
+        return None  # gen3_entity_rehome_v1: the block no longer exists in the live layout
     seg = obs[off.tm_off:off.tm_off + _MATCHUP_DIM]
     if seg.shape[0] != _MATCHUP_DIM:
         return None

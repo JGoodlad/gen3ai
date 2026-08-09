@@ -440,7 +440,9 @@ from typing import Any, Dict, List
 # "speed"; both trained generations' V edge priced bulk). VALUES-only forward-math change: a
 # pre-v58 checkpoint still LOADS, but its v_map/c1_map trained against the buggy feature — its
 # V-edge inputs shift under fixed code (documented, accepted: gen-3 retrains under true physics).
-MODEL_CONFIG_VERSION = 59
+# v60 is the gen3_entity_rehome_v1 STAMP (Stage-3 re-home; the ARCH_SIGNATURE carries the break —
+# obs dim, POKEMON_FULL_DIM and the move/role net widths all move, so no migration is possible).
+MODEL_CONFIG_VERSION = 60
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -827,7 +829,13 @@ MODEL_CONFIG_VERSION = 59
 #     the biased-attention clone — state_dict keys change for every model (no off state), so the
 #     signature carries the break like v51/v54/v55. The within-generation knob is `edge_bias_families`
 #     (which families are delivered; zero-init maps ⇒ ON starts identical to OFF).
-ARCH_SIGNATURE = "gen3_edge_bias_trunk_v1"
+#   gen3_entity_rehome_v1 (config v60, Stage 3 of the entity generation): the flat obs's DERIVED
+#     blocks are deleted and every raw fact re-homed to its entity — the 288-dim CPU matchup
+#     matrices and 6 of the 11 reactive scalars are GONE (obs 2925 → 2667), protect_odds /
+#     trapped / maybe_trapped ride the per-mon slots (POKEMON_FULL_DIM 113 → 116), and the
+#     PokemonEncoder's move/role nets narrow (matchup + validity + struggle inputs deleted).
+#     Weight shapes AND obs meaning change together — a fresh-lineage break (gen-4).
+ARCH_SIGNATURE = "gen3_entity_rehome_v1"
 
 
 class ModelVersionError(Exception):
@@ -2491,4 +2499,9 @@ def _migrate_config(data: dict) -> dict:
         # v59: consequence_topk — pre-v59 models trained with the hardcoded k_cand/k_bench = 4.
         data.setdefault("consequence_topk", 4)
         data["config_version"] = 59
+    if version < 60:
+        # v60: gen3_entity_rehome_v1 STAMP (no field). The ARCH_SIGNATURE change carries the
+        # actual break — every pre-v60 checkpoint has the old signature and fails that check;
+        # this stamp only keeps config_version monotone (the v55/v58 convention).
+        data["config_version"] = 60
     return data

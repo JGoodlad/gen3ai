@@ -317,7 +317,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         edges.append(_edge("active_context", head, "concat", 2 * ac, "2 * ACTIVE_CTX_HIDDEN[-1]",
                            via="ProjectionAssembler.active_ctx_encoder", pooled=False))
         edges.append(_edge("non_matchup_rest", head, "concat", nmr,
-                           "GLOBAL_ENV_DIM + reactive matchup offset", pooled=False))
+                           "GLOBAL_ENV_DIM + board scalars", pooled=False))
         edges.append(_edge("damage_op", head, "concat", op.out_dim, "DamageOperator.out_dim",
                            pooled=False,
                            note="the unpooled ABSOLUTE route — the only channel that can carry "

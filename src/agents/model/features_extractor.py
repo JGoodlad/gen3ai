@@ -10,6 +10,7 @@ from agents.observation.constants import (
     GLOBAL_ENV_DIM,
     POKEMON_FULL_DIM,
     POKEMON_HP_PROBS_OFFSET,
+    POKEMON_PROTECT_OFFSET,
     POKEMON_SPECIES_KNOWN_OFFSET,
     POKEMON_SPREAD_OFFSET,
     POKEMON_SPREAD_DIM,
@@ -174,8 +175,8 @@ class ExtractorContext:
     type2_ids: torch.Tensor
     hp_probs: torch.Tensor
     hp_and_active: torch.Tensor
-    # Reactive / global feature slices.
-    matchups_all: torch.Tensor
+    # Reactive / global feature slices. (gen3_entity_rehome_v1: matchups_all and
+    # struggle_feature are GONE with their obs blocks — the D/V edges own pair physics.)
     move_mask: torch.Tensor
     # gen3_op_move_align_v1: OUR active mon's 4 moves in REQUEST-slot order (action 6+k) — the
     # DamageOperator's OUTGOING per-move blocks read THESE (not all_move_ids[our_active], which is
@@ -194,7 +195,6 @@ class ExtractorContext:
     weather_feature: torch.Tensor
     fainted_feature: torch.Tensor
     spikes_feature: torch.Tensor
-    struggle_feature: torch.Tensor
     screen_feature: torch.Tensor
     # Active-slot indices + fainted masks (hoisted here so transformer/pool read them directly).
     our_active_idx: torch.Tensor
@@ -339,11 +339,10 @@ class ObsUnpack(torch.nn.Module):
         turn_feature    = x[:, sl['global_env.clock']]
         screen_feature  = x[:, sl['global_env.screens']]
 
-        # Reactive feature slices (fainted, matchups, forced-struggle).
-        fainted_feature     = x[:, sl['reactive.fainted']]
-        our_matchups_flat   = x[:, sl['reactive.our_matchups']]
-        their_matchups_flat = x[:, sl['reactive.their_matchups']]
-        struggle_feature    = x[:, sl['reactive.forced_struggle']]
+        # Reactive/board feature slices (gen3_entity_rehome_v1: the matchup matrices and the
+        # forced_struggle bit no longer exist — the D/V edges own pair physics, and struggle
+        # legality lives in the action mask + the all-zero req-move legal bits).
+        fainted_feature = x[:, sl['reactive.fainted']]
 
         # gen3_op_move_align_v1: OUR active's request-order move ids/types/legality (after the matchups,
         # so non_matchup_rest — which stops at the matchup offset — never sees these embedding IDs).
@@ -353,10 +352,6 @@ class ObsUnpack(torch.nn.Module):
         our_active_req_move_ids = x[:, _arm.start : _arm.start + _arm_per].long()
         our_active_req_move_type_ids = x[:, _arm.start + _arm_per : _arm.start + 2 * _arm_per].long()
         our_active_req_move_legal = x[:, _arm.start + 2 * _arm_per : _arm.stop]
-
-        our_matchups   = our_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
-        their_matchups = their_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
-        matchups_all = torch.cat([our_matchups, their_matchups], dim=1)
 
         pokemon_part = torch.cat([our_team_raw, opp_team_raw], dim=1)
 
@@ -401,10 +396,10 @@ class ObsUnpack(torch.nn.Module):
         active_ctx_dim = (_ctx.stop - _ctx.start) // 2
         our_ctx_raw = x[:, _ctx.start : _ctx.start + active_ctx_dim]
         opp_ctx_raw = x[:, _ctx.start + active_ctx_dim : _ctx.stop]
-        # Everything between the active contexts and the first matchup matrix: the global-env
-        # block + the reactive scalars (the embedding-ID active_req_moves tail sits AFTER the
-        # matchups precisely so this raw-scalar span never contains an ID).
-        non_matchup_rest = x[:, sl['global_env'].start : sl['reactive.our_matchups'].start]
+        # Everything between the active contexts and the embedding-ID active_req_moves tail:
+        # the global-env block + the 5 raw board scalars (this raw-scalar span never contains
+        # an ID by construction).
+        non_matchup_rest = x[:, sl['global_env'].start : sl['reactive.active_req_moves'].start]
         return ExtractorContext(
             batch_size=batch_size, device=x.device,
             pokemon_part=pokemon_part,
@@ -412,12 +407,12 @@ class ObsUnpack(torch.nn.Module):
             item_ids=item_ids, ability1_ids=ability1_ids, ability2_ids=ability2_ids,
             type1_ids=type1_ids, type2_ids=type2_ids,
             hp_probs=hp_probs, hp_and_active=hp_and_active,
-            matchups_all=matchups_all, move_mask=move_mask, switch_mask=switch_mask, struggle_mask=struggle_mask,
+            move_mask=move_mask, switch_mask=switch_mask, struggle_mask=struggle_mask,
             our_active_req_move_ids=our_active_req_move_ids,
             our_active_req_move_type_ids=our_active_req_move_type_ids,
             our_active_req_move_legal=our_active_req_move_legal,
             turn_feature=turn_feature, weather_feature=weather_feature, fainted_feature=fainted_feature,
-            spikes_feature=spikes_feature, struggle_feature=struggle_feature, screen_feature=screen_feature,
+            spikes_feature=spikes_feature, screen_feature=screen_feature,
             our_active_idx=our_active_idx, opp_active_local=opp_active_local,
             fainted_mask_ours=fainted_mask_ours, fainted_mask_opp=fainted_mask_opp,
             opp_believed_mask=opp_believed_mask,
@@ -512,8 +507,6 @@ class PokemonEncoder(torch.nn.Module):
         move_input_dim = (layout['move_embedding_dim'] + layout['type_embedding_dim']
                           + self.move_remnant_dim + 1               # remnants + known
                           + _move_ctx_dim                           # context
-                          + TEAM_SIZE                                # matchups
-                          + TEAM_SIZE                                # matchup validity (per opponent)
                           + HP_PROBS_DIM                             # hp candidate-type distribution
                           + 1)                                       # move validity
         # gen3_unified_move_system_v1: the mechanics-grounded move latent, concatenated into the move
@@ -542,7 +535,6 @@ class PokemonEncoder(torch.nn.Module):
             + _gl['weather']['dim']
             + _rl['fainted']['dim']
             + _gl['hazards']['dim']
-            + 1                        # struggle
             + _gl['screens']['dim']
         )
         role_input_dim = (
@@ -668,29 +660,15 @@ class PokemonEncoder(torch.nn.Module):
             torch.zeros_like(hp_probs_per_slot),
         )
 
-        # Per-cell matchup validity: `move_known(slot) AND species_known(opp)`.
-        species_known_all = pokemon_part[:, :, POKEMON_SPECIES_KNOWN_OFFSET]  # [B, 12]
-        our_species_known = species_known_all[:, :TEAM_SIZE]                  # [B, 6]
-        opp_species_known = species_known_all[:, TEAM_SIZE:]                  # [B, 6]
-        move_known_all = known_flags_reshaped.squeeze(-1)                     # [B, 12, 4]
-        our_match_validity = (
-            move_known_all[:, :TEAM_SIZE].unsqueeze(-1)
-            * opp_species_known[:, None, None, :]
-        )
-        their_match_validity = (
-            move_known_all[:, TEAM_SIZE:].unsqueeze(-1)
-            * our_species_known[:, None, None, :]
-        )
-        matchup_validity = torch.cat([our_match_validity, their_match_validity], dim=1)  # [B, 12, 4, 6]
-
+        # gen3_entity_rehome_v1: the 288-dim CPU matchup matrices (and their per-cell validity
+        # mask) are DELETED — the D/V edge families deliver a strict superset of this signal as
+        # attention biases + op cells from real physics and the learned belief.
         move_feature_blocks = [
             embedded_moves,
             embedded_move_types,
             move_remnants_reshaped,
             known_flags_reshaped,
             move_context_final,
-            ctx.matchups_all,
-            matchup_validity,
             hp_probs_per_slot,
             move_validity,
         ]
@@ -737,7 +715,7 @@ class PokemonEncoder(torch.nn.Module):
         # --- Role encoder ---
         global_context = torch.cat([
             ctx.turn_feature, ctx.weather_feature, ctx.fainted_feature,
-            ctx.spikes_feature, ctx.struggle_feature, ctx.screen_feature,
+            ctx.spikes_feature, ctx.screen_feature,
         ], dim=1)
         context_broadcasted = global_context.unsqueeze(1).expand(-1, n_poke, -1)
 
@@ -979,9 +957,9 @@ class TeamTransformer(torch.nn.Module):
         self.turn_history_pos_emb = torch.nn.Embedding(N_HISTORY_TURNS, D_MODEL)
 
         reactive_layout = layout['reactive_layout']
-        _matchup_offset_in_reactive = reactive_layout['our_matchups']['offset']
+        _board_scalar_dim = reactive_layout['active_req_moves']['offset']
         active_ctx_dim = layout['active_context_dim']
-        self._non_matchup_rest_dim = GLOBAL_ENV_DIM + _matchup_offset_in_reactive
+        self._non_matchup_rest_dim = GLOBAL_ENV_DIM + _board_scalar_dim
         self._global_token_input_dim = 2 * active_ctx_dim + self._non_matchup_rest_dim
         self.global_proj = torch.nn.Linear(self._global_token_input_dim, D_MODEL)
 
@@ -3539,9 +3517,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if "g" in _fams:
                 _cells["g"] = self.damage_op.pairwise_schedule(ctx)
             if "c4" in _fams:
-                # gen3_protect_odds_v1: OUR protect-success scalar rides non_matchup_rest at
-                # GLOBAL_ENV_DIM + its reactive offset (7) — the schema names this block.
-                _po = ctx.non_matchup_rest[:, GLOBAL_ENV_DIM + 7]
+                # gen3_entity_rehome_v1: protect odds live ON the mon slot now — gather OUR
+                # active's per-mon protect field (pokemon.py POKEMON_PROTECT_OFFSET).
+                _po = ctx.pokemon_part[
+                    torch.arange(ctx.batch_size, device=ctx.device), ctx.our_active_idx,
+                    POKEMON_PROTECT_OFFSET]
                 _cells["c4"] = self.damage_op.pairwise_protect(ctx, _po)
             if "x" in _fams:
                 _cells["x"] = self.damage_op.pairwise_entry(ctx, self.last_move_belief_logits)

@@ -18,7 +18,9 @@ from .constants import (
     POKEMON_HP_PROBS_OFFSET,
     POKEMON_HP_BLOCK_DIM,
     POKEMON_SLEEP_BELIEF_OFFSET,
+    POKEMON_PROTECT_OFFSET,
 )
+from agents.gen3_mechanics import protect_success_probability
 from .sleep_belief import sleep_belief_features
 from .species import SpeciesEncoder
 from .items import ItemsEncoder
@@ -182,6 +184,14 @@ class PokemonEncoder(ObservationEncoder):
             vec[POKEMON_RECENCY_OFFSET + 1] = recency_vals[1]
             vec[POKEMON_RECENCY_OFFSET + 2] = recency_vals[2]
 
+        # gen3_entity_rehome_v1: per-mon protect-success odds — P(a Protect/Detect/Endure by THIS
+        # mon succeeds now) under the gen3 floored-doubling stall rule, from the LiveView
+        # protect_counter (the counter resets on switch, so a benched mon truthfully reads 1.0).
+        # Re-homed from the deleted reactive scalars (which carried the two ACTIVES only); the
+        # entity now owns its own stall state. 0.0 on the no-LiveView (unit-test) path.
+        if live_mon is not None:
+            vec[POKEMON_PROTECT_OFFSET] = protect_success_probability(live_mon.protect_counter)
+
         # 10. Spread block (18 dims): IVs (6) + EVs (6) + spread_known (1) + nature (5)
         # Own team: actual values from the teambuilder. Opponent: all zeros + spread_known=0
         # so the model can distinguish "unknown opponent" from "zero EVs on own Pokémon".
@@ -283,6 +293,8 @@ class PokemonEncoder(ObservationEncoder):
                     "hp_type_probs": {"offset": 1, "dim": 16},
                 },
             },
+            # gen3_entity_rehome_v1: the entity-owned stall state (see encode()).
+            "protect_odds": {"offset": POKEMON_PROTECT_OFFSET, "dim": 1},
             "pokemon_vector_dim": POKEMON_VECTOR_DIM,
         }
 

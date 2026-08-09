@@ -31,8 +31,8 @@ def test_generated_slices_and_space_match_the_live_encoder():
     sl = sch.slices()
     assert sl["turn_history"] == slice(_layout["turn_history_offset"], _enc.dimension)
     assert sl["prev_action_mask"].start == _layout["base_dim"]
-    assert sl["reactive.our_matchups"].start == (
-        _layout["parts"]["reactive"]["start"] + _layout["reactive_layout"]["our_matchups"]["offset"])
+    assert sl["reactive.active_req_moves"].start == (
+        _layout["parts"]["reactive"]["start"] + _layout["reactive_layout"]["active_req_moves"]["offset"])
     # Every slice must sit inside the vector and child slices inside their parent.
     for name, s in sl.items():
         assert 0 <= s.start < s.stop <= sch.total_dim, name

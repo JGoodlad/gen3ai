@@ -324,13 +324,10 @@ def test_screen_mist_reaches_network():
 # C. Reactive block (scalars + trapping signals + one matchup cell)
 # ===========================================================================
 
-def test_forced_struggle_reaches_network():
-    model, layout, _ = feature_model()
-    base = obs_zero(layout)
-    variant = base.clone()
-    off = _reactive_offset(layout, "forced_struggle")
-    set_region(variant, off, [1.0])
-    assert_reaches_network(model, base, variant, "reactive forced_struggle")
+# gen3_entity_rehome_v1: forced_struggle is DELETED from the obs (derivable — the action mask
+# carries the authoritative bit and the req-move legal bits are all-zero exactly then), and the
+# matchup matrices are deleted with it (D/V edges own pair physics). trapped / maybe_trapped /
+# protect_odds moved to the PER-MON slots — covered below at their entity homes.
 
 
 def test_fainted_count_reaches_network():
@@ -342,36 +339,63 @@ def test_fainted_count_reaches_network():
     set_region(variant, off, [0.5])
     assert_reaches_network(model, base, variant, "reactive our fainted-count")
 
+def _our_mon_offset(layout, slot: int, field_offset: int) -> int:
+    """Absolute offset of a per-mon field on OUR team slot `slot`."""
+    from agents.observation.constants import POKEMON_FULL_DIM
+    return layout["parts"]["our_team"]["start"] + slot * POKEMON_FULL_DIM + field_offset
+
+
 def test_trapped_bit_reaches_network():
-    # gen3_trapping_signals_v1: `trapped` scalar. High-value — must reach the net.
+    # gen3_entity_rehome_v1: `trapped` rides OUR ACTIVE's mon slot now. Must reach the net.
+    from agents.observation.constants import POKEMON_TRAPPED_OFFSET
     model, layout, _ = feature_model()
     base = obs_zero(layout)
     variant = base.clone()
-    off = _reactive_offset(layout, "trapped")
-    set_region(variant, off, [1.0])
-    assert_reaches_network(model, base, variant, "reactive trapped bit")
+    set_region(variant, _our_mon_offset(layout, 0, POKEMON_TRAPPED_OFFSET), [1.0])
+    assert_reaches_network(model, base, variant, "per-mon trapped bit")
 
 
 def test_maybe_trapped_bit_reaches_network():
-    # gen3_trapping_signals_v1: `maybe_trapped` — the highest-value bit (switches
-    # stay legal, so it's the only way the model sees trap risk). Must reach.
+    # gen3_entity_rehome_v1: `maybe_trapped` — the highest-value bit (switches stay legal,
+    # so it's the only way the model sees trap risk) — on the mon slot. Must reach.
+    from agents.observation.constants import POKEMON_MAYBE_TRAPPED_OFFSET
     model, layout, _ = feature_model()
     base = obs_zero(layout)
     variant = base.clone()
-    off = _reactive_offset(layout, "maybe_trapped")
-    set_region(variant, off, [1.0])
-    assert_reaches_network(model, base, variant, "reactive maybe_trapped bit")
+    set_region(variant, _our_mon_offset(layout, 0, POKEMON_MAYBE_TRAPPED_OFFSET), [1.0])
+    assert_reaches_network(model, base, variant, "per-mon maybe_trapped bit")
 
 
-def test_matchup_matrix_cell_reaches_network():
-    # One cell of the our-vs-their matchup matrix (144 dims). The matchup block
-    # feeds the per-move processor (policy-relevant) and flows into both heads.
+def test_protect_odds_reaches_network():
+    # gen3_entity_rehome_v1: per-mon protect-success odds (every mon owns its stall state).
+    # On a BENCH slot on purpose — the re-home's point is that the fact rides every entity,
+    # not just the active. The bench mon must be alive (hp>0) or its token is key-masked.
+    from agents.observation.constants import POKEMON_PROTECT_OFFSET
+    model, layout, _ = feature_model()
+    base = obs_zero(layout)
+    hp_off = layout["pokemon"]["hp"]["offset"]
+    set_region(base, _our_mon_offset(layout, 1, hp_off), [0.8])
+    variant = base.clone()
+    set_region(variant, _our_mon_offset(layout, 1, POKEMON_PROTECT_OFFSET), [1.0])
+    assert_reaches_network(model, base, variant, "per-mon protect odds (live bench mon)")
+
+
+def test_turns_since_progress_reaches_network():
     model, layout, _ = feature_model()
     base = obs_zero(layout)
     variant = base.clone()
-    off = _reactive_offset(layout, "our_matchups")
-    set_region(variant, off + 5, [1.0])  # an arbitrary interior cell
-    assert_reaches_network(model, base, variant, "reactive matchup matrix cell")
+    off = _reactive_offset(layout, "turns_since_progress")
+    set_region(variant, off, [0.7])
+    assert_reaches_network(model, base, variant, "board turns_since_progress")
+
+
+def test_wish_floating_reaches_network():
+    model, layout, _ = feature_model()
+    base = obs_zero(layout)
+    variant = base.clone()
+    off = _reactive_offset(layout, "wish_floating_our")
+    set_region(variant, off, [0.5])
+    assert_reaches_network(model, base, variant, "board wish_floating_our")
 
 
 # ===========================================================================
