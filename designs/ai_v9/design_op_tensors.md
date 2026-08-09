@@ -113,30 +113,51 @@ vector could not express, so it built its own.
 
 `src/agents/model/op_block_split_audit.py`, results at
 `designs/research_state/measurements/gen3_op_block_split_40M.json`. gen-3 `final_model.zip`
-(40M), 6000 states, CPU, idle box (load 0.64/16). `net` = zero-arm − shuffle-arm flip rate (the
-width-fair statistic).
+(40M), 6000 states, CPU, idle box (load 0.64/16).
 
-| arm | width | zero | shuffle | **net** | net \|dV\| |
-|---|---|---|---|---|---|
-| `FULL_CONCAT` (anchor) | 660 | 24.98% | 20.18% | +4.80% | +5.00 |
-| `in_matrix` (anchor) | 522 | 22.00% | 16.32% | +5.68% | +4.99 |
-| **`imx_HEADERS`** | 306 | 21.22% | 14.88% | **+6.33%** | +5.74 |
-| **`imx_CELLS`** | 216 | 5.73% | 5.77% | **−0.03%** | +0.32 |
-| `hdr_latent` (= E4 content) | 192 | 20.63% | 15.07% | +5.57% | +4.18 |
-| `hdr_w_acc_phys` (= E4 content) | 18 | 4.07% | 1.67% | **+2.40%** | +0.96 |
-| `hdr_effect` | 36 | 1.87% | 2.28% | −0.42% | −0.02 |
-| `hdr_secondary` | 60 | 0.15% | 0.18% | −0.03% | −0.01 |
-| `cell_LOW_CRIT` | 72 | 3.00% | 2.80% | +0.20% | +0.05 |
-| `cell_high_pko` | 72 | 2.63% | 3.17% | −0.53% | −0.06 |
-| `cell_mult_status` | 72 | 2.42% | 2.88% | −0.47% | +0.31 |
+**Which statistic — read this before the table.** Each arm is run two ways. **Zero** replaces the
+columns with 0: off-manifold, so it measures reliance *plus* the shock of an impossible input.
+**Shuffle** replaces them with another state's values — same width, same marginals, state
+specificity destroyed. Shuffle is group **permutation importance**, it stays on-manifold, and it
+is the estimator the rest of this project quotes ("shuffle-controlled flips"):
+`shortcut_learning_and_feature_delivery.md` Part 6 records the concat as *"24.15% zeroed but
+16.27% shuffled, i.e. a third of the naive number was the mean shift."* **The dependence column
+below is therefore the shuffle arm.** The zero arm is shown beside it for reference; their
+*difference* is the zero-ablation artifact, and is not a dependence measure.
 
-The three cell arms are **width-matched at exactly 72 dims**, so their zero-perturbation
-magnitudes are directly comparable — a control the block-level arms never had.
+| arm | width | **shuffle = importance** | zero | \|dV\| shuf |
+|---|---|---|---|---|
+| `FULL_CONCAT` (anchor) | 660 | **20.18%** | 24.98% | 2.45 |
+| `in_matrix` (anchor) | 522 | **16.32%** | 22.00% | 1.55 |
+| **`imx_HEADERS`** | 306 | **14.88%** | 21.22% | 1.36 |
+| **`imx_CELLS`** | 216 | **5.77%** | 5.73% | 0.83 |
+| `hdr_latent` (= E4 content) | 192 | **15.07%** | 20.63% | 1.34 |
+| `hdr_w_acc_phys` (= E4 content) | 18 | 1.67% | 4.07% | 0.23 |
+| `hdr_effect` | 36 | 2.28% | 1.87% | 0.24 |
+| `hdr_secondary` | 60 | **0.18%** | 0.15% | 0.04 |
+| `cell_LOW_CRIT` | 72 | 2.80% | 3.00% | 0.43 |
+| `cell_high_pko` | 72 | 3.17% | 2.63% | 0.38 |
+| `cell_mult_status` | 72 | 2.88% | 2.42% | 0.45 |
 
-**Reading:** all of ⑥'s dependence sits in the per-move HEADER, and specifically in the 210 dims
-(`latent` + `[w, acc, is_phys]`) that are **already E4 seat content**. The 216 pair cells are at
-the noise floor. `[w, acc, is_phys]` is the densest signal in the block at **0.133 %/dim** vs the
-latent's 0.029 %/dim.
+The three cell arms are **width-matched at exactly 72 dims**, so they are directly comparable —
+a control the block-level arms never had.
+
+**Reading:**
+
+1. **⑥'s dependence is in the per-move HEADER, not the pair cells** — 14.88% vs 5.77%, a factor
+   of 2.6.
+2. **The header dependence IS the move latent**, which is *already E4 seat content*:
+   `hdr_latent` alone reads 15.07%, statistically the whole of `imx_HEADERS` (14.88%). So the
+   concat's largest single sub-block is re-delivering something the entity stream already carries.
+3. **`hdr_secondary` (60 dims) is dead** at 0.18%, and `hdr_effect` (36 dims) is near-dead at
+   2.28% — both below every 72-dim cell arm despite comparable width.
+4. **The pair cells are secondary, but they are NOT noise.** 5.77% across 216 dims is the same
+   order as `in_permon` (4.52% @9.6M, 6.60% @40M) — a block this project treats as real but
+   subordinate. Among the three width-matched channels the spread is 2.80 / 3.17 / 2.88, i.e.
+   **flat**: no cell channel stands out, which is the useful negative result.
+
+Per-dim, `[w, acc, is_phys]` remains the densest header field (0.093 %/dim vs the latent's
+0.078 %/dim), but only by ~1.2× — not the 4.6× an earlier draft of this table reported.
 
 ### 2.3 The pre-registered coverage probe (pre-existing, 40M)
 
@@ -187,20 +208,29 @@ interpretation (a) below (the edges absorbed the pair-cell role) over interpreta
    (`sentinel_0/1/2`, `random`, `aggressive`, `aggressive_v2`, `heuristic`, `heuristic2`), so it
    is a pool average, not one opponent. **Not yet re-run with stratified sampling.**
 2. **Pooled means hide rare-but-decisive fields.** A mechanic live in ~3% of states that flips 15%
-   of actions *within* them contributes **0.45%** to the pooled mean — under the ~2% shuffle
-   floor. `hdr_effect` at −0.42% pooled is fully consistent with `hazard` being decisive in every
+   of actions *within* them contributes **0.45%** to the pooled mean — inside the noise of these
+   arms. `hdr_effect` at 2.28% pooled is fully consistent with `hazard` being decisive in every
    Spikes matchup. **The field-live stratification has not been run.**
 3. **Generalist only.** There is no gen-3 exploiter checkpoint, so specialist dependence on these
    fields is untested. A field a generalist ignores may be load-bearing for an archetype
    specialist.
 4. **Ablation-KL is marginal, at fixed weights**, measured on a model *trained with* the concat
    present. "The head does not lean on it" is not "a model trained without it would be as strong."
-5. **A doc error this measurement exposed:** the figures quoted elsewhere as "shuffle-controlled"
-   (`in_matrix` 16.27% vs `in_permon` 4.52%, "3.6× more") are the **shuffle arms** — the controls,
-   not the dependence. The nets are `in_permon` +1.45% → **+5.23%** and `in_matrix` +7.88% →
-   +6.58% (9.6M → 40M): **1.26× apart at 40M, not 3.6×**, with the collapsed form's dependence
-   *tripling* over training. Any argument resting on "the model ignores the collapsed form" is
-   unsupported at end of run.
+5. **A retraction — of this document's own first draft.** The 2026-08-08 draft claimed the
+   `in_matrix` 16.27% / `in_permon` 4.52% figures quoted across the other docs were "the controls,
+   not the dependence," and substituted a `net = zero − shuffle` statistic. **That was wrong, and
+   it is withdrawn.** The shuffle arm *is* the dependence estimate — group permutation importance,
+   on-manifold, exactly what the probe's own docstring describes ("same width, same marginals,
+   state-specificity destroyed"). `zero − shuffle` measures the *zero-ablation artifact*, not
+   reliance, so it is not a "width-fair statistic" and should not be quoted as one. §2.2 is
+   restated on the shuffle arm; the qualitative conclusions (headers ≫ cells, the header
+   dependence *is* the E4 latent, `hdr_secondary` dead) **all survive the correction**, and one
+   does not: the ranking *among* the three cell channels was an artifact — under permutation
+   importance they are flat (2.80 / 3.17 / 2.88), and `cell_high_pko` is the largest of the three
+   rather than the smallest. The other docs' numbers stand as written; nothing needed fixing
+   there. What *is* worth recording is the drift over training on the correct statistic:
+   `in_permon` 4.52% → 6.60% and `in_matrix` 16.27% → 18.32% (9.6M → 40M), i.e. the gap narrowed
+   from 3.6× to **2.8×** but did not close.
 
 **Caveats 1–3 are exactly why this design drops no fields** (§7).
 
@@ -319,7 +349,8 @@ attribution discipline `design_generation_roadmap.md` §1 asks for, and it is th
 today's situation where the concat decision is entangled with OA1, PV and Stage 3 at once.
 
 Step 2 also yields a real compute refund: `_incoming_rolls` stops running twice per forward, and
-⑥'s cell block stops being emitted for a consumer that reads it at the noise floor.
+⑥'s cell block stops being *duplicated* into a consumer that already receives the same physics
+through the edges — the cells keep exactly one home, they are not discarded (§7).
 
 ---
 
@@ -395,16 +426,22 @@ both landed and audited**, accepted only if the concat arm falls below all-edges
 What this design changes:
 
 1. **The premise is wrong.** The precondition assumes the concat carries **magnitude** that the
-   entity routes structurally cannot. §2.2 says its dependence is the move **LATENT** (identity) —
-   and that latent is already E4 seat content. Every dim of the concat carrying measurable
-   dependence is already entity-attached. The problem is **readout bandwidth**, not delivery. This
+   entity routes structurally cannot. §2.2 says its *dominant* dependence is the move **LATENT**
+   (identity) — 15.07% against the pair cells' 5.77% — and that latent is already E4 seat content.
+   The largest sub-block of the concat is therefore re-delivering something the entity stream
+   already carries. The problem is **readout bandwidth**, not delivery. This
    promotes confound #1 in `designs/learning/shortcut_learning_and_feature_delivery.md` Part 6
    ("a capacity-of-the-readout problem, not a delivery problem") from footnote to leading
    hypothesis.
-2. **PV as specified should not be built.** Two independent pre-registered gates fired against it:
-   the pair cells it would re-home measure at net −0.03% (§2.2), and the cross-pair reasoning it
-   uniquely buys is already decodable at good r²/AUC from both heads (§2.3). It survives only as a
-   *reduction setting* (§3.2), evaluated at one site against three alternatives.
+2. **PV as specified should not be built — on ONE gate, not two.** The pre-registered coverage
+   probe (§2.3) fired against it cleanly and is untouched by the §2.5.5 retraction: the cross-pair
+   reasoning PV uniquely buys is already decodable at good r²/AUC from *both* heads, controls at
+   chance. The second argument — "the pair cells it would re-home are noise" — **does not
+   survive** the corrected statistic: on permutation importance those cells read 5.77%, secondary
+   to the headers' 14.88% but the same order as `in_permon`, a block this project treats as real.
+   So PV is deprioritised by the coverage probe alone; it survives as a *reduction setting*
+   (§3.2), evaluated at one site against three alternatives, and the case against building it is
+   correspondingly weaker than the first draft asserted.
 3. **The critic route is still required, aimed differently.** Not pair-cell cross-attention —
    a **magnitude readout** targeting the measured `act_threat` gap (§3.3).
 4. **The acceptance clause is unchanged and still correct** (flips AND `|dV|`), but should be

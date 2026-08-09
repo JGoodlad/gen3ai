@@ -145,9 +145,15 @@ def main():
     def forward_all(cols=None, mode="zero"):
         """cols = LongTensor of op-block columns to intervene on at the assembler, or None.
 
-        'zero'    — set those columns to 0 (the deletion counterfactual).
+        'zero'    — set those columns to 0 (the deletion counterfactual). OFF-MANIFOLD, so it
+                    measures reliance PLUS the shock of an impossible input.
         'shuffle' — permute them ACROSS states (same width, same marginals, state-specificity
-                    destroyed) — the width-fair control.
+                    destroyed). This is group PERMUTATION IMPORTANCE and it is THE DEPENDENCE
+                    ESTIMATE — quote this column, not `zero`, and not `zero - shuffle`.
+
+        `zero - shuffle` is printed below only as a diagnostic: it is the size of the
+        zero-ablation artifact, NOT a width-fair measure of reliance. (A 2026-08-08 draft of
+        `designs/ai_v9/design_op_tensors.md` quoted it as one; see that doc's §2.5.5 retraction.)
         """
         hook = None
         if cols is not None:
@@ -233,17 +239,19 @@ def main():
 
     print(f"\nstates: {N}   THREAT states: {int(threat.sum())} "
           f"({100 * threat.float().mean():.1f}%)")
-    hdr = (f"{'arm':>24} {'w':>5} | {'ZERO flip':>9} {'SHUF flip':>9} {'net':>7} "
-           f"| {'kl zero':>8} {'kl shuf':>8} | {'|dV| zero':>9} {'|dV| shuf':>9}")
+    print("  SHUF = permutation importance = the dependence. 'artifact' = zero - shuf "
+          "(the off-manifold cost of zeroing), NOT a reliance measure.")
+    hdr = (f"{'arm':>24} {'w':>5} | {'SHUF flip':>9} {'ZERO flip':>9} {'artifact':>9} "
+           f"| {'kl shuf':>8} {'kl zero':>8} | {'|dV| shuf':>9} {'|dV| zero':>9}")
     print(hdr)
     print("-" * len(hdr))
     for name, r in rows.items():
         al, sa = r["all"], r["shuf_all"]
-        print(f"{name:>24} {r['width']:>5} | {100 * al['flip_rate']:>8.2f}% "
-              f"{100 * sa['flip_rate']:>8.2f}% "
-              f"{100 * (al['flip_rate'] - sa['flip_rate']):>6.2f}% "
-              f"| {al['kl_mean']:>8.5f} {sa['kl_mean']:>8.5f} "
-              f"| {al['dv_mean']:>9.3f} {sa['dv_mean']:>9.3f}")
+        print(f"{name:>24} {r['width']:>5} | {100 * sa['flip_rate']:>8.2f}% "
+              f"{100 * al['flip_rate']:>8.2f}% "
+              f"{100 * (al['flip_rate'] - sa['flip_rate']):>8.2f}% "
+              f"| {sa['kl_mean']:>8.5f} {al['kl_mean']:>8.5f} "
+              f"| {sa['dv_mean']:>9.3f} {al['dv_mean']:>9.3f}")
     if a.out:
         json.dump({"provenance": {"generation": a.generation, "step": a.step, "n_states": N,
                                   "date": None,

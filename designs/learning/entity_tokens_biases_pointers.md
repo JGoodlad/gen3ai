@@ -87,6 +87,13 @@
   hypernetwork shape at different **clock speeds** (computed-per-forward vs learned-per-battle);
   LoRA would attach to the shared functions entity design manufactures — but the conditioning ladder
   is under two independent measured nulls, so that stays an open, not a plan.
+- **Equivariant is NOT position-blind** (§6.9). Invariance, equivariance and true
+  position-dependence are three different properties, and only the third is ever a defect — and
+  only where the game is actually symmetric. Time stays ordered, the two sides stay distinct,
+  OA introduces no positional axis anywhere (pre-registered permutation gate). Exactly **one**
+  axis is still undecided: the six per-defender cells inside a widened seat, which is precisely
+  what separates critic route **7a** (positional, fully expressive) from **7b/PV** (equivariant,
+  rank-*h*).
 
 ---
 
@@ -1485,6 +1492,10 @@ The general shape: **a class of alignment defects became type errors.**
 4. **The standing cost from Part 1**: an equivariant model is strictly less expressive. If the true
    function is not equivariant, we have excluded it.
 
+**Equivariant is not position-blind.** Some asymmetries here are real (time; our side vs theirs)
+and must survive. §6.9 is the inventory of what stays positional in the end state, why each one
+is correct, and the single axis still genuinely undecided.
+
 ### 6.4 The hypothetical-world trick — how the C family got built in days
 
 The C family (consequence deltas) looked like the hardest piece — "price what happens if I set up"
@@ -1919,6 +1930,75 @@ adding it introduces no new (entity) or (entity, entity) fact, it is kernel-inte
 that it has no natural cell of its own.
 
 </details>
+
+### 6.9 What stays POSITIONAL in the end state — and the one open choice
+
+"Equivariant" is not "position-blind," and conflating the two is how a real asymmetry gets
+deleted by accident. Three properties get called the same thing:
+
+| Property | Meaning | Where it lives here |
+|---|---|---|
+| **Invariance** | output *unchanged* under permutation | the CLS pools; OA2's column contracted over their bench |
+| **Equivariance** | output *permutes with* the input | the pointer logits — permute our team, the six switch logits permute |
+| **Position-dependence** | a learned weight bound to index *i* | history's turn embedding; and, if route 7a wins, the within-seat defender axis |
+
+Only the third is ever a defect, and only when the true function is genuinely symmetric in that
+axis. **The test is always the same: does relabeling the entities change the answer in a way the
+game does not?** Turn order — no, time is really ordered. Our side vs theirs — no, the sides
+really differ. Team slot 3 vs slot 5 — yes, and that one is the bug class §6.3 made
+inexpressible.
+
+**The inventory, at the end state:**
+
+| Thing | Status | Verdict |
+|---|---|---|
+| Token *types* (`OUR_TEAM` / `THEIR_TEAM` / `OUR_MOVE` / `THEIR_THREAT` / `HISTORY` / `GLOBAL`) | typing, not ordering | **correct** — a real asymmetry, promoted to content |
+| History seats 12–18 (positional embedding) | genuinely positional | **correct** — de-positioning time would exclude the true function. Part 4's ladder moves history onto *entities*; it never removes time's order |
+| Pointer logits over our 6 switches | equivariant | **correct** — one shared scorer, indexed by content |
+| Action layout `[switch ×6, move ×4, struggle]` | an environment interface | **not a model property** — the head scores from the token, so the index binding is a relabeling both sides share |
+| Seat-index convention (`20 + offset`) | index arithmetic for stable slicing | **not positional** — no learned weight is bound to it |
+| PV's *k* seeds | not slots | **not positional** — seed *s* is a *question*, applied identically to every entity (§ *Shaw et al. 2018*) |
+| Embedding tables (`table[species.num]`) | identity lookup | **content-addressed**, not positional |
+| **The within-seat defender axis** | **genuinely positional — if we take route 7a** | **the one open choice, below** |
+
+**OA is clean, and it is gated.** `design_conditional_opponent_cells.md` §0.3 lists four ways to
+handle an axis you cannot concatenate; OA1/OA2 are built *only* out of rows 2–3 — canonicalize
+(index the one distinguished element, content-addressed) and contract (`Σ_b q_b · X(·,b)` with `q`
+from content). The doc's own words: *"neither introduces a positional axis anywhere."* Each cell
+carries a different symmetry on each axis:
+
+| | over **their** axis | over **our** axis |
+|---|---|---|
+| **OA1** (conditional threat, per switch *j*) | **invariant** — `Σ_k w_k · damage(k,j)`, softmax over believed moves, weights from content | **equivariant** — one cell per switch logit |
+| **OA2** (switch-branch move cell, per move *k*) | **invariant** — contracted over their bench by `q_b` | **equivariant** — one cell per move logit |
+
+And it is checked rather than asserted: pre-registered gate §5.5 is *permute our bench and their
+bench → OA1's cells permute with our team; OA2's contracted column is invariant to their bench
+permutation.*
+
+**The one open choice: 7a vs 7b is a decision about exactly one positional axis.** The amended
+concat-deletion precondition needs a **critic** route (the pointer head is policy-only), and its
+two candidates are not stylistic alternatives — they differ precisely here:
+
+- **7a — token-content injection.** Widen an E4 threat seat to carry its own 6-defender row as
+  content. Free, no new seats, full expressiveness — and the six cells sit **ordered by our team
+  slot**. It buys expressiveness by accepting one positional axis.
+- **7b — PV (the Shaw value-side pair term).** `out_j = Σ_k α_jk·(W_v·seat_k + W_p·cell_kj)`, one
+  shared `W_p` over every `(k, j)` ⇒ equivariant in both axes. What it gives up is that `n_heads`
+  weighted means are a **rank-*h*** view of the six cells, not an arbitrary function of them.
+
+That is the TL;DR's "equivariance costs expressiveness" trade in its sharpest, most local form:
+**7a pays a positional axis for full expressiveness; 7b pays rank for equivariance.** Worth
+noting that 7a's axis is the *cheapest* kind — it is inside a single seat, shared by one `Linear`
+across all seats, so it is one ordering convention rather than a per-pair table — but it is still
+the thing §6.3 says the generation was built to make unrepresentable. The coverage probe chooses
+between them; it is a route chooser, not a veto.
+
+**What keeps this from silently regressing.** In the `OpTensors` end state each fact has exactly
+one home *typed by its arity* (board / opp_move / our_move / our_mon / pair_in / pair_out) and
+consumers take **views**, not slices. Concatenating an axis then requires declaring it, so a
+sorting-rule violation surfaces as a **shape error** instead of a silently positional tensor —
+the same "alignment defects became type errors" move as §6.3, applied to the op's outputs.
 
 ---
 

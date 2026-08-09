@@ -83,15 +83,23 @@ edges).
 
 **Rule 3 — prefer content-addressed selection + a convex combination.** A softmax over a computed
 quantity is permutation-invariant in the contracted axis AND magnitude-preserving. Both OA1 and OA2
-are built entirely out of rows 2–3, so **neither introduces a positional axis anywhere.**
+are built entirely out of rows 2–3, so **neither introduces a positional axis anywhere.** The
+per-axis symmetry of each cell, the standing inventory of what *does* stay positional in the end
+state, and why the §6 item-7a/7b choice is exactly a choice about one positional axis, are in
+[`designs/learning/entity_tokens_biases_pointers.md`](../learning/entity_tokens_biases_pointers.md)
+§6.9 — the canonical statement. §5 gate 5 below is the executable version.
 
 ### 0.4 The anti-patterns this replaces
 
 * **Do NOT** widen `prefuse_proj`'s per-mon row as the re-home for `in_matrix`. `in_permon` **is**
   the collapse of `in_matrix` (independent `max_k` per defender). Measured gen-3 @9.6M,
-  shuffle-controlled flips: `in_permon` **4.52%** vs `in_matrix` **16.27%** — widening delivers
-  more of the block the policy leans on LEAST, and cannot carry the other without re-collapsing
-  the axis that makes it useful.
+  shuffle-controlled flips (= permutation importance): `in_permon` **4.52%** vs `in_matrix`
+  **16.27%** — widening delivers more of the block the policy leans on LEAST, and cannot carry the
+  other without re-collapsing the axis that makes it useful. **End-of-run update (40M,
+  `gen3_op_block_dependence_40M_6k.json`):** `in_permon` **6.60%** vs `in_matrix` **18.32%** — the
+  gap narrowed from 3.6× to **2.8×** but did not close, so the anti-pattern stands. Note the
+  structural half of the argument never depended on the ratio at all: a collapse cannot deliver
+  the axis it collapsed.
 * **Do NOT** pre-blend probabilistic branches into one column (see §2.3).
 * **Do NOT** revealed-gate a marginal over the opponent's bench (see §4.1).
 

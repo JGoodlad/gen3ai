@@ -213,9 +213,14 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   structure vs FiLM/LoRA** (input-symmetry vs parameter-context factorisation; "share where a
   symmetry is real, condition where it is false"; edge-bias and FiLM as one hypernetwork shape at
   different clock speeds; where LoRA would attach and the two measured nulls standing against it),
-  and a **quiz + answer sketches** on designing the next family. ASCII diagrams throughout (seat
-  layout, the eleven families as blocks in the from×to grid, the one concrete E4→D3→token→logit
-  link, the head funnel, the search tree).
+  a **quiz + answer sketches** on designing the next family, and — **§6.9, the canonical
+  statement** — **what stays POSITIONAL in the end state**: invariance vs equivariance vs true
+  position-dependence, the full inventory (time and the two sides are real asymmetries and must
+  survive; seat-index conventions and PV seeds are not positional), OA's per-axis symmetry table
+  and its pre-registered permutation gate, and why the critic-route choice **7a vs 7b** is exactly
+  a choice about one positional axis (expressiveness vs equivariance). ASCII diagrams throughout
+  (seat layout, the eleven families as blocks in the from×to grid, the one concrete
+  E4→D3→token→logit link, the head funnel, the search tree).
 - **`shortcut_learning_and_feature_delivery.md`** — the input-side dual of
   `objective_richness_and_representation.md`: whether feeding a computed feature straight to the
   head makes the model "lazy," and when that is a plus. Gradient starvation (not "simplest
