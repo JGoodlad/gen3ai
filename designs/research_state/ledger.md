@@ -128,4 +128,34 @@ Also affected, and worth a thought before the next belief experiment: the belief
 longer equals the Smogon prior in any historical run, so "cold-start == prior" baselines in the
 v20/v25/v38/v40 notes describe the intended design, not the executed one.
 
-_Last updated: 2026-08-01._
+## Gen-3 40M gate (2026-08-08) — the concat re-read + coverage probe
+
+Run `run_20260807_135637` (gen-3: all 15 edge families, K=6, E9 recency) completed 40M clean;
+final aggregate win rate 91.4%. Reports archived IN THE RUN DIR
+(`edge_audit_gen3_40M.json`, `incoming_cond_gen3_40M_6k.json`, `coverage_probe_gen3_40M.json`);
+all at 6000 final-step eval-trace states on `final_model.zip`.
+
+* **ELO (anchored, complete-run fits):** gen-3 **2131 ± 32** ≈ gen-2 2130 ± 31 > gen-1 2108 ± 31;
+  matched-depth @24M: gen-2.5 2069 > gen-2 2029 ≈ gen-3 2023 > gen-1 2008. The gen-3 additions
+  (K=6 everywhere + E9 recency + full families) are ELO-neutral vs gen-2 at 40M.
+* **Concat arm (5th replication):** flips 27.45% / |ΔV| 5.36 — still ≥ all-15-edges-off
+  (24.65% / 2.27) on BOTH axes ⇒ the deletion precondition stays unmet; branch B (re-home) holds.
+  NOTE the flip GAP collapsed (9.6M: 23.7% vs 13.9% = 1.7×; 40M: 1.11×) — the edges kept growing
+  (all-edges flips 13.9→24.65%, d2 7.6→16.3%) while the concat plateaued — but the |ΔV| ratio
+  stayed ~2.4× (9.6M: 3.1×): **the residual concat dependency is increasingly CRITIC-side**,
+  exactly the owner-amendment's two-route reading (PV/token-injection required for the critic).
+* **Sub-block localization CONFIRMED at 40M** (shuffle-controlled flips): `in_matrix` **18.32%**
+  of FULL_CONCAT 22.37% (≈82% of the concat's state-specific flips; 9.6M: 16.27 of 18.58) ·
+  out_active 9.47 · in_permon 6.60 · in_cb 2.27 · out_status 1.08. "Re-home in_matrix, BOTH
+  directions (policy + critic)" is now the settled, twice-measured target.
+* **Coverage probe (§2b.4, NEW — labels exact from the op's own in_matrix):** joint cross-pair
+  aggregates are ALREADY linearly decodable at the head boundary: `n_threatened` r² 0.80 (vf) /
+  0.69 (pi), `best_move_breadth` 0.75 / 0.64, `safe_pivot_exists` AUC 0.97, shuffled controls ≈ 0
+  (positive control `act_threat` pi 0.69). Per the reconciled §2b.4 read (the probe is a ROUTE
+  CHOOSER, not a veto — 42c9c69): **the "decodable" branch fired ⇒ the critic route is 7a
+  generalized TOKEN-CONTENT INJECTION; PV (7b, k-seed pair-values) and pair-token promotion
+  (item 8) are both disfavored — cross-pair reasoning already happens.** (vf > pi on every joint
+  target while pi > vf on the per-action control — the critic reads board-level structure, the
+  policy per-action magnitude; consistent with |ΔV| being the concat's stickiest axis.)
+
+_Last updated: 2026-08-08._
