@@ -324,8 +324,12 @@ function familiesOn(id) {
 /* On a phone the panel is a bottom sheet, so it needs an explicit open and an explicit way out
    — a fixed overlay with no dismiss is a trap. On desktop these are no-ops: the class does
    nothing outside the media query, and the panel is always visible. */
-function openSheet() { document.body.classList.add('sheet'); }
+function openSheet() { document.body.classList.add('sheet'); closeCtls(); }
 function closeSheet() { document.body.classList.remove('sheet'); }
+/* The controls sheet. On desktop `#ctls` is `display:contents`, so none of this is visible there
+   — the class toggles nothing outside the phone media query. */
+function openCtls() { document.body.classList.add('ctls'); closeSheet(); }
+function closeCtls() { document.body.classList.remove('ctls'); }
 
 /* What the panel is currently showing, so a checkpoint or metric change re-renders it. Left
    static, the panel keeps displaying the numbers of a checkpoint you already navigated away
@@ -441,6 +445,10 @@ function header() {
     `${L.ok ? 'PASS' : 'FAIL (' + L.violations.length + ')'}</span>`;
   $('#leak').title = 'computed from the embedded data: no aux edge may terminate at ' +
     'pi_projection, vf_projection, or a pointer logit';
+  /* Same three facts, re-rendered for the phone: the bar hides them at 390px, and the leak badge
+     and snapshot age are exactly what you want when reading this away from the machine. */
+  $('#ctlmeta').innerHTML = $('#leak').innerHTML + '<br>' + esc($('#hdr').textContent) +
+    '<br>' + $('#prov').innerHTML;
 }
 function setFocus(id, dir) { FOCUS = id; DIR = dir || DIR; $('#fo').value = id || '';
   $('#dir').value = DIR; applyFocus(); hash(); }
@@ -495,6 +503,12 @@ $('#dk').onclick = e => { const on = e.target.getAttribute('aria-pressed') !== '
   document.documentElement.dataset.theme = on ? 'dark' : 'light';
   applyTheme(); applyFocus(); legend(); hash(); };
 $('#sheetclose').onclick = closeSheet;
+$('#ctlclose').onclick = closeCtls;
+$('#ctlbtn').onclick = () => {
+  const on = !document.body.classList.contains('ctls');
+  $('#ctlbtn').setAttribute('aria-pressed', on);
+  on ? openCtls() : closeCtls();
+};
 $('#lgt').onclick = e => { const on = e.target.getAttribute('aria-pressed') !== 'true';
   e.target.setAttribute('aria-pressed', on); $('#legend').classList.toggle('on', on); };
 /* Re-lay out when the viewport crosses the phone breakpoint — a rotation is exactly that, and a
@@ -510,7 +524,9 @@ addEventListener('resize', () => {
 });
 cy.on('tap', 'node', ev => showNode(ev.target.id()));
 cy.on('tap', 'edge', ev => showEdge(ev.target.id()));
-cy.on('tap', ev => { if (ev.target === cy) closeSheet(); if (ev.target === cy) $('#sidebody').innerHTML =
+cy.on('tap', ev => { if (ev.target === cy) { closeSheet(); closeCtls();
+    $('#ctlbtn').setAttribute('aria-pressed', 'false'); }
+  if (ev.target === cy) if (ev.target === cy) $('#sidebody').innerHTML =
   '<div class="kind">Click a node or an edge. Use <b>focus</b> to isolate everything that feeds ' +
   'a sink — e.g. <code>vf_projection</code> answers “what does the critic see”.</div>'; });
 cy.on('mouseover', 'edge', ev => { const e = ev.target.data(), m = measure(e);

@@ -78,6 +78,11 @@ th{position:sticky;top:0;background:var(--surface-2);cursor:pointer;color:var(--
 #err{padding:22px;font-size:13px;line-height:1.6}
 #lgt{display:none}
 
+/* `display:contents` makes #ctls vanish from desktop layout — its children lay out as direct
+   header items, i.e. exactly as they did before they were wrapped. The wrapper exists only so the
+   phone can move the whole set into a sheet in one move. */
+#ctls{display:contents}
+#ctlbtn,#ctlbar,#ctlmeta{display:none}
 #sheetbar{display:none;align-items:center;justify-content:space-between;gap:10px;
  margin:-4px -4px 8px;padding-bottom:6px;border-bottom:1px solid var(--line);
  position:sticky;top:-12px;background:var(--surface-2)}
@@ -101,17 +106,30 @@ th{position:sticky;top:0;background:var(--surface-2);cursor:pointer;color:var(--
   header{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:8px max(10px,env(safe-area-inset-right))
    8px max(10px,env(safe-area-inset-left));scrollbar-width:none}
   header::-webkit-scrollbar{display:none}
-  /* The full title is 165px of a 390px strip — a caption competing with the controls. */
-  h1{font-size:13px;white-space:nowrap}
-  .t-long{display:none}.t-short{display:inline}
   header .ctl{flex:none}
-  header label{display:none}          /* the select's own value says what it is */
-  /* Kept, not dropped — but pushed to the END of the strip. In DOM order the meta string comes
-     before the controls, so left as-is it fills the one visible screenful and pushes every
-     control off to the right, behind a scroll nobody knows is there. The signature and snapshot
-     age are worth reading on a phone; they are not worth the only visible space. */
-  #hdr,#prov{flex:none;white-space:nowrap;order:99}
-  #leak{order:98}
+  /* The bar holds ONLY what fits at 390px. Everything else moves into the controls sheet.
+     The previous strip put a ~330px checkpoint <select> first and left the other five controls
+     behind a horizontal scroll with no affordance, so the bar showed exactly one control and
+     gave no sign there were more. A button that opens a sheet is discoverable; a scroll is not.
+     The meta text and the leak badge are re-rendered inside the sheet by `header()`. */
+  #hdr,#prov,#leak{display:none}
+  h1{display:none}
+  #ctlbtn{display:inline-block}
+  #ctls{position:fixed;left:0;right:0;bottom:0;z-index:22;display:flex;flex-direction:column;
+   gap:12px;background:var(--surface-2);border-top:1px solid var(--line);
+   border-radius:14px 14px 0 0;padding:12px 14px max(14px,env(safe-area-inset-bottom));
+   max-height:76dvh;overflow:auto;transform:translateY(101%);transition:transform .22s ease;
+   box-shadow:0 -6px 24px #0006}
+  body.ctls #ctls{transform:translateY(0)}
+  #ctls .ctl{display:flex;flex-direction:column;align-items:stretch;gap:5px;flex:none}
+  #ctls label{display:block;font-size:12.5px}
+  #ctls select{width:100%}
+  #ctls #clr{align-self:flex-start}
+  #ctlbar{display:flex;align-items:center;justify-content:space-between;
+   border-bottom:1px solid var(--line);padding-bottom:8px}
+  #ctlbar b{font-size:12px;color:var(--text-muted)}
+  #ctlmeta{display:block;font-size:11.5px;color:var(--text-muted);line-height:1.7;
+   border-top:1px solid var(--line);padding-top:10px;word-break:break-word}
   /* 16px is not a style choice: below it, iOS zooms the whole page when a control takes focus
      and never zooms back out. */
   select,button,input{font-size:16px;padding:7px 9px}
@@ -136,15 +154,20 @@ th{position:sticky;top:0;background:var(--surface-2);cursor:pointer;color:var(--
 <header>
   <h1><span class="t-long">Gen3AI delivery digraph</span><span class="t-short">Gen3AI</span></h1>
   <span class="sub" id="hdr"></span>
-  <span class="ctl"><label for="ck">checkpoint</label><select id="ck"></select></span>
-  <span class="ctl"><label for="mt">metric</label><select id="mt">
-    <option value="flip_rate">argmax flips</option><option value="kl_mean">masked KL</option>
-    <option value="dv_mean">|ΔV| (critic)</option></select></span>
-  <span class="ctl"><label for="bf">bias family</label><select id="bf"></select></span>
-  <span class="ctl"><label for="fo">focus</label><select id="fo"></select>
-    <select id="dir"><option value="anc">→ what feeds it</option>
-      <option value="desc">what it feeds →</option><option value="both">both</option></select></span>
-  <button id="clr">clear focus</button>
+  <button id="ctlbtn" aria-pressed="false">controls</button>
+  <div id="ctls">
+    <div id="ctlbar"><b>controls</b><button id="ctlclose" aria-label="close">close</button></div>
+    <span class="ctl"><label for="ck">checkpoint</label><select id="ck"></select></span>
+    <span class="ctl"><label for="mt">metric</label><select id="mt">
+      <option value="flip_rate">argmax flips</option><option value="kl_mean">masked KL</option>
+      <option value="dv_mean">|ΔV| (critic)</option></select></span>
+    <span class="ctl"><label for="bf">bias family</label><select id="bf"></select></span>
+    <span class="ctl"><label for="fo">focus</label><select id="fo"></select>
+      <select id="dir"><option value="anc">→ what feeds it</option>
+        <option value="desc">what it feeds →</option><option value="both">both</option></select></span>
+    <button id="clr">clear focus</button>
+    <div id="ctlmeta"></div>
+  </div>
   <button id="tg" aria-pressed="false">table</button>
   <button id="dk" aria-pressed="true">dark</button>
   <button id="lgt" aria-pressed="false">legend</button>
@@ -483,8 +506,12 @@ function familiesOn(id) {
 /* On a phone the panel is a bottom sheet, so it needs an explicit open and an explicit way out
    — a fixed overlay with no dismiss is a trap. On desktop these are no-ops: the class does
    nothing outside the media query, and the panel is always visible. */
-function openSheet() { document.body.classList.add('sheet'); }
+function openSheet() { document.body.classList.add('sheet'); closeCtls(); }
 function closeSheet() { document.body.classList.remove('sheet'); }
+/* The controls sheet. On desktop `#ctls` is `display:contents`, so none of this is visible there
+   — the class toggles nothing outside the phone media query. */
+function openCtls() { document.body.classList.add('ctls'); closeSheet(); }
+function closeCtls() { document.body.classList.remove('ctls'); }
 
 /* What the panel is currently showing, so a checkpoint or metric change re-renders it. Left
    static, the panel keeps displaying the numbers of a checkpoint you already navigated away
@@ -600,6 +627,10 @@ function header() {
     `${L.ok ? 'PASS' : 'FAIL (' + L.violations.length + ')'}</span>`;
   $('#leak').title = 'computed from the embedded data: no aux edge may terminate at ' +
     'pi_projection, vf_projection, or a pointer logit';
+  /* Same three facts, re-rendered for the phone: the bar hides them at 390px, and the leak badge
+     and snapshot age are exactly what you want when reading this away from the machine. */
+  $('#ctlmeta').innerHTML = $('#leak').innerHTML + '<br>' + esc($('#hdr').textContent) +
+    '<br>' + $('#prov').innerHTML;
 }
 function setFocus(id, dir) { FOCUS = id; DIR = dir || DIR; $('#fo').value = id || '';
   $('#dir').value = DIR; applyFocus(); hash(); }
@@ -654,6 +685,12 @@ $('#dk').onclick = e => { const on = e.target.getAttribute('aria-pressed') !== '
   document.documentElement.dataset.theme = on ? 'dark' : 'light';
   applyTheme(); applyFocus(); legend(); hash(); };
 $('#sheetclose').onclick = closeSheet;
+$('#ctlclose').onclick = closeCtls;
+$('#ctlbtn').onclick = () => {
+  const on = !document.body.classList.contains('ctls');
+  $('#ctlbtn').setAttribute('aria-pressed', on);
+  on ? openCtls() : closeCtls();
+};
 $('#lgt').onclick = e => { const on = e.target.getAttribute('aria-pressed') !== 'true';
   e.target.setAttribute('aria-pressed', on); $('#legend').classList.toggle('on', on); };
 /* Re-lay out when the viewport crosses the phone breakpoint — a rotation is exactly that, and a
@@ -669,7 +706,9 @@ addEventListener('resize', () => {
 });
 cy.on('tap', 'node', ev => showNode(ev.target.id()));
 cy.on('tap', 'edge', ev => showEdge(ev.target.id()));
-cy.on('tap', ev => { if (ev.target === cy) closeSheet(); if (ev.target === cy) $('#sidebody').innerHTML =
+cy.on('tap', ev => { if (ev.target === cy) { closeSheet(); closeCtls();
+    $('#ctlbtn').setAttribute('aria-pressed', 'false'); }
+  if (ev.target === cy) if (ev.target === cy) $('#sidebody').innerHTML =
   '<div class="kind">Click a node or an edge. Use <b>focus</b> to isolate everything that feeds ' +
   'a sink — e.g. <code>vf_projection</code> answers “what does the critic see”.</div>'; });
 cy.on('mouseover', 'edge', ev => { const e = ev.target.data(), m = measure(e);

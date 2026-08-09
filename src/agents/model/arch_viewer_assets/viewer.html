@@ -11,15 +11,20 @@ __CSS__
 <header>
   <h1><span class="t-long">Gen3AI delivery digraph</span><span class="t-short">Gen3AI</span></h1>
   <span class="sub" id="hdr"></span>
-  <span class="ctl"><label for="ck">checkpoint</label><select id="ck"></select></span>
-  <span class="ctl"><label for="mt">metric</label><select id="mt">
-    <option value="flip_rate">argmax flips</option><option value="kl_mean">masked KL</option>
-    <option value="dv_mean">|ΔV| (critic)</option></select></span>
-  <span class="ctl"><label for="bf">bias family</label><select id="bf"></select></span>
-  <span class="ctl"><label for="fo">focus</label><select id="fo"></select>
-    <select id="dir"><option value="anc">→ what feeds it</option>
-      <option value="desc">what it feeds →</option><option value="both">both</option></select></span>
-  <button id="clr">clear focus</button>
+  <button id="ctlbtn" aria-pressed="false">controls</button>
+  <div id="ctls">
+    <div id="ctlbar"><b>controls</b><button id="ctlclose" aria-label="close">close</button></div>
+    <span class="ctl"><label for="ck">checkpoint</label><select id="ck"></select></span>
+    <span class="ctl"><label for="mt">metric</label><select id="mt">
+      <option value="flip_rate">argmax flips</option><option value="kl_mean">masked KL</option>
+      <option value="dv_mean">|ΔV| (critic)</option></select></span>
+    <span class="ctl"><label for="bf">bias family</label><select id="bf"></select></span>
+    <span class="ctl"><label for="fo">focus</label><select id="fo"></select>
+      <select id="dir"><option value="anc">→ what feeds it</option>
+        <option value="desc">what it feeds →</option><option value="both">both</option></select></span>
+    <button id="clr">clear focus</button>
+    <div id="ctlmeta"></div>
+  </div>
   <button id="tg" aria-pressed="false">table</button>
   <button id="dk" aria-pressed="true">dark</button>
   <button id="lgt" aria-pressed="false">legend</button>

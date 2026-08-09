@@ -77,6 +77,11 @@ function report() {{
     out.cyH = d.getElementById('cy').clientHeight;
     out.ckFont = w.getComputedStyle(d.getElementById('ck')).fontSize;
     out.sheetbar = w.getComputedStyle(d.getElementById('sheetbar')).display;
+    var bar = d.querySelector('header');
+    out.barScrollW = bar.scrollWidth; out.barClientW = bar.clientWidth;
+    out.ctlBtn = w.getComputedStyle(d.getElementById('ctlbtn')).display;
+    out.ctlsPos = w.getComputedStyle(d.getElementById('ctls')).position;
+    out.ctlsDisplay = w.getComputedStyle(d.getElementById('ctls')).display;
     out.asidePos = w.getComputedStyle(d.querySelector('aside')).position;
   }} catch (e) {{ out = {{err: String(e)}}; }}
   document.body.dataset.probe = JSON.stringify(out);
@@ -235,6 +240,15 @@ def test_phone_viewport_fits_and_is_usable(page):
     assert p["sheetbar"] == "flex", "the bottom sheet has no visible close bar"
     assert p["asidePos"] == "fixed", "the side panel is still in flow — it would eat the canvas"
 
+    # The complaint this replaced: the bar was a horizontal scroll holding six controls, of which
+    # exactly one (a ~330px checkpoint picker) was ever visible, with nothing to say the rest
+    # existed. Everything left in the bar must FIT in the bar; the controls live in a sheet.
+    assert p["barScrollW"] <= p["barClientW"] + 1, (
+        f"the top bar overflows ({p['barScrollW']}px of content in {p['barClientW']}px) — "
+        "something is hidden behind a scroll nobody can see")
+    assert p["ctlBtn"] != "none", "no controls button on a phone, so the controls are unreachable"
+    assert p["ctlsPos"] == "fixed", "the controls did not become a sheet"
+
 
 def test_landscape_phone_keeps_the_compact_chrome(page):
     """844x390 is a phone too, and too short to hand 352px to a side panel.
@@ -259,6 +273,10 @@ def test_desktop_keeps_the_side_panel_in_flow(page):
         pytest.skip("cytoscape could not be fetched from the CDN — no network")
     assert p["asidePos"] != "fixed", "the bottom-sheet layout leaked into the desktop breakpoint"
     assert abs(p["headerH"] + p["cyH"] - p["innerH"]) <= 1
+    # `display:contents` is what keeps the desktop header identical now that the controls are
+    # wrapped in #ctls — the wrapper must stay invisible to layout here.
+    assert p["ctlsDisplay"] == "contents", "the #ctls wrapper became a box on desktop"
+    assert p["ctlBtn"] == "none", "the phone controls button leaked onto the desktop"
 
 
 def test_serve_answers_every_route():
