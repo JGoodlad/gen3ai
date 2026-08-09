@@ -535,7 +535,29 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--check", action="store_true",
                    help="exit 1 if the committed snapshot no longer matches the live code, and "
                         "print WHAT changed structurally (drift gate)")
+    p.add_argument("--sync-config", metavar="RUN_MODEL_CONFIG",
+                   help="Refresh designs/production_config.json FROM a run's model_config.json "
+                        "(the direction of truth: run -> mirror), then build from it. The "
+                        "per-generation ritual in one flag — pair with --dot/--json, then rebuild "
+                        "the viewer (python -m agents.model.build_arch_viewer).")
     a = p.parse_args(argv)
+
+    if a.sync_config:
+        # The mirror refresh the compile gate's arch_signature assertion polices: the run dir's
+        # model_config.json is the immutable per-run record (written at creation, never mutated);
+        # designs/production_config.json is only its committed mirror for the tools (this graph,
+        # the arch viewer, the compile gate). Copy verbatim — never hand-edit the mirror.
+        with open(a.sync_config) as fh:
+            cfg = json.load(fh)
+        for required in ("arch_signature", "config_version", "total_dim"):
+            if required not in cfg:
+                raise SystemExit(f"--sync-config source lacks {required!r} — not a model_config.json")
+        with open(_DEFAULT_CONFIG, "w") as fh:
+            json.dump(cfg, fh, indent=2, sort_keys=True)
+            fh.write("\n")
+        print(f"synced {_DEFAULT_CONFIG} <- {a.sync_config} "
+              f"({cfg['arch_signature']} v{cfg['config_version']}, obs {cfg['total_dim']})")
+        a.config = _DEFAULT_CONFIG
 
     g = build_graph(a.config)
     if a.check:

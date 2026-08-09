@@ -1,8 +1,10 @@
 # design — `OpTensors`: one home per fact, arity as the type
 
 **Status:** forward design, not built. Written 2026-08-08 off the 40M gen-3 measurements below.
-**Owner decision needed:** yes — this changes the concat-deletion path recorded in
-`design_generation_roadmap.md` §3.8. See §8 *How this alters the existing path*.
+**Owner decision:** ✅ ADOPTED 2026-08-08 (late) — "no more concat" is the next major goal,
+execution starts when gen-4 (`run_20260808_212910`) completes; the §9.1 discriminating arms run
+on gen-4's final checkpoint before step 3+. Recorded beside the superseded two-route
+precondition in `design_generation_roadmap.md` §3.8.
 
 **Written to be evaluated by someone without the originating conversation.** Every measured
 number carries its provenance and its caveats inline; every inference is labelled as one.

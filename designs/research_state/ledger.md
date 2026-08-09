@@ -152,9 +152,12 @@ all at 6000 final-step eval-trace states on `final_model.zip`.
   aggregates are ALREADY linearly decodable at the head boundary: `n_threatened` r² 0.80 (vf) /
   0.69 (pi), `best_move_breadth` 0.75 / 0.64, `safe_pivot_exists` AUC 0.97, shuffled controls ≈ 0
   (positive control `act_threat` pi 0.69). Per the reconciled §2b.4 read (the probe is a ROUTE
-  CHOOSER, not a veto — 42c9c69): **the "decodable" branch fired ⇒ the critic route is 7a
-  generalized TOKEN-CONTENT INJECTION; PV (7b, k-seed pair-values) and pair-token promotion
-  (item 8) are both disfavored — cross-pair reasoning already happens.** (vf > pi on every joint
+  CHOOSER — 42c9c69) the "decodable" branch fired against PV. **SUPERSEDED SAME DAY by the
+  OpTensors split audit + owner adoption (design_op_tensors.md §8; owner: "no more concat"):
+  the 7a token-content route is ALSO dead — the concat's dependence is the per-move HEADER,
+  already E4 seat content, so the critic's gap is READOUT not delivery (act_threat vf r² 0.33
+  vs pi 0.69) → k seed reads over `our_mon`; OA1/PV survive only as `REDUCE(how)` settings.**
+  (vf > pi on every joint
   target while pi > vf on the per-action control — the critic reads board-level structure, the
   policy per-action magnitude; consistent with |ΔV| being the concat's stickiest axis.)
 

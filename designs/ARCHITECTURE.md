@@ -548,11 +548,11 @@ raises at build time.
 | `opp_belief_aux_coef` | 0.0 | OFF ⇒ `opp_belief_slots` false ⇒ **no `BeliefHead`, no species posterior** |
 | `opp_belief_latent` | false | OFF |
 | `opp_belief_cls_k` | 0 | OFF |
-| `spread_belief` | false | OFF — the op prices opponent stats with its hand-coded de-timid / neutral-0-EV constants, not a learned belief |
+| `spread_belief` | false | OFF — the op prices REVEALED opponent stats with its hand-coded de-timid / neutral-0-EV constants, not a learned belief. UNREVEALED defender slots (since `gen3_unrevealed_outgoing_prior_v1`, v60) are priced against the Species-Clause-filtered usage prior's E[def/spd]/E[maxhp] + E[type-mult], P(KO) nulled, `revealed` channel 0 |
 | `spread_belief_nature` | false | OFF |
 | `spread_belief_nature_marginalize` | false | UNREACHABLE — requires `spread_belief_nature` |
 | **`threat_refine_outgoing`** | false | **UNREACHABLE** — hard-requires `damage_refine_rounds > 0`, which is mutually exclusive with `damage_op_prefuse`. Setting it raises `ValueError` at extractor build. |
-| **`threat_unrevealed_outgoing`** | false | **UNREACHABLE** — requires `threat_refine_outgoing` (above), *and* a `BeliefHead` for `species_posterior`, which does not exist (`opp_belief_aux_coef` = 0). Two independent blockers. |
+| **`threat_unrevealed_outgoing`** | false | **UNREACHABLE** — requires `threat_refine_outgoing` (above), *and* a `BeliefHead` for `species_posterior`, which does not exist (`opp_belief_aux_coef` = 0). Two independent blockers. Its expected-latent MATH is no longer dead, though: `gen3_unrevealed_outgoing_prior_v1` (v60) re-homed it onto the live outgoing kernel at a usage prior — this flag's refine-loop delivery stays unreachable. |
 | `threat_prob_outspeed` | false | OFF — `p_outspeed` uses the fixed logistic scale, not the believed-speed std |
 | **`threat_status_refine`** | false | **UNREACHABLE** — same refine-loop dependency as `threat_refine_outgoing` |
 | `win_prob_mode` | `"none"` | OFF |

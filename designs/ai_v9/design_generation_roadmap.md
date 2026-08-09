@@ -402,6 +402,19 @@ Localization: branch B's sub-block arm already ran at 9.6M — the residual is i
 (16.27 of 18.58 shuffle-controlled flips). The gen-3 40M verdict RE-RUNS it; on
 confirmation, "re-home in_matrix, BOTH directions (policy + critic)" is the settled target.
 
+**OWNER DECISION (2026-08-08, late — supersedes the two-route precondition above): the
+concat's removal proceeds by the `design_op_tensors.md` path ("no more concat" is the next
+major goal, starting when gen-4 completes).** The 40M split audit showed the concat's
+measured dependence is the per-move HEADER — content already carried bit-for-bit by the E4
+seats — so the premise "magnitude has no entity home" fell; the residual is the CRITIC's
+READOUT (act_threat vf r² 0.33 vs π 0.69). Consequences: the concat DISSOLVES by typed-view
+refactor (steps 1-2 byte-identical; step 3 doubles as the masked-from-birth arm that settles
+the first-mover confound); OA1/OA2/PV demote to settings of one `REDUCE(pair_in, how=…)`
+call site; the critic route is k seed reads over `our_mon` (multiplicity, not width — P3
+scope), landing WITH the removal. The acceptance clause is UNCHANGED (concat arm <
+all-edges-off on flips AND `|dV|`), measured with stratified state sampling. Precondition
+before step 3+: the op_tensors §9.1 discriminating arms run on gen-4's final checkpoint.
+
 ## 3.9 E9 STEP 1 — per-entity RECENCY features (designed 2026-08-07, pre-gen-3)
 
 The first "history attaches to entities" increment, chosen as the gen-3 launch gate's final
