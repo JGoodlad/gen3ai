@@ -292,6 +292,14 @@ class ObsUnpack(torch.nn.Module):
     def __init__(self, layout: Dict[str, Any], attend_unrevealed_opponents: bool = False):
         super().__init__()
         self.layout = layout
+        # Stage-3 generator half (gen3ai roadmap §3): every block boundary this phase reads comes
+        # from the declarative schema's validated slice map — ONE source, tiling-proven at
+        # construction (build_schema().validate() throws on any gap/overlap/total mismatch), so a
+        # layout drift crashes here instead of silently mis-slicing a consumer. The layout dict
+        # stays for sub-structure the schema deliberately doesn't model (per-mon slot internals via
+        # slice_pokemon_categoricals, move-slot counts).
+        from agents.observation.schema import build_schema
+        self._slices = build_schema(layout).slices()
         # When True, UNREVEALED opp slots (species_known==0, hp filled as 0 — Gen 3 has no
         # team preview, so unseen party mons arrive here as all-zero placeholders) stay
         # ATTENDABLE in the transformer instead of being key-masked identically to fainted
@@ -304,65 +312,47 @@ class ObsUnpack(torch.nn.Module):
 
     def forward(self, obs: Dict[str, torch.Tensor]) -> ExtractorContext:
         layout = self.layout
+        sl = self._slices
         x = obs["observation"]
         batch_size = x.shape[0]
-        base_dim = layout['base_dim']
 
-        reactive_layout = layout['reactive_layout']
-        global_layout   = layout['global_layout']
         # num_moves drives the prev-mask + matchup slices below; the per-mon move-slot slicing moved to
         # slice_pokemon_categoricals (so moves_info/moves_layout/m_slot_layout are no longer needed here).
-        num_moves       = len(layout['pokemon']['moves']['layout']['slots'])
+        num_moves = len(layout['pokemon']['moves']['layout']['slots'])
 
         # prev_mask (ACTION_SPACE_SIZE) + turn-history block (N * TURN_DELTA_DIM) from obs tail.
-        prev_mask = x[:, base_dim : base_dim + ACTION_SPACE_SIZE]
-        history_dim = N_HISTORY_TURNS * TURN_DELTA_DIM
-        turn_history_raw = x[:, base_dim + ACTION_SPACE_SIZE : base_dim + ACTION_SPACE_SIZE + history_dim]
+        prev_mask = x[:, sl['prev_action_mask']]
+        turn_history_raw = x[:, sl['turn_history']]
         switch_mask  = prev_mask[:, 0:TEAM_SIZE]
         move_mask    = prev_mask[:, TEAM_SIZE:TEAM_SIZE + num_moves]
         struggle_mask = prev_mask[:, TEAM_SIZE + num_moves:TEAM_SIZE + num_moves + 1]
 
-        # Team blocks + the remaining context/global/reactive span.
-        parts = layout['parts']
-        ot = parts['our_team']
-        our_team_raw = x[:, ot['start']:ot['end']].reshape(batch_size, *ot['reshape'])
-        opt = parts['opp_team']
-        opp_team_raw = x[:, opt['start']:opt['end']].reshape(batch_size, *opt['reshape'])
-        ctx_part = parts['context']
-        remaining_part = x[:, ctx_part['start']:base_dim]   # stop before prev_mask tail
-
-        matchup_offset = reactive_layout['our_matchups']['offset']
+        # Team blocks (per-mon slot count/width derive from the schema block itself).
+        _team = sl['our_team']
+        mon_dim = (_team.stop - _team.start) // TEAM_SIZE
+        our_team_raw = x[:, sl['our_team']].reshape(batch_size, TEAM_SIZE, mon_dim)
+        opp_team_raw = x[:, sl['opp_team']].reshape(batch_size, TEAM_SIZE, mon_dim)
 
         # Global env feature slices.
-        global_start = parts['global']['start'] - ctx_part['start']
-        _w  = global_layout['weather'];  _w_off,  _w_dim  = _w['offset'], _w['dim']
-        _hz = global_layout['hazards'];  _hz_off, _hz_dim = _hz['offset'], _hz['dim']
-        _ck = global_layout['clock'];    _ck_off, _ck_dim = _ck['offset'], _ck['dim']
-        weather_feature = remaining_part[:, global_start + _w_off  : global_start + _w_off  + _w_dim]
-        spikes_feature  = remaining_part[:, global_start + _hz_off : global_start + _hz_off + _hz_dim]
-        turn_feature    = remaining_part[:, global_start + _ck_off : global_start + _ck_off + _ck_dim]
-        _sc = global_layout['screens']; _sc_off, _sc_dim = _sc['offset'], _sc['dim']
-        screen_feature = remaining_part[:, global_start + _sc_off : global_start + _sc_off + _sc_dim]
+        weather_feature = x[:, sl['global_env.weather']]
+        spikes_feature  = x[:, sl['global_env.hazards']]
+        turn_feature    = x[:, sl['global_env.clock']]
+        screen_feature  = x[:, sl['global_env.screens']]
 
         # Reactive feature slices (fainted, matchups, forced-struggle).
-        reactive_start = parts['reactive']['start'] - ctx_part['start']
-        _f  = reactive_layout['fainted'];        _f_off,  _f_dim  = _f['offset'],  _f['dim']
-        _om = reactive_layout['our_matchups'];   _om_off, _om_dim = _om['offset'], _om['dim']
-        _tm = reactive_layout['their_matchups']; _tm_off, _tm_dim = _tm['offset'], _tm['dim']
-        fainted_feature     = remaining_part[:, reactive_start + _f_off  : reactive_start + _f_off  + _f_dim]
-        our_matchups_flat   = remaining_part[:, reactive_start + _om_off : reactive_start + _om_off + _om_dim]
-        their_matchups_flat = remaining_part[:, reactive_start + _tm_off : reactive_start + _tm_off + _tm_dim]
-        _fs = reactive_layout['forced_struggle']; struggle_offset = _fs['offset']
-        struggle_feature = remaining_part[:, reactive_start + struggle_offset : reactive_start + struggle_offset + 1]
+        fainted_feature     = x[:, sl['reactive.fainted']]
+        our_matchups_flat   = x[:, sl['reactive.our_matchups']]
+        their_matchups_flat = x[:, sl['reactive.their_matchups']]
+        struggle_feature    = x[:, sl['reactive.forced_struggle']]
 
         # gen3_op_move_align_v1: OUR active's request-order move ids/types/legality (after the matchups,
         # so non_matchup_rest — which stops at the matchup offset — never sees these embedding IDs).
         # ids/type_ids → long for the op's table lookups; legal stays float (a 0/1 gate).
-        _arm = reactive_layout['active_req_moves']
-        _arm_base = reactive_start + _arm['offset']; _arm_per = _arm['per']
-        our_active_req_move_ids = remaining_part[:, _arm_base : _arm_base + _arm_per].long()
-        our_active_req_move_type_ids = remaining_part[:, _arm_base + _arm_per : _arm_base + 2 * _arm_per].long()
-        our_active_req_move_legal = remaining_part[:, _arm_base + 2 * _arm_per : _arm_base + 3 * _arm_per]
+        _arm = sl['reactive.active_req_moves']
+        _arm_per = (_arm.stop - _arm.start) // 3   # [ids ×4, type_ids ×4, legal ×4]
+        our_active_req_move_ids = x[:, _arm.start : _arm.start + _arm_per].long()
+        our_active_req_move_type_ids = x[:, _arm.start + _arm_per : _arm.start + 2 * _arm_per].long()
+        our_active_req_move_legal = x[:, _arm.start + 2 * _arm_per : _arm.stop]
 
         our_matchups   = our_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
         their_matchups = their_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
@@ -407,10 +397,14 @@ class ObsUnpack(torch.nn.Module):
         all_fainted = torch.cat([fainted_mask_ours, fainted_mask_opp], dim=1)
 
         # Active contexts + non-matchup scalar tail (transformer global token + projection).
-        active_ctx_dim = layout['active_context_dim']
-        our_ctx_raw = remaining_part[:, 0 : active_ctx_dim]
-        opp_ctx_raw = remaining_part[:, active_ctx_dim : 2 * active_ctx_dim]
-        non_matchup_rest = remaining_part[:, 2 * active_ctx_dim : reactive_start + matchup_offset]
+        _ctx = sl['active_context']
+        active_ctx_dim = (_ctx.stop - _ctx.start) // 2
+        our_ctx_raw = x[:, _ctx.start : _ctx.start + active_ctx_dim]
+        opp_ctx_raw = x[:, _ctx.start + active_ctx_dim : _ctx.stop]
+        # Everything between the active contexts and the first matchup matrix: the global-env
+        # block + the reactive scalars (the embedding-ID active_req_moves tail sits AFTER the
+        # matchups precisely so this raw-scalar span never contains an ID).
+        non_matchup_rest = x[:, sl['global_env'].start : sl['reactive.our_matchups'].start]
         return ExtractorContext(
             batch_size=batch_size, device=x.device,
             pokemon_part=pokemon_part,
