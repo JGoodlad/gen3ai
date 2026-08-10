@@ -304,6 +304,14 @@ They are not three features; they are **three settings of one operator at one ca
 A/B flag with no new plumbing. "Is PV worth building?" becomes "which reduction wins?", measured at
 one place with one harness.
 
+> **`how` is specified in full by [`design_pair_reduction.md`](design_pair_reduction.md)** (2026-08-09),
+> which is scoped to the **post-concat / pre-generation** window. It supersedes the four-row table
+> above as the operative spec: the four rows are rungs R0/R1/R4/R2W of a longer ladder, and — more
+> importantly — that doc separates the **contract** (a weighted reducer emits ONE distribution over
+> the move axis per defender, shared across every channel) from the **knob** (which rung). The
+> contract fixes a defect this section does not name: today's block takes **nine independent
+> maxima**, so up to nine different opponent moves describe one defender.
+
 Two properties of today's `amax` worth recording, because they are easy to misread:
 - It maxes the **belief-weighted** value, `max_c(w_c · v_c)` — neither a max damage nor an
   expectation. A 0.30-belief 90% move (0.27) loses to a 0.90-belief 40% move (0.36).
