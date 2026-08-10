@@ -531,13 +531,25 @@ class DamageOperator(torch.nn.Module):
         w = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local])               # [B, n_moves] (typed)
         return w * self.HP_CAND_MASK[None, :]                                         # zero the 237 presence channel
 
-    def _chan_max(self, value: torch.Tensor, channel_mask: torch.Tensor) -> torch.Tensor:
-        """Max over a channel's candidates = the most-threatening believed move (exactly
-        `incoming_damage.py`'s max-over-candidates). `value` [B,6,C] (≥0), `channel_mask` [1,1,C]
-        (1=on-channel). Off-channel candidates are zeroed; since values are ≥0, `amax` returns the max
-        on-channel value (or 0 if the channel has no threat). Differentiable via the argmax subgradient —
-        the dominant move's belief weight gets gradient — and crucially NOT diluted by the ~400 zero-score
-        candidates the way a low-temperature soft-max would be."""
+    def _chan_max(self, value: torch.Tensor, channel_mask: torch.Tensor,
+                  how: str = "hard_max") -> torch.Tensor:
+        """THE arity-2 → arity-1 REDUCTION SITE (design_op_tensors.md §3.2 — `REDUCE(pair_in,
+        over=MOVE_AXIS, how=…)`). Every "collapse the believed-move axis onto a defender" in the
+        op routes here, so the roadmap's separately-designed alternatives are SETTINGS of this
+        one knob, not features: `hard_max` (today — the belief-weighted amax below),
+        `belief_weighted_mean` (the un-maxed marginal), `conditional(λ)` (OA1),
+        `learned_attention(k)` (PV-as-reduction). Only `hard_max` is implemented; adding a
+        setting is an A/B at THIS call site with no new plumbing (the §5 step-5 gate).
+
+        hard_max: `value` [B,6,C] (≥0), `channel_mask` [1,1,C] (1=on-channel). Off-channel
+        candidates zeroed; `amax` returns the max on-channel belief-weighted value (or 0).
+        Differentiable via the argmax subgradient — the dominant move's belief weight gets the
+        gradient — and NOT diluted the way a low-temperature softmax over a wide candidate
+        sweep would be (historically ~400 candidates; K=6 today, so that objection is ~6-way
+        and much weaker than when written)."""
+        if how != "hard_max":
+            raise NotImplementedError(f"REDUCE how={how!r} — only 'hard_max' is implemented; "
+                                      "add settings HERE (one site), not as new cell families")
         return (value * channel_mask).amax(dim=-1)
 
     @staticmethod

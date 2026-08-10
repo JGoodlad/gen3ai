@@ -2306,3 +2306,33 @@ checkpoint exists). B=1 CPU forward +~0.3 ms. Gates: `unrevealed_outgoing_prior_
 (prior marginal == direct recompute; Species-Clause zero-mass; revealed byte-identity;
 forced-alive; the §4.1 non-zero guard), `damage_op_probe_fuzz_test` 22/22 (revealed physics
 untouched), the fullgraph compile gate.
+
+### v61 — `gen3_no_concat_v1` (2026-08-09): the op head-concat is dead; the multi-seed critic window
+
+The owner's "no more concat" milestone (the gen-5 world), executed on the gen-4 stratified
+evidence (53ef270): net policy dependence on the flat block +0.00%, all-edges-off ABOVE the
+concat arm on flips (first time in the lineage), and the critic's magnitude content decodable
+with the concat zeroed (act_threat vf r² 0.418) — the |dV| 4.75 was trained reliance on an open
+window, not structural necessity.
+
+* **Step 3 (the death):** `ProjectionAssembler` no longer appends the 660-dim block to either
+  head — `pi_projection` 1131 → **471**, `vf_projection` 875 → **471**. The op lives on: pointer
+  cells (policy, lossless per-action), prefuse token injection, the 15 edge families' cells, and
+  `last_raw_block` for the probes/prober. The `edge_ablation_audit` concat arm's SEMANTICS
+  changed with it: it now measures the seed-window route (vf) — its pi effect is structurally 0
+  (pinned in its test).
+* **Step 4 (the replacement window):** `MultiSeedValueReadout` — k=4 × 64 learned seed queries
+  cross-attend over the op's per-our-mon incoming rows (`our_mon`), vf-only (+256). Ships WITH
+  the `seeds/*` TB collapse contract (`seed_diagnostics.py`, logged every `train()` by
+  instrumented_ppo) and the pre-registered VICReg trigger — readout MULTIPLICITY (P3 refuted
+  width, never multiplicity).
+* **Step 5 (the reduction site):** the arity-2→1 collapse is now the NAMED knob
+  `DamageOperator._chan_max(..., how="hard_max")` — OA1 (`conditional(λ)`), the belief mean and
+  PV-as-reduction become settings of this one call site, per design_op_tensors.md §3.2.
+* **Deferred honestly:** OpTensors steps 1–2 (typed views; the E4/d3/s3 recompute dedup) —
+  inverted order under the owner's gen-5 priority; the §9.1 evidence shows the removal was not
+  waiting on them. They proceed as background work during gen-5.
+* Gates: physics oracle 22/22 (revealed physics untouched); fullgraph compile green on the v61
+  production config; full suite green; obs UNCHANGED (2667 — no fixture churn).
+  `ARCH_SIGNATURE` `gen3_entity_rehome_v1` → `gen3_no_concat_v1`, `MODEL_CONFIG_VERSION` 61.
+  Fresh lineage: gen-5 (`ai_v9_06_gen5_no_concat_0809`) is the first run of this world.

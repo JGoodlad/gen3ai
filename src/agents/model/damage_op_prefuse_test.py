@@ -306,7 +306,12 @@ def test_real_policy_forward_runs_and_the_block_reaches_the_heads():
     with torch.no_grad():
         pi, vf = fe(obs)
     assert pi.shape == vf.shape == (2, fe.projection_dim)
-    assert fe.projection_input_dim >= fe.damage_op.out_dim
+    # gen3_no_concat_v1: the block no longer widens the projections; the op reaches the heads
+    # via the pointer cells / prefuse injection / the vf-only seed window instead.
+    assert fe.assembler.seed_readout is not None
+    assert fe.assembler.seed_readout.last_outputs is not None, "the seed window must have run"
+    assert fe.projection_input_dim < fe.damage_op.out_dim + 471, \
+        "pi regained op width — the concat came back"
 
 
 # --------------------------------------------------------------------------- versioning

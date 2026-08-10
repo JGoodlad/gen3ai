@@ -41,7 +41,9 @@ TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 # gen3_arch_constants_v1: the architecture constants now live in `arch_constants.py` so
 # `damage_op.py` can import them without a cycle. Re-exported here UNCHANGED — this module
 # remains the documented import surface (`from agents.model.features_extractor import D_MODEL`).
-from agents.model.arch_constants import (  # noqa: F401  (re-export)
+from agents.model.arch_constants import (  # noqa: F401  (re-export
+    VALUE_SEED_K,
+    VALUE_SEED_DIM,
     ROLE_TOKEN_SIZE,
     PROJECTION_DIM,
     MOVE_NET_HIDDEN,
@@ -2076,6 +2078,37 @@ class PointerNativeActionHead(torch.nn.Module):
         return torch.cat([switch_logits, move_logits, struggle_logit], dim=-1)  # [B,11]
 
 
+class MultiSeedValueReadout(torch.nn.Module):
+    """gen3_no_concat_v1 (v61): the critic's magnitude window after the op head-concat's death.
+
+    k learned SEED QUERIES cross-attend over the op's per-our-mon incoming rows (`our_mon`,
+    [B, 6, per_mon]) — readout MULTIPLICITY, the axis ledger-P3 never tested (it refuted WIDTH:
+    one pooled query at 384 dims read no better; k independent queries is a different object).
+    Output [B, k*dim] rides vf_parts ONLY (the policy keeps its lossless per-action pointer
+    cells). Known failure mode: SEED COLLAPSE (the z_arch precedent) — every forward stashes
+    (queries, outputs) and instrumented_ppo logs the `seeds/*` TB contract from
+    `seed_diagnostics.py`; the VICReg trigger is pre-registered there. Attention is explicit
+    (softmax over 6 mons per seed) — tiny, and the k×6 pattern is itself diagnosable."""
+
+    def __init__(self, per_mon: int, k: int = VALUE_SEED_K, dim: int = VALUE_SEED_DIM):
+        super().__init__()
+        self.k, self.dim = k, dim
+        self.queries = torch.nn.Parameter(torch.randn(k, dim) * (dim ** -0.5))
+        self.kv_proj = torch.nn.Linear(per_mon, dim)
+        self.out_dim = k * dim
+        self.last_outputs: Optional[torch.Tensor] = None   # [B, k, dim] — the TB monitor read
+
+    def forward(self, our_mon_rows: torch.Tensor, alive: torch.Tensor) -> torch.Tensor:
+        """our_mon_rows [B, 6, per_mon]; alive [B, 6] float (dead mons key-masked)."""
+        kv = self.kv_proj(our_mon_rows)                                    # [B, 6, dim]
+        att = torch.einsum("kd,bmd->bkm", self.queries, kv) * (self.dim ** -0.5)
+        att = att + (alive.clamp(max=1.0)[:, None, :] - 1.0) * 1e9        # mask dead mons
+        att = torch.softmax(att, dim=-1)                                   # [B, k, 6]
+        out = torch.einsum("bkm,bmd->bkd", att, kv)                        # [B, k, dim]
+        self.last_outputs = out
+        return out.reshape(out.shape[0], self.out_dim)
+
+
 class ProjectionAssembler(torch.nn.Module):
     """Assembles the pre-projection inputs for BOTH heads.
 
@@ -2087,8 +2120,13 @@ class ProjectionAssembler(torch.nn.Module):
     is parameter-efficient; the value head's distinct signal comes from `value_pooled`.
     """
 
-    def __init__(self, layout: Dict[str, Any], value_active_readout: bool = False):
+    def __init__(self, layout: Dict[str, Any], value_active_readout: bool = False,
+                 seed_per_mon: int = 0):
         super().__init__()
+        # gen3_no_concat_v1: the critic's multi-seed window (None when the config has no op —
+        # then there are no our_mon rows to read and vf keeps its pooled-only shape).
+        self._seed_per_mon = seed_per_mon
+        self.seed_readout = MultiSeedValueReadout(seed_per_mon) if seed_per_mon > 0 else None
         active_ctx_dim = layout['active_context_dim']
         self.active_ctx_encoder = torch.nn.Sequential(
             torch.nn.Linear(active_ctx_dim, ACTIVE_CTX_HIDDEN[0]),
@@ -2113,6 +2151,13 @@ class ProjectionAssembler(torch.nn.Module):
         pi_parts = [our_team_pooled, their_team_pooled, our_active_refined,
                     our_ctx_enc, opp_ctx_enc, ctx.non_matchup_rest]
         vf_parts = [value_pooled, our_ctx_enc, opp_ctx_enc, ctx.non_matchup_rest]
+        # gen3_no_concat_v1 (v61): THE OP HEAD-CONCAT IS DEAD. The 660-dim flat block no longer
+        # enters either head — its measured end-state (gen-4, stratified, 53ef270): net policy
+        # dependence +0.00%, all-edges-off ABOVE the concat arm on flips, and the critic's
+        # magnitude content decodable without it (act_threat vf r² 0.418 concat-zeroed). The op
+        # itself lives on: pointer cells (policy, lossless per-action), prefuse token injection,
+        # the D/S/C/V/T/X edge cells, and `last_raw_block` for the probes. The critic's
+        # replacement window is the multi-seed readout below (vf only).
         # Give the critic the active-mon readout it structurally lacked (see __init__): routes the
         # trunk's nonlinear incoming-KO/threat reasoning into the value head so it can price the tail.
         if self.value_active_readout:
@@ -2123,12 +2168,14 @@ class ProjectionAssembler(torch.nn.Module):
         if hidden_opp_belief is not None:
             pi_parts.append(hidden_opp_belief)
             vf_parts.append(hidden_opp_belief)
-        # Differentiable damage operator (flag-guarded; None when off): the believed-move incoming
-        # damage to each of our mons, fed to BOTH heads (policy: which threat to dodge; value: price the
-        # KO tail). Appended last, after the belief, so off-by-default block layouts are unchanged.
-        if damage_block is not None:
-            pi_parts.append(damage_block)
-            vf_parts.append(damage_block)
+        # gen3_no_concat_v1: the multi-seed critic readout over the op's per-our-mon rows —
+        # sliced from the flat block (its first TEAM_SIZE*per_mon dims are the ① incoming
+        # per-mon rows) until the typed OpTensors views land. vf ONLY.
+        if damage_block is not None and self.seed_readout is not None:
+            rows = damage_block[:, :TEAM_SIZE * self._seed_per_mon].reshape(
+                damage_block.shape[0], TEAM_SIZE, self._seed_per_mon)
+            alive = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
+            vf_parts.append(self.seed_readout(rows, alive))
         pi_combined = torch.cat(pi_parts, dim=1)
         vf_combined = torch.cat(vf_parts, dim=1)
         return pi_combined, vf_combined
@@ -2797,7 +2844,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Value-head active readout (weight-shape via flag): adds our_active_refined (D_MODEL) to the
         # value projection. OFF reproduces the baseline value head byte-for-byte (no ARCH_SIGNATURE bump).
         self.value_active_readout = value_active_readout
-        self.assembler = ProjectionAssembler(layout, value_active_readout=value_active_readout)
+        self.assembler = ProjectionAssembler(
+            layout, value_active_readout=value_active_readout,
+            seed_per_mon=(self.damage_op.per_mon if self.damage_op is not None else 0))
 
         # Auxiliary WIN-PROBABILITY head (tri-state `win_prob_mode`): a calibrated P(win|state) readout
         # off `value_pooled`. 'none' = no module (baseline byte-for-byte, NOT in pi/vf so projection dims

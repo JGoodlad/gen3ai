@@ -4766,10 +4766,10 @@
     }
   ],
   "meta": {
-    "arch_signature": "gen3_entity_rehome_v1",
+    "arch_signature": "gen3_no_concat_v1",
     "base_seats": 20,
     "config": "production_config.json",
-    "config_version": 60,
+    "config_version": 61,
     "edge_bias_families": [
       "c1",
       "c2",
@@ -4798,8 +4798,8 @@
     "n_tokens": 36,
     "obs_dim": 2667,
     "op_out_dim": 660,
-    "pi_projection_in": 1131,
-    "vf_projection_in": 875
+    "pi_projection_in": 471,
+    "vf_projection_in": 471
   },
   "nodes": [
     {
@@ -4824,13 +4824,13 @@
     },
     {
       "id": "pi_projection",
-      "in_features": 1131,
+      "in_features": 471,
       "kind": "head",
       "out_features": 512
     },
     {
       "id": "vf_projection",
-      "in_features": 875,
+      "in_features": 471,
       "kind": "head",
       "out_features": 512
     },

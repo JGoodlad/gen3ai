@@ -230,7 +230,7 @@ def test_d4_zeroes_the_active_column_and_unrevealed_attackers():
 # ------------------------------------------------------- versioning
 def test_version_constants_gate_and_migration():
     assert MODEL_CONFIG_VERSION >= 55
-    assert ARCH_SIGNATURE == "gen3_entity_rehome_v1"  # v60 re-home; the biased trunk rides inside it
+    assert ARCH_SIGNATURE == "gen3_no_concat_v1"  # v61 concat death; the biased trunk rides inside it
     fields = {f.name for f in dataclasses.fields(ModelVersion)}
     assert "edge_bias_families" in fields
     migrated = _migrate_config({"config_version": 50})

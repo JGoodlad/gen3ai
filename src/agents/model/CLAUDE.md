@@ -43,7 +43,10 @@ refined in-lineup); `BeliefHead` reads the refined opp tokens *after* the transf
 species/moves aux logits (a side readout — does NOT feed forward); `MoveBelief` predicts + **reinjects**
 the moveset into `their_team_out` *before* the CLS pools (so it DOES flow to the heads); `DamageOperator`
 runs *after* `MoveBelief` and consumes its predicted-move logits to compute the believed-move incoming
-damage to each of our mons, **appended to both projection inputs** (it doesn't enter the token stream).
+damage to each of our mons. **gen3_no_concat_v1 (v61): its flat block no longer enters either
+projection** — the op reaches the policy via the pointer cells + prefuse injection + edge cells, and
+the critic via the `MultiSeedValueReadout` (k=4×64 seed queries over the per-our-mon rows, vf-only,
+with the `seeds/*` TB collapse contract logged every train()).
 Under `--opp-belief-latent-coef>0` `BeliefHead` ALSO carries an asymmetric SimSiam latent predictor
 (the `latent` logits key) and `forward_internal` stashes a stop-grad `last_belief_target_latent` (the
 `pokemon_encoder` role-tokens of the true hidden mons, from the training-only `belief_target_slots` obs

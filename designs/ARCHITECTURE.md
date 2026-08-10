@@ -239,9 +239,9 @@ the table changes every model's state_dict).
 This section is the canonical answer to "what does head X read". Widths verified by forward pass,
 2026-08-08.
 
-### 3.1 `pi_projection` — 1131 → 512
+### 3.1 `pi_projection` — 471 → 512
 
-`Linear(1131, 512)` after `pre_proj_norm` (LayerNorm), then ReLU. Input concat, in order:
+`Linear(471, 512)` after `pre_proj_norm` (LayerNorm), then ReLU. **The op head-concat is DEAD (`gen3_no_concat_v1`, v61)** — the 660-dim flat block enters neither head; the op reaches the policy via the pointer cells (lossless per-action), the prefuse token injection, and the edge cells. Input concat, in order:
 
 | Part | Dims | Source |
 |---|---|---|
@@ -251,21 +251,26 @@ This section is the canonical answer to "what does head X read". Widths verified
 | `active_ctx_enc` (ours) | 32 | `active_ctx_encoder` (shared with vf) |
 | `active_ctx_enc` (theirs) | 32 | " |
 | `non_matchup_rest` | 23 | global env 18 + board scalars 5 |
-| **damage block** | **660** | `DamageOperator` output, post-gain (§4) |
-| **total** | **1131** | |
+| **total** | **471** | |
 
-### 3.2 `vf_projection` — 875 → 512
+### 3.2 `vf_projection` — 471 → 512
 
 | Part | Dims | Source |
 |---|---|---|
 | `value_pooled` | 128 | `CLSPool.value_cls` over **all 12** team tokens |
 | `active_ctx_enc` ×2 | 64 | shared with pi |
 | `non_matchup_rest` | 23 | |
-| **damage block** | **660** | the **same** tensor pi reads |
-| **total** | **875** | |
+| **seed readout** | **256** | `MultiSeedValueReadout` — k=4 × 64 (`VALUE_SEED_K`/`VALUE_SEED_DIM`) |
+| **total** | **471** | |
 
 The value head does **not** read `our_active_refined` (`value_active_readout` is off), and does not
-read either team pool. Its only board summary is `value_pooled`.
+read either team pool. Its board summary is `value_pooled` plus the **multi-seed window**: k=4
+learned queries cross-attend (explicit softmax, dead mons key-masked) over the op's per-our-mon
+incoming rows — the critic's magnitude read after the concat's death, MULTIPLICITY not width
+(ledger P3 refuted width only). Every `train()` logs the `seeds/*` collapse contract
+(`agents/model/seed_diagnostics.py`: query/output cosine, uncentered effective rank, the VICReg
+variance target) with the VICReg trigger pre-registered in that module — the z_arch lesson,
+mechanized.
 
 ### 3.3 The action head is the pointer head — there is no flat `action_net`
 

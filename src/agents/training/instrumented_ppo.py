@@ -2249,3 +2249,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
             self.logger.record("popart/mu", float(self.policy.popart.mu))
             self.logger.record("popart/sigma", float(self.policy.popart.sigma))
             self.logger.record("popart/value_weight_norm", float(self.policy.value_net.weight.norm()))
+        # gen3_no_concat_v1 (v61): the multi-seed critic readout's collapse monitors — the TB
+        # contract in agents/model/seed_diagnostics.py (query/output cosine, UNCENTERED effective
+        # rank, the VICReg variance target), logged every train() so a collapsing seed set is
+        # visible from step 0 (the z_arch post-hoc-discovery failure, never again). The
+        # pre-registered VICReg trigger lives in that module's docstring — decide from the plot.
+        _sr = getattr(getattr(self.policy.features_extractor, "assembler", None), "seed_readout", None)
+        if _sr is not None and _sr.last_outputs is not None:
+            from agents.model.seed_diagnostics import seed_collapse_diagnostics
+            for k, v in seed_collapse_diagnostics(_sr.queries.detach(),
+                                                  _sr.last_outputs.detach()).items():
+                self.logger.record(k, v)

@@ -38,3 +38,11 @@ D_MODEL = ROLE_TOKEN_SIZE         # 128
 TRANSFORMER_N_LAYERS = 2
 TRANSFORMER_N_HEADS = 4
 TRANSFORMER_FFN_DIM = 256
+
+# gen3_no_concat_v1 (v61, the gen-5 world): the multi-seed CRITIC readout that replaces the op
+# head-concat's value window — k learned queries cross-attend over the op's per-our-mon rows
+# (the `our_mon` arity-1 tensor), giving the critic readout MULTIPLICITY (P3 refuted width,
+# never multiplicity). k*dim rides vf_parts only. Ships WITH the seeds/* TB collapse monitors
+# (seed_diagnostics.py) and the pre-registered VICReg trigger.
+VALUE_SEED_K = 4
+VALUE_SEED_DIM = 64

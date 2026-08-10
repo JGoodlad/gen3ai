@@ -442,7 +442,9 @@ from typing import Any, Dict, List
 # V-edge inputs shift under fixed code (documented, accepted: gen-3 retrains under true physics).
 # v60 is the gen3_entity_rehome_v1 STAMP (Stage-3 re-home; the ARCH_SIGNATURE carries the break —
 # obs dim, POKEMON_FULL_DIM and the move/role net widths all move, so no migration is possible).
-MODEL_CONFIG_VERSION = 60
+# v61 is the gen3_no_concat_v1 STAMP — the op head-concat deletion + the multi-seed critic
+# readout (the gen-5 world; the signature carries the break).
+MODEL_CONFIG_VERSION = 61
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -835,7 +837,14 @@ MODEL_CONFIG_VERSION = 60
 #     trapped / maybe_trapped ride the per-mon slots (POKEMON_FULL_DIM 113 → 116), and the
 #     PokemonEncoder's move/role nets narrow (matchup + validity + struggle inputs deleted).
 #     Weight shapes AND obs meaning change together — a fresh-lineage break (gen-4).
-ARCH_SIGNATURE = "gen3_entity_rehome_v1"
+#   gen3_no_concat_v1 (config v61, the gen-5 world): THE OP HEAD-CONCAT IS DEAD — the 660-dim
+#     flat block no longer enters either projection (pi 1131→471); the critic's replacement
+#     window is the multi-seed readout (MultiSeedValueReadout, k=4×64 over the op's per-our-mon
+#     rows, vf-only, with the seeds/* TB collapse contract). Executed on the gen-4 stratified
+#     evidence (53ef270): net policy dependence +0.00%, flips half of the acceptance clause met
+#     by training, act_threat decodable concat-zeroed. state_dict changes (projection widths +
+#     the new module) → the signature carries the break; fresh lineage (gen-5).
+ARCH_SIGNATURE = "gen3_no_concat_v1"
 
 
 class ModelVersionError(Exception):
@@ -2504,4 +2513,8 @@ def _migrate_config(data: dict) -> dict:
         # actual break — every pre-v60 checkpoint has the old signature and fails that check;
         # this stamp only keeps config_version monotone (the v55/v58 convention).
         data["config_version"] = 60
+    if version < 61:
+        # v61: gen3_no_concat_v1 STAMP (no field) — the head-concat deletion + the multi-seed
+        # critic readout. The signature carries the break; no migration is possible.
+        data["config_version"] = 61
     return data

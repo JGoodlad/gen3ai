@@ -454,23 +454,36 @@ def test_projection_assembler_width_and_passthrough():
     assert torch.allclose(vf_combined[:, -K:], non_matchup)
 
 
-def test_projection_assembler_appends_damage_block_to_both_heads():
-    """The optional damage block (DamageOperator output) widens BOTH heads by its width and is
-    concatenated verbatim (last). None → no change (the off-by-default baseline)."""
+def test_projection_assembler_concat_is_dead_and_seeds_ride_vf_only():
+    """gen3_no_concat_v1 (v61): the flat damage block NEVER enters pi, and enters vf only
+    through the multi-seed readout (k*dim, computed from the per-mon rows — not verbatim).
+    A no-op assembler (seed_per_mon=0, the op-less config) ignores the block entirely."""
+    from agents.model.arch_constants import VALUE_SEED_K, VALUE_SEED_DIM
+    from agents.observation.constants import TEAM_SIZE
     model, layout = _make_model()
     active_ctx_dim = layout["active_context_dim"]
-    B, K, Dg = 2, 7, 24
+    B, K = 2, 7
+    per_mon = 12
     args = (torch.randn(B, D_MODEL), torch.randn(B, D_MODEL),
             torch.randn(B, D_MODEL), torch.randn(B, D_MODEL))
+    hp_active = torch.zeros(B, 2 * TEAM_SIZE, 3)
+    hp_active[:, :, 0] = 1.0                                    # everyone alive
     ctx = _dummy_ctx(
         our_ctx_raw=torch.randn(B, active_ctx_dim),
         opp_ctx_raw=torch.randn(B, active_ctx_dim),
         non_matchup_rest=torch.randn(B, K),
+        hp_and_active=hp_active,
     )
-    pi0, vf0 = model.assembler(*args, ctx)
-    block = torch.randn(B, Dg)
-    pi1, vf1 = model.assembler(*args, ctx, damage_block=block)
-    assert pi1.shape[1] - pi0.shape[1] == Dg
-    assert vf1.shape[1] - vf0.shape[1] == Dg
-    assert torch.allclose(pi1[:, -Dg:], block)        # appended verbatim, last
-    assert torch.allclose(vf1[:, -Dg:], block)
+    from agents.model.features_extractor import ProjectionAssembler
+    asm = ProjectionAssembler(layout, seed_per_mon=per_mon)
+    pi0, vf0 = asm(*args, ctx)
+    block = torch.randn(B, TEAM_SIZE * per_mon + 30)            # rows + a tail beyond them
+    pi1, vf1 = asm(*args, ctx, damage_block=block)
+    assert pi1.shape[1] == pi0.shape[1], "the block must NEVER widen pi (the concat is dead)"
+    assert vf1.shape[1] - vf0.shape[1] == VALUE_SEED_K * VALUE_SEED_DIM
+    assert torch.equal(pi1, pi0), "pi must be bit-identical with and without the block"
+    # And an op-less assembler ignores the block on vf too.
+    asm0 = ProjectionAssembler(layout, seed_per_mon=0)
+    pi2, vf2 = asm0(*args, ctx, damage_block=block)
+    pi3, vf3 = asm0(*args, ctx)
+    assert torch.equal(pi2, pi3) and torch.equal(vf2, vf3)

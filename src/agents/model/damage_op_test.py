@@ -13,6 +13,7 @@ import types
 import numpy as np
 import gymnasium as gym
 import torch
+from agents.model.arch_constants import VALUE_SEED_K, VALUE_SEED_DIM
 import pytest
 
 from agents.model.features_extractor import (
@@ -231,8 +232,12 @@ def test_off_path_projection_dims_unchanged_by_damage_op():
     on, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
     assert base.damage_op is None and on.damage_op is not None
     grow = TEAM_SIZE * _DMG_PER_MON + _DMG_CB
-    assert on.projection_input_dim - base.projection_input_dim == grow
-    assert on.value_projection_input_dim - base.value_projection_input_dim == grow
+    # gen3_no_concat_v1: the flat block no longer enters EITHER projection — pi is
+    # untouched by the op; vf gains exactly the multi-seed readout window (k*dim),
+    # independent of the op's out_dim.
+    assert on.projection_input_dim - base.projection_input_dim == 0
+    assert (on.value_projection_input_dim - base.value_projection_input_dim
+            == VALUE_SEED_K * VALUE_SEED_DIM)
 
 
 def test_dependency_guard_requires_revealed_or_both():
@@ -628,8 +633,10 @@ def test_topk_off_path_projection_dims_unchanged():
     on, _ = _make_model(**common, damage_topk_k=_DMG_TOPK_DEFAULT_K, damage_matrices_incoming=True)
     assert base.damage_op.topk_k == 0 and on.damage_op.topk_k == _DMG_TOPK_DEFAULT_K
     grow = _dmg_imx_dim(_DMG_TOPK_DEFAULT_K)
-    assert on.projection_input_dim - base.projection_input_dim == grow
-    assert on.value_projection_input_dim - base.value_projection_input_dim == grow
+    # gen3_no_concat_v1: the flat block no longer enters either projection, and BOTH of
+    # these configs carry the op (and so the fixed-width seed window) — no delta at all.
+    assert on.projection_input_dim == base.projection_input_dim
+    assert on.value_projection_input_dim == base.value_projection_input_dim
 
 
 def test_topk_dependency_guard():
@@ -948,8 +955,10 @@ def test_matrices_outgoing_off_path_dims_unchanged():
     base, _ = _make_model(**common)
     on, _ = _make_model(**common, damage_matrices_outgoing=True)
     assert base.damage_op.matrices_outgoing is False and on.damage_op.matrices_outgoing is True
-    assert on.projection_input_dim - base.projection_input_dim == _DMG_OMX
-    assert on.value_projection_input_dim - base.value_projection_input_dim == _DMG_OMX
+    # gen3_no_concat_v1: the flat block no longer enters either projection, and BOTH of
+    # these configs carry the op (and so the fixed-width seed window) — no delta at all.
+    assert on.projection_input_dim == base.projection_input_dim
+    assert on.value_projection_input_dim == base.value_projection_input_dim
 
 
 def test_matrices_outgoing_requires_damage_op():
@@ -1063,8 +1072,10 @@ def test_matrices_outgoing_all_off_path_dims_unchanged():
     base, _ = _make_model(**common)
     on, _ = _make_model(**common, damage_matrices_outgoing_all=True)
     assert base.damage_op.matrices_outgoing_all is False and on.damage_op.matrices_outgoing_all is True
-    assert on.projection_input_dim - base.projection_input_dim == _DMG_OAX
-    assert on.value_projection_input_dim - base.value_projection_input_dim == _DMG_OAX
+    # gen3_no_concat_v1: the flat block no longer enters either projection, and BOTH of
+    # these configs carry the op (and so the fixed-width seed window) — no delta at all.
+    assert on.projection_input_dim == base.projection_input_dim
+    assert on.value_projection_input_dim == base.value_projection_input_dim
 
 
 def test_matrices_outgoing_all_requires_damage_op():
@@ -1179,9 +1190,11 @@ def test_matrices_incoming_off_path_dims_unchanged():
     base, _ = _make_model(**_imx_common())
     on, _ = _make_model(**_imx_common(), damage_matrices_incoming=True)
     assert base.damage_op.matrices_incoming is False and on.damage_op.matrices_incoming is True
-    grow = _dmg_imx_dim(on.damage_op.matrices_incoming_k)
-    assert on.projection_input_dim - base.projection_input_dim == grow
-    assert on.value_projection_input_dim - base.value_projection_input_dim == grow
+    # gen3_no_concat_v1: both configs carry the op (imx requires it) → both have the seed
+    # window; the matrix widens only the BLOCK, never the projections.
+    assert on.damage_op.out_dim - base.damage_op.out_dim == _dmg_imx_dim(on.damage_op.matrices_incoming_k)
+    assert on.projection_input_dim == base.projection_input_dim
+    assert on.value_projection_input_dim == base.value_projection_input_dim
 
 
 def test_matrices_incoming_dependency_guards():
@@ -1204,12 +1217,14 @@ def test_matrices_incoming_k_is_tunable_via_topk():
     on4, _ = _make_model(**_imx_common(), damage_matrices_incoming=True, damage_topk_k=4)
     on6, _ = _make_model(**_imx_common(), damage_matrices_incoming=True, damage_topk_k=6)
     assert on4.damage_op.matrices_incoming_k == 4 and on6.damage_op.matrices_incoming_k == 6
-    delta = _dmg_imx_dim(6) - _dmg_imx_dim(4)
-    assert on6.projection_input_dim - on4.projection_input_dim == delta
-    # gen3_op_block_trim_v1: the matrix is the ONLY block K sizes, so on6's whole growth over a K=0 model
-    # IS the matrix — there is no second (lean) block double-counting the same candidates.
+    # gen3_no_concat_v1: K sizes the BLOCK, not the projections — widths are K-invariant now.
+    assert on6.projection_input_dim == on4.projection_input_dim
+    assert on6.damage_op.out_dim - on4.damage_op.out_dim == _dmg_imx_dim(6) - _dmg_imx_dim(4)
+    # gen3_op_block_trim_v1 (+ no_concat): the matrix is the ONLY block K sizes — on6's whole
+    # BLOCK growth over a K=0 model is the matrix; the projections are block-width-invariant.
     off, _ = _make_model(**_imx_common())                               # no matrix, K=0
-    assert on6.projection_input_dim - off.projection_input_dim == _dmg_imx_dim(6)
+    assert on6.damage_op.out_dim - off.damage_op.out_dim == _dmg_imx_dim(6)
+    assert on6.projection_input_dim == off.projection_input_dim
 
 
 def test_incoming_matrix_cell_physics_and_immunity():
@@ -1745,8 +1760,13 @@ def test_candidate_k_zero_is_bit_identical_and_k16_changes_values():
     with torch.no_grad():
         pi_c, vf_c = again(obs)
     assert torch.equal(pi_a, pi_c) and torch.equal(vf_a, vf_c), "k=0 is not reproducible"
-    # k=16 genuinely truncates => the damage block must move (else the cap is a silent no-op).
-    assert not torch.equal(pi_a, pi_b), "damage_candidate_k=16 did not change the forward"
+    # k=16 genuinely truncates => the damage BLOCK must move (else the cap is a silent no-op).
+    # gen3_no_concat_v1: the block no longer reaches pi — assert on the block itself (and vf,
+    # which reads the per-mon rows through the seed window).
+    with torch.no_grad():
+        full(obs); blk_a = full.damage_op.last_raw_block.clone()
+        k16(obs); blk_b = k16.damage_op.last_raw_block.clone()
+    assert not torch.equal(blk_a, blk_b), "damage_candidate_k=16 did not change the op block"
     assert torch.isfinite(pi_b).all() and torch.isfinite(vf_b).all()
 
 

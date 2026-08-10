@@ -78,8 +78,17 @@ def test_op_concat_arms_measure_a_live_block_and_restore():
     pol, obs, masks = _fixture()
     rep = audit(pol, obs, masks, batch=4)
     assert "concat" in rep and "concat_cells" in rep
-    assert rep["concat"]["kl_mean"] > 0.0, "zeroing a live concat block must register"
-    assert rep["concat_cells"]["kl_mean"] >= rep["concat"]["kl_mean"] * 0.99
+    # gen3_no_concat_v1: the flat block no longer enters pi, so the `concat` arm measures the
+    # SEED-READOUT route — |dV| must register (the seeds read the per-mon rows), while the
+    # policy KL from that arm alone is structurally 0. `concat_cells` still zeroes the pointer
+    # cells too, which DO feed the policy — its KL must register.
+    assert rep["concat"]["kl_mean"] == 0.0, "the concat arm can no longer move pi (it is dead)"
+    assert rep["concat"]["dv_mean"] > 0.0, "zeroing the seed rows must register on the critic"
+    # The pointer head's cell input columns are ZERO-INIT (identity-at-init, M1-guarded), so on
+    # an UNTRAINED net concat_cells cannot move pi either — its policy effect only exists on a
+    # trained checkpoint (where the audits measure it at 30%+ flips). At init: same |dV| route.
+    assert rep["concat_cells"]["kl_mean"] >= 0.0
+    assert rep["concat_cells"]["dv_mean"] >= rep["concat"]["dv_mean"] * 0.99
     assert rep["d1"]["kl_mean"] == 0.0, "edge families stay isolated from the op arms"
 
 
