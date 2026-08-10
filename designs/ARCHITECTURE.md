@@ -267,10 +267,17 @@ The value head does **not** read `our_active_refined` (`value_active_readout` is
 read either team pool. Its board summary is `value_pooled` plus the **multi-seed window**: k=4
 learned queries cross-attend (explicit softmax, dead mons key-masked) over the op's per-our-mon
 incoming rows — the critic's magnitude read after the concat's death, MULTIPLICITY not width
-(ledger P3 refuted width only). Every `train()` logs the `seeds/*` collapse contract
+(ledger P3 refuted width only). Every `train()` logs the `value_seeds/*` collapse contract
 (`agents/model/seed_diagnostics.py`: query/output cosine, uncentered effective rank, the VICReg
 variance target) with the VICReg trigger pre-registered in that module — the z_arch lesson,
-mechanized.
+mechanized. **The trigger FIRED on gen-5** (`value_seeds/out_effective_rank` 1.0 sustained
+196k→15.7M steps — the k=4 outputs identical), so the wiring now exists:
+`--value-seed-vicreg-coef` (v62, `agents/model/seed_vicreg.py`) folds a VICReg
+variance+**covariance** floor on the seed outputs into the PPO loss (`value_seeds/vicreg_*`
+terms logged beside the contract). 0.0 (the production value — OFF for every run so far, gen-5
+included) is byte-identical; resume-immutable (the vf_coef class, `check_value_seed_vicreg`);
+fail-loud at startup if enabled on a config without the seed readout. Intended ON at the gen-6
+launch, judged by `out_effective_rank` rising toward k.
 
 ### 3.3 The action head is the pointer head — there is no flat `action_net`
 
@@ -348,6 +355,14 @@ offset).
 The block passes through a learned per-channel `out_gain` (a Parameter, multiplicative only, so the
 "no threat ⇒ exactly 0" gates stay clean) before it reaches the heads and before `pointer_cells`
 slices it — so the pointer path and the flat concat can never disagree on a value.
+
+**The pair-reduction rungs exist but are INERT in production** (`agents/model/pair_reduce.py`,
+`design_pair_reduction.md` §8.1 steps 3–4): `DamageOperator(reduce_how=…)` — constructor-only, no
+CLI flag, no config field — can build Contract-W/L reducers (R1 `belief_mean` / R2W `learned` /
+R2L `deepsets_{sum,max}` / R3 `multi`) BESIDE the legacy per-channel hard max. The production
+default `"hard_max"` builds **nothing**: no params, no state_dict keys, no forward work. A
+non-default rung only stashes `last_reduced_extra` [B,6,extra_dim]; nothing consumes it — delivery
++ versioning is gen-6 work, gated on the §8.1 step-0 audit.
 
 Also **not present anywhere** (deleted with the op block trim, not merely off): the opp-active
 collapsed effect scalars, the opp-active collapsed incoming-secondary scalars, the outgoing

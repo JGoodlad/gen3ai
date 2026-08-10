@@ -348,6 +348,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # OPD softmax temperature β for π' (built worker-side in produce.py); recorded here for provenance.
     opd_beta: float = 1.0
 
+    # SEED VICReg (gen3_seed_vicreg_v1, v62): the variance+COVARIANCE floor on the multi-seed critic
+    # readout's outputs (agents/model/seed_vicreg.py) — the pre-registered collapse trigger in
+    # seed_diagnostics.py FIRED on gen-5 (seeds/out_effective_rank 1.0 sustained: the k=4 seeds pay
+    # for 4 reads and deliver 1). 0.0 = OFF (loss byte-identical, stash never read). UNLIKE the
+    # training-only coefs above this one is resume-IMMUTABLE (the vf_coef class — recorded in
+    # ModelVersion, enforced by check_value_seed_vicreg on the training-resume path only).
+    value_seed_vicreg_coef: float = 0.0
+
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1). The ON-POLICY KL that pours a frozen per-team
     # SPECIALIST (an --exploiter checkpoint) into the generalist: for rollout states where the trainee
     # pilots the teacher's team (the training-only `distill_mask` obs key = 1), a forward of the frozen
@@ -1302,6 +1310,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         pubval_metrics: dict[str, list[float]] = {}    # +PUBVAL: per-minibatch diagnostics (dict of lists)
         teacher_metrics: dict[str, list[float]] = {}    # +SEARCH-TEACHER: AWR per-minibatch diagnostics
         opd_metrics: dict[str, list[float]] = {}         # +OPD: on-policy self-distillation KL diagnostics
+        seed_vicreg_metrics: dict[str, list[float]] = {}  # +SEED-VICREG: per-minibatch var/cov terms
         distill_metrics: dict[str, list[float]] = {}     # +DISTILL: exploiter-distillation KL diagnostics
         value_dist_metrics: dict[str, list[float]] = {}  # +VALUE-DIST: per-minibatch HL-Gauss diagnostics
         zarch_metrics: dict[str, list[float]] = {}       # +ZARCH: recon/VICReg diagnostics (gen3_zarch_film_v1)
@@ -1564,6 +1573,23 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         mb_m["loss"] = float(mb_loss.item())
                         for _mk, _mv in mb_m.items():
                             belief_metrics.setdefault("move_" + _mk, []).append(float(_mv))
+
+                # +SEED-VICREG (gen3_seed_vicreg_v1): variance+covariance floor on the multi-seed
+                # critic readout's [B,k,D] outputs — reads the LIVE (grad-carrying) stash the
+                # evaluate_actions forward above just wrote, so the gradient flows into the seed
+                # queries/kv_proj via the vf path. coef 0 → never entered (byte-identical). A coef>0
+                # with no readout was already rejected at startup (assert_seed_vicreg_wirable).
+                if self.value_seed_vicreg_coef > 0.0:
+                    _svo = getattr(getattr(getattr(self.policy.features_extractor, "assembler", None),
+                                           "seed_readout", None), "last_outputs", None)
+                    if _svo is not None:
+                        from agents.model.seed_vicreg import seed_vicreg_loss
+                        svr_loss, svr_m = seed_vicreg_loss(_svo)
+                        loss = loss + self.value_seed_vicreg_coef * svr_loss
+                        for _sk, _sv in svr_m.items():
+                            seed_vicreg_metrics.setdefault(_sk, []).append(_sv)
+                        seed_vicreg_metrics.setdefault("value_seeds/vicreg_loss", []).append(
+                            float(svr_loss.detach()))
 
                 # +MOVE-LATENT (gen3_unified_move_system_v1): grade the move belief in latent space so
                 # near-moves (Rock Slide ≈ HP Rock) grade as near — the soft complement to the per-ID BCE.
@@ -2260,3 +2286,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
             for k, v in seed_collapse_diagnostics(_sr.queries.detach(),
                                                   _sr.last_outputs.detach()).items():
                 self.logger.record(k, v)
+        # +SEED-VICReg terms (only when the regularizer is active): watch vicreg_var_term fall as
+        # seeds/out_effective_rank rises toward k — the un-collapse confirmation the gen-6 enable
+        # is judged by.
+        for _sk, _svals in seed_vicreg_metrics.items():
+            self.logger.record(_sk, float(np.mean(_svals)))

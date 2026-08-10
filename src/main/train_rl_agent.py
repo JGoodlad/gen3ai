@@ -578,6 +578,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         pubval_coef=float(getattr(model, "pubval_coef", 0.0)),
         zarch_recon_coef=float(getattr(model, "zarch_recon_coef", 0.0)),
         zarch_vicreg_coef=float(getattr(model, "zarch_vicreg_coef", 0.0)),
+        value_seed_vicreg_coef=float(getattr(model, "value_seed_vicreg_coef", 0.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -854,6 +855,15 @@ async def main():
                              "different value is a FATAL error (it silently rescales the value head's "
                              "gradient on the shared trunk — tune it on a fresh run). Watch "
                              "grad/value_policy_logratio (the aux-independent value-vs-policy balance).")
+    parser.add_argument("--value-seed-vicreg-coef", "--value_seed_vicreg_coef", dest="value_seed_vicreg_coef",
+                        type=float, default=0.0,
+                        help="VICReg variance+covariance floor on the MultiSeedValueReadout seed "
+                             "outputs (gen3_seed_vicreg_v1 — the pre-registered collapse trigger "
+                             "FIRED on gen-5: seeds/out_effective_rank 1.0 sustained). 0.0 = OFF "
+                             "(byte-identical). Resume-IMMUTABLE like --vf-coef (recorded in "
+                             "model_config.json, FATAL to change on resume); requires a config with "
+                             "the multi-seed readout (damage op on) — fail-loud otherwise. Watch "
+                             "value_seeds/vicreg_* + seeds/out_effective_rank rising toward k.")
     parser.add_argument("--value-tail-weight", "--value_tail_weight", dest="value_tail_weight",
                         type=float, default=0.0,
                         help="Tail-weighted value loss β∈[0,1] (default 0.0 = plain MSE, byte-identical). "
@@ -3728,6 +3738,7 @@ async def main():
             hp_type_belief_coef=args.hp_type_belief_coef,
             zarch_recon_coef=args.zarch_recon_coef,
             zarch_vicreg_coef=args.zarch_vicreg_coef,
+            value_seed_vicreg_coef=args.value_seed_vicreg_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -3738,6 +3749,7 @@ async def main():
                 current_version=current_version,
                 device=args.device,
                 enforce_vf_coef=args.vf_coef,  # FATAL if the run was started with a different vf_coef
+                enforce_value_seed_vicreg_coef=args.value_seed_vicreg_coef,  # FATAL if the seed-VICReg floor drifts (v62)
                 enforce_reward_config=reward_config,  # FATAL if bias_additivity/mat_alive_weight/redesign drift
                 enforce_value_tail_weight=args.value_tail_weight,  # FATAL if the value-loss tail weight drifts
                 enforce_value_dist=(args.value_dist_vmin, args.value_dist_vmax),  # FATAL if the dist support drifts
@@ -3827,6 +3839,12 @@ async def main():
         # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
         # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
         model.opd_coef = args.opd_coef
+        # SEED VICReg (gen3_seed_vicreg_v1, v62): resume-immutable (enforced above on the resume
+        # path); a coef>0 on a config with no multi-seed readout is a startup FATAL, not a no-op.
+        model.value_seed_vicreg_coef = float(args.value_seed_vicreg_coef)
+        if args.value_seed_vicreg_coef > 0.0:
+            from agents.model.seed_vicreg import assert_seed_vicreg_wirable
+            assert_seed_vicreg_wirable(model.policy)
         # gen3_exploiter_distill_v1: attach the frozen per-team teacher (foreign exploiter) on the training
         # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
         # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
@@ -4070,6 +4088,12 @@ async def main():
         # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
         # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
         model.opd_coef = args.opd_coef
+        # SEED VICReg (gen3_seed_vicreg_v1, v62): resume-immutable (enforced above on the resume
+        # path); a coef>0 on a config with no multi-seed readout is a startup FATAL, not a no-op.
+        model.value_seed_vicreg_coef = float(args.value_seed_vicreg_coef)
+        if args.value_seed_vicreg_coef > 0.0:
+            from agents.model.seed_vicreg import assert_seed_vicreg_wirable
+            assert_seed_vicreg_wirable(model.policy)
         # gen3_exploiter_distill_v1: attach the frozen per-team teacher (foreign exploiter) on the training
         # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
         # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
@@ -4114,6 +4138,7 @@ async def main():
             hp_type_belief_coef=args.hp_type_belief_coef,
             zarch_recon_coef=args.zarch_recon_coef,
             zarch_vicreg_coef=args.zarch_vicreg_coef,
+            value_seed_vicreg_coef=args.value_seed_vicreg_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

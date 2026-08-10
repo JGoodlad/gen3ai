@@ -26,10 +26,17 @@ diagnostics path, same cadence as `popart/*` and `film/*`):
 
 PRE-REGISTERED VICReg TRIGGER (decide from the plot, not vibes): wire the VICReg
 variance+covariance floor onto the seed outputs IF, after the run's first ~2M steps,
-`seeds/query_cos` sustains > 0.6 OR `seeds/out_effective_rank` sustains < k/2. Below those,
+`value_seeds/query_cos` sustains > 0.6 OR `value_seeds/out_effective_rank` sustains < k/2. Below those,
 the seeds are differentiating on their own and the regularizer is dead weight. (The z_arch
 numbers for calibration: its collapsed state read ~2/3 energy in one direction ≈ effective
 rank ~1.6 of a 32-dim code.)
+
+TRIGGER FIRED — 2026-08-10, gen-5 (`ai_v9_06_gen5_no_concat_0809`): `out_effective_rank` = 1.0
+and `out_cos` = 1.000 sustained from 196k through 15M+ steps (`out_var` ≈ 5e-6; `query_cos` 0.33
+— distinct queries, identical attention patterns). The wiring lives in `seed_vicreg.py`
+(`--value-seed-vicreg-coef`, v62 resume-immutable, OFF for gen-5) — enable at the gen-6 launch
+and judge by `out_effective_rank` rising toward k. (These TB tags were `seeds/*` on gen-5's
+board; renamed to `value_seeds/*` in the same pass to disambiguate from RNG seeds.)
 
 Pure torch, no side effects — unit-tested in `seed_diagnostics_test.py`.
 """
@@ -84,8 +91,8 @@ def seed_collapse_diagnostics(queries: torch.Tensor, outputs: torch.Tensor) -> D
         out_var = centered.var(dim=1, unbiased=False).mean()
 
     return {
-        "seeds/query_cos": float(query_cos),
-        "seeds/out_cos": float(out_cos),
-        "seeds/out_effective_rank": float(pr.mean()),
-        "seeds/out_var": float(out_var),
+        "value_seeds/query_cos": float(query_cos),
+        "value_seeds/out_cos": float(out_cos),
+        "value_seeds/out_effective_rank": float(pr.mean()),
+        "value_seeds/out_var": float(out_var),
     }

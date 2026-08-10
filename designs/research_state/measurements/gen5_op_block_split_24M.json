@@ -1,0 +1,354 @@
+{
+  "provenance": {
+    "generation": "gen-5",
+    "step": 24000000,
+    "n_states": 6000,
+    "date": null,
+    "producer": "src/agents/model/op_block_split_audit.py",
+    "note": "design_pair_reduction.md \u00a78.1 STEP 0: the first post-concat measurement \u2014 no competing flat route, so imx_CELLS means what it says. Downscope rule: <=~7% shuffle flips => cheap rungs only.",
+    "sampling": {
+      "sampler": "stratified_round_robin_v1",
+      "seed": 0,
+      "n_states": 6000,
+      "n_files_read": 259,
+      "n_files_matched": 2540,
+      "per_step": {
+        "step_10000032": 500,
+        "step_12000000": 500,
+        "step_14000016": 500,
+        "step_16000032": 500,
+        "step_18000000": 500,
+        "step_20000016": 500,
+        "step_2000016": 500,
+        "step_22000032": 500,
+        "step_24000000": 500,
+        "step_4000032": 500,
+        "step_6000000": 500,
+        "step_8000016": 500
+      },
+      "per_opponent": {
+        "aggressive": 440,
+        "aggressive_v2": 383,
+        "heuristic": 392,
+        "heuristic2": 454,
+        "random": 1319,
+        "sentinel_0": 449,
+        "sentinel_1": 384,
+        "sentinel_2": 224,
+        "sentinel_3": 278,
+        "sentinel_4": 167,
+        "setup_sweep": 328,
+        "setup_sweep_v2": 213,
+        "staller": 299,
+        "staller_v2": 670
+      }
+    }
+  },
+  "meta": {
+    "checkpoint": "/home/goodlad/dev/gen3ai/.claude/worktrees/gen5-run-0809/models/ai_v9_06_gen5_no_concat_0809/final_model.zip",
+    "n_states": 6000,
+    "n_threat": 501,
+    "pko": 0.5,
+    "safe": 0.35,
+    "probe": "op_block_split_audit.py"
+  },
+  "blocks": {
+    "FULL_CONCAT": {
+      "width": 660,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 4.436559677124023
+      },
+      "threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 5.595358371734619
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 1.9704580307006836
+      },
+      "shuf_threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 2.2143359184265137
+      }
+    },
+    "in_matrix": {
+      "width": 522,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      }
+    },
+    "imx_HEADERS": {
+      "width": 306,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      }
+    },
+    "imx_CELLS": {
+      "width": 216,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      }
+    },
+    "hdr_latent~E4": {
+      "width": 192,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      }
+    },
+    "hdr_w_acc_phys~E4": {
+      "width": 18,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      }
+    },
+    "hdr_effect": {
+      "width": 36,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      }
+    },
+    "hdr_secondary": {
+      "width": 60,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      }
+    },
+    "cell_LOW_CRIT(orphan)": {
+      "width": 72,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      }
+    },
+    "cell_high_pko~d3": {
+      "width": 72,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      }
+    },
+    "cell_mult_status~d3s3": {
+      "width": 72,
+      "all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_all": {
+        "n": 6000,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      },
+      "shuf_threat": {
+        "n": 501,
+        "kl_mean": 0.0,
+        "flip_rate": 0.0,
+        "dv_mean": 0.0
+      }
+    }
+  }
+}

@@ -444,7 +444,14 @@ from typing import Any, Dict, List
 # obs dim, POKEMON_FULL_DIM and the move/role net widths all move, so no migration is possible).
 # v61 is the gen3_no_concat_v1 STAMP — the op head-concat deletion + the multi-seed critic
 # readout (the gen-5 world; the signature carries the break).
-MODEL_CONFIG_VERSION = 61
+# v62: added `value_seed_vicreg_coef` (gen3_seed_vicreg_v1) — the VICReg variance+covariance floor on
+#   the MultiSeedValueReadout seed OUTPUTS (agents/model/seed_vicreg.py), built because the
+#   pre-registered trigger in seed_diagnostics.py FIRED on gen-5 (seeds/out_effective_rank 1.0
+#   sustained 13M+ steps — full seed collapse). Resume-immutable VALUE-meaning hparam (the
+#   vf_coef class, NOT weight-shape): enforced only on the training-resume path via
+#   check_value_seed_vicreg; excluded from check_compatible/_WEIGHT_FIELDS (a frozen opponent's
+#   forward never touches it). 0.0 = OFF (loss byte-identical).
+MODEL_CONFIG_VERSION = 62
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1227,6 +1234,12 @@ class ModelVersion:
     zarch_recon_coef: float = 0.0
     zarch_vicreg_coef: float = 0.0
 
+    # v62 resume-immutable VALUE-meaning hparam (the vf_coef class — NOT weight-shape): the VICReg
+    # variance+covariance floor on the MultiSeedValueReadout seed outputs (seed_vicreg.py). 0.0 =
+    # OFF (byte-identical loss). Enforced ONLY on the training-resume path via check_value_seed_vicreg
+    # (excluded from check_compatible — frozen eval/pool/distill opponents never touch it).
+    value_seed_vicreg_coef: float = 0.0
+
     @classmethod
     def from_layout_and_policy_kwargs(
         cls,
@@ -1246,6 +1259,7 @@ class ModelVersion:
         pubval_coef: float = 0.0,
         zarch_recon_coef: float = 0.0,
         zarch_vicreg_coef: float = 0.0,
+        value_seed_vicreg_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -1427,6 +1441,7 @@ class ModelVersion:
             ),
             zarch_recon_coef=float(zarch_recon_coef),
             zarch_vicreg_coef=float(zarch_vicreg_coef),
+            value_seed_vicreg_coef=float(value_seed_vicreg_coef),
             pubval_coef=float(pubval_coef),
             hp_type_belief_coef=float(hp_type_belief_coef),
             value_tail_weight=float(value_tail_weight),
@@ -2016,6 +2031,26 @@ class ModelVersion:
                 f"{requested!r}."
             )
 
+    def check_value_seed_vicreg(self, requested: float) -> None:
+        """Raise ModelVersionError if `requested` (the resume `--value-seed-vicreg-coef`) differs from
+        this saved config's value_seed_vicreg_coef.
+
+        Same treatment as check_vf_coef: a training-loss coefficient (the VICReg floor on the
+        multi-seed critic readout's outputs, seed_vicreg.py), not weight-shape, so it is
+        deliberately NOT part of check_compatible() — that gates every frozen eval / self-play /
+        distill opponent load, whose forward never touches it. Invoked ONLY on the
+        training-resume path: silently toggling the regularizer mid-run would drift the value
+        objective, so a resume with a different value is a hard error.
+        """
+        if not math.isclose(self.value_seed_vicreg_coef, requested, rel_tol=1e-9, abs_tol=1e-12):
+            raise ModelVersionError(
+                f"value_seed_vicreg_coef mismatch: saved={self.value_seed_vicreg_coef!r}, requested={requested!r}.\n"
+                "The seed-VICReg coefficient is fixed for the lifetime of a run — changing it on "
+                "resume silently alters the critic-readout objective.\n"
+                f"Fix: resume with --value-seed-vicreg-coef {self.value_seed_vicreg_coef!r}, or start a fresh "
+                f"training run to use {requested!r}."
+            )
+
     def check_belief_grad_mode(self, requested: str, allow_change: bool = False) -> None:
         """Raise ModelVersionError if `requested` (the resume `--belief-grad-mode`) differs from this
         saved config's belief_grad_mode. Call as: saved_version.check_belief_grad_mode(args.belief_grad_mode).
@@ -2517,4 +2552,10 @@ def _migrate_config(data: dict) -> dict:
         # v61: gen3_no_concat_v1 STAMP (no field) — the head-concat deletion + the multi-seed
         # critic readout. The signature carries the break; no migration is possible.
         data["config_version"] = 61
+    if version < 62:
+        # v62: gen3_seed_vicreg_v1 — the VICReg variance+covariance floor on the multi-seed
+        # critic readout's outputs (resume-immutable training hparam, the vf_coef class).
+        # 0.0 = OFF, byte-identical: every pre-v62 run trained without it.
+        data.setdefault("value_seed_vicreg_coef", 0.0)
+        data["config_version"] = 62
     return data

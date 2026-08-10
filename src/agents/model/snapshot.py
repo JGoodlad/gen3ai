@@ -487,6 +487,7 @@ def load_model_snapshot(
     device: str = "auto",
     tensorboard_log: Optional[str] = None,
     enforce_vf_coef: Optional[float] = None,
+    enforce_value_seed_vicreg_coef: Optional[float] = None,
     enforce_reward_config=None,
     enforce_value_tail_weight: Optional[float] = None,
     enforce_value_dist: Optional[Tuple[float, float]] = None,
@@ -548,6 +549,11 @@ def load_model_snapshot(
         gate_version.check_compatible(saved_version)
         if enforce_vf_coef is not None:
             saved_version.check_vf_coef(enforce_vf_coef)
+        if enforce_value_seed_vicreg_coef is not None:
+            # TRAINING-RESUME ONLY (the vf_coef pattern): the seed-VICReg coefficient is fixed for
+            # a run's lifetime — silently toggling it on resume would drift the critic-readout
+            # objective. Frozen-opponent loads leave this None (their forward never runs the loss).
+            saved_version.check_value_seed_vicreg(enforce_value_seed_vicreg_coef)
         if enforce_reward_config is not None:
             saved_version.check_reward_config(enforce_reward_config)
         if enforce_value_tail_weight is not None:

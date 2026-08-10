@@ -69,6 +69,9 @@ from agents.model.arch_constants import (  # noqa: F401  (re-export)
 _DMG_CHANNEL_FEATS = 5          # [low_roll, high_roll, crit, pko, accuracy] per gen3 type-category channel
 _DMG_N_CHANNELS = 2             # physical / special (the gen3 TYPE split)
 _DMG_PER_MON = _DMG_N_CHANNELS * _DMG_CHANNEL_FEATS + 2   # + p_outspeed + provenance = 12
+# gen3_pair_reduce_v1: the per-(defender, candidate) cell channels handed to the Contract-W/L
+# reduction rungs — [low, high, crit, ko, acc, is_phys] (see the forward's cells_pr stack).
+_PAIR_REDUCE_N_CHANNELS = 6
 # Named per-defender feature offsets (the single source of truth for the op's output slot layout — the
 # prober decode + outgoing/safe-switch directions index by these, never a literal).
 _DMG_IDX_PHYS_LOW, _DMG_IDX_PHYS_HIGH, _DMG_IDX_PHYS_CRIT, _DMG_IDX_PHYS_PKO, _DMG_IDX_PHYS_ACC = 0, 1, 2, 3, 4
@@ -350,8 +353,20 @@ class DamageOperator(torch.nn.Module):
                  matrices_outgoing: bool = False, matrices_incoming: bool = False,
                  matrices_outgoing_all: bool = False,
                  prob_outspeed: bool = False,
-                 candidate_k: int = 0):
+                 candidate_k: int = 0,
+                 reduce_how: str = "hard_max"):
         super().__init__()
+        # gen3_pair_reduce_v1 (design_pair_reduction.md §8.1 steps 3-4): the Contract-W/L reduction
+        # rungs, built BESIDE the legacy hard-max block (add-beside, §9 — never replacing it).
+        # 'hard_max' (production default) builds NOTHING — no params, no state_dict keys, no forward
+        # work: byte-identical. Any other rung populates `last_reduced_extra` [B,6,extra_dim] each
+        # forward; DELIVERY (switch cell / prefuse / seed rows) + config wiring is gen-6 work.
+        from agents.model.pair_reduce import build_pair_reducer, PAIR_REDUCE_HOWS
+        if reduce_how not in PAIR_REDUCE_HOWS:
+            raise ValueError(f"DamageOperator reduce_how={reduce_how!r} — one of {PAIR_REDUCE_HOWS}")
+        self.reduce_how = reduce_how
+        self.pair_reducer = build_pair_reducer(reduce_how, n_channels=_PAIR_REDUCE_N_CHANNELS)
+        self.last_reduced_extra: Optional[torch.Tensor] = None
         # gen3_topk_candidates_v1: cap the incoming candidate sweep at the K most-believed opponent
         # moves (0 = the full ~400-wide sweep, byte-identical). No tail-risk bound — the truncated
         # mass is simply dropped, which is the tradeoff under test.
@@ -548,8 +563,11 @@ class DamageOperator(torch.nn.Module):
         sweep would be (historically ~400 candidates; K=6 today, so that objection is ~6-way
         and much weaker than when written)."""
         if how != "hard_max":
-            raise NotImplementedError(f"REDUCE how={how!r} — only 'hard_max' is implemented; "
-                                      "add settings HERE (one site), not as new cell families")
+            raise NotImplementedError(f"REDUCE how={how!r} — only 'hard_max' is implemented at "
+                                      "this legacy site. The Contract-W/L rungs (belief_mean / "
+                                      "learned / deepsets / multi) live in pair_reduce.py, built "
+                                      "via DamageOperator(reduce_how=…) and stashed on "
+                                      "last_reduced_extra — design_pair_reduction.md §8.1")
         return (value * channel_mask).amax(dim=-1)
 
     @staticmethod
@@ -2826,6 +2844,19 @@ class DamageOperator(torch.nn.Module):
                              spec_low, spec_high, spec_crit, spec_pko, spec_acc,
                              p_outspeed, provenance], dim=-1)                                     # [B,6,12]
         feats = feats * defender_alive[:, :, None] * has_opp[:, None, None]                       # gates
+
+        # gen3_pair_reduce_v1: the Contract-W/L rungs read the SAME per-(defender, candidate) cell
+        # tensors the hard max just reduced — [low, high, crit, ko, acc, is_phys] per (j, c) — plus
+        # the belief w, and stash their per-defender rows. None (production 'hard_max') skips
+        # entirely; nothing below this block changes at any `reduce_how`.
+        if self.pair_reducer is not None:
+            cells_pr = torch.stack([
+                low_frac, high_frac, crit_frac, ko_ramp,
+                acc_exp, phys_mask.expand(-1, TEAM_SIZE, -1)], dim=-1)                            # [B,6,C,6]
+            self.last_reduced_extra = (self.pair_reducer(w_all, cells_pr)
+                                       * defender_alive[:, :, None] * has_opp[:, None, None])
+        else:
+            self.last_reduced_extra = None
 
         # gen3_op_block_trim_v1: the opp-active-level believed-EFFECT scalars (6) and per-STATUS SECONDARY
         # scalars (10) that used to sit here are DELETED. Both were belief-weighted maxes with NO DEFENDER

@@ -14,10 +14,10 @@ def test_collapsed_seeds_read_as_collapsed():
     q = torch.randn(1, d).expand(k, d).contiguous()          # identical queries
     out = torch.randn(b, 1, d).expand(b, k, d).contiguous()  # identical outputs per seed
     m = seed_collapse_diagnostics(q, out)
-    assert m["seeds/query_cos"] > 0.99
-    assert m["seeds/out_cos"] > 0.99
-    assert m["seeds/out_effective_rank"] < 1.05, "identical seeds must read ~1 effective seed"
-    assert m["seeds/out_var"] < 1e-10
+    assert m["value_seeds/query_cos"] > 0.99
+    assert m["value_seeds/out_cos"] > 0.99
+    assert m["value_seeds/out_effective_rank"] < 1.05, "identical seeds must read ~1 effective seed"
+    assert m["value_seeds/out_var"] < 1e-10
 
 
 def test_orthogonal_seeds_read_as_healthy():
@@ -27,10 +27,10 @@ def test_orthogonal_seeds_read_as_healthy():
     out[:, range(k), range(k)] = 1.0                          # orthogonal outputs per seed
     out = out + 0.01 * torch.randn(b, k, k)                   # a whiff of noise
     m = seed_collapse_diagnostics(q, out)
-    assert m["seeds/query_cos"] < 0.05
-    assert m["seeds/out_cos"] < 0.2
-    assert m["seeds/out_effective_rank"] > 0.7 * k, "orthogonal seeds must read ~k effective seeds"
-    assert m["seeds/out_var"] > 0.01
+    assert m["value_seeds/query_cos"] < 0.05
+    assert m["value_seeds/out_cos"] < 0.2
+    assert m["value_seeds/out_effective_rank"] > 0.7 * k, "orthogonal seeds must read ~k effective seeds"
+    assert m["value_seeds/out_var"] > 0.01
 
 
 def test_partial_collapse_sits_between():
@@ -43,8 +43,8 @@ def test_partial_collapse_sits_between():
     out = torch.stack([dir1, dir1, dir2, dir2])[None].expand(b, 4, d).contiguous()
     out = out + 0.01 * torch.randn(b, 4, d)
     m = seed_collapse_diagnostics(q, out)
-    assert 1.3 < m["seeds/out_effective_rank"] < 2.7
-    assert 0.2 < m["seeds/query_cos"] < 0.8
+    assert 1.3 < m["value_seeds/out_effective_rank"] < 2.7
+    assert 0.2 < m["value_seeds/query_cos"] < 0.8
 
 
 def test_shapes_are_enforced():

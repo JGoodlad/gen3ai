@@ -162,3 +162,48 @@ all at 6000 final-step eval-trace states on `final_model.zip`.
   policy per-action magnitude; consistent with |ΔV| being the concat's stickiest axis.)
 
 _Last updated: 2026-08-08._
+
+## 2026-08-10 — STEP 0 of the pair-reduction plan (gen-5 final, 24M, stratified n=6000)
+
+* **The audit's legacy site went structurally BLIND at v61 — and that blindness is itself the
+  measurement.** `gen5_op_block_split_24M.json` (site=assembler): every arm 0.00% flips; only
+  FULL_CONCAT moves |dV| (4.44 zero / 1.97 shuf) — under `gen3_no_concat_v1` the assembler's
+  damage_block argument feeds ONLY the `MultiSeedValueReadout` per-mon rows. The tool gained
+  `--site op` (perturb the op's RETURN before any consumer binds it; recorded in provenance).
+* **`gen5_op_block_split_24M_site_op.json` (site=op) — the honest post-concat read:**
+  FULL_CONCAT **65.07% shuffle flips / kl 1.82 / |dV| 5.54 zero (3.30 shuf)**; every sub-arm
+  (in_matrix 522, imx_HEADERS/CELLS, hdr_*, cell_*) **exactly 0.00%**. Interpretation:
+  **dims 85–660 of the block are write-only at every site** (probes only) — the block's live
+  content is the REDUCED per-defender statistics + CB tail (dims 0–85), consumed by the pointer
+  switch cells (pi) and the seed rows (vf). The E4 seats / d3-s3 edges / prefuse consume the
+  op's INTERNAL tensors and are measured by `edge_ablation_audit`, not by any block site.
+* **Step-0 verdict for §8.1:** the downscope trigger ("unsuppressed `imx_CELLS` ≲7% ⇒ cheap rungs
+  only") was keyed to a quantity that is structurally dead post-concat; the rule's INTENT is
+  answered decisively the other way — the hard-max's reduced output is now the policy's dominant
+  op route (65% flips). **FULL LADDER PROCEEDS: G1 bake-off → delivery wiring → G7.** Also: the
+  seed route carries |dV| 4.4–5.5 while rank-COLLAPSED (eff-rank 1.0 all run) — the VICReg
+  un-collapse (v62, `--value-seed-vicreg-coef`) is upside on an already-load-bearing route.
+* **Refund note (OpTensors territory):** the op need not materialize the in_matrix region into
+  the flat block at all (522/660 dims, write-only); `out_dim` could drop to 138 once the probes
+  read the internal tensors instead.
+
+* **G1 v1 (n=101 beam-switch targets, 5-seed linear probes, chance 0.167):** R0 0.457±0.093 ·
+  R1 0.467±0.056 · **R1+R0 0.505±0.065** · SKYLINE(2800d) 0.486±0.082. Nothing beats R0 beyond
+  seed spread at this n; R1+R0's +0.048 SUGGESTS complementarity (matches the add-beside design)
+  but is within noise; the SKYLINE is overfit-limited (2800 dims / 80 train rows) and cannot
+  support a "no headroom" claim. NOT a kill, NOT an endorsement — expanding to ~600 scanned
+  targets for tighter CIs (`tmp/g1_bakeoff.py`, resumable); G7 remains the capability gate.
+
+* **G1 FINAL (n=299, 5 seeds): the reduction ladder FAILS its pre-registered bar.** R0 0.403±0.034
+  · R1 0.423±0.063 · R1+R0 0.423±0.031 · SKYLINE(2800d) 0.413±0.037 (chance 0.167). No rung beats
+  R0 beyond seed spread; the skyline shows no linear headroom beyond single-α mixtures. Read with
+  step-0: the hard-max route is DOMINANT (65% flips) but its CONTENT already summarizes the pair
+  grid about as well as any mixture, linearly. Per the doc's own framing (G1 = "THE decisive early
+  gate": a rung that cannot beat R0 from ground-truth cells will not learn to in the loop) this is
+  a measured NULL for the W-rung line → **delivery wiring + G7 are NOT justified for gen-6 on this
+  evidence**; the rungs stay in the codebase inert (tested, byte-identical, ~free). Caveats, per
+  §10.2/§10.3: the target is the beam (our own critic's preference, not ground truth), and a
+  linear probe may be blind to the BEHAVIORAL hedging capability G7 was designed to detect —
+  reviving G7 is an owner override, not a data conclusion. Lesson pattern-match: "gate a lever on
+  whether the quantity PREDICTS performance" (the code-rank lesson) — applied here BEFORE spending
+  2×2M G7 forks.

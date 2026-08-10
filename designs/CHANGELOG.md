@@ -2336,3 +2336,47 @@ window, not structural necessity.
   production config; full suite green; obs UNCHANGED (2667 — no fixture churn).
   `ARCH_SIGNATURE` `gen3_entity_rehome_v1` → `gen3_no_concat_v1`, `MODEL_CONFIG_VERSION` 61.
   Fresh lineage: gen-5 (`ai_v9_06_gen5_no_concat_0809`) is the first run of this world.
+
+### v62 — `gen3_seed_vicreg_v1` (2026-08-10): the VICReg floor on the value-seed readout (built because the pre-registered trigger FIRED)
+
+The v61 `value_seeds/*` collapse contract did its job on its first run: gen-5
+(`ai_v9_06_gen5_no_concat_0809`) showed `out_cos` = 1.000 and `out_effective_rank` = 1.0 at every
+measurement from 196k through 15M+ steps (`out_var` ≈ 5e-6; `query_cos` only 0.33 — distinct
+queries, indistinguishable attention patterns), i.e. the k=4 `MultiSeedValueReadout` seeds pay for
+four reads and deliver one. That is exactly the pre-registered VICReg trigger (eff-rank < k/2
+sustained past ~2M), so this version ships the wiring it called for:
+
+- **`agents/model/seed_vicreg.py`** — `seed_vicreg_loss(outputs [B,k,D])`: a variance hinge
+  across the seed axis (`relu(γ − std_k)`, γ=1.0) + a **cross-seed covariance penalty on
+  batch-centered outputs** (kills the "identical + constant offsets" cheat the variance term
+  alone admits — the z_arch covariance-never-wired lesson, this time with a dedicated gate test
+  `test_constant_offset_cheat_is_caught_by_covariance_term`). Terms logged as
+  `value_seeds/vicreg_{var_term,cov_term}` + `value_seeds/vicreg_loss` beside the collapse
+  contract.
+- **`--value-seed-vicreg-coef`** (default 0.0 = OFF, byte-identical): folds `coef · loss` into the
+  PPO loss per minibatch on the live `last_outputs` stash. Resume-IMMUTABLE (the vf_coef class):
+  recorded on `ModelVersion` (config v62, migrate default 0.0), enforced on the training-resume
+  path only (`check_value_seed_vicreg` via `enforce_value_seed_vicreg_coef`); frozen-opponent
+  loads exempt. Enabled with no seed readout in the config → startup RuntimeError
+  (`assert_seed_vicreg_wirable`), never a silent no-op.
+- **TB prefix rename `seeds/*` → `value_seeds/*`** (owner request, same pass): "seed" alone is
+  ambiguous with RNG seeds — these are the critic's value-readout seed queries. Applies to the
+  v61 diagnostics family too (`value_seeds/{query_cos,out_cos,out_effective_rank,out_var}`).
+  Gen-5's TB retains the old `seeds/*` tags (historical); gen-6 starts on the new prefix.
+- No forward/weight-shape change at coef 0 → no `ARCH_SIGNATURE` bump (stays
+  `gen3_no_concat_v1`). Intended ON at the gen-6 launch; accept if `out_effective_rank` rises
+  toward k while `eval/elo` tracks gen-5's curve.
+
+Landed in the same pass, OUTSIDE the version (`gen3_pair_reduce_v1` scaffolding — byte-identical,
+no config field, no flag): `agents/model/pair_reduce.py`, the `design_pair_reduction.md` §8.1
+steps 3–4 rungs. `DamageOperator(reduce_how=…)` (constructor-only; default `"hard_max"` builds
+NOTHING — no params, no state_dict keys, no forward work) can build the Contract-W/L reducers
+beside the legacy per-channel hard max: R1 `belief_mean` (α = w/Σw), R2W `learned` (zero-init
+g ⇒ α(init) = normalize(w)), R2L `deepsets_{sum,max}` (φ carries second-order channels ⇒ E[o²] ⇒
+variance ⇒ hedging expressible; ρ zero-init), R3 `multi` (the §5 PNA bundle). A non-default rung
+only STASHES `last_reduced_extra` [B,6,extra_dim] — nothing consumes it yet; delivery (switch
+cell / prefuse / seed rows) + the config/versioning it entails is the gen-6 boundary's work.
+Gates in `pair_reduce_test.py`: forward-level G0 through the real op (flat block bit-for-bit
+equal default-vs-multi, only `pair_reducer.*` keys added), G2 status-coherence (the per-channel
+max provably describes a move-profile NO single opponent move has; one α fixes it), G4
+candidate-invariance + defender-equivariance, α-init identity, second-moment recovery.

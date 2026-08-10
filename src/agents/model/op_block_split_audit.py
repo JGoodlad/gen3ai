@@ -98,6 +98,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("checkpoint")
     ap.add_argument("--states", nargs="+", required=True)
+    ap.add_argument("--site", choices=("assembler", "op"), default="assembler",
+                    help="WHERE to intervene. 'assembler' (legacy default): the assembler's "
+                         "damage_block argument — under gen3_no_concat_v1 (v61+) this reaches "
+                         "ONLY the critic's seed-readout rows, so use it to isolate the vf "
+                         "route. 'op': the DamageOperator's returned block, before any consumer "
+                         "binds it — covers pointer cells (pi) + seed rows (vf) + the stash; "
+                         "the honest post-concat site for design_pair_reduction.md §8.1 step 0.")
     ap.add_argument("--max-states", type=int, default=6000)
     ap.add_argument("--batch", type=int, default=256)
     ap.add_argument("--pko", type=float, default=0.5)
@@ -143,20 +150,37 @@ def main():
         zero-ablation artifact, NOT a width-fair measure of reliance. (A 2026-08-08 draft of
         `designs/ai_v9/design_op_tensors.md` quoted it as one; see that doc's §2.5.5 retraction.)
         """
+        def _perturb(db):
+            db = db.clone()
+            if mode == "zero":
+                db[:, cols] = 0.0
+            else:
+                n = db.shape[0]
+                perm = torch.randperm(n, generator=torch.Generator().manual_seed(0))
+                db[:, cols] = db[perm][:, cols]
+            return db
+
         hook = None
-        if cols is not None:
+        if cols is not None and a.site == "assembler":
+            # LEGACY SITE (pre-v61 semantics): patch the assembler's damage_block ARGUMENT. Under
+            # gen3_no_concat_v1 the assembler consumes only the per-mon rows (the seed readout),
+            # so this site measures the CRITIC route alone and reads structural zeros for every
+            # arm outside dims [0, TEAM_SIZE*per_mon) — the gen-5 step-0 run that motivated --site.
             def _pre(_module, args):
                 if args and args[-1] is not None and args[-1] is fe.last_damage_block:
-                    db = args[-1].clone()
-                    if mode == "zero":
-                        db[:, cols] = 0.0
-                    else:
-                        n = db.shape[0]
-                        perm = torch.randperm(n, generator=torch.Generator().manual_seed(0))
-                        db[:, cols] = db[perm][:, cols]
-                    return args[:-1] + (db,)
+                    return args[:-1] + (_perturb(args[-1]),)
                 return args
             hook = fe.assembler.register_forward_pre_hook(_pre)
+        elif cols is not None:
+            # --site op: patch the op's RETURN VALUE, before ANY consumer binds it — the local
+            # `damage_block` the extractor stashes (last_damage_block), slices for the pointer
+            # cells, and hands the assembler are all this one tensor. Covers every BLOCK-mediated
+            # route (pi pointer cells + vf seed rows). NOT covered: routes fed from the op's
+            # INTERNAL tensors before the block is assembled (prefuse token injection, E4 seat
+            # content, d3/s3 edge biases) — those are separately measured by edge_ablation_audit.
+            def _post(_module, _inp, out):
+                return _perturb(out)
+            hook = op.register_forward_hook(_post)
         ps, vs, raws, acts, hps = [], [], [], [], []
         try:
             with torch.no_grad():
@@ -248,7 +272,7 @@ def main():
                                   "sampling": coverage},
                    "meta": {"checkpoint": a.checkpoint, "n_states": N,
                             "n_threat": int(threat.sum()), "pko": a.pko, "safe": a.safe,
-                            "probe": "op_block_split_audit.py"},
+                            "probe": "op_block_split_audit.py", "site": a.site},
                    "blocks": rows}, open(a.out, "w"), indent=2)
         print(f"\nwrote {a.out}")
 
