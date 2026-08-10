@@ -8,13 +8,18 @@
 //! | Bridge pattern (today, via Node)            | Rust surface here            |
 //! |---------------------------------------------|------------------------------|
 //! | streaming battle (`local_sim_bridge.js`)    | [`BattleStream`]             |
-//! | mid-battle RNG swap (counterfactual/search) | [`Battle::reseed`]           |
-//! | clone-and-branch (`State.serialize…`)       | [`Battle::serialize`] / [`Battle::deserialize`] |
+//! | mid-battle RNG swap (counterfactual/search) | [`crate::bridge::BridgeSession::reseed`] |
+//! | clone-and-branch (`State.serialize…`)       | `Clone` on [`Battle`] / [`crate::bridge::BridgeSession::snapshot`] |
 //! | damage oracle (`damage_probe.js`)           | [`Battle::new`] + state accessors (TODO) |
 //! | team pack / validate                        | stays a thin shim for now (out of core scope) |
 //!
-//! Everything below is a SKELETON: signatures + contracts are real, bodies are
-//! `todo!()`. The point is to lock the interface before building the engine.
+//! The CONSTRUCTION + streaming surfaces below are real and validated
+//! ([`Battle::start`] / [`Battle::start_with_switchins`] /
+//! [`Battle::start_with_turn0_construction`] / [`BattleStream::write_line`]). A handful
+//! of never-built convenience methods on [`Battle`] (`new`/`choose`/`ended`/`winner`/
+//! `seed`/`reseed`) remain `todo!()` — every production path drives the engine through
+//! [`crate::turn::FullBattleDriver`] (via [`BattleStream`] or [`crate::bridge::BridgeSession`])
+//! instead, so those signatures were never needed. Do not call them.
 
 use crate::dex::Dex;
 use crate::prng::PrngSeed;
@@ -44,23 +49,23 @@ pub struct BattleOptions {
     pub p2: PlayerOptions,
 }
 
-/// A serialized snapshot of a paused battle, for clone-and-branch search
-/// (mirrors `State.serializeBattle`/`deserializeBattle` — the prober's lookahead
-/// hook). The serialization must preserve PRNG continuity so a resumed branch
-/// rolls the same dice the live battle would have.
-#[derive(Debug, Clone)]
-pub struct BattleSnapshot(pub Vec<u8>);
-
 /// A single battle: the authoritative, deterministic core.
 ///
 /// Contract: same [`BattleOptions`] (seed + teams) + same choice sequence ⇒
 /// byte-identical [`ProtocolLine`]s to upstream Showdown.
 ///
-/// **Build status.** The in-battle STATE (`state`) is constructed by
-/// [`Battle::start`] — the per-mon stats/HP/status/boosts + sides + field that
-/// Showdown sets at construction, BEFORE any switch-in event. The event engine
-/// (move resolution, switch-in abilities, the protocol stream) is not built yet,
-/// so the action/serialization methods below stay `todo!()`.
+/// **The clone-and-branch snapshot surface IS `Clone`** (`gen3_bridge_clone_branch_v1`).
+/// This used to be a pair of `todo!()` `serialize`/`deserialize` stubs over an opaque
+/// byte blob, mirroring Showdown's `State.serializeBattle`/`deserializeBattle`. They are
+/// gone: Showdown needs a byte format because its battle graph is full of cyclic object
+/// references, whereas this port's [`BattleState`] is plain owned data all the way down,
+/// so a derived `Clone` gives the same guarantee — a DEEP, independent battle that rolls
+/// the dice the parent would have rolled — with no format to keep in sync and no
+/// re-parse cost. The search snapshot never crosses a process boundary (the Node search
+/// driver's `serializeBattle` snapshot doesn't either), so there is nothing to encode.
+/// The session-level primitive built on this is
+/// [`crate::bridge::BridgeSession::snapshot`].
+#[derive(Clone)]
 pub struct Battle {
     /// The constructed in-battle state (sides, field, PRNG, turn). `None` until
     /// [`Battle::start`] (or, later, [`Battle::new`]) builds it.
@@ -170,20 +175,11 @@ impl Battle {
         todo!()
     }
 
-    /// Swap the RNG mid-battle (mirrors `battle.prng = new PRNG(seed)`). This is
-    /// the exact hook our counterfactual re-roll and search arms rely on: replay
-    /// to a decision point, then resolve the turn under a fresh seed.
+    /// Swap the RNG mid-battle (mirrors `battle.prng = new PRNG(seed)`). Never built:
+    /// the counterfactual re-roll + search arms drive the engine through the bridge, and
+    /// [`crate::bridge::BridgeSession::reseed`] already does exactly this on the live
+    /// `BattleState` (`gen3_bridge_resume_reseed_v1`).
     pub fn reseed(&mut self, _seed: PrngSeed) {
-        todo!()
-    }
-
-    /// Snapshot for cloning (see [`BattleSnapshot`]).
-    pub fn serialize(&self) -> BattleSnapshot {
-        todo!()
-    }
-
-    /// Rebuild a battle from a snapshot, restoring open requests + PRNG continuity.
-    pub fn deserialize(_snap: &BattleSnapshot) -> Self {
         todo!()
     }
 }
@@ -237,7 +233,7 @@ pub struct BattleStream {
     players: [Option<PlayerOptions>; 2],
     /// The LIVE battle — built once both `>player` writes are in, then advanced ONE
     /// request boundary per `>pN` write (no genesis replay). `None` until the battle
-    /// starts. Plain `Battle`, so a future `Battle::serialize` snapshots it directly.
+    /// starts. Plain `Battle`, so a `Clone` snapshots it directly (see [`Battle`]).
     battle: Option<Battle>,
     /// The resumable stepping primitive driving `battle` — the SAME `FullBattleDriver`
     /// `run_full_battle` (batch) drives, so the writeline gate byte-verifies it.

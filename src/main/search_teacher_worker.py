@@ -28,10 +28,14 @@ def run(cfg_path: str) -> None:
     run_dir = cfg["run_dir"]
     result_path = cfg["result_path"]
     cands = [Candidate(**c) for c in cfg["candidates"]]
+    # Which sim engine the search/replay children run — the parent threads the run's bridge impl
+    # ("node" default). Session-wide on the ProbeSession AND on the warm SearchSession below, so
+    # both halves of a correction (search + confirm) are produced by the same engine.
+    impl = cfg.get("impl", "node")
 
     # The FROZEN trainee snapshot drives both the search (ProbeModel) and the confirm (raw model) —
     # ckpt_override pins every battle's model to it (instead of the exact→nearest→recent ladder).
-    sess = ProbeSession(run_dir, ckpt_override=cfg["snapshot_path"])
+    sess = ProbeSession(run_dir, ckpt_override=cfg["snapshot_path"], impl=impl)
 
     # OPD: build the improved distribution π' KL target when requested (config-threaded, mirrors
     # confirm_rollouts/depth); off = the AWR-only behaviour (pi_target stays None → the .npz omits it).
@@ -40,7 +44,7 @@ def run(cfg_path: str) -> None:
 
     corrections, status = [], {}
     # ONE warm SearchSession reused across all candidates → the Node spawn is amortized (perf L4).
-    with SearchSession(timeout=float(cfg.get("timeout", 300.0))) as ss:
+    with SearchSession(timeout=float(cfg.get("timeout", 300.0)), impl=impl) as ss:
         for c in cands:
             opp_ckpt, opp_src = resolve_opponent(run_dir, c.opponent, c.step)
             try:

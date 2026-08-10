@@ -1,12 +1,22 @@
-"""SearchSession — a WARM, persistent clone-and-branch search-server (the Python
-half of ``search_driver.js``).
+"""SearchSession — a WARM, persistent clone-and-branch search-server (the Python half of the
+search driver: ``search_driver.js`` under ``impl="node"``, the ``search_driver`` Rust binary
+under ``impl="rust"``).
 
 Where :func:`reconstruction.reroll_turn` / :func:`reconstruction.reroll_many` spawn a
-fresh Node process and rebuild the battle from turn 1 per call, ``SearchSession`` keeps
-ONE Node process alive holding a node-snapshot cache, so a multi-ply BEAM over candidate
+fresh driver process and rebuild the battle from turn 1 per call, ``SearchSession`` keeps
+ONE process alive holding a node-snapshot cache, so a multi-ply BEAM over candidate
 lines (the prober's ``better_line`` probe) can branch a search TREE from any explored
 node by cloning its mid-battle state (``State.serializeBattle`` / ``deserializeBattle``,
 ~1.7 ms/clone, constant in depth) instead of re-replaying the whole prefix per node.
+
+**Transport selection.** ``impl`` picks WHICH driver child is spawned, exactly the way
+``--use-bridge={node,rust}`` picks the live battle transport; the seam is
+``sim_bridge_bin.search_driver_spawn_argv``. ``"node"`` (the default) is the historical
+behavior byte-for-byte. ``"rust"`` execs the std-only ``src/rust_sim`` ``search_driver``
+binary, which speaks the identical request→one-line-response protocol — so nothing below
+changes but the executable. A missing/unbuildable rust binary raises a clear
+``SimBridgeBinaryError``; it NEVER falls back to node (a "rust" search that silently ran on
+node would answer a different question than the one asked).
 
 Lifecycle (one process per ``better_line`` call; context-managed):
 
@@ -38,12 +48,10 @@ import queue
 import subprocess
 import threading
 from dataclasses import dataclass
-from pathlib import Path
 from typing import List, Optional, Sequence
 
 from utils.bridge.reconstruction import ReconstructionRecord
-
-_SEARCH_DRIVER_JS = str(Path(__file__).parent / "search_driver.js")
+from utils.bridge.sim_bridge_bin import search_driver_spawn_argv
 
 
 @dataclass(frozen=True)
@@ -78,19 +86,27 @@ class SearchError(RuntimeError):
 
 
 class SearchSession:
-    """A live ``search_driver.js`` process. One per ``better_line`` call, OR — for the search-teacher's
+    """A live search-driver process. One per ``better_line`` call, OR — for the search-teacher's
     background workers — ONE WARM process REUSED across many battles (pass ``record=None`` here and the
-    per-battle record to :meth:`open_root`), so the ~0.6 s Node spawn is amortized over hundreds of
+    per-battle record to :meth:`open_root`), so the ~0.6 s spawn is amortized over hundreds of
     searches instead of paid per search. Each ``open_root`` starts a fresh tree (the driver clears its
-    node cache), so reuse is memory-bounded and battle-independent."""
+    node cache), so reuse is memory-bounded and battle-independent.
 
-    def __init__(self, record: "Optional[ReconstructionRecord]" = None, *, timeout: float = 120.0):
+    ``impl`` selects the driver child (``"node"`` — the default and the historical behavior — or
+    ``"rust"``); see the module header."""
+
+    def __init__(self, record: "Optional[ReconstructionRecord]" = None, *, timeout: float = 120.0,
+                 impl: str = "node"):
         self._record = record
         self._timeout = timeout
         self._seq = 0
         self._closed = False
+        # Which driver child to spawn. Resolved BEFORE Popen so an unbuildable rust binary raises
+        # the actionable SimBridgeBinaryError here rather than surfacing as a dead child later.
+        self.impl = impl
+        self._argv = search_driver_spawn_argv(impl)
         self._proc = subprocess.Popen(
-            ["node", _SEARCH_DRIVER_JS],
+            self._argv,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, bufsize=1,
         )
@@ -124,6 +140,11 @@ class SearchSession:
     def _err_tail(self) -> str:
         return "".join(self._stderr)[-2000:]
 
+    def _who(self) -> str:
+        """How the child is named in an error — the impl plus the actual argv[0], so a rust
+        failure self-diagnoses ('which binary was that?') instead of reading like a node crash."""
+        return f"search driver [{self.impl}: {self._argv[-1]}]"
+
     def _call(self, payload: dict) -> dict:
         if self._closed:
             raise SearchError("SearchSession is closed")
@@ -133,22 +154,23 @@ class SearchSession:
             self._proc.stdin.write(json.dumps(payload) + "\n")   # type: ignore[union-attr]
             self._proc.stdin.flush()                             # type: ignore[union-attr]
         except (BrokenPipeError, ValueError) as e:
-            raise SearchError(f"search_driver.js died: {e}\n{self._err_tail()}")
+            raise SearchError(f"{self._who()} died: {e}\n{self._err_tail()}")
         try:
             line = self._q.get(timeout=self._timeout)
         except queue.Empty:
             self.close(kill=True)
             raise SearchError(
-                f"search_driver.js timed out after {self._timeout}s on cmd "
+                f"{self._who()} timed out after {self._timeout}s on cmd "
                 f"{payload.get('cmd')!r}\n{self._err_tail()}")
         if line == "":
             raise SearchError(
-                f"search_driver.js closed its stream (rc={self._proc.poll()})\n{self._err_tail()}")
+                f"{self._who()} closed its stream (rc={self._proc.poll()})\n{self._err_tail()}")
         out = json.loads(line)
         if out.get("id") != self._seq:
-            raise SearchError(f"response id {out.get('id')} != request id {self._seq} (desync)")
+            raise SearchError(
+                f"{self._who()}: response id {out.get('id')} != request id {self._seq} (desync)")
         if not out.get("ok"):
-            raise SearchError(f"search_driver.js: {out.get('error')}")
+            raise SearchError(f"{self._who()}: {out.get('error')}")
         return out
 
     # -- API ----------------------------------------------------------------

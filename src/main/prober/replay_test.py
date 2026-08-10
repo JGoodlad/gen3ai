@@ -41,7 +41,8 @@ def _install(monkeypatch, outcomes):
     """Outcomes is a list cycled across rollouts; record the post_t_seed each rollout saw."""
     seeds_seen = []
 
-    def fake_mat(record, *, actions, mappings=None, map_actions_at=None, stop_after_decision=None):
+    def fake_mat(record, *, actions, mappings=None, map_actions_at=None, stop_after_decision=None,
+                 impl="node"):
         decisions = [MaterializedDecision(np.zeros(2, np.float32), np.ones(11, np.int8), _TURN)
                      for _ in range(_INV + 1)]
         return MaterializedTrace(decisions=decisions, actions_complete=True, action_choices=dict(_CHOICES))
@@ -49,7 +50,7 @@ def _install(monkeypatch, outcomes):
     counter = {"i": 0}
 
     def fake_run_one(record, *, trainee, opponent, divergence_turn, substitute_choice, seed=None,
-                     post_t_seed=None, capture_trajectory=False):
+                     post_t_seed=None, capture_trajectory=False, impl="node"):
         seeds_seen.append(post_t_seed)
         o = outcomes[counter["i"] % len(outcomes)]
         counter["i"] += 1

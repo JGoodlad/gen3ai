@@ -46,6 +46,13 @@ it), with each side's start-of-turn action independently sourced from the
 recorded choice, a uniform-random legal choice, or an explicit choice string.
 What to fix vs re-sample, how many seeds, and what to measure are deliberately
 NOT decided here — Phase-1 consumers compose those.
+
+All three take an ``impl`` (``"node"`` default | ``"rust"``), the offline analogue of
+``--use-bridge={node,rust}``: it picks WHICH driver child runs, via the one seam
+``sim_bridge_bin.search_driver_spawn_argv``. Node splits these verbs across
+``replay_driver.js`` and ``search_driver.js``; the Rust port serves both from a single
+``search_driver`` binary. A missing/unbuildable rust binary raises — it never falls back
+to node.
 """
 
 from __future__ import annotations
@@ -88,6 +95,10 @@ def _sim_aliases() -> Dict[str, str]:
     global _ALIAS_CACHE
     if _ALIAS_CACHE is None:
         try:
+            # NODE-ONLY on purpose — NOT part of the `impl` seam. This dumps Showdown's own
+            # `aliases.ts` table out of `deps/pokemon-showdown/dist`; it is a DATA query against
+            # the reference sim, not a sim RUN, so there is nothing for a rust driver to serve
+            # (and the answer must come from the canonical source either way).
             # Contention-scaled (`gen3_contention_robust_timeouts_v1`): this spawns node beside
             # whatever else the box is running, and the failure mode below is SILENT.
             proc = subprocess.run(["node", "-e", _ALIAS_DUMP_JS, _PS_PATH],
@@ -347,25 +358,43 @@ class RerollResult:
     rerolls: List[TurnReroll] = field(default_factory=list)
 
 
-def _run_driver(request: dict, timeout: float) -> dict:
+def _run_driver(request: dict, timeout: float, impl: str = "node") -> dict:
+    """Spawn ONE offline replay/re-roll driver, feed it ``request``, return its JSON reply.
+
+    ``impl`` selects the child exactly like ``--use-bridge={node,rust}`` selects the live
+    transport. Note the ASYMMETRY the seam hides: **node** splits the offline verbs across two
+    scripts — ``replay_driver.js`` (replay / reroll / reroll_many, what this function drives) and
+    ``search_driver.js`` (the clone-and-branch server ``search_session.py`` drives) — while the
+    **rust** port serves BOTH verb families from the single ``search_driver`` binary. So the node
+    branch keeps its own script while the rust branch routes through
+    ``sim_bridge_bin.search_driver_spawn_argv``, which resolves/builds that one binary.
+    """
+    if impl == "node":
+        argv = ["node", _DRIVER_JS]
+    else:
+        # rust (or an invalid name — the seam raises the ValueError, one place)
+        from utils.bridge.sim_bridge_bin import search_driver_spawn_argv
+        argv = search_driver_spawn_argv(impl)
     proc = subprocess.run(
-        ["node", _DRIVER_JS],
+        argv,
         input=json.dumps(request).encode(),
         capture_output=True,
         timeout=timeout,
     )
+    who = f"replay driver [{impl}: {argv[-1]}]"
     if proc.returncode != 0:
         raise RuntimeError(
-            f"replay_driver.js failed (rc={proc.returncode}): "
+            f"{who} failed (rc={proc.returncode}): "
             f"{proc.stderr.decode('utf-8', 'replace')[-2000:]}"
         )
     out = json.loads(proc.stdout.decode())
     if "error" in out:
-        raise RuntimeError(f"replay_driver.js: {out['error']}")
+        raise RuntimeError(f"{who}: {out['error']}")
     return out
 
 
-def replay_battle(record: ReconstructionRecord, *, timeout: float = 120.0) -> BattleReplay:
+def replay_battle(record: ReconstructionRecord, *, timeout: float = 120.0,
+                  impl: str = "node") -> BattleReplay:
     """Re-run the battle verbatim (original seed, original commands) and return the
     regenerated per-side protocol + the final omniscient outcome.
 
@@ -375,8 +404,11 @@ def replay_battle(record: ReconstructionRecord, *, timeout: float = 120.0) -> Ba
     sit in poke-env's ``MESSAGES_TO_IGNORE`` (state- and obs-invisible). Feed
     them to ``agents.training.obs_materializer`` to rebuild the agent's exact
     observations.
+
+    ``impl`` selects the driver child (``"node"`` — the default and the historical behavior —
+    or ``"rust"``); see :func:`_run_driver`.
     """
-    out = _run_driver({"mode": "replay", "record": record.to_dict()}, timeout)
+    out = _run_driver({"mode": "replay", "record": record.to_dict()}, timeout, impl)
     return BattleReplay(p1_chunks=out["p1_chunks"], p2_chunks=out["p2_chunks"],
                         outcome=out["outcome"])
 
@@ -390,6 +422,7 @@ def reroll_turn(
     p2_action: str = "recorded",
     followup: str = "random",
     timeout: float = 300.0,
+    impl: str = "node",
 ) -> RerollResult:
     """Reconstruct to the start of turn ``turn`` and re-roll it under each seed.
 
@@ -419,6 +452,9 @@ def reroll_turn(
     Everything omniscient in the result (``pre_state``, ``outcome``,
     ``turn_log``) is for ground-truth analysis only; obs materialization must use
     only the per-side chunks.
+
+    ``impl`` selects the driver child (``"node"`` — the default and the historical behavior —
+    or ``"rust"``); see :func:`_run_driver`.
     """
     out = _run_driver(
         {
@@ -431,6 +467,7 @@ def reroll_turn(
             "followup": followup,
         },
         timeout,
+        impl,
     )
     rerolls = [
         TurnReroll(
@@ -485,6 +522,7 @@ def reroll_many(
     *,
     followup: str = "random",
     timeout: float = 300.0,
+    impl: str = "node",
 ) -> RerollManyResult:
     """Resolve N independent ARMS of turn ``turn`` in ONE Node process — one ``buildToTurn`` + module
     load instead of once per arm. Each ``arm`` is a dict ``{p1_action, p2_action, seed, label}`` with
@@ -496,7 +534,10 @@ def reroll_many(
     per candidate (measured ~5× on the re-roll step). Each arm runs in its OWN fresh session, so an
     arm's suffix chunks are BYTE-IDENTICAL to the same single :func:`reroll_turn` — guarded by
     ``reroll_many_parity_fuzz_test.py``. The shared prefix chunks + decision-point views are returned
-    once. ``arms=()`` just reconstructs (prefix/requests only)."""
+    once. ``arms=()`` just reconstructs (prefix/requests only).
+
+    ``impl`` selects the driver child (``"node"`` — the default and the historical behavior — or
+    ``"rust"``); see :func:`_run_driver`."""
     out = _run_driver(
         {
             "mode": "reroll_many",
@@ -506,6 +547,7 @@ def reroll_many(
             "followup": followup,
         },
         timeout,
+        impl,
     )
     arm_results = [
         ArmReroll(

@@ -566,7 +566,8 @@ def test_cli_probe_emits_json(tmp_path):
 # aggregation MATH and the coverage accounting).
 # ---------------------------------------------------------------------------
 
-def _fake_falsify_battle(record, summary, npz, *, worst, gamma, n_seeds, n_alts, followup):
+def _fake_falsify_battle(record, summary, npz, *, worst, gamma, n_seeds, n_alts, followup,
+                         impl="node"):
     """Stand-in for falsifier.falsify_battle: build canned decisions from a
     `_fake_verdicts` spec planted in the summary (so each test battle's verdicts
     + crater δ are exact and deterministic). `_fake_raise` makes it raise (the

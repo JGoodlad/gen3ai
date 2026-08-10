@@ -69,12 +69,24 @@ pub(crate) trait RngCore {
     fn get_seed(&self) -> String;
 }
 
+#[derive(Clone)]
 enum Backend {
     Sodium(SodiumRng),
     Gen5(Gen5Rng),
 }
 
 /// High-level PRNG. Mirrors `class PRNG`.
+///
+/// **`Clone` is the clone-and-branch search primitive** (`gen3_bridge_clone_branch_v1`):
+/// the entire dice state lives in `backend`, so a clone rolls the SAME next number the
+/// parent would and then diverges independently — the property a search tree needs when
+/// it branches a paused battle. The ONE thing a clone shares with its parent is the
+/// PROCESS-GLOBAL `POKESIM_PRNG_TRACE` bookkeeping above (`TRACE_ON` / the monotonic
+/// `TRACE_DRAW_N` counter): those are diagnostics, not battle state, so cloned branches
+/// interleave their draw INDICES in the trace output. That affects only what the trace
+/// prints — never a value drawn, never a battle outcome — and the trace is off unless
+/// `POKESIM_PRNG_TRACE=1`.
+#[derive(Clone)]
 pub struct Prng {
     backend: Backend,
 }

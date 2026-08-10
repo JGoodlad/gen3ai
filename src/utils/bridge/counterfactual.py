@@ -276,6 +276,7 @@ def replay_counterfactual(
     timeout: float = 180.0,
     capture_obs: bool = False,
     capture_trajectory: bool = False,
+    impl: str = "node",
 ) -> dict:
     """Play ONE counterfactual line: replay ``record`` to ``divergence_turn``, substitute
     ``substitute_choice`` for OUR side, then continue live (``trainee`` policy vs ``opponent``) to a
@@ -288,7 +289,11 @@ def replay_counterfactual(
     ``post_t_seed`` (with a ``divergence_turn``) swaps the sim PRNG at the START of the divergence turn
     — so the prefix keeps the recorded dice but the post-divergence resolution is resampled: vary it
     across rollouts for a Monte-Carlo "could it have won" win-probability.
-    ``divergence_turn=None`` is the full-replay oracle (no substitute, no handoff)."""
+    ``divergence_turn=None`` is the full-replay oracle (no substitute, no handoff).
+
+    ``impl`` (``"node"`` default | ``"rust"``) picks the in-process sim-bridge child the live
+    post-divergence battle runs on — this leg plays a REAL game, so it rides the same
+    ``bridge_spawn_argv`` seam as training/eval, not the offline replay-driver one."""
     if not record.trainee_username:
         raise ValueError("reconstruction record lacks trainee_username")
     our_side = record.side_of(record.trainee_username)
@@ -317,7 +322,7 @@ def replay_counterfactual(
     p1_player, p2_player = (trainee, opponent) if our_side == "p1" else (opponent, trainee)
     asyncio.run(run_local_battles(
         p1_player, p2_player, 1, battle_format=record.format_id, seed=seed, start_extra=start_extra,
-        chunk_sink=traj_sink))
+        chunk_sink=traj_sink, impl=impl))
 
     result = _battle_outcome(trainee, record.username(our_side))
     result.update(divergence_turn=divergence_turn, substitute=substitute_choice)

@@ -953,8 +953,11 @@ impl QAction {
 /// The resumable state of a full-battle drive. Every per-turn control datum the
 /// old `run_full_battle` kept in locals lives here so a drive can pause between
 /// turns (`AwaitMove`) or mid-turn at a forced replacement (`AwaitSwitch`). Plain
-/// data (the queue + choices are `Clone`/`Copy`), so a future `Battle::serialize`
-/// can snapshot it mechanically (Tier 3 — not built here).
+/// data (the queue + choices are `Clone`/`Copy`), so `Clone` snapshots the paused
+/// drive mechanically — which is exactly what
+/// [`crate::bridge::BridgeSession::snapshot`] does for clone-and-branch search
+/// (`gen3_bridge_clone_branch_v1`).
+#[derive(Clone)]
 pub(crate) struct FullBattleDriver {
     decisions: Vec<DecisionRecord>,
     /// The per-side pending `move`-request accumulator (the sim's `side.choose`,
@@ -970,6 +973,7 @@ pub(crate) struct FullBattleDriver {
 }
 
 /// Where a paused drive is waiting.
+#[derive(Clone)]
 enum DrivePhase {
     /// Between turns, waiting for a top-of-turn `move` decision.
     AwaitMove,
@@ -982,6 +986,7 @@ enum DrivePhase {
 /// The mid-turn pause state for a forced replacement — the saved turn tail plus
 /// the per-side replacement accumulator, exactly the locals the old inner loop held
 /// across a `NeedSwitch` pause.
+#[derive(Clone)]
 struct SwitchWait {
     /// The saved turn-loop tail (`oldQueue`) the instaswitch(es) prepend before.
     queue: Vec<QAction>,

@@ -365,7 +365,8 @@ _PROBE_TARGETS = {
 
 class ProbeSession:
     def __init__(self, root: str, ckpt_override: "str | None" = None, tier: str = "auto",
-                 model_loader=None, compile_extractor: bool = False) -> None:
+                 model_loader=None, compile_extractor: bool = False,
+                 impl: str = "node") -> None:
         self.tree = build_trace_tree(root)
         self.run_dir = self.tree.run_dir
         self._override = ckpt_override
@@ -378,6 +379,14 @@ class ProbeSession:
         # `summary`/`list` query would never amortize the compile. Worth it for the search-shaped
         # commands — better-line, falsify, falsify-scan, replay-counterfactual, lookahead.
         self._compile_extractor = bool(compile_extractor)
+        # WHICH offline replay/search driver the re-roll-backed probes spawn: "node" (default,
+        # the historical behavior) or "rust". SESSION-WIDE on purpose, exactly like
+        # `compile_extractor` above: it is a transport choice for the whole investigation, not a
+        # per-question semantic — two probes of the same run answering under different engines
+        # would not be comparable, which is precisely what a per-call knob would invite. The CLI
+        # surfaces it as `--impl` on the search-shaped commands; every probe below reads
+        # `self._impl`.
+        self._impl = impl
         self._summaries: "dict[str, dict]" = {}
         self._by_path = {b.summary_path: b for b in self.tree.all_battles()}
         self._by_short = {_short_id(b): b for b in self.tree.all_battles()}
@@ -653,7 +662,8 @@ class ProbeSession:
         record = ReconstructionRecord.load(recon_path)
         return falsify_battle(record, self._summary(b), self._npz(b),
                               invs=invs, worst=worst, gamma=self._gamma,
-                              n_seeds=n_seeds, n_alts=n_alts, followup=followup)
+                              n_seeds=n_seeds, n_alts=n_alts, followup=followup,
+                              impl=self._impl)
 
     def lookahead(self, battle_id: str, *, invs=None, inv: "int | None" = None, worst: int = 3,
                   n_seeds: int = 0, followup: str = "random") -> dict:
@@ -682,9 +692,10 @@ class ProbeSession:
         summary, npz = self._summary(b), self._npz(b)
         if inv is not None:
             return lookahead_decision(model, record, summary, npz, int(inv),
-                                      n_seeds=n_seeds, followup=followup)
+                                      n_seeds=n_seeds, followup=followup, impl=self._impl)
         return lookahead_battle(model, record, summary, npz, invs=invs, worst=worst,
-                                gamma=self._gamma, n_seeds=n_seeds, followup=followup)
+                                gamma=self._gamma, n_seeds=n_seeds, followup=followup,
+                                impl=self._impl)
 
     def better_line(self, battle_id: str, inv: int, *, depth: int = 2, beam: int = 3, top_k: int = 4,
                     followup: str = "random", opponent_ckpt: "str | None" = None,
@@ -713,6 +724,17 @@ class ProbeSession:
             raise FileNotFoundError(
                 f"no reconstruction record next to this trace ({recon_path}) — better-line needs the "
                 "re-roll layer's replay data, which only bridge-eval traces carry")
+        # An injected WARM SearchSession carries its OWN impl (it was spawned before this call), so a
+        # caller that built it on one engine and the ProbeSession on another would produce a
+        # correction whose search half and replay half came from different sims. That is exactly the
+        # silent cross-engine mix the seam exists to prevent — refuse it rather than pick a winner.
+        if search_session is not None:
+            ss_impl = getattr(search_session, "impl", self._impl)
+            if ss_impl != self._impl:
+                raise ValueError(
+                    f"injected SearchSession impl {ss_impl!r} != this ProbeSession's impl "
+                    f"{self._impl!r} — build both on the same engine")
+
         record = ReconstructionRecord.load(recon_path)
         model, _ = self._model_for(b)
         summary, npz = self._summary(b), self._npz(b)
@@ -733,7 +755,7 @@ class ProbeSession:
 
         out = better_line_decision(
             model, record, summary, npz, int(inv), depth=depth, beam=beam, top_k=top_k,
-            followup=followup, opp_model=opp_model, session=search_session)
+            followup=followup, opp_model=opp_model, session=search_session, impl=self._impl)
         out["interior_opponent"] = opp_used
 
         # Ground-truth CONFIRM of the recommended first action vs the RELOADED REAL opponent.
@@ -814,7 +836,8 @@ class ProbeSession:
             record, self._summary(b), self._npz(b), int(inv), int(action),
             play_model=play_model, opp_name=b.opponent, mappings=self._cf_mappings,
             server_config=LocalhostServerConfiguration, opponent_ckpt=opponent_ckpt,
-            opp_model=opp_model, opponent_source=opponent_source, n_rollouts=n_rollouts, narrate=narrate)
+            opp_model=opp_model, opponent_source=opponent_source, n_rollouts=n_rollouts,
+            narrate=narrate, impl=self._impl)
 
     def falsify_scan(self, *, outcome: "str | None" = "loss",
                      opponent: "str | None" = None, step: "int | None" = None,
@@ -900,7 +923,7 @@ class ProbeSession:
                 fb = falsify_battle(
                     ReconstructionRecord.load(recon), self._summary(b), self._npz(b),
                     worst=worst, gamma=self._gamma, n_seeds=n_seeds,
-                    n_alts=n_alts, followup=followup)
+                    n_alts=n_alts, followup=followup, impl=self._impl)
                 return (b, fb, None)
             except Exception as e:  # noqa: BLE001 — one battle's failure must not sink the scan
                 return (b, None, f"{type(e).__name__}: {e}")

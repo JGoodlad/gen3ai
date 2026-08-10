@@ -12,7 +12,9 @@ corrections as numbered shards the parent ingests incrementally. One battle-gene
 per iteration; never touches the training hot path (a frozen-snapshot side activity, like eval).
 
 config: {run_dir, control_path, output_dir, worker_id, opponents:[{label,kind,path?}],
-         n_battles, per_iter_budget, depth, beam, top_k, confirm_rollouts, margin_min, gamma}
+         n_battles, per_iter_budget, depth, beam, top_k, confirm_rollouts, margin_min, gamma,
+         impl}   # impl = "node" (default) | "rust": which sim engine the generation battles and
+                 # the search/replay children run on (the run's --use-bridge impl, threaded down)
 control (parent-written, atomically): {snapshot_path, version, shutdown}
 """
 
@@ -113,7 +115,11 @@ def run(cfg_path: str) -> None:
     # Follows the run's --compile-extractor; this worker is pure frozen-model inference.
     compile_extractor = bool(cfg.get("compile_extractor", False))
     recycle_every = int(cfg.get("recycle_every", 2000))   # Node V8-heap backstop (launcher 3h owns the rest)
-    ss = SearchSession(timeout=timeout)
+    # Which sim engine every child of this worker runs: the battle GENERATION (run_local_battles),
+    # the searches (SearchSession) and the replay/re-roll driver (ProbeSession). One value, so a
+    # correction is never half-produced on one engine and half on the other.
+    impl = cfg.get("impl", "node")
+    ss = SearchSession(timeout=timeout, impl=impl)
     try:
         while True:
             ctrl = _read_control(control_path)
@@ -180,14 +186,15 @@ def run(cfg_path: str) -> None:
             iter_dir = os.path.join(output_dir, f"gen_{wid}_{seq}", f"step_{version}", spec["label"])
             traces = generate_loss_traces(
                 trainee, opp, out_dir=iter_dir, n_battles=int(cfg["n_battles"]), step=version,
-                opponent_label=spec["label"], opponent_ckpt=opp_ckpt, opponent_source=opp_src)
+                opponent_label=spec["label"], opponent_ckpt=opp_ckpt, opponent_source=opp_src,
+                impl=impl)
 
             corrections = []
             if traces:
                 gen_root = os.path.join(output_dir, f"gen_{wid}_{seq}")
                 # one ProbeSession per iter caches a model per checkpoint → close it (context manager) so a
                 # long-lived worker doesn't accumulate model objects across thousands of iterations.
-                with ProbeSession(gen_root, ckpt_override=snapshot_path) as sess:
+                with ProbeSession(gen_root, ckpt_override=snapshot_path, impl=impl) as sess:
                     # plentiful fresh supply → skip the expensive falsify gate; the CONFIRM is the real gate.
                     cands = select_candidates(gen_root, budget=int(cfg["per_iter_budget"]),
                                               scan_limit=int(cfg["per_iter_budget"]),
@@ -210,7 +217,7 @@ def run(cfg_path: str) -> None:
             opp = None                               # drop the opponent player (+ its loaded model) promptly
             seq += 1
             if recycle_every and seq % recycle_every == 0:   # bound the Node child's V8 heap on a no-launcher run
-                ss.close(); ss = SearchSession(timeout=timeout)
+                ss.close(); ss = SearchSession(timeout=timeout, impl=impl)
     finally:
         ss.close()
 

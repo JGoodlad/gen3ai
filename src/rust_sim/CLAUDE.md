@@ -50,7 +50,9 @@ Showdown**, layer by layer. Level 1 (the PRNG) is built; see below.
 | `protocol.rs` | **types + Phase-1+2 emit API, validated** | `Player`, `Choice` (→ wire grammar `move 1`/`switch 3`/…), `ProtocolLine` (raw bytes = source of truth), AND the **`ProtocolBuilder`** — an append-only, **PRNG-free** line buffer the engine writes at each observable event (one sim-mirroring retro-edit excepted: `attr_last_move_still` = `attrLastMove('[still]')`, used by the Disable 0-PP-guard fail). Centralizes the fiddly formatting in ONE place: `MonRef` (`p<N>a: <Name>`) / `HpStatus` (the three variants `x/y` / `x/y <status>` / `0 fnt`) / `Cause` (`[from] item: …` / `[from] ability: …` / `[from] move: …` / `[from] <bare>`) / `STAT_TOKENS` (the `-boost`/`-unboost` stat names). Typed constructors for the Phase-1 line types (framing / `turn` / `upkeep` / separator / `move`+`[miss]`/`[still]` / `switch` / `drag` / `-damage` (+ the `damage_of` `[from] Recoil|[of] <target>` form, `gen3_pp_tracking_v1`) / `-heal` / `faint` / `-crit` / `-supereffective` / `-resisted` / `-immune` / `-miss` / `win` / `tie`) **PLUS the Phase-2 types** (`status`+`[from] move: Rest` / `curestatus`+`[msg]` / `cant` / `boost`/`unboost` by sign / `weather` SET+`[upkeep]` / `ability`+detail / `fail`+`[weak]` / `sidestart` / `volatile_start`/`volatile_end`/`activate`+`[damage]` / `singleturn`). Disabled by default (the seed suite pays zero cost + draws nothing); `run_full_battle_logged` enables it. See "Protocol emission" below. |
 | `battle.rs` | **write_line DONE, validated** | `BattleOptions`/`PlayerOptions`/`PackedTeam` + `Battle::start`/`start_with_switchins` (construction ± switch-in events over `state::BattleState`) + **`BattleStream::write_line`** (`gen3_writeline_stream_v1`) — the streaming drop-in for the bridge's `local_sim_bridge.js` pattern: `>start {formatid,seed}` / `>player pN {name,team}` / `>pN move K\|switch N` per write, returning EXACTLY the omniscient `\|...\|` chunk the real Node `BattleStream` flushes for that write (per-write byte-gated by `tests/writeline_test.rs` vs `harness/gen_writeline_capture.js` — 44 battles / 2377 writes / 7276 filtered lines, all 22 scenarios). INTERNALS (`gen3_bridge_incremental_replay_v1`): **TRULY INCREMENTAL** — `BattleStream` OWNS one live `Battle` + the shared **`turn::FullBattleDriver`** stepping primitive (the SAME one `run_full_battle` drives — the ONE turn-loop in the crate). Once both `>player` writes are in it builds the battle + emits the framing ONCE; each `>pN` write feeds ONE one-sided `ScriptDecision` to the driver, which advances the LIVE battle to its next request boundary and returns ONLY the new omniscient-log suffix — **O(1)/input, O(N)/battle, NEVER re-simulating a prior turn** (was replay-from-genesis, O(turns²)/battle — the wedge). The per-side pending acceptance the old accumulator did now lives INSIDE the driver (`FullBattleDriver::pending`), so the write-order semantics are preserved bit-for-bit (byte-gated by `writeline_test`, which now exercises the incremental primitive). An illegal choice is rejected like `side.choose` (no lines, boundary open). The `>start` seed must be the PRE-first-decision seed (the sim's turn-0 construction window is unmodeled — the protocol-replay convention). CHOICE REVISION is FIRST-accepted-wins, NOT the sim's last-write-wins (`gen3_writeline_choice_revision_v1`, review finding F4): a repeat pre-commit `>pN` is DISCARDED by the driver's per-side accumulator (`pending` sets a side only `if for_side(side).is_none()`) instead of REPLACING it, whereas the sim's `side.choose` clears + re-parses on each write (probe `harness/probe_f4_choice_revision.js`, resolved Dex.mod('gen3'): `>p1 move 1` then `>p1 move 2` executes Earthquake, seed-identical to a single `>p1 move 2`; a 1→2→3 chain executes Rest). Unchanged from the old replay surface (which relied on the SAME `run_full_battle` accumulator); the real bridge sends exactly one choice per request, so a revised `>pN` is unreachable in production. The `\|request\|`/sideupdate frames + the per-side privacy fold (downstream of the omniscient stream) are now DONE in **`bridge.rs`** (the row below). Still OUT of scope on `write_line`: `>forcewin`/`>reseed`. Snapshot/reseed/choose on `Battle` stay `todo!()` (the search layer's JS clone path covers them today). |
 | `bridge.rs` | **DONE, validated (in-scope corpus)** | The PER-SIDE (`p1`/`p2`) protocol streams a drop-in for `src/utils/bridge/local_sim_bridge.js` emits — Phase-1 gaps **G1 (`\|request\|` JSON)** + **G2 (`getPlayerStreams` split + HP-privacy fold)** ON TOP of the unchanged omniscient stream (additive, like `write_line`). `run_full_battle_bridge(opts, cmds, dex) → BridgeStreams{p1,p2}` (and the chunked `run_full_battle_bridge_core`) build the per-side streams by snapshotting the pending request at each boundary, folding the flushed omniscient batch to each side, and injecting each side's `\|request\|`/`\|error\|` — these stay **replay-from-genesis** (O(turns²)) as the **REFERENCE ORACLE** the parity test checks the incremental path against. The **PRODUCTION path is the incremental `BridgeSession`** (`gen3_bridge_incremental_replay_v1`): a PERSISTENT session owning ONE live `Battle` + the shared `turn::FullBattleDriver` (like `BattleStream`), advancing ONE request boundary per fed CMD (`feed_cmd`) and appending ONLY the new chunk — **O(1)/CMD, O(N)/battle, NEVER re-simulating a prior turn** (`run_full_battle_bridge_incremental` = feed the whole stream to one session; `sim_bridge` holds one across CHOOSE lines — the wedge fix). Byte-parity (chunks + `ended` + `script` + the A2 seed anchor) vs the genesis core is gated by `bridge_test::bridge_incremental_matches_genesis_replay` over the trapping golden + constructed LONG STALL battles (single-move Splasher teams, hundreds of decisions incl. forced replacements) + the persistent one-CMD-at-a-time path; the timing gate `timing_bridge_incremental_linear_vs_genesis_quadratic` (ignored) shows a flat ~12 µs/CMD incremental vs the genesis per-CHOOSE cost climbing to ~0.6 s at decision 884. **G2 fold** (from `battle.js::extractChannelMessages` + `pokemon.js::getHealth` + `mods/gen3/abilities.js`): HP-bearing lines (`\|switch\|`/`\|drag\|`/`\|-damage\|`/`\|-heal\|`/`\|-sethp\|`) show the OWNER exact HP, the OTHER side `ceil(hp*100/maxhp)/100` (clamp 100→99 when `hp<maxhp`; `0 fnt` unchanged) — but ONLY in a non-debug format; **gen3customgame sets `reportExactHP`** (its `[Gen 3] Custom Game` def has `debug:true`) so both sides see exact HP. Owner-only (empty-`shared`, dropped for the other side): gen3 Pressure's `\|-ability\|pNa: X\|Pressure\|[silent]` (`addSplit`) + the Intimidate no-activate `\|-hint\|` (owner tagged by the driver since a hint has no `pNa:` prefix). **G1 request** serialized from the crate's EXISTING legality (`is_trapped`/`move_usable`/`switch_flag`), Showdown field+key order + compact `JSON.stringify` (no spaces after `:`/`,`): per-move `{move,id,pp,maxpp,target,disabled}` (typed HP → bare `id:"hiddenpower"` + `move:"Hidden Power <Type> <BP>"`), `active[0].{maybeTrapped\|trapped}` — the `'hidden'` traps (Arena Trap / Magnet Pull) show `maybeTrapped` on the first request (firmed to `trapped` only after a rejected switch → `[Unavailable choice]` + re-request), but **Shadow Tag** (the gen3 mod sets `trapped = true` directly) shows `trapped:true` from the FIRST request + a rejected switch draws `[Invalid choice]` with NO re-request (`state::trap_is_firm`, `gen3_shadowtag_firm_trap_v1`); a forced-Struggle mon also gets a per-side OWNER-ONLY `\|-activate\|<mon>\|move: Struggle` sideupdate line before the broadcast `\|move\|` (`gen3_struggle_activate_sideupdate_v1`) — both found by the bridge/request A/B fuzzer. `side.pokemon[]` in the crate's Showdown-faithful swap-reordered array order; `forceSwitch:[true]`+conditional `noCancel` (iff <2 non-wait requests, mirroring `multipleRequestsExist`); the non-choosing side's `{wait:true}`; the trapped-reject `\|error\|` + `trapped:true` re-request with trailing `"update":true`. gen3 has NO team preview. gen3ou framing (`\|tier\|[Gen 3] OU` + the 12 `\|rule\|` list) spliced in via `reframe` (the crate's `emit_framing` hard-codes the gen3customgame tier). **BYTE-GATE**: `tests/bridge_test.rs` — the trapping golden (`bridge_trapping_golden.txt`: 5 battles — arena_trap_reject / magnet_pull_reject / **shadow_tag_firm_trap** + **taunt_struggle / pp_stall_struggle** (the forced-Struggle-resolve class, `gen3_bridge_struggle_resolve_v1`) — 581 CHUNK lines, `\|request\|` / `trapped:true` / `\|error\|[Invalid\|Unavailable]` frames + the `\|move\|…\|Struggle` + `\|-damage\|…\|[from] Recoil` lines) is byte-for-byte, the definitive Phase-1 pass (the constructed IN-SCOPE corpus: explicit genders, MODELED moves only). The two Struggle scenarios close the hole that let the Struggle wedge escape — NO committed node-vs-rust byte test drove a battle to Struggle before, so `bridge::resolve_choice`'s `move struggle` NAME→`Move(0)` branch was ungated (it returned None → the boundary never committed → an infinite re-request under `--use-bridge=rust`); `taunt_struggle` (a Taunt-stranded status-only Skarmory, non-ended prefix — gen3 Taunt strands for exactly one forced-Struggle turn) + `pp_stall_struggle` (a single-Mean-Look mon drained to 0 PP, plays to a `\|win\|`) both answer the struggling side with the wire NAME `move struggle` and revert-verify the gate FAILS with the fix disabled. `\|debug\|` free-form sim text (gen3customgame is `debug:true`) is filtered from both sides by the capture harness, matching the rust bridge's non-emit. The gen3ou `bridge_capture_golden.txt` (30 battles) is a scope-AUDIT: 28 fail-loud on unmodeled moves (Counter/Wish/Encore/Curse/Baton Pass/Endeavor/Refresh/Sunny Day — out of the ENGINE's faithful-replay scope, not a bridge defect) + ALL 30 carry a gendered species with an UNSPECIFIED gender → an unmodeled construction-time gender-ratio `sample` PRNG draw that desyncs the battle + adds the drawn gender to `details`; the audit asserts the bridge layer is byte-correct (gender-tolerant) up to that first ENGINE-scope divergence (framing + full first request proven on the 2 replayable battles). When the engine models the full move set + the gender draw, these become full byte-equal with NO bridge change. Entry point for the request A/B fuzzer: **`src/bin/bridge_replay.rs`** (`bridge_replay <golden> [id] [--print] [--ab]`; `--ab` = one JSON verdict/battle, panic-caught — the `harness/bridge_ab_fuzz.js` driver; also replays a repro DIR). See "## Bridge / request A/B fuzzer". Observation-only: the omniscient path is UNCHANGED (protocol/writeline/e2e_fuzz green, e2e md5 `a23d77ac60d4af168b8a4428f0b465c9`; the two fuzzer-found fixes [`gen3_shadowtag_firm_trap_v1` firm `trapped`, `gen3_struggle_activate_sideupdate_v1` per-side Struggle line] are bridge-path only + the `switch_details` gender addition is byte-neutral for the genderless goldens). **PHASE 2 (`gen3_sim_bridge_dropin_v1`): the CHUNK-aware `run_full_battle_bridge_chunked(opts,cmds,dex) → BridgeChunks{chunks:Vec<SideChunk>}`** preserves the `getPlayerStreams` FLUSH boundaries (framing → 3 chunks/side split at the two `\|player\|` lines; a resolved turn → 1 log chunk/side + 1 `\|request\|` chunk/side; a trapped reject → a `\|error\|` chunk + [hidden trap] a `trapped:true` re-request chunk; a forced-Struggle commit → a `\|-activate\|move: Struggle` chunk) — the flush unit the Node bridge base64-frames as ONE `pN <b64>` stdout line. `run_full_battle_bridge` now delegates to it via `.flatten()` (so the line-level `bridge_test` golden still validates the chunk logic — pinned by `chunked_flatten_equals_flat_streams`). The turn-0 CONSTRUCTION WINDOW is now MODELED (`gen3_turn0_construction_v1`): `Battle::start_with_turn0_construction` / `BridgeSession::new_construct_turn0` run the REAL turn-0 from the RAW `>start` seed — the per-mon gender `sample(['M','F'])`, the `start` action's insertChoice tie-break + `eachEvent('Update'/'WeatherChange')` shuffles (the `[start, runSwitch, runSwitch]` runActions through the shared `turn_loop`/`insert_runswitch` machinery), then the `endTurn` DisableMove/trap shuffles + Quick Claw — so the post-construction PRNG state + the sampled genders match the real sim bit-for-bit even on a **speed-TIED lead** or an **unspecified-gender** mon. The window runs with logging OFF and the framing is re-emitted afterwards, so it also RECORDS the resolved `runSwitch` order (`BattleState::turn0_switchin_order`, `gen3_turn0_construction_mirror_order_v1`, ROUND 34) — at a raw-Speed TIE that order is the `insertChoice` PRNG draw, and re-DERIVING it as "faster-first, tie = side order" permuted the emitted Intimidate / weather-setter block on a tied lead (seed + board correct, bytes wrong — the `sbd_msdd8698_b293` Masquerain-mirror repro). Gated by `tests/turn0_construction_test.rs` (distinct / speed-tie / weather-setter-tie / gender-sample vs the omniscient sim, + the mirror-order & emission↔state pins). The old pure `advance_seed_for_construction` seed hack (modeled ONLY the Quick Claw → desynced ties + genders) is REMOVED. These feed **`src/bin/sim_bridge.rs`** (below). |
-| `bin/sim_bridge.rs` | **DONE, validated** | The drop-in **`node local_sim_bridge.js` REPLACEMENT** — a std-only Rust binary speaking the EXACT stdin/stdout protocol (`START <json>` / `CHOOSE <side> <choice>` / `FORCELOSE <side>` / `END`; `pN <base64(chunk)>` / `__END__` / `__ERR__ <b64>` frames, base64-per-chunk), so it swaps behind the Python bridge (`local_battle_runner.py`) with ZERO protocol change. **INCREMENTAL** (`gen3_bridge_incremental_replay_v1`): the `Session` holds ONE PERSISTENT `bridge::BridgeSession` across CHOOSE lines — START builds it (framing + first request emitted into its chunks), each CHOOSE `feed_cmd`s ONE command that advances the live battle to its next boundary, and the flush writes the NEW chunk suffix; `__END__` on battle-end (+ persistent-mode reset on `persistent:true`). **O(1)/CHOOSE, O(N)/battle** — this REPLACES the old replay-from-genesis (`re-run over the whole accumulated CHOOSE stream per write`, O(turns³)/battle) which **WEDGED long staller battles under `--use-bridge=rust`** (a late CHOOSE took ~0.6 s+ in-crate → minutes with the full obs pipeline → the `SubprocVecEnv` step-barrier deadlocked). Byte-identical to the genesis path (parity-gated, see the `bridge.rs` row). BYTE-VALIDATED vs the real Node bridge by **`harness/gen_sim_bridge_diff.js`** (spawns BOTH subprocesses, drives choices off the Node bridge's `\|request\|` frames, diffs PER-SIDE chunk sequences — `\|t:\|` normalized, `\|debug\|` dropped): trapping (Arena Trap) + persistent multi-battle-per-child are byte-identical over ~120+ battles. DEFERRED (honest, documented in the binary): **`__RECON__`** (the sim's internal `inputLog` — the port has no byte-identical `input_log`; EXCLUDED from the diff, the Python `_offer_recon` degrades gracefully) + **`resumeReseed`** — now **SUPPORTED** (`gen3_bridge_resume_reseed_v1`) via `BridgeSession::{turn, reseed}`, applied at the START of the divergence turn before its choices commit, ONCE, mirroring the node bridge; a malformed spec is a hard error rather than a silent fall-back to the base seed. `Battle::reseed`/`serialize`/`deserialize` stay `todo!()` for the clone-and-branch SEARCH path, which the bridge's counterfactual did not need. So only `__RECON__` still forces `--use-bridge=node`. **FORFEIT PARITY — `gen3_bridge_forfeit_win_v1` (2026-07-31), the bug that WEDGED `--use-bridge=rust` TRAINING.** `FORCELOSE <side>` used to emit a bare `__END__`: the binary had no `>forcelose` engine hook, so it just flushed pending chunks and terminated ("the forfeiting side simply gets no further protocol"). But Node writes `>forcelose` INTO the sim, which runs a real `win(otherSide)` and sends BOTH players `\|` + `\|win\|<name>` before the streams close — so under rust poke-env's `Battle.finished` stayed False FOREVER and the env's next `reset()` waited on a result that could never arrive. Since the training seam forfeits whenever `reset()` lands MID-BATTLE, every episode boundary could wedge: the multi-env soaks logged `🏁 Episode Finished` lines yet completed **zero** PPO iterations (318-byte tfevents, no checkpoints) — read for months as a "multi-env stall". FIX: **`BridgeSession::forfeit(side)`** mirrors the natural-end emission exactly (`bs.log.separator()` + `bs.log.win(&name)` — the same pair `turn::driver`'s `TurnLoopStop::Ended` arm writes — then `emit_log_batch_chunk` flushes the delta as ONE chunk per side); `handle_forcelose` calls it and lets `flush_new_chunks` emit the single `__END__` (calling `end_battle` again would DOUBLE it, since a persistent `end_battle` resets the `ended` guard). Byte-verified vs the Node oracle (`tmp/forcelose_probe.py`: both emit `\|` + `\|win\|P2` to p1 AND p2). Pinned by `bridge.rs::a_forfeit_emits_the_win_line_to_both_sides_not_a_bare_end` (asserts the OBSERVABLE win bytes reach BOTH sides, not merely `ended`); gated end-to-end by `src/utils/bridge/bridge_session_fuzz_test.py --impl rust`, whose every-9th-episode `early_reset_at` forfeit-reset is the reproducer (pre-fix: wedged on the first one; post-fix: 300 episodes / 59 s / 33 forfeits clean). OBSERVATION-NEUTRAL for every committed golden — no golden sends `FORCELOSE`, so the full suite (563 tests) and the e2e md5 are unchanged. SEED-CONVENTION GAP — **RESOLVED** (`gen3_turn0_construction_v1`, 2026-07-22): `sim_bridge` builds via `BridgeSession::new_construct_turn0`, running the REAL turn-0 CONSTRUCTION window from the RAW `>start` seed (the per-mon gender `sample`s + the speed-tie insertChoice/eachEvent shuffles + **Magnet Pull's `onAny` trap shuffles** [via the endTurn `disable_move_event_shuffle`, which interleaves the trap events] + Quick Claw) through the driver machinery — so a **speed-TIED lead** OR an **unspecified-gender** mon is byte-for-bit vs the real Node bridge (the diff harness `gen_sim_bridge_diff.js` no longer skips speed-tied leads; MP/ST ties under `--extra-trappers` are byte-correct). `seed=None` (the training default) has no reference — the construction still runs, harmlessly. The committed goldens' `write_line`/genesis paths keep the POST-construction convention (they seed at the sim's `initSeed` — untouched, byte-identical). |
+| `bin/sim_bridge.rs` | **DONE, validated** | The drop-in **`node local_sim_bridge.js` REPLACEMENT** — a std-only Rust binary speaking the EXACT stdin/stdout protocol (`START <json>` / `CHOOSE <side> <choice>` / `FORCELOSE <side>` / `END`; `pN <base64(chunk)>` / `__END__` / `__ERR__ <b64>` frames, base64-per-chunk), so it swaps behind the Python bridge (`local_battle_runner.py`) with ZERO protocol change. **INCREMENTAL** (`gen3_bridge_incremental_replay_v1`): the `Session` holds ONE PERSISTENT `bridge::BridgeSession` across CHOOSE lines — START builds it (framing + first request emitted into its chunks), each CHOOSE `feed_cmd`s ONE command that advances the live battle to its next boundary, and the flush writes the NEW chunk suffix; `__END__` on battle-end (+ persistent-mode reset on `persistent:true`). **O(1)/CHOOSE, O(N)/battle** — this REPLACES the old replay-from-genesis (`re-run over the whole accumulated CHOOSE stream per write`, O(turns³)/battle) which **WEDGED long staller battles under `--use-bridge=rust`** (a late CHOOSE took ~0.6 s+ in-crate → minutes with the full obs pipeline → the `SubprocVecEnv` step-barrier deadlocked). Byte-identical to the genesis path (parity-gated, see the `bridge.rs` row). BYTE-VALIDATED vs the real Node bridge by **`harness/gen_sim_bridge_diff.js`** (spawns BOTH subprocesses, drives choices off the Node bridge's `\|request\|` frames, diffs PER-SIDE chunk sequences — `\|t:\|` normalized, `\|debug\|` dropped): trapping (Arena Trap) + persistent multi-battle-per-child are byte-identical over ~120+ battles. DEFERRED (honest, documented in the binary): **`__RECON__`** (the sim's internal `inputLog` — the port has no byte-identical `input_log`; EXCLUDED from the diff, the Python `_offer_recon` degrades gracefully) + **`resumeReseed`** — now **SUPPORTED** (`gen3_bridge_resume_reseed_v1`) via `BridgeSession::{turn, reseed}`, applied at the START of the divergence turn before its choices commit, ONCE, mirroring the node bridge; a malformed spec is a hard error rather than a silent fall-back to the base seed. The clone-and-branch SNAPSHOT surface is now `BridgeSession::snapshot` (`gen3_bridge_clone_branch_v1` — a derived `Clone`, see the row below); the never-built `Battle::{new,choose,ended,winner,seed,reseed}` convenience methods stay `todo!()` and no production path calls them. So only `__RECON__` still forces `--use-bridge=node`. **FORFEIT PARITY — `gen3_bridge_forfeit_win_v1` (2026-07-31), the bug that WEDGED `--use-bridge=rust` TRAINING.** `FORCELOSE <side>` used to emit a bare `__END__`: the binary had no `>forcelose` engine hook, so it just flushed pending chunks and terminated ("the forfeiting side simply gets no further protocol"). But Node writes `>forcelose` INTO the sim, which runs a real `win(otherSide)` and sends BOTH players `\|` + `\|win\|<name>` before the streams close — so under rust poke-env's `Battle.finished` stayed False FOREVER and the env's next `reset()` waited on a result that could never arrive. Since the training seam forfeits whenever `reset()` lands MID-BATTLE, every episode boundary could wedge: the multi-env soaks logged `🏁 Episode Finished` lines yet completed **zero** PPO iterations (318-byte tfevents, no checkpoints) — read for months as a "multi-env stall". FIX: **`BridgeSession::forfeit(side)`** mirrors the natural-end emission exactly (`bs.log.separator()` + `bs.log.win(&name)` — the same pair `turn::driver`'s `TurnLoopStop::Ended` arm writes — then `emit_log_batch_chunk` flushes the delta as ONE chunk per side); `handle_forcelose` calls it and lets `flush_new_chunks` emit the single `__END__` (calling `end_battle` again would DOUBLE it, since a persistent `end_battle` resets the `ended` guard). Byte-verified vs the Node oracle (`tmp/forcelose_probe.py`: both emit `\|` + `\|win\|P2` to p1 AND p2). Pinned by `bridge.rs::a_forfeit_emits_the_win_line_to_both_sides_not_a_bare_end` (asserts the OBSERVABLE win bytes reach BOTH sides, not merely `ended`); gated end-to-end by `src/utils/bridge/bridge_session_fuzz_test.py --impl rust`, whose every-9th-episode `early_reset_at` forfeit-reset is the reproducer (pre-fix: wedged on the first one; post-fix: 300 episodes / 59 s / 33 forfeits clean). OBSERVATION-NEUTRAL for every committed golden — no golden sends `FORCELOSE`, so the full suite (563 tests) and the e2e md5 are unchanged. SEED-CONVENTION GAP — **RESOLVED** (`gen3_turn0_construction_v1`, 2026-07-22): `sim_bridge` builds via `BridgeSession::new_construct_turn0`, running the REAL turn-0 CONSTRUCTION window from the RAW `>start` seed (the per-mon gender `sample`s + the speed-tie insertChoice/eachEvent shuffles + **Magnet Pull's `onAny` trap shuffles** [via the endTurn `disable_move_event_shuffle`, which interleaves the trap events] + Quick Claw) through the driver machinery — so a **speed-TIED lead** OR an **unspecified-gender** mon is byte-for-bit vs the real Node bridge (the diff harness `gen_sim_bridge_diff.js` no longer skips speed-tied leads; MP/ST ties under `--extra-trappers` are byte-correct). `seed=None` (the training default) has no reference — the construction still runs, harmlessly. The committed goldens' `write_line`/genesis paths keep the POST-construction convention (they seed at the sim's `initSeed` — untouched, byte-identical). |
+| `search.rs` | **DONE, validated** | The search KERNELS (`gen3_rust_search_driver_v1`) — the port of `src/utils/bridge/replay_kernels.js`'s search half: the aux PRNG (`aux_rng_from_seed`, mulberry32 over an FNV-1a hash, bit-exact vs JS), `random_choice`/`followup_choice`, `Record::parse` + `session_from_record` + `at_turn_start`/`build_to_turn`/`recorded_turn_choices`, `resolve_turn_exact`/`resolve_turn`, and the omniscient `outcome_of`/`pre_state` renderers. Pure helpers — no stdin/stdout, no node map. See "## The SEARCH SERVER" below for the honest scope of `pre_state` and the one allowlisted divergence. |
+| `bin/search_driver.rs` | **DONE, validated** | The drop-in replacement for **BOTH** node offline drivers. (a) `search_driver.js` — the WARM, PERSISTENT clone-and-branch SEARCH server (`open_root` / `expand_many` / `close` over newline-delimited JSON), holding a node-snapshot map so a multi-ply BEAM branches a TREE without re-replaying from turn 1; built on `BridgeSession::snapshot` + `clear_chunks` instead of Node's `State.serializeBattle` + `sendUpdates()` + baseline dance. (b) `replay_driver.js` — the ONE-SHOT REPLAY family `replay` / `reroll` / `reroll_many` (`gen3_rust_replay_driver_v1`), which `utils/bridge/reconstruction.py` drives and on which `better_line` / `lookahead` / `falsify` depend. **DISPATCH is on the KEY**: a request carrying `mode` is answered with a BARE JSON object (no `id`/`ok`, NO trailing newline) and the process EXITS 0 / `{"error"}`+1 exactly as Node does; anything else runs the persistent `{id, cmd}` loop. Gated by `tests/search_driver_test.rs` (5 tests) + `tests/replay_driver_test.rs` (8 tests) — both node-free — plus the two golden/live differentials `tmp/search_impl_parity.py` (18873 leaf fields, PASS) and `tmp/replay_impl_parity.py` (30689 leaf fields, PASS). |
 
 ## The callable surface (battle.rs) maps to the existing bridge
 
@@ -61,12 +63,256 @@ Showdown, so a finished core is a drop-in:
 |---|---|
 | streaming battle (`local_sim_bridge.js`) | `BattleStream::write_line` |
 | mid-battle RNG swap (counterfactual/search) | `Battle::reseed` |
-| clone-and-branch (`State.serialize…`)    | `Battle::serialize` / `deserialize` (must preserve PRNG continuity) |
+| clone-and-branch (`State.serialize…`)    | `BridgeSession::snapshot` (a derived `Clone`; PRNG continuity is automatic) |
+| search server (`search_driver.js`)       | `src/bin/search_driver.rs` over `src/search.rs` (`gen3_rust_search_driver_v1`) |
+| offline replay / re-roll (`replay_driver.js`) | the SAME `src/bin/search_driver.rs`, one-shot `mode` verbs (`gen3_rust_replay_driver_v1`) — node splits the two families across two scripts, the port serves both from one binary, which is what `sim_bridge_bin.py::search_driver_spawn_argv` assumes |
 | damage oracle (`damage_probe.js`)        | `Battle::new` + state accessors (TODO) |
 | team pack / validate                     | out of core scope — keep as a thin shim |
 
 When you implement the engine, keep these signatures stable; the bridge contract
 is the spec.
+
+## Clone-and-branch: the SNAPSHOT primitive (`gen3_bridge_clone_branch_v1`)
+
+The last surface `--use-bridge=rust` was missing for the prober's SEARCH path
+(`better-line`'s CRN-anchored beam, which branches a paused mid-battle state by CLONING it).
+The Node search server does this with `State.serializeBattle`/`deserializeBattle`; the port's
+answer is **`BridgeSession::snapshot()` — a derived `Clone`**, and the reason a byte format is
+NOT needed is structural: Showdown needs one because its battle graph is full of cyclic object
+references, whereas everything under `BridgeSession` (battle state, PRNG, driver phase, chunk
+stream, boundary progress) is **plain owned data** — no `Rc`/`RefCell`/`Box<dyn>`/closures/raw
+pointers/lifetimes — so `#[derive(Clone)]` already gives a DEEP, independent battle. The
+snapshot never crosses a process boundary (neither does Node's), so there is nothing to encode,
+nothing to keep in sync, and no re-parse cost. The old `Battle::serialize`/`deserialize` +
+`BattleSnapshot` stubs are DELETED, not implemented.
+
+PRNG continuity is automatic (the whole dice state is `Prng`'s backend seed), and the `&Dex` is
+threaded per method rather than owned, so a snapshot copies a couple of teams' worth of state
+rather than ~16 MB. The one thing a clone shares with its parent is the process-global
+`POKESIM_PRNG_TRACE` draw counter — diagnostics, not battle state, so branches interleave their
+trace INDICES and nothing else.
+
+The public search API on `BridgeSession` (all reads or copies — nothing here advances the
+battle or draws a number, so it cannot perturb the production bridge):
+
+| method | contract |
+|---|---|
+| `snapshot() -> BridgeSession` | the deep clone; shares NOTHING with the parent |
+| `clear_chunks()` | reset the chunk stream so a branch's `chunks()` is only ITS suffix. Deliberately does NOT touch `prev_log_len` — that is a cursor into the BATTLE LOG, and resetting it would re-emit the whole battle into the next chunk |
+| `request_kind(side) -> Option<RequestState>` | Showdown's `side.requestState`. `Move` / `Switch` (a forced replacement) / `Wait`; `None` when no boundary is open |
+| `is_choice_done(side) -> bool` | `side.isChoiceDone()`. True also for a `Wait` side and when no boundary is open; FALSE across a REJECT (a reject re-issues the request and holds the boundary open) |
+| `active_request_json(side) -> Option<&str>` | `side.activeRequest` — the EXACT bytes that went on the wire, stored (not rebuilt) at every emit site, INCLUDING the `trapped:true`+`update:true` re-request a hidden-trap reject re-issues. Cleared when the boundary closes / the battle ends |
+| `battle_state() -> Option<&BattleState>` | the omniscient referee readout (HP/status/boosts/field/seed) |
+| `winner() -> Option<usize>` | the winner once ended, from BOTH end paths (the driver's win check and `forfeit`, which ends via the protocol so the driver's phase never becomes `Ended`). `None` = still playing OR a gen-3 TIE — pair with `is_ended()` |
+
+**Gate: `tests/bridge_clone_branch_test.rs`** (7 tests) on a real seeded gen3 battle — two
+snapshots advanced with the SAME choices emit byte-identical chunks (and so does the original);
+two advanced with DIFFERENT choices leave the parent's turn / chunk stream / outstanding request
+/ PRNG seed bit-for-bit unchanged; a `reseed` on a clone leaves the parent matching an
+independently-built control; `clear_chunks` yields exactly the tail the un-cleared branch
+appends; and the boundary accessors track a partially-answered request, a REJECTED switch, and
+game-end. Every test carries a non-vacuity guard (the fixture is a real mid-battle `move`
+boundary, the two branch choices genuinely diverge, the reseed genuinely changed the dice) —
+without those a snapshot of a finished battle would pass while proving nothing. Its lead pair is
+a bulky Blissey MIRROR on purpose: a lead fainting inside the prefix would turn the pause into a
+forced replacement and silently stop testing the branch point. FAULT-INJECTION PROVEN (a
+`clear_chunks` that also reset the log cursor, and a reject that failed to record its re-issued
+request, each fail exactly one named test).
+
+**Not built here:** `Battle::{new,choose,ended,winner,seed,reseed}`, which stay `todo!()` because
+every production path drives the engine through `FullBattleDriver` instead. The SECOND half — the
+driver that consumes this API — is below.
+
+## The SEARCH SERVER: `src/search.rs` + `src/bin/search_driver.rs` (`gen3_rust_search_driver_v1`)
+
+The Rust half of the clone-and-branch search layer: a byte-compatible drop-in for
+`src/utils/bridge/search_driver.js`, so `utils/bridge/search_session.py` (the prober's
+`better_line` beam, and the search teacher) can swap `node search_driver.js` for this binary
+with ZERO protocol change.
+
+**The same binary ALSO serves the offline REPLAY family** — see
+"## The REPLAY family" below (`gen3_rust_replay_driver_v1`). The two protocols share this
+binary and every kernel; they differ only in dispatch (`mode` = one-shot, `cmd` = persistent).
+
+- **`src/search.rs`** — the port of `src/utils/bridge/replay_kernels.js`'s search-relevant
+  kernels. Pure helpers, no stdin/stdout, no node map: `aux_rng_from_seed` / `pick_uniform` /
+  `random_choice` / `followup_choice`, `Record::parse` + `session_from_record` + `at_turn_start`
+  + `build_to_turn` + `recorded_turn_choices`, `resolve_turn_exact` / `resolve_turn`, and the
+  omniscient `outcome_of` / `pre_state` renderers. (Plus the replay half's `recorded_queues` /
+  `TurnSource` / `resolve_turn_sourced` / `turn_log` / `log_len` / `write_cmd`.)
+- **`src/bin/search_driver.rs`** — the persistent stdin/stdout JSON server (`open_root` /
+  `expand_many` / `close`), the node-snapshot map, and the monotonic `n0, n1, …` ids. A panic is
+  caught and returned as `{id, ok:false, error}` (the `sim_bridge` pattern) — a search server
+  that dies mid-beam would strand the caller.
+
+**WHY THE PORT IS STRUCTURALLY SIMPLER.** Node has to clone with `State.serializeBattle`, then
+per arm `deserializeBattle` → `restart()` a fresh `BattleStream` with the same `send` wiring →
+`sendUpdates()` to flush the whole re-emitted historical log → mark a BASELINE index so only this
+ply's suffix is returned (the re-emitted prefix is useless: requests are sent out of band and
+never stored in `battle.log`, so a materializer parsing it would never see the team). The port
+does `snapshot()` + `clear_chunks()` and the branch's chunks ARE its suffix by construction. Same
+wire contract, no byte format, no baseline.
+
+**THE ONE STRUCTURAL DIFFERENCE, and why it is unobservable.** Node writes BOTH sides' choices
+then ticks; `feed_cmd` advances synchronously per call. Showdown's `BattleStream._write` is itself
+synchronous (`_writeLine` then `battle.sendUpdates()` inline) and the `await tick()` only drains
+the async chunk collectors, so both engines resolve at the moment the LAST needed side answers; a
+boundary needing both sides does not resolve on the first feed; and a REJECT re-issues the request
+and leaves the boundary open in both (`is_choice_done` stays false). Verified end-to-end by the
+golden below.
+
+**TWO port-specific decisions worth knowing:**
+- **`"default"`** is a sim-side choice token with no `WireChoice` variant. Rather than change the
+  production bridge's parser, `search.rs::resolve_default` resolves it to the concrete choice
+  `Side.chooseDefault()` commits (a forced switch → the first eligible bench slot; a move request
+  → the first selectable move, Struggle's slot 1 when none is) and records the literal `"default"`
+  in `choices_used`, matching Node. Exercised by the golden (2 arms).
+- **`RESOLVE_GUARD`** mirrors Node's `if (guard++ > 40)` — the value BEFORE the increment, so 41
+  iterations run. A naive `guard += 1; if guard > 40` cuts one short and can flip a `stuck`
+  verdict; the count is pinned exactly (`used[1].len() == 41`).
+
+**GATE 1 — `tests/search_driver_test.rs`** (5 tests, no node needed): the aux-RNG stream against
+four draw tables produced by `replay_kernels.js`'s OWN `auxRngFromSeed` under node (EXACT f64
+equality — `u32 / 2^32` is representable, so a tolerance would only hide a divergence) plus
+`pickUniform`'s index and its one-draw cost; `random_choice` determinism per seed, non-determinism
+across seeds, and legality of every pick against an independently-derived option set; CLONE
+INDEPENDENCE (two arms diverge, the parent's turn / chunk stream / outstanding request / PRNG seed
+are bit-for-bit unchanged, and re-expanding reproduces an arm byte-for-byte); and the `stuck`
+guard's exact iteration count. Every test carries a non-vacuity guard — the fixture must really be
+a mid-battle `move` boundary with a live bench, the two arms must really diverge, the wedge must
+really have wedged.
+
+**GATE 2 — `tmp/search_impl_parity.py`** (scratch, needs node + a captured record): replays
+`tmp/search_golden_node.json` — the NODE `search_driver.js` wire output over 6 decision points
+across 2 real gen3ou battles, 54 arms (12 exercising multi-round forced-switch follow-ups) plus
+depth-2 expansions — through the built binary over raw stdin/stdout JSON, and diffs every field.
+**RESULT: PASS, 18873 leaf fields matched.** It normalizes ONLY `|t:|<epoch>` (the port's one
+documented emission exception) and prints its allowlist + coverage notes on every run.
+FAULT-INJECTION PROVEN: a one-line off-by-one in `pick_uniform` produces 2716 divergences (and the
+illegal-move allowlist below correctly REFUSES to reconcile, hits 0 → 1 → 0).
+
+**THE ONE OPEN DIVERGENCE (allowlisted, pre-existing, NOT the search layer).** When an arm feeds
+an explicit move the request marks `disabled` (the golden hits a Choice-locked Aerodactyl), Node
+emits `|error|[Unavailable choice] Can't move: X's Y is disabled` + a re-request **to that side
+only**, whose disabled slot gains `"disabledSource":""` (`Side.chooseMove`'s
+`updateRequestForPokemon`, which is also what makes the error `[Unavailable]` rather than
+`[Invalid]`). `bridge.rs`'s reject path models only the trapped-SWITCH case, so the port emits no
+`|error|`, no `disabledSource`, and re-opens the boundary with a request to BOTH sides. Everything
+else about that arm matches — `outcome`, `choices_used`, `requests`, and every LOG chunk byte-for-
+byte — so the kernels' re-pick logic is right; only the reject's chunk framing differs. It is a
+PRODUCTION bridge-layer gap on a path poke-env never takes (poke-env always picks from the
+request's legal set), and closing it changes `bridge.rs`'s emitted bytes, so it needs its own
+probe + the bridge's own byte gates (`bridge_test.rs` / `bridge_corpus_test.rs` /
+`gen_sim_bridge_diff.js`) rather than a drive-by edit here. The harness reconciles it ONLY when
+every LOG chunk is byte-equal on both sides.
+
+**HONEST SCOPE — `pre_state`.** It mirrors Node's `preState` and has NO consumer today. `turn`,
+`weather`, the per-mon species/hp/maxhp/status/fainted/position, boosts, item, ability, the
+bare-`hiddenpower` moveSlot ids + PP, and the three gen-3 side conditions are faithful reads.
+Two fields are RECONSTRUCTIONS: `pseudoWeather` is derived from `BattleState::sleep_clause` (the
+port has no pseudo-weather map; gen-3 has no pseudo-weather MOVE, so the clause rules are the only
+real entries — VERIFIED, 6/6 golden cases), and `volatiles` is rebuilt from the port's typed
+volatile fields. The golden gives that mapping exactly ONE piece of coverage, and it was a real
+find: the port's **`duration: 1` single-turn fields** (`focuspunch`, `pursuit`, `protect`,
+`flinch`, `beatup`, the Counter/Mirror-Coat record, `endure`, `snatch`) are cleared at the NEXT
+turn's TOP (`turn::helpers::clear_flinch`) where Showdown removes them at the residual, so they
+are STALE-SET at a move-request boundary — reporting `focuspunch` diverged 2 of the golden's 12
+`pre_state`s, and the group is excluded. **Every OTHER volatile NAME is UNVERIFIED** (all twelve
+golden `pre_state`s end up empty); do not read a green parity run as evidence that e.g.
+`choicelock` is spelled or timed right.
+
+**STILL NEEDED before this can replace node in `better_line`** (all Python-side, owned elsewhere):
+`utils/bridge/search_session.py` must gain an impl switch that spawns this binary, and the
+`search_clone_parity_fuzz_test` must be run with it. Note the search teacher's OTHER blocker is
+unchanged and unrelated: `--search-teacher` needs the sim's OWN byte-identical `input_log`, which
+the rust record renders replay-EQUIVALENT rather than byte-identical.
+
+## The REPLAY family: the one-shot `replay` / `reroll` / `reroll_many` verbs (`gen3_rust_replay_driver_v1`)
+
+The SECOND half of the offline layer, served by the SAME `src/bin/search_driver.rs` binary. It
+closes the gap the search half opened: `utils/bridge/reconstruction.py::_run_driver` routes BOTH
+verb families through `sim_bridge_bin.search_driver_spawn_argv`, so under `impl="rust"` a
+`replay_battle` / `reroll_turn` / `reroll_many` call reached a binary that answered
+`unknown cmd` — which broke `better_line` (it calls `replay_battle`), `lookahead` and `falsify`
+even though the search half worked.
+
+**PROTOCOL.** `{mode: "replay"|"reroll"|"reroll_many", …}` on stdin → ONE bare JSON object on
+stdout with **no trailing newline** → exit **0**; on failure `{"error": …}` → exit **1**. That is
+`replay_driver.js`'s whole lifecycle, and the EXIT CODE is the load-bearing half: `_run_driver`
+branches on it BEFORE it parses stdout, so the message is informational. Dispatch is on the `mode`
+KEY; a `cmd` request still runs the persistent search loop, in the same process, unchanged.
+
+**KERNEL REUSE, not a second copy.** The only kernel the search half never needed is
+`recorded_queues` — the replay family's `"recorded"` action source is a QUEUE, not the search
+path's single-shot latch, because a live turn's command stream can contain a REFUSED choice
+followed by its correction (the maybe-trapped probe). Replaying that faithfully under a fresh seed
+requires pulling the NEXT recorded command on a refusal; a single-shot source would fall to the
+follow-up POLICY and invent a pick the original battle never made. `resolve_turn` was refactored
+onto a shared `resolve_turn_sourced` over a `TurnSource` enum (`Silent` / `Random` / `Explicit` /
+`Queue`) so both families run ONE resolution loop — the guard arithmetic and the routing invariant
+exist once. `resolve_turn`'s own behaviour is byte-identical (`ActionSpec::Recorded` lowers to
+`Silent`).
+
+**`turn_log` — the one field the search half does not produce.** It is defined as Node's
+`b.log.slice(logStart)`, and Showdown's `battle.log` is NOT the port's line list: an `addSplit`
+effect occupies THREE entries there (`|split|pN`, the SECRET line, the SHARED line), and EVERY
+HP-bearing line is one, because `Pokemon.getHealth()` returns a `{side, secret, shared}` object
+for the `Battle.add` split path — including `0 fnt` and including a `reportExactHP` format, where
+`shared` merely equals `secret`. `bridge.rs::split_log_lines` reconstructs the triples from the
+port's single omniscient line using EXACTLY the predicate set the production per-side fold
+(`derive_side`) uses, so the two can never disagree about which lines are split. The owner-only
+pair (`|-ability|…|[silent]`, the Intimidate `|-hint|`) gets an EMPTY shared entry, matching
+`addSplit(side, secret)` with no `shared`. VERIFIED byte-for-byte on 133 arms.
+
+**ONE REAL PORT BUG the widened coverage caught: the `fnt` status token.** `Battle.checkFainted`
+writes `status = 'fnt'` for a FAINTED ACTIVE mon; `BattleActions.switchIn` clears it again when
+the corpse is swapped off (`if (oldActive.fainted) oldActive.status = ''`); and `runAction` runs
+`faintMessages(); if (this.ended) return true;` BEFORE `checkFainted()`, so the DECIDING faint
+never gets it. The port models the state effect as `status = None` (that clear is what stops
+paralysis ×0.25 applying to the replacement sort — `gen3_fnt_clears_status_v1`), so the token has
+to be re-derived at render time: `search.rs::slot_status_token` shows `fnt` only for a fainted mon
+in the ACTIVE slot of a battle that has NOT ended. The search golden never reaches this (its arms
+all end at a live move boundary and it never reports a finished battle), which is why it took
+`replay` + re-rolls of LATE turns to surface. All three branches are node-verified.
+
+**GATE 1 — `tests/replay_driver_test.rs`** (8 tests, no node): the one-shot dispatch (bare object,
+no trailing newline, exit 0 / exit 1 with `{"error"}`, unknown mode, invalid turn); that the
+PERSISTENT protocol is untouched and the process stays alive after a `cmd` request (the regression
+the dispatch could plausibly cause); the `recorded_queues` REFUSAL-PULL together with its contrast
+case (a single-shot source must NOT re-send); and `recorded_queues`' own per-side split /
+`forcelose` stop / cap. Its record is built in-test by playing the fixture board to game-end
+through `BridgeSession::new_construct_turn0` — the same constructor `session_from_record` uses, so
+the recorded stream replays bit-for-bit.
+
+**GATE 2 — `tmp/replay_impl_parity.py`** (scratch, needs node + `tmp/search_golden_node.json`'s
+records): drives `node replay_driver.js` and the rust binary LIVE on the identical request and
+diffs every field. Live rather than golden-captured on purpose — the requests are cheap, so a
+stored golden would only add staleness. **RESULT: PASS — 76 cases (54 success + 22 error-path),
+136 arms, 30689 leaf fields.** It normalizes ONLY `|t:|<epoch>` and prints its allowlist, its hit
+counts and a COVERAGE table on every run.
+
+**COVERAGE the search golden was missing, now exercised** (reported by the harness itself):
+2 arms that END the battle, 1 `stuck` arm, 133 arms whose `turn_log` carries `|split|` triples,
+17 with the owner-only empty-shared form, and 9 distinct error classes across BOTH families
+(`invalid turn` ×8, `battle never reached the start of turn N` ×3, `replay`'s not-ended ×4,
+`unknown mode` ×2, a seedless arm ×2, `unknown cmd`, `unknown node`, `recorded_exact on a non-root
+node`). The `stuck` arm needs a deliberately TRUNCATED record — a well-formed record's turns are
+always complete, so `resolveTurnExact` can never run out mid-turn on one; the harness truncates a
+copy, which also drives `replay`'s not-ended path. STILL NOT EXERCISED and printed as such: a
+NON-EMPTY `pre_state` volatile list, and an Intimidate `|-hint|` inside a re-rolled turn (the one
+`split_log_lines` case whose owner attribution is a heuristic).
+
+**THE OPEN DIVERGENCE (allowlisted, pre-existing, the SAME bridge gap as the search half's).** An
+arm that feeds a choice the sim refuses — here `switch N` into a FAINTED slot — diverges in TWO
+places, both traceable to `bridge.rs` modelling only the trapped-SWITCH reject. (1) FRAMING: Node
+emits `|error|[Invalid choice] …` to that side only; the port emits no `|error|` and re-opens the
+boundary with a request to BOTH sides (4 hits). (2) `choices_used`: because the port rebuilds the
+whole boundary, the UNREJECTED side is asked again and its follow-up pick is RECORDED — never
+executed (1 hit). The harness reconciles (1) only when every remaining LOG chunk is byte-equal on
+both sides, and (2) only on an arm where (1) already reconciled AND node's list is a SUBSEQUENCE
+of the port's — so a genuinely different pick still fails. Closing this properly changes
+`bridge.rs`'s emitted bytes and so needs its own probe plus the bridge's own byte gates, exactly
+as the search half's note says.
 
 ## PRNG: the bit-for-bit gate (level-1 differential test)
 

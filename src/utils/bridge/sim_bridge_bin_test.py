@@ -1,4 +1,5 @@
-"""Unit tests for the sim-bridge binary resolver (pure — no cargo build, no subprocess)."""
+"""Unit tests for the sim-bridge / search-driver binary resolvers (pure — no cargo build,
+no subprocess)."""
 
 import os
 from pathlib import Path
@@ -13,7 +14,16 @@ from utils.bridge.sim_bridge_bin import (
     VALID_IMPLS,
     bridge_spawn_argv,
     rust_deferral_warning,
+    search_driver_spawn_argv,
 )
+
+
+@pytest.fixture(autouse=True)
+def _cold_bin_cache(monkeypatch):
+    """Every test starts with a COLD resolver cache. The cache is process-global and keyed by
+    cargo bin name, so a real resolution earlier in the session would otherwise mask an env
+    override (and the rust-binary integration test below populates it for real)."""
+    monkeypatch.setattr(sim_bridge_bin, "_rust_bin_cache", {})
 
 
 def test_node_argv_is_node_plus_the_js():
@@ -27,15 +37,12 @@ def test_rust_argv_is_the_resolved_binary_via_env_override(tmp_path, monkeypatch
     fake = tmp_path / "sim_bridge"
     fake.write_text("#!/bin/true\n")
     monkeypatch.setenv("POKESIM_SIM_BRIDGE_BIN", str(fake))
-    # The cache is process-global; clear it so the override is (re)read.
-    monkeypatch.setattr(sim_bridge_bin, "_rust_bin_cache", None)
     argv = bridge_spawn_argv("rust")
     assert argv == [str(fake.resolve())]  # NO "node" — just the binary
 
 
 def test_env_override_missing_file_raises_clear_error(monkeypatch):
     monkeypatch.setenv("POKESIM_SIM_BRIDGE_BIN", "/nonexistent/sim_bridge_xyz")
-    monkeypatch.setattr(sim_bridge_bin, "_rust_bin_cache", None)
     with pytest.raises(SimBridgeBinaryError) as ei:
         bridge_spawn_argv("rust")
     assert "POKESIM_SIM_BRIDGE_BIN" in str(ei.value)
@@ -48,22 +55,110 @@ def test_unknown_impl_rejected():
     assert VALID_IMPLS == ("node", "rust")
 
 
-def test_deferral_warning_names_recon_and_reseed_as_supported():
-    """Both `__RECON__` (gen3_bridge_recon_record_v1) and `resumeReseed`
-    (gen3_bridge_resume_reseed_v1) SHIPPED — and, since
-    ``gen3_bridge_seedless_fixed_seed_v1``, the record is emitted on a SEEDLESS battle too
-    (the child mints + reports a real seed), which is the production case.
+# ---------------------------------------------------------------------------
+# The OFFLINE search/replay driver family — the exact mirror of the four above.
+# ---------------------------------------------------------------------------
 
-    The warning must keep naming BOTH so an operator can tell which paths still need
-    ``--use-bridge=node`` — but it must not claim either is deferred/ignored, which would
-    send someone to the node bridge for forensics that now work on rust. What DOES remain
-    node-only is the search TEACHER, which needs the sim's byte-identical ``input_log``.
+
+def test_search_driver_node_argv_is_node_plus_the_js():
+    """`impl="node"` must keep producing the EXACT argv the drivers used before the seam
+    existed — this is the byte-identical-default guarantee every current caller relies on."""
+    argv = search_driver_spawn_argv("node")
+    assert argv[0] == "node"
+    assert argv[1].endswith("search_driver.js")
+    assert Path(argv[1]).is_file(), "the node driver script must actually exist"
+    assert len(argv) == 2
+
+
+def test_search_driver_rust_argv_is_the_resolved_binary_via_env_override(tmp_path, monkeypatch):
+    fake = tmp_path / "search_driver"
+    fake.write_text("#!/bin/true\n")
+    monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(fake))
+    argv = search_driver_spawn_argv("rust")
+    assert argv == [str(fake.resolve())]  # NO "node" — just the binary
+
+
+def test_search_driver_env_override_missing_file_raises_clear_error(monkeypatch):
+    monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", "/nonexistent/search_driver_xyz")
+    with pytest.raises(SimBridgeBinaryError) as ei:
+        search_driver_spawn_argv("rust")
+    msg = str(ei.value)
+    assert "POKESIM_SEARCH_DRIVER_BIN" in msg
+    assert "search_driver" in msg
+
+
+def test_search_driver_unknown_impl_rejected():
+    with pytest.raises(ValueError) as ei:
+        search_driver_spawn_argv("bogus")
+    assert "bogus" in str(ei.value)
+
+
+def test_search_driver_env_overrides_are_independent(tmp_path, monkeypatch):
+    """The two families must not share an override. A single env var (or a single cache slot)
+    would silently hand the search driver the sim_bridge binary — a wrong-protocol child that
+    fails far from the cause."""
+    bridge = tmp_path / "sim_bridge"
+    bridge.write_text("#!/bin/true\n")
+    driver = tmp_path / "search_driver"
+    driver.write_text("#!/bin/true\n")
+    monkeypatch.setenv("POKESIM_SIM_BRIDGE_BIN", str(bridge))
+    monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(driver))
+    assert bridge_spawn_argv("rust") == [str(bridge.resolve())]
+    assert search_driver_spawn_argv("rust") == [str(driver.resolve())]
+
+
+def test_missing_rust_search_driver_raises_instead_of_falling_back_to_node(tmp_path, monkeypatch):
+    """THE no-silent-fallback contract. A rust search that quietly ran on node would answer a
+    different question than the one asked (and would make an engine A/B meaningless), so an
+    unresolvable binary must RAISE — never return a node argv.
+
+    Simulated by pointing the crate dir at an empty tmp dir (no Cargo.toml), the same shape as a
+    checkout without src/rust_sim; the assertion that matters is 'not a node argv'.
+    """
+    monkeypatch.delenv("POKESIM_SEARCH_DRIVER_BIN", raising=False)
+    monkeypatch.setattr(sim_bridge_bin, "_RUST_CRATE_DIR", tmp_path / "no_crate_here")
+    with pytest.raises(SimBridgeBinaryError) as ei:
+        search_driver_spawn_argv("rust")
+    msg = str(ei.value)
+    assert "Cargo.toml" in msg                  # says WHAT is missing
+    assert "POKESIM_SEARCH_DRIVER_BIN" in msg   # ...and the escape hatch
+    # And nothing was cached, so a later call re-raises rather than serving a half-resolution.
+    assert "search_driver" not in sim_bridge_bin._rust_bin_cache
+
+
+def test_deferral_warning_states_the_current_rust_scope():
+    """The startup warning must describe the scope that is TRUE NOW, and no wider.
+
+    Four capabilities have shipped in sequence and the warning has trailed each one, so this
+    test pins the text against the two failure modes that actually hurt an operator:
+
+    * **Under-claiming** sends someone to ``--use-bridge=node`` for work that runs on rust.
+      ``__RECON__`` (``gen3_bridge_recon_record_v1``), ``resumeReseed``
+      (``gen3_bridge_resume_reseed_v1``), and now BOTH offline driver families
+      (``gen3_rust_search_driver_v1`` = ``open_root``/``expand_many``,
+      ``gen3_rust_replay_driver_v1`` = ``replay``/``reroll``/``reroll_many``) are supported, so
+      better-line / lookahead / falsify / the search-teacher all work.
+    * **Over-claiming** hides a real divergence. Two gaps remain and must stay named: the
+      CHOICE-REJECT framing (no ``|error|`` frame; the boundary re-opens to both sides) and the
+      reconstructed ``pre_state`` volatile names.
+
+    It must ALSO not resurrect the retracted reason. The warning once blamed the record's
+    ``input_log`` byte-identity for the search-teacher's node requirement; that was false —
+    nothing reads the committed-choice lines (``replay_kernels.js::writeStart`` and
+    ``ReconstructionRecord.start_options()``/``players()`` read only ``>start``/``>player``).
     """
     msg = rust_deferral_warning()
-    assert "__RECON__" in msg
-    assert "resumeReseed" in msg
-    assert "SUPPORTED" in msg, "the warning must not still claim these are deferred"
-    assert "byte-identical" in msg, "the warning must keep the honest input_log scope"
+    assert "__RECON__" in msg and "resumeReseed" in msg
+    assert "SUPPORTED" in msg, "must not still claim the forensic paths are deferred"
+    assert "search_driver" in msg, "must name the binary an operator selects with --impl"
+    assert "gen3_rust_search_driver_v1" in msg and "gen3_rust_replay_driver_v1" in msg, (
+        "both offline verb families must be named — an operator reading only 'search' would "
+        "still think reroll/falsify needs node")
+    # The honest-scope half: the two known divergences stay visible.
+    assert "REJECT" in msg.upper(), "the choice-reject framing gap must stay named"
+    assert "pre_state" in msg, "the reconstructed volatile-name gap must stay named"
+    # ...and the retracted input_log reason must never come back as the cause.
+    assert "byte-identical" not in msg
 
 
 def test_rust_bridge_emits_a_parseable_recon_record(tmp_path):

@@ -30,11 +30,15 @@ class GeneratedTrace:
 def generate_loss_traces(trainee, opponent, *, out_dir: str, n_battles: int, step: int,
                          opponent_label: str, opponent_ckpt: Optional[str], opponent_source: str,
                          use_bridge: bool = True, concurrency: int = 1,
-                         loss_quota: int = 1000) -> List[GeneratedTrace]:
+                         loss_quota: int = 1000, impl: str = "node") -> List[GeneratedTrace]:
     """Play ``n_battles`` (frozen ``trainee`` vs ``opponent``) recording every LOSS as a trace into
     ``out_dir``, and return those traces tagged with the (known) opponent. ``trainee`` is an
     ``EvalRLPlayer`` (built once by the worker, reused across calls); ``opponent`` is its poke-env
-    player. Reuses the eval forensic-capture + bridge-battle path wholesale."""
+    player. Reuses the eval forensic-capture + bridge-battle path wholesale.
+
+    ``impl`` (``"node"`` default | ``"rust"``) picks the in-process sim-bridge child these battles
+    run on — the same selector as ``--use-bridge={node,rust}``. It used to be unset here, which
+    silently pinned generation to node even on a rust run."""
     from utils.bridge.local_battle_runner import run_local_battles
 
     os.makedirs(out_dir, exist_ok=True)
@@ -45,7 +49,7 @@ def generate_loss_traces(trainee, opponent, *, out_dir: str, n_battles: int, ste
         opponent.reset_battles()
 
     async def _play():
-        await run_local_battles(trainee, opponent, n_battles, concurrency=concurrency)
+        await run_local_battles(trainee, opponent, n_battles, concurrency=concurrency, impl=impl)
     asyncio.run(_play())
 
     traces: List[GeneratedTrace] = []

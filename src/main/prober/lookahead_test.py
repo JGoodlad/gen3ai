@@ -59,7 +59,7 @@ class _Model:
 
 def _install_fakes(monkeypatch):
     def fake_mat_from_record(record, *, actions, mappings=None, map_actions_at=None,
-                             stop_after_decision=None):
+                             stop_after_decision=None, impl="node"):
         decisions = [MaterializedDecision(obs=np.zeros(_DIM, np.float32), mask=np.ones(11, np.int8),
                                           turn=_TURN) for _ in range(_INV + 1)]
         return MaterializedTrace(decisions=decisions, actions_complete=True, action_choices=dict(_CHOICES))

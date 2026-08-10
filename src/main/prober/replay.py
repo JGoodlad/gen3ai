@@ -130,11 +130,16 @@ def replay_counterfactual_battle(
     opponent_source: str = "auto",
     n_rollouts: int = 1,
     narrate: bool = False,
+    impl: str = "node",
 ) -> dict:
     """Run the counterfactual: substitute ``action`` at ``inv_index``'s turn and play to a terminal
     ``n_rollouts`` times (each a fresh post-divergence dice reseed when ``n_rollouts`` > 1), returning
     a win-rate ± Wilson CI. See the module header for opponent resolution. Raises (like the falsifier)
-    on a non-``move_selection`` anchor, an illegal substitute action, or a missing ``actions`` array."""
+    on a non-``move_selection`` anchor, an illegal substitute action, or a missing ``actions`` array.
+
+    ``impl`` (``"node"`` default | ``"rust"``) selects the engine for BOTH legs this call spans: the
+    offline replay driver that materializes the anchor, and the in-process sim bridge the live
+    post-divergence rollouts run on."""
     invs = summary.get("invocations", [])
     if not (0 <= inv_index < len(invs)):
         raise IndexError(f"inv {inv_index} out of range (battle has {len(invs)})")
@@ -152,7 +157,8 @@ def replay_counterfactual_battle(
     actions = np.asarray(npz["actions"], dtype=int)
     chosen_idx = int(actions[inv_index])
     trace = materialize_from_record(record, actions=actions, mappings=mappings,
-                                    map_actions_at=inv_index, stop_after_decision=inv_index)
+                                    map_actions_at=inv_index, stop_after_decision=inv_index,
+                                    impl=impl)
     # Obs-version guard: the players build obs with the CURRENT encoder, but the resolved checkpoint
     # (nearest/recent tier) may have been trained on a different obs dim → a confusing torch shape error
     # deep in the play loop. Fail loud up front (mirrors the analyze path's obs_mismatch).
@@ -185,7 +191,7 @@ def replay_counterfactual_battle(
         cap = narrate and (win_traj is None or loss_traj is None)
         res = _run_one(record, trainee=trainee, opponent=opponent, divergence_turn=turn,
                        substitute_choice=substitute_choice, seed=seed, post_t_seed=ps,
-                       capture_trajectory=cap)
+                       capture_trajectory=cap, impl=impl)
         outcomes.append(res["outcome"])
         if cap and res.get("trajectory"):
             if res["outcome"] == "win" and win_traj is None:

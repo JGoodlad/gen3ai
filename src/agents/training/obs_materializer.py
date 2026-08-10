@@ -328,6 +328,7 @@ def infer_action_indices(
     mappings=None,
     stop_after_decision: Optional[int] = None,
     chunks: "Optional[Sequence[str]]" = None,
+    impl: str = "node",
 ) -> "list[int]":
     """Recover ``side``'s ACTION-INDEX history by replaying its recorded battle and inverting each
     recorded sim-choice string through the real mapper. The counterpart of ``states.npz['actions']``
@@ -337,12 +338,13 @@ def infer_action_indices(
 
     ``chunks`` (that side's chunks from an ALREADY-run :func:`replay_battle`) skips the internal
     replay — a caller that already replayed the battle (e.g. for the other side's obs) passes them so
-    the whole game is replayed through Node ONCE, not once per side."""
+    the whole game is replayed through the driver ONCE, not once per side. ``impl`` selects that
+    driver (``"node"`` default | ``"rust"``) and is ignored when ``chunks`` is supplied."""
     global _TAG_SEQ
     _TAG_SEQ += 1
     name = record.username(side)
     if chunks is None:
-        rep = replay_battle(record)
+        rep = replay_battle(record, impl=impl)
         chunks = rep.p1_chunks if side == "p1" else rep.p2_chunks
     recorded = [c for (s, c) in record.commands if s == side]
     player = _InvertingReplayPlayer(
@@ -400,16 +402,18 @@ def materialize_from_record(
     stall_config: Optional[StallConfig] = None,
     map_actions_at: Optional[int] = None,
     stop_after_decision: Optional[int] = None,
+    impl: str = "node",
 ) -> MaterializedTrace:
     """Convenience: replay the full recorded battle and materialize ``username``'s
     one-sided obs at every decision. ``username`` defaults to the record's
     ``trainee_username``. Only the regenerated per-side chunks cross into the
-    obs pipeline — never the omniscient record fields."""
+    obs pipeline — never the omniscient record fields. ``impl`` selects the replay driver
+    (``"node"`` default | ``"rust"``)."""
     name = username or record.trainee_username
     if not name:
         raise ValueError("record carries no trainee_username — pass username=")
     side = record.side_of(name)
-    rep = replay_battle(record)
+    rep = replay_battle(record, impl=impl)
     chunks = rep.p1_chunks if side == "p1" else rep.p2_chunks
     return materialize_decisions(
         chunks,

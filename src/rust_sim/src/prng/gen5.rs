@@ -11,6 +11,10 @@ use super::RngCore;
 const A: [u16; 4] = [0x5d58, 0x8b65, 0x6c07, 0x8965]; // 0x5D588B656C078965
 const C: [u16; 4] = [0, 0, 0x26, 0x9ec3]; // 0x00269EC3
 
+/// `Clone` is the clone-and-branch search primitive (`gen3_bridge_clone_branch_v1`) —
+/// the four 16-bit words ARE the whole LCG state, so a clone continues the same
+/// stream independently of its parent.
+#[derive(Clone)]
 pub struct Gen5Rng {
     seed: [u16; 4],
 }

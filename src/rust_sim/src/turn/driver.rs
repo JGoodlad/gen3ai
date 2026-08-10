@@ -710,6 +710,19 @@ impl FullBattleDriver {
         matches!(self.phase, DrivePhase::Ended(_))
     }
 
+    /// The WINNER's side index once the drive has ended, else `None`.
+    ///
+    /// `None` covers BOTH "still playing" and a gen-3 double-faint TIE (`Ended(None)`) —
+    /// `is_ended` distinguishes them. This is the read [`crate::bridge::BridgeSession::winner`]
+    /// exposes for the search driver's omniscient referee (`Battle::winner` is one of the
+    /// never-built `todo!()` convenience methods and must not be called).
+    pub(crate) fn winner(&self) -> Option<usize> {
+        match self.phase {
+            DrivePhase::Ended(w) => w,
+            _ => None,
+        }
+    }
+
     /// The final [`BattleOutcome`] — `ended:true` ONLY once game-end was reached (a
     /// script-exhaustion at any boundary is a partial `ended:false`, matching the old
     /// driver's returns exactly).

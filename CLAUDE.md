@@ -410,13 +410,53 @@ tree + binary 2026-08-04). Kept as history because the *coverage-hole lesson* is
   `test_seed_forms_reproduce_the_same_battle_on_rust_and_node` (parametrized over all forms).
 - ~~`resumeReseed` accepts ONLY the array form.~~ **FIXED** — same shared parser, so the
   counterfactual Monte-Carlo works on rust.
-- **STILL TRUE — the clone-and-branch SEARCH server has no rust path**
-  (`Battle::serialize`/`deserialize` are `todo!()` in `src/rust_sim/src/battle.rs`) and
-  `teacher/generate.py` calls `run_local_battles` with no `impl` (→ node). `train_rl_agent`
-  hard-`parser.error`s on `--search-teacher` / `--teacher-persistent` + `rust`, for a DIFFERENT and
-  still-valid reason: those paths need the sim's OWN byte-identical `input_log`, and the rust
-  record's committed-choice lines are rendered from the engine's script — **replay-EQUIVALENT, not
-  byte-identical**. That is the one honest deferral the startup banner names.
+- ~~The clone-and-branch SEARCH server has no rust path.~~ **CLOSED — search runs on rust.** Three
+  layers landed together:
+  - **The snapshot primitive** (`gen3_bridge_clone_branch_v1`) — `BridgeSession::snapshot()`, a
+    derived deep `Clone`, plus `clear_chunks` / `request_kind` / `is_choice_done` /
+    `active_request_json` / `battle_state` / `winner`; gated by `tests/bridge_clone_branch_test.rs`.
+    The `Battle::serialize`/`deserialize` stubs are **DELETED**: Showdown needs a byte format
+    because its battle graph is cyclic, but the port's state is plain owned data and the snapshot
+    never crosses a process boundary, so an in-process clone is the whole requirement.
+  - **The drivers** — ONE binary, `src/rust_sim/src/bin/search_driver.rs`, serves BOTH offline verb
+    families: `open_root` / `expand_many` / `close` over a persistent stdin loop
+    (`gen3_rust_search_driver_v1`) and the one-shot `replay` / `reroll` / `reroll_many`
+    (`gen3_rust_replay_driver_v1`; node splits these across `search_driver.js` +
+    `replay_driver.js`). `src/rust_sim/src/search.rs` ports `replay_kernels.js` — the mulberry32
+    aux-RNG, `random_choice`, `resolve_turn`/`resolve_turn_exact`, `recorded_queues`, `outcome_of`.
+  - **The Python seam** (`gen3_search_driver_impl_seam_v1`) — `resolve_search_driver_bin()` /
+    `search_driver_spawn_argv(impl)` mirror the `sim_bridge` pair (env override
+    `$POKESIM_SEARCH_DRIVER_BIN`, else `cargo build --release --bin search_driver`, cached, clear
+    error, **never** a node fall-back). `impl="node"|"rust"` threads through `SearchSession(impl=)`,
+    `reconstruction.{replay_battle,reroll_turn,reroll_many}(impl=)`,
+    `obs_materializer.{materialize_from_record,infer_action_indices}(impl=)`, the prober
+    (`ProbeSession(impl=)` + `python -m main.prober.query --impl {node,rust}`), both search-teacher
+    workers, `SearchTeacherCallback(impl=args.bridge_impl)` and `teacher/generate.py`'s
+    `run_local_battles` (which used to take node silently). **Every default is `"node"`**, so this
+    is byte-identical until someone asks for rust.
+
+  **Gates** (all run): `tmp/search_impl_parity.py` 6 cases / 60 arms / 18873 leaf fields and
+  `tmp/replay_impl_parity.py` 76 cases / 136 arms / 30689 leaf fields, both node-vs-rust with only
+  `|t:|` normalized; `search_clone_parity_fuzz_test --impl rust [--record-impl rust]` (clone ≡
+  `reroll_many` at the OBS, bit-for-bit); `counterfactual_fuzz_test --impl rust`;
+  `better_line_integration_test`, parametrized over both impls plus a **cross-impl** test asserting
+  node and rust produce identical candidate V — and since that fake model's `V = obs.sum()`, an
+  exact match is an obs-level bit-identity claim at every ply of the beam.
+
+  **The `--search-teacher` + rust guard is GONE.** For the record, the reason it used to give was
+  **WRONG** — not `input_log` byte-identity: *nothing reads the record's committed-choice lines*
+  (`replay_kernels.js::writeStart` and `ReconstructionRecord.start_options()`/`players()` read only
+  `>start`/`>player`, which the rust record renders exactly). The real blocker was always the
+  missing driver. **Do not re-derive a plan from the old reason.** Not yet gated: a full multi-cycle
+  teacher run end-to-end on rust — every leg is gated, the composition is not.
+
+  **Two honest gaps, allowlisted and printed by both harnesses, never silent:** (1) a CHOICE-REJECT
+  (an explicit move the request marks `disabled`, or a switch into a fainted slot) emits no
+  `|error|` frame and re-opens the boundary to BOTH sides where node re-asks only the offending
+  side — a pre-existing `bridge.rs` gap on a path poke-env never takes, reconciled only when every
+  log chunk is byte-equal; (2) `pre_state` volatile NAMES are reconstructed from the port's typed
+  fields, and the golden verifies exactly one fact about them (duration-1 volatiles must not leak
+  into a move boundary — that one really did diverge and was fixed). `pre_state` has no consumer.
 
 **THE DURABLE LESSON from the seed defects** (why they shipped at all): every gate on that path —
 `sim_bridge_bin_test`, `gen_sim_bridge_diff.js`, and the parity test's own check 2 — was inherently

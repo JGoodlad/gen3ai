@@ -1572,8 +1572,14 @@ pub struct Field {
 }
 
 /// The constructed in-battle state: PRNG, turn counter, the two sides, and the
-/// field. This is the deterministic core the event engine will mutate; THIS step
-/// only constructs it (no events run).
+/// field. This is the deterministic core the event engine mutates.
+///
+/// **`Clone` is the clone-and-branch snapshot** (`gen3_bridge_clone_branch_v1`): every
+/// field below is plain owned data (no `Rc`/`RefCell`/`Box<dyn>`/raw pointers), so a
+/// derived clone is a DEEP, fully independent battle — advancing it cannot touch the
+/// original. Deliberately, the [`crate::dex::Dex`] is NOT held here (it is threaded per
+/// call), so a snapshot does not copy the ~16 MB of parsed static data; keep it that way.
+#[derive(Clone)]
 pub struct BattleState {
     /// The battle PRNG, built from the seed (unused until events draw from it).
     pub prng: Prng,

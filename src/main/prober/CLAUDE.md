@@ -607,8 +607,9 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   confirm_rollouts=0)` — **SEARCH for a better line** (`better_line.py`): the depth-≥2 generalization of
   `lookahead` (which IS its depth-1 instance). A shallow, CRN-anchored **beam over the critic** that
   branches a search TREE by CLONING mid-battle states in the warm `SearchSession`
-  (`utils/bridge/search_session.py` → `search_driver.js`, `State.serializeBattle`, ~1.7 ms/clone — the
-  only primitive that makes depth>1 feasible), expands OUR top-k actions by policy prior, scores each
+  (`utils/bridge/search_session.py` → `search_driver.js`'s `State.serializeBattle` on node, or the rust
+  binary's `BridgeSession::snapshot` under `--impl rust` — the only primitive that makes depth>1
+  feasible), expands OUR top-k actions by policy prior, scores each
   successor's V(s′) on the materialized ONE-SIDED obs (`model.values_batch`, one critic forward per
   ply), keeps the top-`beam`, and recurses; backup is **max-over-our-continuations** and the returned
   LINE is the principal variation. Returns ONE human-legible **contrastive trajectory**: the divergence
@@ -771,6 +772,10 @@ python -m main.prober.query falsify  <battle_id> [--inv N]... [--worst K] [--see
 python -m main.prober.query falsify-scan <run_dir> [--outcome loss|win] [--opponent X] [--step N] [--limit K] [--worst K] [--seeds N] [--alts K] [--concurrency N]
 python -m main.prober.query calibration  <run_dir> [--step N] [--opponent X] [--limit K] [--worst K] [--seeds N] [--concurrency N] [--bins N] [--overvalue-tau F]
 python -m main.prober.query decision-table <run_dir> [--step N]... [--opponent X]... [--outcome loss] [--cat selfko]... [--out t.jsonl] [--limit K]
+
+# GLOBAL flags (before the subcommand): --compile (torch.compile the rollout models) and
+# --impl {node,rust} (which sim engine the search/replay children run — see below)
+python -m main.prober.query --impl rust better-line <battle_id> <inv>
 ```
 **Investigation recipe:** `triage` (which LEVER recovers the most rating — start here
 for "what next") → `summary` → `scan --outcome loss [--opponent X]` (the worst turn in
@@ -872,6 +877,42 @@ same extractor, and the compiled artifact is inference-only (AOTAutograd's CPU b
 on the model's scatter/`index_add`). `maybe_compile_extractor`'s wrapper routes any **grad-enabled**
 call to the eager forward, so `--compile` cannot change or break a saliency result — it simply does
 not apply there. Detail: `src/agents/training/CLAUDE.md` → Compiled CPU opponents.
+
+## `--impl {node,rust}` (which sim engine the search/replay children run)
+
+`python -m main.prober.query --impl rust <cmd> …` — the **offline analogue of the trainer's
+`--use-bridge={node,rust}`**, and like `--compile` it is a global flag placed BEFORE the subcommand.
+Default `node` = today's behavior byte-for-byte.
+
+It picks the child process the re-roll-backed probes exec — `better-line` / `lookahead` / `falsify`
+/ `falsify-scan` / `calibration` / `replay-counterfactual`. The model-free, no-replay commands
+(`summary`, `list`, `scan`, `triage`, `overview`, `find`, `analyze`, `probe`, `decision-table`)
+spawn no sim child, so the flag is inert for them. Under `node` the work is split across
+`search_driver.js` (the clone-and-branch server) and `replay_driver.js` (replay / reroll); under
+`rust` a single `src/rust_sim` `search_driver` binary serves both — resolved (and built, once) by
+`utils/bridge/sim_bridge_bin.resolve_search_driver_bin`, overridable with
+`$POKESIM_SEARCH_DRIVER_BIN`. `replay-counterfactual`'s live post-divergence rollouts additionally
+ride the LIVE bridge seam (`$POKESIM_SIM_BRIDGE_BIN` / the `sim_bridge` binary), since that leg
+plays a real game. **It NEVER falls back to node** — an unbuildable binary is a clear error, because
+a "rust" probe that silently ran on node would answer a different question than the one asked.
+
+**The default lives on the SESSION, not the call**: `ProbeSession(root, …, impl="node")` stores it
+and every probe reads it — the same shape as `compile_extractor`, and deliberate, since two probes
+of one run answering under different engines would not be comparable. `better_line` REFUSES an
+injected warm `SearchSession` whose `impl` differs from the session's (the search-teacher's reuse
+path), so a correction can't be half-searched on one engine and half-confirmed on the other.
+
+**The rust binary is BUILT and gated** (`gen3_rust_search_driver_v1` + `gen3_rust_replay_driver_v1`,
+over the `gen3_bridge_clone_branch_v1` snapshot primitive), so `--impl rust` works today. Equivalence
+is pinned node-vs-rust at 18873 + 30689 leaf fields, and — the claim that matters for a probe — the
+cross-impl `better_line_integration_test` asserts node and rust yield IDENTICAL candidate V; since
+that fake model is `V = obs.sum()`, an exact match is an obs-level bit-identity claim at every ply of
+the beam. Two known divergences are printed by the parity harnesses rather than hidden: the
+choice-reject framing (no `|error|` frame, boundary re-opens to both sides) and reconstructed
+`pre_state` volatile names. **Perf: per-op the rust driver is 7–20× (clone-and-branch 13–20×), but
+end-to-end `better_line` is only ~1.9×** — child-wait falls from 51% to 4% of a call, so Python-side
+obs materialization is now the bottleneck and it is impl-invariant. See
+`src/utils/bridge/README.md` → Offline driver transport.
 
 ## Gotchas
 

@@ -1048,7 +1048,7 @@ pub fn run_full_battle_bridge_core_with_quick_claw(
         let non_wait = kinds.iter().filter(|k| **k != SideRequest::Wait).count();
         let no_cancel_forced = non_wait < 2;
         // Each side's request for THIS boundary → ONE chunk per side.
-        emit_boundary_request_chunks(&mut chunks, state, &kinds, no_cancel_forced, dex);
+        let _ = emit_boundary_request_chunks(&mut chunks, state, &kinds, no_cancel_forced, dex);
 
         // ── Consume the CMD(s) answering this boundary (see the flat driver's docs). ──
         let mut need: [bool; 2] = [
@@ -1177,10 +1177,39 @@ pub fn run_full_battle_bridge_core_with_quick_claw(
 /// The mid-boundary progress a [`BridgeSession`] persists across CMD feeds (a `move`
 /// request needs BOTH sides' choices, possibly arriving on separate CHOOSE lines; a
 /// trapped reject holds the boundary open).
+#[derive(Clone)]
 struct BoundaryProgress {
     kinds: [SideRequest; 2],
     got: [Option<Choice>; 2],
     need: [bool; 2],
+}
+
+/// The agent-visible request surface at an open boundary — the PUBLIC mirror of the
+/// private [`SideRequest`], using Showdown's `side.requestState` vocabulary
+/// (`'move'` / `'switch'` / `'wait'`).
+///
+/// A clone-and-branch search kernel branches on exactly `requestState === 'move'`, so
+/// the mapping is the load-bearing part: a FORCED replacement is `Switch` (Showdown
+/// reports `'switch'` for `forceSwitch`, not some third kind), and a side that is not
+/// being asked this boundary is `Wait`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RequestState {
+    /// A top-of-turn `move` request: the side picks a move OR a voluntary switch.
+    Move,
+    /// A FORCED replacement (`forceSwitch`) after a faint: the side must switch.
+    Switch,
+    /// This side is not being asked at this boundary (`{"wait":true}`).
+    Wait,
+}
+
+impl From<SideRequest> for RequestState {
+    fn from(r: SideRequest) -> Self {
+        match r {
+            SideRequest::Move => RequestState::Move,
+            SideRequest::ForceSwitch => RequestState::Switch,
+            SideRequest::Wait => RequestState::Wait,
+        }
+    }
 }
 
 /// A PERSISTENT per-side bridge session over a LIVE battle. It owns the same
@@ -1191,11 +1220,15 @@ struct BoundaryProgress {
 /// (the wedge fix): `sim_bridge` builds ONE session per battle and feeds each CHOOSE
 /// into it, instead of re-running the whole accumulated stream per CHOOSE.
 ///
-/// Plain data (the `Battle`/queue are `Clone`-able), so a future `Battle::serialize`
-/// can snapshot a paused session mechanically (Tier 3 — not built here). Shares the
-/// caller's `&Dex` (a `Dex` owns ~16 MB of parsed data — a per-battle load would be a
-/// real regression), so the bridge threads it per method, unlike the writeline
-/// `BattleStream` which owns its Dex for the standalone `new()` surface.
+/// **Plain data all the way down — which is what makes [`BridgeSession::snapshot`]
+/// work** (`gen3_bridge_clone_branch_v1`): no `Rc`/`RefCell`/`Box<dyn>`/closures/raw
+/// pointers/lifetimes anywhere beneath this type, so the derived `Clone` is a DEEP,
+/// fully independent paused session — the clone-and-branch primitive a search driver
+/// builds a tree from. Shares the caller's `&Dex` (a `Dex` owns ~16 MB of parsed data —
+/// a per-battle load would be a real regression), so the bridge threads it per method,
+/// unlike the writeline `BattleStream` which owns its Dex for the standalone `new()`
+/// surface; a snapshot therefore costs the BATTLE, not the dex.
+#[derive(Clone)]
 pub struct BridgeSession {
     battle: Battle,
     driver: FullBattleDriver,
@@ -1209,11 +1242,25 @@ pub struct BridgeSession {
     prev_log_len: usize,
     /// The open boundary's per-side progress, or `None` between boundaries.
     boundary: Option<BoundaryProgress>,
+    /// The `|request|` line CURRENTLY OUTSTANDING to each side — the port of Showdown's
+    /// `side.activeRequest` (`gen3_bridge_clone_branch_v1`). Written wherever a request is
+    /// emitted into `chunks` (the boundary open, AND the re-request a hidden-trap reject
+    /// re-issues), cleared when the boundary closes / the battle ends. Stored rather than
+    /// rebuilt on demand so [`BridgeSession::active_request_json`] returns the EXACT bytes
+    /// the wire carried — rebuilding could drift from what was sent (the `update`/`noCancel`
+    /// trailing keys depend on how the boundary was reached, not on the current board).
+    active_request: [Option<String>; 2],
     /// Unconsumed CMDs (fed but not yet answering a boundary — e.g. a partial
     /// double-replacement, or cmds queued ahead of the boundary that needs them).
     cmd_buf: std::collections::VecDeque<Cmd>,
     /// The battle reached its natural WIN/LOSS/TIE end.
     ended: bool,
+    /// The winner of a [`BridgeSession::forfeit`], if one happened. A forfeit ends the
+    /// battle through the PROTOCOL (it writes the `|win|` pair directly) rather than the
+    /// driver's own win check, so the driver's phase never becomes `Ended` and
+    /// [`BridgeSession::winner`] would otherwise report `None` for a battle that plainly
+    /// has a winner.
+    forfeit_winner: Option<usize>,
     /// An upstream-desync graceful stop (the R20 `!need[s]` case) — no further advance.
     stopped: bool,
     /// A FATAL, non-recoverable condition the live bridge must report as `__ERR__` rather than
@@ -1301,8 +1348,10 @@ impl BridgeSession {
             script: Vec::new(),
             prev_log_len,
             boundary: None,
+            active_request: [None, None],
             cmd_buf: std::collections::VecDeque::new(),
             ended: false,
+            forfeit_winner: None,
             stopped: false,
             fatal: None,
             reject_streak: 0,
@@ -1360,11 +1409,24 @@ impl BridgeSession {
         emit_log_batch_chunk(&mut self.chunks, &delta, self.report_percent);
         self.prev_log_len = new_len;
         self.ended = true;
+        self.forfeit_winner = Some(winner);
+        // The battle is over — whatever request was open is void (mirrors the natural-end
+        // clear in `advance`).
+        self.boundary = None;
+        self.active_request = [None, None];
     }
 
     /// All per-side chunks emitted so far (the `sim_bridge` cursor reads `[emitted..]`).
     pub fn chunks(&self) -> &BridgeChunks {
         &self.chunks
+    }
+
+    /// Whether this session's FORMAT hides exact HP from the non-owner (gen3ou's "HP
+    /// Percentage Mod"). `false` for a `debug:true` format (gen3customgame sets
+    /// `reportExactHP`). Read-only; exposed for [`split_log_lines`], whose shared-form
+    /// rendering must agree with the per-side fold.
+    pub fn report_percent(&self) -> bool {
+        self.report_percent
     }
 
     /// The battle reached game-end.
@@ -1413,6 +1475,98 @@ impl BridgeSession {
         &self.script
     }
 
+    // =======================================================================
+    // The CLONE-AND-BRANCH SEARCH API (`gen3_bridge_clone_branch_v1`).
+    //
+    // The Node search server clones a paused battle with `State.serializeBattle`
+    // and branches it; this is the Rust equivalent, minus the byte format (see
+    // [`crate::battle::Battle`] for why none is needed). Everything here is a READ
+    // or a snapshot — no method below advances the battle or draws a single number,
+    // so wiring a search driver on top cannot perturb the production bridge.
+    // =======================================================================
+
+    /// A deep, independent clone of this paused session — **the clone-and-branch
+    /// primitive**.
+    ///
+    /// The clone shares NOTHING with its parent: battle state, PRNG, driver phase,
+    /// chunk stream, log cursor and open-boundary progress are all copied, so advancing
+    /// either one cannot affect the other. It resumes from exactly this pause point and
+    /// rolls the dice the parent would have rolled, which is what makes a branch a
+    /// counterfactual of THIS board rather than a different game.
+    ///
+    /// Cost is the BATTLE, not the dex: the `&Dex` is threaded per method, never owned
+    /// here, so a snapshot copies a couple of teams' worth of state rather than ~16 MB.
+    ///
+    /// A search driver will typically pair this with [`BridgeSession::clear_chunks`],
+    /// so the branch's `chunks()` contains only what the branch itself emitted.
+    pub fn snapshot(&self) -> BridgeSession {
+        self.clone()
+    }
+
+    /// Drop every chunk emitted so far and reset the chunk stream, so a resumed clone's
+    /// [`BridgeSession::chunks`] contains ONLY what it emits from here — the per-ply
+    /// SUFFIX a search driver returns for one branch.
+    ///
+    /// Deliberately does NOT touch `prev_log_len`: that is a cursor into the BATTLE LOG
+    /// (which lines have been folded into chunks yet), not into the chunk stream. Resetting
+    /// it would re-emit the whole battle's log into the next chunk. Nor does it touch the
+    /// battle, the driver, the open boundary, or `request_seeds`/`script`.
+    pub fn clear_chunks(&mut self) {
+        self.chunks = BridgeChunks::default();
+    }
+
+    /// The OPEN request kind for `side` at the current paused boundary, or `None` when no
+    /// boundary is open (the battle ended, was forfeited, or the session stopped on an
+    /// upstream desync).
+    ///
+    /// Mirrors Showdown's `side.requestState`: a forced replacement reports
+    /// [`RequestState::Switch`], a top-of-turn request [`RequestState::Move`], and a side
+    /// this boundary does not ask reports [`RequestState::Wait`].
+    pub fn request_kind(&self, side: usize) -> Option<RequestState> {
+        self.boundary.as_ref().map(|bp| RequestState::from(bp.kinds[side]))
+    }
+
+    /// Whether `side` has already supplied an ACCEPTED choice for the open boundary — the
+    /// equivalent of Showdown's `side.isChoiceDone()`.
+    ///
+    /// `true` also when the side is not needed at this boundary (a `Wait` request) and when
+    /// no boundary is open at all: in both cases the boundary is not waiting on this side.
+    /// `false` ONLY while the boundary genuinely wants a choice from it — which includes the
+    /// state right after a REJECTED choice, since a reject re-issues the request and leaves
+    /// the boundary open.
+    pub fn is_choice_done(&self, side: usize) -> bool {
+        self.boundary.as_ref().map(|bp| !bp.need[side]).unwrap_or(true)
+    }
+
+    /// The EXACT `|request|` line last issued to `side` (the bytes the wire carried), or
+    /// `None` when nothing is outstanding (between boundaries / after game-end).
+    ///
+    /// Byte-identical to what Showdown's `side.activeRequest` serializes to, because it IS
+    /// the string that was pushed into the chunk stream — including the `"update":true`
+    /// re-request a hidden-trap REJECT re-issues, which is the frame a search kernel must
+    /// re-pick from after a rejected switch.
+    pub fn active_request_json(&self, side: usize) -> Option<&str> {
+        self.active_request[side].as_deref()
+    }
+
+    /// Read access to the live battle state — the omniscient referee readout a search
+    /// driver scores a branch with (HP, status, boosts, field, the PRNG's current seed).
+    /// `None` only if the battle was never constructed, which cannot happen for a session
+    /// built by any of the `new*` constructors.
+    pub fn battle_state(&self) -> Option<&BattleState> {
+        self.battle.state()
+    }
+
+    /// The WINNER's side index (0 = p1, 1 = p2) once the battle has ended, else `None`.
+    ///
+    /// Covers both end paths: the driver's own win check (a side out of mons) and a
+    /// [`BridgeSession::forfeit`], which ends the battle through the protocol instead.
+    /// `None` therefore means EITHER "still playing" OR a gen-3 double-faint TIE — pair it
+    /// with [`BridgeSession::is_ended`] to tell those apart.
+    pub fn winner(&self) -> Option<usize> {
+        self.driver.winner().or(self.forfeit_winner)
+    }
+
     /// Advance from the current paused state as far as the buffered CMDs allow: at each
     /// request boundary emit the log delta + request, consume CMD(s), emit the struggle
     /// line, feed ONE decision to the driver, repeat — pausing when the CMD buffer runs
@@ -1448,6 +1602,10 @@ impl BridgeSession {
                 self.prev_log_len = new_len;
                 if self.driver.is_ended() {
                     self.ended = true;
+                    // Nothing is outstanding once the battle is over (`side.activeRequest`
+                    // is cleared at the sim's `win`), so the search driver's
+                    // `active_request_json` reads None rather than a stale frame.
+                    self.active_request = [None, None];
                     return;
                 }
                 // Determine the pending request kind per side from the paused state.
@@ -1461,7 +1619,12 @@ impl BridgeSession {
                 };
                 {
                     let bs = self.battle.state().expect("state");
-                    emit_boundary_request_chunks(&mut self.chunks, bs, &kinds, no_cancel_forced, dex);
+                    let issued =
+                        emit_boundary_request_chunks(&mut self.chunks, bs, &kinds, no_cancel_forced, dex);
+                    // Record what is now OUTSTANDING per side (incl. the `{"wait":true}`
+                    // frame — the sim issues that too).
+                    let [r0, r1] = issued;
+                    self.active_request = [Some(r0), Some(r1)];
                 }
                 self.boundary = Some(BoundaryProgress {
                     kinds,
@@ -1612,7 +1775,11 @@ impl BridgeSession {
                             let bs = self.battle.state().expect("state");
                             build_request(bs, s, SideRequest::Move, true, true, false, dex)
                         };
-                        self.chunks.push_chunk(s, vec![rereq]);
+                        self.chunks.push_chunk(s, vec![rereq.clone()]);
+                        // The RE-ISSUED frame supersedes the one this reject answered: the
+                        // boundary is still open and the side must pick again FROM THIS
+                        // request (it now carries `trapped:true` + `"update":true`).
+                        self.active_request[s] = Some(rereq);
                     }
                     continue; // side s still needs a choice
                 }
@@ -1625,6 +1792,9 @@ impl BridgeSession {
 
             // ── Boundary satisfied → struggle announce, commit, feed the driver. ──
             let bp = self.boundary.take().expect("boundary");
+            // The boundary is CLOSING, so nothing is outstanding until the next one opens
+            // (which re-sets both entries a few lines below, via the loop's top).
+            self.active_request = [None, None];
             {
                 let bs = self.battle.state().expect("state");
                 for s in 0..2 {
@@ -1742,19 +1912,119 @@ fn emit_log_batch_chunk(
     }
 }
 
+/// Re-render an omniscient log slice in Showdown's `battle.log` SHAPE — the
+/// `|split|pN` / secret / shared triples an `addSplit` line occupies there
+/// (`gen3_rust_replay_driver_v1`).
+///
+/// The port keeps ONE omniscient line per event and derives each side's view at fold time
+/// ([`derive_side`]); Showdown instead stores BOTH forms inline, because `Battle.add` sees a
+/// FUNCTION argument (`pokemon.getHealth`, which returns `{side, secret, shared}`) and routes
+/// to `addSplit`, pushing three entries:
+///
+/// ```text
+/// |split|p2
+/// |-damage|p2a: Metagross|133/328     <- secret (the owner's exact HP)
+/// |-damage|p2a: Metagross|41/100      <- shared (what the other side sees)
+/// ```
+///
+/// This is the ONLY place the two representations have to be reconciled, and it exists for
+/// the replay family's `turn_log` field, which is defined as `battle.log.slice(...)`.
+///
+/// The classification is exactly the predicate set [`derive_side`] already uses, so the two
+/// can never disagree about WHICH lines are split:
+///
+/// * **HP-bearing** (`switch` / `drag` / `-damage` / `-heal` / `-sethp` with a `pNa:` ident) —
+///   always a triple. `shared == secret` in a `reportExactHP` format (`report_percent ==
+///   false`) and for `0 fnt`, matching `getHealth`'s own branches; the triple is emitted
+///   either way, because the split happens at `add` time regardless of what the two forms
+///   contain.
+/// * **Owner-only** (`|-ability|…|[silent]` — gen-3 Pressure's explicit `addSplit`, and the
+///   Intimidate no-activate `|-hint|`) — a triple whose shared form is the EMPTY string,
+///   which is what `addSplit(side, secret)` with no `shared` pushes.
+/// * everything else broadcasts as a single entry.
+///
+/// The `|-hint|` owner is attributed the same way [`emit_log_batch_chunk`] attributes it (the
+/// gen-3 hint form carries no `pNa:` prefix, so it tracks the immediately-preceding
+/// `|switch|`/`|drag|` owner). A hint with no preceding switch IN THIS SLICE is left
+/// un-split — the honest fallback, since the owner is genuinely unknown from the slice alone.
+pub fn split_log_lines(lines: &[crate::protocol::ProtocolLine], report_percent: bool) -> Vec<String> {
+    let mut out: Vec<String> = Vec::with_capacity(lines.len());
+    let mut last_switch_side: Option<usize> = None;
+    for line in lines {
+        let l = &line.0;
+        if l.starts_with("|switch|") || l.starts_with("|drag|") {
+            last_switch_side = ident_owner(l);
+        }
+        // Owner-only pair 1: the Pressure `addSplit` reveal.
+        if l.starts_with("|-ability|") && l.ends_with("|[silent]") {
+            if let Some(owner) = ident_owner(l) {
+                out.push(format!("|split|p{}", owner + 1));
+                out.push(l.clone());
+                out.push(String::new());
+                continue;
+            }
+        }
+        // Owner-only pair 2: the Intimidate no-activate hint (owner from the driver's
+        // preceding switch, mirroring `emit_log_batch_chunk`).
+        if l.starts_with("|-hint|") && l.contains("Intimidate does not activate") {
+            if let Some(owner) = last_switch_side {
+                out.push(format!("|split|p{}", owner + 1));
+                out.push(l.clone());
+                out.push(String::new());
+                continue;
+            }
+        }
+        // HP-bearing: the secret line is what the port already holds; the shared line is the
+        // NON-owner fold (identical to the secret in a debug format / for `0 fnt`).
+        if let Some(owner) = hp_line_owner(l) {
+            let shared = if report_percent {
+                fold_hp_line(l, 1 - owner).unwrap_or_else(|| l.clone())
+            } else {
+                l.clone()
+            };
+            out.push(format!("|split|p{}", owner + 1));
+            out.push(l.clone());
+            out.push(shared);
+            continue;
+        }
+        out.push(l.clone());
+    }
+    out
+}
+
+/// The owner side of an HP-bearing line (`switch`/`drag`/`-damage`/`-heal`/`-sethp`), or
+/// `None` when the line is not one. Shares [`fold_hp_line`]'s tag set by construction — it
+/// simply asks the question without folding.
+fn hp_line_owner(line: &str) -> Option<usize> {
+    let parts: Vec<&str> = line.split('|').collect();
+    match *parts.get(1)? {
+        "switch" | "drag" | "-damage" | "-heal" | "-sethp" => {}
+        _ => return None,
+    }
+    side_of_ident(parts.get(2)?)
+}
+
 /// Emit the per-side request frame for both sides at a boundary — ONE chunk each.
+///
+/// Returns the two `|request|` lines it emitted, so a caller can record what is
+/// OUTSTANDING per side without rebuilding the JSON (the sim's `side.activeRequest`;
+/// see [`BridgeSession::active_request_json`]). The genesis-replay core ignores the
+/// return value.
 fn emit_boundary_request_chunks(
     chunks: &mut BridgeChunks,
     state: &BattleState,
     kinds: &[SideRequest; 2],
     no_cancel_forced: bool,
     dex: &Dex,
-) {
+) -> [String; 2] {
+    let mut out = [String::new(), String::new()];
     for side in 0..2 {
         let no_cancel = kinds[side] == SideRequest::ForceSwitch && no_cancel_forced;
         let line = build_request(state, side, kinds[side], false, false, no_cancel, dex);
-        chunks.push_chunk(side, vec![line]);
+        chunks.push_chunk(side, vec![line.clone()]);
+        out[side] = line;
     }
+    out
 }
 
 /// The `|tier|` + `|rule|…` framing lines for gen3ou (the crate's `emit_framing`

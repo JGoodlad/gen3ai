@@ -7,7 +7,13 @@ MUST equal the sum of the recorded ``states.npz`` next obs (its ``recorded_exact
 real next state bit-for-bit — the value_crn anchor). Depth 2 additionally checks the beam produces a
 principal variation of the right length through the (self-model) interior opponent.
 
-Needs the Node bridge; no server. Run directly or via ``pytest -m integration``."""
+Every test runs against BOTH offline search drivers (``impl="node"`` — ``search_driver.js`` — and
+``impl="rust"`` — ``src/rust_sim/src/bin/search_driver.rs``), and one test pins them against EACH
+OTHER on the same record: the whole point of a byte-compatible port is that the search answers the
+same question, so a value that moves when only the engine changes is the failure mode worth
+catching. That cross-impl test is the durable regression gate for ``gen3_rust_search_driver_v1``.
+
+Needs a bridge; no server. Run directly or via ``pytest -m integration``."""
 
 import asyncio
 import json
@@ -62,7 +68,7 @@ class _SumModel:
         return None
 
 
-def _record_one_battle(out_dir: str):
+def _record_one_battle(out_dir: str, record_impl: str = "node"):
     ts = int(time.time() * 1000) % 100000
     pool = TeamLoader().get_all_teams()
     trainee = RecordingFuzzPlayer(
@@ -73,7 +79,7 @@ def _record_one_battle(out_dir: str):
         battle_format="gen3ou", team=Gen3Teambuilder(pool),
         account_configuration=AccountConfiguration(f"BLo{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration, start_listening=False, max_concurrent_battles=1)
-    asyncio.run(run_local_battles(trainee, opp, 1))
+    asyncio.run(run_local_battles(trainee, opp, 1, impl=record_impl))
     prefix = trainee.trace_prefixes[0]
     record = ReconstructionRecord.load(f"{prefix}_reconstruction.json")
     with open(f"{prefix}_summary.json") as f:
@@ -92,12 +98,13 @@ def _mid_anchor(summary, npz):
 
 
 @pytest.mark.integration
-def test_better_line_depth1_chosen_value_matches_recorded_next_obs():
+@pytest.mark.parametrize("impl", ["node", "rust"])
+def test_better_line_depth1_chosen_value_matches_recorded_next_obs(impl):
     with tempfile.TemporaryDirectory(prefix="better_line_d1_") as out_dir:
         record, summary, npz = _record_one_battle(out_dir)
         anchor = _mid_anchor(summary, npz)
         assert anchor is not None
-        out = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=1)
+        out = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=1, impl=impl)
 
         assert out["inv"] == anchor and out["depth"] == 1
         assert out["opp_model_used"] == "recorded@divergence"
@@ -114,14 +121,15 @@ def test_better_line_depth1_chosen_value_matches_recorded_next_obs():
 
 
 @pytest.mark.integration
-def test_better_line_depth2_beam_produces_principal_variation():
+@pytest.mark.parametrize("impl", ["node", "rust"])
+def test_better_line_depth2_beam_produces_principal_variation(impl):
     with tempfile.TemporaryDirectory(prefix="better_line_d2_") as out_dir:
         record, summary, npz = _record_one_battle(out_dir)
         anchor = _mid_anchor(summary, npz)
         assert anchor is not None
         model = _SumModel()
         out = better_line_decision(model, record, summary, npz, anchor,
-                                   depth=2, beam=3, top_k=4, opp_model=model)
+                                   depth=2, beam=3, top_k=4, opp_model=model, impl=impl)
         assert out["depth"] == 2 and out["opp_model_used"] == "reloaded"
         best = out["best_alternative"]
         if best is not None and best["terminal"] is None:
@@ -131,20 +139,75 @@ def test_better_line_depth2_beam_produces_principal_variation():
 
 
 @pytest.mark.integration
-def test_better_line_is_deterministic():
+@pytest.mark.parametrize("impl", ["node", "rust"])
+def test_better_line_is_deterministic(impl):
     with tempfile.TemporaryDirectory(prefix="better_line_det_") as out_dir:
         record, summary, npz = _record_one_battle(out_dir)
         anchor = _mid_anchor(summary, npz)
         assert anchor is not None
-        a = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=2, opp_model=_SumModel())
-        b = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=2, opp_model=_SumModel())
+        a = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=2,
+                                 opp_model=_SumModel(), impl=impl)
+        b = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=2,
+                                 opp_model=_SumModel(), impl=impl)
         assert [c["action"] for c in a["candidates"]] == [c["action"] for c in b["candidates"]]
         assert [c["value"] for c in a["candidates"]] == [c["value"] for c in b["candidates"]]
 
 
+@pytest.mark.integration
+@pytest.mark.parametrize("record_impl", ["node", "rust"])
+def test_better_line_node_and_rust_drivers_agree(record_impl):
+    """THE cross-impl gate for ``gen3_rust_search_driver_v1``.
+
+    The same record, the same anchor, the same deterministic model — searched once through
+    ``search_driver.js`` and once through the Rust binary. Every candidate's action, choice,
+    terminal label and V must match, and V is ``obs.sum()``, so an exact match here means the
+    two drivers materialized BIT-IDENTICAL successor observations at every ply of the beam.
+    That is a strictly stronger statement than "both ran without error", and it is the property
+    that lets a rust-driven ``better-line`` be compared against a node-driven one.
+
+    Parametrized over the LIVE bridge that produced the record too: a mixed run (train on rust,
+    forensics on node) is the realistic deployment, so a record from either engine must search
+    identically on both.
+    """
+    with tempfile.TemporaryDirectory(prefix="better_line_xi_") as out_dir:
+        record, summary, npz = _record_one_battle(out_dir, record_impl=record_impl)
+        anchor = _mid_anchor(summary, npz)
+        assert anchor is not None
+        kw = dict(depth=2, beam=3, top_k=4)
+        n = better_line_decision(_SumModel(), record, summary, npz, anchor,
+                                 opp_model=_SumModel(), impl="node", **kw)
+        r = better_line_decision(_SumModel(), record, summary, npz, anchor,
+                                 opp_model=_SumModel(), impl="rust", **kw)
+
+        assert n["opp_model_used"] == r["opp_model_used"]
+        assert len(n["candidates"]) == len(r["candidates"]), "candidate COUNT differs"
+        for cn, cr in zip(n["candidates"], r["candidates"]):
+            assert cn["action"] == cr["action"] and cn["choice"] == cr["choice"], (
+                f"candidate identity differs: node {cn['action']}/{cn['choice']} "
+                f"vs rust {cr['action']}/{cr['choice']}")
+            assert cn["terminal"] == cr["terminal"], (
+                f"action {cn['action']}: terminal node {cn['terminal']} vs rust {cr['terminal']}")
+            if cn["value"] is None or cr["value"] is None:
+                assert cn["value"] == cr["value"], (
+                    f"action {cn['action']}: one driver scored it and the other did not")
+                continue
+            # V = obs.sum() over a 2667-dim float32 vector, so equality here is an obs-level
+            # bit-identity claim, not a tolerance. The 1e-6 only absorbs float64 summation order.
+            assert abs(cn["value"] - cr["value"]) < 1e-6, (
+                f"action {cn['action']}: V differs — node {cn['value']!r} vs rust {cr['value']!r} "
+                "(the drivers materialized DIFFERENT successor observations)")
+
+
 if __name__ == "__main__":
-    for fn in (test_better_line_depth1_chosen_value_matches_recorded_next_obs,
-               test_better_line_depth2_beam_produces_principal_variation,
-               test_better_line_is_deterministic):
-        fn()
-        print(f"{fn.__name__}: PASSED")
+    for fn, args in (
+        (test_better_line_depth1_chosen_value_matches_recorded_next_obs, ("node",)),
+        (test_better_line_depth1_chosen_value_matches_recorded_next_obs, ("rust",)),
+        (test_better_line_depth2_beam_produces_principal_variation, ("node",)),
+        (test_better_line_depth2_beam_produces_principal_variation, ("rust",)),
+        (test_better_line_is_deterministic, ("node",)),
+        (test_better_line_is_deterministic, ("rust",)),
+        (test_better_line_node_and_rust_drivers_agree, ("node",)),
+        (test_better_line_node_and_rust_drivers_agree, ("rust",)),
+    ):
+        fn(*args)
+        print(f"{fn.__name__}[{args[0]}]: PASSED")

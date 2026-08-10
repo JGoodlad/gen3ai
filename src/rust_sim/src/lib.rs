@@ -77,9 +77,20 @@
 //!   KO-to-win, last-mon double-KO tie — INCLUDING the winner). DEFERRED: secondary
 //!   effects, status MOVES, entry hazards (Spikes), Pursuit, Baton Pass, protocol
 //!   emission.
-//! - [`protocol`], [`battle`] — **partial**. The callable surface + contracts are
-//!   designed; [`battle::Battle::start`] builds real construction-time state, but
-//!   the action/protocol/serialization bodies are still `todo!()`.
+//! - [`search`] — **DONE & validated**. The clone-and-branch SEARCH kernels
+//!   (`gen3_rust_search_driver_v1`): the port of `utils/bridge/replay_kernels.js`'s
+//!   search half (the aux PRNG, `random_choice`, `build_to_turn`, `resolve_turn` /
+//!   `resolve_turn_exact`, and the omniscient `outcome_of` / `pre_state` renderers),
+//!   composed by `src/bin/search_driver.rs` into a byte-compatible drop-in for
+//!   `utils/bridge/search_driver.js`. Pinned by `tests/search_driver_test.rs` and, for
+//!   the wire contract, by the golden differential `tmp/search_impl_parity.py`.
+//! - [`protocol`], [`battle`] — **partial**. [`battle::Battle::start`] +
+//!   `start_with_switchins` / `start_with_turn0_construction` +
+//!   [`battle::BattleStream::write_line`] are real and validated; a handful of
+//!   never-built convenience methods on [`battle::Battle`] (`new`/`choose`/`ended`/
+//!   `winner`/`seed`/`reseed`) stay `todo!()` because every production path drives the
+//!   engine through [`turn::FullBattleDriver`] instead. The clone-and-branch SEARCH
+//!   snapshot is `Clone` (see [`bridge::BridgeSession::snapshot`]), not a byte format.
 //!
 //! ## Cross-gen note
 //!
@@ -97,6 +108,7 @@ pub mod event;
 pub mod json;
 pub mod prng;
 pub mod protocol;
+pub mod search;
 pub mod state;
 pub mod stats;
 pub mod team;

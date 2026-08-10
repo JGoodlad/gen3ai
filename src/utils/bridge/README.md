@@ -99,12 +99,127 @@ tree and the built binary 2026-08-04). Do not plan from the struck-through text:
 compared only aggregates, so the **production SEEDLESS branch was never exercised**. A "default"
 branch that no test takes is untested however green the suite looks.
 
+~~Still genuinely deferred: no rust clone-and-branch search driver.~~ **CLOSED.** The snapshot
+primitive (`gen3_bridge_clone_branch_v1` — `BridgeSession::snapshot()`, a deep `Clone`, plus the
+`clear_chunks`/`request_kind`/`is_choice_done`/`active_request_json`/`battle_state`/`winner`
+surface; the `Battle::serialize`/`deserialize` stubs are deleted, the port's state needing no byte
+format) and the driver on top of it both shipped — see *Offline driver transport* below. The
+`--search-teacher` + rust guard is **gone**, and the reason it used to give — the record's
+`input_log` being replay-EQUIVALENT rather than byte-identical — is **WRONG and RETRACTED**: no
+consumer reads the committed-choice lines at all (`replay_kernels.js::writeStart` and
+`ReconstructionRecord.start_options()`/`players()` read only `>start`/`>player`, which the rust
+record renders exactly). The blocker was always the missing driver. Do not re-derive a plan from
+the retracted reason.
+
 Still genuinely deferred:
-- **No rust clone-and-branch search** (`Battle::serialize`/`deserialize` are `todo!()` in
-  `src/rust_sim/src/battle.rs`), and `teacher/generate.py` calls `run_local_battles` with no `impl`
-  (→ node). `train_rl_agent` hard-`parser.error`s on `--search-teacher` / `--teacher-persistent` +
-  `rust` — correct, but for the `input_log` reason above (replay-EQUIVALENT, not byte-identical),
-  not for any seed reason.
+- **The CHOICE-REJECT framing.** When a client sends a choice the request marks illegal (an
+  explicit `disabled` move, a `switch` into a fainted slot), node emits
+  `|error|[Unavailable choice] …` / `[Invalid choice] …` to THAT side and re-asks only it; the port
+  emits no `|error|` and re-opens the boundary to BOTH sides. A pre-existing `bridge.rs` gap on a
+  path poke-env never takes (its action mask never offers an illegal choice) — it surfaces only
+  because the search drivers deliberately feed arbitrary candidate choices. Allowlisted in both
+  parity harnesses and reconciled ONLY when every remaining log chunk is byte-equal, so the battle
+  itself is proven identical.
+- **`pre_state` volatile NAMES** are reconstructed from the port's typed fields rather than read
+  from a keyed map. The golden verifies exactly one fact about them — that duration-1 volatiles
+  (`focuspunch`, `pursuit`, `protect`, …) must not leak into a move-request boundary, which really
+  did diverge and was fixed. Every other name is unverified because all 12 golden `pre_state`s end
+  up empty. `pre_state` has no consumer today.
+
+## Offline driver transport — `impl={node,rust}` (`gen3_search_driver_impl_seam_v1`)
+
+`--use-bridge={node,rust}` selects the LIVE battle child. The **offline** children — the warm
+clone-and-branch search server and the replay/re-roll primitives — are selected the same way, by an
+`impl` argument threaded from the caller. Same module owns both: `sim_bridge_bin.py`.
+
+| family | node | rust | resolver | env override |
+|---|---|---|---|---|
+| live transport | `node local_sim_bridge.js` | `sim_bridge` binary | `resolve_sim_bridge_bin` / `bridge_spawn_argv(impl)` | `POKESIM_SIM_BRIDGE_BIN` |
+| offline drivers | `node search_driver.js` **+** `node replay_driver.js` | `search_driver` binary (**both** verb families) | `resolve_search_driver_bin` / `search_driver_spawn_argv(impl)` | `POKESIM_SEARCH_DRIVER_BIN` |
+
+Note the asymmetry: node splits the offline verbs across two scripts (`search_driver.js` =
+`open_root`/`expand_many`; `replay_driver.js` = `replay`/`reroll`/`reroll_many`), while the rust
+port serves both from ONE binary — so `reconstruction._run_driver` keeps its own node script but
+routes the rust branch through `search_driver_spawn_argv`.
+
+Both resolvers share `_resolve_rust_bin(bin_name, env_var, selector)`: env override first (no
+build), else `cargo build --release --bin <name>` in `src/rust_sim`, cached per bin name across the
+process, and a clear actionable error on any failure. **Neither ever falls back to node** — a
+"rust" run that silently became a node run would answer a different question than the one asked.
+
+Threading (every default is `"node"`, so this is byte-identical for every existing caller):
+
+- `SearchSession(record=None, timeout=…, impl="node")` — stores `self.impl`; the child-death /
+  timeout / desync messages name the impl **and** argv[0], so a rust failure self-diagnoses.
+- `reconstruction.replay_battle / reroll_turn / reroll_many (…, impl="node")` →
+  `_run_driver(request, timeout, impl)`. (`_sim_aliases` stays node-only by design: it dumps
+  Showdown's own `aliases.ts` — a data query against the reference sim, not a sim run.)
+- `obs_materializer.materialize_from_record / infer_action_indices (…, impl="node")`.
+- `counterfactual.replay_counterfactual(…, impl=…)` → `run_local_battles(impl=…)` — this leg plays a
+  REAL game, so it rides the LIVE `bridge_spawn_argv` seam, not the driver one.
+- Prober: `ProbeSession(root, …, impl="node")` holds it **session-wide** (like `compile_extractor`)
+  and every re-roll-backed probe reads it; the CLI exposes a global
+  `python -m main.prober.query --impl {node,rust} <cmd>`. `better_line` REFUSES an injected warm
+  `SearchSession` whose impl differs from the session's, so a correction can't be half-searched on
+  one engine and half-confirmed on the other.
+- Search teacher: `SearchTeacherCallback(impl=args.bridge_impl)` → both worker configs → the
+  workers' `ProbeSession` / `SearchSession` / `generate_loss_traces` (whose `run_local_battles` call
+  previously had no `impl` and so silently took node).
+
+Tests — the SEAM: `sim_bridge_bin_test.py` (node argv, the `POKESIM_SEARCH_DRIVER_BIN` override,
+bad-impl `ValueError`, independence of the two overrides, and a missing rust binary raising instead
+of returning a node argv) + `search_session_test.py` (the exact historical node argv, rust execs
+only the resolved binary, unresolvable rust raises **before** spawning, errors name the impl).
+
+Tests — the ENGINE EQUIVALENCE (the claim that actually matters: rust answers the same question):
+
+| gate | what it pins |
+|---|---|
+| `tmp/search_impl_parity.py` | node vs rust on `open_root`/`expand_many` — 6 cases / 60 arms / **18873 leaf fields**, only `\|t:\|` normalized |
+| `tmp/replay_impl_parity.py` | node vs rust on `replay`/`reroll`/`reroll_many` — 76 cases / 136 arms / **30689 leaf fields**, incl. 9 error classes, 2 ended arms, 1 stuck arm |
+| `search_clone_parity_fuzz_test.py --impl rust [--record-impl rust]` | the rust clone ≡ the rust `reroll_many` **at the OBS**, bit-for-bit, + the `value_crn` anchor + depth-2 |
+| `counterfactual_fuzz_test.py --impl rust [--record-impl rust]` | the CONFIRM leg — scripted-prefix obs oracle, divergence-to-terminal, Monte-Carlo reseed determinism |
+| `main/prober/better_line_integration_test.py` | parametrized over both impls, **plus a cross-impl test** asserting node and rust yield identical candidate V. The fake model is `V = obs.sum()`, so an exact match is an obs-level bit-identity claim at every ply of the beam |
+| `src/rust_sim/tests/{bridge_clone_branch,search_driver,replay_driver}_test.rs` | node-free: clone independence, the aux-RNG draw table, the `guard > 40` off-by-one, `recorded_queues` refusal-pull, one-shot dispatch |
+
+**Performance — `search_impl_throughput_benchmark.py` (MEASURED, node vs rust).** Interleaved
+per-rep A/B (order flips each rep) so a drifting box load hits both arms equally; medians, ms,
+lower is better. Taken beside a live training run at load 8–24/16 cores, which the benchmark
+announces via `warn_if_contended()` — absolute ms are inflated, the RATIO is the load-stable
+signal and the IQRs below are disjoint by an order of magnitude.
+
+| operation | node | rust | speedup |
+|---|---|---|---|
+| COLD spawn → 1st root | 438.6 | 9.7 | **45×** (paid once per non-warm `better_line`) |
+| `open_root` turn 5 / 15 / 30 | 8.3 / 15.0 / 32.1 | 1.1 / 1.7 / 2.9 | 7.8× / 8.7× / 11.2× |
+| `expand_many` per arm, turn 5 / 15 / 30 | 2.3 / 4.4 / 3.0 | 0.18 / 0.21 / 0.18 | 12.9× / 20.2× / 16.3× |
+| `reroll_many` per arm | 73.4 | 2.2 | **33.8×** (node respawns a one-shot child per call) |
+| child RSS | 193 MB | 9.3 MB | **20.7× smaller** |
+
+IQR of `expand_many`/arm: node 3.00–4.59 ms vs rust 0.18–0.25 ms — disjoint, so the ratio survives
+the contention. `open_root` rises monotonically with turn on both, which is the shape the prefix
+replay must have; an earlier cut that showed turn 5 slower than turn 15 was folding V8 startup into
+the first request, and the benchmark now measures COLD separately for exactly that reason.
+
+**But the driver is no longer the bottleneck.** End-to-end `better_line` (depth 2, beam 3, top_k 4)
+is **1.89× faster on rust** (1454 → 771 ms median, disjoint ranges) — far less than the 13–20× the
+hot path gets, and a cProfile of one call says why: blocking child-wait falls from **51% of the
+call on node to 4% on rust**, leaving Python-side obs materialization as the dominant cost, and
+that is impl-invariant. Two consequences: (1) further engine work on this path is largely spent
+effort — the materializer is the next lever, same lesson as the `torch.compile` saturation; (2) the
+1.89× is an UPPER bound for a real search, because it was measured with the integration test's
+`V = obs.sum()` stub, so a real extractor's forward adds impl-invariant time on both arms.
+
+The RSS and cold-start numbers matter more than they look for the SEARCH TEACHER, which runs
+`--teacher-workers` of these concurrently and (in batch mode) respawns per cycle: 5 workers is
+~0.97 GB of node children vs ~47 MB of rust ones.
+
+Both `--impl` and `--record-impl` exist on the two fuzz scripts on purpose: a MIXED run (train on
+rust, run forensics on node) is the realistic deployment, so a record produced by either engine must
+replay and search identically on both. The parity harnesses normalize `|t:|` and **nothing else
+silently** — every unclosed divergence is an explicit printed allowlist entry with a reason and a
+hit count, and both were fault-injection-proven (a one-line `pick_uniform` off-by-one → 2716
+divergences; a dropped `|split|` shared line + a disabled `fnt` token → 1461).
 
 **Coverage (MEASURED).** The port fail-louds (`__ERR__ … is not modeled` → `RuntimeError` → env
 crash → launcher restart; the child itself survives via `catch_unwind`) rather than desync. On the

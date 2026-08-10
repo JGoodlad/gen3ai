@@ -59,8 +59,8 @@
 //!   turn for the counterfactual Monte-Carlo re-roll) is **SUPPORTED** as of
 //!   `gen3_bridge_resume_reseed_v1`, via `BridgeSession::{turn, reseed}` (the incremental
 //!   session owns a live `BattleState` whose `prng` is a plain field, so the bridge's need did
-//!   not have to wait on the full `Battle::serialize`/`deserialize` snapshot surface, which
-//!   stays `todo!()` for the clone-and-branch search path). Applied at the START of the
+//!   not have to wait on the clone-and-branch snapshot surface — which is now simply `Clone`,
+//!   via `BridgeSession::snapshot`). Applied at the START of the
 //!   divergence turn, BEFORE its choices commit, ONCE — mirroring the node bridge — so the
 //!   recorded prefix keeps its dice and only the post-divergence resolution re-rolls. A
 //!   malformed spec is a hard error, not a silent fall-back to the base seed — a counterfactual

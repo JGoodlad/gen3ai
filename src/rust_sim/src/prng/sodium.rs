@@ -13,6 +13,10 @@ use super::RngCore;
 /// Nonce chosen for libsodium compatibility (12 ASCII bytes).
 const NONCE: [u8; 12] = *b"LibsodiumDRG";
 
+/// `Clone` is the clone-and-branch search primitive (`gen3_bridge_clone_branch_v1`):
+/// the whole backend state is the 32-byte seed, so a clone is an INDEPENDENT dice
+/// stream that continues from exactly where the parent was paused.
+#[derive(Clone)]
 pub struct SodiumRng {
     seed: [u8; 32],
 }

@@ -2265,6 +2265,26 @@ caveat is **RETRACTED** — model-judged recoverability is circular; treat those
 | `--teacher-search-workers` | `3` | worker subprocesses per cycle |
 | `--teacher-search-freq` | `0` | steps between cycles (0 = eval freq) |
 
+**Sim engine (`impl`, no flag of its own).** Every child the teacher spawns — the generation
+battles (`teacher/generate.py` → `run_local_battles`), the searches (`SearchSession`) and the
+replay/re-roll driver (`ProbeSession`) — takes its engine from `SearchTeacherCallback(impl=…)`,
+which `train_rl_agent` sources from the existing **`args.bridge_impl`** (so there is no new
+user-facing flag; `"node"` when `--use-bridge` is off, which is the historical behavior). It rides
+each worker's config JSON as an `"impl"` key. This closed a real silent gap:
+`teacher/generate.py`'s `run_local_battles` call had **no** `impl=`, so on a `--use-bridge=rust`
+run its battles would have been generated on node regardless.
+
+**`--use-bridge=rust` + `--search-teacher` now RUNS** — the old hard `parser.error` is deleted
+(`gen3_rust_search_driver_v1` / `gen3_rust_replay_driver_v1`: one `search_driver` binary serves both
+offline verb families). Each LEG is gated on rust — `better_line` node≡rust candidate V (an
+obs-level bit-identity claim), `search_clone_parity` (clone ≡ `reroll_many` at the obs), and the
+counterfactual confirm leg — but the COMPOSITION is not: **no full multi-cycle teacher run has been
+done end-to-end on rust.** Treat the first one as an experiment and fall back to `--use-bridge=node`
+if a cycle misbehaves. That guard's OLD stated reason — the record's `input_log` being
+replay-equivalent rather than byte-identical — was **wrong and is retracted**: no consumer reads the
+committed-choice lines, so do not re-derive a plan from it. See `src/utils/bridge/README.md` →
+*Offline driver transport* for the seam and the full gate table.
+
 **Tests** (`src/agents/training/teacher/*_test.py`): `buffer_test` (ring/sample/stack), `awr_loss_test`
 (AWR math, masking, grad), `opponent_resolver_test` (bot/sentinel/unresolved, tmp metadata),
 `produce_test` (the 3-tier gate with a fake session), `selection_test` (the funnel with a fake

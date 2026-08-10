@@ -785,9 +785,13 @@ async def main():
                              "sim_bridge binary (built via cargo; override with POKESIM_SIM_BRIDGE_BIN). "
                              "NOTE: 'rust' now emits __RECON__ (gen3_bridge_recon_record_v1, on a "
                              "seedless battle too) and supports resumeReseed "
-                             "(gen3_bridge_resume_reseed_v1); its input_log is replay-EQUIVALENT "
-                             "rather than the sim's byte-identical one, so the search-TEACHER path "
-                             "still requires 'node'. 'rust' also fail-louds on an unmodeled move.")
+                             "(gen3_bridge_resume_reseed_v1), so the forensic reconstruction and "
+                             "counterfactual paths work on rust. The OFFLINE search/replay drivers "
+                             "are on rust too (gen3_rust_search_driver_v1 / "
+                             "gen3_rust_replay_driver_v1 — one search_driver binary serves both "
+                             "verb families), so --search-teacher no longer requires 'node'; the "
+                             "run's impl is threaded into the teacher workers. 'rust' also "
+                             "fail-louds on an unmodeled move.")
     parser.add_argument("--use-showdown-bridge", action=BoolFlag, default=None,
                         help="DEPRECATED alias for --use-bridge=node (kept for the launcher + "
                              "existing scripts). Enables the in-process Node BattleStream bridge for "
@@ -2650,10 +2654,10 @@ async def main():
         emit(f"🌉 Transport: in-process BattleStream bridge [{args.bridge_impl}] for BOTH training "
              "and eval (no Showdown server needed — --showdown-port ignored)")
         if args.bridge_impl == "rust":
-            # One-time startup warning naming the Rust bridge's honest remaining scope limits
-            # (an `input_log` that is replay-EQUIVALENT rather than the sim's byte-identical one;
-            # an INCOMPLETE modeled move set that fail-louds) — resolve/build the binary NOW so a
-            # missing toolchain fails loudly at startup, not deep inside the first env reset.
+            # One-time startup warning naming the Rust bridge's honest remaining scope limits (the
+            # offline search/replay drivers are still Node-only; an INCOMPLETE modeled move set that
+            # fail-louds) — resolve/build the binary NOW so a missing toolchain fails loudly at
+            # startup, not deep inside the first env reset.
             from utils.bridge.sim_bridge_bin import (
                 warn_rust_deferrals, resolve_and_publish_sim_bridge_bin)
             warn_rust_deferrals(emit)
@@ -2662,21 +2666,26 @@ async def main():
             # instead of racing its own `cargo build` on first spawn.
             _rust_bin = resolve_and_publish_sim_bridge_bin()
             emit(f"🦀 [BRIDGE=rust] sim_bridge binary (prebuilt, published to children): {_rust_bin}")
-            # The search-TEACHER needs the sim's own byte-identical `input_log`, which the port
-            # does not reproduce (its record is replay-equivalent). Error clearly rather than let
-            # it silently answer a slightly different question.
-            _recon_needed = []
-            if getattr(args, "search_teacher", False):
-                _recon_needed.append("--search-teacher")
-            if getattr(args, "teacher_persistent", False):
-                _recon_needed.append("--teacher-persistent")
-            if _recon_needed:
-                parser.error(
-                    f"--use-bridge=rust is incompatible with {', '.join(_recon_needed)}: the "
-                    "search-teacher path relies on the sim's OWN byte-identical `input_log`, "
-                    "which the Rust record does not reproduce (it is replay-EQUIVALENT — the "
-                    "committed-choice lines are rendered from the port's script). Use "
-                    "--use-bridge=node for search-teacher runs.")
+            # The search-TEACHER used to be hard-blocked here. That guard is GONE
+            # (`gen3_rust_search_driver_v1` / `gen3_rust_replay_driver_v1`): the Rust
+            # `search_driver` binary now serves BOTH offline verb families, and
+            # `SearchTeacherCallback(impl=args.bridge_impl)` threads this run's engine into the
+            # worker subprocesses, so a rust run's teacher no longer silently falls back to node.
+            #
+            # For the record, since it cost someone an investigation: the guard's ORIGINAL reason —
+            # that the search-teacher needs the sim's own byte-identical `input_log` — was simply
+            # FALSE. Nothing reads the record's committed-choice lines. The only readers are
+            # `replay_kernels.js::writeStart` and `ReconstructionRecord.start_options()` /
+            # `.players()`, all of which touch only the `>start` / `>player` lines, which the rust
+            # record renders exactly. The real blocker was always the missing DRIVER, and that is
+            # what got built.
+            if getattr(args, "search_teacher", False) or getattr(args, "teacher_persistent", False):
+                emit("🦀 [BRIDGE=rust] search-teacher on the RUST offline drivers "
+                     "(search_driver binary serves open_root/expand_many + replay/reroll/"
+                     "reroll_many). Gated by: better_line node≡rust candidate values bit-identical, "
+                     "search_clone_parity (clone ≡ reroll_many at the obs), and the counterfactual "
+                     "confirm leg — each run on rust. NOT yet gated: a full multi-cycle teacher run "
+                     "end-to-end on rust. Fall back with --use-bridge=node if a cycle misbehaves.")
     else:
         emit(f"🔌 Showdown server: {server_config.websocket_url}")
 
@@ -3529,6 +3538,9 @@ async def main():
             n_battles=args.teacher_gen_battles,
             # OPD: when --opd-coef>0 the workers ALSO build the improved distribution π' (the KL target).
             opd_build_pi_target=bool(args.opd_coef and args.opd_coef > 0), opd_beta=args.opd_beta,
+            # The workers' sim engine follows the run's --use-bridge impl (no separate flag);
+            # "node" when the bridge is off, which is the historical behaviour.
+            impl=args.bridge_impl,
             verbose=1))
     eval_callback = None
     # A --debug smoke run skips ALL eval by default — the periodic eval callback below AND the

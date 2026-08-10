@@ -57,13 +57,15 @@ def lookahead_decision(
     candidates: Optional[Sequence[int]] = None,
     followup: str = "random",
     mappings=None,
+    impl: str = "node",
 ) -> dict:
     """One-ply value-delta for one ``move_selection`` decision (see module header).
 
     ``candidates`` restricts the swept actions to a subset of legal action indices (the chosen action
     is always included); ``None`` sweeps every legal action. ``n_seeds`` > 0 adds the dice-averaged
-    value alongside the CRN headline. Raises (like the falsifier) on a non-``move_selection`` anchor, a
-    trace missing the ``actions`` array, or a replay desync.
+    value alongside the CRN headline. ``impl`` (``"node"`` default | ``"rust"``) selects the offline
+    replay/re-roll driver. Raises (like the falsifier) on a non-``move_selection`` anchor, a trace
+    missing the ``actions`` array, or a replay desync.
     """
     invs = summary.get("invocations", [])
     if not (0 <= inv_index < len(invs)):
@@ -90,7 +92,7 @@ def lookahead_decision(
     # index → the sim choice string (the same real mapper the falsifier uses). Zero reimplementation.
     trace = materialize_from_record(
         record, actions=actions, mappings=mappings,
-        map_actions_at=inv_index, stop_after_decision=inv_index,
+        map_actions_at=inv_index, stop_after_decision=inv_index, impl=impl,
     )
     if len(trace.decisions) != inv_index + 1:
         raise RuntimeError(
@@ -132,7 +134,7 @@ def lookahead_decision(
         for s in seed_list:
             arms.append({f"{side}_action": our_action, f"{other_side}_action": "recorded",
                          "seed": s, "label": int(a)})
-    rr = reroll_many(record, turn, arms, followup=followup)
+    rr = reroll_many(record, turn, arms, followup=followup, impl=impl)
     prefix_chunks = rr.prefix_p1_chunks if side == "p1" else rr.prefix_p2_chunks
     by_arm: dict = {}                          # action index → {seed → ArmReroll}
     for arm in rr.arms:
@@ -235,6 +237,7 @@ def lookahead_battle(
     n_seeds: int = DEFAULT_SEEDS,
     followup: str = "random",
     mappings=None,
+    impl: str = "node",
 ) -> dict:
     """Look ahead from the chosen (or worst-δ) decisions of one battle — a thin loop over
     :func:`lookahead_decision` mirroring :func:`falsifier.falsify_battle`."""
@@ -246,7 +249,7 @@ def lookahead_battle(
         try:
             decisions.append(lookahead_decision(
                 model, record, summary, npz, int(inv_index),
-                n_seeds=n_seeds, followup=followup, mappings=mappings))
+                n_seeds=n_seeds, followup=followup, mappings=mappings, impl=impl))
         except (ValueError, RuntimeError, IndexError, subprocess.TimeoutExpired) as e:
             errors.append({"inv": int(inv_index), "error": str(e)})
     return {

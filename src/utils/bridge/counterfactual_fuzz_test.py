@@ -19,9 +19,9 @@ No ``test_*`` functions (so ``pytest`` collects nothing — this is a script), m
 ``utils/bridge`` fuzz tests.
 """
 
+import argparse
 import asyncio
 import json
-import sys
 import tempfile
 import time
 
@@ -62,7 +62,7 @@ class _ReplayTrainee(Gen3Player):
         return self.action_to_order(idx, battle)
 
 
-def _record_one_battle(out_dir: str):
+def _record_one_battle(out_dir: str, record_impl: str = "node"):
     ts = int(time.time() * 1000) % 1_000_000
     pool = TeamLoader().get_all_teams()
     trainee = RecordingFuzzPlayer(
@@ -75,7 +75,7 @@ def _record_one_battle(out_dir: str):
         account_configuration=AccountConfiguration(f"CFo{ts % 100000}", "pw"),
         server_configuration=LocalhostServerConfiguration,
         start_listening=False, max_concurrent_battles=1)
-    asyncio.run(run_local_battles(trainee, opp, 1))
+    asyncio.run(run_local_battles(trainee, opp, 1, impl=record_impl))
     prefix = trainee.trace_prefixes[0]
     record = ReconstructionRecord.load(f"{prefix}_reconstruction.json")
     with open(f"{prefix}_summary.json") as f:
@@ -104,16 +104,16 @@ def _fresh_players(record, tag, *, opp_seed: int = 7):
     return trainee, opp
 
 
-def _check_battle(i: int) -> None:
+def _check_battle(i: int, impl: str = "node", record_impl: str = "node") -> None:
     with tempfile.TemporaryDirectory(prefix="cf_fuzz_") as out_dir:
-        record, summary, npz = _record_one_battle(out_dir)
+        record, summary, npz = _record_one_battle(out_dir, record_impl=record_impl)
     recorded_result = ((summary.get("meta") or {}).get("result") or "").lower()
     n_decisions = int(npz["obs"].shape[0])
 
     # --- 1 + 2: full-replay outcome + obs oracle ---
     trainee, opp = _fresh_players(record, f"a{i}")
     out = replay_counterfactual(record, trainee=trainee, opponent=opp,
-                                divergence_turn=None, capture_obs=True)
+                                divergence_turn=None, capture_obs=True, impl=impl)
     assert out["ended"], f"[{i}] full replay did not finish: {out}"
     assert out["outcome"] == recorded_result, (
         f"[{i}] full-replay winner {out['outcome']!r} != recorded {recorded_result!r}")
@@ -138,7 +138,7 @@ def _check_battle(i: int) -> None:
         from agents.training.obs_materializer import materialize_from_record
         actions = np.asarray(npz["actions"], dtype=int)
         trace = materialize_from_record(record, actions=actions, map_actions_at=anchor,
-                                        stop_after_decision=anchor)
+                                        stop_after_decision=anchor, impl=impl)
         choice_map = trace.action_choices or {}
         chosen = int(actions[anchor])
         # an ALTERNATIVE move if one exists, else the recorded one (still exercises the handoff)
@@ -148,7 +148,7 @@ def _check_battle(i: int) -> None:
         trainee, opp = _fresh_players(record, f"b{i}")
         dout = replay_counterfactual(
             record, trainee=trainee, opponent=opp, divergence_turn=turn,
-            substitute_choice=choice_map[sub_idx], capture_obs=True)
+            substitute_choice=choice_map[sub_idx], capture_obs=True, impl=impl)
         assert dout["ended"], f"[{i}] divergence replay did not finish: {dout}"
         assert dout["outcome"] in ("win", "loss", "tie"), dout
         # The prefix (decisions strictly before the divergence turn) must still match the recording.
@@ -167,7 +167,7 @@ def _check_battle(i: int) -> None:
             tr, op = _fresh_players(record, f"c{i}{k}")
             r = replay_counterfactual(record, trainee=tr, opponent=op, divergence_turn=turn,
                                       substitute_choice=choice_map[sub_idx], post_t_seed=ps,
-                                      capture_obs=True)
+                                      capture_obs=True, impl=impl)
             assert r["ended"], f"[{i}] reseed line did not finish (seed {ps}): {r}"
             for k2 in pre[: len(r["trainee_obs"])]:               # reseed must NOT disturb the prefix
                 assert np.array_equal(r["trainee_obs"][k2], np.asarray(npz["obs"][k2], dtype=np.float32)), (
@@ -176,7 +176,7 @@ def _check_battle(i: int) -> None:
         # Determinism: the SAME post_t_seed (+ deterministic policies both sides) reproduces the outcome.
         tr, op = _fresh_players(record, f"d{i}")
         r2 = replay_counterfactual(record, trainee=tr, opponent=op, divergence_turn=turn,
-                                   substitute_choice=choice_map[sub_idx], post_t_seed=ps_a)
+                                   substitute_choice=choice_map[sub_idx], post_t_seed=ps_a, impl=impl)
         assert r2["outcome"] == reseed_outs[0], (
             f"[{i}] reseed not deterministic: {r2['outcome']} != {reseed_outs[0]}")
 
@@ -184,11 +184,20 @@ def _check_battle(i: int) -> None:
           f"divergence@turn={turn if anchor is not None else 'n/a'}  OK")
 
 
-def main(n: int = 3) -> None:
+def main(n: int = 3, impl: str = "node", record_impl: str = "node") -> None:
+    print(f"counterfactual fuzz — {n} battles [driver={impl}, recorded on {record_impl}]")
     for i in range(n):
-        _check_battle(i)
-    print(f"counterfactual_fuzz_test: {n} battles PASSED")
+        _check_battle(i, impl=impl, record_impl=record_impl)
+    print(f"counterfactual_fuzz_test: {n} battles PASSED [driver={impl}, recorded on {record_impl}]")
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else 3)
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("n", nargs="?", type=int, default=3)
+    ap.add_argument("--impl", choices=("node", "rust"), default="node",
+                    help="Engine for the offline replay driver AND the live re-play legs "
+                         "(default node — the historical behavior).")
+    ap.add_argument("--record-impl", choices=("node", "rust"), default="node",
+                    help="Engine for the LIVE bridge that produces the record being replayed.")
+    a = ap.parse_args()
+    main(a.n, impl=a.impl, record_impl=a.record_impl)

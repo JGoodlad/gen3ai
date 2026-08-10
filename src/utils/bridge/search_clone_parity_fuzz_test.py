@@ -19,13 +19,21 @@ arms two ways — once through the ``SearchSession`` clone, once through ``rerol
 
 Run directly (no server needed — the bridge is in-process):
     python src/utils/bridge/search_clone_parity_fuzz_test.py [n_battles]
+    python src/utils/bridge/search_clone_parity_fuzz_test.py 4 --impl rust
+    python src/utils/bridge/search_clone_parity_fuzz_test.py 4 --impl rust --record-impl rust
+
+``--impl`` selects which OFFLINE driver serves both halves of the comparison (the warm
+clone-and-branch ``SearchSession`` **and** the ``reroll_many`` oracle it is checked against);
+``--record-impl`` selects the LIVE bridge that plays the battle the record comes from. They are
+deliberately independent: a mixed run is the realistic case (training on rust, forensics on
+node), and a record produced by one engine must replay on the other for that to hold.
 """
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import json
-import sys
 import tempfile
 import time
 
@@ -49,7 +57,7 @@ BATTLE_FORMAT = "gen3ou"
 MAX_ALTS = 3
 
 
-def _record_one_battle(out_dir: str):
+def _record_one_battle(out_dir: str, record_impl: str = "node"):
     ts = int(time.time() * 1000) % 100000
     pool = TeamLoader().get_all_teams()
     trainee = RecordingFuzzPlayer(
@@ -62,7 +70,7 @@ def _record_one_battle(out_dir: str):
         account_configuration=AccountConfiguration(f"SCo{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration,
         start_listening=False, max_concurrent_battles=1)
-    asyncio.run(run_local_battles(trainee, opp, 1))
+    asyncio.run(run_local_battles(trainee, opp, 1, impl=record_impl))
     prefix = trainee.trace_prefixes[0]
     record = ReconstructionRecord.load(f"{prefix}_reconstruction.json")
     with open(f"{prefix}_summary.json") as f:
@@ -80,7 +88,7 @@ def _mid_anchor(summary, npz):
     return cand[len(cand) // 2] if cand else None
 
 
-def _check_battle(record, summary, npz) -> int:
+def _check_battle(record, summary, npz, impl: str = "node") -> int:
     anchor = _mid_anchor(summary, npz)
     if anchor is None:
         return 0
@@ -93,7 +101,7 @@ def _check_battle(record, summary, npz) -> int:
     chosen = int(actions[anchor])
     prefix_actions = [int(x) for x in actions[:anchor]]
     trace = materialize_from_record(record, actions=actions, map_actions_at=anchor,
-                                    stop_after_decision=anchor)
+                                    stop_after_decision=anchor, impl=impl)
     cmap = trace.action_choices or {}
     assert chosen in cmap, f"{record.battle_tag}: chosen not legal in replay"
 
@@ -107,7 +115,7 @@ def _check_battle(record, summary, npz) -> int:
 
     # infer_action_indices (the interior-opponent action-history primitive) must recover OUR side's
     # recorded actions bit-for-bit — the same inversion drives the opponent's obs in the search.
-    inferred = np.asarray(infer_action_indices(record, side), dtype=int)
+    inferred = np.asarray(infer_action_indices(record, side, impl=impl), dtype=int)
     m = min(len(inferred), len(actions))
     assert m > 0 and np.array_equal(inferred[:m], actions[:m]), (
         f"{record.battle_tag}: infer_action_indices != recorded trainee actions (inversion desync)")
@@ -116,7 +124,7 @@ def _check_battle(record, summary, npz) -> int:
     alts = [a for a in cmap if a != chosen][:MAX_ALTS]
     n_checked = 1
 
-    with SearchSession(record) as ss:
+    with SearchSession(record, impl=impl) as ss:
         root = ss.open_root(turn)
         pfx = root.prefix_p1_chunks if side == "p1" else root.prefix_p2_chunks
         opp_rec = root.recorded_choices.get(other) or "default"
@@ -149,7 +157,7 @@ def _check_battle(record, summary, npz) -> int:
         for a in alts:
             rr_arms.append({f"{side}_action": cmap[a], f"{other}_action": opp_rec,
                             "seed": "original", "label": a})
-        rr = reroll_many(record, turn, rr_arms)
+        rr = reroll_many(record, turn, rr_arms, impl=impl)
         rr_pfx = rr.prefix_p1_chunks if side == "p1" else rr.prefix_p2_chunks
         rr_by = {arm.label: arm for arm in rr.arms}
         for a in [chosen] + alts:
@@ -193,13 +201,14 @@ def _check_battle(record, summary, npz) -> int:
     return n_checked
 
 
-def main(n_battles: int) -> None:
-    print(f"search-server clone parity fuzz — {n_battles} battles", flush=True)
+def main(n_battles: int, impl: str = "node", record_impl: str = "node") -> None:
+    print(f"search-server clone parity fuzz — {n_battles} battles "
+          f"[driver={impl}, recorded on {record_impl}]", flush=True)
     total, n = 0, 0
     for _ in range(n_battles):
         with tempfile.TemporaryDirectory(prefix="search_clone_parity_") as out_dir:
-            record, summary, npz = _record_one_battle(out_dir)
-            c = _check_battle(record, summary, npz)
+            record, summary, npz = _record_one_battle(out_dir, record_impl=record_impl)
+            c = _check_battle(record, summary, npz, impl=impl)
             total += c
             n += 1
             print(f"  {record.battle_tag}: clone ≡ reroll_many + value_crn anchor + depth-2 "
@@ -211,4 +220,17 @@ def main(n_battles: int) -> None:
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else 4)
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("n_battles", nargs="?", type=int, default=4)
+    ap.add_argument("--impl", choices=("node", "rust"), default="node",
+                    help="Which OFFLINE driver serves the clone-and-branch search + the "
+                         "reroll_many oracle it is checked against (default node — the "
+                         "historical behavior). 'rust' runs the same assertions through "
+                         "src/rust_sim/src/bin/search_driver.rs.")
+    ap.add_argument("--record-impl", choices=("node", "rust"), default="node",
+                    help="Which LIVE bridge plays the battle the record comes from. Kept "
+                         "separate from --impl on purpose: a rust-recorded battle replayed by "
+                         "the node driver (and vice versa) is the cross-impl case a mixed "
+                         "run actually hits — training on rust, forensics on node.")
+    a = ap.parse_args()
+    main(a.n_battles, impl=a.impl, record_impl=a.record_impl)

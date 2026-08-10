@@ -51,7 +51,7 @@ class SearchTeacherCallback(BaseCallback):
                  margin_min: float = 0.0, falsify_gate: bool = True, scan_limit: int = 60,
                  persistent: bool = False, refresh_steps: int = 500_000, n_battles: int = 12,
                  opd_build_pi_target: bool = False, opd_beta: float = 1.0,
-                 verbose: int = 0):
+                 impl: str = "node", verbose: int = 0):
         super().__init__(verbose)
         self.run_dir = run_dir
         self.freq_steps = int(freq_steps)
@@ -64,6 +64,10 @@ class SearchTeacherCallback(BaseCallback):
         # (the KL target) on each correction. off = AWR-only (no π' → the KL loss is skipped).
         self.opd_build_pi_target = bool(opd_build_pi_target)
         self.opd_beta = float(opd_beta)
+        # Which sim engine the worker subprocesses run their battles + search/replay children on.
+        # Sourced from the run's `args.bridge_impl` (so a `--use-bridge=rust` run's teacher does
+        # NOT silently fall back to node); "node" is the historical behaviour and the default.
+        self.impl = impl
         self._cycle_dir = os.path.join(run_dir, "teacher_cycle")
         self._pending: Optional[dict] = None
         self._last_launch_step = 0
@@ -176,6 +180,7 @@ class SearchTeacherCallback(BaseCallback):
             "top_k": self.top_k, "confirm_rollouts": self.confirm_rollouts,
             "margin_min": self.margin_min,
             "opd_build_pi_target": self.opd_build_pi_target, "opd_beta": self.opd_beta,
+            "impl": self.impl,
         }
         cfg_path = os.path.join(self._persist_dir, f"config_{wid}.json")
         with open(cfg_path, "w") as f:
@@ -335,6 +340,7 @@ class SearchTeacherCallback(BaseCallback):
                 "depth": self.depth, "beam": self.beam, "top_k": self.top_k,
                 "confirm_rollouts": self.confirm_rollouts, "margin_min": self.margin_min,
                 "opd_build_pi_target": self.opd_build_pi_target, "opd_beta": self.opd_beta,
+                "impl": self.impl,
             }
             cfg_path = os.path.join(self._cycle_dir, f"config_{wid}.json")
             with open(cfg_path, "w") as f:

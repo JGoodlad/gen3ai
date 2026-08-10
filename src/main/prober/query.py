@@ -21,6 +21,10 @@ A typical investigation:
     python -m main.prober.query calibration  <run_dir> [--step N]                # split `unattributed`: critic vs lost
 
 ``<summary.json>`` is a battle id from list/summary output (the ``id`` field).
+
+The two GLOBAL flags sit before the subcommand: ``--compile`` (torch.compile the rollout models)
+and ``--impl {node,rust}`` (which sim engine the search/replay children run — the offline analogue
+of the trainer's ``--use-bridge``; default ``node``).
 """
 
 from __future__ import annotations
@@ -87,6 +91,10 @@ examples:
   # 8. CALIBRATION: resolve falsify-scan's `unattributed` craters into critic_overvalued
   #    (epistemic) vs lost_position, via recorded V(s) vs realized return G(s) — selection-aware
   python -m main.prober.query calibration models/run_X --step 30000000 --concurrency 8
+
+  # 9. run the search/replay children on the RUST engine instead of node (global flag, before the
+  #    subcommand). Never falls back to node — a missing binary is a clear error.
+  python -m main.prober.query --impl rust better-line <id> 7
 """
 
 
@@ -105,6 +113,16 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="torch.compile the replay/rollout models (~6.5x per forward, ~10-20s "
                         "one-time). Worth it for better-line / falsify / falsify-scan / "
                         "replay-counterfactual; pointless for summary/list.")
+    # WHICH sim engine the re-roll/search/replay children run. The offline analogue of the
+    # trainer's --use-bridge={node,rust}; ignored by the model-free / no-replay commands
+    # (summary/list/scan/triage/…), which spawn no sim child at all. Session-wide, not per
+    # question: results from two engines are not comparable within one investigation.
+    p.add_argument("--impl", dest="impl", default="node", choices=["node", "rust"],
+                   help="sim engine for the search/replay children (default node). 'rust' execs "
+                        "the src/rust_sim search_driver / sim_bridge binaries (built via cargo; "
+                        "override with POKESIM_SEARCH_DRIVER_BIN / POKESIM_SIM_BRIDGE_BIN). "
+                        "Applies to better-line / lookahead / falsify / falsify-scan / "
+                        "replay-counterfactual / calibration. NEVER falls back to node.")
 
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -337,32 +355,35 @@ def _run(args) -> object:
             step=args.step, opponent=args.opponent, outcome=args.outcome,
             max_battles=args.max_battles)
     if args.cmd == "falsify":
-        return ProbeSession(args.battle, compile_extractor=args.compile_extractor).falsify(
+        return ProbeSession(args.battle, compile_extractor=args.compile_extractor,
+                            impl=args.impl).falsify(
             args.battle, invs=args.inv, worst=args.worst,
             n_seeds=args.seeds, n_alts=args.alts, followup=args.followup)
     if args.cmd == "lookahead":
         return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier,
-                            compile_extractor=args.compile_extractor).lookahead(
+                            compile_extractor=args.compile_extractor, impl=args.impl).lookahead(
             args.battle, inv=args.inv, worst=args.worst,
             n_seeds=args.seeds, followup=args.followup)
     if args.cmd == "better-line":
         return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier,
-                            compile_extractor=args.compile_extractor).better_line(
+                            compile_extractor=args.compile_extractor, impl=args.impl).better_line(
             args.battle, args.inv, depth=args.depth, beam=args.beam, top_k=args.top_k,
             followup=args.followup, interior_opponent=args.interior_opponent,
             opponent_ckpt=args.opponent_ckpt, confirm_rollouts=args.confirm_rollouts)
     if args.cmd == "replay-counterfactual":
-        return ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier,
-                            compile_extractor=args.compile_extractor).replay_counterfactual(
+        return ProbeSession(
+            args.battle, ckpt_override=args.ckpt, tier=args.tier,
+            compile_extractor=args.compile_extractor, impl=args.impl).replay_counterfactual(
             args.battle, args.inv, args.action, n_rollouts=args.rollouts,
             opponent_ckpt=args.opponent_ckpt, opponent_source=args.opponent_source, narrate=args.narrate)
     if args.cmd == "falsify-scan":
-        return ProbeSession(args.root, compile_extractor=args.compile_extractor).falsify_scan(
+        return ProbeSession(args.root, compile_extractor=args.compile_extractor,
+                            impl=args.impl).falsify_scan(
             outcome=args.outcome, opponent=args.opponent, step=args.step,
             limit=args.limit, worst=args.worst, n_seeds=args.seeds,
             n_alts=args.alts, followup=args.followup, concurrency=args.concurrency)
     if args.cmd == "calibration":
-        return ProbeSession(args.root).calibration(
+        return ProbeSession(args.root, impl=args.impl).calibration(
             outcome=args.outcome, opponent=args.opponent, step=args.step,
             limit=args.limit, worst=args.worst, n_seeds=args.seeds, n_alts=args.alts,
             followup=args.followup, concurrency=args.concurrency,

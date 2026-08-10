@@ -8,6 +8,12 @@ The 3-tier strictly-better gate (§4), all reusing the prober's better-line + ro
 
 The AWR advantage is the CONFIRMED win-rate improvement (``confirmed − played_rate``), never a critic
 advantage (the soundness point). An ``'unresolved'`` opponent is SKIPPED, never approximated.
+
+**Sim engine (node vs rust):** this module takes NO ``impl`` parameter on purpose — it owns no
+child process. Both engines it reaches are the caller's: the search/replay driver comes from
+``session``'s session-wide impl (``ProbeSession(..., impl=…)``) and, when a warm ``search_session``
+is injected, from that session's own. ``ProbeSession.better_line`` REFUSES a mismatched pair, so a
+correction can never be half-searched on one engine and half-confirmed on the other.
 """
 
 from __future__ import annotations
