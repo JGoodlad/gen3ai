@@ -19,6 +19,10 @@
 > replace that doc; it makes `how` buildable and pre-registers how to choose it.
 > `design_conditional_opponent_cells.md` OA1 appears here as one rung of the ladder (R4), not as a
 > separate feature.
+>
+> **ADOPTED 2026-08-10 (owner).** The §8 build order is the plan of record; **§8.1** records the
+> adopted schedule, the step-0 downscope rule, the **seed-VICReg prerequisite** (the §3.2 critic-route
+> collapse caveat is now a gen-5 *measurement*, not a hypothetical), and G7's post-gen-5 slot.
 
 ---
 
@@ -244,6 +248,16 @@ This routing table is the same "what can each channel physically carry" rule as
 > pre-registered trigger) — the `z_arch` collapse lesson mechanized. **Read those diagnostics before
 > designing anything that feeds this sink**; if the seeds have collapsed, a richer message is being
 > delivered to an effectively rank-1 reader and any bake-off against it is measuring the wrong thing.
+>
+> **CONFIRMED on gen-5 (2026-08-10): the seeds ARE collapsed.** `seeds/out_cos` = 1.000 and
+> `seeds/out_effective_rank` = 1.0 at every measurement from 196k through 15.7M steps
+> (`seeds/out_var` ≈ 5e-6; `seeds/query_cos` only 0.33 — distinct queries, identical outputs: the
+> attention distributions are indistinguishable). The pre-registered trigger (eff-rank < k/2
+> sustained past ~2M) has **FIRED**, and the VICReg variance+**covariance** wiring
+> (`--seed-vicreg-coef`, resume-immutable, off for gen-5) is being built 2026-08-10 for enablement
+> at the gen-6 launch. Consequence for this design: **until the regularizer is trained in, the
+> critic route is effectively rank-1** — a G1/bake-off reading against the `MultiSeedValueReadout`
+> sink is not interpretable before gen-6.
 >
 > **The design preference this reinforces:** where a *grounded* query exists, prefer it to a learned
 > seed. R4/OA1 gets its queries from the action space — one per candidate action, each tied to a
@@ -555,6 +569,26 @@ the gen-6 boundary — with step 0's number in hand, which the original plan nev
 **The one real cost of the missed window, stated plainly:** gen-5 trains against R0 `hard_max` and
 cannot be changed mid-run, so the earliest a better reducer can be *in* a generation is gen-6.
 
+### 8.1 ADOPTED PLAN (owner, 2026-08-10)
+
+The §8 order is adopted as the plan of record, with the following amendments and schedule
+commitments from the adoption review:
+
+| when | work | gate / decision rule |
+|---|---|---|
+| **now, beside gen-5** (offline) | **Step 0 first** — `op_block_split_audit` on the gen-5 **final** checkpoint (~25M), stratified sampler (`audit_states.py`) | **Downscope rule, pre-registered:** if the unsuppressed `imx_CELLS` shuffle-flips reading stays ≲7% — no larger than the suppressed gen-4 6.53% — only the cheap rungs proceed (Contract-W typing + R1); R2L and G7 are dropped and the design closes with a measured null |
+| now, beside gen-5 | Step-1 remainder + step 2 — Contract-W typing (`α` as the returned object) + the acc/provenance fold. Byte-identical, G0-gated | lands regardless of step 0's outcome |
+| now, beside gen-5 | Steps 3–4 — R1 / R2W / R2L behind `how` (second-order `φ` terms included, §4.1), `α` zero-init to `normalize(w)` | G3 identity-at-init **on a real `MaskablePPO`-built policy** |
+| now, beside gen-5 | **Seed VICReg** (`--seed-vicreg-coef`) — a named **prerequisite** of this design's critic route, per the §3.2 gen-5 collapse confirmation | enable at gen-6 launch; `seeds/*` must show un-collapse before any Contract-L bake-off against the critic sink is read |
+| after steps 3–4 | **G1** offline bake-off (rank the ladder vs the beam) + **G2** constructed coherence test + G4 / G6 | kill every rung that does not beat R0 beyond seed spread; G6 budget = **no measurable regression on the compiled B=1 path** |
+| **immediately post-gen-5** (first free GPU window) | **G7** — the single-team exploiter A/B on `tss_starmie` (2 × ~2M warm forks) | the §7 three-outcome falsification; decides whether R4/OA1 rides gen-6 or waits |
+| gen-6 launch | ship the surviving R3 bundle **beside** `hard_max`, VICReg on; R4/OA1 per G7's verdict | — |
+
+Two review cautions recorded with the adoption: **let R1 lose honestly** (D1 proves the current
+functional is *arbitrary*, not that the marginal is *better* for a risk-sensitive game — §10.2);
+and the R3 bundle roughly quadruples the reduced per-mon statistics feeding the switch cell and
+prefuse rows, so the G6 compiled-path check is mandatory **before** the gen-6 launch, not after.
+
 ---
 
 ## 9. Anti-patterns (do not relitigate)
@@ -661,6 +695,8 @@ today) and **gated on R2L landing**, but it deserves its own short design.
 | capacity does not move this model (⇒ no capacity-matched arm in G7) | ledger **P3**; both LUT conditioning arms; `project_arch_compute_decision` |
 | the L3 opp-action oracle, VoI ≈ 0.03 | `project_l3_oracle_grind_l4`, `project_opp_action_head_falsified` — see §10.8 for why it does NOT bound this work |
 | G7 design; the Big Five + Starmie team; rejection of the capacity-matched arm | owner, 2026-08-09 |
+| the adopted plan §8.1 — schedule, the step-0 downscope rule, G7's post-gen-5 slot | owner + adoption review, 2026-08-10 |
+| gen-5 seed collapse: `out_cos` 1.000, `out_effective_rank` 1.0 sustained 196k→15.7M steps | gen-5 `ai_v9_06_gen5_no_concat_0809` TB `seeds/*`, read 2026-08-10 |
 | the team's file, `pin_sha` `bcd4d09ee9`, archetype `semi_stall` / `status_heavy` | `data/teams/specialist/tss_starmie.txt`; `agents.training.team_archetypes.load_team_archetypes` (resolved 2026-08-09) |
 | gen3 Sandstorm gives Rock-types no SpD boost | `src/agents/observation/incoming_damage.py:95`; `incoming_damage_test.py::test_gen3_sandstorm_has_no_spd_boost` (the gen3 mod leaves `onModifySpD` undefined) |
 
